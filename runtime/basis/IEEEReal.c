@@ -1,5 +1,4 @@
-#include "mlton-basis.h"
-#include "my-lib.h"
+#include "platform.h"
 
 /* ------------------------------------------------- */
 /*                     IEEEReal                      */

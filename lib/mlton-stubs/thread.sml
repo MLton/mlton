@@ -13,8 +13,14 @@ structure MLtonThread =
 
       type 'a t = unit
 
+      structure Runnable =
+	 struct
+	    type t = unit
+	 end
+
+      val atomicSwitch = fn _ => raise Fail "Thread.atomicSwitch"
       val new = fn _ => raise Fail "Thread.new"
+      val prepare = fn _ => raise Fail "Thread.prepare"
       val prepend = fn _ => raise Fail "Thread.prepend"
       val switch = fn _ => raise Fail "Thread.switch"
-      val switch' = fn _ => raise Fail "Thread.switch'"
    end

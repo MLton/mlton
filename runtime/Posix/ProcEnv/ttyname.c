@@ -1,6 +1,5 @@
-#include <unistd.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
-Cstring Posix_ProcEnv_ttyname(Fd f) {
-	return (Cstring)ttyname(f);
+Cstring Posix_ProcEnv_ttyname (Fd f) {
+	return (Cstring)(ttyname (f));
 }

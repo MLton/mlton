@@ -1,6 +1,4 @@
-#include <unistd.h>
-#include <fcntl.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
 static struct flock s_flock;
 

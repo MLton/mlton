@@ -1,10 +1,8 @@
-#include <sys/time.h>
-#include "mlton-basis.h"
-#include "my-lib.h"
+#include "platform.h"
 
-void Itimer_set(Int which,
-		Int interval_tv_sec, Int interval_tv_usec,
-		Int value_tv_sec, Int value_tv_usec) {
+void Itimer_set (Int which,
+			Int interval_tv_sec, Int interval_tv_usec,
+			Int value_tv_sec, Int value_tv_usec) {
 	struct itimerval	v;
 	int i;
 
@@ -12,6 +10,6 @@ void Itimer_set(Int which,
 	v.it_interval.tv_usec = interval_tv_usec;
 	v.it_value.tv_sec = value_tv_sec;
 	v.it_value.tv_usec = value_tv_usec;
-       	i = setitimer(which, &v, (struct itimerval *)NULL);
+       	i = setitimer (which, &v, (struct itimerval *)NULL);
 	assert(i == 0);
 }

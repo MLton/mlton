@@ -1,6 +1,5 @@
-#include <sys/wait.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
-Bool Posix_Process_ifExited(Status s) {
-	return WIFEXITED(s);
+Bool Posix_Process_ifExited (Status s) {
+	return WIFEXITED (s);
 }

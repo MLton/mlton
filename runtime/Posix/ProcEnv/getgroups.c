@@ -1,7 +1,4 @@
-#include <sys/types.h>
-#include <unistd.h>
-#include "mlton-posix.h"
-#include "posix-constants.h"
+#include "platform.h"
 
 /* Right now this is messy because MLton has no way of dealing with unsigned 
  * shorts (i.e. gid_t).

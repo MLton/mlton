@@ -145,6 +145,11 @@ signature CONTROL =
       (* Save the SSA to a file. *)
       val keepSSA: bool ref
 
+      (* For the codegen -- do labels for gcc and assembler need an extra leading
+       * underscore.
+       *)
+      val labelsHaveExtra_: bool ref
+
       (* lib/mlton directory *)
       val libDir: Dir.t ref
 

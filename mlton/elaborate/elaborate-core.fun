@@ -753,7 +753,14 @@ fun parseAttributes (attributes: Attribute.t list): Convention.t option =
 	 SOME (case a of
 		  Attribute.Cdecl => Convention.Cdecl
 		| Attribute.Stdcall =>
-		     if !Control.targetOS = MLton.Platform.OS.Cygwin
+		     if let
+			   open Control
+			in
+			   case !targetOS of
+			      Cygwin => true
+			    | MinGW => true
+			    | _ => false
+			end
 			then Convention.Stdcall
 		     else Convention.Cdecl)
     | _ => NONE

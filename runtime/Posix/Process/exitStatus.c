@@ -1,6 +1,5 @@
-#include <sys/wait.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
-Int Posix_Process_exitStatus(Status s) {
-	return WEXITSTATUS(s);
+Int Posix_Process_exitStatus (Status s) {
+	return WEXITSTATUS (s);
 }

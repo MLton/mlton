@@ -27,7 +27,9 @@ structure MLtonItimer =
 	 in
 	    Prim.set (toInt t, s1, u1, s2, u2)
 	 end
-	    
+
+      val set' = PosixError.stubMinGW set'
+      
       fun set (z as (t, _)) =
 	 if Primitive.MLton.Profile.isOn
 	    andalso t = Prof

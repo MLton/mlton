@@ -202,6 +202,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       val umask = Prim.umask
 
+ 
       local
 	 fun wrap p arg = (SysCall.simple (fn () => p arg); ())
 	 fun wrapRestart p arg = (SysCall.simpleRestart (fn () => p arg); ())
@@ -218,7 +219,8 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	 val symlink = wrapOldNew Prim.symlink
 	 val chmod = wrap (fn (p, m) => Prim.chmod (NullString.nullTerm p, m))
 	 val fchmod = wrap (fn (FD n, m) => Prim.fchmod (n, m))
-	 val chown = wrap (fn (s, u, g) => Prim.chown (NullString.nullTerm s, u, g))
+	 val chown =
+	    wrap (fn (s, u, g) => Prim.chown (NullString.nullTerm s, u, g))
 	 val fchown = wrap (fn (FD n, u, g) => Prim.fchown (n, u, g))
 	 val ftruncate = wrapRestart (fn (FD n, pos) => Prim.ftruncate (n, pos))
       end	    
@@ -387,8 +389,20 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 		 handlers = [(Error.cleared, fn () => NONE)]}
 	     end)
       in
-	 val pathconf = make (fn (path, s) =>
-			      Prim.pathconf (NullString.nullTerm path, s))
+	 val pathconf =
+	    make (fn (path, s) => Prim.pathconf (NullString.nullTerm path, s))
 	 val fpathconf = make (fn (FD n, s) => Prim.fpathconf (n, s))
       end
+
+      val stub = Error.stubMinGW
+
+      val chown = stub chown
+      val fchown = stub fchown
+      val fpathconf = stub fpathconf
+      val ftruncate = stub ftruncate
+      val link = stub link
+      val mkfifo = stub mkfifo
+      val pathconf = stub pathconf
+      val readlink = stub readlink
+      val symlink = stub symlink
    end

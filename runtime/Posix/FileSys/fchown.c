@@ -1,7 +1,5 @@
-#include <sys/types.h>
-#include <unistd.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
-Int Posix_FileSys_fchown(Fd f, Uid u, Gid g) {
-	return fchown(f, u, g);
+Int Posix_FileSys_fchown (Fd f, Uid u, Gid g) {
+	return fchown (f, u, g);
 }

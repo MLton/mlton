@@ -1,6 +1,5 @@
-#include <sys/wait.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
-Bool Posix_Process_ifSignaled(Status s) {
-	return WIFSIGNALED(s);
+Bool Posix_Process_ifSignaled (Status s) {
+	return WIFSIGNALED (s);
 }

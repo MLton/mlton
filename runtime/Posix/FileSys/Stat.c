@@ -1,8 +1,4 @@
-#include <sys/stat.h>
-#include <unistd.h>
-#include "mlton-posix.h"
-
-#include <stdio.h>
+#include "platform.h"
 
 static struct stat statbuf;
 

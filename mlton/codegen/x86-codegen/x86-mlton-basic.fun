@@ -353,15 +353,13 @@ struct
    *  save gcState.frontier and gcState.stackTop, make call).
    * However, there are probably cases where this is different.
    *
-   * We also have another hack because with Cygwin, Label.toString appends
+   * We also have another hack because on some platforms, Label.toString appends
    * an _ to the beginning of each label.
    *)
   val fileLineLabel =
-     Promise.lazy
-     (fn () =>
-      Label.fromString (if let open Control in !targetOS = Cygwin end
-			   then "_LINE__"
-			else "__LINE__"))
+     Promise.lazy (fn () => Label.fromString (if !Control.labelsHaveExtra_
+						 then "_LINE__"
+					      else "__LINE__"))
 					 
   val fileLine
     = fn () => if !Control.debug

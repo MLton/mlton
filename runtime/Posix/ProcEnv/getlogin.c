@@ -1,6 +1,5 @@
-#include <unistd.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
-Cstring Posix_ProcEnv_getlogin() {
-	return (Cstring)(getlogin());
+Cstring Posix_ProcEnv_getlogin () {
+	return (Cstring)(getlogin ());
 }

@@ -1,5 +1,4 @@
-#include <sys/times.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
 static struct tms tms;
 

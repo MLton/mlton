@@ -16,6 +16,7 @@ structure UnixSock : UNIX_SOCK =
 	in 
 	  finish ()
 	end
+ 
       fun fromAddr sa = 
 	let
 	  val sa = Socket.unpackSockAddr sa
@@ -26,6 +27,11 @@ structure UnixSock : UNIX_SOCK =
 	in
 	   CharArraySlice.vector (CharArraySlice.slice (a, 0, SOME len))
 	end 
+
+      val stub = PosixError.stubMinGW
+	 
+      val toAddr = stub toAddr
+      val fromAddr = stub fromAddr
 
       structure Strm =
 	 struct

@@ -1,7 +1,4 @@
-#include <pwd.h>
-#include <sys/types.h>
-#include "mlton-posix.h"
-#include "my-lib.h"
+#include "platform.h"
 
 static struct passwd *passwd;
 

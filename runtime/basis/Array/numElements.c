@@ -1,6 +1,5 @@
-#include "gc.h"
-#include "mlton-basis.h"
+#include "platform.h"
 
-Int Array_numElements(Pointer p) {
-	return GC_arrayNumElements(p);
+Int Array_numElements (Pointer p) {
+	return GC_arrayNumElements (p);
 }

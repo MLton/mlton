@@ -30,13 +30,23 @@ structure OS_Path : OS_PATH = struct
   val volslash = "/"
   fun isslash c = c = #"/"
   fun validVol s = s = ""
+  fun iscolon c = c = #":"
+
+  val isMinGW = let open Primitive.MLton.Platform.OS in host = MinGW end
 
   fun splitabsvolrest s =
-      if size s >= 1 andalso isslash (s sub 0) then
-	  (true, "", substring(s, 1, NONE))
-      else
-	  (false, "", s);
-
+     if isMinGW
+	then
+	   (* Handle the "C:\" case *)
+	   if size s >= 3 andalso iscolon (s sub 1)
+	      then (true, "", substring(s, 3, NONE))
+	   else (false, "", s)
+     else
+	if size s >= 1 andalso isslash (s sub 0) then
+	   (true, "", substring(s, 1, NONE))
+	else
+	   (false, "", s);
+	   
   in
 
   val parentArc  = ".."

@@ -8,10 +8,18 @@ structure MLtonProcess =
 
       type pid = Pid.t
 
-      val isCygwin = let open MLton.Platform.OS in host = Cygwin end
+      val useSpawn =
+	 let
+	    open MLton.Platform.OS
+	 in
+	    case host of
+	       Cygwin => true
+	     | MinGW => true
+	     | _ => false
+	 end
 	 
       fun spawne {path, args, env} =
-	 if isCygwin
+	 if useSpawn
 	    then
 	       let
 		  val path = NullString.nullTerm path
@@ -33,7 +41,7 @@ structure MLtonProcess =
 	 spawne {path = path, args = args, env = Posix.ProcEnv.environ ()}
 
       fun spawnp {file, args} =
-	 if isCygwin
+	 if useSpawn
 	    then
 	       let
 		  val file = NullString.nullTerm file

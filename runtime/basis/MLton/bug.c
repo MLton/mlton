@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "mlton-basis.h"
+#include "platform.h"
 
 void MLton_bug (Pointer msg) {
 	fprintf (stderr, "MLton bug: %s.\n%s\n",

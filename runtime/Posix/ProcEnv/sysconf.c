@@ -1,6 +1,5 @@
-#include <unistd.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
-Int Posix_ProcEnv_sysconf(Int i) {
-	return sysconf(i);
+Int Posix_ProcEnv_sysconf (Int i) {
+	return sysconf (i);
 }

@@ -1,5 +1,4 @@
-#include "gc.h"
-#include "mlton-basis.h"
+#include "platform.h"
 
 extern struct GC_state gcState;
 

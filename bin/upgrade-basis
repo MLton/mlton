@@ -110,6 +110,9 @@ freebsd)
 linux)
 	os='Linux'
 ;;
+mingw)
+	os='MinGW'
+;;
 netbsd)
 	os='NetBSD'
 ;;
@@ -155,11 +158,13 @@ structure MLton =
 
             structure OS =
                struct
-                  datatype t = Cygwin | FreeBSD | Linux | NetBSD | OpenBSD | Solaris
+                  datatype t = Cygwin | FreeBSD | Linux | MinGW | NetBSD 
+                             | OpenBSD | Solaris
 
                   val all = [(Cygwin, "Cygwin"),
                              (FreeBSD, "FreeBSD"),
                              (Linux, "Linux"),
+                             (MinGW, "MinGW"),
                              (NetBSD, "NetBSD"),
                              (OpenBSD, "OpenBSD"),
                              (Solaris, "Solaris")]

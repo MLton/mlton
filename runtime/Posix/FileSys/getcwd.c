@@ -1,6 +1,5 @@
-#include <unistd.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
-Cstring Posix_FileSys_getcwd(Pointer buf, Size n) {
-	return (Cstring)(getcwd((buf), (n)));
+Cstring Posix_FileSys_getcwd (Pointer buf, Size n) {
+	return (Cstring)(getcwd (buf, n));
 }

@@ -49,6 +49,14 @@ structure PosixError: POSIX_ERROR_EXTRA =
 
       fun raiseSys n = raise SysErr (errorMsg n, SOME n)
 
+      val stubMinGW: ('a -> 'b) -> ('a -> 'b) =
+	 fn f => 
+	 if let open Primitive.MLton.Platform.OS
+	    in MinGW = host
+	    end
+	    then fn _ => raiseSys nosys
+	 else f
+
       structure SysCall =
 	 struct
 	    structure Thread = Primitive.Thread

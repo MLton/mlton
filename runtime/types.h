@@ -4,14 +4,18 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  */
-#ifndef _TYPES_H_
-#define _TYPES_H_
+
+/* Can't use _TYPES_H_ because MSVCRT uses it.  So, we use _MLTON_TYPES_H_. */
+
+#ifndef _MLTON_TYPES_H_
+#define _MLTON_TYPES_H_
 
 typedef char Int8;
 typedef short Int16;
 typedef long Int32;
 typedef long long Int64;
 typedef char *Pointer;
+typedef Pointer pointer;
 typedef float Real32;
 typedef double Real64;
 typedef unsigned char Word8;
@@ -36,5 +40,25 @@ typedef Word32 Word;
 typedef Int64 Position;
 
 typedef Int Bool;
+typedef Word Cpointer;
+typedef Word Cstring;
+typedef Word CstringArray;
+typedef Word Dirstream;
+typedef Int Fd;
+typedef Word Flag;
+typedef Word Gid;
+typedef Word Mode;
+typedef Word NullString;
+typedef Int Pid;
+typedef Int Resource;
+typedef Word Rlimit;
+typedef Int Signal;
+typedef Int Size;
+typedef Int Speed;
+typedef Int Ssize;
+typedef Int Status;
+typedef Int Syserror;
+typedef Pointer Thread;
+typedef Word Uid;
 
-#endif /* _TYPES_H_ */
+#endif /* _MY_TYPES_H_ */

@@ -776,6 +776,7 @@ structure Primitive =
 			   Cygwin
 			 | FreeBSD
 			 | Linux
+			 | MinGW
 			 | NetBSD
 			 | OpenBSD
 			 | Solaris
@@ -785,9 +786,10 @@ structure Primitive =
 			      0 => Cygwin
 			    | 1 => FreeBSD
 			    | 2 => Linux
-			    | 3 => NetBSD
-			    | 4 => OpenBSD
-			    | 5 => Solaris
+			    | 3 => MinGW
+			    | 4 => NetBSD
+			    | 5 => OpenBSD
+			    | 6 => Solaris
 			    | _ => raise Fail "strange MLton_Platform_OS_Host"
 		     end
 	       end
@@ -852,6 +854,7 @@ structure Primitive =
 	    structure Rusage =
                struct
 		 val ru = _import "MLton_Rusage_ru": unit -> unit;
+		    
 		 val self_utime_sec = _import "MLton_Rusage_self_utime_sec": unit -> int;
 		 val self_utime_usec = _import "MLton_Rusage_self_utime_usec": unit -> int;
 		 val self_stime_sec = _import "MLton_Rusage_self_stime_sec": unit -> int;

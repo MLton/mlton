@@ -4,20 +4,20 @@
 #include "main.h"
 
 /* Globals */
-word applyFFTemp;
-word checkTemp;
-word cReturnTemp[16];
-word c_stackP;
-word divTemp;
-word eq1Temp;
-word eq2Temp;
-word fileTemp;
-word fildTemp;
-word fpswTemp;
-word indexTemp;
-word intInfTemp;
+Word applyFFTemp;
+Word checkTemp;
+Word cReturnTemp[16];
+Word c_stackP;
+Word divTemp;
+Word eq1Temp;
+Word eq2Temp;
+Word fileTemp;
+Word fildTemp;
+Word fpswTemp;
+Word indexTemp;
+Word intInfTemp;
 char MLton_bug_msg[] = "cps machine";
-word raTemp1;
+Word raTemp1;
 double raTemp2;
 double realTemp1D;
 double realTemp2D;
@@ -25,17 +25,17 @@ double realTemp3D;
 float realTemp1S;
 float realTemp2S;
 float realTemp3S;
-word spill[16];
-word stackTopTemp;
-word statusTemp;
-word switchTemp;
-word threadTemp;
+Word spill[16];
+Word stackTopTemp;
+Word statusTemp;
+Word switchTemp;
+Word threadTemp;
 
 #ifndef DEBUG_X86CODEGEN
 #define DEBUG_X86CODEGEN FALSE
 #endif
 
-#if (defined (__CYGWIN__))
+#if (defined (__CYGWIN__) || defined (__MSVCRT__))
 #define ReturnToC "_Thread_returnToC"
 #elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
 #define ReturnToC "Thread_returnToC"
@@ -45,7 +45,7 @@ word threadTemp;
 
 #define Main(al, cs, mg, mfs, mmc, pk, ps, ml, reserveEsp)		\
 void MLton_jumpToSML (pointer jump) {					\
-	word lc_stackP;							\
+	Word lc_stackP;							\
 			       						\
 	if (DEBUG_X86CODEGEN)						\
 		fprintf (stderr, "MLton_jumpToSML(0x%08x) starting\n", (uint)jump); \

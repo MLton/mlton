@@ -1,5 +1,4 @@
-#include <math.h>
-#include "mlton-basis.h"
+#include "platform.h"
 
 double frexp (double x, int* exp);
 

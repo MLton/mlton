@@ -137,6 +137,8 @@ structure OS_IO: OS_IO =
 	  end
     end (* local *)
 
+    val poll = PosixError.stubMinGW poll
+
   (* check for conditions *)
     fun isIn (PollInfo(_, flgs)) = #rd flgs
     fun isOut (PollInfo(_, flgs)) = #wr flgs

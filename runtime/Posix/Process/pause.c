@@ -1,6 +1,5 @@
-#include <unistd.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
-Int Posix_Process_pause() {
-	return pause();
+Int Posix_Process_pause () {
+	return pause ();
 }

@@ -1,8 +1,4 @@
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include "mlton-basis.h"
-#include "my-lib.h"
+#include "platform.h"
 
 void INetSock_toAddr (Pointer in_addr, Int port, Char* addr, Int *addrlen) {
 	struct sockaddr_in *sa = (struct sockaddr_in*)addr;

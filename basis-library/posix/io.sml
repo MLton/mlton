@@ -374,4 +374,14 @@ structure PosixIO: POSIX_IO =
 	val {mkReader = mkTextReader, mkWriter = mkTextWriter} =
 	   make rwChar (TextPrimIO.RD, TextPrimIO.WR)
       end
+
+      val stub = PosixError.stubMinGW
+      val dupfd = stub dupfd
+      val fsync = stub fsync
+      val getfd = stub getfd
+      val getlk = stub getlk
+      val pipe = stub pipe
+      val setfd = stub setfd
+      val setlk = stub setlk
+      val setlkw = stub setlkw
    end

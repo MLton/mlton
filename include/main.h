@@ -1,7 +1,7 @@
 #ifndef _MAIN_H_
 #define _MAIN_H_
 
-#include "libmlton.h"
+#include "platform.h"
 
 /* The label must be declared as weak because gcc's optimizer may prove that
  * the code that declares the label is dead and hence eliminate the declaration.

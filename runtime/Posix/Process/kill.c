@@ -1,6 +1,5 @@
-#include <signal.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
-Int Posix_Process_kill(Pid p, Signal s) {
-	return kill(p, s);
+Int Posix_Process_kill (Pid p, Signal s) {
+	return kill (p, s);
 }

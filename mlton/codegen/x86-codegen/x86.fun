@@ -48,7 +48,7 @@ struct
 	open Label
 
 	fun toString l =
-	   if let open Control in !targetOS = Cygwin end
+	   if !Control.labelsHaveExtra_
 	      then concat ["_", Label.toString l]
 	   else Label.toString l
 

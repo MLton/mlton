@@ -35,6 +35,9 @@ CYGWIN*)
 FreeBSD*)
 	HOST_OS='freebsd'
 ;;
+MINGW*)
+	HOST_OS='mingw'
+;;
 NetBSD*)
 	HOST_OS='netbsd'
 ;;

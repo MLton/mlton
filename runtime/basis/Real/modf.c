@@ -1,5 +1,4 @@
-#include <math.h>
-#include "mlton-basis.h"
+#include "platform.h"
 
 Real32 Real32_modf(Real32 x, Real32 *exp) {
 	Real64 exp_, res;

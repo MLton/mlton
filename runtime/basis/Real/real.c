@@ -1,6 +1,4 @@
-#include <math.h>
-#include "basis-constants.h"
-#include "mlton-basis.h"
+#include "platform.h"
 
 Real32 Real32_Math_pi = (Real32)M_PI;
 Real32 Real32_Math_e = (Real32)M_E;

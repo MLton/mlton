@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include "mlton-basis.h"
+#include "platform.h"
 
 enum {
 	DEBUG = 0,

@@ -633,34 +633,26 @@ functor Real (R: PRE_REAL): REAL =
 	 struct
 	    open Prim.Math
 
-	    (* Patches for Cygwin and Solaris, whose math libraries do not handle
-	     * out-of-range args.
+	    (* Patch functions to handle out-of-range args.  Many C math
+	     * libraries do not do what the SML Basis Spec requires.
 	     *)
-	    val (acos, asin, ln, log10) =
-	       if not MLton.native
-		  andalso let
-			     open MLton.Platform.OS
-			  in
-			     case host of
-				Cygwin => true
-			      | Solaris => true
-			      | _ => false
-			  end
-		  then
-		     let
-			fun patch f x =
-			   if x < ~one orelse x > one
-			      then nan
-			   else f x
-			val acos = patch acos
-			val asin = patch asin
-			fun patch f x = if x < zero then nan else f x
-			val ln = patch ln
-			val log10 = patch log10
-		     in
-			(acos, asin, ln, log10)
-		     end
-	       else (acos, asin, ln, log10)
+	       
+	    local
+	       fun patch f x =
+		  if x < ~one orelse x > one
+		     then nan
+		  else f x
+	    in
+	       val acos = patch acos
+	       val asin = patch asin
+	    end
+
+	    local
+	       fun patch f x = if x < zero then nan else f x
+	    in
+	       val ln = patch ln
+	       val log10 = patch log10
+	    end
 
 	    (* The x86 doesn't get exp right on infs. *)
 	    val exp =
@@ -678,8 +670,8 @@ functor Real (R: PRE_REAL): REAL =
 	     * The Linux math library doesn't get pow (x, y) right when x < 0
 	     * and y is large (but finite).
 	     *
-	     * So, we define a safePow function that gives the correct result
-	     * on exceptional cases, and only calls pow with x > 0.
+	     * So, we define a pow function that gives the correct result on
+	     * exceptional cases, and only calls the C pow with x > 0.
 	     *)
 	    fun isInt (x: real): bool = x == realFloor x
 
@@ -690,7 +682,7 @@ functor Real (R: PRE_REAL): REAL =
 
 	    fun isNeg x = x < zero
 
-	    fun safePow (x, y) =
+	    fun pow (x, y) =
 	       case class y of
 		  INF =>
 		     if class x = NAN
@@ -729,11 +721,10 @@ functor Real (R: PRE_REAL): REAL =
 			    if isNeg x
 			       then if isInt y
 				       then if isEven y
-					       then pow (~ x, y)
-					    else negOne * pow (~ x, y)
+					       then Prim.Math.pow (~ x, y)
+					    else negOne * Prim.Math.pow (~ x, y)
 				    else nan
-			    else pow (x, y))
-	    val pow = safePow
+			    else Prim.Math.pow (x, y))
 
 	    fun cosh x =
 	       case class x of

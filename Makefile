@@ -213,7 +213,7 @@ runtime:
 	@echo 'Compiling MLton runtime system for $(TARGET).'
 	$(MAKE) -C runtime
 	$(CP) $(RUN)/*.a $(LIB)/$(TARGET)/
-	$(CP) runtime/*.h include/*.h $(LIB)/include/
+	$(CP) runtime/platform/ runtime/*.h include/*.h $(LIB)/include/
 	$(MAKE) -C bytecode
 	bytecode/print-opcodes >$(LIB)/opcodes
 	ar r $(LIB)/$(TARGET)/libmlton.a bytecode/interpret.o 

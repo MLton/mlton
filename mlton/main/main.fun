@@ -526,6 +526,11 @@ fun commandLine (args: string list): unit =
       val targetArch = !targetArch
       val archStr = String.toLower (MLton.Platform.Arch.toString targetArch)
       val targetOS = !targetOS
+      val () =
+	 Control.labelsHaveExtra_ := (case targetOS of
+					 Cygwin => true
+				       | MinGW => true
+				       | _ => false)
       val OSStr = String.toLower (MLton.Platform.OS.toString targetOS)
       fun tokenize l =
 	 String.tokens (concat (List.separate (l, " ")), Char.isSpace)
@@ -682,9 +687,16 @@ fun commandLine (args: string list): unit =
 			else ()
 		     val tempFiles: File.t list ref = ref []
 		     val tmpDir =
-			case Process.getEnv "TMPDIR" of
-			   NONE => "/tmp"
-			 | SOME d => d
+			let
+			   val (tmpVar, default) =
+			      case targetOS of
+				 MinGW => ("TEMP", "C:/WINNT/TEMP")
+			       | _ => ("TMPDIR", "/tmp")
+			in
+			   case Process.getEnv tmpVar of
+			      NONE => default
+			    | SOME d => d
+			end
 		     fun temp (suf: string): File.t =
 			let
 			   val (f, out) =
@@ -740,6 +752,8 @@ fun commandLine (args: string list): unit =
 			    * Notice that we do not use targetOS here, since we
 			    * care about the platform we're running on, not the
 			    * platform we're generating for.
+			    *
+			    * We want to keep the .exe as is for MinGW/Win32.
 			    *)
 			   val _ =
 			      if MLton.Platform.OS.host = Cygwin

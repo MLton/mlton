@@ -5,8 +5,6 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  */
-#ifndef _MLTON_GC_H
-#define _MLTON_GC_H
 
 /*
  * A two-space stop-and-copy GC.
@@ -14,16 +12,7 @@
  * Has three kinds of objects: normal (fixed size), arrays, and stacks.
  */
 
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-
-#include "my-lib.h"
-
 typedef uint word;
-typedef char* pointer;
 typedef unsigned long long W64;
 typedef unsigned long W32;
 typedef W32 Header;
@@ -686,4 +675,5 @@ bool GC_weakCanGet (pointer p);
 pointer GC_weakGet (pointer p);
 pointer GC_weakNew (GC_state s, W32 header, pointer p);
 
-#endif /* #ifndef _MLTON_GC_H */
+/* initialize the machine */
+void MLton_init (int argc, char **argv, GC_state s);

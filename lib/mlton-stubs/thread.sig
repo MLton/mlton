@@ -1,5 +1,12 @@
-type int = Int.int
+(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
+ *)
 
+type int = Int.int
+   
 signature MLTON_THREAD =
    sig
       structure AtomicState :
@@ -11,29 +18,43 @@ signature MLTON_THREAD =
       val atomically: (unit -> 'a) -> 'a
       val atomicState: unit -> AtomicState.t
 
+      structure Runnable :
+	 sig
+	    type t
+	 end
+
       type 'a t
 
-      (* new f creates a new thread that will apply f to whatever is thrown
-       * to the thread.  f must terminate by throwing to another thread or
-       * exiting the process.
+      (* new f
+       * create a new thread that, when run, applies f to
+       * the value given to the thread.  f must terminate by
+       * <VALREF/switch/ing to another thread or exiting the process.
        *)
       val new: ('a -> unit) -> 'a t
       (* prepend(t, f)
-       * Create a new thread (destroying t in the process) that evaluates
-       * f and passes the result to t.
+       * create a new thread (destroying t in the process) that first
+       * applies f to the value given to the thread and then continues
+       * with t.  This is a constant time operation.
        *)
       val prepend: 'a t * ('b -> 'a) -> 'b t
-      (* switch f = (t, x)
-       * Applies f to the current thread, and then switches to t with
-       * argument x.  f runs in a critical section.
-       * It is an error for f to call switch.
+      (* prepare(t, v)
+       * create a new runnable thread (destroying t in the process)
+       * that will evaluate t on v.
        *)
-      val switch: ('a t -> 'b t * 'b) -> 'a
-      (* switch' is a generalization of switch that evaluates the thunk
-       * x in the context of t (i.e. t's stack and exception handlers are in
-       * place).
+      val prepare: 'a t * 'a -> Runnable.t
+      (* switch f 
+       * apply f to the current thread to get rt, and then start
+       * running thread rt.  It is an error for f to
+       * perform another switch.  f is guaranteed to run
+       * atomically.
        *)
-      val switch': ('a t -> 'b t * (unit -> 'b)) -> 'a
+      val switch: ('a t -> Runnable.t) -> 'a
+      (* atomicSwitch f
+       * as switch, but assumes an atomic calling context.  Upon
+       * switch-ing back to the current thread, an implicit atomicEnd is
+       * performed.
+       *)
+      val atomicSwitch: ('a t -> Runnable.t) -> 'a
    end
 
 signature MLTON_THREAD_EXTRA =
@@ -42,6 +63,6 @@ signature MLTON_THREAD_EXTRA =
 
       val amInSignalHandler: unit -> bool
       val register: int * (unit -> unit) -> unit
-      val setHandler: (unit t -> unit t) -> unit
+      val setHandler: (Runnable.t -> Runnable.t) -> unit
       val switchToHandler: unit -> unit
    end

@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include "mlton-basis.h"
-#include "my-lib.h"
+#include "platform.h"
 
 void Stdio_print (Pointer s) {
 	if (0 == Array_numElements (s))

@@ -1,8 +1,6 @@
-#include <sys/poll.h>
-#include "mlton-basis.h"
-#include "mlton-posix.h"
+#include "platform.h"
 
-Int OS_IO_poll(Fd *fds, Word *eventss, Int n, Int timeout, Word *reventss) {
+Int OS_IO_poll (Fd *fds, Word *eventss, Int n, Int timeout, Word *reventss) {
 	int i, res;
 	struct pollfd ufds[n];
 

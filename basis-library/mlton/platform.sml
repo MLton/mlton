@@ -28,6 +28,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
 	    val all = [(Cygwin, "Cygwin"),
 		       (FreeBSD, "FreeBSD"),
 		       (Linux, "Linux"),
+		       (MinGW, "MinGW"),
 		       (NetBSD, "NetBSD"),
 		       (OpenBSD, "OpenBSD"),
 		       (Solaris, "Solaris")]

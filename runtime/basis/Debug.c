@@ -1,6 +1,4 @@
-#include "mlton-basis.h"
-
-#include <stdio.h>
+#include "platform.h"
 
 enum {
 	INDENTATION = 1,

@@ -1,5 +1,4 @@
-#include <unistd.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
 Ssize Posix_IO_write (Fd fd, Pointer b, Int i, Size s) {
 

@@ -7,11 +7,18 @@
 
 TARGET = self
 TARGET_ARCH = $(shell ../bin/host-arch)
+TARGET_OS = $(shell ../bin/host-os)
+GCC_VERSION = $(shell gcc -v 2>&1 | grep 'gcc version' | sed 's/.*gcc version \(.\).*/\1/')
 
 FLAGS = -fomit-frame-pointer
 
 ifeq ($(TARGET_ARCH), x86)
-FLAGS += -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5
+FLAGS += -mcpu=pentiumpro 
+ifeq ($(GCC_VERSION), 3)
+FLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
+else
+FLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
+endif
 endif
 ifeq ($(TARGET_ARCH), sparc)
 FLAGS += -Wa,-xarch=v8plusa -fcall-used-g5 -fcall-used-g7 -funroll-all-loops -m32 -mv8 -mcpu=ultrasparc
@@ -24,7 +31,7 @@ AR = $(TARGET)-ar rc
 FLAGS += -b $(TARGET)
 endif
 
-CC = gcc -Wall -I. -Igdtoa -D_FILE_OFFSET_BITS=64 $(FLAGS)
+CC = gcc -Wall -I. -D_FILE_OFFSET_BITS=64 $(FLAGS)
 CFLAGS = -O2
 DEBUGFLAGS = -gstabs+ -g2
 
@@ -33,8 +40,7 @@ OBJS =						\
 	basis/CommandLine.o			\
 	basis/Date.o				\
 	basis/Debug.o				\
-	basis/GC/setMessages.o			\
-	basis/GC/setSummary.o			\
+	basis/GC.o				\
 	basis/IEEEReal.o			\
 	basis/IntInf.o				\
 	basis/Int/Word.o			\
@@ -56,27 +62,11 @@ OBJS =						\
 	basis/Net/NetHostDB.o			\
 	basis/Net/NetProtDB.o			\
 	basis/Net/NetServDB.o			\
-	basis/Net/Socket/Ctl.o			\
 	basis/Net/Socket/INetSock.o		\
-	basis/Net/Socket/UnixSock.o		\
-	basis/Net/Socket/accept.o		\
-	basis/Net/Socket/bind.o			\
-	basis/Net/Socket/close.o		\
-	basis/Net/Socket/connect.o		\
-	basis/Net/Socket/familyOfAddr.o		\
-	basis/Net/Socket/listen.o		\
-	basis/Net/Socket/recv.o			\
-	basis/Net/Socket/recvFrom.o		\
-	basis/Net/Socket/send.o			\
-	basis/Net/Socket/sendTo.o		\
-	basis/Net/Socket/shutdown.o		\
-	basis/Net/Socket/socket.o		\
-	basis/Net/Socket/socketPair.o		\
+	basis/Net/Socket/Socket.o		\
 	basis/OS/IO/poll.o			\
-	basis/PackReal/subVec.o			\
-	basis/PackReal/update.o			\
-	basis/Ptrace/ptrace2.o			\
-	basis/Ptrace/ptrace4.o			\
+	basis/PackReal.o			\
+	basis/Ptrace.o				\
 	basis/Real/class.o			\
 	basis/Real/frexp.o			\
 	basis/Real/gdtoa.o			\
@@ -88,20 +78,9 @@ OBJS =						\
 	basis/Stdio.o				\
 	basis/Thread.o				\
 	basis/Time.o				\
-	Posix/Error/clearErrno.o		\
-	Posix/Error/getErrno.o			\
-	Posix/Error/strerror.o			\
-	Posix/FileSys/Dirstream/closedir.o	\
-	Posix/FileSys/Dirstream/opendir.o	\
-	Posix/FileSys/Dirstream/readdir.o	\
-	Posix/FileSys/Dirstream/rewinddir.o	\
-	Posix/FileSys/ST/isBlk.o		\
-	Posix/FileSys/ST/isChr.o		\
-	Posix/FileSys/ST/isDir.o		\
-	Posix/FileSys/ST/isFIFO.o		\
-	Posix/FileSys/ST/isLink.o		\
-	Posix/FileSys/ST/isReg.o		\
-	Posix/FileSys/ST/isSock.o		\
+	Posix/Error.o				\
+	Posix/FileSys/Dirstream.o		\
+	Posix/FileSys/ST.o			\
 	Posix/FileSys/Stat.o			\
 	Posix/FileSys/Utimbuf.o			\
 	Posix/FileSys/access.o			\
@@ -135,26 +114,16 @@ OBJS =						\
 	Posix/IO/pipe.o				\
 	Posix/IO/read.o				\
 	Posix/IO/write.o			\
+	Posix/ProcEnv/ProcEnv.o			\
 	Posix/ProcEnv/Tms.o			\
 	Posix/ProcEnv/Uname.o			\
-	Posix/ProcEnv/ctermid.o			\
 	Posix/ProcEnv/environ.o			\
 	Posix/ProcEnv/getenv.o			\
-	Posix/ProcEnv/getegid.o			\
-	Posix/ProcEnv/geteuid.o			\
-	Posix/ProcEnv/getgid.o			\
 	Posix/ProcEnv/getgroups.o		\
 	Posix/ProcEnv/getlogin.o		\
 	Posix/ProcEnv/getpgrp.o			\
-	Posix/ProcEnv/getpid.o			\
-	Posix/ProcEnv/getppid.o			\
-	Posix/ProcEnv/getuid.o			\
 	Posix/ProcEnv/isatty.o			\
 	Posix/ProcEnv/setenv.o			\
-	Posix/ProcEnv/setgid.o			\
-	Posix/ProcEnv/setpgid.o			\
-	Posix/ProcEnv/setsid.o			\
-	Posix/ProcEnv/setuid.o			\
 	Posix/ProcEnv/sysconf.o			\
 	Posix/ProcEnv/ttyname.o			\
 	Posix/Process/alarm.o			\
@@ -172,29 +141,20 @@ OBJS =						\
 	Posix/Process/stopSig.o			\
 	Posix/Process/termSig.o			\
 	Posix/Process/waitpid.o			\
-	Posix/Signal/Signal.o			\
-	Posix/Signal/isPending.o		\
-	Posix/Signal/resetPending.o		\
+	Posix/Signal.o				\
 	Posix/SysDB/Group.o			\
 	Posix/SysDB/Passwd.o			\
-	Posix/TTY/Termios.o			\
-	Posix/TTY/drain.o			\
-	Posix/TTY/flow.o			\
-	Posix/TTY/flush.o			\
-	Posix/TTY/getpgrp.o			\
-	Posix/TTY/sendbreak.o			\
-	Posix/TTY/setpgrp.o			\
+	Posix/TTY.o				\
 	gc.o					\
-	libmlton.o				\
-	my-lib.o
+	platform.o				\
+	platform/$(TARGET_OS).o
 
 DEBUG_OBJS =					\
 	basis/Array/numElements-gdb.o		\
 	basis/CommandLine-gdb.o			\
 	basis/Date-gdb.o			\
 	basis/Debug-gdb.o			\
-	basis/GC/setMessages-gdb.o		\
-	basis/GC/setSummary-gdb.o		\
+	basis/GC-gdb.o				\
 	basis/IEEEReal-gdb.o			\
 	basis/IntInf-gdb.o			\
 	basis/Int/Word-gdb.o			\
@@ -216,52 +176,25 @@ DEBUG_OBJS =					\
 	basis/Net/NetHostDB-gdb.o		\
 	basis/Net/NetProtDB-gdb.o		\
 	basis/Net/NetServDB-gdb.o		\
-	basis/Net/Socket/Ctl-gdb.o		\
 	basis/Net/Socket/INetSock-gdb.o		\
-	basis/Net/Socket/UnixSock-gdb.o		\
-	basis/Net/Socket/accept-gdb.o		\
-	basis/Net/Socket/bind-gdb.o		\
-	basis/Net/Socket/close-gdb.o		\
-	basis/Net/Socket/connect-gdb.o		\
-	basis/Net/Socket/familyOfAddr-gdb.o	\
-	basis/Net/Socket/listen-gdb.o		\
-	basis/Net/Socket/recv-gdb.o		\
-	basis/Net/Socket/recvFrom-gdb.o		\
-	basis/Net/Socket/send-gdb.o		\
-	basis/Net/Socket/sendTo-gdb.o		\
-	basis/Net/Socket/shutdown-gdb.o		\
-	basis/Net/Socket/socket-gdb.o		\
-	basis/Net/Socket/socketPair-gdb.o	\
+	basis/Net/Socket/Socket-gdb.o		\
 	basis/OS/IO/poll-gdb.o			\
-	basis/PackReal/subVec-gdb.o		\
-	basis/PackReal/update-gdb.o		\
-	basis/Ptrace/ptrace2-gdb.o		\
-	basis/Ptrace/ptrace4-gdb.o		\
+	basis/PackReal-gdb.o			\
+	basis/Ptrace-gdb.o			\
 	basis/Real/class-gdb.o			\
 	basis/Real/frexp-gdb.o			\
 	basis/Real/gdtoa-gdb.o			\
 	basis/Real/modf-gdb.o			\
-	basis/Real/nextAfter-gdb.o			\
+	basis/Real/nextAfter-gdb.o		\
 	basis/Real/real-gdb.o			\
 	basis/Real/signBit-gdb.o		\
 	basis/Real/strto-gdb.o			\
 	basis/Stdio-gdb.o			\
 	basis/Thread-gdb.o			\
 	basis/Time-gdb.o			\
-	Posix/Error/clearErrno-gdb.o		\
-	Posix/Error/getErrno-gdb.o		\
-	Posix/Error/strerror-gdb.o		\
-	Posix/FileSys/Dirstream/closedir-gdb.o	\
-	Posix/FileSys/Dirstream/opendir-gdb.o	\
-	Posix/FileSys/Dirstream/readdir-gdb.o	\
-	Posix/FileSys/Dirstream/rewinddir-gdb.o	\
-	Posix/FileSys/ST/isBlk-gdb.o		\
-	Posix/FileSys/ST/isChr-gdb.o		\
-	Posix/FileSys/ST/isDir-gdb.o		\
-	Posix/FileSys/ST/isFIFO-gdb.o		\
-	Posix/FileSys/ST/isLink-gdb.o		\
-	Posix/FileSys/ST/isReg-gdb.o		\
-	Posix/FileSys/ST/isSock-gdb.o		\
+	Posix/Error-gdb.o			\
+	Posix/FileSys/Dirstream-gdb.o		\
+	Posix/FileSys/ST-gdb.o			\
 	Posix/FileSys/Stat-gdb.o		\
 	Posix/FileSys/Utimbuf-gdb.o		\
 	Posix/FileSys/access-gdb.o		\
@@ -295,26 +228,16 @@ DEBUG_OBJS =					\
 	Posix/IO/pipe-gdb.o			\
 	Posix/IO/read-gdb.o			\
 	Posix/IO/write-gdb.o			\
+	Posix/ProcEnv/ProcEnv-gdb.o		\
 	Posix/ProcEnv/Tms-gdb.o			\
 	Posix/ProcEnv/Uname-gdb.o		\
-	Posix/ProcEnv/ctermid-gdb.o		\
 	Posix/ProcEnv/environ-gdb.o		\
 	Posix/ProcEnv/getenv-gdb.o		\
-	Posix/ProcEnv/getegid-gdb.o		\
-	Posix/ProcEnv/geteuid-gdb.o		\
-	Posix/ProcEnv/getgid-gdb.o		\
 	Posix/ProcEnv/getgroups-gdb.o		\
 	Posix/ProcEnv/getlogin-gdb.o		\
 	Posix/ProcEnv/getpgrp-gdb.o		\
-	Posix/ProcEnv/getpid-gdb.o		\
-	Posix/ProcEnv/getppid-gdb.o		\
-	Posix/ProcEnv/getuid-gdb.o		\
 	Posix/ProcEnv/isatty-gdb.o		\
 	Posix/ProcEnv/setenv-gdb.o		\
-	Posix/ProcEnv/setgid-gdb.o		\
-	Posix/ProcEnv/setpgid-gdb.o		\
-	Posix/ProcEnv/setsid-gdb.o		\
-	Posix/ProcEnv/setuid-gdb.o		\
 	Posix/ProcEnv/sysconf-gdb.o		\
 	Posix/ProcEnv/ttyname-gdb.o		\
 	Posix/Process/alarm-gdb.o		\
@@ -332,21 +255,13 @@ DEBUG_OBJS =					\
 	Posix/Process/stopSig-gdb.o		\
 	Posix/Process/termSig-gdb.o		\
 	Posix/Process/waitpid-gdb.o		\
-	Posix/Signal/Signal-gdb.o		\
-	Posix/Signal/isPending-gdb.o		\
-	Posix/Signal/resetPending-gdb.o		\
+	Posix/Signal-gdb.o			\
 	Posix/SysDB/Group-gdb.o			\
 	Posix/SysDB/Passwd-gdb.o		\
-	Posix/TTY/Termios-gdb.o			\
-	Posix/TTY/drain-gdb.o			\
-	Posix/TTY/flow-gdb.o			\
-	Posix/TTY/flush-gdb.o			\
-	Posix/TTY/getpgrp-gdb.o			\
-	Posix/TTY/sendbreak-gdb.o		\
-	Posix/TTY/setpgrp-gdb.o			\
+	Posix/TTY-gdb.o				\
 	gc-gdb.o				\
-	libmlton-gdb.o				\
-	my-lib-gdb.o
+	platform-gdb.o				\
+	platform/$(TARGET_OS)-gdb.o
 
 all:  libgdtoa.a libmlton.a libmlton-gdb.a
 

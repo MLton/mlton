@@ -1,6 +1,6 @@
 structure MLtonRusage: MLTON_RUSAGE =
    struct
-      open Primitive.MLton.Rusage
+      structure Prim = Primitive.MLton.Rusage
 
       type t = {utime: Time.time, stime: Time.time}
 
@@ -21,8 +21,9 @@ structure MLtonRusage: MLTON_RUSAGE =
 	 end
 
       fun rusage () =
-         let
-	    val _ = ru ()
+	 let
+	    val () = Prim.ru ()
+	    open Prim
 	 in
 	    {children = collect (children_utime_sec, children_utime_usec,
 				 children_stime_sec, children_stime_usec),
@@ -31,4 +32,6 @@ structure MLtonRusage: MLTON_RUSAGE =
 	     self = collect (self_utime_sec, self_utime_usec,
 			     self_stime_sec, self_stime_usec)}
 	 end
+
+      val rusage = PosixError.stubMinGW rusage
    end

@@ -431,6 +431,10 @@ val keepPasses = control {name = "keep passes",
 			             (Layout.toString o 
 				      Regexp.Compiled.layout)}
 
+val labelsHaveExtra_ = control {name = "extra_",
+				default = false,
+				toString = Bool.toString}
+
 val libDir = control {name = "lib dir",
 		      default = "<libDir unset>",
 		      toString = fn s => s}

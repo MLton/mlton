@@ -6,68 +6,7 @@
  * Please see the file MLton-LICENSE for license information.
  */
 
-#include "gc.h"
-#include <errno.h>
-#include <fcntl.h>
-#include <math.h>
-#include <string.h>
-
-#if (defined (__FreeBSD__))
-#include <sys/sysctl.h>
-#endif
-
-#if (defined (__NetBSD__) || defined (__OpenBSD__))
-#include <sys/param.h>
-#include <sys/sysctl.h>
-#endif
-
-#include <sys/mman.h>
-#include <sys/resource.h>
-#include <sys/times.h>
-#include <time.h>
-
-#if (defined (__CYGWIN__))
-#include <windows.h>
-#endif
-
-#if (defined (__linux__))
-#include <values.h>
-#include <sys/sysinfo.h>
-#endif
-
-#if (defined (__CYGWIN__) || defined (__FreeBSD__))
-#include <limits.h>
-#endif
-
-#if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
-#include <signal.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <ucontext.h>
-#endif
-
-#include "IntInf.h"
-
-/* SUPPORTS_WEAK is true if the platform supports the weak attribute. */
-#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
-#define SUPPORTS_WEAK 1
-#elif (defined (__CYGWIN__))
-#define SUPPORTS_WEAK 0
-#else
-#error SUPPORTS_WEAK not defined on platform
-#endif
-
-/* On Linux, We need the value of MREMAP_MAYMOVE, which should come from
- * sys/mman.h, but isn't there.  It is in linux/mman.h, but we can't #include
- * that here, because kernel headers don't mix with system headers.  We could
- * create a separate file, include the kernel headers there, and define a global.
- * But there sometimes seem to be problems including kernel headers, so the 
- * easiest thing to do is just define MREMAP_MAYMOVE.
- */
-#if (defined (__linux__))
-#define MREMAP_MAYMOVE 1
-#endif
+#include "platform.h"
 
 /* The mutator should maintain the invariants
  *
@@ -94,7 +33,6 @@ enum {
 	DEBUG_MEM = FALSE,
 	DEBUG_PROFILE = FALSE,
 	DEBUG_RESIZING = FALSE,
-	DEBUG_SIGNALS = FALSE,
 	DEBUG_STACKS = FALSE,
 	DEBUG_THREADS = FALSE,
 	DEBUG_WEAK = FALSE,
@@ -157,16 +95,6 @@ static inline ulong meg (uint n) {
 static inline uint toBytes (uint n) {
 	return n << 2;
 }
-
-#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
-static inline uint min (uint x, uint y) {
-	return ((x < y) ? x : y);
-}
-
-static inline uint max (uint x, uint y) {
-	return ((x > y) ? x : y);
-}
-#endif
 
 static inline W64 min64 (W64 x, W64 y) {
 	return ((x < y) ? x : y);
@@ -247,129 +175,11 @@ static void sunlink (char *path) {
 /*                    Virtual Memory Management                     */
 /* ---------------------------------------------------------------- */
 
-#if (defined (__CYGWIN__))
-
-static void showMaps () {
-	MEMORY_BASIC_INFORMATION buf;
-	LPCVOID lpAddress;
-	char *state = "<unset>";
-	char *protect = "<unset>";
-
-	for (lpAddress = 0; lpAddress < (LPCVOID)0x80000000; ) {
-		VirtualQuery (lpAddress, &buf, sizeof (buf));
-
-		switch (buf.Protect) {
-		case PAGE_READONLY:
-			protect = "PAGE_READONLY";
-			break;
-		case PAGE_READWRITE:
-			protect = "PAGE_READWRITE";
-			break;
-		case PAGE_WRITECOPY:
-			protect = "PAGE_WRITECOPY";
-			break;
-		case PAGE_EXECUTE:
-			protect = "PAGE_EXECUTE";
-			break;
-		case PAGE_EXECUTE_READ:
-			protect = "PAGE_EXECUTE_READ";
-			break;
-		case PAGE_EXECUTE_READWRITE:
-			protect = "PAGE_EXECUTE_READWRITE";
-			break;
-		case PAGE_EXECUTE_WRITECOPY:
-			protect = "PAGE_EXECUTE_WRITECOPY";
-			break;
-		case PAGE_GUARD:
-			protect = "PAGE_GUARD";
-			break;
-		case PAGE_NOACCESS:
-			protect = "PAGE_NOACCESS";
-			break;
-		case PAGE_NOCACHE:
-			protect = "PAGE_NOCACHE";
-			break;
-		}
-		switch (buf.State) {
-		case MEM_COMMIT:
-			state = "MEM_COMMIT";
-			break;
-		case MEM_FREE:
-			state = "MEM_FREE";
-			break;
-		case MEM_RESERVE:
-			state = "MEM_RESERVE";
-			break;
-		}
-		fprintf(stderr, "0x%8x %10u  %s %s\n",
-			(uint)buf.BaseAddress,
-			(uint)buf.RegionSize,
-			state, protect);
-		lpAddress += buf.RegionSize;
-	}
-}
-
-static void showMem () {
-	MEMORYSTATUS ms; 
-
-	ms.dwLength = sizeof (MEMORYSTATUS); 
-	GlobalMemoryStatus (&ms); 
-	fprintf(stderr, "Total Phys. Mem: %ld\nAvail Phys. Mem: %ld\nTotal Page File: %ld\nAvail Page File: %ld\nTotal Virtual: %ld\nAvail Virtual: %ld\n",
-			 ms.dwTotalPhys, 
-			 ms.dwAvailPhys, 
-			 ms.dwTotalPageFile, 
-			 ms.dwAvailPageFile, 
-			 ms.dwTotalVirtual, 
-			 ms.dwAvailVirtual); 
-	showMaps();
-}
-
-#elif (defined (__FreeBSD__))
-
-static void showMem () {
-	static char buffer[256];
-
-	sprintf (buffer, "/bin/cat /proc/%d/map\n", (int)getpid ());
-	(void)system (buffer);
-}
-
-#elif (defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__))
-
-static void showMem () {
-	static char buffer[256];
-
-	sprintf (buffer, "/bin/cat /proc/%d/maps\n", (int)getpid ());
-	(void)system (buffer);
-}
-
-#elif (defined (__sun__))
-
-static void showMem () {
-	static char buffer[256];
-	sprintf (buffer, "pmap %d\n", (int)getpid ());
-	system (buffer);
-}
-
-#else
-
-#error showMem not defined on platform
-
-#endif
-
-/* On any platform, exactly one of {USE_MMAP, USE_VIRTUAL_ALLOC} should be set
- * to true.
- */
-#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
-#define USE_MMAP TRUE
-#elif (defined (__CYGWIN__))
-#define USE_VIRTUAL_ALLOC TRUE
-#else
-#error must define USE_MMAP or USE_VIRTUAL_ALLOC
-#endif
-
 static void *mmapAnon (void *start, size_t length) {
+#if USE_MMAP
 	static int fd = -1;
 	int flags;
+#endif
 	void *result;
 
 #if USE_VIRTUAL_ALLOC
@@ -397,7 +207,7 @@ static void *mmapAnon (void *start, size_t length) {
 	return result;
 }
 
-static void *smmap (size_t length) {
+void *smmap (size_t length) {
 	void *result;
 
 	result = mmapAnon (NULL, length);
@@ -420,36 +230,6 @@ static void smunmap (void *base, size_t length) {
 	if (0 != munmap (base, length))
 		diee ("munmap failed");
 }
-#endif
-
-#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
-/* A super-safe mmap.
- *  Allocates a region of memory with dead zones at the high and low ends.
- *  Any attempt to touch the dead zone (read or write) will cause a
- *   segmentation fault.
- */
-static void *ssmmap (size_t length, size_t dead_low, size_t dead_high) {
-	void *base,*low,*result,*high;
-
-	base = smmap (length + dead_low + dead_high);
-	low = base;
-	if (mprotect (low, dead_low, PROT_NONE))
-		diee ("mprotect failed");
-	result = low + dead_low;
-	high = result + length;
-	if (mprotect (high, dead_high, PROT_NONE))
-		diee ("mprotect failed");
-	return result;
-}
-
-#elif (defined (__CYGWIN__))
-
-/* Nothing needed. */
-
-#else
-
-#error ssmmap not defined on platform
-
 #endif
 
 static void release (void *base, size_t length) {
@@ -631,10 +411,14 @@ static uint rusageTime (struct rusage *ru) {
 
 /* Return time as number of milliseconds. */
 static uint currentTime () {
+#if (defined(__MSVCRT__))
+	return GetTickCount();
+#else
 	struct rusage	ru;
 
 	fixedGetrusage (RUSAGE_SELF, &ru);
 	return rusageTime (&ru);
+#endif
 }
 
 static inline void startTiming (struct rusage *ru_start) {
@@ -952,6 +736,7 @@ static inline void foreachGlobal (GC_state s, GC_pointerFun f) {
 	maybeCall (f, s, (pointer*)&s->signalHandler);
 }
 
+#if ASSERT
 static pointer arrayPointer (GC_state s, 
 				pointer a, 
 				uint arrayIndex, 
@@ -969,6 +754,7 @@ static pointer arrayPointer (GC_state s,
 		+ numNonPointers
 		+ pointerIndex * POINTER_SIZE;
 }
+#endif
 
 /* The number of bytes in an array, not including the header. */
 static inline uint arrayNumBytes (GC_state s,
@@ -2758,13 +2544,13 @@ static void translateHeap (GC_state s, pointer from, pointer to, uint size) {
 /*                            heapRemap                             */
 /* ---------------------------------------------------------------- */
 
-#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
+#if !HAS_MREMAP
 
 static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	return FALSE;
 }
 
-#elif (defined (__linux__))
+#else
 
 static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	W32 backoff;
@@ -2799,11 +2585,7 @@ static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	return FALSE;
 }
 
-#else
-
-#error heapRemap not defined
-
-#endif
+#endif /* HAS_MREMAP */
 
 /* ---------------------------------------------------------------- */
 /*                             heapGrow                             */
@@ -2858,12 +2640,19 @@ copy:
 		int fd;
 		FILE *stream;
 		char template[80];
+		char *tmpDefault;
 		char *tmpDir;
+		char *tmpVar;
 
-		tmpDir = getenv ("TMPDIR");
-		if (NULL == tmpDir)
-			tmpDir = "/tmp";
-		strcpy (template, tmpDir);
+#if (defined (__MSVCRT__))
+		tmpVar = "TEMP";
+		tmpDefault = "C:/WINNT/TEMP";
+#else
+		tmpVar = "TMPDIR";
+		tmpDefault = "/tmp";
+#endif
+		tmpDir = getenv (tmpVar);
+		strcpy (template, (NULL == tmpDir) ? tmpDefault : tmpDir);
 		strcat (template, "/FromSpaceXXXXXX");
 		fd = smkstemp (template);
 		sclose (fd);
@@ -3050,8 +2839,7 @@ void MLton_Rusage_ru () __attribute__ ((weak));
 void MLton_Rusage_ru ();
 #endif
 static inline bool needGCTime (GC_state s) {
-	return DEBUG or s->summary or s->messages
-		or (0 != MLton_Rusage_ru != 0);
+	return DEBUG or s->summary or s->messages or (0 != MLton_Rusage_ru);
 }
 
 static void doGC (GC_state s, 
@@ -3818,11 +3606,16 @@ void GC_profileWrite (GC_state s, GC_profile p, int fd) {
 		profileWriteCount (s, p, fd, i + s->sourcesSize);
 }
 
-#if (defined (__linux__) || defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
+#if not HAS_TIME_PROFILING
 
-#ifndef EIP
-#define EIP	14
-#endif
+/* No time profiling on this platform.  There is a check in mlton/main/main.fun
+ * to make sure that time profiling is never turned on.
+ */
+static void profileTimeInit (GC_state s) {
+	die ("no time profiling");
+}
+
+#else
 
 static GC_state catcherState;
 
@@ -3843,6 +3636,9 @@ static void catcher (int sig, int code, struct sigcontext *ucp) {
 
 	s = catcherState;
 #if (defined (__linux__))
+#ifndef EIP
+#define EIP	14
+#endif
         pc = (pointer) ucp->uc_mcontext.gregs[EIP];
 #elif (defined (__FreeBSD__))
 	pc = (pointer) ucp->uc_mcontext.mc_eip;
@@ -3959,19 +3755,6 @@ static void profileTimeInit (GC_state s) {
 	setProfTimer (10000);
 }
 
-#elif (defined (__CYGWIN__))
-
-/* No time profiling on this platform.  There is a check in mlton/main/main.fun
- * to make sure that time profiling is never turned on.
- */
-static void profileTimeInit (GC_state s) {
-	die ("no time profiling");
-}
-
-#else
-
-#error time profiling not implemented
-
 #endif
 
 /* profileEnd is for writing out an mlmon.out file even if the C code terminates
@@ -4000,12 +3783,7 @@ static void profileEnd () {
 /* ---------------------------------------------------------------- */
 
 static void initSignalStack (GC_state s) {
-#if (defined (__CYGWIN__))
-
-	/* Nothing */
-
-#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
-
+#if HAS_SIGALTSTACK
         static stack_t altstack;
 	size_t ss_size = align (SIGSTKSZ, s->pageSize);
 	size_t psize = s->pageSize;
@@ -4014,74 +3792,8 @@ static void initSignalStack (GC_state s) {
 	altstack.ss_size = ss_size;
 	altstack.ss_flags = 0;
 	sigaltstack (&altstack, NULL);
-
-#else
-
-#error initSignalStack not defined
-
 #endif
 }
-
-static int processor_has_sse2=0;
-
-static void readProcessor() {
-#if 0
-	int status = system("/bin/cat /proc/cpuinfo | /bin/egrep -q '^flags.*:.* mmx .*xmm'");
-  
-	if (status==0)
-		processor_has_sse2=1;
-	else
-		processor_has_sse2=0;
-#endif
-	processor_has_sse2=0;
-}
-
-/*
- * totalRam returns the amount of physical memory on the machine.  This is
- * later multiplied by ramSlop to cut down on using all memory and paging.
- */
-
-#if (defined (__CYGWIN__) || defined (__linux__) || defined (__sun__))
-
-static W32 totalRam (GC_state s) {
-	W32 maxMem;
-	W64 tmp;
-
-	maxMem = 0x100000000llu - s->pageSize;
-	tmp = sysconf (_SC_PHYS_PAGES) * (W64)s->pageSize;
-	return (tmp >= maxMem) ? maxMem: (W32)tmp;
-}
-
-#elif (defined (__FreeBSD__))
-
-static W32 totalRam (GC_state s) {
-	int mem, len;
-
-	len = sizeof (int);
-	if (-1 == sysctlbyname ("hw.physmem", &mem, &len, NULL, 0))
-		diee ("sysctl failed");
-	return mem;
-}
-
-#elif (defined (__NetBSD__) || defined (__OpenBSD__))
-
-static W32 totalRam (GC_state s) {
-	uint mem;
-	int len, mib[2];
-	
-	mib[0] = CTL_HW;
-	mib[1] = HW_PHYSMEM;
-	len = sizeof(mem);
-	if (-1 == sysctl (mib, 2, &mem, &len, NULL, 0))
-		diee ("sysctl failed");
- 	return mem;
-}
-
-#else
-
-#error totalRam not defined
-
-#endif /* definition of totalRam */
 
 #if FALSE
 static bool stringToBool (string s) {
@@ -4396,7 +4108,11 @@ static int processAtMLton (GC_state s, int argc, char **argv,
 					s->messages = TRUE;
 				} else if (0 == strcmp (arg, "gc-summary")) {
 					++i;
+#if (defined (__MINGW32__))
+					fprintf (stderr, "Warning: MinGW doesn't yet support gc-summary\n");
+#else
 					s->summary = TRUE;
+#endif
 				} else if (0 == strcmp (arg, "copy-generational-ratio")) {
 					++i;
 					if (i == argc)
@@ -4546,7 +4262,6 @@ int GC_init (GC_state s, int argc, char **argv) {
 	rusageZero (&s->ru_gcCopy);
 	rusageZero (&s->ru_gcMarkCompact);
 	rusageZero (&s->ru_gcMinor);
- 	readProcessor ();
 	worldFile = NULL;
 	unless (isAligned (s->pageSize, s->cardSize))
 		die ("Page size must be a multiple of card size.");
@@ -4617,6 +4332,20 @@ int GC_init (GC_state s, int argc, char **argv) {
 	}
 	s->amInGC = FALSE;
 	return i;
+}
+
+extern char **environ; /* for Posix_ProcEnv_environ */
+
+void MLton_init (int argc, char **argv, GC_state s) {
+	int start;
+
+	Posix_ProcEnv_environ = (CstringArray)environ;
+	start = GC_init (s, argc, argv);
+	/* Setup argv and argc that SML sees. */
+	/* start is now the index of the first real arg. */
+	CommandLine_commandName = (uint)(argv[0]);
+	CommandLine_argc = argc - start;
+	CommandLine_argv = (uint)(argv + start);
 }
 
 static void displayCol (FILE *out, int width, string s) {

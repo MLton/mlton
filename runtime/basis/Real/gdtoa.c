@@ -1,8 +1,5 @@
-#include <stdio.h>
-#include <gc.h>
-#include "gdtoa.h"
-#include "mlton-basis.h"
-#include "my-lib.h"
+#include "platform.h"
+#include "gdtoa/gdtoa.h"
 
 enum {
 	DEBUG = FALSE,

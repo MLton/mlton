@@ -32,6 +32,9 @@ functor IO (S : sig
  *) 
 structure MLton: MLTON =
    struct
+      type int = Int.int
+      type word = Word.word
+	 
       type pointer = Word32.word
 	 
       val cleanAtExit = fn _ => raise Fail "cleanAtExit"
@@ -92,6 +95,7 @@ structure MLton: MLTON =
 	 struct
 	    val history = fn _ => []
 
+	    val addExnMessager = fn _ => raise Fail "Exn.addExnMessager"
 	    val topLevelHandler = fn _ => raise Fail "Exn.topLevelHandler"
 	 end
 
@@ -167,7 +171,14 @@ structure MLton: MLTON =
 
 	    structure OS =
 	       struct
-		  datatype t = Cygwin | FreeBSD | Linux | NetBSD | OpenBSD | Solaris
+		  datatype t =
+		     Cygwin
+		   | FreeBSD
+		   | Linux
+		   | MinGW
+		   | NetBSD
+		   | OpenBSD
+		   | Solaris
 
 		  val host: t = Linux
 
@@ -305,7 +316,7 @@ structure MLton: MLTON =
       
       structure Rusage =
          struct
-	   type t = {utime: Time.time, stime: Time.time}
+	   type t = {stime: Time.time, utime: Time.time}
 
 	   (* Fake it with Posix.ProcEnv.times *)
 	   fun rusage () =

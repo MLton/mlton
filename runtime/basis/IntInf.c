@@ -6,10 +6,7 @@
  * Please see the file MLton-LICENSE for license information.
  */
 
-#include <stddef.h> /* for offsetof */
-#include <string.h>
-
-#include "IntInf.h"
+#include "platform.h"
 
 enum {
 	DEBUG_INT_INF = FALSE,
@@ -316,7 +313,7 @@ IntInf_smallMul(Word lhs, Word rhs, pointer carry)
  * Return an integer which compares to 0 as the two intInf args compare
  * to each other.
  */
-int IntInf_compare (pointer lhs, pointer rhs) {
+Int IntInf_compare (pointer lhs, pointer rhs) {
 	__mpz_struct		lhsmpz,
 				rhsmpz;
 	mp_limb_t		lhsspace[2],
@@ -333,7 +330,7 @@ int IntInf_compare (pointer lhs, pointer rhs) {
 /*
  * Check if two IntInf.int's are equal.
  */
-int IntInf_equal (pointer lhs, pointer rhs) {
+Int IntInf_equal (pointer lhs, pointer rhs) {
 	if (lhs == rhs)
 		return TRUE;
 	if (eitherIsSmall (lhs, rhs))

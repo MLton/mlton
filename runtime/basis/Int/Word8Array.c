@@ -1,4 +1,4 @@
-#include "mlton-basis.h"
+#include "platform.h"
 
 Word32 Word8Array_subWord32Rev (Pointer v, Int offset) {
 	Word32 w;

@@ -1,6 +1,4 @@
-#include <netdb.h>
-#include "mlton-basis.h"
-#include "my-lib.h"
+#include "platform.h"
 
 static struct protoent *protoent;
 

@@ -1,8 +1,4 @@
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include "mlton-basis.h"
-#include "my-lib.h"
+#include "platform.h"
 
 #define UNIX_PATH_MAX 108
 

@@ -1,17 +1,14 @@
-#if (defined (__CYGWIN__))
-#include <process.h>
-#include "gc.h"
-#include "mlton-basis.h"
+#include "platform.h"
 
 Int MLton_Process_spawne (NullString p, Pointer a, Pointer e) {
-	char		*path;
-	char		*asaved;
-	char 		*esaved;
-	char 		**args;
-	char 		**env;
-	int             an;
-	int 		en;
-	int 		result;
+	char	*path;
+	char	*asaved;
+	char	*esaved;
+	char	**args;
+	char 	**env;
+	int	an;
+	int	en;
+	int	result;
 
 	path = (char *) p;
 	args = (char **) a;
@@ -22,11 +19,10 @@ Int MLton_Process_spawne (NullString p, Pointer a, Pointer e) {
 	esaved = env[en];
 	args[an] = (char *) NULL;
 	env[en] = (char *) NULL;
-	result = spawnve(0, path, 
+	result = spawnve (SPAWN_MODE, path, 
 				(const char * const *)args,
 				(const char * const *)env);
 	args[an] = asaved;
 	env[en] = esaved;
 	return result;
 }
-#endif

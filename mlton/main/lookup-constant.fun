@@ -96,10 +96,9 @@ fun build (constants, out) =
       List.foreach
       (List.concat
        [["#include <stddef.h>", (* for offsetof *)
-	 "#include <stdio.h>"],
-	List.map (["libmlton.h"], fn i =>
-		  concat ["#include <", i, ">"]),
-	["struct GC_state gcState;",
+	 "#include <stdio.h>",
+	 "#include \"platform.h\"",
+	 "struct GC_state gcState;",
 	 "int main (int argc, char **argv) {"],
 	List.revMap
 	(constants, fn {name, value, ty} =>

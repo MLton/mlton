@@ -1,4 +1,4 @@
-#include "libmlton.h"
+#include "platform.h"
 
 /*
  * We have to be very careful implementing WordS_quot and WordS_rem using / and %

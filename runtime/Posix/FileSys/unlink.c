@@ -1,6 +1,5 @@
-#include <unistd.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
-Word Posix_FileSys_unlink(NullString p) {
-	return unlink((char *) p);
+Word Posix_FileSys_unlink (NullString p) {
+	return unlink ((char *) p);
 }

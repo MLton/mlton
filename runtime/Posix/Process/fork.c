@@ -1,6 +1,5 @@
-#include <unistd.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
-Pid Posix_Process_fork() {
-	return fork();
+Pid Posix_Process_fork () {
+	return fork ();
 }

@@ -1,6 +1,5 @@
-#include <unistd.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
-Pid Posix_ProcEnv_getpgrp() {
-	return getpgrp();
+Pid Posix_ProcEnv_getpgrp () {
+	return getpgrp ();
 }

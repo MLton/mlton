@@ -1,5 +1,4 @@
-#include <unistd.h>
-#include "mlton-posix.h"
+#include "platform.h"
 
 Int Posix_IO_fsync (Fd f) {
 	return fsync (f);

@@ -135,10 +135,9 @@ struct
 	      val additionalMainArgs =
 		 let
 		    val mainLabel = Label.toString (#label main)
-		    (* Drop the leading _ with Cygwin, because gcc will add it.
-		     *)
+		    (* Drop the leading _, because gcc will add it. *)
 		    val mainLabel =
-		       if let open Control in !targetOS = Cygwin end
+		       if !Control.labelsHaveExtra_
 			  then String.dropPrefix (mainLabel, 1)
 		       else mainLabel
 		 in
