@@ -85,11 +85,11 @@ if [ $home = 'yes' ]; then
 	echo '  Checking out docs'
 	cvs -Q co -d doc mlton/doc
 	cvs -Q release doc
-	find . -type d | grep CVS | xargs rm -rf
 	cd $root/doc/web
 	make
 	cp -p $rpms/RPMS/i386/$version-$release.i386.rpm \
 		$rpms/SRPMS/$version-$release.src.rpm .
+	find . -type d | egrep (CVS|cvsignore) | xargs rm -rf
 	echo '  Building tgz'
 	tar.write -x Makefile . | gzip >$root/mlton-home.tgz
 	
