@@ -195,15 +195,18 @@ in
       (l, {isChar = false, needsParen = false})
    val dontCare: z = simple (str "_")
    fun layoutRecord (ds: (Field.t * z) list) =
-      simple (seq [str "{",
-		   mayAlign
-		   (separateRight
-		    (List.map
-		     (QuickSort.sortList (ds, fn ((f, _), (f', _)) =>
-					  Field.<= (f, f')),
-		      fn (f, (l, _)) => seq [Field.layout f, str ": ", l]),
-		     ",")),
-		   str ", ...}"])
+      simple (case ds of
+		 [] => str "{...}"
+	       | _ => 
+		    seq [str "{",
+			 mayAlign
+			 (separateRight
+			  (List.map
+			   (QuickSort.sortList (ds, fn ((f, _), (f', _)) =>
+						Field.<= (f, f')),
+			    fn (f, (l, _)) => seq [Field.layout f, str ": ", l]),
+			   ",")),
+			 str ", ...}"])
    fun layoutTuple (zs: z vector): z =
       Tycon.layoutApp (Tycon.tuple, zs)
 end
@@ -610,9 +613,13 @@ structure Type =
 			       List.fold
 			       (Spine.fields spine, differences,
 				fn (f, (ac, ac')) =>
-				case Srecord.peek (r, f) of
-				   NONE => ((f, dontCare) :: ac, ac')
-				 | SOME _ => (ac, ac'))
+				if List.exists (fields, fn (f', _) =>
+						Field.equals (f, f'))
+				   then (ac, ac')
+				else
+				   case Srecord.peek (r, f) of
+				      NONE => ((f, dontCare) :: ac, ac')
+				    | SOME _ => (ac, ac'))
 			    val differences =
 			       Srecord.foldi
 			       (r, differences, fn (f, t, (ac, ac')) =>
