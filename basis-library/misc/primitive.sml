@@ -137,7 +137,6 @@ structure Primitive =
       val enterLeave = _import "MLton_enterLeave": unit -> unit;
       val eq = fn z => _prim "MLton_eq": 'a * 'a -> bool; z
       val errno = _import "MLton_errno": unit -> int;
-      val halt = _prim "MLton_halt": int -> unit;
       val handlesSignals = _prim "MLton_handlesSignals": bool;
       val installSignalHandler =
 	 _prim "MLton_installSignalHandler": unit -> unit;
@@ -964,7 +963,6 @@ structure Primitive =
 	    val ~ = _prim "Real32_neg": real -> real;
 	 end
 
-
       structure Ref =
 	 struct
 	    val deref = fn x => _prim "Ref_deref": 'a ref -> 'a; x
@@ -1134,6 +1132,26 @@ structure Primitive =
 		     end
 	       end
 	 end
+
+      structure Status:>
+	 sig
+	    eqtype t
+
+	    val failure: t
+	    val fromInt: int -> t
+	    val success: t
+	    val toInt: t -> int
+	 end =
+	 struct
+	    type t = int
+
+	    val failure = 1
+	    val fromInt = fn i => i
+	    val success = 0
+	    val toInt = fn i => i
+	 end
+
+      val halt = _prim "MLton_halt": Status.t -> unit;
 
       structure String =
 	 struct

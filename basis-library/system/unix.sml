@@ -23,6 +23,8 @@ structure Unix: UNIX =
     structure PIO = Posix.IO
     structure SS = Substring
 
+    structure Status = Primitive.Status
+
     type signal = Posix.Signal.signal
     datatype exit_status = datatype Posix.Process.exit_status
     val fromStatus = Posix.Process.fromStatus
@@ -138,5 +140,6 @@ structure Unix: UNIX =
 
     fun kill (PROC{pid, ...}, signal) = PP.kill (PP.K_PROC pid, signal)
 
-    fun exit st = OSP.exit (Word8.toInt st)
+    fun exit (w: Word8.word): 'a =
+       OSP.exit (Status.fromInt (Word8.toInt w))
   end (* structure Unix *)

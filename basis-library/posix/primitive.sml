@@ -192,29 +192,31 @@ structure PosixPrimitive =
 		  type flags = word
 		  val untraced = _const "Posix_Process_W_untraced": flags;
 	       end
-	    
-	    type status = int
 
+	    structure Status = Primitive.Status
+	    
 	    val alarm = _import "Posix_Process_alarm": int -> int;
 	    val exece =
 	       _import "Posix_Process_exece"
 	       : nullString * nullString array * nullString array -> int;
 	    val execp =
-	       _import "Posix_Process_execp": nullString * nullString array -> int;
+	       _import "Posix_Process_execp"
+	       : nullString * nullString array -> int;
 	    val exit = _import "Posix_Process_exit": int -> unit;
-	    val exitStatus = _import "Posix_Process_exitStatus": status -> int;
+	    val exitStatus = _import "Posix_Process_exitStatus": Status.t -> int;
 	    val fork = _import "Posix_Process_fork": unit -> Pid.t;
-	    val ifExited = _import "Posix_Process_ifExited": status -> bool;
-	    val ifSignaled = _import "Posix_Process_ifSignaled": status -> bool;
-	    val ifStopped = _import "Posix_Process_ifStopped": status -> bool;
+	    val ifExited = _import "Posix_Process_ifExited": Status.t -> bool;
+	    val ifSignaled = _import "Posix_Process_ifSignaled"
+	       : Status.t -> bool;
+	    val ifStopped = _import "Posix_Process_ifStopped": Status.t -> bool;
 	    val kill = _import "Posix_Process_kill": Pid.t * signal -> int;
 	    val pause = _import "Posix_Process_pause": unit -> int;
 	    val sleep = _import "Posix_Process_sleep": int -> int;
-	    val stopSig = _import "Posix_Process_stopSig": status -> signal;
-	    val termSig = _import "Posix_Process_termSig": status -> signal;
+	    val stopSig = _import "Posix_Process_stopSig": Status.t -> signal;
+	    val termSig = _import "Posix_Process_termSig": Status.t -> signal;
 	    val waitpid =
 	       _import "Posix_Process_waitpid"
-	       : Pid.t * status ref * int -> Pid.t;
+	       : Pid.t * Status.t ref * int -> Pid.t;
 	 end
 
       structure ProcEnv =

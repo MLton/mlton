@@ -98,7 +98,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
        | W_SAME_GROUP
        | W_GROUP of pid 
 
-      type status = status
+      type status = Status.t
       datatype exit_status =
 	 W_EXITED
        | W_EXITSTATUS of Word8.word
@@ -122,7 +122,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	 end
 
       local
-	 val status: status ref = ref 0
+	 val status: Status.t ref = ref (Status.fromInt 0)
 	 fun wait (wa, status, flags) =
 	    let
 	       val p =

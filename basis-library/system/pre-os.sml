@@ -3,7 +3,7 @@ structure OS =
       type syserror = PosixPrimitive.Error.syserror
       structure Process =
 	 struct
-	    type status = PosixPrimitive.Process.status
+	    type status = PosixPrimitive.Process.Status.t
 	 end
       structure IO :> sig
 			 eqtype iodesc
