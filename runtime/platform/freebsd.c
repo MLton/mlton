@@ -1,5 +1,6 @@
 #include "platform.h"
 
+#include "getText.c"
 #include "mkdir2.c"
 
 void showMem () {

@@ -3835,10 +3835,6 @@ static void catcher (int sig, int code, struct sigcontext *ucp) {
 	profileInc (s, 1, sourceSeqIndex);
 }
 
-/* To get the beginning and end of the text segment. */
-extern void	_start(void),
-		etext(void);
-
 static int compareProfileLabels (const void *v1, const void *v2) {
 	GC_profileLabel l1;
 	GC_profileLabel l2;
@@ -3870,8 +3866,8 @@ static void profileTimeInit (GC_state s) {
 			assert (s->sourceLabels[i-1].label
 				<= s->sourceLabels[i].label);
 	/* Initialize s->textSources. */
-	s->textEnd = (pointer)&etext;
-	s->textStart = (pointer)&_start;
+	s->textEnd = (pointer)(getTextEnd());
+	s->textStart = (pointer)(getTextStart());
 	if (ASSERT)
 		for (i = 0; i < s->sourceLabelsSize; ++i) {
 			pointer label;

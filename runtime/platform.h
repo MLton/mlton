@@ -80,6 +80,10 @@
 #error HAS_TIME_PROFILING not defined
 #endif
 
+/* If HAS_TIME_PROFILING, then you must define these. */
+void *getTextStart ();
+void *getTextEnd ();
+
 /* HAS_WEAK is true if the platform supports the weak attribute. */
 #ifndef HAS_WEAK
 #error HAS_WEAK not defined

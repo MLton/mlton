@@ -650,7 +650,8 @@ fun commandLine (args: string list): unit =
 				andalso not (keepDefUse))
       val _ =
 	 case targetOS of
-	    FreeBSD => ()
+	    Darwin => ()
+	  | FreeBSD => ()
 	  | Linux => ()
 	  | NetBSD => ()
 	  | OpenBSD => ()

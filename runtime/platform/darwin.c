@@ -1,6 +1,24 @@
+#include <mach-o/dyld.h>
+#include <mach-o/getsect.h>  // for get_etext()
+#include <stdio.h>
+
 #include "platform.h"
 
 #include "mkdir2.c"
+
+void *getTextEnd () {
+	return (void*)(get_etext ());
+}
+
+void *getTextStart () {
+	unsigned long address;
+	void *module;
+	struct mach_header *mh;
+
+	_dyld_lookup_and_bind ("_main", &address, &module);
+	mh = _dyld_get_image_header_containing_address (address);
+	return mh;
+}
 
 void showMem () {
 	/* FIXME: this won't actually work. */
