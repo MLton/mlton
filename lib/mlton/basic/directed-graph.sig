@@ -1,5 +1,157 @@
 type int = Int.t
 
+structure DotColor =
+   struct
+      datatype t =
+	 (* (Hue, Saturation, Brightness).  All between 0 and 1. *)
+	 HSB of real * real * real
+       | Aliceblue
+       | Antiquewhite1 | Antiquewhite2 | Antiquewhite3 | Antiquewhite4
+       | Aquamarine1 | Aquamarine2 | Aquamarine3 | Aquamarine4
+       | Azure1 | Azure2 | Azure3 | Azure4
+       | Beige
+       | Bisque1 | Bisque2 | Bisque3 | Bisque4
+       | Black
+       | Blanchedalmond
+       | Blue1 | Blue2 | Blue3 | Blue4
+       | Blueviolet
+       | Brown1 | Brown2 | Brown3 | Brown4
+       | Burlywood1 | Burlywood2 | Burlywood3 | Burlywood4
+       | Cadetblue1 | Cadetblue2 | Cadetblue3 | Cadetblue4
+       | Chartreuse1 | Chartreuse2 | Chartreuse3 | Chartreuse4
+       | Chocolate1 | Chocolate2 | Chocolate3 | Chocolate4
+       | Coral1 | Coral2 | Coral3 | Coral4
+       | Corn
+       | Cornsilk1 | Cornsilk2 | Cornsilk3 | Cornsilk4
+       | Crimson
+       | Cyan1 | Cyan2 | Cyan3 | Cyan4
+       | Darkgoldenrod1 | Darkgoldenrod2 | Darkgoldenrod3 | Darkgoldenrod4
+       | Darkgreen
+       | Darkkhaki
+       | Darkolivegreen1 | Darkolivegreen2 | Darkolivegreen3 | Darkolivegreen4
+       | Darkorange1 | Darkorange2 | Darkorange3 | Darkorange4
+       | Darkorchid1 | Darkorchid2 | Darkorchid3 | Darkorchid4
+       | Darksalmon
+       | Darkseagreen1 | Darkseagreen2 | Darkseagreen3 | Darkseagreen4
+       | Darkslateblue
+       | Darkslategray1 | Darkslategray2 | Darkslategray3 | Darkslategray4
+       | Darkturquoise
+       | Darkviolet
+       | Deeppink1 | Deeppink2 | Deeppink3 | Deeppink4
+       | Deepskyblue1 | Deepskyblue2 | Deepskyblue3 | Deepskyblue4
+       | Dimgray
+       | Dodgerblue1 | Dodgerblue2 | Dodgerblue3 | Dodgerblue4
+       | Forestgreen
+       | Gainsboro
+       | Ghostwhite
+       | Gold1 | Gold2 | Gold3 | Gold4
+       | Goldenrod1 | Goldenrod2 | Goldenrod3 | Goldenrod4
+       | Gray
+       | Gray0 | Gray1 | Gray2 | Gray3 | Gray4 | Gray5 | Gray6 | Gray7 | Gray8
+       | Gray9 | Gray10 | Gray11 | Gray12 | Gray13 | Gray14 | Gray15 | Gray16
+       | Gray17 | Gray18 | Gray19 | Gray20 | Gray21 | Gray22 | Gray23 | Gray24
+       | Gray25 | Gray26 | Gray27 | Gray28 | Gray29 | Gray30 | Gray31 | Gray32
+       | Gray33 | Gray34 | Gray35 | Gray36 | Gray37 | Gray38 | Gray39 | Gray40
+       | Gray41 | Gray42 | Gray43 | Gray44 | Gray45 | Gray46 | Gray47 | Gray48
+       | Gray49 | Gray50 | Gray51 | Gray52 | Gray53 | Gray54 | Gray55 | Gray56
+       | Gray57 | Gray58 | Gray59 | Gray60 | Gray61 | Gray62 | Gray63 | Gray64
+       | Gray65 | Gray66 | Gray67 | Gray68 | Gray69 | Gray70 | Gray71 | Gray72
+       | Gray73 | Gray74 | Gray75 | Gray76 | Gray77 | Gray78 | Gray79 | Gray80
+       | Gray81 | Gray82 | Gray83 | Gray84 | Gray85 | Gray86 | Gray87 | Gray88
+       | Gray89 | Gray90 | Gray91 | Gray92 | Gray93 | Gray94 | Gray95 | Gray96
+       | Gray97 | Gray98 | Gray99 | Gray100
+       | Green1 | Green2 | Green3 | Green4
+       | Greenyellow
+       | Honeydew1 | Honeydew2 | Honeydew3 | Honeydew4
+       | Hotpink1 | Hotpink2 | Hotpink3 | Hotpink4
+       | Indianred1 | Indianred2 | Indianred3 | Indianred4
+       | Indigo
+       | Ivory1 | Ivory2 | Ivory3 | Ivory4
+       | Khaki1 | Khaki2 | Khaki3 | Khaki4
+       | Lavender
+       | Lavenderblush1 | Lavenderblush2 | Lavenderblush3 | Lavenderblush4
+       | Lawngreen
+       | Lemonchi
+       | Lightblue1 | Lightblue2 | Lightblue3 | Lightblue4
+       | Lightcyan1 | Lightcyan2 | Lightcyan3 | Lightcyan4
+       | Lightgoldenrod1 | Lightgoldenrod2 | Lightgoldenrod3 | Lightgoldenrod4
+       | Lightgoldenrodyellow
+       | Lightgray
+       | Lightpink1 | Lightpink2 | Lightpink3 | Lightpink4
+       | Lightsalmon1 | Lightsalmon2 | Lightsalmon3 | Lightsalmon4
+       | Lightseagreen
+       | Lightskyblue1 | Lightskyblue2 | Lightskyblue3 | Lightskyblue4
+       | Lightslateblue1 | Lightslateblue2 | Lightslateblue3 | Lightslateblue4
+       | Lightslategray
+       | Lightyellow1 | Lightyellow2 | Lightyellow3 | Lightyellow4
+       | Limegreen
+       | Linen
+       | Magenta1 | Magenta2 | Magenta3 | Magenta4
+       | Maroon1 | Maroon2 | Maroon3 | Maroon4
+       | Mediumaquamarine
+       | Mediumblue
+       | Mediumorchid1 | Mediumorchid2 | Mediumorchid3 | Mediumorchid4
+       | Mediumpurple1 | Mediumpurple2 | Mediumpurple3 | Mediumpurple4
+       | Mediumseagreen
+       | Mediumslateblue
+       | Mediumspringgreen
+       | Mediumturquoise
+       | Mediumvioletred
+       | Midnightblue
+       | Mintcream
+       | Mistyrose1 | Mistyrose2 | Mistyrose3 | Mistyrose4
+       | Moccasin
+       | Navajowhite1 | Navajowhite2 | Navajowhite3 | Navajowhite4
+       | Navy
+       | Navyblue
+       | Oldlace
+       | Olivedrab1 | Olivedrab2 | Olivedrab3 | Olivedrab4
+       | On1 | On2 | On3 | On4
+       | Oralwhite
+       | Orange1 | Orange2 | Orange3 | Orange4
+       | Orangered1 | Orangered2 | Orangered3 | Orangered4
+       | Orchid1 | Orchid2 | Orchid3 | Orchid4
+       | Owerblue
+       | Palegoldenrod
+       | Palegreen1 | Palegreen2 | Palegreen3 | Palegreen4
+       | Paleturquoise1 | Paleturquoise2 | Paleturquoise3 | Paleturquoise4
+       | Palevioletred1 | Palevioletred2 | Palevioletred3 | Palevioletred4
+       | Papayawhip
+       | Peachpu1 | Peachpu2 | Peachpu3 | Peachpu4
+       | Peru
+       | Pink1 | Pink2 | Pink3 | Pink4
+       | Plum1 | Plum2 | Plum3 | Plum4
+       | Powderblue
+       | Purple1 | Purple2 | Purple3 | Purple4
+       | Rebrick1 | Rebrick2 | Rebrick3 | Rebrick4
+       | Red1 | Red2 | Red3 | Red4
+       | Rosybrown1 | Rosybrown2 | Rosybrown3 | Rosybrown4
+       | Royalblue1 | Royalblue2 | Royalblue3 | Royalblue4
+       | Saddlebrown
+       | Salmon1 | Salmon2 | Salmon3 | Salmon4
+       | Sandybrown
+       | Seagreen1 | Seagreen2 | Seagreen3 | Seagreen4
+       | Seashell1 | Seashell2 | Seashell3 | Seashell4
+       | Sienna1 | Sienna2 | Sienna3 | Sienna4
+       | Skyblue1 | Skyblue2 | Skyblue3 | Skyblue4
+       | Slateblue1 | Slateblue2 | Slateblue3 | Slateblue4
+       | Slategray1 | Slategray2 | Slategray3 | Slategray4
+       | Snow1 | Snow2 | Snow3 | Snow4
+       | Springgreen1 | Springgreen2 | Springgreen3 | Springgreen4
+       | Steelblue1 | Steelblue2 | Steelblue3 | Steelblue4
+       | Tan1 | Tan2 | Tan3 | Tan4
+       | Thistle1 | Thistle2 | Thistle3 | Thistle4
+       | Tomato1 | Tomato2 | Tomato3 | Tomato4
+       | Turquoise1 | Turquoise2 | Turquoise3 | Turquoise4
+       | Violet
+       | Violetred1 | Violetred2 | Violetred3 | Violetred4
+       | Wheat1 | Wheat2 | Wheat3 | Wheat4
+       | White
+       | Whitesmoke
+       | Yellow1 | Yellow2 | Yellow3 | Yellow4
+       | Yellowgreen
+   end
+
 signature DIRECTED_GRAPH = 
    sig
       structure Node: 
@@ -93,11 +245,7 @@ signature DIRECTED_GRAPH =
 
       structure LayoutDot:
 	 sig
-	    datatype color =
-	       Black
-	     | Red
-	     | HSB of real * real * real
-	    (* (Hue, Saturation, Brightness).  All between 0 and 1. *)
+	    datatype color = datatype DotColor.t
 	    datatype direction =
 	       Backward
 	     | Both
