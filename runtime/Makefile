@@ -89,8 +89,6 @@ OBJS =						\
 	basis/Stdio.o				\
 	basis/Thread.o				\
 	basis/Time.o				\
-	basis/Word32/addOverflow.o		\
-	basis/Word32/mulOverflow.o		\
 	Posix/Error/clearErrno.o		\
 	Posix/Error/getErrno.o			\
 	Posix/Error/strerror.o			\
@@ -257,8 +255,6 @@ DEBUG_OBJS =					\
 	basis/Stdio-gdb.o			\
 	basis/Thread-gdb.o			\
 	basis/Time-gdb.o			\
-	basis/Word32/addOverflow-gdb.o		\
-	basis/Word32/mulOverflow-gdb.o		\
 	Posix/Error/clearErrno-gdb.o		\
 	Posix/Error/getErrno-gdb.o		\
 	Posix/Error/strerror-gdb.o		\
