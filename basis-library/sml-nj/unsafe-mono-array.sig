@@ -4,16 +4,14 @@
  *)
 
 signature UNSAFE_MONO_ARRAY =
-  sig
+   sig
+      type array
+      type elem
 
-    type array
-    type elem
-
-    val sub: array * int -> elem
-    val update: array * int * elem -> unit
-    val create: int -> array
-
-  end
+      val create: int -> array
+      val sub: array * int -> elem
+      val update: array * int * elem -> unit
+   end
 
 
 (*

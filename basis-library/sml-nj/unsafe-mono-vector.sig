@@ -15,16 +15,12 @@
  *)
 
 signature UNSAFE_MONO_VECTOR =
-  sig
+   sig
+      type elem
+      type vector
 
-    type vector
-    type elem
-
-    val sub : (vector * int) -> elem
-(*    val update : (vector * int * elem) -> unit *)
-(*    val create : int -> vector *)
-
-  end
+      val sub : (vector * int) -> elem
+   end
 
 
 (*

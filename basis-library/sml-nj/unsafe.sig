@@ -1,4 +1,4 @@
-(* sweeks deleted a bunch of stuff 1998-12-17. *)
+(* A subset of the UNSAFE signature provided by SML/NJ. *)
 
 (* unsafe.sig
  *
@@ -8,12 +8,20 @@
  *)
 
 signature UNSAFE =
-  sig
-    structure Array: UNSAFE_ARRAY
-    structure CharArray: UNSAFE_MONO_ARRAY
-    structure CharVector: UNSAFE_MONO_VECTOR
-    structure Real64Array: UNSAFE_MONO_ARRAY
-    structure Vector: UNSAFE_VECTOR
-    structure Word8Array: UNSAFE_MONO_ARRAY
-    structure Word8Vector: UNSAFE_MONO_VECTOR
-  end
+   sig
+      structure Array:
+	 sig
+	    val create: int * 'a -> 'a array
+	    val sub: 'a array * int -> 'a
+	    val update: 'a array * int * 'a -> unit
+	 end
+      structure CharArray: UNSAFE_MONO_ARRAY
+      structure CharVector: UNSAFE_MONO_VECTOR
+      structure Real64Array: UNSAFE_MONO_ARRAY
+      structure Vector:
+	 sig
+	    val sub: 'a vector * int -> 'a
+	 end
+      structure Word8Array: UNSAFE_MONO_ARRAY
+      structure Word8Vector: UNSAFE_MONO_VECTOR
+   end
