@@ -97,6 +97,7 @@ val options =
 		      | "dot" => (keepDot := true; keepCps := true)
 		      | "g" => keepGenerated := true
 		      | "il" => aux := true
+		      | "mach" => keepMach := true
 		      | "o" => keepO := true
 		      | "sml" => keepSML := true
 		      | _ => usage (concat ["invalid -keep flag: ", s]))),
@@ -419,7 +420,11 @@ fun commandLine (args: string list): unit =
 			val r = ref 0
 			fun sOut () =
 			   let
-			      val suf = concat [".", Int.toString (!r), ".S"]
+			      val suf = concat [".",
+                                                Int.toString (!r),
+                                                if !Control.debug
+                                                  then ".s"
+                                                  else ".S"]
 			      val file = (if !keepGenerated
 					     orelse stop = Place.Generated
 					     then suffix

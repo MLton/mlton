@@ -345,6 +345,17 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
 	  style = Control.No,
 	  display = Control.NoDisplay,
 	  thunk = fn () => Machine.Program.toMachineOutput machine}
+      val _ =
+         let open Control
+         in if !keepMach
+               then (Ref.fluidLet
+                     (aux, true, fn () =>
+                      displays ("mach", fn disp =>
+                                (outputHeader (No, disp)
+                                 ; MachineOutput.Program.layouts (mprogram,
+                                                                  disp)))))
+            else ()
+         end
    in
       mprogram
    end
