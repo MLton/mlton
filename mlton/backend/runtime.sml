@@ -4,6 +4,7 @@ struct
 val wordSize: int = 4
 val arrayHeaderSize = 2 * wordSize
 val labelSize = wordSize
+val limitSlop: int = 512
 val objectHeaderSize = wordSize
 val pointerSize = wordSize
 

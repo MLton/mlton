@@ -14,6 +14,8 @@ signature RUNTIME =
       val isValidArrayHeader: {numBytesNonPointers: int,
 			       numPointers: int} -> bool
       val labelSize: int
+      (* Same as LIMIT_SLOP from gc.c. *)
+      val limitSlop: int
       val maxFrameSize: int
       val objectHeaderSize: int
       val pointerSize: int

@@ -4,6 +4,11 @@ struct
 open S
 open Rssa
 
+fun reduceSlop (n: int): int =
+   if n < Runtime.limitSlop
+      then 0
+   else n - Runtime.limitSlop
+      
 fun insertFunction (f: Function.t) =
    let
       val {args, blocks, name, start} = Function.dest f
@@ -61,7 +66,7 @@ fun insertFunction (f: Function.t) =
 		end
 	     fun normal () =
 		if bytes > 0
-		   then insert (LimitCheck.Heap {bytes = bytes,
+		   then insert (LimitCheck.Heap {bytes = reduceSlop bytes,
 						 stackToo = false})
 		else block
 	  in
@@ -84,6 +89,7 @@ fun insertFunction (f: Function.t) =
 				* arrays.
 				*)
 			       + Runtime.pointerSize
+			    val extraBytes = reduceSlop extraBytes
 			 in
 			    insert
 			    (if bytesPerElt = 0

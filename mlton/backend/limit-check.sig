@@ -1,3 +1,5 @@
+type int = Int.t
+   
 signature LIMIT_CHECK_STRUCTS = 
    sig
       structure Rssa: RSSA
