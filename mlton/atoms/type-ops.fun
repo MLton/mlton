@@ -26,6 +26,7 @@ in
    val bool = nullary Tycon.bool
    val exn = nullary Tycon.exn
    val intInf = nullary Tycon.intInf
+   val pointer = nullary Tycon.pointer
    val real = RealSize.memoize (fn s => nullary (Tycon.real s))
    val thread = nullary Tycon.thread
    val word = WordSize.memoize (fn s => nullary (Tycon.word s))

@@ -57,6 +57,7 @@ signature TYPE_OPS =
       val isTuple: t -> bool
       val list: t -> t
       val nth: t * int -> t
+      val pointer: t
       val real: realSize -> t
       val reff: t -> t
       val result: t -> t (* result = #2 o dearrow *)

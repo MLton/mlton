@@ -46,9 +46,7 @@ datatype 'a t =
  | Exn_setExtendExtra (* implement exceptions *)
  | Exn_setInitExtra (* implement exceptions *)
  | FFI of 'a CFunction.t (* ssa to rssa *)
- | FFI_Symbol of {fetch: bool,
-		  name: string,
-		  ty: 'a} (* codegen *)
+ | FFI_Symbol of {name: string} (* codegen *)
  | GC_collect (* ssa to rssa *)
  | IntInf_add (* ssa to rssa *)
  | IntInf_andb (* ssa to rssa *)
@@ -488,7 +486,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Exn_setExtendExtra => Exn_setExtendExtra
     | Exn_setInitExtra => Exn_setInitExtra
     | FFI func => FFI (CFunction.map (func, f))
-    | FFI_Symbol {fetch, name, ty} => FFI_Symbol {fetch = fetch, name = name, ty = f ty}
+    | FFI_Symbol {name} => FFI_Symbol {name = name}
     | GC_collect => GC_collect
     | IntInf_add => IntInf_add
     | IntInf_andb => IntInf_andb
@@ -618,6 +616,23 @@ val gcCollect = GC_collect
 val intInfEqual = IntInf_equal
 val intInfNeg = IntInf_neg
 val intInfNotb = IntInf_notb
+fun pointerGet ctype =
+   let datatype z = datatype CType.t
+   in
+      case ctype of
+	 Int8 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 8))
+       | Int16 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 16))
+       | Int32 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 32))
+       | Int64 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 64))
+       | Pointer => Pointer_getPointer
+       | Real32 => Pointer_getReal RealSize.R32
+       | Real64 => Pointer_getReal RealSize.R64
+       | Word8 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 8))
+       | Word16 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 16))
+       | Word32 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 32))
+       | Word64 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 64))
+   end
+
 val reff = Ref_ref
 val serialize = MLton_serialize
 val touch = MLton_touch
@@ -683,7 +698,7 @@ val kind: 'a t -> Kind.t =
        | Exn_setExtendExtra => SideEffect
        | Exn_setInitExtra => SideEffect
        | FFI _ => Kind.SideEffect
-       | FFI_Symbol {fetch, ...} => if fetch then DependsOnState else Functional
+       | FFI_Symbol _ => Functional
        | GC_collect => SideEffect
        | IntInf_add => Functional
        | IntInf_andb => Functional

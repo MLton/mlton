@@ -246,11 +246,14 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 				   let
 				      val index = Counter.next callCounter
 				      val display =
-					 concat
-					 ["PushReg (",
-					  CType.toString
-					  (Type.toCType (Operand.ty dst)),
-					  ") = ", name, ";"]
+					 let
+					    val ptr = 
+					       CType.toString CType.Pointer
+					 in
+					    concat
+					    ["PushReg (",ptr,") = ",
+					     "((",ptr,")(&",name,"));\n"]
+					 end
 				      val () =
 					 List.push
 					 (callCs, {display = display,

@@ -828,9 +828,10 @@ fun parseAttributes (attributes: Attribute.t list): Convention.t option =
 		     else Convention.Cdecl)
     | _ => NONE
 
-fun iimport {attributes: Attribute.t list,
-	     ty: Type.t,
-	     region: Region.t}: Type.t Prim.t =
+fun import {attributes: Attribute.t list,
+	    name: string option,
+	    region: Region.t,
+	    ty: Type.t}: Type.t Prim.t =
    let
       fun error l = Control.error (region, l, Layout.empty)
       fun invalidAttributes () =
@@ -855,10 +856,16 @@ fun iimport {attributes: Attribute.t list,
 		     NONE => (invalidAttributes ()
 			      ; Convention.Cdecl)
 		   | SOME c => c
+	       val addrTy = Type.word (WordSize.pointer ())
 	       val func =
-		  CFunction.T {args = Vector.concat 
-			              [Vector.new1 (Type.word (WordSize.pointer ())),
-				       Vector.map (args, #ty)],
+		  CFunction.T {args = let
+					 val args = Vector.map (args, #ty)
+				      in
+					 if isSome name
+					    then args
+					    else Vector.concat
+					         [Vector.new1 addrTy, args]
+				      end,
 			       bytesNeeded = NONE,
 			       convention = convention,
 			       ensuresBytesFree = false,
@@ -871,7 +878,9 @@ fun iimport {attributes: Attribute.t list,
 			       return = (case result of
 					    NONE => Type.unit
 					  | SOME {ty, ...} => ty),
-			       target = Indirect,
+			       target = (case name of
+					    NONE => Indirect
+					  | SOME name => Direct name),
 			       writesStackTop = true}
 
 	    in
@@ -879,67 +888,84 @@ fun iimport {attributes: Attribute.t list,
 	    end
    end
 
-fun import {attributes: Attribute.t list,
-	    name: string,
-	    ty: Type.t,
-	    region: Region.t}: Type.t Prim.t =
+fun fetchSymbol {attributes: Attribute.t list,
+		 name: string,
+		 primApp: {args: Cexp.t vector, 
+			   prim: Type.t Prim.t, 
+			   result: Type.t} -> Cexp.t,
+		 ty: Type.t,
+		 region: Region.t}: Cexp.t =
    let
       fun error l = Control.error (region, l, Layout.empty)
       fun invalidAttributes () =
 	 error (seq [str "invalid attributes for import: ",
 		     List.layout Attribute.layout attributes])
+      val bogus = primApp {args = Vector.new0 (), 
+			   prim = Prim.bogus,
+			   result = ty}
    in
-      case Type.parse ty of
-	 NONE =>
-	    if isSome (Type.toCType ty)
-	       then
-		  (case attributes of
-		      [] => Prim.ffiSymbol {fetch = true, 
-					    name = name, 
-					    ty = ty}
-		    | _ => 
-			 let
-			    val () = invalidAttributes ()
-			 in
-			    Prim.bogus
-			 end)
-	    else
-	       let
-		  val () =
-		     Control.error (region,
-				    str "invalid type for import",
-				    Type.layoutPretty ty)
-	       in
-		  Prim.bogus
-	       end
-       | SOME (args, result) =>
+      case Type.toCType ty of
+	 NONE => 
 	    let
-	       datatype z = datatype CFunction.Target.t
-	       val convention =
-		  case parseAttributes attributes of
-		     NONE => (invalidAttributes ()
-			      ; Convention.Cdecl)
-		   | SOME c => c
-	       val func =
-		  CFunction.T {args = Vector.map (args, #ty),
-			       bytesNeeded = NONE,
-			       convention = convention,
-			       ensuresBytesFree = false,
-			       mayGC = true,
-			       maySwitchThreads = false,
-			       modifiesFrontier = true,
-			       prototype = (Vector.map (args, #ctype),
-					    Option.map (result, #ctype)),
-			       readsStackTop = true,
-			       return = (case result of
-					    NONE => Type.unit
-					  | SOME {ty, ...} => ty),
-			       target = Direct name,
-			       writesStackTop = true}
-
+	       val () =
+		  Control.error 
+		  (region,
+		   str "invalid type for import",
+		   Type.layoutPretty ty)
 	    in
-	       Prim.ffi func
+	       bogus
 	    end
+       | SOME {ctype, ...} => 
+	    (case attributes of
+		[] => 
+		   let
+		      val isBool =
+			 case Type.deConOpt ty of
+			    NONE => false
+			  | SOME (c,_) => Tycon.equals (c, Tycon.bool)
+		      val addrTy = 
+			 Type.word (WordSize.pointer ())
+		      val addrExp = 
+			 primApp
+			 {args = Vector.new0 (),
+			  prim = Prim.ffiSymbol {name = name},
+			  result = addrTy}
+		      val zeroExp =
+			 Cexp.make
+			 (Cexp.Const
+			  (fn () => Const.word (WordX.zero WordSize.default)),
+			  Type.defaultWord)
+		      val fetchTy =
+			 if isBool then Type.defaultWord else ty
+		      val fetchExp = 
+			 primApp 
+			 {args = Vector.new2 (addrExp,zeroExp),
+			  prim = Prim.pointerGet ctype,
+			  result = fetchTy}
+		   in
+		      if isBool 
+			 then Cexp.casee
+			      {kind = "",
+			       lay = fn () => Layout.empty,
+			       noMatch = Cexp.Impossible,
+			       region = Region.bogus,
+			       rules = Vector.new2
+			               ({exp = Cexp.truee,
+					 lay = NONE,
+					 pat = Cpat.falsee},
+					{exp = Cexp.falsee,
+					 lay = NONE,
+					 pat = Cpat.truee}),
+			       test = primApp
+				      {args = Vector.new2 (fetchExp, zeroExp),
+				       prim = Prim.wordEqual WordSize.default,
+				       result = ty},
+				      warnMatch = false}
+			 else fetchExp
+		   end
+	      | _ => 
+		   (invalidAttributes ()
+		    ; bogus))
    end
 
 fun symbol {name: string,
@@ -950,9 +976,7 @@ fun symbol {name: string,
    in
       case Type.toCType ty of
 	 SOME {ctype = CType.Pointer, ...} =>
-	    Prim.ffiSymbol {fetch = false,
-			    name = name,
-			    ty = ty}
+	    Prim.ffiSymbol {name = name}
        | _ =>
 	    let
 	       val () =
@@ -2447,8 +2471,9 @@ fun elaborateDec (d, {env = E, nest}) =
 					   argType = fptrTy,
 					   body = etaExtra (Vector.new1 fptrArg,
 							    ty, expandedTy,
-							    iimport
+							    import
 							    {attributes = attributes,
+							     name = NONE,
 							     region = region,
 							     ty = expandedTy}),
 					   mayInline = true}),
@@ -2463,10 +2488,18 @@ fun elaborateDec (d, {env = E, nest}) =
 			    end
 		       | Import {attributes, name} =>
 			    (check (ElabControl.allowImport, "_import")
-			     ; eta (import {attributes = attributes,
-					    name = name,
-					    region = region,
-					    ty = expandedTy}))
+			     ; (case Type.deArrowOpt expandedTy of
+				   NONE => 
+				      wrap (fetchSymbol {attributes = attributes,
+							 name = name,
+							 primApp = primApp,
+							 region = region,
+							 ty = expandedTy}, ty)
+				 | SOME _ =>
+				      eta (import {attributes = attributes,
+						   name = SOME name,
+						   region = region,
+						   ty = expandedTy})))
 		       | Symbol {name} =>
 			    (check (ElabControl.allowImport, "_import")
 			     ; eta (symbol {name = name,

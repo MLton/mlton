@@ -368,7 +368,7 @@ structure Type =
 		    | _ => false)
 	     | FFI f => done (Vector.toList (CFunction.args f),
 			      CFunction.return f)
-	     | FFI_Symbol {ty, ...} => done ([], ty)
+	     | FFI_Symbol _ => done ([], pointer)
 	     | GC_collect => done ([], unit)
 	     | IntInf_add => intInfBinary ()
 	     | IntInf_andb => intInfBinary ()

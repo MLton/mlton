@@ -35,9 +35,7 @@ signature PRIM =
 	     | Exn_setExtendExtra (* implement exceptions *)
 	     | Exn_setInitExtra (* implement exceptions *)
 	     | FFI of 'a CFunction.t (* ssa to rssa *)
-	     | FFI_Symbol of {fetch: bool,
-			      name: string,
-			      ty: 'a} (* codegen *)
+	     | FFI_Symbol of {name: string} (* codegen *)
 	     | GC_collect (* ssa to rssa *)
 	     | IntInf_add (* ssa to rssa *)
 	     | IntInf_andb (* ssa to rssa *)
@@ -217,7 +215,7 @@ signature PRIM =
 				deWeak: 'b -> 'b,
 				result: 'b} -> 'b vector
       val ffi: 'a CFunction.t -> 'a t
-      val ffiSymbol: {fetch: bool, name: string, ty: 'a} -> 'a t
+      val ffiSymbol: {name: string} -> 'a t
       val fromString: string -> 'a t
       val gcCollect: 'a t
       val intInfEqual: 'a t
@@ -240,6 +238,7 @@ signature PRIM =
        * not examples: Array_array, Array_sub, Ref_deref, Ref_ref
        *)
       val maySideEffect: 'a t -> bool
+      val pointerGet: CType.t -> 'a t
       val name: 'a t -> 'a Name.t
       val reff: 'a t
       val serialize: 'a t
