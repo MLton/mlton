@@ -319,8 +319,16 @@ fun makeOptions {usage} =
 			| "1" => Top
 			| "2" => Pass
 			| "3" =>  Detail
-			| _ => usage (concat ["invalid -v arg: ", s]))))
-      ],
+			| _ => usage (concat ["invalid -v arg: ", s])))),
+       (Expert, "variant", " {header|first-word}",
+	"how to represent variant tags",
+	SpaceString
+	(fn s =>
+	 variant := (case s of
+			"first-word" => FirstWord
+		      | "header" => Header
+		      | _ => usage (concat ["invalid -variant arg: ", s]))))
+       ],
        fn (style, name, arg, desc, opt) =>
        {arg = arg, desc = desc, name = name, opt = opt, style = style})
    end

@@ -27,7 +27,7 @@ signature MACHINE_ATOMS =
 
 	    val <= : t * t -> bool
 	    val equals: t * t -> bool
-	    val index: t -> int (* index into pointerTypes array *)
+	    val index: t -> int (* index into objectTypes array *)
 	    val layout: t -> Layout.t
 	    val new: unit -> t
 	    val plist: t -> PropertyList.t
@@ -45,7 +45,7 @@ signature MACHINE_ATOMS =
 	       Char
 	     | CPointer
 	     (* The ints in an enum are in increasing order without dups.
-	      * The pointers are in increasing order (of index in pointerTypes
+	      * The pointers are in increasing order (of index in objectTypes
 	      * vector) without dups.
 	      *)
 	     | EnumPointers of {enum: int vector,

@@ -391,7 +391,8 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		       let
 			  val pts = pointers ()
 			  val ty = enumAnd pts
-			  val _ = indirect {isTagged = true,
+			  val isTagged = !Control.variant = Control.FirstWord
+			  val _ = indirect {isTagged = isTagged,
 					    conRep = ConRep.TagTuple,
 					    pointerTycons = pts,
 					    ty = ty}

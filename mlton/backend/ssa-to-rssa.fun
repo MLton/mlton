@@ -232,7 +232,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
       fun genCase {cases: (Con.t * Label.t) vector,
 		   default: Label.t option,
 		   test: Operand.t,
-		   testRep: TyconRep.t}: Transfer.t =
+		   testRep: TyconRep.t}: Statement.t list * Transfer.t =
 	 let
 	    fun enum (test: Operand.t): Transfer.t =
 	       let
@@ -290,7 +290,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				 kind = Kind.Jump,
 				 statements = Vector.new0 (),
 				 transfer = transfer}
-	    fun switchEP (makePointersTransfer: Operand.t -> Transfer.t)
+	    fun switchEP
+	       (makePointersTransfer: Operand.t -> Statement.t list * Transfer.t)
 	       : Transfer.t =
 	       let
 		  val {enum = e, pointers = p} =
@@ -307,19 +308,19 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		  val pointersVar = Var.newNoname ()
 		  val pointersOp = Operand.Var {ty = pointersTy,
 						var = pointersVar}
-		  fun block (var, ty, transfer) =
+		  fun block (var, ty, statements, transfer) =
 		     newBlock {args = Vector.new0 (),
 			       kind = Kind.Jump,
-			       statements = (Vector.new1
+			       statements = (Vector.fromList
 					     (Statement.Bind
 					      {isMutable = false,
 					       oper = Operand.Cast (test, ty),
-					       var = var})),
+					       var = var}
+					      :: statements)),
 			       transfer = transfer}
-		  val pointers =
-		     block (pointersVar, pointersTy,
-			    makePointersTransfer pointersOp)
-		  val enum = block (enumVar, enumTy, enum enumOp)
+		  val (s, t) = makePointersTransfer pointersOp
+		  val pointers = block (pointersVar, pointersTy, s, t)
+		  val enum = block (enumVar, enumTy, [], enum enumOp)
 	       in
 		  Switch (Switch.EnumPointers
 			  {enum = enum,
@@ -340,7 +341,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		  end
 	    fun enumAndOne (): Transfer.t =
 	       let
-		  fun make (pointersOp: Operand.t): Transfer.t =
+		  fun make (pointersOp: Operand.t)
+		     : Statement.t list * Transfer.t =
 		     let
 			val (dst, args: Operand.t vector) =
 			   case Vector.peekMap
@@ -358,13 +360,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				   | SOME j => (j, Vector.new0 ()))
 			    | SOME z => z
 		     in
-			Transfer.Goto {args = args,
-				       dst = dst}
+			([], Transfer.Goto {args = args,
+					    dst = dst})
 		     end
 	       in
 		  switchEP make
 	       end
-	    fun indirectTag (test: Operand.t): Transfer.t =
+	    fun indirectTag (test: Operand.t): Statement.t list * Transfer.t =
 	       let
 		  val cases =
 		     Vector.keepAllMap
@@ -373,6 +375,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			 ConRep.TagTuple {rep, tag} =>
 			    let
 			       val tycon = TupleRep.tycon rep
+			       val tag =
+				  if !Control.variant = Control.FirstWord
+				     then tag
+				  else PointerTycon.index tycon
 			       val pointerVar = Var.newNoname ()
 			       val pointerTy = Type.pointer tycon
 			       val pointerOp =
@@ -412,14 +418,37 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		     QuickSort.sortVector
 		     (cases, fn ({tycon = t, ...}, {tycon = t', ...}) =>
 		      PointerTycon.<= (t, t'))
+		  val (ss, tag) =
+		     case !Control.variant of
+			Control.FirstWord =>
+			   ([], Offset {base = test,
+					offset = tagOffset,
+					ty = Type.int})
+		      | Control.Header =>
+			   let
+			      val headerOffset = ~4
+			      val tagVar = Var.newNoname ()
+			      val s =
+				 PrimApp {args = (Vector.new2
+						  (Offset {base = test,
+							   offset = headerOffset,
+							   ty = Type.word},
+						   Operand.word 0w1)),
+					  dst = SOME (tagVar, Type.word),
+					  prim = Prim.word32Rshift}
+			   in
+			      ([s], Cast (Var {ty = Type.word,
+					       var = tagVar},
+					  Type.int))
+			   end
+		      | HeaderIndirect =>
+			   Error.bug "HeaderIndirect unimplemented"
 	       in
-		  Switch (Switch.Pointer
-			  {cases = cases,
-			   default = default,
-			   tag = Offset {base = test,
-					 offset = tagOffset,
-					 ty = Type.int},
-			   test = test})
+		  (ss,
+		   Switch (Switch.Pointer {cases = cases,
+					   default = default,
+					   tag = tag,
+					   test = test}))
 	       end
 	    fun prim () =
 	       case (Vector.length cases, default) of
@@ -447,26 +476,28 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		| _ => Error.bug "prim datatype with more than one case"
 	 in
 	    case testRep of
-	       TyconRep.Direct => prim ()
-	     | TyconRep.Enum => enum test
-	     | TyconRep.EnumDirect => enumAndOne ()
-	     | TyconRep.EnumIndirect => enumAndOne ()
-	     | TyconRep.EnumIndirectTag => switchEP indirectTag
+	       TyconRep.Direct => ([], prim ())
+	     | TyconRep.Enum => ([], enum test)
+	     | TyconRep.EnumDirect => ([], enumAndOne ())
+	     | TyconRep.EnumIndirect => ([], enumAndOne ())
+	     | TyconRep.EnumIndirectTag => ([], switchEP indirectTag)
 	     | TyconRep.IndirectTag => indirectTag test
-	     | TyconRep.Void => prim ()
+	     | TyconRep.Void => ([], prim ())
 	 end
       fun translateCase ({test: Var.t,
 			  cases: Label.t S.Cases.t,
-			  default: Label.t option}): Transfer.t =
+			  default: Label.t option})
+	 : Statement.t list * Transfer.t =
 	 let
 	    fun id x = x
 	    fun simple (l, make, branch, le) =
-	       Switch
-	       (make {test = varOp test,
-		      cases = (QuickSort.sortVector
-			       (Vector.map (l, fn (i, j) => (branch i, j)),
-				fn ((i, _), (i', _)) => le (i, i'))),
-		      default = default})
+	       ([],
+		Switch
+		(make {test = varOp test,
+		       cases = (QuickSort.sortVector
+				(Vector.map (l, fn (i, j) => (branch i, j)),
+				 fn ((i, _), (i', _)) => le (i, i'))),
+		       default = default}))
 	 in
 	    case cases of
 	       S.Cases.Char cs => simple (cs, Switch.Char, id, Char.<=)
@@ -476,7 +507,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		  simple (cs, Switch.Char, Word8.toChar, Char.<=)
 	     | S.Cases.Con cases =>
 		  (case (Vector.length cases, default) of
-		      (0, NONE) => Transfer.bug
+		      (0, NONE) => ([], Transfer.bug)
 		    | _ => 
 			 let
 			    val (tycon, tys) = S.Type.tyconArgs (varType test)
@@ -555,7 +586,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	 Vector.keepAllMap (xs, fn x =>
 			    Option.map (toRtype (varType x), fn _ =>
 					varOp x))
-      fun translateTransfer (t: S.Transfer.t): Transfer.t =
+      fun translateTransfer (t: S.Transfer.t): Statement.t list * Transfer.t =
 	 case t of
 	    S.Transfer.Arith {args, overflow, prim, success, ty} =>
 	       let
@@ -572,14 +603,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					   (Operand.Var {var = temp,
 							 ty = ty}))})}
 	       in
-		  Transfer.Arith {dst = temp,
-				  args = vos args,
-				  overflow = overflow,
-				  prim = prim,
-				  success = noOverflow,
-				  ty = ty}
+		  ([], Transfer.Arith {dst = temp,
+				       args = vos args,
+				       overflow = overflow,
+				       prim = prim,
+				       success = noOverflow,
+				       ty = ty})
 	       end
-	  | S.Transfer.Bug => Transfer.bug
+	  | S.Transfer.Bug => ([], Transfer.bug)
 	  | S.Transfer.Call {func, args, return} =>
 	       let
 		  datatype z = datatype S.Return.t
@@ -600,24 +631,24 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			   end
 		      | Tail => Return.Tail
 	       in
-		  Transfer.Call {func = func,
-				 args = vos args,
-				 return = return}
+		  ([], Transfer.Call {func = func,
+				      args = vos args,
+				      return = return})
 	       end
 	  | S.Transfer.Case r => translateCase r
 	  | S.Transfer.Goto {dst, args} =>
-	       Transfer.Goto {dst = dst, args = vos args}
-	  | S.Transfer.Raise xs => Transfer.Raise (vos xs)
-	  | S.Transfer.Return xs => Transfer.Return (vos xs)
+	       ([], Transfer.Goto {dst = dst, args = vos args})
+	  | S.Transfer.Raise xs => ([], Transfer.Raise (vos xs))
+	  | S.Transfer.Return xs => ([], Transfer.Return (vos xs))
 	  | S.Transfer.Runtime {args, prim, return} =>
 	       let
 		  datatype z = datatype Prim.Name.t
 	       in
 		  case Prim.name prim of
 		     MLton_halt =>
-			Transfer.CCall {args = vos args,
-					func = CFunction.exit,
-					return = NONE}
+			([], Transfer.CCall {args = vos args,
+					     func = CFunction.exit,
+					     return = NONE})
 		   | Thread_copyCurrent =>
 			let
 			   val func = CFunction.copyCurrentThread
@@ -629,11 +660,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					(Goto {args = Vector.new0 (),
 					       dst = return})}
 			in
-			   Transfer.CCall
-			   {args = (Vector.concat
-				    [Vector.new1 Operand.GCState, vos args]),
-			    func = func,
-			    return = SOME l}
+			   ([],
+			    Transfer.CCall
+			    {args = (Vector.concat
+				     [Vector.new1 Operand.GCState, vos args]),
+			     func = func,
+			     return = SOME l})
 			end
 		   | _ => Error.bug (concat
 				     ["strange prim in SSA Runtime transfer ",
@@ -660,7 +692,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	     | Type.Real => c (Const.fromReal "0.0")
 	     | Type.Word => c (Const.fromWord 0w0)
 	 end
-      fun translateStatementsTransfer (statements, transfer) =
+      fun translateStatementsTransfer (statements, ss, transfer) =
 	 let
 	    fun loop (i, ss, t): Statement.t vector * Transfer.t =
 	       if i < 0
@@ -729,7 +761,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			     | ConRep.IntAsTy {int, ty} =>
 				  move (Operand.Cast (Operand.int int, ty))
 			     | ConRep.TagTuple {rep, tag} =>
-				  allocateTagged (tag, args, rep)
+				  if !Control.variant = Control.FirstWord
+				     then allocateTagged (tag, args, rep)
+				  else allocate (args, rep)
 			     | ConRep.Transparent _ =>
 				  move (Operand.cast
 					(varOp (Vector.sub (args, 0)),
@@ -1201,13 +1235,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			     | SOME _ => move (varOp y))
 		  end
 	 in
-	    loop (Vector.length statements - 1, [], transfer)
+	    loop (Vector.length statements - 1, ss, transfer)
 	 end
       fun translateBlock (S.Block.T {label, args, statements, transfer}) = 
 	 let
-	    val (ss, t) =
-	       translateStatementsTransfer
-	       (statements, translateTransfer transfer)
+	    val (ss, t) = translateTransfer transfer
+	    val (ss, t) = translateStatementsTransfer (statements, ss, t)
 	 in
 	    Block.T {args = translateFormals args,
 		     kind = Kind.Jump,

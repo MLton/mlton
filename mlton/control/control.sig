@@ -226,6 +226,12 @@ signature CONTROL =
       (* Should the basis library be prefixed onto the program. *)
       val useBasisLibrary: bool ref
 
+      datatype variant =
+	 FirstWord
+       | Header
+       | HeaderIndirect
+      val variant: variant ref
+
       datatype verbosity =
 	 Silent
        | Top
