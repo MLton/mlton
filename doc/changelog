@@ -2,6 +2,10 @@ Here are the changes since version 20030312.
 
 At this point, the only missing basis library function is "use".
 
+* 2003-06-06
+  - Fixed bug in OS.IO.poll that caused it to return the input event
+    types polled for instead of what was actually available.
+
 * 2003-06-04
   - Fixed bug in known case SSA optimization that could case incorrect 
     results in compiled programs.

@@ -12,7 +12,7 @@ Int OS_IO_poll(Fd *fds, Word *eventss, Int n, Int timeout, Word *reventss) {
 	}
 	res = poll(ufds, n, timeout);
 	for (i = 0; i < n; i++) {
-		reventss[i] = ufds[i].events;
+		reventss[i] = ufds[i].revents;
 	}
 	return res;
 }
