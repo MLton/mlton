@@ -318,6 +318,9 @@ typedef struct GC_state {
 	W32 ram;		/* ramSlop * totalRam */
 	float ramSlop;
  	struct rusage ru_gc; /* total resource usage spent in gc */
+	struct rusage ru_gcCopy; /* resource usage in major copying gcs. */
+	struct rusage ru_gcMarkCompact; /* resource usage in mark-compact gcs. */
+	struct rusage ru_gcMinor; /* resource usage in minor gcs. */
 	/* savedThread is only set
          *    when executing a signal handler.  It is set to the thread that
 	 *    was running when the signal arrived.

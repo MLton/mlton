@@ -429,7 +429,7 @@ static void rusageMinusMax (struct rusage *ru1,
 	ru->ru_nivcsw = ru1->ru_nivcsw - ru2->ru_nivcsw;
 }
 
-static uint rusageTime(struct rusage *ru) {
+static uint rusageTime (struct rusage *ru) {
 	uint	result;
 
 	result = 0;
@@ -444,8 +444,21 @@ static uint rusageTime(struct rusage *ru) {
 static inline uint currentTime () {
 	struct rusage	ru;
 
-	fixedGetrusage(RUSAGE_SELF, &ru);
-	return (rusageTime(&ru));
+	fixedGetrusage (RUSAGE_SELF, &ru);
+	return rusageTime (&ru);
+}
+
+static inline void startTiming (struct rusage *ru_start) {
+	fixedGetrusage (RUSAGE_SELF, ru_start);
+}
+
+static inline uint stopTiming (struct rusage *ru_start, struct rusage *ru_gc) {
+	struct rusage ru_finish, ru_total;
+
+	fixedGetrusage (RUSAGE_SELF, &ru_finish);
+	rusageMinusMax (&ru_finish, ru_start, &ru_total);
+	rusagePlusMax (ru_gc, &ru_total, ru_gc);
+	return rusageTime (&ru_total);
 }
 
 /* ---------------------------------------------------------------- */
@@ -1444,6 +1457,9 @@ static void swapSemis (GC_state s) {
 }
 
 static inline void cheneyCopy (GC_state s) {
+	struct rusage ru_start;
+
+	startTiming (&ru_start);		
 	s->numCopyingGCs++;
 	s->crossMapHeap = &s->heap2;
 	s->toSpace = s->heap2.oldGen;
@@ -1475,6 +1491,7 @@ static inline void cheneyCopy (GC_state s) {
 				uintToCommaString (s->bytesLive));
 	swapSemis (s);
 	s->bytesCopied += s->bytesLive;
+	stopTiming (&ru_start, &s->ru_gcCopy);		
  	if (DEBUG or s->messages)
 		fprintf (stderr, "Major copying GC done.\n");
 }
@@ -1582,6 +1599,7 @@ done:
 static inline void minorGC (GC_state s) {
 	W32 bytesAllocated;
 	W32 bytesCopied;
+	struct rusage ru_start;
 
 	if (DEBUG_GENERATIONAL)
 		fprintf (stderr, "minorGC  frontier = 0x%08x\n", 
@@ -1597,6 +1615,7 @@ static inline void minorGC (GC_state s) {
 	} else {
 		if (DEBUG_GENERATIONAL or s->messages)
 			fprintf (stderr, "Minor GC.\n");
+		startTiming (&ru_start);
 		s->toSpace = s->heap.oldGen + s->heap.oldGenSize;
 		s->toLimit = s->toSpace + s->heap.nurserySize;
 		assert (invariant (s));
@@ -1615,6 +1634,7 @@ static inline void minorGC (GC_state s) {
 		bytesCopied = s->back - s->toSpace;
 		s->bytesCopiedMinor += bytesCopied;
 		s->heap.oldGenSize += bytesCopied;
+		stopTiming (&ru_start, &s->ru_gcMinor);
 		if (DEBUG_GENERATIONAL or s->messages)
 			fprintf (stderr, "Minor GC done.  %s bytes copied.\n",
 					uintToCommaString (bytesCopied));
@@ -2089,8 +2109,11 @@ done:
 }
 
 static inline void markCompact (GC_state s) {
+	struct rusage ru_start;
+
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Major mark-compact GC.\n");
+	startTiming (&ru_start);		
 	s->numMarkCompactGCs++;
 	s->crossMapHeap = &s->heap;
 	heapClearCardMap (&s->heap);
@@ -2101,6 +2124,7 @@ static inline void markCompact (GC_state s) {
 	updateBackwardPointersAndSlide (s);
 	s->bytesMarkCompacted += s->bytesLive;
 	s->heap.oldGenSize = s->bytesLive;
+	stopTiming (&ru_start, &s->ru_gcMarkCompact);
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Major mark-compact GC done.\n");
 }
@@ -2294,7 +2318,7 @@ void doGC (GC_state s,
 	uint gcTime;
 	bool stackTopOk;
 	W64 stackBytesRequested;
-	struct rusage ru_start, ru_finish, ru_total;
+	struct rusage ru_start;
 	W64 totalBytesRequested;
 	
 	if (DEBUG or s->messages)
@@ -2302,7 +2326,7 @@ void doGC (GC_state s,
 				uintToCommaString (nurseryBytesRequested),
 				uintToCommaString (oldGenBytesRequested));
 	assert (invariant (s));
-	fixedGetrusage (RUSAGE_SELF, &ru_start);
+	startTiming (&ru_start);
 	minorGC (s);
 	stackTopOk = stackTopIsOk (s, s->currentThread->stack);
 	stackBytesRequested =
@@ -2321,10 +2345,7 @@ void doGC (GC_state s,
 					nurseryBytesRequested));
 	unless (stackTopOk)
 		growStack (s);
-	fixedGetrusage (RUSAGE_SELF, &ru_finish);
-	rusageMinusMax (&ru_finish, &ru_start, &ru_total);
-	rusagePlusMax (&s->ru_gc, &ru_total, &s->ru_gc);
-	gcTime = rusageTime (&ru_total);
+	gcTime = stopTiming (&ru_start, &s->ru_gc);
 	s->maxPause = max (s->maxPause, gcTime);
 	if (DEBUG or s->messages) {
 		fprintf (stderr, "Finished gc.\n");
@@ -3047,6 +3068,9 @@ int GC_init (GC_state s, int argc, char **argv) {
 	initSignalStack (s);
 	sigemptyset (&s->signalsPending);
 	rusageZero (&s->ru_gc);
+	rusageZero (&s->ru_gcCopy);
+	rusageZero (&s->ru_gcMarkCompact);
+	rusageZero (&s->ru_gcMinor);
  	readProcessor ();
 	worldFile = NULL;
 	i = 1;
@@ -3154,16 +3178,42 @@ int GC_init (GC_state s, int argc, char **argv) {
 	return i;
 }
 
-static void displayUint (string name, uint n) {
-	fprintf (stderr, "%s: %s\n", name, uintToCommaString (n));
+static void displayUint (FILE * out, string name, uint n) {
+	fprintf (out, "%s: %s\n", name, uintToCommaString (n));
 }
 
-static void displayUllong (string name, ullong n) {
-	fprintf (stderr, "%s: %s\n", name, ullongToCommaString (n));
+static void displayUllong (FILE *out, string name, ullong n) {
+	fprintf (out, "%s: %s\n", name, ullongToCommaString (n));
+}
+
+static void displayCol (FILE *out, int width, string s) {
+	int extra;
+	int i;
+	int len;
+
+	len = strlen (s);
+	if (len < width) {
+	        extra = width - len;
+		for (i = 0; i < extra; ++i)
+			fprintf (out, " ");
+	}
+	fprintf (out, "%s\t", s);
+}
+
+static void displayCollectionStats (FILE *out, string name, struct rusage *ru, 
+					uint num, ullong bytes) {
+	fprintf (out, "%s", name);
+	displayCol (out, 7, intToCommaString (rusageTime (ru)));
+	displayCol (out, 7, uintToCommaString (num));
+	displayCol (out, 15, ullongToCommaString (bytes));
+	fprintf (out, "\n");
 }
 
 inline void GC_done (GC_state s) {
+	FILE *out;
+
 	enter (s);
+	out = stderr;
 	heapRelease (s, &s->heap);
 	heapRelease (s, &s->heap2);
 	if (s->summary) {
@@ -3171,38 +3221,44 @@ inline void GC_done (GC_state s) {
 		uint gcTime;
 
 		gcTime = rusageTime (&s->ru_gc);
-		displayUint ("max semispace size(bytes)", s->maxHeapSizeSeen);
-		displayUint ("max stack size(bytes)", s->maxStackSizeSeen);
+		fprintf (out, "GC type\t\tmilisec\t number\t          bytes\n");
+		fprintf (out, "-------------\t-------\t-------\t---------------\n");
+		displayCollectionStats
+			(out, "copying\t\t", &s->ru_gcCopy, s->numCopyingGCs, 
+				s->bytesCopied);
+		displayCollectionStats
+			(out, "mark-compact\t", &s->ru_gcMarkCompact, 
+				s->numMarkCompactGCs, s->bytesMarkCompacted);
+		displayCollectionStats
+			(out, "minor\t\t", &s->ru_gcMinor, s->numMinorGCs, 
+				s->bytesCopiedMinor);
 		time = (double)(currentTime() - s->startTime);
-		fprintf(stderr, "GC time(ms): %s (%.1f%%)\n",
-			intToCommaString (gcTime), 
-			(0.0 == time) ? 0.0 
-			: 100.0 * ((double) gcTime) / time);
-		displayUint ("maxPause(ms)", s->maxPause);
-		displayUllong ("bytes allocated",
+		fprintf (out, "total GC milisec: %s (%.1f%%)\n",
+				intToCommaString (gcTime), 
+				(0.0 == time) 
+					? 0.0 
+					: 100.0 * ((double) gcTime) / time);
+		displayUint (out, "max milisec pause", s->maxPause);
+		displayUllong (out, "bytes allocated",
 	 			s->bytesAllocated 
 				+ (s->frontier - s->heap.nursery));
-		displayUint ("max bytes live", s->maxBytesLive);
-		displayUint ("number of copying GCs", s->numCopyingGCs);
-		displayUllong ("bytes copied", s->bytesCopied);
-		displayUint ("number of mark compact GCs", s->numMarkCompactGCs);
-		displayUllong ("bytes mark-compacted", s->bytesMarkCompacted);
-		displayUint ("number of minor GCs", s->numMinorGCs);
-		displayUllong ("bytes copied (minor)", s->bytesCopiedMinor);
-		displayUllong ("marked cards", s->markedCards);
-		displayUllong ("minor bytes scanned", s->minorBytesScanned);
-		displayUllong ("minor bytes skipped", s->minorBytesSkipped);
+		displayUint (out, "max bytes live", s->maxBytesLive);
+		displayUint (out, "max semispace bytes", 
+				s->maxHeapSizeSeen);
+		displayUint (out, "max stack bytes", s->maxStackSizeSeen);
+		displayUllong (out, "marked cards", s->markedCards);
+		displayUllong (out, "minor bytes scanned", s->minorBytesScanned);
+		displayUllong (out, "minor bytes skipped", s->minorBytesSkipped);
 #if METER
 		{
 			int i;
-			for(i = 0; i < cardof(sizes); ++i) {
+			for (i = 0; i < cardof(sizes); ++i) {
 				if (0 != sizes[i])
-					fprintf(stderr, "COUNT[%d]=%d\n", i, sizes[i]);
+					fprintf (out, "COUNT[%d]=%d\n", i, sizes[i]);
 		  	}
 		}
 #endif
-
-	}	
+	}
 }
 
 void GC_finishHandler (GC_state s) {
