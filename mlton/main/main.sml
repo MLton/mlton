@@ -210,7 +210,7 @@ fun options () =
         intRef Native.optimize),
        (Expert, "native-split", " n", "split assembly files at ~n lines",
 	Int (fn i => Native.split := SOME i)),
-       (Expert, "native-shuffle", " {false|true}", "shuffle registers at C-calls",
+       (Expert, "native-shuffle", " {true|false}", "shuffle registers at C-calls",
 	Bool (fn b => Native.shuffle := b)),
        (Expert, "new-return", " {false|true}", "non-tail call return convention",
 	boolRef newReturn),
