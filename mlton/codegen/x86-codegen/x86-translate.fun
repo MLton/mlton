@@ -117,18 +117,18 @@ struct
 	      in
 		x86.Operand.memloc memloc
 	      end
-	   | Runtime oper =>
-		let
-		   datatype z = datatype Machine.RuntimeOperand.t
-		   open x86MLton
-		in
-		   case oper of
-		      Frontier => gcState_frontierContentsOperand
-		    | Limit => gcState_limitContentsOperand
-		    | LimitPlusSlop => gcState_limitPlusSlopContentsOperand
-		    | StackLimit => gcState_stackLimitContentsOperand
-		    | StackTop => gcState_stackTopContentsOperand
-		end
+	   | Runtime oper 
+	   => let
+		datatype z = datatype Machine.RuntimeOperand.t
+		open x86MLton
+	      in
+		case oper
+		  of Frontier => gcState_frontierContentsOperand
+		   | Limit => gcState_limitContentsOperand
+		   | LimitPlusSlop => gcState_limitPlusSlopContentsOperand
+		   | StackLimit => gcState_stackLimitContentsOperand
+		   | StackTop => gcState_stackTopContentsOperand
+	      end
 	   | StackOffset {offset, ty}
 	   => let
 		val memloc 

@@ -540,7 +540,7 @@ struct
   val gcState_limitPlusSlop
      = Immediate.binexp {oper = Immediate.Addition,
 			 exp1 = Immediate.label gcState,
-			 exp2 = Immediate.const_int 24}
+			 exp2 = Immediate.const_int 36}
   val gcState_limitPlusSlopContents
      = makeContents {base = gcState_limitPlusSlop,
 		     size = pointerSize,
