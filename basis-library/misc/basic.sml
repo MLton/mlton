@@ -24,9 +24,3 @@ fun die (s: string): 'a =
     ; let exception DieFailed
       in raise DieFailed
       end)
-
-val _ =
-   Primitive.TopLevel.setHandler 
-   (fn exn => (Primitive.Stdio.print ("unhandled exception: ")
-	       ; Primitive.Stdio.print (Primitive.Exn.name exn)
-	       ; die "\n"))

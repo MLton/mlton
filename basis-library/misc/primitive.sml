@@ -194,6 +194,7 @@ functor RealComparisons (type t
 
 structure Primitive =
    struct
+      val bug = _import "MLton_bug" : NullString.t -> unit;
       val detectOverflow =
 	 _command_line_const "MLton.detectOverflow": bool = true;
       val eq = _prim "MLton_eq": 'a * 'a -> bool;
@@ -2170,5 +2171,21 @@ local
    val _ = op <
    val _ = chr
    val _ = ord
+in
+end
+
+(* Install an emergency exception handler. *)
+local
+   open Primitive
+   val _ =
+      TopLevel.setHandler 
+      (fn exn => 
+       (Stdio.print ("unhandled exception: ")
+	; case exn of
+	     Fail msg => (Stdio.print "Fail "
+			  ; Stdio.print msg)
+	   | _ => Stdio.print (Exn.name exn)
+	; Stdio.print ("\n")
+	; bug (NullString.fromString "unhandled exception in Basis Library.\000")))
 in
 end
