@@ -544,13 +544,9 @@ fun commandLine (args: string list): unit =
 	      then opt :: ac
 	   else ac))
       val ccOpts = addTargetOpts ccOpts
-      val linkOpts = addTargetOpts linkOpts
-      datatype z = datatype MLton.Platform.OS.t
       val linkWithGmp =
 	 case targetOS of
-	    Cygwin => ["-lgmp"]
-	  | FreeBSD => ["-L/usr/local/lib/", "-lgmp"]
-	  | Linux =>
+	    Linux =>
 	       (* This mess is necessary because the linker on linux
 		* adds a dependency to a shared library even if there are
 		* no references to it.  So, on linux, we explicitly link
@@ -574,14 +570,12 @@ fun commandLine (args: string list): unit =
 		     NONE => ["-lgmp"]
 		   | SOME lib => [lib]
 	       end
-	  | NetBSD => ["-Wl,-R/usr/pkg/lib", "-L/usr/pkg/lib", "-lgmp"]
-	  | OpenBSD => ["-L/usr/local/lib/", "-lgmp"]
-	  | Solaris => ["-lgmp"]
+	  | _ => []
       val linkOpts =
 	 List.concat [[concat ["-L", !libTargetDir],
 		       if !debug then "-lmlton-gdb" else "-lmlton"],
 		      linkWithGmp,
-		      linkOpts]
+		      addTargetOpts linkOpts]
       val _ =
 	 if !Control.codegen = Native andalso targetArch = Sparc
 	    then usage "can't use native codegen on Sparc"
