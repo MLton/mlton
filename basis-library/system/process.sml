@@ -38,8 +38,9 @@ structure OS_Process: OS_PROCESS_EXTRA =
 	    val old =
 	       List.map (fn s => 
 			 let
-			    val old = Signal.getHandler s
-			    val _ = Signal.ignore s
+			    open Signal
+			    val old = getHandler s
+			    val _ = setHandler (s, Handler.ignore)
 			 in
 			    (s, old)
 			 end)

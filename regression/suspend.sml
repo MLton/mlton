@@ -3,7 +3,7 @@ open Posix.Signal MLton.Signal Posix.Process
 val _ =
    case fork () of
       NONE =>
-	 (handleWith (int, fn () => print "child got an int\n")
+	 (setHandler (int, Handler.simple (fn () => print "child got an int\n"))
  	  ; print "child suspending\n"
  	  ; suspend Mask.none
 	  ; print "done\n")

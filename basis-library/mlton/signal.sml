@@ -52,7 +52,7 @@ structure Mask =
       in
 	 val block = make Prim.block
 	 val unblock = make Prim.unblock
-	 val set = make Prim.setmask
+	 val setBlocked = make Prim.setmask
       end
    end
 
@@ -85,7 +85,7 @@ fun raiseInval () =
       raiseSys inval
    end
 
-val (get, set, handlers) =
+val (getHandler, set, handlers) =
    let
       val handlers = Array.tabulate (Prim.numSignals, initHandler o fromInt)
       val _ =
@@ -102,32 +102,6 @@ val (get, set, handlers) =
 
 val gcHandler = ref Ignore
    
-val getHandler = get
-
-fun isHandledDefault (s: t): bool =
-   case get s of
-      Default => true
-    | _ => false
-
-fun isIgnored (s: t): bool =
-   case get s of
-      Ignore => true
-    | _ => false
-
-fun ignore (s: t): unit =
-   case get s of
-      Ignore => ()
-    | InvalidSignal => raiseInval ()
-    | _ => (set (s, Ignore)
-	    ; checkResult (Prim.ignore s))
-
-fun handleDefault (s: t): unit =
-   case getHandler s of
-      Default => ()
-    | InvalidSignal => raiseInval ()
-    | _ => (set (s, Default)
-	    ; checkResult (Prim.default s))
-
 structure Handler =
    struct
       open Handler
@@ -137,7 +111,7 @@ structure Handler =
 
       val isDefault = fn Default => true | _ => false
       val isIgnore = fn Ignore => true | _ => false
-	 
+
       val handler =
 	 (* This let is used so that Thread.setHandler is only used if
 	  * Handler.handler is used.  This prevents threads from being part
@@ -175,29 +149,27 @@ structure Handler =
 	 in
 	    Handler
 	 end
+
+      fun simple f = handler (fn t => (f (); t))
    end
-
-fun handleWithSafe (s: t, h) =
-   let
-      val old = getHandler s
-      val _ = set (s, h)
-   in
-      case old of
-	 Handler _ => ()
-       | InvalidSignal => raiseInval ()
-       | _ => checkResult (Prim.handlee s)
-   end
-
-fun handleWith' (s, f) = handleWithSafe (s, Handler.handler f)
-
-fun handleWith (s, f) = handleWith' (s, fn t => (f (); t))
 
 fun setHandler (s, h) =
-   case h of
-      Default => handleDefault s
-    | Handler f => handleWithSafe (s, Handler f)
-    | Ignore => ignore s
-    | InvalidSignal => raiseInval ()
+   case (getHandler s, h) of
+      (InvalidSignal, _) => raiseInval ()
+    | (_, InvalidSignal) => raiseInval ()
+    | (Default, Default) => ()
+    | (_, Default) => 
+	 (set (s, Default)
+	  ; checkResult (Prim.default s))
+    | (Handler _, Handler _) =>
+	 set (s, h)
+    | (_, Handler _) =>
+	 (set (s, h)
+	  ; checkResult (Prim.handlee s))
+    | (Ignore, Ignore) => ()
+    | (_, Ignore) => 
+	 (set (s, Ignore)
+	  ; checkResult (Prim.ignore s))
 
 fun suspend m =
    (Mask.create m

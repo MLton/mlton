@@ -24,7 +24,7 @@ val _ =
 		 (int, "You can't int me you loser."),
 		 (term, "Don't even try to term me.")],
 		fn (signal, msg) =>
-		handleWith (signal, fn () => print msg))
+		setHandler (signal, Handler.simple (fn () => print msg)))
 	    fun loop' () = (sleep 1; loop' ())
 	 in loop' ()
 	 end

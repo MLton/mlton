@@ -69,7 +69,7 @@ structure Thread:
       fun run (): unit =
 	 (switch (fn t =>
 		  (topLevel := SOME t
-		   ; (new (fn () => (handleWith' (alrm, schedule)
+		   ; (new (fn () => (setHandler (alrm, Handler.handler schedule)
 				     ; setItimer (Time.fromMilliseconds 20))),
 		      ())))
 	  ; setItimer Time.zeroTime

@@ -1,42 +1,6 @@
+open Posix.Signal MLton.Signal
+
 (* Translated from prodcons.ocaml. *)
-
-functor Z (S: sig
-		 structure MLton:
-		    sig
-		       structure Itimer:
-			  sig
-			     datatype t =
-				Prof
-			      | Real
-			      | Virtual
-
-			     val set: t * {value: Time.time,
-					   interval: Time.time} -> unit
-			  end
-		       structure Thread:
-			  sig
-			     type 'a t
-
-			     val atomicBegin: unit -> unit
-			     val atomicEnd: unit -> unit
-			     val new: ('a -> unit) -> 'a t
-			     val switch: ('a t -> 'b t * 'b) -> 'a
-			  end
-		       structure Signal:
-			  sig
-			     type t
-
-			     val alrm: t
-			     val handleWith':
-				t * (unit Thread.t -> unit Thread.t) -> unit
-			     val ignore: t -> unit
-			  end
-		    end
-	      end) =
-struct
-
-open S
-
 fun for (start, stop, f) =
    let
       fun loop i =
@@ -139,7 +103,7 @@ structure Thread:
       fun run (): unit =
 	 (switch (fn t =>
 		  (topLevel := SOME t
-		   ; (new (fn () => (handleWith' (alrm, schedule)
+		   ; (new (fn () => (setHandler (alrm, Handler.handler schedule)
 				     ; setItimer (Time.fromMilliseconds 20))),
 		      ())))
 	  ; setItimer Time.zeroTime
@@ -268,16 +232,4 @@ fun main (name, args) =
       ()
    end
 
-end
-
-structure Z = Z (structure MLton =
-		    struct
-		       open MLton
-
-		       structure Signal =
-			  struct
-			     open Posix.Signal Signal
-			  end
-		    end)
-
-val _ = Z.main ( "prodcons", ["100000"] )
+val _ = main ( "prodcons", ["100000"] )
