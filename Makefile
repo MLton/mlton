@@ -126,7 +126,6 @@ version:
 	for f in							\
 		doc/user-guide/macros.tex				\
 		doc/CHANGES 						\
-		doc/README						\
 		mlton/control/control.sml; 				\
 	do								\
 		sed "s/\(.*\)VERSION\(.*\)/\1$(VERSION)\2/" <$$f >z &&	\
