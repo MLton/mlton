@@ -109,7 +109,7 @@ static void release (void *base, size_t length) {
 static void decommit (void *base, size_t length) {
 #if (defined (__CYGWIN__))
 	if (DEBUG_MEM)
-		fprintf(stderr, "VirtualFree (0x%x, %u, MEM_RELEASE)\n", 
+		fprintf(stderr, "VirtualFree (0x%x, %u, MEM_DECOMMIT)\n", 
 				(uint)base, (uint)length);
 	if (0 == VirtualFree (base, length, MEM_DECOMMIT))
 		die ("VirtualFree decommit failed");
@@ -117,6 +117,94 @@ static void decommit (void *base, size_t length) {
 	smunmap (base, length);
 #endif
 }
+
+#if (defined (__CYGWIN__))
+
+static void showMaps () {
+	MEMORY_BASIC_INFORMATION buf;
+	LPCVOID lpAddress;
+	char *state = "<unset>";
+	char *protect = "<unset>";
+
+	for (lpAddress = 0; lpAddress < (LPCVOID)0x80000000; ) {
+		VirtualQuery (lpAddress, &buf, sizeof(buf));
+
+		switch (buf.Protect) {
+		case PAGE_READONLY:
+			protect = "PAGE_READONLY";
+			break;
+		case PAGE_READWRITE:
+			protect = "PAGE_READWRITE";
+			break;
+		case PAGE_WRITECOPY:
+			protect = "PAGE_WRITECOPY";
+			break;
+		case PAGE_EXECUTE:
+			protect = "PAGE_EXECUTE";
+			break;
+		case PAGE_EXECUTE_READ:
+			protect = "PAGE_EXECUTE_READ";
+			break;
+		case PAGE_EXECUTE_READWRITE:
+			protect = "PAGE_EXECUTE_READWRITE";
+			break;
+		case PAGE_EXECUTE_WRITECOPY:
+			protect = "PAGE_EXECUTE_WRITECOPY";
+			break;
+		case PAGE_GUARD:
+			protect = "PAGE_GUARD";
+			break;
+		case PAGE_NOACCESS:
+			protect = "PAGE_NOACCESS";
+			break;
+		case PAGE_NOCACHE:
+			protect = "PAGE_NOCACHE";
+			break;
+		}
+		switch (buf.State) {
+		case MEM_COMMIT:
+			state = "MEM_COMMIT";
+			break;
+		case MEM_FREE:
+			state = "MEM_FREE";
+			break;
+		case MEM_RESERVE:
+			state = "MEM_RESERVE";
+			break;
+		}
+		fprintf(stderr, "0x%8x %10u  %s %s\n",
+			(uint)buf.BaseAddress,
+			(uint)buf.RegionSize,
+			state, protect);
+		lpAddress += buf.RegionSize;
+	}
+}
+
+static void showMem() {
+	MEMORYSTATUS ms; 
+
+	ms.dwLength = sizeof (MEMORYSTATUS); 
+	GlobalMemoryStatus (&ms); 
+	fprintf(stderr, "Total Phys. Mem: %ld\nAvail Phys. Mem: %ld\nTotal Page File: %ld\nAvail Page File: %ld\nTotal Virtual: %ld\nAvail Virtual: %ld\n",
+			 ms.dwTotalPhys, 
+			 ms.dwAvailPhys, 
+			 ms.dwTotalPageFile, 
+			 ms.dwAvailPageFile, 
+			 ms.dwTotalVirtual, 
+			 ms.dwAvailVirtual); 
+	showMaps();
+}
+
+#elif (defined (__linux__))
+
+static void showMem() {
+	static char buffer[256];
+
+	sprintf(buffer, "/bin/cat /proc/%d/maps\n", getpid());
+	(void)system(buffer);
+}
+
+#endif
 
 /* ------------------------------------------------- */
 /*                     roundPage                     */
@@ -841,18 +929,18 @@ static void *smmap_dienot(size_t length, int direction) {
 		result = VirtualAlloc ((LPVOID)address, length,
 					MEM_COMMIT,
 					PAGE_READWRITE);
+		if (NULL == result)
+			result = (void*)-1;
 		if (DEBUG_MEM)
 			fprintf (stderr, "0x%x = VirtualAlloc (0x%x, %u, MEM_COMMIT, PAGE_READWRITE)\n",
 					(uint)result, (uint)address,
 					(uint)length);
-		unless (NULL == result)
-			break;
 #elif (defined (__linux__))
 		result = mmap(address+(void*)0, length, PROT_READ | PROT_WRITE,
 				MAP_PRIVATE | MAP_ANON, -1, 0);
+#endif
 		unless ((void*)-1 == result)
 			break;
-#endif
 	}
 	return result;
 }
@@ -1496,15 +1584,8 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 				if (++try < 13)
 					goto retry;
 				else {
-#if (defined (__linux__))
-					static char buffer[256];
-
-					sprintf(buffer, 
-						"/bin/cat /proc/%d/maps\n", 
-						getpid());
-					(void)system(buffer);
-#endif
-					die("Out of swap space: cannot obtain %u bytes.", s->toSize);
+					showMem ();
+					die ("Out of swap space: cannot obtain %u bytes.", s->toSize);
 				}
 			}
 		}
@@ -1618,7 +1699,10 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 					"Shrinking old space at %x to %u bytes.\n",
 					(uint)s->toBase , keep);
 			assert(keep <= s->toSize);
-			decommit(s->toBase + keep, s->toSize - keep);
+			if (0 == keep)
+				release(s->toBase, s->toSize);
+			else
+				decommit(s->toBase + keep, s->toSize - keep);
 			s->toSize = keep;
 			if (0 == keep)
 				s->toBase = NULL;
