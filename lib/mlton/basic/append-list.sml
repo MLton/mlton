@@ -108,6 +108,8 @@ fun map (l, f) =
 
 fun toList ds = foldr (ds, [], op ::)
 
+fun toListOnto (ds, l) = foldr (ds, l, op ::)
+
 fun toVector ds = Vector.tabulator (length ds, fn call => foreach (ds, call))
 
 fun layout layoutX l = List.layout layoutX (toList l)

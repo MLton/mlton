@@ -19,5 +19,6 @@ signature APPEND_LIST =
       val single: 'a -> 'a t
       val snoc: 'a t * 'a -> 'a t
       val toList: 'a t -> 'a list
+      val toListOnto: 'a t * 'a list -> 'a list
       val toVector: 'a t -> 'a vector
    end
