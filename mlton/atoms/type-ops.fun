@@ -13,7 +13,6 @@ open S
 local
    open Tycon
 in
-   structure IntSize = IntSize
    structure RealSize = RealSize
    structure WordSize = WordSize
 end
