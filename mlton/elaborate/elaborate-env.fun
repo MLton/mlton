@@ -1828,14 +1828,10 @@ local
 			 uses = uses})
       end
 in
-   fun extendFctid (E, d, r) =
-      extend (E, #fcts, d, r, false, ExtendUses.New)
-   fun extendFix (E, d, r) =
-      extend (E, #fixs, d, r, false, ExtendUses.New)
-   fun extendSigid (E, d, r) =
-      extend (E, #sigs, d, r, false, ExtendUses.New)
-   fun extendStrid (E, d, r) =
-      extend (E, #strs, d, r, false, ExtendUses.New)
+   fun extendFctid (E, d, r) = extend (E, #fcts, d, r, false, ExtendUses.New)
+   fun extendFix (E, d, r) = extend (E, #fixs, d, r, false, ExtendUses.New)
+   fun extendSigid (E, d, r) = extend (E, #sigs, d, r, false, ExtendUses.New)
+   fun extendStrid (E, d, r) = extend (E, #strs, d, r, false, ExtendUses.New)
    fun extendVals (E, d, r, eu) = extend (E, #vals, d, r, false, eu)
    fun extendTycon (E, d, s, ir) =
       let
@@ -1856,7 +1852,7 @@ in
 			true
 		     end
 		| Scheme _ => false
-		| Tycon _ => true
+		| Tycon _ => false
 	    end
 	 val _ = extend (E, #types, d, s, forceTyconUsed,
 			 ExtendUses.fromIsRebind ir)
