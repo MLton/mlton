@@ -257,6 +257,7 @@ signature GLUT =
         val glutInit: unit -> unit;
         val glutInitDisplayMode : GLenum -> unit
         (*val glutInit: int -> string list -> unit;*)
+        val glutInitWindowPosition : int -> int -> unit
         val glutInitWindowSize : int -> int -> unit
         val glutCreateWindow: string -> int;
         val glutMainLoop: unit -> unit;

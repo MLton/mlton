@@ -51,7 +51,7 @@ GLUT_h.h: GLUT.sml
 GLUT_c.o: GLUT_c.c
 	gcc -c GLUT_c.c
 
-test: shortest hello solar
+test: shortest hello solar atom
 
 shortest: gl glut shortest.sml
 	mlton $(GL_LINK_OPTS) shortest.cm Gl_c.c Glut_c.c
@@ -61,6 +61,9 @@ hello: gl glu glut hello.sml
 
 solar: gl glu glut solar.sml
 	mlton $(GL_LINK_OPTS) solar.cm Gl_c.c Glut_c.c
+
+atom: gl glu glut solar.sml
+	mlton $(GL_LINK_OPTS) atom.cm Gl_c.c Glut_c.c
 
 clean:
 	rm -f *_h.h *.stackdump *~ *.o *.exe Glut *.a hello shortest solar

@@ -775,6 +775,9 @@ signature GL =
         val c_glMatrixMode : GLenum -> unit
         val glMatrixMode : GLenum -> unit
 
+        val c_glOrtho : GLdouble * GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit
+        val glOrtho : GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
+
         val c_glPushMatrix : unit -> unit
         val glPushMatrix : unit -> unit
 

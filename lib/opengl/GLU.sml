@@ -775,6 +775,9 @@ signature GL =
         val c_glMatrixMode : GLenum -> unit
         val glMatrixMode : GLenum -> unit
 
+        val c_glOrtho : GLdouble * GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit
+        val glOrtho : GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
+
         val c_glPushMatrix : unit -> unit
         val glPushMatrix : unit -> unit
 
@@ -1580,6 +1583,9 @@ signature GL =
 
         val c_glMatrixMode : GLenum -> unit
         val glMatrixMode : GLenum -> unit
+
+        val c_glOrtho : GLdouble * GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit
+        val glOrtho : GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
 
         val c_glPushMatrix : unit -> unit
         val glPushMatrix : unit -> unit
@@ -2412,6 +2418,11 @@ structure GL :> GL =
         val c_glMatrixMode = _import "glMatrixMode" stdcall: GLenum -> unit;
         fun glMatrixMode (a:GLenum)= c_glMatrixMode (a): unit;
 
+        val c_glOrtho = _import "glOrtho" stdcall: GLdouble * GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit;
+        fun glOrtho (a0 : GLdouble) (a1 : GLdouble) (a2 : GLdouble)
+            (a3 : GLdouble) (a4 : GLdouble) (a5 : GLdouble) =
+                c_glOrtho (a0, a1, a2, a3, a4, a5)
+
         val c_glPushMatrix = _import "glPushMatrix" stdcall: unit -> unit;
         fun glPushMatrix () = c_glPushMatrix (): unit;
 
@@ -3214,6 +3225,9 @@ signature GL =
 
         val c_glMatrixMode : GLenum -> unit
         val glMatrixMode : GLenum -> unit
+
+        val c_glOrtho : GLdouble * GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit
+        val glOrtho : GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
 
         val c_glPushMatrix : unit -> unit
         val glPushMatrix : unit -> unit
