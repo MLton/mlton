@@ -35,7 +35,7 @@ structure Option: OPTION =
 	 | NONE => ()
 
      fun map f =
-	fn SOME x => SOME(f x)
+	fn SOME x => SOME (f x)
 	 | NONE => NONE
 
      fun mapPartial f =
