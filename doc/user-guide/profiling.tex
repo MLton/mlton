@@ -8,14 +8,14 @@ directory showing how to generate profiling information.
 % mlton -p -keep g profiling.sml
 % profiling
 % mlprof profiling mlmon.out
-0.49 seconds of CPU time
-tak_0               87.76%
-IntInf_smallMul (C) 12.24%
+0.46 seconds of CPU time
+tak_1               93.48%
+IntInf_smallMul (C)  6.52%
 \end{verbatim}
 In summary, generating profiling information takes three steps.
 \begin{enumerate}
 
-\item Compile with the {\tt -p} switch.  This saves a {\tt .cps} file (see
+\item Compile with the {\tt -p} switch.  This saves a {\tt .ssa} file (see
 below).  You can also use {\tt -keep g} to save the generated assembly ({\tt
 .S}) files.
 
@@ -26,44 +26,44 @@ below).  You can also use {\tt -keep g} to save the generated assembly ({\tt
 \end{enumerate}
 The profiling information output by {\tt mlprof} {\em does not refer to the
 source program}.  Instead, {\tt mlprof} reports the percentage of time spent in
-each C and CPS function.  C functions are used for the FFI and garbage
-collector.  CPS is an intermediate language used by MLton that has traditional
+each C and SSA function.  C functions are used for the FFI and garbage
+collector.  SSA is an intermediate language used by MLton that has traditional
 first-order function definitions and calls and is similar to static-single
-assignment form.  In the above example, {\tt tak\_0} is a CPS function (see {\tt
-profiling.cps}) corresponding to the source SML {\tt tak} function.  The C
+assignment form.  In the above example, {\tt tak\_0} is a SSA function (see {\tt
+profiling.ssa}) corresponding to the source SML {\tt tak} function.  The C
 function {\tt IntInf\_smallMul} is used to implement {\tt IntInf.*}.
 
-In translating from SML to CPS, {\mlton} attempts to preserve source names, but
+In translating from SML to SSA, {\mlton} attempts to preserve source names, but
 due to anonymous functions, inlining, monomorphisation, closure conversion, and
 other optimizations, there is often quite a difference between the source and
-the optimized CPS program.  The source names are always mangled by adding a
+the optimized SSA program.  The source names are always mangled by adding a
 suffix of {\tt \_n} for some n (e.g. {\tt tak\_0}).  Names in the source may
 disappear (e.g. {\tt f} is nowhere to be found because it has been turned into a
 loop within main) or new names may appear from the SML basis library code that
 is prefixed to your program.
 
-You can display profiling information at the CPS basic block level with
+You can display profiling information at the SSA basic block level with
 {\tt mlprof -d 1}.
 
 \begin{verbatim}
 % mlprof -d 1 profiling mlmon.out
-0.49 seconds of CPU time
-tak_0                      87.76%
-     tak_0          27.91%       
-     L_58,L_71      18.60%       
-     L_53,L_60      13.95%       
-     L_56,L_72      11.63%       
-     L_54,L_73       6.98%       
-     L_60            6.98%       
-     L_58            4.65%       
-     L_56            4.65%       
-     L_52            4.65%       
-IntInf_smallMul (C)        12.24%
+0.45 seconds of CPU time
+tak_1                      84.44%
+     L_79           13.16%       
+     loop_14        13.16%       
+     L_47           13.16%       
+     L_46           13.16%       
+     L_75           10.53%       
+     L_375          10.53%       
+     tak_1           7.89%       
+     L_83            7.89%       
+     L_376           5.26%       
+     L_377           2.63%       
+     L_371           2.63%       
+IntInf_smallMul (C)        15.56%
 \end{verbatim}
-Here, the indented {\tt tak\_0} refers to the basic block that is then entry of
-the CPS {\tt tak\_0} function.  The label {\tt L\_58,L\_71} basic block in {\tt
-profiling.cps}, within the {\tt tak\_0} function called {\tt L\_58}.  This basic
-block also appears as label {\tt L\_71} in {\tt profiling.0.S}.
+Each of the indented labels refers to a basic block in {\tt
+  profiling.ssa}, within the {\tt tak\_0} function.
 
 You can display profiling information at the assembly basic block level with
 {\tt mlprof -d 2}.  Other {\tt mlprof} options are
@@ -72,8 +72,8 @@ which will limit {\tt mlprof} to only print information about functions (or
 blocks) whose percentage of time is above a certain threshold.
 
 You may find it useful to use the {\tt -keep dot} switch when compiling {\tt
--p}, since this saves the the CPS function call graph ({\tt .call-graph.dot})
-for the whole program.  Also, for each CPS function {\tt f}, it saves the
+-p}, since this saves the the SSA function call graph ({\tt .call-graph.dot})
+for the whole program.  Also, for each SSA function {\tt f}, it saves the
 intraprocedural control-flow graph ({\tt .f.cfg.dot}) and dominator tree ({\tt
 .f.dom.dot}).  In the control-flow graph, solid edges indicate gotos with
 arguments, dashed edges indicate handling a raise coming from the callee, and
@@ -89,4 +89,3 @@ the profiler.\\
 \end{tabular}\\
 Also, it is best to have a long running program (at least tens of seconds) in
 order to get reasonable data. 
-
