@@ -1,0 +1,13 @@
+ann  
+   deadCode true,
+   sequenceUnit true,
+   warnMatch true,
+   warnUnused true, forceUsed
+in
+   local
+      libs/build.mlb
+      libs/basis-2002/top-level/basis-types.sig
+   in
+      libs/basis-2002/top-level/pervasive-types.sml
+    end
+end

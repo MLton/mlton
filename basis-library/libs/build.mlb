@@ -300,17 +300,21 @@ basis-1997/io/text-io-convert.fun
 basis-1997/io/bin-stream-io.sig
 basis-1997/io/bin-io.sig
 basis-1997/io/bin-io-convert.fun
+ann forceUsed in
 basis-1997/top-level/basis.sig
 basis-1997/top-level/basis.sml
+end
 
 (*
 #
 # BasisNone
 #
 *)
+ann forceUsed in
 basis-none/top-level/basis.sig
 ann allowRebindEquals true 
 in basis-none/top-level/basis.sml 
+end
 end
 
 end

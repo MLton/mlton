@@ -76,6 +76,7 @@ signature BASIS_2002 =
       val valOf : 'a option -> 'a 
       val vector : 'a list -> 'a vector
 
+      val = : ''a * ''a -> bool
       val <> : ''a * ''a -> bool
 	
       (* Required structures *)

@@ -7,7 +7,7 @@ in
    local
       ann forceUsed in libs/build.mlb end
    in
+      libs/basis-none/top-level/top-level.sml
       libs/basis-none/top-level/infixes.sml
-      ann allowRebindEquals true in libs/basis-none/top-level/top-level.sml end
    end
 end

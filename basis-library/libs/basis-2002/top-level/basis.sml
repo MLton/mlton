@@ -252,6 +252,7 @@ structure Basis2002:> BASIS_2002 =
 	   VectorGlobal
 	   WordGlobal
       val real = real
+      val op = = op =
       val op <> = op <>
       val vector = vector
       datatype ref = datatype ref

@@ -18,6 +18,9 @@ signature BASIS_NONE =
       exception Bind
       exception Match
       exception Overflow
+
+      val = : ''a * ''a -> bool
+      val <> : ''a * ''a -> bool
    end
    (* Top-level types *)
    where type unit = unit

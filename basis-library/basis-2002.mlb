@@ -7,10 +7,10 @@ in
    local
       libs/build.mlb
    in
-      libs/basis-2002/top-level/infixes.sml
       libs/basis-2002/top-level/basis-funs.sml
       libs/basis-2002/top-level/basis-sigs.sml
-      ann allowRebindEquals true in libs/basis-2002/top-level/top-level.sml end
+      libs/basis-2002/top-level/top-level.sml
+      libs/basis-2002/top-level/infixes.sml
       ann allowOverload true in libs/basis-2002/top-level/overloads.sml end
     end
 end

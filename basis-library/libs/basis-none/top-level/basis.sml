@@ -13,5 +13,7 @@ structure BasisNone: BASIS_NONE =
 	   VectorGlobal
 	   WordGlobal
 
+      val op = = op =
+      val op <> = op <>
       datatype ref = datatype ref
    end

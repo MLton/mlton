@@ -37,12 +37,7 @@ signature MLTON_WORLD = MLTON_WORLD
 signature SML_OF_NJ = SML_OF_NJ
 signature UNSAFE = UNSAFE
 
-(* Quell unused structure warnings. *)
-local open Basis1997 BasisNone in end
-
 open Basis2002
-
-val op = = op =
 
 (* Rebind some structures so that their definitions appear later, so that they
  * will be used for displaying tycon names.
