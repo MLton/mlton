@@ -626,9 +626,58 @@ structure PointerRep =
 
       fun make {components, selects, tycon} =
 	 let
+	    val width =
+	       Vector.fold
+	       (components, Bytes.zero, fn ({component = c, ...}, ac) =>
+		Bytes.+ (ac, Type.bytes (Component.ty c)))
+	    val totalWidth = Bytes.+ (Runtime.normalHeaderSize, width)
+	    val (components, selects) =
+	       if !Control.align = Control.Align4
+		  orelse (Bytes.equals
+			  (totalWidth,
+			   Bytes.align (totalWidth,
+					{alignment = Bytes.fromInt 8})))
+		  then (components, selects)
+	       else
+		  (* Need to insert a pad word before the first pointer. *)
+		  let
+		     val {no = nonPointers, yes = pointers} =
+			Vector.partition
+			(components, fn {component = c, ...} =>
+			 Rep.isPointer (Component.rep c))
+		     val padOffset =
+			if 0 = Vector.length pointers
+			   then width
+			else #offset (Vector.sub (pointers, 0))
+		     val pad =			      
+			{component = Component.padToWidth (Component.unit,
+							   Bits.inWord),
+			 offset = padOffset}
+		     val pointers =
+			Vector.map (pointers, fn {component = c, offset} =>
+				    {component = c,
+				     offset = Bytes.+ (offset, Bytes.inWord)})
+		     val components = 
+			Vector.concat [nonPointers, Vector.new1 pad, pointers]
+		     val selects =
+			Selects.map
+			(selects, fn s =>
+			 case s of
+			    Select.Indirect {offset, ty} =>
+			       if Bytes.>= (offset, padOffset)
+				  then
+				     Select.Indirect
+				     {offset = Bytes.+ (offset, Bytes.inWord),
+				      ty = ty}
+			       else s
+			  | _ => s)
+		  in
+		     (components, selects)
+		  end
 	    val componentsTy =
 	       Type.seq (Vector.map (components, Component.ty o #component))
 	    val componentsTy = Type.maybePadToWidth (componentsTy, Bits.inWord)
+	    val width = Type.bytes componentsTy
 	 in
 	    T {components = components,
 	       componentsTy = componentsTy,
@@ -2013,10 +2062,15 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			  val () =
 			     List.push
 			     (delayedObjectTypes, fn () =>
-			      SOME (pt,
-				    ObjectType.Array
-				    (Type.padToPrim
-				     (Rep.ty (Value.get (typeRep ty))))))
+			      let
+				 val ty = Rep.ty (Value.get (typeRep ty))
+				 val ty =
+				    if Type.isUnit ty
+				       then Type.zero Bits.inByte
+				    else Type.padToPrim ty
+			      in
+				 SOME (pt, ObjectType.Array ty)
+			      end)
 		       in
 			  Type.pointer pt
 		       end
