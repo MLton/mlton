@@ -35,7 +35,7 @@ nan
 ~inf
 ~1
 0
-1000
+1E3
 1E21
 inf
 nan
