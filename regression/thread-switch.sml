@@ -23,12 +23,16 @@ fun loop(n: int, T t): unit =
    
 fun main() =
    let
-      val numSwitches = valOf(Int.fromString(hd(CommandLine.arguments())))
+      val numSwitches =
+	 case CommandLine.arguments () of
+	    [] => 1000
+	  | s :: _ => valOf (Int.fromString s)
    in
       switch(fn cur =>
 	     (done := SOME cur
 	      ; (new loop,
 		 (numSwitches, T(new loop)))))
+      ; print "ok\n"
    end
 
 end
