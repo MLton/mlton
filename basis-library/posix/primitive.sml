@@ -366,7 +366,7 @@ structure PosixPrimitive =
 
 	    structure Dirstream =
 	       struct
-		  type dirstream = pointer
+		  type dirstream = Pointer.t
 
 		  val closedir =
 		     _import "Posix_FileSys_Dirstream_closedir": dirstream -> int;

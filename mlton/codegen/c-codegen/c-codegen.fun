@@ -422,8 +422,7 @@ structure Type =
       in
 	 fun toC (t: t): string =
 	    case t of
-	       CPointer => pointer
-	     | EnumPointers {pointers, ...} =>
+	       EnumPointers {pointers, ...} =>
 		  if 0 = Vector.length pointers
 		     then int I32
 		  else pointer

@@ -542,7 +542,6 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	       | Datatype tycon => convertDatatype tycon
 	       | Int s => SOME (R.Type.int s)
 	       | IntInf => SOME R.Type.intInf
-	       | Pointer => SOME R.Type.cpointer
 	       | PreThread => SOME R.Type.thread
 	       | Real s => SOME (R.Type.real s)
 	       | Ref t =>

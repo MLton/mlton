@@ -57,7 +57,7 @@ structure C: C =
 	 struct
 	    open Prim.CSS
 
-	    val length = makeLength (sub, Primitive.Cpointer.isNull)
+	    val length = makeLength (sub, Primitive.Pointer.isNull)
 
 	    val toArrayOfLength =
 	       fn (css, n) => toArrayOfLength (css, CS.toString o sub, n)

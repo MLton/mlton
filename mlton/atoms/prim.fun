@@ -46,7 +46,6 @@ structure Name =
        | Array_update (* backend *)
        | C_CS_charArrayToWord8Array (* type inference *)
        | Char_toWord8 (* type inference *)
-       | Cpointer_isNull (* codegen *)
        | Exn_extra (* implement exceptions *)
        | Exn_keepHistory (* a compile-time boolean *)
        | Exn_name (* implement exceptions *)
@@ -56,8 +55,6 @@ structure Name =
        | FFI of CFunction.t (* ssa to rssa *)
        | FFI_Symbol of {name: string,
 			ty: CType.t} (* codegen *)
-       | FFI_getPointer (* ssa to rssa *)
-       | FFI_setPointer (* ssa to rssa *)
        | GC_collect (* ssa to rssa *)
        | GC_pack (* ssa to rssa *)
        | GC_unpack (* ssa to rssa *)
@@ -123,6 +120,12 @@ structure Name =
        | MLton_serialize (* unused *)
        | MLton_size (* ssa to rssa *)
        | MLton_touch (* backend *)
+       | Pointer_getInt of IntSize.t (* backend *)
+       | Pointer_getReal of RealSize.t (* backend *)
+       | Pointer_getWord of WordSize.t (* backend *)
+       | Pointer_setInt of IntSize.t (* backend *)
+       | Pointer_setReal of RealSize.t (* backend *)
+       | Pointer_setWord of WordSize.t (* backend *)
        | Real_Math_acos of RealSize.t (* codegen *)
        | Real_Math_asin of RealSize.t (* codegen *)
        | Real_Math_atan of RealSize.t (* codegen *)
@@ -265,7 +268,7 @@ structure Name =
 	   (Int_subCheck, SideEffect, "subCheck")],
 	  fn (makeName, kind, str) =>
 	  (makeName s, kind, concat ["Int", IntSize.toString s, "_", str]))
-
+ 
       fun reals (s: RealSize.t) =
 	 List.map
 	 ([(Real_Math_acos, Functional, "Math_acos"),
@@ -336,15 +339,12 @@ structure Name =
 	  (C_CS_charArrayToWord8Array, DependsOnState,
 	   "C_CS_charArrayToWord8Array"),
 	  (Char_toWord8, Functional, "Char_toWord8"),
-	  (Cpointer_isNull, Functional, "Cpointer_isNull"),
 	  (Exn_extra, Functional, "Exn_extra"),
 	  (Exn_name, Functional, "Exn_name"),
 	  (Exn_setExtendExtra, SideEffect, "Exn_setExtendExtra"),
 	  (Exn_setInitExtra, SideEffect, "Exn_setInitExtra"),
 	  (Exn_setTopLevelHandler, SideEffect, "Exn_setTopLevelHandler"),
 	  (Exn_setTopLevelHandler, SideEffect, "Exn_setTopLevelHandler"),
-	  (FFI_getPointer, DependsOnState, "FFI_getPointer"),
-	  (FFI_setPointer, SideEffect, "FFI_setPointer"),
 	  (GC_collect, SideEffect, "GC_collect"),
 	  (GC_pack, SideEffect, "GC_pack"),
 	  (GC_unpack, SideEffect, "GC_unpack"),
@@ -436,6 +436,22 @@ structure Name =
 			   coerces (Word_toWord, word, word),
 			   coercesX (Word_toWordX, word, word)]
 	   end
+	@ let
+	     fun doit (name, all, toString, get, set) =
+		List.concatMap
+		(all, fn s =>
+		 [(get s, DependsOnState,
+		   concat ["Pointer_get", name, toString s]),
+		  (set s, SideEffect,
+		   concat ["Pointer_set", name, toString s])])
+	  in
+	     List.concat [doit ("Int", IntSize.all, IntSize.toString,
+				Pointer_getInt, Pointer_setInt),
+			  doit ("Real", RealSize.all, RealSize.toString,
+				Pointer_getReal, Pointer_setReal),
+			  doit ("Word", WordSize.all, WordSize.toString,
+				Pointer_getWord, Pointer_setWord)]
+	  end
 	 
       fun toString n =
 	 case n of
@@ -606,8 +622,6 @@ fun 'a extractTargs {args: 'a vector,
        | Exn_extra => one result
        | Exn_setExtendExtra => one (#2 (deArrow (arg 0)))
        | Exn_setInitExtra => one (arg 0)
-       | FFI_getPointer => one result
-       | FFI_setPointer => one (arg 0)
        | MLton_bogus => one result
        | MLton_deserialize => one result
        | MLton_eq => one (arg 0)

@@ -844,8 +844,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	    val c = Operand.Const
 	 in
 	    case t of
-	       Type.CPointer => Error.bug "bogus CPointer"
-	     | Type.EnumPointers (ep as {enum, ...})  =>
+	       Type.EnumPointers (ep as {enum, ...})  =>
 		  Operand.Cast (Operand.int (IntX.one IntSize.default), t)
 	     | Type.ExnStack => Error.bug "bogus ExnStack"
 	     | Type.Int s => c (Const.int (IntX.zero s))
@@ -1148,6 +1147,16 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				end
 			else add (Move {dst = arrayOffset ty,
 					src = varOp (a 2)})
+		     fun pointerGet ty =
+			move (ArrayOffset {base = varOp (a 0),
+					   index = varOp (a 1),
+					   ty = ty})
+		     fun pointerSet ty =
+			add (Move {dst = ArrayOffset {base = varOp (a 0),
+						      index = varOp (a 1),
+						      ty = ty},
+				   src = varOp (a 2)})
+			      
 		     fun refAssign (ty, src) =
 		        let
 			   val addr = varOp (a 0)
@@ -1200,10 +1209,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					NONE => none ()
 				      | SOME ty => arrayUpdate ty)
 			       | FFI f => simpleCCall f
-			       | FFI_getPointer =>
-				    simpleCCall CFunction.getPointer
-			       | FFI_setPointer =>
-				    simpleCCall CFunction.setPointer
 			       | GC_collect =>
 				    ccall
 				    {args = (Vector.new5
@@ -1312,6 +1317,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					NONE => move (Operand.bool true)
 				      | SOME _ => normal ())
 			       | MLton_size => simpleCCall CFunction.size
+			       | Pointer_getInt s => pointerGet (Type.Int s)
+			       | Pointer_getReal s => pointerGet (Type.Real s)
+			       | Pointer_getWord s => pointerGet (Type.Word s)
+			       | Pointer_setInt s => pointerSet (Type.Int s)
+			       | Pointer_setReal s => pointerSet (Type.Real s)
+			       | Pointer_setWord s => pointerSet (Type.Word s)
 			       | Ref_assign =>
 				    (case targ () of
 					NONE => none ()
@@ -1337,34 +1348,26 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    split
 				    (Vector.new0 (), Kind.Jump, ss, fn l =>
 				     let
-					fun doit (dst, prim, a, b) =
-					   let
-					      val tmp = Var.newNoname ()
-					   in
-					      Vector.new2
-					      (Statement.PrimApp
-					       {args = Vector.new2 (a, b),
-						dst = SOME (tmp,
-							    Type.defaultWord),
-						prim = prim},
-					       Statement.Move
-					       {dst = (Operand.Cast
-						       (Operand.Runtime dst,
-							Type.defaultWord)),
-						src = (Operand.Var
-						       {var = tmp,
-							ty = Type.defaultWord})})
-					   end
 					datatype z = datatype GCField.t
+					val tmp = Var.newNoname ()
+					val size = WordSize.pointer ()
+					val ty = Type.cPointer ()
 					val statements =
-					   doit (Limit,
-						 Prim.wordSub WordSize.default,
-						 Operand.Runtime LimitPlusSlop,
-						 Operand.word
-						 (WordX.make
-						  (LargeWord.fromInt
-						   Runtime.limitSlop,
-						   WordSize.default)))
+					   Vector.new2
+					   (Statement.PrimApp
+					    {args = (Vector.new2
+						     (Operand.Runtime LimitPlusSlop,
+						      Operand.word
+						      (WordX.make
+						       (LargeWord.fromInt
+							Runtime.limitSlop,
+							size)))),
+					     dst = SOME (tmp, ty),
+					     prim = Prim.wordSub size},
+					    Statement.Move
+					    {dst = Operand.Runtime Limit,
+					     src = Operand.Var {var = tmp,
+								ty = ty}})
 					val l' =
 					   newBlock
 					   {args = Vector.new0 (),
@@ -1394,12 +1397,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					val statements =
 					   Vector.new1
 					   (Statement.Move
-					    {dst = (Operand.Cast
-						    (Operand.Runtime Limit,
-						     Type.defaultWord)),
+					    {dst = Operand.Runtime Limit,
 					     src =
 					     Operand.word
-					     (WordX.zero WordSize.default)})
+					     (WordX.zero (WordSize.pointer ()))})
 					val l'' =
 					   newBlock
 					   {args = Vector.new0 (),

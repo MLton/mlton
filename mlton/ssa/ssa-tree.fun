@@ -29,7 +29,6 @@ structure Type =
 	| Datatype of Tycon.t
 	| Int of IntSize.t
 	| IntInf
-	| Pointer
 	| PreThread
 	| Real of RealSize.t
 	| Ref of t
@@ -58,7 +57,6 @@ structure Type =
 	    @ List.map (Tycon.ints, fn (t, s) =>
 			(t, nullary (Int s)))
 	    @ [(Tycon.intInf, nullary IntInf),
-	       (Tycon.pointer, nullary Pointer),
 	       (Tycon.preThread, nullary PreThread)]
 	    @ List.map (Tycon.reals, fn (t, s) =>
 			(t, nullary (Real s)))
@@ -94,7 +92,6 @@ structure Type =
 	       | Datatype t => Tycon.layout t
 	       | Int s => str (concat ["int", IntSize.toString s])
 	       | IntInf => str "IntInf.int"
-	       | Pointer => str "pointer"
 	       | PreThread => str "preThread"
 	       | Real s => str (concat ["real", RealSize.toString s])
 	       | Ref t => seq [layout t, str " ref"]

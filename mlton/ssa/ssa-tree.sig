@@ -65,7 +65,6 @@ signature SSA_TREE =
 	     | Datatype of Tycon.t
 	     | Int of IntSize.t
 	     | IntInf
-	     | Pointer
 	     | PreThread
 	     | Real of RealSize.t
 	     | Ref of t

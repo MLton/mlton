@@ -27,7 +27,7 @@ structure PosixError: POSIX_ERROR_EXTRA =
 
       fun errorMsg (n: int) =
 	 let val cs = strerror n
-	 in if Primitive.Cpointer.isNull cs
+	 in if Primitive.Pointer.isNull cs
 	       then "Unknown error"
 	    else C.CS.toString cs
 	 end

@@ -53,7 +53,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	    
 	 fun opendir s =
 	    let val d = Prim.opendir (String.nullTerm s)
-	    in if Primitive.Cpointer.isNull d
+	    in if Primitive.Pointer.isNull d
 		  then Error.error ()
 	       else DS (ref (SOME d))
 	    end
@@ -65,7 +65,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 		  let
 		     val _ = Error.clearErrno ()
 		     val cs = Prim.readdir d
-		  in if Primitive.Cpointer.isNull cs
+		  in if Primitive.Pointer.isNull cs
 			then if Error.getErrno () = 0
 				then NONE
 			     else Error.error ()
@@ -118,7 +118,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	 fun extract a = extractToChar (a, #"\000")
       in
 	 fun getcwd () =
-	    if Primitive.Cpointer.isNull (Prim.getcwd (!buffer, !size))
+	    if Primitive.Pointer.isNull (Prim.getcwd (!buffer, !size))
 	       then (size := 2 * !size
 		     ; buffer := make ()
 		     ; getcwd ())

@@ -54,12 +54,11 @@ signature MACHINE_ATOMS =
       structure Type:
 	 sig
 	    datatype t =
-	       CPointer
 	     (* The ints in an enum are in increasing order without dups.
 	      * The pointers are in increasing order (of index in objectTypes
 	      * vector) without dups.
 	      *)
-	     | EnumPointers of {enum: int vector,
+	       EnumPointers of {enum: int vector,
 				pointers: PointerTycon.t vector}
 	     | ExnStack
 	     | Int of IntSize.t
@@ -72,7 +71,7 @@ signature MACHINE_ATOMS =
 	    val align: t * int -> int       (* align an address *)
 	    val bool: t
 	    val containsPointer: t * PointerTycon.t -> bool
-	    val cpointer: t
+	    val cPointer: unit -> t
 	    val dePointer: t -> PointerTycon.t option
 	    val defaultInt: t
 	    val defaultWord: t
@@ -81,6 +80,7 @@ signature MACHINE_ATOMS =
 	    val fromCType: CType.t -> t
 	    val int: IntSize.t -> t
 	    val intInf: t
+	    val isCPointer: t -> bool
 	    val isPointer: t -> bool
 	    val isReal: t -> bool
 	    val label: Label.t -> t

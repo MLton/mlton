@@ -632,26 +632,7 @@ struct
 	AppendList.appends
 	[comment_begin,
 	 (case Prim.name prim of
-	       Cpointer_isNull 
-	     => let
-		  val (dst,dstsize) = getDst1 ()
-		  val (src,srcsize) = getSrc1 ()
-		in
-		  AppendList.fromList
-		  [Block.mkBlock'
-		   {entry = NONE,
-		    statements 
-		    = [Assembly.instruction_cmp
-		       {src1 = src,
-			src2 = Operand.immediate_const_int 0,
-			size = srcsize},
-		       Assembly.instruction_setcc
-		       {condition = Instruction.E,
-			dst = dst,
-			size = dstsize}],
-		    transfer = NONE}]
-		end
-	     | FFI_Symbol {name, ...}
+	     FFI_Symbol {name, ...}
 	     => let
 		   val (dst,dstsize) = getDst1 ()
 		   val memloc

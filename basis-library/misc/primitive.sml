@@ -52,7 +52,6 @@ structure IntInf =
    end
 structure LargeInt = IntInf
 datatype list = datatype list
-type pointer = pointer (* C integer, not SML heap pointer *)
 
 structure Real32 =
    struct
@@ -97,6 +96,11 @@ type int = Int.int
 type real = Real.real
 type word = Word.word
 
+structure Pointer =
+   struct
+      type t = Word32.word
+   end
+   
 exception Bind = Bind
 exception Fail of string
 exception Match = Match
@@ -150,7 +154,7 @@ structure Primitive =
 	    (* char* *)
 	    structure CS =
 	       struct
-		  type t = pointer
+		  type t = Pointer.t
 
 		  val sub = _import "C_CS_sub": t * int -> char;
 		  val update =
@@ -163,7 +167,7 @@ structure Primitive =
 	    (* char** *)
 	    structure CSS =
 	       struct
-		  type t = pointer
+		  type t = Pointer.t
 		     
 		  val sub = _import "C_CSS_sub": t * int -> CS.t;
 	       end
@@ -189,11 +193,6 @@ structure Primitive =
 	    val argc = fn () => _import "CommandLine_argc": int;
 	    val argv = fn () => _import "CommandLine_argv": cstringArray;
 	    val commandName = fn () => _import "CommandLine_commandName": cstring;
-	 end
-
-      structure Cpointer =
-	 struct
-	    val isNull = _prim "Cpointer_isNull": pointer -> bool;
 	 end
 
       structure Date =
@@ -265,7 +264,6 @@ structure Primitive =
 	    val getInt32 = _import "MLton_FFI_getInt32": int -> Int32.int;
 	    val getInt64 = _import "MLton_FFI_getInt64": int -> Int64.int;
 	    val getOp = _import "MLton_FFI_getOp": unit -> int;
-	    val getPointer = fn z => _prim "FFI_getPointer": int -> 'a; z
 	    val getReal32 = _import "MLton_FFI_getReal32": int -> Real32.real;
 	    val getReal64 = _import "MLton_FFI_getReal64": int -> Real64.real;
 	    val getWord8 = _import "MLton_FFI_getWord8": int -> Word8.word;
@@ -276,7 +274,6 @@ structure Primitive =
 	    val setInt16 = _import "MLton_FFI_setInt16": Int16.int -> unit;
 	    val setInt32 = _import "MLton_FFI_setInt32": Int32.int -> unit;
 	    val setInt64 = _import "MLton_FFI_setInt64": Int64.int -> unit;
-	    val setPointer = fn z => _prim "FFI_setPointer": 'a -> unit; z
 	    val setReal32 = _import "MLton_FFI_setReal32": Real32.real -> unit;
 	    val setReal64 = _import "MLton_FFI_setReal64": Real64.real -> unit;
   	    val setWord8 = _import "MLton_FFI_setWord8": Word8.word -> unit;
@@ -720,6 +717,41 @@ structure Primitive =
 	       _import "PackReal64_update": word8 array * int * real -> unit;
 	    val updateRev =
 	       _import "PackReal64_updateRev": word8 array * int * real -> unit;
+	 end
+
+      structure Pointer =
+	 struct
+	    open Pointer
+
+	    val null: t = 0w0
+	    fun isNull p = p = null
+
+	    val getInt8 = _prim "Pointer_getInt8": t * int -> Int8.int;
+	    val getInt16 = _prim "Pointer_getInt16": t * int -> Int16.int;
+	    val getInt32 = _prim "Pointer_getInt32": t * int -> Int32.int;
+	    val getInt64 = _prim "Pointer_getInt64": t * int -> Int64.int;
+	    val getReal32 = _prim "Pointer_getReal32": t * int -> Real32.real;
+	    val getReal64 = _prim "Pointer_getReal64": t * int -> Real64.real;
+	    val getWord8 = _prim "Pointer_getWord8": t * int -> Word8.word;
+	    val getWord16 = _prim "Pointer_getWord16": t * int -> Word16.word;
+	    val getWord32 = _prim "Pointer_getWord32": t * int -> Word32.word;
+	    val getWord64 = _prim "Pointer_getWord64": t * int -> Word64.word;
+	    val setInt8 = _prim "Pointer_setInt8": t * int * Int8.int -> unit;
+	    val setInt16 = _prim "Pointer_setInt16": t * int * Int16.int -> unit;
+	    val setInt32 = _prim "Pointer_setInt32": t * int * Int32.int -> unit;
+	    val setInt64 = _prim "Pointer_setInt64": t * int * Int64.int -> unit;
+	    val setReal32 =
+	       _prim "Pointer_setReal32": t * int * Real32.real -> unit;
+	    val setReal64 =
+	       _prim "Pointer_setReal64": t * int * Real64.real -> unit;
+  	    val setWord8 =
+	       _prim "Pointer_setWord8": t * int * Word8.word -> unit;
+	    val setWord16 =
+	       _prim "Pointer_setWord16": t * int * Word16.word -> unit;
+	    val setWord32 =
+	       _prim "Pointer_setWord32": t * int * Word32.word -> unit;
+	    val setWord64 =
+	       _prim "Pointer_setWord64": t * int * Word64.word -> unit;
 	 end
 
       structure Ptrace =

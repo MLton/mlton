@@ -78,10 +78,9 @@ fun insertInFunction (f: Function.t): Function.t =
 	    val compare =
 	       Vector.new1
 	       (Statement.PrimApp
-		{args = Vector.new2 (Operand.Cast
-				     (Operand.Runtime Runtime.GCField.Limit,
-				      Type.defaultWord),
-				     Operand.word (WordX.zero WordSize.default)),
+		{args = (Vector.new2
+			 (Operand.Runtime Runtime.GCField.Limit,
+			  Operand.word (WordX.zero (WordSize.pointer ())))),
 		 dst = SOME (res, Type.bool),
 		 prim = Prim.eq})
 	    val compareTransfer =

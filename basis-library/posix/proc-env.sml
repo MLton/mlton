@@ -47,7 +47,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
       fun getlogin () =
 	 let val cs = Prim.getlogin ()
-	 in if Primitive.Cpointer.isNull cs
+	 in if Primitive.Pointer.isNull cs
 	       then raise (Error.SysErr ("no login name", NONE))
 	    else CS.toString cs
 	 end
@@ -110,7 +110,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
       fun getenv name =
 	 let val cs = Prim.getenv (String.nullTerm name)
-	 in if Primitive.Cpointer.isNull cs
+	 in if Primitive.Pointer.isNull cs
 	       then NONE
 	    else SOME (CS.toString cs)
 	 end
@@ -121,7 +121,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
       fun ttyname (FD n) =
 	 let val cs = Prim.ttyname n
-	 in if Primitive.Cpointer.isNull cs
+	 in if Primitive.Pointer.isNull cs
 	       then Error.error ()
 	    else CS.toString cs
 	 end

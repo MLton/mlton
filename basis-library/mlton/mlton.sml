@@ -55,6 +55,7 @@ structure GC = MLtonGC
 structure IntInf = IntInf
 structure Itimer = MLtonItimer
 structure Platform = MLtonPlatform
+structure Pointer = MLtonPointer
 structure ProcEnv = MLtonProcEnv
 structure Process = MLtonProcess
 structure Ptrace = MLtonPtrace

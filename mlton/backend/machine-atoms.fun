@@ -55,8 +55,7 @@ structure PointerTycon =
 structure TypeAndMemChunk =
    struct
       datatype ty =
-	 CPointer
-       | EnumPointers of {enum: int vector,
+	 EnumPointers of {enum: int vector,
 			  pointers: PointerTycon.t vector}
        | ExnStack
        | Int of IntSize.t
@@ -76,8 +75,7 @@ structure TypeAndMemChunk =
 	    open Layout
 	 in
 	    case t of
-	       CPointer => str "cpointer"
-	     | EnumPointers {enum, pointers} => 
+	       EnumPointers {enum, pointers} => 
 		  if 0 = Vector.length enum
 		     andalso 1 = Vector.length pointers
 		     then PointerTycon.layout (Vector.sub (pointers, 0))
@@ -105,8 +103,7 @@ structure TypeAndMemChunk =
 
       fun equalsTy (t, t'): bool =
 	 case (t, t') of
-	    (CPointer, CPointer) => true
-	  | (EnumPointers {enum = e, pointers = p},
+	    (EnumPointers {enum = e, pointers = p},
 	     EnumPointers {enum = e', pointers = p'}) =>
 	       e = e'
 	       andalso (MLton.eq (p, p')
@@ -133,8 +130,7 @@ structure TypeAndMemChunk =
 	 val double: int = 8
       in
 	 val size =
-	    fn CPointer => word
-	     | EnumPointers _ => word
+	    fn EnumPointers _ => word
 	     | ExnStack => word
 	     | Int s => IntSize.bytes s
 	     | IntInf => word
@@ -146,8 +142,7 @@ structure TypeAndMemChunk =
 
       fun isOkTy (t: ty): bool =
 	 case t of
-	    CPointer => true
-	  | EnumPointers {enum, pointers} =>
+	    EnumPointers {enum, pointers} =>
 	       Vector.isSorted (enum, op <=)
 	       andalso Vector.isSorted (pointers, PointerTycon.<=)
 	       andalso (0 = Vector.length pointers
@@ -220,7 +215,7 @@ structure Type =
 
       val bool = EnumPointers {enum = Vector.new2 (0, 1),
 			       pointers = Vector.new0 ()}
-      val cpointer = CPointer
+      fun cPointer () = Word (WordSize.pointer ())
       val defaultInt = Int IntSize.default
       val defaultWord = Word WordSize.default
       val exnStack = ExnStack
@@ -229,6 +224,11 @@ structure Type =
       val label = Label
       val real = Real
       val word = Word
+
+      fun isCPointer t =
+	 case t of
+	    Word s => WordSize.equals (s, WordSize.pointer ())
+	  | _ => false
 
       fun pointer pt =
 	 EnumPointers {enum = Vector.new0 (),
@@ -263,19 +263,18 @@ structure Type =
       in
 	 val fromCType: CType.t -> t =
 	    fn C.Int s => int s
-	     | C.Pointer => cpointer
+	     | C.Pointer => cPointer ()
 	     | C.Real s => real s
 	     | C.Word s => word s
 
 	 val toCType: t -> CType.t =
-	    fn CPointer => C.pointer
-	     | EnumPointers {enum, pointers} =>
+	    fn EnumPointers {enum, pointers} =>
 		  if 0 = Vector.length pointers
 		     then C.defaultInt
 		  else C.pointer
 	     | ExnStack => C.defaultWord
 	     | Int s => C.Int s
-	     | IntInf => C.Pointer
+	     | IntInf => C.pointer
 	     | Label _ => C.defaultWord
 	     | MemChunk _ => C.pointer
 	     | Real s => C.Real s
@@ -484,12 +483,7 @@ fun castIsOk {from: Type.t,
       andalso Type.size from = Type.size to
       andalso
       case from of
-	 CPointer =>
-	    (case to of
-		Int _ => true
-	      | Word _ => true
-	      | _ => false)
-       | EnumPointers (ep as {enum, pointers}) =>
+	 EnumPointers (ep as {enum, pointers}) =>
 	    (case to of
 		EnumPointers ep' => castEnumIsOk (ep, ep')
 	      | IntInf =>

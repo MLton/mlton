@@ -10,8 +10,6 @@ type word = Word.word
    
 signature MLTON =
    sig
-      type pointer
-      
       val cleanAtExit: unit -> unit
 (*      val deserialize: Word8Vector.vector -> 'a *)
       (* Pointer equality.  The usual caveats about lack of a well-defined
@@ -33,6 +31,7 @@ signature MLTON =
       structure IntInf: MLTON_INT_INF
       structure Itimer: MLTON_ITIMER
       structure Platform: MLTON_PLATFORM
+      structure Pointer: MLTON_POINTER
       structure ProcEnv: MLTON_PROC_ENV
       structure Process: MLTON_PROCESS
       structure Profile: MLTON_PROFILE

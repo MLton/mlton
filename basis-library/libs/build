@@ -199,6 +199,8 @@ mlton/gc.sml
 mlton/int-inf.sig
 mlton/platform.sig
 mlton/platform.sml
+mlton/pointer.sig
+mlton/pointer.sml
 mlton/proc-env.sig
 mlton/proc-env.sml
 mlton/profile.sig

@@ -61,8 +61,8 @@ structure Operand =
 		   | Word8Vector _ => Type.word8Vector
 	       end
 	  | EnsuresBytesFree => Type.word WordSize.default
-	  | File => Type.cpointer
-	  | GCState => Type.cpointer
+	  | File => Type.cPointer ()
+	  | GCState => Type.cPointer ()
 	  | Line => Type.int IntSize.default
 	  | Offset {ty, ...} => ty
 	  | PointerTycon _ => Type.word WordSize.default
@@ -1057,8 +1057,7 @@ structure Program =
 		  Type.equals (Operand.ty index, Type.defaultInt)
 		  andalso
 		  case Operand.ty base of
-		     Type.CPointer => true (* needed for card marking *)
-		   | Type.EnumPointers {enum, pointers} =>
+		     Type.EnumPointers {enum, pointers} =>
 			0 = Vector.length enum
 			andalso
 			Vector.forall
@@ -1081,7 +1080,7 @@ structure Program =
 					    Type.equals (ty', Type.word W8)))
 			       end
 			  | _ => false)
-		   | _ => false
+		   | t => Type.isCPointer t
 	       end
 	    and offsetIsOk {base, offset, ty} =
 	       let

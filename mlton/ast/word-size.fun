@@ -9,6 +9,8 @@ val all = [W8, W16, W32, W64]
 
 val default = W32
 
+fun pointer () = W32
+
 val max: t -> LargeWord.t =
    fn W8 => Word.toLarge 0wxFF
     | W16 => Word.toLarge 0wxFFFF

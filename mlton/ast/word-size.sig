@@ -19,6 +19,7 @@ signature WORD_SIZE =
       val equals: t * t -> bool
       val max: t -> LargeWord.t
       val memoize: (t -> 'a) -> t -> 'a
+      val pointer: unit -> t
       val size: t -> int
       val toString: t -> string
    end

@@ -8,7 +8,6 @@ signature MLTON_FFI =
       val getInt16: int -> Int16.int
       val getInt32: int -> Int32.int
       val getInt64: int -> Int64.int
-      val getPointer: int -> 'a
       val getReal32: int -> Real32.real
       val getReal64: int -> Real64.real
       val getWord8: int -> Word8.word
@@ -21,7 +20,6 @@ signature MLTON_FFI =
       val setInt16: Int16.int -> unit
       val setInt32: Int32.int -> unit
       val setInt64: Int64.int -> unit
-      val setPointer: 'a -> unit
       val setReal32: Real32.real -> unit
       val setReal64: Real64.real -> unit
       val setWord8: Word8.word -> unit

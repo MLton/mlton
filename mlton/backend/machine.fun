@@ -251,9 +251,9 @@ structure Operand =
        fn ArrayOffset {ty, ...} => ty
 	| Cast (_, ty) => ty
 	| Contents {ty, ...} => ty
-	| File => Type.cpointer
+	| File => Type.cPointer ()
 	| Frontier => Type.defaultWord
-	| GCState => Type.cpointer
+	| GCState => Type.cPointer ()
 	| Global g => Global.ty g
 	| Int i => Type.int (IntX.size i)
 	| Label l => Type.label l
@@ -978,8 +978,7 @@ structure Program =
 				tyconTy = tyconTy}))
 		      | Contents {oper, ...} =>
 			   (checkOperand (oper, alloc)
-			    ; Type.equals (Operand.ty oper,
-					   Type.cpointer))
+			    ; Type.isCPointer (Operand.ty oper))
 		      | File => true
 		      | Frontier => true
 		      | GCState => true
@@ -1038,8 +1037,7 @@ structure Program =
 	       Type.equals (Operand.ty index, Type.defaultInt)
 	       andalso
 	       case Operand.ty base of
-		  Type.CPointer => true (* needed for card marking *)
-		| Type.EnumPointers {enum, pointers} =>
+		  Type.EnumPointers {enum, pointers} =>
 		     0 = Vector.length enum
 		     andalso
 		     Vector.forall
@@ -1062,7 +1060,7 @@ structure Program =
 					 Type.equals (ty', Type.word W8)))
 			    end
 		       | _ => false)
-		| _ => false
+		| t => Type.isCPointer t
 	    and offsetIsOk {base, offset, ty} =
 	       let
 		  fun memChunkIsOk (MemChunk.T {components, ...}) =
@@ -1074,8 +1072,7 @@ structure Program =
 				  
 	       in
 		  case Operand.ty base of
-		     Type.CPointer => true
-		   | Type.EnumPointers {enum, pointers} =>
+		     Type.EnumPointers {enum, pointers} =>
 			0 = Vector.length enum
 			andalso
 			((* Array_toVector header update. *)
@@ -1091,7 +1088,7 @@ structure Program =
 			     ObjectType.Normal m => memChunkIsOk m
 			   | _ => false))
 		   | Type.MemChunk m => memChunkIsOk m
-		   | _ => false
+		   | t => Type.isCPointer t
 	       end
 	    fun checkOperands (v, a) =
 	       Vector.foreach (v, fn z => checkOperand (z, a))
