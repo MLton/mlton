@@ -98,7 +98,6 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
        | W_SAME_GROUP
        | W_GROUP of pid 
 
-      type status = Status.t
       datatype exit_status =
 	 W_EXITED
        | W_EXITSTATUS of Word8.word

@@ -37,7 +37,7 @@ signature ARRAY =
 signature ARRAY_EXTRA =
    sig
       include ARRAY
-      type 'a vector_slice
+
       structure ArraySlice: ARRAY_SLICE_EXTRA 
 
       val rawArray: int -> 'a array

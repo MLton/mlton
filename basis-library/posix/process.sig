@@ -49,5 +49,4 @@ signature POSIX_PROCESS =
 signature POSIX_PROCESS_EXTRA = 
    sig
       include POSIX_PROCESS
-      type status
    end

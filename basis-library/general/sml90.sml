@@ -91,7 +91,7 @@ local
    val _ = output
    val _ = sin
    val _ = sqrt
-   val _ = std_in
-   val _ = std_out
+   val _ = std_in: instream
+   val _ = std_out: outstream
 in
 end

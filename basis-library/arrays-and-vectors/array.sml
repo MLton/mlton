@@ -18,7 +18,6 @@ structure Array: ARRAY_EXTRA =
 
       type 'a array = 'a array
       type 'a vector = 'a Vector.vector
-      type 'a vector_slice = 'a Vector.VectorSlice.slice
 
       structure ArraySlice =
 	 struct
