@@ -16,7 +16,7 @@ sun)
 esac
 
 doit () {
-	rm -rf '.#'* .*~ *~ *.a *.o .cm CM core mlmon.out
+	rm -rf '.#'* .*~ *~ *.a *.o .cm core mlmon.out
 	if [ -r .cvsignore ]; then
 		for f in `cat .cvsignore`; do rm -rf $f; done
 	fi
