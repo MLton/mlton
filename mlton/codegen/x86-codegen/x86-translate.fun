@@ -955,121 +955,6 @@ struct
 		       end
 	      end
 
-      val toX86Blocks_AllocateArray_arrayPointers_loop
-	= fn {dst,
-	      live,
-	      liveInfo}
-	   => let
-		val dstsize = Operand.toX86Size dst
-		val dst = Operand.toX86Operand dst
-		val _ 
-		  = Assert.assert
-		    ("toX86Blocks: AllocateArray, dstsize",
-		     fn () => dstsize = x86MLton.pointerSize)
-
-		val liveIn = dst::live
-
-		val arrayAllocateLoopTemp 
-		  = x86MLton.arrayAllocateLoopTempContentsOperand
-		val arrayAllocateLoopTempDeref 
-		  = x86MLton.arrayAllocateLoopTempDerefOperand
-		val frontier 
-		  = x86MLton.gcState_frontierContentsOperand
-
-		val arrayPointersZ
-		  = Label.newString "arrayPointersZ"
-		val _ = x86Liveness.LiveInfo.setLiveOperands
-		        (liveInfo,
-			 arrayPointersZ, 
-			 liveIn)
-		val arrayPointersNZ
-		  = Label.newString "arrayPointersNZ"
-		val _ = x86Liveness.LiveInfo.setLiveOperands
-		        (liveInfo,
-			 arrayPointersNZ, 
-			 liveIn)
-		val arrayPointersZJoin
-		  = Label.newString "arrayPointersZJoin"
-		val _ = x86Liveness.LiveInfo.setLiveOperands
-		        (liveInfo,
-			 arrayPointersZJoin, 
-			 liveIn)
-		val arrayPointersLoop
-		  = Label.newString "arrayPointersLoop"
-		val _ = x86Liveness.LiveInfo.setLiveOperands
-		        (liveInfo,
-			 arrayPointersLoop, 
-			 x86MLton.arrayAllocateLoopTempContentsOperand::liveIn)
-		val arrayPointersLoopJoin
-		  = Label.newString "arrayPointersLoopJoin"
-		val _ = x86Liveness.LiveInfo.setLiveOperands
-		        (liveInfo,
-			 arrayPointersLoopJoin, 
-			 liveIn)
-	      in
-		AppendList.fromList
-		[(* for (arrayAllocateLoopTemp = dst; 
-		  *      arrayAllocateLoopTemp < frontier; 
-		  *      arrayAllocateLoopTemp++)
-		  *    *arrayAllocateLoopTemp = 0x1 
-		  *)
-		 x86.Block.T'
-		 {entry = NONE,
-		  profileInfo = x86.ProfileInfo.none,
-		  statements 
-		  = [(* arrayAllocateLoopTemp = dst *)
-		     x86.Assembly.instruction_mov
-		     {dst = arrayAllocateLoopTemp,
-		      src = dst,
-		      size = x86MLton.pointerSize}],
-		  transfer = NONE},
-		 (* if arrayAllocateLoopTemp >= frontier 
-		  *    goto arrayPointersLoopJoin
-		  *)
-		 x86.Block.T'
-		 {entry = NONE,
-		  profileInfo = x86.ProfileInfo.none,
-		  statements
-		  = [x86.Assembly.instruction_cmp
-		     {src1 = arrayAllocateLoopTemp,
-		      src2 = frontier,
-		      size = x86MLton.pointerSize}],
-		  transfer 
-		  = SOME (x86.Transfer.iff
-			  {condition = x86.Instruction.AE,
-			   truee = arrayPointersLoopJoin,
-			   falsee = arrayPointersLoop})},
-		 (* arrayPointersLoop: *)
-		 x86.Block.T'
-		 {entry = SOME (x86.Entry.jump {label = arrayPointersLoop}),
-		  profileInfo = x86.ProfileInfo.none,
-		  statements
-		  = [x86.Assembly.instruction_mov
-		     {dst = arrayAllocateLoopTempDeref,
-		      src = x86.Operand.immediate_const_word 0wx1,
-		      size = x86MLton.pointerSize},
-		     x86.Assembly.instruction_binal
-		     {oper = x86.Instruction.ADD,
-		      dst = arrayAllocateLoopTemp,
-		      src = x86.Operand.immediate_const_int pointerBytes,
-		      size = x86MLton.pointerSize},
-		     x86.Assembly.instruction_cmp
-		     {src1 = arrayAllocateLoopTemp,
-		      src2 = frontier,
-		      size = x86MLton.pointerSize}],
-		  transfer 
-		  = SOME (x86.Transfer.iff
-			  {condition = x86.Instruction.B,
-			   truee = arrayPointersLoop,
-			   falsee = arrayPointersLoopJoin})},
-		 (* arrayPointersLoopJoin: *)
-		 x86.Block.T'
-		 {entry = SOME (x86.Entry.jump {label = arrayPointersLoopJoin}),
-		  profileInfo = x86.ProfileInfo.none,
-		  statements = [],
-		  transfer = NONE}]
-	      end
-
       val toX86Blocks_AllocateArray_arrayPointers
 	= fn {dst, 
 	      numElts as Operand.Int numElts', 
@@ -1079,32 +964,28 @@ struct
 	   => let
 		val frontier = x86MLton.gcState_frontierContentsOperand
 	      in
-		AppendList.cons
-		((x86.Block.T'
-		  {entry = NONE,
-		   profileInfo = x86.ProfileInfo.none,
-		   statements 
-		   = [if numElts' = 0
-			then (* frontier += pointerSize *)
-			     x86.Assembly.instruction_binal
-			     {oper = x86.Instruction.ADD,
-			      dst = frontier,
-			      src = x86.Operand.immediate_const_int pointerBytes,
-			      size = x86MLton.pointerSize}
-			else (* frontier 
-			      *    += numElts * numPointers * pointerSize 
-			      *)
-			     x86.Assembly.instruction_binal
-			     {oper = x86.Instruction.ADD,
-			      dst = frontier,
-			      src = x86.Operand.immediate_const_int
-			            (numElts' * numPointers * pointerBytes),
-				    size = x86MLton.pointerSize}],
-		   transfer = NONE}),
-		 (toX86Blocks_AllocateArray_arrayPointers_loop 
-		  {dst = dst,
-		   live = live,
-		   liveInfo = liveInfo}))
+		AppendList.single
+		(x86.Block.T'
+		 {entry = NONE,
+		  profileInfo = x86.ProfileInfo.none,
+		  statements 
+		  = [if numElts' = 0
+		       then (* frontier += pointerSize *)
+			    x86.Assembly.instruction_binal
+			    {oper = x86.Instruction.ADD,
+			     dst = frontier,
+			     src = x86.Operand.immediate_const_int pointerBytes,
+			     size = x86MLton.pointerSize}
+		       else (* frontier 
+			     *    += numElts * numPointers * pointerSize 
+			     *)
+			    x86.Assembly.instruction_binal
+			    {oper = x86.Instruction.ADD,
+			     dst = frontier,
+			     src = x86.Operand.immediate_const_int
+			           (numElts' * numPointers * pointerBytes),
+			     size = x86MLton.pointerSize}],
+		  transfer = NONE})
 	      end
 	   | {dst, 
 	      numElts,
@@ -1141,87 +1022,70 @@ struct
 		        (liveInfo,
 			 arrayPointersZJoin, 
 			 liveIn)
-		val arrayPointersLoop
-		  = Label.newString "arrayPointersLoop"
-		val _ = x86Liveness.LiveInfo.setLiveOperands
-		        (liveInfo,
-			 arrayPointersLoop, 
-			 liveIn)
-		val arrayPointersLoopJoin
-		  = Label.newString "arrayPointersLoopJoin"
-		val _ = x86Liveness.LiveInfo.setLiveOperands
-		        (liveInfo,
-			 arrayPointersLoopJoin, 
-			 liveIn)		  
 	      in
-		AppendList.append
-		(AppendList.fromList
-		 [(* if (numElts == 0) goto arrayPointersZ *)
-		  x86.Block.T'
-		  {entry = NONE,
-		   profileInfo = x86.ProfileInfo.none,
-		   statements
-		   = [x86.Assembly.instruction_test
-		      {src1 = numElts,
-		       src2 = numElts,
-		       size = numEltsSize}],
-		   transfer 
-		   = SOME (x86.Transfer.iff
-			   {condition = x86.Instruction.Z,
-			    truee = arrayPointersZ,
-			    falsee = arrayPointersNZ})},
-		   (* arrayPointersNZ: *)
-		   x86.Block.T'
-		   {entry = SOME (x86.Entry.jump {label = arrayPointersNZ}),
-		    profileInfo = x86.ProfileInfo.none,
-		    statements
-		    = [(* frontier 
-			*    += numElts * numPointers * pointerSize 
-			*)
-		       x86.Assembly.instruction_mov
-		       {dst = arrayAllocateTemp,
-			src = numElts,
-			size = x86MLton.wordSize},
-		       x86.Assembly.instruction_pmd
-		       {oper = x86.Instruction.MUL,
-			dst = arrayAllocateTemp,
-			src = x86.Operand.immediate_const_int 
-		              (numPointers * pointerBytes),
-			size = x86MLton.wordSize},
-		       x86.Assembly.instruction_binal
-		       {oper = x86.Instruction.ADD,
-			dst = frontier,
-			src = arrayAllocateTemp,
-			size = x86MLton.pointerSize}],
-		    (* goto arrayPointersZJoin *)
-		    transfer 
-		    = SOME (x86.Transfer.goto
-			    {target = arrayPointersZJoin})},
-		   (* arrayPointersZ: *)
-		   x86.Block.T'
-		   {entry = SOME (x86.Entry.jump {label = arrayPointersZ}),
-		    profileInfo = x86.ProfileInfo.none,
-		    statements 
-		    = [(* frontier += pointerSize *)
-		       x86.Assembly.instruction_binal
-		       {oper = x86.Instruction.ADD,
-			dst = frontier,
-			src = x86.Operand.immediate_const_int pointerBytes,
-			size = x86MLton.pointerSize}],
-		    (* goto arrayPointersZJoin *)
-		    transfer 
-		    = SOME (x86.Transfer.goto
-			    {target = arrayPointersZJoin})},
-		   (* arrayPointersZJoin: *)
-		   x86.Block.T'
-		   {entry = SOME (x86.Entry.jump {label = arrayPointersZJoin}),
-		    profileInfo = x86.ProfileInfo.none,
-		    statements = [],
-		    transfer = NONE}],
-		(toX86Blocks_AllocateArray_arrayPointers_loop 
-		 {dst = dst,
-		  live = live,
-		  liveInfo = liveInfo}))
+		AppendList.fromList
+		[(* if (numElts == 0) goto arrayPointersZ *)
+		 x86.Block.T'
+		 {entry = NONE,
+		  profileInfo = x86.ProfileInfo.none,
+		  statements
+		  = [x86.Assembly.instruction_test
+		     {src1 = numElts,
+		      src2 = numElts,
+		      size = numEltsSize}],
+		  transfer 
+		  = SOME (x86.Transfer.iff
+			  {condition = x86.Instruction.Z,
+			   truee = arrayPointersZ,
+			   falsee = arrayPointersNZ})},
+		 (* arrayPointersNZ: *)
+		 x86.Block.T'
+		 {entry = SOME (x86.Entry.jump {label = arrayPointersNZ}),
+		  profileInfo = x86.ProfileInfo.none,
+		  statements
+		  = [(* frontier 
+		      *    += numElts * numPointers * pointerSize 
+		      *)
+		     x86.Assembly.instruction_mov
+		     {dst = arrayAllocateTemp,
+		      src = numElts,
+		      size = x86MLton.wordSize},
+		     x86.Assembly.instruction_pmd
+		     {oper = x86.Instruction.MUL,
+		      dst = arrayAllocateTemp,
+		      src = x86.Operand.immediate_const_int 
+		            (numPointers * pointerBytes),
+		      size = x86MLton.wordSize},
+		     x86.Assembly.instruction_binal
+		     {oper = x86.Instruction.ADD,
+		      dst = frontier,
+		      src = arrayAllocateTemp,
+		      size = x86MLton.pointerSize}],
+		  (* goto arrayPointersZJoin *)
+		  transfer 
+		  = SOME (x86.Transfer.goto
+			  {target = arrayPointersZJoin})},
+		 (* arrayPointersZ: *)
+		 x86.Block.T'
+		 {entry = SOME (x86.Entry.jump {label = arrayPointersZ}),
+		  profileInfo = x86.ProfileInfo.none,
+		  statements 
+		  = [(* frontier += pointerSize *)
+		     x86.Assembly.instruction_binal
+		     {oper = x86.Instruction.ADD,
+		      dst = frontier,
+		      src = x86.Operand.immediate_const_int pointerBytes,
+		      size = x86MLton.pointerSize}],
+		  (* goto arrayPointersZJoin *)
+		  transfer 
+		  = SOME (x86.Transfer.goto
+			  {target = arrayPointersZJoin})},
+		 (* arrayPointersZJoin: *)
+		 x86.Block.T'
+		 {entry = SOME (x86.Entry.jump {label = arrayPointersZJoin}),
+		  profileInfo = x86.ProfileInfo.none,
+		  statements = [],
+		  transfer = NONE}]
 	      end
 
       fun comments statement
