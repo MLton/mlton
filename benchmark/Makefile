@@ -49,11 +49,11 @@ FPBENCH = barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace 
 
 BFLAGS = -mlton "/usr/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
 BFLAGS = -html -mlton "/usr/bin/mlton" -mlkit -mosml -poly -smlnj
-BFLAGS = -mlton "mlton"
+BFLAGS = -mlton "$(BIN)/mlton"
 
 .PHONY: test
 test: $(NAME)
-	export PATH=$(PATH) && cd tests && ../benchmark $(BFLAGS) $(BENCH)
+	cd tests && ../benchmark $(BFLAGS) $(BENCH)
 
 QBENCH = wc-input wc-input1 wc-inputLine wc-inputN wc-inputS wc-input1S wc-inputLineS wc-inputNS wc-scanStream 
 QBFLAGS = -mlton "mlton{-stable,.cvs.HEAD -detect-overflow {false,true}}"
