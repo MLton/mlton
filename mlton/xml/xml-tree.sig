@@ -97,7 +97,7 @@ signature XML_TREE =
 			   targs: Type.t vector}
 	     | Profile of ProfileExp.t
 	     | Raise of {exn: VarExp.t,
-			 filePos: string}
+			 filePos: string option}
 	     | Select of {offset: int,
 			  tuple: VarExp.t}
 	     | Tuple of VarExp.t vector
@@ -205,7 +205,7 @@ signature XML_TREE =
 			  targs: Type.t vector,
 			  args: t vector,
 			  ty: Type.t} -> t
-	    val raisee: {exn: t, filePos: string} * Type.t -> t
+	    val raisee: {exn: t, filePos: string option} * Type.t -> t
 	    val reff: t -> t
 	    val select: {tuple: t, offset: int, ty: Type.t} -> t
 	    val seq: t vector * (t vector -> t) -> t

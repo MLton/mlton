@@ -639,7 +639,7 @@ fun infer {program = p: CoreML.Program.t,
 				       Vector.new1
 				       (NestedPat.new (p, argType),
 					Xexp.raisee ({exn = e,
-						      filePos = filePos},
+						      filePos = SOME filePos},
 						     resultType))]),
 			     caseType = resultType,
 			     region = region}))}
@@ -672,7 +672,7 @@ fun infer {program = p: CoreML.Program.t,
 						    kind = kind}))
       fun patDec (p as (_, tp, rp): patCode,
 		  e as (_, te, re): expCode,
-		  filePos): decCode =
+		  filePos: string): decCode =
 	 (Type.unify (tp, te, rp)
 	  ; (fn (body, ty) =>
 	     let
@@ -686,7 +686,7 @@ fun infer {program = p: CoreML.Program.t,
 				  (NestedPat.new
 				   (NestedPat.Wild, NestedPat.ty p),
 				   Xexp.raisee ({exn = bind (),
-						 filePos = filePos},
+						 filePos = SOME filePos},
 						ty)))),
 			region = Region.append (rp, re)},
 		 ty)
@@ -1041,7 +1041,7 @@ fun infer {program = p: CoreML.Program.t,
 		      val _ = Type.unify (t, Type.exn, region)
 		   in
 		      (fn () => Xexp.raisee ({exn = finishExp e,
-					      filePos = filePos},
+					      filePos = SOME filePos},
 					     Type.toXml (resultType, region)),
 		       resultType, region)
 		   end

@@ -127,7 +127,7 @@ and primExp =
 		args: VarExp.t vector}
   | Profile of ProfileExp.t
   | Raise of {exn: VarExp.t,
-	      filePos: string}
+	      filePos: string option}
   | Select of {tuple: VarExp.t,
 	       offset: int}
   | Tuple of VarExp.t vector
@@ -266,8 +266,11 @@ and primExpToAst e : Aexp.t =
 			 (Ast.Const.String (SourceInfo.toString si),
 			  Region.bogus)))
 	 end
-    | Raise {exn, filePos} => Aexp.raisee {exn = VarExp.toAst exn,
-					   filePos = filePos}
+    | Raise {exn, filePos} =>
+	 Aexp.raisee {exn = VarExp.toAst exn,
+		      filePos = (case filePos of
+				    NONE => ""
+				  | SOME s => s)}
     | Select {tuple, offset} =>
 	 Aexp.select {tuple = VarExp.toAst tuple,
 		      offset = offset}
@@ -354,7 +357,7 @@ structure Exp =
 	    val handler =
 	       new {decs = [prof ProfileExp.Leave,
 			    MonoVal {exp = Raise {exn = VarExp.mono exn,
-						  filePos = ""},
+						  filePos = NONE},
 				     ty = ty,
 				     var = res}],
 		    result = VarExp.mono res}

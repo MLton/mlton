@@ -148,35 +148,41 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 					offset = 0,
 					ty = extraType})
 	       fun raisee {exn: VarExp.t,
-			   filePos: string,
+			   filePos: string option,
 			   ty: Type.t,
-			   var = x : Var.t} =
+			   var = x : Var.t}: Dec.t list =
 		  let
-		     val exn = VarExp.var exn
 		     open Dexp
 		  in
 		     vall
 		     {var = x,
-		      exp = 
-		      extract
-		      (exn, ty, fn tup =>
-		       raisee
-		       ({exn =
-			 makeExn
-			 {exn = select {tuple = tup,
-					offset = 1,
-					ty = sumType},
-			  extra =
-			  app {func = monoVar (extendExtraVar, extendExtraType),
-			       arg = tuple {exps = (Vector.new2
-						    (string filePos,
-						     select {tuple = tup,
-							     offset = 0,
-							     ty = extraType})),
-					    ty = seType},
-			       ty = extraType}},
-			 filePos = filePos},
-			ty))}
+		      exp =
+		      case filePos of
+			 NONE => raisee ({exn = varExp (exn, Type.exn),
+					  filePos = NONE},
+					 ty)
+		       | SOME s =>
+			    extract
+			    (VarExp.var exn, ty, fn tup =>
+			     raisee
+			     ({exn =
+			       makeExn
+			       {exn = select {tuple = tup,
+					      offset = 1,
+					      ty = sumType},
+				extra =
+				app
+				{func = monoVar (extendExtraVar,
+						 extendExtraType),
+				 arg = tuple {exps = (Vector.new2
+						      (string s,
+						       select {tuple = tup,
+							       offset = 0,
+							       ty = extraType})),
+					      ty = seType},
+				 ty = extraType}},
+			       filePos = filePos},
+			      ty))}
 		  end
 	       val extraDatatypes =
 		  Vector.new1 {tycon = Tycon.exn,
@@ -272,7 +278,8 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 			       conApp (tuple {exps = Vector.new2 (uniq,
 								  varExp (x, t)),
 					      ty = tupleType})
-				| _ => Error.bug "unary excon not applied to arg")
+				| _ =>
+				     Error.bug "unary excon not applied to arg")
 			   end
 	       in setExconInfo (con, SOME {refVar = r, make = make})
 		  ; List.push (exnValCons, {con = con, arg = arg})
@@ -293,8 +300,9 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 		  let
 		     fun normal () =
 			primExp (Case {cases = Cases.map (cases, loop),
-				       default = Option.map (default, fn (e, r) =>
-							     (loop e, r)),
+				       default = (Option.map
+						  (default, fn (e, r) =>
+						   (loop e, r))),
 				       test = test})
 		  in
 		     case cases of
@@ -303,7 +311,8 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 			      then normal ()
 			   else
 			      let
-				 val (Pat.T {con, ...}, _) = Vector.sub (cases, 0)
+				 val (Pat.T {con, ...}, _) =
+				    Vector.sub (cases, 0)
 			      in
 				 if not (isExcon con)
 				    then normal ()
@@ -312,8 +321,10 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 				       open Dexp
 				       val defaultVar = Var.newString "default"
 				       fun callDefault () =
-					  app {func = monoVar (defaultVar,
-							       Type.arrow (Type.unit, ty)),
+					  app {func = (monoVar
+						       (defaultVar,
+							Type.arrow
+							(Type.unit, ty))),
 					       arg = unit (),
 					       ty = ty}
 				       val unit = Var.newString "unit"
@@ -330,7 +341,8 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 							 argType = Type.unit,
 							 bodyType = ty,
 							 body = body}}
-				    in makeExp
+				    in
+				       makeExp
 				       (lett
 					{decs = decs,
 					 body =
@@ -339,7 +351,8 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 					  casee
 					  {test = extractSum tuple,
 					   ty = ty,
-					   default = SOME (callDefault (), region),
+					   default = SOME (callDefault (),
+							   region),
 					   cases =
 					   Cases.Con
 					   (Vector.map
@@ -355,12 +368,14 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 							 (#refVar (valOf (exconInfo con)),
 							  Type.unitRef)),
 							ty = ty,
-							thenn = fromExp (loop e, ty),
+							thenn = (fromExp
+								 (loop e, ty)),
 							elsee = callDefault ()}
 						fun make (arg, body) = 
-						   (Pat.T {con = con,
-							   targs = Vector.new0 (),
-							   arg = SOME arg},
+						   (Pat.T
+						    {con = con,
+						     targs = Vector.new0 (),
+						     arg = SOME arg},
 						    body)
 					     in case arg of
 						NONE => make ((refVar, Type.unitRef), body)
@@ -370,7 +385,8 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 							 (Var.newNoname (),
 							  Type.tuple (Vector.new2
 								      (Type.unitRef, t)))
-						   in make (tuple,
+						   in
+						      make (tuple,
 							    detupleBind
 							    {tuple = monoVar tuple,
 							     components =
