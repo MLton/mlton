@@ -192,12 +192,6 @@ signature CONTROL =
 	  product: int
 	 } option ref
 
-      (* Elaborator inserts code to print a message on entry to each function.
-       * In order to use this, the "Primitive" structure must be exported at
-       * the top-level in basis-library/top-level/top-level.sml.
-       *)
-      val printAtFunEntry: bool ref
-
       (* Insert profiling information. *)
       datatype profile = ProfileNone | ProfileAlloc | ProfileTime
       val profile: profile ref

@@ -341,10 +341,6 @@ val polyvariance =
 			    ("product", Int.layout product)])
 	     p)}
 
-val printAtFunEntry = control {name = "print at fun entry",
-			       default = false,
-			       toString = Bool.toString}
-
 structure Profile =
    struct
       datatype t = ProfileNone | ProfileAlloc | ProfileTime

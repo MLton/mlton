@@ -467,32 +467,7 @@ fun elaborateDec (d, E) =
 			       {func = func,
 				args = args,
 				resultType = resultType,
-				body =
-				(if !Control.printAtFunEntry
-				    then
-				       let
-					  val x =
-					     Avar.fromString ("z", Region.bogus)
-					  val c =
-					     Aexp.const
-					     (Aconst.makeRegion
-					      (Aconst.String
-					       (Avar.toString func),
-					       region))
-					  fun make f = Aexp.app (f, c)
-				       in
-					  Aexp.seq
-					  (Vector.new2
-					   (make enterDebug,
-					    Aexp.lett (Vector.new1
-						       (Adec.vall (Vector.new0 (),
-								   x, body)),
-						       Aexp.seq
-						       (Vector.new2
-							(make leaveDebug,
-							 Aexp.var x)))))
-				       end
-				 else body)}
+				body = body}
 			    end)})
 		      val funcs =
 			 Vector.map (clausess, fn {clauses, ...} =>
