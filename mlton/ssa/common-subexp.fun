@@ -17,16 +17,17 @@ type word = Word.t
 
 fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
    let
-      (* Keep track of arguments and in-degree of blocks. *)
-      val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector,
-					inDeg: int ref,
-					success: Exp.t option ref,
-					overflow: Exp.t option ref},
+      (* Keep track of control-flow specific cse's,
+       * arguments, and in-degree of blocks. 
+       *)
+      val {get = labelInfo: Label.t -> {add: (Var.t * Exp.t) list ref,
+					args: (Var.t * Type.t) vector,
+					inDeg: int ref},
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("info", Label.layout))
       (* Keep track of variables used as overflow variables. *)
-      val {get = overflowVar: Var.t -> bool, set = setFailureVar, ...} =
+      val {get = overflowVar: Var.t -> bool, set = setOverflowVar, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst false)
       (* Keep track of the replacements of variables. *)
       val {get = replace: Var.t -> Var.t option, set = setReplace, ...} =
@@ -128,32 +129,28 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 				       statements, transfer},
 			      children)): unit =
 	       let
+		 fun diag s =
+		   Control.diagnostics
+		   (fn display =>
+		    let open Layout
+		    in
+		      display (seq [Label.layout label, str ": ", str s])
+		    end)
+		  val _ = diag "started"
 		  val removes = ref []
-		  val {success, overflow, ...} = labelInfo label
-		  val _ = Option.app
-		          (!success, fn exp =>
+		  val {add, ...} = labelInfo label
+		  val _ = List.foreach
+		          (!add, fn (var, exp) =>
 			   let
-			      val hash = Exp.hash exp
-			      val var = #1 (Vector.sub (args, 0))
-			      val {var = var', ...} = lookup (var, exp, hash)
-			      val _ = if Var.equals (var, var')
-					 then List.push (removes, (var, hash))
-				      else ()
+			     val hash = Exp.hash exp
+			     val elem as {var = var', ...} = lookup (var, exp, hash)
+			     val _ = if Var.equals(var, var')
+				       then List.push (removes, elem)
+				       else ()
 			   in
-			      ()
+			     ()
 			   end)
-		  val _ = Option.app
-		          (!overflow, fn exp =>
-			   let
-			      val hash = Exp.hash exp
-			      val var = Var.newNoname ()
-			      val {var = var', ...} = lookup (var, exp, hash)
-			   in
-			      if Var.equals (var, var')
-				 then (setFailureVar (var, true) 
-				       ; List.push (removes, (var, hash)))
-			      else ()
-			   end)
+		  val _ = diag "added"
 
 		  val statements =
 		     Vector.keepAllMap
@@ -174,11 +171,11 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 				  fun doit () =
 				     let
 				        val hash = Exp.hash exp
-					val {var = var', ...} =
+					val elem as {var = var', ...} = 
 					   lookup (var, exp, hash)
 				     in
-				        if Var.equals (var, var')
-					  then (List.push (removes, (var, hash))
+				        if Var.equals(var, var')
+					  then (List.push (removes, elem)
 						; keep ())
 					  else replace var'
 				     end
@@ -220,6 +217,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 				   | _ => doit ()
 			       end
 		      end)
+		  val _ = diag "statements"
 		  val transfer = Transfer.replaceVar (transfer, canonVar)
 		  val transfer =
 		     case transfer of 
@@ -227,11 +225,11 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
                            let
 			      val {args = succArgs,
 				   inDeg = succInDeg,
-				   success = succ, ...} =
+				   add = succAdd, ...} = 
 				 labelInfo success
 			      val {args = overArgs,
 				   inDeg = overInDeg,
-				   overflow = over, ...} =
+				   add = overAdd, ...} =
 				 labelInfo overflow
 			      val exp = canon (PrimApp {prim = prim,
 							targs = Vector.new0 (),
@@ -246,17 +244,32 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 				       then Goto {dst = overflow,
 						  args = Vector.new0 ()}
 				    else (if !succInDeg = 1
-					     then setReplace 
-					          (#1 (Vector.sub (succArgs, 0)), 
-						   SOME var)
+					     then let
+						     val (var', _) =
+						        Vector.sub (succArgs, 0)
+						  in 
+						     setReplace (var', SOME var)
+						  end
 					  else ()
 					  ; Goto {dst = success,
 						  args = Vector.new1 var})
 			       | NONE => (if !succInDeg = 1
-					     then succ := SOME exp
+					     then let
+						     val (var, _) =
+						        Vector.sub (succArgs, 0)
+						  in 
+						     List.push
+						     (succAdd, (var, exp))
+						  end
 					  else () ;
 					  if !overInDeg = 1
-					     then over := SOME exp
+					     then let
+						     val var = Var.newNoname ()
+						     val _ = setOverflowVar (var, true)
+						  in
+						     List.push
+						     (overAdd, (var, exp))
+						  end
 					  else () ;
 					  transfer)
 			   end
@@ -272,6 +285,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 			      else transfer
 			   end
 		      | _ => transfer
+		  val _ = diag "transfer"
 		  val block = Block.T {args = args,
 				       label = label,
 				       statements = statements,
@@ -279,13 +293,40 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 	       in
 		  List.push (blocks, block) ;
 		  Vector.foreach (children, loop) ;
+		  diag "children";
+		  Control.diagnostics
+		  (fn display =>
+		   let open Layout
+		   in
+		     display (seq [str "removes: ",
+				   List.layout (fn {var,exp,...} => 
+						seq [Var.layout var,
+						     str ": ",
+						     Exp.layout exp]) (!removes)])
+		   end);
 		  List.foreach 
-		  (!removes, fn (var, hash) =>
+		  (!removes, fn {var, exp, hash} =>
 		   HashSet.remove
-		   (table, hash, fn {var = var', ...} =>
-		    Var.equals (var, var')))
+		   (table, hash, fn {var = var', exp = exp', ...} =>
+		    Var.equals (var, var') andalso 
+		    Exp.equals (exp, exp')));
+		  diag "removed"
 	       end
+	    val _ =
+	      Control.diagnostics
+	      (fn display =>
+	       let open Layout
+	       in
+		 display (seq [str "starting loop"])
+	       end)
 	    val _ = loop tree
+	    val _ =
+	      Control.diagnostics
+	      (fn display =>
+	       let open Layout
+	       in
+		 display (seq [str "finished loop"])
+	       end)
 	 in
 	    Vector.fromList (!blocks)
 	 end
@@ -298,9 +339,8 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 	     val _ =
 		Vector.foreach
 		(blocks, fn Block.T {label, args, ...} =>
-		 (setLabelInfo (label, {args = args,
-					success = ref NONE,
-					overflow = ref NONE,
+		 (setLabelInfo (label, {add = ref [],
+					args = args,
 					inDeg = ref 0})))
 	     val _ =
 		Vector.foreach
