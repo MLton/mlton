@@ -14,10 +14,9 @@ structure Contify = Contify (S)
 structure ImplementHandlers = ImplementHandlers (S)
 (* structure Inline = Inline (S) *)
 structure IntroduceLoops = IntroduceLoops (S)
-(* structure LocalFlatten = LocalFlatten (S) *)
+structure LocalFlatten = LocalFlatten (S)
 (* structure LoopInvariant = LoopInvariant (S) *)
 (* structure PolyEqual = PolyEqual (S) *)
-(* structure RaiseToJump = RaiseToJump (S) *)
 (* structure Redundant = Redundant (S) *)
 (* structure RedundantTests = RedundantTests (S) *)
 structure RemoveUnused = RemoveUnused (S)
@@ -34,14 +33,13 @@ fun traces s p = (Trace.Immediate.on s; p)
 
 val passes =
    [
-(*    ("removeUnused1", RemoveUnused.remove), *)
+     ("removeUnused1", RemoveUnused.remove),
 (*    ("leafInline", leafInline), *)
-(*    ("raiseToJump1", RaiseToJump.raiseToJump), *)
     (* contify should be run before constant propagation because of the once
      * pass that only looks at main -- hence want as much in main as possible.
      *)
-(*    ("contify1", Contify.contify), *)
-(*    ("localFlatten1", LocalFlatten.flatten), *)
+     ("contify1", Contify.contify),
+     ("localFlatten1", LocalFlatten.flatten),
     (* constantPropagation cannot be omitted. It implements Array_array0. *)
 (*    ("constantPropagation", ConstantPropagation.simplify), *)
     (*
@@ -49,7 +47,7 @@ val passes =
      * makes slots of tuples that are constant useless.
      *)
 (*    ("useless", Useless.useless), *)
-(*    ("removeUnused2", RemoveUnused.remove), *)
+     ("removeUnused2", RemoveUnused.remove),
 (*    ("simplifyTypes", SimplifyTypes.simplify), *)
     (* polyEqual cannot be omitted.  It implements MLton_equal.
      * polyEqual should run
@@ -57,16 +55,15 @@ val passes =
      *   - before inlining so that equality functions can be inlined
      *)
 (*    ("polyEqual", PolyEqual.polyEqual), *)
-(*    ("contify2", Contify.contify), *)
+     ("contify2", Contify.contify),
 (*    ("inline", Inline.inline), *)
-(*    ("localFlatten2", LocalFlatten.flatten), *)
-(*    ("removeUnused3", RemoveUnused.remove), *)
-(*    ("raiseToJump2", RaiseToJump.raiseToJump), *)
+     ("localFlatten2", LocalFlatten.flatten),
+     ("removeUnused3", RemoveUnused.remove),
      ("contify3", Contify.contify),
      ("introduceLoops", IntroduceLoops.introduceLoops),
 (*    ("loopInvariant", LoopInvariant.loopInvariant), *)
 (*    ("flatten", Flatten.flatten), *)
-(*    ("localFlatten3", LocalFlatten.flatten), *)
+     ("localFlatten3", LocalFlatten.flatten),
      ("commonSubexp", CommonSubexp.eliminate),
      ("commonBlock", CommonBlock.eliminate),
 (*    ("redundantTests", RedundantTests.simplify), *)
