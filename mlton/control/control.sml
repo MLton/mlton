@@ -439,49 +439,67 @@ fun trace (verb, name: string) (f: 'a -> 'b) (a: 'a): 'b =
    else
       f a
 
-val ('a, 'b) traceBatch: (verbosity * string) -> ('a -> 'b) -> 
+type traceAccum = {verb: verbosity, 
+		   total: Time.t ref, 
+		   totalGC: Time.t ref}
+
+val traceAccum: (verbosity * string) -> (traceAccum * (unit -> unit)) =
+   fn (verb, name) =>
+   let
+     val total = ref Time.zero
+     val totalGC = ref Time.zero
+   in
+     ({verb = verb, total = total, totalGC = totalGC},
+      fn () => messageStr (verb,
+			   concat [name, 
+				   " totals ",
+				   timeToString
+				   {total = !total,
+				    gc = !totalGC}]))
+   end
+
+val ('a, 'b) traceAdd: (traceAccum * string) -> ('a -> 'b) -> 'a -> 'b =
+   fn ({verb, total, totalGC}, name) =>
+   if Verbosity.<= (verb, !verbosity)
+     then fn f =>
+          fn a =>
+	  let
+	    val (t, gc) = time ()
+	    fun done () 
+	      = let
+		  val (t', gc') = time ()
+		in
+		  total := timePlus 
+		           (!total,
+			    timeMinus
+			    (t', t,
+			     "traceAdd: 't - t"),
+			    "traceAdd: !total") ;
+		  totalGC := timePlus
+		             (!totalGC,
+			      timeMinus
+			      (gc', gc,
+			       "traceAdd: gc' - gc"),
+			      "traceAdd: !totalGC")
+		end
+	  in
+	    (f a
+	     before done ())
+	    handle e => (messageStr (verb,
+				     concat [name, " raised"])
+			 ; raise e)
+	  end
+     else fn f => f
+
+val ('a, 'b) traceBatch: (verbosity * string) -> ('a -> 'b) ->
                          (('a -> 'b) * (unit -> unit)) =
    fn (verb, name) =>
-   fn f => let
-	     val total = ref Time.zero
-	     val totalGC = ref Time.zero
-	   in
-	     (fn a
-	       => if Verbosity.<= (verb, !verbosity)
-		    then let
-			   val (t, gc) = time ()
-			   fun done ()
-			     = let
-				 val (t', gc') = time ()
-			       in
-				 total :=
-				 timePlus (!total,
-					   timeMinus
-					   (t', t,
-					    "traceBatch: 't - t"),
-					   "traceBatch: !total") ;
-				 totalGC :=
-				 timePlus (!totalGC,
-					   timeMinus
-					   (gc', gc,
-					    "traceBatch: gc' - gc"),
-					   "traceBatch: !totalGC")
-			       end
-			 in
-			   (f a
-			    before done ())
-			   handle e => (messageStr (verb,
-						    concat [name, " raised"])
-					; raise e)
-			 end
-		    else f a,
-	      fn () => messageStr (verb,
-				   concat [name,
-					   " totals ",
-					   timeToString
-					   {total = !total,
-					    gc = !totalGC}]))
-	   end
+   let
+     val (ta,taMsg) = traceAccum (verb, name)
+   in
+     fn f =>
+     (traceAdd (ta,name) f, taMsg)
+   end
 
 (*------------------------------------*)
 (*               Errors               *)

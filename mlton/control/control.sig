@@ -181,6 +181,9 @@ signature CONTROL =
       val messageStr: verbosity * string -> unit
       val sizeMessage: string * 'a -> Layout.t
       val trace: verbosity * string -> ('a -> 'b) -> 'a -> 'b
+      type traceAccum
+      val traceAccum: verbosity * string -> (traceAccum * (unit -> unit))
+      val traceAdd: traceAccum * string -> ('a -> 'b) -> 'a -> 'b
       val traceBatch: verbosity * string -> ('a -> 'b) -> 
                       (('a -> 'b) * (unit -> unit))
       val indent: unit -> unit
