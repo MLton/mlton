@@ -323,15 +323,25 @@ functor Real (R: PRE_REAL): REAL =
 		     if Int.< (exp, 0)
 			then concat ["-", Int.toString (Int.~ exp)]
 		     else Int.toString exp
-		  val x =
-		     concat ["0.",
-			     implode (List.map
-				      (fn d =>
-				       if Int.< (d, 0) orelse Int.> (d, 9)
-					  then raise Bad
-				       else Char.chr (Int.+ (d, Char.ord #"0")))
-				      digits),
-			     "E", exp, "\000"]
+(*		  val x = concat ["0.", digits, "E", exp, "\000"] *)
+		  val n  =
+		     Int.+ (4, Int.+ (List.length digits, String.size exp))
+		  val a = Array.rawArray n
+		  fun up (i, c) = (Array.update (a, i, c); Int.+ (i, 1))
+		  val i = 0
+		  val i = up (i, #"0")
+		  val i = up (i, #".")
+		  val i =
+		     List.foldl
+		     (fn (d, i) =>
+		      if Int.< (d, 0) orelse Int.> (d, 9)
+			 then raise Bad
+		      else up (i, Char.chr (Int.+ (d, Char.ord #"0"))))
+		     i digits
+		  val i = up (i, #"E")
+		  val i = CharVector.foldl (fn (c, i) => up (i, c)) i exp
+		  val _ = up (i, #"\000")
+		  val x = Vector.fromArray a
 		  val x = Prim.strto (NullString.fromString x)
 	       in
 		  if sign
