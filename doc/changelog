@@ -1,3 +1,10 @@
+Here are the changes since version 20030312
+
+* 2003-03-21
+  - Fixed mlprof so that the default -graph arg for data from
+    -profile-stack true is '(thresh-stack x)', not '(thresh x)'.
+
+--------------------------------------------------------------------------------
 Here are the changes from version 20020923 to 20030312.
 
 Summary:

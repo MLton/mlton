@@ -710,11 +710,10 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
 	       let
 		  datatype z = datatype NodePred.t
 		  datatype z = datatype Atomic.t
-		  val p = Atomic (Thresh thresh)
 	       in
 		  if profileStack
-		     then p
-		  else PathTo p
+		     then Atomic (ThreshStack thresh)
+		  else PathTo (Atomic (Thresh thresh))
 	       end
 	  | SOME p => p
       val keepNodes =
