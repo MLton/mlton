@@ -35,7 +35,7 @@ signature MACHINE =
       sharing PointerTycon = Switch.PointerTycon
       sharing Type = Switch.Type
       sharing WordX = Switch.WordX
-      structure ChunkLabel: ID_NO_AST
+      structure ChunkLabel: ID
 
       structure Register:
 	 sig

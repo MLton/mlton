@@ -10,7 +10,6 @@ Group
 signature AST
 signature ATOMS
 signature ID
-signature ID_NO_AST
 signature INT_X
 signature C_FUNCTION
 signature C_TYPE
@@ -35,7 +34,6 @@ signature WORD_X
 
 functor Atoms
 functor Id
-functor IdNoAst
 functor GenericScheme
 functor HashType
 functor TypeOps

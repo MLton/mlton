@@ -5,14 +5,14 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-signature ID_NO_AST_STRUCTS =
+signature ID_STRUCTS =
    sig
       val noname: string
    end
 
-signature ID_NO_AST =
+signature ID =
    sig
-      include ID_NO_AST_STRUCTS
+      include ID_STRUCTS
 
       type t
 
@@ -28,16 +28,6 @@ signature ID_NO_AST =
       val plist: t -> PropertyList.t
       val sameName: t * t -> bool
       val toString: t -> string
-   end
-
-signature ID_STRUCTS =
-   sig
-      include ID_NO_AST_STRUCTS
-   end
-
-signature ID =
-   sig
-      include ID_NO_AST
    end
 
 signature HASH_ID =

@@ -33,7 +33,7 @@ structure Atoms = MachineAtoms (open S
 				structure WordSize = WordSize)
 open Atoms
 
-structure ChunkLabel = IdNoAst (val noname = "ChunkLabel")
+structure ChunkLabel = Id (val noname = "ChunkLabel")
 
 structure SmallIntInf =
    struct
