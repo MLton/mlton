@@ -52,12 +52,12 @@
 \sec{Formal Specification of MLBs}{mlb-formal}
     {Formal_Spec_MLBs.html}
 %
-This section formally specifies the ML Basis system (MLBs) in {\mlton} used
-to program in the large.  The system has been designed to be a natural
-extension of Standard ML, and the specification is given in the style
-of The Definition of Standard ML (henceforeth, the Definition).  This
-section adopts (often silently) abbreviations, conventions,
-definitions, and notation from the Definition.
+This section formally specifies the ML Basis system (MLBs) in {\mlton}
+used to program in the large.  The system has been designed to be a
+natural extension of Standard ML, and the specification is given in
+the style of The Definition of Standard ML~\cite{MTHM97} (henceforeth,
+the Definition).  This section adopts (often silently) abbreviations,
+conventions, definitions, and notation from the Definition.
 %
 \subsection{Syntax of MLBs}
 For MLBs there are further reserved words, identifier classes and
@@ -211,11 +211,11 @@ file in the underlying file system are considered equal, though they may
 have distinct textual representations.  An implementation
 may allow additional extensions (e.g., $\mtt{.ML}$, $\mtt{.fun}$,
 $\mtt{.sig}$) in elements of $\mrm{SourcePath}$.  An implementation
-may additionally allow system environment variables to appear in
+may additionally allow path variables to appear in
 paths.  $\mrm{Parser}$ could be refined by a \emph{current working
 directory}, to formally specify the interpretation of relative paths,
-and an \emph{system environment}, to formally specify the
-interpretation of system environment variables, but the above suffices
+and an \emph{path map}, to formally specify the
+interpretation of path variables, but the above suffices
 for the development in the following sections.
 %
 \subsection{Static Semantics for MLBs}
@@ -306,7 +306,7 @@ in the Core and Modules semantics.
 
 \begin{equation}
 \judge{
-\mit{M}, \Psi  \vdash \mit{basdec}_1 \longrightarrow \mit{M}_1, \Psi_2 \quad
+\mit{M}, \Psi  \vdash \mit{basdec}_1 \longrightarrow \mit{M}_1, \Psi_1 \quad
 \mit{M} \oplus \mit{M}_1, \Psi_1  \vdash \mit{basdec}_2 \longrightarrow \mit{M}_2, \Psi_2 \quad
 }{
 \mit{M}, \Psi  \vdash \mtt{local}~ \mit{basdec}_1 ~\mtt{in}~ \mit{basdec}_2 ~\mtt{end} \longrightarrow \mit{M}_2, \Psi_2
@@ -358,7 +358,7 @@ in the Core and Modules semantics.
 
 \begin{equation}
 \judge{
-\mit{M}, \Psi  \vdash \mit{basdec}_1 \longrightarrow \mit{M}_1, \Psi_2 \quad
+\mit{M}, \Psi  \vdash \mit{basdec}_1 \longrightarrow \mit{M}_1, \Psi_1 \quad
 \mit{M} \oplus \mit{M}_1, \Psi_1  \vdash \mit{basdec}_2 \longrightarrow \mit{M}_2, \Psi_2 
 }{
 \mit{M}, \Psi  \vdash \mit{basdec}_1 ~\langle\mtt{;}\rangle~ \mit{basdec}_2 \longrightarrow \mit{M}_1 \oplus \mit{M}_2, \Psi_2
@@ -392,6 +392,16 @@ in the Core and Modules semantics.
 \mit{M}, \Psi  \vdash \msf{path.mlb}  \longrightarrow \mit{M}', \Psi' + \{\msf{path.mlb} \mapsto \mit{M}'\} 
 }
 \end{equation}
+
+\begin{samepage}
+\noindent
+\textit{Comments}:
+\begin{itemize}
+\item[(\ref{eqn:mlb:SS:path.sml})] 
+Note the use of the Definition's 
+$\mit{B} \vdash \mit{topdec} \Rightarrow \mit{B}'$.
+\end{itemize}
+\end{samepage}
 
 \vspace{2\parsep}
 {\large\noindent
@@ -577,7 +587,7 @@ $\mit{basbind}$.
 
 \begin{equation}
 \judge{
-\mit{M}, \Psi  \vdash \mit{basdec}_1 \longrightarrow \mit{M}_1, \Psi_2 \quad
+\mit{M}, \Psi  \vdash \mit{basdec}_1 \longrightarrow \mit{M}_1, \Psi_1 \quad
 \mit{M} + \mit{M}_1, \Psi_1  \vdash \mit{basdec}_2 \longrightarrow \mit{M}_2, \Psi_2 \quad
 }{
 \mit{M}, \Psi  \vdash \mtt{local}~ \mit{basdec}_1 ~\mtt{in}~ \mit{basdec}_2 ~\mtt{end} \longrightarrow \mit{M}_2, \Psi_2
@@ -629,7 +639,7 @@ $\mit{basbind}$.
 
 \begin{equation}
 \judge{
-\mit{M}, \Psi  \vdash \mit{basdec}_1 \longrightarrow \mit{M}_1, \Psi_2 \quad
+\mit{M}, \Psi  \vdash \mit{basdec}_1 \longrightarrow \mit{M}_1, \Psi_1 \quad
 \mit{M} + \mit{M}_1, \Psi_1  \vdash \mit{basdec}_2 \longrightarrow \mit{M}_2, \Psi_2 
 }{
 \mit{M}, \Psi  \vdash \mit{basdec}_1 ~\langle\mtt{;}\rangle~ \mit{basdec}_2 \longrightarrow \mit{M}_1 \oplus \mit{M}_2, \Psi_2
@@ -637,6 +647,7 @@ $\mit{basbind}$.
 \end{equation}
 
 \begin{equation}
+\label{eqn:mlb:DS:path.sml}
 \judge{
 \mcal{P}(\mit{FE}~\mrm{of}~\mit{M}, \msf{path.sml}) = (\mit{FE}', \mit{topdec}) \quad
 \mit{B}~\mrm{of}~\mit{M} \vdash \mit{topdec} \Rightarrow \mit{B}'
@@ -662,6 +673,16 @@ $\mit{basbind}$.
 \mit{M}, \Psi  \vdash \msf{path.mlb}  \longrightarrow \mit{M}', \Psi' + \{\msf{path.mlb} \mapsto \mit{M}'\} 
 }
 \end{equation}
+
+\begin{samepage}
+\noindent
+\textit{Comments}:
+\begin{itemize}
+\item[(\ref{eqn:mlb:DS:path.sml})] 
+Note the use of the Definition's 
+$\mit{B} \vdash \mit{topdec} \Rightarrow \mit{B}'$.
+\end{itemize}
+\end{samepage}
 
 \vspace{2\parsep}
 {\large\noindent
