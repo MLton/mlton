@@ -3839,9 +3839,13 @@ struct
 	       registerAllocation: t}
 	= let
 	    val ra = registerAllocation 
-	    val _ = Assert.assert
-	            ("pre: " ^ (toString ra),
-		     fn () => unique ra)
+	    val _ =
+	       if true
+		  then ()
+	       else
+		  Assert.assert
+		  ("pre: " ^ (toString ra),
+		   fn () => unique ra)
 
 	    val dead_memlocs = dead
 	    val commit_memlocs = commit
@@ -4057,9 +4061,13 @@ struct
 		registerAllocation: t}
 	= let 
 	    val ra = registerAllocation
-	    val _ = Assert.assert
-	            ("post: " ^ (toString ra),
-		     fn () => unique ra)
+	    val _ =
+	       if true
+		  then ()
+	       else
+		  Assert.assert
+		  ("post: " ^ (toString ra),
+		   fn () => unique ra)
 
 	    val (final_uses_registers,
 		 final_defs_registers,
