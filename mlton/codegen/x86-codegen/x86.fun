@@ -4205,52 +4205,58 @@ struct
 		    then Transfer.toString (valOf transfer)
 		    else "NONE");
 	   print "\n")
+ 
+      val compress': t' list -> t' list =
+	 fn l =>
+	 List.fold
+	 (rev l, [],
+	  fn (b' as T' {entry, profileLabel, statements, transfer}, ac) =>
+	  case transfer of
+	     SOME transfer => b' :: ac
+	   | NONE =>
+		case ac of
+		   [] => Error.bug "compress' with dangling transfer"
+		 | b2' :: ac =>
+		      let
+			 val T' {entry = entry2,
+				 profileLabel = profileLabel2,
+				 statements = statements2,
+				 transfer = transfer2} = b2'
+		      in
+			 case entry2 of
+			    SOME _ =>
+			       Error.bug "compress' with mismatched transfer"
+			  | NONE =>
+			       let
+				  val (pl, ss) =
+				     case (profileLabel, statements) of
+					(NONE, []) =>
+					   (profileLabel2, statements2)
+				      | _ => 
+					   (profileLabel,
+					    statements
+					    @ (ProfileLabel.toAssemblyOpt
+					       profileLabel2)
+					    @ statements2)
+			       in
+				  T' {entry = entry,
+				      profileLabel = pl,
+				      statements = ss,
+				      transfer = transfer2} :: ac
+			       end
+		      end)
 
-      val rec compress
-	= fn [] => []
-           | [T' {entry = SOME entry1,
-		  profileLabel = profileLabel1,
-		  statements = statements1,
-		  transfer = SOME transfer1}]
-	   => [T {entry = entry1,
-		  profileLabel = profileLabel1,
-		  statements = statements1,
-		  transfer = transfer1}]
-	   | (T' {entry = SOME entry1,
-		  profileLabel = profileLabel1,
-		  statements = statements1,
-		  transfer = SOME transfer1})::blocks
-	   => (T {entry = entry1,
-		  profileLabel = profileLabel1,
-		  statements = statements1,
-		  transfer = transfer1})::(compress blocks)
-	   | (T' {entry = SOME entry1, 
-		  profileLabel = NONE,
-		  statements = [], 
-		  transfer = NONE})::
-	     (T' {entry = NONE, 
-		  profileLabel = profileLabel2,
-		  statements = statements2, 
-		  transfer = transfer2})::blocks
-           => compress ((T' {entry = SOME entry1,
-			     profileLabel = profileLabel2,
-			     statements = statements2,
-			     transfer = transfer2})::blocks)
-	   | (T' {entry = SOME entry1, 
-		  profileLabel = profileLabel1,
-		  statements = statements1, 
-		  transfer = NONE})::
-	     (T' {entry = NONE, 
-		  profileLabel = profileLabel2,
-		  statements = statements2, 
-		  transfer = transfer2})::blocks
-           => compress ((T' {entry = SOME entry1,
-			     profileLabel = profileLabel1,
-			     statements = statements1 @
-			                  (ProfileLabel.toAssemblyOpt profileLabel2) @
-			                  statements2,
-			     transfer = transfer2})::blocks)
-	   | _ => Error.bug "Blocks.compress"
+      val compress: t' list -> t list =
+	 fn l =>
+	 List.map
+	 (compress' l, fn T' {entry, profileLabel, statements, transfer} =>
+	  case (entry, transfer) of
+	     (SOME e, SOME t) =>
+		T {entry = e,
+		   profileLabel = profileLabel,
+		   statements = statements,
+		   transfer = t}
+	   | _ => Error.bug "compress")
     end
 
   structure Chunk =
