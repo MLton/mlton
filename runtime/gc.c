@@ -19,7 +19,7 @@
  */
 
 #ifndef DEBUG
-#define DEBUG TRUE
+#define DEBUG FALSE
 #endif
 
 #ifndef DEBUG_PROFILE
