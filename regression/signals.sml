@@ -5,7 +5,7 @@ structure List =
       fun foreach (l, f) = app f l
    end
 structure Process = Posix.Process
-open Process MLton.Signal 
+open Process Posix.Signal MLton.Signal 
 
 fun print s = let open TextIO
 	      in output (stdErr, s)

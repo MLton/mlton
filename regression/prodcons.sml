@@ -270,6 +270,14 @@ fun main (name, args) =
 
 end
 
-structure Z = Z (structure MLton = MLton)
+structure Z = Z (structure MLton =
+		    struct
+		       open MLton
+
+		       structure Signal =
+			  struct
+			     open Posix.Signal Signal
+			  end
+		    end)
 
 val _ = Z.main ( "prodcons", ["100000"] )

@@ -17,7 +17,7 @@ fun succeed () =
    in exit success
    end
 
-open MLton.World MLton.Signal Posix.Process Posix.ProcEnv
+open MLton.World MLton.Signal Posix.Signal Posix.Process Posix.ProcEnv
 
 val (w, out) = MLton.TextIO.mkstemp "/tmp/world"
 val _ = TextIO.closeOut out

@@ -1,4 +1,4 @@
-open MLton.Signal Posix.Process
+open Posix.Signal MLton.Signal Posix.Process
 
 val _ =
    case fork () of

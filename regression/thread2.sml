@@ -33,6 +33,7 @@ structure Thread:
       val yield: unit -> unit
    end =
    struct
+      open Posix.Signal
       open MLton
       open Itimer Signal Thread
 
