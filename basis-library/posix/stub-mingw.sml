@@ -1,12 +1,15 @@
 (* Stub out functions that are not implemented on MinGW. *)
 local
    structure Error = PosixError
-   val stub: ('a -> 'b) -> ('a -> 'b) =
-      fn f => 
+   val stub: string * ('a -> 'b) -> ('a -> 'b) =
+      fn (msg, f) => 
       if let open Primitive.MLton.Platform.OS
 	 in MinGW = host
 	 end
-	 then fn _ => Error.raiseSys Error.nosys
+	 then fn _ => (if true then ()
+		       else (Primitive.Stdio.print msg
+			     ; Primitive.Stdio.print "\n")
+		       ; Error.raiseSys Error.nosys)
       else f
 in
    structure PosixPrimitive =
@@ -17,76 +20,69 @@ in
 	    struct
 	       open FileSys
 
-	       val chown = stub chown
-	       val fchown = stub fchown
-	       val fpathconf = stub fpathconf
-	       val ftruncate = stub ftruncate
-	       val link = stub link
-	       val mkfifo = stub mkfifo
-	       val pathconf = stub pathconf
-	       val readlink = stub readlink
-	       val symlink = stub symlink
+	       val chown = stub ("chown", chown)
+	       val fchown = stub ("fchown", fchown)
+	       val fpathconf = stub ("fpathconf", fpathconf)
+	       val ftruncate = stub ("ftruncate", ftruncate)
+	       val link = stub ("link", link)
+	       val mkfifo = stub ("mkfifo", mkfifo)
+	       val pathconf = stub ("pathconf", pathconf)
+	       val readlink = stub ("readlink", readlink)
+	       val symlink = stub ("symlink", symlink)
 	    end
 
 	 structure IO =
 	    struct
 	       open IO
 		  
-	       val fcntl2 = stub fcntl2
-	       val fcntl3 = stub fcntl3
+	       val fcntl2 = stub ("fcntl2", fcntl2)
+	       val fcntl3 = stub ("fcntl3", fcntl3)
 	    end
 
 	 structure ProcEnv =
 	    struct
 	       open ProcEnv
 
-	       structure Uname =
-		  struct
-		     open Uname
-
-		     val uname = stub uname
-		  end
-
-	       val ctermid = stub ctermid
-	       val getegid = stub getegid
-	       val geteuid = stub geteuid
-	       val getgid = stub getgid
-	       val getgroups = stub getgroups
-	       val getlogin = stub getlogin
-	       val getpgrp = stub getpgrp
-	       val getpid = stub getpid
-	       val getppid = stub getppid
-	       val getuid = stub getuid
-	       val setgid = stub setgid
-	       val setpgid = stub setpgid
-	       val setsid = stub setsid
-	       val setuid = stub setuid
-	       val sysconf = stub sysconf
-	       val times = stub times
-	       val ttyname = stub ttyname
+	       val ctermid = stub ("ctermid", ctermid)
+	       val getegid = stub ("getegid", getegid)
+	       val geteuid = stub ("geteuid", geteuid)
+	       val getgid = stub ("getgid", getgid)
+	       val getgroups = stub ("getgroups", getgroups)
+	       val getlogin = stub ("getlogin", getlogin)
+	       val getpgrp = stub ("getpgrp", getpgrp)
+	       val getpid = stub ("getpid", getpid)
+	       val getppid = stub ("getppid", getppid)
+	       val getuid = stub ("getuid", getuid)
+	       val setgid = stub ("setgid", setgid)
+	       val setpgid = stub ("setpgid", setpgid)
+	       val setsid = stub ("setsid", setsid)
+	       val setuid = stub ("setuid", setuid)
+	       val sysconf = stub ("sysconf", sysconf)
+	       val times = stub ("times", times)
+	       val ttyname = stub ("ttyname", ttyname)
 	    end
 
 	 structure SysDB =
 	    struct
 	       open SysDB
 		  
-	       val getgrgid = stub getgrgid
-	       val getgrnam = stub getgrnam
-	       val getpwuid = stub getpwuid
+	       val getgrgid = stub ("getgrgid", getgrgid)
+	       val getgrnam = stub ("getgrnam", getgrnam)
+	       val getpwuid = stub ("getpwuid", getpwuid)
 	    end
 
 	 structure TTY =
 	    struct
 	       open TTY
 		  
-	       val drain = stub drain
-	       val flow = stub flow
-	       val flush = stub flush
-	       val getattr = stub getattr
-	       val getpgrp = stub getpgrp
-	       val sendbreak = stub sendbreak
-	       val setattr = stub setattr
-	       val setpgrp = stub setpgrp
+	       val drain = stub ("drain", drain)
+	       val flow = stub ("flow", flow)
+	       val flush = stub ("flush", flush)
+	       val getattr = stub ("getattr", getattr)
+	       val getpgrp = stub ("getpgrp", getpgrp)
+	       val sendbreak = stub ("sendbreak", sendbreak)
+	       val setattr = stub ("setattr", setattr)
+	       val setpgrp = stub ("setpgrp", setpgrp)
 	    end
       end
    
@@ -98,7 +94,7 @@ in
 	    struct
 	       open Itimer
 
-	       val set = stub set
+	       val set = stub ("set", set)
 	    end
 
 	 structure MLton =
@@ -109,7 +105,7 @@ in
 		  struct
 		     open Rusage
 
-		     val ru = stub ru
+		     val ru = stub ("ru", ru)
 		  end
 	    end
 
@@ -121,7 +117,7 @@ in
 		  struct
 		     open IO
 
-		     val poll = stub poll
+		     val poll = stub ("poll", poll)
 		  end
 	    end
 
@@ -133,8 +129,8 @@ in
 		  struct
 		     open UnixSock
 
-		     val toAddr = stub toAddr
-		     val fromAddr = stub fromAddr
+		     val toAddr = stub ("toAddr", toAddr)
+		     val fromAddr = stub ("fromAddr", fromAddr)
 		  end
 	    end
       end
