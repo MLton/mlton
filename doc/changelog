@@ -4,6 +4,9 @@ Here are the changes since version 20030711.
   - Fixed bug that caused a segfault when attempting to create an
     array that was too large, e.g
        1 + Array.sub (Array.tabulate (valOf Int.maxInt, fn i => i), 0)
+  - mlton now checks the command line arguments following the file to
+    compile that are passed to the linker to make sure they are
+    reasonable.
 
 * 2003-07-14
   - Fixed packaging for Cygwin and Sparc to include libgmp.a.

@@ -1,16 +1,19 @@
 \sec{Manual page}{manual-page}
 
-{\mlton} is run from the command line with a collection of options followed by a
-file name and a list of files to assemble and libraries to link with.
+{\mlton} is run from the command line with a collection of options
+followed by a file name and a list of files to assemble and to link
+with.
 \begin{verbatim}
-mlton [option ...] file.{cm|sml|c|o} [file.{S|o} ...] [library ...]
+mlton [option ...] file.{cm|sml|c|o} [file.{S|o} ...] [linker arg ...]
 \end{verbatim}
-The simplest case is to run {\tt mlton foo.sml}, where {\tt foo.sml} contains a
-valid SML program, in which case {\mlton} compiles the program to produce an
-executable called {\tt foo}.  Since {\mlton} has no notion of separate
-compilation, the program must be the entire program you wish to
-compile.  However, the program may refer to signatures and structures
-defined in the SML basis library.
+The simplest case is to run {\tt mlton foo.sml}, where {\tt foo.sml}
+contains a valid SML program, in which case {\mlton} compiles the
+program to produce an executable called {\tt foo}.  Since {\mlton} has
+no notion of separate compilation, the program must be the entire
+program you wish to compile.  However, the program may refer to
+signatures and structures defined in the SML basis library.
+The linker arguments are passed unchanged to the linker, and must have
+a suffix of {\tt .a} or {\tt .o} or a prefix of {\tt -l} or {\tt -L}.
 
 For developing large programs spanning many files, {\mlton} supports a limited
 subset of SML/NJ Compilation Manager (CM) files.  For example, {\tt mlton

@@ -548,6 +548,18 @@ fun commandLine (args: string list): unit =
 				 ([".c", ".o", ".s", ".S"], fn suffix =>
 				  String.isSuffix {string = s,
 						   suffix = suffix}))
+	    val _ =
+	       case List.peek (rest, fn s =>
+			       not
+			       (List.exists ([".a", ".o"], fn suffix =>
+					     String.isSuffix {string = s,
+							      suffix = suffix})
+				orelse
+				List.exists (["-l", "-L"], fn prefix =>
+					     String.isPrefix {prefix = prefix,
+							      string = s}))) of
+		  NONE => ()
+		| SOME s => usage (concat ["invalid linker argument: ", s])
 	    val stop = !stop
 	 in
 	    case Place.compare (start, stop) of

@@ -1,10 +1,10 @@
-.TH mlton 1 "July 8, 2003"
+.TH mlton 1 "July 15, 2003"
 .SH NAME
 \fBmlton\fP \- whole-program compiler for the Standard ML (SML) programming
 language
 .SH SYNOPSIS
 \fBmlton\fP \fI[option ...] file\fB.\fP{\fBcm\fP|\fBsml\fP|\fBc\fP|\fBo\fP} 
-[file\fB.\fP{\fBS\fP|\fBo\fP} ...] [library ...]\fR
+[file\fB.\fP{\fBS\fP|\fBo\fP} ...] [linker arg ...]\fR
 .SH DESCRIPTION
 .PP
 Typical use of \fBMLton\fP is \fBmlton \fIxxx\fB.sml\fR, which will
@@ -12,6 +12,8 @@ produce the executable \fIxxx\fP.
 \fBMLton\fP has no notion of separate compilation.
 The program must be the entire program you wish to compile; however, it may
 refer to signatures and structures defined in the SML basis library.
+The linker arguments are passed unchanged to the linker, and must have
+a suffix of \fB.a\fP or \fB.o\fP or a prefix of \fB-l\fP or \fB-L\fP.
 
 \fBMLton\fP's options allow you to control the name of the output
 file, the verbosity of compile-time messages, and whether or not
