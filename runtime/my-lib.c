@@ -46,6 +46,10 @@ void asfail(char *file, int line, char *prop)
 	abort();
 }
 
+string boolToString (bool b) {
+	return b ? "TRUE" : "FALSE";
+}
+
 void sclose (int fd) {
 	unless (0 == close (fd)) 
 		diee ("unable to close %d", fd);

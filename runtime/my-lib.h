@@ -60,6 +60,8 @@ extern void asfail(char *file, int line, char *prop);
 #define	assert(p)	((p) ? (void)0 : asfail(__FILE__, __LINE__, #p))
 #endif
 
+string boolToString (bool b);
+
 /* safe version of close, mkstemp, write */
 int smkstemp (char *template);
 void sclose (int fd);
