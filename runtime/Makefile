@@ -321,6 +321,7 @@ all: libmlton.a libmlton-gdb.a
 
 libmlton.a: $(OBJS) 
 	$(AR) libmlton.a $(OBJS)
+	strip libmlton.a
 
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
