@@ -347,11 +347,11 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 	  | Counts.Stack v =>
 	       doit (v, fn {current, stack, stackGC} =>
 		     let
-			val (_, cr) = per current
+			val (cp, cr) = per current
 			val (sp, sr) = per stack
 			val (_, gr) = per stackGC
 		     in
-			{per = sp, row = List.concat [cr, sr, gr]}
+			{per = cp, row = List.concat [cr, sr, gr]}
 		     end)
       val _ =
 	 Vector.mapi

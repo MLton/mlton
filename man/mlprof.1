@@ -15,8 +15,8 @@ total amount of CPU time or bytes allocated.  After this, source
 functions are listed along with the percentage of this total that they
 used, in decreasing order.  If the program was compiled with
 \fB-profile-stack true\fP, \fBmlprof\fP will display the time spent or
-bytes allocated while the function was on the stack in addition to
-the time or bytes that the function is responsible for.
+bytes allocated while the function was on the stack and in GC in
+addition to the time or bytes that the function is responsible for.
 
 \fBmlprof\fP writes a call graph containing the table data to a file
 with the executable name and suffix \fB.dot\fP.

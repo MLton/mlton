@@ -106,11 +106,7 @@ list-rev.sml}, is on the stack while 87.6\% of the allocation is done
 by the user program and while 5.8\% of the allocation is done by the
 garbage collector.  The above table also shows how special functions
 like {\tt main} are handled: they are printed with surrounding
-brackets.  C functions are displayed similarly.  From the above we can
-also see that with {\tt -profile-stack true}, the functions are sorted
-in decreasing order of bytes allocated while the function was on the
-stack. With {\tt -profile-stack false}, the functions are sorted in
-decreasing order of bytes allocated by that function.
+brackets.  C functions are displayed similarly.
 
 For easier visualization of data, {\tt mlprof} also creates a call
 graph of the program, in {\tt .dot} format, containing the table data.
