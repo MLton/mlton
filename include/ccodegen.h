@@ -292,7 +292,8 @@ int main(int argc, char **argv) {					\
 
 #define GC_collect(frameSize, ret, amount, force)				\
 	do {									\
-		InvokeRuntime(GC_gc(&gcState, amount, force, 			\
+		Word a = amount;						\
+		InvokeRuntime(GC_gc(&gcState, a, force, 			\
 					__FILE__, __LINE__),			\
 				frameSize, ret);				\
 	} while (0)
