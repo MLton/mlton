@@ -37,11 +37,13 @@
 
 /* issue error message and exit */
 extern void	die(char *fmt, ...)
-			__attribute__((format(printf, 1, 2)));
+			__attribute__((format(printf, 1, 2)))
+			__attribute__ ((noreturn));
 
 /* issue error message and exit.  Also print strerror(errno). */
 extern void	diee(char *fmt, ...)
-			__attribute__((format(printf, 1, 2)));
+			__attribute__((format(printf, 1, 2)))
+			__attribute__ ((noreturn));
 
 /* assertion failure routine */
 extern void asfail(char *file, int line, char *prop);
