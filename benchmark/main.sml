@@ -8,7 +8,13 @@ val fail = Process.fail
 val doHtml = ref false
 val doOnce = ref false
 val runArgs : string list ref = ref []
-   
+
+fun timeIt (com, args) =
+   (print "timing\n"
+    ; Process.time (fn () =>
+		    (Process.wait
+		     (MLton.Process.spawnp {file = com, args = com :: args}))))
+
 local
    val trialTime = Time.seconds (IntInf.fromInt 60)
 in
@@ -16,8 +22,7 @@ in
       let 
 	 fun doit ac =
 	    let
-	       val {user, system} =
-		  Process.time (fn () => Process.call' (com, args))
+	       val {user, system} = timeIt (com, args)
 	       val op + = Time.+
 	    in ac + user + system
 	    end
@@ -37,8 +42,7 @@ fun compileSizeRun {args, compiler, exe, doTextPlusData: bool} =
    (fn e =>
     let
        val exe = "./" ^ exe
-       val {system, user} =
-	  Process.time (fn () => Process.call' (compiler, args))
+       val {system, user} = timeIt (compiler, args)
 	  handle _ => Escape.escape (e, {compile = NONE,
 					 run = NONE,
 					 size = NONE})
@@ -387,254 +391,262 @@ fun main args =
       val setOutData = fn str => setData ("out", outData, str)
       val errData : (string * (string -> string option)) option ref = ref NONE
       val setErrData = fn str => setData ("err", errData, str)
-
       (* Set the stack limit to its max, since mlkit segfaults on some benchmarks
        * otherwise.
        *)
-      val _ =
-	 let open MLton.Rlimit
-	    val {hard, ...} = get stackSize
-	 in
-	    set (stackSize, {hard = hard, soft = hard})
-	 end
-
+       val _ =
+	  case MLton.hostType of
+	     MLton.Cygwin => ()
+	   | MLton.Linux => 
+		let
+		   open MLton.Rlimit
+		   val {hard, ...} = get stackSize
+		in
+		   set (stackSize, {hard = hard, soft = hard})
+		end
       local
 	 open Popt
       in
 	 val res =
-	    parse {switches = args,
-		   opts = [("args",
-			    SpaceString (fn args => runArgs := String.tokens
-					                       (args, Char.isSpace))),
-			   ("err", SpaceString setErrData),
-			   ("html", trueRef doHtml),
-			   ("mlkit", 
-			    None (fn () => pushCompiler
-					   {name = "ML-Kit",
-					    abbrv = "ML-Kit",
-					    test = kitCompile})),
-			   ("mosml",
-			    None (fn () => pushCompiler
-				           {name = "Moscow-ML",
-					    abbrv = "Moscow-ML",
-					    test = mosmlCompile})),
-			   ("mlton",
-			    SpaceString (fn arg => pushCompilers
-					           (makeMLton arg))),
-			   ("once", trueRef doOnce),
-			   ("out", SpaceString setOutData),
-			   ("smlnj",
-			    None (fn () => pushCompiler
-                                           {name = "SML/NJ",
-					    abbrv = "SML/NJ",
-					    test = njCompile})),
-			   trace]}
+	    parse
+	    {switches = args,
+	     opts = [("args",
+		      SpaceString
+		      (fn args =>
+		       runArgs := String.tokens (args, Char.isSpace))),
+		     ("err", SpaceString setErrData),
+		     ("html", trueRef doHtml),
+		     ("mlkit", 
+		      None (fn () => pushCompiler
+			    {name = "ML-Kit",
+			     abbrv = "ML-Kit",
+			     test = kitCompile})),
+		     ("mosml",
+		      None (fn () => pushCompiler
+			    {name = "Moscow-ML",
+			     abbrv = "Moscow-ML",
+			     test = mosmlCompile})),
+		     ("mlton",
+		      SpaceString (fn arg => pushCompilers
+				   (makeMLton arg))),
+		     ("once", trueRef doOnce),
+		     ("out", SpaceString setOutData),
+		     ("smlnj",
+		      None (fn () => pushCompiler
+			    {name = "SML/NJ",
+			     abbrv = "SML/NJ",
+			     test = njCompile})),
+		     trace]}
       end
-   in case res of
-      Result.No s => usage (concat ["invalid switch: ", s])
-    | Result.Yes benchmarks =>
-	 let
-	    val compilers = List.rev(!compilers)
-	    val base = #name (hd compilers)
-	    val _ =
-	       let open Signal
-	       in setHandler (pipe, Ignore)
-	       end
-	    fun r2s r = Real.format (r, Real.Format.fix (SOME 2))
-	    val i2s = Int.toCommaString
-	    val s2s = fn s => s
-	    fun show {compiles, runs, sizes, errs, outs} =
-	       let
-		  val out = Out.standard
-		  val _ = List.foreach
-		          (compilers,
-			   fn {name, abbrv, ...}
-			    => Out.output (out, concat [abbrv, " -- ", name, "\n"]))
-		  fun show (title, data: 'a data, toString) =
-		     let
-			val _ = Out.output (out, concat [title, "\n"])
-			val compilers =
-			   List.fold
-			   (compilers, [], fn ({name = n, abbrv = n', ...}, ac) =>
-			    if List.exists (data, fn {compiler = c, ...} =>
-					    n = c)
-			       then (n, n') :: ac
-			    else ac)
-			val benchmarks =
-			   List.fold (benchmarks, [], fn (b, ac) =>
-				      if List.exists (data, fn {bench, ...} =>
-						      bench = b)
-					 then b :: ac
-				      else ac)
-			val rows =
-			   ("benchmark" :: List.revMap (compilers, fn (_, n') => n'))
-			   :: (List.revMap
-			       (benchmarks, fn b =>
-				b ::
-				List.revMap
-				(compilers, fn (n, _) =>
-				 case (List.peek
-				       (data, fn {bench = b',
-						  compiler = c', ...} =>
-					b = b' andalso n = c')) of
-				    NONE => "*"
-				  | SOME {value = v, ...} => toString v)))
-			open Justify
-			val _ =
-			   outputTable
-			   (table {justs = (Left :: List.revMap (compilers,
-								 fn _ => Right)),
-				   rows = rows},
-			    out)
-			fun p ss =
-			   (Out.output (out, concat ss)
-			    ; Out.newline out)
-			fun prow (b :: ns, c) =
-			   (p ["<tr>"]
-			     ; p ["<t", c, " align = left>", b, "</t", c, ">"]
-			     ; (List.foreach
-				(ns, fn n =>
-				 p ["<t", c, " align = right>", n,
-				    "</t", c, ">"]))
-			     ; p ["</tr>"])
-			val _ =
-			   if !doHtml
-			      then 
-				 (prow (hd rows, "h")
-				  ; List.foreach (tl rows, fn r =>
-						  prow (r, "d")))
-			   else ()
- 		     in
-			()
-		     end
-		  val _ = show ("compile time", compiles, r2s)
-		  val _ = show ("run time", runs, r2s)
-		  val bases = List.keepAll (runs, fn {compiler, ...} =>
-					    compiler = base)
-		  val runs =
-		     List.fold
-		     (runs, [], fn ({bench, compiler, value}, ac) =>
-		      if compiler = base
-			 then ac
-		      else
-			 {bench = bench,
-			  compiler = compiler,
-			  value =
-			  case List.peek (bases, fn {bench = b, ...} =>
-					  bench = b) of
-			     NONE => ~1.0
-			   | SOME {value = v, ...} => value / v} :: ac)
-		  val _ = show ("run time ratio", runs, r2s)
-		  val _ = show ("size", sizes, i2s)
-		  val _ = case !outData of
-		             SOME (out, _) => show (concat ["out: ", out], outs, s2s)
-			   | NONE => ()
-		  val _ = case !errData of
-		             SOME (err, _) => show (concat ["err: ", err], errs, s2s)
-			   | NONE => ()
-	       in ()
-	       end
-	    val totalFailures = ref []
-	    val data = 
-	       List.fold
-	       (benchmarks, {compiles = [], runs = [], sizes = [],
-			     outs = [], errs = []},
-		fn (bench, ac) =>
-		let
-		   val _ =
-		      File.withOut
-		      (batch bench, fn out =>
-		       (File.outputContents (concat [bench, ".sml"], out)
-			; Out.output (out, "val _ = Main.doit ()\n")))
-		   val foundOne = ref false
-		   val res =
-		      List.fold
-		      (compilers, ac, fn ({name, abbrv, test},
-					  ac as {compiles: real data,
-						 runs: real data,
-						 sizes: int data,
-						 outs: string data,
-						 errs: string data}) =>
-		       if true
-			  then
-			     let
-			        val (outTmpFile, outTmpOut) =
-				   File.temp
-				   {prefix = "tmp", suffix = "out"}
-			        val (errTmpFile, errTmpOut) =
-				   File.temp
-				   {prefix = "tmp", suffix = "err"}
-				val {compile, run, size} =
-				   Out.fluidLet
-				   (Out.standard, outTmpOut, fn () =>
-				    Out.fluidLet
-				    (Out.error, errTmpOut, fn () =>
-				     test {bench = bench}))
-				val out = 
-				   case !outData of 
-				      NONE => NONE
-				    | SOME (_, doit) => 
-					 File.foldLines
-					 (outTmpFile, NONE, fn (s, v) =>
-					  let val s = String.removeTrailing
-					              (s, fn c => 
-						       Char.equals (c, Char.newline))
-					  in
-					     case doit s of
-					        NONE => v
-					      | v => v
-					  end)
-				val err = 
-				   case !errData of 
-				      NONE => NONE
-				    | SOME (_, doit) =>
-					 File.foldLines
-					 (errTmpFile, NONE, fn (s, v) =>
-					  let val s = String.removeTrailing
-					              (s, fn c => 
-						       Char.equals (c, Char.newline))
-					  in
-					     case doit s of
-					        NONE => v
-					      | v => v
-					  end)
-				val _ = File.remove outTmpFile
-				val _ = File.remove errTmpFile
-				fun add (v, ac) =
-				   case v of
-				      NONE => ac
-				    | SOME v =>
-					 (foundOne := true
-					  ; {bench = bench,
-					     compiler = name,
-					     value = v} :: ac)
-				val ac =
-				   {compiles = add (compile, compiles),
-				    runs = add (run, runs),
-				    sizes = add (size, sizes),
-				    outs = add (out, outs),
-				    errs = add (err, errs)}
-			     in show ac
-				; Out.flush Out.standard
-				; ac
-			     end
-		       else ac)
-		   val _ =
-		      if !foundOne
-			 then ()
-		      else List.push (totalFailures, bench)
-		in
-		   res
-		end)
-	    val totalFailures = !totalFailures
-	    val _ =
-	       if List.isEmpty totalFailures
-		  then ()
-	       else (print ("The following benchmarks failed completely.\n")
-		     ; List.foreach (totalFailures, fn s =>
-				     print (concat [s, "\n"])))
-	 in ()
-	 end
+   in
+      case res of
+	 Result.No s => usage (concat ["invalid switch: ", s])
+       | Result.Yes benchmarks =>
+	    let
+	       val compilers = List.rev (!compilers)
+	       val base = #name (hd compilers)
+	       val _ =
+		  let open Signal
+		  in setHandler (pipe, Ignore)
+		  end
+	       fun r2s r = Real.format (r, Real.Format.fix (SOME 2))
+	       val i2s = Int.toCommaString
+	       val s2s = fn s => s
+	       fun show {compiles, runs, sizes, errs, outs} =
+		  let
+		     val out = Out.standard
+		     val _ = List.foreach
+			(compilers,
+			 fn {name, abbrv, ...}
+			 => Out.output (out, concat [abbrv, " -- ", name, "\n"]))
+		     fun show (title, data: 'a data, toString) =
+			let
+			   val _ = Out.output (out, concat [title, "\n"])
+			   val compilers =
+			      List.fold
+			      (compilers, [],
+			       fn ({name = n, abbrv = n', ...}, ac) =>
+			       if List.exists (data, fn {compiler = c, ...} =>
+					       n = c)
+				  then (n, n') :: ac
+			       else ac)
+			   val benchmarks =
+			      List.fold (benchmarks, [], fn (b, ac) =>
+					 if List.exists (data, fn {bench, ...} =>
+							 bench = b)
+					    then b :: ac
+					 else ac)
+			   val rows =
+			      ("benchmark"
+			       :: List.revMap (compilers, fn (_, n') => n'))
+			      :: (List.revMap
+				  (benchmarks, fn b =>
+				   b ::
+				   List.revMap
+				   (compilers, fn (n, _) =>
+				    case (List.peek
+					  (data, fn {bench = b',
+						     compiler = c', ...} =>
+					   b = b' andalso n = c')) of
+				       NONE => "*"
+				     | SOME {value = v, ...} => toString v)))
+			   open Justify
+			   val _ =
+			      outputTable
+			      (table {justs = (Left ::
+					       List.revMap (compilers,
+							    fn _ => Right)),
+				      rows = rows},
+			       out)
+			   fun p ss =
+			      (Out.output (out, concat ss)
+			       ; Out.newline out)
+			   fun prow (b :: ns, c) =
+			      (p ["<tr>"]
+			       ; p ["<t", c, " align = left>", b, "</t", c, ">"]
+			       ; (List.foreach
+				  (ns, fn n =>
+				   p ["<t", c, " align = right>", n,
+				      "</t", c, ">"]))
+			       ; p ["</tr>"])
+			   val _ =
+			      if !doHtml
+				 then 
+				    (prow (hd rows, "h")
+				     ; List.foreach (tl rows, fn r =>
+						     prow (r, "d")))
+			      else ()
+			in
+			   ()
+			end
+		     val _ = show ("compile time", compiles, r2s)
+		     val _ = show ("run time", runs, r2s)
+		     val bases = List.keepAll (runs, fn {compiler, ...} =>
+					       compiler = base)
+		     val runs =
+			List.fold
+			(runs, [], fn ({bench, compiler, value}, ac) =>
+			 if compiler = base
+			    then ac
+			 else
+			    {bench = bench,
+			     compiler = compiler,
+			     value =
+			     case List.peek (bases, fn {bench = b, ...} =>
+					     bench = b) of
+				NONE => ~1.0
+			      | SOME {value = v, ...} => value / v} :: ac)
+		     val _ = show ("run time ratio", runs, r2s)
+		     val _ = show ("size", sizes, i2s)
+		     val _ = case !outData of
+			SOME (out, _) => show (concat ["out: ", out], outs, s2s)
+		      | NONE => ()
+		     val _ = case !errData of
+			SOME (err, _) => show (concat ["err: ", err], errs, s2s)
+		      | NONE => ()
+		  in ()
+		  end
+	       val totalFailures = ref []
+	       val data = 
+		  List.fold
+		  (benchmarks, {compiles = [], runs = [], sizes = [],
+				outs = [], errs = []},
+		   fn (bench, ac) =>
+		   let
+		      val _ =
+			 File.withOut
+			 (batch bench, fn out =>
+			  (File.outputContents (concat [bench, ".sml"], out)
+			   ; Out.output (out, "val _ = Main.doit ()\n")))
+		      val foundOne = ref false
+		      val res =
+			 List.fold
+			 (compilers, ac, fn ({name, abbrv, test},
+					     ac as {compiles: real data,
+						    runs: real data,
+						    sizes: int data,
+						    outs: string data,
+						    errs: string data}) =>
+			  if true
+			     then
+				let
+				   val (outTmpFile, outTmpOut) =
+				      File.temp
+				      {prefix = "tmp", suffix = "out"}
+				   val (errTmpFile, errTmpOut) =
+				      File.temp
+				      {prefix = "tmp", suffix = "err"}
+				   val {compile, run, size} =
+				      Out.fluidLet
+				      (Out.standard, outTmpOut, fn () =>
+				       Out.fluidLet
+				       (Out.error, errTmpOut, fn () =>
+					test {bench = bench}))
+				   val out = 
+				      case !outData of 
+					 NONE => NONE
+				       | SOME (_, doit) => 
+					    File.foldLines
+					    (outTmpFile, NONE, fn (s, v) =>
+					     let val s = String.removeTrailing
+						(s, fn c => 
+						 Char.equals (c, Char.newline))
+					     in
+						case doit s of
+						   NONE => v
+						 | v => v
+					     end)
+				   val err = 
+				      case !errData of 
+					 NONE => NONE
+				       | SOME (_, doit) =>
+					    File.foldLines
+					    (errTmpFile, NONE, fn (s, v) =>
+					     let val s = String.removeTrailing
+						(s, fn c => 
+						 Char.equals (c, Char.newline))
+					     in
+						case doit s of
+						   NONE => v
+						 | v => v
+					     end)
+				   val _ = File.remove outTmpFile
+				   val _ = File.remove errTmpFile
+				   fun add (v, ac) =
+				      case v of
+					 NONE => ac
+				       | SOME v =>
+					    (foundOne := true
+					     ; {bench = bench,
+						compiler = name,
+						value = v} :: ac)
+				   val ac =
+				      {compiles = add (compile, compiles),
+				       runs = add (run, runs),
+				       sizes = add (size, sizes),
+				       outs = add (out, outs),
+				       errs = add (err, errs)}
+				in show ac
+				   ; Out.flush Out.standard
+				   ; ac
+				end
+			  else ac)
+		      val _ =
+			 if !foundOne
+			    then ()
+			 else List.push (totalFailures, bench)
+		   in
+		      res
+		   end)
+	       val totalFailures = !totalFailures
+	       val _ =
+		  if List.isEmpty totalFailures
+		     then ()
+		  else (print ("The following benchmarks failed completely.\n")
+			; List.foreach (totalFailures, fn s =>
+					print (concat [s, "\n"])))
+	    in ()
+	    end
    end
 
 val main = Process.makeMain main
