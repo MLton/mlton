@@ -849,7 +849,6 @@ fun loopForest {headers, graph, root}
 
       fun subGraph {graph,
 		    scc,
-		    scc',
 		    headers'}
 	= let
 	    val _ = List.foreach
@@ -895,6 +894,7 @@ fun loopForest {headers, graph, root}
 	    graph'
 	  end
 
+(*
       fun nest {graph, parent}
 	= List.fold
 	  (stronglyConnectedComponents graph, [],
@@ -908,7 +908,6 @@ fun loopForest {headers, graph, root}
 		   = let
 		       val graph' = subGraph {graph = graph,
 					      scc = scc,
-					      scc' = scc',
 					      headers' = headers'}
 		       val _ = setForestNodeInfo (n', {loopNodes = scc',
 						       parent = parent})
@@ -943,6 +942,55 @@ fun loopForest {headers, graph, root}
 			       else default' n
 		    | scc => default ()
 	       end)
+*)
+
+      fun nest {graph, parent}
+	= List.foreach
+	  (stronglyConnectedComponents graph,
+	   fn scc
+	    => let
+		 val scc' = List.map(scc, graphNode)
+		 val headers' = headers scc'
+
+		 val n' = newNode F
+		 fun default ()
+		   = let
+		       val graph' = subGraph {graph = graph,
+					      scc = scc,
+					      headers' = headers'}
+		     in
+		       setForestNodeInfo (n', {loopNodes = scc',
+					       parent = parent}) ;
+		       nest {graph = graph',
+			     parent = SOME n'}
+		     end
+
+		 fun default' n
+		   = let
+		     in
+		       setForestNodeInfo (n', {loopNodes = [graphNode n], 
+					       parent = parent}) ;
+		       setGraphNodeInfo (graphNode n, {forestNode = n'})
+		     end
+
+		 fun default'' ()
+		   = let
+		     in 
+		       setForestNodeInfo (n', {loopNodes = [],
+					       parent = parent})
+		     end
+	       in
+		 case parent
+		   of NONE => ()
+		    | SOME parent => addEdge (F, {from = parent, to = n'}) ;
+		 case scc
+		   of [] => default'' ()
+		    | [n] => if Node.hasEdge {from = n, to = n}
+			       then default ()
+			       else default' n
+		    | scc => default ()
+	       end)
+
 
       val graph' 
 	= let
@@ -975,7 +1023,11 @@ fun loopForest {headers, graph, root}
 	    graph'
 	  end
 
+(*
       val trees = nest {graph = graph', parent = NONE}
+*)
+      val _ = nest {graph = graph', parent = NONE}
+      val trees = []
     in
       {forest = F,
        trees = trees,
