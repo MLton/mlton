@@ -2,6 +2,9 @@ Here are the changes since version 20040227.
 
 * 2004-03-03
   - Added structures Int2, Int3, ..., Int31.
+  - Fixed bug in elaboration of "and" with signatures, structures, and
+    functors so that it now evaluates all right-hand sides before
+    binding any left-hand sides.
 
 --------------------------------------------------------------------------------
 Here are the changes from version 20030716 to 20040227.

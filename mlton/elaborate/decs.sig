@@ -21,6 +21,7 @@ signature DECS =
       val add: t * dec -> t      (* add a dec to the end of the list *)
       val append: t * t -> t
       val appends: t list -> t
+      val appendsV: t vector -> t
       val empty: t
       val fold: t * 'a * (dec * 'a -> 'a) -> 'a
       val foreach: t * (dec -> unit) -> unit
