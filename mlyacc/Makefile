@@ -11,7 +11,7 @@ $(NAME): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	strip $(NAME)
 	size $(NAME)
 
-$(NAME).cm:
+$(NAME).cm: src/yacc.lex.sml src/yacc.grm.sig src/yacc.grm.sml
 	(								\
 		echo 'Group is';					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj';	\
@@ -28,7 +28,7 @@ src/yacc.grm.sig src/yacc.grm.sml: src/yacc.grm
 clean:
 	find . -type f | grep '.*~$$' | xargs rm -f
 	find . -type d | grep 'CM$$' | xargs rm -rf
-	rm -f junk $(NAME) $(NAME).sml src/yacc.lex.sml ml.grm*
+	rm -f junk $(NAME) $(NAME).sml src/yacc.lex.sml src/yacc.grm.* ml.grm*
 
 .PHONY: test
 test: $(NAME)
