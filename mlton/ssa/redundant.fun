@@ -26,21 +26,26 @@ structure Element:
 	 end
 
       type t
-      type cfs = {coarse: t, fine: t} vector
 
       val areEquivalent: t * t -> bool
       val class: t -> Class.t
+      val fixedPoint: unit -> unit
       val forceDistinct: t vector -> unit
       val new: 'a vector * ('a -> PropertyList.t) -> t vector
       val new1: unit -> t
-      val refine: cfs -> cfs list * {change: bool}
+      val refine: {coarse: t, fine: t} vector -> unit
    end =
    struct
       datatype t = T of {class: class ref}
-      and class = Class of {elements: t vector,
+      and class = Class of {coarserThan: refinement list ref,
+			    elements: t vector,
 			    plist: PropertyList.t}
+      withtype refinement = {coarse: t, fine: t} vector
 
-      type cfs = {coarse: t, fine: t} vector
+      structure Element =
+	 struct
+	    datatype t = datatype t
+	 end
 
       structure Class =
 	 struct
@@ -49,6 +54,7 @@ structure Element:
 	    local
 	       fun make f (Class r) = f r
 	    in
+	       val coarserThan = make #coarserThan
 	       val elements = make #elements
 	       val plist = make #plist
 	    end
@@ -56,7 +62,8 @@ structure Element:
 	    val size = Vector.length o elements
 
 	    fun new elements =
-	       Class {elements = elements,
+	       Class {coarserThan = ref [],
+		      elements = elements,
 		      plist = PropertyList.new ()}
 
 	    val bogus = new (Vector.new0 ())
@@ -128,12 +135,15 @@ structure Element:
 	     ()
 	  end)
 
-      fun refine (v: cfs): cfs list * {change: bool} =
-	 let
-	    fun group (v: cfs, sel): cfs list =
+      structure Refinement =
+	 struct
+	    type t = refinement
+	       
+	    fun group (v: t, sel): t list =
 	       let
 		  val classes = ref []
-		  val {destroy, get: Class.t -> {coarse: t, fine: t} list ref,
+		  val {destroy, get: Class.t -> {coarse: Element.t,
+						 fine: Element.t} list ref,
 		       ...} =
 		     Property.destGet
 		     (Class.plist,
@@ -152,35 +162,55 @@ structure Element:
 		  List.fold (!classes, [], fn (r, ac) =>
 			     Vector.fromList (!r) :: ac)
 	       end
-	    val change = ref false
-	    val res = ref []
-	    val () =
-	       List.foreach
-	       (group (v, #fine), fn v =>
-		List.foreach
-		(group (v, #coarse), fn v =>
-		 let
-		    val elements = Vector.map (v, #fine)
-		    val oldClass = class (Vector.sub (elements, 0))
-		    val () =
-		       if Vector.length elements > 1
-			  then List.push (res, v)
-		       else ()
-		 in
-		    if Vector.length elements = Class.size oldClass
-		       then () (* No change *)
-		    else
+
+	    fun store (v: t): unit =
+	       List.push (Class.coarserThan
+			  (class (#coarse (Vector.sub (v, 0)))),
+			  v)
+	 end
+      
+      val todo: Refinement.t list ref = ref []
+	 
+      fun refine (v: Refinement.t): unit =
+	 List.foreach
+	 (Refinement.group (v, #fine), fn v =>
+	  let
+	     val oldClass = class (#fine (Vector.sub (v, 0)))
+	     val classes = Refinement.group (v, #coarse)
+	  in
+	     case classes of
+		[_] => Refinement.store v
+	      | _ =>
+		   let
+		      val () =
+			 todo
+			 := (List.fold
+			     (! (Class.coarserThan oldClass), !todo, op ::))
+		   in
+		      List.foreach
+		      (classes, fn v =>
 		       let
-			  val _ = change := true
+			  val () = Refinement.store v
+			  val elements = Vector.map (v, #fine)
 			  val c = Class.new elements
 			  val () = Vector.foreach (elements, fn e =>
 						   setClass (e, c))
 		       in
 			  ()
-		       end
-		 end))
+		       end)
+		   end
+	  end)
+
+      fun fixedPoint () =
+	 let
+	    fun loop () =
+	       case !todo of
+		  [] => ()
+		| r :: rs => (todo := rs
+			      ; refine r
+			      ; loop ())
 	 in
-	    (!res, {change = !change})
+	    loop ()
 	 end
    end
 
@@ -193,7 +223,6 @@ structure Eqrel:>
       val classes: t -> int list list
       val element: t * int -> Element.t
       val elements: t -> Element.t vector
-      val fixedPoint: unit -> unit
       val forceDistinct: t -> unit
       val fromTypes: Type.t vector -> t
       val layout: t -> Layout.t
@@ -214,34 +243,9 @@ structure Eqrel:>
 
       fun fromTypes ts = T (Element.new (ts, Type.plist))
 
-      type cfs = Element.cfs
-	 
-      val refinements: cfs list ref = ref []
-
       fun refine {coarse = T cv, fine = T fv} =
-	 List.push (refinements,
-		    Vector.map2 (cv, fv, fn (c, f) => {coarse = c, fine = f}))
-
-      fun fixedPoint () =
-	 let
-	    fun loop ac =
-	       let
-		  val (ac, change) =
-		     List.fold (ac, ([], false), fn (r, (ac, c)) =>
-				let
-				   val (cfss, {change}) = Element.refine r
-				in
-				   (cfss @ ac, c orelse change)
-				end)
-	       in
-		  if change
-		     then loop ac
-		  else ()
-	       end
-	    val () = loop (!refinements)
-	 in
-	    ()
-	 end
+	 Element.refine
+	 (Vector.map2 (cv, fv, fn (c, f) => {coarse = c, fine = f}))
 
       fun unify (r, r') =
 	 (refine {coarse = r, fine = r'}
@@ -357,7 +361,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 					 fine = valOf return}
 		      | _ => ())
 		end)
-	    val _ = Eqrel.fixedPoint ()
+	    val _ = Element.fixedPoint ()
 	 in ()
 	 end
       val _ = 
