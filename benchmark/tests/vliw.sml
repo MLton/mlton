@@ -3617,7 +3617,9 @@ structure Main = struct
 
 fun doitx (ifile:string, ofile:string, c_ofile:string, ws:int) =
 let val foo = Ntypes.init_names()
-    val i = (dodelay o BreakInst.breaki o ReadAbs.read o open_in) ifile
+   val ins = open_in ifile
+    val i = (dodelay o BreakInst.breaki o ReadAbs.read) ins
+   val _ = close_in ins
     val (j, p) = time "Building Nodes" (fn () => ReadI.readI i)
     val x = time "writing unopt" (fn () => writeprog(ofile, j, p))
     fun cwin p = Compress.compress(ws, p)
