@@ -671,6 +671,7 @@ fun import {attributes: Attribute.t list,
 	    ty: Type.t,
 	    region: Region.t}: Prim.t =
    let
+      val ty = Type.expandOpaque (ty, Type.Always)
       fun error l = Control.error (region, l, Layout.empty)
       fun invalidAttributes () =
 	 error (seq [str "invalid attributes for import: ",
@@ -723,6 +724,7 @@ fun import {attributes: Attribute.t list,
 
 fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
    let
+      val ty = Type.expandOpaque (ty, Type.Always)
       fun error l = Control.error (region, l, Layout.empty)
       fun invalidAttributes () =
 	 error (seq [str "invalid attributes for export: ",
