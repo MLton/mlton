@@ -446,7 +446,7 @@ fun makeOptions {usage} =
 			| "2" => Pass
 			| "3" =>  Detail
 			| _ => usage (concat ["invalid -verbose arg: ", s])))),
-       (Normal, "warn-ann", " {true|false}",
+       (Expert, "warn-ann", " {true|false}",
 	"unrecognized annotation warnings",
 	boolRef warnAnn),
        (Normal, "warn-match", " {true|false}",
@@ -469,7 +469,7 @@ fun makeOptions {usage} =
    end
 
 val mainUsage =
-   "mlton [option ...] file.{c|cm|o|sml} [file.{c|o|s|S} ...]"
+   "mlton [option ...] file.{c|cm|mlb|o|sml} [file.{c|o|s|S} ...]"
 
 val {parse, usage} =
    Popt.makeUsage {mainUsage = mainUsage,

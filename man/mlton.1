@@ -3,23 +3,28 @@
 \fBmlton\fP \- whole-program compiler for the Standard ML (SML) programming
 language
 .SH SYNOPSIS
-\fBmlton\fP \fI[option ...] file\fB.\fP{\fBc\fP|\fBcm\fP|\fBsml\fP|\fBo\fP} 
+\fBmlton\fP \fI[option ...] file\fB.\fP{\fBc\fP|\fBcm\fP|\fBmlb\fP|\fBo\fP|\fBsml\fP} 
 [file\fB.\fP{\fBc\fP|\fBS\fP|\fBo\fP} ...]\fR
 .SH DESCRIPTION
 .PP
 \fBMLton\fP is run from the command line with a collection of options
 followed by a file name and a list of files to compile, assemble, and
-link with.  The simplest case is to run \fBmlton foo.sml\fP, which
+link.  The simplest case is to run \fBmlton foo.sml\fP, which
 will produce an executable \fBfoo\fP.  Since \fBMLton\fP does not
 support separate compilation, the program must be the entire program
 you wish to compile.  However, the program may refer to signatures and
-structures defined in the SML basis library.
+structures defined in the SML Basis Library.
 
-For developing large programs spanning many files, \fBMLton\fP supports
-a limited subset of SML/NJ Compilation Manager (CM) files.  For example,
-\fBmlton foo.cm\fP will compile the complete SML program consisting of
-the concatenation of all the SML files referred to (either directly
-or indirectly) by \fBfoo.cm\fP.
+Larger programs, spanning many files, may be compiled with the ML
+Basis system (MLBs).  In this case, \fBmlton foo.mlb\fP will compile
+the complete SML program described by the basis \fBfoo.mlb\fP, which
+may specify both SML files and additional bases.  See the \fBMLton
+User Guide\fP for details.
+
+\fBMLton\fP also supports a limited subset of SML/NJ Compilation
+Manager (CM) files.  For example, \fBmlton foo.cm\fP will compile the
+complete SML program consisting of the concatenation of all the SML
+files referred to (either directly or indirectly) by \fBfoo.cm\fP.
 
 \fBMLton\fP's options allow you to control the name of the output
 file, the verbosity of compile-time messages, and whether or not
@@ -50,6 +55,12 @@ On x86, the default is \fB4\fP and on Sparc the default is
 Pass the option to \fBgcc\fP when compiling C code.
 
 .TP
+\fB-codegen \fI{\fBnative\fI|\fBc\fI}\fR
+Generate native code or generate C and use \fBgcc\fP.  With \fB-codegen
+native\fP, \fBMLton\fP typically compiles more quickly and generates
+better code.
+
+.TP
 \fB-detect-overflow \fI{\fBtrue\fI|\fBfalse\fI}\fR
 Perform overflow checking on integer arithmetic.
 
@@ -70,7 +81,7 @@ from SML to C.  This flag is useful for programs that use
 \fB-ieee-fp \fI{\fBfalse\fP|\fBtrue\fP}\fR
 Cause the code generator to be pedantic about following the IEEE
 floating point standard.  By default, it is not, because of the
-performance cost.  This has no effect with \fB-native false\fP.
+performance cost.  This has no effect with \fB-codegen c\fP.
 
 .TP
 \fB-inline \fIn\fR
@@ -99,12 +110,6 @@ pass an option to the linker, you must use \fBgcc\fP's \fB-Wl,\fP
 syntax, e.g., \fB-link-opt '-Wl,--export-dynamic'\fP.
 
 .TP
-\fB-native \fI{\fBtrue\fP|\fBfalse\fP}\fP
-Generate native code or generate C and use \fBgcc\fP.  With \fB-native
-true\fP, \fBMLton\fP typically compiles more quickly and generates
-better code.
-
-.TP
 \fB-output \fIfile\fR
 Specify the name of the final output file.
 The default name is the input file name with its suffix removed and an
@@ -116,6 +121,12 @@ Produce an executable that will gather profiling information.  When
 such an executable is run, it will produce an \fBmlmon.out\fP file.
 The man page on \fBmlprof\fP describes how to extract information from
 this file.
+
+.TP
+\fB-profile-branch \fI{\fBfalse\fP|\fBtrue\fP}\fR
+If true, the profiler will separately count the time spent (or bytes
+allocated) in each branch of a function definition, \fBcase\fP
+expression, and \fBif\fP expression.
 
 .TP
 \fB-profile-stack \fI{\fBfalse\fP|\fBtrue\fP}\fR
@@ -133,9 +144,9 @@ then the last setting will dominate, except for \fBno-load-world\fP.
 .TP
 \fB-safe \fI{\fBtrue\fP|\fBfalse\fP}\fR
 This switch determines the value of the SML variable \fBMLton.safe\fP, which
-controls whether the basis library performs array, string, and vector bounds
+controls whether the Basis Library performs array, string, and vector bounds
 checks, division for zero checks, and other checks.  Compiling \fB-safe false\fP
-changes the behavior of some programs, does not conform to the basis library
+changes the behavior of some programs, does not conform to the Basis Library
 specification, and may cause programs to seg fault.
 
 .TP
@@ -148,13 +159,6 @@ To silence spurious errors, you can use \fBignore e1\fP.
 .TP
 \fB-show-basis \fIfile\fR
 Pretty print to \fIfile\fP the basis defined by the input program.
-When used with no input program, pretty print the entire basis
-library.
-
-.TP
-\fB-show-basis-used \fIfile\fR
-Pretty print to \fIfile\fP the portion of the basis library that the
-input program uses.
 
 .TP
 \fB-show-def-use \fIfile\fR
@@ -166,13 +170,13 @@ of each use.
 \fB-stop \fI{\fBf\fP|\fBg\fP|\fBo\fP|\fBsml\fP|\fBtc\fP}\fR
 Specify pass to stop at.
 .in +.5i
-\fBf\fP    list of files on stdout (only makes sense when input is \fBfoo.cm\fP)
+\fBf\fP    list of files on stdout (only makes sense when input is \fBfoo.cm\fP or \fBfoo.mlb\fP)
 .br
 \fBg\fP    generated \fB.S\fP and \fB.c\fP files
 .br
 \fBo\fP    object file (\fI*\fB.o\fR).
 .br
-\fBsml\fP  SML file (only makes sense when input is \fBfoo.cm\fP)
+\fBsml\fP  SML file (only makes sense when input is \fBfoo.cm\fP or \fBfoo.mlb\fP)
 .br
 \fBtc\fP   after type checking
 .in -.5i

@@ -4,7 +4,7 @@
 followed by a file name and a list of files to compile, assemble, and
 link with.
 \begin{verbatim}
-mlton [option ...] file.{c|cm|o|sml} [file.{c|o|s|S} ...]
+mlton [option ...] file.{c|cm|mlb|o|sml} [file.{c|o|s|S} ...]
 \end{verbatim}
 The simplest case is to run {\tt mlton foo.sml}, where {\tt foo.sml}
 contains a valid SML program, in which case {\mlton} compiles the
@@ -13,11 +13,17 @@ support separate compilation, the program must be the entire
 program you wish to compile.  However, the program may refer to
 signatures and structures defined in the SML basis library.
 
-For developing large programs spanning many files, {\mlton} supports a
-limited subset of SML/NJ Compilation Manager (CM) files.  For example,
-{\tt mlton foo.cm} will compile the complete SML program consisting of
-the concatenation of all the SML files referred to (either directly
-or indirectly) by {\tt foo.cm}.  See \secref{cm} for details.
+Larger programs, spanning many files, may be compiled with the ML
+Basis system (MLBs).  In this case, {\tt mlton foo.mlb} will compile
+the complete SML program described by the basis {\tt foo.mlb}, which
+may specify both SML files and additional bases.  See \secref{mlb} for
+details.
+
+{\mlton} also supports a limited subset of SML/NJ Compilation Manager
+(CM) files.  For example, {\tt mlton foo.cm} will compile the complete
+SML program consisting of the concatenation of all the SML files
+referred to (either directly or indirectly) by {\tt foo.cm}.  See
+\secref{cm} for details.
 %
 \subsec{Compile-time options}{compile-time-options}
 
@@ -61,6 +67,11 @@ On {\intel}, the default is {\tt 4} and on {\sparc} the default is
 \option{-cc-opt {\it option}}
 Pass the option to {\tt gcc} when compiling C code.
 
+\option{codegen \choiceTwo{native}{c}}
+Generate native code , as opposed to generating C and using {\tt gcc}.
+With {\tt -codegen native}, {\mlton} typically compiles more quickly and
+generates better code.
+
 \option{-detect-overflow \trueFalse}
 Perform overflow checking on integer arithmetic.
 
@@ -103,11 +114,6 @@ the same time, e.g. {\tt -link-opt '-Lpath -lfoo'}.  If you wish to
 pash an option to the linker, you must use {\tt gcc}'s {\tt -Wl,}
 syntax, e.g., {\tt -link-opt '-Wl,--export-dynamic'}.
 
-\option{-native \trueFalse}
-Generate native code , as opposed to generating C and using {\tt gcc}.
-With {\tt -native true}, {\mlton} typically compiles more quickly and
-generates better code.
-
 \option{-output {\it file}}
 Specify the name of the final output file. The default name is the
 input file name with its suffix removed and an appropriate, possibly
@@ -117,6 +123,11 @@ empty, suffix added.
 Produce an executable that will gather profiling information.  When
 such an executable is run, it will produce an {\tt mlmon.out} file.
 See \secref{profiling} for details.
+
+\option{-profile-branch \falseTrue}
+If true, the profiler will separately count the time spent (or bytes
+allocated) in each branch of a function definition, {\tt case}
+expression, and {\tt if} expression.
 
 \option{-profile-stack \falseTrue}
 If true, the profiler will count the time spent (or bytes allocated)
@@ -145,12 +156,6 @@ To silence spurious errors, you can use {\tt ignore e1}.
 
 \option{-show-basis {\it file}}
 Pretty print to {\it file} the basis defined by the input program.
-When used with no input file, {\mlton} pretty prints the entire basis
-library.
-
-\option{-show-basis-used {\it file}}
-pretty print to {\it file} the portion of the basis library that the
-input program uses.
 
 \option{-show-def-use {\it file}}
 Output def-use information to {\it file}.  Each identifier that is
@@ -162,10 +167,10 @@ Secify pass to stop at.\\
 \hspace*{0.5in}
 \begin{tabular}{l|l}
 \hline
-{\tt f} & list of files on stdout (only makes sense when input is {\tt foo.cm})\\
+{\tt f} & list of files on stdout (only makes sense when input is {\tt foo.cm} or {\tt foo.mlb})\\
 {\tt g} & generated {\tt .S} and {\tt .c} files\\
 {\tt o} & object file\\
-{\tt sml} & SML file (only makes sense when input is {\tt foo.cm})\\
+{\tt sml} & SML file (only makes sense when input is {\tt foo.cm} or {\tt foo.mlb})\\
 {\tt tc} & after type checking\\
 \end{tabular}\\
 If you compile {\tt -stop g} or {\tt -stop o}, you can resume

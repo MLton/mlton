@@ -17,6 +17,7 @@ TEX_FILES = \
 	macros.tex		\
 	main.tex		\
 	man-page.tex		\
+	mlb.tex			\
 	mlb-formal.tex		\
 	nj-deviations.tex	\
 	platform.tex		\
