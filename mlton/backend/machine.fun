@@ -357,10 +357,9 @@ structure Transfer =
 		     return: {return: Label.t,
 			      handler: Label.t option,
 			      size: int} option}
-       | LimitCheck of {frameSize: int,
+       | LimitCheck of {failure: Label.t,
 			kind: LimitCheck.t,
-			live: Operand.t list,
-			return: Label.t}
+			success: Label.t}
        | NearJump of {label: Label.t,
 		      return: {return: Label.t,
 			       handler: Label.t option,
@@ -368,7 +367,6 @@ structure Transfer =
        | Raise
        | Return of {live: Operand.t list}
        | Runtime of {args: Operand.t vector,
-		     frameSize: int,
 		     prim: Prim.t,
 		     return: Label.t}
        | Switch of {test: Operand.t,
@@ -408,12 +406,11 @@ structure Transfer =
 					  Option.layout Label.layout handler),
 					 ("size", Int.layout size)])
 				return)]]
-	     | LimitCheck {frameSize, kind, live, return} =>
+	     | LimitCheck {failure, kind, success} =>
 		  seq [str "LimitCheck",
-		       record [("frameSize", Int.layout frameSize),
+		       record [("failure", Label.layout failure),
 			       ("kind", LimitCheck.layout kind),
-			       ("live", List.layout Operand.layout live),
-			       ("return", Label.layout return)]]
+			       ("success", Label.layout success)]]
 	     | NearJump {label, return} => 
 		  seq [str "NearJump ", 
 		       record [("label", Label.layout label),
@@ -428,10 +425,9 @@ structure Transfer =
 	     | Return {live} => 
 		  seq [str "Return ",
 		       record [("live", List.layout Operand.layout live)]]
-	     | Runtime {args, frameSize, prim, return} =>
+	     | Runtime {args, prim, return} =>
 		  seq [str "Runtime ",
 		       record [("args", Vector.layout Operand.layout args),
-			       ("frameSize", Int.layout frameSize),
 			       ("prim", Prim.layout prim),
 			       ("return", Label.layout return)]]
 	     | Switch {test, cases, default} =>
@@ -474,52 +470,62 @@ structure Transfer =
 	     | Cases.Int l => doit l
 	     | Cases.Word l => doit l
 	 end
+   end
 
+structure FrameInfo =
+   struct
+      datatype t = T of {offsetIndex: int,
+			 size: int}
+
+      fun layout (T {offsetIndex, size}) =
+	 Layout.record [("offsetIndex", Int.layout offsetIndex),
+			("size", Int.layout size)]
+
+      val bogus = T {offsetIndex = ~1, size = ~1}
+   end
+
+structure Kind =
+   struct
+      datatype t =
+	 Cont of {args: Operand.t list,
+		  frameInfo: FrameInfo.t}
+       | CReturn of {arg: Operand.t,
+		     ty: Type.t} option
+       | Func of {args: Operand.t list}
+       | Handler of {offset: int}
+       | Jump
+       | Runtime of {frameInfo: FrameInfo.t}
+
+      fun layout k =
+	 let
+	    open Layout
+	 in
+	    case k of
+	       Cont {args, frameInfo} =>
+		  seq [str "Cont ",
+		       record [("args", List.layout Operand.layout args),
+			       ("frameInfo", FrameInfo.layout frameInfo)]]
+	     | CReturn opt =>
+		  seq [str "CReturn ",
+		       Option.layout
+		       (fn {arg, ty} =>
+			record [("arg", Operand.layout arg),
+				("ty", Type.layout ty)])
+		       opt]
+	     | Func {args} =>
+		  seq [str "Func ",
+		       record [("args", List.layout Operand.layout args)]]
+	     | Handler {offset} =>
+		  seq [str "Handler", paren(Int.layout offset)]
+	     | Jump => str "Jump"
+	     | Runtime {frameInfo} =>
+		  seq [str "Runtime ",
+		       record [("frameInfo", FrameInfo.layout frameInfo)]]
+	 end
    end
 
 structure Block =
    struct
-      structure Kind =
-	 struct
-	    datatype t =
-	       Cont of {args: Operand.t list,
-			size: int}
-	     | CReturn of {arg: Operand.t,
-			   ty: Type.t} option
-	     | Func of {args: Operand.t list}
-	     | Handler of {offset: int}
-	     | Jump
-	       
-	    val func = Func
-	    val jump = Jump
-	    val cont = Cont
-	    val creturn = CReturn
-	    val handler = Handler
-
-	    fun layout k =
-	       let
-		  open Layout
-	       in
-		  case k of
-		     Cont {args, size} =>
-			seq [str "Cont", paren (Int.layout size), str " ",
-			     record [("args", List.layout Operand.layout args)]]
-		   | CReturn opt =>
-			seq [str "CReturn ",
-			     Option.layout
-			     (fn {arg, ty} =>
-			      record [("arg", Operand.layout arg),
-				      ("ty", Type.layout ty)])
-			     opt]
-		   | Func {args} =>
-			seq [str "Func ",
-			     record [("args", List.layout Operand.layout args)]]
-		   | Handler {offset} =>
-			seq [str "Handler", paren(Int.layout offset)]
-		   | Jump => str "Jump"
-	       end
-	 end
-
       datatype t = T of {label: Label.t,
 			 kind: Kind.t,
 			 live: Operand.t list,
@@ -554,19 +560,17 @@ structure Block =
 structure Chunk =
    struct
       datatype t = T of {chunkLabel: ChunkLabel.t,
-			 (* where to start *)
-			 entries: Label.t list,
-			 gcReturns: Label.t list,
-			 blocks: Block.t list,
-			 (* for each type, gives the max # regs used *)
+			 blocks: Block.t vector,
 			 regMax: Type.t -> int}
 
       fun layout (T {blocks, ...}) =
-	 Layout.align (List.map (blocks, Block.layout))
+	 Layout.align (Vector.toListMap (blocks, Block.layout))
 
       fun layouts (c as T {blocks, ...}, output' : Layout.t -> unit) =
-	 let open Layout
-	 in List.foreach(blocks, fn block => Block.layouts(block, output'))
+	 let
+	    open Layout
+	 in
+	    Vector.foreach (blocks, fn block => Block.layouts (block, output'))
 	 end
    end
 
@@ -577,25 +581,87 @@ structure Program =
 			 intInfs: (Global.t * string) list,
 			 strings: (Global.t * string) list,
 			 floats: (Global.t * string) list,
-			 nextChunks: Label.t -> ChunkLabel.t option,
-			 frameOffsets: int list list,
-			 frameLayouts: Label.t -> {size: int,
-						   offsetIndex: int} option,
+			 frameOffsets: int vector vector,
 			 maxFrameSize: int,
 			 chunks: Chunk.t list,
 			 main: {chunkLabel: ChunkLabel.t,
 				label: Label.t}}
 
       fun layout (T {chunks, ...}) =
-	 let open Layout
+	 let
+	    open Layout
 	 in 
-	    align (List.map(chunks, Chunk.layout))
+	    align (List.map (chunks, Chunk.layout))
 	 end
 
       fun layouts (p as T {chunks, ...}, output': Layout.t -> unit) =
-	 let open Layout
-	 in List.foreach(chunks, fn chunk => Chunk.layouts(chunk, output'))
-	 end 
+	 let
+	    open Layout
+	 in
+	    List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output'))
+	 end
+
+      fun typeCheck _ = ()
+(*       fun typeCheck (T {chunks, floats, frameLayouts, frameOffsets,
+ * 			globals, globalsNonRoot, intInfs, main,
+ * 			maxFrameSize, nextChunks, strings}) =
+ * 	 let
+ * 	    fun error ss =
+ * 	       raise Fail (concat ss)
+ * 	    fun globals (name, gs, ty) =
+ * 	       List.foreach
+ * 	       (gs, fn (g, s) =>
+ * 		if Type.equals (ty, Global.ty g)
+ * 		   then ()
+ * 		else error ["invalid global ", name, ": ", s, " of type ",
+ * 			    Type.toString ty])
+ * 	    val _ = globals ("float", floats, Type.double)
+ * 	    val _ = globals ("intInf", intInfs, Type.pointer)
+ * 	    val _ = globals ("string", string, Type.pointer)
+ * 	    val _ =
+ * 	       List.foreach
+ * 	       (chunks,
+ * 		fn Chunk.T {chunkLabel, entries, gcReturns, blocks, regMax} =>
+ * 		let
+ * 		   val {get = labelBlock: Label.t -> Block.t option,
+ * 			set = setLabelBlock, ...} =
+ * 		      Property.getSetOnce (Label.plist, Property.initConst NONE)
+ * 		   val _ =
+ * 		      List.foreach
+ * 		      (blocks, fn b as Block.T {label, ...} =>
+ * 		       setLabelBlock (label, b))
+ * 		   val _ =
+ * 		      List.foreach
+ * 		      (entries, fn l =>
+ * 		       case labelBlock l of
+ * 			  NONE => error ["undefined entry: ", Label.toString l]
+ * 			| SOME (Block.T {kind, ...}) =>
+ * 			     let datatype z = datatype Block.Kind.t
+ * 			     in
+ * 				if (case kind of
+ * 				       Cont _ => true
+ * 				     | CReturn _ => false
+ * 				     | Func _ => true
+ * 				     | Handler _ => true
+ * 				     | Jump => false)
+ * 				   then ()
+ * 				else error ["entry of wrong kind: ",
+ * 					    Label.toString l]
+ * 			     end)
+ * 		   val _ =
+ * 		      List.foreach
+ * 		      (gcReturns, fn l =>
+ * 		       
+ * 		   val _ =
+ * 		      List.foreach
+ * 		      (blocks,
+ * 		       fn Block.T {label, kind, live, profileInfo,
+ * 				   statements, transfer} =>
+ * 		       
+ * 			 
+ * 	 in
+ * 	 end
+ *)
    end
 
 end

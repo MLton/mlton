@@ -14,7 +14,6 @@ open Rssa
 datatype z = datatype Operand.t
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
-structure Kind = Block.Kind
 
 structure ImplementHandlers = ImplementHandlers (structure Ssa = Ssa)
 structure Representation = Representation (structure Ssa = Ssa
@@ -603,13 +602,8 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 						  numPointers = np}
 					   :: ss,
 					   fn return => 
-					   LimitCheck
-					   {kind = (LimitCheck.Array
-						    {bytesPerElt = bytesPerElt,
-						     extraBytes = 0,
-						     numElts = numElts,
-						     stackToo = false}),
-					    return = return})
+					   Goto {args = Vector.new0 (),
+						 dst = return})
 				       end
 				  | Array_sub =>
 				       (case targ () of

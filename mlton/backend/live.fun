@@ -134,7 +134,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	     *)
 	    val _ =
 	       case kind of
-		  Block.Kind.Cont {handler, ...} => Option.app (handler, goto)
+		  Kind.Cont {handler, ...} => Option.app (handler, goto)
 		| _ => ()
 	    fun define (x: Var.t): unit = setDefined (x, b)
 	    fun use (x: Var.t): unit =
@@ -217,9 +217,10 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 					 else ())
 			; goto dst
 		     end
-		| LimitCheck {kind, return, ...} =>
+		| LimitCheck {failure, kind, success, ...} =>
 		     (LimitCheck.forVar (kind, use)
-		      ; goto return)
+		      ; goto failure
+		      ; goto success)
 		| Raise xs => useOperands xs
 		| Return xs => useOperands xs
 		| Runtime {args, return, ...} =>

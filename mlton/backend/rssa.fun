@@ -177,8 +177,9 @@ structure Transfer =
 		  return: Return.t}
        | Goto of {dst: Label.t,
 		  args: Operand.t vector}
-       | LimitCheck of {kind: LimitCheck.t,
-			return: Label.t}
+       | LimitCheck of {failure: Label.t,
+			kind: LimitCheck.t,
+			success: Label.t}
        | Raise of Operand.t vector
        | Return of Operand.t vector
        | Runtime of {args: Operand.t vector,
@@ -236,10 +237,11 @@ structure Transfer =
 	     | Goto {dst, args} =>
 		  seq [Label.layout dst, str " ",
 		       Vector.layout Operand.layout args]
-	     | LimitCheck {kind, return} =>
+	     | LimitCheck {failure, kind, success} =>
 		  seq [str "LimitCheck ",
-		       record [("kind", LimitCheck.layout kind),
-			       ("return", Label.layout return)]]
+		       record [("failure", Label.layout failure),
+			       ("kind", LimitCheck.layout kind),
+			       ("success", Label.layout success)]]
 	     | Raise xs => seq [str "Raise", Vector.layout Operand.layout xs]
 	     | Return xs => 
 		  seq [str "Return ",
@@ -268,7 +270,7 @@ structure Transfer =
 	  | CCall {return, ...} => f return
 	  | Call {return, ...} => Return.foreachLabel (return, f)
 	  | Goto {dst, ...} => f dst
-	  | LimitCheck {return, ...} => f return
+	  | LimitCheck {failure, success, ...} => (f failure; f success)
 	  | Raise _ => ()
 	  | Return _ => ()
 	  | Runtime {return, ...} => f return
@@ -279,17 +281,18 @@ structure Transfer =
 	       (f int; f pointer)
    end
 
+structure Kind =
+   struct
+      datatype t =
+	 Cont of {handler: Label.t option}
+       | CReturn
+       | Handler
+       | Normal
+       | Runtime
+   end
+
 structure Block =
    struct
-      structure Kind =
-	 struct
-	    datatype t =
-	       Cont of {handler: Label.t option}
-	     | CReturn
-	     | Handler
-	     | Normal
-	 end
-
       datatype t =
 	 T of {
 	       args: (Var.t * Type.t) vector,

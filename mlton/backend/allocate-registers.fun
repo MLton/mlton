@@ -14,7 +14,7 @@ in
    structure Block = Block
    structure Func = Func
    structure Function = Function
-   structure Kind = Block.Kind
+   structure Kind = Kind
    structure Label = Label
    structure Var = Var
    structure Type = Type
@@ -238,6 +238,8 @@ fun allocate {function = f: Rssa.Function.t,
 			  ; List.foreach (beginNoFormals, forceStack))
 		    | Kind.Handler =>
 			 List.foreach (beginNoFormals, forceStack)
+		    | Kind.Runtime =>
+			 List.foreach (beginNoFormals, forceStack)
 		    | _ => ()
 		val _ =
 		   Vector.foreach
@@ -252,18 +254,6 @@ fun allocate {function = f: Rssa.Function.t,
 			| SetSlotExnStack => hasHandler := true
 			| _ => ()
 		    end)
-		val _ =
-		   let
-		      fun force l =
-			 List.foreach (#beginNoFormals (labelLive l),
-				       forceStack)
-		      datatype z = datatype R.Transfer.t
-		   in
-		      case transfer of
-			 LimitCheck {return, ...} => force return
-		       | Runtime {return, ...} => force return
-		       | _ => ()
-		   end
 	     in
 		()
 	     end)
@@ -410,7 +400,8 @@ fun allocate {function = f: Rssa.Function.t,
 				   Kind.Cont _ => true
 				 | Kind.CReturn => false
 				 | Kind.Handler => true
-				 | Kind.Normal => false)
+				 | Kind.Normal => false
+				 | Kind.Runtime => true)
 		val stack =
 		   Stack.new (List.fold (liveNoFormals, [], fn (oper, ac) =>
 					 case Operand.deStackOffset oper of

@@ -121,9 +121,9 @@ signature MACHINE =
       structure LimitCheck:
 	 sig
 	    datatype t =
-	       Array of {bytesPerElt: int,
+	       Array of {bytesPerElt: int, (* > 0 *)
 			 extraBytes: int, (* for subsequent allocation *)
-			 numElts: Operand.t,
+			 numElts: Operand.t, (* not an int *)
 			 stackToo: bool}
 	     | Heap of {bytes: int,
 			stackToo: bool}
@@ -158,11 +158,9 @@ signature MACHINE =
 			   return: {return: Label.t,
 				    handler: Label.t option,
 				    size: int} option}
-	     | LimitCheck of {frameSize: int,
+	     | LimitCheck of {failure: Label.t, (* Must be of Runtime kind. *)
 			      kind: LimitCheck.t,
-			      live: Operand.t list, (* live in stack frame. *)
-			      (* return must be of Cont kind. *)
-			      return: Label.t}
+			      success: Label.t} (* Must be of Jump kind. *)
 	     | NearJump of {label: Label.t,
 			    return: {return: Label.t,
 				     handler: Label.t option,
@@ -170,9 +168,8 @@ signature MACHINE =
 	     | Raise
 	     | Return of {live: Operand.t list}
 	     | Runtime of {args: Operand.t vector,
-			   frameSize: int,
 			   prim: Prim.t,
-			   return: Label.t}
+			   return: Label.t} (* Must be of Runtime kind. *)
 	     | Switch of {test: Operand.t,
 			  cases: Cases.t,
 			  default: Label.t option}
@@ -187,29 +184,33 @@ signature MACHINE =
 	    val layout: t -> Layout.t
 	 end
 
+      structure FrameInfo:
+	 sig
+	    datatype t =
+	       T of {(* Index into frameOffsets *)
+		     offsetIndex: int,
+		     (* Size of frame in bytes, including return address. *)
+		     size: int}
+
+	    val bogus: t
+	    val size: t -> int
+	 end
+      
+      structure Kind:
+	 sig
+	    datatype t =
+	       Cont of {args: Operand.t list,
+			frameInfo: FrameInfo.t}
+	     | CReturn of {arg: Operand.t,
+			   ty: Type.t} option
+	     | Func of {args: Operand.t list}
+	     | Handler of {offset: int}
+	     | Jump
+	     | Runtime of {frameInfo: FrameInfo.t}
+	 end
+      
       structure Block:
 	 sig
-	    structure Kind:
-	       sig
-		  datatype t =
-		     Cont of {args: Operand.t list,
-			      (* Size of stack frame in bytes, including return address. *)
-			      size: int}
-		   | CReturn of {arg: Operand.t,
-				 ty: Type.t} option
-		   | Func of {args: Operand.t list}
-		   | Handler of {offset: int}
-		   | Jump
-
-		  val cont: {args: Operand.t list,
-			     size: int}
-		     -> t
-		  val creturn: {arg: Operand.t, ty: Type.t} option -> t
-		  val func: {args: Operand.t list} -> t
-		  val handler: {offset: int} -> t
-		  val jump: t
-	       end
-	    	  
 	    datatype t =
 	       T of {kind: Kind.t,
 		     label: Label.t,
@@ -225,10 +226,7 @@ signature MACHINE =
       structure Chunk:
 	 sig
 	    datatype t = T of {chunkLabel: ChunkLabel.t,
-			       (* where to start *)
-			       entries: Label.t list,
-			       gcReturns: Label.t list,
-			       blocks: Block.t list,
+			       blocks: Block.t vector,
 			       (* for each type, gives the max # regs used *)
 			       regMax: Type.t -> int}
 	 end
@@ -236,19 +234,18 @@ signature MACHINE =
       structure Program:
 	 sig
 	    datatype t =
-	       T of {globals: Type.t -> int,
+	       T of {chunks: Chunk.t list,
+		     floats: (Global.t * string) list,
+		     frameOffsets: int vector vector,
+		     globals: Type.t -> int,
 		     globalsNonRoot: int,
 		     intInfs: (Global.t * string) list,
-		     strings: (Global.t * string) list,
-		     floats: (Global.t * string) list,
-		     nextChunks: Label.t -> ChunkLabel.t option,
-		     frameOffsets: int list list,
-		     frameLayouts: Label.t -> {size: int,
-					       offsetIndex: int} option,
+		     main: {chunkLabel: ChunkLabel.t,
+			    label: Label.t},
 		     maxFrameSize: int,
-		     chunks: Chunk.t list,
-		     main: {chunkLabel: ChunkLabel.t, label: Label.t}}
+		     strings: (Global.t * string) list}
 
 	    val layouts: t * (Layout.t -> unit) -> unit
+	    val typeCheck: t -> unit
 	 end
    end

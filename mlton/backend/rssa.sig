@@ -93,7 +93,7 @@ signature RSSA =
       structure LimitCheck:
 	 sig
 	    datatype t =
-	       Array of {bytesPerElt: int,
+	       Array of {bytesPerElt: int, (* > 0 *)
 			 extraBytes: int, (* for subsequent allocation *)
 			 numElts: Var.t,
 			 stackToo: bool}
@@ -130,10 +130,9 @@ signature RSSA =
 			return: Return.t}
 	     | Goto of {dst: Label.t,
 			args: Operand.t vector}
-	     | LimitCheck of {kind: LimitCheck.t,
-			      return: Label.t} (* return must be nullary and of
-						* Cont kind.
-						*)
+	     | LimitCheck of {failure: Label.t, (* Must be nullary, Runtime. *)
+			      kind: LimitCheck.t,
+			      success: Label.t} (* Must be nullary, Normal. *)
 	     (* Raise implicitly raises to the caller.  
 	      * I.E. the local handler stack must be empty.
 	      *)
@@ -141,7 +140,7 @@ signature RSSA =
 	     | Return of Operand.t vector
 	     | Runtime of {args: Operand.t vector,
 			   prim: Prim.t,
-			   return: Label.t} (* Must be nullary. *)
+			   return: Label.t} (* Must be nullary, Runtime. *)
 	     | Switch of {cases: Cases.t,
 			  default: Label.t option, (* Must be nullary. *)
 			  test: Operand.t}
@@ -152,25 +151,24 @@ signature RSSA =
 	    val layout: t -> Layout.t
 	 end
 
+      structure Kind:
+	 sig
+	    datatype t =
+	       Cont of {handler: Label.t option}
+	     | CReturn
+	     | Handler
+	     | Normal
+	     | Runtime
+	 end
+
       structure Block:
 	 sig
-	    structure Kind:
-	       sig
-		  datatype t =
-		     Cont of {handler: Label.t option}
-		   | CReturn
-		   | Handler
-		   | Normal
-	       end
-
 	    datatype t =
-	       T of {
-		     args: (Var.t * Type.t) vector,
+	       T of {args: (Var.t * Type.t) vector,
 		     kind: Kind.t,
 		     label: Label.t,
 		     statements: Statement.t vector,
-		     transfer: Transfer.t
-		     }
+		     transfer: Transfer.t}
 
 	    val args: t -> (Var.t * Type.t) vector
 	    val clear: t -> unit

@@ -119,10 +119,8 @@ fun coalesce (program as Program.T {functions, ...}, limit) =
 		    case transfer of
 		       Arith {overflow, success, ...} =>
 			  (same overflow; same success)
-		     | CCall {return, ...} => same return (* needed? *)
 		     | Goto {dst, ...} => same dst
-		     | LimitCheck {return, ...} => same return (* needed? *)
-		     | Runtime {return, ...} => same return (* needed? *)
+		     | LimitCheck {success, ...} => same success
 		     | Switch {cases, default, ...} =>
 			  (Cases.foreach (cases, same)
 			   ; Option.app (default, same))
