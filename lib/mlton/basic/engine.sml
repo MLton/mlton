@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
@@ -21,7 +21,7 @@ fun done (return): unit =
    (return := NONE
     ; Itimer.set (which, {value = Time.zero,
 			  interval = Time.zero})
-    ; Signal.setHandler(signal, Signal.Handler.default))
+    ; Signal.setHandler (signal, Signal.Handler.default))
 
 fun new (f: unit -> 'a): 'a t =
    let
@@ -33,9 +33,11 @@ fun new (f: unit -> 'a): 'a t =
 	     val res = Done (f ()) handle e => Raise e
 	     val ret = valOf (!return)
 	     val _ = done return
-	  in Thread.switch (fn _ => (ret, res))
+	  in
+	     Thread.switch (fn _ => Thread.prepare (ret, res))
 	  end)
-   in T {return = return, thread = thread}
+   in
+      T {return = return, thread = thread}
    end
      
 fun run (T {return, thread}, time: Time.t): 'a res =
@@ -50,7 +52,8 @@ fun run (T {return, thread}, time: Time.t): 'a res =
        val _ = Signal.setHandler (signal, Signal.Handler.handler handler)
        val _ = Itimer.set (which, {value = time,
 				   interval = Time.zero})
-    in (thread, ())
+    in
+       Thread.prepare (thread, ())
     end)
 
 fun timeLimit (t: Time.t, f: unit -> 'a): 'a option =
