@@ -165,7 +165,6 @@ fun cPointerType (T {convention, prototype = (args, return), ...}) =
 			 ")) "]
 	 else " "
       fun arg t = CType.toString t
-      val args = Vector.dropPrefix (args, 1)
       val return =
 	 case return of
 	    NONE => "void"
