@@ -10,6 +10,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
       structure Prim = PosixPrimitive.Process
       open Prim
       structure Error = PosixError
+      structure SysCall = Error.SysCall
 
       type signal = PosixSignal.signal
       type pid = Pid.t
@@ -20,14 +21,13 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
       structure MLton = Primitive.MLton
 	 
       fun fork () =
-	 let
-	    val p = Prim.fork ()
-	 in
-	    case Pid.toInt p of
-	       ~1 => Error.error ()
-	     | 0 => NONE
-	     | _ => SOME p
-	 end
+	 SysCall.syscall
+	 (fn () =>
+	  let 
+	     val p = Prim.fork ()
+	     val p' = Pid.toInt p
+	  in (p', fn () => if p' = 0 then NONE else SOME p)
+	  end)
 
       val fork =
 	 if let open MLton.Platform.OS in host <> Cygwin end
@@ -82,15 +82,28 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
       val convs = C.CSS.fromList
 
       fun exece (path, args, env): 'a =
-	 (Error.checkResult (Prim.exece (conv path, convs args, convs env))
-	  ; raise Fail "Posix.Process.exece")
+	 let
+	    val path = conv path
+	    val args = convs args
+	    val env = convs env
+	 in
+	    (SysCall.simple
+	     (fn () => Prim.exece (path, args, env))
+	     ; raise Fail "Posix.Process.exece")
+	 end
 	 
       fun exec (path, args): 'a =
 	 exece (path, args, PosixProcEnv.environ ())
 
       fun execp (file, args): 'a =
-	 (Error.checkResult (Prim.execp (conv file, convs args))
-	  ; raise Fail "Posix.Process.execp")
+	 let
+	    val file = conv file
+	    val args = convs args
+	 in
+	    (SysCall.simple 
+	     (fn () => Prim.execp (file, args))
+	     ; raise Fail "Posix.Process.execp")
+	 end
 
       datatype waitpid_arg =
 	 W_ANY_CHILD
@@ -130,11 +143,16 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 		   | W_CHILD pid => Pid.toInt pid
 		   | W_SAME_GROUP => 0
 		   | W_GROUP pid => ~ (Pid.toInt pid)
-	       val pid = Prim.waitpid (Pid.fromInt p, status,
-				       SysWord.toInt (W.flags flags))
-	       val _ = Error.checkResult (Pid.toInt pid)
+	       val flags = W.flags flags
 	    in
-	       pid
+	       SysCall.syscallRestart
+	       (fn () =>
+		let
+		   val pid = Prim.waitpid (Pid.fromInt p, status,
+					   SysWord.toInt flags)
+		in
+		   (Pid.toInt pid, fn () => pid)
+		end)
 	    end
 	 fun getStatus () = fromStatus (!status)
       in
@@ -177,7 +195,8 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 		| K_SAME_GROUP => ~1
 		| K_GROUP pid => ~ (Pid.toInt pid)
 	 in
-	    Error.checkResult (Prim.kill (Pid.fromInt pid, s))
+	    SysCall.simple
+	    (fn () => Prim.kill (Pid.fromInt pid, s))
 	 end
 
       local
@@ -190,5 +209,12 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	 val sleep = wrap Prim.sleep
       end
 	 
-      fun pause () = Error.checkResult (Prim.pause ())
+      (* FIXME: pause *)
+      fun pause () =
+	 SysCall.syscallErr
+	 ({clear = false, restart = false},
+	  fn () =>
+	  {return = Prim.pause (),
+	   post = fn () => (),
+	   handlers = [(Error.intr, fn () => ())]})
    end

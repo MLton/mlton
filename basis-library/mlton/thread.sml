@@ -262,7 +262,7 @@ in
 	 (* Atomic 0 *)
 	 val () = atomicBegin ()
          (* Atomic 1 *)
-	 val () = Prim.startHandler ()
+	 val () = Prim.startHandler () (* implicit atomicBegin () *)
          (* Atomic 2 *)
       in
 	 case !signalHandler of

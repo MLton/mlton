@@ -4,11 +4,14 @@ structure MLtonRlimit: MLTON_RLIMIT =
 
       val get =
 	 fn (r: t) =>
-	 (PosixError.checkResult (get r)
-	  ; {hard = getHard (),
-	     soft = getSoft ()})
+	 PosixError.SysCall.syscall
+	 (fn () =>
+	  (get r, fn () => 
+	   {hard = getHard (),
+	    soft = getSoft ()}))
 
       val set =
 	 fn (r: t, {hard, soft}) =>
-	 PosixError.checkResult (set (r, hard, soft))
+	 PosixError.SysCall.simple
+	 (fn () => set (r, hard, soft))
    end

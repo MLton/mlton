@@ -122,8 +122,8 @@ structure OS_IO: OS_IO =
 		      then let open PosixError in raiseSys inval end
 		   else Int.fromLarge (Time.toMilliseconds t)
 	  val reventss = Array.array (n, 0w0)
-	  val _ = Posix.Error.checkResult 
-                  (Prim.poll (fds, eventss, n, timeOut, reventss))
+	  val _ = Posix.Error.SysCall.simpleRestart
+	          (fn () => Prim.poll (fds, eventss, n, timeOut, reventss))
 	  in
 	    Array.foldri
 	    (fn (i, w, l) => 

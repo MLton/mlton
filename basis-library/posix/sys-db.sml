@@ -10,6 +10,7 @@ structure PosixSysDB: POSIX_SYS_DB =
       structure CS = C.CS
       structure Prim = PosixPrimitive.SysDB
       structure Error = PosixError
+      structure SysCall = Error.SysCall
 
       type uid = Prim.uid
       type gid = Prim.gid
@@ -25,14 +26,15 @@ structure PosixSysDB: POSIX_SYS_DB =
 	    local
 	       structure C = Prim.Passwd
 	    in
-	       fun fromC(b: bool): passwd =
-		  if b
-		     then {name = CS.toString(C.name()),
-			   uid = C.uid(),
-			   gid = C.gid(),
-			   home = CS.toString(C.dir()),
-			   shell = CS.toString(C.shell())}
-		  else Error.error()
+	       fun fromC (f: unit -> bool): passwd =
+		  SysCall.syscall
+		  (fn () =>
+		   (if f () then 0 else ~1,
+		    fn () => {name = CS.toString(C.name()),
+			      uid = C.uid(),
+			      gid = C.gid(),
+			      home = CS.toString(C.dir()),
+			      shell = CS.toString(C.shell())}))
 	    end
 
 	    val name: passwd -> string = #name
@@ -42,8 +44,11 @@ structure PosixSysDB: POSIX_SYS_DB =
 	    val shell: passwd -> string = #shell 
 	 end
 
-      val getpwnam = Passwd.fromC o Prim.getpwnam o NullString.nullTerm
-      val getpwuid = Passwd.fromC o Prim.getpwuid
+      fun getpwnam name = 
+	 let val name = NullString.nullTerm name
+	 in Passwd.fromC (fn () => Prim.getpwnam name)
+	 end
+      fun getpwuid uid = Passwd.fromC (fn () => Prim.getpwuid uid)
    
       structure Group =
 	 struct
@@ -53,18 +58,22 @@ structure PosixSysDB: POSIX_SYS_DB =
 
 	    structure Group = Prim.Group
 
-	    fun fromC(b: bool): group =
-	       if b
-		  then {name = CS.toString(Group.name()),
-			gid = Group.gid(),
-			members = C.CSS.toList(Group.mem())}
-	       else Error.error()
+	    fun fromC (f: unit -> bool): group =
+	       SysCall.syscall
+	       (fn () =>
+		(if f () then 0 else ~1,
+		 fn () => {name = CS.toString(Group.name()),
+			   gid = Group.gid(),
+			   members = C.CSS.toList(Group.mem())}))
 		  
 	    val name: group -> string = #name
 	    val gid: group -> gid = #gid
 	    val members: group -> string list = #members
 	 end
 
-      val getgrnam = Group.fromC o Prim.getgrnam o NullString.nullTerm
-      val getgrgid = Group.fromC o Prim.getgrgid
+      fun getgrnam name = 
+	 let val name = NullString.nullTerm name
+	 in Group.fromC (fn () => Prim.getgrnam name)
+	 end
+      fun getgrgid gid = Group.fromC (fn () => Prim.getgrgid gid)
    end

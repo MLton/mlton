@@ -42,12 +42,12 @@ void NetHostDB_Entry_addrsN(Int n, Pointer addr) {
 	return;
 }
 
-Int NetHostDB_getByAddress(Pointer addr, Int len) {
+Bool NetHostDB_getByAddress(Pointer addr, Int len) {
 	hostent = gethostbyaddr(addr, len, AF_INET);
 	return (hostent != NULL and hostent->h_name != NULL);
 }
 
-Int NetHostDB_getByName(Cstring name) {
+Bool NetHostDB_getByName(Cstring name) {
 	hostent = gethostbyname((char*)name);
 	return (hostent != NULL and hostent->h_name != NULL);
 }

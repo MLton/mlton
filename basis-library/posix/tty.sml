@@ -11,6 +11,7 @@ structure PosixTTY: POSIX_TTY =
       structure Prim = PosixPrimitive.TTY
       open Prim
       structure Error = PosixError
+      structure SysCall = Error.SysCall
 
       type pid = Pid.t
 	 
@@ -120,45 +121,52 @@ structure PosixTTY: POSIX_TTY =
 	    open Prim.TC 
 
 	    fun getattr (FD fd) =
-	       (Error.checkResult (Prim.getattr (fd))
-		; {iflag = Termios.iflag (),
-		   oflag = Termios.oflag (),
-		   cflag = Termios.cflag (),
-		   lflag = Termios.lflag (),
-		   cc = Cstring.toCharArrayOfLength (Termios.cc (), V.nccs),
-		   ispeed = Termios.ispeed (),
-		   ospeed = Termios.ospeed ()})
+	       SysCall.syscallRestart
+	       (fn () =>
+		(Prim.getattr fd, fn () =>
+		 {iflag = Termios.iflag (),
+		  oflag = Termios.oflag (),
+		  cflag = Termios.cflag (),
+		  lflag = Termios.lflag (),
+		  cc = Cstring.toCharArrayOfLength (Termios.cc (), V.nccs),
+		  ispeed = Termios.ispeed (),
+		  ospeed = Termios.ospeed ()}))
 	       
 	    fun setattr (FD fd, a, {iflag, oflag, cflag, lflag, cc, ispeed, ospeed}) =
-	       (Termios.setiflag iflag
-		; Termios.setoflag oflag
-		; Termios.setcflag cflag
-		; Termios.setlflag lflag
-		; PosixError.checkResult (Termios.setospeed ospeed)
-		; PosixError.checkResult (Termios.setispeed ispeed)
-		; let val cs = Termios.cc () 
-		  in Util.naturalForeach
-		     (V.nccs, fn i => Cstring.update (cs, i, V.sub (cc, i)))
-		  end
-		; Error.checkResult (Prim.setattr (fd, a)))
+	       SysCall.syscallRestart
+	       (fn () =>
+		(Termios.setiflag iflag
+		 ; Termios.setoflag oflag
+		 ; Termios.setcflag cflag
+		 ; Termios.setlflag lflag
+		 ; SysCall.simple (fn () => Termios.setospeed ospeed)
+		 ; SysCall.simple (fn () => Termios.setispeed ispeed)
+		 ; let val cs = Termios.cc () 
+		   in Util.naturalForeach
+		      (V.nccs, fn i => Cstring.update (cs, i, V.sub (cc, i)))
+		   end
+		 ; (Prim.setattr (fd, a), fn () => ())))
 
 	    fun sendbreak (FD fd, n) =
-	       Error.checkResult (Prim.sendbreak (fd, n))
+	       SysCall.simpleRestart (fn () => Prim.sendbreak (fd, n))
 
-	    fun drain (FD fd) = Error.checkResult (Prim.drain fd)
+	    fun drain (FD fd) = 
+	       SysCall.simpleRestart (fn () => Prim.drain fd)
 	      
-	    fun flush (FD fd, n) = Error.checkResult (Prim.flush (fd, n))
+	    fun flush (FD fd, n) = 
+	       SysCall.simpleRestart (fn () => Prim.flush (fd, n))
 	      
-	    fun flow (FD fd, n) = Error.checkResult (Prim.flow (fd, n))
+	    fun flow (FD fd, n) = 
+	       SysCall.simpleRestart (fn () => Prim.flow (fd, n))
 	      
 	    fun getpgrp (FD fd) =
-	       let
-		  val pid = Prim.getpgrp fd
-		  val _ = Error.checkResult (Pid.toInt pid)
-	       in
-		  pid
-	       end
+	       SysCall.syscallRestart
+	       (fn () =>
+		let val pid = Prim.getpgrp fd
+		in (Pid.toInt pid, fn () => pid)
+		end)
 	      
-	    fun setpgrp (FD fd, pid) = Error.checkResult (Prim.setpgrp (fd, pid))
+	    fun setpgrp (FD fd, pid) = 
+	       SysCall.simpleRestart (fn () => Prim.setpgrp (fd, pid))
 	 end
    end

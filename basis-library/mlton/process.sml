@@ -2,6 +2,7 @@ structure MLtonProcess =
    struct
       structure Prim = Primitive.MLton.Process
       structure Error = PosixError
+      structure SysCall = Error.SysCall
       structure MLton = Primitive.MLton
       structure Status = PosixPrimitive.Process.Status
 
@@ -13,13 +14,15 @@ structure MLtonProcess =
 	 if isCygwin
 	    then
 	       let
-		  val pid =
-		     Prim.spawne (NullString.fromString (String.nullTerm path),
-				  C.CSS.fromList args,
-				  C.CSS.fromList env)
-		  val _ = Error.checkResult (Pid.toInt pid)
+		  val path = NullString.nullTerm path
+		  val args = C.CSS.fromList args
+		  val env = C.CSS.fromList env
 	       in
-		  pid
+		  SysCall.syscall
+		  (fn () =>
+		   let val pid = Prim.spawne (path, args, env)
+		   in (Pid.toInt pid, fn () => pid)
+		   end)
 	       end
 	 else
 	    case Posix.Process.fork () of
@@ -33,11 +36,14 @@ structure MLtonProcess =
 	 if isCygwin
 	    then
 	       let
-		  val pid = Prim.spawnp (NullString.nullTerm file,
-					 C.CSS.fromList args)
-		  val _ = Error.checkResult (Pid.toInt pid)
+		  val file = NullString.nullTerm file
+		  val args = C.CSS.fromList args
 	       in
-		  pid
+		  SysCall.syscall
+		  (fn () =>
+		   let val pid = Prim.spawnp (file, args)
+		   in (Pid.toInt pid, fn () => pid)
+		   end)
 	       end
 	 else	 
 	    case Posix.Process.fork () of

@@ -10,8 +10,7 @@ structure PosixIO: POSIX_IO =
       structure Prim = PosixPrimitive.IO
       open Prim
       structure Error = PosixError
-      val checkResult = Error.checkResult
-      val checkReturnResult = Error.checkReturnResult
+      structure SysCall = Error.SysCall
       structure FS = PosixFileSys
 
       datatype file_desc = datatype Prim.file_desc
@@ -21,17 +20,19 @@ structure PosixIO: POSIX_IO =
 	 val a: PosixPrimitive.fd array = Array.array (2, 0)
       in
 	 fun pipe () =
-	    (checkResult (Prim.pipe a);
-	     {infd = FD (Array.sub (a, 0)),
-	      outfd = FD (Array.sub (a, 1))})
+	    SysCall.syscall
+	    (fn () =>
+	     (Prim.pipe a,
+	      fn () => {infd = FD (Array.sub (a, 0)),
+			outfd = FD (Array.sub (a, 1))}))
       end
 
-      fun dup (FD fd) = FD (checkReturnResult (Prim.dup fd))
+      fun dup (FD fd) = FD (SysCall.simpleResult (fn () => Prim.dup fd))
 
       fun dup2 {old = FD old, new = FD new} =
-	 checkResult (Prim.dup2 (old, new))
+	 SysCall.simple (fn () => Prim.dup2 (old, new))
 
-      fun close (FD fd) = checkResult (Prim.close fd)
+      fun close (FD fd) = SysCall.simpleRestart (fn () => Prim.close fd)
 
       local
 	 fun make {fromVector, read, toArraySlice, toVectorSlice,
@@ -41,12 +42,15 @@ structure PosixIO: POSIX_IO =
 		  let
 		     val (buf, i, sz) = ArraySlice.base (toArraySlice sl)
 		  in
-		     checkReturnResult (read (fd, buf, i, sz))
+		     SysCall.simpleResultRestart
+		     (fn () => read (fd, buf, i, sz))
 		  end
 	       fun readVec (FD fd, n) =
 		  let
 		     val a = Primitive.Array.array n
-		     val bytesRead = checkReturnResult (read (fd, a, 0, n))
+		     val bytesRead = 
+			SysCall.simpleResultRestart
+			(fn () => read (fd, a, 0, n))
 		  in 
 		     fromVector
 		     (if n = bytesRead
@@ -58,14 +62,16 @@ structure PosixIO: POSIX_IO =
 		  let
 		     val (buf, i, sz) = ArraySlice.base (toArraySlice sl)
 		  in
-		     checkReturnResult (write (fd, buf, i, sz))
+		     SysCall.simpleResultRestart
+		     (fn () => write (fd, buf, i, sz))
 		  end
 	       val writeVec =
 		  fn (FD fd, sl) =>
 		  let
 		     val (buf, i, sz) = VectorSlice.base (toVectorSlice sl)
 		  in
-		     checkReturnResult (writeVec (fd, buf, i, sz))
+		     SysCall.simpleResultRestart
+		     (fn () => writeVec (fd, buf, i, sz))
 		  end
 	    in
 	       {readArr = readArr, readVec = readVec,
@@ -100,27 +106,28 @@ structure PosixIO: POSIX_IO =
       datatype open_mode = datatype PosixFileSys.open_mode
 	 
       fun dupfd {old = FD old, base = FD base} =
-	 FD (checkReturnResult (Prim.fcntl3 (old, F_DUPFD, base)))
+	 FD (SysCall.simpleResultRestart 
+	     (fn () => Prim.fcntl3 (old, F_DUPFD, base)))
 
       fun getfd (FD fd) =
-	 Word.fromInt (checkReturnResult (Prim.fcntl2 (fd, F_GETFD)))
+	 Word.fromInt (SysCall.simpleResultRestart 
+		       (fn () => Prim.fcntl2 (fd, F_GETFD)))
 
       fun setfd (FD fd, flags): unit =
-	 checkResult (Prim.fcntl3 (fd, F_SETFD, Word.toIntX flags))
+	 SysCall.simpleRestart
+	 (fn () => Prim.fcntl3 (fd, F_SETFD, Word.toIntX flags))
 			    
       fun getfl (FD fd): O.flags * open_mode =
-	 let val n = Prim.fcntl2 (fd, F_GETFL)
-	 in if n < 0
-	       then Error.error ()
-	    else let val w = Word.fromInt n
-		     val flags = Word.andb (w, Word.notb O_ACCMODE)
-		     val mode = Word.andb (w, O_ACCMODE)
-		 in (flags, PosixFileSys.wordToOpenMode mode)
-		 end
+	 let 
+	    val n = SysCall.simpleResultRestart (fn () => Prim.fcntl2 (fd, F_GETFL))
+	    val w = Word.fromInt n
+	    val flags = Word.andb (w, Word.notb O_ACCMODE)
+	    val mode = Word.andb (w, O_ACCMODE)
+	 in (flags, PosixFileSys.wordToOpenMode mode)
 	 end
       
       fun setfl (FD fd, flags: O.flags): unit  =
-	 checkResult (Prim.fcntl3 (fd, F_SETFL, Word.toIntX flags))
+	 SysCall.simpleRestart (fn () => Prim.fcntl3 (fd, F_SETFL, Word.toIntX flags))
 	 
       datatype whence = SEEK_SET | SEEK_CUR | SEEK_END
 
@@ -139,9 +146,13 @@ structure PosixIO: POSIX_IO =
 		   else raise Fail "Posix.IO.intToWhence"
 		      
       fun lseek (FD fd, n: Position.int, w: whence): Position.int =
-	 Error.checkReturnPosition (Prim.lseek (fd, n, whenceToInt w))
+	 SysCall.syscall
+	 (fn () =>
+	  let val n = Prim.lseek (fd, n, whenceToInt w)
+	  in (if n = ~1 then ~1 else 0, fn () => n)
+	  end)
 	 
-      fun fsync (FD fd): unit = checkResult (Prim.fsync fd)
+      fun fsync (FD fd): unit = SysCall.simple (fn () => Prim.fsync fd)
 	 
       datatype lock_type =
 	 F_RDLCK
@@ -184,16 +195,18 @@ structure PosixIO: POSIX_IO =
 	    (cmd, usepid)
 	    (FD fd, {ltype, whence, start, len, ...}: FLock.flock)
 	    : FLock.flock  =
-	    (P.setType (lockTypeToInt ltype)
-	     ; P.setWhence (whenceToInt whence)
-	     ; P.setStart start
-	     ; P.setLen len
-	     ; checkResult (P.fcntl (fd, cmd))
-	     ; {ltype = intToLockType (P.typ ()),
-		whence = intToWhence (P.whence ()),
-		start = P.start (),
-		len = P.len (),
-		pid = if usepid then SOME (P.pid ()) else NONE})
+	    SysCall.syscallRestart
+	    (fn () =>
+	     ((P.setType (lockTypeToInt ltype)
+	       ; P.setWhence (whenceToInt whence)
+	       ; P.setStart start
+	       ; P.setLen len
+	       ; P.fcntl (fd, cmd)), fn () => 
+	      {ltype = intToLockType (P.typ ()),
+	       whence = intToWhence (P.whence ()),
+	       start = P.start (),
+	       len = P.len (),
+	       pid = if usepid then SOME (P.pid ()) else NONE}))
       in
 	 val getlk = make (F_GETLK, true)
 	 val setlk = make (F_SETLK, false)

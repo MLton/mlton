@@ -3,25 +3,14 @@ signature CRITICAL =
       val atomicBegin : unit -> unit
       val atomicEnd : unit -> unit
       val doAtomic : (unit -> unit) -> unit
-      
-      val maskBegin : unit -> unit
-      val maskEnd : unit -> unit
-      val doMasked : (unit -> unit) -> unit
    end
 structure Critical : CRITICAL =
    struct
       structure Thread = MLton.Thread
-      structure Signal = MLton.Signal
-      structure Itimer = MLton.Itimer
 
       val atomicBegin = Thread.atomicBegin
       val atomicEnd = Thread.atomicEnd
       fun doAtomic f = (atomicBegin (); f (); atomicEnd ())
-
-      val mask = Signal.Mask.some [Itimer.signal Itimer.Real]
-      fun maskBegin () = Signal.Mask.block mask
-      fun maskEnd () = Signal.Mask.unblock mask
-      fun doMasked f = (maskBegin (); f (); maskEnd ())
    end
 
 structure Main =
@@ -38,7 +27,7 @@ structure Main =
 	 Signal.setHandler (Itimer.signal Itimer.Real, h)
 
       fun print s =
-	 Critical.doMasked (fn () => (MLton.GC.collect (); TextIO.print s))
+	 Critical.doAtomic (fn () => TextIO.print s)
 
       fun doit n =
 	 let

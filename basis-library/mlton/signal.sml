@@ -140,15 +140,6 @@ structure Mask =
 	   case h of 
 	      Handler _ => (fromInt s)::sigs
 	    | _ => sigs) [] handlers)
-
-      val () =
-	 PosixError.SysCall.blocker :=
-	 (fn () => let
-		      val m = getBlocked ()
-		      val () = block (handled ())
-		   in
-		      fn () => setBlocked m
-		   end)
    end
    
 structure Handler =
@@ -175,6 +166,15 @@ structure Handler =
 	     * Any exceptions raised by a signal handler will be caught by
 	     * the topLevelHandler, which is installed in thread.sml.
 	     *)
+	    val _ =
+	       PosixError.SysCall.blocker :=
+	       (fn () => let
+			    val m = Mask.getBlocked ()
+			    val () = Mask.block (Mask.handled ())
+			 in
+			    fn () => Mask.setBlocked m
+			 end)
+
 	    val () =
 	       MLtonThread.setHandler
 	       (fn t =>

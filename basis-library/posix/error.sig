@@ -61,25 +61,54 @@ signature POSIX_ERROR_EXTRA =
 
       exception SysErr of string * syserror option
 
+      val cleared: syserror
+
       val raiseSys: syserror -> 'a
 	 
-      (* raises SysErr with ERRNO *)
-      (* raiseSys if arg is -1 *)
-      val checkResult: int -> unit
-      val checkReturnResult: int -> int 
-      val checkReturnPosition: Position.int -> Position.int
-      val getErrno: unit -> int
-      val clearErrno: unit -> unit
-      val error: unit -> 'a
+      structure Old:
+	 sig
+	    (* raiseSys if arg is -1 *)
+	    val checkResult: int -> unit
+	    val checkReturnResult: int -> int
+	    val getErrno: unit -> int
+	    (* raises SysErr with ERRNO *)
+	    val error: unit -> 'a
+	 end
 
       structure SysCall :
 	 sig
 	    val blocker: (unit -> (unit -> unit)) ref
 	    val restartFlag: bool ref
+
+	    val syscallErr: 
+	       {clear: bool, restart: bool} * 
+	       (unit -> {return: int,
+			 post: unit -> 'a,
+			 handlers: (syserror * (unit -> 'a)) list}) -> 'a
+
+	    (* clear = false, restart = false,
+	     * post = fn () => (), handlers = []
+	     *)
 	    val simple: (unit -> int) -> unit
+	    (* clear = false, restart = true,
+	     * post = fn () => (), handlers = []
+	     *)
 	    val simpleRestart: (unit -> int) -> unit
+	    (* clear = false, restart = false,
+	     * post = fn () => return, handlers = []
+	     *)
 	    val simpleResult: (unit -> int) -> int
+	    (* clear = false, restart = true,
+	     * post = fn () => return, handlers = []
+	     *)
 	    val simpleResultRestart: (unit -> int) -> int
-	    val syscall: {restart: bool} * (unit -> int * (unit -> 'a)) -> 'a
+	    (* clear = false, restart = false,
+	     * handlers = []
+	     *)
+	    val syscall: (unit -> int * (unit -> 'a)) -> 'a
+	    (* clear = false, restart = true,
+	     * handlers = []
+	     *)
+	    val syscallRestart: (unit -> int * (unit -> 'a)) -> 'a
 	 end
    end
