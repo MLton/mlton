@@ -407,17 +407,22 @@ struct
 	      mlmonfile: File.t}: t
     = let
 	val profInfo' as T {buckets = buckets'} = new {mlmonfile = mlmonfile}
-	val die = fn () => die (concat [mlmonfile, "does not match"])
+
+	fun loop (buckets, buckets', ac) 
+	  = case (buckets, buckets')
+	      of ([], buckets') => List.appendRev (ac, buckets')
+	       | (buckets, []) => List.appendRev (ac, buckets)
+	       | (buckets as {addr, count}::bs,
+		  buckets' as {addr = addr', count = count'}::bs')
+	       => (case Word.compare (addr, addr')
+		     of LESS => loop (bs, buckets', 
+				      {addr = addr, count = count}::ac)
+		      | EQUAL => loop (bs, bs', 
+				       {addr = addr, count = count + count'}::ac)
+		      | GREATER => loop (buckets, bs', 
+					 {addr = addr', count = count'}::ac))
       in
-	T {buckets = List.map2
-	             (buckets, buckets',
-		      fn ({addr, count},
-			  {addr = addr', count = count'}) =>
-		      if addr = addr'
-			then {addr = addr,
-			      count = count + count'}
-			else die ())
-		     handle _ => die ()}
+	T {buckets = loop (buckets, buckets', [])}
       end
 
   val addNew = Trace.trace ("ProfFile.addNew", File.layout o #mlmonfile, layout) addNew
