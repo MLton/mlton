@@ -74,6 +74,14 @@ structure IntInf: INT_INF =
 	val << = fn (a, b) => a * (pow2 b)
 	val ~>> = fn (a, b) => a div (pow2 b)
       end
+
+      local
+	 (* Bug in SML/NJ -- they use lower instead of upper case. *)
+	 val toUpper = Pervasive.String.translate (Char.toString o Char.toUpper)
+      in
+	 fun fmt r i = toUpper (Pervasive.IntInf.fmt r i)
+	 val toString = toUpper o Pervasive.IntInf.toString
+      end
    end
 
 structure LargeInt = IntInf
