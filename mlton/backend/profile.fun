@@ -10,7 +10,7 @@ structure Push =
    struct
       datatype t =
 	 Enter of int
-       | Skip of int
+       | Skip of SourceInfo.t
 
       fun layout z =
 	 let
@@ -18,7 +18,7 @@ structure Push =
 	 in
 	    case z of
 	       Enter i => seq [str "Enter ", Int.layout i]
-	     | Skip i => seq [str "Skip ", Int.layout i]
+	     | Skip i => seq [str "Skip ", SourceInfo.layout i]
 	 end
 
       fun toSources (ps: t list): int list =
@@ -331,30 +331,28 @@ fun profile program =
 				     val (keep, sourceSeq) =
 					case ps of
 					   Enter si =>
-					      let
-						 val i = sourceInfoIndex si
-					      in
-						 if shouldPush (si, sourceSeq)
-						    then (true,
-							  Push.Enter i
-							  :: sourceSeq)
-						 else (false,
-						       Push.Skip i :: sourceSeq)
-					      end
+					      if shouldPush (si, sourceSeq)
+						 then (true,
+						       Push.Enter (sourceInfoIndex si)
+						       :: sourceSeq)
+					      else (false,
+						    Push.Skip si :: sourceSeq)
 					 | Leave si =>
 					      (case sourceSeq of
 						  [] =>
 						     Error.bug "unmatched Leave"
 						| p :: sourceSeq' =>
 						     let
-							val (keep, i) =
+							val (keep, isOk) =
 							   case p of
 							      Push.Enter i =>
-								 (true, i)
-							    | Push.Skip i =>
-								 (false, i)
+								 (true,
+								  i = sourceInfoIndex si)
+							    | Push.Skip si' =>
+								 (false,
+								  SourceInfo.equals (si, si'))
 						     in
-							if i = sourceInfoIndex si
+							if isOk
 							   then (keep, sourceSeq')
 							else Error.bug "mismatched Leave"
 						     end)
