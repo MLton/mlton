@@ -45,11 +45,7 @@ text/string-cvt.sml
 general/bool.sig
 general/bool.sml
 integer/integer.sig
-integer/integer.fun
-integer/int8.sml
-integer/int16.sml
-integer/int32.sml
-integer/int64.sml
+integer/int.sml
 text/char.sig
 text/char.sml
 text/substring.sig

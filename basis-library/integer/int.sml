@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor Integer (I: PRE_INTEGER_EXTRA): INTEGER_EXTRA =
+functor Integer (I: PRE_INTEGER_EXTRA) =
 struct
 
 open I
@@ -38,10 +38,6 @@ val minInt: int option = SOME minInt'
 
 val one: int = fromInt 1
 val zero: int = fromInt 0
-
-(* These are overriden in patch.sml after int-inf.sml has been defined. *)
-val toLarge: int -> LargeInt.int = fn _ => raise Fail "toLarge"
-val fromLarge: LargeInt.int -> int = fn _ => raise Fail "fromLarge"
 
 fun quot (x, y) =
   if y = zero
@@ -193,3 +189,28 @@ fun power {base, exp} =
 	 in loop (exp, one)
 	 end
 end
+
+structure Int8 = Integer (Primitive.Int8)
+
+structure Int16 = Integer (Primitive.Int16)
+
+structure Int32 = Integer (Primitive.Int32)
+structure Int = Int32
+structure IntGlobal: INTEGER_GLOBAL = Int
+open IntGlobal
+
+structure Int64 = 
+   struct
+      local
+	 structure P = Primitive.Int64
+	 structure I = Integer (P)
+      in
+	 open I
+	 val fromWord = P.fromWord
+	 val toWord = P.toWord
+      end
+   end
+      
+
+      
+
