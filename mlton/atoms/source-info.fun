@@ -118,6 +118,11 @@ fun isBasis (s: t): bool =
 val isBasis =
    Trace.trace ("SourceInfo.isBasis", layout, Bool.layout) isBasis
 
+fun isC (s: t): bool =
+   case info s of
+      C _ => true
+    | _ => false
+   
 val gc = fromC "gc"
 val gcArrayAllocate = fromC "GC_arrayAllocate"
 val main = fromC "main"

@@ -19,6 +19,7 @@ signature SOURCE_INFO =
       val fromC: string -> t
       val function: {name: string, region: Region.t} -> t
       val isBasis: t -> bool
+      val isC: t -> bool
       val layout: t -> Layout.t
       val main: t
       val plist: t -> PropertyList.t
