@@ -4,7 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor UnorderedSet (Element: T): SET =
+functor UnorderedSet (Element: T):> SET where type Element.t = Element.t =
 struct
 
 structure Element = Element
