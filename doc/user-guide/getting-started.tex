@@ -4,20 +4,14 @@
 
 {\mlton} runs on X86 machines with either Linux or Cygwin/Windows.
 and is distributed in source and binary RPM and gzipped tar ({\tt
-tgz}) format.  You can install the binary RPM with
-\begin{verbatim}
-rpm -i mlton-\version-1.i386.rpm
-\end{verbatim}
-You can install the binary tgz with
-\begin{verbatim}
-zcat mlton-\version-1.i386.tgz | tar x
-\end{verbatim}
+tgz}) format.  You can install the binary RPM with\\
+\hspace*{2em}{\tt rpm -i mlton-\version-1.i386.rpm}\\
+You can install the binary tgz with\\
+\hspace*{2em}{\tt zcat mlton-\version-1.i386.tgz | tar x}\\
 Or, if your distribution doesn't use rpm, but you have {\tt rpm2cpio},
-you can use
-\begin{verbatim}
-rpm2cpio mlton-\version-1.i386.rpm | cpio -id
-\end{verbatim}
-If you do not install {\mlton} in the root directory, then you must
+you can use\\
+\hspace*{2em}{\tt rpm2cpio mlton-\version-1.i386.rpm | cpio -id}\\
+If you do not install {\mlton} in the root directory, you must
 set the {\tt lib} variable in {\tt usr/local/bin/mlton} to the
 directory that contains the libraries ({\tt /usr/local/lib/mlton} by
 default).
