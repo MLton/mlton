@@ -155,6 +155,7 @@ Int Real_class(Double d);
 Int Real_isFinite(Double d);
 Int Real_isNan(Double d);
 Int Real_isNormal(Double d);
+Int Real_isPositive(Double d);
 Int Real_qequal(Double x1, Double x2);
 double Real_round(Double d);
 Int Real_signBit(Double d);

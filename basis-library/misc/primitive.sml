@@ -415,6 +415,7 @@ structure Primitive =
 	    val isFinite = _ffi "Real_isFinite": real -> bool;
 	    val isNan = _ffi "Real_isNan": real -> bool;
 	    val isNormal = _ffi "Real_isNormal": real -> bool;
+	    val isPositive = _ffi "Real_isPositive": real -> bool;
 	    val ldexp = _prim "Real_ldexp": real * int -> real;
 	    val modf = _prim "Real_modf": real * real ref -> real;
 	    val round = _prim "Real_round": real -> real;

@@ -72,18 +72,15 @@ Int Real_class(Double d) {
 }
 
 Int Real_isFinite(Double d) {
-	/* finite is from math.h */
-	return finite(d);
+	return finite(d); /* finite is from math.h */
 }
 
-Int Real_isNan(Double d) {
-	Word word0, word1;
+inline Int Real_isNan(Double d) {
+	return isnan(d); /* isnan is from math.h */
+}
 
-	word0 = ((Word *)&d)[0];
-  	word1 = ((Word *)&d)[1];
-
-	return (((word1 & EXPONENT_MASK) == EXPONENT_MASK)
-		and (word0 or (word1 & MANTISSA_MASK)));
+Int Real_isPositive(Double d) {
+	return (d > 0);
 }
 
 Int Real_qequal(Double x1, Double x2) {

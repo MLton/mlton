@@ -371,7 +371,7 @@ structure Name =
 	  (Real_copysign, Functional, "Real_copysign"),
 	  (Real_div, Functional, "Real_div"),
 	  (Real_equal, Functional, "Real_equal"),
-	  (Real_frexp, Functional, "Real_frexp"),
+	  (Real_frexp, SideEffect, "Real_frexp"),
 	  (Real_fromInt, Functional, "Real_fromInt"),
 	  (Real_ge, Functional, "Real_ge"),
 	  (Real_gt, Functional, "Real_gt"),

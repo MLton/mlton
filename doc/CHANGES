@@ -6,10 +6,17 @@ Summary:
    + Bug fix in heap save and restore to solve problem with excessive heap
      usage by compiler. 
    + Performance improvements in native codegenerator.
-   + Bug fixes in optimizer, register allocator, Real.maxFinite.
+   + Bug fixes in optimizer, register allocator, and in
+     Real.{maxFinite, minPos, toManExp}.
+
+* 2001-10-2
+  - Fixed bugs in Real.toManExp (which always returned the wrong result because
+    the call to frexp was not treated as side-effecting by the optimizer) and
+    in Real.minPos, which was zero because of a mistake with extra precision
+    bits.
 
 * 2001-10-1
-  - added MLton.Exn.history.
+  - Added MLton.Exn.history.
   - Fixed register allocation bug with fucom instruction.  Was
     allowing fucomp when the first source was not removable.
   - Changed Real.isFinite to use the C math.h finite function.  This fixed the

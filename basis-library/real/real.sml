@@ -15,17 +15,21 @@ structure Real: REAL =
       type real = real
 
       local
-	 (* reify is to eliminate Intel extra precision bits. *)
-	 local
-	    val r = ref 0.0
-	 in fun reify (z: real): real = (r := z; !r)
-	 end
-      
+	 (* In computing minNormalPos, minPos, and maxFinite, we use a C routine
+	  * (isNormal, isPositive, and isFinite) to check that the value is OK.
+	  * Because of the C calling convention, which passes the float argument
+	  * on the stack, the float is ejected from the FPU, and is hence
+	  * converted from 80 to 64 bits.  This conversion is essential so that
+	  * we don't end up with something that meets the predicate (especially
+	  * in the isPositive case) with 80 bits but fails with 64.
+	  *)
 	 fun min (p: real -> bool): real =
 	    let
 	       fun loop (x: real): real =
-		  let val y = reify (x / 2.0)
-		  in if p y
+		  let
+		     val y = x / 2.0
+		  in
+		     if p y
 			then loop y
 		     else x
 		  end
@@ -33,13 +37,13 @@ structure Real: REAL =
 	    end
       in
 	 val minNormalPos = min isNormal
-	 val minPos = min (fn x => x > 0.0)
+	 val minPos = min isPositive
 
 	 val maxFinite =
 	    let
 	       fun up (x: real): real =
 		  let
-		     val y = reify (x * 2.0)
+		     val y = x * 2.0
 		  in
 		     if isFinite y
 			then up y
@@ -48,34 +52,18 @@ structure Real: REAL =
 	       fun down (x: real, y: real): real =
 		  let
 		     val y = y / 2.0
-		     val z = reify (x + y)
+		     val z = x + y
 		  in
 		     if isFinite z
 			then down (z, y)
 		     else x
 		  end
 	       val z = up 1.0
-	    in down (z, z)
+	    in
+	       down (z, z)
 	    end
       end
    
-(*       local
- * 	 val r1 = ref 0.0
- * 	 val r2 = ref 0.0
- * 	 val r3 = ref 0.0 
- * 	 fun wrap f (x, y) =
- * 	    (r1 := x;
- * 	     r2 := y;
- * 	     let val z = f (!r1, !r2)
- * 	     in r3 := z ; !r3
- * 	     end)
- * 	 fun wrap f = f
- *       in val op + = wrap (op +)
- * 	 val op - = wrap (op -)
- * 	 val op * = wrap (op * )
- * 	 val op / = wrap (op /)
- *       end
- *)
       val radix: int = 2
 
       val precision: int = 52

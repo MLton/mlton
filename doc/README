@@ -22,7 +22,8 @@ include:
    + Bug fix in heap save and restore to solve problem with excessive heap
      usage by compiler.
    + Performance improvements in native codegenerator.
-   + Bug fixes in optimizer, register allocator, Real.maxFinite.
+   + Bug fixes in optimizer, register allocator, and in
+     Real.{maxFinite, minPos, toManExp}.
 
 Version 20010806 was a major release over 20010706, and included the
 following changes.
