@@ -255,6 +255,31 @@ fun profile program =
 	       (blocks, fn block as Block.T {label, ...} =>
 		setLabelInfo (label, {block = block,
 				      visited = ref false}))
+	    (* Find the first Enter statement and (conceptually) move it to the
+	     * front of the function.
+	     *)
+	    local
+	       exception Yes of Label.t * SourceInfo.t
+	       fun goto l =
+		  let
+		     val {block, ...} = labelInfo l
+		     val Block.T {statements, transfer, ...} = block
+		     val _ =
+			Vector.foreach
+			(statements, fn s =>
+			 case s of
+			    Statement.Profile (ProfileExp.Enter si) =>
+			       raise Yes (l, si)
+			  | _ => ())
+		     val _ = Transfer.foreachLabel (transfer, goto)
+		  in
+		     ()
+		  end
+	    in
+	       val (firstLabel, firstSource) =
+		  (goto start; Error.bug "no profile info")
+		  handle Yes z => z
+	    end
 	    val blocks = ref []
 	    datatype z = datatype Statement.t
 	    datatype z = datatype ProfileExp.t
@@ -286,11 +311,18 @@ fun profile program =
 			 Object _ => (true, true, sourceSeq, s :: ss)
 		       | Profile ps =>
 			    let
-			       val ss =
-				  if profileTime andalso npl
-				     then profileLabel sourceSeq :: ss
-				  else ss
-			       val sourceSeq' = 
+			       val (npl, ss) =
+				  if profileAlloc
+				     then if ncs
+					     then (false,
+						   addCurrent (ss, sourceSeq))
+					  else (false, ss)
+				  else (* profileTime *)
+				     if npl andalso not (List.isEmpty sourceSeq)
+					then (false,
+					      profileLabel sourceSeq :: ss)
+				     else (true, ss)
+			       val sourceSeq = 
 				  case ps of
 				     Enter si =>
 					(case sourceSeq of
@@ -300,12 +332,8 @@ fun profile program =
 						  then sis
 					       else Error.bug "mismatched Enter")
 				   | Leave si => sourceInfoIndex si :: sourceSeq
-			       val ss =
-				  if profileAlloc andalso ncs
-				     then addCurrent (ss, sourceSeq)
-				  else ss
 			    in
-			       (false, false, sourceSeq', ss)
+			       (false, npl, sourceSeq, ss)
 			    end
 		       | _ => (ncs, true, sourceSeq, s :: ss))
 		  val statements =
@@ -439,6 +467,15 @@ fun profile program =
 			val _ = visited := true
 			val Block.T {args, kind, label, statements, transfer,
 				     ...} = block
+			val statements =
+			   if Label.equals (label, firstLabel)
+			      then
+				 Vector.removeFirst
+				 (statements, fn s =>
+				  case s of
+				     Profile (Enter _) => true
+				   | _ => false)
+			   else statements
 			val _ =
 			   if profileStack andalso Kind.isFrame kind
 			      then List.push (frameProfileIndices,
@@ -650,7 +687,7 @@ fun profile program =
 				  transfer = transfer}
 		     end
 	       end
-	    val _ = goto (start, [])
+	    val _ = goto (start, #1 (enter ([], firstSource)))
 	    val blocks = Vector.fromList (!blocks)
 	 in
 	    Function.new {args = args,
