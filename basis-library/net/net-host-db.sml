@@ -113,15 +113,13 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
 	    case reader state of
 	      SOME (#"0", state') => 
 		(case reader state' of
-		   SOME (#"X", state'') => 
-		     StringCvt.wdigits StringCvt.HEX reader state''
-		 | SOME (#"x", state'') => 
-		     StringCvt.wdigits StringCvt.HEX reader state''
-		 | SOME (c, _) =>
+		    NONE => SOME (0w0, state')
+		  | SOME (c, state'') =>
 		     if Char.isDigit c
-		       then StringCvt.wdigits StringCvt.OCT reader state'
-		       else SOME (0wx0, state')
-		 | NONE => raise Fail "NetHostDB.scan failure")
+			then StringCvt.wdigits StringCvt.OCT reader state'
+		     else if c = #"x" orelse c = #"X"
+			then StringCvt.wdigits StringCvt.HEX reader state''
+		     else SOME (0w0, state'))
 	    | _ => StringCvt.wdigits StringCvt.DEC reader state
 	  fun loop (n, state, acc) =
 	    if n <= 0
