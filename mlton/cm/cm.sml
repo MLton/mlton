@@ -36,12 +36,13 @@ fun cm {cmfile: File.t} =
 	       (if dir = "" then "." else dir, fn () =>
 		   let
 		      val cwd = Dir.current ()
-		      fun abs f = OS.Path.mkAbsolute (f, cwd)
+		      fun abs f = OS.Path.mkAbsolute {path = f, relativeTo = cwd}
 		      fun finalize f =
 			 case relativize of
 			    NONE => abs f
 			  | SOME d =>
-			       OS.Path.mkRelative (f, d)
+			       OS.Path.mkRelative {path = f,
+						   relativeTo = d}
 		      datatype z = datatype Parse.result
 		   in case Parse.parse {cmfile = file} of
 		      Alias f =>
