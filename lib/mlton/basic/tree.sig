@@ -4,16 +4,32 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
+signature TREE_STRUCTS =
+   sig
+      structure Seq:
+	 sig
+	    type 'a t
+
+	    val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
+	    val foreach: 'a t * ('a -> unit) -> unit
+	    val layout: 'a t * ('a -> Layout.t) -> Layout.t
+	    val map: 'a t * ('a -> 'b) -> 'b t
+	 end
+   end
+
 signature TREE =
    sig
-      datatype 'a t = T of 'a * 'a t vector
+      include TREE_STRUCTS
+	 
+      datatype 'a t = T of 'a * 'a t Seq.t
 
-      val children: 'a t -> 'a t vector
+      val children: 'a t -> 'a t Seq.t
       val foldPre: 'a t * 'b * ('a * 'b -> 'b) -> 'b
       val foldPost: 'a t * 'b * ('a * 'b -> 'b) -> 'b
       val foreachPre: 'a t * ('a -> unit) -> unit (* preorder traversal *)
       val foreachPost: 'a t * ('a -> unit) -> unit (* postorder traversal *)
-      val layout: ('a -> Layout.t) -> 'a t -> Layout.t
+      val layout: 'a t * ('a -> Layout.t) -> Layout.t
       val layoutDot:
 	 'a t * {nodeOptions: 'a -> Dot.NodeOption.t list,
 		 options: Dot.GraphOption.t list,

@@ -179,6 +179,7 @@ functor Ring
 functor RingWithIdentity
 functor SplayMonoEnv
 functor Sum
+functor Tree
 functor UniqueId
 functor UniqueSet
 functor UnorderedSet

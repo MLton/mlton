@@ -4,27 +4,27 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure Tree: TREE =
+functor Tree (S: TREE_STRUCTS): TREE =
 struct
 
-datatype 'a t = T of 'a * 'a t vector
+open S
+   
+datatype 'a t = T of 'a * 'a t Seq.t
 
 fun children (T (_, v)) = v
 
 fun foldPre (T (a, v), b, f) =
-   Vector.fold (v, f (a, b), fn (t, b) =>
-		foldPre (t, b, f))
+   Seq.fold (v, f (a, b), fn (t, b) => foldPre (t, b, f))
 
 fun foldPost (T (a, v), b, f) =
-   f (a, Vector.fold (v, b, fn (t, b) =>
-		      foldPost (t, b, f)))
+   f (a, Seq.fold (v, b, fn (t, b) => foldPost (t, b, f)))
 
 fun traverse (t, f) =
    let
       fun loop (T (a, v)) =
 	 let
 	    val g = f a
-	    val _ = Vector.foreach (v, loop)
+	    val _ = Seq.foreach (v, loop)
 	    val _ = g ()
 	 in
 	    ()
@@ -46,13 +46,13 @@ fun 'a layoutDot (t: 'a t, {nodeOptions: 'a -> Dot.NodeOption.t list,
       fun loop (T (v, cs)) =
 	 let
 	    val name = next ()
-	    val _ =
+	    val () =
 	       List.push
 	       (nodes, {name = name,
 			options = nodeOptions v,
-			successors = Vector.toListMap (cs, fn t =>
-						       {name = loop t,
-							options = []})})
+			successors = rev (Seq.fold (cs, [], fn (t, ac) =>
+						    {name = loop t,
+						     options = []} :: ac))})
 	 in
 	    name
 	 end
@@ -63,15 +63,22 @@ fun 'a layoutDot (t: 'a t, {nodeOptions: 'a -> Dot.NodeOption.t list,
 		  title = title}
    end
 
-fun layout layout' (T (x, ts))
-  = let open Layout
-    in seq [str "(",
-	    layout' x,
-	    str ", ",
-	    Vector.layout (layout layout') ts,
-	    str ")"]
-    end
+fun layout (t, lay) =
+   let
+      open Layout
+      fun loop (T (x, ts)) =
+	 paren (seq [lay x, str ", ", Seq.layout (ts, loop)])
+   in
+      loop t
+   end
 
-fun map (T (a, ts), f) = T (f a, Vector.map (ts, fn t => map (t, f)))
+fun map (T (a, ts), f) = T (f a, Seq.map (ts, fn t => map (t, f)))
    
 end
+
+structure Tree = Tree (structure Seq =
+			  struct
+			     open Vector
+
+			     fun layout (v, l) = Vector.layout l v
+			  end)

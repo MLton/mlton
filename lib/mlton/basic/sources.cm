@@ -145,6 +145,7 @@ functor PolyEnv
 functor Ring
 functor RingWithIdentity
 functor Sum
+functor Tree
 functor UniqueId
 functor UniqueSet
 
