@@ -36,6 +36,21 @@ val errno = Primitive.errno
 val safe = Primitive.safe
 
 structure Array = Array
+structure BinIO =
+   struct
+      local
+	 structure S = MLtonIO (BinIO)
+      in
+	 open S
+      end
+      local
+	 open BinIO
+      in
+	 val stdErr = stdErr
+	 val stdIn = stdIn
+	 val stdOut = stdOut
+      end
+   end
 structure Cont = Cont
 structure Exn = Exn
 structure GC = GC
@@ -52,7 +67,7 @@ structure Rusage = Rusage
 structure Signal = Signal
 structure Socket = Socket
 structure Syslog = Syslog
-structure TextIO = TextIO
+structure TextIO = MLtonIO (TextIO)
 structure Thread = Thread
 structure Vector = Vector
 structure World = World

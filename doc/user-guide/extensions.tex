@@ -32,6 +32,7 @@ structure MLton:
       val size: 'a -> int
 
       structure Array: MLTON_ARRAY
+      structure BinIO: MLTON_BIN_IO
       structure Cont: MLTON_CONT
       structure Exn: MLTON_EXN
       structure GC: MLTON_GC
@@ -116,6 +117,16 @@ construct an array $a$ of a length {\tt n}, whose elements $a_i$ are determined
 by the equations $b_0 = b$ and $(a_i, b_{i+1}) = f (i, b_i)$.
 
 \end{description}
+
+\subsubsection{{\tt MLton.BinIO}}
+\begin{verbatim}
+signature MLTON_BIN_IO =
+   MLTON_IO
+   where type instream = BinIO.instream
+   where type outstream = BinIO.outstream
+\end{verbatim}
+
+See \secref{mlton-io}.
 
 \subsubsec{{\tt MLton.Cont}}{cont}
 
@@ -232,6 +243,45 @@ return the underlying representation of i.
 \entry{size i}
 return the number of words taken by {\tt i}.
 
+\end{description}
+
+\subsubsec{{\tt MLTON\_IO}}{mlton-io}
+
+\begin{verbatim}
+signature MLTON_IO =
+   sig
+      type instream
+      type outstream
+
+      val inFd: instream -> Posix.IO.file_desc
+      val mkstemp: string -> string * outstream
+      val mkstemps: {prefix: string, suffix: string} -> string * outstream
+      val newIn: Posix.IO.file_desc -> instream
+      val newOut: Posix.IO.file_desc -> outstream
+      val outFd: outstream -> Posix.IO.file_desc
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{inFd ins} return the file descriptor corresponding to {\tt ins}.
+
+\entry{mkstemp s}
+like the C {\tt mkstemp} function, generate and open a tempory file with prefix
+{\tt s}.  This should be used instead of {\tt OS.FileSys.tmpName}, which has
+security risks.
+
+\entry{mkstemps \{prefix, suffix\}}
+{\tt mkstemps} is like {\tt mkstemp}, except it has both a prefix and suffix.
+
+\entry{newIn fd} create a new instream from file descriptor {\tt 
+fd}.
+
+\entry{newOut} create a new outstream from file descriptor {\tt 
+fd}.
+
+\entry{outFd out} return the file descriptor corresponding to
+{\tt out}.
 \end{description}
 
 \subsubsec{{\tt MLton.Itimer}}{itimer}
@@ -727,38 +777,12 @@ message, and is typically set to the program name.
 \subsubsection{{\tt MLton.TextIO}}
 \begin{verbatim}
 signature MLTON_TEXT_IO =
-   sig
-      val inFd: TextIO.instream -> Posix.IO.file_desc
-      val mkstemp: string -> string * TextIO.outstream
-      val mkstemps: {prefix: string, suffix: string} -> string * TextIO.outstream
-      val newIn: Posix.IO.file_desc -> TextIO.instream
-      val newOut: Posix.IO.file_desc -> TextIO.outstream
-      val outFd: TextIO.outstream -> Posix.IO.file_desc
-   end
+   MLTON_IO
+   where type instream = TextIO.instream
+   where type outstream = TextIO.outstream
 \end{verbatim}
 
-\begin{description}
-
-\entry{inFd ins} return the file descriptor corresponding to
-{\tt ins}.
-
-\entry{mkstemp s}
-like the C {\tt mkstemp} function, generate and open a tempory file with prefix
-{\tt s}.  This should be used instead of {\tt OS.FileSys.tmpName}, which has
-security risks.
-
-\entry{mkstemps \{prefix, suffix\}}
-{\tt mkstemps} is like {\tt mkstemp}, except it has both a prefix and suffix.
-
-\entry{newIn fd} create a new instream from file descriptor {\tt 
-fd}.
-
-\entry{newOut} create a new outstream from file descriptor {\tt 
-fd}.
-
-\entry{outFd out} return the file descriptor corresponding to
-{\tt out}.
-\end{description}
+See \secref{mlton-io}.
 
 \subsubsec{{\tt MLton.Thread}}{thread}
 Threads are data structures that will begin computing when {\tt

@@ -26,6 +26,7 @@ signature MLTON =
       val size: 'a -> int
 
       structure Array: MLTON_ARRAY
+      structure BinIO: MLTON_BIN_IO
       structure Cont: MLTON_CONT
       structure Exn: MLTON_EXN
       structure GC: MLTON_GC

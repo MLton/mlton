@@ -142,8 +142,10 @@ mlton/socket.sig
 mlton/socket.sml
 mlton/random.sig
 mlton/random.sml
+mlton/io.sig
+mlton/io.fun
 mlton/text-io.sig
-mlton/text-io.sml
+mlton/bin-io.sig
 mlton/gc.sig
 mlton/gc.sml
 mlton/int-inf.sig

@@ -1,4 +1,4 @@
-structure BinIO: BIN_IO =
+structure BinIO: BIN_IO_EXTRA =
    BinOrTextIO
    (val fileTypeFlags = [PosixPrimitive.FileSys.O.binary]
     structure Cleaner = Cleaner

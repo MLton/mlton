@@ -110,8 +110,6 @@ structure TextIO : TEXT_IO_EXTRA =
 
 	 end
 
-      val stdIn = newIn FS.stdin
-
       fun inputLine (T r): string =
 	 case !r of
 	    Buf b => Buf.inputLine b

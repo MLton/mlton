@@ -52,5 +52,8 @@ signature BIN_IO_EXTRA =
       val newOut: Posix.IO.file_desc -> outstream
       val outFd: outstream -> Posix.IO.file_desc
 (*      val setIn: instream * instream -> unit *)
+      val stdIn: instream
+      val stdErr: outstream
+      val stdOut: outstream
    end
    

@@ -683,6 +683,8 @@ fun closeIn (T r) =
 
 fun newIn fd = T (ref (Buf (Buf.newIn fd)))
    
+val stdIn = newIn FS.stdin
+
 fun openIn path =
    newIn (FS.openf (path,
                     FS.O_RDONLY,
