@@ -54,7 +54,7 @@ structure Mask =
 	     | (AllBut sigs1, Some sigs2) => AllBut (union (sigs1, sigs2))
 	     | (Some sigs1, AllBut sigs2) => Some (inter (sigs1, sigs2))
 	     | (Some sigs1, Some sigs2) => Some (diff (sigs1, sigs2))
-	 fun isMember = fn (mask, s) =>
+	 fun isMember (mask, s) =
 	    case mask of
 	       AllBut sigs => not (member (sigs, s))
 	     | Some sigs => member (sigs, s)
