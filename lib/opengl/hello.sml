@@ -2,23 +2,23 @@ open GL;
 open GLUT;
 open GLU;
 
-fun bmstring (x : GLdouble) (y : GLdouble) (f : char -> unit) (s : string) =
+fun bmstring (x : GLdouble) (y : GLdouble) (f : int -> unit) (s : string) =
     let 
 	val chars = String.explode s;
     in
 	glColor3d 1.0 1.0 1.0;
 	glRasterPos2d x y;
-	app f chars
+	app f (map ord chars)
     end
 
-fun ststring (x : GLdouble) (y : GLdouble) (f : char -> unit) (s : string) =
+fun ststring (x : GLdouble) (y : GLdouble) (f : int -> unit) (s : string) =
     let 
 	val chars = String.explode s;
     in
 	glColor3d 1.0 0.0 0.0;
 	glPushMatrix();
 	glTranslated x y 0.0;
-	app f chars;
+	app f (map ord chars);
 	glPopMatrix()
     end
 
@@ -65,7 +65,7 @@ fun main () =
 ( 
 	 glutInit;
 	 glutInitDisplayMode (GLUT_SINGLE + GLUT_RGB);
-	 glutInitWindowSize (200, 200);
+	 glutInitWindowSize 200 200;
 	 glutCreateWindow "Font Test";
 	 glMatrixMode (GL_PROJECTION);
 	 glLoadIdentity();

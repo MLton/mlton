@@ -8,8 +8,9 @@ signature GL =
 
 
 
-        type GLreal = Real32.real
 
+        type GLreal = Real32.real
+        type GLdouble = real
 
         type GLenum = Word.word
         datatype realspec = realRGB of real * real * real
@@ -708,22 +709,69 @@ signature GL =
         (* For compatibility with OpenGL v1.0 *)
         val GL_LOGIC_OP : GLenum
         val GL_TEXTURE_COMPONENTS : GLenum
+        val c_glBlendFunc : GLenum * GLenum -> unit
+        val glBlendFunc : GLenum -> GLenum -> unit
+
         val c_glClearColor: GLreal * GLreal * GLreal * GLreal -> unit
         val glClearColor: GLreal -> GLreal -> GLreal -> GLreal -> unit
+
         val c_glClearDepth : GLreal -> unit
-        val c_glColor3d : GLreal * GLreal * GLreal -> unit
+        val glClearDepth : GLreal -> unit
+
+        val c_glColor3d : GLdouble * GLdouble * GLdouble -> unit
+        val glColor3d : GLdouble -> GLdouble -> GLdouble -> unit
+
         val c_glColor3f : GLreal * GLreal * GLreal -> unit
+        val glColor3f : GLreal -> GLreal -> GLreal -> unit
+
         val c_glColor3ub : Word8.word * Word8.word * Word8.word -> unit
-        val c_glColor4d : GLreal * GLreal * GLreal * GLreal -> unit
+        val glColor3ub : Word8.word -> Word8.word -> Word8.word -> unit
+
+        val c_glColor4d : GLdouble * GLdouble * GLdouble * GLdouble -> unit
+        val glColor4d : GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
+
         val c_glColor4f : GLreal * GLreal * GLreal * GLreal -> unit
+        val glColor4f : GLreal -> GLreal -> GLreal -> GLreal -> unit
+
         val c_glColor4ub : Word8.word * Word8.word * Word8.word * Word8.word -> unit
+        val glColor4ub : Word8.word -> Word8.word -> Word8.word -> Word8.word -> unit
+
+        val c_glEnable : GLenum -> unit
+        val glEnable : GLenum -> unit
+
         val c_glRasterPos2i : int * int -> unit
+        val glRasterPos2i : int -> int -> unit
+
         val c_glRasterPos2f : GLreal * GLreal -> unit
+        val glRasterPos2f : GLreal -> GLreal -> unit
+
+        val c_glRasterPos2d : GLdouble * GLdouble -> unit
+        val glRasterPos2d : GLdouble -> GLdouble -> unit
+
         val c_glClear: GLenum -> unit
+        val glClear: GLenum -> unit
+
         val c_glFlush: unit -> unit
+        val glFlush: unit -> unit
+
+        val c_glLineWidth : GLreal -> unit
+        val glLineWidth : GLreal -> unit
+
+        val c_glLoadIdentity : unit -> unit
+        val glLoadIdentity : unit -> unit
+
         val c_glMatrixMode : GLenum -> unit
+        val glMatrixMode : GLenum -> unit
+
         val c_glPushMatrix : unit -> unit
-        val c_glTranslated : GLreal * GLreal * GLreal * unit
-        val c_glTranslatef : GLreal * GLreal * GLreal * unit
+        val glPushMatrix : unit -> unit
+
+        val c_glTranslated : GLdouble * GLdouble * GLdouble -> unit
+        val glTranslated : GLdouble -> GLdouble -> GLdouble -> unit
+
+        val c_glTranslatef : GLreal * GLreal * GLreal -> unit
+        val glTranslatef : GLreal -> GLreal -> GLreal -> unit
+
         val c_glPopMatrix : unit -> unit
+        val glPopMatrix : unit -> unit
     end

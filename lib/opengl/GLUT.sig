@@ -1,3 +1,4 @@
+open GL
 signature GLUT =
     sig
 
@@ -251,7 +252,11 @@ signature GLUT =
         val GLUT_GAME_MODE_DISPLAY_CHANGED : GL.GLenum
         val glutDisplayFunc: (unit -> unit) -> unit
         val glutInit: unit -> unit;
+        val glutInitDisplayMode : GLenum -> unit
         (*val glutInit: int -> string list -> unit;*)
+        val glutInitWindowSize : int -> int -> unit
         val glutCreateWindow: string -> int;
         val glutMainLoop: unit -> unit;
+        val glutBitmapCharacter : glutfont -> int -> unit
+        val glutStrokeCharacter : glutfont -> int -> unit
     end

@@ -5,8 +5,6 @@
 
 
 
-
-
 (*
  * Open GL library interface
  *)
@@ -17,8 +15,9 @@ signature GL =
 
 
 
-        type GLreal = Real32.real
 
+        type GLreal = Real32.real
+        type GLdouble = real
 
         type GLenum = Word.word
         datatype realspec = realRGB of real * real * real
@@ -717,27 +716,78 @@ signature GL =
         (* For compatibility with OpenGL v1.0 *)
         val GL_LOGIC_OP : GLenum
         val GL_TEXTURE_COMPONENTS : GLenum
+        val c_glBlendFunc : GLenum * GLenum -> unit
+        val glBlendFunc : GLenum -> GLenum -> unit
+
         val c_glClearColor: GLreal * GLreal * GLreal * GLreal -> unit
         val glClearColor: GLreal -> GLreal -> GLreal -> GLreal -> unit
-        val c_glClearDepth : GLreal -> unit
-        val c_glColor3d : GLreal * GLreal * GLreal -> unit
-        val c_glColor3f : GLreal * GLreal * GLreal -> unit
-        val c_glColor3ub : Word8.word * Word8.word * Word8.word -> unit
-        val c_glColor4d : GLreal * GLreal * GLreal * GLreal -> unit
-        val c_glColor4f : GLreal * GLreal * GLreal * GLreal -> unit
-        val c_glColor4ub : Word8.word * Word8.word * Word8.word * Word8.word -> unit
-        val c_glRasterPos2i : int * int -> unit
-        val c_glRasterPos2f : GLreal * GLreal -> unit
-        val c_glClear: GLenum -> unit
-        val c_glFlush: unit -> unit
-        val c_glMatrixMode : GLenum -> unit
-        val c_glPushMatrix : unit -> unit
-        val c_glTranslated : GLreal * GLreal * GLreal * unit
-        val c_glTranslatef : GLreal * GLreal * GLreal * unit
-        val c_glPopMatrix : unit -> unit
-    end
-structure GL =
 
+        val c_glClearDepth : GLreal -> unit
+        val glClearDepth : GLreal -> unit
+
+        val c_glColor3d : GLdouble * GLdouble * GLdouble -> unit
+        val glColor3d : GLdouble -> GLdouble -> GLdouble -> unit
+
+        val c_glColor3f : GLreal * GLreal * GLreal -> unit
+        val glColor3f : GLreal -> GLreal -> GLreal -> unit
+
+        val c_glColor3ub : Word8.word * Word8.word * Word8.word -> unit
+        val glColor3ub : Word8.word -> Word8.word -> Word8.word -> unit
+
+        val c_glColor4d : GLdouble * GLdouble * GLdouble * GLdouble -> unit
+        val glColor4d : GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
+
+        val c_glColor4f : GLreal * GLreal * GLreal * GLreal -> unit
+        val glColor4f : GLreal -> GLreal -> GLreal -> GLreal -> unit
+
+        val c_glColor4ub : Word8.word * Word8.word * Word8.word * Word8.word -> unit
+        val glColor4ub : Word8.word -> Word8.word -> Word8.word -> Word8.word -> unit
+
+        val c_glEnable : GLenum -> unit
+        val glEnable : GLenum -> unit
+
+        val c_glRasterPos2i : int * int -> unit
+        val glRasterPos2i : int -> int -> unit
+
+        val c_glRasterPos2f : GLreal * GLreal -> unit
+        val glRasterPos2f : GLreal -> GLreal -> unit
+
+        val c_glRasterPos2d : GLdouble * GLdouble -> unit
+        val glRasterPos2d : GLdouble -> GLdouble -> unit
+
+        val c_glClear: GLenum -> unit
+        val glClear: GLenum -> unit
+
+        val c_glFlush: unit -> unit
+        val glFlush: unit -> unit
+
+        val c_glLineWidth : GLreal -> unit
+        val glLineWidth : GLreal -> unit
+
+        val c_glLoadIdentity : unit -> unit
+        val glLoadIdentity : unit -> unit
+
+        val c_glMatrixMode : GLenum -> unit
+        val glMatrixMode : GLenum -> unit
+
+        val c_glPushMatrix : unit -> unit
+        val glPushMatrix : unit -> unit
+
+        val c_glTranslated : GLdouble * GLdouble * GLdouble -> unit
+        val glTranslated : GLdouble -> GLdouble -> GLdouble -> unit
+
+        val c_glTranslatef : GLreal * GLreal * GLreal -> unit
+        val glTranslatef : GLreal -> GLreal -> GLreal -> unit
+
+        val c_glPopMatrix : unit -> unit
+        val glPopMatrix : unit -> unit
+    end
+
+
+
+
+
+structure GL :> GL =
     struct
 
 
@@ -1529,16 +1579,283 @@ structure GL =
         val c_glPopMatrix = _import "glPopMatrix" stdcall: unit -> unit;
         fun glPopMatrix () = c_glPopMatrix (): unit;
 
-        val c_glTranslated = _import "glTranslated" : GLdouble * GLdouble * GLdouble -> unit;
+        val c_glTranslated = _import "glTranslated" stdcall: GLdouble * GLdouble * GLdouble -> unit;
         fun glTranslated (a:GLdouble) (b:GLdouble) (c:GLdouble)
           = c_glTranslated (a,b,c) : unit
 
-        val c_glTranslatef = _import "glTranslatef" : GLreal * GLreal * GLreal -> unit;
+        val c_glTranslatef = _import "glTranslatef" stdcall: GLreal * GLreal * GLreal -> unit;
         fun glTranslatef (a:GLreal) (b:GLreal) (c:GLreal)
           = c_glTranslatef (a,b,c) : unit
     end
-structure GLUT =
 
+
+
+open GL
+signature GLUT =
+    sig
+
+        type glutfont = GL.GLenum
+        (* Display mode bit masks. *)
+        val GLUT_RGB : GL.GLenum
+        val GLUT_RGBA : GL.GLenum
+        val GLUT_INDEX : GL.GLenum
+        val GLUT_SINGLE : GL.GLenum
+        val GLUT_DOUBLE : GL.GLenum
+        val GLUT_ACCUM : GL.GLenum
+        val GLUT_ALPHA : GL.GLenum
+        val GLUT_DEPTH : GL.GLenum
+        val GLUT_STENCIL : GL.GLenum
+        (* #if (GLUT_API_VERSION >= 2) *)
+        val GLUT_MULTISAMPLE : GL.GLenum
+        val GLUT_STEREO : GL.GLenum
+        (* #endif *)
+        (* #if (GLUT_API_VERSION >= 3) *)
+        val GLUT_LUMINANCE : GL.GLenum
+        (* #endif *)
+
+        (* Mouse buttons. *)
+        val GLUT_LEFT_BUTTON : GL.GLenum
+        val GLUT_MIDDLE_BUTTON : GL.GLenum
+        val GLUT_RIGHT_BUTTON : GL.GLenum
+
+        (* Mouse button state. *)
+        val GLUT_DOWN : GL.GLenum
+        val GLUT_UP : GL.GLenum
+
+        (* #if (GLUT_API_VERSION >= 2) *)
+        (* function keys *)
+        val GLUT_KEY_F1 : GL.GLenum
+        val GLUT_KEY_F2 : GL.GLenum
+        val GLUT_KEY_F3 : GL.GLenum
+        val GLUT_KEY_F4 : GL.GLenum
+        val GLUT_KEY_F5 : GL.GLenum
+        val GLUT_KEY_F6 : GL.GLenum
+        val GLUT_KEY_F7 : GL.GLenum
+        val GLUT_KEY_F8 : GL.GLenum
+        val GLUT_KEY_F9 : GL.GLenum
+        val GLUT_KEY_F10 : GL.GLenum
+        val GLUT_KEY_F11 : GL.GLenum
+        val GLUT_KEY_F12 : GL.GLenum
+        (* directional keys *)
+        val GLUT_KEY_LEFT : GL.GLenum
+        val GLUT_KEY_UP : GL.GLenum
+        val GLUT_KEY_RIGHT : GL.GLenum
+        val GLUT_KEY_DOWN : GL.GLenum
+        val GLUT_KEY_PAGE_UP : GL.GLenum
+        val GLUT_KEY_PAGE_DOWN : GL.GLenum
+        val GLUT_KEY_HOME : GL.GLenum
+        val GLUT_KEY_END : GL.GLenum
+        val GLUT_KEY_INSERT : GL.GLenum
+        (* #endif *)
+
+        (* Entry/exit state. *)
+        val GLUT_LEFT : GL.GLenum
+        val GLUT_ENTERED : GL.GLenum
+
+        (* Menu usage state. *)
+        val GLUT_MENU_NOT_IN_USE : GL.GLenum
+        val GLUT_MENU_IN_USE : GL.GLenum
+
+        (* Visibility state. *)
+        val GLUT_NOT_VISIBLE : GL.GLenum
+        val GLUT_VISIBLE : GL.GLenum
+
+        (* Window status state. *)
+        val GLUT_HIDDEN : GL.GLenum
+        val GLUT_FULLY_RETAINED : GL.GLenum
+        val GLUT_PARTIALLY_RETAINED : GL.GLenum
+        val GLUT_FULLY_COVERED : GL.GLenum
+
+        (* Color index component selection values. *)
+        val GLUT_RED : GL.GLenum
+        val GLUT_GREEN : GL.GLenum
+        val GLUT_BLUE : GL.GLenum
+
+        (* Layers for use. *)
+        val GLUT_NORMAL : GL.GLenum
+        val GLUT_OVERLAY : GL.GLenum
+
+        (* Stroke font constants (use these in GLUT program). *)
+        val GLUT_STROKE_ROMAN : glutfont
+        val GLUT_STROKE_MONO_ROMAN : glutfont
+
+        (* Bitmap font constants (use these in GLUT program). *)
+        val GLUT_BITMAP_9_BY_15 : glutfont
+        val GLUT_BITMAP_8_BY_13 : glutfont
+        val GLUT_BITMAP_TIMES_ROMAN_10 : glutfont
+        val GLUT_BITMAP_TIMES_ROMAN_24 : glutfont
+        (*#if (GLUT_API_VERSION >= 3)*)
+        val GLUT_BITMAP_HELVETICA_10 : glutfont
+        val GLUT_BITMAP_HELVETICA_12 : glutfont
+        val GLUT_BITMAP_HELVETICA_18 : glutfont
+        (*#endif *)
+
+        (* glutGet parameters. *)
+        val GLUT_WINDOW_X : GL.GLenum
+        val GLUT_WINDOW_Y : GL.GLenum
+        val GLUT_WINDOW_WIDTH : GL.GLenum
+        val GLUT_WINDOW_HEIGHT : GL.GLenum
+        val GLUT_WINDOW_BUFFER_SIZE : GL.GLenum
+        val GLUT_WINDOW_STENCIL_SIZE : GL.GLenum
+        val GLUT_WINDOW_DEPTH_SIZE : GL.GLenum
+        val GLUT_WINDOW_RED_SIZE : GL.GLenum
+        val GLUT_WINDOW_GREEN_SIZE : GL.GLenum
+        val GLUT_WINDOW_BLUE_SIZE : GL.GLenum
+        val GLUT_WINDOW_ALPHA_SIZE : GL.GLenum
+        val GLUT_WINDOW_ACCUM_RED_SIZE : GL.GLenum
+        val GLUT_WINDOW_ACCUM_GREEN_SIZE : GL.GLenum
+        val GLUT_WINDOW_ACCUM_BLUE_SIZE : GL.GLenum
+        val GLUT_WINDOW_ACCUM_ALPHA_SIZE : GL.GLenum
+        val GLUT_WINDOW_DOUBLEBUFFER : GL.GLenum
+        val GLUT_WINDOW_RGBA : GL.GLenum
+        val GLUT_WINDOW_PARENT : GL.GLenum
+        val GLUT_WINDOW_NUM_CHILDREN : GL.GLenum
+        val GLUT_WINDOW_COLORMAP_SIZE : GL.GLenum
+        (* #if (GLUT_API_VERSION >= 2) *)
+        val GLUT_WINDOW_NUM_SAMPLES : GL.GLenum
+        val GLUT_WINDOW_STEREO : GL.GLenum
+        (* #endif *)
+        (* #if (GLUT_API_VERSION >= 3) *)
+        val GLUT_WINDOW_CURSOR : GL.GLenum
+        (* #endif *)
+        val GLUT_SCREEN_WIDTH : GL.GLenum
+        val GLUT_SCREEN_HEIGHT : GL.GLenum
+        val GLUT_SCREEN_WIDTH_MM : GL.GLenum
+        val GLUT_SCREEN_HEIGHT_MM : GL.GLenum
+        val GLUT_MENU_NUM_ITEMS : GL.GLenum
+        val GLUT_DISPLAY_MODE_POSSIBLE : GL.GLenum
+        val GLUT_INIT_WINDOW_X : GL.GLenum
+        val GLUT_INIT_WINDOW_Y : GL.GLenum
+        val GLUT_INIT_WINDOW_WIDTH : GL.GLenum
+        val GLUT_INIT_WINDOW_HEIGHT : GL.GLenum
+        val GLUT_INIT_DISPLAY_MODE : GL.GLenum
+        (* #if (GLUT_API_VERSION >= 2) *)
+        val GLUT_ELAPSED_TIME : GL.GLenum
+        (* #endif *)
+        (* #if (GLUT_API_VERSION >= 4 || GLUT_XLIB_IMPLEMENTATION >= 13) *)
+        val GLUT_WINDOW_FORMAT_ID : GL.GLenum
+        (* #endif *)
+
+        (* #if (GLUT_API_VERSION >= 2) *)
+        (* glutDeviceGet parameters. *)
+        val GLUT_HAS_KEYBOARD : GL.GLenum
+        val GLUT_HAS_MOUSE : GL.GLenum
+        val GLUT_HAS_SPACEBALL : GL.GLenum
+        val GLUT_HAS_DIAL_AND_BUTTON_BOX : GL.GLenum
+        val GLUT_HAS_TABLET : GL.GLenum
+        val GLUT_NUM_MOUSE_BUTTONS : GL.GLenum
+        val GLUT_NUM_SPACEBALL_BUTTONS : GL.GLenum
+        val GLUT_NUM_BUTTON_BOX_BUTTONS : GL.GLenum
+        val GLUT_NUM_DIALS : GL.GLenum
+        val GLUT_NUM_TABLET_BUTTONS : GL.GLenum
+        (* #endif *)
+        (* #if (GLUT_API_VERSION >= 4 || GLUT_XLIB_IMPLEMENTATION >= 13) *)
+        val GLUT_DEVICE_IGNORE_KEY_REPEAT : GL.GLenum
+        val GLUT_DEVICE_KEY_REPEAT : GL.GLenum
+        val GLUT_HAS_JOYSTICK : GL.GLenum
+        val GLUT_OWNS_JOYSTICK : GL.GLenum
+        val GLUT_JOYSTICK_BUTTONS : GL.GLenum
+        val GLUT_JOYSTICK_AXES : GL.GLenum
+        val GLUT_JOYSTICK_POLL_RATE : GL.GLenum
+        (* #endif *)
+
+        (* #if (GLUT_API_VERSION >= 3) *)
+        (* glutLayerGet parameters. *)
+        val GLUT_OVERLAY_POSSIBLE : GL.GLenum
+        val GLUT_LAYER_IN_USE : GL.GLenum
+        val GLUT_HAS_OVERLAY : GL.GLenum
+        val GLUT_TRANSPARENT_INDEX : GL.GLenum
+        val GLUT_NORMAL_DAMAGED : GL.GLenum
+        val GLUT_OVERLAY_DAMAGED : GL.GLenum
+
+        (* #if (GLUT_API_VERSION >= 4 || GLUT_XLIB_IMPLEMENTATION >= 9) *)
+        (* glutVideoResizeGet parameters. *)
+        val GLUT_VIDEO_RESIZE_POSSIBLE : GL.GLenum
+        val GLUT_VIDEO_RESIZE_IN_USE : GL.GLenum
+        val GLUT_VIDEO_RESIZE_X_DELTA : GL.GLenum
+        val GLUT_VIDEO_RESIZE_Y_DELTA : GL.GLenum
+        val GLUT_VIDEO_RESIZE_WIDTH_DELTA : GL.GLenum
+        val GLUT_VIDEO_RESIZE_HEIGHT_DELTA : GL.GLenum
+        val GLUT_VIDEO_RESIZE_X : GL.GLenum
+        val GLUT_VIDEO_RESIZE_Y : GL.GLenum
+        val GLUT_VIDEO_RESIZE_WIDTH : GL.GLenum
+        val GLUT_VIDEO_RESIZE_HEIGHT : GL.GLenum
+        (* #endif *)
+
+        (* glutGetModifiers return mask. *)
+        val GLUT_ACTIVE_SHIFT : GL.GLenum
+        val GLUT_ACTIVE_CTRL : GL.GLenum
+        val GLUT_ACTIVE_ALT : GL.GLenum
+
+        (* glutSetCursor parameters. *)
+        (* Basic arrows. *)
+        val GLUT_CURSOR_RIGHT_ARROW : GL.GLenum
+        val GLUT_CURSOR_LEFT_ARROW : GL.GLenum
+        (* Symbolic cursor shapes. *)
+        val GLUT_CURSOR_INFO : GL.GLenum
+        val GLUT_CURSOR_DESTROY : GL.GLenum
+        val GLUT_CURSOR_HELP : GL.GLenum
+        val GLUT_CURSOR_CYCLE : GL.GLenum
+        val GLUT_CURSOR_SPRAY : GL.GLenum
+        val GLUT_CURSOR_WAIT : GL.GLenum
+        val GLUT_CURSOR_TEXT : GL.GLenum
+        val GLUT_CURSOR_CROSSHAIR : GL.GLenum
+        (* Directional cursors. *)
+        val GLUT_CURSOR_UP_DOWN : GL.GLenum
+        val GLUT_CURSOR_LEFT_RIGHT : GL.GLenum
+        (* Sizing cursors. *)
+        val GLUT_CURSOR_TOP_SIDE : GL.GLenum
+        val GLUT_CURSOR_BOTTOM_SIDE : GL.GLenum
+        val GLUT_CURSOR_LEFT_SIDE : GL.GLenum
+        val GLUT_CURSOR_RIGHT_SIDE : GL.GLenum
+        val GLUT_CURSOR_TOP_LEFT_CORNER : GL.GLenum
+        val GLUT_CURSOR_TOP_RIGHT_CORNER : GL.GLenum
+        val GLUT_CURSOR_BOTTOM_RIGHT_CORNER : GL.GLenum
+        val GLUT_CURSOR_BOTTOM_LEFT_CORNER : GL.GLenum
+        (* Inherit from parent window. *)
+        val GLUT_CURSOR_INHERIT : GL.GLenum
+        (* Blank cursor. *)
+        val GLUT_CURSOR_NONE : GL.GLenum
+        (* Fullscreen crosshair (if available). *)
+        val GLUT_CURSOR_FULL_CROSSHAIR : GL.GLenum
+        (* #endif *)
+
+        (* #if (GLUT_API_VERSION >= 4 || GLUT_XLIB_IMPLEMENTATION >= 13) *)
+        (* GLUT device control sub-API. *)
+        (* glutSetKeyRepeat modes. *)
+        val GLUT_KEY_REPEAT_OFF : GL.GLenum
+        val GLUT_KEY_REPEAT_ON : GL.GLenum
+        val GLUT_KEY_REPEAT_DEFAULT : GL.GLenum
+
+        (* Joystick button masks. *)
+        val GLUT_JOYSTICK_BUTTON_A : GL.GLenum
+        val GLUT_JOYSTICK_BUTTON_B : GL.GLenum
+        val GLUT_JOYSTICK_BUTTON_C : GL.GLenum
+        val GLUT_JOYSTICK_BUTTON_D : GL.GLenum
+
+        (* GLUT game mode sub-API. *)
+        (* glutGameModeGet. *)
+        val GLUT_GAME_MODE_ACTIVE : GL.GLenum
+        val GLUT_GAME_MODE_POSSIBLE : GL.GLenum
+        val GLUT_GAME_MODE_WIDTH : GL.GLenum
+        val GLUT_GAME_MODE_HEIGHT : GL.GLenum
+        val GLUT_GAME_MODE_PIXEL_DEPTH : GL.GLenum
+        val GLUT_GAME_MODE_REFRESH_RATE : GL.GLenum
+        val GLUT_GAME_MODE_DISPLAY_CHANGED : GL.GLenum
+        val glutDisplayFunc: (unit -> unit) -> unit
+        val glutInit: unit -> unit;
+        val glutInitDisplayMode : GLenum -> unit
+        (*val glutInit: int -> string list -> unit;*)
+        val glutInitWindowSize : int -> int -> unit
+        val glutCreateWindow: string -> int;
+        val glutMainLoop: unit -> unit;
+        val glutBitmapCharacter : glutfont -> int -> unit
+        val glutStrokeCharacter : glutfont -> int -> unit
+    end
+
+open GL
+
+structure GLUT :> GLUT =
     struct
         type glutfont = GL.GLenum
 
@@ -1804,14 +2121,14 @@ structure GLUT =
             fun glutInit () = g ()
 
             (*val init = _import "glutInit" : int -> string list -> unit;*)
-            val c_glutInitDisplayMode = _import "glutInitWindowSize" stdcall: GL.GLenum -> unit;
+            val c_glutInitDisplayMode = _import "glutInitDisplayMode" stdcall: GL.GLenum -> unit;
             fun glutInitDisplayMode (a:GL.GLenum) = c_glutInitDisplayMode (a) : unit
 
             (* #if (GLUT_API_VERSION >= 4 || GLUT_XLIB_IMPLEMENTATION >= 9)*)
-            val c_glutInitDisplayString = _import "glutInitWindowSize" stdcall: string -> unit;
+            val c_glutInitDisplayString = _import "glutInitDisplayString" stdcall: string -> unit;
             fun glutInitDisplayString (a:string) = c_glutInitDisplayString (a) : unit
 
-            val c_glutInitWindowPosition = _import "glutInitWindowSize" stdcall: int * int -> unit ;
+            val c_glutInitWindowPosition = _import "glutInitWindowPosition" stdcall: int * int -> unit ;
             fun glutInitWindowPosition (a:int) (b:int) = c_glutInitWindowPosition (a, b) :unit
 
             val c_glutInitWindowSize = _import "glutInitWindowSize" stdcall: int * int -> unit;
@@ -1821,14 +2138,14 @@ structure GLUT =
 
             val glutMainLoop = _import "glutMainLoop" stdcall: unit -> unit;
 
-            val c_glutBitmapCharacter = _import "glutBitmapCharacter" stdcall: glutfont * char -> unit;
-            fun glutBitmapCharacter (a:glutfont) (b:char) = c_glutBitmapCharacter (a,b)
+            val c_glutBitmapCharacter = _import "glutBitmapCharacter" stdcall: glutfont * int -> unit;
+            fun glutBitmapCharacter (a:glutfont) (b:int) = c_glutBitmapCharacter (a,b)
 
-            (*val c_glutBitmapWidth : glutfont -> char -> int =
+            (*val c_glutBitmapWidth : glutfont -> int -> int =
                 Dynlib.app2 (Dynlib.dlsym dlh "mosml_glutBitmapWidth")*)
 
-            val c_glutStrokeCharacter = _import "glutStrokeCharacter" stdcall: glutfont * char -> unit;
-            fun glutStrokeCharacter (a:glutfont) (b:char) = c_glutStrokeCharacter (a,b)
+            val c_glutStrokeCharacter = _import "glutStrokeCharacter" stdcall: glutfont * int -> unit;
+            fun glutStrokeCharacter (a:glutfont) (b:int) = c_glutStrokeCharacter (a,b)
         end
 
 

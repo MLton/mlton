@@ -1,6 +1,8 @@
 Group is
 Gl.sig
 Gl.sml
+Glu.sig
+Glu.sml
 Glut.sig
 Glut.sml
 hello.sml
