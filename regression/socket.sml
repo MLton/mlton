@@ -38,10 +38,6 @@ val _ =
     | SOME pid => 
 	 let
 	    val socket' = INetSock.TCP.socket ()
-	    val _ =
-	       print (if Socket.connectNB (socket', addr)
-			 then "WRONG\n"
-		      else "OK\n")
 	    val _ = Socket.connect (socket', addr)
 	    val _ = write (socket', "hello, world\n")
 	    val _ = print (read socket')
