@@ -90,6 +90,10 @@ check-nj-version:
 		echo You must use SML/NJ $(SMLNJ_VERSION);	\
 	fi
 
+.PHONY: def-use
+def-use:
+	mlton -stop tc -show-def-use /tmp/z.def-use $(MLTON).cm
+
 .PHONY: nj-mlton
 nj-mlton: $(SOURCES)
 	$(MAKE) check-nj-version
