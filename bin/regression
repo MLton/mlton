@@ -24,6 +24,7 @@ src="$root/src"
 lib="$root/lib"
 bin="$root/bin"
 mlton="$bin/mlton"
+flags='-native false -type-check true'
 cont='callcc.sml callcc2.sml callcc3.sml'
 signal='signals.sml'
 thread='thread0.sml thread1.sml thread2.sml mutex.sml prodcons.sml same-fringe.sml timeout.sml'
@@ -45,13 +46,12 @@ PATH=.:$PATH
  			echo "testing $f"
 			case "$f" in
 			exnHistory*)
-				flags='-exn-history true'
+				flags="-exn-history true $flags"
 			;;
 			*)
-				flags=''
 			;;
 			esac
-			$mlton -native false -type-check true $flags $f.sml
+			$mlton $flags $f.sml
 			if [ $? -ne 0 ]; then
 				echo "compilation of $f failed"
 #				exit 1
@@ -78,7 +78,7 @@ PATH=.:$PATH
 		*)
  			echo "testing $f"
 			echo "val _ = Main.doit ()" | cat $f.sml - > $tmpf.sml
-			$mlton -type-check true $tmpf.sml
+			$mlton $flags $tmpf.sml
 			if [ $? -ne 0 ]; then
 				echo "compilation of $f failed"
 			fi
@@ -99,7 +99,7 @@ PATH=.:$PATH
 	    *)
 		    echo "testing $f"
 		    make -W $f > /dev/null
-		    $mlton -type-check true -o $tmpf $f.cm
+		    $mlton $flags -o $tmpf $f.cm
 		    if [ $? -ne 0 ]; then
 				echo "compilation of $f failed"
 		    fi
