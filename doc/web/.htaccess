@@ -31,4 +31,4 @@ Redirect permanent /experimental http://sourceforge.net/project/showfiles.php?gr
 #ErrorDocument 403
 
 # If you do the following, then you can't see 404's in the error_log.
-#ErrorDocument 404 /not-found.html
+ErrorDocument 404 /not-found.html
