@@ -2892,6 +2892,10 @@ struct
   fun bug {liveInfo: x86Liveness.LiveInfo.t}
     = let
 	val bugLabel = Label.newString "bug"
+	val _ = x86Liveness.LiveInfo.setLiveOperands
+	        (liveInfo, 
+		 bugLabel,
+		 [])
       in 
 	AppendList.appends
 	[AppendList.fromList
