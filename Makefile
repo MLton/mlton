@@ -106,7 +106,7 @@ deb-spell:
 
 .PHONY: dirs
 dirs:
-	mkdir -p $(BIN) $(LIB)/sml $(LIB)/$(TARGET) $(LIB)/include
+	mkdir -p $(BIN) $(LIB)/$(TARGET) $(LIB)/include
 
 .PHONY: docs
 docs:
@@ -211,6 +211,8 @@ world:
 .PHONY: world-no-check
 world-no-check: 
 	@echo 'Making world.'
+	rm -rf $(LIB)/sml
+	mkdir $(LIB)/sml
 	$(CP) $(SRC)/basis-library $(LIB)/sml
 	find $(LIB)/sml -type f -name .cvsignore | xargs rm -rf
 	$(LIB)/$(AOUT) @MLton -- $(LIB)/world
