@@ -197,6 +197,9 @@ signature SSA_TREE =
 	    val alphaRename: t -> t
 	    val blocks: t -> Block.t vector
 	    val checkHandlers: t -> unit
+	    (* clear the plists for all bound variables and labels that appear
+	     * in the function, but not the function name's plist.
+	     *)
 	    val clear: t -> unit
 	    val controlFlow: t -> {graph: DirectedGraph.t,
 				   labelNode: Label.t -> DirectedGraph.Node.t,
@@ -240,7 +243,6 @@ signature SSA_TREE =
 
 	    val checkHandlers: t -> unit
 	    val clear: t -> unit
-	    val clearGlobals: t -> unit
 	    val clearTop: t -> unit
 	    val fromCps: Cps.Program.t * {jumpToLabel: Cps.Jump.t -> Label.t,
 					  funcToFunc: Cps.Func.t -> Func.t} -> t

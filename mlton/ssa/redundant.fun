@@ -341,20 +341,22 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 			     statements = statements,
 			     transfer = transfer}
 		 end)
-
+	     val f = 
+		Function.new {name = name,
+			      args = args,
+			      start = start,
+			      blocks = blocks,
+			      returns = returns,
+			      mayRaise = mayRaise}
+	     val _ = Function.clear f
 	  in
-	     Function.new {name = name,
-			   args = args,
-			   start = start,
-			   blocks = blocks,
-			   returns = returns,
-			   mayRaise = mayRaise}
+	     f
 	  end)
       val p = Program.T {datatypes = datatypes,
 			 globals = globals,
 			 functions = functions,
 			 main = main}
-      val _ = Program.clear p
+      val _ = Program.clearTop p
    in
       p
    end

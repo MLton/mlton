@@ -146,15 +146,6 @@ val traceApply =
 
 val bug = ([], Bug)
 
-fun clear (f: Function.t): unit =
-   let
-      val {args, blocks, ...} = Function.dest f
-      val _ = Vector.foreach (args, Var.clear o #1)
-      val _ = Vector.foreach (blocks, Block.clear)
-   in
-      ()
-   end
-
 fun shrinkFunction (globals: Statement.t vector) =
    let
       fun use (VarInfo.T {isUsed, var, ...}): Var.t =
@@ -192,7 +183,7 @@ fun shrinkFunction (globals: Statement.t vector) =
    in
       fn (f: Function.t, mayDelete: bool) =>
       let
-	 val _ = clear f
+	 val _ = Function.clear f
 	 val {args, blocks, mayRaise, name, returns, start, ...} =
 	    Function.dest f
 	 (* Index the labels by their defining block in blocks. *)
@@ -268,13 +259,13 @@ fun shrinkFunction (globals: Statement.t vector) =
 		fun normal () = LabelMeaning.Block block
 		fun extract (actuals: Var.t vector): Positions.t =
 		   let
-		      val {get: Var.t -> Position.t, set, rem} =
-			 Property.getSetOnce
+		      val {get: Var.t -> Position.t, set, destroy} =
+			 Property.destGetSetOnce
 			 (Var.plist, Property.initFun Position.Free)
 		      val _ = Vector.foreachi (args, fn (i, (x, _)) =>
 					       set (x, Position.Formal i))
 		      val ps = Vector.map (actuals, get)
-		      val _ = Vector.foreach (args, rem o #1)
+		      val _ = destroy ()
 		   in ps
 		   end
 		fun sameAsArgs args' =
@@ -875,7 +866,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 			  name = name,
 			  returns = returns,
 			  start = start}
-	 val _ = clear f
+	 val _ = Function.clear f
       in
 	 f
       end

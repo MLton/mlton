@@ -73,7 +73,6 @@ structure DirectExp =
 fun polyEqual (Program.T {datatypes, globals, functions, main}) =
    let
       val shrink = shrinkFunction globals
-
       val {get = tyconInfo: Tycon.t -> {isEnum: bool,
 					cons: {con: Con.t,
 					       args: Type.t vector} vector},
@@ -411,7 +410,6 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	 in
 	    Vector.fromList blocks
 	 end
-
       val functions =
 	 List.revMap 
 	 (functions, fn f =>
@@ -431,7 +429,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		    functions = (!newFunctions) @ functions,
 		    main = main}
       val _ = destroyType ()
-      val _ = Program.clear program
+      val _ = Program.clearTop program
    in
       program
    end

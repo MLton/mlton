@@ -165,7 +165,7 @@ fun loopInvariant (program as Program.T {globals, datatypes, functions, main}) =
 		    globals = globals,
 		    functions = functions,
 		    main = main}
-      val _ = Program.clearGlobals program
+      val _ = Program.clearTop program
    in
       program
    end

@@ -108,6 +108,7 @@ fun checkScopes (program as
 	    val _ = loop (Function.dominatorTree f)
 	    val _ = Vector.foreach (blocks, unbindLabel o Block.label)
 	    val _ = Vector.foreach (args, unbindVar o #1)
+	    val _ = Function.clear f
 	 in
 	     ()
 	 end
@@ -117,7 +118,7 @@ fun checkScopes (program as
       val _ = List.foreach (functions, bindFunc o Function.name)
       val _ = List.foreach (functions, loopFunc)
       val _ = getFunc main
-      val _ = Program.clear program
+      val _ = Program.clearTop program
    in ()
    end
 
