@@ -4,30 +4,40 @@ functor Array2
        eqtype 'a array
        type 'a elem
        type 'a region = {base: 'a array,
-			 row: int,
-			 col: int,
-			 nrows: int option,
-			 ncols: int option}
+			 row: Int31.int,
+			 col: Int31.int,
+			 nrows: Int31.int option,
+			 ncols: Int31.int option}
 
        datatype traversal = RowMajor | ColMajor
 
        val app: traversal -> ('a -> unit) -> 'a array -> unit 
-       val appi: traversal -> (int * int * 'a -> unit) -> 'a region -> unit 
-       val array: int * int * 'a -> 'a array 
-       val column: ('a array * int) -> 'a vector 
-       val copy: {src: 'a region, dst: 'a array, dst_row: int, dst_col: int} -> unit
-       val dimensions: 'a array -> (int * int) 
+       val appi:
+	  traversal
+	  -> (Int31.int * Int31.int * 'a -> unit) -> 'a region -> unit 
+       val array: Int31.int * Int31.int * 'a -> 'a array 
+       val column: ('a array * Int31.int) -> 'a vector 
+       val copy:
+	  {src: 'a region, dst: 'a array, dst_row: Int31.int, dst_col: Int31.int}
+	  -> unit
+       val dimensions: 'a array -> (Int31.int * Int31.int) 
        val fold: traversal -> ('a * 'b -> 'b) -> 'b -> 'a array -> 'b
-       val foldi: traversal -> (int * int * 'a * 'b -> 'b) -> 'b -> 'a region -> 'b 
+       val foldi:
+	  traversal
+	  -> (Int31.int * Int31.int * 'a * 'b -> 'b) -> 'b -> 'a region -> 'b 
        val fromList: 'a list list -> 'a array 
        val modify: traversal -> ('a -> 'a) -> 'a array -> unit 
-       val modifyi: traversal -> (int * int * 'a -> 'a) -> 'a region -> unit 
-       val nCols: 'a array -> int 
-       val nRows: 'a array -> int 
-       val row: ('a array * int) -> 'a vector 
-       val sub: 'a array * int * int -> 'a 
-       val tabulate: traversal -> (int * int * (int * int -> 'a)) -> 'a array 
-       val update: 'a array * int * int * 'a -> unit 
+       val modifyi:
+	  traversal
+	  -> (Int31.int * Int31.int * 'a -> 'a) -> 'a region -> unit 
+       val nCols: 'a array -> Int31.int 
+       val nRows: 'a array -> Int31.int 
+       val row: ('a array * Int31.int) -> 'a vector 
+       val sub: 'a array * Int31.int * Int31.int -> 'a 
+       val tabulate:
+	  traversal
+	  -> (Int31.int * Int31.int * (Int31.int * Int31.int -> 'a)) -> 'a array 
+       val update: 'a array * Int31.int * Int31.int * 'a -> unit 
     end) =
    struct
       open Array2 OpenInt32

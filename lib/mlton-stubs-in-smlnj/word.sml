@@ -5,10 +5,8 @@ functor FixWord (W: WORD) =
       type t = word
       val wordSize = Pervasive.Int32.fromInt wordSize
       local
-	 fun fix
-	    (f: t * Pervasive.Word.word -> t)
-	    (w: t, w': Pervasive.Word32.word): t =
-	    f(w, Pervasive.Word.fromLargeWord w')
+	 fun fix (f: t * Word31.word -> t) (w: t, w': Word32.word): t =
+	    f (w, Word31.fromLargeWord w')
       in
 	 val << = fix <<
 	 val >> = fix >>
@@ -24,7 +22,7 @@ functor FixWord (W: WORD) =
       val toString = toUpper o toString	 
    end
 
-structure Word8 = FixWord (Word8)
-structure Word = FixWord (Word32)
+structure Word8 = FixWord (Pervasive.Word8)
+structure Word = FixWord (Pervasive.Word32)
 structure Word32 = Word
 structure SysWord = Word

@@ -11,7 +11,7 @@ structure MLton: MLTON =
       fun serialize _ = raise Fail "serialize"
       fun deserialize _ = raise Fail "deserialize"
       fun cleanAtExit _ = raise Fail "cleanAtExit"
-      val debug = true
+      val debug = false
       val safe = true
       fun size _ = ~1: int
 
@@ -133,7 +133,7 @@ structure MLton: MLTON =
 
       structure Rlimit =
 	 struct
-	    type rlim = Word31.word
+	    type rlim = Word.word
 	       
 	    val infinity: rlim = 0w0
 

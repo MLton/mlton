@@ -27,6 +27,24 @@ $(NAME)_cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 		echo 'call-main.sml';					\
 	) >$(NAME).cm
 
+.PHONY: nj-whole
+nj-whole: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
+	(									\
+		echo 'SMLofNJ.Internals.GC.messages false;';			\
+		echo '#set CM.Control.verbose false;';				\
+		echo '#set CM.Control.warn_obsolete false;';			\
+		echo 'Control.polyEqWarn := false;'; 				\
+		echo 'local'; 							\
+		cmcat sources.cm | grep 'mlton-stubs-in-smlnj' | xargs cat;	\
+		cmcat sources.cm | grep 'mlyacc' | xargs cat;			\
+		cmcat sources.cm | grep -v 'mlyacc' |				\
+			grep -v 'mlton-stubs-in-smlnj' | xargs cat; 		\
+		echo 'in';							\
+		echo 'val _ = Main.exportNJ("$(SRC)/basis-library", "$(LIB)/mlton")';	\
+		echo 'end';							\
+	) >$(NAME).whole.sml
+	time $(SML) <$(NAME).whole.sml
+
 mlton.sml: $(NAME).cm $(shell $(MLTON) -stop f mlton.cm)
 	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
 

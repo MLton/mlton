@@ -1,3 +1,5 @@
+type word = Word.word
+   
 signature MLTON_RLIMIT =
    sig
       type rlim = word

@@ -11,7 +11,7 @@ functor ConvertMonoArray (A: UNSAFE_MONO_ARRAY) =
 functor ConvertMonoVector (V: sig
 			       type vector
 			       type elem
-			       val sub : (vector * int) -> elem
+			       val sub: vector * Int31.int -> elem
 			      end) =
    struct
       open V
