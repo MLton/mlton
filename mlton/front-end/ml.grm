@@ -726,7 +726,19 @@ decnolocal
         | DATATYPE datatypeRhs  (Dec.Datatype datatypeRhs)
 	| ABSTYPE datBind WITH decs END   (Dec.Abstype {datBind = datBind,
 							body = decs})
-	| EXCEPTION ebs		(Dec.Exception (Vector.fromList ebs))
+	| EXCEPTION ebs
+	  (let
+	      val ebs = Vector.fromList ebs
+	      val _ =
+		 reportDuplicates
+		 (ebs,
+		  "exception declaration",
+		  fn ((c, _), (c', _)) => Con.equals (c, c'),
+		  Con.layout o #1,
+		  Con.region o #1)
+	   in
+	      Dec.Exception ebs
+	   end)
 	| OPEN longstrids	(Dec.Open (Vector.fromList longstrids))
 	| fixity vids		(Dec.Fix {fixity = fixity,
 					  ops = Vector.fromList vids})
