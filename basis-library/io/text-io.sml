@@ -11,14 +11,19 @@ structure TextIO: TEXT_IO_EXTRA =
 			  structure Cleaner = Cleaner)
       structure SIO = StreamIO
       structure ImperativeIO = 
-	ImperativeIOExtraFile(structure StreamIO = StreamIO
-			      structure Vector = CharVector
-			      structure Array = CharArray
-			      val openVector = TextPrimIO.openVector
-			      val mkReader = Posix.IO.mkTextReader
-			      val mkWriter = Posix.IO.mkTextWriter
-			      val chunkSize = Primitive.TextIO.bufSize
-			      val fileTypeFlags = [PosixPrimitive.FileSys.O.text])
+	ImperativeIOExtraFile(structure PrimIO = TextPrimIO
+				  structure StreamIO = StreamIO
+				  structure Vector = CharVector
+				  structure Array = CharArray
+				  val someElem = (#"\000": Char.char)
+				  val lineElem = #"\n"
+				  fun isLine c = c = lineElem
+				  val hasLine = CharVector.exists isLine
+				  structure Cleaner = Cleaner
+				  val chunkSize = Primitive.TextIO.bufSize
+				  val fileTypeFlags = [PosixPrimitive.FileSys.O.text]
+				  val mkReader = Posix.IO.mkTextReader
+				  val mkWriter = Posix.IO.mkTextWriter)
       open ImperativeIO
 
       structure StreamIO =

@@ -14,11 +14,10 @@ structure BinIO: BIN_IO_EXTRA =
 	ImperativeIOExtraFile(structure StreamIO = StreamIO
 			      structure Vector = Word8Vector
 			      structure Array = Word8Array
-			      val openVector = BinPrimIO.openVector
-			      val mkReader = Posix.IO.mkBinReader
-			      val mkWriter = Posix.IO.mkBinWriter
 			      val chunkSize = Primitive.TextIO.bufSize
-			      val fileTypeFlags = [PosixPrimitive.FileSys.O.binary])
+			      val fileTypeFlags = [PosixPrimitive.FileSys.O.binary]
+			      val mkReader = Posix.IO.mkBinReader
+			      val mkWriter = Posix.IO.mkBinWriter)
       open ImperativeIO
 	
       structure StreamIO =

@@ -118,6 +118,8 @@ posix/posix.sml
 
 io/stream-io.sig
 io/stream-io.fun
+io/buffer-i.sig
+io/buffer-i.fun
 io/imperative-io.sig
 io/imperative-io.fun
 io/bin-stream-io.sig

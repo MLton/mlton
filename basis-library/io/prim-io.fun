@@ -9,7 +9,8 @@ signature PRIM_IO_EXTRA_ARG =
      val compare : (pos * pos) -> order
    end
 
-functor PrimIOExtra (S : PRIM_IO_EXTRA_ARG): PRIM_IO_EXTRA = 
+functor PrimIOExtra 
+        (S : PRIM_IO_EXTRA_ARG): PRIM_IO_EXTRA = 
    struct
       open S
 
@@ -333,4 +334,6 @@ signature PRIM_IO_ARG =
      eqtype pos
      val compare : (pos * pos) -> order
    end
-functor PrimIO(S: PRIM_IO_ARG): PRIM_IO = PrimIOExtra(S)
+functor PrimIO
+        (S: PRIM_IO_ARG): PRIM_IO = 
+  PrimIOExtra(S)

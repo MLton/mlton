@@ -13,7 +13,8 @@ signature STREAM_IO_EXTRA_ARG =
       val hasLine : Vector.vector -> bool
    end
 
-functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
+functor StreamIOExtra 
+        (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
    struct
       open S
 
@@ -225,18 +226,20 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 			    | BLOCK_BUF _ => ()
 			  end
 
-      fun mkOutstream (writer, buffer_mode) =
+      fun mkOutstream' {writer, closed, buffer_mode} =
 	let
 	  val bufSize = writerSel (writer, #chunkSize)
 	in
 	  Out {writer = writer,
 	       augmented_writer = PIO.augmentWriter writer,
-	       state = ref Active,
+	       state = ref (if closed then Closed else Active),
 	       buffer_mode = ref (case buffer_mode of
 				    IO.NO_BUF => NO_BUF
 				  | IO.LINE_BUF => newLineBuf bufSize
 				  | IO.BLOCK_BUF => newBlockBuf bufSize)}
 	end
+      fun mkOutstream (writer, buffer_mode) =
+	mkOutstream' {writer = writer, closed = false, buffer_mode = buffer_mode}
 
       fun getWriter (os as Out {writer, state, buffer_mode, ...}) =
 	if closed (!state)
@@ -355,7 +358,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
       fun extendB function is = valOf (extend function is true)
       fun extendNB function is = extend function is false
 
-      fun input (is as In {augmented_reader, state, ...}) =
+      fun input (is as In {state, ...}) =
 	case !state of
 	  Active (ref (Link {inp, pos, next})) => 
 	    let
@@ -407,7 +410,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 				       then updateState(is, next)
 				       else is)
 		   | Active (ref End) => 
-		       let val _ = extendB "canInput" is 
+		       let val _ = extendB "inputN" is 
 		       in loop (is, inps, n)
 		       end
 		   | _ => finish (inps, is)
@@ -550,18 +553,37 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	in V.length inp = 0
 	end
 
-      fun mkInstream (reader, v) =
+      fun mkInstream' {reader, closed, buffer_contents} =
 	let
-	  val next = ref (Active (ref End))
-	  val this = if V.length v = 0
-		       then next
-		       else ref (Active (ref (Link {inp = v, pos = 0, next = next})))
+	  val next = ref (if closed then Closed else Active (ref End))
+	  val this =
+	    case buffer_contents of
+	      NONE => next
+	    | SOME v => let
+			  val chain = if V.length v = 0
+					then Eos {next = next}
+					else Link {inp = v,
+						   pos = 0,
+						   next = next}
+			  val this = ref (Active (ref chain))
+			in 
+			  this
+			end
 	in
 	  In {reader = reader,
 	      augmented_reader = PIO.augmentReader reader,
 	      state = this,
 	      tail = ref next}
 	end
+      fun mkInstream (reader, buffer_contents) =
+	mkInstream' {reader = reader, closed = false, 
+		     buffer_contents = if V.length buffer_contents = 0
+					 then NONE
+					 else SOME buffer_contents}
+      fun openVector v =
+	mkInstream' {reader = PIO.openVector v,
+		     closed = false,
+		     buffer_contents = NONE}
 
       fun getReader (is as In {reader, tail, ...}) =
 	(case !(!tail) of
@@ -578,6 +600,23 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	| _ => raise IO.ClosedStream
         handle exn => liftExn (instreamName is) "filePosIn" exn
    end
+
+signature STREAM_IO_ARG = 
+   sig
+      structure PrimIO: PRIM_IO
+      structure Array: MONO_ARRAY
+      structure Vector: MONO_VECTOR
+      sharing type PrimIO.elem = Array.elem = Vector.elem
+      sharing type PrimIO.vector = Array.vector = Vector.vector
+      sharing type PrimIO.array = Array.array
+      val someElem: PrimIO.elem
+   end
+functor StreamIO
+        (S: STREAM_IO_ARG): STREAM_IO = 
+  StreamIOExtra(open S
+		val lineElem = someElem
+		fun isLine _ = raise (Fail "<isLine>")
+		fun hasLine _ = raise (Fail "<hasLine>"))
 
 signature STREAM_IO_EXTRA_FILE_ARG =
    sig
@@ -596,7 +635,8 @@ signature STREAM_IO_EXTRA_FILE_ARG =
       structure Cleaner: CLEANER
    end
 
-functor StreamIOExtraFile(S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
+functor StreamIOExtraFile
+        (S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
    struct
       open S
 
@@ -605,8 +645,6 @@ functor StreamIOExtraFile(S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
 
       structure StreamIO = StreamIOExtra(open S)
       open StreamIO
-
-      structure SIO = StreamIO
 
       structure PFS = Posix.FileSys
 
@@ -626,31 +664,39 @@ functor StreamIOExtraFile(S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
 	  SOME ioDesc => valOf (Posix.FileSys.iodToFD ioDesc)
 	| NONE => liftExn (outstreamName os) "outFd" (Fail "<no ioDesc>")
 
-      val openOutstreams : outstream list ref = ref []
-      val mkOutstream =
+      val openOutstreams : (outstream * {close: bool}) list ref = ref []
+      val mkOutstream'' =
 	let	
 	  val _ = Cleaner.addNew
 	          (Cleaner.atExit, fn () =>
-		   List.app (fn os =>
-			     let
-			       val fd = outFd os
-			     in
-			       if fd = PFS.stdout orelse fd = PFS.stderr
-				 then flushOut os
-				 else closeOut os
-			     end) (!openOutstreams))
+		   List.app (fn (os, {close}) =>
+			     if close
+			       then closeOut os
+			       else flushOut os) (!openOutstreams))
 	in
-	  fn (writer, buffer_mode) =>
+	  fn {writer, closed, buffer_mode, atExit} =>
 	  let
-	    val os = mkOutstream (writer, buffer_mode)
-	    val _ = openOutstreams := os :: (!openOutstreams)
+	    val os = mkOutstream' {writer = writer,
+				   closed = closed,
+				   buffer_mode = buffer_mode}
+	    val _ = if closed
+		      then ()
+		      else openOutstreams := (os,atExit) :: (!openOutstreams)
 	  in
 	    os
 	  end
 	end
+      fun mkOutstream' {writer, closed, buffer_mode} =
+	mkOutstream'' {writer = writer, closed = closed, 
+		       buffer_mode = buffer_mode,
+		       atExit = {close = true}}
+      fun mkOutstream (writer, buffer_mode) =
+	mkOutstream' {writer = writer, closed = false,
+		      buffer_mode = buffer_mode}
       val closeOut = fn os =>
 	let
-	  val _ = openOutstreams := List.filter (fn os' => not (equalsOut (os, os'))) 
+	  val _ = openOutstreams := List.filter (fn (os', _) => 
+						 not (equalsOut (os, os'))) 
                                                 (!openOutstreams)
 	in
 	  closeOut os
@@ -668,42 +714,43 @@ functor StreamIOExtraFile(S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
 	  SOME ioDesc => valOf (Posix.FileSys.iodToFD ioDesc)
 	| NONE => liftExn (instreamName is) "inFd" (Fail "<no ioDesc>")
 
-      val openInstreams : instream list ref = ref []
-      val mkInstream =
+      val openInstreams : (instream * {close: bool}) list ref = ref []
+      val mkInstream'' =
 	let
 	  val _ = Cleaner.addNew
 	          (Cleaner.atExit, fn () =>
-		   List.app (fn is => closeIn is) (!openInstreams))
+		   List.app (fn (is, {close}) => 
+			     if close
+			       then closeIn is
+			       else ()) (!openInstreams))
 	in
-	  fn (reader, v) =>
+	  fn {reader, closed, buffer_contents, atExit} =>
 	  let
-	    val is = mkInstream (reader, v)
-	    val _ = openInstreams := is :: (!openInstreams)
+	    val is = mkInstream' {reader = reader,
+				  closed = closed,
+				  buffer_contents = buffer_contents}
+	    val _ = if closed
+		      then ()
+		      else openInstreams := (is,atExit) :: (!openInstreams)
 	  in
 	    is
 	  end
 	end
+      fun mkInstream' {reader, closed, buffer_contents} =
+	mkInstream'' {reader = reader, closed = closed, 
+		      buffer_contents = buffer_contents,
+		      atExit = {close = true}}
+      fun mkInstream (reader, buffer_contents) =
+	mkInstream' {reader = reader, closed = false, 
+		     buffer_contents = if V.length buffer_contents = 0
+					 then NONE
+					 else SOME buffer_contents}
       val closeIn = fn is =>
 	let
-	  val _ = openInstreams := List.filter (fn is' => not (equalsIn (is, is'))) 
+	  val _ = openInstreams := List.filter (fn (is',_) => 
+						not (equalsIn (is, is'))) 
                                                (!openInstreams)
 	in
 	  closeIn is
 	end
    end
-
-signature STREAM_IO_ARG = 
-   sig
-      structure PrimIO: PRIM_IO
-      structure Array: MONO_ARRAY
-      structure Vector: MONO_VECTOR
-      sharing type PrimIO.elem = Array.elem = Vector.elem
-      sharing type PrimIO.vector = Array.vector = Vector.vector
-      sharing type PrimIO.array = Array.array
-      val someElem: PrimIO.elem
-   end
-functor StreamIO(S: STREAM_IO_ARG): STREAM_IO = 
-  StreamIOExtra(open S
-		val lineElem = someElem
-		fun isLine _ = raise (Fail "<isLine>")
-		fun hasLine _ = raise (Fail "<hasLine>"))

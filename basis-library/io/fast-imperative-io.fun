@@ -1,23 +1,38 @@
-signature IMPERATIVE_IO_EXTRA_ARG = 
+signature FAST_IMPERATIVE_IO_EXTRA_ARG =
    sig
       structure StreamIO: STREAM_IO_EXTRA
+      structure BufferI: BUFFER_IO_EXTRA
+      sharing StreamIO = BufferI.StreamIO
       structure Vector: MONO_VECTOR
       structure Array: MONO_ARRAY
-      sharing type StreamIO.elem = Vector.elem = Array.elem
-      sharing type StreamIO.vector = Vector.vector = Array.vector
+      sharing type PrimIO.reader = StreamIO.reader
+      sharing type PrimIO.writer = StreamIO.writer
+      sharing type PrimoIO.pos = StreamIO.pos
+      sharing type PrimIO.elem = StreamIO.elem = Vector.elem = Array.elem
+      sharing type PrimIO.vector = StreamIO.vector = Vector.vector = Array.vector
+      sharing type PrimIO.array = Array.array
+      val someElem: PrimIO.elem
+      val lineElem: Vector.elem
+      val isLine: Vector.elem -> bool
+      val hasLine: Vector.vector -> bool
    end
 
-functor ImperativeIOExtra
-        (S: IMPERATIVE_IO_EXTRA_ARG): IMPERATIVE_IO_EXTRA =
+functor FastImperativeIOExtra
+        (S: FAST_IMPERATIVE_IO_EXTRA_ARG) =
    struct
       open S
 
+      structure PIO = PrimIO
       structure SIO = StreamIO
       structure V = Vector
       structure A = Array
 
-      type vector = StreamIO.vector
-      type elem = StreamIO.elem
+      type vector = PrimIO.vector
+      type elem = PrimIO.elem
+
+      fun liftExn name function cause = raise IO.Io {name = name,
+						     function = function,
+						     cause = cause}
 
       (*---------------*)
       (*   outstream   *)
@@ -42,39 +57,77 @@ functor ImperativeIOExtra
       (*   instream    *)
       (*---------------*)
 
-      datatype instream = In of SIO.instream ref
+      structure Buf =
+	 struct
+	 end
+   
+      datatype instream' = Buf of Buf.buf
+	                 | Stream of SIO.instream
+      datatype instream = In of instream' ref
 
       fun equalsIn (In is1, In is2) = is1 = is2
 
-      fun input (In is) = let val (v, is') = SIO.input (!is)
-			  in is := is'; v
-			  end
+      fun input (In is) =
+	case !is of
+	  Buf buf => Buf.input buf
+	| Stream s => let val (v, s') = SIO.input s
+		      in is := Stream s'; v
+		      end
       (* input1 will never move past a temporary end of stream *)
-      fun input1 (In is) = 
-	Option.map (fn (c,is') => (is := is'; c)) (SIO.input1 (!is))
+      fun input1 (In is) =
+	case !is of
+	  Buf buf => Buf.input1 buf
+	| Stream s => 
+	    Option.map (fn (c,s') => (is := Stream s'; c)) (SIO.input1 s)
       (* input1 will move past a temporary end of stream *)
-      fun input1 (In is) = let val (v, is') = SIO.inputN (!is, 1)
-			   in 
-			     is := is';
-			     if V.length v = 0 then NONE else SOME (V.sub (v, 0))
-			   end
-      fun inputN (In is, n) = let val (v, is') = SIO.inputN (!is, n)
-			      in is := is'; v
-			      end
-      fun inputAll (In is) = let val (v, is') = SIO.inputAll (!is)
-			     in is := is'; v
-			     end
-      fun inputLine (In is) = let val (v, is') = SIO.inputLine (!is)
-			      in is := is'; v
-			      end
-      fun canInput (In is, n) = SIO.canInput (!is, n)
-      fun lookahead (In is) = Option.map (fn (c, is') => c) (SIO.input1 (!is))
-      fun closeIn (In is) = SIO.closeIn (!is)
-      fun endOfStream (In is) = SIO.endOfStream (!is)
-      fun mkInstream is = In (ref is)
-      fun getInstream (In is) = !is
-      fun setInstream (In is, is') = is := is'
-
+      fun input1 (In is) =
+	case !is of
+	  Buf buf => Buf.input1 buf
+	| Stream s => let val (v, s') = SIO.inputN (s, 1)
+		      in 
+			is := Stream s';
+			if V.length v = 0 then NONE else SOME (V.sub (v, 0))
+		      end
+      fun inputN (In is, n) = 
+	case !is of
+	  Buf buf => Buf.inputN (buf, n)
+	| Stream s => let val (v, s') = SIO.inputN (s, n)
+		      in is := Stream s'; v
+		      end
+      fun inputAll (In is) =
+	case !is of
+	  Buf buf => Buf.inputAll buf
+	| Stream s => let val (v, s') = SIO.inputAll s
+		      in is := Stream s'; v
+		      end
+      fun inputLine (In is) =
+	case !is of
+	  Buf buf => Buf.inputLine buf
+	| Stream s => let val (v, s') = SIO.inputAll s
+		      in is := Stream s'; v
+		      end
+      fun canInput (In is, n) = 
+	case !is of
+	  Buf buf => Buf.canInput (buf, n)
+	| Stream s => SIO.canInput (s, n)
+      fun lookahead (In is) =
+	case !is of
+	  Buf buf => Buf.lookahead buf
+	| Stream s => Option.map (fn (c, s') => c) (SIO.input1 s)
+      fun closeIn (In is) =
+	case !is of
+	  Buf buf => Buf.closeIn buf
+	| Stream s => SIO.closeIn s
+      fun endOfStream (In is) =
+	case !is of
+	  Buf buf => Buf.endOfStream buf
+	| Stream s => SIO.endOfStream s
+      fun mkInstream s = In (ref (Stream s))
+      fun getInstream (In is) =
+	case !is of
+	  Buf buf => Buf.mkInstream buf
+	| Stream s => s
+      fun setInstream (In is, s') = is := Stream s'
 
       val empty = V.fromList []
 
@@ -88,44 +141,28 @@ functor ImperativeIOExtra
       fun scanStream f is =
 	case f SIO.input1 (getInstream is) of
 	  NONE => NONE
-	| SOME (v, is') => (setInstream (is, is'); SOME v)
+	| SOME (v, s') => (setInstream (is, s'); SOME v)
    end
 
-signature IMPERATIVE_IO_ARG = 
+
+signature FAST_IMPERATIVE_IO_EXTRA_FILE_ARG =
    sig
-      structure StreamIO: STREAM_IO
-      structure Vector: MONO_VECTOR
-      structure Array: MONO_ARRAY
-      sharing type StreamIO.elem = Vector.elem = Array.elem
-      sharing type StreamIO.vector = Vector.vector = Array.vector
-   end
-
-functor ImperativeIO
-        (S: IMPERATIVE_IO_ARG): IMPERATIVE_IO = 
-  ImperativeIOExtra(open S
-		    structure StreamIO =
-		      struct
-			open StreamIO
-			fun equalsIn _ = raise (Fail "<equalsIn>")
-			fun instreamReader _ = raise (Fail "<instreamReader>")
-			fun mkInstream' _ = raise (Fail "<mkInstream>")
-			fun equalsOut _ = raise (Fail "<equalsOut>")
-			fun outstreamWriter _ = raise (Fail "<outstreamWriter>")
-			fun mkOutstream' _ = raise (Fail "<mkOutstream>")
-			fun openVector _ = raise (Fail "<openVector>")
-			fun inputLine _ = raise (Fail "<inputLine>")
-			fun outputSlice _ = raise (Fail "<outputSlice>")
-		      end)
-
-
-signature IMPERATIVE_IO_EXTRA_FILE_ARG =
-   sig
+      structure PrimIO: PRIM_IO
       structure StreamIO: STREAM_IO_EXTRA_FILE
       structure Vector: MONO_VECTOR
       structure Array: MONO_ARRAY
-      sharing type StreamIO.elem = Vector.elem = Array.elem
-      sharing type StreamIO.vector = Vector.vector = Array.vector
+      sharing type PrimIO.reader = StreamIO.reader
+      sharing type PrimIO.writer = StreamIO.writer
+      sharing type PrimIO.pos = StreamIO.pos
+      sharing type PrimIO.elem = StreamIO.elem = Vector.elem = Array.elem
+      sharing type PrimIO.vector = StreamIO.vector = Vector.vector = Array.vector
+      sharing type PrimIO.array = Array.array
+      val someElem: PrimIO.elem
+      val lineElem: Vector.elem
+      val isLine: Vector.elem -> bool
+      val hasLine: Vector.vector -> bool
 
+      structure Cleaner: CLEANER
       val chunkSize: int
       val fileTypeFlags: Posix.FileSys.O.flags list
       val mkReader: {fd: Posix.FileSys.file_desc,
@@ -138,10 +175,10 @@ signature IMPERATIVE_IO_EXTRA_FILE_ARG =
 		     chunkSize: int} -> StreamIO.writer
    end
 
-functor ImperativeIOExtraFile
-        (S: IMPERATIVE_IO_EXTRA_FILE_ARG): IMPERATIVE_IO_EXTRA_FILE = 
+functor FastImperativeIOExtraFile
+        (S: FAST_IMPERATIVE_IO_EXTRA_FILE_ARG): IMPERATIVE_IO_EXTRA_FILE =
    struct
-      structure ImperativeIO = ImperativeIOExtra(open S)
+      structure ImperativeIO = FastImperativeIOExtra(open S)
       open ImperativeIO
       open S
       structure SIO = StreamIO
@@ -230,6 +267,17 @@ functor ImperativeIOExtraFile
       (*   instream   *)
       (*---------------*)
 
+      structure Buf =
+	struct
+	  open Buf
+
+	  val openInstreams : (buf * {close: bool}) list ref = ref []
+	  fun mkBuf'' {reader, closed, atExit} =
+	    let
+	      val b = mkBuf' {reader = reader, closed = closed}
+	  val mkInstream 
+	end
+
       fun newIn {fd, name} =
 	let 
 	  val reader = mkReader {fd = fd, name = name, initBlkMode = true}
@@ -254,3 +302,7 @@ functor ImperativeIOExtraFile
       val newIn = fn fd => newIn {fd = fd, name = "<not implemented>"}
       val inFd = SIO.inFd o getInstream
    end
+
+functor FastImperativeIOExtra
+        (S: FAST_IMPERATIVE_IO_EXTRA_ARG): IMPERATIVE_IO_EXTRA =
+   FastImperativeIOExtra(open S)
