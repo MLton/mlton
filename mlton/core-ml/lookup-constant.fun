@@ -30,6 +30,12 @@ val unescape = Trace.trace ("unescape", String.layout, String.layout) unescape
 structure ConstType =
    struct
       datatype t = Int | Real | String | Word
+
+      val toString =
+	 fn Int => "Int"
+	  | Real => "Real"
+	  | String => "String"
+	  | Word => "Word"
    end
 datatype z = datatype ConstType.t
 
@@ -168,8 +174,7 @@ fun load (decs, ins: In.t): string -> Const.t =
 		 Int =>
 		    (case IntInf.fromString s of
 			NONE => Error.bug "strange Int constant"
-		      | SOME i => 
-			   Const.Int (IntX.make (i, IntSize.default)))
+		      | SOME i => Const.Int (IntX.make (i, IntSize.default)))
 	       | String => Const.string (unescape s)
 	       | Real => Const.Real (RealX.make (s, RealSize.default))
 	       | Word =>
