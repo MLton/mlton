@@ -26,8 +26,9 @@ profiling information.
 
 .SH OPTIONS
 .TP
-\fB-graph \fI{\fBabove\fP|\fBall\fP}\fP
-Show either nodes above threshold or all nodes in the call graph.
+\fB-graph \fI{\fBexp\fP}\fP
+Show nodes in the call graph specified by \fBexp\fP.  For details on
+the allowed expressions, see the \fBMLton User Guide\fP.
 .TP
 \fB-raw \fI{\fBfalse\fP|\fBtrue\fP}\fP
 Show the raw counts in addition to the percentages.
@@ -35,8 +36,8 @@ Show the raw counts in addition to the percentages.
 \fB-show-line \fI{\fBfalse\fP|\fBtrue\fP}\fP
 Show the file and line for each function.
 .TP
-\fB-thresh \fI{\fB0\fP|\fB1\fP|...|\fB100\fP}\fP
-Only print information about functions whose percentage is above the
-specified integer.
+\fB-thresh \fI{\fBx\fP}\fP
+Only print information about functions whose percentage is above
+\fBx\fP, where 0 <= \fBx\fP <= 100.0.
 .SH "SEE ALSO"
 .BR mlton (1)

@@ -108,23 +108,84 @@ garbage collector.  The above table also shows how special functions
 like {\tt main} are handled: they are printed with surrounding
 brackets.  C functions are displayed similarly.
 
-For easier visualization of data, {\tt mlprof} also creates a call
-graph of the program, in {\tt .dot} format, containing the table data.
-You can create a postscript graph from the dot file using the
-\htmladdnormallink{{\tt graphviz}}
-		  {http://www.research.att.com/sw/tools/graphviz/}
-software package.  If you want to see the entire call-graph for a
-program, you can use {\tt mlprof -graph all a.out}. Technically
-speaking, the graph is a call-stack graph rather than a call graph
-because it describes the set of possible call stacks.  Thedifference
-is in how tail calls are displayed.  For example if {\tt f} nontail
-calls {\tt g} and {\tt g} tail calls {\tt h}, then the call-stack
-graph has edges from {\tt f} to {\tt g} and {\tt f} to {\tt h}, while
-the call-graph would have edges from {\tt f} to {\tt g} and {\tt g} to
-{\tt h}.
-
 The performance impact of {\tt -profile-stack true} can be noticeable
 since there is some extra bookkeeping at every nontail call.
+
+\subsection{Call graphs}
+
+For easier visualization of data, {\tt mlprof} creates a call graph of
+the program in dot format.  The graph nodes contain the function name
+(and source position with {\tt -show-line true}), as well as the
+percentage of ticks.  You can create a postscript graph from the dot
+file using the
+\htmladdnormallink{{\tt graphviz}}
+		  {http://www.research.att.com/sw/tools/graphviz/}
+software package.
+
+Because call graphs can get big, you may want to control what nodes
+appear in the graph.  For this, you can use the {\tt -graph} option to
+specify the nodes that you would like to see.  The argument to {\tt
+-graph} is an expression that describes a set of nodes, taken from the
+following grammar.
+
+\begin{latexonly}
+\begin{center}
+\begin{tabular}{lcl}
+{\it e} & ::= & {\tt all} \\
+& $\alt$ & {\tt "{\it s}"} \\
+& $\alt$ & {\tt (and {\it e} ...)} \\
+& $\alt$ & {\tt (from {\it e})} \\
+& $\alt$ & {\tt (not {\it e})} \\
+& $\alt$ & {\tt (or {\it e} ...)} \\
+& $\alt$ & {\tt (to {\it e})} \\
+& $\alt$ & {\tt (thresh {\it x})} \\
+\end{tabular}
+\end{center}
+\end{latexonly}
+\begin{htmlonly}
+\begin{center}
+\begin{tabular}{lcl}
+{\it e} & ::= & {\tt all} \\
+& | & {\tt "{\it s}"} \\
+& | & {\tt (and {\it e} ...)} \\
+& | & {\tt (from {\it e})} \\
+& | & {\tt (not {\it e})} \\
+& | & {\tt (or {\it e} ...)} \\
+& | & {\tt (to {\it e})} \\
+& | & {\tt (thresh {\it x})} \\
+\end{tabular}
+\end{center}
+\end{htmlonly}
+
+In the grammar, {\tt all} denotes the set of all nodes, {\it s} is a
+regular expression denoting the set of nodes whose function name (and
+source position) matches {\it s}.  The {\tt and}, {\tt not}, and {\tt
+or} expressionds denote intersection, complement, and union,
+respectively.  The {\tt from} ({\tt to}) expression denotes the set of
+nodes that have paths from (to) the set of nodes denoted by its
+argument.  Finally, {\tt thresh} denotes the set of nodes whose
+percentage of ticks is above the real number {\it x}.
+
+For example, if you want to see the entire call-graph for a program,
+you can use {\tt -graph all}.  If you want to see all nodes reachable
+from function {\tt foo} in your program, you would use {\tt -graph
+'(from "foo")'}.  Or, if you want to see all the functions defined in
+subdirectory {\tt bar} of your project that recieved any ticks, you
+would use {\tt -show-line true -graph '(and ".*/bar/.*" (thresh
+0.0))'}.
+
+When compiling with {\tt -profile-stack false}, the default is {\tt
+-graph '(to (thresh {\it x}))'} where {\it x} is the threshold.
+When compiling with {\tt -profile-stack true}, the default is {\tt
+-graph '(thresh {\it x})'} where {\it x} is the threshold.
+
+As a side note, technically speaking, the graph is a call-stack graph
+rather than a call graph because it describes the set of possible call
+stacks.  The difference is in how tail calls are displayed.  For
+example if {\tt f} nontail calls {\tt g} and {\tt g} tail calls {\tt
+h}, then the call-stack graph has edges from {\tt f} to {\tt g} and
+{\tt f} to {\tt h}, while the call-graph has edges from {\tt f} to
+{\tt g} and {\tt g} to {\tt h}.
 
 \subsection{Using {\tt MLton.Profile}}
 
@@ -187,11 +248,11 @@ functions.
 
 With {\tt -profile time}, use of the following in your program will
 cause a run-time error, since they would interfere with the profiler
-signal handler.
+signal handler.\\
 \begin{tabular}{l}
 \tt MLton.Itimer.set (MLton.Itimer.Prof, ...)\}\\
 \tt MLton.Signal.setHandler (MLton.Signal.prof, ...)
-\end{tabular}
+\end{tabular}\\
 Also, because of the random sampling used to implement {\tt -profile
 time}, it is best to have a long running program (at least tens of
 seconds) in order to get reasonable time data.

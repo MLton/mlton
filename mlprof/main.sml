@@ -15,15 +15,9 @@ val debug = false
 
 val sourcesIndexGC: int = 1
 
-structure GraphShow =
-   struct
-      datatype t = Above | All
-   end
-
-val graphShow = ref GraphShow.Above
 val raw = ref false
 val showLine = ref false
-val thresh: int ref = ref 0
+val thresh: real ref = ref 0.0
 
 val die = Process.fail
 
@@ -61,22 +55,34 @@ structure Source =
 	       [(s, Dot.Center)]
    end
 
+structure Graph = DirectedGraph
+local
+   open Graph
+in
+   structure Node = Node
+end
+
 structure AFile =
    struct
-      datatype t = T of {magic: word,
+      datatype t = T of {callGraph: Graph.t,
+			 magic: word,
 			 name: string,
-			 sourceSuccessors: int vector vector,
-			 sources: Source.t vector}
+			 nodeIndex: Node.t -> int,
+			 sources: {node: Node.t,
+				   source: Source.t} vector}
 
-      fun layout (T {magic, name, sourceSuccessors, sources}) =
-	 Layout.record [("name", String.layout name),
-			("magic", Word.layout magic),
-			("sources", Vector.layout Source.layout sources),
-			("sourceSuccessors",
-			 Vector.layout (Vector.layout Int.layout)
-			 sourceSuccessors)]
+      fun layout (T {magic, name, sources, ...}) =
+	 Layout.record
+	 [("name", String.layout name),
+	  ("magic", Word.layout magic),
+	  ("sources", Vector.layout (Source.layout o #source) sources)]
 
       fun new {afile: File.t}: t =
+	 if not (File.doesExist afile)
+	    then die (concat [afile, " does not exist"])
+	 else if not (File.canRun afile)
+	    then die (concat ["can not run ", afile])
+	 else
 	 Process.callWithIn
 	 (afile, ["@MLton", "show-prof"],
 	  fn ins =>
@@ -86,28 +92,52 @@ structure AFile =
 	     val sourcesLength = valOf (Int.fromString (line ()))
 	     val _ =
 		if 0 = sourcesLength
-		   then die (concat [afile, " not compiled for profiling"])
+		   then die (concat [afile, " was not compiled for profiling"])
 		else ()
+	     val graph = Graph.new ()
+	     val {get = nodeIndex, set = setNodeIndex, ...} =
+		Property.getSetOnce (Node.plist,
+				     Property.initRaise ("index", Node.layout))
 	     val sources =
-		Vector.tabulate (sourcesLength, fn _ =>
-				 Source.fromString
-				 (String.dropSuffix (line (), 1)))
-	     val sourceSuccessors =
 		Vector.tabulate
-		(sourcesLength, fn _ =>
-		 Vector.fromListMap
-		 (String.tokens (line (), Char.isSpace), fn s =>
-		  valOf (Int.fromString s)))
+		(sourcesLength, fn i =>
+		 let
+		    val n = Graph.newNode graph
+		    val _ = setNodeIndex (n, i)
+		 in
+		    {node = n,
+		     source = Source.fromString (String.dropSuffix (line (), 1))}
+		 end)
+	     val _ =
+		Int.for
+		(0, sourcesLength, fn i =>
+		 let
+		    val from = #node (Vector.sub (sources, i))
+		 in
+		    List.foreach
+		    (String.tokens (line (), Char.isSpace), fn s =>
+		     let
+		     val suc = valOf (Int.fromString s)
+		     val _ =
+			Graph.addEdge
+			(graph, {from = from,
+				 to = #node (Vector.sub (sources, suc))})
+		     in
+			()
+		     end)
+		 end)
 	     val _ =
 		case line () of
 		   "" => ()
 		 | _ => Error.bug "mlmon file has extra line"
 	  in
-	     T {magic = magic,
+	     T {callGraph = graph,
+		magic = magic,
 		name = afile,
-		sourceSuccessors = sourceSuccessors,
+		nodeIndex = nodeIndex,
 		sources = sources}
-	  end)
+	  end
+	  handle _ => die (concat [afile, " was not compiled for profiling"]))
    end
 
 structure Kind =
@@ -274,21 +304,195 @@ structure ProfFile =
 	       totalGC = IntInf.+ (g, g')}
    end
 
-structure Graph = DirectedGraph
-local
-   open Graph
-in
-   structure Node = Node
-end
+structure Atomic =
+   struct
+      datatype t =
+	 Name of string * Regexp.Compiled.t
+       | Thresh of real
 
-fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
+      val toSexp: t -> Sexp.t =
+	 fn a =>
+	 let
+	    datatype z = datatype Sexp.t
+	 in
+	    case a of
+	       Name (s, _) => String s
+	     | Thresh x => List [Atom "thresh", Atom (Real.toString x)]
+	 end
+   end
+
+structure NodePred =
+   struct
+      datatype t =
+	 All
+       | And of t vector
+       | Atomic of Atomic.t
+       | Not of t
+       | Or of t vector
+       | PathFrom of t
+       | PathTo of t
+
+      val rec toSexp: t -> Sexp.t =
+	 fn p =>
+	 let
+	    datatype z = datatype Sexp.t
+	    fun nAry (name, ps) =
+	       List (Atom name :: Vector.toListMap (ps, toSexp))
+	    fun unary (name, p) =
+	       List [Atom name, toSexp p]
+	 in
+	    case p of
+	       All => Sexp.Atom "all"
+	     | And ps => nAry ("and", ps)
+	     | Atomic a => Atomic.toSexp a
+	     | Not p => unary ("not", p)
+	     | Or ps => nAry ("or", ps)
+	     | PathFrom p => unary ("from", p)
+	     | PathTo p => unary ("to", p)
+	 end
+
+      val layout = Sexp.layout o toSexp
+
+      val fromString: string -> t Result.t =
+	 fn s =>
+	 case Sexp.fromString s of
+	    Sexp.Eof => Result.No "empty"
+	  | Sexp.Error s => Result.No s
+	  | Sexp.Sexp s =>
+	       let
+		  exception Err of string
+		  fun parse (s: Sexp.t): t =
+		     let
+			fun err () = raise Err (Sexp.toString s)
+		     in			   
+			case s of
+			   Sexp.Atom s =>
+			      (case s of
+				  "all" => All
+				| _ => err ())
+			 | Sexp.List ss =>
+			      (case ss of
+				  [] => err ()
+				| s :: ss =>
+				     let
+					fun nAry f =
+					   f (Vector.fromListMap (ss, parse))
+					fun unary f =
+					   case ss of
+					      [s] => f (parse s)
+					    | _ => err ()
+				     in
+					case s of
+					   Sexp.Atom s =>
+					      (case s of
+						  "and" => nAry And
+						| "from" => unary PathFrom
+						| "not" => unary Not
+						| "or" => nAry Or
+						| "thresh" =>
+						     (case ss of
+							 [Sexp.Atom x] =>
+							    (case Real.fromString x of
+								NONE => err ()
+							      | SOME x =>
+								   Atomic (Atomic.Thresh x))
+						       | _ => err ())
+						| "to" => unary PathTo
+						| _ => err ())
+					 | _ => err ()
+				     end)
+			 | Sexp.String s =>
+			      (case Regexp.fromString s of
+				  NONE => err ()
+				| SOME (r, _) =>
+				     Atomic
+				     (Atomic.Name (s, Regexp.compileNFA r)))
+		     end
+	       in
+		  Result.Yes (parse s) handle Err s => Result.No s
+	       end
+
+      fun nodes (p: t, g: Graph.t,
+		 atomic: Node.t * Atomic.t -> bool): Node.t vector =
+	 let
+	    val {get = nodeIndex: Node.t -> int,
+		 set = setNodeIndex, ...} =
+	       Property.getSet (Node.plist,
+				Property.initRaise ("index", Node.layout))
+	    val nodes = Vector.fromList (Graph.nodes g)
+	    val numNodes = Vector.length nodes
+	    val _ = Vector.foreachi (nodes, fn (i, n) => setNodeIndex (n, i))
+	    val transpose =
+	       Promise.lazy
+	       (fn () =>
+		let
+		   val (transpose, {newNode, ...}) = Graph.transpose g
+		   val _ =
+		      Graph.foreachNode
+		      (g, fn n => setNodeIndex (newNode n, nodeIndex n))
+		in
+		   (transpose, newNode)
+		end)
+	    fun vectorToNodes (v: bool vector): Node.t vector =
+	       Vector.keepAllMapi
+	       (v, fn (i, b) =>
+		if b
+		   then SOME (Vector.sub (nodes, i))
+		else NONE)
+	    val all = Promise.lazy (fn () =>
+				    Vector.tabulate (numNodes, fn _ => true))
+	    val none = Promise.lazy (fn () =>
+				     Vector.tabulate (numNodes, fn _ => false))
+	    fun loop (p: t): bool vector =
+	       case p of
+		  All => all ()
+		| And ps =>
+		     Vector.fold (ps, all (), fn (p, v) =>
+				  Vector.map2 (v, loop p, fn (b, b') =>
+					       b andalso b'))
+		| Atomic a => Vector.map (nodes, fn n => atomic (n, a))
+		| Not p => Vector.map (loop p, not)
+		| Or ps =>
+		     Vector.fold (ps, none (), fn (p, v) =>
+				  Vector.map2 (v, loop p, fn (b, b') =>
+					       b orelse b'))
+		| PathFrom p => path (p, (g, fn n => n))
+		| PathTo p => path (p, transpose ())
+	    and path (p: t, (g: Graph.t, getNode)): bool vector =
+	       let
+		  val roots = vectorToNodes (loop p)
+		  val a = Array.array (numNodes, false)
+		  val _ =
+		     Graph.dfsNodes
+		     (g,
+		      Vector.toListMap (roots, getNode),
+		      Graph.DfsParam.startNode (fn n =>
+						Array.update
+						(a, nodeIndex n, true)))
+	       in
+		  Vector.fromArray a
+	       end
+	    val v = loop p
+	 in
+	    vectorToNodes v
+	 end
+   end
+   
+val graphPred: NodePred.t option ref = ref NONE
+
+fun display (AFile.T {callGraph, name = aname, sources, ...},
 	     ProfFile.T {counts, kind, total, totalGC, ...}): unit =
    let
-      val {get = nodeOptions: Node.t -> Dot.NodeOption.t list ref, ...} =
-	 Property.get (Node.plist, Property.initFun (fn _ => ref []))
+      val {get = nodeInfo: Node.t -> {keep: bool ref,
+				      mayKeep: (Atomic.t -> bool) ref,
+				      options: Dot.NodeOption.t list ref}, ...} =
+	 Property.get (Node.plist,
+		       Property.initFun (fn _ => {keep = ref false,
+						  mayKeep = ref (fn _ => false),
+						  options = ref []}))
       val graph = Graph.new ()
       val ticksPerSecond = 100.0
-      val thresh = Real.fromInt (!thresh)
+      val thresh = !thresh
       val totalReal = Real.fromIntInf (IntInf.+ (total, totalGC))
       fun per (ticks: IntInf.t): real * string list =
 	 let
@@ -328,43 +532,34 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 		per > 0.0
 		andalso (per >= thresh
 			 orelse (not profileStack andalso i = sourcesIndexGC))
-	     val source = Vector.sub (sources, i)
-	     val node =
-		if (case !graphShow of
-		       GraphShow.Above =>
-			  (not profileStack orelse i <> sourcesIndexGC)
-			  andalso per > 0.0
-			  andalso per >= thresh
-		     | GraphShow.All => true)
-		   then
-		      let
-			 val _ =
-			    if debug
-			       then
-				  print (concat ["node for ",
-						 Source.toString source,
-						 "\n"])
-			    else ()
-			 val node = Graph.newNode graph
-			 val no = nodeOptions node
-			 val _ = 
-			    List.push
-			    (no,
-			     Dot.NodeOption.Label
-			     (Source.toDotLabel source
-			      @ (if per > 0.0
-				    then [(concat (List.separate (row, " ")),
-					   Dot.Center)]
-				 else [])))
-			 val _ =
-			    List.push (no, Dot.NodeOption.Shape Dot.Box)
-		      in
-			 SOME node
-		      end
-		else NONE
+	     val {node, source, ...} = Vector.sub (sources, i)
+	     val {mayKeep, options, ...} = nodeInfo node
+	     val _ =
+		mayKeep :=
+		(fn a =>
+		 let
+		    datatype z = datatype Atomic.t
+		 in
+		    case a of
+		       Name (_, rc) =>
+			  (case (Regexp.Compiled.findShort
+				 (rc, Source.toString source, 0)) of
+			      NONE => false
+			    | SOME _ => true)
+		     | Thresh x => per >= x
+		 end)
+	     val _ = 
+		List.push
+		(options,
+		 Dot.NodeOption.Label
+		 (Source.toDotLabel source
+		  @ (if per > 0.0
+			then [(concat (List.separate (row, " ")),
+			       Dot.Center)]
+		     else [])))
+	     val _ = List.push (options, Dot.NodeOption.Shape Dot.Box)
 	  in
-	     {node = node,
-	      sortPer = sortPer,
+	     {sortPer = sortPer,
 	      row = Source.toString source :: row,
 	      showInTable = showInTable}
 	  end)
@@ -395,34 +590,48 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 			 row = List.concat [cr, sr, gr],
 			 sortPer = cp}
 		     end)
+      (* Display the subgraph specified by -graph. *)
+      val graphPred =
+	 case !graphPred of
+		 NONE =>
+	       let
+		  datatype z = datatype NodePred.t
+		  datatype z = datatype Atomic.t
+		  val p = Atomic (Thresh thresh)
+	       in
+		  if profileStack
+		     then p
+		  else PathTo p
+	       end
+	  | SOME p => p
+      val keepNodes =
+	 NodePred.nodes
+	 (graphPred, callGraph, fn (n, a) => (! (#mayKeep (nodeInfo n))) a)
+      val _ = Vector.foreach (keepNodes, fn n =>
+			      #keep (nodeInfo n) := true)
+      val (subgraph, {newNode, ...}) =
+	 Graph.subgraph (callGraph, ! o #keep o nodeInfo)
+      val {get = oldNode, set = setOldNode, ...} =
+	 Property.getSetOnce (Node.plist,
+			      Property.initRaise ("old node", Node.layout))
       val _ =
-	 Vector.mapi
-	 (counts,
-	  fn (i, {node, ...}) =>
-	  case node of
-	     NONE => ()
-	   | SOME from =>
-		Vector.foreach
-		(Vector.sub (sourceSuccessors, i), fn j =>
-		 let
-		    val {node, ...} = Vector.sub (counts, j)
-		 in
-		    case node of
-		       NONE => ()
-		     | SOME to =>
-			  (Graph.addEdge (graph, {from = from, to = to})
-			   ; ())
-		 end))
+	 Graph.foreachNode
+	 (callGraph, fn n =>
+	  if !(#keep (nodeInfo n))
+	     then setOldNode (newNode n, n)
+	  else ())
       val _ = 
 	 File.withOut
 	 (concat [aname, ".dot"], fn out =>
 	  Layout.output
-	  (Graph.layoutDot (graph,
+	  (Graph.layoutDot (subgraph,
 			    fn _ => {edgeOptions = fn _ => [],
-				     nodeOptions = ! o nodeOptions,
+				     nodeOptions =
+				     fn n => ! (#options (nodeInfo (oldNode n))),
 				     options = [],
 				     title = "call-stack graph"}),
 	   out))
+      (* Display the table. *)
       val tableRows =
 	 QuickSort.sortVector
 	 (Vector.keepAll (counts, #showInTable),
@@ -477,20 +686,20 @@ fun makeOptions {usage} =
       open Popt
    in
       List.map
-      ([(Normal, "graph", " {above|all}", " show graph nodes",
+      ([(Normal, "graph", " <pred>", " show graph nodes",
 	 SpaceString (fn s =>
-		      case s of
-			 "above" => graphShow := GraphShow.Above
-		       | "all" => graphShow := GraphShow.All
-		       | _ => usage "invalid -graph arg")),
+		      case NodePred.fromString s of
+			 Result.No s =>
+			    usage (concat ["invalid -graph arg: ", s])
+		       | Result.Yes p => graphPred := SOME p)),
 	(Normal, "raw", " {false|true}", "show raw counts",
 	 boolRef raw),
 	(Normal, "show-line", " {false|true}", " show line numbers",
 	 boolRef showLine),
 	(Normal, "thresh", " {0|1|...|100}", "only show counts above threshold",
-	 Int (fn i => if i < 0 orelse i > 100
+	 Real (fn x => if x < 0.0 orelse x > 100.0
 			 then usage "invalid -thresh"
-		      else thresh := i))],
+		      else thresh := x))],
        fn (style, name, arg, desc, opt) =>
        {arg = arg, desc = desc, name = name, opt = opt, style = style})
    end
