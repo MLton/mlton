@@ -1906,7 +1906,7 @@ local
 	    let
 	       val c2 = !current
 	       val lift = List.revMap (c2, Values.pop)
-	       val _ = List.foreach (c1, fn v => (Values.pop v; ()))
+	       val _ = List.foreach (c1, fn v => ignore (Values.pop v))
 	       val _ = current := old
 	       val _ =
 		  List.foreach (lift, fn {domain, range, time, uses, ...} =>
@@ -2007,7 +2007,7 @@ fun scope (T {currentScope, fixs, strs, types, vals, ...}, th) =
 	 let
 	    val old = !current
 	    val _ = current := []
-	 in fn () => (List.foreach (!current, fn v => (Values.pop v; ()))
+	 in fn () => (List.foreach (!current, fn v => ignore (Values.pop v))
 		      ; current := old)
 	 end
       val s0 = !currentScope
@@ -2029,7 +2029,7 @@ fun scopeAll (T {currentScope, fcts, fixs, sigs, strs, types, vals, ...}, th) =
 	 let
 	    val old = !current
 	    val _ = current := []
-	 in fn () => (List.foreach (!current, fn v => (Values.pop v; ()))
+	 in fn () => (List.foreach (!current, fn v => ignore (Values.pop v))
 		      ; current := old)
 	 end
       val s0 = !currentScope
@@ -2397,7 +2397,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	       map (types, types', strids,
 		    "type", Ast.Tycon.equals, Ast.Tycon.layout,
 		    fn _ => (),
-		    fn (name, s, s') => (handleType (s, s', strids, name); ()))
+		    fn (name, s, s') =>
+		    ignore (handleType (s, s', strids, name)))
 	 in
 	    ()
 	 end
@@ -2680,7 +2681,7 @@ fun snapshot (E as T {currentScope, fcts, fixs, sigs, strs, types, vals, ...})
 	       val _ = current := []
 	    in
 	       List.push (restore, fn () =>
-			  (List.foreach (!current, fn v => (Values.pop v; ()))
+			  (List.foreach (!current, fn v => ignore (Values.pop v))
 			   ; current := current0))
 	    end
 	 val _ = (doit fcts; doit fixs; doit sigs

@@ -1204,9 +1204,13 @@ structure Type =
 			       (f, unit) :: ac))
 	    fun recursive _ = Error.bug "Type.hom recursive"
 	    fun default (t, tycon) =
-	       fn t' => (unify (t, t',
-				{preError = fn _ => Error.bug "default unify"})
-			 ; con (t, tycon, Vector.new0 ()))
+	       fn t' =>
+	       let
+		  val _ = unify (t, t',
+				 {preError = fn _ => Error.bug "default unify"})
+	       in
+		  con (t, tycon, Vector.new0 ())
+	       end
 	    val int = default (int IntSize.default, Tycon.defaultInt)
 	    val real = default (real RealSize.default, Tycon.defaultReal)
 	    val word = default (word WordSize.default, Tycon.defaultWord)
@@ -1446,7 +1450,7 @@ structure Scheme =
 fun close (ensure: Tyvar.t vector, region) =
    let
       val genTime = Time.now ()
-      val _ = Vector.foreach (ensure, fn a => (tyvarTime a; ()))
+      val _ = Vector.foreach (ensure, fn a => ignore (tyvarTime a))
       val savedCloses = !Type.newCloses
       val _ = Type.newCloses := []
       fun dontClose () =
@@ -1530,8 +1534,13 @@ fun close (ensure: Tyvar.t vector, region) =
 				  val b =
 				     case Equality.toBoolOpt equality of
 					NONE =>
-					   (Equality.unify (equality, Equality.falsee)
-					    ; false)
+					   let
+					      val _ =
+						 Equality.unify
+						 (equality, Equality.falsee)
+					   in
+					      false
+					   end
 				      | SOME b => b
 				  val a = Tyvar.newNoname {equality = b}
 				  val _ = List.push (tyvars, a)

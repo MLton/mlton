@@ -217,8 +217,7 @@ fun 'a elabConst (c: Aconst.t,
 		in
 		   resolve tycon
 		end)
-	    val _ = List.push (overloads, (Priority.default, fn () => 
-			       (resolve (); ())))
+	    val _ = List.push (overloads, (Priority.default, ignore o resolve))
 	 in
 	    make (resolve, ty)
 	 end
@@ -2173,8 +2172,7 @@ fun elaborateDec (d, {env = E,
 						    Error.bug "overload unify")
 					     ; y))
 				  val _ = 
-				     List.push (overloads, (p, fn () =>
-						(resolve (); ())))
+				     List.push (overloads, (p, ignore o resolve))
 			       in
 				  Cexp.Var (resolve, fn () => Vector.new0 ())
 			       end

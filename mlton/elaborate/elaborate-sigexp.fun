@@ -369,12 +369,13 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: StructureEnv.t): Interface.t option =
 		(* rule 78 and section G.3.3 *)
 		let
 		   val time = Interface.Time.tick ()
-		   val _ = elaborateSpec spec
-		   val _ =
+		   val () = elaborateSpec spec
+		   val () =
 		      List.foreach
 		      (equations, fn eqn =>
 		       case Equation.node eqn of
 			  Equation.Structure ss =>
+			     ignore
 			     (List.fold
 			      (ss, NONE, fn (s', io) =>
 			       case (io, Env.lookupLongstrid (E, s')) of
@@ -383,9 +384,9 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: StructureEnv.t): Interface.t option =
 				| (NONE, SOME I') => SOME (I', s')
 				| (SOME (I, s), SOME I') =>
 				     (Interface.share (I, s, I', s', time)
-				      ; SOME (I', s')))
-			      ; ())
+				      ; SOME (I', s'))))
 			| Equation.Type cs =>
+			     ignore
 			     (List.fold
 			      (cs, NONE, fn (c', so) =>
 			       case (so, Env.lookupLongtycon (E, c')) of
@@ -403,8 +404,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: StructureEnv.t): Interface.t option =
 							  time)
 				     in
 					SOME (c', s')
-				     end)
-			      ; ()))
+				     end)))
 		in
 		   ()
 		end
