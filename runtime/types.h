@@ -10,6 +10,12 @@
 #ifndef _MLTON_TYPES_H_
 #define _MLTON_TYPES_H_
 
+/* We need these because in header files for exported SML functions, types.h is
+ * included without platform.h.
+ */
+#define _ISOC99_SOURCE
+#include <stdint.h>
+
 typedef int8_t Int8;
 typedef int16_t Int16;
 typedef int32_t Int32;
