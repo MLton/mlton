@@ -34,9 +34,9 @@ fun compare c =
    let fun equals (x, y) = (case c (x, y) of
 			     EQUAL => true
 			   | _ => false)
-      fun x <  y = (case c (x, y) of
-		       LESS => true
-		     | _ => false)
+      fun x < y = (case c (x, y) of
+		      LESS => true
+		    | _ => false)
       fun x <= y = (case c (x, y) of
 			LESS => true
 		      | EQUAL => true
