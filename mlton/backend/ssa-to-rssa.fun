@@ -52,6 +52,10 @@ fun convert (p: S.Program.t): Rssa.Program.t =
       val varType = #ty o varInfo
       fun varOp (x: Var.t): Operand.t =
 	 Var {var = x, ty = valOf (toType (varType x))}
+      val varOp =
+	 Trace.trace
+	 ("SsaToRssa.varOp", Var.layout, Operand.layout)
+	 varOp
       fun varOps xs = Vector.map (xs, varOp)
       val _ =
 	 Control.diagnostics
@@ -960,7 +964,10 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			   add (SetHandler (labelHandler (profileInfo, h)))
 		      | S.Exp.SetSlotExnStack => add SetSlotExnStack
 		      | S.Exp.Tuple ys => allocate (ys, tupleInfo ty)
-		      | S.Exp.Var y => move (varOp y)
+		      | S.Exp.Var y =>
+			   (case toType ty of
+			       NONE => none ()
+			     | SOME _ => move (varOp y))
 		      | _ => Error.bug "translateStatement saw strange PrimExp"
 		  end
 	 in
