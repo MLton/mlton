@@ -1391,6 +1391,10 @@ toSpaceReady:
 		}
 	
 		if ((s->toSize < s->fromSize)
+		       /* For improved memory behavior when swapping, unmap
+			* toSpace.  2^27 is pretty arbitrary.
+			*/
+  		    or (s->toSize >= (128ul*1024ul*1024ul))
 		    or (computeHeapSize(s, needed, s->maxLive) > s->fromSize)) {
 			/* prepare to allocate new toSpace at next GC */
 			smunmap(s->toBase, s->toSize);
