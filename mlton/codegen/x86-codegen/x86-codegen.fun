@@ -12,7 +12,8 @@ struct
   val intInfOverhead = arrayHeaderSize + wordSize (* for the sign *)
 
   structure x86 
-    = x86(structure Label = MachineOutput.Label)
+    = x86(structure Label = MachineOutput.Label
+	  structure Prim = MachineOutput.Prim)
 
   structure x86MLtonBasic
     = x86MLtonBasic(structure x86 = x86

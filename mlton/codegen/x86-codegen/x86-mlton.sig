@@ -22,7 +22,7 @@ signature X86_MLTON =
     val wordAlign : int -> int
     (* bug, runtime and primitive Assembly sequences. *)
     val bug : {liveInfo: x86Liveness.LiveInfo.t} -> x86.Block.t' AppendList.t
-    val invokeRuntime : {target : x86.Label.t, 
+    val invokeRuntime : {prim: x86.Prim.t, 
 			 args : (x86.Operand.t * x86.Size.t) list, 
 			 info : {frameSize: int, 
 				 live: x86.Operand.t list,

@@ -9,6 +9,7 @@ signature X86_MLTON_BASIC_STRUCTS =
     structure x86 : X86_PSEUDO
     structure MachineOutput: MACHINE_OUTPUT
     sharing x86.Label = MachineOutput.Label
+    sharing x86.Prim = MachineOutput.Prim
   end
 
 signature X86_MLTON_BASIC =
@@ -111,6 +112,8 @@ signature X86_MLTON_BASIC =
     val fileLine : unit -> x86.Operand.t
 
     (* gcState relative locations defined in gc.h *)
+    val gcState_baseContents : x86.MemLoc.t
+    val gcState_baseContentsOperand : x86.Operand.t
     val gcState_limitContents : x86.MemLoc.t
     val gcState_limitContentsOperand : x86.Operand.t
     val gcState_frontier : x86.Immediate.t
@@ -123,6 +126,12 @@ signature X86_MLTON_BASIC =
     val gcState_currentThreadContentsOperand : x86.Operand.t
     val gcState_currentThread_exnStackContents : x86.MemLoc.t
     val gcState_currentThread_exnStackContentsOperand : x86.Operand.t
+    val gcState_currentThread_stackContents : x86.MemLoc.t
+    val gcState_currentThread_stackContentsOperand : x86.Operand.t
+    val gcState_currentThread_stack_usedContents : x86.MemLoc.t
+    val gcState_currentThread_stack_usedContentsOperand : x86.Operand.t
+    val gcState_currentThread_stack_reservedContents : x86.MemLoc.t
+    val gcState_currentThread_stack_reservedContentsOperand : x86.Operand.t
     val gcState_stackTop : x86.Immediate.t
     val gcState_stackTopContents : x86.MemLoc.t
     val gcState_stackTopContentsOperand : x86.Operand.t
@@ -132,6 +141,12 @@ signature X86_MLTON_BASIC =
     val gcState_stackBottomContentsOperand : x86.Operand.t
     val gcState_stackLimitContents : x86.MemLoc.t
     val gcState_stackLimitContentsOperand : x86.Operand.t
+    val gcState_maxFrameSizeContents : x86.MemLoc.t
+    val gcState_maxFrameSizeContentsOperand : x86.Operand.t
+    val gcState_canHandleContents : x86.MemLoc.t
+    val gcState_canHandleContentsOperand : x86.Operand.t
+    val gcState_signalIsPendingContents : x86.MemLoc.t
+    val gcState_signalIsPendingContentsOperand : x86.Operand.t
 
     (*
      * GC related constants and functions

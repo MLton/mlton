@@ -74,6 +74,7 @@ struct
 	val nearflushClasses = ClassSet.-(nonlivenessClasses, holdClasses)
 	val runtimeClasses = !x86MLton.Classes.runtimeClasses
 	val nonruntimeClasses = ClassSet.-(allClasses, runtimeClasses)
+	val threadflushClasses = ClassSet.-(runtimeClasses, holdClasses)
 	val cstaticClasses = !x86MLton.Classes.cstaticClasses
 	val heapClasses = !x86MLton.Classes.heapClasses
 	val ccallflushClasses = ClassSet.+(cstaticClasses, heapClasses)
@@ -374,7 +375,7 @@ struct
 				     {oper = x86.Instruction.ADD,
 				      dst = stackTop,
 				      src = bytes, 
-				      size = x86MLton.pointerSize}
+				      size = pointerSize}
 				   end))))
 			    | Handler {label, 
 				       frameInfo as Entry.FrameInfo.T 
@@ -400,7 +401,7 @@ struct
 				     {oper = x86.Instruction.ADD,
 				      dst = stackTop,
 				      src = bytes, 
-				      size = x86MLton.pointerSize}
+				      size = pointerSize}
 				   end))))
 			    | Runtime {label,
 				       frameInfo as Entry.FrameInfo.T 
@@ -427,7 +428,7 @@ struct
 				     {oper = x86.Instruction.ADD,
 				      dst = stackTop,
 				      src = bytes, 
-				      size = x86MLton.pointerSize}
+				      size = pointerSize}
 				   end))))
 			       
 		     val pre
@@ -702,7 +703,7 @@ struct
 			{oper = x86.Instruction.ADD,
 			 dst = stackTop,
 			 src = bytes, 
-			 size = x86MLton.pointerSize},
+			 size = pointerSize},
 			(* *(stackTop) = return *)
 			x86.Assembly.instruction_mov
 			{dst = stackTopDeref,
@@ -752,26 +753,28 @@ struct
 			 x86.Assembly.instruction_mov
 			 {dst = stackTop,
 			  src = stackBottom,
-			  size = x86MLton.pointerSize},
+			  size = pointerSize},
 			 x86.Assembly.instruction_binal
 			 {oper = x86.Instruction.ADD,
 			  dst = stackTop,
 			  src = exnStack,
-			  size = x86MLton.pointerSize}])
+			  size = pointerSize}])
 		       (AppendList.single
 			(* jmp *(stackTop) *)
 			(x86.Assembly.instruction_jmp
 			 {target = stackTopDeref,
 			  absolute = true})))
 		    end
-		| Runtime {target, args, live, return, size}
+		| Runtime {prim, args, live, return, size}
 		=> let
+		     val _ = enque return
+		     
 		     val {dead, ...}
 		       = livenessTransfer {transfer = transfer,
 					   liveInfo = liveInfo}
 
-		     val _ = enque return
-
+		     val stackTop'
+		       = x86MLton.gcState_stackTopContents
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand
 		     val bytes 
@@ -783,115 +786,369 @@ struct
 		     val live = MemLocSet.unions [live,
 						  liveReturn]
 
-		     val c_stackP
-		       = x86MLton.c_stackPContentsOperand
-		     val c_stackPDerefDouble
-		       = x86MLton.c_stackPDerefDoubleOperand
-		     val applyFFTemp
-		       = x86MLton.applyFFTempContentsOperand
+		     fun default f
+		       = let
+			   val target = Label.fromString f
 
-		     val (assembly_args,size_args)
-		       = List.fold
-		         (args,(AppendList.empty,0),
-			  fn ((arg,size),
-			      (assembly_args,size_args)) 
-			   => (AppendList.append
-			       (if Size.eq(size,Size.DBLE)
-				   then AppendList.fromList
-				        [Assembly.instruction_binal
-					 {oper = Instruction.SUB,
-					  dst = c_stackP,
-					  src = Operand.immediate_const_int 8,
-					  size = pointerSize},
-					 Assembly.instruction_pfmov
-					 {src = arg,
-					  dst = c_stackPDerefDouble,
-					  size = size}]
-				   else if Size.eq(size,Size.BYTE)
-					  then AppendList.fromList
-					       [Assembly.instruction_movx
-						{oper = Instruction.MOVZX,
-						 dst = applyFFTemp,
-						 src = arg,
-						 dstsize = wordSize,
-						 srcsize = size},
-						Assembly.instruction_ppush
-						{src = applyFFTemp,
-						 base = c_stackP,
-						 size = wordSize}]
-					  else AppendList.single
-					       (Assembly.instruction_ppush
-						{src = arg,
-						 base = c_stackP,
-						 size = size}),
-				assembly_args),
-			       (Size.toBytes size) + size_args))
+			   val c_stackP
+			     = x86MLton.c_stackPContentsOperand
+			   val c_stackPDerefDouble
+			     = x86MLton.c_stackPDerefDoubleOperand
+			   val applyFFTemp
+			     = x86MLton.applyFFTempContentsOperand
+
+			   val (assembly_args,size_args)
+			     = List.fold
+			       (args,(AppendList.empty,0),
+				fn ((arg,size),
+				    (assembly_args,size_args)) 
+				 => (AppendList.append
+				     (if Size.eq(size,Size.DBLE)
+					then AppendList.fromList
+					     [Assembly.instruction_binal
+					      {oper = Instruction.SUB,
+					       dst = c_stackP,
+					       src = Operand.immediate_const_int 8,
+					       size = pointerSize},
+					      Assembly.instruction_pfmov
+					      {src = arg,
+					       dst = c_stackPDerefDouble,
+					       size = size}]
+					else if Size.eq(size,Size.BYTE)
+					       then AppendList.fromList
+						    [Assembly.instruction_movx
+						     {oper = Instruction.MOVZX,
+						      dst = applyFFTemp,
+						      src = arg,
+						      dstsize = wordSize,
+						      srcsize = size},
+						     Assembly.instruction_ppush
+						     {src = applyFFTemp,
+						      base = c_stackP,
+						      size = wordSize}]
+					       else AppendList.single
+						    (Assembly.instruction_ppush
+						     {src = arg,
+						      base = c_stackP,
+						      size = size}),
+						    assembly_args),
+				     (Size.toBytes size) + size_args))
+			 in
+			   AppendList.appends
+			   [AppendList.single
+			    ((* explicit cache in case there are no args *)
+			     Assembly.directive_cache 
+			     {caches = [{register = Register.esp,
+					 memloc = valOf (Operand.deMemloc c_stackP),
+					 reserve = true}]}),
+			    assembly_args,
+			    AppendList.fromList
+			    [x86.Assembly.directive_force
+			     {commit_memlocs = MemLocSet.empty,
+			      commit_classes = ClassSet.empty,
+			      remove_memlocs = MemLocSet.empty,
+			      remove_classes = ClassSet.empty,
+			      dead_memlocs = dead,
+			      dead_classes = ClassSet.empty},
+			     (* stackTop += bytes *)
+			     x86.Assembly.instruction_binal 
+			     {oper = x86.Instruction.ADD,
+			      dst = stackTop,
+			      src = bytes, 
+			      size = pointerSize},
+			     (* *(stackTop) = return *)
+			     x86.Assembly.instruction_mov
+			     {dst = stackTopDeref,
+			      src = Operand.immediate_label return,
+			      size = pointerSize},
+			     (* flushing at Runtime *)
+			     Assembly.directive_force
+			     {commit_memlocs = live,
+			      commit_classes = runtimeClasses,
+			      remove_memlocs = MemLocSet.empty,
+			      remove_classes = ClassSet.empty,
+			      dead_memlocs = MemLocSet.empty,
+			      dead_classes = ClassSet.empty},
+			     Assembly.directive_ccall (),
+			     Assembly.instruction_call 
+			     {target = Operand.label target,
+			      absolute = false},
+			     Assembly.directive_force
+			     {commit_memlocs = MemLocSet.empty,
+			      commit_classes = ClassSet.empty,
+			      remove_memlocs = MemLocSet.empty,
+			      remove_classes = ClassSet.empty,
+			      dead_memlocs = MemLocSet.empty,
+			      dead_classes = runtimeClasses}],
+			    (if size_args > 0
+			       then AppendList.single
+				    (Assembly.instruction_binal
+				     {oper = Instruction.ADD,
+				      dst = c_stackP,
+				      src = Operand.immediate_const_int size_args,
+				      size = pointerSize})
+			       else AppendList.empty),
+			    AppendList.single
+			    (Assembly.directive_unreserve 
+			     {registers = [Register.esp]}),
+			    (* flushing at far transfer *)
+			    (farTransfer MemLocSet.empty
+			     AppendList.empty
+			     (AppendList.single
+			      (* jmp *(stackTop) *)
+			      (x86.Assembly.instruction_jmp
+			       {target = stackTopDeref,
+				absolute = true})))]
+			 end
+
+	
+		     fun thread ()
+		       = let
+			   val (thread,threadsize)
+			     = case args
+				 of [_, (thread,threadsize)] => (thread,threadsize)
+				  | _ => Error.bug "x86GenerateTransfers::Runtime: args"
+
+			   val threadTemp
+			     = x86MLton.threadTempContentsOperand
+(*
+			   val threadTemp_stack
+			     = x86MLton.threadTemp_stackContentsOperand
+			   val threadTemp_stack_used
+			     = x86MLton.threadTemp_stack_usedContentsOperand
+			   val threadTemp_stack_reserved
+			     = x86MLton.threadTemp_stack_reservedContentsOperand
+*)
+			   val currentThread
+			     = x86MLton.gcState_currentThreadContentsOperand	
+			   val stack
+			     = x86MLton.gcState_currentThread_stackContentsOperand
+			   val stack_used
+			     = x86MLton.gcState_currentThread_stack_usedContentsOperand
+			   val stack_reserved
+			     = x86MLton.gcState_currentThread_stack_reservedContentsOperand
+			   val stackBottom
+			     = x86MLton.gcState_stackBottomContentsOperand
+			   val stackLimit
+			     = x86MLton.gcState_stackLimitContentsOperand
+			   val maxFrameSize
+			     = x86MLton.gcState_maxFrameSizeContentsOperand
+			   val canHandle
+			     = x86MLton.gcState_canHandleContentsOperand
+			   val signalIsPending
+			     = x86MLton.gcState_signalIsPendingContentsOperand
+			   val limit
+			     = x86MLton.gcState_limitContentsOperand
+			   val base
+			     = x86MLton.gcState_baseContentsOperand
+
+			   val resetJoin = Label.newString "resetJoin"
+			 in
+			   AppendList.append
+			   (AppendList.fromList
+			    [(* threadTemp = thread *)
+			     Assembly.instruction_mov
+			     {dst = threadTemp,
+			      src = thread,
+			      size = pointerSize},
+			     (* stackTop += bytes *)
+			     x86.Assembly.instruction_binal 
+			     {oper = x86.Instruction.ADD,
+			      dst = stackTop,
+			      src = bytes, 
+			      size = pointerSize},
+			     (* *(stackTop) = return *)
+			     x86.Assembly.instruction_mov
+			     {dst = stackTopDeref,
+			      src = Operand.immediate_label return,
+			      size = pointerSize},
+			     (* flushing at Runtime *)
+			     Assembly.directive_force
+			     {commit_memlocs = live,
+			      commit_classes = threadflushClasses,
+			      remove_memlocs = MemLocSet.empty,
+			      remove_classes = ClassSet.empty,
+			      dead_memlocs = MemLocSet.empty,
+			      dead_classes = ClassSet.empty},
+			     Assembly.directive_force
+			     {commit_memlocs = MemLocSet.empty,
+			      commit_classes = ClassSet.empty,
+			      remove_memlocs = MemLocSet.empty,
+			      remove_classes = ClassSet.empty,
+			      dead_memlocs = MemLocSet.empty,
+			      dead_classes = threadflushClasses},
+			     (* currentThread->stack->used
+			      *   = stackTop + wordSize - stackBottom
+			      *)
+			     Assembly.instruction_mov
+			     {dst = stack_used,
+			      src = stackTop,
+			      size = pointerSize},
+			     Assembly.instruction_binal
+			     {oper = Instruction.ADD,
+			      dst = stack_used,
+			      src = Operand.immediate_const_int x86MLton.wordBytes,
+			      size = pointerSize},
+			     Assembly.instruction_binal
+			     {oper = Instruction.SUB,
+			      dst = stack_used,
+			      src = stackBottom,
+			      size = pointerSize},
+			     (* currentThread = threadTemp *)
+			     Assembly.instruction_mov
+			     {src = threadTemp,
+			      dst = currentThread,
+			      size = pointerSize},
+			     (* stackBottom = currentThread->stack + 8 *)
+			     Assembly.instruction_mov
+			     {dst = stackBottom,
+			      src = stack,
+			      size = pointerSize},
+			     Assembly.instruction_binal
+			     {oper = Instruction.ADD,
+			      dst = stackBottom,
+			      src = Operand.immediate_const_int 8,
+			      size = pointerSize},
+			     (* stackTop
+			      *   = stackBottom + currentThread->stack->used - wordSize
+			      *)
+			     Assembly.instruction_mov
+			     {dst = stackTop,
+			      src = stackBottom,
+			      size = pointerSize},
+			     Assembly.instruction_binal
+			     {oper = Instruction.ADD,
+			      dst = stackTop,
+			      src = stack_used,
+			      size = pointerSize},
+			     Assembly.instruction_binal
+			     {oper = Instruction.SUB,
+			      dst = stackTop,
+			      src = Operand.immediate_const_int x86MLton.wordBytes,
+			      size = pointerSize},
+			     (* stackLimit
+			      *   = stackBottom + currentThread->stack->reserved
+			      *                 - 2 * maxFrameSize
+			      *)
+			     Assembly.instruction_mov
+			     {dst = stackLimit,
+			      src = stackBottom,
+			      size = pointerSize},
+			     Assembly.instruction_binal
+			     {oper = Instruction.ADD,
+			      dst = stackLimit,
+			      src = stack_reserved,
+			      size = pointerSize},
+			     Assembly.instruction_binal
+			     {oper = Instruction.SUB,
+			      dst = stackLimit,
+			      src = maxFrameSize,
+			      size = pointerSize},
+			     Assembly.instruction_binal
+			     {oper = Instruction.SUB,
+			      dst = stackLimit,
+			      src = maxFrameSize,
+			      size = pointerSize},
+			     (* gcState.canHandle-- *)
+			     Assembly.instruction_unal
+			     {oper = Instruction.DEC,
+			      dst = canHandle,
+			      size = wordSize},
+			     (* if (0 == canHandle && signalIsPending)
+			      *   limit = 0
+			      *)
+			     Assembly.directive_cache
+			     {caches = [{register = stackTopReg,
+					 memloc = stackTop',
+					 reserve = true},
+					{register = frontierReg,
+					 memloc = frontier,
+					 reserve = true}]},
+			     Assembly.directive_force
+			     {commit_memlocs = MemLocSet.empty,
+			      commit_classes = farflushClasses,
+			      remove_memlocs = MemLocSet.empty,
+			      remove_classes = ClassSet.empty,
+			      dead_memlocs = MemLocSet.empty,
+			      dead_classes = ClassSet.empty},
+			     Assembly.instruction_jcc
+			     {condition = Instruction.NZ,
+			      target = Operand.label resetJoin},
+			     Assembly.instruction_cmp
+			     {src1 = signalIsPending,
+			      src2 = Operand.immediate_const_int 0,
+			      size = wordSize},
+			     Assembly.directive_cache
+			     {caches = [{register = stackTopReg,
+					 memloc = stackTop',
+					 reserve = true},
+					{register = frontierReg,
+					 memloc = frontier,
+					 reserve = true}]},
+			     Assembly.directive_force
+			     {commit_memlocs = MemLocSet.empty,
+			      commit_classes = farflushClasses,
+			      remove_memlocs = MemLocSet.empty,
+			      remove_classes = ClassSet.empty,
+			      dead_memlocs = MemLocSet.empty,
+			      dead_classes = ClassSet.empty},
+			     Assembly.instruction_jcc
+			     {condition = Instruction.E,
+			      target = Operand.label resetJoin},
+			     Assembly.instruction_mov
+			     {dst = limit,
+			      src = Operand.immediate_const_int 0,
+			      size = pointerSize},
+			     Assembly.directive_cache
+			     {caches = [{register = stackTopReg,
+					 memloc = stackTop',
+					 reserve = true},
+					{register = frontierReg,
+					 memloc = frontier,
+					 reserve = true}]},
+			     Assembly.directive_force
+			     {commit_memlocs = MemLocSet.empty,
+			      commit_classes = farflushClasses,
+			      remove_memlocs = MemLocSet.empty,
+			      remove_classes = ClassSet.empty,
+			      dead_memlocs = MemLocSet.empty,
+			      dead_classes = ClassSet.empty},
+			     Assembly.directive_reset (),
+			     Assembly.label resetJoin,
+			     Assembly.directive_assume
+			     {assumes
+			      = [{register = stackTopReg,
+				  memloc = stackTop',
+				  weight = 1024,
+				  sync = false,
+				  reserve = false},
+				 {register = frontierReg,
+				  memloc = frontier,
+				  weight = 2048,
+				  sync = false,
+				  reserve = false}]}],
+			    (* flushing at far transfer *)
+			    (farTransfer MemLocSet.empty
+			     AppendList.empty
+			     (AppendList.single
+			      (* jmp *(stackTop) *)
+			      (x86.Assembly.instruction_jmp
+			       {target = stackTopDeref,
+				absolute = true}))))
+			 end
+		       
+		     datatype z = datatype Prim.Name.t
 		   in
-		     AppendList.appends
-		     [AppendList.single
-		      ((* explicit cache in case there are no args *)
-		       Assembly.directive_cache 
-		       {caches = [{register = Register.esp,
-				   memloc = valOf (Operand.deMemloc c_stackP),
-				   reserve = true}]}),
-		      assembly_args,
-		      AppendList.fromList
-		      [x86.Assembly.directive_force
-		       {commit_memlocs = MemLocSet.empty,
-			commit_classes = ClassSet.empty,
-			remove_memlocs = MemLocSet.empty,
-			remove_classes = ClassSet.empty,
-			dead_memlocs = dead,
-			dead_classes = ClassSet.empty},
-		       (* stackTop += bytes *)
-		       x86.Assembly.instruction_binal 
-		       {oper = x86.Instruction.ADD,
-			dst = stackTop,
-			src = bytes, 
-			size = x86MLton.pointerSize},
-		       (* *(stackTop) = return *)
-		       x86.Assembly.instruction_mov
-		       {dst = stackTopDeref,
-			src = Operand.immediate_label return,
-			size = pointerSize},
-		       (* flushing at Runtime *)
-		       Assembly.directive_force
-		       {commit_memlocs = live,
-			commit_classes = runtimeClasses,
-			remove_memlocs = MemLocSet.empty,
-			remove_classes = ClassSet.empty,
-			dead_memlocs = MemLocSet.empty,
-			dead_classes = ClassSet.empty},
-		       Assembly.directive_ccall (),
-		       Assembly.instruction_call 
-		       {target = Operand.label target,
-			absolute = false},
-		       Assembly.directive_force
-		       {commit_memlocs = MemLocSet.empty,
-			commit_classes = ClassSet.empty,
-			remove_memlocs = MemLocSet.empty,
-			remove_classes = ClassSet.empty,
-			dead_memlocs = MemLocSet.empty,
-			dead_classes = runtimeClasses}],
-		      (if size_args > 0
-			 then AppendList.single
-			      (Assembly.instruction_binal
-			       {oper = Instruction.ADD,
-				dst = c_stackP,
-				src = Operand.immediate_const_int size_args,
-				size = pointerSize})
-			 else AppendList.empty),
-		      AppendList.single
-		      (Assembly.directive_unreserve 
-		       {registers = [Register.esp]}),
-		      (* flushing at far transfer *)
-		      (farTransfer MemLocSet.empty
-		       AppendList.empty
-		       (AppendList.single
-			(* jmp *(stackTop) *)
-			(x86.Assembly.instruction_jmp
-			 {target = stackTopDeref,
-			  absolute = true})))]
+		     case Prim.name prim
+		       of GC_collect => default "GC_gc"
+			| MLton_halt => default "MLton_exit"
+			| Thread_copy => default "GC_copyThread"
+			| Thread_copyShrink => default "GC_copyThreadShrink"
+			| Thread_finishHandler => default "GC_finishHandler"
+			| Thread_switchTo => (* thread () *) default "GC_switchToThread"
+			| Thread_switchToCont => (* thread () *) default "GC_switchToThread"
+			| World_save => default "GC_saveWorld"
+			| _ => Error.bug "x86GenerateTransfers::Runtime: prim"
 		   end
 		| CCall {target, args, dst, live, return}
 		=> let

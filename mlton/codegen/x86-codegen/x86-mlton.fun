@@ -253,30 +253,6 @@ struct
 		    class = Classes.StaticTemp}
   val threadTempContentsOperand
     = Operand.memloc threadTempContents
-  val threadTemp_stackContents 
-    = MemLoc.simple {base = threadTempContents,
-		     index = Immediate.const_int 1,
-		     size = pointerSize,
-		     scale = wordScale,
-		     class = Classes.Heap}
-  val threadTemp_stackContentsOperand
-    = Operand.memloc threadTemp_stackContents
-  val threadTemp_stack_reservedContents 
-    = MemLoc.simple {base = threadTemp_stackContents,
-		     index = Immediate.const_int 0,
-		     size = pointerSize,
-		     scale = wordScale,
-		     class = Classes.ThreadStack}
-  val threadTemp_stack_reservedContentsOperand
-    = Operand.memloc threadTemp_stack_reservedContents
-  val threadTemp_stack_usedContents 
-    = MemLoc.simple {base = threadTemp_stackContents,
-		     index = Immediate.const_int 1,
-		     size = pointerSize,
-		     scale = wordScale,
-		     class = Classes.ThreadStack}
-  val threadTemp_stack_usedContents
-    = Operand.memloc threadTemp_stack_usedContents
     
   val statusTemp = Label.fromString "statusTemp"
   val statusTempContents 
@@ -397,6 +373,19 @@ struct
 					  exp2 = Immediate.const_int 7})
 
   val gcState = Label.fromString "gcState"
+
+
+  val gcState_base 
+    = Immediate.binexp {oper = Immediate.Addition,
+			exp1 = Immediate.label gcState,
+			exp2 = Immediate.const_int 4}
+  val gcState_baseContents 
+    = makeContents {base = gcState_base,
+		    size = pointerSize,
+		    class = Classes.GCState}
+  val gcState_baseContentsOperand
+    = Operand.memloc gcState_baseContents
+
   val gcState_limit 
     = Immediate.binexp {oper = Immediate.Addition,
 			exp1 = Immediate.label gcState,
@@ -521,6 +510,28 @@ struct
 		    class = Classes.GCState}
   val gcState_maxFrameSizeContentsOperand
     = Operand.memloc gcState_maxFrameSizeContents 
+
+  val gcState_canHandle
+    = Immediate.binexp {oper = Immediate.Addition,
+			exp1 = Immediate.label gcState,
+			exp2 = Immediate.const_int 128}
+  val gcState_canHandleContents
+    = makeContents {base = gcState_canHandle,
+		    size = wordSize,
+		    class = Classes.GCState}
+  val gcState_canHandleContentsOperand
+    = Operand.memloc gcState_canHandleContents
+
+  val gcState_signalIsPending
+    = Immediate.binexp {oper = Immediate.Addition,
+			exp1 = Immediate.label gcState,
+			exp2 = Immediate.const_int 264}
+  val gcState_signalIsPendingContents
+    = makeContents {base = gcState_signalIsPending,
+		    size = wordSize,
+		    class = Classes.GCState}
+  val gcState_signalIsPendingContentsOperand
+    = Operand.memloc gcState_signalIsPendingContents
 
   (*
    * GC related constants and functions
@@ -676,7 +687,7 @@ struct
 	  transfer = NONE}]
       end
 
-  fun invokeRuntime {target: Label.t, 
+  fun invokeRuntime {prim: Prim.t, 
 		     args: (Operand.t * Size.t) list, 
 		     info as {frameSize: int, 
 			      live: Operand.t list,
@@ -711,7 +722,7 @@ struct
 	 {entry = NONE,
 	  profileInfo = ProfileInfo.none,
 	  statements = comment_begin,
-	  transfer = SOME (Transfer.runtime {target = target,
+	  transfer = SOME (Transfer.runtime {prim = prim,
 					     args = args,
 					     live = MemLocSet.empty,
 					     return = return,
@@ -927,7 +938,7 @@ struct
 		transfer = NONE}]
 	    end	  
 
-	fun thread f
+	fun thread ()
 	  = let
 	      val (thread,threadsize) = getSrc1 ()
 	      val info = getRuntimeInfo ()
@@ -951,155 +962,13 @@ struct
 		     src = thread,
 		     size = threadsize}],
 		 transfer = NONE}],
-	       (invokeRuntime {target = Label.fromString f,
+	       (invokeRuntime {prim = oper,
 			       args = [(Operand.immediate_label gcState, pointerSize),
 				       (threadTempContentsOperand, threadsize)],
 			       info = info,
 			       frameLayouts = frameLayouts,
 			       liveInfo = liveInfo})]
 	    end
-
-(*
-	fun thread_switchTo ()
-	  = let
-	      val (thread,threadsize) = getSrc1 ()
-	      val {frameSize, return} = getInfo ()
-	      val _ = set(return, [])
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: thread_switchTo",
-		   fn () => threadsize = pointerSize)
-	    in
-	      [Block.T'
-	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
-		statements
-		= [(* thread might be of the form SX(?),
-		    *  so copy the thread to a local location.
-		    *)
-		   Assembly.instruction_mov
-		   {dst = threadTempContentsOperand
-		    src = thread,
-		    size = threadsize},
-		   (* gcState.stackTop += frameSize *)
-		   Assembly.instruction_binal
-		   {oper = Instruction.ADD,
-		    dst = gcState_stackTopContentsOperand,
-		    src = Operand.immediate_const_int frameSize,
-		    size = pointerSize},
-		   (* *(gcState.stackTop) = return *)
-		   Assembly.instruction_mov
-		   {dst = gcState_stackTopDerefOperand,
-		    src = Operand.immediate_label return,
-		    size = pointerSize},
-		   (* gcState.currentThread->stack->used
-		    *   = gcState.stackTop + WORD_SIZE - gcState.stackBottom
-		    *)
-		   Assembly.instruction_mov
-		   {dst 
-		    = gcState_currentThread_stack_usedContentsOperand,
-		    src = gcState_stackTopContentsOperand
-		    size = wordSize},
-		   Assembly.instruction_binal
-		   {oper = Instruction.ADD,
-		    dst
-		    = gcState_currentThread_stack_usedContentsOperand,
-		    src = Operand.immediate_const_int WORD_SIZE,
-		    size = pointerSize},
-		   Assembly.instruction_binal
-		   {oper = Instruction.SUB,
-		    dst
-		    = gcState_currentThread_stack_usedContentsOperand,
-		    src = gcState_stackBottomContentsOperand,
-		    size = pointerSize},
-		   (* gcState.currentThread = threadTemp *)
-		   Assembly.instruction_mov
-		   {dst = gcState_currentThreadContentsOperand,
-		    src = threadTempContentsOperand,
-		    size = pointerSize},
-		   (* gcState.stackBottom = threadTemp->stack + 8 *)
-		   Assembly.instruction_mov
-		   {dst = gcState_stackBottomContentsOperand,
-		    src = threadTemp_stackContentsOperand,
-		    size = pointerSize},
-		   Assembly.instruction_binal
-		   {oper = Instruction.ADD,
-		    dst = gcState_stackBottomContentsOperand,
-		    src = Operand,.immediate_const_int 8,
-		    size = pointerSize},		   
-		   (* gcState.stackTop
-		    *    = gcState.stackBottom + threadTemp->stack->used 
-		    *                          - WORD_SIZE 
-		    *)
-		   Assembly.instruction_mov
-		   {dst = gcState_stackTopContentsOperand
-		    src = gcState_stackBottomContentsOperand
-		    size = pointerSize},
-		   Assembly.instruction_binal
-		   {oper = Instruction.ADD,
-		    dst = gcState_stackTopContentsOperand
-		    src = threadTemp_stack_usedContentsOperand
-		    size = pointerSize},
-		   Assembly.instruction_binal
-		   {oper = Instruction.SUB,
-		    dst = gcState_stackTopContentsOperand
-		    src = Operand.immediate_const_int WORD_SIZE,
-		    size = pointerSize},
-		   (* gcState.stackLimit
-		    *    = gcState.stackBottom + threadTemp->stack->reserved
-		    *                          - 2 * gcState.maxFrameSize
-		    *)
-		   Assembly.instruction_mov
-		   {dst = gcState_stackLimitContentsOperand
-		    src = gcState_stackBottomContentsOperand
-		    size = pointerSize},
-		   Assembly.instruction_binal
-		   {oper = Instruction.ADD,
-		    dst = gcState_stackLimitContentsOperand
-		    src = threadTemp_stack_reservedContentsOperand
-		    size = pointerSize},
-		   Assembly.instruction_binal
-		   {oper = Instruction.SUB,
-		    dst = gcState_stackLimitContentsOperand
-		    src = gcState_maxFrameSizeContentsOperand
-		    size = pointerSize},
-		   Assembly.instruction_binal
-		   {oper = Instruction.SUB,
-		    dst = gcState_stackLimitContentsOperand
-		    src = gcState_maxFrameSizeContentsOperand
-		    size = pointerSize},
-		   (* gcState.canHandle-- *)
-		   Assembly.instruction_unal
-		   {oper = Instruction.DEC,
-		    dst = gcState_canHandleContentsOperand
-		    size = wordSize}],
-		transfer = NONE},
-	       (* thread changed,
-		* so jump to current thread's return.
-		*)	 
-	       Block.T'
-	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
-		statements = [],
-		transfer 
-		= SOME (Transfer.assembly
-			[Assembly.instruction_jmp
-			 {target = gcState_stackTopDerefOperand
-			  absolute = true}])},
-	       (* return: *)
-	       Block.T'
-	       {entry = SOME return,
-		profileInfo = ProfileInfo.none,
-		statements 
-		= [(* *(gcState.stackTop) -= framesize *)
-		   Assembly.instruction_binal
-		   {oper = Instruction.SUB,
-		    dst = gcState_stackTopContentsOperand
-		    src = Operand.immediate_const_int frameSize,
-		    size = pointerSize}],
-		transfer = NONE}]
-	    end
-*)
 
 	fun intInf_comp f
 	  = let
@@ -2027,7 +1896,7 @@ struct
 		  val info = getRuntimeInfo ()
 		in 
 		  invokeRuntime 
-		  {target = Label.fromString "GC_gc",
+		  {prim = oper,
 		   args = [(Operand.immediate_label gcState, pointerSize),
 			   (Operand.immediate_const_int 0, wordSize),
 			   (Operand.immediate_const_int 1, wordSize),
@@ -2219,7 +2088,7 @@ struct
 			size = statussize}],
 		    transfer = NONE},
 		   (invokeRuntime 
-		    {target = Label.fromString "MLton_exit",
+		    {prim = oper,
 		     args = [(statusTempContentsOperand, statussize)],
 		     info = info,	
 		     frameLayouts = frameLayouts,
@@ -2772,8 +2641,8 @@ struct
 	     | String_size => lengthArrayVectorString ()
 	     | String_toCharVector => mov ()
 	     | String_toWord8Vector => mov ()
-	     | Thread_copy => thread "GC_copyThread"
-	     | Thread_copyShrink => thread "GC_copyThreadShrink"
+	     | Thread_copy => thread ()
+	     | Thread_copyShrink => thread ()
 	     | Thread_current
 	     => let
 		  val (dst,dstsize) = getDst ()
@@ -2793,13 +2662,9 @@ struct
 			size = wordSize}],
 		    transfer = NONE}]
 		end
-	     | Thread_finishHandler => thread "GC_finishHandler"
-(*	     | Thread_switchTo => unimplemented primName *)
-(*	     | Thread_switchTo => thread_switchTo () *)
-	     | Thread_switchTo => thread "GC_switchToThread"
-(*	     | Thread_switchToCont => unimplemented primName *)
-(*	     | Thread_switchToCont => thread_switchTo () *)
-	     | Thread_switchToCont => thread "GC_switchToThread"
+	     | Thread_finishHandler => thread ()
+	     | Thread_switchTo => thread ()
+	     | Thread_switchToCont => thread ()
 	     | Vector_length => lengthArrayVectorString ()
 	     | Word8_toInt => movx Instruction.MOVZX
 	     | Word8_toIntX => movx Instruction.MOVSX
@@ -2874,7 +2739,7 @@ struct
 			size = filesize}],
 		    transfer = NONE},
 		   (invokeRuntime 
-		    {target = Label.fromString "GC_saveWorld",
+		    {prim = oper,
 		     args = [(Operand.immediate_label gcState, pointerSize),
 			     (fileTempContentsOperand, filesize),
 			     (Operand.immediate_label saveGlobals, 

@@ -351,7 +351,7 @@ struct
 	       statements = [],
 	       transfer = NONE}],
 	     (x86MLton.invokeRuntime
-	      {target = Label.fromString "GC_gc",
+	      {prim = Prim.gcCollect,
 	       args = [(x86.Operand.immediate_label x86MLton.gcState, 
 			x86MLton.pointerSize),
 		       (case bytes

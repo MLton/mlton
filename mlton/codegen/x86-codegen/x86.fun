@@ -3647,7 +3647,7 @@ struct
 		      size: int}
 	| Return of {live: MemLocSet.t}
 	| Raise of {live: MemLocSet.t}
-	| Runtime of {target: Label.t,
+	| Runtime of {prim: Prim.t,
 		      args: (Operand.t * Size.t) list,
 		      live: MemLocSet.t,
 		      return: Label.t,
@@ -3722,9 +3722,9 @@ struct
 		      (List.map(live, fn memloc => MemLoc.toString memloc),
 		       ", "),
 		      "]"]
-	   | Runtime {target, args, live, return, size}
+	   | Runtime {prim, args, live, return, size}
 	   => concat ["RUNTIME ",
-		      Label.toString target,
+		      Prim.toString prim,
 		      "(",
 		      (concat o List.separate)
 		      (List.map(args, fn (oper,_) => Operand.toString oper),
@@ -3803,8 +3803,8 @@ struct
 	   => Switch {test = replacer {use = true, def = false} test,
 		      cases = cases,
 		      default = default}
-	   | Runtime {target, args, live, return, size}
-	   => Runtime {target = target,
+	   | Runtime {prim, args, live, return, size}
+	   => Runtime {prim = prim,
 		       args = List.map(args,
 				       fn (oper,size) => (replacer {use = true,
 								    def = false}

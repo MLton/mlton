@@ -7,6 +7,7 @@ type word = Word.t
 signature X86_PSEUDO =
   sig
     structure Label : HASH_ID
+    structure Prim : PRIM
 
     val tracer : string -> ('a -> 'b) -> 
                  (('a -> 'b) * (unit -> unit))
@@ -410,7 +411,7 @@ signature X86_PSEUDO =
 		       size: int} -> t
 	val return : {live: MemLocSet.t} -> t 
 	val raisee : {live: MemLocSet.t} -> t
-	val runtime : {target: Label.t,
+	val runtime : {prim: Prim.t,
 		       args: (Operand.t * Size.t) list,
 		       live: MemLocSet.t,
 		       return: Label.t,

@@ -7,6 +7,7 @@ type word = Word.t
 signature X86_STRUCTS =
   sig
     structure Label : HASH_ID
+    structure Prim : PRIM
   end
 
 signature X86 =
@@ -1093,7 +1094,7 @@ signature X86 =
 			size: int}
 	  | Return of {live: MemLocSet.t}
 	  | Raise of {live: MemLocSet.t}
-	  | Runtime of {target: Label.t,
+	  | Runtime of {prim: Prim.t,
 			args: (Operand.t * Size.t) list,
 			live: MemLocSet.t,
 			return: Label.t,
@@ -1130,7 +1131,7 @@ signature X86 =
 		       size: int} -> t
 	val return : {live: MemLocSet.t} -> t 
 	val raisee : {live: MemLocSet.t} -> t
-	val runtime : {target: Label.t,
+	val runtime : {prim: Prim.t,
 		       args: (Operand.t * Size.t) list,
 		       live: MemLocSet.t,
 		       return: Label.t,
