@@ -16,11 +16,13 @@ signature LIVE =
 
       val live:
 	 Function.t * {shouldConsider: Var.t -> bool}
-	 -> Label.t -> {(* live at beginning of block. *)
+	 -> {labelLive:
+	     Label.t -> {(* live at beginning of block. *)
 			begin: Var.t vector,
 			(* live at the beginning of a block, except formals. *)
 			beginNoFormals: Var.t vector,
 			(* live handler slots at beginning of block. *)
 			handler: Label.t option,
-			link: bool}
+			link: bool},
+	     remLabelLive: Label.t -> unit}
    end

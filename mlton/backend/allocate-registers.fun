@@ -299,7 +299,7 @@ fun allocate {argOperands,
 			     in seq [str "Function allocs for ",
 				     Func.layout (Function.name f)]
 			     end)
-      val labelLive =
+      val {labelLive, remLabelLive} =
 	 Live.live (f, {shouldConsider = isSome o #operand o varInfo})
       val {args, blocks, name, ...} = Function.dest f
       (*
@@ -372,6 +372,7 @@ fun allocate {argOperands,
 			   | Register =>
 				Operand.Register
 				(Allocation.getRegister (a, ty))
+		       val () = removePlace x
 		       val _ = 
 			  case operand of
 			     NONE => ()
@@ -430,6 +431,7 @@ fun allocate {argOperands,
 	  let
 	     val {begin, beginNoFormals, handler = handlerLive,
 		  link = linkLive} = labelLive label
+	     val () = remLabelLive label
 	     fun addHS (ops: Operand.t vector): Operand.t vector =
 		case handlerLinkOffset of
 		   NONE => ops
@@ -511,7 +513,6 @@ fun allocate {argOperands,
 	  in
 	     fn () => ()
 	  end)
-      val () = Function.foreachVar (f, removePlace o #1)
       val () =
 	 diagnostics
 	 (fn (display, diagVar, diagStatement) =>

@@ -43,9 +43,6 @@ signature ALLOCATE_REGISTERS =
 			       * excepting its formals.
 			       *)
 			      liveNoFormals: Machine.Operand.t vector,
-			      (* Number of bytes in frame including return
-			       * address.
-			       *)
-			      size: Bytes.t
-			      }}
+			      (* Size of frame including return address. *)
+			      size: Bytes.t}}
    end

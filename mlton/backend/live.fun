@@ -309,7 +309,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	 end
       val _ = handlerLink (handlerCodeDefUses, #handler)
       val _ = handlerLink (handlerLinkDefUses, #link)
-      val {get = labelLive, ...} =
+      val {get = labelLive, rem = remLabelLive, ...} =
 	 Property.get
 	 (Label.plist,
 	  Property.initFun
@@ -348,7 +348,8 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	      end)
 	  end)
    in 
-      labelLive
+      {labelLive = labelLive,
+       remLabelLive = remLabelLive}
    end
 
 val live =
