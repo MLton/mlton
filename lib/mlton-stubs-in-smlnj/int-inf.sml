@@ -53,23 +53,26 @@ structure IntInf: INT_INF =
       val fromInt = Pervasive.Int32.toLarge
       val toInt = Pervasive.Int32.fromLarge
       val sign = Pervasive.Int32.fromInt o sign
-      val divMod = divMod
-      val quotRem = quotRem
       val precision: Pervasive.Int32.int option = NONE
       val log2 = Pervasive.Int32.fromInt o log2
       fun pow (a, b) = Pervasive.IntInf.pow (a, Pervasive.Int32.toInt b)
 
       local
-	fun pow2' (n, w) =
+	fun pow2 w = 
 	  if w = 0wx0
-	    then n
-	  else pow2' (if Pervasive.Word32.andb (0wx1, w) = 0wx1
-			then (Pervasive.IntInf.fromInt 2) * n else n,
-		      Pervasive.Word32.>> (w, 0wx1))
-	fun pow2 w = pow2' (Pervasive.IntInf.fromInt 1, w)
+	    then 1
+	  else
+	     let
+		val p = pow2 (Pervasive.Word32.>> (w, 0wx1))
+		val pp = p * p
+	     in
+		if 0wx1 = Pervasive.Word32.andb (0wx1, w)
+		  then 2 * pp
+		else pp
+	     end
       in
-	val (op <<) = fn (a, b) => a * (pow2 b)
-	val (op ~>>) = fn (a, b) => a div (pow2 b)
+	val << = fn (a, b) => a * (pow2 b)
+	val ~>> = fn (a, b) => a div (pow2 b)
       end
    end
 
