@@ -1382,7 +1382,8 @@ structure Pointers =
 			    {statements = Vector.new0 (),
 			     transfer =
 			     Goto {args = if dstHasArg
-					     then Vector.new1 (Cast (test, ty))
+					     then (Vector.new1
+						   (Operand.cast (test, ty)))
 					  else Vector.new0 (),
 				   dst = dst}})
 		 | _ => NONE)
@@ -1453,7 +1454,8 @@ structure Small =
 		case conRep con of
 		   ConRep.ShiftAndTag {tag, ty, ...} =>
 		      let
-			 val test = Cast (test, Type.padToWidth (ty, testBits))
+			 val test =
+			    Operand.cast (test, Type.padToWidth (ty, testBits))
 			 val (test, ss) = Statement.resize (test, Type.width ty)
 			 val transfer =
 			    Goto {args = if dstHasArg
@@ -1487,7 +1489,7 @@ structure Small =
 		  end
 	    val tagOp =
 	       if isPointer
-		  then Cast (tagOp, Type.word (WordSize.bits wordSize))
+		  then Operand.cast (tagOp, Type.word (WordSize.bits wordSize))
 	       else tagOp
 	    val default =
 	       if Vector.length variants = Vector.length cases
@@ -1500,7 +1502,7 @@ structure Small =
 			let
 			   val (s, test) =
 			      Statement.andb
-			      (Cast (test, Type.word testBits),
+			      (Operand.cast (test, Type.word testBits),
 			       Operand.word (WordX.fromIntInf (3, wordSize)))
 			   val t =
 			      Switch
@@ -2042,7 +2044,8 @@ structure TyconRep =
 			    | SOME {dst, dstHasArg, ...} =>
 				 let
 				    val test =
-				       Cast (test (), PointerRep.ty pointer)
+				       Operand.cast (test (),
+						     PointerRep.ty pointer)
 				 in
 				    SOME
 				    (Block.new
@@ -2072,7 +2075,7 @@ structure TyconRep =
 				    val args =
 				       if dstHasArg
 					  then (Vector.new1
-						(Cast
+						(Operand.cast
 						 (test (),
 						  Component.ty component)))
 				       else Vector.new0 ()
@@ -2098,7 +2101,8 @@ structure TyconRep =
 			   (pointers, {cases = cases,
 				       conRep = conRep,
 				       default = default,
-				       test = Cast (test, Pointers.ty pointers)})
+				       test = (Operand.cast
+					       (test, Pointers.ty pointers))})
 			val pointer =
 			   Block.new {statements = Vector.fromList ss,
 				      transfer = t}

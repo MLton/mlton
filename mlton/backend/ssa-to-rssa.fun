@@ -976,7 +976,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 					 src = PointerTycon pt}
 					:: Bind {dst = (valOf var, vecTy),
 						 isMutable = false,
-						 src = Cast (array, vecTy)}
+						 src = Operand.cast (array, vecTy)}
 					:: ss,
 					t)
 				    end

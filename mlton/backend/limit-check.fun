@@ -806,7 +806,7 @@ fun insert (Program.T {functions, handlesSignals, main, objectTypes}) =
 				 Statement.Bind
 				 {dst = (x, Type.bool),
 				  isMutable = true,
-				  src = Operand.Cast (Operand.bool true,
+				  src = Operand.cast (Operand.bool true,
 						      Type.bool)})),
 		  transfer = Transfer.Goto {args = Vector.new0 (),
 					    dst = start}}
