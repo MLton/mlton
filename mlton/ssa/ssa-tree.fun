@@ -788,15 +788,7 @@ structure Function =
 			 | Call {return, ...} =>
 			      Option.app (return, fn {cont, handler} =>
 					  (edge cont
-					   ; if false
-						then Option.app (handler, edge)
-					     else
-						Option.app
-						(handler, fn h =>
-						 (Graph.addEdge
-						  (g, {from = labelNode cont,
-						       to = labelNode h})
-						  ; ()))))
+					   ; Option.app (handler, edge)))
 			 | Case {cases, default, ...} =>
 			      (Cases.foreach (cases, edge)
 			       ; Option.app (default, edge))

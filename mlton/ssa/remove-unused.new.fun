@@ -171,7 +171,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 				      terminates: Terminates.t,
 				      fails: Fails.t,
 				      bug: Label.t option ref,
-				      bugConts: (Type.t vector * Label.t option * Label.t) list ref,
+				      bugConts: (Type.t vector * Label.t) list ref,
 				      wrappers: Block.t list ref},
 	   set = setFuncInfo, ...}
 	= Property.getSetOnce
@@ -462,29 +462,27 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	  (datatypes,
 	   fn Datatype.T {tycon, cons} 
 	    => let
-(*
-		 val _ = (print (Tycon.toString tycon);
-			  print ":\n";
-			  Vector.foreach
-			  (cons,
-			   fn {con, ...}
-			    => (print (Con.toString con);
-				print ": ";
-				if isConedCon con
-				  then print "+"
-				  else print "-";
-				print " ";
-				if isDeconedCon con
-				  then print "+"
-				  else print "-";
-			        print " ";
-				Vector.foreach
-				(argsCon con,
-				 fn (x,_) => if isUsedVar x
-					       then print "+"
-					       else print "-");
-				print "\n")))
-*)
+	         val _ = Control.diagnostics
+		         (fn display
+		           => let open Layout
+			      in display 
+				 (seq [Tycon.layout tycon,
+				       str ": ",
+				       Vector.layout
+				       (fn {con, ...}
+					 => seq [Con.layout con,
+						 record
+						 [("isConedCon",
+						   Bool.layout (isConedCon con)),
+						  ("isDeconedCon", 
+						   Bool.layout (isDeconedCon con)),
+						  ("argsCon", 
+						   Vector.layout
+						   (Bool.layout o isUsedVar o #1)
+						   (argsCon con))]])
+				       cons])
+			      end)
+
 		 val r: Exp.t option ref = ref NONE
 		 val cons 
 		   = Vector.keepAllMap
@@ -548,7 +546,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		  l
 		end
 
-      fun getBugContFunc (f, args, handler)
+      fun getBugContFunc (f, args)
 	= let
 	    val tys = Vector.keepAllMap
 	              (args, fn (x, ty) => if isUsedVar x
@@ -557,15 +555,13 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	  in
 	    case List.peek
 	         (bugContsFunc' f,
-		  fn (tys', handler', l')
+		  fn (tys', l')
 		   => Vector.length tys' = Vector.length tys
 		      andalso
 		      Vector.forall2
 		      (tys', tys,
-		       fn (ty', ty) => Type.equals(ty', ty))
-		      andalso
-		      Option.equals(handler', handler, Label.equals))
-	      of SOME (_, _, l') => l'
+		       fn (ty', ty) => Type.equals(ty', ty)))
+	      of SOME (_, l') => l'
 	       | NONE
 	       => let
 		    val l' = Label.newNoname ()
@@ -582,7 +578,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 					 statements = Vector.new0 (),
 					 transfer = Goto {dst = getBugFunc f,
 							  args = Vector.new0 ()}}
-		    val _ = List.push(bugContsFunc f, (tys', handler, l'))
+		    val _ = List.push(bugContsFunc f, (tys', l'))
 		    val _ = List.push(wrappersFunc f, block)
 		  in
 		    l'
@@ -757,7 +753,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 				      in
 					call
 					(SOME {cont = getBugContFunc
-					              (f, returnsFunc func, handler),
+					              (f, returnsFunc func),
 					       handler = handler})
 				      end
 				   | (false, _, _)
@@ -766,9 +762,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 					  fn (x, t) => not (isUsedVar x))
 				        then call NONE
 				        else call (SOME {cont = getBugContFunc 
-							        (f, 
-								 returnsFunc func, 
-								 NONE), 
+							        (f, returnsFunc func), 
 					 	 	 handler = NONE}))
                      | NONE => call NONE
 		end
@@ -832,23 +826,19 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 				     statements, transfer}): Block.t option
 	= let
 	    val {args, func, ...} = labelInfo label
-	    local
-	    in
-(*
-	      val _ = (print (Label.toString label);
-		       print ": ";
-		       if isUsedLabel label
-			 then print "+"
-			 else print "-";
-		       print " ";
-		       Vector.foreach
-		       (args,
-			fn (x,_) => if isUsedVar x
-				      then print "+"
-				      else print "-");
-		       print "\n")
-*)
-	    end
+	    val _ = Control.diagnostics
+	            (fn display
+		      => let open Layout
+		         in display
+			    (seq [Label.layout label,
+				  str ": ",
+				  record
+				  [("isUsedLabel", Bool.layout (isUsedLabel label)),
+				   ("argsLabel",
+				    Vector.layout
+				    (Bool.layout o isUsedVar o #1)
+				    (argsLabel label))]])
+			 end)
 	  in 
 	    if isUsedLabel label
 	      then let
@@ -880,41 +870,29 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	= let
 	    val {name, blocks, start, ...} = Function.dest f
 	    val {args, returns, wrappers, ...} = funcInfo name
-	    local
-	    in
-(*
-	      val _ = (print (Func.toString name);
-		       print ": ";
-		       if isUsedFunc name
-			 then print "+"
-			 else print "-";
-		       print " ";
-		       if doesSideEffectFunc name
-			 then print "+"
-			 else print "-";
-		       print " ";
-		       if doesTerminateFunc name
-			 then print "+"
-			 else print "-";
-		       print " ";
-		       if doesFailFunc name
-			 then print "+"
-			 else print "-";
-		       print " ";
-		       Vector.foreach
-		       (args,
-			fn (x,_) => if isUsedVar x
-				      then print "+"
-				      else print "-");
-		       print ":";
-		       Vector.foreach
-		       (returns,
-			fn (x, _) => if isUsedVar x
-				       then print "+"
-				       else print "-");
-		       print "\n")
-*)
-	    end
+	    val _ = Control.diagnostics
+	            (fn display
+		      => let open Layout
+			 in display
+			    (seq [Func.layout name,
+				  str ": ",
+				  record
+				  [("isUsedFunc", Bool.layout (isUsedFunc name)),
+				   ("doesSideEffectFunc",
+				    Bool.layout (doesSideEffectFunc name)),
+				   ("doesTerminateFunc",
+				    Bool.layout (doesTerminateFunc name)),
+				   ("doesFailFunc",
+				    Bool.layout (doesFailFunc name)),
+				   ("argsFunc",
+				    Vector.layout
+				    (Bool.layout o isUsedVar o #1)
+				    (argsFunc name)),
+				   ("returnsFunc",
+				    Vector.layout
+				    (Bool.layout o isUsedVar o #1)
+				    (returnsFunc name))]])
+			 end)
 	  in
 	    if isUsedFunc name
 	      then let
