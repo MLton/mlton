@@ -109,8 +109,10 @@ structure Real: REAL =
 	 val int = ref 0.0
       in
 	 fun split x =
-	    let val frac = modf (x, int)
-	    in {frac = frac,
+	    let
+	       val frac = modf (x, int)
+	    in
+	       {frac = frac,
 		whole = ! int}
 	    end
       end
@@ -364,6 +366,7 @@ structure Real: REAL =
 	    val m = 52 (* The number of mantissa bits in 64 bit IEEE 854. *)
 	    val half = Int.quot (m, 2)
 	    val two = IntInf.fromInt 2
+	    val twoPowHalf = IntInf.pow (two, half)
 	    fun pos (i: IntInf.int): real = 
 	       let
 		  val exp: Int.int = IntInf.log2 i
@@ -380,15 +383,12 @@ structure Real: REAL =
 			      then IntInf.quot (i, IntInf.pow (two, shift))
 			   else IntInf.* (i, IntInf.pow (two, Int.~ shift))
 			(* 2^m <= man < 2^(m+1) *)
-			val (q, r) = IntInf.quotRem (man, IntInf.pow (two, half))
-			val fromManExp =
-			   fn (man, exp) =>
-			   fromManExp
-			   {man = fromInt (IntInf.toInt man),
-			    exp = exp}
+			val (q, r) = IntInf.quotRem (man, twoPowHalf)
+			fun conv (man, exp) =
+			   fromManExp {man = fromInt (IntInf.toInt man),
+				       exp = exp}
 		     in
-			fromManExp (q, Int.+ (half, shift))
-			+ fromManExp (r, shift)
+			conv (q, Int.+ (half, shift)) + conv (r, shift)
 		     end
 	       end
 	 in
