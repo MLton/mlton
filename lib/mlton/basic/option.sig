@@ -5,6 +5,7 @@ signature OPTION =
       val app: 'a t * ('a -> unit) -> unit
       val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool
       val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
+      val forall: 'a t * ('a -> bool) -> bool
       val isNone: 'a t -> bool
       val isSome: 'a t -> bool
       val layout: ('a -> Layout.t) -> 'a t -> Layout.t
