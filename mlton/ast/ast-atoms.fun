@@ -47,8 +47,10 @@ structure Con =
 
       open P
 
+      val it = fromString ("it", Region.bogus)
+	 
       fun ensureRedefine c =
-	 if List.exists ([cons, falsee, nill, reff, truee],
+	 if List.exists ([cons, falsee, it, nill, reff, truee],
 			 fn c' => equals (c, c'))
 	    then 
 	       let
