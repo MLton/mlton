@@ -74,7 +74,7 @@ constants:
 DEBSRC = mlton-$(VERSION).orig
 .PHONY: deb
 deb:
-	$(MAKE) clean clean-cvs version
+	$(MAKE) clean clean-cvs version deb-change
 	tar -cpf - . | \
 		( cd .. && mkdir $(DEBSRC) && cd $(DEBSRC) && tar -xpf - )
 	cd .. && tar -cpf - $(DEBSRC) | $(GZIP) >mlton_$(VERSION).orig.tar.gz
@@ -84,6 +84,19 @@ deb:
 .PHONY: deb-binary
 deb-binary:
 	fakeroot debian/rules binary
+
+.PHONY: deb-change
+deb-change:
+	(								\
+		echo 'mlton ($(VERSION)-1) unstable; urgency=low';	\
+		echo;							\
+		echo '  * new upstream version';			\
+		echo;							\
+		echo ' -- Stephen Weeks <sweeks@sweeks.com>  '`date -R`;\
+		echo;							\
+		cat debian/changelog;					\
+	) >/tmp/changelog
+	mv /tmp/changelog debian/changelog
 
 .PHONY: deb-lint
 deb-lint:
@@ -178,7 +191,6 @@ tools:
 version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
-		debian/changelog					\
 		doc/mlton.spec						\
 		doc/user-guide/macros.tex				\
 		freebsd/Makefile					\
