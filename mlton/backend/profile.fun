@@ -132,7 +132,7 @@ fun profile program =
 	 val c = Counter.new 0
 	 val sourceSeqs: int vector list ref = ref []
       in
-	 fun sourceSeqIndex' (s: sourceSeq): int =
+	 fun sourceSeqIndex (s: sourceSeq): int =
 	    let
 	       val s = Vector.fromListRev s
 	       val hash =
@@ -154,13 +154,9 @@ fun profile program =
 	 fun makeSourceSeqs () = Vector.fromListRev (!sourceSeqs)
       end
       (* Ensure that [SourceInfo.unknown] is index 0. *)
-      val unknownSourceSeq = sourceSeqIndex' [sourceInfoIndex SourceInfo.unknown]
+      val unknownSourceSeq = sourceSeqIndex [sourceInfoIndex SourceInfo.unknown]
       (* Ensure that [SourceInfo.gc] is index 1. *)
-      val gcSourceSeq = sourceSeqIndex' [sourceInfoIndex SourceInfo.gc]
-      (* Treat the empty source sequence as unknown. *)
-      val sourceSeqIndex =
-	 fn [] => unknownSourceSeq
-	  | s => sourceSeqIndex' s
+      val gcSourceSeq = sourceSeqIndex [sourceInfoIndex SourceInfo.gc]
       val {get = labelInfo: Label.t -> {block: Block.t,
 					visited: bool ref},
 	   set = setLabelInfo, ...} =
@@ -266,6 +262,11 @@ fun profile program =
 	       Statement.Move
 	       {dst = Operand.Runtime Runtime.GCField.CurrentSource,
 		src = Operand.word (Word.fromInt n)}
+	    val setCurrentSource =
+	       Trace.trace ("Profile.setCurrentSource",
+			    Int.layout, Statement.layout)
+	       setCurrentSource
+	    val clearCurrentSource = setCurrentSource ~1
 	    fun backward {args,
 			  kind,
 			  label,
@@ -318,15 +319,17 @@ fun profile program =
 			   fun pl () = profileLabel sourceSeq
 			in
 			   if (case kind of
-				  Kind.CReturn {func, ...} => true
+				  Kind.Cont _ => profileStack
+		                | Kind.CReturn {func, ...} => true
+				| Kind.Handler => profileStack
 				| _ => false)
 			      then
 				 (case statements of
 				     (s as Statement.ProfileLabel _) :: ss =>
-					s :: setCurrentSource ~1 :: ss
+					s :: clearCurrentSource :: ss
 				   | _ => 
 					pl ()
-					:: setCurrentSource ~1
+					:: clearCurrentSource
 					:: statements)
 			   else if npl
 				   then pl () :: statements
@@ -342,6 +345,12 @@ fun profile program =
 			      val func = CFunction.profileLeave
 			      val newLabel = Label.newNoname ()
 			      val index = sourceSeqIndex sourceSeq
+			      val statements =
+				 [setCurrentSource index]
+			      val statements =
+				 if profileTime
+				    then profileLabelIndex index :: statements
+				 else statements
 			      val _ =
 				 List.push
 				 (blocks,
@@ -349,15 +358,10 @@ fun profile program =
 				  {args = args,
 				   kind = kind,
 				   label = label,
-				   statements =
-				   if profileTime
-				      then Vector.new1 (profileLabelIndex index)
-				   else Vector.new0 (),
+				   statements = Vector.fromList statements,
 				   transfer = 
 				   Transfer.CCall
-				   {args = (Vector.new2
-					    (Operand.GCState,
-					     Operand.word (Word.fromInt index))),
+				   {args = Vector.new1 Operand.GCState,
 				    func = func,
 				    return = SOME newLabel}})
 			   in
@@ -365,7 +369,9 @@ fun profile program =
 			       kind = Kind.CReturn {func = func},
 			       label = newLabel}
 			   end
-		     else {args = args, kind = kind, label = label}
+		     else {args = args,
+			   kind = kind,
+			   label = label}
 	       in		       
 		  List.push (blocks,
 			     Block.T {args = args,
@@ -383,29 +389,30 @@ fun profile program =
 		Unit.layout)
 	       backward
 	    fun profileEnter (sourceSeq: int list,
-			      transfer: Transfer.t): Transfer.t =
+			      transfer: Transfer.t)
+	       : Statement.t * Transfer.t =
 	       let
 		  val func = CFunction.profileEnter
 		  val newLabel = Label.newNoname ()
 		  val index = sourceSeqIndex sourceSeq
+		  val statements = [clearCurrentSource]
 		  val statements =
 		     if profileTime
-			then Vector.new1 (profileLabelIndex index)
-		     else Vector.new0 ()
+			then profileLabelIndex index :: statements
+		     else statements
 		  val _ =
 		     List.push
 		     (blocks,
 		      Block.T {args = Vector.new0 (),
 			       kind = Kind.CReturn {func = func},
 			       label = newLabel,
-			       statements = statements,
+			       statements = Vector.fromList statements,
 			       transfer = transfer})
 	       in
-		  Transfer.CCall
-		  {args = Vector.new2 (Operand.GCState,
-				       Operand.word (Word.fromInt index)),
-		   func = func,
-		   return = SOME newLabel}
+		  (setCurrentSource index,
+		   Transfer.CCall {args = Vector.new1 Operand.GCState,
+				   func = func,
+				   return = SOME newLabel})
 	       end
 	    fun goto (l: Label.t, pushes: Push.t list): unit =
 	       let
@@ -610,15 +617,23 @@ fun profile program =
 				       Return.NonTail _ =>
 					  let
 					     val _ =
-						Option.app
-						(firstEnter pushes,
-						 fn n => List.push (callers, n))
+						case firstEnter pushes of
+						   NONE =>
+						      List.push (tailCalls, fi)
+						 | SOME n => 
+						      List.push (callers, n)
 					  in
-					     (statements,
 					      if profileStack
-						 then (profileEnter
-						       (sourceSeq, transfer))
-					      else transfer)
+						 then
+						    let
+						       val (s, t) =
+							  profileEnter
+							  (sourceSeq, transfer)
+						    in
+						       (s :: statements, t)
+						    end
+					      else
+						 (statements, transfer)
 					  end
 				     | _ =>
 					  (List.push (tailCalls, fi)
@@ -655,7 +670,7 @@ fun profile program =
 		     let
 			val InfoNode.T {successors, ...} = sourceInfoNode si
 		     in
-			sourceSeqIndex'
+			sourceSeqIndex
 			(List.revMap (!successors, InfoNode.index))
 		     end)
       (* This must happen after making sourceSuccessors, since that creates
