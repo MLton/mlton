@@ -1,48 +1,48 @@
 #ifndef _X86CODEGEN_H_
 #define _X86CODEGEN_H_
 
-#define Globals(c, d, i, p, u, nr)				       	\
+#define Globals(c, d, i, p, u, nr)					\
 	word raTemp1;							\
 	double raTemp2;							\
 	word spill[16];							\
 	word indexTemp;							\
 	word checkTemp;							\
 	word divTemp;							\
-	struct GC_state gcState;				       	\
+	struct GC_state gcState;					\
 	word c_stackP;							\
-	char cReturnTempB;     						\
-	word cReturnTempL;     						\
-	double cReturnTempD;   						\
+	char cReturnTempB;						\
+	word cReturnTempL;						\
+	double cReturnTempD;						\
 	word switchTemp;						\
 	word intInfTemp;						\
 	word threadTemp;						\
 	word statusTemp;						\
 	word fileTemp;							\
 	word applyFFTemp;						\
-	double realTemp1;				       		\
-	double realTemp2;				       		\
-        double realTemp3;				       		\
+	double realTemp1;						\
+	double realTemp2;						\
+        double realTemp3;						\
 	word fpswTemp;							\
 	char MLton_bug_msg[] = "cps machine";				\
-	char globaluchar[c];					       	\
-	double globaldouble[d];					       	\
-	int globalint[i];					       	\
-	pointer globalpointer[p];				       	\
-        uint globaluint[u];					       	\
-	pointer globalpointerNonRoot[nr];			       	\
-	void saveGlobals(FILE *file) {				       	\
-		swrite(globaluchar, sizeof(char), c, file);	       	\
-		swrite(globaldouble, sizeof(double), d, file);	       	\
-		swrite(globalint, sizeof(int), i, file);	       	\
-		swrite(globalpointer, sizeof(pointer), p, file);       	\
-		swrite(globaluint, sizeof(uint), u, file);	       	\
-	}							       	\
-	void loadGlobals(FILE *file) {				       	\
-		sread(globaluchar, sizeof(char), c, file);	       	\
-		sread(globaldouble, sizeof(double), d, file);	       	\
-		sread(globalint, sizeof(int), i, file);		       	\
-		sread(globalpointer, sizeof(pointer), p, file);	       	\
-		sread(globaluint, sizeof(uint), u, file);	       	\
+	char globaluchar[c];						\
+	double globaldouble[d];						\
+	int globalint[i];						\
+	pointer globalpointer[p];					\
+        uint globaluint[u];						\
+	pointer globalpointerNonRoot[nr];				\
+	void saveGlobals(int fd) {					\
+		swrite(fd, globaluchar, sizeof(char) * c);		\
+		swrite(fd, globaldouble, sizeof(double) * d);		\
+		swrite(fd, globalint, sizeof(int) * i);			\
+		swrite(fd, globalpointer, sizeof(pointer) * p);		\
+		swrite(fd, globaluint, sizeof(uint) * u);		\
+	}								\
+	static void loadGlobals(FILE *file) {				\
+		sfread(globaluchar, sizeof(char), c, file);		\
+		sfread(globaldouble, sizeof(double), d, file);		\
+		sfread(globalint, sizeof(int), i, file);		\
+		sfread(globalpointer, sizeof(pointer), p, file);	\
+		sfread(globaluint, sizeof(uint), u, file);		\
 	}
 
 #define Locals(c, d, i, p, u)						\

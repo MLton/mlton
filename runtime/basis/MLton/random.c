@@ -6,8 +6,8 @@ Word MLton_random() {
 	FILE *file;
 	Word result;
 
-	file = sopen("/dev/random", "r");
-	result = sreadUint(file);
+	file = sfopen("/dev/random", "r");
+	result = sfreadUint(file);
 	fclose(file);
 	return result;
 }

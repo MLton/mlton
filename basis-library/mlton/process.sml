@@ -1,4 +1,4 @@
-structure Process:> MLTON_PROCESS =
+structure Process =
    struct
       structure Prim = Primitive.MLton.Process
       structure Error = PosixError
@@ -27,4 +27,13 @@ structure Process:> MLTON_PROCESS =
 	    case Posix.Process.fork () of
 	       NONE => Posix.Process.execp (file, args)
 	     | SOME pid => pid
+
+      fun exit sts =
+	 if 0 <= sts andalso sts < 256
+	    then (let open Cleaner in clean atExit end
+		  ; Primitive.halt sts
+                  ; raise Fail "exit")
+	 else raise Fail (concat ["exit must have 0 <= status < 256: saw ",
+				  Int.toString sts])
    end
+

@@ -31,7 +31,7 @@ fun prepend (T r: 'a t, f: 'b -> 'a): 'b t =
 
 datatype state =
    Normal
- | InHandler of unit t
+ | InHandler
     
 val state = ref Normal
 
@@ -46,13 +46,7 @@ local
 		  (func := NONE
 		   (* Close the atomicBegin of the thread that switched to me. *)
 		   ; atomicEnd ()
-		   ; (x ()
-		      handle e =>
-		      die (concat ["Thread raised exception: ",
-				   case e of
-				      Fail s => concat ["Fail ", s]
-				    | _ => exnName e,
-			           "\n"]))
+		   ; (x () handle e => Exn.topLevelHandler e)
 		   ; die "Thread didn't exit properly.\n"))
    val switching = ref false
 in
@@ -72,7 +66,7 @@ in
 			  ; raise e)
 	    val (T t': 'b t, x: unit -> 'b) = f (T t) handle e => fail e
 	    val primThread =
-	       case !t' before t' := Dead of
+	       case !t' before (t' := Dead; switching := false) of
 		  Dead => fail (Fail "switch to a Dead thread")
 		| New g => (func := SOME (g o x)
 			    ; Prim.copy base
@@ -138,7 +132,8 @@ fun setHandler (f: unit t -> unit t): unit =
 	    loop ()
 	 end
    in
-      Prim.setHandler (toPrimitive (new loop))
+      Prim.setHandler
+      (toPrimitive (new (fn () => loop () handle e => Exn.topLevelHandler e)))
    end
 
 type 'a thread = 'a t

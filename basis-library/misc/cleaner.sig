@@ -11,7 +11,6 @@ signature CLEANER =
       val addNew: t * (unit -> unit) -> unit
       val atExit: t
       val atLoadWorld: t
-      val atSaveWorld: t
       val clean: t -> unit
       val new: unit -> t
       val remove: t * UniqueId.id -> unit

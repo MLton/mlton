@@ -45,8 +45,6 @@ functor TextIO (
 
 		     val addNew: t * (unit -> unit) -> unit
 		     val atExit: t
-		     val atLoadWorld: t
-		     val atSaveWorld: t
 		  end
 	       ) =
 struct
@@ -160,9 +158,6 @@ fun getPosOut(out as ref (Out {fd, bufStyle, ...})) =
 
 val newOut =
    let
-      val _ =
-	 Cleaner.addNew (Cleaner.atSaveWorld, fn () =>
-			 List.app flushOut (!openOuts))
       val _ = 
 	 Cleaner.addNew
 	 (Cleaner.atExit, fn () =>

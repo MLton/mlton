@@ -41,6 +41,7 @@ OBJS =						\
 	basis/MLton/spawne.o			\
 	basis/MLton/spawnp.o			\
 	basis/MLton/size.o			\
+	basis/MLton/world.o			\
 	basis/OS/FileSys/tmpnam.o		\
 	basis/PackReal/subVec.o			\
 	basis/PackReal/update.o			\
@@ -191,6 +192,7 @@ DEBUG_OBJS =					\
 	basis/MLton/spawne-gdb.o		\
 	basis/MLton/spawnp-gdb.o		\
 	basis/MLton/size-gdb.o			\
+	basis/MLton/world-gdb.o			\
 	basis/OS/FileSys/tmpnam-gdb.o		\
 	basis/PackReal/subVec-gdb.o		\
 	basis/PackReal/update-gdb.o		\

@@ -40,31 +40,41 @@ void asfail(char *file, int line, char *prop)
 	abort();
 }
 
+/* safe version of write */
+void swrite(int fd, const void *buf, size_t count) {
+	if (0 == count) return;
+	unless (count == write(fd, buf, count))
+		diee("swrite failed");
+}
+
+void swriteUint(int fd, uint n) {
+	swrite(fd, &n, sizeof(uint));
+}
 
 /* safe version of fopen */
-FILE *sopen(char *fileName, char *mode) {
+FILE *sfopen(char *fileName, char *mode) {
 	FILE *file;
 	
-	if ((file = fopen((char*)fileName, mode)) == NULL)
+	if (NULL == (file = fopen((char*)fileName, mode)))
 		diee("sopen unable to open file %s", fileName);
 	return file;
 }
 
 /* safe version of fwrite */
-void swrite(void *ptr, size_t size, size_t nmemb, FILE *file) {
+void sfwrite(void *ptr, size_t size, size_t nmemb, FILE *file) {
 	size_t bytes;
 
 	bytes = size * nmemb;
 	if (0 == bytes) return;
 	unless (1 == fwrite(ptr, size * nmemb, 1, file))
-		diee("swrite failed");
+		diee("sfwrite failed");
 }
 
-void swriteUint(uint n, FILE *file) {
-	swrite(&n, sizeof(uint), 1, file);
+void sfwriteUint(uint n, FILE *file) {
+	sfwrite(&n, sizeof(uint), 1, file);
 }
 
-void sread(void *ptr, size_t size, size_t nmemb, FILE *file) {
+void sfread(void *ptr, size_t size, size_t nmemb, FILE *file) {
 	size_t bytes;
 
 	bytes = size * nmemb;
@@ -73,10 +83,10 @@ void sread(void *ptr, size_t size, size_t nmemb, FILE *file) {
 		diee("sread failed");
 }
 
-uint sreadUint(FILE *file) {
+uint sfreadUint(FILE *file) {
 	uint n;
 
-	sread(&n, sizeof(uint), 1, file);
+	sfread(&n, sizeof(uint), 1, file);
 
 	return n;
 }

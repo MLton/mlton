@@ -60,15 +60,16 @@ extern void asfail(char *file, int line, char *prop);
 #define	assert(p)	((p) ? (void)0 : asfail(__FILE__, __LINE__, #p))
 #endif
 
-FILE *sopen(char *fileName, char *mode);
+/* safe version of write */
+void swrite(int fd, const void *buf, size_t count);
+void swriteUint(int fd, uint n);
 
-/* safe version of fwrite */
-void swrite(void *ptr, size_t size, size_t nmemb, FILE *file);
-void swriteUint(uint n, FILE *file);
-
-/* safe version of fread */
-void sread(void *ptr, size_t size, size_t nmemb, FILE *file);
-uint sreadUint(FILE *file);
+/* safe versions of fopen, fread, fwrite */
+FILE *sfopen(char *fileName, char *mode);
+void sfread(void *ptr, size_t size, size_t nmemb, FILE *file);
+uint sfreadUint(FILE *file);
+void sfwrite(void *ptr, size_t size, size_t nmemb, FILE *file);
+void sfwriteUint(uint n, FILE *file);
 
 /* safe mmap and munmap */
 void *smmap(size_t length);

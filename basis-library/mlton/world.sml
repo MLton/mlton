@@ -8,33 +8,39 @@ structure World: MLTON_WORLD =
        *   - open file descriptors
        *   - redetermine buffer status when restart
        *)
-      fun save' (file: string,
-		 f: (unit -> unit) -> unit): status =
-	 (let open Cleaner in clean atSaveWorld end
-	  ; (case Posix.Process.fork () of
-		NONE =>
-		   (Cleaner.clean Cleaner.atExit
-		    ; f (fn () =>
-			 (Prim.save (String.nullTerm file)
-			  ; Cleaner.clean Cleaner.atLoadWorld))
-		    ; Clone)
-	      | SOME pid =>
-		   let
-		      open Posix.Process
-		      val (pid', status) = waitpid (W_CHILD pid, [])
-		   in
-		      if pid = pid' andalso status = W_EXITED
-			 then Original
-		      else raise Fail (concat ["World.save ", file, " failed"])
-		   end))
+      fun save' (file: string): status =
+	 let
+	    val fd =
+	       let
+		  open Posix.FileSys
+		  val flags =
+		     let
+			open S
+		     in
+			flags [irusr, iwusr, irgrp, iwgrp, iroth, iwoth]
+		     end
+	       in
+		   (creat (file, flags))
+	       end
+	    val _ = Prim.save (Posix.FileSys.fdToWord fd)
+	 in
+	    if Prim.isOriginal ()
+	       then (Posix.IO.close fd; Original)
+	    else (Prim.makeOriginal ()
+		  ; Cleaner.clean Cleaner.atLoadWorld
+		  ; Clone)
+	 end
 
-      fun saveThread (f: string, t: unit Thread.t) =
-	 save' (f, fn save => Thread.switch' (fn _ => (t, save)))
+      fun saveThread (file: string, t: unit Thread.t): unit =
+	 case save' file of
+	    Clone => Thread.switch (fn _ => (t, ()))
+	  | Original => ()
 	 
-      fun save (f: string) =
+      fun save (file: string): status =
 	 case !Thread.state of
-	    Thread.Normal => save' (f, fn save => save ())
-	  | Thread.InHandler t => saveThread (f, t)
+	    Thread.Normal => save' file
+	  | Thread.InHandler =>
+	       raise Fail "cannot call MLton.World.save within signal handler"
 
       fun load (file: string): 'a =
 	 if let open OS_FileSys

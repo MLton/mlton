@@ -60,17 +60,11 @@ val (get, set, handlers) =
 			 else Ignore)
       val _ =
 	 Cleaner.addNew
-	 (Cleaner.atSaveWorld, fn () =>
-	  Array.modify (fn _ => Default) handlers)
-
-      val _ =
-	 Cleaner.addNew
 	 (Cleaner.atLoadWorld, fn () =>
-	  Array.appi
-	  (fn (s, h) =>
-	   if Prim.isDefault s
-	      then ()
-	   else Array.update (handlers, s, Ignore))
+	  Array.modifyi
+	  (fn (s, _) => if Prim.isDefault s
+			   then Default
+			else Ignore)
 	  (handlers, 0, NONE))
    in
       (fn s => Array.sub (handlers, s),
@@ -102,6 +96,9 @@ val handleWith' =
        * As soon as possible after a C signal is received, this signal
        * handler walks over the array of all SML handlers, and invokes any
        * one for which a C signal has been received.
+       *
+       * Any exceptions raised by a signal handler will be caught by
+       * the topLevelHandler, which is installed in thread.sml.
        *)
       val () =
 	 Thread.setHandler
@@ -111,11 +108,12 @@ val handleWith' =
 	   case h of
 	      Handler f =>
 		 (if Prim.isPending s
-		     then let val _ = Thread.state := Thread.InHandler t
-			      val t = (f t handle _ =>
-				       die "Signal handler raised exception.\n")
-			  in Thread.state := Thread.Normal
-			     ; t
+		     then let
+			     val _ = Thread.state := Thread.InHandler
+			     val t = f t
+			     val _ = Thread.state := Thread.Normal
+			  in
+			     t
 			  end
 		  else t)
 	    | _ => t)

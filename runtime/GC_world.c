@@ -1,3 +1,4 @@
+#include <string.h>
 #include "gc.h"
 
 /* TERMINATOR is used to separate the human readable messages at the beginning
@@ -9,31 +10,25 @@ static const char GC_worldTerminator = '\000';
 /*                   GC_saveWorld                    */
 /* ------------------------------------------------- */
 
-void GC_saveWorld(GC_state s, 
-			pointer fileName,
-			void (*saveGlobals)(FILE *file)) {
-	FILE *file;
+void GC_saveWorld(GC_state s, int fd, void (*saveGlobals)(int fd)) {
+	char buf[80];
 
 	GC_enter(s);
-	/* The sopen must happen before the GC, because the GC will invalidate
- 	 * the fileName pointer.
-	 */
-	file = sopen((char*)fileName, "w");
 	/* Compact the heap into fromSpace */
 	GC_doGC(s, 0, 0);
-	fprintf(file, "Heap file created by MLton.\nbase = %x\nfrontier = %x\n",
+	sprintf(buf,
+		"Heap file created by MLton.\nbase = %x\nfrontier = %x\n",
 		(uint)s->base,
 		(uint)s->frontier);
- 	fputc(GC_worldTerminator, file);
-	swriteUint(s->magic, file);
-	swriteUint((uint)s->base, file);
-	swriteUint((uint)s->frontier, file);
-	swriteUint((uint)s->currentThread, file);
-	swriteUint((uint)s->signalHandler, file);
- 	swrite(s->base, 1, s->frontier - s->base, file);
-	(*saveGlobals)(file);
-	fclose(file);
-	exit(0);
+	swrite(fd, buf, 1 + strlen(buf)); /* +1 to get the '\000' */
+	swriteUint(fd, s->magic);
+	swriteUint(fd, (uint)s->base);
+	swriteUint(fd, (uint)s->frontier);
+	swriteUint(fd, (uint)s->currentThread);
+	swriteUint(fd, (uint)s->signalHandler);
+ 	swrite(fd, s->base, s->frontier - s->base);
+	(*saveGlobals)(fd);
+	GC_leave(s);
 }
 
 /* ------------------------------------------------- */
@@ -77,21 +72,21 @@ void GC_loadWorld(GC_state s,
 	pointer base, frontier;
 	char c;
 	
-	file = sopen(fileName, "r");
+	file = sfopen(fileName, "r");
 	until ((c = fgetc(file)) == GC_worldTerminator or EOF == c);
 	if (EOF == c) die("Invalid world.");
-	magic = sreadUint(file);
+	magic = sfreadUint(file);
 	unless (s->magic == magic)
 		die("Invalid world: wrong magic number.");
-	base = (pointer)sreadUint(file);
-	frontier = (pointer)sreadUint(file);
-	s->currentThread = (GC_thread)sreadUint(file);
-	s->signalHandler = (GC_thread)sreadUint(file);
+	base = (pointer)sfreadUint(file);
+	frontier = (pointer)sfreadUint(file);
+	s->currentThread = (GC_thread)sfreadUint(file);
+	s->signalHandler = (GC_thread)sfreadUint(file);
 	heapSize = frontier - base;
 	s->bytesLive = heapSize;
        	GC_setHeapParams(s, heapSize);
 	GC_fromSpace(s);
-	sread(s->base, 1, heapSize, file);
+	sfread(s->base, 1, heapSize, file);
 	s->frontier = s->base + heapSize;
 	(*loadGlobals)(file);
 	unless (EOF == fgetc(file))

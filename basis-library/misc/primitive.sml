@@ -682,6 +682,6 @@ structure Primitive =
 	 struct
 	    val isOriginal = _ffi "World_isOriginal": unit -> bool;
 	    val makeOriginal = _ffi "World_makeOriginal": unit -> unit;
-	    val save = _prim "World_save": string -> unit;
+	    val save = _prim "World_save": word (* filedes *) -> unit;
 	 end
    end

@@ -16,19 +16,19 @@
 	static pointer globalpointer[p];					\
 	static uint globaluint[u];						\
 	static pointer globalpointerNonRoot[nr];				\
-	static void saveGlobals(FILE *file) {					\
-		swrite(globaluchar, sizeof(char), c, file);			\
-		swrite(globaldouble, sizeof(double), d, file);			\
-		swrite(globalint, sizeof(int), i, file);			\
-		swrite(globalpointer, sizeof(pointer), p, file);		\
-		swrite(globaluint, sizeof(uint), u, file);			\
+	void saveGlobals(int fd) {						\
+		swrite(fd, globaluchar, sizeof(char) * c);			\
+		swrite(fd, globaldouble, sizeof(double) * d);			\
+		swrite(fd, globalint, sizeof(int) * i);				\
+		swrite(fd, globalpointer, sizeof(pointer) * p);			\
+		swrite(fd, globaluint, sizeof(uint) * u);			\
 	}									\
 	static void loadGlobals(FILE *file) {					\
-		sread(globaluchar, sizeof(char), c, file);			\
-		sread(globaldouble, sizeof(double), d, file);			\
-		sread(globalint, sizeof(int), i, file);				\
-		sread(globalpointer, sizeof(pointer), p, file);			\
-		sread(globaluint, sizeof(uint), u, file);			\
+		sfread(globaluchar, sizeof(char), c, file);			\
+		sfread(globaldouble, sizeof(double), d, file);			\
+		sfread(globalint, sizeof(int), i, file);			\
+		sfread(globalpointer, sizeof(pointer), p, file);		\
+		sfread(globaluint, sizeof(uint), u, file);			\
 	}
 
 #ifdef GLOBAL_REGS

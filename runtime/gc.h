@@ -360,6 +360,7 @@ void GC_done (GC_state s);
 
 void GC_doGC (GC_state s, uint bytesRequested, uint stackBytesRequested);
 void GC_enter (GC_state s);
+void GC_leave(GC_state s);
 
 /* Do a gc.
  * This will also resize the stack if necessary.
@@ -415,15 +416,10 @@ void GC_threadSwitchTo(GC_state s, GC_thread t);
 /*                      Worlds                       */
 /* ------------------------------------------------- */
 
-/* GC_saveWorld should be called in a child process, because it exits when done.
- */
-void GC_saveWorld(GC_state s, 
-			pointer fileName,
-			void (*saveGlobals)(FILE *file));
-
 void GC_loadWorld(GC_state s, 
 			char *fileName,
 			void (*loadGlobals)(FILE *file));
+void GC_saveWorld(GC_state s, int fd, void (*saveGlobals)(int fd));
 
 /* ------------------------------------------------- */
 /*                    GC_handler                     */

@@ -44,8 +44,6 @@ enum {
 #define WORD8_VECTOR_HEADER GC_arrayHeader(1, 0)
 #define THREAD_HEADER GC_objectHeader(2, 1)
 
-static void leave(GC_state s);
-
 #define SPLIT_HEADER()								\
 	do {									\
 		tag = header & TAG_MASK;					\
@@ -744,8 +742,7 @@ GC_enter(GC_state s)
 	assert(invariant(s));
 }
 
-static inline void
-leave(GC_state s)
+void GC_leave(GC_state s)
 {
 	assert(GC_mutatorInvariant(s));
 	if (s->signalIsPending and 0 == s->canHandle)
@@ -763,7 +760,7 @@ GC_copyCurrentThread(GC_state s)
 	t = s->currentThread;
 	copyThread(s, t, t->stack->used);
 	assert(s->frontier <= s->limit);
-	leave(s);
+	GC_leave(s);
 }
 
 static inline uint
@@ -779,7 +776,7 @@ GC_copyThread(GC_state s, GC_thread t)
 	assert (t->stack->reserved == t->stack->used);
 	copyThread (s, t, stackNeedsReserved(s, t->stack));
 	assert(s->frontier <= s->limit);
-	leave(s);
+	GC_leave(s);
 }
 
 extern struct GC_state gcState;
@@ -1675,7 +1672,7 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 		s->canHandle = 2;
 		switchToThread(s, s->signalHandler);
 	}
-	leave(s);
+	GC_leave(s);
 	} while ((W64)(W32)s->frontier + (W64)s->currentThread->bytesNeeded 
 			> (W64)(W32)s->limit);
 }

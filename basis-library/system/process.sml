@@ -50,13 +50,7 @@ structure OS_Process: OS_PROCESS_EXTRA =
 
       fun terminate x = exit (Word8.fromInt x)
 
-      fun exit sts =
-	 if 0 <= sts andalso sts < 256
-	    then (let open Cleaner in clean atExit end
-		     ; Primitive.halt sts
-		     ; raise Fail "exit")
-	 else raise Fail (concat ["exit must have 0 <= status < 256: saw ",
-				  Int.toString sts])
+      val exit = MLton.Process.exit
 
       val getEnv = Posix.ProcEnv.getenv
    end

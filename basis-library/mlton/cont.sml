@@ -18,7 +18,7 @@ type 'a t = (unit -> 'a) -> unit
 fun callcc (f: 'a t -> 'a): 'a =
    (dummy ()
     ; (case !State.state of
-	  State.InHandler _ =>
+	  State.InHandler =>
 	     die "callcc can not be used in a signal handler\n"
 	| State.Normal => 
 	     let

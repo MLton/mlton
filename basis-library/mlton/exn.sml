@@ -20,4 +20,38 @@ structure Exn: MLTON_EXN =
 			      end)
 		  ; ! o extra)
 	 else fn _ => []
+
+      local
+	 val message = Primitive.Stdio.print
+      in
+	 fun topLevelHandler exn =
+	    (message "unhandled exception: "
+	     ; let
+		  fun loop e =
+		     case e of
+			Fail s => (message "Fail "; message s)
+		      | IO.Io {cause, function, ...} => (message "IO "
+							 ; message function
+							 ; message ": "
+							 ; loop cause)
+		      | PosixError.SysErr (s, _) =>
+			   (message "SysErr "; message s)
+		      | _ => message (exnName e)
+	       in
+		  loop exn
+	       end
+	     ; message "\n"
+	     ; (case history exn of
+		   [] => ()
+		 | l =>
+		      (message "with history:\n"
+		       ; (List.app
+			  (fn s => (message "\t"; message s; message "\n"))
+			  l)))
+	     ; Process.exit 1)
+	    handle _ => (message "Toplevel handler raised exception.\n"
+			 ; Primitive.halt 1)
+      end
+
+      val _ = Primitive.Exn.setTopLevelHandler topLevelHandler
    end

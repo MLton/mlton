@@ -118,6 +118,10 @@ general/sml90.sml
 
 mlton/array.sig
 mlton/vector.sig
+mlton/process.sig
+mlton/process.sml
+mlton/exn.sig
+mlton/exn.sml
 mlton/itimer.sig
 mlton/itimer.sml
 mlton/thread.sig
@@ -150,10 +154,6 @@ mlton/rusage.sig
 mlton/rusage.sml
 mlton/syslog.sig
 mlton/syslog.sml
-mlton/exn.sig
-mlton/exn.sml
-mlton/process.sig
-mlton/process.sml
 mlton/mlton.sig
 mlton/mlton.sml
 
@@ -167,8 +167,6 @@ system/unix.sig
 system/unix.sml
 system/timer.sig
 system/timer.sml
-
-misc/top-level-handler.sml
 
 sml-nj/sml-nj.sig
 sml-nj/sml-nj.sml

@@ -24,6 +24,5 @@ fun clean cs = app (fn (_, c) => c ()) (!cs)
    
 val atExit = new ()
 val atLoadWorld = new ()
-val atSaveWorld = new ()
    
 end
