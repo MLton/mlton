@@ -213,9 +213,10 @@ datatype decNode =
 	   pat: Pat.t,
 	   tyvars: Tyvar.t vector}
   | Fun of {tyvars: Tyvar.t vector,
-	    decs: {var: Var.t,
+	    decs: {match: match,
+		   profile: SourceInfo.t,
 		   types: Type.t vector,
-		   match: match} vector}
+		   var: Var.t} vector}
   | Datatype of {
 		 tyvars: Tyvar.t vector,
 		 tycon: Tycon.t,
@@ -237,7 +238,8 @@ and expNode =
   | Const of Ast.Const.t
   | Con of Con.t
   | Record of exp Record.t
-  | Fn of match
+  | Fn of {match: match,
+	   profile: SourceInfo.t option}
   | App of exp * exp
   | Let of dec vector * exp
   | Constraint of exp * Type.t
@@ -307,7 +309,7 @@ in
 		     {tyvars = tyvars,
 		      vbs = Vector.new0 (),
 		      rvbs = (Vector.map
-			      (decs, fn {var, types, match} =>
+			      (decs, fn {match, types, var, ...} =>
 			       {pat = (Vector.fold
 				       (types, Apat.var (Var.toAst var),
 					fn (t, p) =>
@@ -325,21 +327,20 @@ in
       end
    and expToAst e =
       case Wrap.node e of
-	 Var x => Exp.var (Var.toAst x)
+	 App (e1, e2) => Exp.app (expToAst e1, expToAst e2)
+       | Con c => Exp.con (Con.toAst c)
+       | Const c => Exp.const c
+       | Constraint (e, t) => Exp.constraint (expToAst e, Type.toAst t)
+       | Fn {match, ...} => Exp.fnn (matchToAst match)
+       | Handle (try, match) => Exp.handlee (expToAst try, matchToAst match)
+       | Let (ds, e) => Exp.lett (Vector.map (ds, decToAst), expToAst e)
        | Prim p => Exp.longvid (Ast.Longvid.short
 				(Ast.Longvid.Id.fromString (Prim.toString p,
 							    Region.bogus)))
-       | Const c => Exp.const c
-       | Con c => Exp.con (Con.toAst c)
+       | Raise {exn, filePos} =>
+	    Exp.raisee {exn = expToAst exn, filePos = filePos}
        | Record r => Exp.record (Record.map (r, expToAst))
-       | Fn m => Exp.fnn (matchToAst m)
-       | App (e1, e2) => Exp.app (expToAst e1, expToAst e2)
-       | Let (ds, e) => Exp.lett (Vector.map (ds, decToAst), expToAst e)
-       | Constraint (e, t) => Exp.constraint (expToAst e, Type.toAst t)
-       | Handle (try, match) =>
-	    Exp.handlee (expToAst try, matchToAst match)
-       | Raise {exn, filePos} => Exp.raisee {exn = expToAst exn,
-					     filePos = filePos}
+       | Var x => Exp.var (Var.toAst x)
 
    and matchToAst m =
       let
@@ -355,21 +356,21 @@ fun makeForeachVar f =
    let
       fun exp e =
 	 case Wrap.node e of
-	    Var x => f x
-	  | Record r => Record.foreach (r, exp)
-	  | Fn m => match m
-	  | App (e1, e2) => (exp e1; exp e2)
-	  | Let (ds, e) => (Vector.foreach (ds, dec); exp e)
+	    App (e1, e2) => (exp e1; exp e2)
 	  | Constraint (e, _) => exp e
+	  | Fn {match = m, ...} => match m
 	  | Handle (e, m) => (exp e; match m)
+	  | Let (ds, e) => (Vector.foreach (ds, dec); exp e)
 	  | Raise {exn, ...} => exp exn
+	  | Record r => Record.foreach (r, exp)
+	  | Var x => f x
 	  | _ => ()
       and match m = Vector.foreach (Match.rules m, exp o #2)
       and dec d =
 	 case Wrap.node d of
-	    Val {exp = e, ...} => exp e
-	  | Fun {decs, ...} => Vector.foreach (decs, match o #match)
+	    Fun {decs, ...} => Vector.foreach (decs, match o #match)
 	  | Overload {ovlds, ...} => Vector.foreach (ovlds, f)
+	  | Val {exp = e, ...} => exp e
 	  | _ => ()
    in
       {exp = exp, dec = dec}
@@ -392,8 +393,9 @@ structure Exp =
       fun fnn (m, r) = makeRegion (Fn m, r)
 
       fun fn1 (p, e, r) =
-	 fnn (Match.new {filePos = "",
-			 rules = Vector.new1 (p, e)},
+	 fnn ({match = Match.new {filePos = "",
+				  rules = Vector.new1 (p, e)},
+	       profile = NONE},
 	      r)
 
       fun isExpansive e =
@@ -415,10 +417,12 @@ structure Exp =
 	 
       fun lambda (x, e, r) = fn1 (makeRegion (Pat.Var x, r), e, r)
 
-      fun delay (e, r) = fn1 (Pat.unit r, e, r)
+(*      fun delay (e, r) = fn1 (Pat.unit r, e, r) *)
 
       fun casee (test, rules, r) =
-	 makeRegion (App (makeRegion (Fn rules, r),
+	 makeRegion (App (makeRegion (Fn {match = rules,
+					  profile = NONE},
+				      r),
 			  test),
 		     r)
 
@@ -485,24 +489,24 @@ structure Exp =
 	 let
 	    val loop = Var.newNoname ()
 	    val call = makeRegion (App (var (loop, r), unit r), r)
+	    val match =
+	       Match.new {filePos = "",
+			  rules = (Vector.new1
+				   (Pat.tuple (Vector.new0 (), r),
+				    iff (test,
+					 seq (Vector.new2 (expr, call), r),
+					 unit r,
+					 r)))}
 	 in
 	    makeRegion
 	    (Let (Vector.new1
 		  (makeRegion
 		   (Fun {tyvars = Vector.new0 (),
 			 decs = (Vector.new1
-				 {var = loop,
+				 {match = match,
+				  profile = SourceInfo.anonymous r,
 				  types = Vector.new0 (),
-				  match = (Match.new
-					   {filePos = "",
-					    rules =
-					    Vector.new1
-					    (Pat.tuple (Vector.new0 (), r),
-					     iff (test,
-						  seq (Vector.new2 (expr, call),
-						       r),
-						  unit r,
-						  r))})})},
+				  var = loop})},
 		    r)),
 		  call),
 	     r)
@@ -550,20 +554,20 @@ structure Program =
 	    fun exp e =
 	       (inc ()
 		; (case Exp.node e of
-		      Fn m => match m
-		    | Record r => Record.foreach (r, exp)
-		    | App (e, e') => (exp e; exp e')
-		    | Let (ds, e) => (Vector.foreach (ds, dec); exp e)
+		      App (e, e') => (exp e; exp e')
 		    | Constraint (e, _) => exp e
+		    | Fn {match = m, ...} => match m
 		    | Handle (e, m) => (exp e; match m)
+		    | Let (ds, e) => (Vector.foreach (ds, dec); exp e)
 		    | Raise {exn, ...} => exp exn
+		    | Record r => Record.foreach (r, exp)
 		    | _ => ()))
 	    and match m = Vector.foreach (Match.rules m, exp o #2)
 	    and dec d =
 	       case Dec.node d of
-		  Val {exp = e, ...} => exp e
+		  Exception _ => inc ()
 		| Fun {decs, ...} => Vector.foreach (decs, match o #match)
-		| Exception _ => inc ()
+		| Val {exp = e, ...} => exp e
 		| _ => ()
 	    val _ = Vector.foreach (ds, dec)
 	 in

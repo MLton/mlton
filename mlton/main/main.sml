@@ -263,11 +263,11 @@ fun makeOptions {usage} =
        (Expert, "profile-basis", " {false|true}",
 	"profile the basis implementation",
 	boolRef profileBasis),
-       (Expert, "profile-il", " {xml}", "where to insert profile exps",
+       (Expert, "profile-il", " {source}", "where to insert profile exps",
 	SpaceString
 	(fn s =>
 	 case s of
-	    "xml" => profileIL := ProfileXML
+	    "source" => profileIL := ProfileSource
 	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
        (Normal, "profile-stack", " {false|true}",
 	"profile the stack",

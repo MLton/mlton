@@ -841,7 +841,7 @@ fun infer {program = p: CoreML.Program.t,
 		      (fn () => Vector.map (valOf (!argsRef) (), Xtype.var))
 		   val (decs, env') =
 		      Vector.mapAndFold
-		      (decs, env, fn ({var, types, match}, env) =>
+		      (decs, env, fn ({match, profile, types, var}, env) =>
 		       let
 			  val argType = newType ()
 			  val resultType = newType ()
@@ -852,10 +852,11 @@ fun infer {program = p: CoreML.Program.t,
 			      Type.unify (t, Type.fromCoreML t',
 					  Cmatch.region match))
 		       in
-			  ({var = var,
-			    argType = argType,
+			  ({argType = argType,
+			    match = match,
+			    profile = profile,
 			    resultType = resultType,
-			    match = match},
+			    var = var},
 			   Env.extendVarRange
 			   (env, var,
 			    VarRange.T {scheme = Scheme.fromType t,
@@ -864,17 +865,19 @@ fun infer {program = p: CoreML.Program.t,
 		   val region = Cmatch.region (#match (Vector.sub (decs, 0)))
 		   val decs =
 		      Vector.map
-		      (decs, fn {var, match, argType, resultType} =>
+		      (decs, fn {argType, match, profile, resultType, var} =>
 		       let
 			  val saved = !currentFunction
 			  val _ = currentFunction := var :: saved
 			  val rs = inferMatchUnify (match, env',
 						    argType, resultType)
 			  val _ = currentFunction := saved
-		       in {var = var,
+		       in
+			  {profile = profile,
 			   region = Cmatch.region match,
 			   rules = rs,
-			   ty = Type.arrow (argType, resultType)}
+			   ty = Type.arrow (argType, resultType),
+			   var = var}
 		       end)
 		   val {bound, schemes} =
 		      Env.closes (env, Vector.map (decs, #ty), tyvars, region)
@@ -887,7 +890,8 @@ fun infer {program = p: CoreML.Program.t,
 			  [Xdec.Fun
 			   {tyvars = bound (),
 			    decs = (Vector.map
-				    (decs, fn {var, region, rules, ty} =>
+				    (decs,
+				     fn {var, profile, region, rules, ty} =>
 				     let
 					val ty = Type.toXml (ty, region)
 					val {arg, argType, body, ...} =
@@ -895,9 +899,7 @@ fun infer {program = p: CoreML.Program.t,
 					   (forceRulesMatch (rules, region))
 					val body =
 					   Xml.Exp.enterLeave
-					   (body,
-					    #2 (Xtype.dearrow ty),
-					    SourceInfo.fromRegion region)
+					   (body, #2 (Xtype.dearrow ty), profile)
 					val lambda =
 					   Xlambda.new
 					   {arg = arg,
@@ -986,7 +988,7 @@ fun infer {program = p: CoreML.Program.t,
 				    ty = Type.toXml (ty, region)}),
 		       ty, region)
 		   end
-	      | Cexp.Fn m =>
+	      | Cexp.Fn {match = m, profile} =>
 		   let
 		      val rs as {argType, resultType, rules, ...} =
 			 inferMatch (m, env)
@@ -997,9 +999,10 @@ fun infer {program = p: CoreML.Program.t,
 			     Xlambda.dest (forceRulesMatch (rs, region))
 			  val resultType = Type.toXml (resultType, region)
 			  val body =
-			     Xml.Exp.enterLeave (body,
-						 resultType,
-						 SourceInfo.fromRegion region)
+			     case profile of
+				NONE => body
+			      | SOME si =>
+				   Xml.Exp.enterLeave (body, resultType, si)
 		       in
 			  Xexp.lambda {arg = arg,
 				       argType = argType,

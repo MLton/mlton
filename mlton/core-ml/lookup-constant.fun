@@ -66,7 +66,12 @@ fun decsConstants (decs: CoreML.Dec.t vector): res =
       open Exp Dec
       fun loopExp (e: Exp.t, ac: res): res =
 	 case Exp.node e of
-	    Prim p =>
+	    App (e, e') => loopExp (e, loopExp (e', ac))
+	  | Constraint (e, _) => loopExp (e, ac)
+	  | Fn {match = m, ...} => loopMatch (m, ac)
+	  | Handle (e, m) => loopMatch (m, loopExp (e, ac))
+	  | Let (ds, e) => loopDecs (ds, loopExp (e, ac))
+	  | Prim p =>
 	       (case Prim.name p of
 		   Prim.Name.Constant c =>
 		      let
@@ -96,13 +101,8 @@ fun decsConstants (decs: CoreML.Dec.t vector): res =
 			  | _ => strange ()
 		      end
 		 | _ => ac)
-	  | Record r => Record.fold (r, ac, loopExp)
-	  | Fn m => loopMatch (m, ac)
-	  | App (e, e') => loopExp (e, loopExp (e', ac))
-	  | Let (ds, e) => loopDecs (ds, loopExp (e, ac))
-	  | Constraint (e, _) => loopExp (e, ac)
-	  | Handle (e, m) => loopMatch (m, loopExp (e, ac))
 	  | Raise {exn, ...} => loopExp (exn, ac)
+	  | Record r => Record.fold (r, ac, loopExp)
 	  | _ => ac
       and loopMatch (m, ac: res): res =
 	 Vector.fold (Match.rules m , ac, fn ((_, e), ac) => loopExp (e, ac))

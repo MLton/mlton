@@ -95,31 +95,29 @@ fun profile program =
       val profileTime: bool = profile = Control.ProfileTime
       val frameProfileIndices = ref []
       local
-	 val table: InfoNode.t HashSet.t =
-	    HashSet.new {hash = SourceInfo.hash o InfoNode.info}
 	 val c = Counter.new 0
 	 val sourceInfos = ref []
       in
-	 fun sourceInfoNode (si: SourceInfo.t) =
-	    HashSet.lookupOrInsert
-	    (table, SourceInfo.hash si,
-	     fn InfoNode.T {info = si', ...} => SourceInfo.equals (si, si'),
-	     fn () => let
-			 val _ = List.push (sourceInfos, si)
-			 val index = Counter.next c
-		      in
-			 InfoNode.T {index = index,
-				     info = si,
-				     successors = ref []}
-		      end)
+	 val {get = sourceInfoNode, ...} =
+	    Property.get (SourceInfo.plist,
+			  Property.initFun
+			  (fn si =>
+			   let
+			      val _ = List.push (sourceInfos, si)
+			      val index = Counter.next c
+			   in
+			      InfoNode.T {index = index,
+					  info = si,
+					  successors = ref []}
+			   end))
 	 val sourceInfoIndex = InfoNode.index o sourceInfoNode
-	 fun firstEnter (ps: Push.t list): InfoNode.t option =
-	    List.peekMap (ps, fn p =>
-			  case p of
-			     Push.Enter n => SOME n
-			   | _ => NONE)
 	 fun makeSources () = Vector.fromListRev (!sourceInfos)
       end
+      fun firstEnter (ps: Push.t list): InfoNode.t option =
+	 List.peekMap (ps, fn p =>
+		       case p of
+			  Push.Enter n => SOME n
+			| _ => NONE)
       (* unknown must be 0, which == SOURCES_INDEX_UNKNOWN from gc.h *)
       val unknownInfoNode = sourceInfoNode SourceInfo.unknown
       val unknownIndex = InfoNode.index unknownInfoNode
@@ -243,14 +241,19 @@ fun profile program =
 				 andalso
 				 (equals (si, gcArrayAllocate)
 				  orelse (isBasis si 
-					  andalso
-					  (equals (si, main)
-					   orelse not (equals (si', main)))))
+					  andalso not (equals (si', main))))
 			      end
 			      then no ()
 			   else (InfoNode.call {from = node', to = node ()}
 				 ; yes ())
 	       end
+	    val enter =
+	       Trace.trace2 ("Profile.enter",
+			     List.layout Push.layout,
+			     SourceInfo.layout,
+			     Layout.tuple2 (List.layout Push.layout,
+					    Bool.layout))
+	       enter
 	    val _ =
 	       Vector.foreach
 	       (blocks, fn block as Block.T {label, ...} =>
@@ -588,9 +591,7 @@ fun profile program =
 						"GC_gc" => SourceInfo.gc
 					      | "GC_arrayAllocate" =>
 						   SourceInfo.gcArrayAllocate
-					      | _ => 
-						   SourceInfo.fromString
-						   (concat ["<", name, ">"])
+					      | _ => SourceInfo.fromC name
 					  val set =
 					     setCurrentSource
 					     (sourceSeqIndex

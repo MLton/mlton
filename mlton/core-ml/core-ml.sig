@@ -70,7 +70,8 @@ signature CORE_ML =
 	     | Con of Con.t
 	     | Const of Ast.Const.t
 	     | Constraint of t * Type.t
-	     | Fn of match
+	     | Fn of {match: match,
+		      profile: SourceInfo.t option}
 	     | Handle of t * match
 	     | Let of dec vector * t
 	     | Prim of Prim.t
@@ -83,7 +84,7 @@ signature CORE_ML =
 
 	    val andAlso: t * t * Region.t -> t
 	    val casee: t * match * Region.t -> t
-	    val delay: t * Region.t -> t
+(*	    val delay: t * Region.t -> t *)
 	    val force: t * Region.t -> t
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val iff: t * t * t * Region.t -> t
@@ -130,11 +131,10 @@ signature CORE_ML =
 			    }
 	     | Fun of {
 		       tyvars: Tyvar.t vector,
-		       decs: {
-			      var: Var.t,
+		       decs: {match: Match.t,
+			      profile: SourceInfo.t,
 			      types: Type.t vector, (* multiple constraints *)
-			      match: Match.t
-			     } vector
+			      var: Var.t} vector
 		      }
 	     | Overload of {
 			    var: Var.t,

@@ -201,7 +201,7 @@ signature CONTROL =
 
       val profileBasis: bool ref
 
-      datatype profileIL = ProfileXML | ProfileSSA
+      datatype profileIL = ProfileSSA | ProfileSource
       val profileIL: profileIL ref
 	 
       val profileStack: bool ref

@@ -359,11 +359,11 @@ val profile = control {name = "profile",
 
 structure ProfileIL =
    struct
-      datatype t = ProfileSSA | ProfileXML
+      datatype t = ProfileSSA | ProfileSource
 
       val toString =
 	 fn ProfileSSA => "ProfileSSA"
-	  | ProfileXML => "ProfileXML"
+	  | ProfileSource => "ProfileSource"
    end
 
 val profileBasis = control {name = "profile basis",
@@ -373,7 +373,7 @@ val profileBasis = control {name = "profile basis",
 datatype profileIL = datatype ProfileIL.t
    
 val profileIL = control {name = "profile IL",
-			 default = ProfileXML,
+			 default = ProfileSource,
 			 toString = ProfileIL.toString}
    
 val profileStack = control {name = "profile stack",

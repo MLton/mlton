@@ -48,6 +48,7 @@ in
    structure Ctype = Type
    structure Cvar = Var
    structure Scheme = Scheme
+   structure SourceInfo = SourceInfo
    structure Tycon = Tycon
    structure Type = Type
    structure Tyvar = Tyvar
@@ -61,6 +62,26 @@ end
 
 structure Parse = PrecedenceParse (structure Ast = Ast
 				   structure Env = Env)
+
+structure Apat =
+   struct
+      open Apat
+
+      fun getName (p: t): string option =
+	 case node p of
+	    Var {name, ...} => SOME (Longvid.toString name)
+	  | Constraint (p, _) => getName p
+	  | FlatApp v =>
+	       if 1 = Vector.length v
+		  then getName (Vector.sub (v, 0))
+	       else NONE
+	  | Layered {var, ...} => SOME (Avar.toString var)
+	  | _ => NONE
+
+      val getName =
+	 Trace.trace ("Apat.getName", layout, Option.layout String.layout)
+	 getName
+   end
 
 structure Lookup =
    struct
@@ -304,7 +325,7 @@ in
 end
 
 val info = Trace.info "elaborateDec"
-val info' = Trace.info "elaborateExp"
+val elabExpInfo = Trace.info "elaborateExp"
 
 fun elaborateDec (d, E) =
    let
@@ -442,7 +463,8 @@ fun elaborateDec (d, E) =
 			   (clauses, fn {pats, resultType, body} =>
 			    let
 			       val {func, args} = Parse.parseClause (pats, E)
-			    in {func = func,
+			    in
+			       {func = func,
 				args = args,
 				resultType = resultType,
 				body =
@@ -488,54 +510,66 @@ fun elaborateDec (d, E) =
 			     then Error.bug "empty clauses in fundec"
 			  else
 			     let
-				val {args, ...} = Vector.sub (clauses, 0)
+				val {func, args, ...} = Vector.sub (clauses, 0)
+				val profile =
+				   SourceInfo.function
+				   {name = Ast.Var.toString func,
+				    region = region}
 				val numVars = Vector.length args
-			     in {var = newFunc,
+				val match =
+				   let
+				      val rs =
+					 Vector.map
+					 (clauses,
+					  fn {args, resultType, body, ...} =>
+					  let
+					     val (pats, body) =
+						Env.scope
+						(E, fn () =>
+						 (elaboratePatsV (args, E),
+						  elabExp body))
+					  in (Cpat.tuple (pats, region),
+					      constrain (body,
+							 elabTypeOpt resultType,
+							 region))
+					  end)
+				      fun make (i, xs) =
+					 if i = 0
+					    then
+					       Cexp.casee
+					       (Cexp.tuple
+						(Vector.rev
+						 (Vector.fromListMap
+						  (xs, fn x =>
+						   doit (Cexp.Var x))),
+						 region),
+						Cmatch.new {filePos = filePos,
+							    rules = rs},
+						region)
+					 else 
+					    let
+					       val x = Cvar.newNoname ()
+					    in
+					       Cexp.lambda
+					       (x,
+						make (i - 1, x :: xs),
+						region)
+					    end
+				   in if numVars = 1
+					 then Cmatch.new {filePos = filePos,
+							  rules = rs}
+				      else (case Cexp.node (make (numVars, [])) of
+					       Cexp.Fn {match = m, ...} => m
+					     | _ => Error.bug "elabFbs")
+				   end
+			     in
+				{match = match,
+				 profile = profile,
 				 types = Vector.new0 (),
-				 match =
-				 let
-				    val rs =
-				       Vector.map
-				       (clauses,
-					fn {args, resultType, body, ...} =>
-					let
-					   val (pats, body) =
-					      Env.scope
-					      (E, fn () =>
-					       (elaboratePatsV (args, E),
-						elabExp body))
-					in (Cpat.tuple (pats, region),
-					    constrain (body,
-						       elabTypeOpt resultType,
-						       region))
-					end)
-				    fun make (i, xs) =
-				       if i = 0
-					  then
-					     Cexp.casee
-					     (Cexp.tuple
-					      (Vector.rev
-					       (Vector.fromListMap
-						(xs, fn x => doit (Cexp.Var x))),
-					       region),
-					      Cmatch.new {filePos = filePos,
-							  rules = rs},
-					      region)
-				       else 
-					  let val x = Cvar.newNoname ()
-					  in Cexp.lambda (x,
-							  make (i - 1, x :: xs),
-							  region)
-					  end
-				 in if numVars = 1
-				       then Cmatch.new {filePos = filePos,
-							rules = rs}
-				    else (case Cexp.node (make (numVars, [])) of
-					     Cexp.Fn m => m
-					   | _ => Error.bug "elabFbs")
-				 end}
+				 var = newFunc}
 			     end)
-		   in Decs.single (Cdec.makeRegion (Cdec.Fun {tyvars = tyvars,
+		   in
+		      Decs.single (Cdec.makeRegion (Cdec.Fun {tyvars = tyvars,
 							      decs = decs},
 						    region))
 		   end
@@ -597,7 +631,8 @@ fun elaborateDec (d, E) =
 		      (* Must do all the es and rvbs pefore the ps because of
 		       * scoping rules.
 		       *)
-		      val es = Vector.map (vbs, elabExp o #exp)
+		      val es = Vector.map (vbs, fn {pat, exp, ...} =>
+					   elabExp' (exp, Apat.getName pat))
 		      fun varsAndTypes (p: Apat.t, vars, types)
 			 : Avar.t list * Atype.t list =
 			 let
@@ -640,9 +675,9 @@ fun elaborateDec (d, E) =
 			 (rvbs, fn {pat, ...} =>
 			  let
 			     val (vars, types) = varsAndTypes (pat, [], [])
-			     val var =
+			     val (name, var) =
 				case vars of
-				   [] => Cvar.newNoname ()
+				   [] => ("<anon>", Cvar.newNoname ())
 				 | x :: _ =>
 				      let
 					 val x' = Cvar.fromAst x
@@ -651,18 +686,24 @@ fun elaborateDec (d, E) =
 					    (vars, fn y =>
 					     Env.extendVar (E, y, x'))
 				      in
-					 x'
+					 (Avar.toString x, x')
 				      end
 			  in
-			     (var,
-			      Vector.fromListMap (types, Scheme.ty o elabType))
+			     {name = name,
+			      types = (Vector.fromListMap
+				       (types, Scheme.ty o elabType)),
+			      var = var}
 			  end)
 		      val rvbs =
 			 Vector.map2
-			 (rvbs, vts, fn ({match, ...}, (var, types)) =>
-			  {var = var,
+			 (rvbs, vts,
+			  fn ({pat, match, ...}, {name, types, var}) =>
+			  {match = elabMatch match,
+			   profile = (SourceInfo.function
+				      {name = name,
+				       region = Apat.region pat}),
 			   types = types,
-			   match = elabMatch match})
+			   var = var})
 		      val ps = Vector.map (vbs, fn {pat, filePos, ...} =>
 					   {pat = elaboratePat (pat, E),
 					    filePos = filePos,
@@ -704,10 +745,14 @@ fun elaborateDec (d, E) =
 	  end) d
       and elabExps (es: Ast.Exp.t list): Cexp.t list =
 	 List.map (es, elabExp)
-      and elabExp arg: Cexp.t =
-	 Trace.traceInfo (info', Ast.Exp.layout, Cexp.layout,
+      and elabExp e = elabExp' (e, NONE)
+      and elabExp' (arg: Aexp.t * string option): Cexp.t =
+	 Trace.traceInfo (elabExpInfo,
+			  Layout.tuple2 (Aexp.layout,
+					 Option.layout String.layout),
+			  Cexp.layout,
 			  Trace.assertTrue)
-	 (fn (e: Aexp.t) =>
+	 (fn (e: Aexp.t, name) =>
 	  let
 	     val region = Aexp.region e
 	     fun doit n = Cexp.makeRegion (n, region)
@@ -721,9 +766,20 @@ fun elaborateDec (d, E) =
 		   Cexp.casee (elabExp e, elabMatch m, region)
 	      | Aexp.Const c => doit (Cexp.Const c)
 	      | Aexp.Constraint (e, t) =>
-		   doit (Cexp.Constraint (elabExp e, Scheme.ty (elabType t)))
+		   doit (Cexp.Constraint (elabExp' (e, name),
+					  Scheme.ty (elabType t)))
 	      | Aexp.FlatApp items => elabExp (Parse.parseExp (items, E))
-	      | Aexp.Fn m => doit (Cexp.Fn (elabMatch m))
+	      | Aexp.Fn m =>
+		   let
+		      val profile =
+			 case name of
+			    NONE => SourceInfo.anonymous region
+			  | SOME s => SourceInfo.function {name = s,
+							   region = region}
+		   in
+		      doit (Cexp.Fn {match = elabMatch m,
+				     profile = SOME profile})
+		   end
 	      | Aexp.Handle (try, match) =>
 		   doit (Cexp.Handle (elabExp try, elabMatch match))
 	      | Aexp.If (a, b, c) =>

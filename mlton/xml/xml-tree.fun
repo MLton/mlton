@@ -342,7 +342,7 @@ structure Exp =
 
       fun enterLeave (e: t, ty: Type.t, si: SourceInfo.t): t =
 	 if !Control.profile = Control.ProfileNone
-	    orelse !Control.profileIL <> Control.ProfileXML
+	    orelse !Control.profileIL <> Control.ProfileSource
 	    then e
 	 else
 	 let

@@ -1342,7 +1342,7 @@ structure Function =
 
       fun profile (f: t, sourceInfo): t =
 	 if !Control.profile = Control.ProfileNone
-	    orelse !Control.profileIL <> Control.ProfileXML
+	    orelse !Control.profileIL <> Control.ProfileSource
 	    then f
 	 else 
 	 let

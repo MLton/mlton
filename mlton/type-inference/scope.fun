@@ -141,12 +141,16 @@ fun renameDec (d, env) =
 	    let
 	       val (env, tyvars) = TyvarEnv.rename (env, tyvars)
 	       val (decs, unguarded) =
-		  renames (decs, fn {var, types, match} =>
+		  renames (decs, fn {match, profile, types, var} =>
 			   let
 			      val (types, u1) = renames (types, fn t =>
 							 renameTy (t, env))
 			      val (match, u2) = renameMatch (match, env)
-			   in ({var = var, types = types, match = match},
+			   in
+			      ({match = match,
+				profile = profile,
+				types = types,
+				var = var},
 			       Tyvars.+ (u1, u2))
 			   end)
 	    in (doit (Fun {tyvars = (Vector.fromList
@@ -211,9 +215,12 @@ and renameExp (e, env) =
 	    in
 	       (doit (Constraint (e, t)), Tyvars.+ (u1, u2))
 	    end
-       | Fn m =>
-	    let val (m, unguarded) = renameMatch (m, env)
-	    in (doit (Fn m), unguarded)
+       | Fn {match = m, profile} =>
+	    let
+	       val (m, unguarded) = renameMatch (m, env)
+	    in
+	       (doit (Fn {match = m, profile = profile}),
+		unguarded)
 	    end
        | Handle (e, m) =>
 	    let
@@ -334,11 +341,12 @@ fun removeDec (d: Dec.t, scope: Env.t): Dec.t =
 	       doit
 	       (Fun {tyvars = tyvars,
 		     decs = (Vector.map
-			     (decs, fn {var, types, match} =>
-			      {var = var,
+			     (decs, fn {match, profile, types, var} =>
+			      {match = removeMatch (match, scope),
+			       profile = profile,
 			       types = Vector.map (types, fn t =>
 						   removeTy (t, scope)),
-			       match = removeMatch (match, scope)}))})
+			       var = var}))})
 	    end
        | Exception {con, arg} =>
 	    doit (Exception {con = con,
@@ -368,7 +376,9 @@ and removeExp (e: Exp.t, scope: Env.t): Exp.t =
        | Const _ => e
        | Constraint (e, t) =>
 	    doit (Constraint (removeExp (e, scope), removeTy (t, scope)))
-       | Fn m => doit (Fn (removeMatch (m, scope)))
+       | Fn {match = m, profile} =>
+	    doit (Fn {match = removeMatch (m, scope),
+		      profile = profile})
        | Handle (e, m) =>
 	    doit (Handle (removeExp (e, scope), removeMatch (m, scope)))
        | Let (ds, e) => doit (Let (removes (ds, scope, removeDec),

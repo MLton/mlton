@@ -20,21 +20,56 @@ structure GraphShow =
 
 val graphShow = ref GraphShow.Above
 val raw = ref false
+val showLine = ref false
 val thresh: int ref = ref 0
 
 val die = Process.fail
-   
+
+structure Source =
+   struct
+      datatype t =
+	 NamePos of {name: string,
+		     pos: string}
+       | Simple of string
+
+      fun toString n =
+	 case n of
+	    NamePos {name, pos} =>
+	       if !showLine
+		  then concat [name, " ", pos]
+	       else name
+	  | Simple s => s
+
+      val layout = Layout.str o toString
+
+      fun fromString s =
+	 case String.tokens (s, fn c => Char.equals (c, #"\t")) of
+	    [s] => Simple s
+	  | [name, pos] => NamePos {name = name, pos = pos}
+	  | _ => die "strange source"
+
+      fun toDotLabel s =
+	 case s of
+	    NamePos {name, pos} =>
+	       if !showLine
+		  then [(name, Dot.Center),
+			(pos, Dot.Center)]
+	       else [(name, Dot.Center)]
+	  | Simple s =>
+	       [(s, Dot.Center)]
+   end
+
 structure AFile =
    struct
       datatype t = T of {magic: word,
 			 name: string,
 			 sourceSuccessors: int vector vector,
-			 sources: string vector}
+			 sources: Source.t vector}
 
       fun layout (T {magic, name, sourceSuccessors, sources}) =
 	 Layout.record [("name", String.layout name),
 			("magic", Word.layout magic),
-			("sources", Vector.layout String.layout sources),
+			("sources", Vector.layout Source.layout sources),
 			("sourceSuccessors",
 			 Vector.layout (Vector.layout Int.layout)
 			 sourceSuccessors)]
@@ -49,7 +84,8 @@ structure AFile =
 	     val sourcesLength = valOf (Int.fromString (line ()))
 	     val sources =
 		Vector.tabulate (sourcesLength, fn _ =>
-				 String.dropSuffix (line (), 1))
+				 Source.fromString
+				 (String.dropSuffix (line (), 1)))
 	     val sourceSuccessors =
 		Vector.tabulate
 		(sourcesLength, fn _ =>
@@ -266,7 +302,7 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 	     val showInTable =
 		(per > 0.0 andalso per >= thresh)
 		orelse (not profileStack andalso i = sourcesIndexGC)
-	     val name = Vector.sub (sources, i)
+	     val source = Vector.sub (sources, i)
 	     val node =
 		if (not profileStack orelse i <> sourcesIndexGC)
 		   andalso (case !graphShow of
@@ -280,8 +316,9 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 			    List.push
 			    (no,
 			     Dot.NodeOption.Label
-			     [(name, Dot.Center),
-			      (concat (List.separate (row, " ")), Dot.Center)])
+			     (Source.toDotLabel source
+			      @ [(concat (List.separate (row, " ")),
+				  Dot.Center)]))
 			 val _ =
 			    List.push (no, Dot.NodeOption.Shape Dot.Box)
 		      in
@@ -291,7 +328,7 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 	  in
 	     {node = node,
 	      per = per,
-	      row = name :: row,
+	      row = Source.toString source :: row,
 	      showInTable = showInTable}
 	  end)
       val counts =
@@ -400,6 +437,8 @@ fun makeOptions {usage} =
 		       | _ => usage "invalid -graph arg")),
 	(Normal, "raw", " {false|true}", "show raw counts",
 	 boolRef raw),
+	(Normal, "show-line", " {false|true}", " show line numbers",
+	 boolRef showLine),
 	(Normal, "thresh", " {0|1|...|100}", "only show counts above threshold",
 	 Int (fn i => if i < 0 orelse i > 100
 			 then usage "invalid -thresh"
