@@ -2,14 +2,14 @@ structure Assert: ASSERT =
    struct
       val debug = MLton.debug
 
-      fun fail msg = Error.bug(concat["assertion failure: ", msg])
+      fun fail msg = Error.bug (concat ["assertion failure: ", msg])
 	 
-      fun assert(msg: string, f: unit -> bool): unit =
-	 if debug andalso not(f() handle _ => false)
+      fun assert (msg: string, f: unit -> bool): unit =
+	 if debug andalso not (f () handle _ => false)
 	    then fail msg
 	 else ()
 
-      fun assert'(msg, b) = assert(msg, fn () => b)
+      fun assert' (msg, b) = assert (msg, fn () => b)
 	 
       val ('a, 'b) assertFun':
 	 string
@@ -24,28 +24,28 @@ structure Assert: ASSERT =
 	 if debug
 	    then (fn a =>
 		  let val (yes, check) = check a
-		     val _ = assert'(concat[msg, " argument"], yes)
-		     val (yes, b) = check(f a)
-		  in assert'(concat[msg, " result"], yes)
+		     val _ = assert' (concat [msg, " argument"], yes)
+		     val (yes, b) = check (f a)
+		  in assert' (concat [msg, " result"], yes)
 		     ; b
 		  end)
 	 else f
 
-      fun assertFun(msg,
+      fun assertFun (msg,
 		    f: 'a -> 'b,
 		    check: 'a -> bool * ('b -> bool)): 'a -> 'b =
-	 assertFun'(msg, f,
+	 assertFun' (msg, f,
 		    fn a => let val (yes, check) = check a
 			    in (yes, fn b => (check b, b))
 			    end)
 
-      fun assertFun2(msg,
+      fun assertFun2 (msg,
 		     f: 'a -> 'b -> 'c,
 		     check: 'a -> bool * ('b -> (bool * ('c -> bool)))) =
 	 assertFun'
 	 (msg, f,
 	  fn a => let val (yes, check) = check a
 		  in (yes,
-		      fn bc => (true, assertFun(msg, bc, check)))
+		      fn bc => (true, assertFun (msg, bc, check)))
 		  end)
    end
