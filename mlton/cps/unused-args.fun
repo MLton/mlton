@@ -124,23 +124,10 @@ fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
 			 => if isUsed var orelse
 			       PrimExp.maySideEffect exp
 			      then d::decs
-			      else (if stats
-				      then Int.inc removedBinds
-				      else ()
-				    ; decs)
+			      else decs
 			 | Fun {name, args, body}
 			 => if wrap name
 			      then let
-				     val _ = if stats
-					       then (Int.inc wrappers;
-						     Vector.foreach
-						     (args,
-						      fn (x,_) 
-						       => if isUsed x
-							    then ()
-							    else Int.inc removedArgs))
-					       else ()
-
 				     val name = name
 				     val name' = Jump.new name
 
@@ -189,14 +176,6 @@ fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
 					  body = loopExp body} ::
 				     decs
 			      else let
-				     val _ = if stats
-					       then Vector.foreach
-						    (args,
-						     fn (x,_) 
-						      => if isUsed x
-							   then ()
-							   else Int.inc removedArgs)
-					       else ()
 				     val name = name
 				     val args = Vector.keepAll
 				                (args, fn (x,_) => isUsed x)
@@ -267,54 +246,6 @@ fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
 		     globals = globals,
 		     functions = functions,
 		     main = main}
-
-(*
-      val _ 
-	= if true
-	    then Control.displays
-	         ("unused-args", 
-		  fn display 
-		   => (Program.layouts (program, display)
-		       ; Program.foreachVar 
-		         (program, 
-			  fn (x, _) 
-			   => display (let open Layout
-				       in seq [Var.layout x,
-					       str " ",
-					       Used.layout (used x)]
-				       end))
-(*
-		       ; Program.foreachJump
-		         (program, 
-			  fn j 
-			   => display (let open Layout
-					   val {needArgs, cedeArgs, wrapper, ...}
-					     = jumpInfo j
-				       in seq [Jump.layout j,
-					       str " ",
-					       Bool.layout (!needArgs),
-					       str " ",
-					       Bool.layout (!cedeArgs),
-					       str " ",
-					       Option.layout Jump.layout (!wrapper)]
-				       end))
-*)
-		       ; Program.layouts (program', display)))
-	 else ()
-*)
-      val _ 
-	= if stats
-	    then (Out.output(Out.standard,
-			     concat ["removedBinds: ",
-				     Int.toString (!removedBinds),
-				     " wrappers: ",
-				     Int.toString (!wrappers),
-				     " removedArgs: ",
-				     Int.toString (!removedArgs),
-				     "\n"])
-		  ; Out.flush Out.standard)
-	    else ()
-
      in 
       Program.clear program'
       ; program'
