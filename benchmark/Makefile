@@ -55,9 +55,10 @@ BFLAGS = -html -mlton "mlton" -mlkit -mosml -poly -smlnj
 test: $(NAME)
 	export PATH=$(PATH):$$PATH && cd tests && ../benchmark $(BFLAGS) $(BENCH)
 
-QBENCH = $(BENCH)
+QBENCH = barnes-hut boyer checksum count-graphs DLXSimulator fft fib hamlet imp-for knuth-bendix lexgen life logic mandelbrot matrix-multiply merge mlyacc mpuz nucleic peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tsp tyan vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
+FPBENCH = barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace simple tsp tyan vliw zern
 
-QBFLAGS = -mlton "mlton-stable -native-shuffle {true,false}"
+QBFLAGS = -mlton "mlton.cvs.basis-1997" -mlton "mlton.cvs.basis-2002"
 
 .PHONY: qtest
 qtest: $(NAME)

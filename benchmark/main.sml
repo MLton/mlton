@@ -121,6 +121,7 @@ in
 		  val compilerSave = Save.new ()
 		  val compiler = save (star (isChar (fn #"-" => true
 		                                      | #"/" => true
+		                                      | #"." => true
 						      | c => Char.isAlphaNum c)),
 				       compilerSave)
 		  val comilerC = compileDFA compiler
