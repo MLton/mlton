@@ -6,9 +6,13 @@ signature UNSAFE = UNSAFE
 
 (* Non-standard structures *)
 structure Primitive = Primitive
-structure MLton = MLton
-structure SMLofNJ = SMLofNJ
-structure Unsafe = Unsafe
+local
+   open Basis2002
+in
+   structure MLton = MLton
+   structure SMLofNJ = SMLofNJ
+   structure Unsafe = Unsafe
+end
 
 open Basis1997
 
