@@ -63,6 +63,7 @@ signature REAL =
       val realMod: t -> t
       val realPower: t * t -> t
       val round: t -> int
+      val signBit: t -> bool
       val sin: t -> t
       val sqrt: t -> t
       val sub1: t -> t
