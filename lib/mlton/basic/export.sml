@@ -7,7 +7,7 @@
 structure Export: EXPORT =
 struct
    
-structure NJ = Pervasive.SMLofNJ
+structure NJ = SMLofNJ
 
 fun exportFn(file, command) =
    NJ.exportFn(File.toString file,
