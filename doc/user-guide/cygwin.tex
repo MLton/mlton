@@ -16,8 +16,19 @@ Here are the known problems using {\mlton} on Cygwin.
 
 \item Time profiling is disabled.
 
-\item Due to some recent Cygwin bugfixes involving fork/mmap, you must
-use a Cygwin version from 2004-Jul-15 or later, which translates to a
-release numbered 1.5.11-1 or higher.
+\item
+{\tt Posix.Process.fork} is disabled.  Any use of {\tt fork} will
+raise {\tt OS.SysErr}.  For idiomatic uses of {\tt fork} plus {\tt
+exec}, you can instead use the {\tt MLton.Process.spawn} family of
+functions, which work on both Cygwin and Linux.
+
+Fork used to be disabled due to Cygwin bugs involving the interaction
+of fork and mmap.  Recently, Cygwin developers have fixed those bugs,
+in Cygwin versions from 2004-Jul-15 or later (1.5.11-1 or higher).
+However, Cygwin's mmap emulation does not make available as much
+contiguous virtual address space as using the Windows {\tt
+VirtualAlloc} function.  Hence, {\mlton} still uses {\tt VirtualAlloc}
+and not mmap, which means that Cygwin can not properly emulate fork.
+Consequently, {\tt Posix.Process.fork} must be disabled.
 
 \end{itemize}

@@ -358,8 +358,10 @@ static void showMem () {
 /* On any platform, exactly one of {USE_MMAP, USE_VIRTUAL_ALLOC} should be set
  * to true.
  */
-#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
+#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
 #define USE_MMAP TRUE
+#elif (defined (__CYGWIN__))
+#define USE_VIRTUAL_ALLOC TRUE
 #else
 #error must define USE_MMAP or USE_VIRTUAL_ALLOC
 #endif

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -30,56 +30,9 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	  end)
 
       val fork =
-	 (* Enable fork everywhere, and in particular, on Cygwin. *)
-	 if true then fork
-	 else 
 	 if let open MLton.Platform.OS in host <> Cygwin end
 	    then fork
- 	 else
-	    fn () =>
-	    if true
-	       then Error.raiseSys Error.nosys
-	    else
-	    (* On Cygwin, need to have the parent wait around until the child
-	     * starts to work around a Cygwin fork/mmap bug.
-	     * We accomplish this by creating a pipe that the child writes a
-	     * single byte to and the parent reads from.
-	     *)
-	    let
-	       val {infd, outfd} = PosixIO.pipe ()
-	       fun close () = (PosixIO.close infd
-			       ; PosixIO.close outfd)
-	       fun doit () =
-		  case fork () of
-		     NONE => 
-			(ignore (PosixIO.writeVec (outfd,
-						   Word8VectorSlice.full
-						   (Word8Vector.tabulate
-						    (1, fn _ => 0w0))))
-			 ; NONE)
-		   | SOME n =>
-			let
-			   (* Wait in the parent until the child writes the
-			    * byte to the pipe.  Need to restart the read system
-			    * call in case the child also sends a signal.
-			    *)
-			   fun loop () =
-			      (if 1 = Word8Vector.length (PosixIO.readVec
-							  (infd, 1))
-				  then ()
-			       else raise Fail "bug in fork")
-				  handle
-				  e as (PosixError.SysErr (_, SOME err)) =>
-				     if err = PosixError.intr
-					then loop ()
-				     else raise e
-			   val _ = loop ()
-			in
-			   SOME n
-			end
-	    in
-	       DynamicWind.wind (doit, close)
-	    end
+ 	 else fn () => Error.raiseSys Error.nosys
 
       val conv = NullString.nullTerm
       val convs = C.CSS.fromList
