@@ -148,8 +148,8 @@ structure JumpInfo =
 	    Return ps =>
 	       Vector.length args = Vector.length ps
 	       andalso Vector.foralli (ps,
-				      fn (i, Position.Formal i') => i = i'
-				       | _ => false)
+				       fn (i, Position.Formal i') => i = i'
+					| _ => false)
 	  | _ => false
    end
 
@@ -402,7 +402,7 @@ fun shrinkExp globals =
 			      end
 			   fun sameAsArgs args' =
 			      Vector.equals (args, args', fn ((x, _), x') =>
-					    Var.equals (x, x'))
+					     Var.equals (x, x'))
 			in case (decs, transfer) of
 			   ([], Jump {dst, args}) =>
 			      if Jump.equals (dst, name)
@@ -509,84 +509,93 @@ fun shrinkExp globals =
 			      end)
 		fun rr (f: Var.t vector -> Transfer.t, ps: Positions.t): Exp.t =
 		   (deleteJumpInfo info
-		    ; Exp.fromTransfer (f (Vector.map (extract ps, VarInfo.var))))
-	     in case meaning of
-		JumpInfo.Code {body, formals, isLiftableCase,
-			       isRecursive, ...} =>
-		   if 1 = !numOccurrences andalso not (!isRecursive)
-		      then (numOccurrences := 0
-			    ; Vector.foreach2 (formals, args, fn ((x, _), i) =>
-					      setReplacement (x, i))
-			    ; deleteVarInfos args
-			    ; simplifyExp (makeBody (body, isLiftableCase)))
-		   else
-		      let
-			 fun jump (j: Jump.t, args: VarInfo.t vector): Exp.t =
-			    Exp.fromTransfer
-			    (Jump {dst = j,
-				   args = Vector.map (args, VarInfo.var)})
-		      in
-			 case (!isLiftableCase, Vector.length args) of
-			    (SOME {cases, default}, 1) =>
-			       let
-				  val VarInfo.T {numOccurrences, value, ...} =
-				     Vector.sub (args, 0)
-				  fun doit (cases, is, args) =
-				     let
-					val jump =
-					   fn (j, args) =>
-					   (deleteJumpInfo info
-					    ; JumpInfo.inc (j, 1)
-					    ; jump (JumpInfo.name j, args))
-				     in case Vector.peek (cases, fn (i, _) =>
-							  is i) of
-					NONE =>
-					   (case default of
-					       NONE => Exp.bug
-					     | SOME j =>
-						  jump (j, Vector.new0 ()))
-				      | SOME (_, j) =>
-					   (incNumOccurrences (numOccurrences,
-							       ~1)
-					    ; Vector.foreach (args, addVarInfo)
-					    ; jump (j, args))
-				     end
-				  fun doCases (cases, v) =
-				     case (cases, v) of
-					(Cases.Con cases, Value.Con {con, args}) => 
-					   doit (cases, fn c =>
-						 Con.equals (c, con), args)
-				      | (_, Value.Const c) =>
-					   let
-					      val doit = fn (l, x) =>
-						 doit (l, fn x' => x = x',
-						       Vector.new0 ())
-					   in case (cases, Const.node c) of
-					      (Cases.Char l, Const.Node.Char c) =>
-						 doit (l, c)
-					    | (Cases.Int l, Const.Node.Int i) =>
-						 doit (l, i)
-					    | (Cases.Word l, Const.Node.Word w) =>
-						 doit (l, w)
-					    | (Cases.Word8 l, Const.Node.Word w) =>
-						 doit (l, Word8.fromWord w)
-					    | _ =>
-						 Error.bug "strange constant for Cases.Int"
-					   end
-				      | _ => Error.bug "strange Case with constant test"
-			       in
-				  case !value of
-				     NONE => jump (name, args)
-				   | SOME v => doCases (cases, v)
-			       end
-			  | _ => jump (name, args)
-		      end
-			  | JumpInfo.Jump {dst, args} =>
-			       (addJumpInfo dst
-				; deleteJumpInfo info
-				; jump (dst, extract args))
-			  | JumpInfo.Raise ps => rr (Raise, ps)
-			  | JumpInfo.Return ps => rr (Return, ps)
+		    ; (Exp.fromTransfer
+		       (f (Vector.map (extract ps, VarInfo.var)))))
+	     in
+		case meaning of
+		   JumpInfo.Jump {dst, args} =>
+		      (addJumpInfo dst
+		       ; deleteJumpInfo info
+		       ; jump (dst, extract args))
+		 | JumpInfo.Raise ps => rr (Raise, ps)
+		 | JumpInfo.Return ps => rr (Return, ps)
+		 | JumpInfo.Code {body, formals, isLiftableCase, isRecursive,
+				  ...} =>
+		      if 1 = !numOccurrences andalso not (!isRecursive)
+			 then (numOccurrences := 0
+			       ; Vector.foreach2 (formals, args,
+						  fn ((x, _), i) =>
+						  setReplacement (x, i))
+			       ; deleteVarInfos args
+			       ; simplifyExp (makeBody (body, isLiftableCase)))
+		      else
+			 let
+			    fun jump (j: Jump.t, args: VarInfo.t vector): Exp.t =
+			       Exp.fromTransfer
+			       (Jump {dst = j,
+				      args = Vector.map (args, VarInfo.var)})
+			 in
+			    case (!isLiftableCase, Vector.length args) of
+			       (SOME {cases, default}, 1) =>
+				  let
+				     val VarInfo.T {numOccurrences, value, ...} =
+					Vector.sub (args, 0)
+				     fun doit (cases, is, args) =
+					let
+					   val jump =
+					      fn (j, args) =>
+					      (deleteJumpInfo info
+					       ; JumpInfo.inc (j, 1)
+					       ; jump (JumpInfo.name j, args))
+					in case Vector.peek (cases, fn (i, _) =>
+							     is i) of
+					   NONE =>
+					      (case default of
+						  NONE => Exp.bug
+						| SOME j =>
+						     jump (j, Vector.new0 ()))
+					 | SOME (_, j) =>
+					      (incNumOccurrences (numOccurrences,
+								  ~1)
+					       ; Vector.foreach (args,
+								 addVarInfo)
+					       ; jump (j, args))
+					end
+				     fun doCases (cases, v) =
+					case (cases, v) of
+					   (Cases.Con cases,
+					    Value.Con {con, args}) => 
+					      doit (cases, fn c =>
+						    Con.equals (c, con), args)
+					 | (_, Value.Const c) =>
+					      let
+						 val doit = fn (l, x) =>
+						    doit (l, fn x' => x = x',
+							  Vector.new0 ())
+					      in case (cases, Const.node c) of
+						 (Cases.Char l,
+						  Const.Node.Char c) =>
+						    doit (l, c)
+					       | (Cases.Int l,
+						  Const.Node.Int i) =>
+						    doit (l, i)
+					       | (Cases.Word l,
+						  Const.Node.Word w) =>
+						    doit (l, w)
+					       | (Cases.Word8 l,
+						  Const.Node.Word w) =>
+						    doit (l, Word8.fromWord w)
+					       | _ =>
+						    Error.bug "strange constant for Cases.Int"
+					      end
+					 | _ => Error.bug "strange Case with constant test"
+				  in
+				     case !value of
+					NONE => jump (name, args)
+				      | SOME v => doCases (cases, v)
+				  end
+			     | _ => jump (name, args)
+			 end
 	     end) arg
 	 and simplifyExp arg : Exp.t =
 	    traceSimplifyExp
@@ -747,7 +756,8 @@ fun shrinkExp globals =
 			      then rest
 			   else
 			      let
-				 fun getVars (ps: Positions.t): VarInfo.t vector =
+				 fun getVars (ps: Positions.t)
+				    : VarInfo.t vector =
 				    Vector.map
 				    (ps, fn p =>
 				     case p of
@@ -808,7 +818,7 @@ fun shrinkExp globals =
 			  | SOME j =>
 			       let val info = jumpInfo j
 			       in if JumpInfo.isTail info
-				     then NONE
+				     then (deleteJumpInfo info; NONE)
 				  else SOME (JumpInfo.name info)
 			       end
 		   in Exp.fromTransfer
