@@ -30,8 +30,8 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 
       val fork =
 	 if Primitive.MLton.Platform.OS.forkIsEnabled
-	    then (fn () => Error.raiseSys Error.nosys)
-	 else fork
+	    then fork
+	 else fn () => Error.raiseSys Error.nosys
 
       val conv = NullString.nullTerm
       val convs = C.CSS.fromList
