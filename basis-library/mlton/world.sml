@@ -25,7 +25,7 @@ structure World: MLTON_WORLD =
 		   in
 		      if pid = pid' andalso status = W_EXITED
 			 then Original
-		      else raise Fail (concat ["World.save ", file, "failed"])
+		      else raise Fail (concat ["World.save ", file, " failed"])
 		   end))
 
       fun saveThread (f: string, t: unit Thread.t) =
