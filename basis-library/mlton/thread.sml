@@ -35,6 +35,8 @@ datatype state =
     
 val state = ref Normal
 
+fun amInSignalHandler () = InHandler = !state
+
 fun new f = T (ref (New f))
    
 local
@@ -116,7 +118,9 @@ fun setHandler (f: unit t -> unit t): unit =
       fun loop () =
 	 let
 	    (* s->canHandle == 1 *)
+	    val _ = state := InHandler
 	    val t = f (fromPrimitive (Prim.saved ()))
+	    val _ = state := Normal
 	    val _ = Prim.finishHandler ()
 	    val _ =
 	       switch'NoAtomicBegin

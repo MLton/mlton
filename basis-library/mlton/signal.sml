@@ -140,16 +140,7 @@ structure Handler =
 		Array.foldli
 		(fn (s, h, t) =>
 		 case h of
-		    Handler f =>
-		       (if Prim.isPending s
-			   then let
-				   val _ = Thread.state := Thread.InHandler
-				   val t = f t
-				   val _ = Thread.state := Thread.Normal
-				in
-				   t
-				end
-			else t)
+		    Handler f => if Prim.isPending s then f t else t
 		  | _ => t)
 		t
 		(handlers, 0, NONE))

@@ -41,10 +41,9 @@ structure World: MLTON_WORLD =
 	  | Original => ()
 	 
       fun save (file: string): status =
-	 case !Thread.state of
-	    Thread.Normal => save' file
-	  | Thread.InHandler =>
-	       raise Fail "cannot call MLton.World.save within signal handler"
+	 if Thread.amInSignalHandler ()
+	    then raise Fail "cannot call MLton.World.save within signal handler"
+	 else save' file
 
       fun load (file: string): 'a =
 	 if let open OS_FileSys
