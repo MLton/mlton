@@ -413,11 +413,7 @@ struct
 					 (n, SOME label))
 			| Length n
 			=> let
-			     val loopLabels
-			       = case getLoopTreeAt(loopInfo, label)
-				   of NONE => []
-				    | SOME {up = Tree.T (loopLabels, _), ...}
-				    => loopLabels
+			     val loopLabels = getLoopLabels (loopInfo, label)
 			     val _ = distanceF := SOME (I.PosInfinity, NONE)
 			     fun default ()
 			       = let
@@ -483,11 +479,7 @@ struct
 		 => (db, dbl)
 		 | SOME {distanceB, ...}
 		 => let
-		      val loopLabels
-			= case getLoopTreeAt(loopInfo, label)
-			    of NONE => []
-			     | SOME {up = Tree.T (loopLabels, _), ...} 
-			     => loopLabels
+		      val loopLabels = getLoopLabels(loopInfo, label)
 		      val _ = distanceB := SOME (I.PosInfinity, NONE)
 		      fun default () 
 			= List.fold
@@ -567,10 +559,7 @@ struct
 		of SOME _ => ()
 		 | NONE 
 		 => let
-		      val loopLabels
-			= case getLoopTreeAt(loopInfo, label)
-			    of NONE => []
-			     | SOME {up = Tree.T (loopLabels, _), ...} => loopLabels
+		      val loopLabels = getLoopLabels(loopInfo, label)
 		      val Block.T {transfer, ...} = block
 			
 		      val (regHints, fltregHints) = hints

@@ -763,6 +763,214 @@ fun dominatorTree (graph, {root: Node.t, nodeValue: Node.t -> 'a}): 'a Tree.t =
  * http://www.research.ibm.com/people/r/rama/Papers/ibmtr21513.revised.ps).
  *)
 
+ structure LoopForest =
+   struct
+      (* Every node in the graph will appear exactly once in a notInLoop
+       * vector in the loop forest.
+       * Every node that is a loop header will appear in exactly one headers
+       * vector.
+       *)
+      datatype t = T of {loops: {headers: Node.t vector,
+				 child: t} vector,
+			 notInLoop: Node.t vector}
+
+      val empty = T {loops = Vector.new0 (),
+		     notInLoop = Vector.new0 ()}
+
+      fun single n = T {loops = Vector.new0 (),
+			notInLoop = Vector.new1 n}
+
+      fun layoutDot (forest: t,
+		     {nodeName: Node.t -> string,
+		      options: Dot.GraphOption.t list,
+		      title: string}) =
+	 let
+	    open Dot
+	    fun label ns =
+	       NodeOption.label
+	       (Layout.toString (Vector.layout (Layout.str o nodeName) ns))
+	    val c = Counter.new 0
+	    fun newName () = concat ["n", Int.toString (Counter.next c)]
+	    val nodes = ref []
+	    fun loop (T {loops, notInLoop}) =
+	       let
+		  val n = newName ()
+		  val _ = List.push (nodes, {name = n,
+					     options = [label notInLoop,
+							NodeOption.Shape Box],
+					     successors = []})
+	       in
+		  Vector.fold
+		  (loops, [n], fn ({headers, child}, ac) =>
+		   let
+		      val n = newName ()
+		      val _ =
+			 List.push
+			 (nodes, {name = n,
+				  options = [label headers,
+					     NodeOption.Shape Ellipse],
+				  successors =
+				  List.revMap (loop child, fn n =>
+					       {name = n, options = []})})
+		   in
+		      n :: ac
+		   end)
+	       end
+	    val _ = loop forest
+	 in
+	    Dot.layout {nodes = !nodes,
+			options = options,
+			title = title}
+	 end   
+   end
+
+(* This code assumes everything is reachable from the root.
+ * Otherwise it may loop forever.
+ *)
+fun loopForestSteensgaard (g: t, {root: Node.t}): LoopForest.t =
+   let
+      val {get =
+	   nodeInfo:
+	   Node.t -> {class: int ref,
+		      isHeader: bool ref,
+		      (* The corresponding node in the next subgraph. *)
+		      next: Node.t option ref,
+		      (* The corresponding node in the original graph. *)
+		      original: Node.t},
+	   set = setNodeInfo, 
+	   rem = remNodeInfo, ...} =
+	 Property.getSet
+	 (Node.plist, Property.initRaise ("loopForestSteensgaard", Node.layout))
+      fun newNodeInfo (n, original) =
+	 setNodeInfo (n, {class = ref ~1,
+			  isHeader = ref false,
+			  next = ref NONE,
+			  original = original})
+      val _ = List.foreach (nodes g, fn n => newNodeInfo (n, n))
+      (* Treat the root as though there is an external edge into it. *)
+      val _ = #isHeader (nodeInfo root) := true
+      val c = Counter.new 0
+      (* Before calling treeFor, nodeInfo must be defined for all nodes in g. *)
+      fun treeFor (g: t): LoopForest.t  =
+	 let
+	    val sccs = stronglyConnectedComponents g
+	    (* Put nodes in the same scc into the same class. *)
+	    val _ = List.foreachi 
+	            (sccs, fn (i, ns) =>
+		     List.foreach
+		     (ns, fn n =>
+		      #class (nodeInfo n) := i))
+	    (* Set nodes to be headers if they are the target of an edge whose
+	     * source is in another scc.
+             * This is a bit of an abuse of terminology, since it also marks
+             * as headers nodes that are in their own trivial (one node) scc.
+	     *)
+	    val _ =
+	       List.foreach
+	       (nodes g, fn n =>
+		let
+		   val {class = ref class, ...} = nodeInfo n
+		   val _ =
+		      List.foreach
+		      (Node.successors n, fn e =>
+		       let
+			  val {class = ref class', isHeader, ...} =
+			     nodeInfo (Edge.to e)
+		       in
+			  if class = class'
+			     then ()
+			  else isHeader := true
+		       end)
+		in
+		   ()
+		end)
+	    (* Accumulate the subtrees. *)
+	    val loops = ref []
+	    val notInLoop = ref []
+	    val _ =
+	       List.foreach
+	       (sccs, fn ns =>
+		case ns of
+		   [n] =>
+		      let
+			 val {original, ...} = nodeInfo n
+		      in
+			 if List.exists (Node.successors n, fn e =>
+					 Node.equals (n, Edge.to e))
+			    then
+			       List.push (loops,
+					  {headers = Vector.new1 original,
+					   child = LoopForest.single original})
+			 else List.push (notInLoop, original)
+		      end
+		 | _ =>
+		      let
+			 (* Build a new subgraph of the component, sans edges
+			  * that go into headers.
+			  *)
+			 val g' = new ()
+			 val headers = ref []
+			 (* Create all the new nodes. *)
+			 val _ =
+			    List.foreach
+			    (ns, fn n =>
+			     let
+				val {next, original, ...} = nodeInfo n
+				val n' = newNode g'
+				val _ = next := SOME n'
+				val _ = newNodeInfo (n', original)
+			     in
+				()
+			     end)
+			 (* Add all the edges. *)
+			 val _ =
+			    List.foreach
+			    (ns, fn from =>
+			     let
+				val {class = ref class, isHeader, next,
+				     original, ...} = nodeInfo from
+				val from' = valOf (!next)
+				val _ =
+				   if !isHeader
+				      then List.push (headers, original)
+				   else ()
+			     in
+				List.foreach
+				(Node.successors from, fn e =>
+				 let
+				    val to = Edge.to e
+				    val info as {class = ref class', 
+						 isHeader = isHeader',
+						 next = next', ...} =
+				       nodeInfo to
+				 in
+				    if class = class'
+				       andalso not (!isHeader')
+				       then (addEdge (g', {from = from',
+							   to = valOf (!next')})
+					     ; ())
+				    else ()
+				 end)
+			     end)
+			 (* We're done with the old graph, so delete the
+			  * nodeInfo.
+			  *)
+			 val _ = List.foreach (ns, remNodeInfo)
+			 val headers = Vector.fromList (!headers)
+			 val child = treeFor g'
+		      in
+			 List.push (loops, {child = child,
+					    headers = headers})
+		      end)
+	 in
+	    LoopForest.T {loops = Vector.fromList (!loops),
+			  notInLoop = Vector.fromList (!notInLoop)}
+	 end
+   in
+      treeFor g
+   end
+
+(*
 structure GraphNodeInfo = 
   struct
     type t = {forestNode: Node.t}
@@ -970,264 +1178,17 @@ fun loopForest {headers, graph, root}
        trees = []}
     end
 
- structure LoopForest =
-   struct
-      (* Every node in the graph will appear exactly once in a notInLoop
-       * vector in the loop forest.
-       * Every node that is a loop header will appear in exactly one headers
-       * vector.
-       *)
-      datatype t = T of {loops: {headers: Node.t vector,
-				 child: t} vector,
-			 notInLoop: Node.t vector}
-
-      val empty = T {loops = Vector.new0 (),
-		     notInLoop = Vector.new0 ()}
-
-      fun single n = T {loops = Vector.new0 (),
-			notInLoop = Vector.new1 n}
-
-      fun layoutDot (forest: t,
-		     {nodeName: Node.t -> string,
-		      options: Dot.GraphOption.t list,
-		      title: string}) =
-	 let
-	    open Dot
-	    fun label ns =
-	       NodeOption.label
-	       (Layout.toString (Vector.layout (Layout.str o nodeName) ns))
-	    val c = Counter.new 0
-	    fun newName () = concat ["n", Int.toString (Counter.next c)]
-	    val nodes = ref []
-	    fun loop (T {loops, notInLoop}) =
-	       let
-		  val n = newName ()
-		  val _ = List.push (nodes, {name = n,
-					     options = [label notInLoop,
-							NodeOption.Shape Box],
-					     successors = []})
-	       in
-		  Vector.fold
-		  (loops, [n], fn ({headers, child}, ac) =>
-		   let
-		      val n = newName ()
-		      val _ =
-			 List.push
-			 (nodes, {name = n,
-				  options = [label headers,
-					     NodeOption.Shape Ellipse],
-				  successors =
-				  List.revMap (loop child, fn n =>
-					       {name = n, options = []})})
-		   in
-		      n :: ac
-		   end)
-	       end
-	    val _ = loop forest
-	 in
-	    Dot.layout {nodes = !nodes,
-			options = options,
-			title = title}
-	 end   
-   end
-
-(* This code assumes everything is reachable from the root.
- * Otherwise it may loop forever.
- *)
-fun loopForestSteensgaard' (g: t, {root: Node.t}): LoopForest.t =
-   let
-      val {get =
-	   nodeInfo:
-	   Node.t -> {class: int ref,
-		      isHeader: bool ref,
-		      (* The corresponding node in the next subgraph. *)
-		      next: Node.t option ref,
-		      (* The corresponding node in the original graph. *)
-		      original: Node.t},
-	   set = setNodeInfo, rem, ...} =
-	 Property.getSet
-	 (Node.plist, Property.initRaise ("loopForestSteensgaard", Node.layout))
-      fun newNodeInfo (n, original) =
-	 setNodeInfo (n, {class = ref ~1,
-			  isHeader = ref false,
-			  next = ref NONE,
-			  original = original})
-      val _ = List.foreach (nodes g, fn n => newNodeInfo (n, n))
-      (* Treat the root as though there is an external edge into it. *)
-      val _ = #isHeader (nodeInfo root) := true
-      val c = Counter.new 0
-      (* Before calling treeFor, nodeInfo must be defined for all nodes in g. *)
-      fun treeFor (g: t): LoopForest.t  =
-	 let
-	    val _ =
-	       if true
-		  then ()
-	       else
-		  File.withOut
-		  (concat ["/tmp/z.treeFor.",
-			   Int.toString (Counter.next c),
-			   ".dot"],
-		   fn out =>
-		   Layout.outputl (layoutDot
-				   (g, fn _ =>
-				    {title = "treeFor graph",
-				     options = [],
-				     edgeOptions = fn _ => [],
-				     nodeOptions = fn _ => []}),
-				   out))
-	    val sccs = stronglyConnectedComponents g
-	    (* Put nodes in the same scc into the same class. *)
-	    val _ = List.foreachi (sccs, fn (i, ns) =>
-				   List.foreach (ns, fn n =>
-						 #class (nodeInfo n) := i))
-	    (* Set nodes to be headers if they are the target of an edge whose
-	     * source is in another scc.
-	     * This is a bit of an abuse of terminology, since it also marks
-	     * as headers nodes that are in their own trivial (one node) scc.
-	     *)
-	    val _ =
-	       List.foreach
-	       (nodes g, fn n =>
-		let
-		   val {class = ref class, ...} = nodeInfo n
-		   val _ =
-		      List.foreach
-		      (Node.successors n, fn e =>
-		       let
-			  val {class = ref class', isHeader, ...} =
-			     nodeInfo (Edge.to e)
-		       in
-			  if class = class'
-			     then ()
-			  else isHeader := true
-		       end)
-		in
-		   ()
-		end)
-	    (* Accumulate the subtrees. *)
-	    val loops = ref []
-	    val notInLoop = ref []
-	    val _ =
-	       List.foreach
-	       (sccs, fn ns =>
-		case ns of
-		   [n] =>
-		      let
-			 val {original, ...} = nodeInfo n
-		      in
-			 if List.exists (Node.successors n, fn e =>
-					 Node.equals (n, Edge.to e))
-			    then
-			       List.push (loops,
-					  {headers = Vector.new1 original,
-					   child = LoopForest.single original})
-			 else List.push (notInLoop, original)
-		      end
-		 | _ =>
-		      let
-			 (* Build a new subgraph of the component, sans edges
-			  * that go into headers.
-			  *)
-			 val g' = new ()
-			 val headers = ref []
-			 (* Create all the new nodes. *)
-			 val _ =
-			    List.foreach
-			    (ns, fn n =>
-			     let
-				val {next, original, ...} = nodeInfo n
-				val n' = newNode g'
-				val _ = next := SOME n'
-				val _ = newNodeInfo (n', original)
-			     in
-				()
-			     end)
-			 (* Add all the edges. *)
-			 val _ =
-			    List.foreach
-			    (ns, fn from =>
-			     let
-				val {class = ref class, isHeader, next,
-				     original, ...} = nodeInfo from
-				val from' = valOf (!next)
-				val _ =
-				   if !isHeader
-				      then List.push (headers, original)
-				   else ()
-			     in
-				List.foreach
-				(Node.successors from, fn e =>
-				 let
-				    val to = Edge.to e
-				    val info as {class = ref class', isHeader,
-						 next, ...} =
-				       nodeInfo to
-				 in
-				    if class = class'
-				       andalso not (!isHeader)
-				       then (addEdge (g', {from = from',
-							   to = valOf (!next)})
-					     ; ())
-				    else ()
-				 end)
-			     end)
-			 (* We're done with the old graph, so delete the
-			  * nodeInfo.
-			  *)
-			 val _ = List.foreach (ns, rem)
-			 val headers = Vector.fromList (!headers)
-			 val child = treeFor g'
-		      in
-			 List.push (loops, {child = child,
-					    headers = headers})
-		      end)
-	 in
-	    LoopForest.T {loops = Vector.fromList (!loops),
-			  notInLoop = Vector.fromList (!notInLoop)}
-	 end
-   in
-      treeFor g
-   end
-
 val c = Counter.new 0
    
 fun loopForestSteensgaard {graph, root}
   = let
-       val _ =
-	  if true
-	     then ()
-	  else
-	     let
-		val c = Int.toString (Counter.next c)
-	     in
-		File.withOut
-		(concat ["/tmp/z", c, ".graph.dot"], fn out =>
-		 Layout.outputl
-		 (layoutDot
-		  (graph, fn {nodeName} =>
-		   let
-		      val _ = 
-			 File.withOut
-			 (concat ["/tmp/z", c, ".forest.dot"], fn out =>
-			  Layout.outputl
-			  (LoopForest.layoutDot
-			   (loopForestSteensgaard' (graph, {root = root}),
-			    {nodeName = nodeName,
-			     options = [],
-			     title = "loop forest"}),
-			   out))
-		   in
-		      {title = "graph",
-		       options = [],
-		       edgeOptions = fn _ => [],
-		       nodeOptions = fn _ => []}
-		   end),
-		  out))
-	     end
       fun headers X
 	= let
 	    val headers = ref []
 	  in
+	    if List.contains(X, root, Node.equals)
+	      then List.push(headers, root)
+	      else () ;
 	    foreachEdge
 	    (graph, fn (n, e) => let 
 				   val from = Edge.from e
@@ -1264,11 +1225,60 @@ fun loopForestSteensgaard {graph, root}
 				   end);
 		     false)))
 *)
+       val lf =
+	  if false
+	     then loopForest {headers = headers,
+			      graph = graph,
+			      root = root}
+	  else
+	     let
+	        val lf as {forest, loopNodes, ...} =
+		   loopForest {headers = headers,
+			       graph = graph,
+			       root = root}
+		val c = Int.toString (Counter.next c)
+	     in
+		File.withOut
+		(concat ["/tmp/z", c, ".graph.dot"], fn out =>
+		 Layout.outputl
+		 (layoutDot
+		  (graph, fn {nodeName} =>
+		   let
+		      val _ = 
+			 File.withOut
+			 (concat ["/tmp/z", c, ".forest.dot"], fn out =>
+			  Layout.outputl
+			  (LoopForest.layoutDot
+			   (loopForestSteensgaard' (graph, {root = root}),
+			    {nodeName = nodeName,
+			     options = [],
+			     title = "loop forest"}),
+			   out))
+		      val _ =
+			 File.withOut
+			 (concat ["/tmp/z", c, ".lf.dot"], fn out =>
+			  Layout.outputl
+			  (layoutDot
+			   (forest, fn {...} =>
+			    {title = "lf",
+			     options = [],
+			     edgeOptions = fn _ => [],
+			     nodeOptions = fn n => [Dot.NodeOption.label
+						    (List.toString
+						     nodeName
+						     (loopNodes n))]}),
+			   out))
+		   in
+		      {title = "graph",
+		       options = [],
+		       edgeOptions = fn _ => [],
+		       nodeOptions = fn _ => []}
+		   end),
+		  out)) ;
+		lf
+	     end
     in
-      loopForest {headers = headers,
-		  graph = graph,
-		  root = root}
-    end
-
-   
+      lf
+    end  
+*)
 end

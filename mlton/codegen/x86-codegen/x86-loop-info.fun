@@ -7,15 +7,15 @@ struct
   structure Graph = DirectedGraph
   structure Node = Graph.Node
   structure Edge = Graph.Edge
+  structure LoopForest = Graph.LoopForest
 
   val tracer = x86.tracer
 
-  datatype t = T of {loopForest : Label.t list Tree.t list,
-		     getLoopInfo : Label.t -> 
+  datatype t = T of {getLoopInfo : Label.t ->
 		                   {loopHeader: bool,
-				    treeAt: {up: Label.t list Tree.t,
-					     down: Label.t list Tree.t} option}}
-    
+				    loopLabels: Label.t list,
+				    loopPath: int list}}
+
   fun createLoopInfo {chunk = Chunk.T {blocks, ...}, farLoops}
     = let
 	val G = Graph.new ()
@@ -40,8 +40,8 @@ struct
 	val loopInfo as {get = getLoopInfo : 
 			       Label.t -> 
 			       {loopHeader: bool,
-				treeAt: {up: x86.Label.t list Tree.t,
-					 down: x86.Label.t list Tree.t} option},
+				loopLabels: Label.t list,
+				loopPath: int list},
 			 set = setLoopInfo, ...}
 	  = Property.getSetOnce
 	    (Label.plist,
@@ -111,131 +111,53 @@ struct
 		      => (doit' return)
 		 end)
 
-	val {forest, graphToForest, headers, isHeader, loopNodes, parent, ...}
-	  = Graph.loopForestSteensgaard {graph = G, root = root}
-
-	val loopForest
+	val lf = Graph.loopForestSteensgaard (G, {root = root})
+	  
+	fun doit (LoopForest.T {loops, notInLoop}, 
+		  headers,
+		  path)
 	  = let
-	      val (finished_roots, unfinished_roots)
-		= List.fold
-		  (Graph.nodes forest,
-		   ([],[]),
-		   fn (node, (finished_roots, unfinished_roots)) 
-		    => (case parent node
-			  of NONE => (case Node.successors node
-					of nil => (node::finished_roots,
-						   unfinished_roots)
-					 | _ => (finished_roots,
-						 node::unfinished_roots))
-			   | SOME _ => (finished_roots, unfinished_roots)))
-
-	      fun doit {node, up}
-		= let
-		    val loopLabels = List.map(loopNodes node, getNodeInfo)
-
-		    val (finished_nodes, unfinished_nodes)
-		      = List.fold
-		        (Node.successors node,
-			 ([], []),
-			 fn (edge, (finished_nodes, unfinished_nodes))
-			  => let
-			       val node = Edge.to edge
-			     in
-			       case Node.successors node
-				 of nil => (node::finished_nodes,
-					    unfinished_nodes)
-				  | _ => (finished_nodes,
-					  node::unfinished_nodes)
-			     end)
-
-		    val up = Tree.T (loopLabels, Vector.fromList up)
-		    val down 
-		      = Tree.T (loopLabels, 
-				Vector.fromListMap
-				(unfinished_nodes, fn node =>
-				 doit {node = node, up = [up]}))
-		  in
-		    List.foreach
-		    (finished_nodes, 
-		     fn node => let
-				  val node' = hd (loopNodes node)
-				in 
-				  setLoopInfo
-				  (getNodeInfo node', 
-				   {loopHeader = isHeader node',
-				    treeAt = SOME {up = up, 
-						   down = down}})
-				end) ;
-		    down
-		  end
+	      val notInLoop = Vector.toListMap (notInLoop, getNodeInfo)
+	      val path' = List.rev path
 	    in
 	      List.foreach
-	      (finished_roots,
-	       fn node => let
-			    val node' = hd (loopNodes node)
-			  in 
-			    setLoopInfo(getNodeInfo node', 
-					{loopHeader = isHeader node',
-					 treeAt = NONE})
-			  end) ;
-	      List.map
-	      (unfinished_roots,
-	       fn node => doit {node = node, up = []})
+	      (notInLoop, fn l =>
+	       setLoopInfo 
+	       (l, {loopHeader = Vector.contains (headers, l, Label.equals),
+		    loopLabels = notInLoop,
+		    loopPath = path'})) ;
+	      Vector.foreachi
+	      (loops, fn (i,{headers, child}) =>
+	       doit (child, 
+		     Vector.map (headers, getNodeInfo),
+		     i::path))
 	    end
-
-	val _ = destInfo ()
+	val _ = doit (lf, Vector.new0 (), [])
       in
-	T {loopForest = loopForest, getLoopInfo = getLoopInfo}
+	T {getLoopInfo = getLoopInfo}
       end
 
   val (createLoopInfo, createLoopInfo_msg)
     = tracer
       "createLoopInfo"
       createLoopInfo
-    
-  fun getLoopTreeAt (T {getLoopInfo, ...}, label) = #treeAt (getLoopInfo label)
-
-  fun getLoopForest (T {loopForest, ...}) = loopForest
-
-  fun getLoopDepth (T {getLoopInfo, ...}, l)
-    = (case (#treeAt (getLoopInfo l))
-	 of NONE => NONE
-          | SOME {up, ...}
-	  => let
-	       fun depth' (Tree.T (labels, tree), d)
-		 = (case Vector.length tree
-		      of 0 => d
-		       | 1 => depth' (Vector.sub (tree, 0), d + 1)
-		       | _ => Error.bug "x86LoopInfo:depth'")
-	       fun depth tree = depth' (tree, 0: int)
-	     in
-	       SOME (depth up)
-	     end)
-
-  fun isLoopHeader (T {getLoopInfo, ...}, l)
-    = #loopHeader (getLoopInfo l)
 
   fun getLoopDistance (T {getLoopInfo, ...}, from, to)
-    = (case (#treeAt (getLoopInfo from), #treeAt (getLoopInfo to))
-	 of (NONE, _) => NONE
-	  | (_, NONE) => NONE
-	  | (SOME {up = up_from, ...}, SOME {up = up_to, ...})
+    = (case (#loopPath (getLoopInfo from), #loopPath (getLoopInfo to))
+	 of ([], _) => NONE
+	  | (_, []) => NONE
+	  | (pfrom, pto)
 	  => let
-	       fun depth' (Tree.T (labels, tree), d)
-		 = (case Vector.length tree
-		      of 0 => d
-		       | 1 => depth' (Vector.sub (tree, 0), d + 1)
-		       | _ => Error.bug "x86LoopInfo:depth'")
-	       fun depth tree = depth' (tree, 0:int)
-
-	       val Tree.T (labels_to, _) = up_to
-	       val Tree.T (labels_from, _) = up_from
+	       val rec check
+		 = fn ([], pto) => SOME (List.length pto)
+		    | (pfrom, []) => SOME (~(List.length pfrom))
+		    | (f::pfrom,t::pto)
+		    => if f = t
+			 then check (pfrom, pto)
+			 else NONE
 	     in
-	       if List.contains(labels_to, from, Label.equals)
-		  orelse
-		  List.contains(labels_from, to, Label.equals)
-		 then SOME ((depth up_to) - (depth up_from))
-		 else NONE 
+	       check (pfrom, pto)
 	     end)
-	   
+  fun getLoopLabels (T {getLoopInfo, ...}, label) = #loopLabels (getLoopInfo label)
+  fun isLoopHeader (T {getLoopInfo, ...}, l) = #loopHeader (getLoopInfo l)
 end

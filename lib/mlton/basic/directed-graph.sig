@@ -78,6 +78,7 @@ signature DIRECTED_GRAPH =
 	       options: Dot.GraphOption.t list,
 	       edgeOptions: Edge.t -> Dot.EdgeOption.t list,
 	       nodeOptions: Node.t -> Dot.NodeOption.t list}) -> Layout.t
+(*
       val loopForest:
 	 {headers: (* graph *) Node.t list -> (* graph *) Node.t list,
 	  graph: t,
@@ -101,6 +102,14 @@ signature DIRECTED_GRAPH =
 	     isHeader: (* graph *) Node.t -> bool,
 	     loopNodes: (* forest *) Node.t -> (* graph *) Node.t list,
 	     parent: (* forest *) Node.t -> (* forest *) Node.t option}
+*)
+      structure LoopForest: 
+	 sig 
+	   datatype t = T of {loops: {headers: Node.t vector,
+				      child: t} vector,
+			      notInLoop: Node.t vector}
+	 end
+      val loopForestSteensgaard : (t * {root:Node.t}) -> LoopForest.t
       val new: unit -> t
       val newNode: t -> Node.t
       val nodes: t -> Node.t list

@@ -2221,9 +2221,6 @@ struct
 	val isLoopHeader
 	  = fn label => isLoopHeader(loopInfo, label)
 	                handle _ => false
-	val getLoopDepth
-	  = fn label => getLoopDepth(loopInfo, label)
-	                handle _ => NONE
 
 	val liveTransfers
 	  = x86LiveTransfers.computeLiveTransfers
@@ -2311,6 +2308,17 @@ struct
 	       => let
 		    val label = Entry.label entry
 		    val {allPreds, preds, ...} = getLabelInfo label
+		    val loopLabels = getLoopLabels (loopInfo, label)
+		  in
+			    preds := List.removeAll
+			             (!allPreds,
+				      fn l => List.exists
+				              (!(#allPreds(getLabelInfo l)), isRare)
+					      orelse
+					      List.contains
+					      (loopLabels, label, Label.equals))
+		  end))
+(*
 		    val loopTreeAt = getLoopTreeAt (loopInfo, label)
 		  in
 		    case loopTreeAt
@@ -2333,6 +2341,7 @@ struct
 					      (loopLabels, label, Label.equals))
 			  end
 		  end))
+*)
 
 	local	
 	  type u = {source: Label.t, target: Label.t}	
