@@ -121,7 +121,33 @@ functor Real (R: PRE_REAL): REAL =
       end
    
       fun unordered (x, y) = isNan x orelse isNan y
-	 
+
+      val nextAfter: real * real -> real =
+	 fn (r, t) =>
+	 case (class r, class t) of
+	    (NAN, _) => nan
+	  | (_, NAN) => nan
+	  | (INF, _) => r
+	  | (ZERO, ZERO) => r
+	  | (ZERO, _) => if t > zero then minPos else ~minPos
+	  | _ =>
+	       if r == t
+		  then r
+	       else
+		  let
+		     fun doit (r, t) =
+			if r == maxFinite andalso t == posInf
+			   then posInf
+			else if r > t
+				then R.nextAfterDown r
+			     else R.nextAfterUp r
+		  in
+		     if r > zero
+			then doit (r, t)
+		     else
+			~ (doit (~r, ~t))
+		  end
+			 
       val toManExp =
 	 let
 	    val r: int ref = ref 0

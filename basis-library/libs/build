@@ -70,12 +70,6 @@ real/IEEE-real.sml
 real/math.sig
 real/real.sig
 real/real.fun
-real/real32.sml
-real/real64.sml
-integer/patch.sml
-
-top-level/overloads.sml
-
 integer/pack-word.sig
 integer/pack32.sml
 text/byte.sig
@@ -84,6 +78,11 @@ text/text.sig
 text/text.sml
 real/pack-real.sig
 real/pack-real.sml
+real/real32.sml
+real/real64.sml
+integer/patch.sml
+
+top-level/overloads.sml
 
 misc/unique-id.sig
 misc/unique-id.fun

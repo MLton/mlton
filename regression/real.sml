@@ -598,8 +598,8 @@ val _ =
 		   (s2r "1.23", ~halfMaxFinite),
 		   (s2r "~1.23", halfMaxFinite),
 		   (s2r "~1.23", ~halfMaxFinite)
-		   ])
-(*      ("nextAfter", nextAfter, []), *)
+		   ]),
+      ("nextAfter", nextAfter, [])
 (*      ("rem", rem, []), *)
 (*      ("atan2", Math.atan2, []), *)
 (*      ("pow", Math.pow, [(halfMaxFinite, s2r "0.123"), (pi, e)]) *)

@@ -28,9 +28,10 @@ val (sub, up, subV) =
 
 fun start (i, n) = 
    let
-      val i = bytesPerElem * i 
+      val i = Int.* (bytesPerElem, i )
       val _ =
-	 if Primitive.safe andalso Int.geu (i + (bytesPerElem - 1), n)
+	 if Primitive.safe
+	    andalso Int.geu (Int.+ (i, Int.- (bytesPerElem, 1)), n)
 	    then raise Subscript
 	 else ()
    in
