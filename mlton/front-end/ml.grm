@@ -8,7 +8,7 @@
 type int = Int.t
 
 fun reg (left, right) = Region.make {left = left, right = right}
-fun error (reg, msg) = Control.error (reg, Layout.str msg)
+fun error (reg, msg) = Control.error (reg, Layout.str msg, Layout.empty)
 
 open Ast
 structure Field = Record.Field

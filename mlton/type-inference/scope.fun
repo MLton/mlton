@@ -60,7 +60,8 @@ fun renameTyOpt (to, env) =
 		end
 
 fun renamePat (p, env) =
-   let open Pat
+   let
+      open Pat
       fun loopOpt opt =
 	 case opt of
 	    NONE => (NONE, Tyvars.empty)
@@ -68,31 +69,46 @@ fun renamePat (p, env) =
 		      in (SOME p, u)
 		      end
       and loop p =
-	 case p of
-	    Wild => (p, Tyvars.empty)
-	  | Var _ => (p, Tyvars.empty)
-	  | Const _ => (p, Tyvars.empty)
-	  | Con {con, arg} => let val (arg, unguarded) = loopOpt arg
-			    in (Con {con = con, arg = arg}, unguarded)
-			    end
-	  | Record {flexible, record} =>
-	       let val (r, u) = Record.change (record, loops)
-	       in (Record {flexible = flexible,
-			  record = r},
-		   u)
-	       end
-	  | Constraint (p, t) =>
-	       let val (p, unguarded) = loop p
-		  val (t, unguarded') = renameTy (t, env)
-	       in (Constraint (p, t),
-		   Tyvars.+ (unguarded, unguarded'))
-	       end
-	  | Layered (x, p) =>
-	       let val (p, unguarded) = loop p
-	       in (Layered (x, p), unguarded)
-	       end
+	 let
+	    fun doit n = makeRegion (n, region p)
+	 in
+	    case node p of
+	       Wild => (p, Tyvars.empty)
+	     | Var _ => (p, Tyvars.empty)
+	     | Const _ => (p, Tyvars.empty)
+	     | Con {con, arg} =>
+		  let
+		     val (arg, unguarded) = loopOpt arg
+		  in
+		     (doit (Con {con = con, arg = arg}),
+		      unguarded)
+		  end
+	     | Record {flexible, record} =>
+		  let
+		     val (r, u) = Record.change (record, loops)
+		  in
+		     (doit (Record {flexible = flexible,
+				    record = r}),
+		      u)
+		  end
+	     | Constraint (p, t) =>
+		  let
+		     val (p, unguarded) = loop p
+		     val (t, unguarded') = renameTy (t, env)
+		  in
+		     (doit (Constraint (p, t)),
+		      Tyvars.+ (unguarded, unguarded'))
+		  end
+	     | Layered (x, p) =>
+		  let
+		     val (p, unguarded) = loop p
+		  in
+		     (doit (Layered (x, p)), unguarded)
+		  end
+	 end
       and loops ps = renames (ps, loop)
-   in loop p
+   in
+      loop p
    end
 
 open Dec Exp
@@ -157,61 +173,73 @@ fun renameDec (d, env) =
     | Overload _ => (d, Tyvars.empty)
 and renameDecs (ds, env) = renames (ds, fn d => renameDec (d, env))
 and renameExp (e, env) =
-   let val empty = (e, Tyvars.empty)
-   in case e of
-      Var _ => empty
-    | Prim _ => empty
-    | Const _ => empty
-    | Con _ => empty
-    | Record r =>
-	 let val (r, u) = Record.change (r, fn es => renameExps (es, env))
-	 in (Record r, u)
-	 end
-    | Fn m =>
-	 let val (m, unguarded) = renameMatch (m, env)
-	 in (Fn m, unguarded)
-	 end
-    | App (e1, e2) =>
-	 let
-	    val (e1, u1) = renameExp (e1, env)
-	    val (e2, u2) = renameExp (e2, env)
-	 in (App (e1, e2), Tyvars.+ (u1, u2))
-	 end
-    | Let (ds, e) =>
-	 let
-	    val (ds, u1) = renameDecs (ds, env)
-	    val (e, u2) = renameExp (e, env)
-	 in (Let (ds, e), Tyvars.+ (u1, u2))
-	 end
-    | Constraint (e, t) =>
-	 let
-	    val (e, u1) = renameExp (e, env)
-	    val (t, u2) = renameTy (t, env)
-	 in (Constraint (e, t), Tyvars.+ (u1, u2))
-	 end
-    | Handle (e, m) =>
-	 let
-	    val (e, u1) = renameExp (e, env)
-	    val (m, u2) = renameMatch (m, env)
-	 in (Handle (e, m), Tyvars.+ (u1, u2))
-	 end
-    | Raise {exn, filePos} =>
-	 let
-	    val (exn, unguarded) = renameExp (exn, env)
-	 in
-	    (Raise {exn = exn, filePos = filePos}, unguarded)
-	 end
+   let
+      val empty = (e, Tyvars.empty)
+      val region = Exp.region e
+      fun doit n = Exp.makeRegion (n, region)
+   in
+      case Exp.node e of
+	 App (e1, e2) =>
+	    let
+	       val (e1, u1) = renameExp (e1, env)
+	       val (e2, u2) = renameExp (e2, env)
+	    in
+	       (doit (App (e1, e2)), Tyvars.+ (u1, u2))
+	    end
+       | Con _ => empty
+       | Const _ => empty
+       | Constraint (e, t) =>
+	    let
+	       val (e, u1) = renameExp (e, env)
+	       val (t, u2) = renameTy (t, env)
+	    in
+	       (doit (Constraint (e, t)), Tyvars.+ (u1, u2))
+	    end
+       | Fn m =>
+	    let val (m, unguarded) = renameMatch (m, env)
+	    in (doit (Fn m), unguarded)
+	    end
+       | Handle (e, m) =>
+	    let
+	       val (e, u1) = renameExp (e, env)
+	       val (m, u2) = renameMatch (m, env)
+	    in
+	       (doit (Handle (e, m)), Tyvars.+ (u1, u2))
+	    end
+       | Let (ds, e) =>
+	    let
+	       val (ds, u1) = renameDecs (ds, env)
+	       val (e, u2) = renameExp (e, env)
+	    in
+	       (doit (Let (ds, e)), Tyvars.+ (u1, u2))
+	    end
+       | Prim _ => empty
+       | Raise {exn, filePos} =>
+	    let
+	       val (exn, unguarded) = renameExp (exn, env)
+	    in
+	       (doit (Raise {exn = exn, filePos = filePos}), unguarded)
+	    end
+       | Record r =>
+	    let val (r, u) = Record.change (r, fn es => renameExps (es, env))
+	    in (doit (Record r), u)
+	    end
+       | Var _ => empty
    end
 and renameExps (es, env) = renames (es, fn e => renameExp (e, env))
-and renameMatch (Match.T {rules, filePos}, env) =
+and renameMatch (m, env) =
    let
-      val (rs, unguarded) = renames (rules, fn r => renameRule (r, env))
-   in (Match.T {rules = rs, filePos = filePos}, unguarded)
+      val (rs, unguarded) = renames (Match.rules m, fn r => renameRule (r, env))
+   in
+      (Match.new {rules = rs, filePos = Match.filePos m},
+       unguarded)
    end
 and renameRule ((p, e), env) =
-   let val (p, u1) = renamePat (p, env)
+   let
+      val (p, u1) = renamePat (p, env)
       val (e, u2) = renameExp (e, env)
-   in ((p, e), Tyvars.+ (u1, u2))
+   in
+      ((p, e), Tyvars.+ (u1, u2))
    end      
 
 fun bindNew (bound: Env.t, tyvars: Tyvar.t vector): Env.t * Tyvar.t vector =
@@ -238,23 +266,32 @@ fun removeTyOpt (ty: Type.t option, env: Env.t): Type.t option =
     | SOME ty => SOME (removeTy (ty, env))
 
 fun removePat (p: Pat.t, env: Env.t): Pat.t =
-   let open Pat
+   let
+      open Pat
       fun loopOpt opt =
 	 case opt of
 	    NONE => NONE
 	  | SOME p => SOME (loop p)
       and loops ps = List.map (ps, loop)
       and loop p =
-	 case p of
-	    Wild => p
-	  | Var _ => p
-	  | Const _ => p
-	  | Con {con, arg} => Con {con = con, arg = loopOpt arg}
-	  | Record {flexible, record} => Record {flexible = flexible,
-					      record = Record.map (record, loop)}
-	  | Constraint (p, t) => Constraint (loop p, removeTy (t, env))
-	  | Layered (x, p) => Layered (x, loop p)
-   in loop p
+	 let
+	    fun doit n = makeRegion (n, region p)
+	 in
+	    case node p of
+	       Wild => p
+	     | Var _ => p
+	     | Const _ => p
+	     | Con {con, arg} =>
+		  doit (Con {con = con, arg = loopOpt arg})
+	     | Record {flexible, record} =>
+		  doit (Record {flexible = flexible,
+				record = Record.map (record, loop)})
+	     | Constraint (p, t) =>
+		  doit (Constraint (loop p, removeTy (t, env)))
+	     | Layered (x, p) => doit (Layered (x, loop p))
+	 end
+   in
+      loop p
    end
       
 fun removes (xs, scope, removeX) =
@@ -293,24 +330,32 @@ fun removeDec (d: Dec.t, scope: Env.t): Dec.t =
     | Overload _ => d
 
 and removeExp (e: Exp.t, scope: Env.t): Exp.t =
-   case e of
-      Var _ => e
-    | Prim _ => e
-    | Const _ => e
-    | Con _ => e
-    | Record r => Record (Record.map (r, fn e => removeExp (e, scope)))
-    | Fn m => Fn (removeMatch (m, scope))
-    | App (e1, e2) => App (removeExp (e1, scope), removeExp (e2, scope))
-    | Let (ds, e) => Let (removes (ds, scope, removeDec),
-			  removeExp (e, scope))
-    | Constraint (e, t) => Constraint (removeExp (e, scope), removeTy (t, scope))
-    | Handle (e, m) => Handle (removeExp (e, scope), removeMatch (m, scope))
-    | Raise {exn, filePos} =>
-	 Raise {exn = removeExp (exn, scope),
-		filePos = filePos}
-and removeMatch (Match.T {rules, filePos}, scope) =
-   Match.T {rules = removes (rules, scope, removeRule),
-	    filePos = filePos}
+   let
+      fun doit n = makeRegion (n, Exp.region e)
+   in
+      case Exp.node e of
+	 App (e1, e2) =>
+	    doit (App (removeExp (e1, scope), removeExp (e2, scope)))
+       | Con _ => e
+       | Const _ => e
+       | Constraint (e, t) =>
+	    doit (Constraint (removeExp (e, scope), removeTy (t, scope)))
+       | Fn m => doit (Fn (removeMatch (m, scope)))
+       | Handle (e, m) =>
+	    doit (Handle (removeExp (e, scope), removeMatch (m, scope)))
+       | Let (ds, e) => doit (Let (removes (ds, scope, removeDec),
+				   removeExp (e, scope)))
+       | Prim _ => e
+       | Record r =>
+	    doit (Record (Record.map (r, fn e => removeExp (e, scope))))
+       | Raise {exn, filePos} =>
+	    doit (Raise {exn = removeExp (exn, scope),
+			 filePos = filePos})
+       | Var _ => e
+   end
+and removeMatch (m, scope) =
+   Match.new {rules = removes (Match.rules m, scope, removeRule),
+	      filePos = Match.filePos m}
 and removeRule ((p, e), scope) = (removePat (p, scope), removeExp (e, scope))
     
 fun scopeDec d =

@@ -26,10 +26,14 @@ structure Unknown =
 	 in
 	    seq [str "Unknown ", Int.layout id]
 	 end
-      (* 		 namedRecord ("Unknown",
-       * 			      [("equality", Bool.layout equality),
-       * 			       ("canGeneralize", Bool.layout canGeneralize)]),
-       *)
+
+      fun layoutPretty (T {id, ...}) =
+	 let
+	    open Layout
+	 in
+	    seq [str "'a", Int.layout id]
+	 end
+      
       local
 	 val r: int ref = ref 0
       in
@@ -61,6 +65,7 @@ structure Spine:
       val ensureField: t * Field.t -> unit
       val foldOverNew: t * (Field.t * 'a) list * 'b * (Field.t * 'b -> 'b) -> 'b
       val layout: t -> Layout.t
+      val layoutPretty: t -> Layout.t
       val new: Field.t list -> t
       val noMoreFields: t -> unit
       val unify: t * t -> unit
@@ -80,6 +85,18 @@ structure Spine:
 	 in
 	    Layout.record [("fields", List.layout Field.layout (!fields)),
 			   ("more", Bool.layout (!more))]
+	 end
+
+      fun layoutPretty (T s) =
+	 let
+	    val {fields, more} = Set.value s
+	    open Layout
+	 in
+	    seq [mayAlign (List.map (!fields, fn f =>
+				     seq [Field.layout f, str ": ?, "])),
+		 if !more
+		    then str "..."
+		 else empty]
 	 end
 
       fun canAddFields (T s) = ! (#more (Set.value s))
@@ -191,13 +208,49 @@ structure Type =
 			       ("final", FinalRecordType.layout final),
 			       ("spine", Spine.layout spine)]]
 	     | Record r => Srecord.layout {record = r,
-					   separator = ":",
+					   separator = ": ",
 					   extra = "",
 					   layoutTuple = Vector.layout layout,
 					   layoutElt = layout}
 	     | Unknown u => Unknown.layout u
 	     | Var a => paren (seq [str "Var ", Tyvar.layout a])
 	     | Word => str "Word"
+
+	 fun layoutPretty t =
+	    case toType t of
+	       Con (c, ts) =>
+		  let
+		     val c' = Tycon.layout c
+		     fun t n = layoutPretty (Vector.sub (ts, n))
+		  in
+		     case Vector.length ts of
+			0 => c'
+		      | 1 => seq [t 0, str " ", c']
+		      | _ => 
+			   if Tycon.equals (c, Tycon.arrow)
+			      then seq [t 0, str " -> ", t 1]
+			   else seq [Vector.layout layoutPretty ts,
+				     str " ", c']
+		  end
+	     | Int => str "int"
+	     | FlexRecord {fields, spine, ...} =>
+		  seq [str "{",
+		       seq (List.map
+			    (fields, fn (f, t) =>
+			     seq [Field.layout f, str ": ", layoutPretty t,
+				  str ", "])),
+		       Spine.layoutPretty spine,
+		       str "}"]
+	     | GenFlexRecord _ => layout t
+	     | Record r =>
+		  Srecord.layout {record = r,
+				  separator = ": ",
+				  extra = "",
+				  layoutTuple = Vector.layout layoutPretty,
+				  layoutElt = layoutPretty}
+	     | Unknown u => Unknown.layoutPretty u
+	     | Var a => Tyvar.layout a
+	     | Word => str "word"
       end
 
       fun union (T s, T s') = Set.union (s, s')
@@ -339,143 +392,168 @@ structure Type =
 
       val traceUnify = Trace.trace2 ("unify", layout, layout, Unit.layout)
 
-      fun unify arg =
-	 traceUnify
-	 (fn (T s, T s') =>
-	  if Set.equals (s, s')
-	     then ()
-	  else
-	     let
-		fun oneFlex ({fields, final, spine}, r) =
+      fun unify (t, t', region): unit =
+	 let
+	    fun unify arg =
+	       traceUnify
+	       (fn (T s, T s') =>
+		if Set.equals (s, s')
+		   then ()
+		else
 		   let
-		      val _ =
-			 List.foreach
-			 (fields, fn (f, t) =>
-			  case Srecord.peek (r, f) of
-			     NONE =>
-				Error.bug "oneFlex: in flex but not in record"
-			   | SOME t' => unify (t, t'))
-		      val _ =
-			 List.foreach
-			 (Spine.fields spine, fn f =>
-			  case Srecord.peek (r, f) of
-			     NONE =>
-				Error.bug "oneFlex: in spine but not in record"
-			   | SOME _ => ())
-		      val _ =
-			 Srecord.foldi
-			 (r, (), fn (f, t, ()) =>
+		      fun error msg =
 			  let
-			     val _ = Spine.ensureField (spine, f)
-			     val _ =
-				case List.peek (fields, fn (f', _) =>
-						Field.equals (f, f')) of
-				   NONE => ()
-				 | SOME (_, t') => unify (t, t')
+			     open Layout
 			  in
-			     ()
-			  end)
-		      val _ = Spine.noMoreFields spine
+			     Control.error
+			     (region,
+			      seq [str "unify: ", msg],
+			      align [seq [str "t1: ", layoutPretty (T s)],
+				     seq [str "t2: ", layoutPretty (T s')]])
+			  end
+		      fun errorS s = error (Layout.str s)
+		      fun oneFlex ({fields, final, spine}, r) =
+			 let
+			    val _ =
+			       List.foreach
+			       (fields, fn (f, t) =>
+				case Srecord.peek (r, f) of
+				   NONE =>
+				      error
+				      (let open Layout
+				       in seq [Field.layout f,
+					       str " in flexible record but not in rigid record"]
+				       end)
+				 | SOME t' => unify (t, t'))
+			    val _ =
+			       List.foreach
+			       (Spine.fields spine, fn f =>
+				case Srecord.peek (r, f) of
+				   NONE =>
+				      error
+				      (let open Layout
+				       in seq [Field.layout f,
+					       str " in rigid record but not in flexible record"]
+				       end)
+				 | SOME _ => ())
+			    val _ =
+			       Srecord.foldi
+			       (r, (), fn (f, t, ()) =>
+				let
+				   val _ = Spine.ensureField (spine, f)
+				   val _ =
+				      case List.peek (fields, fn (f', _) =>
+						      Field.equals (f, f')) of
+					 NONE => ()
+				       | SOME (_, t') => unify (t, t')
+				in
+				   ()
+				end)
+			    val _ = Spine.noMoreFields spine
+			 in
+			    ()
+			 end
+		      fun genFlexError () =
+			 Error.bug "GenFlexRecord seen in unify"
+		      val {ty = t, plist} = Set.value s
+		      val {ty = t', ...} = Set.value s'
+		      val t =
+			 case (t, t')           of
+			    (Unknown r, Unknown r') =>
+			       Unknown (Unknown.join (r, r'))
+			  | (t, Unknown _) => t
+			  | (Unknown _, t) => t
+			  | (Var a, Var a') =>
+			       if Tyvar.equals (a, a')
+				  then t
+			       else (errorS "type variables not equal"
+				     ; t)
+			  | (Con (c, ts), Con (c', ts')) =>
+			       if Tycon.equals (c, c')
+				  then (unifys (ts, ts'); t)
+			       else (errorS "type constructors not equal"; t)
+			  | (Con (c, ts), Word) =>
+			       if Tycon.isWordX c andalso Vector.isEmpty ts
+				  then t
+			       else (errorS "not a word"; t)
+			  | (Word, Con (c, ts)) =>
+			       if Tycon.isWordX c andalso Vector.isEmpty ts
+				  then t'
+			       else (errorS "not a word"; t)
+			  | (Con (c, ts), Int) =>
+			       if Tycon.isIntX c andalso Vector.isEmpty ts
+				  then t
+			       else (errorS "not an int"; t)
+			  | (Int, Con (c, ts)) =>
+			       if Tycon.isIntX c andalso Vector.isEmpty ts
+				  then t'
+			       else (errorS "not an int"; t)
+			  | (Word, Word) => t
+			  | (Int, Int) => t
+			  | (Record r, Record r') =>
+			       let
+				  val fs = Srecord.toVector r
+				  val fs' = Srecord.toVector r'
+				  val n = Vector.length fs
+				  val n' = Vector.length fs'
+			       in
+				  if n = n'
+				     then (Vector.foreach2
+					   (fs, fs', fn ((f, t), (f', t')) =>
+					    if Field.equals (f, f')
+					       then unify (t, t')
+					    else errorS "field mismatch")
+					   ; t)
+				  else (errorS "different length records"
+					; t)
+			       end
+			  | (GenFlexRecord _, _) => genFlexError ()
+			  | (_, GenFlexRecord _) => genFlexError ()
+			  | (FlexRecord f, res as Record r) =>
+			       (oneFlex (f, r); res)
+			  | (res as Record r, FlexRecord f) =>
+			       (oneFlex (f, r); res)
+			| (FlexRecord {fields = fields, spine = s, final, ...},
+			   FlexRecord {fields = fields', spine = s', ...}) =>
+			  let
+			     val _ = Spine.unify (s, s')
+			     fun subset (fields, fields') =
+				let
+				   val res = ref fields'
+				   val _ =
+				      List.foreach
+				      (fields, fn (f, t) =>
+				       case List.peek (fields', fn (f', _) =>
+						       Field.equals (f, f')) of
+					  NONE => List.push (res, (f, t))
+					| SOME (_, t') => unify (t, t'))
+				in
+				   !res
+				end
+			     val _ = subset (fields, fields')
+			     val fields = subset (fields', fields)
+			  in
+			     FlexRecord {fields = fields,
+					 final = final,
+					 spine = s}
+			  end
+			 | _ => (errorS "can't unify"; t)
+		      val _ = Set.union (s, s')
+		      val _ = Set.setValue (s, {ty = t, plist = plist})
 		   in
 		      ()
-		   end
-		fun genFlexError () = Error.bug "GenFlexRecord seen in unify"
-		val {ty = t, plist} = Set.value s
-		val {ty = t', ...} = Set.value s'
-		val t =
-		   case (t, t')           of
-		      (Unknown r, Unknown r') => Unknown (Unknown.join (r, r'))
-		    | (t, Unknown _) => t
-		    | (Unknown _, t) => t
-		    | (Var a, Var a') => if Tyvar.equals (a, a')
-					    then t
-					 else Error.bug "unify Var"
-		    | (Con (c, ts), Con (c', ts')) =>
-			 if Tycon.equals (c, c')
-			    then (unifys (ts, ts'); t)
-			 else Error.bug "unify Con"
-		    | (Con (c, ts), Word) =>
-			 if Tycon.isWordX c andalso Vector.isEmpty ts
-			    then t
-			 else Error.bug "unify Word"
-		    | (Word, Con (c, ts)) =>
-			 if Tycon.isWordX c andalso Vector.isEmpty ts
-			    then t'
-			 else Error.bug "unify Word"
-		    | (Con (c, ts), Int) =>
-			 if Tycon.isIntX c andalso Vector.isEmpty ts
-			    then t
-			 else Error.bug "unify Int"
-		    | (Int, Con (c, ts)) =>
-			 if Tycon.isIntX c andalso Vector.isEmpty ts
-			    then t'
-			 else Error.bug "unify Int"
-		    | (Word, Word) => t
-		    | (Int, Int) => t
-		    | (Record r, Record r') =>
-			 let
-			    val fs = Srecord.toVector r
-			    val fs' = Srecord.toVector r'
-			    val n = Vector.length fs
-			    val n' = Vector.length fs'
-			 in
-			    
-			    if n = n'
-			       then (Vector.foreach2
-				     (fs, fs', fn ((f, t), (f', t')) =>
-				      if Field.equals (f, f')
-					 then unify (t, t')
-				      else Error.bug "unify field")
-				     ; t)
-			    else Error.bug "unify mismatch: different length records"
-			 end
-		    | (GenFlexRecord _, _) => genFlexError ()
-		    | (_, GenFlexRecord _) => genFlexError ()
-		    | (FlexRecord f, res as Record r) => (oneFlex (f, r); res)
-		    | (res as Record r, FlexRecord f) => (oneFlex (f, r); res)
-		    | (FlexRecord {fields = fields, spine = s, final, ...},
-		       FlexRecord {fields = fields', spine = s', ...}) =>
-			 let
-			    val _ = Spine.unify (s, s')
-			    fun subset (fields, fields') =
-			       let
-				  val res = ref fields'
-				  val _ =
-				     List.foreach
-				     (fields, fn (f, t) =>
-				      case List.peek (fields', fn (f', _) =>
-						      Field.equals (f, f')) of
-					 NONE => List.push (res, (f, t))
-				       | SOME (_, t') => unify (t, t'))
-			       in
-				  !res
-			       end
-			    val _ = subset (fields, fields')
-			    val fields = subset (fields', fields)
-			 in
-			    FlexRecord {fields = fields,
-					final = final,
-					spine = s}
-			 end
-		    | _ => Error.bug (concat ["unify mismatch ",
-					      " t1 = ",
-					      Layout.toString (layout (T s)),
-					      ", t2 = ",
-					      Layout.toString (layout (T s'))])
-		val _ = Set.union (s, s')
-		val _ = Set.setValue (s, {ty = t, plist = plist})
-	     in
-		()
-	     end) arg
+		   end) arg
+	    and unifys (ts: t vector, ts': t vector): unit =
+	       if Vector.length ts = Vector.length ts'
+		  then Vector.foreach2 (ts, ts', unify)
+	       else Error.bug "unify Con: different number of args"
+	 in
+	    unify (t, t')
+	 end
 
-      and unifys (ts: t vector, ts': t vector): unit =
-	 if Vector.length ts = Vector.length ts'
-	    then Vector.foreach2 (ts, ts', unify)
-	 else Error.bug "unify Con: different number of args"
-
-      fun unifys ts =
+      fun unifys (ts, region) =
 	 case ts of
-	    t :: ts => (List.foreach (ts, fn t' => unify (t, t'))
+	    t :: ts => (List.foreach (ts, fn t' => unify (t, t', region))
 			; t)
 	  | [] => new {equality = false, canGeneralize = true}
 

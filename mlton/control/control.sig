@@ -210,7 +210,7 @@ signature CONTROL =
       (*------------------------------------*)
       (* abort compilation once this many errors reached *)
       val errorThreshhold: int ref
-      val error: Region.t * Layout.t -> unit
+      val error: Region.t * Layout.t * Layout.t -> unit
       val errorStr: Region.t * string -> unit
       val checkForErrors: string -> unit
 	 

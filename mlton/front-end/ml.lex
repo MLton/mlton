@@ -43,14 +43,14 @@ fun inc (ri as ref (i: int)) = (ri := i + 1)
 fun dec (ri as ref (i: int)) = (ri := i-1)
 
 fun error (source, left, right, msg) = 
-   Control.error (Region.make {left = Source.getPos (source, left),
-			       right = Source.getPos (source, right)},
-		  Layout.str msg)
+   Control.errorStr (Region.make {left = Source.getPos (source, left),
+				  right = Source.getPos (source, right)},
+		     msg)
 
 fun stringError (source, right, msg) =
-   Control.error (Region.make {left = !stringStart,
-			       right = Source.getPos (source, right)},
-		  Layout.str msg)
+   Control.errorStr (Region.make {left = !stringStart,
+				  right = Source.getPos (source, right)},
+		     msg)
 
 val eof: lexarg -> lexresult =
    fn {source, ...} =>

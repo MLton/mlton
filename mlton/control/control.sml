@@ -540,16 +540,20 @@ val errorThreshhold: int ref = ref 20
 
 val die = Process.fail
 
-fun error (r: Region.t, msg: Layout.t): unit =
-   (Int.inc numErrors
-    ; Out.output (Out.error, 
-		  concat [Region.toString r, " Error: ", Layout.toString msg])
-    ; Out.newline Out.error
-    ; if !numErrors = !errorThreshhold
+fun error (r: Region.t, msg: Layout.t, extra: Layout.t): unit =
+   let
+      val _ = Int.inc numErrors
+      open Layout
+      val _ = outputl (align [seq [Region.layout r, str " Error: ", msg],
+			      indent (extra, 3)],
+		       Out.error)
+   in
+      if !numErrors = !errorThreshhold
 	 then die "compilation aborted: too many errors"
-      else ())
+      else ()
+   end
 
-fun errorStr (r, msg) = error (r, Layout.str msg)
+fun errorStr (r, msg) = error (r, Layout.str msg, Layout.empty)
 
 fun checkForErrors (name: string) =
    if !numErrors > 0

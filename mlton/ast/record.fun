@@ -115,12 +115,12 @@ fun layout {record, layoutTuple, separator, extra, layoutElt} =
 	    val r = toVector record
 	    open Layout
 	 in seq [str "{",
-		 align (separateRight (Vector.toListMap
-				       (r, fn (f, x) =>
-					align [seq [Field.layout f,
-						    str separator],
-					       layoutElt x]),
-				       ", ")),
+		 mayAlign (separateRight (Vector.toListMap
+					  (r, fn (f, x) =>
+					   seq [Field.layout f,
+						str separator,
+						layoutElt x]),
+					  ",")),
 		 str extra,
 		 str "}"]
 	 end

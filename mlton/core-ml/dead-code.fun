@@ -30,7 +30,7 @@ fun deadCode {basis, user} =
       fun decIsNeeded d =
 	 case d of
 	    Val {pat, ...} =>
-	       (case pat of
+	       (case Pat.node pat of
 		   Wild => true
 		 | _ => patVarIsUsed pat)
 	  | Fun {decs, ...} => Vector.exists (decs, varIsUsed o #var)
@@ -44,15 +44,14 @@ fun deadCode {basis, user} =
 	 case d of
 	    Val {exp, ...} => useExp exp
 	  | Fun {decs, ...} =>
-	       Vector.foreach (decs, fn {match = Match.T {rules, ...}, ...} =>
-			       Vector.foreach (rules, useExp o #2))
+	       Vector.foreach (decs, fn {match, ...} =>
+			       Vector.foreach (Match.rules match, useExp o #2))
 	  | Datatype _ => ()
 	  | Exception _ => ()
 	  | Overload {ovlds, ...} => Vector.foreach (ovlds, useVar)
-
       fun decIsWild d =
 	 case d of
-	    Val {pat = Wild, ...} => true
+	    Val {pat, ...} => Pat.isWild pat
 	  | _ => false
       val _ = List.foreach (user, useDec)
       val _ = List.foreach (basis, fn d => if decIsWild d then useDec d else ())

@@ -81,6 +81,7 @@ fun unbound (x: t): unit =
    (region x,
     let open Layout
     in seq [str "unbound ", str className, str " ", layout x]
-    end)
+    end,
+    Layout.empty)
 
 end

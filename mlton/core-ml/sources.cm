@@ -8,6 +8,7 @@ functor LookupConstant
 
 is
 
+../ast/sources.cm
 ../atoms/sources.cm
 ../control/sources.cm
 ../../lib/mlton/sources.cm

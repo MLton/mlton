@@ -29,11 +29,11 @@ signature TYPE_ENV =
 	    (* cached for speed *)
 	    val toXml: t -> XmlType.t
 	    (* make two types identical (recursively).  side-effecting. *)
-	    val unify: t * t -> unit
+	    val unify: t * t * Region.t -> unit
 	    (* make all types in the list identical.
 	     * return new type if empty list.
 	     *)
-	    val unifys: t list -> t 
+	    val unifys: t list * Region.t -> t 
 	    val var: Tyvar.t -> t
 	 end
       sharing type Type.tycon = Tycon.t

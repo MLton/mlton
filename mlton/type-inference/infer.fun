@@ -252,7 +252,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
       fun inferPat arg: patCode * (Var.t * Type.t) list =
 	 traceInferPat
 	 (fn (p: Cpat.t, ac) =>
-	  case p of
+	  case Cpat.node p of
 	     Cpat.Wild => ((fn () => NestedPat.Wild, newType ()),
 			   ac)
 	   | Cpat.Var x => let val t = newType ()
@@ -273,14 +273,17 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			     instance),
 			    ac)
 		 | SOME p => 
-		      let val (t1, t2) = Type.dearrow instance
+		      let
+			 val r = Cpat.region p
+			 val (t1, t2) = Type.dearrow instance
 			 val (p as (_, tp), ac) = inferPat (p, ac)
-		      in Type.unify (t1, tp)
-			 ; ((fn () => NestedPat.Con {con = con,
-						    targs = args (),
-						    arg = SOME (finishPat p)},
-			     t2),
-			    ac)
+			 val _ = Type.unify (t1, tp, r)
+		      in
+			 ((fn () => NestedPat.Con {con = con,
+						   targs = args (),
+						   arg = SOME (finishPat p)},
+			   t2),
+			  ac)
 		      end
 		end
 	   | Cpat.Record {flexible, record} =>
@@ -310,14 +313,18 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		    ac)
 		end
 	   | Cpat.Constraint (p, t') =>
-		let val ((p, t), ac) = inferPat (p, ac)
-		in Type.unify (t, Type.fromCoreML t')
-		   ; ((p, t), ac)
+		let
+		   val r = Cpat.region p
+		   val ((p, t), ac) = inferPat (p, ac)
+		   val _ = Type.unify (t, Type.fromCoreML t', r)
+		in
+		   ((p, t), ac)
 		end
 	   | Cpat.Layered (x, p) =>
-		let val (p as (_, t), ac) = inferPat (p, ac)
-		in ((fn () => NestedPat.Layered (x, finishPat p),
-		     t),
+		let
+		   val (p as (_, t), ac) = inferPat (p, ac)
+		in
+		   ((fn () => NestedPat.Layered (x, finishPat p), t),
 		    (x, t) :: ac)
 		end) arg
 
@@ -349,7 +356,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
       (* Helps to find type errors. *)
       val currentFunction: Var.t list ref = ref []
 
-      fun varExp (x: Var.t, env: Env.t): expCode =
+      fun varExp (x: Var.t, env: Env.t, r: Region.t): expCode =
 	 let
 	    val vr as VarRange.T {scheme, kind} = Env.lookupVarRange (env, x)
 	 in
@@ -401,7 +408,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			 (yts,
 			  fn (y, t) =>
 			  if Type.canUnify (instance, t)
-			     then (Type.unify (instance, t)
+			     then (Type.unify (instance, t, r)
 				   ; SOME (Xexp.monoVar (y, Type.toXml t)))
 			  else NONE,
 			     fn () =>
@@ -597,8 +604,9 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 						    kind = kind}))
       fun patDec (p as (_, tp): patCode,
 		  e as (_, te): expCode,
-		  filePos): decCode =
-	 (Type.unify (tp, te)
+		  filePos,
+		  region): decCode =
+	 (Type.unify (tp, te, region)
 	  ; (fn (body, ty) =>
 	     let val p = finishPat p
 	     in (casee {test = finishExp e,
@@ -623,9 +631,11 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		       e: expCode as (_, te),
 		       env: Env.t): decCode * Env.t =
 	 let
+	    val region = Cpat.region pat
 	    val (p as (_, tp), xts) = inferPat (pat, [])
-	    fun simple () = (patDec (p, e, filePos), multiExtend (env, xts))
-	    val _ = Type.unify (te, tp)
+	    fun simple () = (patDec (p, e, filePos, region),
+			     multiExtend (env, xts))
+	    val _ = Type.unify (te, tp, region)
 	 in if Cexp.isExpansive exp
 	       then if Vector.isEmpty tyvars
 		       then simple ()
@@ -637,19 +647,14 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		  val {bound, mayHaveTyvars, scheme} =
 		     Env.close (env, te, tyvars)
 		  fun vd x = valDec (x, scheme, bound, e, VarRange.Normal, env)
-	       in case (mayHaveTyvars, pat) of
-		  (false, _) => simple ()
-		| (_, Cpat.Wild) => vd (Var.newNoname ())
-		| (_, Cpat.Var x) => vd x
-		| (_, Cpat.Constraint (Cpat.Var x, _)) => vd x
-		| _ =>
+		  fun polymorphic () =
 		     (* Polymorphic pattern.
-		      *   val 'a Foo (y1, y2) = e
+		      *  val 'a Foo (y1, y2) = e
 		      * Expands to
-		      *   val x = e
-		      *   val Foo _ = x
-		      *   val y1 = fn () => let val Foo (y1', _) = x in y1' end
-		      *   val y2 = fn () => let val Foo (_, y2') = x in y2' end
+		      *  val x = e
+		      *  val Foo _ = x
+		      *  val y1 = fn () => let val Foo (y1', _) = x in y1' end
+		      *  val y2 = fn () => let val Foo (_, y2') = x in y2' end
 		      * Uses of y1 and y2 are thawed.
 		      *)
 		     let
@@ -662,8 +667,8 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 				 (d,
 				  patDec
 				  (#1 (inferPat (Cpat.removeVars pat, [])),
-				   varExp (x, env),
-				   filePos))
+				   varExp (x, env, region),
+				   filePos, region))
 			   else d
 		     in List.fold
 			(Cpat.vars pat, (d, env), fn (y, (d, env)) =>
@@ -673,15 +678,28 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			    val (p, xts) = inferPat (p, [])
 			    val e as (_, te) =
 			       delayExp
-			       (letExp (patDec (p, varExp (x, env), filePos),
-					varExp (y', multiExtend (env, xts))))
+			       (letExp (patDec (p, varExp (x, env, region),
+						filePos, region),
+					varExp (y', multiExtend (env, xts),
+						region)))
 			    val {bound, scheme, ...} =
 			       Env.close (env, te, Vector.new0 ())
 			    val (d', env) =
-			       valDec (y, scheme, bound, e, VarRange.Delayed, env)
+			       valDec (y, scheme, bound, e, VarRange.Delayed,
+				       env)
 			 in (appendDec (d, d'), env)
 			 end)
 		     end
+	       in
+		  case (mayHaveTyvars, Cpat.node pat) of
+		     (false, _) => simple ()
+		   | (_, Cpat.Wild) => vd (Var.newNoname ())
+		   | (_, Cpat.Var x) => vd x
+		   | (_, Cpat.Constraint (p, _)) =>
+			(case Cpat.node p of
+			    Cpat.Var x => vd x
+			  | _ => polymorphic ())
+		   | _ => polymorphic ()
 	       end
 	 end
       fun processConArg (tycon, tyvars: Tyvar.t vector, {con, arg}) =
@@ -761,7 +779,9 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			  val t = Type.arrow (argType, resultType)
 			  val _ =
 			     Vector.foreach
-			     (types, fn t' => Type.unify (t, Type.fromCoreML t'))
+			     (types, fn t' =>
+			      Type.unify (t, Type.fromCoreML t',
+					  Cmatch.region match))
 		       in
 			  ({var = var,
 			    argType = argType,
@@ -813,99 +833,106 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 
       and inferExp arg: expCode =
 	 traceInferExp
-	 (fn (e, env) => 
-	 case e of
-	    Cexp.Var x => varExp (x, env)
-	  | Cexp.Prim _ => apply (e, env, NONE)
-	  | Cexp.Con _ => apply (e, env, NONE)
-	  | Cexp.App (e1, e2) => apply (e1, env, SOME (inferExp (e2, env)))
-	  | Cexp.Const c => let val ty = Type.ofConst c
-			    in (fn () => Xexp.const (makeXconst (c, ty)),
-				ty)
-			    end
-	  | Cexp.Record r =>
-	       (* This code is messy because the components of the record have
-		* to be evaluated left to right as they appeared in the source
-		* program, but then ordered according to sorted field name within
-		* the tuple.
-		*)
-	       let
-		  val fes = Record.toVector r
-		  val es = Vector.map (fes, fn (_, e) => inferExp (e, env))
-		  val ty =
-		     Type.record
-		     {flexible = false,
-		      record = (Srecord.fromVector
-				(Vector.map2 (fes, es, fn ((f, _), (_, t)) =>
-					      (f, t))))}
-	       in (fn () =>
-		   Xexp.seq
-		   (Vector.map (es, finishExp), fn es =>
-		    Xexp.tuple {exps = (sortByField
-					(Vector.map2
-					  (fes, es, fn ((f, _), e) => (f, e)))),
-			       ty = Type.toXml ty}),
-		   ty)
-	       end
-	  | Cexp.Fn m =>
-	       let
-		  val rs as {argType, resultType, rules, ...} =
-		     inferMatch (m, env)
-	       in (fn () => let
-			       val {arg, argType, body} =
-				  Xlambda.dest (forceRulesMatch rs)
-			       val resultType = Type.toXml resultType
-			    in Xexp.lambda
-			       {arg = arg,
-				argType = argType,
-				body = Xexp.fromExp (body, resultType),
-				bodyType = resultType}
-			    end,
-		   Type.arrow (argType, resultType))
-	       end
-	  | Cexp.Let (ds, e) =>
-	       let val (ds, env) = inferDecs (ds, env)
-	       in letExp (ds, inferExp (e, env))
-	       end
-	  | Cexp.Constraint (e, t') =>
-	       let
-		  val ans as (_, t) = inferExp (e, env)
-		  val _ = Type.unify (t, Type.fromCoreML t')
-	       in
-		  ans
-	       end
-	  | Cexp.Handle (e, m) =>
-	       let
-		  val (e, t) = inferExp (e, env)
-		  val rs as {argType, resultType, ...} = inferMatch (m, env)
-		  val _ = Type.unify (t, resultType)
-		  val _ = Type.unify (argType, Type.exn)
-	       in (fn () => let
-			       val {arg, body, ...} =
-				  Xlambda.dest (forceRulesReraise rs)
-			       val t' = Type.toXml t
-			    in Xexp.handlee {try = finishExp (e, t),
-					     catch = (arg, Type.toXml Type.exn),
-					     handler = Xexp.fromExp (body, t'),
-					     ty = t'}
-			    end,
-			 t)
-	       end
-	  | Cexp.Raise {exn, filePos} =>
-	       let
-		  val e as (_, t) = inferExp (exn, env)
-		  val resultType = newType ()
-		  val _ = Type.unify (t, Type.exn)
-	       in
-		  (fn () => Xexp.raisee ({exn = finishExp e,
-					  filePos = filePos},
-					 Type.toXml resultType),
-		   resultType)
-	       end) arg
-      and applyOne (e as (_, t): expCode, e' as (_, t'): expCode): expCode =
+	 (fn (e, env) =>
+	  let
+	     val region = Cexp.region e
+	  in
+	     case Cexp.node e of
+		Cexp.App (e1, e2) => apply (e1, env, SOME (inferExp (e2, env)))
+	      | Cexp.Con _ => apply (e, env, NONE)
+	      | Cexp.Const c => let val ty = Type.ofConst c
+				in (fn () => Xexp.const (makeXconst (c, ty)),
+				    ty)
+				end
+	      | Cexp.Constraint (e, t') =>
+		   let
+		      val ans as (_, t) = inferExp (e, env)
+		      val _ = Type.unify (t, Type.fromCoreML t', region)
+		   in
+		      ans
+		   end
+	      | Cexp.Record r =>
+		   (* This code is messy because the components of the record
+		    * have to be evaluated left to right as they appeared in the
+		    * source program, but then ordered according to sorted field
+		    * name within the tuple.
+		    *)
+		   let
+		      val fes = Record.toVector r
+		      val es = Vector.map (fes, fn (_, e) => inferExp (e, env))
+		      val ty =
+			 Type.record
+			 {flexible = false,
+			  record = (Srecord.fromVector
+				    (Vector.map2 (fes, es, fn ((f, _), (_, t)) =>
+						  (f, t))))}
+		   in (fn () =>
+		       Xexp.seq
+		       (Vector.map (es, finishExp), fn es =>
+			Xexp.tuple {exps = (sortByField
+					    (Vector.map2
+					     (fes, es, fn ((f, _), e) => (f, e)))),
+				    ty = Type.toXml ty}),
+		       ty)
+		   end
+	      | Cexp.Fn m =>
+		   let
+		      val rs as {argType, resultType, rules, ...} =
+			 inferMatch (m, env)
+		   in (fn () => let
+				   val {arg, argType, body} =
+				      Xlambda.dest (forceRulesMatch rs)
+				   val resultType = Type.toXml resultType
+				in Xexp.lambda
+				   {arg = arg,
+				    argType = argType,
+				    body = Xexp.fromExp (body, resultType),
+				    bodyType = resultType}
+				end,
+			     Type.arrow (argType, resultType))
+		   end
+	      | Cexp.Handle (e, m) =>
+		   let
+		      val (e, t) = inferExp (e, env)
+		      val rs as {argType, resultType, ...} = inferMatch (m, env)
+		      val _ = Type.unify (t, resultType, region)
+		      val _ = Type.unify (argType, Type.exn, region)
+		   in (fn () =>
+		       let
+			  val {arg, body, ...} =
+			     Xlambda.dest (forceRulesReraise rs)
+			  val t' = Type.toXml t
+		       in Xexp.handlee {try = finishExp (e, t),
+					catch = (arg, Type.toXml Type.exn),
+					handler = Xexp.fromExp (body, t'),
+					ty = t'}
+		       end,
+		       t)
+		   end
+	      | Cexp.Let (ds, e) =>
+		   let val (ds, env) = inferDecs (ds, env)
+		   in letExp (ds, inferExp (e, env))
+		   end
+	      | Cexp.Prim _ => apply (e, env, NONE)
+	      | Cexp.Raise {exn, filePos} =>
+		   let
+		      val e as (_, t) = inferExp (exn, env)
+		      val resultType = newType ()
+		      val _ = Type.unify (t, Type.exn, region)
+		   in
+		      (fn () => Xexp.raisee ({exn = finishExp e,
+					      filePos = filePos},
+					     Type.toXml resultType),
+		       resultType)
+		   end
+	      | Cexp.Var x => varExp (x, env, region)
+	  end) arg
+      and applyOne (e as (_, t): expCode,
+		    e' as (_, t'): expCode,
+		    region): expCode =
 	 let
 	    val resultType = newType ()
-	    val _ = Type.unify (t, Type.arrow (t', resultType))
+	    val _ = Type.unify (t, Type.arrow (t', resultType), region)
 	 in
 	    (fn () => Xexp.app {func = finishExp e,
 				arg = finishExp e',
@@ -914,6 +941,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 	 end
       and apply (e1: Cexp.t, env: Env.t, arg: expCode option): expCode =
 	 let
+	    val region = Cexp.region e1
 	    fun eta (ty: Type.t,
 		     make: (Xexp.t * Xtype.t) option * Xtype.t -> Xexp.t)
 	       : expCode =
@@ -921,7 +949,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		  (NONE, NONE) => (fn () => make (NONE, Type.toXml ty), ty)
 		| (NONE, SOME _) => Error.bug "application mismatch"
 		| (SOME (t1, t2), SOME (argExp as (_, argTy))) =>
-		     (Type.unify (t1, argTy)
+		     (Type.unify (t1, argTy, region)
 		      ; (fn () => make (SOME (finishExp argExp, Type.toXml t1),
 					Type.toXml t2),
 			 t2))
@@ -943,10 +971,12 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			 ty)
 		     end
 	 in
-	    case e1 of
+	    case Cexp.node e1 of
 	       Cexp.Con con =>
-		  let val {instance, args} = instCon con
-		  in eta (instance, fn (arg, resultType) =>
+		  let
+		     val {instance, args} = instCon con
+		  in
+		     eta (instance, fn (arg, resultType) =>
 			 if Con.equals (con, Con.reff)
 			    then (case arg of
 				     NONE => Error.bug "bad ref"
@@ -1010,30 +1040,32 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		  let val e = apply (e1, env, SOME (inferExp (e2, env)))
 		  in case arg of
 		     NONE => e
-		   | SOME e' => applyOne (e, e')
+		   | SOME e' => applyOne (e, e', region)
 		  end
-	     | _ => let val e1 = inferExp (e1, env)
-		    in case arg of
-		       NONE => e1
-		     | SOME e2 => applyOne (e1, e2)
-		    end
+	     | _ =>
+		  let val e1 = inferExp (e1, env)
+		  in case arg of
+		     NONE => e1
+		   | SOME e2 => applyOne (e1, e2, region)
+		  end
 	 end
       and inferMatch (m, env): {argType: Type.t,
 				filePos: string,
 				resultType: Type.t,
 				rules: (patCode * expCode) vector} =
 	 inferMatchUnify (m, env, newType (), newType ())
-      and inferMatchUnify (Cmatch.T {rules, filePos}, env, argType, resultType) =
+      and inferMatchUnify (m: Cmatch.t, env, argType, resultType) =
 	 {argType = argType,
 	  resultType = resultType,
-	  filePos = filePos,
-	  rules = Vector.map (rules, fn (p, e) =>
+	  filePos = Cmatch.filePos m,
+	  rules = Vector.map (Cmatch.rules m, fn (p, e) =>
 			      let
+				 val region = Cpat.region p
 				 val (p as (_, tp), xts) = inferPat (p, [])
 				 val env = multiExtend (env, xts)
 				 val e as (_, te)  = inferExp (e, env)
-				 val _ = Type.unify (tp, argType)
-				 val _ = Type.unify (te, resultType)
+				 val _ = Type.unify (tp, argType, region)
+				 val _ = Type.unify (te, resultType, region)
 			      in
 				 (p, e)
 			      end)}

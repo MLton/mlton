@@ -17,7 +17,8 @@ signature CORE_ML =
 
       structure Pat:
 	 sig
-	    datatype t =
+	    type t
+	    datatype node =
 	       Con of {
 		       con: Con.t,
 		       arg: t option
@@ -31,21 +32,26 @@ signature CORE_ML =
 			 }
 	     | Var of Var.t
 	     | Wild
+	    include WRAPPED sharing type node' = node
+		            sharing type obj = t
 
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    (* true if pattern contains a constant, constructor or variable *)
-	    val isRefutable: t -> bool 
+	    val isRefutable: t -> bool
+	    val isWild: t -> bool
 	    val layout: t -> Layout.t
-	    val list: t list -> t
-	    val record: { flexible: bool, record: t Record.t } -> t
+	    val list: t list * Region.t -> t
+	    val record: {flexible: bool,
+			 record: t Record.t,
+			 region: Region.t} -> t
 	    (* removeOthersReplace(pat, old,new) replaces all variables in pat
 	     * with Wild, except for old, which it replaces with new
 	     *)
 	    val removeOthersReplace: t * Var.t * Var.t -> t
 	    val removeVars: t -> t 	    (* replace all variables with Wild *)
 	    val toAst: t -> Ast.Pat.t	    (* conversion to Ast *)
-	    val tuple: t vector -> t
-	    val unit: t
+	    val tuple: t vector * Region.t -> t
+	    val unit: Region.t -> t
 	    (* a list (without duplicates) of variables occurring in a pattern *)
 	    val vars: t -> Var.t list 
 	 end
@@ -54,7 +60,8 @@ signature CORE_ML =
 	 sig
 	    type dec
 	    type match
-	    datatype t =
+	    type t
+	    datatype node =
 	       App of t * t
 	     | Con of Con.t
 	     | Const of Ast.Const.t
@@ -67,33 +74,37 @@ signature CORE_ML =
 			 filePos: string}
 	     | Record of t Record.t
 	     | Var of Var.t
+	    include WRAPPED sharing type node' = node
+		            sharing type obj = t
 
-	    val andAlso: t * t -> t
-	    val casee: t * match -> t
-	    val compose: unit -> t
-	    val delay: t -> t
-	    val force: t -> t
+	    val andAlso: t * t * Region.t -> t
+	    val casee: t * match * Region.t -> t
+	    val delay: t * Region.t -> t
+	    val force: t * Region.t -> t
 	    val foreachVar: t * (Var.t -> unit) -> unit
-	    val iff: t * t * t -> t
+	    val iff: t * t * t * Region.t -> t
 	    (* true if the expression may side-effect. See p 19 of Definition *)
 	    val isExpansive: t -> bool
-	    val lambda: Var.t * t -> t
+	    val lambda: Var.t * t * Region.t -> t
 	    val layout: t -> Layout.t
-	    val list: t list -> t
-	    val orElse: t * t -> t
-	    val selector: Record.Field.t -> t
-	    val seq: t vector -> t
-	    val tuple: t vector -> t
-	    val unit: t
-	    val whilee: {test: t, expr: t} -> t
+	    val list: t list * Region.t -> t
+	    val orElse: t * t * Region.t -> t
+	    val selector: Record.Field.t * Region.t -> t
+	    val seq: t vector * Region.t -> t
+	    val tuple: t vector * Region.t -> t
+	    val unit: Region.t -> t
+	    val whilee: {test: t, expr: t, region: Region.t} -> t
 	 end
 
       structure Match:
 	 sig
-	    datatype t = T of {rules: (Pat.t * Exp.t) vector,
-			       filePos: string}
+	    type t
 
 	    val filePos: t -> string
+	    val new: {rules: (Pat.t * Exp.t) vector,
+		      filePos: string} -> t
+	    val region: t -> Region.t
+	    val rules: t -> (Pat.t * Exp.t) vector
 	 end
       where type t = Exp.match
 

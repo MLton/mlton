@@ -283,6 +283,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	  simplify = Xml.simplify}
       val _ = Control.message (Control.Detail, fn () =>
 			       Xml.Program.layoutStats xml)
+      val _ = Control.checkForErrors "type check"
       val sxml =
 	 Control.passSimplify
 	 {name = "mono",

@@ -423,7 +423,7 @@ structure Structure =
 	       (region, let open Layout
 			in seq [str name, str " ", l,
 				str " in signature but not in structure"]
-			end)
+			end, Layout.empty)
 	    fun cut (S as T {shapeId, ...}, I, strids) =
 	       let
 		  val shapeId' = Interface.shapeId I
@@ -478,7 +478,7 @@ structure Structure =
 							 let open Layout
 							 in seq [str "type ",
 								 str " is a datatype in signature but not in structure"]
-							 end)
+							 end, Layout.empty)
 							; TypeStr.bogus))
 					   | Interface.TypeStr.Tycon =>
 						let
@@ -524,7 +524,8 @@ structure Structure =
 						    Vid.statusString vid,
 						    " in structure but status ",
 						    Status.toString status,
-						    " in signature "]))
+						    " in signature "]),
+						  Layout.empty)
 						 ; vid)
 				    in List.push (vals,
 						  {isUsed = ref false,
@@ -1205,7 +1206,8 @@ structure InterfaceMaker =
 		   | {scope = scope', ...} :: l =>
 			if Scope.equals (scope, scope')
 			   then Control.error (Region.bogus,
-					       Layout.str "duplicate spec")
+					       Layout.str "duplicate spec",
+					       Layout.empty)
 			else new ()
 	       end
 	 end

@@ -55,7 +55,7 @@ fun build (CoreML.Program.T {decs, ...},
 
 	 type ac = (string * constantType) list
 	 fun loopExp (e: Exp.t, ac: ac): ac =
-	    case e of
+	    case Exp.node e of
 	       Prim p =>
 		  (case Prim.name p of
 		      Prim.Name.Constant c =>
@@ -92,8 +92,8 @@ fun build (CoreML.Program.T {decs, ...},
 	     | Handle (e, m) => loopMatch (m, loopExp (e, ac))
 	     | Raise {exn, ...} => loopExp (exn, ac)
 	     | _ => ac
-	 and loopMatch (Match.T {rules,...}, ac: ac): ac =
-	    Vector.fold (rules, ac, fn ((_, e), ac) => loopExp (e, ac))
+	 and loopMatch (m, ac: ac): ac =
+	    Vector.fold (Match.rules m , ac, fn ((_, e), ac) => loopExp (e, ac))
 	 and loopDecs (ds: Dec.t vector, ac: ac): ac =
 	    Vector.fold (ds, ac, loopDec)
 	 and loopDec (d: Dec.t, ac: ac): ac =

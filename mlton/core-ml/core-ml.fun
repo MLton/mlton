@@ -12,13 +12,18 @@ in
    structure Apat = Pat
 end
 
-fun makeList (con, app, tuple) l =
-   List.foldr (l, con Con.nill, fn (x1, x2) =>
-	       app (Con.cons, tuple (Vector.new2 (x1, x2))))
+structure Wrap = Region.Wrap
+
+fun makeList (con, app, tuple) (l, r) =
+   List.foldr (l, Wrap.makeRegion (con Con.nill, r), fn (x1, x2) =>
+	       Wrap.makeRegion (app (Con.cons, tuple (Vector.new2 (x1, x2), r)),
+				r))
 
 structure Pat =
    struct
-      datatype t =
+      open Wrap
+	 
+      datatype node =
 	 Wild
        | Var of Var.t
        | Const of Ast.Const.t
@@ -26,12 +31,15 @@ structure Pat =
        | Record of {flexible: bool, record: t Record.t}
        | Constraint of t * Type.t
        | Layered of Var.t * t
+      withtype t = node Wrap.t
+      type node' = node
+      type obj = t
 
       local
 	 structure Pat = Ast.Pat
       in
 	 fun toAst p =
-	    case p of
+	    case node p of
 	       Wild => Pat.wild
 	     | Var x => Pat.var (Var.toAst x)
 	     | Const c => Pat.const c
@@ -60,9 +68,14 @@ structure Pat =
 
 	 val layout = Pat.layout o toAst
       end
-   
+
+      fun isWild p =
+	 case node p of
+	    Wild => true
+	  | _ => false
+	 
       fun isRefutable p =
-	 case p of
+	 case node p of
 	    Wild => false
 	  | Var _ => false
 	  | Const _ => true
@@ -72,7 +85,7 @@ structure Pat =
 	  | Layered (_, p) => isRefutable p
 
       fun vars'(p, l) =
-	 case p of
+	 case node p of
 	    Wild => l
 	  | Var x => x :: l
 	  | Const _ => l
@@ -88,19 +101,26 @@ structure Pat =
       fun removeVarsPred (p: t, pred: Var.t -> bool): t =
 	 let
 	    fun loop p =
-	       case p of
-		  Wild => Wild
-		| Const _ => p
-		| Var x => if pred x then Wild else p
-		| Record {flexible, record} =>
-		     Record {flexible = flexible,
-			     record = Record.map (record, loop)}
-		| Con {con, arg} => Con {con = con,
-					 arg = (case arg of
-						   NONE => NONE
-						 | SOME p => SOME (loop p))}
-		| Constraint (p, t) => Constraint (loop p, t)
-		| Layered (_, p) => loop p
+	       let
+		  fun doit n = makeRegion (n, region p)
+	       in
+		  case node p of
+		     Wild => p
+		   | Const _ => p
+		   | Var x => if pred x
+				 then doit Wild
+			      else p
+		   | Record {flexible, record} =>
+			doit (Record {flexible = flexible,
+				      record = Record.map (record, loop)})
+		   | Con {con, arg} =>
+			doit (Con {con = con,
+				   arg = (case arg of
+					     NONE => NONE
+					   | SOME p => SOME (loop p))})
+		   | Constraint (p, t) => doit (Constraint (loop p, t))
+		   | Layered (_, p) => loop p
+	       end
 	 in loop p
 	 end
 
@@ -109,21 +129,30 @@ structure Pat =
       fun removeOthersReplace (p, x, y) =
 	 let
 	    fun loop p =
-	       case p of
-		  Wild => Wild
-		| Const _ => p
-		| Var x' => if Var.equals (x, x') then Var y else Wild
-		| Record {record, flexible} =>
-		     Record {flexible = flexible,
-			     record = Record.map (record, loop)}
-		| Con {con, arg} => Con {con = con,
-					 arg = (case arg of
-						   NONE => NONE
-						 | SOME p => SOME (loop p))}
-		| Constraint (p, t) => loop p (*Constraint (loop p, t)*)
-		| Layered (x', p) =>
-		     if Var.equals (x, x') then Var y else loop p
-	 in loop p
+	       let
+		  fun doit n = makeRegion (n, region p)
+	       in
+		  case node p of
+		     Wild => doit Wild
+		   | Const _ => p
+		   | Var x' =>
+			doit (if Var.equals (x, x') then Var y else Wild)
+		   | Record {record, flexible} =>
+			doit (Record {flexible = flexible,
+				      record = Record.map (record, loop)})
+		   | Con {con, arg} =>
+			doit (Con {con = con,
+				   arg = (case arg of
+					     NONE => NONE
+					   | SOME p => SOME (loop p))})
+		   | Constraint (p, _) => loop p
+		   | Layered (x', p) =>
+			if Var.equals (x, x')
+			   then doit (Var y)
+			else loop p
+	       end
+	 in
+	    loop p
 	 end
 
       val removeOthersReplace =
@@ -131,21 +160,27 @@ structure Pat =
 		       layout, Var.layout, Var.layout, layout)
 	 removeOthersReplace
 
-      fun tuple ps =
+      fun tuple (ps, region)  =
 	 if 1 = Vector.length ps
 	    then Vector.sub (ps, 0)
-	 else Record {flexible = false, record = Record.tuple ps}
+	 else makeRegion (Record {flexible = false, record = Record.tuple ps},
+			  region)
 
-      val unit = tuple (Vector.new0 ())
+      fun unit r = tuple (Vector.new0 (), r)
 	 
-      val list = makeList (fn c => Con {con = c, arg = NONE},
-			   fn (c, p) => Con {con = c, arg = SOME p},
-			   tuple)
+      val list =
+	 makeList (fn c => Con {con = c, arg = NONE},
+		   fn (c, p) => Con {con = c, arg = SOME p},
+		   tuple)
 
-      val record = Record
+      fun var (x, r) = makeRegion (Var x, r)
+	 
+      fun record {flexible, record, region} =
+	 makeRegion (Record {flexible = flexible, record = record},
+		     region)
 
       local
-	 fun make c = Con {con = c, arg = NONE}
+	 fun make c r = makeRegion (Con {con = c, arg = NONE}, r)
       in
 	 val truee = make Con.truee
 	 val falsee = make Con.falsee
@@ -154,7 +189,7 @@ structure Pat =
       fun foreachVar (p, f) =
 	 let
 	    fun loop p =
-	       case p of
+	       case node p of
 		  Var x => f x
 		| Con {arg = SOME p, ...} => loop p
 		| Record {record, ...} => Record.foreach (record, loop)
@@ -189,7 +224,7 @@ datatype dec =
   | Overload of {var: Var.t,
 		 scheme: Scheme.t,
 		 ovlds: Var.t vector}
-and exp =
+and expNode =
    Var of Var.t
   | Prim of Prim.t
   | Const of Ast.Const.t
@@ -201,22 +236,33 @@ and exp =
   | Constraint of exp * Type.t
   | Handle of exp * match
   | Raise of {exn: exp, filePos: string}
-
-and match = T of {filePos: string,
-		  rules: (Pat.t * exp) vector}
+and match = Match of {filePos: string,
+		      rules: (Pat.t * exp) vector}
+withtype exp = expNode Wrap.t
 
 structure Match =
    struct
-      datatype t = datatype match
+      type t = match
 
       local
-	 fun make f (T r) = f r
+	 fun make f m =
+	    let
+	       val Match r = m
+	    in
+	       f r
+	    end
       in
 	 val filePos = make #filePos
+	 val rules = make #rules
       end
-   
-      fun new rs = T {rules = rs,
-		      filePos = ""}
+
+      fun region m =
+	 Wrap.region (#1 (Vector.sub (rules m, 0)))
+		     
+
+      fun new {filePos, rules} =
+	 Match {filePos = filePos,
+		rules = rules}
    end
 
 local
@@ -265,7 +311,7 @@ in
 				   Longvar.short (Var.toAst x))))
 
    and expToAst e =
-      case e of
+      case Wrap.node e of
 	 Var x => Exp.var (Var.toAst x)
        | Prim p => Exp.longvid (Ast.Longvid.short
 				(Ast.Longvid.Id.fromString (Prim.toString p)))
@@ -280,17 +326,21 @@ in
 	    Exp.handlee (expToAst try, matchToAst match)
        | Raise {exn, filePos} => Exp.raisee {exn = expToAst exn,
 					     filePos = filePos}
-	    
-   and matchToAst (Match.T {rules, filePos}) =
-      Ast.Match.T
-      {filePos = filePos,
-       rules = Vector.map (rules, fn (p, e) => (Pat.toAst p, expToAst e))}
+
+   and matchToAst m =
+      let
+	 val Match {rules, filePos} = m
+      in
+	 Ast.Match.T
+	 {filePos = filePos,
+	  rules = Vector.map (rules, fn (p, e) => (Pat.toAst p, expToAst e))}
+      end
 end
 
 fun makeForeachVar f =
    let
       fun exp e =
-	 case e of
+	 case Wrap.node e of
 	    Var x => f x
 	  | Record r => Record.foreach (r, exp)
 	  | Fn m => match m
@@ -300,40 +350,41 @@ fun makeForeachVar f =
 	  | Handle (e, m) => (exp e; match m)
 	  | Raise {exn, ...} => exp exn
 	  | _ => ()
-      and match (Match.T {rules, ...}) = Vector.foreach (rules, exp o #2)
+      and match m = Vector.foreach (Match.rules m, exp o #2)
       and dec d =
 	 case d of
 	    Val {exp = e, ...} => exp e
 	  | Fun {decs, ...} => Vector.foreach (decs, match o #match)
 	  | Overload {ovlds, ...} => Vector.foreach (ovlds, f)
 	  | _ => ()
-   in {exp = exp, dec = dec}
+   in
+      {exp = exp, dec = dec}
    end
 
 structure Exp =
    struct
+      open Wrap
       type dec = dec
       type match = match
-      datatype t = datatype exp
+      datatype node = datatype expNode
+      type t = exp
+      type node' = node
+      type obj = t
 
       val toAst = expToAst
 
       fun foreachVar (e, f) = #exp (makeForeachVar f) e
 
-      val fnn = Fn
+      fun fnn (m, r) = makeRegion (Fn m, r)
 
-      fun fn1 r = fnn (Match.new (Vector.new1 r))
+      fun fn1 (p, e, r) =
+	 fnn (Match.new {filePos = "",
+			 rules = Vector.new1 (p, e)},
+	      r)
 
-      fun compose () =
-	 let val f = Var.newNoname ()
-	    val g = Var.newNoname ()
-	    val x = Var.newNoname ()
-	 in fn1 (Pat.tuple (Vector.new2 (Pat.Var f, Pat.Var g)),
-		 fn1 (Pat.Var x, App (Var f, App (Var g, Var x))))
-	 end
-      
-      val rec isExpansive =
-	 fn Var _ => false
+      fun isExpansive e =
+	 case node e of
+	    Var _ => false
 	  | Const _ => false
 	  | Con _ => false
 	  | Fn _ => false
@@ -341,81 +392,103 @@ structure Exp =
 	  | Record r => Record.exists (r, isExpansive)
 	  | Constraint (e, _) => isExpansive e
 	  | App (e1, e2) =>
-	       (case e1 of
+	       (case node e1 of
 		   Con c => Con.equals (c, Con.reff) orelse isExpansive e2
 		 | _ => true)
 	  | _ => true
 
-      val record = Record
+      fun record (record, r) = makeRegion (Record record, r)
 	 
-      fun lambda (x, e) = fn1 (Pat.Var x, e)
+      fun lambda (x, e, r) = fn1 (makeRegion (Pat.Var x, r), e, r)
 
-      fun delay e = fn1 (Pat.unit, e)
+      fun delay (e, r) = fn1 (Pat.unit r, e, r)
 
-      fun casee (test, rules) = App (Fn rules, test)
+      fun casee (test, rules, r) =
+	 makeRegion (App (makeRegion (Fn rules, r),
+			  test),
+		     r)
 
-      fun tuple es =
+      fun tuple (es, r) =
 	 if 1 = Vector.length es
 	    then Vector.sub (es, 0)
-	 else record (Record.tuple es)
+	 else record (Record.tuple es, r)
 
-      val unit = tuple (Vector.new0 ())
+      fun unit r = tuple (Vector.new0 (), r)
 
-      fun seq es =
+      fun seq (es, r) =
 	 if 1 = Vector.length es
 	    then Vector.sub (es, 0)
 	 else
 	    let
 	       val (es, e) = Vector.splitLast es
 	    in
-	       Let (Vector.map (es, fn e =>
-				Val {pat = Pat.Wild,
-				     tyvars = Vector.new0 (),
-				     exp = e,
-				     filePos = ""}),
-		    e)
+	       makeRegion
+	       (Let (Vector.map (es, fn e =>
+				 Val {pat = makeRegion (Pat.Wild, r),
+				      tyvars = Vector.new0 (),
+				      exp = e,
+				      filePos = ""}),
+		     e),
+		r)
 	    end
 
-      fun force e = App (e, unit)
+      fun force (e, r) = makeRegion (App (e, unit r), r)
 	 
-      val list = makeList (Con, fn (c, e) => App (Con c, e), tuple)
+      fun list (l, r) =
+	 makeList (Con, fn (c, e) => App (makeRegion (Con c, r), e), tuple)
+	 (l, r)
 
-      fun selector f =
-	 let val x = Var.newNoname ()
-	 in fn1 (Pat.Record {flexible = true,
+      fun var (x, r) = makeRegion (Var x, r)
+	 
+      fun selector (f, r) =
+	 let
+	    val x = Var.newNoname ()
+	 in
+	    fn1 (Pat.record {flexible = true,
 			     record = Record.fromVector (Vector.new1
-							 (f, Pat.Var x))},
-		 Var x)
+							 (f, Pat.var (x, r))),
+			     region = r},
+		 var (x, r),
+		 r)
 	 end
 
-      fun iff (test, thenCase, elseCase) =
-	 casee (test, Match.new (Vector.new2 ((Pat.truee, thenCase),
-					      (Pat.falsee, elseCase))))
+      fun iff (test, thenCase, elseCase, r) =
+	 casee (test,
+		Match.new {filePos = "",
+			   rules = Vector.new2 ((Pat.truee r, thenCase),
+						(Pat.falsee r, elseCase))},
+		r)
 
-      val truee = Con Con.truee
-      val falsee = Con Con.falsee
+      fun con (c, r) = makeRegion (Con c, r)
+      fun truee r = con (Con.truee, r)
+      fun falsee r = con (Con.falsee, r)
 	 
-      fun andAlso (e1, e2) = iff (e1, e2, falsee)
-      fun orElse (e1, e2) = iff (e1, truee, e2)
+      fun andAlso (e1, e2, r) = iff (e1, e2, falsee r, r)
+      fun orElse (e1, e2, r) = iff (e1, truee r, e2, r)
 
-      fun whilee {test, expr} =
+      fun whilee {test, expr, region = r} =
 	 let
 	    val loop = Var.newNoname ()
+	    val call = makeRegion (App (var (loop, r), unit r), r)
 	 in
-	    Let (Vector.new1
-		 (Fun {tyvars = Vector.new0 (),
-		       decs = (Vector.new1
-			       {var = loop,
-				types = Vector.new0 (),
-				match = (Match.new
-					 (Vector.new1
-					  (Pat.tuple (Vector.new0 ()),
-					   iff (test,
-						seq (Vector.new2
-						     (expr,
-						      App (Var loop, unit))),
-						unit))))})}),
-		 App (Var loop, unit))
+	    makeRegion
+	    (Let (Vector.new1
+		  (Fun {tyvars = Vector.new0 (),
+			decs = (Vector.new1
+				{var = loop,
+				 types = Vector.new0 (),
+				 match = (Match.new
+					  {filePos = "",
+					   rules =
+					   Vector.new1
+					   (Pat.tuple (Vector.new0 (), r),
+					    iff (test,
+						 seq (Vector.new2 (expr, call),
+						      r),
+						 unit r,
+						 r))})})}),
+		  call),
+	     r)
 	 end
 
       val layout = Ast.Exp.layout o toAst
@@ -456,7 +529,7 @@ structure Program =
 	    fun inc () = n := 1 + !n
 	    fun exp e =
 	       (inc ()
-		; (case e of
+		; (case Exp.node e of
 		      Fn m => match m
 		    | Record r => Record.foreach (r, exp)
 		    | App (e, e') => (exp e; exp e')
@@ -465,7 +538,7 @@ structure Program =
 		    | Handle (e, m) => (exp e; match m)
 		    | Raise {exn, ...} => exp exn
 		    | _ => ()))
-	    and match (Match.T {rules, ...}) = Vector.foreach (rules, exp o #2)
+	    and match m = Vector.foreach (Match.rules m, exp o #2)
 	    and dec d =
 	       case d of
 		  Val {exp = e, ...} => exp e
