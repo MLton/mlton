@@ -11,3 +11,5 @@ structure SMLofNJ = SMLofNJ
 structure Unsafe = Unsafe
 
 open Basis1997
+
+val op = = op =
