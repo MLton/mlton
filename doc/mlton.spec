@@ -17,7 +17,7 @@ language.  The MLton home page is http://www.mlton.org/.
 %setup
 
 %build
-make bootstrap VERSION=%{version} 
+make all # bootstrap VERSION=%{version} 
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -25,11 +25,11 @@ make install DESTDIR=$RPM_BUILD_ROOT VERSION=%{version}
 
 %files
 %attr(-, root, root)		/usr/share/doc/mlton
-%attr(-, root, root)		/usr/local/bin/mllex
-%attr(-, root, root)		/usr/local/bin/mlprof
-%attr(-, root, root)		/usr/local/bin/mlton
-%attr(-, root, root)		/usr/local/bin/mlyacc
-%attr(-, root, root)		/usr/local/lib/mlton
-%attr(-, root, root)		/usr/share/man/man1/mlprof.1
-%attr(-, root, root)		/usr/share/man/man1/mlton.1
+%attr(-, root, root)		/usr/bin/mllex
+%attr(-, root, root)		/usr/bin/mlprof
+%attr(-, root, root)		/usr/bin/mlton
+%attr(-, root, root)		/usr/bin/mlyacc
+%attr(-, root, root)		/usr/lib/mlton
+%attr(-, root, root)		/usr/share/man/man1/mlprof.1.gz
+%attr(-, root, root)		/usr/share/man/man1/mlton.1.gz
 

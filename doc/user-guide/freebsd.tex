@@ -6,7 +6,8 @@ We have noticed a few issues when running {\mlton} on FreeBSD.
 
 \item The executables often run more slowly than on a comparable Linux machine.
 We conjecture that part of this is due to costs due to heap resizing and kernel
-zeroing of pages.
+zeroing of pages.  We are working on the problem, and any help would be
+appreciated.
 
 \end{itemize}
 
@@ -19,14 +20,10 @@ only arise if you are working with the {\mlton} sources.
 instead of {\tt make}.
 
 \item {\mlton} requires GNU MP version 3 or higher.  The default that comes with
-FreeBSD is version 2.  So to build MLton, in particular the runtime, requires
-putting gmp.h and libgmp.a in the {\tt runtime} directory.  You can get them
-by either downloading from \htmlurl{http://www.gnu.org/software/gmp/gmp.html}
-and compiling yourself (we use 4.0.1), or just copying them from a {\mlton}
-binary package for FreeBSD ({\tt /usr/local/lib/mlton/self/libgmp.a} or {\tt
-/usr/local/lib/mlton/self/include/gmp.h}).
-
-By default, {\tt runtime/Makefile} will grab them from the {\mlton} binary
-package.
-
+FreeBSD is version 2.  Building MLton's runtime will attempt to copy
+{\tt gmp.h} and {\tt libgmp.a} to the {\tt runtime} directory from the {\mlton}
+binary package for FreeBSD ({\tt /\prefix/lib/mlton/self/libgmp.a} and {\tt
+/\prefix/lib/mlton/self/include/gmp.h}).  You can also get them by
+downloading them from \htmlurl{http://www.gnu.org/software/gmp/gmp.html} and
+compiling yourself (we use version 4.0.1).
 \end{itemize}
