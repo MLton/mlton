@@ -127,7 +127,7 @@ structure PosixIO: POSIX_IO =
 		   else raise Fail "Posix.IO.intToWhence"
 		      
       fun lseek (FD fd, n: Position.int, w: whence): Position.int =
-	 checkReturnResult (Prim.lseek (fd, n, whenceToInt w))
+	 Error.checkReturnPosition (Prim.lseek (fd, n, whenceToInt w))
 	 
       fun fsync (FD fd): unit = checkResult (Prim.fsync fd)
 	 
@@ -272,7 +272,10 @@ structure PosixIO: POSIX_IO =
 		  if isReg fd
 		    then fn () => if !closed 
 				    then SOME 0
-				    else SOME(Position.-(FS.ST.size(FS.fstat fd), !pos))
+				    else SOME (Position.toInt
+					       (Position.-
+						(FS.ST.size (FS.fstat fd),
+						 !pos)))
 		    else fn () => if !closed then SOME 0 else NONE
 	      in
 		RD {avail = avail,

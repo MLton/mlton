@@ -84,3 +84,4 @@ structure Int =
 
 structure Int32 = Int
 
+structure Position = Int

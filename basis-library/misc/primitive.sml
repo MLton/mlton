@@ -100,6 +100,8 @@ structure Pointer =
    struct
       type t = Word32.word
    end
+
+structure Position = Int64
    
 exception Bind = Bind
 exception Fail of string

@@ -227,7 +227,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 		     nlink: int,
 		     uid: uid,
 		     gid: gid,
-		     size: int,
+		     size: Position.int,
 		     atime: Time.time,
 		     mtime: Time.time,
 		     ctime: Time.time}

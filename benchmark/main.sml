@@ -158,7 +158,7 @@ fun compileSizeRun {command, exe, doTextPlusData: bool} =
 	     then
 		let 
 		   val {text, data, ...} = Process.size exe
-		in SOME (text + data)
+		in SOME (Position.fromInt (text + data))
 		end
 	  else SOME (File.size exe)
        val run =
@@ -319,7 +319,7 @@ fun main args =
 		      abbrv: string,
 		      test: {bench: File.t} -> {compile: real option,
 						run: real option,
-						size: int option}} list ref 
+						size: Position.int option}} list ref 
 	= ref []
       fun pushCompiler compiler = List.push(compilers, compiler)
       fun pushCompilers compilers' = compilers := (List.rev compilers') @ (!compilers)
@@ -433,6 +433,7 @@ fun main args =
 		  end
 	       fun r2s r = Real.format (r, Real.Format.fix (SOME 2))
 	       val i2s = Int.toCommaString
+	       val p2s = i2s o Position.toInt
 	       val s2s = fn s => s
 	       val failures = ref []
 	       fun show ({compiles, runs, sizes, errs, outs}, {showAll}) =
@@ -545,7 +546,7 @@ fun main args =
 				NONE => ~1.0
 			      | SOME {value = v, ...} => value / v} :: ac)
 		     val _ = show ("run time ratio", ratios, r2s)
-		     val _ = show ("size", sizes, i2s)
+		     val _ = show ("size", sizes, p2s)
 		     val _ = show ("compile time", compiles, r2s)
 		     val _ = show ("run time", runs, r2s)
 		     val _ = case !outData of
@@ -576,7 +577,7 @@ fun main args =
 			 (compilers, ac, fn ({name, abbrv, test},
 					     ac as {compiles: real data,
 						    runs: real data,
-						    sizes: int data,
+						    sizes: Position.int data,
 						    outs: string data,
 						    errs: string data}) =>
 			  if true

@@ -1,5 +1,9 @@
 Here are the changes since version 20030716.
 
+* 2003-12-04
+  - Added support for files larger than 2G.  This included changing
+    Position from Int32 to Int64.
+
 * 2003-12-01
   - Added structure MLton.Pointer, which includes a type t for
     pointers (memory addresses, not SML heap pointers) and operations 

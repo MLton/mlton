@@ -35,5 +35,7 @@ structure PosixError: POSIX_ERROR_EXTRA =
       fun raiseSys n = raise SysErr (errorMsg n, SOME n)
       fun error () = raiseSys (getErrno ())
       fun checkReturnResult (n: int) = if n = ~1 then error () else n
+      fun checkReturnPosition (n: Position.int) =
+	 if n = ~1 then error () else n
       fun checkResult n = (checkReturnResult n; ())
    end

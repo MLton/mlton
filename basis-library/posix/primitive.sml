@@ -389,7 +389,8 @@ structure PosixPrimitive =
 		  val nlink = _import "Posix_FileSys_Stat_nlink": unit -> int;
 		  val uid = _import "Posix_FileSys_Stat_uid": unit -> uid;
 		  val gid = _import "Posix_FileSys_Stat_gid": unit -> gid;
-		  val size = _import "Posix_FileSys_Stat_size": unit -> int;
+		  val size =
+		     _import "Posix_FileSys_Stat_size": unit -> Position.int;
 		  val atime =
 		     _import "Posix_FileSys_Stat_atime": unit -> time;
 		  val mtime =
@@ -427,7 +428,7 @@ structure PosixPrimitive =
 	    val fpathconf =
 	       _import "Posix_FileSys_fpathconf": fd * int -> int;
 	    val ftruncate =
-	       _import "Posix_FileSys_ftruncate": fd * int -> int;
+	       _import "Posix_FileSys_ftruncate": fd * Position.int -> int;
 	    val getcwd =
 	       _import "Posix_FileSys_getcwd": char array * size -> cstring;
 	    val link =
@@ -501,15 +502,18 @@ structure PosixPrimitive =
 		  val fcntl = _import "Posix_IO_FLock_fcntl": fd * int -> int;
 		  val typ = _import "Posix_IO_FLock_typ": unit -> int;
 		  val whence = _import "Posix_IO_FLock_whence": unit -> int;
-		  val start = _import "Posix_IO_FLock_start": unit -> int;
-		  val len = _import "Posix_IO_FLock_len": unit -> int;
+		  val start =
+		     _import "Posix_IO_FLock_start": unit -> Position.int;
+		  val len =
+		     _import "Posix_IO_FLock_len": unit -> Position.int;
 		  val pid = _import "Posix_IO_FLock_pid": unit -> int;
 		  val setType = _import "Posix_IO_FLock_setType": int -> unit;
 		  val setWhence =
 		     _import "Posix_IO_FLock_setWhence": int -> unit;
 		  val setStart =
-		     _import "Posix_IO_FLock_setStart": int -> unit;
-		  val setLen = _import "Posix_IO_FLock_setLen": int -> unit;
+		     _import "Posix_IO_FLock_setStart": Position.int -> unit;
+		  val setLen =
+		     _import "Posix_IO_FLock_setLen": Position.int -> unit;
 		  val setPid = _import "Posix_IO_FLock_setPid": int -> unit;
 	       end
 	    
@@ -519,7 +523,8 @@ structure PosixPrimitive =
 	    val fcntl2 = _import "Posix_IO_fcntl2": fd * int -> int;
 	    val fcntl3 = _import "Posix_IO_fcntl3": fd * int * int -> int;
 	    val fsync = _import "Posix_IO_fsync": fd -> int;
-	    val lseek = _import "Posix_IO_lseek": fd * int * int -> int;
+	    val lseek =
+	       _import "Posix_IO_lseek": fd * Position.int * int -> Position.int;
 	    val pipe = _import "Posix_IO_pipe": fd array -> int;
 	    val readChar = _import "Posix_IO_read":
 	       fd * char array * int * size -> ssize;

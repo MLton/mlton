@@ -16,11 +16,11 @@ Int Posix_IO_FLock_whence () {
 	return s_flock.l_whence;
 }
 
-Int Posix_IO_FLock_start () {
+Position Posix_IO_FLock_start () {
 	return s_flock.l_start;
 }
 
-Int Posix_IO_FLock_len () {
+Position Posix_IO_FLock_len () {
 	return s_flock.l_len;
 }
 
@@ -36,11 +36,11 @@ void Posix_IO_FLock_setWhence (Int x) {
 	s_flock.l_whence = x;
 } 
 
-void Posix_IO_FLock_setStart (Int x) {
+void Posix_IO_FLock_setStart (Position x) {
 	s_flock.l_start = x;
 } 
 
-void Posix_IO_FLock_setLen (Int x) {
+void Posix_IO_FLock_setLen (Position x) {
 	s_flock.l_len = x;
 } 
 

@@ -8,17 +8,12 @@ enum {
 	DEBUG = 0,
 };
 
-/* {Free,Net}BSD use 64 bits files by default, so doesn't have O_LARGEFILE. */
-#if (defined (__FreeBSD__) || defined (__NetBSD__))
-#define O_LARGEFILE 0
-#endif
-
 Int Posix_FileSys_open (NullString p, Word w, Mode m) {
 	Int res;
 
 #if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
 
-	res = open ((char *) p, w | O_LARGEFILE, m);
+	res = open ((char *) p, w, m);
 
 #elif (defined (__CYGWIN__))
 

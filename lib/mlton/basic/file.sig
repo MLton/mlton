@@ -39,7 +39,7 @@ signature FILE =
       val outputContents: t * Out.t -> unit
       val remove: t -> unit
       val sameContents: t * t -> bool
-      val size: t -> int
+      val size: t -> Position.int
       val suffix: t -> string option
       val temp: {prefix: string, suffix: string} -> t * Out.t
       val toString: t -> string

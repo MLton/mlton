@@ -64,8 +64,10 @@ signature POSIX_ERROR_EXTRA =
       val raiseSys: syserror -> 'a
 	 
       (* raises SysErr with ERRNO *)
-      val checkResult: int -> unit (* raiseSys if arg is -1 *)
-      val checkReturnResult: int -> int (* raiseSys if arg is -1 *)
+      (* raiseSys if arg is -1 *)
+      val checkResult: int -> unit
+      val checkReturnResult: int -> int 
+      val checkReturnPosition: Position.int -> Position.int
       val getErrno: unit -> int
       val clearErrno: unit -> unit
       val error: unit -> 'a

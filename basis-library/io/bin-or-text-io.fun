@@ -161,7 +161,7 @@ fun closeOut (out as ref (Out {fd, closed, ...})): unit =
 					       cause = exn})
       end
 
-fun getPosOut(out as ref (Out {fd, bufStyle, ...})) =
+fun getPosOut (out as ref (Out {fd, bufStyle, ...})) =
    let
       val streamPos = Posix.IO.lseek (fd, 0, Posix.IO.SEEK_CUR)
       val bufPos =
@@ -170,7 +170,7 @@ fun getPosOut(out as ref (Out {fd, bufStyle, ...})) =
 	  | Buffered (Buf {size, ...}) => !size
 	  | Line (Buf {size, ...}) => !size
    in
-      streamPos + bufPos
+      Position.+ (streamPos, Position.fromInt bufPos)
    end
 
 val newOut =

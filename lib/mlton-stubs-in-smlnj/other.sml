@@ -10,7 +10,6 @@ structure Math = Math
 structure Option = Option
 structure Pack32Big = Pack32Big
 structure Pack32Little = Pack32Little
-structure Position = Position
 structure SML90 = SML90
 structure SMLofNJ = SMLofNJ
 structure Unix = Unix

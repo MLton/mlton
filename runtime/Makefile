@@ -17,7 +17,7 @@ AR = $(TARGET)-ar rc
 FLAGS += -b $(TARGET)
 endif
 
-CC = gcc -Wall -I. -Igdtoa -D_LARGEFILE64_SOURCE $(FLAGS)
+CC = gcc -Wall -I. -Igdtoa -D_FILE_OFFSET_BITS=64 $(FLAGS)
 CFLAGS = -O2
 DEBUGFLAGS = -gstabs+ -g2
 
