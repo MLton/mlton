@@ -19,6 +19,7 @@ val mlmonFiles: string list ref = ref []
 val raw = ref false
 val showLine = ref false
 val thresh: real ref = ref 0.0
+val title: string option ref = ref NONE
 
 val die = Process.fail
 
@@ -669,6 +670,10 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
 	  if !(#keep (nodeInfo n))
 	     then setOldNode (newNode n, n)
 	  else ())
+      val title =
+	 case !title of
+	    NONE => concat [aname, " call-stack graph"]
+	  | SOME s => s
       val _ = 
 	 File.withOut
 	 (concat [aname, ".dot"], fn out =>
@@ -678,7 +683,7 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
 				     nodeOptions =
 				     fn n => ! (#options (nodeInfo (oldNode n))),
 				     options = [],
-				     title = "call-stack graph"}),
+				     title = title}),
 	   out))
       (* Display the table. *)
       val tableRows =
@@ -741,6 +746,8 @@ fun makeOptions {usage} =
 			 Result.No s =>
 			    usage (concat ["invalid -graph arg: ", s])
 		       | Result.Yes p => graphPred := SOME p)),
+	(Normal, "graph-title", " <string>", " set call-graph title",
+	 SpaceString (fn s => title := SOME s)),
 	(Normal, "mlmon", " <file>", " file with list of mlmon files",
 	 SpaceString (fn s =>
 		      mlmonFiles :=
