@@ -313,6 +313,7 @@ structure Operand =
 	 fn ArrayOffset _ => true
 	  | Cast (z, _) => isLocation z
 	  | Contents _ => true
+	  | GCState => true
 	  | Global _ => true
 	  | Offset _ => true
 	  | Register _ => true
@@ -1010,10 +1011,12 @@ structure Program =
 			ArrayOffset {base, index, ty} =>
 			   (checkOperand (base, alloc)
 			    ; checkOperand (index, alloc)
-			     ; Type.arrayOffsetIsOk {base = Operand.ty base,
-						     index = Operand.ty index,
-						     pointerTy = tyconTy,
-						     result = ty})
+			    ; (Operand.isLocation base
+			       andalso
+			       (Type.arrayOffsetIsOk {base = Operand.ty base,
+						      index = Operand.ty index,
+						      pointerTy = tyconTy,
+						      result = ty})))
 		      | Cast (z, t) =>
 			   (checkOperand (z, alloc)
 			    ; (Type.castIsOk
@@ -1039,13 +1042,15 @@ structure Program =
 		      | Line => true
 		      | Offset {base, offset, ty} =>
 			   (checkOperand (base, alloc)
-			    ; (case base of
+			    ; (Operand.isLocation base
+			       andalso
+			       (case base of
 				  Operand.GCState => true
 				| _ => 
 				     Type.offsetIsOk {base = Operand.ty base,
 						      offset = offset,
 						      pointerTy = tyconTy,
-						      result = ty}))
+						      result = ty})))
 		      | Real _ => true
 		      | Register r => Alloc.doesDefine (alloc, Live.Register r)
 		      | StackOffset (so as StackOffset.T {offset, ty, ...}) =>
