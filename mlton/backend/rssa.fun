@@ -437,6 +437,7 @@ structure Block =
 	       kind: Kind.t,
 	       label: Label.t,
 	       statements: Statement.t vector,
+	       profileInfo: {ssa: {func: string, label: string}},
 	       transfer: Transfer.t}
 
       local
@@ -446,6 +447,7 @@ structure Block =
 	 val kind = make #kind
 	 val label = make #label
 	 val statements = make #statements
+	 val profileInfo = make #profileInfo
 	 val transfer = make #transfer
       end
    
@@ -459,7 +461,7 @@ structure Block =
 	 Vector.exists (statements, fn s => Statement.hasPrim (s, f))
 	 orelse Transfer.hasPrim (transfer, f)
 
-      fun layout (T {args, kind, label, statements, transfer}) =
+      fun layout (T {args, kind, label, statements, transfer, ...}) =
 	 let
 	    open Layout
 	 in
@@ -866,8 +868,8 @@ structure Program =
 			       andalso Type.equals (Type.pointer,
 						    Operand.ty test)))
 	       end
-	    fun blockOk (Block.T {args, kind, label, statements,
-				  transfer}): bool =
+	    fun blockOk (Block.T {args, kind, label, 
+				  statements, transfer, ...}): bool =
 	       let
 		  fun kindOk (k: Kind.t): bool =
 		     let

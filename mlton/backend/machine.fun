@@ -450,7 +450,8 @@ structure Block =
       datatype t = T of {kind: Kind.t,
 			 label: Label.t,
 			 live: Operand.t vector,
-			 profileInfo: {func: string, label: string},
+			 profileInfo: {ssa: {func: string, label: string},
+				       rssa: {func: string, label: string}},
 			 statements: Statement.t vector,
 			 transfer: Transfer.t}
 

@@ -27,7 +27,7 @@ fun insertFunction (f: Function.t,
    let
       val {args, blocks, name, start} = Function.dest f
       val extra = ref []
-      fun add {args, blockKind, lcKind, start, success} =
+      fun add {args, blockKind, lcKind, profileInfo, start, success} =
 	 let
 	    val failure = Label.newNoname ()
 	 in
@@ -35,6 +35,7 @@ fun insertFunction (f: Function.t,
 	    Block.T {args = args,
 		     kind = blockKind,
 		     label = start,
+		     profileInfo = profileInfo,
 		     statements = Vector.new0 (),
 		     transfer = Transfer.LimitCheck {failure = failure,
 						     kind = lcKind,
@@ -42,16 +43,27 @@ fun insertFunction (f: Function.t,
 	    :: Block.T {args = Vector.new0 (),
 			kind = Kind.Runtime {prim = Prim.gcCollect},
 			label = failure,
+			profileInfo = profileInfo,
 			statements = Vector.new0 (),
 			transfer = Transfer.Goto {dst = success,
 						  args = Vector.new0 ()}}
 	    :: !extra
 	 end
+      val newStart = Label.newNoname ()
       val blocks =
 	 Vector.mapi
 	 (blocks,
-	  fn (i, block as Block.T {args, kind, label, statements, transfer}) =>
+	  fn (i, block as Block.T {args, kind, label, profileInfo,
+				   statements, transfer}) =>
 	  let
+	     val _ = if Label.equals(label, start)
+		        then add {args = Vector.new0 (),
+				  blockKind = Kind.Jump,
+				  lcKind = LimitCheck.Stack,
+				  profileInfo = profileInfo,
+				  start = newStart,
+				  success = start}
+		     else ()
 	     val bytes = checkAmount {blockIndex = i}
 	     fun insert (lcKind: LimitCheck.t) =
 		let
@@ -59,12 +71,14 @@ fun insertFunction (f: Function.t,
 		   val _ = add {args = args,
 				blockKind = kind,
 				lcKind = lcKind,
+				profileInfo = profileInfo,
 				start = label,
 				success = success}
 		in
 		   Block.T {args = Vector.new0 (),
 			    kind = Kind.Jump,
 			    label = success,
+			    profileInfo = profileInfo,
 			    statements = statements,
 			    transfer = transfer}
 		end
@@ -107,12 +121,6 @@ fun insertFunction (f: Function.t,
                     | _ => normal ()
 	     else normal ()
 	  end)
-      val newStart = Label.newNoname ()
-      val _ = add {args = Vector.new0 (),
-		   blockKind = Kind.Jump,
-		   lcKind = LimitCheck.Stack,
-		   start = newStart,
-		   success = start}
       val blocks = Vector.concat [blocks, Vector.fromList (!extra)]
    in
       Function.new {args = args,

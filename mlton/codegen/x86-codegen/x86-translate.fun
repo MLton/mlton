@@ -1827,8 +1827,9 @@ struct
       fun toX86Blocks {block as T {label, 
 				   live, 
 				   kind, 
-				   profileInfo as {func = funcProfileInfo,
-						   label = labelProfileInfo},
+				   profileInfo as 
+				   {ssa as {func = funcProfileInfo,
+					    label = labelProfileInfo}, ...},
 				   statements, 
 				   transfer,
 				   ...},

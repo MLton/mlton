@@ -622,22 +622,28 @@ fun toMachine (program: Ssa.Program.t) =
 			    Layout.tuple2 (Vector.layout M.Statement.layout,
 					   M.Transfer.layout))
 	       genTransfer
-	    val _ =
-	       let
-		  val live = #live (labelRegInfo start)
-	       in
-		  Chunk.newBlock
-		  (chunk, {label = funcToLabel name,
-			   kind = M.Kind.Func {args = live},
-			   live = live,
-			   profileInfo = {func = profileInfoFunc,
-					  label = profileInfoFunc},
-			   statements = Vector.new0 (),
-			   transfer = M.Transfer.Goto start})
-	       end
-	    fun genBlock (R.Block.T {args, kind, label, statements, transfer,
+	    fun genBlock (R.Block.T {args, kind, label, profileInfo,
+				     statements, transfer,
 				     ...}) : unit =
 	       let
+		  val _ = if Label.equals (label, start)
+			     then let
+				     val live = #live (labelRegInfo start)
+				  in
+				     Chunk.newBlock
+				     (chunk, 
+				      {label = funcToLabel name,
+				       kind = M.Kind.Func {args = live},
+				       live = live,
+				       profileInfo = 
+				       {ssa = #ssa profileInfo,
+					rssa = {func = profileInfoFunc,
+						label = Label.toString label}},
+				       statements = Vector.new0 (),
+				       transfer = M.Transfer.Goto start})
+				  end
+			  else ()
+
 		  val {adjustSize, live, liveNoFormals, size, ...} =
 		     labelRegInfo label
 		  val chunk = labelChunk label
@@ -723,8 +729,10 @@ fun toMachine (program: Ssa.Program.t) =
 				  {kind = kind,
 				   label = label,
 				   live = live,
-				   profileInfo = {func = profileInfoFunc,
-						  label = Label.toString label},
+				   profileInfo = 
+				   {ssa = #ssa profileInfo,
+				    rssa = {func = profileInfoFunc,
+					    label = Label.toString label}},
 				   statements = statements,
 				   transfer = transfer})
 	       end

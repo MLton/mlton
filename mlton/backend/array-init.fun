@@ -12,7 +12,9 @@ fun insertFunction (f: Function.t) =
 	 case s of
 	    Statement.Array {numPointers, ...} => numPointers > 0
 	  | _ => false
-      fun insertInit (z as {dst = array, numElts, ...}, statements, transfer) =
+      fun insertInit (z as {dst = array, numElts, ...}, 
+		      profileInfo,
+		      statements, transfer) =
 	 let
 	    val isZero = Var.newNoname ()
 	    val compare =
@@ -61,22 +63,26 @@ fun insertFunction (f: Function.t) =
 			kind = Kind.Jump,
 			label = init,
 			statements = Vector.new0 (),
+			profileInfo = profileInfo,
 			transfer = (Transfer.Goto
 				    {args = Vector.new1 (Operand.int 0),
 				     dst = loop})}
 	       :: Block.T {args = Vector.new0 (),
 			   kind = Kind.Jump,
 			   label = continue,
+			   profileInfo = profileInfo,
 			   statements = Vector.fromList statements,
 			   transfer = transfer}
 	       :: Block.T {args = Vector.new1 (i, Type.int),
 			   kind = Kind.Jump,
-			   label = loop,
+			   label = loop,	
+			   profileInfo = profileInfo,
 			   statements = loopStatements,
 			   transfer = loopTransfer}
 	       :: Block.T {args = Vector.new0 (),
 			   kind = Kind.Jump,
 			   label = loopi',
+			   profileInfo = profileInfo,
 			   statements = Vector.new0 (),
 			   transfer =
 			   Transfer.Goto
@@ -90,7 +96,8 @@ fun insertFunction (f: Function.t) =
       val blocks =
 	 Vector.map
 	 (blocks,
-	  fn block as Block.T {args, kind, label, statements, transfer} =>
+	  fn block as Block.T {args, kind, label, profileInfo, 
+			       statements, transfer} =>
 	  if not (Vector.exists (statements, needsInit))
 	     then block
 	  else
@@ -102,12 +109,13 @@ fun insertFunction (f: Function.t) =
 		       Statement.Array (z as {numBytesNonPointers, ...}) =>
 		         if numBytesNonPointers > 0
 			    then (s :: statements, transfer)
-			 else insertInit (z, statements, transfer)
+			 else insertInit (z, profileInfo, statements, transfer)
 		     | _ => (s :: statements, transfer))
 	     in
 		Block.T {args = args,
 			 kind = kind,
 			 label = label,
+			 profileInfo = profileInfo,
 			 statements = Vector.fromList statements,
 			 transfer = transfer}
 	     end)

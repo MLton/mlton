@@ -78,8 +78,8 @@ fun insert p =
 			  let
 			     val i = nodeIndex n
 			     val _ = Array.update (isHeader, i, true)
-			     val Block.T {args, kind, label, statements,
-					  transfer} =
+			     val Block.T {args, kind, label, profileInfo,
+					  statements, transfer} =
 				Vector.sub (blocks, i)
 			     val failure = Label.newNoname ()
 			     val success = Label.newNoname ()
@@ -88,6 +88,7 @@ fun insert p =
 				Block.T {args = args,
 					 kind = kind,
 					 label = label,
+					 profileInfo = profileInfo,
 					 statements = Vector.new0 (),
 					 transfer = (Transfer.LimitCheck
 						     {failure = failure,
@@ -96,6 +97,7 @@ fun insert p =
 				:: Block.T {args = Vector.new0 (),
 					    kind = Kind.Runtime {prim = Prim.gcCollect},
 					    label = failure,
+					    profileInfo = profileInfo,
 					    statements = Vector.new0 (),
 					    transfer = (Transfer.Goto
 							{args = Vector.new0 (),
@@ -103,6 +105,7 @@ fun insert p =
 				:: Block.T {args = Vector.new0 (),
 					    kind = Kind.Jump,
 					    label = success,
+					    profileInfo = profileInfo,
 					    statements = statements,
 					    transfer = transfer}
 				:: !extra

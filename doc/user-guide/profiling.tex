@@ -8,9 +8,9 @@ directory showing how to generate profiling information.
 % mlton -p -keep g profiling.sml
 % profiling
 % mlprof profiling mlmon.out
-0.41 seconds of CPU time
-tak_0               95.12%
-IntInf_smallMul (C)  4.88%
+0.40 seconds of CPU time
+tak_0               97.50%
+IntInf_smallMul (C)  2.50%
 \end{verbatim}
 In summary, generating profiling information takes three steps.
 \begin{enumerate}
@@ -47,18 +47,18 @@ You can display profiling information at the SSA basic block level with
 
 \begin{verbatim}
 % mlprof -d 1 profiling mlmon.out
-0.41 seconds of CPU time
-tak_0                      95.12%
-     L_18           28.21%       
-     loop_0         20.51%       
-     L_14           12.82%       
-     L_20           12.82%       
+0.40 seconds of CPU time
+tak_0                      97.50%
+     L_18           23.08%       
+     L_14           20.51%       
+     L_20           20.51%       
+     loop_0         12.82%       
      L_16           10.26%       
-     L_17            7.69%       
-     L_49            2.56%       
-     L_47            2.56%       
+     L_17            5.13%       
+     L_19            2.56%       
+     L_15            2.56%       
      L_21            2.56%       
-IntInf_smallMul (C)         4.88%
+IntInf_smallMul (C)         2.50%
 \end{verbatim}
 Each of the indented labels refers to a basic block in {\tt
   profiling.ssa}, within the {\tt tak\_0} function.
@@ -108,17 +108,15 @@ directory showing how to profile the executions of the {\tt fib} and
 % mlton -p -keep g profiling2.sml
 % profiling2
 % mlprof profiling2 mlmon.fib.out
-mlprof profiling2 mlmon.fib.out
-14.65 seconds of CPU time
+14.71 seconds of CPU time
 fib_0 100.00%
 % mlprof profiling2 mlmon.tak.out
-mlprof profiling2 mlmon.tak.out
-1.67 seconds of CPU time
+1.70 seconds of CPU time
 tak_0 100.00%
 % mlprof profiling2 mlmon.init.out mlmon.fib.out mlmon.tak.out mlmon.out
-16.33 seconds of CPU time
-fib_0     89.71%
-tak_0     10.23%
+16.42 seconds of CPU time
+fib_0     89.59%
+tak_0     10.35%
 <unknown>  0.06%
 \end{verbatim}
 

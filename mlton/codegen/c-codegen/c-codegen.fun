@@ -458,8 +458,9 @@ fun output {program = Machine.Program.T {chunks,
 	    and printLabelCode arg =
 	       tracePrintLabelCode
 	       (fn {block = Block.T {kind, label = l, live,
-				     profileInfo = {func = profileInfoFunc, 
-						    label = profileInfoLabel},
+				     profileInfo as 
+				     {ssa as {func = profileInfoFunc, 
+					      label = profileInfoLabel}, ...},
 				     statements, transfer, ...},
 		    layedOut, status, ...} =>
 		let
