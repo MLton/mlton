@@ -64,60 +64,6 @@ structure Edge =
       fun equals (e, e') = PropertyList.equals (plist e, plist e')
    end
 
-structure DfsParam =
-   struct
-      type t = {startNode: Node.t -> unit,
-		finishNode: Node.t -> unit,
-		handleTreeEdge: Edge.t -> unit,
-		handleNonTreeEdge: Edge.t -> unit,
-		startTree: Node.t -> unit,
-		finishTree: Node.t -> unit,
-		finishDfs: unit -> unit}
-	 
-      fun ignore _ = ()
-
-      fun finishNode f = {finishNode = f,
-			  startNode = ignore,
-			  handleTreeEdge = ignore,
-			  handleNonTreeEdge = ignore,
-			  startTree = ignore,
-			  finishTree = ignore,
-			  finishDfs = ignore}
-
-      fun handleTreeEdge f = {finishNode = ignore,
-			      startNode = ignore,
-			      handleTreeEdge = f,
-			      handleNonTreeEdge = ignore,
-			      startTree = ignore,
-			      finishTree = ignore,
-			      finishDfs = ignore}
-
-
-      fun startNode f = {finishNode = ignore,
-			 startNode = f,
-			 handleTreeEdge = ignore,
-			 handleNonTreeEdge = ignore,
-			 startTree = ignore,
-			 finishTree = ignore,
-			 finishDfs = ignore}
-	 
-      fun seq f g a = (f a; g a)
-	 
-      fun combine ({startNode, finishNode,
-		    handleTreeEdge, handleNonTreeEdge,
-		    startTree, finishTree, finishDfs}: t,
-		   {startNode = sn, finishNode = fin,
-		    handleTreeEdge = ht, handleNonTreeEdge = hn,
-		    startTree = st, finishTree = ft, finishDfs = fd}: t): t =
-	 {startNode = seq startNode sn,
-	  finishNode = seq finishNode fin,
-	  handleTreeEdge = seq handleTreeEdge ht,
-	  handleNonTreeEdge = seq handleNonTreeEdge hn,
-	  startTree = seq startTree st,
-	  finishTree = seq finishTree ft,
-	  finishDfs = seq finishDfs fd}
-   end
-
 (*---------------------------------------------------*)
 (*                  graph datatype                   *)
 (*---------------------------------------------------*)
@@ -125,6 +71,10 @@ structure DfsParam =
 datatype t = T of {nodes: Node.t list ref}
 
 fun nodes (T {nodes, ...}) = !nodes
+
+fun foldNodes (g, a, f) = List.fold (nodes g, a, f)
+   
+val numNodes = List.length o nodes
 
 fun new () = T {nodes = ref []}
    
@@ -141,11 +91,12 @@ fun addEdge (_, e as {from as Node.Node {successors, ...}, to}) =
    end
 
 fun layoutDot (T {nodes, ...},
-	       mkOptions : {nodeName: Node.t -> string} ->
-	       {edgeOptions: Edge.t -> Dot.EdgeOption.t list,
-		nodeOptions: Node.t -> Dot.NodeOption.t list,
-		options: Dot.GraphOption.t list,
-		title: string}): Layout.t =
+	       mkOptions:
+	       {nodeName: Node.t -> string}
+	       -> {edgeOptions: Edge.t -> Dot.EdgeOption.t list,
+		   nodeOptions: Node.t -> Dot.NodeOption.t list,
+		   options: Dot.GraphOption.t list,
+		   title: string}): Layout.t =
    let
       val ns = !nodes
       val c = Counter.new 0
@@ -177,53 +128,135 @@ fun layoutDot (T {nodes, ...},
 (*                   Depth-First Search                   *)
 (*--------------------------------------------------------*)
 
-fun dfsNodes (g, ns, {startNode, finishNode,
-		      handleTreeEdge, handleNonTreeEdge,
-		      startTree, finishTree, finishDfs}) =
-   let
-      val {get = hasBeenVisited, set = setVisited, destroy, ...} =
-	 Property.destGetSet (Node.plist, Property.initConst false)
-      fun visit n =
-	 (startNode n
-	  ; setVisited (n, true)
-	  ; List.foreach (Node.successors n, fn e =>
-			  let val n' = Edge.to e
-			  in if hasBeenVisited n'
-				then handleNonTreeEdge e
-			     else (visit n'; handleTreeEdge e)
-			  end)
-	  ; finishNode n)
-   in List.foreach (ns, fn n =>
-		    if hasBeenVisited n
-		       then ()
-		    else (startTree n; visit n; finishTree n))
-      ; destroy ()
-      ; finishDfs ()
-   end
+structure DfsParam =
+   struct
+      type ('a, 'b, 'c, 'd) t =
+	 'a
+	 * (Node.t * 'a -> ('b
+			    * (Node.t * 'b -> ('c
+					       * (Edge.t * 'c -> 'c)
+					       * (Edge.t * 'c -> 'b * ('d -> 'c))
+					       * ('c -> 'd)))
+			    * ('d -> 'a)))
 
-fun dfs (g, p) = dfsNodes (g, nodes g, p)
+      type 'a u = ('a, 'a, 'a, 'a) t
 
-fun dfsTree (g, {root: Node.t, nodeValue: Node.t -> 'a}): 'a Tree.t =
-   let
-      val {get = nodeInfo, ...} =
-	 Property.get
-	 (Node.plist, Property.initFun (fn n => {children = ref [],
-						 value = nodeValue n}))
+      fun startFinishNode (a: 'a,
+			   start: Node.t * 'a -> 'a,
+			   finish: Node.t * 'a -> 'a): ('a, 'a, 'a, 'a) t =
+	 (a,
+	  fn (_, a) => (a,
+			fn (n, a) =>
+			let
+			   val a = start (n, a)
+			in
+			   (a, #2, fn (_, a) => (a, fn a => a),
+			    fn a => finish (n, a))
+			end,
+			fn a => a))
 
-      val handleTreeEdge =
-	 fn Edge.Edge {from, to, ...} => List.push (#children (nodeInfo from), to)
+      fun finishNode (f: Node.t -> unit) =
+	 startFinishNode ((), fn _ => (), f o #1)
 
-      val _ = dfsNodes (g, [root], DfsParam.handleTreeEdge handleTreeEdge)
+      fun startNode (f: Node.t -> unit) =
+	 startFinishNode ((), f o #1, fn _ => ())
 
-      fun treeAt (n: Node.t): 'a Tree.t =
+      fun discoverFinishTimes () =
 	 let
-	    val {children, value} = nodeInfo n
+	    val {get = discover, set = setDiscover,
+		 destroy = destroyDiscover, ...} =
+	       Property.destGetSetOnce
+	       (Node.plist, Property.initRaise ("discover", Node.layout))
+	    val {get = finish, set = setFinish, destroy = destroyFinish, ...} =
+	       Property.destGetSetOnce
+	       (Node.plist, Property.initRaise ("finish", Node.layout))
 	 in
-	    Tree.T (value, Vector.fromListMap (!children, treeAt))
+	    (startFinishNode (0: int,
+			      fn (n, t) => (setDiscover (n, t); t + 1),
+			      fn (n, t) => (setFinish (n, t); t + 1)),
+	     {destroy = fn () => (destroyDiscover (); destroyFinish ()),
+	      discover = discover,
+	      finish = finish})
 	 end
-   in
-      treeAt root
    end
+	 
+fun dfsNodes (g: t,
+	      ns: Node.t list,
+	      (a, f): ('a, 'b, 'c, 'd) DfsParam.t) =
+   let
+      type info = {hasBeenVisited: bool ref}
+      val {get = nodeInfo: Node.t -> info, destroy, ...} =
+	 Property.destGetSet (Node.plist,
+			      Property.initFun (fn _ =>
+						{hasBeenVisited = ref false}))
+      val a =
+	 List.fold
+	 (ns, a, fn (n, a) =>
+	  let
+	     val info as {hasBeenVisited} = nodeInfo n
+	  in
+	     if !hasBeenVisited
+		then a
+	     else
+		let
+		   val (b, startNode, finishTree) = f (n, a)
+		   fun visit (n: Node.t, {hasBeenVisited}: info, b: 'b): 'd =
+		      let
+			 val _ = hasBeenVisited := true
+			 val (c, nonTreeEdge, treeEdge, finishNode) =
+			    startNode (n, b)
+		      in
+			 finishNode
+			 (List.fold
+			  (Node.successors n, c,
+			   fn (e, c) =>
+			   let
+			      val n = Edge.to e
+			      val info as {hasBeenVisited} = nodeInfo n
+			   in
+			      if !hasBeenVisited
+				 then nonTreeEdge (e, c)
+			      else
+				 let
+				    val (b, finish) = treeEdge (e, c)
+				 in
+				    finish (visit (n, info, b))
+				 end
+			   end))
+		      end
+		in
+		   finishTree (visit (n, info, b))
+		end
+	  end)
+      val _ = destroy ()
+   in
+      a
+   end
+
+fun dfs (g, z) = dfsNodes (g, nodes g, z)
+
+fun dfsTrees (g, roots: Node.t list, nodeValue: Node.t -> 'a): 'a Tree.t list =
+   dfsNodes
+   (g, roots,
+    ([], fn (n, trees) =>
+     let
+	fun startNode (n, ()) =
+	   let
+	      fun nonTree (_, ts) = ts
+	      fun tree (_, ts) = ((), fn t => t :: ts)
+	      fun finish ts = Tree.T (nodeValue n, Vector.fromList ts)
+	   in
+	      ([], nonTree, tree, finish)
+	   end
+	fun finishTree t = t :: trees
+     in
+	((), startNode, finishTree)
+     end))
+
+fun dfsTree (g, {root, nodeValue}) =
+   case dfsTrees (g, [root], nodeValue) of
+      [t] => t
+    | _ => Error.bug "dfsTree"
 
 fun display {graph, layoutNode, display} =
    dfs (graph,
@@ -239,124 +272,11 @@ fun display {graph, layoutNode, display} =
 fun foreachDescendent (g, n, f) =
    dfsNodes (g, [n], DfsParam.finishNode f)
 
-(*--------------------------------------------------------*)
-(*                         Times                          *)
-(*--------------------------------------------------------*)
-
-fun discoverFinishTimes g =
-   let val time: int ref = ref 0
-      val {get = discover, set = setDiscover, destroy = destroyDiscover, ...} =
-	 Property.destGetSetOnce (Node.plist,
-				  Property.initRaise ("discover", Node.layout))
-      val {get = finish, set = setFinish, destroy = destroyFinish, ...} =
-	 Property.destGetSetOnce (Node.plist,
-				  Property.initRaise ("finish", Node.layout))
-   in {destroy = fn () => (destroyDiscover (); destroyFinish ()),
-       discover = discover,
-       finish = finish,
-       param = {startNode = fn n => (Int.inc time; setDiscover (n, !time)),
-		finishNode = fn n => (Int.inc time; setFinish (n, !time)),
-		handleTreeEdge = DfsParam.ignore,
-		handleNonTreeEdge = DfsParam.ignore,
-		startTree = DfsParam.ignore,
-		finishTree = DfsParam.ignore,
-		finishDfs = DfsParam.ignore}}
-   end
-
-(*--------------------------------------------------------*)
-(*                        Foreach                         *)
-(*--------------------------------------------------------*)
-
 fun foreachNode (g, f) = List.foreach (nodes g, f)
    
 fun foreachEdge (g, edge) =
    foreachNode (g, fn n as Node.Node {successors, ...} =>
 		List.foreach (!successors, fn e => edge (n, e)))
-
-(*--------------------------------------------------------*)
-(*                    Topological Sort                    *)
-(*--------------------------------------------------------*)
-
-exception TopologicalSort
-
-fun topSortParam g =
-   let
-      val {get = amVisiting, set = setVisiting, destroy, ...} =
-	 Property.destGetSet (Node.plist,
-			     Property.initRaise ("visiting", Node.layout))
-      val ns = ref []
-   in (ns, {startNode = fn n => amVisiting n := true,
-	    finishNode = fn n => (amVisiting n := false; List.push (ns,n)),
-	    handleNonTreeEdge =
-	    fn Edge.Edge {from, to, ...} => if ! (amVisiting to)
-					      then raise TopologicalSort
-					   else (),
-	    startTree = DfsParam.ignore, finishTree = DfsParam.ignore,
-	    handleTreeEdge = DfsParam.ignore,
-	    finishDfs = destroy})
-   end
-
-fun topologicalSort g = let val (ns, p) = topSortParam g
-			in dfs (g, p); !ns
-			end
-
-(* from Aho, Hopcroft, Ullman section 5.5 *)
-
-fun stronglyConnectedComponents g =
-   let
-      val {get = discover: Node.t -> int, set = setDiscover,
-	   destroy = destroyDiscover, ...} =
-	 Property.destGetSetOnce (Node.plist,
-				 Property.initRaise ("discover", Node.layout))
-      val {get = low: Node.t -> int ref, destroy = destroyLow, ...} =
-	 Property.destGet (Node.plist, Property.initFun (fn _ => ref ~1))
-      val {get = isOnStack: Node.t -> bool, set = setOnStack,
-	   destroy = destroyStack, ...} =
-	 Property.destGetSet (Node.plist,
-			     Property.initRaise ("isOnStack", Node.layout))
-      val stack = ref []
-      val components = ref []
-      val time = ref 0
-      fun pop () = let val n = List.pop stack
-		  in setOnStack (n, false); n
-		  end
-      fun popTo n = let fun popTo () = let val n' = pop ()
-				      in if Node.equals (n,n') then [n]
-					 else n' :: (popTo ())
-				      end
-		    in popTo ()
-		    end
-      fun startNode n = (Int.inc time
-			 ; setDiscover (n, !time)
-			 ; low n := !time
-			 ; setOnStack (n, true)
-			 ; List.push (stack, n))
-      fun finishNode n = if discover n = ! (low n)
-			     then List.push (components, popTo n)
-			 else ()
-      fun updateLow (Edge.Edge {from, to, ...}) =
-	 let val lto = ! (low to)
-	    val lfrom = low from
-	 in if lto < !lfrom
-	       then lfrom := lto
-	    else ()
-	 end
-      val handleTreeEdge = updateLow
-      fun handleNonTreeEdge e = 
-	 if isOnStack (Edge.to e)
-	    then updateLow e
-	 else ()
-      val p = {startNode = startNode, finishNode = finishNode,
-	       handleTreeEdge = handleTreeEdge,
-	       handleNonTreeEdge = handleNonTreeEdge,
-	       startTree = DfsParam.ignore, finishTree = DfsParam.ignore,
-	       finishDfs = DfsParam.ignore}
-   in dfs (g, p)
-      ; destroyLow ()
-      ; destroyStack ()
-      ; destroyDiscover ()
-      ; !components
-   end
 
 (*--------------------------------------------------------*)
 (*                    Dominators                          *)
@@ -685,6 +605,128 @@ structure LoopForest =
 	 end   
    end
 
+(* Strongly connected components from Aho, Hopcroft, Ullman section 5.5. *)
+
+fun stronglyConnectedComponents (g: t): Node.t list list =
+   let
+      val {get = nodeInfo: Node.t -> {dfnumber: int,
+				      isOnStack: bool ref,
+				      lowlink: int ref},
+	   set = setNodeInfo, destroy, ...} =
+	 Property.destGetSetOnce (Node.plist,
+				  Property.initRaise ("scc info", Node.layout))
+      fun updateLow {from: int ref, to: int ref} =
+	 if !to < !from
+	    then from := !to
+	 else ()
+      fun startNode (n, (count, stack, components)) =
+	 let
+	    val dfnumber = count
+	    val count = count + 1
+	    val lowlink = ref dfnumber
+	    val stack = n :: stack
+	    val isOnStack = ref true
+	    val v = {dfnumber = dfnumber,
+		     isOnStack = isOnStack,
+		     lowlink = lowlink}
+	    val _ = setNodeInfo (n, v)
+	    fun nonTreeEdge (e, z) =
+	       let
+		  val w = nodeInfo (Edge.to e)
+		  val _ =
+		     if #dfnumber w < #dfnumber v
+			andalso !(#isOnStack w)
+			andalso #dfnumber w < !(#lowlink v)
+			then #lowlink v := #dfnumber w
+		     else ()
+	       in
+		  z
+	       end
+	    fun treeEdge (e, z) =
+	       (z,
+		fn z =>
+		let
+		   val w = nodeInfo (Edge.to e)
+		   val _ =
+		      if !(#lowlink w) < !(#lowlink v)
+			 then #lowlink v := !(#lowlink w)
+		      else ()
+		in
+		   z
+		end)
+	    fun finishNode (count, stack, components) =
+	       if !lowlink = dfnumber
+		  then
+		     let
+			fun popTo (stack, ac) =
+			   case stack of
+			      [] => Error.bug "not on stack"
+			    | n' :: stack =>
+				 let
+				    val _ = #isOnStack (nodeInfo n') := false
+				    val ac = n' :: ac
+				 in
+				    if Node.equals (n, n')
+				       then (stack, ac)
+				    else popTo (stack, ac)
+				 end
+			val (stack, component) = popTo (stack, [])
+		     in
+			(count, stack, component :: components)
+		     end
+	       else (count, stack, components)
+	 in
+	    ((count, stack, components),
+	     nonTreeEdge,
+	     treeEdge,
+	     finishNode)
+	 end
+      val (_, _, components) =
+	 dfs (g, ((0, [], []), fn (_, z) => (z, startNode, fn z => z)))
+      val _ = destroy ()
+   in
+      components
+   end
+
+val stronglyConnectedComponents =
+   if true
+      then stronglyConnectedComponents
+   else
+   let
+      val c = Counter.new 0
+   in
+      fn g =>
+      let
+	 val nodeCounter = Counter.new 0
+	 val {get = nodeIndex: Node.t -> int, destroy, ...} =
+	    Property.destGet
+	    (Node.plist,
+	     Property.initFun (fn _ => Counter.next nodeCounter))
+	 val index = Counter.next c
+	 val _ =
+	    File.withOut
+	    (concat ["graph", Int.toString index, ".dot"], fn out =>
+	     Layout.output
+	     (layoutDot (g, fn {nodeName} =>
+			 {edgeOptions = fn _ => [],
+			  nodeOptions = fn n => [Dot.NodeOption.label
+						 (Int.toString (nodeIndex n))],
+			  options = [],
+			  title = "scc graph"}),
+	      out))
+	 val ns = stronglyConnectedComponents g
+	 val _ =
+	    File.withOut
+	    (concat ["scc", Int.toString index], fn out =>
+	     Layout.outputl
+	     (List.layout (List.layout (Int.layout o nodeIndex)) ns,
+	      out))
+	 val _ = destroy ()
+      in
+	 ns
+      end
+   end
+
 (* This code assumes everything is reachable from the root.
  * Otherwise it may loop forever.
  *)
@@ -831,4 +873,133 @@ fun loopForestSteensgaard (g: t, {root: Node.t}): LoopForest.t =
       treeFor g
    end
 
+fun subgraph (g: t, keep: Node.t -> bool) =
+   let
+      val sub = new ()
+      val {get = newNode, destroy, ...} =
+	 Property.destGet (Node.plist,
+			   Property.initFun (fn _ => newNode sub))
+      val _ = foreachNode (g, fn from =>
+			   if not (keep from)
+			      then ()
+			   else
+			      List.foreach
+			      (Node.successors from,
+			       let
+				  val from = newNode from
+			       in
+				  fn e =>
+				  let
+				     val to = Edge.to e
+				  in
+				     if keep to
+					then
+					   (addEdge (sub, {from = from,
+							   to = newNode to})
+					    ; ())
+				     else ()
+				  end
+			       end))
+   in
+      (sub, {destroy = destroy,
+	     newNode = newNode})
+   end
+
+fun topologicalSort (g: t): Node.t list option =
+   let
+      exception Cycle
+      val {get = amVisiting, destroy, ...} =
+	 Property.destGet (Node.plist, Property.initFun (fn _ => ref false))
+      fun doit () =
+	 dfs (g,
+	      ([], fn (_, ns) =>
+	       let
+		  fun startNode (n, ns) =
+		     let
+			fun nonTree (e, ns) =
+			   if !(amVisiting (Edge.to e))
+			      then raise Cycle
+			   else ns
+			fun tree (e, ns) = (ns, fn ns => ns)
+			fun finish ns = n :: ns
+		     in
+			(ns, nonTree, tree, finish)
+		     end
+		  fun finishTree ns = ns
+	       in
+		  (ns, startNode, finishTree)
+	       end))
+      val res = SOME (doit ()) handle Cycle => NONE
+      val _ = destroy ()
+   in
+      res
+   end
+
+fun transpose (g: t) =
+   let
+      val transpose = new ()
+      val {get = newNode, destroy, ...} =
+	 Property.destGet (Node.plist,
+			   Property.initFun (fn _ => newNode transpose))
+      val _ = foreachNode (g, fn to =>
+			   List.foreach
+			   (Node.successors to,
+			    let
+			       val to = newNode to
+			    in
+			       fn e =>
+			       (addEdge (transpose, {from = newNode (Edge.to e),
+						     to = to})
+				; ())
+			    end))
+   in
+      (transpose, {destroy = destroy,
+		   newNode = newNode})
+   end
+
+val transpose =
+   if true
+      then transpose
+   else
+   let
+      val c = Counter.new 0
+   in
+      fn g =>
+      let
+	 val nodeCounter = Counter.new 0
+	 val {get = nodeIndex: Node.t -> int, destroy, ...} =
+	    Property.destGet
+	    (Node.plist,
+	     Property.initFun (fn _ => Counter.next nodeCounter))
+	 val index = Counter.next c
+	 val _ =
+	    File.withOut
+	    (concat ["graph", Int.toString index, ".dot"], fn out =>
+	     Layout.output
+	     (layoutDot (g, fn {nodeName} =>
+			 {edgeOptions = fn _ => [],
+			  nodeOptions = fn n => [Dot.NodeOption.label
+						 (Int.toString (nodeIndex n))],
+			  options = [],
+			  title = "transpose graph"}),
+	      out))
+	 val z as (g, _) = transpose g
+	 val _ =
+	    File.withOut
+	    (concat ["transpose", Int.toString index, ".dot"], fn out =>
+	     Layout.output
+	     (layoutDot (g, fn {nodeName} =>
+			 {edgeOptions = fn _ => [],
+			  nodeOptions = fn n => [Dot.NodeOption.label
+						 (Int.toString (nodeIndex n))],
+			  options = [],
+			  title = "transpose graph"}),
+	      out))
+	 val _ = destroy ()
+      in
+	 z
+      end
+   end
+
 end
+
