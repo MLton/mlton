@@ -134,9 +134,9 @@ If this is true, then the compiler prints out the types, values, signatures,
 structures, and functors from the basis library that the input program uses, and
 then exits.
 
-\option{-static}
-Produce a statically linked executable.  This switch is passed unchanged to the
-linker.
+\option{-static \{false|true\}}
+If true, then produce a statically linked executable.  This option only
+affects the linker.
 
 \option{-stop \{f|g|o|sml\}}
 Secify pass to stop at.\\
