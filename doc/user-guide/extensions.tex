@@ -384,27 +384,51 @@ return the signal corresponding to {\tt t}.
 \begin{verbatim}
 signature MLTON_PLATFORM =
    sig
-      datatype arch = Sparc | X86
-      val arch: arch
-	 
-      datatype os = Cygwin | FreeBSD | Linux | SunOS
-      val os: os
+      structure Arch:
+         sig
+            datatype t = Sparc | X86
+
+            val host: t
+            val fromString: string -> t option
+            val toString: t -> string
+         end
+         
+      structure OS:
+         sig
+            datatype t = Cygwin | FreeBSD | Linux | NetBSD | SunOS
+
+            val host: t
+            val fromString: string -> t option
+            val toString: t -> string
+         end
    end
 \end{verbatim}
 
 \begin{description}
 
-\entry{datatype arch}
+\entry{datatype Arch.t}
 the architectures to which {\mlton} can compile.
 
-\entry{arch}
+\entry{Arch.host}
 the architecture for which the program is compiled.
 
-\entry{datatype os}
+\entry{Arch.fromString a}
+convert from lower case string to architecture.
+
+\entry{Arch.toString}
+lower case string for architecture.
+
+\entry{datatype OS.t}
 the operating systems to which {\mlton} can compile.
 
-\entry{os}
+\entry{OS.host}
 the operating system for which the program is compiled.
+
+\entry{OS.fromString}
+convert from lower case string to operating system.
+
+\entry{OS.toString}
+lower case string for operating system.
 
 \end{description}
 
