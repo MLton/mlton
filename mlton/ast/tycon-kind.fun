@@ -15,6 +15,8 @@ val equals =
    fn (Arity n, Arity n') => n = n'
     | (Nary, Nary) => true
     | _ => false
+
+val equals = Trace.trace2 ("Kind.equals", layout, layout, Bool.layout) equals
 	 
 end
 
