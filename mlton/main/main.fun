@@ -188,7 +188,7 @@ fun makeOptions {usage} =
 				       (s, fn #" " => true | _ => false))
 	     then ()
 	     else usage (concat ["invalid -default-ann flag: ", s])))),
-       (Normal, "detect-overflow", " {true|false}",
+       (Expert, "detect-overflow", " {true|false}",
 	"overflow checking on integer arithmetic",
 	boolRef detectOverflow),
        (Expert, "diag-pass", " <pass>", "keep diagnostic info for pass",
@@ -391,7 +391,7 @@ fun makeOptions {usage} =
 	  | SOME b => reserveEsp := SOME b)),
        (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
 	push runtimeArgs),
-       (Normal, "safe", " {true|false}", "bounds checking and other checks",
+       (Expert, "safe", " {true|false}", "bounds checking and other checks",
 	boolRef safe),
        (Expert, "sequence-unit", " {false|true}",
 	"in (e1; e2), require e1: unit",

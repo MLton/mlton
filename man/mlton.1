@@ -70,10 +70,6 @@ supply multiple annotations separated by commas, as in
 Defaults may be overridden by an annotation in an \fBmlb\fP file.
 
 .TP
-\fB-detect-overflow \fI{\fBtrue\fI|\fBfalse\fI}\fR
-Perform overflow checking on integer arithmetic.
-
-.TP
 \fB-disable-ann \fIanns\fR
 Ignore the specified annotations in every ML basis file.  You can
 supply multiple annotations separated by commas.  For example, to see
@@ -157,14 +153,6 @@ will be processed before other \fB@MLton\fP command line switches.
 Multiple uses of \fB-runtime\fP are allowed, and will pass all the
 arguments in order.  If the same runtime switch occurs more than once,
 then the last setting will dominate, except for \fBno-load-world\fP.
-
-.TP
-\fB-safe \fI{\fBtrue\fP|\fBfalse\fP}\fR
-This switch determines the value of the SML variable \fBMLton.safe\fP, which
-controls whether the Basis Library performs array, string, and vector bounds
-checks, division for zero checks, and other checks.  Compiling \fB-safe false\fP
-changes the behavior of some programs, does not conform to the Basis Library
-specification, and may cause programs to seg fault.
 
 .TP
 \fB-sequence-unit \fI{\fBfalse\fP|\fBtrue\fP}\fR

@@ -66,9 +66,6 @@ annotations separated by commas, as in {\tt -default-ann 'sequenceUnit
 true, warnUnused true'}.  Defaults may be overridden by an annotation
 in an {\tt mlb} file.
 
-\option{-detect-overflow \trueFalse}
-Perform overflow checking on integer arithmetic.
-
 \option{-disable-ann {\it anns}}
 Ignore the specified annotations in every ML basis file.  You can
 supply multiple annotations separated by commas.  For example, to see
@@ -139,14 +136,6 @@ will be processed before other {\tt @MLton} command line switches.
 Multiple uses of {\tt -runtime} are allowed, and will pass all the
 arguments in order.  If the same runtime switch occurs more than once,
 then the last setting will take effect.
-
-\option{-safe \trueFalse}
-This switch determines the value of the SML variable {\tt MLton.safe},
-which controls whether the Basis Library performs array, string, and
-vector bounds checks, division for zero checks, and other checks.
-Compiling {\tt -safe false} changes the behavior of some programs,
-does not conform to the Basis Library specification, and may cause
-programs to seg fault.
 
 \option{-show-basis {\it file}}
 Pretty print to {\it file} the basis defined by the input program.
