@@ -1,9 +1,10 @@
 NAME = benchmark
 MLTON = mlton
-FLAGS =
-PATH = $(shell cd ../build/bin && pwd):$(shell echo $$PATH)
+HOST = self
+FLAGS = -host $(HOST)
+PATH = $(shell cd ../build/bin && echo `pwd`:$$PATH)
 
-all:	$(NAME)
+all: 	$(NAME)
 
 $(NAME): $(shell $(MLTON) -stop f $(NAME).cm)
 	@echo 'Compiling $(NAME)'
@@ -36,8 +37,8 @@ BENCH = barnes-hut checksum count-graphs DLXSimulator fft fib hamlet imp-for knu
 FPBENCH = barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace simple tensor tsp tyan vliw zern
 
 BFLAGS = -mlton "mlton" -mlkit -mosml -smlnj
-BFLAGS = -mlton "mlton"
 BFLAGS = -mlton "/usr/local/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
+BFLAGS = -mlton "mlton"
 
 .PHONY: test
 test: $(NAME)
