@@ -109,6 +109,10 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
    Ref.fluidLet
    (Control.aux, true, fn () =>
    let
+      val _ =
+	 Control.displays
+	 ("redundant-tests.pre", fn display =>
+	  (Program.layouts (program, display)))
       datatype varInfo =
 	 Const of Const.t
        | Fact of Fact.t
@@ -202,9 +206,40 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 	     val _ =
 		List.foreach
 		(Graph.nodes graph, fn n =>
-		 (List.push (#children (nodeInfo (idom n)), n)
+		 (if Node.equals (n, root)
+		     then ()
+		  else List.push (#children (nodeInfo (idom n)), n)
 		  ; List.foreach (Node.successors n, fn e =>
 				  Int.inc (#numPreds (nodeInfo (Edge.to e))))))
+	     local
+		val g = Graph.new ()
+		val {get = nodeNode} =
+		   Property.get
+		   (Node.plist, Property.initFun (fn _ => Graph.newNode g))
+	     in
+		val _ =
+		   List.foreach
+		   (Graph.nodes graph, fn n =>
+		    let
+		       val m = nodeNode n
+		    in
+		       List.foreach (! (#children (nodeInfo n)), fn n' =>
+				     (Graph.addEdge (g, {from = m,
+							 to = nodeNode n'})
+				      ; ()))
+		    end)
+		val _ =
+		   File.withOut
+		   ("z.dot", fn out =>
+		    Layout.outputl
+		    (Graph.LayoutDot.layout
+		     {graph = g,
+		      title = "dominator tree",
+		      options = [],
+		      edgeOptions = fn _ => [],
+		      nodeOptions = fn _ => []},
+		     out))
+	     end				     
 	     fun loopTransfer (t, n: Node.t) =
 		case t of
 		   Case {test, cases, default, ...} =>
@@ -290,6 +325,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 		   ()
 		end
 	     val _ = loop (body, root)
+	     val _ = Out.output (Out.error, "analysis done\n")
 	     (* Analysis is done. *)
 	     (* Set up ancestors. *)
 	     fun loop (n: Node.t, a: Node.t option) =
@@ -304,26 +340,26 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 		   List.foreach (!children, fn n => loop (n, a))
 		end
 	     val _ = loop (root, NONE)
+	     val _ = Out.output (Out.error, "ancestors done\n")
 	     (* Diagnostic. *)
-	     val _ =
-		Control.displays
-		("redundant-tests", fn display =>
-		 Ref.fluidLet
-		 (Control.inputFile, concat [!Control.inputFile, ".pre" ],
-		  fn () =>
-		  (Program.layouts (program, display)
-		   ; display (Layout.str "Facts starting")
-		   ; (Exp.foreachDec
-		      (body,
-		       fn Fun {name, ...} =>
-		       let open Layout
-		       in display (seq [Jump.layout name,
-					str " ",
-					List.layout Fact.layout
-					(! (#facts (jumpInfo name)))])
-		       end
-			| _ => ()))
-		   ; display (Layout.str "Facts done"))))
+	     val _ = 
+		Ref.fluidLet
+		(Control.inputFile, concat [!Control.inputFile,
+					    ".", Func.toString name,
+					    ".facts"],
+		 fn () =>
+		 Control.displays
+		 ("", fn display =>
+		  Exp.foreachDec
+		  (body,
+		   fn Fun {name, ...} =>
+		   let open Layout
+		   in display (seq [Jump.layout name,
+				    str " ",
+				    List.layout Fact.layout
+				    (! (#facts (jumpInfo name)))])
+		   end
+		    | _ => ())))
 	     (* Transformation. *)
 	     fun determine (i: NodeInfo.t, f: Fact.t) =
 		let
@@ -385,11 +421,12 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 		   Exp.make {decs = decs,
 			     transfer = transfer}
 		end
-	     val body = loop (body, NodeInfo.dummy)
+	     val body = shrink (loop (body, NodeInfo.dummy))
+	     val _ = Exp.clear body
 	  in
 	     Function.T {name = name,
 			 args = args,
-			 body = shrink body,
+			 body = body,
 			 returns = returns}
 	  end
       val functions = Vector.map (functions, simplifyFunction)
