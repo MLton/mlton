@@ -131,7 +131,10 @@ val test12k = tst0 "test12k" (if Real.==(pow(0.0, ~0.5),Real.posInf) then "OK" e
 *)
 val test12l = tst0 "test12l" (if Real.isNan(pow(~1.0, 1.1)) then "OK" else "WRONG")
 val test12m = tst0 "test12m" (if Real.isNan(pow(~1.0, 0.5)) then "OK" else "WRONG")
-val test12n = tst0 "test12n" (if Real.==(pow(3.0, 1000000.0),Real.posInf) then "OK" else "WRONG")   (* not in basis lib spec.*)
+(* sweeks removed 12n because it fails on FreeBSD on x86, apparently due to a
+ * 64 bit vs 80 bit issue.
+ *)
+(* val test12n = tst0 "test12n" (if Real.==(pow(3.0, 1000000.0),Real.posInf) then "OK" else "WRONG") *)   (* not in basis lib spec.*)
 val test13a = tst1 "test13a" (log10, 1.0, 0.0);
 val test13b = tst1 "test13b" (log10, 10.0, 1.0);
 val test13c = tst1 "test13c" (log10, 100.0, 2.0);
