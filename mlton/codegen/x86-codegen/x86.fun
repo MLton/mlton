@@ -1122,6 +1122,9 @@ struct
       val immediate_const_word = immediate o Immediate.const_word
       val immediate_label = immediate o Immediate.label
       val label = Label
+      val deLabel
+	= fn Label x => SOME x
+	   | _ => NONE
       val address = Address
       val memloc = MemLoc
       val deMemloc 

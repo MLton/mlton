@@ -250,6 +250,7 @@ signature X86 =
 	val immediate_label : Label.t -> t
 	val deImmediate : t -> Immediate.t option
 	val label : Label.t -> t
+	val deLabel : t -> Label.t option
 	val address : Address.t -> t
 	val memloc : MemLoc.t -> t
 	val deMemloc : t -> MemLoc.t option

@@ -4841,15 +4841,18 @@ struct
 	    {assembly = assembly,
 	     registerAllocation = registerAllocation}
 	  end
-		
-(*
+
+(*		
       fun cache {caches: {register: Register.t, 
 			  memloc: MemLoc.t, 
 			  reserve: bool} list, 
 		 info: Liveness.t,
 		 registerAllocation: t}
 	= let
-	    val supports = List.map(caches, Operand.memloc o #memloc)
+	    val supports 
+	      = List.map
+	        (caches, 
+		 fn {memloc, ...} => Operand.memloc memloc)
 
 	    val {assembly = assembly_load,
 		 registerAllocation,
@@ -4868,7 +4871,7 @@ struct
 			 = toRegisterMemLoc 
 			   {memloc = memloc,
 			    info = info,
-			    size = Register.size register, 
+			    size = MemLoc.size memloc, 
 			    move = true,
 			    supports = supports,
 			    saves = saves, 
@@ -4877,7 +4880,7 @@ struct
 		     in
 		       {assembly = assembly @ assembly_register,
 			registerAllocation = registerAllocation,
-			saves = (Operand.register register)::saves}
+			saves = (Operand.memloc memloc)::saves}
 		     end)
 
 	    val {register,
@@ -10203,38 +10206,92 @@ struct
   fun allocateRegisters {assembly : Assembly.t list list,
 			 liveness : bool} :
                         Assembly.t list list
-    = List.map(assembly,
-	       fn assembly 
-	        => let
-		     val assembly
-		       = if liveness
-			   then Liveness.toLiveness assembly
-			   else Liveness.toNoLiveness assembly
+    = let
+	val {get = getInfo : Label.t -> Label.t option,
+	     set = setInfo}
+	  = Property.getSetOnce
+	    (Label.plist,
+	     Property.initConst NONE)
 
-		     val {assembly, registerAllocation}
-		       = Assembly.allocateRegisters 
-		         {assembly = assembly,
-			  registerAllocation 
-			  = RegisterAllocation.empty ()}
-			 handle Fail msg
-			 => (List.foreach(assembly,
-					  fn (asm,info)
-					   => (print (Assembly.toString asm);
-					       print "\n";
-					       print (Liveness.toString info);
-					       print "\n"));
-			     Error.bug msg)
-		   in
-		     (fn l 
-		       => if !Control.Native.commented > 1
-			    then (Assembly.comment
-				  (String.make (60, #"*")))::
-			         (Assembly.comment
-				  (String.make (60, #"*")))::
-				 l
-			    else l)
-		     assembly
-		   end)
+	val assembly
+	  = List.fold
+	    (assembly,
+	     [],
+	     fn (assembly,assembly')
+	      => let
+		   val assembly
+		     = if liveness
+			 then Liveness.toLiveness assembly
+			 else Liveness.toNoLiveness assembly
+
+		   val {assembly, registerAllocation}
+		     = Assembly.allocateRegisters
+		       {assembly = assembly,
+			registerAllocation
+			= RegisterAllocation.empty ()}
+		       handle Fail msg
+		       => (List.foreach(assembly,
+					fn (asm,info)
+					 => (print (Assembly.toString asm);
+					     print "\n";
+					     print (Liveness.toString info);
+					     print "\n"));
+			   Error.bug msg)
+
+		   val rec doit 
+		     = fn (Assembly.Comment _)::assembly 
+		        => doit assembly
+			| (Assembly.PseudoOp (PseudoOp.P2align 2))::assembly
+		        => doit' (assembly, [])
+		        | _ => false
+		   and doit'
+		     = fn ((Assembly.Comment _)::assembly, labels) 
+		        => doit' (assembly, labels)
+			| ((Assembly.Label l)::assembly, labels)
+		        => doit' (assembly, l::labels)
+		        | (assembly, labels) => doit'' (assembly, labels)
+		   and doit''
+		     = fn ((Assembly.Comment _)::assembly, labels)
+		        => doit'' (assembly, labels)
+			| ((Assembly.Instruction 
+			    (Instruction.JMP 
+			     {target = Operand.Label label, 
+			      absolute = false}))::assembly, labels)
+		        => doit''' (assembly, labels, label)
+		        | _ => false
+		   and doit'''
+		     = fn ([], labels, label)
+		        => (List.foreach
+			    (labels, 
+			     fn label' => setInfo(label', SOME label))
+			    ; true)
+			| ((Assembly.Comment _)::assembly, labels, label)
+		        => doit''' (assembly, labels, label)
+		        | _ => false
+		 in
+		   if doit assembly
+		     then assembly'
+		     else assembly::assembly'
+		 end)
+
+	fun replacer _ oper
+	  = (case Operand.deLabel oper
+	       of SOME label 
+		=> (case getInfo label
+		      of NONE => oper
+	               | SOME label'
+		       => Operand.label label')
+		| NONE => oper)
+
+	val assembly
+	  = List.fold
+	    (assembly,
+	     [],
+	     fn (assembly,assembly')
+	      => (List.map(assembly, Assembly.replace replacer))::assembly')
+      in
+	assembly
+      end
 
   val (allocateRegisters, allocateRegisters_msg)
     = tracerTop
