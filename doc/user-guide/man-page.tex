@@ -38,9 +38,6 @@ listed is the default.  For example, by default, overflow checking on
 is performed on integer arithmetic.
 
 \newcommand{\option}[1]{\item[{\tt #1}]\hspace{1em}\\}
-
-\begin{description}
-
 \newcommand{\choices}{{\it \{}}
 \newcommand{\choice}{{\it |}}
 \renewcommand{\choice}{|}
@@ -48,8 +45,13 @@ is performed on integer arithmetic.
 \newcommand{\choiceTwo}[2]{\choices #1\choice #2\choicesEnd}
 \newcommand{\choiceThree}[3]{\choices #1\choice #2\choice #3\choicesEnd}
 \newcommand{\choiceFour}[4]{\choices #1\choice #2\choice #3\choice #4\choicesEnd}
+\newcommand{\choiceSix}[6]
+	   {\choices #1\choice #2\choice #3\choice #4\choice #5\choice
+            #6\choicesEnd}
 \newcommand{\falseTrue}{\choiceTwo{false}{true}}
 \newcommand{\trueFalse}{\choiceTwo{true}{false}}
+
+\begin{description}
 
 \option{-align \choiceTwo{4}{8}}
 Aligns object sizes and doubles in memory by the specified alignment.
@@ -85,7 +87,9 @@ approximate measure of code size of a procedure.  The default is 320.
 \option{-keep \choiceThree{g}{o}{sml}}
 Save intermediate files.  If no {\tt -keep} argument is given, then
 only the output file is saved.\\
+\hspace*{0.5in}
 \begin{tabular}{l|l}
+\hline
 {\tt g} & generated {\tt .S} and {\tt .c} files passed to gcc and the assembler\\
 {\tt o} & object ({\tt .o}) files\\
 {\tt sml} & SML file\\
@@ -155,7 +159,9 @@ of each use.
 
 \option{-stop \choiceFour{f}{g}{o}{sml}}
 Secify pass to stop at.\\
+\hspace*{0.5in}
 \begin{tabular}{l|l}
+\hline
 {\tt f} & list of files on stdout (only makes sense when input is {\tt foo.cm})\\
 {\tt g} & generated {\tt .S} and {\tt .c} files\\
 {\tt o} & object file\\
@@ -174,7 +180,9 @@ cross-compiler.  See \secref{cross-compiling}.
 
 \option{-verbose \choiceFour{0}{1}{2}{3}}
 How verbose to be about what passes are running.  The default is 0.\\
+\hspace*{0.5in}
 \begin{tabular}{l|l}
+\hline
 {\tt 0} & silent\\
 {\tt 1} & calls to compiler, assembler, and linker\\
 {\tt 2} & 1 + intermediate compiler passes\\
@@ -212,13 +220,18 @@ hello-world @MLton gc-summary -- @MLton fixed-heap 10k -- a b c
 Here are the allowed options.
 
 \begin{description}
-\option{fixed-heap \mbox{\rm n[}km\mbox{\rm ]}}
- Use a fixed size heap of {\tt n} bytes.
- A trailing {\tt k} means that {\tt n} is in units of 1024 bytes. 
- A trailing {\tt m} means that {\tt n} is in units of 1,048,576 bytes. 
- If neither appear, then {\tt n} is in bytes.
- A value of {\tt 0} means to use almost all the RAM present on the
- machine.
+\option{fixed-heap {\it x}\choiceSix{k}{K}{m}{M}{g}{G}}
+Use a fixed size heap of size {\it x}, where {\tt x} is a real number
+and the trailing letter indicates its units.\\
+\hspace*{0.5in}
+\begin{tabular}{l|l}
+\hline
+{\tt k} or {\tt K} & 1024 \\
+{\tt m} or {\tt M} & 1,048,576 \\
+{\tt g} or {\tt G} & 1,073,741,824
+\end{tabular}\\
+A value of {\tt 0} means to use almost all the RAM present on the
+machine.
 
 \option{gc-messages}
 Print a message at the start and end of every garbage collection.
@@ -232,10 +245,10 @@ Restart the computation with the file specified by world, which must
 have been created by a call to {\tt MLton.World.save} by the same
 executable.  See \secref{world} for details.
 
-\option{max-heap \mbox{\rm n[}km\mbox{\rm ]}}
+\option{max-heap {\it x}\choiceSix{k}{K}{m}{M}{g}{G}}
 Run the computation with an automatically resized heap that is never
-larger than n.  The meaning of [{\tt km}] is the same as with the
-{\tt fixed-heap} option.
+larger than {\it x}, where {\it x} is a real number and the trailing
+letter indicates the units as with {\tt fixed-heap}.
 
 \option{no-load-world}
 Disable {\tt load-world}.  This can be used as an argument to the
@@ -257,5 +270,5 @@ process any {\tt @MLton} arguments.
 \end{description}
 These options can also control {\mlton}, as in
 \begin{verbatim}
-mlton @MLton fixed-heap 100m -- foo.sml
+mlton @MLton fixed-heap 0.5g -- foo.sml
 \end{verbatim}

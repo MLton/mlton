@@ -1,5 +1,11 @@
 Here are the changes since version 20040227.
 
+* 2004-06-23
+  - Runtime system options that take memory sizes now accept a "g"
+    suffix indicating gigabytes.  They also now take a real instead of
+    an integer, e.g. fixed-heap 0.5g.  They also now accept uppercase,
+    e.g. 150M.
+
 * 2004-06-12
   - Added support for OpenBSD.
 

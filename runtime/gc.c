@@ -4004,34 +4004,35 @@ static float stringToFloat (string s) {
 }
 
 static uint stringToBytes (string s) {
-	char c;
-	uint result;
-	int i;
+	double d;
+	char *endptr;
+	uint factor;
 	
-	result = 0;
-	i = 0;
-	while ((c = s[i++]) != '\000') {
-		switch (c) {
-		case 'm':
-			if (s[i] == '\000') 
-				return result * 1048576;
-			else 
-				goto bad;
-			break;
-		case 'k':
-			if (s[i] == '\000') 
-				return result * 1024;
-			else 
-				goto bad;
-			break;
-		default:
-			if ('0' <= c and c <= '9')
-				result = result * 10 + (c - '0');
-			else 
-				goto bad;
-		}
+	d = strtod (s, &endptr);
+	if (0.0 == d and s == endptr)
+		goto bad;
+	switch (*endptr++) {
+	case 'g':
+	case 'G':
+		factor = 1024 * 1024 * 1024;
+	break;
+	case 'k':
+	case 'K':
+		factor = 1024;
+	break;
+	case 'm':
+	case 'M':
+		factor = 1024 * 1024;
+	break;
+	default:
+		goto bad;
 	}
-	assert (FALSE);
+	d *= factor;
+	unless ('\000' == *endptr
+			and (double)INT_MIN <= d 
+			and d <= (double)INT_MAX)
+		goto bad;
+	return (uint)d;
 bad:
 	die ("Invalid @MLton memory amount: %s.", s);
 }

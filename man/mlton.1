@@ -218,11 +218,17 @@ by \fB--\fP, and are followed by any arguments to the program.
 The optional arguments are \fInot\fP made available to the SML
 program via \fBCommandLine.arguments\fP.
 .TP
-\fBfixed-heap \fIn[\fBkm\fI]\fR
-Use a fixed size heap of \fBn\fP bytes.
-A trailing \fBk\fP means that \fBn\fP is in units of 1024 bytes.
-A trailing \fBm\fP means that \fBn\fP is in units of 1,048,576 bytes.
-If neither appears, then \fBn\fP is in bytes.
+\fBfixed-heap \fIx{\fBk\fP|\fBm\fP|\fBg\fP}\fR
+Use a fixed size heap of size \fIx\fP, where \fIx\fP is a real number
+and the trailing letter indicates its units.
+.in +.5i
+\fBk\fP or \fBK\fP    1024
+.br
+\fPm\fP or \fBM\fP    1,048,576
+.br
+\fBg\fP or \fBG\fP    1,073,741,824
+.in -.5i
+Upper case \fBK\fP, \fBM\fP, or \fBG\fP can also be used.
 A value of \fB0\fP means to use almost all the RAM present on the machine.
 .TP
 \fBgc-messages\fP
@@ -237,10 +243,11 @@ Restart the computation with the file \fIworld\fP, which must have
 been created by a call to \fBMLton.World.save\fP by the same
 executable.
 .TP
-\fBmax-heap \fIn[\fBkm\fI]\fR
-Run the computation with an automatically resized heap that is never larger
-than \fIn\fP.
-The meaning of \fI[\fBkm\fI]\fR is the same as with the \fBfixed-heap\fP
+\fBmax-heap \fIx{\fBk\fP|\fBm\fP|\fBg\fP}\fR
+Run the computation with an automatically resized heap that is never
+larger than \fIx\fP, where \fIx\fP is a real number and the trailing
+letter indicates the units as with \fBfixed-heap\fP.
+
 option.
 .TP
 \fB-no-load-world\fP
