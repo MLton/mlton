@@ -76,7 +76,7 @@ done
 echo 'Creating source tgz'
 cd $rpms/SOURCES
 ss chown -R root.root $version
-tar.write $version | gzip >$version-$release.tgz
+tar.write $version | gzip >$version.tgz
 ss rm -rf $version
 
 echo 'Building rpms'
