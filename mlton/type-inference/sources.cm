@@ -23,7 +23,5 @@ match-compile.fun
 match-compile.sig
 nested-pat.fun
 nested-pat.sig
-scope.fun
-scope.sig
 type-env.fun
 type-env.sig

@@ -145,7 +145,6 @@ control/source-pos.sml
 control/region.sig
 control/region.sml
 ../lib/mlton/set/set.sig
-../lib/mlton/env/mono-env.sig
 ast/word-size.sig
 ast/wrapped.sig
 ast/tyvar.sig
@@ -249,12 +248,9 @@ ast/ast-atoms.fun
 ast/ast-core.fun
 ast/ast.fun
 ../lib/mlton/set/unordered.fun
-../lib/mlton/env/basic-env-to-env.fun
-../lib/mlton/env/mono-env.fun
 atoms/word-x.fun
 atoms/id.fun
 atoms/var.fun
-atoms/use-name.fun
 atoms/type-ops.fun
 atoms/type.fun
 atoms/tycon.fun
@@ -477,9 +473,15 @@ elaborate/decs.fun
 elaborate/elaborate-env.fun
 elaborate/elaborate-sigexp.sig
 elaborate/elaborate-sigexp.fun
-elaborate/elaborate-core.sig
+../lib/mlton/env/mono-env.sig
+../lib/mlton/env/basic-env-to-env.fun
+../lib/mlton/env/mono-env.fun
+atoms/use-name.fun
+elaborate/scope.sig
+elaborate/scope.fun
 elaborate/precedence-parse.sig
 elaborate/precedence-parse.fun
+elaborate/elaborate-core.sig
 elaborate/elaborate-core.fun
 elaborate/elaborate.fun
 control/source.sig
@@ -491,8 +493,6 @@ front-end/ml.lex.sml
 front-end/front-end.fun
 type-inference/type-env.sig
 type-inference/type-env.fun
-type-inference/scope.sig
-type-inference/scope.fun
 type-inference/nested-pat.sig
 type-inference/nested-pat.fun
 type-inference/match-compile.sig

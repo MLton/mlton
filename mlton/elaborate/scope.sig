@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2003 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -7,14 +7,15 @@
  *)
 signature SCOPE_STRUCTS =
    sig
-      structure CoreML: CORE_ML
+      structure Ast: AST
    end
 
 signature SCOPE =
    sig
       include SCOPE_STRUCTS
 
-      (* add free type variables to the val or fun declaration
-       where they are implicitly scoped *)
-      val scope: CoreML.Program.t -> CoreML.Program.t
+      (* Add free type variables to the val or fun declaration where they are
+       * implicitly scoped.
+       *)
+      val scope: Ast.Dec.t -> Ast.Dec.t
    end

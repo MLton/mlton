@@ -16,7 +16,6 @@ datatype z = datatype WordSize.t
    
 structure Srecord = SortedRecord
 structure Field = Record.Field
-structure Scope = Scope (structure CoreML = CoreML)
 structure Env = TypeEnv (open CoreML
 			 structure XmlType = Xml.Type)
 structure Scheme = Env.InferScheme
@@ -1248,7 +1247,7 @@ fun infer {program = p: CoreML.Program.t,
       (*------------------------------------*)
       (*    main code for type inference    *)
       (*------------------------------------*)
-      val Cprogram.T {decs} = Scope.scope p
+      val Cprogram.T {decs} = p
       val _ = Control.checkForErrors "type variable scope inference"
       val (ds, env) =
 	 Control.trace (Control.Pass, "unification")

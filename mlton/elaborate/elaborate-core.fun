@@ -68,6 +68,8 @@ end
 structure Parse = PrecedenceParse (structure Ast = Ast
 				   structure Env = Env)
 
+structure Scope = Scope (structure Ast = Ast)
+
 structure Apat =
    struct
       open Apat
@@ -1082,7 +1084,7 @@ fun elaborateDec (d, nest, E) =
 				 Env.scope (E, fn () => (elaboratePat (pat, E),
 							 elabExp' (exp, nest))))}
    in
-      elabDec (d, nest)
+      elabDec (Scope.scope d, nest)
    end
 
 end

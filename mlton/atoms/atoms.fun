@@ -70,25 +70,6 @@ structure Atoms =
       structure Vars = UnorderedSet (Var)
       structure Cons = UnorderedSet (Con)
       structure Tycons = UnorderedSet (Tycon)
-      structure TyvarEnv =
-	 struct
-	    structure Env = MonoEnv (structure Domain = UseName (Tyvar)
-				    structure Range = Tyvar)
-	    open Env
-
-	    fun rename (env: t, tyvars: Tyvar.t vector): t * Tyvar.t vector =
-	       let
-		  val (tyvars, env) =
-		     Vector.mapAndFold
-		     (tyvars, env, fn (tyv, env) =>
-		      let
-			 val tyv' =
-			    Tyvar.newNoname {equality = Tyvar.isEquality tyv}
-		      in (tyv', extend (env, tyv, tyv'))
-		      end)
-	       in (env, tyvars)
-	       end
-	 end
    end
 
 open Atoms

@@ -84,20 +84,20 @@ structure Pat =
    struct
       open Wrap
       datatype node =
-	 Wild
-       | Var of {fixop: Fixop.t, name: Longvid.t}
+	 App of Longcon.t * t
        | Const of Const.t
-       | Tuple of t vector
-       | Record of {items: item vector,
-		    flexible: bool}
-       | List of t list
-       | FlatApp of t vector
-       | App of Longcon.t * t
        | Constraint of t * Type.t
+       | FlatApp of t vector
        | Layered of {fixop: Fixop.t,
 		     var: Var.t,
 		     constraint: Type.t option,
 		     pat: t}
+       | List of t list
+       | Record of {flexible: bool,
+		    items: item vector}
+       | Tuple of t vector
+       | Var of {fixop: Fixop.t, name: Longvid.t}
+       | Wild
       and item =
 	 Field of Record.Field.t * t
 	| Vid of Vid.t * Type.t option * t option 
@@ -286,27 +286,27 @@ datatype expNode =
 	     name: string,
 	     ty: Type.t}
 and decNode =
-    Val of {tyvars: Tyvar.t vector,
-	    vbs: {pat: Pat.t,
-		  exp: exp,
-		  filePos: string} vector,
-	    rvbs: {pat: Pat.t,
-		   match: match} vector}
-  | Fun of Tyvar.t vector * {clauses: {pats: Pat.t vector,
-				       resultType: Type.t option,
-				       body: exp} vector,
-			     filePos: string} vector
-  | Type of TypBind.t
+   Abstype of {body: dec,
+	       datBind: DatBind.t}
   | Datatype of DatatypeRhs.t
-  | Abstype of {datBind: DatBind.t,
-		body: dec}
   | Exception of Eb.t vector
-  | Local of dec * dec
-  | SeqDec of dec vector
-  | Open of Longstrid.t vector
-  | Overload of Var.t * Type.t * Longvar.t vector
   | Fix of {fixity: Fixity.t,
 	    ops: Vid.t vector}
+  | Fun of Tyvar.t vector * {clauses: {body: exp,
+				       pats: Pat.t vector,
+				       resultType: Type.t option} vector,
+			     filePos: string} vector
+  | Local of dec * dec
+  | Open of Longstrid.t vector
+  | Overload of Var.t * Type.t * Longvar.t vector
+  | SeqDec of dec vector
+  | Type of TypBind.t
+  | Val of {tyvars: Tyvar.t vector,
+	    vbs: {exp: exp,
+		  filePos: string,
+		  pat: Pat.t} vector,
+	    rvbs: {match: match,
+		   pat: Pat.t} vector}
 and match = T of {filePos: string,
 		  rules: (Pat.t * exp) vector}
 withtype

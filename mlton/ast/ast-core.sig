@@ -50,15 +50,16 @@ signature AST_CORE =
 	     | Const of Const.t
 	     | Constraint of t * Type.t
 	     | FlatApp of t vector
-	     | Layered of {fixop: Fixop.t,
-			   var: Var.t,
-			   constraint: Type.t option,
-			   pat: t}
+	     | Layered of {constraint: Type.t option,
+			   fixop: Fixop.t,
+			   pat: t,
+			   var: Var.t}
 	     | List of t list
-	     | Record of {items: Item.t vector,
-			  flexible: bool}
+	     | Record of {flexible: bool,
+			  items: Item.t vector}
 	     | Tuple of t vector
-	     | Var of {fixop: Fixop.t, name: Longvid.t}
+	     | Var of {fixop: Fixop.t,
+		       name: Longvid.t}
 	     | Wild
 	       
 	    include WRAPPED sharing type node' = node
@@ -160,8 +161,8 @@ signature AST_CORE =
 	 sig
 	    type t
 	    datatype node =
-	       Gen of Type.t option
-	     | Def of Longcon.t
+	       Def of Longcon.t
+	     | Gen of Type.t option
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
 	 end
@@ -170,27 +171,27 @@ signature AST_CORE =
 	 sig
 	    type t
 	    datatype node =
-	       Val of {tyvars: Tyvar.t vector,
-		       vbs: {pat: Pat.t,
-			     exp: Exp.t,
-			     filePos: string} vector,
-		       rvbs: {pat: Pat.t,
-			      match: Match.t} vector}
+	       Abstype of {datBind: DatBind.t,
+			   body: t}
+	     | Datatype of DatatypeRhs.t
+	     | Exception of (Con.t * EbRhs.t) vector
+	     | Fix of {fixity: Fixity.t,
+		       ops: Vid.t vector}
 	     | Fun of Tyvar.t vector * {clauses: {pats: Pat.t vector,
 						  resultType: Type.t option,
 						  body: Exp.t} vector,
 					filePos: string} vector
-	     | Type of TypBind.t
-	     | Datatype of DatatypeRhs.t
-	     | Abstype of {datBind: DatBind.t,
-			   body: t}
-	     | Exception of (Con.t * EbRhs.t) vector
-	     | SeqDec of t vector
 	     | Local of t * t
 	     | Open of Longstrid.t vector
 	     | Overload of Var.t * Type.t * Longvar.t vector
-	     | Fix of {fixity: Fixity.t,
-		       ops: Vid.t vector}
+	     | SeqDec of t vector
+	     | Type of TypBind.t
+	     | Val of {rvbs: {match: Match.t,
+			      pat: Pat.t} vector,
+		       tyvars: Tyvar.t vector,
+		       vbs: {exp: Exp.t,
+			     filePos: string,
+			     pat: Pat.t} vector}
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
 

@@ -36,16 +36,6 @@ signature ATOMS' =
       structure Tyvar: TYVAR
       structure Var: VAR
       structure Vars: SET
-      structure TyvarEnv:
-	 sig
-	    include MONO_ENV 
-
-	    (* rename (env, tyvars) extends env by mapping each tyvar to
-	     * a new tyvar (with the same equality property).  It returns
-	     * the extended environment and the list of new tyvars
-	     *)
-            val rename: t * Tyvar.t vector -> t * Tyvar.t vector
-	 end
       structure Tyvars: SET
       structure WordX: WORD_X
 
@@ -75,8 +65,6 @@ signature ATOMS' =
       sharing WordX = Const.WordX
       sharing type Con.t = Cons.Element.t
       sharing type Tycon.t = Tycons.Element.t
-      sharing type Tyvar.t = TyvarEnv.Domain.t
-      sharing type Tyvar.t = TyvarEnv.Range.t
       sharing type Tyvar.t = Tyvars.Element.t
       sharing type Var.t = Vars.Element.t
    end

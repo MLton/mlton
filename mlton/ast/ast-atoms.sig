@@ -104,9 +104,9 @@ signature AST_ATOMS =
       structure TypBind:
 	 sig
 	    type t
-	    datatype node = T of {tyvars: Tyvar.t vector,
+	    datatype node = T of {def: Type.t,
 				  tycon: Tycon.t,
-				  def: Type.t} list
+				  tyvars: Tyvar.t vector} list
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
 
@@ -117,9 +117,9 @@ signature AST_ATOMS =
 	 sig
 	    type t
 	    datatype node =
-	       T of {datatypes: {tyvars: Tyvar.t vector,
+	       T of {datatypes: {cons: (Con.t * Type.t option) vector,
 				 tycon: Tycon.t,
-				 cons: (Con.t * Type.t option) vector} vector,
+				 tyvars: Tyvar.t vector} vector,
 		     withtypes: TypBind.t}
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
