@@ -471,9 +471,9 @@ struct
 		(case (Operand.deMemloc src,
 		       Operand.deMemloc dst)
 		   of (SOME src, SOME dst)
-		    => not (MemLoc.mayAlias(src, dst))
-		       andalso
-		       not (List.contains(MemLoc.utilized src, dst, MemLoc.eq))
+		    => not (List.exists
+			    (src::(MemLoc.utilized src),
+			     fn memloc => MemLoc.mayAlias(memloc, dst)))
 	            | _ => true)
 	     | Assembly.Instruction (Instruction.pMD
 				     {oper,
