@@ -16,15 +16,6 @@ structure Used =
     val isUsed = isTop
   end
 
-structure NeedsArgs =
-  struct
-    structure L = TwoPointLattice (val bottom = "no"
-				   val top = "yes")
-    open L
-    val forceArgs = makeTop
-    val needsArgs = isTop
-  end
-
 fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
   = let
       val {get = varInfo : Var.t -> {used: Used.t}}
