@@ -6,44 +6,7 @@
 structure MLtonSyslog :> MLTON_SYSLOG =
 struct
 
-type openflag = int
-        
-val CONS = _const "LOG_CONS" : openflag;
-val NDELAY = _const "LOG_NDELAY" : openflag;
-val PERROR = _const "LOG_PERROR" : openflag;
-val PID = _const "LOG_PID" : openflag;
-
-type facility = int
-
-val AUTHPRIV = _const "LOG_AUTHPRIV" : facility;
-val CRON = _const "LOG_CRON" : facility;
-val DAEMON = _const "LOG_DAEMON" : facility;
-val KERN = _const "LOG_KERN" : facility;
-val LOCAL0 = _const "LOG_LOCAL0" : facility;
-val LOCAL1 = _const "LOG_LOCAL1" : facility;
-val LOCAL2 = _const "LOG_LOCAL2" : facility;
-val LOCAL3 = _const "LOG_LOCAL3" : facility;
-val LOCAL4 = _const "LOG_LOCAL4" : facility;
-val LOCAL5 = _const "LOG_LOCAL5" : facility;
-val LOCAL6 = _const "LOG_LOCAL6" : facility;
-val LOCAL7 = _const "LOG_LOCAL7" : facility;
-val LPR = _const "LOG_LPR" : facility;
-val MAIL = _const "LOG_MAIL" : facility;
-val NEWS = _const "LOG_NEWS" : facility;
-val SYSLOG = _const "LOG_SYSLOG" : facility;
-val USER = _const "LOG_USER" : facility;
-val UUCP = _const "LOG_UUCP" : facility;
-
-type loglevel = int
-
-val EMERG = _const "LOG_EMERG" : loglevel;
-val ALERT = _const "LOG_ALERT" : loglevel;
-val CRIT = _const "LOG_CRIT" : loglevel;
-val ERR = _const "LOG_ERR" : loglevel;
-val WARNING = _const "LOG_WARNING" : loglevel;
-val NOTICE = _const "LOG_NOTICE" : loglevel;
-val INFO = _const "LOG_INFO" : loglevel;
-val DEBUG = _const "LOG_DEBUG" : loglevel;
+open Primitive.MLton.Syslog
 
 fun zt s = s ^ "\000"
 

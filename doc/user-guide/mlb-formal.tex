@@ -1,0 +1,772 @@
+%% \documentclass[draft]{article}
+%% \usepackage{fullpage}
+%% \usepackage{amsmath}
+%% \usepackage{amssymb}
+%% \usepackage[mathscr]{eucal}
+%% \usepackage{stmaryrd}
+
+% math fonts
+\newcommand{\mbb}[1]{\mathbb{#1}}
+\newcommand{\mbf}[1]{\mathbf{#1}}
+\renewcommand{\mit}[1]{\mathit{#1}}
+\newcommand{\mrm}[1]{\mathrm{#1}}
+\newcommand{\mtt}[1]{\mathtt{#1}}
+\newcommand{\mcal}[1]{\mathcal{#1}}
+\newcommand{\msf}[1]{\mathsf{#1}}
+
+% text fonts
+\newcommand{\ttt}[1]{\texttt{#1}}
+
+% formatting
+\newenvironment{stackAux}[2]{%
+\setlength{\arraycolsep}{0pt}
+\begin{array}[#1]{#2}}{
+\end{array}}
+\newenvironment{stackCC}{
+\begin{stackAux}{c}{c}}{\end{stackAux}}
+\newenvironment{stackCL}{
+\begin{stackAux}{c}{l}}{\end{stackAux}}
+\newenvironment{stackTL}{
+\begin{stackAux}{t}{l}}{\end{stackAux}}
+\newenvironment{stackTR}{
+\begin{stackAux}{t}{r}}{\end{stackAux}}
+\newenvironment{stackBC}{
+\begin{stackAux}{b}{c}}{\end{stackAux}}
+\newenvironment{stackBL}{
+\begin{stackAux}{b}{l}}{\end{stackAux}}
+
+\newcommand{\stagger}[2]{%
+\begin{array}{ccc}%
+\multicolumn{2}{l}{#1}&\\%
+&\multicolumn{2}{r}{#2}%
+\end{array}}
+
+\newcommand{\axiom}[1]{{\displaystyle\strut{#1}}}
+\newcommand{\infrule}[2]{{\frac{\displaystyle\strut{#1}}{\displaystyle\strut{#2}}}} 
+\newcommand{\judge}[2]{\infrule{#1}{#2}}
+
+%% \begin{document}
+
+\sec{Formal Specification of MLBs}{mlb-formal}
+    {Formal_Spec_MLBs.html}
+%
+This section formally specifies the ML Basis system in {\mlton} used
+to program in the large.  The system has been designed to be a natural
+extension of Standard ML, and the specification is given in the style
+of The Definition of Standard ML (henceforeth, the Definition).  This
+section adopts (often silently) abbreviations, conventions,
+definitions, and notation from the Definition.
+
+\subsection{Syntax of MLBs}
+
+For MLBs there are further reserved words, identifier classes and
+derived forms.  There are no further special constants; comments and
+lexical analysis are as for the Core and Modules.  The derived forms
+appear in Section~\ref{sec:mlb:DerivedForms}.
+
+\subsubsection{Reserved Words}
+The following are the additional reserved words used in MLBs.
+\begin{displaymath}
+\mtt{bas} \quad\quad \mtt{basis}
+\end{displaymath}
+Note that many of the reserved words from the Core and Modules are not
+used by the grammar of MLBs.  However, as the grammar includes
+identifiers from the grammars of the Core and Modules, it is useful to
+consider the reserved words from the Core and Modules to be reserved
+in MLBs as well.
+
+\subsubsection{Identifiers}
+The additional identifier class for MLBs are $\mrm{BasId}$ (basis
+identifiers).  Basis identifiers must be alphanumeric, not starting
+with a prime.  The class of each identifier occurence is determined by
+the grammatical rules which follow.  Henceforth, therefore, we
+consider all identifier classes to be disjoint.
+
+\subsubsection{Infixed operators}
+The grammar of MLBs does not directly admit fixity directives.
+However, the static and dynamic semantics for MLBs will import source
+files that must be parsed in the scope of fixity directives and that
+may introduce additional fixity directives into scope.
+Figure~\ref{fig:mlb:S:FixityEnv} formalizes the Definition's notion of
+\emph{infix status} as a \emph{fixity environment}.
+\begin{figure}[h]
+\begin{displaymath}
+\begin{array}{rcl}
+ & & \mrm{InfixStatus} = \{\mtt{nonfix}\} \cup \bigcup_{d \in \{0,\ldots,9\}} \{\mtt{infix}~d, \mtt{infixr}~d\} \\
+\mit{FE} & \in & \mrm{FixEnv} = \mrm{VId} \xrightarrow{\mrm{fin}} \mrm{InfixStatus} \end{array}
+\end{displaymath}
+\caption{Fixity Environment}\label{fig:mlb:S:FixityEnv}
+\end{figure}
+
+\subsubsection{Grammar for MLBs}
+The phrase classes for MLBs are shown in
+Figure~\ref{fig:mlb:S:PhraseClasses}.
+\begin{figure}[h]
+\begin{displaymath}
+\begin{array}{ll}
+\mrm{BasExp} & \mbox{basis expressions} \\
+\mrm{BasDec} & \mbox{basis-level declaration} \\
+\mrm{BasBind} & \mbox{basis bindings} \\
+\mrm{BStrBind} & \mbox{(basis) structure bindings} \\
+\mrm{BSigBind} & \mbox{(basis) signature bindings} \\
+\mrm{BFunBind} & \mbox{(basis) functor bindings}
+\end{array}
+\end{displaymath}
+\caption{MLBs Phrase Classes}\label{fig:mlb:S:PhraseClasses}
+\end{figure}
+We use the variable $\mit{basexp}$ to range over $\mrm{BasExp}$, etc.
+The conventions adopted in presenting the grammatical rulse for MLBs
+are the same as for the Core and Modules.  The grammatical rules are
+showin in Figure~\ref{fig:mlb:S:GrammaticalRules}.
+\begin{figure}[h]
+\begin{displaymath}
+\begin{array}{rcll}
+\mit{basexp} & ::= & 
+\mtt{bas}~ \mit{basdec} ~\mtt{end} 
+& \mbox{basic} \\&& 
+\mit{basid} 
+& \mbox{basis identifier} \\&&
+\mtt{let}~ \mit{basdec} ~\mtt{in}~ \mit{basexp} ~\mtt{end} 
+& \mbox{local declaration} \\
+
+\mit{basdec} & ::= & 
+\mtt{basis}~ \mit{basbind}
+& \mbox{basis} \\&&
+\mtt{local}~ \mit{basdec}_1 ~\mtt{in}~ \mit{basdec}_2 ~\mtt{end} 
+& \mbox{local} \\&&
+\mtt{open}~ \mit{basid}_1 \cdots \mit{basid}_n 
+& \mbox{open ($n \geq 1$)} \\&&
+\mtt{structure}~ \mit{bstrbind}
+& \mbox{(basis) structure binding} \\&&
+\mtt{signature}~ \mit{bsigbind}
+& \mbox{(basis) signature binding} \\&&
+\mtt{functor}~ \mit{bfunbind}
+& \mbox{(basis) functor binding} \\&&
+\quad
+& \mbox{empty} \\&&
+\mit{basdec}_1~\langle\mtt{;}\rangle~\mit{basdec}_2 
+& \mbox{sequential} \\&&
+\msf{path.mlb} &
+\mbox{import ML basis} \\&&
+\msf{path.sml} 
+& \mbox{import source} \\
+
+\mit{basbind} & ::= &  
+\mit{basid} ~\mtt{=}~ \mit{basexp} ~\langle\mtt{and}~ \mit{basbind}\rangle \\
+\mit{bstrbind} & ::= &  
+\mit{strid}_1 ~\mtt{=}~ \mit{strid}_2 ~\langle\mtt{and}~ \mit{bstrbind}\rangle \\
+\mit{bsigbind} & ::= &  
+\mit{sigid}_1 ~\mtt{=}~ \mit{sigid}_2 ~\langle\mtt{and}~ \mit{bsigbind}\rangle \\
+\mit{bfunbind} & ::= &  
+\mit{funid}_1 ~\mtt{=}~ \mit{funid}_2 ~\langle\mtt{and}~ \mit{bfunbind}\rangle
+\end{array}
+\end{displaymath}
+\caption{Grammar: Basis Expressions}\label{fig:mlb:S:GrammaticalRules}
+\end{figure}
+
+\subsubsection{Syntactic Restrictions}
+\begin{itemize}
+\item No binding $\mit{basbind}$ may bind the same identifier twice.
+\item No binding $\mit{bstrbind}$, $\mit{bsigbind}$ or $\mit{bfunbind}$ may bind the same identifier twice.
+\item MLBs may not be cyclic; i.e., successively replacing
+  $\msf{path.mlb}$ with it's parsed $\mrm{BasDec}$ must terminate.
+\end{itemize}
+
+\subsubsection{Parsing}
+The static and dynamic semantics for MLBs will interpret
+$\msf{path.sml}$ as a parsed $\mrm{TopDec}$ and
+$\msf{path.mlb}$ as a parsed $\mrm{BasDec}$.  Parsing a $\mrm{TopDec}$
+must be performed against a fixity environment, and may result in a
+modified fixity environment.  
+
+Paths and parsers are given in Figure~\ref{fig:mlb:S:PathsParser}.  A
+(fixed) $\mrm{Parser}$ $\mcal{P}$ provides the interpretation of
+$\msf{path.sml}$ and $\msf{path.mlb}$ imports.
+\begin{figure}[h]
+\begin{displaymath}
+\begin{array}{c}
+\begin{array}{rcl}
+\msf{path.sml} & \in & \mrm{SourcePath} \\
+\msf{path.mlb} & \in & \mrm{MLBasisPath} 
+\end{array} \\
+\begin{array}{rcl}
+\mcal{P} & \in & \mrm{Parser} = 
+((\mrm{FixEnv} \times \mrm{SourcePath})
+ \xrightarrow{\mrm{fin}} (\mrm{FixEnv} \times \mrm{TopDec})) 
+\times 
+(\mrm{MLBasisPath} \xrightarrow{\mrm{fin}} \mrm{BasDec}) 
+\end{array}
+\end{array}
+\end{displaymath}
+\caption{Parser}\label{fig:mlb:S:PathsParser}
+\end{figure}
+
+For a file extension $\msf{.ext}$, $\msf{path.ext}$ denotes either an
+absolute path or a relative path (relative to the $\mrm{BasDec}$ being
+parsed) to a file in the underlying file system.  An implementation
+may allow additional extensions (e.g., $\mtt{.ML}$, $\mtt{.fun}$,
+$\mtt{.sig}$) in elements of $\mrm{SourcePath}$.  An implementation
+may additionally allow system environment variables to appear in
+paths.  $\mrm{Parser}$ could be refined by a \emph{current working
+directory}, to formally specify the interpretation of relative paths,
+and an \emph{system environment}, to formally specify the
+interpretation of system environment variables, but the above suffices
+for the development in the following sections.
+
+\subsection{Static Semantics for MLBs}
+
+\subsubsection{Semantic Objects}
+
+The simple objects for the MLBs static semantics are exactly as for
+Modules.  The compound objects are those for Modules, augmented by
+those in Figure~\ref{fig:mlb:SS:CompoundObjects}.
+\begin{figure}[h]
+\begin{displaymath}
+\begin{array}{rcl}
+\mit{BE} & \in & \mrm{BasEnv} = \mrm{BasId} \xrightarrow{\mrm{fin}} \mrm{MBasis} \\
+\mit{M} ~\mrm{or}~ \mit{FE},\mit{BE},\mit{B} & \in & 
+\mrm{MBasis} = \mrm{FixEnv} \times \mrm{BasEnv} \times \mrm{Basis} \\
+\Psi & \in & \mrm{BasCache} = \mrm{MLBasisPath} \xrightarrow{\mrm{fin}} \mrm{MBasis} 
+\end{array}
+\end{displaymath}
+\caption{Compound Semantic Objects}\label{fig:mlb:SS:CompoundObjects}
+\end{figure}
+The operations of projection, injection and modification are as for
+Modules.
+
+\subsubsection{Inference Rules}
+
+As for the Core and for Modules, the rules for MLBs static semantics
+allow sentences of the form
+\begin{displaymath}
+A \vdash \mit{phrase} \longrightarrow A'
+\end{displaymath}
+to be inferred.  Some hypotheses in rules are not of this form; they
+are called \emph{side-conditions}.  The convention for options is as
+in the Core and Modules semantics.
+
+\vspace{2\parsep}
+
+{\large\noindent
+\textbf{Basis Expressions} \hfill 
+\fbox{$\mit{M}, \Psi \vdash \mit{basexp} \longrightarrow \mit{M}', \Psi'$}
+}
+
+\begin{equation}
+\judge{
+\mit{M}, \Psi \vdash \mit{basdec} \longrightarrow \mit{M}', \Psi'
+}{
+\mit{M}, \Psi \vdash \mtt{bas}~ \mit{basdec} ~\mtt{end} \longrightarrow \mit{M}', \Psi'
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{M}(\mit{basid}) = \mit{M}'
+}{
+\mit{M}, \Psi \vdash \mit{basid} \longrightarrow \mit{M}', \Psi
+}
+\end{equation}
+
+\begin{equation}
+\label{eqn:mlb:SS:localDeclaration}
+\judge{
+\mit{M}, \Psi \vdash \mit{basdec} \longrightarrow \mit{M}_1, \Psi_1 \quad
+\mit{M} \oplus \mit{M}_1, \Psi_1 \vdash \mit{basexp} \longrightarrow \mit{M}_2, \Psi_2
+}{
+\mit{M}, \Psi \vdash \mtt{let}~ \mit{basdec} ~\mtt{in}~ \mit{basexp} ~\mtt{end} \longrightarrow \mit{M}_2, \Psi_2
+}
+\end{equation}
+
+\noindent
+\textit{Comments}:
+\begin{itemize}
+\item[(\ref{eqn:mlb:SS:localDeclaration})] The use of $\oplus$, here
+  and elsewhere, ensures that the type names generated by the first
+  sub-phrase are distinct from the names generated by the second sub-phrase.
+\end{itemize}
+
+
+{\large\noindent
+\textbf{Basis-level Declarations} \hfill 
+\fbox{$\mit{M}, \Psi \vdash \mit{basdec} \longrightarrow \mit{M}', \Psi'$}
+}
+
+\begin{equation}
+\judge{
+\mit{M}, \Psi  \vdash \mit{basbind} \longrightarrow \mit{BE}', \Psi'
+}{
+\mit{M}, \Psi  \vdash \msf{basis}~ \mit{basbind} \longrightarrow \mit{BE}' ~\mrm{in}~ \mrm{MBasis}, \Psi'
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{M}, \Psi  \vdash \mit{basdec}_1 \longrightarrow \mit{M}_1, \Psi_2 \quad
+\mit{M} \oplus \mit{M}_1, \Psi_1  \vdash \mit{basdec}_2 \longrightarrow \mit{M}_2, \Psi_2 \quad
+}{
+\mit{M}, \Psi  \vdash \mtt{local}~ \mit{basdec}_1 ~\mtt{in}~ \mit{basdec}_2 ~\mtt{end} \longrightarrow \mit{M}_2, \Psi_2
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{M}(\mit{basid}_1) = \mit{M}_1 \quad \cdots \quad
+\mit{M}(\mit{basid}_n) = \mit{M}_n 
+}{
+\mit{M}, \Psi  \vdash \mtt{open}~ \mit{basid}_1 \cdots \mit{basid}_n \longrightarrow \mit{M}_1 \oplus \cdots \oplus \mit{M}_n, \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{B}~\mrm{of}~\mit{M} \vdash \mit{bstrbind} \longrightarrow SE
+}{
+\mit{M}, \Psi  \vdash \mtt{structure}~ \mit{bstrbind}
+\longrightarrow \mit{SE} ~\mrm{in}~ \mrm{MBasis}, \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{B}~\mrm{of}~\mit{M} \vdash \mit{bsigbind} \longrightarrow G
+}{
+\mit{M}, \Psi  \vdash \mtt{signature}~ \mit{bsigbind}
+\longrightarrow \mit{G } ~\mrm{in}~ \mrm{MBasis}, \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{B}~\mrm{of}~\mit{M} \vdash \mit{bfunbind} \longrightarrow F
+}{
+\mit{M}, \Psi  \vdash \mtt{functor}~ \mit{bfunbind}
+\longrightarrow \mit{F} ~\mrm{in}~ \mrm{MBasis}, \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+}{
+\mit{M}, \Psi  \vdash \quad \longrightarrow \{\} ~\mrm{in}~ \mrm{MBasis}, \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{M}, \Psi  \vdash \mit{basdec}_1 \longrightarrow \mit{M}_1, \Psi_2 \quad
+\mit{M} \oplus \mit{M}_1, \Psi_1  \vdash \mit{basdec}_2 \longrightarrow \mit{M}_2, \Psi_2 
+}{
+\mit{M}, \Psi  \vdash \mit{basdec}_1 ~\langle\mtt{;}\rangle~ \mit{basdec}_2 \longrightarrow \mit{M}_1 \oplus \mit{M}_2, \Psi_2
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mcal{P}(\mit{FE}~\mrm{of}~\mit{M}, \msf{path.sml}) = (\mit{FE}', \mit{topdec}) \quad
+\mit{B}~\mrm{of}~\mit{M} \vdash \mit{topdec} \Rightarrow \mit{B}'
+}{
+\mit{M}, \Psi  \vdash \msf{path.sml}  \longrightarrow (\mit{FE}',\{\},\mit{B}'), \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\Psi(\msf{path.mlb}) = \mit{M}'
+}{
+\mit{M}, \Psi  \vdash \msf{path.mlb}  \longrightarrow \mit{M}', \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\msf{path.mlb} \notin \mrm{Dom}~\Psi \quad
+\mcal{P}(\msf{path.mlb}) = \mit{basdec} \quad
+\{\} ~\mrm{in}~ \mrm{MBasis}, \Psi  \vdash \mit{basdec} \longrightarrow \mit{M}', \Psi'
+}{
+\mit{M}, \Psi  \vdash \msf{path.mlb}  \longrightarrow \mit{M}', \Psi' + \{\msf{path.mlb} \mapsto \mit{M}'\} 
+}
+\end{equation}
+
+{\large\noindent
+\textbf{Basis Bindings} \hfill 
+\fbox{$\mit{M}, \Psi \vdash \mit{basbind} \longrightarrow \mit{BE}', \Psi'$}
+}
+
+\begin{equation}
+\judge{
+\mit{M}, \Psi \vdash \mit{basexp} \longrightarrow \mit{M}', \Psi' \quad
+\langle\mit{M} + \mrm{tynames}~\mit{M}', \Psi' \vdash \mit{basbind} \longrightarrow \mit{BE}'', \Psi''\rangle
+}{
+\mit{M}, \Psi  \vdash \mit{basid} ~\mtt{=}~ \mit{basexp} ~\langle\mtt{and}~\mit{basbind}\rangle \longrightarrow 
+\{\mit{basid} \mapsto \mit{M}'\} \langle+ \mit{BE}''\rangle, \Psi'\langle'\rangle
+}
+\end{equation}
+
+{\large\noindent
+\textbf{(Basis) Structure Bindings} \hfill 
+\fbox{$\mit{B} \vdash \mit{bstrbind} \longrightarrow \mit{SE}$}
+}
+
+\begin{equation}
+\label{eqn:mlb:SS:bstrbind}
+\judge{
+\mit{B}(\mit{strid}_2) = E \quad
+\langle\mit{B} + \mrm{tynames}~\mit{E} \vdash \mit{bstrbind} \longrightarrow \mit{SE}\rangle
+}{
+\mit{B} \vdash \mit{strid}_1 ~\mtt{=}~ \mit{strid}_2 ~\langle\mtt{and}~\mit{bstrbind}\rangle \longrightarrow 
+\{\mit{strid}_1 \mapsto \mit{E}\} \langle+ \mit{SE}\rangle
+}
+\end{equation}
+
+\noindent
+\textit{Comments}:
+\begin{itemize}
+\item[(\ref{eqn:mlb:SS:bstrbind})] Note that $\mit{fstrbind} \subset
+\mit{strbind}$.  Hence, this rule can be derived from the
+Definition's $B \vdash \mit{strbind} \Rightarrow SE$.
+\end{itemize}
+
+{\large\noindent
+\textbf{(Basis) Signature Bindings} \hfill 
+\fbox{$\mit{B} \vdash \mit{bsigbind} \longrightarrow \mit{G}$}
+}
+
+\begin{equation}
+\label{eqn:mlb:SS:bsigbind}
+\judge{
+\begin{stackCC}
+\mit{B}(\mit{strid}_2) = \Sigma \quad \Sigma = (\mit{T})\mit{E} \quad
+\mit{T} \cap (\mit{T}~\mrm{of}~\mit{B}) = \emptyset \\
+\mit{T} = \mrm{tynames}~\mit{E} \setminus (\mit{T}~\mrm{of}~\mit{B}) \quad
+\langle\mit{B} \vdash \mit{bsigbind} \longrightarrow \mit{G}\rangle
+\end{stackCC}
+}{
+\mit{B} \vdash \mit{sigid}_1 ~\mtt{=}~ \mit{sigid}_2 ~\langle\mtt{and}~\mit{bsigbind}\rangle \longrightarrow 
+\{\mit{sigid}_1 \mapsto \Sigma\} \langle+ \mit{G}\rangle
+}
+\end{equation}
+
+\noindent
+\textit{Comments}:
+\begin{itemize}
+\item[(\ref{eqn:mlb:SS:bsigbind})] Note that $\mit{fsigbind} \subset
+\mit{sigbind}$.  Hence, this rule can be derived from the
+Definition's $B \vdash \mit{sigbind} \Rightarrow G$.  As such, the
+following comment from the Definition applies:
+\begin{quote}
+The bound names of $\mit{B}(\mit{sigid}_2)$ can always be renamed to
+satisfy $\mit{T} \cap (\mit{T}~\mrm{of}~\mit{B}) = \emptyset$, if necessary.
+\end{quote}
+\end{itemize}
+
+{\large\noindent
+\textbf{(Basis) Functor Bindings} \hfill 
+\fbox{$\mit{B} \vdash \mit{bfunbind} \longrightarrow \mit{F}$}
+}
+
+\begin{equation}
+\judge{
+\begin{stackCC}
+\mit{B}(\mit{funid}_2) = \Phi \quad \Phi = (\mit{T})(\mit{E},(\mit{T}')\mit{E}') \quad
+\mit{T} \cap (\mit{T}~\mrm{of}~\mit{B}) = \emptyset \\
+\mit{T}' = \mrm{tynames}~\mit{E}' \setminus ((\mit{T}~\mrm{of}~\mit{B}) \cup \mit{T}) \quad
+\langle\mit{B} \vdash \mit{bfunbind} \longrightarrow \mit{F}\rangle
+\end{stackCC}
+}{
+\mit{B} \vdash \mit{funid}_1 ~\mtt{=}~ \mit{funid}_2 ~\langle\mtt{and}~\mit{bfunbind}\rangle \longrightarrow 
+\{\mit{funid}_1 \mapsto \Phi\} \langle+ \mit{F}\rangle
+}
+\end{equation}
+
+\subsection{Dynamic Semantics for MLBs}
+
+\subsubsection{Reduced Syntax}
+The syntax of MLBs is unchanged for the purposes of the dynamic
+semantics for MLBs.  However, the $\mrm{Parser}$ $\mcal{P}$ returns a
+$\mit{topdec}$ in the reduced syntax of Modules.
+
+\subsubsection{Compound Objects}
+The compound objects for the MLBs dynamic semantics, extra to those
+for the Modules dynamic semantics, are shown in Figure~\ref{fig:mlb:DS:CompoundObjects}.
+\begin{figure}[h]
+\begin{displaymath}
+\begin{array}{rcl}
+\mit{BE} & \in & \mrm{BasEnv} = \mrm{BasId} \xrightarrow{\mrm{fin}} \mrm{MBasis} \\
+\mit{M} ~\mrm{or}~ \mit{FE},\mit{BE},\mit{B} & \in & \mrm{MBasis} =
+\mrm{FixEnv} \times \mrm{BasEnv} \times \mrm{Basis} \\
+\Psi & \in & \mrm{BasCache} = \mrm{MLBasisPath} \xrightarrow{\mrm{fin}} \mrm{MBasis} 
+\end{array}
+\end{displaymath}
+\caption{Compound Semantic Objects}\label{fig:mlb:DS:CompoundObjects}
+\end{figure}
+
+\subsubsection{Inference Rules}
+
+The semantic rules allow sentences of the form
+\begin{displaymath}
+s, A \vdash \mit{phrase} \longrightarrow A', s'
+\end{displaymath}
+to be inferred, where $s$, $s'$ are the states before and after the
+evaluation represented by the sentence.  Some hypotheses in rules are
+not of this form; they are called \emph{side-conditions}. The
+convention for options is as in the Core and Modules semantics.
+
+The state and exception conventions are adopted as in the Core and
+Modules dynamic semantics.  However, it may be shown that the only
+MLBs phrases whose evaluation may cause a side-effect or generate an
+exception packet are of the form $\mit{basexp}$, $\mit{basdec}$ or
+$\mit{basbind}$.
+
+\vspace{2\parsep}
+
+{\large\noindent
+\textbf{Basis Expressions} \hfill 
+\fbox{$\mit{M}, \Psi \vdash \mit{basexp} \longrightarrow \mit{M}', \Psi' / p$}
+}
+
+\begin{equation}
+\judge{
+\mit{M}, \Psi \vdash \mit{basdec} \longrightarrow \mit{M}', \Psi'
+}{
+\mit{M}, \Psi \vdash \mtt{bas}~ \mit{basdec} ~\mtt{end} \longrightarrow \mit{M}', \Psi'
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{M}(\mit{basid}) = \mit{M}'
+}{
+\mit{M}, \Psi \vdash \mit{basid} \longrightarrow \mit{M}', \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{M}, \Psi \vdash \mit{basdec} \longrightarrow \mit{M}_1, \Psi_1 \quad
+\mit{M} \oplus \mit{M}_1, \Psi_1 \vdash \mit{basexp} \longrightarrow \mit{M}_2, \Psi_2
+}{
+\mit{M}, \Psi \vdash \mtt{let}~ \mit{basdec} ~\mtt{in}~ \mit{basexp} ~\mtt{end} \longrightarrow \mit{M}_2, \Psi_2
+}
+\end{equation}
+
+{\large\noindent
+\textbf{Basis-level Declarations} \hfill 
+\fbox{$\mit{M}, \Psi \vdash \mit{basdec} \longrightarrow \mit{M}', \Psi' / p$}
+}
+
+\begin{equation}
+\judge{
+\mit{M}, \Psi  \vdash \mit{basbind} \longrightarrow \mit{BE}', \Psi'
+}{
+\mit{M}, \Psi  \vdash \msf{basis}~ \mit{basbind} \longrightarrow \mit{BE}' ~\mrm{in}~ \mrm{MBasis}, \Psi'
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{M}, \Psi  \vdash \mit{basdec}_1 \longrightarrow \mit{M}_1, \Psi_2 \quad
+\mit{M} + \mit{M}_1, \Psi_1  \vdash \mit{basdec}_2 \longrightarrow \mit{M}_2, \Psi_2 \quad
+}{
+\mit{M}, \Psi  \vdash \mtt{local}~ \mit{basdec}_1 ~\mtt{in}~ \mit{basdec}_2 ~\mtt{end} \longrightarrow \mit{M}_2, \Psi_2
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{M}(\mit{basid}_1) = \mit{M}_1 \quad \cdots \quad
+\mit{M}(\mit{basid}_n) = \mit{M}_n 
+}{
+\mit{M}, \Psi  \vdash \mtt{open}~ \mit{basid}_1 \cdots \mit{basid}_n \longrightarrow \mit{M}_1 + \cdots + \mit{M}_n, \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{B}~\mrm{of}~\mit{M} \vdash \mit{bstrbind} \longrightarrow SE
+}{
+\mit{M}, \Psi  \vdash \mtt{structure}~ \mit{bstrbind}
+\longrightarrow \mit{SE} ~\mrm{in}~ \mrm{MBasis}, \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mrm{Inter}~(\mit{B}~\mrm{of}~\mit{M}) \vdash \mit{bsigbind} \longrightarrow G
+}{
+\mit{M}, \Psi  \vdash \mtt{signature}~ \mit{bsigbind}
+\longrightarrow \mit{G } ~\mrm{in}~ \mrm{MBasis}, \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{B}~\mrm{of}~\mit{M} \vdash \mit{bfunbind} \longrightarrow F
+}{
+\mit{M}, \Psi  \vdash \mtt{functor}~ \mit{bfunbind}
+\longrightarrow \mit{F} ~\mrm{in}~ \mrm{MBasis}, \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+}{
+\mit{M}, \Psi  \vdash \quad \longrightarrow \{\} ~\mrm{in}~ \mrm{MBasis}, \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mit{M}, \Psi  \vdash \mit{basdec}_1 \longrightarrow \mit{M}_1, \Psi_2 \quad
+\mit{M} + \mit{M}_1, \Psi_1  \vdash \mit{basdec}_2 \longrightarrow \mit{M}_2, \Psi_2 
+}{
+\mit{M}, \Psi  \vdash \mit{basdec}_1 ~\langle\mtt{;}\rangle~ \mit{basdec}_2 \longrightarrow \mit{M}_1 \oplus \mit{M}_2, \Psi_2
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\mcal{P}(\mit{FE}~\mrm{of}~\mit{M}, \msf{path.sml}) = (\mit{FE}', \mit{topdec}) \quad
+\mit{B}~\mrm{of}~\mit{M} \vdash \mit{topdec} \Rightarrow \mit{B}'
+}{
+\mit{M}, \Psi  \vdash \msf{path.sml}  \longrightarrow (\mit{FE}',\{\},\mit{B}'), \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\Psi(\msf{path.mlb}) = \mit{M}'
+}{
+\mit{M}, \Psi  \vdash \msf{path.mlb}  \longrightarrow \mit{M}', \Psi
+}
+\end{equation}
+
+\begin{equation}
+\judge{
+\msf{path.mlb} \notin \mrm{Dom}~\Psi \quad
+\mcal{P}(\msf{path.mlb}) = \mit{basdec} \quad
+\{\} ~\mrm{in}~ \mrm{MBasis}, \Psi  \vdash \mit{basdec} \longrightarrow \mit{M}', \Psi'
+}{
+\mit{M}, \Psi  \vdash \msf{path.mlb}  \longrightarrow \mit{M}', \Psi' + \{\msf{path.mlb} \mapsto \mit{M}'\} 
+}
+\end{equation}
+
+{\large\noindent
+\textbf{Basis Bindings} \hfill 
+\fbox{$\mit{M}, \Psi \vdash \mit{basbind} \longrightarrow \mit{BE}', \Psi' / p$}
+}
+
+\begin{equation}
+\judge{
+\mit{M}, \Psi \vdash \mit{basexp} \longrightarrow \mit{M}', \Psi' \quad
+\langle\mit{M}, \Psi' \vdash \mit{basbind} \longrightarrow \mit{BE}'', \Psi''\rangle
+}{
+\mit{M}, \Psi  \vdash \mit{basid} ~\mtt{=}~ \mit{basexp} ~\langle\mtt{and}~\mit{basbind}\rangle \longrightarrow 
+\{\mit{basid} \mapsto \mit{M}'\} \langle+ \mit{BE}''\rangle, \Psi'\langle'\rangle
+}
+\end{equation}
+
+{\large\noindent
+\textbf{(Basis) Structure Bindings} \hfill 
+\fbox{$\mit{B} \vdash \mit{bstrbind} \longrightarrow \mit{SE}$}
+}
+
+\begin{equation}
+\label{eqn:mlb:DS:bstrbind}
+\judge{
+\mit{B}(\mit{strid}_2) = E \quad
+\langle\mit{B} \vdash \mit{bstrbind} \longrightarrow \mit{SE}\rangle
+}{
+\mit{B} \vdash \mit{strid}_1 ~\mtt{=}~ \mit{strid}_2 ~\langle\mtt{and}~\mit{bstrbind}\rangle \longrightarrow 
+\{\mit{strid}_1 \mapsto \mit{E}\} \langle+ \mit{SE}\rangle
+}
+\end{equation}
+
+\noindent
+\textit{Comments}:
+\begin{itemize}
+\item[(\ref{eqn:mlb:DS:bstrbind})] Note that $\mit{fstrbind} \subset
+\mit{strbind}$.  Hence, this rule can be derived from the
+Definition's $B \vdash \mit{strbind} \Rightarrow SE / p$, noting that
+the derivation may neither cause a side-effect nor generate an
+exception packet.
+\end{itemize}
+
+{\large\noindent
+\textbf{(Basis) Signature Bindings} \hfill 
+\fbox{$\mit{IB} \vdash \mit{bsigbind} \longrightarrow \mit{G}$}
+}
+
+\begin{equation}
+\label{eqn:mlb:DS:bsigbind}
+\judge{
+\mit{IB}(\mit{strid}_2) = I \quad 
+\langle\mit{IB} \vdash \mit{bsigbind} \longrightarrow \mit{G}\rangle
+}{
+\mit{IB} \vdash \mit{sigid}_1 ~\mtt{=}~ \mit{sigid}_2 ~\langle\mtt{and}~\mit{bsigbind}\rangle \longrightarrow 
+\{\mit{sigid}_1 \mapsto I\} \langle+ \mit{G}\rangle
+}
+\end{equation}
+
+\noindent
+\textit{Comments}:
+\begin{itemize}
+\item[(\ref{eqn:mlb:DS:bsigbind})] Note that $\mit{fsigbind} \subset
+\mit{sigbind}$.  Hence, this rule can be derived from the
+Definition's $IB \vdash \mit{sigbind} \Rightarrow G$, noting that
+the derivation may neither cause a side-effect nor generate an
+exception packet.
+\end{itemize}
+
+{\large\noindent
+\textbf{(Basis) Functor Bindings} \hfill 
+\fbox{$\mit{B} \vdash \mit{bfunbind} \longrightarrow \mit{F}$}
+}
+
+\begin{equation}
+\judge{
+\mit{B}(\mit{funid}_2) = (\mit{strid}:\mit{I},\mit{strexp},\mit{B}) \quad
+\langle\mit{B} \vdash \mit{bfunbind} \longrightarrow \mit{F}\rangle
+}{
+\mit{B} \vdash \mit{funid}_1 ~\mtt{=}~ \mit{funid}_2 ~\langle\mtt{and}~\mit{bfunbind}\rangle \longrightarrow 
+\{\mit{funid}_1 \mapsto (\mit{strid}:\mit{I},\mit{strexp},\mit{B})\} \langle+ \mit{F}\rangle
+}
+\end{equation}
+
+
+\subsection{Derived Forms}
+\label{sec:mlb:DerivedForms}
+
+Figure~\ref{fig:mlb:DF:bindings} shows derived forms for structure,
+signature, and functor bindings in MLBs.  These derived forms are
+a useful shorthand for specifying import and export filters.
+
+\begin{figure}[h]
+\begin{center}
+\begin{tabular}{|l|l|}
+\multicolumn{1}{c}{Derived Form} &
+\multicolumn{1}{c}{Equivalent Form} \\
+\multicolumn{2}{c}{} \\
+\multicolumn{2}{l}{\textbf{(Basis) Structure Bindings} $\mit{bstrbind}$} \\
+\hline
+$\mit{strid} ~\langle\mtt{and}~ \mit{bstrbind}\rangle$ &
+$\mit{strid} ~\mtt{=}~ \mit{strid} ~\langle\mtt{and}~ \mit{bstrbind}\rangle$ \\
+\hline
+\multicolumn{2}{c}{} \\
+\multicolumn{2}{l}{\textbf{(Basis) Signature Bindings} $\mit{bsigbind}$} \\
+\hline
+$\mit{sigid} ~\langle\mtt{and}~ \mit{bsigbind}\rangle$ &
+$\mit{sigid} ~\mtt{=}~ \mit{sigid} ~\langle\mtt{and}~ \mit{bsigbind}\rangle$ \\
+\hline
+\multicolumn{2}{c}{} \\
+\multicolumn{2}{l}{\textbf{(Basis) Functor Bindings} $\mit{bfunbind}$} \\
+\hline
+$\mit{funid} ~\langle\mtt{and}~ \mit{bfunbind}\rangle$ &
+$\mit{funid} ~\mtt{=}~ \mit{funid} ~\langle\mtt{and}~ \mit{bfunbind}\rangle$ \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Derived forms of (Basis) Structure, Signature, and Functor Bindings}\label{fig:mlb:DF:bindings}
+\end{figure}
+
+%% \end{document}

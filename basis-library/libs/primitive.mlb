@@ -1,0 +1,14 @@
+
+ann 
+   allowConstant true, 
+   allowPrim true, 
+   allowRebindEquals true,
+   deadCode true,
+   sequenceUnit true,
+   warnMatch true,
+   warnUnused true  
+in
+   _prim
+   ../misc/primitive.sml
+   ../posix/primitive.sml
+end

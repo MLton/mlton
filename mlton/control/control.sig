@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -22,7 +22,7 @@ signature CONTROL =
       val align: align ref
 
       val atMLtons: string vector ref
-	 
+
       val basisLibs: string list
       val basisLibrary: string ref
 
@@ -47,7 +47,7 @@ signature CONTROL =
 
       val contifyIntoMain: bool ref
 
-      val deadCode: bool ref
+      val deadCodeAnn: bool ref
 	 
       (* Generate an executable with debugging info. *)
       val debug: bool ref
@@ -104,8 +104,6 @@ signature CONTROL =
 
       (* call count instrumentation *)
       val instrument: bool ref
-
-      val keepDefUse: bool ref
 
       (* Keep dot files for whatever SSA files are produced. *)
       val keepDot: bool ref
@@ -232,14 +230,12 @@ signature CONTROL =
       val safe: bool ref
 
       (* in (e1; e2), require e1: unit. *)
-      val sequenceUnit: bool ref
+      val sequenceUnitAnn: bool ref
+      val sequenceUnitDef: bool ref
 
       (* Show the basis library. *)
       val showBasis: File.t option ref
 	 
-      (* Show the basis library used. *)
-      val showBasisUsed: File.t option ref
-
       (* Show def-use information. *)
       val showDefUse: File.t option ref
 	 
@@ -294,11 +290,13 @@ signature CONTROL =
       (* version number *)
       val version: string
 
-      val warnNonExhaustive: bool ref
+      val warnAnn: bool ref
 
-      val warnRedundant: bool ref
+      val warnMatchAnn: bool ref
+      val warnMatchDef: bool ref
 
-      val warnUnused: bool ref
+      val warnUnusedAnn: bool ref
+      val warnUnusedDef: bool ref
 
       (* XML Passes *)
       val xmlPassesSet: (string -> string list Result.t) ref

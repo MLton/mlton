@@ -258,8 +258,7 @@ fun casee {caseType: Xtype.t,
       fun warn () =
 	 let
 	    val _ =
-	       if !Control.warnNonExhaustive
-		  andalso noMatch <> Cexp.RaiseAgain
+	       if noMatch <> Cexp.RaiseAgain
 		  then
 		     case Vector.peeki (cases,
 					fn (_, {isDefault, numUses, ...}) =>
@@ -281,8 +280,7 @@ fun casee {caseType: Xtype.t,
 	       Vector.keepAll (cases, fn {isDefault, numUses, ...} =>
 			       not isDefault andalso !numUses = 0)
 	    val _ =
-	       if not (!Control.warnRedundant)
-		  orelse 0 = Vector.length redundant
+	       if 0 = Vector.length redundant
 		  then ()
 	       else 
 		  let
@@ -685,7 +683,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 	     | Fun {decs, tyvars} =>
 		  prefix (Xdec.Fun {decs = processLambdas decs,
 				    tyvars = tyvars ()})
-	     | Val {rvbs, tyvars, vbs} =>
+	     | Val {rvbs, tyvars, vbs, warnMatch} =>
 	       let
 		  val tyvars = tyvars ()
 		  val bodyType = et
@@ -706,7 +704,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 				   conTycon = conTycon,
 				   kind = "declaration",
 				   lay = lay,
-				   mayWarn = mayWarn,
+				   mayWarn = warnMatch andalso mayWarn,
 				   noMatch = Cexp.RaiseBind,
 				   region = r,
 				   test = (e, NestedPat.ty p),
@@ -846,7 +844,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 					func = #1 (loopExp e1),
 					ty = ty}
 		     end
-		| Case {kind, lay, noMatch, region, rules, test, ...} =>
+		| Case {kind, lay, noMatch, region, rules, test, warnMatch, ...} =>
 		     casee {caseType = ty,
 			    cases = Vector.map (rules, fn {exp, lay, pat} =>
 						{exp = #1 (loopExp exp),
@@ -855,7 +853,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 			    conTycon = conTycon,
 			    kind = kind,
 			    lay = lay,
-			    mayWarn = true,
+			    mayWarn = warnMatch,
 			    noMatch = noMatch,
 			    region = region,
 			    test = loopExp test,

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -9,10 +9,13 @@ signature ELABORATE_ENV_STRUCTS =
    sig
       structure Ast: AST
       structure CoreML: CORE_ML
+      structure Ctrls: ELABORATE_CONTROLS
       structure TypeEnv: TYPE_ENV
+      sharing Ast = Ctrls.Ast
       sharing Ast.Record = CoreML.Record
       sharing Ast.SortedRecord = CoreML.SortedRecord
       sharing Ast.Tyvar = CoreML.Tyvar
+      sharing CoreML = Ctrls.CoreML
       sharing CoreML.Atoms = TypeEnv.Atoms
       sharing CoreML.Type = TypeEnv.Type
    end
@@ -145,10 +148,15 @@ signature ELABORATE_ENV =
       sharing Interface.Status = InterfaceEnv.Status
       sharing Interface.TypeStr = InterfaceEnv.TypeStr
 
+      structure Basis:
+	 sig
+	    type t
+	    val layout: t -> Layout.t
+	 end
+
       type t
 
       val amInsideFunctor: unit -> bool
-      val clearDefUses: t -> unit
       (* cut keeps only those bindings in the structure that also appear
        * in the interface.  It proceeds recursively on substructures.
        *)
@@ -157,6 +165,7 @@ signature ELABORATE_ENV =
 	 * {isFunctor: bool, opaque: bool, prefix: string} * Region.t
 	 -> Structure.t * Decs.t
       val empty: unit -> t
+      val extendBasid: t * Ast.Basid.t * Basis.t -> unit
       val extendExn: t * Ast.Con.t * CoreML.Con.t * Scheme.t -> unit
       val extendFctid: t * Ast.Fctid.t * FunctorClosure.t -> unit
       val extendFix: t * Ast.Vid.t * Ast.Fixity.t -> unit
@@ -169,6 +178,7 @@ signature ELABORATE_ENV =
       val extendOverload:
 	 t * Ast.Priority.t * Ast.Var.t * (CoreML.Var.t * Type.t) vector * Scheme.t
 	 -> unit
+      val forceUsed: t -> unit
       val functorClosure:
 	 t * string * Interface.t
 	 * (Structure.t * string list -> Decs.t * Structure.t option)
@@ -176,17 +186,10 @@ signature ELABORATE_ENV =
       val layout: t -> Layout.t
       val layoutCurrentScope: t -> Layout.t
       val layoutUsed: t -> Layout.t
+      val localAll: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val localCore: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val localModule: t * (unit -> 'a) * ('a -> 'b) -> 'b
-      (* localTop (E, f) = (a, finish)
-       * evaluates f () in a new scope.  finish g can then be called later to
-       * finish the local, evaluating g () within the scope and eventually
-       * leaving only the bindings introduced by g.  Thus, the whole thing is
-       * very much like the following.
-       *
-       *   local f () in g () end
-       *)
-      val localTop: t * (unit -> 'a) -> 'a * ((unit -> 'b) -> 'b)
+      val lookupBasid: t * Ast.Basid.t -> Basis.t option
       val lookupFctid: t * Ast.Fctid.t -> FunctorClosure.t option
       val lookupLongcon: t * Ast.Longcon.t -> CoreML.Con.t * Scheme.t
       val lookupLongstrid: t * Ast.Longstrid.t -> Structure.t option
@@ -194,7 +197,9 @@ signature ELABORATE_ENV =
       val lookupLongvar: t * Ast.Longvar.t -> CoreML.Var.t * Scheme.t
       val lookupLongvid: t * Ast.Longvid.t -> Vid.t * Scheme.t
       val lookupSigid: t * Ast.Sigid.t -> Interface.t option
+      val lookupStrid: t * Ast.Strid.t -> Structure.t option
       val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
+      val makeBasis: t * (unit -> 'a) -> 'a * Basis.t
       val makeInterfaceEnv: t -> InterfaceEnv.t
       val newCons: ((t * {con: CoreML.Con.t,
 			  name: Ast.Con.t} vector)
@@ -203,18 +208,21 @@ signature ELABORATE_ENV =
       val newTycon: string * Tycon.Kind.t * AdmitsEquality.t -> Tycon.t
       (* openStructure (E, S) opens S in the environment E. *) 
       val openStructure: t * Structure.t -> unit
+      (* openBasis (E, B) opens B in the environment E. *) 
+      val openBasis: t * Basis.t -> unit
       val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option
       val peekLongcon: t * Ast.Longcon.t -> (CoreML.Con.t * Scheme.t) option
       val peekLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
+      val processDefUse: t -> unit
       (* scope f evaluates f () in a new scope so that extensions that occur
        * during f () are forgotten afterwards.
        * scope works for infixes, types, values, and structures
        *)
       val scope: t * (unit -> 'a) -> 'a
-      (* like scope, but works for signatures and functors as well *)
+      (* like scope, but works for bases, signatures and functors as well *)
       val scopeAll: t * (unit -> 'a) -> 'a
       val setTyconNames: t -> unit
       val sizeMessage: t -> Layout.t
-      val processDefUse: t -> unit
+      val snapshot: t -> (unit -> 'a) -> 'a
    end
 

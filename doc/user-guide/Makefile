@@ -17,6 +17,7 @@ TEX_FILES = \
 	macros.tex		\
 	main.tex		\
 	man-page.tex		\
+	mlb-formal.tex		\
 	nj-deviations.tex	\
 	platform.tex		\
 	profiling.tex		\
@@ -43,7 +44,7 @@ main.dvi: $(TEX_FILES)
 
 main.pdf: main.ps
 	ps2pdf main.ps
-	
+
 main.ps: main.dvi
 	dvips -o main.ps main
 

@@ -175,6 +175,13 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 				Layouts Rssa.Program.layouts)
 	    else ()
 	 end
+      val program =
+	 Control.pass
+	 {name = "toMachine",
+	  suffix = "machine",
+	  style = Control.No,
+	  thunk = fn () =>
+let
       val R.Program.T {functions, handlesSignals, main, objectTypes} = program
       (* Chunk information *)
       val {get = labelChunk, set = setLabelChunk, ...} =
@@ -1055,7 +1062,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 	   end))
       val maxFrameSize = Bytes.wordAlign maxFrameSize
       val profileInfo = makeProfileInfo {frames = frameLabels}
-   in
+in
       Machine.Program.T 
       {chunks = chunks,
        frameLayouts = frameLayouts,
@@ -1068,7 +1075,10 @@ fun toMachine (program: Ssa.Program.t, codegen) =
        profileInfo = profileInfo,
        reals = allReals (),
        strings = allStrings ()}
+end,
+      display = Control.Layouts Machine.Program.layouts}         
+   in
+      program
    end
-
 end
    

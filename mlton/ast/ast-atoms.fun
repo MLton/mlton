@@ -70,6 +70,7 @@ structure Con =
       val ensureSpecify = ensure "specify"
    end
 
+structure Basid = AstId (structure Symbol = Symbol)
 structure Sigid = AstId (structure Symbol = Symbol)
 structure Strid = AstId (structure Symbol = Symbol)
 structure Fctid = AstId (structure Symbol = Symbol)
@@ -339,6 +340,36 @@ structure DatatypeRhs =
 	  | Repl {lhs, rhs} =>
 	       seq [str "datatype ", Tycon.layout lhs,
 		   str " = datatype ", Longtycon.layout rhs]
+   end
+
+(*---------------------------------------------------*)
+(*                      ModIdBind                    *)
+(*---------------------------------------------------*)
+
+structure ModIdBind =
+   struct
+      datatype node =
+	 Fct of {lhs: Fctid.t, rhs: Fctid.t} vector
+       | Sig of {lhs: Sigid.t, rhs: Sigid.t} vector
+       | Str of {lhs: Strid.t, rhs: Strid.t} vector
+
+      open Wrap
+      type t = node Wrap.t
+      type node' = node
+      type obj = t
+
+      fun layout d =
+	 let
+	    fun doit (prefix, l, bds) =
+	       layoutAndsBind
+	       (prefix, "=", Vector.toList bds, fn {lhs, rhs} =>
+		(OneLine, l lhs, l rhs))
+	 in
+	    case node d of
+	       Fct bds => doit ("functor", Fctid.layout, bds)
+	     | Sig bds => doit ("signature", Sigid.layout, bds)
+	     | Str bds => doit ("structure", Strid.layout, bds)
+	 end
    end
 
 end

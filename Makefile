@@ -39,6 +39,13 @@ endif
 	$(MAKE) script targetmap constants compiler world tools
 	@echo 'Build of MLton succeeded.'
 
+.PHONY: basis
+basis:
+	rm -rf $(LIB)/sml
+	mkdir $(LIB)/sml
+	$(CP) $(SRC)/basis-library $(LIB)/sml/basis
+	find $(LIB)/sml -type f -name .cvsignore | xargs rm -rf
+
 .PHONY: bootstrap-nj
 bootstrap-nj:
 	$(MAKE) nj-mlton
@@ -141,16 +148,16 @@ targetmap:
 
 .PHONY: nj-mlton
 nj-mlton:
-	$(MAKE) dirs
+	$(MAKE) dirs runtime 
 	$(MAKE) -C $(COMP) nj-mlton
-	$(MAKE) script runtime targetmap constants
+	$(MAKE) script basis targetmap constants
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual:
-	$(MAKE) dirs	
+	$(MAKE) dirs runtime
 	$(MAKE) -C $(COMP) nj-mlton-dual
-	$(MAKE) script runtime targetmap constants
+	$(MAKE) script basis targetmap constants
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: profiled
@@ -231,19 +238,15 @@ version:
 world: 
 	$(MAKE) world-no-check
 	@echo 'Type checking basis.'
-	$(MLTON) -dead-code false	\
-		-sequence-unit true 	\
-		-stop tc 		\
-		-warn-unused true	\
+	$(MLTON) -disable-ann deadCode \
+		-stop tc \
+		$(LIB)/sml/basis/basis.mlb \
 		>/dev/null
 
 .PHONY: world-no-check
 world-no-check: 
 	@echo 'Making world.'
-	rm -rf $(LIB)/sml
-	mkdir $(LIB)/sml
-	$(CP) $(SRC)/basis-library $(LIB)/sml
-	find $(LIB)/sml -type f -name .cvsignore | xargs rm -rf
+	$(MAKE) basis
 	$(LIB)/$(AOUT) @MLton -- $(LIB)/world
 
 # The TBIN and TLIB are where the files are going to be after installing.

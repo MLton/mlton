@@ -1,0 +1,16 @@
+ann  
+   deadCode true,
+   sequenceUnit true,
+   warnMatch true,
+   warnLocalUnused true  
+in
+   local
+      libs/build.mlb
+   in
+      libs/basis-2002/top-level/infixes.sml
+      libs/basis-2002/top-level/basis-funs.sml
+      libs/basis-2002/top-level/basis-sigs.sml
+      ann allowRebindEquals true in libs/basis-2002-strict/top-level/top-level.sml end
+      ann allowOverload true in libs/basis-2002/top-level/overloads.sml end
+   end
+end

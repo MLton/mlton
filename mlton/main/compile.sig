@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -14,16 +14,22 @@ signature COMPILE =
    sig
       include COMPILE_STRUCTS
 
-      val compile: {input: File.t list,
-		    outputC: unit -> {file: File.t,
-				      print: string -> unit,
-				      done: unit -> unit},
-		    outputS: unit -> {file: File.t,
-				      print: string -> unit,
-				      done: unit -> unit}} -> unit
-      val elaborate: {input: File.t list} -> unit
-      val forceBasisLibrary: Dir.t -> unit
+      val compileMLB: {input: File.t,
+		       outputC: unit -> {file: File.t,
+					 print: string -> unit,
+					 done: unit -> unit},
+		       outputS: unit -> {file: File.t,
+					 print: string -> unit,
+					 done: unit -> unit}} -> unit
+      val compileSML: {input: File.t list,
+		       outputC: unit -> {file: File.t,
+					 print: string -> unit,
+					 done: unit -> unit},
+		       outputS: unit -> {file: File.t,
+					 print: string -> unit,
+					 done: unit -> unit}} -> unit
+      val elaborateMLB: {input: File.t} -> unit
+      val elaborateSML: {input: File.t list} -> unit
       (* output a C file to print out the basis constants. *)
       val outputBasisConstants: Out.t -> unit
-      val setBasisLibraryDir: Dir.t -> unit
    end

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -22,10 +22,10 @@ signature ELABORATE =
       include ELABORATE_STRUCTS
 
       structure ConstType: CONST_TYPE
+      structure Ctrls: ELABORATE_CONTROLS
       structure Decs: DECS
       structure Env: ELABORATE_ENV
 
-      val elaborateProgram:
-	 Ast.Program.t * Env.t * (string * ConstType.t -> CoreML.Const.t)
-	 -> Decs.t
+      val elaborateMLB:
+	 Ast.Basdec.t * {addPrim: Env.t -> Decs.t} -> Env.t * (Decs.t * bool) vector
    end

@@ -12,7 +12,7 @@ open S
 open CoreML
 open Dec
 
-fun deadCode {basis, user} =
+fun deadCode {prog} =
    let
       val {get = varIsUsed, set = setVarIsUsed, destroy, ...} =
 	 Property.destGetSet (Var.plist, Property.initConst false)
@@ -55,15 +55,24 @@ fun deadCode {basis, user} =
 	  | Val {rvbs, vbs, ...} =>
 	       (Vector.foreach (rvbs, useLambda o #lambda)
 		; Vector.foreach (vbs, useExp o #exp))
-      val _ = List.foreach (user, useDec)
-      val _ = List.foreach (basis, fn d => if decIsWild d then useDec d else ())
-      val res =
-	 List.fold (rev basis, [], fn (d, b) =>
-		    if decIsNeeded d
-		       then (useDec d; d :: b)
-		    else b)
+
+      val n = Vector.length prog
+      val m = n - 1
+      val prog =
+	 Vector.tabulate
+	 (n, fn i =>
+	  let val (decs, deadCode) = Vector.sub (prog, m - i)
+	  in
+	     if deadCode
+		then List.fold (rev decs, [], fn (dec, decs) =>
+				if decIsWild dec orelse decIsNeeded dec
+				   then (useDec dec; dec :: decs)
+				   else decs)
+		else (List.foreach (decs, useDec)
+		      ; decs)
+	  end)
       val _ = destroy ()
-   in res
+   in {prog = Vector.rev prog}
    end
 
 end

@@ -42,6 +42,7 @@ signature AST_ATOMS =
             val ensureSpecify: t -> unit
 	 end
 
+      structure Basid: AST_ID
       structure Sigid: AST_ID
       structure Strid: AST_ID
       structure Fctid: AST_ID
@@ -89,7 +90,7 @@ signature AST_ATOMS =
       sharing Strid = Longtycon.Strid = Longvar.Strid = Longcon.Strid
 	 = Longvid.Strid = Longstrid.Strid
 
-      sharing Symbol = Con.Symbol = Fctid.Symbol = Longcon.Symbol
+      sharing Symbol = Basid.Symbol = Con.Symbol = Fctid.Symbol = Longcon.Symbol
 	 = Longstrid.Symbol = Longtycon.Symbol = Longvar.Symbol = Longvid.Symbol
 	 = Sigid.Symbol = Strid.Symbol = Tycon.Symbol = Vid.Symbol = Var.Symbol
 
@@ -145,6 +146,17 @@ signature AST_ATOMS =
 	    datatype node =
 	       DatBind of DatBind.t
 	     | Repl of {lhs: Tycon.t, rhs: Longtycon.t}
+	    include WRAPPED sharing type node' = node
+			    sharing type obj = t
+	    val layout: t -> Layout.t
+	 end
+      structure ModIdBind:
+	 sig
+	    type t
+	    datatype node = 
+	       Fct of {lhs: Fctid.t, rhs: Fctid.t} vector
+	     | Sig of {lhs: Sigid.t, rhs: Sigid.t} vector
+	     | Str of {lhs: Strid.t, rhs: Strid.t} vector
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
 	    val layout: t -> Layout.t

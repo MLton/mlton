@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
@@ -33,6 +33,7 @@ signature INSTREAM =
       (* Each line includes the newline. *)
       val lines: t -> string list
       val openIn: string -> t	 
+      val openString: string -> t
       val outputAll: t * Out.t -> unit
       val peekChar: t -> char option
       val sameContents: t * t -> bool

@@ -15,21 +15,23 @@ structure Compile = Compile ()
 
 structure Place =
    struct
-      datatype t = CM | Files | Generated | O | OUT | SML | TypeCheck
+      datatype t = CM | Files | Generated | MLB | O | OUT | SML | TypeCheck
 
       val toInt: t -> int =
 	 fn CM => 0
-	  | Files => 1
-	  | SML => 2
-	  | TypeCheck => 3
-	  | Generated => 4
-	  | O => 5
-	  | OUT => 6
+	  | MLB => 1
+	  | Files => 2
+	  | SML => 3
+	  | TypeCheck => 4
+	  | Generated => 5
+	  | O => 6
+	  | OUT => 7
 
       val toString =
 	 fn CM => "cm"
 	  | Files => "files"
 	  | SML => "sml"
+	  | MLB => "mlb"
 	  | Generated => "g"
 	  | O => "o"
 	  | OUT => "out"
@@ -58,7 +60,6 @@ val output: string option ref = ref NONE
 val profileSet: bool ref = ref false
 val runtimeArgs: string list ref = ref ["@MLton"]
 val stop = ref Place.OUT
-val warnMatch = ref true
 
 val targetMap: unit -> {arch: MLton.Platform.Arch.t,
 			os: MLton.Platform.OS.t,
@@ -161,22 +162,34 @@ fun makeOptions {usage} =
 	"contify functions into main",
 	boolRef contifyIntoMain),
        (Expert, "dead-code", " {true|false}",
-	"basis library dead code elimination",
-	boolRef deadCode),
+	"annotated dead code elimination",
+	Bool (fn b =>
+	      (warnDeprecated "dead-code"
+	       ; deadCodeAnn := b))),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
 	boolRef debug),
        (Normal, "detect-overflow", " {true|false}",
 	"overflow checking on integer arithmetic",
 	boolRef detectOverflow),
        (Expert, "diag-pass", " <pass>", "keep diagnostic info for pass",
-	SpaceString (fn s =>
-		     (case Regexp.fromString s of
-			 SOME (re,_) => let val re = Regexp.compileDFA re
-					in 
-					   List.push (diagPasses, re)
-					   ; List.push (keepPasses, re)
-					end
-		       | NONE => usage (concat ["invalid -diag-pass flag: ", s])))),
+	SpaceString 
+	(fn s =>
+	 (case Regexp.fromString s of
+	     SOME (re,_) => let val re = Regexp.compileDFA re
+			    in 
+			       List.push (diagPasses, re)
+			       ; List.push (keepPasses, re)
+			    end
+	   | NONE => usage (concat ["invalid -diag-pass flag: ", s])))),
+       (Expert, "disable-ann", " <ann>", "globally disable annotation",
+	SpaceString 
+	(fn s =>
+	 (case s of
+	     "deadCode" => deadCodeAnn := false
+	   | "sequenceUnit" => sequenceUnitAnn := false
+	   | "warnMatch" => warnMatchAnn := false
+	   | "warnUnused" => warnUnusedAnn := false
+	   | _ => usage (concat ["invalid -disable-ann flag: ", s])))),
        (Expert, "drop-pass", " <pass>", "omit optimization pass",
 	SpaceString
 	(fn s => (case Regexp.fromString s of
@@ -187,6 +200,15 @@ fun makeOptions {usage} =
        (Expert, "eliminate-overflow", " {true|false}",
 	"eliminate useless overflow tests",
 	boolRef eliminateOverflow),
+       (Expert, "enable-ann", " <ann>", "globally enable annotation",
+	SpaceString 
+	(fn s =>
+	 (case s of
+	     "deadCode" => deadCodeAnn := true
+	   | "sequenceUnit" => sequenceUnitAnn := true
+	   | "warnMatch" => warnMatchAnn := true
+	   | "warnUnused" => warnUnusedAnn := true
+	   | _ => usage (concat ["invalid -enable-ann flag: ", s])))),
        (Expert, "error-threshhold", " 20", "error threshhold",
 	intRef errorThreshhold),
        (Normal, "exn-history", " {false|true}", "enable Exn.history",
@@ -353,12 +375,9 @@ fun makeOptions {usage} =
 	boolRef safe),
        (Normal, "sequence-unit", " {false|true}",
 	"in (e1; e2), require e1: unit",
-	boolRef sequenceUnit),
-       (Normal, "show-basis", " <file>", "write out the basis library",
+	boolRef sequenceUnitDef),
+       (Normal, "show-basis", " <file>", "write out the final basis environment",
 	SpaceString (fn s => showBasis := SOME s)),
-       (Normal, "show-basis-used", " <file>",
-	"write the basis library used by the program",
-	SpaceString (fn s => showBasisUsed := SOME s)),
        (Normal, "show-def-use", " <file>", "write def-use information",
 	SpaceString (fn s => showDefUse := SOME s)),
        (Expert, "show-types", " {false|true}", "show types in ILs",
@@ -427,12 +446,15 @@ fun makeOptions {usage} =
 			| "2" => Pass
 			| "3" =>  Detail
 			| _ => usage (concat ["invalid -verbose arg: ", s])))),
+       (Normal, "warn-ann", " {true|false}",
+	"unrecognized annotation warnings",
+	boolRef warnAnn),
        (Normal, "warn-match", " {true|false}",
 	"nonexhaustive and redundant match warnings",
-	boolRef warnMatch),
+	boolRef warnMatchDef),
        (Normal, "warn-unused", " {false|true}",
 	"unused identifier warnings",
-	boolRef warnUnused),
+	boolRef warnUnusedDef),
        (Expert, "xml-passes", " <passes>", "xml optimization passes",
 	SpaceString
 	(fn s =>
@@ -463,7 +485,6 @@ fun commandLine (args: string list): unit =
 	 case args of
 	    lib :: args =>
 	       (libDir := lib
-		; Compile.setBasisLibraryDir (concat [lib, "/sml/basis-library"])
 		; args)
 	  | _ => Error.bug "incorrect args from shell script"
       val _ = setTargetType ("self", usage)
@@ -557,19 +578,10 @@ fun commandLine (args: string list): unit =
 	 if !keepDot andalso List.isEmpty (!keepPasses)
 	    then keepSSA := true
 	 else ()
-      val _ =
-	 let
-	    val b = !warnMatch
-	 in
-	    (warnNonExhaustive := b; warnRedundant := b)
-	 end
-      val _ =
-	 keepDefUse := (isSome (!showDefUse)
-			orelse isSome (!showBasisUsed)
-			orelse !warnUnused)
+      val keepDefUse = (isSome (!showDefUse) orelse !warnUnusedAnn)
       val _ = elaborateOnly := (stop = Place.TypeCheck
-				andalso not (!warnMatch)
-				andalso not (!keepDefUse))
+				andalso not (!Control.warnMatchAnn)
+				andalso not (keepDefUse))
       val _ =
 	 case targetOS of
 	    FreeBSD => ()
@@ -588,11 +600,7 @@ fun commandLine (args: string list): unit =
       Result.No msg => usage msg
     | Result.Yes [] =>
 	 (inputFile := "<none>"
-	  ; if isSome (!showDefUse) orelse isSome (!showBasis) orelse !warnUnused
-	       then
-		  trace (Top, "Type Check Basis")
-		  Compile.elaborate {input = []}
-	    else if !buildConstants
+	  ; if !buildConstants
                then Compile.outputBasisConstants Out.standard
 	    else if !verbosity = Silent orelse !verbosity = Top
                then printVersion Out.standard
@@ -617,7 +625,8 @@ fun commandLine (args: string list): unit =
 			   else loop sufs
 		  datatype z = datatype Place.t
 	       in
-		  loop [(".cm", CM, false),
+		  loop [(".mlb", MLB, false),
+			(".cm", CM, false),
 			(".sml", SML, false),
 			(".c", Generated, true),
 			(".o", O, true)]
@@ -817,10 +826,10 @@ fun commandLine (args: string list): unit =
 			   case stop of
 			      Place.TypeCheck =>
 				 trace (Top, "Type Check SML")
-				 Compile.elaborate {input = files}
+				 Compile.elaborateSML {input = files}
 			    | _ => 
 				 trace (Top, "Compile SML")
-				 Compile.compile
+				 Compile.compileSML
 				 {input = files,
 				  outputC = make (Control.C, ".c"),
 				  outputS = make (Control.Assembly,
@@ -858,10 +867,65 @@ fun commandLine (args: string list): unit =
 			       else ()
 				  ; compileSml files)
 		     end
+		  fun compileMLB file =
+		     let
+			val outputs: File.t list ref = ref []
+			val r = ref 0
+			fun make (style: style, suf: string) () =
+			   let
+			      val suf = concat [".", Int.toString (!r), suf]
+			      val _ = Int.inc r
+			      val file = (if !keepGenerated
+					     orelse stop = Place.Generated
+					     then suffix
+					  else temp) suf
+			      val _ = List.push (outputs, file)
+			      val out = Out.openOut file
+			      fun print s = Out.output (out, s)
+			      val _ = outputHeader' (style, out)
+			      fun done () = Out.close out
+			   in
+			      {file = file,
+			       print = print,
+			       done = done}
+			   end
+			val _ =
+			   case !verbosity of
+			      Silent => ()
+			    | Top => ()
+			    | _ => 
+				 outputHeader
+				 (Control.No, fn l =>
+				  let val out = Out.error
+				  in Layout.output (l, out)
+				     ; Out.newline out
+				  end)
+			val _ =
+			   case stop of
+			      Place.TypeCheck =>
+				 trace (Top, "Type Check SML")
+				 Compile.elaborateMLB {input = file}
+			    | _ => 
+				 trace (Top, "Compile SML")
+				 Compile.compileMLB
+				 {input = file,
+				  outputC = make (Control.C, ".c"),
+				  outputS = make (Control.Assembly,
+						  if !debug then ".s" else ".S")}
+		     in
+			case stop of
+			   Place.Generated => ()
+			 | Place.TypeCheck => ()
+			 | _ =>
+			      (* Shrink the heap before calling gcc. *)
+			      (MLton.GC.pack ()
+			       ; compileCSO (List.concat [!outputs, csoFiles]))
+		     end
 		  fun compile () =
 		     case start of
 			Place.CM => compileCM input
 		      | Place.SML => compileSml [input]
+		      | Place.MLB => compileMLB input
 		      | Place.Generated => compileCSO (input :: csoFiles)
 		      | Place.O => compileCSO (input :: csoFiles)
 		      | _ => Error.bug "invalid start"
@@ -878,9 +942,8 @@ fun commandLine (args: string list): unit =
 
 val commandLine = Process.makeCommandLine commandLine
    
-fun exportNJ (root: Dir.t, file: File.t): unit =
-   (Compile.forceBasisLibrary root
-    ; SMLofNJ.exportFn (file, fn (_, args) => commandLine args))
+fun exportNJ (file: File.t): unit =
+   SMLofNJ.exportFn (file, fn (_, args) => commandLine args)
    
 fun exportMLton (): unit =
    case CommandLine.arguments () of

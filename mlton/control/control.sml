@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -83,9 +83,9 @@ val contifyIntoMain = control {name = "contifyIntoMain",
 			       default = false,
 			       toString = Bool.toString}
 
-val deadCode = control {name = "dead code",
-			default = true,
-			toString = Bool.toString}
+val deadCodeAnn = control {name = "dead code (annotation)",
+			   default = true,
+			   toString = Bool.toString}
    
 val debug = control {name = "debug",
 		     default = false,
@@ -228,10 +228,6 @@ val instrumentSxml = control {name = "instrument Sxml",
 			      default = false,
 			      toString = Bool.toString}
 
-val keepDefUse = control {name = "keep def-use",
-			  default = false,
-			  toString = Bool.toString}
-   
 val keepMachine = control {name = "keep Machine",
 			   default = false,
 			   toString = Bool.toString}
@@ -437,18 +433,17 @@ val safe = control {name = "safe",
 		    default = true,
 		    toString = Bool.toString}
 
-val sequenceUnit = control {name = "sequence unit",
-			    default = false,
-			    toString = Bool.toString}
+val sequenceUnitAnn = control {name = "sequence unit (annotation)",
+			       default = true,
+			       toString = Bool.toString}
+val sequenceUnitDef = control {name = "sequence unit (default)",
+			       default = false,
+			       toString = Bool.toString}
 
 val showBasis = control {name = "show basis",
 			 default = NONE,
 			 toString = Option.toString File.toString}
    
-val showBasisUsed = control {name = "show basis used",
-			     default = NONE,
-			     toString = Option.toString File.toString}
-
 val showDefUse = control {name = "show def-use",
 			  default = NONE,
 			  toString = Option.toString File.toString}
@@ -575,17 +570,23 @@ val verbosity = control {name = "verbosity",
 
 val version = "MLton MLTONVERSION"
 
-val warnNonExhaustive = control {name = "warn non-exhaustive",
-				 default = true,
-				 toString = Bool.toString}
+val warnAnn = control {name = "warn annotation",
+		       default = true,
+		       toString = Bool.toString}
 
-val warnRedundant = control {name = "warn redundant",
+val warnMatchAnn = control {name = "warn match (annotation)",
+			    default = true,
+			    toString = Bool.toString}
+val warnMatchDef = control {name = "warn match (default)",
+			    default = true,
+			    toString = Bool.toString}
+
+val warnUnusedAnn = control {name = "warn unused (annotation)",
 			     default = true,
 			     toString = Bool.toString}
-
-val warnUnused = control {name = "warn unused",
-			  default = false,
-			  toString = Bool.toString}
+val warnUnusedDef = control {name = "warn unused (default)",
+			     default = false,
+			     toString = Bool.toString}
 
 val xmlPassesSet: (string -> string list Result.t) ref = 
    control {name = "xmlPassesSet",

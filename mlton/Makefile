@@ -44,12 +44,15 @@ SOURCES =			\
 	front-end/ml.lex.sml 	\
 	front-end/ml.grm.sig 	\
 	front-end/ml.grm.sml	\
+	front-end/mlb.lex.sml 	\
+	front-end/mlb.grm.sig 	\
+	front-end/mlb.grm.sml	\
 	$(shell if [ -r mlton.cm ]; then mlton -stop f mlton.cm; fi)
 
 .PHONY: all
 all: $(AOUT)
 
-front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml:
+front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml front-end/mlb.lex.sml front-end/mlb.grm.sig front-end/mlb.grm.sml:
 	$(MAKE) -C front-end
 
 $(AOUT): $(SOURCES)
@@ -96,7 +99,7 @@ nj-mlton: $(SOURCES)
 		echo '#set CM.Control.warn_obsolete false;';			\
 		echo 'Control.polyEqWarn := false;';				\
 		echo 'CM.make "sources.cm";';					\
-		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
+		echo 'Main.exportNJ ("$(LIB)/mlton");'	\
 	) | $(SML)
 
 .PHONY: nj-mlton-dual
@@ -110,7 +113,7 @@ nj-mlton-dual: $(SOURCES)
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server1", pathtrans = NONE, pref = 0};';\
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
 		echo 'CM.make "sources.cm";';					\
-		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
+		echo 'Main.exportNJ ("$(LIB)/mlton");'	\
 	) | $(SML)
 
 .PHONY: nj-whole

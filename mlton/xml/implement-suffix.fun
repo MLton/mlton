@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -39,13 +39,12 @@ fun doit (Program.T {datatypes, body, overflow, ...}): Program.t =
 				       {var = var,
 					ty = ty,
 					lambda = loopLambda lambda})}
-	  | Exception {con, arg} => dec
+	  | Exception {...} => dec
 	  | _ => Error.bug "implement suffix saw unexpected dec"
       and loopMonoVal {var, ty, exp} : Dec.t =
 	 let
 	    fun primExp e = MonoVal {var = var, ty = ty, exp = e}
 	    fun keep () = primExp exp
-	    fun makeExp e = Dexp.vall {var = var, exp = e}
 	 in
 	    case exp of
 	       Case {test, cases, default} =>
@@ -54,7 +53,7 @@ fun doit (Program.T {datatypes, body, overflow, ...}): Program.t =
 					    (default, fn (e, r) =>
 					     (loop e, r))),
 				 test = test})
-	     | ConApp {con, arg, ...} => keep ()
+	     | ConApp {...} => keep ()
 	     | Handle {try, catch = (catch, ty), handler} =>
 		  primExp (Handle {try = loop try,
 				   catch = (catch, ty),

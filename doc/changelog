@@ -1,5 +1,9 @@
 Here are the changes since version 20040227.
 
+* 2004-07-28
+  - Added support for programming in the large using the ML Basis
+    system.
+
 * 2004-07-11
   - Fixed bugs in ListPair.*Eq functions, which incorrectly raised
     the UnequalLengths exception.

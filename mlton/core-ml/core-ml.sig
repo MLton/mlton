@@ -78,7 +78,8 @@ signature CORE_ML =
 			rules: {exp: t,
 				lay: (unit -> Layout.t) option,
 				pat: Pat.t} vector,
-			test: t}
+			test: t,
+			warnMatch: bool}
 	     | Con of Con.t * Type.t vector
 	     | Const of unit -> Const.t
 	     | EnterLeave of t * SourceInfo.t
@@ -105,7 +106,8 @@ signature CORE_ML =
 			rules: {exp: t,
 				lay: (unit -> Layout.t) option,
 				pat: Pat.t} vector,
-			test: t} -> t
+			test: t,
+			warnMatch: bool} -> t
 	    val dest: t -> node * Type.t
 	    val iff: t * t * t -> t
 	    val falsee: t
@@ -160,7 +162,8 @@ signature CORE_ML =
 		       vbs: {exp: Exp.t,
 			     lay: unit -> Layout.t,
 			     pat: Pat.t,
-			     patRegion: Region.t} vector}
+			     patRegion: Region.t} vector,
+		       warnMatch: bool}
 
 	    val layout: t -> Layout.t
 	 end

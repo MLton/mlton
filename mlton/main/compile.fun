@@ -78,6 +78,8 @@ end
 (*---------------------------------------------------*)
 
 structure FrontEnd = FrontEnd (structure Ast = Ast)
+structure MLBFrontEnd = MLBFrontEnd (structure Ast = Ast
+				     structure FrontEnd = FrontEnd)
 structure DeadCode = DeadCode (structure CoreML = CoreML)
 structure Defunctorize = Defunctorize (structure CoreML = CoreML
 				       structure Xml = Xml)
@@ -89,6 +91,7 @@ local
 in
    structure ConstType = ConstType
    structure Env = Env
+   structure Decs = Decs
 end
 structure LookupConstant = LookupConstant (structure Const = Const
 					   structure ConstType = ConstType
@@ -109,59 +112,31 @@ structure Bytecode = Bytecode (structure CCodegen = CCodegen
 structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
 				   structure Machine = Machine)
 
-local
-   open Elaborate
-in 
-   structure Decs = Decs
-end
+
+(* ------------------------------------------------- *)
+(*                 Lookup Constant                   *)
+(* ------------------------------------------------- *)
+
+val allConstants: (string * ConstType.t) list ref = ref []
+val amBuildingConstants: bool ref = ref false
    
-(* ------------------------------------------------- *)
-(*                 parseAndElaborate                 *)
-(* ------------------------------------------------- *)
-
-val (lexAndParse, lexAndParseMsg) =
-   Control.traceBatch (Control.Pass, "lex and parse") FrontEnd.lexAndParse
-
-fun lexAndParseFile (f: File.t): Ast.Program.t =
+val lookupConstant =
    let
-      val ast = lexAndParse f
-      val _ = Control.checkForErrors "parse"
-   in ast
-   end
-
-fun lexAndParseFiles (fs: File.t list): Ast.Program.t =
-   List.fold
-   (fs, Ast.Program.empty, fn (f, ast) =>
-    Ast.Program.append (ast, lexAndParseFile f))
-
-val (elaborate, elaborateMsg) =
-   Control.traceBatch (Control.Pass, "elaborate") Elaborate.elaborateProgram
-
-fun elaborateProg z: Decs.t =
-   let
-      val decs = elaborate z
-      val _ = Control.checkForErrors "elaborate"
+      val zero = Const.word (WordX.fromIntInf (0, WordSize.default))
+      val f =
+	 Promise.lazy
+	 (fn () =>
+	  if !amBuildingConstants
+	     then fn ct => (List.push (allConstants, ct)
+			    ; zero)
+	  else
+	     File.withIn
+	     (concat [!Control.libTargetDir, "/constants"], fn ins =>
+	      LookupConstant.load ins))
    in
-      decs
+      fn z => f () z
    end
 
-val displayDecs =
-   Control.Layout
-   (fn ds => CoreML.Program.layout (CoreML.Program.T
-				    {decs = Decs.toVector ds}))
-   
-fun parseAndElaborateFiles (fs: File.t list, E: Env.t, lookupConstant): Decs.t =
-   Control.pass
-   {name = "parseAndElaborate",
-    suffix = "core-ml",
-    style = Control.ML,
-    thunk = fn () => (List.fold
-		      (fs, Decs.empty, fn (f, ds) =>
-		       Decs.append 
-		       (ds, elaborateProg (lexAndParseFile f,
-					   E,
-					   lookupConstant)))),
-    display = displayDecs}
 
 (* ------------------------------------------------- *)   
 (*                   Primitive Env                   *)
@@ -172,7 +147,7 @@ local
    structure Tycon = TypeEnv.Tycon
    structure Type = TypeEnv.Type
    structure Tyvar = TypeEnv.Tyvar
-in
+
    val primitiveDatatypes =
       Vector.new3
       ({tycon = Tycon.bool,
@@ -283,134 +258,96 @@ in
 	       ()
 	    end
       end
+
+   val primitiveDecs: CoreML.Dec.t vector =
+      let
+	 open CoreML.Dec
+      in
+	 Vector.concat [Vector.new1 (Datatype primitiveDatatypes),
+			Vector.fromListMap
+			(primitiveExcons, fn c =>
+			 Exception {con = c, arg = NONE})]
+      end
+
+in
+
+   fun addPrim E =
+      (Env.addPrim E
+       ; Decs.fromVector primitiveDecs)
 end
 
+
+(* ------------------------------------------------- *)
+(*                 parseAndElaborateMLB              *)
+(* ------------------------------------------------- *)
+
+datatype input = File of File.t | String of String.t
+
+local
+   val (lexAndParseMLBFile, lexAndParseMLBFileMsg) =
+      Control.traceBatch (Control.Pass, "lex and parse (mlb)") MLBFrontEnd.lexAndParseFile
+   val (lexAndParseMLBString, lexAndParseMLBStringMsg) =
+      Control.traceBatch (Control.Pass, "lex and parse (mlb)") MLBFrontEnd.lexAndParseString
+      
+   val lexAndParseMLBMsgRef = ref lexAndParseMLBFileMsg
+in
+   fun lexAndParseMLB fs =
+      case fs of
+	 File f => (lexAndParseMLBMsgRef := lexAndParseMLBFileMsg
+		    ; lexAndParseMLBFile f)
+       | String s => (lexAndParseMLBMsgRef := lexAndParseMLBStringMsg
+		      ; lexAndParseMLBString s)
+   fun lexAndParseMLBMsg () =
+      (!lexAndParseMLBMsgRef) ()
+end
+
+val lexAndParseMLB : input -> Ast.Basdec.t = fn (fs: input) => 
+   let
+      val ast = lexAndParseMLB fs
+      val _ = Control.checkForErrors "parse"
+   in ast
+   end
+
+val (elaborateMLB, elaborateMLBMsg) =
+   Control.traceBatch (Control.Pass, "elaborate") Elaborate.elaborateMLB
+
+val displayEnvDecs =
+   Control.Layout
+   (fn (_, ds) => 
+    Vector.layout
+    (fn (d, b) =>
+     Layout.record
+     [("deadCode", Bool.layout b),
+      ("decs", Decs.layout d)])
+    ds)
+fun parseAndElaborateMLB (fs: input): Env.t * (Decs.t * bool) vector =
+   Control.pass
+   {name = "parseAndElaborate",
+    suffix = "core-ml",
+    style = Control.ML,
+    thunk = fn () => 
+    Ref.fluidLet
+    (Elaborate.Ctrls.lookupConstant, lookupConstant, fn () =>
+     elaborateMLB (lexAndParseMLB fs, {addPrim = addPrim})),
+    display = displayEnvDecs}
+   
 (* ------------------------------------------------- *)
 (*                   Basis Library                   *)
 (* ------------------------------------------------- *)
 
-val basisEnv = Env.empty ()
-
-val allConstants: (string * ConstType.t) list ref = ref []
-
-val amBuildingConstants: bool ref = ref false
-   
-val lookupConstant =
-   let
-      val zero = Const.word (WordX.fromIntInf (0, WordSize.default))
-      val f =
-	 Promise.lazy
-	 (fn () =>
-	  if !amBuildingConstants
-	     then fn ct => (List.push (allConstants, ct)
-			    ; zero)
-	  else
-	     File.withIn
-	     (concat [!Control.libTargetDir, "/constants"], fn ins =>
-	      LookupConstant.load ins))
-   in
-      fn z => f () z
-   end
-
-local
-   val dir = ref NONE
-in
-   fun setBasisLibraryDir (d: Dir.t): unit =
-      dir := SOME d
-   fun basisLibrary ()
-      : {build: Decs.t,
-	 localTopFinish: (unit -> Decs.t) -> Decs.t,
-	 libs: {name: string,
-		bind: Ast.Program.t} list} =
-       let
-	  val d =
-	     case !dir of
-		NONE => Error.bug "basis library dir not set"
-	      | SOME d => d
-	  fun basisFile f = String./ (d, f)
-	  fun libsFile f = basisFile (String./ ("libs", f))
-	  fun withFiles (f, g) =
-	     let
-	        val fs = File.foldLines
-		         (f, [], fn (s, ac) =>
-			  if s <> "\n" andalso #"#" <> String.sub (s, 0)
-			     then basisFile (String.dropLast s) :: ac
-			  else ac)
-	     in
-	        g (List.rev fs)
-	     end
-	  val (build, localTopFinish) =
-	     Env.localTop
-	     (basisEnv,
-	      fn () =>
-	      (Env.addPrim basisEnv
-	       ; withFiles (libsFile "build", 
-			    fn fs => parseAndElaborateFiles (fs, basisEnv,
-							     lookupConstant))))
-	  fun doit name =
-	    let
-	      fun libFile f = libsFile (String./ (name, f))
-	      val bind = withFiles (libFile "bind", lexAndParseFiles)
-	    in
-	      {name = name,
-	       bind = bind}
-	    end
-       in
-	  {build = build,
-	   localTopFinish = localTopFinish,
-	   libs = List.map (Control.basisLibs, doit)}
-       end
-end
-
-val basisLibrary = Promise.lazy basisLibrary
-    
-fun forceBasisLibrary d =
-   (setBasisLibraryDir d
-    ; ignore (basisLibrary ())
-    ; ())
-
-val primitiveDecs: CoreML.Dec.t vector =
-   let
-      open CoreML.Dec
-   in
-      Vector.concat [Vector.new1 (Datatype primitiveDatatypes),
-		     Vector.fromListMap
-		     (primitiveExcons, fn c =>
-		      Exception {con = c, arg = NONE})]
-   end
-
 fun outputBasisConstants (out: Out.t): unit =
    let
       val _ = amBuildingConstants := true
-      val {build, ...} = basisLibrary ()
+      val (_, decs) = parseAndElaborateMLB (File "$(SML_LIB)/basis/libs/primitive.mlb")
+      val decs = Vector.map (decs, fn (decs, _) => Decs.toList decs)
+      val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
       (* Need to defunctorize so the constants are forced. *)
       val _ =
 	 Defunctorize.defunctorize
-	 (CoreML.Program.T {decs = Vector.concat [primitiveDecs,
-						  Decs.toVector build]})
+	 (CoreML.Program.T {decs = decs})
       val _ = LookupConstant.build (!allConstants, out)
    in
       ()
-   end
-
-fun lookupConstantError _ = Error.bug "const in user input"
-
-fun selectBasisLibrary () =
-   let
-     val {build, localTopFinish, libs} = basisLibrary ()
-     val lib = !Control.basisLibrary
-   in
-      case List.peek (libs, fn {name, ...} => name = lib) of
-	 NONE => Error.bug (concat ["Missing basis library: ", lib])
-       | SOME {bind, ...} =>
-	   let
-	     val bind = 
-	        localTopFinish 
-		(fn () =>
-		 elaborateProg (bind, basisEnv, lookupConstantError))
-	   in
-	     {basis = Decs.append (build, bind)}
-	   end
    end
 
 (* ------------------------------------------------- *)
@@ -419,44 +356,17 @@ fun selectBasisLibrary () =
 
 exception Done
 
-fun elaborate {input: File.t list}: Xml.Program.t =
+fun elaborate {input: input}: Xml.Program.t =
    let
-      val {basis, ...} = selectBasisLibrary ()
+      val (E, decs) = parseAndElaborateMLB input
       val _ =
-	 if List.isEmpty input
-	    then ()
-	 else Env.clearDefUses basisEnv
-      val input =
-	 Env.scopeAll
-	 (basisEnv, fn () =>
-	  let
-	     val res = parseAndElaborateFiles (input, basisEnv,
-					       lookupConstantError)
-	     val _ =
-		case !Control.showBasis of
-		   NONE => ()
-		 | SOME f => 
-		      let
-			 val lay =
-			    if List.isEmpty input
-			       then Env.layout basisEnv
-			    else Env.layoutCurrentScope basisEnv
-		      in
-			 File.withOut (f, fn out => Layout.outputl (lay, out))
-		      end
-	     val _ =
-		if isSome (!Control.showDefUse) orelse !Control.warnUnused
-		   then Env.processDefUse basisEnv
-		else ()
-	  in
-	     res
-	  end)
-      val _ = 
-	 case !Control.showBasisUsed of
+	 case !Control.showBasis of
 	    NONE => ()
-	  | SOME f => 
-	       File.withOut (f, fn out =>
-			     Layout.outputl (Env.layoutUsed basisEnv, out))
+	  | SOME f =>
+	       File.withOut
+	       (f, fn out =>
+		Layout.outputl (Env.layoutCurrentScope E, out))
+      val _ = Env.processDefUse E
       val _ =
 	 case !Control.exportHeader of
 	    NONE => ()
@@ -473,25 +383,25 @@ fun elaborate {input: File.t list}: Xml.Program.t =
 		in
 		   ()
 		end)
-      val _ = (lexAndParseMsg (); elaborateMsg ())
+      val _ = (lexAndParseMLBMsg (); elaborateMLBMsg ())
       val _ = if !Control.elaborateOnly then raise Done else ()
-      val user = Decs.toList input
-      val basis = Decs.toList basis
-      val basis =
-	 if !Control.deadCode
-	    then
-	       Control.pass
-	       {name = "deadCode",
-		suffix = "basis",
-		style = Control.ML,
-		thunk = fn () => DeadCode.deadCode {basis = basis,
-						    user = user},
-		display = Control.Layout (List.layout CoreML.Dec.layout)}
-	 else basis
+
       val decs =
-	 Vector.concat [primitiveDecs,
-			Vector.fromList basis,
-			Vector.fromList user]
+	 Control.pass
+	 {name = "deadCode",
+	  suffix = "basis",
+	  style = Control.ML,
+	  thunk = fn () => let
+			      val decs = 
+				 Vector.map (decs, fn (decs, b) => 
+					     (Decs.toList decs, b))
+			      val {prog = decs} =
+				 DeadCode.deadCode {prog = decs}
+			   in
+			      decs
+			   end,
+	  display = Control.Layout (Vector.layout (List.layout CoreML.Dec.layout))}
+      val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
       val coreML = CoreML.Program.T {decs = decs}
 (*
       val _ = Control.message (Control.Detail, fn () =>
@@ -620,7 +530,7 @@ fun preCodegen {input}: Machine.Program.t =
       machine
    end
  
-fun compile {input: File.t list, outputC, outputS}: unit =
+fun compile {input: input, outputC, outputS}: unit =
    let
       val machine =
 	 Control.trace (Control.Top, "pre codegen")
@@ -648,9 +558,44 @@ fun compile {input: File.t list, outputC, outputS}: unit =
       ()
    end handle Done => ()
 
-val elaborate =
-   fn {input: File.t list} =>
-   (ignore (elaborate {input = input}))
+fun compileMLB {input: File.t, outputC, outputS}: unit =
+   compile {input = File input,
+	    outputC = outputC,
+	    outputS = outputS}
+
+val elaborateMLB =
+   fn {input: File.t} =>
+   (ignore (elaborate {input = File input}))
    handle Done => ()
+
+local
+   fun genMLB {input: File.t list} =
+      let
+	 val basis =
+	    String.concat
+	    ["$(SML_LIB)/basis/",!Control.basisLibrary,".mlb\n"]
+	 val s =
+	    if List.length input = 0
+	       then basis
+	       else 
+		  String.concat
+		  ["local\n",
+		   basis,
+		   "in\n",
+		   String.concat (List.separate(input, "\n")), "\n",
+		   "end\n"]
+      in
+	 String s
+      end
+in
+   fun compileSML {input: File.t list, outputC, outputS}: unit =
+      compile {input = genMLB {input = input},
+	       outputC = outputC,
+	       outputS = outputS}
+   val elaborateSML =
+      fn {input: File.t list} =>
+      (ignore (elaborate {input = genMLB {input = input}}))
+      handle Done => ()
+end
 
 end

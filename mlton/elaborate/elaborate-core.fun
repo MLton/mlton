@@ -319,13 +319,11 @@ structure Var =
       val fromAst = fromString o Avar.toString
    end
 
-val allowRebindEquals = ref true
-   
 local
    val eq = Avar.fromSymbol (Symbol.equal, Region.bogus)
 in
    fun ensureNotEquals x =
-      if not (!allowRebindEquals) andalso Avar.equals (x, eq)
+      if not (!Ctrls.allowRebindEquals) andalso Avar.equals (x, eq)
 	 then
 	    let
 	       open Layout
@@ -958,9 +956,7 @@ val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
      ...} =
    Property.get (Var.plist, Property.initFun (fn _ => ref NONE))
    
-fun elaborateDec (d, {env = E,
-		      lookupConstant: string * ConstType.t -> CoreML.Const.t,
-		      nest}) =
+fun elaborateDec (d, {env = E, nest}) =
    let
       fun recursiveFun () =
 	 let
@@ -1505,7 +1501,8 @@ fun elaborateDec (d, {env = E,
 					     test = 
 					     Cexp.tuple
 					     (Vector.map2
-					      (xs, argTypes, Cexp.var))}
+					      (xs, argTypes, Cexp.var)),
+					     warnMatch = !Ctrls.warnMatch}
 				      in
 					 Cexp.enterLeave (e, sourceInfo)
 				      end
@@ -1583,22 +1580,27 @@ fun elaborateDec (d, {env = E,
 		      Decs.empty
 		   end
 	      | Adec.Overload (p, x, tyvars, ty, xs) =>
-		   let
-		      (* Lookup the overloads before extending the var in case
-		       * x appears in the xs.
-		       *)
-		      val ovlds =
-			 Vector.map (xs, fn x => Env.lookupLongvar (E, x))
-		      val _ =
-			 Env.extendOverload
-			 (E, p, x, 
-			  Vector.map (ovlds, fn (x, s) => (x, Scheme.ty s)),
-			  Scheme.make {canGeneralize = false,
-				       tyvars = tyvars,
-				       ty = elabType ty})
-		   in
-		      Decs.empty
-		   end
+		   (if not (!Ctrls.allowOverload)
+		       then let open Layout
+			    in Control.error (region, str "_overload disallowed", empty)
+			    end
+		       else ()
+		    ; let
+			 (* Lookup the overloads before extending the var in case
+			  * x appears in the xs.
+			  *)
+			 val ovlds =
+			    Vector.map (xs, fn x => Env.lookupLongvar (E, x))
+			 val _ =
+			    Env.extendOverload
+			    (E, p, x, 
+			     Vector.map (ovlds, fn (x, s) => (x, Scheme.ty s)),
+			     Scheme.make {canGeneralize = false,
+					  tyvars = tyvars,
+					  ty = elabType ty})
+		      in
+			 Decs.empty
+		      end)
 	      | Adec.SeqDec ds =>
 		   Vector.fold (ds, Decs.empty, fn (d, decs) =>
 				Decs.append (decs, elabDec (d, isTop)))
@@ -1728,7 +1730,8 @@ fun elaborateDec (d, {env = E,
 					     noMatch = Cexp.RaiseMatch,
 					     region = region,
 					     rules = rules,
-					     test = Cexp.var (arg, argType)},
+					     test = Cexp.var (arg, argType),
+					     warnMatch = !Ctrls.warnMatch},
 				 fn () => SourceInfo.function {name = nest,
 							       region = region})
 			     val lambda =
@@ -1806,7 +1809,8 @@ fun elaborateDec (d, {env = E,
 		       *)
 		      Decs.single (Cdec.Val {rvbs = rvbs,
 					     tyvars = bound,
-					     vbs = vbs})
+					     vbs = vbs,
+					     warnMatch = !Ctrls.warnMatch})
 		   end
 	  end) arg
       and elabExp (arg: Aexp.t * Nest.t * string option): Cexp.t =
@@ -1887,7 +1891,8 @@ fun elaborateDec (d, {env = E,
 				  noMatch = Cexp.RaiseMatch,
 				  region = region,
 				  rules = rules,
-				  test = e}
+				  test = e,
+				  warnMatch = !Ctrls.warnMatch}
 		   end
 	      | Aexp.Const c =>
 		   elabConst
@@ -2037,6 +2042,10 @@ fun elaborateDec (d, {env = E,
 		   end
 	      | Aexp.Prim {kind, name, ty} =>
 		   let
+		      fun disallowed d =
+			 let open Layout
+			 in Control.error (region, str (d ^ " disallowed"), empty)
+			 end
 		      val ty = elabType ty
 		      val expandedTy =
 			 Type.hom
@@ -2108,7 +2117,8 @@ fun elaborateDec (d, {env = E,
 						pat =
 						(Cpat.tuple
 						 (Vector.map (vars, Cpat.var)))},
-					       test = Cexp.var (arg, argType)}
+					       test = Cexp.var (arg, argType),
+					       warnMatch = !Ctrls.warnMatch}
 					   end
 			       in
 				  Cexp.make (Cexp.Lambda
@@ -2157,7 +2167,10 @@ fun elaborateDec (d, {env = E,
 						then ConstType.String
 					     else
 						bug ()
-				  fun finish () = lookupConstant (name, ct)
+				  val finish =
+				     let val lookupConstant = !Ctrls.lookupConstant
+				     in fn () => lookupConstant (name, ct)
+				     end
 			       in
 				  Cexp.make (Cexp.Const finish, ty)
 			       end
@@ -2165,43 +2178,61 @@ fun elaborateDec (d, {env = E,
 		      datatype z = datatype Ast.PrimKind.t
 		   in
 		      case kind of
-			 BuildConst => lookConst name
-		       | Const => lookConst name
+			 BuildConst => 
+			    (if not (!Ctrls.allowConstant)
+				then disallowed "_build_const"
+				else ()
+			     ; lookConst name)
+		       | Const => 
+			    (if not (!Ctrls.allowConstant)
+				then disallowed "_const"
+				else ()
+			     ; lookConst name)
 		       | Export attributes =>
-			    let
-			       val e =
-				  Env.scope
-				  (E, fn () =>
-				   (Env.openStructure
-				    (E, valOf (!Env.Structure.ffi))
-				    ; elabExp (export {attributes = attributes,
-						       name = name,
-						       region = region,
-						       ty = expandedTy},
-					       nest,
-					       NONE)))
-			       val _ =
-				  unify
-				  (Cexp.ty e,
-				   Type.arrow (expandedTy, Type.unit),
-				   fn (l1, l2) =>
-				   let
-				      open Layout
-				   in
-				      (region,
-				       str "export unify bug",
-				       align [seq [str "inferred: ", l1],
-					      seq [str "expanded: ", l2]])
-				   end)
-			    in
-			       wrap (e, Type.arrow (ty, Type.unit))
-			    end
+			    (if not (!Ctrls.allowExport)
+				then disallowed "_export"
+				else ()
+			     ; let
+				  val e =
+				     Env.scope
+				     (E, fn () =>
+				      (Env.openStructure
+				       (E, valOf (!Env.Structure.ffi))
+				       ; elabExp (export {attributes = attributes,
+							  name = name,
+							  region = region,
+							  ty = expandedTy},
+						  nest,
+						  NONE)))
+				  val _ =
+				     unify
+				     (Cexp.ty e,
+				      Type.arrow (expandedTy, Type.unit),
+				      fn (l1, l2) =>
+				      let
+					 open Layout
+				      in
+					 (region,
+					  str "_export unify bug",
+					  align [seq [str "inferred: ", l1],
+						 seq [str "expanded: ", l2]])
+				      end)
+			       in
+				  wrap (e, Type.arrow (ty, Type.unit))
+			       end)
 		       | Import attributes =>
-			    eta (import {attributes = attributes,
-					 name = name,
-					 region = region,
-					 ty = expandedTy})
-		       | Prim => eta (Prim.fromString name)
+			    (if not (!Ctrls.allowImport)
+				then disallowed "_import"
+				else ()
+			     ; eta (import {attributes = attributes,
+					    name = name,
+					    region = region,
+					    ty = expandedTy}))
+		       | Prim => 
+			    (if not (!Ctrls.allowPrim)
+				then disallowed "_prim"
+				else ()
+			     ; eta (Prim.fromString name))
 		   end
 	      | Aexp.Raise exn =>
 		   let
@@ -2237,7 +2268,7 @@ fun elaborateDec (d, {env = E,
 		       * unit.
 		       *)
 		      val _ =
-			 if not (!Control.sequenceUnit)
+			 if not (!Ctrls.sequenceUnit)
 			    then ()
 			 else
 			    Vector.foreachi
@@ -2323,7 +2354,7 @@ fun elaborateDec (d, {env = E,
 		      val expr = elab expr
 		      (* Error if expr is not of type unit. *)
 		      val _ =
-			 if not (!Control.sequenceUnit)
+			 if not (!Ctrls.sequenceUnit)
 			    then ()
 			 else
 			    unify (Cexp.ty expr, Type.unit, fn (l, _) =>
@@ -2344,7 +2375,8 @@ fun elaborateDec (d, {env = E,
 			   noMatch = noMatch,
 			   region = region,
 			   rules = rules,
-			   test = Cexp.var (arg, argType)}
+			   test = Cexp.var (arg, argType),
+			   warnMatch = !Ctrls.warnMatch}
 	 in
 	   {arg = arg,
 	    argType = argType,

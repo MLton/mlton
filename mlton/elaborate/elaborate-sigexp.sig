@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -16,5 +16,7 @@ signature ELABORATE_SIGEXP =
    sig
       include ELABORATE_SIGEXP_STRUCTS
 
-      val elaborateSigexp: Ast.Sigexp.t * Env.t -> Env.Interface.t option
+      val elaborateSigexp: 
+	 Ast.Sigexp.t * {env: Env.t} 
+	 -> Env.Interface.t option
    end

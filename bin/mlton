@@ -8,6 +8,8 @@ lib='lib unset'
 gcc='gcc'
 mlton="$lib/mlton-compile"
 world="$lib/world.mlton"
+SML_LIB="$lib/sml"
+export SML_LIB
 nj='sml'
 eval `$lib/platform`
 njHeap="$lib/mlton.$HOST_ARCH-$HOST_OS"

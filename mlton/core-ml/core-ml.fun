@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -147,7 +147,8 @@ datatype dec =
 	   vbs: {exp: exp,
 		 lay: unit -> Layout.t,
 		 pat: Pat.t,
-		 patRegion: Region.t} vector}
+		 patRegion: Region.t} vector,
+	   warnMatch: bool}
 and exp = Exp of {node: expNode,
 		  ty: Type.t}
 and expNode =
@@ -159,7 +160,8 @@ and expNode =
 	     rules: {exp: exp,
 		     lay: (unit -> Layout.t) option,
 		     pat: Pat.t} vector,
-	     test: exp}
+	     test: exp,
+	     warnMatch: bool}
   | Con of Con.t * Type.t vector
   | Const of unit -> Const.t
   | EnterLeave of exp * SourceInfo.t
@@ -365,7 +367,8 @@ structure Exp =
 				     {exp = elseCase,
 				      lay = NONE,
 				      pat = Pat.falsee}),
-		test = test}
+		test = test,
+		warnMatch = false}
 
       fun andAlso (e1, e2) = iff (e1, e2, falsee)
 	 

@@ -1,5 +1,5 @@
 .PHONY: all
-all: ml.lex.sml ml.grm.sig ml.grm.sml
+all: ml.lex.sml ml.grm.sig ml.grm.sml mlb.lex.sml mlb.grm.sig mlb.grm.sml
 
 .PHONY: clean
 clean:
@@ -14,3 +14,13 @@ ml.grm.sig ml.grm.sml: ml.grm
 	rm -f ml.grm.*
 	mlyacc ml.grm
 	chmod -w ml.grm.*
+
+mlb.lex.sml: mlb.lex
+	rm -f mlb.lex.sml
+	mllex mlb.lex
+	chmod -w mlb.lex.sml
+
+mlb.grm.sig mlb.grm.sml: mlb.grm
+	rm -f mlb.grm.*
+	mlyacc mlb.grm
+	chmod -w mlb.grm.*
