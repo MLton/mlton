@@ -22,6 +22,7 @@ done
 
 root="$HOME/mlton"
 rpms="$root/rpms"
+src="$rpms/SOURCES/$version/src"
 date='20010706'
 date=`date +%Y%m%d`
 version="mlton-$date"
@@ -45,11 +46,11 @@ cvs -Q release src
 find src -type d | grep CVS | xargs rm -rf
 
 echo 'Instantiating version numbers'
-cd $rpms/SOURCES/$version/src/doc
+cd $src/doc
 sed "/^Version:/s;.*;Version: $date;" <mlton.spec >z
 sed "/^Release:/s;.*;Release: $release;" <z >$rpms/SPECS/mlton.spec
 rm -f z
-cd $rpms/SOURCES/$version/src/
+cd $src
 for f in doc/web/index.html \
 		doc/user-guide/macros.tex \
  		doc/ANNOUNCE \
@@ -57,14 +58,14 @@ for f in doc/web/index.html \
  		doc/README \
  		mlton/control/control.sml; do
 	sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <$f >z
-	mv z f
+	mv z $f
 done
 
 manvers=`date '+%B %d, %Y'`
-cd $rpms/SOURCES/$version/man
+cd $src/man
 for f in mlprof.1 mlton.1; do
-	sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <$f >z
-	mv z f
+	sed "s/\(.*\)VERSION\(.*\)/\1$manvers\2/" <$f >z
+	mv z $f
 done
 
 echo 'Creating source tgz'
