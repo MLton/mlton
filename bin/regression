@@ -60,7 +60,7 @@ $mlton -verbose 1 || echo 'no mlton present'
 echo "flags = $flags"
 
 cd $src/regression
-for f in $signal $thread $world; do #`ls *.sml`; do
+for f in `ls *.sml`; do
 	f=`basename $f .sml`
 	case "$f" in
 	serialize)
