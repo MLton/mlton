@@ -707,12 +707,56 @@ fun defunctorize (CoreML.Program.T {decs}) =
 				   region = r,
 				   test = (e, NestedPat.ty p),
 				   tyconCons = tyconCons}
+			 val isExpansive = Cexp.isExpansive exp
 			 val (exp, expType) = loopExp exp
 			 val pat = loopPat pat
 			 fun vd (x: Var.t) = valDec (tyvars, x, exp, expType, e)
 		      in
-			 if Vector.isEmpty tyvars
-			    then patDec (pat, exp, patRegion, e, bodyType, true)
+			 if Vector.isEmpty tyvars orelse isExpansive
+			    then
+			       let
+				  val exp =
+				     if Vector.isEmpty tyvars
+					then exp
+				     else
+					let
+					   val x = Var.newNoname ()
+					   val thunk =
+					      let
+						 open Xexp
+					      in
+						 toExp
+						 (lambda
+						  {arg = Var.newNoname (),
+						   argType = Xtype.unit,
+						   body = exp,
+						   bodyType = expType,
+						   mayInline = true})
+					      end
+					   val thunkTy =
+					      Xtype.arrow (Xtype.unit, expType)
+					   val body =
+					      Xexp.app
+					      {arg = Xexp.unit (),
+					       func =
+					       Xexp.var
+					       {targs = (Vector.map
+							 (tyvars, fn _ =>
+							  Xtype.unit)),
+						ty = thunkTy,
+						var = x},
+					       ty = expType}
+					   val decs =
+					      [Xdec.PolyVal {exp = thunk, 
+							     ty = thunkTy,
+							     tyvars = tyvars,
+							     var = x}]
+					in
+					   Xexp.lett {body = body, decs = decs}
+					end
+			       in
+				  patDec (pat, exp, patRegion, e, bodyType, true)
+			       end
 			 else
 			    case NestedPat.node pat of
 			       NestedPat.Wild => vd (Var.newNoname ())

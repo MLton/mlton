@@ -82,19 +82,13 @@ signature TYPE_ENV =
 	    val ty: t -> Type.t
 	 end
 
-      (* close (e, t, ts, r) = {bound, scheme} close type
-       * t with respect to environment e, including all the tyvars in ts
-       * and ensuring than no tyvar in ts occurs free in e.  bound returns
-       * the vector of type variables in t that do not occur in e, which
-       * isn't known until all flexible record fields are determined,
-       * after unification is complete.
-       *)
       val close:
 	 Tyvar.t vector
-	 -> {close: Type.t vector -> {bound: unit -> Tyvar.t vector,
-				      schemes: Scheme.t vector,
-				      unable: Tyvar.t vector},
-	     dontClose: unit -> unit}
+	 -> {expansives: Type.t vector,
+	     varTypes: {isExpansive: bool, ty: Type.t} vector}
+	 -> {bound: unit -> Tyvar.t vector,
+	     schemes: Scheme.t vector,
+	     unable: Tyvar.t vector}
       val generalize: Tyvar.t vector -> unit -> {unable: Tyvar.t vector}
       val initAdmitsEquality: Tycon.t * Tycon.AdmitsEquality.t -> unit
       val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit

@@ -875,6 +875,9 @@ structure Type =
 	    ()
 	 end
 
+      val minTime =
+	 Trace.trace2 ("minTime", layout, Time.layout, Unit.layout) minTime
+
       datatype z = datatype UnifyResult.t
 
       val traceUnify = Trace.trace2 ("unify", layout, layout, UnifyResult.layout)
@@ -1072,7 +1075,9 @@ structure Type =
 			    let
 			       fun yes () =
 				  let
-				     val _ = Spine.unify (s, s')
+				     val () = Spine.unify (s, s')
+				     val () = minTime (outer, !time')
+				     val () = minTime (outer', !time)
 				     val fields =
 					List.fold
 					(fields, fields', fn ((f, t), ac) =>
@@ -1127,17 +1132,17 @@ structure Type =
 			  | Unified =>
 			       let
 				  val res = Equality.unify (e, e')
-				  val _ =
+				  val () =
 				     case res of
 					NotUnifiable _ => ()
 				      | Unified =>
 					   let
-					      val _ = Set.union (s, s')
-					      val _ =
+					      val () = Set.union (s, s')
+					      val () =
 						 if Time.<= (!time, !time')
 						    then ()
 						 else time := !time'
-					      val _ =
+					      val () =
 						 Set.:= (s, {equality = e,
 							     plist = plist,
 							     time = time,
@@ -1569,30 +1574,47 @@ fun generalize (tyvars: Tyvar.t vector) =
 
 fun close (ensure: Tyvar.t vector) =
    let
+      val beforeGen = Time.now ()
+      val () = Time.tick {useBeforeDef = fn _ => Error.bug "close useBeforeDef"}
       val genTime = Time.now ()
-      val _ = Vector.foreach (ensure, fn a => ignore (tyvarTime a))
+      val () = Vector.foreach (ensure, fn a => ignore (tyvarTime a))
       val savedCloses = !Type.newCloses
-      val _ = Type.newCloses := []
-      fun dontClose () =
-	 Type.newCloses := List.fold (!Type.newCloses, savedCloses, op ::)
-      fun close tys =
-	 let
-	    val unable =
-	       Vector.keepAll (ensure, fn a =>
-			       not (Time.<= (genTime, !(tyvarTime a))))
-	    val flexes = ref []
-	    val tyvars = ref (Vector.toList ensure)
-	    (* Convert all the unknown types bound at this level into tyvars.
-	     * Convert all the FlexRecords bound at this level into
-	     * GenFlexRecords.
-	     *)
-	    val newCloses =
-	       List.fold
-	       (!Type.newCloses, savedCloses, fn (t as Type.T s, ac) =>
-		let
-		   val {equality, plist, time, ty, ...} = Set.! s
-		   val _ =
-		      if true then () else
+      val () = Type.newCloses := []
+   in
+      Trace.trace
+      ("close",
+       let
+	  open Layout
+       in
+	  fn {expansives, varTypes} =>
+	  record [("expansives", Vector.layout Type.layout expansives),
+		  ("varTypes",
+		   Vector.layout
+		   (fn {isExpansive, ty} =>
+		    Layout.record [("isExpansive", Bool.layout isExpansive),
+				   ("ty", Type.layout ty)])
+		   varTypes)]
+       end,
+       Layout.ignore)
+      (fn {expansives, varTypes} =>
+      let
+	 val () = Vector.foreach (expansives, fn t =>
+				  Type.minTime (t, beforeGen))
+	 val unable = Vector.keepAll (ensure, fn a =>
+				      not (Time.<= (genTime, !(tyvarTime a))))
+	 val flexes = ref []
+	 val tyvars = ref (Vector.toList ensure)
+	 (* Convert all the unknown types bound at this level into tyvars.
+	  * Convert all the FlexRecords bound at this level into
+	  * GenFlexRecords.
+	  *)
+	 val newCloses =
+	    List.fold
+	    (!Type.newCloses, savedCloses, fn (t as Type.T s, ac) =>
+	     let
+		val {equality, plist, time, ty, ...} = Set.! s
+		val _ =
+		   if true then () else
 		      let
 			 open Layout
 		      in
@@ -1604,98 +1626,98 @@ fun close (ensure: Tyvar.t vector) =
 				       Time.layout genTime],
 				  Out.standard)
 		      end
-		in
-		   if not (Time.<= (genTime, !time))
-		      then t :: ac
-		   else
-		      case ty of
-			 Type.FlexRecord {fields, spine, ...} =>
+	     in
+		if not (Time.<= (genTime, !time))
+		   then t :: ac
+		else
+		   case ty of
+		      Type.FlexRecord {fields, spine, ...} =>
+			 let
+			    val extra =
+			       Promise.lazy
+			       (fn () =>
+				Spine.foldOverNew
+				(spine, fields, [], fn (f, ac) =>
+				 {field = f,
+				  tyvar = Tyvar.newNoname {equality = false}}
+				 :: ac))
+			    val gfr = {extra = extra,
+				       fields = fields,
+				       spine = spine}
+			    val _ = List.push (flexes, gfr)
+			    val _ = 
+			       Set.:=
+			       (s, {equality = equality,
+				    plist = plist,
+				    time = time,
+				    ty = Type.GenFlexRecord gfr})
+			 in
+			    ac
+			 end
+		    | Type.Unknown (Unknown.T {canGeneralize, ...}) =>
+			 if not canGeneralize
+			    then t :: ac
+			 else
 			    let
-			       val extra =
-				  Promise.lazy
-				  (fn () =>
-				   Spine.foldOverNew
-				   (spine, fields, [], fn (f, ac) =>
-				    {field = f,
-				     tyvar = Tyvar.newNoname {equality = false}}
-				    :: ac))
-			       val gfr = {extra = extra,
-					  fields = fields,
-					  spine = spine}
-			       val _ = List.push (flexes, gfr)
-			       val _ = 
-				  Set.:=
-				  (s, {equality = equality,
-				       plist = plist,
-				       time = time,
-				       ty = Type.GenFlexRecord gfr})
+			       val b =
+				  case Equality.toBoolOpt equality of
+				     NONE =>
+					let
+					   val _ =
+					      Equality.unify
+					      (equality, Equality.falsee)
+					in
+					   false
+					end
+				   | SOME b => b
+			       val a = Tyvar.newNoname {equality = b}
+			       val _ = List.push (tyvars, a)
+			       val _ =
+				  Set.:= (s, {equality = equality,
+					      plist = PropertyList.new (),
+					      time = time,
+					      ty = Type.Var a})
 			    in
 			       ac
 			    end
-		       | Type.Unknown (Unknown.T {canGeneralize, ...}) =>
-			    if not canGeneralize
-			       then t :: ac
-			    else
-			       let
-				  val b =
-				     case Equality.toBoolOpt equality of
-					NONE =>
-					   let
-					      val _ =
-						 Equality.unify
-						 (equality, Equality.falsee)
-					   in
-					      false
-					   end
-				      | SOME b => b
-				  val a = Tyvar.newNoname {equality = b}
-				  val _ = List.push (tyvars, a)
-				  val _ =
-				     Set.:= (s, {equality = equality,
-						 plist = PropertyList.new (),
-						 time = time,
-						 ty = Type.Var a})
-			       in
-				  ac
-			       end
-		       | _ => ac
-		end)
-	    val _ = Type.newCloses := newCloses
-	    val flexes = !flexes
-	    val tyvars = !tyvars
-	    (* For all fields that were added to the generalized flex records,
-	     * add a type variable.
-	     *)
-	    fun bound () =
-	       Vector.fromList
-	       (List.fold
-		(flexes, tyvars, fn ({extra, fields, spine}, ac) =>
-		 let
-		    val extra = extra ()
-		 in
-		    Spine.foldOverNew
-		    (spine, fields, ac, fn (f, ac) =>
-		     case List.peek (extra, fn {field, ...} =>
-				     Field.equals (f, field)) of
-			NONE => Error.bug "GenFlex missing field"
-		      | SOME {tyvar, ...} => tyvar :: ac)
-		 end))
-	    val schemes =
-	       Vector.map
-	       (tys, fn ty =>
-		Scheme.General {bound = bound,
-				canGeneralize = true,
-				flexes = flexes,
-				tyvars = Vector.fromList tyvars,
-				ty = ty})
-	 in
-	    {bound = bound,
-	     schemes = schemes,
-	     unable = unable}
-	 end
-   in
-      {close = close,
-       dontClose = dontClose}
+		    | _ => ac
+	     end)
+	 val _ = Type.newCloses := newCloses
+	 val flexes = !flexes
+	 val tyvars = !tyvars
+	 (* For all fields that were added to the generalized flex records,
+	  * add a type variable.
+	  *)
+	 fun bound () =
+	    Vector.fromList
+	    (List.fold
+	     (flexes, tyvars, fn ({extra, fields, spine}, ac) =>
+	      let
+		 val extra = extra ()
+	      in
+		 Spine.foldOverNew
+		 (spine, fields, ac, fn (f, ac) =>
+		  case List.peek (extra, fn {field, ...} =>
+				  Field.equals (f, field)) of
+		     NONE => Error.bug "GenFlex missing field"
+		   | SOME {tyvar, ...} => tyvar :: ac)
+	      end))
+	 val schemes =
+	    Vector.map
+	    (varTypes, fn {isExpansive, ty} =>
+	     if isExpansive
+		then Scheme.Type ty
+	     else Scheme.General {bound = bound,
+				  canGeneralize = true,
+				  flexes = flexes,
+				  tyvars = Vector.fromList tyvars,
+				  ty = ty})
+      in
+	 {bound = bound,
+	  schemes = schemes,
+	  unable = unable}
+      end
+   )
    end
 
 structure Type =

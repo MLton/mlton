@@ -1321,10 +1321,13 @@ fun elaborateDec (d, {env = E, nest}) =
 		  in
 		     Control.error
 		     (region,
-		      seq [str "unable to generalize ",
-			   seq (List.separate (Vector.toListMap (unable,
-								 Tyvar.layout),
-					       str ", "))],
+		      seq [str (concat
+				["can't bind type variable",
+				 if Vector.length unable > 1 then "s" else "",
+				 ": "]),
+			   seq (List.separate
+				(Vector.toListMap (unable, Tyvar.layout),
+				 str ", "))],
 		      lay ())
 		  end
 	     fun useBeforeDef (c: Tycon.t) =
@@ -1344,7 +1347,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		    align [seq [str "type: ", Tycon.layout c],
 			   lay ()])
 		end
-	     val _ = TypeEnv.tick {useBeforeDef = useBeforeDef}
+	     val () = TypeEnv.tick {useBeforeDef = useBeforeDef}
 	     val unify = fn (t, t', f) => unify (t, t', preError, f)
 	     fun checkSchemes (v: (Var.t * Scheme.t) vector): unit =
 		if isTop
@@ -1486,7 +1489,7 @@ fun elaborateDec (d, {env = E, nest}) =
 			       lay = lay,
 			       resultType = resultType}
 			   end))
-		      val {close, ...} = TypeEnv.close tyvars
+		      val close = TypeEnv.close tyvars
 		      val {markFunc, setBound, unmarkFunc} = recursiveFun ()
 		      val fbs =
 			 Vector.map
@@ -1747,7 +1750,10 @@ fun elaborateDec (d, {env = E, nest}) =
 			      var = var}
 			  end)
 		      val {bound, schemes, unable} =
-			 close (Vector.map (decs, #ty))
+			 close {expansives = Vector.new0 (),
+				varTypes = Vector.map (decs, fn {ty, ...} =>
+						       {isExpansive = false,
+							ty = ty})}
 		      val () = reportUnable unable
 		      val _ = checkSchemes (Vector.zip
 					    (Vector.map (decs, #var),
@@ -1814,7 +1820,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		    ; Decs.empty)
 	      | Adec.Val {tyvars, rvbs, vbs} =>
 		   let
-		      val {close, dontClose} = TypeEnv.close tyvars
+		      val close = TypeEnv.close tyvars
 		      (* Must do all the es and rvbs before the ps because of
 		       * scoping rules.
 		       *)
@@ -1841,36 +1847,6 @@ fun elaborateDec (d, {env = E, nest}) =
 			      pat = pat,
 			      patRegion = Apat.region pat}
 			  end)
-		      val close =
-			 case Vector.peek (vbs, Cexp.isExpansive o #exp) of
-			    NONE => close
-			  | SOME {expRegion, ...} => 
-			       let
-				  val _ =
-				     if Vector.isEmpty tyvars
-					then ()
-				     else
-					Control.error
-					(expRegion,
-					 seq [str
-					      (concat
-					       ["can't bind type variable",
-						if Vector.length tyvars > 1
-						   then "s"
-						else "",
-						": "]),
-					      seq (Layout.separateRight
-						   (Vector.toListMap (tyvars, Tyvar.layout),
-						    ", "))],
-					 lay ())
-			       in
-				  fn tys =>
-				  (dontClose ()
-				   ; {bound = fn () => Vector.new0 (),
-				      schemes = (Vector.map
-						 (tys, Scheme.fromType)),
-				      unable = Vector.new0 ()})
-			       end
 		      val {markFunc, setBound, unmarkFunc} = recursiveFun ()
 		      val elaboratePat = elaboratePat ()
 		      val rvbs =
@@ -1953,7 +1929,8 @@ fun elaborateDec (d, {env = E, nest}) =
 		      val boundVars =
 			 Vector.map
 			 (Vector.concatV (Vector.map (rvbs, #bound)),
-			  fn x => (x, {isRebind = true}))
+			  fn x => (x, {isExpansive = false,
+				       isRebind = true}))
 		      val rvbs =
 			 Vector.map
 			 (rvbs, fn {bound, lambda, var} =>
@@ -1987,36 +1964,52 @@ fun elaborateDec (d, {env = E, nest}) =
 		      val boundVars =
 			 Vector.concat
 			 [boundVars,
-			  Vector.map
-			  (Vector.concatV (Vector.map (vbs, #bound)),
-			   fn x => (x, {isRebind = false}))]
+			  Vector.concatV
+			  (Vector.map
+			   (vbs, fn {bound, exp, ...} =>
+			    (Vector.map
+			     (bound, fn z =>
+			      (z, {isExpansive = Cexp.isExpansive exp,
+				   isRebind = false})))))]
 		      val {bound, schemes, unable} =
-			 close (Vector.map (boundVars, #3 o #1))
+			 close
+			 {expansives = (Vector.keepAllMap
+					(vbs, fn {exp, ...} =>
+					 if Cexp.isExpansive exp
+					    then SOME (Cexp.ty exp)
+					 else NONE)),
+			  varTypes = (Vector.map
+				      (boundVars,
+				       fn ((_, _, ty), {isExpansive, ...}) =>
+				       {isExpansive = isExpansive, ty = ty}))}
 		      val () = reportUnable unable
-		      val _ = checkSchemes (Vector.zip
+		      val () = checkSchemes (Vector.zip
 					    (Vector.map (boundVars, #2 o #1),
 					     schemes))
-		      val _ = setBound bound
-		      val _ =
+		      val () = setBound bound
+		      val () =
 			 Vector.foreach2
-			 (boundVars, schemes, fn (((x, x', _), ir), scheme) =>
-			  Env.extendVar (E, x, x', scheme, ir))
+			 (boundVars, schemes,
+			  fn (((x, x', _), {isRebind, ...}), scheme) =>
+			  Env.extendVar (E, x, x', scheme,
+					 {isRebind = isRebind}))
 		      val vbs =
 			 Vector.map (vbs, fn {exp, lay, pat, patRegion, ...} =>
 				     {exp = exp,
 				      lay = lay,
 				      pat = pat,
 				      patRegion = patRegion})
-		   in
 		      (* According to page 28 of the Definition, we should
 		       * issue warnings for nonexhaustive valdecs only when it's
 		       * not a top level dec.   It seems harmless enough to go
 		       * ahead and always issue them.
 		       *)
-		      Decs.single (Cdec.Val {rvbs = rvbs,
-					     tyvars = bound,
-					     vbs = vbs,
-					     warnMatch = warnMatch ()})
+		   in
+		      Decs.single
+		      (Cdec.Val {rvbs = rvbs,
+				 tyvars = bound,
+				 vbs = vbs,
+				 warnMatch = warnMatch ()})
 		   end
 	  end) arg
       and elabExp (arg: Aexp.t * Nest.t * string option): Cexp.t =
