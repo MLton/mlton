@@ -1,9 +1,14 @@
 Here are the changes from the 20010706 version to the 200????? version.
 
 * 2000-7-20
-  - Added intraprocedural flattener.  This avoids some stupid tuple allocations 
-    in loops.  Decent speedup on a few benchmarks (count-graphs, psdes-random,
-    wc-scanStream) and no noticeable slowdowns.
+  - Bug fix to x86 codegen.  The commuteBinALMD peephole optimization would
+    rewrite  mov 2,Y; add Y,Y  as  mov Y,Y; add 2,Y.  Now the appropriate
+    interference checks are made.
+  - Added intraprocedural unused argument removal.
+  - Added intraprocedural flattener.  This avoids some stupid tuple
+    allocations in loops.  Decent speedup on a few benchmarks
+    (count-graphs, psdes-random, wc-scanStream) and no noticeable
+    slowdowns.
 
 * 2000-7-17
   - Modified grammar to properly handle val rec.  There were several problems.
