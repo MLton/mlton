@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor CoreML (S: CORE_ML_STRUCTS): CORE_ML = 
 struct
 
@@ -202,11 +203,12 @@ in
    fun layoutDec d =
       case d of
 	 Datatype v =>
-	    seq [str "datatype ",
+	    seq [str "datatype",
 		 align
 		 (Vector.toListMap
 		  (v, fn {cons, tycon, tyvars} =>
-		   seq [layoutTyvars tyvars, Tycon.layout tycon, str " = ",
+		   seq [layoutTyvars tyvars,
+			str " ", Tycon.layout tycon, str " = ",
 			align
 			(separateLeft (Vector.toListMap (cons, layoutConArg),
 				       "| "))]))]
