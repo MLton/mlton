@@ -1,6 +1,11 @@
 mlton = mlton
 MLTONFLAGS = -verbose 0
-GL_LINK_OPTS = -link-opt -L/lib/w32api -link-opt -lglut32 -link-opt -lglu32 -link-opt -lopengl32
+
+# On Cygwin Windows
+GL_LINK_OPTS = -link-opt '-L/lib/w32api -lglut32 -lglu32 -lopengl32'
+
+# On Linux
+# GL_LINK_OPTS = -link-opt '-lglut -lGLU -lGL'
 
 CPPFLAGS =  -P -C -x c -E
 
@@ -32,7 +37,7 @@ GLUT_C   = GLUT_c.c GLUT_h.h
 all:  gl glu glut test
 
 smlgllib: gl glut
-	ar rv libmltongl.a Gl.*.o Gl_c.o Glut.*.o Glut_c.o
+	ar rv libmltongl.a Gl.*.o GL_c.o Glut.*.o GLUT_c.o
 
 gl: $(GL_SML) $(GL_C) GL_c.o
 
@@ -79,25 +84,25 @@ GLUT_c.o: $(GLUT_C)
 test: shortest hello solar atom triangle spin_cube blender
 
 shortest: $(GLUT_SML) $(GL_SML) shortest.sml
-	mlton $(GL_LINK_OPTS) shortest.cm Gl_c.c Glut_c.c
+	mlton $(GL_LINK_OPTS) shortest.cm GL_c.c GLUT_c.c
 
 hello: $(GLUT_SML) $(GLU_SML) $(GL_SML) hello.sml
-	mlton $(GL_LINK_OPTS) hello.cm Gl_c.c Glut_c.c
+	mlton $(GL_LINK_OPTS) hello.cm GL_c.c GLUT_c.c
 
 solar: $(GLUT_SML) $(GLU_SML) $(GL_SML) solar.sml
-	mlton $(GL_LINK_OPTS) solar.cm Gl_c.c Glut_c.c
+	mlton $(GL_LINK_OPTS) solar.cm GL_c.c GLUT_c.c
 
 atom: $(GLUT_SML) $(GLU_SML) $(GL_SML) atom.sml
-	mlton $(GL_LINK_OPTS) atom.cm Gl_c.c Glut_c.c
+	mlton $(GL_LINK_OPTS) atom.cm GL_c.c GLUT_c.c
 
 triangle: $(GLUT_SML) $(GLU_SML) $(GL_SML) triangle.sml
-	mlton $(GL_LINK_OPTS) triangle.cm Gl_c.c Glut_c.c
+	mlton $(GL_LINK_OPTS) triangle.cm GL_c.c GLUT_c.c
 
 spin_cube: $(GLUT_SML) $(GLU_SML) $(GL_SML) spin_cube.sml
-	mlton $(GL_LINK_OPTS) spin_cube.cm Gl_c.c Glut_c.c
+	mlton $(GL_LINK_OPTS) spin_cube.cm GL_c.c GLUT_c.c
 
 blender: $(GLUT_SML) $(GLU_SML) $(GL_SML) blender.sml
-	mlton $(GL_LINK_OPTS) blender.cm Gl_c.c Glut_c.c
+	mlton $(GL_LINK_OPTS) blender.cm GL_c.c GLUT_c.c
 
 clean:
 	rm -f *_h.h *.stackdump *~ *.o *.exe Glut *.a hello shortest atom solar triangle spin_cube blender

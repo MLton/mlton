@@ -1,8 +1,3 @@
 Group is
-Gl.sig
-Gl.sml
-Glut.sig
-Glut.sml
-Glu.sig
-Glu.sml
+GL.cm
 shortest.sml
