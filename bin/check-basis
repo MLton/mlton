@@ -37,7 +37,10 @@ cat <<-EOF
 	type intInf = int
 	nonfix * / mod div ^ + - := o > < >= <= = <> :: @ before
 EOF
-(cat build-basis; cat bind-basis) | egrep -v overload | xargs cat |
+for f in `(cat build-basis; cat bind-basis) | grep -v overload`; do
+	echo "(*#line 1.0 \"$f\"*)"
+	cat $f
+done |
 	sed 's/_build_const\(.*\);/(PRIM\1)/' |
 	sed 's/_build_const/PRIM/' |
 	sed 's/_const\(.*\);/(PRIM\1)/' |
