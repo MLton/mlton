@@ -67,7 +67,8 @@ fun flow (f: Function.t): Function.t =
       val {args, blocks, name, raises, returns, start} =
 	 Function.dest f
       val {get = labelInfo: Label.t -> {global: ExnStack.t,
-					handler: HandlerLat.t}, ...} =
+					handler: HandlerLat.t},
+	   rem, ...} =
 	 Property.get (Label.plist,
 		       Property.initFun (fn _ =>
 					 {global = ExnStack.new (),
@@ -197,6 +198,7 @@ fun flow (f: Function.t): Function.t =
 		  transfer = Goto {args = Vector.new0 (),
 				   dst = start}}
       val blocks = Vector.concat [blocks, Vector.new1 startBlock]
+      val () = Vector.foreach (blocks, rem o Block.label)
    in
       Function.new {args = args,
 		    blocks = blocks,
@@ -271,7 +273,7 @@ fun doit (Program.T {functions, handlesSignals, main, objectTypes}) =
    in
       Program.T {functions = List.revMap (functions, implementFunction),
 		 handlesSignals = handlesSignals,
-		 main = main,
+		 main = implementFunction main,
 		 objectTypes = objectTypes}
    end
 
