@@ -5,7 +5,7 @@ PATH = $(shell cd ../../bin && pwd):$(shell echo $$PATH)
 
 all:	$(NAME)
 
-$(NAME): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
+$(NAME): $(shell $(MLTON) -stop f $(NAME).cm)
 	@echo 'Compiling $(NAME)'
 	time $(MLTON) $(FLAGS) $(NAME).cm
 	strip $(NAME)
