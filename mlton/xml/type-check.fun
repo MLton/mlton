@@ -133,34 +133,34 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	 let
 	    fun error msg =
 	       Type.error (msg, let open Layout
-			       in seq [str "exp: ", PrimExp.layout e]
-			       end)
+				in seq [str "exp: ", PrimExp.layout e]
+				end)
 	    fun checkApp (t1, x) =
-	       let val t2 = checkVarExp x
-	       in case Type.dearrowOpt t1 of
-		  SOME (t2', t3) =>
-		     if Type.equals (t2, t2') then t3
-		     else
-			Type.error
-			("actual and formal not of same type",
-			 let open Layout
-			 in align [seq [str "actual: ", Type.layout t2],
-				   seq [str "formal: ", Type.layout t2'],
-				   seq [str "expression: ",
-					PrimExp.layout e]]
-			 end)
-		| NONE => error "function not of arrow type"
+	       let
+		  val t2 = checkVarExp x
+	       in
+		  case Type.dearrowOpt t1 of
+		     NONE => error "function not of arrow type"
+		   | SOME (t2', t3) =>
+			if Type.equals (t2, t2') then t3
+			else
+			   Type.error
+			   ("actual and formal not of same type",
+			    let open Layout
+			    in align [seq [str "actual: ", Type.layout t2],
+				      seq [str "formal: ", Type.layout t2'],
+				      seq [str "expression: ",
+					   PrimExp.layout e]]
+			    end)
 	       end
 	    fun checkApps (t, es) =
 	       List.fold (es, t, fn (e, t) => checkApp (t, e))
 	 in
 	    case e of
-	       App {func, arg} => checkApp (checkVarExp func, arg)
-	     | Case {test, cases, default} =>
+	       App {arg, func} => checkApp (checkVarExp func, arg)
+	     | Case {cases, default, test} =>
 		  let
-		     val ty = checkVarExp test
-		     fun doit (l, t) =
-			(Vector.new1 t, Vector.map (l, fn (_, e) => checkExp e))
+		     val default = Option.map (default, checkExp o #1)
 		     fun equalss v =
 			if Vector.isEmpty v
 			   then Error.bug "equalss"
@@ -172,37 +172,41 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 				 then SOME t
 			      else NONE
 			   end
+		     fun finish (ptys: Type.t vector,
+				 etys: Type.t vector): Type.t =
+			case (equalss ptys, equalss etys) of
+			   (NONE, _) => error "patterns not of same type"
+			 | (_, NONE) => error "branches not of same type"
+			 | (SOME pty, SOME ety) =>
+			      if Type.equals (checkVarExp test, pty)
+				 then
+				    case default of
+				       NONE => ety
+				     | SOME t =>
+					  if Type.equals (ety, t)
+					     then ety
+					  else error "default of wrong type"
+			      else error "test and patterns of different types"
+		     fun doit (l, t) =
+			finish (Vector.new1 t,
+				Vector.map (l, fn (_, e) => checkExp e))
 		     datatype z = datatype Cases.t
-		     val (ptys, etys) =
-			case cases of
-			   Char l => doit (l, Type.char)
-			 | Con cases =>
-			      Vector.unzip
-			      (Vector.map (cases, fn (p, e) =>
-					   (checkPat p, checkExp e)))
-			 | Int l => doit (l, Type.int)
-			 | Word l => doit (l, Type.word)
-			 | Word8 l => doit (l, Type.word8)
-		  in case (equalss ptys, equalss etys) of
-		     (NONE, _) => error "patterns not of same type"
-		   | (_, NONE) => error "branches not of same type"
-		   | (SOME pty, SOME ety) =>
-			if Type.equals (ty, pty)
-			   then
-			      case default of
-				 NONE => ety
-			       | SOME (e, _) =>
-				    if Type.equals (ety, checkExp e)
-				       then ety
-				    else error "default of wrong type"
-			else error "test and patterns of different types"
+		  in
+		     case cases of
+			Con cases =>
+			   finish (Vector.unzip
+				   (Vector.map (cases, fn (p, e) =>
+						(checkPat p, checkExp e))))
+		      | Int (s, cs) => doit (cs, Type.int s)
+		      | Word (s, cs) => doit (cs, Type.word s)
 		  end
 	     | ConApp {con, targs, arg} =>
 		  let
 		     val t = checkConExp (con, targs)
-		  in case arg of
-		     NONE => t
-		   | SOME e => checkApp (t, e)
+		  in
+		     case arg of
+			NONE => t
+		      | SOME e => checkApp (t, e)
 		  end
 	     | Const c => Type.ofConst c
 	     | Handle {try, catch = (catch, catchType), handler, ...} =>
@@ -214,7 +218,9 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		     val _ = setVar (catch, {tyvars = Vector.new0 (),
 					     ty = catchType})
 		     val ty' = checkExp handler
-		  in if Type.equals (ty, ty') then ty
+		  in
+		     if Type.equals (ty, ty')
+			then ty
 		     else error "bad handle"
 		  end
 	     | Lambda l => checkLambda l

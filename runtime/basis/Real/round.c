@@ -3,7 +3,7 @@
 
 #if (defined (__i386__))
 
-Double Real_round (Double d) {
+Real64 Real64_round (Real64 d) {
 	register double f0;
 
 	f0 = d;
@@ -16,7 +16,7 @@ Double Real_round (Double d) {
 
 #elif (defined __sparc__)
 
-Double Real_round (Double d) {
+Real64 Real64_round (Real64 d) {
 	return rint (d);
 }
 

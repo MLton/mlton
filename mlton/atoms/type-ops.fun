@@ -10,25 +10,34 @@ struct
 
 open S
 
+local
+   open Tycon
+in
+   structure IntSize = IntSize
+   structure RealSize = RealSize
+   structure WordSize = WordSize
+end
+datatype intSize = datatype IntSize.t
+datatype realSize = datatype RealSize.t
 type tycon = Tycon.t
+datatype wordSize = datatype WordSize.t
    
 local
    fun nullary tycon = con (tycon, Vector.new0 ())
 in
    val bool = nullary Tycon.bool
-   val char = nullary Tycon.char
    val exn = nullary Tycon.exn
-   val int = nullary Tycon.int
+   val int = IntSize.memoize (fn s => nullary (Tycon.int s))
    val intInf = nullary Tycon.intInf
    val preThread = nullary Tycon.preThread
-   val real = nullary Tycon.real
+   val real = RealSize.memoize (fn s => nullary (Tycon.real s))
    val thread = nullary Tycon.thread
-   val word = nullary Tycon.word
-   val word8 = nullary Tycon.word8
-
-   val defaultInt = nullary Tycon.defaultInt
-   val defaultWord = nullary Tycon.defaultWord
+   val word = WordSize.memoize (fn s => nullary (Tycon.word s))
 end
+
+val defaultInt = int IntSize.default
+val defaultReal = real RealSize.default
+val defaultWord = word WordSize.default
 
 local
    fun unary tycon t = con (tycon, Vector.new1 t)
@@ -40,8 +49,9 @@ in
    val weak = unary Tycon.weak
 end
 
-val string = vector char
-
+val word8 = word W8
+val word8Vector = vector word8
+   
 local
    fun binary tycon (t1, t2) = con (tycon, Vector.new2 (t1, t2))
 in

@@ -9,11 +9,14 @@ Group
 
 signature AST
 signature AST_ID
+signature INT_SIZE
 signature LONGID
 signature PRIM_CONS
 signature PRIM_TYCONS
+signature REAL_SIZE
 signature RECORD
 signature TYVAR
+signature WORD_SIZE
 signature WRAPPED
 
 functor Ast
@@ -25,26 +28,32 @@ is
 ../../lib/mlton/sources.cm
 ../control/sources.cm
 
-wrapped.sig
-tyvar.sig
-tyvar.fun
-field.sig
-record.sig
-record.fun
-field.fun
-ast-const.sig
-ast-const.fun
-prim-tycons.sig
-prim-cons.sig
-ast-id.sig
-longid.sig
-ast-atoms.sig
-ast-core.sig
-ast-core.fun
-prim-tycons.fun
-prim-cons.fun
-longid.fun
-ast-id.fun
 ast-atoms.fun
-ast.sig
+ast-atoms.sig
+ast-const.fun
+ast-const.sig
+ast-core.fun
+ast-core.sig
+ast-id.fun
+ast-id.sig
 ast.fun
+ast.sig
+field.fun
+field.sig
+int-size.fun
+int-size.sig
+longid.fun
+longid.sig
+prim-cons.fun
+prim-cons.sig
+prim-tycons.fun
+prim-tycons.sig
+real-size.fun
+real-size.sig
+record.fun
+record.sig
+tyvar.fun
+tyvar.sig
+word-size.fun
+word-size.sig
+wrapped.sig

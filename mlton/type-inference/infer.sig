@@ -19,11 +19,18 @@ signature INFER_STRUCTS =
 signature INFER = 
    sig
       include INFER_STRUCTS
-      
+
+      structure BuildConst:
+	 sig
+	    datatype t =
+	       Bool of bool
+	     | Int of int
+	 end
+	 
       val infer:
 	 {program: CoreML.Program.t,
-	  lookupBuildConstant: string -> LookupConstant.Const.t,
-	  lookupConstant: string -> LookupConstant.Const.t}
+	  lookupBuildConstant: string -> BuildConst.t,
+	  lookupConstant: string -> CoreML.Const.t}
 	 -> Xml.Program.t
    end
 

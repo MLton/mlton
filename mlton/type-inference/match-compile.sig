@@ -16,32 +16,28 @@ signature MATCH_COMPILE_STRUCTS =
 	 sig
 	    type t
 
-	    val char: t
 	    val detuple: t -> t vector
 	    val equals: t * t -> bool
-	    val int: t
+	    val int: IntSize.t -> t
 	    val layout: t -> Layout.t
-	    val word: t
-	    val word8: t
+	    val word: WordSize.t -> t
 	 end
       structure Cases:
 	 sig
 	    type exp
-
 	    type t
 
-	    val char: (char * exp) vector -> t
 	    val con: {con: Con.t,
 		      targs: Type.t vector,
 		      arg: (Var.t * Type.t) option,
 		      rhs: exp} vector -> t
-	    val int: (int * exp) vector -> t
-	    val word: (word * exp) vector -> t
-	    val word8: (Word8.t * exp) vector -> t
+	    val int: IntSize.t * (IntX.t * exp) vector -> t
+	    val word: WordSize.t * (WordX.t * exp) vector -> t
 	 end
       structure Exp:
 	 sig
 	    type t
+	       
 	    val const: Const.t -> t
 	    val var: Var.t * Type.t -> t
 	    val detuple: {tuple: t,

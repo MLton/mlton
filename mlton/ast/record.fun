@@ -32,6 +32,9 @@ fun detupleOpt (r: 'a t): 'a vector option =
       Tuple t => SOME t
     | Record _ => NONE
 
+fun sort v =
+   QuickSort.sortVector (v, fn ((s, _), (s', _)) => Field.<= (s, s'))
+   
 fun fromVector v =
    let
       fun isTuple v : bool =
@@ -40,15 +43,21 @@ fun fromVector v =
 	  case f of
 	     Field.Int i' => Int.equals (i, i')
 	   | _ => false)
-      val v =
-	 if isSorted
-	    then QuickSort.sortVector (v, fn ((s, _), (s', _)) =>
-				       Field.<= (s, s')) 
-	 else v
-   in if isTuple v
+      val v = if isSorted then sort v else v
+   in
+      if isTuple v
 	 then Tuple (Vector.map (v, #2))
       else Record v
    end
+
+fun equals (r, r', eq) =
+   case (r, r') of
+      (Tuple v, Tuple v') => Vector.equals (v, v', eq)
+    | (Record fs, Record fs') =>
+	 Vector.equals
+	 (fs, sort fs', fn ((f, v), (f', v')) =>
+	  Field.equals (f, f') andalso eq (v, v'))
+    | _ => false
 
 val peek: 'a t * Field.t -> 'a option =
    fn (r, f) =>

@@ -11,7 +11,17 @@ struct
 
 open S
 
-structure Runtime = Runtime ()
+structure IntSize = IntX.IntSize
+structure RealSize = RealX.RealSize
+structure WordSize = WordX.WordSize
+
+datatype z = datatype IntSize.t
+datatype z = datatype RealSize.t
+datatype z = datatype WordSize.t
+
+structure Runtime = Runtime (structure IntSize = IntSize
+			     structure RealSize = RealSize
+			     structure WordSize = WordSize)
 local
    open Runtime
 in
@@ -19,10 +29,11 @@ in
    structure GCField = GCField
 end
 
-structure Atoms = MachineAtoms (structure Label = Label
-				structure Prim = Prim
+structure Atoms = MachineAtoms (open S
+				structure IntSize = IntSize
+				structure RealSize = RealSize
 				structure Runtime = Runtime
-				structure SourceInfo = SourceInfo)
+				structure WordSize = WordSize)
 open Atoms
 
 structure ChunkLabel = IdNoAst (val noname = "ChunkLabel")
@@ -174,23 +185,22 @@ structure Operand =
 			 index: t,
 			 ty: Type.t}
        | Cast of t * Type.t
-       | Char of char
        | Contents of {oper: t,
 		      ty: Type.t}
        | File
        | Frontier
        | GCState
        | Global of Global.t
-       | Int of int
+       | Int of IntX.t
        | SmallIntInf of SmallIntInf.t
        | Label of Label.t
        | Line
        | Offset of {base: t, offset: int, ty: Type.t}
        | Register of Register.t
-       | Real of string
+       | Real of RealX.t
        | StackOffset of StackOffset.t
        | StackTop
-       | Word of Word.t
+       | Word of WordX.t
     
       val rec isLocation =
 	 fn ArrayOffset _ => true
@@ -217,7 +227,6 @@ structure Operand =
 		       constrain ty]
 	     | Cast (z, ty) =>
 		  seq [str "Cast ", tuple [layout z, Type.layout ty]]
-	     | Char c => str (Char.escapeC c)
 	     | Contents {oper, ty} =>
 		  seq [str (concat ["C", Type.name ty, " "]),
 		       paren (layout oper)]
@@ -225,19 +234,19 @@ structure Operand =
 	     | Frontier => str "<Frontier>"
 	     | GCState => str "<GCState>"
 	     | Global g => Global.layout g
-	     | Int i => Int.layout i
+	     | Int i => IntX.layout i
 	     | Label l => Label.layout l
 	     | Line => str "<Line>"
 	     | Offset {base, offset, ty} =>
 		  seq [str (concat ["O", Type.name ty, " "]),
 		       tuple [layout base, Int.layout offset],
 		       constrain ty]
-	     | Real s => str s
+	     | Real r => RealX.layout r
 	     | Register r => Register.layout r
 	     | SmallIntInf w => seq [str "SmallIntInf ", paren (Word.layout w)]
 	     | StackOffset so => StackOffset.layout so
 	     | StackTop => str "<StackTop>"
-	     | Word w => seq [str "0x", Word.layout w]
+	     | Word w => WordX.layout w
 	 end
 
     val toString = Layout.toString o layout
@@ -245,22 +254,21 @@ structure Operand =
     val ty =
        fn ArrayOffset {ty, ...} => ty
 	| Cast (_, ty) => ty
-	| Char _ => Type.char
 	| Contents {ty, ...} => ty
 	| File => Type.cpointer
-	| Frontier => Type.word
+	| Frontier => Type.defaultWord
 	| GCState => Type.cpointer
 	| Global g => Global.ty g
-	| Int _ => Type.int
+	| Int i => Type.int (IntX.size i)
 	| Label l => Type.label l
-	| Line => Type.int
+	| Line => Type.defaultInt
 	| Offset {ty, ...} => ty
-	| Real _ => Type.real
+	| Real r => Type.real (RealX.size r)
 	| Register r => Register.ty r
 	| SmallIntInf _ => Type.intInf
 	| StackOffset {ty, ...} => ty
-	| StackTop => Type.word
-	| Word _ => Type.word
+	| StackTop => Type.defaultWord
+	| Word w => Type.word (WordX.size w)
 	 
       val rec equals =
 	 fn (ArrayOffset {base = b, index = i, ...},
@@ -268,23 +276,22 @@ structure Operand =
 	        equals (b, b') andalso equals (i, i') 
 	   | (Cast (z, t), Cast (z', t')) =>
 		Type.equals (t, t') andalso equals (z, z')
-	   | (Char c, Char c') => c = c'
 	   | (Contents {oper = z, ...}, Contents {oper = z', ...}) =>
 		equals (z, z')
 	   | (File, File) => true
 	   | (GCState, GCState) => true
 	   | (Global g, Global g') => Global.equals (g, g')
-	   | (Int i, Int i') => i = i'
+	   | (Int i, Int i') => IntX.equals (i, i')
 	   | (Label l, Label l') => Label.equals (l, l')
 	   | (Line, Line) => true
 	   | (Offset {base = b, offset = i, ...},
 	      Offset {base = b', offset = i', ...}) =>
 	        equals (b, b') andalso i = i' 
-	   | (Real s, Real s') => s = s'
+	   | (Real r, Real r') => RealX.equals (r, r')
 	   | (Register r, Register r') => Register.equals (r, r')
 	   | (SmallIntInf w, SmallIntInf w') => Word.equals (w, w')
 	   | (StackOffset so, StackOffset so') => StackOffset.equals (so, so')
-	   | (Word w, Word w') => w = w'
+	   | (Word w, Word w') => WordX.equals (w, w')
 	   | _ => false
 
       fun interfere (write: t, read: t): bool =
@@ -732,7 +739,7 @@ structure Program =
 			 maxFrameSize: int,
 			 objectTypes: ObjectType.t vector,
 			 profileInfo: ProfileInfo.t,
-			 reals: (Global.t * string) list,
+			 reals: (Global.t * RealX.t) list,
 			 strings: (Global.t * string) list}
 
       fun clear (T {chunks, profileInfo, ...}) =
@@ -884,16 +891,24 @@ structure Program =
 	    fun tyconTy (pt: PointerTycon.t): ObjectType.t =
 	       Vector.sub (objectTypes, PointerTycon.index pt)
 	    open Layout
-	    fun globals (name, gs, ty) =
+	    fun globals (name, gs, isOk, layout) =
 	       List.foreach
 	       (gs, fn (g, s) =>
-		Err.check
-		(concat ["global ", name],
-		 fn () => Type.equals (ty, Global.ty g),
-		 fn () => seq [String.layout s, str ": ", Type.layout ty]))
-	    val _ = globals ("real", reals, Type.real)
-	    val _ = globals ("intInf", intInfs, Type.intInf)
-	    val _ = globals ("string", strings, Type.string)
+		let
+		   val ty = Global.ty g
+		in
+		   Err.check
+		   (concat ["global ", name],
+		    fn () => isOk ty,
+		    fn () => seq [layout s, str ": ", Type.layout ty])
+		end)
+	    val _ = globals ("real", reals, Type.isReal, RealX.layout)
+	    val _ = globals ("intInf", intInfs,
+			     fn t => Type.equals (t, Type.intInf),
+			     String.layout)
+	    val _ = globals ("string", strings,
+			     fn t => Type.equals (t, Type.word8Vector),
+			     String.layout)
 	    (* Check for no duplicate labels. *)
 	    local
 	       val {get, ...} =
@@ -941,7 +956,6 @@ structure Program =
 					    | _ => NONE),
 				to = t,
 				tyconTy = tyconTy}))
-		      | Char _ => true
 		      | Contents {oper, ...} =>
 			   (checkOperand (oper, alloc)
 			    ; Type.equals (Operand.ty oper,
@@ -1001,7 +1015,7 @@ structure Program =
 		  Err.check ("operand", ok, fn () => Operand.layout x)
 	       end
 	    and arrayOffsetIsOk {base, index, ty} =
-	       Type.equals (Operand.ty index, Type.int)
+	       Type.equals (Operand.ty index, Type.defaultInt)
 	       andalso
 	       case Operand.ty base of
 		  Type.CPointer => true (* needed for card marking *)
@@ -1020,7 +1034,12 @@ structure Program =
 				  Vector.sub (components, 0)
 			    in
 			       offset = 0
-			       andalso Type.equals (ty, ty')
+			       andalso (Type.equals (ty, ty')
+					orelse
+					(* Get a word from a word8 array.*)
+					(Type.equals (ty, Type.word W32)
+					 andalso
+					 Type.equals (ty', Type.word W8)))
 			    end
 		       | _ => false)
 		| _ => false
@@ -1039,12 +1058,12 @@ structure Program =
 		   | Type.EnumPointers {enum, pointers} =>
 			0 = Vector.length enum
 			andalso
-			((* Vector_fromArray header update. *)
+			((* Array_toVector header update. *)
 			 (offset = Runtime.headerOffset
-			  andalso Type.equals (ty, Type.word))
+			  andalso Type.equals (ty, Type.defaultWord))
 			 orelse
 			 (offset = Runtime.arrayLengthOffset
-			  andalso Type.equals (ty, Type.int))
+			  andalso Type.equals (ty, Type.defaultInt))
 			 orelse
 			 Vector.forall
 			 (pointers, fn p =>

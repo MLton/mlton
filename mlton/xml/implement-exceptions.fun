@@ -508,7 +508,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 					   targs = Vector.new0 (),
 					   arg = SOME (Var.newNoname (), arg)},
 				    const
-				    (Const.fromString
+				    (Const.string
 				     (Con.originalName con))))),
 				 default = NONE,
 				 ty = Type.string}))
@@ -540,7 +540,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 		       Type.unit),
 		      MonoVal {var = s,
 			       ty = Type.string,
-			       exp = Const (Const.fromString
+			       exp = Const (Const.string
 					    "toplevel handler not installed")})
 		  end},
 	  Type.unit)

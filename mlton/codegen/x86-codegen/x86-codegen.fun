@@ -159,22 +159,19 @@ struct
 		    [mainLabel, if reserveEsp then C.truee else C.falsee]
 		 end
 	      fun declareLocals () =
-		 let
-		    val tyMax =
-		       Runtime.Type.memo
-		       (fn t =>
+		 List.foreach
+		 (Runtime.Type.all,
+		  fn t =>
+		  let
+		     val m =
 			List.fold
 			(chunks, ~1, fn (Machine.Chunk.T {regMax, ...}, max) =>
-			 Int.max (max, regMax t)))
-		 in
-		    print
-		    (concat ["Locals",
-			     Layout.toString
-			     (Layout.tuple (List.map
-					    (Runtime.Type.all, fn t =>
-					     Int.layout (1 + tyMax t)))),
-			     ";\n"])
-		 end
+			 Int.max (max, regMax t))
+		     val m = m + 1
+		  in
+		     print (concat ["local", Runtime.Type.toString t,
+				    "[", Int.toString m, "];\n"])
+		  end)
 	      fun rest () =
 		 declareLocals ()
 	    in

@@ -22,17 +22,19 @@ signature TYPE_OPS_STRUCTS =
 signature TYPE_OPS =
    sig
       (* Don't want to include TYPE_OPS_STRUCTS because don't want to propagate
-       * the Tycon structure, which will cause duplicate specifications later on.
+       * the Tycon structure, which will cause duplicate specifications later
+       * on.
        *)
-
+      type intSize
+      type realSize
       type tycon
+      type wordSize
       type t
 
       val arg: t -> t    (* arg = #1 o dearrow *)
       val array: t -> t
       val arrow: t * t -> t
       val bool: t
-      val char: t
       val con: tycon * t vector -> t
       val dearray: t -> t
       val dearrayOpt: t -> t option
@@ -42,6 +44,7 @@ signature TYPE_OPS =
       val deconConstOpt: t -> (tycon * tycon vector) option
       val deconConst: t -> (tycon * tycon vector)
       val defaultInt: t
+      val defaultReal: t
       val defaultWord: t
       val deref: t -> t
       val derefOpt: t -> t option
@@ -52,22 +55,22 @@ signature TYPE_OPS =
       val deweak: t -> t
       val deweakOpt: t -> t option
       val exn: t
-      val int: t
+      val int: intSize -> t
       val intInf: t
       val isTuple: t -> bool
       val list: t -> t
       val nth: t * int -> t
       val preThread: t
-      val real: t
+      val real: realSize -> t
       val reff: t -> t
       val result: t -> t (* result = #2 o dearrow *)
-      val string: t
       val thread: t
       val tuple: t vector -> t
       val unit: t
       val unitRef: t
       val vector: t -> t
       val weak: t -> t
+      val word: wordSize -> t
       val word8: t
-      val word: t
+      val word8Vector: t
    end

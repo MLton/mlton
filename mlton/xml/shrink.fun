@@ -366,16 +366,15 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 			      end
 			     | (_, SOME (Value.Const c)) =>
 				  let
-				     fun doit (l, z) = match (l, fn z' => z = z')
-				  in case (cases, Const.node c) of
-				     (Cases.Char l, Const.Node.Char c) =>
-					doit (l, c)
-				   | (Cases.Int l, Const.Node.Int i) =>
-					doit (l, i)
-				   | (Cases.Word l, Const.Node.Word w) =>
-					doit (l, w)
-				   | (Cases.Word8 l, Const.Node.Word w) =>
-					doit (l, Word8.fromWord w)
+				     fun doit (l, z, equals) =
+					match (l, fn z' => equals (z, z'))
+				     datatype z = datatype Const.t
+				  in
+				     case (cases, c) of
+					(Cases.Int (_, l), Int i) =>
+					   doit (l, i, IntX.equals)
+				      | (Cases.Word (_, l), Word w) =>
+					   doit (l, w, WordX.equals)
 				   | _ => Error.bug "strange case"
 				  end
 			     | (_, NONE) => normal varExp

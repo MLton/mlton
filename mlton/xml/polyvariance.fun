@@ -316,16 +316,13 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 							  (z, loopExp e))
 					   val cases =
 					      case cases of
-						 Char cases => Char (doit cases)
-					       | Con cases =>
+						 Con cases =>
 						    Con
 						    (Vector.map
 						     (cases, fn (p, e) =>
 						      (bindPat p, loopExp e)))
-					       | Int cases => Int (doit cases)
-					       | Word cases => Word (doit cases)
-					       | Word8 cases =>
-						    Word8 (doit cases)
+					       | Int (s, v) => Int (s, doit v)
+					       | Word (s, v) => Word (s, doit v)
 					in
 					   Case {test = loopVar test,
 						 cases = cases,

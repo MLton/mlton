@@ -25,16 +25,13 @@ signature SWITCH =
       include SWITCH_STRUCTS
 
       datatype t =
-	 Char of {(* Cases are in increasing order of char. *)
-		  cases: (char * Label.t) vector,
-		  default: Label.t option,
-		  test: Use.t}
-       | EnumPointers of {enum: Label.t,
+	 EnumPointers of {enum: Label.t,
 			  pointers: Label.t,
 			  test: Use.t}
        | Int of {(* Cases are in increasing order of int. *)
-		 cases: (int * Label.t) vector,
+		 cases: (IntX.t * Label.t) vector,
 		 default: Label.t option,
+		 size: IntSize.t,
 		 test: Use.t}
        | Pointer of {(* Cases are in increasing order of tycon. *)
 		     cases: {dst: Label.t,
@@ -44,8 +41,9 @@ signature SWITCH =
 		     tag: Use.t, (* of type int *)
 		     test: Use.t}
        | Word of {(* Cases are in increasing order of word. *)
-		  cases: (word * Label.t) vector,
+		  cases: (WordX.t * Label.t) vector,
 		  default: Label.t option,
+		  size: WordSize.t,
 		  test: Use.t}
 
       val foldLabelUse: t * 'a * {label: Label.t * 'a -> 'a,

@@ -4,9 +4,9 @@
 #include "mlton-basis.h"
 #include "my-lib.h"
 
-Double Real_strtod (char *s) {
+Real64 Real64_strtod (char *s) {
 	char *endptr;
-	Double res;
+	Real64 res;
 
 	res = strtod (s, &endptr);
 	assert (NULL != endptr);

@@ -9,32 +9,7 @@ functor LookupConstant (S: LOOKUP_CONSTANT_STRUCTS): LOOKUP_CONSTANT =
 struct
 
 open S
-
-structure Int =
-   struct
-      open Int
-      val fromString =
-	 Trace.trace ("Int.fromString", String.layout, Option.layout layout)
-	 fromString
-   end
-
-structure Word =
-   struct
-      open Word
-      val fromString =
-	 Trace.trace ("Word.fromString", String.layout, Option.layout layout)
-	 fromString
-   end
-
-structure Const =
-   struct
-      datatype t =
-	 Bool of bool
-       | Int of int
-       | Real of string
-       | String of string
-       | Word of word
-   end
+open CoreML
 
 fun unescape s =
    let
@@ -54,16 +29,16 @@ val unescape = Trace.trace ("unescape", String.layout, String.layout) unescape
 
 structure ConstType =
    struct
-      datatype t = Bool | Int | Real | String | Word
+      datatype t = Int | Real | String | Word
    end
 datatype z = datatype ConstType.t
 
 type res = (string * ConstType.t) list
 
-fun decsConstants (decs: CoreML.Dec.t vector): res =
+fun decsConstants (decs: Dec.t vector): res =
    let
-      open CoreML
-      open Exp Dec
+      datatype z = datatype Exp.node
+      datatype z = datatype Dec.node
       fun loopExp (e: Exp.t, ac: res): res =
 	 case Exp.node e of
 	    App (e, e') => loopExp (e, loopExp (e', ac))
@@ -78,27 +53,24 @@ fun decsConstants (decs: CoreML.Dec.t vector): res =
 			 fun strange () =
 			    Error.bug
 			    (concat ["constant with strange type: ", c])
-		      in case Prim.scheme p of
-			   Scheme.T {tyvars, ty as Type.Con (tc, ts)} =>
-			      if 0 = Vector.length tyvars
-				 then
-				    let
-				       val ty = Const.Type.make
-					        (Type.deconConst ty)
-				       val tys = [(Const.Type.bool, Bool),
-						  (Const.Type.int, Int),
-						  (Const.Type.real, Real),
-						  (Const.Type.string, String),
-						  (Const.Type.word, Word)]
-				    in case (List.peek
-					     (tys, fn (ty', _) =>
-					      Const.Type.equals (ty, ty'))) of
-				          NONE => strange ()
-					| SOME (_,t) => (c,t) :: ac
+			 val Scheme.T {tyvars, ty} = Prim.scheme p
+		      in
+			 if 0 = Vector.length tyvars
+			    then
+			       let
+				  val tys =
+				     [(Type.defaultInt, Int),
+				      (Type.defaultReal, Real),
+				      (Type.word8Vector, String),
+				      (Type.defaultWord, Word)]
+			       in case (List.peek
+					(tys, fn (ty', _) =>
+					 Type.equals (ty, ty'))) of
+				  NONE => strange ()
+				| SOME (_, t) => (c, t) :: ac
 
-				    end
-			      else strange ()
-			  | _ => strange ()
+			       end
+			 else strange ()
 		      end
 		 | _ => ac)
 	  | Raise {exn, ...} => loopExp (exn, ac)
@@ -163,11 +135,10 @@ fun build (decs: CoreML.Dec.t vector, out: Out.t): unit =
 		    value, ");"]
       in
 	 case ty of
-	    Bool => doit ("%s", concat [value, "? \"true\" : \"false\""])
-	  | Int => doit ("%d", value)
+	    Int => doit ("%d", value)
 	  | Real => doit ("%.20f", value)
 	  | String => concat ["MLton_printStringEscaped (f, ", value, ");"]
-	  | Word => doit ("%x", value)
+	  | Word => doit ("%u", value)
       end),
      ["return 0;}"]],
     fn l => (Out.output (out, l); Out.newline out))
@@ -194,11 +165,18 @@ fun load (decs, ins: In.t): string -> Const.t =
 		  | _ => Error.bug (concat ["strange constants line ", s])
 	   in
 	      case ty of
-		 Bool => Const.Bool (valOf (Bool.fromString s))
-	       | Int => Const.Int (valOf (Int.fromString s))
-	       | String => Const.String (unescape s)
-	       | Real => Const.Real s
-	       | Word => Const.Word (valOf (Word.fromString s))
+		 Int =>
+		    (case IntInf.fromString s of
+			NONE => Error.bug "strange Int constant"
+		      | SOME i => 
+			   Const.Int (IntX.make (i, IntSize.default)))
+	       | String => Const.string (unescape s)
+	       | Real => Const.Real (RealX.make (s, RealSize.default))
+	       | Word =>
+		    (case IntInf.fromString s of
+			NONE => Error.bug "strange Word constant"
+		      | SOME i => 
+			   Const.Word (WordX.fromLargeInt (i, WordSize.default)))
 	   end)
       val lookupConstant =
 	 String.memoizeList

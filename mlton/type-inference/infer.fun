@@ -12,6 +12,8 @@ open S
 
 open CoreML.Atoms
 
+datatype z = datatype WordSize.t
+   
 structure Srecord = SortedRecord
 structure Field = Record.Field
 structure Scope = Scope (structure CoreML = CoreML)
@@ -49,6 +51,13 @@ in
    structure XvarExp = VarExp
 end
 
+structure BuildConst =
+   struct
+      datatype t =
+	 Bool of bool
+       | Int of int
+   end
+
 structure Type =
    struct
       open Type
@@ -81,10 +90,8 @@ structure MatchCompile =
 
 		       open Xcases
 		       type t = exp t
-		       val char = Char
 		       val int = Int
 		       val word = Word
-		       val word8 = Word8
 		       fun con v =
 			  Con (Vector.map
 			       (v, fn {con, targs, arg, rhs} =>
@@ -170,54 +177,42 @@ fun stringToIntInf (str: string): IntInf.t =
 
 fun makeXconst (c: Aconst.t, ty: Type.t): Xconst.t =
    let
-      val ty = Xconst.Type.make (Xtype.deconConst (Type.toXml (ty, Aconst.region c)))
-      datatype z = datatype Xconst.Node.t
       fun error m =
 	 Control.error (Aconst.region c,
 			Layout.str (concat [m, ": ", Aconst.toString c]),
 			Layout.empty)
+      val ty = Type.toXml (ty, Aconst.region c)
+      fun choose (all, sizeTy, name, make) =
+	 case List.peek (all, fn s => Xtype.equals (ty, sizeTy s)) of
+	    NONE => Error.bug (concat ["strange ", name, " type: ",
+				       Layout.toString (Xtype.layout ty)])
+	  | SOME s => make s
    in
-      Xconst.make
-      (case Aconst.node c of
-	  Aconst.Char c => Char c
-	| Aconst.Int s =>
-	     if Xconst.Type.equals (ty, Xconst.Type.intInf)
-		then
-		   IntInf (stringToIntInf s)
-		   handle _ => (error "invalid IntInf";
-				IntInf (valOf (IntInf.fromString "~1")))
-	     else
-		Int
-		(let
-		    val radix =
-		       if String.isPrefix {string = s, prefix = "0x"}
-			  orelse String.isPrefix {string = s, prefix = "~0x"}
-			  then StringCvt.HEX
-		       else StringCvt.DEC
-		 in
-		    case StringCvt.scanString (Pervasive.Int32.scan radix) s of
-		       NONE => (error "invalid int constant"; ~1)
-		     | SOME n =>
-			  if Xconst.Type.equals (ty, Xconst.Type.int)
-			     then n
-			  else (error (concat ["int can't be of type ",
-					       Xconst.Type.toString ty])
-				; ~1)
-		 end
-		    handle Overflow =>
-		       (error "int constant too big"; ~1))
-	| Aconst.Real r => Real r
-	| Aconst.String s => String s
-	| Aconst.Word w =>
-	     Word (if Xconst.Type.equals (ty, Xconst.Type.word)
-		     then w
-		  else if Xconst.Type.equals (ty, Xconst.Type.word8)
-			  then if w = Word.andb (w, 0wxFF)
-				  then w
-			       else (error "word8 too big"; 0w0)
-		       else (error ("strange word " ^ (Xconst.Type.toString ty))
-			     ; 0w0)),
-       ty)
+      case Aconst.node c of
+	 Aconst.Char c =>
+	    Xconst.Word (WordX.make (Word8.toWord (Word8.fromChar c),
+				     WordSize.W8))
+       | Aconst.Int i =>
+	    if Xtype.equals (ty, Xtype.intInf)
+	       then Xconst.IntInf i
+	    else
+	       choose (IntSize.all, Xtype.int, "int", fn s =>
+		       Xconst.Int
+		       (IntX.make (i, s)
+			handle Overflow =>
+			   (error (concat [Xtype.toString ty, " too big"])
+			    ; IntX.zero s)))
+       | Aconst.Real r =>
+	    choose (RealSize.all, Xtype.real, "real", fn s =>
+		    Xconst.Real (RealX.make (r, s)))
+       | Aconst.String s => Xconst.string s
+       | Aconst.Word w =>
+	    choose (WordSize.all, Xtype.word, "word", fn s =>
+		    Xconst.Word
+		    (if IntInf.<= (w, Word.toIntInf (WordSize.max s))
+			then WordX.fromLargeInt (w, s)
+		     else (error (concat [Xtype.toString ty, " too big"])
+			   ; WordX.zero s)))
    end
 
 fun 'a sortByField (v: (Field.t * 'a) vector): 'a vector =
@@ -1158,30 +1153,52 @@ fun infer {program = p: CoreML.Program.t,
 		  in
 		     eta (instance, fn (arg, resultType) =>
 			  let
-			     fun constant c =
-				let
-				   datatype z = datatype LookupConstant.Const.t
-				in
-				   case c of
-				      Bool b => if b then Xexp.truee ()
-						else Xexp.falsee ()
-				    | Int i => Xexp.const (Const.fromInt i)
-				    | Real r => Xexp.const (Const.fromReal r)
-				    | String s =>
-					 Xexp.const (Const.fromString s)
-				    | Word w => Xexp.const (Const.fromWord w)
-				end
+			     datatype z = datatype Prim.Name.t
 			     fun make (args: Xexp.t vector): Xexp.t =
-				case Prim.name prim of
-				   Prim.Name.BuildConstant c =>
-				      constant (lookupBuildConstant c)
-				 | Prim.Name.Constant c =>
-				      constant (lookupConstant c)
-				 | _ => 
-				      Xexp.primApp {prim = prim,
+				let
+				   fun app p =
+				      Xexp.primApp {prim = p,
 						    targs = targs (),
 						    args = args,
 						    ty = resultType}
+				   fun id () = Vector.sub (args, 0)
+				in
+				   case Prim.name prim of
+				      BuildConstant c =>
+					 let
+					    datatype z = datatype BuildConst.t
+					 in
+					    case lookupBuildConstant c of
+					       Bool b =>
+						  if b
+						     then Xexp.truee ()
+						  else Xexp.falsee ()
+					     | Int i =>
+						  Xexp.const
+						  (Const.int
+						   (IntX.make
+						    (IntInf.fromInt i,
+						     IntSize.default)))
+					 end
+				    | Byte_byteToChar => id ()
+				    | Byte_charToByte => id ()
+				    | C_CS_charArrayToWord8Array => id ()
+				    | Char_chr =>
+					 app (Prim.intToWord
+					      (IntSize.default, W8))
+				    | Char_ge => app (Prim.wordGe W8)
+				    | Char_gt => app (Prim.wordGt W8)
+				    | Char_le => app (Prim.wordLe W8)
+				    | Char_lt => app (Prim.wordLt W8)
+				    | Char_ord =>
+					 app (Prim.wordToInt
+					      (W8, IntSize.default))
+				    | Constant c =>
+					 Xexp.const (lookupConstant c)
+				    | String_toWord8Vector => id ()
+				    | Word8Vector_toString => id ()
+				    | _ => app prim
+				end
 			  in
 			     case (Prim.numArgs prim, arg) of
 				(NONE, NONE) => make (Vector.new0 ())

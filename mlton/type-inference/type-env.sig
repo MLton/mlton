@@ -25,6 +25,7 @@ signature TYPE_ENV =
             (* can two types be unified?  not side-effecting. *)
             val canUnify: t * t -> bool
 	    val derecord: t * Region.t -> (Record.Field.t * XmlType.t) vector
+	    val equals: t * t -> bool
 	    val layout: t -> Layout.t
 	    val layoutPretty: t -> Layout.t
 	    val new: {equality: bool, canGeneralize: bool} -> t
@@ -32,6 +33,7 @@ signature TYPE_ENV =
 	    val record: {flexible: bool,
 			 record: t SortedRecord.t,
 			 region: Region.t} -> t
+	    val toString: t -> string
 	    (* cached for speed *)
 	    val toXml: t * Region.t -> XmlType.t
 	    (* make two types identical (recursively).  side-effecting. *)

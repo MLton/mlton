@@ -14,7 +14,7 @@
 #define ROUNDING_CONTROL_MASK 0x0C00
 #define ROUNDING_CONTROL_SHIFT 10
 
-void IEEEReal_setRoundingMode (int mode) {
+void IEEEReal_setRoundingMode (Int mode) {
 	unsigned short controlWord;
 
 	_FPU_GETCW(controlWord);
@@ -34,7 +34,7 @@ Int IEEEReal_getRoundingMode () {
 
 #include <ieeefp.h>
 
-void IEEEReal_setRoundingMode (int mode) {
+void IEEEReal_setRoundingMode (Int mode) {
 	switch (mode) {
 	case 0: mode = FP_RN; break;
 	case 1: mode = FP_RM; break;
@@ -46,7 +46,7 @@ void IEEEReal_setRoundingMode (int mode) {
 	fpsetround (mode);
 }
  
-int IEEEReal_getRoundingMode () {
+Int IEEEReal_getRoundingMode () {
 	int mode;
 
 	mode = fpgetround ();

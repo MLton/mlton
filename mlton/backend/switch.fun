@@ -41,14 +41,12 @@ fun exhaustiveAndIrredundant {all: 'a vector,
    andalso not (isRedundant {cases = cases, equals = equals})
 
 datatype t =
-   Char of {cases: (char * Label.t) vector,
-	    default: Label.t option,
-	    test: Use.t}
-  | EnumPointers of {enum: Label.t,
+   EnumPointers of {enum: Label.t,
 		     pointers: Label.t,
 		     test: Use.t}
-  | Int of {cases: (int * Label.t) vector,
+  | Int of {cases: (IntX.t * Label.t) vector,
 	    default: Label.t option,
+	    size: IntSize.t,
 	    test: Use.t}
   | Pointer of {cases: {dst: Label.t,
 			tag: int,
@@ -56,14 +54,15 @@ datatype t =
 		default: Label.t option,
 		tag: Use.t,
 		test: Use.t} (* of type int*)
-  | Word of {cases: (word * Label.t) vector,
+  | Word of {cases: (WordX.t * Label.t) vector,
 	     default: Label.t option,
+	     size: WordSize.t,
 	     test: Use.t}
 
 fun layout s =
    let
       open Layout
-      fun simple ({cases, default, test}, name, lay) =
+      fun simple ({cases, default, size, test}, name, lay) =
 	 seq [str (concat ["switch", name, " "]),
 	      record [("test", Use.layout test),
 		      ("default", Option.layout Label.layout default),
@@ -73,13 +72,12 @@ fun layout s =
 		       cases)]]
    in
       case s of
-	 Char z => simple (z, "Char", Char.layout)
-       | EnumPointers {enum, pointers, test} =>
+	 EnumPointers {enum, pointers, test} =>
 	    seq [str "SwitchEP ",
 		 record [("test", Use.layout test),
 			 ("enum", Label.layout enum),
 			 ("pointers", Label.layout pointers)]]
-       | Int z => simple (z, "Int", Int.layout)
+       | Int z => simple (z, "Int", IntX.layout)
        | Pointer {cases, default, tag, test} =>
 	    seq [str "SwitchPointer ",
 		 record [("test", Use.layout test),
@@ -92,59 +90,52 @@ fun layout s =
 				   ("tag", Int.layout tag),
 				   ("tycon", PointerTycon.layout tycon)])
 			  cases)]]
-       | Word z => simple (z, "Word", Word.layout)
+       | Word z => simple (z, "Word", WordX.layout)
    end
 
 val allChars = Vector.tabulate (Char.numChars, Char.fromInt)
 
 fun isOk (s, {checkUse, labelIsOk}): bool =
    case s of
-      Char {cases, default, test}  =>
-	 (checkUse test
-	  ; (Type.equals (Use.ty test, Type.char)
-	     andalso (case default of
-			 NONE => true
-		       | SOME l => labelIsOk l)
-	     andalso Vector.forall (cases, labelIsOk o #2)
-	     andalso Vector.isSorted (cases, fn ((c, _), (c', _)) => c <= c')
-	     andalso exhaustiveAndIrredundant {all = allChars,
-					       cases = Vector.map (cases, #1),
-					       default = default,
-					       equals = op =}))
-    | EnumPointers {enum, pointers, test, ...} =>
+      EnumPointers {enum, pointers, test, ...} =>
 	 (checkUse test
 	  ; (labelIsOk enum
 	     andalso labelIsOk pointers
 	     andalso (case Use.ty test of
 			 Type.EnumPointers _ => true
 		       | _ => false)))
-    | Int {cases, default, test} =>
+    | Int {cases, default, size, test} =>
 	 (checkUse test
 	  ; ((case default of
 		 NONE => true
 	       | SOME l => labelIsOk l)
 	     andalso Vector.forall (cases, labelIsOk o #2)
-	     andalso Vector.isSorted (cases, fn ((i, _), (i', _)) => i <= i')
+	     andalso Vector.isSorted (cases, fn ((i, _), (i', _)) =>
+				      IntX.<= (i, i'))
 	     andalso
 	     (case Use.ty test of
-		 Type.Int =>
-		    Option.isSome default
-		    andalso not (isRedundant
-				 {cases = cases,
-				  equals = fn ((i, _), (i', _)) => i = i'})
-	       | Type.EnumPointers {enum, pointers} =>
+		 Type.EnumPointers {enum, pointers} =>
 		    0 = Vector.length pointers
 		    andalso
 		    exhaustiveAndIrredundant
-		    {all = enum,
+		    {all = Vector.map (enum, fn i =>
+				       IntX.make (IntInf.fromInt i, size)),
 		     cases = Vector.map (cases, #1),
 		     default = default,
-		     equals = op =}
+		     equals = IntX.equals}
+	       | Type.Int s =>
+		    IntSize.equals (size, s)
+		    andalso Option.isSome default
+		    andalso not (isRedundant
+				 {cases = cases,
+				  equals = fn ((i, _), (i', _)) =>
+				  IntX.equals (i, i')})
+
 	       | _ => false)))
     | Pointer {cases, default, tag, test} =>
 	  (checkUse tag
 	   ; checkUse test
-	   ; (Type.equals (Use.ty tag, Type.int)
+	   ; (Type.equals (Use.ty tag, Type.defaultInt)
 	      andalso (case default of
 			  NONE => true
 			| SOME l => labelIsOk l)
@@ -163,22 +154,23 @@ fun isOk (s, {checkUse, labelIsOk}): bool =
 					      default = default,
 					      equals = PointerTycon.equals}
 	       | _ => false))
-    | Word {cases, default, test} =>
+    | Word {cases, default, size, test} =>
 	 (checkUse test
-	  ; (Type.equals (Use.ty test, Type.word)
+	  ; (Type.equals (Use.ty test, Type.word size)
 	     andalso (case default of
 			 NONE => false
 		       | SOME l => labelIsOk l)
 	     andalso Vector.forall (cases, labelIsOk o #2)
-	     andalso Vector.isSorted (cases, fn ((w, _), (w', _)) => w <= w')
+	     andalso Vector.isSorted (cases, fn ((w, _), (w', _)) =>
+				      WordX.<= (w, w'))
 	     andalso
 	     not (isRedundant
 		  {cases = cases,
-		   equals = fn ((w, _), (w', _)) => w = w'})))
+		   equals = fn ((w, _), (w', _)) => WordX.equals (w, w')})))
 
 fun foldLabelUse (s: t, a: 'a, {label, use}): 'a =
    let
-      fun simple {cases, default, test} =
+      fun simple {cases, default, size, test} =
 	 let
 	    val a = use (test, a)
 	    val a = Option.fold (default, a, label)
@@ -189,8 +181,7 @@ fun foldLabelUse (s: t, a: 'a, {label, use}): 'a =
 	 end
    in
       case s of
-	  Char z => simple z
-        | EnumPointers {enum, pointers, test} =>
+	 EnumPointers {enum, pointers, test} =>
 	  let
 	     val a = use (test, a)
 	     val a = label (enum, a)

@@ -38,7 +38,7 @@ structure Oper =
 	 fn Const c => Const.layout c
 	  | Var x => Var.layout x
 
-      val zero = Const (Const.fromInt 0)
+      val zero = IntSize.memoize (fn s => Const (Const.int (IntX.zero s)))
       val equals =
 	 fn (Const c, Const c') => Const.equals (c, c')
 	  | (Var x, Var x') => Var.equals (x, x')
@@ -117,37 +117,19 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 	    datatype z = datatype Prim.Name.t
 	 in
 	    case Prim.name prim of
-	       Char_gt => doit' LT
-	     | Char_ge => doit' LE
-	     | Char_lt => doit LT
+	       Char_ge => doit' LE
+	     | Char_gt => doit' LT
 	     | Char_le => doit LE
-	     | Int_gt => doit' LT
-	     | Int_ge => doit' LE
-	     | Int_geu =>
-		  Or (Fact.T {rel = LT,
-			      lhs = arg 0,
-			      rhs = Oper.zero},
-		      Fact.T {rel = LE,
-			      lhs = arg 1,
-			      rhs = arg 0})
-	     | Int_gtu =>
-		  Or (Fact.T {rel = LT,
-			      lhs = arg 0,
-			      rhs = Oper.zero},
-		      Fact.T {rel = LT,
-			      lhs = arg 1,
-			      rhs = arg 0})
-	     | Int_lt => doit LT
-	     | Int_le => doit LE
+	     | Char_lt => doit LT
+	     | Int_ge _ => doit' LE
+	     | Int_gt _ => doit' LT
+	     | Int_le _ => doit LE
+	     | Int_lt _ => doit LT
 	     | MLton_eq => doit EQ
-	     | Word32_ge => doit' LE
-	     | Word32_gt => doit' LT
-	     | Word32_le => doit LE
-	     | Word32_lt => doit LT
-	     | Word8_ge => doit' LE
-	     | Word8_gt => doit' LT
-	     | Word8_le => doit LE
-	     | Word8_lt => doit LT
+	     | Word_ge _ => doit' LE
+	     | Word_gt _ => doit' LT
+	     | Word_le _ => doit LE
+	     | Word_lt _ => doit LT
 	     | _ => None
 	 end
       fun setConst (x, c) = setVarInfo (x, Const c)
@@ -172,9 +154,10 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 	 val (falseVar, f) = make Con.falsee
       end
       val one = Var.newNoname ()
-      val oneS = Statement.T {exp = Exp.Const (Const.fromInt 1),
-			      var = SOME one,
-			      ty = Type.int}
+      val oneS =
+	 Statement.T {exp = Exp.Const (Const.int (IntX.one IntSize.default)),
+		      ty = Type.defaultInt,
+		      var = SOME one}
       val globals = Vector.concat [Vector.new3 (t, f, oneS), globals]
       val shrink = shrinkFunction globals
       val numSimplified = ref 0
@@ -373,7 +356,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 			       success: Label.t)
 		       : Statement.t vector * Transfer.t =
 		       let
-			  fun simplify (prim: Prim.t, x: Var.t) =
+			  fun simplify (prim: Prim.t, x: Var.t, s: IntSize.t) =
 			     let
 				val res = Var.newNoname ()
 			     in
@@ -384,75 +367,79 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 				   {exp = PrimApp {args = Vector.new2 (x, one),
 						   prim = prim,
 						   targs = Vector.new0 ()},
-				    ty = Type.int,
+				    ty = Type.int s,
 				    var = SOME res})],
 				 Goto {args = Vector.new1 res,
 				       dst = success})
 			     end
-			  fun add1 (x: Var.t) =
+			  fun add1 (x: Var.t, s: IntSize.t) =
 			     if isFact (label, fn Fact.T {lhs, rel, rhs} =>
 					case (lhs, rel, rhs) of
 					   (Oper.Var x', Rel.LT, _) =>
 					      Var.equals (x, x')
 					 | (Oper.Var x', Rel.LE, Oper.Const c) =>
 					      Var.equals (x, x')
-					      andalso (case Const.node c of
-							  Const.Node.Int c =>
-							     c < Int.maxInt
-							| _ => Error.bug "strange fact")
+					      andalso
+					      (case c of
+						  Const.Int i =>
+						     IntX.<
+						     (i, IntX.max (IntX.size i))
+						| _ => Error.bug "strange fact")
 					 | _ => false)
-				then simplify (Prim.intAdd, x)
+				then simplify (Prim.intAdd s, x, s)
 			     else noChange
-			  fun sub1 (x: Var.t) =
+			  fun sub1 (x: Var.t, s: IntSize.t) =
 			     if isFact (label, fn Fact.T {lhs, rel, rhs} =>
 					case (lhs, rel, rhs) of
 					   (_, Rel.LT, Oper.Var x') =>
 					      Var.equals (x, x')
 					 | (Oper.Const c, Rel.LE, Oper.Var x') =>
 					      Var.equals (x, x')
-					      andalso (case Const.node c of
-							  Const.Node.Int c =>
-							     c > Int.minInt
-							| _ => Error.bug "strange fact")
+					      andalso
+					      (case c of
+						  Const.Int i =>
+						     IntX.>
+						     (i, IntX.min (IntX.size i))
+						| _ => Error.bug "strange fact")
 					 | _ => false)
-				then simplify (Prim.intSub, x)
+				then simplify (Prim.intSub s, x, s)
 			     else noChange
-			  fun add (c: Const.t, x: Var.t) =
-			     case Const.node c of
-				Const.Node.Int i =>
-				   if i = 1
-				      then add1 x
-				   else if i = ~1
-					   then sub1 x
+			  fun add (c: Const.t, x: Var.t, s: IntSize.t) =
+			     case c of
+				Const.Int i =>
+				   if IntX.isOne i
+				      then add1 (x, s)
+				   else if IntX.isNegOne i
+					   then sub1 (x, s)
 					else noChange
 			      | _ => Error.bug "add of strange const"
 			  datatype z = datatype Prim.Name.t
 		       in
 			  case Prim.name prim of
-			     Int_addCheck =>
+			     Int_addCheck s =>
 				let
 				   val x1 = Vector.sub (args, 0)
 				   val x2 = Vector.sub (args, 1)
 				in
 				   case varInfo x1 of
-				      Const c => add (c, x2)
+				      Const c => add (c, x2, s)
 				    | _ => (case varInfo x2 of
-					       Const c => add (c, x1)
+					       Const c => add (c, x1, s)
 					     | _ => noChange)
 				end
-			   | Int_subCheck =>
+			   | Int_subCheck s =>
 				let
 				   val x1 = Vector.sub (args, 0)
 				   val x2 = Vector.sub (args, 1)
 				in
 				   case varInfo x2 of
 				      Const c =>
-					 (case Const.node c of
-					     Const.Node.Int i =>
-						if i = ~1
-						   then add1 x1
-						else if i = 1
-							then sub1 x1
+					 (case c of
+					     Const.Int i =>
+						if IntX.isNegOne i
+						   then add1 (x1, s)
+						else if IntX.isOne i
+							then sub1 (x1, s)
 						     else noChange
 					   | _ =>
 						Error.bug "sub of strage const")

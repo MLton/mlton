@@ -27,8 +27,12 @@ struct
   local
      open Machine
   in
+     structure IntSize = IntSize
+     structure IntX = IntX
      structure Label = Label
      structure Prim = Prim
+     structure RealSize = RealSize
+     structure RealX = RealX
      structure Register = Register
      structure Runtime = Runtime
      local
@@ -37,7 +41,13 @@ struct
        structure GCField = GCField
      end
      structure Type = Type
+     structure WordSize = WordSize
+     structure WordX = WordX
   end
+
+  datatype z = datatype IntSize.t
+  datatype z = datatype RealSize.t
+  datatype z = datatype WordSize.t
   
   structure Global =
      struct
@@ -101,7 +111,6 @@ struct
 		  x86.Operand.memloc memloc
 	       end
 	  | Cast (z, _) => toX86Operand z
-	  | Char c => x86.Operand.immediate_const_char c
 	  | Contents {oper, ty} =>
 	       let
 		  val ty = Type.toRuntime ty
@@ -128,7 +137,14 @@ struct
 	  | Frontier => x86MLton.gcState_frontierContentsOperand ()
 	  | GCState => x86.Operand.label x86MLton.gcState_label
 	  | Global g => x86.Operand.memloc (Global.toX86MemLoc g)
-	  | Int i => x86.Operand.immediate_const_int i
+	  | Int i =>
+	       let
+		  val i' = IntX.toIntInf i
+	       in
+		  case IntX.size i of
+		     I32 => x86.Operand.immediate_const_int (IntInf.toInt i')
+		   | _ => Error.bug "FIXME"
+	       end
 	  | Label l => x86.Operand.immediate_label l
 	  | Line => x86MLton.fileLine ()
 	  | Offset {base = GCState, offset, ty} =>
@@ -185,7 +201,17 @@ struct
 		  x86.Operand.memloc memloc
 	       end
 	  | StackTop => x86MLton.gcState_stackTopContentsOperand ()
-	  | Word w => x86.Operand.immediate_const_word w
+	  | Word w =>
+	       let
+		  val w' = WordX.toWord w
+	       in
+		  case WordX.size w of
+		     W8 =>
+			x86.Operand.immediate_const_char
+			(Word8.toChar (Word8.fromWord w'))
+		   | W16 => Error.bug "FIXME"
+		   | W32 => x86.Operand.immediate_const_word w'
+	       end
 	       
       val toX86Operand =
 	 fn operand =>
@@ -681,8 +707,7 @@ struct
 			
 		 in
 		    case switch of
-		       Char z => simple (z, doSwitchChar)
-		     | EnumPointers {enum, pointers, test} =>
+		       EnumPointers {enum, pointers, test} =>
 			  let
 			     val size = Operand.toX86Size test
 			     val test = Operand.toX86Operand test
@@ -706,7 +731,16 @@ struct
 					 truee = enum,
 					 falsee = pointers})}))
 			  end
-		     | Int z => simple (z, doSwitchInt)
+		     | Int {cases, default, size, test} =>
+			  (case size of
+			      I32 =>
+				 simple ({cases = (Vector.map
+						   (cases, fn (i, l) =>
+						    (IntX.toInt i, l))),
+					  default = default,
+					  test = test},
+					 doSwitchInt)
+			    | _ => Error.bug "FIXME")
 		     | Pointer {cases, default, tag, ...} =>
 			  simple ({cases = (Vector.map
 					    (cases, fn {dst, tag, ...} =>
@@ -714,7 +748,26 @@ struct
 				   default = default,
 				   test = tag},
 				  doSwitchInt)
-		     | Word z => simple (z, doSwitchWord)
+		     | Word {cases, default, size, test} =>
+			  (case size of
+			      W8 =>
+				 simple ({cases = (Vector.map
+						   (cases, fn (w, l) =>
+						    (Word8.toChar
+						     (Word8.fromWord
+						      (WordX.toWord w)),
+						     l))),
+					  default = default,
+					  test = test},
+					 doSwitchChar)
+			    | W32 =>
+				 simple ({cases = (Vector.map
+						   (cases, fn (w, l) =>
+						    (WordX.toWord w, l))),
+					  default = default,
+					  test = test},
+					 doSwitchWord)
+			    | _ => Error.bug "FIXME")
 		 end
 	      | Goto label
 	      => (AppendList.append

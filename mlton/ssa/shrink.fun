@@ -133,7 +133,7 @@ structure LabelMeaning =
       and aux =
 	 Block
        | Bug
-       | Case of {cases: Label.t Cases.t,
+       | Case of {cases: Cases.t,
 		  default: Label.t option}
        | Goto of {dst: t,
 		  args: Positions.t}
@@ -190,7 +190,7 @@ val traceApply =
    Trace.trace ("Prim.apply",
 		fn (p, args, _: VarInfo.t * VarInfo.t -> bool) =>
 		let open Layout
-		in seq [Prim.layout p,
+		in seq [Prim.layout p, str " ",
 			List.layout (Prim.ApplyArg.layout
 				     (Var.layout o VarInfo.var)) args]
 		end,
@@ -661,8 +661,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 					    {con = con,
 					     hasArg = not (Vector.isEmpty args)}
 				      else Prim.ApplyArg.Var vi
-				 | Value.Const c =>
-				      Prim.ApplyArg.Const (Const.node c)
+				 | Value.Const c => Prim.ApplyArg.Const c
 				 | _ => Prim.ApplyArg.Var vi)
 			  | _ => Prim.ApplyArg.Var vi)
 		  in
@@ -1015,19 +1014,15 @@ fun shrinkFunction (globals: Statement.t vector) =
 			   case (VarInfo.value test, cases) of
 			      (SOME (Value.Const c), _) =>
 				 let
-				    fun doit (l, z) =
-				       findCase (l, fn z' => z = z',
+				    fun doit (l, z, eq) =
+				       findCase (l, fn z' => eq (z, z'),
 						 Vector.new0 ())
 				 in
-				    case (cases, Const.node c) of
-				       (Cases.Char l, Const.Node.Char c) =>
-					  doit (l, c)
-				     | (Cases.Int l, Const.Node.Int i) =>
-					  doit (l, i)
-				     | (Cases.Word l, Const.Node.Word w) =>
-					  doit (l, w)
-				     | (Cases.Word8 l, Const.Node.Word w) =>
-					  doit (l, Word8.fromWord w)
+				    case (cases, c) of
+				       (Cases.Int (_, cs), Const.Int i) =>
+					  doit (cs, i, IntX.equals)
+				     | (Cases.Word (_, cs), Const.Word w) =>
+					  doit (cs, w, WordX.equals)
 				     | _ =>
 					  Error.bug "strange constant for cases"
 				 end

@@ -805,8 +805,7 @@ fun closureConvert
 		     fun doit (l, f) = doCases (l, f, fn i => fn e => (i, e))
 		     val (cases, ac) =
 			case cases of
-			   Scases.Char l => doit (l, Dexp.Char)
-			 | Scases.Con cases =>
+			   Scases.Con cases =>
 			      doCases
 			      (cases, Dexp.Con,
 			       fn Spat.T {con, arg, ...} =>
@@ -817,11 +816,15 @@ fun closureConvert
 				      | (SOME v, SOME (arg, _)) =>
 					   Vector.new1 (newVar arg, valueType v)
 				      | _ => Error.bug "constructor mismatch"
-			       in fn body => {con = con, args = args, body = body}
+			       in
+				  fn body => {args = args,
+					      body = body,
+					      con = con}
 			       end)
-			 | Scases.Int l => doit (l, Dexp.Int)
-			 | Scases.Word l => doit (l, Dexp.Word)
-			 | Scases.Word8 l => doit (l, Dexp.Word8)
+			 | Scases.Int (s, cs) =>
+			      doit (cs, fn cs => Dexp.Int (s, cs))
+			 | Scases.Word (s, cs) =>
+			      doit (cs, fn cs => Dexp.Word (s, cs))
 		  in (Dexp.casee
 		      {test = convertVarExp test,
 		       ty = ty, cases = cases, default = default},

@@ -249,13 +249,11 @@ fun simplifyTypes (I.Program.T {body, datatypes, overflow}) =
 		  fun doit v = Vector.map (v, fn (c, e) => (c, fixExp e))
 		  val cases =
 		     case cases of
-			I.Cases.Char v => O.Cases.Char (doit v)
-		      | I.Cases.Con v =>
+			I.Cases.Con v =>
 			   O.Cases.Con (Vector.map (v, fn (p, e) =>
 						    (fixPat p, fixExp e)))
-		      | I.Cases.Int v => O.Cases.Int (doit v)
-		      | I.Cases.Word v => O.Cases.Word (doit v)
-		      | I.Cases.Word8 v => O.Cases.Word8 (doit v)
+		      | I.Cases.Int (s, v) => O.Cases.Int (s, doit v)
+		      | I.Cases.Word (s, v) => O.Cases.Word (s, doit v)
 	       in
 		  O.PrimExp.Case {cases = cases,
 				  default = Option.map (default, fn (e, r) =>

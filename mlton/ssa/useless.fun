@@ -252,7 +252,7 @@ structure Value =
 		     case Type.dest t of
 			Type.Array t =>
 			   let val elt as (_, e) = slot t
-			       val length = loop Type.int
+			       val length = loop Type.defaultInt
 			   in Exists.addHandler
 			      (e, fn () => Useful.makeUseful (deground length))
 			      ; Array {useful = useful (),
@@ -262,7 +262,7 @@ structure Value =
 		      | Type.Ref t => Ref {arg = slot t,
 					   useful = useful ()}
 		      | Type.Tuple ts => Tuple (Vector.map (ts, slot))
-		      | Type.Vector t => Vector {length = loop Type.int,
+		      | Type.Vector t => Vector {length = loop Type.defaultInt,
 						 elt = slot t}
 		      | Type.Weak t => Weak {arg = slot t,
 					     useful = useful ()}
@@ -287,7 +287,7 @@ structure Value =
 	 in
 	    v
 	 end
-      val int = fromType Type.int
+      val int = fromType Type.defaultInt
 
       fun detupleSlots (v: t): slot vector =
 	 case value v of
@@ -526,17 +526,17 @@ fun useless (program: Program.t): Program.t =
 		   | Array_array0Const => ()
 		   | Array_length => return (arrayLength (arg 0))
 		   | Array_sub => sub ()
+		   | Array_toVector =>
+			(case (value (arg 0), value result) of
+			    (Array {length = l, elt = e, ...},
+			     Vector {length = l', elt = e', ...}) =>
+			       (unify (l, l'); unifySlot (e, e'))
+			   | _ => Error.bug "strange Array_toVector")
 		   | Array_update => update ()
 		   | MLton_equal => Vector.foreach (args, deepMakeUseful)
 		   | Ref_assign => coerce {from = arg 1, to = deref (arg 0)}
 		   | Ref_deref => return (deref (arg 0))
 		   | Ref_ref => coerce {from = arg 0, to = deref result}
-		   | Vector_fromArray =>
-			(case (value (arg 0), value result) of
-			    (Array {length = l, elt = e, ...},
-			     Vector {length = l', elt = e', ...}) =>
-			       (unify (l, l'); unifySlot (e, e'))
-			   | _ => Error.bug "strange Vector_fromArray")
 		   | Vector_length => return (vectorLength (arg 0))
 		   | Vector_sub => (arg 1 dependsOn result
 				    ; return (devector (arg 0)))
@@ -576,10 +576,8 @@ fun useless (program: Program.t): Program.t =
 		  const = Value.const,
 		  copy = Value.fromType o Value.ty,
 		  filter = filter,
-		  filterChar = filterGround,
-		  filterInt = filterGround,
-		  filterWord = filterGround,
-		  filterWord8 = filterGround,
+		  filterInt = filterGround o #1,
+		  filterWord = filterGround o #1,
 		  fromType = Value.fromType,
 		  layout = Value.layout,
 		  primApp = primApp,
@@ -947,37 +945,36 @@ fun useless (program: Program.t): Program.t =
 			(0, NONE) => ([], Bug)
 		      | _ => ([], t)
 		  datatype z = datatype Cases.t
-	       in case cases of
-		  Char l => doit l
-		| Int l => doit l
-		| Word l => doit l
-		| Word8 l => doit l
-		| Con cases =>
-		     case (Vector.length cases, default) of
-			(0, NONE) => ([], Bug)
-		      | _ => 
-			   let
-			      val (cases, blocks) =
-				 Vector.mapAndFold
-				 (cases, [], fn ((c, l), blocks) =>
-				  let
-				     val args = label l
-				  in if Vector.forall (args, Value.isUseful)
-					then ((c, l), blocks)
-				     else
-					let
-					   val (l', b) =
-					      dropUseless
-					      (conArgs c, args, fn args =>
-					       Goto {dst = l, args = args})
-					in ((c, l'), b :: blocks)
-					end
-				  end)
-			   in (blocks, 
-			       Case {test = test, 
-				     cases = Cases.Con cases,
-				     default = default})
-			   end
+	       in
+		  case cases of
+		     Con cases =>
+			(case (Vector.length cases, default) of
+			    (0, NONE) => ([], Bug)
+			  | _ => 
+			       let
+				  val (cases, blocks) =
+				     Vector.mapAndFold
+				     (cases, [], fn ((c, l), blocks) =>
+				      let
+					 val args = label l
+				      in if Vector.forall (args, Value.isUseful)
+					    then ((c, l), blocks)
+					 else
+					    let
+					       val (l', b) =
+						  dropUseless
+						  (conArgs c, args, fn args =>
+						   Goto {dst = l, args = args})
+					    in ((c, l'), b :: blocks)
+					    end
+				      end)
+			       in (blocks, 
+				   Case {test = test, 
+					 cases = Cases.Con cases,
+					 default = default})
+			       end)
+		   | Int (_, cs) => doit cs
+		   | Word (_, cs) => doit cs
 	       end
 	  | Goto {dst, args} =>
 	       ([], Goto {dst = dst, args = keepUseful (args, label dst)})

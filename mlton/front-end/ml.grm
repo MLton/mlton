@@ -212,8 +212,8 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
       EOF | SEMICOLON
     | LONGID of string
     | TYVAR of string
-    | INT of string
-    | WORD of Word32.word
+    | INT of IntInf.t
+    | WORD of IntInf.t
     | REAL of string
     | STRING of string 
     | CHAR of char
@@ -228,185 +228,168 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
       (* primitives *)
     | PRIM | FFI | CONST | BUILD_CONST
 
-%nonterm digit of int
-       | int of int
-       | id of string * Region.t
-       | idEqual of string * Region.t
-       | idNoAsterisk of string * Region.t
-       | longidNoAsterisk of string * Region.t
-       | longid of string * Region.t
-       | longidEqual of string * Region.t
-       | const of Const.t
-       | const' of Const.node
-       | vid of Vid.t
-       | vidNoEqual of Vid.t
-       | vids of Vid.t list
-       | var of Var.t
-       | con of Con.t
-       | opcon of Con.t
-       | tyvar of Tyvar.t
-       | tycon of Tycon.t
-       | field of Field.t
-       | strid of Strid.t
-       | sigid of Sigid.t
-       | sigids of Sigid.t list
-       | fctid of Fctid.t
-       | longtycon of Longtycon.t
-       | longvar of Longvar.t
-       | longvarands of Longvar.t list
-       | longcon of Longcon.t
-       | longvid of Longvid.t
-       | longvidNoEqual of Longvid.t
-       | longstrid of Longstrid.t
-       | longstrids of Longstrid.t list
-
-       | tlabel of (Field.t * Type.t)
-       | tlabels  of (Field.t * Type.t) list
-       | ty' of Type.t
-       | ty'node of Type.node
-       | tuple_ty of Type.t list
-       | ty of Type.t
-       | tynode of Type.node
-       | ty1 of Type.t
-       | tyOpt of Type.t option
-       | ty0_pc of Type.t list
-
-       | match of Match.t
-       | rules of rule list
-       | rule of rule
-       | elabel of (Field.t * Exp.t)
-       | elabels of (Field.t * Exp.t) list
-       | exp_ps of Exp.t list
-       | exp of Exp.t
-       | expnode of Exp.node
+%nonterm
+         aexp of Exp.node
+       | andspecs of wherespec list
+       | apat of Pat.t
+       | apat' of Pat.t
+       | apatnode of Pat.node
+       | apats of Pat.t list
        | app_exp of Exp.t list
        | app_exp1 of Exp.t list
-       | aexp of Exp.node
-       | ot_list of Exp.t list
-       | exp_2c of Exp.t list
-       | exp_list of Exp.t list
-
-       | pat of Pat.t
-       | patnode of Pat.node
-       | apats of Pat.t list
-       | apat of Pat.t
-       | apatnode of Pat.node
-       | apat' of Pat.t
-       | patitems of (Pat.Item.t list * bool)
-       | patitem of Pat.Item.t
-       | pat_2c of Pat.t list
-       | pats of Pat.t list
-       | commapats of Pat.t list
-       | opaspat of Pat.t option
-	 
-       | valbindTop of vb vector * rvb vector
-       | valbind of vb list * rvb list
-       | valbindRest of vb list * rvb list
-       | rvalbind of rvb list
-       | rvalbindRest of rvb list
-       | constraint of Type.t option
-       | funs of clauses list
-       | clausesTop of clauses
-       | clauses of clause list
+       | arg_fct of Strexp.t
        | clause of clause
-
-       | typBind of TypBind.t
-       | typBind' of TypBind.node
-
-       | tyvars of Tyvar.t vector
-       | tyvarseq of Tyvar.t vector
-       | tyvar_pc of Tyvar.t list
-       | constrs of (Con.t * Type.t option) list
+       | clauses of clause list
+       | clausesTop of clauses
+       | commapats of Pat.t list
+       | con of Con.t
+       | const of Const.t
+       | const' of Const.node
        | constr of Con.t * Type.t option
-       | ebs of eb list
-       | eb of eb
-       | ebrhs of EbRhs.t
-       | ebrhsnode of EbRhs.node
-       | fixity of Fixity.t
-
+       | constraint of Type.t option
+       | constrs of (Con.t * Type.t option) list
+       | datBind of DatBind.t
+       | datBindNoWithtype of DatBind.t
+       | datatypeRhs of DatatypeRhs.t
+       | datatypeRhsNoWithtype of DatatypeRhs.t
+       | datatypeRhsnode of DatatypeRhs.node
+       | datatypeRhsnodeNoWithtype of DatatypeRhs.node
+       | db of db
+       | dbs of db list
        | dec of Dec.t
        | decnode of Dec.node
        | decnolocal of Dec.node
        | decs of Dec.t
        | decsnode of Dec.node
-
-       | specs of Spec.t
-       | spec of Spec.t
-       | specnode of Spec.node
-       | sharespec of Equation.node
-
-       | strdescs of strdesc list
-       | strdescs' of strdesc whereAnd
-       | strdescs'' of strdesc whereAnd
-	 
-       | typdescs of typdesc list
-       | typdesc of typdesc
-       | typdefs of typdef list
-       | typdef of typdef
-       | valdescs of valdesc list
-       | valdesc of valdesc
-       | exndescs of exndesc list
+       | digit of int
+       | eb of eb
+       | ebrhs of EbRhs.t
+       | ebrhsnode of EbRhs.node
+       | ebs of eb list
+       | elabel of (Field.t * Exp.t)
+       | elabels of (Field.t * Exp.t) list
        | exndesc of exndesc
-       | longtyconeqns of Longtycon.t list
-       | longstrideqns of Longstrid.t list
-
-       | wherespec of wherespec
-	 
-       | sigexp of Sigexp.t
-       | sigexpnode of Sigexp.node
-       | sigexp' of Sigexp.t
-       | sigexp'node of Sigexp.node
-       | sigconst of SigConst.t
-       | arg_fct of Strexp.t
-       | sdecs of Dec.t
-       | sdec of Dec.t
-       | sdecsPlus of Dec.t
-
-       | strbinds of strbind list
-       | strbinds' of Strexp.t * strbind list
-       | strbinds'1 of strbind whereAnd
-       | strbinds'2 of strbind list
-       | strbinds'1' of strbind whereAnd
-
-       | sigbinds of sigbind list
-       | sigbinds' of sigbind whereAnd
-       | sigbinds'' of sigbind whereAnd
-
-       | wherespecs of wherespec list
-       | andspecs of wherespec list
-	 
+       | exndescs of exndesc list
+       | exp of Exp.t
+       | exp_2c of Exp.t list
+       | exp_list of Exp.t list
+       | exp_ps of Exp.t list
+       | expnode of Exp.node
+       | fctarg of FctArg.node
+       | fctid of Fctid.t
+       | field of Field.t
+       | fixity of Fixity.t
        | funbinds of funbind list
        | funbinds' of Strexp.t * funbind list
        | funbinds'1 of funbind whereAnd
        | funbinds'1' of funbind whereAnd
        | funbinds'2 of funbind list
-       | fctarg of FctArg.node
-	 
-       | datatypeRhs of DatatypeRhs.t
-       | datatypeRhsNoWithtype of DatatypeRhs.t
-       | datatypeRhsnode of DatatypeRhs.node
-       | datatypeRhsnodeNoWithtype of DatatypeRhs.node
+       | funs of clauses list
+       | id of string * Region.t
+       | idEqual of string * Region.t
+       | idNoAsterisk of string * Region.t
+       | int of IntInf.t
+       | leadExps of Topdec.t list
+       | longcon of Longcon.t
+       | longid of string * Region.t
+       | longidEqual of string * Region.t
+       | longidNoAsterisk of string * Region.t
+       | longstrid of Longstrid.t
+       | longstrideqns of Longstrid.t list
+       | longstrids of Longstrid.t list
+       | longtycon of Longtycon.t
+       | longtyconeqns of Longtycon.t list
+       | longvar of Longvar.t
+       | longvarands of Longvar.t list
+       | longvid of Longvid.t
+       | longvidNoEqual of Longvid.t
+       | match of Match.t
+       | opaspat of Pat.t option
+       | opcon of Con.t
+       | ot_list of Exp.t list
+       | pat of Pat.t
+       | pat_2c of Pat.t list
+       | patitem of Pat.Item.t
+       | patitems of (Pat.Item.t list * bool)
+       | patnode of Pat.node
+       | pats of Pat.t list
+       | program of Program.t
        | repl of DatatypeRhs.node
-       | datBind of DatBind.t
-       | datBindNoWithtype of DatBind.t
-       | db of db
-       | dbs of db list
-       | withtypes of TypBind.t
-       | strdecs of Strdec.t
-       | strdecsnode of Strdec.node
+       | rule of rule
+       | rules of rule list
+       | rvalbind of rvb list
+       | rvalbindRest of rvb list
+       | sdec of Dec.t
+       | sdecs of Dec.t
+       | sdecsPlus of Dec.t
+       | sharespec of Equation.node
+       | sigbinds of sigbind list
+       | sigbinds' of sigbind whereAnd
+       | sigbinds'' of sigbind whereAnd
+       | sigconst of SigConst.t
+       | sigexp of Sigexp.t
+       | sigexp' of Sigexp.t
+       | sigexp'node of Sigexp.node
+       | sigexpnode of Sigexp.node
+       | sigid of Sigid.t
+       | sigids of Sigid.t list
+       | spec of Spec.t
+       | specnode of Spec.node
+       | specs of Spec.t
+       | strbinds of strbind list
+       | strbinds' of Strexp.t * strbind list
+       | strbinds'1 of strbind whereAnd
+       | strbinds'1' of strbind whereAnd
+       | strbinds'2 of strbind list
        | strdec of Strdec.t
        | strdecnode of Strdec.node
-       | topdec of Topdec.t
-       | topdecnode of Topdec.node
-       | topdecs of Topdec.t list
-       | leadExps of Topdec.t list
-       | program of Program.t
-
+       | strdecs of Strdec.t
+       | strdecsnode of Strdec.node
+       | strdescs of strdesc list
+       | strdescs' of strdesc whereAnd
+       | strdescs'' of strdesc whereAnd
        | strexp of Strexp.t
-       | strexpnode of Strexp.node
        | strexp1 of Strexp.t * (Sigexp.t -> SigConst.t) * Sigexp.t
        | strexp2 of Strexp.t
        | strexp2node of Strexp.node
+       | strexpnode of Strexp.node
+       | strid of Strid.t
+       | tlabel of (Field.t * Type.t)
+       | tlabels  of (Field.t * Type.t) list
+       | topdec of Topdec.t
+       | topdecnode of Topdec.node
+       | topdecs of Topdec.t list
+       | tuple_ty of Type.t list
+       | ty of Type.t
+       | ty' of Type.t
+       | ty'node of Type.node
+       | ty0_pc of Type.t list
+       | ty1 of Type.t
+       | tyOpt of Type.t option
+       | tycon of Tycon.t
+       | tynode of Type.node
+       | typBind of TypBind.t
+       | typBind' of TypBind.node
+       | typdef of typdef
+       | typdefs of typdef list
+       | typdesc of typdesc
+       | typdescs of typdesc list
+       | tyvar of Tyvar.t
+       | tyvar_pc of Tyvar.t list
+       | tyvars of Tyvar.t vector
+       | tyvarseq of Tyvar.t vector
+       | valbind of vb list * rvb list
+       | valbindRest of vb list * rvb list
+       | valbindTop of vb vector * rvb vector
+       | valdesc of valdesc
+       | valdescs of valdesc list
+       | var of Var.t
+       | vid of Vid.t
+       | vidNoEqual of Vid.t
+       | vids of Vid.t list
+       | wherespec of wherespec
+       | wherespecs of wherespec list
+       | withtypes of TypBind.t
 
 %verbose
 %pos SourcePos.t
@@ -414,7 +397,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
 %noshift EOF
 
 %header (functor MLLrValsFun (structure Token: TOKEN
-			     structure Ast: AST))
+                              structure Ast: AST))
 
 %nonassoc WITHTYPE
 %right AND
@@ -811,15 +794,13 @@ fixity	: INFIX			(Fixity.Infix NONE)
 	| INFIXR digit		(Fixity.Infixr (SOME digit))
 	| NONFIX		(Fixity.Nonfix)
 
-int : INT (case Int.fromString INT of
-	      NONE => (error (reg (INTleft, INTright), "expected integer");
-		       ~1)
-	    | SOME n => n)
+int : INT (INT)
 	   
-digit : int (if int < 0 orelse int >= 10
-		then (error (reg (intleft, intright), "expected single digit") ;
-		      0)
-	     else int)
+digit : int (if IntInf.< (int, IntInf.fromInt 0)
+		orelse IntInf.>= (int, IntInf.fromInt 10)
+		then (error (reg (intleft, intright), "expected single digit")
+		      ; 0)
+	     else IntInf.toInt int)
 
 datatypeRhs : datatypeRhsnode (DatatypeRhs.makeRegion' (datatypeRhsnode,
 						       datatypeRhsnodeleft,
@@ -1066,14 +1047,23 @@ tycon : idNoAsterisk 	       (Tycon.fromString idNoAsterisk)
 tyvar : TYVAR 		       (Tyvar.newString (TYVAR, {left = TYVARleft,
 							 right = TYVARright}))
 field : id  		       (Field.String (#1 id))
-      | int 		       (Field.Int
-				(if int <= 0
-				    then (error (reg (intleft, intright),
-						 "expected integer")
-					  ; ~1)
-				 else
-				    int - 1))
-	(* The int - 1 is because fields are represented zero based. *)
+      | int 		       (let
+				   val int =
+				      IntInf.toInt int
+				      handle Exn.Overflow =>
+					 (error (reg (intleft, intright),
+						 "field too huge")
+					  ; 0)
+				in
+				   Field.Int
+				   (if int <= 0
+				       then (error (reg (intleft, intright),
+						    "nonpositive field")
+					     ; ~1)
+				    else
+				       int - 1)
+				end) (* int - 1 because fields are 0-based *)
+
 strid : id 		       (Strid.fromString id)
 sigid : id 		       (Sigid.fromString id)
 sigids : sigid         	       ([sigid])

@@ -9,6 +9,9 @@ type int = Int.t
    
 signature MTYPE_STRUCTS = 
    sig
+      structure IntSize: INT_SIZE
+      structure RealSize: REAL_SIZE
+      structure WordSize: WORD_SIZE
    end
 
 signature MTYPE = 
@@ -18,30 +21,32 @@ signature MTYPE =
       type t
 	 
       datatype dest =
-	 Char
-       | Double
-       | Int
+	 Int of IntSize.t
        | Pointer
-       | Uint
+       | Real of RealSize.t
+       | Word of WordSize.t
 
       val align4: int -> int
       val align8: int -> int
-      val align: t * int -> int       (* align an address *)	 
+      val align: t * int -> int (* align an address *)	 
       val all: t list
       val bool: t (* same as int *)
-      val char: t
+      val defaultInt: t
+      val defaultReal: t
+      val defaultWord: t
       val dest: t -> dest
-      val double: t
       val equals: t * t -> bool
-      val int: t
+      val int: IntSize.t -> t
       val isPointer: t -> bool
+      val isReal: t -> bool
       val label: t (* same as uint *)
       val layout: t -> Layout.t
       val memo: (t -> 'a) -> (t -> 'a)
-      val name: t -> string (* one letter abbreviation: CDIPUV *)
+      (* name: R{32,64} I{8,16,32,64] P W[8,16,32] *)
+      val name: t -> string
       val pointer: t
+      val real: RealSize.t -> t
       val size: t -> int (* bytes *)
       val toString: t -> string
-      val uint: t
-      val word: t (* synonym for uint *)
+      val word: WordSize.t -> t
    end

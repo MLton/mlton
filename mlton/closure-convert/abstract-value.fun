@@ -444,7 +444,7 @@ fun primApply {prim: Prim.t, args: t vector, resultTy: Type.t}: t =
 	    in
 	       r
 	    end
-       | Vector_fromArray =>
+       | Array_toVector =>
 	    let val r = result ()
 	    in (case (dest (oneArg ()), dest r) of
 		   (Type _, Type _) => ()

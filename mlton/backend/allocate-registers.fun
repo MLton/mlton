@@ -42,7 +42,7 @@ val traceForceStack =
 local
    open Type
 in
-   val handlerSize = Runtime.labelSize + size word
+   val handlerSize = Runtime.labelSize + size defaultWord
 end
 
 structure Live = Live (open Rssa)
@@ -455,7 +455,7 @@ fun allocate {argOperands,
 	    then
 	       let
 		  val (stack, {offset = handler, ...}) =
-		     Allocation.Stack.get (stack, Type.word)
+		     Allocation.Stack.get (stack, Type.defaultWord)
 		  val (stack, {offset = link, ...}) = 
 		     Allocation.Stack.get (stack, Type.ExnStack)
 	       in
@@ -513,7 +513,7 @@ fun allocate {argOperands,
 		case handlerLinkOffset of
 		   NONE => stackInit
 		 | SOME {handler, link} =>
-		      {offset = handler, ty = Type.word} (* should be label *)
+		      {offset = handler, ty = Type.defaultWord} (* should be label *)
 		      :: {offset = link, ty = Type.ExnStack}
 		      :: stackInit
 	     val a = Allocation.new (stackInit, registersInit)

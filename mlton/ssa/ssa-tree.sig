@@ -62,20 +62,18 @@ signature SSA_TREE =
 	       
 	    datatype dest =
 	       Array of t
-	     | Char
 	     | Datatype of Tycon.t
-	     | Int
+	     | Int of IntSize.t
 	     | IntInf
 	     | Pointer
 	     | PreThread
-	     | Real
+	     | Real of RealSize.t
 	     | Ref of t
 	     | Thread
 	     | Tuple of t vector
 	     | Vector of t
 	     | Weak of t
-	     | Word
-	     | Word8
+	     | Word of WordSize.t
 
 	    val dest: t -> dest
 	    val tyconArgs: t -> Tycon.t * t vector
@@ -126,7 +124,20 @@ signature SSA_TREE =
 	    val var: t -> Var.t option
 	 end
       
-      structure Cases: CASES sharing type Cases.con = Con.t
+      structure Cases:
+	 sig
+	    datatype t =
+	       Con of (Con.t * Label.t) vector
+	     | Int of IntSize.t * (IntX.t * Label.t) vector
+	     | Word of WordSize.t * (WordX.t * Label.t) vector
+
+	    val forall: t * (Label.t -> bool) -> bool
+	    val foreach: t * (Label.t -> unit) -> unit
+	    val hd: t -> Label.t
+	    val isEmpty: t -> bool
+	    val length: t -> int
+	    val map: t * (Label.t -> Label.t) -> t
+	 end
 
       structure Handler: HANDLER
       sharing Handler.Label = Label
@@ -147,7 +158,7 @@ signature SSA_TREE =
 			func: Func.t,
 			return: Return.t}
 	     | Case of {test: Var.t,
-			cases: Label.t Cases.t,
+			cases: Cases.t,
 			default: Label.t option (* Must be nullary. *)
 		       }
 	     | Goto of {dst: Label.t,

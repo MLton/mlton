@@ -18,6 +18,6 @@ bool Posix_Signal_isGCPending () {
  	return res;
 }
 
-bool Posix_Signal_isPending (Int signum) {
+Bool Posix_Signal_isPending (Int signum) {
 	return sigismember (&gcState.signalsPending, signum);
 }

@@ -39,7 +39,12 @@ structure Real64: REAL =
 	 val signBit = signBit
 	 val ~ = ~
       end
- 
+
+      val op ?= =
+	 if Primitive.MLton.native
+	    then op ?=
+	 else fn (r, r') => isNan r orelse isNan r' orelse r == r'
+	 
       val radix: int = 2
 
       val precision: int = 52

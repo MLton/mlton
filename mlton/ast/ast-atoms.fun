@@ -11,13 +11,20 @@ struct
 open S
 structure Wrap = Region.Wrap
 
+structure IntSize = IntSize ()
+structure RealSize = RealSize ()
+structure WordSize = WordSize ()
+
 structure Tycon =
    struct
       structure Id = AstId (val className = "tycon")
       open Id
 
       structure P =
-	 PrimTycons (open Id
+	 PrimTycons (structure IntSize = IntSize
+		     structure RealSize = RealSize
+		     structure WordSize = WordSize
+		     open Id
 		     val fromString = fn s => fromString (s, Region.bogus))
       open P
    end

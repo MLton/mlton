@@ -44,12 +44,11 @@ fun blockSize (Block.T {statements, transfer, ...}): int =
 	    Switch s =>
 	       let
 		  datatype z = datatype Switch.t
-		  fun simple {cases, default, test} =
+		  fun simple {cases, default, size, test} =
 		     1 + Vector.length cases
 	       in
 		  case s of
-		     Char z => simple z
-		   | EnumPointers _ => 2
+		     EnumPointers _ => 2
 		   | Int z => simple z
 		   | Pointer {cases, ...} => 1 + Vector.length cases
 		   | Word z => simple z

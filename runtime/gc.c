@@ -4549,7 +4549,7 @@ void GC_unpack (GC_state s) {
  * The second word is the weak pointer.
  */ 
 
-Bool GC_weakCanGet (pointer p) {
+bool GC_weakCanGet (pointer p) {
 	Bool res;
 
 	res = WEAK_GONE_HEADER != GC_getHeader (p);
@@ -4559,7 +4559,7 @@ Bool GC_weakCanGet (pointer p) {
 	return res;
 }
 
-pointer GC_weakGet (pointer p) {
+Pointer GC_weakGet (Pointer p) {
 	pointer res;
 
 	res = ((GC_weak)p)->object;
@@ -4569,7 +4569,7 @@ pointer GC_weakGet (pointer p) {
 	return res;
 }
 
-pointer GC_weakNew (GC_state s, W32 header, pointer p) {
+Pointer GC_weakNew (GC_state s, Word32 header, Pointer p) {
 	pointer res;
 
 	res = object (s, header, GC_NORMAL_HEADER_SIZE + 3 * WORD_SIZE, 

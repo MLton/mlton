@@ -144,28 +144,22 @@ in
 end
 
 local
-   fun make (inj, get) (cases, finish) =
-      inj (Vector.map
-	   (cases, fn {const, infos: Info.t list} =>
-	    (get (Const.node const), finish (Vector.fromList infos))))
+   fun make (all, ty, inj, get) =
+      List.map (all, fn s =>
+		(ty s,
+		 fn (cases, finish) =>
+		 inj (s,
+		      Vector.map
+		      (cases, fn {const, infos: Info.t list} =>
+		       (get const, finish (Vector.fromList infos))))))
 in
    val directCases = 
-      [(Type.char,
-	make (Cases.char,
-	      fn Const.Node.Char c => c
-	       | _ => Error.bug "caseChar type error")),
-       (Type.int,
-	make (Cases.int,
-	      fn Const.Node.Int i => i
-	       | _ => Error.bug "caseInt type error")),
-       (Type.word,
-	make (Cases.word,
-	      fn Const.Node.Word w => w
-	       | _ => Error.bug "caseWord type error")),
-       (Type.word8,
-	make (Cases.word8,
-	      fn Const.Node.Word w => Word8.fromWord w
-	       | _ => Error.bug "caseWord8 type error"))]
+      make (IntSize.all, Type.int, Cases.int,
+	    fn Const.Int i => i
+	     | _ => Error.bug "caseInt type error")
+      @ make (WordSize.all, Type.word, Cases.word,
+	      fn Const.Word w => w
+	       | _ => Error.bug "caseWord type error")
 end
 
 (*---------------------------------------------------*)

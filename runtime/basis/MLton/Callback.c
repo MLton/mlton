@@ -6,13 +6,13 @@
 static Bool argB[10];
 static Char argC[10];
 static Int argI[10];
-static Double argR[10];
+static Real argR[10];
 static Word argW[10];
 
 static Bool resB;
 static Char resC;
 static Int resI;
-static Double resR;
+static Real resR;
 static Word resW;
 
 Cstring callbackName;
@@ -39,7 +39,7 @@ Int MLton_Callback_fetchI(Int l) {
   return argI[l];
 }
 
-Double MLton_Callback_fetchR(Int l) {
+Real MLton_Callback_fetchR(Int l) {
   return argR[l];
 }
 
@@ -59,7 +59,7 @@ void MLton_Callback_retI(Int i) {
   resI = i;
 }
 
-void MLton_Callback_retR(Double r) {
+void MLton_Callback_retR(Real r) {
   resR = r;
 }
 
@@ -102,7 +102,7 @@ int MLton_Callback_call(char *rep, char *name, ...) {
       argI[indices[2]++] = va_arg(ap, Int);
       break;
     case 'R':
-      argR[indices[3]++] = va_arg(ap, Double);
+      argR[indices[3]++] = va_arg(ap, Real);
       break;
     case 'U':
       break;
@@ -125,7 +125,7 @@ int MLton_Callback_call(char *rep, char *name, ...) {
     *(va_arg(ap, Int*)) = resI;
     break;
   case 'R':
-    *(va_arg(ap, Double*)) = resR;
+    *(va_arg(ap, Real*)) = resR;
     break;
   case 'U':
     break;

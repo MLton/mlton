@@ -15,12 +15,15 @@ signature RSSA_STRUCTS =
       structure Const: CONST
       structure Func: HASH_ID
       structure Handler: HANDLER
-      sharing Handler.Label = Label
       structure ProfileExp: PROFILE_EXP
-      sharing ProfileExp.SourceInfo = SourceInfo
       structure Return: RETURN
-      sharing Return.Handler = Handler
       structure Var: VAR
+      sharing Handler = Return.Handler
+      sharing IntX = Const.IntX
+      sharing Label = Handler.Label
+      sharing RealX = Const.RealX
+      sharing SourceInfo = ProfileExp.SourceInfo
+      sharing WordX = Const.WordX
    end
 
 signature RSSA = 
@@ -28,9 +31,11 @@ signature RSSA =
       include RSSA_STRUCTS
 
       structure Switch: SWITCH
+      sharing IntX = Switch.IntX
       sharing Label = Switch.Label
       sharing PointerTycon = Switch.PointerTycon
       sharing Type = Switch.Type
+      sharing WordX = Switch.WordX
       structure CFunction: C_FUNCTION
       sharing CFunction = Runtime.CFunction
      
@@ -65,12 +70,11 @@ signature RSSA =
 	    val caseBytes: t * {big: t -> 'a,
 				small: word -> 'a} -> 'a
 	    val cast: t * Type.t -> t
-	    val char: char -> t
-	    val int: int -> t
+	    val int: IntX.t -> t
 	    val layout: t -> Layout.t
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val ty: t -> Type.t
-	    val word: word -> t
+	    val word: WordX.t -> t
 	 end
       sharing Operand = Switch.Use
     

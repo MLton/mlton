@@ -10,79 +10,88 @@ struct
 
 open S
 
-datatype dest =
-   Char
- | Double
- | Int
+datatype t =
+   Int of IntSize.t
  | Pointer
- | Uint
+ | Real of RealSize.t
+ | Word of WordSize.t
 
-datatype t = T of {dest: dest}
+datatype dest = datatype t
 
-fun dest (T {dest, ...}) = dest
+fun dest t = t
 
-fun toString t =
-   case dest t of
-      Char => "Char"
-    | Double => "Double"
-    | Int => "Int"
-    | Pointer => "Pointer"
-    | Uint => "Word"
+val isReal =
+   fn Real _ => true
+    | _ => false
+
+fun memo f =
+   let
+      val int = IntSize.memoize (f o Int)
+      val pointer = f Pointer
+      val real = RealSize.memoize (f o Real)
+      val word = WordSize.memoize (f o Word)
+   in
+      fn Int s => int s
+       | Pointer => pointer
+       | Real s => real s
+       | Word s => word s
+   end
+
+val toString =
+   memo
+   (fn t =>
+    case t of
+       Int s => concat ["Int", IntSize.toString s]
+     | Pointer => "Pointer"
+     | Real s => concat ["Real", RealSize.toString s]
+     | Word s => concat ["Word", WordSize.toString s])
 
 val layout = Layout.str o toString
 
-fun equals (t, t') = dest t = dest t'
+fun equals (t, t') = t = t'
 
 val equals =
    Trace.trace2 ("Runtime.Type.equals", layout, layout, Bool.layout) equals
 
-local
-   fun new dest = T {dest = dest}
-in
-   val char = new Char
-   val double = new Double
-   val int = new Int
-   val pointer = new Pointer
-   val uint = new Uint
-end
+val int = IntSize.memoize Int
+val pointer = Pointer
+val real = RealSize.memoize Real
+val word = WordSize.memoize Word
 
-val all = [char, double, int, pointer, uint]
+val all =
+   List.map (IntSize.all, int)
+   @ [pointer]
+   @ List.map (RealSize.all, real)
+   @ List.map (WordSize.all, word)
 
-fun memo f =
-   let val all = List.revMap (all, fn t => (t, f t))
-   in fn t => #2 (valOf (List.peek (all, fn (t', _) => equals (t, t'))))
-   end
+val bool = int IntSize.I32
 
-val bool = int
-val label = uint
-val word = uint
+val defaultInt = int IntSize.default
+
+val defaultReal = real RealSize.default
+   
+val defaultWord = word WordSize.default
+
+val label = word WordSize.W32
   
 fun isPointer t =
-   case dest t of
+   case t of
       Pointer => true
     | _ => false
-	 
-local
-   val byte: int = 1
-   val word: int = 4
-   val double: int = 8
-in
-   fun size t =
-      case dest t of
-	 Char => byte
-       | Double => double
-       | Int => word
-       | Pointer => word
-       | Uint => word
-end
+
+fun size (t: t): int =
+   case t of
+      Int s => IntSize.bytes s
+    | Pointer => 4
+    | Real s => RealSize.bytes s
+    | Word s => WordSize.bytes s
 
 fun name t =
-   case dest t of
-      Char => "C"
-    | Double => "D"
-    | Int => "I"
+   case t of
+      Int s => concat ["I", IntSize.toString s]
     | Pointer => "P"
-    | Uint => "U"
+    | Real s => concat ["R", RealSize.toString s]
+    | Word s => concat ["W", WordSize.toString s]
 
 local
    fun align a b =
@@ -95,14 +104,7 @@ local
 in
    val align4 = align 4
    val align8 = align 8
+   val align: t * int -> int = fn (ty, n) => align (size ty) n
 end
-
-fun align (ty: t, n: int): int =
-   case dest ty of
-      Char => n
-    | Double => align8 n
-    | Int => align4 n
-    | Pointer => align4 n
-    | Uint => align4 n
 
 end

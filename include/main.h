@@ -17,37 +17,8 @@
 #define String(g, s, l) { g, s, l },
 #define EndStrings };
 
-#define BeginReals static void real_Init() {
-#define Real(c, f) globaldouble[c] = f;
-#define EndReals }
-
 #define LoadArray(a, f) sfread (a, sizeof(*a), cardof(a), f)
 #define SaveArray(a, fd) swrite (fd, a, sizeof(*a) * cardof(a))
-
-/* gcState can't be static because stuff in mlton-lib.c refers to it */
-
-#define Globals(c, d, i, p, u, nr)			\
-	struct GC_state gcState;			\
-	char globaluchar[c];				\
-	double globaldouble[d];				\
-	int globalint[i];				\
-	pointer globalpointer[p];			\
-        uint globaluint[u];				\
-	pointer globalpointerNonRoot[nr];		\
-	static void saveGlobals (int fd) {		\
-		SaveArray (globaluchar, fd);		\
-		SaveArray (globaldouble, fd);		\
-		SaveArray (globalint, fd);		\
-		SaveArray (globalpointer, fd);		\
-		SaveArray (globaluint, fd);		\
-	}						\
-	static void loadGlobals (FILE *file) {		\
-		LoadArray (globaluchar, file);		\
-		LoadArray (globaldouble, file);		\
-		LoadArray (globalint, file);		\
-		LoadArray (globalpointer, file);	\
-		LoadArray (globaluint, file);		\
-	}
 
 #define Initialize(al, cs, mg, mfs, mlw, mmc, ps)			\
 	gcState.alignment = al;						\
@@ -56,8 +27,8 @@
 	gcState.frameLayoutsSize = cardof(frameLayouts); 		\
 	gcState.frameSources = frameSources;				\
 	gcState.frameSourcesSize = cardof(frameSources);		\
-	gcState.globals = globalpointer;				\
-	gcState.globalsSize = cardof(globalpointer);			\
+	gcState.globals = globalPointer;				\
+	gcState.globalsSize = cardof(globalPointer);			\
 	gcState.intInfInits = intInfInits;				\
 	gcState.intInfInitsSize = cardof(intInfInits);			\
 	gcState.loadGlobals = loadGlobals;				\

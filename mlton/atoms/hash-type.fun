@@ -99,6 +99,8 @@ structure Type =
    
       val layout = Ast.Type.layout o toAst
 
+      val toString = Layout.toString o layout
+	 
       (* 	let open Layout
        * n
        *   case tree of
@@ -153,10 +155,14 @@ structure Type =
 				 layout) con
       end
    end
-structure Ops = TypeOps (structure Tycon = Tycon
+structure Ops = TypeOps (structure IntSize = IntSize
+			 structure Tycon = Tycon
+			 structure WordSize = WordSize
 			 open Type)
 open Type Ops
 
+val string = word8Vector
+   
 structure Plist = PropertyList
 
 local structure Type = Ast.Type
@@ -175,7 +181,17 @@ end
 
 fun optionToAst z = Option.map (z, toAst)
 
-fun ofConst c = Const.Type.toType (Const.ty c, con)
+fun ofConst c =
+   let
+      datatype z = datatype Const.t
+   in
+      case c of
+	 Int i => int (IntX.size i)
+       | IntInf _ => intInf
+       | Real r => real (RealX.size r)
+       | Word w => word (WordX.size w)
+       | Word8Vector _ => word8Vector
+   end
 
 fun isUnit t =
    case dest t of

@@ -14,7 +14,10 @@ structure Id = HashId (structure AstId = AstId
 		       val noname = "t")
 open Id
 
-structure P = PrimTycons (Id)
+structure P = PrimTycons (structure IntSize = IntSize
+			  structure RealSize = RealSize
+			  structure WordSize = WordSize
+			  open Id)
 open P
 
 fun stats () =

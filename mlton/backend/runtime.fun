@@ -9,7 +9,7 @@ struct
 
 open S
 
-structure Type = Mtype ()
+structure Type = Mtype (S)
 
 structure CFunction = CFunction (structure Type = Type)
 
@@ -32,15 +32,15 @@ structure GCField =
       val equals: t * t -> bool = op =
 	 
       val ty =
-	 fn CanHandle => Type.int
+	 fn CanHandle => Type.defaultInt
 	  | CardMap => Type.pointer
 	  | CurrentThread => Type.pointer
-	  | ExnStack => Type.word
+	  | ExnStack => Type.defaultWord
 	  | Frontier => Type.pointer
 	  | Limit => Type.pointer
 	  | LimitPlusSlop => Type.pointer
-	  | MaxFrameSize => Type.word
-	  | SignalIsPending => Type.int
+	  | MaxFrameSize => Type.defaultWord
+	  | SignalIsPending => Type.defaultInt
 	  | StackBottom => Type.pointer
 	  | StackLimit => Type.pointer
 	  | StackTop => Type.pointer

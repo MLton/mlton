@@ -9,6 +9,8 @@ functor MachineAtoms (S: MACHINE_ATOMS_STRUCTS): MACHINE_ATOMS =
 struct
 
 open S
+datatype z = datatype IntSize.t
+datatype z = datatype WordSize.t
 
 structure ProfileLabel = ProfileLabel ()
 
@@ -44,7 +46,7 @@ structure PointerTycon =
        * {STACK,STRING,THREAD,WEAK_GONE,WORD_VECTOR}_TYPE_INDEX.
        *)
       val stack = new ()
-      val string = new ()
+      val word8Vector = new ()
       val thread = new ()
       val weakGone = new ()
       val wordVector = new ()
@@ -53,17 +55,16 @@ structure PointerTycon =
 structure TypeAndMemChunk =
    struct
       datatype ty =
-	 Char
-       | CPointer
+	 CPointer
        | EnumPointers of {enum: int vector,
 			  pointers: PointerTycon.t vector}
        | ExnStack
-       | Int
+       | Int of IntSize.t
        | IntInf
        | Label of Label.t
        | MemChunk of memChunk
-       | Real
-       | Word
+       | Real of RealSize.t
+       | Word of WordSize.t
       and memChunk =
 	 T of {components: {mutable: bool,
 			    offset: int,
@@ -75,8 +76,7 @@ structure TypeAndMemChunk =
 	    open Layout
 	 in
 	    case t of
-	       Char => str "char"
-	     | CPointer => str "cpointer"
+	       CPointer => str "cpointer"
 	     | EnumPointers {enum, pointers} => 
 		  if 0 = Vector.length enum
 		     andalso 1 = Vector.length pointers
@@ -86,12 +86,12 @@ structure TypeAndMemChunk =
 		     (Vector.concat [Vector.map (enum, Int.layout),
 				     Vector.map (pointers, PointerTycon.layout)])
 	     | ExnStack => str "exnStack"
-	     | Int => str "int"
+	     | Int s => str (concat ["Int", IntSize.toString s])
 	     | IntInf => str "intInf"
 	     | Label l => seq [str "Label ", Label.layout l]
 	     | MemChunk m => seq [str "MemChunk ", layoutMemChunk m]
-	     | Real => str "real"
-	     | Word => str "word"
+	     | Real s => str (concat ["Real", RealSize.toString s])
+	     | Word s => str (concat ["Word", WordSize.toString s])
 	 end
       and layoutMemChunk (T {components, size}) =
 	 Layout.record
@@ -105,20 +105,19 @@ structure TypeAndMemChunk =
 
       fun equalsTy (t, t'): bool =
 	 case (t, t') of
-	    (Char, Char) => true
-	  | (CPointer, CPointer) => true
+	    (CPointer, CPointer) => true
 	  | (EnumPointers {enum = e, pointers = p},
 	     EnumPointers {enum = e', pointers = p'}) =>
 	       e = e'
 	       andalso (MLton.eq (p, p')
 			orelse Vector.equals (p, p', PointerTycon.equals))
           | (ExnStack, ExnStack) => true
-	  | (Int, Int) => true
+	  | (Int s, Int s') => IntSize.equals (s, s')
 	  | (IntInf, IntInf) => true
 	  | (Label l, Label l') => Label.equals (l, l')
 	  | (MemChunk m, MemChunk m') => equalsMemChunk (m, m')
-	  | (Real, Real) => true
-	  | (Word, Word) => true
+	  | (Real s, Real s') => RealSize.equals (s, s')
+	  | (Word s, Word s') => WordSize.equals (s, s')
 	  | _ => false
       and equalsMemChunk (T {components = cs, size = s},
 			  T {components = cs', size = s'}) =
@@ -134,34 +133,32 @@ structure TypeAndMemChunk =
 	 val double: int = 8
       in
 	 val size =
-	    fn Char => byte
-	     | CPointer => word
+	    fn CPointer => word
 	     | EnumPointers _ => word
 	     | ExnStack => word
-	     | Int => word
+	     | Int s => IntSize.bytes s
 	     | IntInf => word
 	     | Label _ => word
 	     | MemChunk _ => word
-	     | Real => double
-	     | Word => word
+	     | Real s => RealSize.bytes s
+	     | Word s => WordSize.bytes s
       end
 
       fun isOkTy (t: ty): bool =
 	 case t of
-	    Char => true
-	  | CPointer => true
+	    CPointer => true
 	  | EnumPointers {enum, pointers} =>
 	       Vector.isSorted (enum, op <=)
 	       andalso Vector.isSorted (pointers, PointerTycon.<=)
 	       andalso (0 = Vector.length pointers
 			orelse Vector.forall (enum, Int.isOdd))
 	  | ExnStack => true
-	  | Int => true
+	  | Int _ => true
 	  | IntInf => true
 	  | Label _ => true
 	  | MemChunk m => isOkMemChunk m
-	  | Real => true
-	  | Word => true
+	  | Real _ => true
+	  | Word _ => true
       and isOkMemChunk (T {components, size = s}) =
 	 let
 	    exception No
@@ -223,8 +220,9 @@ structure Type =
 
       val bool = EnumPointers {enum = Vector.new2 (0, 1),
 			       pointers = Vector.new0 ()}
-      val char = Char
       val cpointer = CPointer
+      val defaultInt = Int IntSize.default
+      val defaultWord = Word WordSize.default
       val exnStack = ExnStack
       val int = Int
       val intInf = IntInf
@@ -237,9 +235,9 @@ structure Type =
 		       pointers = Vector.new1 pt}
 
       val stack = pointer PointerTycon.stack
-      val string = pointer PointerTycon.string
       val thread = pointer PointerTycon.thread
       val wordVector = pointer PointerTycon.wordVector
+      val word8Vector = pointer PointerTycon.word8Vector
 
       fun containsPointer (t, pt): bool =
 	 case t of
@@ -252,6 +250,10 @@ structure Type =
 	  | IntInf => true
 	  | _ => false
 
+      val isReal =
+	 fn Real _ => true
+	  | _ => false
+
       fun split ({enum, pointers}) =
 	 {enum = {enum = enum, pointers = Vector.new0 ()},
 	  pointers = {enum = Vector.new0 (), pointers = pointers}}
@@ -262,26 +264,24 @@ structure Type =
 	 val fromRuntime: Runtime.Type.t -> t =
 	    fn t =>
 	    case R.dest t of
-	       R.Char => char
-	     | R.Double => real
-	     | R.Int => int
+	       R.Int s => int s
 	     | R.Pointer => cpointer
-	     | Uint => word
+	     | R.Real s => real s
+	     | R.Word s => word s
 
 	 val toRuntime: t -> Runtime.Type.t =
-	    fn Char => R.char
-	     | CPointer => R.pointer
+	    fn CPointer => R.pointer
 	     | EnumPointers {enum, pointers} =>
 		  if 0 = Vector.length pointers
-		     then R.int
+		     then R.defaultInt
 		  else R.pointer
-	     | ExnStack => R.uint
-	     | Int => R.int
+	     | ExnStack => R.defaultWord
+	     | Int s => R.int s
 	     | IntInf => R.pointer
-	     | Label _ => R.uint
+	     | Label _ => R.defaultWord
 	     | MemChunk _ => R.pointer
-	     | Real => R.double
-	     | Word => R.word
+	     | Real s => R.real s
+	     | Word s => R.word s
 
 	 val name = R.name o toRuntime
 
@@ -361,10 +361,10 @@ structure ObjectType =
 	 
       val stack = Stack
 
-      val string =
+      val word8Vector =
 	 Array (MemChunk.T {components = Vector.new1 {mutable = false,
 						      offset = 0,
-						      ty = Type.char},
+						      ty = Type.word W8},
 			    size = 1})
 
       val thread =
@@ -372,10 +372,10 @@ structure ObjectType =
 	    val components =
 	       Vector.new3 ({mutable = true,
 			     offset = 0,
-			     ty = Type.word},
+			     ty = Type.defaultWord},
 			    {mutable = true,
 			     offset = wordSize,
-			     ty = Type.word},
+			     ty = Type.defaultWord},
 			    {mutable = true,
 			     offset = 2 * wordSize,
 			     ty = Type.stack})
@@ -389,7 +389,7 @@ structure ObjectType =
       val wordVector =
 	 Array (MemChunk.T {components = Vector.new1 {mutable = false,
 						      offset = 0,
-						      ty = Type.word},
+						      ty = Type.defaultWord},
 			    size = wordSize})
 		
       val isOk =
@@ -425,14 +425,14 @@ structure ObjectType =
       val basic =
 	 Vector.fromList
 	 [(PointerTycon.stack, stack),
-	  (PointerTycon.string, string),
 	  (PointerTycon.thread, thread),
 	  (PointerTycon.weakGone, WeakGone),
-	  (PointerTycon.wordVector, wordVector)]
+	  (PointerTycon.wordVector, wordVector),
+	  (PointerTycon.word8Vector, word8Vector)]
    end
 
 fun castIsOk {from: Type.t,
-	      fromInt: int option,
+	      fromInt: IntX.t option,
 	      to: Type.t,
 	      tyconTy: PointerTycon.t -> ObjectType.t}: bool =
    let
@@ -442,7 +442,7 @@ fun castIsOk {from: Type.t,
 	 (Vector.isSubsequence (e, e', op =)
 	  andalso Vector.isSubsequence (p, p', PointerTycon.equals))
 	 orelse
-	 (* Unsafe Vector_fromArray. *)
+	 (* Unsafe Array_toVector. *)
 	 (0 = Vector.length e
 	  andalso 0 = Vector.length e'
 	  andalso 1 = Vector.length p
@@ -483,37 +483,43 @@ fun castIsOk {from: Type.t,
       datatype z = datatype Type.t
    in
       not (Type.equals (from, to))
+      andalso Type.size from = Type.size to
       andalso
       case from of
 	 CPointer =>
 	    (case to of
-		Int => true
-	      | Word => true
+		Int _ => true
+	      | Word _ => true
 	      | _ => false)
        | EnumPointers (ep as {enum, pointers}) =>
 	    (case to of
 		EnumPointers ep' => castEnumIsOk (ep, ep')
 	      | IntInf =>
-		   (* IntInf_fromVector *)
+		   (* WordVector_toIntInf *)
 		   0 = Vector.length enum
 		   andalso 1 = Vector.length pointers
 		   andalso PointerTycon.equals (PointerTycon.wordVector,
 						Vector.sub (pointers, 0))
-	      | Word => true (* necessary for card marking *)
+	      | Word _ => true (* necessary for card marking *)
 	      | _ => false)
-       | Int =>
+       | Int _ =>
 	    (case to of
 		EnumPointers {enum, ...} =>
 		   (case fromInt of
 		       NONE => false
-		     | SOME int => Vector.exists (enum, fn i => i = int))
+		     | SOME int =>
+			  Vector.exists (enum, fn i =>
+					 IntInf.equals (IntX.toIntInf int,
+							IntInf.fromInt i)))
 		   orelse
 		   (* MLton_bogus *)
 		   (0 = Vector.length enum
 		    andalso (case fromInt of
-				SOME 1 => true
-			      | _ => false))
-	      | Word => true (* Word32_fromInt *)
+				NONE => false
+			      | SOME i =>
+				   IntInf.equals (IntX.toIntInf i,
+						  IntInf.fromInt 1)))
+	      | Word _ => true
 	      | _ => false)
        | IntInf =>
 	    (case to of
@@ -523,16 +529,16 @@ fun castIsOk {from: Type.t,
 		   andalso 1 = Vector.length pointers
 		   andalso PointerTycon.equals (PointerTycon.wordVector,
 						Vector.sub (pointers, 0))
-	      | Word => true  (* IntInf_toWord *)
+	      | Word s =>  true  (* IntInf_toWord *)
 	      | _ => false)
        | MemChunk _ =>
 	    (case to of
-		Word => true (* needed for card marking of arrays *)
+		Word _ => true (* needed for card marking of arrays *)
 	      | _ => false)
-       | Word =>
+       | Word _ =>
 	    (case to of
-		Int => true (* Word32_toIntX *)
-	      | IntInf => true (* IntInf_fromWord *)
+		Int _ => true (* Word32_toIntX *)
+	      | IntInf => true (* Word_toIntInf *)
 	      | _ => false)
        | _ => false
    end

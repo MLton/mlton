@@ -12,9 +12,12 @@ signature BACKEND_STRUCTS =
    sig
       structure Machine: MACHINE
       structure Ssa: SSA
+      sharing Machine.IntX = Ssa.IntX
       sharing Machine.Label = Ssa.Label
       sharing Machine.Prim = Ssa.Prim
+      sharing Machine.RealX = Ssa.RealX
       sharing Machine.SourceInfo = Ssa.SourceInfo
+      sharing Machine.WordX = Ssa.WordX
 
       val funcToLabel: Ssa.Func.t -> Machine.Label.t
    end

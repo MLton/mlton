@@ -61,8 +61,8 @@ structure Value =
 	    fun isZero (T {const, ...}) =
 	       case !const of
 		  Const c =>
-		     (case Const.node c of
-			 Const.Node.Int 0 => true
+		     (case c of
+			 Const.Int i => IntX.isZero i
 		       | _ => false)
 		| _ => false
 
@@ -398,41 +398,44 @@ structure Value =
 		    in new (Const c', Type.ofConst c)
 		    end
 
-      val zero = const (S.Const.fromInt 0)
+      val zero = IntSize.memoize (fn s => const (S.Const.int (IntX.zero s)))
 
       fun deconst v =
 	 case value v of
 	    Const c => c
 	  | _ => Error.bug "deconst"
+
+      fun constToEltLength (c, err) =
+	 let
+	    val v = case c of
+	       Sconst.Word8Vector v => v
+	     | _ => Error.bug err 
+	    val n = Vector.length v
+	    val x = if n = 0
+		       then const' (Const.unknown (), Type.word8)
+		    else let
+			    val w = Vector.sub (v, 0)
+			 in
+			    if Vector.forall (v, fn w' => w = w')
+			       then const (Sconst.word8 w)
+			    else const' (Const.unknown (), Type.word8)
+			 end
+	    val n =
+	       const (Sconst.Int (IntX.make
+				  (IntInf.fromInt n, IntSize.default)))
+	 in
+	    {elt = x, length = n}
+	 end
 	       
       local
 	 fun make (err, sel) v =
 	    case value v of
 	       Vector fs => sel fs
-	     | Const (Const.T {const = ref (Const.Const c), coercedTo}) =>
-		  let
-		     val s = case Sconst.node c of
-		                Sconst.Node.String s => s
-			      | _ => Error.bug err 
-		     val n = String.length s
-		     val x = if n = 0
-			        then const' (Const.unknown(), Type.char)
-			     else let
-				     val c = String.sub (s, 0)
-				  in
-				     if String.forall (s, fn c' => c = c')
-				        then (const o Sconst.make)
-					     (Sconst.Node.Char c, 
-					      Sconst.Type.char)
-				     else const' (Const.unknown(), Type.char)
-				  end
-		     val n = (const o Sconst.make)
-		             (Sconst.Node.Int n, Sconst.Type.int)
-		  in
-		     sel {length = n, elt = x}
-		  end
+	     | Const (Const.T {const = ref (Const.Const c), ...}) =>
+		  sel (constToEltLength (c, err))
 	     | _ => Error.bug err
-      in val devector = make ("devector", #elt)
+      in
+	 val devector = make ("devector", #elt)
 	 val vectorLength = make ("vectorLength", #length)
       end
 
@@ -496,13 +499,13 @@ structure Value =
 		  (case Type.dest t of
 		      Type.Array t => Array {birth = arrayBirth (),
 					     elt = loop t,
-					     length = loop Type.int}
+					     length = loop Type.defaultInt}
 		    | Type.Datatype _ => Datatype (data ())
 		    | Type.Ref t => Ref {arg = loop t,
 					 birth = refBirth ()}
 		    | Type.Tuple ts => Tuple (Vector.map (ts, loop))
 		    | Type.Vector t => Vector {elt = loop t,
-					       length = loop Type.int}
+					       length = loop Type.defaultInt}
 		    | Type.Weak t => Weak (loop t)
 		    | _ => Const (const ()), 
 		   t)
@@ -662,28 +665,13 @@ fun simplify (program: Program.t): Program.t =
 		   | (Tuple vs, Tuple vs') => coerces {froms = vs, tos = vs'}
 		   | (Weak v, Weak v') => unify (v, v')
 		   | (Const (Const.T {const = ref (Const.Const c), coercedTo}),
-		      Vector {length, elt}) =>
+		      Vector {elt, length}) =>
 			let
-			   val s = case Sconst.node c of
-			              Sconst.Node.String s => s
-				    | _ => error ()
-			   val n = String.length s
-			   val x = if n = 0
-			              then const' (Const.unknown(), Type.char)
-				   else let
-					   val c = String.sub (s, 0)
-					in
-					   if String.forall (s, fn c' => c = c')
-					      then (const o Sconst.make)
-						   (Sconst.Node.Char c, 
-						    Sconst.Type.char)
-					   else const' (Const.unknown(), Type.char)
-					end
-			   val n = (const o Sconst.make)
-			           (Sconst.Node.Int n, Sconst.Type.int)
+			   val {elt = elt', length = length'} =
+			      Value.constToEltLength (c, "coerce")
 			in
-			   coerce {from = x, to = elt}
-			   ; coerce {from = n, to = length}
+			   coerce {from = elt', to = elt}
+			   ; coerce {from = length', to = length}
 			end
 		   | (_, _) => error ()
 		end) arg
@@ -785,9 +773,11 @@ fun simplify (program: Program.t): Program.t =
 	    in
 	       case Prim.name prim of
 		  Array_array => array (arg 0, bear ())
-		| Array_array0Const => array (zero, Birth.here ())
+		| Array_array0Const =>
+		     array (zero IntSize.default, Birth.here ())
 		| Array_length => arrayLength (arg 0)
 		| Array_sub => dearray (arg 0)
+		| Array_toVector => vectorFromArray (arg 0)
 		| Array_update => update (arg 0, arg 2)
 		| Ref_assign =>
 		     (coerce {from = arg 1, to = deref (arg 0)}; unit ())
@@ -802,7 +792,6 @@ fun simplify (program: Program.t): Program.t =
 		     in
 			r
 		     end
-		| Vector_fromArray => vectorFromArray (arg 0)
 		| Vector_length => vectorLength (arg 0)
 		| Vector_sub => devector (arg 0)
 		| Weak_get => deweak (arg 0)
@@ -847,10 +836,8 @@ fun simplify (program: Program.t): Program.t =
 		  const = Value.const,
 		  copy = Value.fromType o Value.ty,
 		  filter = filter,
-		  filterChar = filterIgnore,
 		  filterInt = filterIgnore,
 		  filterWord = filterIgnore,
-		  filterWord8 = filterIgnore,
 		  fromType = Value.fromType,
 		  layout = Value.layout,
 		  primApp = primApp,

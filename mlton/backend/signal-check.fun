@@ -79,10 +79,9 @@ fun insertInFunction (f: Function.t): Function.t =
 	       Vector.new1
 	       (Statement.PrimApp
 		{args = Vector.new2 (Operand.Cast
-				     (Operand.Runtime
-				      Runtime.GCField.Limit,
-				      Type.Word),
-				     Operand.word 0w0),
+				     (Operand.Runtime Runtime.GCField.Limit,
+				      Type.defaultWord),
+				     Operand.word (WordX.zero WordSize.default)),
 		 dst = SOME (res, Type.bool),
 		 prim = Prim.eq})
 	    val compareTransfer =
@@ -106,7 +105,8 @@ fun insertInFunction (f: Function.t): Function.t =
 		    transfer =
 		    Transfer.CCall
 		    {args = Vector.new5 (Operand.GCState,
-					 Operand.word 0w0,
+					 Operand.word (WordX.zero
+						       WordSize.default),
 					 Operand.bool false,
 					 Operand.File,
 					 Operand.Line),

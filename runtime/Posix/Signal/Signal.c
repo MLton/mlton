@@ -5,7 +5,7 @@
 
 extern struct GC_state gcState;
 
-static void handler (Int signum) {
+static void handler (int signum) {
 	GC_handler (&gcState, signum);
 }
 
@@ -29,7 +29,7 @@ Int Posix_Signal_default (Int signum) {
 	return sigaction (signum, &sa, NULL);
 }
 
-Int Posix_Signal_handle (int signum) {
+Int Posix_Signal_handle (Int signum) {
 	static struct sigaction sa;
 
 	sigaddset (&gcState.signalsHandled, signum);
@@ -69,11 +69,11 @@ Int Posix_Signal_isDefault (Int signum, Bool *isDef) {
 
 static sigset_t set;
 
-Int Posix_Signal_sigaddset (int signum) {
+Int Posix_Signal_sigaddset (Int signum) {
 	return sigaddset (&set, signum);
 }
 
-Int Posix_Signal_sigdelset (int signum) {
+Int Posix_Signal_sigdelset (Int signum) {
 	return sigdelset (&set, signum);
 }
 

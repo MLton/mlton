@@ -20,10 +20,10 @@ signature AST_CONST =
       type t
       datatype node =
 	 Char of char
-       | Int of string
+       | Int of IntInf.t
        | Real of string
        | String of string
-       | Word of word
+       | Word of IntInf.t
       include WRAPPED sharing type node' = node
                       sharing type obj = t
 

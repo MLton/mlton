@@ -11,7 +11,7 @@ signature AST
 signature ATOMS
 signature ID
 signature ID_NO_AST
-signature CASES
+signature INT_X
 signature CON
 signature CONST
 signature GENERIC_SCHEME
@@ -19,6 +19,7 @@ signature HASH_ID
 signature HASH_TYPE
 signature PRIM
 signature PROFILE_EXP
+signature REAL_X
 signature RECORD
 signature SCHEME
 signature SOURCE_INFO
@@ -27,9 +28,9 @@ signature TYPE_OPS
 signature TYPE
 signature TYVAR
 signature VAR
+signature WORD_X
 
 functor Atoms
-functor Cases
 functor Id
 functor IdNoAst
 functor GenericScheme
@@ -45,8 +46,6 @@ is
 
 atoms.fun
 atoms.sig
-cases.fun
-cases.sig
 cons.fun
 cons.sig
 const.fun
@@ -57,10 +56,14 @@ hash-type.fun
 hash-type.sig
 id.fun
 id.sig
+int-x.fun
+int-x.sig
 prim.fun
 prim.sig
 profile-exp.fun
 profile-exp.sig
+real-x.fun
+real-x.sig
 scheme.sig
 source-info.fun
 source-info.sig
@@ -73,3 +76,5 @@ type.sig
 use-name.fun
 var.fun
 var.sig
+word-x.fun
+word-x.sig

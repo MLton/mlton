@@ -40,7 +40,7 @@ enum {
 #define SIGNBIT_MASK  0x80000000
 #define MANTISSA_HIGHBIT_MASK 0x00080000
 
-Int Real_class (Double d) {
+Int Real64_class (Real64 d) {
 	Word word0, word1;
 	Int res;
 
@@ -73,7 +73,7 @@ Int Real_class (Double d) {
 
 #elif (defined __sparc__)
 
-Int Real_class (Double d) {
+Int Real64_class (Real64 d) {
 	fpclass_t c;
 
 	c = fpclass (d);

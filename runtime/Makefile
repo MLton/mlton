@@ -78,13 +78,11 @@ OBJS =						\
 	basis/Ptrace/ptrace2.o			\
 	basis/Ptrace/ptrace4.o			\
 	basis/Real/class.o			\
-	basis/Real/const.o			\
 	basis/Real/gdtoa.o			\
 	basis/Real/isFinite.o			\
 	basis/Real/isNan.o			\
 	basis/Real/isNormal.o			\
 	basis/Real/nextAfter.o			\
-	basis/Real/qequal.o			\
 	basis/Real/real.o			\
 	basis/Real/round.o			\
 	basis/Real/signBit.o			\
@@ -249,13 +247,11 @@ DEBUG_OBJS =					\
 	basis/Ptrace/ptrace2-gdb.o		\
 	basis/Ptrace/ptrace4-gdb.o		\
 	basis/Real/class-gdb.o			\
-	basis/Real/const-gdb.o			\
 	basis/Real/gdtoa-gdb.o			\
 	basis/Real/isFinite-gdb.o		\
 	basis/Real/isNan-gdb.o			\
 	basis/Real/isNormal-gdb.o		\
 	basis/Real/nextAfter-gdb.o		\
-	basis/Real/qequal-gdb.o			\
 	basis/Real/real-gdb.o			\
 	basis/Real/round-gdb.o			\
 	basis/Real/signBit-gdb.o		\

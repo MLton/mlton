@@ -23,22 +23,11 @@ in
    structure GCField = GCField
 end
 
+datatype z = datatype WordSize.t
+
 structure CFunction =
    struct
       open CFunction
-
-      local
-	 fun make name = vanilla {name = name,
-				  returnTy = SOME Type.double}
-      in
-	 val cosh = make "cosh"
-	 val sinh = make "sinh"
-	 val tanh = make "tanh"
-	 val pow = make "pow"
-	 val copysign = make "copysign"
-	 val frexp = make "frexp"
-	 val modf = make "modf"
-      end
 
       local
 	 fun make (name, i) =
@@ -69,7 +58,7 @@ structure CFunction =
 
       local
 	 fun make name = vanilla {name = name,
-				  returnTy = SOME Type.int}
+				  returnTy = SOME Type.defaultInt}
       in
 	 val intInfCompare = make "IntInf_compare"
 	 val intInfEqual = make "IntInf_equal"
@@ -200,15 +189,15 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
       (* varInt is set for variables that are constant integers.  It is used
        * so that we can precompute array numBytes when numElts is known.
        *)
-      val {get = varInt: Var.t -> int option,
+      val {get = varInt: Var.t -> IntX.t option,
 	   set = setVarInt, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst NONE)
       val _ =
 	 Vector.foreach (globals, fn S.Statement.T {var, exp, ...} =>
 			 case exp of
 			    S.Exp.Const c =>
-			       (case Const.node c of
-				   Const.Node.Int n =>
+			       (case c of
+				   Const.Int n =>
 				      Option.app (var, fn x =>
 						  setVarInt (x, SOME n))
 				 | _ => ())
@@ -296,10 +285,16 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			      val cases =
 				 QuickSort.sortVector
 				 (cases, fn ((i, _), (i', _)) => i <= i')
+			      val cases =
+				 Vector.map (cases, fn (i, l) =>
+					     (IntX.make (IntInf.fromInt i,
+							 IntSize.default),
+					      l))
 			   in
-			      Switch (Switch.Int {test = test,
-						  cases = cases,
-						  default = default})
+			      Switch (Switch.Int {cases = cases,
+						  default = default,
+						  size = IntSize.default,
+						  test = test})
 			   end
 		     end
 	       end
@@ -446,7 +441,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			Control.FirstWord =>
 			   ([], Offset {base = test,
 					offset = tagOffset,
-					ty = Type.int})
+					ty = Type.defaultInt})
 		      | Control.Header =>
 			   let
 			      val headerOffset = ~4
@@ -455,14 +450,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				 PrimApp {args = (Vector.new2
 						  (Offset {base = test,
 							   offset = headerOffset,
-							   ty = Type.word},
-						   Operand.word 0w1)),
-					  dst = SOME (tagVar, Type.word),
-					  prim = Prim.word32Rshift}
+							   ty = Type.defaultWord},
+						   Operand.word (WordX.one WordSize.default))),
+					  dst = SOME (tagVar, Type.defaultWord),
+					  prim = Prim.wordRshift WordSize.default}
 			   in
-			      ([s], Cast (Var {ty = Type.word,
+			      ([s], Cast (Var {ty = Type.defaultWord,
 					       var = tagVar},
-					  Type.int))
+					  Type.defaultInt))
 			   end
 		      | HeaderIndirect =>
 			   Error.bug "HeaderIndirect unimplemented"
@@ -508,27 +503,23 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	     | TyconRep.Void => ([], prim ())
 	 end
       fun translateCase ({test: Var.t,
-			  cases: Label.t S.Cases.t,
+			  cases: S.Cases.t,
 			  default: Label.t option})
 	 : Statement.t list * Transfer.t =
 	 let
 	    fun id x = x
-	    fun simple (l, make, branch, le) =
+	    fun simple (s, cs, make, branch, le) =
 	       ([],
 		Switch
-		(make {test = varOp test,
-		       cases = (QuickSort.sortVector
-				(Vector.map (l, fn (i, j) => (branch i, j)),
+		(make {cases = (QuickSort.sortVector
+				(Vector.map (cs, fn (i, j) => (branch i, j)),
 				 fn ((i, _), (i', _)) => le (i, i'))),
-		       default = default}))
+		       default = default,
+		       size = s,
+		       test = varOp test}))
 	 in
 	    case cases of
-	       S.Cases.Char cs => simple (cs, Switch.Char, id, Char.<=)
-	     | S.Cases.Int cs => simple (cs, Switch.Int, id, Int.<=)
-	     | S.Cases.Word cs => simple (cs, Switch.Word, id, Word.<=)
-	     | S.Cases.Word8 cs =>
-		  simple (cs, Switch.Char, Word8.toChar, Char.<=)
-	     | S.Cases.Con cases =>
+	       S.Cases.Con cases =>
 		  (case (Vector.length cases, default) of
 		      (0, NONE) => ([], Transfer.bug)
 		    | _ => 
@@ -542,6 +533,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					     testRep = tyconRep tycon}
 			    else Error.bug "strange type in case"
 			 end)
+	     | S.Cases.Int (s, cs) => simple (s, cs, Switch.Int, id, IntX.<=)
+	     | S.Cases.Word (s, cs) => simple (s, cs, Switch.Word, id, WordX.<=)
 	 end
       val {get = labelInfo: (Label.t ->
 			     {args: (Var.t * S.Type.t) vector,
@@ -702,18 +695,16 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	    val c = Operand.Const
 	 in
 	    case t of
-	       Type.Char =>
-		  c (Const.fromChar #"\000")
-	     | Type.CPointer => Error.bug "bogus CPointer"
+	       Type.CPointer => Error.bug "bogus CPointer"
 	     | Type.EnumPointers (ep as {enum, ...})  =>
-		  Operand.Cast (Operand.int 1, t)
+		  Operand.Cast (Operand.int (IntX.one IntSize.default), t)
 	     | Type.ExnStack => Error.bug "bogus ExnStack"
-	     | Type.Int => c (Const.fromInt 0)
+	     | Type.Int s => c (Const.int (IntX.zero s))
 	     | Type.IntInf => SmallIntInf 0wx1
 	     | Type.Label _ => Error.bug "bogus Label"
 	     | Type.MemChunk _ => Error.bug "bogus MemChunk"
-	     | Type.Real => c (Const.fromReal "0.0")
-	     | Type.Word => c (Const.fromWord 0w0)
+	     | Type.Real s => c (Const.real (RealX.make ("0.0", s)))
+	     | Type.Word s => c (Const.word (WordX.zero s))
 	 end
       fun translateStatementsTransfer (statements, ss, transfer) =
 	 let
@@ -767,8 +758,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			     {dst = valOf var,
 			      size = size + Runtime.normalHeaderSize,
 			      stores = (Vector.concat
-					[Vector.new1 {offset = tagOffset,
-						      value = Operand.int n},
+					[Vector.new1
+					 {offset = tagOffset,
+					  value = (Operand.int
+						   (IntX.make
+						    (IntInf.fromInt n,
+						     IntSize.default)))},
 					 makeStores (ys, offsets)]),
 			      ty = ty,
 			      tycon = tycon})
@@ -782,7 +777,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			   (case conRep con of
 			       ConRep.Void => none ()
 			     | ConRep.IntAsTy {int, ty} =>
-				  move (Operand.Cast (Operand.int int, ty))
+				  move (Operand.Cast
+					(Operand.int
+					 (IntX.make (IntInf.fromInt int,
+						     IntSize.default)),
+					 ty))
 			     | ConRep.TagTuple {rep, tag} =>
 				  if !Control.variant = Control.FirstWord
 				     then allocateTagged (tag, args, rep)
@@ -812,7 +811,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				 move (Operand.Offset
 				       {base = varOp (a 0),
 					offset = Runtime.arrayLengthOffset,
-					ty = Type.int})
+					ty = Type.defaultInt})
 			      fun arrayOffset (ty: Type.t): Operand.t =
 				 ArrayOffset {base = varOp (a 0),
 					      index = varOp (a 1),
@@ -836,14 +835,18 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    val res = Var.newNoname ()
 				 in
 				    [Statement.PrimApp
-				     {args = Vector.new2 (canHandle,
-							  Operand.int n),
-				      dst = SOME (res, Type.int),
-				      prim = Prim.intAdd},
+				     {args = (Vector.new2
+					      (canHandle,
+					       (Operand.int
+						(IntX.make
+						 (IntInf.fromInt n,
+						  IntSize.default))))),
+				      dst = SOME (res, Type.defaultInt),
+				      prim = Prim.intAdd IntSize.default},
 				     Statement.Move
 				     {dst = canHandle,
 				      src = Operand.Var {var = res,
-							 ty = Type.int}}]
+							 ty = Type.defaultInt}}]
 				 end
 			      fun ccallGen
 				 {args: Operand.t vector,
@@ -923,21 +926,24 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			   val ss = 
 			      (PrimApp
 			       {args = (Vector.new2
-					(Operand.Cast (addr, Type.Word),
+					(Operand.Cast (addr, Type.defaultWord),
 					 Operand.word
-					 (Word.fromInt
-					  (!Control.cardSizeLog2)))),
-				dst = SOME (index, Type.int),
-				prim = Prim.word32Rshift})
+					 (WordX.make
+					  (Word.fromInt
+					   (!Control.cardSizeLog2),
+					   WordSize.default)))),
+				dst = SOME (index, Type.defaultInt),
+				prim = Prim.wordRshift WordSize.default})
 			      :: (Move
 				  {dst = (Operand.ArrayOffset
 					  {base = (Operand.Runtime
 						   GCField.CardMap),
-					   index = Operand.Var {ty = Type.int,
-								var = index},
-					   ty = Type.char}),
-				   src = Operand.char #"\001"})
-				  :: assign
+					   index = (Operand.Var
+						    {ty = Type.defaultInt,
+						     var = index}),
+					   ty = Type.word W8}),
+				   src = Operand.word (WordX.one W8)})
+			      :: assign
 			      :: ss
 			in
 			  loop (i - 1, prefix ss, t)
@@ -948,8 +954,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				   val src = varOp (a 2)
 				   val arrayOp = varOp (a 0)
 				   val temp = Var.newNoname ()
-				   val tempOp = Operand.Var {var = temp,
-							     ty = Type.word}
+				   val tempOp =
+				      Operand.Var {var = temp,
+						   ty = Type.defaultWord}
 				   val addr = Var.newNoname ()
 				   val mc =
 				      case Type.dePointer (Operand.ty arrayOp) of
@@ -965,18 +972,20 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				      (PrimApp
 				       {args = Vector.new2
 					       (Operand.Cast (varOp (a 1),
-							      Type.Word),
+							      Type.defaultWord),
 					        Operand.word
-						(Word.fromInt (Type.size ty))),
-				        dst = SOME (temp, Type.word),
-				        prim = Prim.word32Mul})
+						(WordX.make
+						 (Word.fromInt (Type.size ty),
+						  WordSize.default))),
+				        dst = SOME (temp, Type.defaultWord),
+				        prim = Prim.wordMul WordSize.default})
 				      :: (PrimApp
 					  {args = (Vector.new2
 						   (Operand.Cast (arrayOp,
-								  Type.Word),
+								  Type.defaultWord),
 						    tempOp)),
 					   dst = SOME (addr, Type.MemChunk mc),
-					   prim = Prim.word32Add})
+					   prim = Prim.wordAdd WordSize.default})
 				      :: ss
 				   val assign =
 				      Move {dst = (Operand.Offset
@@ -1006,19 +1015,40 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			      case Prim.name prim of
 				 Array_array =>
 				    array (Operand.Var {var = a 0,
-							ty = Type.int})
+							ty = Type.defaultInt})
 			       | Array_length => arrayOrVectorLength ()
 			       | Array_sub =>
 				    (case targ () of
 					NONE => none ()
 				      | SOME t => sub t)
+			       | Array_toVector =>
+				    let
+				       val array = varOp (a 0)
+				       val vecTy = valOf (toRtype ty)
+				       val pt =
+					  case Type.dePointer vecTy of
+					     NONE => Error.bug "strange Array_toVector"
+					   | SOME pt => pt
+				    in
+				       loop
+				       (i - 1,
+					Move
+					{dst = (Offset
+						{base = array,
+						 offset = Runtime.headerOffset,
+						 ty = Type.defaultWord}),
+					 src = PointerTycon pt}
+					:: Bind {isMutable = false,
+						 oper = (Operand.Cast
+							 (array, vecTy)),
+						 var = valOf var}
+					:: ss,
+					t)
+				    end
 			       | Array_update =>
 				    (case targ () of
 					NONE => none ()
 				      | SOME ty => arrayUpdate ty)
-			       | Byte_byteToChar => cast ()
-			       | Byte_charToByte => cast ()
-			       | C_CS_charArrayToWord8Array => cast ()
 			       | FFI name =>
 				    if Option.isNone (Prim.numArgs prim)
 				       then normal ()
@@ -1036,11 +1066,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 								Type.toRuntime)})
 			       | GC_collect =>
 				    ccall
-				    {args = Vector.new5 (Operand.GCState,
-							 Operand.int 0,
-							 Operand.bool true,
-							 Operand.File,
-							 Operand.Line),
+				    {args = (Vector.new5
+					     (Operand.GCState,
+					      Operand.int (IntX.zero
+							   IntSize.default),
+					      Operand.bool true,
+					      Operand.File,
+					      Operand.Line)),
 				     func = (CFunction.gc
 					     {maySwitchThreads = false})}
 			       | GC_pack =>
@@ -1057,8 +1089,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    simpleCCall CFunction.intInfCompare
 			       | IntInf_equal =>
 				    simpleCCall CFunction.intInfEqual
-			       | IntInf_fromVector => cast ()
-			       | IntInf_fromWord => cast ()
 			       | IntInf_gcd => simpleCCall CFunction.intInfGcd
 			       | IntInf_lshift =>
 				    simpleCCall CFunction.intInfLshift
@@ -1081,16 +1111,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | MLton_bug => simpleCCall CFunction.bug
 			       | MLton_eq =>
 				    (case targ () of
-					NONE => move (Operand.int 1)
+					NONE => move (Operand.int
+						      (IntX.defaultInt 1))
 				      | SOME _ => normal ())
 			       | MLton_size => simpleCCall CFunction.size
-			       | Real_Math_cosh => simpleCCall CFunction.cosh
-			       | Real_Math_sinh => simpleCCall CFunction.sinh
-			       | Real_Math_tanh => simpleCCall CFunction.tanh
-			       | Real_Math_pow => simpleCCall CFunction.pow
-			       | Real_copysign => simpleCCall CFunction.copysign
-			       | Real_frexp => simpleCCall CFunction.frexp
-			       | Real_modf => simpleCCall CFunction.modf
 			       | Ref_assign =>
 				    (case targ () of
 					NONE => none ()
@@ -1106,8 +1130,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    allocate
 				    (Vector.new1 (a 0),
 				     refRep (Vector.sub (targs, 0)))
-			       | String_fromWord8Vector => cast ()
-			       | String_toWord8Vector => cast ()
 			       | Thread_atomicBegin =>
 				    (* assert (s->canHandle >= 0);
 				     * s->canHandle++;
@@ -1125,24 +1147,27 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					      Vector.new2
 					      (Statement.PrimApp
 					       {args = Vector.new2 (a, b),
-						dst = SOME (tmp, Type.word),
+						dst = SOME (tmp,
+							    Type.defaultWord),
 						prim = prim},
 					       Statement.Move
 					       {dst = (Operand.Cast
 						       (Operand.Runtime dst,
-							Type.Word)),
+							Type.defaultWord)),
 						src = (Operand.Var
 						       {var = tmp,
-							ty = Type.word})})
+							ty = Type.defaultWord})})
 					   end
 					datatype z = datatype GCField.t
 					val statements =
 					   doit (Limit,
-						 Prim.word32Sub,
+						 Prim.wordSub WordSize.default,
 						 Operand.Runtime LimitPlusSlop,
 						 Operand.word
-						 (Word.fromInt
-						  Runtime.limitSlop))
+						 (WordX.make
+						  (Word.fromInt
+						   Runtime.limitSlop,
+						   WordSize.default)))
 					val l' =
 					   newBlock
 					   {args = Vector.new0 (),
@@ -1174,8 +1199,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					   (Statement.Move
 					    {dst = (Operand.Cast
 						    (Operand.Runtime Limit,
-						     Type.Word)),
-					     src = Operand.word 0w0})
+						     Type.defaultWord)),
+					     src =
+					     Operand.word
+					     (WordX.zero WordSize.default)})
 					val l'' =
 					   newBlock
 					   {args = Vector.new0 (),
@@ -1217,30 +1244,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 						   (varOp (a 0),
 						    Operand.EnsuresBytesFree)),
 					   func = CFunction.threadSwitchTo}
-			       | Vector_fromArray =>
-				    let
-				       val array = varOp (a 0)
-				       val vecTy = valOf (toRtype ty)
-				       val pt =
-					  case Type.dePointer vecTy of
-					     NONE => Error.bug "strange Vector_fromArray"
-					   | SOME pt => pt
-				    in
-				       loop
-				       (i - 1,
-					Move
-					{dst = (Offset
-						{base = array,
-						 offset = Runtime.headerOffset,
-						 ty = Type.word}),
-					 src = PointerTycon pt}
-					:: Bind {isMutable = false,
-						 oper = (Operand.Cast
-							 (array, vecTy)),
-						 var = valOf var}
-					:: ss,
-					t)
-				    end
 			       | Vector_length => arrayOrVectorLength ()
 			       | Vector_sub =>
 				    (case targ () of
@@ -1272,8 +1275,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					       func = CFunction.weakNew}
 				     end,
 				     none)
-			       | Word32_toIntX => cast ()
-			       | Word32_fromInt => cast ()
+			       | Word_toIntInf => cast ()
+			       | WordVector_toIntInf => cast ()
+			       | Word8Array_subWord => sub Type.defaultWord
+			       | Word8Array_updateWord =>
+				    arrayUpdate Type.defaultWord
+			       | Word8Vector_subWord => sub Type.defaultWord
 			       | World_save =>
 				    ccall {args = (Vector.new2
 						   (Operand.GCState,

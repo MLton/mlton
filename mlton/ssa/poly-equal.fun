@@ -44,10 +44,10 @@ structure Dexp =
       open DirectExp
 
       fun add (e1: t, e2: t): t =
-	 primApp {prim = Prim.intAdd,
+	 primApp {prim = Prim.intAdd IntSize.default,
 		  targs = Vector.new0 (),
 		  args = Vector.new2 (e1, e2),
-		  ty = Type.int}
+		  ty = Type.defaultInt}
 
       fun conjoin (e1: t, e2: t): t =
 	 casee {test = e1,
@@ -199,18 +199,19 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		        let
 			  fun length x =
 			     Dexp.primApp {prim = Prim.vectorLength,
-						targs = Vector.new1 ty,
-						args = Vector.new1 x,
-						ty = Type.int}
+					   targs = Vector.new1 ty,
+					   args = Vector.new1 x,
+					   ty = Type.defaultInt}
 			in
 			   Dexp.disjoin
 			   (Dexp.eq (Dexp.var v1, Dexp.var v2, vty),
 			    Dexp.conjoin
-			    (Dexp.eq (length dv1, length dv2, Type.int),
+			    (Dexp.eq (length dv1, length dv2, Type.defaultInt),
 			     Dexp.call
 			     {func = loop,
 			      args = (Vector.new4 
-				      (Dexp.int 0, length dv1, dv1, dv2)),
+				      (Dexp.int (IntX.zero IntSize.default),
+				       length dv1, dv1, dv2)),
 			      ty = Type.bool}))
 			end
 		     val (start, blocks) = Dexp.linearize (body, Handler.Caller)
@@ -225,8 +226,8 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 				     start = start}
 		  end
 		  local
-		     val i = (Var.newNoname (), Type.int)
-		     val len = (Var.newNoname (), Type.int)
+		     val i = (Var.newNoname (), Type.defaultInt)
+		     val len = (Var.newNoname (), Type.defaultInt)
 		     val v1 = (Var.newNoname (), vty)
 		     val v2 = (Var.newNoname (), vty)
 		     val args = Vector.new4 (i, len, v1, v2)
@@ -241,17 +242,19 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 					    targs = Vector.new1 ty,
 					    args = Vector.new2 (v, i),
 					    ty = ty}
+			   val args =
+			      Vector.new4 
+			      (Dexp.add
+			       (di, Dexp.int (IntX.one IntSize.default)),
+			       dlen, dv1, dv2)
 			in
 			   Dexp.disjoin 
-			   (Dexp.eq (di, dlen, Type.int),
+			   (Dexp.eq (di, dlen, Type.defaultInt),
 			    Dexp.conjoin
 			    (equalExp (sub (dv1, di), sub (dv2, di), ty),
-			     Dexp.call
-			     {func = loop,
-			      args = (Vector.new4 
-				      (Dexp.add (di, Dexp.int 1),
-				       dlen, dv1, dv2)),
-			      ty = Type.bool}))
+			     Dexp.call {args = args,
+					func = loop,
+					ty = Type.bool}))
 			end
 		     val (start, blocks) = Dexp.linearize (body, Handler.Caller)
 		     val blocks = Vector.fromList blocks
@@ -283,14 +286,13 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	 in
 	    case Type.dest ty of
 	       Type.Array _ => eq ()
-	     | Type.Char => eq ()
 	     | Type.Datatype tycon =>
 		  if isEnum tycon orelse hasConstArg ()
 		     then eq ()
 		  else Dexp.call {func = equalFunc tycon,
 				  args = Vector.new2 (dx1, dx2),
 				  ty = Type.bool}
-	     | Type.Int => eq ()
+	     | Type.Int _ => eq ()
 	     | Type.IntInf => if hasConstArg ()
 				 then eq ()
 			      else prim (Prim.intInfEqual, Vector.new0 ())
@@ -320,8 +322,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		  Dexp.call {func = vectorEqualFunc ty,
 			     args = Vector.new2 (dx1, dx2),
 			     ty = Type.bool}
-	     | Type.Word => eq ()
-	     | Type.Word8 => eq ()
+	     | Type.Word _ => eq ()
 	     | _ => Error.bug "equal of strange type"
 	 end
       fun loopBind (Statement.T {var, ty, exp}) =
@@ -330,13 +331,15 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	 in
 	    case exp of
 	       Const c =>
-		  (case Const.node c of
-		      Const.Node.IntInf i =>
+		  (case c of
+		      Const.Int _ => const ()
+		    | Const.IntInf i =>
 			 if Const.SmallIntInf.isSmall i
 			    then const ()
 			 else ()
 		    | _ => ())
-	     | ConApp {args, ...} => if Vector.isEmpty args then const () else ()
+	     | ConApp {args, ...} =>
+		  if Vector.isEmpty args then const () else ()
 	     | _ => ()
 	 end
       val _ = Vector.foreach (globals, loopBind)

@@ -8,6 +8,9 @@
 signature TYCON_STRUCTS = 
    sig
       structure AstId: AST_ID
+      structure IntSize: INT_SIZE
+      structure RealSize: REAL_SIZE
+      structure WordSize: WORD_SIZE
    end
 
 signature TYCON =

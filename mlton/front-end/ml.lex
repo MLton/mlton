@@ -87,26 +87,27 @@ fun tok (t, s, l, r) =
 
 fun tok' (t, x, s, l) = tok (fn (l, r) => t (x, l, r), s, l, l + size x)
 
-local 
-   fun make (scan, token, default, msg) (radix, str, source, left) =
-      let
-	 val right = left + size str
-      in
-	 token ((case StringCvt.scanString (scan radix) str of
-		    NONE => (error (source, left, right,
-				    concat ["invalid ", msg, " constant"])
-			     ; default)
-		  | SOME n => n)
-		handle Overflow =>
-		   (error (source, left, right,
-			   concat [msg, " constant out of range"])
-		    ; default),
-		   Source.getPos (source, left),
-		   Source.getPos (source, right))
-      end
-in 
-   val makeWord = make (Word32.scan, Tokens.WORD, 0w0, "word")
-end
+fun scanInt (yytext: string,
+	     start: int,
+	     radix: StringCvt.radix,
+	     negate: bool,
+	     makeToken,
+	     source,
+	     yypos: int) =
+   let
+      val str = String.dropPrefix (yytext, start)
+      val left = yypos
+      val right = left + size str
+   in
+      makeToken ((case (StringCvt.scanString
+			(fn r => IntInf.scan (radix, r)) str) of
+		     NONE => (error (source, left, right,
+				     concat ["invalid constant: ", yytext])
+			      ; IntInf.fromInt 0)
+		   | SOME n => if negate then IntInf.~ n else n),
+		 Source.getPos (source, left),
+		 Source.getPos (source, right))
+   end
 
 %% 
 %reject
@@ -208,12 +209,18 @@ hexnum={hexDigit}+;
 			 "*" => tok (Tokens.ASTERISK, source, yypos, yypos + 1)
 		       | _ => tok' (Tokens.LONGID, yytext, source, yypos));
 <INITIAL>{real}	=> (tok' (Tokens.REAL, yytext, source, yypos));
-<INITIAL>{num}	=> (tok' (Tokens.INT, yytext, source, yypos));
-<INITIAL>~{num}	=> (tok' (Tokens.INT, yytext, source, yypos));
-<INITIAL>"0x"{hexnum} => (tok' (Tokens.INT, yytext, source, yypos));
-<INITIAL>"~0x"{hexnum} => (tok' (Tokens.INT, yytext, source, yypos));
-<INITIAL>"0w"{num} => (makeWord (StringCvt.DEC, yytext, source, yypos));
-<INITIAL>"0wx"{hexnum} => (makeWord (StringCvt.HEX, yytext, source, yypos));
+<INITIAL>{num}	=> (scanInt (yytext, 0, StringCvt.DEC, false, Tokens.INT,
+			     source, yypos));
+<INITIAL>~{num}	=> (scanInt (yytext, 1, StringCvt.DEC, true, Tokens.INT,
+			     source, yypos));
+<INITIAL>"0x"{hexnum} => (scanInt (yytext, 2, StringCvt.HEX, false, Tokens.INT,
+				   source, yypos));
+<INITIAL>"~0x"{hexnum} => (scanInt (yytext, 3, StringCvt.HEX, true, Tokens.INT,
+				    source, yypos));
+<INITIAL>"0w"{num} => (scanInt (yytext, 2, StringCvt.DEC, false, Tokens.WORD,
+				source, yypos));
+<INITIAL>"0wx"{hexnum} => (scanInt (yytext, 3, StringCvt.HEX, false, Tokens.WORD,
+				    source, yypos));
 <INITIAL>\"	=> (charlist := [""]
                     ; stringStart := Source.getPos (source, yypos)
                     ; stringtype := true

@@ -17,21 +17,59 @@ type 'a array = 'a array
 datatype bool = datatype bool
 type char = char
 type exn = exn
-type int = int
+structure Int8 =
+   struct
+      type int = int8
+   end
+structure Int16 =
+   struct
+      type int = int16
+   end
+structure Int32 =
+   struct
+      type int = int32
+   end
+structure Int64 =
+   struct
+      type int = int64
+   end
 type intInf = intInf
 datatype list = datatype list
 type pointer = pointer (* C integer, not SML heap pointer *)
-type real = real
+structure Real32 =
+   struct
+      type real = real32
+   end
+structure Real64 =
+   struct
+      type real = real64
+   end
 datatype ref = datatype ref
 type preThread = preThread
 type thread = thread
-type word = word
-type word8 = word8
-type word32 = word
+structure Word8 =
+   struct
+      type word = word8
+   end
+structure Word16 =
+   struct
+      type word = word16
+   end
+structure Word32 =
+   struct
+      type word = word32
+   end
 type 'a vector = 'a vector
 type 'a weak = 'a weak
 type string = char vector
 type nullString = string
+
+structure Int = Int32
+type int = Int.int
+structure Real = Real64
+type real = Real.real
+structure Word = Word32
+type word = Word.word
 
 exception Bind = Bind
 exception Fail of string
@@ -56,7 +94,8 @@ structure Primitive =
       val errno = _ffi "MLton_errno": unit -> int;
       val halt = _prim "MLton_halt": int -> unit;
       val handlesSignals = _prim "MLton_handlesSignals": bool;
-      val installSignalHandler = _prim "MLton_installSignalHandler": unit -> unit;
+      val installSignalHandler =
+	 _prim "MLton_installSignalHandler": unit -> unit;
       val safe = _build_const "MLton_safe": bool;
       val touch = fn z => _prim "MLton_touch": 'a -> unit; z
       val usesCallcc: bool ref = ref false;
@@ -206,39 +245,38 @@ structure Primitive =
 	    val getRoundingMode = _ffi "IEEEReal_getRoundingMode": unit -> int;
 	 end
 
-      structure Int =
+      structure Int32 =
 	 struct
-	    type int = int
+	    type int = int32
 
-	    val *? = _prim "Int_mul": int * int -> int;
+	    val *? = _prim "Int32_mul": int * int -> int;
 	    val * =
 	       if detectOverflow
-		  then _prim "Int_mulCheck": int * int -> int;
+		  then _prim "Int32_mulCheck": int * int -> int;
 	       else *?
-	    val +? = _prim "Int_add": int * int -> int;
+	    val +? = _prim "Int32_add": int * int -> int;
 	    val + =
 	       if detectOverflow
-		  then _prim "Int_addCheck": int * int -> int;
+		  then _prim "Int32_addCheck": int * int -> int;
 	       else +?
-	    val -? = _prim "Int_sub": int * int -> int;
+	    val -? = _prim "Int32_sub": int * int -> int;
 	    val - =
 	       if detectOverflow
-		  then _prim "Int_subCheck": int * int -> int;
+		  then _prim "Int32_subCheck": int * int -> int;
 	       else -?
-	    val < = _prim "Int_lt": int * int -> bool;
-	    val <= = _prim "Int_le": int * int -> bool;
-	    val > = _prim "Int_gt": int * int -> bool;
-	    val >= = _prim "Int_ge": int * int -> bool;
-	    val geu = _prim "Int_geu": int * int -> bool;
-	    val gtu = _prim "Int_gtu": int * int -> bool;
-	    val quot = _prim "Int_quot": int * int -> int;
-	    val rem = _prim "Int_rem": int * int -> int;
-	    val ~? = _prim "Int_neg": int -> int; 
+	    val < = _prim "Int32_lt": int * int -> bool;
+	    val <= = _prim "Int32_le": int * int -> bool;
+	    val > = _prim "Int32_gt": int * int -> bool;
+	    val >= = _prim "Int32_ge": int * int -> bool;
+	    val quot = _prim "Int32_quot": int * int -> int;
+	    val rem = _prim "Int32_rem": int * int -> int;
+	    val ~? = _prim "Int32_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
-		  then _prim "Int_negCheck": int -> int;
+		  then _prim "Int32_negCheck": int -> int;
 	       else ~?
 	 end
+      structure Int = Int32
 
       structure Array =
 	 struct
@@ -259,8 +297,8 @@ structure Primitive =
 	    val andb = _prim "IntInf_andb": int * int * word -> int;
 	    val ~>> = _prim "IntInf_arshift": int * word * word -> int;
 	    val compare = _prim "IntInf_compare": int * int -> Int.int;
-	    val fromVector = _prim "IntInf_fromVector": word vector -> int;
-	    val fromWord = _prim "IntInf_fromWord": word -> int;
+	    val fromVector = _prim "WordVector_toIntInf": word vector -> int;
+	    val fromWord = _prim "Word_toIntInf": word -> int;
 	    val gcd = _prim "IntInf_gcd": int * int * word -> int;
 	    val << = _prim "IntInf_lshift": int * word * word -> int;
 	    val * = _prim "IntInf_mul": int * int * word -> int;
@@ -453,10 +491,13 @@ structure Primitive =
 	    val entryAddrType = _ffi "NetHostDB_Entry_addrType": unit -> int;
 	    val entryLength = _ffi "NetHostDB_Entry_length": unit -> int;
 	    val entryNumAddrs = _ffi "NetHostDB_Entry_numAddrs": unit -> int;
-	    val entryAddrsN = _ffi "NetHostDB_Entry_addrsN": int * pre_in_addr -> unit;
-	    val getByAddress = _ffi "NetHostDB_getByAddress": in_addr * int -> bool;
+	    val entryAddrsN =
+	       _ffi "NetHostDB_Entry_addrsN": int * pre_in_addr -> unit;
+	    val getByAddress =
+	       _ffi "NetHostDB_getByAddress": in_addr * int -> bool;
 	    val getByName = _ffi "NetHostDB_getByName": nullString -> bool;
-	    val getHostName = _ffi "NetHostDB_getHostName": char array * int -> int;
+	    val getHostName =
+	       _ffi "NetHostDB_getHostName": char array * int -> int;
 	 end
 
       structure NetProtDB =
@@ -501,7 +542,8 @@ structure Primitive =
       structure PackReal =
 	 struct
 	    val subVec = _ffi "PackReal_subVec": word8 vector * int -> real;
-	    val update = _ffi "PackReal_update": word8 array * int * real -> unit;
+	    val update =
+	       _ffi "PackReal_update": word8 array * int * real -> unit;
 	 end
 
       structure Ptrace =
@@ -538,61 +580,64 @@ structure Primitive =
 
       structure Real =
 	 struct
+	    type real = real64
+
 	    structure Math =
 	       struct
 		  type real = real
 		     
-		  val acos = _prim "Real_Math_acos": real -> real;
-		  val asin = _prim "Real_Math_asin": real -> real;
-		  val atan = _prim "Real_Math_atan": real -> real;
-		  val atan2 = _prim "Real_Math_atan2": real * real -> real;
-		  val cos = _prim "Real_Math_cos": real -> real;
-		  val cosh = _prim "Real_Math_cosh": real -> real;
-		  val e = _ffi "Real_Math_e": real;
-		  val exp = _prim "Real_Math_exp": real -> real;
-		  val ln = _prim "Real_Math_ln": real -> real;
-		  val log10 = _prim "Real_Math_log10": real -> real;
-		  val pi = _ffi "Real_Math_pi": real;
-		  val pow = _prim "Real_Math_pow": real * real -> real;
-		  val sin = _prim "Real_Math_sin": real -> real;
-		  val sinh = _prim "Real_Math_sinh": real -> real;
-		  val sqrt = _prim "Real_Math_sqrt": real -> real;
-		  val tan = _prim "Real_Math_tan": real -> real;
-		  val tanh = _prim "Real_Math_tanh": real -> real;
+		  val acos = _prim "Real64_Math_acos": real -> real;
+		  val asin = _prim "Real64_Math_asin": real -> real;
+		  val atan = _prim "Real64_Math_atan": real -> real;
+		  val atan2 = _prim "Real64_Math_atan2": real * real -> real;
+		  val cos = _prim "Real64_Math_cos": real -> real;
+		  val cosh = _ffi "cosh": real -> real;
+		  val e = _ffi "Real64_Math_e": real;
+		  val exp = _prim "Real64_Math_exp": real -> real;
+		  val ln = _prim "Real64_Math_ln": real -> real;
+		  val log10 = _prim "Real64_Math_log10": real -> real;
+		  val pi = _ffi "Real64_Math_pi": real;
+		  val pow = _ffi "pow": real * real -> real;
+		  val sin = _prim "Real64_Math_sin": real -> real;
+		  val sinh = _ffi "sinh": real -> real;
+		  val sqrt = _prim "Real64_Math_sqrt": real -> real;
+		  val tan = _prim "Real64_Math_tan": real -> real;
+		  val tanh = _ffi "tanh": real -> real;
 	       end
 
-	    val * = _prim "Real_mul": real * real -> real;
-	    val *+ = _prim "Real_muladd": real * real * real -> real;
-	    val *- = _prim "Real_mulsub": real * real * real -> real;
-	    val + = _prim "Real_add": real * real -> real;
-	    val - = _prim "Real_sub": real * real -> real;
-	    val / = _prim "Real_div": real * real -> real;
-	    val < = _prim "Real_lt": real * real -> bool;
-	    val <= = _prim "Real_le": real * real -> bool;
-	    val == = _prim "Real_equal": real * real -> bool;
-	    val > = _prim "Real_gt": real * real -> bool;
-	    val >= = _prim "Real_ge": real * real -> bool;
-	    val ?= = _prim "Real_qequal": real * real -> bool;
-	    val abs = _prim "Real_abs": real -> real;
-	    val class = _ffi "Real_class": real -> int;
-	    val copySign = _prim "Real_copysign": real * real -> real;
-	    val frexp = _prim "Real_frexp": real * int ref -> real;
-	    val gdtoa = _ffi "Real_gdtoa": real * int * int * int ref -> cstring;
-	    val fromInt = _prim "Real_fromInt": int -> real;
-	    val isFinite = _ffi "Real_isFinite": real -> bool;
-	    val isNan = _ffi "Real_isNan": real -> bool;
-	    val isNormal = _ffi "Real_isNormal": real -> bool;
-	    val ldexp = _prim "Real_ldexp": real * int -> real;
-	    val maxFinite = _ffi "Real_maxFinite": real;
-	    val minNormalPos = _ffi "Real_minNormalPos": real;
-	    val minPos = _ffi "Real_minPos": real;
-	    val modf = _prim "Real_modf": real * real ref -> real;
-	    val nextAfter = _ffi "Real_nextAfter": real * real -> real;
-	    val round = _prim "Real_round": real -> real;
-	    val signBit = _ffi "Real_signBit": real -> bool;
-	    val strtod = _ffi "Real_strtod": nullString -> real;
-	    val toInt = _prim "Real_toInt": real -> int;
-	    val ~ = _prim "Real_neg": real -> real;
+	    val * = _prim "Real64_mul": real * real -> real;
+	    val *+ = _prim "Real64_muladd": real * real * real -> real;
+	    val *- = _prim "Real64_mulsub": real * real * real -> real;
+	    val + = _prim "Real64_add": real * real -> real;
+	    val - = _prim "Real64_sub": real * real -> real;
+	    val / = _prim "Real64_div": real * real -> real;
+	    val < = _prim "Real64_lt": real * real -> bool;
+	    val <= = _prim "Real64_le": real * real -> bool;
+	    val == = _prim "Real64_equal": real * real -> bool;
+	    val > = _prim "Real64_gt": real * real -> bool;
+	    val >= = _prim "Real64_ge": real * real -> bool;
+	    val ?= = _prim "Real64_qequal": real * real -> bool;
+	    val abs = _prim "Real64_abs": real -> real;
+	    val class = _ffi "Real64_class": real -> int;
+	    val copySign = _ffi "copysign": real * real -> real;
+	    val frexp = _ffi "frexp": real * int ref -> real;
+	    val gdtoa =
+	       _ffi "Real64_gdtoa": real * int * int * int ref -> cstring;
+	    val fromInt = _prim "Int32_toReal64": int -> real;
+	    val isFinite = _ffi "Real64_isFinite": real -> bool;
+	    val isNan = _ffi "Real64_isNan": real -> bool;
+	    val isNormal = _ffi "Real64_isNormal": real -> bool;
+	    val ldexp = _prim "Real64_ldexp": real * int -> real;
+	    val maxFinite = _ffi "Real64_maxFinite": real;
+	    val minNormalPos = _ffi "Real64_minNormalPos": real;
+	    val minPos = _ffi "Real64_minPos": real;
+	    val modf = _ffi "modf": real * real ref -> real;
+	    val nextAfter = _ffi "Real64_nextAfter": real * real -> real;
+	    val round = _prim "Real64_round": real -> real;
+	    val signBit = _ffi "Real64_signBit": real -> bool;
+	    val strtod = _ffi "Real64_strtod": nullString -> real;
+	    val toInt = _prim "Real64_toInt": real -> int;
+	    val ~ = _prim "Real64_neg": real -> real;
 	 end
       
       structure Ref =
@@ -738,8 +783,9 @@ structure Primitive =
 		  val toAddr = _ffi "UnixSock_toAddr": nullString * int *
                                                        pre_sock_addr * int ref -> unit;
 		  val pathLen = _ffi "UnixSock_pathLen": sock_addr -> int;
-		  val fromAddr = _ffi "UnixSock_fromAddr": sock_addr * 
-                                                           char array * int -> unit;
+		  val fromAddr =
+		     _ffi "UnixSock_fromAddr"
+		     : sock_addr * char array * int -> unit;
 		  structure Strm =
 		     struct
 		     end
@@ -759,7 +805,7 @@ structure Primitive =
       structure String =
 	 struct
 	    val fromWord8Vector =
-	       _prim "String_fromWord8Vector": word8 vector -> string;
+	       _prim "Word8Vector_toString": word8 vector -> string;
 	    val toWord8Vector =
 	       _prim "String_toWord8Vector": string -> word8 vector;
 	 end
@@ -830,7 +876,7 @@ structure Primitive =
 	     * are supposed to be immutable and the optimizer depends on this.
 	     *)
 	    val fromArray =
-	       fn x => _prim "Vector_fromArray": 'a array -> 'a vector; x
+	       fn x => _prim "Array_toVector": 'a array -> 'a vector; x
 	 end
 
       structure Word8 =
@@ -841,8 +887,8 @@ structure Primitive =
 	    val andb = _prim "Word8_andb": word * word -> word;
 	    val ~>> = _prim "Word8_arshift": word * word32 -> word;
 	    val div = _prim "Word8_div": word * word -> word;
-	    val fromInt = _prim "Word8_fromInt": int -> word;
-	    val fromLargeWord = _prim "Word8_fromLargeWord": word32 -> word;
+	    val fromInt = _prim "Int32_toWord8": int -> word;
+	    val fromLargeWord = _prim "Word32_toWord8": word32 -> word;
 	    val >= = _prim "Word8_ge": word * word -> bool;
 	    val > = _prim "Word8_gt" : word * word -> bool;
 	    val <= = _prim "Word8_le": word * word -> bool;
@@ -857,10 +903,10 @@ structure Primitive =
 	    val ror = _prim "Word8_ror": word * word32 -> word;
 	    val >> = _prim "Word8_rshift": word * word32 -> word;
 	    val - = _prim "Word8_sub": word * word -> word;
-	    val toInt = _prim "Word8_toInt": word -> int;
-	    val toIntX = _prim "Word8_toIntX": word -> int;
-	    val toLargeWord = _prim "Word8_toLargeWord": word -> word32;
-	    val toLargeWordX = _prim "Word8_toLargeWordX": word -> word32;
+	    val toInt = _prim "Word8_toInt32": word -> int;
+	    val toIntX = _prim "Word8_toInt32X": word -> int;
+	    val toLargeWord = _prim "Word8_toWord32": word -> word32;
+	    val toLargeWordX = _prim "Word8_toWord32X": word -> word32;
 	    val xorb = _prim "Word8_xorb": word * word -> word;
 	 end
 
@@ -887,7 +933,7 @@ structure Primitive =
 	    val andb = _prim "Word32_andb": word * word -> word;
 	    val ~>> = _prim "Word32_arshift": word * word -> word;
 	    val div = _prim "Word32_div": word * word -> word;
-	    val fromInt = _prim "Word32_fromInt": int -> word;
+	    val fromInt = _prim "Int32_toWord32": int -> word;
 	    val >= = _prim "Word32_ge": word * word -> bool;
 	    val > = _prim "Word32_gt" : word * word -> bool;
 	    val <= = _prim "Word32_le": word * word -> bool;
@@ -903,9 +949,10 @@ structure Primitive =
 	    val ror = _prim "Word32_ror": word * word -> word;
 	    val >> = _prim "Word32_rshift": word * word -> word;
 	    val - = _prim "Word32_sub": word * word -> word;
-	    val toIntX = _prim "Word32_toIntX": word -> int;
+	    val toIntX = _prim "Word32_toInt32X": word -> int;
 	    val xorb = _prim "Word32_xorb": word * word -> word;
 	 end
+      structure Word = Word32
 
       structure World =
 	 struct
@@ -913,4 +960,23 @@ structure Primitive =
 	    val makeOriginal = _ffi "World_makeOriginal": unit -> unit;
 	    val save = _prim "World_save": word (* filedes *) -> unit;
 	 end
+   end
+
+structure Primitive =
+   struct
+      open Primitive
+
+      structure Int32 =
+	 struct
+	    open Int32
+	       
+	    local
+	       fun make f (i: int, i': int): bool =
+		  f (Primitive.Word.fromInt i, Primitive.Word.fromInt i')
+	    in
+	       val geu = make Primitive.Word.>=
+	       val gtu = make Primitive.Word.> 
+	    end
+	 end
+      structure Int = Int32
    end

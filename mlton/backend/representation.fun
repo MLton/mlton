@@ -16,9 +16,11 @@ structure R = Rssa
 local
    open Rssa
 in
+   structure IntSize = IntSize
    structure ObjectType = ObjectType
    structure PointerTycon = PointerTycon
    structure Runtime = Runtime
+   structure WordSize = WordSize
 end
 structure S = Ssa
 local
@@ -28,6 +30,8 @@ in
    structure Tycon = Tycon
 end
 
+datatype z = datatype WordSize.t
+   
 structure TyconRep =
    struct
       datatype t =
@@ -313,7 +317,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		       if isTagged
 			  then {mutable = false,
 				offset = 0,
-				ty = R.Type.int} :: components
+				ty = R.Type.int IntSize.default} :: components
 		       else components
 		    val components =
 		       Vector.fromArray
@@ -525,22 +529,20 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		       then new ()
 		    else
 		       case S.Type.dest ty of
-			  Char => R.Type.string
-			| Word => R.Type.wordVector
-			| Word8 => R.Type.string
+			  Word W8 => R.Type.word8Vector
+			| Word W32 => R.Type.wordVector
 			| _ => new ()
 		 end
 	      datatype z = datatype S.Type.dest
 	   in
 	      case S.Type.dest t of
 		 Array t => SOME (array {mutable = true, ty = t})
-	       | Char => SOME R.Type.char
 	       | Datatype tycon => convertDatatype tycon
-	       | Int => SOME R.Type.int
+	       | Int s => SOME (R.Type.int s)
 	       | IntInf => SOME R.Type.intInf
 	       | Pointer => SOME R.Type.cpointer
 	       | PreThread => SOME R.Type.thread
-	       | Real => SOME R.Type.real
+	       | Real s => SOME (R.Type.real s)
 	       | Ref t =>
 		    SOME (pointer {fin = fn r => setRefRep (t, r),
 				   isNormal = true,
@@ -572,8 +574,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				     SOME (R.Type.pointer pt)
 				  end
 			   else NONE)
-	       | Word => SOME R.Type.word
-	       | Word8 => SOME R.Type.char
+	       | Word s => SOME (R.Type.word s)
 	   end))
       val toRtype =
 	 Trace.trace

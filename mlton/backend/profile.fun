@@ -511,7 +511,9 @@ fun profile program =
 				       {args = (Vector.new2
 						(Operand.GCState,
 						 Operand.word
-						 (Word.fromInt bytesAllocated))),
+						 (WordX.make
+						  (Word.fromInt bytesAllocated,
+						   WordSize.default)))),
 					func = func,
 					return = SOME newLabel}
 				    val sourceSeq = Push.toSources pushes

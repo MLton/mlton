@@ -206,10 +206,10 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 					   case Prim.name prim of
 					      Array_array => knownLength (arg ())
 					    | Array_length => length ()
-					    | Vector_fromArray => conv ()
-					    | String_fromWord8Vector => conv ()
+					    | Array_toVector => conv ()
 					    | String_toWord8Vector => conv ()
 					    | Vector_length => length ()
+					    | Word8Vector_toString => conv ()
 					    | _ => if Prim.isFunctional prim
 						      then doit ()
 						   else keep ()

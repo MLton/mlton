@@ -31,13 +31,6 @@ word threadTemp;
 #define DEBUG_X86CODEGEN FALSE
 #endif
 
-#define Locals(c, d, i, p, u)						\
-	char localuchar[c];						\
-	double localdouble[d];				       		\
-	int localint[i];						\
-	pointer localpointer[p];					\
-	uint localuint[u]
-
 #if (defined (__CYGWIN__))
 #define ReturnToC "_Thread_returnToC"
 #elif (defined (__FreeBSD__) || defined (__linux__) || defined (__sun__))

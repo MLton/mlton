@@ -21,7 +21,7 @@ enum {
 #endif
 
 /* This code is patterned on g_dfmt from the gdtoa sources. */
-char * Real_gdtoa (double d, int mode, int ndig, int *decpt) {
+char * Real64_gdtoa (double d, int mode, int ndig, int *decpt) {
 	ULong bits[2];
 	int ex;
 	static FPI fpi = { 53, 1-1023-53+1, 2046-1023-53+1, 1, 0 };

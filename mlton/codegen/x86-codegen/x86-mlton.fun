@@ -17,6 +17,9 @@ struct
      structure CFunction = CFunction
      structure Prim = Prim
      structure Runtime = Runtime
+     datatype z = datatype IntSize.t
+     datatype z = datatype RealSize.t
+     datatype z = datatype WordSize.t
   end
 
   type transInfo = {addData : x86.Assembly.t list -> unit,
@@ -53,110 +56,6 @@ struct
 	     {entry = NONE,
 	      statements = [Assembly.comment ("UNIMPLEMENTED PRIM: " ^ s)],
 	      transfer = NONE}]
-
-	fun subWord8ArrayVector ()
-	  = let
-	      val (dst,dstsize) = getDst ()
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: subWord8ArrayVector, dstsize", 
-		   fn () => dstsize = Size.LONG)
-	      val ((src1,src1size),
-		   (src2,src2size)) = getSrc2 ()
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: subWord8ArrayVector, src1size",
-		   fn () => src1size = pointerSize)
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: subWord8ArrayVector, src2size",
-		   fn () => src2size = pointerSize)
-
-	      val base 
-		= case (Operand.deMemloc src1)
-		    of SOME base => base
-		     | NONE => Error.bug "applyPrim: subWord8ArrayVector, src1"
-	      val memloc
-		= case (Operand.deImmediate src2,
-			Operand.deMemloc src2)
-		    of (SOME index, _)
-		     => MemLoc.simple 
-		        {base = base,
-			 index = index,
-			 scale = Scale.Four,
-			 size = Size.LONG,
-			 class = Classes.Heap}
-		     | (_, SOME index)
-		     => MemLoc.complex 
-		        {base = base,
-			 index = index,
-			 scale = Scale.Four,
-			 size = Size.LONG,
-			 class = Classes.Heap}
-		     | _ => Error.bug "applyPrim: subWord8ArrayVector, src2"
-	    in
-	      AppendList.fromList
-	      [Block.mkBlock'
-	       {entry = NONE,
-		statements 
-		= [Assembly.instruction_mov
-		   {dst = dst,
-		    src = Operand.memloc memloc,
-		    size = dstsize}],
-		transfer = NONE}]
-	    end	  
-
-	fun updateWord8Array ()
-	  = let
-	      val ((src1,src1size),
-		   (src2,src2size),
-		   (src3,src3size)) = getSrc3 ()
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: updateWord8Array, src1size", 
-		   fn () => src1size = pointerSize)
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: updateWord8Array, src2size", 
-		   fn () => src2size = wordSize)
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: updateWord8Array, src3size", 
-		   fn () => src3size = wordSize)
-
-	      val base 
-		= case (Operand.deMemloc src1)
-		    of SOME base => base
-		     | NONE => Error.bug "applyPrim: updateWord8Array, src1"
-	      val memloc
-		= case (Operand.deImmediate src2,
-			Operand.deMemloc src2)
-		    of (SOME index, _)
-		     => MemLoc.simple 
-		        {base = base,
-			 index = index,
-			 scale = Scale.Four,
-			 size = Size.LONG,
-			 class = Classes.Heap}
-		     | (_, SOME index)
-		     => MemLoc.complex 
-			{base = base,
-			 index = index,
-			 scale = Scale.Four,
-			 size = Size.LONG,
-			 class = Classes.Heap}
-		     | _ => Error.bug "applyPrim: updateWord8Array, src2"
-	    in
-	      AppendList.fromList
-	      [Block.mkBlock'
-	       {entry = NONE,
-		statements 
-		= [Assembly.instruction_mov
-		   {dst = Operand.memloc memloc,
-		    src = src3,
-		    size = src3size}],
-		transfer = NONE}]
-	    end	  
 
 	fun mov ()
 	  = let
@@ -650,13 +549,7 @@ struct
 	AppendList.appends
 	[comment_begin,
 	 (case Prim.name prim of
-	       Char_lt => cmp Instruction.B
-	     | Char_le => cmp Instruction.BE
-	     | Char_gt => cmp Instruction.A
-	     | Char_ge => cmp Instruction.AE
-	     | Char_chr => xvom ()
-	     | Char_ord => movx Instruction.MOVZX
-	     | Cpointer_isNull 
+	     Cpointer_isNull 
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val (src,srcsize) = getSrc1 ()
@@ -706,22 +599,39 @@ struct
 			   transfer = NONE}]
 		       end
  	            | SOME _ => Error.bug "prim: FFI")
-             | Int_add => binal Instruction.ADD
-	     | Int_sub => binal Instruction.SUB
-	     | Int_mul => imul2 () 
-	     | Int_quot => pmd Instruction.IDIV
-	     | Int_rem => pmd Instruction.IMOD
-	     | Int_neg => unal Instruction.NEG 
-	     | Int_lt => cmp Instruction.L
-	     | Int_le => cmp Instruction.LE
-	     | Int_gt => cmp Instruction.G
-	     | Int_ge => cmp Instruction.GE
-	     | Int_gtu => cmp Instruction.A
-	     | Int_geu => cmp Instruction.AE
+	     | Int_ge _ => cmp Instruction.GE
+	     | Int_gt _ => cmp Instruction.G
+	     | Int_le _ => cmp Instruction.LE
+	     | Int_lt _ => cmp Instruction.L
+	     | Int_mul _ => imul2 () 
+	     | Int_neg _ => unal Instruction.NEG 
+	     | Int_quot _ => pmd Instruction.IDIV
+	     | Int_rem _ => pmd Instruction.IMOD
+	     | Int_sub _ => binal Instruction.SUB
+             | Int_add _ => binal Instruction.ADD
+	     | Int_toReal _
+	     => let
+		  val (dst,dstsize) = getDst ()
+		  val (src,srcsize) = getSrc1 ()
+		in
+		  AppendList.fromList
+		  [Block.mkBlock'
+		   {entry = NONE,
+		    statements 
+		    = [Assembly.instruction_pfmovfi
+		       {dst = dst,
+			src = src,
+			srcsize = srcsize,
+			dstsize = dstsize}],
+		    transfer = NONE}]
+		end 
+	     | Int_toWord (s, s') =>
+		  (case (s, s') of
+		      (I32, W8) => xvom ()
+		    | (I32, W32) => mov ()
+		    | _ => Error.bug (Prim.toString prim))
 	     | MLton_eq => cmp Instruction.E
-	     | MLton_serialize => unimplemented primName
-	     | MLton_deserialize => unimplemented primName
-	     | Real_Math_acos 
+	     | Real_Math_acos _
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val (src,srcsize) = getSrc1 ()
@@ -771,7 +681,7 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_Math_asin
+	     | Real_Math_asin _
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val (src,srcsize) = getSrc1 ()
@@ -817,7 +727,7 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_Math_atan 
+	     | Real_Math_atan _
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val (src,srcsize) = getSrc1 ()
@@ -845,7 +755,7 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_Math_atan2 
+	     | Real_Math_atan2 _
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val ((src1,src1size),
@@ -871,8 +781,8 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_Math_cos => funa Instruction.FCOS
-	     | Real_Math_exp 
+	     | Real_Math_cos _ => funa Instruction.FCOS
+	     | Real_Math_exp _
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val (src,srcsize) = getSrc1 ()
@@ -927,11 +837,11 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
- 	     | Real_Math_ln => flogarithm Instruction.LN2
-	     | Real_Math_log10 => flogarithm Instruction.LG2
-	     | Real_Math_sin => funa Instruction.FSIN
-	     | Real_Math_sqrt => funa Instruction.FSQRT
-	     | Real_Math_tan
+ 	     | Real_Math_ln _ => flogarithm Instruction.LN2
+	     | Real_Math_log10 _ => flogarithm Instruction.LG2
+	     | Real_Math_sin _ => funa Instruction.FSIN
+	     | Real_Math_sqrt _ => funa Instruction.FSQRT
+	     | Real_Math_tan _
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val (src,srcsize) = getSrc1 ()
@@ -953,13 +863,13 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_mul => fbina Instruction.FMUL
-	     | Real_muladd => fbina_fmul Instruction.FADD
-	     | Real_mulsub => fbina_fmul Instruction.FSUB
-	     | Real_add => fbina Instruction.FADD
-	     | Real_sub => fbina Instruction.FSUB
-	     | Real_div => fbina Instruction.FDIV
-	     | Real_lt 
+	     | Real_mul _ => fbina Instruction.FMUL
+	     | Real_muladd _ => fbina_fmul Instruction.FADD
+	     | Real_mulsub _ => fbina_fmul Instruction.FSUB
+	     | Real_add _ => fbina Instruction.FADD
+	     | Real_sub _ => fbina Instruction.FSUB
+	     | Real_div _ => fbina Instruction.FDIV
+	     | Real_lt _
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val ((src1,src1size),
@@ -990,7 +900,7 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_le
+	     | Real_le _
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val ((src1,src1size),
@@ -1021,7 +931,7 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_equal
+	     | Real_equal _
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val ((src1,src1size),
@@ -1057,7 +967,7 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_gt
+	     | Real_gt _
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val ((src1,src1size),
@@ -1088,7 +998,7 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_ge
+	     | Real_ge _
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val ((src1,src1size),
@@ -1119,7 +1029,7 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_qequal
+	     | Real_qequal _
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val ((src1,src1size),
@@ -1150,24 +1060,8 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_abs => funa Instruction.FABS
-	     | Real_fromInt 
-	     => let
-		  val (dst,dstsize) = getDst ()
-		  val (src,srcsize) = getSrc1 ()
-		in
-		  AppendList.fromList
-		  [Block.mkBlock'
-		   {entry = NONE,
-		    statements 
-		    = [Assembly.instruction_pfmovfi
-		       {dst = dst,
-			src = src,
-			srcsize = srcsize,
-			dstsize = dstsize}],
-		    transfer = NONE}]
-		end 
-	     | Real_toInt
+	     | Real_abs _ => funa Instruction.FABS
+	     | Real_toInt _
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val (src,srcsize) = getSrc1 ()
@@ -1183,7 +1077,7 @@ struct
 			dstsize = dstsize}],
 		    transfer = NONE}]
 		end 
-	     | Real_ldexp 
+	     | Real_ldexp _ 
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val ((src1,src1size),
@@ -1217,58 +1111,49 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_neg => funa Instruction.FCHS
-	     | Real_round => funa Instruction.FRNDINT
-	     | Word8_toInt => movx Instruction.MOVZX
-	     | Word8_toIntX => movx Instruction.MOVSX
-	     | Word8_fromInt => xvom ()
-	     | Word8_toLargeWord => movx Instruction.MOVZX
-	     | Word8_toLargeWordX => movx Instruction.MOVSX
-	     | Word8_fromLargeWord => xvom ()
-	     | Word8_add => binal Instruction.ADD
-	     | Word8_sub => binal Instruction.SUB
-	     | Word8_andb => binal Instruction.AND
-	     | Word8_orb => binal Instruction.OR
-	     | Word8_xorb => binal Instruction.XOR
-	     | Word8_mul => pmd Instruction.MUL
-	     | Word8_div => pmd Instruction.DIV
-	     | Word8_mod => pmd Instruction.MOD
-	     | Word8_neg => unal Instruction.NEG
-	     | Word8_notb => unal Instruction.NOT
-	     | Word8_lt => cmp Instruction.B
-	     | Word8_le => cmp Instruction.BE
-	     | Word8_gt => cmp Instruction.A
-	     | Word8_ge => cmp Instruction.AE
-	     | Word8_rol => sral Instruction.ROL
-	     | Word8_ror => sral Instruction.ROR
-	     | Word8_lshift => sral Instruction.SHL
-	     | Word8_rshift => sral Instruction.SHR
-	     | Word8_arshift => sral Instruction.SAR
-	     | Word8Array_subWord => subWord8ArrayVector ()
-	     | Word8Array_updateWord => updateWord8Array ()
-	     | Word8Vector_subWord => subWord8ArrayVector ()
-	     | Word32_add => binal Instruction.ADD
-	     | Word32_sub => binal Instruction.SUB
-	     | Word32_andb => binal Instruction.AND
-	     | Word32_orb => binal Instruction.OR
-	     | Word32_xorb => binal Instruction.XOR
-(*
-	     | Word32_mul => pmd Instruction.MUL
-*)
-	     | Word32_mul => imul2 ()
-	     | Word32_div => pmd Instruction.DIV
-	     | Word32_mod => pmd Instruction.MOD
-	     | Word32_neg => unal Instruction.NEG
-	     | Word32_notb => unal Instruction.NOT
-	     | Word32_lt => cmp Instruction.B
-	     | Word32_le => cmp Instruction.BE
-	     | Word32_gt => cmp Instruction.A
-	     | Word32_ge => cmp Instruction.AE
-	     | Word32_rol => sral Instruction.ROL
-	     | Word32_ror => sral Instruction.ROR
-	     | Word32_lshift => sral Instruction.SHL
-	     | Word32_rshift => sral Instruction.SHR
-	     | Word32_arshift => sral Instruction.SAR
+	     | Real_neg _ => funa Instruction.FCHS
+	     | Real_round _ => funa Instruction.FRNDINT
+	     | Word_add _ => binal Instruction.ADD
+	     | Word_andb _ => binal Instruction.AND
+	     | Word_arshift _ => sral Instruction.SAR
+	     | Word_div _ => pmd Instruction.DIV
+	     | Word_ge _ => cmp Instruction.AE
+	     | Word_gt _ => cmp Instruction.A
+	     | Word_le _ => cmp Instruction.BE
+	     | Word_lshift _ => sral Instruction.SHL
+	     | Word_lt _ => cmp Instruction.B
+	     | Word_mod _ => pmd Instruction.MOD
+	     | Word_mul s =>
+		  (case s of
+		      W8 => pmd Instruction.MUL
+		    | W16 => Error.bug "FIXME"
+		    | W32 => imul2 ())
+	     | Word_neg _ => unal Instruction.NEG
+	     | Word_notb _ => unal Instruction.NOT
+	     | Word_orb _ => binal Instruction.OR
+	     | Word_rol _ => sral Instruction.ROL
+	     | Word_ror _ => sral Instruction.ROR
+	     | Word_rshift _ => sral Instruction.SHR
+	     | Word_sub _ => binal Instruction.SUB
+	     | Word_toInt (s, s') =>
+		  (case (s, s') of
+		      (W8, I32) => movx Instruction.MOVZX
+		    | _ => Error.bug (Prim.toString prim))
+	     | Word_toIntX (s, s') =>
+		  (case (s, s') of
+		      (W8, I32) => movx Instruction.MOVSX
+		    | (W32, I32) => mov ()
+		    | _ => Error.bug (Prim.toString prim))
+	     | Word_toWord (s, s') =>
+		  (case (s, s') of
+		      (W8, W32) => movx Instruction.MOVZX
+		    | (W32, W8) => xvom ()
+		    | _ => Error.bug (Prim.toString prim))
+	     | Word_toWordX (s, s') =>
+		  (case (s, s') of
+		      (W8, W32) => movx Instruction.MOVSX
+		    | _ => Error.bug (Prim.toString prim))
+	     | Word_xorb _ => binal Instruction.XOR
 	     | _ => Error.bug ("prim: strange Prim.Name.t: " ^ primName)),
 	 comment_end]
       end
@@ -1497,12 +1382,12 @@ struct
 	AppendList.appends
 	[comment_begin,
 	 (case Prim.name prim of
-	     Int_addCheck => binal (x86.Instruction.ADD, x86.Instruction.O)
-	   | Int_subCheck => binal (x86.Instruction.SUB, x86.Instruction.O)
-	   | Int_mulCheck => imul2_check x86.Instruction.O
-	   | Int_negCheck => unal (x86.Instruction.NEG, x86.Instruction.O)
-	   | Word32_addCheck => binal (x86.Instruction.ADD, x86.Instruction.C)
-	   | Word32_mulCheck => pmd (x86.Instruction.MUL, x86.Instruction.C)
+	     Int_addCheck _ => binal (x86.Instruction.ADD, x86.Instruction.O)
+	   | Int_subCheck _ => binal (x86.Instruction.SUB, x86.Instruction.O)
+	   | Int_mulCheck _ => imul2_check x86.Instruction.O
+	   | Int_negCheck _ => unal (x86.Instruction.NEG, x86.Instruction.O)
+	   | Word_addCheck _ => binal (x86.Instruction.ADD, x86.Instruction.C)
+	   | Word_mulCheck _ => pmd (x86.Instruction.MUL, x86.Instruction.C)
 	   | _ => Error.bug ("arith: strange Prim.Name.t: " ^ primName))]
       end
 

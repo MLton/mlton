@@ -9,6 +9,9 @@ functor SsaTree (S: SSA_TREE_STRUCTS): SSA_TREE =
 struct
 
 open S
+datatype z = datatype IntSize.t
+datatype z = datatype RealSize.t
+datatype z = datatype WordSize.t
 
 structure Type =
    struct
@@ -23,20 +26,18 @@ structure Type =
 	       
       datatype dest =
 	  Array of t
-	| Char
 	| Datatype of Tycon.t
-	| Int
+	| Int of IntSize.t
 	| IntInf
 	| Pointer
 	| PreThread
-	| Real
+	| Real of RealSize.t
 	| Ref of t
 	| Thread
 	| Tuple of t vector
 	| Vector of t
 	| Weak of t
-	| Word
-	| Word8
+	| Word of WordSize.t
 
       local
 	 val {get, set, ...} =
@@ -53,20 +54,21 @@ structure Type =
 	    else Error.bug "bogus application of unary tycon"
 
 	 val tycons =
-	    [(Tycon.array, unary Array),
-	     (Tycon.char, nullary Char),
-	     (Tycon.int, nullary Int),
-	     (Tycon.intInf, nullary IntInf),
-	     (Tycon.pointer, nullary Pointer),
-	     (Tycon.preThread, nullary PreThread),
-	     (Tycon.real, nullary Real),
-	     (Tycon.reff, unary Ref),
-	     (Tycon.thread, nullary Thread),
-	     (Tycon.tuple, Tuple),
-	     (Tycon.vector, unary Vector),
-	     (Tycon.weak, unary Weak),
-	     (Tycon.word, nullary Word),
-	     (Tycon.word8, nullary Word8)]
+	    [(Tycon.array, unary Array)]
+	    @ List.map (Tycon.ints, fn (t, s) =>
+			(t, nullary (Int s)))
+	    @ [(Tycon.intInf, nullary IntInf),
+	       (Tycon.pointer, nullary Pointer),
+	       (Tycon.preThread, nullary PreThread)]
+	    @ List.map (Tycon.reals, fn (t, s) =>
+			(t, nullary (Real s)))
+	    @ [(Tycon.reff, unary Ref),
+	       (Tycon.thread, nullary Thread),
+	       (Tycon.tuple, Tuple),
+	       (Tycon.vector, unary Vector),
+	       (Tycon.weak, unary Weak)]
+	    @ List.map (Tycon.words, fn (t, s) =>
+			(t, nullary (Word s)))
       in
 	 val _ = List.foreach (tycons, fn (tycon, f) => set (tycon, SOME f))
 
@@ -89,13 +91,12 @@ structure Type =
 	     (fn (t, layout) =>
 	      case dest t of
 		 Array t => seq [layout t, str " array"]
-	       | Char => str "char"
 	       | Datatype t => Tycon.layout t
-	       | Int => str "int"
+	       | Int s => str (concat ["int", IntSize.toString s])
 	       | IntInf => str "IntInf.int"
 	       | Pointer => str "pointer"
 	       | PreThread => str "preThread"
-	       | Real => str "real"
+	       | Real s => str (concat ["real", RealSize.toString s])
 	       | Ref t => seq [layout t, str " ref"]
 	       | Thread => str "thread"
 	       | Tuple ts =>
@@ -105,8 +106,7 @@ structure Type =
 					       " * ")))
 	       | Vector t => seq [layout t, str " vector"]
 	       | Weak t => seq [layout t, str " weak"]
-	       | Word => str "word"
-	       | Word8 => str "word8"))
+	       | Word s => str (concat ["word", WordSize.toString s])))
       end
    end
 
@@ -123,8 +123,96 @@ structure Label =
       fun newNoname () = newString "L"
    end
 
-structure Cases = Cases (type con = Con.t
-			 val conEquals = Con.equals)
+structure Cases =
+   struct
+      datatype t =
+	 Con of (Con.t * Label.t) vector
+       | Int of IntSize.t * (IntX.t * Label.t) vector
+       | Word of WordSize.t * (WordX.t * Label.t) vector
+
+      fun equals (c1: t, c2: t): bool =
+	 let
+	    fun doit (l1, l2, eq') = 
+	       Vector.equals 
+	       (l1, l2, fn ((x1, a1), (x2, a2)) =>
+		eq' (x1, x2) andalso Label.equals (a1, a2))
+	 in
+	    case (c1, c2) of
+	       (Con l1, Con l2) => doit (l1, l2, Con.equals)
+	     | (Int (_, l1), Int (_, l2)) => doit (l1, l2, IntX.equals)
+	     | (Word (_, l1), Word (_, l2)) => doit (l1, l2, WordX.equals)
+	     | _ => false
+	 end
+
+      fun hd (c: t): Label.t =
+	 let
+	    fun doit v =
+	       if Vector.length v >= 1
+		  then let val (_, a) = Vector.sub (v, 0)
+		       in a
+		       end
+	       else Error.bug "Cases.hd"
+	 in
+	    case c of
+	       Con cs => doit cs
+	     | Int (_, cs) => doit cs
+	     | Word (_, cs) => doit cs
+	 end
+
+      fun isEmpty (c: t): bool =
+	 let
+	    fun doit v = 0 = Vector.length v
+	 in
+	    case c of
+	       Con cs => doit cs
+	     | Int (_, cs) => doit cs
+	     | Word (_, cs) => doit cs
+	 end
+
+      fun fold (c: t, b, f) =
+	 let
+	    fun doit l = Vector.fold (l, b, fn ((_, a), b) => f (a, b))
+	 in
+	    case c of
+	       Con l => doit l
+	     | Int (_, l) => doit l
+	     | Word (_, l) => doit l
+	 end
+
+      fun map (c: t, f): t =
+	 let
+	    fun doit l = Vector.map (l, fn (i, x) => (i, f x))
+	 in
+	    case c of
+	       Con l => Con (doit l)
+	     | Int (s, l) => Int (s, doit l)
+	     | Word (s, l) => Word (s, doit l)
+	 end
+      
+      fun forall (c: t, f: Label.t -> bool): bool =
+	 let
+	    fun doit l = Vector.forall (l, fn (_, x) => f x)
+	 in
+	    case c of
+	       Con l => doit l
+	     | Int (_, l) => doit l
+	     | Word (_, l) => doit l
+	 end
+
+      fun length (c: t): int = fold (c, 0, fn (_, i) => i + 1)
+
+      fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
+
+      fun foreach' (c: t, f: Label.t -> unit, fc: Con.t -> unit): unit =
+	 let
+	    fun doit l = Vector.foreach (l, fn (_, a) => f a)
+	 in
+	    case c of
+	       Con l => Vector.foreach (l, fn (c, a) => (fc c; f a))
+	     | Int (_, l) => doit l
+	     | Word (_, l) => doit l
+	 end
+   end
 
 local open Layout
 in
@@ -544,7 +632,7 @@ structure Transfer =
 		  func: Func.t,
 		  return: Return.t}
        | Case of {test: Var.t,
-		  cases: Label.t Cases.t,
+		  cases: Cases.t,
 		  default: Label.t option} (* Must be nullary. *)
        | Goto of {dst: Label.t,
 		  args: Var.t vector}
@@ -556,7 +644,9 @@ structure Transfer =
 
       fun iff (test: Var.t, {truee, falsee}) =
 	 Case
-	 {cases = Cases.Int (Vector.new2 ((0, falsee), (1, truee))),
+	 {cases = Cases.Int (I32,
+			     Vector.new2 ((IntX.zero I32, falsee),
+					  (IntX.one I32, truee))),
 	  default = NONE,
 	  test = test}
 	 
@@ -640,11 +730,9 @@ structure Transfer =
 	       datatype z = datatype Cases.t
 	       val cases =
 		  case cases of
-		     Char l => doit (l, Char.layout)
-		   | Con l => doit (l, Con.layout)
-		   | Int l => doit (l, Int.layout)
-		   | Word l => doit (l, Word.layout)
-		   | Word8 l => doit (l, Word8.layout)
+		     Con l => doit (l, Con.layout)
+		   | Int (_, l) => doit (l, IntX.layout)
+		   | Word (_, l) => doit (l, WordX.layout)
 	       val cases =
 		  case default of
 		     NONE => cases
@@ -697,9 +785,9 @@ structure Transfer =
 	       Return.equals (return, return')
 	  | (Case {test, cases, default},
 	     Case {test = test', cases = cases', default = default'}) =>
-	       Var.equals (test, test') andalso
-	       Cases.equals (cases, cases', Label.equals) andalso
-	       Option.equals (default, default', Label.equals)
+	       Var.equals (test, test')
+	       andalso Cases.equals (cases, cases')
+	       andalso Option.equals (default, default', Label.equals)
 	  | (Goto {dst, args}, Goto {dst = dst', args = args'}) =>
 	       Label.equals (dst, dst') andalso
 	       varsEquals (args, args')
@@ -1104,11 +1192,11 @@ structure Function =
 				      edge (j, toString x, Solid))
 				  val _ =
 				     case cases of
-					Cases.Char v => doit (v, Char.toString)
-				      | Cases.Con v => doit (v, Con.toString)
-				      | Cases.Int v => doit (v, Int.toString)
-				      | Cases.Word v => doit (v, Word.toString)
-				      | Cases.Word8 v => doit (v, Word8.toString)
+					Cases.Con v => doit (v, Con.toString)
+				      | Cases.Int (_, v) =>
+					   doit (v, IntX.toString)
+				      | Cases.Word (_, v) =>
+					   doit (v, WordX.toString)
 				  val _ = 
 				     case default of
 					NONE => ()
@@ -1757,9 +1845,9 @@ structure Program =
 			     datatype z = datatype Prim.Name.t
 			  in
 			     case Prim.name prim of
-				Int_addCheck => doit add
-			      | Int_subCheck => doit sub
-			      | Int_mulCheck => doit mul
+				Int_addCheck _ => doit add
+			      | Int_subCheck _ => doit sub
+			      | Int_mulCheck _ => doit mul
 			      | _ => ()
 			  end
 		     | _ => ())

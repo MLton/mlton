@@ -26,10 +26,10 @@
  * implements / and %.
  */
 
-Int Int_quot (Int n, Int d) {
+Int32 Int32_quot (Int32 n, Int32 d) {
 #if (defined (__i386__) || defined (__sparc__))
 	return n / d;
 #else
-#error check that C / correctly implements Int.quot from the basis library
+#error check that C / correctly implements Int32.quot from the basis library
 #endif
 }

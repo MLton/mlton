@@ -50,7 +50,7 @@ structure Unknown =
 	    id = newId ()}
 
       fun join (T r, T r'): t =
-	 T {equality = #equality r orelse #equality r',
+	 T {equality = #equality r andalso #equality r',
 	    canGeneralize = #canGeneralize r andalso #canGeneralize r',
 	    id = newId ()}
    end
@@ -183,6 +183,7 @@ structure Type =
 			    final: FinalRecordType.t,
 			    region: Region.t,
 			    spine: Spine.t}
+	| Real (* an unresolved real type *)
 	| Record of t Srecord.t
 	| Unknown of Unknown.t
 	| Var of Tyvar.t
@@ -206,7 +207,6 @@ structure Type =
 	       Con (c, ts) =>
 		  paren (align [seq [str "Con ", Tycon.layout c],
 				Vector.layout layout ts])
-	     | Int => str "Int"
 	     | FlexRecord {fields, final, region, spine} =>
 		  seq [str "Flex ",
 		       record [("fields", layoutFields fields),
@@ -218,6 +218,8 @@ structure Type =
 		       record [("fields", layoutFields fields),
 			       ("final", FinalRecordType.layout final),
 			       ("spine", Spine.layout spine)]]
+	     | Int => str "Int"
+	     | Real => str "Real"
 	     | Record r => Srecord.layout {record = r,
 					   separator = ": ",
 					   extra = "",
@@ -228,11 +230,13 @@ structure Type =
 	     | Word => str "Word"
       end
 
+      val toString = Layout.toString o layout
+
       fun union (T s, T s') = Set.union (s, s')
 
       fun set (T s, v) = Set.setValue (s, v)
 	 
-      fun makeHom {con, flexRecord, genFlexRecord, int,
+      fun makeHom {con, flexRecord, genFlexRecord, int, real,
 		   record, recursive, unknown, var, word} =
 	 let
 	    datatype status = Processing | Seen | Unseen
@@ -271,6 +275,7 @@ structure Type =
 					   final = final,
 					   region = region,
 					   spine = spine})
+				 | Real => real t
 				 | Record r => record (t, Srecord.map (r, get))
 				 | Unknown u => unknown (t, u)
 				 | Var a => var (t, a)
@@ -283,7 +288,8 @@ structure Type =
 	    fun destroy () =
 	       (destroyStatus ()
 		; destroyProp ())
-	 in {hom = get, destroy = destroy}
+	 in
+	    {hom = get, destroy = destroy}
 	 end
 
       fun hom (ty, z) =
@@ -320,6 +326,7 @@ structure Type =
 		    Spine.layoutPretty spine,
 		    str "}"]
 	    fun genFlexRecord (t, _) = layout t
+	    fun real _ = str "real"
 	    fun record (_, r) =
 	       Srecord.layout
 	       {record = r,
@@ -341,6 +348,7 @@ structure Type =
 		     flexRecord = flexRecord,
 		     genFlexRecord = genFlexRecord,
 		     int = int,
+		     real = real,
 		     record = record,
 		     recursive = recursive,
 		     unknown = unknown,
@@ -381,9 +389,14 @@ structure Type =
       fun con (tycon, ts) =
 	 if Tycon.equals (tycon, Tycon.tuple) then tuple ts
 	 else newTy (Con (tycon, ts))
+
+      val char = con (Tycon.char, Vector.new0 ())
+      val string = con (Tycon.vector, Vector.new1 char)
    end
 
-structure Ops = TypeOps (structure Tycon = Tycon
+structure Ops = TypeOps (structure IntSize = IntSize
+			 structure Tycon = Tycon
+			 structure WordSize = WordSize
 			 open Type)
 
 structure Type =
@@ -403,10 +416,9 @@ structure Type =
 	 case Aconst.node c of
 	    Aconst.Char _ => char
 	  | Aconst.Int _ => newTy Type.Int
-	  | Aconst.Real _ => real
+	  | Aconst.Real _ => newTy Type.Real
 	  | Aconst.String _ => string
 	  | Aconst.Word _ => newTy Type.Word
-
 
       val traceCanUnify =
 	 Trace.trace2 ("canUnify", layout, layout, Bool.layout)
@@ -414,23 +426,13 @@ structure Type =
       fun canUnify arg = 
 	 traceCanUnify
 	 (fn (t, t') =>
-	  case (toType t,   toType t') of
+	  case (toType t, toType t') of
 	     (Unknown _,  _) => true
 	   | (_, Unknown _) => true
-	   | (Con (c, ts), Con (c', ts')) => (Tycon.equals (c, c')
-					      andalso
-					      Vector.forall2 (ts, ts', canUnify))
-	   | (Con (c, ts), Word) =>
-		0 = Vector.length ts andalso Tycon.isWordX c
-	   | (Word, Con (c, ts)) =>
-		0 = Vector.length ts andalso Tycon.isWordX c
-	   | (Con (c, ts), Int) =>
-		0 = Vector.length ts andalso Tycon.isIntX c
-	   | (Int, Con (c, ts)) =>
-		0 = Vector.length ts andalso Tycon.isIntX c
-	   | (Var a, Var a') => Tyvar.equals (a, a')
-	   | (Word, Word) => true
+	   | (Con (c, ts), t') => conAnd (c, ts, t')
+	   | (t', Con (c, ts)) => conAnd (c, ts, t')
 	   | (Int, Int) => true
+	   | (Real, Real) => true
 	   | (Record r, Record r') =>
 		let
 		   val fs = Srecord.toVector r
@@ -440,7 +442,18 @@ structure Type =
 					   Field.equals (f, f')
 					   andalso canUnify (t, t'))
 		end
-	    | _ => false) arg
+	   | (Var a, Var a') => Tyvar.equals (a, a')
+	   | (Word, Word) => true
+	   | _ => false) arg
+      and conAnd (c, ts, t') =
+	 case t' of
+	    Con (c', ts') =>
+	       Tycon.equals (c, c')
+	       andalso Vector.forall2 (ts, ts', canUnify)
+	  | Int => 0 = Vector.length ts andalso Tycon.isIntX c
+	  | Real => 0 = Vector.length ts andalso Tycon.isRealX c
+	  | Word => 0 = Vector.length ts andalso Tycon.isWordX c
+	  | _ => false
 
       val traceUnify = Trace.trace2 ("unify", layout, layout, Unit.layout)
 
@@ -509,39 +522,67 @@ structure Type =
 			 Error.bug "GenFlexRecord seen in unify"
 		      val {ty = t, plist} = Set.value s
 		      val {ty = t', ...} = Set.value s'
-		      val t =
-			 case (t, t')           of
-			    (Unknown r, Unknown r') =>
-			       Unknown (Unknown.join (r, r'))
-			  | (t, Unknown _) => t
-			  | (Unknown _, t) => t
-			  | (Var a, Var a') =>
-			       if Tyvar.equals (a, a')
-				  then t
-			       else (errorS "type variables not equal"
-				     ; t)
-			  | (Con (c, ts), Con (c', ts')) =>
+		      fun conAnd (c, ts, t, t') =
+			 case t of
+			    Con (c', ts') =>
 			       if Tycon.equals (c, c')
 				  then (unifys (ts, ts'); t)
 			       else (errorS "type constructors not equal"; t)
-			  | (Con (c, ts), Word) =>
-			       if Tycon.isWordX c andalso Vector.isEmpty ts
-				  then t
-			       else (errorS "not a word"; t)
-			  | (Word, Con (c, ts)) =>
-			       if Tycon.isWordX c andalso Vector.isEmpty ts
-				  then t'
-			       else (errorS "not a word"; t)
-			  | (Con (c, ts), Int) =>
-			       if Tycon.isIntX c andalso Vector.isEmpty ts
-				  then t
-			       else (errorS "not an int"; t)
-			  | (Int, Con (c, ts)) =>
+			  | Int =>
 			       if Tycon.isIntX c andalso Vector.isEmpty ts
 				  then t'
-			       else (errorS "not an int"; t)
-			  | (Word, Word) => t
+			       else (errorS "not an int"; t')
+			  | Real =>
+			       if Tycon.isRealX c andalso Vector.isEmpty ts
+				  then t'
+			       else (errorS "not a real"; t')
+			  | Word =>
+			       if Tycon.isWordX c andalso Vector.isEmpty ts
+				  then t'
+			       else (errorS "not a word"; t')
+			  | _ => (errorS "can't unify"; t)
+		      val t =
+			 case (t, t') of
+			    (Unknown r, Unknown r') =>
+			       Unknown (Unknown.join (r, r'))
+			  | (_, Unknown _) => t
+			  | (Unknown _, _) => t'
+			  | (Con (c, ts), _) => conAnd (c, ts, t', t)
+			  | (_, Con (c, ts)) => conAnd (c, ts, t, t')
+			  | (FlexRecord f, res as Record r) =>
+			       (oneFlex (f, r); res)
+			  | (res as Record r, FlexRecord f) =>
+			       (oneFlex (f, r); res)
+			  | (FlexRecord {fields = fields, final, region,
+					 spine = s},
+			     FlexRecord {fields = fields', spine = s', ...}) =>
+			       let
+				  val _ = Spine.unify (s, s', error)
+				  fun subset (fields, fields') =
+				     let
+					val res = ref fields'
+					val _ =
+					   List.foreach
+					   (fields, fn (f, t) =>
+					    case List.peek (fields', fn (f', _) =>
+							    Field.equals (f, f')) of
+					       NONE => List.push (res, (f, t))
+					     | SOME (_, t') => unify (t, t'))
+				     in
+					!res
+				     end
+				  val _ = subset (fields, fields')
+				  val fields = subset (fields', fields)
+			       in
+				  FlexRecord {fields = fields,
+					      final = final,
+					      region = region,
+					      spine = s}
+			       end
+			  | (GenFlexRecord _, _) => genFlexError ()
+			  | (_, GenFlexRecord _) => genFlexError ()
 			  | (Int, Int) => t
+			  | (Real, Real) => t
 			  | (Record r, Record r') =>
 			       let
 				  val fs = Srecord.toVector r
@@ -559,39 +600,12 @@ structure Type =
 				  else (errorS "different length records"
 					; t)
 			       end
-			  | (GenFlexRecord _, _) => genFlexError ()
-			  | (_, GenFlexRecord _) => genFlexError ()
-			  | (FlexRecord f, res as Record r) =>
-			       (oneFlex (f, r); res)
-			  | (res as Record r, FlexRecord f) =>
-			       (oneFlex (f, r); res)
-			| (FlexRecord {fields = fields, final, region,
-				       spine = s},
-			   FlexRecord {fields = fields', spine = s', ...}) =>
-			  let
-			     val _ = Spine.unify (s, s', error)
-			     fun subset (fields, fields') =
-				let
-				   val res = ref fields'
-				   val _ =
-				      List.foreach
-				      (fields, fn (f, t) =>
-				       case List.peek (fields', fn (f', _) =>
-						       Field.equals (f, f')) of
-					  NONE => List.push (res, (f, t))
-					| SOME (_, t') => unify (t, t'))
-				in
-				   !res
-				end
-			     val _ = subset (fields, fields')
-			     val fields = subset (fields', fields)
-			  in
-			     FlexRecord {fields = fields,
-					 final = final,
-					 region = region,
-					 spine = s}
-			  end
-			 | _ => (errorS "can't unify"; t)
+			  | (Var a, Var a') =>
+			       if Tyvar.equals (a, a')
+				  then t
+			       else (errorS "type variables not equal"; t)
+			  | (Word, Word) => t
+			  | _ => (errorS "can't unify"; t)
 		      val _ = Set.union (s, s')
 		      val _ = Set.setValue (s, {ty = t, plist = plist})
 		   in
@@ -613,7 +627,10 @@ structure Type =
 
       local
 	 structure X = XmlType
-	 val con = X.con
+	 fun con (c, ts) =
+	    if Tycon.equals (c, Tycon.char)
+	       then X.word8
+	    else X.con (c, ts)
 	 val unknown = con (Tycon.tuple, Vector.new0 ())
 	 fun tuple ts =
 	    if 1 = Vector.length ts
@@ -666,12 +683,14 @@ structure Type =
 	       X.unit
 	    end
 	 val int = con (Tycon.defaultInt, Vector.new0 ())
+	 val real = con (Tycon.defaultReal, Vector.new0 ())
 	 val word = con (Tycon.defaultWord, Vector.new0 ())
 	 val {hom: Type.t -> X.t, ...} =
 	    makeHom {con = fn (_, c, ts) => con (c, ts),
 		     int = fn _ => int,
 		     flexRecord = flexRecord,
 		     genFlexRecord = genFlexRecord,
+		     real = fn _ => real,
 		     record = record,
 		     recursive = recursive,
 		     unknown = fn _ => unknown,
@@ -814,6 +833,7 @@ structure InferScheme =
 				    int = keep,
 				    flexRecord = fn (t, _) => keep t,
 				    genFlexRecord = genFlexRecord,
+				    real = keep,
 				    record = record,
 				    recursive = recursive,
 				    unknown = fn (t, _) => keep t,
@@ -974,6 +994,7 @@ fun closes (e: t, tys: Type.t vector, ensure: Tyvar.t vector, region)
 	    int = fn _ => (),
 	    flexRecord = fn (t, _) => add (flexes, t, Type.equals),
 	    genFlexRecord = fn _ => Error.bug "GenFlexRecord seen in Env.close",
+	    real = fn _ => (),
 	    record = fn _ => (),
 	    recursive = fn _ => (),
 	    unknown = (fn (t, Unknown.T {canGeneralize, ...}) =>
@@ -1118,6 +1139,7 @@ fun closes (e: t, tys: Type.t vector, ensure: Tyvar.t vector, region)
 					int = ignore,
 					flexRecord = flexRecord,
 					genFlexRecord = ignore,
+					real = ignore,
 					record = ignore,
 					recursive = ignore,
 					unknown = unknown,

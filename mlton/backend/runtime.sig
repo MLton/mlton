@@ -10,6 +10,9 @@ type word = Word.t
    
 signature RUNTIME_STRUCTS =
    sig
+      structure IntSize: INT_SIZE
+      structure RealSize: REAL_SIZE
+      structure WordSize: WORD_SIZE
    end
 
 signature RUNTIME =
@@ -17,6 +20,9 @@ signature RUNTIME =
       include RUNTIME_STRUCTS
 
       structure Type: MTYPE
+      sharing IntSize = Type.IntSize
+      sharing RealSize = Type.RealSize
+      sharing WordSize = Type.WordSize
       structure CFunction: C_FUNCTION
       sharing Type = CFunction.Type
       structure GCField:

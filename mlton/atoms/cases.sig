@@ -6,12 +6,14 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 type int = Int.t
-type word = Word.t
 
 signature CASES_STRUCTS = 
    sig
       type con
-      val conEquals : con * con -> bool
+      type word
+
+      val conEquals: con * con -> bool
+      val wordEquals: word * word -> bool
    end
 
 signature CASES = 
@@ -21,9 +23,8 @@ signature CASES =
       datatype 'a t =
 	 Char of (char * 'a) vector
        | Con of (con * 'a) vector
-       | Int of (int * 'a) vector
+       | Int of (IntInf.t * 'a) vector
        | Word of (word * 'a) vector
-       | Word8 of (Word8.t * 'a) vector
 
       val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool
       val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
@@ -35,12 +36,3 @@ signature CASES =
       val length: 'a t -> int
       val map: 'a t * ('a -> 'b) -> 'b t
    end
-
-functor TestCasesVector (S: CASES) =
-struct
-
-open S
-
-val _ = Assert.assert ("Cases", fn () => true)
-
-end

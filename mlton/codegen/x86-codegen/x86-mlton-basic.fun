@@ -12,6 +12,13 @@ struct
   open x86
 
   structure Runtime = Machine.Runtime
+  local
+     open Runtime
+  in
+     structure IntSize = IntSize
+     structure RealSize = RealSize
+     structure WordSize = WordSize
+  end
 
   (*
    * x86.Size.t equivalents
@@ -30,23 +37,40 @@ struct
    
   local
      datatype z = datatype Runtime.Type.dest
+     datatype z = datatype x86.Size.t
   in
-    fun toX86Size' t
-      = case t
-	  of Char => x86.Size.BYTE
-	   | Double => x86.Size.DBLE
-	   | Int => x86.Size.LONG
-	   | Pointer => x86.Size.LONG
-	   | Uint => x86.Size.LONG
+    fun toX86Size' t =
+       case t of
+	  Int s =>
+	     let
+		datatype z = datatype IntSize.t
+	     in
+		case s of
+		   I8 => BYTE
+		 | I16 => WORD
+		 | I32 => LONG
+		 | I64 => Error.bug "FIXME"
+	     end
+	| Pointer => LONG
+	| Real s =>
+	     let
+		datatype z = datatype RealSize.t
+	     in
+		case s of
+		   R32 => SNGL
+		 | R64 => DBLE
+	     end
+	| Word s =>
+	     let
+		datatype z = datatype WordSize.t
+	     in
+		case s of
+		   W8 => BYTE
+		 | W16 => WORD 
+		 | W32 => LONG
+	     end
     val toX86Size = fn t => toX86Size' (Runtime.Type.dest t)
-    fun toX86Scale' t
-      = case t
-	  of Char => x86.Scale.One
-	   | Double => x86.Scale.Eight
-	   | Int => x86.Scale.Four
-	   | Pointer => x86.Scale.Four
-	   | Uint => x86.Scale.Four
-    val toX86Scale = fn t => toX86Scale' (Runtime.Type.dest t)
+    fun toX86Scale t = x86.Scale.fromBytes (Runtime.Type.size t)
   end
 
   (*
@@ -251,45 +275,51 @@ struct
     = Operand.memloc fpswTempContents
 
   local
-    val localC_base = Label.fromString "localuchar"
-    val localD_base = Label.fromString "localdouble"
-    val localI_base = Label.fromString "localint"
-    val localP_base = Label.fromString "localpointer"
-    val localU_base = Label.fromString "localuint"
+    val localI_base =
+       IntSize.memoize
+       (fn s => Label.fromString (concat ["localInt", IntSize.toString s]))
+    val localP_base = Label.fromString "localPointer"
+    val localR_base =
+       RealSize.memoize
+       (fn s => Label.fromString (concat ["localReal", RealSize.toString s]))
+    val localW_base =
+       WordSize.memoize
+       (fn s => Label.fromString (concat ["localWord", WordSize.toString s]))
     datatype z = datatype Runtime.Type.dest
   in
-    fun local_base ty
-      = case Runtime.Type.dest ty
-	  of Char    => localC_base
-	   | Double  => localD_base
-	   | Int     => localI_base
-	   | Pointer => localP_base
-	   | Uint    => localU_base
+    fun local_base ty =
+       case Runtime.Type.dest ty of
+	  Int s => localI_base s
+	| Pointer => localP_base
+	| Real s => localR_base s
+	| Word s => localW_base s
   end
 
   local
-    val globalC_base = Label.fromString "globaluchar"
-    val globalC_num = Label.fromString "num_globaluchar"
-    val globalD_base = Label.fromString "globaldouble"
-    val globalD_num = Label.fromString "num_globaldouble"
-    val globalI_base = Label.fromString "globalint"
-    val globalI_num = Label.fromString "num_globalint"
-    val globalP_base = Label.fromString "globalpointer"
-    val globalP_num = Label.fromString "num_globalpointer"
-    val globalU_base = Label.fromString "globaluint"
-    val globalU_num = Label.fromString "num_globaluint"
+     fun make (name, memo, toString) =
+	(memo (fn s =>
+	       Label.fromString (concat ["global", name, toString s])),
+	 memo (fn s =>
+	       Label.fromString (concat ["num_global", name, toString s])))
+     val (globalI_base, globalI_num) =
+	make ("Int", IntSize.memoize, IntSize.toString)
+     val globalP_base = Label.fromString "globalPointer"
+     val globalP_num = Label.fromString "num_globalpointer"
+     val (globalR_base, globalR_num) =
+	make ("Real", RealSize.memoize, RealSize.toString)
+     val (globalW_base, globalW_num) =
+	make ("Word", WordSize.memoize, WordSize.toString)
     datatype z = datatype Runtime.Type.dest
   in
-    fun global_base ty
-      = case Runtime.Type.dest ty
-	  of Char    => globalC_base
-	   | Double  => globalD_base
-	   | Int     => globalI_base
-	   | Pointer => globalP_base
-	   | Uint    => globalU_base
+     fun global_base ty =
+	case Runtime.Type.dest ty of
+	   Int s => globalI_base s
+	 | Pointer => globalP_base
+	 | Real s => globalR_base s
+	 | Word s => globalW_base s
   end
 
-  val globalPointerNonRoot_base = Label.fromString "globalpointerNonRoot"
+  val globalPointerNonRoot_base = Label.fromString "globalPointerNonRoot"
 
   val saveGlobals = Label.fromString "saveGlobals"
   val loadGlobals = Label.fromString "loadGlobals"

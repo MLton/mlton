@@ -167,7 +167,9 @@ fun insertFunction (f: Function.t,
 				       case z of
 					  Operand.EnsuresBytesFree =>
 					     Operand.word
-					     (ensureBytesFree (valOf return))
+					     (WordX.make
+					      (ensureBytesFree (valOf return),
+					       WordSize.default))
 					| _ => z)),
 			      func = func,
 			      return = return}
@@ -280,7 +282,7 @@ fun insertFunction (f: Function.t,
 	     fun stackCheck (maybeFirst, z): Label.t =
 		let
 		   val (statements, transfer) =
-		      primApp (Prim.word32Gt,
+		      primApp (Prim.wordGt WordSize.default,
 			       Operand.Runtime StackTop,
 			       Operand.Runtime StackLimit,
 			       z)
@@ -289,7 +291,9 @@ fun insertFunction (f: Function.t,
 		end
 	     fun maybeStack (): Label.t =
 		if stack
-		   then stackCheck (true, insert (Operand.word 0w0))
+		   then stackCheck (true,
+				    insert (Operand.word
+					    (WordX.zero WordSize.default)))
 		else
 		   (* No limit check, just keep the block around. *)
 		   (List.push (newBlocks,
@@ -324,12 +328,12 @@ fun insertFunction (f: Function.t,
 		      Statement.PrimApp
 		      {args = Vector.new2 (Operand.Runtime LimitPlusSlop,
 					   Operand.Runtime Frontier),
-		       dst = SOME (res, Type.word),
-		       prim = Prim.word32Sub}
+		       dst = SOME (res, Type.defaultWord),
+		       prim = Prim.wordSub WordSize.default}
 		   val (statements, transfer) =
-		      primApp (Prim.word32Gt,
+		      primApp (Prim.wordGt WordSize.default,
 			       amount,
-			       Operand.Var {var = res, ty = Type.word},
+			       Operand.Var {var = res, ty = Type.defaultWord},
 			       z)
 		   val statements = Vector.concat [Vector.new1 s, statements]
 		in
@@ -338,7 +342,7 @@ fun insertFunction (f: Function.t,
 			 frontierCheck (isFirst,
 					Prim.eq,
 					Operand.Runtime Limit,
-					Operand.int 0,
+					Operand.int (IntX.zero IntSize.default),
 					{collect = collect,
 					 dontCollect = newBlock (false,
 								 statements,
@@ -355,11 +359,14 @@ fun insertFunction (f: Function.t,
 	     fun heapCheckNonZero (bytes: Word.t): Label.t =
 		if bytes <= Word.fromInt Runtime.limitSlop
 		   then frontierCheck (true,
-				       Prim.word32Gt,
+				       Prim.wordGt WordSize.default,
 				       Operand.Runtime Frontier,
 				       Operand.Runtime Limit,
-				       insert (Operand.word 0w0))
-		else heapCheck (true, Operand.word bytes)
+				       insert (Operand.word
+					       (WordX.zero WordSize.default)))
+		else heapCheck (true,
+				Operand.word (WordX.make (bytes,
+							  WordSize.default)))
 	     fun smallAllocation _ =
 		let
 		   val w = blockCheckAmount {blockIndex = i}
@@ -376,10 +383,10 @@ fun insertFunction (f: Function.t,
 		in
 		   case bytesNeeded of
 		      Operand.Const c =>
-			 (case Const.node c of
-			     Const.Node.Word w =>
+			 (case c of
+			     Const.Word w =>
 				heapCheckNonZero
-				(MLton.Word.addCheck (w, extraBytes)
+				(MLton.Word.addCheck (WordX.toWord w, extraBytes)
 				 handle Overflow => Runtime.allocTooLarge)
 			   | _ => Error.bug "strange primitive bytes needed")
 		    | _ =>
@@ -390,16 +397,18 @@ fun insertFunction (f: Function.t,
 			    (true,
 			     Vector.new0 (),
 			     Transfer.Arith
-			     {args = Vector.new2 (Operand.word extraBytes,
+			     {args = Vector.new2 (Operand.word
+						  (WordX.make (extraBytes,
+							       WordSize.default)),
 						  bytesNeeded),
 			      dst = bytes,
 			      overflow = allocTooLarge (),
-			      prim = Prim.word32AddCheck,
+			      prim = Prim.wordAddCheck WordSize.default,
 			      success = (heapCheck
 					 (false, 
 					  Operand.Var {var = bytes,
-						       ty = Type.word})),
-			      ty = Type.word})
+						       ty = Type.defaultWord})),
+			      ty = Type.defaultWord})
 			 end
 		end
 	     val bs = {big = bigAllocation,

@@ -13,15 +13,30 @@ struct
 (*---------------------------------------------------*)
    
 structure Ast = Ast ()
-structure Atoms = Atoms (structure Ast = Ast)
+local
+   open Ast.Tycon
+in
+   structure IntSize = IntSize
+   structure RealSize = RealSize
+   structure WordSize = WordSize
+end
+structure Atoms = Atoms (structure Ast = Ast
+			 structure IntSize = IntSize
+			 structure RealSize = RealSize
+			 structure WordSize = WordSize)
+local
+   open Atoms
+in
+   structure Const = Const
+   structure IntX = IntX
+end
 structure CoreML = CoreML (open Atoms
 			   structure Type = Prim.Type)
 structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)
 structure Ssa = Ssa (open Atoms)
-structure Machine = Machine (structure Label = Ssa.Label
-			     structure Prim = Atoms.Prim
-			     structure SourceInfo = Ssa.SourceInfo)
+structure Machine = Machine (open Atoms
+			     structure Label = Ssa.Label)
 local
    open Machine
 in
@@ -40,6 +55,11 @@ structure LookupConstant = LookupConstant (structure CoreML = CoreML)
 structure Infer = Infer (structure CoreML = CoreML
 			 structure LookupConstant = LookupConstant
 			 structure Xml = Xml)
+local
+   open Infer
+in
+   structure BuildConst = BuildConst
+end
 structure Monomorphise = Monomorphise (structure Xml = Xml
 				       structure Sxml = Sxml)
 structure ClosureConvert = ClosureConvert (structure Ssa = Ssa
@@ -342,15 +362,16 @@ fun preCodegen {input, docc}: Machine.Program.t =
 			       CoreML.Program.layoutStats coreML)
       val buildConstants =
 	 let
-	    datatype z = datatype LookupConstant.Const.t
+	    val bool = BuildConst.Bool
+	    val int = BuildConst.Int
 	    open Control
 	 in
-	    [("Exn_keepHistory", Bool (!exnHistory)),
-	     ("MLton_detectOverflow", Bool (!detectOverflow)),
-	     ("MLton_native", Bool (!Native.native)),
-	     ("MLton_profile_isOn", Bool (!profile <> ProfileNone)),
-	     ("MLton_safe", Bool (!safe)),
-	     ("TextIO_bufSize", Int (!textIOBufSize))]
+	    [("Exn_keepHistory", bool (!exnHistory)),
+	     ("MLton_detectOverflow", bool (!detectOverflow)),
+	     ("MLton_native", bool (!Native.native)),
+	     ("MLton_profile_isOn", bool (!profile <> ProfileNone)),
+	     ("MLton_safe", bool (!safe)),
+	     ("TextIO_bufSize", int (!textIOBufSize))]
 	 end
       fun lookupBuildConstant (c: string) =
 	 case List.peek (buildConstants, fn (c', _) => c = c') of
@@ -365,7 +386,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	 let
 	    fun get s =
 	       case lookupConstant s of
-		  LookupConstant.Const.Int n => n
+		  Const.Int i => IntX.toInt i
 		| _ => Error.bug "GC_state offset must be an int"
 	 in
 	    Runtime.GCField.setOffsets

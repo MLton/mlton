@@ -8,6 +8,9 @@
 signature ATOMS_STRUCTS =
    sig
       structure Ast: AST
+      structure IntSize: INT_SIZE
+      structure RealSize: REAL_SIZE
+      structure WordSize: WORD_SIZE
    end
 
 signature ATOMS' =
@@ -17,8 +20,10 @@ signature ATOMS' =
       structure Con: CON
       structure Cons: SET
       structure Const: CONST
+      structure IntX: INT_X
       structure Prim: PRIM 
       structure ProfileExp: PROFILE_EXP
+      structure RealX: REAL_X
       structure Record: RECORD
       structure Scheme: SCHEME
       structure SortedRecord: RECORD
@@ -39,6 +44,7 @@ signature ATOMS' =
             val rename: t * Tyvar.t vector -> t * Tyvar.t vector
 	 end
       structure Tyvars: SET
+      structure WordX: WORD_X
 
       sharing Ast = Const.Ast = Prim.Type.Ast
       sharing Ast.Con = Con.AstId
@@ -47,13 +53,18 @@ signature ATOMS' =
       sharing Ast.Var = Var.AstId
       sharing Con = Prim.Con
       sharing Const = Prim.Const
+      sharing IntSize = IntX.IntSize = Prim.IntSize = Tycon.IntSize
+      sharing IntX = Const.IntX
+      sharing RealSize = Prim.RealSize = RealX.RealSize = Tycon.RealSize
+      sharing RealX = Const.RealX
       sharing Record = Ast.Record
       sharing Scheme = Prim.Scheme
       sharing SortedRecord = Ast.SortedRecord
       sharing SourceInfo = ProfileExp.SourceInfo
-      sharing Tycon = Const.Tycon
       sharing Tycon = Scheme.Tycon
       sharing Tyvar = Ast.Tyvar
+      sharing WordSize = Prim.WordSize = Tycon.WordSize = WordX.WordSize
+      sharing WordX = Const.WordX
       sharing type Con.t = Cons.Element.t
       sharing type Tycon.t = Tycons.Element.t
       sharing type Tyvar.t = TyvarEnv.Domain.t

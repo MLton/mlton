@@ -10,9 +10,11 @@ Group
 structure Array
 structure Char
 structure Error
+structure Exn
 structure File
 structure In
 structure Int
+structure IntInf
 structure Layout
 structure List
 structure Out

@@ -15,7 +15,18 @@ struct
 
 open S
 
-local open Type
+datatype z = datatype IntSize.t
+datatype z = datatype RealSize.t
+datatype z = datatype WordSize.t	       
+
+local
+   open Const
+in
+   structure IntX = IntX
+   structure WordX = WordX
+end
+local
+   open Type
 in
    structure Tycon = Tycon
    structure Tyvar = Tyvar
@@ -33,236 +44,297 @@ structure Kind =
 structure Name =
    struct
       datatype t =
-	 Array_array
-       | Array_array0Const
-       | Array_length
-       | Array_sub
-       | Array_update
-       | BuildConstant of string
-       | Byte_byteToChar
-       | Byte_charToByte
-       | C_CS_charArrayToWord8Array
-       | Char_chr
-       | Char_ge
-       | Char_gt
-       | Char_le
-       | Char_lt
-       | Char_ord
-       | Constant of string
-       | Cpointer_isNull
-       | Exn_extra
-       | Exn_keepHistory
-       | Exn_name
-       | Exn_setExtendExtra
-       | Exn_setInitExtra
-       | Exn_setTopLevelHandler
-       | FFI of string
-       | GC_collect
-       | GC_pack
-       | GC_unpack
-       | Int_add
-       | Int_addCheck
-       | Int_ge
-       | Int_geu
-       | Int_gt
-       | Int_gtu
-       | Int_le
-       | Int_lt
-       | Int_mul
-       | Int_mulCheck
-       | Int_neg
-       | Int_negCheck
-       | Int_quot
-       | Int_rem
-       | Int_sub
-       | Int_subCheck
-       | IntInf_add
-       | IntInf_andb
-       | IntInf_arshift
-       | IntInf_compare
-       | IntInf_equal
-       | IntInf_fromVector
-       | IntInf_fromWord
-       | IntInf_gcd
-       | IntInf_lshift
-       | IntInf_mul
-       | IntInf_notb
-       | IntInf_neg
-       | IntInf_orb
-       | IntInf_quot
-       | IntInf_rem
-       | IntInf_sub
-       | IntInf_toString
-       | IntInf_toVector
-       | IntInf_toWord
-       | IntInf_xorb
-       | MLton_bogus
-       | MLton_bug
-       | MLton_deserialize
-       | MLton_eq
-       | MLton_equal
-       | MLton_halt
-       | MLton_handlesSignals
-       | MLton_installSignalHandler
-       | MLton_serialize
-       | MLton_size
-       | MLton_touch
-       | Real_Math_acos
-       | Real_Math_asin
-       | Real_Math_atan
-       | Real_Math_atan2
-       | Real_Math_cos
-       | Real_Math_cosh
-       | Real_Math_exp
-       | Real_Math_ln
-       | Real_Math_log10 
-       | Real_Math_pow
-       | Real_Math_sin
-       | Real_Math_sinh
-       | Real_Math_sqrt
-       | Real_Math_tan
-       | Real_Math_tanh
-       | Real_abs
-       | Real_add
-       | Real_copysign
-       | Real_div
-       | Real_equal
-       | Real_frexp
-       | Real_fromInt
-       | Real_ge
-       | Real_gt
-       | Real_ldexp
-       | Real_le
-       | Real_lt
-       | Real_modf
-       | Real_mul
-       | Real_muladd
-       | Real_mulsub
-       | Real_neg
-       | Real_qequal
-       | Real_round
-       | Real_sub
-       | Real_toInt
-       | Ref_assign
-       | Ref_deref
-       | Ref_ref
-       | String_fromWord8Vector
-       | String_toWord8Vector
-       | Thread_atomicBegin
-       | Thread_atomicEnd
-       | Thread_canHandle
-       | Thread_copy
-       | Thread_copyCurrent
-       | Thread_returnToC
-       | Thread_switchTo
-       | Vector_fromArray
-       | Vector_length
-       | Vector_sub
-       | Weak_canGet
-       | Weak_get
-       | Weak_new
-       | Word32_add
-       | Word32_addCheck
-       | Word32_andb
-       | Word32_arshift
-       | Word32_div
-       | Word32_fromInt
-       | Word32_ge
-       | Word32_gt
-       | Word32_le
-       | Word32_lshift
-       | Word32_lt
-       | Word32_mod
-       | Word32_mul
-       | Word32_mulCheck
-       | Word32_neg
-       | Word32_notb
-       | Word32_orb
-       | Word32_rol
-       | Word32_ror
-       | Word32_rshift
-       | Word32_sub
-       | Word32_toIntX
-       | Word32_xorb
-       | Word8Array_subWord
-       | Word8Array_updateWord
-       | Word8Vector_subWord
-       | Word8_add
-       | Word8_andb
-       | Word8_arshift
-       | Word8_div
-       | Word8_fromInt
-       | Word8_fromLargeWord
-       | Word8_ge
-       | Word8_gt
-       | Word8_le
-       | Word8_lshift
-       | Word8_lt
-       | Word8_mod
-       | Word8_mul
-       | Word8_neg
-       | Word8_notb
-       | Word8_orb
-       | Word8_rol
-       | Word8_ror
-       | Word8_rshift
-       | Word8_sub
-       | Word8_toInt
-       | Word8_toIntX
-       | Word8_toLargeWord
-       | Word8_toLargeWordX
-       | Word8_xorb
-       | World_save
+	 Array_array (* backend *)
+       | Array_array0Const (* constant propagation *)
+       | Array_length (* ssa to rssa *)
+       | Array_sub (* backend *)
+       | Array_toVector (* backend *)
+       | Array_update (* backend *)
+       | BuildConstant of string (* type inference *)
+       | Byte_byteToChar (* ssa to rssa *)
+       | Byte_charToByte (* ssa to rssa *)
+       | C_CS_charArrayToWord8Array (* ssa to rssa *)
+       | Char_lt (* codegen *)
+       | Char_le (* codegen *)
+       | Char_gt (* codegen *)
+       | Char_ge (* codegen *)
+       | Char_chr (* codegen *)
+       | Char_ord (* codegen *)
+       | Constant of string (* type inference *)
+       | Cpointer_isNull (* codegen *)
+       | Exn_extra (* implement exceptions *)
+       | Exn_keepHistory (* a compile-time boolean *)
+       | Exn_name (* implement exceptions *)
+       | Exn_setExtendExtra (* implement exceptions *)
+       | Exn_setInitExtra (* implement exceptions *)
+       | Exn_setTopLevelHandler (* implement exceptions *)
+       | FFI of string (* ssa to rssa *)
+       | GC_collect (* ssa to rssa *)
+       | GC_pack (* ssa to rssa *)
+       | GC_unpack (* ssa to rssa *)
+       | Int_add of IntSize.t (* codegen *)
+       | Int_addCheck of IntSize.t (* codegen *)
+       | Int_ge of IntSize.t (* codegen *)
+       | Int_gt of IntSize.t (* codegen *)
+       | Int_le of IntSize.t (* codegen *)
+       | Int_lt of IntSize.t (* codegen *)
+       | Int_mul of IntSize.t (* codegen *)
+       | Int_mulCheck of IntSize.t (* codegen *)
+       | Int_neg of IntSize.t (* codegen *)
+       | Int_negCheck of IntSize.t (* codegen *)
+       | Int_quot of IntSize.t (* codegen *)
+       | Int_rem of IntSize.t (* codegen *)
+       | Int_sub of IntSize.t (* codegen *)
+       | Int_subCheck of IntSize.t (* codegen *)
+       | Int_toReal of IntSize.t * RealSize.t (* codegen *)
+       | Int_toWord of IntSize.t * WordSize.t (* codegen *)
+       | IntInf_add (* ssa to rssa *)
+       | IntInf_andb (* ssa to rssa *)
+       | IntInf_arshift (* ssa to rssa *)
+       | IntInf_compare (* ssa to rssa *)
+       | IntInf_equal (* ssa to rssa *)
+       | IntInf_gcd (* ssa to rssa *)
+       | IntInf_lshift (* ssa to rssa *)
+       | IntInf_mul (* ssa to rssa *)
+       | IntInf_neg (* ssa to rssa *)
+       | IntInf_notb (* ssa to rssa *)
+       | IntInf_orb (* ssa to rssa *)
+       | IntInf_quot (* ssa to rssa *)
+       | IntInf_rem (* ssa to rssa *)
+       | IntInf_sub (* ssa to rssa *)
+       | IntInf_toString (* ssa to rssa *)
+       | IntInf_toVector (* ssa to rssa *)
+       | IntInf_toWord (* ssa to rssa *)
+       | IntInf_xorb (* ssa to rssa *)
+       | MLton_bogus (* ssa to rssa *)
+       (* of type unit -> 'a.
+	* Makes a bogus value of any type.
+	*)
+       | MLton_bug (* ssa to rssa *)
+       | MLton_deserialize (* unused *)
+       | MLton_eq (* codegen *)
+       | MLton_equal (* polymorphic equality *)
+       | MLton_halt (* ssa to rssa *)
+       (* MLton_handlesSignals and MLton_installSignalHandler work together
+	* to inform the optimizer and basis library whether or not the
+	* program uses signal handlers.
+	*
+	* MLton_installSignalHandler is called by MLton.Signal.setHandler,
+	* and is effectively a noop, but is left in the program until the
+	* end of the backend, so that the optimizer can test whether or
+	* not the program installs signal handlers.
+	*
+	* MLton_handlesSignals is translated by closure conversion into
+	* a boolean, and is true iff MLton_installsSignalHandler is called.
+	*)
+       | MLton_handlesSignals (* closure conversion *)
+       | MLton_installSignalHandler (* backend *)
+       | MLton_serialize (* unused *)
+       | MLton_size (* ssa to rssa *)
+       | MLton_touch (* backend *)
+       | Real_Math_acos of RealSize.t (* codegen *)
+       | Real_Math_asin of RealSize.t (* codegen *)
+       | Real_Math_atan of RealSize.t (* codegen *)
+       | Real_Math_atan2 of RealSize.t (* codegen *)
+       | Real_Math_cos of RealSize.t (* codegen *)
+       | Real_Math_exp of RealSize.t (* codegen *)
+       | Real_Math_ln of RealSize.t (* codegen *)
+       | Real_Math_log10 of RealSize.t  (* codegen *)
+       | Real_Math_sin of RealSize.t (* codegen *)
+       | Real_Math_sqrt of RealSize.t (* codegen *)
+       | Real_Math_tan of RealSize.t (* codegen *)
+       | Real_abs of RealSize.t (* codegen *)
+       | Real_add of RealSize.t (* codegen *)
+       | Real_div of RealSize.t (* codegen *)
+       | Real_equal of RealSize.t (* codegen *)
+       | Real_ge of RealSize.t (* codegen *)
+       | Real_gt of RealSize.t (* codegen *)
+       | Real_ldexp of RealSize.t (* codegen *)
+       | Real_le of RealSize.t (* codegen *)
+       | Real_lt of RealSize.t (* codegen *)
+       | Real_mul of RealSize.t (* codegen *)
+       | Real_muladd of RealSize.t (* codegen *)
+       | Real_mulsub of RealSize.t (* codegen *)
+       | Real_neg of RealSize.t	  (* codegen *)
+       | Real_qequal of RealSize.t (* codegen *)
+       | Real_round of RealSize.t (* codegen *)
+       | Real_sub of RealSize.t (* codegen *)
+       | Real_toInt of RealSize.t (* codegen *)
+       | Ref_assign (* backend *)
+       | Ref_deref (* backend *)
+       | Ref_ref (* backend *)
+       | String_toWord8Vector (* ssa to rssa *)
+       | Thread_atomicBegin (* backend *)
+       | Thread_atomicEnd (* backend *)
+       | Thread_canHandle (* backend *)
+       | Thread_copy (* ssa to rssa *)
+       | Thread_copyCurrent (* ssa to rssa *)
+       | Thread_returnToC (* codegen *)
+       (* switchTo has to be a _prim because we have to know that it
+	* enters the runtime -- because everything must be saved
+	* on the stack.
+	*)
+       | Thread_switchTo (* ssa to rssa *)
+       | Vector_length (* ssa to rssa *)
+       | Vector_sub (* backend *)
+       | Weak_canGet (* ssa to rssa *)
+       | Weak_get (* ssa to rssa *)
+       | Weak_new (* ssa to rssa *)
+       | Word_add of WordSize.t (* codegen *)
+       | Word_addCheck of WordSize.t (* codegen *)
+       | Word_andb of WordSize.t (* codegen *)
+       | Word_arshift of WordSize.t (* codegen *)
+       | Word_div of WordSize.t (* codegen *)
+       | Word_ge of WordSize.t (* codegen *)
+       | Word_gt of WordSize.t (* codegen *)
+       | Word_le of WordSize.t (* codegen *)
+       | Word_lshift of WordSize.t (* codegen *)
+       | Word_lt of WordSize.t (* codegen *)
+       | Word_mod of WordSize.t (* codegen *)
+       | Word_mul of WordSize.t (* codegen *)
+       | Word_mulCheck of WordSize.t (* codegen *)
+       | Word_neg of WordSize.t (* codegen *)
+       | Word_notb of WordSize.t (* codegen *)
+       | Word_orb of WordSize.t (* codegen *)
+       | Word_rol of WordSize.t (* codegen *)
+       | Word_ror of WordSize.t (* codegen *)
+       | Word_rshift of WordSize.t (* codegen *)
+       | Word_sub of WordSize.t (* codegen *)
+       | Word_toInt of WordSize.t * IntSize.t (* codegen *)
+       | Word_toIntInf (* ssa to rssa *)
+       | Word_toIntX of WordSize.t * IntSize.t (* codegen *)
+       | Word_toWord of WordSize.t * WordSize.t (* codegen *)
+       | Word_toWordX of WordSize.t * WordSize.t (* codegen *)
+       | Word_xorb of WordSize.t (* codegen *)
+       | WordVector_toIntInf (* ssa to rssa *)
+       | Word8Array_subWord (* codegen *)
+       | Word8Array_updateWord (* codegen *)
+       | Word8Vector_subWord (* codegen *)
+       | Word8Vector_toString (* ssa to rssa *)
+       | World_save (* ssa to rssa *)
 
       val equals: t * t -> bool = op =
 
       val isCommutative =
-	 fn Int_add => true
-	  | Int_addCheck => true
-	  | Int_mul => true
-	  | Int_mulCheck => true
+	 fn Int_add _ => true
+	  | Int_addCheck _ => true
+	  | Int_mul _ => true
+	  | Int_mulCheck _ => true
 	  | IntInf_equal => true
 	  | MLton_eq => true
 	  | MLton_equal => true
-	  | Real_add => true
-	  | Real_mul => true
-	  | Real_qequal => true
-	  | Word32_add => true
-	  | Word32_addCheck => true
-	  | Word32_andb => true
-	  | Word32_mul => true
-	  | Word32_mulCheck => true
-	  | Word32_orb => true
-	  | Word32_xorb => true
-	  | Word8_add => true
-	  | Word8_andb => true
-	  | Word8_mul => true
-	  | Word8_orb => true
-	  | Word8_xorb => true
+	  | Real_add _ => true
+	  | Real_mul _ => true
+	  | Real_qequal _ => true
+	  | Word_add _ => true
+	  | Word_addCheck _ => true
+	  | Word_andb _ => true
+	  | Word_mul _ => true
+	  | Word_mulCheck _ => true
+	  | Word_orb _ => true
+	  | Word_xorb _ => true
 	  | _ => false
 
       val mayOverflow =
-	 fn Int_addCheck => true
-	  | Int_mulCheck => true
-	  | Int_negCheck => true
-	  | Int_subCheck => true
-	  | Word32_addCheck => true
-	  | Word32_mulCheck => true
+	 fn Int_addCheck _ => true
+	  | Int_mulCheck _ => true
+	  | Int_negCheck _ => true
+	  | Int_subCheck _ => true
+	  | Word_addCheck _ => true
+	  | Word_mulCheck _ => true
 	  | _ => false
 
       val mayRaise = mayOverflow
 
       datatype z = datatype Kind.t
-	       
       (* The values of these strings are important since they are referred to
        * in the basis library code.  See basis-library/misc/primitive.sml.
        *)
+      fun ints (s: IntSize.t) =
+	 List.map
+	 ([(Int_add, Functional, "add"),
+	   (Int_addCheck, SideEffect, "addCheck"),
+	   (Int_ge, Functional, "ge"),
+	   (Int_gt, Functional, "gt"),
+	   (Int_le, Functional, "le"),
+	   (Int_lt, Functional, "lt"),
+	   (Int_mul, Functional, "mul"),
+	   (Int_mulCheck, SideEffect, "mulCheck"),
+	   (Int_neg, Functional, "neg"),
+	   (Int_negCheck, SideEffect, "negCheck"),
+	   (Int_quot, Functional, "quot"),
+	   (Int_rem, Functional, "rem"),
+	   (Int_sub, Functional, "sub"),
+	   (Int_subCheck, SideEffect, "subCheck")],
+	  fn (makeName, kind, str) =>
+	  (makeName s, kind, concat ["Int", IntSize.toString s, "_", str]))
+
+      fun reals (s: RealSize.t) =
+	 List.map
+	 ([(Real_Math_acos, Functional, "Math_acos"),
+	   (Real_Math_asin, Functional, "Math_asin"),
+	   (Real_Math_atan, Functional, "Math_atan"),
+	   (Real_Math_atan2, Functional, "Math_atan2"),
+	   (Real_Math_cos, Functional, "Math_cos"),
+	   (Real_Math_exp, Functional, "Math_exp"),
+	   (Real_Math_ln, Functional, "Math_ln"),
+	   (Real_Math_log10, Functional, "Math_log10"),
+	   (Real_Math_sin, Functional, "Math_sin"),
+	   (Real_Math_sqrt, Functional, "Math_sqrt"),
+	   (Real_Math_tan, Functional, "Math_tan"),
+	   (Real_abs, Functional, "abs"),
+	   (Real_add, Functional, "add"),
+	   (Real_div, Functional, "div"),
+	   (Real_equal, Functional, "equal"),
+	   (Real_ge, Functional, "ge"),
+	   (Real_gt, Functional, "gt"),
+	   (Real_ldexp, Functional, "ldexp"),
+	   (Real_le, Functional, "le"),
+	   (Real_lt, Functional, "lt"),
+	   (Real_mul, Functional, "mul"),
+	   (Real_muladd, Functional, "muladd"),
+	   (Real_mulsub, Functional, "mulsub"),
+	   (Real_neg, Functional, "neg"),
+	   (Real_qequal, Functional, "qequal"),
+	   (Real_round, Functional, "round"),
+	   (Real_sub, Functional, "sub"),
+	   (Real_toInt, Functional, "toInt")],
+	 fn (makeName, kind, str) =>
+	 (makeName s, kind, concat ["Real", RealSize.toString s, "_", str]))
+
+      fun words (s: WordSize.t) =
+	 List.map
+	 ([(Word_add, Functional, "add"),
+	   (Word_addCheck, SideEffect, "addCheck"),
+	   (Word_andb, Functional, "andb"),
+	   (Word_arshift, Functional, "arshift"),
+	   (Word_div, Functional, "div"),
+	   (Word_ge, Functional, "ge"),
+	   (Word_gt, Functional, "gt"),
+	   (Word_le, Functional, "le"),
+	   (Word_lshift, Functional, "lshift"),
+	   (Word_lt, Functional, "lt"),
+	   (Word_mod, Functional, "mod"),
+	   (Word_mul, Functional, "mul"),
+	   (Word_mulCheck, SideEffect, "mulCheck"),
+	   (Word_neg, Functional, "neg"),
+	   (Word_notb, Functional, "notb"),
+	   (Word_orb, Functional, "orb"),
+	   (Word_rol, Functional, "rol"),
+	   (Word_ror, Functional, "ror"),
+	   (Word_rshift, Functional, "rshift"),
+	   (Word_sub, Functional, "sub"),
+	   (Word_xorb, Functional, "xorb")],
+	  fn (makeName, kind, str) =>
+	  (makeName s, kind, concat ["Word", WordSize.toString s, "_", str]))
+
       val strings =
 	 [
 	  (Array_array, Moveable, "Array_array"),
 	  (Array_array0Const, Moveable, "Array_array0Const"),
 	  (Array_length, Functional, "Array_length"),
 	  (Array_sub, DependsOnState, "Array_sub"),
+	  (Array_toVector, DependsOnState, "Array_toVector"),
 	  (Array_update, SideEffect, "Array_update"),
 	  (Byte_byteToChar, Functional, "Byte_byteToChar"),
 	  (Byte_charToByte, Functional, "Byte_charToByte"),
@@ -289,8 +361,6 @@ structure Name =
 	  (IntInf_arshift, Functional, "IntInf_arshift"),
 	  (IntInf_compare, Functional, "IntInf_compare"),
 	  (IntInf_equal, Functional, "IntInf_equal"),
-	  (IntInf_fromVector, Functional, "IntInf_fromVector"),
-	  (IntInf_fromWord, Functional, "IntInf_fromWord"),
 	  (IntInf_gcd, Functional, "IntInf_gcd"),
 	  (IntInf_lshift, Functional, "IntInf_lshift"),
 	  (IntInf_mul, Functional, "IntInf_mul"),
@@ -304,22 +374,6 @@ structure Name =
 	  (IntInf_toVector, Functional, "IntInf_toVector"),
 	  (IntInf_toWord, Functional, "IntInf_toWord"),
 	  (IntInf_xorb, Functional, "IntInf_xorb"),
-	  (Int_add, Functional, "Int_add"),
-	  (Int_addCheck, SideEffect, "Int_addCheck"),
-	  (Int_ge, Functional, "Int_ge"),
-	  (Int_geu, Functional, "Int_geu"),
-	  (Int_gt, Functional, "Int_gt"),
-	  (Int_gtu, Functional, "Int_gtu"),
-	  (Int_le, Functional, "Int_le"),
-	  (Int_lt, Functional, "Int_lt"),
-	  (Int_mul, Functional, "Int_mul"),
-	  (Int_mulCheck, SideEffect, "Int_mulCheck"),
-	  (Int_neg, Functional, "Int_neg"),
-	  (Int_negCheck, SideEffect, "Int_negCheck"),
-	  (Int_quot, Functional, "Int_quot"),
-	  (Int_rem, Functional, "Int_rem"),
-	  (Int_sub, Functional, "Int_sub"),
-	  (Int_subCheck, SideEffect, "Int_subCheck"),
 	  (MLton_bogus, Functional, "MLton_bogus"),
 	  (MLton_bug, SideEffect, "MLton_bug"),
 	  (MLton_deserialize, Moveable, "MLton_deserialize"),
@@ -332,46 +386,9 @@ structure Name =
 	  (MLton_serialize, DependsOnState, "MLton_serialize"),
 	  (MLton_size, DependsOnState, "MLton_size"),
 	  (MLton_touch, SideEffect, "MLton_touch"),
-	  (Real_Math_acos, Functional, "Real_Math_acos"),
-	  (Real_Math_asin, Functional, "Real_Math_asin"),
-	  (Real_Math_atan, Functional, "Real_Math_atan"),
-	  (Real_Math_atan2, Functional, "Real_Math_atan2"),
-	  (Real_Math_cos, Functional, "Real_Math_cos"),
-	  (Real_Math_cosh, Functional, "Real_Math_cosh"),
-	  (Real_Math_exp, Functional, "Real_Math_exp"),
-	  (Real_Math_ln, Functional, "Real_Math_ln"),
-	  (Real_Math_log10, Functional, "Real_Math_log10"),
-	  (Real_Math_pow, Functional, "Real_Math_pow"),
-	  (Real_Math_sin, Functional, "Real_Math_sin"),
-	  (Real_Math_sinh, Functional, "Real_Math_sinh"),
-	  (Real_Math_sqrt, Functional, "Real_Math_sqrt"),
-	  (Real_Math_tan, Functional, "Real_Math_tan"),
-	  (Real_Math_tanh, Functional, "Real_Math_tanh"),
-	  (Real_abs, Functional, "Real_abs"),
-	  (Real_add, Functional, "Real_add"),
-	  (Real_copysign, Functional, "Real_copysign"),
-	  (Real_div, Functional, "Real_div"),
-	  (Real_equal, Functional, "Real_equal"),
-	  (Real_frexp, SideEffect, "Real_frexp"),
-	  (Real_fromInt, Functional, "Real_fromInt"),
-	  (Real_ge, Functional, "Real_ge"),
-	  (Real_gt, Functional, "Real_gt"),
-	  (Real_ldexp, Functional, "Real_ldexp"),
-	  (Real_le, Functional, "Real_le"),
-	  (Real_lt, Functional, "Real_lt"),
-	  (Real_modf, SideEffect, "Real_modf"),
-	  (Real_mul, Functional, "Real_mul"),
-	  (Real_muladd, Functional, "Real_muladd"),
-	  (Real_mulsub, Functional, "Real_mulsub"),
-	  (Real_neg, Functional, "Real_neg"),
-	  (Real_qequal, Functional, "Real_qequal"),
-	  (Real_round, Functional, "Real_round"),
-	  (Real_sub, Functional, "Real_sub"),
-	  (Real_toInt, Functional, "Real_toInt"),
 	  (Ref_assign, SideEffect, "Ref_assign"),
 	  (Ref_deref, DependsOnState, "Ref_deref"),
 	  (Ref_ref, Moveable, "Ref_ref"),
-	  (String_fromWord8Vector, Functional, "String_fromWord8Vector"),
 	  (String_toWord8Vector, Functional, "String_toWord8Vector"),
 	  (Thread_atomicBegin, SideEffect, "Thread_atomicBegin"),
 	  (Thread_atomicEnd, SideEffect, "Thread_atomicEnd"),
@@ -380,65 +397,50 @@ structure Name =
 	  (Thread_copyCurrent, SideEffect, "Thread_copyCurrent"),
 	  (Thread_returnToC, SideEffect, "Thread_returnToC"),
 	  (Thread_switchTo, SideEffect, "Thread_switchTo"),
-	  (Vector_fromArray, DependsOnState, "Vector_fromArray"),
 	  (Vector_length, Functional, "Vector_length"),
 	  (Vector_sub, Functional, "Vector_sub"),
 	  (Weak_canGet, DependsOnState, "Weak_canGet"),
 	  (Weak_get, DependsOnState, "Weak_get"),
 	  (Weak_new, Moveable, "Weak_new"),
-	  (Word32_add, Functional, "Word32_add"),
-	  (Word32_addCheck, SideEffect, "Word32_addCheck"),
-	  (Word32_andb, Functional, "Word32_andb"),
-	  (Word32_arshift, Functional, "Word32_arshift"),
-	  (Word32_div, Functional, "Word32_div"),
-	  (Word32_fromInt, Functional, "Word32_fromInt"),
-	  (Word32_ge, Functional, "Word32_ge"),
-	  (Word32_gt, Functional, "Word32_gt"),
-	  (Word32_le, Functional, "Word32_le"),
-	  (Word32_lshift, Functional, "Word32_lshift"),
-	  (Word32_lt, Functional, "Word32_lt"),
-	  (Word32_mod, Functional, "Word32_mod"),
-	  (Word32_mul, Functional, "Word32_mul"),
-	  (Word32_mulCheck, SideEffect, "Word32_mulCheck"),
-	  (Word32_neg, Functional, "Word32_neg"),
-	  (Word32_notb, Functional, "Word32_notb"),
-	  (Word32_orb, Functional, "Word32_orb"),
-	  (Word32_rol, Functional, "Word32_rol"),
-	  (Word32_ror, Functional, "Word32_ror"),
-	  (Word32_rshift, Functional, "Word32_rshift"),
-	  (Word32_sub, Functional, "Word32_sub"),
-	  (Word32_toIntX, Functional, "Word32_toIntX"),
-	  (Word32_xorb, Functional, "Word32_xorb"),
+	  (Word_toIntInf, Functional, "Word_toIntInf"),
+	  (WordVector_toIntInf, Functional, "WordVector_toIntInf"),
 	  (Word8Array_subWord, DependsOnState, "Word8Array_subWord"),
 	  (Word8Array_updateWord, SideEffect, "Word8Array_updateWord"),
 	  (Word8Vector_subWord, Functional, "Word8Vector_subWord"),
-	  (Word8_add, Functional, "Word8_add"),
-	  (Word8_andb, Functional, "Word8_andb"),
-	  (Word8_arshift, Functional, "Word8_arshift"),
-	  (Word8_div, Functional, "Word8_div"),
-	  (Word8_fromInt, Functional, "Word8_fromInt"),
-	  (Word8_fromLargeWord, Functional, "Word8_fromLargeWord"),
-	  (Word8_ge, Functional, "Word8_ge"),
-	  (Word8_gt, Functional, "Word8_gt"),
-	  (Word8_le, Functional, "Word8_le"),
-	  (Word8_lshift, Functional, "Word8_lshift"),
-	  (Word8_lt, Functional, "Word8_lt"),
-	  (Word8_mod, Functional, "Word8_mod"),
-	  (Word8_mul, Functional, "Word8_mul"),
-	  (Word8_neg, Functional, "Word8_neg"),
-	  (Word8_notb, Functional, "Word8_notb"),
-	  (Word8_orb, Functional, "Word8_orb"),
-	  (Word8_rol, Functional, "Word8_rol"),
-	  (Word8_ror, Functional, "Word8_ror"),
-	  (Word8_rshift, Functional, "Word8_rshift"),
-	  (Word8_sub, Functional, "Word8_sub"),
-	  (Word8_toInt, Functional, "Word8_toInt"),
-	  (Word8_toIntX, Functional, "Word8_toIntX"),
-	  (Word8_toLargeWord, Functional, "Word8_toLargeWord"),
-	  (Word8_toLargeWordX, Functional, "Word8_toLargeWordX"),
-	  (Word8_xorb, Functional, "Word8_xorb"),
+	  (Word8Vector_toString, Functional, "Word8Vector_toString"),
 	  (World_save, SideEffect, "World_save")]
-
+	 @ List.concat [List.concatMap (IntSize.all, ints),
+			List.concatMap (RealSize.all, reals),
+			List.concatMap (WordSize.all, words)]
+	 @ let
+	      val int = ("Int", IntSize.all, IntSize.toString)
+	      val real = ("Real", RealSize.all, RealSize.toString)
+	      val word = ("Word", WordSize.all, WordSize.toString)
+	      local
+		 fun coerces' suf (name,
+				   (n, sizes, sizeToString),
+				   (n', sizes', sizeToString')) =
+		    List.fold
+		    (sizes, [], fn (s, ac) =>
+		     List.fold
+		     (sizes', ac, fn (s', ac) =>
+		      (name (s, s'), Functional,
+		       concat [n, sizeToString s, "_to", n', sizeToString' s',
+			       suf])
+		      :: ac))
+	      in
+		 val coerces = fn z => coerces' "" z
+		 val coercesX = fn z => coerces' "X" z
+	      end
+	   in
+	      List.concat [coerces (Int_toReal, int, real),
+			   coerces (Int_toWord, int, word),
+			   coerces (Word_toInt, word, int),
+			   coercesX (Word_toIntX, word, int),
+			   coerces (Word_toWord, word, word),
+			   coercesX (Word_toWordX, word, word)]
+	   end
+	 
       fun toString n =
 	 case n of
 	    BuildConstant s => s
@@ -532,42 +534,46 @@ local
 	     | _ => (case List.peek (Name.strings, fn (n', _, _) => n = n') of
 			NONE => Error.bug "strange name"
 		      | SOME (_, k, _) => k)
-      in new (n, k, s)
+      in
+	 new (n, k, s)
       end
-   val tuple = tuple o Vector.fromList    
+   val tuple = tuple o Vector.fromList
 in
-   val array = new (Name.Array_array, make1 (fn a => int --> array a))
-   val assign = new (Name.Ref_assign, make1 (fn a => tuple [reff a, a] --> unit))
+   val array = new (Name.Array_array, make1 (fn a => int I32 --> array a))
+   val assign =
+      new (Name.Ref_assign, make1 (fn a => tuple [reff a, a] --> unit))
    val bogus = new (Name.MLton_bogus, make1 (fn a => a))
-   val bug = new (Name.MLton_bug, make0 (string --> unit))
+   val bug = new (Name.MLton_bug, make0 (word8Vector --> unit))
    val deref = new (Name.Ref_deref, make1 (fn a => reff a --> a))
    val deserialize =
-      new (Name.MLton_deserialize, make1 (fn a => vector word8 --> a))
+      new (Name.MLton_deserialize, make1 (fn a => vector (word W8) --> a))
    val eq = new (Name.MLton_eq, makeEqual1 (fn a => tuple [a, a] --> bool))
    val equal = new (Name.MLton_equal, makeEqual1 (fn a => tuple [a, a] --> bool))
-   val gcCollect = new (Name.GC_collect, make0 (tuple [word, bool] --> unit))
+   val gcCollect = new (Name.GC_collect, make0 (tuple [word W32, bool] --> unit))
    val reff = new (Name.Ref_ref, make1 (fn a => a --> reff a))
-   val serialize = new (Name.MLton_serialize, make1 (fn a => a --> vector word8))
-   val vectorLength = new (Name.Vector_length, make1 (fn a => vector a --> int))
+   val serialize = new (Name.MLton_serialize,
+			make1 (fn a => a --> vector (word W8)))
+   val vectorLength =
+      new (Name.Vector_length, make1 (fn a => vector a --> int I32))
    val vectorSub =
-      new (Name.Vector_sub, make1 (fn a => tuple [vector a, int] --> a))
+      new (Name.Vector_sub, make1 (fn a => tuple [vector a, int I32] --> a))
 
    fun new0 (name, ty) = new (name, make0 ty)
 
-   val intNeg = new0 (Name.Int_neg, int --> int)
-   val intNegCheck = new0 (Name.Int_negCheck, int --> int)
+   fun intNeg s = new0 (Name.Int_neg s, int s --> int s)
+   fun intNegCheck s = new0 (Name.Int_negCheck s, int s --> int s)
    val intInfNeg =
-      new0 (Name.IntInf_neg, tuple [intInf, word] --> intInf)
+      new0 (Name.IntInf_neg, tuple [intInf, word W32] --> intInf)
    val intInfNotb =
-      new0 (Name.IntInf_notb, tuple [intInf, word] --> intInf)
+      new0 (Name.IntInf_notb, tuple [intInf, word W32] --> intInf)
    val intInfEqual = new0 (Name.IntInf_equal, tuple [intInf, intInf] --> bool)
-   val word8Neg = new0 (Name.Word8_neg, word8 --> word8)
-   val word8Notb = new0 (Name.Word8_notb, word8 --> word8)
-   val word32Notb = new0 (Name.Word32_notb, word --> word)
-   val word32Neg = new0 (Name.Word32_neg, word --> word)
+
+   fun wordNotb (s: WordSize.t) = new0 (Name.Word_notb s, word s --> word s)
+   fun wordNeg (s: WordSize.t) = new0 (Name.Word_neg s, word s --> word s)
 
    local
-      fun make n = new0 (n, tuple [int, int] --> int)
+      fun make n =
+	 IntSize.memoize (fn s => new0 (n s, tuple [int s, int s] --> int s))
    in
       val intAdd = make Name.Int_add
       val intAddCheck = make Name.Int_addCheck
@@ -578,25 +584,46 @@ in
    end
 
    local
-      fun make n = new0 (n, tuple [word, word] --> word)
+      fun make n =
+	 WordSize.memoize
+	 (fn s => new0 (n s, tuple [word s, word s] --> word s))
    in
-      val word32Add = make Name.Word32_add
-      val word32AddCheck = make Name.Word32_addCheck
-      val word32Andb = make Name.Word32_andb
-      val word32Mul = make Name.Word32_mul
-      val word32MulCheck = make Name.Word32_mulCheck
-      val word32Rshift = make Name.Word32_rshift
-      val word32Sub = make Name.Word32_sub
+      val wordAdd = make Name.Word_add
+      val wordAddCheck = make Name.Word_addCheck
+      val wordAndb = make Name.Word_andb
+      val wordMul = make Name.Word_mul
+      val wordMulCheck = make Name.Word_mulCheck
+      val wordRshift = make Name.Word_rshift
+      val wordSub = make Name.Word_sub
    end
 
    local
-      fun make n = new0 (n, tuple [word, word] --> bool)
+      fun make n =
+	 WordSize.memoize
+	 (fn s => new0 (n s, tuple [word s, word s] --> bool))
    in
-      val word32Gt = make Name.Word32_gt
+      val wordGe = make Name.Word_ge
+      val wordGt = make Name.Word_gt
+      val wordLe = make Name.Word_le
+      val wordLt = make Name.Word_lt
    end
 
-   val word32FromInt = new0 (Name.Word32_fromInt, int --> word)
-   val word32ToIntX = new0 (Name.Word32_toIntX, word --> int)
+   local
+      fun make (name, (ty, memo), (ty', memo')) =
+	 let
+	    val f =
+	       memo (fn s => memo' (fn s' => new0 (name (s, s'),
+						   ty s --> ty' s')))
+      in
+	 fn (s, s') => f s s'
+      end
+      val int = (int, IntSize.memoize)
+      val word = (word, WordSize.memoize)
+   in
+      val intToWord = make (Name.Int_toWord, int, word)
+      val wordToInt = make (Name.Word_toInt, word, int)
+      val wordToIntX = make (Name.Word_toIntX, word, int)
+   end
       
    fun ffi (name: string, s: Scheme.t) =
       new (Name.FFI name, s)
@@ -639,6 +666,14 @@ fun 'a checkApp {prim, targs, args,
 	     ; error)
       else
 	 let
+	    val con = fn (c, ts) =>
+	       let
+		  val c = if Tycon.equals (c, Tycon.char)
+			     then Tycon.word W8
+			  else c
+	       in
+		  con (c, ts)
+	       end
 	    val env = Vector.zip (tyvars, targs)
 	    fun var a =
 	       case Vector.peek (env, fn (a', _) => Tyvar.equals (a, a')) of
@@ -691,6 +726,7 @@ fun 'a extractTargs {prim, args, result,
 	 Array_array => one (dearray result)
        | Array_array0Const => one (dearray result)
        | Array_sub => one result
+       | Array_toVector => one (dearray (arg 0))
        | Array_update => one (arg 2)
        | Array_length => one (dearray (arg 0))
        | Exn_extra => one result
@@ -706,7 +742,6 @@ fun 'a extractTargs {prim, args, result,
        | Ref_assign => one (arg 1)
        | Ref_deref => one result
        | Ref_ref => one (arg 0)
-       | Vector_fromArray => one (dearray (arg 0))
        | Vector_length => one (devector (arg 0))
        | Vector_sub => one result
        | Weak_canGet => one (deweak (arg 0))
@@ -721,14 +756,14 @@ structure ApplyArg =
    struct
       datatype 'a t =
 	 Con of {con: Con.t, hasArg: bool}
-       | Const of Const.Node.t
+       | Const of Const.t
        | Var of 'a
 
       fun layout layoutX =
 	 fn Con {con, hasArg} =>
 	      Layout.record [("con", Con.layout con),
 			     ("hasArg", Bool.layout hasArg)]
-	  | Const c => Const.Node.layout c
+	  | Const c => Const.layout c
 	  | Var x => layoutX x
    end
 
@@ -784,139 +819,114 @@ structure ApplyResult =
  * A = B --> false
  * A x = B y --> false
  *)
-
+   
 fun 'a apply (p, args, varEquals) =
    let
       datatype z = datatype Name.t
-      datatype z = datatype Const.Node.t
+      datatype z = datatype Const.t
       val bool = ApplyResult.Bool
-      val char = ApplyResult.Const o Const.fromChar
-      val int = ApplyResult.Const o Const.fromInt
-      val intInf = ApplyResult.Const o Const.fromIntInf
+      val int = ApplyResult.Const o Const.int
+      val intInf = ApplyResult.Const o Const.intInf
       val intInfConst = intInf o IntInf.fromInt
-      val string = ApplyResult.Const o Const.fromString
-      val word = ApplyResult.Const o Const.fromWord
-      val word32 = word
-      val word8 = ApplyResult.Const o Const.fromWord8
+      fun word (w: WordX.t): 'a ApplyResult.t =
+	 ApplyResult.Const (Const.word w)
+      val word8Vector = ApplyResult.Const o Const.word8Vector
       val t = ApplyResult.truee
       val f = ApplyResult.falsee
       local
 	 fun make from (f, c1, c2) = from (f (c1, c2))
       in
-	 fun io z = make int z
-	 val wo = make word
 	 fun pred z = make bool z
 	 val iio = make intInf
       end
-      fun iu (f, i1, i2) = bool (f (Word.fromInt i1, Word.fromInt i2))
-      fun w8w (f, w8: Word.t, w: Word.t) = word8 (f (Word8.fromWord w8, w))
-      fun w8p (p, w1, w2) = bool (p (Word8.fromWord w1, Word8.fromWord w2))
-      fun w8o (f, w1, w2) = word8 (f (Word8.fromWord w1, Word8.fromWord w2))
+      fun io (f: IntX.t * IntX.t -> IntX.t, i, i') =
+	 int (f (i, i'))
+      fun wcheck (f: IntInf.t * IntInf.t -> IntInf.t,
+		  w: WordX.t,
+		  w': WordX.t,
+		  s: WordSize.t) =
+	 let
+	    val x = f (WordX.toIntInf w, WordX.toIntInf w')
+	    val x' = IntInf.mod (x, Int.toIntInf (WordSize.size s))
+	 in
+	    if x = x'
+	       then word (WordX.fromLargeInt (x, s))
+	    else ApplyResult.Overflow
+	 end
       val eq =
- 	 fn (Char c1, Char c2) => bool (Char.equals (c1, c2))
- 	  | (Int i1, Int i2) => bool (Int.equals (i1, i2))
- 	  | (Word w1, Word w2) => bool (Word.equals (w1, w2))
+ 	 fn (Int i1, Int i2) => bool (IntX.equals (i1, i2))
+ 	  | (Word w1, Word w2) => bool (WordX.equals (w1, w2))
  	  | _ => ApplyResult.Unknown
       val equal =
-	 fn (Char c1, Char c2) => bool (Char.equals (c1, c2))
-	  | (Int i1, Int i2) => bool (Int.equals (i1, i2))
-	  | (IntInf i1, IntInf i2) => bool (IntInf.equals (i1, i2))
-	  | (String s1, String s2) => bool (String.equals (s1, s2))
-	  | (Word w1, Word w2) => bool (Word.equals (w1, w2))
+	 fn (Int i1, Int i2) => bool (IntX.equals (i1, i2))
+	  | (Word w1, Word w2) => bool (WordX.equals (w1, w2))
+	  | (Word8Vector v1, Word8Vector v2) => bool (v1 = v2)
 	  | _ => ApplyResult.Unknown
-      fun allConsts (cs: Const.Node.t list) =
+      fun allConsts (cs: Const.t list) =
 	 (case (name p, cs) of
-	     (Byte_byteToChar, [Word w]) => char (Word.toChar w)
-	   | (Byte_charToByte, [Char c]) => word8 (Word8.fromChar c)
-	   | (Char_lt, [Char c1, Char c2]) => pred (Char.<, c1, c2)
-	   | (Char_le, [Char c1, Char c2]) => pred (Char.<=, c1, c2)
-	   | (Char_gt, [Char c1, Char c2]) => pred (Char.>, c1, c2)
-	   | (Char_ge, [Char c1, Char c2]) => pred (Char.>=, c1, c2)
-	   | (Char_chr, [Int i]) => char (Char.fromInt i)
-	   | (Char_ord, [Char c]) => int (Char.toInt c)
-	   | (Int_add, [Int i1, Int i2]) => io (Int.+, i1, i2)
-	   | (Int_addCheck, [Int i1, Int i2]) => io (Int.+, i1, i2)
-	   | (Int_mul, [Int i1, Int i2]) => io (Int.*, i1, i2)
-	   | (Int_mulCheck, [Int i1, Int i2]) => io (Int.*, i1, i2)
-	   | (Int_sub, [Int i1, Int i2]) => io (Int.-, i1, i2)
-	   | (Int_subCheck, [Int i1, Int i2]) => io (Int.-, i1, i2)
-	   | (Int_lt, [Int i1, Int i2]) => pred (Int.<, i1, i2)
-	   | (Int_le, [Int i1, Int i2]) => pred (Int.<=, i1, i2)
-	   | (Int_gt, [Int i1, Int i2]) => pred (Int.>, i1, i2)
-	   | (Int_ge, [Int i1, Int i2]) => pred (Int.>=, i1, i2)
-	   | (Int_geu, [Int i1, Int i2]) => iu (Word.>=, i1, i2)
-	   | (Int_gtu, [Int i1, Int i2]) => iu (Word.>, i1, i2)
-	   | (Int_neg, [Int i]) => int (~ i)
-	   | (Int_negCheck, [Int i]) => int (~ i)
-	   | (Int_quot, [Int i1, Int i2]) => io (Int.quot, i1, i2)
-	   | (Int_rem, [Int i1, Int i2]) => io (Int.rem, i1, i2)
+	     (Int_add _, [Int i1, Int i2]) => io (IntX.+, i1, i2)
+	   | (Int_addCheck _, [Int i1, Int i2]) => io (IntX.+, i1, i2)
+	   | (Int_ge s, [Int i1, Int i2]) => pred (IntX.>=, i1, i2)
+	   | (Int_gt s, [Int i1, Int i2]) => pred (IntX.>, i1, i2)
+	   | (Int_le s, [Int i1, Int i2]) => pred (IntX.<=, i1, i2)
+	   | (Int_lt s, [Int i1, Int i2]) => pred (IntX.<, i1, i2)
+	   | (Int_mul _, [Int i1, Int i2]) => io (IntX.*, i1, i2)
+	   | (Int_mulCheck _, [Int i1, Int i2]) => io (IntX.*, i1, i2)
+	   | (Int_neg _, [Int i]) => int (IntX.~ i)
+	   | (Int_negCheck _, [Int i]) => int (IntX.~ i)
+	   | (Int_quot _, [Int i1, Int i2]) => io (IntX.quot, i1, i2)
+	   | (Int_rem _, [Int i1, Int i2]) => io (IntX.rem, i1, i2)
+	   | (Int_sub _, [Int i1, Int i2]) => io (IntX.-, i1, i2)
+	   | (Int_subCheck _, [Int i1, Int i2]) => io (IntX.-, i1, i2)
+	   | (Int_toWord (_, s), [Int i]) =>
+		word (WordX.fromLargeInt (IntX.toIntInf i, s))
 	   | (IntInf_compare, [IntInf i1, IntInf i2]) =>
-		int (case IntInf.compare (i1, i2) of
-			Relation.LESS => ~1
-		      | Relation.EQUAL => 0
-		      | Relation.GREATER => 1)
+		int (IntX.make
+		     (IntInf.fromInt (case IntInf.compare (i1, i2) of
+					 Relation.LESS => ~1
+				       | Relation.EQUAL => 0
+				       | Relation.GREATER => 1),
+		      IntSize.default))
 	   | (IntInf_equal, [IntInf i1, IntInf i2]) =>
 		bool (IntInf.equals (i1, i2))
-	   | (IntInf_fromWord, [Word w]) =>
-		(case SmallIntInf.fromWord w of
-		    NONE => ApplyResult.Unknown
-		  | SOME i => intInf i)
 	   | (IntInf_toWord, [IntInf i]) =>
 		(case SmallIntInf.toWord i of
 		    NONE => ApplyResult.Unknown
-		  | SOME w => word w)
+		  | SOME w => word (WordX.make (w, WordSize.default)))
 	   | (MLton_eq, [c1, c2]) => eq (c1, c2)
 	   | (MLton_equal, [c1, c2]) => equal (c1, c2)
-	   | (Word8_mul, [Word w1, Word w2]) => w8o (Word8.*, w1, w2)
-	   | (Word8_add, [Word w1, Word w2]) => w8o (Word8.+, w1, w2)
-	   | (Word8_sub, [Word w1, Word w2]) => w8o (Word8.-, w1, w2)
-	   | (Word8_lt, [Word w1, Word w2]) => w8p (Word8.<, w1, w2)
-	   | (Word8_lshift, [Word w1, Word w2]) => w8w (Word8.<<, w1, w2)
-	   | (Word8_le, [Word w1, Word w2]) => w8p (Word8.<=, w1, w2)
-	   | (Word8_gt, [Word w1, Word w2]) => w8p (Word8.>, w1, w2)
-	   | (Word8_ge, [Word w1, Word w2]) => w8p (Word8.>=, w1, w2)
-	   | (Word8_rol, [Word w1, Word w2]) => w8w (Word8.rol, w1, w2)
-	   | (Word8_ror, [Word w1, Word w2]) => w8w (Word8.ror, w1, w2)
-	   | (Word8_rshift, [Word w1, Word w2]) => w8w (Word8.>>, w1, w2)
-	   | (Word8_andb, [Word w1, Word w2]) => w8o (Word8.andb, w1, w2)
-	   | (Word8_div, [Word w1, Word w2]) => w8o (Word8.div, w1, w2)
-	   | (Word8_fromInt, [Int i]) => word8 (Word8.fromInt i)
-	   | (Word8_fromLargeWord, [Word w]) => word8 (Word8.fromWord w)
-	   | (Word8_mod, [Word w1, Word w2]) => w8o (Word8.mod, w1, w2)
-	   | (Word8_notb, [Word w]) => word8 (Word8.notb (Word8.fromWord w))
-	   | (Word8_orb, [Word w1, Word w2]) => w8o (Word8.orb, w1, w2)
-	   | (Word8_toInt, [Word w]) => int (Word8.toInt (Word8.fromWord w))
-	   | (Word8_toIntX, [Word w]) => int (Word8.toIntX (Word8.fromWord w))
-	   | (Word8_toLargeWord, [Word w]) =>
-		word (Word8.toWord (Word8.fromWord w))
-	   | (Word8_toLargeWordX, [Word w]) => 
-		word (Word8.toWordX (Word8.fromWord w))
-	   | (Word8_xorb, [Word w1, Word w2]) => w8o (Word8.xorb, w1, w2)
-	   | (Word8_arshift, [Word w1, Word w2]) => w8w (Word8.~>>, w1, w2)
-	   | (Word32_add, [Word w1, Word w2]) => wo (Word.+, w1, w2)
-	   | (Word32_addCheck, [Word w1, Word w2]) =>
-		wo (MLton.Word.addCheck, w1, w2)
-	   | (Word32_andb, [Word w1, Word w2]) => wo (Word.andb, w1, w2)
-	   | (Word32_arshift, [Word w1, Word w2]) => wo (Word.~>>, w1, w2)
-	   | (Word32_div, [Word w1, Word w2]) => wo (Word.div, w1, w2)
-	   | (Word32_fromInt, [Int i]) => word (Word.fromInt i)
-	   | (Word32_ge, [Word w1, Word w2]) => pred (Word.>=, w1, w2)
-	   | (Word32_gt, [Word w1, Word w2]) => pred (Word.>, w1, w2)
-	   | (Word32_le, [Word w1, Word w2]) => pred (Word.<=, w1, w2)
-	   | (Word32_lshift, [Word w1, Word w2]) => wo (Word.<<, w1, w2)
-	   | (Word32_lt, [Word w1, Word w2]) => pred (Word.<, w1, w2)
-	   | (Word32_mod, [Word w1, Word w2]) => wo (Word.mod, w1, w2)
-	   | (Word32_mul, [Word w1, Word w2]) => wo (Word.*, w1, w2)
-	   | (Word32_mulCheck, [Word w1, Word w2]) =>
-		wo (MLton.Word.mulCheck, w1, w2)
-	   | (Word32_notb, [Word w]) => word (Word.notb w)
-	   | (Word32_orb, [Word w1, Word w2]) => wo (Word.orb, w1, w2)
-	   | (Word32_rol, [Word w1, Word w2]) => wo (Word.rol, w1, w2)
-	   | (Word32_ror, [Word w1, Word w2]) => wo (Word.ror, w1, w2)
-	   | (Word32_rshift, [Word w1, Word w2]) => wo (Word.>>, w1, w2)
-	   | (Word32_sub, [Word w1, Word w2]) => wo (Word.-, w1, w2)
-	   | (Word32_toIntX, [Word w]) => int (Word.toIntX w)
-	   | (Word32_xorb, [Word w1, Word w2]) => wo (Word.xorb, w1, w2)
+	   | (Word_add _, [Word w1, Word w2]) => word (WordX.+ (w1, w2))
+	   | (Word_addCheck s, [Word w1, Word w2]) =>
+		wcheck (IntInf.+, w1, w2, s)
+	   | (Word_andb _, [Word w1, Word w2]) => word (WordX.andb (w1, w2))
+	   | (Word_arshift _, [Word w1, Word w2]) => word (WordX.~>> (w1, w2))
+	   | (Word_div _, [Word w1, Word w2]) => word (WordX.div (w1, w2))
+	   | (Word_ge _, [Word w1, Word w2]) => bool (WordX.>= (w1, w2))
+	   | (Word_gt _, [Word w1, Word w2]) => bool (WordX.> (w1, w2))
+	   | (Word_le _, [Word w1, Word w2]) => bool (WordX.<= (w1, w2))
+	   | (Word_lshift _, [Word w1, Word w2]) => word (WordX.<< (w1, w2))
+	   | (Word_lt _, [Word w1, Word w2]) => bool (WordX.< (w1, w2))
+	   | (Word_mod _, [Word w1, Word w2]) => word (WordX.mod (w1, w2))
+	   | (Word_mul _, [Word w1, Word w2]) => word (WordX.* (w1, w2))
+	   | (Word_mulCheck s, [Word w1, Word w2]) =>
+		wcheck (IntInf.*, w1, w2, s)
+	   | (Word_notb _, [Word w]) => word (WordX.notb w)
+	   | (Word_orb _, [Word w1, Word w2]) => word (WordX.orb (w1, w2))
+	   | (Word_rol _, [Word w1, Word w2]) => word (WordX.rol (w1, w2))
+	   | (Word_ror _, [Word w1, Word w2]) => word (WordX.ror (w1, w2))
+	   | (Word_rshift _, [Word w1, Word w2]) => word (WordX.>> (w1, w2))
+	   | (Word_sub _, [Word w1, Word w2]) => word (WordX.- (w1, w2))
+	   | (Word_toInt (_, s), [Word w]) =>
+		int (IntX.make (WordX.toIntInf w, s))
+	   | (Word_toIntInf, [Word w]) =>
+		(case SmallIntInf.fromWord (WordX.toWord w) of
+		    NONE => ApplyResult.Unknown
+		  | SOME i => intInf i)
+	   | (Word_toIntX (_, s), [Word w]) =>
+		int (IntX.make (WordX.toIntInfX w, s))
+	   | (Word_toWord (_, s), [Word w]) => word (WordX.resize (w, s))
+	   | (Word_toWordX (_, s), [Word w]) => word (WordX.resizeX (w, s))
+	   | (Word_xorb _, [Word w1, Word w2]) => word (WordX.xorb (w1, w2))
 	   | _ => ApplyResult.Unknown)
 	     handle Chr => ApplyResult.Unknown
 		  | Div => ApplyResult.Unknown
@@ -925,13 +935,14 @@ fun 'a apply (p, args, varEquals) =
       fun someVars () =
 	 let
 	    datatype z = datatype ApplyResult.t
-	    fun add (x, i) = if i = 0 then Var x else Unknown
-	    fun mul (x, i, neg) =
-	       case i of
-		  0 => int 0
-		| 1 => Var x
-		| ~1 => Apply (neg, [x])
-		| _ => Unknown
+	    fun add (x: 'a, i: IntX.t): 'a ApplyResult.t =
+	       if IntX.isZero i then Var x else Unknown
+	    fun mul (x: 'a, i: IntX.t, s: IntSize.t, neg) =
+	       (case IntX.toInt i of
+		   0 => int (IntX.zero s)
+		 | 1 => Var x
+		 | ~1 => Apply (neg s, [x])
+		 | _ => Unknown) handle Exn.Overflow => Unknown
 	    val name = name p
 	    fun varIntInf (x, i: IntInf.t, space, inOrder) =
 	       let
@@ -983,151 +994,124 @@ fun 'a apply (p, args, varEquals) =
 	       end handle Exn.Overflow => Unknown
 	    fun varWord (x, w, inOrder) =
 	       let
-		  fun allOnes isWord8 = if isWord8 then 0wxFF else 0wxFFFFFFFF
-		  val max = allOnes
-		  fun zero isWord8 = if isWord8 then word8 0wx0 else word32 0wx0
-		  fun maxRes isWord8 =
-		     if isWord8 then word8 0wxFF else word32 0wxFFFFFFFF
-		  fun add () = if w = 0w0 then Var x else Unknown
-		  fun andb isWord8 =
-		     if w = 0w0
-		        then zero isWord8
-		     else if w = allOnes isWord8
+		  val zero = word o WordX.zero
+		  fun add s = if WordX.isZero w then Var x else Unknown
+		  fun mul () =
+		     if WordX.isZero w
+			then word w
+		     else if WordX.isOne w
 			     then Var x
 			  else Unknown
-		  fun arshift isWord8 =
-		     if w = 0w0 then if inOrder then Var x else zero isWord8
-		     else if w = max isWord8
-			     then if inOrder then Unknown else maxRes isWord8
-			  else Unknown
-		  nonfix div
-		  fun div () = if inOrder andalso w = 0w1 then Var x else Unknown
-		  fun ge isWord8 =
-		     if inOrder
-			then if w = 0w0 then t else Unknown
-		     else if w = max isWord8 then t else Unknown
-		  fun gt isWord8 =
-		     if inOrder
-			then if w = max isWord8 then f else Unknown
-		     else if w = 0w0 then f else Unknown
-		  fun le isWord8 =
-		     if inOrder
-			then if w = max isWord8 then t else Unknown
-		     else if w = 0w0 then t else Unknown
-		  fun lt isWord8 =
-		     if inOrder
-			then if w = 0w0 then f else Unknown
-		     else if w = max isWord8 then f else Unknown
-		  nonfix mod
-		  fun mod isWord8 =
-		     if inOrder andalso w = 0w1 then zero isWord8 else Unknown
-		  fun mul isWord8 =
-		     case w of
-			0w0 => zero isWord8
-		      | 0w1 => Var x
-		      | _ => Unknown
-		  fun orb isWord8 =
-		     if w = 0w0
-			then Var x
-		     else if w = allOnes isWord8
-			     then maxRes isWord8
-			  else Unknown
-		  fun ro isWord8 =
+		  fun ro () =
 		     if inOrder
 			then
-			   if 0w0 = Word.mod (w, if isWord8 then 0w8 else 0w32)
-			      then Var x
-			   else Unknown
+			   let
+			      val s = WordX.size w
+			   in
+			      if WordX.isZero
+				 (WordX.mod
+				  (w,
+				   WordX.make
+				   (Word.fromInt (WordSize.size s), s)))
+				 then Var x
+			      else Unknown
+			   end
 		     else
-			if w = 0w0
-			   then zero isWord8
-			else if w = allOnes isWord8
-				then maxRes isWord8
-			     else Unknown
-		  fun shift isWord8 =
+			if WordX.isZero w orelse WordX.isAllOnes w
+			   then word w
+			else Unknown
+		  fun shift s =
 		     if inOrder
-			then if w = 0w0
+			then if WordX.isZero w
 				then Var x
-			     else if w >= (if isWord8 then 0w8 else 0w32)
-				     then zero isWord8
+			     else if (WordX.>=
+				      (w, WordX.make (Word.fromInt
+						      (WordSize.size s),
+						      WordSize.default)))
+				     then zero s
 				  else Unknown
-		     else if w = 0w0
-			     then zero isWord8
-			  else Unknown
-		  fun sub isWord8 =
-		     if w = 0w0
-			then
-			   if inOrder
-			      then Var x
-			   else Apply (if isWord8
-					  then word8Neg
-				       else word32Neg,
-					  [x])
-		     else Unknown
-		  fun xorb isWord8 =
-		     if w = 0w0
-			then Var x
-		     else if w = allOnes isWord8
-			     then Apply (if isWord8 then word8Notb
-					 else word32Notb,
-					 [x])
+		     else if WordX.isZero w
+			     then zero s
 			  else Unknown
 	       in
 		  case name of
-		     Word8_add => add ()
-		   | Word32_add => add ()
-		   | Word32_addCheck => add ()
-		   | Word8_andb => andb true
-		   | Word32_andb => andb false
-		   | Word8_arshift => arshift true
-		   | Word32_arshift => arshift false
-		   | Word8_div => div ()
-		   | Word32_div => div ()
-		   | Word8_ge => ge true
-		   | Word32_ge => ge false
-		   | Word8_gt => gt true
-		   | Word32_gt => gt false
-		   | Word8_le => le true
-		   | Word32_le => le false
-		   | Word8_lshift => shift true
-		   | Word32_lshift => shift false
-		   | Word8_lt => lt true
-		   | Word32_lt => lt false
-		   | Word8_mod => mod true
-		   | Word32_mod => mod false
-		   | Word8_mul => mul true
-		   | Word32_mul => mul false
-		   | Word32_mulCheck => mul false
-		   | Word8_orb => orb true
-		   | Word32_orb => orb false
-		   | Word8_rol => ro true
-		   | Word32_rol => ro false
-		   | Word8_ror => ro true
-		   | Word32_ror => ro false
-		   | Word8_rshift => shift true
-		   | Word32_rshift => shift false
-		   | Word8_sub => sub true
-		   | Word32_sub => sub false
-		   | Word8_xorb => xorb true
-		   | Word32_xorb => xorb false
+		     Word_add s => add s
+		   | Word_addCheck s => add s
+		   | Word_andb s =>
+			if WordX.isZero w
+			   then zero s
+			else if WordX.isAllOnes w
+				then Var x
+			     else Unknown
+		   | Word_arshift s =>
+			if WordX.isZero w
+			   then if inOrder then Var x else zero s
+			else if WordX.isAllOnes w
+				then if inOrder then Unknown else word w
+			     else Unknown
+		   | Word_div _ =>
+			if inOrder andalso WordX.isOne w then Var x else Unknown
+		   | Word_ge _ =>
+			if inOrder
+			   then if WordX.isZero w then t else Unknown
+			else if WordX.isMax w then t else Unknown
+		   | Word_gt _ =>
+			if inOrder
+			   then if WordX.isMax w then f else Unknown
+			else if WordX.isZero w then f else Unknown
+		   | Word_le _ =>
+			if inOrder
+			   then if WordX.isMax w then t else Unknown
+			else if WordX.isZero w then t else Unknown
+		   | Word_lshift s => shift s
+		   | Word_lt _ =>
+			if inOrder
+			   then if WordX.isZero w then f else Unknown
+			else if WordX.isMax w then f else Unknown
+		   | Word_mod s =>
+			if inOrder andalso WordX.isOne w
+			   then zero s
+			else Unknown
+		   | Word_mul _ => mul ()
+		   | Word_mulCheck _ => mul ()
+		   | Word_orb _ =>
+			if WordX.isZero w
+			   then Var x
+			else if WordX.isAllOnes w
+				then word w
+			     else Unknown
+		   | Word_rol _ => ro ()
+		   | Word_ror _ => ro ()
+		   | Word_rshift s => shift s
+		   | Word_sub s =>
+			if WordX.isZero w
+			   then
+			      if inOrder
+				 then Var x
+			      else Apply (wordNeg s, [x])
+			else Unknown
+		   | Word_xorb s =>
+			if WordX.isZero w
+			   then Var x
+			else if WordX.isAllOnes w
+				then Apply (wordNotb s, [x])
+			     else Unknown
 		   | _ => Unknown
 	       end
-	    val minInt = ~0x80000000
-	    val maxInt = 0x7FFFFFFF
 	    datatype z = datatype ApplyArg.t
 	 in
 	    case (name, args) of
 	       (IntInf_toString, [Const (IntInf i), Const (Int base), _]) =>
 		  let
 		     val base =
-			case base of
+			case IntX.toInt base of
 			   2 => StringCvt.BIN
 			 | 8 => StringCvt.OCT 
 			 | 10 => StringCvt.DEC
 			 | 16 => StringCvt.HEX
 			 | _ => Error.bug "strange base for IntInf_toString"
 		  in
-		     string (IntInf.format (i, base))
+		     word8Vector (Word8.stringToVector (IntInf.format (i, base)))
 		  end
 	     | (_, [Con {con = c, hasArg = h}, Con {con = c', hasArg = h'}]) =>
 		  if name = MLton_equal orelse name = MLton_eq
@@ -1141,40 +1125,51 @@ fun 'a apply (p, args, varEquals) =
 	     | (_, [Const (Word i), Var x]) => varWord (x, i, false)
 	     | (_, [Var x, Const (Int i)]) =>
 		  (case name of
-		      Int_add => add (x, i)
-		    | Int_addCheck => add (x, i)
-		    | Int_ge => if i = minInt then t else Unknown
-		    | Int_geu => if i = 0 then t else Unknown
-		    | Int_gt => if i = maxInt then f else Unknown
-		    | Int_gtu => if i = ~1 then f else Unknown
-		    | Int_le => if i = maxInt then t else Unknown
-		    | Int_lt => if i = minInt then f else Unknown
-		    | Int_mul => mul (x, i, intNeg)
-		    | Int_mulCheck => mul (x, i, intNegCheck)
-		    | Int_quot => (case i of
-				      1 => ApplyResult.Var x
-				    | ~1 => Apply (intNeg, [x])
-				    | _ => Unknown)
-		    | Int_rem => if i = ~1 orelse i = 1 then int 0 else Unknown
-		    | Int_sub => if i = 0 then ApplyResult.Var x else Unknown
-		    | Int_subCheck =>
-			 if i = 0 then ApplyResult.Var x else Unknown
+		      Int_add s => add (x, i)
+		    | Int_addCheck s => add (x, i)
+		    | Int_ge _ => if IntX.isMin i then t else Unknown
+		    | Int_gt _ => if IntX.isMax i then f else Unknown
+		    | Int_le _ => if IntX.isMax i then t else Unknown
+		    | Int_lt _ => if IntX.isMin i then f else Unknown
+		    | Int_mul s => mul (x, i, s, intNeg)
+		    | Int_mulCheck s => mul (x, i, s, intNegCheck)
+		    | Int_quot s =>
+			 if IntX.isNegOne i
+			    then Apply (intNeg s, [x])
+			 else if IntX.isOne i
+				 then ApplyResult.Var x
+			      else Unknown
+		    | Int_rem s =>
+			 if IntX.isNegOne i orelse IntX.isOne i
+			    then int (IntX.zero s)
+			 else Unknown
+		    | Int_sub _ =>
+			 if IntX.isZero i
+			    then ApplyResult.Var x
+			 else Unknown
+		    | Int_subCheck _ =>
+			 if IntX.isZero i
+			    then ApplyResult.Var x
+			 else Unknown
 		    | _ => Unknown)
 	     | (_, [Const (Int i), Var x]) =>
 		  (case name of 
-		      Int_add => add (x, i)
-		    | Int_addCheck => add (x, i)
-		    | Int_ge => if i = maxInt then t else Unknown
-		    | Int_geu => if i = ~1 then t else Unknown
-		    | Int_gt => if i = minInt then f else Unknown
-		    | Int_gtu => if i = 0 then f else Unknown
-		    | Int_le => if i = minInt then t else Unknown
-		    | Int_lt => if i = maxInt then f else Unknown
-		    | Int_mul => mul (x, i, intNeg)
-		    | Int_mulCheck => mul (x, i, intNegCheck)
-		    | Int_sub => if i = 0 then Apply (intNeg, [x]) else Unknown
-		    | Int_subCheck =>
-			 if i = 0 then Apply (intNegCheck, [x]) else Unknown
+		      Int_add _ => add (x, i)
+		    | Int_addCheck _ => add (x, i)
+		    | Int_ge _ => if IntX.isMax i then t else Unknown
+		    | Int_gt _ => if IntX.isMin i then f else Unknown
+		    | Int_le _ => if IntX.isMin i then t else Unknown
+		    | Int_lt _ => if IntX.isMax i then f else Unknown
+		    | Int_mul s => mul (x, i, s, intNeg)
+		    | Int_mulCheck s => mul (x, i, s, intNegCheck)
+		    | Int_sub s =>
+			 if IntX.isZero i
+			    then Apply (intNeg s, [x])
+			 else Unknown
+		    | Int_subCheck s =>
+			 if IntX.isZero i
+			    then Apply (intNegCheck s, [x])
+			 else Unknown
 		    | _ => Unknown)
 	     | (_, [Const (IntInf i1), Const (IntInf i2), _]) =>
 		  (case name of
@@ -1190,8 +1185,8 @@ fun 'a apply (p, args, varEquals) =
 		    | _ => Unknown)
 	     | (_, [Const (IntInf i1), Const (Word w2), _]) =>
 		  (case name of
-		      IntInf_arshift => intInf (IntInf.~>> (i1, w2))
-		    | IntInf_lshift => intInf (IntInf.<< (i1, w2))
+		      IntInf_arshift => intInf (IntInf.~>> (i1, WordX.toWord w2))
+		    | IntInf_lshift => intInf (IntInf.<< (i1, WordX.toWord w2))
 		    | _ => Unknown)
 	     | (_, [Const (IntInf i1), _]) =>
 		  (case name of
@@ -1202,15 +1197,19 @@ fun 'a apply (p, args, varEquals) =
 		  varIntInf (x, i, space, true)
 	     | (_, [Const (IntInf i), Var x, Var space]) =>
 		  varIntInf (x, i, space, false)
-	     | (_, [Var x, Const (Word 0wx0), _]) =>
-		  (let datatype z = datatype ApplyResult.t
-		   in 
-		      case name of
-			 IntInf_arshift => Var x
-		       | IntInf_lshift => Var x
-		       | _ => Unknown
-		   end)
-	     | (_, [Var x, Var y, _]) =>
+	     | (_, [Var x, Const (Word w), _]) =>
+		  if WordX.isZero w
+		     then
+			let
+			   datatype z = datatype ApplyResult.t
+			in
+			   case name of
+			      IntInf_arshift => Var x
+			    | IntInf_lshift => Var x
+			    | _ => Unknown
+			end
+		  else Unknown
+             | (_, [Var x, Var y, _]) =>
 		  if varEquals (x, y)
 		     then let datatype z = datatype ApplyResult.t
 			  in
@@ -1230,50 +1229,36 @@ fun 'a apply (p, args, varEquals) =
 			     val t = ApplyResult.truee
 			     val f = ApplyResult.falsee
 			     datatype z = datatype ApplyResult.t
-			  in case name of
-			        Char_lt => f
-			      | Char_le => t
-			      | Char_gt => f
-			      | Char_ge => t
-			      | Int_ge => t
-			      | Int_geu => t
-			      | Int_gt => f
-			      | Int_gtu => f
-			      | Int_le => t
-			      | Int_lt => f
-			      | Int_quot => int 1
-			      | Int_rem => int 0
-			      | Int_sub => int 0
-			      | IntInf_compare => int 0
+			  in
+			     case name of
+				Int_ge _ => t
+			      | Int_gt _ => f
+			      | Int_le _ => t
+			      | Int_lt _ => f
+			      | Int_quot s => int (IntX.one s)
+			      | Int_rem s => int (IntX.zero s)
+			      | Int_sub s => int (IntX.zero s)
+			      | IntInf_compare =>
+				   int (IntX.zero IntSize.default)
 			      | IntInf_equal => t
 			      | MLton_eq => t
 			      | MLton_equal => t
-			      | Real_lt => f
-			      | Real_le => t
-			      | Real_equal => t
-			      | Real_gt => f
-			      | Real_ge => t
-			      | Real_qequal => t
-			      | Word8_andb => Var x
-			      | Word8_div => word8 0w1
-			      | Word8_ge => t
-			      | Word8_gt => f
-			      | Word8_le => t
-			      | Word8_lt => f
-			      | Word8_mod => word8 0w0
-			      | Word8_orb => Var x
-			      | Word8_sub => word8 0w0
-			      | Word8_xorb => word8 0w0
-			      | Word32_andb => Var x
-			      | Word32_div => word 0w1
-			      | Word32_ge => t
-			      | Word32_gt => f
-			      | Word32_le => t
-			      | Word32_lt => f
-			      | Word32_mod => word 0w0
-			      | Word32_orb => Var x
-			      | Word32_sub => word 0w0
-			      | Word32_xorb => word 0w0
+			      | Real_lt _ => f
+			      | Real_le _ => t
+			      | Real_equal _ => t
+			      | Real_gt _ => f
+			      | Real_ge _ => t
+			      | Real_qequal _ => t
+			      | Word_andb _ => Var x
+			      | Word_div s => word (WordX.one s)
+			      | Word_ge _ => t
+			      | Word_gt _ => f
+			      | Word_le _ => t
+			      | Word_lt _ => f
+			      | Word_mod s => word (WordX.zero s)
+			      | Word_orb _ => Var x
+			      | Word_sub s => word (WordX.zero s)
+			      | Word_xorb s => word (WordX.zero s)
 			      | _ => Unknown
 			  end
 		  else Unknown
@@ -1303,85 +1288,63 @@ fun layoutApp (p: t, args: 'a vector, layoutArg: 'a -> Layout.t): Layout.t =
        | Char_ge => two ">="
        | Char_chr => one "chr"
        | Char_ord => one "ord"
-       | Int_mul => two "*?"
-       | Int_mulCheck => two "*"
-       | Int_add => two "+?"
-       | Int_addCheck => two "+"
-       | Int_sub => two "-?"
-       | Int_subCheck => two "-"
-       | Int_lt => two "<"
-       | Int_le => two "<="
-       | Int_gt => two ">"
-       | Int_ge => two ">="
-       | Int_geu => two ">=u"
-       | Int_gtu => two ">u"
-       | Int_neg => one "-?"
-       | Int_negCheck => one "-"
+       | Int_mul _ => two "*?"
+       | Int_mulCheck _ => two "*"
+       | Int_add _ => two "+?"
+       | Int_addCheck _ => two "+"
+       | Int_sub _ => two "-?"
+       | Int_subCheck _ => two "-"
+       | Int_lt _ => two "<"
+       | Int_le _ => two "<="
+       | Int_gt _ => two ">"
+       | Int_ge _ => two ">="
+       | Int_neg _ => one "-?"
+       | Int_negCheck _ => one "-"
        | IntInf_equal => two "="
        | MLton_eq => two "="
-       | Real_Math_acos => one "acos"
-       | Real_Math_asin => one "asin"
-       | Real_Math_atan => one "atan"
-       | Real_Math_cos => one "cos"
-       | Real_Math_cosh => one "cosh"
-       | Real_Math_exp => one "exp"
-       | Real_Math_ln => one "ln"
-       | Real_Math_log10  => one "log10"
-       | Real_Math_pow => two "^"
-       | Real_Math_sin => one "sin"
-       | Real_Math_sinh => one "sinh"
-       | Real_Math_sqrt => one "sqrt"
-       | Real_Math_tan => one "tan"
-       | Real_Math_tanh => one "tanh"
-       | Real_mul => two "*"
-       | Real_add => two "+"
-       | Real_sub => two "-"
-       | Real_div => two "/"
-       | Real_lt => two "<"
-       | Real_le => two "<="
-       | Real_equal => two "=="
-       | Real_gt => two ">"
-       | Real_ge => two ">="
-       | Real_qequal => two "?="
-       | Real_neg => one "-"
+       | Real_Math_acos _ => one "acos"
+       | Real_Math_asin _ => one "asin"
+       | Real_Math_atan _ => one "atan"
+       | Real_Math_cos _ => one "cos"
+       | Real_Math_exp _ => one "exp"
+       | Real_Math_ln _ => one "ln"
+       | Real_Math_log10  _ => one "log10"
+       | Real_Math_sin _ => one "sin"
+       | Real_Math_sqrt _ => one "sqrt"
+       | Real_Math_tan _ => one "tan"
+       | Real_add _ => two "+"
+       | Real_div _ => two "/"
+       | Real_equal _ => two "=="
+       | Real_ge _ => two ">="
+       | Real_gt _ => two ">"
+       | Real_le _ => two "<="
+       | Real_lt _ => two "<"
+       | Real_mul _ => two "*"
+       | Real_neg _ => one "-"
+       | Real_qequal _ => two "?="
+       | Real_sub _ => two "-"
        | Ref_assign => two ":="
        | Ref_deref => one "!"
        | Ref_ref => one "ref"
        | Vector_length => one "length"
-       | Word32_add => two "+"
-       | Word32_addCheck => two "+c"
-       | Word32_andb => two "&"
-       | Word32_arshift => two "~>>"
-       | Word32_ge => two ">="
-       | Word32_gt => two ">"
-       | Word32_le => two "<="
-       | Word32_lshift => two "<<"
-       | Word32_lt => two "<"
-       | Word32_mul => two "*"
-       | Word32_mulCheck => two "*c"
-       | Word32_neg => one "-"
-       | Word32_orb => two "|"
-       | Word32_rol => two "rol"
-       | Word32_ror => two "ror"
-       | Word32_rshift => two ">>"
-       | Word32_sub => two "-"
-       | Word32_xorb => two "^"
-       | Word8_add => two "+"
-       | Word8_andb => two "&"
-       | Word8_arshift => two "~>>"
-       | Word8_ge => two ">="
-       | Word8_gt => two ">"
-       | Word8_le => two "<="
-       | Word8_lshift => two "<<"
-       | Word8_lt => two "<"
-       | Word8_mul => two "*"
-       | Word8_neg => one "-"
-       | Word8_orb => two "|"
-       | Word8_rol => two "rol"
-       | Word8_ror => two "ror"
-       | Word8_rshift => two ">>"
-       | Word8_sub => two "-"
-       | Word8_xorb => two "^"
+       | Word_add _ => two "+"
+       | Word_addCheck _ => two "+c"
+       | Word_andb _ => two "&"
+       | Word_arshift _ => two "~>>"
+       | Word_ge _ => two ">="
+       | Word_gt _ => two ">"
+       | Word_le _ => two "<="
+       | Word_lshift _ => two "<<"
+       | Word_lt _ => two "<"
+       | Word_mul _ => two "*"
+       | Word_mulCheck _ => two "*c"
+       | Word_neg _ => one "-"
+       | Word_orb _ => two "|"
+       | Word_rol _ => two "rol"
+       | Word_ror _ => two "ror"
+       | Word_rshift _ => two ">>"
+       | Word_sub _ => two "-"
+       | Word_xorb _ => two "^"
        | _ => seq [layout p, str " ", Vector.layout layoutArg args]
    end
 

@@ -17,6 +17,7 @@ functor Machine
 is
 
 ../../lib/mlton/sources.cm
+../ast/sources.cm
 ../atoms/sources.cm
 ../control/sources.cm
 ../ssa/sources.cm

@@ -22,13 +22,11 @@ signature DIRECT_EXP =
 	   type t
 
 	   datatype cases =
-	      Char of (char * t) vector
-	    | Con of {con: Con.t,
+	      Con of {con: Con.t,
 		      args: (Var.t * Type.t) vector,
 		      body: t} vector
-	    | Int of (int * t) vector
-	    | Word of (word * t) vector
-	    | Word8 of (Word8.t * t) vector
+	    | Int of IntSize.t * (IntX.t * t) vector
+	    | Word of WordSize.t * (WordX.t * t) vector
 
 	   val arith: {prim: Prim.t,
 		       args: t vector,
@@ -59,7 +57,7 @@ signature DIRECT_EXP =
 			 ty: Type.t,
 			 catch: Var.t * Type.t,
 			 handler: t} -> t
-	   val int: int -> t
+	   val int: IntX.t -> t
 	   val layout: t -> Layout.t
 	   val lett: {decs: {var: Var.t, exp: t} list,
 		      body: t} -> t

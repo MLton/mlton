@@ -13,7 +13,11 @@ signature HASH_TYPE_STRUCTS =
 signature HASH_TYPE = 
    sig
       include HASH_TYPE_STRUCTS
-      include TYPE_OPS sharing type tycon = Tycon.t
+      include TYPE_OPS
+      sharing type intSize = IntSize.t
+      sharing type realSize = RealSize.t
+      sharing type tycon = Tycon.t
+      sharing type wordSize = WordSize.t
 
       structure Dest:
 	 sig
@@ -48,6 +52,7 @@ signature HASH_TYPE =
       val optionToAst: t option -> Ast.Type.t option
       val plist: t -> PropertyList.t
       val stats: unit -> Layout.t
+      val string: t (* synonym for word8Vector *)
       (* substitute (t, [(a1, t1), ..., (an, tn)]) performs simultaneous
        * substitution of the ti for ai in t.
        * The ai's are not required to contain every free variable in t
@@ -56,6 +61,7 @@ signature HASH_TYPE =
       (* conversion to Ast *)
       val toAst: t -> Ast.Type.t
       val toPrim: t -> Prim.Type.t
+      val toString: t -> string
       val tycon: t -> Tycon.t
       val var: Tyvar.t -> t
    end

@@ -9,8 +9,11 @@ type int = Int.t
    
 signature REPRESENTATION_STRUCTS = 
    sig
-      structure Ssa: SSA
       structure Rssa: RSSA
+      structure Ssa: SSA
+      sharing Rssa.IntSize = Ssa.IntSize
+      sharing Rssa.RealSize = Ssa.RealSize
+      sharing Rssa.WordSize = Ssa.WordSize
    end
 
 signature REPRESENTATION = 

@@ -12,12 +12,13 @@ open S
 
 structure Type =
    struct
+      type var = Tyvar.t
+	 
       datatype t =
 	 Var of var
        | Con of con
        | Record of record
-      withtype var = Tyvar.t
-      and con = Tycon.t * t vector
+      withtype con = Tycon.t * t vector
       and record = t Record.t
       datatype t' = datatype t
 
@@ -51,6 +52,15 @@ structure Type =
 structure Ops = TypeOps (structure Tycon = Tycon
 			 open Type)
 open Ops Type
+
+val rec equals =
+   fn (Var a, Var a') => Tyvar.equals (a, a')
+    | (Con (c, ts), Con (c', ts')) =>
+	 Tycon.equals (c, c')
+	 andalso Vector.equals (ts, ts', equals)
+    | (Record r, Record r') =>
+	 Record.equals (r, r', equals)
+    | _ => false
 
 structure Tyvars = UnorderedSet (Tyvar)
    

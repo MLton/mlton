@@ -60,13 +60,11 @@ datatype t =
 	     ty: Type.t}
  | Var of Var.t * Type.t
 and cases =
-   Char of (char * t) vector
- | Con of {con: Con.t,
+   Con of {con: Con.t,
 	   args: (Var.t * Type.t) vector,
 	   body: t} vector
- | Int of (int * t) vector
- | Word of (word * t) vector
- | Word8 of (Word8.t * t) vector
+ | Int of IntSize.t * (IntX.t * t) vector
+ | Word of WordSize.t * (WordX.t * t) vector
 
 val arith = Arith
 val call = Call
@@ -113,7 +111,7 @@ in
    val falsee = make Con.falsee
 end
 
-val int = const o Const.fromInt
+val int = const o Const.int
    
 fun eq (e1, e2, ty) =
    primApp {prim = Prim.eq,
@@ -154,15 +152,13 @@ in
 			   doit (v, (fn (x, e) => (f x, e)))
 		     in
 			case cases of
-			   Char v => simple (v, Char.layout)
-			 | Con v =>
+			   Con v =>
 			      doit (v, fn {con, args, body} =>
 				    (seq [Con.layout con,
 					  Vector.layout (Var.layout o #1) args],
 				     body))
-			 | Int v => simple (v, Int.layout)
-			 | Word v => simple (v, Word.layout)
-			 | Word8 v => simple (v, Word8.layout)
+			 | Int (_, v) => simple (v, IntX.layout)
+			 | Word (_, v) => simple (v, WordX.layout)
 		     end,
 			case default of
 			   NONE => empty
@@ -433,16 +429,14 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 					     (c, newLabel0 (e, h, k)))
 			   in
 			      case cases of
-				 Char v => Cases.Char (doit v)
-			       | Con v =>
+				 Con v =>
 				    Cases.Con
 				    (Vector.map
 				     (v, fn {con, args, body} =>
 				      (con,
 				       newLabel (args, body, h, k))))
-			       | Int v => Cases.Int (doit v)
-			       | Word v => Cases.Word (doit v)
-			       | Word8 v => Cases.Word8 (doit v)
+			       | Int (s, v) => Cases.Int (s, doit v)
+			       | Word (s, v) => Cases.Word (s, doit v)
 			   end}})
 	       end
 	  | ConApp {con, args, ty} =>

@@ -11,22 +11,27 @@ signature TYPE_STRUCTS =
       structure Record: RECORD
       structure Tycon: TYCON
       structure Tyvar: TYVAR
+      sharing Record = Ast.SortedRecord
       sharing Tyvar = Ast.Tyvar
       sharing Ast.Tycon = Tycon.AstId
-      sharing Record = Ast.SortedRecord
    end
 
 signature TYPE = 
    sig
       include TYPE_STRUCTS
-      include TYPE_OPS where type tycon = Tycon.t
+      include TYPE_OPS
+	 where type intSize = Tycon.IntSize.t
+	 where type realSize = Tycon.RealSize.t
+	 where type tycon = Tycon.t
+	 where type wordSize = Tycon.WordSize.t
 	    
       datatype t' =
 	 Con of Tycon.t * t' vector
        | Record of t' Record.t
        | Var of Tyvar.t
       sharing type t = t'
-	 
+
+      val equals: t * t -> bool
       val hom: {ty: t,
 		var: Tyvar.t -> 'a,
 		con: Tycon.t * 'a vector -> 'a} -> 'a

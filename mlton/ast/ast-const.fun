@@ -11,10 +11,10 @@ struct
 open Region.Wrap
 datatype node =
    Char of char
- | Int of string
+ | Int of IntInf.t
  | Real of string
  | String of string
- | Word of word
+ | Word of IntInf.t
 type t = node Region.Wrap.t
 type node' = node
 type obj = t
@@ -28,10 +28,10 @@ in
    fun layout c =
       case node c of
 	 Char c => wrap ("#\"", "\"", String.implode [c])
-       | Int s => str s
+       | Int s => str (IntInf.toString s)
        | Real l => String.layout l
        | String s => wrap ("\"", "\"", s)
-       | Word w => seq [str "0wx", str (Word.toString w)]
+       | Word w => str (concat ["0wx", IntInf.format (w, StringCvt.HEX)])
 end
 
 val toString = Layout.toString o layout

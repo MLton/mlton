@@ -111,7 +111,7 @@ in
 end
 
 val size = vanilla {name = "MLton_size",
-		    returnTy = SOME Type.int}
+		    returnTy = SOME Type.defaultInt}
 
 val returnToC =
    T {bytesNeeded = NONE,

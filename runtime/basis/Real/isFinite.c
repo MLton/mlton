@@ -4,6 +4,6 @@
 #endif
 #include "mlton-basis.h"
 
-Int Real_isFinite (Double d) {
+Int Real64_isFinite (Real64 d) {
 	return finite (d); /* finite is from math.h */
 }

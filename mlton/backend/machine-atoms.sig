@@ -9,10 +9,19 @@ type word = Word.t
    
 signature MACHINE_ATOMS_STRUCTS =
    sig
+      structure IntSize: INT_SIZE
+      structure IntX: INT_X
       structure Label: HASH_ID
       structure Prim: PRIM
+      structure RealSize: REAL_SIZE
+      structure RealX: REAL_X
       structure Runtime: RUNTIME
       structure SourceInfo: SOURCE_INFO
+      structure WordSize: WORD_SIZE
+      structure WordX: WORD_X
+      sharing IntSize = IntX.IntSize = Prim.IntSize = Runtime.IntSize
+      sharing RealSize = Prim.RealSize = RealX.RealSize = Runtime.RealSize
+      sharing WordSize = Prim.WordSize = Runtime.WordSize = WordX.WordSize
    end
 
 signature MACHINE_ATOMS =
@@ -32,18 +41,17 @@ signature MACHINE_ATOMS =
 	    val new: unit -> t
 	    val plist: t -> PropertyList.t
 	    val stack: t
-	    val string: t
 	    val thread: t
 	    val toString: t -> string
 	    val wordVector: t
+	    val word8Vector: t
 	 end
 
       type memChunk
       structure Type:
 	 sig
 	    datatype t =
-	       Char
-	     | CPointer
+	       CPointer
 	     (* The ints in an enum are in increasing order without dups.
 	      * The pointers are in increasing order (of index in objectTypes
 	      * vector) without dups.
@@ -51,38 +59,40 @@ signature MACHINE_ATOMS =
 	     | EnumPointers of {enum: int vector,
 				pointers: PointerTycon.t vector}
 	     | ExnStack
-	     | Int
+	     | Int of IntSize.t
 	     | IntInf
 	     | Label of Label.t
 	     | MemChunk of memChunk (* An internal pointer. *)
-	     | Real
-	     | Word
+	     | Real of RealSize.t
+	     | Word of WordSize.t
 
 	    val align: t * int -> int       (* align an address *)
 	    val bool: t
-	    val char: t
 	    val containsPointer: t * PointerTycon.t -> bool
 	    val cpointer: t
 	    val dePointer: t -> PointerTycon.t option
+	    val defaultInt: t
+	    val defaultWord: t
 	    val equals: t * t -> bool
 	    val exnStack: t
 	    val fromRuntime: Runtime.Type.t -> t
-	    val int: t
+	    val int: IntSize.t -> t
 	    val intInf: t
 	    val isPointer: t -> bool
+	    val isReal: t -> bool
 	    val label: Label.t -> t
 	    val layout: t -> Layout.t
 	    val name: t -> string (* simple one letter abbreviation *)
 	    val pointer: PointerTycon.t -> t
-	    val real: t
+	    val real: RealSize.t -> t
 	    val size: t -> int
 	    val stack: t
-	    val string: t
 	    val thread: t
 	    val toRuntime: t -> Runtime.Type.t
 	    val toString: t -> string
-	    val word: t
+	    val word: WordSize.t -> t
 	    val wordVector: t
+	    val word8Vector: t
 	 end
 
       structure MemChunk:
@@ -111,15 +121,15 @@ signature MACHINE_ATOMS =
 	    val basic: (PointerTycon.t * t) vector
 	    val isOk: t -> bool
 	    val layout: t -> Layout.t
-	    val string: t
 	    val thread: t
 	    val toRuntime: t -> Runtime.ObjectType.t
 	    val weak: Type.t -> t
 	    val wordVector: t
+	    val word8Vector: t
 	 end
 
       val castIsOk: {from: Type.t,
-		     fromInt: int option,
+		     fromInt: IntX.t option,
 		     to: Type.t,
 		     tyconTy: PointerTycon.t -> ObjectType.t} -> bool
    end

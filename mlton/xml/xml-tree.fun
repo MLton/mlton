@@ -63,9 +63,57 @@ structure Pat =
       val layout = Apat.layout o toAst
    end
 
-structure Cases = Cases (type con = Pat.t
-			 val conEquals = fn _ => 
-			 Error.bug "XmlTree.Cases.conEquals")
+structure Cases =
+   struct
+      datatype 'a t = 
+	 Con of (Pat.t * 'a) vector
+       | Int of IntSize.t * (IntX.t * 'a) vector
+       | Word of WordSize.t * (WordX.t * 'a) vector
+
+      fun fold (c: 'a t, b: 'b, f: 'a * 'b -> 'b): 'b =
+	 let
+	    fun doit l = Vector.fold (l, b, fn ((_, a), b) => f (a, b))
+	 in
+	    case c of
+	       Con l => doit l
+	     | Int (_, l) => doit l
+	     | Word (_, l) => doit l
+	 end
+
+      fun map (c: 'a t, f: 'a -> 'b): 'b t =
+	 let
+	    fun doit l = Vector.map (l, fn (i, x) => (i, f x))
+	 in
+	    case c of
+	       Con l => Con (doit l)
+	     | Int (s, l) => Int (s, doit l)
+	     | Word (s, l) => Word (s, doit l)
+	 end
+      
+      fun forall (c: 'a t, f: 'a -> bool): bool =
+	 let
+	    fun doit l = Vector.forall (l, fn (_, x) => f x)
+	 in
+	    case c of
+	       Con l => doit l
+	     | Int (_, l) => doit l
+	     | Word (_, l) => doit l
+	 end
+
+      fun length (c: 'a t): int = fold (c, 0, fn (_, i) => i + 1)
+
+      fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
+
+      fun foreach' (c: 'a t, f: 'a -> unit, fc: Pat.t -> unit): unit =
+	 let
+	    fun doit l = Vector.foreach (l, fn (_, a) => f a)
+	 in
+	    case c of
+	       Con l => Vector.foreach (l, fn (c, a) => (fc c; f a))
+	     | Int (_, l) => doit l
+	     | Word (_, l) => doit l
+	 end
+   end
 
 (*---------------------------------------------------*)
 (*                      VarExp                       *)
@@ -210,12 +258,10 @@ and primExpToAst e : Aexp.t =
 	       fn n => Ast.Pat.const (Ast.Const.makeRegion (n, Region.bogus))
 	    val cases =
 	       case cases of
-		  Char l => doit (l, make o Ast.Const.Char)
-		| Con l => Vector.map (l, fn (pat, exp) =>
+		  Con l => Vector.map (l, fn (pat, exp) =>
 				       (Pat.toAst pat, expToAst exp))
-		| Int l => doit (l, make o Ast.Const.Int o Int.toString)
-		| Word l => doit (l, make o Ast.Const.Word)
-		| Word8 l => doit (l, make o Ast.Const.Word o Word8.toWord)
+		| Int (_, l) => doit (l, make o Ast.Const.Int o IntX.toIntInf)
+		| Word (_, l) => doit (l, make o Ast.Const.Word o WordX.toIntInf)
 	    val cases =
 	       case default of
 		  NONE => cases
@@ -602,11 +648,12 @@ structure DirectExp =
 	 
       fun const c = simple (Const c, Type.ofConst c)
 
-      val string = const o Const.fromString
+      val string = const o Const.string
 	 
       fun varExp (x, t) = simple (Var x, t)
 
-      fun var {var, targs, ty} = varExp (VarExp.T {var = var, targs = targs}, ty)
+      fun var {var, targs, ty} =
+	 varExp (VarExp.T {var = var, targs = targs}, ty)
 
       fun monoVar (x, t) = var {var = x, targs = Vector.new0 (), ty = t}
 

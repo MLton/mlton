@@ -74,7 +74,6 @@ fun checkScopes (program as
 	 fn Arith {args, ...} => getVars args
 	  | Bug => ()
 	  | Call {func, args, ...} => (getFunc func; getVars args)
-
 	  | Case {test, cases, default, ...} =>
 	       let
 		  fun doit (cases: ('a * 'b) vector,
@@ -123,12 +122,9 @@ fun checkScopes (program as
 		  val _ = getVar test
 	       in
 		  case cases of
-		     Cases.Char cases => doit (cases, Char.equals, Word.fromChar)
-		   | Cases.Con cases => doitCon cases 
-		   | Cases.Int cases => doit (cases, Int.equals, Word.fromInt)
-		   | Cases.Word cases => doit (cases, Word.equals, Word.fromWord)
-		   | Cases.Word8 cases =>
-			doit (cases, Word8.equals, Word.fromWord8)
+		     Cases.Con cs => doitCon cs 
+		   | Cases.Int (_, cs) => doit (cs, IntX.equals, IntX.hash)
+		   | Cases.Word (_, cs) => doit (cs, WordX.equals, WordX.toWord)
 	       end
 	  | Goto {args, ...} => getVars args
 	  | Raise xs => getVars xs
@@ -407,10 +403,10 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 		  const = Type.ofConst,
 		  copy = fn x => x,
 		  filter = filter,
-		  filterChar = filterGround Type.char,
-		  filterInt = filterGround Type.int,
-		  filterWord = filterGround Type.word,
-		  filterWord8 = filterGround Type.word8,
+		  filterInt = fn (from, s) => coerce {from = from,
+						      to = Type.int s},
+		  filterWord = fn (from, s) => coerce {from = from,
+						       to = Type.word s},
 		  fromType = fn x => x,
 		  layout = Type.layout,
 		  primApp = primApp,

@@ -491,12 +491,10 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		  fun doit l = (Vector.foreach (l, fn (_, l) => visitLabel l);
 				Option.app (default, visitLabel))
 		in
-		  case cases 
-		    of Cases.Char l => doit l
-		     | Cases.Int l => doit l
-		     | Cases.Word l => doit l
-		     | Cases.Word8 l => doit l
-		     | Cases.Con cases
+		  case cases of
+		     Cases.Int (_, cs) => doit cs
+		   | Cases.Word (_, cs) => doit cs
+		   | Cases.Con cases
 		     => if Vector.length cases = 0
 			  then Option.app (default, visitLabel)
 			  else let

@@ -9,7 +9,7 @@
 
 #define EXPONENT_MASK 0x7FF00000
 
-Int Real_isNormal (Double d) {
+Int Real64_isNormal (Real64 d) {
 	Word word1, exponent;
 
 	word1 = ((Word *)&d)[1];
@@ -21,7 +21,7 @@ Int Real_isNormal (Double d) {
 
 #elif (defined __sparc__)
 
-Int Real_isNormal (Double d) {
+Int Real64_isNormal (Real64 d) {
 	fpclass_t c;
 
 	c = fpclass (d);
@@ -30,6 +30,6 @@ Int Real_isNormal (Double d) {
 
 #else
 
-#error Real_isNormal not defined
+#error Real64_isNormal not defined
 
 #endif

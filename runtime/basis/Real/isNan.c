@@ -6,13 +6,13 @@
 
 #if (defined (__i386__))
 
-Int Real_isNan (Double d) {
+Int Real64_isNan (Real64 d) {
 	return isnan (d); /* isnan is from math.h */
 }
 
 #elif (defined __sparc__)
 
-Int Real_isNan (Double d) {
+Int Real64_isNan (Real64 d) {
 	fpclass_t c;
 
 	c = fpclass (d);
@@ -21,6 +21,6 @@ Int Real_isNan (Double d) {
 
 #else
 
-#error Real_isNan not defined
+#error Real64_isNan not defined
 
 #endif

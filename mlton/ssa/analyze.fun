@@ -14,7 +14,7 @@ datatype z = datatype Transfer.t
    
 fun 'a analyze
    {coerce, conApp, const, copy,
-    filter, filterChar, filterInt, filterWord, filterWord8,
+    filter, filterInt, filterWord,
     fromType, layout, primApp,
     program = Program.T {main, datatypes, globals, functions},
     select, tuple, useFromTypeOnBinds} =
@@ -131,19 +131,17 @@ fun 'a analyze
 			then ()
 		     else Error.bug (concat [Label.toString j,
 					     " must be nullary"])
-		  fun doit (l, filter) =
-		     (filter test
-		      ; Vector.foreach (l, fn (_, j) => ensureNullary j))
+		  fun doit (s, cs, filter) =
+		     (filter (test, s)
+		      ; Vector.foreach (cs, fn (_, j) => ensureNullary j))
 		  datatype z = datatype Cases.t
 		  val _ =
 		     case cases of
-			Char l => doit (l, filterChar)
-		      | Con cases =>
+			Con cases =>
 			   Vector.foreach (cases, fn (c, j) =>
 					   filter (test, c, labelValues j))
-		      | Int l => doit (l, filterInt)
-		      | Word l => doit (l, filterWord)
-		      | Word8 l => doit (l, filterWord8)
+		      | Int (s, cs) => doit (s, cs, filterInt)
+		      | Word (s, cs) => doit (s, cs, filterWord)
 		  val _ = Option.app (default, ensureNullary)
 	       in ()
 	       end

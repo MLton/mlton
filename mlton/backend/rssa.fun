@@ -16,6 +16,8 @@ in
    structure GCField = GCField
 end
 
+datatype z = datatype WordSize.t
+
 structure Operand =
    struct
       datatype t =
@@ -37,41 +39,34 @@ structure Operand =
        | Var of {var: Var.t,
 		 ty: Type.t}
 
-      val char = Const o Const.fromChar
-      val int = Const o Const.fromInt
-      val word = Const o Const.fromWord
-      fun bool b = Cast (int (if b then 1 else 0), Type.bool)
+      val int = Const o Const.int
+      val real = Const o Const.real
+      val word = Const o Const.word
+	 
+      fun bool b = Cast (int (IntX.make (IntInf.fromInt (if b then 1 else 0),
+					 IntSize.default)),
+			 Type.bool)
 	 
       val ty =
 	 fn ArrayOffset {ty, ...} => ty
 	  | Cast (_, ty) => ty
 	  | Const c =>
 	       let
-		  datatype z = datatype Const.Node.t
+		  datatype z = datatype Const.t
 	       in
-		  case Const.node c of
-		     Char _ => Type.char
-		   | Int _ => Type.int
+		  case c of
+		     Int i => Type.int (IntX.size i)
 		   | IntInf _ => Type.intInf
-		   | Real _ => Type.real
-		   | String _ => Type.string
-		   | Word _ =>
-			let
-			   val ty = Const.ty c
-			in
-			   if Const.Type.equals (ty, Const.Type.word)
-			      then Type.word
-			   else if Const.Type.equals (ty, Const.Type.word8)
-				   then Type.char
-				else Error.bug "strange word"
-			end
+		   | Real r => Type.real (RealX.size r)
+		   | Word w => Type.word (WordX.size w)
+		   | Word8Vector _ => Type.word8Vector
 	       end
-	  | EnsuresBytesFree => Type.word
+	  | EnsuresBytesFree => Type.word WordSize.default
 	  | File => Type.cpointer
 	  | GCState => Type.cpointer
-	  | Line => Type.int
+	  | Line => Type.int IntSize.default
 	  | Offset {ty, ...} => ty
-	  | PointerTycon _ => Type.word
+	  | PointerTycon _ => Type.word WordSize.default
 	  | Runtime z => Type.fromRuntime (GCField.ty z)
 	  | SmallIntInf _ => Type.IntInf
 	  | Var {ty, ...} => ty
@@ -139,10 +134,12 @@ structure Operand =
 			 small: word -> 'a}): 'a =
 	 case z of
 	    Const c =>
-	       (case Const.node c of
-		   Const.Node.Word w =>
-		      if w <= 0w512 (* pretty arbitrary *)
-			 then small w
+	       (case c of
+		   Const.Word w =>
+		      (* 512 is pretty arbitrary *)
+		      if WordX.<= (w, WordX.fromLargeInt (IntInf.fromInt 512,
+							  WordX.size w))
+			 then small (WordX.toWord w)
 		      else big z
 		 | _ => Error.bug "strange numBytes")
 	  | _ => big z
@@ -328,7 +325,7 @@ structure Transfer =
       val bug =
 	 CCall {args = (Vector.new1
 			(Operand.Const
-			 (Const.fromString "control shouldn't reach here"))),
+			 (Const.string "control shouldn't reach here"))),
 		func = CFunction.bug,
 		return = NONE}
 
@@ -394,17 +391,22 @@ structure Transfer =
       fun clear (t: t): unit =
 	 foreachDef (t, Var.clear o #1)
 
-      fun ifBool (test, {falsee, truee}) =
-	 Switch (Switch.Int
-		 {cases = Vector.new2 ((0, falsee), (1, truee)),
-		  default = NONE,
-		  test = test})
-	 
-      fun ifInt (test, {falsee, truee}) =
-	 Switch (Switch.Int
-		 {cases = Vector.new1 (0, falsee),
-		  default = SOME truee,
-		  test = test})
+      local
+	 fun make i = IntX.make (IntInf.fromInt i, IntSize.default)
+      in
+	 fun ifBool (test, {falsee, truee}) =
+	    Switch (Switch.Int
+		    {cases = Vector.new2 ((make 0, falsee), (make 1, truee)),
+		     default = NONE,
+		     size = IntSize.default,
+		     test = test})
+	 fun ifInt (test, {falsee, truee}) =
+	    Switch (Switch.Int
+		    {cases = Vector.new1 (make 0, falsee),
+		     default = SOME truee,
+		     size = IntSize.default,
+		     test = test})
+      end
    end
 
 structure Kind =
@@ -1030,8 +1032,8 @@ structure Program =
 			       {from = Operand.ty z,
 				fromInt = (case z of
 					      Const c =>
-						 (case Const.node c of
-						     Const.Node.Int n => SOME n
+						 (case c of
+						     Const.Int n => SOME n
 						   | _ => NONE)
 					    | _ => NONE),
 				to = ty,
@@ -1054,7 +1056,7 @@ structure Program =
 		  val _ = checkOperand base
 		  val _ = checkOperand index
 	       in
-		  Type.equals (Operand.ty index, Type.int)
+		  Type.equals (Operand.ty index, Type.defaultInt)
 		  andalso
 		  case Operand.ty base of
 		     Type.CPointer => true (* needed for card marking *)
@@ -1072,8 +1074,13 @@ structure Program =
 				  val {offset, ty = ty', ...} =
 				     Vector.sub (components, 0)
 			       in
-				  offset = 0
-				  andalso Type.equals (ty, ty')
+				  0 = offset
+				  andalso (Type.equals (ty, ty')
+					   orelse
+					   (* Get a word from a word8 array.*)
+					   (Type.equals (ty, Type.word W32)
+					    andalso
+					    Type.equals (ty', Type.word W8)))
 			       end
 			  | _ => false)
 		   | _ => false
@@ -1091,12 +1098,12 @@ structure Program =
 		     Type.EnumPointers {enum, pointers} =>
 			0 = Vector.length enum
 			andalso
-			((* Vector_fromArray header update. *)
+			((* Array_toVector header update. *)
 			 (offset = Runtime.headerOffset
-			  andalso Type.equals (ty, Type.word))
+			  andalso Type.equals (ty, Type.defaultWord))
 			 orelse
 			 (offset = Runtime.arrayLengthOffset
-			  andalso Type.equals (ty, Type.int))
+			  andalso Type.equals (ty, Type.defaultInt))
 			 orelse
 			 Vector.forall
 			 (pointers, fn p =>

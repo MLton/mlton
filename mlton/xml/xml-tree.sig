@@ -41,7 +41,18 @@ signature XML_TREE =
 	    val layout: t -> Layout.t
 	 end
 
-      structure Cases: CASES sharing type Cases.con = Pat.t
+      structure Cases:
+	 sig
+	    datatype 'a t =
+	       Con of (Pat.t * 'a) vector
+	     | Int of IntSize.t * (IntX.t * 'a) vector
+	     | Word of WordSize.t * (WordX.t * 'a) vector
+
+	    val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
+	    val foreach: 'a t * ('a -> unit) -> unit
+	    val foreach': 'a t * ('a -> unit) * (Pat.t -> unit) -> unit
+	    val map: 'a t * ('a -> 'b) -> 'b t
+	 end
 
       structure Lambda:
 	 sig

@@ -1,6 +1,6 @@
 #include "mlton-basis.h"
 
-Double PackReal_subVec(Pointer v, Int offset) {
+Real64 PackReal_subVec (Pointer v, Int offset) {
 	double r;
 	char *p = (char*)&r;
 	char *s = v + offset;

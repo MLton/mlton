@@ -16,15 +16,19 @@ local
 in
    structure Chunk = Chunk
    structure Global = Global
+   structure IntX = IntX
    structure Label = Label
    structure MemChunk = MemChunk
    structure ObjectType = ObjectType
    structure PointerTycon = PointerTycon
    structure ProfileInfo = ProfileInfo
+   structure RealX = RealX
    structure Register = Register
    structure Runtime = Runtime
    structure SourceInfo = SourceInfo
    structure Type = Type
+   structure WordSize = WordSize
+   structure WordX = WordX
 end
 local
    open Runtime
@@ -345,61 +349,67 @@ fun toMachine (program: Ssa.Program.t) =
       fun varOperands xs = Vector.map (xs, varOperand)
       (* Hash tables for uniquifying globals. *)
       local
-	 fun 'a make (ty: Type.t, toString: 'a -> string) =
+	 fun ('a, 'b) make (equals: 'a * 'a -> bool,
+			    info: 'a -> string * Type.t * 'b) =
 	    let
-	       val set: {global: M.Global.t,
+	       val set: {a: 'a,
+			 global: M.Global.t,
 			 hash: word,
-			 string: string} HashSet.t = HashSet.new {hash = #hash}
+			 value: 'b} HashSet.t = HashSet.new {hash = #hash}
 	       fun get (a: 'a): M.Operand.t =
 		  let
-		     val s = toString a
-		     val hash = String.hash s
+		     val (string, ty, value) = info a
+		     val hash = String.hash string
 		  in
 		     M.Operand.Global
 		     (#global
 		      (HashSet.lookupOrInsert
-		       (set, hash, fn {string, ...} => s = string,
-			fn () => {hash = hash,
+		       (set, hash,
+			fn {a = a', ...} => equals (a, a'),
+			fn () => {a = a,
+				  hash = hash,
 				  global = M.Global.new {isRoot = true,
 							 ty = ty},
-				  string = s})))
+				  value =  value})))
 		  end
 	       fun all () =
 		  HashSet.fold
-		  (set, [], fn ({global, string, ...}, ac) =>
-		   (global, string) :: ac)
+		  (set, [], fn ({global, value, ...}, ac) =>
+		   (global, value) :: ac)
 	    in
 	       (all, get)
 	    end
       in
 	 val (allIntInfs, globalIntInf) =
-	    make (Type.intInf, fn i => IntInf.format (i, StringCvt.DEC))
-	 val (allReals, globalReal) = make (Type.real, fn s => s)
-	 val (allStrings, globalString) = make (Type.string, fn s => s)
+	    make (IntInf.equals,
+		  fn i => let
+			     val s = IntInf.toString i
+			  in
+			     (s, Type.intInf, s)
+			  end)
+	 val (allReals, globalReal) =
+	    make (RealX.equals,
+		  fn r => (RealX.toString r,
+			   Type.real (RealX.size r),
+			   r))
+	 val (allStrings, globalString) =
+	    make (String.equals, fn s => (s, Type.word8Vector, s))
 	 fun constOperand (c: Const.t): M.Operand.t =
 	    let
-	       datatype z = datatype Const.Node.t
+	       datatype z = datatype Const.t
 	    in
-	       case Const.node c of
-		  Char n => M.Operand.Char n
-		| Int n => M.Operand.Int n
+	       case c of
+		  Int i => M.Operand.Int i
 		| IntInf i =>
 		     (case Const.SmallIntInf.toWord i of
 			 NONE => globalIntInf i
 		       | SOME w => M.Operand.SmallIntInf w)
-		| Real f =>
+		| Real r =>
 		     if !Control.Native.native
-			then globalReal f
-		     else M.Operand.Real f
-		| String s => globalString s
-		| Word w =>
-		     let val ty = Const.ty c
-		     in if Const.Type.equals (ty, Const.Type.word)
-			   then M.Operand.Word w
-			else if Const.Type.equals (ty, Const.Type.word8)
-				then M.Operand.Char (Char.chr (Word.toInt w))
-			     else Error.bug "strange word"
-		     end
+			then globalReal r
+		     else M.Operand.Real r
+		| Word w => M.Operand.Word w
+		| Word8Vector v => globalString (Word8.vectorToString v)
 	    end
       end
       fun parallelMove {chunk,
@@ -430,8 +440,8 @@ fun toMachine (program: Ssa.Program.t) =
 				 offset = GCField.offset field,
 				 ty = ty}
       val exnStackOp = runtimeOp (GCField.ExnStack, Type.ExnStack)
-      val stackBottomOp = runtimeOp (GCField.StackBottom, Type.Word)
-      val stackTopOp = runtimeOp (GCField.StackTop, Type.Word)
+      val stackBottomOp = runtimeOp (GCField.StackBottom, Type.defaultWord)
+      val stackTopOp = runtimeOp (GCField.StackTop, Type.defaultWord)
       fun translateOperand (oper: R.Operand.t): M.Operand.t =
 	 let
 	    datatype z = datatype R.Operand.t
@@ -453,8 +463,9 @@ fun toMachine (program: Ssa.Program.t) =
 				    offset = offset,
 				    ty = ty}
 	     | PointerTycon pt =>
-		  M.Operand.Word (Runtime.typeIndexToHeader
-				  (PointerTycon.index pt))
+		  M.Operand.Word
+		  (WordX.make (Runtime.typeIndexToHeader (PointerTycon.index pt),
+			       WordSize.default))
 	     | Runtime f =>
 		  runtimeOp (f, R.Operand.ty oper)
 	     | SmallIntInf w => M.Operand.SmallIntInf w
@@ -513,20 +524,22 @@ fun toMachine (program: Ssa.Program.t) =
 		  (* ExnStack = stackTop + (offset + WORD_SIZE) - StackBottom; *)
 		  let
 		     val tmp =
-			M.Operand.Register (Register.new (Type.word, NONE))
+			M.Operand.Register
+			(Register.new (Type.defaultWord, NONE))
 		  in
 		     Vector.new2
 		     (M.Statement.PrimApp
 		      {args = (Vector.new2
 			       (stackTopOp,
 				M.Operand.Int
-				(handlerOffset () + Runtime.wordSize))),
+				(IntX.defaultInt
+				 (handlerOffset () + Runtime.wordSize)))),
 		       dst = SOME tmp,
-		       prim = Prim.word32Add},
+		       prim = Prim.wordAdd WordSize.default},
 		      M.Statement.PrimApp
 		      {args = Vector.new2 (tmp, stackBottomOp),
 		       dst = SOME exnStackOp,
-		       prim = Prim.word32Sub})
+		       prim = Prim.wordSub WordSize.default})
 		  end
 	     | SetExnStackSlot =>
 		  (* ExnStack = *(uint* )(stackTop + offset);	*)
@@ -822,9 +835,11 @@ fun toMachine (program: Ssa.Program.t) =
 			let
 			   fun doit ({cases: ('a * Label.t) vector,
 				      default: Label.t option,
+				      size: 'b,
 				      test: R.Operand.t},
 				     make: {cases: ('a * Label.t) vector,
 					    default: Label.t option,
+					    size: 'b,
 					    test: M.Operand.t} -> M.Switch.t) =
 			      simple
 			      (case (Vector.length cases, default) of
@@ -836,11 +851,11 @@ fun toMachine (program: Ssa.Program.t) =
 				     M.Transfer.Switch
 				     (make {cases = cases,
 					    default = default,
+					    size = size,
 					    test = translateOperand test}))
 			in
 			   case switch of
-			      R.Switch.Char z => doit (z, M.Switch.Char)
-			    | R.Switch.EnumPointers {enum, pointers, test} =>
+			      R.Switch.EnumPointers {enum, pointers, test} =>
 			         simple
 			         (M.Transfer.Switch
 				  (M.Switch.EnumPointers

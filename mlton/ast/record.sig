@@ -23,6 +23,7 @@ signature RECORD =
       val change: 'a t * ('a vector -> 'b vector * 'c) -> 'b t * 'c
       (* detuple r returns the components, if r is a tuple *)
       val detupleOpt: 'a t -> 'a vector option
+      val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool
       val exists: 'a t * ('a -> bool) -> bool
       val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
       val foldi: 'a t * 'b * (Field.t * 'a * 'b ->'b) -> 'b

@@ -10,9 +10,15 @@ type word = Word.t
    
 signature MACHINE_STRUCTS = 
    sig
+      structure IntX: INT_X
       structure Label: HASH_ID
       structure Prim: PRIM
       structure SourceInfo: SOURCE_INFO
+      structure RealX: REAL_X
+      structure WordX: WORD_X
+      sharing IntX.IntSize = Prim.IntSize
+      sharing RealX.RealSize = Prim.RealSize
+      sharing WordX.WordSize = Prim.WordSize
    end
 
 signature MACHINE = 
@@ -20,9 +26,11 @@ signature MACHINE =
       include MACHINE_ATOMS
 
       structure Switch: SWITCH
+      sharing IntX = Switch.IntX
       sharing Label = Switch.Label
       sharing PointerTycon = Switch.PointerTycon
       sharing Type = Switch.Type
+      sharing WordX = Switch.WordX
       structure CFunction: C_FUNCTION
       sharing CFunction = Runtime.CFunction
       structure ChunkLabel: ID_NO_AST
@@ -63,26 +71,25 @@ signature MACHINE =
 			       index: t,
 			       ty: Type.t}
 	     | Cast of t * Type.t
-	     | Char of char
 	     | Contents of {oper: t,
 			    ty: Type.t}
-	     | File (* expand by codegen into string constant *)
+	     | File (* expanded by codegen into string constant *)
 	     | Frontier
 	     | GCState
 	     | Global of Global.t
-	     | Int of int
+	     | Int of IntX.t
 	     | Label of Label.t
 	     | Line (* expand by codegen into int constant *)
 	     | Offset of {base: t,
 			  offset: int,
 			  ty: Type.t}
-	     | Real of string
+	     | Real of RealX.t
 	     | Register of Register.t
 	     | SmallIntInf of word
 	     | StackOffset of {offset: int,
 			       ty: Type.t}
 	     | StackTop
-	     | Word of Word.t
+	     | Word of WordX.t
 
 	    val equals: t * t -> bool
 	    val interfere: t * t -> bool
@@ -247,7 +254,7 @@ signature MACHINE =
 		     maxFrameSize: int,
 		     objectTypes: ObjectType.t vector,
 		     profileInfo: ProfileInfo.t,
-		     reals: (Global.t * string) list,
+		     reals: (Global.t * RealX.t) list,
 		     strings: (Global.t * string) list}
 
 	    val frameSize: t * FrameInfo.t -> int

@@ -6,18 +6,9 @@
 #endif
 #include <sys/resource.h>
 
-/* Here are the types that the abstract machine deals with.
- * See backend/mtype.sig.
- */
-typedef char Char;
-typedef double Double;
-typedef int Int;
-typedef char *Pointer;
-typedef unsigned long Word32;
-typedef Word32 Word;
+#include "types.h"
 
 /* Here are some type abbreviations for abstract machine types. */
-typedef Int Bool;
 typedef Word Cpointer;
 typedef Word Cstring;
 typedef Pointer Thread;
@@ -28,15 +19,15 @@ typedef Word NullString;
 /*                       Array                       */
 /* ------------------------------------------------- */
 
-Int Array_numElements(Pointer p);
+Int Array_numElements (Pointer p);
 
 /* ------------------------------------------------- */
 /*                         C                         */
 /* ------------------------------------------------- */
 
-Char C_CS_sub(Cstring s, Int i);
-void C_CS_update(Cstring s, Int i, Char c);
-Cstring C_CSS_sub(CstringArray a, Int i);
+Char C_CS_sub (Cstring s, Int i);
+void C_CS_update (Cstring s, Int i, Char c);
+Cstring C_CSS_sub (CstringArray a, Int i);
 
 /* ------------------------------------------------- */
 /*                    CommandLine                    */
@@ -81,22 +72,22 @@ Int Date_strfTime(Pointer buf, Int n, NullString fmt);
 /*                       Debug                       */
 /* ------------------------------------------------- */
 
-void Debug_enter(Pointer name);
-void Debug_leave(Pointer name);
+void Debug_enter (Pointer name);
+void Debug_leave (Pointer name);
 
 /* ------------------------------------------------- */
 /*                        GC                         */
 /* ------------------------------------------------- */
 
-void GC_setMessages(Int b);
-void GC_setSummary(Int b);
+void GC_setMessages (Int b);
+void GC_setSummary (Int b);
 
 /* ------------------------------------------------- */
 /*                     IEEEReal                      */
 /* ------------------------------------------------- */
 
-void IEEEReal_setRoundingMode(Int mode);
-Int IEEEReal_getRoundingMode();
+void IEEEReal_setRoundingMode (Int mode);
+Int IEEEReal_getRoundingMode ();
 
 /* ------------------------------------------------- */
 /*                      Itimer                       */
@@ -120,12 +111,12 @@ Cstring MLton_Callback_callbackType();
 Bool MLton_Callback_fetchB(Int l);
 Char MLton_Callback_fetchC(Int l);
 Int MLton_Callback_fetchI(Int l);
-Double MLton_Callback_fetchR(Int l);
+Real MLton_Callback_fetchR(Int l);
 Word MLton_Callback_fetchW(Int l);
 void MLton_Callback_retB(Bool b);
 void MLton_Callback_retC(Char c);
 void MLton_Callback_retI(Int i);
-void MLton_Callback_retR(Double r);
+void MLton_Callback_retR(Real r);
 void MLton_Callback_retW(Word w);
 /* C functions */
 int MLton_Callback_call(char *rep, char *name, ...);
@@ -153,43 +144,23 @@ Int MLton_Process_spawnp (NullString p, Pointer a);
 /*                        OS                         */
 /* ------------------------------------------------- */
 
-Cstring OS_FileSys_tmpnam();
-Int OS_IO_poll(Int *fds, Word *eventss, Int n, Int timeout, Word *reventss);
+Cstring OS_FileSys_tmpnam ();
+Int OS_IO_poll (Int *fds, Word *eventss, Int n, Int timeout, Word *reventss);
 
 /* ------------------------------------------------- */
 /*                     PackReal                      */
 /* ------------------------------------------------- */
 
-Double PackReal_subVec(Pointer v, Int offset);
-void PackReal_update(Pointer a, Int offset, Double r);
+Real64 PackReal_subVec (Pointer v, Int offset);
+void PackReal_update (Pointer a, Int offset, Real64 r);
 
 /* ------------------------------------------------- */
 /*                      Ptrace                       */
 /* ------------------------------------------------- */
 
-Int Ptrace_ptrace2(Int request, Int pid);
+Int Ptrace_ptrace2 (Int request, Int pid);
 /* data is a word ref */
-Int Ptrace_ptrace4(Int request, Int pid, Word addr, Pointer data);
-
-/* ------------------------------------------------- */
-/*                       Real                        */
-/* ------------------------------------------------- */
-
-extern Double Real_Math_e;
-extern Double Real_Math_pi;
-extern Double Real_posInf;
-extern Double Real_maxFinite;
-extern Double Real_minNormalPos;
-extern Double Real_minPos;
-
-Int Real_class (Double d);
-Int Real_isFinite (Double d);
-Int Real_isNan (Double d);
-Int Real_isNormal (Double d);
-Int Real_isPositive (Double d);
-Int Real_qequal (Double x1, Double x2);
-double Real_round (Double d);
-Int Real_signBit (Double d);
+Int Ptrace_ptrace4 (Int request, Int pid, Word addr, Pointer data);
 
 /* ------------------------------------------------- */
 /*                      Rlimit                       */
@@ -224,23 +195,23 @@ Int Real_signBit (Double d);
 typedef Word Rlimit;
 typedef Int Resource;
 
-Int MLton_Rlimit_get(Resource r);
-Rlimit MLton_Rlimit_getHard();
-Rlimit MLton_Rlimit_getSoft();
-Int MLton_Rlimit_set(Resource r, Rlimit hard, Rlimit soft);
+Int MLton_Rlimit_get (Resource r);
+Rlimit MLton_Rlimit_getHard ();
+Rlimit MLton_Rlimit_getSoft ();
+Int MLton_Rlimit_set (Resource r, Rlimit hard, Rlimit soft);
 
 /* ------------------------------------------------- */
 /*                       Stdio                       */
 /* ------------------------------------------------- */
 
-void Stdio_print(Pointer s);
-Int Stdio_sprintf(Pointer buf, Pointer fmt, Double x);
+void Stdio_print (Pointer s);
+Int Stdio_sprintf (Pointer buf, Pointer fmt, Real64 x);
 
 /* ------------------------------------------------- */
 /*                      String                       */
 /* ------------------------------------------------- */
 
-int String_equal(char * s1, char * s2);
+int String_equal (char * s1, char * s2);
 
 /* ------------------------------------------------- */
 /*                      Thread                       */
@@ -259,20 +230,20 @@ void Thread_switchTo (Thread t, Word ensureBytesFree);
 /*                       Time                        */
 /* ------------------------------------------------- */
 
-Int Time_gettimeofday();
-Int Time_sec();
-Int Time_usec();
+Int Time_gettimeofday ();
+Int Time_sec ();
+Int Time_usec ();
 
 /* ------------------------------------------------- */
 /*                       Word8                       */
 /* ------------------------------------------------- */
 
-Char Word8_arshiftAsm(Char w, Word s);
+Char Word8_arshiftAsm (Char w, Word s);
 
 /* ------------------------------------------------- */
 /*                      Word32                       */
 /* ------------------------------------------------- */
 
-Word Word32_arshiftAsm(Word w, Word s);
+Word Word32_arshiftAsm (Word w, Word s);
 
 #endif /* #ifndef _MLTON_BASIS_H_ */

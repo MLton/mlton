@@ -18,6 +18,8 @@ in
    structure ChunkLabel = ChunkLabel
    structure FrameInfo = FrameInfo
    structure Global = Global
+   structure IntSize = IntSize
+   structure IntX = IntX
    structure Kind = Kind
    structure Label = Label
    structure ObjectType = ObjectType
@@ -26,6 +28,8 @@ in
    structure ProfileInfo = ProfileInfo
    structure ProfileLabel = ProfileLabel
    structure Program = Program
+   structure RealSize = RealSize
+   structure RealX = RealX
    structure Register = Register
    structure Runtime = Runtime
    structure SourceInfo = SourceInfo
@@ -33,7 +37,13 @@ in
    structure Switch = Switch
    structure Transfer = Transfer
    structure Type = Type
+   structure WordSize = WordSize
+   structure WordX = WordX
 end
+
+datatype z = datatype IntSize.t
+datatype z = datatype RealSize.t
+datatype z = datatype WordSize.t
 
 local
    open Runtime
@@ -58,6 +68,68 @@ structure Kind =
 val traceGotoLabel = Trace.trace ("gotoLabel", Label.layout, Unit.layout) 
 
 val overhead = "**C overhead**"
+
+structure IntX =
+   struct
+      open IntX
+	 
+      fun toC (i: t): string =
+	 let
+	    fun isPos () = i >= zero (size i)
+	    fun neg () = concat ["-", String.dropPrefix (toString i, 1)]
+	    fun simple s =
+	       concat ["(Int", s, ")",
+		       if isPos () then toString i else neg ()]
+	    (* tricky writes min as a word to avoid a gcc warning. *)
+	    fun tricky min =
+	       if isPos ()
+		  then toString i
+	       else if IntX.isMin i
+		       then min
+		    else neg ()
+	 in
+	    case size i of
+	       I8 => simple "8"
+	     | I16 => simple "16"
+	     | I32 => tricky ("0x80000000")
+	     | I64 => concat ["(Int64)", tricky "0x8000000000000000"]
+	 end
+   end
+
+structure RealX =
+   struct
+      open RealX
+
+      fun toC (r: t): string =
+	 let
+	    (* The only difference between SML reals and C floats/doubles is that
+	     * SML uses "~" while C uses "-".
+	     *)
+	    val s =
+	       String.translate (toString r,
+				 fn #"~" => "-" | c => String.fromChar c)
+	 in
+	    case size r of
+	       R32 => concat ["(Real32)", s]
+	     | R64 => s
+	 end
+   end
+
+structure WordX =
+   struct
+      open WordX
+
+      fun toC (w: t): string =
+	 let
+	    fun simple s =
+	       concat ["(Word", s, ")0x", toString w]
+	 in
+	    case size w of
+	       W8 => simple "8"
+	     | W16 => simple "16"
+	     | W32 => concat ["0x", toString w]
+	 end
+   end
    
 structure C =
    struct
@@ -83,28 +155,19 @@ structure C =
 	 (callNoSemi (f, xs, print)
 	  ; print ";\n")
 
-      fun int (n: int): string =
-	 if n >= 0
-	    then Int.toString n
-	 else if n = Int.minInt
-		 then "(int)0x80000000" (* because of goofy gcc warning *)
-	      else concat ["-", String.dropPrefix (Int.toString n, 1)]
-
       fun char (c: char) =
 	 concat [if Char.ord c >= 0x80 then "(uchar)" else "",
 		 "'", Char.escapeC c, "'"]
 
-      fun word (w: Word.t) = "0x" ^ Word.toString w
-
-      (* The only difference between SML reals and C floats/doubles is that
-       * SML uses "~" while C uses "-".
-       *)
-      fun real s = String.translate (s, fn #"~" => "-" | c => String.fromChar c)
+      fun int (i: int) =
+	 IntX.toC (IntX.make (IntInf.fromInt i, IntSize.default))
 
       fun string s =
 	 let val quote = "\""
 	 in concat [quote, String.escapeC s, quote]
 	 end
+
+      fun word (w: Word.t) = "0x" ^ Word.toString w
 
       fun bug (s: string, print) =
 	 call ("MLton_bug", [concat ["\"", String.escapeC s, "\""]], print)
@@ -142,6 +205,30 @@ fun outputIncludes (includes, print) =
 fun declareProfileLabel (l, print) =
    C.call ("DeclareProfileLabel", [ProfileLabel.toString l], print)
 
+fun declareGlobals (prefix: string, print) =
+   let
+      (* gcState can't be static because stuff in mlton-lib.c refers to
+       * it.
+       *)
+      val _ = print (concat [prefix, "struct GC_state gcState;\n"])
+      val _ =
+	 List.foreach
+	 (Runtime.Type.all, fn t =>
+	  let
+	     val s = Runtime.Type.toString t
+	  in		
+	     print (concat [prefix, s, " global", s,
+			    " [", C.int (Global.numberOfType t), "];\n"])
+	     ; print (concat [prefix, s, " CReturn", Runtime.Type.name t, ";\n"])
+	  end)
+      val _ =	       			    
+	 print (concat [prefix, "Pointer globalPointerNonRoot [",
+			C.int (Global.numberOfNonRoot ()),
+			"];\n"])
+   in
+      ()
+   end
+
 fun outputDeclarations
    {additionalMainArgs: string list,
     includes: string list,
@@ -152,15 +239,25 @@ fun outputDeclarations
     rest: unit -> unit
     }: unit =
    let
-      fun declareGlobals () =
-	 C.call ("Globals",
-		 List.map (List.map (let open Runtime.Type
-				     in [char, double, int, pointer, uint]
-				     end, 
-				     Global.numberOfType)
-			   @ [Global.numberOfNonRoot ()],
-			   C.int),
-		 print)
+      fun declareLoadSaveGlobals () =
+	 let
+	    val _ =
+	       (print "static void saveGlobals (int fd) {\n"
+		; (List.foreach
+		   (Runtime.Type.all, fn t =>
+		    print (concat ["\tSaveArray (global",
+				   Runtime.Type.toString t, ", fd);\n"])))
+		; print "}\n")
+	    val _ =
+	       (print "static void loadGlobals (FILE *file) {\n"
+		; (List.foreach
+		   (Runtime.Type.all, fn t =>
+		    print (concat ["\tLoadArray (global",
+				   Runtime.Type.toString t, ", file);\n"])))
+		; print "}\n")
+	 in
+	    ()
+	 end
       fun declareIntInfs () =
 	 (print "BeginIntInfs\n"
 	  ; List.foreach (intInfs, fn (g, s) =>
@@ -181,14 +278,13 @@ fun outputDeclarations
 			   ; print "\n"))
 	  ; print "EndStrings\n")
       fun declareReals () =
-	 (print "BeginReals\n"
-	  ; List.foreach (reals, fn (g, f) =>
-			  (C.callNoSemi ("Real",
-					 [C.int (Global.index g),
-					  C.real f],
-					 print)
-			   ; print "\n"))
-	  ; print "EndReals\n")
+	 (print "static void real_Init() {\n"
+	  ; List.foreach (reals, fn (g, r) =>
+			  print (concat ["\tglobalReal",
+					 RealSize.toString (RealX.size r),
+					 "[", C.int (Global.index g), "] = ",
+					 RealX.toC r, ";\n"]))
+	  ; print "}\n")
       fun declareFrameOffsets () =
 	 Vector.foreachi
 	 (frameOffsets, fn (i, v) =>
@@ -289,7 +385,8 @@ fun outputDeclarations
 	 end
    in
       outputIncludes (includes, print)
-      ; declareGlobals ()
+      ; declareGlobals ("", print)
+      ; declareLoadSaveGlobals ()
       ; declareIntInfs ()
       ; declareStrings ()
       ; declareReals ()
@@ -305,21 +402,29 @@ structure Type =
    struct
       open Type
 
-      fun toC (t: t): string =
-	 case t of
-	    Char => "Char"
-	  | CPointer => "Pointer"
-	  | EnumPointers {pointers, ...} =>
-	       if 0 = Vector.length pointers
-		  then "Int"
-	       else "Pointer"
-	  | ExnStack => "Word"
-	  | Int => "Int"
-	  | IntInf => "Pointer"
-	  | Label _ => "Word"
-	  | Real => "Double"
-	  | Word => "Word"
-	  | _ => Error.bug (concat ["Type.toC strange type: ", toString t])
+      local
+	 fun make (name, memo, toString) =
+	    memo (fn s => concat [name, toString s])
+	 val int = make ("Int", IntSize.memoize, IntSize.toString)
+	 val real = make ("Real", RealSize.memoize, RealSize.toString)
+	 val word = make ("Word", WordSize.memoize, WordSize.toString)
+	 val pointer = "Pointer"
+      in
+	 fun toC (t: t): string =
+	    case t of
+	       CPointer => pointer
+	     | EnumPointers {pointers, ...} =>
+		  if 0 = Vector.length pointers
+		     then int I32
+		  else pointer
+	     | ExnStack => word W32
+	     | Int s => int s
+	     | IntInf => pointer
+	     | Label _ => word W32
+	     | Real s => real s
+	     | Word s => word s
+	     | _ => Error.bug (concat ["Type.toC strange type: ", toString t])
+      end
    end
 
 structure Prim =
@@ -333,19 +438,23 @@ structure Prim =
 	       val {get: Tycon.t -> string option, set, ...} =
 		  Property.getSetOnce (Tycon.plist, Property.initConst NONE)
 	       val tycons =
-		  [(Tycon.char, "Char"),
-		   (Tycon.int, "Int"),
-		   (Tycon.intInf, "Pointer"),
-		   (Tycon.pointer, "Pointer"),
-		   (Tycon.preThread, "Pointer"),
-		   (Tycon.real, "Double"),
-		   (Tycon.reff, "Pointer"),
-		   (Tycon.thread, "Pointer"),
-		   (Tycon.tuple, "Pointer"),
-		   (Tycon.vector, "Pointer"),
-		   (Tycon.weak, "Pointer"),
-		   (Tycon.word, "Word32"),
-		   (Tycon.word8, "Word8")]
+		  List.map
+		  (IntSize.all, fn s =>
+		   (Tycon.int s, concat ["Int", IntSize.toString s]))
+		  @ [(Tycon.intInf, "Pointer"),
+		     (Tycon.pointer, "Pointer"),
+		     (Tycon.preThread, "Pointer")]
+		  @ (List.map
+		     (RealSize.all, fn s =>
+		      (Tycon.real s, concat ["Real", RealSize.toString s])))
+		  @ [(Tycon.reff, "Pointer"),
+		     (Tycon.thread, "Pointer"),
+		     (Tycon.tuple, "Pointer"),
+		     (Tycon.vector, "Pointer"),
+		     (Tycon.weak, "Pointer")]
+		  @ (List.map
+		     (WordSize.all, fn s =>
+		      (Tycon.word s, concat ["Word", WordSize.toString s])))
 	       val _ =
 		  List.foreach (tycons, fn (tycon, s) => set (tycon, SOME s))
 	    in
@@ -360,7 +469,9 @@ structure Prim =
 	    end
 	 end
    end
-   
+
+fun contents (ty, z) = concat ["C", C.args [Type.toC ty, z]]
+
 fun output {program as Machine.Program.T {chunks,
 					  frameLayouts,
 					  main = {chunkLabel, label}, ...},
@@ -454,7 +565,7 @@ fun output {program as Machine.Program.T {chunks,
 		src: string, srcIsMem: bool,
 		ty: Type.t}: string =
 	 if handleMisalignedReals
-	    andalso Type.equals (ty, Type.real)
+	    andalso Type.equals (ty, Type.real R64)
 	    then
 	       case (dstIsMem, srcIsMem) of
 		  (false, false) => concat [dst, " = ", src, ";\n"]
@@ -467,45 +578,41 @@ fun output {program as Machine.Program.T {chunks,
       	 fun toString (z: Operand.t): string =
 	    case z of
 	       ArrayOffset {base, index, ty} =>
-		  concat ["X", Type.name ty,
-			  C.args [toString base, toString index]]
-	     | Cast (z, ty) =>
-		  concat ["(", Runtime.Type.toString (Type.toRuntime ty), ")",
-			  toString z]
-	     | Char c => C.char c
-	     | Contents {oper, ty} =>
-		  concat ["C", Type.name ty, "(", toString oper, ")"]
+		  concat ["X", C.args [Type.toC ty,
+				       toString base,
+				       toString index]]
+	     | Cast (z, ty) => concat ["(", Type.toC ty, ")", toString z]
+	     | Contents {oper, ty} => contents (ty, toString oper)
 	     | File => "__FILE__"
 	     | Frontier => "Frontier"
 	     | GCState => "GCState"
 	     | Global g =>
-		  concat ["G", Type.name (Global.ty g),
-			  if Global.isRoot g
-			     then ""
-			  else "NR",
-			     "(", Int.toString (Global.index g), ")"]
-	     | Int n => C.int n
+		  if Global.isRoot g
+		     then concat ["G",
+				  C.args [Type.toC (Global.ty g),
+					  Int.toString (Global.index g)]]
+		  else concat ["GPNR", C.args [Int.toString (Global.index g)]]
+	     | Int i => IntX.toC i
 	     | Label l => labelToStringIndex l
 	     | Line => "__LINE__"
 	     | Offset {base, offset, ty} =>
-		  concat ["O", Type.name ty,
-			  C.args [toString base, C.int offset]]
-	     | Real s => C.real s
+		  concat ["O", C.args [Type.toC ty, toString base, C.int offset]]
+	     | Real r => RealX.toC r
 	     | Register r =>
-		  concat ["R", Type.name (Register.ty r),
-			  "(", Int.toString (Register.index r), ")"]
+		  concat [Type.name (Register.ty r), "_",
+			  Int.toString (Register.index r)]
 	     | SmallIntInf w =>
 		  concat ["SmallIntInf", C.args [concat ["0x", Word.toString w]]]
 	     | StackOffset {offset, ty} =>
-		  concat ["S", Type.name ty, "(", C.int offset, ")"]
+		  concat ["S", C.args [Type.toC ty, C.int offset]]
 	     | StackTop => "StackTop"
-	     | Word w => C.word w
+	     | Word w => WordX.toC w
       in
 	 val operandToString = toString
       end
       fun fetchOperand (z: Operand.t): string =
 	 if handleMisalignedReals
-	    andalso Type.equals (Operand.ty z, Type.real)
+	    andalso Type.equals (Operand.ty z, Type.real R64)
 	    andalso Operand.isMem z
 	    then realFetch (operandToString z)
 	 else operandToString z
@@ -535,12 +642,12 @@ fun output {program as Machine.Program.T {chunks,
 				 let
 				    val ty = Operand.ty value
 				    val dst =
-				       concat
-				       ["C", Type.name (Operand.ty value),
-					"(Frontier + ",
-					C.int (offset
-					       + Runtime.normalHeaderSize),
-					")"]
+				       contents
+				       (Operand.ty value,
+					concat ["Frontier + ",
+						C.int
+						(offset
+						 + Runtime.normalHeaderSize)])
 				 in
 				    print "\t"
 				    ; (print
@@ -758,12 +865,8 @@ fun output {program as Machine.Program.T {chunks,
 				     val _ =
 					print
 					(concat
-					 ["\t",
-					  Runtime.Type.toString
-					  (Type.toRuntime ty),
-					  " ", tmp, " = ",
-					  fetchOperand z,
-					  ";\n"])
+					 ["\t", Type.toC ty, " ", tmp, " = ",
+					  fetchOperand z, ";\n"])
 				  in
 				     tmp
 				  end
@@ -890,36 +993,40 @@ fun output {program as Machine.Program.T {chunks,
 				 fun const1 () = const 1
 			      in
 				 case Prim.name prim of
-				    Int_addCheck =>
-				       if const0 ()
-					  then "\tInt_addCheckCX"
-				       else if const1 ()
-					       then "\tInt_addCheckXC"
-					    else "\tInt_addCheck"
-				  | Int_mulCheck => "\tInt_mulCheck"
-				  | Int_negCheck => "\tInt_negCheck"
-				  | Int_subCheck =>
-				       if const0 ()
-					  then "\tInt_subCheckCX"
-				       else if const1 ()
-					       then "\tInt_subCheckXC"
-					    else "\tInt_subCheck"
-				  | Word32_addCheck =>
-				       if const0 ()
-					  then "\tWord32_addCheckCX"
-				       else if const1 ()
-					       then "\tWord32_addCheckXC"
-					    else "\tWord32_addCheck"
-				  | Word32_mulCheck => "\tWord32_mulCheck"  
+				    Int_addCheck _ =>
+				       concat [Prim.toString prim,
+					       if const0 ()
+						  then "CX"
+					       else if const1 ()
+						       then "XC"
+						    else ""]
+				  | Int_mulCheck _ => Prim.toString prim
+				  | Int_negCheck _ => Prim.toString prim
+				  | Int_subCheck _ =>
+				       concat [Prim.toString prim,
+					       if const0 ()
+						  then "CX"
+					       else if const1 ()
+						       then "XC"
+						    else ""]
+				  | Word_addCheck _ =>
+				       concat [Prim.toString prim,
+					       if const0 ()
+						  then "CX"
+					       else if const1 ()
+						       then "XC"
+						    else ""]
+				  | Word_mulCheck _ => Prim.toString prim
 				  | _ => Error.bug "strange overflow prim"
 			      end
 			   val _ = force overflow
 			in
-			   C.call (prim,
-				   operandToString dst
-				   :: (Vector.toListMap (args, operandToString)
-				       @ [Label.toString overflow]),
-				   print)
+                           print "\t"
+			   ; C.call (prim,
+				     operandToString dst
+				     :: (Vector.toListMap (args, operandToString)
+					 @ [Label.toString overflow]),
+				     print)
 			   ; gotoLabel success 
 			   ; maybePrintLabel overflow
 			end
@@ -1030,7 +1137,7 @@ fun output {program as Machine.Program.T {chunks,
 					       #2 (Vector.sub (cases, 0)))
 				  | (_, SOME l) => switch (cases, l)
 			      end
-			   fun simple ({cases, default, test}, f) =
+			   fun simple ({cases, default, size, test}, f) =
 			      doit {cases = Vector.map (cases, fn (c, l) =>
 							(f c, l)),
 				    default = default,
@@ -1038,27 +1145,28 @@ fun output {program as Machine.Program.T {chunks,
 			   datatype z = datatype Switch.t
 			in
 			   case switch of
-			      Char z => simple (z, C.char)
-			    | EnumPointers {enum, pointers, test} =>
+			      EnumPointers {enum, pointers, test} =>
 			      iff (concat
 				   ["IsInt (", operandToString test, ")"],
 				   enum, pointers)
-			    | Int (z as {cases, default, test}) =>
+			    | Int (z as {cases, default, size, test}) =>
 				 let
-				    fun normal () = simple (z, C.int)
+				    fun normal () = simple (z, IntX.toC)
 				 in
 				    if 2 = Vector.length cases
+				       andalso Option.isNone default
 				       then
 					  let
-					     val c0 = Vector.sub (cases, 0)
-					     val c1 = Vector.sub (cases, 1)
+					     val (c0, l0) = Vector.sub (cases, 0)
+					     val (c1, l1) = Vector.sub (cases, 1)
 					  in
-					     case (c0, c1, default) of
-						((0, f), (1, t), NONE) =>
-						   bool (test, t, f)
-					      | ((1, t), (0, f), NONE) =>
-						   bool (test, t, f)
-					      | _ => normal ()
+					     if IntX.isZero c0
+						andalso IntX.isOne c1
+						then bool (test, l1, l0)
+					     else if (IntX.isOne c0
+						      andalso IntX.isZero c1)
+						     then bool (test, l0, l1)
+						  else normal ()
 					  end
 				    else normal ()
 				 end
@@ -1068,17 +1176,18 @@ fun output {program as Machine.Program.T {chunks,
 						 (Int.toString tag, dst))),
 				       default = default,
 				       test = tag}
-			    | Word z => simple (z, C.word)
+			    | Word z => simple (z, WordX.toC)
 			end
 	       end
 	    fun declareRegisters () =
 	       List.foreach
 	       (Runtime.Type.all, fn t =>
 		let
-		   val d = concat ["D", Runtime.Type.name t]
+		   val pre = concat ["\t", Runtime.Type.toString t, " ",
+				     Runtime.Type.name t, "_"]
 		in
 		   Int.for (0, 1 + regMax t, fn i =>
-			    C.call (d, [C.int i], print))
+			    print (concat [pre, C.int i, ";\n"]))
 		end)
 	    fun outputOffsets () =
 	       List.foreach
@@ -1092,6 +1201,7 @@ fun output {program as Machine.Program.T {chunks,
 	 in
 	    outputIncludes (["c-chunk.h"], print)
 	    ; outputOffsets ()
+	    ; declareGlobals ("extern ", print)
 	    ; declareFFI ()
 	    ; declareChunks ()
 	    ; declareProfileLabels ()
