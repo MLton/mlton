@@ -391,7 +391,7 @@ fun makeOptions {usage} =
 	push runtimeArgs),
        (Normal, "safe", " {true|false}", "bounds checking and other checks",
 	boolRef safe),
-       (Normal, "sequence-unit", " {false|true}",
+       (Expert, "sequence-unit", " {false|true}",
 	"in (e1; e2), require e1: unit",
 	Bool (fn b =>
 	      (warnDeprecated "sequence-unit"
@@ -469,12 +469,12 @@ fun makeOptions {usage} =
        (Expert, "warn-ann", " {true|false}",
 	"unrecognized annotation warnings",
 	boolRef warnAnn),
-       (Normal, "warn-match", " {true|false}",
+       (Expert, "warn-match", " {true|false}",
 	"nonexhaustive and redundant match warnings",
 	Bool (fn b =>
 	      (warnDeprecated "warn-match"
 	       ; (Control.Elaborate.default Control.Elaborate.warnMatch) := b))),
-       (Normal, "warn-unused", " {false|true}",
+       (Expert, "warn-unused", " {false|true}",
 	"unused identifier warnings",
 	Bool (fn b =>
 	      (warnDeprecated "warn-unused"
