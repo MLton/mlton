@@ -152,30 +152,3 @@ Although the C type of an array, ref, or vector is always {\tt
 Pointer}, in reality, the object is layed out in the natural C
 representation.  Your C code should cast to the appropriate C type if
 you want to keep the C compiler from complaining.
-
-\subsection{Type checking programs that use {\tt \_import}}
-
-Because {\mlton} has relaxed type checking, it is necessary to
-type check programs that use {\tt \_import} with another SML compiler.
-This can be done by a standard process using a Makefile and {\tt sed}.
-Suppose that you have a file, {\tt mlxtest.cm}, that describes your
-{\mlton} project, and that it refers to a file, {\tt mlx.sml}, that
-uses {\tt \_import}.  The following Makefile will let you type-check your
-code with {\smlnj} by typing {\tt make typecheck}.
-
-\begin{verbatim}
-nj: *.sml *.cm
-        cat mlx.sml | sed -e 's/_import/Unsafe.cast/' >mlx-nj.sml
-        cat mlxtest.cm | sed -e 's/mlx.sml/mlx-nj.sml/' >sources.cm
-
-typecheck: nj
-        echo "CM.make();" | sml
-\end{verbatim}
-
-The basic trick is to replace {\ffi} with {\tt Unsafe.cast} to generate a new
-program that SML/NJ likes.  Instead of {\tt Unsafe.cast}, you could also use
-anything of type {\tt string -> 'a}, like {\tt raise Match} or a looping
-function.  Since all {\ffi} declarations are annotated with their types, the
-cast is constrained to the actual type of the foreign function or primitive. Of
-course, you should never actually run the code, but it's sufficient for type
-checking.

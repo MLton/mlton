@@ -4,17 +4,6 @@
 
 \begin{description}
 
-\drawback{relaxed type checking}
-{\mlton} does SML-style polymorphic type inference.  However, type
-inference happens after functor expansion, hence {\mlton} accepts more
-programs than The Definition of SML allows.  {\mlton}'s type error
-messages are also difficult to understand.  It is strongly recommended
-that you type check your programs with another SML compiler before
-compiling them with {\mlton}.
-
-{\mlton} should always accept a valid SML program.  If it doesn't,
-please send a bug report to {\mltonmail}.
-
 \drawback{large compile-time memory requirement}
 Because {\mlton} performs whole-program analysis and optimization,
 compilation requires a large amount of memory on large programs.  For
@@ -23,12 +12,12 @@ RAM.
 
 \drawback{long compile times}
 Whole-program compilation can take a long time on large programs.  For
-example, compiling {\mlton} (over 100K lines) on an 1.6GhZ machine
-takes roughly five minutes.
+example, compiling {\mlton} (over 100K lines) on a 1.6GhZ machine
+takes five to ten minutes.
 
 \drawback{no interactive top level}
 Because of whole-program compilation, {\mlton} does not provide an
-interactive top level.  In particular, it does not implement the {\tt
-use} basis library function.
+interactive top level.  In particular, it does not implement the
+optional {\tt use} basis library function.
 
 \end{description}
