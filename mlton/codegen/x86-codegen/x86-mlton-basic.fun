@@ -356,7 +356,7 @@ struct
      make (Field.CardMap, wordSize, Classes.GCState)
 
   val (_, _, gcState_currentSourceContentsOperand) =
-     make (Field.CurrentSource, wordSize, Classes.GCState)
+     make (Field.CurrentSource, wordSize, Classes.GCStateVolatile)
 
   val (gcState_currentThread, gcState_currentThreadContents,
         gcState_currentThreadContentsOperand) =
