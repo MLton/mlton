@@ -425,12 +425,35 @@ fun commandLine (args: string list): unit =
 		  val definesAndIncludes =
 		     List.concat [list ("-D", !defines),
 				  list ("-I", rev (includeDirs))]
+		  (* This mess is necessary because the linker on linux
+		   * adds a dependency to a shared library even if there are
+		   * no references to it.  So, on linux, we explicitly link
+		   * with libgmp.a instead of using -lgmp.
+		   *)
+		  val linkWithGmp =
+		     case !hostType of
+			Cygwin => "-lgmp"
+		      | Linux =>
+			   case (List.peekMap
+				 (File.lines "/etc/ld.so.conf", fn d =>
+				  let
+				     val lib = concat [String.dropSuffix (d, 1),
+						       "/libgmp.a"]
+				  in
+				     if File.canRead lib
+					then SOME lib
+				     else NONE
+				  end)) of
+			      NONE => "-lgmp"
+			    | SOME lib => lib
 		  val linkLibs: string list =
 		     List.concat [list ("-L", rev (libDirs)),
+				  [linkWithGmp],
 				  list ("-l",
 					(if !debug
 					    then "mlton-gdb"
-					 else "mlton") :: !libs)]
+					 else "mlton")
+					    :: !libs)]
 		  fun compileO (inputs: File.t list) =
 		     let
 			val output = maybeOut ""

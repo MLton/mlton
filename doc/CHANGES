@@ -5,6 +5,9 @@ Here are the changes from version 20020410 to version VERSION.
     "sread failed" problem that Byron Hale saw on Cygwin that caused mlton to
     fail to start.
   - Added IntInf.log2.
+  - Changed call to linker to use libgmp.a (if it exists) instead of libgmp.so.
+    This is because the linker adds a dependency to a shared library even if
+    there are no references to it
 
 * 2002-04-23
   - Rewrote heap resizing code.  This fixed bug that was triggered with large

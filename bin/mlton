@@ -40,4 +40,4 @@ doit "$lib" \
 	"$gcc" -w -fomit-frame-pointer -fno-strength-reduce \
 	-mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 \
 	-fschedule-insns -fschedule-insns2 END \
-	-lgmp -lm "$@"
+	-lm "$@"
