@@ -45,6 +45,8 @@ signature SSA_TREE2 =
 	    val equals: t * t -> bool
 	    val intInf: t
 	    val layout: t -> Layout.t
+	    val object: {args: {elt: t, isMutable: bool} vector,
+			 con: Con.t option} -> t
 	    val ofConst: Const.t -> t
 	    val plist: t -> PropertyList.t
 	    val real: RealSize.t -> t

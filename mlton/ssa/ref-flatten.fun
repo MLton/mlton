@@ -17,15 +17,25 @@ datatype z = datatype Transfer.t
 
 structure Set = DisjointSet
 
-structure Flat =
+structure Unary =
+   struct
+      datatype t = Array | Vector | Weak
+
+      val equals: t * t -> bool = op =
+	 
+      val toString =
+	 fn Array => "Array"
+	  | Vector => "Vector"
+	  | Weak => "Weak"
+
+      val layout = Layout.str o toString
+   end
+
+structure Finish =
    struct
       datatype t =
-	 ConOffset of {con: Con.t,
-		       offset: int}
-       | NotFlat
-       | TupleOffset of {offset: int,
-			 tuple: Type.t}
-       | Unknown
+	 Flat of {elt: Type.t, isMutable: bool} vector
+	| NotFlat of Type.t
 
       val layout: t -> Layout.t =
 	 fn f =>
@@ -33,206 +43,313 @@ structure Flat =
 	    open Layout
 	 in
 	    case f of
-	       ConOffset {con, offset} =>
-		  seq [str "ConOffset ",
-		       record [("con", Con.layout con),
-			       ("offset", Int.layout offset)]]
-	     | NotFlat => str "NotFlat"
-	     | TupleOffset {offset, tuple} =>
-		  seq [str "TupleOffset ",
-		       record [("offset", Int.layout offset),
-			       ("tuple", Type.layout tuple)]]
-	     | Unknown => str "Unknown"
+	       Flat es =>
+		  seq [str "Flat ",
+		       Vector.layout
+		       (fn {elt, isMutable} =>
+			record [("elt", Type.layout elt),
+				("isMutable", Bool.layout isMutable)])
+		       es]
+	     | NotFlat t => seq [str "NotFlat ", Type.layout t]
 	 end
    end
 
 structure Value =
    struct
       datatype t =
-	 Ground
-       | Ref of {arg: t,
-		 flat: Flat.t Set.t}
-       | Tuple of t vector
-       | Unary of t
+	 Ground of Type.t
+       | Object of {args: {elt: t, isMutable: bool} vector,
+		    con: Con.t option,
+		    finalOffsets: int vector option ref,
+		    finish: Finish.t option ref,
+		    flat: flat Set.t}
+       | Unary of {arg: t,
+		   finalType: Type.t option ref,
+		   unary: Unary.t}
+      and flat =
+	 NotFlat
+	| Offset of {object: t,
+		     offset: int}
+	| Unknown
 
-      fun layout (v: t): Layout.t =
-	 let
-	    open Layout
-	 in
+      local
+	 open Layout
+      in
+	 fun layout v: Layout.t =
 	    case v of
-	       Ground => str "Ground"
-	     | Ref {arg, flat} =>
-		  seq [str "Ref ",
+	       Ground t => Type.layout t
+	     | Object {args, con, finish, flat, ...} =>
+		  seq [str "Object ",
+		       record
+		       [("args", Vector.layout (layout o #elt) args),
+			("con", Option.layout Con.layout con),
+			("finish", Option.layout Finish.layout (!finish)),
+			("flat", layoutFlat (Set.value flat))]]
+	     | Unary {arg, unary, ...} =>
+		  seq [str "Unary ",
 		       record [("arg", layout arg),
-			       ("flat", Flat.layout (Set.value flat))]]
-	     | Tuple v => tuple (Vector.toListMap (v, layout))
-	     | Unary v => seq [str "Unary ", layout v]
-	 end
+			       ("unary", Unary.layout unary)]]
+	 and layoutFlat (f: flat): Layout.t =
+	    case f of
+	       NotFlat => str "NotFlat"
+	     | Offset {offset, ...} =>
+		  seq [str "Offset ",
+		       record [("offset", Int.layout offset)]]
+	     | Unknown => str "Unknown"
+      end
 
-      val ground = Ground
-
-      val isGround =
-	 fn Ground => true
-	  | _ => false
+      local
+	 fun unary u a = Unary {arg = a, finalType = ref NONE, unary = u}
+	 datatype z = datatype Unary.t
+      in
+	 val array = unary Array
+	 val vector = unary Vector
+	 val weak = unary Weak
+      end
 	 
-      fun unary v =
+      local
+	 val deUnary: t -> t =
+	    fn v =>
+	    case v of
+	       Unary {arg, ...} => arg
+	     | _ => Error.bug "deUnary"
+      in
+	 val deArray = deUnary
+	 val deVector = deUnary
+	 val deWeak = deUnary
+      end
+
+      fun deFlat (v: t): {elt: t, isMutable: bool} vector option =
 	 case v of
-	    Ground => Ground
-	  | _ => Unary v
-
-      val array = unary
-      val vector = unary
-      val weak = unary
-	 
-      val reff: t -> t =
-	 fn arg => Ref {arg = arg, flat = Set.singleton Flat.Unknown}
-
-      val deUnary: t -> t =
-	 fn Ground => Ground
-	  | Unary v => v
-	  | _ => Error.bug "deUnary"
-
-      val deArray = deUnary
-      val deref =
-	 fn Ref {arg, ...} => arg
-	  | _ => Error.bug "deref"
-      val deVector = deUnary
-      val deWeak = deUnary
-
-      val tuple: t vector -> t =
-	 fn vs =>
-	 if Vector.forall (vs, isGround)
-	    then ground
-	 else Tuple vs
-
-      val select: t * int -> t =
-	 fn (v, i) =>
-	 case v of
-	    Ground => ground
-	  | Tuple v => Vector.sub (v, i)
-	  | _ => Error.bug "Value.select"
+	    Object {args, flat, ...} =>
+	       (case Set.value flat of
+		   Offset _ => SOME args
+		 | _ => NONE)
+	  | _ => NONE
 	       
+      val ground: Type.t -> t = Ground
+
+      fun object (con, args) =
+	 Object {args = args,
+		 con = con,
+		 finalOffsets = ref NONE,
+		 finish = ref NONE,
+		 flat = Set.singleton Unknown}
+
+      val tuple: {elt: t, isMutable: bool} vector -> t =
+	 fn vs => object (NONE, vs)
+
+      val sameObject: t * t -> bool =
+	 fn (v, v') =>
+	 case (v, v') of
+	    (Object {flat = f, ...}, Object {flat = f', ...}) =>
+	       Set.equals (f, f')
+	  | _ => false
+
       fun fromType (t: Type.t) =
 	 let
 	    datatype z = datatype Type.dest
 	 in
 	    case Type.dest t of
 	       Array t => array (fromType t)
-	     | Ref t => reff (fromType t)
-	     | Tuple ts => tuple (Vector.map (ts, fromType))
+	     | Object {args, con} =>
+		  (case con of
+		      NONE => tuple (Vector.map (args, fn {elt, isMutable} =>
+						 {elt = fromType elt,
+						  isMutable = isMutable}))
+		    | SOME _ => Error.bug "Value.fromType Object SOME con")
 	     | Vector t => vector (fromType t)
 	     | Weak t => weak (fromType t)
-	     | _ => ground
+	     | _ => ground t
 	 end
 
-      val rec unify: t * t -> unit =
-	 fn (Ground, Ground) => ()
-	  | (Ref {arg = a, flat = f}, Ref {arg = a', flat = f'}) =>
-	       (Set.union (f, f'); unify (a, a'))
-	  | (Tuple v, Tuple v') => Vector.foreach2 (v, v', unify)
-	  | (Unary v, Unary v') => unify (v, v')
-	  | _ => Error.bug "Value.unify"
+      val fromType = Trace.trace ("Value.fromType", Type.layout, layout) fromType
+
+      fun coerce {from: t, to: t}: unit =
+	 case (from, to) of
+	    (Ground t, Ground t') =>
+	       if Type.equals (t, t')
+		  then ()
+	       else Error.bug "coerce Ground"
+	  | (Object {con = SOME _, ...}, Ground _) => ()
+	  | (Object {args = a, flat = f, ...},
+	     Object {args = a', flat = f', ...}) =>
+	       (Set.union (f, f')
+		; (Vector.foreach2
+		   (a, a', fn ({elt = e, ...}, {elt = e', ...}) =>
+		    coerce {from = e, to = e'})))
+	  | (Unary {arg = a, unary = u, ...},
+	     Unary {arg = a', unary = u', ...}) =>
+	       if Unary.equals (u, u')
+		  then coerce {from = a, to = a'}
+	       else Error.bug "coerce Unary"
+	  | _ => Error.bug "strange coerce"
+
+      val coerce =
+	 Trace.trace ("Value.coerce",
+		      fn {from, to} =>
+		      Layout.record [("from", layout from),
+				     ("to", layout to)],
+		      Unit.layout)
+	 coerce
+   end
+
+structure Flat =
+   struct
+      datatype t = datatype Value.flat
+
+      val layout = Value.layoutFlat
    end
 
 fun flatten (program as Program.T {datatypes, functions, globals, main}) =
    let
-      val {get = conInfo: Con.t -> {args: Value.t vector},
-	   set = setConInfo, ...} =
+      val {get = conValue: Con.t -> Value.t, set = setConValue, ...} =
 	 Property.getSetOnce 
 	 (Con.plist, Property.initRaise ("conInfo", Con.layout))
-      val conArgs = #args o conInfo
       val () =
 	 Vector.foreach
 	 (datatypes, fn Datatype.T {cons, tycon} =>
 	  Vector.foreach
 	  (cons, fn {args, con} =>
-	   setConInfo (con, {args = Vector.map (args, Value.fromType)})))
-      fun coerce {from, to} = Value.unify (from, to)
-      fun conApp {args, con} =
-	 (Vector.foreach2 (args, conArgs con, fn (v, v') =>
-			   coerce {from = v, to = v'})
-	  ; Value.ground)
-      fun filter (_, con, args) =
-	 Vector.foreach2 (conArgs con, args, fn (v, v') =>
-			  coerce {from = v, to = v'})
+	   let
+	      val value =
+		 Value.object (SOME con,
+			       Vector.map (args, fn {elt, isMutable} =>
+					   {elt = Value.fromType elt,
+					    isMutable = isMutable}))
+	      val () = setConValue (con, value)
+	      (* Constructors can never be flattened into other objects. *)
+	      val () =
+		 case value of
+		    Value.Object {flat, ...} => Set.setValue (flat, Flat.NotFlat)
+		  | _ => Error.bug "constructor not object"
+	   in
+	      ()
+	   end))
+      fun typeValue t =
+	 case Type.dest t of
+	    Type.Object {con = SOME c, ...} => conValue c
+	  | _ => Value.fromType t
+      val coerce = Value.coerce
+      fun object {args, con, resultType} =
+	 let
+	    val object =
+	       case con of
+		  NONE => Value.fromType resultType
+		| SOME c => conValue c
+	    val () =
+	       case object of
+		  Value.Object {args = args', ...} =>
+		     Vector.foreach2
+		     (args, args', fn (a, {elt = a', ...}) =>
+		      coerce {from = a, to = a'})
+		| _ => Error.bug "strange object"
+	 in
+	    object
+	 end
       fun primApp {args, prim, resultVar, resultType, targs = _} =
 	 let
 	    fun arg i = Vector.sub (args, i)
-	    fun result () = Value.fromType resultType
+	    fun result () = typeValue resultType
 	    datatype z = datatype Prim.Name.t
 	 in
 	    case Prim.name prim of
 	       Array_sub => Value.deArray (arg 0)
-	     | Array_toVector => arg 0
+	     | Array_toVector => Value.vector (Value.deArray (arg 0))
 	     | Array_update =>
 		  (coerce {from = arg 2,
 			   to = Value.deArray (arg 0)}
 		   ; result ())
-	     | Ref_assign =>
-		  (coerce {from = arg 1, to = Value.deref (arg 0)}; result ())
-	     | Ref_deref => Value.deref (arg 0)
-	     | Ref_ref => Value.reff (arg 0)
 	     | Vector_sub => Value.deVector (arg 0)
 	     | Weak_get => Value.deWeak (arg 0)
 	     | Weak_new => Value.weak (arg 0)
 	     | _ => result ()
 	 end
-      fun select {offset, resultType = _, tuple} =
-	 Value.select (tuple, offset)
-      val {value, ...} =
+      fun select {object, offset} =
+	 let
+	    datatype z = datatype Value.t
+	    val args =
+	       case object of
+		  Object {args, ...} => args
+		| _ => Error.bug "select"
+	 in
+	    #elt (Vector.sub (args, offset))
+	 end
+      fun update {object, offset, value} =
+	 coerce {from = value,
+		 to = select {object = object, offset = offset}}
+      fun const c = Value.fromType (Type.ofConst c)
+      val {func, label, value = varValue, ...} =
 	 analyze {coerce = coerce,
-		  conApp = conApp,
-		  const = fn _ => Value.ground,
-		  filter = filter,
+		  const = const,
+		  filter = fn _ => (),
 		  filterWord = fn _ => (),
-		  fromType = Value.fromType,
+		  fromType = typeValue,
 		  layout = Value.layout,
+		  object = object,
 		  primApp = primApp,
 		  program = program,
-		  select = select,
-		  tuple = Value.tuple,
+		  select = fn {object, offset, ...} => select {object = object,
+							       offset = offset},
+		  update = update,
 		  useFromTypeOnBinds = false}
-      (* Mark a ref field of a tuple as unflattenable if
-       * 1. When the ref is constructed, it is used in some way other
-       *    than put in the tuple.
-       * 2. When the ref is extracted, it is used in some way other than in
-       *    a ! or :=.
-       *
-       * Count numOccurences of each variable.
-       * Flag indicating if the variable is directly the result of a ref.
-       * Flag indicating if a variable is used in something other than
-       * a ! or :=.
+      (* Mark a variable as flat if it is used only once and that use is in an
+       * object allocation.
        *)
-      val {get = varInfo: Var.t -> {flat: Flat.t ref}, ...} =
-	 Property.get (Var.plist,
-		       Property.initFun (fn _ => {flat = ref Flat.Unknown}))
-      fun use x = #flat (varInfo x) := Flat.NotFlat
+      datatype varInfo =
+	 NonTuple
+	| Tuple of {components: Var.t vector,
+		    flat: Flat.t ref}
+      val {get = varInfo: Var.t -> varInfo ref, ...} =
+	 Property.get (Var.plist, Property.initFun (fn _ => ref NonTuple))
+      fun use x =
+	 case ! (varInfo x) of
+	    Tuple {flat, ...} => flat := Flat.NotFlat
+	  | _ => ()
       fun uses xs = Vector.foreach (xs, use)
-      fun object (xs, make) =
-	 Vector.foreachi
-	 (xs, fn (i, x) =>
-	  let
-	     val {flat, ...} = varInfo x
-	  in
-	     case !flat of
-		Flat.Unknown => flat := make {offset = i}
-	      | _ => flat := Flat.NotFlat
-	  end)
       fun loopStatements ss =
 	 Vector.foreach
 	 (ss, fn Statement.T {exp, ty, var} =>
-	  case exp of
-	     ConApp {args, con, ...} =>
-		object (args, fn {offset} =>
-			Flat.ConOffset {con = con, offset = offset})
-	   | Const _ => ()
-	   | PrimApp {args, ...} => uses args
-	   | Profile _ => ()
-	   | Select {tuple, ...} => use tuple
-	   | Tuple xs =>
-		object (xs, fn {offset} =>
-			Flat.TupleOffset {offset = offset, tuple = ty})
-	   | Var x => use x)
+	  let
+	     datatype z = datatype Exp.t
+	  in
+	     case exp of
+		Const _ => ()
+	      | Object {args, con, ...} =>
+		   (case var of
+		       NONE => uses args
+		     | SOME var => 
+			  let
+			     val () =
+				case con of
+				   NONE =>
+				      varInfo var
+				      := Tuple {components = args,
+						flat = ref Flat.Unknown}
+				 | _ => ()
+			     val object = varValue var
+			  in
+			     Vector.foreachi
+			     (args, fn (offset, x) =>
+			      case ! (varInfo x) of
+				 NonTuple => ()
+			       | Tuple {components, flat} => 
+				    let
+				       datatype z = datatype Flat.t
+				    in
+				       case !flat of
+					  Unknown =>
+					     flat := Offset {object = object,
+							     offset = offset}
+					| _ => flat := NotFlat
+				    end)
+			  end)
+	      | PrimApp {args, ...} => uses args
+	      | Profile _ => ()
+	      | Select {object, ...} => use object
+	      | Update {object, value, ...} => (use object; use value)
+	      | Var x => use x
+	  end)
       fun loopTransfer t = Transfer.foreachVar (t, use)
       val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector},
 	   set = setLabelInfo, ...} =
@@ -252,44 +369,37 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	       ; loopStatements statements
 	       ; loopTransfer transfer))
 	  end)
-      (* Now, walk over the whole program and try to flatten each ref. *)
+      (* Walk over the whole program and try to flatten each ref. *)
       fun loopStatement (Statement.T {exp, var, ...}) =
 	 case exp of
-	    PrimApp {prim, ...} =>
-	       (case Prim.name prim of
-		   Prim.Name.Ref_ref =>
-		      Option.app
-		      (var, fn var =>
-		       case value var of
-			  Value.Ref {flat, ...} =>
-			     let
-				datatype z = datatype Flat.t
-				val {flat = flat'} = varInfo var
-				val flat' = !flat'
-				fun notFlat () = Set.setValue (flat, NotFlat)
-			     in
-				case flat' of
-				   ConOffset {con = c, offset = i} =>
-				      (case Set.value flat of
-					  ConOffset {con = c', offset = i'} =>
-					     if Con.equals (c, c') andalso i = i'
-						then ()
-					     else notFlat ()
-					| Unknown => Set.setValue (flat, flat')
-					| _ => notFlat ())
-				 | NotFlat => notFlat ()
-				 | TupleOffset {offset = i, tuple = t} =>
-				      (case Set.value flat of
-					  TupleOffset {offset = i', tuple = t'} =>
-					     if i = i' andalso Type.equals (t, t')
-						then ()
-					     else notFlat ()
-					| Unknown => Set.setValue (flat, flat')
-					| _ => notFlat ())
-				 | Unkonwn => notFlat ()
-			     end
-			| _ => Error.bug "Ref_ref with strange value")
-		 | _ => ())
+	    Object {args, con = NONE} =>
+	       Option.app
+	       (var, fn var =>
+		case varValue var of
+		   Value.Object {flat, ...} =>
+		      let
+			 datatype z = datatype Flat.t
+			 val flat'Ref as ref flat' =
+			    case ! (varInfo var) of
+			       NonTuple => Error.bug "tuple with NonTuple"
+			     | Tuple {flat, ...} => flat
+			 fun notFlat () =
+			    (Set.setValue (flat, NotFlat)
+			     ; flat'Ref := NotFlat)
+		      in
+			 case flat' of
+			    Offset {object = obj, offset = i} =>
+			       (case Set.value flat of
+				   NotFlat => notFlat ()
+				 | Offset {object = obj', offset = i'} =>
+				      if i = i'
+					 andalso Value.sameObject (obj, obj')
+					 then ()
+				      else notFlat ()
+				 | Unknown => Set.setValue (flat, flat'))
+			  | _ => notFlat ()
+		      end
+		 | _ => Error.bug "Object with strange value")
 	  | _ => ()
       val () = Vector.foreach (globals, loopStatement)
       val () =
@@ -312,25 +422,239 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		(datatypes, fn Datatype.T {cons, ...} =>
 		 Vector.foreach
 		 (cons, fn {con, ...} =>
-		  display
-		  (seq [Con.layout con, str " ",
-			tuple (Vector.toListMap (conArgs con, Value.layout))])))
+		  display (Value.layout (conValue con))))
 	     val () =
 		Program.foreachVar
 		(program, fn (x, _) =>
 		 let
-		    val {flat} = varInfo x
+		    val vi =
+		       case ! (varInfo x) of
+			  NonTuple => str "NonTuple"
+			| Tuple {flat, ...} =>
+			     seq [str "Tuple ", Flat.layout (!flat)]
 		 in
 		    display
 		    (seq [Var.layout x, str " ",
-			  record [("flat", Flat.layout (!flat)),
-				  ("value", Value.layout (value x))]])
+			  record [("value", Value.layout (varValue x)),
+				  ("varInfo", vi)]])
 		 end)
 	  in
 	     ()
 	  end)
+      (* Conversion from values to types. *)
+      fun memoize (r: 'a option ref, f: unit -> 'a): 'a =
+	 case !r of
+	    NONE =>
+	       let
+		  val a = f ()
+		  val () = r := SOME a
+	       in
+		  a
+	       end
+	  | SOME a => a
+      datatype z = datatype Finish.t
+      fun valueType (v: Value.t): Type.t =
+	 case valueFinish v of
+	    Flat _ =>
+	       (case v of
+		   Value.Object {flat, ...} =>
+		      (case Set.value flat of
+			  Flat.Offset {object, ...} => valueType object
+			| _ => Error.bug "valueType flat")
+		 | _ => Error.bug "valueType object")
+	  | NotFlat t => t
+      and valueFinish (v: Value.t) =
+	 let
+	    datatype z = datatype Value.t
+	 in
+	    case v of
+	       Ground t => NotFlat t
+	     | Object z => objectFinish z
+	     | Unary {arg, finalType, unary} =>
+		  NotFlat
+		  (memoize
+		   (finalType, fn () =>
+		    case valueFinish arg of
+		       NotFlat arg =>
+			  let
+			     datatype z = datatype Unary.t
+			  in
+			     case unary of
+				Array => Type.array arg
+			      | Vector => Type.vector arg
+			      | Weak => Type.weak arg
+			  end
+		     | _ => Error.bug "finishValue Unary"))
+	 end
+      and valueOffset (object: Value.t, offset: int): int =
+	 case object of
+	    Value.Object z => Vector.sub (objectFinalOffsets z, offset)
+	  | _ => Error.bug "valueOffset of non Object"
+      and objectFinalOffsets (z as {args, finalOffsets, flat, ...}) =
+	 memoize
+	 (finalOffsets, fn () =>
+	  let
+	     val initial =
+		case Set.value flat of
+		   Flat.Offset {object, offset} => valueOffset (object, offset)
+		 | _ => 0
+	     val (_, offsets) =
+		Vector.fold
+		(args, (initial, []), fn ({elt, ...}, (offset, ac)) =>
+		 (offset + (case valueFinish elt of
+			       Flat es => Vector.length es
+			     | NotFlat _ => 1),
+		  offset :: ac))
+	  in
+	     Vector.fromListRev offsets
+	  end)
+      and objectFinish {args, con, finish, flat, ...}: Finish.t =
+	 memoize
+	 (finish, fn () =>
+	  let
+	     val isFlat =
+		case Set.value flat of
+		   Flat.Offset _ => true
+		 | _ => false
+	     val tss =
+		Vector.fold
+		(args, [], fn ({elt, isMutable = i}, ac) =>
+		 let
+		    val ts =
+		       case valueFinish elt of
+			  Flat vs =>
+			     Vector.map (vs, fn {elt, isMutable = i'} =>
+					 {elt = elt,
+					  isMutable = i orelse i'})
+			| NotFlat t => Vector.new1 {elt = t, isMutable = i}
+		 in
+		    ts :: ac
+		 end)
+	     val ts = Vector.concatV (Vector.fromListRev tss)
+	  in
+	     if isFlat
+		then Flat ts
+	     else
+		NotFlat (Type.object {args = ts, con = con})
+	  end)
+      val valueType =
+	 Trace.trace ("valueType", Value.layout, Type.layout) valueType
+      val getOffset =
+	 Trace.trace2 ("valueOffset", Value.layout, Int.layout, Int.layout)
+	 valueOffset
+      (* Transform the program. *)
+      fun transformFormals (xts: (Var.t * Type.t) vector)
+	 : (Var.t * Type.t) vector =
+	 Vector.map (xts, fn (x, _) => (x, valueType (varValue x)))
+      fun flattenArgs (xs: Var.t vector): Var.t vector =
+	 let
+	    fun loop (xs: Var.t vector, ac: Var.t list): Var.t list =
+	       Vector.foldr
+	       (xs, ac, fn (x, ac) =>
+		case ! (varInfo x) of
+		   NonTuple => x :: ac
+		 | Tuple {components, flat} => 
+		      case !flat of
+			 Flat.Offset _ => loop (components, ac)
+		       | _ => x :: ac)
+	 in
+	    Vector.fromList (loop (xs, []))
+	 end
+      val flattenArgs =
+	 Trace.trace ("flattenArgs",
+		      Vector.layout Var.layout,
+		      Vector.layout Var.layout)
+	 flattenArgs
+      fun transformStatement (s as Statement.T {exp, ty, var})
+	 : Statement.t option =
+	 let
+	    fun make e =
+	       SOME
+	       (Statement.T {exp = e,
+			     ty = (case var of
+				      NONE => ty
+				    | SOME var => valueType (varValue var)),
+			     var = var})
+	 in
+	    case exp of
+	       Object {args, con} =>
+		  let
+		     fun simple () =
+			make (Object {args = flattenArgs args,
+				      con = con})
+		  in
+		     case var of
+			NONE => NONE
+		      | SOME var =>
+			   case ! (varInfo var) of
+			      NonTuple => simple ()
+			    | Tuple {flat, ...} => 
+				 case !flat of
+				    Flat.Offset _ => NONE
+				  | _ => simple ()
+		  end
+	     | Select {object, offset} =>
+		  (case var of
+		      NONE => NONE
+		    | SOME var =>
+			 make
+			 (if isSome (Value.deFlat (varValue var))
+			     then Var object
+			  else Select {object = object,
+				       offset = valueOffset (varValue object,
+							     offset)}))
+	     | Update {object, offset, value} =>
+		  make (Update {object = object,
+				offset = valueOffset (varValue object, offset),
+				value = value})
+	     | _ => make exp
+	 end
+      val transformStatement =
+	 Trace.trace ("transformStatement",
+		      Statement.layout,
+		      Option.layout Statement.layout)
+	 transformStatement
+      fun transformStatements ss = Vector.keepAllMap (ss, transformStatement)
+      fun transformBlock (Block.T {args, label, statements, transfer}) =
+	    Block.T {args = transformFormals args,
+		     label = label,
+		     statements = transformStatements statements,
+		     transfer = transfer}
+      fun valuesTypes vs = Vector.map (vs, valueType)
+      val datatypes =
+	 Vector.map
+	 (datatypes, fn Datatype.T {cons, tycon} =>
+	  Datatype.T
+	  {cons = Vector.map (cons, fn {con, ...} =>
+			      case Type.dest (valueType (conValue con)) of
+				 Type.Object {args, ...} =>
+				    {args = args, con = con}
+			       | _ => Error.bug "strange con"),
+	   tycon = tycon})
+      fun transformFunction (f: Function.t): Function.t =
+	  let
+	     val {args, blocks, mayInline, name, start, ...} = Function.dest f
+	     val {raises, returns, ...} = func name
+	     val raises = Option.map (raises, valuesTypes)
+	     val returns = Option.map (returns, valuesTypes)
+	  in
+	     Function.new {args = transformFormals args,
+			   blocks = Vector.map (blocks, transformBlock),
+			   mayInline = mayInline,
+			   name = name,
+			   raises = raises,
+			   returns = returns,
+			   start = start}
+	  end
+      val program =
+	 Program.T {datatypes = datatypes,
+		    functions = List.revMap (functions, transformFunction),
+		    globals = transformStatements globals,
+		    main = main}
+      val () = Program.clear program
    in
       program
    end
 
 end
+
