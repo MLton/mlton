@@ -23,7 +23,8 @@ signature PRIM =
       structure Name:
 	 sig
 	    datatype t =
-	       Array_array (* implemented in backend *)
+	       Array_allocate (* implemented in backend *)
+	     | Array_array (* implemented in backend *)
 	     | Array_array0 (* implemented in backend *)
 	     | Array_array0Const (* implemented in constant-propagation.fun *)
 	     | Array_length
@@ -69,10 +70,8 @@ signature PRIM =
 	     | IntInf_areSmall
 	     | IntInf_compare
 	     | IntInf_equal
+	     | IntInf_fromVector
 	     | IntInf_fromWord
-	     | IntInf_fromArray
-	     | IntInf_fromString
-	     | IntInf_fromStringIsPossible
 	     | IntInf_gcd
 	     | IntInf_isSmall
 	     | IntInf_mul
@@ -252,12 +251,19 @@ signature PRIM =
 
       val allocTooLarge: t
       val apply: t * 'a ApplyArg.t list * ('a * 'a -> bool) -> 'a ApplyResult.t
+      val array_allocate: t
       val array: t
       val array0: t
       val assign: t
       val bogus: t
       val bug: t
       val buildConstant: string * Scheme.t -> t
+      (* bytesNeeded p = SOME f iff p takes a (variable) argument that indicates
+       *   a minimum number of heap bytes needed to make the call.
+       * bytesNeeded implies impCall.
+       * examples: IntInf_add
+       *)
+      val bytesNeeded : t -> ('a vector -> 'a) option
       val checkApp: {
 		     prim: t,
 		     targs: 'a vector,

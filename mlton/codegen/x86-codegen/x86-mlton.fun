@@ -1240,7 +1240,82 @@ struct
 	AppendList.appends
 	[comment_begin,
 	 (case Prim.name prim
-	    of Array_length => lengthArrayVectorString ()
+	    of Array_allocate
+	     => let
+		  val (dst,dstsize) = getDst ()
+		  val _ 
+		    = Assert.assert
+		      ("applyPrim: AllocateArray, dstsize",
+		       fn () => dstsize = pointerSize)
+
+		  val ((numElts, numEltsSize),
+		       (numBytes, numBytesSize),
+		       (header, headerSize)) = getSrc3 ()
+		       
+		  val _
+		    = Assert.assert
+		      ("applyPrim: AllocateArray, numEltsSize",
+		       fn () => numEltsSize = wordSize)
+		  val _
+		    = Assert.assert
+		      ("applyPrim: AllocateArray, numBytesSize",
+		       fn () => numBytesSize = wordSize)
+		  val _
+		    = Assert.assert
+		      ("applyPrim: AllocateArray, headerSize",
+		       fn () => headerSize = wordSize)
+
+		  val frontier = gcState_frontierContentsOperand ()
+		  val frontierDeref = gcState_frontierDerefOperand ()
+		  val frontierOffset
+		    = let
+			val memloc 
+			  = MemLoc.simple 
+			    {base = gcState_frontierContents (), 
+			     index = Immediate.const_int 1,
+			     scale = wordScale,
+			     size = pointerSize,
+			     class = Classes.Heap}
+		      in
+			Operand.memloc memloc
+		      end
+		  val frontierPlusAHW
+		    = (Operand.memloc o MemLoc.simple)
+		      {base = gcState_frontierContents (), 
+		       index = Immediate.const_int arrayHeaderBytes,
+		       scale = Scale.One,
+		       size = pointerSize,
+		       class = Classes.Heap}
+		  val statements =
+		    [(* *(frontier) = numElts *)
+		     Assembly.instruction_mov
+		     {dst = frontierDeref,
+		      src = numElts,
+		      size = wordSize},
+		     (* *(frontier + wordSize) = header *)
+		     Assembly.instruction_mov
+		     {dst = frontierOffset,
+		      src = header,
+		      size = wordSize},
+		     (* dst = frontier + arrayHeaderSize *)
+		     Assembly.instruction_lea
+		     {dst = dst,
+		      src = frontierPlusAHW,
+		      size = pointerSize},
+		     (* frontier = frontier + numBytes *)
+		     Assembly.instruction_binal
+		     {oper = Instruction.ADD,
+		      dst = frontier,
+		      src = numBytes,
+		      size = pointerSize}]
+		in
+		  AppendList.single
+		  (Block.T' {entry = NONE,
+			     profileInfo = ProfileInfo.none,
+			     statements = statements,
+			     transfer = NONE})
+		end
+	     | Array_length => lengthArrayVectorString ()
 	     | Byte_byteToChar => mov ()
 	     | Byte_charToByte => mov ()
 	     | C_CS_charArrayToWord8Array => mov ()
@@ -1387,7 +1462,7 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end 
-	     | IntInf_fromArray => mov ()
+	     | IntInf_fromVector => mov ()
 	     | IntInf_toVector => mov ()
 	     | IntInf_fromWord => mov ()
 	     | IntInf_toWord => mov ()
@@ -2202,7 +2277,7 @@ struct
 		      ("ccall: IntInf_toString, src1size/src2size/src3size",
 		       fn () => src1size = pointerSize andalso
 		                src2size = wordSize andalso
-				src3size = pointerSize)
+				src3size = wordSize)
 
 		  val args = [(src1,src2size),
 			      (src2,src2size),

@@ -8,6 +8,7 @@
 	static pointer serializeRes;						\
 	static pointer deserializeRes;						\
 	static pointer stackRes;						\
+	static pointer arrayAllocateRes;					\
 	static struct intInfRes_t *intInfRes;					\
 	static int nextFun;							\
 	static char globaluchar[c];						\
@@ -185,7 +186,7 @@ int main(int argc, char **argv) {					\
 #define DC(n) Declare(uchar, c, n)
 #define DD(n) Declare(double, d, n)
 #define DI(n) Declare(int, i, n)
-#define DP(n) Declare(Pointer, p, n)
+#define DP(n) Declare(pointer, p, n)
 #define DU(n) Declare(uint, u, n)
 
 #define Slot(ty, i) *(ty*)(stackTop + (i))
@@ -341,18 +342,18 @@ int main(int argc, char **argv) {					\
 #define XP(b, i) ArrayOffset(pointer, b, i)
 #define XU(b, i) ArrayOffset(uint, b, i)
 
-#define Array(dst, header, numBytes, numElts)			\
-	do {							\
-		assert(numBytes > 0);				\
-		assert(isWordAligned(numBytes));		\
-		*(word*)frontier = (numElts);			\
-		*(word*)(frontier + WORD_SIZE) = (header);	\
-		(dst) = frontier + 2 * WORD_SIZE;		\
-		if (FALSE)					\
-			fprintf(stderr, "%d  %x = Array(%d)\n",	\
-				__LINE__, (uint)dst, numElts);	\
-		frontier = (dst) + (numBytes);			\
-	} while (0)
+#define Array_allocate(numElts, numBytes, header)	(	\
+		assert(numBytes > 0),				\
+		assert(isWordAligned(numBytes)),		\
+		*(word*)(frontier) = (numElts),			\
+		*(word*)((frontier) + WORD_SIZE) = (header),	\
+		(FALSE)						\
+		? fprintf(stderr, "%d  Array(%d)\n",		\
+				__LINE__, numElts)		\
+		: 0,						\
+	        arrayAllocateRes = (frontier) + 2 * WORD_SIZE,	\
+		frontier += (numBytes),				\
+		arrayAllocateRes)
 
 /* ------------------------------------------------- */
 /*                       Byte                        */
@@ -499,7 +500,7 @@ int Int_bogus;
 /*                      IntInf                       */
 /* ------------------------------------------------- */
 
-#define IntInf_fromArray(x) x
+#define IntInf_fromVector(x) x
 #define IntInf_toVector(x) x
 #define IntInf_toWord(i) ((uint)(i))
 #define IntInf_fromWord(w) ((pointer)(w))

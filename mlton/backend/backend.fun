@@ -318,6 +318,7 @@ fun toMachine (program: Ssa.Program.t) =
 	    datatype z = datatype R.Statement.t
 	 in
 	    case s of
+(*
 	       Array {dst, numBytes, numBytesNonPointers, numElts, numPointers,
 		      ...} =>
 		  M.Statement.Array
@@ -327,7 +328,9 @@ fun toMachine (program: Ssa.Program.t) =
 			      numPointers = numPointers}),
 		   numBytes = translateOperand numBytes,
 		   numElts = translateOperand numElts}
-	     | Bind {isMutable, oper, var} =>
+	     | 
+*)
+               Bind {isMutable, oper, var} =>
 		  if isMutable
 		     orelse (case #operand (varInfo var) of
 				VarOperand.Const _ => false

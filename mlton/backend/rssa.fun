@@ -100,13 +100,7 @@ structure Operand =
 structure Statement =
    struct
       datatype t =
-	 Array of {dst: Var.t,
-		   isObject: bool,
-		   numBytes: Operand.t,
-		   numBytesNonPointers: int,
-		   numElts: Operand.t,
-		   numPointers: int}
-       | Bind of {isMutable: bool,
+	 Bind of {isMutable: bool,
 		  oper: Operand.t,
 		  var: Var.t}
        | Move of {dst: Operand.t,
@@ -135,10 +129,7 @@ structure Statement =
 	    fun useOperand (z: Operand.t, a) = Operand.foldVars (z, a, use)
 	 in
 	    case s of
-	       Array {dst, numBytes, numElts, ...} =>
-		  useOperand (numElts,
-			      useOperand (numBytes, def (dst, Type.pointer, a)))
-	     | Bind {oper, var, ...} =>
+	       Bind {oper, var, ...} =>
 		  def (var, Operand.ty oper, useOperand (oper, a))
 	     | Move {dst, src} => useOperand (src, useOperand (dst, a))
 	     | Object {dst, stores, ...} =>
@@ -174,16 +165,7 @@ structure Statement =
 	 let
 	    open Layout
 	 in
-	    fn Array {dst, isObject, numBytes, numBytesNonPointers, numElts,
-		      numPointers} =>
-	    seq [Var.layout dst,
-		 str " = Array ",
-		 record [("isObject", Bool.layout isObject),
-			 ("numBytes", Operand.layout numBytes),
-			 ("numBytesNonPointers", Int.layout numBytesNonPointers),
-			 ("numElts", Operand.layout numElts),
-			 ("numPointers", Int.layout numPointers)]]
-	     | Bind {oper, var, ...} =>
+	    fn Bind {oper, var, ...} =>
 		  seq [Var.layout var, str " = ", Operand.layout oper]
 	     | Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
@@ -799,16 +781,7 @@ structure Program =
 		  datatype z = datatype Statement.t
 	       in
 		  case s of
-		     Array {dst, isObject, numBytes, numBytesNonPointers,
-			    numElts, numPointers} =>
-			(Type.equals (varType dst, Type.pointer)
-			 andalso Type.equals (Operand.ty numBytes, Type.word)
-			 andalso Type.equals (Operand.ty numElts, Type.int)
-			 andalso
-			 Runtime.isValidArrayHeader
-			 {numPointers = numPointers,
-			  numBytesNonPointers = numBytesNonPointers})
-		   | Bind {oper, ...} => (checkOperand oper; true)
+		     Bind {oper, ...} => (checkOperand oper; true)
 		   | Move {dst, src} =>
 			(checkOperand dst
 			 ; checkOperand src

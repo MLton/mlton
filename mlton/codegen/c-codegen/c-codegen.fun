@@ -192,14 +192,7 @@ structure Statement =
 	  | _ =>
 	       (print "\t"
 		; (case s of
-		      Array {dst, header, numBytes, numElts} =>
-			 C.call ("Array",
-				 [Operand.toString dst,
-				  C.word header,
-				  Operand.toString numBytes,
-				  Operand.toString numElts],
-				 print)
-		    | Move {dst, src} =>
+		      Move {dst, src} =>
 			 print (concat [Operand.toString dst, " = ",
 					Operand.toString src, ";\n"])
 		    | Noop => ()

@@ -34,6 +34,10 @@ signature RUNTIME =
       val objectSize: {numPointers: int,
 		       numWordsNonPointers: int} -> int
       val pointerSize: int
+      val splitArrayHeader: word -> {numBytesNonPointers: int,
+				     numPointers: int}
+      val splitObjectHeader: word -> {numPointers: int,
+				      numWordsNonPointers: int}
       val wordAlign: word -> word (* Can raise Overflow. *)
       val wordSize: int
    end

@@ -24,13 +24,13 @@
  * uses what it must, possibly rolling the heap frontier back.
  */
 struct	intInfRes_t {
-	Pointer	frontier,
+	pointer	frontier,
 		value;
 };
 
 /*
  * IntInf_init() is passed an array of struct intInfInit's (along
- * with a Pointer to the current GC_state) at the start of the program.
+ * with a pointer to the current GC_state) at the start of the program.
  * The array is terminated by an intInfInit with mlstr field NULL.
  * For each other entry, the globalIndex'th entry of the globals array in
  * the GC_state structure is set to the IntInf.int whose value corresponds
@@ -44,41 +44,41 @@ struct intInfInit {
 };
 
 extern void	IntInf_init(GC_state state, struct intInfInit inits[]);
-extern struct intInfRes_t	*IntInf_do_add(Pointer lhs,
-					     Pointer rhs,
-					     Pointer rspace,
-					     Pointer frontier),
-				*IntInf_do_sub(Pointer lhs,
-					     Pointer rhs,
-					     Pointer rspace,
-					     Pointer frontier),
-				*IntInf_do_mul(Pointer lhs,
-					     Pointer rhs,
-					     Pointer rspace,
-					     Pointer frontier),
-				*IntInf_do_toString(Pointer arg,
+extern struct intInfRes_t	*IntInf_do_add(pointer lhs,
+					     pointer rhs,
+					     uint bytes,
+					     pointer frontier),
+				*IntInf_do_sub(pointer lhs,
+					     pointer rhs,
+					     uint bytes,
+					     pointer frontier),
+				*IntInf_do_mul(pointer lhs,
+					     pointer rhs,
+					     uint bytes,
+					     pointer frontier),
+				*IntInf_do_toString(pointer arg,
 					       int base,
-					       Pointer space,
-					       Pointer frontier),
-				*IntInf_do_neg(Pointer arg,
-						Pointer space,
-						Pointer frontier),
-				*IntInf_do_quot(Pointer num,
-					      Pointer den,
-					      Pointer space,
-					      Pointer frontier),
-				*IntInf_do_rem(Pointer num,
-					     Pointer den,
-					     Pointer space,
-					     Pointer frontier),
+					       uint bytes,
+					       pointer frontier),
+				*IntInf_do_neg(pointer arg,
+						uint bytes,
+						pointer frontier),
+				*IntInf_do_quot(pointer num,
+					      pointer den,
+					      uint bytes,
+					      pointer frontier),
+				*IntInf_do_rem(pointer num,
+					     pointer den,
+					     uint bytes,
+					     pointer frontier),
 				*IntInf_do_gcd(pointer lhs,
  					     pointer rhs,
- 					     pointer rspace,
+					     uint bytes,
  					     pointer frontier);
 
-extern Word	IntInf_smallMul(Word lhs, Word rhs, Pointer carry);
-extern int	IntInf_compare(Pointer lhs, Pointer rhs),
-		IntInf_equal(Pointer lhs, Pointer rhs);
+extern Word	IntInf_smallMul(Word lhs, Word rhs, pointer carry);
+extern int	IntInf_compare(pointer lhs, pointer rhs),
+		IntInf_equal(pointer lhs, pointer rhs);
 
 #endif	/* #ifndef _MLTON_INT_INF_H */
 

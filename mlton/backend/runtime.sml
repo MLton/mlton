@@ -101,12 +101,12 @@ structure GCField =
    end
 
 val wordSize: int = 4
-val arrayHeaderSize = 2 * wordSize
-val labelSize = wordSize
-val limitSlop: int = 512
 val objectHeaderSize = wordSize
-val pointerSize = wordSize
+val arrayHeaderSize = wordSize + objectHeaderSize
 val array0Size = arrayHeaderSize + wordSize (* for the forwarding pointer *)
+val limitSlop: int = 512
+val labelSize = wordSize
+val pointerSize = wordSize
 
 val allocTooLarge: word = 0wxFFFFFFFC
    
@@ -114,7 +114,12 @@ val allocTooLarge: word = 0wxFFFFFFFC
  * must agree with runtime/gc.h.
  *)
 
+val tagMask: word =        0wxC0000000
+val nonPointerMask: word = 0wx0FFFC000
+val pointerMask: word =    0wx00003FFF
+
 val arrayTag: word =  0wx00000000
+val stackTag: word =  0wxC0000000
 val normalTag: word = 0wx80000000
 val pointerBits: int = 14
 val nonPointerBits: int = 14
@@ -166,6 +171,32 @@ fun arrayHeader (z as {numBytesNonPointers, numPointers}) =
    in
       orb (orb (arrayTag, fromInt numPointers),
 	   << (fromInt numBytesNonPointers, fromInt nonPointersShift))
+   end
+
+fun splitHeader (header: word) =
+   let
+      open Word
+   in 
+     {tag = andb (header, tagMask),
+      numNonPointers = Word.toInt (>> (andb (header, nonPointerMask), 
+				       Word.fromInt pointerBits)),
+      numPointers = Word.toInt (andb (header, pointerMask))}
+   end
+fun splitObjectHeader (header: word) =
+   let
+      val {tag, numNonPointers, numPointers} = splitHeader header
+      val _ = Assert.assert ("splitObjectHeader", fn () => tag = normalTag)
+   in
+      {numWordsNonPointers = numNonPointers,
+       numPointers = numPointers}
+   end
+fun splitArrayHeader (header: word) =
+   let
+      val {tag, numNonPointers, numPointers} = splitHeader header
+      val _ = Assert.assert ("splitArrayHeader", fn () => tag = arrayTag)
+   in
+      {numBytesNonPointers = numNonPointers,
+       numPointers = numPointers}
    end
 
 fun wordAlign (w: word): word =

@@ -33,7 +33,8 @@ structure Kind =
 structure Name =
    struct
       datatype t =
-	 Array_array
+	 Array_allocate
+       | Array_array
        | Array_array0
        | Array_array0Const
        | Array_length
@@ -63,9 +64,7 @@ structure Name =
        | IntInf_areSmall
        | IntInf_compare
        | IntInf_equal
-       | IntInf_fromArray
-       | IntInf_fromString
-       | IntInf_fromStringIsPossible
+       | IntInf_fromVector
        | IntInf_fromWord
        | IntInf_gcd
        | IntInf_isSmall
@@ -263,7 +262,6 @@ structure Name =
 
       val impCall
 	= fn FFI _ => true
-           | IntInf_toString => true
 	   | MLton_bug => true
 	   | MLton_size => true
 	   | String_equal => true
@@ -276,6 +274,7 @@ structure Name =
 	   | IntInf_quot => true
 	   | IntInf_rem => true
            | IntInf_neg => true
+           | IntInf_toString => true
 	   | Real_Math_cosh => true
            | Real_Math_sinh => true
 	   | Real_Math_tanh => true
@@ -285,6 +284,18 @@ structure Name =
 	   | Real_modf => true
            | _ => false
 
+      val bytesNeeded
+	= fn Array_allocate => SOME (fn args => Vector.sub(args, 1))
+	   | IntInf_add => SOME (fn args => Vector.sub (args, 2))
+	   | IntInf_gcd => SOME (fn args => Vector.sub (args, 2))
+	   | IntInf_mul => SOME (fn args => Vector.sub (args, 2))
+	   | IntInf_neg => SOME (fn args => Vector.sub (args, 1))
+	   | IntInf_quot => SOME (fn args => Vector.sub (args, 2))
+	   | IntInf_rem => SOME (fn args => Vector.sub (args, 2))
+	   | IntInf_sub => SOME (fn args => Vector.sub (args, 2))
+	   | IntInf_toString => SOME (fn args => Vector.sub (args, 2))
+	   | _ => NONE
+
       datatype z = datatype Kind.t
 	       
       (* The values of these strings are important since they are referred to
@@ -292,6 +303,7 @@ structure Name =
        *)
       val strings =
 	 [
+	  (Array_allocate, Moveable, "Array_allocate"),
 	  (Array_array, Moveable, "Array_array"),
 	  (Array_array0, Moveable, "Array_array0"),
 	  (Array_array0Const, Moveable, "Array_array0Const"),
@@ -320,10 +332,7 @@ structure Name =
 	  (IntInf_areSmall, Functional, "IntInf_areSmall"),
 	  (IntInf_compare, Functional, "IntInf_compare"),
 	  (IntInf_equal, Functional, "IntInf_equal"),
-	  (IntInf_fromArray, DependsOnState, "IntInf_fromArray"),
-	  (IntInf_fromString, Functional, "IntInf_fromString"),
-	  (IntInf_fromStringIsPossible, Functional,
-	   "IntInf_fromStringIsPossible"),
+	  (IntInf_fromVector, Functional, "IntInf_fromVector"),
 	  (IntInf_fromWord, Functional, "IntInf_fromWord"),
 	  (IntInf_gcd, Functional, "IntInf_gcd"),
 	  (IntInf_isSmall, Functional, "IntInf_isSmall"),
@@ -516,6 +525,7 @@ val mayRaise = Name.mayRaise o name
 fun impCall p = case name p
 		  of Name.FFI _ => isSome (numArgs p)
 		   | p => Name.impCall p
+fun bytesNeeded p = Name.bytesNeeded (name p)
 
 val entersRuntime = Name.entersRuntime o name
 val entersRuntime =
@@ -575,6 +585,8 @@ local
       end
    val tuple = tuple o Vector.fromList    
 in
+   val array_allocate =
+      new (Name.Array_allocate, make1 (fn a => tuple [int,word,word] --> array a))
    val array0 = new (Name.Array_array0, make1 (fn a => unit --> array a))
    val array = new (Name.Array_array, make1 (fn a => int --> array a))
    val assign = new (Name.Ref_assign, make1 (fn a => tuple [reff a, a] --> unit))
@@ -598,7 +610,7 @@ in
    val intNeg = new0 (Name.Int_neg, int --> int)
    val intNegCheck = new0 (Name.Int_negCheck, int --> int)
    val intInfNeg =
-      new0 (Name.IntInf_neg, tuple [intInf, Type.array word] --> intInf)
+      new0 (Name.IntInf_neg, tuple [intInf, word] --> intInf)
    val intInfEqual = new0 (Name.IntInf_equal, tuple [intInf, intInf] --> bool)
    val stringEqual = new0 (Name.String_equal, tuple [string, string] --> bool)
    val word8Neg = new0 (Name.Word8_neg, word8 --> word8)
@@ -888,12 +900,14 @@ fun 'a apply (p, args, varEquals) =
 		      | Relation.GREATER => 1)
 	   | (IntInf_equal, [IntInf i1, IntInf i2]) => bool (i1 = i2)
 	   | (IntInf_fromWord, [Word w]) => intInf (SmallIntInf.fromWord w)
+(*
 	   | (IntInf_fromString, [String s]) =>
 		(case IntInf.fromString s of
 		    NONE => ApplyResult.Unknown
 		  | SOME i => intInf i)
 	   | (IntInf_fromStringIsPossible, [String s]) =>
 		bool (isSome (IntInf.fromString s))
+*)
 	   | (IntInf_isSmall, [IntInf i]) => bool (SmallIntInf.isSmall i)
 	   | (IntInf_toWord, [IntInf i]) => word (SmallIntInf.toWord i)
 	   | (MLton_eq, [c1, c2]) => eq (c1, c2)

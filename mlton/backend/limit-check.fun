@@ -75,24 +75,21 @@ structure Statement =
    struct
       open Statement
 
-      fun error () = Error.bug "Array as object with non-constant numBytes"
+      fun error () = Error.bug "Primitive with non-constant bytesNeeded"
       fun objectBytesAllocated s =
 	 case s of
-	    Statement.Array {isObject, numBytes, ...} =>
-	       if isObject
-		  then
-		     (case numBytes of
-			 Operand.Const c =>
-			    (case Const.node c of
-				Const.Node.Word w =>
-				   Word.toInt w + Runtime.arrayHeaderSize
-			      | _ => error ())
-		       | _ => error ())
-	       else 0
-	  | Statement.Object {numPointers = p, numWordsNonPointers = np, ...} =>
+	    Statement.Object {numPointers = p, numWordsNonPointers = np, ...} =>
 	       Runtime.objectHeaderSize
-	       + Runtime.objectSize {numPointers = p,
-				     numWordsNonPointers = np}
+	       + Runtime.objectSize {numPointers = p, numWordsNonPointers = np}
+	  | Statement.PrimApp {prim, args, ...} =>
+	       (case Prim.bytesNeeded prim of
+		   SOME f => (case f args of
+				 Operand.Const c =>
+				    (case Const.node c of
+				        Const.Node.Word w => Word.toInt w
+				      | _ => error ())
+			       | _ => 0)
+		 | NONE => 0)
 	  | _ => 0
    end
 
@@ -311,14 +308,14 @@ fun insertFunction (f: Function.t,
 				       Operand.Runtime Limit,
 				       insert (Operand.int 0))
 		else heapCheck (true, Operand.word bytes)
-	     fun noArray () =
+	     fun noPrimitiveAllocation () =
 		case heap of
 		   NONE => maybeStack ()
 		 | SOME {bytes} =>
 		      if bytes = 0
 			 then maybeStack ()
 		      else heapCheckNonZero (Word.fromInt bytes)
-	     fun array (numBytes: Operand.t) =
+	     fun primitiveAllocation (bytesNeeded: Operand.t) =
 		let
 		   val extraBytes =
 		      Word.fromInt
@@ -327,14 +324,14 @@ fun insertFunction (f: Function.t,
 			     NONE => 0
 			   | SOME {bytes} => bytes))
 		in
-		   case numBytes of
+		   case bytesNeeded of
 		      Operand.Const c =>
 			 (case Const.node c of
 			     Const.Node.Word w =>
 				heapCheckNonZero
 				(MLton.Word.addCheck (w, extraBytes)
 				 handle Overflow => Runtime.allocTooLarge)
-			   | _ => Error.bug "strange array bytes")
+			   | _ => Error.bug "strange primitive bytes needed")
 		    | _ =>
 			 let
 			    val bytes = Var.newNoname ()
@@ -344,7 +341,7 @@ fun insertFunction (f: Function.t,
 			     Vector.new0 (),
 			     Transfer.Arith
 			     {args = Vector.new2 (Operand.word extraBytes,
-						  numBytes),
+						  bytesNeeded),
 			      dst = bytes,
 			      overflow = allocTooLarge (),
 			      prim = Prim.word32AddCheck,
@@ -358,9 +355,12 @@ fun insertFunction (f: Function.t,
 	     val _ =
 		if 0 < Vector.length statements
 		   then case Vector.sub (statements, 0) of
-		      Statement.Array {numBytes, ...} => array numBytes
-		    | _ => noArray ()
-		else noArray ()
+		      Statement.PrimApp {prim, args, ...} =>
+			 (case Prim.bytesNeeded prim of
+			     SOME f => primitiveAllocation (f args)
+			   | _ => noPrimitiveAllocation ())
+		    | _ => noPrimitiveAllocation ()
+		else noPrimitiveAllocation ()
 	  in
 	     ()
 	  end)
@@ -431,7 +431,8 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
       val root = Graph.newNode g
       (* mayHaveCheck == E U D
        *   E = set of entry nodes 
-       *     = start, Cont, Handler, Runtime, or Jump that starts with an Array
+       *     = start, Cont, Handler, Runtime, or
+       *         Jump that starts with a primitive with non-constant bytesNeeded
        *   D = set of decycling nodes
        *)
       val mayHaveCheck =
@@ -447,7 +448,12 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
 		 | Handler => true
 		 | Jump => (0 < Vector.length statements
 			    andalso (case Vector.sub (statements, 0) of
-					Statement.Array _ => true
+				        Statement.PrimApp {prim, args, ...} =>
+					   (case Prim.bytesNeeded prim of
+					       SOME f => (case f args of
+							     Operand.Const c => false
+							   | _ => true)
+					     | _ => false)
 				      | _ => false))
 		 | Runtime _ => true
 	  in

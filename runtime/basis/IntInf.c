@@ -67,6 +67,20 @@ toString(pointer arg)
 
 
 /*
+ * Convert frontier space to a strng pointer and intialize card and magic.
+ */
+static inline strng	*
+initFrontierAsStrng(pointer frontier, uint bytes)
+{
+	strng	*sp;
+
+	sp = (strng*)frontier;
+	sp->card = (bytes - 8);
+	sp->magic = STRMAGIC;
+	return (sp);
+}
+
+/*
  * Convert a bignum intInf to a bignum pointer.
  */
 static inline bignum	*
@@ -80,6 +94,20 @@ toBignum(pointer arg)
 	return (bp);
 }
 
+
+/*
+ * Convert frontier space to a bignum pointer and intialize card and magic.
+ */
+static inline bignum	*
+initFrontierAsBignum(pointer frontier, uint bytes)
+{
+	bignum	*bp;
+
+	bp = (bignum*)frontier;
+	bp->card = (bytes - 8) / 4;
+	bp->magic = BIGMAGIC;
+	return (bp);
+}
 
 /*
  * Given an intInf, a pointer to an __mpz_struct and something large enough
@@ -109,7 +137,6 @@ fill(pointer arg, __mpz_struct *res, mp_limb_t space[2])
 					: res->_mp_alloc;
 	}
 }
-
 
 /*
  * Initialize an __mpz_struct to use the space provided by an ML array.
@@ -202,7 +229,7 @@ answer(__mpz_struct *ans, struct intInfRes_t *res)
 }
 
 struct intInfRes_t	*
-IntInf_do_add(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
+IntInf_do_add(pointer lhs, pointer rhs, uint bytes, pointer frontier)
 {
 	bignum		*bp;
 	__mpz_struct	lhsmpz,
@@ -212,8 +239,8 @@ IntInf_do_add(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
 			rhsspace[2];
 	static struct intInfRes_t	res;
 
-	bp = toBignum(rspace);
-	assert(frontier == (pointer)&bp->limbs[bp->card - 1]);
+	bp = initFrontierAsBignum(frontier, bytes);
+	/* assert(frontier == (pointer)&bp->limbs[bp->card - 1]); */
 	fill(lhs, &lhsmpz, lhsspace);
 	fill(rhs, &rhsmpz, rhsspace);
 	init(bp, &resmpz);
@@ -226,7 +253,7 @@ IntInf_do_add(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
 }
 
 struct intInfRes_t	*
-IntInf_do_sub(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
+IntInf_do_sub(pointer lhs, pointer rhs, uint bytes, pointer frontier)
 {
 	bignum		*bp;
 	__mpz_struct	lhsmpz,
@@ -236,8 +263,8 @@ IntInf_do_sub(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
 			rhsspace[2];
 	static struct intInfRes_t	res;
 
-	bp = toBignum(rspace);
-	assert(frontier == (pointer)&bp->limbs[bp->card - 1]);
+	bp = initFrontierAsBignum(frontier, bytes);
+	/* assert(frontier == (pointer)&bp->limbs[bp->card - 1]); */
 	fill(lhs, &lhsmpz, lhsspace);
 	fill(rhs, &rhsmpz, rhsspace);
 	init(bp, &resmpz);
@@ -260,7 +287,7 @@ IntInf_smallMul(uint lhs, uint rhs, pointer carry)
 }
 
 struct intInfRes_t	*
-IntInf_do_mul(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
+IntInf_do_mul(pointer lhs, pointer rhs, uint bytes, pointer frontier)
 {
 	bignum		*bp;
 	__mpz_struct	lhsmpz,
@@ -270,8 +297,8 @@ IntInf_do_mul(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
 			rhsspace[2];
 	static struct intInfRes_t	res;
 
-	bp = toBignum(rspace);
-	assert(frontier == (pointer)&bp->limbs[bp->card - 1]);
+	bp = initFrontierAsBignum(frontier, bytes);
+	/* assert(frontier == (pointer)&bp->limbs[bp->card - 1]); */
 	fill(lhs, &lhsmpz, lhsspace);
 	fill(rhs, &rhsmpz, rhsspace);
 	init(bp, &resmpz);
@@ -325,7 +352,7 @@ int IntInf_equal(pointer lhs, pointer rhs) {
  * string (mutable) which is large enough.
  */
 struct intInfRes_t	*
-IntInf_do_toString(pointer arg, int base, pointer space, pointer frontier)
+IntInf_do_toString(pointer arg, int base, uint bytes, pointer frontier)
 {
 	strng		*sp;
 	__mpz_struct	argmpz;
@@ -336,25 +363,25 @@ IntInf_do_toString(pointer arg, int base, pointer space, pointer frontier)
 
 	assert(base == 2 || base == 8 || base == 10 || base == 16);
 	fill(arg, &argmpz, argspace);
-	sp = toString(space);
+	sp = initFrontierAsStrng(frontier, bytes);
 	str = mpz_get_str(sp->chars, base, &argmpz);
 	assert(str == sp->chars);
 	size = strlen(str);
 	assert(0 < size && size < sp->card);
 	if (*sp->chars == '-')
 		*sp->chars = '~';
-	GC_arrayShrink(space, size);
+	GC_arrayShrink((pointer)str, size);
 	size += sizeof(pointer) - 1;
 	size -= size % sizeof(pointer);
-	assert(frontier >= &sp->chars[size]);
+	/* assert(frontier >= &sp->chars[size]); */
 	res.frontier = &sp->chars[size];
-	res.value = space;
+	res.value = (pointer)str;
 	return (&res);
 }
 
 
 struct intInfRes_t	*
-IntInf_do_neg(pointer arg, pointer space, pointer frontier)
+IntInf_do_neg(pointer arg, uint bytes, pointer frontier)
 {
 	bignum		*bp;
 	__mpz_struct	argmpz,
@@ -362,8 +389,8 @@ IntInf_do_neg(pointer arg, pointer space, pointer frontier)
 	mp_limb_t	argspace[2];
 	static struct intInfRes_t	res;
 
-	bp = toBignum(space);
-	assert(frontier == (pointer)&bp->limbs[bp->card - 1]);
+	bp = initFrontierAsBignum(frontier, bytes);
+	/* assert(frontier == (pointer)&bp->limbs[bp->card - 1]); */
 	fill(arg, &argmpz, argspace);
 	init(bp, &resmpz);
 	mpz_neg(&resmpz, &argmpz);
@@ -389,7 +416,7 @@ IntInf_do_neg(pointer arg, pointer space, pointer frontier)
  * the current frontier.
  */
 struct intInfRes_t	*
-IntInf_do_quot(pointer num, pointer den, pointer space, pointer frontier)
+IntInf_do_quot(pointer num, pointer den, uint bytes, pointer frontier)
 {
 	bignum		*spbp;
 	__mpz_struct	resmpz,
@@ -407,8 +434,8 @@ IntInf_do_quot(pointer num, pointer den, pointer space, pointer frontier)
 	uint		shift;
 	static struct intInfRes_t	res;
 
-	spbp = toBignum(space);
-	assert(frontier == (pointer)&spbp->limbs[spbp->card - 1]);
+	spbp = initFrontierAsBignum(frontier, bytes);
+	/* assert(frontier == (pointer)&spbp->limbs[spbp->card - 1]); */
 	init(spbp, &resmpz);
 	fill(num, &nmpz, nss);
 	resIsNeg = FALSE;
@@ -488,7 +515,7 @@ IntInf_do_quot(pointer num, pointer den, pointer space, pointer frontier)
  * the current frontier.
  */
 struct intInfRes_t	*
-IntInf_do_rem(pointer num, pointer den, pointer space, pointer frontier)
+IntInf_do_rem(pointer num, pointer den, uint bytes, pointer frontier)
 {
 	bignum		*spbp;
 	__mpz_struct	resmpz,
@@ -504,8 +531,8 @@ IntInf_do_rem(pointer num, pointer den, pointer space, pointer frontier)
 	uint		shift;
 	static struct intInfRes_t	res;
 
-	spbp = toBignum(space);
-	assert(frontier == (pointer)&spbp->limbs[spbp->card - 1]);
+	spbp = initFrontierAsBignum(frontier, bytes);
+	/* assert(frontier == (pointer)&spbp->limbs[spbp->card - 1]); */
 	init(spbp, &resmpz);
 	fill(num, &nmpz, nss);
 	nsize = nmpz._mp_size;
@@ -575,7 +602,7 @@ IntInf_do_rem(pointer num, pointer den, pointer space, pointer frontier)
 
 
 struct intInfRes_t	*
-IntInf_do_gcd(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
+IntInf_do_gcd(pointer lhs, pointer rhs, uint bytes, pointer frontier)
 {
 	bignum		*bp;
 	__mpz_struct	lhsmpz,
@@ -585,8 +612,8 @@ IntInf_do_gcd(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
 			rhsspace[2];
 	static struct intInfRes_t	res;
 
-	bp = toBignum(rspace);
-	assert(frontier == (pointer)&bp->limbs[bp->card - 1]);
+	bp = initFrontierAsBignum(frontier, bytes);
+	/* assert(frontier == (pointer)&bp->limbs[bp->card - 1]); */
 	fill(lhs, &lhsmpz, lhsspace);
 	fill(rhs, &rhsmpz, rhsspace);
 	init(bp, &resmpz);
@@ -685,9 +712,3 @@ IntInf_init(GC_state state, struct intInfInit *inits)
 		state->frontier = (pointer)&bp->limbs[alen];
 	}
 }
-
-
-
-
-
-

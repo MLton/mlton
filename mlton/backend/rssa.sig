@@ -75,19 +75,7 @@ signature RSSA =
       structure Statement:
 	 sig
 	    datatype t =
-	       Array of {dst: Var.t,
-			 (* Treat the array as an object for the purposes of
-			  * limit check insertion.
-			  *)
-			 isObject: bool,
-			 (* The number of bytes taken by the array, not
-			  * including headers.
-			  *)
-			 numBytes: Operand.t,
-			 numBytesNonPointers: int,
-			 numElts: Operand.t,
-			 numPointers: int}
-	     | Bind of {isMutable: bool,
+	       Bind of {isMutable: bool,
 			oper: Operand.t,
 			var: Var.t}
 	     | Move of {dst: Operand.t,

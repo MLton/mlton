@@ -627,14 +627,17 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					       args = varOps args})
 			      fun array0 (numElts: Operand.t) =
 				 add
-				 (Array
-				  {dst = valOf var,
-				   isObject = true,
-				   numBytes = (Operand.word
-					       (Word.fromInt Runtime.wordSize)),
-				   numBytesNonPointers = 0,
-				   numElts = numElts,
-				   numPointers = 0})
+				 (PrimApp
+				  {dst = dst (),
+				   prim = Prim.array_allocate,
+				   args = Vector.new3
+				          (numElts,
+					   Operand.word 
+					   (Word.fromInt Runtime.array0Size),
+					   Operand.word 
+					   (Runtime.arrayHeader
+					    {numBytesNonPointers = 0,
+					     numPointers = 0}))})
 			      datatype z = datatype Prim.Name.t
 			      fun bumpCanHandle n =
 				 let
@@ -653,7 +656,20 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 							 ty = Type.int}}]
 				 end
 			   in
-			      if Prim.impCall prim
+			      if isSome (Prim.bytesNeeded prim)
+				 then
+				    let
+				    in
+				       split (Vector.new0 (), Kind.Jump,
+					      PrimApp {dst = dst (),
+						       prim = prim,
+						       args = varOps args} 
+					      :: ss,
+					      fn l =>
+					      ([], Transfer.Goto {dst = l,
+								  args = Vector.new0 ()}))
+				    end
+			      else if Prim.impCall prim
 				 then
 				    let
 				       val (formals, returnTy) =
@@ -715,8 +731,10 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			     let
 				val numBytes =
 				   Runtime.wordAlign
-				   (MLton.Word.mulCheck (Word.fromInt n,
-							 Word.fromInt bytesPerElt))
+				   (MLton.Word.addCheck
+				    (Word.fromInt Runtime.arrayHeaderSize,
+				     (MLton.Word.mulCheck (Word.fromInt n,
+							   Word.fromInt bytesPerElt))))
 				   handle Overflow => Runtime.allocTooLarge
 			     in
 				(Operand.word numBytes,
@@ -730,6 +748,9 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				val numEltsOp =
 				   Operand.Var {var = numElts, ty = Type.int}
 				val numBytes = Var.newNoname ()
+				val numBytes' = Var.newNoname ()
+				val numBytesOp' =
+				   Operand.Var {var = numBytes', ty = Type.word}
 				val numEltsWord = Var.newNoname ()
 				val numEltsWordOp =
 				   Operand.Var {var = numEltsWord, ty = Type.word}
@@ -744,7 +765,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				 if 1 = nbnp
 				    then
 				       let
-					  val numBytesWord = Var.newNoname ()
 					  val numEltsP3 = Var.newNoname ()
 				       in
 					  ([conv,
@@ -758,31 +778,62 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 						     (Operand.word (Word.notb 0w3),
 						      Operand.Var {var = numEltsP3,
 								   ty = Type.word})),
+					     dst = SOME (numBytes', Type.word),
+					     prim = Prim.word32Andb},
+					    PrimApp
+					    {args = (Vector.new2
+						     (Operand.word
+						      (Word.fromInt 
+						       (Runtime.arrayHeaderSize)),
+						      numBytesOp')),
 					     dst = SOME (numBytes, Type.word),
-					     prim = Prim.word32Andb}],
+					     prim = Prim.word32Add}],
 					   Goto {args = Vector.new0 (),
 						 dst = alloc})
 				       end
 				 else
-				    ([conv],
-				     Transfer.Arith
-				     {args = Vector.new2 (Operand.word
-							  (Word.fromInt bytesPerElt),
-							  numEltsWordOp),
-				      dst = numBytes,
-				      overflow = allocTooLarge (),
-				      prim = Prim.word32MulCheck,
-				      success = alloc,
-				      ty = Type.word}))
+				    let
+				      val l = newBlock
+					      {args = Vector.new0 (),
+					       kind = Kind.Jump,
+					       profileInfo = profileInfo,
+					       statements = Vector.new0 (),
+					       transfer = 
+					       Transfer.Arith
+					       {args = Vector.new2
+						       (Operand.word
+							(Word.fromInt 
+							 Runtime.arrayHeaderSize),
+							numBytesOp'),
+					        dst = numBytes,
+						overflow = allocTooLarge (),
+						prim = Prim.word32AddCheck,
+						success = alloc,
+						ty = Type.word}}
+				    in
+				      ([conv],
+				       Transfer.Arith
+				       {args = Vector.new2 (Operand.word
+							    (Word.fromInt bytesPerElt),
+							    numEltsWordOp),
+					dst = numBytes',
+					overflow = allocTooLarge (),
+					prim = Prim.word32MulCheck,
+					success = l,
+					ty = Type.word})
+				    end)
 			     end
 		 in
 		    split (Vector.new0 (), Kind.Jump,
-			   Array {dst = valOf var,
-				  isObject = false,
-				  numBytes = numBytes,
-				  numBytesNonPointers = nbnp,
-				  numElts = numElts,
-				  numPointers = np}
+			   PrimApp {dst = dst (),
+				    prim = Prim.array_allocate,
+				    args = Vector.new3
+				           (numElts,
+					    numBytes,
+					    Operand.word
+					    (Runtime.arrayHeader
+					     {numBytesNonPointers = nbnp,
+					      numPointers = np}))}
 			   :: ss,
 			   continue)
 		 end

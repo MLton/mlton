@@ -189,11 +189,7 @@ structure Operand =
 structure Statement =
    struct
       datatype t =
-	 Array of {dst: Operand.t,
-		   header: word,
-		   numBytes: Operand.t,
-		   numElts: Operand.t}
-       | Move of {dst: Operand.t,
+	 Move of {dst: Operand.t,
 		  src: Operand.t}
        | Noop
        | Object of {dst: Operand.t,
@@ -212,13 +208,7 @@ structure Statement =
 	 let
 	    open Layout
 	 in
-	    fn Array {dst, header, numBytes, numElts} =>
-	    seq [Operand.layout dst,
-		 str " = Array",
-		 record [("header", Word.layout header),
-			 ("numBytes", Operand.layout numBytes),
-			 ("numElts", Operand.layout numElts)]]
-	     | Move {dst, src} =>
+	    fn Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
 	     | Noop => str "Noop"
 	     | Object {dst, numPointers, numWordsNonPointers, stores} =>
@@ -256,9 +246,7 @@ structure Statement =
 
       fun foldOperands (s, ac, f) =
 	 case s of
-	    Array {dst, numBytes, numElts, ...} =>
-	       f (dst, f (numBytes, f (numElts, ac)))
-	  | Move {dst, src} => f (dst, f (src, ac))
+	    Move {dst, src} => f (dst, f (src, ac))
 	  | Object {dst, stores, ...} =>
 	       Vector.fold
 	       (stores, f (dst, ac), fn ({value, ...}, ac) => f (value, ac))
@@ -632,16 +620,7 @@ structure Program =
 			 datatype z = datatype Statement.t
 		      in
 			 case s of
-			    Array {dst, header, numBytes, numElts} =>
-			       (checkOperand dst
-				; checkOperand numBytes
-				; checkOperand numElts
-				; (Type.equals (Operand.ty dst, Type.pointer)
-				   andalso Type.equals (Operand.ty numBytes,
-							Type.word)
-				   andalso Type.equals (Operand.ty numElts,
-							Type.int)))
-			  | Move {dst, src} =>
+			    Move {dst, src} =>
 			       (checkOperand dst
 				; checkOperand src
 				; (Type.equals (Operand.ty dst, Operand.ty src)

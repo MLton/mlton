@@ -83,16 +83,11 @@ signature MACHINE =
       structure Statement:
 	 sig
 	    datatype t =
-	       (* Variable-sized allocation. *)
-	       Array of {dst: Operand.t,
-			 header: word,
-			 numBytes: Operand.t,
-			 numElts: Operand.t}
 	     (* When registers or offsets appear in operands, there is an
 	      * implicit contents of.
 	      * When they appear as locations, there is not.
 	      *)
-	     | Move of {dst: Operand.t,
+	       Move of {dst: Operand.t,
 			src: Operand.t}
 	     | Noop
 	     (* Fixed-size allocation. *)

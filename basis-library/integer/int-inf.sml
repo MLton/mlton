@@ -8,14 +8,10 @@
 (*
  * IntInf.int's either have a bottom bit of 1, in which case the top 31
  * bits are the signed integer, or else the bottom bit is 0, in which case
- * they point to an array of Word.word's.  The first word is either 0,
+ * they point to an vector of Word.word's.  The first word is either 0,
  * indicating that the number is positive, or 1, indicating that it is
- * negative.  The rest of the array contains the `limbs' (big digits) or
+ * negative.  The rest of the vector contains the `limbs' (big digits) or
  * the absolute value of the number, from least to most significant.
- *)
-(*
- * Note, all the array's should be changed to vector's.
- * This requires the magic cast from 'a array to 'a vector.
  *)
 structure IntInf: INT_INF_EXTRA =
    struct
@@ -65,10 +61,15 @@ structure IntInf: INT_INF_EXTRA =
 	 else bigSize arg
 
       (*
-       * Allocate a bignum bigInt with room for size `limbs'.
+       * Reserve heap space for a bignum bigInt with room for size `limbs'.
        *)
-      fun allocate (size: smallInt) =
-	 Primitive.Array.array (size +? 1)
+      fun reserve (size: smallInt) = 
+	 Word.fromInt
+	 (4 (* bytes per word *) *?
+	  (1 (* header word *) +?
+	   1 (* size word *) +?
+	   1 (* sign word *) +?
+	   size))
 
       (*
        * Given a fixnum bigInt, return the Word.word which it
@@ -92,7 +93,7 @@ structure IntInf: INT_INF_EXTRA =
        * which is a bignum bigInt.
        *)
       fun zeroTag (arg: bigInt): Word.word =
-	 Word.- (Prim.toWord arg, 0w1)
+	 Word.andb (Prim.toWord arg, 0wxFFFFFFFE)
 
       (*
        * Given a Word.word, set the tag bit back to 1.
@@ -132,14 +133,15 @@ structure IntInf: INT_INF_EXTRA =
 	    val ans = addTag argv
 	 in if sameSign (argv, ans)
 	       then Prim.fromWord ans
-	    else let val space = allocate 1
+	    else let val space = Primitive.Array.array 2
 		     val (isneg, abs) = if arg < 0
-					   then (0w1, Word.- (0w0,
-							      argv))
+					   then (0w1, Word.- (0w0, argv))
 					else (0w0, argv)
-		 in Primitive.Array.update (space, 0, isneg);
-		    Primitive.Array.update (space, 1, abs);
-		    Prim.fromArray space
+		     val _ = Primitive.Array.update (space, 0, isneg)
+		     val _ = Primitive.Array.update (space, 1, abs)
+		     val space = Primitive.Vector.fromArray space
+		 in 
+		    Prim.fromVector space
 		 end
 	 end
 
@@ -149,7 +151,7 @@ structure IntInf: INT_INF_EXTRA =
 	 else
 	    Big (Prim.toVector x)
       (*
-       * Convert a biglInt to a smallInt, raising overflow if it
+       * Convert a bigInt to a smallInt, raising overflow if it
        * is too big.
        *)
       fun bigToInt (arg: bigInt): smallInt =
@@ -178,14 +180,14 @@ structure IntInf: INT_INF_EXTRA =
 		       then negBad
 		    else Prim.fromWord (Word.- (0w2, argw))
 		 end
-	 else Prim.~ (arg, allocate (1 +? bigSize arg))
+	 else Prim.~ (arg, reserve (1 +? bigSize arg))
 
       (*
        * bigInt multiplication.
        *)
       local fun expensive (lhs: bigInt, rhs: bigInt): bigInt =
 	 let val tsize = size lhs +? size rhs
-	 in Prim.* (lhs, rhs, allocate tsize)
+	 in Prim.* (lhs, rhs, reserve tsize)
 	 end
 	    val carry: Word.word ref = ref 0w0
       in fun bigMul (lhs: bigInt, rhs: bigInt): bigInt =
@@ -232,7 +234,7 @@ structure IntInf: INT_INF_EXTRA =
 		    then zero
 		 else if den = zero
 			 then raise Div
-		      else let val space = allocate (2 *? nsize +? 2)
+		      else let val space = reserve (2 *? nsize +? 2)
 			   in Prim.quot (num, den, space)
 			   end
 	      end
@@ -266,7 +268,7 @@ structure IntInf: INT_INF_EXTRA =
 		    then num
 		 else if den = zero
 			 then raise Div
-		      else let val space = allocate (2 *? nsize +? 2)
+		      else let val space = reserve (2 *? nsize +? 2)
 			   in Prim.rem (num, den, space)
 			   end
 	      end
@@ -276,7 +278,7 @@ structure IntInf: INT_INF_EXTRA =
        *)
       local fun expensive (lhs: bigInt, rhs: bigInt): bigInt =
 	 let val tsize = Int.max (size lhs, size rhs) +? 1
-	 in Prim.+ (lhs, rhs, allocate tsize)
+	 in Prim.+ (lhs, rhs, reserve tsize)
 	 end
       in fun bigPlus (lhs: bigInt, rhs: bigInt): bigInt =
 	 if Prim.areSmall (lhs, rhs)
@@ -294,7 +296,7 @@ structure IntInf: INT_INF_EXTRA =
        *)
       local fun expensive (lhs: bigInt, rhs: bigInt): bigInt =
 	 let val tsize = Int.max (size lhs, size rhs) +? 1
-	 in Prim.- (lhs, rhs, allocate tsize)
+	 in Prim.- (lhs, rhs, reserve tsize)
 	 end
       in fun bigMinus (lhs: bigInt, rhs: bigInt): bigInt =
 	 if Prim.areSmall (lhs, rhs)
@@ -346,7 +348,7 @@ structure IntInf: INT_INF_EXTRA =
 			 else arg
 		 end
 	 else if bigIsNeg arg
-		 then Prim.~ (arg, allocate (1 +? bigSize arg))
+		 then Prim.~ (arg, reserve (1 +? bigSize arg))
 	      else arg
 
       (*
@@ -392,7 +394,7 @@ structure IntInf: INT_INF_EXTRA =
 	    let
 	       val tsize = max (size lhs, size rhs)
 	    in
-	       Prim.gcd (lhs, rhs, allocate tsize)
+	       Prim.gcd (lhs, rhs, reserve tsize)
 	    end
 	 
 	 fun mod2 x = Word.toIntX (Word.andb (Word.fromInt x, 0w1))
@@ -456,8 +458,12 @@ structure IntInf: INT_INF_EXTRA =
 	    if Prim.isSmall arg
 	       then smallCvt (Word.toIntX (stripTag arg))
 	    else Prim.toString (arg, base,
-				Primitive.Array.array
-				(2 +? dpc *? bigSize arg))
+				Word.fromInt
+				(4 (* bytes per word *) *?
+				 (1 (* header word *) +?
+				  1 (* size word *)) +?
+				 (2 (* sign character *) +?
+				  dpc *? (bigSize arg))))
 	 val binCvt = cvt {base = 2, dpc = 32, smallCvt = Int.fmt BIN}
 	 val octCvt = cvt {base = 8, dpc = 11, smallCvt = Int.fmt OCT}
 	 val hexCvt = cvt {base = 16, dpc = 8, smallCvt = Int.fmt HEX}
@@ -704,10 +710,6 @@ structure IntInf: INT_INF_EXTRA =
 	       val reader = decReader stringReader
 	 in
 	    fun bigFromString str =
-	       (* 		  if Prim.fromStringIsPossible str
-		* 		     then SOME (Prim.fromString str)
-		* 		  else
-		*)
 	       case reader (0, str) of
 		  NONE => NONE
 		| SOME (res, _) => SOME res
