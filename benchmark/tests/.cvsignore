@@ -1,5 +1,6 @@
 *.batch.sml
 *.mlton.sml
+*.ssa
 *.ui
 *.uo
 *.x86-linux
@@ -27,6 +28,7 @@ mandelbrot
 matrix-multiply
 md5
 merge
+mlmon.out
 mlyacc
 mpuz
 nucleic
