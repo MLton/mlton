@@ -351,7 +351,7 @@ fun outputBasisConstants (out: Out.t): unit =
    let
       val _ = amBuildingConstants := true
       val (_, decs) =
-	 parseAndElaborateMLB "$(MLTON_ROOT)/basis/libs/primitive.mlb"
+	 parseAndElaborateMLB "$(SML_LIB)/basis/libs/primitive.mlb"
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList o #1))
       (* Need to defunctorize so the constants are forced. *)
       val _ = Defunctorize.defunctorize (CoreML.Program.T {decs = decs})
@@ -618,7 +618,7 @@ local
 	 val basis =
 	    String.concat
 	    (List.map ([!Control.basisLibrary, "mlton", "sml-nj", "unsafe"],
-		       fn s => concat ["$(MLTON_ROOT)/basis/", s, ".mlb\n"]))
+		       fn s => concat ["$(SML_LIB)/basis/", s, ".mlb\n"]))
       in
 	 case input of
 	    [] => basis

@@ -189,7 +189,7 @@ end = struct
 	end
 
 	val _ = xlocal ()
-	val _ = out ["$(MLTON_ROOT)/basis/pervasive.mlb"]
+	val _ = out ["$(SML_LIB)/basis/pervasive.mlb"]
 
 	val dm = foldl onedef M.empty defs
 

@@ -1,5 +1,10 @@
 Here are the changes since version 20041109.
 
+* 2004-12-15
+  - Replaced MLB path variable MLTON_ROOT with SML_LIB, to use a more
+    compiler-independent name.  We will keep MLTON_ROOT aliased to
+    SML_LIB until after the next release.
+
 * 2004-12-02
   - Unix.create now works on all platforms (including Cygwin and MinGW).
 

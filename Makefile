@@ -151,7 +151,7 @@ libraries:
 		echo "Type checking $$f library.";		\
 		$(MLTON) -disable-ann deadCode 			\
 			-stop tc 				\
-			'$$(MLTON_ROOT)/'"$$f/$$f.mlb" 		\
+			'$$(SML_LIB)/'"$$f/$$f.mlb" 		\
 			>/dev/null;				\
 	done
 
@@ -179,7 +179,8 @@ nj-mlton-quad:
 .PHONY: mlbpathmap
 mlbpathmap:
 	touch $(MLBPATHMAP)
-	( echo 'MLTON_ROOT $$(LIB_MLTON_DIR)/sml' ) 	\
+	( echo 'MLTON_ROOT $$(SML_LIB)';		\
+	 echo 'SML_LIB $$(LIB_MLTON_DIR)/sml' ) 	\
 		>>$(MLBPATHMAP).tmp
 	mv $(MLBPATHMAP).tmp $(MLBPATHMAP)
 
@@ -276,7 +277,7 @@ world:
 	@echo 'Type checking basis.'
 	$(MLTON) -disable-ann deadCode \
 		-stop tc \
-		'$$(MLTON_ROOT)/basis/libs/all.mlb' \
+		'$$(SML_LIB)/basis/libs/all.mlb' \
 		>/dev/null
 
 .PHONY: world-no-check

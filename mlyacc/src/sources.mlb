@@ -1,6 +1,6 @@
 local
-  $(MLTON_ROOT)/basis/basis.mlb
-  $(MLTON_ROOT)/mlyacc-lib/mlyacc-lib.mlb
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 
   utils.sig
   utils.sml
@@ -9,7 +9,7 @@ local
   yacc.grm.sig
   yacc.grm.sml
   local
-     $(MLTON_ROOT)/basis/unsafe.mlb
+     $(SML_LIB)/basis/unsafe.mlb
   in
      yacc.lex.sml
   end

@@ -1,5 +1,5 @@
 local
-    $(MLTON_ROOT)/basis/basis.mlb
+    $(SML_LIB)/basis/basis.mlb
     pervasive.sml
 in
     signature PERVASIVE_REAL

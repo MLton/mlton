@@ -133,6 +133,6 @@ in
     functor UniqueSet
     functor UnorderedSet
     
-    $(MLTON_ROOT)/basis/pervasive.mlb
+    $(SML_LIB)/basis/pervasive.mlb
 end
 end

@@ -1,6 +1,6 @@
 local
   local 
-    $(MLTON_ROOT)/basis/basis.mlb
+    $(SML_LIB)/basis/basis.mlb
     lexgen.sml
   in
     structure LexGen

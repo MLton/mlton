@@ -117,7 +117,7 @@ struct
 		    NONE => []
 		  | SOME path => make (concat [path, "/.mlton/cm2mlb-map"]),
 		 [{cmAnchor = "basis", 
-		   mlbPath = "$(MLTON_ROOT)/basis"}]])
+		   mlbPath = "$(SML_LIB)/basis"}]])
 	       
 	    fun peekAnchorMap cmAnchor' =
 	       case List.find (fn {cmAnchor, ...} => cmAnchor = cmAnchor') anchorMap of

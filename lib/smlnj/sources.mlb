@@ -18,7 +18,7 @@ ann
    "warnUnused false" "forceUsed"
 in
 local
-    $(MLTON_ROOT)/basis/basis.mlb
+    $(SML_LIB)/basis/basis.mlb
 
     splaytree-sig.sml
     splaytree.sml

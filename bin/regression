@@ -123,9 +123,9 @@ for f in `ls *.sml`; do
 		case "$runOnly" in
 		no)
 			mlb="$f.mlb"
-			echo "\$(MLTON_ROOT)/basis/basis.mlb
-				\$(MLTON_ROOT)/basis/mlton.mlb
-				\$(MLTON_ROOT)/basis/sml-nj.mlb
+			echo "\$(SML_LIB)/basis/basis.mlb
+				\$(SML_LIB)/basis/mlton.mlb
+				\$(SML_LIB)/basis/sml-nj.mlb
  				ann 
 					\"allowExport true\"
 					\"allowImport true\"

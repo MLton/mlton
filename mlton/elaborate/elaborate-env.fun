@@ -2836,8 +2836,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 				       let
 					  open Layout
 				       in
-					  error (align [seq [str "structure: ", l],
-							seq [str "signature: ", l']])
+					  error (align
+						 [seq [str "structure: ", l],
+						  seq [str "signature: ", l']])
 				       end),
 			      preError = preError})
 			 (* Now that we've unified, find any type variables that
