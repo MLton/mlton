@@ -56,7 +56,7 @@ structure Int64: INTEGER_EXTRA =
 
 structure Int = Int32
 structure Position = Int64
-structure FixedInt = Int
+structure FixedInt = Int64
 
 structure Word8: WORD_EXTRA =
    struct
