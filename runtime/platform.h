@@ -134,6 +134,7 @@ void *getTextEnd ();
 
 #define NEW(x)		x = (typeof(x))(smalloc (sizeof(*x)))
 #define ARRAY(a, s)	a = (typeof(a))(scalloc (s, sizeof(*a)))
+#define ARRAY_UNSAFE(a, s)	a = (typeof(a))(calloc (s, sizeof(*a)))
 
 #define string char*
 

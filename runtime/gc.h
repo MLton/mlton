@@ -175,6 +175,7 @@ typedef struct GC_ObjectHashTable {
 	Bool elementsIsInHeap;
 	int elementsSize;
 	int log2ElementsSize;
+	Bool mayInsert;
 	int numElements;
 } *GC_ObjectHashTable;
 

@@ -1937,7 +1937,7 @@ static GC_ObjectHashTable newTable (GC_state s) {
 	maxElementsSize = (regionEnd - regionStart) / sizeof (*(t->elements));
 	if (DEBUG_SHARE)
 		fprintf (stderr, "maxElementsSize = %u\n", maxElementsSize);
-	t->elementsSize = 64;    // some small power of two
+	t->elementsSize = 64;  // some small power of two
 	t->log2ElementsSize = 6;  // and its log base 2
 	if (maxElementsSize < t->elementsSize) {
 		if (DEBUG_SHARE)
@@ -1958,6 +1958,7 @@ static GC_ObjectHashTable newTable (GC_state s) {
 			t->elements[i].object = NULL;
 	}
 	t->numElements = 0;
+	t->mayInsert = TRUE;
 	if (DEBUG_SHARE) {
 		fprintf (stderr, "elementsIsInHeap = %s\n", 
 				boolToString (t->elementsIsInHeap));
@@ -2009,8 +2010,15 @@ look:
 	assert (0 <= slot and slot < t->elementsSize);
 	numProbes++;
 	e = &t->elements[slot];
+	fprintf (stderr, "e = 0x%08x  t->elements = 0x%08x\n",
+			(uint)e, (uint)t->elements);
 	if (NULL == e->object) {
 		/* It's not in the table.  Add it. */
+		unless (t->mayInsert) {
+			if (DEBUG_SHARE)
+				fprintf (stderr, "not inserting\n");
+			return object;
+		}
 		e->hash = hash;
 		e->object = object;
 		t->numElements++;
@@ -2051,29 +2059,40 @@ lookNext:
 }
 
 static void maybeGrowTable (GC_state s, GC_ObjectHashTable t) {	
-	GC_ObjectHashElement e0;
-	struct GC_ObjectHashElement *elements0;
 	int i;
-	int s0;
+	GC_ObjectHashElement oldElement;
+	struct GC_ObjectHashElement *oldElements;
+	uint oldSize;
+	uint newSize;
 
-	if (t->numElements * 2 <= t->elementsSize)
+	if (not t->mayInsert or t->numElements * 2 <= t->elementsSize)
 		return;
-	s0 = t->elementsSize;
-	t->elementsSize *= 2;
-	t->log2ElementsSize++;
+	oldElements = t->elements;
+	oldSize = t->elementsSize;
+	newSize = oldSize * 2;
 	if (DEBUG_SHARE)
-		fprintf (stderr, "growing table to size %d\n", t->elementsSize);
-	elements0 = t->elements;
-	ARRAY (t->elements, t->elementsSize);
-	for (i = 0; i < s0; ++i) {
-		e0 = &elements0[i];
-		unless (NULL == e0->object)
-			tableInsert (s, t, e0->hash, e0->object, FALSE, 0, 0, 0);
+		fprintf (stderr, "trying to grow table to size %d\n", newSize);
+	// Try to alocate the new table.
+	ARRAY_UNSAFE (t->elements, newSize);
+	if (NULL == t->elements) {
+		t->mayInsert = FALSE;
+		t->elements = oldElements;
+		if (DEBUG_SHARE)
+			fprintf (stderr, "unable to grow table\n");
+		return;
+	}
+	t->elementsSize = newSize;
+	t->log2ElementsSize++;
+	for (i = 0; i < oldSize; ++i) {
+		oldElement = &oldElements[i];
+		unless (NULL == oldElement->object)
+			tableInsert (s, t, oldElement->hash, oldElement->object,
+					FALSE, 0, 0, 0);
 	}
 	if (t->elementsIsInHeap)
 		t->elementsIsInHeap = FALSE;
 	else
-		free (elements0);
+		free (oldElements);
 	if (DEBUG_SHARE)
 		fprintf (stderr, "done growing table\n");
 }
