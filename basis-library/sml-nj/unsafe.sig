@@ -1,11 +1,30 @@
-(* A subset of the UNSAFE signature provided by SML/NJ. *)
-
-(* unsafe.sig
+(* A subset of the UNSAFE signature provided by SML/NJ.  Modified from SML/NJ
+ * sources, which are
  *
  * Copyright (c) 1997 Bell Labs, Lucent Technologies.
  *
- * Unsafe operations on ML values.
  *)
+
+signature UNSAFE_MONO_ARRAY =
+   sig
+      type array
+      type elem
+
+      val create: int -> array
+      val sub: array * int -> elem
+      val update: array * int * elem -> unit
+   end
+
+(* sweeks took out update and create because vectors are immutable
+ * and mlton optimizations may break if you update them.
+ *)
+signature UNSAFE_MONO_VECTOR =
+   sig
+      type elem
+      type vector
+
+      val sub: vector * int -> elem
+   end
 
 signature UNSAFE =
    sig

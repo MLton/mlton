@@ -221,10 +221,6 @@ mlton/mlton.sml
 
 sml-nj/sml-nj.sig
 sml-nj/sml-nj.sml
-sml-nj/unsafe-mono-array.sig
-sml-nj/unsafe-mono-array.fun
-sml-nj/unsafe-mono-vector.sig
-sml-nj/unsafe-mono-vector.fun
 sml-nj/unsafe.sig
 sml-nj/unsafe.sml
 
