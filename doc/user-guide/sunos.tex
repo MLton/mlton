@@ -4,32 +4,24 @@ Here are some things that may affect performance on Sparc.
 \begin{itemize}
 
 \item
-When running on a Sparc, {\mlton} uses {\tt -align 8} by default.
+When compiling for Sparc, {\mlton} only supports the C code generator
+({\tt -native false}).  Hence, performance is not as good as it might
+be and compile times are longer.  Also, the quality of code generated
+of {\tt gcc} is important.  By default, {\mlton} calls {\tt gcc -O1}.
+You can change this by calling {\mlton} with {\tt -cc-opt -O2}.  We
+have seen this speed up some programs by as much as 30\%, especially
+those involving floating point, however it can also more than double
+compile times.
+
+\item
+When compiling for Sparc, {\mlton} uses {\tt -align 8} by default.
 While this speeds up reals, it also may increase object sizes.  If
 your program does not make significant use of reals, you might see a
 speedup with {\tt -align 4}.
 
-\item
-Since {\mlton} uses {\tt -native false} on Sparc, the quality of
-code generated of {\tt gcc} is important.  By default, {\mlton} calls
-{\tt gcc -O1}.  You can change this by calling {\mlton} with {\tt
--cc-opt -O2}.  We have seen this speed up some programs by as much as
-30\%, especially those involving floating point, however it can also
-more than double compile times.
-
 \end{itemize}
 
-Here are the known problems using {\mlton} on SunOS.
-
-\begin{itemize}
-
-\item {\mlton} only supports the C code generator when running on
-SPARCs. So, performance is not as good as it might be.  Compile times
-are also longer.
-
-\end{itemize}
-
-Here are the known problems building {\mlton} on SunOS.
+Here are the known problems building {\mlton} on Sparc/SunOS.
 
 \begin{itemize}
 
@@ -37,13 +29,13 @@ Here are the known problems building {\mlton} on SunOS.
 packages.  You can find out how to get these at
 \htmladdnormallink{Sunfreeware.com}{http://www.sunfreeware.com}.
 
-\item Bootstrapping is so slow as to be impractical (many hours on a
-500MhZ UltraSPARC).  For this reason, we strongly recommend building
-with a Linux to SunOS cross compiler (\secref{cross-compiling}).
-
 \item Making the documentation requires that you install {\tt latex}
 and {\tt dvips}, which are available in the {\tt tetex} package.  It
 also requires {\tt latex2html}, which we haven't yet tracked down a
 package for yet.
+
+\item Bootstrapping is so slow as to be impractical (many hours on a
+500MhZ UltraSPARC).  For this reason, we strongly recommend building
+with a Linux to SunOS cross compiler (\secref{cross-compiling}).
 
 \end{itemize}
