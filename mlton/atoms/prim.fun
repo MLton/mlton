@@ -744,8 +744,6 @@ val intNeg = Int_neg
 val intNegCheck = Int_negCheck
 val intSub = Int_sub
 val intSubCheck = Int_subCheck
-val intToInt = Int_toInt
-val intToWord = Int_toWord
 val reff = Ref_ref
 val serialize = MLton_serialize
 val vectorLength = Vector_length
@@ -767,8 +765,6 @@ val wordNotb = Word_notb
 val wordOrb = Word_orb
 val wordRshift = Word_rshift
 val wordSub = Word_sub
-val wordToInt = Word_toInt
-val wordToIntX = Word_toIntX
 val wordToWord = Word_toWord
 val wordToWordX = Word_toWordX
 
@@ -1774,7 +1770,6 @@ fun ('a, 'b) layoutApp (p: 'a t,
       open Layout
       fun one name = seq [str name, str " ", arg 0]
       fun two name = seq [arg 0, str " ", str name, str " ", arg 1]
-      datatype z = datatype t
    in
       case p of
 	 Int_mul _ => two "*?"

@@ -5,8 +5,6 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
-type int = Int.t
-   
 signature C_TYPE_STRUCTS = 
    sig
    end

@@ -129,11 +129,6 @@ structure Type =
 
       fun zero b = constant (WordX.zero (WordSize.fromBits b))
 
-      fun isZero t =
-	 case dest t of
-	    Constant w => WordX.isZero w
-	  | _ => false
-
       fun isUnit t = Bits.zero = width t
 	 
       local
@@ -952,7 +947,7 @@ fun ofGCField (f: GCField.t): t =
        | StackTop => cPointer ()
    end
 
-fun castIsOk {from, fromInt, to, tyconTy} =
+fun castIsOk {from, fromInt = _, to, tyconTy = _} =
    Bits.equals (width from, width to)
 
 fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
@@ -1090,7 +1085,7 @@ fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
        | Word_add _ => twoWord add
        | Word_addCheck s => wordBinary s
        | Word_andb _ => twoOpt andb
-       | Word_arshift s => wordShift' arshift
+       | Word_arshift _ => wordShift' arshift
        | Word_div s => wordBinary s
        | Word_equal s => wordCompare s
        | Word_ge s => wordCompare s
@@ -1112,13 +1107,8 @@ fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
        | Word_toIntX (s, s') => unary (word s, int s')
        | Word_toWord (s, s') =>
 	    one (fn t =>
-		 let
-		    val b = WordSize.bits s
-		    val b' = WordSize.bits s'
-		 in
-		    isSubtype (t, word s)
-		    andalso done (resize (t, b'))
-		 end)
+		 isSubtype (t, word s)
+		 andalso done (resize (t, (WordSize.bits s'))))
        | Word_toWordX (s, s') => unary (word s, word s')
        | Word_xorb s => wordBinary s
        | _ => Error.bug (concat ["strange primitive to Prim.typeCheck: ",

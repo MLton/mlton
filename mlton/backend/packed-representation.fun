@@ -17,9 +17,7 @@ local
    open Rssa
 in
    structure Block = Block
-   structure CType = CType
    structure IntSize = IntSize
-   structure IntX = IntX
    structure Kind = Kind
    structure Label = Label
    structure ObjectType = ObjectType
@@ -229,7 +227,6 @@ structure WordRep =
 	 let
 	    val bits = Type.width dstTy
 	    val wordSize = WordSize.fromBits bits
-	    val ty = Type.word bits
 	    val z =
 	       Vector.fold
 	       (components, NONE, fn ({index, rep, ...}, z) =>
@@ -335,9 +332,9 @@ structure Component =
 		  val (src, ss) = Statement.resize (src {index = index},
 						    Type.width (#2 dst))
 	       in
-		  [Bind {dst = dst,
-			 isMutable = false,
-			 src = src}]
+		  ss @ [Bind {dst = dst,
+			      isMutable = false,
+			      src = src}]
 	       end
 	  | Word wr => WordRep.tuple (wr, {dst = dst, src = src})
 
@@ -362,12 +359,6 @@ structure Unpack =
 		    ("ty", Type.layout ty)]
 	 end
 	 
-      local
-	 fun make f (T r) = f r
-      in
-	 val ty = make #ty
-      end
-
       val lshift: t * Bits.t -> t =
 	 fn (T {shift, ty}, b) =>
 	 T {shift = Bits.+ (shift, b),
@@ -455,13 +446,6 @@ structure Select =
 	     | Unpack u => seq [str "Unpack ", Unpack.layout u]
 	 end
 
-      val ty =
-	 fn None => Error.bug "Select.ty"
-	  | Direct {ty, ...} => ty
-	  | Indirect {ty, ...} => ty
-	  | IndirectUnpack {rest, ...} => Unpack.ty rest
-	  | Unpack u => Unpack.ty u
-
       val lshift: t * Bits.t -> t =
 	 fn (s, b) =>
 	 case s of
@@ -497,7 +481,7 @@ structure Select =
 	 in
 	    case s of
 	       None => []
-	     | Direct {ty} => move (tuple ())
+	     | Direct _ => move (tuple ())
 	     | Indirect {offset, ty} =>
 		  move (Offset {base = tuple (),
 				offset = offset,
@@ -668,7 +652,6 @@ structure PointerRep =
 	    val componentsTy =
 	       Type.seq (Vector.map (components, Component.ty o #component))
 	    val componentsTy = Type.maybePadToWidth (componentsTy, Bits.inWord)
-	    val width = Type.bytes componentsTy
 	 in
 	    T {components = components,
 	       componentsTy = componentsTy,
@@ -775,8 +758,6 @@ structure TupleRep =
 	  | Indirect p => PointerRep.rep p
 
       val ty = Rep.ty o rep
-	 
-      val isUnit = Type.isUnit o ty
 	 
       fun selects (tr: t): Selects.t =
 	 case tr of
@@ -898,7 +879,7 @@ structure TupleRep =
 		     then makeWords (max - 1, offset, ac)
 		  else
 		     let
-			val (remainingWidth, components) =
+			val (_, components) =
 			   wordComponents (max, Bits.inWord, [])
 			val componentTy =
 			   Type.seq (Vector.map (components, Rep.ty o #rep))
@@ -931,7 +912,7 @@ structure TupleRep =
 	    val (offset, components) =
 	       makeWords (Bits.toInt Bits.inWord - 1, offset, components)
 	    (* Add the pointers at the end. *)
-	    val (offset, components) =
+	    val (_, components) =
 	       simple (!pointers, Words.inPointer, offset, components)
 	    val components = Vector.fromListRev components
 	    fun getSelects s =
@@ -1234,12 +1215,11 @@ structure Small =
 	 let
 	    val testBits = Type.width (Operand.ty test)
 	    val wordSize = WordSize.fromBits testBits
-	    val shift = tagShift tagBits
 	    val cases =
 	       Vector.keepAllMap
 	       (cases, fn (c, l) =>
 		case conRep c of
-		   ConRep.ShiftAndTag {component, selects, tag, ty, ...} =>
+		   ConRep.ShiftAndTag {selects, tag, ty, ...} =>
 		      let
 			 val test = Cast (test, Type.padToWidth (ty, testBits))
 			 val (test, ss) = Statement.resize (test, Type.width ty)
@@ -1350,14 +1330,14 @@ structure TyconRep =
 		  seq [str "Pointers ", Pointers.layout ps]
 	     | Small s =>
 		  seq [str "Small ", Small.layout s]
-	     | SmallAndBox {box as {con, pointer}, rep, small} =>
+	     | SmallAndBox {box = {con, pointer}, rep, small} =>
 		  seq [str "SmallAndBox ",
 		       record [("box",
 				record [("con", Con.layout con),
 					("pointer", PointerRep.layout pointer)]),
 			       ("rep", Rep.layout rep),
 			       ("small", Small.layout small)]]
-	     | SmallAndPointer {pointer as {component, con}, rep, small} =>
+	     | SmallAndPointer {pointer = {component, con}, rep, small} =>
 		  seq [str "SmallAndPointer ",
 		       record
 		       [("pointer",
@@ -1444,7 +1424,7 @@ structure TyconRep =
 						{forceBox = false})
 		  val conRep =
 		     case tupleRep of
-			TupleRep.Direct {component, selects} =>
+			TupleRep.Direct {component, ...} =>
 			   if Component.isUnit component
 			      then ConRep.Unit
 			   else ConRep.Transparent
@@ -1468,7 +1448,6 @@ structure TyconRep =
 	       else variants
 	    val numSmall = ref 0
 	    val small = Array.array (wordBits, [])
-	    val numBig = ref 0
 	    val big = ref []
 	    val () =
 	       Vector.foreach
@@ -1477,11 +1456,10 @@ structure TyconRep =
 		   val tr = TupleRep.make (args, pointerTycon,
 					   {forceBox = false})
 		   fun makeBig () =
-		      (Int.inc numBig
-		       ; List.push (big,
-				    {con = con,
-				     pointerTycon = pointerTycon,
-				     tupleRep = tr}))
+		      List.push (big,
+				 {con = con,
+				  pointerTycon = pointerTycon,
+				  tupleRep = tr})
 		   val Rep.T {rep, ty} = TupleRep.rep tr
 		in
 		   case rep of
@@ -1513,10 +1491,8 @@ structure TyconRep =
 			 end
 		    | Rep.Pointer _ => makeBig ()
 		end)
-	    val numBig = !numBig
 	    val big = !big
 	    val numSmall = !numSmall
-	    val numVariants = Int.toIntInf (numBig + numSmall)
 	    fun noLargerThan (i, ac) =
 	       if i < 0
 		  then ac
@@ -1999,7 +1975,6 @@ structure Value:
 
 fun compute (program as Ssa.Program.T {datatypes, ...}) =
    let
-      val objectTypes = ref []
       val {get = refRep: S.Type.t -> TupleRep.t Value.t,
 	   set = setRefRep, ...} =
 	 Property.getSetOnce (S.Type.plist,

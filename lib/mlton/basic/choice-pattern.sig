@@ -1,5 +1,4 @@
 type int = Int.t
-type word = Word.t
    
 signature CHOICE_PATTERN =
    sig

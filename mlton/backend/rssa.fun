@@ -127,11 +127,6 @@ structure Operand =
 
       val cast = Trace.trace2 ("Operand.cast", layout, Type.layout, layout) cast
 
-      fun offset {base, offset, ty} =
-	 Offset {base = base,
-		 offset = byteOffset {offset = offset, ty = ty},
-		 ty = ty}
-
       val rec isLocation =
 	 fn ArrayOffset _ => true
 	  | Cast (z, _) => isLocation z

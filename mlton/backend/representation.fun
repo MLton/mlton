@@ -20,7 +20,6 @@ in
    structure IntSize = IntSize
    structure Kind = Kind
    structure Label = Label
-   structure ObjectType = ObjectType
    structure Operand = Operand
    structure PointerTycon = PointerTycon
    structure Prim = Prim
