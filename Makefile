@@ -179,7 +179,7 @@ nj-mlton-quad:
 .PHONY: mlbpathmap
 mlbpathmap:
 	touch $(MLBPATHMAP)
-	( echo 'MLTON_ROOT $$(LIB_MLTON_DIR)/sml)';		\
+	( echo 'MLTON_ROOT $$(LIB_MLTON_DIR)/sml';	\
 	 echo 'SML_LIB $$(LIB_MLTON_DIR)/sml' ) 	\
 		>>$(MLBPATHMAP).tmp
 	mv $(MLBPATHMAP).tmp $(MLBPATHMAP)
