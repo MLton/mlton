@@ -135,3 +135,6 @@ nj-whole: $(SOURCES)
 	) >mlton.whole.sml
 	$(SML) <mlton.whole.sml
 
+.PHONY: warn
+warn:
+	mlton -stop tc -default-ann 'warnUnused true' $(MLTON).cm
