@@ -1712,7 +1712,7 @@ static inline void forward (GC_state s, pointer *pp) {
 				 * but don't violate the stack invariant.
 				 */
 				if (stack->used <= stack->reserved / 4) {
-					uint new = stackReserved (s, max (stack->reserved / 2,
+					uint new = stackReserved (s, max (s->threadShrinkRatio * stack->reserved,
 										stackNeedsReserved (s, stack)));
 					/* It's possible that new > stack->reserved if
 					 * the stack invariant is violated. In that case, 
@@ -1731,7 +1731,8 @@ static inline void forward (GC_state s, pointer *pp) {
 			} else {
 				/* Shrink heap stacks.
 				 */
-				stack->reserved = stackReserved (s, max(stack->reserved / 2, stack->used));
+				stack->reserved = stackReserved (s, max(s->threadShrinkRatio * stack->reserved, 
+									stack->used));
 				if (DEBUG_STACKS)
 					fprintf (stderr, "Shrinking stack to size %s.\n",
 							uintToCommaString (stack->reserved));
@@ -4360,6 +4361,12 @@ static int processAtMLton (GC_state s, int argc, char **argv,
 				} else if (0 == strcmp (arg, "stop")) {
 					++i;
 					s->mayProcessAtMLton = FALSE;
+				} else if (0 == strcmp (arg, "thread-shrink-ratio")) {
+					++i;
+					if (i == argc)
+						die ("@MLton thread-shrink-ratio missing argument.");
+					s->threadShrinkRatio =
+						stringToFloat (argv[i++]);
 				} else if (0 == strcmp (arg, "--")) {
 					++i;
 					done = TRUE;
@@ -4427,6 +4434,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->signalIsPending = FALSE;
 	s->startTime = currentTime ();
 	s->summary = FALSE;
+	s->threadShrinkRatio = 0.5;
 	s->weaks = NULL;
 	heapInit (&s->heap);
 	heapInit (&s->heap2);
