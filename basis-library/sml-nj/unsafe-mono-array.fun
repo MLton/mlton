@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor UnsafeMonoArray(type elem): UNSAFE_MONO_ARRAY =
+functor UnsafeMonoArray (type elem): UNSAFE_MONO_ARRAY =
    struct
       type array = elem array
       type elem = elem

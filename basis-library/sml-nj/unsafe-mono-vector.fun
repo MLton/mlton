@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor UnsafeMonoVector(type elem): UNSAFE_MONO_VECTOR =
+functor UnsafeMonoVector (type elem): UNSAFE_MONO_VECTOR =
    struct
       type vector = elem vector
       type elem = elem

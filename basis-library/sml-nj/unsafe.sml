@@ -18,9 +18,9 @@ structure Unsafe: UNSAFE =
 	    val update = Primitive.Array.update
 	    val create = Array.array
 	 end
-      structure CharVector = UnsafeMonoVector(type elem = char)
-      structure Word8Vector = UnsafeMonoVector(type elem = word8)
-      structure CharArray = UnsafeMonoArray(type elem = char)
-      structure Word8Array = UnsafeMonoArray(type elem = word8)
-      structure Real64Array = UnsafeMonoArray(type elem = real)
+      structure CharVector = UnsafeMonoVector (type elem = char)
+      structure Word8Vector = UnsafeMonoVector (type elem = word8)
+      structure CharArray = UnsafeMonoArray (type elem = char)
+      structure Word8Array = UnsafeMonoArray (type elem = word8)
+      structure Real64Array = UnsafeMonoArray (type elem = real)
    end
