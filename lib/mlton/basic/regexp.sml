@@ -1383,6 +1383,8 @@ in
 	 val seq = Seq
 	 val star = Star
 
+	 val dquote = char #"\""
+
 	 val any = isChar (fn _ => true)
 	 val anys = star any
 	 val ascii = isChar (fn c => ord c <= 127)

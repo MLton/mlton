@@ -73,6 +73,7 @@ signature REGEXP =
       val compileNFA: t -> Compiled.t
       val digit: t
       val digits: t
+      val dquote: t (* char #"\"" *)
       val isChar: (char -> bool) -> t
       val isNotChar: (char -> bool) -> t
       val nonDigit: t
