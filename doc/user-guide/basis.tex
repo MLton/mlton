@@ -15,7 +15,7 @@ In summary, {\mlton} implements all of the required portions of the
 Basis Library.  {\mlton} also implements many of the optional
 structures, as seen below.
 %
-\subsec{Toplevel types and constructors}{basis-pervasive-types}
+\subsec{Top-level types and constructors}{basis-pervasive-types}
 {
 \tt eqtype 'a array\\
 \tt datatype bool = false | true\\
@@ -34,7 +34,7 @@ structures, as seen below.
 \tt eqtype word\\
 }
 %
-\subsec{Top level exception constructors}{basis-pervasive-exns}
+\subsec{Top-level exception constructors}{basis-pervasive-exns}
 {\tt Bind},
 {\tt Chr},
 {\tt Div},
@@ -48,12 +48,12 @@ structures, as seen below.
 {\tt Span},
 {\tt Subscript}.
 %
-\subsec{Top level values}{basis-pervasive-vals}
+\subsec{Top-level values}{basis-pervasive-vals}
 
-{\mlton} does not implement the optional top level value
+{\mlton} does not implement the optional top-level value
 \verb+use: string -> unit+, which conflicts with whole-program
 compilation because it allows new code to be loaded dynamically.
-{\mlton} implements all other top level values:
+{\mlton} implements all other top-level values:
 
 {\tt !},
 {\tt :=},
@@ -112,7 +112,7 @@ compilation because it allows new code to be loaded dynamically.
 {\tt mod}.
 %
 \newcommand{\signature}[1]{{\tt #1}\\}
-\subsection{Top level signatures}
+\subsection{Top-level signatures}
 \signature{ARRAY}
 \signature{ARRAY2}
 \signature{ARRAY\_SLICE}
@@ -178,7 +178,7 @@ compilation because it allows new code to be loaded dynamically.
 {\tt WORD}.
 %
 \newcommand{\fullmodule}[2]{{\tt #1: #2}\\ }
-\subsection{Top level structures}
+\subsection{Top-level structures}
 \fullmodule{Array}{ARRAY}
 \fullmodule{Array2}{ARRAY2}
 \fullmodule{ArraySlice}{ARRAY\_SLICE}
@@ -374,7 +374,7 @@ can compile with {\tt -ieee-fp true}, which will cause intermediate
 results to be stored after each operation.  This may cause a
 substantial performance penalty.
 %
-\subsection{Top level functors}
+\subsection{Top-level functors}
 
 {\tt ImperativeIO}\\
 {\tt PrimIO}\\

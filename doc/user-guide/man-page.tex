@@ -39,23 +39,9 @@ possibilities are {\tt .c}, {\tt .cm}, {\tt .o}, and {\tt .sml}.
 With no arguments, {\mlton} prints the version number and exits.  For
 a usage message, run {\mlton} with an invalid switch, e.g. {\tt mlton
 -}.  In the explanation below and in the usage message, for flags
-that take a boolean argument {\tt \{true|false\}}, the first value
+that take a boolean argument {\tt \trueFalse}, the first value
 listed is the default.  For example, by default, overflow checking on
 is performed on integer arithmetic.
-
-\newcommand{\option}[1]{\item[{\tt #1}]\hspace{1em}\\}
-\newcommand{\choices}{{\it \{}}
-\newcommand{\choice}{{\it |}}
-\renewcommand{\choice}{|}
-\newcommand{\choicesEnd}{{\it \}}}
-\newcommand{\choiceTwo}[2]{\choices #1\choice #2\choicesEnd}
-\newcommand{\choiceThree}[3]{\choices #1\choice #2\choice #3\choicesEnd}
-\newcommand{\choiceFour}[4]{\choices #1\choice #2\choice #3\choice #4\choicesEnd}
-\newcommand{\choiceSix}[6]
-	   {\choices #1\choice #2\choice #3\choice #4\choice #5\choice
-            #6\choicesEnd}
-\newcommand{\falseTrue}{\choiceTwo{false}{true}}
-\newcommand{\trueFalse}{\choiceTwo{true}{false}}
 
 \begin{description}
 

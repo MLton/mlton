@@ -106,3 +106,21 @@ distribution includes the sources for a utility, {\tt cmcat}, that
 will print an ordered list of files corresponding to a CM file.  See
 {\tt \doc/cmcat/cmcat.sml} for details.  Building {\tt cmcat} requires
 that you have already installed {\smlnj} version 110.44.
+
+Alternatively, you may convert your CM files to {\tt .mlb} files.  The
+{\mlton} distribution includes the sources for a utility, {\tt
+cm2mlb}, that will print a ML basis file with essentially the same
+semantics as the CM file -- handling the full syntax of CM supported
+by your installed {\smlnj} version and correctly handling export
+filters.  When {\tt cm2mlb} encounters a {\tt .cm} import, it attempts
+to convert it to a corresponding {\tt .mlb} import.  CM anchors are
+translated to paths according to a configuration file in {\tt
+.mlton/cm2mlb-map} in the user's home directory (which must be given
+by the {\tt HOME} environment variable.  For example, adding
+\begin{verbatim}
+basis  $(MLTON_ROOT)/basis
+\end{verbatim}
+to your {\tt cm2mlb-map} file will ensure that a {\tt \$/basis.cm}
+import is translated to a {\tt \$(MLTON\_ROOT)/basis/basis.mlb} import.
+See {\tt \doc/cmcat/cm2mlb} for details.  Building {\tt cm2mlb}
+requires that you have already installed {\smlnj} version 110.44.

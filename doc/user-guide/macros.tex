@@ -32,3 +32,17 @@
 \newcommand{\version}{MLTONVERSION}
 \newcommand{\intel}{X86}
 \renewcommand{\sec}[3]{\section{#1}\label{section:#2}{\cutname{#3}}}
+
+\newcommand{\option}[1]{\item[{\tt #1}]\hspace{1em}\\}
+\newcommand{\choices}{{\it \{}}
+\newcommand{\choice}{{\it |}}
+\renewcommand{\choice}{|}
+\newcommand{\choicesEnd}{{\it \}}}
+\newcommand{\choiceTwo}[2]{\choices #1\choice #2\choicesEnd}
+\newcommand{\choiceThree}[3]{\choices #1\choice #2\choice #3\choicesEnd}
+\newcommand{\choiceFour}[4]{\choices #1\choice #2\choice #3\choice #4\choicesEnd}
+\newcommand{\choiceSix}[6]
+	   {\choices #1\choice #2\choice #3\choice #4\choice #5\choice
+            #6\choicesEnd}
+\newcommand{\falseTrue}{\choiceTwo{false}{true}}
+\newcommand{\trueFalse}{\choiceTwo{true}{false}}

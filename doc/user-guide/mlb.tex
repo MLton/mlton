@@ -1,4 +1,4 @@
-\sec{ML Basis System}{mlb}{MLBs.html}
+\sec{ML Basis system}{mlb}{MLBs.html}
 %
 This section describes the ML Basis system (MLBs) used in {\mlton}.
 While the Modules level of Standard ML provides a sophisticated
@@ -33,7 +33,7 @@ We briefly highlight some of the key features provided by MLBs:
 \end{itemize}
 
 %
-\subsection{Syntax and Semantics}
+\subsection{Syntax and semantics}
 
 An {\tt .mlb} (ML Basis) file describes a library or program.  An
 {\tt .mlb} file contains a ``basis declaration,'' defined by the
@@ -56,7 +56,7 @@ following grammar:
                 ({\tt and} {\it funid} [{\tt =} {\it funid}])* \\
 & $\alt$ & {\it path.}{\tt sml} \\
 & $\alt$ & {\it path.}{\tt mlb} \\
-& $\alt$ & {\tt ann} {\it id} ({\it id})* [{\tt ,}  {\it id} ({\it id})*] 
+& $\alt$ & {\tt ann} {\it id} ({\it id})* ({\tt ,}  {\it id} ({\it id})*)*
            {\tt in} {\it basdec} {\tt end} \\
 \\
 {\it basexp}
@@ -77,19 +77,29 @@ Nested SML-style comments (enclosed with {\tt (*} and {\tt *)}) are
 ignored (but {\nline} directives of \secref{nline} are recognized).
 
 Conceptually, a basis file is elaborated starting in an empty basis,
-and each basis declaration adds to the basis, producing a basis as a
-result.  Basis expressions and basis identifiers allow binding a basis
-to a name; this, in turn, allows fine-grained specification of
-dependenies, without the need for additional {\tt .mlb} files.  Local
-declarations provide name hiding.
+and each basis declaration produces a basis as a result.  Basis
+expressions and basis identifiers allow binding a basis to a name;
+this, in turn, allows fine-grained specification of dependenies,
+without the need for additional {\tt .mlb} files.  Local declarations
+provide name hiding.  Sequencing of basis declarations merges the
+bases.  Structure, signature, and functor declarations bind a module
+in the current basis.
 
-Structure, signature, and functor declarations bind a module in the
-current basis.  References to SML source files cause the file to be
-elaborated in the ``current'' basis.  References to other ML basis
-files cause the basis denoted by that ML basis file to be imported.
+References to SML source files cause the file to be elaborated in the
+``current'' basis.  References to other ML basis files cause the basis
+denoted by that ML basis file to be imported.  Recall that an ML basis
+file is elaborated in an empty basis; hence, no bindings from the
+``current'' basis are available to the imported basis file.  Since
+{\tt .mlb} files are elaborated in the empty basis, they need only be
+elaborated (and evaluated) once.  The semantics of MLBs are such that
+the results of elaborating (and evaluating) a {\tt .mlb} file are
+cached.  Thus, any observable effects due to evaluation are not
+duplicated if the {\tt .mlb} file is referred to multiple times.
+
 Paths can be relative or absolute.  Relative paths are relative to the
-directory containing the {\tt .mlb} file.  Paths are expanded
-according to a path map; see \secref{mlb-path-map} for more details.
+directory containing the {\tt .mlb} file.  Paths may include path
+variables and are expanded according to a path map; see
+\secref{mlb-path-map} for more details.
 
 Finally, annotations allow a library author to control options that
 affect the elaboration of SML source files; see \secref{mlb-anns} for
@@ -237,7 +247,7 @@ structure Either : EITHER =
     fun f & g = fn x =>
       case x of Left z => f z | Right z => g z
     fun f && g = fn x =>
-      case x of Left z => Left (f z) | Right z => Right (g z)
+      ((Left o f) & (Right o g)) x
     fun isLeft x = ((fn _ => true) & (fn _ => false)) x
     fun isRight x = (not o isLeft) x
     ...
@@ -252,7 +262,7 @@ and values ({\tt either-open.sml}):
 \begin{description}
 \item{{\tt either-infixes.sml}:}
 \begin{verbatim}
-infixr 5 & &&
+infixr 3 & &&
 \end{verbatim}
 \item{{\tt either-open.sml}:}
 \begin{verbatim}
@@ -318,7 +328,7 @@ makes the following path variables available:\\
 \end{tabular}
 
 %
-\subsection{Available Libraries}
+\subsec{Available libraries}{mlb-libs}
 
 \begin{tabular}{l}
 {\tt \$(MLTON\_ROOT)/basis/basis.mlb} \\\hspace{0.5in}
@@ -361,6 +371,17 @@ The {\tt Unsafe} structure and signature (see \secref{unsafe-ext}).
 %
 \subsec{Annotations}{mlb-anns}
 
+Annotations are a mechanism that allows a library author to control
+options that affect the elaboration of SML source files.
+Conceptually, a basis file is elaborated in a default annotation
+environment (just as it is elaborated in an empty basis).  The {\tt
+ann {\it anns} in {\it basdec} end} declaration merges the annotations
+{\it anns} with the ``current'' annotation environment for the
+elaboration of {\it basdec}.  
+
+In the explanation below, for annotations that take a boolean argument
+{\tt \trueFalse}, the first value listed is the default annotation.
+
 \begin{description}
 \option{allowExport \falseTrue}
 If true, allow the {\tt \_export} expression form of \secref{export} to
@@ -372,8 +393,8 @@ appear in imported source files.
 
 \option{forceUsed}
 Force all identifiers in the basis denoted by the body of the {\tt
-ann} basis declaration to be considered used; 
-use in conjunction with {\tt warnUnused true}.
+ann} to be considered used; use in conjunction with {\tt warnUnused
+true}.
 
 \option{sequenceUnit \falseTrue}
 If true, then in the sequence expression {\tt (e1; e2)}, it is a type
@@ -386,4 +407,88 @@ Report nonexhaustive and redundant matches.
 
 \option{warnUnused \falseTrue}
 Report unused identifiers.
+\end{description}
+
+%
+\subsubsection{Examples}
+
+We demonstrate how to use annotations in two common scenarios.
+
+Programs that automatically generate source code can often produce
+nonexhaustive matches, relying upon invariants of the generated code
+to ensure that the matches never fail.  A programmer may wish to elide
+the nonexhaustive match warnings from this code, in order that
+legitimate warnings are not missed in a flurry of false positives.  To
+do so, the programmer simply annotates the generated code with the
+{\tt warnMatch false} annotation:
+\begin{verbatim}
+local
+  $(GEN_ROOT)/gen-lib.mlb
+
+  ann warnMatch false in
+    foo.gen.sml
+  end
+in
+  signature FOO
+  structure Foo
+end
+\end{verbatim}
+
+Standard ML libraries can delivered via {\tt .mlb} files.  Authors of
+such libraries should strive to be mindful of the ways in which
+programmers may choose to compile their programs.  For example,
+although the defaults for {\tt sequenceUnit} and {\tt warnUnused} are
+{\tt false}, periodically compiling with these annotations defaulted
+to {\tt true} can help uncover likely bugs.  However, a programmer is
+unlikely to be interested in unused modules from an imported library,
+and the behavior of {\tt sequenceUnit true} may be incompatible with
+some libraries.  Hence, a library author may choose to deliver a
+library as follows:
+\begin{verbatim}
+ann 
+  sequenceUnit false,
+  warnMatch true,
+  warnUnused true, forceUsed
+in
+  local
+    file1.sml
+    ...
+    filen.sml
+  in
+    functor F1
+    ...
+    signature S1
+    ...
+    structure S1
+    ...
+  end
+end
+\end{verbatim}
+The annotations {\tt sequenceUnit true} and {\tt warnMatch true} have
+the obvious effect on elaboration.  The annotations {\tt warnMatch
+true} and {\tt forceUsed} work in conjunction --- warning on any
+identifiers that do not contribute to the exported modules, and
+preventing warnings on exported modules that are not used in the
+remainder of the program.  Many of the available libraries listed in
+\secref{mlb-libs} are delivered with these annotations.
+
+%
+\subsubsection{Compile-time options}
+
+\begin{description}
+
+\option{-default-ann {\it anns}}
+Specify the default annotation values.  For example, to change the
+defaults as described in the previous section, use {\tt -default-ann
+'sequenceUnit true, warnUnused true'}.
+
+\option{-disable-ann {\it ann}}
+Specify that an annotation should be disabled.  This has the effect of
+ignoring the annotation in every ML basis file.  For example, to see
+\emph{all} match and unused warnings, use {\tt -disable-ann
+'warnMatch, warnUnused, forceUsed' -default-ann 'warnUnused true'}.
+
+\option{-warn-ann \trueFalse}
+Report unrecognized annotations.
+
 \end{description}
