@@ -3,6 +3,9 @@ type word = Word.word
    
 signature MLTON_RANDOM =
    sig
+      (* Return a random alphanumeric character. *)
+      val alphaNumChar: unit -> char
+	 
       (* Return a string of random alphanumeric characters of specified
        * length.
        *)

@@ -15,33 +15,39 @@ structure Random: MLTON_RANDOM =
 	    end
 
 	 fun srand (w: word): unit = seed := w
-
-	 structure String =
-	    struct
-	       open String
-			
-	       val tabulate = CharVector.tabulate
-	    end
-	 local
-	    val chars =
-	       "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	    val n = Word.fromInt (String.size chars)
-	    val r: word ref = ref 0w0
-	 in
-	    fun alphaNumString (length: int) =
-	       String.tabulate
-	       (length, fn i =>
-		let
-		   val _ =
-		      if 0 = Int.rem (i, 6) (* n^6 = 62^6 = 965,660,736 *)
-			 then r := rand ()
-		      else ()
-		   val w = !r
-		   val c = String.sub (chars, Word.toInt (Word.mod (w, n)))
-		   val _ = r := Word.div (w, n)
-		in
-		   c
-		end)
-	 end
       end
+   
+      structure String =
+	 struct
+	    open String
+			
+	    val tabulate = CharVector.tabulate
+	 end
+
+      local
+	 val chars =
+	    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	 val refresh =
+	    Int.quot (Word.wordSize,
+		      1 + IntInf.log2 (IntInf.fromInt (String.size chars)))
+	 val r: word ref = ref (rand ())
+	 val count: int ref = ref 0
+	 val numChars = Word.fromInt (String.size chars)
+      in
+	 fun alphaNumChar (): char =
+	    let
+	       val n = !count
+	       val _ = if 0 = n then r := rand () else ()
+	       val w = !r
+	       val c = String.sub (chars, Word.toInt (Word.mod (w, numChars)))
+	       val _ = r := Word.div (w, numChars)
+	       val n = n + 1
+	       val _ = count := (if n = refresh then 0 else n)
+	    in
+	       c
+	    end
+      end
+
+      fun alphaNumString (length: int): string =
+	 String.tabulate (length, fn _ => alphaNumChar ())
    end
