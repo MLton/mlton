@@ -199,7 +199,6 @@ struct
 				  in
 				     (lo, hi)
 				  end
-(*
 			       fun convert2 (ii: IntInf.t): Word.t * Word.t =
 				  let
 				     fun finish (iis: String.t, c: Char.t) =
@@ -250,9 +249,11 @@ struct
 					     end
 					else finish (IntInf.format(ii, StringCvt.HEX), #"0")
 				  end
-*)
 			       val ii = IntX.toIntInf i
-			       val (lo, hi) = convert1 ii
+			       val (lo, hi) = 
+				 if MLton.isMLton 
+				   then convert1 ii
+				   else convert2 ii
 			    in
 			       Vector.new2
 			       ((x86.Operand.immediate_const_word lo, x86.Size.LONG),

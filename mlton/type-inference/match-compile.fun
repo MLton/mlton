@@ -154,7 +154,10 @@ local
 		       (get const, finish (Vector.fromList infos))))))
 in
    val directCases = 
-      make (IntSize.all, Type.int, Cases.int,
+      make (if !Control.Native.native
+	      then List.remove(IntSize.all, fn s => IntSize.I64 = s)
+	      else IntSize.all,
+	    Type.int, Cases.int,
 	    fn Const.Int i => i
 	     | _ => Error.bug "caseInt type error")
       @ make (WordSize.all, Type.word, Cases.word,

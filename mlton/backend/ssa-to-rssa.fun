@@ -625,51 +625,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					     testRep = tyconRep tycon}
 			    else Error.bug "strange type in case"
 			 end)
-	     | S.Cases.Int (s, cs) => 
-		  if s = IntSize.I64 andalso !Control.Native.native
-		     then let
-			     val defaultLabel =
-				case default of
-				   SOME default => default
-				 | NONE => Error.bug "case has no default"
-			     val firstLabel =
-				Vector.foldr
-				(cs, defaultLabel, fn ((i, l), nextLabel) =>
-				 let	
-				    val b = (Var.newNoname (), Type.bool)	
-				    val transfer =
-				       Transfer.ifInt
-				       (Operand.Var {var = #1 b, ty = #2 b}, 
-					{truee = l, falsee = nextLabel})
-				    val return =
-				       newBlock
-				       {args = Vector.new1 b,
-					kind = Kind.CReturn {func = CFunction.int64Equal},
-					statements = Vector.new0 (),
-					transfer = transfer}
-				    val args =
-				       Vector.new2
-				       (Operand.Var {var = test,
-						     ty = Type.int IntSize.I64},
-					Operand.Const (Const.int i))
-				    val transfer =
-				       Transfer.CCall
-				       {args = args,
-					func = CFunction.int64Equal,
-					return = SOME return}
-				    val label =
-				       newBlock
-				       {args = Vector.new0 (),
-					kind = Kind.Jump,
-					statements = Vector.new0 (),
-					transfer = transfer}
-				 in
-				    label
-				 end)
-			  in
-			     ([], Transfer.Goto {args = Vector.new0 (), dst = firstLabel})
-			  end
-		     else simple (s, cs, Switch.Int, id, IntX.<=)
+	     | S.Cases.Int (s, cs) => simple (s, cs, Switch.Int, id, IntX.<=)
 	     | S.Cases.Word (s, cs) => simple (s, cs, Switch.Word, id, WordX.<=)
 	 end
       val {get = labelInfo: (Label.t ->
