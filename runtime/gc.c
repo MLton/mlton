@@ -344,21 +344,6 @@ static void rusagePlusMax (struct rusage *ru1,
 	usec %= million;
 	ru->ru_stime.tv_sec = sec;
 	ru->ru_stime.tv_usec = usec;
-
-	ru->ru_maxrss = max(ru1->ru_maxrss, ru2->ru_maxrss);
-	ru->ru_ixrss = max(ru1->ru_ixrss, ru2->ru_ixrss);
-	ru->ru_idrss = max(ru1->ru_idrss, ru2->ru_idrss);
-	ru->ru_isrss = max(ru1->ru_isrss, ru2->ru_isrss);
-	ru->ru_minflt = ru1->ru_minflt + ru2->ru_minflt;
-	ru->ru_majflt = ru1->ru_majflt + ru2->ru_majflt;
-	ru->ru_nswap = ru1->ru_nswap + ru2->ru_nswap;
-	ru->ru_inblock = ru1->ru_inblock + ru2->ru_inblock;
-	ru->ru_oublock = ru1->ru_oublock + ru2->ru_oublock;
-	ru->ru_msgsnd = ru1->ru_msgsnd + ru2->ru_msgsnd;
-	ru->ru_msgrcv = ru1->ru_msgrcv + ru2->ru_msgrcv;
-	ru->ru_nsignals = ru1->ru_nsignals + ru2->ru_nsignals;
-	ru->ru_nvcsw = ru1->ru_nvcsw + ru2->ru_nvcsw;
-	ru->ru_nivcsw = ru1->ru_nivcsw + ru2->ru_nivcsw;
 }
 
 static void rusageMinusMax (struct rusage *ru1,
@@ -381,21 +366,6 @@ static void rusageMinusMax (struct rusage *ru1,
 	usec %= million;
 	ru->ru_stime.tv_sec = sec;
 	ru->ru_stime.tv_usec = usec;
-
-	ru->ru_maxrss = max(ru1->ru_maxrss, ru2->ru_maxrss);
-	ru->ru_ixrss = max(ru1->ru_ixrss, ru2->ru_ixrss);
-	ru->ru_idrss = max(ru1->ru_idrss, ru2->ru_idrss);
-	ru->ru_isrss = max(ru1->ru_isrss, ru2->ru_isrss);
-	ru->ru_minflt = ru1->ru_minflt - ru2->ru_minflt;
-	ru->ru_majflt = ru1->ru_majflt - ru2->ru_majflt;
-	ru->ru_nswap = ru1->ru_nswap - ru2->ru_nswap;
-	ru->ru_inblock = ru1->ru_inblock - ru2->ru_inblock;
-	ru->ru_oublock = ru1->ru_oublock - ru2->ru_oublock;
-	ru->ru_msgsnd = ru1->ru_msgsnd - ru2->ru_msgsnd;
-	ru->ru_msgrcv = ru1->ru_msgrcv - ru2->ru_msgrcv;
-	ru->ru_nsignals = ru1->ru_nsignals - ru2->ru_nsignals;
-	ru->ru_nvcsw = ru1->ru_nvcsw - ru2->ru_nvcsw;
-	ru->ru_nivcsw = ru1->ru_nivcsw - ru2->ru_nivcsw;
 }
 
 static uint rusageTime (struct rusage *ru) {

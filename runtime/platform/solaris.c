@@ -1,5 +1,9 @@
 #include "platform.h"
 
+#include "mkdir2.c"
+#include "ssmmap.c"
+#include "totalRam.sysconf.c"
+
 /* This implementation of setenv has a space leak, but I don't see how to avoid 
  * it, since the specification of putenv is that it uses the memory for its arg.
  */
@@ -16,6 +20,3 @@ void showMem () {
 	sprintf (buffer, "pmap %d\n", (int)(getpid ()));
 	system (buffer);
 }
-
-#include "ssmmap.c"
-#include "totalRam.sysconf.c"

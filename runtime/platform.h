@@ -13,35 +13,20 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <grp.h>
 #include <math.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <netinet/udp.h>
-#include <pwd.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <sys/poll.h>
-#include <sys/resource.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/times.h>
-#include <sys/un.h>
-#include <sys/utsname.h>
-#include <sys/wait.h>
-#include <syslog.h>
-#include <termios.h>
 #include <time.h>
 #include <unistd.h>
 #include <utime.h>
+
+#include "assert.h"
 
 #if (defined (__CYGWIN__))
 #include "platform/cygwin.h"
@@ -88,21 +73,6 @@
 
 #ifndef SPAWN_MODE
 #define SPAWN_MODE 0
-#endif
-
-#ifndef ASSERT
-#define ASSERT 0
-#endif
-
-/* assertion failure routine */
-extern void asfail(char *file, int line, char *prop);
-/*
- * Assertion verifier.
- */
-#if ASSERT
-#define	assert(p)	((p) ? (void)0 : asfail(__FILE__, __LINE__, #p))
-#else
-#define	assert(p)	((void)0)
 #endif
 
 #ifndef INT_MIN
@@ -204,6 +174,8 @@ void swrite (int fd, const void *buf, size_t count);
 void swriteUint (int fd, uint n);
 string uintToCommaString (uint n);
 string ullongToCommaString (ullong n);
+
+int mkdir2 (const char *pathname, mode_t mode);
 
 /* ---------------------------------------------------------------- */
 /*                         MLton libraries                          */
@@ -367,7 +339,7 @@ Word MLton_size (Pointer p);
 #define MLton_Platform_OS_host 1
 #elif (defined (__linux__))
 #define MLton_Platform_OS_host 2
-#elif (defined (__MinGW__))
+#elif (defined (__MINGW32__))
 #define MLton_Platform_OS_host 3
 #elif (defined (__NetBSD__))
 #define MLton_Platform_OS_host 4

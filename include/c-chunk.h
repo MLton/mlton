@@ -1,8 +1,14 @@
 #ifndef _C_CHUNK_H_
 #define _C_CHUNK_H_
 
-#include "platform.h"
+#include <stdio.h>
+#include "assert.h"
 #include "c-common.h"
+#include "types.h"
+
+#ifndef FALSE
+#define FALSE 0
+#endif
 
 #define WORD_SIZE 4
 

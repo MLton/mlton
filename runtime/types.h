@@ -61,4 +61,4 @@ typedef Int Syserror;
 typedef Pointer Thread;
 typedef Word Uid;
 
-#endif /* _MY_TYPES_H_ */
+#endif /* _MLTON_TYPES_H_ */

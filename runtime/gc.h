@@ -53,7 +53,7 @@ typedef W32 Header;
 
 /* Sizes are (almost) always measured in bytes. */
 enum {
-	BOGUS_POINTER = 0x1,
+	BOGUS_POINTER = 	0x1,
 	WORD_SIZE = 		4,
 	COUNTER_MASK =		0x7FF00000,
 	COUNTER_SHIFT =		20,

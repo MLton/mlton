@@ -68,8 +68,8 @@ lib="$src/build/lib"
 
 # You shouldn't need to change anything below this line.
 
-rm -rf "$lib/$crossTarget"
-mkdir -p "$lib/$crossTarget" || die "Cannot write to $lib."
+# rm -rf "$lib/$crossTarget"
+# mkdir -p "$lib/$crossTarget" || die "Cannot write to $lib."
 
 tmp='/tmp/mlton-add-cross'
 
@@ -79,7 +79,8 @@ ssh $machine "rm -rf $tmp && mkdir $tmp"
 
 echo 'Making runtime.' 
 ( cd $src && tar cf - bin runtime ) | 
-	ssh $machine "cd $tmp && tar xf - && cd runtime && make clean all"
+	ssh $machine "cd $tmp && tar xf - && cd runtime &&
+		make TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all"
 ssh $machine "cd $tmp/runtime && tar cf - *.a" | 
 	( cd $lib/$crossTarget && tar xf - )
 ( cd $src &&

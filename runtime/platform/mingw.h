@@ -1,3 +1,4 @@
+#include <windows.h> // lots of stuff depends on this
 #include <io.h>
 #include <limits.h>
 #include <lm.h>
@@ -6,25 +7,26 @@
 #include <sys/stat.h>
 #include <sys/timeb.h>
 #include <sys/types.h>
-#include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #undef max
 
 #include "gmp.h"
-#include "resource.h"
+#include "ptrace.h"
 
 #define HAS_MREMAP FALSE
 #define HAS_SIGALTSTACK FALSE
+#define HAS_TIME_PROFILING FALSE
 #define HAS_WEAK FALSE
 #define USE_VIRTUAL_ALLOC TRUE
 
-int getpagesize (void);
+typedef unsigned short gid_t;
+typedef unsigned short uid_t;
 
-struct timeval {
-	long tv_sec;
-	long tv_usec;
-};
+int getpagesize (void);
+int ioctl (int d, int request, ...);
+int mkstemp (char *template);
+int socketpair (int d, int type, int protocol, int sv[2]);
 
 #define POLLIN 1
 #define POLLPRI 2
@@ -64,9 +66,11 @@ struct timeval {
 /* ------------------------------------------------- */
 
 struct timezone {
-    int tz_minuteswest;
     int tz_dsttime;
+    int tz_minuteswest;
 };
+
+int gettimeofday (struct timeval *tv, struct timezone *tz);
 
 /* ------------------------------------------------- */
 /*                   MLton.Itimer                    */
@@ -112,6 +116,9 @@ struct rlimit {
 	rlim_t	rlim_max;
 };
 
+int getrlimit (int resource, struct rlimit *rlim);
+int setrlimit (int resource, const struct rlimit *rlim);
+
 /* ------------------------------------------------- */
 /*                   MLton.Rusage                    */
 /* ------------------------------------------------- */
@@ -123,6 +130,20 @@ struct rusage {
         struct timeval ru_utime;
         struct timeval ru_stime;
 };
+
+int getrusage (int who, struct rusage *usage);
+
+/* ------------------------------------------------- */
+/*                       OS.IO                       */
+/* ------------------------------------------------- */
+
+struct pollfd {
+ 	short events;
+	int fd;
+ 	short revents;
+};
+
+int poll (struct pollfd *ufds, unsigned int nfds, int timeout);
 
 /* ------------------------------------------------- */
 /*                    Posix.Error                    */
@@ -151,40 +172,44 @@ struct rusage {
 #define O_NOCTTY 0x8000
 #define O_NONBLOCK 0x4000
 
-#define S_ISLNK(m) 0
+#define S_ISLNK(m) FALSE
+#define S_ISSOCK(m) FALSE
 
-static inline int chmod (const char *path, mode_t mode) {
-	return _chmod (path, mode);
-}
+//static inline int chmod (const char *path, mode_t mode) {
+//	return _chmod (path, mode);
+//}
 
-static inline int mkdir (const char *pathname, mode_t mode) {
-	return _mkdir (pathname, mode);
-}
+//static inline int mkdir (const char *pathname, mode_t mode) {
+//	return _mkdir (pathname);
+//}
 
-static inline int rmdir (const char *pathname) {
-	return _rmdir (pathname);
-}
+//static inline int rmdir (const char *pathname) {
+//	return _rmdir (pathname);
+//}
 
-static inline mode_t umask (mode_t mask) {
-	return _umask (mask);
-}
+//static inline mode_t umask (mode_t mask) {
+//	return _umask (mask);
+//}
 
-static inline int unlink (const char *pathname) {
-	return _unlink (pathname);
-}
+//static inline int unlink (const char *pathname) {
+//	return _unlink (pathname);
+//}
 
-int fchmod (int fildes, mode_t mode);
+int chown (const char *path, uid_t owner, gid_t group);
+int fchmod (int filedes, mode_t mode);
+int fchown (int fd, uid_t owner, gid_t group);
+long fpathconf (int filedes, int name);
+int ftruncate (int fd, off_t length);
+int link (const char *oldpath, const char *newpath);
 int lstat (const char *file_name, struct stat *buf);
+int mkfifo (const char *pathname, mode_t mode);
+long pathconf (char *path, int name);
+int readlink (const char *path, char *buf, size_t bufsiz);
+int symlink(const char *oldpath, const char *newpath);
 
 /* ------------------------------------------------- */
 /*                     Posix.IO                      */
 /* ------------------------------------------------- */
-
-int fcntl(int fd, int cmd);
-int fcntl(int fd, int cmd, long arg);
-int fcntl(int fd, int cmd, struct flock *lock);
-int fsync (int fd);
-int pipe (int filedes[2]);
 
 struct flock {
 	off_t l_len;
@@ -193,6 +218,10 @@ struct flock {
 	short l_type;
 	short l_whence;
 };
+
+int fcntl (int fd, int cmd, ...);
+int fsync (int fd);
+int pipe (int filedes[2]);
 
 /* ------------------------------------------------- */
 /*                   Posix.ProcEnv                   */
@@ -222,11 +251,11 @@ struct flock {
 #define _SC_TZNAME_MAX 20
 #define _SC_VERSION 7
 
-struct tms {	/* WARNING:  BOGUS! */
-	int	tms_utime;		/* user time */
-	int	tms_stime;		/* system time */
-	int	tms_cutime;		/* user time, children */
-	int	tms_cstime;		/* system time, children */
+struct tms {
+	int tms_utime;
+	int tms_stime;
+	int tms_cutime;
+	int tms_cstime;
 };
 
 struct utsname {
@@ -237,6 +266,24 @@ struct utsname {
 	char version[20];
 };
 
+char *ctermid (char *s);
+gid_t getegid (void);
+uid_t geteuid (void);
+gid_t getgid (void);
+int getgroups (int size, gid_t list[]);
+char *getlogin (void);
+pid_t getpgid(pid_t pid);
+pid_t getpgrp(void);
+pid_t getpid (void);
+pid_t getppid (void);
+uid_t getuid (void);
+int setenv (const char *name, const char *value, int overwrite);
+int setgid (gid_t gid);
+pid_t setsid (void);
+int setuid (uid_t uid);
+long sysconf (int name);
+clock_t times (struct tms *buf);
+char *ttyname (int desc);
 int uname (struct utsname *buf);
 
 /* ------------------------------------------------- */
@@ -265,6 +312,9 @@ int uname (struct utsname *buf);
 
 int alarm (int secs);
 pid_t fork (void);
+int kill (pid_t pid, int sig);
+int pause (void);
+unsigned int sleep (unsigned int seconds);
 pid_t wait (int *status);
 pid_t waitpid (pid_t pid, int *status, int options);
 
@@ -321,14 +371,23 @@ int sigsuspend (const sigset_t *mask);
 /*                Posix.SysDB.Passwd                 */
 /* ------------------------------------------------- */
 
-struct passwd {
-	char    *pw_dir;        /* home directory */
-	gid_t   pw_gid;         /* group id */
-	char    *pw_name;       /* user name */
-	char    *pw_shell;      /* shell program */
-	uid_t   pw_uid;         /* user id */
+struct group {
+ 	gid_t   gr_gid;
+	char    **gr_mem;
+ 	char    *gr_name;
+	char    *gr_passwd;
 };
 
+struct passwd {
+	char    *pw_dir;
+	gid_t   pw_gid;
+	char    *pw_name;
+	char    *pw_shell;
+	uid_t   pw_uid;
+};
+
+struct group *getgrgid (gid_t gid);
+struct group *getgrnam (const char *name);
 struct passwd *getpwnam (const char *name);
 struct passwd *getpwuid (uid_t uid);
 
@@ -431,11 +490,69 @@ struct passwd *getpwuid (uid_t uid);
 #define TCSADRAIN       3
 #define TCSADFLUSH      4
 
+typedef unsigned char	cc_t;
+typedef unsigned int	speed_t;
+typedef unsigned int	tcflag_t;
+
+struct termios {
+	cc_t c_cc[NCCS];
+	tcflag_t c_cflag;
+	tcflag_t c_iflag;
+	tcflag_t c_lflag;
+	tcflag_t c_oflag;
+};
+
+speed_t cfgetispeed (struct termios *termios_p);
+speed_t cfgetospeed (struct termios *termios_p);
+int cfsetispeed (struct termios *termios_p, speed_t speed);
+int cfsetospeed (struct termios *termios_p, speed_t speed);
+int tcdrain (int fd);
+int tcflow (int fd, int action);
+int tcflush (int fd, int queue_selector);
+int tcgetattr (int fd, struct termios *termios_p);
+pid_t tcgetpgrp (int fd);
+int tcsendbreak (int fd, int duration);
+int tcsetattr (int fd, int optional_actions, struct termios *termios_p);
+int tcsetpgrp (int fd, pid_t pgrpid);
+
 /* ------------------------------------------------- */
 /*                      Socket                       */
 /* ------------------------------------------------- */
 
 #define MSG_DONTWAIT 0
-#define PF_INET6 0
-struct sockaddr_in6 {};
 struct sockaddr_un {};
+
+/* ------------------------------------------------- */
+/*                      Syslog                       */
+/* ------------------------------------------------- */
+
+#define LOG_ALERT 0
+#define LOG_AUTHPRIV 0
+#define LOG_CONS 0
+#define LOG_CRIT 0
+#define LOG_CRON 0
+#define LOG_DAEMON 0
+#define LOG_DEBUG 0
+#define LOG_EMERG 0
+#define LOG_ERR 0
+#define LOG_INFO 0
+#define LOG_KERN 0
+#define LOG_LOCAL0 0
+#define LOG_LOCAL1 0
+#define LOG_LOCAL2 0
+#define LOG_LOCAL3 0
+#define LOG_LOCAL4 0
+#define LOG_LOCAL5 0
+#define LOG_LOCAL6 0
+#define LOG_LOCAL7 0
+#define LOG_LPR 0
+#define LOG_MAIL 0
+#define LOG_NDELAY 0
+#define LOG_NEWS 0
+#define LOG_NOTICE 0
+#define LOG_PERROR 0
+#define LOG_PID 0
+#define LOG_SYSLOG 0
+#define LOG_USER 0
+#define LOG_UUCP 0
+#define LOG_WARNING 0

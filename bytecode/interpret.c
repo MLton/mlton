@@ -1,5 +1,5 @@
-#include "c-chunk.h"
 #include "interpret.h"
+#include "c-chunk.h"
 
 enum {
 	DEBUG = TRUE,

@@ -12,13 +12,13 @@ int mkstemp (char *template) {
 	char templ[4];
 	DWORD size = sizeof(file_path);
 
-	if (0 == GetTempPath(size, file_path)
+	if (0 == GetTempPath(size, file_path))
 		diee ("unable to make temporary file");
-	strncpy(templ, template, 3);
+	strncpy (templ, template, 3);
 	templ[4] = 0x00;
-	if (0 == GetTempFileName(file_path, templ, 0, file_name))
+	if (0 == GetTempFileName (file_path, templ, 0, file_name))
 		diee ("unable to make temporary file");
-	return _open(file_name, _O_CREAT | _O_RDWR, _S_IREAD | _S_IWRITE);
+	return _open (file_name, _O_CREAT | _O_RDWR, _S_IREAD | _S_IWRITE);
 }
 
 #ifndef __GNUC__
@@ -36,28 +36,26 @@ int gettimeofday (struct timeval *tv, struct timezone *tz) {
 	__int64 t;
 	static bool tzInit = FALSE;
 	
-	if (tz_init) {
-		_tzset();
+	unless (tzInit) {
 		tzInit = TRUE;
+		_tzset();
 	}
-
 	GetSystemTimeAsFileTime (&ft);
 	li.LowPart = ft.dwLowDateTime;
 	li.HighPart = ft.dwHighDateTime;
 	t = li.QuadPart;
 	t -= EPOCHFILETIME;
 	t /= 10;
-	tv.tv_sec  = (long)(t / 1000000);
-	tv.tv_usec = (long)(t % 1000000);
-	res = 0;
+	tv->tv_sec = (long)(t / 1000000);
+	tv->tv_usec = (long)(t % 1000000);
+	return 0;
 }
 
-static W32 totalRam (GC_state s) {
+Word32 totalRam (GC_state s) {
 	MEMORYSTATUS memStat;
+
 	memStat.dwLength = sizeof(memStat);
-
 	GlobalMemoryStatus(&memStat);
-
 	return memStat.dwTotalPhys;
 }
 
@@ -65,58 +63,45 @@ static W32 totalRam (GC_state s) {
 /*                   MLton.Rlimit                    */
 /* ------------------------------------------------- */
 
-static int rlimit_init = 0;
 static struct rlimit rlimits[RLIM_NLIMITS];
 
-void init_rlimits() {
-    int lim = 0;
-    
-    for(lim = 0; lim < RLIM_NLIMITS; ++lim )
-    {
-	rlimits[lim].rlim_cur = 0;
-	rlimits[lim].rlim_max = UINT_MAX;
-    }
-    ++rlimit_init;
+static void initRlimits () {
+	static int done = FALSE;
+ 	int lim;
+
+	if (done)
+		return;
+	done = TRUE;
+	for (lim = 0; lim < RLIM_NLIMITS; ++lim ) {
+		rlimits[lim].rlim_cur = 0;
+		rlimits[lim].rlim_max = UINT_MAX;
+	}
 }
 
 int getrlimit (int resource, struct rlimit *rlp) {
-    int rc = 0;
-
-    if( ! rlimit_init ) {
-	init_rlimits();
-    }
-
-    if( (resource < 0) || (resource >= RLIM_NLIMITS) )
-    {
-	rc = EINVAL;
-    }
-
-    *rlp = rlimits[resource];
-
-    return rc;
+	initRlimits ();
+	if (resource < 0 or resource >= RLIM_NLIMITS) {
+		errno = EINVAL;
+		return -1;
+	}
+	*rlp = rlimits[resource];
+	return 0;
 }
 
-int setrlimit(int resource, const struct rlimit *rlp) {
-    int rc = 0;
-
-    if( ! rlimit_init ) {
-	init_rlimits();
-    }
-
-    if( (resource < 0) || (resource >= RLIM_NLIMITS) )
-    {
-	rc = EINVAL;
-    }
-
-    if( rlp->rlim_cur < rlimits[resource].rlim_max ) {
-	rlimits[resource].rlim_cur = rlp->rlim_cur;
-    } else {
-	rc = EINVAL;
-    }
-
-    rlimits[resource].rlim_max = rlp->rlim_max;
-
-    return rc;
+int setrlimit (int resource, const struct rlimit *rlp) {
+	initRlimits ();
+	if (resource < 0 or resource >= RLIM_NLIMITS) {
+		errno = EINVAL;
+		return -1;
+	}
+	if (rlp->rlim_cur < rlimits[resource].rlim_max)
+		rlimits[resource].rlim_cur = rlp->rlim_cur;
+	else {
+		errno = EPERM;
+		return -1;
+	}
+	rlimits[resource].rlim_max = rlp->rlim_max;
+	return 0;
 }
 
 /* ------------------------------------------------- */
@@ -142,7 +127,7 @@ static void GetWin32FileName (int fd, char* fname) {
 	return;	
 }
 
-int fchmod (int fildes, mode_t mode) {
+int fchmod (int filedes, mode_t mode) {
 	char fname[MAX_PATH + 1];
 
 	GetWin32FileName (filedes, fname);
@@ -152,6 +137,10 @@ int fchmod (int fildes, mode_t mode) {
 int lstat (const char *file_name, struct stat *buf) {
 	/* Win32 doesn't really have links. */
 	return stat (file_name, buf);
+}
+
+int mkdir2 (const char *pathname, mode_t mode) {
+	return mkdir (pathname);
 }
 
 /* ------------------------------------------------- */
@@ -206,41 +195,35 @@ int alarm (int secs) {
 }
 
 pid_t waitpid (pid_t pid, int *status, int options) {
-	return _cwait (s, p, i);
+	return _cwait (status, pid, options);
 }
 
 /* ------------------------------------------------- */
 /*                      Signals                      */
 /* ------------------------------------------------- */
 
-int sigismember (sigset_t* set, const int signum) {
-	if (signum < 0 || signum >= NSIG) {
-	    printf("SIG_ERR: sigismember %d out of range", signum);
-	    return -1;
+int sigismember (const sigset_t *set, const int signum) {
+	if (signum < 0 or signum >= NSIG) {
+		errno = EINVAL;
+		return -1;
 	}
-
-	if (*set & SIGTOMASK(signum))
-	    return 1;
-
-	return 0;
+	return (*set & SIGTOMASK(signum)) ? 1 : 0;
 }
 
 int sigaddset (sigset_t *set, const int signum) {
-	if (signum < 0 || signum >= NSIG) {
-	    printf("SIG_ERR: sigaddset signal %d out of range", signum);
-	    return -1;
+	if (signum < 0 or signum >= NSIG) {
+		errno = EINVAL;
+		return -1;
 	}
-
 	*set |= SIGTOMASK (signum);
 	return 0;
 }
 
 int sigdelset (sigset_t *set, const int signum) {
-	if (signum < 0 || signum >= NSIG) {
-	    printf("SIG_ERR: sigdelset signal %d out of range", signum);
-	    return -1;
+	if (signum < 0 or signum >= NSIG) {
+		errno = EINVAL;
+		return -1;
 	}
-
 	*set &= ~SIGTOMASK (signum);
 	return 0;
 }
@@ -260,13 +243,14 @@ int sigaction (int signum,
 			struct sigaction *oldact) {
 
 	struct sigaction oa;
-	if (signum < 0 || signum >= NSIG) {
-		printf ("SIG_ERR: sigaction signal %d out of range", signum);
+
+	if (signum < 0 or signum >= NSIG) {
+		errno = EINVAL;
 		return -1;
 	}
 	if (newact) {
 		if (signum == SIGKILL || signum == SIGSTOP) {
-			//set_errno (EINVAL);
+			errno = EINVAL;
 			return -1;
 		}
 		oa.sa_handler = signal (signum, newact->sa_handler);
@@ -283,7 +267,6 @@ int sigprocmask (int how, const sigset_t *set, sigset_t *oldset) {
 	if (oldset) {
 		//*oldset = opmask;
 	}
-
 	if (set) {
 		sigset_t newmask = opmask;
 
@@ -291,27 +274,22 @@ int sigprocmask (int how, const sigset_t *set, sigset_t *oldset) {
 			case SIG_BLOCK:
 				/* add set to current mask */
 				newmask |= *set;
-				break;
-
+			break;
 			case SIG_UNBLOCK:
 				/* remove set from current mask */
 				newmask &= ~*set;
-				break;
-
+			break;
 			case SIG_SETMASK:
 				/* just set it */
 				newmask = *set;
-				break;
-
+			break;
 			default:
 				return -1;
 		}
-
 		//(void) set_signal_mask (newmask, opmask);
 	}
 	return 0;
 }
-
 
 /* ------------------------------------------------- */
 /*                Posix.SysDB.Passwd                 */
@@ -323,18 +301,15 @@ static LPUSER_INFO_3 usrData = NULL;
 static struct passwd passwd;
 
 struct passwd *getpwnam (const char *name) {
-	int res;
-
 	unless (NERR_Success == 
-			NetUserGetInfo (NULL, (LPCWSTR)p, INFO_LEVEL, 
+			NetUserGetInfo (NULL, (LPCWSTR)name, INFO_LEVEL, 
 					(LPBYTE*)&usrData))
 		return NULL;
-	passwd->pw_dir = usrData->usri3_home_dir;
-	passwd->pw_gid = usrData->usri3_primary_group_id;
-	passwd->pw_name = usrData->usri3_name;
-	passwd->pw_shell = usrData->usri3_script_path;
-	passwd->pw_uid = usrData->usri3_user_id;
-
+	passwd.pw_dir = (char*)usrData->usri3_home_dir;
+	passwd.pw_gid = usrData->usri3_primary_group_id;
+	passwd.pw_name = (char*)usrData->usri3_name;
+	passwd.pw_shell = (char*)usrData->usri3_script_path;
+	passwd.pw_uid = usrData->usri3_user_id;
 	return &passwd;
 }
 

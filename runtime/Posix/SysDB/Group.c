@@ -15,9 +15,9 @@ CstringArray Posix_SysDB_Group_mem() {
 }
 
 Bool Posix_SysDB_getgrgid(Gid g) {
- 	return NULL != (group = getgrgid((gid_t)g));
+ 	return NULL != (group = getgrgid ((gid_t)g));
 }
 
 Bool Posix_SysDB_getgrnam(NullString s) {
- 	return NULL != (group = getgrnam((char*)s));
+ 	return NULL != (group = getgrnam ((char*)s));
 }
