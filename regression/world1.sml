@@ -29,4 +29,5 @@ val _ =
 
 val _ = run (fn () => load w)
    
-(*val _ = OS.FileSys.remove w*)
+val _ = OS.FileSys.remove w
+
