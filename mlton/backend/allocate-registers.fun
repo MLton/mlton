@@ -33,12 +33,6 @@ in
    structure Statement = Statement
 end
 
-val here =
-   Trace.trace ("Allocate.here",
-		fn s => Layout.str s,
-		Unit.layout)
-               (fn s => ())
-
 val traceAllocateBlock =
    Trace.trace ("Allocate.block",
 		fn (Tree.T (Sblock.T {label, ...}, _),
@@ -466,10 +460,8 @@ fun allocate {program = program as Program.T {globals, ...},
 			* across a chunk boundary.
 			*)
 		     List.foreach (Mtype.all, fn t => nextReg t := 0)
-	       val _ = here "Before args"
 	       val _ = Vector.foreach (args, fn (x, _) =>
 				       allocateVar (x, c', false))
-	       val _ = here "After args"
 	       (* This must occur after allocating slots for the
 		* args, since it must have the correct stack frame
 		* size.
@@ -483,13 +475,9 @@ fun allocate {program = program as Program.T {globals, ...},
 		      | LimitCheck.Maybe => doit MlimitCheck.Maybe
 		      | LimitCheck.Yes => doit MlimitCheck.Yes
 		  end
-	       val _ = here "Before statements"
 	       val _ = Vector.foreach (statements, fn s =>
 				       allocateStatement (s, c'))
-	       val _ = here "After statements"
-	       val _ = here "Before children"
 	       val _ = Vector.foreach (children, fn n => loop (n, c'))
-	       val _ = here "After children"
 	       val _ = List.foreach (Mtype.all, fn t => nextReg t := saveReg t)
 	       val _ = nextOffset := saveOffset
 	       val isCont = isCont label
