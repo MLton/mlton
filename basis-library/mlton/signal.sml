@@ -179,8 +179,10 @@ fun setHandler (s, h) =
     | Ignore => ignore s
 
 fun suspend m =
-   (Mask.create m
+   (raise Fail "MLton.Signal.suspend is currently unimplemented."
+    ; Mask.create m
     ; Prim.suspend ()
-    ; Primitive.GC.collect (0w0, false) (* force switch to signal handler *))
+    ; ())
+(*  ;  Primitive.GC.switchToSignalHandler () *)
    
 end

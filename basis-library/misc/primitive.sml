@@ -189,7 +189,7 @@ structure Primitive =
 
       structure GC =
 	 struct
-	    val collect = _prim "GC_collect": word * bool -> unit;
+	    val collect = _prim "GC_collect": unit -> unit;
 	    val setMessages = _ffi "GC_setMessages": bool -> unit;
 	    val setSummary = _ffi "GC_setSummary": bool -> unit;
 	 end
@@ -250,36 +250,18 @@ structure Primitive =
 	 struct
 	    type int = intInf
 
-(*	    val + = _prim "IntInf_add": int * int * word array -> int; *)
 	    val + = _prim "IntInf_add": int * int * word -> int;
-	    val areSmall = _prim "IntInf_areSmall": int * int -> bool;
 	    val compare = _prim "IntInf_compare": int * int -> Int.int;
-(*
-	    val fromArray = _prim "IntInf_fromArray": word array -> int;
-	    val fromString = _prim "IntInf_fromString": string -> int;
-	    val fromStringIsPossible =
-	       _prim "IntInf_fromStringIsPossible": string -> bool;
-*)
 	    val fromVector = _prim "IntInf_fromVector": word vector -> int;
 	    val fromWord = _prim "IntInf_fromWord": word -> int;
-(*	    val gcd = _prim "IntInf_gcd": int * int * word array -> int; *)
 	    val gcd = _prim "IntInf_gcd": int * int * word -> int;
-	    val isSmall = _prim "IntInf_isSmall": int -> bool;
-(*	    val * = _prim "IntInf_mul": int * int * word array -> int; *)
 	    val * = _prim "IntInf_mul": int * int * word -> int;
-(*	    val ~ = _prim "IntInf_neg": int * word array -> int; *)
 	    val ~ = _prim "IntInf_neg": int * word -> int;
-(*	    val quot = _prim "IntInf_quot": int * int * word array -> int; *)
 	    val quot = _prim "IntInf_quot": int * int * word -> int;
-(*	    val rem = _prim "IntInf_rem": int * int * word array -> int; *)
 	    val rem = _prim "IntInf_rem": int * int * word -> int;
 	    val smallMul =
 	       _ffi "IntInf_smallMul": word * word * word ref -> word;
-(*	    val - = _prim "IntInf_sub": int * int * word array -> int; *)
 	    val - = _prim "IntInf_sub": int * int * word -> int; 
-(*
-	    val toString
-	       = _prim "IntInf_toString": int * Int.int * char array -> string; *)
  	    val toString
 	       = _prim "IntInf_toString": int * Int.int * word -> string;
 	    val toVector = _prim "IntInf_toVector": int -> word vector;

@@ -49,6 +49,16 @@ structure IntInf: INT_INF_EXTRA =
       fun bigSize (arg: bigInt): smallInt =
 	 Vector.length (Prim.toVector arg) -? 1
 
+      (* Check if an IntInf.int is small (i.e., a fixnum). *)
+      fun isSmall (i: bigInt): bool =
+	 0w0 <> Word.andb (0w1, Prim.toWord i)
+
+      (* Check if two IntInf.int's are both small (i.e., fixnums).
+       * This is a gross hack, but uses only one test.
+       *)
+      fun areSmall (i: bigInt, i': bigInt) =
+	 0w0 <> Word.andb (Prim.toWord i, Word.andb (Prim.toWord i', 0w1))
+	 
       (*
        * Return the number of `limbs' in a bigInt.
        * If arg is big, then |arg| is in [ 2^ (32 (x-1)), 2^ (32 x) )
@@ -56,20 +66,17 @@ structure IntInf: INT_INF_EXTRA =
        * [ - 2^30, 2^30 ).
        *)
       fun size (arg: bigInt): smallInt =
-	 if Prim.isSmall arg
+	 if isSmall arg
 	    then 1
 	 else bigSize arg
 
       (*
        * Reserve heap space for a bignum bigInt with room for size `limbs'.
        *)
-      fun reserve (size: smallInt) = 
-	 Word.fromInt
-	 (4 (* bytes per word *) *?
-	  (1 (* header word *) +?
-	   1 (* size word *) +?
-	   1 (* sign word *) +?
-	   size))
+      fun reserve (size: smallInt): word = 
+	 Word.* (0w4 (* bytes per word *),
+		 Word.+ (Word.fromInt size,
+			 0w4 (* counter, size, header, sign words *)))
 
       (*
        * Given a fixnum bigInt, return the Word.word which it
@@ -146,7 +153,7 @@ structure IntInf: INT_INF_EXTRA =
 	 end
 
       fun rep x =
-	 if Prim.isSmall x then
+	 if isSmall x then
 	    Small (stripTag x)
 	 else
 	    Big (Prim.toVector x)
@@ -155,7 +162,7 @@ structure IntInf: INT_INF_EXTRA =
        * is too big.
        *)
       fun bigToInt (arg: bigInt): smallInt =
-	 if Prim.isSmall arg
+	 if isSmall arg
 	    then Word.toIntX (stripTag arg)
 	 else if bigSize arg <> 1
 		 then raise Overflow
@@ -174,7 +181,7 @@ structure IntInf: INT_INF_EXTRA =
        * bigInt negation.
        *)
       fun bigNegate (arg: bigInt): bigInt =
-	 if Prim.isSmall arg
+	 if isSmall arg
 	    then let val argw = Prim.toWord arg
 		 in if argw = badw
 		       then negBad
@@ -191,7 +198,7 @@ structure IntInf: INT_INF_EXTRA =
 	 end
 	    val carry: Word.word ref = ref 0w0
       in fun bigMul (lhs: bigInt, rhs: bigInt): bigInt =
-	 if Prim.areSmall (lhs, rhs)
+	 if areSmall (lhs, rhs)
 	    then let val lhsv = stripTag lhs
 		     val rhs0 = zeroTag rhs
 		     val ans0 = Prim.smallMul (lhsv, rhs0, carry)
@@ -216,7 +223,7 @@ structure IntInf: INT_INF_EXTRA =
        * word for the isNeg flag).
        *)
       fun bigQuot (num: bigInt, den: bigInt): bigInt =
-	 if Prim.areSmall (num, den)
+	 if areSmall (num, den)
 	    then let val numv = stripTag num
 		     val denv = stripTag den
 		 in if numv = badv andalso denv = Word.fromInt ~1
@@ -253,7 +260,7 @@ structure IntInf: INT_INF_EXTRA =
        * word for the isNeg flag).
        *)
       fun bigRem (num: bigInt, den: bigInt): bigInt =
-	 if Prim.areSmall (num, den)
+	 if areSmall (num, den)
 	    then let val numv = stripTag num
 		     val numi = Word.toIntX numv
 		     val denv = stripTag den
@@ -281,7 +288,7 @@ structure IntInf: INT_INF_EXTRA =
 	 in Prim.+ (lhs, rhs, reserve tsize)
 	 end
       in fun bigPlus (lhs: bigInt, rhs: bigInt): bigInt =
-	 if Prim.areSmall (lhs, rhs)
+	 if areSmall (lhs, rhs)
 	    then let val ansv = Word.+ (stripTag lhs, stripTag rhs)
 		     val ans = addTag ansv
 		 in if sameSign (ans, ansv)
@@ -299,7 +306,7 @@ structure IntInf: INT_INF_EXTRA =
 	 in Prim.- (lhs, rhs, reserve tsize)
 	 end
       in fun bigMinus (lhs: bigInt, rhs: bigInt): bigInt =
-	 if Prim.areSmall (lhs, rhs)
+	 if areSmall (lhs, rhs)
 	    then let val ansv = Word.- (stripTag lhs, stripTag rhs)
 		     val ans = addTag ansv
 		 in if sameSign (ans, ansv)
@@ -313,7 +320,7 @@ structure IntInf: INT_INF_EXTRA =
        * bigInt compare.
        *)
       fun bigCompare (lhs: bigInt, rhs: bigInt): order =
-	 if Prim.areSmall (lhs, rhs)
+	 if areSmall (lhs, rhs)
 	    then Int.compare (Word.toIntX (Prim.toWord lhs),
 			      Word.toIntX (Prim.toWord rhs))
 	 else Int.compare (Prim.compare (lhs, rhs), 0)
@@ -325,7 +332,7 @@ structure IntInf: INT_INF_EXTRA =
       local fun makeTest (smallTest: smallInt * smallInt -> bool)
 	 (lhs: bigInt, rhs: bigInt)
 	 : bool =
-	 if Prim.areSmall (lhs, rhs)
+	 if areSmall (lhs, rhs)
 	    then smallTest (Word.toIntX (Prim.toWord lhs),
 			    Word.toIntX (Prim.toWord rhs))
 	 else smallTest (Prim.compare (lhs, rhs), 0)
@@ -339,7 +346,7 @@ structure IntInf: INT_INF_EXTRA =
        * bigInt abs.
        *)
       fun bigAbs (arg: bigInt): bigInt =
-	 if Prim.isSmall arg
+	 if isSmall arg
 	    then let val argw = Prim.toWord arg
 		 in if argw = badw
 		       then negBad
@@ -371,7 +378,7 @@ structure IntInf: INT_INF_EXTRA =
        * bigInt sign.
        *)
       fun bigSign (arg: bigInt): smallInt =
-	 if Prim.isSmall arg
+	 if isSmall arg
 	    then Int.sign (Word.toIntX (Prim.toWord arg))
 	 else if bigIsNeg arg
 		 then ~1
@@ -432,7 +439,7 @@ structure IntInf: INT_INF_EXTRA =
 		  
       in
 	 fun bigGcd (lhs: bigInt, rhs: bigInt): bigInt =
-	    if Prim.areSmall (lhs, rhs)
+	    if areSmall (lhs, rhs)
 	       then
 		  Prim.fromWord
 		  (addTag
@@ -451,25 +458,24 @@ structure IntInf: INT_INF_EXTRA =
 	 open StringCvt
 
 	 fun cvt {base: smallInt,
-		  dpc: smallInt,
+		  dpc: word,
 		  smallCvt: smallInt -> string}
 	    (arg: bigInt)
 	    : string =
-	    if Prim.isSmall arg
+	    if isSmall arg
 	       then smallCvt (Word.toIntX (stripTag arg))
 	    else Prim.toString (arg, base,
-				Word.fromInt
-				(4 (* bytes per word *) *?
-				 (1 (* header word *) +?
-				  1 (* size word *)) +?
-				 (2 (* sign character *) +?
-				  dpc *? (bigSize arg))))
-	 val binCvt = cvt {base = 2, dpc = 32, smallCvt = Int.fmt BIN}
-	 val octCvt = cvt {base = 8, dpc = 11, smallCvt = Int.fmt OCT}
-	 val hexCvt = cvt {base = 16, dpc = 8, smallCvt = Int.fmt HEX}
+				Word.+
+				(reserve 0,
+				 Word.+ (0w2, (* sign character *)
+					 Word.* (dpc,
+						 Word.fromInt (bigSize arg)))))
+	 val binCvt = cvt {base = 2, dpc = 0w32, smallCvt = Int.fmt BIN}
+	 val octCvt = cvt {base = 8, dpc = 0w11, smallCvt = Int.fmt OCT}
+	 val hexCvt = cvt {base = 16, dpc = 0w8, smallCvt = Int.fmt HEX}
       in
 	 val bigToString = cvt {base = 10,
-				dpc = 10,
+				dpc = 0w10,
 				smallCvt = Int.toString}
 	 fun bigFmt radix =
 	    case radix of
