@@ -244,7 +244,7 @@ structure EbRhs = Eb.Rhs
 
 structure PrimKind =
    struct
-      datatype t = BuildConst | Const | FFI | Prim
+      datatype t = BuildConst | Const | Export | FFI | Prim
    end
 
 datatype expNode =

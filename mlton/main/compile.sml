@@ -28,6 +28,7 @@ local
    open Atoms
 in
    structure Const = Const
+   structure Ffi = Ffi
    structure IntX = IntX
 end
 structure CoreML = CoreML (open Atoms
@@ -67,7 +68,8 @@ structure ClosureConvert = ClosureConvert (structure Ssa = Ssa
 structure Backend = Backend (structure Ssa = Ssa
 			     structure Machine = Machine
 			     fun funcToLabel f = f)
-structure CCodegen = CCodegen (structure Machine = Machine)
+structure CCodegen = CCodegen (structure Ffi = Ffi
+			       structure Machine = Machine)
 structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
 				   structure Machine = Machine)
 
@@ -371,6 +373,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	     ("MLton_native", bool (!Native.native)),
 	     ("MLton_profile_isOn", bool (!profile <> ProfileNone)),
 	     ("MLton_safe", bool (!safe)),
+	     ("MLton_FFI_numExports", int (Ffi.numExports ())),
 	     ("TextIO_bufSize", int (!textIOBufSize))]
 	 end
       fun lookupBuildConstant (c: string) =
@@ -471,7 +474,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
       machine
    end
 
-fun compile {input: File.t list, outputC, outputS, docc}: unit =
+fun compile {input: File.t list, outputC, outputH, outputS, docc}: unit =
    let
       val machine =
 	 Control.trace (Control.Top, "pre codegen")
@@ -482,11 +485,13 @@ fun compile {input: File.t list, outputC, outputS, docc}: unit =
 	       Control.trace (Control.Top, "x86 code gen")
 	       x86Codegen.output {program = machine,
 				  outputC = outputC,
+				  outputH = outputH,
 				  outputS = outputS}
 	 else
 	    Control.trace (Control.Top, "C code gen")
 	    CCodegen.output {program = machine,
-			     outputC = outputC}
+			     outputC = outputC,
+			     outputH = outputH}
       val _ = Control.message (Control.Detail, PropertyList.stats)
       val _ = Control.message (Control.Detail, HashSet.stats)
    in ()

@@ -20,6 +20,7 @@ signature ATOMS' =
       structure Con: CON
       structure Cons: SET
       structure Const: CONST
+      structure Ffi: FFI
       structure IntX: INT_X
       structure Prim: PRIM 
       structure ProfileExp: PROFILE_EXP
@@ -53,9 +54,10 @@ signature ATOMS' =
       sharing Ast.Var = Var.AstId
       sharing Con = Prim.Con
       sharing Const = Prim.Const
-      sharing IntSize = IntX.IntSize = Prim.IntSize = Tycon.IntSize
+      sharing IntSize = Ffi.IntSize = IntX.IntSize = Prim.IntSize = Tycon.IntSize
       sharing IntX = Const.IntX
-      sharing RealSize = Prim.RealSize = RealX.RealSize = Tycon.RealSize
+      sharing RealSize = Ffi.RealSize = Prim.RealSize = RealX.RealSize
+	 = Tycon.RealSize
       sharing RealX = Const.RealX
       sharing Record = Ast.Record
       sharing Scheme = Prim.Scheme
@@ -63,7 +65,8 @@ signature ATOMS' =
       sharing SourceInfo = ProfileExp.SourceInfo
       sharing Tycon = Scheme.Tycon
       sharing Tyvar = Ast.Tyvar
-      sharing WordSize = Prim.WordSize = Tycon.WordSize = WordX.WordSize
+      sharing WordSize = Ffi.WordSize = Prim.WordSize = Tycon.WordSize
+	 = WordX.WordSize
       sharing WordX = Const.WordX
       sharing type Con.t = Cons.Element.t
       sharing type Tycon.t = Tycons.Element.t
@@ -80,17 +83,18 @@ signature ATOMS =
       include ATOMS'
 
       sharing Ast = Atoms.Ast
-      sharing Const = Atoms.Const
-      sharing Var = Atoms.Var
       sharing Con = Atoms.Con
+      sharing Cons = Atoms.Cons
+      sharing Const = Atoms.Const
+      sharing Ffi = Atoms.Ffi
       sharing Prim = Atoms.Prim
       sharing ProfileExp = Atoms.ProfileExp
-      sharing Tycon = Atoms.Tycon
-      sharing Tyvar = Atoms.Tyvar
       sharing Record = Atoms.Record
       sharing SourceInfo = Atoms.SourceInfo
-      sharing Vars = Atoms.Vars
-      sharing Cons = Atoms.Cons
+      sharing Tycon = Atoms.Tycon
       sharing Tycons = Atoms.Tycons
+      sharing Tyvar = Atoms.Tyvar
       sharing Tyvars = Atoms.Tyvars
+      sharing Var = Atoms.Var
+      sharing Vars = Atoms.Vars
    end

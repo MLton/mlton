@@ -145,6 +145,7 @@ atoms/cons.sig
 atoms/int-x.sig
 atoms/const.sig
 atoms/prim.sig
+atoms/ffi.sig
 atoms/atoms.sig
 atoms/hash-type.sig
 xml/xml-type.sig
@@ -228,6 +229,7 @@ atoms/profile-exp.fun
 atoms/prim.fun
 atoms/int-x.fun
 atoms/generic-scheme.fun
+atoms/ffi.fun
 atoms/const.fun
 atoms/cons.fun
 atoms/atoms.fun

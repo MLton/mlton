@@ -14,6 +14,7 @@ signature ID_NO_AST
 signature INT_X
 signature CON
 signature CONST
+signature FFI
 signature GENERIC_SCHEME
 signature HASH_ID
 signature HASH_TYPE
@@ -50,6 +51,8 @@ cons.fun
 cons.sig
 const.fun
 const.sig
+ffi.fun
+ffi.sig
 generic-scheme.fun
 generic-scheme.sig
 hash-type.fun

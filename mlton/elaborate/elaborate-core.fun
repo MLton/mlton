@@ -42,15 +42,16 @@ in
    structure Con = Con
    structure Cdec = Dec
    structure Cexp = Exp
+   structure Ffi = Ffi
    structure Cmatch = Match
    structure Cpat = Pat
    structure Cprim = Prim
-   structure Ctype = Type
    structure Cvar = Var
    structure Scheme = Scheme
    structure SourceInfo = SourceInfo
    structure Tycon = Tycon
    structure Type = Type
+   structure Ctype = Type
    structure Tyvar = Tyvar
 end
 
@@ -323,6 +324,164 @@ structure Nest =
 val info = Trace.info "elaborateDec"
 val elabExpInfo = Trace.info "elaborateExp"
 
+structure Ffi =
+   struct
+      open Ffi
+	 
+      structure Type =
+	 struct
+	    open Type
+	       
+	    val bogus = Bool
+	       
+	    val nullary =
+	       [(Bool, Ctype.bool),
+		(Char, Ctype.con (Tycon.char, Vector.new0 ()))]
+	       @ List.map (IntSize.all, fn s => (Int s, Ctype.int s))
+	       @ List.map (RealSize.all, fn s => (Real s, Ctype.real s))
+	       @ List.map (WordSize.all, fn s => (Word s, Ctype.word s))
+
+	    fun peekNullary t =
+	       List.peek (nullary, fn (_, t') => Ctype.equals (t, t'))
+
+	    val unary = [Tycon.array, Tycon.reff, Tycon.vector]
+
+	    fun fromCtype (t: Ctype.t): t option =
+	       case peekNullary t of
+		  NONE =>
+		     (case Ctype.deconOpt t of
+			 NONE => NONE
+		       | SOME (tycon, ts) =>
+			    if List.exists (unary, fn tycon' =>
+					    Tycon.equals (tycon, tycon'))
+			       andalso 1 = Vector.length ts
+			       andalso isSome (peekNullary
+					       (Vector.sub (ts, 0)))
+			       then SOME Pointer
+			    else NONE)
+		| SOME (t, _) => SOME t
+	 end
+	 
+      fun parseCtype (ty: Ctype.t): (Type.t vector * Type.t) option =
+	 case Ctype.dearrowOpt ty of
+	    NONE => NONE
+	  | SOME (t1, t2) =>
+	       let
+		  fun finish (ts: Type.t vector) =
+		     case Type.fromCtype t2 of
+			NONE => NONE
+		      | SOME t => SOME (ts, t)
+	       in
+		  case Ctype.detupleOpt t1 of 
+		     NONE =>
+			(case Type.fromCtype t1 of
+			    NONE => NONE
+			  | SOME u => finish (Vector.new1 u))
+		   | SOME ts =>
+			let
+			   val us = Vector.map (ts, Type.fromCtype)
+			in
+			   if Vector.forall (us, isSome)
+			      then finish (Vector.map (us, valOf))
+			   else NONE
+			end
+	       end
+   end
+
+fun export (name: string, ty: Type.t, region: Region.t): Aexp.t =
+   let
+      val (args, exportId, res) =
+	 case Ffi.parseCtype ty of
+	    NONE =>
+	       (Control.error
+		(region,
+		 let
+		    open Layout
+		 in
+		    seq [str "invalid type for exported function: ",
+			 Type.layout ty]
+		 end,
+		 Layout.empty)
+		; (Vector.new0 (), 0, Ffi.Type.bogus))
+	  | SOME (us, t) =>
+	       let
+		  val id = Ffi.addExport {args = us,
+					  name = name,
+					  res = t}
+	       in
+		  (us, id, t)
+	       end
+      open Ast
+      val filePos = "<export>"
+      fun strid name = Strid.fromString (name, region)
+      fun id name =
+	 Aexp.longvid
+	 (Longvid.long ([strid "MLton", strid "FFI"], 
+			Vid.fromString (name, region)))
+      fun int (i: int): Aexp.t =
+	 Aexp.const (Aconst.makeRegion (Aconst.Int (IntInf.fromInt i), region))
+      val f = Var.fromString ("f", region)
+   in
+      Exp.fnn
+      (Match.T
+       {filePos = filePos,
+	rules =
+	Vector.new1
+	(Pat.var f,
+	 Exp.app
+	 (id "register",
+	  Exp.tuple
+	  (Vector.new2
+	   (int exportId,
+	    Exp.fnn
+	    (Match.T
+	     {filePos = filePos,
+	      rules =
+	      Vector.new1
+	      (Pat.tuple (Vector.new0 ()),
+	       let
+		  val map = Ffi.Type.memo (fn _ => Counter.new 0)
+		  val varCounter = Counter.new 0
+		  val (args, decs) =
+		     Vector.unzip
+		     (Vector.map
+		      (args, fn u =>
+		       let
+			  val x =
+			     Var.fromString
+			     (concat ["x",
+				      Int.toString (Counter.next varCounter)],
+			      region)
+			  val dec =
+			     Dec.vall (Vector.new0 (),
+				       x,
+				       Exp.app
+				       (id (concat
+					    ["get", Ffi.Type.toString u]),
+					int (Counter.next (map u))))
+		       in
+			  (x, dec)
+		       end))
+		  val resVar = Var.fromString ("res", region)
+		  fun newVar () = Var.fromString ("none", region)
+	       in
+		  Exp.lett
+		  (Vector.concat
+		   [decs,
+		    Vector.map 
+		    (Vector.new4
+		     ((newVar (), Exp.app (id "atomicEnd", Exp.unit)),
+		      (resVar, Exp.app (Exp.var f,
+					Exp.tuple (Vector.map (args, Exp.var)))),
+		      (newVar (), Exp.app (id "atomicBegin", Exp.unit)),
+		      (newVar (),
+		       Exp.app (id (concat ["set", Ffi.Type.toString res]),
+				Exp.var resVar))),
+		     fn (x, e) => Dec.vall (Vector.new0 (), x, e))],
+		   Exp.tuple (Vector.new0 ()))
+	       end)})))))})
+   end
+   
 fun elaborateDec (d, nest, E) =
    let
       fun elabType t = elaborateType (t, Lookup.fromEnv E)
@@ -779,14 +938,22 @@ fun elaborateDec (d, nest, E) =
 		   let
 		      val ty = elabType ty
 		      datatype z = datatype Ast.PrimKind.t
+		      val simple = doit o Cexp.Prim
 		   in
-		      doit
-		      (Cexp.Prim
-		       (case kind of
-			   BuildConst => Cprim.buildConstant (name, ty)
-			 | Const => Cprim.constant (name, ty)
-			 | FFI => Cprim.ffi (name, ty)
-			 | Prim => Cprim.new (name, ty)))
+		      case kind of
+			 BuildConst => simple (Cprim.buildConstant (name, ty))
+		       | Const => simple (Cprim.constant (name, ty))
+		       | Export =>
+			    let
+			       val ty = Scheme.ty ty
+			    in
+			       doit
+			       (Cexp.Constraint
+				(elabExp' (export (name, ty, region), nest),
+				 Type.arrow (ty, Type.unit)))
+			    end
+		       | FFI => simple (Cprim.ffi (name, ty))
+		       | Prim => simple (Cprim.new (name, ty))
 		   end
 	      | Aexp.Raise {exn, filePos} =>
 		   doit (Cexp.Raise {exn = elabExp exn, filePos = filePos})

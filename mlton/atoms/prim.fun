@@ -69,6 +69,8 @@ structure Name =
        | Exn_setInitExtra (* implement exceptions *)
        | Exn_setTopLevelHandler (* implement exceptions *)
        | FFI of string (* ssa to rssa *)
+       | FFI_getPointer
+       | FFI_setPointer
        | GC_collect (* ssa to rssa *)
        | GC_pack (* ssa to rssa *)
        | GC_unpack (* ssa to rssa *)
@@ -354,6 +356,8 @@ structure Name =
 	  (Exn_setInitExtra, SideEffect, "Exn_setInitExtra"),
 	  (Exn_setTopLevelHandler, SideEffect, "Exn_setTopLevelHandler"),
 	  (Exn_setTopLevelHandler, SideEffect, "Exn_setTopLevelHandler"),
+	  (FFI_getPointer, DependsOnState, "FFI_getPointer"),
+	  (FFI_setPointer, SideEffect, "FFI_setPointer"),
 	  (GC_collect, SideEffect, "GC_collect"),
 	  (GC_pack, SideEffect, "GC_pack"),
 	  (GC_unpack, SideEffect, "GC_unpack"),
@@ -734,6 +738,8 @@ fun 'a extractTargs {prim, args, result,
        | Exn_extra => one result
        | Exn_setExtendExtra => one (#2 (dearrow (arg 0)))
        | Exn_setInitExtra => one (arg 0)
+       | FFI_getPointer => one result
+       | FFI_setPointer => one (arg 0)
        | MLton_bogus => one result
        | MLton_deserialize => one result
        | MLton_eq => one (arg 0)

@@ -1,14 +1,16 @@
 mlton = mlton
 
 .PHONY: all
-all: main
-	main
+all: import export
 
-main: ffi.o main.sml ffi.h
-	$(mlton) main.sml ffi.o
+export: export.sml ffi-export.c
+	$(mlton) export.sml ffi-export.c
 
-ffi.o: ffi.c ffi.h
-	$(mlton) -stop o ffi.c
+import: import.sml ffi-import.o
+	$(mlton) import.sml ffi-import.o
+
+ffi-import.o:
+	$(mlton) -stop o ffi-import.c
 
 clean:
 	../../../bin/clean

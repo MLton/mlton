@@ -2,13 +2,13 @@
 
 {\mlton}'s FFI is {\em not} part of Standard ML and it is quite
 possible that this interface will change.  That having been said, with
-{\mlton} it is easy to access C global variables and make calls to C
-functions from within SML, at least when dealing with
-simple types like {\tt char}, {\tt double}, {\tt int}, and {\tt word}.
-It is not possible to call C macros or to call SML from C.
+{\mlton} it is easy to access C global variables and to make calls
+from SML to C and from C to SML, at least when dealing with simple
+types like {\tt char}, {\tt int}, {\tt real}, and {\tt word}.
 
-Suppose you would like to call a C function with the following prototype
-from SML:
+\subsection{Calling from SML to C}
+Suppose you would like SML to call a C function with the following
+prototype:
 \begin{verbatim}
 int foo (double d, unsigned char c);
 \end{verbatim}
@@ -23,108 +23,115 @@ variables {\tt d} of type {\tt double}, {\tt c} of type {\tt unsigned
 char}, and {\tt i} of type {\tt int}.  Then, the C statement
 \mbox{\tt i = foo(d, c)} is executed and {\tt i} is returned.
 
-The general form of an \verb+_ffi+ declaration is:
+The general form of an \verb+_ffi+ expresion is:
 \begin{center}
 {\tt \_ffi "}C global variable or function name{\tt ": }ty{\tt ;}
 \end{center}
-The semicolon is not optional.  Here is a grammar for the types that
-are currently allowed.
-\begin{latexonly}
-\begin{center}
-\begin{tabular}{l}
-\production{\mbox{ty}}
-	   {u $\alt$ t\ \mbox{\tt *}\ \ldots\ \mbox{\tt *}\ t\ \mbox{\tt ->}\ u}
-\production{u}
-	   {\mbox{\tt bool} $\alt$ \mbox{\tt char} $\alt$ \mbox{\tt int} $\alt$ \mbox{\tt real} $\alt$ \mbox{\tt string} $\alt$ \mbox{\tt unit} $\alt$ \mbox{\tt word} $\alt$ \mbox{\tt word8}}
-\production{t}
-	   {u $\alt$ u\ \mbox{\tt array} $\alt$ u\ \mbox{\tt ref}
-             $\alt$ u\ \mbox{\tt vector}}
-\quad $\alt$ \mbox{\tt CharArray.array} $\alt$ \mbox{\tt CharVector.vector} \\
-\quad $\alt$ \mbox{\tt IntArray.array} $\alt$ \mbox{\tt IntVector.vector} \\
-\quad $\alt$ \mbox{\tt Int32Array.array} $\alt$ \mbox{\tt Int32Vector.vector} \\
-\quad $\alt$ \mbox{\tt RealArray.array} $\alt$ \mbox{\tt RealVector.vector} \\
-\quad $\alt$ \mbox{\tt Real64Array.array} $\alt$ \mbox{\tt Real64Vector.vector} \\
-\quad $\alt$ \mbox{\tt Word8Array.array} $\alt$ \mbox{\tt Word8Vector.vector} \\
-\quad $\alt$ \mbox{\tt Word32Array.array} $\alt$ \mbox{\tt Word32Vector.vector} \\
-\end{tabular}
-\end{center}
-\end{latexonly}
-\begin{htmlonly}
-\begin{center}
-\begin{tabular}{l}
-\production{\mbox{ty}}
-	   {u \alt t\ \mbox{\tt *}\ \ldots\ \mbox{\tt *}\ t\ \mbox{\tt ->}\ u}
-\production{u}
-	   {\mbox{\tt bool} \alt \mbox{\tt char} \alt \mbox{\tt int} \alt \mbox{\tt real} \alt \mbox{\tt string} \alt \mbox{\tt unit} \alt \mbox{\tt word} \alt \mbox{\tt word8}}
-\production{t}
-	   {u \alt u\ \mbox{\tt array} \alt u\ \mbox{\tt ref}
-             \alt u\ \mbox{\tt vector}}
-\quad \alt \mbox{\tt CharArray.array} \alt \mbox{\tt CharVector.vector} \\
-\quad \alt \mbox{\tt IntArray.array} \alt \mbox{\tt IntVector.vector} \\
-\quad \alt \mbox{\tt Int32Array.array} \alt \mbox{\tt Int32Vector.vector} \\
-\quad \alt \mbox{\tt RealArray.array} \alt \mbox{\tt RealVector.vector} \\
-\quad \alt \mbox{\tt Real64Array.array} \alt \mbox{\tt Real64Vector.vector} \\
-\quad \alt \mbox{\tt Word8Array.array} \alt \mbox{\tt Word8Vector.vector} \\
-\quad \alt \mbox{\tt Word32Array.array} \alt \mbox{\tt Word32Vector.vector} \\
-\end{tabular}
-\end{center}
-\end{htmlonly}
+The semicolon is not optional.
 
+An example in the {\tt examples/ffi} directory demonstrates the use of
+{\ffi} expressions.  The {\tt Makefile} demonstrates how to call
+{\mlton} to include and link with the appropriate files.  Running {\tt
+make import} will produce an executable, {\tt import}, that should
+output {\tt success} when run.
+
+\begin{verbatim}
+% make import
+mlton -stop o ffi-import.c
+mlton import.sml ffi-import.o
+% import
+13
+success
+\end{verbatim}
+
+\subsection{Calling from C to SML}
+Suppose you would like export from SML a funtion of type {\tt real *
+char -> int} as the C function {\tt foo}.  {\mlton} extends the syntax
+of SML to allow expressions like the following:
+\begin{verbatim}
+_export "foo": real * char -> int;
+\end{verbatim}
+This expression exports a C function named {\tt foo}, with prototype
+\begin{verbatim}
+Int32 foo (Real64 x0, Char x1);
+\end{verbatim}
+The {\export} expression denotes a function of type {\tt (real * char
+-> int) -> unit}, that when called with a function {\tt f} arranges
+for the exported {\tt foo} function to call {\tt f} when {\tt foo} is
+called.  So, for example, the following expression both exports and
+defines {\tt foo}.
+\begin{verbatim}
+_export "foo": real * char -> int;
+(fn (x, c) => 13 + Real.floor x + Char.ord c)
+\end{verbatim}
+
+{\mlton} generate a C header file at compile time with prototypes for
+all of the exported functions.  You can use this header to type check
+your C code.  An example in the {\tt examples/ffi} directory
+demonstrates the use of {\export} expressions and the header file.
+Running {\tt make export} will produce an executable, {\tt export},
+that should output {\tt success} when run.
+
+\begin{verbatim}
+% make export
+mlton export.sml ffi-export.c
+% ./export
+g starting
+i = 13  r = 17.15
+g done  char = g
+g starting
+i = 13  r = 17.15
+g done  char = g
+g2 starting
+g2 done
+0wxFF
+success
+\end{verbatim}
+
+Notice that {\tt ffi-export.c} includes {\tt export.h}, the header
+file generated by {\mlton}.
+
+\subsection{FFI types}
+
+{\mlton} only allows a values of certain SML types to be passed
+between SML and C.  The following types are allowed: {\tt bool}, {\tt
+char}, {\tt int}, {\tt real}, {\tt string}, {\tt unit}, {\tt word}.
+Strings are not null terminated, unless you manually do so from the
+SML side.  All of the different sizes of integers, reals, and words
+are supported as well: {\tt Int32.int}, {\tt Real64.real}, {\tt
+Word8.word}, {\tt Word32.word}.  Arrays, refs, and vectors of the
+above types are also allowed.  Because in {\mlton}, monomorphic arrays
+and vectors are exactly the same as their polymorphic counterpart
+these are also allowed.  Unfortunately, passing tuples or datatypes is
+not allowed because that would interfere with representation
+optimizations.
+
+The file {\tt types.h} in the MLton include directory includes
+typedefs for the C types corresponding to the SML types.
 Here is the mapping between SML types and C types.
+
 \begin{center}
-\begin{tabular}{ll}
-SML type & C type\\
+\begin{tabular}{lll}
+SML type & C typedef & C type\\
 \hline
-{\tt bool} & {\tt int} (0 is false, nonzero is true) \\
-{\tt char} & {\tt unsigned char} \\
-{\tt int} & {\tt int} \\
-{\tt real} & {\tt double} \\
-{\tt string} & {\tt char *} \\
-{\tt unit} & {\tt void} \\
-{\tt word} & {\tt unsigned int} \\
-{\tt word8} & {\tt unsigned char} \\
-{\tt array} & {\tt char *} \\
-{\tt ref} & {\tt char *} \\
-{\tt vector} & {\tt char *} \\
+{\tt array} & {\tt Pointer} & {\tt char *} \\
+{\tt bool} & {\tt Bool} & {\tt long} \\
+{\tt char} & {\tt Char} & {\tt unsigned char} \\
+{\tt int} & {\tt Int32} & {\tt long} \\
+{\tt real} & {\tt Real64} & {\tt double} \\
+{\tt ref} & {\tt Pointer} & {\tt char *} \\
+{\tt string} & {\tt Pointer} & {\tt char *} \\
+{\tt unit} & {\tt Unit} & {\tt void} \\
+{\tt vector} & Pointer & {\tt char *} \\
+{\tt Word8.word} & {\tt Word8} & {\tt unsigned char} \\
+{\tt word} & {\tt Word32} & {\tt unsigned int} \\
 \end{tabular}
 \end{center}
-Passing or returning tuples or datatypes is not allowed because the
-representation of these is decided late in the compilation
-process and because optimizations can cause the representation to
-change.  Arrays, refs, and vectors may only be passed as arguments and
-not returned as results because C functions are not allowed to
-allocate in the SML heap.  Although the C type of an array, ref, or
-vector is always {\tt char*}, in reality, the object is layed out in
-the natural C representation.
-%You are responsible for doing the cast
-%if you want to keep the C compiler from complaining.
-Strings are just
-like char arrays, and are not null terminated, unless you manually do
-so from the SML side.
 
-% This section is no longer relevant, with the changes in place for
-% cross compiling.  Let's wait and see what we actually add before updating
-% the docs
-%\subsec{Compile-time constants}{compile-time-constant}
-
-%{\mlton}'s \verb+_prim+ facility provides access to compile-time constants,
-%which can be defined either via C include ({\tt .h}) files or on the command
-%line with the {\tt -D} command-line option.
-%The facility supports constants of type {\tt bool}, {\tt int}, {\tt real},
-%{\tt string}, and {\tt word}.
-%For example, the basis library
-%implementation contains the following lines.
-%\begin{verbatim}
-%type syserror = int
-%val acces = _prim "Posix_Error_acces": syserror;
-%\end{verbatim}
-%This defines the SML variable {\tt acces} to be an int whose value is the value
-%of the C constant (macro) \verb+Posix_Error_access+, which is obtained from the
-%(automatically) included file {\tt posix-constants.h}.  At compile-time, {\mlton}
-%generates a C file that prints the values of all \verb+_prim+ constants, calls
-%{\tt gcc} to produce an executable, runs the executable, and reads the result.
-%The \verb+_prim+ expressions are then replaced by appropriate constants, which
-%are available to the rest of the compilation process.
+Although the C type of an array, ref, or vector is always {\tt
+Pointer}, in reality, the object is layed out in the natural C
+representation.  Your C code should cast to the appropriate C type if
+you want to keep the C compiler from complaining.
 
 \subsection{Type checking programs that use {\tt \_ffi}}
 
@@ -152,22 +159,3 @@ function.  Since all {\ffi} declarations are annotated with their types, the
 cast is constrained to the actual type of the foreign function or primitive. Of
 course, you should never actually run the code, but it's sufficient for type
 checking.
-
-\subsection{FFI Example}
-
-The example in the {\tt examples/ffi} directory demonstrates the use of
-{\ffi} declarations.  The {\tt Makefile} demonstrates how
-to call {\mlton} to include and link with the appropriate files.  Running {\tt
-make} should produce an executable, {\tt ffi}, which should output {\tt success}
-when run.
-%You should also read \secref{compile-time-options} to familiarize
-%yourself with the {\mlton} options governing include files and linking ({\tt
-%-include}, {\tt -I}, {\tt -l}, and {\tt -L}).
-
-\begin{verbatim}
-% mlton -stop o ffi.c
-% mlton main.sml ffi.o
-% main
-13
-success
-\end{verbatim}

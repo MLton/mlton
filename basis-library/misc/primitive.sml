@@ -230,6 +230,36 @@ structure Primitive =
 	       _prim "Exn_setTopLevelHandler": (exn -> unit) -> unit;
 	 end
 
+      structure FFI =
+	 struct
+	    val getBool = _ffi "MLton_FFI_getBool": int -> bool;
+	    val getChar = _ffi "MLton_FFI_getChar": int -> char;
+	    val getInt8 = _ffi "MLton_FFI_getInt8": int -> Int8.int;
+	    val getInt16 = _ffi "MLton_FFI_getInt16": int -> Int16.int;
+	    val getInt32 = _ffi "MLton_FFI_getInt32": int -> Int32.int;
+	    val getInt64 = _ffi "MLton_FFI_getInt64": int -> Int64.int;
+	    val getOp = _ffi "MLton_FFI_getOp": unit -> int;
+	    val getPointer = fn z => _prim "FFI_getPointer": int -> 'a; z
+	    val getReal32 = _ffi "MLton_FFI_getReal32": int -> Real32.real;
+	    val getReal64 = _ffi "MLton_FFI_getReal64": int -> Real64.real;
+	    val getWord8 = _ffi "MLton_FFI_getWord8": int -> Word8.word;
+	    val getWord16 = _ffi "MLton_FFI_getWord16": int -> Word16.word;
+	    val getWord32 = _ffi "MLton_FFI_getWord32": int -> Word32.word;
+	    val numExports = _build_const "MLton_FFI_numExports": int;
+	    val setBool = _ffi "MLton_FFI_setBool": bool -> unit;
+	    val setChar = _ffi "MLton_FFI_setChar": char -> unit;
+	    val setInt8 = _ffi "MLton_FFI_setInt8": Int8.int -> unit;
+	    val setInt16 = _ffi "MLton_FFI_setInt16": Int16.int -> unit;
+	    val setInt32 = _ffi "MLton_FFI_setInt32": Int32.int -> unit;
+	    val setInt64 = _ffi "MLton_FFI_setInt64": Int64.int -> unit;
+	    val setPointer = fn z => _prim "FFI_setPointer": 'a -> unit; z
+	    val setReal32 = _ffi "MLton_FFI_setReal32": Real32.real -> unit;
+	    val setReal64 = _ffi "MLton_FFI_setReal64": Real64.real -> unit;
+  	    val setWord8 = _ffi "MLton_FFI_setWord8": Word8.word -> unit;
+	    val setWord16 = _ffi "MLton_FFI_setWord16": Word16.word -> unit;
+	    val setWord32 = _ffi "MLton_FFI_setWord32": Word32.word -> unit;
+	 end
+
       structure GC =
 	 struct
 	    val collect = _prim "GC_collect": unit -> unit;
@@ -241,8 +271,8 @@ structure Primitive =
       
       structure IEEEReal =
 	 struct
-	    val setRoundingMode = _ffi "IEEEReal_setRoundingMode": int -> unit;
 	    val getRoundingMode = _ffi "IEEEReal_getRoundingMode": unit -> int;
+	    val setRoundingMode = _ffi "IEEEReal_setRoundingMode": int -> unit;
 	 end
 
       structure Int8 =

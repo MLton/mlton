@@ -12,6 +12,7 @@ functor CCodegen
 
 is
 
+../../atoms/sources.cm
 ../../control/sources.cm
 ../../../lib/mlton/sources.cm
 ../../backend/sources.cm

@@ -81,6 +81,7 @@ struct
   structure Type = Machine.Type
   fun output {program as Machine.Program.T {chunks, frameLayouts, main, ...},
 	      outputC,
+	      outputH,
 	      outputS}: unit
     = let
 	 val reserveEsp =
@@ -178,6 +179,7 @@ struct
 	      CCodegen.outputDeclarations
 	      {additionalMainArgs = additionalMainArgs,
 	       includes = ["x86-main.h"],
+	       outputH = outputH,
 	       print = print,
 	       program = program,
 	       rest = rest}

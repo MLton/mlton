@@ -54,6 +54,8 @@ signature PRIM =
 	     | Exn_setInitExtra (* implement exceptions *)
 	     | Exn_setTopLevelHandler (* implement exceptions *)
 	     | FFI of string (* ssa to rssa *)
+	     | FFI_getPointer
+	     | FFI_setPointer
 	     | GC_collect (* ssa to rssa *)
 	     | GC_pack (* ssa to rssa *)
 	     | GC_unpack (* ssa to rssa *)

@@ -5,6 +5,9 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+type int = Int.t
+type word = Word.t
+   
 signature ELABORATE_CORE_STRUCTS = 
    sig
       structure Ast: AST

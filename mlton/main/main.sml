@@ -579,7 +579,6 @@ fun commandLine (args: string list): unit =
 			   f
 			end
 		     fun suffix s = concat [base, s]
-		     fun file (b, suf) = (if b then suffix else temp) suf
 		     fun maybeOut suf =
 			case !output of
 			   NONE => suffix suf
@@ -777,12 +776,24 @@ fun commandLine (args: string list): unit =
 				  in Layout.output (l, out)
 				     ; Out.newline out
 				  end)
+			fun outputH () =
+			   let
+			      val file = suffix ".h"
+			      val out = Out.openOut file
+			      fun done () = Out.close out
+			      fun print s = Out.output (out, s)
+			      val _ = outputHeader' (Control.C, out)
+			   in
+			      {done = done,
+			       print = print}
+			   end
 			val _ =
 			   trace (Top, "Compile SML")
 			   Compile.compile
 			   {input = files,
 			    docc = docc,
 			    outputC = make (Control.C, ".c"),
+			    outputH = outputH,
 			    outputS = make (Control.Assembly,
 					    if !debug then ".s" else ".S")}
 			(* Shrink the heap before calling gcc. *)

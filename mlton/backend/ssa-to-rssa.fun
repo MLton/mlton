@@ -56,6 +56,15 @@ structure CFunction =
 	 val intInfXorb = make ("IntInf_do_xorb", 2)
       end
 
+      val getPointer =
+	 vanilla {name = "MLton_FFI_getPointer",
+		  returnTy = SOME Type.pointer}
+
+      val setPointer =
+	 vanilla {name = "MLton_FFI_setPointer",
+		  returnTy = NONE}
+			 
+
       local
 	 fun make name = vanilla {name = name,
 				  returnTy = SOME Type.defaultInt}
@@ -1064,6 +1073,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					 name = name,
 					 returnTy = Option.map (toRtype ty,
 								Type.toRuntime)})
+			       | FFI_getPointer =>
+				    simpleCCall CFunction.getPointer
+			       | FFI_setPointer =>
+				    simpleCCall CFunction.setPointer
 			       | GC_collect =>
 				    ccall
 				    {args = (Vector.new5

@@ -23,6 +23,8 @@ signature X86_CODEGEN =
                  outputC: unit -> {file: File.t,
 				   print: string -> unit,
 				   done: unit -> unit},
+		 outputH: unit -> {done: unit -> unit,
+				   print: string -> unit},
                  outputS: unit -> {file: File.t,
 				   print: string -> unit,
 				   done: unit -> unit}}

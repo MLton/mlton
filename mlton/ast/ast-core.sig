@@ -46,20 +46,20 @@ signature AST_CORE =
 	    sharing type Item.pat = t
 
 	    datatype node =
-	       Wild
-	     | Var of {fixop: Fixop.t, name: Longvid.t}
+	       App of Longcon.t * t
 	     | Const of Const.t
-	     | Tuple of t vector
-	     | Record of {items: Item.t vector,
-			  flexible: bool}
-	     | List of t list
-	     | FlatApp of t vector
-	     | App of Longcon.t * t
 	     | Constraint of t * Type.t
+	     | FlatApp of t vector
 	     | Layered of {fixop: Fixop.t,
 			   var: Var.t,
 			   constraint: Type.t option,
 			   pat: t}
+	     | List of t list
+	     | Record of {items: Item.t vector,
+			  flexible: bool}
+	     | Tuple of t vector
+	     | Var of {fixop: Fixop.t, name: Longvid.t}
+	     | Wild
 	       
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
@@ -81,7 +81,7 @@ signature AST_CORE =
 
       structure PrimKind:
 	 sig
-	    datatype t = BuildConst | Const | FFI | Prim
+	    datatype t = BuildConst | Const | Export | FFI | Prim
 	 end
       
       structure Exp:
@@ -90,29 +90,30 @@ signature AST_CORE =
 	    type match
 	    type t
 	    datatype node =
-	       Const of Const.t
-	     | Var of {name: Longvid.t, fixop: Fixop.t}
-	     | Fn of match
-	     | FlatApp of t vector
+	       Andalso of t * t
 	     | App of t * t
 	     | Case of t * match
-	     | Let of dec * t
-	     | Seq of t vector
-	     | Record of t Record.t
-	     | List of t list
-	     | Selector of Record.Field.t
+	     | Const of Const.t
 	     | Constraint of t * Type.t
+	     | FlatApp of t vector
+	     | Fn of match
 	     | Handle of t * match
-	     | Raise of {exn: t,
-			 filePos: string}
 	     | If of t * t * t
-	     | Andalso of t * t
+	     | Let of dec * t
+	     | List of t list
 	     | Orelse of t * t
-	     | While of {test: t,
-			 expr: t}
 	     | Prim of {kind: PrimKind.t,
 			name: string,
 			ty: Type.t}
+	     | Raise of {exn: t,
+			 filePos: string}
+	     | Record of t Record.t
+	     | Selector of Record.Field.t
+	     | Seq of t vector
+	     | Var of {fixop: Fixop.t,
+		       name: Longvid.t}
+	     | While of {expr: t,
+			 test: t}
 
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t

@@ -1,2 +1,5 @@
-ffi.o
-main
+export
+export.h
+import
+
+

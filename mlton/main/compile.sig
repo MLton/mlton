@@ -11,6 +11,8 @@ signature COMPILE =
 		    outputC: unit -> {file: File.t,
 				      print: string -> unit,
 				      done: unit -> unit},
+		    outputH: unit -> {print: string -> unit,
+				      done: unit -> unit},
 		    outputS: unit -> {file: File.t,
 				      print: string -> unit,
 				      done: unit -> unit},

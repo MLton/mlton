@@ -143,7 +143,7 @@ structure C =
          
       fun callNoSemi (f: string, xs: string list, print: string -> unit): unit 
 	 = (print f
-	    ; print "("
+	    ; print " ("
 	    ; (case xs 
 		  of [] => ()
 		| x :: xs => (print x
@@ -232,6 +232,7 @@ fun declareGlobals (prefix: string, print) =
 fun outputDeclarations
    {additionalMainArgs: string list,
     includes: string list,
+    outputH,
     print: string -> unit,
     program = (Program.T
 	       {chunks, frameLayouts, frameOffsets, intInfs, maxFrameSize,
@@ -239,6 +240,20 @@ fun outputDeclarations
     rest: unit -> unit
     }: unit =
    let
+      fun declareExports () =
+	 if Ffi.numExports () > 0
+	    then
+	       let
+		  val _ = Ffi.declareExports {print = print}
+		  val {print, done} = outputH ()
+		  val _ = print "#include \"types.h\"\n"
+		  val _ = Ffi.declareHeaders {print = print}
+		  val _ = done ()
+	       in
+		  ()
+	       end
+	 else
+	    ()
       fun declareLoadSaveGlobals () =
 	 let
 	    val _ =
@@ -386,6 +401,7 @@ fun outputDeclarations
    in
       outputIncludes (includes, print)
       ; declareGlobals ("", print)
+      ; declareExports ()
       ; declareLoadSaveGlobals ()
       ; declareIntInfs ()
       ; declareStrings ()
@@ -477,7 +493,8 @@ fun output {program as Machine.Program.T {chunks,
 					  main = {chunkLabel, label}, ...},
 	    outputC: unit -> {file: File.t,
 			      print: string -> unit,
-			      done: unit -> unit}} =
+			      done: unit -> unit},
+	    outputH} =
    let
       datatype status = None | One | Many
       val {get = labelInfo: Label.t -> {block: Block.t,
@@ -1242,6 +1259,7 @@ fun output {program as Machine.Program.T {chunks,
       val _ = 
 	 outputDeclarations {additionalMainArgs = additionalMainArgs,
 			     includes = ["c-main.h"],
+			     outputH = outputH,
 			     program = program,
 			     print = print,
 			     rest = rest}
