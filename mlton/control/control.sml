@@ -460,10 +460,10 @@ val traceAccum: (verbosity * string) -> (traceAccum * (unit -> unit)) =
 
 val ('a, 'b) traceAdd: (traceAccum * string) -> ('a -> 'b) -> 'a -> 'b =
    fn ({verb, total, totalGC}, name) =>
+   fn f =>
+   fn a =>
    if Verbosity.<= (verb, !verbosity)
-     then fn f =>
-          fn a =>
-	  let
+     then let
 	    val (t, gc) = time ()
 	    fun done () 
 	      = let
@@ -489,7 +489,7 @@ val ('a, 'b) traceAdd: (traceAccum * string) -> ('a -> 'b) -> 'a -> 'b =
 				     concat [name, " raised"])
 			 ; raise e)
 	  end
-     else fn f => f
+     else f a
 
 val ('a, 'b) traceBatch: (verbosity * string) -> ('a -> 'b) ->
                          (('a -> 'b) * (unit -> unit)) =
