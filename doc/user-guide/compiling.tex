@@ -26,21 +26,21 @@ the {\tt Makefile} will rebuild {\mlton} with itself, this time using
 library.  This second round of compilation is essential in order to
 achieve a fast and robust {\mlton}.
 
-Compiling {\mlton} requires at least 256M of actual RAM.  Thus, if
-your machine has less than this, it is likely that self-compilation
-will take a very long time due to paging.  Even if you have enough
-memory, there simply may not be enough available, due to memory
-consumed by other processes.  In this case, you may see an {\tt Out of
-memory} message, or self-compilation may become extremely slow.  The
-only fix is to make sure that enough memory is available.
+Compiling {\mlton} requires at least 512M of actual RAM, and 1G is
+preferable.  If your machine has less than 512M, self-compilation will
+likely fail, or at least take a very long time due to paging.  Even if
+you have enough memory, there simply may not be enough available, due
+to memory consumed by other processes.  In this case, you may see an
+{\tt Out of memory} message, or self-compilation may become extremely
+slow.  The only fix is to make sure that enough memory is available.
 %
 \subsection{Compiling with {\smlnj}}
 
 To compile with {\smlnj}, run {\tt make nj-mlton} from within the root
-directory of the sources.  You must use the SML/NJ version 110.44,
+directory of the sources.  You must use the SML/NJ version 110.45,
 which is what {\mlton} is tested with.  First, the {\tt Makefile}
 calls {\tt mllex} and {\tt mlyacc} to build the lexer and parser.
 Then, it calls {\smlnj} with the appropriate {\tt sources.cm} file.
-Building with {\smlnj} takes some time (5-10 minutes on a 1.6GHz
+Building with {\smlnj} takes some time (10 minutes on a 1.6GHz
 machine).  Unless you are doing compiler development and need rapid
 recompilation, we recommend compiling with {\mlton}.
