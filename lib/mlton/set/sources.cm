@@ -2,6 +2,7 @@ Library
 
 signature SET
 
+functor BitVectorSet
 structure DisjointSet
 functor HashedUniqueSet
 functor OrderedUniqueSet
@@ -17,6 +18,7 @@ is
 
 ../basic/sources.cm
 set.sig
+bit-vector.fun
 disjoint.sig
 disjoint.fun
 hashed-unique-set.fun

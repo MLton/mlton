@@ -147,6 +147,7 @@ structure Word32
    
 functor AlphaBeta
 functor BinaryHeap
+functor BitVectorSet
 functor Cache
 functor Control
 functor Env
