@@ -83,7 +83,8 @@ void MLton_ProfileAlloc_Data_write (Pointer d, Word fd) {
 	ullong *data;
 	uint i;
 
-	fprintf (stderr, "writing file\n");
+	if (0)
+		fprintf (stderr, "writing file\n");
 	assert (gcState.profileAllocIsOn);
 	data = (ullong*)d;
 	swrite (fd, MAGIC, sizeof(MAGIC));
