@@ -3122,7 +3122,7 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 		w64align ((W64)eltSize * (W64)numElts + GC_ARRAY_HEADER_SIZE,
 				s->alignment);
 	if (arraySize64 >= 0x100000000llu)
-		die ("Out of memory: cannot allocate array with %s bytes.\n",
+		die ("Out of memory: cannot allocate array with %s bytes.",
 			ullongToCommaString (arraySize64));
 	arraySize = (W32)arraySize64;
 	if (arraySize < GC_ARRAY_HEADER_SIZE + WORD_SIZE)
