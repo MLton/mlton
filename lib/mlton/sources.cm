@@ -47,6 +47,7 @@ structure AppendList
 structure Array
 structure Array2
 structure Assert
+structure Base64
 structure BinarySearch
 structure Bool
 structure Char
