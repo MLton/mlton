@@ -18,11 +18,14 @@ val word =
 	       fn i => concat ["Word", Int.toString i])
 
 val text = ["Char", "String"]
-   
-val num = word @ int @ real
+
+(* Order matters here in the appends, since the first element will be the
+ * default.
+ *)
+val num = int @ word @ real
 val numtext = num @ text
-val realint = real @ int
-val wordint = word @ int
+val realint = int @ real
+val wordint = int @ word
 
 val binary = "'a * 'a -> 'a"
 val compare = "'a * 'a -> bool"
