@@ -59,6 +59,8 @@ constant-propagation.sig
 constant-propagation.fun
 contify.sig
 contify.fun
+deep-flatten.sig
+deep-flatten.fun
 flatten.sig
 flatten.fun
 inline.sig

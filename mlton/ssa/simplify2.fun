@@ -16,6 +16,7 @@ open S
 (* structure CommonSubexp = CommonSubexp (S) *)
 (* structure ConstantPropagation = ConstantPropagation (S) *)
 (* structure Contify = Contify (S) *)
+structure DeepFlatten = DeepFlatten (S)
 (* structure Flatten = Flatten (S) *)
 (* structure Inline = Inline (S) *)
 (* structure IntroduceLoops = IntroduceLoops (S) *)
@@ -95,6 +96,7 @@ val ssaPasses : pass list ref = ref
     (* For now, do ref flattening last, because each pass that follows it will
      * have to be modified to correctly handle mutable fields.
      *)
+(*     {name = "deepFlatten", doit = DeepFlatten.flatten}, *)
      {name = "refFlatten", doit = RefFlatten.flatten},
      {name = "zone", doit = Zone.zone}
     ]
