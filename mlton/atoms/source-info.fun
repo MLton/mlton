@@ -34,7 +34,7 @@ structure Pos =
 datatype info =
    Anonymous of Pos.t
  | C of string
- | Function of {name: string,
+ | Function of {name: string list,
 		pos: Pos.t}
 
 datatype t = T of {hash: word,
@@ -82,7 +82,9 @@ fun toString' (si, sep) =
    case info si of
       Anonymous p => Pos.toString p
     | C s => concat ["<", s, ">"]
-    | Function {name, pos} => concat [name, sep, Pos.toString pos]
+    | Function {name, pos} =>
+	 concat [concat (List.separate (List.rev name, ".")),
+		 sep, Pos.toString pos]
 
 fun toString si = toString' (si, " ")
    

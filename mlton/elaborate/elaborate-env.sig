@@ -84,7 +84,9 @@ signature ELABORATE_ENV =
 	 sig
 	    type t
 
-	    val apply: t * Structure.t * Region.t -> Decs.t * Structure.t
+	    val apply:
+	       t * Structure.t * string list * Region.t
+	       -> Decs.t * Structure.t
 	 end
 
       type t
@@ -102,7 +104,7 @@ signature ELABORATE_ENV =
       val extendTycon: t * Ast.Tycon.t * TypeStr.t -> unit
       val extendVar: t * Ast.Var.t * CoreML.Var.t -> unit
       val functorClosure:
-	 t * Interface.t * (Structure.t -> Decs.t * Structure.t)
+	 t * Interface.t * (Structure.t * string list -> Decs.t * Structure.t)
 	 -> FunctorClosure.t
       val layout: t -> Layout.t
       val layoutPretty: t -> Layout.t

@@ -568,13 +568,15 @@ structure Structure =
 
 structure FunctorClosure =
    struct
-      datatype t = T of {apply: Structure.t * Region.t -> Decs.t * Structure.t,
-			 sizeMessage: unit -> Layout.t}
+      datatype t =
+	 T of {apply: (Structure.t * string list * Region.t
+		       -> Decs.t * Structure.t),
+	       sizeMessage: unit -> Layout.t}
 
       val bogus = T {apply = fn _ => (Decs.empty, Structure.bogus),
  		     sizeMessage = fn _ => Layout.str "<bogus>"}
 
-      fun apply (T {apply, ...}, s, r) = apply (s, r)
+      fun apply (T {apply, ...}, s, nest, r) = apply (s, nest, r)
 
       fun sizeMessage (T {sizeMessage, ...}) = sizeMessage ()
 	 
@@ -713,11 +715,13 @@ fun sizeMessage (E as T {fcts, fixs, sigs, strs, types, vals, ...}) =
    let
       val size = MLton.size
       open Layout
-   in record [("total", Int.layout (size E)),
-	      ("fcts", NameSpace.sizeMessage (fcts, Ast.Fctid.layout,
-					 FunctorClosure.sizeMessage)),
-	      ("sigs", NameSpace.sizeMessage (sigs, Ast.Sigid.layout, layoutSize)),
-	      ("strs", NameSpace.sizeMessage (strs, Ast.Strid.layout, layoutSize))]
+   in
+      record
+      [("total", Int.layout (size E)),
+       ("fcts", NameSpace.sizeMessage (fcts, Ast.Fctid.layout,
+				       FunctorClosure.sizeMessage)),
+       ("sigs", NameSpace.sizeMessage (sigs, Ast.Sigid.layout, layoutSize)),
+       ("strs", NameSpace.sizeMessage (strs, Ast.Strid.layout, layoutSize))]
    end
 
 fun empty () =
@@ -867,18 +871,20 @@ fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals}):
       end
    end
       
-fun functorClosure (E: t,
-		    argInt: Interface.t,
-		    makeBody: Structure.t -> Decs.t * Structure.t) =
+fun functorClosure
+   (E: t,
+    argInt: Interface.t,
+    makeBody: Structure.t * string list -> Decs.t * Structure.t) =
    let
       val restore = snapshot E
-      fun apply (arg, region) =
+      fun apply (arg, nest, region) =
 	 let
 	    val actual = Structure.cut {str = arg,
 					interface = argInt,
 					opaque = false,
 					region = region}
-	 in restore (fn () => makeBody actual)
+	 in
+	    restore (fn () => makeBody (actual, nest))
 	 end
       val apply =
 	 Trace.trace ("functorApply",

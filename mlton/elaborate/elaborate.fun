@@ -50,9 +50,9 @@ structure ElaborateSigexp = ElaborateSigexp (structure Ast = Ast
 					     structure Interface = Interface)
 
 structure ElaborateCore = ElaborateCore (structure Ast = Ast
-					structure CoreML = CoreML
-					structure Decs = Decs
-					structure Env = Env)
+					 structure CoreML = CoreML
+					 structure Decs = Decs
+					 structure Env = Env)
 
 val info = Trace.info "elaborateStrdec"
 val info' = Trace.info "elaborateTopdec"
@@ -74,63 +74,78 @@ fun elaborateProgram (Ast.Program.T decs, E: Env.t) =
 	  | SigConst.Transparent sigexp => s (sigexp, false)
 	  | SigConst.Opaque sigexp => s (sigexp, true)
 	 end	 
-
-      fun elabStrdec arg: Decs.t =
-	 Trace.traceInfo' (info, Strdec.layout, Layout.ignore)
-	 (fn d: Strdec.t =>
-	  case Strdec.node d of
-	     Strdec.Core d => (* rule 56 *)
-		ElaborateCore.elaborateDec (d, E)
-	   | Strdec.Local (d, d') => (* rule 58 *)
-		Decs.append (Env.localModule (E,
-					      fn () => elabStrdec d,
-					      fn () => elabStrdec d'))
-	   | Strdec.Seq ds => (* rule 60 *)
-		List.fold
-		(ds, Decs.empty, fn (d, decs) =>
-		 Decs.append (decs, elabStrdec d))
-	   | Strdec.Structure strbinds => (* rules 57, 61 *)
-		List.fold
-		(strbinds, Decs.empty, fn ({name, def, constraint}, decs) =>
-		 let val (decs', S) = elabStrexp def
-		    val _ = 
-		       Env.extendStrid
-		       (E, name, elabSigexpConstraint (constraint, S))
-		 in Decs.append (decs, decs')
-		 end)
-		) arg
-
-      and elabStrexp (e: Strexp.t): Decs.t * Structure.t =
-	 case Strexp.node e of
-	    Strexp.App (fctid, strexp) => (* rules 54, 154 *)
-	       let
-		  val (decs, S) = elabStrexp strexp
-		  val (decs', S) =
-		     FunctorClosure.apply (Env.lookupFctid (E, fctid),
-					   S, Strexp.region strexp)
-	       in (Decs.append (decs, decs'), S)
-	       end
-	  | Strexp.Constrained (e, c) => (* rules 52, 53 *)
-	       let val (decs, S) = elabStrexp e
-	       in (decs, elabSigexpConstraint (c, S))
-	       end
-	  | Strexp.Let (d, e) => (* rule 55 *)
-	       Env.scope
-	       (E, fn () =>
-		let val decs = elabStrdec d
-		   val (decs', S) = elabStrexp e
-		in (Decs.append (decs, decs'), S)
-		end)
-	  | Strexp.Struct d => (* rule 50 *)
-	       Env.makeStructure (E, fn () => elabStrdec d)
-	  | Strexp.Var p => (* rule 51 *)
-	       (Decs.empty, Env.lookupLongstrid (E, p))
-
+      fun elabStrdec (arg: Strdec.t * string list): Decs.t =
+	 Trace.traceInfo' (info,
+			   Layout.tuple2 (Strdec.layout,
+					  List.layout String.layout),
+			   Layout.ignore)
+	 (fn (d: Strdec.t, nest: string list) =>
+	  let
+	     val elabStrdec = fn d => elabStrdec (d, nest)
+	  in
+	     case Strdec.node d of
+		Strdec.Core d => (* rule 56 *)
+		   ElaborateCore.elaborateDec (d, nest, E)
+	      | Strdec.Local (d, d') => (* rule 58 *)
+		   Decs.append (Env.localModule (E,
+						 fn () => elabStrdec d,
+						 fn () => elabStrdec d'))
+	      | Strdec.Seq ds => (* rule 60 *)
+		   List.fold
+		   (ds, Decs.empty, fn (d, decs) =>
+		    Decs.append (decs, elabStrdec d))
+	      | Strdec.Structure strbinds => (* rules 57, 61 *)
+		   List.fold
+		   (strbinds, Decs.empty, fn ({name, def, constraint}, decs) =>
+		    let
+		       val (decs', S) = elabStrexp (def,
+						    Strid.toString name :: nest)
+		       val _ = 
+			  Env.extendStrid
+			  (E, name, elabSigexpConstraint (constraint, S))
+		    in
+		       Decs.append (decs, decs')
+		    end)
+	  end) arg
+      and elabStrexp (e: Strexp.t, nest: string list): Decs.t * Structure.t =
+	 let
+	    val elabStrexp = fn e => elabStrexp (e, nest)
+	 in
+	    case Strexp.node e of
+	       Strexp.App (fctid, strexp) => (* rules 54, 154 *)
+		  let
+		     val (decs, S) = elabStrexp strexp
+		     val (decs', S) =
+			FunctorClosure.apply (Env.lookupFctid (E, fctid),
+					      S, nest, Strexp.region strexp)
+		  in
+		     (Decs.append (decs, decs'), S)
+		  end
+	     | Strexp.Constrained (e, c) => (* rules 52, 53 *)
+		  let
+		     val (decs, S) = elabStrexp e
+		  in
+		     (decs, elabSigexpConstraint (c, S))
+		  end
+	     | Strexp.Let (d, e) => (* rule 55 *)
+		  Env.scope
+		  (E, fn () =>
+		   let
+		      val decs = elabStrdec (d, nest)
+		      val (decs', S) = elabStrexp e
+		   in
+		      (Decs.append (decs, decs'), S)
+		   end)
+	     | Strexp.Struct d => (* rule 50 *)
+		  Env.makeStructure (E, fn () => elabStrdec (d, nest))
+	     | Strexp.Var p => (* rule 51 *)
+		  (Decs.empty, Env.lookupLongstrid (E, p))
+	 end
       fun elabTopdec arg: Decs.t =
 	 Trace.traceInfo' (info', Topdec.layout, Decs.layout)
 	 (fn (d: Topdec.t) =>
 	  case Topdec.node d of
-	     Topdec.Strdec d => elabStrdec d
+	     Topdec.Strdec d => elabStrdec (d, [])
 	   | Topdec.Signature sigbinds =>
 		(List.foreach
 		 (sigbinds, fn (sigid, sigexp) =>
@@ -162,13 +177,14 @@ fun elaborateProgram (Ast.Program.T decs, E: Env.t) =
 		     val closure =
 			Env.functorClosure
 			(E, argInt,
-			 fn formal => (Env.extendStrid (E, arg, formal)
-				       ; elabStrexp body))
+			 fn (formal, nest) => (Env.extendStrid (E, arg, formal)
+					       ; elabStrexp (body, nest)))
 		  in Env.extendFctid (E, name, closure)
 		  end)
 		 ; Decs.empty)
 		) arg
-   in List.fold (decs, Decs.empty, fn (d, decs) =>
+   in
+      List.fold (decs, Decs.empty, fn (d, decs) =>
 		 Decs.append (decs, elabTopdec d))
    end
 

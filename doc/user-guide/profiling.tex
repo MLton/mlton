@@ -261,6 +261,17 @@ tak       11.3%
 
 \subsection{Profiling details}
 
+Function names are displayed as sequence of period-separated names,
+indicated the structures and functions in which the function
+definition is nested.  For example, {\tt g} in the following code
+would appear as {\tt S.f.g}.
+\begin{verbatim}
+structure S =
+   struct
+       fun f = ... fun g ...
+   end
+\end{verbatim}
+
 {\mlton}'s optimizer may duplicate source functions for any of a
 number of reasons (functor duplication, monomorphisation,
 polyvariance, inlining).  By default, duplicates arising from functor

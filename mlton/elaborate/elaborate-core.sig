@@ -20,5 +20,5 @@ signature ELABORATE_CORE =
       include ELABORATE_CORE_STRUCTS
 
       (* Elaborate dec in env, returning Core ML decs. *)
-      val elaborateDec: Ast.Dec.t * Env.t -> Decs.t
+      val elaborateDec: Ast.Dec.t * string list * Env.t -> Decs.t
    end

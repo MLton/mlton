@@ -17,6 +17,7 @@ val sourcesIndexGC: int = 1
 
 val gray: bool ref = ref false
 val ignore: Regexp.t ref = ref Regexp.none
+val longName: bool ref = ref true
 val mlmonFiles: string list ref = ref []
 val raw = ref false
 val showLine = ref false
@@ -44,7 +45,17 @@ structure Source =
       fun fromString s =
 	 case String.tokens (s, fn c => Char.equals (c, #"\t")) of
 	    [s] => Simple s
-	  | [name, pos] => NamePos {name = name, pos = pos}
+	  | [name, pos] =>
+	       let
+		  val name =
+		     if !longName
+			then name
+		     else
+			List.last
+			(String.tokens (name, fn c => Char.equals (c, #".")))
+	       in
+		  NamePos {name = name, pos = pos}
+	       end
 	  | _ => Error.bug "strange source"
 
       fun toDotLabel s =
@@ -806,6 +817,9 @@ fun makeOptions {usage} =
 		      case Regexp.fromString s of
 			 NONE => usage (concat ["invalid -ignore regexp: ", s])
 		       | SOME (r, _) => ignore := Regexp.or [r, !ignore])),
+	(Expert, "long-name", " {true|false}",
+	 " show long names of functions",
+	 boolRef longName),
 	(Normal, "mlmon", " <file>", "proces mlmon files listed in <file>",
 	 SpaceString (fn s =>
 		      mlmonFiles :=

@@ -312,22 +312,18 @@ fun constrain (e, tyOpt, r) =
 (*---------------------------------------------------*)
 (*                   Declarations                    *)
 (*---------------------------------------------------*)
-  
-local
-   fun make name =
-      Aexp.longvid (Ast.Longvid.long
-		    ([Strid.fromString ("Primitive", Region.bogus),
-		      Strid.fromString ("Debug", Region.bogus)],
-		     Ast.Vid.fromString (name, Region.bogus)))
-in
-   val enterDebug = make "enter"
-   val leaveDebug = make "leave"
-end
+
+structure Nest =
+   struct
+      type t = string list
+
+      val layout = List.layout String.layout
+   end
 
 val info = Trace.info "elaborateDec"
 val elabExpInfo = Trace.info "elaborateExp"
 
-fun elaborateDec (d, E) =
+fun elaborateDec (d, nest, E) =
    let
       fun elabType t = elaborateType (t, Lookup.fromEnv E)
       fun elabTypeOpt t = elaborateTypeOpt (t, Lookup.fromEnv E)
@@ -386,12 +382,16 @@ fun elaborateDec (d, E) =
 	     decs = Decs.single (Cdec.makeRegion (Cdec.Datatype datatypes,
 						  region))}
 	 end
-      fun elabDec d =
-	 Trace.traceInfo (info, Ast.Dec.layout, Layout.ignore, Trace.assertTrue)
-	 (fn d =>
+      fun elabDec arg =
+	 Trace.traceInfo (info,
+			  Layout.tuple2 (Ast.Dec.layout, Nest.layout),
+			  Layout.ignore, Trace.assertTrue)
+	 (fn (d, nest) =>
 	  let
 	     val region = Adec.region d
 	     fun doit n = Cexp.makeRegion (n, region)
+	     val elabDec' = elabDec
+	     fun elabDec (d: Adec.t) = elabDec' (d, nest)
 	  in
 	     case Adec.node d of
 		Adec.Abstype {datBind, body} => (* rule 19 and p.57 *)
@@ -400,14 +400,17 @@ fun elaborateDec (d, E) =
 		      val (_, decs') =
 			 Env.localCore
 			 (E,
-			  fn () => (Vector.foreach (cons, fn {name, con} =>
-						    Env.extendCon (E, name, con))
-				    ; Vector.foreach (tycons, fn (t, s) =>
-						      Env.extendTycon (E, t, s))),
+			  fn () =>
+			  (Vector.foreach (cons, fn {name, con} =>
+					   Env.extendCon (E, name, con))
+			   ; Vector.foreach (tycons, fn (t, s) =>
+					     Env.extendTycon (E, t, s))),
 			  fn () => elabDec body)
-		      val _ = Vector.foreach (tycons, fn (t, s) =>
-					      Env.extendTycon (E, t, TypeStr.abs s))
-		   in Decs.append (decs, decs')
+		      val _ =
+			 Vector.foreach (tycons, fn (t, s) =>
+					 Env.extendTycon (E, t, TypeStr.abs s))
+		   in
+		      Decs.append (decs, decs')
 		   end
 	      | Adec.Datatype rhs =>
 		   let
@@ -427,7 +430,8 @@ fun elaborateDec (d, E) =
 					      Env.extendCon (E, name, con))
 		      val _ = Vector.foreach (tycons, fn (t, s) =>
 					      Env.extendTycon (E, t, s))
-		   in decs
+		   in
+		      decs
 		   end
 	      | Adec.Exception ebs =>
 		   Vector.fold
@@ -450,7 +454,8 @@ fun elaborateDec (d, E) =
 		    in decs
 		    end)
 	      | Adec.Fix {ops, fixity} =>
-		   (Vector.foreach (ops, fn op' => Env.extendFix (E, op', fixity))
+		   (Vector.foreach (ops, fn op' =>
+				    Env.extendFix (E, op', fixity))
 		    ; Decs.empty)
 	      | Adec.Fun (tyvars, fbs) =>
 		   let
@@ -486,9 +491,10 @@ fun elaborateDec (d, E) =
 			  else
 			     let
 				val {func, args, ...} = Vector.sub (clauses, 0)
+				val nest = Avar.toString func :: nest
 				val profile =
 				   SourceInfo.function
-				   {name = Avar.toString func,
+				   {name = nest,
 				    region = Avar.region func}
 				val numVars = Vector.length args
 				val match =
@@ -502,7 +508,7 @@ fun elaborateDec (d, E) =
 						Env.scope
 						(E, fn () =>
 						 (elaboratePatsV (args, E),
-						  elabExp body))
+						  elabExp' (body, nest)))
 					  in (Cpat.tuple (pats, region),
 					      constrain (body,
 							 elabTypeOpt resultType,
@@ -611,8 +617,13 @@ fun elaborateDec (d, E) =
 		      (* Must do all the es and rvbs pefore the ps because of
 		       * scoping rules.
 		       *)
-		      val es = Vector.map (vbs, fn {pat, exp, ...} =>
-					   elabExp' (exp, Apat.getName pat))
+		      val es =
+			 Vector.map (vbs, fn {pat, exp, ...} =>
+				     elabExp'
+				     (exp,
+				      case Apat.getName pat of
+					 NONE => "<anon>" :: nest
+				       | SOME s => s :: nest))
 		      fun varsAndTypes (p: Apat.t, vars, types)
 			 : Avar.t list * Atype.t list =
 			 let
@@ -657,7 +668,7 @@ fun elaborateDec (d, E) =
 			     val (vars, types) = varsAndTypes (pat, [], [])
 			     val (name, var) =
 				case vars of
-				   [] => ("<anon>", Cvar.newNoname ())
+				   [] => ("<anon>" :: nest, Cvar.newNoname ())
 				 | x :: _ =>
 				      let
 					 val x' = Cvar.fromAst x
@@ -666,10 +677,10 @@ fun elaborateDec (d, E) =
 					    (vars, fn y =>
 					     Env.extendVar (E, y, x'))
 				      in
-					 (Avar.toString x, x')
+					 (Avar.toString x :: nest, x')
 				      end
 			  in
-			     {name = name,
+			     {nest = nest,
 			      types = (Vector.fromListMap
 				       (types, Scheme.ty o elabType)),
 			      var = var}
@@ -677,10 +688,10 @@ fun elaborateDec (d, E) =
 		      val rvbs =
 			 Vector.map2
 			 (rvbs, vts,
-			  fn ({pat, match, ...}, {name, types, var}) =>
-			  {match = elabMatch (match, SOME name),
+			  fn ({pat, match, ...}, {nest, types, var}) =>
+			  {match = elabMatch (match, nest),
 			   profile = SOME (SourceInfo.function
-					   {name = name,
+					   {name = nest,
 					    region = Apat.region pat}),
 			   types = types,
 			   var = var})
@@ -722,20 +733,17 @@ fun elaborateDec (d, E) =
 				tyvars = Vector.new0 ()},
 			       region))]
 		   end
-	  end) d
-      and elabExps (es: Ast.Exp.t list): Cexp.t list =
-	 List.map (es, elabExp)
-      and elabExp e = elabExp' (e, NONE)
-      and elabExp' (arg: Aexp.t * string option): Cexp.t =
+	  end) arg
+      and elabExp' (arg: Aexp.t * Nest.t): Cexp.t =
 	 Trace.traceInfo (elabExpInfo,
-			  Layout.tuple2 (Aexp.layout,
-					 Option.layout String.layout),
+			  Layout.tuple2 (Aexp.layout, Nest.layout),
 			  Cexp.layout,
 			  Trace.assertTrue)
-	 (fn (e: Aexp.t, name: string option) =>
+	 (fn (e: Aexp.t, nest) =>
 	  let
 	     val region = Aexp.region e
 	     fun doit n = Cexp.makeRegion (n, region)
+	     fun elabExp e = elabExp' (e, nest)
 	  in
 	     case Aexp.node e of
 		Aexp.Andalso (e, e') =>
@@ -743,32 +751,28 @@ fun elaborateDec (d, E) =
 	      | Aexp.App (e1, e2) =>
 		   doit (Cexp.App (elabExp e1, elabExp e2))
 	      | Aexp.Case (e, m) =>
-		   Cexp.casee (elabExp e, elabMatch (m, NONE), region)
+		   Cexp.casee (elabExp e, elabMatch (m, nest), region)
 	      | Aexp.Const c => doit (Cexp.Const c)
 	      | Aexp.Constraint (e, t) =>
-		   doit (Cexp.Constraint (elabExp' (e, name),
+		   doit (Cexp.Constraint (elabExp e,
 					  Scheme.ty (elabType t)))
 	      | Aexp.FlatApp items => elabExp (Parse.parseExp (items, E))
 	      | Aexp.Fn m =>
-		   let
-		      val profile =
-			 case name of
-			    NONE => SourceInfo.anonymous region
-			  | SOME s => SourceInfo.function {name = s,
-							   region = region}
-		   in
-		      doit (Cexp.Fn {match = elabMatch (m, name),
-				     profile = SOME profile})
-		   end
+		   doit
+		   (Cexp.Fn
+		    {match = elabMatch (m, nest),
+		     profile = SOME (SourceInfo.function {name = nest,
+							  region = region})})
 	      | Aexp.Handle (try, match) =>
-		   doit (Cexp.Handle (elabExp try, elabMatch (match, NONE)))
+		   doit (Cexp.Handle (elabExp try, elabMatch (match, nest)))
 	      | Aexp.If (a, b, c) =>
 		   Cexp.iff (elabExp a, elabExp b, elabExp c, region)
 	      | Aexp.Let (d, e) =>
 		   Env.scope
 		   (E, fn () =>
-		    doit (Cexp.Let (Decs.toVector (elabDec d), elabExp e)))
-	      | Aexp.List es => Cexp.list (elabExps es, region)
+		    doit (Cexp.Let (Decs.toVector (elabDec (d, nest)),
+				    elabExp e)))
+	      | Aexp.List es => Cexp.list (List.map (es, elabExp), region)
 	      | Aexp.Orelse (e, e') =>
 		   Cexp.orElse (elabExp e, elabExp e', region)
 	      | Aexp.Prim {kind, name, ty} =>
@@ -804,13 +808,14 @@ fun elaborateDec (d, E) =
 				expr = elabExp expr,
 				region = region}
 	  end) arg
-      and elabMatch (Amatch.T {filePos, rules}, name: string option) =
+      and elabMatch (Amatch.T {filePos, rules}, nest: Nest.t) =
 	 Cmatch.new {filePos = filePos,
 		     rules = 
 		     Vector.map (rules, fn (pat, exp) =>
 				 Env.scope (E, fn () => (elaboratePat (pat, E),
-							 elabExp' (exp, name))))}
-   in elabDec d
+							 elabExp' (exp, nest))))}
+   in
+      elabDec (d, nest)
    end
 
 end
