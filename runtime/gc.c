@@ -213,6 +213,68 @@ static inline uint stackReserved (GC_state s, uint r) {
 	return res;
 }
 
+static void sunlink (char *path) {
+	unless (0 == unlink (path))
+		diee ("unkink (%s) failed", path);
+}
+
+/* ---------------------------------------------------------------- */
+/*                    Virtual Memory Management                     */
+/* ---------------------------------------------------------------- */
+
+static void *mmapAnon (void *start, size_t length) {
+	void *result;
+
+#if (defined (__CYGWIN__))	
+	result = VirtualAlloc ((LPVOID)start, length, MEM_COMMIT, 
+				PAGE_READWRITE);
+	if (NULL == result)
+		result = (void*)-1;
+#elif (defined (__linux__) || defined (__FreeBSD__))
+	result = mmap (start, length, PROT_READ | PROT_WRITE, 
+			MAP_PRIVATE | MAP_ANON, -1, 0);
+#elif (defined (__sun__))
+/* On Solaris 5.7, MAP_ANON causes EINVAL and mmap requires a file descriptor. */
+        {
+		static int fd = -1;
+
+		if (-1 == fd)
+			fd = open ("/dev/zero", O_RDONLY);
+		result = mmap (start, length, PROT_READ | PROT_WRITE, 
+				MAP_PRIVATE, fd, 0);
+	}
+#else
+#error smmap not defined
+#endif	
+	if (DEBUG_MEM)
+		fprintf (stderr, "0x%08x = mmapAnon (0x%08x, %s)\n",
+					(uint)result,
+					(uint)start, 
+					uintToCommaString (length));
+	return result;
+}
+
+static void *smmap (size_t length) {
+	void *result;
+
+	result = mmapAnon (NULL, length);
+	if ((void*)-1 == result)
+		diee ("Out of memory.");
+	return result;
+}
+
+static void smunmap (void *base, size_t length) {
+	if (FALSE)
+		fprintf (stderr, "smunmap 0x%08x of length %s\n",
+				(uint)base,
+				uintToCommaString (length));
+	assert (base != NULL);
+	if (0 == length)
+		return;
+	if (0 != munmap (base, length))
+		diee("munmap failed");
+}
+
 #if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
 /* A super-safe mmap.
  *  Allocates a region of memory with dead zones at the high and low ends.
@@ -1519,26 +1581,17 @@ static bool heapCreate (GC_state s, GC_heap h, W32 desiredSize, W32 minSize) {
 			address = i * 0x08000000ul;
 			if (direction)
 				address = 0xf8000000ul - address;
+/* FIXME.
+ * This #if is here because on Windows, the address passed to mmapAnon, which 
+ * calls VirtualAlloc, doesn't seem to matter.
+ */
 #if (defined (__CYGWIN__))
-			address = 0; /* FIXME */
-			i = 31; /* FIXME */
-			h->start = VirtualAlloc ((LPVOID)address, h->size,
-							MEM_COMMIT,
-							PAGE_READWRITE);
-			if (DEBUG_MEM)
-				fprintf (stderr, "0x%08x = VirtualAlloc (0x%08x, %u, MEM_COMMIT, PAGE_READWRITE)\n",
-						(uint)h->start, 
-						(uint)address,
-						(uint)h->size);
-#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
-			h->start = mmap (address+(void*)0, h->size, 
-						PROT_READ | PROT_WRITE,
-						MAP_PRIVATE | MAP_ANON, -1, 0);
+			address = 0; 
+			i = 31;
+#endif
+			h->start = mmapAnon ((void*)address, h->size);
 			if ((void*)-1 == h->start)
 				h->start = (void*)NULL;
-#else
-#error heapCreate not defined
-#endif
 			unless ((void*)NULL == h->start) {
 				direction = (direction==0);
 				if (h->size > s->maxHeapSizeSeen)

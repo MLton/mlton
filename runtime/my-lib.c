@@ -49,99 +49,8 @@ string boolToString (bool b) {
 	return b ? "TRUE" : "FALSE";
 }
 
-void *scalloc (size_t nmemb, size_t size) {
-	void *res;
-
-	res = calloc (nmemb, size);
-	if (NULL == res)
-		die ("calloc (%s, %s) failed.\n", 
-			uintToCommaString (nmemb),
-			uintToCommaString (size));
-	return res;
-}
-
-void sclose (int fd) {
-	unless (0 == close (fd)) 
-		diee ("unable to close %d", fd);
-}
-
-int smkstemp (char *template) {
-	int fd;
-
-	fd = mkstemp (template);
-	if (-1 == fd)
-		diee ("unable to make temporary file");
-	return fd;
-}
-
-/* safe version of write */
-void swrite (int fd, const void *buf, size_t count) {
-	if (0 == count) return;
-	unless (count == write (fd, buf, count))
-		diee ("swrite failed");
-}
-
-void swriteUint (int fd, uint n) {
-	swrite (fd, &n, sizeof(uint));
-}
-
-void swriteUllong (int fd, ullong n) {
-	swrite (fd, &n, sizeof(ullong));
-}
-
-/* safe version of fclose */
-void sfclose (FILE *file) {
-	unless (0 == fclose (file))
-		diee ("unable to close file");
-}
-
-/* safe version of fopen */
-FILE *sfopen(char *fileName, char *mode) {
-	FILE *file;
-	
-	if (NULL == (file = fopen((char*)fileName, mode)))
-		diee("sfopen unable to open file %s", fileName);
-	return file;
-}
-
-/* safe version of fwrite */
-void sfwrite(void *ptr, size_t size, size_t nmemb, FILE *file) {
-	size_t bytes;
-
-	bytes = size * nmemb;
-	if (0 == bytes) return;
-	unless (1 == fwrite(ptr, size * nmemb, 1, file))
-		diee("sfwrite failed");
-}
-
-void sfwriteUint(uint n, FILE *file) {
-	sfwrite(&n, sizeof(uint), 1, file);
-}
-
-void sfread(void *ptr, size_t size, size_t nmemb, FILE *file) {
-	size_t bytes;
-
-	bytes = size * nmemb;
-	if (0 == bytes) return;
-	unless (1 == fread(ptr, bytes, 1, file))
-		diee("sfread failed");
-}
-
-uint sfreadUint(FILE *file) {
-	uint n;
-
-	sfread(&n, sizeof(uint), 1, file);
-
-	return n;
-}
-
-/* ------------------------------------------------- */
-/*                 intToCommaString                  */
-/* ------------------------------------------------- */
-/* BUF_SIZE must be == 1 mod 4 so that the ',' is inserted in the right place */
 #define BUF_SIZE 81
-
-string intToCommaString(int n) {
+string intToCommaString (int n) {
 	static char buf[BUF_SIZE];
 	int i;
 	
@@ -170,6 +79,88 @@ string intToCommaString(int n) {
  		if (n < 0) buf[i--] = '-';
  	}
  	return buf + i + 1;
+}
+
+void *scalloc (size_t nmemb, size_t size) {
+	void *res;
+
+	res = calloc (nmemb, size);
+	if (NULL == res)
+		die ("calloc (%s, %s) failed.\n", 
+			uintToCommaString (nmemb),
+			uintToCommaString (size));
+	return res;
+}
+
+void sclose (int fd) {
+	unless (0 == close (fd)) 
+		diee ("unable to close %d", fd);
+}
+
+void sfclose (FILE *file) {
+	unless (0 == fclose (file))
+		diee ("unable to close file");
+}
+
+FILE *sfopen (char *fileName, char *mode) {
+	FILE *file;
+	
+	if (NULL == (file = fopen ((char*)fileName, mode)))
+		diee ("sfopen unable to open file %s", fileName);
+	return file;
+}
+
+void sfread (void *ptr, size_t size, size_t nmemb, FILE *file) {
+	size_t bytes;
+
+	bytes = size * nmemb;
+	if (0 == bytes) return;
+	unless (1 == fread (ptr, bytes, 1, file))
+		diee("sfread failed");
+}
+
+uint sfreadUint (FILE *file) {
+	uint n;
+
+	sfread (&n, sizeof(uint), 1, file);
+	return n;
+}
+
+void sfwrite (void *ptr, size_t size, size_t nmemb, FILE *file) {
+	size_t bytes;
+
+	bytes = size * nmemb;
+	if (0 == bytes) return;
+	unless (1 == fwrite (ptr, size * nmemb, 1, file))
+		diee ("sfwrite failed");
+}
+
+void *smalloc (size_t length) {
+	void *res;
+
+	res = malloc (length);
+	if (NULL == res)
+		die ("Unable to malloc %s bytes.\n", uintToCommaString (length));
+	return res;
+}
+
+int smkstemp (char *template) {
+	int fd;
+
+	fd = mkstemp (template);
+	if (-1 == fd)
+		diee ("unable to make temporary file");
+	return fd;
+}
+
+void swrite (int fd, const void *buf, size_t count) {
+	if (0 == count) return;
+	unless (count == write (fd, buf, count))
+		diee ("swrite failed");
+}
+
+void swriteUint (int fd, uint n) {
+	swrite (fd, &n, sizeof(uint));
 }
 
 string uintToCommaString (uint n) {
@@ -217,52 +208,4 @@ string ullongToCommaString(ullong n) {
  		}
  	}
  	return buf + i + 1;
-}
-
-void *smalloc(size_t length) {
-	void *res;
-
-	res = malloc (length);
-	if (NULL == res)
-		die ("Unable to malloc %s bytes.\n", uintToCommaString (length));
-	return res;
-}
-
-/* ------------------------------------------------- */
-/*               Safe mmap and munmap                */
-/* ------------------------------------------------- */
-
-void *smmap (size_t length) {
-	void *result;
-
-#if (defined (__CYGWIN__))	
-	result = VirtualAlloc (0, length, MEM_COMMIT, PAGE_READWRITE);
-	if (NULL == result)
-		die("VirtualAlloc failed");
-#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
-	result = mmap (NULL, length, PROT_READ | PROT_WRITE, 
-			MAP_PRIVATE | MAP_ANON, -1, 0);
-	if (result == (void*)-1) 
-		diee ("Out of swap space.");
-#else
-#error smmap not defined
-#endif	
-	return result;
-}
-
-void smunmap (void *base, size_t length) {
-	if (FALSE)
-		fprintf (stderr, "smunmap 0x%08x of length %s\n",
-				(uint)base,
-				uintToCommaString (length));
-	assert (base != NULL);
-	if (0 == length)
-		return;
-	if (0 != munmap (base, length))
-		diee("munmap failed");
-}
-
-void sunlink (char *path) {
-	unless (0 == unlink (path))
-		diee ("unkink (%s) failed", path);
 }

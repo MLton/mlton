@@ -36,9 +36,9 @@
 #endif
 
 #define NEW(x) \
-	x = (typeof(x))smalloc(sizeof(*x))
+	x = (typeof(x))(smalloc (sizeof(*x)))
 #define ARRAY(a, s) \
-	a = (typeof(a))scalloc(s, sizeof(*a))
+	a = (typeof(a))(scalloc (s, sizeof(*a)))
 
 #define string char*
 
@@ -70,33 +70,18 @@ extern void asfail(char *file, int line, char *prop);
 #endif
 
 string boolToString (bool b);
-
+string intToCommaString (int n);
 void *scalloc (size_t nmemb, size_t size);
-
-/* safe version of close, mkstemp, write */
-int smkstemp (char *template);
 void sclose (int fd);
-void swrite (int fd, const void *buf, size_t count);
-void swriteUint (int fd, uint n);
-void swriteUllong (int fd, ullong n);
-
-/* safe versions of fopen, fread, fwrite */
 void sfclose (FILE *file);
 FILE *sfopen (char *fileName, char *mode);
 void sfread (void *ptr, size_t size, size_t nmemb, FILE *file);
 uint sfreadUint (FILE *file);
 void sfwrite (void *ptr, size_t size, size_t nmemb, FILE *file);
-void sfwriteUint (uint n, FILE *file);
-
 void *smalloc (size_t length);
-
-/* safe mmap and munmap */
-void *smmap (size_t length);
-void smunmap (void *base, size_t length);
-void sunlink (char *path);
-
-/* Return a statically allocated comma separated string */
-string intToCommaString (int n);
+int smkstemp (char *template);
+void swrite (int fd, const void *buf, size_t count);
+void swriteUint (int fd, uint n);
 string uintToCommaString (uint n);
 string ullongToCommaString (ullong n);
 
