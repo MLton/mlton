@@ -15,6 +15,7 @@ signature FILE =
       val appendTo: t * string -> unit
       val base: t -> string
       val canRead: t -> bool
+      val canRun: t -> bool
       val canWrite: t -> bool
       val concat: t list * t -> unit
       val contents: t -> string

@@ -46,8 +46,9 @@ fun foldLines (f, ac, trans) =
 local
    fun can a f = FS.access (f, a)
 in
-   val canWrite = can [FS.A_WRITE]
    val canRead = can [FS.A_READ]
+   val canRun = can [FS.A_EXEC]
+   val canWrite = can [FS.A_WRITE]
    val doesExist = can []
 end
 
