@@ -66,14 +66,14 @@ pointer-tycon.sig
 pointer-tycon.fun
 object-type.sig
 label.sig
-rep-type.sig
-rep-type.fun
 c-function.sig
 c-function.fun
 const.sig
 const.fun
 prim.sig
 prim.fun
+rep-type.sig
+rep-type.fun
 ffi.sig
 ffi.fun
 func.sig

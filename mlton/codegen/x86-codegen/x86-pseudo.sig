@@ -13,8 +13,10 @@ signature X86_PSEUDO =
     structure CFunction: C_FUNCTION
     structure CType: C_TYPE
     structure Label: ID
+    structure RepType: REP_TYPE
     structure Runtime: RUNTIME
-    sharing CType = CFunction.RepType.CType
+    sharing CFunction = RepType.CFunction
+    sharing CType = RepType.CType
 
     val tracer : string -> ('a -> 'b) -> 
                  (('a -> 'b) * (unit -> unit))
@@ -425,7 +427,7 @@ signature X86_PSEUDO =
 		   frameInfo: FrameInfo.t} -> t
 	val creturn: {dsts: (Operand.t * Size.t) vector,
 		      frameInfo: FrameInfo.t option,
-		      func: CFunction.t,
+		      func: RepType.t CFunction.t,
 		      label: Label.t} -> t
 	val func: {label: Label.t,
 		   live: MemLocSet.t} -> t
@@ -467,7 +469,7 @@ signature X86_PSEUDO =
 	val raisee : {live: MemLocSet.t} -> t
 	val ccall : {args: (Operand.t * Size.t) list,
 		     frameInfo: FrameInfo.t option,
-		     func: CFunction.t,
+		     func: RepType.t CFunction.t,
 		     return: Label.t option,
 		     target: Label.t} -> t
       end

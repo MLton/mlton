@@ -42,24 +42,25 @@ structure Atoms =
       structure Const = Const (structure IntX = IntX
 			       structure RealX = RealX
 			       structure WordX = WordX)
-      structure RepType = RepType (structure CType = CType
-				   structure IntSize = IntSize
-				   structure IntX = IntX
-				   structure Label = Label
-				   structure PointerTycon = PointerTycon
-				   structure RealSize = RealSize
-				   structure Runtime = Runtime
-				   structure WordSize = WordSize
-				   structure WordX = WordX)
-      structure CFunction = CFunction (structure RepType = RepType)
+      structure CFunction = CFunction ()
       structure Prim = Prim (structure CFunction = CFunction
 			     structure CType = CType
 			     structure Con = Con
 			     structure Const = Const
 			     structure IntSize = IntSize
 			     structure RealSize = RealSize
-			     structure RepType = RepType
 			     structure WordSize = WordSize)
+      structure RepType = RepType (structure CFunction = CFunction
+				   structure CType = CType
+				   structure IntSize = IntSize
+				   structure IntX = IntX
+				   structure Label = Label
+				   structure PointerTycon = PointerTycon
+				   structure Prim = Prim
+				   structure RealSize = RealSize
+				   structure Runtime = Runtime
+				   structure WordSize = WordSize
+				   structure WordX = WordX)
       structure Ffi = Ffi (structure CFunction = CFunction
 			   structure CType = CType)
       structure ObjectType = RepType.ObjectType

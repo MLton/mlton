@@ -33,7 +33,7 @@ structure Kind =
        | SideEffect
    end
 
-datatype t =
+datatype 'a t =
    Array_array (* backend *)
  | Array_array0Const (* constant propagation *)
  | Array_length (* ssa to rssa *)
@@ -47,9 +47,9 @@ datatype t =
  | Exn_setExtendExtra (* implement exceptions *)
  | Exn_setInitExtra (* implement exceptions *)
  | Exn_setTopLevelHandler (* implement exceptions *)
- | FFI of CFunction.t (* ssa to rssa *)
+ | FFI of 'a CFunction.t (* ssa to rssa *)
  | FFI_Symbol of {name: string,
-		  ty: RepType.t} (* codegen *)
+		  ty: 'a} (* codegen *)
  | GC_collect (* ssa to rssa *)
  | GC_pack (* ssa to rssa *)
  | GC_unpack (* ssa to rssa *)
@@ -115,14 +115,14 @@ datatype t =
  | MLton_serialize (* unused *)
  | MLton_size (* ssa to rssa *)
  | MLton_touch (* backend *)
- | Pointer_getInt of IntSize.t (* backend *)
- | Pointer_getPointer (* backend *)
- | Pointer_getReal of RealSize.t (* backend *)
- | Pointer_getWord of WordSize.t (* backend *)
- | Pointer_setInt of IntSize.t (* backend *)
- | Pointer_setPointer (* backend *)
- | Pointer_setReal of RealSize.t (* backend *)
- | Pointer_setWord of WordSize.t (* backend *)
+ | Pointer_getInt of IntSize.t (* ssa to rssa *)
+ | Pointer_getPointer (* ssa to rssa *)
+ | Pointer_getReal of RealSize.t (* ssa to rssa *)
+ | Pointer_getWord of WordSize.t (* ssa to rssa *)
+ | Pointer_setInt of IntSize.t (* ssa to rssa *)
+ | Pointer_setPointer (* ssa to rssa *)
+ | Pointer_setReal of RealSize.t (* ssa to rssa *)
+ | Pointer_setWord of WordSize.t (* ssa to rssa *)
  | Real_Math_acos of RealSize.t (* codegen *)
  | Real_Math_asin of RealSize.t (* codegen *)
  | Real_Math_atan of RealSize.t (* codegen *)
@@ -168,7 +168,7 @@ datatype t =
   *)
  | Thread_switchTo (* ssa to rssa *)
  | Vector_length (* ssa to rssa *)
- | Vector_sub (* backend *)
+ | Vector_sub (* ssa to rssa *)
  | Weak_canGet (* ssa to rssa *)
  | Weak_get (* ssa to rssa *)
  | Weak_new (* ssa to rssa *)
@@ -208,11 +208,11 @@ datatype t =
  | World_save (* ssa to rssa *)
 
 fun name p = p
-   
+
 (* The values of these strings are important since they are referred to
  * in the basis library code.  See basis-library/misc/primitive.sml.
  *)
-fun toString (n: t): string =
+fun toString (n: 'a t): string =
    let
       fun int (s: IntSize.t, str: string): string =
 	 concat ["Int", IntSize.toString s, "_", str]
@@ -389,9 +389,9 @@ fun toString (n: t): string =
        | World_save => "World_save"
    end
 
-val layout = Layout.str o toString
+fun layout p = Layout.str (toString p)
    
-val equals: t * t -> bool =
+val equals: 'a t * 'a t -> bool =
    fn (Array_array, Array_array) => true
     | (Array_array0Const, Array_array0Const) => true
     | (Array_length, Array_length) => true
@@ -555,7 +555,164 @@ val equals: t * t -> bool =
     | (World_save, World_save) => true
     | _ => false
 
-val allocTooLarge = FFI CFunction.allocTooLarge
+val map: 'a t * ('a -> 'b) -> 'b t =
+   fn (p, f) =>
+   case p of
+      Array_array => Array_array
+    | Array_array0Const => Array_array0Const
+    | Array_length => Array_length
+    | Array_sub => Array_sub
+    | Array_toVector => Array_toVector
+    | Array_update => Array_update
+    | Char_toWord8 => Char_toWord8
+    | Exn_extra => Exn_extra
+    | Exn_keepHistory => Exn_keepHistory
+    | Exn_name => Exn_name
+    | Exn_setExtendExtra => Exn_setExtendExtra
+    | Exn_setInitExtra => Exn_setInitExtra
+    | Exn_setTopLevelHandler => Exn_setTopLevelHandler
+    | FFI func => FFI (CFunction.map (func, f))
+    | FFI_Symbol {name, ty} => FFI_Symbol {name = name, ty = f ty}
+    | GC_collect => GC_collect
+    | GC_pack => GC_pack
+    | GC_unpack => GC_unpack
+    | Int_add z => Int_add z
+    | Int_addCheck z => Int_addCheck z
+    | Int_equal z => Int_equal z
+    | Int_ge z => Int_ge z
+    | Int_gt z => Int_gt z
+    | Int_le z => Int_le z
+    | Int_lt z => Int_lt z
+    | Int_mul z => Int_mul z
+    | Int_mulCheck z => Int_mulCheck z
+    | Int_neg z => Int_neg z
+    | Int_negCheck z => Int_negCheck z
+    | Int_quot z => Int_quot z
+    | Int_rem z => Int_rem z
+    | Int_sub z => Int_sub z
+    | Int_subCheck z => Int_subCheck z
+    | Int_toInt z => Int_toInt z
+    | Int_toReal z => Int_toReal z
+    | Int_toWord z => Int_toWord z
+    | IntInf_add => IntInf_add
+    | IntInf_andb => IntInf_andb
+    | IntInf_arshift => IntInf_arshift
+    | IntInf_compare => IntInf_compare
+    | IntInf_equal => IntInf_equal
+    | IntInf_gcd => IntInf_gcd
+    | IntInf_lshift => IntInf_lshift
+    | IntInf_mul => IntInf_mul
+    | IntInf_neg => IntInf_neg
+    | IntInf_notb => IntInf_notb
+    | IntInf_orb => IntInf_orb
+    | IntInf_quot => IntInf_quot
+    | IntInf_rem => IntInf_rem
+    | IntInf_sub => IntInf_sub
+    | IntInf_toString => IntInf_toString
+    | IntInf_toVector => IntInf_toVector
+    | IntInf_toWord => IntInf_toWord
+    | IntInf_xorb => IntInf_xorb
+    | MLton_bogus => MLton_bogus
+    | MLton_bug => MLton_bug
+    | MLton_deserialize => MLton_deserialize
+    | MLton_eq => MLton_eq
+    | MLton_equal => MLton_equal
+    | MLton_halt => MLton_halt
+    | MLton_handlesSignals => MLton_handlesSignals
+    | MLton_installSignalHandler => MLton_installSignalHandler
+    | MLton_serialize => MLton_serialize
+    | MLton_size => MLton_size
+    | MLton_touch => MLton_touch
+    | Pointer_getInt z => Pointer_getInt z
+    | Pointer_getPointer => Pointer_getPointer
+    | Pointer_getReal z => Pointer_getReal z
+    | Pointer_getWord z => Pointer_getWord z
+    | Pointer_setInt z => Pointer_setInt z
+    | Pointer_setPointer => Pointer_setPointer
+    | Pointer_setReal z => Pointer_setReal z
+    | Pointer_setWord z => Pointer_setWord z
+    | Real_Math_acos z => Real_Math_acos z
+    | Real_Math_asin z => Real_Math_asin z
+    | Real_Math_atan z => Real_Math_atan z
+    | Real_Math_atan2 z => Real_Math_atan2 z
+    | Real_Math_cos z => Real_Math_cos z
+    | Real_Math_exp z => Real_Math_exp z
+    | Real_Math_ln z => Real_Math_ln z
+    | Real_Math_log10 z => Real_Math_log10 z
+    | Real_Math_sin z => Real_Math_sin z
+    | Real_Math_sqrt z => Real_Math_sqrt z
+    | Real_Math_tan z => Real_Math_tan z
+    | Real_abs z => Real_abs z
+    | Real_add z => Real_add z
+    | Real_div z => Real_div z
+    | Real_equal z => Real_equal z
+    | Real_ge z => Real_ge z
+    | Real_gt z => Real_gt z
+    | Real_ldexp z => Real_ldexp z
+    | Real_le z => Real_le z
+    | Real_lt z => Real_lt z
+    | Real_mul z => Real_mul z
+    | Real_muladd z => Real_muladd z
+    | Real_mulsub z => Real_mulsub z
+    | Real_neg z => Real_neg z
+    | Real_qequal z => Real_qequal z
+    | Real_round z => Real_round z
+    | Real_sub z => Real_sub z
+    | Real_toInt z => Real_toInt z
+    | Real_toReal z => Real_toReal z
+    | Ref_assign => Ref_assign
+    | Ref_deref => Ref_deref
+    | Ref_ref => Ref_ref
+    | String_toWord8Vector => String_toWord8Vector
+    | Thread_atomicBegin => Thread_atomicBegin
+    | Thread_atomicEnd => Thread_atomicEnd
+    | Thread_canHandle => Thread_canHandle
+    | Thread_copy => Thread_copy
+    | Thread_copyCurrent => Thread_copyCurrent
+    | Thread_returnToC => Thread_returnToC
+    | Thread_switchTo => Thread_switchTo
+    | Vector_length => Vector_length
+    | Vector_sub => Vector_sub
+    | Weak_canGet => Weak_canGet
+    | Weak_get => Weak_get
+    | Weak_new => Weak_new
+    | Word_add z => Word_add z
+    | Word_addCheck z => Word_addCheck z
+    | Word_andb z => Word_andb z
+    | Word_arshift z => Word_arshift z
+    | Word_div z => Word_div z
+    | Word_equal z => Word_equal z
+    | Word_ge z => Word_ge z
+    | Word_gt z => Word_gt z
+    | Word_le z => Word_le z
+    | Word_lshift z => Word_lshift z
+    | Word_lt z => Word_lt z
+    | Word_mod z => Word_mod z
+    | Word_mul z => Word_mul z
+    | Word_mulCheck z => Word_mulCheck z
+    | Word_neg z => Word_neg z
+    | Word_notb z => Word_notb z
+    | Word_orb z => Word_orb z
+    | Word_rol z => Word_rol z
+    | Word_ror z => Word_ror z
+    | Word_rshift z => Word_rshift z
+    | Word_sub z => Word_sub z
+    | Word_toInt z => Word_toInt z
+    | Word_toIntInf => Word_toIntInf
+    | Word_toIntX z => Word_toIntX z
+    | Word_toWord z => Word_toWord z
+    | Word_toWordX z => Word_toWordX z
+    | Word_xorb z => Word_xorb z
+    | WordVector_toIntInf => WordVector_toIntInf
+    | Word8_toChar => Word8_toChar
+    | Word8Array_subWord => Word8Array_subWord
+    | Word8Array_updateWord => Word8Array_updateWord
+    | Word8Vector_subWord => Word8Vector_subWord
+    | Word8Vector_toString => Word8Vector_toString
+    | World_save => World_save
+
+val cast: 'a t -> 'b t = fn p => map (p, fn _ => Error.bug "Prim.cast")
+
 val array = Array_array
 val assign = Ref_assign
 val bogus = MLton_bogus
@@ -637,11 +794,13 @@ val mayOverflow =
 
 val mayRaise = mayOverflow
 
-val kind: t -> Kind.t =
+val kind: 'a t -> Kind.t =
+   fn p =>
    let
       datatype z = datatype Kind.t
    in
-      fn Array_array => Moveable
+      case p of
+	 Array_array => Moveable
        | Array_array0Const => Moveable
        | Array_length => Functional
        | Array_sub => DependsOnState
@@ -798,10 +957,8 @@ val kind: t -> Kind.t =
 local
    fun make k p = k = kind p
 in
-   val isFunctional = make Kind.Functional
-   val isFunctional =
-      Trace.trace ("isFunctional", layout, Bool.layout) isFunctional
-   val maySideEffect = make Kind.SideEffect
+   fun isFunctional p = Kind.Functional = kind p
+   fun maySideEffect p = Kind.SideEffect = kind p
 end
 
 local
@@ -875,7 +1032,7 @@ local
        (Word_sub s),
        (Word_xorb s)]
 in
-   val all: t list =
+   val all: unit t list =
       [Array_array,
        Array_array0Const,
        Array_length,
@@ -921,6 +1078,8 @@ in
        MLton_serialize,
        MLton_size,
        MLton_touch,
+       Pointer_getPointer,
+       Pointer_setPointer,
        Ref_assign,
        Ref_deref,
        Ref_ref,
@@ -972,7 +1131,6 @@ in
 	     List.concatMap (all, fn s => [get s, set s])
        in
 	  List.concat [doit (IntSize.prims, Pointer_getInt, Pointer_setInt),
-		       [Pointer_getPointer, Pointer_setPointer],
 		       doit (RealSize.all, Pointer_getReal, Pointer_setReal),
 		       doit (WordSize.prims, Pointer_getWord, Pointer_setWord)]
        end
@@ -980,7 +1138,7 @@ end
 
 local
    val table: {hash: word,
-	       prim: t,
+	       prim: unit t,
 	       string: string} HashSet.t =
       HashSet.new {hash = #hash}
    val () =
@@ -998,17 +1156,15 @@ local
 		       ()
 		    end)
 in
-   val fromString: string -> t =
+   val fromString: string -> 'a t =
       fn name =>
-      #prim
-      (HashSet.lookupOrInsert
-       (table, String.hash name,
-	fn {string, ...} => name = string,
-	fn () => Error.bug (concat ["unknown primitive: ", name])))
+      cast
+      (#prim
+       (HashSet.lookupOrInsert
+	(table, String.hash name,
+	 fn {string, ...} => name = string,
+	 fn () => Error.bug (concat ["unknown primitive: ", name]))))
 end
-
-val fromString =
-   Trace.trace ("Prim.fromString", String.layout, layout) fromString
 
 fun 'a extractTargs {args: 'a vector,
 		     deArray: 'a -> 'a,
@@ -1016,7 +1172,7 @@ fun 'a extractTargs {args: 'a vector,
 		     deRef: 'a -> 'a,
 		     deVector: 'a -> 'a,
 		     deWeak: 'a -> 'a,
-		     prim: t,
+		     prim: 'a t,
 		     result: 'a} =
    let
       val one = Vector.new1
@@ -1076,22 +1232,27 @@ structure ApplyArg =
 
 structure ApplyResult =
    struct
-      type prim = t
-      datatype 'a t =
-	 Apply of prim * 'a list
+      type 'a prim = 'a t
+
+      datatype ('a, 'b) t =
+	 Apply of 'a prim * 'b list
        | Bool of bool
        | Const of Const.t
        | Overflow
        | Unknown
-       | Var of 'a
+       | Var of 'b
 
       val truee = Bool true
       val falsee = Bool false
 
       val layoutPrim = layout
-      fun layout layoutX =
-	 let open Layout
-	 in fn Apply (p, args) => seq [layoutPrim p, List.layout layoutX args]
+
+      fun layout layoutX ar =
+	 let
+	    open Layout
+	 in
+	    case ar of
+	       Apply (p, args) => seq [layoutPrim p, List.layout layoutX args]
 	     | Bool b => Bool.layout b
 	     | Const c => Const.layout c
 	     | Overflow => str "Overflow"
@@ -1127,7 +1288,9 @@ structure ApplyResult =
  * A x = B y --> false
  *)
    
-fun 'a apply (p, args, varEquals) =
+fun ('a, 'b) apply (p: 'a t,
+		    args: 'b ApplyArg.t list,
+		    varEquals: 'b * 'b -> bool): ('a, 'b) ApplyResult.t =
    let
       datatype z = datatype t
       datatype z = datatype Const.t
@@ -1135,7 +1298,7 @@ fun 'a apply (p, args, varEquals) =
       val int = ApplyResult.Const o Const.int
       val intInf = ApplyResult.Const o Const.intInf
       val intInfConst = intInf o IntInf.fromInt
-      fun word (w: WordX.t): 'a ApplyResult.t =
+      fun word (w: WordX.t): ('a, 'b) ApplyResult.t =
 	 ApplyResult.Const (Const.word w)
       val word8Vector = ApplyResult.Const o Const.word8Vector
       val t = ApplyResult.truee
@@ -1238,9 +1401,9 @@ fun 'a apply (p, args, varEquals) =
       fun someVars () =
 	 let
 	    datatype z = datatype ApplyResult.t
-	    fun add (x: 'a, i: IntX.t): 'a ApplyResult.t =
+	    fun add (x: 'b, i: IntX.t): ('a, 'b) ApplyResult.t =
 	       if IntX.isZero i then Var x else Unknown
-	    fun mul (x: 'a, i: IntX.t, s: IntSize.t, neg) =
+	    fun mul (x: 'b, i: IntX.t, s: IntSize.t, neg) =
 	       (case IntX.toInt i of
 		   0 => int (IntX.zero s)
 		 | 1 => Var x
@@ -1587,7 +1750,9 @@ fun 'a apply (p, args, varEquals) =
       else someVars ()
    end
 
-fun layoutApp (p: t, args: 'a vector, layoutArg: 'a -> Layout.t): Layout.t =
+fun ('a, 'b) layoutApp (p: 'a t,
+			args: 'b vector,
+			layoutArg: 'b -> Layout.t): Layout.t =
    let
       fun arg i = layoutArg (Vector.sub (args, i))
       open Layout
@@ -1657,178 +1822,6 @@ fun layoutApp (p: t, args: 'a vector, layoutArg: 'a -> Layout.t): Layout.t =
        | Word_xorb _ => two "^"
        | _ => seq [layout p, str " ", Vector.layout layoutArg args]
    end
-
-structure Type = RepType
-
-fun typeCheck (p: t, ts: Type.t vector): Type.t option =
-   let
-      fun nullary res =
-	 if 0 = Vector.length ts
-	    then res
-	 else NONE
-      fun unary (t0, res) =
-	 if 1 = Vector.length ts
-	    andalso Type.isSubtype (Vector.sub (ts, 0), t0)
-	    then SOME res
-	 else NONE
-      fun two f =
-	 if 2 = Vector.length ts
-	    then f (Vector.sub (ts, 0), Vector.sub (ts, 1))
-	 else NONE
-      fun twoWord f =
-	 two (fn (t, t') =>
-	      if Bits.equals (Type.width t, Type.width t')
-		 then SOME (f (t, t'))
-	      else NONE)
-      fun binary (t0, t1, res) =
-	 two (fn (t0', t1') =>
-	      if Type.isSubtype (Vector.sub (ts, 0), t0)
-		 andalso Type.isSubtype (Vector.sub (ts, 1), t1)
-		 then SOME res
-	      else NONE)
-      fun ternary (t0, t1, t2, res) =
-	 if 3 = Vector.length ts
-	    andalso Type.isSubtype (Vector.sub (ts, 0), t0)
-	    andalso Type.isSubtype (Vector.sub (ts, 1), t1)
-	    andalso Type.isSubtype (Vector.sub (ts, 2), t2)
-	    then SOME res
-	 else NONE
-      local
-	 open Type
-      in
-	 val defaultInt = defaultInt
-	 val defaultWord = defaultWord
-	 val int = int
-	 val real = real
-	 val word = word o WordSize.bits
-      end
-      local
-	 fun make f s = let val t = f s in unary (t, t) end
-      in
-	 val intUnary = make int
-	 val realUnary = make real
-	 val wordUnary = make word
-      end
-      local
-	 fun make f s = let val t = f s in binary (t, t, t) end
-      in
-	 val intBinary = make int
-	 val realBinary = make real
-	 val wordBinary = make word
-      end
-      local
-	 fun make f s = let val t = f s in binary (t, t, Type.bool) end
-      in
-	 val intCompare = make int
-	 val realCompare = make real
-	 val wordCompare = make word
-      end
-      fun wordShift s = binary (word s, defaultWord, word s)
-      fun wordShift' f = two (fn (t, t') => SOME (f (t, t')))
-      fun real3 s =
-	 let
-	    val t = real s
-	 in
-	    ternary (t, t, t, t)
-	 end
-   in
-      case p of
-	 FFI f =>
-	    let
-	       val CFunction.T {args, return, ...} = f
-	    in
-	       if Vector.equals (ts, args, Type.isSubtype)
-		  then SOME return
-	       else NONE
-	    end
-       | FFI_Symbol {ty, ...} => nullary (SOME ty)
-       | Int_add s => intBinary s
-       | Int_addCheck s => intBinary s
-       | Int_equal s => intCompare s
-       | Int_ge s => intCompare s
-       | Int_gt s => intCompare s
-       | Int_le s => intCompare s
-       | Int_lt s => intCompare s
-       | Int_mul s => intBinary s
-       | Int_mulCheck s => intBinary s
-       | Int_neg s => intUnary s
-       | Int_negCheck s => intUnary s
-       | Int_quot s => intBinary s
-       | Int_rem s => intBinary s
-       | Int_sub s => intBinary s
-       | Int_subCheck s => intBinary s
-       | Int_toInt (s, s') => unary (int s, int s')
-       | Int_toReal (s, s') => unary (int s, real s')
-       | Int_toWord (s, s') => unary (int s, word s')
-       | MLton_eq =>
-	    two (fn (t1, t2) =>
-		 if Type.isSubtype (t1, t2) orelse Type.isSubtype (t2, t1)
-		    then SOME Type.bool
-		 else NONE)
-       | Real_Math_acos s => realUnary s
-       | Real_Math_asin s => realUnary s
-       | Real_Math_atan s => realUnary s
-       | Real_Math_atan2 s => realBinary s
-       | Real_Math_cos s => realUnary s
-       | Real_Math_exp s => realUnary s
-       | Real_Math_ln s => realUnary s
-       | Real_Math_log10 s => realUnary s
-       | Real_Math_sin s => realUnary s
-       | Real_Math_sqrt s => realUnary s
-       | Real_Math_tan s => realUnary s
-       | Real_abs s => realUnary s
-       | Real_add s => realBinary s
-       | Real_div s => realBinary s
-       | Real_equal s => realCompare s
-       | Real_ge s => realCompare s
-       | Real_gt s => realCompare s
-       | Real_ldexp s => binary (real s, defaultInt, real s)
-       | Real_le s => realCompare s
-       | Real_lt s => realCompare s
-       | Real_mul s => realBinary s
-       | Real_muladd s => real3 s
-       | Real_mulsub s => real3 s
-       | Real_neg s => realUnary s
-       | Real_qequal s => realCompare s
-       | Real_round s => realUnary s
-       | Real_sub s => realBinary s
-       | Real_toInt (s, s') => unary (real s, int s')
-       | Real_toReal (s, s') => unary (real s, real s')
-       | Thread_returnToC => nullary (SOME Type.unit)
-       | Word_add s => twoWord Type.add
-       | Word_addCheck s => wordBinary s
-       | Word_andb s => two Type.andb
-       | Word_arshift s => wordShift s
-       | Word_div s => wordBinary s
-       | Word_equal s => wordCompare s
-       | Word_ge s => wordCompare s
-       | Word_gt s => wordCompare s
-       | Word_le s => wordCompare s
-       | Word_lshift s => wordShift' Type.lshift
-       | Word_lt s => wordCompare s
-       | Word_mod s => wordBinary s
-       | Word_mul s => twoWord Type.mul
-       | Word_mulCheck s => wordBinary s
-       | Word_neg s => wordUnary s
-       | Word_notb s => wordUnary s
-       | Word_orb s => two Type.orb
-       | Word_rol s => wordShift s
-       | Word_ror s => wordShift s
-       | Word_rshift s => wordShift' Type.rshift
-       | Word_sub s => wordBinary s
-       | Word_toInt (s, s') => unary (word s, int s')
-       | Word_toIntX (s, s') => unary (word s, int s')
-       | Word_toWord (s, s') => unary (word s, word s')
-       | Word_toWordX (s, s') => unary (word s, word s')
-       | Word_xorb s => wordBinary s
-       | _ => Error.bug (concat ["strange primitive to Prim.typeCheck: ",
-				 toString p])
-   end
-
-val typeCheck =
-   Trace.trace2 ("Prim.typeCheck", layout, Vector.layout Type.layout,
-		 Option.layout Type.layout)
-   typeCheck
 
 structure Name =
    struct

@@ -56,9 +56,9 @@ signature ATOMS' =
       sharing Label = RepType.Label
       sharing ObjectType = RepType.ObjectType
       sharing PointerTycon = ObjectType.PointerTycon = RepType.PointerTycon
+      sharing Prim = RepType.Prim
       sharing RealSize = Prim.RealSize = RealX.RealSize = RepType.RealSize
 	 = Tycon.RealSize
-      sharing RepType = CFunction.RepType = Prim.RepType
       sharing RealX = Const.RealX
       sharing Runtime = ObjectType.Runtime = RepType.Runtime
       sharing SourceInfo = ProfileExp.SourceInfo

@@ -542,7 +542,7 @@ fun toMachine (program: Ssa.Program.t) =
 	 {args = (Vector.new1
 		  (globalString "backend thought control shouldn't reach here")),
 	  frameInfo = NONE,
-	  func = CFunction.bug,
+	  func = Type.BuiltInCFunction.bug,
 	  return = NONE}
       val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector},
 	   set = setLabelInfo, ...} =

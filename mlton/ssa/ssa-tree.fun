@@ -210,7 +210,7 @@ structure Exp =
 	 ConApp of {con: Con.t,
 		    args: Var.t vector}
        | Const of Const.t
-       | PrimApp of {prim: Prim.t,
+       | PrimApp of {prim: Type.t Prim.t,
 		     targs: Type.t vector,
 		     args: Var.t vector}
        | Profile of ProfileExp.t
@@ -573,7 +573,7 @@ structure Return =
 structure Transfer =
    struct
       datatype t =
-         Arith of {prim: Prim.t,
+         Arith of {prim: Type.t Prim.t,
 		   args: Var.t vector,
 		   overflow: Label.t, (* Must be nullary. *)
 		   success: Label.t, (* Must be unary. *)
@@ -589,7 +589,7 @@ structure Transfer =
 		  args: Var.t vector}
        | Raise of Var.t vector
        | Return of Var.t vector
-       | Runtime of {prim: Prim.t,
+       | Runtime of {prim: Type.t Prim.t,
 		     args: Var.t vector,
 		     return: Label.t} (* Must be nullary. *)
 

@@ -172,15 +172,7 @@ structure State =
 	 end
    end
 
-val traceApply =
-   Trace.trace ("Prim.apply",
-		fn (p, args, _: VarInfo.t * VarInfo.t -> bool) =>
-		let open Layout
-		in seq [Prim.layout p, str " ",
-			List.layout (Prim.ApplyArg.layout
-				     (Var.layout o VarInfo.var)) args]
-		end,
-		Prim.ApplyResult.layout (Var.layout o VarInfo.var))
+val traceApplyInfo = Trace.info "Prim.apply"
 
 fun shrinkFunction (globals: Statement.t vector) =
    let
@@ -619,8 +611,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 		     end
 	       else ()
 	    end) arg
-	 fun primApp (prim: Prim.t, args: VarInfo.t vector)
-	    : VarInfo.t Prim.ApplyResult.t =
+	 fun primApp (prim: Type.t Prim.t, args: VarInfo.t vector)
+	    : (Type.t, VarInfo.t) Prim.ApplyResult.t =
 	    case Prim.name prim of
 	       Prim.Name.FFI _ => Prim.ApplyResult.Unknown
 	     | _ =>
@@ -642,7 +634,18 @@ fun shrinkFunction (globals: Statement.t vector) =
 				 | _ => Prim.ApplyArg.Var vi)
 			  | _ => Prim.ApplyArg.Var vi)
 		  in
-		     traceApply Prim.apply
+		     Trace.traceInfo'
+		     (traceApplyInfo,
+		      fn (p, args, _) =>
+		      let
+			 open Layout
+		      in
+			 seq [Prim.layout p, str " ",
+			      List.layout (Prim.ApplyArg.layout
+					   (Var.layout o VarInfo.var)) args]
+		      end,
+		      Prim.ApplyResult.layout (Var.layout o VarInfo.var))
+		     Prim.apply
 		     (prim, Vector.toList args', VarInfo.equals)
 		     handle e =>
 			Error.bug (concat ["Prim.apply raised ",

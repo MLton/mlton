@@ -66,6 +66,11 @@ struct
 open S
 open Rssa
 
+structure CFunction =
+   struct
+      open CFunction Type.BuiltInCFunction
+   end
+
 structure Statement =
    struct
       open Statement

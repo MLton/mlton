@@ -174,7 +174,7 @@ and primExp =
 	       handler: exp}
   | Lambda of lambda
   | PrimApp of {args: VarExp.t vector,
-		prim: Prim.t,
+		prim: Type.t Prim.t,
 		targs: Type.t vector}
   | Profile of ProfileExp.t
   | Raise of {exn: VarExp.t,

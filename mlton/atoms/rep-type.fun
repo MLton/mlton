@@ -10,6 +10,8 @@ struct
 
 open S
 
+structure CFunction = Prim.CFunction
+
 type int = Int.t
 
 structure Type =
@@ -761,6 +763,20 @@ fun pointerHeader p =
 	     (1 + 2 * Int.toIntInf (PointerTycon.index p),
 	      WordSize.default))
 
+fun arrayOffsetIsOk {base: t, index: t, pointerTy, result: t}: bool =
+   isSubtype (index, defaultInt)
+   andalso
+   case dest base of
+      Pointer p =>
+	 (case pointerTy p of
+	     ObjectType.Array ty =>
+		isSubtype (ty, result)
+		orelse
+		(* Get a word from a word8 array.*)
+		(equals (result, defaultWord) andalso equals (ty, word8))
+	   | _ => false)
+    | _ => isCPointer base
+   
 fun offset (t: t, {offset, pointerTy, width}): t option =
    let
       fun frag t =
@@ -776,7 +792,7 @@ fun offset (t: t, {offset, pointerTy, width}): t option =
 		  (case pointerTy p of
 		      ObjectType.Array _ =>
 			 if Bytes.equals (offset, Runtime.arrayLengthOffset)
-			    then SOME Type.defaultInt
+			    then SOME defaultInt
 			 else NONE
 		    | ObjectType.Normal t => SOME (frag t)
 		    | _ => NONE)
@@ -803,6 +819,13 @@ val offset =
     Option.layout layout)
    offset
 
+fun offsetIsOk {base, offset = off, pointerTy, result} =
+   case offset (base, {offset = off,
+		       pointerTy = pointerTy,
+		       width = width result}) of
+      NONE => false
+    | SOME t => isSubtype (t, result)
+
 structure GCField = Runtime.GCField
    
 fun ofGCField (f: GCField.t): t =
@@ -825,5 +848,225 @@ fun ofGCField (f: GCField.t): t =
    end
 
 fun castIsOk _ = true
+
+fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
+   let
+      fun done t =
+	 case result of
+	    NONE => true
+	  | SOME t' => isSubtype (t, t')
+      fun nullary res =
+	 0 = Vector.length args
+	 andalso done res
+      fun arg i = Vector.sub (args, i)
+      fun unary (t0, res) =
+	 1 = Vector.length args
+	 andalso isSubtype (arg 0, t0)
+	 andalso done res
+      fun two f = 2 = Vector.length args andalso f (arg 0, arg 1)
+      fun twoOpt f =
+	 two (fn z =>
+	      case f z of
+		 NONE => false
+	       | SOME t => done t)
+      fun twoWord f =
+	 two (fn (t, t') =>
+	      Bits.equals (width t, width t') andalso done (f (t, t')))
+      fun binary (t0, t1, res) =
+	 two (fn (t0', t1') =>
+	      isSubtype (arg 0, t0)
+	      andalso isSubtype (arg 1, t1)
+	      andalso done res)
+      fun ternary (t0, t1, t2, res) =
+	 3 = Vector.length args
+	 andalso isSubtype (arg 0, t0)
+	 andalso isSubtype (arg 1, t1)
+	 andalso isSubtype (arg 2, t2)
+	 andalso done res
+      local
+	 open Type
+      in
+	 val defaultInt = defaultInt
+	 val defaultWord = defaultWord
+	 val int = int
+	 val real = real
+	 val word = word o WordSize.bits
+      end
+      local
+	 fun make f s = let val t = f s in unary (t, t) end
+      in
+	 val intUnary = make int
+	 val realUnary = make real
+	 val wordUnary = make word
+      end
+      local
+	 fun make f s = let val t = f s in binary (t, t, t) end
+      in
+	 val intBinary = make int
+	 val realBinary = make real
+	 val wordBinary = make word
+      end
+      local
+	 fun make f s = let val t = f s in binary (t, t, bool) end
+      in
+	 val intCompare = make int
+	 val realCompare = make real
+	 val wordCompare = make word
+      end
+      fun wordShift s = binary (word s, defaultWord, word s)
+      fun wordShift' f = two (fn (t, t') => done (f (t, t')))
+      fun real3 s =
+	 let
+	    val t = real s
+	 in
+	    ternary (t, t, t, t)
+	 end
+      datatype z = datatype Prim.Name.t
+   in
+      case Prim.name prim of
+	 FFI f =>
+	    let
+	       val CFunction.T {args = expects, return, ...} = f
+	    in
+	       Vector.equals (args, expects, isSubtype) andalso done return
+	    end
+       | FFI_Symbol {ty, ...} => nullary ty
+       | Int_add s => intBinary s
+       | Int_addCheck s => intBinary s
+       | Int_equal s => intCompare s
+       | Int_ge s => intCompare s
+       | Int_gt s => intCompare s
+       | Int_le s => intCompare s
+       | Int_lt s => intCompare s
+       | Int_mul s => intBinary s
+       | Int_mulCheck s => intBinary s
+       | Int_neg s => intUnary s
+       | Int_negCheck s => intUnary s
+       | Int_quot s => intBinary s
+       | Int_rem s => intBinary s
+       | Int_sub s => intBinary s
+       | Int_subCheck s => intBinary s
+       | Int_toInt (s, s') => unary (int s, int s')
+       | Int_toReal (s, s') => unary (int s, real s')
+       | Int_toWord (s, s') => unary (int s, word s')
+       | MLton_eq =>
+	    two (fn (t1, t2) =>
+		 (isSubtype (t1, t2) orelse isSubtype (t2, t1))
+		 andalso done bool)
+       | Real_Math_acos s => realUnary s
+       | Real_Math_asin s => realUnary s
+       | Real_Math_atan s => realUnary s
+       | Real_Math_atan2 s => realBinary s
+       | Real_Math_cos s => realUnary s
+       | Real_Math_exp s => realUnary s
+       | Real_Math_ln s => realUnary s
+       | Real_Math_log10 s => realUnary s
+       | Real_Math_sin s => realUnary s
+       | Real_Math_sqrt s => realUnary s
+       | Real_Math_tan s => realUnary s
+       | Real_abs s => realUnary s
+       | Real_add s => realBinary s
+       | Real_div s => realBinary s
+       | Real_equal s => realCompare s
+       | Real_ge s => realCompare s
+       | Real_gt s => realCompare s
+       | Real_ldexp s => binary (real s, defaultInt, real s)
+       | Real_le s => realCompare s
+       | Real_lt s => realCompare s
+       | Real_mul s => realBinary s
+       | Real_muladd s => real3 s
+       | Real_mulsub s => real3 s
+       | Real_neg s => realUnary s
+       | Real_qequal s => realCompare s
+       | Real_round s => realUnary s
+       | Real_sub s => realBinary s
+       | Real_toInt (s, s') => unary (real s, int s')
+       | Real_toReal (s, s') => unary (real s, real s')
+       | Thread_returnToC => nullary unit
+       | Word_add s => twoWord add
+       | Word_addCheck s => wordBinary s
+       | Word_andb s => twoOpt andb
+       | Word_arshift s => wordShift s
+       | Word_div s => wordBinary s
+       | Word_equal s => wordCompare s
+       | Word_ge s => wordCompare s
+       | Word_gt s => wordCompare s
+       | Word_le s => wordCompare s
+       | Word_lshift s => wordShift' lshift
+       | Word_lt s => wordCompare s
+       | Word_mod s => wordBinary s
+       | Word_mul s => twoWord mul
+       | Word_mulCheck s => wordBinary s
+       | Word_neg s => wordUnary s
+       | Word_notb s => wordUnary s
+       | Word_orb s => twoOpt orb
+       | Word_rol s => wordShift s
+       | Word_ror s => wordShift s
+       | Word_rshift s => wordShift' rshift
+       | Word_sub s => wordBinary s
+       | Word_toInt (s, s') => unary (word s, int s')
+       | Word_toIntX (s, s') => unary (word s, int s')
+       | Word_toWord (s, s') => unary (word s, word s')
+       | Word_toWordX (s, s') => unary (word s, word s')
+       | Word_xorb s => wordBinary s
+       | _ => Error.bug (concat ["strange primitive to Prim.typeCheck: ",
+				 Prim.toString prim])
+   end
+
+val checkPrimApp =
+   Trace.trace ("RepType.checkPrimApp",
+		fn {args, prim, result} =>
+		Layout.record [("args", Vector.layout layout args),
+			       ("prim", Prim.layout prim),
+			       ("result", Option.layout layout result)],
+		Bool.layout)
+   checkPrimApp
+
+structure BuiltInCFunction =
+   struct
+      open CFunction
+
+      type t = Type.t CFunction.t
+
+      datatype z = datatype Convention.t
+	 
+      val bug = vanilla {args = Vector.new1 string,
+			 name = "MLton_bug",
+			 return = unit}
+
+      local
+	 open Type
+      in
+	 val Int32 = int (IntSize.I (Bits.fromInt 32))
+	 val Word32 = word (Bits.fromInt 32)
+	 val bool = bool
+	 val cPointer = cPointer
+	 val gcState = gcState
+	 val string = word8Vector
+	 val unit = unit
+      end
+   
+      local
+	 fun make b =
+	    T {args = let
+			 open Type
+		      in
+			 Vector.new5 (gcState, Word32, bool, cPointer (), Int32)
+		      end,
+		   bytesNeeded = NONE,
+		   convention = Cdecl,
+		   ensuresBytesFree = true,
+		   mayGC = true,
+		   maySwitchThreads = b,
+		   modifiesFrontier = true,
+		   modifiesStackTop = true,
+		   name = "GC_gc",
+		   return = unit}
+	 val t = make true
+	 val f = make false
+      in
+	 fun gc {maySwitchThreads = b} = if b then t else f
+      end
+   end
 
 end

@@ -29,7 +29,6 @@ in
    val exn = nullary Tycon.exn
    val int = IntSize.memoize (fn s => nullary (Tycon.int s))
    val intInf = nullary Tycon.intInf
-   val pointer = nullary Tycon.pointer
    val preThread = nullary Tycon.preThread
    val real = RealSize.memoize (fn s => nullary (Tycon.real s))
    val thread = nullary Tycon.thread

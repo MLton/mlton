@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -9,17 +9,26 @@ type int = Int.t
 
 signature X86_MLTON_BASIC_STRUCTS =
   sig
-    structure x86 : X86_PSEUDO
     structure Machine: MACHINE
+    structure x86: X86_PSEUDO
     sharing x86.CFunction = Machine.CFunction
+    sharing x86.CType = Machine.CType
     sharing x86.Label = Machine.Label
     sharing x86.ProfileLabel = Machine.ProfileLabel
+    sharing x86.RepType = Machine.RepType
     sharing x86.Runtime = Machine.Runtime
   end
 
 signature X86_MLTON_BASIC =
   sig
     include X86_MLTON_BASIC_STRUCTS
+
+    structure CFunction: C_FUNCTION
+    structure CType: C_TYPE
+    structure RepType: REP_TYPE
+    sharing CFunction = RepType.CFunction
+    sharing CType = RepType.CType
+    sharing RepType = Machine.RepType
 
     val init : unit -> unit
 

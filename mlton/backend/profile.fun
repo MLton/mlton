@@ -4,6 +4,34 @@ struct
 open S
 open Rssa
 
+structure CFunction =
+   struct
+      open CFunction
+
+      local
+	 open Type
+      in
+	 val gcState = gcState
+	 val Word32 = word (Bits.fromInt 32)
+	 val unit = unit
+      end
+
+      val profileEnter =
+	 vanilla {args = Vector.new1 gcState,
+		  name = "GC_profileEnter",
+		  return = unit}
+
+      val profileInc =
+	 vanilla {args = Vector.new2 (gcState, Word32),
+		  name = "GC_profileInc",
+		  return = unit}
+	 
+      val profileLeave =
+	 vanilla {args = Vector.new1 gcState,
+		  name = "GC_profileLeave",
+		  return = unit}
+   end
+
 type sourceSeq = int list
 
 structure InfoNode =

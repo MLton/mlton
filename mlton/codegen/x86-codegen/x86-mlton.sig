@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -28,7 +28,7 @@ signature X86_MLTON =
 		      liveInfo: x86Liveness.LiveInfo.t}
 
     (* arith, c call, and primitive assembly sequences. *)
-    val arith: {prim: Machine.Prim.t,
+    val arith: {prim: RepType.t Machine.Prim.t,
 		args: (x86.Operand.t * x86.Size.t) vector,
 		dsts: (x86.Operand.t * x86.Size.t) vector,
 		overflow: x86.Label.t,
@@ -36,15 +36,15 @@ signature X86_MLTON =
 		transInfo : transInfo} -> x86.Block.t' AppendList.t
     val ccall: {args: (x86.Operand.t * x86.Size.t) vector,
 		frameInfo: x86.FrameInfo.t option,
-		func: Machine.CFunction.t,
+		func: RepType.t Machine.CFunction.t,
 		return: x86.Label.t option,
 		transInfo: transInfo} -> x86.Block.t' AppendList.t
     val creturn: {dsts: (x86.Operand.t * x86.Size.t) vector,
 		  frameInfo: x86.FrameInfo.t option,
-		  func: Machine.CFunction.t,
+		  func: RepType.t Machine.CFunction.t,
 		  label: x86.Label.t, 
 		  transInfo: transInfo} -> x86.Block.t' AppendList.t
-    val prim: {prim: Machine.Prim.t,
+    val prim: {prim: RepType.t Machine.Prim.t,
 	       args: (x86.Operand.t * x86.Size.t) vector,
 	       dsts: (x86.Operand.t * x86.Size.t) vector,
 	       transInfo: transInfo} -> x86.Block.t' AppendList.t

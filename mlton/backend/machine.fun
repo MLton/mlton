@@ -304,7 +304,7 @@ structure Statement =
 			     value: Operand.t} vector}
        | PrimApp of {args: Operand.t vector,
 		     dst: Operand.t option,
-		     prim: Prim.t}
+		     prim: Type.t Prim.t}
        | ProfileLabel of ProfileLabel.t
 
       val layout =
@@ -398,11 +398,11 @@ structure Transfer =
 	 Arith of {args: Operand.t vector,
 		   dst: Operand.t,
 		   overflow: Label.t,
-		   prim: Prim.t,
+		   prim: Type.t Prim.t,
 		   success: Label.t}
        | CCall of {args: Operand.t vector,
 		   frameInfo: FrameInfo.t option,
-		   func: CFunction.t,
+		   func: Type.t CFunction.t,
 		   return: Label.t option}
        | Call of {label: Label.t,
 		  live: Operand.t vector,
@@ -431,7 +431,7 @@ structure Transfer =
 		       record
 		       [("args", Vector.layout Operand.layout args),
 			("frameInfo", Option.layout FrameInfo.layout frameInfo),
-			("func", CFunction.layout func),
+			("func", CFunction.layout (func, Type.layout)),
 			("return", Option.layout Label.layout return)]]
 	     | Call {label, live, return} => 
 		  seq [str "Call ", 
@@ -473,7 +473,7 @@ structure Kind =
 		  frameInfo: FrameInfo.t}
        | CReturn of {dst: Operand.t option,
 		     frameInfo: FrameInfo.t option,
-		     func: CFunction.t}
+		     func: Type.t CFunction.t}
        | Func
        | Handler of {frameInfo: FrameInfo.t,
 		     handles: Operand.t vector}
@@ -493,7 +493,7 @@ structure Kind =
 		       record
 		       [("dst", Option.layout Operand.layout dst),
 			("frameInfo", Option.layout FrameInfo.layout frameInfo),
-			("func", CFunction.layout func)]]
+			("func", CFunction.layout (func, Type.layout))]]
 	     | Func => str "Func"
 	     | Handler {frameInfo, handles} =>
 		  seq [str "Handler ",
@@ -921,10 +921,13 @@ structure Program =
 		  datatype z = datatype Operand.t
 		  fun ok () =
 		     case x of
-			ArrayOffset (z as {base, index, ...}) =>
+			ArrayOffset {base, index, ty} =>
 			   (checkOperand (base, alloc)
 			    ; checkOperand (index, alloc)
-			    ; arrayOffsetIsOk z)
+			     ; Type.arrayOffsetIsOk {base = Operand.ty base,
+						     index = Operand.ty index,
+						     pointerTy = tyconTy,
+						     result = ty})
 		      | Cast (z, t) =>
 			   (checkOperand (z, alloc)
 			    ; (Type.castIsOk
@@ -958,12 +961,10 @@ structure Program =
 			    ; (case base of
 				  Operand.GCState => true
 				| _ => 
-				     (case Type.offset (Operand.ty base,
-							{offset = offset,
-							 pointerTy = tyconTy,
-							 width = Type.width ty}) of
-					 NONE => false
-				       | SOME t => Type.isSubtype (t, ty))))
+				     Type.offsetIsOk {base = Operand.ty base,
+						      offset = offset,
+						      pointerTy = tyconTy,
+						      result = ty}))
 		      | Real _ => true
 		      | Register _ => Alloc.doesDefine (alloc, x)
 		      | SmallIntInf w => 0wx1 = Word.andb (w, 0wx1)
@@ -1005,20 +1006,6 @@ structure Program =
 	       in
 		  Err.check ("operand", ok, fn () => Operand.layout x)
 	       end
-	    and arrayOffsetIsOk {base: Operand.t, index: Operand.t, ty} =
-	       Type.isSubtype (Operand.ty index, Type.defaultInt)
-	       andalso
-	       case Type.dest (Operand.ty base) of
-		  Type.Pointer p =>
-		     (case tyconTy p of
-			 ObjectType.Array ty' =>
-			    Type.isSubtype (ty', ty)
-			    orelse
-			    (* Get a word from a word8 array.*)
-			    (Type.equals (ty, Type.defaultWord)
-			     andalso Type.equals (ty', Type.word8))
-		       | _ => false)
-		| _ => Type.isCPointer (Operand.ty base)
 	    fun checkOperands (v, a) =
 	       Vector.foreach (v, fn z => checkOperand (z, a))
 	    fun check' (x, name, isOk, layout) =
@@ -1327,17 +1314,16 @@ structure Program =
 			   andalso jump (overflow, alloc)
 			   andalso jump (success, alloc)
 			   andalso
-			   (case (Prim.typeCheck
-				  (prim, Vector.map (args, Operand.ty))) of
-			       NONE => false
-			     | SOME t => Type.isSubtype (t, Operand.ty dst))
-
+			   Type.checkPrimApp
+			   {args = Vector.map (args, Operand.ty),
+			    prim = prim,
+			    result = SOME (Operand.ty dst)}
 			end
 		   | CCall {args, frameInfo = fi, func, return} =>
 			let
 			   val _ = checkOperands (args, alloc)
 			in
-			   CFunction.isOk func
+			   CFunction.isOk (func, {isUnit = Type.isUnit})
 			   andalso
 			   Vector.equals (args, CFunction.args func,
 					  fn (z, t) =>

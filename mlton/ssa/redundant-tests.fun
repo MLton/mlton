@@ -367,11 +367,13 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 			end)
 		    val noChange = (statements, transfer)
 		    fun arith (args: Var.t vector,
-			       prim: Prim.t,
+			       prim: Type.t Prim.t,
 			       success: Label.t)
 		       : Statement.t vector * Transfer.t =
 		       let
-			  fun simplify (prim: Prim.t, x: Var.t, s: IntSize.t) =
+			  fun simplify (prim: Type.t Prim.t,
+					x: Var.t,
+					s: IntSize.t) =
 			     let
 				val res = Var.newNoname ()
 			     in

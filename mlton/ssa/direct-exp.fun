@@ -14,7 +14,7 @@ structure DirectExp =
 struct
    
 datatype t =
-   Arith of {prim: Prim.t,
+   Arith of {prim: Type.t Prim.t,
 	     args: t vector,
 	     overflow: t,
 	     ty: Type.t}
@@ -43,14 +43,14 @@ datatype t =
  | Let of {decs: {var: Var.t, exp: t} list,
 	   body: t}
  | Name of t * (Var.t -> t)
- | PrimApp of {prim: Prim.t,
+ | PrimApp of {prim: Type.t Prim.t,
 	       targs: Type.t vector,
 	       args: t vector,
 	       ty: Type.t}
  | Profile of ProfileExp.t
  | Raise of t
  | Runtime of {args: t vector,
-	       prim: Prim.t,
+	       prim: Type.t Prim.t,
 	       ty: Type.t}
  | Select of {tuple: t,
 	      offset: int,

@@ -628,9 +628,9 @@ structure Nest =
 val info = Trace.info "elaborateDec"
 val elabExpInfo = Trace.info "elaborateExp"
 
-structure RepType =
+structure Type =
    struct
-      open CoreML.RepType
+      open Type
 
       fun sized (all: 'a list,
 		 toString: 'a -> string,
@@ -640,65 +640,97 @@ structure RepType =
 	 List.map (all, fn a =>
 		   (make a, concat [prefix, toString a], makeType a))
 
-      val nullary: (t * string * Tycon.t) list =
-	 [(bool, "Bool", Tycon.bool),
-	  (char, "Char", Tycon.char),
-	  (cPointer (), "Pointer", Tycon.pointer),
-	  (thread, "Pointer", Tycon.preThread),
-	  (thread, "Pointer", Tycon.thread)]
-	 @ sized (IntSize.all, IntSize.toString, "Int", int, Tycon.int)
-	 @ sized (RealSize.all, RealSize.toString, "Real", real, Tycon.real)
-	 @ sized (WordSize.all, WordSize.toString, "Word",
-		  word o WordSize.bits,
-		  Tycon.word)
+      val nullary: (string * CType.t * Tycon.t) list =
+	 let
+	    fun sized (tycon: Bits.t -> Tycon.t) =
+	       List.map
+	       ([CType.Word8, CType.Word16, CType.Word32, CType.Word64],
+		fn cty =>
+		let
+		   val c = tycon (Bytes.toBits (CType.size cty))
+		   val s = Tycon.toString c
+		   val s =
+		      CharVector.tabulate
+		      (String.size s, fn i =>
+		       let
+			  val c = String.sub (s, i)
+		       in
+			  if i = 0 then Char.toUpper c else c
+		       end)
+		in
+		   (s, cty, c)
+		end)
+	 in
+	    [("Bool", CType.bool, Tycon.bool),
+	     ("Char", CType.char, Tycon.char),
+	     ("Pointer", CType.preThread, Tycon.preThread),
+	     ("Thread", CType.thread, Tycon.thread)]
+	    @ sized (Tycon.int o IntSize.I)
+	    @ [("Real32", CType.Real32, Tycon.real RealSize.R32),
+	       ("Real64", CType.Real64, Tycon.real RealSize.R64)]
+	    @ sized (Tycon.word o WordSize.fromBits)
+	 end
+
+      val nullary =
+	 List.map (nullary, fn (name, ctype, tycon) =>
+		   {ctype = ctype, name = name, tycon = tycon})
 
       val unary: Tycon.t list =
 	 [Tycon.array, Tycon.reff, Tycon.vector]
 
-      fun fromType (t: Type.t): (t * string) option =
-	 case Type.deConOpt t of
+      fun toCType (t: t): {ctype: CType.t, name: string} option =
+	 case deConOpt t of
 	    NONE => NONE
 	  | SOME (c, ts) =>
-	       case List.peek (nullary, fn (_, _, c') => Tycon.equals (c, c')) of
+	       case List.peek (nullary, fn {tycon = c', ...} =>
+			       Tycon.equals (c, c')) of
 		  NONE =>
 		     if List.exists (unary, fn c' => Tycon.equals (c, c'))
 			andalso 1 = Vector.length ts
-			andalso isSome (fromType (Vector.sub (ts, 0)))
-			then SOME (cPointer (), "Pointer")
+			andalso isSome (toCType (Vector.sub (ts, 0)))
+			then SOME {ctype = CType.pointer, name = "Pointer"}
 		     else NONE
-		| SOME (t, s, _) => SOME (t, s)
+		| SOME {ctype, name, ...} => SOME {ctype = ctype, name = name}
 
-      val fromType =
-	 Trace.trace ("RepType.fromType",
-		      Type.layoutPretty,
-		      Option.layout (Layout.tuple2 (layout, String.layout)))
-	 fromType
-
-      fun parse (ty: Type.t)
-	 : ((t * string) vector * (t * string) option) option =
-	 case Type.deArrowOpt ty of
+      type z = {ctype: CType.t, name: string, ty: t}
+	 
+      fun parse (ty: t): (z vector * z option) option =
+	 case deArrowOpt ty of
 	    NONE => NONE
 	  | SOME (t1, t2) =>
 	       let
-		  fun finish (ts: (t * string) vector) =
-		     case fromType t2 of
+		  fun finish (ts: z vector) =
+		     case toCType t2 of
 			NONE =>
 			   if Type.isUnit t2
 			      then SOME (ts, NONE)
 			   else NONE
-		      | SOME t => SOME (ts, SOME t)
+		      | SOME {ctype, name} =>
+			   SOME (ts, SOME {ctype = ctype, name = name, ty = t2})
 	       in
-		  case Type.deTupleOpt t1 of 
+		  case deTupleOpt t1 of 
 		     NONE =>
-			(case fromType t1 of
+			(case toCType t1 of
 			    NONE => NONE
-			  | SOME u => finish (Vector.new1 u))
+			  | SOME {ctype, name} =>
+			       finish (Vector.new1 {ctype = ctype,
+						    name = name,
+						    ty = t1}))
 		   | SOME ts =>
 			let
-			   val us = Vector.map (ts, fromType)
+			   val cts = Vector.map (ts, toCType)
 			in
-			   if Vector.forall (us, isSome)
-			      then finish (Vector.map (us, valOf))
+			   if Vector.forall (cts, isSome)
+			      then
+				 finish (Vector.map2
+					 (ts, cts, fn (ty, z) =>
+					  let
+					     val {ctype, name} = valOf z
+					  in
+					     {ctype = ctype,
+					      name = name,
+					      ty = ty}
+					  end))
 			   else NONE
 			end
 	       end
@@ -719,35 +751,34 @@ fun parseAttributes (attributes: Attribute.t list): Convention.t option =
 fun import {attributes: Attribute.t list,
 	    name: string,
 	    ty: Type.t,
-	    region: Region.t}: Prim.t =
+	    region: Region.t}: Type.t Prim.t =
    let
       fun error l = Control.error (region, l, Layout.empty)
       fun invalidAttributes () =
 	 error (seq [str "invalid attributes for import: ",
 		     List.layout Attribute.layout attributes])
    in
-      case RepType.parse ty of
+      case Type.parse ty of
 	 NONE =>
-	    (case RepType.fromType ty of
-		NONE => 
-		   let
-		      val _ =
-			 Control.error
-			 (region,
-			  str "invalid type for import: ",
-			  Type.layoutPretty ty)
-		   in
-		      Prim.bogus
-		   end
-	      | SOME (t, _) =>
-		   case attributes of
-		      [] => Prim.ffiSymbol {name = name, ty = t}
+	    if isSome (Type.toCType ty)
+	       then
+		  (case attributes of
+		      [] => Prim.ffiSymbol {name = name, ty = ty}
 		    | _ => 
 			 let
-			    val _ = invalidAttributes ()
+			    val () = invalidAttributes ()
 			 in
 			    Prim.bogus
 			 end)
+	    else
+	       let
+		  val () =
+		     Control.error (region,
+				    str "invalid type for import: ",
+				    Type.layoutPretty ty)
+	       in
+		  Prim.bogus
+	       end
        | SOME (args, result) =>
 	    let
 	       val convention =
@@ -756,7 +787,7 @@ fun import {attributes: Attribute.t list,
 			      ; Convention.Cdecl)
 		   | SOME c => c
 	       val func =
-		  CFunction.T {args = Vector.map (args, #1),
+		  CFunction.T {args = Vector.map (args, #ty),
 			       bytesNeeded = NONE,
 			       convention = convention,
 			       ensuresBytesFree = false,
@@ -766,8 +797,8 @@ fun import {attributes: Attribute.t list,
 			       maySwitchThreads = false,
 			       name = name,
 			       return = (case result of
-					    NONE => RepType.unit
-					  | SOME (t, _) => t)}
+					    NONE => Type.unit
+					  | SOME {ty, ...} => ty)}
 	    in
 	       Prim.ffi func
 	    end
@@ -785,29 +816,27 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		     ; Convention.Cdecl)
 	  | SOME c => c
       val (exportId, args, res) =
-	 case RepType.parse ty of
+	 case Type.parse ty of
 	    NONE =>
-	       (Control.error
-		(region,
-		 seq [str "invalid type for exported function: ",
-		      Type.layoutPretty ty],
-		 Layout.empty)
+	       (Control.error (region,
+			       seq [str "invalid type for exported function: ",
+				    Type.layoutPretty ty],
+			       Layout.empty)
 		; (0, Vector.new0 (), NONE))
-	  | SOME (us, t) =>
+	  | SOME (args, result) =>
 	       let
 		  val id =
-		     Ffi.addExport {args = Vector.map (us, RepType.toCType o #1),
+		     Ffi.addExport {args = Vector.map (args, #ctype),
 				    convention = convention,
 				    name = name,
-				    res = Option.map (t, RepType.toCType o #1)}
+				    res = Option.map (result, #ctype)}
 	       in
-		  (id, us, t)
+		  (id, args, result)
 	       end
       open Ast
       fun id (name: string) =
 	 Aexp.longvid (Longvid.short
-		       (Vid.fromSymbol (Symbol.fromString name,
-					region)))
+		       (Vid.fromSymbol (Symbol.fromString name, region)))
       fun int (i: int): Aexp.t =
 	 Aexp.const (Aconst.makeRegion (Aconst.Int (IntInf.fromInt i), region))
       val f = Var.fromSymbol (Symbol.fromString "f", region)
@@ -829,9 +858,8 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		val (args, decs) =
 		   Vector.unzip
 		   (Vector.map
-		    (args, fn (u, name) =>
+		    (args, fn {ctype, name, ...} =>
 		     let
-			val u = RepType.toCType u
 			val x =
 			   Var.fromSymbol
 			   (Symbol.fromString
@@ -842,7 +870,7 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 			   Dec.vall (Vector.new0 (),
 				     x,
 				     Exp.app (id (concat ["get", name]),
-					      int (Counter.next (map u))))
+					      int (Counter.next (map ctype))))
 		     in
 			(x, dec)
 		     end))
@@ -861,7 +889,7 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		    (newVar (),
 		     (case res of
 			 NONE => Exp.constraint (Exp.var resVar, Type.unit)
-		       | SOME (_, name) => 
+		       | SOME {name, ...} => 
 			    Exp.app (id (concat ["set", name]),
 				     Exp.var resVar)))),
 		   fn (x, e) => Dec.vall (Vector.new0 (), x, e))],
@@ -1975,7 +2003,7 @@ fun elaborateDec (d, {env = E,
 						     targs = targs},
 				       result)
 			 end
-		      fun eta (p: Prim.t): Cexp.t =
+		      fun eta (p: Type.t Prim.t): Cexp.t =
 			 case Type.deArrowOpt expandedTy of
 			    NONE =>
 			       wrap (primApp {args = Vector.new0 (),

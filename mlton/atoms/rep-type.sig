@@ -7,23 +7,27 @@
 
 signature REP_TYPE_STRUCTS =
    sig
+      structure CFunction: C_FUNCTION
       structure CType: C_TYPE
       structure IntSize: INT_SIZE
       structure IntX: INT_X
       structure Label: LABEL
       structure PointerTycon: POINTER_TYCON
+      structure Prim: PRIM
       structure RealSize: REAL_SIZE
       structure Runtime: RUNTIME
       structure WordSize: WORD_SIZE
       structure WordX: WORD_X
-      sharing IntSize = IntX.IntSize
-      sharing WordSize = WordX.WordSize
+      sharing CFunction = Prim.CFunction
+      sharing IntSize = IntX.IntSize = Prim.IntSize
+      sharing RealSize = Prim.RealSize
+      sharing WordSize = Prim.WordSize = WordX.WordSize
    end
 
 signature REP_TYPE =
    sig
       include REP_TYPE_STRUCTS
-	 
+
       structure ObjectType: OBJECT_TYPE
       (*
        * - Junk is used for padding.  You can stick any value in, but you
@@ -55,12 +59,19 @@ signature REP_TYPE =
       val address: t -> t
       val align: t * Bytes.t -> Bytes.t
       val andb: t * t -> t option
+      val arrayOffsetIsOk: {base: t,
+			    index: t,
+			    pointerTy: PointerTycon.t -> ObjectType.t,
+			    result: t} -> bool
       val bool: t
       val bytes: t -> Bytes.t
       val castIsOk: {from: t,
 		     fromInt: IntX.t option,
 		     to: t,
 		     tyconTy: PointerTycon.t -> ObjectType.t} -> bool
+      val checkPrimApp: {args: t vector,
+			 prim: t Prim.t,
+			 result: t option} -> bool
       val char: t
       val cPointer: unit -> t
       val constant: WordX.t -> t
@@ -88,9 +99,10 @@ signature REP_TYPE =
       val mul: t * t -> t
       val name: t -> string (* simple one letter abbreviation *)
       val ofGCField: Runtime.GCField.t -> t
-      val offset: t * {offset: Bytes.t,
+      val offsetIsOk: {base: t,
+		       offset: Bytes.t,
 		       pointerTy: PointerTycon.t -> ObjectType.t,
-		       width: Bits.t} -> t option
+		       result: t} -> bool
       val orb: t * t -> t option
       val pointer: PointerTycon.t -> t
       val pointerHeader: PointerTycon.t -> t
@@ -108,4 +120,10 @@ signature REP_TYPE =
       val word8: t
       val wordVector: t
       val word8Vector: t
+
+      structure BuiltInCFunction:
+	 sig
+	    val bug: t CFunction.t
+	    val gc: {maySwitchThreads: bool} -> t CFunction.t
+	 end
    end

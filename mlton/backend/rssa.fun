@@ -168,7 +168,7 @@ structure Statement =
 			     value: Operand.t} vector}
        | PrimApp of {args: Operand.t vector,
 		     dst: (Var.t * Type.t) option,
-		     prim: Prim.t}
+		     prim: Type.t Prim.t}
        | Profile of ProfileExp.t
        | ProfileLabel of ProfileLabel.t
        | SetExnStackLocal
@@ -272,11 +272,11 @@ structure Transfer =
 	 Arith of {args: Operand.t vector,
 		   dst: Var.t,
 		   overflow: Label.t,
-		   prim: Prim.t,
+		   prim: Type.t Prim.t,
 		   success: Label.t,
 		   ty: Type.t}
        | CCall of {args: Operand.t vector,
-		   func: CFunction.t,
+		   func: Type.t CFunction.t,
 		   return: Label.t option}
        | Call of {args: Operand.t vector,
 		  func: Func.t,
@@ -303,7 +303,7 @@ structure Transfer =
 	     | CCall {args, func, return} =>
 		  seq [str "CCall ",
 		       record [("args", Vector.layout Operand.layout args),
-			       ("func", CFunction.layout func),
+			       ("func", CFunction.layout (func, Type.layout)),
 			       ("return", Option.layout Label.layout return)]]
 	     | Call {args, func, return} =>
 		  seq [Func.layout func, str " ",
@@ -321,7 +321,7 @@ structure Transfer =
 	 CCall {args = (Vector.new1
 			(Operand.Const
 			 (Const.string "control shouldn't reach here"))),
-		func = CFunction.bug,
+		func = Type.BuiltInCFunction.bug,
 		return = NONE}
 
       fun 'a foldDefLabelUse (t, a: 'a,
@@ -406,7 +406,7 @@ structure Kind =
    struct
       datatype t =
 	 Cont of {handler: Handler.t}
-       | CReturn of {func: CFunction.t}
+       | CReturn of {func: Type.t CFunction.t}
        | Handler
        | Jump
 
@@ -420,7 +420,7 @@ structure Kind =
 		       record [("handler", Handler.layout handler)]]
 	     | CReturn {func} =>
 		  seq [str "CReturn ",
-		       record [("func", CFunction.layout func)]]
+		       record [("func", CFunction.layout (func, Type.layout))]]
 	     | Handler => str "Handler"
 	     | Jump => str "Jump"
 	 end
@@ -995,7 +995,13 @@ structure Program =
 		   datatype z = datatype Operand.t
 		   fun ok () =
 		      case x of
-			 ArrayOffset z => arrayOffsetIsOk z
+			 ArrayOffset {base, index, ty} =>
+			    (checkOperand base
+			     ; checkOperand index
+			     ; Type.arrayOffsetIsOk {base = Operand.ty base,
+						     index = Operand.ty index,
+						     pointerTy = tyconTy,
+						     result = ty})
 		       | Cast (z, ty) =>
 			    (checkOperand z
 			    ; (Type.castIsOk
@@ -1014,12 +1020,10 @@ structure Program =
 		       | GCState => true
 		       | Line => true
 		       | Offset {base, offset, ty} =>
-			    (case Type.offset (Operand.ty base,
-					       {offset = offset,
-						pointerTy = tyconTy,
-						width = Type.width ty}) of
-				NONE => false
-			      | SOME t => Type.isSubtype (t, ty))
+			    Type.offsetIsOk {base = Operand.ty base,
+					     offset = offset,
+					     pointerTy = tyconTy,
+					     result = ty}
 		       | PointerTycon _ => true
 		       | Runtime _ => true
 		       | SmallIntInf _ => true
@@ -1027,25 +1031,6 @@ structure Program =
 		in
 		   Err.check ("operand", ok, fn () => Operand.layout x)
 		end
-	    and arrayOffsetIsOk {base, index, ty} =
-	       let
-		  val _ = checkOperand base
-		  val _ = checkOperand index
-	       in
-		  Type.isSubtype (Operand.ty index, Type.defaultInt)
-		  andalso
-		  case Type.dest (Operand.ty base) of
-		     Type.Pointer p =>
-			(case tyconTy p of
-			    ObjectType.Array ty' =>
-			       Type.isSubtype (ty', ty)
-			       orelse
-			       (* Get a word from a word8 array.*)
-			       (Type.equals (ty, Type.defaultWord)
-				andalso Type.equals (ty', Type.word8))
-			  | _ => false)
-		   | _ => Type.isCPointer (Operand.ty base)
-	       end
 	    val checkOperand =
 	       Trace.trace ("checkOperand", Operand.layout, Unit.layout)
 	       checkOperand
@@ -1090,13 +1075,10 @@ structure Program =
 			end
 		   | PrimApp {args, dst, prim} =>
 			(Vector.foreach (args, checkOperand)
-			 ; (case (Prim.typeCheck
-				  (prim, Vector.map (args, Operand.ty))) of
-			       NONE => false
-			     | SOME t =>
-				  case dst of
-				     NONE => true
-				   | SOME (_, t') => Type.isSubtype (t, t')))
+			 ; (Type.checkPrimApp
+			    {args = Vector.map (args, Operand.ty),
+			     prim = prim,
+			     result = Option.map (dst, #2)}))
 		   | Profile _ => true
 		   | ProfileLabel _ => true
 		   | SetExnStackLocal => true
@@ -1210,16 +1192,16 @@ structure Program =
 				 andalso labelIsNullaryJump overflow
 				 andalso labelIsNullaryJump success
 				 andalso
-				 (case (Prim.typeCheck
-					(prim, Vector.map (args, Operand.ty))) of
-				     NONE => false
-				   | SOME t => Type.isSubtype (t, ty))
+				 Type.checkPrimApp
+				 {args = Vector.map (args, Operand.ty),
+				  prim = prim,
+				  result = SOME ty}
 			      end
 			 | CCall {args, func, return} =>
 			      let
 				 val _ = checkOperands args
 			      in
-				 CFunction.isOk func
+				 CFunction.isOk (func, {isUnit = Type.isUnit})
 				 andalso
 				 Vector.equals (args, CFunction.args func,
 						fn (z, t) =>

@@ -165,7 +165,7 @@ and expNode =
   | Let of dec vector * exp
   | List of exp vector
   | PrimApp of {args: exp vector,
-		prim: Prim.t,
+		prim: Type.t Prim.t,
 		targs: Type.t vector}
   | Raise of {exn: exp,
 	      region: Region.t}

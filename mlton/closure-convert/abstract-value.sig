@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -59,7 +59,7 @@ signature ABSTRACT_VALUE =
       val isEmpty: t -> bool (* no possible values correspond to me *) 
       val lambda: Sxml.Lambda.t * Sxml.Type.t (* The type of the lambda. *) -> t
       val layout: t -> Layout.t
-      val primApply: {prim: Sxml.Prim.t,
+      val primApply: {prim: Sxml.Type.t Sxml.Prim.t,
 		      args: t vector,
 		      resultTy: Sxml.Type.t} -> t
       val select: t * int -> t

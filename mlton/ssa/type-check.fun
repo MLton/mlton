@@ -381,7 +381,8 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	    val () =
 	       if Type.checkPrimApp {args = args,
 				     prim = prim,
-				     result = resultType}
+				     result = resultType,
+				     targs = targs}
 		  then ()
 	       else error ("bad primapp",
 			   let

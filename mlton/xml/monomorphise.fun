@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -306,9 +306,9 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 				handler = monoExp handler}
 	  | XprimExp.Lambda l => SprimExp.Lambda (monoLambda l)
 	  | XprimExp.PrimApp {prim, targs, args} =>
-	       SprimExp.PrimApp {prim = prim,
-				 targs = monoTypes targs,
-				 args = monoVarExps args}
+	       SprimExp.PrimApp {args = monoVarExps args,
+				 prim = Prim.map (prim, monoType),
+				 targs = monoTypes targs}
 	  | XprimExp.Profile e => SprimExp.Profile  e
 	  | XprimExp.Raise {exn, filePos} =>
 	       SprimExp.Raise {exn = monoVarExp exn,

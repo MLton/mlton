@@ -13,13 +13,10 @@ signature PRIM_STRUCTS =
       structure Const: CONST
       structure IntSize: INT_SIZE
       structure RealSize: REAL_SIZE
-      structure RepType: REP_TYPE
       structure WordSize: WORD_SIZE
-      sharing CType = RepType.CType
-      sharing IntSize = Const.IntX.IntSize = RepType.IntSize
-      sharing RealSize = Const.RealX.RealSize = RepType.RealSize
-      sharing RepType = CFunction.RepType
-      sharing WordSize = Const.WordX.WordSize = RepType.WordSize
+      sharing IntSize = Const.IntX.IntSize
+      sharing RealSize = Const.RealX.RealSize
+      sharing WordSize = Const.WordX.WordSize
    end
 
 signature PRIM = 
@@ -28,7 +25,7 @@ signature PRIM =
 
       structure Name:
 	 sig
-	    datatype t =
+	    datatype 'a t =
 	       Array_array (* backend *)
 	     | Array_array0Const (* constant propagation *)
 	     | Array_length (* ssa to rssa *)
@@ -42,9 +39,9 @@ signature PRIM =
 	     | Exn_setExtendExtra (* implement exceptions *)
 	     | Exn_setInitExtra (* implement exceptions *)
 	     | Exn_setTopLevelHandler (* implement exceptions *)
-	     | FFI of CFunction.t (* ssa to rssa *)
+	     | FFI of 'a CFunction.t (* ssa to rssa *)
 	     | FFI_Symbol of {name: string,
-			      ty: RepType.t} (* codegen *)
+			      ty: 'a} (* codegen *)
 	     | GC_collect (* ssa to rssa *)
 	     | GC_pack (* ssa to rssa *)
 	     | GC_unpack (* ssa to rssa *)
@@ -202,11 +199,9 @@ signature PRIM =
 	     | Word8Vector_toString (* type inference *)
 	     | World_save (* ssa to rssa *)
 
-	    val layout: t -> Layout.t
-	    val toString: t -> string
+	    val layout: 'a t -> Layout.t
+	    val toString: 'a t -> string
 	 end
-
-      type t
 
       structure ApplyArg:
 	 sig
@@ -219,52 +214,54 @@ signature PRIM =
 	 end
       structure ApplyResult:
 	 sig
-	    type prim
-	    datatype 'a t =
-	       Apply of prim * 'a list
+	    type 'a prim
+	    datatype ('a, 'b) t =
+	       Apply of 'a prim * 'b list
 	     | Bool of bool
 	     | Const of Const.t
 	     | Overflow
 	     | Unknown
-	     | Var of 'a
+	     | Var of 'b
 
-	    val layout: ('a -> Layout.t) -> 'a t -> Layout.t
-	 end where type prim = t
-
-      val allocTooLarge: t
-      val apply: t * 'a ApplyArg.t list * ('a * 'a -> bool) -> 'a ApplyResult.t
-      val array: t
-      val assign: t
-      val bogus: t
-      val bug: t
-      val deref: t
-      val deserialize: t
-      val eq: t    (* pointer equality *)
-      val equal: t (* polymorphic equality *)
-      val equals: t * t -> bool
+	    val layout: ('b -> Layout.t) -> ('a, 'b) t -> Layout.t
+	 end
+      
+      type 'a t
+      sharing type t = ApplyResult.prim
+      val apply:
+	 'a t * 'b ApplyArg.t list * ('b * 'b -> bool) -> ('a, 'b) ApplyResult.t
+      val array: 'a t
+      val assign: 'a t
+      val bogus: 'a t
+      val bug: 'a t
+      val deref: 'a t
+      val deserialize: 'a t
+      val eq: 'a t    (* pointer equality *)
+      val equal: 'a t (* polymorphic equality *)
+      val equals: 'a t * 'a t -> bool
       val extractTargs: {args: 'a vector,
 			 deArray: 'a -> 'a,
 			 deArrow: 'a -> 'a * 'a,
 			 deRef: 'a -> 'a,
 			 deVector: 'a -> 'a,
 			 deWeak: 'a -> 'a,
-			 prim: t,
+			 prim: 'a t,
 			 result: 'a} -> 'a vector
-      val ffi: CFunction.t -> t
-      val ffiSymbol: {name: string, ty: RepType.t} -> t
-      val fromString: string -> t
-      val gcCollect: t
-      val intInfEqual: t
-      val intAdd: IntSize.t -> t
-      val intAddCheck: IntSize.t -> t
-      val intEqual: IntSize.t -> t
-      val intMul: IntSize.t -> t
-      val intMulCheck: IntSize.t -> t
-      val intSub: IntSize.t -> t
-      val intSubCheck: IntSize.t -> t
-      val intToInt: IntSize.t * IntSize.t -> t
-      val intToWord: IntSize.t * WordSize.t -> t
-      val isCommutative: t -> bool
+      val ffi: 'a CFunction.t -> 'a t
+      val ffiSymbol: {name: string, ty: 'a} -> 'a t
+      val fromString: string -> 'a t
+      val gcCollect: 'a t
+      val intInfEqual: 'a t
+      val intAdd: IntSize.t -> 'a t
+      val intAddCheck: IntSize.t -> 'a t
+      val intEqual: IntSize.t -> 'a t
+      val intMul: IntSize.t -> 'a t
+      val intMulCheck: IntSize.t -> 'a t
+      val intSub: IntSize.t -> 'a t
+      val intSubCheck: IntSize.t -> 'a t
+      val intToInt: IntSize.t * IntSize.t -> 'a t
+      val intToWord: IntSize.t * WordSize.t -> 'a t
+      val isCommutative: 'a t -> bool
       (*
        * isFunctional p = true iff p always returns same result when given
        *   same args and has no side effects.
@@ -272,37 +269,37 @@ signature PRIM =
        * examples: Array_length, MLton_equal, Int_add
        * not examples: Array_array, Array_sub, Ref_deref, Ref_ref
        *)
-      val isFunctional: t -> bool
-      val layout: t -> Layout.t
-      val layoutApp: t * 'a vector * ('a -> Layout.t) -> Layout.t
+      val isFunctional: 'a t -> bool
+      val layout: 'a t -> Layout.t
+      val layoutApp: 'a t * 'b vector * ('b -> Layout.t) -> Layout.t
+      val map: 'a t * ('a -> 'b) -> 'b t
       (* Int_addCheck, Int_mulCheck, Int_subCheck *)
-      val mayOverflow: t -> bool
-      val mayRaise: t -> bool
+      val mayOverflow: 'a t -> bool
+      val mayRaise: 'a t -> bool
       (* examples: Array_update, Ref_assign
        * not examples: Array_array, Array_sub, Ref_deref, Ref_ref
        *)
-      val maySideEffect: t -> bool
-      val name: t -> Name.t
-      val reff: t
-      val serialize: t
-      val toString: t -> string
-      val typeCheck: t * RepType.t vector -> RepType.t option
-      val vectorLength: t
-      val vectorSub: t
-      val wordAdd: WordSize.t -> t
-      val wordAddCheck: WordSize.t -> t
-      val wordAndb: WordSize.t -> t
-      val wordEqual: WordSize.t -> t
-      val wordGe: WordSize.t -> t
-      val wordGt: WordSize.t -> t
-      val wordLe: WordSize.t -> t
-      val wordLt: WordSize.t -> t
-      val wordLshift: WordSize.t -> t
-      val wordMul: WordSize.t -> t
-      val wordMulCheck: WordSize.t -> t
-      val wordRshift: WordSize.t -> t
-      val wordSub: WordSize.t -> t
-      val wordToInt: WordSize.t * IntSize.t -> t
-      val wordToIntX: WordSize.t * IntSize.t -> t
-      val wordToWord: WordSize.t * WordSize.t -> t
+      val maySideEffect: 'a t -> bool
+      val name: 'a t -> 'a Name.t
+      val reff: 'a t
+      val serialize: 'a t
+      val toString: 'a t -> string
+      val vectorLength: 'a t
+      val vectorSub: 'a t
+      val wordAdd: WordSize.t -> 'a t
+      val wordAddCheck: WordSize.t -> 'a t
+      val wordAndb: WordSize.t -> 'a t
+      val wordEqual: WordSize.t -> 'a t
+      val wordGe: WordSize.t -> 'a t
+      val wordGt: WordSize.t -> 'a t
+      val wordLe: WordSize.t -> 'a t
+      val wordLt: WordSize.t -> 'a t
+      val wordLshift: WordSize.t -> 'a t
+      val wordMul: WordSize.t -> 'a t
+      val wordMulCheck: WordSize.t -> 'a t
+      val wordRshift: WordSize.t -> 'a t
+      val wordSub: WordSize.t -> 'a t
+      val wordToInt: WordSize.t * IntSize.t -> 'a t
+      val wordToIntX: WordSize.t * IntSize.t -> 'a t
+      val wordToWord: WordSize.t * WordSize.t -> 'a t
    end

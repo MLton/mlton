@@ -54,7 +54,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 	    let
 	       val sumTycon = Tycon.newNoname ()
 	       val sumType = Type.con (sumTycon, Vector.new0 ())
-	       fun find (nameString: string, isName: Prim.Name.t -> bool)
+	       fun find (nameString: string, isName: Type.t Prim.Name.t -> bool)
 		  : Var.t * Type.t * PrimExp.t =
 		  let
 		     val var =

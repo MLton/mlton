@@ -11,7 +11,6 @@ signature FFI_STRUCTS =
    sig
       structure CFunction: C_FUNCTION
       structure CType: C_TYPE
-      sharing CType = CFunction.RepType.CType
    end
 
 signature FFI = 

@@ -23,7 +23,6 @@ val char = fromString "char"
 val exn = fromString "exn"
 val intInf = fromString "intInf"
 val list = fromString "list"
-val pointer = fromString "pointer"
 val preThread = fromString "preThread"
 val reff = fromString "ref"
 val thread = fromString "thread"
@@ -91,7 +90,6 @@ val prims =
     (exn, Arity 0, Never),
     (intInf, Arity 0, Always),
     (list, Arity 1, Sometimes),
-    (pointer, Arity 0, Always),
     (preThread, Arity 0, Never),
     (reff, Arity 1, Always),
     (thread, Arity 0, Never),

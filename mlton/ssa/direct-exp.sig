@@ -27,7 +27,7 @@ signature DIRECT_EXP =
 	    | Int of IntSize.t * (IntX.t * t) vector
 	    | Word of WordSize.t * (WordX.t * t) vector
 
-	   val arith: {prim: Prim.t,
+	   val arith: {prim: Type.t Prim.t,
 		       args: t vector,
 		       overflow: t,
 		       ty: Type.t} -> t
@@ -66,7 +66,7 @@ signature DIRECT_EXP =
 	      t * Return.Handler.t * Label.t -> Label.t * Block.t list
 	   val name: t * (Var.t -> t) -> t
 	   val primApp: {args: t vector,
-			 prim: Prim.t,
+			 prim: Type.t Prim.t,
 			 targs: Type.t vector, 
 			 ty: Type.t} -> t
 	   val profile: ProfileExp.t -> t

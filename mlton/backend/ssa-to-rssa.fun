@@ -26,9 +26,19 @@ in
    structure GCField = GCField
 end
 
+structure Prim =
+   struct
+      open Prim
+
+      type t = Type.t Prim.t
+   end
+
 structure CFunction =
    struct
-      open CFunction 
+      open CFunction
+      open Type.BuiltInCFunction
+
+      type t = Type.t CFunction.t
 
       local
 	 open Type
@@ -106,6 +116,18 @@ structure CFunction =
 	 val unpack = make "GC_unpack"
       end
 
+      val returnToC =
+	 T {args = Vector.new0 (),
+	    bytesNeeded = NONE,
+	    convention = Cdecl,
+	    ensuresBytesFree = false,
+	    modifiesFrontier = true,
+	    modifiesStackTop = true,
+	    mayGC = true,
+	    maySwitchThreads = true,
+	    name = "Thread_returnToC",
+	    return = unit}
+
       val threadSwitchTo =
 	 T {args = Vector.new2 (Type.thread, Word32),
 	    bytesNeeded = NONE,
@@ -161,6 +183,8 @@ structure CFunction =
 structure Name =
    struct
       open Prim.Name
+
+      type t = Type.t t
 
       fun cFunctionRaise (n: t): CFunction.t =
 	 let
@@ -591,9 +615,9 @@ structure Name =
 	      | _ => false
 	 end
 
-      val x86CodegenImplements =
+      val x86CodegenImplements: t -> bool =
 	 Trace.trace ("x86CodegenImplements", layout, Bool.layout)
-	  x86CodegenImplements
+	 x86CodegenImplements
    end
 
 datatype z = datatype Operand.t
@@ -823,6 +847,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	 Vector.keepAllMap (xs, fn x =>
 			    Option.map (toRtype (varType x), fn _ =>
 					varOp x))
+      fun translatePrim p =
+	 Prim.map (p, fn t =>
+		   case toRtype t of
+		      NONE => Type.unit
+		    | SOME t => t)
       fun translateTransfer (t: S.Transfer.t): Statement.t list * Transfer.t =
 	 case t of
 	    S.Transfer.Arith {args, overflow, prim, success, ty} =>
@@ -843,7 +872,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		  ([], Transfer.Arith {dst = temp,
 				       args = vos args,
 				       overflow = overflow,
-				       prim = prim,
+				       prim = translatePrim prim,
 				       success = noOverflow,
 				       ty = ty})
 	       end
@@ -990,6 +1019,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			   end
 		      | S.Exp.PrimApp {prim, targs, args, ...} =>
 			   let
+			      val prim = translatePrim prim
 			      fun a i = Vector.sub (args, i)
 			      fun cast () =
 				 move (Operand.cast (varOp (a 0),

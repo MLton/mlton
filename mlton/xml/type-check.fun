@@ -229,7 +229,8 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		     val () =
 			if Type.checkPrimApp {args = checkVarExps args,
 					      prim = prim,
-					      result = ty}
+					      result = ty,
+					      targs = targs}
 			   then ()
 			else error "bad primapp"
 		  in

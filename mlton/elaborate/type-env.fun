@@ -1172,7 +1172,13 @@ structure Type =
 	  | UnifyResult.Unified => Unified
 
       val word8 = word WordSize.byte
-	 
+
+      val synonyms =
+	 List.map
+	 ([(Tycon.char, Tycon.word WordSize.byte),
+	   (Tycon.preThread, Tycon.thread)],
+	  fn (c, c') => (c, c', con (c, Vector.new0 ())))
+
       fun 'a simpleHom {con: t * Tycon.t * 'a vector -> 'a,
 			expandOpaque: bool,
 			record: t * (Field.t * 'a) vector -> 'a,
@@ -1217,15 +1223,14 @@ structure Type =
 	    val real = default (real RealSize.default, Tycon.defaultReal)
 	    val word = default (word WordSize.default, Tycon.defaultWord)
 	    val con =
-	       fn (t, c, ts) =>
-	       if replaceSynonyms
-		  then if Tycon.equals (c, Tycon.char)
-			  then con (word8, Tycon.word WordSize.byte,
-				    Vector.new0 ())
-		       else if Tycon.equals (c, Tycon.preThread)
-			       then con (thread, Tycon.thread, Vector.new0 ())
-			    else con (t, c, ts)
-	       else con (t, c, ts)
+	       if not replaceSynonyms
+		  then con
+	       else
+		  fn (t, c, ts) =>
+		  case List.peek (synonyms, fn (c', _, _) =>
+				  Tycon.equals (c, c')) of
+		     NONE => con (t, c, ts)
+		   | SOME (_, c, t) => con (t, c, Vector.new0 ())
 	 in
 	    makeHom {con = con,
 		     expandOpaque = expandOpaque,

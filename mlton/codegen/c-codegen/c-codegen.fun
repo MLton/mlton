@@ -35,7 +35,6 @@ in
    structure RealSize = RealSize
    structure RealX = RealX
    structure Register = Register
-   structure RepType = RepType
    structure Runtime = Runtime
    structure Statement = Statement
    structure Switch = Switch
@@ -65,6 +64,31 @@ structure Kind =
 	  | Func => true
 	  | Handler _ => true
 	  | _ => false
+   end
+
+structure CFunction =
+   struct
+      open CFunction
+	 
+      fun prototype (T {args, convention, name, return, ...}) =
+	 let
+	    val c = Counter.new 0
+	    fun arg t = concat [CType.toString (Type.toCType t),
+				" x", Int.toString (Counter.next c)]
+	 in
+	    concat
+	    [if Type.isUnit return
+		then "void"
+	     else CType.toString (Type.toCType return),
+		if convention <> Convention.Cdecl
+		   then concat [" __attribute__ ((",
+				Convention.toString convention,
+				")) "]
+		else " ",
+		   name, " (",
+		   concat (List.separate (Vector.toListMap (args, arg), ", ")),
+		   ")"]
+	 end
    end
 
 val traceGotoLabel = Trace.trace ("gotoLabel", Label.layout, Unit.layout) 
@@ -187,8 +211,8 @@ structure Operand =
 	  | _ => false
    end
 
-fun creturn (t: RepType.t): string =
-   concat ["CReturn", CType.name (RepType.toCType t)]
+fun creturn (t: Type.t): string =
+   concat ["CReturn", CType.name (Type.toCType t)]
 
 fun outputIncludes (includes, print) =
    (List.foreach (includes, fn i => (print "#include <";
@@ -658,7 +682,7 @@ fun output {program as Machine.Program.T {chunks,
 				       (name, fn () =>
 					concat
 					["extern ",
-					 CType.toString (RepType.toCType ty),
+					 CType.toString (Type.toCType ty),
 					    " ", name, ";\n"])
 				  | _ => ())
 			   | _ => ())
@@ -971,7 +995,7 @@ fun output {program as Machine.Program.T {chunks,
 			      else ()
 			   val _ = print "\t"
 			   val _ =
-			      if RepType.isUnit returnTy
+			      if Type.isUnit returnTy
 				 then ()
 			      else print (concat [creturn returnTy, " = "])
 			   val _ = C.call (name, args, print)

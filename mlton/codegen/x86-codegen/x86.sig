@@ -13,18 +13,22 @@ signature X86_STRUCTS =
     structure CFunction: C_FUNCTION
     structure CType: C_TYPE
     structure Label: ID
-    structure ProfileLabel: PROFILE_LABEL
+    structure ProfileLabel: PROFILE_LABEL 
+    structure RepType: REP_TYPE
     structure Runtime: RUNTIME
-    sharing CType = CFunction.RepType.CType
+    sharing CFunction = RepType.CFunction
+    sharing CType = RepType.CType
   end
 
 signature X86 =
   sig
     structure CFunction: C_FUNCTION
-    structure Label: ID
-    structure Runtime: RUNTIME
     structure CType: C_TYPE
-    sharing CType = CFunction.RepType.CType
+    structure Label: ID
+    structure RepType: REP_TYPE
+    structure Runtime: RUNTIME
+    sharing CFunction = RepType.CFunction
+    sharing CType = RepType.CType
 
     val tracer : string -> ('a -> 'b) -> 
                  (('a -> 'b) * (unit -> unit))
@@ -307,7 +311,7 @@ signature X86 =
 	val size : t -> Size.t option
 	val eq : t * t -> bool
 
-	val cReturnTemps: CFunction.RepType.t -> {src: t, dst: MemLoc.t} list
+	val cReturnTemps: RepType.t -> {src: t, dst: MemLoc.t} list
       end
 
     structure Instruction :
@@ -1073,7 +1077,7 @@ signature X86 =
 			live: MemLocSet.t}
 	  | CReturn of {dsts: (Operand.t * Size.t) vector,
 			frameInfo: FrameInfo.t option,
-			func: CFunction.t,
+			func: RepType.t CFunction.t,
 			label: Label.t}
 
 	val cont : {label: Label.t,
@@ -1081,7 +1085,7 @@ signature X86 =
 		    frameInfo: FrameInfo.t} -> t
 	val creturn: {dsts: (Operand.t * Size.t) vector,
 		      frameInfo: FrameInfo.t option,
-		      func: CFunction.t,
+		      func: RepType.t CFunction.t,
 		      label: Label.t}  -> t
 	val func : {label: Label.t,
 		    live: MemLocSet.t} -> t
@@ -1161,7 +1165,7 @@ signature X86 =
 	  | Raise of {live: MemLocSet.t}
 	  | CCall of {args: (Operand.t * Size.t) list,
 		      frameInfo: FrameInfo.t option,
-		      func: CFunction.t,
+		      func: RepType.t CFunction.t,
 		      return: Label.t option,
 		      target: Label.t}
 
@@ -1193,7 +1197,7 @@ signature X86 =
 	val raisee : {live: MemLocSet.t} -> t
 	val ccall: {args: (Operand.t * Size.t) list,
 		    frameInfo: FrameInfo.t option,
-		    func: CFunction.t,
+		    func: RepType.t CFunction.t,
 		    return: Label.t option,
 		    target: Label.t} -> t		       
       end

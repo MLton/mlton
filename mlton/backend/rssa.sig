@@ -83,7 +83,7 @@ signature RSSA =
 				   value: Operand.t} vector}
 	     | PrimApp of {args: Operand.t vector,
 			   dst: (Var.t * Type.t) option,
-			   prim: Prim.t}
+			   prim: Type.t Prim.t}
 	     | Profile of ProfileExp.t
 	     | ProfileLabel of ProfileLabel.t
 	     | SetExnStackLocal
@@ -111,11 +111,11 @@ signature RSSA =
 	       Arith of {args: Operand.t vector,
 			 dst: Var.t,
 			 overflow: Label.t, (* Must be nullary. *)
-			 prim: Prim.t,
+			 prim: Type.t Prim.t,
 			 success: Label.t, (* Must be nullary. *)
 			 ty: Type.t}
 	     | CCall of {args: Operand.t vector,
-			 func: CFunction.t,
+			 func: Type.t CFunction.t,
 			 (* return is NONE iff the CFunction doesn't return.
 			  * Else, return must be SOME l, where l is of kind
 			  * CReturn.  The return should be nullary if the C
@@ -157,7 +157,7 @@ signature RSSA =
 	 sig
 	    datatype t =
 	       Cont of {handler: Handler.t}
-	     | CReturn of {func: CFunction.t}
+	     | CReturn of {func: Type.t CFunction.t}
 	     | Handler
 	     | Jump
 

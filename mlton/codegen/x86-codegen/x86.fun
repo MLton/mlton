@@ -43,8 +43,6 @@ struct
 
   open S
 
-  structure RepType = CFunction.RepType
-
   structure Label =
      struct
 	open Label
@@ -3720,7 +3718,7 @@ struct
 		      live: MemLocSet.t}
 	| CReturn of {dsts: (Operand.t * Size.t) vector,
 		      frameInfo: FrameInfo.t option,
-		      func: CFunction.t,
+		      func: RepType.t CFunction.t,
 		      label: Label.t}
 				    
       val toString
@@ -3979,7 +3977,7 @@ struct
 	| Raise of {live: MemLocSet.t}
 	| CCall of {args: (Operand.t * Size.t) list,
 		    frameInfo: FrameInfo.t option,
-		    func: CFunction.t,
+		    func: RepType.t CFunction.t,
 		    return: Label.t option,
 		    target: Label.t}
 

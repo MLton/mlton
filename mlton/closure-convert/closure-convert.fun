@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -870,6 +870,7 @@ fun closureConvert
 		  end
 	     | SprimExp.PrimApp {prim, targs, args} =>
 		  let
+		     val prim = Prim.map (prim, convertType)
 		     open Prim.Name
 		     fun arg i = Vector.sub (args, i)
 		     val v1 = Vector.new1

@@ -14,6 +14,16 @@ datatype t =
 
 val all = [Pointer, Real32, Real64, Word8, Word16, Word32, Word64]
 
+val bool = Word32
+
+val char = Word8
+
+val pointer = Pointer
+
+val preThread = Pointer
+   
+val thread = Pointer
+
 val equals: t * t -> bool = op =
    
 fun memo (f: t -> 'a): t -> 'a =

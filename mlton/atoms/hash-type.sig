@@ -28,8 +28,9 @@ signature HASH_TYPE =
 	 end
 
       val checkPrimApp: {args: t vector,
-			 prim: Prim.t,
-			 result: t} -> bool
+			 prim: t Prim.t,
+			 result: t,
+			 targs: t vector} -> bool
       val containsTycon: t * Tycon.t -> bool
       (* O(1) time *)
       val equals: t * t -> bool

@@ -205,136 +205,197 @@ fun containsTycon (ty, tycon) =
 	con = fn (tycon', bs) => (Tycon.equals (tycon, tycon')
 				  orelse Vector.exists (bs, fn b => b))}
 
-structure P = PointerTycon
-   
-fun fromRepType (t: RepType.t): t =
+fun checkPrimApp {args, prim, result, targs}: bool =
    let
-      fun bug () = Error.bug (concat ["Type.fromRepType: ", RepType.toString t])
-      datatype z = datatype RepType.dest
-   in
-      case RepType.dest t of
-	 Int s => int s
-       | Real s => real s
-       | Pointer p =>
-	    (case List.peek ([(P.thread, thread),
-			      (P.word8Vector, word8Vector)],
-			     fn (p', _) => P.equals (p, p')) of
-		NONE => bug ()
-	      | SOME (_, t) => t)
-       | Seq ts => if 0 = Vector.length ts then unit else bug ()
-       | Sum _ => if RepType.isBool t then bool else bug ()
-       | Word s => word (WordSize.fromBits s)
-       | _ => bug ()
-   end
-
-val fromRepType =
-   Trace.trace ("Type.fromRepType", RepType.layout, layout) fromRepType
-
-local
-   val {get, set, ...} =
-      Property.getSetOnce (Tycon.plist, Property.initConst NONE)
-   val () =
-      List.foreach ([Tycon.array, Tycon.reff, Tycon.vector], fn t =>
-		    set (t, SOME (RepType.cPointer ())))
-   fun doit (ts, f) = Vector.foreach (ts, fn (c, s) => set (c, SOME (f s)))
-   val () = doit (Tycon.ints, RepType.int)
-   val () = doit (Tycon.reals, RepType.real)
-   val () = set (Tycon.thread, SOME RepType.thread)
-   val () = doit (Tycon.words, RepType.word o WordSize.bits)
-in
-   fun toRepType (t: t): RepType.t =
-      let
-	 fun bug () = Error.bug (concat ["Type.toRepType: ", toString t])
-      in
-	 case dest t of
-	    Con (c, _) =>
-	       (case get c of
-		   NONE => bug ()
-		 | SOME t => t)
-	  | Var _ => bug ()
-      end
-end
-
-fun checkPrimApp {args, prim, result}: bool =
-   let
-      fun check () =
-	 case Prim.typeCheck (prim, Vector.map (args, toRepType)) of
-	    NONE => false
-	  | SOME t => equals (result, fromRepType t)
       datatype z = datatype Prim.Name.t
+      fun done (args', result') =
+	 Vector.equals (args, Vector.fromList args', equals)
+	 andalso equals (result, result')
+      fun targ i = Vector.sub (targs, i)
+      fun oneTarg f =
+	 1 = Vector.length targs
+	 andalso done (f (targ 0))
+      local
+	 fun make f s = let val t = f s in done ([t], t) end
+      in
+	 val intUnary = make int
+	 val realUnary = make real
+	 val wordUnary = make word
+      end
+      local
+	 fun make f s = let val t = f s in done ([t, t], t) end
+      in
+	 val intBinary = make int
+	 val realBinary = make real
+	 val wordBinary = make word
+      end
+      local
+	 fun make f s = let val t = f s in done ([t, t], bool) end
+      in
+	 val intCompare = make int
+	 val realCompare = make real
+	 val wordCompare = make word
+      end
+      fun intInfBinary () = done ([intInf, intInf, defaultWord], intInf)
+      fun intInfShift () = done ([intInf, defaultWord, defaultWord], intInf)
+      fun intInfUnary () = done ([intInf, defaultWord], intInf)
+      fun real3 s = done ([real s, real s, real s], real s)
+      val pointer = defaultWord
+      val word8Array = array word8
+      val wordVector = vector defaultWord
+      fun wordShift s = done ([word s, defaultWord], word s)
    in
       case Prim.name prim of
-	 Array_array => true
-       | Array_array0Const => true
-       | Array_length => true
-       | Array_sub => true
-       | Array_toVector => true
-       | Array_update => true
-       | Exn_extra => true
-       | Exn_name => true
-       | Exn_setExtendExtra => true
-       | Exn_setInitExtra => true
-       | Exn_setTopLevelHandler => true
-       | GC_collect => true
-       | GC_pack => true
-       | GC_unpack => true
-       | IntInf_add => true
-       | IntInf_andb => true
-       | IntInf_arshift => true
-       | IntInf_compare => true
-       | IntInf_equal => true
-       | IntInf_gcd => true
-       | IntInf_lshift => true
-       | IntInf_mul => true
-       | IntInf_neg => true
-       | IntInf_notb => true
-       | IntInf_orb => true
-       | IntInf_quot => true
-       | IntInf_rem => true
-       | IntInf_sub => true
-       | IntInf_toString => true
-       | IntInf_toVector => true
-       | IntInf_toWord => true
-       | IntInf_xorb => true
-       | MLton_bogus => true
-       | MLton_bug => true
-       | MLton_eq => true
-       | MLton_equal => true
-       | MLton_halt => true
-       | MLton_handlesSignals => true
-       | MLton_installSignalHandler => true
-       | MLton_size => true
-       | MLton_touch => true
-       | Pointer_getInt _ => true
-       | Pointer_getPointer => true
-       | Pointer_getReal _ => true
-       | Pointer_getWord _ => true
-       | Pointer_setInt _ => true
-       | Pointer_setPointer => true
-       | Pointer_setReal _ => true
-       | Pointer_setWord _ => true
-       | Ref_assign => true
-       | Ref_deref => true
-       | Ref_ref => true
-       | Thread_atomicBegin => true
-       | Thread_atomicEnd => true
-       | Thread_canHandle => true
-       | Thread_copy => true
-       | Thread_copyCurrent => true
-       | Thread_returnToC => true
-       | Thread_switchTo => true
-       | Vector_length => true
-       | Vector_sub => true
-       | Weak_canGet => true
-       | Weak_get => true
-       | Weak_new => true
-       | Word_toIntInf => true
-       | WordVector_toIntInf => true
-       | Word8Array_subWord => true
-       | Word8Array_updateWord => true
-       | Word8Vector_subWord => true
-       | World_save => true
-       | _ => check ()
+	 Array_array => oneTarg (fn targ => ([defaultInt], array targ))
+       | Array_array0Const => oneTarg (fn targ => ([], array targ))
+       | Array_length => oneTarg (fn t => ([array t], defaultInt))
+       | Array_sub => oneTarg (fn t => ([array t, defaultInt], t))
+       | Array_toVector => oneTarg (fn t => ([array t], vector t))
+       | Array_update => oneTarg (fn t => ([array t, defaultInt, t], unit))
+       | Exn_extra => oneTarg (fn t => ([exn], t))
+       | Exn_name => done ([exn], string)
+       | Exn_setExtendExtra =>
+	    oneTarg (fn t => ([arrow (tuple (Vector.new2 (string, t)), t)],
+			      unit))
+       | Exn_setInitExtra => oneTarg (fn t => ([t], unit))
+       | Exn_setTopLevelHandler => done ([arrow (exn, unit)], unit)
+       | FFI f => done (Vector.toList (CFunction.args f), CFunction.return f)
+       | FFI_Symbol {ty, ...} => done ([], ty)
+       | GC_collect => done ([], unit)
+       | GC_pack => done ([], unit)
+       | GC_unpack => done ([], unit)
+       | IntInf_add => intInfBinary ()
+       | IntInf_andb => intInfBinary ()
+       | IntInf_arshift => intInfShift ()
+       | IntInf_compare => done ([intInf, intInf], defaultInt)
+       | IntInf_equal => done ([intInf, intInf], bool)
+       | IntInf_gcd => intInfBinary ()
+       | IntInf_lshift => intInfShift ()
+       | IntInf_mul => intInfBinary ()
+       | IntInf_neg => intInfUnary ()
+       | IntInf_notb => intInfUnary ()
+       | IntInf_orb => intInfBinary ()
+       | IntInf_quot => intInfBinary ()
+       | IntInf_rem => intInfBinary ()
+       | IntInf_sub => intInfBinary ()
+       | IntInf_toString => done ([intInf, defaultInt, defaultWord], string)
+       | IntInf_toVector => done ([intInf], vector defaultWord)
+       | IntInf_toWord => done ([intInf], defaultWord)
+       | IntInf_xorb => intInfBinary ()
+       | Int_add s => intBinary s
+       | Int_addCheck s => intBinary s
+       | Int_equal s => intCompare s
+       | Int_ge s => intCompare s
+       | Int_gt s => intCompare s
+       | Int_le s => intCompare s
+       | Int_lt s => intCompare s
+       | Int_mul s => intBinary s
+       | Int_mulCheck s => intBinary s
+       | Int_neg s => intUnary s
+       | Int_negCheck s => intUnary s
+       | Int_quot s => intBinary s
+       | Int_rem s => intBinary s
+       | Int_sub s => intBinary s
+       | Int_subCheck s => intBinary s
+       | Int_toInt (s, s') => done ([int s], int s')
+       | Int_toReal (s, s') => done ([int s], real s')
+       | Int_toWord (s, s') => done ([int s], word s')
+       | MLton_bogus => oneTarg (fn t => ([], t))
+       | MLton_bug => done ([string], unit)
+       | MLton_eq => oneTarg (fn t => ([t, t], bool))
+       | MLton_equal => oneTarg (fn t => ([t, t], bool))
+       | MLton_halt => done ([defaultInt], unit)
+       | MLton_handlesSignals => done ([], bool)
+       | MLton_installSignalHandler => done ([], unit)
+       | MLton_size => oneTarg (fn t => ([reff t], defaultInt))
+       | MLton_touch => oneTarg (fn t => ([t], unit))
+       | Pointer_getInt s => done ([pointer, defaultInt], int s)
+       | Pointer_getPointer => oneTarg (fn t => ([pointer, defaultInt], t))
+       | Pointer_getReal s => done ([pointer, defaultInt], real s)
+       | Pointer_getWord s => done ([pointer, defaultInt], word s)
+       | Pointer_setInt s => done ([pointer, defaultInt, int s], unit)
+       | Pointer_setPointer => oneTarg (fn t => ([pointer, defaultInt, t], unit))
+       | Pointer_setReal s => done ([pointer, defaultInt, real s], unit)
+       | Pointer_setWord s => done ([pointer, defaultInt, word s], unit)
+       | Real_Math_acos s => realUnary s
+       | Real_Math_asin s => realUnary s
+       | Real_Math_atan s => realUnary s
+       | Real_Math_atan2 s => realBinary s
+       | Real_Math_cos s => realUnary s
+       | Real_Math_exp s => realUnary s
+       | Real_Math_ln s => realUnary s
+       | Real_Math_log10 s => realUnary s
+       | Real_Math_sin s => realUnary s
+       | Real_Math_sqrt s => realUnary s
+       | Real_Math_tan s => realUnary s
+       | Real_abs s => realUnary s
+       | Real_add s => realBinary s
+       | Real_div s => realBinary s
+       | Real_equal s => realCompare s
+       | Real_ge s => realCompare s
+       | Real_gt s => realCompare s
+       | Real_ldexp s => done ([real s, defaultInt], real s)
+       | Real_le s => realCompare s
+       | Real_lt s => realCompare s
+       | Real_mul s => realBinary s
+       | Real_muladd s => real3 s
+       | Real_mulsub s => real3 s
+       | Real_neg s => realUnary s
+       | Real_qequal s => realCompare s
+       | Real_round s => realUnary s
+       | Real_sub s => realBinary s
+       | Real_toInt (s, s') => done ([real s], int s')
+       | Real_toReal (s, s') => done ([real s], real s')
+       | Ref_assign => oneTarg (fn t => ([reff t, t], unit))
+       | Ref_deref => oneTarg (fn t => ([reff t], t))
+       | Ref_ref => oneTarg (fn t => ([t], reff t))
+       | Thread_atomicBegin => done ([], unit)
+       | Thread_atomicEnd => done ([], unit)
+       | Thread_canHandle => done ([], defaultInt)
+       | Thread_copy => done ([thread], thread)
+       | Thread_copyCurrent => done ([], unit)
+       | Thread_returnToC => done ([], unit)
+       | Thread_switchTo => done ([thread], unit)
+       | Vector_length => oneTarg (fn t => ([vector t], defaultInt))
+       | Vector_sub => oneTarg (fn t => ([vector t, defaultInt], t))
+       | Weak_canGet => oneTarg (fn t => ([weak t], bool))
+       | Weak_get => oneTarg (fn t => ([weak t], t))
+       | Weak_new => oneTarg (fn t => ([t], weak t))
+       | Word8Array_subWord => done ([word8Array, defaultInt], defaultWord)
+       | Word8Array_updateWord =>
+	    done ([word8Array, defaultInt, defaultWord], unit)
+       | Word8Vector_subWord => done ([word8Vector, defaultInt], defaultWord)
+       | WordVector_toIntInf => done ([wordVector], intInf)
+       | Word_add s => wordBinary s
+       | Word_addCheck s => wordBinary s
+       | Word_andb s => wordBinary s
+       | Word_arshift s => wordShift s
+       | Word_div s => wordBinary s
+       | Word_equal s => wordCompare s
+       | Word_ge s => wordCompare s
+       | Word_gt s => wordCompare s
+       | Word_le s => wordCompare s
+       | Word_lshift s => wordShift s
+       | Word_lt s => wordCompare s
+       | Word_mod s => wordBinary s
+       | Word_mul s => wordBinary s
+       | Word_mulCheck s => wordBinary s
+       | Word_neg s => wordUnary s
+       | Word_notb s => wordUnary s
+       | Word_orb s => wordBinary s
+       | Word_rol s => wordShift s
+       | Word_ror s => wordShift s
+       | Word_rshift s => wordShift s
+       | Word_sub s => wordBinary s
+       | Word_toInt (s, s') => done ([word s], int s')
+       | Word_toIntInf => done ([defaultWord], intInf)
+       | Word_toIntX (s, s') => done ([word s], int s')
+       | Word_toWord (s, s') => done ([word s], word s')
+       | Word_toWordX (s, s') => done ([word s], word s')
+       | Word_xorb s => wordBinary s
+       | World_save => done ([defaultWord], unit)
+       | _ => Error.bug (concat ["Type.checkPrimApp got strange prim: ",
+				 Prim.toString prim])
    end
 
 end

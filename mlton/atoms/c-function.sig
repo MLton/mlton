@@ -9,13 +9,12 @@ type int = Int.t
    
 signature C_FUNCTION_STRUCTS = 
    sig
-      structure RepType: REP_TYPE
    end
 
 signature C_FUNCTION = 
    sig
       include C_FUNCTION_STRUCTS
-      
+
       structure Convention:
 	 sig
 	    datatype t = Cdecl | Stdcall
@@ -24,50 +23,38 @@ signature C_FUNCTION =
 	    val toString: t -> string
 	 end
 
-      datatype t = T of {args: RepType.t vector,
-			 (* bytesNeeded = SOME i means that the i'th
-			  * argument to the function is a word that
-			  * specifies the number of bytes that must be
-			  * free in order for the C function to succeed.
-			  * Limit check insertion is responsible for
-			  * making sure that the bytesNeeded is available.
-			  *)
-			 bytesNeeded: int option,
-			 convention: Convention.t,
-			 ensuresBytesFree: bool,
-			 mayGC: bool,
-			 maySwitchThreads: bool,
-			 modifiesFrontier: bool,
-			 modifiesStackTop: bool,
-			 name: string,
-			 return: RepType.t}
+      datatype 'a t = T of {args: 'a vector,
+			     (* bytesNeeded = SOME i means that the i'th
+			      * argument to the function is a word that
+			      * specifies the number of bytes that must be
+			      * free in order for the C function to succeed.
+			      * Limit check insertion is responsible for
+			      * making sure that the bytesNeeded is available.
+			      *)
+			     bytesNeeded: int option,
+			     convention: Convention.t,
+			     ensuresBytesFree: bool,
+			     mayGC: bool,
+			     maySwitchThreads: bool,
+			     modifiesFrontier: bool,
+			     modifiesStackTop: bool,
+			     name: string,
+			     return: 'a}
 
-      val allocTooLarge: t
-      val args: t -> RepType.t vector
-      val bug: t
-      val bytesNeeded: t -> int option
-      val ensuresBytesFree: t -> bool
-      val equals: t * t -> bool
-      val gc: {maySwitchThreads: bool} -> t
-      val isOk: t -> bool
-      val layout: t -> Layout.t
-      val mayGC: t -> bool
-      val maySwitchThreads: t -> bool
-      val modifiesFrontier: t -> bool
-      val modifiesStackTop: t -> bool
-      val name: t -> string
-      val profileEnter: t
-      val profileInc: t
-      val profileLeave: t
-      val prototype: t -> string
-      val return: t -> RepType.t
-      (* returnToC is not really a C function.  Calls to it must be handled
-       * specially by each codegen to ensure that the C stack is handled
-       * correctly.  However, for the purposes of everything up to the
-       * backend it looks like a call to C.
-       *)
-      val returnToC: t
-      val vanilla: {args: RepType.t vector,
+      val args: 'a t -> 'a vector
+      val bytesNeeded: 'a t -> int option
+      val ensuresBytesFree: 'a t -> bool
+      val equals: 'a t * 'a t -> bool
+      val isOk: 'a t * {isUnit: 'a -> bool} -> bool
+      val layout: 'a t * ('a -> Layout.t) -> Layout.t
+      val map: 'a t * ('a -> 'b) -> 'b t
+      val mayGC: 'a t -> bool
+      val maySwitchThreads: 'a t -> bool
+      val modifiesFrontier: 'a t -> bool
+      val modifiesStackTop: 'a t -> bool
+      val name: 'a t -> string
+      val return: 'a t -> 'a
+      val vanilla: {args: 'a vector,
 		    name: string,
-		    return: RepType.t} -> t
+		    return: 'a} -> 'a t
    end

@@ -806,21 +806,21 @@ fun defunctorize (CoreML.Program.T {decs}) =
 		| PrimApp {args, prim, targs} =>
 		     let
 			val args = Vector.map (args, #1 o loopExp)
-			val targs = Vector.map (targs, loopTy)
-			fun app prim =
-			   Xexp.primApp {args = args,
-					 prim = prim,
-					 targs = targs,
-					 ty = ty}
-			fun id () = Vector.sub (args, 0)
 			datatype z = datatype Prim.Name.t
 		     in
-			case Prim.name prim of
-			   Char_toWord8 => id ()
-			 | String_toWord8Vector => id ()
-			 | Word8_toChar => id ()
-			 | Word8Vector_toString => id ()
-			 | _ => app prim
+			if (case Prim.name prim of
+			       Char_toWord8 => true
+			     | String_toWord8Vector => true
+			     | Word8_toChar => true
+			     | Word8Vector_toString => true
+			     | _ => false)
+			   then Vector.sub (args, 0)
+			else
+			   Xexp.primApp {args = args,
+					 prim = Prim.map (prim, loopTy),
+					 targs = Vector.map (targs, loopTy),
+					 ty = ty}
+
 		     end
 		| Raise {exn, region} =>
 		     Xexp.raisee ({exn = #1 (loopExp exn),

@@ -82,7 +82,7 @@ signature SSA_TREE =
 			  con: Con.t}
 	     | Const of Const.t
 	     | PrimApp of {args: Var.t vector,
-			   prim: Prim.t,
+			   prim: Type.t Prim.t,
 			   targs: Type.t vector}
 	     | Profile of ProfileExp.t
 	     | Select of {offset: int,
@@ -142,7 +142,7 @@ signature SSA_TREE =
 	    datatype t =
 	       Arith of {args: Var.t vector,
 			 overflow: Label.t, (* Must be nullary. *)
-			 prim: Prim.t,
+			 prim: Type.t Prim.t,
 			 success: Label.t, (* Must be unary. *)
 			 ty: Type.t} (* int or word *)
 	     | Bug  (* MLton thought control couldn't reach here. *)
@@ -160,7 +160,7 @@ signature SSA_TREE =
 	     | Raise of Var.t vector
 	     | Return of Var.t vector
 	     | Runtime of {args: Var.t vector,
-			   prim: Prim.t,
+			   prim: Type.t Prim.t,
 			   return: Label.t} (* Must be nullary. *)
 
 	    val equals: t * t -> bool
@@ -254,9 +254,9 @@ signature SSA_TREE =
 
 	    val clear: t -> unit
 	    val clearTop: t -> unit
-	    val foreachPrim: t * (Prim.t -> unit) -> unit
+	    val foreachPrim: t * (Type.t Prim.t -> unit) -> unit
 	    val foreachVar: t * (Var.t * Type.t -> unit) -> unit
-	    val hasPrim: t * (Prim.t -> bool) -> bool
+	    val hasPrim: t * (Type.t Prim.t -> bool) -> bool
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val layoutStats: t -> Layout.t
 	    val profile: t -> t

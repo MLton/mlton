@@ -103,7 +103,7 @@ signature XML_TREE =
 			  try: exp}
 	     | Lambda of Lambda.t
 	     | PrimApp of {args: VarExp.t vector,
-			   prim: Prim.t,
+			   prim: Type.t Prim.t,
 			   targs: Type.t vector}
 	     | Profile of ProfileExp.t
 	     | Raise of {exn: VarExp.t,
@@ -167,7 +167,7 @@ signature XML_TREE =
 	    val foreachPrimExp: t * (Var.t * Type.t * PrimExp.t -> unit) -> unit
 	    val foreachVarExp: t * (VarExp.t -> unit) -> unit
 	    val fromPrimExp: PrimExp.t * Type.t -> t
-	    val hasPrim: t * (Prim.t -> bool) -> bool
+	    val hasPrim: t * (Type.t Prim.t -> bool) -> bool
 	    val layout: t -> Layout.t
 	    val make: {decs: Dec.t list, result: VarExp.t} -> t
 	    val prefix: t * Dec.t -> t
@@ -211,7 +211,7 @@ signature XML_TREE =
 	    val lett: {decs: Dec.t list, body: t} -> t
 	    val monoVar: Var.t * Type.t -> t
 	    val primApp: {args: t vector,
-			  prim: Prim.t,
+			  prim: Type.t Prim.t,
 			  targs: Type.t vector,
 			  ty: Type.t} -> t
 	    val raisee: {exn: t, filePos: string option} * Type.t -> t

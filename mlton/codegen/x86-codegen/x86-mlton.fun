@@ -29,7 +29,7 @@ struct
 		    live: x86.Label.t -> x86.Operand.t list,
 		    liveInfo: x86Liveness.LiveInfo.t}
 
-  fun prim {prim : Prim.t,
+  fun prim {prim : RepType.t Prim.t,
 	    args : (Operand.t * Size.t) vector,
 	    dsts : (Operand.t * Size.t) vector,
 	    transInfo = {...} : transInfo}
@@ -1582,7 +1582,7 @@ struct
 
   fun creturn {dsts: (x86.Operand.t * x86.Size.t) vector,
 	       frameInfo: x86.FrameInfo.t option,
-	       func: CFunction.t,
+	       func: RepType.t CFunction.t,
 	       label: x86.Label.t, 
 	       transInfo = {live, liveInfo, ...}: transInfo}
     = let
@@ -1613,7 +1613,7 @@ struct
 	AppendList.appends [default (), comment_end]
       end
 
-  fun arith {prim : Prim.t,
+  fun arith {prim : RepType.t Prim.t,
 	     args : (Operand.t * Size.t) vector,
 	     dsts : (Operand.t * Size.t) vector,
 	     overflow : Label.t,

@@ -108,7 +108,7 @@ signature MACHINE =
 				   value: Operand.t} vector}
 	     | PrimApp of {args: Operand.t vector,
 			   dst: Operand.t option,
-			   prim: Prim.t}
+			   prim: Type.t Prim.t}
 	     | ProfileLabel of ProfileLabel.t
 
 	    val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
@@ -136,11 +136,11 @@ signature MACHINE =
 	       Arith of {args: Operand.t vector,
 			 dst: Operand.t,
 			 overflow: Label.t,
-			 prim: Prim.t,
+			 prim: Type.t Prim.t,
 			 success: Label.t}
 	     | CCall of {args: Operand.t vector,
 			 frameInfo: FrameInfo.t option,
-			 func: CFunction.t,
+			 func: Type.t CFunction.t,
 			 (* return is NONE iff the func doesn't return.
 			  * Else, return must be SOME l, where l is of CReturn
 			  * kind with a matching func.
@@ -167,7 +167,7 @@ signature MACHINE =
 			frameInfo: FrameInfo.t}
 	     | CReturn of {dst: Operand.t option,
 			   frameInfo: FrameInfo.t option,
-			   func: CFunction.t}
+			   func: Type.t CFunction.t}
 	     | Func
 	     | Handler of {frameInfo: FrameInfo.t,
 			   handles: Operand.t vector}

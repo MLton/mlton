@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -373,7 +373,7 @@ open Dest
 val {get = serialValue: Type.t -> t, ...} =
    Property.get (Type.plist, Property.initFun fromType)
 
-fun primApply {prim: Prim.t, args: t vector, resultTy: Type.t}: t =
+fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
    let 
       fun result () = fromType resultTy
       fun typeError () =

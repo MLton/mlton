@@ -28,7 +28,7 @@ signature ANALYZE =
 	  fromType: Type.t -> 'a,
 	  layout: 'a -> Layout.t,
 	  primApp: {args: 'a vector,
-		    prim: Prim.t,
+		    prim: Type.t Prim.t,
 		    resultType: Type.t,
 		    resultVar: Var.t option,
 		    targs: Type.t vector} -> 'a,

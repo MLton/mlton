@@ -86,7 +86,7 @@ signature CORE_ML =
 	     | Let of dec vector * t
 	     | List of t vector
 	     | PrimApp of {args: t vector,
-			   prim: Prim.t,
+			   prim: Type.t Prim.t,
 			   targs: Type.t vector}
 	     | Raise of {exn: t,
 			 region: Region.t}
