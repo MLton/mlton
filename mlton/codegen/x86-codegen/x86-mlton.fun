@@ -2713,7 +2713,10 @@ struct
 		    transfer 
 		    = SOME (Transfer.runtime 
 			    {prim = prim,
-			     args = [(fileTempContentsOperand, filesize)],
+			     args = [(Operand.immediate_label gcState, pointerSize),
+				     (fileTempContentsOperand, filesize),
+				     (Operand.immediate_label saveGlobals, 
+				      pointerSize)],
 			     return = return,
 			     size = frameSize})})
 		end
