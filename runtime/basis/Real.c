@@ -32,6 +32,18 @@ Int Real_signBit(Double d) {
 #define SIGNBIT_MASK  0x80000000
 #define MANTISSA_HIGHBIT_MASK 0x00080000
 
+/* ------------------------------------------------- */
+/*                       Real                        */
+/* ------------------------------------------------- */
+
+/* returned by Real_class */
+#define Real_Class_nanQuiet 0
+#define Real_Class_nanSignalling 1
+#define Real_Class_inf 2
+#define Real_Class_zero 3
+#define Real_Class_normal 4
+#define Real_Class_subnormal 5
+
 Int Real_class(Double d) {
 	Word word0, word1;
 

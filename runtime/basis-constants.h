@@ -53,18 +53,6 @@
 #define Ptrace_SYSCALL PTRACE_SYSCALL
 
 /* ------------------------------------------------- */
-/*                       Real                        */
-/* ------------------------------------------------- */
-
-/* returned by Real_class */
-#define Real_Class_nanQuiet 0
-#define Real_Class_nanSignalling 1
-#define Real_Class_inf 2
-#define Real_Class_zero 3
-#define Real_Class_normal 4
-#define Real_Class_subnormal 5
-
-/* ------------------------------------------------- */
 /*                      Socket                       */
 /* ------------------------------------------------- */
 

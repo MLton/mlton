@@ -10,7 +10,6 @@
 structure Real: REAL =
    struct
       structure Real = Primitive.Real
-      structure Class = Real.Class
       open Real IEEEReal
       infix 4 == != ?=
       type real = real
@@ -108,24 +107,16 @@ structure Real: REAL =
 
       fun unordered (x, y) = isNan x orelse isNan y
 
-      (* see mlton-lib.h for the integers returned by class *)
-      val class =
-	 fn x =>
-	 let val i = class x
-	 in if i = Class.nanQuiet
-	       then NAN QUIET
-	    else if i = Class.nanSignalling
-		    then NAN SIGNALLING
-		 else if i = Class.inf
-			 then INF
-		      else if i = Class.zero
-			      then ZERO
-			   else if i = Class.normal
-				   then NORMAL
-				else if i = Class.subnormal
-					then SUBNORMAL
-				     else raise Fail "Primitive.Real.class returned bogus integer"
-	 end
+      (* See runtime/basis/Real.c for the integers returned by class. *)
+      fun class x =
+	 case Real.class x of
+	    0 => NAN QUIET
+	  | 1 => NAN SIGNALLING
+	  | 2 => INF
+	  | 3 => ZERO
+	  | 4 => NORMAL
+	  | 5 => SUBNORMAL
+	  | _ => raise Fail "Primitive.Real.class returned bogus integer"
 
       local
 	 val r: int ref = ref 0

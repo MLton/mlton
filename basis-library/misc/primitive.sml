@@ -381,16 +381,6 @@ structure Primitive =
 		  val tanh = _prim "Real_Math_tanh": real -> real;
 	       end
 
-	    structure Class =
-	       struct
-		  val inf = _prim "Real_Class_inf": int;
-		  val nanQuiet = _prim "Real_Class_nanQuiet": int;
-		  val nanSignalling = _prim "Real_Class_nanSignalling": int;
-		  val normal = _prim "Real_Class_normal": int;
-		  val subnormal = _prim "Real_Class_subnormal": int;
-		  val zero = _prim "Real_Class_zero": int;
-	       end
-
 	    val * = _prim "Real_mul": real * real -> real;
 	    val *+ = _prim "Real_muladd": real * real * real -> real;
 	    val *- = _prim "Real_mulsub": real * real * real -> real;
