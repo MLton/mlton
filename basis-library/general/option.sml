@@ -1,51 +1,48 @@
-(* Modified from SML/NJ sources by sweeks@research.nj.nec.com on 4/18/98. *)
-(* Modified by fluet@cs.cornell.edu on 7/19/02. *)
-
-(* option.sml
+(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
  *
- * COPYRIGHT (c) 1997 AT&T Labs Research.
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
  *)
-
 structure Option: OPTION =
-  struct
-     datatype 'a option = NONE | SOME of 'a
-	
-     exception Option
+struct
 
-     val getOpt =
-	fn (SOME x, y) => x
-	 | (NONE, y) => y
-	 
-     val isSome =
-	fn SOME _ => true
-	 | NONE => false
-	 
-     val valOf =
-	fn SOME x => x
-	 | _ => raise Option
-	 
-     fun filter pred x = if (pred x) then SOME x else NONE
+datatype 'a option = NONE | SOME of 'a
 
-     val join =
-	fn SOME opt => opt
-	 | NONE => NONE
+exception Option
 
-     fun app f =
-        fn SOME x => f x
-	 | NONE => ()
+fun map f =
+   fn NONE => NONE
+    | SOME a => SOME (f a)
 
-     fun map f =
-	fn SOME x => SOME (f x)
-	 | NONE => NONE
+fun app f z = (map f z; ())
 
-     fun mapPartial f =
-	fn SOME x => f x
-	 | NONE => NONE
+fun compose (f, g) c = map f (g c)
 
-     fun compose (f, g) x = map f (g x)
+val join =
+   fn NONE => NONE
+    | SOME v => v
 
-     fun composePartial (f, g) x = mapPartial f (g x)
-  end
+fun mapPartial f = join o (map f)
+
+fun composePartial (f, g) = (mapPartial f) o g
+
+fun filter f a = if f a then SOME a else NONE
+
+fun getOpt (z, a) =
+   case z of
+      NONE => a
+    | SOME v => v
+
+val isSome =
+   fn NONE => false
+    | SOME _ => true
+
+val valOf =
+   fn NONE => raise Option
+    | SOME v => v
+
+end
 
 structure OptionGlobal: OPTION_GLOBAL = Option
 open OptionGlobal
