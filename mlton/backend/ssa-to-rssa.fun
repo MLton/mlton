@@ -856,7 +856,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 					      File,
 					      Line)),
 				     func = (CFunction.gc
-					     {maySwitchThreads = false})}
+					     {maySwitchThreads = handlesSignals})}
 			       | GC_pack =>
 				    ccall {args = Vector.new1 GCState,
 					   func = CFunction.pack}
