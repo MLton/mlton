@@ -53,11 +53,6 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
       val {get = isCont: Jump.t -> bool,
 	   set = setCont, destroy = destroyCont} =
 	 Property.destGetSet (Jump.plist, Property.initConst false)
-      val _ =
-	 Exp.foreachTransfer
-	 (exp,
-	  fn Call {cont = SOME j, ...} => setCont (j, true)
-	   | _ => ())
       val {get = jumpInfo: Jump.t -> {argBlock: Block.t,
 				      bodyBlock: Block.t,
 				      formals: (Var.t * Type.t) vector},
@@ -80,6 +75,39 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 		  ; setVarInfo (x, {defined = defined,
 				    used = ref []}))
 	 else ()
+
+      val _ =
+	 Exp.foreach
+	 (exp,
+	  {handleDec 
+	   = fn Fun {name, args, ...}
+	      => (fn () => let 
+			     val _ = List.push (allJumps, name)
+			     val (argBlock, bodyBlock)
+			       = case (Vector.length args, isCont name)
+				   of (0, false) => let val b = Block.new ()
+						    in (b, b)
+						    end
+				    | _ => let val b = Block.new ()
+					       val b' = Block.new ()
+					       val _ = Block.addEdge (b, b')
+					   in Vector.foreach
+					      (args,
+					       fn (x, _) 
+					        => newVarInfo (x, {defined = b}))
+					      ; (b, b')
+					   end
+			   in
+			     setJumpInfo (name, 
+					  {argBlock = argBlock,
+					   bodyBlock = bodyBlock,
+					   formals = args})
+			   end)
+	      | _ => fn () => (),
+	   handleTransfer
+	   = fn Call {cont = SOME j, ...} => setCont (j, true)
+	      | _ => ()})
+
       val head = Block.new ()
       val _ = Vector.foreach (formals, fn (x, _) =>
 			      newVarInfo (x, {defined = head}))
@@ -131,25 +159,10 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 		      end
 		 | Fun {name, args, body} =>
 		      let
-			 val isCont = isCont name
-			 val (argBlock, bodyBlock) =
-			    case (Vector.length args, isCont) of
-			       (0, false) => let val b = Block.new ()
-					     in (b, b)
-					     end
-			     | _ => let
-				       val b = Block.new ()
-					val b' = Block.new ()
-					val _ = Block.addEdge (b, b')
-				    in Vector.foreach
-				       (args, fn (x, _) =>
-					newVarInfo (x, {defined = b}))
-				       ; (b, b')
-				    end
-			 val _ = List.push (allJumps, name)
+			 val {argBlock, bodyBlock, ...} = jumpInfo name
 			 val _ =
 			    (* In case there is a raise to j. *)
-			    if isCont
+			    if isCont name
 			       then
 				  case jumpHandlers name of
 				     h :: _ =>
@@ -157,11 +170,6 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 						       #argBlock (jumpInfo h))
 				   | _ => ()
 			    else ()
-			 val _ =
-			    setJumpInfo (name,
-					 {argBlock = argBlock,
-					  bodyBlock = bodyBlock,
-					  formals = args})
 			 val _ = loopExp (body, bodyBlock, jumpHandlers name)
 		      in b
 		      end
