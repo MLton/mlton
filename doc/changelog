@@ -1,5 +1,8 @@
 Here are the changes since version 20030312.
 
+* 2003-05-12
+  - Added support for finalization with MLton.Finalize.
+
 * 2003-05-09
   - Fixed a runtime system bug that could cause a segfault.  This bug
     would happen after a GC during heap resizing when copying a heap,
