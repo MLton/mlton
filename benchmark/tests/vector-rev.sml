@@ -21,6 +21,6 @@ structure Main =
 		  if 0 = sub (rev (rev v), 0)
 		     then loop (n - 1)
 		  else raise Fail "bug"
-	 in loop 1
+	 in loop 10000
 	 end
    end
