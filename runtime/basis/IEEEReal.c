@@ -41,7 +41,8 @@ void IEEEReal_setRoundingMode (Int mode) {
 	case 2: mode = FP_RP; break;
 	case 3: mode = FP_RZ; break;
 	default:
-		die ("IEEEReal_setRoundingMode error: invalid mode %d\n", mode);
+		die ("IEEEReal_setRoundingMode error: invalid mode %d\n", 
+			(int)mode);
 	}
 	fpsetround (mode);
 }
