@@ -32,7 +32,7 @@ PATH=.:$PATH
 
 (
 	cd $src/regression
-	for f in $world # `ls *.sml`
+	for f in `ls *.sml`
 	do
 		f=`basename $f .sml`
 		case "$f" in
