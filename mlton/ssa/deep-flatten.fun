@@ -622,7 +622,11 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       val typeValue =
 	 Trace.trace ("DeepFlatten.typeValue", Type.layout, Value.layout)
 	 typeValue
-      val coerce = Value.coerce
+      val (coerce, coerceProd) =
+	 if !Control.deepFlattenUnify
+	    then (fn {from, to} => Value.unify (from, to),
+		  fn {from, to} => Value.unifyProd (from, to))
+	 else (Value.coerce, Value.coerceProd)
       fun inject {sum, variant = _} = typeValue (Type.datatypee sum)
       fun object {args, con, resultType} =
 	 case con of
@@ -630,8 +634,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	  | SOME _ =>
 	       let
 		  val res = typeValue resultType
-		  val () =
-		     Value.coerceProd {from = args,
+		  val () = coerceProd {from = args,
 				       to = #args (Value.deObject res)}
 	       in
 		  res

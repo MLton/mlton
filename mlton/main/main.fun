@@ -202,6 +202,9 @@ fun makeOptions {usage} =
 	       ; Control.Elaborate.enabled Control.Elaborate.deadCode := b))),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
 	boolRef debug),
+       (Expert, "deep-flatten-unify", " {false|true}",
+	"unify (instead of coerce) during deepFlatten",
+	boolRef deepFlattenUnify),
        (Normal, "default-ann", " <ann>", "set annotation default for mlb files",
 	SpaceString 
 	(fn s =>

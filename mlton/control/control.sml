@@ -87,6 +87,11 @@ val debug = control {name = "debug",
 		     default = false,
 		     toString = Bool.toString}
 
+val deepFlattenUnify =
+   control {name = "deepFlattenUnify",
+	    default = false,
+	    toString = Bool.toString}
+
 val defines = control {name = "defines",
 		       default = [],
 		       toString = List.toString String.toString}
