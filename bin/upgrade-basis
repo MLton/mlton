@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -e
 
@@ -10,11 +10,12 @@ die () {
 name=`basename $0`
 
 usage () {
-	die "usage: $name"
+	die "usage: $name <PATH>"
 }
 
 case "$#" in
-0)
+1)
+	PATH="$1"
 ;;
 *)
 	usage
@@ -23,14 +24,16 @@ esac
 
 tmp="$$.sml"
 
-hasFeature () {
+feature () {
 	feature="$1"
+	sml="$2"
 	echo "$feature" >$tmp
-	mlton $tmp >/dev/null 2>&1
+	if ! mlton $tmp >/dev/null 2>&1; then
+		echo "$sml"
+	fi
 }
 
-if ! hasFeature 'fun f x : string option = TextIO.inputLine x'; then
-	cat<<-EOF
+feature 'fun f x : string option = TextIO.inputLine x' '
 structure TextIO =
    struct
       open TextIO
@@ -39,12 +42,9 @@ structure TextIO =
          case TextIO.inputLine ins of
             "" => NONE
           | s => SOME s
-   end
-EOF
-fi
+   end'
 	
-if ! hasFeature 'fun f x : string option = OS.FileSys.readDir x'; then
-	cat <<-EOF
+feature 'fun f x : string option = OS.FileSys.readDir x' '
 structure OS =
    struct
       open OS
@@ -56,8 +56,16 @@ structure OS =
                   "" => NONE
                 | s => SOME s
          end
-   end
-EOF
-fi
+   end'
+
+feature 'val _ = IntInf.~>>' '
+structure IntInf = 
+   struct
+      open IntInf
+
+      val ~>> : int * Word.word -> int =
+	 fn _ => raise Fail "IntInf.~>>"
+   end'
+
 rm -f $tmp
 rm -f `basename $tmp .sml`

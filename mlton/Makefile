@@ -52,8 +52,10 @@ $(AOUT): $(SOURCES)
 	mlton $(FLAGS) $(CM)
 	size $(AOUT)
 
+#! Pass $(PATH) to upgrade-basis because it is run via #!/usr/bin/env
+# bash, which resets the path.
 $(UP):
-	$(SRC)/bin/upgrade-basis >$(UP)
+	$(SRC)/bin/upgrade-basis "$(PATH)" >$(UP)
 
 mlton.cm: mlton-stubs.cm
 	grep -v mlton-stubs mlton-stubs.cm >mlton.cm
