@@ -1,5 +1,10 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2001-10-24
+  - Fixed bug in Thread_atomicEnd -- limit was mistakenly set to base instead of
+    to 0.  This caused assertion failures when for executables compiled -g
+    because GC_enter didn't reset the limit.
+
 * 2001-10-23
   - Added -D option to cmcat for preprocessor defines.  Thanks to Anoq for
     sending the code.

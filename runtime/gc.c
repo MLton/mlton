@@ -780,6 +780,10 @@ Thread_atomicBegin()
 		setLimit(&gcState);
 }
 
+/* Warning: If you change this, you must also change Thread_switchTo in
+ * ccodegen.h and the implementation of Thread_switchTo in 
+ * x86-generate-transfers.fun.
+ */
 inline void
 Thread_atomicEnd()
 {
@@ -789,7 +793,7 @@ Thread_atomicEnd()
 	gcState.canHandle--;
 	assert(gcState.canHandle >= 0);
 	if (gcState.signalIsPending && 0 == gcState.canHandle)
-		gcState.limit = gcState.base;
+		gcState.limit = 0;
 }
 
 inline void
@@ -1463,7 +1467,7 @@ GC_handler(GC_state s, int signum)
 		fprintf(stderr, "GC_handler\n");
 	if (0 == s->canHandle) {
 		if (DEBUG)
-			fprintf(stderr, "setting limit = base\n");
+			fprintf(stderr, "setting limit = 0\n");
 		s->limit = 0;
 	}
 	sigaddset(&s->signalsPending, signum);
