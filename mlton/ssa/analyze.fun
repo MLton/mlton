@@ -55,7 +55,7 @@ fun 'a analyze
 		    end
 	  | SOME vs => vs
       fun loopTransfer (t, shouldReturns): unit =
-	 case t of
+	(case t of
 	    Bug => ()
 	  | Call {func = f, args, return} =>
 	       let
@@ -101,12 +101,17 @@ fun 'a analyze
 	  | Raise xs => let val vs = values xs
 			in coerces (vs, getExnVals vs)
 			end
-	  | Return xs => coerces (values xs, shouldReturns)
+	  | Return xs => coerces (values xs, shouldReturns))
+	   handle exn => Error.bug ("loopTransfer:" ^ 
+				    (Layout.toString (Transfer.layout t)) ^ ":" ^
+				    (case exn
+				       of Fail msg => msg
+					| _ => ""))
       val loopTransfer =
 	 Trace.trace2
 	 ("Analyze.loopTransfer",
 	  Transfer.layout, Layout.ignore, Layout.ignore) loopTransfer
-      fun loopStatement (Statement.T {var, exp, ty}): unit =
+      fun loopStatement (s as Statement.T {var, exp, ty}): unit =
 	 let
 	    val v =
 	       case exp of
@@ -149,6 +154,11 @@ fun 'a analyze
 		     end
 	     else setValue (var, v))
 	 end
+         handle exn => Error.bug ("loopStatement:" ^ 
+				  (Layout.toString (Statement.layout s)) ^ ":" ^
+				  (case exn
+				     of Fail msg => msg
+				      | _ => ""))
       val _ = coerces (Vector.new0 (), #args (func main))
       val _ = Vector.foreach (globals, loopStatement)
       val _ =

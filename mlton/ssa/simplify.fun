@@ -81,12 +81,13 @@ val passes =
       * are expected in the Operand.offsets generated in the
       * backend.
       *)
-    ("removeUnused4", RemoveUnused.remove)
+    ("removeUnused5", RemoveUnused.remove)
     ]
 
 fun stats p =
    Control.message (Control.Detail, fn () => Program.layoutStats p)
 
+(*
 fun simplify p =
    (stats p
     ; (List.fold
@@ -107,8 +108,8 @@ fun simplify p =
 	   in
 	      p
 	   end)))
+*)
 
-(*
 fun simplify p =
    (stats p
     ; (List.fold
@@ -137,7 +138,6 @@ fun simplify p =
          in
             p
          end)))
-*)
 
 val typeCheck = S.typeCheck
 
