@@ -36,8 +36,10 @@ fun 'a newProperty () =
 	 let
 	    fun loop (l, n) =
 	       let
-		  fun update () = (numLinks := n + !numLinks;
-				   maxLength := Int.max(!maxLength, n))
+		  fun update () =
+		     ((numLinks := n + !numLinks
+		       handle Overflow => Error.bug "property list numLinks overflow")
+		      ; maxLength := Int.max (!maxLength, n))
 	       in case l of
 		  [] => (update (); NONE)
 		| e :: l =>
@@ -45,8 +47,11 @@ fun 'a newProperty () =
 			r as SOME _ => (update (); r)
 		      | NONE => loop (l, n + 1)
 	       end
-	 in numPeeks := 1 + !numPeeks
-	    ; loop (!hs, 0)
+	    val _ =
+	       numPeeks := 1 + !numPeeks
+	       handle Overflow => Error.bug "propery list numPeeks overflow"
+	 in
+	    loop (!hs, 0)
 	 end
 
       fun get (plist: t) =
