@@ -1,4 +1,12 @@
-Here are the changes since version 20030312.
+Here are the changes since version 20030711.
+
+* 2003-07-12
+  - Turned off FORCE_GENERATIONAL in gc.  It had been set, which
+    caused the gc to always use generational collection.  This could
+    seriously slow apps down that don't need it.
+
+--------------------------------------------------------------------------------
+Here are the changes from version 20030312 to 20030711
 
 Summary:
   + Added support for Sparc/SunOS using the C code generator.
