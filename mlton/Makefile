@@ -47,7 +47,7 @@ all: $(AOUT)
 
 $(AOUT): $(SOURCES)
 	rm -f $(UP)
-	make $(UP)
+	$(MAKE) $(UP)
 	@echo 'Compiling mlton (takes a while)'
 	mlton $(FLAGS) $(CM)
 	size $(AOUT)
