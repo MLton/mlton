@@ -2,8 +2,6 @@
 %% \usepackage{fullpage}
 %% \usepackage{amsmath}
 %% \usepackage{amssymb}
-%% \usepackage[mathscr]{eucal}
-%% \usepackage{stmaryrd}
 
 % math fonts
 \newcommand{\mbb}[1]{\mathbb{#1}}
@@ -176,8 +174,10 @@ showin in Figure~\ref{fig:mlb:S:GrammaticalRules}.
 The static and dynamic semantics for MLBs will interpret
 $\msf{path.sml}$ as a parsed $\mrm{TopDec}$ and
 $\msf{path.mlb}$ as a parsed $\mrm{BasDec}$.  Parsing a $\mrm{TopDec}$
-must be performed against a fixity environment, and may result in a
-modified fixity environment.  
+takes a fixity environment as input and returns a fixity environment
+as output; the output fixity environment corresponds to fixity
+directives introduced by and whose scope is not limited by the parsed
+$\mrm{TopDec}$.
 
 Paths and parsers are given in Figure~\ref{fig:mlb:S:PathsParser}.  A
 (fixed) $\mrm{Parser}$ $\mcal{P}$ provides the interpretation of
@@ -203,7 +203,9 @@ $\msf{path.sml}$ and $\msf{path.mlb}$ imports.
 %
 For a file extension $\msf{.ext}$, $\msf{path.ext}$ denotes either an
 absolute path or a relative path (relative to the $\mrm{BasDec}$ being
-parsed) to a file in the underlying file system.  An implementation
+parsed) to a file in the underlying file system.  Paths that denote the same
+file in the underlying file system are considered equal, though they may
+have distinct textual representations.  An implementation
 may allow additional extensions (e.g., $\mtt{.ML}$, $\mtt{.fun}$,
 $\mtt{.sig}$) in elements of $\mrm{SourcePath}$.  An implementation
 may additionally allow system environment variables to appear in
