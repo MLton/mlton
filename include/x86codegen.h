@@ -64,12 +64,11 @@
 #define Float(c, f) globaldouble[c] = f;
 #define EndFloats }
 
-#define Main(cs, ufh, fhs, mmc, mfs, mfi, mot, mg, ml, reserveEsp)	\
+#define Main(cs, mmc, mfs, mfi, mot, mg, ml, reserveEsp)		\
 extern pointer ml;							\
 int main (int argc, char **argv) {					\
 	pointer jump;  							\
 	gcState.cardSizeLog2 = cs;					\
-	gcState.fixedHeapSize = fhs;					\
 	gcState.frameLayouts = frameLayouts;				\
 	gcState.globals = globalpointer;				\
 	gcState.intInfInits = intInfInits;				\
@@ -84,7 +83,6 @@ int main (int argc, char **argv) {					\
 	gcState.objectTypes = objectTypes;				\
 	gcState.saveGlobals = &saveGlobals;				\
 	gcState.stringInits = stringInits;				\
-	gcState.useFixedHeap = ufh;					\
 	MLton_init (argc, argv, &gcState);				\
 	if (gcState.isOriginal) {					\
 		float_Init();						\

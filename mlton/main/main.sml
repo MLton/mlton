@@ -115,9 +115,6 @@ fun options () =
        (Normal, "exn-history", " {false|true}",
 	"enable Exn.history",
 	boolRef Control.exnHistory),
-       (Normal, "fixed-heap", " n[{k|m}]",
-	"heap size used by resulting executable",
-	Mem (fn n => fixedHeap := SOME n)),
        (Expert, "gc-check", " {limit|first|every}", "force GCs",
 	SpaceString (fn s =>
 		     gcCheck :=
@@ -223,7 +220,7 @@ fun options () =
 	Bool (fn b => Native.shuffle := b)),
        (Expert, "new-return", " {false|true}", "non-tail call return convention",
 	boolRef newReturn),
-       (Normal, "polyvariance", " {true|false}", "use polyvariance",
+       (Expert, "polyvariance", " {true|false}", "use polyvariance",
 	Bool (fn b => if b then () else polyvariance := NONE)),
        (Normal, "o", " file", "name of output file",
 	SpaceString (fn s => output := SOME s)),

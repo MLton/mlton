@@ -285,16 +285,10 @@ fun outputDeclarations
 	  ; print "};\n")
       fun declareMain () =
 	 let
-	    val (usedFixedHeap, fixedHeapSize) =
-	       case !Control.fixedHeap of
-		  NONE => (C.falsee, 0)
-		| SOME n => (C.truee, n)
 	    val magic = C.word (Random.useed ())
 	 in 
 	    C.callNoSemi ("Main",
 			  [C.int (!Control.cardSizeLog2),
-			   usedFixedHeap,
-			   C.int fixedHeapSize,
 			   C.bool (!Control.markCards),
 			   C.int maxFrameSize,
 			   C.int maxFrameIndex,

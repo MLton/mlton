@@ -56,10 +56,6 @@ val exnHistory = control {name = "exn history",
 			  default = false,
 			  toString = Bool.toString}
    
-val fixedHeap = control {name = "fixed heap",
-			 default = NONE,
-			 toString = Option.toString Int.toString}
-
 structure GcCheck =
    struct
       datatype t =

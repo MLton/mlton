@@ -3148,6 +3148,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->signalIsPending = FALSE;
 	s->startTime = currentTime ();
 	s->summary = FALSE;
+	s->useFixedHeap = FALSE;
 	heapInit (&s->heap);
 	heapInit (&s->heap2);
 	sigemptyset (&s->signalsHandled);
