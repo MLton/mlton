@@ -1,5 +1,10 @@
 Here are the changes since version 20030711.
 
+* 2003-07-15
+  - Fixed bug that caused a segfault when attempting to create an
+    array that was too large, e.g
+       1 + Array.sub (Array.tabulate (valOf Int.maxInt, fn i => i), 0)
+
 * 2003-07-14
   - Fixed packaging for Cygwin and Sparc to include libgmp.a.
   - Eliminated bootstrap target.  The Makefile automatically
