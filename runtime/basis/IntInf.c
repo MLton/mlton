@@ -11,6 +11,10 @@
 
 #include "IntInf.h"
 
+enum {
+	DEBUG_INT_INF = FALSE,
+};
+
 /* Import the global gcState so we can get and set the frontier. */
 extern struct GC_state gcState;
 
@@ -48,8 +52,10 @@ static inline bignum * toBignum (pointer arg) {
 
 	assert(not isSmall(arg));
 	bp = (bignum *)((uint)arg - offsetof(struct bignum, isneg));
-	assert(bp->magic == BIGMAGIC);
-	return (bp);
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "bp->magic = 0x%08x\n", bp->magic);
+	assert (bp->magic == BIGMAGIC);
+	return bp;
 }
 
 /*
@@ -59,6 +65,9 @@ static inline bignum * toBignum (pointer arg) {
 static inline void fill (pointer arg, __mpz_struct *res, mp_limb_t space[2]) {
 	bignum	*bp;
 
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "fill (0x%08x, 0x%08x, 0x%08x)\n",
+				(uint)arg, (uint)res, (uint)space);
 	if (isSmall(arg)) {
 		res->_mp_alloc = 2;
 		res->_mp_d = space;
@@ -185,33 +194,51 @@ static pointer binary (pointer lhs, pointer rhs, uint bytes,
 }
 
 pointer IntInf_do_add (pointer lhs, pointer rhs, uint bytes) {
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "IntInf_do_add (0x%08x, 0x%08x, %u)\n",
+				(uint)lhs, (uint)rhs, bytes);
 	return binary (lhs, rhs, bytes, &mpz_add);
 }
 
 pointer IntInf_do_gcd (pointer lhs, pointer rhs, uint bytes) {
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "IntInf_do_gcd (0x%08x, 0x%08x, %u)\n",
+				(uint)lhs, (uint)rhs, bytes);
 	return binary (lhs, rhs, bytes, &mpz_gcd);
 }
 
 pointer IntInf_do_mul (pointer lhs, pointer rhs, uint bytes) {
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "IntInf_do_mul (0x%08x, 0x%08x, %u)\n",
+				(uint)lhs, (uint)rhs, bytes);
 	return binary (lhs, rhs, bytes, &mpz_mul);
 }
 
 pointer IntInf_do_sub (pointer lhs, pointer rhs, uint bytes) {
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "IntInf_do_sub (0x%08x, 0x%08x, %u)\n",
+				(uint)lhs, (uint)rhs, bytes);
 	return binary (lhs, rhs, bytes, &mpz_sub);
 }
 
-pointer IntInf_do_andb(pointer lhs, pointer rhs, uint bytes)
-{
+pointer IntInf_do_andb(pointer lhs, pointer rhs, uint bytes) {
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "IntInf_do_andb (0x%08x, 0x%08x, %u)\n",
+				(uint)lhs, (uint)rhs, bytes);
 	return binary(lhs, rhs, bytes, &mpz_and);
 }
 
-pointer IntInf_do_orb(pointer lhs, pointer rhs, uint bytes)
-{
+pointer IntInf_do_orb(pointer lhs, pointer rhs, uint bytes) {
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "IntInf_do_orb (0x%08x, 0x%08x, %u)\n",
+				(uint)lhs, (uint)rhs, bytes);
 	return binary(lhs, rhs, bytes, &mpz_ior);
 }
 
-pointer IntInf_do_xorb(pointer lhs, pointer rhs, uint bytes)
-{
+pointer IntInf_do_xorb(pointer lhs, pointer rhs, uint bytes) {
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "IntInf_do_xorb (0x%08x, 0x%08x, %u)\n",
+				(uint)lhs, (uint)rhs, bytes);
 	return binary(lhs, rhs, bytes, &mpz_xor);
 }
 
@@ -230,13 +257,17 @@ unary(pointer arg, uint bytes,
 	return answer(&resmpz);
 }
 
-pointer IntInf_do_neg(pointer arg, uint bytes)
-{
+pointer IntInf_do_neg(pointer arg, uint bytes) {
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "IntInf_do_neg (0x%08x, %u)\n",
+				(uint)arg, bytes);
 	return unary(arg, bytes, &mpz_neg);
 }
 
-pointer IntInf_do_notb(pointer arg, uint bytes)
-{
+pointer IntInf_do_notb(pointer arg, uint bytes) {
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "IntInf_do_notb (0x%08x, %u)\n",
+				(uint)arg, bytes);
 	return unary(arg, bytes, &mpz_com);
 }
 
@@ -256,13 +287,17 @@ shary(pointer arg, uint shift, uint bytes,
 	return answer(&resmpz);
 }
 
-pointer IntInf_do_arshift(pointer arg, uint shift, uint bytes)
-{
+pointer IntInf_do_arshift(pointer arg, uint shift, uint bytes) {
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "IntInf_do_arshift (0x%08x, %u, %u)\n",
+				(uint)arg, shift, bytes);
 	return shary(arg, shift, bytes, &mpz_fdiv_q_2exp);
 }
 
-pointer IntInf_do_lshift(pointer arg, uint shift, uint bytes)
-{
+pointer IntInf_do_lshift(pointer arg, uint shift, uint bytes) {
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "IntInf_do_lshift (0x%08x, %u, %u)\n",
+				(uint)arg, shift, bytes);
 	return shary(arg, shift, bytes, &mpz_mul_2exp);
 }
 
@@ -286,9 +321,12 @@ int IntInf_compare (pointer lhs, pointer rhs) {
 	mp_limb_t		lhsspace[2],
 				rhsspace[2];
 
-	fill(lhs, &lhsmpz, lhsspace);
-	fill(rhs, &rhsmpz, rhsspace);
-	return (mpz_cmp(&lhsmpz, &rhsmpz));
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "IntInf_compare (0x%08x, 0x%08x)\n",
+				(uint)lhs, (uint)rhs);
+	fill (lhs, &lhsmpz, lhsspace);
+	fill (rhs, &rhsmpz, rhsspace);
+	return mpz_cmp (&lhsmpz, &rhsmpz);
 }
 
 /*
@@ -300,7 +338,7 @@ int IntInf_equal (pointer lhs, pointer rhs) {
 	if (eitherIsSmall (lhs, rhs))
 		return FALSE;
 	else
-		return (IntInf_compare (lhs, rhs) == 0);
+		return 0 == IntInf_compare (lhs, rhs);
 }
 
 /*
@@ -317,6 +355,9 @@ pointer IntInf_do_toString (pointer arg, int base, uint bytes) {
 	int		i;
 	char		c;
 
+	if (DEBUG_INT_INF)
+		fprintf (stderr, "IntInf_do_toString (0x%08x, %d, %u)\n",
+				(uint)arg, base, bytes);
 	assert (base == 2 || base == 8 || base == 10 || base == 16);
 	fill (arg, &argmpz, argspace);
 	sp = (strng*)gcState.frontier;
