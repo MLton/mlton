@@ -1056,7 +1056,7 @@ structure TupleRep =
 				      if padToPrim
 					 then (Select.Indirect
 					       {offset = Bytes.zero,
-						ty = repTy})
+						ty = Type.padToPrim repTy})
 				      else if (Bits.isByteAligned shift
 					       andalso (Bits.equals
 							(Type.width repTy,
