@@ -40,7 +40,7 @@ install: $(NAME)
 tags:
 	etags *.fun *.sig *.sml
 
-BENCH = barnes-hut checksum count-graphs DLXSimulator fft fib hamlet knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc mpuz nucleic peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tensor tsp vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
+BENCH = barnes-hut checksum count-graphs DLXSimulator fft fib hamlet knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc mpuz nucleic peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tensor tsp tyan vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
 
 BFLAGS = -mlton "mlton" -mlkit -mosml -smlnj
 
