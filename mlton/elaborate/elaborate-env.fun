@@ -1439,8 +1439,8 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 			       Control.error
 			       (region,
 				seq [str "type ", Longtycon.layout c,
-				     str "has arity ", Kind.layout k',
-				     str "in structure but arity ",
+				     str " has arity ", Kind.layout k',
+				     str " in structure but arity ",
 				     Kind.layout k, str " in ", str sign],
 				empty)
 			 in
