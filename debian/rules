@@ -18,7 +18,7 @@ build: configure-stamp build-stamp
 build-stamp:
 	dh_testdir
 	# Add here commands to compile the package.
-	$(MAKE) version bootstrap
+	$(MAKE) bootstrap
 	#/usr/bin/docbook-to-man debian/mlton.sgml > mlton.1
 	touch build-stamp
 
@@ -34,7 +34,8 @@ install: build
 	dh_clean -k
 	dh_installdirs
 	# Add here commands to install the package into debian/mlton.
-	$(MAKE) install post-install-debian DESTDIR=$(CURDIR)/debian/mlton
+	$(MAKE) install post-install-debian DESTDIR=$(CURDIR)/debian/mlton \
+		MAN_PREFIX_EXTRA=/share
 
 # Build architecture-independent files here.
 binary-indep: build install

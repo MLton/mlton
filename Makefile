@@ -62,7 +62,7 @@ constants:
 
 .PHONY: deb
 deb:
-	$(MAKE) clean-cvs
+	$(MAKE) clean-cvs version
 	fakeroot dpkg-buildpackage -us -uc
 #	debuild
 
@@ -81,6 +81,18 @@ dirs:
 .PHONY: docs
 docs:
 	$(MAKE) -C $(SRC)/doc/user-guide
+
+BSDSRC = /tmp/mlton-$(VERSION)
+.PHONY: freebsd
+freebsd:
+	rm -rf $(BSDSRC)
+	mkdir -p $(BSDSRC)
+	( cd $(SRC) && tar -cpf - . ) | ( cd $(BSDSRC) && tar -xpf - )
+	cd $(BSDSRC) && $(MAKE) clean clean-cvs version
+	cd /tmp && tar -cpf - mlton-$(VERSION) | \
+		 gzip >/usr/ports/distfiles/mlton-$(VERSION)-1.src.tgz
+	cd $(BSDSRC)/freebsd && make build-package
+	rm -rf $(BSDSRC)
 
 .PHONY: hostmap
 hostmap:
@@ -143,8 +155,10 @@ tools:
 version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
+		debian/changelog					\
 		doc/mlton.spec						\
 		doc/user-guide/macros.tex				\
+		freebsd/Makefile					\
 		mlton/control/control.sml; 				\
 	do								\
 		sed "s/\(.*\)VERSION\(.*\)/\1$(VERSION)\2/" <$$f >z &&	\
@@ -164,10 +178,11 @@ world:
 DESTDIR = $(CURDIR)/install
 PREFIX = /usr
 prefix = $(PREFIX)
+MAN_PREFIX_EXTRA =
 TBIN = $(DESTDIR)$(prefix)/bin
 ULIB = lib/mlton
 TLIB = $(DESTDIR)$(prefix)/$(ULIB)
-TMAN = $(DESTDIR)$(prefix)/man/man1
+TMAN = $(DESTDIR)$(prefix)$(MAN_PREFIX_EXTRA)/man/man1
 TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
 
 .PHONY: install

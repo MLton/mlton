@@ -6,7 +6,7 @@
 #
 
 PORTNAME=	mlton
-PORTVERSION=	20021017
+PORTVERSION=	VERSION
 CATEGORIES= 	lang
 MASTER_SITES=	${MASTER_SITE_SOURCEFORGE}
 EXTRACT_SUFX=	-1.src.tgz
@@ -29,8 +29,20 @@ ALL_TARGET=	bootstrap
 USE_GMAKE= 	yes
 MAKE_ARGS=	DESTDIR='' PREFIX=$(PREFIX)
 
-pre-build:
-	$(GMAKE) -C $(WRKSRC) version
+.PHONY: build-package
+build-package:
+	$(MAKE) makesum build
+	cd $(WRKSRC) && $(GMAKE) install
+	$(MAKE) pkg-plist
+	portlint .
+	$(MAKE) deinstall
+	$(MAKE) install 
+	$(MAKE) package 
+	$(MAKE) deinstall
+	pkg_add $(PACKAGES)/All/$(DISTNAME).tgz
+	$(MAKE) deinstall 
+	$(MAKE) reinstall
+	$(MAKE) package
 
 .PHONY: pkg-plist
 pkg-plist:

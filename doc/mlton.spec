@@ -31,6 +31,6 @@ make install DESTDIR=$RPM_BUILD_ROOT VERSION=%{version}
 %attr(-, root, root)		/usr/bin/mlton
 %attr(-, root, root)		/usr/bin/mlyacc
 %attr(-, root, root)		/usr/lib/mlton
-%attr(-, root, root)		/usr/man/man1/mlprof.1.gz
-%attr(-, root, root)		/usr/man/man1/mlton.1.gz
+%attr(-, root, root)		/usr/share/man/man1/mlprof.1.gz
+%attr(-, root, root)		/usr/share/man/man1/mlton.1.gz
 
