@@ -52,4 +52,6 @@
 	gcState.stringInitsSize = cardof(stringInits);			\
 	MLton_init (argc, argv, &gcState);				\
 
+void MLton_callFromC ();
+
 #endif /* #ifndef _MAIN_H_ */
