@@ -43,6 +43,7 @@ val output: string option ref = ref NONE
 val optimization: int ref = ref 1
 val showBasis: bool ref = ref false
 val stop = ref Place.OUT
+val textIOBufSize: int ref = ref 4096
 
 val usageRef: (string -> unit) option ref = ref NONE
 
@@ -203,6 +204,8 @@ val options =
 		   | "sml" => Place.SML
 		   | _ => usage (concat ["invalid -stop arg: ", s])))),
        (Expert, #1 trace, " name1,...", "trace compiler internals", #2 trace),
+       (Expert, "text-io-buf-size", " n", "TextIO buffer size",
+	intRef textIOBufSize),
        (Expert, "type-check", " {false|true}", "type check ILs",
 	boolRef typeCheck),
        (Expert, "use-basis-library", " {true|false}",
@@ -289,6 +292,9 @@ fun commandLine (args: string list): unit =
 	   (safe, "MLton_safe")],
 	  fn (b, x) =>
 	  List.push (defines, concat [x, if !b then "=TRUE" else "=FALSE"]))
+      val _ =
+	 List.push (defines,
+		    concat ["TextIO_bufSize=", Int.toString (!textIOBufSize)])
       val _ = if !debug then () else List.push (defines, "NODEBUG")
       val _ = Control.includes := !includes
    in case result of

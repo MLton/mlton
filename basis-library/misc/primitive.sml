@@ -516,11 +516,11 @@ structure Primitive =
 	    val sub = _prim "String_sub": string * int -> char;
 	 end
 
-      structure PreThread =
+      structure TextIO =
 	 struct
-
-	 end	    
-
+	    val bufSize = _prim "TextIO_bufSize": int;
+	 end
+      
       structure Thread =
 	 struct
 	    type preThread = preThread

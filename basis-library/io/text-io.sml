@@ -24,6 +24,10 @@ functor TextIO (
 			   val fromWord8Vector: Word8Vector.vector -> string
 			   val toWord8Vector: string -> Word8Vector.vector
 			end
+		     structure TextIO:
+			sig
+			   val bufSize: int
+			end
 		     structure Vector:
 			sig
 			   val fromArray: Word8Array.array -> Word8Vector.vector
@@ -61,7 +65,7 @@ structure String =
 type vector = string
 type elem = char
 
-val bufSize: int = 4096
+val bufSize: int = Primitive.TextIO.bufSize
 
 (*---------------------------------------------------*)
 (*                     outstream                     *)
@@ -141,6 +145,18 @@ fun closeOut (out as ref (Out {fd, closed, ...})): unit =
 					       function = "closeOut",
 					       cause = exn})
       end
+
+fun getPosOut(out as ref (Out {fd, bufStyle, ...})) =
+   let
+      val streamPos = Posix.IO.lseek (fd, 0, Posix.IO.SEEK_CUR)
+      val bufPos =
+	 case bufStyle of
+	    Unbuffered => 0
+	  | Buffered (Buf {size, ...}) => !size
+	  | Line (Buf {size, ...}) => !size
+   in
+      streamPos + bufPos
+   end
 
 val newOut =
    let
@@ -521,6 +537,10 @@ structure Buf =
 
 structure StreamIO =
    struct
+      type out_pos = int
+      type pos = int
+      fun filePosOut x = x
+	 
       structure Chain =
 	 struct
 	    datatype t = T of {buf: Array.array,

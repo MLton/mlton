@@ -37,21 +37,20 @@ signature TEXT_IO =
  *)
 
       type outstream
-      val stdOut: outstream 
-      val stdErr: outstream 
-      val openOut: string -> outstream 
-      val openAppend: string -> outstream 
-      val output: outstream * vector -> unit 
-      val output1: outstream * elem -> unit 
-      val outputSubstr: outstream * substring -> unit
-      val flushOut: outstream -> unit 
       val closeOut: outstream -> unit 
-(*       val getPosOut: outstream -> StreamIO.out_pos 
- *       val setPosOut: outstream * StreamIO.out_pos -> unit 
- *)
-      val mkOutstream: StreamIO.outstream -> outstream
+      val flushOut: outstream -> unit 
       val getOutstream: outstream -> StreamIO.outstream
+      val getPosOut: outstream -> StreamIO.out_pos 
+      val mkOutstream: StreamIO.outstream -> outstream
+      val openAppend: string -> outstream 
+      val openOut: string -> outstream 
+      val output1: outstream * elem -> unit 
+      val output: outstream * vector -> unit 
+      val outputSubstr: outstream * substring -> unit
       val setOutstream: outstream * StreamIO.outstream -> unit
+      val stdErr: outstream 
+      val stdOut: outstream 
+(*       val setPosOut: outstream * StreamIO.out_pos -> unit  *)
    end
 
 signature TEXT_IO_EXTRA =

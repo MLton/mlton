@@ -9,12 +9,13 @@ signature STREAM_IO =
       type instream
       type outstream
  
-(*       type out_pos
- *       type pos
- *)
+      type out_pos
+      type pos = int
+
       val canInput: instream * int -> int option
       val closeIn: instream -> unit
       val endOfStream: instream -> bool 
+      val filePosOut: out_pos -> pos
       val input1: instream -> (elem * instream) option 
       val input: instream -> vector * instream 
       val inputAll: instream -> vector 
@@ -31,6 +32,5 @@ signature STREAM_IO =
  *       val getWriter: outstream -> writer * IO.buffer_mode 
  *       val getPosOut: outstream -> out_pos 
  *       val setPosOut: out_pos -> outstream 
- *       val filePosOut: out_pos -> pos
  *)
    end
