@@ -124,8 +124,7 @@ structure MLtonCallback :> MLTON_CALLBACK_EXTRA =
       let
 	val _ = 
 	  MLtonThread.setCallFromCHandler
-	  (false,
-	   fn () =>
+	  (fn () =>
 	   let 
 	     val cs = Prim.callbackName ()
 	     val n = if Primitive.Cpointer.isNull cs

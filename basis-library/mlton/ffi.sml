@@ -1,6 +1,13 @@
 structure MLtonFFI =
 struct
 
-val handleCallFromC = fn f => MLtonThread.setCallFromCHandler (true, f)
+local
+  open MLtonThread
+in
+  fun handleCallFromC f =
+    setCallFromCHandler (fn () => (atomicBegin();
+				   f ();
+				   atomicEnd()))
+end
    
 end

@@ -149,8 +149,8 @@ val msg = Primitive.Stdio.print
    
 val setCallFromCHandler =
    let
-      val r: (bool * (unit -> unit)) ref =
-	 ref (true, fn () => raise Fail "no handler for C calls")
+      val r: (unit -> unit) ref =
+	 ref (fn () => raise Fail "no handler for C calls")
       val _ =
 	 Prim.setCallFromCHandler
 	 (toPrimitive
@@ -162,13 +162,11 @@ val setCallFromCHandler =
 			    Prim.switchTo
 			    (toPrimitive
 			     (new (fn () => 
-				   let val (b,f) = !r in
-				     if b then atomicEnd () else ()
-				     ; f ()
-				     ; Prim.setSaved t
-				     ; if b then atomicBegin () else ()
-				     ; Prim.returnToC ()
-				   end)))
+				   (let in
+				      (!r) ()
+				      ; Prim.setSaved t
+				      ; Prim.returnToC ()
+				   end))))
 		      in
 			 loop ()
 		      end
@@ -176,7 +174,7 @@ val setCallFromCHandler =
 		   loop
 		end)))
    in
-      fn (b, f) => r := (b, f)
+      fn f => r := f
    end
 
 fun switchToHandler () =
