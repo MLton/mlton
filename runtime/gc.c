@@ -1050,16 +1050,36 @@ static void readProcessor() {
 
 #if (defined (__linux__))
 #include <sys/sysinfo.h>
+/* struct sysinfo copied from /usr/include/linux/kernel.h on a 2.4 kernel
+ * because we need mem_unit.
+ * On older kernels, it will be guaranteed to be zero, and we test for that
+ * below.
+ */
+struct Msysinfo {
+	long uptime;			/* Seconds since boot */
+	unsigned long loads[3];		/* 1, 5, and 15 minute load averages */
+	unsigned long totalram;		/* Total usable main memory size */
+	unsigned long freeram;		/* Available memory size */
+	unsigned long sharedram;	/* Amount of shared memory */
+	unsigned long bufferram;	/* Memory used by buffers */
+	unsigned long totalswap;	/* Total swap space size */
+	unsigned long freeswap;		/* swap space still available */
+	unsigned short procs;		/* Number of current processes */
+	unsigned long totalhigh;	/* Total high memory size */
+	unsigned long freehigh;		/* Available high memory size */
+	unsigned int mem_unit;		/* Memory unit size in bytes */
+	char _f[20-2*sizeof(long)-sizeof(int)];	/* Padding: libc5 uses this.. */
+};
 static inline void
 setMemInfo(GC_state s)
 {
-	struct sysinfo	sbuf;
+	struct Msysinfo	sbuf;
 	W32 maxMem;
 	W64 tmp;
 	uint memUnit;
 
 	maxMem = 0x100000000llu - s->pageSize;
-	unless (0 == sysinfo(&sbuf))
+	unless (0 == sysinfo((struct sysinfo*)&sbuf))
 		diee("sysinfo failed");
 	memUnit = sbuf.mem_unit;
 	/* On 2.2 kernels, mem_unit is not defined, but will be zero, so go
