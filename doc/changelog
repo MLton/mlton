@@ -1,7 +1,12 @@
 Here are the changes from version 20020923.
 
+* 2003-02-09
+  - Added options to mlprof: -graph-title, -gray, -ignore, -mlmon,
+	-tolerant.
+
 * 2002-11 - 2003-01
-  - Added source-level allocation and time profiling.
+  - Added source-level allocation and time profiling.  This includes
+	the new options to mlton: -profile and -profile-stack.
 
 * 2002-12-28
   - Added NetHostDB,NetProtDB,NetServDB structures.
