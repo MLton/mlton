@@ -41,22 +41,27 @@ fun foldLines (ins, ac, f) =
 
 fun foreachLine (ins, f) = foldLines (ins, (), f o #1)
 
-fun inputTo (i, p) =
+fun inputTo (i: t, p: char -> bool): string =
    let
       val maxListLength = 1000
-      fun finish chars = String.implode (rev chars)
+      fun finish chars = String.rev (String.implode chars)
       fun loop (n, chars, strings) =
 	 case peekChar i of
 	    NONE => (chars, strings)
 	  | SOME c =>
 	       if p c
 		  then (chars, strings)
-	       else (inputChar i
-		     ; if n > 0
-			  then loop (n - 1, c :: chars, strings)
-		       else loop (maxListLength,
-				  [],
-				  finish chars :: strings))
+	       else
+		  let
+		     val chars = c :: chars
+		     val _ = inputChar i
+		  in
+		     if n > 0
+			then loop (n - 1, chars, strings)
+		     else loop (maxListLength,
+				[],
+				finish chars :: strings)
+		  end
       val (chars, strings) = loop (maxListLength, [], [])
    in
       concat (rev (finish chars :: strings))

@@ -214,4 +214,14 @@ in
    val op > = op >
 end
 
+fun rev (s: t): t =
+   let
+      val n = size s
+      val n1 = n - 1
+   in
+      CharVector.tabulate (n, fn i => sub (s, n1 - i))
+   end
+
+val fromListRev = rev o implode
+
 end
