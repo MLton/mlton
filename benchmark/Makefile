@@ -44,7 +44,7 @@ test: $(NAME)
 
 QBENCH = $(BENCH)
 
-QBFLAGS = -mlton "mlton -native-new-gen-transfer {false,true}"
+QBFLAGS = -mlton "mlton -drop-pass localRef" -mlton "mlton"
 
 .PHONY: qtest
 qtest: $(NAME)

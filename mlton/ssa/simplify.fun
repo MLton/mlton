@@ -14,6 +14,7 @@ structure Flatten = Flatten (S)
 structure Inline = Inline (S)
 structure IntroduceLoops = IntroduceLoops (S)
 structure LocalFlatten = LocalFlatten (S)
+structure LocalRef = LocalRef (S)
 structure LoopInvariant = LoopInvariant (S)
 structure PolyEqual = PolyEqual (S)
 structure Redundant = Redundant (S)
@@ -60,6 +61,9 @@ val passes =
     ("contify3", Contify.contify),
     ("introduceLoops", IntroduceLoops.introduceLoops),
     ("loopInvariant", LoopInvariant.loopInvariant),
+(*
+    ("localRef", LocalRef.eliminate),
+*)
     (* flatten cannot be omitted.  It ensures(?) that no spurious
      * allocations occur between allocation of an intInf return 
      * and the call to the primitive.

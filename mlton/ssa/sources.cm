@@ -3,7 +3,7 @@ Group
 signature SSA
    
 functor Ssa
-   
+
 is
 
 ../atoms/sources.cm
@@ -37,6 +37,8 @@ introduce-loops.fun
 introduce-loops.sig
 local-flatten.fun
 local-flatten.sig
+local-ref.sig
+local-ref.fun
 loop-invariant.fun
 loop-invariant.sig
 once.fun

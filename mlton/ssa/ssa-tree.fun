@@ -496,8 +496,8 @@ structure Transfer =
 	     | Return xs => Return (fxs xs)
 	 end
 
-      fun replaceVar (t, f) = replaceLabelVar (t, fn l => l, f)
       fun replaceLabel (t, f) = replaceLabelVar (t, f, fn x => x)
+      fun replaceVar (t, f) = replaceLabelVar (t, fn l => l, f)
 
       local open Layout
       in

@@ -155,6 +155,7 @@ signature SSA_TREE =
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	    val isNonTail: t -> bool
 	    val layout: t -> Layout.t
+	    val map: t * (Label.t -> Label.t) -> t
 	 end
       
       structure Transfer:
@@ -188,6 +189,7 @@ signature SSA_TREE =
 	    val foreachLabelVar: t * (Label.t -> unit) * (Var.t -> unit) -> unit
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
+	    val replaceLabel: t * (Label.t -> Label.t) -> t
 	    val replaceVar: t * (Var.t -> Var.t) -> t
 	 end
 
