@@ -320,8 +320,8 @@ fun signalGroup (p: Pid.t, s: Signal.t): unit =
    end
 
 local
-   val delay = Time.fromMilliseconds (IntInf.fromInt 250)
-   val maxDelay = Time.minutes (IntInf.fromInt 1)
+   val delay = Time.fromMilliseconds 1
+   val maxDelay = Time.minutes 1
 in
    fun try (f: unit -> 'a, msg: string): 'a =
       let

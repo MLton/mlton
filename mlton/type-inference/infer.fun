@@ -169,7 +169,7 @@ fun stringToIntInf (str: string): IntInf.t =
 	    then (StringCvt.HEX, start + 2)
 	 else (StringCvt.DEC, start)
       val (v, _) = valOf (IntInf.scan (base, reader) start)
-      val v = if negate then IntInf.~ v else v
+      val v = if negate then ~ v else v
    in
       v
    end
@@ -207,7 +207,7 @@ fun makeXconst (c: Aconst.t, ty: Type.t): Xconst.t =
        | Aconst.Word w =>
 	    choose (WordSize.all, Xtype.word, "word", fn s =>
 		    Xconst.Word
-		    (if IntInf.<= (w, LargeWord.toIntInf (WordSize.max s))
+		    (if w <= LargeWord.toIntInf (WordSize.max s)
 			then WordX.fromLargeInt (w, s)
 		     else (error (concat [Xtype.toString ty, " too big"])
 			   ; WordX.zero s)))

@@ -103,8 +103,8 @@ fun scanInt (yytext: string,
 			(fn r => IntInf.scan (radix, r)) str) of
 		     NONE => (error (source, left, right,
 				     concat ["invalid constant: ", yytext])
-			      ; IntInf.fromInt 0)
-		   | SOME n => if negate then IntInf.~ n else n),
+			      ; 0)
+		   | SOME n => if negate then ~ n else n),
 		 Source.getPos (source, left),
 		 Source.getPos (source, right))
    end

@@ -797,8 +797,7 @@ fixity	: INFIX			(Fixity.Infix NONE)
 
 int : INT (INT)
 	   
-digit : int (if IntInf.< (int, IntInf.fromInt 0)
-		orelse IntInf.>= (int, IntInf.fromInt 10)
+digit : int (if int < 0 orelse int >= 10
 		then (error (reg (intleft, intright), "expected single digit")
 		      ; 0)
 	     else IntInf.toInt int)

@@ -69,9 +69,9 @@ in
    val isMin = is IntSize.min
 end
 
-fun one s = make (IntInf.fromInt 1, s)
+fun one s = make (1, s)
    
-fun zero s = make (IntInf.fromInt 0, s)
+fun zero s = make (0, s)
 
 fun max s = make (IntSize.max s, s)
 

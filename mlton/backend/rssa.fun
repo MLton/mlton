@@ -43,8 +43,7 @@ structure Operand =
       val real = Const o Const.real
       val word = Const o Const.word
 	 
-      fun bool b = Cast (int (IntX.make (IntInf.fromInt (if b then 1 else 0),
-					 IntSize.default)),
+      fun bool b = Cast (int (IntX.make (if b then 1 else 0, IntSize.default)),
 			 Type.bool)
 	 
       val ty =
@@ -137,8 +136,7 @@ structure Operand =
 	       (case c of
 		   Const.Word w =>
 		      (* 512 is pretty arbitrary *)
-		      if WordX.<= (w, WordX.fromLargeInt (IntInf.fromInt 512,
-							  WordX.size w))
+		      if WordX.<= (w, WordX.fromLargeInt (512, WordX.size w))
 			 then small (LargeWord.toWord (WordX.toLargeWord w))
 		      else big z
 		 | _ => Error.bug "strange numBytes")
@@ -392,7 +390,7 @@ structure Transfer =
 	 foreachDef (t, Var.clear o #1)
 
       local
-	 fun make i = IntX.make (IntInf.fromInt i, IntSize.default)
+	 fun make i = IntX.make (i, IntSize.default)
       in
 	 fun ifBool (test, {falsee, truee}) =
 	    Switch (Switch.Int

@@ -32,19 +32,12 @@ datatype z = datatype WordSize.t
 structure SmallIntInf =
    struct
       structure Word = Pervasive.Word
-      (*
-       * The IntInf.fromInt calls are just because SML/NJ doesn't
-       * overload integer constants for IntInf.int's.
-       * This code relies on the language that MLton is implemented in using at
-       * least 31 bits for integers.
-       *)
-      val minSmall: IntInf.t = IntInf.fromInt ~0x40000000
-      val maxSmall: IntInf.t = IntInf.fromInt 0x3FFFFFFF
+
+      val minSmall: IntInf.t = ~0x40000000
+      val maxSmall: IntInf.t = 0x3FFFFFFF
 
       fun isSmall (i: IntInf.t): bool =
-	 let open IntInf
-	 in minSmall <= i andalso i <= maxSmall
-	 end
+	 minSmall <= i andalso i <= maxSmall
 
       fun toWord (i: IntInf.t): word option =
 	 if isSmall i

@@ -883,7 +883,7 @@ fun 'a apply (p, args, varEquals) =
 		  s: WordSize.t) =
 	 let
 	    val x = f (WordX.toIntInf w, WordX.toIntInf w')
-	    val x' = IntInf.mod (x, Int.toIntInf (WordSize.size s))
+	    val x' = x mod (Int.toIntInf (WordSize.size s))
 	 in
 	    if x = x'
 	       then word (WordX.fromLargeInt (x, s))
@@ -926,8 +926,7 @@ fun 'a apply (p, args, varEquals) =
 				       | Relation.EQUAL => 0
 				       | Relation.GREATER => 1),
 		      IntSize.default))
-	   | (IntInf_equal, [IntInf i1, IntInf i2]) =>
-		bool (IntInf.equals (i1, i2))
+	   | (IntInf_equal, [IntInf i1, IntInf i2]) => bool (i1 = i2)
 	   | (IntInf_toWord, [IntInf i]) =>
 		(case SmallIntInf.toWord i of
 		    NONE => ApplyResult.Unknown

@@ -39,16 +39,16 @@ val range =
    memoize
    (fn s =>
     let
-       val pow = IntInf.pow (IntInf.fromInt 2, size s - 1)
+       val pow = IntInf.pow (2, size s - 1)
     in
-       (IntInf.~ pow, IntInf.- (pow, IntInf.fromInt 1))
+       (~ pow, pow - 1)
     end)
 
 fun isInRange (s, i) =
    let
       val (min, max) = range s
    in
-      IntInf.<= (min, i) andalso IntInf.<= (i, max)
+      min <= i andalso i <= max
    end
 
 val min = #1 o range

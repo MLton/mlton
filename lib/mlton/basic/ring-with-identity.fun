@@ -39,7 +39,7 @@ in
 		      < = op <,
 		      ~ = Pervasive.Int.~,
 		      power = Power.power}
-   val fromIntInf = make{zero = IntInf.fromInt 0,
+   val fromIntInf = make{zero = 0,
 			 < = IntInf.<,
 			 ~ = IntInf.~,
 			 power = Power.powerInf}

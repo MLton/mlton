@@ -178,7 +178,7 @@ fun existsPrimeOfSmallerMetric(m: IntInf.int, f: t -> bool): bool =
 
 fun isPrime(r: t): bool =
    let val r = unitEquivalent r
-   in existsPrimeOfSmallerMetric(IntInf.+(metric r, IntInf.fromInt 1),
+   in existsPrimeOfSmallerMetric(IntInf.+ (metric r, 1),
 				 fn p => equals(r, p))
    end
 

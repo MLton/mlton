@@ -215,12 +215,12 @@ struct
 					   (lo, hi)
 					end
 				  in
-				     if IntInf.<(ii, IntInf.fromInt 0)
+				     if ii < 0
 					then let
-						val ii = IntInf.-(IntInf.~ ii, IntInf.fromInt 1)
+						val ii = ~ ii - 1
 						val iis =
 						   String.translate
-						   (IntInf.format(ii, StringCvt.HEX),
+						   (IntInf.format (ii, StringCvt.HEX),
 						    fn #"0" => "F"
 						     | #"1" => "E"
 						     | #"2" => "D"
@@ -247,7 +247,7 @@ struct
 					     in
 						finish (iis, #"F")
 					     end
-					else finish (IntInf.format(ii, StringCvt.HEX), #"0")
+					else finish (IntInf.format (ii, StringCvt.HEX), #"0")
 				  end
 			       val ii = IntX.toIntInf i
 			       val (lo, hi) = 
