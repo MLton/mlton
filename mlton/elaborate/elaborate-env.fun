@@ -1322,7 +1322,9 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 	 end
       (* pre: arities are equal. *)
       fun equalSchemes (s: Scheme.t, s': Scheme.t,
-			name: unit -> Layout.t,
+			name: string,
+			thing: string,
+			lay: unit -> Layout.t,
 			r: Region.t): unit =
 	 let
 	    val (tyvars', ty') = Scheme.dest s'
@@ -1343,17 +1345,18 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 		open Layout
 	     in
 		(r,
-		 seq [str "type ", name (),
-		      str " in structure disagrees with ", str sign],
-		 align [seq [str "structure: ", l1],
+		 seq [str (concat [thing, " in structure disagrees with ",
+				   sign])],
+		 align [seq [str (concat [name, ": "]), lay ()],
+			seq [str "structure: ", l1],
 			seq [str "signature: ", l2]])
 	     end)
 	 end
       val equalSchemes =
 	 Trace.trace
 	 ("equalSchemes",
-	  fn (s, s', _, _) => Layout.tuple [Scheme.layout s,
-					    Scheme.layout s'],
+	  fn (s, s', _, _, _, _) => Layout.tuple [Scheme.layout s,
+						  Scheme.layout s'],
 	  Unit.layout)
 	 equalSchemes
       fun checkCons (Cons.T v, Cons.T v', strids): unit =
@@ -1370,13 +1373,10 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 		      let
 			 val _ =
 			    equalSchemes
-			    (s, s', fn () =>
-			     let
-				open Layout
-			     in
-				seq [str "of ", lay n]
-			     end,
-			     region)
+			    (s, s',
+			     "constructor",
+			     "constructor type",
+			     fn () => lay n, region)
 		      in
 			 NONE
 		      end)
@@ -1466,7 +1466,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 		  in
 		     S'
 		  end
-	     | SOME (_, S) => (print "cutting off internal\n"; S)
+	     | SOME (_, S) => S
 	 end
       and reallyCut (S, I, strids) =
 	 let
@@ -1556,13 +1556,15 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 					      end)
 				  | Scheme s =>
 				       (equalSchemes
-					(typeStrScheme typeStr',
-					 s, layoutName, region)
+					(typeStrScheme typeStr', s,
+					 "type", "type definition",
+					 layoutName, region)
 					; typeStr)
 				  | Tycon c =>
 				       (equalSchemes
 					(typeStrScheme typeStr',
 					 tyconScheme c,
+					 "type", "type definition",
 					 layoutName, region)
 					; typeStr)
 			in
