@@ -11,7 +11,7 @@ structure MLton: MLTON =
       fun serialize _ = raise Fail "serialize"
       fun deserialize _ = raise Fail "deserialize"
       fun cleanAtExit _ = raise Fail "cleanAtExit"
-      val debug = false
+      val debug = true
       val safe = true
       fun size _ = ~1: int
 
