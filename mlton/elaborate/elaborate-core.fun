@@ -937,7 +937,8 @@ fun elaborateDec (d, {env = E,
 	 in
 	    Vector.foreach2
 	    (types, strs, fn ({tycon, ...}, str) =>
-	     Env.extendTycon (E, tycon, str, {isRebind = false}))
+	     Env.extendTycon (E, tycon, str, {forceUsed = false,
+					      isRebind = false}))
 	 end
       fun elabDatBind (datBind: DatBind.t, nest: string list)
 	 : Decs.t * {tycon: Ast.Tycon.t,
@@ -961,7 +962,8 @@ fun elaborateDec (d, {env = E,
 		       kind,
 		       AdmitsEquality.Sometimes)
 		   val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, kind),
-					    {isRebind = false})
+					    {forceUsed = true,
+					     isRebind = false})
 		   val cons =
 		      Vector.map
 		      (cons, fn (name, arg) =>
@@ -1033,7 +1035,9 @@ fun elaborateDec (d, {env = E,
 		       TypeStr.data (tycon,
 				     Kind.Arity (Vector.length tyvars),
 				     makeCons schemes)
-		    val _ = Env.extendTycon (E, name, typeStr, {isRebind = true})
+		    val _ =
+		       Env.extendTycon (E, name, typeStr,
+					{forceUsed = false, isRebind = true})
 		 in
 		    ({cons = datatypeCons,
 		      tycon = tycon,
@@ -1115,7 +1119,8 @@ fun elaborateDec (d, {env = E,
 			 Vector.foreach
 			 (strs, fn {tycon, typeStr} =>
 			  Env.extendTycon (E, tycon, TypeStr.abs typeStr,
-					   {isRebind = false}))
+					   {forceUsed = true,
+					    isRebind = false}))
 		   in
 		      Decs.append (decs, decs')
 		   end
@@ -1126,8 +1131,14 @@ fun elaborateDec (d, {env = E,
 		     | DatatypeRhs.Repl {lhs, rhs} => (* rule 18 *)
 			  let
 			     val s = Env.lookupLongtycon (E, rhs)
-			     val _ = Env.extendTycon (E, lhs, s,
-						      {isRebind = false})
+			     val forceUsed =
+				case TypeStr.node s of
+				   TypeStr.Datatype _ => true
+				 | _ => false
+			     val _ =
+				Env.extendTycon (E, lhs, s,
+						 {forceUsed = forceUsed,
+						  isRebind = false})
 			  in
 			     Decs.empty
 			  end)

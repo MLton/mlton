@@ -160,7 +160,8 @@ signature ELABORATE_ENV =
       val extendFix: t * Ast.Vid.t * Ast.Fixity.t -> unit
       val extendSigid: t * Ast.Sigid.t * Interface.t -> unit
       val extendStrid: t * Ast.Strid.t * Structure.t -> unit
-      val extendTycon: t * Ast.Tycon.t * TypeStr.t * {isRebind: bool} -> unit
+      val extendTycon:
+	 t * Ast.Tycon.t * TypeStr.t * {forceUsed: bool, isRebind: bool} -> unit
       val extendVar:
 	 t * Ast.Var.t * CoreML.Var.t * Scheme.t * {isRebind: bool} -> unit
       val extendOverload:

@@ -1835,29 +1835,24 @@ in
    fun extendSigid (E, d, r) = extend (E, #sigs, d, r, false, ExtendUses.New)
    fun extendStrid (E, d, r) = extend (E, #strs, d, r, false, ExtendUses.New)
    fun extendVals (E, d, r, eu) = extend (E, #vals, d, r, false, eu)
-   fun extendTycon (E, d, s, ir) =
+   fun extendTycon (E, d, s, {forceUsed, isRebind}) =
       let
-	 val forceTyconUsed =
+	 val () =
 	    let
 	       datatype z = datatype TypeStr.node
 	    in
 	       case TypeStr.node s of
 		  Datatype {cons = Cons.T v , ...} =>
-		     let
-			val _ = 
-			   Vector.foreach
-			   (v, fn {con, name, scheme, uses} => 
-			    extendVals (E, Ast.Vid.fromCon name,
-					(Vid.Con con, scheme),
-					ExtendUses.Old uses))
-		     in
-			true
-		     end
-		| Scheme _ => false
-		| Tycon _ => false
+		     Vector.foreach
+		     (v, fn {con, name, scheme, uses} => 
+		      extendVals (E, Ast.Vid.fromCon name,
+				  (Vid.Con con, scheme),
+				  ExtendUses.Old uses))
+		| _ => ()
 	    end
-	 val _ = extend (E, #types, d, s, forceTyconUsed,
-			 ExtendUses.fromIsRebind ir)
+	 val _ =
+	    extend (E, #types, d, s, forceUsed,
+		    ExtendUses.fromIsRebind {isRebind = isRebind})
       in
 	 ()
       end
