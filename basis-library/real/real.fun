@@ -753,8 +753,8 @@ functor Real (R: PRE_REAL): REAL =
 		      | NetBSD => true
 		      | _ => false
 		  end
-		  then fn x => if x == negZero
-				  then negZero
+		  then fn x => if x == zero 
+				  then if signBit x then negZero else zero
 			       else tanh x
 	       else tanh
 	 end
