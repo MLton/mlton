@@ -9,6 +9,19 @@
 #include "totalRam.sysconf.c"
 #include "use-mmap.c"
 
+#ifndef EIP
+#define EIP	14
+#endif
+
+static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
+	GC_handleSigProf ((pointer) ucp->uc_mcontext.gregs[EIP]);
+}
+
+void setSigProfHandler (struct sigaction *sa) {
+	sa->sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
+	sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
+}
+
 /* Work around Linux kernel bugs associated with the user and system times. */
 
 int fixedGetrusage (int who, struct rusage *rup) {

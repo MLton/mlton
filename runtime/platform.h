@@ -193,6 +193,7 @@ void release (void *base, size_t length);
 void *remap (void *old,  size_t oldSize, size_t newSize);
 void *scalloc (size_t nmemb, size_t size);
 void sclose (int fd);
+void setSigProfHandler (struct sigaction *sa);
 void sfclose (FILE *file);
 FILE *sfopen (char *fileName, char *mode);
 void sfread (void *ptr, size_t size, size_t nmemb, FILE *file);

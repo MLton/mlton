@@ -5,8 +5,6 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  */
-
-#define _GNU_SOURCE
 #include "platform.h"
 
 /* The mutator should maintain the invariants
@@ -3858,44 +3856,14 @@ static void profileTimeInit (GC_state s) {
 
 static GC_state catcherState;
 
-/*
- * Called on each SIGPROF interrupt.
- */
-#if (defined (__Darwin__) ||\
-	defined (__FreeBSD__) ||\
-	defined (__linux__) ||\
-	defined (__OpenBSD__) ||\
-	defined (__sun__))
-static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
-#elif (defined (__NetBSD__))
-static void catcher (int sig, int code, struct sigcontext *ucp) {
-#else
-#error catcher prototype not defined
-#endif
+void GC_handleSigProf (pointer pc) {
 	uint frameIndex;
-	pointer pc;
 	GC_state s;
 	uint sourceSeqIndex;
 
 	s = catcherState;
-#if (defined (__Darwin__))
- 	pc = (pointer) ucp->uc_mcontext->ss.srr0;
-#elif (defined (__FreeBSD__))
-	pc = (pointer) ucp->uc_mcontext.mc_eip;
-#elif (defined (__linux__))
-#ifndef EIP
-#define EIP	14
-#endif
-        pc = (pointer) ucp->uc_mcontext.gregs[EIP];
-#elif (defined (__NetBSD__) || defined (__OpenBSD__))
-	pc = (pointer) ucp->sc_eip;
-#elif (defined (__sun__))
-	pc = (pointer) ucp->uc_mcontext.gregs[REG_PC];
-#else
-#error pc not defined
-#endif
 	if (DEBUG_PROFILE)
-		fprintf (stderr, "catcher  pc = 0x%08x\n", (uint)pc);
+		fprintf (stderr, "GC_handleSigProf (0x%08x)\n", (uint)pc);
 	if (s->amInGC)
 		sourceSeqIndex = SOURCE_SEQ_GC;
 	else {
@@ -3982,19 +3950,7 @@ static void profileTimeInit (GC_state s) {
 	 */
 	catcherState = s;
 	sigemptyset (&sa.sa_mask);
-#if (defined (__Darwin__) ||\
-	defined (__FreeBSD__) ||\
-	defined (__linux__) ||\
-	defined (__OpenBSD__) ||\
-	defined (__sun__))
-	sa.sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
-	sa.sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
-#elif (defined (__NetBSD__))
-	sa.sa_flags = SA_ONSTACK | SA_RESTART;
-	sa.sa_handler = (void (*)(int))catcher;
-#else
-#error sa_flags not set
-#endif
+	setSigProfHandler (&sa);
 	unless (sigaction (SIGPROF, &sa, NULL) == 0)
 		diee ("sigaction() failed");
 	/* Start the SIGPROF timer. */

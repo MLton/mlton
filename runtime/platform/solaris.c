@@ -7,6 +7,16 @@
 #include "ssmmap.c"
 #include "totalRam.sysconf.c"
 
+static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
+	GC_handleSigProf ((pointer) ucp->uc_mcontext.gregs[REG_PC]);
+}
+
+void setSigProfHandler (struct sigaction *sa) {
+	sa->sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
+	sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
+}
+
+
 void decommit (void *base, size_t length) {
 	smunmap (base, length);
 }

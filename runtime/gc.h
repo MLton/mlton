@@ -612,6 +612,8 @@ static inline Header GC_getHeader (pointer p) {
  */
 void GC_handler (GC_state s, int signum);
 
+void GC_handleSigProf (pointer pc);
+
 /* GC_init must be called before doing any allocation.
  * It processes command line arguments, creates the heap, initializes the global
  * strings and intInfs.
