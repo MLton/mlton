@@ -9,7 +9,7 @@ signature PRIM_IO_ARG =
      val compare : (pos * pos) -> order
    end
 
-functor PrimIO (S : PRIM_IO_ARG): PRIM_IO = 
+functor PrimIOExtra (S : PRIM_IO_ARG) = 
    struct
       open S
 
@@ -68,7 +68,7 @@ functor PrimIO (S : PRIM_IO_ARG): PRIM_IO =
 	let
 	  val name = "openVector"
 	  val closed = ref false
-	  val empty = V.fromList []
+	  val empty = V.tabulate (0, fn _ => someElem)
 	  val pos = ref 0
 	  val eofPos = V.length v
 	  fun check f = if !closed
@@ -322,3 +322,5 @@ functor PrimIO (S : PRIM_IO_ARG): PRIM_IO =
 	      close = close, ioDesc = ioDesc}
 	end
    end
+
+functor PrimIO(S: PRIM_IO_ARG): PRIM_IO = PrimIOExtra(S)

@@ -3,10 +3,8 @@ structure Basis:> BASIS =
       (* Required structures *)
       structure Array = Array
       structure ArraySlice = ArraySlice
-(*
       structure BinIO = BinIO
       structure BinPrimIO = BinPrimIO
-*)
       structure Bool = Bool
       structure Byte = Byte
       structure CharArray = CharArray
@@ -19,9 +17,7 @@ structure Basis:> BASIS =
       structure General = General
       structure IEEEReal = IEEEReal
       structure Int = Int
-(*
       structure IO = IO
-*)
       structure LargeInt = LargeInt
       structure LargeReal = LargeReal
       structure LargeWord = LargeWord
@@ -35,10 +31,8 @@ structure Basis:> BASIS =
       structure StringCvt = StringCvt
       structure String = String
       structure Substring = Substring
-(*
       structure TextIO = TextIO
       structure TextPrimIO = TextPrimIO
-*)
       structure Text = Text
       structure Time = Time
       structure Timer = Timer

@@ -1,26 +1,27 @@
 signature STREAM_IO_ARG = 
    sig
-     structure PrimIO: PRIM_IO
-     structure Array: MONO_ARRAY
-     structure Vector: MONO_VECTOR
-     sharing type PrimIO.elem = Array.elem = Vector.elem
-     sharing type PrimIO.vector = Array.vector = Vector.vector
-     sharing type PrimIO.array = Array.array
-     val someElem: PrimIO.elem
+      structure PrimIO: PRIM_IO
+      structure Array: MONO_ARRAY
+      structure Vector: MONO_VECTOR
+      sharing type PrimIO.elem = Array.elem = Vector.elem
+      sharing type PrimIO.vector = Array.vector = Vector.vector
+      sharing type PrimIO.array = Array.array
+      val someElem: PrimIO.elem
    end
 
-functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
+functor StreamIOExtra (S: STREAM_IO_ARG) =
    struct
       open S
 
+      structure PIO = PrimIO
       structure A = Array
       structure V = Vector
 
-      type elem = PrimIO.elem
-      type vector = PrimIO.vector
-      type reader = PrimIO.reader
-      type writer = PrimIO.writer
-      type pos = PrimIO.pos
+      type elem = PIO.elem
+      type vector = PIO.vector
+      type reader = PIO.reader
+      type writer = PIO.writer
+      type pos = PIO.pos
 
       fun liftExn name function cause = raise IO.Io {name = name,
 						     function = function,
@@ -53,7 +54,7 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 				   buffer_mode: buffer_mode ref}
 
       fun outstreamSel (Out v, sel) = sel v
-      fun writerSel (PrimIO.WR v, sel) = sel v
+      fun writerSel (PIO.WR v, sel) = sel v
       fun outstreamWriter os = outstreamSel (os, #writer)
       fun outstreamName os = writerSel (outstreamWriter os, #name)
 
@@ -211,7 +212,7 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 	  val bufSize = writerSel (writer, #chunkSize)
 	in
 	  Out {writer = writer,
-	       augmented_writer = PrimIO.augmentWriter writer,
+	       augmented_writer = PIO.augmentWriter writer,
 	       state = ref Active,
 	       buffer_mode = ref (case buffer_mode of
 				    IO.NO_BUF => NO_BUF
@@ -274,11 +275,11 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 	    state = state}
 
       fun instreamSel (In v, sel) = sel v
-      fun readerSel (PrimIO.RD v, sel) = sel v
+      fun readerSel (PIO.RD v, sel) = sel v
       fun instreamReader is = instreamSel (is, #reader)
       fun instreamName is = readerSel (instreamReader is, #name)
 
-      val empty = V.fromList []
+      val empty = V.tabulate (0, fn _ => someElem)
 
       fun extend function (is as In {augmented_reader, tail, ...}) blocking =
 	case !(!tail) of
@@ -478,7 +479,7 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 		       else ref (Active (ref (Link {inp = v, pos = 0, next = next})))
 	in
 	  In {reader = reader,
-	      augmented_reader = PrimIO.augmentReader reader,
+	      augmented_reader = PIO.augmentReader reader,
 	      state = this,
 	      tail = ref next}
 	end
@@ -498,3 +499,5 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 	| _ => raise IO.ClosedStream
         handle exn => liftExn (instreamName is) "filePosIn" exn
    end
+
+functor StreamIO(S: STREAM_IO_ARG): STREAM_IO = StreamIOExtra(S)

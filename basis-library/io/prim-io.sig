@@ -52,3 +52,8 @@ signature PRIM_IO =
       val augmentReader: reader -> reader
       val augmentWriter: writer -> writer
    end
+
+signature PRIM_IO_EXTRA = 
+   sig
+      include PRIM_IO
+   end

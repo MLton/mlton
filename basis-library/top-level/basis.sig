@@ -77,10 +77,8 @@ signature BASIS =
       (* Required structures *)
       structure Array : ARRAY	
       structure ArraySlice : ARRAY_SLICE	
-(*
       structure BinIO : BIN_IO	
       structure BinPrimIO : PRIM_IO	
-*)
       structure Bool : BOOL	
       structure Byte : BYTE	
       structure CharArray : MONO_ARRAY	
@@ -93,9 +91,7 @@ signature BASIS =
       structure General : GENERAL	
       structure IEEEReal : IEEE_REAL	
       structure Int : INTEGER	
-(*
       structure IO : IO	
-*)
       structure LargeInt : INTEGER	
       structure LargeReal : REAL	
       structure LargeWord : WORD	
@@ -109,10 +105,8 @@ signature BASIS =
       structure StringCvt : STRING_CVT	
       structure String : STRING	
       structure Substring : SUBSTRING	
-(*
       structure TextIO : TEXT_IO	
       structure TextPrimIO : PRIM_IO	
-*)
       structure Text : TEXT	
       structure Time : TIME	
       structure Timer : TIMER	
@@ -238,12 +232,10 @@ signature BASIS =
 
       (* Required structures *)
       sharing type Array.vector = Vector.vector
-(*
       sharing type BinPrimIO.array = Word8Array.array
       sharing type BinPrimIO.vector = Word8Vector.vector
       sharing type BinPrimIO.elem = Word8.word
       sharing type BinPrimIO.pos = Position.int
-*)
       sharing type Char.string = string
       sharing type CharArray.vector = CharVector.vector
       sharing type CharArray.elem = char
@@ -262,15 +254,13 @@ signature BASIS =
       sharing type Substring.substring = CharVectorSlice.slice
       sharing type Substring.string = String.string
       sharing type Substring.char = char
-      (*
+(*
       sharing type Text.Char.char = char
       sharing type Text.String.string = string
-      *)
-(*
+*)
       sharing type TextPrimIO.array = CharArray.array
       sharing type TextPrimIO.vector = CharVector.vector
       sharing type TextPrimIO.elem = Char.char
-*)
       sharing type Word8Array2.vector = Word8Vector.vector
       sharing type Word8Array2.elem = Word8.word
       sharing type Word8Array.vector = Word8Vector.vector

@@ -87,6 +87,15 @@ system/time.sml
 system/date.sig
 system/date.sml
 
+io/io.sig
+io/io.sml
+io/prim-io.sig
+io/prim-io.fun
+io/bin-prim-io.sml
+io/text-prim-io.sml
+io/stream-io.sig
+io/stream-io.fun
+
 posix/error.sig
 posix/error.sml
 posix/flags.sig
@@ -108,25 +117,20 @@ posix/tty.sml
 posix/posix.sig
 posix/posix.sml
 
+io/imperative-io.sig
+io/imperative-io.fun
+io/bin-stream-io.sig
+io/text-stream-io.sig
+io/bin-io.sig
+io/bin-io.sml
+io/text-io.sig
+io/text-io.sml
+io/bin-or-text-io.fun
+
 system/path.sig
 system/path.sml
 system/file-sys.sig
 system/file-sys.sml
-
-io/io.sig
-io/io.sml
-io/prim-io.sig
-io/prim-io.fun
-io/stream-io.sig
-io/stream-io.fun
-io/text-stream-io.sig
-io/bin-stream-io.sig
-io/bin-or-text-io.fun
-io/text-io.sig
-io/text-io.sml
-io/bin-io.sig
-io/bin-io.sml
-
 system/command-line.sig
 system/command-line.sml
 

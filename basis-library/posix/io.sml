@@ -170,8 +170,147 @@ structure PosixIO: POSIX_IO =
 	 val setlkw = make (F_SETLKW, false)
       end
 
-      fun mkBinReader _ = raise (Fail "<not implemented>")
+      (* Adapted from SML/NJ sources. *)
+      (* posix-bin-prim-io.sml
+       *
+       * COPYRIGHT (c) 1995 AT&T Bell Laboratories.
+       *
+       * This implements the UNIX version of the OS specific binary primitive
+       * IO structure.  The Text IO version is implemented by a trivial translation
+       * of these operations (see posix-text-prim-io.sml).
+       *
+       *)
+      local
+	structure V = Word8Vector
+	val pos0 = Position.fromInt 0
+	fun isReg fd = FS.ST.isReg(FS.fstat fd)
+	fun posFns (closed, fd) = 
+	  if (isReg fd)
+	    then let
+		   val pos = ref pos0
+		   fun getPos () = !pos
+		   fun setPos p = (if !closed 
+				     then raise IO.ClosedStream 
+				     else ();
+				   pos := lseek(fd,p,SEEK_SET))
+		   fun endPos () = (if !closed 
+				      then raise IO.ClosedStream 
+				      else ();
+				    FS.ST.size(FS.fstat fd))
+		   fun verifyPos () = let
+					val curPos = lseek(fd, pos0, SEEK_CUR)
+				      in
+					pos := curPos; curPos
+				      end
+		 in
+		   verifyPos ();
+		   {pos = pos,
+		    getPos = SOME getPos,
+		    setPos = SOME setPos,
+		    endPos = SOME endPos,
+		    verifyPos = SOME verifyPos}
+		 end
+	    else {pos = ref pos0,
+		  getPos = NONE, 
+		  setPos = NONE, 
+		  endPos = NONE, 
+		  verifyPos = NONE}
+
+	fun mkBinReader {fd, name, initBlkMode} =
+	  let
+	    val closed = ref false
+	    val {pos, getPos, setPos, endPos, verifyPos} = posFns (closed, fd)
+	    val blocking = ref initBlkMode
+	    fun blockingOn () = (setfl(fd, O.flags[]); blocking := true)
+	    fun blockingOff () = (setfl(fd, O.nonblock); blocking := false)
+	    fun incPos k = pos := Position.+ (!pos, Position.fromInt k)
+	    val readVec = fn n => 
+	      let val v = readVec (fd, n)
+	      in incPos (V.length v); v
+	      end
+	    val readArr = fn x => 
+	      let val k = readArr (fd, x)
+	      in incPos k; k
+	      end
+	    fun blockWrap f x =
+	      (if !closed then raise IO.ClosedStream else ();
+	       if !blocking then () else blockingOn ();
+	       f x)
+	    fun noBlockWrap f x =
+	      (if !closed then raise IO.ClosedStream else ();
+	       if !blocking then blockingOff () else ();
+	       (SOME (f x)
+		handle (e as PosixError.SysErr (_, SOME cause)) =>
+		  if cause = PosixError.again then NONE else raise e))
+	    val close = fn () => if !closed then () else (closed := true; close fd)
+	    val avail = 
+	      if isReg fd
+		then fn () => if !closed 
+				then SOME 0
+				else SOME(Position.-(FS.ST.size(FS.fstat fd), !pos))
+		else fn () => if !closed then SOME 0 else NONE
+	  in
+	    BinPrimIO.RD {name = name,
+			  chunkSize = Primitive.TextIO.bufSize,
+			  readVec = SOME (blockWrap readVec),
+			  readArr = SOME (blockWrap readArr),
+			  readVecNB = SOME (noBlockWrap readVec),
+			  readArrNB = SOME (noBlockWrap readArr),
+			  block = NONE,
+			  canInput = NONE,
+			  avail = avail,
+			  getPos = getPos,
+			  setPos = setPos,
+			  endPos = endPos,
+			  verifyPos = verifyPos,
+			  close = close,
+			  ioDesc = SOME (FS.fdToIOD fd)}
+	  end
+	fun mkBinWriter {fd, name, initBlkMode, appendMode, chunkSize} =
+	  let
+	    val closed = ref false
+	    val {pos, getPos, setPos, endPos, verifyPos} = posFns (closed, fd)
+	    fun incPos k = (pos := Position.+ (!pos, Position.fromInt k); k)
+	    val blocking = ref initBlkMode
+	    val appendFlgs = O.flags(if appendMode then [O.append] else [])
+	    fun updateStatus () = 
+	      let
+		val flgs = if !blocking
+			     then appendFlgs
+			     else O.flags [O.nonblock, appendFlgs]
+	      in
+		setfl(fd, flgs)
+	      end
+	    fun ensureOpen () = if !closed then raise IO.ClosedStream else ()
+	    fun ensureBlock x = if !blocking then () else (blocking := x; updateStatus ())
+	    fun putV x = incPos(writeVec x)
+	    fun putA x = incPos(writeArr x)
+	    fun write (put, block) arg = (ensureOpen (); ensureBlock block; put (fd, arg))
+	    fun handleBlock writer arg = 
+	      SOME(writer arg)
+	      handle (e as PosixError.SysErr (_, SOME cause)) =>
+		if cause = PosixError.again then NONE else raise e
+	    val close = fn () => if !closed then () else (closed := true; close fd)
+	  in
+	    BinPrimIO.WR {name = name,
+			  chunkSize = chunkSize,
+			  writeVec = SOME (write (putV, true)),
+			  writeArr = SOME (write (putA, true)),
+			  writeVecNB = SOME (handleBlock (write (putV, false))),
+			  writeArrNB = SOME (handleBlock (write (putA, false))),
+			  block = NONE,
+			  canOutput = NONE,
+			  getPos = getPos,
+			  setPos = setPos,
+			  endPos = endPos,
+			  verifyPos = verifyPos,
+			  close = close,
+			  ioDesc = SOME (FS.fdToIOD fd)}
+	  end
+      in
+	val mkBinReader = mkBinReader
+	val mkBinWriter = mkBinWriter
+      end
       fun mkTextReader _ = raise (Fail "<not implemented>")
-      fun mkBinWriter _ = raise (Fail "<not implemented>")
       fun mkTextWriter _ = raise (Fail "<not implemented>")
    end

@@ -1,9 +1,7 @@
 (* Required signatures *)
 signature ARRAY = ARRAY 
 signature ARRAY_SLICE = ARRAY_SLICE 
-(*
 signature BIN_IO = BIN_IO 
-*)
 signature BOOL = BOOL 
 signature BYTE = BYTE 
 signature CHAR = CHAR 
@@ -11,14 +9,10 @@ signature COMMAND_LINE = COMMAND_LINE
 signature DATE = DATE 
 signature GENERAL = GENERAL 
 signature IEEE_REAL = IEEE_REAL 
-(*
 signature IMPERATIVE_IO = IMPERATIVE_IO 
-*)
 signature INTEGER = INTEGER 
 signature INT_INF = INT_INF 
-(*
 signature IO = IO 
-*)
 signature LIST = LIST 
 signature LIST_PAIR = LIST_PAIR 
 signature MATH = MATH 
@@ -34,17 +28,13 @@ signature OS_PATH = OS_PATH
 signature OS_PROCESS = OS_PROCESS 
 signature PRIM_IO = PRIM_IO 
 signature REAL = REAL 
-(*
 signature STREAM_IO = STREAM_IO
-*) 
 signature STRING = STRING 
 signature STRING_CVT = STRING_CVT 
 signature SUBSTRING = SUBSTRING 
 signature TEXT = TEXT 
-(*
 signature TEXT_IO = TEXT_IO 
 signature TEXT_STREAM_IO = TEXT_STREAM_IO 
-*)
 signature TIME = TIME 
 signature TIMER = TIMER 
 signature VECTOR = VECTOR 
@@ -53,8 +43,8 @@ signature WORD = WORD
 
 (* Optional signatures *)
 signature ARRAY2 = ARRAY2 
-(*
 signature BIT_FLAGS = BIT_FLAGS 
+(*
 signature GENERIC_SOCK = GENERIC_SOCK 
 signature INET_SOCK = INET_SOCK 
 *)

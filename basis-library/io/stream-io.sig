@@ -30,3 +30,8 @@ signature STREAM_IO =
       val setPosOut: out_pos -> outstream
       val filePosOut: out_pos -> pos
    end
+
+signature STREAM_IO_EXTRA =
+   sig
+      include STREAM_IO
+   end
