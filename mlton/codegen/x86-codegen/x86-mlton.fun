@@ -2868,6 +2868,8 @@ struct
 	     | Word8_le => cmp Instruction.BE
 	     | Word8_gt => cmp Instruction.A
 	     | Word8_ge => cmp Instruction.AE
+	     | Word8_rol => sral Instruction.ROL
+	     | Word8_ror => sral Instruction.ROR
 	     | Word8_lshift => sral Instruction.SHL
 	     | Word8_rshift => sral Instruction.SHR
 	     | Word8_arshift => sral Instruction.SAR
@@ -2890,6 +2892,8 @@ struct
 	     | Word32_le => cmp Instruction.BE
 	     | Word32_gt => cmp Instruction.A
 	     | Word32_ge => cmp Instruction.AE
+	     | Word32_rol => sral Instruction.ROL
+	     | Word32_ror => sral Instruction.ROR
 	     | Word32_lshift => sral Instruction.SHL
 	     | Word32_rshift => sral Instruction.SHR
 	     | Word32_arshift => sral Instruction.SAR

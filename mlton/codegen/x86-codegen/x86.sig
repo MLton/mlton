@@ -221,9 +221,9 @@ signature X86 =
 	val replace : (t -> t) -> t -> t
     end
 
-    structure ClassSet : ORDERED_UNIQUE_SET
+    structure ClassSet : SET
     sharing type ClassSet.Element.t = MemLoc.Class.t
-    structure MemLocSet : ORDERED_UNIQUE_SET
+    structure MemLocSet : SET
     sharing type MemLocSet.Element.t = MemLoc.t
 
     structure Operand :

@@ -150,7 +150,7 @@ struct
 
       val split
 	= fn (set, p)
-	   => MemLocSet.foldr
+	   => MemLocSet.fold
 	      (set,
 	       (MemLocSet.empty,MemLocSet.empty,MemLocSet.empty),
 	       fn (memloc, (no, commit, remove))
