@@ -29,21 +29,22 @@ structure OS_Process: OS_PROCESS_EXTRA =
 	  | W_STOPPED s => failure (* this shouldn't happen *)
 	       
       fun system cmd =
-	 case fork () of
-	    NONE => exec ("/bin/sh", ["sh", "-c", cmd])
-	  | SOME pid =>
-	       let
-		  val old =
-		     List.map (fn s => 
-			       let
-				  val old = Signal.getHandler s
-				  val _ = Signal.ignore s
-			       in (s, old)
-			       end)
-		     [Signal.int, Signal.quit]
-	       in DynamicWind.wind (fn () => wait pid,
-				    fn () => List.app Signal.setHandler old)
-	       end
+	 let
+	    val pid =
+	       MLton.Process.spawn {path = "/bin/sh",
+				    args = ["sh", "-c", cmd]}
+	    val old =
+	       List.map (fn s => 
+			 let
+			    val old = Signal.getHandler s
+			    val _ = Signal.ignore s
+			 in (s, old)
+			 end)
+	       [Signal.int, Signal.quit]
+	 in
+	    DynamicWind.wind (fn () => wait pid,
+			      fn () => List.app Signal.setHandler old)
+	 end
 
       fun atExit f = Cleaner.addNew (Cleaner.atExit, f)
 
