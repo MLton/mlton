@@ -32,22 +32,28 @@ val parent = getpid ()
 
 val _ =
    case fork () of
-      NONE => 
-	 (handleWith' (usr1, fn t => (saveThread (w, t); t))
-	  ; kill (K_PROC parent, usr1)
-	  ; let
-	       val rec loop =
-		  fn 0 => print "success\n"
-		   | n => loop (n - 1)
-	    in loop 100000000
-	    end
-	  ; let open OS.Process
-	    in exit success
-	    end)
+      NONE =>
+	 let
+	    val canExit = ref false
+	 in
+	    handleWith' (usr1, fn t => (canExit := true
+					; saveThread (w, t)
+					; t))
+	    ; kill (K_PROC parent, usr1)
+	    ; let
+		 fun loop () = if !canExit then print "success\n" else loop ()
+	      in
+		 loop ()
+	      end
+	    ; let open OS.Process
+	      in exit success
+	      end
+	 end
     | SOME child =>
 	 let
 	    fun loop () = if !childReady then () else loop ()
-	 in loop ()
+	 in
+	    loop ()
 	    ; kill (K_PROC child, usr1)
 	    ; wait ()
 	    ; run (fn () => load w)
