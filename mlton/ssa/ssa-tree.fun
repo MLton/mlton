@@ -1328,59 +1328,28 @@ structure Function =
 	    local
 	       fun make (new, plist, layout) =
 		  let
-		     val {get, set, destroy} = 
+		     val {get, set, destroy, ...} = 
 		        Property.destGetSetOnce (plist, Property.initConst NONE)
-		     fun bind x = let val x' = new x
-				  in set (x, SOME x'); x'
-				  end
+		     fun bind x =
+			let
+			   val x' = new x
+			   val _ = set (x, SOME x')
+			in
+			   x'
+			end
 		     fun lookup x =
 		        case get x of
 			   NONE => x
 			 | SOME y => y
-		  in (set, bind, lookup, destroy)
+		  in (bind, lookup, destroy)
 		  end
 	    in
-	       val (setVar, bindVar, lookupVar, destroyVar) =
+	       val (bindVar, lookupVar, destroyVar) =
 		  make (Var.new, Var.plist, Var.layout)
-	       val (setLabel, bindLabel, lookupLabel, destroyLabel) =
+	       val (bindLabel, lookupLabel, destroyLabel) =
 		  make (Label.new, Label.plist, Label.layout)
 	    end
 	    fun lookupVars xs = Vector.map (xs, lookupVar)
-
-(*
-	    val {name, args, start, blocks, returns, ...} = dest f
-	    val args = Vector.map (args, fn (x, ty) => (bindVar x, ty))
-	    val _ = 
-	       Vector.foreach
-	       (blocks, fn Block.T {label, ...} => 
-		ignore (bindLabel label))
-	    val newBlocks = ref []
-	    fun loop (Tree.T (Block.T {label, args, statements, transfer},
-			      children)) =
-	       let
-		  val label = lookupLabel label
-		  val args = Vector.map (args, fn (x, ty) => (bindVar x, ty))
-		  val statements = 
-		     Vector.map
-		     (statements, fn Statement.T {var, ty, exp} =>
-		      Statement.T {var = Option.map (var, bindVar),
-				   ty = ty,
-				   exp = Exp.replaceLabelVar 
-				         (exp, lookupLabel, lookupVar)})
-		  val transfer = Transfer.replaceLabelVar
-		                 (transfer, lookupLabel, lookupVar)
-	       in
-		  List.push (newBlocks, 
-			     Block.T {label = label,
-				      args = args,
-				      statements = statements,
-				      transfer = transfer})
-		  ; Vector.foreach (children, loop)
-	       end
-	    val _ = loop (dominatorTree f)
-	    val blocks = Vector.fromList (!newBlocks)
-*)
-
 	    val {args, blocks, mayRaise, name, returns, start, ...} = dest f
 	    val args = Vector.map (args, fn (x, ty) => (bindVar x, ty))
 	    val bindLabel = ignore o bindLabel
@@ -1397,7 +1366,8 @@ structure Function =
 	       Vector.map
 	       (blocks, fn Block.T {label, args, statements, transfer} =>
 		Block.T {label = lookupLabel label,
-			 args = Vector.map (args, fn (x, ty) => (lookupVar x, ty)),
+			 args = Vector.map (args, fn (x, ty) =>
+					    (lookupVar x, ty)),
 			 statements = Vector.map
 			              (statements, 
 				       fn Statement.T {var, ty, exp} =>
@@ -1408,13 +1378,16 @@ structure Function =
 					      (exp, lookupLabel, lookupVar)}),
 			 transfer = Transfer.replaceLabelVar
 			            (transfer, lookupLabel, lookupVar)})
+	    val start = lookupLabel start
+	    val _ = destroyVar ()
+	    val _ = destroyLabel ()
 	 in
 	    new {name = name,
 		 args = args,
-		 start = lookupLabel start,
 		 mayRaise = mayRaise,
 		 blocks = blocks,
-		 returns = returns}
+		 returns = returns,
+		 start = start}
 	 end
    end
 
