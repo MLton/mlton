@@ -38,7 +38,7 @@ val state = ref Normal
 fun amInSignalHandler () = InHandler = !state
 
 fun new f = T (ref (New f))
-   
+
 local
    val func: (unit -> unit) option ref = ref NONE
    val base: Prim.preThread =
@@ -75,7 +75,6 @@ in
 		| New g => (func := SOME (g o x)
 			    ; Prim.copy base)
 		| Paused (f, t) => (f x; t)
-	    val _ = switching := false
 	    val _ = Prim.switchTo primThread
 	    (* Close the atomicBegin of the thread that switched to me. *)
 	    val _ = atomicEnd ()
