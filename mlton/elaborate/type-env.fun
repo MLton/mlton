@@ -867,7 +867,11 @@ structure Type =
 		      fun notUnifiable (l: Lay.t, l': Lay.t) =
 			 (NotUnifiable (l, l'),
 			  Unknown (Unknown.new {canGeneralize = true}))
-		      val bracket = fn (l, z) => (bracket l, z)
+		      val bracket =
+			 fn (l, {isChar, needsParen}) =>
+			 (bracket l,
+			  {isChar = isChar,
+			   needsParen = false})
 		      fun notUnifiableBracket (l, l') =
 			 notUnifiable (bracket l, bracket l')
 		      fun oneFlex ({fields, spine, time}, r, outer, swap) =
@@ -966,9 +970,8 @@ structure Type =
 			 end
 		      fun conAnd (c, ts, t, t', swap) =
 			 let
-			    fun notUnifiable (z, z') =
-			       notUnifiableBracket
-			       (if swap then (z', z) else (z, z'))
+			    fun maybe (z, z') =
+			       if swap then (z', z) else (z, z')
 			 in
 			    case t of
 			       Con (c', ts') =>
@@ -987,7 +990,8 @@ structure Type =
 							       " args> "]),
 						      Tycon.layout c])
 					      in
-						 notUnifiable (lay ts, lay ts')
+						 notUnifiableBracket
+						 (maybe (lay ts, lay ts'))
 					      end
 					else
 					   unifys
@@ -998,7 +1002,8 @@ structure Type =
 					       fun lay ls =
 						  Tycon.layoutApp (c, ls)
 					    in
-					       notUnifiable (lay ls, lay ls')
+					       notUnifiable
+					       (maybe (lay ls, lay ls'))
 					    end)
 				  else not ()
 			     | Int =>
