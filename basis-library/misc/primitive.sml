@@ -340,7 +340,7 @@ structure Primitive =
       structure Int16 =
 	 struct
 	    type int = Int16.int
-	       
+       
 	    val precision' : Int.int = 16
 	    val maxInt' : int = 0x7fff
 	    val minInt' : int = ~0x8000
@@ -377,6 +377,7 @@ structure Primitive =
       structure Int32 =
 	 struct
 	    type int = Int32.int
+
 	    val precision' : Int.int = 32
 	    val maxInt' : int = 0x7fffffff
 	    val minInt' : int = ~0x80000000
@@ -414,7 +415,6 @@ structure Primitive =
       structure Int64 =
 	 struct
 	    infix 7 *?
-	    infix 6 +? -?
 
 	    type int = Int64.int
 
@@ -422,10 +422,17 @@ structure Primitive =
 	    val maxInt' : int = 0x7FFFFFFFFFFFFFFF
 	    val minInt' : int = ~0x8000000000000000
 
-	    val op +? = _import "Int64_add": int * int -> int;
 	    val op *? = _import "Int64_mul": int * int -> int;
-	    val op -? = _import "Int64_sub": int * int -> int;
-	    val ~? = fn i => 0 -? i
+	    val +? = _prim "Int64_add": int * int -> int;
+	    val + =
+	       if detectOverflow
+		  then _prim "Int64_addCheck": int * int -> int;
+	       else +?
+	    val -? = _prim "Int64_sub": int * int -> int;
+	    val - =
+	       if detectOverflow
+		  then _prim "Int64_subCheck": int * int -> int;
+	       else -?
 	    val op < = _import "Int64_lt": int * int -> bool;
 	    val op <= = _import "Int64_le": int * int -> bool;
 	    val op > = _import "Int64_gt": int * int -> bool;
@@ -434,39 +441,15 @@ structure Primitive =
 	    val rem = _import "Int64_rem": int * int -> int;
 	    val geu = _import "Int64_geu": int * int -> bool;
 	    val gtu = _import "Int64_gtu": int * int -> bool;
+	    val ~? = _prim "Int64_neg": int -> int; 
+	    val ~ =
+	       if detectOverflow
+		  then _prim "Int64_negCheck": int -> int;
+	       else ~?
 	    val fromInt = _import "Int32_toInt64": Int.int -> int;
 	    val fromWord = _import "Word32_toInt64": word -> int;
 	    val toInt = _import "Int64_toInt32": int -> Int.int;
 	    val toWord = _import "Int64_toWord32": int -> word;
-
-	    val ~ =
-	       if detectOverflow
-		  then (fn i: int => if i = minInt'
-					then raise Overflow
-				     else ~? i)
-	       else ~?
-		  
-	    val + =
-	       if detectOverflow
-		  then
-		     fn (i, j) =>
-		     if (if i >= 0
-			    then j > maxInt' -? i
-			 else j < minInt' -? i)
-			then raise Overflow
-		     else i +? j
-	       else op +?
-
-	    val - =
-	       if detectOverflow
-		  then
-		     fn (i, j) =>
-		     if (if i >= 0
-			    then j < i -? maxInt'
-			 else j > i -? minInt')
-			then raise Overflow
-		     else i -? j
-	       else op -?
 
 	    val * = fn _ => raise Fail "Int64.* unimplemented"
 	 end
@@ -1303,9 +1286,9 @@ structure Primitive =
 	       
 	    val wordSize: int = 64
 
-	    val + = _import "Word64_add": word * word -> word;
-(*	    val addCheck = _import "Word64_addCheck": word * word -> word; *)
-	    val andb = _import "Word64_andb": word * word -> word;
+	    val + = _prim "Word64_add": word * word -> word;
+	    val addCheck = _prim "Word64_addCheck": word * word -> word;
+	    val andb = _prim "Word64_andb": word * word -> word;
 	    val ~>> = _import "Word64_arshift": word * Word.word -> word;
 	    val div = _import "Word64_div": word * word -> word;
 	    val fromInt = _import "Int32_toWord64": int -> word;
@@ -1318,18 +1301,18 @@ structure Primitive =
 	    val mod = _import "Word64_mod": word * word -> word;
 	    val * = _import "Word64_mul": word * word -> word;
 (*	    val mulCheck = _import "Word64_mulCheck": word * word -> word; *)
-	    val ~ = _import "Word64_neg": word -> word;
-	    val notb = _import "Word64_notb": word -> word;
-	    val orb = _import "Word64_orb": word * word -> word;
+	    val ~ = _prim "Word64_neg": word -> word;
+	    val notb = _prim "Word64_notb": word -> word;
+	    val orb = _prim "Word64_orb": word * word -> word;
 	    val rol = _import "Word64_rol": word * Word.word -> word;
 	    val ror = _import "Word64_ror": word * Word.word -> word;
 	    val >> = _import "Word64_rshift": word * Word.word -> word;
-	    val - = _import "Word64_sub": word * word -> word;
+	    val - = _prim "Word64_sub": word * word -> word;
 	    val toInt = _import "Word64_toInt32": word -> int;
 	    val toIntX = _import "Word64_toInt32X": word -> int;
 	    val toLarge: word -> LargeWord.word = fn x => x
 	    val toLargeX: word -> LargeWord.word = fn x => x
-	    val xorb = _import "Word64_xorb": word * word -> word;
+	    val xorb = _prim "Word64_xorb": word * word -> word;
 	 end
       structure LargeWord = Word64
 	 

@@ -234,12 +234,12 @@ extern struct GC_state gcState;
 #define Int16_min (Int16)0x8000
 #define Int32_max (Int32)0x7FFFFFFF
 #define Int32_min (Int32)0x80000000
-//#define Int64_max (Int64)0x7FFFFFFFFFFFFFFF
-//#define Int64_min (Int64)0x8000000000000000
+#define Int64_max (Int64)0x7FFFFFFFFFFFFFFF
+#define Int64_min (Int64)0x8000000000000000
 #define Word8_max (Word8)0xFF
 #define Word16_max (Word16)0xFFFF
 #define Word32_max (Word32)0xFFFFFFFF
-//#define Word64_max (Word64)0xFFFFFFFFFFFFFFFF
+#define Word64_max (Word64)0xFFFFFFFFFFFFFFFF
 
 #define Int_addCheckXC(size, dst, x, c, l)		\
 	do {						\
@@ -253,17 +253,17 @@ extern struct GC_state gcState;
 #define Int8_addCheckXC(dst, x, c, l) Int_addCheckXC(8, dst, x, c, l)
 #define Int16_addCheckXC(dst, x, c, l) Int_addCheckXC(16, dst, x, c, l)
 #define Int32_addCheckXC(dst, x, c, l) Int_addCheckXC(32, dst, x, c, l)
-//#define Int64_addCheckXC(dst, x, c, l) Int_addCheckXC(64, dst, x, c, l)
+#define Int64_addCheckXC(dst, x, c, l) Int_addCheckXC(64, dst, x, c, l)
 
 #define Int8_addCheckCX(dst, c, x, l) Int8_addCheckXC(dst, x, c, l)
 #define Int16_addCheckCX(dst, c, x, l) Int16_addCheckXC(dst, x, c, l)
 #define Int32_addCheckCX(dst, c, x, l) Int32_addCheckXC(dst, x, c, l)
-//#define Int64_addCheckCX(dst, c, x, l) Int64_addCheckXC(dst, x, c, l)
+#define Int64_addCheckCX(dst, c, x, l) Int64_addCheckXC(dst, x, c, l)
 
 #define Int8_addCheck Int8_addCheckXC
 #define Int16_addCheck Int16_addCheckXC
 #define Int32_addCheck Int32_addCheckXC
-//#define Int64_addCheck Int64_addCheckXC
+#define Int64_addCheck Int64_addCheckXC
 
 #define Int_negCheck(size, dst, n, l)		\
 	do {					\
@@ -275,7 +275,7 @@ extern struct GC_state gcState;
 #define Int8_negCheck(dst, n, l) Int_negCheck(8, dst, n, l)
 #define Int16_negCheck(dst, n, l) Int_negCheck(16, dst, n, l)
 #define Int32_negCheck(dst, n, l) Int_negCheck(32, dst, n, l)
-//#define Int64_negCheck(dst, n, l) Int_negCheck(64, dst, n, l)
+#define Int64_negCheck(dst, n, l) Int_negCheck(64, dst, n, l)
 
 #define Int_subCheckCX(size, dst, c, x, l)		\
 	do {						\
@@ -289,7 +289,7 @@ extern struct GC_state gcState;
 #define Int8_subCheckCX(dst, c, x, l) Int_subCheckCX(8, dst, c, x, l)
 #define Int16_subCheckCX(dst, c, x, l) Int_subCheckCX(16, dst, c, x, l)
 #define Int32_subCheckCX(dst, c, x, l) Int_subCheckCX(32, dst, c, x, l)
-//#define Int64_subCheckCX(dst, c, x, l) Int_subCheckCX(64, dst, c, x, l)
+#define Int64_subCheckCX(dst, c, x, l) Int_subCheckCX(64, dst, c, x, l)
 
 #define Int_subCheckXC(size, dst, x, c, l)		\
 	do {						\
@@ -303,12 +303,12 @@ extern struct GC_state gcState;
 #define Int8_subCheckXC(dst, c, x, l) Int_subCheckXC(8, dst, c, x, l)
 #define Int16_subCheckXC(dst, c, x, l) Int_subCheckXC(16, dst, c, x, l)
 #define Int32_subCheckXC(dst, c, x, l) Int_subCheckXC(32, dst, c, x, l)
-//#define Int64_subCheckXC(dst, c, x, l) Int_subCheckXC(64, dst, c, x, l)
+#define Int64_subCheckXC(dst, c, x, l) Int_subCheckXC(64, dst, c, x, l)
 
 #define Int8_subCheck Int8_subCheckXC
 #define Int16_subCheck Int16_subCheckXC
 #define Int32_subCheck Int32_subCheckXC
-//#define Int64_subCheck Int64_subCheckXC
+#define Int64_subCheck Int64_subCheckXC
 
 #define Word_addCheckXC(size, dst, x, c, l)	\
 	do {					\
@@ -319,16 +319,16 @@ extern struct GC_state gcState;
 #define Word8_addCheckXC(dst, x, c, l) Word_addCheckXC(8, dst, x, c, l)
 #define Word16_addCheckXC(dst, x, c, l) Word_addCheckXC(16, dst, x, c, l)
 #define Word32_addCheckXC(dst, x, c, l) Word_addCheckXC(32, dst, x, c, l)
-//#define Word64_addCheckXC(dst, x, c, l) Word_addCheckXC(64, dst, x, c, l)
+#define Word64_addCheckXC(dst, x, c, l) Word_addCheckXC(64, dst, x, c, l)
 #define Word8_addCheckCX(dst, c, x, l) Word_addCheckXC(8, dst, x, c, l)
 #define Word16_addCheckCX(dst, c, x, l) Word_addCheckXC(16, dst, x, c, l)
 #define Word32_addCheckCX(dst, c, x, l) Word_addCheckXC(32, dst, x, c, l)
-//#define Word64_addCheckCX(dst, c, x, l) Word_addCheckXC(64, dst, x, c, l)
+#define Word64_addCheckCX(dst, c, x, l) Word_addCheckXC(64, dst, x, c, l)
 
 #define Word8_addCheck Word8_addCheckXC
 #define Word16_addCheck Word16_addCheckXC
 #define Word32_addCheck Word32_addCheckXC
-//#define Word64_addCheck Word64_addCheckXC
+#define Word64_addCheck Word64_addCheckXC
 
 #define mulOverflow(kind, small, large)						\
 	static inline kind##small kind##small##_##mulOverflow			\
@@ -425,7 +425,7 @@ intAllBinaryCompare (lt, <)
 Int_neg(8)
 Int_neg(16)
 Int_neg(32)
-//Int_neg(64)
+Int_neg(64)
 #undef Int_neg
 
 /* ------------------------------------------------- */
@@ -595,7 +595,7 @@ static inline void Real64_store (Real64 *dp, Real64 d) {
 wordOps(8)
 wordOps(16)
 wordOps(32)
-//wordOps(64)
+wordOps(64)
 #undef wordBinary wordCmp wordShift wordUnary
 
 #define coerce(f, t)				\

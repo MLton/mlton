@@ -226,8 +226,7 @@ structure IntInf: INT_INF_EXTRA =
 		      else if w2 = 0wx80000000
 			      then if w1 = 0w0 andalso sign = 0w1
 				      then valOf Int64.minInt
-				   else raise Overflow
-				      
+				   else raise Overflow				      
 			   else
 			      let
 				 val n =

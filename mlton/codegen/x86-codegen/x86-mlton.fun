@@ -176,6 +176,48 @@ struct
 		transfer = NONE}]
 	    end
 
+	fun binal64 (oper1, oper2)
+	  = let
+	      val ((src1,src1size),
+		   (src2,src2size),
+		   (src3,src3size),
+		   (src4,src4size)) = getSrc4 ()
+	      val ((dst1,dst1size),
+		   (dst2,dst2size)) = getDst2 ()
+	      val _ 
+		= Assert.assert
+		  ("applyPrim: binal64, dst1size/dst2size/src1size/src2size/src3size/src4size",
+		   fn () => src1size = dst1size andalso
+		            src3size = dst1size andalso
+			    src2size = dst2size andalso
+		            src4size = dst2size andalso
+		            dst1size = dst2size)
+	    in
+	      AppendList.fromList
+	      [Block.mkBlock'
+	       {entry = NONE,
+		statements
+		= [Assembly.instruction_mov
+		   {dst = dst1,
+		    src = src1,
+		    size = src1size},
+		   Assembly.instruction_mov
+		   {dst = dst2,
+		    src = src2,
+		    size = src2size},
+		   Assembly.instruction_binal
+		   {oper = oper1,
+		    dst = dst1,
+		    src = src3,
+		    size = dst1size},
+		   Assembly.instruction_binal
+		   {oper = oper2,
+		    dst = dst2,
+		    src = src4,
+		    size = dst2size}],
+		transfer = NONE}]
+	    end
+
 	fun pmd oper
 	  = let
 	      val ((src1,src1size),
@@ -280,6 +322,41 @@ struct
 		   {oper = oper,
 		    dst = dst,
 		    size = dstsize}],
+		transfer = NONE}]
+	    end
+
+	fun unal64 (oper, mk)
+	  = let
+	      val ((src1,src1size),(src2,src2size)) = getSrc2 ()
+	      val ((dst1,dst1size),(dst2,dst2size)) = getDst2 ()
+	      val _ 
+		= Assert.assert
+		  ("applyPrim: unal, dst1size/dst2size/src1size/src2size",
+		   fn () => src1size = dst1size andalso
+                            src2size = dst2size andalso
+                            dst1size = dst2size)
+	    in
+	      AppendList.fromList
+	      [Block.mkBlock'
+	       {entry = NONE,
+		statements 
+		= [Assembly.instruction_mov
+		   {dst = dst1,
+		    src = src1,
+		    size = src1size},
+		   Assembly.instruction_mov
+		   {dst = dst2,
+		    src = src2,
+		    size = src2size},
+		   Assembly.instruction_unal
+		   {oper = oper,
+		    dst = dst1,
+		    size = dst1size}] @
+		  (mk (dst2,dst2size)) @
+		  [Assembly.instruction_unal
+		   {oper = oper,
+		    dst = dst2,
+		    size = dst2size}],
 		transfer = NONE}]
 	    end
 
@@ -555,7 +632,7 @@ struct
 	AppendList.appends
 	[comment_begin,
 	 (case Prim.name prim of
-	     Cpointer_isNull 
+	       Cpointer_isNull 
 	     => let
 		  val (dst,dstsize) = getDst1 ()
 		  val (src,srcsize) = getSrc1 ()
@@ -593,12 +670,12 @@ struct
 				 {dst = dst,
 				  src = Operand.memloc memloc,
 				  size = dstsize}
-			       | Size.FLT 
-				 => Assembly.instruction_pfmov
-				    {dst = dst,
-				     src = Operand.memloc memloc,
-				     size = dstsize}
-			       | _ => Error.bug "prim: FFI"],
+			    | Size.FLT 
+			      => Assembly.instruction_pfmov
+				 {dst = dst,
+				  src = Operand.memloc memloc,
+				  size = dstsize}
+			    | _ => Error.bug "prim: FFI"],
 		     transfer = NONE}]
 		end
              | Int_add s => 
@@ -606,7 +683,7 @@ struct
 		    I8 => binal Instruction.ADD
 		  | I16 => binal Instruction.ADD
 		  | I32 => binal Instruction.ADD
-		  | I64 => Error.bug "FIXME")
+		  | I64 => binal64 (Instruction.ADD, Instruction.ADC))
 	     | Int_equal s => 	
 		(case s of
 		    I8 => cmp Instruction.E
@@ -648,7 +725,12 @@ struct
 		    I8 => unal Instruction.NEG 
 		  | I16 => unal Instruction.NEG 
 		  | I32 => unal Instruction.NEG 
-		  | I64 => Error.bug "FIXME")
+		  | I64 => unal64 (Instruction.NEG, 
+				   fn (dst,dstsize) => [Assembly.instruction_binal
+							{dst = dst,
+							 oper = Instruction.ADC,
+							 src = Operand.immediate_const_int 0,
+							 size = dstsize}]))
 	     | Int_quot s => 
 		(case s of
 		    I8 => pmd Instruction.IDIV
@@ -666,7 +748,7 @@ struct
 		    I8 => binal Instruction.SUB
 		  | I16 => binal Instruction.SUB
 		  | I32 => binal Instruction.SUB
-		  | I64 => Error.bug "FIXME")
+		  | I64 => binal64 (Instruction.SUB, Instruction.SBB))
 	     | Int_toInt (s, s') =>
 		(case (s, s') of
 		    (I64, I64) => Error.bug "FIXME"
@@ -1338,13 +1420,13 @@ struct
 		    W8 => binal Instruction.ADD
 		  | W16 => binal Instruction.ADD
 		  | W32 => binal Instruction.ADD
-		  | W64 => Error.bug "FIXME")
+		  | W64 => binal64 (Instruction.ADD, Instruction.ADC))
 	     | Word_andb s => 
 		(case s of
 		    W8 => binal Instruction.AND
 		  | W16 => binal Instruction.AND
 		  | W32 => binal Instruction.AND
-		  | W64 => Error.bug "FIXME")
+		  | W64 => binal64 (Instruction.AND, Instruction.AND))
 	     | Word_arshift s => 
 		(case s of
 		    W8 => sral Instruction.SAR
@@ -1410,19 +1492,24 @@ struct
 		    W8 => unal Instruction.NEG
 		  | W16 => unal Instruction.NEG
 		  | W32 => unal Instruction.NEG
-		  | W64 => Error.bug "FIXME")
+		  | W64 => unal64 (Instruction.NEG, 
+				   fn (dst,dstsize) => [Assembly.instruction_binal
+							{dst = dst,
+							 oper = Instruction.ADC,
+							 src = Operand.immediate_const_int 0,
+							 size = dstsize}]))
 	     | Word_notb s => 
 		(case s of
 		    W8 => unal Instruction.NOT
 		  | W16 => unal Instruction.NOT
 		  | W32 => unal Instruction.NOT
-		  | W64 => Error.bug "FIXME")
+		  | W64 => unal64 (Instruction.NOT, fn _ => []))
 	     | Word_orb s => 
 		(case s of
 		    W8 => binal Instruction.OR
 		  | W16 => binal Instruction.OR
 		  | W32 => binal Instruction.OR
-		  | W64 => Error.bug "FIXME")
+		  | W64 => binal64 (Instruction.OR, Instruction.OR))
 	     | Word_rol s => 
 		(case s of
 		    W8 => sral Instruction.ROL
@@ -1446,7 +1533,7 @@ struct
 		    W8 => binal Instruction.SUB
 		  | W16 => binal Instruction.SUB
 		  | W32 => binal Instruction.SUB
-		  | W64 => Error.bug "FIXME")
+		  | W64 => binal64 (Instruction.SUB, Instruction.SBB))
 	     | Word_toInt (s, s') =>
 		(case (s, s') of
 		   (W64, I64) => Error.bug "FIXME"
@@ -1524,7 +1611,7 @@ struct
 		    W8 => binal Instruction.XOR
 		  | W16 => binal Instruction.XOR
 		  | W32 => binal Instruction.XOR
-		  | W64 => Error.bug "FIXME")
+		  | W64 => binal64 (Instruction.XOR, Instruction.XOR))
 	     | _ => Error.bug ("prim: strange Prim.Name.t: " ^ primName)),
 	 comment_end]
       end
@@ -1634,15 +1721,11 @@ struct
 	     Vector.sub (args, 2), Vector.sub (args, 3))
 	    handle _ => Error.bug "arith: getSrc4"
 
-	fun check (dst, src, size, statement, condition)
+	fun check (statements, condition)
 	  = AppendList.single
 	    (x86.Block.mkBlock'
 	     {entry = NONE,	
-	      statements = [x86.Assembly.instruction_mov
-			    {dst = dst,
-			     src = src,
-			     size = size},
-			    statement],
+	      statements = statements,
 	      transfer = SOME (x86.Transfer.iff
 			       {condition = condition,
 				truee = overflow,
@@ -1670,12 +1753,48 @@ struct
 			    | _ => (src1,src2)
 		    else (src1,src2)
 	    in
-	      check (dst, src1, dstsize,
-		     x86.Assembly.instruction_binal
-		     {oper = oper,
-		      dst = dst,
-		      src = src2,
-		      size = dstsize},
+	      check ([Assembly.instruction_mov
+		      {dst = dst,
+		       src = src1,
+		       size = dstsize},
+		      Assembly.instruction_binal
+		      {oper = oper,
+		       dst = dst,
+		       src = src2,
+		       size = dstsize}],
+		     condition)
+	    end
+	fun binal64 (oper1: x86.Instruction.binal, 
+		     oper2: x86.Instruction.binal, 
+		     condition)
+	  = let
+	      val ((dst1, dst1size), (dst2, dst2size)) = getDst2 ()
+	      val ((src1, src1size), (src2, src2size),
+		   (src3, src3size), (src4, src4size)) = getSrc4 ()
+	      val _ = Assert.assert
+		      ("arith: binal64, dst1size/dst2size/src1size/src2size/src3size/src4size",
+		       fn () => src1size = dst1size andalso src3size = dst1size andalso
+                                src2size = dst2size andalso src4size = dst2size andalso
+                                dst1size = dst2size)
+	    in
+	      check ([Assembly.instruction_mov
+		      {dst = dst1,
+		       src = src1,
+		       size = dst1size},
+		      Assembly.instruction_mov
+		      {dst = dst2,
+		       src = src2,
+		       size = dst2size},
+		      Assembly.instruction_binal
+		      {oper = oper1,
+		       dst = dst1,
+		       src = src3,
+		       size = dst1size},
+		      Assembly.instruction_binal
+		      {oper = oper2,
+		       dst = dst2,
+		       src = src4,
+		       size = dst2size}],
 		     condition)
 	    end
  	fun pmd (oper: x86.Instruction.md, condition)
@@ -1701,12 +1820,15 @@ struct
  			    | _ => (src1,src2)
  		    else (src1,src2)
  	    in
- 	      check (dst, src1, dstsize,
-		     x86.Assembly.instruction_pmd
- 		     {oper = oper,
- 		      dst = dst,
- 		      src = src2,
- 		      size = dstsize},
+ 	      check ([Assembly.instruction_mov
+		      {dst = dst,
+		       src = src1,
+		       size = dstsize},
+		      Assembly.instruction_pmd
+		      {oper = oper,
+		       dst = dst,
+		       src = src2,
+		       size = dstsize}],
 		     condition)
  	    end
 	fun unal (oper: x86.Instruction.unal, condition)
@@ -1717,13 +1839,128 @@ struct
 		      ("arith: unal, dstsize/src1size",
 		       fn () => src1size = dstsize)
 	    in
-	      check (dst, src1, dstsize,
-		     x86.Assembly.instruction_unal 
-		     {oper = oper,
-		      dst = dst,
-		      size = dstsize},
+	      check ([Assembly.instruction_mov
+		      {dst = dst,
+		       src = src1,
+		       size = dstsize},
+		      Assembly.instruction_unal 
+		      {oper = oper,
+		       dst = dst,
+		       size = dstsize}],
 		     condition)
 	    end
+
+	fun neg64 ()
+	  = let
+	      val ((dst1, dst1size), (dst2, dst2size)) = getDst2 ()
+	      val ((src1, src1size), (src2, src2size)) = getSrc2 ()
+	      val _ = Assert.assert
+		      ("arith: neg64, dst1size/dst2size/src1size/src2size",
+		       fn () => src1size = dst1size andalso
+		                src2size = dst2size andalso
+				dst1size = dst2size)
+	      val overflowCheck = Label.newString "overflowCheck"
+	      val _ = x86Liveness.LiveInfo.setLiveOperands
+		      (liveInfo, overflowCheck, dst1::(live overflow))
+	    in
+	       AppendList.fromList
+	       [x86.Block.mkBlock'
+		{entry = NONE,
+		 statements = [Assembly.instruction_mov
+			       {dst = dst1,
+				src = src1,
+				size = dst1size},
+			       Assembly.instruction_mov
+			       {dst = dst2,
+				src = src2,
+				size = dst2size},
+			       Assembly.instruction_unal 
+			       {oper = x86.Instruction.NEG,
+				dst = dst1,
+				size = dst1size},
+			       Assembly.instruction_binal
+			       {dst = dst2,
+				oper = Instruction.ADC,
+				src = Operand.immediate_const_int 0,
+				size = dst2size},
+			       Assembly.instruction_unal 
+			       {oper = x86.Instruction.NEG,
+				dst = dst2,
+				size = dst2size}],
+		 transfer = SOME (x86.Transfer.iff
+				  {condition = x86.Instruction.O,
+				   truee = overflowCheck,
+				   falsee = success})},
+		x86.Block.mkBlock'
+		{entry = SOME (x86.Entry.jump {label = overflowCheck}),
+		 statements = [Assembly.instruction_cmp
+			       {src1 = dst1,
+				src2 = Operand.immediate_const_int 0,
+				size = dst1size}],
+		 transfer = SOME (x86.Transfer.iff
+				  {condition = x86.Instruction.E,
+				   truee = overflow,
+				   falsee = success})}]
+	    end
+
+	fun neg64 ()
+	  = let
+	      val ((dst1, dst1size), (dst2, dst2size)) = getDst2 ()
+	      val ((src1, src1size), (src2, src2size)) = getSrc2 ()
+	      val _ = Assert.assert
+		      ("arith: neg64, dst1size/dst2size/src1size/src2size",
+		       fn () => src1size = dst1size andalso
+		                src2size = dst2size andalso
+				dst1size = dst2size)
+	      val loZ = Label.newString "loZ"
+	      val _ = x86Liveness.LiveInfo.setLiveOperands
+		      (liveInfo, loZ, dst2::((live success) @ (live overflow)))
+	      val loNZ = Label.newString "loNZ"
+	      val _ = x86Liveness.LiveInfo.setLiveOperands
+		      (liveInfo, loNZ, dst2::(live success))
+	    in
+	       AppendList.fromList
+	       [x86.Block.mkBlock'
+		{entry = NONE,
+		 statements = [Assembly.instruction_mov
+			       {dst = dst1,
+				src = src1,
+				size = dst1size},
+			       Assembly.instruction_mov
+			       {dst = dst2,
+				src = src2,
+				size = dst2size},
+			       Assembly.instruction_unal 
+			       {oper = x86.Instruction.NEG,
+				dst = dst1,
+				size = dst1size}],
+                 transfer = SOME (x86.Transfer.iff
+                                  {condition = x86.Instruction.Z,
+				   truee = loZ,
+				   falsee = loNZ})},
+		x86.Block.mkBlock'
+		{entry = SOME (x86.Entry.jump {label = loNZ}),
+		 statements = [Assembly.instruction_unal
+			       {dst = dst2,
+				oper = Instruction.INC,
+				size = dst2size},
+			       Assembly.instruction_unal 
+			       {oper = x86.Instruction.NEG,
+				dst = dst2,
+				size = dst2size}],
+		 transfer = SOME (x86.Transfer.goto {target = success})},
+		x86.Block.mkBlock'
+		{entry = SOME (x86.Entry.jump {label = loZ}),
+		 statements = [Assembly.instruction_unal 
+			       {oper = x86.Instruction.NEG,
+				dst = dst2,
+				size = dst2size}],
+		 transfer = SOME (x86.Transfer.iff
+				  {condition = x86.Instruction.O,
+				   truee = overflow,
+				   falsee = success})}]
+	    end
+
 	fun imul2 condition
 	  = let
 	      val (dst, dstsize) = getDst1 ()
@@ -1745,14 +1982,17 @@ struct
 			  else (src1,src2)
 		     | _ => (src1,src2)
 	    in
-	      check (dst, src1, dstsize,
-		     x86.Assembly.instruction_imul2
-		     {dst = dst,
-		      src = src2,
-		      size = dstsize},
+	      check ([Assembly.instruction_mov
+		      {dst = dst,
+		       src = src1,
+		       size = dstsize},
+		      Assembly.instruction_imul2
+		      {dst = dst,
+		       src = src2,
+		       size = dstsize}],
 		     condition)
 	    end
-	  
+
 	val (comment_begin,
 	     comment_end)
 	  = if !Control.Native.commented > 0
@@ -1784,13 +2024,13 @@ struct
 		  I8 => binal (x86.Instruction.ADD, x86.Instruction.O)
 		| I16 => binal (x86.Instruction.ADD, x86.Instruction.O)
 		| I32 => binal (x86.Instruction.ADD, x86.Instruction.O)
-		| I64 => Error.bug "FIXME")
+		| I64 => binal64 (x86.Instruction.ADD, x86.Instruction.ADC, x86.Instruction.O))
 	   | Int_subCheck s => 
 	       (case s of
 		  I8 => binal (x86.Instruction.SUB, x86.Instruction.O)
 		| I16 => binal (x86.Instruction.SUB, x86.Instruction.O)
 		| I32 => binal (x86.Instruction.SUB, x86.Instruction.O)
-		| I64 => Error.bug "FIXME")
+		| I64 => binal64 (x86.Instruction.SUB, x86.Instruction.SBB, x86.Instruction.O))
 	   | Int_mulCheck s => 	
 	       (case s of
 		  I8 => pmd (x86.Instruction.IMUL, x86.Instruction.O)
@@ -1802,13 +2042,13 @@ struct
 		  I8 => unal (x86.Instruction.NEG, x86.Instruction.O)
 		| I16 => unal (x86.Instruction.NEG, x86.Instruction.O)
 		| I32 => unal (x86.Instruction.NEG, x86.Instruction.O)
-		| I64 => Error.bug "FIXME")
+		| I64 => neg64 ())
 	   | Word_addCheck s => 
 	       (case s of
 		   W8 => binal (x86.Instruction.ADD, x86.Instruction.C)
 		 | W16 => binal (x86.Instruction.ADD, x86.Instruction.C)
 		 | W32 => binal (x86.Instruction.ADD, x86.Instruction.C)
-		 | W64 => Error.bug "FIXME")
+		 | W64 => binal64 (x86.Instruction.ADD, x86.Instruction.ADC, x86.Instruction.C))
 	   | Word_mulCheck s => 
 	       (case s of
 		  W8 => pmd (x86.Instruction.MUL, x86.Instruction.C)
