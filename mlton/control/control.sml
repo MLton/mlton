@@ -927,7 +927,8 @@ local
 		     "."])
 	 in
 	    outputl (align [seq [str (concat [kind, ": "]), str p, str "."],
-			    indent (align [msg, extra], 3)],
+			    msg,
+			    indent (extra, 3)],
 		     Out.error)
       end
 in
