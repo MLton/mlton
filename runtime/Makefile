@@ -364,20 +364,19 @@ DEBUG_OBJS =					\
 
 all:  libgdtoa.a libmlton.a libmlton-gdb.a
 
-libgdtoa.a: gdtoa gdtoa/arith.h
+libgdtoa.a: gdtoa/arith.h
 	cd gdtoa && gcc $(HOSTFLAGS) -c -DINFNAN_CHECK *.c
 	$(AR) libgdtoa.a gdtoa/*.o
 
-gdtoa/arithchk.out: gdtoa
+gdtoa/arithchk.c:
+	zcat gdtoa.tgz | tar xf -	
+	patch -p0 <gdtoa-patch
+
+gdtoa/arithchk.out: gdtoa/arithchk.c
 	cd gdtoa && gcc $(HOSTFLAGS) -o arithchk.out arithchk.c
 
 gdtoa/arith.h: gdtoa/arithchk.out
 	cd gdtoa && ./arithchk.out >arith.h
-
-gdtoa:
-	zcat gdtoa.tgz | tar xf -
-
-#	patch -p0 <gdtoa-patch
 
 libmlton.a: $(OBJS) 
 	$(AR) libmlton.a $(OBJS)
