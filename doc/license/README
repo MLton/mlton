@@ -4,7 +4,7 @@ MLton		MLton-LICENSE (GPL)
 
 SML/NJ		NJ-LICENSE		lexer, parser, precedence parser,
 					splay trees,
-					IO, Option, Process, Unix
+					Option, OS.IO, Process, Unix
 
 ML Kit		MLKit-LICENSE (GPL)	Path, Time, Date
 
