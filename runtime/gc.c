@@ -1985,6 +1985,7 @@ static Pointer hashCons (GC_state s, Pointer object) {
 	GC_ObjectHashElement e;
 	Bool hasIdentity;
 	Word32 hash;
+	int i;
 	word header;
 	word *max;
 	uint numPointers;
@@ -2009,9 +2010,11 @@ static Pointer hashCons (GC_state s, Pointer object) {
 	hash = header;
 	for (p = (word*)object; p < max; ++p)
 		hash = hash * 31 + *p;
+	i = hash;
 	/* Look in the table. */
-	e = &t->elements[hash % t->elementsSize];
 look:
+	i %= t->elementsSize;
+	e = &t->elements[i];
 	if (NULL == e->object) {
 		/* It's not in the table.  Add it. */
 		assert (NULL == e->object);
@@ -2037,16 +2040,15 @@ look:
 		unless (object == e->object) {
 			header2 = GC_getHeader (e->object);
 			unless (header == header2) {
-				++e; 
+lookNext:
+				i++;
 				goto look;
 			}
 			for (p = (word*)object, p2 = (word*)e->object; 
 					p < max; 
 					++p, ++p2)
-				unless (*p == *p2) {
-					++e;
-					goto look;
-				}
+				unless (*p == *p2)
+					goto lookNext;
 		}
 		/* object is equal to e->object. */
 		if (DEBUG_SHARE)
