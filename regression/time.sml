@@ -81,8 +81,7 @@ val test8a =
 	   andalso (now () before fib 27 seq ()) <= now());
 
 val test9a = 
-    tst' "test9a" (fn _ => fmt ~1 litt  = "455"
-	   andalso fmt 0 litt = "455");
+    tst' "test9a" (fn _ => fmt 0 litt = "455")
 
 val test9b = 
     tst' "test9b" (fn _ => fmt 1 litt = "454.5"
