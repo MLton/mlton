@@ -50,7 +50,7 @@ structure TextIO1: TEXT_IO_EXTRA =
       fun print (s: string) = (output (stdOut, s); flushOut stdOut)
    end
 
-structure TextIO2: TEXT_IO_EXTRA =
+structure TextIO2(*: TEXT_IO_EXTRA *) =
    struct
       structure NativeVector =
 	 struct
@@ -162,7 +162,7 @@ structure TextIO2: TEXT_IO_EXTRA =
 			end
    end
 
-structure TextIO = TextIO2
+structure TextIO = TextIO1
 
 structure TextIOGlobal: TEXT_IO_GLOBAL = TextIO
 open TextIOGlobal
