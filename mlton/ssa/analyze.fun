@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -14,7 +14,7 @@ datatype z = datatype Transfer.t
    
 fun 'a analyze
    {coerce, conApp, const,
-    filter, filterInt, filterWord,
+    filter, filterWord,
     fromType, layout, primApp,
     program = Program.T {main, globals, functions, ...},
     select, tuple, useFromTypeOnBinds} =
@@ -140,7 +140,6 @@ fun 'a analyze
 			Con cases =>
 			   Vector.foreach (cases, fn (c, j) =>
 					   filter (test, c, labelValues j))
-		      | Int (s, cs) => doit (s, cs, filterInt)
 		      | Word (s, cs) => doit (s, cs, filterWord)
 		  val _ = Option.app (default, ensureNullary)
 	       in ()

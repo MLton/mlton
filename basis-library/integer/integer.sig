@@ -36,10 +36,12 @@ signature PRE_INTEGER_EXTRA =
       include PRE_INTEGER
 
       val << : int * Word.word -> int
+      val >> : int * Word.word -> int
       val ~>> : int * Word.word -> int
       val *? : int * int -> int
       val +? : int * int -> int
       val -? : int * int -> int
+      val andb : int * int -> int
       val maxInt' : int
       val minInt' : int
       val precision' : Int.int
@@ -76,14 +78,15 @@ signature INTEGER_EXTRA =
       include INTEGER
 
       val << : int * Word.word -> int
+      val >> : int * Word.word -> int
       val ~>> : int * Word.word -> int
       val *? : int * int -> int
       val +? : int * int -> int
       val -? : int * int -> int
       val ~? : int -> int
-      val precision' : Int.int
+      val andb : int * int -> int
       val maxInt' : int
       val minInt' : int
-
       val power: {base: int, exp: int} -> int
+      val precision' : Int.int
    end

@@ -183,20 +183,21 @@ structure Primitive =
 
       structure Char =
 	 struct
-	    val op < = _prim "Word8_lt": char * char -> bool;
-	    val op <= = _prim "Word8_le": char * char -> bool;
-	    val op > = _prim "Word8_gt": char * char -> bool;
-	    val op >= = _prim "Word8_ge": char * char -> bool;
-	    val chr = _prim "Int32_toWord8": int -> char;
-	    val ord = _prim "Word8_toInt32": char -> int;
-	    val toWord8 = _prim "Char_toWord8": char -> Word8.word;
+	    val op < = _prim "WordU8_lt": char * char -> bool;
+	    val op <= = _prim "WordU8_le": char * char -> bool;
+	    val op > = _prim "WordU8_gt": char * char -> bool;
+	    val op >= = _prim "WordU8_ge": char * char -> bool;
+	    val chr = _prim "WordS32_toWord8": int -> char;
+	    val ord = _prim "WordU8_toWord32": char -> int;
+	    val toWord8 = _prim "WordU8_toWord8": char -> Word8.word;
 	 end
 
       structure CommandLine =
 	 struct
 	    val argc = fn () => _import "CommandLine_argc": int;
 	    val argv = fn () => _import "CommandLine_argv": cstringArray;
-	    val commandName = fn () => _import "CommandLine_commandName": cstring;
+	    val commandName =
+	       fn () => _import "CommandLine_commandName": cstring;
 	 end
 
       structure Date =
@@ -287,8 +288,10 @@ structure Primitive =
       
       structure IEEEReal =
 	 struct
-	    val getRoundingMode = _import "IEEEReal_getRoundingMode": unit -> int;
-	    val setRoundingMode = _import "IEEEReal_setRoundingMode": int -> unit;
+	    val getRoundingMode =
+	       _import "IEEEReal_getRoundingMode": unit -> int;
+	    val setRoundingMode =
+	       _import "IEEEReal_setRoundingMode": int -> unit;
 	 end
 
       structure Int8 =
@@ -299,36 +302,38 @@ structure Primitive =
 	    val maxInt' : int = 0x7f
 	    val minInt' : int = ~0x80
 
-	    val *? = _prim "Int8_mul": int * int -> int;
+	    val *? = _prim "WordS8_mul": int * int -> int;
 	    val * =
 	       if detectOverflow
-		  then _prim "Int8_mulCheck": int * int -> int;
+		  then _prim "WordS8_mulCheck": int * int -> int;
 	       else *?
-	    val +? = _prim "Int8_add": int * int -> int;
+	    val +? = _prim "Word8_add": int * int -> int;
 	    val + =
 	       if detectOverflow
-		  then _prim "Int8_addCheck": int * int -> int;
+		  then _prim "WordS8_addCheck": int * int -> int;
 	       else +?
-	    val -? = _prim "Int8_sub": int * int -> int;
+	    val -? = _prim "Word8_sub": int * int -> int;
 	    val - =
 	       if detectOverflow
-		  then _prim "Int8_subCheck": int * int -> int;
+		  then _prim "WordS8_subCheck": int * int -> int;
 	       else -?
-	    val op < = _prim "Int8_lt": int * int -> bool;
-	    val op <= = _prim "Int8_le": int * int -> bool;
-	    val op > = _prim "Int8_gt": int * int -> bool;
-	    val op >= = _prim "Int8_ge": int * int -> bool;
-	    val quot = _prim "Int8_quot": int * int -> int;
-	    val rem = _prim "Int8_rem": int * int -> int;
-	    val << = _prim "Int8_lshift": int * Word.word -> int;
-	    val ~>> = _prim "Int8_arshift": int * Word.word -> int;
-	    val ~? = _prim "Int8_neg": int -> int; 
+	    val op < = _prim "WordS8_lt": int * int -> bool;
+	    val op <= = _prim "WordS8_le": int * int -> bool;
+	    val op > = _prim "WordS8_gt": int * int -> bool;
+	    val op >= = _prim "WordS8_ge": int * int -> bool;
+	    val quot = _prim "WordS8_quot": int * int -> int;
+	    val rem = _prim "WordS8_rem": int * int -> int;
+	    val << = _prim "Word8_lshift": int * Word.word -> int;
+	    val >> = _prim "WordU8_rshift": int * Word.word -> int;
+	    val ~>> = _prim "WordS8_rshift": int * Word.word -> int;
+	    val ~? = _prim "Word8_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
-		  then _prim "Int8_negCheck": int -> int;
+		  then _prim "Word8_negCheck": int -> int;
 	       else ~?
-	    val fromInt = _prim "Int32_toInt8": Int.int -> int;
-	    val toInt = _prim "Int8_toInt32": int -> Int.int;
+	    val andb = _prim "Word8_andb": int * int -> int;
+	    val fromInt = _prim "WordS32_toWord8": Int.int -> int;
+	    val toInt = _prim "WordS8_toWord32": int -> Int.int;
 	 end
       
       structure Int16 =
@@ -339,260 +344,262 @@ structure Primitive =
 	    val maxInt' : int = 0x7fff
 	    val minInt' : int = ~0x8000
 
-	    val *? = _prim "Int16_mul": int * int -> int;
+	    val *? = _prim "WordS16_mul": int * int -> int;
 	    val * =
 	       if detectOverflow
-		  then _prim "Int16_mulCheck": int * int -> int;
+		  then _prim "WordS16_mulCheck": int * int -> int;
 	       else *?
-	    val +? = _prim "Int16_add": int * int -> int;
+	    val +? = _prim "Word16_add": int * int -> int;
 	    val + =
 	       if detectOverflow
-		  then _prim "Int16_addCheck": int * int -> int;
+		  then _prim "WordS16_addCheck": int * int -> int;
 	       else +?
-	    val -? = _prim "Int16_sub": int * int -> int;
+	    val -? = _prim "Word16_sub": int * int -> int;
 	    val - =
 	       if detectOverflow
-		  then _prim "Int16_subCheck": int * int -> int;
+		  then _prim "WordS16_subCheck": int * int -> int;
 	       else -?
-	    val op < = _prim "Int16_lt": int * int -> bool;
-	    val op <= = _prim "Int16_le": int * int -> bool;
-	    val op > = _prim "Int16_gt": int * int -> bool;
-	    val op >= = _prim "Int16_ge": int * int -> bool;
-	    val quot = _prim "Int16_quot": int * int -> int;
-	    val rem = _prim "Int16_rem": int * int -> int;
-	    val << = _prim "Int16_lshift": int * Word.word -> int;
-	    val ~>> = _prim "Int16_arshift": int * Word.word -> int;
-	    val ~? = _prim "Int16_neg": int -> int; 
+	    val op < = _prim "WordS16_lt": int * int -> bool;
+	    val op <= = _prim "WordS16_le": int * int -> bool;
+	    val op > = _prim "WordS16_gt": int * int -> bool;
+	    val op >= = _prim "WordS16_ge": int * int -> bool;
+	    val quot = _prim "WordS16_quot": int * int -> int;
+	    val rem = _prim "WordS16_rem": int * int -> int;
+	    val << = _prim "Word16_lshift": int * Word.word -> int;
+	    val >> = _prim "WordU16_rshift": int * Word.word -> int;
+	    val ~>> = _prim "WordS16_rshift": int * Word.word -> int;
+	    val ~? = _prim "Word16_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
-		  then _prim "Int16_negCheck": int -> int;
+		  then _prim "Word16_negCheck": int -> int;
 	       else ~?
-	    val fromInt = _prim "Int32_toInt16": Int.int -> int;
-	    val toInt = _prim "Int16_toInt32": int -> Int.int;
+	    val andb = _prim "Word16_andb": int * int -> int;
+	    val fromInt = _prim "WordS32_toWord16": Int.int -> int;
+	    val toInt = _prim "WordS16_toWord32": int -> Int.int;
 	 end
       structure Int2 =
 	 struct
 	    type big = Int8.int
 	    type int = int2
-	    val fromBigUnsafe = _prim "Int8_toInt2": big -> int;
+	    val fromBigUnsafe = _prim "WordU8_toWord2": big -> int;
 	    val precision' = 2
-	    val toBig = _prim "Int2_toInt8": int -> big;
+	    val toBig = _prim "WordU2_toWord8": int -> big;
 	 end
       structure Int3 =
 	 struct
 	    type big = Int8.int
 	    type int = int3
-	    val fromBigUnsafe = _prim "Int8_toInt3": big -> int;
+	    val fromBigUnsafe = _prim "WordU8_toWord3": big -> int;
 	    val precision' = 3
-	    val toBig = _prim "Int3_toInt8": int -> big;
+	    val toBig = _prim "WordU3_toWord8": int -> big;
 	 end
       structure Int4 =
 	 struct
 	    type big = Int8.int
 	    type int = int4
-	    val fromBigUnsafe = _prim "Int8_toInt4": big -> int;
+	    val fromBigUnsafe = _prim "WordU8_toWord4": big -> int;
 	    val precision' = 4
-	    val toBig = _prim "Int4_toInt8": int -> big;
+	    val toBig = _prim "WordU4_toWord8": int -> big;
 	 end
       structure Int5 =
 	 struct
 	    type big = Int8.int
 	    type int = int5
-	    val fromBigUnsafe = _prim "Int8_toInt5": big -> int;
+	    val fromBigUnsafe = _prim "WordU8_toWord5": big -> int;
 	    val precision' = 5
-	    val toBig = _prim "Int5_toInt8": int -> big;
+	    val toBig = _prim "WordU5_toWord8": int -> big;
 	 end
       structure Int6 =
 	 struct
 	    type big = Int8.int
 	    type int = int6
-	    val fromBigUnsafe = _prim "Int8_toInt6": big -> int;
+	    val fromBigUnsafe = _prim "WordU8_toWord6": big -> int;
 	    val precision' = 6
-	    val toBig = _prim "Int6_toInt8": int -> big;
+	    val toBig = _prim "WordU6_toWord8": int -> big;
 	 end
       structure Int7 =
 	 struct
 	    type big = Int8.int
 	    type int = int7
-	    val fromBigUnsafe = _prim "Int8_toInt7": big -> int;
+	    val fromBigUnsafe = _prim "WordU8_toWord7": big -> int;
 	    val precision' = 7
-	    val toBig = _prim "Int7_toInt8": int -> big;
+	    val toBig = _prim "WordU7_toWord8": int -> big;
 	 end
       structure Int9 =
 	 struct
 	    type big = Int16.int
 	    type int = int9
-	    val fromBigUnsafe = _prim "Int16_toInt9": big -> int;
+	    val fromBigUnsafe = _prim "WordU16_toWord9": big -> int;
 	    val precision' = 9
-	    val toBig = _prim "Int9_toInt16": int -> big;
+	    val toBig = _prim "WordU9_toWord16": int -> big;
 	 end
       structure Int10 =
 	 struct
 	    type big = Int16.int
 	    type int = int10
-	    val fromBigUnsafe = _prim "Int16_toInt10": big -> int;
+	    val fromBigUnsafe = _prim "WordU16_toWord10": big -> int;
 	    val precision' = 10
-	    val toBig = _prim "Int10_toInt16": int -> big;
+	    val toBig = _prim "WordU10_toWord16": int -> big;
 	 end
       structure Int11 =
 	 struct
 	    type big = Int16.int
 	    type int = int11
-	    val fromBigUnsafe = _prim "Int16_toInt11": big -> int;
+	    val fromBigUnsafe = _prim "WordU16_toWord11": big -> int;
 	    val precision' = 11
-	    val toBig = _prim "Int11_toInt16": int -> big;
+	    val toBig = _prim "WordU11_toWord16": int -> big;
 	 end
       structure Int12 =
 	 struct
 	    type big = Int16.int
 	    type int = int12
-	    val fromBigUnsafe = _prim "Int16_toInt12": big -> int;
+	    val fromBigUnsafe = _prim "WordU16_toWord12": big -> int;
 	    val precision' = 12
-	    val toBig = _prim "Int12_toInt16": int -> big;
+	    val toBig = _prim "WordU12_toWord16": int -> big;
 	 end
       structure Int13 =
 	 struct
 	    type big = Int16.int
 	    type int = int13
-	    val fromBigUnsafe = _prim "Int16_toInt13": big -> int;
+	    val fromBigUnsafe = _prim "WordU16_toWord13": big -> int;
 	    val precision' = 13
-	    val toBig = _prim "Int13_toInt16": int -> big;
+	    val toBig = _prim "WordU13_toWord16": int -> big;
 	 end
       structure Int14 =
 	 struct
 	    type big = Int16.int
 	    type int = int14
-	    val fromBigUnsafe = _prim "Int16_toInt14": big -> int;
+	    val fromBigUnsafe = _prim "WordU16_toWord14": big -> int;
 	    val precision' = 14
-	    val toBig = _prim "Int14_toInt16": int -> big;
+	    val toBig = _prim "WordU14_toWord16": int -> big;
 	 end
       structure Int15 =
 	 struct
 	    type big = Int16.int
 	    type int = int15
-	    val fromBigUnsafe = _prim "Int16_toInt15": big -> int;
+	    val fromBigUnsafe = _prim "WordU16_toWord15": big -> int;
 	    val precision' = 15
-	    val toBig = _prim "Int15_toInt16": int -> big;
+	    val toBig = _prim "WordU15_toWord16": int -> big;
 	 end
       structure Int17 =
 	 struct
 	    type big = Int32.int
 	    type int = int17
-	    val fromBigUnsafe = _prim "Int32_toInt17": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord17": big -> int;
 	    val precision' = 17
-	    val toBig = _prim "Int17_toInt32": int -> big;
+	    val toBig = _prim "WordU17_toWord32": int -> big;
 	 end
       structure Int18 =
 	 struct
 	    type big = Int32.int
 	    type int = int18
-	    val fromBigUnsafe = _prim "Int32_toInt18": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord18": big -> int;
 	    val precision' = 18
-	    val toBig = _prim "Int18_toInt32": int -> big;
+	    val toBig = _prim "WordU18_toWord32": int -> big;
 	 end
       structure Int19 =
 	 struct
 	    type big = Int32.int
 	    type int = int19
-	    val fromBigUnsafe = _prim "Int32_toInt19": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord19": big -> int;
 	    val precision' = 19
-	    val toBig = _prim "Int19_toInt32": int -> big;
+	    val toBig = _prim "WordU19_toWord32": int -> big;
 	 end
       structure Int20 =
 	 struct
 	    type big = Int32.int
 	    type int = int20
-	    val fromBigUnsafe = _prim "Int32_toInt20": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord20": big -> int;
 	    val precision' = 20
-	    val toBig = _prim "Int20_toInt32": int -> big;
+	    val toBig = _prim "WordU20_toWord32": int -> big;
 	 end
       structure Int21 =
 	 struct
 	    type big = Int32.int
 	    type int = int21
-	    val fromBigUnsafe = _prim "Int32_toInt21": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord21": big -> int;
 	    val precision' = 21
-	    val toBig = _prim "Int21_toInt32": int -> big;
+	    val toBig = _prim "WordU21_toWord32": int -> big;
 	 end
       structure Int22 =
 	 struct
 	    type big = Int32.int
 	    type int = int22
-	    val fromBigUnsafe = _prim "Int32_toInt22": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord22": big -> int;
 	    val precision' = 22
-	    val toBig = _prim "Int22_toInt32": int -> big;
+	    val toBig = _prim "WordU22_toWord32": int -> big;
 	 end
       structure Int23 =
 	 struct
 	    type big = Int32.int
 	    type int = int23
-	    val fromBigUnsafe = _prim "Int32_toInt23": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord23": big -> int;
 	    val precision' = 23
-	    val toBig = _prim "Int23_toInt32": int -> big;
+	    val toBig = _prim "WordU23_toWord32": int -> big;
 	 end
       structure Int24 =
 	 struct
 	    type big = Int32.int
 	    type int = int24
-	    val fromBigUnsafe = _prim "Int32_toInt24": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord24": big -> int;
 	    val precision' = 24
-	    val toBig = _prim "Int24_toInt32": int -> big;
+	    val toBig = _prim "WordU24_toWord32": int -> big;
 	 end
       structure Int25 =
 	 struct
 	    type big = Int32.int
 	    type int = int25
-	    val fromBigUnsafe = _prim "Int32_toInt25": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord25": big -> int;
 	    val precision' = 25
-	    val toBig = _prim "Int25_toInt32": int -> big;
+	    val toBig = _prim "WordU25_toWord32": int -> big;
 	 end
       structure Int26 =
 	 struct
 	    type big = Int32.int
 	    type int = int26
-	    val fromBigUnsafe = _prim "Int32_toInt26": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord26": big -> int;
 	    val precision' = 26
-	    val toBig = _prim "Int26_toInt32": int -> big;
+	    val toBig = _prim "WordU26_toWord32": int -> big;
 	 end
       structure Int27 =
 	 struct
 	    type big = Int32.int
 	    type int = int27
-	    val fromBigUnsafe = _prim "Int32_toInt27": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord27": big -> int;
 	    val precision' = 27
-	    val toBig = _prim "Int27_toInt32": int -> big;
+	    val toBig = _prim "WordU27_toWord32": int -> big;
 	 end
       structure Int28 =
 	 struct
 	    type big = Int32.int
 	    type int = int28
-	    val fromBigUnsafe = _prim "Int32_toInt28": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord28": big -> int;
 	    val precision' = 28
-	    val toBig = _prim "Int28_toInt32": int -> big;
+	    val toBig = _prim "WordU28_toWord32": int -> big;
 	 end
       structure Int29 =
 	 struct
 	    type big = Int32.int
 	    type int = int29
-	    val fromBigUnsafe = _prim "Int32_toInt29": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord29": big -> int;
 	    val precision' = 29
-	    val toBig = _prim "Int29_toInt32": int -> big;
+	    val toBig = _prim "WordU29_toWord32": int -> big;
 	 end
       structure Int30 =
 	 struct
 	    type big = Int32.int
 	    type int = int30
-	    val fromBigUnsafe = _prim "Int32_toInt30": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord30": big -> int;
 	    val precision' = 30
-	    val toBig = _prim "Int30_toInt32": int -> big;
+	    val toBig = _prim "WordU30_toWord32": int -> big;
 	 end
       structure Int31 =
 	 struct
 	    type big = Int32.int
 	    type int = int31
-	    val fromBigUnsafe = _prim "Int32_toInt31": big -> int;
+	    val fromBigUnsafe = _prim "WordU32_toWord31": big -> int;
 	    val precision' = 31
-	    val toBig = _prim "Int31_toInt32": int -> big;
+	    val toBig = _prim "WordU31_toWord32": int -> big;
 	 end
       structure Int32 =
 	 struct
@@ -602,34 +609,36 @@ structure Primitive =
 	    val maxInt' : int = 0x7fffffff
 	    val minInt' : int = ~0x80000000
 
-	    val *? = _prim "Int32_mul": int * int -> int;
+	    val *? = _prim "WordS32_mul": int * int -> int;
 	    val * =
 	       if detectOverflow
-		  then _prim "Int32_mulCheck": int * int -> int;
+		  then _prim "WordS32_mulCheck": int * int -> int;
 	       else *?
-	    val +? = _prim "Int32_add": int * int -> int;
+	    val +? = _prim "Word32_add": int * int -> int;
 	    val + =
 	       if detectOverflow
-		  then _prim "Int32_addCheck": int * int -> int;
+		  then _prim "WordS32_addCheck": int * int -> int;
 	       else +?
-	    val -? = _prim "Int32_sub": int * int -> int;
+	    val -? = _prim "Word32_sub": int * int -> int;
 	    val - =
 	       if detectOverflow
-		  then _prim "Int32_subCheck": int * int -> int;
+		  then _prim "WordS32_subCheck": int * int -> int;
 	       else -?
-	    val op < = _prim "Int32_lt": int * int -> bool;
-	    val op <= = _prim "Int32_le": int * int -> bool;
-	    val op > = _prim "Int32_gt": int * int -> bool;
-	    val op >= = _prim "Int32_ge": int * int -> bool;
-	    val quot = _prim "Int32_quot": int * int -> int;
-	    val rem = _prim "Int32_rem": int * int -> int;
-	    val << = _prim "Int32_lshift": int * Word.word -> int;
-	    val ~>> = _prim "Int32_arshift": int * Word.word -> int;
-	    val ~? = _prim "Int32_neg": int -> int; 
+	    val op < = _prim "WordS32_lt": int * int -> bool;
+	    val op <= = _prim "WordS32_le": int * int -> bool;
+	    val op > = _prim "WordS32_gt": int * int -> bool;
+	    val op >= = _prim "WordS32_ge": int * int -> bool;
+	    val quot = _prim "WordS32_quot": int * int -> int;
+	    val rem = _prim "WordS32_rem": int * int -> int;
+	    val << = _prim "Word32_lshift": int * Word.word -> int;
+	    val >> = _prim "WordU32_rshift": int * Word.word -> int;
+	    val ~>> = _prim "WordS32_rshift": int * Word.word -> int;
+	    val ~? = _prim "Word32_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
-		  then _prim "Int32_negCheck": int -> int;
+		  then _prim "Word32_negCheck": int -> int;
 	       else ~?
+	    val andb = _prim "Word32_andb": int * int -> int;
 	    val fromInt : int -> int = fn x => x
 	    val toInt : int -> int = fn x => x
 	 end
@@ -644,38 +653,47 @@ structure Primitive =
 	    val maxInt' : int = 0x7FFFFFFFFFFFFFFF
 	    val minInt' : int = ~0x8000000000000000
 
-	    val *? = _prim "Int64_mul": int * int -> int;
-	    val +? = _prim "Int64_add": int * int -> int;
+	    val *? = _prim "WordS64_mul": int * int -> int;
+	    val +? = _prim "Word64_add": int * int -> int;
 	    val + =
 	       if detectOverflow
-		  then _prim "Int64_addCheck": int * int -> int;
+		  then _prim "WordS64_addCheck": int * int -> int;
 	       else +?
-	    val -? = _prim "Int64_sub": int * int -> int;
+	    val -? = _prim "Word64_sub": int * int -> int;
 	    val - =
 	       if detectOverflow
-		  then _prim "Int64_subCheck": int * int -> int;
+		  then _prim "WordS64_subCheck": int * int -> int;
 	       else -?
-	    val op < = _prim "Int64_lt": int * int -> bool;
-	    val op <= = _prim "Int64_le": int * int -> bool;
-	    val op > = _prim "Int64_gt": int * int -> bool;
-	    val op >= = _prim "Int64_ge": int * int -> bool;
-	    val << = _prim "Int64_lshift": int * Word.word -> int;
-	    val _ = << (* quell unused warning *)
-	    val ~>> = _prim "Int64_arshift": int * Word.word -> int;
-	    val _ = ~>> (* quell unused warning *)
-	    val quot = _prim "Int64_quot": int * int -> int;
-	    val rem = _prim "Int64_rem": int * int -> int;
-	    val ~? = _prim "Int64_neg": int -> int; 
+	    val op < = _prim "WordS64_lt": int * int -> bool;
+	    val op <= = _prim "WordS64_le": int * int -> bool;
+	    val op > = _prim "WordS64_gt": int * int -> bool;
+	    val op >= = _prim "WordS64_ge": int * int -> bool;
+	    val << = _prim "Word64_lshift": int * Word.word -> int;
+	    val >> = _prim "WordU64_rshift": int * Word.word -> int;
+	    val ~>> = _prim "WordS64_rshift": int * Word.word -> int;
+	    val quot = _prim "WordS64_quot": int * int -> int;
+	    val rem = _prim "WordS64_rem": int * int -> int;
+	    val ~? = _prim "Word64_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
-		  then _prim "Int64_negCheck": int -> int;
+		  then _prim "Word64_negCheck": int -> int;
 	       else ~?
-	    val fromInt = _prim "Int32_toInt64": Int.int -> int;
-	    val fromWord = _prim "Word32_toInt64": word -> int;
-	    val toInt = _prim "Int64_toInt32": int -> Int.int;
-	    val toWord = _prim "Int64_toWord32": int -> word;
-
+	    val andb = _prim "Word64_andb": int * int -> int;
+	    val fromInt = _prim "WordS32_toWord64": Int.int -> int;
+	    val fromWord = _prim "WordU32_toWord64": word -> int;
+	    val toInt = _prim "WordU64_toWord32": int -> Int.int;
+	    val toWord = _prim "WordU64_toWord32": int -> word;
 	    val * = fn _ => raise Fail "Int64.* unimplemented"
+	    (* quell unused warnings *)
+	    val () =
+	       let
+		  val _ = << 
+		  val _ = >>
+		  val _ = ~>>
+		  val _ = andb
+	       in
+		  ()
+	       end
 	 end
 
       structure Array =
@@ -947,9 +965,6 @@ structure Primitive =
 	 struct
 	    open Pointer
 
-(*	    val fromWord = _prim "Word_toPointer": word -> t; *)
-(*	    val toWord = _prim "Pointer_toWord": t -> word; *)
-
 	    val fromWord = fn w => w
 	    val toWord = fn w => w
 	       
@@ -957,10 +972,10 @@ structure Primitive =
 
 	    fun isNull p = p = null
 
-	    val getInt8 = _prim "Pointer_getInt8": t * int -> Int8.int;
-	    val getInt16 = _prim "Pointer_getInt16": t * int -> Int16.int;
-	    val getInt32 = _prim "Pointer_getInt32": t * int -> Int32.int;
-	    val getInt64 = _prim "Pointer_getInt64": t * int -> Int64.int;
+	    val getInt8 = _prim "Pointer_getWord8": t * int -> Int8.int;
+	    val getInt16 = _prim "Pointer_getWord16": t * int -> Int16.int;
+	    val getInt32 = _prim "Pointer_getWord32": t * int -> Int32.int;
+	    val getInt64 = _prim "Pointer_getWord64": t * int -> Int64.int;
 	    val getPointer = _prim "Pointer_getPointer": t * int -> 'a;
 	    val getReal32 = _prim "Pointer_getReal32": t * int -> Real32.real;
 	    val getReal64 = _prim "Pointer_getReal64": t * int -> Real64.real;
@@ -968,10 +983,13 @@ structure Primitive =
 	    val getWord16 = _prim "Pointer_getWord16": t * int -> Word16.word;
 	    val getWord32 = _prim "Pointer_getWord32": t * int -> Word32.word;
 	    val getWord64 = _prim "Pointer_getWord64": t * int -> Word64.word;
-	    val setInt8 = _prim "Pointer_setInt8": t * int * Int8.int -> unit;
-	    val setInt16 = _prim "Pointer_setInt16": t * int * Int16.int -> unit;
-	    val setInt32 = _prim "Pointer_setInt32": t * int * Int32.int -> unit;
-	    val setInt64 = _prim "Pointer_setInt64": t * int * Int64.int -> unit;
+	    val setInt8 = _prim "Pointer_setWord8": t * int * Int8.int -> unit;
+	    val setInt16 =
+	       _prim "Pointer_setWord16": t * int * Int16.int -> unit;
+	    val setInt32 =
+	       _prim "Pointer_setWord32": t * int * Int32.int -> unit;
+	    val setInt64 =
+	       _prim "Pointer_setWord64": t * int * Int64.int -> unit;
 	    val setPointer = _prim "Pointer_setPointer": t * int * 'a -> unit;
 	    val setReal32 =
 	       _prim "Pointer_setReal32": t * int * Real32.real -> unit;
@@ -1031,7 +1049,7 @@ structure Primitive =
 	    val frexp = _import "Real64_frexp": real * int ref -> real;
 	    val gdtoa =
 	       _import "Real64_gdtoa": real * int * int * int ref -> cstring;
-	    val fromInt = _prim "Int32_toReal64": int -> real;
+	    val fromInt = _prim "WordS32_toReal64": int -> real;
 	    val ldexp = _prim "Real64_ldexp": real * int -> real;
 	    val maxFinite = _import "Real64_maxFinite": real;
 	    val minNormalPos = _import "Real64_minNormalPos": real;
@@ -1041,7 +1059,7 @@ structure Primitive =
 	    val round = _prim "Real64_round": real -> real;
 	    val signBit = _import "Real64_signBit": real -> bool;
 	    val strto = _import "Real64_strto": NullString.t -> real;
-	    val toInt = _prim "Real64_toInt32": real -> int;
+	    val toInt = _prim "Real64_toWordS32": real -> int;
 	    val ~ = _prim "Real64_neg": real -> real;
 
 	    val fromLarge : real -> real = fn x => x
@@ -1108,7 +1126,7 @@ structure Primitive =
 	       fromLarge (Real64.frexp (toLarge r, ir))
 	    val gdtoa =
 	       _import "Real32_gdtoa": real * int * int * int ref -> cstring;
-	    val fromInt = _prim "Int32_toReal32": int -> real;
+	    val fromInt = _prim "WordS32_toReal32": int -> real;
 	    val ldexp = _prim "Real32_ldexp": real * int -> real;
 	    val maxFinite = _import "Real32_maxFinite": real;
 	    val minNormalPos = _import "Real32_minNormalPos": real;
@@ -1116,7 +1134,7 @@ structure Primitive =
 	    val modf = _import "Real32_modf": real * real ref -> real;
 	    val signBit = _import "Real32_signBit": real -> bool;
 	    val strto = _import "Real32_strto": NullString.t -> real;
-	    val toInt = _prim "Real32_toInt32": real -> int;
+	    val toInt = _prim "Real32_toWordS32": real -> int;
 	    val ~ = _prim "Real32_neg": real -> real;
 	 end
 
@@ -1380,29 +1398,29 @@ structure Primitive =
 
 	    val + = _prim "Word8_add": word * word -> word;
 	    val andb = _prim "Word8_andb": word * word -> word;
-	    val ~>> = _prim "Word8_arshift": word * Word.word -> word;
-	    val div = _prim "Word8_div": word * word -> word;
-	    val fromInt = _prim "Int32_toWord8": int -> word;
-	    val fromLarge = _prim "Word64_toWord8": LargeWord.word -> word;
-	    val op >= = _prim "Word8_ge": word * word -> bool;
-	    val op > = _prim "Word8_gt" : word * word -> bool;
-	    val op <= = _prim "Word8_le": word * word -> bool;
+	    val ~>> = _prim "WordS8_rshift": word * Word.word -> word;
+	    val div = _prim "WordU8_quot": word * word -> word;
+	    val fromInt = _prim "WordU32_toWord8": int -> word;
+	    val fromLarge = _prim "WordU64_toWord8": LargeWord.word -> word;
+	    val op >= = _prim "WordU8_ge": word * word -> bool;
+	    val op > = _prim "WordU8_gt" : word * word -> bool;
+	    val op <= = _prim "WordU8_le": word * word -> bool;
 	    val << = _prim "Word8_lshift": word * Word.word -> word;
-	    val op < = _prim "Word8_lt" : word * word -> bool;
-	    val mod = _prim "Word8_mod": word * word -> word;
-	    val * = _prim "Word8_mul": word * word -> word;
+	    val op < = _prim "WordU8_lt" : word * word -> bool;
+	    val mod = _prim "WordU8_rem": word * word -> word;
+	    val * = _prim "WordU8_mul": word * word -> word;
 	    val ~ = _prim "Word8_neg": word -> word;
 	    val notb = _prim "Word8_notb": word -> word;
 	    val orb = _prim "Word8_orb": word * word -> word;
 	    val rol = _prim "Word8_rol": word * Word.word -> word;
 	    val ror = _prim "Word8_ror": word * Word.word -> word;
-	    val >> = _prim "Word8_rshift": word * Word.word -> word;
+	    val >> = _prim "WordU8_rshift": word * Word.word -> word;
 	    val - = _prim "Word8_sub": word * word -> word;
-	    val toChar = _prim "Word8_toChar": word -> char;
-	    val toInt = _prim "Word8_toInt32": word -> int;
-	    val toIntX = _prim "Word8_toInt32X": word -> int;
-	    val toLarge = _prim "Word8_toWord64": word -> LargeWord.word;
-	    val toLargeX = _prim "Word8_toWord64X": word -> LargeWord.word;
+	    val toChar = _prim "WordU8_toWord8": word -> char;
+	    val toInt = _prim "WordU8_toWord32": word -> int;
+	    val toIntX = _prim "WordS8_toWord32": word -> int;
+	    val toLarge = _prim "WordU8_toWord64": word -> LargeWord.word;
+	    val toLargeX = _prim "WordS8_toWord64": word -> LargeWord.word;
 	    val xorb = _prim "Word8_xorb": word * word -> word;
 	 end
 
@@ -1434,26 +1452,26 @@ structure Primitive =
 
 	    val + = _prim "Word16_add": word * word -> word;
 	    val andb = _prim "Word16_andb": word * word -> word;
-	    val ~>> = _prim "Word16_arshift": word * Word.word -> word;
-	    val div = _prim "Word16_div": word * word -> word;
-	    val fromInt = _prim "Int32_toWord16": int -> word;
-	    val fromLarge = _prim "Word64_toWord16": LargeWord.word -> word;
-	    val op >= = _prim "Word16_ge": word * word -> bool;
-	    val op > = _prim "Word16_gt" : word * word -> bool;
-	    val op <= = _prim "Word16_le": word * word -> bool;
+	    val ~>> = _prim "WordS16_rshift": word * Word.word -> word;
+	    val div = _prim "WordU16_quot": word * word -> word;
+	    val fromInt = _prim "WordU32_toWord16": int -> word;
+	    val fromLarge = _prim "WordU64_toWord16": LargeWord.word -> word;
+	    val op >= = _prim "WordU16_ge": word * word -> bool;
+	    val op > = _prim "WordU16_gt" : word * word -> bool;
+	    val op <= = _prim "WordU16_le": word * word -> bool;
 	    val << = _prim "Word16_lshift": word * Word.word -> word;
-	    val op < = _prim "Word16_lt" : word * word -> bool;
-	    val mod = _prim "Word16_mod": word * word -> word;
-	    val * = _prim "Word16_mul": word * word -> word;
+	    val op < = _prim "WordU16_lt" : word * word -> bool;
+	    val mod = _prim "WordU16_rem": word * word -> word;
+	    val * = _prim "WordU16_mul": word * word -> word;
 	    val ~ = _prim "Word16_neg": word -> word;
 	    val notb = _prim "Word16_notb": word -> word;
 	    val orb = _prim "Word16_orb": word * word -> word;
-	    val >> = _prim "Word16_rshift": word * Word.word -> word;
+	    val >> = _prim "WordU16_rshift": word * Word.word -> word;
 	    val - = _prim "Word16_sub": word * word -> word;
-	    val toInt = _prim "Word16_toInt32": word -> int;
-	    val toIntX = _prim "Word16_toInt32X": word -> int;
-	    val toLarge = _prim "Word16_toWord64": word -> LargeWord.word;
-	    val toLargeX = _prim "Word16_toWord64X": word -> LargeWord.word;
+	    val toInt = _prim "WordU16_toWord32": word -> int;
+	    val toIntX = _prim "WordS16_toWord32": word -> int;
+	    val toLarge = _prim "WordU16_toWord64": word -> LargeWord.word;
+	    val toLargeX = _prim "WordS16_toWord64": word -> LargeWord.word;
 	    val xorb = _prim "Word16_xorb": word * word -> word;
 	 end
 
@@ -1463,31 +1481,29 @@ structure Primitive =
 	    val wordSize: int = 32
 
 	    val + = _prim "Word32_add": word * word -> word;
-(*	    val addCheck = _prim "Word32_addCheck": word * word -> word; *)
 	    val andb = _prim "Word32_andb": word * word -> word;
-	    val ~>> = _prim "Word32_arshift": word * word -> word;
-	    val div = _prim "Word32_div": word * word -> word;
-	    val fromInt = _prim "Int32_toWord32": int -> word;
-	    val fromLarge = _prim "Word64_toWord32": LargeWord.word -> word;
-	    val op >= = _prim "Word32_ge": word * word -> bool;
-	    val op > = _prim "Word32_gt" : word * word -> bool;
-	    val op <= = _prim "Word32_le": word * word -> bool;
+	    val ~>> = _prim "WordS32_rshift": word * word -> word;
+	    val div = _prim "WordU32_quot": word * word -> word;
+	    val fromInt = _prim "WordU32_toWord32": int -> word;
+	    val fromLarge = _prim "WordU64_toWord32": LargeWord.word -> word;
+	    val op >= = _prim "WordU32_ge": word * word -> bool;
+	    val op > = _prim "WordU32_gt" : word * word -> bool;
+	    val op <= = _prim "WordU32_le": word * word -> bool;
 	    val << = _prim "Word32_lshift": word * word -> word;
-	    val op < = _prim "Word32_lt" : word * word -> bool;
-	    val mod = _prim "Word32_mod": word * word -> word;
-	    val * = _prim "Word32_mul": word * word -> word;
-(*	    val mulCheck = _prim "Word32_mulCheck": word * word -> word; *)
+	    val op < = _prim "WordU32_lt" : word * word -> bool;
+	    val mod = _prim "WordU32_rem": word * word -> word;
+	    val * = _prim "WordU32_mul": word * word -> word;
 	    val ~ = _prim "Word32_neg": word -> word;
 	    val notb = _prim "Word32_notb": word -> word;
 	    val orb = _prim "Word32_orb": word * word -> word;
 	    val rol = _prim "Word32_rol": word * word -> word;
 	    val ror = _prim "Word32_ror": word * word -> word;
-	    val >> = _prim "Word32_rshift": word * word -> word;
+	    val >> = _prim "WordU32_rshift": word * word -> word;
 	    val - = _prim "Word32_sub": word * word -> word;
-	    val toInt = _prim "Word32_toInt32": word -> int;
-	    val toIntX = _prim "Word32_toInt32X": word -> int;
-	    val toLarge = _prim "Word32_toWord64": word -> LargeWord.word;
-	    val toLargeX = _prim "Word32_toWord64X": word -> LargeWord.word;
+	    val toInt = _prim "WordU32_toWord32": word -> int;
+	    val toIntX = _prim "WordS32_toWord32": word -> int;
+	    val toLarge = _prim "WordU32_toWord64": word -> LargeWord.word;
+	    val toLargeX = _prim "WordS32_toWord64": word -> LargeWord.word;
 	    val xorb = _prim "Word32_xorb": word * word -> word;
 	 end
       structure Word = Word32
@@ -1499,24 +1515,24 @@ structure Primitive =
 
 	    val + = _prim "Word64_add": word * word -> word;
 	    val andb = _prim "Word64_andb": word * word -> word;
-	    val ~>> = _prim "Word64_arshift": word * Word.word -> word;
-	    val div = _prim "Word64_div": word * word -> word;
-	    val fromInt = _prim "Int32_toWord64": int -> word;
+	    val ~>> = _prim "WordS64_rshift": word * Word.word -> word;
+	    val div = _prim "WordU64_quot": word * word -> word;
+	    val fromInt = _prim "WordS32_toWord64": int -> word;
 	    val fromLarge: LargeWord.word -> word = fn x => x
-	    val op >= = _prim "Word64_ge": word * word -> bool;
-	    val op > = _prim "Word64_gt" : word * word -> bool;
-	    val op <= = _prim "Word64_le": word * word -> bool;
+	    val op >= = _prim "WordU64_ge": word * word -> bool;
+	    val op > = _prim "WordU64_gt" : word * word -> bool;
+	    val op <= = _prim "WordU64_le": word * word -> bool;
 	    val << = _prim "Word64_lshift": word * Word.word -> word;
-	    val op < = _prim "Word64_lt" : word * word -> bool;
-	    val mod = _prim "Word64_mod": word * word -> word;
-	    val * = _prim "Word64_mul": word * word -> word;
+	    val op < = _prim "WordU64_lt" : word * word -> bool;
+	    val mod = _prim "WordU64_rem": word * word -> word;
+	    val * = _prim "WordU64_mul": word * word -> word;
 	    val ~ = _prim "Word64_neg": word -> word;
 	    val notb = _prim "Word64_notb": word -> word;
 	    val orb = _prim "Word64_orb": word * word -> word;
-	    val >> = _prim "Word64_rshift": word * Word.word -> word;
+	    val >> = _prim "WordU64_rshift": word * Word.word -> word;
 	    val - = _prim "Word64_sub": word * word -> word;
-	    val toInt = _prim "Word64_toInt32": word -> int;
-	    val toIntX = _prim "Word64_toInt32X": word -> int;
+	    val toInt = _prim "WordU64_toWord32": word -> int;
+	    val toIntX = _prim "WordU64_toWord32": word -> int;
 	    val toLarge: word -> LargeWord.word = fn x => x
 	    val toLargeX: word -> LargeWord.word = fn x => x
 	    val xorb = _prim "Word64_xorb": word * word -> word;
@@ -1526,224 +1542,224 @@ structure Primitive =
 	 struct
 	    type big = Word8.word
 	    type word = word2
-	    val fromBigUnsafe = _prim "Word8_toWord2": big -> word;
-	    val toBig = _prim "Word2_toWord8": word -> big;
+	    val fromBigUnsafe = _prim "WordU8_toWord2": big -> word;
+	    val toBig = _prim "WordU2_toWord8": word -> big;
 	    val wordSize = 2
 	 end
       structure Word3 =
 	 struct
 	    type big = Word8.word
 	    type word = word3
-	    val fromBigUnsafe = _prim "Word8_toWord3": big -> word;
-	    val toBig = _prim "Word3_toWord8": word -> big;
+	    val fromBigUnsafe = _prim "WordU8_toWord3": big -> word;
+	    val toBig = _prim "WordU3_toWord8": word -> big;
 	    val wordSize = 3
 	 end
       structure Word4 =
 	 struct
 	    type big = Word8.word
 	    type word = word4
-	    val fromBigUnsafe = _prim "Word8_toWord4": big -> word;
-	    val toBig = _prim "Word4_toWord8": word -> big;
+	    val fromBigUnsafe = _prim "WordU8_toWord4": big -> word;
+	    val toBig = _prim "WordU4_toWord8": word -> big;
 	    val wordSize = 4
 	 end
       structure Word5 =
 	 struct
 	    type big = Word8.word
 	    type word = word5
-	    val fromBigUnsafe = _prim "Word8_toWord5": big -> word;
-	    val toBig = _prim "Word5_toWord8": word -> big;
+	    val fromBigUnsafe = _prim "WordU8_toWord5": big -> word;
+	    val toBig = _prim "WordU5_toWord8": word -> big;
 	    val wordSize = 5
 	 end
       structure Word6 =
 	 struct
 	    type big = Word8.word
 	    type word = word6
-	    val fromBigUnsafe = _prim "Word8_toWord6": big -> word;
-	    val toBig = _prim "Word6_toWord8": word -> big;
+	    val fromBigUnsafe = _prim "WordU8_toWord6": big -> word;
+	    val toBig = _prim "WordU6_toWord8": word -> big;
 	    val wordSize = 6
 	 end
       structure Word7 =
 	 struct
 	    type big = Word8.word
 	    type word = word7
-	    val fromBigUnsafe = _prim "Word8_toWord7": big -> word;
-	    val toBig = _prim "Word7_toWord8": word -> big;
+	    val fromBigUnsafe = _prim "WordU8_toWord7": big -> word;
+	    val toBig = _prim "WordU7_toWord8": word -> big;
 	    val wordSize = 7
 	 end
       structure Word9 =
 	 struct
 	    type big = Word16.word
 	    type word = word9
-	    val fromBigUnsafe = _prim "Word16_toWord9": big -> word;
-	    val toBig = _prim "Word9_toWord16": word -> big;
+	    val fromBigUnsafe = _prim "WordU16_toWord9": big -> word;
+	    val toBig = _prim "WordU9_toWord16": word -> big;
 	    val wordSize = 9
 	 end
       structure Word10 =
 	 struct
 	    type big = Word16.word
 	    type word = word10
-	    val fromBigUnsafe = _prim "Word16_toWord10": big -> word;
-	    val toBig = _prim "Word10_toWord16": word -> big;
+	    val fromBigUnsafe = _prim "WordU16_toWord10": big -> word;
+	    val toBig = _prim "WordU10_toWord16": word -> big;
 	    val wordSize = 10
 	 end
       structure Word11 =
 	 struct
 	    type big = Word16.word
 	    type word = word11
-	    val fromBigUnsafe = _prim "Word16_toWord11": big -> word;
-	    val toBig = _prim "Word11_toWord16": word -> big;
+	    val fromBigUnsafe = _prim "WordU16_toWord11": big -> word;
+	    val toBig = _prim "WordU11_toWord16": word -> big;
 	    val wordSize = 11
 	 end
       structure Word12 =
 	 struct
 	    type big = Word16.word
 	    type word = word12
-	    val fromBigUnsafe = _prim "Word16_toWord12": big -> word;
-	    val toBig = _prim "Word12_toWord16": word -> big;
+	    val fromBigUnsafe = _prim "WordU16_toWord12": big -> word;
+	    val toBig = _prim "WordU12_toWord16": word -> big;
 	    val wordSize = 12
 	 end
       structure Word13 =
 	 struct
 	    type big = Word16.word
 	    type word = word13
-	    val fromBigUnsafe = _prim "Word16_toWord13": big -> word;
-	    val toBig = _prim "Word13_toWord16": word -> big;
+	    val fromBigUnsafe = _prim "WordU16_toWord13": big -> word;
+	    val toBig = _prim "WordU13_toWord16": word -> big;
 	    val wordSize = 13
 	 end
       structure Word14 =
 	 struct
 	    type big = Word16.word
 	    type word = word14
-	    val fromBigUnsafe = _prim "Word16_toWord14": big -> word;
-	    val toBig = _prim "Word14_toWord16": word -> big;
+	    val fromBigUnsafe = _prim "WordU16_toWord14": big -> word;
+	    val toBig = _prim "WordU14_toWord16": word -> big;
 	    val wordSize = 14
 	 end
       structure Word15 =
 	 struct
 	    type big = Word16.word
 	    type word = word15
-	    val fromBigUnsafe = _prim "Word16_toWord15": big -> word;
-	    val toBig = _prim "Word15_toWord16": word -> big;
+	    val fromBigUnsafe = _prim "WordU16_toWord15": big -> word;
+	    val toBig = _prim "WordU15_toWord16": word -> big;
 	    val wordSize = 15
 	 end
       structure Word17 =
 	 struct
 	    type big = Word32.word
 	    type word = word17
-	    val fromBigUnsafe = _prim "Word32_toWord17": big -> word;
-	    val toBig = _prim "Word17_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord17": big -> word;
+	    val toBig = _prim "WordU17_toWord32": word -> big;
 	    val wordSize = 17
 	 end
       structure Word18 =
 	 struct
 	    type big = Word32.word
 	    type word = word18
-	    val fromBigUnsafe = _prim "Word32_toWord18": big -> word;
-	    val toBig = _prim "Word18_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord18": big -> word;
+	    val toBig = _prim "WordU18_toWord32": word -> big;
 	    val wordSize = 18
 	 end
       structure Word19 =
 	 struct
 	    type big = Word32.word
 	    type word = word19
-	    val fromBigUnsafe = _prim "Word32_toWord19": big -> word;
-	    val toBig = _prim "Word19_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord19": big -> word;
+	    val toBig = _prim "WordU19_toWord32": word -> big;
 	    val wordSize = 19
 	 end
       structure Word20 =
 	 struct
 	    type big = Word32.word
 	    type word = word20
-	    val fromBigUnsafe = _prim "Word32_toWord20": big -> word;
-	    val toBig = _prim "Word20_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord20": big -> word;
+	    val toBig = _prim "WordU20_toWord32": word -> big;
 	    val wordSize = 20
 	 end
       structure Word21 =
 	 struct
 	    type big = Word32.word
 	    type word = word21
-	    val fromBigUnsafe = _prim "Word32_toWord21": big -> word;
-	    val toBig = _prim "Word21_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord21": big -> word;
+	    val toBig = _prim "WordU21_toWord32": word -> big;
 	    val wordSize = 21
 	 end
       structure Word22 =
 	 struct
 	    type big = Word32.word
 	    type word = word22
-	    val fromBigUnsafe = _prim "Word32_toWord22": big -> word;
-	    val toBig = _prim "Word22_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord22": big -> word;
+	    val toBig = _prim "WordU22_toWord32": word -> big;
 	    val wordSize = 22
 	 end
       structure Word23 =
 	 struct
 	    type big = Word32.word
 	    type word = word23
-	    val fromBigUnsafe = _prim "Word32_toWord23": big -> word;
-	    val toBig = _prim "Word23_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord23": big -> word;
+	    val toBig = _prim "WordU23_toWord32": word -> big;
 	    val wordSize = 23
 	 end
       structure Word24 =
 	 struct
 	    type big = Word32.word
 	    type word = word24
-	    val fromBigUnsafe = _prim "Word32_toWord24": big -> word;
-	    val toBig = _prim "Word24_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord24": big -> word;
+	    val toBig = _prim "WordU24_toWord32": word -> big;
 	    val wordSize = 24
 	 end
       structure Word25 =
 	 struct
 	    type big = Word32.word
 	    type word = word25
-	    val fromBigUnsafe = _prim "Word32_toWord25": big -> word;
-	    val toBig = _prim "Word25_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord25": big -> word;
+	    val toBig = _prim "WordU25_toWord32": word -> big;
 	    val wordSize = 25
 	 end
       structure Word26 =
 	 struct
 	    type big = Word32.word
 	    type word = word26
-	    val fromBigUnsafe = _prim "Word32_toWord26": big -> word;
-	    val toBig = _prim "Word26_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord26": big -> word;
+	    val toBig = _prim "WordU26_toWord32": word -> big;
 	    val wordSize = 26
 	 end
       structure Word27 =
 	 struct
 	    type big = Word32.word
 	    type word = word27
-	    val fromBigUnsafe = _prim "Word32_toWord27": big -> word;
-	    val toBig = _prim "Word27_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord27": big -> word;
+	    val toBig = _prim "WordU27_toWord32": word -> big;
 	    val wordSize = 27
 	 end
       structure Word28 =
 	 struct
 	    type big = Word32.word
 	    type word = word28
-	    val fromBigUnsafe = _prim "Word32_toWord28": big -> word;
-	    val toBig = _prim "Word28_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord28": big -> word;
+	    val toBig = _prim "WordU28_toWord32": word -> big;
 	    val wordSize = 28
 	 end
       structure Word29 =
 	 struct
 	    type big = Word32.word
 	    type word = word29
-	    val fromBigUnsafe = _prim "Word32_toWord29": big -> word;
-	    val toBig = _prim "Word29_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord29": big -> word;
+	    val toBig = _prim "WordU29_toWord32": word -> big;
 	    val wordSize = 29
 	 end
       structure Word30 =
 	 struct
 	    type big = Word32.word
 	    type word = word30
-	    val fromBigUnsafe = _prim "Word32_toWord30": big -> word;
-	    val toBig = _prim "Word30_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord30": big -> word;
+	    val toBig = _prim "WordU30_toWord32": word -> big;
 	    val wordSize = 30
 	 end
       structure Word31 =
 	 struct
 	    type big = Word32.word
 	    type word = word31
-	    val fromBigUnsafe = _prim "Word32_toWord31": big -> word;
-	    val toBig = _prim "Word31_toWord32": word -> big;
+	    val fromBigUnsafe = _prim "WordU32_toWord31": big -> word;
+	    val toBig = _prim "WordU31_toWord32": word -> big;
 	    val wordSize = 31
 	 end
 

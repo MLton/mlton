@@ -27,7 +27,6 @@ local
 in
    val bool = nullary Tycon.bool
    val exn = nullary Tycon.exn
-   val int = IntSize.memoize (fn s => nullary (Tycon.int s))
    val intInf = nullary Tycon.intInf
    val preThread = nullary Tycon.preThread
    val real = RealSize.memoize (fn s => nullary (Tycon.real s))
@@ -35,7 +34,6 @@ in
    val word = WordSize.memoize (fn s => nullary (Tycon.word s))
 end
 
-val defaultInt = int IntSize.default
 val defaultReal = real RealSize.default
 val defaultWord = word WordSize.default
 

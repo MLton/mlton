@@ -246,7 +246,7 @@ structure Value =
 		     case Type.dest t of
 			Type.Array t =>
 			   let val elt as (_, e) = slot t
-			       val length = loop Type.defaultInt
+			       val length = loop Type.defaultWord
 			   in Exists.addHandler
 			      (e, fn () => Useful.makeUseful (deground length))
 			      ; Array {useful = useful (),
@@ -256,7 +256,7 @@ structure Value =
 		      | Type.Ref t => Ref {arg = slot t,
 					   useful = useful ()}
 		      | Type.Tuple ts => Tuple (Vector.map (ts, slot))
-		      | Type.Vector t => Vector {length = loop Type.defaultInt,
+		      | Type.Vector t => Vector {length = loop Type.defaultWord,
 						 elt = slot t}
 		      | Type.Weak t => Weak {arg = slot t,
 					     useful = useful ()}
@@ -565,7 +565,6 @@ fun useless (program: Program.t): Program.t =
 		  conApp = conApp,
 		  const = Value.const,
 		  filter = filter,
-		  filterInt = filterGround o #1,
 		  filterWord = filterGround o #1,
 		  fromType = Value.fromType,
 		  layout = Value.layout,
@@ -926,13 +925,6 @@ fun useless (program: Program.t): Program.t =
 	       end
 	  | Case {test, cases, default} => 
 	       let
-		  (* The test may be useless if there are no cases or default,
-		   * thus we must eliminate the case.
-		   *)
-		  fun doit v =
-		     case (Vector.length v, default) of
-			(0, NONE) => ([], Bug)
-		      | _ => ([], t)
 		  datatype z = datatype Cases.t
 	       in
 		  case cases of
@@ -962,8 +954,13 @@ fun useless (program: Program.t): Program.t =
 					 cases = Cases.Con cases,
 					 default = default})
 			       end)
-		   | Int (_, cs) => doit cs
-		   | Word (_, cs) => doit cs
+		   | Word (_, cs) =>
+			(* The test may be useless if there are no cases or
+			 * default, thus we must eliminate the case.
+			 *)
+			case (Vector.length cs, default) of
+			   (0, NONE) => ([], Bug)
+			 | _ => ([], t)
 	       end
 	  | Goto {dst, args} =>
 	       ([], Goto {dst = dst, args = keepUseful (args, label dst)})

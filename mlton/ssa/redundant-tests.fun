@@ -14,14 +14,18 @@ type int = Int.t
 
 structure Rel =
    struct
-      datatype t = EQ | LT | LE | NE
+      datatype t =
+	 EQ
+       | LT of {signed: bool}
+       | LE of {signed: bool}
+       | NE
 
       val equals: t * t -> bool = op =
 
       val toString =
 	 fn EQ => "="
-	  | LT => "<"
-	  | LE => "<="
+	  | LT _ => "<"
+	  | LE _ => "<="
 	  | NE => "<>"
 
       val layout = Layout.str o toString
@@ -67,14 +71,15 @@ structure Fact =
 	    val rel =
 	       case rel of
 		  EQ => NE
-		| LT => LE
-		| LE => LT
+		| LT s => LE s
+		| LE s => LT s
 		| NE => EQ
 	 in
 	    T {rel = rel, lhs = rhs, rhs = lhs}
 	 end
 
       datatype result = False | True | Unknown
+	 
       fun determine (facts: t list, f: t): result =
 	 if List.contains (facts, f, equals)
 	    then True
@@ -120,17 +125,12 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 	    datatype z = datatype Prim.Name.t
 	 in
 	    case Prim.name prim of
-	       Int_equal _ => doit EQ
-	     | Int_ge _ => doit' LE
-	     | Int_gt _ => doit' LT
-	     | Int_le _ => doit LE
-	     | Int_lt _ => doit LT
-	     | MLton_eq => doit EQ
+	       MLton_eq => doit EQ
 	     | Word_equal _ => doit EQ
-	     | Word_ge _ => doit' LE
-	     | Word_gt _ => doit' LT
-	     | Word_le _ => doit LE
-	     | Word_lt _ => doit LT
+	     | Word_ge (_, sg) => doit' (LE sg)
+	     | Word_gt (_, sg) => doit' (LT sg)
+	     | Word_le (_, sg) => doit (LE sg)
+	     | Word_lt (_, sg) => doit (LT sg)
 	     | _ => None
 	 end
       fun setConst (x, c) = setVarInfo (x, Const c)
@@ -158,15 +158,15 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 	 val statements = ref []
       in
 	 val one =
-	    IntSize.memoize
+	    WordSize.memoize
 	    (fn s =>
 	     let
 		val one = Var.newNoname ()
 		val () =
 		   List.push
 		   (statements,
-		    Statement.T {exp = Exp.Const (Const.int (IntX.one s)),
-				 ty = Type.int s,
+		    Statement.T {exp = Exp.Const (Const.word (WordX.one s)),
+				 ty = Type.word s,
 				 var = SOME one})
 	     in
 		one
@@ -373,7 +373,7 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 		       let
 			  fun simplify (prim: Type.t Prim.t,
 					x: Var.t,
-					s: IntSize.t) =
+					s: WordSize.t) =
 			     let
 				val res = Var.newNoname ()
 			     in
@@ -384,56 +384,62 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 				   {exp = PrimApp {args = Vector.new2 (x, one s),
 						   prim = prim,
 						   targs = Vector.new0 ()},
-				    ty = Type.int s,
+				    ty = Type.word s,
 				    var = SOME res})],
 				 Goto {args = Vector.new1 res,
 				       dst = success})
 			     end
-			  fun add1 (x: Var.t, s: IntSize.t) =
+			  fun add1 (x: Var.t, s: WordSize.t, sg) =
 			     if isFact (label, fn Fact.T {lhs, rel, rhs} =>
 					case (lhs, rel, rhs) of
-					   (Oper.Var x', Rel.LT, _) =>
+					   (Oper.Var x', Rel.LT sg', _) =>
 					      Var.equals (x, x')
-					 | (Oper.Var x', Rel.LE, Oper.Const c) =>
+					      andalso sg = sg'
+					 | (Oper.Var x', Rel.LE sg',
+					    Oper.Const c) =>
 					      Var.equals (x, x')
+					      andalso sg = sg'
 					      andalso
 					      (case c of
-						  Const.Int i =>
-						     IntX.<
-						     (i, IntX.max (IntX.size i))
+						  Const.Word w =>
+						     WordX.lt
+						     (w, WordX.max (s, sg), sg)
 						| _ => Error.bug "strange fact")
 					 | _ => false)
-				then simplify (Prim.intAdd s, x, s)
+				then simplify (Prim.wordAdd s, x, s)
 			     else noChange
-			  fun sub1 (x: Var.t, s: IntSize.t) =
+			  fun sub1 (x: Var.t, s: WordSize.t, sg) =
 			     if isFact (label, fn Fact.T {lhs, rel, rhs} =>
 					case (lhs, rel, rhs) of
-					   (_, Rel.LT, Oper.Var x') =>
+					   (_, Rel.LT sg', Oper.Var x') =>
 					      Var.equals (x, x')
-					 | (Oper.Const c, Rel.LE, Oper.Var x') =>
+					      andalso sg = sg'
+					 | (Oper.Const c, Rel.LE sg',
+					    Oper.Var x') =>
 					      Var.equals (x, x')
+					      andalso sg = sg'
 					      andalso
 					      (case c of
-						  Const.Int i =>
-						     IntX.>
-						     (i, IntX.min (IntX.size i))
+						  Const.Word w =>
+						     WordX.gt
+						     (w, WordX.min (s, sg), sg)
 						| _ => Error.bug "strange fact")
 					 | _ => false)
-				then simplify (Prim.intSub s, x, s)
+				then simplify (Prim.wordSub s, x, s)
 			     else noChange
-			  fun add (c: Const.t, x: Var.t, s: IntSize.t) =
+			  fun add (c: Const.t, x: Var.t, (s, sg as {signed})) =
 			     case c of
-				Const.Int i =>
-				   if IntX.isOne i
-				      then add1 (x, s)
-				   else if IntX.isNegOne i
-					   then sub1 (x, s)
+				Const.Word i =>
+				   if WordX.isOne i
+				      then add1 (x, s, sg)
+				   else if signed andalso WordX.isNegOne i
+					   then sub1 (x, s, sg)
 					else noChange
 			      | _ => Error.bug "add of strange const"
 			  datatype z = datatype Prim.Name.t
 		       in
 			  case Prim.name prim of
-			     Int_addCheck s =>
+			     Word_addCheck s =>
 				let
 				   val x1 = Vector.sub (args, 0)
 				   val x2 = Vector.sub (args, 1)
@@ -444,7 +450,7 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 					       Const c => add (c, x1, s)
 					     | _ => noChange)
 				end
-			   | Int_subCheck s =>
+			   | Word_subCheck (s, sg as {signed}) =>
 				let
 				   val x1 = Vector.sub (args, 0)
 				   val x2 = Vector.sub (args, 1)
@@ -452,12 +458,14 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 				   case varInfo x2 of
 				      Const c =>
 					 (case c of
-					     Const.Int i =>
-						if IntX.isNegOne i
-						   then add1 (x1, s)
-						else if IntX.isOne i
-							then sub1 (x1, s)
-						     else noChange
+					     Const.Word w =>
+						if WordX.isOne w
+						   then sub1 (x1, s, sg)
+						else
+						   if (signed
+						       andalso WordX.isNegOne w)
+						      then add1 (x1, s, sg)
+						   else noChange
 					   | _ =>
 						Error.bug "sub of strage const")
 				    | _ => noChange

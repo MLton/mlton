@@ -55,7 +55,7 @@ signature TYPE_ENV =
 	    val unresolvedWord: unit -> t
 	    val var: Tyvar.t -> t
 	 end
-      sharing type Type.intSize = IntSize.t
+(*      sharing type Type.intSize = IntSize.t *)
       sharing type Type.realSize = RealSize.t
       sharing type Type.wordSize = WordSize.t
       sharing type Type.tycon = Tycon.t

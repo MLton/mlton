@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -12,11 +12,9 @@ open S
 local
    open Const
 in
-   structure IntX = IntX
    structure RealX = RealX
    structure WordX = WordX
 end
-structure IntSize = IntX.IntSize
 structure RealSize = RealX.RealSize
 structure WordSize = WordX.WordSize
 
@@ -84,7 +82,7 @@ val gcFields =
    List.map (gcFields, fn s =>
 	     {name = s,
 	      value = concat ["offsetof (struct GC_state, ", s, ")"],
-	      ty = ConstType.Int})
+	      ty = ConstType.Word})
 
 fun build (constants, out) =
    let
@@ -109,7 +107,6 @@ fun build (constants, out) =
 	    val (format, value) =
 	       case ty of
 		  Bool => ("%s", concat [value, "? \"true\" : \"false\""])
-		| Int => ("%d", value)
 		| Real => ("%.20f", value)
 		| String => ("%s", concat ["\"", escape value, "\""])
 		| Word => ("%u", value)
@@ -152,17 +149,14 @@ fun load (ins: In.t): string * ConstType.t -> Const.t =
  	       (table, String.hash name,
  		fn {name = name', ...} => name = name',
  		fn () => Error.bug (concat ["constant not found: ", name]))
-	    fun int i = Const.int (IntX.make (i, IntSize.default))
 	 in
 	    case ty of
 	       Bool =>
 		  (case Bool.fromString value of
 		      NONE => Error.bug "strange Bool constant"
-		    | SOME b => int (if b then 1 else 0))
-	     | Int => 
-		  (case IntInf.fromString value of
-		      NONE => Error.bug "strange Int constant"
-		    | SOME i => int i)
+		    | SOME b =>
+			 Const.Word (WordX.fromIntInf
+				     (if b then 1 else 0, WordSize.default)))
 	     | Real =>
 		  (case RealX.make (value, RealSize.default) of
 		      NONE => Error.bug "strange Real constant"

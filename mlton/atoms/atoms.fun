@@ -22,7 +22,6 @@ structure Atoms =
 			       structure WordSize = WordSize)
       structure Con = Con ()
       structure CType = CType ()
-      structure IntX = IntX (structure IntSize = IntSize)
       structure RealX = RealX (structure RealSize = RealSize)
       structure WordX = WordX (structure WordSize = WordSize)
       structure Func =
@@ -35,15 +34,13 @@ structure Atoms =
 	    open Func
 	    fun newNoname () = newString "L"
 	 end
-      structure Const = Const (structure IntX = IntX
-			       structure RealX = RealX
+      structure Const = Const (structure RealX = RealX
 			       structure WordX = WordX)
       structure CFunction = CFunction ()
       structure Prim = Prim (structure CFunction = CFunction
 			     structure CType = CType
 			     structure Con = Con
 			     structure Const = Const
-			     structure IntSize = IntSize
 			     structure RealSize = RealSize
 			     structure WordSize = WordSize)
       structure Ffi = Ffi (structure CFunction = CFunction

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -44,7 +44,6 @@ signature XML_TREE =
 	 sig
 	    datatype 'a t =
 	       Con of (Pat.t * 'a) vector
-	     | Int of IntSize.t * (IntX.t * 'a) vector
 	     | Word of WordSize.t * (WordX.t * 'a) vector
 
 	    val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b

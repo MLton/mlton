@@ -195,229 +195,6 @@ extern struct GC_state gcState;
 	} while (0)
 
 /* ------------------------------------------------- */
-/*                        Int                        */
-/* ------------------------------------------------- */
-
-/* The default is to use INT_TEST. */
-#if (! defined (INT_NO_CHECK) && ! defined (INT_TEST))
-#define INT_TEST
-#endif
-
-#if (defined (INT_NO_CHECK))
-
-#define Int_addCheck(dst, n1, n2, l) dst = n1 + n2
-#define Int_mulCheck(dst, n1, n2, l) dst = n1 * n2
-#define Int_negCheck(dst, n, l) dst = -n
-#define Int_subCheck(dst, n1, n2, l) dst = n1 - n2
-#define Word32_addCheck(dst, n1, n2, l) dst = n1 + n2
-#define Word32_mulCheck(dst, n1, n2, l) dst = n1 * n2
-#define Int_addCheckCX Int_addCheck
-#define Int_addCheckXC Int_addCheck
-#define Int_subCheckCX Int_subCheck
-#define Int_subCheckXC Int_subCheck
-#define Word32_addCheckCX Word32_addCheck
-#define Word32_addCheckXC Word32_addCheck
-
-#endif
-
-#if (defined (INT_TEST))
-
-#define Int8_max (Int8)0x7F
-#define	Int8_min (Int8)0x80
-#define Int16_max (Int16)0x7FFF
-#define Int16_min (Int16)0x8000
-#define Int32_max (Int32)0x7FFFFFFF
-#define Int32_min (Int32)0x80000000
-#define Int64_max (Int64)0x7FFFFFFFFFFFFFFF
-#define Int64_min (Int64)0x8000000000000000
-#define Word8_max (Word8)0xFF
-#define Word16_max (Word16)0xFFFF
-#define Word32_max (Word32)0xFFFFFFFF
-#define Word64_max (Word64)0xFFFFFFFFFFFFFFFF
-
-#define Int_addCheckXC(size, dst, xW, cW, l)		\
-	do {						\
-		Int##size x = xW;			\
-		Int##size c = cW;			\
-		if (c >= 0) {				\
-			if (x > Int##size##_max - c)	\
-				goto l;			\
-		} else if (x < Int##size##_min - c)	\
-				goto l;			\
-		dst = x + c;				\
-	} while (0)
-#define Int8_addCheckXC(dst, x, c, l) Int_addCheckXC(8, dst, x, c, l)
-#define Int16_addCheckXC(dst, x, c, l) Int_addCheckXC(16, dst, x, c, l)
-#define Int32_addCheckXC(dst, x, c, l) Int_addCheckXC(32, dst, x, c, l)
-#define Int64_addCheckXC(dst, x, c, l) Int_addCheckXC(64, dst, x, c, l)
-
-#define Int8_addCheckCX(dst, c, x, l) Int8_addCheckXC(dst, x, c, l)
-#define Int16_addCheckCX(dst, c, x, l) Int16_addCheckXC(dst, x, c, l)
-#define Int32_addCheckCX(dst, c, x, l) Int32_addCheckXC(dst, x, c, l)
-#define Int64_addCheckCX(dst, c, x, l) Int64_addCheckXC(dst, x, c, l)
-
-#define Int8_addCheck Int8_addCheckXC
-#define Int16_addCheck Int16_addCheckXC
-#define Int32_addCheck Int32_addCheckXC
-#define Int64_addCheck Int64_addCheckXC
-
-#define Int_negCheck(size, dst, nW, l)		\
-	do {					\
-		Int##size n = nW;		\
-		if (n == Int##size##_min)	\
-			goto l;			\
-		dst = -n;			\
-	} while (0)
-
-#define Int8_negCheck(dst, n, l) Int_negCheck(8, dst, n, l)
-#define Int16_negCheck(dst, n, l) Int_negCheck(16, dst, n, l)
-#define Int32_negCheck(dst, n, l) Int_negCheck(32, dst, n, l)
-#define Int64_negCheck(dst, n, l) Int_negCheck(64, dst, n, l)
-
-#define Int_subCheckCX(size, dst, cW, xW, l)		\
-	do {						\
-		Int##size c = cW;			\
-		Int##size x = xW;			\
- 		if (c >= 0) {				\
-			if (x < c - Int##size##_max)	\
-				goto l;			\
-		} else if (x > c - Int##size##_min)	\
-			goto l;				\
-		dst = c - x;				\
-	} while (0)
-#define Int8_subCheckCX(dst, c, x, l) Int_subCheckCX(8, dst, c, x, l)
-#define Int16_subCheckCX(dst, c, x, l) Int_subCheckCX(16, dst, c, x, l)
-#define Int32_subCheckCX(dst, c, x, l) Int_subCheckCX(32, dst, c, x, l)
-#define Int64_subCheckCX(dst, c, x, l) Int_subCheckCX(64, dst, c, x, l)
-
-#define Int_subCheckXC(size, dst, xW, cW, l)		\
-	do {						\
-		Int##size c = cW;			\
-		Int##size x = xW;			\
-		if (c <= 0) {				\
-			if (x > Int##size##_max + c)	\
-				goto l;			\
-		} else if (x < Int##size##_min + c)	\
-			goto l;				\
-		dst = x - c;				\
- 	} while (0)
-#define Int8_subCheckXC(dst, c, x, l) Int_subCheckXC(8, dst, c, x, l)
-#define Int16_subCheckXC(dst, c, x, l) Int_subCheckXC(16, dst, c, x, l)
-#define Int32_subCheckXC(dst, c, x, l) Int_subCheckXC(32, dst, c, x, l)
-#define Int64_subCheckXC(dst, c, x, l) Int_subCheckXC(64, dst, c, x, l)
-
-#define Int8_subCheck Int8_subCheckXC
-#define Int16_subCheck Int16_subCheckXC
-#define Int32_subCheck Int32_subCheckXC
-#define Int64_subCheck Int64_subCheckXC
-
-#define Word_addCheckXC(size, dst, x, c, l)	\
-	do {					\
-		if (x > Word##size##_max - c)	\
-			goto l;			\
-		dst = x + c;			\
-	} while (0)
-#define Word8_addCheckXC(dst, x, c, l) Word_addCheckXC(8, dst, x, c, l)
-#define Word16_addCheckXC(dst, x, c, l) Word_addCheckXC(16, dst, x, c, l)
-#define Word32_addCheckXC(dst, x, c, l) Word_addCheckXC(32, dst, x, c, l)
-#define Word64_addCheckXC(dst, x, c, l) Word_addCheckXC(64, dst, x, c, l)
-#define Word8_addCheckCX(dst, c, x, l) Word_addCheckXC(8, dst, x, c, l)
-#define Word16_addCheckCX(dst, c, x, l) Word_addCheckXC(16, dst, x, c, l)
-#define Word32_addCheckCX(dst, c, x, l) Word_addCheckXC(32, dst, x, c, l)
-#define Word64_addCheckCX(dst, c, x, l) Word_addCheckXC(64, dst, x, c, l)
-
-#define Word8_addCheck Word8_addCheckXC
-#define Word16_addCheck Word16_addCheckXC
-#define Word32_addCheck Word32_addCheckXC
-#define Word64_addCheck Word64_addCheckXC
-
-#define mulOverflow(kind, small, large)						\
-	static inline kind##small kind##small##_##mulOverflow			\
-			(kind##small x1, kind##small x2, Bool *overflow) {	\
-		kind##large tmp;						\
-		kind##small res;						\
-										\
-		tmp = (kind##large)x1 * x2;					\
-		res = tmp;							\
-		*overflow = (tmp != res);					\
-		return res;							\
-	}
-mulOverflow(Int, 8, 16)
-mulOverflow(Int, 16, 32)
-mulOverflow(Int, 32, 64)
-mulOverflow(Word, 8, 16)
-mulOverflow(Word, 16, 32)
-mulOverflow(Word, 32, 64)
-#undef mulOverflow
-
-#define check(dst, n1, n2, l, f);						\
-	do {									\
-		int overflow;							\
-		dst = f (n1, n2, &overflow);					\
-		if (DEBUG_CCODEGEN)						\
-			fprintf (stderr, "%s:%d: " #f "(%d, %d) = %d\n",	\
-					__FILE__, __LINE__, n1, n2, dst);	\
-		if (overflow) {							\
-			if (DEBUG_CCODEGEN)					\
-				fprintf (stderr, "%s:%d: overflow\n",		\
-						__FILE__, __LINE__);		\
-			goto l;							\
-		}								\
-	} while (0)
-
-#define Int8_mulCheck(dst, n1, n2, l)			\
-	check (dst, n1, n2, l, Int8_mulOverflow)
-#define Int16_mulCheck(dst, n1, n2, l)			\
-	check (dst, n1, n2, l, Int16_mulOverflow)
-#define Int32_mulCheck(dst, n1, n2, l)			\
-	check (dst, n1, n2, l, Int32_mulOverflow)
-//#define Int64_mulCheck(dst, n1, n2, l)			\
-//	fprintf (stderr, "FIXME: Int64_mulCheck\n");
-
-#define Word8_mulCheck(dst, n1, n2, l)			\
-	check (dst, n1, n2, l, Word8_mulOverflow)
-#define Word16_mulCheck(dst, n1, n2, l)			\
-	check (dst, n1, n2, l, Word16_mulOverflow)
-#define Word32_mulCheck(dst, n1, n2, l)			\
-	check (dst, n1, n2, l, Word32_mulOverflow)
-//#define Word64_mulCheck(dst, n1, n2, l)			\
-//	fprintf (stderr, "FIXME: Word64_mulCheck\n");
-
-#endif /* INT_TEST */
-
-#define intBinary(name, op, size)			\
-	static inline Int##size Int##size##_##name 	\
-			(Int##size i1, Int##size i2) {	\
-		return i1 op i2;			\
-	}
-#define intAllBinary(name, op)			\
-	intBinary(name,op,8)			\
-	intBinary(name,op,16)			\
-	intBinary(name,op,32)			\
-	intBinary(name,op,64)
-intAllBinary (mul, *)
-#undef intBinary
-#undef intAllBinary
-
-#define intBinaryCompare(name, op, size) 		\
-	static inline Bool Int##size##_##name 		\
-			(Int##size i1, Int##size i2) {	\
-		return i1 op i2;			\
-	}
-#define intAllBinaryCompare(name, op)		\
-	intBinaryCompare(name,op,8)		\
-	intBinaryCompare(name,op,16)		\
-	intBinaryCompare(name,op,32)		\
-	intBinaryCompare(name,op,64)
-intAllBinaryCompare (ge, >=)
-intAllBinaryCompare (gt, >)
-intAllBinaryCompare (le, <=)
-intAllBinaryCompare (lt, <)
-#undef intBinaryCompare
-#undef intAllBinaryCompare
-
-
-/* ------------------------------------------------- */
 /*                       Real                        */
 /* ------------------------------------------------- */
 
@@ -551,10 +328,15 @@ static inline void Real64_store (Real64 *dp, Real64 d) {
 			(Word##size w1, Word##size w2) {	\
 		return w1 op w2;				\
 	}
-#define wordCmp(size, name, op)					\
-	static inline Bool Word##size##_##name 			\
-			(Word##size w1, Word##size w2) {	\
-		return w1 op w2;				\
+#define wordCmp(size, name, op)							\
+	static inline Bool Word##size##_##name					\
+			(Word##size w1, Word##size w2) {			\
+		Bool res = w1 op w2;						\
+		if (DEBUG_CCODEGEN)						\
+			fprintf (stderr, "%s = 0x%08x " #op " 0x%08x\n",	\
+					res ? "true": "false",			\
+					w1, w2);				\
+		return w1 op w2;						\
 	}
 #define wordShift(size, name, op)			\
 	static inline Word##size Word##size##_##name 	\
@@ -568,26 +350,31 @@ static inline void Real64_store (Real64 *dp, Real64 d) {
 #define wordOps(size)								\
 	wordBinary (size, add, +)						\
 	wordBinary (size, andb, &)						\
-	wordBinary (size, div, /)						\
-	wordBinary (size, mod, %)						\
-	wordBinary (size, mul, *)						\
+	wordBinary (S##size, mul, *)						\
+	wordBinary (U##size, mul, *)						\
 	wordBinary (size, orb, |)						\
+	wordBinary (U##size, quot, /)						\
+	wordBinary (U##size, rem, %)						\
 	wordBinary (size, sub, -)						\
 	wordBinary (size, xorb, ^)						\
 	wordCmp (size, equal, ==)						\
-	wordCmp (size, ge, >=)							\
-	wordCmp (size, gt, >)							\
-	wordCmp (size, le, <=)							\
-	wordCmp (size, lt, <)							\
+	wordCmp (S##size, ge, >=)						\
+	wordCmp (U##size, ge, >=)						\
+	wordCmp (S##size, gt, >)						\
+	wordCmp (U##size, gt, >)						\
+	wordCmp (S##size, le, <=)						\
+	wordCmp (U##size, le, <=)						\
+	wordCmp (S##size, lt, <)						\
+	wordCmp (U##size, lt, <)						\
 	wordShift (size, lshift, <<)						\
-	wordShift (size, rshift, >>)						\
+	wordShift (U##size, rshift, >>)						\
 	wordUnary (size, neg, -)						\
 	wordUnary (size, notb, ~)						\
-	/* Word_arshift isn't ANSI C, because ANSI doesn't guarantee sign	\
+	/* WordS_rshift isn't ANSI C, because ANSI doesn't guarantee sign	\
          * extension.  We use it anyway cause it always seems to work.		\
 	 */									\
-	static inline Word##size Word##size##_arshift (Word##size w, Word s) {	\
-		return (Int##size)w >> s;					\
+	static inline Word##size WordS##size##_rshift (WordS##size w, Word s) {	\
+		return w >> s;							\
 	}									\
 	static inline Word##size Word##size##_rol (Word##size w1, Word w2) {	\
 		return (w1 >> (size - w2)) | (w1 << w2);			\
@@ -605,46 +392,190 @@ wordOps(64)
 	static inline t f##_to##t (f x) {	\
 		return (t)x;			\
 	}
-coerce (Int16, Real32)
-coerce (Int16, Real64)
-coerce (Int32, Real32)
-coerce (Int32, Real64)
-coerce (Int8, Real32)
-coerce (Int8, Real64)
-coerce (Real32, Int16)
-coerce (Real32, Int32)
-coerce (Real32, Int8)
-coerce (Real32, Real32)
 coerce (Real32, Real64)
-coerce (Real64, Int16)
-coerce (Real64, Int32)
-coerce (Real64, Int8)
+coerce (Real32, WordS32)
 coerce (Real64, Real32)
-coerce (Real64, Real64)
-coerce (Word16, Word32)
-coerce (Word16, Word64)
-coerce (Word16, Word8)
-coerce (Word32, Word16)
-coerce (Word32, Word64)
-coerce (Word32, Word8)
-coerce (Word64, Word16)
-coerce (Word64, Word32)
-coerce (Word64, Word8)
-coerce (Word8, Word16)
-coerce (Word8, Word32)
-coerce (Word8, Word64)
+coerce (Real64, WordS32)
+coerce (WordS16, Real32)
+coerce (WordS16, Real64)
+coerce (WordS16, Word32)
+coerce (WordS16, Word64)
+coerce (WordS32, Real32)
+coerce (WordS32, Real64)
+coerce (WordS32, Word64)
+coerce (WordS8, Real32)
+coerce (WordS8, Real64)
+coerce (WordS8, Word16)
+coerce (WordS8, Word32)
+coerce (WordS8, Word64)
+coerce (WordU16, Word32)
+coerce (WordU16, Word64)
+coerce (WordU16, Word8)
+coerce (WordU32, Word16)
+coerce (WordU32, Word64)
+coerce (WordU32, Word8)
+coerce (WordU64, Word16)
+coerce (WordU64, Word32)
+coerce (WordU64, Word8)
+coerce (WordU8, Word16)
+coerce (WordU8, Word32)
+coerce (WordU8, Word64)
 #undef coerce
 
-#define coerceX(size, t)					\
-	static inline t Word##size##_to##t##X (Word##size x) {	\
-		return (t)(Int##size)x;				\
+#define WordS8_max (WordS8)0x7F
+#define	WordS8_min (WordS8)0x80
+#define WordS16_max (WordS16)0x7FFF
+#define WordS16_min (WordS16)0x8000
+#define WordS32_max (WordS32)0x7FFFFFFF
+#define WordS32_min (WordS32)0x80000000
+#define WordS64_max (WordS64)0x7FFFFFFFFFFFFFFF
+#define WordS64_min (WordS64)0x8000000000000000
+#define Word8_max (Word8)0xFF
+#define Word16_max (Word16)0xFFFF
+#define Word32_max (Word32)0xFFFFFFFF
+#define Word64_max (Word64)0xFFFFFFFFFFFFFFFF
+
+#define WordS_addCheckXC(size, dst, xW, cW, l)		\
+	do {						\
+		WordS##size x = xW;			\
+		WordS##size c = cW;			\
+		if (c >= 0) {				\
+			if (x > WordS##size##_max - c)	\
+				goto l;			\
+		} else if (x < WordS##size##_min - c)	\
+				goto l;			\
+		dst = x + c;				\
+	} while (0)
+#define WordS8_addCheckXC(dst, x, c, l) WordS_addCheckXC(8, dst, x, c, l)
+#define WordS16_addCheckXC(dst, x, c, l) WordS_addCheckXC(16, dst, x, c, l)
+#define WordS32_addCheckXC(dst, x, c, l) WordS_addCheckXC(32, dst, x, c, l)
+#define WordS64_addCheckXC(dst, x, c, l) WordS_addCheckXC(64, dst, x, c, l)
+
+#define WordS8_addCheckCX(dst, c, x, l) WordS8_addCheckXC(dst, x, c, l)
+#define WordS16_addCheckCX(dst, c, x, l) WordS16_addCheckXC(dst, x, c, l)
+#define WordS32_addCheckCX(dst, c, x, l) WordS32_addCheckXC(dst, x, c, l)
+#define WordS64_addCheckCX(dst, c, x, l) WordS64_addCheckXC(dst, x, c, l)
+
+#define WordS8_addCheck WordS8_addCheckXC
+#define WordS16_addCheck WordS16_addCheckXC
+#define WordS32_addCheck WordS32_addCheckXC
+#define WordS64_addCheck WordS64_addCheckXC
+
+#define WordS_negCheck(size, dst, nW, l)	\
+	do {					\
+		WordS##size n = nW;		\
+		if (n == WordS##size##_min)	\
+			goto l;			\
+		dst = -n;			\
+	} while (0)
+
+#define Word8_negCheck(dst, n, l) WordS_negCheck(8, dst, n, l)
+#define Word16_negCheck(dst, n, l) WordS_negCheck(16, dst, n, l)
+#define Word32_negCheck(dst, n, l) WordS_negCheck(32, dst, n, l)
+#define Word64_negCheck(dst, n, l) WordS_negCheck(64, dst, n, l)
+
+#define WordS_subCheckCX(size, dst, cW, xW, l)		\
+	do {						\
+		WordS##size c = cW;			\
+		WordS##size x = xW;			\
+ 		if (c >= 0) {				\
+			if (x < c - WordS##size##_max)	\
+				goto l;			\
+		} else if (x > c - WordS##size##_min)	\
+			goto l;				\
+		dst = c - x;				\
+	} while (0)
+#define WordS8_subCheckCX(dst, c, x, l) WordS_subCheckCX(8, dst, c, x, l)
+#define WordS16_subCheckCX(dst, c, x, l) WordS_subCheckCX(16, dst, c, x, l)
+#define WordS32_subCheckCX(dst, c, x, l) WordS_subCheckCX(32, dst, c, x, l)
+#define WordS64_subCheckCX(dst, c, x, l) WordS_subCheckCX(64, dst, c, x, l)
+
+#define WordS_subCheckXC(size, dst, xW, cW, l)		\
+	do {						\
+		WordS##size c = cW;			\
+		WordS##size x = xW;			\
+		if (c <= 0) {				\
+			if (x > WordS##size##_max + c)	\
+				goto l;			\
+		} else if (x < WordS##size##_min + c)	\
+			goto l;				\
+		dst = x - c;				\
+ 	} while (0)
+#define WordS8_subCheckXC(dst, c, x, l) WordS_subCheckXC(8, dst, c, x, l)
+#define WordS16_subCheckXC(dst, c, x, l) WordS_subCheckXC(16, dst, c, x, l)
+#define WordS32_subCheckXC(dst, c, x, l) WordS_subCheckXC(32, dst, c, x, l)
+#define WordS64_subCheckXC(dst, c, x, l) WordS_subCheckXC(64, dst, c, x, l)
+
+#define WordS8_subCheck WordS8_subCheckXC
+#define WordS16_subCheck WordS16_subCheckXC
+#define WordS32_subCheck WordS32_subCheckXC
+#define WordS64_subCheck WordS64_subCheckXC
+
+#define Word_addCheckXC(size, dst, x, c, l)	\
+	do {					\
+		if (x > Word##size##_max - c)	\
+			goto l;			\
+		dst = x + c;			\
+	} while (0)
+#define WordU8_addCheckXC(dst, x, c, l) Word_addCheckXC(8, dst, x, c, l)
+#define WordU16_addCheckXC(dst, x, c, l) Word_addCheckXC(16, dst, x, c, l)
+#define WordU32_addCheckXC(dst, x, c, l) Word_addCheckXC(32, dst, x, c, l)
+#define WordU64_addCheckXC(dst, x, c, l) Word_addCheckXC(64, dst, x, c, l)
+#define WordU8_addCheckCX(dst, c, x, l) Word_addCheckXC(8, dst, x, c, l)
+#define WordU16_addCheckCX(dst, c, x, l) Word_addCheckXC(16, dst, x, c, l)
+#define WordU32_addCheckCX(dst, c, x, l) Word_addCheckXC(32, dst, x, c, l)
+#define WordU64_addCheckCX(dst, c, x, l) Word_addCheckXC(64, dst, x, c, l)
+
+#define WordU8_addCheck WordU8_addCheckXC
+#define WordU16_addCheck WordU16_addCheckXC
+#define WordU32_addCheck WordU32_addCheckXC
+#define WordU64_addCheck WordU64_addCheckXC
+
+#define mulOverflow(small, large)						\
+	static inline Word##small Word##small##_##mulOverflow			\
+			(Word##small x1, Word##small x2, Bool *overflow) {	\
+		Word##large tmp;						\
+		Word##small res;						\
+										\
+		tmp = (Word##large)x1 * x2;					\
+		res = tmp;							\
+		*overflow = (tmp != res);					\
+		return res;							\
 	}
-coerceX (32, Word64)
-coerceX (16, Word64)
-coerceX (16, Word32)
-coerceX (8, Word64)
-coerceX (8, Word32)
-coerceX (8, Word16)
-#undef coerceX
+mulOverflow(S8, S16)
+mulOverflow(S16, S32)
+mulOverflow(S32, S64)
+mulOverflow(U8, U16)
+mulOverflow(U16, U32)
+mulOverflow(U32, U64)
+#undef mulOverflow
+
+#define check(dst, n1, n2, l, f);						\
+	do {									\
+		int overflow;							\
+		dst = f (n1, n2, &overflow);					\
+		if (DEBUG_CCODEGEN)						\
+			fprintf (stderr, "%s:%d: " #f "(%d, %d) = %d\n",	\
+					__FILE__, __LINE__, n1, n2, dst);	\
+		if (overflow) {							\
+			if (DEBUG_CCODEGEN)					\
+				fprintf (stderr, "%s:%d: overflow\n",		\
+						__FILE__, __LINE__);		\
+			goto l;							\
+		}								\
+	} while (0)
+
+#define WordS8_mulCheck(dst, n1, n2, l)			\
+	check (dst, n1, n2, l, WordS8_mulOverflow)
+#define WordS16_mulCheck(dst, n1, n2, l)		\
+	check (dst, n1, n2, l, WordS16_mulOverflow)
+#define WordS32_mulCheck(dst, n1, n2, l)		\
+	check (dst, n1, n2, l, WordS32_mulOverflow)
+#define WordU8_mulCheck(dst, n1, n2, l)			\
+	check (dst, n1, n2, l, WordU8_mulOverflow)
+#define WordU16_mulCheck(dst, n1, n2, l)		\
+	check (dst, n1, n2, l, WordU16_mulOverflow)
+#define WordU32_mulCheck(dst, n1, n2, l)		\
+	check (dst, n1, n2, l, WordU32_mulOverflow)
 
 #endif /* #ifndef _C_CHUNK_H_ */

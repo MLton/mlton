@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -313,9 +313,6 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 				   | Case {test, cases, default} =>
 					let
 					   datatype z = datatype Cases.t
-					   fun doit cases =
-					      Vector.map (cases, fn (z, e) =>
-							  (z, loopExp e))
 					   val cases =
 					      case cases of
 						 Con cases =>
@@ -323,8 +320,11 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 						    (Vector.map
 						     (cases, fn (p, e) =>
 						      (bindPat p, loopExp e)))
-					       | Int (s, v) => Int (s, doit v)
-					       | Word (s, v) => Word (s, doit v)
+					       | Word (s, v) =>
+						    Word
+						    (s, (Vector.map
+							 (v, fn (z, e) =>
+							  (z, loopExp e))))
 					in
 					   Case {test = loopVar test,
 						 cases = cases,

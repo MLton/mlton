@@ -28,7 +28,6 @@ signature ATOMS' =
       structure Const: CONST
       structure Ffi: FFI
       structure Func: FUNC
-      structure IntX: INT_X
       structure Label: LABEL
       structure Prim: PRIM
       structure ProfileLabel: PROFILE_LABEL
@@ -46,8 +45,7 @@ signature ATOMS' =
       sharing CType = Ffi.CType = Prim.CType 
       sharing Con = Prim.Con
       sharing Const = Prim.Const
-      sharing IntSize = IntX.IntSize = Prim.IntSize = Tycon.IntSize
-      sharing IntX = Const.IntX
+      sharing IntSize = Tycon.IntSize
       sharing RealSize = Prim.RealSize = RealX.RealSize = Tycon.RealSize
       sharing RealX = Const.RealX
       sharing SourceInfo = ProfileExp.SourceInfo
@@ -77,8 +75,6 @@ signature ATOMS =
       sharing Ffi = Atoms.Ffi
       sharing Field = Atoms.Field
       sharing Func = Atoms.Func
-      sharing IntSize = Atoms.IntSize
-      sharing IntX = Atoms.IntX
       sharing Label = Atoms.Label
       sharing Prim = Atoms.Prim
       sharing ProfileLabel = Atoms.ProfileLabel

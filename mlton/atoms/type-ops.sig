@@ -25,7 +25,6 @@ signature TYPE_OPS =
        * the Tycon structure, which will cause duplicate specifications later
        * on.
        *)
-      type intSize
       type realSize
       type tycon
       type wordSize
@@ -51,11 +50,9 @@ signature TYPE_OPS =
       val deVector: t -> t
       val deWeak: t -> t
       val deWeakOpt: t -> t option
-      val defaultInt: t
       val defaultReal: t
       val defaultWord: t
       val exn: t
-      val int: intSize -> t
       val intInf: t
       val isTuple: t -> bool
       val list: t -> t

@@ -70,7 +70,6 @@ in
    structure Cexp = Exp
    structure Ffi = Ffi
    structure IntSize = IntSize
-   structure IntX = IntX
    structure Lambda = Lambda
    structure Cpat = Pat
    structure Prim = Prim
@@ -187,6 +186,9 @@ val {hom = typeTycon: Type.t -> Tycon.t option, ...} =
 		 expandOpaque = false,
 		 var = fn _ => NONE}
 
+val typeTycon =
+   Trace.trace ("typeTycon", Type.layout, Option.layout Tycon.layout) typeTycon
+
 fun 'a elabConst (c: Aconst.t,
 		  make: (unit -> Const.t) * Type.t -> 'a,
 		  {false = f: 'a, true = t: 'a}): 'a =
@@ -238,10 +240,11 @@ fun 'a elabConst (c: Aconst.t,
 		if Tycon.equals (tycon, Tycon.intInf)
 		   then Const.IntInf i
 		else
-		   choose (tycon, IntSize.all, Tycon.int, fn s =>
-			   Const.Int
-			   (IntX.make (i, s)
-			    handle Overflow => (error ty; IntX.zero s))))
+		   choose (tycon, WordSize.all, Tycon.word, fn s =>
+			   Const.Word
+			   (if WordSize.isInRange (s, i, {signed = true})
+			       then WordX.fromIntInf (i, s)
+			    else (error ty; WordX.zero s))))
 	    end
        | Aconst.Real r =>
 	    let
@@ -263,7 +266,7 @@ fun 'a elabConst (c: Aconst.t,
 	       (ty, fn tycon =>
 		choose (tycon, WordSize.all, Tycon.word, fn s =>
 			Const.Word
-			(if w <= WordSize.max s
+			(if WordSize.isInRange (s, w, {signed = false})
 			    then WordX.fromIntInf (w, s)
 			 else (error ty
 			       ; WordX.zero s))))
@@ -2089,7 +2092,7 @@ fun elaborateDec (d, {env = E,
 					if Tycon.equals (c, Tycon.bool)
 					   then ConstType.Bool
 					else if Tycon.isIntX c
-						then ConstType.Int
+						then ConstType.Word
 					else if Tycon.isRealX c
 						then ConstType.Real
 					else if Tycon.isWordX c

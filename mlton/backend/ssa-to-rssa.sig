@@ -24,5 +24,8 @@ signature SSA_TO_RSSA =
    sig
       include SSA_TO_RSSA_STRUCTS
 	 
-      val convert: Ssa.Program.t -> Rssa.Program.t
+      val convert:
+	 Ssa.Program.t
+	 * {codegenImplementsPrim: Rssa.Type.t Rssa.Prim.t -> bool}
+	 -> Rssa.Program.t
    end

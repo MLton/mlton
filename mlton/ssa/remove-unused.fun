@@ -468,12 +468,11 @@ fun remove (Program.T {datatypes, globals, functions, main})
 	     | Case {test, cases, default}
 	     => let
 		  val _ = visitVar test
-		  fun doit l = (Vector.foreach (l, fn (_, l) => visitLabel l);
-				Option.app (default, visitLabel))
 		in
 		  case cases of
-		     Cases.Int (_, cs) => doit cs
-		   | Cases.Word (_, cs) => doit cs
+		     Cases.Word (_, cs) =>
+			(Vector.foreach (cs, visitLabel o #2)
+			 ; Option.app (default, visitLabel))
 		   | Cases.Con cases
 		     => if Vector.length cases = 0
 			  then Option.app (default, visitLabel)

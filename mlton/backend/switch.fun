@@ -59,7 +59,8 @@ fun isOk (T {cases, default, size = _, test}, {checkUse, labelIsOk}): bool =
       andalso (case default of
 		  NONE => true
 		| SOME l => labelIsOk l)
-      andalso Vector.isSorted (cases, fn ((w, _), (w', _)) => WordX.<= (w, w'))
+      andalso Vector.isSorted (cases, fn ((w, _), (w', _)) =>
+			       WordX.le (w, w', {signed = false}))
       andalso not (isRedundant
 		   {cases = cases,
 		    equals = fn ((w, _), (w', _)) => WordX.equals (w, w')})

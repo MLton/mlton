@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -206,9 +206,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
 					      Array_array => knownLength (arg ())
 					    | Array_length => length ()
 					    | Array_toVector => conv ()
-					    | String_toWord8Vector => conv ()
 					    | Vector_length => length ()
-					    | Word8Vector_toString => conv ()
 					    | _ => if Prim.isFunctional prim
 						      then doit ()
 						   else keep ()

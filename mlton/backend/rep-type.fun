@@ -38,7 +38,7 @@ structure Type =
 	 in
 	    case dest t of
 	       Address t => seq [str "Address ", layout t]
-	     | Constant w => seq [str "0x", WordX.layout w, str ":",
+	     | Constant w => seq [WordX.layout w, str ":",
 				  WordSize.layout (WordX.size w)]
 	     | ExnStack => str "ExnStack"
 	     | GCState => str "GCState"
@@ -123,8 +123,6 @@ structure Type =
       val real = T o Real
       val word = T o Word
 
-      val int = word o IntSize.bits
-
       val char = word Bits.inByte
 
       fun zero b = constant (WordX.zero (WordSize.fromBits b))
@@ -201,7 +199,6 @@ structure Type =
 	    Word b => Bits.equals (b, Bits.inPointer)
 	  | _ => false
 	 
-      val defaultInt = int IntSize.default
       val defaultWord = word Bits.inWord
       val word8 = word Bits.inByte
 
@@ -217,7 +214,7 @@ structure Type =
 	       seq (Vector.new2
 		    (constant (WordX.fromIntInf
 			       (1, WordSize.fromBits (Bits.fromInt 1))),
-		     int (IntSize.I (Bits.fromInt 31))))))
+		     word (Bits.fromInt 31)))))
 
       local
 	 fun make is t =
@@ -495,7 +492,7 @@ structure Type =
 
       fun mulConstant (t: t, w: WordX.t): t =
 	 case dest t of
-	    Constant w' => constant (WordX.* (w, w'))
+	    Constant w' => constant (WordX.mul (w, w', {signed = false}))
 	  | _ =>
 	       let
 		  val n = width t
@@ -865,7 +862,7 @@ fun pointerHeader p =
 	      WordSize.default))
 
 fun arrayOffsetIsOk {base: t, index: t, pointerTy, result: t}: bool =
-   isSubtype (index, defaultInt)
+   isSubtype (index, defaultWord)
    andalso
    case dest base of
       Pointer p =>
@@ -893,7 +890,7 @@ fun offset (t: t, {offset, pointerTy, width}): t option =
 		  (case pointerTy p of
 		      ObjectType.Array _ =>
 			 if Bytes.equals (offset, Runtime.arrayLengthOffset)
-			    then SOME defaultInt
+			    then SOME defaultWord
 			 else NONE
 		    | ObjectType.Normal t => SOME (frag t)
 		    | _ => NONE)
@@ -947,7 +944,7 @@ fun ofGCField (f: GCField.t): t =
        | StackTop => cPointer ()
    end
 
-fun castIsOk {from, fromInt = _, to, tyconTy = _} =
+fun castIsOk {from, to, tyconTy = _} =
    Bits.equals (width from, width to)
 
 fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
@@ -985,30 +982,25 @@ fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
       local
 	 open Type
       in
-	 val defaultInt = defaultInt
 	 val defaultWord = defaultWord
-	 val int = int
 	 val real = real
 	 val word = word o WordSize.bits
       end
       local
 	 fun make f s = let val t = f s in unary (t, t) end
       in
-	 val intUnary = make int
 	 val realUnary = make real
 	 val wordUnary = make word
       end
       local
 	 fun make f s = let val t = f s in binary (t, t, t) end
       in
-	 val intBinary = make int
 	 val realBinary = make real
 	 val wordBinary = make word
       end
       local
 	 fun make f s = let val t = f s in binary (t, t, bool) end
       in
-	 val intCompare = make int
 	 val realCompare = make real
 	 val wordCompare = make word
       end
@@ -1030,24 +1022,6 @@ fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
 	       Vector.equals (args, expects, isSubtype) andalso done return
 	    end
        | FFI_Symbol {ty, ...} => nullary ty
-       | Int_add s => intBinary s
-       | Int_addCheck s => intBinary s
-       | Int_equal s => intCompare s
-       | Int_ge s => intCompare s
-       | Int_gt s => intCompare s
-       | Int_le s => intCompare s
-       | Int_lt s => intCompare s
-       | Int_mul s => intBinary s
-       | Int_mulCheck s => intBinary s
-       | Int_neg s => intUnary s
-       | Int_negCheck s => intUnary s
-       | Int_quot s => intBinary s
-       | Int_rem s => intBinary s
-       | Int_sub s => intBinary s
-       | Int_subCheck s => intBinary s
-       | Int_toInt (s, s') => unary (int s, int s')
-       | Int_toReal (s, s') => unary (int s, real s')
-       | Int_toWord (s, s') => unary (int s, word s')
        | MLton_eq =>
 	    two (fn (t1, t2) =>
 		 (isSubtype (t1, t2) orelse isSubtype (t2, t1))
@@ -1069,7 +1043,7 @@ fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
        | Real_equal s => realCompare s
        | Real_ge s => realCompare s
        | Real_gt s => realCompare s
-       | Real_ldexp s => binary (real s, defaultInt, real s)
+       | Real_ldexp s => binary (real s, defaultWord, real s)
        | Real_le s => realCompare s
        | Real_lt s => realCompare s
        | Real_mul s => realBinary s
@@ -1079,37 +1053,42 @@ fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
        | Real_qequal s => realCompare s
        | Real_round s => realUnary s
        | Real_sub s => realBinary s
-       | Real_toInt (s, s') => unary (real s, int s')
        | Real_toReal (s, s') => unary (real s, real s')
+       | Real_toWord (s, s', _) => unary (real s, word s')
        | Thread_returnToC => nullary unit
        | Word_add _ => twoWord add
-       | Word_addCheck s => wordBinary s
+       | Word_addCheck (s, _) => wordBinary s
        | Word_andb _ => twoOpt andb
-       | Word_arshift _ => wordShift' arshift
-       | Word_div s => wordBinary s
        | Word_equal s => wordCompare s
-       | Word_ge s => wordCompare s
-       | Word_gt s => wordCompare s
-       | Word_le s => wordCompare s
+       | Word_ge (s, _) => wordCompare s
+       | Word_gt (s, _) => wordCompare s
+       | Word_le (s, _) => wordCompare s
        | Word_lshift _ => wordShift' lshift
-       | Word_lt s => wordCompare s
-       | Word_mod s => wordBinary s
-       | Word_mul _ => twoWord mul
-       | Word_mulCheck s => wordBinary s
+       | Word_lt (s, _) => wordCompare s
+       | Word_mul (s, {signed}) =>
+	    if signed
+	       then wordBinary s
+	    else twoWord mul
+       | Word_mulCheck (s, _) => wordBinary s
        | Word_neg s => wordUnary s
+       | Word_negCheck s => wordUnary s
        | Word_notb s => wordUnary s
        | Word_orb _ => twoOpt orb
+       | Word_quot (s, _) => wordBinary s
+       | Word_rem (s, _) => wordBinary s
        | Word_rol s => wordShift s
        | Word_ror s => wordShift s
-       | Word_rshift _ => wordShift' rshift
+       | Word_rshift (_, {signed}) =>
+	    wordShift' (if signed then arshift else rshift)
        | Word_sub s => wordBinary s
-       | Word_toInt (s, s') => unary (word s, int s')
-       | Word_toIntX (s, s') => unary (word s, int s')
-       | Word_toWord (s, s') =>
-	    one (fn t =>
-		 isSubtype (t, word s)
-		 andalso done (resize (t, (WordSize.bits s'))))
-       | Word_toWordX (s, s') => unary (word s, word s')
+       | Word_subCheck (s, _) => wordBinary s
+       | Word_toReal (s, s', _) => unary (word s, real s')
+       | Word_toWord (s, s', {signed}) =>
+	    if signed
+	       then unary (word s, word s')
+	    else one (fn t =>
+		      isSubtype (t, word s)
+		      andalso done (resize (t, (WordSize.bits s'))))
        | Word_xorb s => wordBinary s
        | _ => Error.bug (concat ["strange primitive to Prim.typeCheck: ",
 				 Prim.toString prim])
@@ -1137,7 +1116,6 @@ structure BuiltInCFunction =
       local
 	 open Type
       in
-	 val Int32 = int (IntSize.I (Bits.fromInt 32))
 	 val Word32 = word (Bits.fromInt 32)
 	 val unit = unit
       end
@@ -1147,7 +1125,7 @@ structure BuiltInCFunction =
 	    T {args = let
 			 open Type
 		      in
-			 Vector.new5 (gcState, Word32, bool, cPointer (), Int32)
+			 Vector.new5 (gcState, Word32, bool, cPointer (), Word32)
 		      end,
 		   bytesNeeded = NONE,
 		   convention = Cdecl,

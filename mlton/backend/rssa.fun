@@ -66,8 +66,9 @@ structure Operand =
        | Var of {var: Var.t,
 		 ty: Type.t}
 
-      val int = Const o Const.int
       val word = Const o Const.word
+
+      fun zero s = word (WordX.fromIntInf (0, s))
 	 
       fun bool b =
 	 word (WordX.fromIntInf (if b then 1 else 0, WordSize.default))
@@ -80,8 +81,7 @@ structure Operand =
 		  datatype z = datatype Const.t
 	       in
 		  case c of
-		     Int i => Type.int (IntX.size i)
-		   | IntInf _ => Type.intInf
+		     IntInf _ => Type.intInf
 		   | Real r => Type.real (RealX.size r)
 		   | Word w => Type.constant w
 		   | Word8Vector _ => Type.word8Vector
@@ -89,7 +89,7 @@ structure Operand =
 	  | EnsuresBytesFree => Type.defaultWord
 	  | File => Type.cPointer ()
 	  | GCState => Type.gcState
-	  | Line => Type.int IntSize.default
+	  | Line => Type.defaultWord
 	  | Offset {ty, ...} => ty
 	  | PointerTycon _ => Type.defaultWord
 	  | Runtime z => Type.ofGCField z
@@ -121,7 +121,7 @@ structure Operand =
 	 end
 
       fun cast (z, t) =
-	 if Type.isSubtype (t, ty z)
+	 if Type.isSubtype (ty z, t)
 	    then z
 	 else Cast (z, t)
 
@@ -294,7 +294,8 @@ structure Statement =
 		   [PrimApp {args = Vector.new1 z,
 			     dst = SOME (tmp, tmpTy),
 			     prim = Prim.wordToWord (WordSize.fromBits w,
-						     WordSize.fromBits b)}])
+						     WordSize.fromBits b,
+						     {signed = false})}])
 	       end
 	 end
    end
@@ -1045,16 +1046,9 @@ structure Program =
 						     result = ty})
 		       | Cast (z, ty) =>
 			    (checkOperand z
-			    ; (Type.castIsOk
-			       {from = Operand.ty z,
-				fromInt = (case z of
-					      Const c =>
-						 (case c of
-						     Const.Int n => SOME n
-						   | _ => NONE)
-					    | _ => NONE),
-				to = ty,
-				tyconTy = tyconTy}))
+			    ; Type.castIsOk {from = Operand.ty z,
+					     to = ty,
+					     tyconTy = tyconTy})
 		       | Const _ => true
 		       | EnsuresBytesFree => true
 		       | File => true
@@ -1083,7 +1077,9 @@ structure Program =
 		  datatype z = datatype Statement.t
 	       in
 		  case s of
-		     Bind {src, ...} => (checkOperand src; true)
+		     Bind {src, dst = (_, dstTy), ...} =>
+			(checkOperand src
+			 ; Type.isSubtype (Operand.ty src, dstTy))
 		   | Move {dst, src} =>
 			(checkOperand dst
 			 ; checkOperand src

@@ -1,3 +1,10 @@
+(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
+ *)
+
 functor WordX (S: WORD_X_STRUCTS): WORD_X = 
 struct
 
@@ -27,9 +34,23 @@ in
    val value = make #value
 end
 
-fun toString w = IntInf.format (value w, StringCvt.HEX)
+val toIntInf = value
+   
+fun toIntInfX w =
+   let
+      val v = value w
+	    val m = modulus (size w)
+   in
+      if v >= m div 2
+	 then v - m
+      else v
+   end
 
-val layout = Layout.str o toString
+val toInt = IntInf.toInt o toIntInf
+
+fun toString w = IntInf.format (toIntInf w, StringCvt.HEX)
+
+fun layout w = Layout.str (concat ["0x", toString w])
 
 fun zero s = make (0, s)
 
@@ -59,35 +80,38 @@ fun fromWord8 w = make (Word8.toIntInf w, WordSize.byte)
 
 fun isAllOnes w = value w = modulus (size w) - 1
 
-val isMax = isAllOnes
-
 fun isOne w = 1 = value w
 
 fun isZero w = 0 = value w
 
-fun max s = make (modulus s - 1, s)
+fun isNegOne w = ~1 = toIntInfX w
+
+local
+   fun make f (s, sg) = fromIntInf (f (s, sg), s)
+in
+   val max = make WordSize.max
+   val min = make WordSize.min
+end
+
+local
+   fun make f (w, sg) = equals (w, f (size w, sg))
+in
+   val isMax = make max
+   val isMin = make min
+end
 
 fun notb w = make (IntInf.notb (value w), size w)
 
 fun one s = make (1, s)
 
-fun resize (w, s) = make (value w, s)
-
-fun toIntInfX w =
-   let
-      val v = value w
-      val m = modulus (size w)
-   in
-      if v >= m div 2
-	 then v - m
-      else v
-   end
+fun toIntInfSg (w, {signed}) =
+   if signed then toIntInfX w else toIntInf w
    
+fun resize (w, s) = make (toIntInf w, s)
+
 fun resizeX (w, s) = make (toIntInfX w, s)
 
 fun toChar (w: t): char = Char.fromInt (Int.fromIntInf (value w))
-
-val toIntInf = value
 
 fun ~>> (w, w') =
    let
@@ -100,6 +124,9 @@ fun ~>> (w, w') =
    in
       make (IntInf.~>> (toIntInfX w, shift), s)
    end
+
+fun rshift (w, w', {signed}) =
+   if signed then ~>> (w, w') else >> (w, w')
 
 fun swap (i: IntInf.t, {hi: word, lo: word}) =
    let
@@ -150,27 +177,42 @@ local
 	 then make (f (value w, value w'), size w)
       else raise Fail "WordX binary"
 in
-   val op + = make IntInf.+
-   val op - = make IntInf.-
-   val op * = make IntInf.*
+   val add = make IntInf.+
+   val sub = make IntInf.-
    val andb = make IntInf.andb
-   val op div = make IntInf.div
-   val op mod = make IntInf.mod
    val orb = make IntInf.orb
    val xorb = make IntInf.xorb
 end
 
+fun neg w = make (~ (toIntInfX w), size w)
+
 local
-   val make: (IntInf.t * IntInf.t -> 'a) -> t * t -> 'a =
-      fn f => fn (w, w') =>
+   val make: (IntInf.t * IntInf.t -> IntInf.t) -> t * t * {signed: bool}-> t =
+      fn f => fn (w, w', s) =>
       if WordSize.equals (size w, size w')
-	 then f (value w, value w')
+	 then make (f (toIntInfSg (w, s), toIntInfSg (w', s)), size w)
+      else raise Fail "WordX binary"
+in
+   val mul = make IntInf.*
+   val quot = make IntInf.quot
+   val rem = make IntInf.rem
+end
+
+local
+   val make: (IntInf.t * IntInf.t -> 'a) -> t * t * {signed: bool} -> 'a =
+      fn f => fn (w, w', sg) =>
+      if WordSize.equals (size w, size w')
+	 then f (toIntInfSg (w, sg), toIntInfSg (w', sg))
       else Error.bug "WordX compare"
 in
-   val op < = make IntInf.<
-   val op <= = make IntInf.<=
-   val op > = make IntInf.>
-   val op >= = make IntInf.>=
+   val lt = make IntInf.<
+   val le = make IntInf.<=
+   val gt = make IntInf.>
+   val ge = make IntInf.>=
 end
+
+fun layoutSg {signed} = Layout.record [("signed", Bool.layout signed)]
+
+val lt = Trace.trace3 ("WordX.lt", layout, layout, layoutSg, Bool.layout) lt
 
 end

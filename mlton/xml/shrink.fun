@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -397,18 +397,10 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 				  | _ => false)
 			      end
 			     | (_, SOME (Value.Const c)) =>
-				  let
-				     fun doit (l, z, equals) =
-					match (l, fn z' => equals (z, z'))
-				     datatype z = datatype Const.t
-				  in
-				     case (cases, c) of
-					(Cases.Int (_, l), Int i) =>
-					   doit (l, i, IntX.equals)
-				      | (Cases.Word (_, l), Word w) =>
-					   doit (l, w, WordX.equals)
-				   | _ => Error.bug "strange case"
-				  end
+				  (case (cases, c) of
+				      (Cases.Word (_, l), Const.Word w) =>
+					 match (l, fn w' => WordX.equals (w, w'))
+				    | _ => Error.bug "strange case")
 			     | (_, NONE) => normal varExp
 			     | _ => Error.bug "shrinkMonoVal"
 		  end

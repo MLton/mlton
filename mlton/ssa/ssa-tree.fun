@@ -26,7 +26,6 @@ structure Type =
       datatype dest =
 	  Array of t
 	| Datatype of Tycon.t
-	| Int of IntSize.t
 	| IntInf
 	| Real of RealSize.t
 	| Ref of t
@@ -52,7 +51,6 @@ structure Type =
 
 	 val tycons =
 	    [(Tycon.array, unary Array)]
-	    @ Vector.toListMap (Tycon.ints, fn (t, s) => (t, nullary (Int s)))
 	    @ [(Tycon.intInf, nullary IntInf)]
 	    @ Vector.toListMap (Tycon.reals, fn (t, s) => (t, nullary (Real s)))
 	    @ [(Tycon.reff, unary Ref),
@@ -84,7 +82,6 @@ structure Type =
 	      case dest t of
 		 Array t => seq [layout t, str " array"]
 	       | Datatype t => Tycon.layout t
-	       | Int s => str (concat ["int", IntSize.toString s])
 	       | IntInf => str "IntInf.int"
 	       | Real s => str (concat ["real", RealSize.toString s])
 	       | Ref t => seq [layout t, str " ref"]
@@ -104,7 +101,6 @@ structure Cases =
    struct
       datatype t =
 	 Con of (Con.t * Label.t) vector
-       | Int of IntSize.t * (IntX.t * Label.t) vector
        | Word of WordSize.t * (WordX.t * Label.t) vector
 
       fun equals (c1: t, c2: t): bool =
@@ -116,7 +112,6 @@ structure Cases =
 	 in
 	    case (c1, c2) of
 	       (Con l1, Con l2) => doit (l1, l2, Con.equals)
-	     | (Int (_, l1), Int (_, l2)) => doit (l1, l2, IntX.equals)
 	     | (Word (_, l1), Word (_, l2)) => doit (l1, l2, WordX.equals)
 	     | _ => false
 	 end
@@ -132,7 +127,6 @@ structure Cases =
 	 in
 	    case c of
 	       Con cs => doit cs
-	     | Int (_, cs) => doit cs
 	     | Word (_, cs) => doit cs
 	 end
 
@@ -142,7 +136,6 @@ structure Cases =
 	 in
 	    case c of
 	       Con cs => doit cs
-	     | Int (_, cs) => doit cs
 	     | Word (_, cs) => doit cs
 	 end
 
@@ -152,7 +145,6 @@ structure Cases =
 	 in
 	    case c of
 	       Con l => doit l
-	     | Int (_, l) => doit l
 	     | Word (_, l) => doit l
 	 end
 
@@ -162,7 +154,6 @@ structure Cases =
 	 in
 	    case c of
 	       Con l => Con (doit l)
-	     | Int (s, l) => Int (s, doit l)
 	     | Word (s, l) => Word (s, doit l)
 	 end
       
@@ -172,7 +163,6 @@ structure Cases =
 	 in
 	    case c of
 	       Con l => doit l
-	     | Int (_, l) => doit l
 	     | Word (_, l) => doit l
 	 end
 
@@ -595,13 +585,12 @@ structure Transfer =
 
       fun iff (test: Var.t, {truee, falsee}) =
 	 let
-	    val s = IntSize.I (Bits.fromInt 32)
+	    val s = WordSize.fromBits (Bits.fromInt 32)
 	 in
-	    Case
-	    {cases = Cases.Int (s, Vector.new2 ((IntX.zero s, falsee),
-						(IntX.one s, truee))),
-	     default = NONE,
-	     test = test}
+	    Case {cases = Cases.Word (s, Vector.new2 ((WordX.zero s, falsee),
+						      (WordX.one s, truee))),
+		  default = NONE,
+		  test = test}
 	 end
 	 
       fun foreachFuncLabelVar (t, func, label: Label.t -> unit, var) =
@@ -685,20 +674,20 @@ structure Transfer =
 	       val cases =
 		  case cases of
 		     Con l => doit (l, Con.layout)
-		   | Int (_, l) => doit (l, IntX.layout)
 		   | Word (_, l) => doit (l, WordX.layout)
 	       val cases =
 		  case default of
 		     NONE => cases
 		   | SOME j =>
 			cases @ [seq [str "_ => ", Label.layout j]]
-	    in align [seq [str "case ", Var.layout test, str " of"],
+	    in
+	       align [seq [str "case ", Var.layout test, str " of"],
 		      indent (alignPrefix (cases, "| "), 2)]
 	    end
 
 	 val layout =
 	    fn Arith {prim, args, overflow, success, ...} =>
-		  seq [Label.layout success,
+		  seq [Label.layout success, str " ",
 		       tuple [Prim.layoutApp (prim, args, Var.layout)],
 		       str " Overflow => ",
 		       Label.layout overflow, str " ()"]
@@ -1117,8 +1106,6 @@ structure Function =
 				  val _ =
 				     case cases of
 					Cases.Con v => doit (v, Con.toString)
-				      | Cases.Int (_, v) =>
-					   doit (v, IntX.toString)
 				      | Cases.Word (_, v) =>
 					   doit (v, WordX.toString)
 				  val _ = 

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -63,7 +63,6 @@ and cases =
    Con of {con: Con.t,
 	   args: (Var.t * Type.t) vector,
 	   body: t} vector
- | Int of IntSize.t * (IntX.t * t) vector
  | Word of WordSize.t * (WordX.t * t) vector
 
 val arith = Arith
@@ -80,6 +79,7 @@ val profile = Profile
 val raisee = Raise
 val select = Select
 val seq = Seq
+val word = Const o Const.word
 
 fun tuple (r as {exps, ...}) =
    if 1 = Vector.length exps
@@ -111,8 +111,6 @@ in
    val falsee = make Con.falsee
 end
 
-val int = const o Const.int
-   
 fun eq (e1, e2, ty) =
    primApp {prim = Prim.eq,
 	    targs = Vector.new1 ty,
@@ -157,7 +155,6 @@ in
 				    (seq [Con.layout con,
 					  Vector.layout (Var.layout o #1) args],
 				     body))
-			 | Int (_, v) => simple (v, IntX.layout)
 			 | Word (_, v) => simple (v, WordX.layout)
 		     end,
 			case default of
@@ -433,7 +430,6 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 				     (v, fn {con, args, body} =>
 				      (con,
 				       newLabel (args, body, h, k))))
-			       | Int (s, v) => Cases.Int (s, doit v)
 			       | Word (s, v) => Cases.Word (s, doit v)
 			   end}})
 	       end

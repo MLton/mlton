@@ -128,7 +128,6 @@ fun checkScopes (program as
 	       in
 		  case cases of
 		     Cases.Con cs => doitCon cs 
-		   | Cases.Int (_, cs) => doit (cs, IntX.equals, IntX.hash)
 		   | Cases.Word (_, cs) =>
 			doit (cs, WordX.equals, Word.fromIntInf o WordX.toIntInf)
 	       end
@@ -400,8 +399,6 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 		  conApp = conApp,
 		  const = Type.ofConst,
 		  filter = filter,
-		  filterInt = fn (from, s) => coerce {from = from,
-						      to = Type.int s},
 		  filterWord = fn (from, s) => coerce {from = from,
 						       to = Type.word s},
 		  fromType = fn x => x,

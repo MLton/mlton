@@ -1217,12 +1217,28 @@ structure Type =
 
       val word8 = word WordSize.byte
 
-      val synonyms =
-	 List.map
+      local
+	 val {get: Tycon.t -> (t * Tycon.t) option, set, ...} =
+	    Property.getSetOnce (Tycon.plist, Property.initConst NONE)
+      in
+	 fun setSynonym (c, c') = set (c, SOME (con (c, Vector.new0 ()), c'))
+	 val synonym = get
+      end
+
+      val () =
+	 List.foreach
 	 ([(Tycon.char, Tycon.word WordSize.byte),
 	   (Tycon.preThread, Tycon.thread)],
-	  fn (c, c') => (c, c', con (c, Vector.new0 ())))
+	  setSynonym)
 
+      val () =
+	 List.foreach
+	 (IntSize.all, fn s =>
+	  setSynonym (Tycon.int s,
+		      Tycon.word (WordSize.fromBits (IntSize.bits s))))
+
+      val defaultInt = con (Tycon.int IntSize.default, Vector.new0 ())
+	 
       fun 'a simpleHom {con: t * Tycon.t * 'a vector -> 'a,
 			expandOpaque: bool,
 			record: t * (Field.t * 'a) vector -> 'a,
@@ -1255,6 +1271,19 @@ structure Type =
 			      (spine, fields, fields, fn (f, ac) =>
 			       (f, unit) :: ac))
 	    fun recursive _ = Error.bug "Type.hom recursive"
+	    val con =
+	       if not replaceSynonyms
+		  then con
+	       else
+		  fn (t, c, ts) =>
+		  let
+		     val (t, c) =
+			case synonym c of
+			   NONE => (t, c)
+			 | SOME (t, c) => (t, c)
+		  in
+		     con (t, c, ts)
+		  end
 	    fun default (t, tycon) =
 	       fn t' =>
 	       let
@@ -1263,18 +1292,9 @@ structure Type =
 	       in
 		  con (t, tycon, Vector.new0 ())
 	       end
-	    val int = default (int IntSize.default, Tycon.defaultInt)
-	    val real = default (real RealSize.default, Tycon.defaultReal)
-	    val word = default (word WordSize.default, Tycon.defaultWord)
-	    val con =
-	       if not replaceSynonyms
-		  then con
-	       else
-		  fn (t, c, ts) =>
-		  case List.peek (synonyms, fn (c', _, _) =>
-				  Tycon.equals (c, c')) of
-		     NONE => con (t, c, ts)
-		   | SOME (_, c, t) => con (t, c, Vector.new0 ())
+	    val int = default (defaultInt, Tycon.defaultInt)
+	    val real = default (defaultReal, Tycon.defaultReal)
+	    val word = default (defaultWord, Tycon.defaultWord)
 	 in
 	    makeHom {con = con,
 		     expandOpaque = expandOpaque,

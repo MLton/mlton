@@ -11,10 +11,8 @@ signature PRIM_STRUCTS =
       structure CType: C_TYPE
       structure Con: CON
       structure Const: CONST
-      structure IntSize: INT_SIZE
       structure RealSize: REAL_SIZE
       structure WordSize: WORD_SIZE
-      sharing IntSize = Const.IntX.IntSize
       sharing RealSize = Const.RealX.RealSize
       sharing WordSize = Const.WordX.WordSize
    end
@@ -32,7 +30,6 @@ signature PRIM =
 	     | Array_sub (* backend *)
 	     | Array_toVector (* backend *)
 	     | Array_update (* backend *)
-	     | Char_toWord8 (* type inference *)
 	     | Exn_extra (* implement exceptions *)
 	     | Exn_keepHistory (* a compile-time boolean *)
 	     | Exn_name (* implement exceptions *)
@@ -45,26 +42,6 @@ signature PRIM =
 	     | GC_collect (* ssa to rssa *)
 	     | GC_pack (* ssa to rssa *)
 	     | GC_unpack (* ssa to rssa *)
-	     | Int_add of IntSize.t (* codegen *)
-	     | Int_addCheck of IntSize.t (* codegen *)
-	     | Int_arshift of IntSize.t (* codegen *)
-	     | Int_equal of IntSize.t (* ssa to rssa / codegen *)
-	     | Int_ge of IntSize.t (* codegen *)
-	     | Int_gt of IntSize.t (* codegen *)
-	     | Int_le of IntSize.t (* codegen *)
-	     | Int_lt of IntSize.t (* codegen *)
-	     | Int_lshift of IntSize.t (* codegen *)
-	     | Int_mul of IntSize.t (* codegen *)
-	     | Int_mulCheck of IntSize.t (* codegen *)
-	     | Int_neg of IntSize.t (* codegen *)
-	     | Int_negCheck of IntSize.t (* codegen *)
-	     | Int_quot of IntSize.t (* codegen *)
-	     | Int_rem of IntSize.t (* codegen *)
-	     | Int_sub of IntSize.t (* codegen *)
-	     | Int_subCheck of IntSize.t (* codegen *)
-	     | Int_toInt of IntSize.t * IntSize.t (* codegen *)
-	     | Int_toReal of IntSize.t * RealSize.t (* codegen *)
-	     | Int_toWord of IntSize.t * WordSize.t (* codegen *)
 	     | IntInf_add (* ssa to rssa *)
 	     | IntInf_andb (* ssa to rssa *)
 	     | IntInf_arshift (* ssa to rssa *)
@@ -109,11 +86,9 @@ signature PRIM =
 	     | MLton_serialize (* unused *)
 	     | MLton_size (* ssa to rssa *)
 	     | MLton_touch (* backend *)
-	     | Pointer_getInt of IntSize.t (* ssa to rssa *)
 	     | Pointer_getPointer (* ssa to rssa *)
 	     | Pointer_getReal of RealSize.t (* ssa to rssa *)
 	     | Pointer_getWord of WordSize.t (* ssa to rssa *)
-	     | Pointer_setInt of IntSize.t (* ssa to rssa *)
 	     | Pointer_setPointer (* ssa to rssa *)
 	     | Pointer_setReal of RealSize.t (* ssa to rssa *)
 	     | Pointer_setWord of WordSize.t (* ssa to rssa *)
@@ -144,7 +119,7 @@ signature PRIM =
 	     | Real_qequal of RealSize.t (* codegen *)
 	     | Real_round of RealSize.t (* codegen *)
 	     | Real_sub of RealSize.t (* codegen *)
-	     | Real_toInt of RealSize.t * IntSize.t (* codegen *)
+	     | Real_toWord of RealSize.t * WordSize.t * {signed: bool} (* codegen *)
 	     | Real_toReal of RealSize.t * RealSize.t (* codegen *)
 	     | Ref_assign (* backend *)
 	     | Ref_deref (* backend *)
@@ -167,34 +142,32 @@ signature PRIM =
 	     | Weak_get (* ssa to rssa *)
 	     | Weak_new (* ssa to rssa *)
 	     | Word_add of WordSize.t (* codegen *)
-	     | Word_addCheck of WordSize.t (* codegen *)
+	     | Word_addCheck of WordSize.t * {signed: bool} (* codegen *)
 	     | Word_andb of WordSize.t (* codegen *)
-	     | Word_arshift of WordSize.t (* codegen *)
-	     | Word_div of WordSize.t (* codegen *)
 	     | Word_equal of WordSize.t (* codegen *)
-	     | Word_ge of WordSize.t (* codegen *)
-	     | Word_gt of WordSize.t (* codegen *)
-	     | Word_le of WordSize.t (* codegen *)
+	     | Word_ge of WordSize.t * {signed: bool} (* codegen *)
+	     | Word_gt of WordSize.t * {signed: bool} (* codegen *)
+	     | Word_le of WordSize.t * {signed: bool} (* codegen *)
 	     | Word_lshift of WordSize.t (* codegen *)
-	     | Word_lt of WordSize.t (* codegen *)
-	     | Word_mod of WordSize.t (* codegen *)
-	     | Word_mul of WordSize.t (* codegen *)
-	     | Word_mulCheck of WordSize.t (* codegen *)
+	     | Word_lt of WordSize.t * {signed: bool} (* codegen *)
+	     | Word_mul of WordSize.t * {signed: bool} (* codegen *)
+	     | Word_mulCheck of WordSize.t * {signed: bool} (* codegen *)
 	     | Word_neg of WordSize.t (* codegen *)
+	     | Word_negCheck of WordSize.t (* codegen *)
 	     | Word_notb of WordSize.t (* codegen *)
 	     | Word_orb of WordSize.t (* codegen *)
+	     | Word_quot of WordSize.t * {signed: bool} (* codegen *)
+	     | Word_rem of WordSize.t * {signed: bool} (* codegen *)
 	     | Word_rol of WordSize.t (* codegen *)
 	     | Word_ror of WordSize.t (* codegen *)
-	     | Word_rshift of WordSize.t (* codegen *)
+	     | Word_rshift of WordSize.t * {signed: bool} (* codegen *)
 	     | Word_sub of WordSize.t (* codegen *)
-	     | Word_toInt of WordSize.t * IntSize.t (* codegen *)
+	     | Word_subCheck of WordSize.t* {signed: bool} (* codegen *)
 	     | Word_toIntInf (* ssa to rssa *)
-	     | Word_toIntX of WordSize.t * IntSize.t (* codegen *)
-	     | Word_toWord of WordSize.t * WordSize.t (* codegen *)
-	     | Word_toWordX of WordSize.t * WordSize.t (* codegen *)
+	     | Word_toReal of WordSize.t * RealSize.t * {signed: bool} (* codegen *)
+	     | Word_toWord of WordSize.t * WordSize.t * {signed: bool} (* codegen *)
 	     | Word_xorb of WordSize.t (* codegen *)
 	     | WordVector_toIntInf (* ssa to rssa *)
-	     | Word8_toChar (* type inference *)
 	     | Word8Array_subWord (* ssa to rssa *)
 	     | Word8Array_updateWord (* ssa to rssa *)
 	     | Word8Vector_subWord (* ssa to rssa *)
@@ -254,13 +227,6 @@ signature PRIM =
       val fromString: string -> 'a t
       val gcCollect: 'a t
       val intInfEqual: 'a t
-      val intAdd: IntSize.t -> 'a t
-      val intAddCheck: IntSize.t -> 'a t
-      val intEqual: IntSize.t -> 'a t
-      val intMul: IntSize.t -> 'a t
-      val intMulCheck: IntSize.t -> 'a t
-      val intSub: IntSize.t -> 'a t
-      val intSubCheck: IntSize.t -> 'a t
       val isCommutative: 'a t -> bool
       (*
        * isFunctional p = true iff p always returns same result when given
@@ -287,21 +253,20 @@ signature PRIM =
       val vectorLength: 'a t
       val vectorSub: 'a t
       val wordAdd: WordSize.t -> 'a t
-      val wordAddCheck: WordSize.t -> 'a t
+      val wordAddCheck: WordSize.t * {signed: bool} -> 'a t
       val wordAndb: WordSize.t -> 'a t
-      val wordArshift: WordSize.t -> 'a t
       val wordEqual: WordSize.t -> 'a t
-      val wordGe: WordSize.t -> 'a t
-      val wordGt: WordSize.t -> 'a t
-      val wordLe: WordSize.t -> 'a t
-      val wordLt: WordSize.t -> 'a t
+      val wordGe: WordSize.t * {signed: bool} -> 'a t
+      val wordGt: WordSize.t * {signed: bool} -> 'a t
+      val wordLe: WordSize.t * {signed: bool} -> 'a t
+      val wordLt: WordSize.t * {signed: bool} -> 'a t
       val wordLshift: WordSize.t -> 'a t
-      val wordMul: WordSize.t -> 'a t
-      val wordMulCheck: WordSize.t -> 'a t
+      val wordMul: WordSize.t * {signed: bool} -> 'a t
+      val wordMulCheck: WordSize.t * {signed: bool} -> 'a t
       val wordNeg: WordSize.t -> 'a t
       val wordOrb: WordSize.t -> 'a t
-      val wordRshift: WordSize.t -> 'a t
+      val wordRshift: WordSize.t * {signed: bool} -> 'a t
       val wordSub: WordSize.t -> 'a t
-      val wordToWord: WordSize.t * WordSize.t -> 'a t
-      val wordToWordX: WordSize.t * WordSize.t -> 'a t
+      val wordSubCheck: WordSize.t * {signed: bool} -> 'a t
+      val wordToWord: WordSize.t * WordSize.t * {signed: bool} -> 'a t
    end

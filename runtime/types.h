@@ -19,6 +19,16 @@ typedef unsigned short Word16;
 typedef unsigned long Word32;
 typedef unsigned long long Word64;
 
+typedef Int8 WordS8;
+typedef Int16 WordS16;
+typedef Int32 WordS32;
+typedef Int64 WordS64;
+
+typedef Word8 WordU8;
+typedef Word16 WordU16;
+typedef Word32 WordU32;
+typedef Word64 WordU64;
+
 typedef Int32 Int;
 typedef Real64 Real;
 typedef Word8 Char;

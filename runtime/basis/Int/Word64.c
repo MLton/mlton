@@ -11,25 +11,16 @@ enum {
 	t f##_to##t (f x) {			\
 		return (t)x;			\
 	}
-coerce(Int32,Word64)
-coerce(Word8,Word64)
-coerce(Word16,Word64)
-coerce(Word32,Word64)
-coerce(Word64,Int32)
-coerce(Word64,Word8)
-coerce(Word64,Word16)
-coerce(Word64,Word32)
+coerce (WordS16, Word64)
+coerce (WordS32, Word64)
+coerce (WordS8, Word64)
+coerce (WordU16, Word64)
+coerce (WordU32, Word64)
+coerce (WordU64, Word16)
+coerce (WordU64, Word32)
+coerce (WordU64, Word8)
+coerce (WordU8, Word64)
 #undef coerce
-
-#define coerceX(size, t)				\
-	t Word##size##_to##t##X (Word##size w) {	\
-		return (t)(Int##size)w;			\
-	}
-coerceX(8,Word64)
-coerceX(16,Word64)
-coerceX(32,Word64)
-coerceX(64,Int32)
-#undef coerceX
 
 #define binary(name, op)				\
 	Word64 Word64_##name (Word64 w1, Word64 w2) {	\
@@ -37,12 +28,25 @@ coerceX(64,Int32)
 	}
 binary (add, +)
 binary (andb, &)
-binary (div, /)
-binary (mod, %)
-binary (mul, *)
 binary (orb, |)
 binary (sub, -)
 binary (xorb, ^)
+#undef binary
+
+#define binary(kind, name, op)							\
+	Word64 Word##kind##64_##name (Word##kind##64 w1, Word##kind##64 w2) {	\
+		Word##kind##64 res = w1 op w2;					\
+		if (DEBUG)							\
+			fprintf (stderr, "%lld = " #name " (%lld, %lld)\n",	\
+					res, w1, w2);				\
+		return res;							\
+	}
+binary (S, mul, *)
+binary (U, mul, *)
+binary (S, quot, /)
+binary (U, quot, /)
+binary (S, rem, %)
+binary (U, rem, %)
 #undef binary
 
 #define unary(name, op)				\
@@ -53,28 +57,36 @@ unary (neg, -)
 unary (notb, ~)
 #undef unary
 
-#define compare(name, op)				\
-	Bool Word64_##name (Word64 w1, Word64 w2) {	\
-		return w1 op w2;			\
-	}
-compare (equal, ==)
-compare (ge, >=)
-compare (gt, >)
-compare (le, <=)
-compare (lt, <)
-#undef binary
-
-#define shift(name, op)					\
-	Word64 Word64_##name (Word64 w1, Word w2) {	\
-		return w1 op w2;			\
-	}
-shift (lshift, <<)
-shift (rshift, >>)
-#undef binary
-
-Word64 Word64_arshift (Word64 w, Word s) {
-	return (Int64)w >> s;
+Bool Word64_equal (Word64 w1, Word64 w2) {
+	Bool res = w1 == w2;
+	if (DEBUG)
+		fprintf (stderr, "%s = %llu == %llu\n", 
+			res ? "true" : "false", w1, w2);
+	return res;
 }
+
+#define compare(s, name, op)						\
+	Bool Word##s##64_##name (Word##s##64 w1, Word##s##64 w2) {	\
+		return w1 op w2;					\
+	}
+compare (S, ge, >=)
+compare (U, ge, >=)
+compare (S, gt, >)
+compare (U, gt, >)
+compare (S, le, <=)
+compare (U, le, <=)
+compare (S, lt, <)
+compare (U, lt, <)
+#undef compare
+
+#define shift(size,name, op)					\
+	Word64 Word##size##_##name (Word##size w1, Word w2) {	\
+		return w1 op w2;				\
+	}
+shift (64, lshift, <<)
+shift (S64, rshift, >>)
+shift (U64, rshift, >>)
+#undef shift
 
 Word64 Word64_rol (Word64 w1, Word w2) {
 	return (w1 >> (64 - w2)) | (w1 << w2);

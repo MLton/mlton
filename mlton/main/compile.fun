@@ -45,7 +45,7 @@ local
 in
    structure Const = Const
    structure Ffi = Ffi
-   structure IntX = IntX
+   structure WordX = WordX
 end
 structure TypeEnv = TypeEnv (Atoms)
 structure CoreML = CoreML (open Atoms
@@ -292,7 +292,7 @@ val amBuildingConstants: bool ref = ref false
    
 val lookupConstant =
    let
-      val zero = Const.int (IntX.make (0, IntSize.default))
+      val zero = Const.word (WordX.fromIntInf (0, WordSize.default))
       val f =
 	 Promise.lazy
 	 (fn () =>
@@ -506,8 +506,8 @@ fun elaborate {input: File.t list}: Xml.Program.t =
       val _ =
 	 let
 	    fun get (s: string): Bytes.t =
-	       case lookupConstant (s, ConstType.Int) of
-		  Const.Int i => Bytes.fromInt (IntX.toInt i)
+	       case lookupConstant (s, ConstType.Word) of
+		  Const.Word w => Bytes.fromInt (WordX.toInt w)
 		| _ => Error.bug "GC_state offset must be an int"
 	 in
 	    Runtime.GCField.setOffsets
@@ -580,12 +580,18 @@ fun preCodegen {input}: Machine.Program.t =
 				 Layouts Ssa.Program.layouts)
 	    else ()
 	 end
+      val codegenImplementsPrim =
+	 if !Control.Native.native
+	    then x86Codegen.implementsPrim
+	 else CCodegen.implementsPrim
       val machine =
 	 Control.pass
 	 {name = "backend",
 	  suffix = "machine",
 	  style = Control.No,
-	  thunk = fn () => Backend.toMachine ssa,
+	  thunk = fn () => (Backend.toMachine
+			    (ssa,
+			     {codegenImplementsPrim = codegenImplementsPrim})),
 	  display = Control.Layouts Machine.Program.layouts}
       val _ =
 	 let

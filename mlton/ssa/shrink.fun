@@ -918,50 +918,18 @@ fun shrinkFunction (globals: Statement.t vector) =
 			 | SOME l => tryToEliminate (labelMeaning l))
 	       else
 		  let
-		     val m = labelMeaning (Cases.hd cases)
-		     local
-			open LabelMeaning
-		     in
-			fun usesFormal (T {aux, blockIndex = i, ...}): bool =
-			   case aux of
-			      Block =>
-				 0 < Vector.length (Block.args
-						    (Vector.sub (blocks, i)))
-			    | Bug => false
-			    | Goto {args, ...} => Positions.usesFormal args
-			    | Raise {args, ...} => Positions.usesFormal args
-			    | Return {args, ...} => Positions.usesFormal args
-			    | _ => true
-			fun rr ({args = a, canMove = c},
-				{args = a', canMove = c'}) =
-			   Positions.equals (a, a')
-			   andalso List.equals (c, c', Statement.equals)
-			fun equals (m: t, m': t): bool =
-			   case (aux m, aux m') of
-			      (Block, Block) => blockIndex m = blockIndex m'
-			    | (Bug, Bug) => true
-			    | (Goto {dst, args},
-			       Goto {dst = dst', args = args'}) =>
-				 equals (dst, dst')
-				 andalso Positions.equals (args, args')
-			    | (Raise z, Raise z') => rr (z, z')
-			    | (Return z, Return z') => rr (z, z')
-			    | _ => false
-		     end
-		     fun isOk (l: Label.t): bool =
-			let
-			   val m' = labelMeaning l
-			in
-			   not (usesFormal m') andalso equals (m, m')
-			end
+		     val l = Cases.hd cases
+		     fun isOk (l': Label.t): bool = Label.equals (l, l')
 		  in
-		     if Cases.forall (cases, isOk)
+		     if 0 = Vector.length (Block.args
+					   (Vector.sub (blocks, labelIndex l)))
+			andalso Cases.forall (cases, isOk)
 			andalso (case default of
 				    NONE => true
 				  | SOME l => isOk l)
 			then
 			   (* All cases the same -- eliminate the case. *)
-			   tryToEliminate m
+			   tryToEliminate (labelMeaning l)
 		     else
 			let
 			   fun findCase (cases, is, args) =
@@ -989,27 +957,23 @@ fun shrinkFunction (globals: Statement.t vector) =
 					     then doit (j, args)
 					  else loop (k + 1)
 				       end
-			      in loop 0
+			      in
+				 loop 0
 			      end
 			in
 			   case (VarInfo.value test, cases) of
 			      (SOME (Value.Const c), _) =>
-				 let
-				    fun doit (l, z, eq) =
-				       findCase (l, fn z' => eq (z, z'),
-						 Vector.new0 ())
-				 in
-				    case (cases, c) of
-				       (Cases.Int (_, cs), Const.Int i) =>
-					  doit (cs, i, IntX.equals)
-				     | (Cases.Word (_, cs), Const.Word w) =>
-					  doit (cs, w, WordX.equals)
-				     | _ =>
-					  Error.bug "strange constant for cases"
-				 end
+				 (case (cases, c) of
+				     (Cases.Word (_, cs), Const.Word w) =>
+					findCase (cs,
+						  fn w' => WordX.equals (w, w'),
+						  Vector.new0 ())
+				   | _ =>
+					Error.bug "strange constant for cases")
 			    | (SOME (Value.Con {con, args}), Cases.Con cases) =>
-				 findCase (cases, fn c =>
-					   Con.equals (con, c), args)
+				 findCase (cases,
+					   fn c => Con.equals (con, c),
+					   args)
 			    | _ => cantSimplify ()
 (*
 			    | (NONE, _) => cantSimplify ()

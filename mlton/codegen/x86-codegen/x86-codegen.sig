@@ -13,16 +13,16 @@ signature X86_CODEGEN_STRUCTS =
    end
 
 signature X86_CODEGEN =
-  sig
-    include X86_CODEGEN_STRUCTS
+   sig
+      include X86_CODEGEN_STRUCTS
 
-    val output: {program: Machine.Program.t,
-                 outputC: unit -> {file: File.t,
-				   print: string -> unit,
-				   done: unit -> unit},
-                 outputS: unit -> {file: File.t,
-				   print: string -> unit,
-				   done: unit -> unit}}
-                -> unit
-  end
+      val implementsPrim: Machine.Type.t Machine.Prim.t -> bool
+      val output: {program: Machine.Program.t,
+		   outputC: unit -> {file: File.t,
+				     print: string -> unit,
+				     done: unit -> unit},
+		   outputS: unit -> {file: File.t,
+				     print: string -> unit,
+				     done: unit -> unit}} -> unit
+   end
 

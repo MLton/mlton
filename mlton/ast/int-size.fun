@@ -93,24 +93,4 @@ fun prim s =
       NONE => Error.bug "IntSize.prim"
     | SOME p => p
 
-val range =
-   memoize
-   (fn s =>
-    let
-       val pow = IntInf.pow (2, Bits.toInt (bits s) - 1)
-    in
-       (~ pow, pow - 1)
-    end)
-
-fun isInRange (s, i) =
-   let
-      val (min, max) = range s
-   in
-      min <= i andalso i <= max
-   end
-
-val min = #1 o range
-
-val max = #2 o range
-
 end

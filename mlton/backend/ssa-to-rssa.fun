@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -39,7 +39,6 @@ structure CFunction =
 	 open Type
       in
 	 val gcState = gcState
-	 val Int32 = int (IntSize.I (Bits.fromInt 32))
 	 val Word32 = word (Bits.fromInt 32)
 	 val unit = unit
       end
@@ -71,7 +70,7 @@ structure CFunction =
 	    return = Type.thread}
 
       val exit =
-	 T {args = Vector.new1 Int32,
+	 T {args = Vector.new1 Word32,
 	    bytesNeeded = NONE,
 	    convention = Cdecl,
 	    ensuresBytesFree = false,
@@ -83,7 +82,7 @@ structure CFunction =
 	    return = unit}
 
       fun gcArrayAllocate {return} =
-	 T {args = Vector.new4 (gcState, Word32, Int32, Word32),
+	 T {args = Vector.new4 (gcState, Word32, Word32, Word32),
 	    bytesNeeded = NONE,
 	    convention = Cdecl,
 	    ensuresBytesFree = true,
@@ -172,7 +171,7 @@ structure CFunction =
       fun size t =
 	 vanilla {args = Vector.new1 t,
 		  name = "MLton_size",
-		  return = Int32}
+		  return = Word32}
    end
 
 structure Name =
@@ -184,36 +183,17 @@ structure Name =
       fun cFunctionRaise (n: t): CFunction.t =
 	 let
 	    datatype z = datatype CFunction.Convention.t
+	    val name = toString n
 	    val word = Type.word o WordSize.bits
 	    val vanilla = CFunction.vanilla
-	    val intC = ("Int", Type.int, IntSize.toString)
+	    val intC = ("Int", Type.word, IntSize.toString)
 	    val realC = ("Real", Type.real, RealSize.toString)
 	    val wordC = ("Word", word, WordSize.toString)
-	    fun coerce (s1, (fromName, fromType, fromString),
-			s2, (toName, toType, toString)) =
-	       vanilla {args = Vector.new1 (fromType s1),
-			name = concat [fromName, fromString s1,
-				       "_to", toName, toString s2],
-			return = toType s2}
-	    fun coerceX (s1, (fromName, fromType, fromString),
-			 s2, (toName, toType, toString)) =
-	       vanilla {args = Vector.new1 (fromType s1),
-			name = concat [fromName, fromString s1,
-				       "_to", toName, toString s2, "X"],
-			return = toType s2}
-	    fun intBinary (s, name) =
-	       let
-		  val t = Type.int s
-	       in
-		  vanilla {args = Vector.new2 (t, t),
-			   name = concat ["Int", IntSize.toString s, "_", name],
-			   return = t}
-	       end
-	    fun intCompare (s, name) =
-	       vanilla {args = Vector.new2 (Type.int s, Type.int s),
-			name = concat ["Int", IntSize.toString s, "_", name],
-			return = Type.bool}
-	    fun intInfBinary name =
+	    fun coerce (t1, t2) =
+	       vanilla {args = Vector.new1 t1,
+			name = name,
+			return = t2}
+	    fun intInfBinary () =
 	       CFunction.T {args = Vector.new3 (Type.intInf, Type.intInf,
 						Type.defaultWord),
 			    bytesNeeded = SOME 2,
@@ -223,9 +203,9 @@ structure Name =
 			    maySwitchThreads = false,
 			    modifiesFrontier = true,
 			    modifiesStackTop = false,
-			    name = concat ["IntInf_", name],
+			    name = name,
 			    return = Type.intInf}
-	    fun intInfShift name =
+	    fun intInfShift () =
 	       CFunction.T {args = Vector.new3 (Type.intInf,
 						Type.defaultWord,
 						Type.defaultWord),
@@ -236,11 +216,11 @@ structure Name =
 			    maySwitchThreads = false,
 			    modifiesFrontier = true,
 			    modifiesStackTop = false,
-			    name = concat ["IntInf_", name],
+			    name = name,
 			    return = Type.intInf}
-	    val intInfToString =
+	    fun intInfToString () =
 	       CFunction.T {args = Vector.new3 (Type.intInf,
-						Type.defaultInt,
+						Type.defaultWord,
 						Type.defaultWord),
 			    bytesNeeded = SOME 2,
 			    convention = Cdecl,
@@ -249,9 +229,9 @@ structure Name =
 			    maySwitchThreads = false,
 			    modifiesFrontier = true,
 			    modifiesStackTop = false,
-			    name = "IntInf_toString",
+			    name = name,
 			    return = Type.string}
-	    fun intInfUnary name =
+	    fun intInfUnary () =
 	       CFunction.T {args = Vector.new2 (Type.intInf, Type.defaultWord),
 			    bytesNeeded = SOME 1,
 			    convention = Cdecl,
@@ -260,284 +240,82 @@ structure Name =
 			    maySwitchThreads = false,
 			    modifiesFrontier = true,
 			    modifiesStackTop = false,
-			    name = concat ["IntInf_", name],
+			    name = name,
 			    return = Type.intInf}
-	    fun wordBinary (s, name) =
+	    fun wordBinary s =
 	       let
 		  val t = word s
 	       in
 		  vanilla {args = Vector.new2 (t, t),
-			   name = concat ["Word", WordSize.toString s,
-					  "_", name],
+			   name = name,
 			   return = t}
 	       end
-	    fun wordCompare (s, name) =
+	    fun wordCompare s =
 	       vanilla {args = Vector.new2 (word s, word s),
-			name = concat ["Word", WordSize.toString s, "_", name],
+			name = name,
 			return = Type.bool}
-	    fun wordShift (s, name) =
+	    fun wordShift s =
 	       vanilla {args = Vector.new2 (word s, Type.defaultWord),
-			name = concat ["Word", WordSize.toString s, "_", name],
+			name = name,
 			return = word s}
-	    fun wordUnary (s, name) =
+	    fun wordUnary s =
 	       vanilla {args = Vector.new1 (word s),
-			name = concat ["Word", WordSize.toString s, "_", name],
+			name = name,
 			return = word s}
 	 in
 	    case n of
-	       Int_ge s => intCompare (s, "ge")
-	     | Int_gt s => intCompare (s, "gt")
-	     | Int_le s => intCompare (s, "le")
-	     | Int_lt s => intCompare (s, "lt")
-	     | Int_mul s => intBinary (s, "mul")
-	     | Int_quot s => intBinary (s, "quot")
-	     | Int_rem s => intBinary (s, "rem")
-	     | Int_toReal (s1, s2) => coerce (s1, intC, s2, realC)
-	     | IntInf_add => intInfBinary "add"
-	     | IntInf_andb => intInfBinary "andb"
-	     | IntInf_arshift => intInfShift "arshift"
+	       IntInf_add => intInfBinary ()
+	     | IntInf_andb => intInfBinary ()
+	     | IntInf_arshift => intInfShift ()
 	     | IntInf_compare => 
 		  vanilla {args = Vector.new2 (Type.intInf, Type.intInf),
-			   name = "IntInf_compare",
-			   return = Type.defaultInt}
+			   name = name,
+			   return = Type.defaultWord}
 	     | IntInf_equal =>
 		  vanilla {args = Vector.new2 (Type.intInf, Type.intInf),
-			   name = "IntInf_equal",
+			   name = name,
 			   return = Type.bool}
-	     | IntInf_gcd => intInfBinary "gcd"
-	     | IntInf_lshift => intInfShift "lshift"
-	     | IntInf_mul => intInfBinary "mul"
-	     | IntInf_neg => intInfUnary "neg"
-	     | IntInf_notb => intInfUnary "notb"
-	     | IntInf_orb => intInfBinary "orb"
-	     | IntInf_quot => intInfBinary "quot"
-	     | IntInf_rem => intInfBinary "rem"
-	     | IntInf_sub => intInfBinary "sub"
-	     | IntInf_toString => intInfToString
-	     | IntInf_xorb => intInfBinary "xorb"
+	     | IntInf_gcd => intInfBinary ()
+	     | IntInf_lshift => intInfShift ()
+	     | IntInf_mul => intInfBinary ()
+	     | IntInf_neg => intInfUnary ()
+	     | IntInf_notb => intInfUnary ()
+	     | IntInf_orb => intInfBinary ()
+	     | IntInf_quot => intInfBinary ()
+	     | IntInf_rem => intInfBinary ()
+	     | IntInf_sub => intInfBinary ()
+	     | IntInf_toString => intInfToString ()
+	     | IntInf_xorb => intInfBinary ()
 	     | MLton_bug => CFunction.bug
 	     | Thread_returnToC => CFunction.returnToC
-	     | Word_add s => wordBinary (s, "add")
-	     | Word_andb s => wordBinary (s, "andb")
-	     | Word_arshift s => wordShift (s, "arshift")
-	     | Word_div s => wordBinary (s, "div")
-	     | Word_equal s => wordCompare (s, "equal")
-	     | Word_ge s => wordCompare (s, "ge")
-	     | Word_gt s => wordCompare (s, "gt")
-	     | Word_le s => wordCompare (s, "le")
-	     | Word_lshift s => wordShift (s, "lshift")
-	     | Word_lt s => wordCompare (s, "lt")
-	     | Word_mod s => wordBinary (s, "mod")
-	     | Word_mul s => wordBinary (s, "mul")
-	     | Word_neg s => wordUnary (s, "neg")
-	     | Word_notb s => wordUnary (s, "notb")
-	     | Word_orb s => wordBinary (s, "orb")
-	     | Word_rol s => wordShift (s, "rol")
-	     | Word_ror s => wordShift (s, "ror")
-	     | Word_rshift s => wordShift (s, "rshift")
-	     | Word_sub s => wordBinary (s, "sub")
-	     | Word_toWord (s1, s2) => coerce (s1, wordC, s2, wordC)
-	     | Word_toWordX (s1, s2) => coerceX (s1, wordC, s2, wordC)
-	     | Word_xorb s => wordBinary (s, "xorb")
+	     | Word_add s => wordBinary s
+	     | Word_andb s => wordBinary s
+	     | Word_equal s => wordCompare s
+	     | Word_ge (s, _) => wordCompare s
+	     | Word_gt (s, _) => wordCompare s
+	     | Word_le (s, _) => wordCompare s
+	     | Word_lshift s => wordShift s
+	     | Word_lt (s, _) => wordCompare s
+	     | Word_mul (s, _) => wordBinary s
+	     | Word_neg s => wordUnary s
+	     | Word_notb s => wordUnary s
+	     | Word_orb s => wordBinary s
+	     | Word_quot (s, _) => wordBinary s
+	     | Word_rem (s, _) => wordBinary s
+	     | Word_rol s => wordShift s
+	     | Word_ror s => wordShift s
+	     | Word_rshift (s, _) => wordShift s
+	     | Word_sub s => wordBinary s
+	     | Word_toReal (s1, s2, _) =>
+		  coerce (Type.word (WordSize.bits s1), Type.real s2)
+	     | Word_toWord (s1, s2, _) =>
+		  coerce (Type.word (WordSize.bits s1),
+			  Type.word (WordSize.bits s2))
+	     | Word_xorb s => wordBinary s
 	     | _ => raise Fail "cFunctionRaise"
 	 end
 
       fun cFunction n = SOME (cFunctionRaise n) handle _ => NONE
-
-      fun cCodegenImplements n =
-	 let
-	    datatype z = datatype RealSize.t
-	 in
-	    case n of
-	       FFI_Symbol _ => true
-	     | Int_ge _ => true
-	     | Int_gt _ => true
-	     | Int_le _ => true
-	     | Int_lt _ => true
-	     | Int_mul _ => true
-	     | Int_toReal _ => true
-	     | Real_Math_acos _ => true
-	     | Real_Math_asin _ => true
-	     | Real_Math_atan _ => true
-	     | Real_Math_atan2 _ => true
-	     | Real_Math_cos _ => true
-	     | Real_Math_exp _ => true
-	     | Real_Math_ln _ => true
-	     | Real_Math_log10 _ => true
-	     | Real_Math_sin _ => true
-	     | Real_Math_sqrt _ => true
-	     | Real_Math_tan _ => true
-	     | Real_add _ => true
-	     | Real_div _ => true
-	     | Real_equal _ => true
-	     | Real_ge _ => true
-	     | Real_gt _ => true
-	     | Real_ldexp _ => true
-	     | Real_le _ => true
-	     | Real_lt _ => true
-	     | Real_mul _ => true
-	     | Real_muladd _ => true
-	     | Real_mulsub _ => true
-	     | Real_neg _ => true
-	     | Real_round _ => true
-	     | Real_sub _ => true
-	     | Real_toInt _ => true
-	     | Real_toReal _ => true
-	     | Thread_returnToC => true
-	     | Word_add _ => true
-	     | Word_andb _ => true
-	     | Word_arshift _ => true
-	     | Word_div _ => true
-	     | Word_equal _ => true
-	     | Word_ge _ => true
-	     | Word_gt _ => true
-	     | Word_le _ => true
-	     | Word_lshift _ => true
-	     | Word_lt _ => true
-	     | Word_mod _ => true
-	     | Word_mul _ => true
-	     | Word_neg _ => true
-	     | Word_notb _ => true
-	     | Word_orb _ => true
-	     | Word_rol _ => true
-	     | Word_ror _ => true
-	     | Word_rshift _ => true
-	     | Word_sub _ => true
-	     | Word_toWord _ => true
-	     | Word_toWordX _ => true
-	     | Word_xorb _ => true
-	     | _ => false
-	 end
-
-      fun x86CodegenImplements n =
-	 let
-	    datatype z = datatype IntSize.prim
-	    datatype z = datatype RealSize.t
-	    datatype z = datatype WordSize.prim
-	    fun i32168 s =
-	       case IntSize.prim s of
-		  I8 => true
-		| I16 => true
-		| I32 => true
-		| I64 => false
-	    fun w32168 s =
-	       case WordSize.prim s of
-		  W8 => true
-		| W16 => true
-		| W32 => true
-		| W64 => false
-	 in
-	    case n of
-	       FFI_Symbol _ => true
-	     | Int_addCheck _ => true
-	     | Int_ge s => i32168 s
-	     | Int_gt s => i32168 s
-	     | Int_le s => i32168 s
-	     | Int_lt s => i32168 s
-	     | Int_mul s => i32168 s
-	     | Int_mulCheck s => i32168 s
-	     | Int_negCheck _ => true
-	     | Int_quot s => i32168 s
-	     | Int_rem s => i32168 s
-	     | Int_subCheck _ => true
-	     | Int_toReal (s1, s2) =>
-		  (case (IntSize.prim s1, s2) of
-		      (I32, R64) => true
-		    | (I32, R32) => true
-		    | (I16, R64) => true
-		    | (I16, R32) => true
-		    | (I8, R64) => true
-		    | (I8, R32) => true
-		    | _ => false)
-	      | Real_Math_acos _ => true
-	      | Real_Math_asin _ => true
-	      | Real_Math_atan _ => true
-	      | Real_Math_atan2 _ => true
-	      | Real_Math_cos _ => true
-	      | Real_Math_exp _ => true
-	      | Real_Math_ln _ => true
-	      | Real_Math_log10 _ => true
-	      | Real_Math_sin _ => true
-	      | Real_Math_sqrt _ => true
-	      | Real_Math_tan _ => true
-	      | Real_abs _ => true
-	      | Real_add _ => true
-	      | Real_div _ => true
-	      | Real_equal _ => true
-	      | Real_ge _ => true
-	      | Real_gt _ => true
-	      | Real_ldexp _ => true
-	      | Real_le _ => true
-	      | Real_lt _ => true
-	      | Real_mul _ => true
-	      | Real_muladd _ => true
-	      | Real_mulsub _ => true
-	      | Real_neg _ => true
-	      | Real_qequal _ => true
-	      | Real_round _ => true
-	      | Real_sub _ => true
-	      | Real_toInt (s1, s2) =>
-		   (case (s1, IntSize.prim s2) of
-		       (R64, I32) => true
-		     | (R64, I16) => true
-		     | (R64, I8) => true
-		     | (R32, I32) => true
-		     | (R32, I16) => true
-		     | (R32, I8) => true
-		     | _ => false)
-	      | Real_toReal _ => true
-	      | Word_add _ => true
-	      | Word_addCheck _ => true
-	      | Word_andb _ => true
-	      | Word_arshift s => w32168 s
-	      | Word_div s => w32168 s
-	      | Word_equal s => w32168 s
-	      | Word_ge s => w32168 s
-	      | Word_gt s => w32168 s
-	      | Word_le s => w32168 s
-	      | Word_lshift s => w32168 s
-	      | Word_lt s => w32168 s
-	      | Word_mod s => w32168 s
-	      | Word_mul s => w32168 s
-	      | Word_mulCheck s => w32168 s
-	      | Word_neg _ => true
-	      | Word_notb _ => true
-	      | Word_orb _ => true
-	      | Word_rol s => w32168 s
-	      | Word_ror s => w32168 s
-	      | Word_rshift s => w32168 s
-	      | Word_sub _ => true
-	      | Word_toWord (s1, s2) =>
-		   (case (WordSize.prim s1, WordSize.prim s2) of
-		       (W32, W32) => true
-		     | (W32, W16) => true
-		     | (W32, W8) => true
-		     | (W16, W32) => true
-		     | (W16, W16) => true
-		     | (W16, W8) => true
-		     | (W8, W32) => true
-		     | (W8, W16) => true
-		     | (W8, W8) => true
-		     | _ => false)
-	      | Word_toWordX (s1, s2) =>
-		   (case (WordSize.prim s1, WordSize.prim s2) of
-		       (W32, W32) => true
-		     | (W32, W16) => true
-		     | (W32, W8) => true
-		     | (W16, W32) => true
-		     | (W16, W16) => true
-		     | (W16, W8) => true
-		     | (W8, W32) => true
-		     | (W8, W16) => true
-		     | (W8, W8) => true
-		     | _ => false)
-	      | Word_xorb _ => true
-	      | _ => false
-	 end
-
-      val x86CodegenImplements: t -> bool =
-	 Trace.trace ("x86CodegenImplements", layout, Bool.layout)
-	 x86CodegenImplements
    end
 
 datatype z = datatype Operand.t
@@ -564,7 +342,8 @@ fun updateCard (addr: Operand.t): Statement.t list =
 					    (!Control.cardSizeLog2),
 					    WordSize.default)))),
 		dst = SOME (index, indexTy),
-		prim = Prim.wordRshift WordSize.default},
+		prim = Prim.wordRshift (WordSize.default,
+					{signed = false})},
        Move {dst = (ArrayOffset
 		    {base = Runtime GCField.CardMap,
 		     index = Var {ty = indexTy, var = index},
@@ -619,40 +398,14 @@ fun convertConst (c: Const.t): Const.t =
       datatype z = datatype Const.t
    in
       case c of
-	 Int i =>
-	    let
-	       val s = IntX.size i
-	       val s' = IntSize.roundUpToPrim s
-	       val i =
-		  if IntSize.equals (s, s')
-		     then i
-		  else
-		     (* Represent a twos-complement s-bit integer in a
-		      * twos-complement s'-bit integer.  If the integer is
-		      * negative, to get the right bits, we need to make it
-		      * positive.
-		      *)
-		     let
-			val i' = IntX.toIntInf i
-			val i' =
-			   if i' >= 0
-			      then i'
-			   else
-			      i' - IntInf.<< (~1, Bits.toWord (IntSize.bits s))
-		     in
-			IntX.make (i', s')
-		     end
-	    in
-	       Int i
-	    end
-       | Word w => Word (WordX.resize (w, WordSize.roundUpToPrim (WordX.size w)))
+	 Word w => Word (WordX.resize (w, WordSize.roundUpToPrim (WordX.size w)))
        | _ => c
    end
 
 val word = Type.word o WordSize.bits
 
-fun convert (program as S.Program.T {functions, globals, main, ...})
-   : Rssa.Program.t =
+fun convert (program as S.Program.T {functions, globals, main, ...},
+	     {codegenImplementsPrim}): Rssa.Program.t =
    let
       val {conApp, diagnostic, genCase, objectTypes, reff, select, toRtype,
 	   tuple} =
@@ -705,52 +458,40 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			  cases: S.Cases.t,
 			  default: Label.t option})
 	 : Statement.t list * Transfer.t =
-	 let
-	    fun simple (s, cs) =
+	 case cases of
+	    S.Cases.Con cases =>
+	       (case (Vector.length cases, default) of
+		   (0, NONE) => ([], Transfer.bug)
+		 | _ => 
+		      let
+			 val (tycon, tys) = S.Type.tyconArgs (varType test)
+		      in
+			 if Vector.isEmpty tys
+			    then
+			       let
+				  val test = fn () => varOp test
+				  val (ss, t, blocks) =
+				     genCase {cases = cases,
+					      default = default,
+					      test = test,
+					      tycon = tycon}
+				  val () =
+				     extraBlocks := blocks @ !extraBlocks
+			       in
+				  (ss, t)
+			       end
+			 else Error.bug "strange type in case"
+		      end)
+	  | S.Cases.Word (s, cs) =>
 	       ([],
 		Switch
 		(Switch.T
 		 {cases = (QuickSort.sortVector
-			   (cs, fn ((w, _), (w', _)) => WordX.<= (w, w'))),
+			   (cs, fn ((w, _), (w', _)) =>
+			    WordX.le (w, w', {signed = false}))),
 		  default = default,
 		  size = s,
 		  test = varOp test}))
-	 in
-	    case cases of
-	       S.Cases.Con cases =>
-		  (case (Vector.length cases, default) of
-		      (0, NONE) => ([], Transfer.bug)
-		    | _ => 
-			 let
-			    val (tycon, tys) = S.Type.tyconArgs (varType test)
-			 in
-			    if Vector.isEmpty tys
-			       then
-				  let
-				     val test = fn () => varOp test
-				     val (ss, t, blocks) =
-					genCase {cases = cases,
-						 default = default,
-						 test = test,
-						 tycon = tycon}
-				     val () =
-					extraBlocks := blocks @ !extraBlocks
-				  in
-				     (ss, t)
-				  end
-			    else Error.bug "strange type in case"
-			 end)
-	     | S.Cases.Int (s, cs) =>
-		  let
-		     val s = WordSize.fromBits (IntSize.bits s)
-		     val cs = Vector.map (cs, fn (i, l) =>
-					  (WordX.fromIntInf (IntX.toIntInf i, s),
-					   l))
-		  in
-		     simple (s, cs)
-		  end
-	     | S.Cases.Word (s, cs) => simple (s, cs)
-	 end
       val {get = labelInfo: (Label.t ->
 			     {args: (Var.t * S.Type.t) vector,
 			      cont: (Handler.t * Label.t) list ref,
@@ -916,7 +657,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	 in
 	    case Type.dest t of
 	       Constant w => c (Const.word w)
-	     | Pointer _ => Cast (Operand.int (IntX.one IntSize.default), t)
+	     | Pointer _ =>
+		  Cast (Operand.word (WordX.one (WordSize.pointer ())), t)
 	     | Real s => c (Const.real (RealX.zero s))
 	     | Sum ts => bogus (Vector.sub (ts, 0))
 	     | Word s => c (Const.word (WordX.zero (WordSize.fromBits s)))
@@ -936,7 +678,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		  then (Vector.fromList ss, t)
 	       else
 		  let
-		     val S.Statement.T {exp, ty, var} =
+		     val s as S.Statement.T {exp, ty, var} =
 			Vector.sub (statements, i)
 		     fun none () = loop (i - 1, ss, t)
 		     fun add s = loop (i - 1, s :: ss, t)
@@ -985,7 +727,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				 move (Offset
 				       {base = a 0,
 					offset = Runtime.arrayLengthOffset,
-					ty = Type.defaultInt})
+					ty = Type.defaultWord})
 			      fun sub (ty: Type.t) =
 				 let
 				    val base = a 0
@@ -1137,13 +879,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			in
 			   loop (i - 1, ss, t)
 			end
-		     fun nativeOrC (p: Prim.t) =
+		     fun codegenOrC (p: Prim.t) =
 			let
 			   val n = Prim.name p
 			in
-			   if if !Control.Native.native
-				 then Name.x86CodegenImplements n
-			      else Name.cCodegenImplements n
+			   if codegenImplementsPrim p
 			      then primApp p
 			   else (case Name.cFunction n of
 				    NONE =>
@@ -1151,22 +891,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 							  Name.toString n])
 				  | SOME f => simpleCCall f)
 			end
-		     fun wordToWord (s1: WordSize.t, s2: WordSize.t) =
-			if WordSize.equals (s1, s2)
-			   then move (a 0)
-			else nativeOrC (Prim.wordToWord (s1, s2))
-		     fun wordToWordX (s1: WordSize.t, s2: WordSize.t) =
-			if WordSize.equals (s1, s2)
-			   then move (a 0)
-			else
-			   let
-			      val p = 
-				 if Bits.< (WordSize.bits s1, WordSize.bits s2)
-				    then Prim.wordToWordX
-				 else Prim.wordToWord
-			   in
-			      nativeOrC (p (s1, s2))
-			   end
 		     datatype z = datatype Prim.Name.t
 			   in
 			      case Prim.name prim of
@@ -1219,8 +943,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    ccall
 				    {args = (Vector.new5
 					     (GCState,
-					      Operand.int (IntX.zero
-							   IntSize.default),
+					      Operand.zero WordSize.default,
 					      Operand.bool true,
 					      File,
 					      Line)),
@@ -1232,33 +955,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | GC_unpack =>
 				    ccall {args = Vector.new1 GCState,
 					   func = CFunction.unpack}
-			       | Int_add s =>
-				    nativeOrC (Prim.wordAdd
-					       (intSizeToWordSize s))
-			       | Int_arshift s =>
-				    nativeOrC (Prim.wordArshift
-					       (intSizeToWordSize s))
-			       | Int_equal s =>
-				    nativeOrC (Prim.wordEqual
-					       (intSizeToWordSize
-						(IntSize.roundUpToPrim s)))
-			       | Int_lshift s =>
-				    nativeOrC (Prim.wordLshift
-					       (intSizeToWordSize s))
-			       | Int_neg s =>
-				    nativeOrC (Prim.wordNeg
-					       (intSizeToWordSize s))
-			       | Int_sub s =>
-				    nativeOrC (Prim.wordSub
-					       (intSizeToWordSize s))
-			       | Int_toInt (s1, s2) =>
-				    wordToWordX
-				    (intSizeToWordSize
-				     (IntSize.roundUpToPrim s1),
-				     intSizeToWordSize
-				     (IntSize.roundUpToPrim s2))
-			       | Int_toWord (s1, s2) =>
-				    wordToWordX (intSizeToWordSize s1, s2)
 			       | IntInf_toVector => cast ()
 			       | IntInf_toWord => cast ()
 			       | MLton_bogus =>
@@ -1269,7 +965,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    (case targ () of
 					NONE => move (Operand.bool true)
 				      | SOME t =>
-					   nativeOrC
+					   codegenOrC
 					   (Prim.wordEqual
 					    (WordSize.fromBits (Type.width t))))
 			       | MLton_installSignalHandler => none ()
@@ -1277,14 +973,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    simpleCCall
 				    (CFunction.size (Operand.ty (a 0)))
 			       | MLton_touch => none ()
-			       | Pointer_getInt s => pointerGet (Type.int s)
 			       | Pointer_getPointer =>
 				    (case targ () of
 					NONE => Error.bug "getPointer"
 				      | SOME t => pointerGet t)
 			       | Pointer_getReal s => pointerGet (Type.real s)
 			       | Pointer_getWord s => pointerGet (word s)
-			       | Pointer_setInt s => pointerSet (Type.int s)
 			       | Pointer_setPointer =>
 				    (case targ () of
 					NONE => Error.bug "setPointer"
@@ -1385,8 +1079,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					val args = 
 					   Vector.new5
 					   (GCState,
-					    Operand.int (IntX.zero
-							 IntSize.default),
+					    Operand.zero WordSize.default,
 					    Operand.bool false,
 					    File,
 					    Line)
@@ -1472,16 +1165,30 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				     end,
 				     none)
 			       | Word_equal s =>
-				    nativeOrC (Prim.wordEqual
+				    codegenOrC (Prim.wordEqual
 					       (WordSize.roundUpToPrim s))
-			       | Word_toInt (s1, s2) =>
-				    wordToWord (s1, intSizeToWordSize s2)
-			       | Word_toIntX (s1, s2) =>
-				    wordToWordX (s1, intSizeToWordSize s2)
-			       | Word_toIntInf => move (a 0)
-			       | Word_toWord (s1, s2) =>
-				    wordToWord (WordSize.roundUpToPrim s1,
-						WordSize.roundUpToPrim s2)
+			       | Word_toIntInf => cast ()
+			       | Word_toWord (s1, s2, {signed}) =>
+				    if WordSize.equals (s1, s2)
+				       then move (a 0)
+				    else
+				       let
+					  val signed =
+					     signed
+					     andalso Bits.< (WordSize.bits s1,
+							     WordSize.bits s2)
+					  val b1 = WordSize.bits s1
+					  val b2 = WordSize.bits s2
+					  val s1 = WordSize.roundUpToPrim s1
+					  val s2 = WordSize.roundUpToPrim s2
+				       in
+					  if WordSize.equals (s1, s2)
+					     then cast ()
+					  else
+					     codegenOrC
+					     (Prim.wordToWord
+					      (s1, s2, {signed = signed}))
+				       end
 			       | WordVector_toIntInf => move (a 0)
 			       | Word8Array_subWord => subWord ()
 			       | Word8Array_updateWord =>
@@ -1496,7 +1203,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 						   (GCState,
 						    Vector.sub (vos args, 0))),
 					   func = CFunction.worldSave}
-			       | _ => nativeOrC prim
+			       | _ => codegenOrC prim
 			   end
 		      | S.Exp.Profile e => add (Statement.Profile e)
 		      | S.Exp.Select {tuple, offset} =>

@@ -60,7 +60,6 @@ signature SSA_TREE =
 	    datatype dest =
 	       Array of t
 	     | Datatype of Tycon.t
-	     | Int of IntSize.t
 	     | IntInf
 	     | Real of RealSize.t
 	     | Ref of t
@@ -120,7 +119,6 @@ signature SSA_TREE =
 	 sig
 	    datatype t =
 	       Con of (Con.t * Label.t) vector
-	     | Int of IntSize.t * (IntX.t * Label.t) vector
 	     | Word of WordSize.t * (WordX.t * Label.t) vector
 
 	    val forall: t * (Label.t -> bool) -> bool

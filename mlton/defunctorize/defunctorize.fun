@@ -14,9 +14,10 @@ in
    structure Prim = Prim
    structure Record = Record
    structure Ctype = Type
+   structure WordSize = WordSize
+   structure WordX = WordX
 end
 
-structure IntX = Const.IntX
 structure Field = Record.Field
 
 local
@@ -55,7 +56,6 @@ structure MatchCompile =
 
 		       open Xcases
 		       type t = exp t
-		       val int = Int
 		       val word = Word
 		       fun con v =
 			  Con (Vector.map
@@ -761,8 +761,8 @@ fun defunctorize (CoreML.Program.T {decs}) =
 			if Xtype.equals (ty, Xtype.bool)
 			   then
 			      (case c of
-				  Const.Int i =>
-				     if 0 = IntX.toInt i
+				  Const.Word w =>
+				     if WordX.isZero w
 					then Xexp.falsee ()
 				     else Xexp.truee ()
 				| _ => Error.bug "strange boolean constant")
@@ -809,10 +809,10 @@ fun defunctorize (CoreML.Program.T {decs}) =
 			datatype z = datatype Prim.Name.t
 		     in
 			if (case Prim.name prim of
-			       Char_toWord8 => true
-			     | String_toWord8Vector => true
-			     | Word8_toChar => true
+			       String_toWord8Vector => true
 			     | Word8Vector_toString => true
+			     | Word_toWord (s1, s2, _) =>
+				  WordSize.equals (s1, s2)
 			     | _ => false)
 			   then Vector.sub (args, 0)
 			else

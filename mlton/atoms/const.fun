@@ -32,13 +32,11 @@ structure SmallIntInf =
    end
 
 datatype t =
-   Int of IntX.t
- | IntInf of IntInf.t
+   IntInf of IntInf.t
  | Real of RealX.t
  | Word of WordX.t
  | Word8Vector of Word8.t vector
 
-val int = Int
 val real = Real
 val intInf = IntInf
 val word = Word
@@ -52,10 +50,9 @@ local
    fun wrap (pre, post, s) = seq [str pre, String.layout s, str post]
 in
    val layout =
-      fn Int i => IntX.layout i
-       | IntInf i => IntInf.layout i
+      fn IntInf i => IntInf.layout i
        | Real r => RealX.layout r
-       | Word w => seq [str "0wx", WordX.layout w]
+       | Word w => WordX.layout w
        | Word8Vector v => wrap ("\"", "\"", Word8.vectorToString v)
 end	 
 
@@ -63,16 +60,14 @@ val toString = Layout.toString o layout
 
 fun hash (c: t): word =
    case c of
-      Int i => String.hash (IntX.toString i)
-    | IntInf i => String.hash (IntInf.toString i)
+      IntInf i => String.hash (IntInf.toString i)
     | Real r => RealX.hash r
     | Word w => Word.fromIntInf (WordX.toIntInf w)
     | Word8Vector v => String.hash (Word8.vectorToString v)
    
 fun equals (c, c') =
    case (c, c') of
-      (Int i, Int i') => IntX.equals (i, i')
-    | (IntInf i, IntInf i') => IntInf.equals (i, i')
+      (IntInf i, IntInf i') => IntInf.equals (i, i')
     | (Real r, Real r') => RealX.equals (r, r')
     | (Word w, Word w') => WordX.equals (w, w')
     | (Word8Vector v, Word8Vector v') => v = v'

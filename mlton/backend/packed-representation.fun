@@ -167,7 +167,8 @@ structure Statement =
 	 val andb = make (valOf o Type.andb, Prim.wordAndb)
 	 val lshift = make (Type.lshift, Prim.wordLshift)
 	 val orb = make (valOf o Type.orb, Prim.wordOrb)
-	 val rshift = make (Type.rshift, Prim.wordRshift)
+	 val rshift = make (Type.rshift, fn s =>
+			    Prim.wordRshift (s, {signed = false}))
       end
    end
 
@@ -395,7 +396,10 @@ structure Unpack =
 		  let
 		     val (s, src) =
 			Statement.andb
-			(src, Operand.word (WordX.resize (WordX.max s, s')))
+			(src,
+			 Operand.word (WordX.resize
+				       (WordX.max (s, {signed = false}), s')))
+					    
 		  in
 		     (src, [s])
 		  end
@@ -994,10 +998,10 @@ structure ConRep =
 		  seq [str "ShiftAndTag ",
 		       record [("component", Component.layout component),
 			       ("selects", Selects.layout selects),
-			       ("tag", seq [str "0x", WordX.layout tag]),
+			       ("tag", WordX.layout tag),
 			       ("ty", Type.layout ty)]]
 	     | Tag {tag} =>
-		  seq [str "Tag 0x", WordX.layout tag]
+		  seq [str "Tag ", WordX.layout tag]
 	     | Transparent => str "Transparent"
 	     | Unit => str "Unit"
 	 end
@@ -1165,7 +1169,8 @@ structure Pointers =
 	       else default
 	    val cases =
 	       QuickSort.sortVector 
-	       (cases, fn ((w, _), (w', _)) => WordX.<= (w, w'))
+	       (cases, fn ((w, _), (w', _)) =>
+		WordX.le (w, w', {signed = false}))
 	    val headerTy = headerTy ()
 	    val (s, tag) =
 	       Statement.rshift (Offset {base = test,
@@ -1231,10 +1236,11 @@ structure Small =
 			       Block.new {statements = statements,
 					  transfer = transfer})
 		      end
-		 | ConRep.Tag {tag} => SOME (WordX.resize (tag, wordSize), l)
+		 | ConRep.Tag {tag} =>
+		      SOME (WordX.resize (tag, wordSize), l)
 		 | _ => NONE)
 	    val cases = QuickSort.sortVector (cases, fn ((w, _), (w', _)) =>
-					      WordX.<= (w, w'))
+					      WordX.le (w, w', {signed = false}))
 	    val (tagOp, ss) =
 	       if isEnum
 		  then (test, [])
@@ -1244,7 +1250,8 @@ structure Small =
 			Statement.andb
 			(test,
 			 Operand.word (WordX.resize
-				       (WordX.max (WordSize.fromBits tagBits),
+				       (WordX.max (WordSize.fromBits tagBits,
+						   {signed = false}),
 					wordSize)))
 		  in
 		     (tag, [s])
@@ -1416,7 +1423,9 @@ structure TyconRep =
 			   con: Con.t,
 			   pointerTycon: PointerTycon.t} vector)
 	 : t * {con: Con.t, rep: ConRep.t} vector =
-	 if 1 = Vector.length variants
+	 if 0 = Vector.length variants
+	    then (Unit, Vector.new0 ())
+	 else if 1 = Vector.length variants
 	    then
 	       let
 		  val {args, con, pointerTycon} = Vector.sub (variants, 0)
@@ -2094,7 +2103,6 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		    in
 		       r'
 		    end
-	       | Int s => nonPointer (Type.int s)
 	       | IntInf =>
 		    constant (Rep.T {rep = Rep.Pointer {endsIn00 = false},
 				     ty = Type.intInf})
@@ -2252,10 +2260,6 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		  if Tycon.equals (c, Tycon.bool)
 		     then SOME Type.bool
 		  else normal ()
-	     | Int s =>
-		  if true
-		     then normal ()
-		  else SOME (Type.int (IntSize.roundUpToPrim s))
 	     | _ => normal ()
 	 end
       fun makeSrc (v, oper) {index} = oper (Vector.sub (v, index))

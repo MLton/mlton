@@ -23,7 +23,6 @@ signature ANALYZE =
 		   con: Con.t} -> 'a,
 	  const: Const.t -> 'a,
 	  filter: 'a * Con.t * 'a vector -> unit,
-	  filterInt: 'a * IntSize.t -> unit,
 	  filterWord: 'a * WordSize.t -> unit,
 	  fromType: Type.t -> 'a,
 	  layout: 'a -> Layout.t,

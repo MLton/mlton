@@ -42,11 +42,10 @@ structure ElaborateSigexp = ElaborateSigexp (structure Ast = Ast
 
 structure ConstType =
    struct
-      datatype t = Bool | Int | Real | String | Word
+      datatype t = Bool | Real | String | Word
 
       val toString =
 	 fn Bool => "Bool"
-	  | Int => "Int"
 	  | Real => "Real"
 	  | String => "String"
 	  | Word => "Word"

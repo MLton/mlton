@@ -37,13 +37,9 @@ OBJS =						\
 	basis/GC/setSummary.o			\
 	basis/IEEEReal.o			\
 	basis/IntInf.o				\
-	basis/Int/Int64.o			\
 	basis/Int/Word8Array.o			\
 	basis/Int/Word8Vector.o			\
 	basis/Int/Word64.o			\
-	basis/Int/addOverflow.o			\
-	basis/Int/mulOverflow.o			\
-	basis/Int/negOverflow.o			\
 	basis/Int/quot.o			\
 	basis/Int/subOverflow.o			\
 	basis/Itimer/set.o			\
@@ -203,13 +199,9 @@ DEBUG_OBJS =					\
 	basis/GC/setSummary-gdb.o		\
 	basis/IEEEReal-gdb.o			\
 	basis/IntInf-gdb.o			\
-	basis/Int/Int64-gdb.o			\
 	basis/Int/Word8Array-gdb.o		\
 	basis/Int/Word8Vector-gdb.o		\
 	basis/Int/Word64-gdb.o			\
-	basis/Int/addOverflow-gdb.o		\
-	basis/Int/mulOverflow-gdb.o		\
-	basis/Int/negOverflow-gdb.o		\
 	basis/Int/quot-gdb.o			\
 	basis/Int/subOverflow-gdb.o		\
 	basis/Itimer/set-gdb.o			\

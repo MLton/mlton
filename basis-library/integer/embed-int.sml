@@ -16,35 +16,30 @@ functor EmbedInt (structure Big: INTEGER_EXTRA
 
       open Small
 
-      val shift = Word.fromInt (Int.- (valOf Big.precision, Small.precision'))
-	 
-      val toBig: Small.int -> Big.int =
-	 fn s => Big.~>> (Big.<< (Small.toBig s, shift), shift)
+      val shift = Word.fromInt (Int.- (valOf Big.precision, precision'))
+
+      val extend: Big.int -> Big.int =
+	 fn i => Big.~>> (Big.<< (i, shift), shift)
+
+      val toBig: Small.int -> Big.int = extend o Small.toBig
 	 
       val precision = SOME precision'
 
-      val maxIntBig =
-	 Big.fromLarge
-	 (IntInf.- (LargeInt.<< (1, Word.fromInt (Int.- (precision', 1))),
-		    1))
+      val maxIntBig = Big.>> (Big.fromInt ~1, Word.+ (shift, 0w1))
 
       val minIntBig = Big.- (Big.~ maxIntBig, Big.fromInt 1)
 
-      fun fromBig (i: Big.int): int =
-	 if Big.< (i, Big.fromInt 0)
-	    then
-	       if Big.<= (minIntBig, i)
-		  then
-		     fromBigUnsafe
-		     (Big.- (i,
-			     Big.<< (Big.fromInt ~1,
-				     Word.fromInt Small.precision')))
-	       else raise Overflow
-	 else
-	    if Big.<= (i, maxIntBig)
-	       then fromBigUnsafe i
-	    else raise Overflow
+      val mask = Big.>> (Big.fromInt ~1, shift)
 
+      fun fromBig (i: Big.int): int =
+	 let
+	    val i' = Big.andb (i, mask)
+	 in
+	    if i = extend i'
+	       then fromBigUnsafe i'
+	    else raise Overflow
+	 end
+	       
       val maxInt = SOME (fromBig maxIntBig)
 
       val minInt = SOME (fromBig minIntBig)

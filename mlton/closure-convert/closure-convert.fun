@@ -798,7 +798,6 @@ fun closureConvert
 			       end)
 			in (finish cases, ac)
 			end
-		     fun doit (l, f) = doCases (l, f, fn i => fn e => (i, e))
 		     val (cases, ac) =
 			case cases of
 			   Scases.Con cases =>
@@ -817,10 +816,9 @@ fun closureConvert
 					      body = body,
 					      con = con}
 			       end)
-			 | Scases.Int (s, cs) =>
-			      doit (cs, fn cs => Dexp.Int (s, cs))
 			 | Scases.Word (s, cs) =>
-			      doit (cs, fn cs => Dexp.Word (s, cs))
+			      doCases (cs, fn cs => Dexp.Word (s, cs),
+				       fn i => fn e => (i, e))
 		  in (Dexp.casee
 		      {test = convertVarExp test,
 		       ty = ty, cases = cases, default = default},

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -76,7 +76,6 @@ structure Cases =
    struct
       datatype 'a t = 
 	 Con of (Pat.t * 'a) vector
-       | Int of IntSize.t * (IntX.t * 'a) vector
        | Word of WordSize.t * (WordX.t * 'a) vector
 
       fun layout (cs, layout) =
@@ -89,7 +88,6 @@ structure Cases =
 	 in
 	    case cs of
 	       Con v => doit (v, Pat.layout)
-	     | Int (_, v) => doit (v, IntX.layout)
 	     | Word (_, v) => doit (v, WordX.layout)
 	 end
 
@@ -99,7 +97,6 @@ structure Cases =
 	 in
 	    case c of
 	       Con l => doit l
-	     | Int (_, l) => doit l
 	     | Word (_, l) => doit l
 	 end
 
@@ -109,7 +106,6 @@ structure Cases =
 	 in
 	    case c of
 	       Con l => Con (doit l)
-	     | Int (s, l) => Int (s, doit l)
 	     | Word (s, l) => Word (s, doit l)
 	 end
       
@@ -121,7 +117,6 @@ structure Cases =
 	 in
 	    case c of
 	       Con l => Vector.foreach (l, fn (c, a) => (fc c; f a))
-	     | Int (_, l) => doit l
 	     | Word (_, l) => doit l
 	 end
    end

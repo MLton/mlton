@@ -17,7 +17,6 @@ signature MATCH_COMPILE_STRUCTS =
 
 	    val deTuple: t -> t vector
 	    val equals: t * t -> bool
-	    val int: IntSize.t -> t
 	    val layout: t -> Layout.t
 	    val unit: t
 	    val word: WordSize.t -> t
@@ -31,7 +30,6 @@ signature MATCH_COMPILE_STRUCTS =
 		      targs: Type.t vector,
 		      arg: (Var.t * Type.t) option,
 		      rhs: exp} vector -> t
-	    val int: IntSize.t * (IntX.t * exp) vector -> t
 	    val word: WordSize.t * (WordX.t * exp) vector -> t
 	 end
       structure Exp:

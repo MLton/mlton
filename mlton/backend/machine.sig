@@ -73,7 +73,6 @@ signature MACHINE =
 	     | Frontier
 	     | GCState
 	     | Global of Global.t
-	     | Int of IntX.t
 	     | Label of Label.t
 	     | Line (* expand by codegen into int constant *)
 	     | Offset of {base: t,

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -246,14 +246,14 @@ fun simplifyTypes (I.Program.T {body, datatypes, overflow}) =
 							func = fixVarExp func}
 	  | I.PrimExp.Case {cases, default, test} =>
 	       let
-		  fun doit v = Vector.map (v, fn (c, e) => (c, fixExp e))
 		  val cases =
 		     case cases of
 			I.Cases.Con v =>
 			   O.Cases.Con (Vector.map (v, fn (p, e) =>
 						    (fixPat p, fixExp e)))
-		      | I.Cases.Int (s, v) => O.Cases.Int (s, doit v)
-		      | I.Cases.Word (s, v) => O.Cases.Word (s, doit v)
+		      | I.Cases.Word (s, v) =>
+			   O.Cases.Word
+			   (s, Vector.map (v, fn (c, e) => (c, fixExp e)))
 	       in
 		  O.PrimExp.Case {cases = cases,
 				  default = Option.map (default, fn (e, r) =>

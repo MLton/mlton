@@ -11,7 +11,6 @@ signature REPRESENTATION_STRUCTS =
    sig
       structure Rssa: RSSA
       structure Ssa: SSA
-      sharing Rssa.IntSize = Ssa.IntSize
       sharing Rssa.RealSize = Ssa.RealSize
       sharing Rssa.WordSize = Ssa.WordSize
    end

@@ -22,8 +22,6 @@ struct
   local
      open Machine
   in
-     structure IntSize = IntSize
-     structure IntX = IntX
      structure Label = Label
      structure Register = Register
      structure Type = Type
@@ -163,85 +161,6 @@ struct
 	       Vector.new1 (x86.Operand.label x86MLton.gcState_label,
 			    x86MLton.pointerSize)
 	  | Global g => Global.toX86Operand g
-	  | Int i =>
-	       let
-		  val i'' = fn () => x86.Operand.immediate_const_int (IntX.toInt i)
-		  datatype z = datatype IntSize.prim
-	       in
-		  case IntSize.prim (IntX.size i) of
-		     I8 => Vector.new1 (i'' (), x86.Size.BYTE)
-		   | I16 => Vector.new1 (i'' (), x86.Size.WORD)
-		   | I32 => Vector.new1 (i'' (), x86.Size.LONG)
-		   | I64 => let
-			       fun convert1 (ii: IntInf.t): Word.t * Word.t =
-				  let
-				     val lo = Word.fromIntInf ii
-				     val ii = IntInf.~>> (ii, 0w32)
-				     val hi = Word.fromIntInf ii
-				  in
-				     (lo, hi)
-				  end
-			       fun convert2 (ii: IntInf.t): Word.t * Word.t =
-				  let
-				     fun finish (iis: String.t, c: Char.t) =
-					let
-					   val s =
-					      String.concat
-					      [String.tabulate
-					       (16 - String.size iis, fn _ => c),
-					       iis]
-					   fun cvt s = valOf (Word.fromString s)
-					   val lo = cvt(String.extract(s, 8, SOME 8))
-					   val hi = cvt(String.extract(s, 0, SOME 8))
-					in
-					   (lo, hi)
-					end
-				  in
-				     if ii < 0
-					then let
-						val ii = ~ ii - 1
-						val iis =
-						   String.translate
-						   (IntInf.format (ii, StringCvt.HEX),
-						    fn #"0" => "F"
-						     | #"1" => "E"
-						     | #"2" => "D"
-						     | #"3" => "C"
-						     | #"4" => "B"
-						     | #"5" => "A"
-						     | #"6" => "9"
-						     | #"7" => "8"
-						     | #"8" => "7"
-						     | #"9" => "6"
-						     | #"A" => "5"
-						     | #"B" => "4"
-						     | #"C" => "3"
-						     | #"D" => "2"
-						     | #"E" => "1"
-						     | #"F" => "0"
-						     | #"a" => "5"
-						     | #"b" => "4"
-						     | #"c" => "3"
-						     | #"d" => "2"
-						     | #"e" => "1"
-						     | #"f" => "0"
-						     | _ => "")
-					     in
-						finish (iis, #"F")
-					     end
-					else finish (IntInf.format (ii, StringCvt.HEX), #"0")
-				  end
-			       val ii = IntX.toIntInf i
-			       val (lo, hi) = 
-				 if MLton.isMLton 
-				   then convert1 ii
-				   else convert2 ii
-			    in
-			       Vector.new2
-			       ((x86.Operand.immediate_const_word lo, x86.Size.LONG),
-				(x86.Operand.immediate_const_word hi, x86.Size.LONG))
-			    end
-	       end
 	  | Label l => 
 	       Vector.new1 (x86.Operand.immediate_label l, x86MLton.pointerSize)
 	  | Line => 

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -384,7 +384,7 @@ structure Value =
 		    in new (Const c', Type.ofConst c)
 		    end
 
-      val zero = IntSize.memoize (fn s => const (S.Const.int (IntX.zero s)))
+      val zero = WordSize.memoize (fn s => const (S.Const.word (WordX.zero s)))
 
       fun constToEltLength (c, err) =
 	 let
@@ -402,8 +402,8 @@ structure Value =
 			    else const' (Const.unknown (), Type.word8)
 			 end
 	    val n =
-	       const (Sconst.Int (IntX.make
-				  (IntInf.fromInt n, IntSize.default)))
+	       const (Sconst.Word (WordX.fromIntInf (IntInf.fromInt n,
+						     WordSize.default)))
 	 in
 	    {elt = x, length = n}
 	 end
@@ -480,13 +480,13 @@ structure Value =
 		  (case Type.dest t of
 		      Type.Array t => Array {birth = arrayBirth (),
 					     elt = loop t,
-					     length = loop Type.defaultInt}
+					     length = loop Type.defaultWord}
 		    | Type.Datatype _ => Datatype (data ())
 		    | Type.Ref t => Ref {arg = loop t,
 					 birth = refBirth ()}
 		    | Type.Tuple ts => Tuple (Vector.map (ts, loop))
 		    | Type.Vector t => Vector {elt = loop t,
-					       length = loop Type.defaultInt}
+					       length = loop Type.defaultWord}
 		    | Type.Weak t => Weak (loop t)
 		    | _ => Const (const ()), 
 		   t)
@@ -622,12 +622,14 @@ fun simplify (program: Program.t): Program.t =
 	     else
 	        let 
 		   fun error () = 
-		      Error.bug ("strange coerce:" ^
-				 " from: " ^ (Layout.toString (Value.layout from)) ^
-				 " to: " ^ (Layout.toString (Value.layout to)))
+		      Error.bug
+		      (concat ["strange coerce: from: ",
+			       Layout.toString (Value.layout from),
+			       " to: ", Layout.toString (Value.layout to)])
 		in
 		  case (value from, value to) of
-		     (Const from, Const to) => Const.coerce {from = from, to = to}
+		     (Const from, Const to) =>
+			Const.coerce {from = from, to = to}
 		   | (Datatype from, Datatype to) =>
 		        coerceData {from = from, to = to}
 		   | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
@@ -754,7 +756,7 @@ fun simplify (program: Program.t): Program.t =
 	       case Prim.name prim of
 		  Array_array => array (arg 0, bear ())
 		| Array_array0Const =>
-		     array (zero IntSize.default, Birth.here ())
+		     array (zero WordSize.default, Birth.here ())
 		| Array_length => arrayLength (arg 0)
 		| Array_sub => dearray (arg 0)
 		| Array_toVector => vectorFromArray (arg 0)
@@ -815,7 +817,6 @@ fun simplify (program: Program.t): Program.t =
 		  conApp = conApp,
 		  const = Value.const,
 		  filter = filter,
-		  filterInt = filterIgnore,
 		  filterWord = filterIgnore,
 		  fromType = Value.fromType,
 		  layout = Value.layout,

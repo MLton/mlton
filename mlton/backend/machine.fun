@@ -16,7 +16,6 @@ structure Runtime = Runtime ()
 structure RepType = RepType (structure CFunction = CFunction
 			     structure CType = CType
 			     structure IntSize = IntSize
-			     structure IntX = IntX
 			     structure Label = Label
 			     structure PointerTycon = PointerTycon
 			     structure Prim = Prim
@@ -175,7 +174,6 @@ structure Operand =
        | Frontier
        | GCState
        | Global of Global.t
-       | Int of IntX.t
        | Label of Label.t
        | Line
        | Offset of {base: t,
@@ -205,9 +203,8 @@ structure Operand =
 	| Frontier => Type.defaultWord
 	| GCState => Type.gcState
 	| Global g => Global.ty g
-	| Int i => Type.int (IntX.size i)
 	| Label l => Type.label l
-	| Line => Type.defaultInt
+	| Line => Type.defaultWord
 	| Offset {ty, ...} => ty
 	| Real r => Type.real (RealX.size r)
 	| Register r => Register.ty r
@@ -237,7 +234,6 @@ structure Operand =
 	     | Frontier => str "<Frontier>"
 	     | GCState => str "<GCState>"
 	     | Global g => Global.layout g
-	     | Int i => IntX.layout i
 	     | Label l => Label.layout l
 	     | Line => str "<Line>"
 	     | Offset {base, offset, ty} =>
@@ -248,7 +244,7 @@ structure Operand =
 	     | Register r => Register.layout r
 	     | StackOffset so => StackOffset.layout so
 	     | StackTop => str "<StackTop>"
-	     | Word w => seq [str "0x", WordX.layout w]
+	     | Word w => WordX.layout w
 	 end
 
     val toString = Layout.toString o layout
@@ -264,7 +260,6 @@ structure Operand =
 	   | (File, File) => true
 	   | (GCState, GCState) => true
 	   | (Global g, Global g') => Global.equals (g, g')
-	   | (Int i, Int i') => IntX.equals (i, i')
 	   | (Label l, Label l') => Label.equals (l, l')
 	   | (Line, Line) => true
 	   | (Offset {base = b, offset = i, ...},
@@ -938,9 +933,6 @@ structure Program =
 			   (checkOperand (z, alloc)
 			    ; (Type.castIsOk
 			       {from = Operand.ty z,
-				fromInt = (case z of
-					      Int i => SOME i
-					    | _ => NONE),
 				to = t,
 				tyconTy = tyconTy}))
 		      | Contents {oper, ...} =>
@@ -956,7 +948,6 @@ structure Program =
 			    *)
 			   true
 			   orelse Alloc.doesDefine (alloc, x)
-		      | Int _ => true
 		      | Label l => 
 			   (let val _ = labelBlock l
 			    in true

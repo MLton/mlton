@@ -278,15 +278,15 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 	       SprimExp.App {func = monoVarExp func, arg = monoVarExp arg}
 	  | XprimExp.Case {test, cases, default} =>
 	       let
-		  fun doit cases =
-		     Vector.map (cases, fn (c, e) => (c, monoExp e))
 		  val cases =
 		     case cases of
 			Xcases.Con cases => 
 			   Scases.Con (Vector.map (cases, fn (pat, exp) =>
 						   (monoPat pat, monoExp exp)))
-		      | Xcases.Int (s, l) => Scases.Int (s, doit l)
-		      | Xcases.Word (s, l) => Scases.Word (s, doit l)
+		      | Xcases.Word (s, v) =>
+			   Scases.Word
+			   (s, Vector.map (v, fn (c, e) => (c, monoExp e)))
+
 	       in
 		  SprimExp.Case
 		  {test = monoVarExp test,

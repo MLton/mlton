@@ -27,8 +27,10 @@ signature WORD_SIZE =
       val default: t
       val equals: t * t -> bool
       val fromBits: Bits.t -> t
+      val isInRange: t * IntInf.t * {signed: bool} -> bool
       val layout: t -> Layout.t
-      val max: t -> IntInf.t
+      val max: t * {signed: bool} -> IntInf.t
+      val min: t * {signed: bool} -> IntInf.t
       val memoize: (t -> 'a) -> t -> 'a
       val one: t
       val pointer: unit -> t

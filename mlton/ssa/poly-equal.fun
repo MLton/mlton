@@ -43,10 +43,10 @@ structure Dexp =
       open DirectExp
 
       fun add (e1: t, e2: t): t =
-	 primApp {prim = Prim.intAdd IntSize.default,
+	 primApp {prim = Prim.wordAdd WordSize.default,
 		  targs = Vector.new0 (),
 		  args = Vector.new2 (e1, e2),
-		  ty = Type.defaultInt}
+		  ty = Type.defaultWord}
 
       fun conjoin (e1: t, e2: t): t =
 	 casee {test = e1,
@@ -201,16 +201,16 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 			     Dexp.primApp {prim = Prim.vectorLength,
 					   targs = Vector.new1 ty,
 					   args = Vector.new1 x,
-					   ty = Type.defaultInt}
+					   ty = Type.defaultWord}
 			in
 			   Dexp.disjoin
 			   (Dexp.eq (Dexp.var v1, Dexp.var v2, vty),
 			    Dexp.conjoin
-			    (Dexp.eq (length dv1, length dv2, Type.defaultInt),
+			    (Dexp.eq (length dv1, length dv2, Type.defaultWord),
 			     Dexp.call
 			     {func = loop,
 			      args = (Vector.new4 
-				      (Dexp.int (IntX.zero IntSize.default),
+				      (Dexp.word (WordX.zero WordSize.default),
 				       length dv1, dv1, dv2)),
 			      ty = Type.bool}))
 			end
@@ -226,8 +226,8 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 				     start = start}
 		  end
 		  local
-		     val i = (Var.newNoname (), Type.defaultInt)
-		     val len = (Var.newNoname (), Type.defaultInt)
+		     val i = (Var.newNoname (), Type.defaultWord)
+		     val len = (Var.newNoname (), Type.defaultWord)
 		     val v1 = (Var.newNoname (), vty)
 		     val v2 = (Var.newNoname (), vty)
 		     val args = Vector.new4 (i, len, v1, v2)
@@ -245,11 +245,11 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 			   val args =
 			      Vector.new4 
 			      (Dexp.add
-			       (di, Dexp.int (IntX.one IntSize.default)),
+			       (di, Dexp.word (WordX.one WordSize.default)),
 			       dlen, dv1, dv2)
 			in
 			   Dexp.disjoin 
-			   (Dexp.eq (di, dlen, Type.defaultInt),
+			   (Dexp.eq (di, dlen, Type.defaultWord),
 			    Dexp.conjoin
 			    (equalExp (sub (dv1, di), sub (dv2, di), ty),
 			     Dexp.call {args = args,
@@ -292,7 +292,6 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		  else Dexp.call {func = equalFunc tycon,
 				  args = Vector.new2 (dx1, dx2),
 				  ty = Type.bool}
-	     | Type.Int s => prim (Prim.intEqual s, Vector.new0 ())
 	     | Type.IntInf => if hasConstArg ()
 				 then eq ()
 			      else prim (Prim.intInfEqual, Vector.new0 ())
@@ -332,11 +331,11 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	    case exp of
 	       Const c =>
 		  (case c of
-		      Const.Int _ => const ()
-		    | Const.IntInf i =>
+		      Const.IntInf i =>
 			 if Const.SmallIntInf.isSmall i
 			    then const ()
 			 else ()
+		    | Const.Word _ => const ()
 		    | _ => ())
 	     | ConApp {args, ...} =>
 		  if Vector.isEmpty args then const () else ()

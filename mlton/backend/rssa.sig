@@ -66,11 +66,11 @@ signature RSSA =
 	    val caseBytes: t * {big: t -> 'a,
 				small: Bytes.t -> 'a} -> 'a
 	    val cast: t * Type.t -> t
-	    val int: IntX.t -> t
 	    val layout: t -> Layout.t
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val ty: t -> Type.t
 	    val word: WordX.t -> t
+	    val zero: WordSize.t -> t
 	 end
       sharing Operand = Switch.Use
     

@@ -33,6 +33,8 @@ struct
     = x86MLton (structure x86MLtonBasic = x86MLtonBasic
 		structure x86Liveness = x86Liveness)
 
+  val implementsPrim = x86MLton.implementsPrim
+    
   structure x86Translate 
     = x86Translate (structure x86 = x86
 		    structure x86MLton = x86MLton

@@ -6,4 +6,5 @@ val _ =
    in
       debug := Out Out.error
       ; flagged ()
+      ; on []
    end

@@ -10,7 +10,6 @@ Group
 signature AST
 signature ATOMS
 signature ID
-signature INT_X
 signature C_FUNCTION
 signature C_TYPE
 signature CON
@@ -50,8 +49,6 @@ id.fun
 (* Windows doesn't like files named con, so use con- instead. *)
 con-.sig
 con-.fun
-int-x.sig
-int-x.fun
 real-x.sig
 real-x.fun
 word-x.sig

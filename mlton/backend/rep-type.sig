@@ -9,8 +9,6 @@ signature REP_TYPE_STRUCTS =
    sig
       structure CFunction: C_FUNCTION
       structure CType: C_TYPE
-      structure IntSize: INT_SIZE
-      structure IntX: INT_X
       structure Label: LABEL
       structure PointerTycon: POINTER_TYCON
       structure Prim: PRIM
@@ -19,7 +17,6 @@ signature REP_TYPE_STRUCTS =
       structure WordSize: WORD_SIZE
       structure WordX: WORD_X
       sharing CFunction = Prim.CFunction
-      sharing IntSize = IntX.IntSize = Prim.IntSize
       sharing RealSize = Prim.RealSize
       sharing WordSize = Prim.WordSize = WordX.WordSize
    end
@@ -66,7 +63,6 @@ signature REP_TYPE =
       val bool: t
       val bytes: t -> Bytes.t
       val castIsOk: {from: t,
-		     fromInt: IntX.t option,
 		     to: t,
 		     tyconTy: PointerTycon.t -> ObjectType.t} -> bool
       val checkPrimApp: {args: t vector,
@@ -75,7 +71,6 @@ signature REP_TYPE =
       val char: t
       val cPointer: unit -> t
       val constant: WordX.t -> t
-      val defaultInt: t
       val defaultWord: t
       val dest: t -> dest
       val dropPrefix: t * Bits.t -> t
@@ -85,7 +80,6 @@ signature REP_TYPE =
       val fragment: t * {start: Bits.t, width: Bits.t} -> t
       val fromCType: CType.t -> t
       val gcState: t
-      val int: IntSize.t -> t
       val intInf: t
       val isBool: t -> bool
       val isCPointer: t -> bool

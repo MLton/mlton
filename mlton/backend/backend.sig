@@ -21,5 +21,8 @@ signature BACKEND =
    sig
       include BACKEND_STRUCTS
       
-      val toMachine: Ssa.Program.t -> Machine.Program.t
+      val toMachine:
+	 Ssa.Program.t
+	 * {codegenImplementsPrim: Machine.Type.t Machine.Prim.t -> bool}
+	 -> Machine.Program.t
    end

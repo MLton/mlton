@@ -1,11 +1,12 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor x86MLton(S: X86_MLTON_STRUCTS): X86_MLTON =
+
+functor x86MLton (S: X86_MLTON_STRUCTS): X86_MLTON =
 struct
 
   open S
@@ -16,9 +17,9 @@ struct
   in
      structure CFunction = CFunction
      structure IntSize = IntSize
+     structure RealSize = RealSize
      structure Prim = Prim
      structure WordSize = WordSize
-     datatype z = datatype IntSize.prim
      datatype z = datatype RealSize.t
      datatype z = datatype WordSize.prim
   end
@@ -28,6 +29,108 @@ struct
 				     -> x86.FrameInfo.t),
 		    live: x86.Label.t -> x86.Operand.t list,
 		    liveInfo: x86Liveness.LiveInfo.t}
+
+  fun implementsPrim (p: 'a Prim.t) =
+     let
+	datatype z = datatype IntSize.prim
+	datatype z = datatype RealSize.t
+	datatype z = datatype WordSize.prim
+	fun w32168 s =
+	   case WordSize.prim s of
+	      W8 => true
+	    | W16 => true
+	    | W32 => true
+	    | W64 => false
+	datatype z = datatype Prim.Name.t
+     in
+	case Prim.name p of
+	   FFI_Symbol _ => true
+	 | Real_Math_acos _ => true
+	 | Real_Math_asin _ => true
+	 | Real_Math_atan _ => true
+	 | Real_Math_atan2 _ => true
+	 | Real_Math_cos _ => true
+	 | Real_Math_exp _ => true
+	 | Real_Math_ln _ => true
+	 | Real_Math_log10 _ => true
+	 | Real_Math_sin _ => true
+	 | Real_Math_sqrt _ => true
+	 | Real_Math_tan _ => true
+	 | Real_abs _ => true
+	 | Real_add _ => true
+	 | Real_div _ => true
+	 | Real_equal _ => true
+	 | Real_ge _ => true
+	 | Real_gt _ => true
+	 | Real_ldexp _ => true
+	 | Real_le _ => true
+	 | Real_lt _ => true
+	 | Real_mul _ => true
+	 | Real_muladd _ => true
+	 | Real_mulsub _ => true
+	 | Real_neg _ => true
+	 | Real_qequal _ => true
+	 | Real_round _ => true
+	 | Real_sub _ => true
+	 | Real_toReal _ => true
+	 | Real_toWord (s1, s2, {signed}) =>
+	      signed
+	      andalso (case (s1, WordSize.prim s2) of
+			  (R64, W32) => true
+			| (R64, W16) => true
+			| (R64, W8) => true
+			| (R32, W32) => true
+			| (R32, W16) => true
+			| (R32, W8) => true
+			| _ => false)
+	 | Word_add _ => true
+	 | Word_addCheck _ => true
+	 | Word_andb _ => true
+	 | Word_equal s => w32168 s
+	 | Word_ge (s, _) => w32168 s
+	 | Word_gt (s, _) => w32168 s
+	 | Word_le (s, _) => w32168 s
+	 | Word_lshift s => w32168 s
+	 | Word_lt (s, _) => w32168 s
+	 | Word_mul (s, _) => w32168 s
+	 | Word_mulCheck (s, _) => w32168 s
+	 | Word_neg _ => true
+	 | Word_notb _ => true
+	 | Word_orb _ => true
+	 | Word_quot (s, _) => w32168 s
+	 | Word_rem (s, _) => w32168 s
+	 | Word_rol s => w32168 s
+	 | Word_ror s => w32168 s
+	 | Word_rshift (s, _) => w32168 s
+	 | Word_sub _ => true
+	 | Word_toReal (s1, s2, {signed}) =>
+	      signed
+	      andalso (case (WordSize.prim s1, s2) of
+			  (W32, R64) => true
+			| (W32, R32) => true
+			| (W16, R64) => true
+			| (W16, R32) => true
+			| (W8, R64) => true
+			| (W8, R32) => true
+			| _ => false)
+	 | Word_toWord (s1, s2, _) =>
+	      (case (WordSize.prim s1, WordSize.prim s2) of
+		  (W32, W32) => true
+		| (W32, W16) => true
+		| (W32, W8) => true
+		| (W16, W32) => true
+		| (W16, W16) => true
+		| (W16, W8) => true
+		| (W8, W32) => true
+		| (W8, W16) => true
+		| (W8, W8) => true
+		| _ => false)
+	 | Word_xorb _ => true
+	 | _ => false
+     end
+
+  val implementsPrim: Machine.Type.t Prim.t -> bool =
+     Trace.trace ("implementsPrim", Prim.layout, Bool.layout) implementsPrim
 
   fun prim {prim : RepType.t Prim.t,
 	    args : (Operand.t * Size.t) vector,
@@ -575,6 +678,28 @@ struct
 			transfer = NONE}))
 		   end
 	      else (AppendList.empty,AppendList.empty)
+	fun bitop (size, i) =
+	   case WordSize.prim size of
+	      W8 => binal i
+	    | W16 => binal i
+	    | W32 => binal i
+	    | W64 => binal64 (i, i)
+	fun compare (size, {signed}, s, u) =
+	   let
+	      val f = if signed then s else u
+	   in
+	      case WordSize.prim size of
+		 W8 => cmp f
+	       | W16 => cmp f
+	       | W32 => cmp f
+	       | W64 => Error.bug "FIXME"
+	   end
+	fun shift (size, i) =
+	   case WordSize.prim size of
+	      W8 => sral i
+	    | W16 => sral i
+	    | W32 => sral i
+	    | W64 => Error.bug "FIXME"
       in
 	AppendList.appends
 	[comment_begin,
@@ -605,101 +730,6 @@ struct
 				  size = dstsize}
 			    | _ => Error.bug "prim: FFI"],
 		     transfer = NONE}]
-		end
-	     | Int_ge s => 	
-		(case IntSize.prim s of
-		    I8 => cmp Instruction.GE
-		  | I16 => cmp Instruction.GE
-		  | I32 => cmp Instruction.GE
-		  | I64 => Error.bug "FIXME")
-	     | Int_gt s => 
-		(case IntSize.prim s of
-		    I8 => cmp Instruction.G
-		  | I16 => cmp Instruction.G
-		  | I32 => cmp Instruction.G
-		  | I64 => Error.bug "FIXME")
-	     | Int_le s => 
-		(case IntSize.prim s of
-		    I8 => cmp Instruction.LE
-		  | I16 => cmp Instruction.LE
-		  | I32 => cmp Instruction.LE
-		  | I64 => Error.bug "FIXME")
-	     | Int_lt s =>
-		(case IntSize.prim s of
-		    I8 => cmp Instruction.L
-		  | I16 => cmp Instruction.L
-		  | I32 => cmp Instruction.L
-		  | I64 => Error.bug "FIXME")
-	     | Int_mul s =>
-		(case IntSize.prim s of
-		    I8 => pmd Instruction.IMUL
-		  | I16 => imul2 () 
-		  | I32 => imul2 ()
-		  | I64 => Error.bug "FIXME")
-	     | Int_quot s => 
-		(case IntSize.prim s of
-		    I8 => pmd Instruction.IDIV
-		  | I16 => pmd Instruction.IDIV
-		  | I32 => pmd Instruction.IDIV
-		  | I64 => Error.bug "FIXME")
-	     | Int_rem s => 
-		(case IntSize.prim s of
-		    I8 => pmd Instruction.IMOD
-		  | I16 => pmd Instruction.IMOD
-		  | I32 => pmd Instruction.IMOD
-		  | I64 => Error.bug "FIXME")
-	     | Int_toReal (s, s')
-	     => let
-		  fun default () =
-		    let
-		      val (dst,dstsize) = getDst1 ()
-		      val (src,srcsize) = getSrc1 ()
-		    in
-		      AppendList.fromList
-		      [Block.mkBlock'
-		       {entry = NONE,
-			statements 
-			= [Assembly.instruction_pfmovfi
-			   {src = src,
-			    dst = dst,
-			    srcsize = srcsize,
-			    dstsize = dstsize}],
-			transfer = NONE}]
-		    end 
-		  fun default' () =
-		    let
-		      val (dst,dstsize) = getDst1 ()
-		      val (src,srcsize) = getSrc1 ()
-		      val (tmp,tmpsize) =
-			 (fildTempContentsOperand, Size.WORD)
-		    in
-		      AppendList.fromList
-		      [Block.mkBlock'
-		       {entry = NONE,
-			statements 
-			= [Assembly.instruction_movx
-			   {oper = Instruction.MOVSX,
-			    src = src,
-			    dst = tmp,
-			    dstsize = tmpsize,
-			    srcsize = srcsize},
-			   Assembly.instruction_pfmovfi
-			   {src = tmp,
-			    dst = dst,
-			    srcsize = tmpsize,
-			    dstsize = dstsize}],
-			transfer = NONE}]
-		    end 
-		in
-		   case (IntSize.prim s, s') of
-		      (I64, R64) => Error.bug "FIXME"
-		    | (I64, R32) => Error.bug "FIXME"
-		    | (I32, R64) => default ()
-		    | (I32, R32) => default ()
-		    | (I16, R64) => default ()
-		    | (I16, R32) => default ()
-		    | (I8, R64) => default' ()
-		    | (I8, R32) => default' ()
 		end
 	     | Real_Math_acos _
 	     => let
@@ -1139,58 +1169,6 @@ struct
 		    transfer = NONE}]
 		end
 	     | Real_abs _ => funa Instruction.FABS
-	     | Real_toInt (s, s')
-	     => let
-		  fun default () =
-		    let
-		      val (dst,dstsize) = getDst1 ()
-		      val (src,srcsize) = getSrc1 ()
-		    in
-		      AppendList.fromList
-		      [Block.mkBlock'
-		       {entry = NONE,
-			statements 
-			= [Assembly.instruction_pfmovti
-			   {dst = dst,
-			    src = src,
-			    srcsize = srcsize,
-			    dstsize = dstsize}],
-			transfer = NONE}]
-		    end 
-		  fun default' () =
-		    let
-		      val (dst,dstsize) = getDst1 ()
-		      val (src,srcsize) = getSrc1 ()
-		      val (tmp,tmpsize) =
-			 (fildTempContentsOperand, Size.WORD)
-		    in
-		      AppendList.fromList
-		      [Block.mkBlock'
-		       {entry = NONE,
-			statements 
-			= [Assembly.instruction_pfmovti
-			   {dst = dst,
-			    src = src,
-			    srcsize = srcsize,
-			    dstsize = dstsize},
-			   Assembly.instruction_xvom
-			   {src = tmp,
-			    dst = dst,
-			    dstsize = dstsize,
-			    srcsize = tmpsize}],
-			transfer = NONE}]
-		    end 
-		in
-		   case (s, IntSize.prim s') of
-		      (R64, I64) => Error.bug "FIXME"
-		    | (R64, I32) => default ()
-		    | (R64, I16) => default ()
-		    | (R64, I8) => default' ()
-		    | (R32, I64) => Error.bug "FIXME"
-		    | (R32, I32) => default ()
-		    | (R32, I16) => default ()
-		    | (R32, I8) => default' ()
-		end
              | Real_toReal (s, s')
 	     => let
 		  val (dst,dstsize) = getDst1 ()
@@ -1234,6 +1212,58 @@ struct
 		    | (R32, R64) => movx ()
 		    | (R32, R32) => mov ()
 		end 
+	     | Real_toWord (s, s', _)
+	     => let
+		  fun default () =
+		    let
+		      val (dst,dstsize) = getDst1 ()
+		      val (src,srcsize) = getSrc1 ()
+		    in
+		      AppendList.fromList
+		      [Block.mkBlock'
+		       {entry = NONE,
+			statements 
+			= [Assembly.instruction_pfmovti
+			   {dst = dst,
+			    src = src,
+			    srcsize = srcsize,
+			    dstsize = dstsize}],
+			transfer = NONE}]
+		    end 
+		  fun default' () =
+		    let
+		      val (dst,dstsize) = getDst1 ()
+		      val (src,srcsize) = getSrc1 ()
+		      val (tmp,tmpsize) =
+			 (fildTempContentsOperand, Size.WORD)
+		    in
+		      AppendList.fromList
+		      [Block.mkBlock'
+		       {entry = NONE,
+			statements 
+			= [Assembly.instruction_pfmovti
+			   {dst = dst,
+			    src = src,
+			    srcsize = srcsize,
+			    dstsize = dstsize},
+			   Assembly.instruction_xvom
+			   {src = tmp,
+			    dst = dst,
+			    dstsize = dstsize,
+			    srcsize = tmpsize}],
+			transfer = NONE}]
+		    end 
+		in
+		   case (s, WordSize.prim s') of
+		      (R64, W64) => Error.bug "FIXME"
+		    | (R64, W32) => default ()
+		    | (R64, W16) => default ()
+		    | (R64, W8) => default' ()
+		    | (R32, W64) => Error.bug "FIXME"
+		    | (R32, W32) => default ()
+		    | (R32, W16) => default ()
+		    | (R32, W8) => default' ()
+		end
 	     | Real_ldexp _ 
 	     => let
 		  val (dst,dstsize) = getDst1 ()
@@ -1277,69 +1307,18 @@ struct
 		  | W16 => binal Instruction.ADD
 		  | W32 => binal Instruction.ADD
 		  | W64 => binal64 (Instruction.ADD, Instruction.ADC))
-	     | Word_andb s => 
+	     | Word_andb s => bitop (s, Instruction.AND)
+	     | Word_equal s => cmp Instruction.E
+	     | Word_ge (s, sg) => compare (s, sg, Instruction.GE, Instruction.AE)
+	     | Word_gt (s, sg) => compare (s, sg, Instruction.G, Instruction.A)
+	     | Word_le (s, sg) => compare (s, sg, Instruction.LE, Instruction.BE)
+	     | Word_lshift s => shift (s, Instruction.SHL)
+	     | Word_lt (s, sg) => compare (s, sg, Instruction.L, Instruction.B)
+	     | Word_mul (s, {signed}) =>
 		(case WordSize.prim s of
-		    W8 => binal Instruction.AND
-		  | W16 => binal Instruction.AND
-		  | W32 => binal Instruction.AND
-		  | W64 => binal64 (Instruction.AND, Instruction.AND))
-	     | Word_arshift s => 
-		(case WordSize.prim s of
-		    W8 => sral Instruction.SAR
-		  | W16 => sral Instruction.SAR
-		  | W32 => sral Instruction.SAR
-		  | W64 => Error.bug "FIXME")
-	     | Word_div s => 
-		(case WordSize.prim s of
-		    W8 => pmd Instruction.DIV
-		  | W16 => pmd Instruction.DIV
-		  | W32 => pmd Instruction.DIV
-		  | W64 => Error.bug "FIXME")
-	     | Word_equal s => 
-		(case WordSize.prim s of
-		    W8 => cmp Instruction.E
-		  | W16 => cmp Instruction.E
-		  | W32 => cmp Instruction.E
-		  | W64 => Error.bug "FIXME")
-	     | Word_ge s => 
-		(case WordSize.prim s of
-		    W8 => cmp Instruction.AE
-		  | W16 => cmp Instruction.AE
-		  | W32 => cmp Instruction.AE
-		  | W64 => Error.bug "FIXME")
-	     | Word_gt s => 
-		(case WordSize.prim s of
-		    W8 => cmp Instruction.A
-		  | W16 => cmp Instruction.A
-		  | W32 => cmp Instruction.A
-		  | W64 => Error.bug "FIXME")
-	     | Word_le s => 
-		(case WordSize.prim s of
-		    W8 => cmp Instruction.BE
-		  | W16 => cmp Instruction.BE
-		  | W32 => cmp Instruction.BE
-		  | W64 => Error.bug "FIXME")
-	     | Word_lshift s => 
-		(case WordSize.prim s of
-		    W8 => sral Instruction.SHL
-		  | W16 => sral Instruction.SHL
-		  | W32 => sral Instruction.SHL
-		  | W64 => Error.bug "FIXME")
-	     | Word_lt s => 
-		(case WordSize.prim s of
-		    W8 => cmp Instruction.B
-		  | W16 => cmp Instruction.B
-		  | W32 => cmp Instruction.B
-		  | W64 => Error.bug "FIXME")
-	     | Word_mod s => 
-		(case WordSize.prim s of
-		    W8 => pmd Instruction.MOD
-		  | W16 => pmd Instruction.MOD
-		  | W32 => pmd Instruction.MOD
-		  | W64 => Error.bug "FIXME")
-	     | Word_mul s =>
-		(case WordSize.prim s of
-		    W8 => pmd Instruction.MUL
+		    W8 => pmd (if signed
+				  then Instruction.IMUL
+			       else Instruction.MUL)
 		  | W16 => imul2 ()
 		  | W32 => imul2 ()
 		  | W64 => Error.bug "FIXME")
@@ -1360,78 +1339,87 @@ struct
 		  | W16 => unal Instruction.NOT
 		  | W32 => unal Instruction.NOT
 		  | W64 => unal64 (Instruction.NOT, fn _ => []))
-	     | Word_orb s => 
-		(case WordSize.prim s of
-		    W8 => binal Instruction.OR
-		  | W16 => binal Instruction.OR
-		  | W32 => binal Instruction.OR
-		  | W64 => binal64 (Instruction.OR, Instruction.OR))
-	     | Word_rol s => 
-		(case WordSize.prim s of
-		    W8 => sral Instruction.ROL
-		  | W16 => sral Instruction.ROL
-		  | W32 => sral Instruction.ROL
-		  | W64 => Error.bug "FIXME")
-	     | Word_ror s => 
-		(case WordSize.prim s of
-		    W8 => sral Instruction.ROR
-		  | W16 => sral Instruction.ROR
-		  | W32 => sral Instruction.ROR
-		  | W64 => Error.bug "FIXME")
-	     | Word_rshift s => 
-		(case WordSize.prim s of
-		    W8 => sral Instruction.SHR
-		  | W16 => sral Instruction.SHR
-		  | W32 => sral Instruction.SHR
-		  | W64 => Error.bug "FIXME")
+	     | Word_orb s => bitop (s, Instruction.OR)
+	     | Word_quot (s, {signed}) =>
+		  pmd (if signed then Instruction.IDIV else Instruction.DIV)
+	     | Word_rem (s, {signed}) =>
+		  pmd (if signed then Instruction.IMOD else Instruction.MOD)
+	     | Word_rol s => shift (s, Instruction.ROL)
+	     | Word_ror s => shift (s, Instruction.ROR)
+	     | Word_rshift (s, {signed}) =>
+		  shift (s, if signed then Instruction.SAR else Instruction.SHR)
 	     | Word_sub s => 
 		(case WordSize.prim s of
 		    W8 => binal Instruction.SUB
 		  | W16 => binal Instruction.SUB
 		  | W32 => binal Instruction.SUB
 		  | W64 => binal64 (Instruction.SUB, Instruction.SBB))
-	     | Word_toWord (s, s') =>
-	        (case (WordSize.prim s, WordSize.prim s') of
-		    (W64, W64) => Error.bug "FIXME"
-		  | (W64, W32) => Error.bug "FIXME"
-		  | (W64, W16) => Error.bug "FIXME"
-		  | (W64, W8) => Error.bug "FIXME"
-		  | (W32, W64) => Error.bug "FIXME"
-		  | (W32, W32) => mov ()
-		  | (W32, W16) => xvom ()
-		  | (W32, W8) => xvom ()
-		  | (W16, W64) => Error.bug "FIXME"
-		  | (W16, W32) => movx Instruction.MOVZX
-		  | (W16, W16) => mov ()
-		  | (W16, W8) => xvom ()
-		  | (W8, W64) => Error.bug "FIXME"
-		  | (W8, W32) => movx Instruction.MOVZX
-		  | (W8, W16) => movx Instruction.MOVZX
-		  | (W8, W8) => mov ())
-	     | Word_toWordX (s, s') =>
-		(case (WordSize.prim s, WordSize.prim s') of
-		    (W64, W64) => Error.bug "FIXME"
-		  | (W64, W32) => Error.bug "FIXME"
-		  | (W64, W16) => Error.bug "FIXME"
-		  | (W64, W8) => Error.bug "FIXME"
-		  | (W32, W64) => Error.bug "FIXME"
-		  | (W32, W32) => mov ()
-		  | (W32, W16) => xvom ()
-		  | (W32, W8) => xvom ()
-		  | (W16, W64) => Error.bug "FIXME"
-		  | (W16, W32) => movx Instruction.MOVSX
-		  | (W16, W16) => mov ()
-		  | (W16, W8) => xvom ()
-		  | (W8, W64) => Error.bug "FIXME"
-		  | (W8, W32) => movx Instruction.MOVSX
-		  | (W8, W16) => movx Instruction.MOVSX
-		  | (W8, W8) => mov ())
-	     | Word_xorb s => 
-		(case WordSize.prim s of
-		    W8 => binal Instruction.XOR
-		  | W16 => binal Instruction.XOR
-		  | W32 => binal Instruction.XOR
-		  | W64 => binal64 (Instruction.XOR, Instruction.XOR))
+	     | Word_toReal (s, s', {signed})
+	     => let
+		  fun default () =
+		    let
+		      val (dst,dstsize) = getDst1 ()
+		      val (src,srcsize) = getSrc1 ()
+		    in
+		      AppendList.fromList
+		      [Block.mkBlock'
+		       {entry = NONE,
+			statements 
+			= [Assembly.instruction_pfmovfi
+			   {src = src,
+			    dst = dst,
+			    srcsize = srcsize,
+			    dstsize = dstsize}],
+			transfer = NONE}]
+		    end 
+		  fun default' () =
+		    let
+		      val (dst,dstsize) = getDst1 ()
+		      val (src,srcsize) = getSrc1 ()
+		      val (tmp,tmpsize) =
+			 (fildTempContentsOperand, Size.WORD)
+		    in
+		      AppendList.fromList
+		      [Block.mkBlock'
+		       {entry = NONE,
+			statements 
+			= [Assembly.instruction_movx
+			   {oper = Instruction.MOVSX,
+			    src = src,
+			    dst = tmp,
+			    dstsize = tmpsize,
+			    srcsize = srcsize},
+			   Assembly.instruction_pfmovfi
+			   {src = tmp,
+			    dst = dst,
+			    srcsize = tmpsize,
+			    dstsize = dstsize}],
+			transfer = NONE}]
+		    end 
+		in
+		   case (WordSize.prim s, s') of
+		      (W32, R64) => default ()
+		    | (W32, R32) => default ()
+		    | (W16, R64) => default ()
+		    | (W16, R32) => default ()
+		    | (W8, R64) => default' ()
+		    | (W8, R32) => default' ()
+		    | _ => Error.bug "FIXME"
+		end
+	     | Word_toWord (s, s', {signed}) =>
+		  let
+		     val b = WordSize.bits s
+		     val b' = WordSize.bits s'
+		  in
+		     if Bits.< (b, b')
+			then movx (if signed
+				      then Instruction.MOVSX
+				   else Instruction.MOVZX)
+		     else if Bits.equals (b, b')
+			     then mov ()
+			  else xvom ()
+		  end
+	     | Word_xorb s => bitop (s, Instruction.XOR)
 	     | _ => Error.bug ("prim: strange Prim.Name.t: " ^ primName)),
 	 comment_end]
       end
@@ -1778,46 +1766,57 @@ struct
 			transfer = NONE}))
 		   end
 	      else (AppendList.empty,AppendList.empty)
+	fun flag {signed} =
+	   if signed then x86.Instruction.O else x86.Instruction.C
       in
 	AppendList.appends
 	[comment_begin,
 	 (case Prim.name prim of
-	     Int_addCheck s => 
-	       (case IntSize.prim s of
-		  I8 => binal (x86.Instruction.ADD, x86.Instruction.O)
-		| I16 => binal (x86.Instruction.ADD, x86.Instruction.O)
-		| I32 => binal (x86.Instruction.ADD, x86.Instruction.O)
-		| I64 => binal64 (x86.Instruction.ADD, x86.Instruction.ADC, x86.Instruction.O))
-	   | Int_subCheck s => 
-	       (case IntSize.prim s of
-		  I8 => binal (x86.Instruction.SUB, x86.Instruction.O)
-		| I16 => binal (x86.Instruction.SUB, x86.Instruction.O)
-		| I32 => binal (x86.Instruction.SUB, x86.Instruction.O)
-		| I64 => binal64 (x86.Instruction.SUB, x86.Instruction.SBB, x86.Instruction.O))
-	   | Int_mulCheck s => 	
-	       (case IntSize.prim s of
-		  I8 => pmd (x86.Instruction.IMUL, x86.Instruction.O)
-		| I16 => imul2 x86.Instruction.O
-		| I32 => imul2 x86.Instruction.O
-		| I64 => Error.bug "FIXME")
-	   | Int_negCheck s => 
-	       (case IntSize.prim s of
-		  I8 => unal (x86.Instruction.NEG, x86.Instruction.O)
-		| I16 => unal (x86.Instruction.NEG, x86.Instruction.O)
-		| I32 => unal (x86.Instruction.NEG, x86.Instruction.O)
-		| I64 => neg64 ())
-	   | Word_addCheck s => 
+	     Word_addCheck (s, sg) =>
+		let
+		   val flag = flag sg
+		in
+		   case WordSize.prim s of
+		      W8 => binal (x86.Instruction.ADD, flag)
+		    | W16 => binal (x86.Instruction.ADD, flag)
+		    | W32 => binal (x86.Instruction.ADD, flag)
+		    | W64 =>
+			 binal64 (x86.Instruction.ADD, x86.Instruction.ADC, flag)
+		end
+	   | Word_mulCheck (s, {signed}) =>
+		let
+		in
+		   if signed
+		      then
+			 (case WordSize.prim s of
+			     W8 => pmd (x86.Instruction.IMUL, x86.Instruction.O)
+			   | W16 => imul2 x86.Instruction.O
+			   | W32 => imul2 x86.Instruction.O
+			   | W64 => Error.bug "FIXME")
+		   else
+		      (case WordSize.prim s of
+			  W8 => pmd (x86.Instruction.MUL, x86.Instruction.C)
+			| W16 => pmd (x86.Instruction.MUL, x86.Instruction.C)
+			| W32 => pmd (x86.Instruction.MUL, x86.Instruction.C)
+			| W64 => Error.bug "FIXME")
+		end
+	   | Word_negCheck s => 
 	       (case WordSize.prim s of
-		   W8 => binal (x86.Instruction.ADD, x86.Instruction.C)
-		 | W16 => binal (x86.Instruction.ADD, x86.Instruction.C)
-		 | W32 => binal (x86.Instruction.ADD, x86.Instruction.C)
-		 | W64 => binal64 (x86.Instruction.ADD, x86.Instruction.ADC, x86.Instruction.C))
-	   | Word_mulCheck s => 
-	       (case WordSize.prim s of
-		  W8 => pmd (x86.Instruction.MUL, x86.Instruction.C)
-		| W16 => pmd (x86.Instruction.MUL, x86.Instruction.C)
-		| W32 => pmd (x86.Instruction.MUL, x86.Instruction.C)
-		| W64 => Error.bug "FIXME")
+		  W8 => unal (x86.Instruction.NEG, x86.Instruction.O)
+		| W16 => unal (x86.Instruction.NEG, x86.Instruction.O)
+		| W32 => unal (x86.Instruction.NEG, x86.Instruction.O)
+		| W64 => neg64 ())
+	   | Word_subCheck (s, {signed}) =>
+		let
+		   val flag =
+		      if signed then x86.Instruction.O else x86.Instruction.C
+		in
+		   case WordSize.prim s of
+		      W8 => binal (x86.Instruction.SUB, flag)
+		    | W16 => binal (x86.Instruction.SUB, flag)
+		    | W32 => binal (x86.Instruction.SUB, flag)
+		    | W64 => binal64 (x86.Instruction.SUB, x86.Instruction.SBB, flag)
+		end
 	   | _ => Error.bug ("arith: strange Prim.Name.t: " ^ primName))]
       end
 

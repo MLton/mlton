@@ -15,7 +15,6 @@ local
    open Machine
 in
    structure Global = Global
-   structure IntX = IntX
    structure Label = Label
    structure PointerTycon = PointerTycon
    structure RealX = RealX
@@ -133,7 +132,7 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
 		      start = start}
    end
 
-fun toMachine (program: Ssa.Program.t) =
+fun toMachine (program: Ssa.Program.t, codegen) =
    let
       fun pass (name, doit, program) =
 	 Control.passTypeCheck {display = Control.Layouts Rssa.Program.layouts,
@@ -142,7 +141,7 @@ fun toMachine (program: Ssa.Program.t) =
 				suffix = "rssa",
 				thunk = fn () => doit program,
 				typeCheck = R.Program.typeCheck}
-      val program = pass ("ssaToRssa", SsaToRssa.convert, program)
+      val program = pass ("ssaToRssa", SsaToRssa.convert, (program, codegen))
       val program = pass ("insertLimitChecks", LimitCheck.insert, program)
       val program = pass ("insertSignalChecks", SignalCheck.insert, program)
       val program = pass ("implementHandlers", ImplementHandlers.doit, program)
@@ -372,8 +371,7 @@ fun toMachine (program: Ssa.Program.t) =
 	       datatype z = datatype Const.t
 	    in
 	       case c of
-		  Int i => M.Operand.Int i
-		| IntInf i =>
+		  IntInf i =>
 		     (case Const.SmallIntInf.toWord i of
 			 NONE => globalIntInf i
 		       | SOME w =>
@@ -498,10 +496,12 @@ fun toMachine (program: Ssa.Program.t) =
 		     (M.Statement.PrimApp
 		      {args = (Vector.new2
 			       (stackTopOp,
-				M.Operand.Int
-				(IntX.defaultInt
-				 (Bytes.toInt
-				  (Bytes.+ (handlerOffset (), Bytes.inWord)))))),
+				M.Operand.Word
+				(WordX.fromIntInf
+				 (Int.toIntInf
+				  (Bytes.toInt
+				   (Bytes.+ (handlerOffset (), Bytes.inWord))),
+				  WordSize.default)))),
 		       dst = SOME tmp,
 		       prim = Prim.wordAdd WordSize.default},
 		      M.Statement.PrimApp

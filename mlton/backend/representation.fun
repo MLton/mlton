@@ -427,7 +427,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		       if isTagged
 			  then {mutable = false,
 				offset = Bytes.zero,
-				ty = Type.int IntSize.default} :: components
+				ty = Type.defaultWord} :: components
 		       else components
 		    val components =
 		       QuickSort.sortArray
@@ -678,7 +678,6 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	      case S.Type.dest t of
 		 Array t => SOME (array {mutable = true, ty = t})
 	       | Datatype tycon => convertDatatype tycon
-	       | Int s => SOME (Type.int (IntSize.roundUpToPrim s))
 	       | IntInf => SOME Type.intInf
 	       | Real s => SOME (Type.real s)
 	       | Ref t =>
@@ -842,7 +841,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			      val cases =
 				 QuickSort.sortVector
 				 (cases, fn ((w, _), (w', _)) =>
-				  WordX.<= (w, w'))
+				  WordX.le (w, w', {signed = false}))
 			   in
 			      Switch (Switch.T {cases = cases,
 						default = default,
@@ -971,7 +970,8 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		     else default
 		  val cases =
 		     QuickSort.sortVector
-		     (cases, fn ((w, _), (w', _)) => WordX.<= (w, w'))
+		     (cases, fn ((w, _), (w', _)) =>
+		      WordX.le (w, w', {signed = false}))
 		  val headerOffset = Bytes.fromInt ~4
 		  val tagVar = Var.newNoname ()
 		  val tagTy =
@@ -992,7 +992,8 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 						       Type.pointerHeader))},
 			       Operand.word (WordX.one WordSize.default))),
 		      dst = SOME (tagVar, tagTy),
-		      prim = Prim.wordRshift WordSize.default}
+		      prim = Prim.wordRshift (WordSize.default,
+					      {signed = false})}
 	       in
 		  ([s],
 		   Transfer.Switch

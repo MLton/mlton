@@ -14,7 +14,7 @@ signature HASH_TYPE =
    sig
       include HASH_TYPE_STRUCTS
       include TYPE_OPS
-      sharing type intSize = IntSize.t
+(*      sharing type intSize = IntSize.t *)
       sharing type realSize = RealSize.t
       sharing type tycon = Tycon.t
       sharing type wordSize = WordSize.t

@@ -82,7 +82,25 @@ val bytes: t -> Bytes.t = Bits.toBytes o bits
 
 fun cardinality s = IntInf.<< (1, Bits.toWord (bits s))
 
-fun max s = cardinality s - 1
+fun range (s, {signed}) =
+   if signed
+      then
+	 let
+	    val pow = IntInf.pow (2, Bits.toInt (bits s) - 1)
+	 in
+	    (~ pow, pow - 1)
+	 end
+   else (0, cardinality s - 1)
+
+val min = #1 o range
+val max = #2 o range
+
+fun isInRange (s, i, sg) =
+   let
+      val (min, max) = range (s, sg)
+   in
+      min <= i andalso i <= max
+   end
    
 datatype prim = W8 | W16 | W32 | W64
 

@@ -9,7 +9,6 @@ type word = Word.t
    
 signature CONST_STRUCTS = 
    sig
-      structure IntX: INT_X
       structure RealX: REAL_X
       structure WordX: WORD_X
    end
@@ -26,14 +25,12 @@ signature CONST =
 	 end
 
       datatype t =
-	 Int of IntX.t
-       | IntInf of IntInf.t
+	 IntInf of IntInf.t
        | Real of RealX.t
        | Word of WordX.t
        | Word8Vector of Word8.t vector
 
       val equals: t * t -> bool
-      val int: IntX.t -> t
       val intInf: IntInf.t -> t
       val hash: t -> word
       val layout: t -> Layout.t

@@ -186,9 +186,6 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 					     then ety
 					  else error "default of wrong type"
 			      else error "test and patterns of different types"
-		     fun doit (l, t) =
-			finish (Vector.new1 t,
-				Vector.map (l, fn (_, e) => checkExp e))
 		     datatype z = datatype Cases.t
 		  in
 		     case cases of
@@ -196,8 +193,9 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 			   finish (Vector.unzip
 				   (Vector.map (cases, fn (p, e) =>
 						(checkPat p, checkExp e))))
-		      | Int (s, cs) => doit (cs, Type.int s)
-		      | Word (s, cs) => doit (cs, Type.word s)
+		      | Word (s, cs) =>
+			   finish (Vector.new1 (Type.word s),
+				   Vector.map (cs, fn (_, e) => checkExp e))
 		  end
 	     | ConApp {con, targs, arg} =>
 		  let

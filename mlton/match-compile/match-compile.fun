@@ -142,18 +142,13 @@ local
 		       (get const, finish (Const.layout const,
 					   Vector.fromList infos))))))
 in
-   val directCases = 
-      make (List.remove (IntSize.all, fn s =>
-			 IntSize.equals (s, IntSize.I (Bits.fromInt 64))),
-	    IntSize.cardinality, Type.int, Cases.int,
-	    fn Const.Int i => i
-	     | _ => Error.bug "caseInt type error")
-      @ make (List.remove (WordSize.all, fn s =>
-			   WordSize.equals
-			   (s, WordSize.fromBits (Bits.fromInt 64))),
-	      WordSize.cardinality, Type.word, Cases.word,
-	      fn Const.Word w => w
-	       | _ => Error.bug "caseWord type error")
+   val directCases =
+      make (List.remove (WordSize.all, fn s =>
+			 WordSize.equals
+			 (s, WordSize.fromBits (Bits.fromInt 64))),
+	    WordSize.cardinality, Type.word, Cases.word,
+	    fn Const.Word w => w
+	     | _ => Error.bug "caseWord type error")
 end
 
 (* unhandledConst cs returns a constant (of the appropriate type) not in cs. *)
@@ -187,25 +182,7 @@ fun unhandledConst (cs: Const.t vector): Const.t =
       datatype z = datatype Const.t
    in
       case c of
-	 Int i =>
-	    let
-	       val s = IntX.size i
-	       val min = IntX.toIntInf (IntX.min s)
-	       fun extract c =
-		  case c of
-		     Int i => IntX.toIntInf i
-		   | _ => Error.bug "expected Int"
-	    in
-	       search {<= = op <=,
-		       equals = op =,
-		       extract = extract,
-		       isMin = fn i => i = min,
-		       make = fn i => Const.int (IntX.make (i, s)),
-		       next = fn i => i + 1,
-		       prev = fn i => i - 1}
-
-	    end
-       | IntInf _ =>
+	 IntInf _ =>
 	    let
 	       fun extract c =
 		  case c of
@@ -678,7 +655,11 @@ fun matchCompile {caseType: Type.t,
 val matchCompile =
    Trace.trace
    ("matchCompile",
-    fn {cases, ...} => Vector.layout (NestedPat.layout o #1) cases,
+    fn {caseType, cases, test, testType, ...} =>
+    Layout.record [("caseType", Type.layout caseType),
+		   ("cases", Vector.layout (NestedPat.layout o #1) cases),
+		   ("test", Var.layout test),
+		   ("testType", Type.layout testType)],
     Exp.layout o #1)
    matchCompile
    

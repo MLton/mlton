@@ -2,6 +2,10 @@
 
 #include "mlton-basis.h"
 
+enum {
+	DEBUG = 0,
+};
+
 /*
  * We have to be very careful implementing Int_quot and Int_rem using / and %
  * because C allows
@@ -27,16 +31,27 @@
  */
 
 #if ! (defined (__i386__) || defined (__sparc__))
-#error check that C / correctly implements quot from the basis library
+#error check that C {/,%} correctly implement {quot,rem} from the basis library
 #endif
 
+#define WordS8_format "%c"
+#define WordS16_format "%d"
+#define WordS32_format "%d"
+#define WordS64_format "%lld"
+
 #define binary(size, name, op)							\
-	Int##size Int##size##_##name (Int##size i, Int##size j) {		\
-		return i op j;							\
+	WordS##size WordS##size##_##name (WordS##size i, WordS##size j) {	\
+		WordS##size res = i op j;					\
+		if (DEBUG)							\
+			fprintf (stderr, WordS##size##_format			\
+					" = " WordS##size##_format " "		\
+					#op " " WordS##size##_format "\n",	\
+				        res, i, j);				\
+		return res;							\
 	}
 
-#define both(size)								\
-	binary(size, quot, /)							\
+#define both(size)				\
+	binary(size, quot, /)			\
 	binary(size, rem, %)
 
 both(8)

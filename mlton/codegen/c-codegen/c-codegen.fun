@@ -23,7 +23,6 @@ in
    structure FrameInfo = FrameInfo
    structure Global = Global
    structure IntSize = IntSize
-   structure IntX = IntX
    structure Kind = Kind
    structure Label = Label
    structure ObjectType = ObjectType
@@ -93,34 +92,6 @@ structure CFunction =
 
 val traceGotoLabel = Trace.trace ("gotoLabel", Label.layout, Unit.layout) 
 
-structure IntX =
-   struct
-      open IntX
-	 
-      fun toC (i: t): string =
-	 let
-	    fun isPos () = i >= zero (size i)
-	    fun neg () = concat ["-", String.dropPrefix (toString i, 1)]
-	    fun simple s =
-	       concat ["(Int", s, ")",
-		       if isPos () then toString i else neg ()]
-	    (* tricky writes min as a word to avoid a gcc warning. *)
-	    fun tricky min =
-	       if isPos ()
-		  then toString i
-	       else if IntX.isMin i
-		       then min
-		    else neg ()
-	    datatype z = datatype IntSize.prim
-	 in
-	    case IntSize.prim (size i) of
-	       I8 => simple "8"
-	     | I16 => simple "16"
-	     | I32 => tricky ("0x80000000")
-	     | I64 => concat [tricky "0x8000000000000000", "ll"]
-	 end
-   end
-
 structure RealX =
    struct
       open RealX
@@ -182,7 +153,9 @@ structure C =
 	  ; print ";\n")
 
       fun int (i: int) =
-	 IntX.toC (IntX.make (IntInf.fromInt i, IntSize.default))
+	 if i >= 0
+	    then Int.toString i
+	 else concat ["-", Int.toString (~ i)]
 
       val bytes = int o Bytes.toInt
 
@@ -209,6 +182,64 @@ structure Operand =
 	  | Offset _ => true
 	  | StackOffset _ => true
 	  | _ => false
+   end
+
+fun implementsPrim (p: 'a Prim.t): bool =
+   let
+      datatype z = datatype Prim.Name.t
+   in
+      case Prim.name p of
+	 FFI_Symbol _ => true
+       | Real_Math_acos _ => true
+       | Real_Math_asin _ => true
+       | Real_Math_atan _ => true
+       | Real_Math_atan2 _ => true
+       | Real_Math_cos _ => true
+       | Real_Math_exp _ => true
+       | Real_Math_ln _ => true
+       | Real_Math_log10 _ => true
+       | Real_Math_sin _ => true
+       | Real_Math_sqrt _ => true
+       | Real_Math_tan _ => true
+       | Real_add _ => true
+       | Real_div _ => true
+       | Real_equal _ => true
+       | Real_ge _ => true
+       | Real_gt _ => true
+       | Real_ldexp _ => true
+       | Real_le _ => true
+       | Real_lt _ => true
+       | Real_mul _ => true
+       | Real_muladd _ => true
+       | Real_mulsub _ => true
+       | Real_neg _ => true
+       | Real_round _ => true
+       | Real_sub _ => true
+       | Real_toReal _ => true
+       | Real_toWord _ => true
+       | Thread_returnToC => true
+       | Word_add _ => true
+       | Word_andb _ => true
+       | Word_equal _ => true
+       | Word_ge _ => true
+       | Word_gt _ => true
+       | Word_le _ => true
+       | Word_lshift _ => true
+       | Word_lt _ => true
+       | Word_mul _ => true
+       | Word_neg _ => true
+       | Word_notb _ => true
+       | Word_orb _ => true
+       | Word_quot (_, {signed}) => not signed
+       | Word_rem (_, {signed}) => not signed
+       | Word_rol _ => true
+       | Word_ror _ => true
+       | Word_rshift _ => true
+       | Word_sub _ => true
+       | Word_toReal _ => true
+       | Word_toWord _ => true
+       | Word_xorb _ => true
+       | _ => false
    end
 
 fun creturn (t: Type.t): string =
@@ -551,7 +582,6 @@ fun output {program as Machine.Program.T {chunks,
 				  C.args [Type.toC (Global.ty g),
 					  Int.toString (Global.index g)]]
 		  else concat ["GPNR", C.args [Int.toString (Global.index g)]]
-	     | Int i => IntX.toC i
 	     | Label l => labelToStringIndex l
 	     | Line => "__LINE__"
 	     | Offset {base, offset, ty} =>
@@ -918,29 +948,13 @@ fun output {program as Machine.Program.T {chunks,
 				 datatype z = datatype Prim.Name.t
 				 fun const i =
 				    case Vector.sub (args, i) of
-				       Operand.Int _ => true
+				       Operand.Word _ => true
 				     | _ => false
 				 fun const0 () = const 0
 				 fun const1 () = const 1
 			      in
 				 case Prim.name prim of
-				    Int_addCheck _ =>
-				       concat [Prim.toString prim,
-					       if const0 ()
-						  then "CX"
-					       else if const1 ()
-						       then "XC"
-						    else ""]
-				  | Int_mulCheck _ => Prim.toString prim
-				  | Int_negCheck _ => Prim.toString prim
-				  | Int_subCheck _ =>
-				       concat [Prim.toString prim,
-					       if const0 ()
-						  then "CX"
-					       else if const1 ()
-						       then "XC"
-						    else ""]
-				  | Word_addCheck _ =>
+				    Word_addCheck _ =>
 				       concat [Prim.toString prim,
 					       if const0 ()
 						  then "CX"
@@ -948,6 +962,14 @@ fun output {program as Machine.Program.T {chunks,
 						       then "XC"
 						    else ""]
 				  | Word_mulCheck _ => Prim.toString prim
+				  | Word_negCheck _ => Prim.toString prim
+				  | Word_subCheck _ =>
+				       concat [Prim.toString prim,
+					       if const0 ()
+						  then "CX"
+					       else if const1 ()
+						       then "XC"
+						    else ""]
 				  | _ => Error.bug "strange overflow prim"
 			      end
 			   val _ = force overflow
