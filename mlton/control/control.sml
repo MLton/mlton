@@ -642,6 +642,7 @@ structure Profile =
        | ProfileAlloc
        | ProfileCallStack
        | ProfileCount
+       | ProfileMark
        | ProfileTime
 
       val toString =
@@ -649,6 +650,7 @@ structure Profile =
 	  | ProfileAlloc => "Alloc"
 	  | ProfileCallStack => "CallStack"
 	  | ProfileCount => "Count"
+	  | ProfileMark => "Mark"
 	  | ProfileTime => "Time"
    end
 
@@ -668,10 +670,11 @@ val profileBranch = control {name = "profile branch",
 
 structure ProfileIL =
    struct
-      datatype t = ProfileSSA | ProfileSource
+      datatype t = ProfileSSA | ProfileSSA2 | ProfileSource
 
       val toString =
 	 fn ProfileSSA => "ProfileSSA"
+	  | ProfileSSA2 => "ProfileSSA2"
 	  | ProfileSource => "ProfileSource"
    end
 

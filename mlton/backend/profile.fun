@@ -147,7 +147,7 @@ fun profile program =
       local
 	 val sourceCounter = Counter.new 0
 	 val sep =
-	    if profile = ProfileCallStack
+	    if profile = ProfileCallStack orelse profile = ProfileMark
 	       then " "
 	    else "\t"
 	 val {get = nameIndex, ...} =
@@ -405,7 +405,8 @@ fun profile program =
 		       | Profile ps =>
 			    let
 			       val (npl, ss) =
-				  if profile = ProfileTime
+				  if profile = ProfileTime 
+				     orelse profile = ProfileMark
 				     then
 					if npl
 					   andalso not (List.isEmpty sourceSeq)
@@ -431,7 +432,8 @@ fun profile program =
 			    end
 		       | _ => (leaves, true, sourceSeq, s :: ss))
 		  val statements =
-		     if profile = ProfileTime andalso npl
+		     if (profile = ProfileTime orelse profile = ProfileMark)
+			andalso npl
 			then profileLabel sourceSeq :: statements
 		     else statements
 		  val {args, kind, label} =
@@ -447,7 +449,8 @@ fun profile program =
 				 addFrameProfileIndex
 				 (newLabel, sourceSeqIndex sourceSeq)
 			      val statements =
-				 if profile = ProfileTime
+				 if profile = ProfileTime 
+				    orelse profile = ProfileMark
 				    then (Vector.new1
 					  (profileLabelIndex
 					   (sourceSeqIndex sourceSeq)))
@@ -504,7 +507,7 @@ fun profile program =
 		  val index = sourceSeqIndex (Push.toSources pushes)
 		  val _ = addFrameProfileIndex (newLabel, index)
 		  val statements =
-		     if profile = ProfileTime
+		     if profile = ProfileTime orelse profile = ProfileMark
 			then Vector.new1 (profileLabelIndex index)
 		     else Vector.new0 ()
 		  val _ =
@@ -866,7 +869,7 @@ fun profile program =
 		   sourceSeqs = sourceSeqs,
 		   sources = sources})
 	 end
-   in
+   in 
       (program, makeProfileInfo)
    end
 

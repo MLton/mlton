@@ -279,7 +279,7 @@ val simplify = fn p => let
 			 val p = simplify p
 			 val p =
 			    if !Control.profile <> Control.ProfileNone
-			       andalso !Control.profileIL = Control.ProfileSSA
+			       andalso !Control.profileIL = Control.ProfileSSA2
 			       then Program.profile p
 			    else p
 			 val _ = typeCheck p

@@ -271,12 +271,13 @@ signature CONTROL =
        | ProfileAlloc
        | ProfileCallStack
        | ProfileCount
+       | ProfileMark
        | ProfileTime
       val profile: profile ref
 
       val profileBasis: bool ref
 
-      datatype profileIL = ProfileSSA | ProfileSource
+      datatype profileIL = ProfileSSA | ProfileSSA2 | ProfileSource
       val profileIL: profileIL ref
 
       val profileBranch: bool ref

@@ -30,8 +30,9 @@ val buildConstants: (string * (unit -> string)) list =
 					| CCodegen => 1
 					| Native => 2)),
        ("MLton_profile_isOn", fn () => bool (case !profile of
-						ProfileCallStack => false
-					      | ProfileNone => false
+						ProfileNone => false
+					      | ProfileCallStack => false
+					      | ProfileMark => false
 					      | _ => true)),
        ("MLton_FFI_numExports", fn () => int (Ffi.numExports ()))]
    end

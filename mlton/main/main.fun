@@ -385,6 +385,7 @@ fun makeOptions {usage} =
 			    | "alloc" => ProfileAlloc
 			    | "call" => ProfileCallStack
 			    | "count" => ProfileCount
+			    | "mark" => ProfileMark
 			    | "time" => ProfileTime
 			    | _ => usage (concat
 					  ["invalid -profile arg: ", s]))))),
@@ -400,6 +401,7 @@ fun makeOptions {usage} =
 	 case s of
 	    "source" => profileIL := ProfileSource
 	  | "ssa" => profileIL := ProfileSSA
+	  | "ssa2" => profileIL := ProfileSSA2
 	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
        (Normal, "profile-stack", " {false|true}", "profile the stack",
 	boolRef profileStack),

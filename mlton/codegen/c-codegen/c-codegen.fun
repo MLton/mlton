@@ -343,10 +343,11 @@ fun outputDeclarations
 				 | SOME w => w)
 	    val profile =
 	       case !Control.profile of
-		  Control.ProfileAlloc => "PROFILE_ALLOC"
+		  Control.ProfileNone => "PROFILE_NONE"
+		| Control.ProfileAlloc => "PROFILE_ALLOC"
 		| Control.ProfileCallStack => "PROFILE_NONE"
 		| Control.ProfileCount => "PROFILE_COUNT"
-		| Control.ProfileNone => "PROFILE_NONE"
+		| Control.ProfileMark => "PROFILE_NONE"
 		| Control.ProfileTime => "PROFILE_TIME"
 	 in 
 	    C.callNoSemi ("Main",
