@@ -1,28 +1,40 @@
 signature STREAM_IO_EXTRA_ARG = 
    sig
-      structure PrimIO: PRIM_IO where type pos = Position.int
+      structure PrimIO: PRIM_IO
+      structure Vector: MONO_VECTOR
+      structure VectorSlice: MONO_VECTOR_SLICE
       structure Array: MONO_ARRAY
       structure ArraySlice: MONO_ARRAY_SLICE
-      structure Vector: sig 
-	                  include MONO_VECTOR
-			  val extract: vector * int * int option -> vector
-			end
-      structure VectorSlice: MONO_VECTOR_SLICE
-      sharing type Array.array = ArraySlice.array = PrimIO.array
-      sharing type Array.elem = ArraySlice.elem = PrimIO.elem = Vector.elem
-	 = VectorSlice.elem
-      sharing type Array.vector = ArraySlice.vector = PrimIO.vector
+      sharing type PrimIO.elem 
+	 = Vector.elem = VectorSlice.elem
+	 = Array.elem = ArraySlice.elem 
+      sharing type PrimIO.vector 
 	 = Vector.vector = VectorSlice.vector
-      sharing type ArraySlice.slice = PrimIO.array_slice
-      sharing type ArraySlice.vector_slice = PrimIO.vector_slice
+	 = Array.vector = ArraySlice.vector 
+      sharing type PrimIO.vector_slice 
 	 = VectorSlice.slice
+	 = ArraySlice.vector_slice
+      sharing type PrimIO.array 
+	 = Array.array = ArraySlice.array 
+      sharing type PrimIO.array_slice 
+	 = ArraySlice.slice
 
-      val isLine : Vector.elem -> bool 
-      val lineElem : Vector.elem
       val someElem: PrimIO.elem
+
+      val line: {isLine: PrimIO.elem -> bool,
+		 lineElem: PrimIO.elem} option
+      val xlatePos : {toInt : PrimIO.pos -> Position.int, 
+		      fromInt : Position.int -> PrimIO.pos} option
    end
 
-functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
+functor StreamIOExtra 
+        (S: STREAM_IO_EXTRA_ARG) :>
+	STREAM_IO_EXTRA where type elem = S.PrimIO.elem
+	                where type vector = S.PrimIO.vector
+			where type vector_slice = S.PrimIO.vector_slice
+			where type reader = S.PrimIO.reader
+			where type writer = S.PrimIO.writer
+			where type pos = S.PrimIO.pos =
    struct
       open S
 
@@ -31,12 +43,14 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
       structure AS = ArraySlice
       structure V = struct
 		      open Vector
-		      val extract = extract
+		      val extract : vector * int * int option -> vector
+			 = VectorSlice.vector o VectorSlice.slice
 		    end
       structure VS = VectorSlice
 
       type elem = PIO.elem
       type vector = PIO.vector
+      type vector_slice = PIO.vector_slice
       type reader = PIO.reader
       type writer = PIO.writer
       type pos = PIO.pos
@@ -44,8 +58,6 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
       fun liftExn name function cause = raise IO.Io {name = name,
 						     function = function,
 						     cause = cause}
-
-      val hasLine = fn z => V.exists isLine z
 
       (*---------------*)
       (*   outstream   *)
@@ -87,37 +99,39 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	 end
       fun outstreamName os = writerSel (outstreamWriter os, #name)
 
-      fun flushGen (write: 'a -> int,
-		    base: 'a -> ('b * int * int),
-		    slice: ('b * int * int option) -> 'a,
-		    a: 'a) =
-	 let
-	    val (b, i, sz) = base a
-	    val max = i + sz
-	    fun loop i =
-	       if i = max
-		  then ()
-	       else let
-		       val j = write (slice (b, i, SOME (max - i)))
-		    in 
-		       if j = 0
-			  then raise (Fail "partial write")
-		       else loop (i + j)
-		    end
-	 in
-	    loop i
-	 end
+      local
+	 fun flushGen (write: 'a -> int,
+		       base: 'a -> ('b * int * int),
+		       slice: ('b * int * int option) -> 'a,
+		       a: 'a) =
+	    let
+	       val (b, i, sz) = base a
+	       val max = i + sz
+	       fun loop i =
+		  if i = max
+		     then ()
+		     else let
+			     val j = write (slice (b, i, SOME (max - i)))
+			  in 
+			     if j = 0
+				then raise (Fail "partial write")
+				else loop (i + j)
+			  end
+	    in
+	       loop i
+	    end
+      in
+	 fun flushVec (writer, x) =
+	    case writerSel (writer, #writeVec) of
+	       NONE => raise IO.BlockingNotSupported
+	     | SOME writeVec => flushGen (writeVec, VS.base, VS.slice, x)
+		  
+	 fun flushArr (writer, x) =
+	    case writerSel (writer, #writeArr) of
+	       NONE => raise IO.BlockingNotSupported
+	     | SOME writeArr => flushGen (writeArr, AS.base, AS.slice, x)
+      end
 
-      fun flushVec (writer, x) =
-	 case writerSel (writer, #writeVec) of
-	    NONE => raise IO.BlockingNotSupported
-	  | SOME writeVec => flushGen (writeVec, VS.base, VS.slice, x)
-     
-      fun flushArr (writer, x) =
-	 case writerSel (writer, #writeArr) of
-	    NONE => raise IO.BlockingNotSupported
-	  | SOME writeArr => flushGen (writeArr, AS.base, AS.slice, x)
-     
       fun flushBuf (writer, Buf {size, array}) =
 	 let
 	    val size' = !size 
@@ -126,71 +140,95 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	    ; flushArr (writer, AS.slice (array, 0, SOME size'))
 	 end
 
-      fun output (os as Out {augmented_writer, 
+      fun output (os as Out {augmented_writer,
 			     state, 
 			     buffer_mode, ...}, v) =
-	if terminated (!state)
-	  then liftExn (outstreamName os) "output" IO.ClosedStream
-	  else let
-		  fun put () = flushVec (augmented_writer, VS.full v)
-		 fun doit (buf as Buf {size, array}, maybe) =
-		   let
-		     val curSize = !size
-		     val newSize = curSize + V.length v
-		   in
-		     if newSize >= A.length array orelse maybe ()
-		       then (flushBuf (augmented_writer, buf); put ())
-		       else (A.copyVec {src = v, dst = array, di = curSize};
-			     size := newSize)
-		   end
-	       in
-		 case !buffer_mode of
-		   NO_BUF => put ()
-		 | LINE_BUF buf => doit (buf, fn () => hasLine v)
-		 | BLOCK_BUF buf => doit (buf, fn () => false)
-	       end
-	handle exn => liftExn (outstreamName os) "output" exn
-
-      local
-	val buf1 = A.array (1, someElem)
-      in
-	fun output1 (os as Out {augmented_writer, 
-				state,
-				buffer_mode, ...}, c) =
-	  if terminated (!state)
+	 if terminated (!state)
 	    then liftExn (outstreamName os) "output" IO.ClosedStream
 	    else let
-		   fun doit (buf as Buf {size, array}, maybe) =
-		     let
-		       val _ = if 1 + !size >= A.length array
-				 then flushBuf (augmented_writer, buf)
-				 else ()
-		       val _ = A.update (array, !size, c)
-		       val _ = size := !size + 1
-		       val _ = if maybe
-				 then flushBuf (augmented_writer, buf)
-				 else () 
-		     in
-		       ()
-		     end
+		    fun put () = flushVec (augmented_writer, VS.full v)
+		    fun doit (buf as Buf {size, array}, maybe) =
+		       let
+			  val curSize = !size
+			  val newSize = curSize + V.length v
+		       in
+			  if newSize >= A.length array orelse maybe ()
+			     then (flushBuf (augmented_writer, buf); put ())
+			     else (A.copyVec {src = v, dst = array, di = curSize};
+				   size := newSize)
+		       end
 		 in
-		   case !buffer_mode of
-		     NO_BUF => (A.update (buf1, 0, c);
-				flushArr (augmented_writer,
-					  AS.slice (buf1, 0, SOME 1)))
-		   | LINE_BUF buf => doit (buf, isLine c)
-		   | BLOCK_BUF buf => doit (buf, false)
+		    case !buffer_mode of
+		       NO_BUF => put ()
+		     | LINE_BUF buf => doit (buf, fn () => (case line of
+							       NONE => false 
+							     | SOME {isLine, ...} => V.exists isLine v))
+		     | BLOCK_BUF buf => doit (buf, fn () => false)
 		 end
-	  handle exn => liftExn (outstreamName os) "output1" exn
+	         handle exn => liftExn (outstreamName os) "output" exn
+				   
+      local
+	 val buf1 = A.array (1, someElem)
+      in
+	 fun output1 (os as Out {augmented_writer, 
+				 state,
+				 buffer_mode, ...}, c) =
+	    if terminated (!state)
+	       then liftExn (outstreamName os) "output" IO.ClosedStream
+	       else let
+		       fun doit (buf as Buf {size, array}, maybe) =
+			  let
+			     val _ = if 1 + !size >= A.length array
+					then flushBuf (augmented_writer, buf)
+					else ()
+			     val _ = A.update (array, !size, c)
+			     val _ = size := !size + 1
+			     val _ = if maybe
+					then flushBuf (augmented_writer, buf)
+					else () 
+			  in
+			     ()
+			  end
+		    in
+		       case !buffer_mode of
+			  NO_BUF => (A.update (buf1, 0, c);
+				     flushArr (augmented_writer,
+					       AS.slice (buf1, 0, SOME 1)))
+			| LINE_BUF buf => doit (buf, 
+						case line of
+						   NONE => false
+						 | SOME {isLine, ...} => isLine c)
+			| BLOCK_BUF buf => doit (buf, false)
+		    end
+		    handle exn => liftExn (outstreamName os) "output1" exn
       end
 
-      fun outputSlice (os, (v, i, sz)) =
-	let
-	  val v' = V.extract(v, i, sz)
-	in
-	  output (os, v')
-	end
-        handle exn => liftExn (outstreamName os) "outputSlice" exn
+      fun outputSlice (os as Out {augmented_writer,
+				  state, 
+				  buffer_mode, ...}, v) =
+	 if terminated (!state)
+	    then liftExn (outstreamName os) "output" IO.ClosedStream
+	    else let
+		    fun put () = flushVec (augmented_writer, v)
+		    fun doit (buf as Buf {size, array}, maybe) =
+		       let
+			  val curSize = !size
+			  val newSize = curSize + VS.length v
+		       in
+			  if newSize >= A.length array orelse maybe ()
+			     then (flushBuf (augmented_writer, buf); put ())
+			     else (AS.copyVec {src = v, dst = array, di = curSize};
+				   size := newSize)
+		       end
+		 in
+		    case !buffer_mode of
+		       NO_BUF => put ()
+		     | LINE_BUF buf => doit (buf, fn () => (case line of
+							       NONE => false 
+							     | SOME {isLine, ...} => VS.exists isLine v))
+		     | BLOCK_BUF buf => doit (buf, fn () => false)
+		 end
+	         handle exn => liftExn (outstreamName os) "output" exn
 
       fun flushOut (os as Out {augmented_writer, 
 			       state, 
@@ -231,7 +269,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 			   case !buffer_mode of
 			     NO_BUF => doit ()
 			   | LINE_BUF _ => ()
-			   | BLOCK_BUF _ => (flushOut os; doit ())
+			   | BLOCK_BUF _ => doit ()
 			 end
 	| IO.BLOCK_BUF => let
 			    fun doit () = 
@@ -240,7 +278,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 			  in
 			    case !buffer_mode of
 			      NO_BUF => doit ()
-			    | LINE_BUF _ => (flushOut os; doit ())
+			    | LINE_BUF _ => doit ()
 			    | BLOCK_BUF _ => ()
 			  end
 
@@ -306,7 +344,6 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 					  tail: state ref ref},
 				 pos: int,
 				 buf: buf}
-
       (* @ s = Eos, End, Truncated, Closed ==>
        *   pos = V.length inp, !next = s
        *)
@@ -332,7 +369,6 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
       fun instreamName is = readerSel (instreamReader is, #name)
 
       val empty = V.tabulate (0, fn _ => someElem)
-      val line = V.tabulate (1, fn _ => lineElem)
 
       fun extend function
 	         (is as In {common = {augmented_reader, tail, ...}, ...})
@@ -412,7 +448,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 			    (inp', updatePos (is, pos + n))
 			  end
 		     else let
-			    val inp' = V.extract(inp, pos, NONE)
+			    val inp' = VS.slice(inp, pos, NONE)
 			  in
 			    loop (buf, [inp'], n - (V.length inp - pos))
 			  end
@@ -423,12 +459,12 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 			 Link {buf as Buf {inp, next, ...}} =>
 			   if n <= V.length inp
 			     then let
-				    val inp' = V.extract(inp, 0, SOME n)
+				    val inp' = VS.slice(inp, 0, SOME n)
 				    val inps = inp'::inps
 				  in
 				    finish (inps, update (is, n, buf))
 				  end
-			     else loop (buf, inp::inps, n - V.length inp)
+			     else loop (buf, (VS.full inp)::inps, n - V.length inp)
 		       | Eos {buf} => 
 			   finish (inps, if n > 0
 					   then updateBufBeg (is, buf)
@@ -439,7 +475,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 		     doit (!next)
 		   end
 		 and finish (inps, is) =
-		   let val inp = V.concat (List.rev inps)
+		   let val inp = VS.concat (List.rev inps)
 		   in (inp, is)
 		   end
 	       in
@@ -485,74 +521,82 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	  loop (is, [])
 	end
 
-      fun inputLine is =
-	let
-	  fun findLine (v, i) =
+      val inputLine =
+	 case line of
+	    NONE => (fn is => SOME (input is))
+	  | SOME {isLine, lineElem, ...} =>
 	    let
-	      fun loop i =
-		if i >= V.length v
-		  then NONE
-		  else if isLine (V.sub (v, i))
-			 then SOME (i + 1)
-			 else loop (i + 1)
+	       val lineVecSl = VS.full (V.tabulate(1, fn _ => lineElem))
 	    in
-	      loop i
+	       fn is =>
+	       let
+		  fun findLine (v, i) =
+		     let
+			fun loop i =
+			   if i >= V.length v
+			      then NONE
+			      else if isLine (V.sub (v, i))
+				      then SOME (i + 1)
+				      else loop (i + 1)
+		     in
+			loop i
+		     end
+		  fun first (is as In {pos, buf as Buf {inp, next, ...}, ...}) =
+		     (case findLine (inp, pos) of
+			 SOME i => let
+				      val inp' = V.extract(inp, pos, SOME (i - pos))
+				   in
+				      SOME (inp', updatePos (is, i))
+				   end
+		       | NONE => if pos < V.length inp
+				    then let
+					    val inp' = VS.slice(inp, pos, NONE)
+					 in
+					    loop (buf, [inp'])
+					 end
+				    else let
+					    fun doit next = 
+					       case next of
+						  Link {buf} => first (updateBufBeg (is, buf))
+						| Eos {buf} => NONE
+						| End => doit (extendB "inputLine" is)
+						| _ => NONE
+					 in
+					    doit (!next)
+					 end)
+		  and loop (buf' as Buf {next, ...}, inps) = 
+		     (* List.length inps > 0 *)
+		     let
+			fun doit next =
+			   case next of
+			      Link {buf as Buf {inp, next, ...}} =>
+				 (case findLine (inp, 0) of
+				     SOME i => let
+						  val inp' = VS.slice(inp, 0, SOME i)
+						  val inps = inp'::inps
+					       in
+						  finish (inps, update (is, i + 1, buf), false)
+					       end
+				   | NONE => loop (buf, (VS.full inp)::inps))
+			    | End => doit (extendB "inputLine" is)
+			    | _ => finish (inps, updateBufEnd (is, buf'), true)
+		     in
+			doit (!next)
+		     end
+		  and finish (inps, is, trail) =
+		     let
+			val inps = if trail
+				      then lineVecSl::inps
+				      else inps
+			val inp = VS.concat (List.rev inps)
+		     in
+			SOME (inp, is)
+		     end
+	       in
+		  first is
+	       end
 	    end
-	  fun first (is as In {pos, buf as Buf {inp, next, ...}, ...}) =
-	    (case findLine (inp, pos) of
-	       SOME i => let
-			   val inp' = V.extract(inp, pos, SOME (i - pos))
-			 in
-			   SOME (inp', updatePos (is, i))
-			 end
-	     | NONE => if pos < V.length inp
-			 then let
-				val inp' = V.extract(inp, pos, NONE)
-			      in
-				loop (buf, [inp'])
-			      end
-			 else let
-				fun doit next = 
-				  case next of
-				    Link {buf} => first (updateBufBeg (is, buf))
-				  | Eos {buf} => NONE
-				  | End => doit (extendB "inputLine" is)
-				  | _ => NONE
-			      in
-				doit (!next)
-			      end)
-	  and loop (buf' as Buf {next, ...}, inps) = 
-	    (* List.length inps > 0 *)
-	    let
-	      fun doit next =
-		case next of
-		  Link {buf as Buf {inp, next, ...}} =>
-		    (case findLine (inp, 0) of
-		       SOME i => let
-				   val inp' = V.extract(inp, 0, SOME i)
-				   val inps = inp'::inps
-				 in
-				   finish (inps, update (is, i + 1, buf), false)
-				 end
-		     | NONE => loop (buf, inp::inps))
-		| End => doit (extendB "inputLine" is)
-		| _ => finish (inps, updateBufEnd (is, buf'), true)
-	    in
-	      doit (!next)
-	    end
-	  and finish (inps, is, trail) =
-	    let
-	      val inps = if trail
-			   then line::inps
-			   else inps
-	      val inp = V.concat (List.rev inps)
-	    in
-	       SOME (inp, is)
-	    end
-	in
-	  first is
-	end
-
+	       
       fun canInput (is as In {pos, buf as Buf {inp, next, ...}, ...}, n) =
 	if n < 0 orelse n > V.maxLen
 	  then raise Size
@@ -679,52 +723,57 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 		  end)
 	| _ => liftExn (instreamName is) "getReader" IO.ClosedStream
 
-      fun filePosIn (is as In {pos, buf as Buf {base, ...}, ...}) =
+      fun filePosIn (is as In {common = {augmented_reader, ...},
+			       pos, buf as Buf {base, ...}, ...}) =
 	case base of
-	  SOME b => Position.+ (Position.fromInt pos, b)
-	| NONE => liftExn (instreamName is) "filePosIn" IO.RandomAccessNotSupported
+	   SOME b => (case xlatePos of
+			 SOME {fromInt, toInt, ...} => 
+			    (fromInt (Position.+ (Position.fromInt pos, toInt b)))
+		       | NONE => (case (readerSel (augmented_reader, #readVec),
+					readerSel (augmented_reader, #getPos),
+					readerSel (augmented_reader, #setPos)) of
+				     (SOME readVec, SOME getPos, SOME setPos) => 
+					let
+					   val curPos = getPos ()
+					in
+					   setPos b;
+					   readVec pos;
+					   getPos () before setPos curPos
+					end
+				   | _ => 
+					liftExn (instreamName is) "filePosIn" IO.RandomAccessNotSupported))
+	 | NONE => liftExn (instreamName is) "filePosIn" IO.RandomAccessNotSupported
    end
 
 signature STREAM_IO_ARG = 
-   sig
-      structure PrimIO: PRIM_IO where type pos = Position.int
-      structure Array: MONO_ARRAY
-      structure ArraySlice: MONO_ARRAY_SLICE
+   sig 
+      structure PrimIO: PRIM_IO  
       structure Vector: MONO_VECTOR
       structure VectorSlice: MONO_VECTOR_SLICE
-      sharing type Array.array = ArraySlice.array = PrimIO.array
-      sharing type Array.elem = ArraySlice.elem = PrimIO.elem = Vector.elem
-	 = VectorSlice.elem
-      sharing type Array.vector = ArraySlice.vector = PrimIO.vector
-	 = Vector.vector = VectorSlice.vector
-      sharing type ArraySlice.slice = PrimIO.array_slice
-      sharing type ArraySlice.vector_slice = PrimIO.vector_slice
-	 = VectorSlice.slice
+      structure Array: MONO_ARRAY
+      structure ArraySlice: MONO_ARRAY_SLICE
+      sharing type PrimIO.elem = Vector.elem = VectorSlice.elem
+	 = Array.elem = ArraySlice.elem 
+      sharing type PrimIO.vector = Vector.vector = VectorSlice.vector
+	 = Array.vector = ArraySlice.vector 
+      sharing type PrimIO.vector_slice = VectorSlice.slice
+	 = ArraySlice.vector_slice
+      sharing type PrimIO.array = Array.array = ArraySlice.array 
+      sharing type PrimIO.array_slice = ArraySlice.slice
 
       val someElem: PrimIO.elem
    end
 
-functor StreamIO (S: STREAM_IO_ARG): STREAM_IO = 
-  StreamIOExtra(open S
-		structure Vector =
-		  struct
-		    open Vector
-		    fun extract (v, i, sz) =
-		      if i = 0 andalso sz = NONE
-			then v
-			else let
-			       val l = 
-				 case sz of
-				   SOME sz => sz
-				 | NONE => length v - i
-			     in
-			       tabulate
-			       (l, fn j => 
-				sub (v, i + j))
-			     end
-		  end
-		val lineElem = someElem
-		fun isLine _ = raise (Fail "<isLine>"))
+functor StreamIO 
+        (S: STREAM_IO_ARG) :>
+	STREAM_IO where type elem = S.PrimIO.elem
+	          where type vector = S.PrimIO.vector
+		  where type reader = S.PrimIO.reader
+		  where type writer = S.PrimIO.writer
+		  where type pos = S.PrimIO.pos =
+   StreamIOExtra(open S
+		 val line = NONE
+		 val xlatePos = NONE)
 
 signature STREAM_IO_EXTRA_FILE_ARG =
    sig
@@ -733,7 +782,14 @@ signature STREAM_IO_EXTRA_FILE_ARG =
       structure Cleaner: CLEANER
    end
 
-functor StreamIOExtraFile (S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
+functor StreamIOExtraFile 
+        (S: STREAM_IO_EXTRA_FILE_ARG) :>
+	STREAM_IO_EXTRA_FILE where type elem = S.PrimIO.elem
+	                     where type vector = S.PrimIO.vector
+			     where type vector_slice = S.PrimIO.vector_slice
+			     where type reader = S.PrimIO.reader
+			     where type writer = S.PrimIO.writer
+			     where type pos = S.PrimIO.pos =
    struct
       open S
 

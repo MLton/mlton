@@ -12,23 +12,32 @@ signature BUFFER_I_EXTRA_ARG =
                            val fromArray: Array.array -> vector
 			end
       structure VectorSlice: MONO_VECTOR_SLICE
-      sharing type Array.array = ArraySlice.array = PrimIO.array
-      sharing type Array.elem = ArraySlice.elem = PrimIO.elem = StreamIO.elem
+      sharing type PrimIO.elem = StreamIO.elem
 	 = Vector.elem = VectorSlice.elem
-      sharing type Array.vector = ArraySlice.vector = PrimIO.vector
-	 = StreamIO.vector = Vector.vector = VectorSlice.vector
-      sharing type ArraySlice.slice = PrimIO.array_slice
-      sharing type ArraySlice.vector_slice = PrimIO.vector_slice
-	 = VectorSlice.slice
+	 = Array.elem = ArraySlice.elem
+      sharing type PrimIO.vector = StreamIO.vector 
+	 = Vector.vector = VectorSlice.vector
+	 = Array.vector = ArraySlice.vector
+      sharing type PrimIO.vector_slice = StreamIO.vector_slice 
+	 = VectorSlice.slice = ArraySlice.vector_slice
+      sharing type PrimIO.array 
+	 = Array.array = ArraySlice.array
+      sharing type PrimIO.array_slice = ArraySlice.slice
       sharing type PrimIO.pos = StreamIO.pos
       sharing type PrimIO.reader = StreamIO.reader
-
-      val isLine: Vector.elem -> bool
-      val lineElem: Vector.elem
+	 
       val someElem: PrimIO.elem
+      val line : {isLine: Vector.elem -> bool,
+		  lineElem: Vector.elem} option
    end
 
-functor BufferIExtra (S: BUFFER_I_EXTRA_ARG): BUFFER_I_EXTRA =
+functor BufferIExtra 
+        (S: BUFFER_I_EXTRA_ARG) :>
+	BUFFER_I_EXTRA where type elem = S.StreamIO.elem
+	               where type vector = S.StreamIO.vector
+		       where type reader = S.StreamIO.reader
+		       where type instream = S.StreamIO.instream
+		       where type pos = S.StreamIO.pos =
    struct
       open S
 
@@ -74,7 +83,6 @@ functor BufferIExtra (S: BUFFER_I_EXTRA_ARG): BUFFER_I_EXTRA =
       fun inbufferName ib = readerSel (inbufferReader ib, #name)
 
       val empty = V.tabulate (0, fn _ => someElem)
-      val line = V.tabulate (1, fn _ => lineElem)
       fun lastElem v = V.sub (v, V.length v - 1)
 
       fun update function (ib as In {augmented_reader, state,
@@ -191,7 +199,7 @@ functor BufferIExtra (S: BUFFER_I_EXTRA_ARG): BUFFER_I_EXTRA =
 	in
 	  if f < l
 	    then (first := l;
-		  V.tabulate (l - f, fn i => A.sub (buf, f + i)))
+		  AS.vector (AS.slice (buf, f, SOME (l - f))))
 	    else case !state of
 	           Closed => empty
 		 | Open {eos = true} => (state := Open {eos = false};
@@ -233,7 +241,7 @@ functor BufferIExtra (S: BUFFER_I_EXTRA_ARG): BUFFER_I_EXTRA =
 	       in
 		 if size >= n
 		   then (first := f + n;
-			 V.tabulate (n, fn k => A.sub (buf, f + k)))
+			 AS.vector (AS.slice (buf, f, SOME n)))
 		   else case !state of
 		          Closed => empty
 			| Open {eos = true} => (state := Open {eos = false};
@@ -271,7 +279,7 @@ functor BufferIExtra (S: BUFFER_I_EXTRA_ARG): BUFFER_I_EXTRA =
 				 in
 				   if i = n
 				     then V.fromArray inp
-				     else V.tabulate (i, fn k => A.sub (inp, k))
+				     else AS.vector (AS.slice (inp, 0, SOME i))
 				 end)
 	       end
 	    
@@ -288,7 +296,7 @@ functor BufferIExtra (S: BUFFER_I_EXTRA_ARG): BUFFER_I_EXTRA =
 		 let
 		   val f = !first
 		   val l = !last
-		   val inp = V.tabulate (l - f, fn i => A.sub (buf, f + i))
+		   val inp = AS.vector (AS.slice (buf, f, SOME (l - f)))
 		   val inps = [inp]
 		   fun loop inps =
 		     let
@@ -304,49 +312,56 @@ functor BufferIExtra (S: BUFFER_I_EXTRA_ARG): BUFFER_I_EXTRA =
 		   loop inps
 		 end)
 
-      fun inputLine (ib as In {first, last, buf, ...}) = 
-	let
-	  fun finish (inps, trail) =
+      val inputLine =
+	 case line of
+	    NONE => (fn ib => SOME (input ib))
+	  | SOME {isLine, lineElem, ...} =>
 	    let
-	      val inps = if trail
-			   then line::inps
-			   else inps
-	      val inp = V.concat (List.rev inps)
+	       val lineVec = V.tabulate (1, fn _ => lineElem)
 	    in
-	      SOME inp
+	       fn (ib as In {first, last, buf, ...}) =>
+	       let
+		  fun finish (inps, trail) =
+		     let
+			val inps = if trail
+				      then lineVec::inps
+				      else inps
+			val inp = V.concat (List.rev inps)
+		     in
+			SOME inp
+		     end
+		  fun loop inps =
+		     if updateB "inputLine" ib
+			then let
+				val f = !first
+				val l = !last
+				(* !first < !last *) 
+				fun loop' i = (* pre: !first <= i <= !last *)
+				   let
+				      fun done j = (* pre: !first < j <= !last *)
+					 let
+					    val inp = AS.vector (AS.slice (buf, f, SOME (j - f)))
+					 in
+					    first := j;
+					    inp::inps
+					 end
+				   in
+				      if i >= l
+					 then loop (done i)
+					 else if isLine (A.sub (buf, i))
+						 then finish (done (i + 1), false)
+						 else loop' (i + 1)
+				   end
+			     in
+				loop' f
+			     end
+			else (case inps of
+				 [] => NONE
+			       | _ => finish (inps, true))
+	       in
+		  loop []
+	       end
 	    end
-	  fun loop inps =
-	    if updateB "inputLine" ib
-	      then let
-		     val f = !first
-		     val l = !last
-		     (* !first < !last *) 
-		     fun loop' i = (* pre: !first <= i <= !last *)
-		       let
-			 fun done j = (* pre: !first < j <= !last *)
-			   let
-			     val inp = V.tabulate(j - f, fn k => 
-						  A.sub (buf, f + k))
-			   in
-			     first := j;
-			     inp::inps
-			   end
-		       in
-			 if i >= l
-			   then loop (done i)
-			   else if isLine (A.sub (buf, i))
-				  then finish (done (i + 1), false)
-				  else loop' (i + 1)
-		       end
-		   in
-		     loop' f
-		   end
-	      else (case inps of
-		       [] => NONE
-		     | _ => finish (inps, true))
-	in
-	  loop []
-	end
 
       fun canInput (ib as In {state, first, last, buf, ...}, n) =
 	if n < 0 orelse n > V.maxLen
@@ -424,78 +439,33 @@ functor BufferIExtra (S: BUFFER_I_EXTRA_ARG): BUFFER_I_EXTRA =
       fun getInstream' mkInstream (ib as In {reader, state,
 					     first, last, buf, ...}) =
 	case !state of
-	  Closed => mkInstream {reader = reader,
-				closed = true,
-				buffer_contents = NONE}
-	| Open {eos = true} => mkInstream {reader = reader,
-					   closed = false,
-					   buffer_contents = SOME empty}
-	| Open {eos = false} =>
-	    let
-	      val f = !first
-	      val l = !last
-	    in 
-	      if f < l
-		then let
-		       val buffer_contents = 
-			 V.tabulate (l - f, fn i => A.sub (buf, f + i))
-		     in 
-		       mkInstream {reader = reader,
-				   closed = false,
-				   buffer_contents = SOME buffer_contents}
-		     end 
-		else mkInstream {reader = reader,
-				 closed = false,
+	   Closed => mkInstream {reader = reader,
+				 closed = true,
 				 buffer_contents = NONE}
-	    end
+	 | Open {eos = true} => mkInstream {reader = reader,
+					    closed = false,
+					    buffer_contents = SOME empty}
+	 | Open {eos = false} =>
+	      let
+		 val f = !first
+		 val l = !last
+	      in 
+		 if f < l
+		    then let
+			    val buffer_contents = 
+			       AS.vector (AS.slice (buf, f, SOME (l - f)))
+			 in 
+			    mkInstream {reader = reader,
+					closed = false,
+					buffer_contents = SOME buffer_contents}
+			 end 
+		    else mkInstream {reader = reader,
+				     closed = false,
+				     buffer_contents = NONE}
+	      end
       fun getInstream ib =
-	getInstream' SIO.mkInstream' ib
+	 getInstream' SIO.mkInstream' ib
    end
-
-(* signature BUFFER_I_ARG = 
- *    sig
- *       structure PrimIO: PRIM_IO
- *       structure StreamIO: STREAM_IO
- *       structure Array: MONO_ARRAY
- *       structure Vector: MONO_VECTOR
- *       sharing type PrimIO.elem = StreamIO.elem = Vector.elem = Array.elem
- *       sharing type PrimIO.vector = StreamIO.vector = Vector.vector = Array.vector
- *       sharing type PrimIO.array = Array.array
- *       sharing type PrimIO.reader = StreamIO.reader
- *       sharing type PrimIO.pos = StreamIO.pos
- *       val someElem: PrimIO.elem
- *    end
- * functor BufferI
- *         (S: BUFFER_I_ARG): BUFFER_I = 
- *   BufferIExtra(open S
- * 	       structure Array =
- * 		  struct
- * 		     open Array
- * 		     fun rawArray n = Array.array (n, someElem)
- * 		  end
- * 	       structure Vector =
- * 		  struct
- * 		     open Vector
- * 		     fun fromArray a = 
- * 		       tabulate(Array.length a, fn i => Array.sub (a, i))
- * 		  end
- * 	       structure StreamIO =
- * 		  struct
- * 		     open StreamIO
- * 		     fun input1' _ = raise (Fail "<input1'>")
- * 		     fun equalsIn _ = raise (Fail "<equalsIn>")
- * 		     fun instreamReader _ = raise (Fail "<instreamReader>")
- * 		     fun mkInstream' _ = raise (Fail "<mkInstream>")
- * 		     fun equalsOut _ = raise (Fail "<equalsOut>")
- * 		     fun outstreamWriter _ = raise (Fail "<outstreamWriter>")
- * 		     fun mkOutstream' _ = raise (Fail "<mkOutstream>")
- * 		     fun openVector _ = raise (Fail "<openVector>")
- * 		     fun inputLine _ = raise (Fail "<inputLine>")
- * 		     fun outputSlice _ = raise (Fail "<outputSlice>")
- * 		  end
- * 	       val lineElem = someElem
- * 	       fun isLine _ = raise (Fail "<isLine>"))
- *)
 
 signature BUFFER_I_EXTRA_FILE_ARG =
    sig
@@ -511,25 +481,33 @@ signature BUFFER_I_EXTRA_FILE_ARG =
                            val fromArray: Array.array -> vector
 			end
       structure VectorSlice: MONO_VECTOR_SLICE
-      sharing type Array.array = ArraySlice.array = PrimIO.array
-      sharing type Array.elem = ArraySlice.elem = PrimIO.elem = StreamIO.elem
+      sharing type PrimIO.elem = StreamIO.elem
 	 = Vector.elem = VectorSlice.elem
-      sharing type Array.vector = ArraySlice.vector = PrimIO.vector
-	 = StreamIO.vector = Vector.vector = VectorSlice.vector
-      sharing type ArraySlice.slice = PrimIO.array_slice
-      sharing type ArraySlice.vector_slice = PrimIO.vector_slice
-	 = VectorSlice.slice
+	 = Array.elem = ArraySlice.elem
+      sharing type PrimIO.vector = StreamIO.vector 
+	 = Vector.vector = VectorSlice.vector
+	 = Array.vector = ArraySlice.vector
+      sharing type PrimIO.vector_slice = StreamIO.vector_slice 
+	 = VectorSlice.slice = ArraySlice.vector_slice
+      sharing type PrimIO.array 
+	 = Array.array = ArraySlice.array
+      sharing type PrimIO.array_slice = ArraySlice.slice
       sharing type PrimIO.pos = StreamIO.pos
       sharing type PrimIO.reader = StreamIO.reader
-
-      val isLine: Vector.elem -> bool
-      val lineElem: Vector.elem
+	 
       val someElem: PrimIO.elem
-
+      val line : {isLine: Vector.elem -> bool,
+		  lineElem: Vector.elem} option
       structure Cleaner: CLEANER
    end
 
-functor BufferIExtraFile (S: BUFFER_I_EXTRA_FILE_ARG): BUFFER_I_EXTRA_FILE =
+functor BufferIExtraFile 
+        (S: BUFFER_I_EXTRA_FILE_ARG) :>
+	BUFFER_I_EXTRA_FILE where type elem = S.StreamIO.elem
+	                    where type vector = S.StreamIO.vector
+			    where type reader = S.StreamIO.reader
+			    where type instream = S.StreamIO.instream
+			    where type pos = S.StreamIO.pos =
    struct
       open S
 
@@ -606,8 +584,7 @@ functor BufferIExtraFile (S: BUFFER_I_EXTRA_FILE_ARG): BUFFER_I_EXTRA_FILE =
 				    buffer_contents = buffer_contents,
 				    atExit = atExit}) ib
 	end
-      fun getInstream ib = 
-	getInstream'' SIO.mkInstream'' ib
+      fun getInstream ib = getInstream'' SIO.mkInstream'' ib
       val closeIn = fn ib =>
 	let
 	  val _ = openInbuffers := List.filter (fn (ib',_) => 

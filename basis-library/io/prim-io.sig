@@ -1,11 +1,13 @@
 signature PRIM_IO = 
    sig
-      type array
-      type array_slice
       type elem
-      eqtype pos
       type vector
       type vector_slice
+      type array
+      type array_slice
+
+      eqtype pos
+      val compare: pos * pos -> order
 
       datatype reader =
 	 RD of {avail: unit -> int option,
@@ -40,10 +42,10 @@ signature PRIM_IO =
 		writeVec: (vector_slice -> int) option,
 		writeVecNB: (vector_slice -> int option) option}
 
-      val augmentReader: reader -> reader
-      val augmentWriter: writer -> writer 
-      val compare: pos * pos -> order
+      val openVector: vector -> reader
       val nullRd: unit -> reader
       val nullWr: unit -> writer
-      val openVector: vector -> reader
+
+      val augmentReader: reader -> reader
+      val augmentWriter: writer -> writer 
    end

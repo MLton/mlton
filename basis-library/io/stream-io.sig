@@ -1,13 +1,15 @@
 signature STREAM_IO =
    sig
       type elem
-      type instream
-      type out_pos
-      type outstream
-      type pos
-      type reader
       type vector
+
+      type instream
+      type outstream
+      type out_pos
+
+      type reader
       type writer
+      type pos
 
       val canInput: instream * int -> int option
       val closeIn: instream -> unit
@@ -35,6 +37,7 @@ signature STREAM_IO =
 signature STREAM_IO_EXTRA =
    sig
       include STREAM_IO
+      type vector_slice
 
       structure Close:
 	 sig
@@ -44,36 +47,36 @@ signature STREAM_IO_EXTRA =
 	    val equalsInstream: t * instream -> bool
 	    val make: instream -> t
 	 end
+
+      val openVector: vector -> instream
       val input1': instream -> elem option * instream
+      val inputLine: instream -> (vector * instream) option
+      val equalsIn: instream * instream -> bool
       val instreamReader: instream -> reader
       val mkInstream': {reader: reader,
 			closed: bool,
 			buffer_contents: vector option} -> instream
 
+      val outputSlice: outstream * vector_slice -> unit
       val equalsOut: outstream * outstream -> bool
       val outstreamWriter: outstream -> writer
       val mkOutstream': {writer: writer,
 			 closed: bool,
 			 buffer_mode: IO.buffer_mode} -> outstream
-
-      val openVector: vector -> instream
-      val inputLine: instream -> (vector * instream) option
-      val outputSlice: outstream * (vector * int * int option) -> unit
    end
 
 signature STREAM_IO_EXTRA_FILE =
    sig
       include STREAM_IO_EXTRA
 
+      val inFd: instream -> Posix.IO.file_desc
       val mkInstream'': {reader: reader,
 			 closed: bool,
 			 buffer_contents: vector option,
 			 atExit: {close: bool}} -> instream
+      val outFd: outstream -> Posix.IO.file_desc
       val mkOutstream'': {writer: writer,
 			  closed: bool,
 			  buffer_mode: IO.buffer_mode,
 			  atExit: {close: bool}} -> outstream
-
-      val inFd: instream -> Posix.IO.file_desc
-      val outFd: outstream -> Posix.IO.file_desc
   end

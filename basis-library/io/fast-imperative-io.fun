@@ -11,8 +11,25 @@ signature FAST_IMPERATIVE_IO_EXTRA_ARG =
       sharing type StreamIO.pos = BufferI.pos
    end
 
-functor FastImperativeIOExtra
-        (S: FAST_IMPERATIVE_IO_EXTRA_ARG): FAST_IMPERATIVE_IO_EXTRA =
+functor FastImperativeIOExtra 
+        (S: FAST_IMPERATIVE_IO_EXTRA_ARG) :>
+	FAST_IMPERATIVE_IO_EXTRA where type elem = S.StreamIO.elem
+	                         where type vector = S.StreamIO.vector
+				 where type vector_slice = S.StreamIO.vector_slice
+				 where type StreamIO.elem = S.StreamIO.elem
+				 where type StreamIO.vector = S.StreamIO.vector
+				 where type StreamIO.instream = S.StreamIO.instream
+				 where type StreamIO.outstream = S.StreamIO.outstream
+				 where type StreamIO.out_pos = S.StreamIO.out_pos
+				 where type StreamIO.reader = S.StreamIO.reader
+				 where type StreamIO.writer = S.StreamIO.writer
+				 where type StreamIO.pos = S.StreamIO.pos
+				 where type BufferI.elem = S.BufferI.elem
+				 where type BufferI.vector = S.BufferI.vector
+				 where type BufferI.inbuffer = S.BufferI.inbuffer
+				 where type BufferI.instream = S.BufferI.instream
+				 where type BufferI.reader = S.BufferI.reader
+				 where type BufferI.pos = S.BufferI.pos =
    struct
       open S
 
@@ -21,8 +38,9 @@ functor FastImperativeIOExtra
       structure V = Vector
       structure A = Array
 
-      type vector = SIO.vector
       type elem = SIO.elem
+      type vector = SIO.vector
+      type vector_slice = SIO.vector_slice
 
       fun liftExn name function cause = raise IO.Io {name = name,
 						     function = function,
@@ -38,7 +56,7 @@ functor FastImperativeIOExtra
 
       fun output (Out os, v) = SIO.output (!os, v)
       fun output1 (Out os, v) = SIO.output1 (!os, v)
-      fun outputSlice (Out os, (v, i, sz)) = SIO.outputSlice (!os, (v, i, sz))
+      fun outputSlice (Out os, v) = SIO.outputSlice (!os, v)
       fun flushOut (Out os) = SIO.flushOut (!os)
       fun closeOut (Out os) = SIO.closeOut (!os)
       fun mkOutstream os = Out (ref os)
@@ -158,7 +176,24 @@ signature FAST_IMPERATIVE_IO_EXTRA_FILE_ARG =
    end
 
 functor FastImperativeIOExtraFile
-        (S: FAST_IMPERATIVE_IO_EXTRA_FILE_ARG): FAST_IMPERATIVE_IO_EXTRA_FILE =
+        (S: FAST_IMPERATIVE_IO_EXTRA_FILE_ARG) :>
+	FAST_IMPERATIVE_IO_EXTRA_FILE where type elem = S.StreamIO.elem
+	                              where type vector = S.StreamIO.vector
+				      where type vector_slice = S.StreamIO.vector_slice
+				      where type StreamIO.elem = S.StreamIO.elem
+				      where type StreamIO.vector = S.StreamIO.vector
+				      where type StreamIO.instream = S.StreamIO.instream
+				      where type StreamIO.outstream = S.StreamIO.outstream
+				      where type StreamIO.out_pos = S.StreamIO.out_pos
+				      where type StreamIO.reader = S.StreamIO.reader
+				      where type StreamIO.writer = S.StreamIO.writer
+				      where type StreamIO.pos = S.StreamIO.pos
+				      where type BufferI.elem = S.BufferI.elem
+				      where type BufferI.vector = S.BufferI.vector
+				      where type BufferI.inbuffer = S.BufferI.inbuffer
+				      where type BufferI.instream = S.BufferI.instream
+				      where type BufferI.reader = S.BufferI.reader
+				      where type BufferI.pos = S.BufferI.pos =
    struct
       structure ImperativeIO = FastImperativeIOExtra(open S)
       open ImperativeIO

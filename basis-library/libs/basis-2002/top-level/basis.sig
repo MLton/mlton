@@ -591,6 +591,10 @@ signature BASIS_2002 =
    where type TextPrimIO.reader = TextPrimIO.reader
    where type TextPrimIO.writer = TextPrimIO.writer
    where type Time.time = Time.time
+(*
+   where type 'a Vector.vector = 'a Vector.vector
+*)
+   where type 'a VectorSlice.slice = 'a VectorSlice.slice
    where type Word8.word = Word8.word
    where type Word16.word = Word16.word
    where type Word32.word = Word32.word
@@ -600,9 +604,5 @@ signature BASIS_2002 =
    where type Word8ArraySlice.vector_slice = Word8ArraySlice.vector_slice
    where type Word8Vector.vector = Word8Vector.vector
    where type Word8VectorSlice.vector = Word8VectorSlice.vector
-(*
-   where type 'a Vector.vector = 'a Vector.vector
-*)
-   where type 'a VectorSlice.slice = 'a VectorSlice.slice
 
    where type 'a MLton.Thread.t = 'a MLton.Thread.t

@@ -2,8 +2,8 @@ signature IMPERATIVE_IO =
    sig
       structure StreamIO: STREAM_IO
 
-      type vector = StreamIO.vector
       type elem = StreamIO.elem
+      type vector = StreamIO.vector
       type instream
       type outstream
 
@@ -32,29 +32,32 @@ signature IMPERATIVE_IO =
 signature IMPERATIVE_IO_EXTRA =
    sig
       include IMPERATIVE_IO
+      type vector_slice
 
-      val equalsIn: instream * instream -> bool
-      val equalsOut: outstream * outstream -> bool
-      val inputLine: instream -> vector option
       val openVector: vector -> instream
-      val outputSlice: outstream * (vector * int * int option) -> unit
+      val inputLine: instream -> vector option
+      val equalsIn: instream * instream -> bool
       val scanStream: ((elem, StreamIO.instream) StringCvt.reader -> 
 		       ('a, StreamIO.instream) StringCvt.reader) -> 
 	              instream -> 'a option
+
+      val outputSlice: outstream * vector_slice -> unit
+      val equalsOut: outstream * outstream -> bool
    end
 
 signature IMPERATIVE_IO_EXTRA_FILE =
    sig
       include IMPERATIVE_IO_EXTRA
 
-      val inFd: instream -> Posix.IO.file_desc
-      val newIn: Posix.IO.file_desc * string -> instream
-      val newOut: Posix.IO.file_desc * string -> outstream
-      val openAppend: string -> outstream
       val openIn: string -> instream
+      val newIn: Posix.IO.file_desc * string -> instream
+      val inFd: instream -> Posix.IO.file_desc
+      val stdIn: instream
+ 
       val openOut: string -> outstream
+      val openAppend: string -> outstream
+      val newOut: Posix.IO.file_desc * string -> outstream
       val outFd: outstream -> Posix.IO.file_desc
       val stdErr: outstream
-      val stdIn: instream
       val stdOut: outstream
    end

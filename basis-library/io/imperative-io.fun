@@ -7,8 +7,19 @@ signature IMPERATIVE_IO_EXTRA_ARG =
       sharing type StreamIO.vector = Vector.vector = Array.vector
    end
 
-functor ImperativeIOExtra
-        (S: IMPERATIVE_IO_EXTRA_ARG): IMPERATIVE_IO_EXTRA =
+functor ImperativeIOExtra 
+        (S: IMPERATIVE_IO_EXTRA_ARG) :>
+	IMPERATIVE_IO_EXTRA where type elem = S.StreamIO.elem
+	                    where type vector = S.StreamIO.vector
+			    where type vector_slice = S.StreamIO.vector_slice
+			    where type StreamIO.elem = S.StreamIO.elem
+			    where type StreamIO.vector = S.StreamIO.vector
+			    where type StreamIO.instream = S.StreamIO.instream
+			    where type StreamIO.outstream = S.StreamIO.outstream
+			    where type StreamIO.out_pos = S.StreamIO.out_pos
+			    where type StreamIO.reader = S.StreamIO.reader
+			    where type StreamIO.writer = S.StreamIO.writer
+			    where type StreamIO.pos = S.StreamIO.pos =
    struct
       open S
 
@@ -16,8 +27,9 @@ functor ImperativeIOExtra
       structure V = Vector
       structure A = Array
 
-      type vector = StreamIO.vector
-      type elem = StreamIO.elem
+      type elem = SIO.elem
+      type vector = SIO.vector
+      type vector_slice = SIO.vector_slice
 
       (*---------------*)
       (*   outstream   *)
@@ -29,7 +41,7 @@ functor ImperativeIOExtra
 
       fun output (Out os, v) = SIO.output (!os, v)
       fun output1 (Out os, v) = SIO.output1 (!os, v)
-      fun outputSlice (Out os, (v, i, sz)) = SIO.outputSlice (!os, (v, i, sz))
+      fun outputSlice (Out os, v) = SIO.outputSlice (!os, v)
       fun flushOut (Out os) = SIO.flushOut (!os)
       fun closeOut (Out os) = SIO.closeOut (!os)
       fun mkOutstream os = Out (ref os)
@@ -92,33 +104,43 @@ signature IMPERATIVE_IO_ARG =
       sharing type StreamIO.vector = Vector.vector = Array.vector
    end
 
-functor ImperativeIO
-        (S: IMPERATIVE_IO_ARG): IMPERATIVE_IO = 
-  ImperativeIOExtra(open S
-		    structure StreamIO =
-		      struct
-			open StreamIO
-			structure Close =
-			   struct
-			      type t = unit
-
-			      fun close _ = raise Fail "<Close.close>"
-			      fun equalsInstream _ = raise Fail "<Close.equalsInstream"
-			      fun make _ = raise Fail "<Close.make>"
-			   end
-			fun instreamUniq _ = raise Fail "<instreamUniq>"
-			fun input1' _ = raise (Fail "<input1'>")
-			fun equalsIn _ = raise (Fail "<equalsIn>")
-			fun instreamReader _ = raise (Fail "<instreamReader>")
-			fun mkInstream' _ = raise (Fail "<mkInstream>")
-			fun equalsOut _ = raise (Fail "<equalsOut>")
-			fun outstreamWriter _ = raise (Fail "<outstreamWriter>")
-			fun mkOutstream' _ = raise (Fail "<mkOutstream>")
-			fun openVector _ = raise (Fail "<openVector>")
-			fun inputLine _ = raise (Fail "<inputLine>")
-			fun outputSlice _ = raise (Fail "<outputSlice>")
-		      end)
-
+functor ImperativeIO 
+        (S: IMPERATIVE_IO_ARG) :>
+	IMPERATIVE_IO where type elem = S.StreamIO.elem
+	              where type vector = S.StreamIO.vector
+		      where type StreamIO.elem = S.StreamIO.elem
+		      where type StreamIO.vector = S.StreamIO.vector
+		      where type StreamIO.instream = S.StreamIO.instream
+		      where type StreamIO.outstream = S.StreamIO.outstream
+		      where type StreamIO.out_pos = S.StreamIO.out_pos
+		      where type StreamIO.reader = S.StreamIO.reader
+		      where type StreamIO.writer = S.StreamIO.writer
+		      where type StreamIO.pos = S.StreamIO.pos =
+   ImperativeIOExtra(open S
+		     structure StreamIO =
+			struct
+			   open StreamIO
+			   type vector_slice = unit
+			   structure Close =
+			      struct
+				 type t = unit
+				    
+				 fun close _ = raise Fail "<Close.close>"
+				 fun equalsInstream _ = raise Fail "<Close.equalsInstream"
+				 fun make _ = raise Fail "<Close.make>"
+			      end
+			   fun instreamUniq _ = raise Fail "<instreamUniq>"
+			   fun input1' _ = raise (Fail "<input1'>")
+			   fun equalsIn _ = raise (Fail "<equalsIn>")
+			   fun instreamReader _ = raise (Fail "<instreamReader>")
+			   fun mkInstream' _ = raise (Fail "<mkInstream>")
+			   fun equalsOut _ = raise (Fail "<equalsOut>")
+			   fun outstreamWriter _ = raise (Fail "<outstreamWriter>")
+			   fun mkOutstream' _ = raise (Fail "<mkOutstream>")
+			   fun openVector _ = raise (Fail "<openVector>")
+			   fun inputLine _ = raise (Fail "<inputLine>")
+			   fun outputSlice _ = raise (Fail "<outputSlice>")
+			end)
 
 signature IMPERATIVE_IO_EXTRA_FILE_ARG =
    sig
@@ -140,8 +162,19 @@ signature IMPERATIVE_IO_EXTRA_FILE_ARG =
 		     chunkSize: int} -> StreamIO.writer
    end
 
-functor ImperativeIOExtraFile
-        (S: IMPERATIVE_IO_EXTRA_FILE_ARG): IMPERATIVE_IO_EXTRA_FILE = 
+functor ImperativeIOExtraFile 
+        (S: IMPERATIVE_IO_EXTRA_FILE_ARG) :>
+	IMPERATIVE_IO_EXTRA_FILE where type elem = S.StreamIO.elem
+	                         where type vector = S.StreamIO.vector
+				 where type vector_slice = S.StreamIO.vector_slice
+				 where type StreamIO.elem = S.StreamIO.elem
+				 where type StreamIO.vector = S.StreamIO.vector
+				 where type StreamIO.instream = S.StreamIO.instream
+				 where type StreamIO.outstream = S.StreamIO.outstream
+				 where type StreamIO.out_pos = S.StreamIO.out_pos
+				 where type StreamIO.reader = S.StreamIO.reader
+				 where type StreamIO.writer = S.StreamIO.writer
+				 where type StreamIO.pos = S.StreamIO.pos =
    struct
       structure ImperativeIO = ImperativeIOExtra(open S)
       open ImperativeIO
