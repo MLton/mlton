@@ -385,6 +385,21 @@ val profileStack = control {name = "profile stack",
 			    default = false,
 			    toString = Bool.toString}
 
+structure Representation =
+   struct
+      datatype t = Normal | Packed
+
+      val toString =
+	 fn Normal => "Normal"
+	  | Packed => "Packed"
+   end
+
+datatype representation = datatype Representation.t
+
+val representation = control {name = "representation",
+			      default = Normal,
+			      toString = Representation.toString}
+
 val reserveEsp = control {name = "reserve esp",
 			  default = NONE,
 			  toString = Option.toString Bool.toString}

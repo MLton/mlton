@@ -92,7 +92,7 @@ structure Type =
       val {<= = lessEq, equals, ...} = Relation.compare compare
 
       val equals =
-	 Trace.trace2 ("Machine.Type.equals", layout, layout, Bool.layout)
+	 Trace.trace2 ("RepType.equals", layout, layout, Bool.layout)
 	 equals
 
       local
@@ -159,7 +159,7 @@ structure Type =
 	       [t] => t
 	     | ts => T (Seq (Vector.fromList ts))
       end
-   
+
       val unit = seq (Vector.new0 ())
 
       fun sum (ts: t vector): t =
@@ -603,6 +603,12 @@ structure Type =
 			    then constant (WordX.one WordSize.one)
 			 else word (Bits.fromInt 1))
       end
+
+      val andb =
+	 Trace.trace2 ("Type.andb", layout, layout, Option.layout layout) andb
+	 
+      val orb =
+	 Trace.trace2 ("Type.orb", layout, layout, Option.layout layout) orb
 	 
       local
 	 structure C =
@@ -719,13 +725,21 @@ structure ObjectType =
 
       val wordVector = Array Type.defaultWord
 
+      (* Order in the following vector matters.  The basic pointer tycons must
+       * correspond to the constants in gc.h.
+       * STACK_TYPE_INDEX,
+       * STRING_TYPE_INDEX,
+       * THREAD_TYPE_INDEX,
+       * WEAK_GONE_TYPE_INDEX,
+       * WORD_VECTOR_TYPE_INDEX.
+       *)
       val basic =
 	 Vector.fromList
 	 [(PointerTycon.stack, stack),
+	  (PointerTycon.word8Vector, word8Vector),
 	  (PointerTycon.thread, thread),
 	  (PointerTycon.weakGone, WeakGone),
-	  (PointerTycon.wordVector, wordVector),
-	  (PointerTycon.word8Vector, word8Vector)]
+	  (PointerTycon.wordVector, wordVector)]
 
       local
 	 structure R = Runtime.RObjectType

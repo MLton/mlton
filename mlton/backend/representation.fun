@@ -119,15 +119,15 @@ structure TupleRep =
 	 val tycon = make #tycon
       end
 
-      fun tuple (T {offsets, size, ty, tycon, ...}, {components, dst, oper}) =
+      fun tuple (T {offsets, size, ty, tycon, ...}, {dst, src}) =
 	 let
 	    val stores =
 	       QuickSort.sortVector
-	       (Vector.keepAllMap2
-		(components, offsets, fn (x, offset) =>
+	       (Vector.keepAllMapi
+		(offsets, fn (i, offset) =>
 		 Option.map (offset, fn {offset, ...} =>
 			     {offset = offset,
-			      value = oper x})),
+			      value = src {index = i}})),
 		fn ({offset, ...}, {offset = offset', ...}) =>
 		Bytes.<= (offset, offset'))
 	 in
@@ -137,6 +137,12 @@ structure TupleRep =
 				 size = size,
 				 stores = stores}]
 	 end
+
+      val tuple =
+	 Trace.trace ("TupleRep.tuple",
+		      layout o #1,
+		      List.layout Statement.layout)
+	 tuple
    end
 
 structure ConRep =
@@ -225,7 +231,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	 Trace.trace ("tyconRep", Tycon.layout, TyconRep.layout) tyconRep
       val {get = conRep, set = setConRep, ...} =
 	 Property.getSetOnce (Con.plist,
-			      Property.initRaise ("rep", Con.layout))
+			      Property.initFun (fn _ => ConRep.Void))
       fun isEmpty (t: S.Type.t): bool =
 	 let
 	    datatype z = datatype S.Type.dest
@@ -721,14 +727,8 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	 if n = List.length (!finish)
 	    then ()
 	 else Error.bug "missed finish"
-      val objectTypes =
-	 Vector.map
-	 (QuickSort.sortVector
-	  (Vector.concat [ObjectType.basic,
-			  Vector.fromList (!objectTypes)],
-	   fn ((pt, _), (pt', _)) => PointerTycon.<= (pt, pt')),
-	  #2)
-      val _ =
+      val objectTypes = Vector.fromList (!objectTypes)
+      fun diagnostic () =
 	 Control.diagnostics
 	 (fn display =>
 	  (display (Layout.str "Representations:")
@@ -749,6 +749,10 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			      cons,
 			      2))
 	       end))))
+      fun tuple (tr, {components, dst, oper}) =
+	 TupleRep.tuple
+	 (tr, {dst = dst,
+	       src = fn {index} => oper (Vector.sub (components, index))})
       fun conApp {args, con, dst, oper, ty} =
 	 let
 	    fun move (oper: Operand.t) =
@@ -756,9 +760,9 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				oper = oper,
 				var = dst ()}]
 	    fun allocate (ys, tr) =
-	       TupleRep.tuple (tr, {components = ys,
-				    dst = dst (),
-				    oper = oper})
+	       tuple (tr, {components = ys,
+			   dst = dst (),
+			   oper = oper})
 	    datatype z = datatype ConRep.t
 	 in
 	    case conRep con of
@@ -1052,16 +1056,18 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 					     ty = ty},
 		    var = dst ()}]
 	 end
-      fun tuple ({components, dst = (dst, dstTy), oper}) =
-	 TupleRep.tuple (tupleRep dstTy,
-			 {components = components, dst = dst, oper = oper})
       fun reff {arg, dst, ty} =
-	 TupleRep.tuple (refRep ty,
-			 {components = Vector.new1 arg,
-			  dst = dst,
-			  oper = fn f => f ()})
+	 tuple (refRep ty,
+		{components = Vector.new1 arg,
+		 dst = dst,
+		 oper = fn f => f ()})
+      val tuple =
+	 fn ({components, dst = (dst, dstTy), oper}) =>
+	 tuple (tupleRep dstTy,
+		{components = components, dst = dst, oper = oper})
    in
       {conApp = conApp,
+       diagnostic = diagnostic,
        genCase = genCase,
        objectTypes = objectTypes,
        reff = reff,

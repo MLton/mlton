@@ -228,7 +228,7 @@ structure Statement =
 		  [seq [Var.layout dst, constrain ty],
 		   seq [str " = Object ",
 			record
-			[("header", Word.layout header),
+			[("header", seq [str "0x", Word.layout header]),
 			 ("size", Bytes.layout size),
 			 ("stores",
 			  Vector.layout

@@ -755,6 +755,7 @@ val wordMul = Word_mul
 val wordMulCheck = Word_mulCheck
 val wordNeg = Word_neg
 val wordNotb = Word_notb
+val wordOrb = Word_orb
 val wordRshift = Word_rshift
 val wordSub = Word_sub
 val wordToInt = Word_toInt

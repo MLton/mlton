@@ -5,6 +5,8 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
+type int = Int.t
+   
 signature POINTER_TYCON_STRUCTS =
    sig
    end
@@ -22,6 +24,7 @@ signature POINTER_TYCON =
       val index: t -> Int.t (* index into objectTypes array *)
       val layout: t -> Layout.t
       val new: unit -> t
+      val setIndex: t * int -> unit
       val stack: t
       val thread: t
       val toString: t -> string

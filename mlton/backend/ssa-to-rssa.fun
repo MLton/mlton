@@ -621,6 +621,8 @@ datatype z = datatype Transfer.t
 
 structure Representation = Representation (structure Rssa = Rssa
 					   structure Ssa = Ssa)
+structure PackedRepresentation = PackedRepresentation (structure Rssa = Rssa
+						       structure Ssa = Ssa)
 
 fun updateCard (addr: Operand.t): Statement.t list =
    let
@@ -689,8 +691,17 @@ val word = Type.word o WordSize.bits
 fun convert (program as S.Program.T {functions, globals, main, ...})
    : Rssa.Program.t =
    let
-      val {conApp, genCase, objectTypes, reff, select, toRtype, tuple} =
-	 Representation.compute program
+      val {conApp, diagnostic, genCase, objectTypes, reff, select, toRtype,
+	   tuple} =
+	 (case !Control.representation of
+	     Control.Normal => Representation.compute
+	   | Control.Packed => PackedRepresentation.compute) program
+      val objectTypes = Vector.concat [ObjectType.basic, objectTypes]
+      val () =
+	 Vector.foreachi
+	 (objectTypes, fn (i, (pt, _)) => PointerTycon.setIndex (pt, i))
+      val objectTypes = Vector.map (objectTypes, #2)
+      val () = diagnostic ()
       val {get = varInfo: Var.t -> {ty: S.Type.t},
 	   set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist,

@@ -297,6 +297,7 @@ signature PRIM =
       val wordLshift: WordSize.t -> 'a t
       val wordMul: WordSize.t -> 'a t
       val wordMulCheck: WordSize.t -> 'a t
+      val wordOrb: WordSize.t -> 'a t
       val wordRshift: WordSize.t -> 'a t
       val wordSub: WordSize.t -> 'a t
       val wordToInt: WordSize.t * IntSize.t -> 'a t

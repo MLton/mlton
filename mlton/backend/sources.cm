@@ -27,6 +27,7 @@ rssa.sig
 rssa.fun
 representation.sig
 representation.fun
+packed-representation.fun
 ssa-to-rssa.sig
 ssa-to-rssa.fun
 implement-handlers.sig

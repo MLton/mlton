@@ -20,14 +20,6 @@ signature REPRESENTATION =
    sig
       include REPRESENTATION_STRUCTS
 
-      structure TupleRep:
-	 sig
-	    type t
-
-	    val layout: t -> Layout.t
-	    val tycon: t -> Rssa.PointerTycon.t
-	 end
-
       val compute:
 	 Ssa.Program.t
 	 -> {conApp: {args: 'a vector,
@@ -35,13 +27,14 @@ signature REPRESENTATION =
 		      dst: unit -> Rssa.Var.t,
 		      oper: 'a -> Rssa.Operand.t,
 		      ty: unit -> Rssa.Type.t} -> Rssa.Statement.t list,
+	     diagnostic: unit -> unit,
 	     genCase: {cases: (Ssa.Con.t * Rssa.Label.t) vector,
 		       default: Rssa.Label.t option,
 		       test: unit -> Rssa.Operand.t,
 		       tycon: Ssa.Tycon.t} -> (Rssa.Statement.t list
 					       * Rssa.Transfer.t
 					       * Rssa.Block.t list),
-	     objectTypes: Rssa.ObjectType.t vector,
+	     objectTypes: (Rssa.PointerTycon.t * Rssa.ObjectType.t) vector,
 	     reff: {arg: unit -> Rssa.Operand.t,
 		    dst: Rssa.Var.t,
 		    ty: Ssa.Type.t} -> Rssa.Statement.t list,
