@@ -199,6 +199,11 @@ compilation because it allows new code to be loaded dynamically.
 \fullmodule{CharVectorSlice}{MONO\_VECTOR\_SLICE}
 \fullmodule{CommandLine}{COMMAND\_LINE}
 \fullmodule{Date}{DATE}
+\begin{quote}
+Date.fromString and Date.scan accept a space in addition to a zero for
+the first character of the day of the month.  The basis library
+specification only allows a zero.
+\end{quote}
 \fullmodule{FixedInt}{INTEGER}
 \fullmodule{General}{GENERAL}
 \fullmodule{GenericSock}{GENERIC\_SOCK}

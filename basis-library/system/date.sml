@@ -444,7 +444,11 @@ structure Date :> DATE =
 			     then f v
 			  else none
 		       end)
-	  fun readDay f = readDigs (2, 1, 31, f)
+	  fun readDay f =
+	     peek1 (fn c =>
+		    if c = #" "
+		       then read1 (fn _ => readDigs (1, 1, 9, f))
+		    else readDigs (2, 1, 31, f))
 	  fun readHour f = readDigs (2, 0, 23, f)
 	  fun readMinute f = readDigs (2, 0, 59, f)
 	  fun readSeconds f = readDigs (2, 0, 61, f)
