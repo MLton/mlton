@@ -96,10 +96,10 @@ local
     val dstr = openDir "testdir";
 in
     val test7a = 
-	tst' "test7a" (fn _ => "" = readDir dstr);
+	tst' "test7a" (fn _ => NONE = readDir dstr);
     val _ = rewindDir dstr;
     val test7b = 
-	tst' "test7b" (fn _ => "" = readDir dstr);
+	tst' "test7b" (fn _ => NONE = readDir dstr);
     val _ = closeDir dstr;
     val test7c = tst0 "test7c" ((readDir dstr seq "WRONG")
 				handle OS.SysErr _ => "OK" | _ => "WRONG")
