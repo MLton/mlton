@@ -5,6 +5,8 @@ Here are the changes since version 20030716.
     return INF instead of ZERO for things like "0.0000e123456789012345".
   - Fixed a bug in Real.{fromDecimal,fromString,scan}, which didn't
     return an appropriately signed zero for ~0.0.
+  - Fixed a bug in Real.{toDecimal,fmt}, which didn't correctly handle
+    ~0.0.
   - Report a compile-time error on unrepresentable real constants.
 
 * 2004-01-05

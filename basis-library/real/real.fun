@@ -405,7 +405,7 @@ functor Real (R: PRE_REAL): REAL =
 	  | ZERO => {class = ZERO,
 		     digits = [],
 		     exp = 0,
-		     sign = false}
+		     sign = signBit x}
 	  | c => 
 	       let
 		  val (cs, exp) = gdtoa (x, Gen, 0)
