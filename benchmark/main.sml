@@ -5,6 +5,7 @@ type int = Int.t
 
 val fail = Process.fail
 
+val doHtml = ref false
 val doKit = ref false
 val doMLton = ref true
 val doMLtonTop = ref false
@@ -62,16 +63,17 @@ fun compileSizeRun {args, compiler, exe, doTextPlusData: bool} =
 fun batch bench = concat [bench, ".batch.sml"]
    
 local
-   fun make compiler {bench} =
+   fun make (compiler, args) {bench} =
       let val exe = "a.out"
-      in compileSizeRun {args = ["-o", exe, batch bench],
+      in compileSizeRun {args = args @ ["-o", exe, batch bench],
 			 compiler = compiler,
 			 exe = exe,
 			 doTextPlusData = true}
       end
 in
-   val mltonCompile  = make "mlton"
-   val mltonTopCompile = make "/usr/local/bin/mlton"
+   val mltonCompile  = make ("mlton", [])
+(*   val mltonTopCompile = make ("/usr/local/bin/mlton", []) *)
+   val mltonTopCompile = make ("mlton", ["-local-flatten", "false"])
 end
 
 fun kitCompile {bench} =
@@ -237,7 +239,8 @@ fun main args =
       in
 	 val res =
 	    parse {switches = args,
-		   opts = [("mlkit", trueRef doKit),
+		   opts = [("html", trueRef doHtml),
+			   ("mlkit", trueRef doKit),
 			   ("mltonTop", trueRef doMLtonTop),
 			   ("mosml", trueRef doMosml),
 			   ("smlnj", trueRef doNJ),
@@ -304,8 +307,12 @@ fun main args =
 				    "</t", c, ">"]))
 			     ; p ["</tr>"])
 			val _ =
-			   (prow (hd rows, "h")
-			    ; List.foreach (tl rows, fn r => prow (r, "d")))
+			   if !doHtml
+			      then 
+				 (prow (hd rows, "h")
+				  ; List.foreach (tl rows, fn r =>
+						  prow (r, "d")))
+			   else ()
  		     in
 			()
 		     end
