@@ -1,5 +1,6 @@
 Library
 
+signature PERVASIVE_REAL
 signature PERVASIVE_WORD
 structure Pervasive
 

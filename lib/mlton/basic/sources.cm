@@ -96,6 +96,8 @@ structure Random
 structure Reader
 structure Real
 structure RealVector
+structure Real32
+structure Real64
 structure Ref
 structure Regexp
 structure Relation

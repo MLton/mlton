@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+signature PERVASIVE_REAL = REAL
 signature PERVASIVE_WORD = WORD
 structure Pervasive =
    struct
@@ -32,6 +33,8 @@ structure Pervasive =
       structure Position = Position
       structure Posix = Posix
       structure Real = Real
+      structure Real32 = Real32
+      structure Real64 = Real64
       structure SMLofNJ = SMLofNJ
       structure String = String
       structure StringCvt = StringCvt

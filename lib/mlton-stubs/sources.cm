@@ -5,6 +5,7 @@ signature INT_INF
 #if (SMLNJ_VERSION == 110) && (SMLNJ_MINOR_VERSION >= 20)
 signature POSIX_SIGNAL
 #endif   
+signature REAL
 signature WORD
 
 structure Array
@@ -37,6 +38,8 @@ structure Pack32Little
 structure Position
 structure Posix
 structure Real
+structure Real32
+structure Real64
 structure Real64Array
 structure RealArray
 structure RealVector

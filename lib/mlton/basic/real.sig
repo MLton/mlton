@@ -12,9 +12,10 @@ signature REAL =
 	 sig
 	    type t
 
-	    val sci: int option -> t
+	    val exact: t
 	    val fix: int option -> t
 	    val gen: int option -> t
+	    val sci: int option -> t
 	 end
 
       type t
@@ -36,7 +37,7 @@ signature REAL =
       val ceiling: t -> int
       val choose: t * t -> t
       val compare: t * t -> Relation.t
-      val cos: real -> real
+      val cos: t -> t
       val dec: t ref -> unit
       val equals: t * t -> bool
       val exp: t -> t
@@ -62,7 +63,7 @@ signature REAL =
       val realMod: t -> t
       val realPower: t * t -> t
       val round: t -> int
-      val sin: real -> real
+      val sin: t -> t
       val sqrt: t -> t
       val sub1: t -> t
       val tan: t -> t

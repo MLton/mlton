@@ -120,9 +120,9 @@ structure Random
 structure RDB
 structure Reader
 structure Real
-(*structure RealArray*)
-(*structure Real64Array*)
 structure RealVector
+structure Real32
+structure Real64
 structure Ref
 structure Regexp
 structure Relation

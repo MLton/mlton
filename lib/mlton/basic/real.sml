@@ -4,29 +4,33 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure Real: REAL =
+
+functor Real (Real: sig
+		       include PERVASIVE_REAL
+		       val one: real
+		       val zero: real
+		    end): REAL =
 struct
 
 type int = Int.t
+type real = Real.real
 
 structure In = In0
 
 structure R = 
-   OrderedRing(structure R = 
-		  RingWithIdentity(structure R =
-				      Ring(type t = real
-					   open Real
-					   val zero = 0.0
-					   val layout = Layout.str o toString
-					   val equals = Pervasive.Real.==)
-				   open R Real
-				   val one = 1.0)
-	       open R Real
-	       val {compare, ...} =
-		  Relation.lessEqual{< = op <, equals = equals})
+   OrderedRing (structure R = 
+		   RingWithIdentity (structure R =
+					Ring (type t = real
+					      open Real
+					      val layout = Layout.str o toString
+					      val equals = Real.==)
+				     open R Real)
+		open R Real
+		val {compare, ...} =
+		   Relation.lessEqual {< = op <, equals = equals})
 
-structure F = OrderedField(open R Real
-			   fun inverse x = 1.0 / x)
+structure F = OrderedField (open R Real
+			    fun inverse x = one / x)
 open F Real
 open Math
 
@@ -37,7 +41,7 @@ fun input i =
     | NONE => raise Input
 
 local
-   open Pervasive.Real
+   open Real
 in
    val fromInt = fromInt
    val fromIntInf = fromLargeInt
@@ -48,19 +52,26 @@ structure Format =
    struct
       open StringCvt
       type t = realfmt
+
+      val exact = EXACT
       val sci = SCI
       val fix = FIX
       val gen = GEN
    end
 
-fun format(x, f) = Pervasive.Real.fmt f x
+fun format (x, f) = Real.fmt f x
 
 fun choose(n, k) =
-   let val k = max(k, n - k)
-   in prodFromTo{from = add1 k, to = n, term = fn i => i} / factorial(n - k)
+   let
+      val k = max (k, n - k)
+   in
+      prodFromTo {from = add1 k,
+		  term = fn i => i,
+		  to = n}
+      / factorial (n - k)
    end
 
-fun log(base, arg) = ln arg / ln base
+fun log (base, arg) = ln arg / ln base
    
 val ln2 = ln two
    
@@ -71,3 +82,12 @@ fun realPower(m, n) = exp(n * ln m)
 val ceiling = ceil
 
 end
+
+structure Real64 = Real (open Real64
+			 val one: real = 1.0
+			 val zero: real = 0.0)
+structure Real = Real64
+structure Real32 = Real (open Real32
+			 val one: real = 1.0
+			 val zero: real = 0.0)
+			    

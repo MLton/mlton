@@ -4,6 +4,7 @@ signature INT_INF
 #if (SMLNJ_VERSION == 110) && (SMLNJ_MINOR_VERSION >= 20)
 signature POSIX_SIGNAL
 #endif
+signature REAL
 signature WORD
    
 structure Array
