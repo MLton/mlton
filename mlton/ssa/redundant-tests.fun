@@ -153,12 +153,32 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 	 val (trueVar, t) = make Con.truee
 	 val (falseVar, f) = make Con.falsee
       end
-      val one = Var.newNoname ()
-      val oneS =
-	 Statement.T {exp = Exp.Const (Const.int (IntX.one IntSize.default)),
-		      ty = Type.defaultInt,
-		      var = SOME one}
-      val globals = Vector.concat [Vector.new3 (t, f, oneS), globals]
+      local
+	 fun make s =
+	    let
+	       val one = Var.newNoname ()
+	       val oneS = 
+		  Statement.T {exp = Exp.Const (Const.int (IntX.one s)),
+			       ty = Type.int s,
+			       var = SOME one}
+	    in
+	       (one,oneS)
+	    end
+	 datatype z = datatype IntX.IntSize.t
+	 val (one8, oneS8) = make I8
+	 val (one16, oneS16) = make I16
+	 val (one32, oneS32) = make I32
+	 val (one64, oneS64) = make I64
+      in
+	 fun one s =
+	   case s of
+	     I8 => one8
+	   | I16 => one16
+	   | I32 => one32
+	   | I64 => one64
+	 val oneSs = Vector.new4 (oneS8, oneS16, oneS32, oneS64)
+      end
+      val globals = Vector.concat [Vector.new2 (t, f), oneSs, globals]
       val shrink = shrinkFunction globals
       val numSimplified = ref 0
       fun simplifyFunction f =
@@ -364,7 +384,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 				 [statements,
 				  Vector.new1
 				  (Statement.T
-				   {exp = PrimApp {args = Vector.new2 (x, one),
+				   {exp = PrimApp {args = Vector.new2 (x, one s),
 						   prim = prim,
 						   targs = Vector.new0 ()},
 				    ty = Type.int s,
