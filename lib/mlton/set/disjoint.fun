@@ -4,7 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor DisjointSet (): DISJOINT_SET =
+functor DisjointSet ():> DISJOINT_SET =
 struct
 
 type int = Int.t
