@@ -33,6 +33,12 @@ in
    structure Statement = Statement
 end
 
+val here =
+   Trace.trace ("Allocate.here",
+		fn s => Layout.str s,
+		Unit.layout)
+               (fn s => ())
+
 val traceAllocateBlock =
    Trace.trace ("Allocate.block",
 		fn (Tree.T (Sblock.T {label, ...}, _),
@@ -238,6 +244,9 @@ fun allocate {program = program as Program.T {globals, ...},
 				  then forceStacks (livePrim (valOf var))
 			       else ()
 		     | Exp.SetHandler h => hasHandler := true
+		     | Exp.SetExnStackLocal => hasHandler := true
+		     | Exp.SetExnStackSlot => hasHandler := true
+		     | Exp.SetSlotExnStack => hasHandler := true
 		     | _ => ())
 		val _ =
 		   case transfer of
@@ -353,7 +362,7 @@ fun allocate {program = program as Program.T {globals, ...},
 					 ["live register ",
 					  Layout.toString (Var.layout x)])
 				   | Stack =>
-					case Operand.deStackOffset (^r) of
+				        case Operand.deStackOffset (^r) of
 					   NONE => Error.bug "live slot"
 					 | SOME _ => (^r)::operands)
 			 else (^r)::operands
@@ -361,10 +370,11 @@ fun allocate {program = program as Program.T {globals, ...},
 	 in
 	    val getOperands =
 	       Trace.trace ("Allocate.getOperands",
-			    fn ((xs, (code, link)), _) =>
+			    fn ((xs, (code, link)), force) =>
 			    Layout.tuple [List.layout Var.layout xs,
 					  Bool.layout code,
-					  Bool.layout link],
+					  Bool.layout link,
+					  Bool.layout force],
 			    List.layout Operand.layout)
 	       getOperands
 	    fun getLiveOperands (j, force) =
@@ -376,6 +386,19 @@ fun allocate {program = program as Program.T {globals, ...},
 		   liveNoFormals = getOperands ((beginNoFormals, hs), force),
 		   liveFrame = getOperands ((frame, hs), force)}
 	       end
+	    val getLiveOperands =
+	       Trace.trace ("Allocate.getLiveOperands",
+			    fn (j, force) =>
+			    Layout.tuple [Slabel.layout j,
+					  Bool.layout force],
+			    fn {live, liveNoFormals, liveFrame} =>
+			    Layout.record [("live", 
+					    List.layout Operand.layout live),
+					   ("liveNoFormals",
+					    List.layout Operand.layout liveNoFormals),
+					   ("liveFrame", 
+					    List.layout Operand.layout liveFrame)])
+	                   getLiveOperands
 	    fun getLivePrimOperands x = getOperands (livePrim' x, false)
 	    fun getLivePrimRuntimeOperands x = getOperands (livePrim' x, true)
 	 end
@@ -385,6 +408,11 @@ fun allocate {program = program as Program.T {globals, ...},
 	 in
 	    val getGCInfo' = getGCInfo'
 	    fun getGCInfo j = getGCInfo' (getOperands (liveBegin' j, true))
+	    val getGCInfo =
+	       Trace.trace ("Allocate.getGCInfo",
+			    Slabel.layout,
+			    GCInfo.layout)
+                           getGCInfo
 	    fun getGCInfoPrimRuntime x =
 	       getGCInfo' (getLivePrimRuntimeOperands x)
 	 end
@@ -431,8 +459,10 @@ fun allocate {program = program as Program.T {globals, ...},
 			* across a chunk boundary.
 			*)
 		     List.foreach (Mtype.all, fn t => nextReg t := 0)
+	       val _ = here "Before args"
 	       val _ = Vector.foreach (args, fn (x, _) =>
 				       allocateVar (x, c', false))
+	       val _ = here "After args"
 	       (* This must occur after allocating slots for the
 		* args, since it must have the correct stack frame
 		* size.
@@ -446,9 +476,13 @@ fun allocate {program = program as Program.T {globals, ...},
 		      | LimitCheck.Maybe => doit MlimitCheck.Maybe
 		      | LimitCheck.Yes => doit MlimitCheck.Yes
 		  end
+	       val _ = here "Before statements"
 	       val _ = Vector.foreach (statements, fn s =>
 				       allocateStatement (s, c'))
+	       val _ = here "After statements"
+	       val _ = here "Before children"
 	       val _ = Vector.foreach (children, fn n => loop (n, c'))
+	       val _ = here "After children"
 	       val _ = List.foreach (Mtype.all, fn t => nextReg t := saveReg t)
 	       val _ = nextOffset := saveOffset
 	       val isCont = isCont label
@@ -461,8 +495,10 @@ fun allocate {program = program as Program.T {globals, ...},
 		  if isHandler
 		     then SOME {size = valOf handlerOffset}
 		  else NONE
+	       val _ = here "Before getLiveOperands"
 	       val {live, liveNoFormals, liveFrame} =
 		  getLiveOperands (label, isCont orelse isHandler)
+	       val _ = here "After getLiveOperands"
 	       val _ =
 		  setSlabelInfo
 		  (label, Info.T {limitCheck = limitCheck,

@@ -68,8 +68,7 @@ fun live (function, {isCont: Label.t -> bool,
 					block: Block.t,
 					bodyInfo: LiveInfo.t,
 					frameInfo: LiveInfo.t,
-					isContSet: bool ref,
-					visited: bool ref (* for dfs *)
+					isContSet: bool ref
 					},
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
@@ -128,8 +127,7 @@ fun live (function, {isCont: Label.t -> bool,
 				   block = block,
 				   bodyInfo = bodyInfo,
 				   frameInfo = frameInfo,
-				   isContSet = ref false,
-				   visited = ref false
+				   isContSet = ref false
 				   })
 	  end)
       val _ = 

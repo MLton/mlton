@@ -91,7 +91,7 @@ structure VarOperand =
 	  | Global oper => SOME oper
 	  | Void => NONE
 
-      val operand = valOf o operandOpt
+      val operand = fn x => ((valOf o operandOpt) x)
 
       fun layout i =
 	 let open Layout
@@ -238,7 +238,8 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
       val varOperand = #operand o varInfo
       fun varOperands xs = List.map (xs, varOperand)
       val varOperandOpt = VarOperand.operandOpt o varOperand
-      val vo = valOf o varOperandOpt
+      val vo = fn x => ((valOf o varOperandOpt) x)
+
       fun sortTypes (initialOffset: int,
 		     tys: Mtype.t vector): {size: int,
 					    offsets: int vector,
@@ -724,7 +725,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		let
 		   open Layout
 		in
-		   seq [str "Generating code for function", Func.layout name]
+		   seq [str "Generating code for function ", Func.layout name]
 		end)
 	    val _ = setVarInfos args
 	    val profileName = Func.toString name
