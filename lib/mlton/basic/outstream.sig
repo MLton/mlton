@@ -18,6 +18,6 @@ signature OUTSTREAM =
       val print: string -> unit
       val set: t * t -> unit
       val standard: t
-      val withClose: t * (t -> 'a) -> 'a
+      val withClose: t * (unit -> 'a) -> 'a
       val withNull: (t -> 'a) -> 'a
    end

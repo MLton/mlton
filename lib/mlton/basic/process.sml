@@ -355,7 +355,7 @@ fun callWithOut (name, args, f: Out.t -> 'a) =
 	 forkOut
 	 (fn ins => Out.withNull (fn out => call (name, args) (ins, out)))
    in DynamicWind.wind
-      (fn () => Out.withClose (out, f),
+      (fn () => Out.withClose (out, fn () => f out),
        fn () => wait pid)
    end
 
