@@ -10,6 +10,7 @@ RedirectMatch permanent /HTML* http://www.mlton.org/user-guide/index.html
 # The user guide used to use node names like user-guide/node??.html
 RedirectMatch permanent /user-guide/node* http://www.mlton.org/user-guide/index.html
 
+Redirect permanent /improvements.html http://www.mlton.org/projects.html
 Redirect permanent /sources.html http://www.mlton.org/download.html
 
 #ErrorDocument 401 
