@@ -295,10 +295,12 @@ signature BASIS_2002 =
       *)
 
       (* Required structures *)
-      sharing type BinPrimIO.elem = Word8.word
       sharing type BinPrimIO.array = Word8Array.array
-      sharing type BinPrimIO.vector = Word8Vector.vector
+      sharing type BinPrimIO.array_slice = Word8ArraySlice.slice
+      sharing type BinPrimIO.elem = Word8.word
       sharing type BinPrimIO.pos = Position.int
+      sharing type BinPrimIO.vector = Word8Vector.vector
+      sharing type BinPrimIO.vector_slice = Word8VectorSlice.slice
       sharing type Char.char = char
       sharing type Char.string = String.string
       sharing type CharArray.elem = char
@@ -328,9 +330,12 @@ signature BASIS_2002 =
       sharing type Text.CharArray.array = CharArray.array
       sharing type TextIO.elem = char 
       sharing type TextIO.vector = string
-      sharing type TextPrimIO.elem = Char.char
       sharing type TextPrimIO.array = CharArray.array
+      sharing type TextPrimIO.array_slice = CharArraySlice.slice
+      sharing type TextPrimIO.elem = Char.char
+      sharing type TextPrimIO.pos = Position.int
       sharing type TextPrimIO.vector = CharVector.vector
+      sharing type TextPrimIO.vector_slice = CharVectorSlice.slice
       sharing type Word8Array.elem = Word8.word
       sharing type Word8Array.vector = Word8Vector.vector
       sharing type Word8ArraySlice.elem = Word8.word
