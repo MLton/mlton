@@ -352,6 +352,8 @@ structure MLton: MLTON =
 		  orb (>> (w, w'),
 		       << (w, fromInt wordSize - w'))
 	       end
+	    val addCheck = op +
+	    val mulCheck = op *
 	 end
       
       structure Word8 =
