@@ -15,6 +15,21 @@ val _ =
     | [_] => 1
     | [_, _] => 2
 
+fun first l =
+   case l of
+      SOME x :: _ => x
+
+fun f x =
+   case x of
+      (false, false) => ()
+    | (true, true) => ()
+
+datatype z = A | B | C
+
+fun f x =
+   case x of
+      (A, B, C) => ()
+
 val _ =
    case Fail "foo" of
       Fail _ => false
@@ -34,7 +49,7 @@ fun f "" = ()
 fun f #"a" = 13
    
 fun f (0w0: Word8.word) = 13
-   
+
 (* Checks for non-exhaustive pattern matches (compiler should warn). *)
 
 fun ord #"\000" = 0

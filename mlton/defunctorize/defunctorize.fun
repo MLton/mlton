@@ -105,7 +105,7 @@ fun casee {caseType: Xtype.t,
 		   lay: (unit -> Layout.t) option,
 		   pat: NestedPat.t} vector,
 	   conTycon,
-	   hasExtraTuple,
+	   hasExtraTuple: bool,
 	   kind: string,
 	   lay: unit -> Layout.t,
 	   mayWarn: bool,
@@ -115,7 +115,7 @@ fun casee {caseType: Xtype.t,
 	   tyconCons}: Xexp.t =
    let
       val cases = Vector.map (cases, fn {exp, lay, pat} =>
-			      {example = ref NONE,
+			      {examples = ref [],
 			       exp = exp,
 			       isDefault = false,
 			       lay = lay,
@@ -127,7 +127,7 @@ fun casee {caseType: Xtype.t,
 	 in
 	    Vector.concat
 	    [cases,
-	     Vector.new1 {example = ref NONE,
+	     Vector.new1 {examples = ref [],
 			  exp =
 			  Xexp.raisee ({exn = f e,
 					filePos = Region.toFilePos region},
@@ -153,7 +153,7 @@ fun casee {caseType: Xtype.t,
 	    val (cases, decs) =
 	       Vector.mapAndFold
 	       (cases, [],
-		fn ({example, exp = e, numUses, pat = p, ...}, decs) =>
+		fn ({examples, exp = e, numUses, pat = p, ...}, decs) =>
 		let
 		   val args = Vector.fromList (NestedPat.varsAndTypes p)
 		   val (vars, tys) = Vector.unzip args
@@ -178,7 +178,7 @@ fun casee {caseType: Xtype.t,
 			   body = e})})}
 		   fun finish (p, rename) =
 		      (Int.inc numUses
-		       ; example := SOME p
+		       ; List.push (examples, p)
 		       ; (Xexp.app
 			  {func = Xexp.monoVar (func, funcType),
 			   arg =
@@ -263,48 +263,18 @@ fun casee {caseType: Xtype.t,
 		     case Vector.peek (cases, fn {isDefault, numUses, ...} =>
 				       isDefault andalso !numUses > 0) of
 			NONE => ()
-		      | SOME {example, ...} =>
+		      | SOME {examples, ...} =>
 			   let
+			      val ps = !examples
+			      val suf = if length ps > 1 then "s" else ""
 			      open Layout
-			      fun layoutPat p =
-				 let
-				    val char =
-				       case NestedPat.node p of
-					  NestedPat.Const {const, isChar} =>
-					     (case const of
-						 Const.Word w =>
-						    if isChar
-						       then SOME (WordX.toChar w)
-						    else NONE
-					       | _ => NONE)
-					| _ => NONE
-				 in
-				    case char of
-				       NONE => NestedPat.layout p
-				     | SOME c => 
-					  seq [str "#\"",
-					       Char.layout c,
-					       str "\""]
-				 end
-			      val p = valOf (!example)
-			      val (suf, p) =
-				 if not hasExtraTuple
-				    then ("", layoutPat p)
-				 else
-				    case NestedPat.node p of
-				       NestedPat.Tuple ps =>
-					  ("s",
-					   seq (separate (Vector.toListMap
-							  (ps, layoutPat),
-							  " ")))
-				     | _ => Error.bug "hasExtraTuple needs tuple"
 			   in
 			      Control.warning
 			      (region,
 			       str (concat [kind, " is not exhaustive"]),
-			       align [seq [str (concat ["missing pattern",
-							suf, ": "]),
-					   p],
+			       align [seq (str (concat ["missing pattern",
+							suf, ": "])
+					   :: (separate (ps, " | "))),
 				      lay ()])
 			   end
 	       else ()

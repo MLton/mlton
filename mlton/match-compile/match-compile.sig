@@ -68,7 +68,7 @@ signature MATCH_COMPILE =
       val matchCompile:
 	 {caseType: Type.t, (* type of entire expression *)
 	  cases: (NestedPat.t
-		  * (NestedPat.t * (Var.t -> Var.t) -> Exp.t)) vector,
+		  * (Layout.t * (Var.t -> Var.t) -> Exp.t)) vector,
 	  conTycon: Con.t -> Tycon.t,
 	  region: Region.t,
 	  test: Var.t,

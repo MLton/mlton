@@ -62,7 +62,7 @@ structure FlatPat =
 structure Continue =
    struct
       datatype t =
-	 Finish of (NestedPat.t * (Var.t -> Var.t)) -> Exp.t
+	 Finish of (Layout.t * (Var.t -> Var.t)) -> Exp.t
        | Matches of FlatPat.t vector option * t
 
       fun layout c =
@@ -117,7 +117,7 @@ structure FlatRule =
 
 structure Finish =
    struct
-      type t = NestedPat.t * Info.t vector -> Exp.t
+      type t = Layout.t * Info.t vector -> Exp.t
 	 
       fun layout (_: t) = Layout.str "<finish>"
    end
@@ -143,10 +143,7 @@ local
 		 inj (s,
 		      Vector.map
 		      (cases, fn {const, infos: Info.t list} =>
-		       (get const, finish (NestedPat.make
-					   (NestedPat.Const {const = const,
-							     isChar = false},
-					    ty s),
+		       (get const, finish (Const.layout const,
 					   Vector.fromList infos))))))
 in
    val directCases = 
@@ -268,13 +265,21 @@ fun unhandledConst (cs: Const.t vector): Const.t =
 	    end
    end
 
+local
+   open Layout
+in
+   val wild = str "_"
+
+   fun conApp (c, p) = paren (seq [Con.layout c, str " ", p])
+end
+
 (*---------------------------------------------------*)
 (*                   matchCompile                    *)
 (*---------------------------------------------------*)
 
 fun matchCompile {caseType: Type.t,
 		  cases: (NestedPat.t
-			  * (NestedPat.t * (Var.t -> Var.t) -> Exp.t)) vector,
+			  * (Layout.t * (Var.t -> Var.t) -> Exp.t)) vector,
 		  conTycon: Con.t -> Tycon.t,
 		  region: Region.t,
 		  test: Var.t,
@@ -310,8 +315,7 @@ fun matchCompile {caseType: Type.t,
 			    case pat of
 			       FlatPat.Any => false
 			     | _ => true) of
-	     NONE => finish (NestedPat.wild ty,
-			     Vector.map (rules, FlatRule.info))
+	     NONE => finish (wild, Vector.map (rules, FlatRule.info))
 	   | SOME (FlatRule.T {pat, info}) =>
 		let
 		   val test = Exp.var (var, ty)
@@ -345,13 +349,12 @@ fun matchCompile {caseType: Type.t,
 	 end
       and matchesFlat (i: int,
 		       vars: (Var.t * Type.t) vector,
-		       pats: NestedPat.t list,
+		       pats: Layout.t list,
 		       rules: {pats: FlatPat.t vector option,
 			       info: Info.t} vector,
 		       finish: Finish.t): Exp.t =
 	 if i = Vector.length vars
-	    then finish (NestedPat.tuple (Vector.fromListRev pats),
-			 Vector.map (rules, #info))
+	    then finish (Layout.tuple (rev pats), Vector.map (rules, #info))
 	 else
 	    let
 	       val (var, ty) = Vector.sub (vars, i)
@@ -477,20 +480,16 @@ fun matchCompile {caseType: Type.t,
 	    val defaults = Vector.fromList defaults
 	    val default =
 	       if Vector.isEmpty cases
-		  then
-		     SOME (finish (NestedPat.wild ty, defaults),
-			   region)
+		  then SOME (finish (wild, defaults), region)
 	       else
 		  let
 		     val {con, ...} = Vector.sub (cases, 0)
 		     val tycon = conTycon con
-		     fun done defaultPat =
+		     fun done (defaultPat: Layout.t) =
 			SOME (finish (defaultPat, defaults), region)
 		  in
 		     if Tycon.equals (tycon, Tycon.exn)
-			then done (NestedPat.make
-				   (NestedPat.Var (Var.fromString "e"),
-				    ty))
+			then done (Layout.str  "e")
 		     else
 			let
 			   val cons = tyconCons tycon
@@ -498,29 +497,22 @@ fun matchCompile {caseType: Type.t,
 			   if Vector.length cases = Vector.length cons
 			      then NONE
 			   else
-			      done
-			      (case (Vector.peek
-				     (cons, fn {con, ...} =>
-				      not (Vector.exists
-					   (cases, fn {con = con', ...} =>
-					    Con.equals (con, con'))))) of
-				  NONE =>
-				     Error.bug "unable to find default example"
-				| SOME {con, hasArg} =>
-				     let
-					val arg =
-					   if hasArg
-					      then SOME (NestedPat.wild
-							 Type.unit)
-					   else NONE
-				     in
-					NestedPat.make
-					(NestedPat.Con
-					 {arg = arg,
-					  con = con,
-					  targs = Vector.new0 ()},
-					 ty)
-				     end)
+			      let
+				 val unhandled =
+				    Vector.keepAllMap
+				    (cons, fn {con, hasArg, ...} =>
+				     if Vector.exists
+					(cases, fn {con = con', ...} =>
+					 Con.equals (con, con'))
+					then NONE
+				     else SOME (if hasArg
+						   then conApp (con, wild)
+						else Con.layout con))
+				 open Layout
+			      in
+				 done (seq (separate (Vector.toList unhandled,
+						      " | ")))
+			      end
 			end
 		  end
 	    fun normal () =
@@ -541,15 +533,16 @@ fun matchCompile {caseType: Type.t,
 				  case arg of
 				     NoArg infos =>
 					(NONE,
-					 finish (conPat NONE,
+					 finish (Con.layout con,
 						 Vector.fromList infos))
 				   | Arg {var, ty, rules} =>
 					(SOME (var, ty),
 					 match (var, ty,
 						Vector.fromList rules,
 						fn (p, e) =>
-						finish (conPat (SOME p), e)))
-			    in {con = con,
+						finish (conApp (con, p), e)))
+			    in
+			       {con = con,
 				targs = tys,
 				arg = arg,
 				rhs = rhs}
@@ -570,13 +563,7 @@ fun matchCompile {caseType: Type.t,
 				  body = match (var, ty,
 						Vector.fromList rules,
 						fn (p, e) =>
-						finish (NestedPat.make
-							(NestedPat.Con
-							 {arg = SOME p,
-							  con = Con.reff,
-							  targs = tys},
-							 ty),
-							e))}
+						finish (conApp (con, p), e))}
 			   else normal ()
 		      | _ => normal ()
 		  end
@@ -634,12 +621,26 @@ fun matchCompile {caseType: Type.t,
 		  val cs = Vector.fromListMap (cases, #const)
 		  val unhandled = 
 		     if 0 = Vector.length cs
-			then NestedPat.Wild
-		     else NestedPat.Const {const = unhandledConst cs,
-					   isChar = isChar}
+			then wild
+		     else
+			let
+			   val c = unhandledConst cs
+			in
+			   if isChar
+			      then (case c of
+				       Const.Word w =>
+					  let
+					     open Layout
+					  in
+					     seq [str "#\"",
+						  Char.layout (WordX.toChar w),
+						  str "\""]
+					  end
+				     | _ => Error.bug "strange char")
+			   else Const.layout c
+			end
 	       in
-		  finish (NestedPat.make (unhandled, ty),
-			  Vector.fromList defaults)
+		  finish (unhandled, Vector.fromList defaults)
 	       end
 	 in
 	    case List.peek (directCases, fn (ty', _, _) =>
@@ -648,10 +649,7 @@ fun matchCompile {caseType: Type.t,
 		  List.fold
 		  (cases, default (), fn ({const, infos}, rest) =>
 		   Exp.iff {test = Exp.equal (test, Exp.const const),
-			    thenn = finish (NestedPat.make
-					    (NestedPat.Const {const = const,
-							      isChar = false},
-					     ty),
+			    thenn = finish (Const.layout const,
 					    Vector.fromList infos),
 			    elsee = rest,
 			    ty = caseType})
