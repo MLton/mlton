@@ -347,8 +347,10 @@ structure Type =
       fun hom (ty, z) =
 	 let
 	    val {hom, destroy} = makeHom z
+	    val res = hom ty
+	    val _ = destroy ()
 	 in
-	    hom ty before destroy ()
+	    res
 	 end
 
       fun layoutPretty (t: t): Layout.t =
@@ -976,19 +978,17 @@ structure Type =
 	       con (real RealSize.default, Tycon.defaultReal, Vector.new0 ())
 	    val word =
 	       con (word WordSize.default, Tycon.defaultWord, Vector.new0 ())
-	    val {hom: t -> 'a, ...} =
-	       makeHom {con = con,
-			int = fn _ => int,
-			flexRecord = flexRecord,
-			genFlexRecord = genFlexRecord,
-			real = fn _ => real,
-			record = fn (t, r) => record (t, Srecord.toVector r),
-			recursive = recursive,
-			unknown = fn _ => unknown,
-			var = var,
-			word = fn _ => word}
 	 in
-	    hom
+	    makeHom {con = con,
+		     int = fn _ => int,
+		     flexRecord = flexRecord,
+		     genFlexRecord = genFlexRecord,
+		     real = fn _ => real,
+		     record = fn (t, r) => record (t, Srecord.toVector r),
+		     recursive = recursive,
+		     unknown = fn _ => unknown,
+		     var = var,
+		     word = fn _ => word}
 	 end
    end
 
@@ -1351,36 +1351,41 @@ structure Type =
 		       var = var}
 	 end
 
-      fun hom {con, var} =
+      fun makeHom {con, var} =
 	 homConVar {con = fn (_, c, ts) => con (c, ts),
 		    var = fn (_, a) => var a}
 	 
       fun deRecord t =
 	 let
-	    val hom =
+	    val {hom, destroy} =
 	       simpleHom
 	       {con = fn (t, _, _) => (t, NONE),
 		record = fn (t, fs) => (t,
 					SOME (Vector.map (fs, fn (f, (t, _)) =>
 							  (f, t)))),
 		var = fn (t, _) => (t, NONE)}
+	    val res =
+	       case #2 (hom t) of
+		  NONE => Error.bug "Type.deRecord"
+		| SOME fs => fs
+	    val _ = destroy ()
 	 in
-	    case #2 (hom t) of
-	       NONE => Error.bug "Type.deRecord"
-	     | SOME fs => fs
+	    res
 	 end
 
       fun deTupleOpt t =
 	 let
-	    val hom =
+	    val {destroy, hom} =
 	       homConVar
 	       {con = fn (t, c, ts) => (t,
 					if Tycon.equals (c, Tycon.tuple)
 					   then SOME (Vector.map (ts, #1))
 					else NONE),
                 var = fn (t, _) => (t, NONE)}
+	    val res = #2 (hom t)
+	    val _ = destroy ()
 	 in
-	    #2 (hom t)
+	    res
 	 end
 
       val deTupleOpt =

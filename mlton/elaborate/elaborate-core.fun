@@ -209,9 +209,9 @@ fun elaborateTypeOpt (ty: Ast.Type.t option, lookup): Type.t option =
 val overloads: (unit -> unit) list ref = ref []
 val freeTyvarChecks: (unit -> unit) list ref = ref []
 
-val typeTycon: Type.t -> Tycon.t option =
-   Type.hom {con = fn (c, _) => SOME c,
-	     var = fn _ => NONE}
+val {hom = typeTycon: Type.t -> Tycon.t option, ...} =
+   Type.makeHom {con = fn (c, _) => SOME c,
+		 var = fn _ => NONE}
    
 fun resolveConst (c: Aconst.t, ty: Type.t): Const.t =
    let

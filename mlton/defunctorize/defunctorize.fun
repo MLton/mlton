@@ -315,10 +315,11 @@ fun valDec (tyvars: Tyvar.t vector,
 
 fun defunctorize (CoreML.Program.T {decs}) =
    let
-      val loopTy = Ctype.hom {con = fn (c, ts) => if Tycon.equals (c, Tycon.char)
-						     then Xtype.word8
-						  else Xtype.con (c, ts),
-			      var = Xtype.var}
+      val {destroy, hom = loopTy} =
+	 Ctype.makeHom {con = fn (c, ts) => if Tycon.equals (c, Tycon.char)
+					       then Xtype.word8
+					    else Xtype.con (c, ts),
+                        var = Xtype.var}
       val {get = conTycon, set = setConTycon, ...} =
 	 Property.getSetOnce (Con.plist,
 			      Property.initRaise ("conTycon", Con.layout))
@@ -771,6 +772,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 	 end
       val body = Xexp.toExp (loopDecs (decs, (Xexp.unit (), Xtype.unit)))
       val _ = List.foreach (!warnings, fn f => f ())
+      val _ = destroy ()
    in
       Xml.Program.T {body = body,
 		     datatypes = Vector.fromList (!datatypes),

@@ -19,9 +19,10 @@ signature CORE_ML_STRUCTS =
 	    val bool: t
 	    val deConOpt: t -> (Tycon.t * t vector) option
 	    val deRecord: t -> (Record.Field.t * t) vector
-	    val hom: {con: Tycon.t * 'a vector -> 'a,
-		      var: Tyvar.t -> 'a} -> t -> 'a
 	    val layout: t -> Layout.t
+	    val makeHom: {con: Tycon.t * 'a vector -> 'a,
+			  var: Tyvar.t -> 'a} -> {destroy: unit -> unit,
+						  hom: t -> 'a}
 	    val tuple: t vector -> t
 	    val unit: t
 	 end

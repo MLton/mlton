@@ -24,8 +24,9 @@ signature TYPE_ENV =
 	    val char: t
 	    val deRecord: t -> (Record.Field.t * t) vector
 	    val flexRecord: t SortedRecord.t -> t * (unit -> bool)
-	    val hom: {con: Tycon.t * 'a vector -> 'a,
-		      var: Tyvar.t -> 'a} -> t -> 'a
+	    val makeHom: {con: Tycon.t * 'a vector -> 'a,
+			  var: Tyvar.t -> 'a} -> {destroy: unit -> unit,
+						  hom: t -> 'a}
 	    val isUnit: t -> bool
 	    val layout: t -> Layout.t
 	    val layoutPretty: t -> Layout.t
