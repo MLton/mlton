@@ -53,6 +53,7 @@ structure Char
 structure CharArray
 structure CharBuffer
 structure CharVector
+structure CommandLine
 structure Computation
 structure Console
 structure Counter
@@ -89,6 +90,7 @@ structure MergeSort
 structure MLton
 structure Net
 structure Option
+structure OS
 structure Out
 structure Parse
 structure Pervasive
@@ -118,6 +120,7 @@ structure Relation
 structure ResizableArray
 structure Result
 structure Signal
+structure SMLofNJ
 structure Stream
 structure String
 structure StringCvt
@@ -136,7 +139,8 @@ structure Word
 structure Word8
 structure Word8Array
 structure Word8Vector
-
+structure Word32
+   
 functor AlphaBeta
 functor BinaryHeap
 functor Cache

@@ -11,9 +11,11 @@ structure List
 structure Out
 structure Pervasive
 structure String
+structure StringCvt
 structure Trace
 structure Unsafe
 structure Vector
+structure Word32
 
 is
 

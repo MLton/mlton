@@ -56,7 +56,7 @@ structure CMLexer: CM_LEXER = struct
 	fun getc () =
 	    case !lookahead of
 		[] => let
-		    val new = String.explode (TextIO.input stream)
+		    val new = String.explode (In.input stream)
 		in
 		    case new of
 			[] => NONE

@@ -1,4 +1,4 @@
-Group
+Library
 
 functor BinaryHeap
 functor EagerBinomialHeap

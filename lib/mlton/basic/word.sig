@@ -1,6 +1,7 @@
+type int = Pervasive.Int.int
+   
 signature WORD =
    sig
-      type int = Pervasive.Int.int
       type t
 
       val << : t * t -> t 

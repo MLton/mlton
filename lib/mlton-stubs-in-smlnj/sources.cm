@@ -1,43 +1,110 @@
-Group is
+Library
 
+signature MLTON_CONT
+signature MLTON_GC
+signature MLTON_ITIMER
+signature MLTON_PTRACE
+signature MLTON_SIGNAL
+signature MLTON_SOCKET
+signature MLTON_THREAD
+signature MLTON_TEXT_IO
+signature MLTON_WORLD
+
+structure Array
+structure Array2
+structure Bool
+structure Byte
+structure Char
+structure CharArray
+structure CharVector
+structure CommandLine
+structure Date
+structure General
+structure IEEEReal
+structure Int
+structure Int32
+structure IntInf
+structure IO
+structure LargeInt
+structure LargeReal
+structure LargeWord
+structure List
+structure ListPair
+structure MLton
+structure Math
+structure OS
+structure Option
+structure Pack32Big
+structure Pack32Little
+structure Position
+structure Posix
+structure Real
+structure Real64Array
+structure RealArray
+structure RealVector
+structure SML90
+structure SMLofNJ
+structure String
+structure StringCvt
+structure Substring
+structure SysWord
+structure TextIO
+structure Time
+structure Unix
+structure Unsafe
+structure Vector
+structure Word
+structure Word32
+structure Word8
+structure Word8Array
+structure Word8Vector
+
+is
+
+
+#if (SMLNJ_VERSION == 110) && (SMLNJ_MINOR_VERSION >= 20)
+$/basis.cm
+#endif   
 import.cm
+
+array.sig
+array.sml
+array2.sml
+char.sml
+cont.sig
+date.sml
+gc.sig
 int-inf-sig.sml
 int-inf.sml
 int.sml
-open-int32.sml
-text-io.sml
-list.sml
-os.sml
-array.sml
-thread.sig
-char.sml
-word.sml
-vector.sml
-time.sml
-substring.sml
-string.sml
-string-cvt.sml
-real.sml
-date.sml
-array2.sml
-thread.sml
-world.sig
-text-io.sig
-socket.sig
-signal.sig
-ptrace.sig
-cont.sig
-gc.sig
 itimer.sig
-proc-env.sig
-rlimit.sig
-rusage.sig
-word.sig
-random.sig
-syslog.sig
-syslog.sml
-array.sig
-vector.sig
+list.sml
 mlton.sig
 mlton.sml
+open-int32.sml
+os.sml
+other.sml
+proc-env.sig
+ptrace.sig
+random.sig
+real.sml
+rlimit.sig
+rusage.sig
+signal.sig
+socket.sig
+string-cvt.sml
+string.sml
+substring.sml
+syslog.sig
+syslog.sml
+text-io.sig
+text-io.sml
+thread.sig
+thread.sml
+time.sml
 unsafe.sml
+vector.sig
+vector.sml
+word.sig
+word.sml
+world.sig

@@ -1,0 +1,1 @@
+structure Word = Word

@@ -44,3 +44,5 @@ structure Word: WORD32 =
 
       val fromWord8 = Word8.toLargeWord
    end
+
+structure ZWord = Word

@@ -101,14 +101,14 @@ fun parse {cmfile: string} =
 	      fun parseAlias () =
 		 case getFileName () of
 		    NONE => bad "alias name missing"
-		  | SOME f => let val _ = TextIO.closeIn ins
+		  | SOME f => let val _ = In.close ins
 			      in Alias f
 			      end
 	      fun parseGroup () =
 		 let
 		    val _ = readList readExport
 		    val members = readMembers ()
-		    val _ = TextIO.closeIn ins
+		    val _ = In.close ins
 		 in Members members
 		 end
 	   in case normal () of

@@ -1,4 +1,18 @@
-Group is
+Library
+
+signature ENV
+signature MONO_ENV
+signature POLY_CACHE
+
+structure PolyCache
+
+functor Cache
+functor MakeMonoEnv
+functor MonoEnv
+functor MoveToFrontEnv
+functor SplayMonoEnv
+
+is
 
 ../../smlnj/sources.cm
 ../basic/sources.cm

@@ -7,7 +7,7 @@ struct
 (*---------------------------------------------------*)
 (*              Intermediate Languages               *)
 (*---------------------------------------------------*)
-
+   
 structure Ast = Ast ()
 structure Atoms = Atoms (structure Ast = Ast)
 structure CoreML = CoreML (open Atoms
@@ -49,7 +49,7 @@ in
    structure Decs = Decs
    structure Env = Env
 end
-
+   
 (* ------------------------------------------------- *)
 (*                 parseAndElaborate                 *)
 (* ------------------------------------------------- *)

@@ -12,7 +12,7 @@
  * SML/NJ Library suite.
  *)
 
-Group
+Library
 
 functor SplayMapFn
 

@@ -339,6 +339,7 @@ closure-convert/lambda-free.fun
 closure-convert/closure-convert.fun
 codegen/c-codegen/c-codegen.sig
 codegen/c-codegen/c-codegen.fun
+codegen/x86-codegen/word.sml
 codegen/x86-codegen/x86-codegen.sig
 codegen/x86-codegen/x86.sig
 codegen/x86-codegen/x86.fun

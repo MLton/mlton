@@ -54,6 +54,6 @@ signature CM_LEXER = sig
 		fsigdef: string -> bool,
 		symval: string -> int option
 	       } ->
-	string * TextIO.instream -> mode -> token
+	string * In.t -> mode -> token
 
 end
