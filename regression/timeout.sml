@@ -3,7 +3,7 @@ open MLton
 fun timeLimit (t: Time.time, f: unit -> 'a): 'a option =
    let
       val which = Itimer.Real
-      val signal = Itimer.whichSignal which
+      val signal = Itimer.signal which
       val res =
 	 Thread.switch
 	 (fn cur: 'a option Thread.t =>
