@@ -1,0 +1,336 @@
+(* Copyright (C) 1997-1999 NEC Research Institute.
+ * Please see the file LICENSE for license information.
+ *)
+functor UnusedArgs (S: UNUSED_ARGS_STRUCTS): UNUSED_ARGS = 
+struct
+
+open S
+open Dec Transfer
+
+structure Used =
+  struct
+    structure L = TwoPointLattice (val bottom = "unused"
+				   val top = "used")
+    open L
+    val makeUsed = makeTop
+    val isUsed = isTop
+  end
+
+structure NeedsArgs =
+  struct
+    structure L = TwoPointLattice (val bottom = "no"
+				   val top = "yes")
+    open L
+    val forceArgs = makeTop
+    val needsArgs = isTop
+  end
+
+val stats = true
+
+fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
+  = let
+      val removedBinds : Int.t ref = ref 0
+      val removedArgs : Int.t ref = ref 0
+      val wrappers : Int.t ref = ref 0
+
+      val {get = varInfo : Var.t -> {used: Used.t}}
+	= Property.get (Var.plist,
+			Property.initFun (fn _ => {used = Used.new ()}))
+      fun used x = #used (varInfo x)
+      fun isUsed x = Used.isUsed (used x)
+      fun use x = Used.makeUsed (used x)
+      fun uses xs = Vector.foreach(xs, use)
+      fun flow (x, y) = Used.<=(used x, used y)
+
+      val {get = jumpInfo : Jump.t -> {args: Var.t vector,
+				       wrapper: Jump.t option ref,
+				       needArgs: bool ref,
+				       cedeArgs: bool ref},
+	   set = setJumpInfo}
+	= Property.getSetOnce
+	  (Jump.plist,
+	   Property.initRaise ("jumpInfo", Jump.layout))
+      fun newJumpInfo (j, args)
+	= setJumpInfo (j, {args = Vector.map(args, fn (x,_) => x),
+			   wrapper = ref NONE,
+			   needArgs = ref false,
+			   cedeArgs = ref false})
+      fun getArgs j = #args (jumpInfo j)
+      fun forceNeed j = #needArgs (jumpInfo j) := true
+      fun needArgs j = !(#needArgs (jumpInfo j))
+      fun forceCede j = #cedeArgs (jumpInfo j) := true
+      fun cedeArgs j = !(#cedeArgs (jumpInfo j))
+      fun wrapper j = valOf(!(#wrapper (jumpInfo j)))
+      fun getWrapper j = case !(#wrapper (jumpInfo j))
+			   of SOME j' => j'
+			    | NONE => j
+      fun setWrapper (j, j') = #wrapper (jumpInfo j) := SOME j'
+
+      fun wrap j = let
+		     val {needArgs, cedeArgs, args, ...} = jumpInfo j
+		   in 
+		     !needArgs andalso 
+		     !cedeArgs andalso 
+		     Vector.exists(args, not o isUsed)
+		   end
+
+      fun analyzeExp (e: Exp.t) : unit
+	= let
+	    val {decs, transfer} = Exp.dest e
+	  in
+	    List.foreach
+	    (decs,
+	     fn Bind {var, ty, exp}
+	      => if PrimExp.maySideEffect exp
+		   then PrimExp.foreachVar(exp, use)
+		   else PrimExp.foreachVar(exp, fn x => flow (var, x))
+	      | Fun {name, args, body}
+	      => (newJumpInfo (name, args)
+		  ; analyzeExp body)
+	      | HandlerPush h
+	      => forceNeed h
+	      | _ => ())
+	    ; analyzeTransfer transfer
+	  end
+      and analyzeTransfer (t: Transfer.t) : unit
+	= (case t
+	     of Bug => ()
+	      | Call {args, cont, ...}
+	      => (uses args
+		  ; Option.app(cont, forceNeed))
+	      | Case {test, cases, default, ...} 
+	      => (use test
+		  ; Option.app(default, forceCede)
+		  ; case cases
+		      of Cases.Con cjs 
+		       => Vector.foreach(cjs, fn (_,j) => forceNeed j)
+		       | _ => Cases.foreach(cases, fn j => forceCede j))
+	      | Raise args => uses args
+	      | Return args => uses args
+	      | Jump {dst, args}
+	      => (Vector.foreach2 (getArgs dst, args, fn (x,y) => flow (x,y))
+		  ; forceCede dst))
+
+      fun loopExp (e: Exp.t) : Exp.t
+	= let
+	    val {decs, transfer} = Exp.dest e
+	    val decs
+	      = List.fold
+	        (decs,
+		 [],
+		 fn (d,decs)
+		  => (case d
+			of Bind {var, ty, exp}
+			 => if isUsed var orelse
+			       PrimExp.maySideEffect exp
+			      then d::decs
+			      else (if stats
+				      then Int.inc removedBinds
+				      else ()
+				    ; decs)
+			 | Fun {name, args, body}
+			 => if wrap name
+			      then let
+				     val _ = if stats
+					       then (Int.inc wrappers;
+						     Vector.foreach
+						     (args,
+						      fn (x,_) 
+						       => if isUsed x
+							    then ()
+							    else Int.inc removedArgs))
+					       else ()
+
+				     val name = name
+				     val name' = Jump.new name
+
+				     val (args, args', acts)
+				       = Vector.fold
+				         (args,
+					  ([],[],[]),
+					  fn ((x,ty),
+					      (args,args',acts))
+					   => let
+						val x' = Var.new x
+					      in 
+						if isUsed x
+						  then ((x,ty)::args,
+							(x',ty)::args',
+							x'::acts)
+						  else (args,
+							(x',ty)::args',
+							acts)
+					      end)
+				     val args = Vector.fromListRev args
+				     val args' = Vector.fromListRev args'
+				     val acts = Vector.fromListRev acts
+				       
+				     val body = loopExp body
+				     val body' 
+				       = Exp.make
+				         {decs = [],
+					  transfer
+					  = Jump {dst = name,
+						  args = acts}}
+
+				     val _ = setWrapper(name, name')
+				   in
+				     Fun {name = name',
+					  args = args',
+					  body = body'} ::
+				     Fun {name = name,
+					  args = args,
+					  body = body} ::
+				     decs
+				   end
+			      else if needArgs name
+				then Fun {name = name,
+					  args = args,
+					  body = loopExp body} ::
+				     decs
+			      else let
+				     val _ = if stats
+					       then Vector.foreach
+						    (args,
+						     fn (x,_) 
+						      => if isUsed x
+							   then ()
+							   else Int.inc removedArgs)
+					       else ()
+				     val name = name
+				     val args = Vector.keepAll
+				                (args, fn (x,_) => isUsed x)
+				     val body = loopExp body
+				   in
+				     Fun {name = name,
+					  args = args,
+					  body = body} ::
+				     decs
+				   end
+			 | HandlerPush h 
+			 => HandlerPush (getWrapper h)::
+			    decs
+			 | HandlerPop
+			 => d::decs))
+	    val decs = List.rev decs
+	    val transfer = loopTransfer transfer
+	  in
+	    Exp.make {decs = decs,
+		      transfer = transfer}
+	  end
+      and loopTransfer (t: Transfer.t) : Transfer.t
+	= (case t
+	     of Call {func, args, cont}
+	      => Call {func = func,
+		       args = args,
+		       cont = Option.map(cont, getWrapper)}
+	      | Case {cause, test, cases, default}
+	      => let
+		   val cases
+		     = case cases
+			 of Cases.Con cjs 
+			  => Cases.Con (Vector.map(cjs, fn (c,j) => (c, getWrapper j)))
+			  | _ => cases
+		 in 
+		   Case {cause = cause,
+			 test = test,
+			 cases = cases,
+			 default = default}
+		 end 
+	      | Jump {dst, args}
+	      => let
+		   val args 
+		     = Vector.keepAllMap2
+		       (getArgs dst, args,
+			fn (y, x) => if isUsed y
+				       then SOME x
+				       else NONE)
+		 in 
+		   Jump {dst = dst,
+			 args = args}
+		 end
+	      | _ => t)
+
+      val shrinkExp = shrinkExp globals
+      val functions 
+	= Vector.map 
+	  (functions, 
+	   fn {name, args, body, returns}
+	    => {name = name,
+		args = args,
+		body = (analyzeExp body ; 
+			loopExp body),
+		returns = returns})
+
+      val program'
+	= Program.T {datatypes = datatypes,
+		     globals = globals,
+		     functions = functions,
+		     main = main}
+
+     val functions 
+	= Vector.map 
+	  (functions, 
+	   fn {name, args, body, returns}
+	    => {name = name,
+		args = args,
+		body = shrinkExp body,
+		returns = returns})
+
+      val program''
+	= Program.T {datatypes = datatypes,
+		     globals = globals,
+		     functions = functions,
+		     main = main}
+      val _ 
+	= if true
+	    then Control.displays
+	         ("unused-args", 
+		  fn display 
+		   => (Program.layouts (program, display)
+		       ; Program.foreachVar 
+		         (program, 
+			  fn (x, _) 
+			   => display (let open Layout
+				       in seq [Var.layout x,
+					       str " ",
+					       Used.layout (used x)]
+				       end))
+(*
+		       ; Program.foreachJump
+		         (program, 
+			  fn j 
+			   => display (let open Layout
+					   val {needArgs, cedeArgs, wrapper, ...}
+					     = jumpInfo j
+				       in seq [Jump.layout j,
+					       str " ",
+					       Bool.layout (!needArgs),
+					       str " ",
+					       Bool.layout (!cedeArgs),
+					       str " ",
+					       Option.layout Jump.layout (!wrapper)]
+				       end))
+*)
+		       ; Program.layouts (program', display)
+		       ; Program.layouts (program'', display)))
+	 else ()
+      val _ 
+	= if stats
+	    then (Out.output(Out.standard,
+			     concat ["removedBinds: ",
+				     Int.toString (!removedBinds),
+				     " wrappers: ",
+				     Int.toString (!wrappers),
+				     " removedArgs: ",
+				     Int.toString (!removedArgs),
+				     "\n"])
+		  ; Out.flush Out.standard)
+	    else ()
+
+     in 
+      Program.clear program''
+      ; program'
+    end
+
+end
