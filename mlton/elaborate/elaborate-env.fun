@@ -406,12 +406,6 @@ structure Structure =
 	    end
       end
 
-      val bogus = T {instance = NONE,
-		     plist = PropertyList.new (),
-		     strs = Info.bogus (),
-		     vals = Info.bogus (),
-		     types = Info.bogus ()}
-
       local
 	 fun make (field, toSymbol) (T fields, domain) =
 	    Info.peek (field fields, domain, toSymbol)
@@ -502,10 +496,10 @@ structure FunctorClosure =
    struct
       datatype t =
 	 T of {apply: (Structure.t * string list * Region.t
-		       -> Decs.t * Structure.t),
+		       -> Decs.t * Structure.t option),
 	       sizeMessage: unit -> Layout.t}
 
-      val bogus = T {apply = fn _ => (Decs.empty, Structure.bogus),
+      val bogus = T {apply = fn _ => (Decs.empty, NONE),
  		     sizeMessage = fn _ => Layout.str "<bogus>"}
 
       fun apply (T {apply, ...}, s, nest, r) = apply (s, nest, r)
@@ -799,6 +793,12 @@ structure PeekResult =
 	  | UndefinedStructure ss => layoutStrids ss
 	  | Undefined => Layout.str "Undefined"
 
+      fun map (r: 'a t, f: 'a -> 'b): 'b t =
+	 case r of
+	    Found a => Found (f a)
+	  | UndefinedStructure ss => UndefinedStructure ss
+	  | Undefined => Undefined
+	       
       val toOption: 'a t -> 'a option =
 	 fn Found z => SOME z
 	  | _ => NONE
@@ -899,8 +899,8 @@ in
 	    Ast.Longcon.region,
 	    Ast.Longcon.layout)
    val lookupLongstrid =
-      make (peekLongstrid,
-	    fn () => Structure.bogus,
+      make (fn (E, x) => PeekResult.map (peekLongstrid (E, x), SOME),
+	    fn () => NONE,
 	    "structure",
 	    Ast.Longstrid.region,
 	    Ast.Longstrid.layout)
@@ -1861,7 +1861,7 @@ fun functorClosure
    (E: t,
     prefix: string,
     argInt: Interface.t,
-    makeBody: Structure.t * string list -> Decs.t * Structure.t) =
+    makeBody: Structure.t * string list -> Decs.t * Structure.t option) =
    let
       (* Need to tick here so that any tycons created in the dummy structure
        * for the functor formal have a new time, and will therefore report an
@@ -1982,7 +1982,7 @@ fun functorClosure
 			   types = Info.map (types, replaceTypeStr),
 			   vals = Info.map (vals, fn (v, s) =>
 					    (v, replaceScheme s))}))
-		     val res = replacement res
+		     val res = Option.map (res, replacement)
 		     val _ = destroy1 ()
 		     val _ = destroy2 ()
 		  in
@@ -1999,7 +1999,8 @@ fun functorClosure
       val apply =
 	 Trace.trace ("functorApply",
 		      Structure.layout o #1,
-		      Layout.tuple2 (Layout.ignore, Structure.layout))
+		      Layout.tuple2 (Layout.ignore,
+				     Option.layout Structure.layout))
 	 apply
       fun sizeMessage () = layoutSize apply
       val fc =

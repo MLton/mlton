@@ -81,9 +81,10 @@ fun elaborateProgram (program,
    let
       val Ast.Program.T decs = Ast.Program.coalesce program 
       fun elabSigexp s = ElaborateSigexp.elaborateSigexp (s, E)
-      fun elabSigexpConstraint (cons: SigConst.t, S: Structure.t,
+      fun elabSigexpConstraint (cons: SigConst.t,
+				S: Structure.t option,
 				nest: string list)
-	 : Decs.t * Structure.t =
+	 : Decs.t * Structure.t option =
 	 let
 	    fun s (sigexp, opaque) =
 	       let
@@ -92,14 +93,20 @@ fun elaborateProgram (program,
 			[] => ""
 		      | _ => concat (List.fold (nest, [], fn (s, ac) =>
 						s :: "." :: ac))
-		  val (S, decs) =
-		     Env.cut (E, S, elabSigexp sigexp,
-			      {isFunctor = false,
-			       opaque = opaque,
-			       prefix = prefix},
-			      Sigexp.region sigexp)
 	       in
-		  (decs, S)
+		  case S of
+		     NONE => (Decs.empty, NONE)
+		   | SOME S => 
+			let
+			   val (S, decs) =
+			      Env.cut (E, S, elabSigexp sigexp,
+				       {isFunctor = false,
+					opaque = opaque,
+					prefix = prefix},
+				       Sigexp.region sigexp)
+			in
+			   (decs, SOME S)
+			end
 	       end
 	 in
 	    case cons of
@@ -139,12 +146,14 @@ fun elaborateProgram (program,
 		       val (decs', S) = elabStrexp (def, nest)
 		       val (decs'', S) =
 			  elabSigexpConstraint (constraint, S, nest)
-		       val _ = Env.extendStrid (E, name, S)
+		       val _ = Option.app (S, fn S =>
+					   Env.extendStrid (E, name, S))
 		    in
 		       Decs.appends [decs, decs', decs'']
 		    end)
 	  end) arg
-      and elabStrexp (e: Strexp.t, nest: string list): Decs.t * Structure.t =
+      and elabStrexp (e: Strexp.t, nest: string list)
+	 : Decs.t * Structure.t option =
 	 let
 	    val elabStrexp = fn e => elabStrexp (e, nest)
 	 in
@@ -152,13 +161,20 @@ fun elaborateProgram (program,
 	       Strexp.App (fctid, strexp) => (* rules 54, 154 *)
 		  let
 		     val (decs, S) = elabStrexp strexp
-		     val (decs', S) =
-			FunctorClosure.apply (Env.lookupFctid (E, fctid),
-					      S,
-					      [Fctid.toString fctid],
-					      Strexp.region strexp)
 		  in
-		     (Decs.append (decs, decs'), S)
+		     case S of
+			NONE => (decs, NONE)
+		      | SOME S => 
+			   let
+			      val (decs', S) =
+				 FunctorClosure.apply
+				 (Env.lookupFctid (E, fctid),
+				  S,
+				  [Fctid.toString fctid],
+				  Strexp.region strexp)
+			   in
+			      (Decs.append (decs, decs'), S)
+			   end
 		  end
 	     | Strexp.Constrained (e, c) => (* rules 52, 53 *)
 		  let
@@ -177,7 +193,12 @@ fun elaborateProgram (program,
 		      (Decs.append (decs, decs'), S)
 		   end)
 	     | Strexp.Struct d => (* rule 50 *)
-		  Env.makeStructure (E, fn () => elabStrdec (d, nest))
+		  let
+		     val (decs, S) =
+			Env.makeStructure (E, fn () => elabStrdec (d, nest))
+		  in
+		     (decs, SOME S)
+		  end
 	     | Strexp.Var p => (* rule 51 *)
 		  (Decs.empty, Env.lookupLongstrid (E, p))
 	 end

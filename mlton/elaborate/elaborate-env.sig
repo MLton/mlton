@@ -77,7 +77,8 @@ signature ELABORATE_ENV =
 	    type t
 
 	    val apply:
-	       t * Structure.t * string list * Region.t -> Decs.t * Structure.t
+	       t * Structure.t * string list * Region.t ->
+	       Decs.t * Structure.t option
 	 end
 
       type t
@@ -103,7 +104,7 @@ signature ELABORATE_ENV =
 	 -> unit
       val functorClosure:
 	 t * string * Interface.t
-	 * (Structure.t * string list -> Decs.t * Structure.t)
+	 * (Structure.t * string list -> Decs.t * Structure.t option)
 	 -> FunctorClosure.t
       val layout: t -> Layout.t
       val layoutUsed: t -> Layout.t
@@ -112,7 +113,7 @@ signature ELABORATE_ENV =
       val localTop: t * (unit -> 'a) -> ('a * ((unit -> 'b) -> 'b))
       val lookupFctid: t * Ast.Fctid.t -> FunctorClosure.t
       val lookupLongcon: t * Ast.Longcon.t -> CoreML.Con.t * Scheme.t
-      val lookupLongstrid: t * Ast.Longstrid.t -> Structure.t
+      val lookupLongstrid: t * Ast.Longstrid.t -> Structure.t option
       val lookupLongtycon: t * Ast.Longtycon.t -> TypeStr.t
       val lookupLongvar: t * Ast.Longvar.t -> CoreML.Var.t * Scheme.t
       val lookupLongvid: t * Ast.Longvid.t -> Vid.t * Scheme.t

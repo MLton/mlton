@@ -348,11 +348,11 @@ in
 							     lookupConstant))))
 	  val _ =
 	     Env.Structure.ffi
-	     := SOME (Env.lookupLongstrid
-		      (basisEnv,
-		       Ast.Longstrid.short
-		       (Ast.Strid.fromSymbol (Symbol.fromString "MLtonFFI",
-					      Region.bogus))))
+	     := (Env.lookupLongstrid
+		 (basisEnv,
+		  Ast.Longstrid.short
+		  (Ast.Strid.fromSymbol (Symbol.fromString "MLtonFFI",
+					 Region.bogus))))
 	  fun doit name =
 	    let
 	      fun libFile f = libsFile (String./ (name, f))

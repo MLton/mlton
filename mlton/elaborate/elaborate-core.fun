@@ -1493,7 +1493,8 @@ fun elaborateDec (d, {env = E,
 		      val _ =
 			 Vector.foreach
 			 (Vector.map (paths, fn p => Env.lookupLongstrid (E, p)),
-			  fn s => Env.openStructure (E, s))
+			  fn so => Option.app (so, fn s =>
+					       Env.openStructure (E, s)))
 		   in
 		      Decs.empty
 		   end
