@@ -439,8 +439,12 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 fun usesConts p 
   = Program.hasPrim (p, fn p => Prim.name p = Prim.Name.Thread_switchTo)
 
-val eliminate = fn p => if usesConts p
-			  then p
-			  else eliminate p
+structure NewOnce = NewOnce (S)
+
+val eliminate 
+  = fn p => (NewOnce.once p;
+	     if usesConts p
+	       then p
+	       else eliminate p)
 
 end

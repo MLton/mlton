@@ -578,6 +578,9 @@ structure Transfer =
 		   ; label return)
 	 end
 
+      fun foreachFunc (t, func) =
+	 foreachFuncLabelVar (t, func, fn _ => (), fn _ => ())
+
       fun foreachLabelVar (t, label, var) =
 	 foreachFuncLabelVar (t, fn _ => (), label, var)
 	 
