@@ -167,13 +167,13 @@ fun multi (p as Program.T {globals, functions, main, ...})
 	   set = setFuncNode, 
 	   rem = remFuncNode, ...}
 	= Property.getSetOnce
-	  (Func.plist, Property.initRaise ("Once.funcNode", Func.layout))
+	  (Func.plist, Property.initRaise ("Multi.funcNode", Func.layout))
 
       (* nodeFunction *)
       val {get = nodeFunction: Node.t -> Function.t,
 	   set = setNodeFunction, ...}
 	= Property.getSetOnce 
-	  (Node.plist, Property.initRaise ("Once.nodeFunc", Node.layout))
+	  (Node.plist, Property.initRaise ("Multi.nodeFunc", Node.layout))
 
       (* funcInfo *)
       val {get = funcInfo: Func.t -> FuncInfo.t, ...}

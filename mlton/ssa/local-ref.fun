@@ -139,8 +139,11 @@ structure LabelInfo =
 
 structure Multi = Multi (S)
 
-fun eliminate (program as Program.T {globals, datatypes, functions, main})
+fun eliminate (program: Program.t): Program.t
   = let
+      val program as Program.T {datatypes, globals, functions, main}
+	= eliminateDeadBlocks program
+
       exception NoLocalRefs
 
       (* Compute multi *)
