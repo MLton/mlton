@@ -69,6 +69,6 @@ doit "$lib" \
 		-m32
 		-mv8
 		-mcpu=ultrasparc'				\
-	-target-link-opt sunos '-ldl -lnsl -lsocket'		\
+	-target-link-opt solaris '-ldl -lnsl -lsocket'		\
 	-link-opt '-lgdtoa -lm'					\
 	"$@"

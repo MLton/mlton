@@ -2,8 +2,8 @@ MLton is a whole-program optimizing compiler for the Standard ML
 programming language. MLton has the following features.
 
    + Runs on a variety of platforms
-     o X86: Linux, FreeBSD, or Cygwin/Windows
-     o Sparc: SunOS
+     o X86: Cygwin/Windows, FreeBSD, Linux, and NetBSD
+     o Sparc: Solaris
    + Generates standalone executables with excellent running times
    + Supports the full SML 97 language
    + Has a complete basis library

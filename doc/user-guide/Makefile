@@ -20,7 +20,7 @@ TEX_FILES = \
 	nj-deviations.tex	\
 	platform.tex		\
 	profiling.tex		\
-	sunos.tex
+	solaris.tex
 
 all:	main.ps main/index.html
 

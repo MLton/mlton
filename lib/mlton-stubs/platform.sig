@@ -11,7 +11,7 @@ signature MLTON_PLATFORM =
 	 
       structure OS:
 	 sig
-	    datatype t = Cygwin | FreeBSD | Linux | NetBSD | SunOS
+	    datatype t = Cygwin | FreeBSD | Linux | NetBSD | Solaris
 
 	    val host: t
 	    val fromString: string -> t option

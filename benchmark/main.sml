@@ -237,7 +237,7 @@ fun njCompile {bench} =
 		 in
 		   case (MLton.Platform.Arch.host, MLton.Platform.OS.host) of
 		     (X86, Linux) => ".x86-linux"
-		   | (Sparc, SunOS) => ".sparc-solaris"
+		   | (Sparc, Solaris) => ".sparc-solaris"
 		   | _ => raise Fail "don't know SML/NJ suffix for host type"
 		 end
        val heap = concat [bench, suffix]

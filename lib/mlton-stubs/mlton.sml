@@ -164,7 +164,7 @@ structure MLton: MLTON =
 
 	    structure OS =
 	       struct
-		  datatype t = Cygwin | FreeBSD | Linux | NetBSD | SunOS
+		  datatype t = Cygwin | FreeBSD | Linux | NetBSD | Solaris
 
 		  val host: t = Linux
 
@@ -172,7 +172,7 @@ structure MLton: MLTON =
 			     (FreeBSD, "freebsd"),
 			     (Linux, "linux"),
 			     (NetBSD, "netbsd"),
-			     (SunOS, "sunos")]
+			     (Solaris, "solaris")]
 	       
 		  fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
 

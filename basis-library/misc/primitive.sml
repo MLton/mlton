@@ -521,7 +521,7 @@ structure Primitive =
 
 		  structure OS =
 		     struct
-			datatype t = Cygwin | FreeBSD | Linux | NetBSD | SunOS
+			datatype t = Cygwin | FreeBSD | Linux | NetBSD | Solaris
 
 			val host: t =
 			   case _const "MLton_Platform_OS_host": int; of
@@ -529,7 +529,7 @@ structure Primitive =
 			    | 1 => FreeBSD
 			    | 2 => Linux
 			    | 3 => NetBSD
-			    | 4 => SunOS
+			    | 4 => Solaris
 			    | _ => raise Fail "strange MLton_Platform_OS_Host"
 		     end
 	       end

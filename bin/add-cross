@@ -15,7 +15,7 @@ set -e
 #    The posibilities are: sparc, x86.
 #
 # 3. <crossOS> specifies the target OS.
-#    The possibilities are: cygwin, sunos.
+#    The possibilities are: cygwin, solaris.
 #
 # 4. <machine> specifies a remote machine of the target type.  This script
 #    will ssh to $machine to compile the runtime and to compile and run the
@@ -25,7 +25,7 @@ set -e
 # Here are some example uses of this script.
 #
 #   add-cross i386-pc-cygwin x86 cygwin cygwin
-#   add-cross sparc-sun-solaris sparc sunos blade
+#   add-cross sparc-sun-solaris sparc solaris blade
 #
 # (Here cygwin happens to be the name of my Cygwin machine and blade
 #  happens to be the name of my Sparc machine.)

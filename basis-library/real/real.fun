@@ -224,7 +224,7 @@ functor Real (R: PRE_REAL): REAL =
 		  let
 		     val frac = Prim.modf (x, int)
 		     val whole = !int
-		     (* FreeBSD, NetBSD, and SunOS don't always get sign of
+		     (* FreeBSD, NetBSD, and Solaris don't always get sign of
 		      * zero right.
 		      *)
 		     val (frac, whole) =
@@ -234,7 +234,7 @@ functor Real (R: PRE_REAL): REAL =
 			      case host of
 				 FreeBSD => true
 			       | NetBSD => true
-			       | SunOS => true
+			       | Solaris => true
 			       | _ => false
 			   end
 			   then
@@ -641,7 +641,7 @@ functor Real (R: PRE_REAL): REAL =
 	 struct
 	    open Prim.Math
 
-	    (* Patches for Cygwin and SunOS, whose math libraries do not handle
+	    (* Patches for Cygwin and Solaris, whose math libraries do not handle
 	     * out-of-range args.
 	     *)
 	    val (acos, asin, ln, log10) =
@@ -651,7 +651,7 @@ functor Real (R: PRE_REAL): REAL =
 			  in
 			     case host of
 				Cygwin => true
-			      | SunOS => true
+			      | Solaris => true
 			      | _ => false
 			  end
 		  then

@@ -39,7 +39,7 @@ NetBSD*)
 	HOST_OS='netbsd'
 ;;
 SunOS)
-	HOST_OS='sunos'
+	HOST_OS='solaris'
 ;;
 *)
 	die "Unknown OS $uname."

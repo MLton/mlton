@@ -24,7 +24,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
 		       (FreeBSD, "freebsd"),
 		       (Linux, "linux"),
 		       (NetBSD, "netbsd"),
-		       (SunOS, "sunos")]
+		       (Solaris, "solaris")]
 	       
 	    fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
 

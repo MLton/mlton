@@ -220,7 +220,7 @@ world-no-check:
 # puts them.
 DESTDIR = $(CURDIR)/install
 PREFIX = /usr
-ifeq ($(TARGET_OS), sunos)
+ifeq ($(TARGET_OS), solaris)
 PREFIX = /usr/local
 endif
 prefix = $(PREFIX)
@@ -230,13 +230,13 @@ ULIB = lib/mlton
 TLIB = $(DESTDIR)$(prefix)/$(ULIB)
 TMAN = $(DESTDIR)$(prefix)$(MAN_PREFIX_EXTRA)/man/man1
 TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
-ifeq ($(TARGET_OS), sunos)
+ifeq ($(TARGET_OS), solaris)
 TDOC = $(DESTDIR)$(prefix)/doc/mlton
 endif
 TEXM = $(TDOC)/examples
 
 GZIP_MAN = true
-ifeq ($(TARGET_OS), sunos)
+ifeq ($(TARGET_OS), solaris)
 GZIP_MAN = false
 endif
 
@@ -258,7 +258,7 @@ install-no-docs:
 		cd $(TMAN) && $(GZIP) mllex.1 mlprof.1 mlton.1		\
 			mlyacc.1;					\
 	fi
-	if [ $(TARGET_OS) != sunos ]; then					\
+	if [ $(TARGET_OS) != solaris ]; then					\
 	for f in $(TLIB)/$(AOUT) 						\
 		$(TBIN)/$(LEX) $(TBIN)/$(PROF) $(TBIN)/$(YACC); do 		\
 		strip --remove-section=.comment --remove-section=.note $$f; 	\
