@@ -1,15 +1,207 @@
 
-What is the rationale for Word8Array2 being required?
-MONO_ARRAY2 isn't required.
-Word8Array2 is marked optional in mono-array2.html
+John and SML implementers,
 
-With the addition of Word.~, presumably ~ should be overloaded at num,
-rather than intreal.
+Here are a loose collection of notes I've taken while starting to
+update the MLton implementation of the SML Basis Library to the latest
+version.  They span quite a range: errata and typos, signature
+constraint concerns, and some design questions.  Thus far, I've looked
+at the structures that had been grouped under the headings General,
+Text, Integer, Reals, Lists, and Arrays and Vectors (i.e., excluding
+IO, System, and Posix) in the "old" web specification.
 
-Non-opaque signature match on structure IntInf.
+A few high level comments:
 
-Ordering of comparison functions (<,>, etc.) and unary negation are
-different within INTEGER and WORD.
+* As an organizational principal, I liked the grouping of modules into
+  larger collections used in the "old" web specification better than
+  the long alphabetical list.
+* I'm quite happy to see opaque signature matches for most structures.
+  In particular, I think it will help avoid porting problems between
+  implementations that provide different INTEGER structures, especially
+  when LargeInt = Int in one implementation and LargeInt = IntInf in 
+  another.
+
+Required and optional components, Top-level:
+
+* A number of structures have an opaque signature match in
+  overview.html, but not in the corresponding structure specific page:
+  General, Bool, Option, List, ListPair, IntInf, 
+  Array, ArraySlice, Vector, VectorSlice.
+* Word8Array2 is listed as required in overview.html,
+  but its signature, MONO_ARRAY2, is not required.
+  Furthermore, Word8Array2 is marked optional in mono-array2.html.
+  I don't quite see a rationale for Word8Array2 being required.
+* With the addition of  val ~ : word -> word  to the WORD signature,
+  presumably ~ should be overloaded at num, rather than at intreal.
+
+Reals:
+
+* In pack-float.html, the where type clauses are incorrect:
+  structure PackRealBig :> PACK_REAL  
+    where type PackRealBig.real = Real.real
+  should be
+  structure PackRealBig :> PACK_REAL  
+    where type real = Real.real
+* Likewise, in most places, references to basic types are unqualifed,
+  so perhaps the where clause should read
+  where type real = real
+  for the PackRealBig and PackRealLittle structures.
+
+Arrays and Vectors:
+
+* In vector-slice.html, the description of subslice references |arr|
+  when it should reference |sl|.
+* In {[mono-]array[-slice],[mono-]vector[-slice]}.html, the
+  description of findi references appi when it should reference findi.
+* In mono-array-slice.html, structure CharArraySlice has the clause
+  where type array = CharVector.vector
+  which should be
+  where type array = CharArray.array.
+* In mono-{vector[-slice],array[-slice],array2}.html, there are
+  Word<N> structures but no Word structures.
+* In mono-vector.html, structure CharVector has the clause
+  where type elem = Char.char
+  while the other monomorphic vectors of basic types reference
+  the unqualified type; i.e. structure BoolVector has the clause
+  where type elem = bool.
+* There are no "See also"'s into MONO_VECTOR_SLICE or MONO_ARRAY_SLICE
+  from MONO_VECTOR or MONO_ARRAY.
+* A long discussion about types defined in
+  [MONO_]{ARRAY,VECTOR}[_SLICE] signatures; deferred to a separate
+  email. 
+
+Really nit-picky:
+
+* Ordering of comparison functions (>, >=, etc.) and unary negation
+  are different within INTEGER and WORD.
+* Ordering of functions in CHAR seems awkward.
+* Ordering of full, slice, subslice different in ARRAY_SLICE and
+  VECTOR_SLICE. 
+* Ordering of foldi/fold and modifi/modify different in ARRAY2 and
+  MONO_ARRAY2. 
+
+Top-level and opaque signatures:
+
+* I think it would be useful to see the entire top-level of required
+  structures written out with their respective typing constraints.
+  For example, in the description of the Math structure, the spec
+  reads: "The top-level structure Math provides these functions for
+  the default real type Real.real."  Because the top-level Math
+  structure has an opaque signature match (in overview.html), then the
+  sentence above implies that there ought to be the constraint 
+  where type real = real (or Real.real).  
+  Granted, none of the other structures in overview.html have where
+  clauses, and most type constraints are documented in the structure
+  specific pages, but the constraint on the top-level Math.real
+  slipped my mind when I first looked at it.
+ 
+
+Array and Vector design:
+
+* The ARRAY signature includes type 'a vector.
+  Presumably, type 'a Array.vector = type 'a Vector.vector, but no
+  constraint makes this explicit.
+* MONO_ARRAY_SLICE includes type vector and type vector_slice, 
+  while the ARRAY_SLICE signature explicitly references 
+  'a VectorSlice.slice and 'a Vector.vector.
+* VECTOR_SLICE doesn't include 'a vector, but has
+  val mapi : (int * 'a -> 'b) -> 'a slice -> 'b vector
+  val map  : ('a -> 'b) -> 'a slice -> 'b vector;
+  On the other hand, full, slice, base, vector, and concat
+  reference 'a Vector.vector.
+
+For consistency, I'd prefer to see
+signature VECTOR = 
+  sig  type 'a vector  ... end
+signature VECTOR_SLICE = 
+  sig  type 'a vector  type 'a slice  ... end 
+signature ARRAY = 
+  sig  type 'a vector  type 'a array  ... end
+signature ARRAY_SLICE = 
+  sig  type 'a vector  type 'a vector_slice
+       tyep 'a array  type 'a slice  ... end
+signature MONO_VECTOR = 
+  sig  type elem  type vector  ... end
+signature MONO_VECTOR_SLICE = 
+  sig  type elem  type vector  type slice ... end
+signature MONO_ARRAY =
+  sig  type elem  type vector  type array  ... end
+signature MONO_ARRAY_SLICE =
+  sig  type elem  type vector  type vector_slice
+       type array  type slice  ... end
+
+structure Vector :> VECTOR
+structure VectorSlice :> VECTOR_SLICE 
+                         where type 'a vector = 'a Vector.vector
+structure Array :> ARRAY 
+                   where type 'a vector = 'a Vector.vector
+structure ArraySlice :> ARRAY_SLICE 
+                        where type 'a vector = 'a Vector
+                        where type 'a vector_slice = 'a VectorSlice.slice
+                        where type 'a array = 'a Array.array
+structure BoolVector :> MONO_VECTOR 
+                        where type elem = bool
+structure BoolVectorSlice :> MONO_VECTOR_SLICE 
+                             where type elem = bool
+                             where type vector = BoolVector.vector
+structure BoolArray :> MONO_ARRAY 
+                       where type elem = bool
+                       where type vector = BoolVector.vector
+structure BoolArraySlice :> MONO_ARRAY_SLICE 
+                            where type elem = bool
+                            where type vector = BoolVector.vector
+                            where type vector_slice = BoolVectorSlice.slice
+                            where type array = BoolArray.array
+
+While semantically, this shouldn't be any different than the
+specification, it could effect type-error messages.  For example, if I
+have the structure Foo:
+
+structure Foo = struct
+   open BoolArraySlice
+
+   val copyVec0 {src: vector_slice, 
+                 dst: array} = copyVec {src = src, dst = dst, di = 0}   
+end
+
+which I decide to generalize to polymorphic array slices, then just
+changing BoolArraySlice to ArraySlice will lead to different
+type-error messages: either "ubound type constructor: vector_slice"
+(under the specification) or "type constructor vector_slice given 0
+arguments, wants 0" (under the signatures given above); and an arity
+error for array in either case.  It's not much of an argument, but I
+need to replace vector_slice with 'a VectorSlice.slice under the
+specification, while I only need to add 'a under the sigs above.
+
+
+Array2:
+* Why not have an ARRAY2_REGION analagous to ARRAY_SLICE?
+  Likewise, how about VECTOR2 and VECTOR2_REGION?
+  I think the decision to separate Arrays and Vectors from
+  their corresponding slices is a nice design choice, and I'd be in
+  favor of extending it to multi-dimentional ones.
+* Should ARRAY2 have findi/find, exists, all?  collate?
+
+
+Not sent to list:
+
+* (In general, probably a good idea to look at the entire top-level
+  structure/signature matches and choose a consistent usage of base
+  types.  For example, Int:>INTEGER would seem to hide the top-level
+  int; unless Int is opened afterwards.  But, then what about all the
+  other structures that reference int?  Is top-level int = Int.int or
+  is Int.int = top-level int.)
+--> I think I'm biased from looking at the MLton implementation,
+becuase I'm finding it hard to think about how to really express all
+of the sharing constraints in a way that will be acceptable.  This
+might be the wrong way to look at things: the listing of structures
+and signatures with clauses doesn't correspond to a build order, it
+corresponds to the way the environment should look to the program.
+
+SLICES:
+Why not existsi, alli?
+
+Vector:
+Why no vector: int * 'a -> 'a vector?
 
 ListPair discussion:
 "Note that a function requiring equal length arguments may determine
@@ -17,6 +209,25 @@ this lazily, i.e. , it may act as though the lists have equal length
 and invoke the user-supplied function argument, but raise the
 exception when it arrives at the end of one list before the end of the
 other."
+
+
+Resolved:
+ 
+If one defines VECTOR_SLICE by including a type 'a vector and replace
+'a Vector.vector with the local 'a vector, but then binds
+structure Vector: VECTOR
+structure VectorSlice: VECTOR_SLICE where type 'a vector = 'a Vector.vector
+at the top-level, does one violate the basis spec?
+Rationale: it's easiset to implement Vector and VectorSlice simultaneously, say 
+with VectorSlice as a substructure of Vector (in fact, with all of the Vector operations
+being dispatched to the corresponding VectorSlice ops with full slices),
+so Vector isn't in scope for the VECTOR_SLICE.
+*** No, it's not o.k., because opening VectorSlice will introduce a binding
+    for 'a vector; but, if we're lucky, John will accept the proposal.
+
+IEEEReal:
+toString prepends a #"~" even when the class is NAN?
+*** I guess this is o.k.; there is an explicit sign field.
 
 PACK_WORD:
 structure Pack<N>Big :> PACK_WORD  (* OPTIONAL *)
@@ -33,103 +244,10 @@ structure Pack<N>Big :> PACK_WORD with word = Word<N>.word  (* OPTIONAL *)
 Should there be PackBig and PackLittle with word = Word.word?
 Should there be PackLargeBig with word = LargeWord.word?
 There aren't many structures that refine on LargeXYZ; most refine on XYZ<N>.
-
-Math:
-"The top-level structure Math provides these functions for the default
-real type Real.real."
-But, structure Math :> MATH has an opaque signature;
-either the top-level Math structure is equal to Real.Math (which
-includes the type sharing constraint), or this instance of Math should
-have a sharing constraint.
-
-IEEEReal:
-toString prepends a #"~" even when the class is NAN?
-
-PACK_REAL:
-syntax/scope of where clauses in structure bindings is incorrect.
-reference Real.real instead of real; 
-MONO_VECTOR/MONO_ARRAY reference real instead of Real.real.
-
-Array2:
-Why no ARRAY2_REGION analagous to ARRAY_SLICE?
-Types of Array2 operations don't match corresponding Array ops.
-find,exists,all?  collate?
-How about Matrix (== Vector2) and MATRIX_REGION?
-
-ARRAY2/MONO_ARRAY2
-Order of foldi/fold and modifyi/modify differs between them.
-
-VECTOR_SLICE:
-Description of subslice references |arr| when it should reference |sl|.
-
-ARRAY, ARRAY_SLICE, VECTOR, VECTOR_SLICE, 
-MONO_VECTOR, MONO_ARRAY:
-Description of findi references appi when it should reference findi.
-
-MONO_ARRAY:
-CharArray has where type elem = char, not Char.char.
-
-MONO_ARRAY_SLICE:
-CharArraySlice has clause
-where type array = CharVector.vector
-which should be
-where type array = CharArray.array
-
-(In general, probably a good idea to look at the entire top-level
-structure/signature matches and choose a consistent usage of base
-types.  For example, Int:>INTEGER would seem to hide the top-level
-int; unless Int is opened afterwards.  But, then what about all the
-other structures that reference int?  Is top-level int = Int.int or is
-Int.int = top-level int.)
-
-MONO_{VECTOR[SLICE],ARRAY[_SLICE],ARRAY2}
-Have Word<N> structures, but not Word structures.
-
-SLICES:
-Why not existsi, alli?
-Should signature matching be opaque to hide implementation of 'a slice?
-Rationale: maintaining the slice invariants in {Array,Vector}Slice structures
- allows use of unsafe sub and updates when iterating through elements;
- if arbitrary slices can be passed to appi, then unsafe subs aren't allowed.
- (In fact, Basis doesn't discuss what should happen in this case.)
-Ordering of full, slice, subslice different in ArraySlice and VectorSlice
-
-Array includes 'a vector;
-ArraySlice references 'a VectorSlice.slice and 'a Vector.vector.
-VectorSlice references 'a Vector.vector.
-Presumably, 'a Array.vector = 'a Vector.vector, but no sharing constraint makes
-this explicit.
-
-Probably Vector and Array signatures matching should be opaque as well.
-
-Vector:
-Why no vector: int * 'a -> 'a vector?
-
-CHAR
-Ordering of:
-val isAscii : char -> bool
-val toLower : char -> char
-val toUpper : char -> char
-val isAlpha : char -> bool
-seems bad; move isAscii down to other isXYZ
-Similarly with isXYZ's (not quite alphabetical, separation of isLower
-and isUpper seems awkward).
-
-
-Question: 
-
-If one defines VECTOR_SLICE by including a type 'a vector and replace
-'a Vector.vector with the local 'a vector, but then binds
-structure Vector: VECTOR
-structure VectorSlice: VECTOR_SLICE where type 'a vector = 'a Vector.vector
-at the top-level, does one violate the basis spec?
-Rationale: it's easiset to implement Vector and VectorSlice simultaneously, say 
-with VectorSlice as a substructure of Vector (in fact, with all of the Vector operations
-being dispatched to the corresponding VectorSlice ops with full slices),
-so Vector isn't in scope for the VECTOR_SLICE.
-
-
-
+*** O.k., we always unpack into a LargeWord, which we could then
+    Word<N>.fromLargeWord back to the size.  I guess this is o.k.; It
+    lets an implementation give more Pack<N>Big structures than there
+    are Word<N> structures.
 
 MLton specific:
  + why are Int32_gtu and Int32_geu primitive?
