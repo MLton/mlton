@@ -67,14 +67,12 @@ post-extract:
 	${BOOT_WRKSRC}/bin/mlton
 
 post-install:
-        for f in mllex mlprof mlton mlyacc; do          \
-                ${CHOWN} ${SHAREOWN}:${SHAREGRP}        \
-                        ${PREFIX}/bin/$$f               \
-                        ${PREFIX}/man/man1/$$f.1.gz;    \
-        done
-        ${CHOWN} ${SHAREOWN}:${SHAREGRP}                \
-                ${PREFIX}/lib/mlton                     \
-                ${PREFIX}/share/doc/mlton
+.for f in mllex mlprof mlton mlyacc; do
+	${CHOWN} ${SHAREOWN}:${SHAREGRP}	\
+		${PREFIX}/bin/${f}		\
+		${PREFIX}/man/man1/${f}.1.gz
+.endfor
+        ${CHOWN} -R ${SHAREOWN}:${SHAREGRP} ${PREFIX}/lib/mlton ${DOCSDIR}
 
 # Stuff below this line is for maintainer use only.
 
@@ -104,7 +102,7 @@ pkg-plist:
 	cd ${WRKSRC} && ${GMAKE} install
 	cd ${WRKSRC}/install/usr && \
 		${FIND} -d * \! -type d | ${GREP} -v man/man | \
-		sort >${PLIST}
+		${SORT} >${PLIST}
 	cd ${WRKSRC}/install/usr && \
 		${FIND} -d * -type d | ${GREP} mlton | \
 			${SED} -e 's/^/@dirrm /' >>${PLIST}
