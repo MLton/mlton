@@ -24,6 +24,10 @@ structure MLtonWorld: MLTON_WORLD =
 		     end
 	       in
 		  createf (file, O_WRONLY, flags, mode)
+		  handle e =>
+		     raise Fail (concat ["MLton.World.save unable to open ",
+					 file, " due to ",
+					 General.exnMessage e])
 	       end
 	    val _ = Prim.save (Posix.FileSys.fdToWord fd)
 	 in
