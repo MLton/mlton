@@ -277,9 +277,10 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 				   blocks = blocks,
 				   returns = returns,
 				   mayRaise = mayRaise}
+	     val f = shrink f
 	     val _ = Function.clear f
 	  in
-	     shrink f
+	     f
 	  end)
       val program = Program.T {datatypes = datatypes,
 			       globals = globals,
