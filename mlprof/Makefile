@@ -1,7 +1,6 @@
 NAME = mlprof
 MLTON = mlton
 FLAGS =
-PATH = ../build/bin:$(shell echo $$PATH)
 
 all:	$(NAME)
 

@@ -1,7 +1,6 @@
 NAME = mllex
 MLTON = mlton
 FLAGS =
-PATH = ../build/bin:$(shell echo $$PATH)
 
 all:	$(NAME)
 
