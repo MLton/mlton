@@ -34,7 +34,7 @@ structure MLton: MLTON =
    struct
       val cleanAtExit = fn _ => raise Fail "cleanAtExit"
       val deserialize = fn _ => raise Fail "deserialize"
-      val eq = fn _ => raise Fail "eq"
+      val eq = fn _ => false
       val errno = fn _ => raise Fail "errno"
       datatype hostType = Cygwin | FreeBSD | Linux
       val hostType = Linux
