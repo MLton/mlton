@@ -143,7 +143,8 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
 
 					(* A -> .B y, where y is nullable *)
 
-				    | f (NONTERM b :: nil) = 0 
+				    | f (NONTERM b :: nil) = 0
+				    | f _ = raise Fail "f"
 			      in  f l
 			      end
 			     

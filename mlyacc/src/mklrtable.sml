@@ -173,8 +173,15 @@ is true.
 		     k as (pair2 as (T t2,action2)) :: r2,result,errs) =
 	  	    if t1 < t2 then f(r1,k,pair1::result,errs)
 		    else if t1 > t2 then f(j,r2,pair2::result,errs)
-		    else let val REDUCE num1 = action1
-			     val REDUCE num2 = action2
+		    else let
+			    val num1 =
+			       case action1 of
+				  REDUCE z => z
+				| _ => raise Fail "action1"
+			     val num2 =
+				case action2 of
+				   REDUCE z => z
+				 | _ => raise Fail "action2"
 			     val errs = RR(T t1,state,num1,num2) :: errs
 			     val action = if num1 < num2 then pair1 else pair2
 		         in f(r1,r2,action::result,errs)
@@ -211,8 +218,12 @@ is true.
 			result,errs) =
 		if t1 < t2 then f(r1,reduces,pair1 :: result,errs)
 		else if t1 > t2 then f(shifts,r2,pair2 :: result,errs)
-		else let val REDUCE rulenum = action
-			 val (term1,_) = pair1
+		else let
+			val rulenum =
+			   case action of
+			      REDUCE z => z
+			    | _ => raise Fail "action"
+			val (term1,_) = pair1
 		     in case (precedence term1,rulePrec rulenum)
 		      of (SOME i,SOME j) =>
 		         if i>j then f(r1,r2,pair1 :: result,errs)

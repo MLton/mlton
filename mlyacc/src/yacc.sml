@@ -640,8 +640,10 @@ let val printAbsynRule = Absyn.printRule(say,sayln)
 	       val unmap = fn (symbol,_) =>
 		   let val name = symbolName symbol
                    in update(data,
-			     case SymbolHash.find(name,symbolHash)
-			     of SOME i => i,name)
+			     case SymbolHash.find (name,symbolHash) of
+				NONE => raise Fail "termToString"
+			      | SOME i => i,
+		             name)
                    end
 	       val _ = app unmap term
 	   in fn T i =>
@@ -655,8 +657,10 @@ let val printAbsynRule = Absyn.printRule(say,sayln)
 	       val unmap = fn (symbol,_) =>
 		    let val name = symbolName symbol
 		    in update(data,
-			      case SymbolHash.find(name,symbolHash)
-			      of SOME i => i-numTerms,name)
+			      case SymbolHash.find (name,symbolHash) of
+				 NONE => raise Fail "nontermToString"
+			       | SOME i => i-numTerms,
+                              name)
 		    end
 	       val _ = app unmap nonterm
 	   in fn NT i =>
@@ -745,10 +749,13 @@ precedences of the rule and the terminal are equal.
 
 	val symbolType = 
 	   let val data = array(numTerms+numNonterms,NONE : ty option)
-	       val unmap = fn (symbol,ty) =>
-		      update(data,
-			     case SymbolHash.find(symbolName symbol,symbolHash)
-			     of SOME i => i,ty)
+	       val unmap =
+		  fn (symbol,ty) =>
+		  update (data,
+			  case SymbolHash.find(symbolName symbol,symbolHash) of
+			     NONE => raise Fail "unmap"
+			   | SOME i => i,
+                          ty)
 	       val _ = (app unmap term; app unmap nonterm)
 	   in fn NONTERM(NT i) =>
 		if DEBUG andalso (i<0 orelse i>=numNonterms)

@@ -76,7 +76,11 @@ functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
 		| ok_rhs ((TERM _)::_) = false
 		| ok_rhs ((NONTERM i)::r) = ok_rhs r
 	      fun add_rule (RULE {lhs,rhs,...},r) =
-		 if ok_rhs rhs then (lhs,map (fn NONTERM (NT i) => i) rhs)::r
+		 if ok_rhs rhs
+		    then (lhs,
+			  map
+			  (fn NONTERM (NT i) => i | _ => raise Fail "add_rule")
+			  rhs) :: r
 		 else r
 	      val items = List.foldr add_rule [] rules
 	      val nullable = array(nonterms,false)

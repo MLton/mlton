@@ -161,6 +161,7 @@ structure Absyn : ABSYN =
                  | f (PLIST l) =
 	              let fun scan (h :: nil) = [f h]
                             | scan (h :: t) = f h :: ["::"] :: scan t
+			    | scan _ = raise Fail "scan"
                       in List.concat (scan l)
                       end
                  | f (PTUPLE (a::r)) = 
