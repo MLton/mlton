@@ -9,7 +9,7 @@ sig
 end where type s = int;
 
 (* MLton doesn't get this right yet.
- * Due to Marin Elsman, also see SML/NJ bug 1330.
+ * Due to Martin Elsman, also see SML/NJ bug 1330.
  *
  * signature T =	
  * sig
