@@ -27,6 +27,6 @@ type-check.sig
 two-point-lattice.sig
 two-point-lattice.fun
 remove-unused.sig
-remove-unused.fun
-(* remove-unused.new.fun *)
+(* remove-unused.fun *)
+remove-unused.new.fun
 

@@ -86,8 +86,8 @@ fun checkScopes (program as
       fun loopFunc (f: Function.t) =
 	 let
 	    val {name, args, start, blocks, returns, ...} = Function.dest f
-	    (* Descend the dominator tree, verifying that variables are
-	     * defined before they are used.
+	    (* Descend the dominator tree, verifying that variable definitions
+	     * dominate variable uses.
 	     *)
 	    fun loop (Tree.T (block, children)): unit =
 	       let

@@ -35,13 +35,19 @@ structure LiveInfo =
    struct
       datatype t = T of {live: Var.t list ref,
 			 liveHS: bool ref * bool ref,
+			 name: string,
 			 preds: t list ref}
 
-      fun new () = T {live = ref [],
-		      liveHS = (ref false, ref false),
-		      preds = ref []}
+      fun layout (T {name, ...}) = Layout.str name
+
+      fun new (name: string) =
+	 T {live = ref [],
+	    liveHS = (ref false, ref false),
+	    name = name,
+	    preds = ref []}
 
       fun live (T {live = r, ...}) = !r
+	 
       fun liveHS (T {liveHS = (c, l), ...}) = (!c, !l)
 
       fun equals (T {live = r, ...}, T {live = r', ...}) = r = r'
@@ -50,7 +56,12 @@ structure LiveInfo =
 	 if List.exists (!preds, fn b' => equals (b, b'))
 	    then ()
 	 else List.push (preds, b)
+
+      val addEdge =
+	 Trace.trace2 ("Live.addEdge", layout, layout, Unit.layout) addEdge
    end
+
+val traceConsider = Trace.trace ("Live.consider", LiveInfo.layout, Bool.layout)
 
 fun live (function, {isCont: Label.t -> bool,
 		     shouldConsider: Var.t -> bool}) =
@@ -96,25 +107,26 @@ fun live (function, {isCont: Label.t -> bool,
       val _ =
 	 Vector.foreach
 	 (blocks, fn block as Block.T {label, args, ...} =>
-	  let 
+	  let
+	     val name = Label.toString label
 	     val (frameInfo, argInfo, bodyInfo) =
 		case (Vector.length args, isCont label) of
-		   (0, false) => let val b = LiveInfo.new ()
+		   (0, false) => let val b = LiveInfo.new (name ^ "a")
 				 in (b, b, b)
 				 end
-		 | (_, false) => let val b = LiveInfo.new ()
-				     val b' = LiveInfo.new ()
+		 | (_, false) => let val b = LiveInfo.new (name ^ "b")
+				     val b' = LiveInfo.new (name ^ "c")
 				     val _ = LiveInfo.addEdge (b, b')
 				 in (b, b, b')
 				 end
-		 | (0, true) => let val b = LiveInfo.new ()
-				    val b' = LiveInfo.new ()
+		 | (0, true) => let val b = LiveInfo.new (name ^ "d")
+				    val b' = LiveInfo.new (name ^ "e")
 				    val _ = LiveInfo.addEdge (b, b')
 				in (b, b', b')
 				end
-		 | _ => let val b = LiveInfo.new ()
-			    val b' = LiveInfo.new ()
-			    val b'' = LiveInfo.new ()
+		 | _ => let val b = LiveInfo.new (name ^ "f")
+			    val b' = LiveInfo.new (name ^ "g")
+			    val b'' = LiveInfo.new (name ^ "h")
 			    val _ = LiveInfo.addEdge (b, b')
 			    val _ = LiveInfo.addEdge (b', b'')
 			in (b, b', b'')
@@ -130,27 +142,6 @@ fun live (function, {isCont: Label.t -> bool,
 				   isContSet = ref false
 				   })
 	  end)
-      val _ = 
-	 Vector.foreach
-	 (blocks, fn Block.T {label, transfer, ...} =>
-	  case transfer of
-	     Call {return = SOME {cont, handler}, ...} =>
-		let
-		   val {frameInfo, isContSet, ...} = labelInfo cont
-		in
-		   if !isContSet
-		      then ()
-		   else
-		      let
-			 val _ = isContSet := true
-		      in
-			 Option.app
-			 (handler, fn h =>
-			  (* In case there is a raise to h. *)
-			  LiveInfo.addEdge (frameInfo, #argInfo (labelInfo h)))
-		      end
-		end
-	   | _ => ())
       fun use (b, x) =
 	 if shouldConsider x
 	    then
@@ -182,7 +173,7 @@ fun live (function, {isCont: Label.t -> bool,
 				   orelse Prim.impCall prim)
 				  then 
 				     let
-					val b' = LiveInfo.new ()
+					val b' = LiveInfo.new (Label.toString label ^ "i")
 					val var =
 					   case var of
 					      NONE =>
@@ -234,19 +225,26 @@ fun live (function, {isCont: Label.t -> bool,
 		      ; (Option.app
 			 (return, fn {cont, handler} =>
 			  let
-			     val _ =
-				LiveInfo.addEdge (b, #frameInfo (labelInfo cont))
+			     val {frameInfo, isContSet, ...} = labelInfo cont
+			     val _ = LiveInfo.addEdge (b, frameInfo)
 			  in
-			     if isSome handler
-				then
-				   let val ({defuse = code_defuse, ...},
-					    {defuse = link_defuse, ...}) =
-				      handlerSlotInfo
-				   in
-				      List.push (code_defuse, Use b)
-				      ; List.push (link_defuse, Use b)
-				   end
-			     else ()
+			     Option.app
+			     (handler, fn h =>
+			      let
+				 val ({defuse = code_defuse, ...},
+				      {defuse = link_defuse, ...}) =
+				    handlerSlotInfo
+				 val _ = List.push (code_defuse, Use b)
+				 val _ = List.push (link_defuse, Use b)
+			      in
+				 if !isContSet
+				    then ()
+				 else
+				    (* In case there is a raise to h. *)
+				    (isContSet := true
+				     ; (LiveInfo.addEdge
+					(frameInfo, #argInfo (labelInfo h))))
+			      end)
 			  end)))
 		| Case {test, cases, default, ...} =>
 		     (use (b, test)
@@ -276,7 +274,7 @@ fun live (function, {isCont: Label.t -> bool,
 		      Label.layout o Block.label,
 		      Unit.layout)
 	 addEdgesForBlock
-      val head = LiveInfo.new ()
+      val head = LiveInfo.new "main"
       val _ = Vector.foreach (args, fn (x, _) =>
 			      newVarInfo (x, {defined = head}))
       val _ = Tree.foreachPre (Function.dominatorTree function,
@@ -293,9 +291,12 @@ fun live (function, {isCont: Label.t -> bool,
 		     orelse (case !live of
 				[] => false
 			      | x' :: _ => Var.equals (x, x'))
-		     then ()
+		     then false
 		  else (List.push (live, x)
-			; List.push (todo, b))
+			; List.push (todo, b)
+			; true)
+	       val consider = traceConsider consider
+	       val consider = fn x => (consider x; ())
 	       val _ = List.foreach (!used, consider)
 	       fun loop () =
 		  case !todo of
@@ -307,6 +308,8 @@ fun live (function, {isCont: Label.t -> bool,
 	       val _ = loop ()
 	    in ()
 	    end
+      val processVar =
+	 Trace.trace ("Live.processVar", Var.layout, Unit.layout) processVar
       val _ = Vector.foreach (args, processVar o #1)
       val _ =
 	 Vector.foreach
@@ -380,11 +383,14 @@ fun live (function, {isCont: Label.t -> bool,
 	     (blocks, fn b =>
 	      let
 		 val l = Block.label b		 
-		 val {begin, ...} = labelLive l
+		 val {begin, beginNoFormals, frame, ...} = labelLive l
 	      in
 		 display (seq [Label.layout l,
-			       str ":",
-			       List.layout Var.layout begin])
+			       str " ",
+			       record [("begin", List.layout Var.layout begin),
+				       ("beginNoFormals",
+					List.layout Var.layout beginNoFormals),
+				       ("frame", List.layout Var.layout frame)]])
 	      end)
 	  end)
    in {
