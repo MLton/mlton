@@ -3,6 +3,10 @@ Here are the changes from version 20011006 to version VERSION.
 * 2001-10-23
   - Added -D option to cmcat for preprocessor defines.  Thanks to Anoq for
     sending the code.
+  - Changed limit check insertion so that limit checks are only coalesced within
+    a single basic block -- not across blocks.  This slows many benchmarks down,
+    but is needed to fix a bug in the way that limit checks were coalesced across
+    blocks.  Hopefully we will figure out a better fix soon.
 
 * 2001-10-18
   - Fixed type inference of flexrecord so that it now follows the Definition.

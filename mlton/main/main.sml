@@ -31,7 +31,6 @@ structure Place =
       fun compare (p, p') = Int.compare (toInt p, toInt p')
    end
 
-val detectOverflowSet = ref false
 val includes: string list ref = ref []
 val includeDirs: string list ref = ref []
 val keepGenerated = ref false
@@ -62,12 +61,9 @@ val options =
       open Control Popt
       fun push r = String (fn s => List.push (r, s))
    in [
-       (Normal,
-	"detect-overflow",
-	" {true|false}",
+       (Normal, "detect-overflow", " {true|false}",
 	"overflow checking on integer arithmetic",
-	Bool (fn b => (detectOverflowSet := true
-		       ; detectOverflow := b))),
+	boolRef detectOverflow),
        (Expert, "diag", " pass", "keep diagnostic info for pass",
 	SpaceString (fn s =>
 		     (List.push (keepDiagnostics, s)
@@ -88,9 +84,8 @@ val options =
        (Normal, "h", " heapSize [{k|m}]",
 	"heap size used by resulting executable",
 	Mem (fn n => fixedHeap := SOME n)),
-       (Normal, "ieee-fp", " {false|true}", 
-	"use strict IEEE floating-point",
-	Bool (fn b => Native.IEEEFP := b)),
+       (Normal, "ieee-fp", " {false|true}", "use strict IEEE floating-point",
+	boolRef Native.IEEEFP),
        (Expert, "indentation", " n", "indentation level in ILs",
 	intRef indentation),
        (Normal, "include", " file.h", "include a .h file",
@@ -112,6 +107,9 @@ val options =
        (Expert, "keep-pass", " pass", "keep the results of pass",
 	SpaceString (fn s => List.push (keepPasses, s))),
        (Normal, "l", "library", "link with library", push libs),
+       (Expert, "limit-check-per-block", " {true|false}",
+	" force limit checks at each block",
+	boolRef limitCheckPerBlock),
        (Normal, "L", "dir", "search dir for libraries",
 	push libDirs),
        (Normal, "native", " {true|false}", "use native x86 code generator",
@@ -127,7 +125,7 @@ val options =
        (Expert, "native-live-transfer", " {0,...,8}",
 	"use live transfer",
 	intRef Native.liveTransfer),
-       (Expert, "native-live-stack", " {true|false}",
+       (Expert, "native-live-stack", " {false|true}",
 	"track liveness of stack slots",
 	boolRef Native.liveStack),
        (Expert, "native-move-hoist", " {true|false}",

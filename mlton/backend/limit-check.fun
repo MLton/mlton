@@ -40,12 +40,16 @@ fun limitCheck (program as Program.T {functions, ...})=
    in
       fn f =>
       let
+	 val default =
+	    if !Control.limitCheckPerBlock
+	       then Maybe
+	    else No
 	 val {blocks, name, ...} = Function.dest f
 	 val {get = labelInfo: Label.t -> {inBody: bool ref,
 					   limitCheck: t ref}, ...} =
 	    Property.get (Label.plist,
 			  Property.initFun (fn _ => {inBody = ref false,
-						     limitCheck = ref No}))
+						     limitCheck = ref default}))
 	 fun up (r: t ref, v: t) =
 	    if !r < v
 	       then r := v

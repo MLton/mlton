@@ -130,6 +130,10 @@ val keepDot = control {name = "keep dot",
 val keepPasses = control {name = "keep passes",
 			  default = [],
 			  toString = List.toString (fn s => s)}
+
+val limitCheckPerBlock = control {name = "limit check per block",
+				  default = true,
+				  toString = Bool.toString}
    
 structure Native =
    struct
