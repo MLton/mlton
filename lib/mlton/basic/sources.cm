@@ -85,6 +85,8 @@ structure Pid
 structure Pointer
 structure Popt
 structure Port
+structure Position
+structure Posix
 structure Postscript
 structure Power
 structure Process
