@@ -101,6 +101,19 @@ structure Pointer =
       type t = Word32.word
    end
 
+structure Pid :> sig
+		    eqtype t
+
+		    val fromInt: int -> t
+		    val toInt: t -> int
+		 end =
+   struct
+      type t = int
+
+      val fromInt = fn i => i
+      val toInt = fn i => i
+   end
+
 structure Position = Int64
    
 exception Bind = Bind
@@ -602,10 +615,10 @@ structure Primitive =
 	       struct
 		  val spawne =
 		     _import "MLton_Process_spawne"
-		     : nullString * nullString array * nullString array -> int;
+		     : nullString * nullString array * nullString array -> Pid.t;
 		  val spawnp =
 		     _import "MLton_Process_spawnp"
-		     : nullString * nullString array -> int;
+		     : nullString * nullString array -> Pid.t;
 	       end
 	    
 	    structure Weak =
@@ -754,8 +767,6 @@ structure Primitive =
 
       structure Ptrace =
 	 struct
-	    type pid = int
-	       
 	    (*
 	     * These constants are from
 	     *   /usr/include/linux/ptrace.h
@@ -779,9 +790,9 @@ structure Primitive =
 	    val SETFPREGS = _const "Ptrace_SETFPREGS": int;
 	    val SYSCALL = _const "Ptrace_SYSCALL": int;
 
-	    val ptrace2 = _import "Ptrace_ptrace2": int * pid -> int;
+	    val ptrace2 = _import "Ptrace_ptrace2": int * Pid.t -> int;
 	    val ptrace4 =
-	       _import "Ptrace_ptrace4": int * pid * word * word ref -> int;
+	       _import "Ptrace_ptrace4": int * Pid.t * word * word ref -> int;
 	 end
 
       val useMathLibForTrig = false

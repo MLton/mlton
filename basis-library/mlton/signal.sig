@@ -3,9 +3,6 @@ signature MLTON_SIGNAL =
       type t
       type signal = t
 
-      val prof: t
-      val vtalrm: t
-
       structure Handler:
 	 sig
 	    type t
@@ -32,11 +29,13 @@ signature MLTON_SIGNAL =
 	 end
 
       val getHandler: t -> Handler.t
+      val prof: t
       val setHandler: t * Handler.t -> unit
       (* suspend m temporarily sets the signal mask to m and suspends until an
        * unmasked signal is received and handled, and then resets the mask.
        *)
       val suspend: Mask.t -> unit
+      val vtalrm: t
    end
 
 signature MLTON_SIGNAL_EXTRA =

@@ -11,9 +11,11 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       structure Error = PosixError
       structure CS = C.CS
 
-      local open Prim
+      type pid = Pid.t
+	 
+      local
+	 open Prim
       in
-	 type pid = pid
 	 type uid = uid
 	 type gid = gid
 	 datatype file_desc = datatype file_desc
@@ -25,9 +27,11 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 	 val getppid = getppid (* No error checking required *)
 	 val getuid = getuid (* No error checking required *)
 	 val setgid = Error.checkResult o setgid
-	 val setsid = Error.checkReturnResult o setsid 
 	 val setuid = Error.checkResult o setuid
       end
+
+      fun setsid () = Pid.fromInt (Error.checkReturnResult
+				   (Pid.toInt (setsid ())))
 
       fun id x = x
       val uidToWord = id 
@@ -55,9 +59,10 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       fun setpgid {pid, pgid} =
 	 let
 	    val f =
-	       fn NONE => 0
-		| SOME n => n
-	 in Error.checkResult (Prim.setpgid (f pid, f pgid))
+	       fn NONE => Pid.fromInt 0
+		| SOME pid => pid
+	 in
+	    Error.checkResult (Prim.setpgid (f pid, f pgid))
 	 end
 
       local
@@ -109,8 +114,10 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       fun environ () = C.CSS.toList Prim.environ
 
       fun getenv name =
-	 let val cs = Prim.getenv (String.nullTerm name)
-	 in if Primitive.Pointer.isNull cs
+	 let
+	    val cs = Prim.getenv (String.nullTerm name)
+	 in
+	    if Primitive.Pointer.isNull cs
 	       then NONE
 	    else SOME (CS.toString cs)
 	 end

@@ -15,7 +15,7 @@ structure PosixIO: POSIX_IO =
       structure FS = PosixFileSys
 
       datatype file_desc = datatype Prim.file_desc
-      type pid = Prim.pid
+      type pid = Pid.t
 
       local
 	 val a: PosixPrimitive.fd array = Array.array (2, 0)

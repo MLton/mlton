@@ -258,6 +258,7 @@ signature BASIS_2002 =
       structure Unsafe: UNSAFE
 
       sharing type MLton.IntInf.t = IntInf.int
+      sharing type MLton.Process.pid = Posix.Process.pid
       sharing type MLton.Signal.t = Posix.Signal.signal
       sharing type MLton.Word.t = Word.word
       sharing type MLton.Word8.t = Word8.word
@@ -605,7 +606,6 @@ signature BASIS_2002 =
    where type OS.Process.status = OS.Process.status
    where type Position.int = Position.int
    where type Posix.IO.file_desc = Posix.IO.file_desc
-   where type Posix.Process.pid = Posix.Process.pid
    where type Posix.Signal.signal = Posix.Signal.signal
    where type Real32.real = Real32.real
    where type Real64Array.array = Real64Array.array

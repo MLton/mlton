@@ -4,15 +4,21 @@ structure MLtonProcess =
       structure Error = PosixError
       structure MLton = Primitive.MLton
 
-      type pid = Posix.Process.pid
+      type pid = Pid.t
 
       val isCygwin = let open MLton.Platform.OS in host = Cygwin end
 	 
       fun spawne {path, args, env} =
 	 if isCygwin
-	    then Error.checkReturnResult (Prim.spawne (String.nullTerm path,
-						       C.CSS.fromList args,
-						       C.CSS.fromList env))
+	    then
+	       let
+		  val pid = Prim.spawne (String.nullTerm path,
+					 C.CSS.fromList args,
+					 C.CSS.fromList env)
+		  val _ = Error.checkResult (Pid.toInt pid)
+	       in
+		  pid
+	       end
 	 else
 	    case Posix.Process.fork () of
 	       NONE => Posix.Process.exece (path, args, env)
@@ -23,8 +29,14 @@ structure MLtonProcess =
 
       fun spawnp {file, args} =
 	 if isCygwin
-	    then Error.checkReturnResult (Prim.spawnp (String.nullTerm file,
-						       C.CSS.fromList args))
+	    then
+	       let
+		  val pid = Prim.spawnp (String.nullTerm file,
+					 C.CSS.fromList args)
+		  val _ = Error.checkResult (Pid.toInt pid)
+	       in
+		  pid
+	       end
 	 else	 
 	    case Posix.Process.fork () of
 	       NONE => Posix.Process.execp (file, args)

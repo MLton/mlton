@@ -12,8 +12,10 @@ structure PosixTTY: POSIX_TTY =
       open Prim
       structure Error = PosixError
 
-      type pid = Prim.pid
+      type pid = Pid.t
+	 
       datatype file_desc = datatype Prim.file_desc
+	 
       structure V =
 	 struct
 	    open V
@@ -149,7 +151,13 @@ structure PosixTTY: POSIX_TTY =
 	      
 	    fun flow (FD fd, n) = Error.checkResult (Prim.flow (fd, n))
 	      
-	    fun getpgrp (FD fd) = Error.checkReturnResult (Prim.getpgrp fd)
+	    fun getpgrp (FD fd) =
+	       let
+		  val pid = Prim.getpgrp fd
+		  val _ = Error.checkResult (Pid.toInt pid)
+	       in
+		  pid
+	       end
 	      
 	    fun setpgrp (FD fd, pid) = Error.checkResult (Prim.setpgrp (fd, pid))
 	 end

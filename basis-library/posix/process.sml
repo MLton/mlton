@@ -12,17 +12,22 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
       structure Error = PosixError
 
       type signal = PosixSignal.signal
-      type pid = Prim.pid
+      type pid = Pid.t
 
-      val wordToPid = SysWord.toInt
-      val pidToWord = SysWord.fromInt
+      val wordToPid = Pid.fromInt o SysWord.toInt
+      val pidToWord = SysWord.fromInt o Pid.toInt
 
       structure MLton = Primitive.MLton
+
       fun fork () =
-	 case Prim.fork () of
-	    ~1 => Error.error ()
-	  | 0 => NONE
-	  | n => SOME n
+	 let
+	    val p = Prim.fork ()
+	 in
+	    case Pid.toInt p of
+	       ~1 => Error.error ()
+	     | 0 => NONE
+	     | _ => SOME p
+	 end
 
       val fork =
 	 if let open MLton.Platform.OS in host <> Cygwin end
@@ -117,33 +122,37 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	 end
 
       local
-	 val convertwa =
-	    fn W_ANY_CHILD => ~1
-	     | W_CHILD pid => pid
-	     | W_SAME_GROUP => 0
-	     | W_GROUP pid => ~ pid
-	    
 	 val status: status ref = ref 0
-
+	 fun wait (wa, status, flags) =
+	    let
+	       val p =
+		  case wa of
+		     W_ANY_CHILD => ~1
+		   | W_CHILD pid => Pid.toInt pid
+		   | W_SAME_GROUP => 0
+		   | W_GROUP pid => ~ (Pid.toInt pid)
+	       val pid = Prim.waitpid (Pid.fromInt p, status,
+				       SysWord.toInt (W.flags flags))
+	       val _ = Error.checkResult (Pid.toInt pid)
+	    in
+	       pid
+	    end
 	 fun getStatus () = fromStatus (!status)
       in
 	 fun waitpid (wa, flags) =
-	    let val pid = Prim.waitpid (convertwa wa, status,
-					SysWord.toInt 
-					(W.flags flags))
-	    in Error.checkResult pid
-	       ; (pid, getStatus ())
+	    let
+	       val pid = wait (wa, status, flags)
+	    in 
+	       (pid, getStatus ())
 	    end
 
 	 fun waitpid_nh (wa, flags) =
 	    let
-	       val pid = Prim.waitpid (convertwa wa, status,
-				       SysWord.toInt 
-				       (W.flags (wnohang :: flags)))
-	    in Error.checkResult pid
-	       ; if pid = 0
-		    then NONE
-		 else SOME (pid, getStatus ())
+	       val pid = wait (wa, status, wnohang :: flags)
+	    in
+	       if 0 = Pid.toInt pid
+		  then NONE
+	       else SOME (pid, getStatus ())
 	    end
       end
 
@@ -165,11 +174,11 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	 let
 	    val pid =
 	       case ka of
-		  K_PROC pid => pid
+		  K_PROC pid => Pid.toInt pid
 		| K_SAME_GROUP => ~1
-		| K_GROUP pid => ~ pid
+		| K_GROUP pid => ~ (Pid.toInt pid)
 	 in
-	    Error.checkResult (Prim.kill (pid, PosixSignal.toInt s))
+	    Error.checkResult (Prim.kill (Pid.fromInt pid, PosixSignal.toInt s))
 	 end
 
       local

@@ -2,7 +2,7 @@ structure MLtonPtrace: MLTON_PTRACE =
    struct
       open Primitive.Ptrace
 	 
-      type word = Word32.word
+      type pid = Pid.t
 	 
       local
 	 fun make request pid = PosixError.checkResult(ptrace2(request, pid))
