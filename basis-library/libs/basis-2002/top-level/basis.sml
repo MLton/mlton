@@ -72,10 +72,8 @@ structure Basis2002:> BASIS_2002 =
       structure Int32Array2 = Int32Array2
       structure IntInf = IntInf
       structure NetHostDB = NetHostDB
-(*
       structure NetProtDB = NetProtDB
       structure NetServDB = NetServDB
-*)
       structure Pack32Big = Pack32Big
       structure Pack32Little = Pack32Little
 (*

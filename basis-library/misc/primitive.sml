@@ -432,6 +432,29 @@ structure Primitive =
 	    val getHostName = _ffi "NetHostDB_getHostName": char array * int -> int;
 	 end
 
+      structure NetProtDB =
+	 struct
+	    val entryName = _ffi "NetProtDB_Entry_name": unit -> cstring;
+	    val entryNumAliases = _ffi "NetProtDB_Entry_numAliases": unit -> int;
+	    val entryAliasesN = _ffi "NetProtDB_Entry_aliasesN": int -> cstring;
+	    val entryProtocol = _ffi "NetProtDB_Entry_protocol": unit -> int;
+	    val getByName = _ffi "NetProtDB_getByName": string -> bool;
+	    val getByNumber = _ffi "NetProtDB_getByNumber": int -> bool;
+	 end
+
+      structure NetServDB =
+	 struct
+	    val entryName = _ffi "NetServDB_Entry_name": unit -> cstring;
+	    val entryNumAliases = _ffi "NetServDB_Entry_numAliases": unit -> int;
+	    val entryAliasesN = _ffi "NetServDB_Entry_aliasesN": int -> cstring;
+	    val entryPort = _ffi "NetServDB_Entry_port": unit -> int;
+	    val entryProtocol = _ffi "NetServDB_Entry_protocol": unit -> cstring;
+	    val getByName = _ffi "NetServDB_getByName": string * string -> bool;
+	    val getByNameNull = _ffi "NetServDB_getByNameNull": string -> bool;
+	    val getByPort = _ffi "NetServDB_getByPort": int * string -> bool;
+	    val getByPortNull = _ffi "NetServDB_getByPortNull": int -> bool;
+	 end
+
       structure OS =
 	 struct
 	    structure FileSys =

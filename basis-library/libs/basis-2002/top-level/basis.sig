@@ -153,10 +153,8 @@ signature BASIS_2002 =
       structure Int32VectorSlice : MONO_VECTOR_SLICE
       structure IntInf : INT_INF
       structure NetHostDB : NET_HOST_DB
-(*
       structure NetProtDB : NET_PROT_DB
       structure NetServDB : NET_SERV_DB
-*)
       structure Pack32Big : PACK_WORD
       structure Pack32Little : PACK_WORD
 (*

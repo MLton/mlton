@@ -205,7 +205,9 @@ system/timer.sml
 net/net-host-db.sig
 net/net-host-db.sml
 net/net-prot-db.sig
+net/net-prot-db.sml
 net/net-serv-db.sig
+net/net-serv-db.sml
 
 sml-nj/sml-nj.sig
 sml-nj/sml-nj.sml
