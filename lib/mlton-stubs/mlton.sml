@@ -33,7 +33,6 @@ functor IO (S : sig
 structure MLton: MLTON =
    struct
       val cleanAtExit = fn _ => raise Fail "cleanAtExit"
-      val debug = false
       val deserialize = fn _ => raise Fail "deserialize"
       val eq = fn _ => raise Fail "eq"
       val errno = fn _ => raise Fail "errno"

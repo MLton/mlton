@@ -23,7 +23,6 @@ to release of {\mlton}.
 \begin{verbatim}
 structure MLton:
    sig
-      val debug: bool
       val eq: 'a * 'a -> bool
       datatype hostType = Cygwin | FreeBSD | Linux
       val hostType: hostType
@@ -60,9 +59,6 @@ structure MLton:
 
 \newcommand{\entry}[1]{\item[\tt #1]\hspace{1in}\\}
 \begin{description}
-
-\entry{debug}
-a compile-time constant that reflects the value of the {\tt -debug} switch.
 
 \entry{eq (x, y)}
 returns true if {\tt x} and {\tt y} are equal as pointers.  For simple types

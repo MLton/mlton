@@ -304,7 +304,6 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	    open Control
 	 in
 	    [("Exn_keepHistory", Bool (!exnHistory)),
-	     ("MLton_debug", Bool (!debug)),
 	     ("MLton_detectOverflow", Bool (!detectOverflow)),
 	     ("MLton_native", Bool (!Native.native)),
 	     ("MLton_profile", Bool (!profile)),

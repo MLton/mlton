@@ -49,7 +49,6 @@ structure Primitive =
    
 structure Primitive =
    struct
-      val debug = _build_const "MLton_debug": bool;
       val detectOverflow = _build_const "MLton_detectOverflow": bool;
       val enterLeave = _ffi "MLton_enterLeave": unit -> unit;
       val eq = fn z => _prim "MLton_eq": 'a * 'a -> bool; z

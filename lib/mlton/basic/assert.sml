@@ -6,7 +6,7 @@
  *)
 structure Assert: ASSERT =
    struct
-      val debug = not MLton.isMLton orelse MLton.debug
+      val debug = not MLton.isMLton
 
       fun fail msg = Error.bug (concat ["assertion failure: ", msg])
 	 
