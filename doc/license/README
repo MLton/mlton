@@ -1,17 +1,13 @@
 package		license			use
 --------------  -----------		------------
-MLton		MLton-LICENSE		
-		(GPL)
+MLton		MLton-LICENSE (GPL)	
 
 SML/NJ		NJ-LICENSE		lexer, parser, precedence parser,
 					splay trees,
-					basis library: Real, IO, Timer,
-					Unix, Process, Option
+					IO, Option, Process, Unix
 
-ML Kit		MLKit-LICENSE		basis library: Real, Path, Time, Date
-		(GPL)
+ML Kit		MLKit-LICENSE (GPL)	Path, Time, Date
 
-gdtoa		gdtoa-LICENSE		Real.{fmt,toDecimal,toString}
+gdtoa		gdtoa-LICENSE		Real binary <-> decimal conversions
 
-gmp		gmp-LICENSE		IntInf
-		(LGPL)
+gmp		gmp-LICENSE (LGPL)	IntInf
