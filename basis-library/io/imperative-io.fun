@@ -12,8 +12,6 @@ functor ImperativeIOExtra
 	IMPERATIVE_IO_EXTRA where type elem = S.StreamIO.elem
 	                    where type vector = S.StreamIO.vector
 			    where type vector_slice = S.StreamIO.vector_slice
-			    where type StreamIO.elem = S.StreamIO.elem
-			    where type StreamIO.vector = S.StreamIO.vector
 			    where type StreamIO.instream = S.StreamIO.instream
 			    where type StreamIO.outstream = S.StreamIO.outstream
 			    where type StreamIO.out_pos = S.StreamIO.out_pos
@@ -108,8 +106,6 @@ functor ImperativeIO
         (S: IMPERATIVE_IO_ARG) :>
 	IMPERATIVE_IO where type elem = S.StreamIO.elem
 	              where type vector = S.StreamIO.vector
-		      where type StreamIO.elem = S.StreamIO.elem
-		      where type StreamIO.vector = S.StreamIO.vector
 		      where type StreamIO.instream = S.StreamIO.instream
 		      where type StreamIO.outstream = S.StreamIO.outstream
 		      where type StreamIO.out_pos = S.StreamIO.out_pos
@@ -167,8 +163,6 @@ functor ImperativeIOExtraFile
 	IMPERATIVE_IO_EXTRA_FILE where type elem = S.StreamIO.elem
 	                         where type vector = S.StreamIO.vector
 				 where type vector_slice = S.StreamIO.vector_slice
-				 where type StreamIO.elem = S.StreamIO.elem
-				 where type StreamIO.vector = S.StreamIO.vector
 				 where type StreamIO.instream = S.StreamIO.instream
 				 where type StreamIO.outstream = S.StreamIO.outstream
 				 where type StreamIO.out_pos = S.StreamIO.out_pos

@@ -328,6 +328,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
 		Interface.copy (Env.lookupSigid (E, x))
 	   | Sigexp.Where (sigexp, wheres) => (* rule 64 *)
 		let
+		   val time = Interface.Time.tick ()
 		   val I' = elaborateSigexp (sigexp, I)
 		   val _ =
 		      Interface.wheres
@@ -337,7 +338,8 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
 			(longtycon,
 			 TypeStr.def
 			 (elaborateScheme (tyvars, ty, E, I),
-			  Kind.Arity (Vector.length tyvars)))))
+			  Kind.Arity (Vector.length tyvars)))),
+		       time)
 		in
 		   I'
 		end) arg
@@ -405,6 +407,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
 	   | Spec.Sharing {equations, spec} =>
 		(* rule 78 and section G.3.3 *)
 		let
+		   val time = Interface.Time.tick ()
 		   val I' = elaborateSpec (spec, I)
 		   fun share eqn =
 		      case Equation.node eqn of
@@ -416,7 +419,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
 				   | s :: ss =>
 					(List.foreach
 					 (ss, fn s' =>
-					  Interface.share (I', s, s'))
+					  Interface.share (I', s, s', time))
 					 ; loop ss)
 			    in
 			       loop ss
@@ -427,7 +430,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
 			     | c :: cs =>
 				  List.foreach
 				  (cs, fn c' =>
-				   Interface.shareType (I', c, c'))
+				   Interface.shareType (I', c, c', time))
 		   val _ = List.foreach (equations, share)
 		in
 		   I'

@@ -277,3 +277,14 @@ structure T:> T =
       type t = S.t
    end
 val _: T.t -> S.t = fn x => x
+
+signature SIG =
+   sig
+      type u
+      type v = u
+   end where type v = int
+structure S: SIG =
+   struct
+      type u = int
+      type v = int
+   end

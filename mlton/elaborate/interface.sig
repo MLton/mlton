@@ -79,7 +79,14 @@ signature INTERFACE =
       sharing TypeStr.Tycon = Tycon
       sharing TypeStr.Type = Type
       sharing TypeStr.Tyvar = EnvTypeStr.Tyvar = Tyvar
-      
+
+      structure Time:
+	 sig
+	    type t
+
+	    val tick: unit -> t
+	 end
+
       type t
       
       val + : t * t -> t
@@ -108,12 +115,12 @@ signature INTERFACE =
 			* TypeStr.Kind.t -> EnvTypeStr.t) -> t
       val reportDuplicates: t * Region.t -> unit
       val shapeId: t -> ShapeId.t
-      val share: t * Ast.Longstrid.t * Ast.Longstrid.t -> unit
-      val shareType: t * Ast.Longtycon.t * Ast.Longtycon.t -> unit
+      val share: t * Ast.Longstrid.t * Ast.Longstrid.t * Time.t -> unit
+      val shareType: t * Ast.Longtycon.t * Ast.Longtycon.t * Time.t -> unit
       val strs: {name: Ast.Strid.t, interface: t} vector -> t
       val types: {name: Ast.Tycon.t, typeStr: TypeStr.t} vector -> t
       val vals: {name: Ast.Vid.t,
 		 scheme: Scheme.t,
 		 status: Status.t} vector -> t
-      val wheres: t * (Ast.Longtycon.t * TypeStr.t) vector -> unit
+      val wheres: t * (Ast.Longtycon.t * TypeStr.t) vector * Time.t -> unit
    end

@@ -16,20 +16,14 @@ functor FastImperativeIOExtra
 	FAST_IMPERATIVE_IO_EXTRA where type elem = S.StreamIO.elem
 	                         where type vector = S.StreamIO.vector
 				 where type vector_slice = S.StreamIO.vector_slice
-				 where type StreamIO.elem = S.StreamIO.elem
-				 where type StreamIO.vector = S.StreamIO.vector
 				 where type StreamIO.instream = S.StreamIO.instream
 				 where type StreamIO.outstream = S.StreamIO.outstream
 				 where type StreamIO.out_pos = S.StreamIO.out_pos
 				 where type StreamIO.reader = S.StreamIO.reader
 				 where type StreamIO.writer = S.StreamIO.writer
 				 where type StreamIO.pos = S.StreamIO.pos
-				 where type BufferI.elem = S.BufferI.elem
-				 where type BufferI.vector = S.BufferI.vector
 				 where type BufferI.inbuffer = S.BufferI.inbuffer
-				 where type BufferI.instream = S.BufferI.instream
-				 where type BufferI.reader = S.BufferI.reader
-				 where type BufferI.pos = S.BufferI.pos =
+   =
    struct
       open S
 
@@ -180,20 +174,14 @@ functor FastImperativeIOExtraFile
 	FAST_IMPERATIVE_IO_EXTRA_FILE where type elem = S.StreamIO.elem
 	                              where type vector = S.StreamIO.vector
 				      where type vector_slice = S.StreamIO.vector_slice
-				      where type StreamIO.elem = S.StreamIO.elem
-				      where type StreamIO.vector = S.StreamIO.vector
 				      where type StreamIO.instream = S.StreamIO.instream
 				      where type StreamIO.outstream = S.StreamIO.outstream
 				      where type StreamIO.out_pos = S.StreamIO.out_pos
 				      where type StreamIO.reader = S.StreamIO.reader
 				      where type StreamIO.writer = S.StreamIO.writer
 				      where type StreamIO.pos = S.StreamIO.pos
-				      where type BufferI.elem = S.BufferI.elem
-				      where type BufferI.vector = S.BufferI.vector
 				      where type BufferI.inbuffer = S.BufferI.inbuffer
-				      where type BufferI.instream = S.BufferI.instream
-				      where type BufferI.reader = S.BufferI.reader
-				      where type BufferI.pos = S.BufferI.pos =
+   =
    struct
       structure ImperativeIO = FastImperativeIOExtra(open S)
       open ImperativeIO
