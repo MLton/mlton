@@ -20,8 +20,8 @@ directory}, you should copy {\tt gmp.h} to {\tt
 usr/lib/mlton/self/include}.  If you see the error message {\tt
 /usr/bin/ld: cannot find -lgmp}, you 
 should add a {\tt -link-opt -L} argument in the {\tt usr/bin/mlton}
-script so that the linker can find {\tt libgmp}, for example, {\tt
--link-opt -L/\prefix/lib}.
+script so that the linker can find {\tt libgmp}.  If, for example,
+{\tt libgmp.a} is in {\tt /tmp}, then add {\tt -link-opt -L/tmp}.
 
 Installation of {\mlton} creates the following files and directories.
 
