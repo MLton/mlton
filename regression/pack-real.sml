@@ -11,7 +11,7 @@ val _ =
 		   val _ =
 		      print (concat ["r = ", Real.fmt StringCvt.EXACT r, "\t"])
 		   val _ =
-		      Vector.app
+		      Word8Vector.app
 		      (fn w =>
 		       let
 			  val s = Word8.toString w

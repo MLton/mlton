@@ -94,12 +94,25 @@ val test8b:unit = tst0 "test8b" ((update(e, length e, w127); "WRONG")
 
 val f = extract (e, 100, SOME 3);
 
-val test9:unit = tst' "test9" (fn () => f = a2v b);
+fun equal (v, v') =
+   let
+      val n = Word8Vector.length v
+      val n' = Word8Vector.length v'
+      fun loop i =
+	 i < n
+	 andalso Word8Vector.sub (v, i) = Word8Vector.sub (v', i)
+	 andalso loop (i + 1)
+   in
+      n = n' andalso loop 0
+   end
+   
+val test9:unit = tst' "test9" (fn () => equal (f, a2v b));
 
-val test9a:unit = tst' "test9a" (fn () => ev = extract(e, 0, NONE)
-			    andalso ev = extract(e, 0, SOME (length e)));
+val test9a:unit = tst' "test9a" (fn () => equal (ev, extract(e, 0, NONE))
+				 andalso equal (ev, extract(e, 0, SOME (length e))));
 val test9b:unit = 
-    tst' "test9b" (fn () => Word8Vector.fromList [] = extract(e, 100, SOME 0));
+    tst' "test9b" (fn () => equal (Word8Vector.fromList [],
+				   extract(e, 100, SOME 0)));
 val test9c:unit = tst0 "test9c" ((extract(e, ~1, SOME (length e))  seq "WRONG") 
 			    handle Subscript => "OK" | _ => "WRONG")
 val test9d:unit = tst0 "test9d" ((extract(e, length e+1, SOME 0) seq "WRONG") 
@@ -113,29 +126,31 @@ val test9g:unit = tst0 "test9g" ((extract(e, ~1, NONE)  seq "WRONG")
 val test9h:unit = tst0 "test9h" ((extract(e, length e+1, NONE) seq "WRONG") 
 			    handle Subscript => "OK" | _ => "WRONG")
 val test9i:unit = 
-    tst' "test9i" (fn () => a2v (fromList []) = extract(e, length e, SOME 0)
-		   andalso a2v (fromList []) = extract(e, length e, NONE));
+    tst' "test9i" (fn () => equal (a2v (fromList []),
+				   extract(e, length e, SOME 0))
+		   andalso equal (a2v (fromList []),
+				  extract(e, length e, NONE)));
 
 val _ = copy{src=e, si=0, dst=e, di=0, len=NONE};
 val g = array(203, w127);
 val _ = copy{src=e, si=0, dst=g, di=0, len=NONE};
 
-val test10a:unit = tst' "test10a" (fn () => ev = extract(e, 0, NONE)
-			      andalso ev = extract(e, 0, SOME (length e)));
-val test10b:unit = tst' "test10b" (fn () => ev = extract(g, 0, NONE)
-			      andalso ev = extract(g, 0, SOME (length g)));
+val test10a:unit = tst' "test10a" (fn () => equal (ev, extract(e, 0, NONE))
+			      andalso equal (ev, extract(e, 0, SOME (length e))));
+val test10b:unit = tst' "test10b" (fn () => equal (ev, extract(g, 0, NONE))
+			      andalso equal (ev, extract(g, 0, SOME (length g))));
 
 val _ = copy{src=g, si=203, dst=g, di=0, len=SOME 0};
-val test10c:unit = tst' "test10c" (fn () => ev = extract(g, 0, NONE));
+val test10c:unit = tst' "test10c" (fn () => equal (ev, extract(g, 0, NONE)));
 
 val _ = copy{src=g, si=0, dst=g, di=203, len=SOME 0};
-val test10d:unit = tst' "test10d" (fn () => ev = extract(g, 0, NONE));
+val test10d:unit = tst' "test10d" (fn () => equal (ev, extract(g, 0, NONE)));
 
 val _ = copy{src=g, si=0, dst=g, di=1, len=SOME (length g-1)};
-val test10e:unit = tst' "test10e" (fn () => a2v b = extract(g, 101, SOME 3));
+val test10e:unit = tst' "test10e" (fn () => equal (a2v b, extract(g, 101, SOME 3)));
 
 val _ = copy{src=g, si=1, dst=g, di=0, len=SOME(length g-1)};
-val test10f:unit = tst' "test10f" (fn () => a2v b = extract(g, 100, SOME 3));
+val test10f:unit = tst' "test10f" (fn () => equal (a2v b, extract(g, 100, SOME 3)));
 
 val _ = copy{src=g, si=202, dst=g, di=202, len=SOME 1};
 val test10g:unit = tst' "test10g" (fn () => g sub 202 = i2w ((202-1-103) mod 7));
