@@ -8,34 +8,32 @@ structure World: MLTON_WORLD =
        *   - open file descriptors
        *   - redetermine buffer status when restart
        *)
-      fun saveThread' (file: string,
-		      f: status Thread.t -> status Thread.t): status =
+      fun save' (file: string,
+		 f: (unit -> unit) -> unit): status =
 	 (let open Cleaner in clean atSaveWorld end
 	  ; (case Posix.Process.fork () of
 		NONE =>
-		   (let open Cleaner in clean atExit end
-		    ; Thread.switch'
-		       (fn t =>
-			(f t,
-			 fn () =>
+		   (Cleaner.clean Cleaner.atExit
+		    ; f (fn () =>
 			 (Prim.save (String.nullTerm file)
-			  ; let open Cleaner in clean atLoadWorld end
-			  ; Clone))))
+			  ; Cleaner.clean Cleaner.atLoadWorld))
+		    ; Clone)
 	      | SOME pid =>
 		   let
 		      open Posix.Process
 		      val (pid', status) = waitpid (W_CHILD pid, [])
-		   in if pid = pid' andalso status = W_EXITED
+		   in
+		      if pid = pid' andalso status = W_EXITED
 			 then Original
 		      else raise Fail (concat ["World.save ", file, "failed"])
 		   end))
 
-      fun saveThread (f, t) =
-	 saveThread' (f, fn _ => Thread.prepend (t, fn _ => ()))
+      fun saveThread (f: string, t: unit Thread.t) =
+	 save' (f, fn save => Thread.switch' (fn _ => (t, save)))
 	 
-      fun save f =
+      fun save (f: string) =
 	 case !Thread.state of
-	    Thread.Normal => saveThread' (f, fn t => t)
+	    Thread.Normal => save' (f, fn save => save ())
 	  | Thread.InHandler t => saveThread (f, t)
 
       fun load (file: string): 'a =
