@@ -1,4 +1,5 @@
 top-level/infixes.sml
 top-level/overloads.sml
 top-level/basis-sigs.sml
+top-level/basis-funs.sml
 top-level/top-level.sml

@@ -45,10 +45,8 @@ signature MONO_VECTOR_EXTRA_PRE =
       val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> vector
       val vector: int * elem -> vector
 
-(*
       (* Deprecated *)
       val extract: vector * int * int option -> vector
-*)
    end
 
 signature MONO_VECTOR_EXTRA =

@@ -169,4 +169,9 @@ structure PosixIO: POSIX_IO =
 	 val setlk = make (F_SETLK, false)
 	 val setlkw = make (F_SETLKW, false)
       end
+
+      fun mkBinReader _ = raise (Fail "<not implemented>")
+      fun mkTextReader _ = raise (Fail "<not implemented>")
+      fun mkBinWriter _ = raise (Fail "<not implemented>")
+      fun mkTextWriter _ = raise (Fail "<not implemented>")
    end

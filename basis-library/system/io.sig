@@ -15,6 +15,7 @@ signature OS_IO =
 	    val socket: iodesc_kind
 	    val device: iodesc_kind
 	 end
+
       (* MISSING *)
 (*
       eqtype poll_desc

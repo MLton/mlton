@@ -32,9 +32,7 @@ signature OS_FILE_SYS = OS_FILE_SYS
 signature OS_IO = OS_IO 
 signature OS_PATH = OS_PATH 
 signature OS_PROCESS = OS_PROCESS 
-(*
 signature PRIM_IO = PRIM_IO 
-*)
 signature REAL = REAL 
 (*
 signature STREAM_IO = STREAM_IO

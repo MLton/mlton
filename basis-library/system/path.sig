@@ -25,9 +25,8 @@ signature OS_PATH =
       val isRelative: string -> bool
       val isRoot: string -> bool
       val concat: string * string -> string
+
       (* MISSING *)
-(*
       val fromUnixPath: string -> string
       val toUnixPath: string -> string
-*)
    end

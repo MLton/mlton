@@ -299,3 +299,34 @@ Time now include negative values?
     still, just drop fractional part?
 +, - raise Overflow when result not representable; why not raise Time?
 - is written prefix instead of infix in description.
+fromString : rounding or truncation semantics?
+
+PrimIO and PRIM_IO
+- PRIM_IO requires pos to be an eqtype, but the PrimIO functor argument only 
+   requires pos to be a type.
+- readArr {buf, i, sz}
+   * what should happen when k elements read and i + k >= Array.length buf
+- reader & writer operations should be expressed in terms of {Array,Vector}Slice.slice;
+  semantics aren't clear when not a valid slice
+- ArraySlice and VectorSlice should be sub-structures of Array and Vector.
+  Particularly, MONO_ARRAY and MONO_VECTOR should have MONO_ARRAY_SLICE and 
+  MONO_VECTOR_SLICE substructures.
+  The "obvious" way of turning a readArr into a readVec requires extracting
+  the read elements from the buffer, which is concisely expressed with
+  ArraySlice.vector o ArraySlice.slice.  But, these functions aren't available
+  from the MONO_ARRAY structure argument to the PRIM_IO functor.
+- contradictory statements:
+  "Readers and writers should not, in general, raise the IO.Io
+  exception. It is assumed that the higher levels will appropriately
+  handle these exceptions."
+  "A reader is required to raise IO.Io if any of its functions, except
+  close or getPos, is invoked after a call to close. A writer is
+  required to raise IO.Io if any of its functions, except close, is
+  invoked after a call to close."
+  "closes the reader and frees operating system resources. Further
+  operations on the reader (besides close and getPos) raise
+  IO.ClosedStream."
+  "closes the writer and frees operating system resources. Further
+  operations (other than close) raise IO.ClosedStream.
+- should synthesized operations handle and IO.Io exceptions and change
+  the name field?

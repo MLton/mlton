@@ -242,6 +242,9 @@ structure OS_Path : OS_PATH = struct
 	{isAbs = true, arcs= [a], ...} => a = ""
       | _ => false
   end
+
+  fun fromUnixPath _ = raise (Fail "<not implemented>")
+  fun toUnixPath _ = raise (Fail "<not implemented>")
 end (*structure Path*)
 
 

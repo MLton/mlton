@@ -115,6 +115,8 @@ system/file-sys.sml
 
 io/io.sig
 io/io.sml
+io/prim-io.sig
+io/prim-io.fun
 io/stream-io.sig
 io/text-stream-io.sig
 io/bin-stream-io.sig
@@ -196,5 +198,6 @@ sml-nj/unsafe.sig
 sml-nj/unsafe.sml
 
 top-level/basis-sigs.sml
+top-level/basis-funs.sml
 top-level/basis.sig
 top-level/basis.sml
