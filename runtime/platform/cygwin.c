@@ -1,10 +1,8 @@
 #include "platform.h"
 
-#include "create.c"
 #include "getrusage.c"
 #include "mkdir2.c"
 #include "mmap.c"
-#include "setbintext.c"
 #include "showMem.win32.c"
 #include "totalRam.sysconf.c"
 #include "virtualAlloc.c"
@@ -28,4 +26,14 @@ void release (void *base, size_t length) {
 		smunmap (base, length);
 	else
 		releaseVirtual (base);
+}
+
+void Posix_IO_setbin (Fd fd) {
+	/* cygwin has a different method for working with its fds */
+	setmode (fd, O_BINARY);
+}
+
+void Posix_IO_settext (Fd fd) {
+	/* cygwin has a different method for working with its fds */
+	setmode (fd, O_TEXT);
 }

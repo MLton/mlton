@@ -542,8 +542,8 @@ structure PosixPrimitive =
 	    val pipe = _import "Posix_IO_pipe": fd array -> int;
 	    val readChar =
 	       _import "Posix_IO_read": fd * char array * int * size -> ssize;
-	    val setbin = _import "Posix_IO_setbin": fd * bool -> unit;
-	    val settext = _import "Posix_IO_settext": fd * bool -> unit;
+	    val setbin = _import "Posix_IO_setbin": fd -> unit;
+	    val settext = _import "Posix_IO_settext": fd -> unit;
 	    val writeChar =
 	       _import "Posix_IO_write": fd * char array * int * size -> ssize;
 	    val writeCharVec =

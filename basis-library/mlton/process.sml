@@ -27,7 +27,7 @@ structure MLtonProcess =
       type chain = unit
       type any = unit
       
-      val useCreate = MLton.Platform.OS.useWindowsProcess
+      val useWindowsProcess = MLton.Platform.OS.useWindowsProcess
 
       val readWrite =
         let
@@ -109,7 +109,7 @@ structure MLtonProcess =
           
 	    val pipe = Pipe
 	    local
-	       val null = if useCreate then "nul" else "/dev/null"
+	       val null = if useWindowsProcess then "nul" else "/dev/null"
 	    in
 	       val null = File null
 	    end
@@ -125,7 +125,7 @@ structure MLtonProcess =
 		 | Child.Term  => raise MisuseOfForget)
             
 	    fun setCloseExec fd =
-	       if useCreate
+	       if useWindowsProcess
 		  then ()
 	       else IO.setfd (fd, IO.FD.flags [IO.FD.cloexec])
             
@@ -257,7 +257,8 @@ structure MLtonProcess =
 	  stdin, stdout, stderr)
 
       val launch =
-	 fn z => (if useCreate then launchWithCreate else launchWithFork) z
+	 fn z =>
+	 (if useWindowsProcess then launchWithCreate else launchWithFork) z
 	     
       fun create {args, env, path, stderr, stdin, stdout} =
 	 if not (FileSys.access (path, [FileSys.A_EXEC]))
@@ -290,16 +291,8 @@ structure MLtonProcess =
 		  stdout = ref cstdout}
             end
 
-      val useSpawn =
-	 let
-	    open MLton.Platform.OS
-	 in
-	    case host of
-	       Cygwin => true
-	     | MinGW => true
-	     | _ => false
-	 end
-	 
+      val useSpawn = not Primitive.MLton.Platform.OS.forkIsEnabled
+
       fun spawne {path, args, env} =
 	 if useSpawn
 	    then

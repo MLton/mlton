@@ -215,7 +215,7 @@ local
 		   | MinGW => true
 		   | _ => false
 	       end
-	       then setMode (fd, Primitive.MLton.Platform.OS.useWindowsProcess)
+	       then setMode fd
 	    else ()
 	 fun readArr (FD fd, sl): int =
 	    let

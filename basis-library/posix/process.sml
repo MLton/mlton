@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 structure PosixProcess: POSIX_PROCESS_EXTRA =
    struct
       structure Prim = PosixPrimitive.Process
@@ -28,7 +29,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	  end)
 
       val fork =
-	 if Primitive.MLton.Platform.OS.useWindowsProcess
+	 if Primitive.MLton.Platform.OS.forkIsEnabled
 	    then (fn () => Error.raiseSys Error.nosys)
 	 else fork
 

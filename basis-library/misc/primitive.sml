@@ -909,9 +909,15 @@ structure Primitive =
 			in
 			   val useWindowsProcess: bool =
 			      case host of
-				 Cygwin => not cygwinUseMmap
+				 Cygwin => false (* not cygwinUseMmap *)
 			       | MinGW => true
 			       | _ => false
+
+			   val forkIsEnabled =
+			      case host of
+				 Cygwin => not cygwinUseMmap
+			       | MinGW => false
+			       | _ => true
 			end
 		     end
 	       end

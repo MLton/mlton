@@ -51,6 +51,3 @@
 #define PF_INET6 0
 
 struct sockaddr_in6 {};
-
-int _setmode (int, int);
-HANDLE _get_osfhandle (int fd);

@@ -1,7 +1,6 @@
 #include "platform.h"
 
 #include "create.c"
-#include "setbintext.c"
 #include "showMem.win32.c"
 #include "virtualAlloc.c"
 
@@ -19,8 +18,9 @@ int mkstemp (char *template) {
 	char file_path[255];
 	char file_name[255];
 	char templ[4];
-	DWORD size = sizeof(file_path);
+	DWORD size;
 
+	size = sizeof (file_path);
 	if (0 == GetTempPath (size, file_path))
 		diee ("unable to make temporary file");
 	strncpy (templ, template, 3);
@@ -434,11 +434,10 @@ int kill (pid_t pid, int sig) {
 	 * Then in the basis library I test for this to decide W_SIGNALED.
 	 * Perhaps not the best choice, but I have no better idea.
 	 */
-	if (!TerminateProcess(h, sig | 0x80)) {
+        unless (TerminateProcess (h, sig | 0x80)) {
 		errno = ECHILD;
 		return -1;
 	}
-	
 	return 0;
 }
 
@@ -460,7 +459,7 @@ pid_t waitpid (pid_t pid, int *status, int options) {
 
 	h = (HANDLE)pid;
 	/* -1 on error, the casts here are due to bad types on both sides */
-	return _cwait(status, (_pid_t)h, 0);
+	return _cwait (status, (_pid_t)h, 0);
 }
 
 /* ------------------------------------------------- */
@@ -562,6 +561,18 @@ int sigprocmask (int how, const sigset_t *set, sigset_t *oldset) {
 
 int sigsuspend (const sigset_t *mask) {
 	die ("sigsuspend not implemented");
+}
+
+/* ------------------------------------------------- */
+/*                     Posix.IO                      */
+/* ------------------------------------------------- */
+
+void Posix_IO_setbin (Fd fd) {
+	_setmode (fd, _O_BINARY);
+}
+
+void Posix_IO_settext (Fd fd) {
+	_setmode (fd, _O_TEXT);
 }
 
 /* ------------------------------------------------- */

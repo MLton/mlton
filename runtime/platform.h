@@ -703,8 +703,8 @@ Int Posix_IO_fsync (Fd f);
 Position Posix_IO_lseek (Fd f, Position i, Int j);
 Int Posix_IO_pipe (Pointer fds);
 Ssize Posix_IO_read (Fd fd, Pointer b, Int i, Size s);
-void Posix_IO_setbin (Fd fd, Bool useWindows);
-void Posix_IO_settext (Fd fd, Bool useWindows);
+void Posix_IO_setbin (Fd fd);
+void Posix_IO_settext (Fd fd);
 Ssize Posix_IO_write (Fd fd, Pointer b, Int i, Size s);
 
 /* ---------------------------------- */
