@@ -17,54 +17,95 @@ structure Char: CHAR_EXTRA =
 		  then SOME (chr (ord c -? ord #"@"), state)
 	       else NONE
 
+      fun formatChar reader state =
+	 case reader state of
+	    NONE => NONE
+	  | SOME (c, state) =>
+	       if isSpace c
+		  then SOME ((), state)
+	       else NONE
+
+      fun formatChars reader =
+	 let
+	    fun loop state =
+	       case formatChar reader state of
+		  NONE => state
+		| SOME ((), state) => loop state
+	 in
+	    loop
+	 end
+		  
+      val 'a formatSequences: (char, 'a) StringCvt.reader -> 'a -> 'a =
+	 fn reader =>
+	 let
+	    fun loop state =
+	       case reader state of
+		  SOME (#"\\", state1) =>
+		     (case formatChar reader state1 of
+			 NONE => state
+		       | SOME ((), state2) =>
+			    let
+			       val state3 = formatChars reader state2
+			    in
+			       case reader state3 of
+				  SOME (#"\\", state4) => loop state4
+				| _ => state
+			    end)
+		| _ => state
+	 in
+	    loop
+	 end
+
       fun 'a scan (reader: (char, 'a) StringCvt.reader)
 	: (char, 'a) StringCvt.reader =
 	 let
-	    fun main state =
-	       case reader state of
-		  NONE => NONE
-		| SOME (c, state) =>
-		     if isPrint c
-			then
-			   case c of
-			      #"\\" => escape state
-			    | _ => SOME (c, state)
-		     else NONE
-	    and escape state =
+	    val escape: (char, 'a) StringCvt.reader =
+	       fn state =>
 	       case reader state of
 		  NONE => NONE
 		| SOME (c, state') =>
-		     let fun yes c = SOME (c, state')
-		     in case c of
-			#"a" => yes #"\a"
-		      | #"b" => yes #"\b"
-		      | #"t" => yes #"\t"
-		      | #"n" => yes #"\n"
-		      | #"v" => yes #"\v"
-		      | #"f" => yes #"\f"
-		      | #"r" => yes #"\r"
-		      | #"\\" => yes #"\\"
-		      | #"\"" => yes #"\""
-		      | #"^" => control reader state'
-		      | #"u" =>
-			   Reader.mapOpt chrOpt
-			   (StringCvt.digitsExact (StringCvt.HEX, 4) reader)
-			   state'
-		      | _ => (* either formatting chars or 3 decimal digits *)
-			   if isSpace c
-			      then
-				 case Reader.ignore isSpace reader state' of
-				    NONE => NONE
-				  | SOME (c, state) =>
-				       case c of
-					  #"\\" => main state
-					| _ => NONE
-			   else
+		     let
+			fun yes c = SOME (c, state')
+		     in
+			case c of
+			   #"a" => yes #"\a"
+			 | #"b" => yes #"\b"
+			 | #"t" => yes #"\t"
+			 | #"n" => yes #"\n"
+			 | #"v" => yes #"\v"
+			 | #"f" => yes #"\f"
+			 | #"r" => yes #"\r"
+			 | #"\\" => yes #"\\"
+			 | #"\"" => yes #"\""
+			 | #"^" => control reader state'
+			 | #"u" =>
 			      Reader.mapOpt chrOpt
-			      (StringCvt.digitsExact (StringCvt.DEC, 3) reader)
+			      (StringCvt.digitsExact (StringCvt.HEX, 4) reader)
+			      state'
+			 | _ => (* 3 decimal digits *)
+			      Reader.mapOpt chrOpt
+			      (StringCvt.digitsExact (StringCvt.DEC, 3)
+			       reader)
 			      state
 		     end
-	 in main
+	    val main: (char, 'a) StringCvt.reader =
+	       fn state =>
+	       let
+		  val state = formatSequences reader state
+	       in
+		  case reader state of
+		     NONE => NONE
+		   | SOME (c, state) =>
+			if isPrint c
+			   then
+			      case c of
+				 #"\\" => escape state
+			       | #"\"" => NONE
+			       | _ => SOME (c, formatSequences reader state)
+			else NONE
+	       end
+	 in
+	    main
 	 end
 
       val fromString = StringCvt.scanString scan

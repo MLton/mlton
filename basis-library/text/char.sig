@@ -49,5 +49,6 @@ signature CHAR_EXTRA =
    sig
       include CHAR
 
+      val formatSequences: (char, 'a) StringCvt.reader -> 'a -> 'a
       val scanC: (char, 'a) StringCvt.reader -> (char, 'a) StringCvt.reader
    end

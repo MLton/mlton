@@ -22,13 +22,26 @@ structure String: STRING_EXTRA =
       val toString = translate Char.toString
       val toCString = translate Char.toCString
 
+      val scan: (char, 'a) StringCvt.reader -> (string, 'a) StringCvt.reader =
+	 fn reader =>
+	 let
+	    fun loop (state, cs) =
+	       case Char.scan reader state of
+		  NONE => SOME (implode (rev cs),
+				Char.formatSequences reader state)
+		| SOME (c, state) => loop (state, c :: cs)
+	 in
+	    fn state => loop (state, [])
+	 end
+	 
+      val fromString = StringCvt.scanString scan
+	 
       fun scanString scanChar (reader: (char, 'a) StringCvt.reader)
 	: (string, 'a) StringCvt.reader =
 	 fn state =>
 	 Option.map (fn (cs, state) => (implode cs, state))
 	 (Reader.list (scanChar reader) state)
 
-      val fromString = StringCvt.scanString (scanString Char.scan)
       val fromCString = StringCvt.scanString (scanString Char.scanC)
 
       fun nullTerm s = s ^ "\000"

@@ -242,7 +242,7 @@ val test19 =
     end;
 
 val test20 = 
-    tst' "test20" (fn _ => List.all (fn arg => fromString arg = NONE)
+    tst' "test20" (fn _ => List.all (fn arg => isSome (fromString arg))
 	   ["\\",
 	    "\\c",
 	    "\\F",
@@ -342,7 +342,7 @@ val test23 =
     end;
 
 val test24 = 
-    let fun checkFromCStringFail arg = fromCString arg = NONE
+    let fun checkFromCStringFail arg = isSome (fromCString arg)
     in
 	tst' "test24" (fn _ => List.all checkFromCStringFail 
 	       ["\\",
