@@ -564,6 +564,7 @@ signature BASIS_2002 =
    where type BinPrimIO.reader = BinPrimIO.reader
    where type BinPrimIO.writer = BinPrimIO.writer
    where type Char.char = Char.char
+   where type FixedInt.int = FixedInt.int
    where type Int8.int = Int8.int
    where type Int16.int = Int16.int
    where type Int32.int = Int32.int
