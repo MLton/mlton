@@ -104,7 +104,7 @@ signature CORE_ML =
 				pat: Pat.t} vector,
 			test: t} -> t
 	    val dest: t -> node * Type.t
-	    val enterLeave: t * SourceInfo.t -> t
+	    val enterLeave: t * (unit -> SourceInfo.t) -> t
 	    val iff: t * t * t -> t
 	    val falsee: t
 	    val foreachVar: t * (Var.t -> unit) -> unit

@@ -110,6 +110,12 @@ structure Push =
 		     | Skip _ => ac)
    end
 
+val traceEnter =
+   Trace.trace2 ("Profile.enter",
+		 List.layout Push.layout,
+		 SourceInfo.layout,
+		 Layout.tuple2 (List.layout Push.layout, Bool.layout))
+
 fun profile program =
    if !Control.profile = Control.ProfileNone
       then (program, fn _ => NONE)
@@ -160,6 +166,21 @@ fun profile program =
       (* gc must be 1 which == SOURCES_INDEX_GC from gc.h *)
       val gcInfoNode = sourceInfoNode SourceInfo.gc
       val mainInfoNode = sourceInfoNode SourceInfo.main
+      fun keepSource (si: SourceInfo.t): bool =
+	 !Control.profileBasis
+	 orelse profile <> Count
+	 orelse not (SourceInfo.isBasis si orelse SourceInfo.isC si)
+      (* With -profile count, we want to get zero counts for all functions,
+       * whether or not they made it into the final executable.
+       *)
+      val () =
+	 case profile of
+	    Count =>
+	       List.foreach (SourceInfo.all (), fn si =>
+			     if keepSource si
+				then ignore (sourceInfoNode si)
+			     else ())
+	  | _ => ()
       val sourceInfoNode =
 	 fn si =>
 	 let
@@ -173,6 +194,9 @@ fun profile program =
 			 then mainInfoNode
 		      else sourceInfoNode si
 	 end
+      val sourceInfoNode =
+	 Trace.trace ("sourceInfoNode", SourceInfo.layout, InfoNode.layout)
+	 sourceInfoNode
       local
 	 val table: {hash: word,
 		     index: int,
@@ -214,7 +238,8 @@ fun profile program =
 	 addFrameProfileIndex (label,
 			       sourceSeqIndex (Push.toSources pushes))
       val {get = labelInfo: Label.t -> {block: Block.t,
-					visited: bool ref},
+					visited1: bool ref,
+					visited2: bool ref},
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce
 	 (Label.plist, Property.initRaise ("info", Label.layout))
@@ -270,28 +295,28 @@ fun profile program =
       fun doFunction (f: Function.t): Function.t =
 	 let
 	    val {args, blocks, name, raises, returns, start} = Function.dest f
+	    val _ =
+	       if not debug
+		  then ()
+	       else print (concat ["doFunction ", Func.toString name, "\n"])
 	    val FuncInfo.T {enters, tailCalls, ...} = funcInfo name
 	    fun enter (ps: Push.t list, si: SourceInfo.t): Push.t list * bool =
 	       let
 		  val node = Promise.lazy (fn () => sourceInfoNode si)
 		  fun yes () = (Push.Enter (node ()) :: ps, true)
 		  fun no () = (Push.Skip si :: ps, false)
-		  fun countOk () =
-		     !Control.profileBasis
-		     orelse profile <> Count
-		     orelse not (SourceInfo.isBasis si orelse SourceInfo.isC si)
 	       in
 		  if SourceInfo.equals (si, SourceInfo.unknown)
 		     then no ()
 		  else
 		     case firstEnter ps of
 			NONE =>
-			   if countOk ()
+			   if keepSource si
 			      then (List.push (enters, node ())
 				    ; yes ())
 			   else no ()
 		      | SOME (node' as InfoNode.T {info = si', ...}) =>
-			   if countOk () andalso
+			   if keepSource si andalso
 			      let
 				 open SourceInfo
 			      in
@@ -309,18 +334,13 @@ fun profile program =
 				    ; yes ())
 			   else no ()
 	       end
-	    val enter =
-	       Trace.trace2 ("Profile.enter",
-			     List.layout Push.layout,
-			     SourceInfo.layout,
-			     Layout.tuple2 (List.layout Push.layout,
-					    Bool.layout))
-	       enter
+	    val enter = traceEnter enter
 	    val _ =
 	       Vector.foreach
 	       (blocks, fn block as Block.T {label, ...} =>
 		setLabelInfo (label, {block = block,
-				      visited = ref false}))
+				      visited1 = ref false,
+				      visited2 = ref false}))
 	    (* Find the first Enter statement and (conceptually) move it to the
 	     * front of the function.
 	     *)
@@ -328,18 +348,25 @@ fun profile program =
 	       exception Yes of Label.t * Statement.t
 	       fun goto l =
 		  let
-		     val {block, ...} = labelInfo l
-		     val Block.T {statements, transfer, ...} = block
-		     val _ =
-			Vector.foreach
-			(statements, fn s =>
-			 case s of
-			    Statement.Profile (ProfileExp.Enter _) =>
-			       raise Yes (l, s)
-			  | _ => ())
-		     val _ = Transfer.foreachLabel (transfer, goto)
+		     val {block, visited1, ...} = labelInfo l
 		  in
-		     ()
+		     if !visited1
+			then ()
+		     else
+			let
+			   val () = visited1 := true
+			   val Block.T {statements, transfer, ...} = block
+			   val () =
+			      Vector.foreach
+			      (statements, fn s =>
+			       case s of
+				  Statement.Profile (ProfileExp.Enter _) =>
+				     raise Yes (l, s)
+				| _ => ())
+			   val () = Transfer.foreachLabel (transfer, goto)
+			in
+			   ()
+			end
 		  end
 	    in
 	       val first = (goto start; NONE) handle Yes z => SOME z
@@ -489,13 +516,13 @@ fun profile program =
 				      str ")"],
 				 Out.error)
 		     end
-		  val {block, visited, ...} = labelInfo l
+		  val {block, visited2, ...} = labelInfo l
 	       in
-		  if !visited
+		  if !visited2
 		     then ()
 		  else
 		     let
-			val _ = visited := true
+			val _ = visited2 := true
 			val Block.T {args, kind, label, statements, transfer,
 				     ...} = block
 			val statements =

@@ -324,10 +324,6 @@ structure Exp =
       end
 
       fun enterLeave (e: t, ty: Type.t, si: SourceInfo.t): t =
-	 if !Control.profile = Control.ProfileNone
-	    orelse !Control.profileIL <> Control.ProfileSource
-	    then e
-	 else
 	 let
 	    datatype z = datatype Dec.t
 	    datatype z = datatype PrimExp.t

@@ -1368,7 +1368,7 @@ fun elaborateDec (d, {env = E,
 				   var: Var.t} =>
 			  let
 			     val nest = Avar.toString func :: nest
-			     val sourceInfo =
+			     fun sourceInfo () =
 				SourceInfo.function {name = nest,
 						     region = Avar.region func}
 			     val rs =
@@ -1704,8 +1704,8 @@ fun elaborateDec (d, {env = E,
 					     region = region,
 					     rules = rules,
 					     test = Cexp.var (arg, argType)},
-				 SourceInfo.function {name = nest,
-						      region = region})
+				 fn () => SourceInfo.function {name = nest,
+							       region = region})
 			     val lambda =
 				Lambda.make {arg = arg,
 					     argType = argType,
@@ -1894,8 +1894,8 @@ fun elaborateDec (d, {env = E,
 				      Cexp.RaiseMatch)
 		      val body =
 			 Cexp.enterLeave
-			 (body, SourceInfo.function {name = nest,
-						     region = region})
+			 (body, fn () => SourceInfo.function {name = nest,
+							      region = region})
 		   in
 		      Cexp.make (Cexp.Lambda (Lambda.make {arg = arg,
 							   argType = argType,
@@ -1953,7 +1953,7 @@ fun elaborateDec (d, {env = E,
 			    let
 			       fun wrap (e, e', name) =
 				  Cexp.enterLeave
-				  (e',
+				  (e', fn () =>
 				   SourceInfo.function
 				   {name = name :: nest,
 				    region = Aexp.region e})
@@ -2368,8 +2368,9 @@ fun elaborateDec (d, {env = E,
 			  then e
 		       else
 			  Cexp.enterLeave
-			  (e, SourceInfo.function {name = "<branch>" :: nest,
-						   region = Aexp.region exp})
+			  (e, fn () =>
+			   SourceInfo.function {name = "<branch>" :: nest,
+						region = Aexp.region exp})
 		 in
 		    {exp = e,
 		     lay = SOME lay,

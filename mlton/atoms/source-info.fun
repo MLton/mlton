@@ -37,9 +37,23 @@ datatype t = T of {hash: word,
 		   info: info,
 		   plist: PropertyList.t}
 
-fun new info = T {hash = Random.word (),
-		  info = info,
-		  plist = PropertyList.new ()}
+local
+   val r: t list ref = ref []
+in
+   fun new info =
+      let
+	 val res = T {hash = Random.word (),
+		      info = info,
+		      plist = PropertyList.new ()}
+	 val () =
+	    if !Control.profile = Control.ProfileCount
+	       then List.push (r, res)
+	    else ()
+      in
+	 res
+      end
+   fun all () = !r
+end
 
 local
    fun make f (T r) = f r
