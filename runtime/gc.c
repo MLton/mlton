@@ -2484,6 +2484,22 @@ static void majorGC (GC_state s, W32 bytesRequested, bool mayResize) {
 	assert (s->oldGenSize + bytesRequested <= s->heap.size);
 }
 
+static inline void enterGC (GC_state s) {
+	if (s->profilingIsOn) {
+		if (s->profileStack)
+			GC_profileEnter (s);
+		s->amInGC = TRUE;
+	}
+}
+
+static inline void leaveGC (GC_state s) {
+	if (s->profilingIsOn) {
+		if (s->profileStack)
+			GC_profileLeave (s);
+		s->amInGC = FALSE;
+	}
+}
+
 static void doGC (GC_state s, 
 			W32 oldGenBytesRequested,
 			W32 nurseryBytesRequested, 
@@ -2495,11 +2511,7 @@ static void doGC (GC_state s,
 	struct rusage ru_start;
 	W64 totalBytesRequested;
 	
-	if (s->profilingIsOn) {
-		if (s->profileStack)
-			GC_profileEnter (s);
-		s->amInGC = TRUE;
-	}
+	enterGC (s);
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Starting gc.  Request %s nursery bytes and %s old gen bytes.\n",
 				uintToCommaString (nurseryBytesRequested),
@@ -2540,11 +2552,7 @@ static void doGC (GC_state s,
 		GC_display (s, stderr);
 	assert (hasBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 	assert (invariant (s));
-	if (s->profilingIsOn) {
-		if (s->profileStack)
-			GC_profileLeave (s);
-		s->amInGC = FALSE;
-	}
+	leaveGC (s);
 }
 
 /* ensureFree (s, b) ensures that upon return
@@ -4022,11 +4030,17 @@ void GC_unpack (GC_state s) {
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Unpacking heap of size %s.\n",
 				uintToCommaString (s->heap.size));
+	/* The enterGC is needed here because minorGC and resizeHeap might move
+	 * the stack, and the SIGPROF catcher would then see a bogus stack.  The
+ 	 * leaveGC has to happen after the setStack.
+	 */
+	enterGC (s);
 	minorGC (s);
 	resizeHeap (s, s->oldGenSize);
 	resizeHeap2 (s);
 	setNursery (s, 0, 0);
 	setStack (s);
+	leaveGC (s);
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Unpacked heap to size %s.\n",
 				uintToCommaString (s->heap.size));
