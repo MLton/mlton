@@ -105,14 +105,12 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 		     if Char.isDigit c
 			then success (digitStar ([charToDigit c], state))
 		     else failure ()
-	    (* The exponent may be too large to represent as an Int.int, in
-	     * which case the computation of the exponent from the digits will
-	     * overflow.  In that case, the right answer is INF.
-	     *)
-	    exception Inf of 'a
-	    fun digitsToInt ds = List.foldl (fn (d, n) => n * 10 + d) 0 ds
 	    (* [+~-]?[0-9]+ *)
-	    fun afterE (state: 'a, failure, success) =
+	    type exp = {digits: int list, negate: bool}
+	    fun 'b afterE (state: 'a,
+			   failure: unit -> 'b,
+			   success: exp * 'a -> 'b)
+	       : 'b =
 	       case reader state of
 		  NONE => failure ()
 		| SOME (c, state) =>
@@ -120,26 +118,15 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 			fun neg () =
 			   digitPlus (state, failure,
 				      fn (ds, state) =>
-				      let
-					 val exp =
-					    Int.~ (digitsToInt ds)
-					    handle Overflow =>
-					       raise Inf state
-				      in
-					 success (exp, state)
-				      end)
+				      success ({digits = ds, negate = true},
+					       state))
 		     in
 			case c of
 			   #"+" => digitPlus (state, failure,
 					      fn (ds, state) =>
-					      let
-						 val exp =
-						    digitsToInt ds
-						    handle Overflow =>
-						       raise Inf state
-					      in
-						 success (exp, state)
-					      end)
+					      success ({digits = ds,
+							negate = false},
+						       state))
 			 | #"~" => neg ()
 			 | #"-" => neg ()
 			 | _ =>
@@ -148,11 +135,9 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 				    let
 				       val (ds, state) =
 					  digitStar ([charToDigit c], state)
-				       val exp =
-					  digitsToInt ds
-					  handle Overflow => raise Inf state
 				    in
-				       success (exp, state)
+				       success ({digits = ds, negate = false},
+						state)
 				    end
 			      else failure ()
 		     end
@@ -165,11 +150,15 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 			#"e" => afterE (state, failure, success)
 		      | _ => failure ()
 	    (* (\.[0-9]+)(e[+~-]?[0-9]+)? *)
-	    fun afterDot (state, failure, success) =
+	    fun 'b afterDot (state: 'a,
+			     failure: unit -> 'b,
+			     success: int list * exp * 'a -> 'b) =
 	       digitPlus (state, failure,
 			  fn (frac, state) =>
 			  exp (state,
-			       fn () => success (frac, 0, state),
+			       fn () => success (frac,
+						 {digits = [], negate = false},
+						 state),
 			       fn (e, state) => success (frac, e, state)))
 	    fun stripLeadingZeros (ds: int list): int * int list =
 	       let
@@ -185,10 +174,19 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 	       end
 	    fun stripTrailingZeros ds =
 	       rev (#2 (stripLeadingZeros (rev ds)))
-	    fun done (whole: int list, frac: int list, exp: int, state) =
+	    fun done (whole: int list,
+		      frac: int list,
+		      {digits: int list, negate: bool},
+		      state: 'a) =
 	       let
 		  val (_, il) = stripLeadingZeros whole
 		  val fl = stripTrailingZeros frac
+		  fun exp (): int =
+		     let
+			val e = List.foldl (fn (d, n) => n * 10 + d) 0 digits
+		     in
+			if negate then Int.~ e else e
+		     end
 		  val da =
 		     case il of
 			[] =>
@@ -203,12 +201,12 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 				  in
 				     {class = NORMAL,
 				      digits = fl,
-				      exp = exp - m,
+				      exp = exp () - m,
 				      sign = false}
 				  end)
 		      | _ => {class = NORMAL,
 			      digits = stripTrailingZeros (il @ fl),
-			      exp = exp + length il,
+			      exp = exp () + length il,
 			      sign = false}
 	       in
 		  SOME (da, state)
@@ -248,7 +246,9 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 			   let
 			      val (whole, state) =
 				 digitStar ([charToDigit c], state)
-			      fun no () = done (whole, [], 0, state)
+			      fun no () = done (whole, [],
+						{digits = [], negate = false},
+						state)
 			   in
 			      case reader state of
 				 NONE => no ()
@@ -265,14 +265,7 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 				     | _ => no ()
 			   end
 		     else NONE
-	    val normal' =
-	       fn z =>
-	       normal' z
-	       handle Inf state => SOME ({class = INF,
-					  digits = [],
-					  exp = 0,
-					  sign = false},
-					 state)
+	    val normal' = fn z => normal' z handle Overflow => NONE
 	    fun normal state =
 	       case reader state of
 		  NONE => NONE

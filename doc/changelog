@@ -1,5 +1,9 @@
 Here are the changes since version 20030716.
 
+* 2004-01-20
+  - Fixed a bug in IEEEReal.{fromString,scan}, which would improperly
+    return INF instead of ZERO for things like "0.0000e123456789012345".
+
 * 2004-01-05
   - Removed option -may-load-world.  You can now use -runtime
     no-load-world instead.
