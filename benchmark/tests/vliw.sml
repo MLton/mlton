@@ -4,7 +4,7 @@ fun print _ = ()
    
 signature BMARK =
   sig
-    val doit : unit -> unit
+    val doit : int -> unit
     val testit : TextIO.outstream -> unit
   end;
 
@@ -3683,13 +3683,13 @@ structure Main : BMARK =
       open Main
 
       val doit =
-	    fn () =>
+	    fn n =>
 	    let
 	       fun loop n =
 		  if n = 0
 		     then ()
 		  else (doit();
 			loop(n-1))
-	    in loop 150
+	    in loop n
 	    end
    end

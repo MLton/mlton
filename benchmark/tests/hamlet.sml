@@ -22883,7 +22883,7 @@ structure Main =
 
 structure Main =
    struct
-      fun doit () =
+      fun doit size =
 	 let
 	    open TextIO
 	    fun loop n =
@@ -22895,7 +22895,7 @@ structure Main =
 		     val _ = Main.main' ["-x"]
 		  in loop (n - 1)
 		  end
-	    val _ = loop 50
-	 in ()
+	 in 
+	    loop size
 	 end
    end

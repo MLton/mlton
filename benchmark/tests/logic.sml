@@ -338,7 +338,7 @@ solitaire (STR(cons_s, [STR(cons_s, [CON_x_s, STR(cons_s, [CON_x_s, STR(cons_s, 
 end; (* Data *)
 signature BMARK =
   sig
-    val doit : unit -> unit
+    val doit : int -> unit
     val testit : TextIO.outstream -> unit
   end;
 (* main.sml *)
@@ -356,14 +356,14 @@ structure Main : BMARK =
 	  handle Done => ()
 
     val doit =
-       fn () =>
+       fn size =>
        let
 	  fun loop n =
 	     if n = 0
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 40
+       in loop size
        end
 
   end; (* Main *)

@@ -19,7 +19,7 @@ fun usage msg =
 val doHtml = ref false
 val doOnce = ref false
 val runArgs : string list ref = ref []
-
+   
 fun withInput (file, f: unit -> 'a): 'a =
    let
       open FileDesc
@@ -85,7 +85,60 @@ in
 	 else loop (0, Time.zero)
       end
 end
-   
+
+val benchCounts: (string * int * int) list =
+   [("barnes-hut", 4096, 1024),
+    ("boyer", 1500, 500),
+    ("checksum", 1500, 150),
+    ("count-graphs", 3, 1),
+    ("DLXSimulator", 50, 15),
+    ("fft", 256, 128),
+    ("fib", 6, 1),
+    ("hamlet", 50, 5),
+    ("imp-for", 1000, 300),
+    ("knuth-bendix", 500, 100),
+    ("lexgen", 300, 50),
+    ("life", 3, 1),
+    ("logic", 40, 7),
+    ("mandelbrot", 2, 1),
+    ("matrix-multiply", 2, 2),
+    ("md5", 3, 1),
+    ("merge", 2000, 500),
+    ("mlyacc", 500, 150),
+    ("model-elimination", 0, 0),
+    ("mpuz", 20, 5),
+    ("nucleic", 500, 150),
+    ("peek", 1000, 100),
+    ("psdes-random", 3, 1),
+    ("ratio-regions", 512, 256),
+    ("ray", 100, 30),
+    ("raytrace", 10, 3),
+    ("simple", 100, 20),
+    ("smith-normal-form", 6, 1),
+    ("tailfib", 200, 60),
+    ("tak", 2, 1),
+    ("tensor", 3, 1),
+    ("tsp", 4, 1),
+    ("tyan", 80, 13),
+    ("vector-concat", 10, 2),
+    ("vector-rev", 10, 2),
+    ("vliw", 150, 30),
+    ("wc-input1", 4000, 1000),
+    ("wc-scanStream", 3000, 1000),
+    ("zebra", 15, 3),
+    ("zern", 2000, 500)]
+
+val benchCount =
+   String.memoize
+   (fn s =>
+    case List.peek (benchCounts, fn (b, _, _) => b = s) of
+       NONE => Error.bug (concat ["no benchCount for ", s])
+     | SOME (_, x86, sparc) =>
+	  Int.toString
+	  (case MLton.Platform.arch of
+	      MLton.Platform.Sparc => sparc
+	    | MLton.Platform.X86 => x86))
+
 fun compileSizeRun {command, exe, doTextPlusData: bool} =
    Escape.new
    (fn e =>
@@ -165,7 +218,8 @@ fun njCompile {bench} =
 	       (out,
 		concat
 		["in val _ = SMLofNJ.exportFn (\"", bench,
-		 "\", fn _ =>\n (Main.doit () ; OS.Process.success))\nend\n"]
+		 "\", fn _ =>\n", "(Main.doit ", benchCount bench, ")",
+		 "; OS.Process.success))\nend\n"]
 		 ))),
            fn input => withInput (input, fn () => timeIt (Explicit {args = [],
 								    com = sml})))
@@ -214,14 +268,14 @@ fun polyCompile {bench} =
 	let
 	   val _ = File.copy (originalDbase, dbase)
 	   val original = File.size dbase
-
 	   val {system, user} =
 	      File.withTempOut
 	      (fn out =>
 	       Out.output
 	       (out,
 		concat ["use \"", bench, ".sml\" handle _ => PolyML.quit ();\n",
-			"if PolyML.commit() then () else (Main.doit(); ());\n",
+			"if PolyML.commit() then () else ",
+			"(Main.doit ", benchCount bench, "; ());\n",
 			"PolyML.quit();\n"]),
 	       fn input =>
 	       withInput
@@ -511,7 +565,9 @@ fun main args =
 			 File.withOut
 			 (batch bench, fn out =>
 			  (File.outputContents (concat [bench, ".sml"], out)
-			   ; Out.output (out, "val _ = Main.doit ()\n")))
+			   ; Out.output (out, concat ["val _ = Main.doit ",
+						      benchCount bench,
+						      "\n"])))
 		      val foundOne = ref false
 		      val res =
 			 List.fold

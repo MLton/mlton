@@ -2937,7 +2937,7 @@ fun test_operator new list_op list_sizes =
 
 structure Main =
    struct
-      fun doit() =
+      fun one() =
 	 let
 	    val _ =
 	       let val operators = [(20, RTensor.+), (20, RTensor.* ), (20, RTensor./),
@@ -2946,7 +2946,7 @@ structure Main =
 		  fun constructor size = RTensor.new([size,size],1.0)
 	       in
 		  print "Real tensors: (+, *, /, +*, *+)\n";
-		  test_operator constructor operators [100,200,300,400,500,600];
+		  test_operator constructor operators [100,200,300,400,500];
 		  print "\n\n"
 	       end
 	    
@@ -2957,9 +2957,15 @@ structure Main =
 	    fun constructor size = CTensor.new([size,size],CNumber.one)
 	 in
 	    print "Real tensors: (+, *, /, +*, *+)\n";
-	    test_operator constructor operators [100,200,300,400,500,600];
+	    test_operator constructor operators [100,200,300,400,500];
 	    print "\n\n"
 	 end
 	 in ()
 	 end
+
+      fun doit n =
+	 if n = 0
+	    then ()
+	 else (one ()
+	       ; doit (n - 1))
    end

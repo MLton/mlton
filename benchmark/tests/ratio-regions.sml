@@ -586,9 +586,9 @@ fun rao_ratio_region(c_right, c_down, w, lg_max_v) =
 
 in
 
-fun doit() = 
-   let val height = 512
-      val width = 512
+fun doit n = 
+   let val height = n
+      val width = n
       val lg_max_v = 15
       val c_right = make_matrix(height, width - 1, ~1)
       val c_down = make_matrix(height - 1, width, ~1)

@@ -2,7 +2,7 @@
 
 structure Main =
    struct
-      fun doit () =
+      fun doit n =
 	 let
 	    open TextIO
 	    val f = OS.FileSys.tmpName ()
@@ -35,7 +35,7 @@ structure Main =
 	    val rec loop =
 	       fn 0 => ()
 		| n => (wc f; loop (n - 1))
-	    val _ = loop 3000
+	    val _ = loop n
 	    val _ = OS.FileSys.remove f
 	 in ()
 	 end

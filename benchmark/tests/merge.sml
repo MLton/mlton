@@ -10,7 +10,7 @@ fun merge (l1: int list, l2) =
       
 structure Main =
    struct
-      fun doit () =
+      fun doit size =
 	 let
 	    val len = 100000
 	    val l1 = List.tabulate (len, fn i => i * 2)
@@ -25,6 +25,7 @@ structure Main =
 	       if n = 0
 		  then ()
 	       else (test (); loop (n - 1))
-	 in loop 2000
+	 in
+	    loop size
 	 end
    end

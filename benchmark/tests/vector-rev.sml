@@ -11,7 +11,7 @@ structure Main =
 	    tabulate (n, fn i => sub (v, n - 1 - i))
 	 end
 
-      fun doit () =
+      fun doit n =
 	 let
 	    val v = tabulate (200000, fn i => i)
 	    fun loop n =
@@ -21,6 +21,6 @@ structure Main =
 		  if 0 = sub (rev (rev v), 0)
 		     then loop (n - 1)
 		  else raise Fail "bug"
-	 in loop 10000
+	 in loop (n * 1000)
 	 end
    end

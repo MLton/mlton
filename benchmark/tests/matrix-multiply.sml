@@ -37,23 +37,23 @@ structure Main =
    struct
       fun doit () =
 	 let
-	    val dim = 1000
+	    val dim = 500
 	    val a = Array.tabulate Array.RowMajor (dim, dim, fn (r, c) =>
 						   Real.fromInt (r + c))
 	 in
-	    if Real.== (332833500.0, Array2.sub (mult (a, a), 0, 0))
+	    if Real.== (41541750.0, Array2.sub (mult (a, a), 0, 0))
 	       then ()
 	    else raise Fail "bug"
 	 end
       
       val doit =
-	 fn () =>
+	 fn size =>
 	 let
 	    fun loop n =
 	       if n = 0
 		  then ()
 	       else (doit ();
 		     loop (n-1))
-	 in loop 1
+	 in loop size
 	 end
    end

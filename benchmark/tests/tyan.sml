@@ -998,7 +998,7 @@ fun report (e as Tabulate) = (print "exn: Tabulate\n"; raise e)
 
 structure Main =
    struct
-      fun doit () =
+      fun doit n =
 	 let
 	    val u6 =
 	       map G.parsePoly
@@ -1011,6 +1011,6 @@ structure Main =
 		  then ()
 	       else (gb u6; loop (n - 1))
 	 in
-	    loop 80
+	    loop n
 	 end
    end

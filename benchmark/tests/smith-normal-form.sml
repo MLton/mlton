@@ -379,20 +379,20 @@ fun show m = print (Matrix.toString (m, IntInf.toString))
 structure Main =
    struct
       fun snf() =
-	 let val dim = 41
+	 let val dim = 35
 	    val big = Matrix.map (Matrix.make (dim, dim, f), IntInf.fromInt)
 	    val entry = Matrix.fetch(smithNormalForm big, dim - 1, dim - 1)
 (*	    val _ = print (concat [IntInf.toString entry, "\n"]) *)
 	 in if entry = valOf (IntInf.fromString
-			      "~5982287446743594366320025265358994041861754680646118986")
+			      "~1027954043102083189860753402541358641712697245")
 	       then ()
 	    else raise Fail "bug"
 	 end
-      fun doit() =
+      fun doit n =
 	 let
 	    val rec loop =
 	       fn 0 => ()
 		| n => (snf(); loop(n - 1))
-	 in loop 1
+	 in loop n
 	 end
    end

@@ -424,7 +424,7 @@ structure Interface =
 
 signature BMARK =
   sig
-    val doit : unit -> unit
+    val doit : int -> unit
     val testit : TextIO.outstream -> unit
   end;
 (* main.sml
@@ -437,7 +437,7 @@ signature BMARK =
 structure Main : BMARK =
   struct
 
-    fun doit () =
+    fun doit n =
        let
 	  fun loop n =
 	     if n = 0
@@ -452,7 +452,7 @@ structure Main : BMARK =
 		   loop (n - 1)
 		end
        in
-	  loop 100
+	  loop n
        end
 
     fun testit _ = ()

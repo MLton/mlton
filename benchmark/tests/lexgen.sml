@@ -1,7 +1,7 @@
 (* From the SML/NJ benchmark suite. *)
 signature BMARK =
   sig
-    val doit : unit -> unit
+    val doit : int -> unit
     val testit : TextIO.outstream -> unit
   end;
 (*  Lexical analyzer generator for Standard ML.
@@ -1311,14 +1311,14 @@ structure Main : BMARK =
     val s = OS.FileSys.getDir()
     fun doit () = LexGen.lexGen (s^"/DATA/ml.lex");
     val doit =
-       fn () =>
+       fn size =>
        let
 	  fun loop n =
 	     if n = 0
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 300
+       in loop size
        end
 
     fun testit _ = LexGen.lexGen (s^"DATA/ml.lex")

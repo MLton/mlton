@@ -2,8 +2,7 @@
 fun print _ = ()
 signature BMARK =
   sig
-    val doit : unit -> unit
-    val testit : TextIO.outstream -> unit
+    val doit : int -> unit
   end;
 structure Main: BMARK = struct
 
@@ -292,20 +291,7 @@ fun test np =
 fun loop_np i np = if i > 15 then () else
   (test np; loop_np (i+1) (np*2))
 
-fun doit () = loop_np 1 256
-
-fun testit outstream = doit()
-
-   	 val doit =
-	    fn () =>
-	    let
-	       fun loop n =
-		  if n = 0
-		     then ()
-		  else (doit();
-			loop(n-1))
-	    in loop 1
-	    end
+fun doit size = loop_np 1 size
 
 end
 end;

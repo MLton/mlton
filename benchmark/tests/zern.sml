@@ -600,5 +600,5 @@ end
 
 structure Main =
    struct
-      fun doit() = MSpeed.ztest 2000
+      fun doit n = MSpeed.ztest n
    end

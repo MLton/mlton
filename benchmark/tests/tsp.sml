@@ -479,14 +479,14 @@ structure Main : sig
     fun doit () = doit' (!problemSz)
 
     val doit =
-       fn () =>
+       fn n =>
        let
 	  fun loop n =
 	     if n = 0
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 4
+       in loop n
        end
 
   end

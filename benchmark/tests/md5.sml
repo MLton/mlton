@@ -256,7 +256,7 @@ structure Test =
     in List.app f tests
     end
     val BLOCK_LEN = 10000
-    val BLOCK_COUNT = 1000000
+    val BLOCK_COUNT = 100000
     fun time_test () = let
       val block = Word8Vector.tabulate (BLOCK_LEN,Word8.fromInt)
       fun loop (n,s) =
@@ -270,5 +270,9 @@ structure Test =
 
 structure Main =
    struct
-      val doit = Test.time_test
+      fun doit n =
+	 if n = 0
+	    then ()
+	 else (Test.time_test ()
+	       ; doit (n - 1))
    end

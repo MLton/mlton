@@ -44,7 +44,7 @@ structure Main =
 	 in ()
 	 end
 
-      fun doit () =
+      fun doit size =
 	 let
 	    fun loop i =
 	       if i = 0

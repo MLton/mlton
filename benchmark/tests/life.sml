@@ -1,7 +1,7 @@
 (* From the SML/NJ benchmark suite. *)
 signature BMARK =
   sig
-    val doit : unit -> unit
+    val doit : int -> unit
     val testit : TextIO.outstream -> unit
   end;
 structure Main : BMARK = 
@@ -139,17 +139,17 @@ structure Main : BMARK =
 
     fun show pr = (app (fn s => (pr s; pr "\n"))) o plot o alive
 
-    fun doit () = show (fn _ => ()) (nthgen gun 250000)
+    fun doit () = show (fn _ => ()) (nthgen gun 25000)
 
     val doit =
-       fn () =>
+       fn size =>
        let
 	  fun loop n =
 	     if n = 0
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 1
+       in loop size
        end
     
     fun testit strm = show (fn c => TextIO.output (strm, c)) (nthgen gun 50)

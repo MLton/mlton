@@ -8583,7 +8583,7 @@ end
 structure Main =
 struct
 
-fun main () =
+fun main _ =
 let
 
 val () = app load

@@ -2375,13 +2375,13 @@ structure Main =
 	 handle _ => ()
 
       val doit =
-	 fn () =>
+	 fn n =>
 	 let
 	    fun loop n =
 	       if n = 0
 		  then ()
 	       else (doit();
 		     loop(n-1))
-	 in loop 10
+	 in loop n
 	 end
    end

@@ -7270,7 +7270,7 @@ end
 
 signature BMARK =
   sig
-    val doit : unit -> unit
+    val doit : int -> unit
     val testit : TextIO.outstream -> unit
   end;
 (* main.sml
@@ -7279,14 +7279,14 @@ signature BMARK =
 structure Main : BMARK =
   struct
     val s = OS.FileSys.getDir()
-    fun doit() =
+    fun doit size =
        let
 	  fun loop n =
 	     if n = 0
 		then ()
 	     else (ParseGen.parseGen(s^"/DATA/ml.grm");
 		   loop(n - 1))
-       in loop 500
+       in loop size
        end
     fun testit _ = ParseGen.parseGen(s^"/DATA/ml.grm")
   end

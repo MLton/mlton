@@ -2,7 +2,7 @@
 
 structure Main =
    struct
-      fun doit () =
+      fun doit n =
 	 let
 	    val len = 20000
 	    val sum = len * (len - 1)
@@ -14,7 +14,6 @@ structure Main =
 		  if sum = Vector.foldl (op +) 0 (Vector.concat [v, v])
 		     then loop (n - 1)
 		  else raise Fail "bug"
-	    val numTrials = 100000
-	 in loop numTrials
+	 in loop (n * 10000)
 	 end
    end

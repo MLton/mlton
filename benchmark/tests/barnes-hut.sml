@@ -1236,11 +1236,11 @@ structure Main : BMARK =
 
     fun testit strm = ()
 
-    fun doit () = (
+    fun doit n = (
 	  M3.srand 123;
 	  M3.go {
 	      output = fn _ => (),
-	      bodies = M3.testdata 4096,
+	      bodies = M3.testdata n,
 	      tnow = 0.0, tstop = 2.0,
 	      dtime = 0.025, eps = 0.05, tol = 1.0,
 	      rmin = M3.S.V.tabulate (fn _ => ~2.0),

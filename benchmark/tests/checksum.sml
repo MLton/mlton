@@ -25,7 +25,7 @@ fun checksum buf = fold checkOne 0w0 buf
 
 structure Main =
    struct
-      fun doit () =
+      fun doit n =
 	 let
 	    val first = 0
 	    val size = 10000000
@@ -39,6 +39,6 @@ structure Main =
 			val _ = if w <> 0w0 then raise Fail "bug" else ()
 		     in loop (n - 1)
 		     end
-	 in loop 1500
+	 in loop n
 	 end
    end

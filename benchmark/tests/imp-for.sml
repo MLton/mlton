@@ -28,5 +28,5 @@ struct
 	  then raise Fail "bug"
 	  else ()
       end
-  val doit = fn () => for (0, 1000, fn _ => doit ())
+  val doit = fn size => for (0, size, fn _ => doit ())
 end

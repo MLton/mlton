@@ -3653,13 +3653,14 @@ structure Main : BMARK =
      val doit = Nucleic.doit
        
     val doit =
-       fn () =>
+       fn size =>
        let
 	  fun loop n =
 	     if n = 0
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 500
+       in
+	  loop size
        end
   end;

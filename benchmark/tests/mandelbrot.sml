@@ -2,7 +2,7 @@
 
 signature BMARK =
   sig
-    val doit : unit -> unit
+    val doit : int -> unit
     val testit : TextIO.outstream -> unit
   end;
 (* mandelbrot.sml *)
@@ -57,14 +57,14 @@ structure Main : BMARK =
     fun doit () = (sum_iterations := 0; loop1 0)
 
     val doit =
-       fn () =>
+       fn size =>
        let
 	  fun loop n =
 	     if n = 0
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 2
+       in loop size
        end
     fun testit outstrm = (
 	  sum_iterations := 0;

@@ -919,13 +919,13 @@ val term =
 structure Main =
   struct
     val doit = 
-       fn () =>
+       fn n =>
        let
 	  fun loop n =
 	     if n = 0
 	        then ()
 	     else (Main.doit ();
 		   loop(n-1))
-       in loop 1500
+       in loop n
        end
   end;

@@ -7,9 +7,9 @@ fun tak (x,y,z) =
 
 val rec f =
    fn 0 => ()
-    | n => (tak (36,24,12); f (n-1))
+    | n => (tak (33,22,11); f (n-1))
 
 structure Main =
    struct
-      fun doit () = f 1
+      val doit = f
    end

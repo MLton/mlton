@@ -1,7 +1,7 @@
 (* From the SML/NJ benchmark suite. *)
 signature BMARK =
   sig
-    val doit : unit -> unit
+    val doit : int -> unit
     val testit : TextIO.outstream -> unit
   end;
 (* knuth-bendix.sml
@@ -587,14 +587,14 @@ fun Group_precedence op1 op2 =
     fun doit() = kb_complete greater [] Geom_rules
 
     val doit =
-       fn () =>
+       fn size =>
        let
 	  fun loop n =
 	     if n = 0
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 500
+       in loop size
        end
     
     fun testit _ = ()

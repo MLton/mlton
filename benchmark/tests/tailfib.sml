@@ -11,13 +11,13 @@ structure Main =
 	 else ()
 
       val doit =
-	fn () =>
+	fn n =>
 	let
 	  fun loop n =
 	    if n = 0
 	      then ()
 	      else (doit();
 		    loop(n-1))
-	in loop 200000000
+	in loop (n * 1000000)
 	end
    end

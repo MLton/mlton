@@ -2,7 +2,8 @@
 (*
  * Random number generator based on page 302 of Numerical Recipes in C.
  *)
-local
+fun once () =      
+   let
    fun natFold (start, stop, ac, f) =
       let
 	 fun loop (i, ac) =
@@ -36,7 +37,6 @@ local
    val lword: word ref = ref 0w13
    val irword: word ref = ref 0w14
    val needTo = ref true
-in
    fun word () =
       if !needTo
 	 then
@@ -50,19 +50,24 @@ in
 	    end
       else (needTo := true
 	    ; !irword)
-end
+   fun loop (i, w) =
+      if i = 0
+	 then
+	    if w = 0wx132B1B67
+	       then ()
+	    else raise Fail "bug"
+      else loop (Int.- (i, 1), w + word())
+   in
+      loop (150000000, 0w0)
+   end
 
 structure Main =
    struct
       fun doit n =
-	 let
-	    fun loop (i, w) =
-	       if i = 0
-		  then
-		     if w = 0wx2373ABE5
-			then ()
-		     else raise Fail "bug"
-	       else loop (i - 1, w + word())
-	 in loop (500000000, 0w0)
-	 end
+	 if n = 0
+	    then ()
+	 else (once ()
+	       ; doit (n - 1))
    end
+
+val _ = Main.doit 2

@@ -286,13 +286,13 @@ fun search () =
 
 structure Main =
    struct
-      fun doit () =
+      fun doit n =
 	 let
 	    fun loop n =
 	       if n < 0
 		  then ()
 	       else (search ()
 		     ; loop (n - 1))
-	 in loop 15000
+	 in loop (n * 1000)
 	 end
    end

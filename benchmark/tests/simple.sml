@@ -916,14 +916,14 @@ fun print_state ((v1,v2),(r,z),alpha,s,rho,p,q,epsilon,theta,deltat,c) = (
 	  end
 
     val doit =
-       fn () =>
+       fn n =>
        let
 	  fun loop n =
 	     if n = 0
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 100
+       in loop n
        end
 
 
