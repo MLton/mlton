@@ -1,4 +1,4 @@
-#!/bin/sh -n
+#!/bin/sh
 
 name=`basename $0`
 
