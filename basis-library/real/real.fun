@@ -333,7 +333,7 @@ functor Real (R: PRE_REAL): REAL =
 		     sign = false}
 	  | c => 
 	       let
-		  val (cs, decpt) = gdtoa (x, Gen, 0)
+		  val (cs, exp) = gdtoa (x, Gen, 0)
 		  fun loop (i, ac) =
 		     if Int.< (i, 0)
 			then ac
@@ -342,7 +342,6 @@ functor Real (R: PRE_REAL): REAL =
 					Char.ord #"0"))
 				:: ac)
 		  val digits = loop (Int.- (C.CS.length cs, 1), [])
-		  val exp = decpt
 	       in
 		  {class = NORMAL,
 		   digits = digits,
@@ -533,146 +532,38 @@ functor Real (R: PRE_REAL): REAL =
    
       val toString = fmt (StringCvt.GEN NONE)
 
-      local
-	 fun negateMode m =
-	    case m of
-	       TO_NEAREST => TO_NEAREST
-	     | TO_NEGINF => TO_POSINF
-	     | TO_POSINF => TO_NEGINF
-	     | TO_ZERO => TO_ZERO
-
-	 val m: int = precision (* The number of mantissa bits in IEEE 854. *)
-	 val half_i = Int.quot (m, 2)
-	 val two_ii = IntInf.fromInt 2
-	 val twoPowHalf_ii = IntInf.pow (two_ii, half_i)
-      in
-	 fun fromLargeInt (i: IntInf.int): real =
+      val fromLargeInt: IntInf.int -> real =
+	 fn i =>
+	 fromInt (IntInf.toInt i)
+	 handle Overflow =>
 	    let
-	       fun pos (i: IntInf.int, mode): real = 
-		  case SOME (IntInf.log2 i) handle Overflow => NONE of
-		     NONE => posInf
-		   | SOME exp =>
-			if Int.< (exp, Int.- (valOf Int.precision, 1))
-			   then fromInt (IntInf.toInt i)
-			else if Int.>= (exp, 1024)
-		           then posInf
-			else
-			   let
-			      val shift = Int.- (exp, m)
-			      val (man: IntInf.int, extra: IntInf.int) =
-				 if Int.>= (shift, 0)
-				    then
-				       let
-					  val (q, r) =
-					     IntInf.quotRem
-					     (i, IntInf.pow (two_ii, shift))
-					  val extra =
-					     case mode of
-						TO_NEAREST =>
-						   if IntInf.> (r, 0)
-						      andalso IntInf.log2 r =
-						      Int.- (shift, 1)
-						      then 1
-						   else 0
-					      | TO_NEGINF => 0
-					      | TO_POSINF =>
-						   if IntInf.> (r, 0)
-						      then 1
-						   else 0
-					      | TO_ZERO => 0
-				       in
-					  (q, extra)
-				       end
-				 else
-				    (IntInf.* (i, IntInf.pow (two_ii, Int.~ shift)),
-				     0)
-			      (* 2^m <= man < 2^(m+1) *)
-			      val (q, r) = IntInf.quotRem (man, twoPowHalf_ii)
-			      fun conv (man, exp) =
-				 fromManExp {man = fromInt (IntInf.toInt man),
-					     exp = exp}
-			   in
-			      conv (q, Int.+ (half_i, shift))
-			      + conv (IntInf.+ (r, extra), shift)
-			   end
-	       val mode = IEEEReal.getRoundingMode ()
+	       val (i, sign) =
+		  if IntInf.< (i, 0)
+		     then (IntInf.~ i, true)
+		  else (i, false)
+	       val x = Prim.strto (concat [IntInf.toString i, "\000"])
 	    in
-	       case IntInf.compare (i, IntInf.fromInt 0) of
-		  General.LESS => ~ (pos (IntInf.~ i, negateMode mode))
-		| General.EQUAL => zero
-		| General.GREATER => pos (i, mode)
+	       if sign then ~ x else x		   
 	    end
-		  
-	 val toLargeInt: IEEEReal.rounding_mode -> real -> IntInf.int =
-	    fn mode => fn x =>
- 	    (IntInf.fromInt (toInt mode x)
- 	     handle Overflow =>
-	     case class x of
-		INF => raise Overflow
-	      | _ => 
-		   let
-		      fun pos (x, mode) =
-			 let 
-			    val {frac, whole} = split x
-			    val extra =
-			       if mode = TO_NEAREST
-				  andalso half == frac
-				  then
-				     if half == realMod (whole / two)
-					then 1
-				     else 0
-			       else IntInf.fromInt (toInt mode frac)
-			    val {man, exp} = toManExp whole
-			    (* 1 <= man < 2 *)
-			    val man = fromManExp {man = man, exp = half_i}
-			    (* 2^half <= man < 2^(half+1) *)
-			    val {frac = lower, whole = upper} = split man
-			    val upper = IntInf.* (IntInf.fromInt (floor upper),
-						  twoPowHalf_ii)
-			    (* 2^m <= upper < 2^(m+1) *)
-			    val {whole = lower, ...} =
-			       split (fromManExp {man = lower, exp = half_i})
-			    (* 0 <= lower < 2^half *)
-			    val lower = IntInf.fromInt (floor lower)
-			    val int = IntInf.+ (upper, lower)
-			    (* 2^m <= int < 2^(m+1) *)
-			    val shift = Int.- (exp, m)
-			    val int =
-			       if Int.>= (shift, 0)
-				  then IntInf.* (int, IntInf.pow (2, shift))
-			       else IntInf.quot (int,
-						 IntInf.pow (2, Int.~ shift))
-			 in
-			    IntInf.+ (int, extra)
-			 end
-		   in
-		      if x > zero
-			 then pos (x, mode)
-		      else IntInf.~ (pos (~ x, negateMode mode))
-		   end)
-      end
-
+	 
       val toLargeInt: IEEEReal.rounding_mode -> real -> LargeInt.int =
 	 fn mode => fn x =>
 	 case class x of
 	    INF => raise Overflow
 	  | NAN => raise Domain
-	  | ZERO => IntInf.fromInt 0
+	  | ZERO => 0
 	  | _ =>
 	       IntInf.fromInt (toInt mode x)
 	       handle Overflow =>
 		  let
 		     val x =
 			IEEEReal.withRoundingMode (mode, fn () => Prim.round x)
-		     val {digits, exp, sign, ...} = toDecimal x
-		     val i =
-			valOf
-			(IntInf.fromString
-			 (implode (List.map (fn d =>
-					     Char.chr (Int.+ (d, Char.ord #"0")))
-				   digits)))
+		     val (x, sign) = if x < zero then (~ x, true) else (x, false)
+		     val (digits, exp) = gdtoa (x, Gen, 0)
+		     val digits = C.CS.toString digits
+		     val i = valOf (IntInf.fromString digits)
 		     val i = if sign then IntInf.~ i else i
 		  in
-		     IntInf.* (i, IntInf.pow (IntInf.fromInt 10, exp))
+		     IntInf.* (i, IntInf.pow (10, Int.- (exp, size digits)))
 		  end
    end
