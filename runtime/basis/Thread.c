@@ -24,7 +24,7 @@ void Thread_setHandler(Thread t) {
 	gcState.signalHandler = (GC_thread)t;
 }
 
-void Thread_switchTo (Thread thread, W32 ensureBytesFree) {
+void Thread_switchTo (Thread thread, Word ensureBytesFree) {
 	GC_state s;
 
 	if (FALSE)

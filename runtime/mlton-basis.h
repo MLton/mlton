@@ -8,7 +8,7 @@ typedef char Char;
 typedef double Double;
 typedef int Int;
 typedef char *Pointer;
-typedef unsigned int Word;
+typedef unsigned long Word;
 
 /* Here are some type abbreviations for abstract machine types. */
 typedef Int Bool;
@@ -248,7 +248,7 @@ Thread Thread_current();
 void Thread_finishHandler();
 Thread Thread_saved();
 void Thread_setHandler(Thread t);
-void Thread_switchTo (Thread t, W32 ensureBytesFree);
+void Thread_switchTo (Thread t, Word ensureBytesFree);
 
 /* ------------------------------------------------- */
 /*                       Time                        */
