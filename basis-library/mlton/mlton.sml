@@ -74,3 +74,22 @@ structure Word = Primitive.Word32
 structure Word8 = Primitive.Word8
 
 end
+
+(* Patch OS.FileSys.tmpName to use mkstemp. *)
+structure OS =
+   struct
+      open OS
+
+      structure FileSys =
+	 struct
+	    open FileSys
+
+	    fun tmpName () =
+	       let
+		  val (f, out) = MLton.TextIO.mkstemp "/tmp/file"
+		  val _ = TextIO.closeOut out
+	       in
+		  f
+	       end
+	 end
+   end

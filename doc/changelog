@@ -2,6 +2,8 @@ Here are the changes since version 20030716.
 
 * 2003-09-06
   - Int64 is completely there.
+  - Fixed OS.FileSys.tmpName so that it creates the file, and doesn't
+    use tmpnam.  This eliminates an annoying linker warning message.
 
 * 2003-09-05
   - Added structures {LargeInt,LargeReal,LargeWord,Word}

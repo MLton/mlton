@@ -119,12 +119,7 @@ structure OS_FileSys: OS_FILE_SYS =
 	 end
 
       (* modified by sweeks *)
-      fun tmpName(): string =
-	 let val cs = Prim.tmpnam()
-	 in if Primitive.Cpointer.isNull cs
-	       then PosixError.error()
-	    else C.CS.toString cs
-	 end
+      val tmpName = fn _ => raise Fail "tmpName unimplemented"
 
       datatype file_id = FID of {dev: SysWord.word, ino: SysWord.word}
 
