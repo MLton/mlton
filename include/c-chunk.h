@@ -86,17 +86,26 @@ extern Pointer globalpointerNonRoot[];
 /*                       Chunk                       */
 /* ------------------------------------------------- */
 
+#if (defined (__sun__) && defined (REGISTER_FRONTIER_STACKTOP))
+#define Chunk(n)						\
+	DeclareChunk(n) {					\
+		struct cont cont;				\
+		register unsigned int frontier asm("g5");	\
+		int l_nextFun = nextFun;			\
+		register unsigned int stackTop asm("g6");
+#else
 #define Chunk(n)				\
 	DeclareChunk(n) {			\
 		struct cont cont;		\
 		Pointer frontier;		\
 		int l_nextFun = nextFun;	\
 		Pointer stackTop;
+#endif
 
 #define ChunkSwitch(n)							\
 		if (DEBUG_CCODEGEN)					\
 			fprintf (stderr, "%s:%d: entering chunk %d  l_nextFun = %d\n",	\
-					__FILE__, __LINE__, n, l_nextFun);	\	
+					__FILE__, __LINE__, n, l_nextFun);	\
 		CacheFrontier();					\
 		CacheStackTop();					\
 		while (1) {						\
