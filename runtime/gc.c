@@ -1060,6 +1060,11 @@ setMemInfo(GC_state s)
 	maxMem = 0x100000000llu - s->pageSize;
 	unless (0 == sysinfo(&sbuf))
 		diee("sysinfo failed");
+	if (0 == sbuf.mem_unit)
+		/* On 2.2 kernels, mem_unit was not defined, but will be zero
+		 * so go ahead and pretend it is one.
+		 */
+		sbuf.mem_unit = 1;
 	tmp = sbuf.mem_unit * (W64)sbuf.totalram;
 	s->totalRam = (tmp > (W64)maxMem) ? maxMem : (W32)tmp;
 	maxMem = maxMem - s->totalRam;
