@@ -1,3 +1,8 @@
+structure Real =
+   struct
+      type real = real
+   end
+
 structure LargeReal =
    struct
       type real = real
@@ -5,8 +10,8 @@ structure LargeReal =
 
 signature REAL_GLOBAL =
    sig
-     structure Math: MATH
      type real
+     structure Math: MATH where type real = real
 
      val ceil: real -> Int.int
      val floor: real -> Int.int 
@@ -18,61 +23,61 @@ signature REAL =
    sig
       include REAL_GLOBAL
 
-      val != : real * real -> bool 
-      val * : real * real -> real 
-      val *+ : real * real * real -> real 
-      val *- : real * real * real -> real 
+      val radix: int 
+      val precision: int 
+      val maxFinite: real 
+      val minPos: real 
+      val minNormalPos: real 
+      val posInf: real 
+      val negInf: real
       val + : real * real -> real 
       val - : real * real -> real 
+      val * : real * real -> real 
       val / : real * real -> real 
-      val < : real * real -> bool 
-      val <= : real * real -> bool 
-      val == : real * real -> bool 
-      val > : real * real -> bool 
-      val >= : real * real -> bool 
-      val ?= : real * real -> bool 
-      val abs: real -> real 
-      val checkFloat: real -> real 
-      val class: real -> IEEEReal.float_class 
+      val rem: real * real -> real 
+      val *+ : real * real * real -> real 
+      val *- : real * real * real -> real 
+      val ~ : real -> real 
+      val abs: real -> real
+      val min: real * real -> real 
+      val max: real * real -> real 
+      val sign: real -> int 
+      val signBit: real -> bool 
+      val sameSign: real * real -> bool 
+      val copySign: real * real -> real 
       val compare: real * real -> order 
       val compareReal: real * real -> IEEEReal.real_order
-      val copySign: real * real -> real 
-      val fmt: StringCvt.realfmt -> real -> string 
-      val fromInt: int -> real 
-      val fromLarge: IEEEReal.rounding_mode -> LargeReal.real -> real 
-      val fromManExp: {man: real, exp: int} -> real 
-      val fromString: string -> real option
+      val < : real * real -> bool 
+      val <= : real * real -> bool 
+      val > : real * real -> bool 
+      val >= : real * real -> bool 
+      val == : real * real -> bool 
+      val != : real * real -> bool 
+      val ?= : real * real -> bool 
+      val unordered: real * real -> bool 
       val isFinite: real -> bool 
       val isNan: real -> bool 
       val isNormal: real -> bool 
-      val max: real * real -> real 
-      val maxFinite: real 
-      val min: real * real -> real 
-      val minNormalPos: real 
-      val minPos: real 
-      val negInf: real
-      val posInf: real 
-      val precision: int 
-      val radix: int 
-      val realCeil: real -> real 
-      val realFloor: real -> real 
-      val realMod: real -> real 
-      val realTrunc: real -> real 
-      val rem: real * real -> real 
-      val sameSign: real * real -> bool 
-      val scan: (char, 'a) StringCvt.reader -> (real, 'a) StringCvt.reader
-      val sign: real -> int 
-      val signBit: real -> bool 
-      val split: real -> {whole: real, frac: real} 
-      val toInt: IEEEReal.rounding_mode -> real -> int 
-      val toLarge: real -> LargeReal.real 
-      val toManExp: real -> {man: real, exp: int} 
+      val class: real -> IEEEReal.float_class 
+      val fmt: StringCvt.realfmt -> real -> string 
       val toString: real -> string 
-      val unordered: real * real -> bool 
-      val ~ : real -> real 
-(*     val nextAfter: real * real -> real *)
-(*     val toLargeInt: IEEEReal.rounding_mode -> real -> LargeInt.int   *)
-(*     val fromLargeInt: LargeInt.int -> real  *)
-(*     val toDecimal: real -> IEEEReal.decimal_approx  *)
-(*     val fromDecimal: IEEEReal.decimal_approx -> real *)
+      val scan: (char, 'a) StringCvt.reader -> (real, 'a) StringCvt.reader
+      val fromString: string -> real option
+      val toManExp: real -> {man: real, exp: int} 
+      val fromManExp: {man: real, exp: int} -> real 
+      val split: real -> {whole: real, frac: real} 
+      val realMod: real -> real 
+(*    val nextAfter: real * real -> real *)
+      val checkFloat: real -> real 
+      val realFloor: real -> real 
+      val realCeil: real -> real 
+      val realTrunc: real -> real 
+      val toInt: IEEEReal.rounding_mode -> real -> int 
+(*    val toLargeInt: IEEEReal.rounding_mode -> real -> LargeInt.int   *)
+      val fromInt: int -> real 
+(*    val fromLargeInt: LargeInt.int -> real  *)
+      val toLarge: real -> LargeReal.real 
+      val fromLarge: IEEEReal.rounding_mode -> LargeReal.real -> real 
+(*    val toDecimal: real -> IEEEReal.decimal_approx  *)
+(*    val fromDecimal: IEEEReal.decimal_approx -> real option *)
    end

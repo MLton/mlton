@@ -9,10 +9,9 @@ structure IEEEReal: IEEE_REAL =
    struct
       exception Unordered
       datatype real_order = LESS | EQUAL | GREATER | UNORDERED
-      datatype nan_mode = QUIET | SIGNALLING
 
       datatype float_class =
-	 NAN of nan_mode 
+	 NAN
        | INF
        | ZERO
        | NORMAL
@@ -42,12 +41,12 @@ structure IEEEReal: IEEE_REAL =
       val setRoundingMode = Prim.setRoundingMode o rounding_modeToInt
       val getRoundingMode = intToRounding_mode o Prim.getRoundingMode
 	       
-      type decimal_approx = {kind: float_class,
+      type decimal_approx = {class: float_class,
 			     sign: bool,
 			     digits: int list,
 			     exp: int}
 
-      fun toString{kind, sign, digits, exp}: string =
+      fun toString {class, sign, digits, exp}: string =
 	 let
 	    fun digitStr() = implode(map StringCvt.digitToChar digits)
 	    fun norm() =
@@ -57,12 +56,12 @@ structure IEEEReal: IEEE_REAL =
 		  else concat[num, "E", Int.toString exp]
 	       end
 	    val num =
-	       case kind of
+	       case class of
 		  ZERO => "0.0"
 		| NORMAL => norm()
 		| SUBNORMAL => norm()
 		| INF => "inf"
-		| NAN _ => concat["nan(", digitStr(), ")"]
+		| NAN => "nan"
 	 in if sign
 	       then "~" ^ num
 	    else num

@@ -72,31 +72,35 @@ structure CharArray2: MONO_ARRAY2 = CharArray2
 structure CharVector: MONO_VECTOR = CharVector
 structure CommandLine: COMMAND_LINE = CommandLine
 structure Date: DATE = Date
-structure FixedInt: INTEGER = Int32
+structure FixedInt:> INTEGER = Int32
 structure General: GENERAL = General
 structure IEEEReal: IEEE_REAL = IEEEReal
-structure Int: INTEGER = Int
-structure Int32: INTEGER = Int32
+structure Int:> INTEGER = Int
+structure Int32:> INTEGER = Int32
 structure IntArray: MONO_ARRAY = IntArray
 structure IntArray2: MONO_ARRAY2 = IntArray2
 structure IntVector: MONO_VECTOR = IntVector
 structure IntInf: INT_INF = IntInf
+(* structure IntInf:> INT_INF = IntInf *)
 structure IO: IO = IO
-structure LargeInt: INTEGER = LargeInt
-structure LargeReal: REAL = LargeReal
-structure LargeWord: WORD = Word
+structure LargeInt:> INTEGER = LargeInt
+structure LargeReal:> REAL = LargeReal
+structure LargeWord:> WORD = Word
 structure List: LIST = List
 structure ListPair: LIST_PAIR = ListPair
 structure Math: MATH = Real.Math
 structure Option: OPTION = Option
 structure OS: OS = OS
-structure PackRealLittle: PACK_REAL = PackReal64Little
-structure PackReal64Little: PACK_REAL = PackReal64Little
-structure Pack32Big: PACK_WORD = Pack32Big
-structure Pack32Little: PACK_WORD = Pack32Little
-structure Position: INTEGER = Position
+structure Pack32Big:> PACK_WORD = Pack32Big
+structure Pack32Little:> PACK_WORD = Pack32Little
+structure Position:> INTEGER = Position
 structure Posix: POSIX = Posix
 structure Real: REAL = Real
+structure PackRealLittle:> PACK_REAL where type real = Real.real = PackRealLittle
+structure Real:> REAL where type real = PackRealLittle.real = Real
+structure Real64: REAL = Real64
+structure PackReal64Little:> PACK_REAL where type real = Real64.real = PackReal64Little
+structure Real64:> REAL where type real = PackReal64Little.real = Real64
 structure RealArray: MONO_ARRAY = RealArray
 structure Real64Array: MONO_ARRAY = RealArray
 structure RealArray2: MONO_ARRAY2 = RealArray2
@@ -105,18 +109,18 @@ structure SML90:> SML90 = SML90
 structure String: STRING = String
 structure StringCvt: STRING_CVT = StringCvt
 structure Substring: SUBSTRING = Substring
-structure SysWord: WORD = SysWord
+structure SysWord:> WORD = SysWord
 structure TextIO:> TEXT_IO = TextIO
 structure Time: TIME = Time
 structure Timer:> TIMER = Timer
 structure Unix: UNIX = Unix
 structure Vector: VECTOR = Vector
-structure Word: WORD = Word
-structure Word8: WORD = Word8
+structure Word:> WORD = Word
+structure Word8:> WORD = Word8
 structure Word8Array: MONO_ARRAY = Word8Array
 structure Word8Array2: MONO_ARRAY2 = Word8Array2
 structure Word8Vector: MONO_VECTOR = Word8Vector
-structure Word32: WORD = Word32
+structure Word32:> WORD = Word32
 
 open
    ArrayGlobal

@@ -7,7 +7,7 @@
  *
  *)
 
-structure Real: REAL =
+structure Real64: REAL =
    struct
       structure Real = Primitive.Real
       open Real IEEEReal
@@ -81,8 +81,8 @@ structure Real: REAL =
       (* See runtime/basis/Real.c for the integers returned by class. *)
       fun class x =
 	 case Real.class x of
-	    0 => NAN QUIET
-	  | 1 => NAN SIGNALLING
+	    0 => NAN (* QUIET *)
+	  | 1 => NAN (* SIGNALLING *)
 	  | 2 => INF
 	  | 3 => ZERO
 	  | 4 => NORMAL
@@ -132,7 +132,7 @@ structure Real: REAL =
 	 let fun doit () = withRoundingMode (mode, fn () =>
 					   Real.toInt (Real.round x))
 	 in case class x of
-	    NAN _ => raise Domain
+	    NAN => raise Domain
 	  | INF => raise Overflow
 	  | ZERO => 0
 	  | NORMAL =>
@@ -179,7 +179,7 @@ structure Real: REAL =
       local
 	 fun round mode x =
 	    case class x of
-	       NAN _ => x
+	       NAN => x
 	     | INF => x
 	     | _ => withRoundingMode (mode, fn () => Real.round x)
       in
@@ -242,7 +242,7 @@ structure Real: REAL =
 		   | EXACT => raise Fail "Real.fmt EXACT unimplemented"
 	    in fn x =>
 	       case class x of
-		  NAN _ => "nan" (* this is wrong *)
+		  NAN => "nan"
 		| INF => if x > 0.0 then "inf" else "~inf"
 		| ZERO => "0.0"
 		| _ => 
@@ -321,6 +321,23 @@ structure Real: REAL =
 		| SOME (#"~", rest) => (false, rest)
 		| _                => (true,  src )
 
+	    fun sym src =
+	       case getc src of
+		  SOME (#"i", restA) => 
+		    (case Reader.reader2 getc restA of
+		       SOME ((#"n", #"f"), restB) =>
+			 SOME (posInf, 
+			       case Reader.readerN (getc, 5) restB of
+				 SOME ([#"i", #"n", #"i", #"t", #"y"], restC) => restC
+			       | _ => restB)
+		     | _ => NONE)
+		| SOME (#"n", restA) =>
+		    (case Reader.reader2 getc restA of
+		       SOME ((#"a", #"n"), restB) =>
+			 SOME (nan, restB)
+		     | _ => NONE)
+		| _ => NONE
+
 	    val src = StringCvt.dropl Char.isSpace getc source
 	    val (manpos, src1) = sign src
 	    val (intg,   src2) = getint src1
@@ -349,14 +366,16 @@ structure Real: REAL =
 	     | (SOME ival, true,  NONE     ) => mkres ival src2
 	     | (SOME ival, false, NONE     ) => expopt ival src2
 	     | (SOME ival, _    , SOME fval) => expopt (ival+fval) src4
-	     | _                             => NONE 
+	     | _                             => (case sym src1 of
+						   SOME (v, rest) => mkres v rest
+						 | NONE => NONE)
 	 end
 
       fun fromString s = StringCvt.scanString scan s
    end
 
+structure Real = Real64   
+structure LargeReal = Real64
 structure RealGlobal: REAL_GLOBAL = Real
 open RealGlobal
 val real = Real.fromInt
-   
-structure LargeReal: REAL = Real
