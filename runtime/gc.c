@@ -4519,15 +4519,6 @@ void GC_done (GC_state s) {
 	heapRelease (s, &s->heap2);
 }
 
-static void signalPending (GC_state s) {
-	if (0 == s->canHandle) {
-		if (DEBUG_SIGNALS)
-			fprintf (stderr, "setting limit = 0\n");
-		s->limit = 0;
-	}
-	s->signalIsPending = TRUE;
-}
-
 void GC_finishHandler (GC_state s) {
 	if (DEBUG_SIGNALS)
 		fprintf (stderr, "GC_finishHandler ()\n");
@@ -4547,7 +4538,9 @@ void GC_handler (GC_state s, int signum) {
 	if (DEBUG_SIGNALS)
 		fprintf (stderr, "GC_handler  signum = %d\n", signum);
 	assert (sigismember (&s->signalsHandled, signum));
-	signalPending (s);
+	if (0 == s->canHandle)
+		s->limit = 0;
+	s->signalIsPending = TRUE;
 	sigaddset (&s->signalsPending, signum);
 	if (DEBUG_SIGNALS)
 		fprintf (stderr, "GC_handler done\n");
