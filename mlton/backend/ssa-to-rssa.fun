@@ -886,7 +886,24 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					 valOf (toRtype ty)))
 			     | ConRep.Tuple rep =>
 				  allocate (args, rep))
-		      | S.Exp.Const c => move (Operand.Const c)
+		      | S.Exp.Const c =>
+			   let
+			      datatype z = datatype Const.t
+			      val c =
+				 case c of
+				    Int i =>
+				       Int (IntX.make (IntX.toIntInf i,
+						       IntSize.roundUpToPrim
+						       (IntX.size i)))
+				  | Word w =>
+				       Word (WordX.fromIntInf
+					     (WordX.toIntInf w,
+					      WordSize.roundUpToPrim
+					      (WordX.size w)))
+				  | _ => c
+			   in
+			      move (Operand.Const c)
+			   end
 		      | S.Exp.PrimApp {prim, targs, args, ...} =>
 			   let
 			      fun a i = Vector.sub (args, i)

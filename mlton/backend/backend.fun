@@ -372,10 +372,7 @@ fun toMachine (program: Ssa.Program.t) =
 	       datatype z = datatype Const.t
 	    in
 	       case c of
-		  Int i =>
-		     M.Operand.Int
-		     (IntX.make (IntX.toIntInf i,
-				 IntSize.roundUpToPrim (IntX.size i)))
+		  Int i => M.Operand.Int i
 		| IntInf i =>
 		     (case Const.SmallIntInf.toWord i of
 			 NONE => globalIntInf i
@@ -384,10 +381,7 @@ fun toMachine (program: Ssa.Program.t) =
 		     if !Control.Native.native
 			then globalReal r
 		     else M.Operand.Real r
-		| Word w =>
-		     M.Operand.Word
-		     (WordX.fromIntInf (WordX.toIntInf w,
-					WordSize.roundUpToPrim (WordX.size w)))
+		| Word w => M.Operand.Word w
 		| Word8Vector v => globalString (Word8.vectorToString v)
 	    end
       end
