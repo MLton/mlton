@@ -49,7 +49,7 @@ FPBENCH = barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace 
 
 BFLAGS = -mlton "/usr/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
 BFLAGS = -mlton "mlton"
-BFLAGS = -html -mlton "mlton" -mlkit -mosml -poly -smlnj
+BFLAGS = -html -mlton "/usr/bin/mlton" -mlkit -mosml -poly -smlnj
 
 .PHONY: test
 test: $(NAME)
