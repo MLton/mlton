@@ -17,7 +17,8 @@ functor EmbedWord (structure Big: WORD
       open Small
 
       fun ones size =
-	 Big.fromLargeInt (IntInf.- (IntInf.<< (1, Word.fromInt size), 1))
+	 Big.- (Big.<< (Big.fromLarge 0w1, Word.fromInt size),
+		Big.fromLarge 0w1)
 	 
       val maxWord = ones wordSize
 
