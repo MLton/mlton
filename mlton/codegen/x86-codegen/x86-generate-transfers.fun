@@ -283,16 +283,34 @@ struct
 		     val profile_assembly
 		       = AppendList.fromList profile_assembly
 
+		     val isLoopHeader = fn _ => false
+
 		     fun near label
 		       = if falling
 			   then if unique
-				  then AppendList.cons
-				       (Assembly.label label,
-					profile_assembly)
-				  else AppendList.append
-				       (AppendList.fromList
-					[Assembly.label label,
-					 (* near entry & 
+				  then AppendList.appends
+				       [AppendList.fromList
+					(if isLoopHeader(loopInfo, label)
+					    handle _ => false
+					   then [Assembly.pseudoop_p2align 
+						 (Immediate.const_int 4,
+						  NONE,
+						  SOME (Immediate.const_int 7)),
+						 Assembly.label label]
+					   else [Assembly.label label]),
+					profile_assembly]
+				  else AppendList.appends
+				       [AppendList.fromList
+					(if isLoopHeader(loopInfo, label)
+					    handle _ => false
+					   then [Assembly.pseudoop_p2align 
+						 (Immediate.const_int 4,
+						  NONE,
+						  SOME (Immediate.const_int 7)),
+						 Assembly.label label]
+					   else [Assembly.label label]),
+					AppendList.fromList
+					[(* near entry & 
 					  * live transfer assumptions *)
 					 (Assembly.directive_assume
 					  {assumes
@@ -324,12 +342,23 @@ struct
 					        => {memloc = memloc,
 						    sync = sync,
 						    weight = 1024}))})],
-					profile_assembly)
-			   else AppendList.append
-			        (AppendList.fromList
-				 [Assembly.pseudoop_p2align 2,
-				  Assembly.label label,
-				  (* near entry & 
+					profile_assembly]
+			   else AppendList.appends
+			        [AppendList.fromList
+				 (if isLoopHeader(loopInfo, label)
+				     handle _ => false
+				    then [Assembly.pseudoop_p2align 
+					  (Immediate.const_int 4,
+					   NONE,
+					   SOME (Immediate.const_int 7)),
+					  Assembly.label label]
+				    else [Assembly.pseudoop_p2align
+					  (Immediate.const_int 4, 
+					   NONE, 
+					   NONE),
+					  Assembly.label label]),
+				 AppendList.fromList
+				 [(* near entry & 
 				   * live transfer assumptions *)
 				  (Assembly.directive_assume
 				   {assumes
@@ -361,7 +390,7 @@ struct
 					 => {memloc = memloc,
 					     sync = sync,
 					     weight = 1024}))})],
-				 profile_assembly)
+				 profile_assembly]
 
 		     val pre
 		       = case entry
@@ -372,7 +401,8 @@ struct
 			    | Func {label,...}
 			    => AppendList.append
 			       (AppendList.fromList
-				[Assembly.pseudoop_p2align 2,
+				[Assembly.pseudoop_p2align 
+				 (Immediate.const_int 4, NONE, NONE),
 				 Assembly.pseudoop_global label,
 				 Assembly.label label],
 				(* entry from far assumptions *)
@@ -384,7 +414,8 @@ struct
 				    ...}
 			    => AppendList.append
 			       (AppendList.fromList
-				[Assembly.pseudoop_p2align 2,
+				[Assembly.pseudoop_p2align
+				 (Immediate.const_int 4, NONE, NONE),
 				 Assembly.pseudoop_long
 				 [Immediate.const_int frameLayoutsIndex],
 				 Assembly.label label],
@@ -412,7 +443,10 @@ struct
 				       ...}
 			    => AppendList.append
 			       (AppendList.fromList
-				[Assembly.pseudoop_p2align 2,
+				[Assembly.pseudoop_p2align 
+				 (Immediate.const_int 4, NONE, NONE),
+				 Assembly.pseudoop_long
+				 [Immediate.const_int frameLayoutsIndex],
 				 Assembly.label label],
 				(* entry from far assumptions *)
 				(farEntry
@@ -437,7 +471,8 @@ struct
 						     frameLayoutsIndex}}
 			    => AppendList.append
 			       (AppendList.fromList
-				[Assembly.pseudoop_p2align 2,
+				[Assembly.pseudoop_p2align 
+				 (Immediate.const_int 4, NONE, NONE),
 				 Assembly.pseudoop_long 
 				 [Immediate.const_int frameLayoutsIndex],
 				 Assembly.label label],
@@ -1574,7 +1609,8 @@ struct
 			    dead_classes = ClassSet.empty}],
 			  AppendList.fromList
 			  [Assembly.pseudoop_data (),
-			   Assembly.pseudoop_p2align 2,
+			   Assembly.pseudoop_p2align 
+			   (Immediate.const_int 4, NONE, NONE),
 			   Assembly.label jump_table_label,
 			   Assembly.pseudoop_long jump_table,
 			   Assembly.pseudoop_text ()]]
