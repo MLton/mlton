@@ -27,50 +27,40 @@
     to <tt>MLton@mlton.org</tt>.
 
     <ul> 
-      <li> Optimizations
-	<ul>
-	  <li>Improved closure representation.
-	    <br>
-	    Right now, MLton's closure conversion algorithm uses a simple flat
-	    closure to represent each function.
-	  <li> Elimination of array bounds checks in loops.
-	  <li> Elimination of overflow checks on array index computations.
-	  <li> Common-subexpression elimination of repeated array subscripts.
-	  <li> Loop-invariant code motion, especially for tuple selects.
-	</ul>
-      <li> Profiler.
-	<ul>
-	  <li> Relate to the source code.
-	</ul>
-      <li> Debugger.
-	<br> Build one.
-	<ul>
-	  <li> It shouldn't be too hard to spit out stabs data similar to what
-	    the profiler does now, relating to the SSA code.
-	  <li> Relate to the source code
-	</ul>
-      <li> Port CML.
+      <li> Port to new platform: Windows, Mac OSX, x86-64, ...
+      <li> Proper front end
+      <li> Source-level debugger
+      <li> Support calling SML from C
+      <li> Heap profiler
+      <li> Support NLFFI
+      <li> Interfaces to libraries: Gtk, OpenGL, ...
+      <li> Additional constant types: Int64, Real32, Real80, Word64, ...
+      <li> Use Int64 for file positions
+      <li> Support CML
 	<br> The support for threads and signals is already there, so
 	it shouldn't be too hard to change the uses of callcc to
 	MLton.thread.switch.  Harder is thinking about how to make MLton's
 	libraries thread safe.
-      <li> Libraries.
+      <li> Port MLRISC and use for code generation
+      <li> Optimizations
 	<ul>
-	  <li> Add support for 64 bit integers, and use them for file
-	    positions.
-	  <li> Interface to gtk+.
-	  <li> Interface to OpenGL.
-	  <li> Any useful additions to the <tt>MLton</tt> structure.
-	  <li> Transform the compiler libraries used within MLton into generally
-	    useful libraries.
+	  <li>Improved closure representation
+	    <br>
+	    Right now, MLton's closure conversion algorithm uses a simple flat
+	    closure to represent each function.
+          <li> Array, ref, and vector flattening
+	  <li> Elimination of array bounds checks in loops
+	  <li> Elimination of overflow checks on array index computations
+	  <li> Common-subexpression elimination of repeated array subscripts
+	  <li> Loop-invariant code motion, especially for tuple selects
 	</ul>
-      </ul>
+	     
     </ul>
     <hr>
 <a href = "http://www.mlton.org">MLton</a><br>
     <!-- Created: Mon Jan 29 13:26:08 PST 2001 -->
     <!-- hhmts start -->
-Last modified: Wed Jan  8 09:23:16 PST 2003
+Last modified: Mon Feb 24 17:53:43 PST 2003
 <!-- hhmts end -->
   </body>
 </html>
