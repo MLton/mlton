@@ -36,11 +36,11 @@ build-package:
 	$(MAKE) pkg-plist
 	portlint .
 	$(MAKE) deinstall
-	$(MAKE) install 
-	$(MAKE) package 
+	$(MAKE) install
+	$(MAKE) package
 	$(MAKE) deinstall
 	pkg_add $(PACKAGES)/All/$(DISTNAME).tgz
-	$(MAKE) deinstall 
+	$(MAKE) deinstall
 	$(MAKE) reinstall
 	$(MAKE) package
 
