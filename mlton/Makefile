@@ -45,6 +45,9 @@ SOURCES =			\
 .PHONY: all
 all: $(AOUT)
 
+front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml:
+	$(MAKE) -C front-end
+
 $(AOUT): $(SOURCES)
 	rm -f $(UP)
 	$(MAKE) $(UP)
