@@ -43,8 +43,8 @@ struct
 end
 ;
 (* 4.sml *)
-val id = (fn x => x) (fn x => x)
 datatype t = T
+val id = (fn x => x) (fn x => x)
 val _ = id T
 ;
 (* 5.sml *)
