@@ -67,5 +67,49 @@ structure IntInf =
 	 fn _ => raise Fail "IntInf.~>>"
    end'
 
+(
+cat <<-EOF
+structure MLton =
+   struct
+      open MLton
+
+      structure Platform =
+         struct
+            fun peek (l, f) = List.find f l
+            fun omap (opt, f) = Option.map f opt
+               
+            structure Arch =
+               struct
+                  datatype t = datatype Platform.arch
+
+                  val host = Platform.arch
+
+                  val all = [(Sparc, "sparc"), (X86, "x86")]
+
+                  fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
+
+                  fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
+               end
+            
+            structure OS =
+               struct
+                  datatype t = datatype Platform.os
+
+                  val host = Platform.os
+
+                  val all = [(Cygwin, "cygwin"),
+                             (FreeBSD, "freebsd"),
+                             (Linux, "linux"),
+                             (SunOS, "sunos")]
+               
+                  fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
+
+                  fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
+               end
+         end
+   end
+EOF
+) | feature 'val _ = MLton.Platform.Arch.host' "`cat`"
+
 rm -f $tmp
 rm -f `basename $tmp .sml`
