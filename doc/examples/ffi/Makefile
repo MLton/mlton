@@ -20,7 +20,7 @@ ffi-import.o:
 	$(mlton) -stop o ffi-import.c
 
 iimport: iimport.sml
-	$(mlton) -link-opt '-ldl' iimport.sml
+	$(mlton) iimport.sml
 
 clean:
 	../../../bin/clean
