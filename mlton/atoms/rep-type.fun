@@ -329,7 +329,7 @@ structure Type =
 
       fun dropPrefix (t, b) = #hi (split (t, {lo = b}))
 
-      fun suffix (t, b) = dropPrefix (t, Bits.- (width t, b))
+(*      fun suffix (t, b) = dropPrefix (t, Bits.- (width t, b)) *)
 
       fun fragment (t: t, {start, width}): t =
 	 prefix (dropPrefix (t, start), width)
@@ -609,9 +609,6 @@ structure Type =
 	    struct
 	       open CType
 
-	       val defaultWord = Word32
-	       val pointer = Word32
-
 	       fun fromBits (b: Bits.t): t =
 		  case Bits.toInt b of
 		     8 => Word8
@@ -620,9 +617,6 @@ structure Type =
 		   | 64 => Word64
 		   | _ => Error.bug (concat ["CType.fromBits: ",
 					     Bits.toString b])
-
-	       val fromIntSize = fromBits o IntSize.bits
-	       val fromWordSize = fromBits o WordSize.bits
 	    end
 	 fun w i = word (Bits.fromInt i)
       in
@@ -874,8 +868,8 @@ fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
 	      Bits.equals (width t, width t') andalso done (f (t, t')))
       fun binary (t0, t1, res) =
 	 two (fn (t0', t1') =>
-	      isSubtype (arg 0, t0)
-	      andalso isSubtype (arg 1, t1)
+	      isSubtype (t0', t0)
+	      andalso isSubtype (t1', t1)
 	      andalso done res)
       fun ternary (t0, t1, t2, res) =
 	 3 = Vector.length args
@@ -983,26 +977,26 @@ fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
        | Real_toInt (s, s') => unary (real s, int s')
        | Real_toReal (s, s') => unary (real s, real s')
        | Thread_returnToC => nullary unit
-       | Word_add s => twoWord add
+       | Word_add _ => twoWord add
        | Word_addCheck s => wordBinary s
-       | Word_andb s => twoOpt andb
+       | Word_andb _ => twoOpt andb
        | Word_arshift s => wordShift s
        | Word_div s => wordBinary s
        | Word_equal s => wordCompare s
        | Word_ge s => wordCompare s
        | Word_gt s => wordCompare s
        | Word_le s => wordCompare s
-       | Word_lshift s => wordShift' lshift
+       | Word_lshift _ => wordShift' lshift
        | Word_lt s => wordCompare s
        | Word_mod s => wordBinary s
-       | Word_mul s => twoWord mul
+       | Word_mul _ => twoWord mul
        | Word_mulCheck s => wordBinary s
        | Word_neg s => wordUnary s
        | Word_notb s => wordUnary s
-       | Word_orb s => twoOpt orb
+       | Word_orb _ => twoOpt orb
        | Word_rol s => wordShift s
        | Word_ror s => wordShift s
-       | Word_rshift s => wordShift' rshift
+       | Word_rshift _ => wordShift' rshift
        | Word_sub s => wordBinary s
        | Word_toInt (s, s') => unary (word s, int s')
        | Word_toIntX (s, s') => unary (word s, int s')
@@ -1026,8 +1020,6 @@ structure BuiltInCFunction =
    struct
       open CFunction
 
-      type t = Type.t CFunction.t
-
       datatype z = datatype Convention.t
 	 
       val bug = vanilla {args = Vector.new1 string,
@@ -1039,10 +1031,6 @@ structure BuiltInCFunction =
       in
 	 val Int32 = int (IntSize.I (Bits.fromInt 32))
 	 val Word32 = word (Bits.fromInt 32)
-	 val bool = bool
-	 val cPointer = cPointer
-	 val gcState = gcState
-	 val string = word8Vector
 	 val unit = unit
       end
    

@@ -35,7 +35,6 @@ structure R = Rssa
 local
    open Rssa
 in
-   structure CFunction = CFunction
    structure CType = CType
    structure Const = Const
    structure Func = Func
@@ -716,7 +715,8 @@ fun toMachine (program: Ssa.Program.t) =
 		  fun simple t = (Vector.new0 (), t)
 	       in
 		  case t of
-		     R.Transfer.Arith {args, dst, overflow, prim, success, ty} =>
+		     R.Transfer.Arith {args, dst, overflow, prim, success,
+				       ...} =>
 			simple
 			(M.Transfer.Arith {args = translateOperands args,
 					   dst = varOperand dst,

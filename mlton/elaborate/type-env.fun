@@ -999,7 +999,7 @@ structure Type =
 		      fun oneUnknown (u: Unknown.t, time,
 				      t: Type.ty,
 				      outer: Type.t,
-				      swap: bool) =
+				      _: bool) =
 			 let
 			    (* This should fail if the unknown occurs in t.
 			     *)
@@ -1007,9 +1007,10 @@ structure Type =
 			       Vector.exists (ts, fn b => b)
 			    fun doFields fields =
 			       List.exists (fields, fn (_, b) => b)
-			    fun flexRecord (_, {fields, spine}) =
+			    fun flexRecord (_, {fields, spine = _}) =
 			       doFields fields
-			    fun genFlexRecord (_, {extra, fields, spine}) =
+			    fun genFlexRecord (_, {extra = _, fields,
+						   spine = _}) =
 			       doFields fields
 			    fun record (_, r) = Srecord.exists (r, fn b => b)
 			    fun unknown (_, u') = Unknown.equals (u, u')

@@ -8,8 +8,6 @@
 functor x86Codegen (S: X86_CODEGEN_STRUCTS): X86_CODEGEN =
 struct
   open S
-
-  structure CType = Machine.CType
      
   structure x86 = x86 (Machine)
 

@@ -375,7 +375,7 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	    val _ = coerces (args', args)
 	 in ()
 	 end
-      fun primApp {args, prim, resultType, resultVar, targs} =
+      fun primApp {args, prim, resultType, resultVar = _, targs} =
 	 let
 	    datatype z = datatype Prim.Name.t
 	    val () =

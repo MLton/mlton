@@ -24,12 +24,6 @@ struct
      structure CFunction = CFunction
   end
 
-  local
-     open CFunction
-  in
-     structure RepType = RepType
-  end
-
   structure LiveSet = x86Liveness.LiveSet
   structure LiveInfo = x86Liveness.LiveInfo
   open x86JumpInfo

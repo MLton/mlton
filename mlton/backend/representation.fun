@@ -17,9 +17,7 @@ local
    open Rssa
 in
    structure Block = Block
-   structure CType = CType
    structure IntSize = IntSize
-   structure IntX = IntX
    structure Kind = Kind
    structure Label = Label
    structure ObjectType = ObjectType
@@ -42,8 +40,6 @@ in
    structure Con = Con
    structure Tycon = Tycon
 end
-
-val bitsPerByte: int = 8
 
 datatype z = datatype WordSize.prim
 
@@ -436,7 +432,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		    val (_, cs) =
 		       Array.fold
 		       (components, (Bytes.zero, []),
-			fn ({mutable, offset, ty}, (i, ac)) =>
+			fn ({offset, ty, ...}, (i, ac)) =>
 			let
 			   val ac =
 			      if Bytes.equals (i, offset)
@@ -497,8 +493,8 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		    fun indirect {conRep, isTagged, pointerTycons, ty} =
 		       List.push
 		       (finish, fn () =>
-			Vector.foreachi2
-			(pointerTycons, haveArgs, fn (i, pt, {con, args}) =>
+			Vector.foreach2
+			(pointerTycons, haveArgs, fn (pt, {con, args}) =>
 			 let
 			    val rep =
 			       typesRep {isNormal = true,
@@ -771,7 +767,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	     | Transparent _ =>
 		  move (Operand.cast (oper (Vector.sub (args, 0)), ty ()))
 	     | Tuple rep => allocate (args, rep)
-	     | WordAsTy {ty, word} => move (Operand.word word)
+	     | WordAsTy {word, ...} => move (Operand.word word)
 	 end
       fun conSelects (TupleRep.T {offsets, ...}, variant: Operand.t)
 	 : Operand.t vector =

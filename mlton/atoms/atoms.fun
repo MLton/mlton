@@ -22,13 +22,11 @@ structure Atoms =
 			       structure RealSize = RealSize
 			       structure WordSize = WordSize)
       structure Con = Con ()
-      structure CType = CType (structure IntSize = IntSize
-			       structure RealSize = RealSize
-			       structure WordSize = WordSize)
+      structure CType = CType ()
       structure IntX = IntX (structure IntSize = IntSize)
       structure RealX = RealX (structure RealSize = RealSize)
       structure WordX = WordX (structure WordSize = WordSize)
-      structure Runtime = Runtime (structure CType = CType)
+      structure Runtime = Runtime ()
       structure Func =
 	 struct
 	    open Var

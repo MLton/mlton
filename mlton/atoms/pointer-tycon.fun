@@ -8,6 +8,8 @@
 functor PointerTycon (S: POINTER_TYCON_STRUCTS): POINTER_TYCON =
 struct
 
+open S
+
 type int = Int.t
    
 datatype t = T of {index: int}

@@ -1339,7 +1339,7 @@ structure Program =
 				    andalso
 				    case labelKind l of
 				       Kind.CReturn
-				       {dst, frameInfo = fi', func = f, ...} => 
+				       {frameInfo = fi', func = f, ...} => 
 					  CFunction.equals (func, f)
 					  andalso (Option.equals
 						   (fi, fi', FrameInfo.equals))

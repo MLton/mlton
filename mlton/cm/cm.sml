@@ -8,8 +8,6 @@
 structure CM: CM =
 struct
 
-fun fail s = raise Fail s
-
 val maxAliasNesting: int = 32
 
 fun cm {cmfile: File.t} =

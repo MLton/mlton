@@ -954,12 +954,9 @@ val kind: 'a t -> Kind.t =
        | World_save => SideEffect
    end
 
-local
-   fun make k p = k = kind p
-in
-   fun isFunctional p = Kind.Functional = kind p
-   fun maySideEffect p = Kind.SideEffect = kind p
-end
+fun isFunctional p = Kind.Functional = kind p
+
+fun maySideEffect p = Kind.SideEffect = kind p
 
 local
    fun ints (s: IntSize.t) =

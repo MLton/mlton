@@ -2607,11 +2607,10 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
       val () =
 	 Structure.realize
 	 (S, Interface.flexibleTycons I,
-	  fn (name, flex, typeStr, {nest}) =>
+	  fn (_, flex, typeStr, _) =>
 	  let
 	     val {admitsEquality = a, hasCons, kind = k, ...} =
 		FlexibleTycon.dest flex
-	     fun long () = Longtycon.long (rev nest, name)
 	     fun bad () =
 		(* Use a new type to avoid spurious errors. *)
 		TypeStr.def

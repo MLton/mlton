@@ -16,11 +16,6 @@ datatype z = datatype WordSize.prim
 
 structure S = Ssa
 local
-   open Ssa
-in
-   structure Con = Con
-end
-local
    open Runtime
 in
    structure GCField = GCField
@@ -696,8 +691,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
    let
       val {conApp, genCase, objectTypes, reff, select, toRtype, tuple} =
 	 Representation.compute program
-      fun tyconTy (pt: PointerTycon.t): ObjectType.t =
-	 Vector.sub (objectTypes, PointerTycon.index pt)
       val {get = varInfo: Var.t -> {ty: S.Type.t},
 	   set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist,
@@ -727,13 +720,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	 in
 	    l
 	 end
-      val tagOffset = 0
       fun translateCase ({test: Var.t,
 			  cases: S.Cases.t,
 			  default: Label.t option})
 	 : Statement.t list * Transfer.t =
 	 let
-	    fun id x = x
 	    fun simple (s, cs, cast) =
 	       ([],
 		Switch

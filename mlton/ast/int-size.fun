@@ -28,8 +28,6 @@ val sizes: Bits.t list =
 
 fun make i = T {bits = i}
 
-val byte = make (Bits.fromInt 8)
-
 val allVector = Vector.tabulate (65, fn i =>
 				  if isValidSize i
 				     then SOME (make (Bits.fromInt i))
@@ -45,8 +43,6 @@ val all = List.map (sizes, I)
 val prims = List.map ([8, 16, 32, 64], I o Bits.fromInt)
 
 val default = I Bits.inWord
-
-fun pointer () = I Bits.inWord
 
 val memoize: (t -> 'a) -> t -> 'a =
    fn f =>
@@ -75,9 +71,6 @@ fun roundUpToPrim s =
 
 val bytes: t -> Bytes.t = Bits.toBytes o bits
 
-val max: t -> IntInf.t =
-   memoize (fn s => IntInf.<< (1, Bits.toWord (bits s)) - 1)
-   
 val cardinality = memoize (fn s => IntInf.pow (2, Bits.toInt (bits s)))
 
 datatype prim = I8 | I16 | I32 | I64

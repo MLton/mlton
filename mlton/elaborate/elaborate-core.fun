@@ -632,14 +632,6 @@ structure Type =
    struct
       open Type
 
-      fun sized (all: 'a list,
-		 toString: 'a -> string,
-		 prefix: string,
-		 make: 'a -> t,
-		 makeType: 'a -> 'b) =
-	 List.map (all, fn a =>
-		   (make a, concat [prefix, toString a], makeType a))
-
       val nullary: (string * CType.t * Tycon.t) list =
 	 let
 	    fun sized (tycon: Bits.t -> Tycon.t) =

@@ -50,7 +50,7 @@ fun layout (T {cases, default, test, ...})=
 		    cases)]]
    end
 
-fun isOk (T {cases, default, size, test}, {checkUse, labelIsOk}): bool =
+fun isOk (T {cases, default, size = _, test}, {checkUse, labelIsOk}): bool =
    let
       val () = checkUse test
       val ty = Use.ty test

@@ -714,23 +714,6 @@ struct
 				default = default})})
 	  end
 
-      fun doSwitchInt (test, cases, default)
-	= (case (cases, default)
-	     of ([],             NONE)
-	      => Error.bug "toX86Blocks: doSwitchInt"
-	      | ([(_,l)],        NONE) => goto l
-	      | ([],             SOME l) => goto l
-	      | ([(0,f),(1,t)],  NONE) => iff(test,t,f)
-	      | ([(1,t),(0,f)],  NONE) => iff(test,t,f)
-	      | ([(_,l),(k',l')],NONE) 
-	      => cmp(test,x86.Immediate.const_int k',l',l)
-	      | ([(k',l')],      SOME l)
-	      => cmp(test,x86.Immediate.const_int k',l',l)
-	      | ((_,l)::cases,   NONE) 
-	      => switch(test, x86.Transfer.Cases.int cases, l)
-	      | (cases,          SOME l) 
-	      => switch(test, x86.Transfer.Cases.int cases, l))
-
       fun doSwitchWord (test, cases, default)
 	= (case (cases, default)
 	     of ([],            NONE)
