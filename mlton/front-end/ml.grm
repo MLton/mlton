@@ -214,7 +214,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
 
   %%
   %term
-      CHAR of char
+      CHAR of IntInf.t
     | INT of {digits: string,
 	      negate: bool,
 	      radix: StringCvt.radix}
@@ -442,7 +442,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
         SEMICOLON -> COMMA | COMMA -> SEMICOLON |
         -> IN LONGID END | -> ELSE LONGID
 
-%value CHAR (#"a")
+%value CHAR (IntInf.fromInt (Char.ord #"a"))
 %value INT ({digits = "0", negate = false, radix = StringCvt.DEC})
 %value LONGID ("bogus")
 %value REAL ("13.0")

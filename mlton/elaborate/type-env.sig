@@ -21,7 +21,7 @@ signature TYPE_ENV =
 	    val admitsEquality: t -> bool
             (* can two types be unified?  not side-effecting. *)
             val canUnify: t * t -> bool
-	    val char: t
+	    val char: CharSize.t -> t
 	    val deEta: t * Tyvar.t vector -> Tycon.t option
 	    val deRecord: t -> (Record.Field.t * t) vector
 	    val flexRecord: t SortedRecord.t -> t * (unit -> bool)
@@ -30,7 +30,7 @@ signature TYPE_ENV =
 			  record: 'a SortedRecord.t -> 'a,
 			  replaceSynonyms: bool,
 			  var: Tyvar.t -> 'a} -> 'a
-	    val isChar: t -> bool
+	    val isCharX: t -> bool
 	    val isInt: t -> bool
 	    val isUnit: t -> bool
 	    val layout: t -> Layout.t
@@ -50,7 +50,8 @@ signature TYPE_ENV =
 	    (* make two types identical (recursively).  side-effecting. *)
 	    val unify:
 	       t * t * {error: Layout.t * Layout.t -> unit,
-			preError: unit -> unit} -> unit 
+			preError: unit -> unit} -> unit
+	    val unresolvedChar: unit -> t
 	    val unresolvedInt: unit -> t
 	    val unresolvedReal: unit -> t
 	    val unresolvedWord: unit -> t

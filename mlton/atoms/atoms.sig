@@ -8,6 +8,7 @@
 signature ATOMS_STRUCTS =
    sig
       structure Field: FIELD
+      structure CharSize: CHAR_SIZE
       structure IntSize: INT_SIZE
       structure RealSize: REAL_SIZE
       structure Record: RECORD
@@ -43,7 +44,8 @@ signature ATOMS' =
       structure WordXVector: WORD_X_VECTOR
 
       sharing CFunction = Ffi.CFunction = Prim.CFunction
-      sharing CType = CFunction.CType = Ffi.CType = Prim.CType 
+      sharing CType = CFunction.CType = Ffi.CType = Prim.CType
+      sharing CharSize = Tycon.CharSize
       sharing Con = Prim.Con
       sharing Const = Prim.Const
       sharing IntSize = Tycon.IntSize

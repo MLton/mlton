@@ -17,7 +17,7 @@ signature AST_CONST =
       type t
       datatype node =
 	 Bool of bool
-       | Char of char
+       | Char of IntInf.t
        | Int of IntInf.t
        | Real of string
        | String of string

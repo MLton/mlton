@@ -7,6 +7,7 @@
  *)
 signature TYCON_STRUCTS = 
    sig
+      structure CharSize: CHAR_SIZE
       structure IntSize: INT_SIZE
       structure RealSize: REAL_SIZE
       structure WordSize: WORD_SIZE

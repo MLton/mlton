@@ -6,13 +6,19 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
-signature PRIM_TYCONS_STRUCTS =
+signature PRIM_TYCONS_SUBSTRUCTS =
    sig
       structure AdmitsEquality: ADMITS_EQUALITY
+      structure CharSize: CHAR_SIZE
       structure IntSize: INT_SIZE
       structure Kind: TYCON_KIND
       structure RealSize: REAL_SIZE
       structure WordSize: WORD_SIZE
+   end
+
+signature PRIM_TYCONS_STRUCTS =
+   sig
+      include PRIM_TYCONS_SUBSTRUCTS
 
       type t
 
@@ -23,18 +29,15 @@ signature PRIM_TYCONS_STRUCTS =
 
 signature PRIM_TYCONS =
    sig
-      structure AdmitsEquality: ADMITS_EQUALITY
-      structure IntSize: INT_SIZE
-      structure Kind: TYCON_KIND
-      structure RealSize: REAL_SIZE
-      structure WordSize: WORD_SIZE
+      include PRIM_TYCONS_SUBSTRUCTS
      
       type tycon
 
       val array: tycon
       val arrow: tycon
       val bool: tycon
-      val char: tycon
+      val char: CharSize.t -> tycon
+      val defaultChar: tycon
       val defaultInt: tycon
       val defaultReal: tycon
       val defaultWord: tycon
@@ -42,6 +45,7 @@ signature PRIM_TYCONS =
       val int: IntSize.t -> tycon
       val ints: (tycon * IntSize.t) vector
       val intInf: tycon
+      val isCharX: tycon -> bool
       val isIntX: tycon -> bool
       val isRealX: tycon -> bool
       val isWordX: tycon -> bool

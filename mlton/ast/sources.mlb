@@ -20,6 +20,8 @@ local
     ast-id.fun
     field.sig
     field.fun
+    char-size.sig
+    char-size.fun
     int-size.sig
     int-size.fun
     longid.sig
@@ -53,6 +55,7 @@ local
 in
     signature ADMITS_EQUALITY
     signature AST
+    signature CHAR_SIZE
     signature FIELD
     signature INT_SIZE
     signature LONGID

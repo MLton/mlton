@@ -26,11 +26,29 @@ structure Bool =
 
 structure Char =
    struct
-      type t = char
+      type t = char8
       type char = t
    end
 
 type char = Char.char
+
+structure Char2 =
+   struct
+      type t = char16
+   end
+
+structure Char4 =
+   struct
+      type t = char32
+   end
+
+(* Quell unused warnings. *)
+local
+   open Char2 Char4
+   val _ = #"a": Char2.t
+   val _ = #"a": Char4.t
+in
+end
 
 type exn = exn
 

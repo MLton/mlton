@@ -17,7 +17,8 @@ structure Atoms =
       structure SourceInfo = SourceInfo ()
       structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)
       structure Var = Var ()
-      structure Tycon = Tycon (structure IntSize = IntSize
+      structure Tycon = Tycon (structure CharSize = CharSize
+			       structure IntSize = IntSize
 			       structure RealSize = RealSize
 			       structure WordSize = WordSize)
       structure Con = Con ()

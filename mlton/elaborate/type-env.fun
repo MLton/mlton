@@ -399,12 +399,13 @@ structure Type =
    struct
       structure Overload =
 	 struct
-	    datatype t = Int | Real | Word
+	    datatype t = Char | Int | Real | Word
 
 	    val equals: t * t -> bool = op =
 
 	    val toString =
-	       fn Int => "Int"
+	       fn Char => "Char"
+		| Int => "Int"
 		| Real => "Real"
 		| Word => "Word"
 
@@ -413,12 +414,14 @@ structure Type =
 	    val matchesTycon: t * Tycon.t -> bool =
 	       fn (ov, c) =>
 	       case ov of
-		  Int => Tycon.isIntX c
+		  Char => Tycon.isCharX c
+		| Int => Tycon.isIntX c
 		| Real => Tycon.isRealX c
 		| Word => Tycon.isWordX c
 
 	    val defaultTycon: t -> Tycon.t =
-	       fn Int => Tycon.defaultInt
+	       fn Char => Tycon.defaultChar
+		| Int => Tycon.defaultInt
 		| Real => Tycon.defaultReal
 		| Word => Tycon.defaultWord
 	 end
@@ -747,15 +750,16 @@ structure Type =
        *)
       open Ops Type
 
-      val char = con (Tycon.char, Vector.new0 ())
-      val string = con (Tycon.vector, Vector.new1 char)
+      fun char s = con (Tycon.char s, Vector.new0 ())
+      val string = con (Tycon.vector, Vector.new1 (char CharSize.C1))
 	 
       val unit = tuple (Vector.new0 ())
 
-      fun isChar t =
+      fun isCharX t =
 	 case toType t of
-	    Con (c, _) => Tycon.equals (c, Tycon.char)
-	  | _ => false
+ 	    Con (c, _) => Tycon.isCharX c
+	  | Overload Overload.Char => true
+ 	  | _ => false
 
       fun isInt t =
 	 case toType t of
@@ -775,6 +779,7 @@ structure Type =
 	 fun make (ov, eq) () = newTy (Overload ov, eq)
 	 datatype z = datatype Overload.t
       in
+	 val unresolvedChar = make (Char, Equality.truee)
 	 val unresolvedInt = make (Int, Equality.truee)
 	 val unresolvedReal = make (Real, Equality.falsee)
 	 val unresolvedWord = make (Word, Equality.truee)
@@ -1235,8 +1240,9 @@ structure Type =
 
       val () =
 	 List.foreach
-	 ([(Tycon.char, Tycon.word WordSize.byte)],
-	  setSynonym)
+	 (CharSize.all, fn s =>
+	  setSynonym (Tycon.char s,
+		      Tycon.word (WordSize.fromBits (CharSize.bits s))))
 
       val () =
 	 List.foreach
@@ -1244,6 +1250,7 @@ structure Type =
 	  setSynonym (Tycon.int s,
 		      Tycon.word (WordSize.fromBits (IntSize.bits s))))
 
+      val defaultChar = con (Tycon.char CharSize.default, Vector.new0 ())
       val defaultInt = con (Tycon.int IntSize.default, Vector.new0 ())
 
       structure Overload =
@@ -1251,7 +1258,8 @@ structure Type =
 	    open Overload
 	       
 	    val defaultType =
-	       fn Int => defaultInt
+	       fn Char => defaultChar
+		| Int => defaultInt
 		| Real => defaultReal
 		| Word => defaultWord
 	 end

@@ -72,6 +72,7 @@ local
 in
    structure CFunction = CFunction
    structure CType = CType
+   structure CharSize = CharSize
    structure Convention	 = CFunction.Convention	
    structure Con = Con
    structure Const = Const
@@ -240,9 +241,20 @@ fun 'a elabConst (c: Aconst.t,
       case Aconst.node c of
 	 Aconst.Bool b => if b then t else f
        | Aconst.Char c =>
-	    now (Const.Word (WordX.fromIntInf (IntInf.fromInt (Char.toInt c),
-					       WordSize.byte)),
-		 Type.char)
+	    let
+	       val ty = Type.unresolvedChar ()
+	    in
+	       delay
+	       (ty, fn tycon =>
+		choose (tycon,
+			List.map ([8, 16, 32], WordSize.fromBits o Bits.fromInt),
+			Tycon.word,
+			fn s =>
+			Const.Word
+			(if WordSize.isInRange (s, c, {signed = false})
+			    then WordX.fromIntInf (c, s)
+			 else (error ty; WordX.zero s))))
+	    end
        | Aconst.Int i =>
 	    let
 	       val ty = Type.unresolvedInt ()
@@ -683,16 +695,21 @@ structure Type =
 		end)
 	 in
 	    [("Bool", CType.bool, Tycon.bool),
-	     ("Char", CType.char, Tycon.char),
+	     ("Real32", CType.Real32, Tycon.real RealSize.R32),
+	     ("Real64", CType.Real64, Tycon.real RealSize.R64),
 	     ("Thread", CType.thread, Tycon.thread)]
+	    @ sized (Tycon.char o CharSize.fromBits,
+		     let
+			open CType
+		     in
+			[Int8, Int16, Int32]
+		     end)
 	    @ sized (Tycon.int o IntSize.I,
 		     let
 			open CType
 		     in
 			[Int8, Int16, Int32, Int64]
 		     end)
-	    @ [("Real32", CType.Real32, Tycon.real RealSize.R32),
-	       ("Real64", CType.Real64, Tycon.real RealSize.R64)]
 	    @ sized (Tycon.word o WordSize.fromBits,
 		     let
 			open CType

@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor Tycon (S: TYCON_STRUCTS): TYCON = 
 struct
 
@@ -17,6 +18,7 @@ structure AdmitsEquality = AdmitsEquality ()
 structure Kind = TyconKind ()
    
 structure P = PrimTycons (structure AdmitsEquality = AdmitsEquality
+			  structure CharSize = CharSize
 			  structure IntSize = IntSize
 			  structure Kind = Kind
 			  structure RealSize = RealSize

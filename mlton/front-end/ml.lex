@@ -281,12 +281,14 @@ hexnum={hexDigit}+;
 			  then make (Tokens.STRING, s)
 		       else
 			  make (Tokens.CHAR,
-				if size s <> 1 
-				   then (error
-					 (source, yypos, yypos + 1,
-					  "character constant not length 1")
-					 ; #"\000")
-				else String.sub (s, 0))
+				IntInf.fromInt
+				(Char.ord
+				 (if size s <> 1 
+				     then (error
+					   (source, yypos, yypos + 1,
+					    "character constant not length 1")
+					   ; #"\000")
+				  else String.sub (s, 0))))
                     end);
 <S>\\a		=> (addChar #"\a"; continue ());
 <S>\\b		=> (addChar #"\b"; continue ());

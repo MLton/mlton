@@ -18,7 +18,6 @@ type tycon = t
 val array = fromString "array"
 val arrow = fromString "->"
 val bool = fromString "bool"
-val char = fromString "char"
 val exn = fromString "exn"
 val intInf = fromString "intInf"
 val list = fromString "list"
@@ -60,6 +59,12 @@ local
 	 (fromSize default, fromSize, all, is, prims)
       end
 in
+   val (defaultChar, char, chars, isCharX, primChars) =
+      let
+	 open CharSize
+      in
+	 make ("char", all, bits, default, equals, memoize, Always)
+      end
    val (defaultInt, int, ints, isIntX, primInts) =
       let
 	 open IntSize
@@ -86,7 +91,6 @@ val prims =
    [(array, Arity 1, Always),
     (arrow, Arity 2, Never),
     (bool, Arity 0, Always),
-    (char, Arity 0, Always),
     (exn, Arity 0, Never),
     (intInf, Arity 0, Always),
     (list, Arity 1, Sometimes),
@@ -96,7 +100,7 @@ val prims =
     (tuple, Nary, Sometimes),
     (vector, Arity 1, Sometimes),
     (weak, Arity 1, Never)]
-   @ primInts @ primReals @ primWords
+   @ primChars @ primInts @ primReals @ primWords
 
 fun layoutApp (c: t,
 	       args: (Layout.t * {isChar: bool, needsParen: bool}) vector) =
@@ -116,7 +120,7 @@ fun layoutApp (c: t,
 	 let
 	    val ({isChar}, lay) =
 	       case Vector.length args of
-		  0 => ({isChar = equals (c, char)}, layout c)
+		  0 => ({isChar = equals (c, defaultChar)}, layout c)
 		| 1 => ({isChar = false},
 			seq [maybe (Vector.sub (args, 0)), str " ", layout c])
 		| _ => ({isChar = false},

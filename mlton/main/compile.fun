@@ -29,11 +29,13 @@ structure Ast = Ast (structure Record = Record
 local
    open Ast.Tycon
 in
+   structure CharSize = CharSize
    structure IntSize = IntSize
    structure RealSize = RealSize
    structure WordSize = WordSize
 end
-structure Atoms = Atoms (structure Field = Field
+structure Atoms = Atoms (structure CharSize = CharSize
+			 structure Field = Field
 			 structure IntSize = IntSize
 			 structure RealSize = RealSize
 			 structure Record = Record
