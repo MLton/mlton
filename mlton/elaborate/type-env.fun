@@ -551,7 +551,9 @@ structure Type =
 	    res
 	 end
 
-      fun layoutPretty (t: t): Layout.t =
+      fun makeLayoutPretty (): {destroy: unit -> unit,
+				lay: t -> Layout.t * {isChar: bool,
+						      needsParen: bool}} =
 	 let
 	    val str = Layout.str
 	    fun maybeParen (b, t) = if b then Layout.paren t else t
@@ -602,7 +604,7 @@ structure Type =
 		 end))
 	    fun var (_, a) = prettyTyvar a
 	    fun word _ = simple (str "word")
-	    val (res, _) =
+	    fun lay t =
 	       hom (t, {con = con,
 			expandOpaque = Never,
 			flexRecord = flexRecord,
@@ -614,6 +616,15 @@ structure Type =
 			unknown = unknown,
 			var = var,
 			word = word})
+	 in
+	    {destroy = destroy,
+	     lay = lay}
+	 end
+
+      fun layoutPretty t =
+	 let
+	    val {destroy, lay} = makeLayoutPretty ()
+	    val res = #1 (lay t)
 	    val _ = destroy ()
 	 in
 	    res
@@ -827,6 +838,7 @@ structure Type =
 
       fun unify (t, t'): UnifyResult.t =
 	 let
+	    val {destroy, lay = layoutPretty} = makeLayoutPretty ()
 	    val layoutRecord = fn z => layoutRecord (z, true)
 	    fun unify arg =
 	       traceUnify
@@ -886,10 +898,17 @@ structure Type =
 		      val {equality = e, ty = t, plist} = Set.value s
 		      val {equality = e', ty = t', ...} = Set.value s'
 		      fun not () =
-			 notUnifiable (layoutTopLevel t, layoutTopLevel t')
+			 (* By choosing layoutTopLevel, when two types don't
+			  * unify, we only see the outermost bits.  On the other
+			  * hand, if we choose layoutPretty, then we see the
+			  * whole type that didn't unify.
+			  *)
+			 notUnifiable
+			 (if true
+			     then (layoutPretty outer, layoutPretty outer')
+			  else (layoutTopLevel t, layoutTopLevel t'))
 		      fun conAnd (c, ts, t, t', swap) =
 			 let
-			    fun lay () = layoutTopLevel (Con (c, ts))
 			    val notUnifiable =
 			       fn (z, z') =>
 			       notUnifiable (if swap then (z', z) else (z, z'))
@@ -1120,6 +1139,7 @@ structure Type =
 		   in
 		      res
 		   end) arg
+	    val _ = destroy ()
 	 in
 	    unify (t, t')
 	 end
