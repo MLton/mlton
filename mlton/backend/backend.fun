@@ -686,7 +686,7 @@ fun toMachine (program: Ssa.Program.t) =
 			   in
 			      (M.Kind.CReturn {dst = dst,
 					       prim = prim},
-			       live,
+			       liveNoFormals,
 			       Vector.new0 ())
 			   end
 		      | R.Kind.Handler =>
@@ -712,7 +712,7 @@ fun toMachine (program: Ssa.Program.t) =
 			   in
 			      (M.Kind.Runtime {frameInfo = M.FrameInfo.bogus,
 					       prim = prim},
-			       live,
+			       liveNoFormals,
 			       Vector.new0 ())
 			   end
 		  val statements = Vector.concat [pre, statements, preTransfer]
