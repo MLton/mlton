@@ -1124,7 +1124,7 @@ static void newWorld(GC_state s)
 }
 
 static void usage(string s) {
-	die("Usage: %s [@MLton [fixed-heap n[{k|m}]] [gc-messages] [gc-summary] [load-world file] [max-heap n[{k|m}]] [ram-slop x] --] args", 
+	die("Usage: %s [@MLton [fixed-heap n[{k|m}]] [gc-messages] [gc-summary] [load-world file] [ram-slop x] --] args", 
 		s);
 }
 
@@ -1243,7 +1243,7 @@ GC_init(GC_state s, int argc, char **argv,
 						usage(argv[0]);
 					worldFile = argv[i++];
 				} else if (0 == strcmp(arg, "max-heap")) {
-					fprintf(stderr, "max-heap is currently disabled\n");
+					usage("max-heap is currently disabled\n");
 					++i;
 					if (i == argc) 
 						usage(argv[0]);
