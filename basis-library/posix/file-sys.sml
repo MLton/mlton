@@ -32,9 +32,8 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       fun fdToWord (FD n) = SysWord.fromInt n
       val wordToFD = FD o SysWord.toInt
-      fun id x = x
-      val fdToIOD = id
-      val iodToFD = SOME
+      val fdToIOD = OS.IO.fromFD
+      val iodToFD = SOME o OS.IO.toFD
 
       (*------------------------------------*)
       (*             dirstream              *)
@@ -214,6 +213,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       end
 
       type dev = Prim.dev
+      val id = fn x => x
       val wordToDev = id
       val devToWord = id
 

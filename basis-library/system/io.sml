@@ -21,11 +21,22 @@ structure OS_IO: OS_IO =
 
     datatype iodesc_kind = K of string
 
+    datatype file_desc = datatype PosixPrimitive.file_desc
+
+    fun toFD (iod: iodesc): file_desc =
+       valOf (Posix.FileSys.iodToFD iod)
+
+    fun fromInt i = Posix.FileSys.fdToIOD (FD i)
+       
+    fun toInt iod = let val FD fd = toFD iod in fd end
+
+    val toWord = Posix.FileSys.fdToWord o toFD
+       
   (* return a hash value for the I/O descriptor. *)
-    fun hash (FD fd) = Word.fromInt fd
+    val hash = toWord
 
   (* compare two I/O descriptors *)
-    fun compare (FD fd1, FD fd2) = Int.compare(fd1, fd2)
+    fun compare (i, i') = Word.compare (toWord i, toWord i')
 
     structure Kind =
       struct
@@ -39,8 +50,8 @@ structure OS_IO: OS_IO =
       end
 
   (* return the kind of I/O descriptor *)
-    fun kind (fd) = let
-	  val stat = Posix.FileSys.fstat fd
+    fun kind (iod) = let
+	  val stat = Posix.FileSys.fstat (toFD iod)
 	  in
 	    if      (Posix.FileSys.ST.isReg stat) then Kind.file
 	    else if (Posix.FileSys.ST.isDir stat) then Kind.dir
@@ -53,29 +64,29 @@ structure OS_IO: OS_IO =
 	  end
 
     type poll_flags = {rd: bool, wr: bool, pri: bool}
-    datatype poll_desc = PollDesc of (iodesc * poll_flags)
-    datatype poll_info = PollInfo of (iodesc * poll_flags)
+    datatype poll_desc = PollDesc of iodesc * poll_flags
+    datatype poll_info = PollInfo of iodesc * poll_flags
 
   (* create a polling operation on the given descriptor; note that
    * not all I/O devices support polling, but for the time being, we
    * don't test for this.
    *)
-    fun pollDesc iod = SOME(PollDesc(iod, {rd=false, wr=false, pri=false}))
+    fun pollDesc iod = SOME (PollDesc (iod, {rd=false, wr=false, pri=false}))
 
   (* return the I/O descriptor that is being polled *)
-    fun pollToIODesc (PollDesc(iod, _)) = iod
+    fun pollToIODesc (PollDesc (iod, _)) = iod
 
     exception Poll
 
   (* set polling events; if the polling operation is not appropriate
    * for the underlying I/O device, then the Poll exception is raised.
    *)
-    fun pollIn (PollDesc(iod, {rd, wr, pri})) =
-	  PollDesc(iod, {rd=true, wr=wr, pri=pri})
-    fun pollOut (PollDesc(iod, {rd, wr, pri})) =
-	  PollDesc(iod, {rd=rd, wr=true, pri=pri})
-    fun pollPri (PollDesc(iod, {rd, wr, pri})) =
-	  PollDesc(iod, {rd=rd, wr=wr, pri=true})
+    fun pollIn (PollDesc (iod, {rd, wr, pri})) =
+	  PollDesc (iod, {rd=true, wr=wr, pri=pri})
+    fun pollOut (PollDesc (iod, {rd, wr, pri})) =
+	  PollDesc (iod, {rd=rd, wr=true, pri=pri})
+    fun pollPri (PollDesc (iod, {rd, wr, pri})) =
+	  PollDesc (iod, {rd=rd, wr=wr, pri=true})
 
   (* polling function *)
     local
@@ -86,13 +97,13 @@ structure OS_IO: OS_IO =
       val rdBit : Word.word = Primitive.OS.IO.POLLIN
       and wrBit : Word.word = Primitive.OS.IO.POLLOUT
       and priBit : Word.word = Primitive.OS.IO.POLLPRI
-      fun fromPollDesc (PollDesc(FD fd, {rd, wr, pri})) =
-	    ( fd,
+      fun fromPollDesc (PollDesc (iod, {rd, wr, pri})) =
+	    ( toInt iod,
 	      join (rd, rdBit, 
 	      join (wr, wrBit, 
               join (pri, priBit, 0w0)))
 	    )
-      fun toPollInfo (fd, w) = PollInfo(FD fd, {
+      fun toPollInfo (fd, w) = PollInfo (fromInt fd, {
 	      rd = test(w, rdBit), 
 	      wr = test(w, wrBit), 
               pri = test(w, priBit)

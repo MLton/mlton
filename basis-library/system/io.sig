@@ -1,10 +1,12 @@
 signature OS_IO =
    sig
       eqtype iodesc
+      eqtype iodesc_kind
+
       val hash: iodesc -> word
       val compare: iodesc * iodesc -> order
-      eqtype iodesc_kind
       val kind: iodesc -> iodesc_kind
+
       structure Kind: 
 	 sig
 	    val file: iodesc_kind
