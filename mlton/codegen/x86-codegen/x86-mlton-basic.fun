@@ -211,6 +211,14 @@ struct
 		     class = Classes.CStack}
   val c_stackPDerefDoubleOperand
     = Operand.memloc c_stackPDerefDouble
+  val c_stackPDerefFloat
+    = MemLoc.simple {base = c_stackPContents,
+		     index = Immediate.const_int 0,
+		     scale = wordScale,
+		     size = Size.SNGL,
+		     class = Classes.CStack}
+  val c_stackPDerefFloatOperand
+    = Operand.memloc c_stackPDerefFloat
 				 
   val threadTemp = Label.fromString "threadTemp"
   val threadTempContents 
@@ -244,29 +252,65 @@ struct
   val applyFFTempContentsOperand
     = Operand.memloc applyFFTempContents
 
-  val realTemp1 = Label.fromString "realTemp1"
-  val realTemp1Contents 
-    = makeContents {base = Immediate.label realTemp1,
-		    size = floatSize,
+  val realTemp1D = Label.fromString "realTemp1D"
+  val realTemp1ContentsD
+    = makeContents {base = Immediate.label realTemp1D,
+		    size = Size.DBLE,
 		    class = Classes.StaticTemp}
-  val realTemp1ContentsOperand
-    = Operand.memloc realTemp1Contents
+  val realTemp1ContentsOperandD
+    = Operand.memloc realTemp1ContentsD
+  val realTemp1S = Label.fromString "realTemp1S"
+  val realTemp1ContentsS
+    = makeContents {base = Immediate.label realTemp1S,
+		    size = Size.SNGL,
+		    class = Classes.StaticTemp}
+  val realTemp1ContentsOperandS
+    = Operand.memloc realTemp1ContentsS
+  fun realTemp1ContentsOperand floatSize
+    = case floatSize of
+        Size.DBLE => realTemp1ContentsOperandD
+      | Size.SNGL => realTemp1ContentsOperandD
+      | _ => Error.bug "realTemp1ContentsOperand: floatSize"
 
-  val realTemp2 = Label.fromString "realTemp2"
-  val realTemp2Contents 
-    = makeContents {base = Immediate.label realTemp2,
-		    size = floatSize,
+  val realTemp2D = Label.fromString "realTemp2D"
+  val realTemp2ContentsD
+    = makeContents {base = Immediate.label realTemp2D,
+		    size = Size.DBLE,
 		    class = Classes.StaticTemp}
-  val realTemp2ContentsOperand
-    = Operand.memloc realTemp2Contents 
+  val realTemp2ContentsOperandD
+    = Operand.memloc realTemp2ContentsD
+  val realTemp2S = Label.fromString "realTemp2S"
+  val realTemp2ContentsS
+    = makeContents {base = Immediate.label realTemp2S,
+		    size = Size.SNGL,
+		    class = Classes.StaticTemp}
+  val realTemp2ContentsOperandS
+    = Operand.memloc realTemp2ContentsS
+  fun realTemp2ContentsOperand floatSize
+    = case floatSize of
+        Size.DBLE => realTemp2ContentsOperandD
+      | Size.SNGL => realTemp2ContentsOperandD
+      | _ => Error.bug "realTemp2ContentsOperand: floatSize"
 
-  val realTemp3 = Label.fromString "realTemp3"
-  val realTemp3Contents 
-    = makeContents {base = Immediate.label realTemp3,
-		    size = floatSize,
+  val realTemp3D = Label.fromString "realTemp3D"
+  val realTemp3ContentsD
+    = makeContents {base = Immediate.label realTemp3D,
+		    size = Size.DBLE,
 		    class = Classes.StaticTemp}
-  val realTemp3ContentsOperand
-    = Operand.memloc realTemp3Contents
+  val realTemp3ContentsOperandD
+    = Operand.memloc realTemp3ContentsD
+  val realTemp3S = Label.fromString "realTemp3S"
+  val realTemp3ContentsS
+    = makeContents {base = Immediate.label realTemp3S,
+		    size = Size.SNGL,
+		    class = Classes.StaticTemp}
+  val realTemp3ContentsOperandS
+    = Operand.memloc realTemp3ContentsS
+  fun realTemp3ContentsOperand floatSize
+    = case floatSize of
+        Size.DBLE => realTemp3ContentsOperandD
+      | Size.SNGL => realTemp3ContentsOperandD
+      | _ => Error.bug "realTemp3ContentsOperand: floatSize"
 
   val fpswTemp = Label.fromString "fpswTemp"
   val fpswTempContents 
@@ -275,6 +319,13 @@ struct
 		    class = Classes.StaticTemp}
   val fpswTempContentsOperand
     = Operand.memloc fpswTempContents
+  val fildTemp = Label.fromString "fildTemp"
+  val fildTempContents 
+    = makeContents {base = Immediate.label fildTemp,
+		    size = Size.WORD,
+		    class = Classes.StaticTemp}
+  val fildTempContentsOperand
+    = Operand.memloc fildTempContents
 
   local
     val localI_base =

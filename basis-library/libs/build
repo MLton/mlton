@@ -69,7 +69,9 @@ real/IEEE-real.sig
 real/IEEE-real.sml
 real/math.sig
 real/real.sig
-real/real.sml
+real/real.fun
+real/real32.sml
+real/real64.sml
 integer/patch.sml
 
 top-level/overloads.sml

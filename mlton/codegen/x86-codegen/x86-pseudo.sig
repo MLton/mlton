@@ -10,7 +10,7 @@ type word = Word.t
 
 signature X86_PSEUDO =
   sig
-     structure CFunction: C_FUNCTION
+    structure CFunction: C_FUNCTION
     structure Label : HASH_ID
     structure Runtime: RUNTIME
     sharing CFunction.CType = Runtime.CType
@@ -351,6 +351,14 @@ signature X86_PSEUDO =
 	val instruction_pfmov : {src: Operand.t,
 				 dst: Operand.t,
 				 size: Size.t} -> t
+	val instruction_pfmovx : {src: Operand.t,
+				  dst: Operand.t,
+				  srcsize: Size.t,
+				  dstsize: Size.t} -> t
+	val instruction_pfxvom : {src: Operand.t,
+				  dst: Operand.t,
+				  srcsize: Size.t,
+				  dstsize: Size.t} -> t
 	val instruction_pfldc : {oper: Instruction.fldc,
 				 dst: Operand.t,
 				 size: Size.t} -> t

@@ -595,61 +595,151 @@ struct
 			       | _ => Error.bug "prim: FFI"],
 		     transfer = NONE}]
 		end
-	     | Int_ge _ => cmp Instruction.GE
-	     | Int_gt _ => cmp Instruction.G
-	     | Int_le _ => cmp Instruction.LE
-	     | Int_lt _ => cmp Instruction.L
+             | Int_add s => 
+		(case s of
+		    I8 => binal Instruction.ADD
+		  | I16 => binal Instruction.ADD
+		  | I32 => binal Instruction.ADD
+		  | I64 => Error.bug "FIXME")
+	     | Int_ge s => 	
+		(case s of
+		    I8 => cmp Instruction.GE
+		  | I16 => cmp Instruction.GE
+		  | I32 => cmp Instruction.GE
+		  | I64 => Error.bug "FIXME")
+	     | Int_gt s => 
+		(case s of
+		    I8 => cmp Instruction.G
+		  | I16 => cmp Instruction.G
+		  | I32 => cmp Instruction.G
+		  | I64 => Error.bug "FIXME")
+	     | Int_le s => 
+		(case s of
+		    I8 => cmp Instruction.LE
+		  | I16 => cmp Instruction.LE
+		  | I32 => cmp Instruction.LE
+		  | I64 => Error.bug "FIXME")
+	     | Int_lt s =>
+		(case s of
+		    I8 => cmp Instruction.L
+		  | I16 => cmp Instruction.L
+		  | I32 => cmp Instruction.L
+		  | I64 => Error.bug "FIXME")
 	     | Int_mul s =>
-		  (case s of
-		      I8 => pmd Instruction.IMUL
-		    | I16 => imul2 () 
-		    | I32 => imul2 ()
-		    | I64 => Error.bug "FIXME")
-	     | Int_neg _ => unal Instruction.NEG 
-	     | Int_quot _ => pmd Instruction.IDIV
-	     | Int_rem _ => pmd Instruction.IMOD
-	     | Int_sub _ => binal Instruction.SUB
-             | Int_add _ => binal Instruction.ADD
+		(case s of
+		    I8 => pmd Instruction.IMUL
+		  | I16 => imul2 () 
+		  | I32 => imul2 ()
+		  | I64 => Error.bug "FIXME")
+	     | Int_neg s => 
+		(case s of
+		    I8 => unal Instruction.NEG 
+		  | I16 => unal Instruction.NEG 
+		  | I32 => unal Instruction.NEG 
+		  | I64 => Error.bug "FIXME")
+	     | Int_quot s => 
+		(case s of
+		    I8 => pmd Instruction.IDIV
+		  | I16 => pmd Instruction.IDIV
+		  | I32 => pmd Instruction.IDIV
+		  | I64 => Error.bug "FIXME")
+	     | Int_rem s => 
+		(case s of
+		    I8 => pmd Instruction.IMOD
+		  | I16 => pmd Instruction.IMOD
+		  | I32 => pmd Instruction.IMOD
+		  | I64 => Error.bug "FIXME")
+	     | Int_sub s => 
+		(case s of
+		    I8 => binal Instruction.SUB
+		  | I16 => binal Instruction.SUB
+		  | I32 => binal Instruction.SUB
+		  | I64 => Error.bug "FIXME")
 	     | Int_toInt (s, s') =>
 		(case (s, s') of
-		   (I32, I32) => mov ()
-		 | (I32, I16) => xvom ()
-		 | (I32, I8) => xvom ()
-		 | (I16, I32) => movx Instruction.MOVSX
-		 | (I16, I16) => mov ()
-		 | (I16, I8) => xvom ()
-		 | (I8, I32) => movx Instruction.MOVSX
-		 | (I8, I16) => movx Instruction.MOVSX
-		 | (I8, I8) => mov ()
-		 | _ => Error.bug (Prim.toString prim))
-	     | Int_toReal _
+		    (I64, I64) => Error.bug "FIXME"
+		  | (I64, I32) => Error.bug "FIXME"
+		  | (I64, I16) => Error.bug "FIXME"
+		  | (I64, I8) => Error.bug "FIXME"
+		  | (I32, I64) => Error.bug "FIXME"
+		  | (I32, I32) => mov ()
+		  | (I32, I16) => xvom ()
+		  | (I32, I8) => xvom ()
+		  | (I16, I64) => Error.bug "FIXME"
+		  | (I16, I32) => movx Instruction.MOVSX
+		  | (I16, I16) => mov ()
+		  | (I16, I8) => xvom ()
+		  | (I8, I64) => Error.bug "FIXME"
+		  | (I8, I32) => movx Instruction.MOVSX
+		  | (I8, I16) => movx Instruction.MOVSX
+		  | (I8, I8) => mov ())
+	     | Int_toReal (s, s')
 	     => let
-		  val (dst,dstsize) = getDst ()
-		  val (src,srcsize) = getSrc1 ()
+		  fun default () =
+		    let
+		      val (dst,dstsize) = getDst ()
+		      val (src,srcsize) = getSrc1 ()
+		    in
+		      AppendList.fromList
+		      [Block.mkBlock'
+		       {entry = NONE,
+			statements 
+			= [Assembly.instruction_pfmovfi
+			   {src = src,
+			    dst = dst,
+			    srcsize = srcsize,
+			    dstsize = dstsize}],
+			transfer = NONE}]
+		    end 
+		  fun default' () =
+		    let
+		      val (dst,dstsize) = getDst ()
+		      val (src,srcsize) = getSrc1 ()
+		      val (tmp,tmpsize) =
+			 (fildTempContentsOperand, Size.WORD)
+		    in
+		      AppendList.fromList
+		      [Block.mkBlock'
+		       {entry = NONE,
+			statements 
+			= [Assembly.instruction_movx
+			   {oper = Instruction.MOVSX,
+			    src = src,
+			    dst = tmp,
+			    dstsize = tmpsize,
+			    srcsize = srcsize},
+			   Assembly.instruction_pfmovfi
+			   {src = tmp,
+			    dst = dst,
+			    srcsize = tmpsize,
+			    dstsize = dstsize}],
+			transfer = NONE}]
+		    end 
 		in
-		  AppendList.fromList
-		  [Block.mkBlock'
-		   {entry = NONE,
-		    statements 
-		    = [Assembly.instruction_pfmovfi
-		       {dst = dst,
-			src = src,
-			srcsize = srcsize,
-			dstsize = dstsize}],
-		    transfer = NONE}]
-		end 
+		   case (s, s') of
+		      (I64, R64) => Error.bug "FIXME"
+		    | (I64, R32) => Error.bug "FIXME"
+		    | (I32, R64) => default ()
+		    | (I32, R32) => default ()
+		    | (I16, R64) => default ()
+		    | (I16, R32) => default ()
+		    | (I8, R64) => default' ()
+		    | (I8, R32) => default' ()
+		end
 	     | Int_toWord (s, s') =>
 		(case (s, s') of
-		   (I32, W32) => mov ()
-		 | (I32, W16) => xvom ()
-		 | (I32, W8) => xvom ()
-		 | (I16, W32) => movx Instruction.MOVSX
-		 | (I16, W16) => mov ()
-		 | (I16, W8) => xvom ()
-		 | (I8, W32) => movx Instruction.MOVSX
-		 | (I8, W16) => movx Instruction.MOVSX
-		 | (I8, W8) => mov ()
-		 | _ => Error.bug (Prim.toString prim))
+		    (I64, W32) => Error.bug "FIXME"
+		  | (I64, W16) => Error.bug "FIXME"
+		  | (I64, W8) => Error.bug "FIXME"
+		  | (I32, W32) => mov ()
+		  | (I32, W16) => xvom ()
+		  | (I32, W8) => xvom ()
+		  | (I16, W32) => movx Instruction.MOVSX
+		  | (I16, W16) => mov ()
+		  | (I16, W8) => xvom ()
+		  | (I8, W32) => movx Instruction.MOVSX
+		  | (I8, W16) => movx Instruction.MOVSX
+		  | (I8, W8) => mov ())
 	     | MLton_eq => cmp Instruction.E
 	     | Real_Math_acos _
 	     => let
@@ -659,6 +749,9 @@ struct
 		    = Assert.assert
 		      ("applyPrim: Real_Math_acos, dstsize/srcsize",
 		       fn () => srcsize = dstsize)
+		  val realTemp1ContentsOperand = realTemp1ContentsOperand srcsize
+		  val realTemp2ContentsOperand = realTemp2ContentsOperand srcsize
+		  val realTemp3ContentsOperand = realTemp3ContentsOperand srcsize
 		in
 		  AppendList.fromList
 		  [Block.mkBlock'
@@ -709,6 +802,9 @@ struct
 		    = Assert.assert
 		      ("applyPrim: Real_Math_asin, dstsize/srcsize",
 		       fn () => srcsize = dstsize)
+		  val realTemp1ContentsOperand = realTemp1ContentsOperand srcsize
+		  val realTemp2ContentsOperand = realTemp2ContentsOperand srcsize
+		  val realTemp3ContentsOperand = realTemp3ContentsOperand srcsize
 		in
 		  AppendList.fromList
 		  [Block.mkBlock'
@@ -721,25 +817,25 @@ struct
 		       Assembly.instruction_pfmov
 		       {dst = realTemp1ContentsOperand,
 			src = dst,
-			size = srcsize},
+			size = dstsize},
 		       Assembly.instruction_pfbina
 		       {oper = Instruction.FMUL,
 			dst = realTemp1ContentsOperand,
 			src = realTemp1ContentsOperand,
-			size = srcsize},
+			size = dstsize},
 		       Assembly.instruction_pfldc
 		       {oper = Instruction.ONE,
 			dst = realTemp2ContentsOperand,
-			size = srcsize},
+			size = dstsize},
 		       Assembly.instruction_pfbina
 		       {oper = Instruction.FSUB,
 			dst = realTemp2ContentsOperand,
 			src = realTemp1ContentsOperand,
-			size = srcsize},
+			size = dstsize},
 		       Assembly.instruction_pfuna
 		       {oper = Instruction.FSQRT,
 			dst = realTemp2ContentsOperand,
-			size = srcsize},
+			size = dstsize},
 		       Assembly.instruction_pfbinasp
 		       {oper = Instruction.FPATAN,
 			src = realTemp2ContentsOperand,
@@ -755,6 +851,9 @@ struct
 		    = Assert.assert
 		      ("applyPrim: Real_Math_atan, dstsize/srcsize",
 		       fn () => srcsize = dstsize)
+		  val realTemp1ContentsOperand = realTemp1ContentsOperand srcsize
+		  val realTemp2ContentsOperand = realTemp2ContentsOperand srcsize
+		  val realTemp3ContentsOperand = realTemp3ContentsOperand srcsize
 		in
 		  AppendList.fromList
 		  [Block.mkBlock'
@@ -810,6 +909,9 @@ struct
 		    = Assert.assert
 		      ("applyPrim: Real_Math_exp, dstsize/srcsize",
 		       fn () => srcsize = dstsize)
+		  val realTemp1ContentsOperand = realTemp1ContentsOperand srcsize
+		  val realTemp2ContentsOperand = realTemp2ContentsOperand srcsize
+		  val realTemp3ContentsOperand = realTemp3ContentsOperand srcsize
 		in
 		  AppendList.fromList
 		  [Block.mkBlock'
@@ -1081,21 +1183,100 @@ struct
 		    transfer = NONE}]
 		end
 	     | Real_abs _ => funa Instruction.FABS
-	     | Real_toInt _
+	     | Real_toInt (s, s')
+	     => let
+		  fun default () =
+		    let
+		      val (dst,dstsize) = getDst ()
+		      val (src,srcsize) = getSrc1 ()
+		    in
+		      AppendList.fromList
+		      [Block.mkBlock'
+		       {entry = NONE,
+			statements 
+			= [Assembly.instruction_pfmovti
+			   {dst = dst,
+			    src = src,
+			    srcsize = srcsize,
+			    dstsize = dstsize}],
+			transfer = NONE}]
+		    end 
+		  fun default' () =
+		    let
+		      val (dst,dstsize) = getDst ()
+		      val (src,srcsize) = getSrc1 ()
+		      val (tmp,tmpsize) =
+			 (fildTempContentsOperand, Size.WORD)
+		    in
+		      AppendList.fromList
+		      [Block.mkBlock'
+		       {entry = NONE,
+			statements 
+			= [Assembly.instruction_pfmovti
+			   {dst = dst,
+			    src = src,
+			    srcsize = srcsize,
+			    dstsize = dstsize},
+			   Assembly.instruction_xvom
+			   {src = tmp,
+			    dst = dst,
+			    dstsize = dstsize,
+			    srcsize = tmpsize}],
+			transfer = NONE}]
+		    end 
+		in
+		   case (s, s') of
+		      (R64, I64) => Error.bug "FIXME"
+		    | (R64, I32) => default ()
+		    | (R64, I16) => default ()
+		    | (R64, I8) => default' ()
+		    | (R32, I64) => Error.bug "FIXME"
+		    | (R32, I32) => default ()
+		    | (R32, I16) => default ()
+		    | (R32, I8) => default' ()
+		end
+             | Real_toReal (s, s')
 	     => let
 		  val (dst,dstsize) = getDst ()
 		  val (src,srcsize) = getSrc1 ()
-		in
-		  AppendList.fromList
-		  [Block.mkBlock'
-		   {entry = NONE,
-		    statements 
-		    = [Assembly.instruction_pfmovti
-		       {dst = dst,
-			src = src,
-			srcsize = srcsize,
-			dstsize = dstsize}],
-		    transfer = NONE}]
+		  fun mov () =
+		     AppendList.fromList
+		     [Block.mkBlock'
+		      {entry = NONE,
+		       statements 
+		       = [Assembly.instruction_pfmov
+			  {dst = dst,
+			   src = src,
+			   size = srcsize}],
+		       transfer = NONE}]
+		  fun movx () =
+		     AppendList.fromList
+		     [Block.mkBlock'
+		      {entry = NONE,
+		       statements 
+		       = [Assembly.instruction_pfmovx
+			  {dst = dst,
+			   src = src,
+			   srcsize = srcsize,
+			   dstsize = dstsize}],
+		       transfer = NONE}]
+		  fun xvom () =
+		     AppendList.fromList
+		     [Block.mkBlock'
+		      {entry = NONE,
+		       statements 
+		       = [Assembly.instruction_pfxvom
+			  {dst = dst,
+			   src = src,
+			   srcsize = srcsize,
+			   dstsize = dstsize}],
+		       transfer = NONE}]
+		in	
+		   case (s, s') of
+		      (R64, R64) => mov ()
+		    | (R64, R32) => xvom ()
+		    | (R32, R64) => movx ()
+		    | (R32, R32) => mov ()
 		end 
 	     | Real_ldexp _ 
 	     => let
@@ -1110,6 +1291,9 @@ struct
 		    = Assert.assert
 		      ("applyPrim: Real_qequal, src2size",
 		       fn () => src2size = Size.LONG)
+		  val realTemp1ContentsOperand = realTemp1ContentsOperand src1size
+		  val realTemp2ContentsOperand = realTemp2ContentsOperand src1size
+		  val realTemp3ContentsOperand = realTemp3ContentsOperand src1size
 		in
 		  AppendList.fromList
 		  [Block.mkBlock'

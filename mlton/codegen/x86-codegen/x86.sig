@@ -251,7 +251,7 @@ signature X86 =
 			    size: Size.t,
 			    class: Class.t} -> t
 	(* CReturn locations *)
-	val cReturnTempContents : Size.t -> t
+	val cReturnTempContent : Size.t -> t
     end
 
     structure ClassSet : SET
@@ -523,6 +523,18 @@ signature X86 =
 	  | pFMOV of {src: Operand.t,
 		      dst: Operand.t,
 		      size: Size.t}
+	  (* Pseudo floating-point move with extension.
+	   *)
+	  | pFMOVX of {src: Operand.t,
+		       dst: Operand.t,
+		       srcsize: Size.t,
+		       dstsize: Size.t}
+	  (* Pseudo floating-point move with contraction.
+	   *)
+	  | pFXVOM of {src: Operand.t,
+		       dst: Operand.t,
+		       srcsize: Size.t,
+		       dstsize: Size.t}
 	  (* Pseudo floating-point load constant.
 	   *)
 	  | pFLDC of {oper: fldc,
@@ -950,6 +962,14 @@ signature X86 =
 	val instruction_pfmov : {src: Operand.t,
 				 dst: Operand.t,
 				 size: Size.t} -> t
+	val instruction_pfmovx : {src: Operand.t,
+				  dst: Operand.t,
+				  srcsize: Size.t,
+				  dstsize: Size.t} -> t
+	val instruction_pfxvom : {src: Operand.t,
+				  dst: Operand.t,
+				  srcsize: Size.t,
+				  dstsize: Size.t} -> t
 	val instruction_pfldc : {oper: Instruction.fldc,
 				 dst: Operand.t,
 				 size: Size.t} -> t

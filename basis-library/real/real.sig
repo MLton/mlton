@@ -8,10 +8,58 @@ structure LargeReal =
       type real = real
    end
 
+signature PRE_REAL_GLOBAL =
+  sig
+      type real
+      structure Math: MATH where type real = real
+  end
+
+signature PRE_REAL =
+  sig
+      include PRE_REAL_GLOBAL
+
+      val * : real * real -> real
+      val *+ : real * real * real -> real
+      val *- : real * real * real -> real
+      val + : real * real -> real
+      val - : real * real -> real
+      val / : real * real -> real
+      val <  : real * real -> bool
+      val <= : real * real -> bool
+      val == : real * real -> bool
+      val >  : real * real -> bool
+      val >= : real * real -> bool
+      val ?= : real * real -> bool
+      val ~ : real -> real
+      val abs: real -> real
+      val class: real -> int
+      val copySign: real * real -> real
+      val frexp: real * int ref -> real;
+      val gdtoa: real * int * int * int ref -> Primitive.cstring;
+      val fromInt: int -> real
+      val isFinite: real -> bool
+      val isNan: real -> bool
+      val isNormal: real -> bool
+      val ldexp: real * int -> real
+      val maxFinite: real
+      val minNormalPos: real
+      val minPos: real
+      val modf: real * real ref -> real
+      val nextAfter: real * real -> real
+      val round: real -> real
+      val signBit: real -> bool
+      val strto: nullString -> real
+      val toInt: real -> int
+	 
+      val fromLarge: IEEEReal.rounding_mode -> LargeReal.real -> real
+      val toLarge: real -> LargeReal.real
+      val precision: int
+      val radix: int
+  end
+
 signature REAL_GLOBAL =
    sig
-     type real
-     structure Math: MATH where type real = real
+     include PRE_REAL_GLOBAL
 
      val round: real -> Int.int
      val trunc: real -> Int.int 
@@ -80,12 +128,4 @@ signature REAL =
       val toManExp: real -> {man: real, exp: int}
       val toString: real -> string
       val unordered: real * real -> bool
-   end
-
-signature REAL32 =
-   sig
-      type real
-
-      val toLarge: real -> LargeReal.real
-      val fromLarge: IEEEReal.rounding_mode -> LargeReal.real -> real
    end

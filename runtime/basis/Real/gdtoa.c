@@ -46,3 +46,7 @@ char * Real64_gdtoa (double d, int mode, int ndig, int *decpt) {
 				result, d, mode, ndig, *decpt);
 	return result;
 }
+
+char * Real32_gdtoa (float f, int mode, int ndig, int *decpt) {
+	return Real64_gdtoa ((double)f, mode, ndig, decpt);
+}

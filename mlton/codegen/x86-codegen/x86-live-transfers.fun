@@ -868,14 +868,14 @@ struct
 					    | SOME dstsize
 					    => (case Size.class dstsize
 						  of Size.INT 
-						   => ([(MemLoc.cReturnTempContents 
+						   => ([(MemLoc.cReturnTempContent
 							 dstsize,
 							 Register.return dstsize,
 							 ref true)],
 						       [])
 						   | Size.FLT 
 						   => ([],
-						       [(MemLoc.cReturnTempContents 
+						       [(MemLoc.cReturnTempContent
 							 dstsize,
 							 ref true)])
 						   | _ => Error.bug "CCall")}

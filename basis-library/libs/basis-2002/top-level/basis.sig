@@ -187,7 +187,7 @@ signature BASIS_2002 =
       structure RealVector : MONO_VECTOR
       structure RealVectorSlice : MONO_VECTOR_SLICE
       structure RealArray2 : MONO_ARRAY2
-      structure Real32 : REAL32
+      structure Real32 : REAL
       structure Real32Array : MONO_ARRAY
       structure Real32ArraySlice : MONO_ARRAY_SLICE
       structure Real32Vector : MONO_VECTOR
@@ -394,16 +394,16 @@ signature BASIS_2002 =
       sharing type RealVectorSlice.vector = RealVector.vector
       sharing type RealArray2.elem = real
       sharing type RealArray2.vector = RealVector.vector
-      (* sharing type Real32Array.elem = Real32.real *)
+      sharing type Real32Array.elem = Real32.real
       sharing type Real32Array.vector = Real32Vector.vector
-      (* sharing type Real32ArraySlice.elem = Real32.real *)
+      sharing type Real32ArraySlice.elem = Real32.real
       sharing type Real32ArraySlice.array = Real32Array.array
       sharing type Real32ArraySlice.vector = Real32Vector.vector
       sharing type Real32ArraySlice.vector_slice = Real32VectorSlice.slice
-      (* sharing type Real32Vector.elem = Real32.real *)
-      (* sharing type Real32VectorSlice.elem = Real32.real *)
+      sharing type Real32Vector.elem = Real32.real
+      sharing type Real32VectorSlice.elem = Real32.real
       sharing type Real32VectorSlice.vector = Real32Vector.vector
-      (* sharing type Real32Array2.elem = Real32.real *)
+      sharing type Real32Array2.elem = Real32.real
       sharing type Real32Array2.vector = Real32Vector.vector
       sharing type Real64Array.elem = Real64.real
       sharing type Real64Array.vector = Real64Vector.vector

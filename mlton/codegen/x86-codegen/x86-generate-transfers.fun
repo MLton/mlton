@@ -518,7 +518,7 @@ struct
 						  (x86.Assembly.instruction_mov
 						   {dst = dst,
 						    src = Operand.memloc
-						          (MemLoc.cReturnTempContents 
+						          (MemLoc.cReturnTempContent 
 							   dstsize),
 						    size = dstsize})
 					       | Size.FLT
@@ -526,7 +526,7 @@ struct
 						  (x86.Assembly.instruction_pfmov
 						   {dst = dst,
 						    src = Operand.memloc
-						          (MemLoc.cReturnTempContents 
+						          (MemLoc.cReturnTempContent 
 							   dstsize),
 						    size = dstsize})
 					       | _ => Error.bug "CReturn")
@@ -1085,6 +1085,7 @@ struct
 		       = livenessTransfer {transfer = transfer,
 					   liveInfo = liveInfo}
 		     val c_stackP = x86MLton.c_stackPContentsOperand
+		     val c_stackPDerefFloat = x86MLton.c_stackPDerefFloatOperand
 		     val c_stackPDerefDouble = x86MLton.c_stackPDerefDoubleOperand
 		     val applyFFTemp = x86MLton.applyFFTempContentsOperand
 		     val (pushArgs, size_args)
@@ -1102,6 +1103,17 @@ struct
 				    Assembly.instruction_pfmov
 				    {src = arg,
 				     dst = c_stackPDerefDouble,
+				     size = size}]
+                            else if Size.eq (size, Size.SNGL)
+			      then AppendList.fromList
+			   	   [Assembly.instruction_binal
+				    {oper = Instruction.SUB,
+				     dst = c_stackP,
+				     src = Operand.immediate_const_int 4,
+				     size = pointerSize},
+				    Assembly.instruction_pfmov
+				    {src = arg,
+				     dst = c_stackPDerefFloat,
 				     size = size}]
 			    else if Size.eq (size, Size.BYTE)
 			      then AppendList.fromList
@@ -1280,11 +1292,11 @@ struct
 				  of Size.INT
 				   => AppendList.single
 				      (Assembly.directive_return
-				       {memloc = MemLoc.cReturnTempContents dstsize})
+				       {memloc = MemLoc.cReturnTempContent dstsize})
 				   | Size.FLT 
 				   => AppendList.single
 				      (Assembly.directive_fltreturn
-				       {memloc = MemLoc.cReturnTempContents dstsize})
+				       {memloc = MemLoc.cReturnTempContent dstsize})
 				   | _ => Error.bug "CCall")
 		     val fixCStack =
 			if size_args > 0

@@ -78,16 +78,20 @@ OBJS =						\
 	basis/Ptrace/ptrace2.o			\
 	basis/Ptrace/ptrace4.o			\
 	basis/Real/class.o			\
+	basis/Real/copysign.o			\
+	basis/Real/frexp.o			\
 	basis/Real/gdtoa.o			\
 	basis/Real/isFinite.o			\
 	basis/Real/isNan.o			\
 	basis/Real/isNormal.o			\
+	basis/Real/modf.o			\
 	basis/Real/nextAfter.o			\
+	basis/Real/pow.o			\
 	basis/Real/real.o			\
 	basis/Real/round.o			\
 	basis/Real/signBit.o			\
-	basis/Real/strtod.o			\
-	basis/Real/toReal.o			\
+	basis/Real/strto.o			\
+	basis/Real/trig.o			\
 	basis/Stdio.o				\
 	basis/Thread.o				\
 	basis/Time.o				\
@@ -246,16 +250,20 @@ DEBUG_OBJS =					\
 	basis/Ptrace/ptrace2-gdb.o		\
 	basis/Ptrace/ptrace4-gdb.o		\
 	basis/Real/class-gdb.o			\
+	basis/Real/copysign-gdb.o		\
+	basis/Real/frexp-gdb.o			\
 	basis/Real/gdtoa-gdb.o			\
 	basis/Real/isFinite-gdb.o		\
 	basis/Real/isNan-gdb.o			\
 	basis/Real/isNormal-gdb.o		\
+	basis/Real/modf-gdb.o			\
 	basis/Real/nextAfter-gdb.o		\
+	basis/Real/pow-gdb.o			\
 	basis/Real/real-gdb.o			\
 	basis/Real/round-gdb.o			\
 	basis/Real/signBit-gdb.o		\
-	basis/Real/strtod-gdb.o			\
-	basis/Real/toReal-gdb.o			\
+	basis/Real/strto-gdb.o			\
+	basis/Real/trig-gdb.o			\
 	basis/Stdio-gdb.o			\
 	basis/Thread-gdb.o			\
 	basis/Time-gdb.o			\

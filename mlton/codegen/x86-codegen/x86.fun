@@ -1200,31 +1200,24 @@ struct
 	       size = size,
 	       class = class}
       local
-	open CType
-	val cReturnTempBYTE = Label.fromString "cReturnTempB"
-	val cReturnTempBYTEContents 
-	  = makeContents {base = Immediate.label cReturnTempBYTE,
-			  size = Size.BYTE,
-			  class = Class.StaticTemp}
-	val cReturnTempDBLE = Label.fromString "cReturnTempD"
-	val cReturnTempDBLEContents 
-	  = makeContents {base = Immediate.label cReturnTempDBLE,
-			  size = Size.DBLE,
-			  class = Class.StaticTemp}
-	val cReturnTempLONG = Label.fromString "cReturnTempL"
-	val cReturnTempLONGContents 
-	  = makeContents {base = Immediate.label cReturnTempLONG,
-			  size = Size.LONG,
-			  class = Class.StaticTemp}
+	val cReturnTemp = Label.fromString "cReturnTemp"
+	fun cReturnTempContent (index, size) =
+	   imm
+	   {base = Immediate.label cReturnTemp,
+	    index = Immediate.const_int index,
+	    scale = Scale.One,
+	    size = size,
+	    class = Class.StaticTemp}
       in
-	fun cReturnTempContents size
-	  = case size
-	      of Size.BYTE => cReturnTempBYTEContents
-	       | Size.DBLE => cReturnTempDBLEContents
-	       | Size.LONG => cReturnTempLONGContents
-	       | _ => Error.bug "cReturnTempContents: size"
+	 fun cReturnTempContents sizes =
+	    (List.rev o #1)
+	    (List.fold
+	     (sizes, ([],0), fn (size, (contents, index)) =>
+	      ((cReturnTempContent (index, size))::contents,
+	       index + Size.toBytes size)))
+	 fun cReturnTempContent size =
+	    List.first(cReturnTempContents [size])
       end
-
     end
 
   local
@@ -1761,6 +1754,18 @@ struct
 	| pFMOV of {src: Operand.t,
 		    dst: Operand.t,
 		    size: Size.t}
+	(* Pseudo floating-point move with extension.
+	 *)
+	| pFMOVX of {src: Operand.t,
+		     dst: Operand.t,
+		     srcsize: Size.t,
+		     dstsize: Size.t}
+	(* Pseudo floating-point move with contraction.
+	 *)
+	| pFXVOM of {src: Operand.t,
+		     dst: Operand.t,
+		     srcsize: Size.t,
+		     dstsize: Size.t}
 	(* Pseudo floating-point load constant.
 	 *)
 	| pFLDC of {oper: fldc,
@@ -2028,6 +2033,18 @@ struct
 	     | pFMOV {src, dst, size}
 	     => bin (str "fmov", 
 		     Size.layout size,
+		     Operand.layout src,
+		     Operand.layout dst)
+	     | pFMOVX {src, dst, srcsize, dstsize}
+	     => bin (str "fmovx", 
+		     seq [Size.layout srcsize, 
+			  Size.layout dstsize],
+		     Operand.layout src,
+		     Operand.layout dst)
+	     | pFXVOM {src, dst, srcsize, dstsize}
+	     => bin (str "fmov", 
+		     seq [Size.layout srcsize,
+			  Size.layout dstsize],
 		     Operand.layout src,
 		     Operand.layout dst)
 	     | pFLDC {oper, dst, size}
@@ -2302,6 +2319,10 @@ struct
 	   | LEA {src, dst, size}
 	   => {uses = [src], defs = [dst], kills = []}
 	   | pFMOV {src, dst, size}
+	   => {uses = [src], defs = [dst], kills = []}
+	   | pFMOVX {src, dst, srcsize, dstsize}
+	   => {uses = [src], defs = [dst], kills = []}
+	   | pFXVOM {src, dst, srcsize, dstsize}
 	   => {uses = [src], defs = [dst], kills = []}
 	   | pFLDC {oper, dst, size}
 	   => {uses = [], defs = [dst], kills = []}
@@ -2601,6 +2622,10 @@ struct
 	   => {srcs = SOME [src], dsts = SOME [dst]}
 	   | pFMOV {src, dst, size}
 	   => {srcs = SOME [src], dsts = SOME [dst]}
+	   | pFMOVX {src, dst, srcsize, dstsize}
+	   => {srcs = SOME [src], dsts = SOME [dst]}
+	   | pFXVOM {src, dst, srcsize, dstsize}
+	   => {srcs = SOME [src], dsts = SOME [dst]}
 	   | pFLDC {oper, dst, size}
 	   => {srcs = SOME [], dsts = SOME [dst]}
 	   | pFMOVFI {src, dst, srcsize, dstsize}
@@ -2775,6 +2800,14 @@ struct
 	   => pFMOV {src = replacer {use = true, def = false} src,
 		     dst = replacer {use = false, def = true} dst,
 		     size = size}
+	   | pFMOVX {src, dst, srcsize, dstsize}
+	   => pFMOVX {src = replacer {use = true, def = false} src,
+		      dst = replacer {use = false, def = true} dst,
+		      srcsize = srcsize, dstsize = dstsize}
+	   | pFXVOM {src, dst, srcsize, dstsize}
+	   => pFXVOM {src = replacer {use = true, def = false} src,
+		      dst = replacer {use = false, def = true} dst,
+		      srcsize = srcsize, dstsize = dstsize}
            | pFLDC {oper, dst, size}
            => pFLDC {oper = oper,
 		     dst = replacer {use = false, def = true} dst,
@@ -2895,6 +2928,8 @@ struct
       val xvom = XVOM
       val lea = LEA
       val pfmov = pFMOV
+      val pfmovx = pFMOVX
+      val pfxvom = pFXVOM
       val pfldc = pFLDC
       val pfmovfi = pFMOVFI
       val pfmovti = pFMOVTI
@@ -3569,6 +3604,8 @@ struct
       val instruction_xvom = Instruction o Instruction.xvom
       val instruction_lea = Instruction o Instruction.lea
       val instruction_pfmov = Instruction o Instruction.pfmov
+      val instruction_pfmovx = Instruction o Instruction.pfmovx
+      val instruction_pfxvom = Instruction o Instruction.pfxvom
       val instruction_pfldc = Instruction o Instruction.pfldc
       val instruction_pfmovfi = Instruction o Instruction.pfmovfi
       val instruction_pfmovti = Instruction o Instruction.pfmovti
@@ -3685,7 +3722,7 @@ struct
 
       val uses_defs_kills
 	= fn CReturn {dst = SOME (dst, dstsize), ...} 
-	   => {uses = [Operand.memloc (MemLoc.cReturnTempContents dstsize)],
+	   => {uses = [Operand.memloc (MemLoc.cReturnTempContent dstsize)],
 	       defs = [dst], kills = []}
 	   | _ => {uses = [], defs = [], kills = []}
 	   
@@ -4003,7 +4040,7 @@ struct
 	       defs = case dstsize 
 			of NONE => []
 			 | SOME dstsize 
-			 => [Operand.memloc (MemLoc.cReturnTempContents dstsize)],
+			 => [Operand.memloc (MemLoc.cReturnTempContent dstsize)],
 	       kills = []}
 	   | _ => {uses = [], defs = [], kills = []}
 

@@ -163,7 +163,8 @@ structure Name =
        | Real_qequal of RealSize.t (* codegen *)
        | Real_round of RealSize.t (* codegen *)
        | Real_sub of RealSize.t (* codegen *)
-       | Real_toInt of RealSize.t (* codegen *)
+       | Real_toInt of RealSize.t * IntSize.t (* codegen *)
+       | Real_toReal of RealSize.t * RealSize.t (* codegen *)
        | Ref_assign (* backend *)
        | Ref_deref (* backend *)
        | Ref_ref (* backend *)
@@ -302,8 +303,7 @@ structure Name =
 	   (Real_neg, Functional, "neg"),
 	   (Real_qequal, Functional, "qequal"),
 	   (Real_round, Functional, "round"),
-	   (Real_sub, Functional, "sub"),
-	   (Real_toInt, Functional, "toInt")],
+	   (Real_sub, Functional, "sub")],
 	 fn (makeName, kind, str) =>
 	 (makeName s, kind, concat ["Real", RealSize.toString s, "_", str]))
 
@@ -443,6 +443,8 @@ structure Name =
 	      List.concat [coerces (Int_toInt, int, int),
 			   coerces (Int_toReal, int, real),
 			   coerces (Int_toWord, int, word),
+			   coerces (Real_toInt, real, int),
+			   coerces (Real_toReal, real, real),
 			   coerces (Word_toInt, word, int),
 			   coercesX (Word_toIntX, word, int),
 			   coerces (Word_toWord, word, word),

@@ -6550,6 +6550,255 @@ struct
 		    registerAllocation = registerAllocation}
 		 end
 
+      fun pfmov {instruction, info as {dead, commit, remove, ...}, 
+		 registerAllocation,
+		 src, dst, srcsize, dstsize} =
+	 let
+	    fun default ()
+	       = let
+		    val {uses,defs,kills} 
+		       = Instruction.uses_defs_kills instruction
+		    val {assembly = assembly_pre,
+			 registerAllocation}
+		       = RA.pre {uses = uses,
+				 defs = defs,
+				 kills = kills,
+				 info = info,
+				 registerAllocation = registerAllocation}
+		       
+		    val {operand = final_src,
+			 assembly = assembly_src,
+			 fltrename = fltrename_src,
+			 registerAllocation}
+		       = RA.allocateFltOperand 
+		         {operand = src,
+			  options = {fltregister = true,
+				     address = true},
+			  info = info,
+			  size = srcsize,
+			  move = true,
+			  supports = [dst],
+			  saves = [],
+			  top = SOME false,
+			  registerAllocation
+			  = registerAllocation}
+			 
+		    val {operand = final_dst,
+			 assembly = assembly_dst,
+			 fltrename = fltrename_dst,
+			 registerAllocation}
+		       = RA.allocateFltOperand 
+		         {operand = dst,
+			  options = {fltregister = true,
+				     address = false},
+			  info = info,
+			  size = dstsize,
+			  move = false,
+			  supports = [],
+			  saves = [src,final_src],
+			  top = NONE,
+			  registerAllocation
+			  = registerAllocation}
+			 
+		    val final_src = (RA.fltrenameLift fltrename_dst) final_src
+		       
+		    val instruction
+		       = Instruction.FLD
+		         {src = final_src,
+			  size = srcsize}
+			 
+		    val {uses = final_uses,
+			 defs = final_defs,  
+			 ...}
+		       = Instruction.uses_defs_kills instruction
+		       
+		    val {assembly = assembly_post,
+			 registerAllocation}
+		       = RA.post {uses = uses,
+				  final_uses = final_uses,
+				  defs = defs,
+				  final_defs = final_defs,
+				  kills = kills,
+				  info = info,
+				  registerAllocation = registerAllocation}
+		 in
+		    {assembly 
+		     = AppendList.appends
+		       [assembly_pre,
+			assembly_src,	
+			assembly_dst,
+			AppendList.single
+			(Assembly.instruction instruction),
+			assembly_post],
+		       registerAllocation = registerAllocation}
+		 end
+	      
+	    fun default' ()
+	       = let
+		    val {uses,defs,kills} 
+		       = Instruction.uses_defs_kills instruction
+		    val {assembly = assembly_pre,
+			 registerAllocation}
+		       = RA.pre {uses = uses,
+				 defs = defs,
+				 kills = kills,
+				 info = info,
+				 registerAllocation = registerAllocation}
+		       
+		    val {operand = final_src,
+			 assembly = assembly_src,
+			 fltrename = fltrename_src,
+			 registerAllocation}
+		       = RA.allocateFltOperand 
+		         {operand = src,
+			  options = {fltregister = true,
+				     address = false},
+			  info = info,
+			  size = srcsize,
+			  move = true,
+			  supports = [dst],
+			  saves = [],
+			  top = SOME true,
+			  registerAllocation = registerAllocation}
+			 
+		    val {operand = final_dst,
+			 assembly = assembly_dst,
+			 fltrename = fltrename_dst,
+			 registerAllocation}
+		       = RA.allocateFltOperand 
+		         {operand = dst,
+			  options = {fltregister = false,
+				     address = true},
+			  info = info,
+			  size = dstsize,
+			  move = false,
+			  supports = [],
+			  saves = [src,final_src],
+			  top = SOME false,
+			  registerAllocation = registerAllocation}
+			 
+		    val final_src = (RA.fltrenameLift fltrename_dst) final_src
+		       
+		    val instruction
+		       = Instruction.FST
+		         {dst = final_dst,
+			  size = dstsize,
+			  pop = true}
+			 
+		    val {fltrename = fltrename_pop,
+			 registerAllocation}
+		       = RA.fltpop {registerAllocation = registerAllocation}
+		       
+		    val {uses = final_uses,
+			 defs = final_defs,
+			 ...}
+		       = Instruction.uses_defs_kills instruction
+		       
+		    val final_uses
+		       = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
+		    val final_defs
+		       = List.revMap(final_defs, RA.fltrenameLift fltrename_pop)
+		       
+		    val {assembly = assembly_post,
+			 registerAllocation}
+		       = RA.post {uses = uses,
+				  final_uses = final_uses,
+				  defs = defs,
+				  final_defs = final_defs,
+				  kills = kills,
+				  info = info,
+				  registerAllocation = registerAllocation}
+		 in
+		    {assembly 
+		     = AppendList.appends 
+		       [assembly_pre,
+			assembly_src,
+			assembly_dst,
+			AppendList.single
+			(Assembly.instruction instruction),
+			assembly_post],
+		       registerAllocation = registerAllocation}
+		 end
+	 in
+	    case (src,dst)
+	       of (Operand.MemLoc memloc_src,
+		   Operand.MemLoc memloc_dst)
+		  => (case (RA.fltallocated {memloc = memloc_src,
+					     registerAllocation 
+					     = registerAllocation},
+			    RA.fltallocated {memloc = memloc_dst,
+					     registerAllocation 
+					     = registerAllocation})
+			 of (SOME {fltregister = fltregister_src, 
+				   sync = sync_src,
+				   commit = commit_src, 
+				   ...},
+			     NONE)
+			    => if MemLocSet.contains(dead,memloc_src)
+			           orelse
+				   (MemLocSet.contains(remove,memloc_src)
+				    andalso
+				    sync_src)
+				  then if MemLocSet.contains(remove,
+							     memloc_dst)
+					  then default' ()
+					  else let
+						  val registerAllocation
+						     = RA.fltupdate 
+						       {value = {fltregister 
+								 = fltregister_src,
+								 memloc 
+								 = memloc_dst,
+								 weight = 1024,
+								 sync = false,
+								 commit 
+								 = commit_src},
+							registerAllocation 
+							= registerAllocation}
+						       
+						  val {uses,defs,kills} 
+						     = Instruction.uses_defs_kills
+						       instruction
+						  val {assembly = assembly_pre,
+						       registerAllocation}
+						     = RA.pre 
+						       {uses = uses,
+							defs = defs,
+							kills = kills,
+							info = info,
+							registerAllocation 
+							= registerAllocation}
+						       
+						  val final_uses = []
+						  val final_defs 
+						     = [Operand.fltregister 
+							fltregister_src]
+						     
+						  val {assembly = assembly_post,
+						       registerAllocation}
+						     = RA.post 
+						       {uses = uses,
+							final_uses = final_uses,
+							defs = defs,
+							final_defs = final_defs,
+							kills = kills,
+							info = info,
+							registerAllocation 
+							= registerAllocation}
+					       in
+						  {assembly 
+						   = AppendList.appends 
+						     [assembly_pre,
+						      assembly_post],
+						     registerAllocation 
+						     = registerAllocation}
+					       end
+				  else default ()
+			  | _ => default ())
+		| _ => default ()
+	 end
+
+
       fun removable {memloc,
 		     info as {dead, commit, remove, ...}: Liveness.t,
 		     registerAllocation}
@@ -8615,253 +8864,18 @@ struct
 		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
-	     | pFMOV {src, dst, size}
-	       (* Pseudo floating-point move.
-		*)
-	     => let
-		  fun default ()
-		    = let
-			val {uses,defs,kills} 
-			  = Instruction.uses_defs_kills instruction
-			val {assembly = assembly_pre,
-			     registerAllocation}
-			  = RA.pre {uses = uses,
-				    defs = defs,
-				    kills = kills,
-				    info = info,
-				    registerAllocation = registerAllocation}
-
-			val {operand = final_src,
-			     assembly = assembly_src,
-			     fltrename = fltrename_src,
-			     registerAllocation}
-			  = RA.allocateFltOperand 
-			    {operand = src,
-			     options = {fltregister = true,
-					address = true},
-			     info = info,
-			     size = size,
-			     move = true,
-			     supports = [dst],
-			     saves = [],
-			     top = SOME false,
-			     registerAllocation
-			     = registerAllocation}
-
-			val {operand = final_dst,
-			     assembly = assembly_dst,
-			     fltrename = fltrename_dst,
-			     registerAllocation}
-			  = RA.allocateFltOperand 
-			    {operand = dst,
-			     options = {fltregister = true,
-					address = false},
-			     info = info,
-			     size = size,
-			     move = false,
-			     supports = [],
-			     saves = [src,final_src],
-			     top = NONE,
-			     registerAllocation
-			     = registerAllocation}
-
-			val final_src = (RA.fltrenameLift fltrename_dst) final_src
-
-			val instruction
-			  = Instruction.FLD
-			    {src = final_src,
-			     size = size}
-
-                        val {uses = final_uses,
-			     defs = final_defs,  
-			     ...}
-			  = Instruction.uses_defs_kills instruction
-
-			val {assembly = assembly_post,
-			     registerAllocation}
-			  = RA.post {uses = uses,
-				     final_uses = final_uses,
-				     defs = defs,
-				     final_defs = final_defs,
-				     kills = kills,
-				     info = info,
-				     registerAllocation = registerAllocation}
-		      in
-			{assembly 
-			 = AppendList.appends
-			   [assembly_pre,
-			    assembly_src,	
-			    assembly_dst,
-			    AppendList.single
-			    (Assembly.instruction instruction),
-			    assembly_post],
-			 registerAllocation = registerAllocation}
-		      end
-
-		  fun default' ()
-		    = let
-			val {uses,defs,kills} 
-			  = Instruction.uses_defs_kills instruction
-			val {assembly = assembly_pre,
-			     registerAllocation}
-			  = RA.pre {uses = uses,
-				    defs = defs,
-				    kills = kills,
-				    info = info,
-				    registerAllocation = registerAllocation}
-
-			val {operand = final_src,
-			     assembly = assembly_src,
-			     fltrename = fltrename_src,
-			     registerAllocation}
-			  = RA.allocateFltOperand 
-			    {operand = src,
-			     options = {fltregister = true,
-					address = false},
-			     info = info,
-			     size = size,
-			     move = true,
-			     supports = [dst],
-			     saves = [],
-			     top = SOME true,
-			     registerAllocation = registerAllocation}
-
-			val {operand = final_dst,
-			     assembly = assembly_dst,
-			     fltrename = fltrename_dst,
-			     registerAllocation}
-			  = RA.allocateFltOperand 
-			    {operand = dst,
-			     options = {fltregister = false,
-					address = true},
-			     info = info,
-			     size = size,
-			     move = false,
-			     supports = [],
-			     saves = [src,final_src],
-			     top = SOME false,
-			     registerAllocation = registerAllocation}
-			    
-			val final_src = (RA.fltrenameLift fltrename_dst) final_src
-
-			val instruction
-			  = Instruction.FST
-			    {dst = final_dst,
-			     size = size,
-			     pop = true}
-			    
-			val {fltrename = fltrename_pop,
-			     registerAllocation}
-			  = RA.fltpop {registerAllocation = registerAllocation}
-			    
-			val {uses = final_uses,
-			     defs = final_defs,
-			     ...}
-			  = Instruction.uses_defs_kills instruction
-		    
-			val final_uses
-			  = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
-			val final_defs
-			  = List.revMap(final_defs, RA.fltrenameLift fltrename_pop)
-
-			val {assembly = assembly_post,
-			     registerAllocation}
-			  = RA.post {uses = uses,
-				     final_uses = final_uses,
-				     defs = defs,
-				     final_defs = final_defs,
-				     kills = kills,
-				     info = info,
-				     registerAllocation = registerAllocation}
-		      in
-			{assembly 
-			 = AppendList.appends 
-			   [assembly_pre,
-			    assembly_src,
-			    assembly_dst,
-			    AppendList.single
-			    (Assembly.instruction instruction),
-			    assembly_post],
-			 registerAllocation = registerAllocation}
-		      end
-		in
-		  case (src,dst)
-		    of (Operand.MemLoc memloc_src,
-			Operand.MemLoc memloc_dst)
-		     => (case (RA.fltallocated {memloc = memloc_src,
-						registerAllocation 
-						= registerAllocation},
-			       RA.fltallocated {memloc = memloc_dst,
-						registerAllocation 
-						= registerAllocation})
-			   of (SOME {fltregister = fltregister_src, 
-				     sync = sync_src,
-				     commit = commit_src, 
-				     ...},
-			       NONE)
-			    => if MemLocSet.contains(dead,memloc_src)
-			          orelse
-				  (MemLocSet.contains(remove,memloc_src)
-				   andalso
-				   sync_src)
-				 then if MemLocSet.contains(remove,
-							    memloc_dst)
-					then default' ()
-					else let
-					       val registerAllocation
-						 = RA.fltupdate 
-						   {value = {fltregister 
-							     = fltregister_src,
-							     memloc 
-							     = memloc_dst,
-							     weight = 1024,
-							     sync = false,
-							     commit 
-							     = commit_src},
-						    registerAllocation 
-						    = registerAllocation}
-
-					       val {uses,defs,kills} 
-						 = Instruction.uses_defs_kills
-						   instruction
-					       val {assembly = assembly_pre,
-						    registerAllocation}
-						 = RA.pre 
-						   {uses = uses,
-						    defs = defs,
-						    kills = kills,
-						    info = info,
-						    registerAllocation 
-						    = registerAllocation}
-
-					       val final_uses = []
-					       val final_defs 
-						 = [Operand.fltregister 
-						    fltregister_src]
-
-					       val {assembly = assembly_post,
-						    registerAllocation}
-						 = RA.post 
-						   {uses = uses,
-						    final_uses = final_uses,
-						    defs = defs,
-						    final_defs = final_defs,
-						    kills = kills,
-						    info = info,
-						    registerAllocation 
-						    = registerAllocation}
-					     in
-					       {assembly 
-						= AppendList.appends 
-						  [assembly_pre,
-						   assembly_post],
-						registerAllocation 
-						= registerAllocation}
-					     end
-				 else default ()
-			    | _ => default ())
-                     | _ => default ()
-		end
+	     | pFMOV {src, dst, size} => pfmov {instruction = instruction, info = info,
+						registerAllocation = registerAllocation,
+						src = src, dst = dst, 
+						srcsize = size, dstsize = size}
+	     | pFMOVX {src, dst, srcsize, dstsize} => pfmov {instruction = instruction, info = info,
+							     registerAllocation = registerAllocation,
+							     src = src, dst = dst, 
+							     srcsize = srcsize, dstsize = dstsize}
+	     | pFXVOM {src, dst, srcsize, dstsize} => pfmov {instruction = instruction, info = info,
+							     registerAllocation = registerAllocation,
+							     src = src, dst = dst, 
+							     srcsize = srcsize, dstsize = dstsize}
              | pFLDC {oper, dst, size}
 	       (* Pseudo floating-point load constant.
 	        *)

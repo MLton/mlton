@@ -6,6 +6,10 @@
 
 #if (defined (__i386__))
 
+Int Real32_isNan (Real32 f) {
+	return isnan (f); /* isnan is from math.h */
+}
+
 Int Real64_isNan (Real64 d) {
 	return isnan (d); /* isnan is from math.h */
 }

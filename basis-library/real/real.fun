@@ -1,18 +1,6 @@
-structure Real32: REAL32 =
+functor Real (R: PRE_REAL): REAL =
    struct
-      structure Prim = Primitive.Real32
-
-      type real = Prim.real
-
-      fun fromLarge m r =
-	 IEEEReal.withRoundingMode (m, fn () => Prim.fromLarge r)
-	 
-      val toLarge = Prim.toLarge
-   end
-
-structure Real64: REAL =
-   struct
-      structure Prim = Primitive.Real64
+      structure Prim = R
       local
 	 open IEEEReal
       in
@@ -57,12 +45,20 @@ structure Real64: REAL =
 	    then op ?=
 	 else fn (r, r') => isNan r orelse isNan r' orelse r == r'
 	 
-      val radix: int = 2
+      val radix: int = Prim.radix
 
-      val precision: int = 52
+      val precision: int = Prim.precision
 
-      val posInf = 1.0 / 0.0
-      val negInf = ~1.0 / 0.0
+      val toLarge = Prim.toLarge
+      val fromLarge = Prim.fromLarge
+
+      val zero = fromLarge IEEEReal.TO_NEAREST 0.0
+      val one = fromLarge IEEEReal.TO_NEAREST 1.0
+      val two = fromLarge IEEEReal.TO_NEAREST 2.0
+      val half = one / two
+
+      val posInf = one / zero
+      val negInf = ~one / zero
 
       val nan = posInf + negInf
 	 
@@ -84,12 +80,12 @@ structure Real64: REAL =
 		  then
 		     let
 			fun patch f x =
-			   if x < ~1.0 orelse x > 1.0
+			   if x < ~one orelse x > one
 			      then nan
 			   else f x
 			val acos = patch acos
 			val asin = patch asin
-			fun patch f x = if x < 0.0 then nan else f x
+			fun patch f x = if x < zero then nan else f x
 			val ln = patch ln
 			val log10 = patch log10
 		     in
@@ -105,8 +101,8 @@ structure Real64: REAL =
       fun max (x, y) = if x > y orelse isNan y then x else y
 
       fun sign (x: real): int =
-	 if x > 0.0 then 1
-         else if x < 0.0 then ~1
+	 if x > zero then 1
+         else if x < zero then ~1
 	 else if isNan x then raise Domain
          else 0
 
@@ -149,20 +145,20 @@ structure Real64: REAL =
 	 let
 	    val r: int ref = ref 0
 	 in
-	    fn x => if x == 0.0
-		       then {exp = 0, man = 0.0}
+	    fn x => if x == zero
+		       then {exp = 0, man = zero}
 		    else
 		       let
 			  val man = Prim.frexp (x, r)
 		       in
-			  {man = man * 2.0, exp = Int.- (!r, 1)}
+			  {man = man * two, exp = Int.- (!r, 1)}
 		       end
 	 end
 
       fun fromManExp {man, exp} = Prim.ldexp (man, exp)
 
       local
-	 val int = ref 0.0
+	 val int = ref zero
       in
 	 fun split x =
 	    let
@@ -197,33 +193,30 @@ structure Real64: REAL =
 		  if minInt <= x
 		     then if x <= maxInt
 			     then doit ()
-			  else if x < maxInt + 1.0
+			  else if x < maxInt + one
 				  then (case mode of
 					   TO_NEGINF => Int.maxInt'
 					 | TO_POSINF => raise Overflow
 					 | TO_ZERO => Int.maxInt'
 					 | TO_NEAREST =>
 					      (* Depends on maxInt being odd. *)
-					      if x - maxInt >= 0.5
+					      if x - maxInt >= half
 						 then raise Overflow
 					      else Int.maxInt')
 			       else raise Overflow
-		  else if x > minInt - 1.0
+		  else if x > minInt - one
 			  then (case mode of
 				   TO_NEGINF => raise Overflow
 				 | TO_POSINF => Int.minInt'
 				 | TO_ZERO => Int.minInt'
 				 | TO_NEAREST =>
 				      (* Depends on minInt being even. *)
-				      if x - minInt < ~0.5
+				      if x - minInt < ~half
 					 then raise Overflow
 				      else Int.minInt')
 		       else raise Overflow
            | SUBNORMAL => doit ()
 	 end
-
-      fun toLarge x = x
-      fun fromLarge _ x = x
       
       val floor = toInt TO_NEGINF
       val ceil = toInt TO_POSINF
@@ -246,7 +239,7 @@ structure Real64: REAL =
 	 case class x of
 	    INF => nan
 	  | NAN => nan
-	  | ZERO => 0.0
+	  | ZERO => zero
 	  | _ =>
 	       case class y of
 		  INF => x
@@ -273,7 +266,7 @@ structure Real64: REAL =
 				       else Char.chr (Int.+ (d, Char.ord #"0")))
 				      digits),
 			     "E", exp, "\000"]
-		  val x = Prim.strtod x
+		  val x = Prim.strto x
 	       in
 		  if sign
 		     then ~ x
@@ -285,7 +278,7 @@ structure Real64: REAL =
 		   | NAN => nan
 		   | NORMAL => doit ()
 		   | SUBNORMAL => doit ()
-		   | ZERO => 0.0)
+		   | ZERO => zero)
 	    handle Bad => NONE
 	 end
 
@@ -323,7 +316,7 @@ structure Real64: REAL =
 	  | INF => {class = INF,
 		    digits = [],
 		    exp = 0,
-		    sign = x < 0.0}
+		    sign = x < zero}
 	  | ZERO => {class = ZERO,
 		     digits = [],
 		     exp = 0,
@@ -344,7 +337,7 @@ structure Real64: REAL =
 		  {class = NORMAL,
 		   digits = digits,
 		   exp = exp,
-		   sign = x < 0.0}
+		   sign = x < zero}
 	       end
 
       datatype realfmt = datatype StringCvt.realfmt
@@ -444,7 +437,7 @@ structure Real64: REAL =
 			in
 			   fn x =>
 			   let
-			      val sign = if x < 0.0 then "~" else ""
+			      val sign = if x < zero then "~" else ""
 			      val (cs, decpt) = gdtoa (x, Fix, n)
 			   in
 			      fix (sign, cs, decpt, n)
@@ -462,7 +455,7 @@ structure Real64: REAL =
 			in
 			   fn x =>
 			   let
-			      val sign = if x < 0.0 then "~" else ""
+			      val sign = if x < zero then "~" else ""
 			      val (cs, decpt) = gdtoa (x, Sci, n)
 			      val length = C.CS.length cs
 			   in
@@ -487,7 +480,7 @@ structure Real64: REAL =
 			in
 			   fn x =>
 			   let
-			      val sign = if x < 0.0 then "~" else ""
+			      val sign = if x < zero then "~" else ""
 			      val (cs, decpt) = gdtoa (x, Sci, add1 n)
 			   in
 			      sci (sign, cs, decpt, n)
@@ -497,7 +490,7 @@ structure Real64: REAL =
 	       fn x =>
 	       case class x of
 		  NAN => "nan"
-		| INF => if x > 0.0 then "inf" else "~inf"
+		| INF => if x > zero then "inf" else "~inf"
 		| _ => doit x
 	    end
       end
@@ -512,10 +505,10 @@ structure Real64: REAL =
 	     | TO_POSINF => TO_NEGINF
 	     | TO_ZERO => TO_ZERO
 
-	 val m: int = 52 (* The number of mantissa bits in 64 bit IEEE 854. *)
-	 val half = Int.quot (m, 2)
-	 val two = IntInf.fromInt 2
-	 val twoPowHalf = IntInf.pow (two, half)
+	 val m: int = precision (* The number of mantissa bits in IEEE 854. *)
+	 val half_i = Int.quot (m, 2)
+	 val two_ii = IntInf.fromInt 2
+	 val twoPowHalf_ii = IntInf.pow (two_ii, half_i)
       in
 	 fun fromLargeInt (i: IntInf.int): real =
 	    let
@@ -536,7 +529,7 @@ structure Real64: REAL =
 				       let
 					  val (q, r) =
 					     IntInf.quotRem
-					     (i, IntInf.pow (two, shift))
+					     (i, IntInf.pow (two_ii, shift))
 					  val extra =
 					     case mode of
 						TO_NEAREST =>
@@ -555,22 +548,22 @@ structure Real64: REAL =
 					  (q, extra)
 				       end
 				 else
-				    (IntInf.* (i, IntInf.pow (two, Int.~ shift)),
+				    (IntInf.* (i, IntInf.pow (two_ii, Int.~ shift)),
 				     0)
 			      (* 2^m <= man < 2^(m+1) *)
-			      val (q, r) = IntInf.quotRem (man, twoPowHalf)
+			      val (q, r) = IntInf.quotRem (man, twoPowHalf_ii)
 			      fun conv (man, exp) =
 				 fromManExp {man = fromInt (IntInf.toInt man),
 					     exp = exp}
 			   in
-			      conv (q, Int.+ (half, shift))
+			      conv (q, Int.+ (half_i, shift))
 			      + conv (IntInf.+ (r, extra), shift)
 			   end
 	       val mode = IEEEReal.getRoundingMode ()
 	    in
 	       case IntInf.compare (i, IntInf.fromInt 0) of
 		  General.LESS => ~ (pos (IntInf.~ i, negateMode mode))
-		| General.EQUAL => 0.0
+		| General.EQUAL => zero
 		| General.GREATER => pos (i, mode)
 	    end
 
@@ -587,22 +580,22 @@ structure Real64: REAL =
 			    val {frac, whole} = split x
 			    val extra =
 			       if mode = TO_NEAREST
-				  andalso 0.5 == frac
+				  andalso half == frac
 				  then
-				     if 0.5 == realMod (whole / 2.0)
+				     if half == realMod (whole / two)
 					then 1
 				     else 0
 			       else IntInf.fromInt (toInt mode frac)
 			    val {man, exp} = toManExp whole
 			    (* 1 <= man < 2 *)
-			    val man = fromManExp {man = man, exp = half}
+			    val man = fromManExp {man = man, exp = half_i}
 			    (* 2^half <= man < 2^(half+1) *)
 			    val {frac = lower, whole = upper} = split man
 			    val upper = IntInf.* (IntInf.fromInt (floor upper),
-						  twoPowHalf)
+						  twoPowHalf_ii)
 			    (* 2^m <= upper < 2^(m+1) *)
 			    val {whole = lower, ...} =
-			       split (fromManExp {man = lower, exp = half})
+			       split (fromManExp {man = lower, exp = half_i})
 			    (* 0 <= lower < 2^half *)
 			    val lower = IntInf.fromInt (floor lower)
 			    val int = IntInf.+ (upper, lower)
@@ -617,15 +610,9 @@ structure Real64: REAL =
 			    IntInf.+ (int, extra)
 			 end
 		   in
-		      if x > 0.0
+		      if x > zero
 			 then pos (x, mode)
 		      else IntInf.~ (pos (~ x, negateMode mode))
 		   end)
       end
   end
-
-structure Real = Real64   
-structure LargeReal = Real64
-structure RealGlobal: REAL_GLOBAL = Real
-open RealGlobal
-val real = Real.fromInt

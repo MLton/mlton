@@ -76,14 +76,16 @@ signature X86_MLTON_BASIC =
     val c_stackPContentsOperand : x86.Operand.t
     val c_stackPDerefOperand : x86.Operand.t
     val c_stackPDerefDoubleOperand : x86.Operand.t
+    val c_stackPDerefFloatOperand : x86.Operand.t
 
     (* Static temps defined in x86-main.h *)
     val applyFFTempContentsOperand : x86.Operand.t
     val threadTempContentsOperand : x86.Operand.t
     val fileTempContentsOperand : x86.Operand.t
-    val realTemp1ContentsOperand : x86.Operand.t
-    val realTemp2ContentsOperand : x86.Operand.t
-    val realTemp3ContentsOperand : x86.Operand.t
+    val realTemp1ContentsOperand : x86.Size.t -> x86.Operand.t
+    val realTemp2ContentsOperand : x86.Size.t -> x86.Operand.t
+    val realTemp3ContentsOperand : x86.Size.t -> x86.Operand.t
+    val fildTempContentsOperand : x86.Operand.t
     val fpswTempContentsOperand : x86.Operand.t
     val statusTempContentsOperand : x86.Operand.t
 

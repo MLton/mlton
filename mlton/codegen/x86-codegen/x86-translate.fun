@@ -440,7 +440,7 @@ struct
 			     => x86.Assembly.instruction_pfmov
 				{dst = dst,
 				 src = value,
-				size = size}
+				 size = size}
 			     | _ => Error.bug "toX86Blocks: Allocate")::l
 		       end
 		 in

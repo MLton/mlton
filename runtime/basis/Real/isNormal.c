@@ -7,16 +7,29 @@
 
 #if (defined (__i386__))
 
-#define EXPONENT_MASK 0x7FF00000
+#define EXPONENT_MASK64 0x7FF00000
 
 Int Real64_isNormal (Real64 d) {
 	Word word1, exponent;
 
 	word1 = ((Word *)&d)[1];
   
-  	exponent = word1 & EXPONENT_MASK;
+  	exponent = word1 & EXPONENT_MASK64;
 
-	return not (exponent == 0 or exponent == EXPONENT_MASK);
+	return not (exponent == 0 or exponent == EXPONENT_MASK64);
+}
+
+
+#define EXPONENT_MASK32 0x7F800000
+
+Int Real32_isNormal (Real32 f) {
+	Word word0, exponent;
+
+	word0 = ((Word *)&f)[0];
+  
+  	exponent = word0 & EXPONENT_MASK32;
+
+	return not (exponent == 0 or exponent == EXPONENT_MASK32);
 }
 
 #elif (defined __sparc__)
