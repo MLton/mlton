@@ -25,11 +25,15 @@ structure InfoNode =
 
       fun equals (n: t, n': t): bool = index n = index n'
 
-      fun call {from = T {successors, ...}, to as T {info, ...}} =
-	 if SourceInfo.equals (info, SourceInfo.gc)
-	    orelse SourceInfo.equals (info, SourceInfo.main)
-	    orelse SourceInfo.equals (info, SourceInfo.unknown)
-	    orelse List.exists (!successors, fn n => equals (n, to))
+      fun call {from = T {info = i, successors, ...},
+		to as T {info = i', ...}} =
+	 if let
+	       open SourceInfo
+	    in
+	       equals (i', gc)
+	       orelse equals (i', main)
+	       orelse equals (i', unknown)
+	    end orelse List.exists (!successors, fn n => equals (n, to))
 	    then ()
 	 else List.push (successors, to)
 
@@ -243,8 +247,10 @@ fun profile program =
 				 andalso not (equals (si', unknown))
 				 andalso
 				 (equals (si, gcArrayAllocate)
-				  orelse (isBasis si 
-					  andalso not (equals (si', main))))
+				  orelse isBasis si
+				  orelse (isC si
+					  andalso (isBasis si'
+						   orelse equals (si', main))))
 			      end
 			      then no ()
 			   else (InfoNode.call {from = node', to = node ()}
@@ -457,14 +463,15 @@ fun profile program =
 			       | CReturn {func, ...} =>
 				    let
 				       val name = CFunction.name func
-				       val si =
-					  case name of
-					     "GC_gc" => SourceInfo.gc
-					   | "GC_arrayAllocate" =>
-						SourceInfo.gcArrayAllocate
-					   | _ => SourceInfo.fromC name
+				       fun doit si =
+					  add (#1 (enter (pushes, si)))
 				    in
-				       add (#1 (enter (pushes, si)))
+				       case name of
+					  "GC_gc" => doit SourceInfo.gc
+					| "GC_arrayAllocate" =>
+					     doit SourceInfo.gcArrayAllocate
+					| "MLton_bug" => add pushes
+					| _ => doit (SourceInfo.fromC name)
 				    end
 			       | Handler => add pushes
 			       | Jump => ()
