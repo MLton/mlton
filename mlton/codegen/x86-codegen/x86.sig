@@ -656,12 +656,12 @@ signature X86 =
 	    (* Ensure that memlocs are commited to memory;
 	     * used at bot of basic blocks to establish passing conventions
 	     *)
-	  | Force of {commit_memlocs: MemLoc.t list,
-		      commit_classes: MemLoc.Class.t list,
-		      remove_memlocs: MemLoc.t list,
-		      remove_classes: MemLoc.Class.t list,
-		      dead_memlocs: MemLoc.t list,
-		      dead_classes: MemLoc.Class.t list}
+	  | Force of {commit_memlocs: MemLocSet.t,
+		      commit_classes: ClassSet.t,
+		      remove_memlocs: MemLocSet.t,
+		      remove_classes: ClassSet.t,
+		      dead_memlocs: MemLocSet.t,
+		      dead_classes: ClassSet.t}
 	  (* C calls *)
 	    (* Prepare for a C call; i.e., clear all caller save registers;
 	     * also, clear the flt. register stack;
@@ -695,14 +695,14 @@ signature X86 =
 	     * used at bot of basic blocks to delay establishment
 	     *  of passing convention to compensation block
 	     *)
-	  | SaveRegAlloc of {live: MemLoc.t list,
+	  | SaveRegAlloc of {live: MemLocSet.t,
 			     id: Id.t}
 	    (* Restore the register allocation from id and
 	     *  remove anything tracked that is not live;
 	     * used at bot of basic blocks to delay establishment
 	     *  of passing convention to compensation block
 	     *)
-	  | RestoreRegAlloc of {live: MemLoc.t list,
+	  | RestoreRegAlloc of {live: MemLocSet.t,
 				id: Id.t}
 
 	val toString : t -> string
@@ -725,21 +725,21 @@ signature X86 =
 			      reserve: bool} list} -> t
 	val fltcache : {caches: {memloc: MemLoc.t} list} -> t
 	val reset : unit -> t
-	val force : {commit_memlocs: MemLoc.t list,
-		     commit_classes: MemLoc.Class.t list,
-		     remove_memlocs: MemLoc.t list,
-		     remove_classes: MemLoc.Class.t list,
-		     dead_memlocs: MemLoc.t list,
-		     dead_classes: MemLoc.Class.t list} -> t
+	val force : {commit_memlocs: MemLocSet.t,
+		     commit_classes: ClassSet.t,
+		     remove_memlocs: MemLocSet.t,
+		     remove_classes: ClassSet.t,
+		     dead_memlocs: MemLocSet.t,
+		     dead_classes: ClassSet.t} -> t
 	val ccall : unit -> t
 	val return : {memloc: MemLoc.t} -> t
 	val fltreturn : {memloc: MemLoc.t} -> t
 	val reserve : {registers: Register.t list} -> t
 	val unreserve : {registers: Register.t list} -> t
 	val clearflt : unit -> t
-	val saveregalloc : {live: MemLoc.t list,
+	val saveregalloc : {live: MemLocSet.t,
 			    id: Id.t} -> t
-	val restoreregalloc : {live: MemLoc.t list,
+	val restoreregalloc : {live: MemLocSet.t,
 			       id: Id.t} -> t
     end
 
@@ -809,20 +809,20 @@ signature X86 =
 					reserve: bool} list} -> t
 	val directive_fltcache : {caches: {memloc: MemLoc.t} list} -> t
 	val directive_reset : unit -> t
-	val directive_force : {commit_memlocs: MemLoc.t list,
-			       commit_classes: MemLoc.Class.t list,
-			       remove_memlocs: MemLoc.t list,
-			       remove_classes: MemLoc.Class.t list,
-			       dead_memlocs: MemLoc.t list,
-			       dead_classes: MemLoc.Class.t list} -> t
+	val directive_force : {commit_memlocs: MemLocSet.t,
+			       commit_classes: ClassSet.t,
+			       remove_memlocs: MemLocSet.t,
+			       remove_classes: ClassSet.t,
+			       dead_memlocs: MemLocSet.t,
+			       dead_classes: ClassSet.t} -> t
 	val directive_ccall : unit -> t
 	val directive_return : {memloc: MemLoc.t} -> t
 	val directive_fltreturn : {memloc: MemLoc.t} -> t
 	val directive_reserve : {registers: Register.t list} -> t
 	val directive_unreserve : {registers: Register.t list} -> t
-	val directive_saveregalloc : {live: MemLoc.t list,
+	val directive_saveregalloc : {live: MemLocSet.t,
 				      id: Directive.Id.t} -> t
-	val directive_restoreregalloc : {live: MemLoc.t list,
+	val directive_restoreregalloc : {live: MemLocSet.t,
 					 id: Directive.Id.t} -> t
 	val directive_clearflt : unit -> t
 	val pseudoop : PseudoOp.t -> t
@@ -994,12 +994,12 @@ signature X86 =
 	datatype t
 	  = Jump of {label: Label.t}
 	  | Func of {label: Label.t,
-		     live: MemLoc.t list}
+		     live: MemLocSet.t}
 	  | Cont of {label: Label.t,
-		     live: MemLoc.t list,
+		     live: MemLocSet.t,
 		     frameInfo: FrameInfo.t}
 	  | Handler of {label: Label.t,
-			live: MemLoc.t list,
+			live: MemLocSet.t,
 			frameInfo: FrameInfo.t}
 	  | Runtime of {label: Label.t,
 			frameInfo: FrameInfo.t}
@@ -1009,16 +1009,16 @@ signature X86 =
 				    defs: Operand.t list,
 				    kills: Operand.t list}
 	val label : t -> Label.t
-	val live : t -> MemLoc.t list
+	val live : t -> MemLocSet.t
 
 	val jump : {label: Label.t} -> t
 	val func : {label: Label.t,
-		    live: MemLoc.t list} -> t
+		    live: MemLocSet.t} -> t
 	val cont : {label: Label.t,
-		    live: MemLoc.t list,
+		    live: MemLocSet.t,
 		    frameInfo: FrameInfo.t} -> t
 	val handler : {label: Label.t,
-		       live: MemLoc.t list,
+		       live: MemLocSet.t,
 		       frameInfo: FrameInfo.t} -> t
 	val runtime : {label: Label.t,
 		       frameInfo: FrameInfo.t} -> t
@@ -1085,23 +1085,23 @@ signature X86 =
 		       cases: Label.t Cases.t,
 		       default: Label.t}
 	  | Tail of {target: Label.t,
-		     live: MemLoc.t list}
+		     live: MemLocSet.t}
 	  | NonTail of {target: Label.t,
-			live: MemLoc.t list,
+			live: MemLocSet.t,
 			return: Label.t,
 			handler: Label.t option,
 			size: int}
-	  | Return of {live: MemLoc.t list}
-	  | Raise of {live: MemLoc.t list}
+	  | Return of {live: MemLocSet.t}
+	  | Raise of {live: MemLocSet.t}
 	  | Runtime of {target: Label.t,
 			args: (Operand.t * Size.t) list,
-			live: MemLoc.t list,
+			live: MemLocSet.t,
 			return: Label.t,
 			size: int}
 	  | CCall of {target: Label.t,
 		      args: (Operand.t * Size.t) list,
 		      dst: (Operand.t * Size.t) option,
-		      live: MemLoc.t list,
+		      live: MemLocSet.t,
 		      return: Label.t}
 
 	val toString : t -> string
@@ -1110,7 +1110,7 @@ signature X86 =
 				    defs: Operand.t list,
 				    kills: Operand.t list}
 	val nearTargets : t -> Label.t list
-	val live : t -> MemLoc.t list
+	val live : t -> MemLocSet.t
 	val replace : ({use: bool, def: bool} -> Operand.t -> Operand.t) -> 
                       t -> t
 
@@ -1122,23 +1122,23 @@ signature X86 =
 		      cases: Label.t Cases.t,
 		      default: Label.t} -> t
 	val tail : {target: Label.t,
-		    live: MemLoc.t list} -> t
+		    live: MemLocSet.t} -> t
 	val nontail : {target: Label.t, 
-		       live: MemLoc.t list,
+		       live: MemLocSet.t,
 		       return: Label.t,
 		       handler: Label.t option,
 		       size: int} -> t
-	val return : {live: MemLoc.t list} -> t 
-	val raisee : {live: MemLoc.t list} -> t
+	val return : {live: MemLocSet.t} -> t 
+	val raisee : {live: MemLocSet.t} -> t
 	val runtime : {target: Label.t,
 		       args: (Operand.t * Size.t) list,
-		       live: MemLoc.t list,
+		       live: MemLocSet.t,
 		       return: Label.t,
 		       size: int} -> t
 	val ccall : {target: Label.t,
 		     args: (Operand.t * Size.t) list,
 		     dst: (Operand.t * Size.t) option,
-		     live: MemLoc.t list,
+		     live: MemLocSet.t,
 		     return: Label.t} -> t		       
       end
 

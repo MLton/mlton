@@ -24,7 +24,7 @@ struct
 		    else live))
 
   fun livenessMemlocs live
-    = List.fold
+    = MemLocSet.fold
       (live,
        LiveSet.empty,
        fn (memloc, live) 
@@ -182,7 +182,7 @@ struct
 	= let
 	    val {uses, defs, ...} = Entry.uses_defs_kills entry
 	    val {uses, defs} = liveness_uses_defs {uses = uses, defs = defs}
-	    val defs = List.fold
+	    val defs = MemLocSet.fold
 	               (Entry.live entry,
 			defs,
 			fn (memloc, defs)
@@ -215,7 +215,7 @@ struct
 	     *  but the Liveness.t of a transfer should have
 	     *  Transfer.live transfer as liveOut.
 	     *)
-	    val live = List.fold
+	    val live = MemLocSet.fold
 	               (Transfer.live transfer,
 			live,
 			fn (memloc, live)

@@ -363,12 +363,12 @@ signature X86_PSEUDO =
 
 	val jump : {label: Label.t} -> t
 	val func : {label: Label.t,
-		    live: MemLoc.t list} -> t
+		    live: MemLocSet.t} -> t
 	val cont : {label: Label.t,
-		    live: MemLoc.t list,
+		    live: MemLocSet.t,
 		    frameInfo: FrameInfo.t} -> t
 	val handler : {label: Label.t,
-		       live: MemLoc.t list,
+		       live: MemLocSet.t,
 		       frameInfo: FrameInfo.t} -> t
 	val runtime : {label: Label.t,
 		       frameInfo: FrameInfo.t} -> t
@@ -402,23 +402,23 @@ signature X86_PSEUDO =
 		      cases: Label.t Cases.t,
 		      default: Label.t} -> t
 	val tail : {target: Label.t,
-		    live: MemLoc.t list} -> t
+		    live: MemLocSet.t} -> t
 	val nontail : {target: Label.t, 
-		       live: MemLoc.t list,
+		       live: MemLocSet.t,
 		       return: Label.t,
 		       handler: Label.t option,
 		       size: int} -> t
-	val return : {live: MemLoc.t list} -> t 
-	val raisee : {live: MemLoc.t list} -> t
+	val return : {live: MemLocSet.t} -> t 
+	val raisee : {live: MemLocSet.t} -> t
 	val runtime : {target: Label.t,
 		       args: (Operand.t * Size.t) list,
-		       live: MemLoc.t list,
+		       live: MemLocSet.t,
 		       return: Label.t,
 		       size: int} -> t
 	val ccall : {target: Label.t,
 		     args: (Operand.t * Size.t) list,
 		     dst: (Operand.t * Size.t) option,
-		     live: MemLoc.t list,
+		     live: MemLocSet.t,
 		     return: Label.t} -> t		       
       end
 

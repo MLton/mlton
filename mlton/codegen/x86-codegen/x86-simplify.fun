@@ -2888,9 +2888,8 @@ struct
 						memloc_dst,
 						MemLoc.eq))
 			     andalso
-			     not (List.contains(Transfer.live transfer,
-						memloc_dst,
-						MemLoc.eq))
+			     not (MemLocSet.contains(Transfer.live transfer,
+						     memloc_dst))
 			    then if List.forall
 			            (all,
 				     fn memloc

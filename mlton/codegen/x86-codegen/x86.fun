@@ -2722,12 +2722,12 @@ struct
 	  (* Ensure that memlocs are commited to memory;
 	   * used at bot of basic blocks to establish passing conventions
 	   *)
-	| Force of {commit_memlocs: MemLoc.t list,
-		    commit_classes: MemLoc.Class.t list,
-		    remove_memlocs: MemLoc.t list,
-		    remove_classes: MemLoc.Class.t list,
-		    dead_memlocs: MemLoc.t list,
-		    dead_classes: MemLoc.Class.t list}
+	| Force of {commit_memlocs: MemLocSet.t,
+		    commit_classes: ClassSet.t,
+		    remove_memlocs: MemLocSet.t,
+		    remove_classes: ClassSet.t,
+		    dead_memlocs: MemLocSet.t,
+		    dead_classes: ClassSet.t}
 	(* C calls *)
 	  (* Prepare for a C call; i.e., clear all caller save registers;
 	   * also, clear the flt. register stack;
@@ -2761,14 +2761,14 @@ struct
 	   * used at bot of basic blocks to delay establishment
 	   *  of passing convention to compensation block
 	   *)
-	| SaveRegAlloc of {live: MemLoc.t list,
+	| SaveRegAlloc of {live: MemLocSet.t,
 			   id: Id.t}
 	  (* Restore the register allocation from id and
 	   *  remove anything tracked that is not live;
 	   * used at bot of basic blocks to delay establishment
 	   *  of passing convention to compensation block
 	   *)
-	| RestoreRegAlloc of {live: MemLoc.t list,
+	| RestoreRegAlloc of {live: MemLocSet.t,
 			      id: Id.t}
 
       val toString
@@ -2823,35 +2823,41 @@ struct
 		    dead_memlocs, dead_classes}
 	   => concat["Force: ", 
 		     "commit_memlocs: ",
-		     List.fold(commit_memlocs,
-			       "",
-			       fn (memloc,s)
-			        => concat[MemLoc.toString memloc, " ", s]),
+		     MemLocSet.fold
+		     (commit_memlocs,
+		      "",
+		      fn (memloc,s)
+		       => concat[MemLoc.toString memloc, " ", s]),
 		     "commit_classes: ",
-		     List.fold(commit_classes,
-			       "",
-			       fn (class,s)
-			        => concat[MemLoc.Class.toString class, " ", s]),
+		     ClassSet.fold
+		     (commit_classes,
+		      "",
+		      fn (class,s)
+		       => concat[MemLoc.Class.toString class, " ", s]),
 		     "remove_memlocs: ",
-		     List.fold(remove_memlocs,
-			       "",
-			       fn (memloc,s)
-			        => concat[MemLoc.toString memloc, " ", s]),
+		     MemLocSet.fold
+		     (remove_memlocs,
+		      "",
+		      fn (memloc,s)
+		       => concat[MemLoc.toString memloc, " ", s]),
 		     "remove_classes: ",
-		     List.fold(remove_classes,
-			       "",
-			       fn (class,s)
-			        => concat[MemLoc.Class.toString class, " ", s]),
+		     ClassSet.fold
+		     (remove_classes,
+		      "",
+		      fn (class,s)
+		       => concat[MemLoc.Class.toString class, " ", s]),
 		     "dead_memlocs: ",
-		     List.fold(dead_memlocs,
-			       "",
-			       fn (memloc,s)
-			        => concat[MemLoc.toString memloc, " ", s]),
+		     MemLocSet.fold
+		     (dead_memlocs,
+		      "",
+		      fn (memloc,s)
+		       => concat[MemLoc.toString memloc, " ", s]),
 		     "dead_classes: ",
-		     List.fold(dead_classes,
-			       "",
-			       fn (class,s)
-			        => concat[MemLoc.Class.toString class, " ", s])]
+		     ClassSet.fold
+		     (dead_classes,
+		      "",
+		      fn (class,s)
+		       => concat[MemLoc.Class.toString class, " ", s])]
 	   | Reset
 	   => concat["Reset"]
 	   | CCall
@@ -2879,18 +2885,20 @@ struct
 	   | SaveRegAlloc {live, id}
 	   => concat["SaveRegAlloc: ", 
 		     "live: ",
-		     List.fold(live,
-			       "",
-			       fn (memloc,s)
-			        => concat[MemLoc.toString memloc, " ", s]),
+		     MemLocSet.fold
+		     (live,
+		      "",
+		      fn (memloc,s)
+		       => concat[MemLoc.toString memloc, " ", s]),
 		     Id.toString id]
 	   | RestoreRegAlloc {live, id}
 	   => concat["RestoreRegAlloc: ", 
 		     "live: ",
-		     List.fold(live,
-			       "",
-			       fn (memloc,s)
-			        => concat[MemLoc.toString memloc, " ", s]),
+		     MemLocSet.fold
+		     (live,
+		      "",
+		      fn (memloc,s)
+		       => concat[MemLoc.toString memloc, " ", s]),
 		     Id.toString id]
       val layout = Layout.str o toString
 
@@ -2933,8 +2941,8 @@ struct
 		    kills = []})
 	   | Reset => {uses = [], defs = [], kills = []}
            | Force {commit_memlocs, remove_memlocs, dead_memlocs, ...}
-	   => {uses = List.map(commit_memlocs @ remove_memlocs, 
-			       Operand.memloc), 
+	   => {uses = List.map(MemLocSet.toList commit_memlocs, Operand.memloc) @
+	              List.map(MemLocSet.toList remove_memlocs, Operand.memloc),
 	       defs = [], 
 	       kills = []}
 	   | CCall => {uses = [], defs = [], kills = []}
@@ -2946,7 +2954,9 @@ struct
 	   | Unreserve {registers} => {uses = [], defs = [], kills = []}
 	   | ClearFlt => {uses = [], defs = [], kills = []}
 	   | SaveRegAlloc {live, id} 
-	   => {uses = List.map(live, Operand.memloc), defs = [], kills = []}
+	   => {uses = List.map(MemLocSet.toList live, Operand.memloc), 
+	       defs = [], 
+	       kills = []}
 	   | RestoreRegAlloc {live, id} 
 	   => {uses = [], defs = [], kills = []}
 
@@ -3004,38 +3014,32 @@ struct
 	   | Force {commit_memlocs, commit_classes, 
 		    remove_memlocs, remove_classes,
 		    dead_memlocs, dead_classes}
-           => Force {commit_memlocs = List.map(commit_memlocs,
-					       fn memloc
-					        => case replacer 
-					                {use = true, def = false}
-							(Operand.memloc memloc)
-						     of Operand.MemLoc memloc 
-						      => memloc
-					              | _ 
-					              => Error.bug 
-                                                         "Directive.replace"),
+           => Force {commit_memlocs = MemLocSet.map
+		                      (commit_memlocs,
+				       fn memloc
+				        => case replacer 
+				                {use = true, def = false}
+						(Operand.memloc memloc)
+					     of Operand.MemLoc memloc => memloc
+					      | _ => Error.bug "Directive.replace"),
 		     commit_classes = commit_classes,
-		     remove_memlocs = List.map(remove_memlocs,
-					       fn memloc
-					        => case replacer 
-					                {use = true, def = false}
-							(Operand.memloc memloc)
-						     of Operand.MemLoc memloc 
-						      => memloc
-						      | _ 
-						      => Error.bug 
-						         "Directive.replace"),
+		     remove_memlocs = MemLocSet.map
+		                      (remove_memlocs,
+				       fn memloc
+				        => case replacer 
+				                {use = true, def = false}
+						(Operand.memloc memloc)
+					     of Operand.MemLoc memloc => memloc
+					      | _ => Error.bug "Directive.replace"),
 		     remove_classes = remove_classes,
-		     dead_memlocs = List.map(dead_memlocs,
-					     fn memloc
-					      => case replacer 
-					              {use = false, def = false}
-						      (Operand.memloc memloc)
-						   of Operand.MemLoc memloc 
-						    => memloc
-					            | _ 
-						    => Error.bug 
-						       "Directive.replace"),
+		     dead_memlocs = MemLocSet.map
+		                    (dead_memlocs,
+				     fn memloc
+				      => case replacer 
+				              {use = false, def = false}
+					      (Operand.memloc memloc)
+					   of Operand.MemLoc memloc => memloc
+				            | _ => Error.bug "Directive.replace"),
 		     dead_classes = dead_classes}
 	   | CCall => CCall
            | Return {memloc}
@@ -3329,12 +3333,12 @@ struct
       datatype t
 	= Jump of {label: Label.t}
         | Func of {label: Label.t,
-		   live: MemLoc.t list}
+		   live: MemLocSet.t}
         | Cont of {label: Label.t,
-		   live: MemLoc.t list,
+		   live: MemLocSet.t,
 		   frameInfo: FrameInfo.t}
 	| Handler of {label: Label.t,
-		      live: MemLoc.t list,
+		      live: MemLocSet.t,
 		      frameInfo: FrameInfo.t}
 	| Runtime of {label: Label.t,
 		      frameInfo: FrameInfo.t}
@@ -3635,23 +3639,23 @@ struct
 		     cases: Label.t Cases.t,
 		     default: Label.t}
 	| Tail of {target: Label.t,
-		   live: MemLoc.t list}
+		   live: MemLocSet.t}
 	| NonTail of {target: Label.t,
-		      live: MemLoc.t list,
+		      live: MemLocSet.t,
 		      return: Label.t,
 		      handler: Label.t option,
 		      size: int}
-	| Return of {live: MemLoc.t list}
-	| Raise of {live: MemLoc.t list}
+	| Return of {live: MemLocSet.t}
+	| Raise of {live: MemLocSet.t}
 	| Runtime of {target: Label.t,
 		      args: (Operand.t * Size.t) list,
-		      live: MemLoc.t list,
+		      live: MemLocSet.t,
 		      return: Label.t,
 		      size: int}
 	| CCall of {target: Label.t,
 		    args: (Operand.t * Size.t) list,
 		    dst: (Operand.t * Size.t) option,
-		    live: MemLoc.t list,
+		    live: MemLocSet.t,
 		    return: Label.t}
 
       val toString

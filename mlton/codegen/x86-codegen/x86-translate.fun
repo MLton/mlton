@@ -1302,17 +1302,6 @@ struct
 				   scale = x86.Scale.One,
 				   size = size,
 				   class = x86MLton.Classes.Heap}
-(*
-			      val index 
-				= x86.Immediate.const_int (objectHeaderBytes + offset)
-			      val memloc 
-				= x86.MemLoc.simple 
-			          {base = x86MLton.gcState_frontierContents, 
-				   index = index,
-				   scale = x86.Scale.One,
-				   size = size,
-				   class = x86MLton.Classes.Heap}
-*)
 			    in
 			      x86.Operand.memloc memloc
 			    end
@@ -1602,11 +1591,17 @@ struct
 		   {entry = NONE,
 		    profileInfo = x86.ProfileInfo.none,
 		    statements = [],
-		    transfer = SOME (x86.Transfer.return 
-				     {live = List.keepAllMap
-				             (live,
-					      x86.Operand.deMemloc o
-					      Operand.toX86Operand)})}))
+		    transfer 
+		    = SOME (x86.Transfer.return 
+			    {live 
+			     = List.fold
+			       (live,
+				x86.MemLocSet.empty,
+				fn (operand, live)
+				 => case x86.Operand.deMemloc
+				         (Operand.toX86Operand operand)
+				      of SOME memloc => x86.MemLocSet.add(live, memloc)
+				       | NONE => live)})}))
   	      | Raise
 	      => AppendList.append
 	         (comments transfer,
@@ -1617,8 +1612,12 @@ struct
 		    statements = [],
 		    transfer 
 		    = SOME (x86.Transfer.raisee 
-			    {live = [x86MLton.gcState_stackBottomContents,
-				     x86MLton.gcState_currentThread_exnStackContents]})}))
+			    {live 
+			     = x86.MemLocSet.add
+			       (x86.MemLocSet.add
+				(x86.MemLocSet.empty,
+				 x86MLton.gcState_stackBottomContents),
+				x86MLton.gcState_currentThread_exnStackContents)})}))
 	      | Switch {test, cases, default}
 	      => AppendList.append
 	         (comments transfer,
@@ -1682,10 +1681,16 @@ struct
 			   transfer 
 			   = SOME (x86.Transfer.nontail 
 				   {target = label,
-				    live = List.keepAllMap
-				           (live,
-					    x86.Operand.deMemloc o 
-					    Operand.toX86Operand),
+				    live 
+				    = List.fold
+				      (live,
+				       x86.MemLocSet.empty,
+				       fn (operand,live)
+				        => case x86.Operand.deMemloc
+				                (Operand.toX86Operand operand)
+					     of SOME memloc 
+					      => x86.MemLocSet.add(live, memloc)
+					      | NONE => live),
 				    return = return,
 				    handler = handler,
 				    size = size})}))
@@ -1701,10 +1706,16 @@ struct
 			   transfer 
 			   = SOME (x86.Transfer.tail 
 				   {target = label,
-				    live = List.keepAllMap
-				           (live,
-					    x86.Operand.deMemloc o 
-					    Operand.toX86Operand)})}))))
+				    live 
+				    = List.fold
+				      (live,
+				       x86.MemLocSet.empty,
+				       fn (operand,live)
+				        => case x86.Operand.deMemloc
+				                (Operand.toX86Operand operand)
+					     of SOME memloc 
+					      => x86.MemLocSet.add(live, memloc)
+					      | NONE => live)})}))))
     end
 
   structure Block =
@@ -1721,7 +1732,15 @@ struct
 		       liveInfo}
 	= let
 	    val live' = live
-	    val live = List.map(live, Operand.toX86Operand)
+	    val live
+	      = List.fold
+	        (live,
+		 x86.MemLocSet.empty,
+		 fn (operand,live)
+		  => case x86.Operand.deMemloc
+		          (Operand.toX86Operand operand)
+		       of SOME memloc => x86.MemLocSet.add(live, memloc)
+			| NONE => live)
 
 	    fun frameInfo frameSize
 	      = case frameLayouts label
@@ -1741,43 +1760,47 @@ struct
 	      = case kind
 		  of Kind.Jump 
 		   => let
-			val _ = x86Liveness.LiveInfo.setLiveOperands
+			val _ = x86Liveness.LiveInfo.setLiveMemlocs
 			        (liveInfo, label, live)
 		      in
 			x86.Entry.jump {label = label}
 		      end
 		   | Kind.Func {args}
 		   => let
-			val args = List.map(args, Operand.toX86Operand)
+			val args
+			  = List.fold
+			    (args,
+			     x86.MemLocSet.empty,
+			     fn (operand, args)
+			      => case x86.Operand.deMemloc
+			               (Operand.toX86Operand operand)
+				   of SOME memloc => x86.MemLocSet.add(args, memloc)
+				    | NONE => args)
+			    
+			val live = x86.MemLocSet.+(live, args)
 
-			val live = List.keepAll
-			           (live,
-				    fn operand 
-				     => not (List.contains
-					     (args, operand, x86.Operand.eq)))
-
-			val _ = x86Liveness.LiveInfo.setLiveOperands
+			val _ = x86Liveness.LiveInfo.setLiveMemlocs
 			        (liveInfo, label, live)
-
-			val args = List.keepAllMap(args, x86.Operand.deMemloc)
 		      in 
 			x86.Entry.func {label = label, 
 					live = args}
 		      end
 		   | Kind.Cont {args, size}
 		   => let
-			val args = List.map(args, Operand.toX86Operand)
+			val args
+			  = List.fold
+			    (args,
+			     x86.MemLocSet.empty,
+			     fn (operand, args)
+			      => case x86.Operand.deMemloc
+			               (Operand.toX86Operand operand)
+				   of SOME memloc => x86.MemLocSet.add(args, memloc)
+				    | NONE => args)
+			    
+			val live = x86.MemLocSet.+(live, args)
 
-			val live = List.keepAll
-			           (live,
-				    fn operand 
-				     => not (List.contains
-					     (args, operand, x86.Operand.eq)))
-
-			val _ = x86Liveness.LiveInfo.setLiveOperands
+			val _ = x86Liveness.LiveInfo.setLiveMemlocs
 			        (liveInfo, label, live)
-
-			val args = List.keepAllMap(args, x86.Operand.deMemloc)
 		      in 
 			x86.Entry.cont {label = label, 
 					live = args,
@@ -1785,12 +1808,12 @@ struct
 		      end
 		   | Kind.Handler {size}
 		   => let
-			val _ = x86Liveness.LiveInfo.setLiveOperands
+			val _ = x86Liveness.LiveInfo.setLiveMemlocs
 			        (liveInfo, label, live)		      
 		      in 
 			x86.Entry.handler 
 			{label = label,
-			 live = [],
+			 live = x86.MemLocSet.empty,
 			 frameInfo = x86.Entry.FrameInfo.frameInfo
 			             {size = size,
 				      frameLayoutsIndex = ~1}}

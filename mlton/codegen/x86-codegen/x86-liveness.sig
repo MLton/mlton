@@ -23,6 +23,7 @@ signature X86_LIVENESS =
 	val newLiveInfo : unit -> t
 
 	val setLiveOperands : t * x86.Label.t * x86.Operand.t list -> unit
+	val setLiveMemlocs : t * x86.Label.t * x86.MemLocSet.t -> unit
 	val setLive : t * x86.Label.t * LiveSet.t -> unit
 	val getLive : t * x86.Label.t -> LiveSet.t
 	val completeLiveInfo : {chunk: x86.Chunk.t,

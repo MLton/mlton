@@ -667,7 +667,7 @@ struct
 	  transfer = SOME (Transfer.ccall {target = target,
 					   args = args,
 					   dst = dst,
-					   live = [],
+					   live = MemLocSet.empty,
 					   return = return})},
 	 Block.T'
 	 {entry = SOME (Entry.jump {label = return}),
@@ -713,7 +713,7 @@ struct
 	  statements = comment_begin,
 	  transfer = SOME (Transfer.runtime {target = target,
 					     args = args,
-					     live = [],
+					     live = MemLocSet.empty,
 					     return = return,
 					     size = frameSize})},
 	 Block.T'

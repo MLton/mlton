@@ -463,11 +463,11 @@ struct
 	        (memlocsX,
 		 future,
 		 fn (X, future) => (M (FLIVE, f X))::future)
-	    fun addRemove (memlocsX, f)
-	      = List.fold
-	        (memlocsX,
+	    fun addLive' (memlocs)
+	      = MemLocSet.fold
+	        (memlocs,
 		 future,
-		 fn (X, future) => (M (FREMOVE, f X))::future)
+		 fn (memloc, future) => (M (FLIVE, memloc))::future)
 
 	    val future_pre
 	      = case directive
@@ -484,27 +484,24 @@ struct
 				      dead_memlocs,
 				      dead_classes,
 				      ...}
-		   => List.fold
+		   => MemLocSet.fold
 		      (commit_memlocs,
-		       List.fold
+		       MemLocSet.fold
 		       (remove_memlocs,
-			List.fold
+			MemLocSet.fold
 			(dead_memlocs,
 			 (MP (FCOMMITP, 
 			      fn memloc 
-			       => List.contains(commit_classes,
-						MemLoc.class memloc,
-						MemLoc.Class.eq)))::
+			       => ClassSet.contains(commit_classes,
+						    MemLoc.class memloc)))::
 			 (MP (FREMOVEP, 
 			      fn memloc 
-			       => List.contains(remove_classes,
-						MemLoc.class memloc,
-						MemLoc.Class.eq)))::
+			       => ClassSet.contains(remove_classes,
+						    MemLoc.class memloc)))::
 			 (MP (FDEADP, 
 			      fn memloc 
-			       => List.contains(dead_classes,
-						MemLoc.class memloc,
-						MemLoc.Class.eq)))::
+			       => ClassSet.contains(dead_classes,
+						    MemLoc.class memloc)))::
 			 future,
 			 fn (memloc,future) => (M (FDEAD, memloc))::future),
 			fn (memloc,future) => (M (FREMOVE, memloc))::future),
@@ -529,7 +526,7 @@ struct
 			    => (Size.class (MemLoc.size memloc) <> Size.INT)))::
 		      future
 		   | Directive.SaveRegAlloc {live, ...}
-		   => addLive(live, fn memloc => memloc)
+		   => addLive'(live)
 		   | _ => future
 
 	    val info = {dead = MemLocSet.empty,
@@ -5118,12 +5115,12 @@ struct
 	= {assembly = AppendList.empty,
 	   registerAllocation = empty ()}
 
-      fun force {commit_memlocs: MemLoc.t list,
-		 commit_classes: MemLoc.Class.t list,
-		 remove_memlocs: MemLoc.t list,
-		 remove_classes: MemLoc.Class.t list,
-		 dead_memlocs: MemLoc.t list,
-		 dead_classes: MemLoc.Class.t list,
+      fun force {commit_memlocs: MemLocSet.t,
+		 commit_classes: ClassSet.t,
+		 remove_memlocs: MemLocSet.t,
+		 remove_classes: ClassSet.t,
+		 dead_memlocs: MemLocSet.t,
+		 dead_classes: ClassSet.t,
 		 info: Liveness.t,
 		 registerAllocation: t}
 	= let
@@ -5135,29 +5132,23 @@ struct
 	      = fn _ => REMOVE 0
 
 	    val shouldCommit 
-	      = fn memloc => (List.contains(commit_memlocs,
-					    memloc,
-					    MemLoc.eq)
+	      = fn memloc => (MemLocSet.contains(commit_memlocs,
+						 memloc)
 			      orelse
-			      List.contains(commit_classes,
-					    MemLoc.class memloc,
-					    MemLoc.Class.eq))
+			      ClassSet.contains(commit_classes,
+						MemLoc.class memloc))
 	    val shouldRemove
-	      = fn memloc => (List.contains(remove_memlocs,
-						    memloc,
-						    MemLoc.eq)
+	      = fn memloc => (MemLocSet.contains(remove_memlocs,
+						 memloc)
 			      orelse
-			      List.contains(remove_classes,
-					    MemLoc.class memloc,
-					    MemLoc.Class.eq))
+			      ClassSet.contains(remove_classes,
+						MemLoc.class memloc))
 	    val shouldDead
-	      = fn memloc => (List.contains(dead_memlocs,
-					    memloc,
-					    MemLoc.eq)
+	      = fn memloc => (MemLocSet.contains(dead_memlocs,
+						 memloc)
 			      orelse
-			      List.contains(dead_classes,
-					    MemLoc.class memloc,
-					    MemLoc.Class.eq))
+			      ClassSet.contains(dead_classes,
+						MemLoc.class memloc))
 
 	    val registerAllocation
 	      = fltvalueMap {map 
@@ -5251,8 +5242,8 @@ struct
 					      sync = sync, 
 					      commit = toRemove commit}
 				      else if List.exists
-					        (MemLoc.utilized memloc,
-						 fn memloc' => shouldRemove memloc')
+					      (MemLoc.utilized memloc,
+					       fn memloc' => shouldRemove memloc')
 					then {register = register, 
 					      memloc = memloc, 
 					      weight = weight, 
@@ -5512,7 +5503,7 @@ struct
 	     registerAllocation = registerAllocation}
 	  end
 
-      fun saveregalloc {live: MemLoc.t list,
+      fun saveregalloc {live: MemLocSet.t,
 			id: Directive.Id.t,
 			info: Liveness.t,
 			registerAllocation: t}
@@ -5525,7 +5516,7 @@ struct
 	     registerAllocation = registerAllocation}
 	  end
 
-      fun restoreregalloc {live: MemLoc.t list,
+      fun restoreregalloc {live: MemLocSet.t,
 			   id: Directive.Id.t,
 			   info: Liveness.t,
 			   registerAllocation: t}
@@ -5534,7 +5525,7 @@ struct
 
 	    fun dump memloc
 	      = (track memloc) andalso 
-	        not (List.contains(live,memloc,MemLoc.eq))
+	        not (MemLocSet.contains(live,memloc))
 
 	    val registerAllocation
 	      = fltvalueMap
