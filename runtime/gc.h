@@ -206,6 +206,7 @@ typedef struct GC_thread {
  */
 
 typedef struct GC_heap {
+	bool canMinor; /* TRUE iff there is space for a minor gc. */
 	pointer cardMap;
 	pointer crossMap;
 	uint numCards;
@@ -309,6 +310,10 @@ typedef struct GC_state {
 	 */
 	float nurseryRatio;
 	GC_ObjectType *objectTypes; /* Array of object types. */
+	/* Arrays larger than oldGenArraySize are allocated in the old generation
+	 * instead of the nursery, if possible.
+	 */
+	W32 oldGenArraySize; 
 	uint pageSize; /* bytes */
 	W32 ram;		/* ramSlop * totalRam */
 	float ramSlop;
