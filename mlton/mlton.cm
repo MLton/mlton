@@ -146,8 +146,6 @@ cm/parse.sig
 cm/parse.sml
 cm/cm.sig
 cm/cm.sml
-control/source.sig
-control/source.sml
 ast/wrapped.sig
 ast/ast-const.sig
 ast/field.sig
@@ -392,6 +390,8 @@ elaborate/precedence-parse.sig
 elaborate/precedence-parse.fun
 elaborate/elaborate-core.fun
 elaborate/elaborate.fun
+control/source.sig
+control/source.sml
 front-end/front-end.sig
 front-end/ml.grm.sig
 front-end/ml.grm.sml

@@ -1040,12 +1040,18 @@ struct
 	val max = fn (a, b) => min (b, a)
 	val equals = MemLoc.eq
 	val layout = MemLoc.layout
+	val hash = MemLoc.hash
       end
   in
+    structure MemLocSet = UnorderedSet(open MemLocElement)
 (*
     structure MemLocSet = OrderedUniqueSet(open MemLocElement)
 *)
-    structure MemLocSet = UnorderedSet(open MemLocElement)
+(*
+    structure MemLocSet' = UnorderedSet(open MemLocElement)
+    structure MemLocSet = HashedUniqueSet(structure Set = MemLocSet'
+					  structure Element = MemLocElement)
+*)
   end
 
   structure Operand =
@@ -3351,7 +3357,10 @@ struct
 		      Label.toString label,
 		      " [",
 		      (concat o List.separate)
-		      (List.map(live, fn memloc => MemLoc.toString memloc),
+		      (MemLocSet.fold
+		       (live,
+			[],
+			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "]"]
 	   | Cont {label, live, frameInfo} 
@@ -3359,7 +3368,10 @@ struct
 		      Label.toString label,
 		      " [",
 		      (concat o List.separate)
-		      (List.map(live, fn memloc => MemLoc.toString memloc),
+		      (MemLocSet.fold
+		       (live,
+			[],
+			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "] ",
 		      FrameInfo.toString frameInfo]
@@ -3368,7 +3380,10 @@ struct
 		      Label.toString label,
 		      " [",
 		      (concat o List.separate)
-		      (List.map(live, fn memloc => MemLoc.toString memloc),
+		      (MemLocSet.fold
+		       (live,
+			[],
+			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "] ",
 		      FrameInfo.toString frameInfo]
@@ -3393,7 +3408,7 @@ struct
 	= fn Func {live, ...} => live
 	   | Cont {live, ...} => live
 	   | Handler {live, ...} => live
-	   | _ => []
+	   | _ => MemLocSet.empty
 
       val jump = Jump
       val func = Func
@@ -3689,7 +3704,10 @@ struct
 		      Label.toString target,
 		      " [",
 		      (concat o List.separate)
-		      (List.map(live, fn memloc => MemLoc.toString memloc),
+		      (MemLocSet.fold
+		       (live,
+			[],
+			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "]"]
 	   | NonTail {target, live, return, handler, size}
@@ -3697,7 +3715,10 @@ struct
 		      Label.toString target,
 		      " [",
 		      (concat o List.separate)
-		      (List.map(live, fn memloc => MemLoc.toString memloc),
+		      (MemLocSet.fold
+		       (live,
+			[],
+			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "] <",
 		      Label.toString return,
@@ -3712,14 +3733,20 @@ struct
 	   => concat ["RETURN",
 		      " [",
 		      (concat o List.separate)
-		      (List.map(live, fn memloc => MemLoc.toString memloc),
+		      (MemLocSet.fold
+		       (live,
+			[],
+			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "]"]
 	   | Raise {live}
 	   => concat ["RAISE",	
 		      " [",
 		      (concat o List.separate)
-		      (List.map(live, fn memloc => MemLoc.toString memloc),
+		      (MemLocSet.fold
+		       (live,
+			[],
+			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "]"]
 	   | Runtime {prim, args, live, return, size}
@@ -3731,7 +3758,10 @@ struct
 		       ", "),
 		      ") [",
 		      (concat o List.separate)
-		      (List.map(live, fn memloc => MemLoc.toString memloc),
+		      (MemLocSet.fold
+		       (live,
+			[],
+			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "] <",
 		      Label.toString return,
@@ -3750,7 +3780,10 @@ struct
 		       ", "),
 		      ") [",
 		      (concat o List.separate)
-		      (List.map(live, fn memloc => MemLoc.toString memloc),
+		      (MemLocSet.fold
+		       (live,
+			[],
+			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "] <",
 		      Label.toString return,
@@ -3796,7 +3829,7 @@ struct
 	   | Raise {live,...} => live
 	   | Runtime {live,...} => live
 	   | CCall {live,...} => live
-	   | _ => []
+	   | _ => MemLocSet.empty
 
       fun replace replacer
 	= fn Switch {test, cases, default}

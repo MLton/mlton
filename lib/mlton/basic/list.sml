@@ -317,7 +317,7 @@ fun equalsAsSet (l1, l2, equals) =
    end
 
 fun 'a set {equals: 'a * 'a -> bool,
-	   layout: 'a -> Layout.t} =
+	    layout: 'a -> Layout.t} =
    let
       val equal = equals
       fun equalTo x x' = equal (x, x')
@@ -330,11 +330,15 @@ fun 'a set {equals: 'a * 'a -> bool,
       fun singleton x = cons (x, [])
       fun add (s, x) = if contains (s, x) then s else cons (x, s)
       fun areDisjoint (s, s') = forall (s, fn x => not (contains (s', x)))
-      val subset = keepAll
+(*      val subset = keepAll *)
+      fun subset (s, p) =
+	 fold (s, [], fn (x, s'') => if p x then x::s'' else s'')
       fun subsetSize (s, p) =
 	 fold (s, 0: int, fn (x, n) => if p x then n + 1 else n)
       fun s - s' = subset (s, fn x => not (contains (s', x)))
-      fun s + s' = append (s - s', s')
+(*      fun s + s' = append (s - s', s') *)
+      fun s + s' =
+	 fold (s, s', fn (x, s'') => if not (contains (s', x)) then x::s'' else s'')
       fun intersect (s, s') = subset (s, fn x => contains (s', x))
       fun unions ss = fold (ss, [], op +)
       val size = length
