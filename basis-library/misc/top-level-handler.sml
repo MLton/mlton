@@ -11,7 +11,7 @@ val _ =
 						      ; message function
 						      ; message ": "
 						      ; loop cause)
-		   | _ => message (exnName exn)
+		   | _ => message (exnName e)
 	    in
 	       loop exn
 	    end
