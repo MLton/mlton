@@ -425,9 +425,9 @@ fun cross l =
 
 fun removeDuplicates (l, equals) =
    fold (l, [], fn (x, ac) =>
-	if contains (ac, x, equals)
-	   then ac
-	else x :: ac)
+	 if contains (ac, x, equals)
+	    then ac
+	 else x :: ac)
 
 fun removeCommonPrefix (l1, l2, equals) =
    let
