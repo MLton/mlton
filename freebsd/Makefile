@@ -20,10 +20,8 @@ MAINTAINER=	MLton@mlton.org
 COMMENT=	An optimizing Standard ML compiler
 
 # MLton build depends on itself.  There is no easy way to avoid this.
-# The code below is supposed to instal an old version of MLton,
-# version 20040429, that runs on FreeBSD 4.X and is statically linked
-# against the GnuMP, so that all it needs is the compat4x package in
-# order to run on a FreeBSD 5.X machine.
+# This Makefile is supposed to install an alread-built version of
+# MLton, BOOT_DIST, to use for bootstrapping. 
 BUILD_DEPENDS= 					\
 	hevea:${PORTSDIR}/textproc/hevea:	\
 	latex:${PORTSDIR}/print/teTeX: 		\
@@ -32,7 +30,7 @@ LIB_DEPENDS= 					\
 	gmp.6:${PORTSDIR}/math/libgmp4
 
 SRC_DIST=	${DISTNAME}-1.src.tgz
-BOOT_DIST=	mlton-20040429-1.i386-freebsd.tgz
+BOOT_DIST=	${DISTNAME}-1.i386-freebsd.tbz
 
 ONLY_FOR_ARCHS=	i386
 
@@ -81,12 +79,9 @@ post-build:
 .PHONY: post-extract
 post-extract:
 	@${MKDIR} ${BOOT_WRKSRC}
-	@${TAR} zxf ${DISTDIR}/${BOOT_DIST} -C ${BOOT_WRKSRC}
+	@${TAR} xf ${DISTDIR}/${BOOT_DIST} --bzip -C ${BOOT_WRKSRC}
 	@${REINPLACE_CMD} -e \
 		"s|lib=\'${LOCALBASE}/|lib=\'${BOOT_WRKSRC}/|" \
 	${BOOT_WRKSRC}/bin/mlton
 
 .include <bsd.port.mk>
-
-#.include <bsd.port.pre.mk>
-#.include <bsd.port.post.mk>
