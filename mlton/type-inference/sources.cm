@@ -10,17 +10,13 @@ is
 ../../lib/mlton/sources.cm
 ../xml/sources.cm
 
-infer-type.sig
-infer-scheme.sig
-type-env.sig
-infer-type.fun
-infer-scheme.fun
-type-env.fun
-scope.sig
-scope.fun
-nested-pat.sig
-nested-pat.fun
-match-compile.sig
-match-compile.fun
-infer.sig
 infer.fun
+infer.sig
+match-compile.fun
+match-compile.sig
+nested-pat.fun
+nested-pat.sig
+scope.fun
+scope.sig
+type-env.fun
+type-env.sig

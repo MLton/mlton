@@ -18,7 +18,7 @@ signature INFER_SCHEME =
       (* frees returns the set of free variables of a scheme, i.e.
        * the frees of the body minus the bound tyvars.
        *)
-      val frees: t -> Frees.t
+(*      val frees: t -> Frees.t *)
       (* Create a new copy of of the body of the scheme, replacing
        * the bound tyvars with new unknown types of the same equality
        * as the tyvar and the given canGeneralize.
@@ -27,4 +27,6 @@ signature INFER_SCHEME =
 	 {scheme: t,
 	  canGeneralize: bool} -> {args: Type.t vector,
 				   instance: Type.t}
+      (* true if the scheme may contain an unknown *)
+      val mayContainUnknown: t -> bool
    end

@@ -10,10 +10,25 @@ open Dec PrimExp
 
 fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
    let
+      (* getTyvar is used to ensure the alpha condition on tyvars. *)
+      val {get = getTyvar: Tyvar.t -> bool ref, ...} =
+	 Property.get (Tyvar.plist,
+		       Property.initFun (fn _ => ref false))
+      fun checkTyvars (vs: Tyvar.t vector): unit =
+	 Vector.foreach (vs, fn v =>
+			 let
+			    val r = getTyvar v
+			 in
+			    if !r
+			       then Error.bug (concat ["tyvar ",
+						       Tyvar.toString v,
+						       " is bound twice"])
+			    else r := true
+			 end)
       val {get = getCon: Con.t -> {tyvars: Tyvar.t vector, ty: Type.t},
-	   set, destroy = destroyCon} =
-	 Property.destGetSetOnce (Con.plist,
-				  Property.initRaise ("scheme", Con.layout))
+	   set, ...} =
+	 Property.getSetOnce (Con.plist,
+			      Property.initRaise ("scheme", Con.layout))
       fun setCon ({con, arg}, tyvars, result) =
 	 set (con, {tyvars = tyvars,
 		    ty = (case arg of
@@ -24,9 +39,9 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	 in Type.substitute (ty, Vector.zip (tyvars, ts))
 	 end
       val {get = getVar: Var.t -> {tyvars: Tyvar.t vector, ty: Type.t},
-	   set = setVar, destroy = destroyVar} =
-	 Property.destGetSetOnce (Var.plist,
-				  Property.initRaise ("var scheme", Var.layout))
+	   set = setVar, ...} =
+	 Property.getSetOnce (Var.plist,
+			      Property.initRaise ("var scheme", Var.layout))
       (* val getVar = Trace.trace ("getVar", Var.layout, Layout.ignore) getVar *)
       (* val setVar = Trace.trace2 ("setVar", Var.layout, Layout.ignore, Layout.ignore) setVar *)
       fun checkVarExp (VarExp.T {var, targs}): Type.t =
@@ -215,25 +230,28 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	       (check (ty, checkPrimExp (exp, ty));
 		setVar (var, {tyvars = Vector.new0 (), ty = ty}))
 	  | PolyVal {tyvars, var, ty, exp} =>
-	       (if Vector.isEmpty tyvars
-		   then Error.bug "empty tyvars in PolyVal dec"
-		else ()
+	       (checkTyvars tyvars
+		; if Vector.isEmpty tyvars
+		     then Error.bug "empty tyvars in PolyVal dec"
+		  else ()
 		; check (ty, checkExp exp)
 		; setVar (var, {tyvars = tyvars, ty = ty}))
 	  | Fun {tyvars, decs} =>
-	       (Vector.foreach (decs, fn {var, ty, lambda} =>
-				setVar (var, {tyvars = tyvars, ty = ty}));
-		Vector.foreach
-		(decs, fn {ty, lambda, ...} =>
-		 let val {arg, argType, body} = Lambda.dest lambda
-		 in setVar (arg, {tyvars = Vector.new0 (), ty = argType});
-		    check (ty, Type.arrow (argType, checkExp body))
-		 end))
+	       (checkTyvars tyvars
+		; Vector.foreach (decs, fn {var, ty, lambda} =>
+				  setVar (var, {tyvars = tyvars, ty = ty}))
+		; (Vector.foreach
+		   (decs, fn {ty, lambda, ...} =>
+		    let val {arg, argType, body} = Lambda.dest lambda
+		    in setVar (arg, {tyvars = Vector.new0 (), ty = argType});
+		       check (ty, Type.arrow (argType, checkExp body))
+		    end)))
 	 end
       val _ =
 	 Vector.foreach
 	 (datatypes, fn {tycon, tyvars, cons} =>
 	  let
+	     val _ = checkTyvars tyvars
 	     val ty = Type.con (tycon, Vector.map (tyvars, Type.var))
 	  in Vector.foreach (cons, fn c => setCon (c, tyvars, ty))
 	  end)
@@ -250,8 +268,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		  0 = Vector.length tyvars
 		  andalso Type.equals (ty, Type.exn)
 	       end
-      val _ = destroyCon ()
-      val _ = destroyVar ()
+      val _ = Program.clear program
    in
       ()
    end

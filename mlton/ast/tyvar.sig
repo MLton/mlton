@@ -31,5 +31,6 @@ signature TYVAR =
       (* reset the counter for new type variables *)
       val reset: unit -> unit 
       val sameName: t * t -> bool
+      val toString: t -> string
    end
 

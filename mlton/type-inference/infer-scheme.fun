@@ -19,6 +19,9 @@ open Scheme
 fun frees (T {tyvars, ty}) =
    Frees.- (Type.frees ty, Frees.fromTyvars (Vector.toList tyvars))
 
+fun mayContainUnknown s =
+   Frees.isEmpty (frees s)
+
 fun instantiate {scheme, canGeneralize} =
    let
       val ts = Vector.map (tyvars scheme, fn v =>
