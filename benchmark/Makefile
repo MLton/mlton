@@ -4,7 +4,9 @@ BIN = $(BUILD)/bin
 LIB = $(BUILD)/lib
 MLTON = mlton
 TARGET = self
-FLAGS = -target $(TARGET) -default-ann 'sequenceUnit true, warnUnused true'
+FLAGS = -target $(TARGET)	\
+	-default-ann 'sequenceUnit true' \
+	-default-ann 'warnUnused true'
 NAME = benchmark
 PATH = $(BIN):$(shell echo $$PATH)
 
@@ -35,10 +37,8 @@ BENCH = barnes-hut boyer checksum count-graphs DLXSimulator fft fib flat-array h
 FPBENCH = barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace simple tensor tsp tyan vliw zern
 
 BFLAGS = -mlton "/usr/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
-BFLAGS = -html -mlton "/usr/bin/mlton" -mlkit -mosml -poly -smlnj
+BFLAGS = -wiki -mlton "/usr/bin/mlton" -mlkit -mosml -poly -smlnj
 BFLAGS = -mlton "$(BIN)/mlton"
-
-BFLAGS = -mlton "$(BIN)/mlton -codegen {native,bytecode}"
 
 .PHONY: test
 test: $(NAME)

@@ -16,8 +16,8 @@ fun usage msg =
    Process.usage {usage = "[-mlkit] [-mosml] [-smlnj] bench1 bench2 ...",
 		  msg = msg}
 
-val doHtml = ref false
 val doOnce = ref false
+val doWiki = ref false
 val runArgs : string list ref = ref []
    
 fun withInput (file, f: unit -> 'a): 'a =
@@ -395,7 +395,6 @@ fun main args =
 		      (fn args =>
 		       runArgs := String.tokens (args, Char.isSpace))),
 		     ("err", SpaceString setErrData),
-		     ("html", trueRef doHtml),
 		     ("mlkit", 
 		      None (fn () => pushCompiler
 			    {name = "ML-Kit",
@@ -421,7 +420,8 @@ fun main args =
 			    {name = "SML/NJ",
 			     abbrv = "SML/NJ",
 			     test = njCompile})),
-		     trace]}
+		     trace,
+		     ("wiki", trueRef doWiki)]}
       end
    in
       case res of
@@ -501,42 +501,40 @@ fun main args =
 							    fn _ => Right)),
 				      rows = rows toString},
 			       out)
-			   fun p ss =
-			      (Out.output (out, concat ss)
-			       ; Out.newline out)
-			   fun prow (ns, c) =
-			      case ns of
-				 [] => raise Fail "bug"
-			       | b :: ns =>
-				    (p ["<tr>"]
-				     ; p ["<t", c, " align = left>", b,
-					  "</t", c, ">"]
-				     ; (List.foreach
-					(ns, fn n =>
-					 p ["<t", c, " align = right>", n,
-					    "</t", c, ">"]))
-				     ; p ["</tr>"])
+			   fun prow ns =
+			      let
+				 fun p s = Out.output (out, s)
+			      in
+				 case ns of
+				    [] => raise Fail "bug"
+				  | b :: ns =>
+				       (p "||"
+					; p b
+					; List.foreach (ns, fn n =>
+							(p "||"; p n))
+					; p "||\n")
+			      end
 			   val _ =
-			      if !doHtml
-				 then
-				    let
-				       val rows = rows toStringHtml
-				    in					  
-				       prow (hd rows, "h")
-				       ; (List.foreach
-					  (tl rows,
-					   fn [] => raise Fail "bug"
-					    | b :: r =>
-						 let
-						    val b = 
-						       concat
-						       ["<a href = \"benchmarks/",
-							b, ".sml\">", b, "</a>"]
-						 in
-							prow (b :: r, "d")
-						 end))
-				    end
-			      else ()
+			      if not (!doWiki)
+				 then ()
+			      else
+				 let
+				    val rows = rows toStringHtml
+				 in					  
+				    prow (hd rows)
+				    ; (List.foreach
+				       (tl rows,
+					fn [] => raise Fail "bug"
+					 | b :: r =>
+					      let
+						 val b = 
+						    concat
+						    ["[attachment:",
+						     b, ".sml ", b, "]"]
+					      in
+						 prow (b :: r)
+					      end))
+				 end
 			in
 			   ()
 			end
