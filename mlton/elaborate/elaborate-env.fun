@@ -1034,19 +1034,23 @@ structure All =
       val valOpt = fn Val z => SOME z | _ => NONE
    end
 
-datatype t = T of {currentScope: Scope.t ref,
-		   fcts: (Fctid.t, FunctorClosure.t) NameSpace.t,
-		   fixs: (Ast.Vid.t, Ast.Fixity.t) NameSpace.t,
-		   lookup: Symbol.t -> All.t list ref,
-		   maybeAddTop: Symbol.t -> unit,
-		   sigs: (Sigid.t, Interface.t) NameSpace.t,
-		   strs: (Strid.t, Structure.t) NameSpace.t,
-		   (* topSymbols is a list of all symbols that are defined at
-		    * the top level (in any namespace).
-		    *)
-		   topSymbols: Symbol.t list ref,
-		   types: (Ast.Tycon.t, TypeStr.t) NameSpace.t,
-		   vals: (Ast.Vid.t, Vid.t * Scheme.t) NameSpace.t}
+datatype t =
+   T of {currentScope: Scope.t ref,
+	 fcts: (Fctid.t, FunctorClosure.t) NameSpace.t,
+	 fixs: (Ast.Vid.t, Ast.Fixity.t) NameSpace.t,
+	 interface: {strs: (Strid.t, Interface.t) NameSpace.t,
+		     types: (Ast.Tycon.t, Interface.TypeStr.t) NameSpace.t,
+		     vals: (Ast.Vid.t, Interface.Status.t * Interface.Scheme.t) NameSpace.t},
+	 lookup: Symbol.t -> All.t list ref,
+	 maybeAddTop: Symbol.t -> unit,
+	 sigs: (Sigid.t, Interface.t) NameSpace.t,
+	 strs: (Strid.t, Structure.t) NameSpace.t,
+	 (* topSymbols is a list of all symbols that are defined at
+	  * the top level (in any namespace).
+	  *)
+	 topSymbols: Symbol.t list ref,
+	 types: (Ast.Tycon.t, TypeStr.t) NameSpace.t,
+	 vals: (Ast.Vid.t, Vid.t * Scheme.t) NameSpace.t}
 
 fun sizeMessage (E: t): Layout.t =
    let
@@ -1103,10 +1107,36 @@ fun empty () =
 			All.tycOpt, All.Tyc)
       val vals = make (Vid.class o #1, Ast.Vid.region, Ast.Vid.toSymbol,
 		       All.valOpt, All.Val)
+      local
+	 val {get =
+	      lookupAll: (Symbol.t
+			  -> {strs: (Strid.t, Interface.t) Values.t,
+			      types: (Ast.Tycon.t, Interface.TypeStr.t) Values.t,
+			      vals: (Ast.Vid.t, Status.t * Interface.Scheme.t) Values.t}),
+	      ...} =
+	    Property.get (Symbol.plist,
+			  Property.initFun
+			  (fn _ => {strs = Values.new (),
+				    types = Values.new (),
+				    vals = Values.new ()}))
+	 fun make (sel, class, region, toSymbol: 'a -> Symbol.t)
+	    : ('a, 'b) NameSpace.t =
+	    NameSpace.new {class = fn _ => class,
+			   lookup = sel o lookupAll o toSymbol,
+			   region = region,
+			   toSymbol = toSymbol}
+      in
+	 val interface =
+	    {strs = make (#strs, Class.Str, Strid.region, Strid.toSymbol),
+	     types = make (#types, Class.Typ, Ast.Tycon.region,
+			   Ast.Tycon.toSymbol),
+	     vals = make (#vals, Class.Var, Ast.Vid.region, Ast.Vid.toSymbol)}
+      end
    in
       T {currentScope = ref (Scope.new {isTop = true}),
 	 fcts = fcts,
 	 fixs = fixs,
+	 interface = interface,
 	 lookup = lookupAll,
 	 maybeAddTop = maybeAddTop,
 	 sigs = sigs,
@@ -2928,19 +2958,15 @@ structure InterfaceEnv =
 	 structure TypeStr = TypeStr
       end
 	 
-      datatype t = T of {currentScope: Scope.t ref,
-			 env: Env.t,
-			 strs: (Strid.t, Interface.t) NameSpace.t,
-			 types: (Ast.Tycon.t, TypeStr.t) NameSpace.t,
-			 vals: (Ast.Vid.t, Status.t * Scheme.t) NameSpace.t}
-
       val allowDuplicates = ref false
 
-      fun extend (T (fields as {currentScope, ...}),
+      type t = t
+	 
+      fun extend (T {currentScope, interface, ...},
 		  domain, range, kind: string, ns, region): unit =
 	 let
 	    val scope = !currentScope
-	    val NameSpace.T {current, lookup, toSymbol, ...} = ns fields
+	    val NameSpace.T {current, lookup, toSymbol, ...} = ns interface
 	    fun value () = {domain = domain,
 			    range = range,
 			    scope = scope,
@@ -2974,11 +3000,11 @@ structure InterfaceEnv =
 
       fun extendVid (E, v, st, s, r) = extend (E, v, (st, s), "value", #vals, r)
 
-      val lookupSigid = fn (T {env, ...}, x) => lookupSigid (env, x)
+      val lookupSigid = lookupSigid
 
       local
-	 fun make sel (T r, a) =
-	    NameSpace.peek (sel r, a, {markUse = fn _ => true})
+	 fun make sel (T {interface, ...}, a) =
+	    NameSpace.peek (sel interface, a, {markUse = fn _ => true})
       in
 	 val peekStrid = make #strs
 	 val peekTycon = make #types
@@ -3010,11 +3036,10 @@ structure InterfaceEnv =
 			end
 	 end
       
-      fun lookupLongtycon (E as T {env, ...},
-			   long: Longtycon.t): TypeStr.t option =
+      fun lookupLongtycon (E: t, long: Longtycon.t): TypeStr.t option =
 	 let
 	    fun doit () =
-	       Option.map (Env.lookupLongtycon (env, long), TypeStr.fromEnv)
+	       Option.map (Env.lookupLongtycon (E, long), TypeStr.fromEnv)
 	    val (strids, c) = Longtycon.split long
 	 in
 	    case strids of
@@ -3031,7 +3056,7 @@ structure InterfaceEnv =
 			 {prefix = [s]})
 	 end
 
-      fun makeInterface (T {currentScope, strs, types, vals, ...},
+      fun makeInterface (T {currentScope, interface = {strs, types, vals}, ...},
 			 {isTop}, make) =
 	 let
 	    val s = NameSpace.collect strs
@@ -3079,32 +3104,6 @@ structure InterfaceEnv =
 	 extendVid (E, Ast.Vid.fromCon c, Status.Exn, s)
 end
 
-fun makeInterfaceEnv (env as T {currentScope, ...}): InterfaceEnv.t =
-   let
-      val {get =
-	   lookupAll: (Symbol.t
-		       -> {strs: (Strid.t, Interface.t) Values.t,
-			   types: (Ast.Tycon.t, Interface.TypeStr.t) Values.t,
-			   vals: (Ast.Vid.t, Status.t * Interface.Scheme.t) Values.t}),
-	   ...} =
-	 Property.get (Symbol.plist,
-		       Property.initFun
-		       (fn _ => {strs = Values.new (),
-				 types = Values.new (),
-				 vals = Values.new ()}))
-      fun make (sel, class, region, toSymbol: 'a -> Symbol.t)
-	 : ('a, 'b) NameSpace.t =
-	 NameSpace.new {class = fn _ => class,
-			lookup = sel o lookupAll o toSymbol,
-			region = region,
-			toSymbol = toSymbol}
-   in
-      InterfaceEnv.T
-      {currentScope = currentScope,
-       env = env,
-       strs = make (#strs, Class.Str, Strid.region, Strid.toSymbol),
-       types = make (#types, Class.Typ, Ast.Tycon.region, Ast.Tycon.toSymbol),
-       vals = make (#vals, Class.Var, Ast.Vid.region, Ast.Vid.toSymbol)}
-   end
-   
+val makeInterfaceEnv = fn E => E
+
 end
