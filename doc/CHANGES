@@ -1,5 +1,11 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2002-01-18
+  - The MACHINE IL has been replaced with an RSSA (representation explicit SSA) IL and an improved MACHINE IL.  
+
+* 2002-01-16
+  - Added known case SSA optimization
+
 * 2002-01-09
   - Fixed bug in match compiler that caused case expressions on datatypes
     with redundant cases to be compiled incorrectly.
