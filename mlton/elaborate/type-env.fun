@@ -741,6 +741,12 @@ structure Type =
 	 case toType t of
 	    Con (c, _) => Tycon.equals (c, Tycon.char)
 	  | _ => false
+
+      fun isInt t =
+	 case toType t of
+	    Con (c, _) => Tycon.isIntX c
+	  | Int => true
+	  | _ => false
 	       
       fun isUnit t =
 	 case toType t of

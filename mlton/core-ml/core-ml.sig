@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 signature CORE_ML_STRUCTS = 
    sig
       include ATOMS
@@ -17,6 +18,7 @@ signature CORE_ML_STRUCTS =
 	    val deConOpt: t -> (Tycon.t * t vector) option
 	    val deRecord: t -> (Record.Field.t * t) vector
 	    val isChar: t -> bool
+	    val isInt: t -> bool
 	    val layout: t -> Layout.t
 	    val makeHom: {con: Tycon.t * 'a vector -> 'a,
 			  var: Tyvar.t -> 'a} -> {destroy: unit -> unit,

@@ -16,7 +16,8 @@ and node =
 	   con: Con.t,
 	   targs: Type.t vector}
   | Const of {const: Const.t,
-	      isChar: bool}
+	      isChar: bool,
+	      isInt: bool}
   | Layered of Var.t * t
   | Tuple of t vector
   | Var of Var.t

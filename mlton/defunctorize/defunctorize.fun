@@ -1,3 +1,11 @@
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-1999 NEC Research Institute.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
+ *)
+
 functor Defunctorize (S: DEFUNCTORIZE_STRUCTS): DEFUNCTORIZE = 
 struct
 
@@ -611,7 +619,8 @@ fun defunctorize (CoreML.Program.T {decs}) =
 				    targs = conTargs (con, targs)}
 		| Const f =>
 		     NestedPat.Const {const = f (),
-				      isChar = Ctype.isChar t}
+				      isChar = Ctype.isChar t,
+				      isInt = Ctype.isInt t}
 		| Layered (x, p) => NestedPat.Layered (x, loopPat p)
 		| List ps =>
 		     let

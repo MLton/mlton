@@ -17,7 +17,9 @@ structure FlatPat =
    struct
       datatype t =
 	 Any
-       | Const of {const: Const.t, isChar: bool}
+       | Const of {const: Const.t,
+		   isChar: bool,
+		   isInt: bool}
        | Con of {arg: NestedPat.t option,
 		 con: Con.t,
 		 targs: Type.t vector}
@@ -535,13 +537,14 @@ fun matchCompile {caseType: Type.t,
 	      rules: FlatRule.t vector,
 	      finish: Finish.t) =>
 	 let
-	    val isChar =
+	    val {isChar, isInt} =
 	       case Vector.peekMap (rules, fn FlatRule.T {pat, ...} =>
 				    case pat of
-				       FlatPat.Const {isChar, ...} => SOME isChar
+				       FlatPat.Const {isChar, isInt, ...} =>
+					  SOME {isChar = isChar, isInt = isInt}
 				     | _ => NONE) of
-		  NONE => false
-		| SOME isChar => isChar
+		  NONE => {isChar = false, isInt = false}
+		| SOME z => z
 	    val (cases, defaults) =
 	       Vector.foldr
 	       (rules, ([], []),
@@ -593,7 +596,14 @@ fun matchCompile {caseType: Type.t,
 						  str "\""]
 					  end
 				     | _ => Error.bug "strange char")
-			   else Const.layout c
+			   else (if isInt
+				    then
+				       case c of
+					  Const.IntInf i => IntInf.layout i
+					| Const.Word w =>
+					     IntInf.layout (WordX.toIntInfX w)
+					| _ => Error.bug "strange int"
+				 else Const.layout c)
 			end
 	       in
 		  finish (unhandled, Vector.fromList defaults)

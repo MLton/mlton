@@ -31,6 +31,7 @@ signature TYPE_ENV =
 			  replaceSynonyms: bool,
 			  var: Tyvar.t -> 'a} -> 'a
 	    val isChar: t -> bool
+	    val isInt: t -> bool
 	    val isUnit: t -> bool
 	    val layout: t -> Layout.t
 	    val layoutPretty: t -> Layout.t
