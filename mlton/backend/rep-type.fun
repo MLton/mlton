@@ -220,9 +220,9 @@ structure Type =
 
       val thread = pointer PointerTycon.thread
 
-      val wordVector = pointer PointerTycon.wordVector
+      val wordVector: Bits.t -> t = pointer o PointerTycon.wordVector
 
-      val word8Vector = pointer PointerTycon.word8Vector
+      val word8Vector = wordVector Bits.inByte
 
       val string = word8Vector
 
@@ -290,7 +290,7 @@ structure Type =
 
       val intInf: t =
 	 sum (Vector.new2
-	      (wordVector,
+	      (wordVector Bits.inWord,
 	       seq (Vector.new2
 		    (constant (WordX.fromIntInf
 			       (1, WordSize.fromBits (Bits.fromInt 1))),
@@ -377,12 +377,6 @@ structure ObjectType =
 					     Type.defaultWord,
 					     Type.stack))}
 
-      val word8Vector = Array {hasIdentity = false,
-			       elt = Type.word8}
-
-      val wordVector = Array {hasIdentity = false,
-			      elt = Type.defaultWord}
-
       (* Order in the following vector matters.  The basic pointer tycons must
        * correspond to the constants in gc.h.
        * STACK_TYPE_INDEX,
@@ -392,12 +386,24 @@ structure ObjectType =
        * WORD_VECTOR_TYPE_INDEX.
        *)
       val basic =
-	 Vector.fromList
-	 [(PointerTycon.stack, stack),
-	  (PointerTycon.word8Vector, word8Vector),
-	  (PointerTycon.thread, thread),
-	  (PointerTycon.weakGone, WeakGone),
-	  (PointerTycon.wordVector, wordVector)]
+	 let
+	    fun wordVec i =
+	       let
+		  val b = Bits.fromInt i
+	       in
+		  (PointerTycon.wordVector b,
+		   Array {hasIdentity = false,
+			  elt = Type.word b})
+	       end
+	 in
+	    Vector.fromList
+	    [(PointerTycon.stack, stack),
+	     wordVec 8,
+	     (PointerTycon.thread, thread),
+	     (PointerTycon.weakGone, WeakGone),
+	     wordVec 32,
+	     wordVec 16]
+	 end
 
       local
 	 structure R = Runtime.RObjectType
@@ -455,6 +461,9 @@ fun ofGCField (f: GCField.t): t =
        | StackLimit => cPointer ()
        | StackTop => cPointer ()
    end
+
+fun ofWordVector (v: WordXVector.t): t =
+   wordVector (WordSize.bits (WordXVector.elementSize v))
 
 fun castIsOk {from, to, tyconTy = _} =
    Bits.equals (width from, width to)

@@ -4114,6 +4114,7 @@ bad:
 
 static void setInitialBytesLive (GC_state s) {
 	int i;
+	int numBytes;
 	int numElements;
 
 	s->bytesLive = 0;
@@ -4125,13 +4126,14 @@ static void setInitialBytesLive (GC_state s) {
 				+ numElements,
 				s->alignment);
 	}
-	for (i = 0; i < s->stringInitsSize; ++i) {
-		numElements = s->stringInits[i].size;
+	for (i = 0; i < s->vectorInitsSize; ++i) {
+		numBytes = s->vectorInits[i].bytesPerElement
+			* s->vectorInits[i].numElements;
 		s->bytesLive +=
 			align (GC_ARRAY_HEADER_SIZE
-				+ ((0 == numElements) 
+				+ ((0 == numBytes) 
 					? POINTER_SIZE
-					: numElements),
+					: numBytes),
 				s->alignment);
 	}
 }
@@ -4141,7 +4143,7 @@ static void setInitialBytesLive (GC_state s) {
  * by one with an mlstr of NULL), set
  *	state->globals[globalIndex]
  * to the corresponding IntInf.int value.
- * On exit, the GC_state pointed to by state is adjusted to account for any
+ * On exit, the GC_state pointed to by s is adjusted to account for any
  * space used.
  */
 static void initIntInfs (GC_state s) {
@@ -4228,39 +4230,52 @@ static void initIntInfs (GC_state s) {
 }
 
 static void initStrings (GC_state s) {
-	struct GC_stringInit *inits;
+	struct GC_vectorInit *inits;
 	pointer frontier;
 	int i;
 
 	assert (isAlignedFrontier (s, s->frontier));
-	inits = s->stringInits;
+	inits = s->vectorInits;
 	frontier = s->frontier;
-	for (i = 0; i < s->stringInitsSize; ++i) {
-		uint numElements, numBytes;
+	for (i = 0; i < s->vectorInitsSize; ++i) {
+		uint bytesPerElement;
+		uint numBytes;
+		uint objectSize;
+		uint typeIndex;
 
-		numElements = inits[i].size;
-		numBytes = align (GC_ARRAY_HEADER_SIZE
-					+ ((0 == numElements) 
+		bytesPerElement = inits[i].bytesPerElement;
+		numBytes = bytesPerElement * inits[i].numElements;
+		objectSize = align (GC_ARRAY_HEADER_SIZE
+					+ ((0 == numBytes) 
 						? POINTER_SIZE
-						: numElements),
+						: numBytes),
 					s->alignment);
-		assert (numBytes <= s->heap.start + s->heap.size - frontier);
+		assert (objectSize <= s->heap.start + s->heap.size - frontier);
 		*(word*)frontier = 0; /* counter word */
-		*(word*)(frontier + WORD_SIZE) = numElements;
-		*(word*)(frontier + 2 * WORD_SIZE) = STRING_HEADER;
+		*(word*)(frontier + WORD_SIZE) = inits[i].numElements;
+		switch (bytesPerElement) {
+		case 1:
+			typeIndex = WORD8_VECTOR_TYPE_INDEX;
+		break;
+		case 2:
+			typeIndex = WORD16_VECTOR_TYPE_INDEX;
+		break;
+		case 4:
+			typeIndex = WORD32_VECTOR_TYPE_INDEX;
+		break;
+		default:
+			die ("unknown bytes per element in vectorInit: %d",
+				bytesPerElement);
+		}
+		*(word*)(frontier + 2 * WORD_SIZE) = GC_objectHeader (typeIndex);
 		s->globals[inits[i].globalIndex] = 
 			frontier + GC_ARRAY_HEADER_SIZE;
 		if (DEBUG_DETAILED)
 			fprintf (stderr, "allocated string at 0x%x\n",
 					(uint)s->globals[inits[i].globalIndex]);
-		{
-			int j;
-
-			for (j = 0; j < numElements; ++j)
-				*(frontier + GC_ARRAY_HEADER_SIZE + j) 
-					= inits[i].str[j];
-		}
-		frontier += numBytes;
+		memcpy (frontier + GC_ARRAY_HEADER_SIZE, inits[i].bytes, 
+				numBytes);
+		frontier += objectSize;
 	}
 	if (DEBUG_DETAILED)
 		fprintf (stderr, "frontier after string allocation is 0x%08x\n",

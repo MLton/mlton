@@ -449,24 +449,27 @@ structure Value =
 
       fun constToEltLength (c, err) =
 	 let
-	    val v = case c of
-	       Sconst.Word8Vector v => v
-	     | _ => Error.bug err 
-	    val n = Vector.length v
-	    val x = if n = 0
-		       then const' (Const.unknown (), Type.word8)
-		    else let
-			    val w = Vector.sub (v, 0)
-			 in
-			    if Vector.forall (v, fn w' => w = w')
-			       then const (Sconst.word8 w)
-			    else const' (Const.unknown (), Type.word8)
-			 end
-	    val n =
-	       const (Sconst.Word (WordX.fromIntInf (IntInf.fromInt n,
+	    val v =
+	       case c of
+		  Sconst.WordVector v => v
+		| _ => Error.bug err 
+	    val length = WordXVector.length v
+	    val elt =
+	       if 0 = length
+		  then const' (Const.unknown (), Type.word8)
+	       else let
+		       val w = WordXVector.sub (v, 0)
+		    in
+		       if WordXVector.forall (v, fn w' =>
+					      WordX.equals (w, w'))
+			  then const (Sconst.word w)
+		       else const' (Const.unknown (), Type.word8)
+		    end
+	    val length =
+	       const (Sconst.Word (WordX.fromIntInf (IntInf.fromInt length,
 						     WordSize.default)))
 	 in
-	    {elt = x, length = n}
+	    {elt = elt, length = length}
 	 end
 	       
       local

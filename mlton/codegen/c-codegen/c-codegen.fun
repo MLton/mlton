@@ -226,7 +226,7 @@ fun outputDeclarations
     print: string -> unit,
     program = (Program.T
 	       {frameLayouts, frameOffsets, intInfs, maxFrameSize,
-		objectTypes, profileInfo, reals, strings, ...}),
+		objectTypes, profileInfo, reals, vectors, ...}),
     rest: unit -> unit
     }: unit =
    let
@@ -261,15 +261,19 @@ fun outputDeclarations
 			   ; print "\n"))
 	  ; print "EndIntInfs\n")
       fun declareStrings () =
-	 (print "BeginStrings\n"
-	  ; List.foreach (strings, fn (g, s) =>
-			  (C.callNoSemi ("String",
-					 [C.int (Global.index g),
-					  C.string s,
-					  C.int (String.size s)],
-					 print)
-			   ; print "\n"))
-	  ; print "EndStrings\n")
+	 (print "BeginVectors\n"
+	  ; (List.foreach
+	     (vectors, fn (g, v) =>
+	      (C.callNoSemi ("Vector",
+			     [C.string (WordXVector.toString v),
+			      C.int (Bytes.toInt
+				     (WordSize.bytes
+				      (WordXVector.elementSize v))),
+			      C.int (Global.index g),
+			      C.int (WordXVector.length v)],
+			     print)
+		 ; print "\n")))
+	  ; print "EndVectors\n")
       fun declareReals () =
 	 (print "static void real_Init() {\n"
 	  ; List.foreach (reals, fn (g, r) =>

@@ -29,6 +29,5 @@ signature POINTER_TYCON =
       val thread: t
       val toString: t -> string
       val weakGone: t
-      val wordVector: t
-      val word8Vector: t
+      val wordVector: Bits.t -> t
    end

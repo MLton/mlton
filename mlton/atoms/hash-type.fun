@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor HashType (S: HASH_TYPE_STRUCTS): HASH_TYPE = 
 struct
 
@@ -144,7 +145,7 @@ fun ofConst c =
 	 IntInf _ => intInf
        | Real r => real (RealX.size r)
        | Word w => word (WordX.size w)
-       | Word8Vector _ => word8Vector
+       | WordVector v => vector (word (WordXVector.elementSize v))
    end
 
 fun isUnit t =

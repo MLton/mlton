@@ -274,7 +274,7 @@ signature MACHINE =
 		     objectTypes: Type.ObjectType.t vector,
 		     profileInfo: ProfileInfo.t option,
 		     reals: (Global.t * RealX.t) list,
-		     strings: (Global.t * string) list}
+		     vectors: (Global.t * WordXVector.t) list}
 
 	    val frameSize: t * FrameInfo.t -> Bytes.t
 	    val clearLabelNames: t -> unit

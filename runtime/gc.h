@@ -69,14 +69,15 @@ enum {
 	SOURCE_SEQ_GC = 	1,
 	SOURCE_SEQ_UNKNOWN = 	0,
 	/* The type indices here must agree with those in
-	 * backend/machine-atoms.fun.
+	 * backend/rep-type.fun.
 	 */
 	STACK_TYPE_INDEX =	0,
 	STRING_TYPE_INDEX = 	1,
 	THREAD_TYPE_INDEX =	2,
 	WEAK_GONE_TYPE_INDEX = 	3,
 	WORD8_VECTOR_TYPE_INDEX = STRING_TYPE_INDEX,
-	WORD_VECTOR_TYPE_INDEX = 4,
+	WORD32_VECTOR_TYPE_INDEX = 4,
+	WORD16_VECTOR_TYPE_INDEX = 5,
 };
 
 #define BOGUS_THREAD (GC_thread)BOGUS_POINTER
@@ -134,11 +135,12 @@ struct GC_intInfInit {
 	char	*mlstr;
 };
 
-/* GC_init allocates a collection of strings in the heap. */
-struct GC_stringInit {
-  uint globalIndex;
-  char *str;
-  uint size;
+/* GC_init allocates a collection of arrays/vectors in the heap. */
+struct GC_vectorInit {
+	char *bytes;
+	uint bytesPerElement;
+	uint globalIndex;
+	uint numElements;
 };
 
 /* ------------------------------------------------- */
@@ -496,8 +498,6 @@ typedef struct GC_state {
 	uint sourcesSize;
 	pointer stackBottom; /* The bottom of the stack in the current thread. */
  	uint startTime; /* The time when GC_init or GC_loadWorld was called. */
-	struct GC_stringInit *stringInits;
-	uint stringInitsSize;
 	/* If summary is TRUE, then print a summary of gc info when the program 
 	 * is done .
 	 */
@@ -514,6 +514,8 @@ typedef struct GC_state {
 	uint totalRam;		/* bytes */
 	uint translateDiff;	/* used by translateHeap */
  	bool translateUp;	/* used by translateHeap */
+	struct GC_vectorInit *vectorInits;
+	uint vectorInitsSize;
 	GC_weak weaks;
 } *GC_state;
 
@@ -627,7 +629,7 @@ void GC_handler (GC_state s, int signum);
  *   numGlobals
  *   objectTypes
  *   saveGlobals
- *   stringInits
+ *   wordVectorInits
  *
  * GC_init returns the index of the first non-runtime command-line arg.
  */

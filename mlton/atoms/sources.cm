@@ -31,6 +31,7 @@ signature TYPE_OPS
 signature TYVAR
 signature VAR
 signature WORD_X
+signature WORD_X_VECTOR
 
 functor Atoms
 functor Id
@@ -54,6 +55,8 @@ real-x.sig
 real-x.fun
 word-x.sig
 word-x.fun
+word-x-vector.sig
+word-x-vector.fun
 c-type.sig
 c-type.fun
 label.sig

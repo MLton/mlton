@@ -252,7 +252,7 @@ structure Type =
 	       IntInf _ => intInf
 	     | Real r => real (RealX.size r)
 	     | Word w => word (WordX.size w)
-	     | Word8Vector _ => word8Vector
+	     | WordVector v => vector1 (word (WordXVector.elementSize v))
 	 end
 
       fun conApp (con, args) = object {args = args, con = Con con}

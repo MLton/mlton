@@ -38,15 +38,15 @@ datatype t =
    IntInf of IntInf.t
  | Real of RealX.t
  | Word of WordX.t
- | Word8Vector of Word8.t vector
+ | WordVector of WordXVector.t
 
 val real = Real
 val intInf = IntInf
 val word = Word
-val word8Vector = Word8Vector
+val wordVector = WordVector
 
 val word8 = word o WordX.fromWord8 
-val string = word8Vector o Word8.stringToVector
+val string = wordVector o WordXVector.fromString
    
 local
    open Layout
@@ -56,7 +56,7 @@ in
       fn IntInf i => IntInf.layout i
        | Real r => RealX.layout r
        | Word w => WordX.layout w
-       | Word8Vector v => wrap ("\"", "\"", Word8.vectorToString v)
+       | WordVector v => wrap ("\"", "\"", WordXVector.toString v)
 end	 
 
 val toString = Layout.toString o layout
@@ -66,14 +66,14 @@ fun hash (c: t): word =
       IntInf i => String.hash (IntInf.toString i)
     | Real r => RealX.hash r
     | Word w => Word.fromIntInf (WordX.toIntInf w)
-    | Word8Vector v => String.hash (Word8.vectorToString v)
+    | WordVector v => String.hash (WordXVector.toString v)
    
 fun equals (c, c') =
    case (c, c') of
       (IntInf i, IntInf i') => IntInf.equals (i, i')
     | (Real r, Real r') => RealX.equals (r, r')
     | (Word w, Word w') => WordX.equals (w, w')
-    | (Word8Vector v, Word8Vector v') => v = v'
+    | (WordVector v, WordVector v') => WordXVector.equals (v, v')
     | _ => false
 
 val equals = Trace.trace2 ("Const.equals", layout, layout, Bool.layout) equals

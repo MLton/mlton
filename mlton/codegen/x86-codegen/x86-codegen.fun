@@ -114,7 +114,7 @@ struct
 		     maxFrameSize, 
 		     objectTypes, 
 		     reals, 
-		     strings, ...} =
+		     vectors, ...} =
 		  program
 	      in
 		val program =
@@ -129,7 +129,7 @@ struct
 		   objectTypes = objectTypes, 
 		   profileInfo = SOME (getProfileInfo ()),
 		   reals = reals, 
-		   strings = strings} 
+		   vectors = vectors}
 	      end
 	      val {print, done, ...} = makeC ()
 	      val additionalMainArgs =

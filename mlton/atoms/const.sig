@@ -11,6 +11,7 @@ signature CONST_STRUCTS =
    sig
       structure RealX: REAL_X
       structure WordX: WORD_X
+      structure WordXVector: WORD_X_VECTOR
    end
 
 signature CONST = 
@@ -30,7 +31,7 @@ signature CONST =
 	 IntInf of IntInf.t
        | Real of RealX.t
        | Word of WordX.t
-       | Word8Vector of Word8.t vector
+       | WordVector of WordXVector.t
 
       val equals: t * t -> bool
       val intInf: IntInf.t -> t
@@ -46,5 +47,5 @@ signature CONST =
       val toString: t -> string
       val word: WordX.t -> t
       val word8: Word8.t -> t
-      val word8Vector: Word8.t vector -> t
+      val wordVector: WordXVector.t -> t
    end

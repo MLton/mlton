@@ -40,6 +40,7 @@ signature ATOMS' =
       structure Vars: SET
       structure Tyvars: SET
       structure WordX: WORD_X
+      structure WordXVector: WORD_X_VECTOR
 
       sharing CFunction = Ffi.CFunction = Prim.CFunction
       sharing CType = CFunction.CType = Ffi.CType = Prim.CType 
@@ -52,7 +53,8 @@ signature ATOMS' =
       sharing SourceInfo = ProfileExp.SourceInfo
       sharing WordSize = CType.WordSize = Prim.WordSize = Tycon.WordSize
 	 = WordX.WordSize
-      sharing WordX = Const.WordX
+      sharing WordX = Const.WordX = WordXVector.WordX
+      sharing WordXVector = Const.WordXVector
    end
 
 signature ATOMS =

@@ -23,7 +23,8 @@ structure RepType = RepType (structure CFunction = CFunction
 			     structure Runtime = Runtime
 			     structure Scale = Scale
 			     structure WordSize = WordSize
-			     structure WordX = WordX)
+			     structure WordX = WordX
+			     structure WordXVector = WordXVector)
 structure ObjectType = RepType.ObjectType
 
 structure Type = RepType
@@ -799,7 +800,7 @@ structure Program =
 			 objectTypes: ObjectType.t vector,
 			 profileInfo: ProfileInfo.t option,
 			 reals: (Global.t * RealX.t) list,
-			 strings: (Global.t * string) list}
+			 vectors: (Global.t * WordXVector.t) list}
 
       fun clear (T {chunks, profileInfo, ...}) =
 	 (List.foreach (chunks, Chunk.clear)
@@ -876,8 +877,8 @@ structure Program =
 
       fun typeCheck (program as
 		     T {chunks, frameLayouts, frameOffsets, intInfs,
-			maxFrameSize, objectTypes, profileInfo, reals, strings,
-			...}) =
+			maxFrameSize, objectTypes, profileInfo, reals,
+			vectors, ...}) =
 	 let
 	    val _ =
 	       if !Control.profile = Control.ProfileTime
@@ -967,16 +968,22 @@ structure Program =
 		in
 		   Err.check
 		   (concat ["global ", name],
-		    fn () => isOk ty,
+		    fn () => isOk (ty, s),
 		    fn () => seq [layout s, str ": ", Type.layout ty])
 		end)
-	    val _ = globals ("real", reals, Type.isReal, RealX.layout)
-	    val _ = globals ("intInf", intInfs,
-			     fn t => Type.isSubtype (t, Type.intInf),
-			     String.layout)
-	    val _ = globals ("string", strings,
-			     fn t => Type.isSubtype (t, Type.word8Vector),
-			     String.layout)
+	    val _ =
+	       globals ("real", reals,
+			fn (t, r) => Type.equals (t, Type.real (RealX.size r)),
+			RealX.layout)
+	    val _ =
+	       globals ("intInf", intInfs,
+			fn (t, _) => Type.isSubtype (t, Type.intInf),
+			String.layout)
+	    val _ =
+	       globals ("vector", vectors,
+			fn (t, v) =>
+			Type.equals (t, Type.ofWordVector v),
+			WordXVector.layout)
 	    (* Check for no duplicate labels. *)
 	    local
 	       val {get, ...} =

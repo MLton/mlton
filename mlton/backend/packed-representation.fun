@@ -2451,11 +2451,20 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				       else
 					  (case S.Type.dest elt of
 					      S.Type.Word s =>
-						 (case (Bits.toInt
-							(WordSize.bits s)) of
-						     8 => now PointerTycon.word8Vector
-						   | 32 => now PointerTycon.wordVector
-						   | _ => delay ())
+						 let
+						    val n =
+						       Bits.toInt
+						       (WordSize.bits s)
+						 in
+						    if n = 8
+						       orelse n = 16
+						       orelse n = 32
+						       then
+							  now
+							  (PointerTycon.wordVector
+							   (Bits.fromInt n))
+						    else delay ()
+						 end
 					    | _ => delay ())
 				    end
 			   in

@@ -24,6 +24,7 @@ in
    structure StackOffset = StackOffset
    structure WordSize = WordSize
    structure WordX = WordX
+   structure WordXVector = WordXVector
 end
 local
    open Runtime
@@ -395,8 +396,11 @@ let
 		  fn r => (RealX.toString r,
 			   Type.real (RealX.size r),
 			   r))
-	 val (allStrings, globalString) =
-	    make (String.equals, fn s => (s, Type.word8Vector, s))
+	 val (allVectors, globalVector) =
+	    make (WordXVector.equals,
+		  fn v => (WordXVector.toString v,
+			   Type.ofWordVector v,
+			   v))
       end
       fun realOp (r: RealX.t): M.Operand.t =
 	 if !Control.codegen = Control.CCodegen
@@ -420,7 +424,7 @@ let
 					 (Word.toIntInf w, WordSize.default)))
 	     | Real r => realOp r
 	     | Word w => M.Operand.Word w
-	     | Word8Vector v => globalString (Word8.vectorToString v)
+	     | WordVector v => globalVector v
 	 end
       fun parallelMove {chunk = _,
 			dsts: M.Operand.t vector,
@@ -580,7 +584,9 @@ let
       val bugTransfer =
 	 M.Transfer.CCall
 	 {args = (Vector.new1
-		  (globalString "backend thought control shouldn't reach here")),
+		  (globalVector
+		   (WordXVector.fromString
+		    "backend thought control shouldn't reach here"))),
 	  frameInfo = NONE,
 	  func = Type.BuiltInCFunction.bug,
 	  return = NONE}
@@ -1096,7 +1102,7 @@ in
        objectTypes = objectTypes,
        profileInfo = profileInfo,
        reals = allReals (),
-       strings = allStrings ()}
+       vectors = allVectors ()}
 end,
       display = Control.Layouts Machine.Program.layouts}         
    in

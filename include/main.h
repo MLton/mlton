@@ -13,9 +13,9 @@
 #define IntInf(g, n) { g, n },
 #define EndIntInfs };
 
-#define BeginStrings static struct GC_stringInit stringInits[] = {
-#define String(g, s, l) { g, s, l },
-#define EndStrings };
+#define BeginVectors static struct GC_vectorInit vectorInits[] = {
+#define Vector(a, b, c, d) { a, b, c, d },
+#define EndVectors };
 
 #define LoadArray(a, f) sfread (a, sizeof(*a), cardof(a), f)
 #define SaveArray(a, fd) swrite (fd, a, sizeof(*a) * cardof(a))
@@ -54,8 +54,8 @@ Pointer gcStateAddress;
 	gcState.sourceSeqsSize = cardof(sourceSeqs);			\
 	gcState.sources = sources;					\
 	gcState.sourcesSize = cardof(sources);				\
-	gcState.stringInits = stringInits;				\
-	gcState.stringInitsSize = cardof(stringInits);			\
+	gcState.vectorInits = vectorInits;				\
+	gcState.vectorInitsSize = cardof(vectorInits);			\
 	MLton_init (argc, argv, &gcState);				\
 
 void MLton_callFromC ();

@@ -17,9 +17,11 @@ signature REP_TYPE_STRUCTS =
       structure Scale: SCALE
       structure WordSize: WORD_SIZE
       structure WordX: WORD_X
+      structure WordXVector: WORD_X_VECTOR
       sharing CFunction = Prim.CFunction
       sharing RealSize = Prim.RealSize
       sharing WordSize = Prim.WordSize = WordX.WordSize
+      sharing WordX = WordXVector.WordX
    end
 
 signature REP_TYPE =
@@ -84,6 +86,7 @@ signature REP_TYPE =
       val mul: t * t -> t
       val name: t -> string (* simple one letter abbreviation *)
       val ofGCField: Runtime.GCField.t -> t
+      val ofWordVector: WordXVector.t -> t
       val offsetIsOk: {base: t,
 		       offset: Bytes.t,
 		       pointerTy: PointerTycon.t -> ObjectType.t,
@@ -103,9 +106,8 @@ signature REP_TYPE =
       val unit: t
       val width: t -> Bits.t
       val word8: t
-      val word8Vector: t
       val word: Bits.t -> t
-      val wordVector: t
+      val wordVector: Bits.t -> t
       val words: t -> Words.t
       val zero: Bits.t -> t
 

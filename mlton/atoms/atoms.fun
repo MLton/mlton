@@ -25,6 +25,8 @@ structure Atoms =
 			       structure WordSize = WordSize)
       structure RealX = RealX (structure RealSize = RealSize)
       structure WordX = WordX (structure WordSize = WordSize)
+      structure WordXVector = WordXVector (structure WordSize = WordSize
+					   structure WordX = WordX)
       structure Func =
 	 struct
 	    open Var
@@ -36,7 +38,8 @@ structure Atoms =
 	    fun newNoname () = newString "L"
 	 end
       structure Const = Const (structure RealX = RealX
-			       structure WordX = WordX)
+			       structure WordX = WordX
+			       structure WordXVector = WordXVector)
       structure CFunction = CFunction (structure CType = CType)
       structure Prim = Prim (structure CFunction = CFunction
 			     structure CType = CType

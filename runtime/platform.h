@@ -294,8 +294,8 @@ Int IEEEReal_getRoundingMode ();
 /*
  * Third header word for bignums and strings.
  */
-#define	BIGMAGIC	GC_objectHeader(WORD_VECTOR_TYPE_INDEX)
-#define	STRMAGIC	GC_objectHeader(STRING_TYPE_INDEX)
+#define	BIGMAGIC	GC_objectHeader (WORD32_VECTOR_TYPE_INDEX)
+#define	STRMAGIC	GC_objectHeader (STRING_TYPE_INDEX)
 
 /*
  * Layout of bignums.  Note, the value passed around is a pointer to

@@ -216,17 +216,21 @@ fun unhandledConst (cs: Const.t vector): Const.t =
 		       next = fn w => w + 1,
 		       prev = fn w => w - 1}
 	    end
-       | Word8Vector _ =>
+       | WordVector v =>
 	    let
 	       val max =
 		  Vector.fold
 		  (cs, ~1, fn (c, max) =>
 		   case c of
-		      Word8Vector v => Int.max (max, Vector.length v)
+		      WordVector v => Int.max (max, WordXVector.length v)
 		    | _ => Error.bug "expected Word8Vector")
-	       val w = Word8.fromChar #"a"
+	       val elementSize = WordXVector.elementSize v
+	       val w = WordX.fromIntInf (IntInf.fromInt (Char.ord #"a"),
+					 elementSize)
 	    in
-	       Const.Word8Vector (Vector.tabulate (max + 1, fn _ => w))
+	       Const.WordVector (WordXVector.tabulate
+				 ({elementSize = elementSize}, max + 1,
+				  fn _ => w))
 	    end
    end
 

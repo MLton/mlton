@@ -21,6 +21,7 @@ local
    open Const
 in
    structure WordX = WordX
+   structure WordXVector = WordXVector
 end
 
 structure Kind =
@@ -1120,7 +1121,6 @@ fun ('a, 'b) apply (p: 'a t,
       val intInfConst = intInf o IntInf.fromInt
       fun word (w: WordX.t): ('a, 'b) ApplyResult.t =
 	 ApplyResult.Const (Const.word w)
-      val word8Vector = ApplyResult.Const o Const.word8Vector
       val t = ApplyResult.truee
       val f = ApplyResult.falsee
       fun iio (f, c1, c2) = intInf (f (c1, c2))
@@ -1152,7 +1152,7 @@ fun ('a, 'b) apply (p: 'a t,
  	  | _ => ApplyResult.Unknown
       val equal =
 	 fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
-	  | (Word8Vector v1, Word8Vector v2) => bool (v1 = v2)
+	  | (WordVector v1, WordVector v2) => bool (WordXVector.equals (v1, v2))
 	  | _ => ApplyResult.Unknown
       fun allConsts (cs: Const.t list) =
 	 (case (p, cs) of
@@ -1391,7 +1391,7 @@ fun ('a, 'b) apply (p: 'a t,
 			 | 16 => StringCvt.HEX
 			 | _ => Error.bug "strange base for IntInf_toString"
 		  in
-		     word8Vector (Word8.stringToVector (IntInf.format (i, base)))
+		     ApplyResult.Const (Const.string (IntInf.format (i, base)))
 		  end
 	     | (_, [Con {con = c, hasArg = h}, Con {con = c', ...}]) =>
 		  if (case p of

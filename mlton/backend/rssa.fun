@@ -93,7 +93,9 @@ structure Operand =
 		     IntInf _ => Type.intInf
 		   | Real r => Type.real (RealX.size r)
 		   | Word w => Type.constant w
-		   | Word8Vector _ => Type.word8Vector
+		   | WordVector v =>
+			Type.wordVector (WordSize.bits
+					 (WordXVector.elementSize v))
 	       end
 	  | EnsuresBytesFree => Type.defaultWord
 	  | File => Type.cPointer ()
