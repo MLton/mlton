@@ -12,8 +12,8 @@ functor F (P: PACK_WORD) =
 	 [~1, 2, valOf Int.maxInt]
    end
 
-structure S = F (Pack32Little)
-structure S = F (Pack32Big)
+structure S = F (PackWord32Little)
+structure S = F (PackWord32Big)
 
 functor F (P: PACK_WORD) =
    struct
