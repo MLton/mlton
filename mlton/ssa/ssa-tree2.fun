@@ -174,21 +174,17 @@ structure Type =
 		    if isUnit t
 		       then str "unit"
 		    else
-		       let
-			  val args =
-			     paren
-			     (seq (separate (Vector.toListMap
-					     (args, fn {elt, isMutable} =>
-					      if isMutable
-						 then seq [layout elt,
-							   str " ref"]
-					      else layout elt),
-					     " * ")))
-		       in
-			  case con of
-			     NONE => args
-			   | SOME c => seq [Con.layout c, str " ", args]
-		       end
+		       (case con of
+			   NONE =>
+			      paren
+			      (seq (separate (Vector.toListMap
+					      (args, fn {elt, isMutable} =>
+					       if isMutable
+						  then seq [layout elt,
+							    str " ref"]
+					       else layout elt),
+					      " * ")))
+			 | SOME c => Con.layout c)
 	       | Real s => str (concat ["real", RealSize.toString s])
 	       | Thread => str "thread"
 	       | Vector t => seq [layout t, str " vector"]
