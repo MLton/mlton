@@ -244,6 +244,9 @@ static void *ssmmap (size_t length, size_t dead_low, size_t dead_high) {
 #endif
 
 static void release (void *base, size_t length) {
+	if (DEBUG_MEM)
+		fprintf (stderr, "release (0x%08x, %s)\n",
+				(uint)base, uintToCommaString (length));
 #if (defined (__CYGWIN__))
 	if (DEBUG_MEM)
 		fprintf (stderr, "VirtualFree (0x%x, 0, MEM_RELEASE)\n", 
@@ -258,6 +261,9 @@ static void release (void *base, size_t length) {
 }
 
 static void decommit (void *base, size_t length) {
+	if (DEBUG_MEM)
+		fprintf (stderr, "decommit (0x%08x, %s)\n",
+				(uint)base, uintToCommaString (length));
 #if (defined (__CYGWIN__))
 	if (DEBUG_MEM)
 		fprintf (stderr, "VirtualFree (0x%x, %u, MEM_DECOMMIT)\n", 
@@ -1459,6 +1465,9 @@ static void createCardMapAndCrossMap (GC_state s) {
 	h = &s->heap;
 	assert (isAligned (h->size, s->cardSize));
 	s->cardMapSize = align (divCardSize (s, h->size), s->pageSize);
+	if (DEBUG_MEM)
+		fprintf (stderr, "allocating card map of size %s\n",
+				uintToCommaString (s->cardMapSize));
 	s->cardMap = smmap (s->cardMapSize);
 	setCardMapForMutator (s);
 	if (DEBUG_CARD_MARKING)
@@ -1466,6 +1475,9 @@ static void createCardMapAndCrossMap (GC_state s) {
 				(uint)s->cardMap,
 				uintToCommaString (s->cardMapSize));
 	s->crossMapSize = s->cardMapSize;
+	if (DEBUG_MEM)
+		fprintf (stderr, "allocating cross map of size %s\n",
+				uintToCommaString (s->cardMapSize));
 	s->crossMap = smmap (s->crossMapSize);
 	clearCrossMap (s);
 }
@@ -2731,12 +2743,16 @@ static void resizeCardMapAndCrossMap (GC_state s) {
 		pointer oldCrossMap;
 		uint oldCrossMapSize;
 
+		if (DEBUG_MEM)
+			fprintf (stderr, "releasing card map.\n");
 		release (s->cardMap, s->cardMapSize);
 		oldCrossMap = s->crossMap;
 		oldCrossMapSize = s->crossMapSize;
 		createCardMapAndCrossMap (s);
 		copy (oldCrossMap, s->crossMap,
 			min (s->crossMapSize, oldCrossMapSize));
+		if (DEBUG_MEM)
+			fprintf (stderr, "releasing cross map.\n");
 		release (oldCrossMap, oldCrossMapSize);
 	}
 }
