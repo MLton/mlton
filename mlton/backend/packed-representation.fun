@@ -1203,12 +1203,14 @@ structure Small =
 		case conRep c of
 		   ConRep.ShiftAndTag {component, selects, tag, ty, ...} =>
 		      let
-			 val (ss, transfer) =
-			    Selects.goto (selects, l, toRtype, fn () =>
-					  Cast (test, ty))
+			 val test = Cast (test, Type.padToWidth (ty, testBits))
+			 val (test, ss) = Statement.resize (test, Type.width ty)
+			 val (ss', transfer) =
+			    Selects.goto (selects, l, toRtype, fn () => test)
+			 val statements = Vector.fromList (ss @ ss')
 		      in
 			 SOME (WordX.resize (tag, wordSize),
-			       Block.new {statements = Vector.fromList ss,
+			       Block.new {statements = statements,
 					  transfer = transfer})
 		      end
 		 | ConRep.Tag {tag} => SOME (WordX.resize (tag, wordSize), l)
