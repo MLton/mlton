@@ -375,23 +375,12 @@ fun eliminate (program: Program.t): Program.t =
 	     val locals = !locals
 	     val f =
 		if List.isEmpty locals
-		   then (print (concat ["skipping ", Func.toString name, "\n"])
-			 ; f)
+		   then f
 		else
 		   let
-		      val _ =
-			 print (concat ["patching ", Func.toString name, "\n"])
 		      val {args, blocks, mayInline, name, raises, returns,
 			   start} = Function.dest f
 		      val locals = Vector.fromListRev locals
-		      val _ =
-			 let
-			    open Layout
-			 in
-			    outputl (seq [str "locals ",
-					  Vector.layout Statement.layout locals],
-				     Out.error)
-			 end
 		      val localsLabel = Label.newNoname ()
 		      val localsBlock =
 			 Block.T {label = localsLabel,
