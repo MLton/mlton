@@ -290,7 +290,7 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
       val ticksPerSecond = 100.0
       val thresh = Real.fromInt (!thresh)
       val totalReal = Real.fromIntInf (IntInf.+ (total, totalGC))
-      fun per (ticks: IntInf.t): {per: real, row: string list} =
+      fun per (ticks: IntInf.t): real * string list =
 	 let
 	    val rticks = Real.fromIntInf ticks
 	    val per = 100.0 * rticks / totalReal
@@ -312,7 +312,7 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 				  "s)"])]
 		   else [])
 	 in
-	    {per = per, row = row}
+	    (per, row)
 	 end
       val profileStack =
 	 case counts of
@@ -323,7 +323,7 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 	 Vector.mapi
 	 (v, fn (i, x) =>
 	  let
-	     val {per, row} = f x
+	     val {per, row, sortPer} = f x
 	     val showInTable =
 		per > 0.0
 		andalso (per >= thresh
@@ -364,24 +364,36 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 		else NONE
 	  in
 	     {node = node,
-	      per = per,
+	      sortPer = sortPer,
 	      row = Source.toString source :: row,
 	      showInTable = showInTable}
 	  end)
       val counts =
 	 case counts of
-	    Counts.Current v => doit (v, per)
+	    Counts.Current v =>
+	       doit (v, fn z =>
+		     let
+			val (p, r) = per z
+		     in
+			{per = p, row = r, sortPer = p}
+		     end)
 	  | Counts.Empty =>
-	       doit (Vector.new (Vector.length sources, ()),
-		     fn () => per IntInf.zero)
+	       let
+		  val (p, r) = per IntInf.zero
+	       in
+		  doit (Vector.new (Vector.length sources, ()),
+			fn () => {per = p, row = r, sortPer = p})
+	       end
 	  | Counts.Stack v =>
 	       doit (v, fn {current, stack, stackGC} =>
 		     let
-			val {per = cp, row = cr} = per current
-			val {row = sr, ...} = per stack
-			val {row = gr, ...} = per stackGC
+			val (cp, cr) = per current
+			val (sp, sr) = per stack
+			val (_, gr) = per stackGC
 		     in
-			{per = cp, row = List.concat [cr, sr, gr]}
+			{per = sp,
+			 row = List.concat [cr, sr, gr],
+			 sortPer = cp}
 		     end)
       val _ =
 	 Vector.mapi
@@ -414,7 +426,7 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
       val tableRows =
 	 QuickSort.sortVector
 	 (Vector.keepAll (counts, #showInTable),
-	  fn ({per = p, ...}, {per = p', ...}) => p >= p')
+	  fn (z, z') => #sortPer z >= #sortPer z')
       val _ = 
 	 print
 	 (concat
