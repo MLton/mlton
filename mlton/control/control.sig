@@ -111,6 +111,9 @@ signature CONTROL =
 	    (* whether or not to use live transfer in native codegen *)
 	    val liveTransfer: int ref 
 
+	    (* whether or not to use the new gen transfer *)
+	    val newGenTransfer: bool ref
+
 	    (* size of future list for register allocation *)
 	    val future: int ref
 	       

@@ -548,7 +548,7 @@ struct
    * the stack object header, which must be distinguishable from an array 
    * length.
    *)
-  val GC_MAX_ARRAY_LENGTH = 0x3FFFFFFF : int
+  val GC_MAX_ARRAY_LENGTH = 0x20000000 : int
 
   (*
    * High bit in an object identifies its type.
