@@ -6,7 +6,7 @@ type word = Word.t
 
 signature MACHINE_OUTPUT_STRUCTS =
    sig
-      structure Label: ID
+      structure Label: HASH_ID
       structure Prim: PRIM
    end
 
@@ -67,6 +67,8 @@ signature MACHINE_OUTPUT =
 	 sig
 	    datatype t = T of {(* Size of frame, including return address. *)
 			       frameSize: int,
+			       (* Live stack offsets. *)
+			       live: Operand.t list,
 			       return: Label.t}
 	 end
 
@@ -74,7 +76,9 @@ signature MACHINE_OUTPUT =
 	 sig
 	    datatype t =
 	       None
-	     | Overflow of Label.t
+	     | Overflow of Label.t * Operand.t list
+	     | Runtime of GCInfo.t
+	     | Normal of Operand.t list
 
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	 end
@@ -88,8 +92,7 @@ signature MACHINE_OUTPUT =
 	     | Assign of {dst: Operand.t option,
 			  oper: Prim.t, 
 			  pinfo: PrimInfo.t,
-			  args: Operand.t list,
-			  info: GCInfo.t option}
+			  args: Operand.t list}
 	     | LimitCheck of {info: GCInfo.t,
 			      bytes: int,
 			      stackCheck: bool}
@@ -105,6 +108,7 @@ signature MACHINE_OUTPUT =
 				 numElts: Operand.t,
 				 numPointers: int,
 				 numBytesNonPointers: int,
+				 live: Operand.t list,
 				 limitCheck: {gcInfo: GCInfo.t,
 					      bytesPerElt: int,
 					      bytesAllocated: int} option}
@@ -116,7 +120,7 @@ signature MACHINE_OUTPUT =
       structure Transfer:
 	 sig
 	    datatype t = Bug
-	     | Return
+	     | Return of {live: Operand.t list}
 	     | Raise
 	     | Switch of {test: Operand.t,
 			  cases: Cases.t,
@@ -124,18 +128,34 @@ signature MACHINE_OUTPUT =
 	     | SwitchIP of {test: Operand.t,
 			    int: Label.t,
 			    pointer: Label.t}
-	     | NearJump of {label: Label.t}
+	     | NearJump of {label: Label.t,
+			    return: {return: Label.t,
+				     handler: Label.t option,
+				     size: int} option}
 	     | FarJump of {chunkLabel: ChunkLabel.t,
-			   label: Label.t}
+			   label: Label.t,
+			   live: Operand.t list,
+			   return: {return: Label.t,
+				    handler: Label.t option,
+				    size: int} option}
 
 	    val layout: t -> Layout.t
 	 end
 
       structure Block:
 	 sig
+	   structure Kind:
+	     sig
+	       datatype t = Func of {args: Operand.t list}
+		          | Jump
+		          | Cont of {args: Operand.t list,
+				     size: int}
+		          | Handler of {size: int}
+	     end
 	    datatype t = T of {label: Label.t,
-			       (* Live registers at beginning of block. *)
-			       live: Register.t list,
+			       kind: Kind.t,
+			       (* Live registers and stack offsets at beginning of block. *)
+			       live: Operand.t list,
 			       profileName: string,
 			       statements: Statement.t array,
 			       transfer: Transfer.t}
@@ -167,6 +187,7 @@ signature MACHINE_OUTPUT =
 		     maxFrameSize: int,
 		     chunks: Chunk.t list,
 		     main: {chunkLabel: ChunkLabel.t, label: Label.t}}
+
 	    val layouts: t * (Layout.t -> unit) -> unit
 	 end
    end

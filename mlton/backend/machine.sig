@@ -13,7 +13,7 @@ signature MACHINE =
    sig
       structure MachineOutput: MACHINE_OUTPUT
      
-      structure Label: ID sharing Label = MachineOutput.Label
+      structure Label: HASH_ID sharing Label = MachineOutput.Label
       structure ChunkLabel: UNIQUE_ID
       structure Prim: PRIM
       structure Type: MTYPE
@@ -71,10 +71,8 @@ signature MACHINE =
 	    val make:
 	       {(* Size of stack frame in bytes, including return address. *)
 		frameSize: int,
-		(* Live pointer valued stack offsets.  It should not contain
-		 * duplicates.
-		 *) 
-		offsets: int list
+		(* Live stack offsets. *)
+		live: Operand.t list
 		} -> t
 	 end
 
@@ -87,13 +85,21 @@ signature MACHINE =
 	     | Stack of GCInfo.t
 
 	    val layout: t -> Layout.t
+	    val live : t -> Operand.t list
 	 end
 
       structure PrimInfo:
 	 sig
-	    datatype t =
-	       None
-	     | Overflow of Label.t
+	    type t
+	      
+	    val none : t
+	    val overflow : Label.t * Operand.t list -> t
+	    val runtime : GCInfo.t -> t
+	    val normal : Operand.t list -> t
+
+	    val deRuntime : t -> GCInfo.t
+
+	    val layout : t -> Layout.t
 	 end
 
       structure Statement:
@@ -119,8 +125,7 @@ signature MACHINE =
 	    val assign: {dst: Operand.t option,
 			 oper: Prim.t,
 			 pinfo: PrimInfo.t,
-			 args: Operand.t vector,
-			 info: GCInfo.t option} -> t
+			 args: Operand.t vector} -> t
 	    val layout: t -> Layout.t
 	    val limitCheck: LimitCheck.t -> t
 	    (* When registers or offsets appear in operands, there is an
@@ -149,11 +154,18 @@ signature MACHINE =
 
 	    val bug: t
 	    val farJump: {chunkLabel: ChunkLabel.t,
-			  label: Label.t} -> t
+			  label: Label.t,
+			  live: Operand.t list,
+			  return: {return: Label.t,
+				   handler: Label.t option,
+				   size: int} option} -> t
 	    val isSwitch: t -> bool
 	    val layout: t -> Layout.t
-	    val nearJump: {label: Label.t} -> t
-	    val return: t
+	    val nearJump: {label: Label.t,
+			   return: {return: Label.t,
+				    handler: Label.t option,
+				    size: int} option} -> t
+	    val return: {live: Operand.t list} -> t
 	    val raisee: t
 	    val switch: {
 			 test: Operand.t,
@@ -172,6 +184,18 @@ signature MACHINE =
 	    val toMOut: t -> MachineOutput.Transfer.t
 	 end
 
+      structure Block:
+	sig
+	  structure Kind:
+	    sig
+	      type t
+	      val func: {args: Operand.t list} -> t
+	      val jump: t
+	      val cont: {args: Operand.t list, size: int} -> t
+	      val handler: {size: int} -> t
+	    end
+	end
+
       structure Chunk:
 	 sig
 	    type t
@@ -181,7 +205,8 @@ signature MACHINE =
 	    val newBlock: 
 	       t * {
 		    label: Label.t,
-		    live: Register.t list,
+		    kind: Block.Kind.t,
+		    live: Operand.t list,
 		    profileName: string,
 		    statements: Statement.t list,
 		    transfer: Transfer.t
@@ -203,10 +228,10 @@ signature MACHINE =
 		    chunkLabel: ChunkLabel.t,
 		    (* Number of bytes in frame, including return address. *)
 		    size: int,
-		    (* The locations of live pointers in the current stack frame
+		    (* The locations of operands in the current stack frame
 		     * relative to the stack pointer of the frame below.
 		     *)
-		    liveOffsets: int list
+		    live: Operand.t list
 		    } -> unit
 	    val newGlobal: t * Type.t -> Operand.t
 	    (* A global pointer that the GC doesn't use as a root *)

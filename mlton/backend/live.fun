@@ -33,12 +33,15 @@ open Dec PrimExp Transfer
 structure Block =
    struct
       datatype t = T of {live: Var.t list ref,
+			 liveHS: bool ref * bool ref,
 			 preds: t list ref}
 
       fun new () = T {live = ref [],
+		      liveHS = (ref false, ref false),
 		      preds = ref []}
 
       fun live (T {live = r, ...}) = !r
+      fun liveHS (T {liveHS = (c, l), ...}) = (!c, !l)
 
       fun equals (T {live = r, ...}, T {live = r', ...}) = r = r'
 
@@ -48,12 +51,14 @@ structure Block =
 	 else List.push (preds, b)
    end
 
+
 fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
    let
       val {get = isCont: Jump.t -> bool,
 	   set = setCont, destroy = destroyCont} =
 	 Property.destGetSet (Jump.plist, Property.initConst false)
-      val {get = jumpInfo: Jump.t -> {argBlock: Block.t,
+      val {get = jumpInfo: Jump.t -> {frameBlock: Block.t,
+				      argBlock: Block.t,
 				      bodyBlock: Block.t,
 				      formals: (Var.t * Type.t) vector},
 	   set = setJumpInfo,
@@ -66,6 +71,9 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 	   destroy = destroyVarInfo} =
 	 Property.destGetSetOnce (Var.plist,
 				  Property.initRaise ("live info", Var.layout))
+      datatype u = Def of Block.t | Use of Block.t
+      val handlerSlotInfo = ({defuse = ref [] : u list ref}, 
+			     {defuse = ref [] : u list ref})
       val allPrims: (Var.t * Block.t) list ref = ref []
       val allJumps: Jump.t list ref = ref []
       val allVars: Var.t list ref = ref []
@@ -83,20 +91,31 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 	   = fn Fun {name, args, ...}
 	      => (fn () => let 
 			     val _ = List.push (allJumps, name)
-			     val (argBlock, bodyBlock)
-			       = case (Vector.length args, isCont name)
-				   of (0, false) => let val b = Block.new ()
-						    in (b, b)
-						    end
-				    | _ => let val b = Block.new ()
-					       val b' = Block.new ()
-					       val _ = Block.addEdge (b, b')
-					   in Vector.foreach
-					      (args,
-					       fn (x, _) 
-					        => newVarInfo (x, {defined = b}))
-					      ; (b, b')
-					   end
+			     val (frameBlock, argBlock, bodyBlock) =
+			       case (Vector.length args, isCont)
+				 of (0, false) => let val b = Block.new ()
+						  in (b, b, b)
+						  end
+				  | (_, false) => let val b = Block.new ()
+						      val b' = Block.new ()
+						      val _ = Block.addEdge (b, b')
+						  in (b, b, b')
+						  end
+				  | (0, true) => let val b = Block.new ()
+						     val b' = Block.new ()
+						     val _ = Block.addEdge (b, b')
+						 in (b, b', b')
+						 end
+				  | _ => let val b = Block.new ()
+					     val b' = Block.new ()
+					     val b'' = Block.new ()
+					     val _ = Block.addEdge (b, b')
+					     val _ = Block.addEdge (b', b'')
+					 in (b, b', b'')
+					 end
+			     val _ = Vector.foreach
+			             (args, fn (x, _) =>
+				      newVarInfo (x, {defined = argBlock}))
 			   in
 			     setJumpInfo (name, 
 					  {argBlock = argBlock,
@@ -127,10 +146,10 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
       fun loopExp (e: Exp.t, b: Block.t, handlers: Jump.t list): unit =
 	 let
 	    val {decs, transfer} = Exp.dest e
-	    val b =
+	    val (b,handlers) =
 	       List.fold
-	       (decs, b, fn (d, b) =>
-		case d of
+	       (decs, (b,handlers), fn (d, (b,handlers)) =>
+		(case d of
 		   Bind {var, exp, ...} =>
 		      let
 			 val b =
@@ -144,6 +163,10 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 				       Block.addEdge
 				       (b, #argBlock (jumpInfo j))))
 				   ; if Prim.entersRuntime prim
+				        orelse
+					Prim.mayOverflow prim
+					orelse
+					Prim.impCall prim
 					then 
 					   let val b' = Block.new ()
 					   in Block.addEdge (b, b')
@@ -159,45 +182,81 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 		      end
 		 | Fun {name, args, body} =>
 		      let
-			 val {argBlock, bodyBlock, ...} = jumpInfo name
+			 val (frameBlock, argBlock, bodyBlock) = jumpInfo name
 			 val _ =
-			    (* In case there is a raise to j. *)
+			    (* In case there is a raise to h. *)
 			    if isCont name
 			       then
 				  case jumpHandlers name of
 				     h :: _ =>
-					Block.addEdge (argBlock,
+					Block.addEdge (frameBlock,
 						       #argBlock (jumpInfo h))
 				   | _ => ()
 			    else ()
 			 val _ = loopExp (body, bodyBlock, jumpHandlers name)
 		      in b
 		      end
-		 | HandlerPush _ => b
-		 | HandlerPop => b)
+		 | HandlerPush _ =>
+		      let
+			val ({defuse = code_defuse, ...},
+			     {defuse = link_defuse, ...})
+			  = handlerSlotInfo
+			  
+			val _ = List.push(code_defuse, Def b)
+			val _ = case handlers
+				  of [] => List.push(link_defuse, Def b)
+				   | _ => ()
+		      in
+			b
+		      end
+		 | HandlerPop => 
+		      let
+			val ({defuse = code_defuse, ...},
+			     {defuse = link_defuse, ...})
+			  = handlerSlotInfo
+
+			val _ = case handlers
+				  of [] => Error.bug "pop of empty handler stack"
+				   | _ :: [] => List.push(link_defuse, Use b)
+				   | _ => List.push(code_defuse, Def b)
+		      in
+			b
+		      end,
+		 deltaHandlers (d, handlers)))
 	    fun jump j = Block.addEdge (b, #argBlock (jumpInfo j))
+	    fun call j = Block.addEdge (b, #frameBlock (jumpInfo j))
 	    val _ =
 	       case transfer of
 		  Bug => ()
 		| Call {args, cont, ...} =>
 		     (uses (b, args)
-		      ; Option.app (cont, jump))
+		      ; case handlers
+			  of [] => ()
+			   | h::_ => let
+				       val ({defuse = code_defuse, ...},
+					    {defuse = link_defuse, ...})
+					 = handlerSlotInfo
+				     in
+				       List.push(code_defuse, Use b);
+				       List.push(link_defuse, Use b)
+				     end
+		      ; Option.app (cont, call))
 		| Case {test, cases, default, ...} =>
 		     (use (b, test)
 		      ; Option.app (default, jump)
 		      ; Cases.foreach (cases, jump))
 		| Jump {dst, args, ...} =>
-		     let val {formals, argBlock, ...} = jumpInfo dst
+		     let val {formals, ...} = jumpInfo dst
 		     in Vector.foreach2 (formals, args, fn ((f, _), a) =>
 					if shouldConsider f
 					   then use (b, a)
 					else ())
-			; Block.addEdge (b, argBlock)
+			; jump dst
 		     end
 		| Return xs => uses (b, xs)
 		| Raise xs =>
 		     (uses (b, xs)
-		      ; (case List.fold (decs, handlers, deltaHandlers) of
+		      ; (case handlers of
 			    h :: _ => jump h
 			  | _ => ()))
 	 in ()
@@ -231,8 +290,57 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 	     val _ = loop ()
 	  in ()
 	  end)
-      val {get = getJump: Jump.t -> {liveBegin: Var.t list,
-				     liveBeginNoFormals: Var.t list},
+
+      (* handler code and link slots are harder; in particular, they don't
+       * satisfy the SSA invariant -- there are multiple definitions;
+       * furthermore, a def and use in a block does not mean that the def 
+       * occurs before the use.  But, a back propagated use will always
+       * come after a def in the same block
+       *)
+      val _ =
+	 List.foreach
+	 ([(#1, #1), (#2, #2)], fn (sel, sel') =>
+	  let
+	    val {defuse,...} = sel handlerSlotInfo
+	    val todo: Block.t list ref = ref []
+	      
+	    val defs
+	      = List.foldr
+	        (!defuse,
+		 [],
+		 fn (Def b, defs)
+		  => b::defs
+		  | (Use (b as Block.T {liveHS, ...}), defs)
+		  => if List.exists(defs, fn b' => Block.equals(b, b'))
+		       then defs
+		       else (sel' liveHS := true
+			     ; List.push(todo, b)
+			     ; defs))
+
+	    fun consider (b as Block.T {liveHS, ...})
+	      = if List.exists(defs, fn b' => Block.equals(b, b'))
+	           orelse !(sel' liveHS)
+		 then ()
+		 else (sel' liveHS := true
+		       ; List.push (todo, b))
+
+	    fun loop () =
+	       case !todo of
+		  [] => ()
+		| Block.T {preds, ...} :: bs =>
+		     (todo := bs
+		      ; List.foreach (!preds, consider)
+		      ; loop ())
+	    val _ = loop ()
+	 in
+	   ()
+	 end)
+
+      val {get = getJump: Jump.t -> 
+                          {liveBegin: Var.t list,
+			   liveBeginNoFormals: Var.t list,
+			   liveBeginFrame: Var.t list,
+			   liveBeginHS: (bool * bool)},
 	   set, destroy = destroyJump} =
 	 Property.destGetSetOnce (Jump.plist,
 				  Property.initRaise ("live", Jump.layout))
@@ -240,33 +348,53 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 	 Trace.trace2
 	 ("setJumpLive",
 	  Jump.layout,
-	  fn {liveBegin, liveBeginNoFormals, ...} =>
+	  fn {liveBegin, liveBeginNoFormals, liveBeginFrame, liveBeginHS, ...} =>
 	  Layout.record
 	  [("liveBegin", List.layout Var.layout liveBegin),
-	   ("liveBeginNoFormals", List.layout Var.layout liveBeginNoFormals)],
+	   ("liveBeginNoFormals", List.layout Var.layout liveBeginNoFormals),
+	   ("liveBeginFrame", List.layout Var.layout liveBeginFrame),
+	   ("liveBeginHS", Layout.tuple2 (Bool.layout, Bool.layout) liveBeginHS)],
 	  Unit.layout)
 	 set
       val _ =
 	 List.foreach (!allJumps, fn j =>
-		       let val {argBlock, bodyBlock, ...} = jumpInfo j
+		       let val {frameBlock, argBlock, bodyBlock, ...} = jumpInfo j
 		       in set (j, {liveBegin = Block.live bodyBlock,
-				   liveBeginNoFormals = Block.live argBlock})
+				   liveBeginNoFormals = Block.live argBlock,
+				   liveBeginFrame = Block.live frameBlock,
+				   liveBeginHS = Block.liveHS frameBlock})
 		       end)
       val _ = destroyJumpInfo ()
-      val {get = livePrim: Var.t -> Var.t list,
-	   set = setLivePrim, destroy = destroyVar} =
+
+      val {get = getPrim: Var.t -> {livePrim: Var.t list,
+				    livePrimHS: (bool * bool)},
+	   set, destroy = destroyPrim} =
 	 Property.destGetSetOnce (Var.plist,
 				  Property.initRaise ("livePrim", Var.layout))
+      val set =
+	 Trace.trace2
+	 ("setPrimLive",
+	  Var.layout,
+	  fn {livePrim, livePrimHS, ...} =>
+	  Layout.record
+	  [("livePrim", List.layout Var.layout livePrim),
+	   ("livePrimHS", Layout.tuple2 (Bool.layout, Bool.layout) livePrimHS)],
+	  Unit.layout)
+	 set
       val _ =
 	 List.foreach (!allPrims, fn (x, b) =>
-		       setLivePrim (x, Block.live b))
+		       set (x, {livePrim = Block.live b, 
+				livePrimHS = Block.liveHS b}))
       val _ = destroyVarInfo ()
    in {
        liveBegin = #liveBegin o getJump,
        liveBeginNoFormals = #liveBeginNoFormals o getJump,
-       livePrim = livePrim,
+       liveBeginFrame = #liveBeginFrame o getJump,
+       liveBeginHS = #liveBeginHS o getJump,
+       livePrim = #livePrim o getPrim,
+       livePrimHS = #livePrimHS o getPrim,
        destroy = fn () => (destroyJump ()
-			   ; destroyVar ())
+			   ; destroyPrim ())
        }
    end
 

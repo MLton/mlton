@@ -18,9 +18,22 @@ signature ALLOCATE_REGISTERS =
 	    datatype t =
 	       T of {
 		     limitCheck: Machine.LimitCheck.t,
-		     (* Live registers at the beginning of the block. *)
-		     live: Machine.Register.t list,
-		     liveNoFormals: Machine.Register.t list
+		     (* Live operands at the beginning of the block. 
+		      *)
+		     live: Machine.Operand.t list,
+		     (* Live operands at the beginning of the block, 
+		      * excepting its formals
+		      *)
+		     liveNoFormals: Machine.Operand.t list,
+		     (* Live variables at the frame corresponding to the block
+		      *)
+		     liveFrame: Machine.Operand.t list,
+		     (* Number of bytes in frame including return address.
+		      *)
+		     cont: {size: int} option,
+		     (* Amount to subtract to get to the next frame.
+		      *)
+		     handler: {size: int} option
 		     }
 	 end
       
@@ -31,6 +44,7 @@ signature ALLOCATE_REGISTERS =
 	 {
 	  funcChunk: Cps.Func.t -> Machine.Chunk.t,
 	  jumpChunk: Cps.Jump.t -> Machine.Chunk.t,
+	  jumpToLabel: Cps.Jump.t -> Machine.Label.t,
 	  jumpHandlers: Cps.Jump.t -> Cps.Jump.t list,
 	  program: Cps.Program.t,
 	  varInfo: Cps.Var.t -> {
@@ -42,20 +56,12 @@ signature ALLOCATE_REGISTERS =
 				 (* primInfo will be set for primitives that
 				  * enter the runtime system.
 				  *)
-				 primInfo: Machine.GCInfo.t option ref,
+				 primInfo: Machine.PrimInfo.t ref,
 				 ty: Machine.Type.t
 				 }
 	  }
 	 ->
 	 {
-	  contInfo: Cps.Jump.t -> {
-				   (* Number of bytes in frame including
-				    * return address.
-				    *)
-				   size: int,
-				   (* Offsets of live pointers in frame. *)
-				   liveOffsets: int list
-				   },
 	  funcInfo: Cps.Func.t -> {
 				   info: Info.t,
 				   (* If handlers are used, this gives the stack
@@ -64,14 +70,6 @@ signature ALLOCATE_REGISTERS =
 				    *)
 				   handlerOffset: int option
 				   },
-	  handlerInfo: Cps.Jump.t -> {
-				      (* Amount to subtract to get to the next
-				       * frame.
-				       *)
-				      size: int,
-				      (* Offsets of live pointers in frame. *)
-				      liveOffsets: int list
-				      },
 	  jumpInfo: Cps.Jump.t -> Info.t
 	  }
    end
