@@ -28,7 +28,8 @@ functor Sequence (S: sig
 	 if not isMutable andalso n = 0
 	    then Array.array0Const ()
 	 else Array.array n
-      val seq0 = fn () => fromArray (array 0)
+
+      fun seq0 () = fromArray (array 0)
 
       fun unfoldi (n, b, f) =
 	 let
