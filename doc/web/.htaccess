@@ -34,6 +34,7 @@ Redirect permanent /user-guide/node18.html http://www.mlton.org/user-guide/Cross
 Redirect permanent /user-guide/node20.html http://www.mlton.org/user-guide/MLton_structure.html
 Redirect permanent /user-guide/node25.html http://www.mlton.org/user-guide/Basis_library.html
 Redirect permanent /user-guide/node33.html http://www.mlton.org/user-guide/MLton_Process.html
+Redirect permanent /user-guide/node36.html http://www.mlton.org/user-guide/MLton_Rlimit.html
 Redirect permanent /user-guide/node52.html http://www.mlton.org/user-guide/Compiling_with_MLton.html
 Redirect permanent /user-guide/node57.html http://www.mlton.org/user-guide/Credits.html
 Redirect permanent /user-guide/node59.html http://www.mlton.org/user-guide/Deviations_SML_NJ_from.html
