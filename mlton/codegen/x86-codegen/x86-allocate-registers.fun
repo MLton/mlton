@@ -1468,8 +1468,9 @@ struct
 	    val register
 	      = case registers
 		  of [] 
-		   => raise Spill
 (*
+		   => raise Spill
+*)
 		   => let
 			fun listToString(ss: string list): string
 			  = "[" ^ (concat(List.separate(ss, ", "))) ^ "]"
@@ -1497,7 +1498,6 @@ struct
 			print "Raising Spill in chooseRegister\n";
 			raise Spill
 		      end
-*)
 		   | register::_ => register
 			
 	    val values = valuesRegister {register = register,
@@ -2779,12 +2779,6 @@ struct
 					 = delete {register = register,
 						   registerAllocation
 						   = registerAllocation}}
-(*
-			     val registerAllocation
-			       = delete {register = register,
-					 registerAllocation
-					 = registerAllocation}
-*)
 			   in
 			     case coincide_values
 			       of [] 
@@ -3040,6 +3034,7 @@ struct
 	       | NONE 
 	       => if move
 		    then let
+(*
 			   val {register = register', 
 				assembly = assembly_register,
 				registerAllocation}
@@ -3105,7 +3100,7 @@ struct
 			       assembly_force],
 			    registerAllocation = registerAllocation}
 			 end
-(*
+*)
 			   val {address, 
 				assembly = assembly_address,
 				registerAllocation}
@@ -3172,16 +3167,17 @@ struct
 			 in
 			   {register = register,
 			    assembly 
-			    = List.concat [assembly_address,
-					   assembly_register,
-					   [Assembly.instruction_mov
-					    {dst = Operand.register register',
-					     src = Operand.address address,
-					     size = size}],
-					   assembly_force],
+			    = AppendList.appends 
+			      [assembly_address,
+			       assembly_register,
+			       AppendList.single
+			       (Assembly.instruction_mov
+				{dst = Operand.register register',
+				 src = Operand.address address,
+				 size = size}),
+			       assembly_force],
 			    registerAllocation = registerAllocation}
 			 end
-*)
 		    else let
 			   val {register, 
 				assembly = assembly_register,
@@ -3443,7 +3439,8 @@ struct
 	       reissue = fn {assembly = assembly_spill,
 			     registerAllocation}
 	                  => let
-			       val {fltregister, assembly, fltrename, registerAllocation}
+			       val {fltregister, assembly, 
+				    fltrename, registerAllocation}
 				 = toFltRegisterMemLoc
 				   {memloc = memloc,
 				    info = info,
