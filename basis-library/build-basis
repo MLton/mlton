@@ -83,10 +83,10 @@ posix/flags.sig
 posix/flags.sml
 posix/signal.sig
 posix/signal.sml
-posix/process.sig
-posix/process.sml
 posix/proc-env.sig
 posix/proc-env.sml
+posix/process.sig
+posix/process.sml
 posix/file-sys.sig
 posix/file-sys.sml
 posix/io.sig

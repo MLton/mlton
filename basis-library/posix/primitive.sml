@@ -449,8 +449,6 @@ structure PosixPrimitive =
 	    type status = int
 
 	    val alarm = _ffi "Posix_Process_alarm": int -> int;
-	    val exec =
-	       _ffi "Posix_Process_exec": nullString * nullString array -> int;
 	    val exece =
 	       _ffi "Posix_Process_exece"
 	       : nullString * nullString array * nullString array -> int;

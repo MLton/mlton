@@ -26,14 +26,13 @@ structure PosixProcess: POSIX_PROCESS =
       val conv = String.nullTerm
       val convs = C.CSS.fromList
 
-      fun exec (path, args): 'a =
-	 (Error.checkResult (Prim.exec (conv path, convs args))
-	  ; raise Fail "Posix.Process.exec")
-
       fun exece (path, args, env): 'a =
 	 (Error.checkResult (Prim.exece (conv path, convs args, convs env))
 	  ; raise Fail "Posix.Process.exece")
 	 
+      fun exec (path, args): 'a =
+	 exece (path, args, PosixProcEnv.environ ())
+
       fun execp (file, args): 'a =
 	 (Error.checkResult (Prim.execp (conv file, convs args))
 	  ; raise Fail "Posix.Process.execp")

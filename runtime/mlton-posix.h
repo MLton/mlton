@@ -158,7 +158,6 @@ Cstring Posix_ProcEnv_ttyname (Fd f);
 /* ------------------------------------------------- */
 
 Int Posix_Process_alarm(Int i);
-Int Posix_Process_exec(NullString path, Pointer args);
 Int Posix_Process_exece(NullString path, Pointer args, Pointer env);
 Int Posix_Process_execp(NullString file, Pointer args);
 void Posix_Process_exit(Int i);

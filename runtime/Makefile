@@ -127,7 +127,6 @@ OBJS =						\
 	Posix/ProcEnv/sysconf.o			\
 	Posix/ProcEnv/ttyname.o			\
 	Posix/Process/alarm.o			\
-	Posix/Process/exec.o			\
 	Posix/Process/exece.o			\
 	Posix/Process/execp.o			\
 	Posix/Process/exit.o			\
@@ -276,7 +275,6 @@ DEBUG_OBJS =					\
 	Posix/ProcEnv/sysconf-gdb.o		\
 	Posix/ProcEnv/ttyname-gdb.o		\
 	Posix/Process/alarm-gdb.o		\
-	Posix/Process/exec-gdb.o		\
 	Posix/Process/exece-gdb.o		\
 	Posix/Process/execp-gdb.o		\
 	Posix/Process/exit-gdb.o		\
