@@ -314,6 +314,7 @@ fun commandLine (args: string list): unit =
 		  (lib, gcc, gccSwitches, args)
 	       end
 	  | _ => error ()
+      val _ = Compile.setBasisLibraryDir (concat [lib, "/basis-library"])
       val _ = libRef := SOME lib
       val result =
 	 Popt.parse {switches = args,
@@ -638,27 +639,31 @@ fun commandLine (args: string list): unit =
 	 end
    end
 
+val commandLine =
+   fn args =>
+   ((commandLine args; OS.Process.success)
+    handle e =>
+       let
+	  val out = Out.error
+	  open Layout
+       in
+	  output (seq [str "mlton: ", Exn.layout e], out)
+	  ; List.foreach (Exn.history e, fn s =>
+			  (Out.output (out, "\n\t")
+			   ; Out.output (out, s)))
+	  ; Out.newline out
+	  ; OS.Process.failure
+       end)
+   
 fun exportNJ (root: Dir.t, file: File.t): unit =
-   (Compile.forceBasisLibrary root
-    ; (SMLofNJ.exportFn
-       (file,
-	fn (_, args) => ((commandLine args; OS.Process.success)
-			 handle e =>
-			    let
-			       val out = Out.error
-			       open Layout
-			    in
-			       output (seq [str "mlton: ", Exn.layout e], out)
-			       ; List.foreach (Exn.history e, fn s =>
-					       (Out.output (out, "\n\t")
-						; Out.output (out, s)))
-			       ; Out.newline out
-			       ; OS.Process.failure
-			    end))))
+   (*Compile.forceBasisLibrary root *)
+   SMLofNJ.exportFn (file, fn (_, args) => commandLine args)
    
 fun exportMLton (): unit =
-   case CommandLine.arguments () of
-      [root, file] => exportNJ (root, file)
-    | _ => Error.bug "usage: exportMLton root file"
+   OS.Process.exit (commandLine (CommandLine.arguments ()))
+(*    case CommandLine.arguments () of
+ *       [root, file] => exportNJ (root, file)
+ *     | _ => Error.bug "usage: exportMLton root file"
+ *)
 
 end

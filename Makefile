@@ -19,6 +19,7 @@ CP = /bin/cp -fp
 all:
 	$(MAKE) compiler
 	$(MAKE) support
+	@echo 'Build of MLton succeeded.'
 
 .PHONY: clean
 clean:
@@ -40,21 +41,21 @@ constants:
 dirs:
 	mkdir -p $(BIN) $(LIB)/$(HOST)/include
 
-.PHONY: runtime
-runtime:
-	@echo 'Making runtime system.'
-	@echo 'Compiling MLton runtime system for $(HOST).'
-	cd runtime && $(MAKE)
-	$(CP) $(RUN)/*.a $(LIB)/$(HOST)
-	$(CP) runtime/*.h include/*.h $(LIB)/$(HOST)/include
-	cd runtime && $(MAKE) clean
-
 .PHONY: hostmap
 hostmap:
 	touch $(HOSTMAP)
 	( sed '/$(HOST)/d' <$(HOSTMAP); echo '$(HOST) $(HOSTTYPE)' ) \
 		>>$(HOSTMAP).tmp
 	mv $(HOSTMAP).tmp $(HOSTMAP)
+
+.PHONY: runtime
+runtime:
+	@echo 'Compiling MLton runtime system for $(HOST).'
+	cd runtime && $(MAKE)
+	$(CP) $(RUN)/*.a $(LIB)/$(HOST)
+	$(CP) runtime/*.h include/*.h $(LIB)/$(HOST)/include
+	cd runtime && $(MAKE) clean
+	$(MAKE) hostmap
 
 .PHONY: script
 script:
@@ -66,16 +67,16 @@ script:
 support:
 	$(MAKE) dirs
 	mv $(COMP)/$(AOUT) $(LIB)
-	$(MAKE) world
+	cp -pR basis-library $(LIB)
 	$(MAKE) script
 	$(MAKE) runtime
-	$(MAKE) hostmap
 	$(MAKE) constants
 	cd $(LEX) && $(MAKE) && $(CP) $(LEX) $(BIN)
 	cd $(YACC) && $(MAKE) && $(CP) $(YACC) $(BIN)
 	cd $(PROF) && $(MAKE) && $(CP) $(PROF) $(BIN)
 	cd $(SRC)/doc/user-guide && $(MAKE)
-	@echo 'Build of MLton succeeded.'
+
+#	$(MAKE) world
 
 .PHONY: world
 world: 

@@ -172,37 +172,41 @@ structure Env =
 val basisEnv = Env.empty ()
 
 local
-   val r = ref NONE
+   val dir = ref NONE
 in
-   fun forceBasisLibrary (d: Dir.t): unit =
-      let
-	 fun basisFile f = String./ (d, f)
-	 fun files (f, E) =
-	    parseAndElaborateFiles
-	    (rev (File.foldLines (basisFile f, [], fn (s, ac) =>
-				  if s <> "\n" andalso #"#" <> String.sub (s, 0)
-				     then basisFile (String.dropLast s) :: ac
-				  else ac)),
-	     basisEnv)
-	 val (d1, (d2, d3)) =
-	    Env.localTop
-	    (basisEnv,
-	     fn () => (Env.addPrim basisEnv
-		       ; files ("build-basis", basisEnv)),
-	     fn () =>
-	     (files ("bind-basis", basisEnv),
-	      (* Suffix is concatenated onto the end of the program for cleanup. *)
-	      parseAndElaborateFiles ([basisFile "misc/suffix.sml"], basisEnv)))
-	 val _ = Env.addEquals basisEnv
-	 val _ = Env.clean basisEnv
-      in r := SOME {prefix = Decs.append (d1, d2),
-		    suffix = d3}
-      end
-   fun basisLibrary () =
-      (case !r of
-	  NONE => forceBasisLibrary "../basis-library"
-	| _ => ()
-	     ; valOf (!r))
+   fun setBasisLibraryDir (d: Dir.t): unit =
+      dir := SOME d
+   val basisLibrary =
+      Promise.lazy
+      (fn () =>
+       let
+	  val d =
+	     case !dir of
+		NONE => Error.bug "basis library dir not set"
+	      | SOME d => d
+	  fun basisFile f = String./ (d, f)
+	  fun files (f, E) =
+	     parseAndElaborateFiles
+	     (rev (File.foldLines (basisFile f, [], fn (s, ac) =>
+				   if s <> "\n" andalso #"#" <> String.sub (s, 0)
+				      then basisFile (String.dropLast s) :: ac
+				   else ac)),
+	      basisEnv)
+	  val (d1, (d2, d3)) =
+	     Env.localTop
+	     (basisEnv,
+	      fn () => (Env.addPrim basisEnv
+			; files ("build-basis", basisEnv)),
+	      fn () =>
+	      (files ("bind-basis", basisEnv),
+	       (* Suffix is concatenated onto the end of the program for cleanup. *)
+	       parseAndElaborateFiles ([basisFile "misc/suffix.sml"], basisEnv)))
+	  val _ = Env.addEquals basisEnv
+	  val _ = Env.clean basisEnv
+       in
+	  {prefix = Decs.append (d1, d2),
+	   suffix = d3}
+       end)
 end
    
 fun basisDecs () =

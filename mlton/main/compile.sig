@@ -14,6 +14,6 @@ signature COMPILE =
 				      done: unit -> unit},
 		    docc: {input: File.t,
 			   output: File.t} -> unit} -> unit
-      val forceBasisLibrary: Dir.t -> unit
       val layoutBasisLibrary: unit -> Layout.t
+      val setBasisLibraryDir: Dir.t -> unit
    end
