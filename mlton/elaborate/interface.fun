@@ -39,7 +39,22 @@ end
 
 structure Set = DisjointSet
 
-structure ShapeId = UniqueId ()
+structure Shape =
+   struct
+      datatype t = T of {plist: PropertyList.t}
+
+      local
+	 fun make f (T r) = f r
+      in
+	 val plist = make #plist
+      end
+
+      fun layout (T _) = Layout.str "<shape>"
+
+      fun new () = T {plist = PropertyList.new ()}
+
+      fun equals (s, s') = PropertyList.equals (plist s, plist s')
+   end
 
 structure Status:
    sig
@@ -816,7 +831,7 @@ structure UniqueId = IntUniqueId ()
 
 datatype t = T of {copy: copy,
 		   plist: PropertyList.t,
-		   shapeId: ShapeId.t,
+		   shape: Shape.t,
 		   strs: (Ast.Strid.t * t) array,
 		   types: (Ast.Tycon.t * TypeStr.t) array,
 		   uniqueId: UniqueId.t,
@@ -826,7 +841,7 @@ withtype copy = t option ref
 fun new {strs, types, vals} =
    T (Set.singleton {copy = ref NONE,
 		     plist = PropertyList.new (),
-		     shapeId = ShapeId.new (),
+		     shape = Shape.new (),
 		     strs = strs,
 		     types = types,
 		     uniqueId = UniqueId.new (),
@@ -840,7 +855,7 @@ local
    fun make f (T s) = f (Set.value s)
 in
    val plist = make #plist
-   val shapeId = make #shapeId
+   val shape = make #shape
    val strs = make #strs
    val types = make #types
    val uniqueId = make #uniqueId
@@ -852,9 +867,9 @@ local
 in
    fun layout (T s) =
       let
-	 val {shapeId, strs, types, uniqueId = u, vals, ...} = Set.value s
+	 val {shape, strs, types, uniqueId = u, vals, ...} = Set.value s
       in
-	 record [("shapeId", ShapeId.layout shapeId),
+	 record [("shape", Shape.layout shape),
 		 ("uniqueId", UniqueId.layout u),
 
 		 ("strs",
@@ -950,8 +965,6 @@ fun lookupLongtycon (I: t, long: Longtycon.t, r: Region.t,
 	     ; NONE)
    end
 
-fun sameShape (m, m') = ShapeId.equals (shapeId m, shapeId m')
-
 fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
    let
       fun lay (s, ls, strids, name) =
@@ -965,7 +978,7 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
 				  name))
 	  end)
       fun share (I as T s, I' as T s', strids): unit = 
-	 if sameShape (I, I')
+	 if Shape.equals (shape I, shape I')
 	    then
 	       let
 		  fun loop (T s, T s', strids): unit =
@@ -1060,7 +1073,7 @@ fun 'a copyAndRealize (I: t, {followStrid, init: 'a, realizeTycon}): t =
       val copies: copy list ref = ref []
       fun loop (I as T s, a: 'a): t =
 	 let
-	    val {copy, shapeId, strs, types, vals, ...} = Set.value s
+	    val {copy, shape, strs, types, vals, ...} = Set.value s
 	 in
 	    case !copy of
 	       NONE =>
@@ -1106,7 +1119,7 @@ fun 'a copyAndRealize (I: t, {followStrid, init: 'a, realizeTycon}): t =
 				   (name, loop (I, followStrid (a, name))))
 		     val I = T (Set.singleton {copy = ref NONE,
 					       plist = PropertyList.new (),
-					       shapeId = shapeId,
+					       shape = shape,
 					       strs = strs,
 					       types = types,
 					       uniqueId = UniqueId.new (),

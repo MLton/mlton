@@ -532,6 +532,14 @@ fun commandLine (args: string list): unit =
 	    (a, _) :: (b, _) :: _ =>
 	       usage (concat ["can't use both ", a, " and ", b])
 	  | _ => ()
+      val _ =
+	 if !showBasis orelse !showBasisUsed
+	    then (stop := Place.TypeCheck
+		  ; warnNonExhaustive := false)
+	 else ()
+      val stop = !stop
+      val _ = elaborateOnly := (stop = Place.TypeCheck
+				andalso not (!warnNonExhaustive))
       fun printVersion (out: Out.t): unit =
 	 Out.output (out, concat [version, " ", build, "\n"])
    in
@@ -539,7 +547,7 @@ fun commandLine (args: string list): unit =
       Result.No msg => usage msg
     | Result.Yes [] =>
 	 (inputFile := "<none>"
-	  ; if !showBasis orelse (!stop = Place.TypeCheck)
+	  ; if !showBasis orelse stop = Place.TypeCheck
 	       then
 		  trace (Top, "Type Check Basis")
 		  Compile.elaborate {input = []}
@@ -581,7 +589,6 @@ fun commandLine (args: string list): unit =
 		   then File.withIn (f, fn _ => ())
 		else usage (concat ["invalid file suffix: ", f]))
 	    val csoFiles = rest
-	    val stop = !stop
 	 in
 	    case Place.compare (start, stop) of
 	       GREATER => usage (concat ["cannot go from ", Place.toString start,
@@ -768,9 +775,8 @@ fun commandLine (args: string list): unit =
 			val _ =
 			   case stop of
 			      Place.TypeCheck =>
-				 (elaborateOnly := not (!warnNonExhaustive)
-				  ; (trace (Top, "Type Check SML")
-				     Compile.elaborate {input = files}))
+				 trace (Top, "Type Check SML")
+				 Compile.elaborate {input = files}
 			    | _ => 
 				 trace (Top, "Compile SML")
 				 Compile.compile

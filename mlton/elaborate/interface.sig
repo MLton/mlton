@@ -93,6 +93,13 @@ signature INTERFACE =
       sharing TypeStr.Tycon = Tycon
       sharing TypeStr.Type = Type
       sharing TypeStr.Tyvar = EnvTypeStr.Tyvar = Tyvar
+      structure Shape:
+	 sig
+	    type t
+
+	    val equals: t * t -> bool
+	    val plist: t -> PropertyList.t
+	 end
 
       type t
       
@@ -126,6 +133,6 @@ signature INTERFACE =
 			     * {hasCons: bool} -> EnvTypeStr.t)}
 	 -> t
       val renameTycons: (unit -> unit) ref
-      val sameShape: t * t -> bool
+      val shape: t -> Shape.t
       val share: t * Ast.Longstrid.t * t * Ast.Longstrid.t * Time.t -> unit
    end
