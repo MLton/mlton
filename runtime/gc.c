@@ -2297,13 +2297,13 @@ static void resizeCardMapAndCrossMap (GC_state s) {
 		pointer oldCrossMap;
 		uint oldCrossMapSize;
 
-		smunmap (s->cardMap, s->cardMapSize);
+		release (s->cardMap, s->cardMapSize);
 		oldCrossMap = s->crossMap;
 		oldCrossMapSize = s->crossMapSize;
 		createCardMapAndCrossMap (s);
 		copy (oldCrossMap, s->crossMap,
 			min (s->crossMapSize, oldCrossMapSize));
-		smunmap (oldCrossMap, oldCrossMapSize);
+		release (oldCrossMap, oldCrossMapSize);
 	}
 }
 
