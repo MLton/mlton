@@ -559,18 +559,6 @@ structure Select =
 	  | Unpack u => Unpack (Unpack.lshift (u, b))
 	  | _ => Error.bug "Select.lshift"
 
-      fun indirectUnpack {offset, rest as Unpack.T {shift, ty = ty'}, ty} =
-	 if Bits.isByteAligned shift
-	    andalso Bits.equals (Type.width ty', Bits.inByte)
-	    then Indirect {offset = (Rssa.byteOffset
-				     {offset = Bytes.+ (Words.toBytes offset,
-							Bits.toBytes shift),
-				      ty = ty'}),
-			   ty = ty'}
-	 else IndirectUnpack {offset = offset,
-			      rest = rest,
-			      ty = ty}
-
       fun select (s: t, {base: Operand.t Base.t,
 			 dst: Var.t * Type.t,
 			 eltWidth: Bytes.t option}): Statement.t list =
@@ -1053,15 +1041,37 @@ structure TupleRep =
 			       (components, Bits.zero,
 				fn ({index, rep}, shift) =>
 				let
+				   val repTy = Rep.ty rep
 				   val unpack = Unpack.T {shift = shift,
-							  ty = Rep.ty rep}
+							  ty = repTy}
+				   val iu =
+				      if padToPrim
+					 then (Select.Indirect
+					       {offset = Bytes.zero,
+						ty = repTy})
+				      else if (Bits.isByteAligned shift
+					       andalso (Bits.equals
+							(Type.width repTy,
+							 Bits.inByte)))
+					 then
+					    let
+					       val offset =
+						  Rssa.byteOffset
+						  {offset =
+						   Bytes.+ (Words.toBytes offset,
+							    Bits.toBytes shift),
+						   ty = repTy}
+					    in
+					       Select.Indirect {offset = offset,
+								ty = repTy}
+					    end
+				      else (Select.IndirectUnpack
+					    {offset = offset,
+					     rest = unpack,
+					     ty = wordTy})
 				   val () =
-				      Array.update
-				      (selects, index,
-				       (Select.Unpack unpack,
-					Select.indirectUnpack {offset = offset,
-							       rest = unpack,
-							       ty = wordTy}))
+				      Array.update (selects, index,
+						    (Select.Unpack unpack, iu))
 				in
 				   Bits.+ (shift, Rep.width rep)
 				end))
