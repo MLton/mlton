@@ -640,17 +640,17 @@ structure Exp =
 		       seq [str " ", layoutTuple args]]
 	     | Profile p => ProfileExp.layout p
 	     | Select {object, offset} =>
-		  seq [str "#", Int.layout (offset + 1), str " ",
+		  seq [str "#", Int.layout offset, str " ",
 		       layoutVar object]
 	     | Update {object, offset, value} =>
-		  seq [str "#", Int.layout (offset + 1), str " ",
+		  seq [str "#", Int.layout offset, str " ",
 		       layoutVar object,
 		       str " := ", layoutVar value]
 	     | Var x => layoutVar x
 	     | VectorSub {index, offset, vector} =>
 		  seq [if 0 = offset
 			  then empty
-		       else str "#", Int.layout (offset + 1), str " ",
+		       else str "#", Int.layout offset, str " ",
 		       layoutVar vector,
 		       str "[", layoutVar index, str "]"]
 	     | VectorUpdates (x, us) =>
@@ -658,7 +658,7 @@ structure Exp =
 			 (us, fn {index, offset, value} =>
 			  seq [if 0 = offset
 				  then empty
-			       else str "#", Int.layout (offset + 1), str " ",
+			       else seq [str "#", Int.layout offset, str " "],
 			       layoutVar x,
 			       str "[", layoutVar index, str "]",
 			       str " := ", layoutVar value]))

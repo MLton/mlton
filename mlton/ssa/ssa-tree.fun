@@ -259,7 +259,7 @@ structure Exp =
 		       seq [str " ", layoutTuple args]]
 	     | Profile p => ProfileExp.layout p
 	     | Select {tuple, offset} =>
-		  seq [str "#", Int.layout (offset + 1), str " ",
+		  seq [str "#", Int.layout offset, str " ",
 		       Var.layout tuple]
 	     | Tuple xs => layoutTuple xs
 	     | Var x => Var.layout x
@@ -329,7 +329,7 @@ structure Exp =
 				 | SOME s => Layout.str s))
 	  | Profile p => ProfileExp.toString p
 	  | Select {tuple, offset} =>
-	       concat ["#", Int.toString (offset + 1), " ", Var.toString tuple]
+	       concat ["#", Int.toString offset, " ", Var.toString tuple]
 	  | Tuple xs => Var.prettys (xs, global)
 	  | Var x => Var.toString x
 
