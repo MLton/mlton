@@ -1,5 +1,13 @@
 Here are the changes from version 20020410 to version VERSION.
 
+* 2002-07 and 2002-08
+  - Added generational GC, and code to the runtime that automatically turns it
+    on and off.
+    
+* 2002-08-20
+  - Fixed SSA optimizer bug that could cause the following error message
+	x_0 has no analyze var value property 
+
 * 2002-07-28
   - Added MLton.GC.{pack,unpack}.  pack shrinks the heap so that other processes
     can use the RAM, and its dual, unpack, resizes the heap to the desired size.
