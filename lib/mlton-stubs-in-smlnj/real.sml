@@ -77,6 +77,19 @@ structure Real: REAL =
       datatype z = datatype IEEEReal.float_class
       datatype z = datatype IEEEReal.rounding_mode
 
+      fun fmt f =
+	 Pervasive.Real.fmt
+	 (let
+	     datatype z = datatype StringCvt.realfmt
+	     val toIntOpt = OpenInt32.toIntOpt
+	  in
+	     case f of
+		EXACT => Pervasive.StringCvt.GEN NONE
+	      | FIX io => Pervasive.StringCvt.FIX (toIntOpt io)
+	      | GEN io => Pervasive.StringCvt.GEN (toIntOpt io)
+	      | SCI io => Pervasive.StringCvt.SCI (toIntOpt io)
+	 end)
+	 
       fun fromLargeInt i =
 	 valOf (Real.fromString (LargeInt.toString i))
 

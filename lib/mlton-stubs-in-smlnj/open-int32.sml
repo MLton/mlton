@@ -4,5 +4,5 @@ structure OpenInt32 =
       val fromInt = Pervasive.Int32.fromInt
       val toIntOpt =
 	 fn NONE => NONE
-	  | SOME i => SOME(toInt i)
+	  | SOME i => SOME (toInt i)
    end
