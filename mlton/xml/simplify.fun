@@ -130,9 +130,10 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
       fun isExhaustive (cases: exp Cases.t): bool =
 	 case cases of
 	    Cases.Con v =>
-	       0 < Vector.length v
-	       andalso (Vector.length v
-			= conNumCons (Pat.con (#1 (Vector.sub (v, 0)))))
+	       ((0 < Vector.length v
+		 andalso (Vector.length v
+			  = conNumCons (Pat.con (#1 (Vector.sub (v, 0))))))
+		handle _ => false)
 	  | _ => false
       val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...} =
 	 Property.getSet (Var.plist,
