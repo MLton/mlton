@@ -2743,8 +2743,10 @@ static void markCompact (GC_state s) {
 	if (detailedGCTime (s))
 		startTiming (&ru_start);
 	s->numMarkCompactGCs++;
-	if (s->hashConsDuringGC)
+	if (s->hashConsDuringGC) {
+		s->numHashConsGCs++;
 		s->objectHashTable = newTable (s);
+	}
 	foreachGlobal (s, s->hashConsDuringGC 
 				? markGlobalTrue 
 				: markGlobalFalse);
@@ -3045,6 +3047,13 @@ static bool heapAllocateSecondSemi (GC_state s, W32 size) {
 
 static void majorGC (GC_state s, W32 bytesRequested, bool mayResize) {
 	s->numMinorsSinceLastMajor = 0;
+	if (0 < (s->numCopyingGCs + s->numMarkCompactGCs)
+		and ((float)s->numHashConsGCs 
+			/ (float)(s->numCopyingGCs + s->numMarkCompactGCs)
+			< s->hashConsFrequency))
+		s->hashConsDuringGC = TRUE;
+	fprintf (stderr, "hashConsDuringGC = %s\n",
+			boolToString (s->hashConsDuringGC));
         if ((not FORCE_MARK_COMPACT)
 		and not s->hashConsDuringGC // only markCompact can hash cons
  		and s->heap.size < s->ram
@@ -3053,6 +3062,7 @@ static void majorGC (GC_state s, W32 bytesRequested, bool mayResize) {
 		cheneyCopy (s);
 	else
 		markCompact (s);
+	s->hashConsDuringGC = FALSE;
 	s->bytesLive = s->oldGenSize;
 	if (s->bytesLive > s->maxBytesLive)
 		s->maxBytesLive = s->bytesLive;
@@ -4401,7 +4411,13 @@ static int processAtMLton (GC_state s, int argc, char **argv,
 						stringToFloat (argv[i++]);
 				} else if (0 == strcmp (arg, "hash-cons")) {
 					++i;
-					s->hashConsDuringGC = TRUE;
+					if (i == argc)
+						die ("@MLton hash-cons missing argument.");
+					s->hashConsFrequency =
+						stringToFloat (argv[i++]);
+					unless (0.0 <= s->hashConsFrequency
+						and s->hashConsFrequency <= 1.0)
+						die ("@MLton hash-cons argument must be between 0.0 and 1.0");
 				} else if (0 == strcmp (arg, "live-ratio")) {
 					++i;
 					if (i == argc)
@@ -4499,6 +4515,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->growRatio = 8.0;
 	s->handleGCSignal = FALSE;
 	s->hashConsDuringGC = FALSE;
+	s->hashConsFrequency = 0.0;
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
 	s->lastMajor = GC_COPYING;
@@ -4518,6 +4535,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->minorBytesSkipped = 0;
 	s->numCopyingGCs = 0;
 	s->numLCs = 0;
+	s->numHashConsGCs = 0;
 	s->numMarkCompactGCs = 0;
 	s->numMinorGCs = 0;
 	s->numMinorsSinceLastMajor = 0;

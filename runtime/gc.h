@@ -382,6 +382,7 @@ typedef struct GC_state {
 	float growRatio;
 	bool handleGCSignal;
 	Bool hashConsDuringGC;
+	float hashConsFrequency;  /* What fraction of GC's should hash cons. */
 	struct GC_heap heap;
 	struct GC_heap heap2;	/* Used for major copying collection. */
 	bool inSignalHandler; 	/* TRUE iff a signal handler is running. */
@@ -424,6 +425,7 @@ typedef struct GC_state {
 	bool native;
 	uint numCopyingGCs;
  	ullong numLCs;
+	uint numHashConsGCs;
  	uint numMarkCompactGCs;
 	uint numMinorGCs;
 	uint numMinorsSinceLastMajor;

@@ -22,15 +22,8 @@ val share = Primitive.MLton.share
 structure GC = MLtonGC
 
 fun shareAll () =
-   let
-      val cur = GC.getHashConsDuringGC ()
-      val set = GC.setHashConsDuringGC
-      val () = set true
-      val () = GC.collect ()
-      val () = set cur
-   in
-      ()
-   end
+   (GC.setHashConsDuringGC true
+    ; GC.collect ())
  
 fun size x =
    let val refOverhead = 8 (* header + indirect *)

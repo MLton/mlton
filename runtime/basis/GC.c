@@ -2,10 +2,6 @@
 
 extern struct GC_state gcState;
 
-Bool GC_getHashConsDuringGC () {
-	return gcState.hashConsDuringGC;
-}
-
 void GC_setHashConsDuringGC (Int b) {
 	gcState.hashConsDuringGC = b;
 }
