@@ -4052,6 +4052,7 @@ struct
 
   structure Chunk =
     struct
-      datatype t = T of {blocks: Block.t list}
+      datatype t = T of {data: Assembly.t list,
+			 blocks: Block.t list}
     end
 end

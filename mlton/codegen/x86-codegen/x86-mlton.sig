@@ -27,6 +27,7 @@ signature X86_MLTON =
 			 info : {frameSize: int, 
 				 live: x86.Operand.t list,
 				 return: x86.Label.t},
+			 addData : x86.Assembly.t list -> unit,
 			 frameLayouts : x86.Label.t
                                         -> {size: int, frameLayoutsIndex: int} option,
 			 liveInfo : x86Liveness.LiveInfo.t}
@@ -46,6 +47,7 @@ signature X86_MLTON =
 		     args : (x86.Operand.t * x86.Size.t) list,
 		     dst : (x86.Operand.t * x86.Size.t) option,
 		     pinfo : PrimInfo.t,	
+		     addData : x86.Assembly.t list -> unit,
 		     frameLayouts : x86.Label.t
                                     -> {size: int, frameLayoutsIndex: int} option,
 		     liveInfo : x86Liveness.LiveInfo.t}

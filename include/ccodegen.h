@@ -332,24 +332,20 @@ int main(int argc, char **argv) {					\
 		frontier += GC_OBJECT_HEADER_SIZE + (bytes);	\
 	} while (0)
 
-#define LimitCheck(frameSize, ret, b, other)					\
+#define LimitCheck(frameSize, ret, bytes, other)				\
 	do {									\
 		declareFirst;							\
 										\
 		if (GC_EVERY_CHECK						\
 		or (GC_FIRST_CHECK and gc_first)				\
-		or frontier + (b) > gcState.limit				\
+		or frontier + (bytes) > gcState.limit				\
 		or (other)) {							\
-			do {							\
-				uint	bytes = b;				\
-										\
-				InvokeRuntime					\
-					(GC_gc(&gcState, bytes,			\
-						GC_EVERY_CHECK or		\
-						(GC_FIRST_CHECK and gc_first),	\
-						__FILE__, __LINE__),		\
-					frameSize, ret);			\
-			} while (frontier + (b) > gcState.limit)		\
+			InvokeRuntime						\
+			(GC_gc(&gcState, bytes,					\
+				GC_EVERY_CHECK or				\
+				(GC_FIRST_CHECK and gc_first),			\
+				__FILE__, __LINE__),				\
+			frameSize, ret);					\
 			clearFirst;						\
 		}								\
 		assert(gcState.stackBottom <= stackTop + WORD_SIZE);		\

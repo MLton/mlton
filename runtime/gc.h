@@ -127,6 +127,9 @@ typedef struct GC_thread {
 	uint exnStack;    	/* An offset added to stackBottom that specifies 
 				 * where the top of the exnStack is.
 				 */
+	uint bytesNeeded;       /* The number of bytes needed when returning
+				 * to this thread.
+				 */
 	GC_stack stack;		/* The stack for this thread. */
 } *GC_thread;
 

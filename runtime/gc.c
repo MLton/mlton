@@ -63,7 +63,7 @@ enum {
 #define BOGUS_THREAD (GC_thread)BOGUS_POINTER
 #define STRING_HEADER GC_arrayHeader(1, 0)
 #define WORD8_VECTOR_HEADER GC_arrayHeader(1, 0)
-#define THREAD_HEADER GC_objectHeader(1, 1)
+#define THREAD_HEADER GC_objectHeader(2, 1)
 
 static void leave(GC_state s);
 
@@ -1323,8 +1323,9 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 
 void GC_gc(GC_state s, uint bytesRequested, bool force,
 		string file, int line) {
+	s->currentThread->bytesNeeded = bytesRequested;
+	do {
 	uint stackBytesRequested;
-
 	if (DEBUG)
 		fprintf(stderr, "%s %d: GC  canHandle = %d  base = %x  frontier = %x  limit = %x\n", 
 				file, line, s->canHandle,
@@ -1376,6 +1377,7 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 		switchToThread(s, s->signalHandler);
 	}
 	leave(s);
+	} while (s->frontier + s->currentThread->bytesNeeded > s->limit);
 }
 
 /* ------------------------------------------------- */

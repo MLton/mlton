@@ -376,8 +376,7 @@ struct
 	     x86.Assembly.pseudoop_p2align 
 	     (x86.Immediate.const_int 2, NONE, NONE),
 	     x86.Assembly.label x86MLton.fileNameLabel,
-	     x86.Assembly.pseudoop_string [file],
-	     x86.Assembly.pseudoop_text ()]
+	     x86.Assembly.pseudoop_string [file]]
 
 	val liveInfo = x86Liveness.LiveInfo.newLiveInfo ()
 	val jumpInfo = x86JumpInfo.newJumpInfo ()
@@ -389,7 +388,7 @@ struct
 	      val isMain 
 		= MachineOutput.ChunkLabel.equals(#chunkLabel main, chunkLabel)
 
-	      val {chunk as Chunk.T {blocks}}
+	      val {chunk}
 		= x86Translate.translateChunk 
 		  {chunk = chunk,
 		   frameLayouts = getFrameLayoutIndex,

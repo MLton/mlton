@@ -81,6 +81,15 @@ val options =
        (Expert, "g", "", "produce executable with debug info",
 	None (fn () => (debug := true
 			; lib := "mlton-gdb"))),
+       (Expert, "gc-check", " {limit|first|every}", "force GCs",
+	SpaceString (fn s =>
+		     case s of
+		        "limit" => gcCheck := Limit
+		      | "first" => (gcCheck := First;
+				    List.push(defines, "GC_FIRST_CHECK"))
+		      | "every" => (gcCheck := Every;
+				    List.push(defines, "GC_EVERY_CHECK"))
+		      | _ => usage (concat ["invalid -gcCheck flag: ", s]))),
        (Normal, "h", " heapSize [{k|m}]",
 	"heap size used by resulting executable",
 	Mem (fn n => fixedHeap := SOME n)),

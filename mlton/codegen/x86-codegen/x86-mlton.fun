@@ -63,7 +63,7 @@ struct
 	val CStatic = new "CStatic"
 	val StaticTemp = new "StaticTemp"
 	val StaticNonTemp = new "StaticNonTemp"
-	  
+
 	val GCState = new "GCState"
 	val GCStateHold = new "GCStateHold"
 	  
@@ -436,7 +436,7 @@ struct
     = Operand.memloc gcState_currentThread_exnStackContents
   val gcState_currentThread_stackContents 
     = MemLoc.simple {base = gcState_currentThreadContents,
-		     index = Immediate.const_int 1,
+		     index = Immediate.const_int 2,
 		     size = pointerSize,
 		     scale = wordScale,
 		     class = Classes.Heap}
@@ -698,6 +698,7 @@ struct
 		     info as {frameSize: int, 
 			      live: Operand.t list,
 			      return: Label.t},
+		     addData: Assembly.t list -> unit,
 		     frameLayouts: Label.t -> {size: int, 
 					       frameLayoutsIndex: int} option,
 		     liveInfo: x86Liveness.LiveInfo.t} : Block.t' AppendList.t
@@ -757,6 +758,7 @@ struct
 		 args: (Operand.t * Size.t) list,
 		 dst: (Operand.t * Size.t) option,
 		 pinfo: PrimInfo.t,
+		 addData: Assembly.t list -> unit,
 		 frameLayouts: Label.t -> {size: int, frameLayoutsIndex: int} option,
 		 liveInfo: x86Liveness.LiveInfo.t} : Block.t' AppendList.t
     = let
@@ -966,6 +968,7 @@ struct
 			       args = [(Operand.immediate_label gcState, pointerSize),
 				       (threadTempContentsOperand, threadsize)],
 			       info = info,
+			       addData = addData,
 			       frameLayouts = frameLayouts,
 			       liveInfo = liveInfo})]
 	    end
@@ -1732,7 +1735,8 @@ struct
 			   (Operand.immediate_const_int 1, wordSize),
 			   (fileName, pointerSize),
 			   (fileLine (), wordSize)],
-		   info = info,	
+		   info = info,
+		   addData = addData,
 		   frameLayouts = frameLayouts,
 		   liveInfo = liveInfo}
 		end
@@ -1922,7 +1926,8 @@ struct
 		   (invokeRuntime 
 		    {prim = oper,
 		     args = [(statusTempContentsOperand, statussize)],
-		     info = info,	
+		     info = info,
+		     addData = addData,
 		     frameLayouts = frameLayouts,
 		     liveInfo = liveInfo}))
 		end
@@ -2579,7 +2584,8 @@ struct
 			     (fileTempContentsOperand, filesize),
 			     (Operand.immediate_label saveGlobals, 
 			      pointerSize)],
-		     info = info,	
+		     info = info,
+		     addData = addData,
 		     frameLayouts = frameLayouts,
 		     liveInfo = liveInfo}))
 		end

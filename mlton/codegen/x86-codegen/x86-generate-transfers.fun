@@ -69,7 +69,7 @@ struct
 				 live : MemLocSet.t} ->
 				Assembly.t AppendList.t}
 
-  fun generateTransfers {chunk as Chunk.T {blocks},
+  fun generateTransfers {chunk as Chunk.T {data, blocks, ...},
 			 optimize: int,
 			 liveInfo : x86Liveness.LiveInfo.t,
 			 jumpInfo : x86JumpInfo.t}
@@ -171,6 +171,55 @@ struct
 	  = Assert.assert
 	    ("verifyEntryTransfer", 
 	     fn () => x86EntryTransfer.verifyEntryTransfer {chunk = chunk})
+
+	local
+	  val gotoInfo as {get: Label.t -> {block:Block.t},
+			   set,
+			   destroy}
+	    = Property.destGetSetOnce
+	      (Label.plist, Property.initRaise ("gotoInfo", Label.layout))
+
+	  val labels
+	    = List.fold
+	      (blocks, [],
+	       fn (block as Block.T {entry, ...}, labels)
+	        => let
+		     val label = Entry.label entry
+		   in
+		     set(label, {block = block}) ;
+		     label::labels
+		   end)
+	      
+	  fun loop labels
+	    = let
+		val (labels, b)
+		  = List.fold
+		    (labels, ([], false),
+		     fn (label, (labels, b))
+		      => case x86JumpInfo.getNear (jumpInfo, label)
+			   of x86JumpInfo.Count 0 
+			    => let
+				 val {block as Block.T {transfer, ...}}
+				   = get label
+			       in
+				 List.foreach 
+				 (Transfer.nearTargets transfer,
+				  fn label 
+				   => x86JumpInfo.decNear (jumpInfo, label));
+				 (labels, true)
+			       end
+			    | _ => (label::labels, b))
+	      in
+		if b
+		  then loop labels
+		  else List.map (labels, #block o get)
+	      end
+	  val blocks = loop labels
+	    
+	  val _ = destroy ()
+	in
+	  val chunk = Chunk.T {data = data, blocks = blocks}
+	end
 
 	val loopInfo
 	  = x86LoopInfo.createLoopInfo {chunk = chunk, farLoops = false}
@@ -977,7 +1026,6 @@ struct
 				absolute = true})))]
 			 end
 
-	
 		     fun thread ()
 		       = let
 			   val (thread,threadsize)
@@ -1924,7 +1972,7 @@ struct
 	val _ = destLayoutInfo ()
 	val _ = destProfileInfo ()
       in
-	assembly
+	data::assembly
       end
 
   val (generateTransfers, generateTransfers_msg)

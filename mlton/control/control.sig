@@ -36,6 +36,13 @@ signature CONTROL =
       (* SOME n means that the executable should use a fixed heap of size n *)
       val fixedHeap: int option ref
 
+      (* *)
+      datatype gcCheck =
+	 Limit
+       | First
+       | Every
+      val gcCheck: gcCheck ref
+
       (* Indentation used in laying out CPS trees. *)
       val indentation: int ref
 	 

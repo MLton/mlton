@@ -52,6 +52,29 @@ val fixedHeap = control {name = "fixed heap",
 			 default = NONE,
 			 toString = Option.toString Int.toString}
 
+structure GcCheck =
+   struct
+      datatype t =
+	 Limit
+       | First
+       | Every
+
+      local open Layout
+      in
+	 val layout =
+	    fn Limit => str "Limit"
+	     | First => str "First"
+	     | Every => str "Every"
+      end
+      val toString = Layout.toString o layout
+   end
+
+datatype gcCheck = datatype GcCheck.t
+
+val gcCheck = control {name = "gc check",
+		       default = Limit,
+		       toString = GcCheck.toString}
+
 val indentation = control {name = "indentation",
 			   default = 3,
 			   toString = Int.toString}

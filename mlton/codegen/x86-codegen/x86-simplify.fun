@@ -2408,7 +2408,7 @@ struct
 
   structure ElimGoto =
     struct
-      fun elimSimpleGoto {chunk as Chunk.T {blocks, ...},
+      fun elimSimpleGoto {chunk as Chunk.T {data, blocks, ...},
 			  jumpInfo : x86JumpInfo.t} 
 	= let
 	    val gotoInfo as {get: Label.t -> Label.t option,
@@ -2507,7 +2507,7 @@ struct
 
 	    val _ = destroy ()
 	  in
-	    {chunk = Chunk.T {blocks = blocks},
+	    {chunk = Chunk.T {data = data, blocks = blocks},
 	     changed = !changed}
 	  end
 
@@ -2516,7 +2516,7 @@ struct
 	  "elimSimpleGoto"
 	  elimSimpleGoto
 
-      fun elimComplexGoto {chunk as Chunk.T {blocks, ...},
+      fun elimComplexGoto {chunk as Chunk.T {data, blocks, ...},
 			   jumpInfo : x86JumpInfo.t}
 	= let
 	    datatype z = datatype x86JumpInfo.status
@@ -2621,7 +2621,7 @@ struct
 
 	    val _ = destroy ()
 	  in
-	    {chunk = Chunk.T {blocks = blocks},
+	    {chunk = Chunk.T {data = data, blocks = blocks},
 	     changed = !changed}
 	  end
 
@@ -2630,7 +2630,7 @@ struct
 	  "elimComplexGoto"
 	  elimComplexGoto
 
-      fun elimBlocks {chunk as Chunk.T {blocks, ...},
+      fun elimBlocks {chunk as Chunk.T {data, blocks, ...},
 		      jumpInfo : x86JumpInfo.t}
 	= let
 	    val gotoInfo as {get: Label.t -> {block: Block.t,
@@ -2710,7 +2710,7 @@ struct
 
 	    val _ = destroy ()
 	  in
-	    {chunk = Chunk.T {blocks = blocks},
+	    {chunk = Chunk.T {data = data, blocks = blocks},
 	     changed = !changed}
 	  end
 
@@ -2736,7 +2736,7 @@ struct
 		    = elimSimpleGoto {chunk = chunk,
 				      jumpInfo = jumpInfo}
 
-		  val Chunk.T {blocks} = chunk
+		  val Chunk.T {data, blocks, ...} = chunk
 
 		  val {blocks,
 		       changed = changed_peepholeBlocks}
@@ -2746,7 +2746,7 @@ struct
 					elimSwitchTest,
 					elimSwitchCases]}
 
-		  val chunk = Chunk.T {blocks = blocks}
+		  val chunk = Chunk.T {data = data, blocks = blocks}
 		in
 		  if changed_elimSimpleGoto orelse changed_peepholeBlocks
 		    then loop {chunk = chunk, changed = true}
@@ -4731,7 +4731,7 @@ struct
       end
     end
 
-  fun simplify {chunk as Chunk.T {blocks}: Chunk.t,
+  fun simplify {chunk as Chunk.T {data, blocks, ...}: Chunk.t,
 		optimize : int,
 		liveInfo : x86Liveness.LiveInfo.t,
 		jumpInfo : x86JumpInfo.t} :
@@ -4741,7 +4741,7 @@ struct
 	  = List.map(blocks, fn Block.T {entry,...} => Entry.label entry)
 
 	fun changedChunk_msg 
-            {chunk as Chunk.T {blocks, ...}, changed, msg}
+            {chunk as Chunk.T {data, blocks, ...}, changed, msg}
 	  = ()
 	fun changedBlock_msg 
 	    {block as Block.T {entry, ...}, changed, msg}
@@ -4952,7 +4952,7 @@ struct
 	       (**************************************************************)
 	       (* peepholeBlock/moveHoist/peepholeLivenessBlock/copyPropagate*)
 	       (**************************************************************)
-	       val Chunk.T {blocks} = chunk
+	       val Chunk.T {data, blocks} = chunk
 	       val {blocks = blocks',
 		    changed = changed'}
 		 = List.fold
@@ -5156,7 +5156,7 @@ struct
 			  {blocks = block::blocks,
 			   changed = changed}
 			end)
-	       val chunk' = Chunk.T {blocks = blocks'}
+	       val chunk' = Chunk.T {data = data, blocks = blocks'}
 
 	       val _ = changedChunk_msg 
 		       {chunk = chunk',

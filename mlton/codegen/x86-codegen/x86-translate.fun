@@ -242,7 +242,7 @@ struct
       fun limitCheck {info = {frameSize, live, return},
 		      bytes: kind, 
 		      stackCheck: bool,
-		      loopGC: x86.Label.t option,
+		      addData: x86.Assembly.t list -> unit,
 		      frameLayouts: x86MLton.MachineOutput.Label.t ->
 			            {size: int, frameLayoutsIndex: int} option,
 		      liveInfo: x86Liveness.LiveInfo.t}
@@ -252,53 +252,101 @@ struct
 		  of Const _ => live
 		   | Variable bytes => (x86.Operand.memloc bytes)::live
 
+	    val checkForce = Label.newString "checkForce"
+	    val _ = x86Liveness.LiveInfo.setLiveOperands(liveInfo,
+							 checkForce,
+							 liveDoGC)
+	    val gcFirst
+	      = case !Control.gcCheck
+		  of Control.Limit => NONE
+		   | Control.First 
+		   => let
+			val gcFirst = Label.newString "gcFirst"
+			val _ = addData [x86.Assembly.pseudoop_p2align 
+					 (x86.Immediate.const_int 2, NONE, NONE),
+					 x86.Assembly.label gcFirst,
+					 x86.Assembly.pseudoop_long 
+					 [x86.Immediate.const_int 1]]
+		      in
+			SOME ((x86.Operand.memloc o x86.MemLoc.imm) 
+			      {base = x86.Immediate.label gcFirst,
+			       index = x86.Immediate.const_int 0,
+			       scale = x86MLton.wordScale,
+			       size = x86MLton.wordSize,
+			       class = x86MLton.Classes.StaticNonTemp})
+		      end
+		   | Control.Every => NONE
+	    val checkStack = Label.newString "checkStack"
+	    val _ = x86Liveness.LiveInfo.setLiveOperands(liveInfo,
+							 checkStack, 
+							 liveDoGC)
+	    val checkFrontier = Label.newString "checkFrontier"
+	    val _ = x86Liveness.LiveInfo.setLiveOperands(liveInfo,
+							 checkFrontier, 
+							 liveDoGC)
 	    val doGC = Label.newString "doGC"
 	    val _ = x86Liveness.LiveInfo.setLiveOperands(liveInfo, doGC, liveDoGC)
 	    val skipGC = Label.newString "skipGC"
 	    val _ = x86Liveness.LiveInfo.setLiveOperands(liveInfo, skipGC, live)
-	    val _ = case loopGC
-		      of NONE => ()
-		       | SOME l => x86Liveness.LiveInfo.setLiveOperands
-			           (liveInfo, l, live)
 
 	    val info = {frameSize = frameSize,
 			live = live,
 			return = return}
 	  in
 	    AppendList.appends
-	    [(if stackCheck
-		then let
-		       val checkFrontier = Label.newString "checkFrontier"
-		       val _ = x86Liveness.LiveInfo.setLiveOperands(liveInfo, 
-								    checkFrontier, 
-								    liveDoGC)
-		     in AppendList.fromList
-		        [(* if (stackTop >= stackLimit) goto doGC *)
-			 x86.Block.T'
-			 {entry = NONE,
-			  profileInfo = x86.ProfileInfo.none,
-			  statements
-			  = [x86.Assembly.instruction_cmp
+	    [AppendList.fromList
+	     [x86.Block.T'
+	      {entry = NONE,
+	       profileInfo = x86.ProfileInfo.none,
+	       statements = [],
+	       transfer
+	       = SOME (x86.Transfer.goto {target = checkForce})},
+	      let
+		val (statements, transfer)
+		  = case !Control.gcCheck
+		      of Control.Limit 
+		       => ([], SOME (x86.Transfer.goto {target = checkStack}))
+		       | Control.First
+		       => ([x86.Assembly.instruction_test
+			    {src1 = valOf gcFirst,
+			     src2 = valOf gcFirst,
+			     size = x86MLton.wordSize}],
+			   SOME (x86.Transfer.iff
+				 {condition = x86.Instruction.NZ,
+				  truee = doGC,
+				  falsee = checkStack}))
+		       | Control.Every
+		       => ([], SOME (x86.Transfer.goto {target = doGC}))
+	      in
+		x86.Block.T'
+		{entry = SOME (x86.Entry.jump {label = checkForce}),
+		 profileInfo = x86.ProfileInfo.none,
+		 statements = statements,
+		transfer = transfer}
+	      end,
+	      (* if (stackTop >= stackLimit) goto doGC *)
+	      let
+		val (statements, transfer)
+		  = if stackCheck
+		      then ([x86.Assembly.instruction_cmp
 			     {src1 = stackTop,
 			      src2 = stackLimit,
-			      size = x86MLton.pointerSize}],
-			  transfer 
-			  = SOME (x86.Transfer.iff 
+			      size = x86MLton.pointerSize}],			   
+			    SOME (x86.Transfer.iff 
 				  {condition = x86.Instruction.AE,
 				   truee = doGC,
-				   falsee = checkFrontier})},
-			 (* checkFrontier: *)
-			 x86.Block.T'
-			 {entry = SOME (x86.Entry.jump {label = checkFrontier}),
-			  profileInfo = x86.ProfileInfo.none,
-			  statements = [],
-			  transfer = NONE}]
-		     end
-		else AppendList.empty),
-	     AppendList.fromList
-	     [(* if (frontier + bytes <= limit) goto skipGC *)
+				   falsee = checkFrontier}))
+		      else ([], SOME (x86.Transfer.goto {target = checkFrontier}))
+	      in
+		x86.Block.T'
+		{entry = SOME (x86.Entry.jump {label = checkStack}),
+		 profileInfo = x86.ProfileInfo.none,
+		 statements = statements,
+		 transfer = transfer}
+	      end,
+	      (* if (frontier + bytes <= limit) goto skipGC *)
 	      x86.Block.T'
-	      {entry = NONE,
+	      {entry = SOME (x86.Entry.jump {label = checkFrontier}),
 	       profileInfo = x86.ProfileInfo.none,
 	       statements
 	       = case bytes
@@ -363,22 +411,32 @@ struct
 			  of Const bytes => x86.Operand.immediate_const_int bytes
 			   | Variable bytes => x86.Operand.memloc bytes, 
 			x86MLton.wordSize),
-		       (x86.Operand.immediate_const_int 0, x86MLton.wordSize),
+		       (case !Control.gcCheck
+			  of Control.Limit => x86.Operand.immediate_const_int 0
+			   | Control.First => valOf gcFirst
+			   | Control.Every => x86.Operand.immediate_const_int 1,
+			x86MLton.wordSize),
 		       (x86MLton.fileName, x86MLton.pointerSize),
 		       (x86MLton.fileLine (), x86MLton.wordSize)],
 	       info = info,
+	       addData = addData,
 	       frameLayouts = frameLayouts,
 	       liveInfo = liveInfo}),
 	     AppendList.fromList
-	     [(* goto loopGC *)
+	     [(* goto skipGC *)
 	      x86.Block.T'
 	      {entry = NONE,
 	       profileInfo = x86.ProfileInfo.none,
-	       statements = [],
+	       statements = case !Control.gcCheck
+			      of Control.Limit => []
+			       | Control.First
+			       => [x86.Assembly.instruction_mov
+				   {src = x86.Operand.immediate_const_int 0,
+				    dst = valOf gcFirst,
+				    size = x86MLton.wordSize}]
+			       | Control.Every => [],
 	       transfer 
-	       = SOME (x86.Transfer.goto {target = case loopGC
-						     of SOME loopGC => loopGC
-						      | NONE => skipGC})},
+	       = SOME (x86.Transfer.goto {target = skipGC})},
 	      (* skipGC: *)
 	      x86.Block.T'
 	      {entry = SOME (x86.Entry.jump {label = skipGC}),
@@ -400,11 +458,13 @@ struct
       val toX86Blocks_AllocateArray_limitCheck 
 	= fn {numElts,
 	      limitCheck = NONE, 
+	      addData,
 	      frameLayouts,
 	      liveInfo}
 	   => AppendList.empty
 	   | {numElts,
 	      limitCheck as SOME {gcInfo, bytesPerElt = 0, bytesAllocated},
+	      addData,
 	      frameLayouts,
 	      liveInfo}
 	   => let
@@ -412,31 +472,19 @@ struct
 		val info = {frameSize = frameSize,
 			    live = List.map(numElts::live, Operand.toX86Operand),
 			    return = return}
-		val arrayLimitCheckLoop = Label.newString "arrayLimitCheckLoopA"
 	      in 
 		AppendList.appends
-	        [AppendList.fromList
-		 [x86.Block.T'
-		  {entry = NONE,
-		   profileInfo = x86.ProfileInfo.none,
-		   statements = [],
-		   transfer = SOME (x86.Transfer.goto
-				    {target = arrayLimitCheckLoop})},
-		  x86.Block.T'
-		  {entry = SOME (x86.Entry.jump {label = arrayLimitCheckLoop}),
-		   profileInfo = x86.ProfileInfo.none,
-		   statements = [],
-		   transfer = NONE}],
-		 (LimitCheck.limitCheck 
+	        [(LimitCheck.limitCheck 
 		  {info = info,
 		   bytes = LimitCheck.Const bytesAllocated,
 		   stackCheck = false,
-		   loopGC = SOME arrayLimitCheckLoop,
+		   addData = addData,
 		   frameLayouts = frameLayouts,
 		   liveInfo = liveInfo})]
 	      end
 	   | {numElts as Operand.Int numElts',
 	      limitCheck as SOME {gcInfo, bytesPerElt, bytesAllocated},
+	      addData,
 	      frameLayouts,
 	      liveInfo} 
 	   => let
@@ -444,32 +492,20 @@ struct
 		val info = {frameSize = frameSize,
 			    live = List.map(numElts::live, Operand.toX86Operand),
 			    return = return}
-		val arrayLimitCheckLoop = Label.newString "arrayLimitCheckLoopB"
 	      in 
 		AppendList.appends
-		[AppendList.fromList
-		 [x86.Block.T'
-		  {entry = NONE,
-		   profileInfo = x86.ProfileInfo.none,
-		   statements = [],
-		   transfer = SOME (x86.Transfer.goto
-				    {target = arrayLimitCheckLoop})},
-		  x86.Block.T'
-		  {entry = SOME (x86.Entry.jump {label = arrayLimitCheckLoop}),
-		   profileInfo = x86.ProfileInfo.none,
-		   statements = [],
-		   transfer = NONE}],
-		 (LimitCheck.limitCheck 
+		[(LimitCheck.limitCheck 
 		  {info = info,
 		   bytes = LimitCheck.Const
 		           (numElts' * bytesPerElt + bytesAllocated),
 		   stackCheck = false,
-		   loopGC = SOME arrayLimitCheckLoop,
+		   addData = addData,
 		   frameLayouts = frameLayouts,
 		   liveInfo = liveInfo})]
 	      end
 	   | {numElts,
 	      limitCheck as SOME {gcInfo, bytesPerElt, bytesAllocated},
+	      addData,
 	      frameLayouts,
 	      liveInfo}
 	   => let
@@ -477,8 +513,6 @@ struct
 		val info = {frameSize = frameSize,
 			    live = List.map(numElts::live, Operand.toX86Operand),
 			    return = return}
-		val arrayLimitCheckLoop = Label.newString "arrayLimitCheckLoopC"
-
 		val numEltsSize = Operand.toX86Size numElts
 		val numElts = Operand.toX86Operand numElts
 		val _
@@ -492,12 +526,6 @@ struct
 		[AppendList.fromList
 		 [x86.Block.T'
 		  {entry = NONE,
-		   profileInfo = x86.ProfileInfo.none,
-		   statements = [],
-		   transfer = SOME (x86.Transfer.goto
-				    {target = arrayLimitCheckLoop})},
-		  x86.Block.T'
-		  {entry = SOME (x86.Entry.jump {label = arrayLimitCheckLoop}),
 		   profileInfo = x86.ProfileInfo.none,
 		   statements 
 		   = [(* arrayAllocateTemp 
@@ -524,7 +552,7 @@ struct
 		 {info = info,
 		  bytes = LimitCheck.Variable arrayAllocateTemp',
 		  stackCheck = false,	
-		  loopGC = SOME arrayLimitCheckLoop,
+		  addData = addData,
 		  frameLayouts = frameLayouts,
 		  liveInfo = liveInfo})]
 	      end
@@ -1068,6 +1096,7 @@ struct
 	    else (AppendList.empty,AppendList.empty)
 
       fun toX86Blocks {statement,
+		       addData,
 		       frameLayouts,
 		       liveInfo}
 	= (case statement
@@ -1137,6 +1166,7 @@ struct
 					 args = args,
 					 dst = dst,
 					 pinfo = pinfo,
+					 addData = addData,
 					 frameLayouts = frameLayouts,
 					 liveInfo = liveInfo}),
 		    comment_end]
@@ -1150,29 +1180,14 @@ struct
 		   val info = {frameSize = frameSize,
 			       live = List.map(live, Operand.toX86Operand),
 			       return = return}
-		   val statementLimitCheckLoop 
-		     = Label.newString "statementLimitCheckLoop"
 		 in 
 		   AppendList.appends
 		   [comment_begin,
-		    AppendList.fromList
-		    [x86.Block.T'
-		     {entry = NONE,
-		      profileInfo = x86.ProfileInfo.none,
-		      statements = [],
-		      transfer 
-		      = SOME (x86.Transfer.goto 
-			      {target = statementLimitCheckLoop})},
-		     x86.Block.T'
-		     {entry = SOME (x86.Entry.jump {label = statementLimitCheckLoop}),
-		      profileInfo = x86.ProfileInfo.none,
-		      statements = [],
-		      transfer = NONE}],
 		    (LimitCheck.limitCheck
 		     {info = info,
 		      bytes = LimitCheck.Const bytes,
 		      stackCheck = stackCheck,
-		      loopGC = SOME statementLimitCheckLoop,
+		      addData = addData,
 		      frameLayouts = frameLayouts,
 		      liveInfo = liveInfo}),
 		    comment_end]
@@ -1423,6 +1438,7 @@ struct
 		    (toX86Blocks_AllocateArray_limitCheck
 		     {numElts = numElts,
 		      limitCheck = limitCheck,
+		      addData = addData,
 		      frameLayouts = frameLayouts,
 		      liveInfo = liveInfo}),
 		    (toX86Blocks_AllocateArray_init
@@ -1611,7 +1627,7 @@ struct
 		 end
 	    else AppendList.empty
 
-	fun toX86Blocks {transfer, liveInfo}
+	fun toX86Blocks {transfer, addData, frameLayouts, liveInfo}
 	= (case transfer
 	     of Bug 
 	      => AppendList.append
@@ -1903,6 +1919,7 @@ struct
 						   label = labelProfileInfo},
 				   statements, 
 				   transfer},
+		       addData,
 		       frameLayouts,
 		       liveInfo}
 	= let
@@ -2011,11 +2028,14 @@ struct
 		  transfer = NONE},
 		 Array.foldr(statements,
 			     (Transfer.toX86Blocks {transfer = transfer,
+						    addData = addData,
+						    frameLayouts = frameLayouts,
 						    liveInfo = liveInfo}),
 			     fn (statement,l)
 			      => AppendList.append
 			         (Statement.toX86Blocks 
 				  {statement = statement,
+				   addData = addData,
 				   frameLayouts = frameLayouts,
 				   liveInfo = liveInfo}, l)))
 
@@ -2077,16 +2097,22 @@ struct
 		      frameLayouts, 
 		      liveInfo}
 	= let
+	    val data = ref []
+	    val addData = fn l => List.push (data, l)
+
+	    val _ = addData [x86.Assembly.pseudoop_data ()]
 	    val blocks 
 	      = List.concatMap(blocks, 
 				fn block
 				 => Block.toX86Blocks 
 				    {block = block,
+				     addData = addData,
 				     frameLayouts = frameLayouts,
 				     liveInfo = liveInfo})
+	    val _ = addData [x86.Assembly.pseudoop_text ()]
+	    val data = List.concatRev (!data)
 	  in
-	    x86.Chunk.T {blocks = blocks}
-			 
+	    x86.Chunk.T {data = data, blocks = blocks}
 	  end
 	  handle exn
 	   => Error.bug ("x86Translate.Chunk.toX86Chunk::" ^ 

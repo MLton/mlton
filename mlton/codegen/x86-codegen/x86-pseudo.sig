@@ -236,6 +236,20 @@ signature X86_PSEUDO =
 	type t
       end
 
+    structure PseudoOp :
+      sig
+	type t
+
+	val toString : t -> string
+	  
+	val data : unit -> t
+	val text : unit -> t
+	val p2align : Immediate.t * Immediate.t option * Immediate.t option -> t
+	val byte : Immediate.t list -> t
+	val word : Immediate.t list -> t
+	val long : Immediate.t list -> t
+      end
+
     structure Assembly :
       sig
 	type t
@@ -244,6 +258,13 @@ signature X86_PSEUDO =
 
 	val comment : string -> t
 	val isComment : t -> bool
+	val pseudoop : PseudoOp.t -> t
+	val pseudoop_data : unit -> t
+	val pseudoop_text : unit -> t
+	val pseudoop_p2align : Immediate.t * Immediate.t option * Immediate.t option -> t
+	val pseudoop_byte : Immediate.t list -> t
+	val pseudoop_word : Immediate.t list -> t
+	val pseudoop_long : Immediate.t list -> t
 	val label : Label.t -> t
 	val instruction : Instruction.t -> t
 	val instruction_nop : unit -> t
@@ -442,7 +463,7 @@ signature X86_PSEUDO =
 
     structure Chunk :
       sig
-	datatype t = T of {blocks: Block.t list}
+	datatype t = T of {data: Assembly.t list, blocks: Block.t list}
 			   
       end
   end
