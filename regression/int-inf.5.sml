@@ -1,4 +1,4 @@
-open MLton.IntInf
+open IntInf MLton.IntInf
 
 fun p (a, b) = (print (toString (gcd (a, b)))
 		; print "\n")
