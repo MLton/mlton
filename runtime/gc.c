@@ -437,7 +437,9 @@ stackCopy(GC_stack from, GC_stack to)
 #define LIVE_RATIO_MIN 1.25
 
 enum {
+	GROW_RATIO = 3,
 	LIVE_RATIO = 8,	/* The desired live ratio. */
+	SHRINK_RATIO = 20,
 };
 
 /*
@@ -1620,7 +1622,7 @@ static inline void resizeHeap (GC_state s, uint bytesRequested) {
 		/* If the ratio of live data to semispace size is too low,
 		 * shrink new space.
 		 */
-		keep = needed * 20 < (W64)s->fromSize
+		keep = needed * SHRINK_RATIO < (W64)s->fromSize
 			? roundPage (s, needed * LIVE_RATIO)
 			: s->fromSize;
 	else 
@@ -1646,7 +1648,7 @@ static inline void resizeHeap (GC_state s, uint bytesRequested) {
 		/* Holding on to toSpace may cause swapping. */
 		keep = 0;
         /* s->fromSize <= s->toSize and s->fromSize < s->halfRam */
-	else if (3 * needed > (W64)s->toSize)
+	else if (GROW_RATIO * needed > (W64)s->toSize)
 		/* toSpace is too small */
 		keep = 0;
 	else
