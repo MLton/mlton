@@ -661,7 +661,7 @@ fun toMachine (program: Ssa.Program.t) =
 					    return = label,
 					    size = size})
 		     end
-		  val (kind, pre) =
+		  val (kind, live, pre) =
 		     case kind of
 			R.Kind.Cont {handler} =>
 			   let
@@ -670,6 +670,7 @@ fun toMachine (program: Ssa.Program.t) =
 			   in
 			      (M.Kind.Cont {args = srcs,
 					    frameInfo = M.FrameInfo.bogus},
+			       liveNoFormals,
 			       parallelMove
 			       {chunk = chunk,
 				dsts = Vector.map (args, varOperand o #1),
@@ -685,6 +686,7 @@ fun toMachine (program: Ssa.Program.t) =
 			   in
 			      (M.Kind.CReturn {dst = dst,
 					       prim = prim},
+			       live,
 			       Vector.new0 ())
 			   end
 		      | R.Kind.Handler =>
@@ -697,18 +699,20 @@ fun toMachine (program: Ssa.Program.t) =
 			      val dsts = Vector.map (args, varOperand o #1)
 			   in
 			      (M.Kind.Handler {offset = handler},
+			       liveNoFormals,
 			       M.Statement.moves
 			       {dsts = dsts,
 				srcs = (raiseOperands
 					(Vector.map (dsts, M.Operand.ty)))})
 			   end
-		      | R.Kind.Jump => (M.Kind.Jump, Vector.new0 ())
+		      | R.Kind.Jump => (M.Kind.Jump, live, Vector.new0 ())
 		      | R.Kind.Runtime {prim} =>
 			   let
 			      val _ = frame ()
 			   in
 			      (M.Kind.Runtime {frameInfo = M.FrameInfo.bogus,
 					       prim = prim},
+			       live,
 			       Vector.new0 ())
 			   end
 		  val statements = Vector.concat [pre, statements, preTransfer]
