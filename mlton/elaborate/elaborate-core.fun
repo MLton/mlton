@@ -1970,7 +1970,11 @@ fun elaborateDec (d, {env = E,
 						       region = region,
 						       ty = expandedTy},
 					       nest)))
-
+			       val _ =
+				  unify
+				  (Cexp.ty e,
+				   Type.arrow (expandedTy, Type.unit),
+				   fn _ => Error.bug "export unify failure")
 			    in
 			       wrap (e, Type.arrow (ty, Type.unit))
 			    end
