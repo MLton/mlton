@@ -344,6 +344,8 @@ structure Value =
 	 Trace.trace ("getNew", layout, Layout.tuple2 (Type.layout, Bool.layout))
 	 getNew
 
+      val isUseful = Trace.trace ("isUseful", layout, Bool.layout) isUseful
+
       val newType = Trace.trace ("newType", layout, Type.layout) newType
 	 
       fun newTypes (vs: t vector): Type.t vector =
@@ -660,10 +662,10 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 		  val (args, argTypes) =
 		     Vector.unzip
 		     (Vector.map (args, fn x =>
-				 let val (t, b) = Value.getNew (value x)
-				 in if b then (x, t)
-				    else (unitVar, Type.unit)
-				 end))
+				  let val (t, b) = Value.getNew (value x)
+				  in if b then (x, t)
+				     else (unitVar, Type.unit)
+				  end))
 	       in PrimApp
 		  {prim = prim,
 		   args = args,
@@ -713,7 +715,7 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 	    val v = Option.map (var, value)
 	    val (ty, b) =
 	       case v of
-		 NONE => (ty, true)
+		  NONE => (ty, false)
 		| SOME v => Value.getNew v
 	    fun yes ty =
 	       SOME (Statement.T 
@@ -736,8 +738,10 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 				in case Prim.name prim of
 				   Array_update => array ()
 				 | Ref_assign =>
+				      (Out.output (Out.error, "FUCK\n")
+				       ;
 				      Value.isUseful 
-				      (Value.deref (value (arg 0)))
+				      (Value.deref (value (arg 0))))
 				 | Word8Array_updateWord => array ()
 				 | _ => true
 				end
