@@ -1252,12 +1252,12 @@ fun elaborateDec (d, {env = E, nest}) =
 		in
 		   Control.error
 		   (region,
-		    seq [str "type ", Tycon.layout c,
-			 str " escapes the scope of its definition at ",
+		    seq [str "type escapes the scope of its definition at ",
 			 str (case Region.left (tyconRegion c) of
 				 NONE => "<bogus>"
 			       | SOME p => SourcePos.toString p)],
-		    lay ())
+		    align [seq [str "type: ", Tycon.layout c],
+			   lay ()])
 		end
 	     val _ = TypeEnv.tick {useBeforeDef = useBeforeDef}
 	     val unify = fn (t, t', f) => unify (t, t', preError, f)
