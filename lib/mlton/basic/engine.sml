@@ -16,6 +16,9 @@ fun done (return): unit =
     ; Itimer.set (which, {value = Time.zero,
 			  interval = Time.zero})
     ; Signal.handleDefault signal)
+(*
+    ; Signal.Handler.set (signal, Signal.Handler.Default))
+*)
 
 fun new (f: unit -> 'a): 'a t =
    let
@@ -42,6 +45,9 @@ fun run (T {return, thread}, time: Time.t): 'a res =
 					 ; TimeOut (T {return = return,
 						       thread = me})))
        val _ = Signal.handleWith' (signal, handler)
+(*
+       val _ = Signal.Handler.set (signal, Signal.Handler.Handler handler)
+*)
        val _ = Itimer.set (which, {value = time,
 				   interval = Time.zero})
     in (thread, ())
