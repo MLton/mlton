@@ -85,7 +85,12 @@ structure Pat =
 	 val falsee: t = bool Con.falsee
 	 val truee: t = bool Con.truee
       end
-   
+
+      fun isUnit (p: t): bool =
+	 case node p of
+	    Tuple v => 0 = Vector.length v
+	  | _ => false
+	       
       fun isWild (p: t): bool =
 	 case node p of
 	    Wild => true

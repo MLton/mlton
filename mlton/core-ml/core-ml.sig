@@ -50,6 +50,7 @@ signature CORE_ML =
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    (* true if pattern contains a constant, constructor or variable *)
 	    val isRefutable: t -> bool
+	    val isUnit: t -> bool
 	    val isWild: t -> bool
 	    val layout: t -> Layout.t
 	    val make: node * Type.t -> t

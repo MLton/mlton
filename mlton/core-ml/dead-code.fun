@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -23,6 +23,17 @@ fun deadCode {basis, user} =
 					 then escape true
 				      else ())
 	   ; false))
+      fun decIsWild (d: Dec.t): bool =
+	 case d of
+	    Val {rvbs, vbs, ...} =>
+	       0 = Vector.length rvbs
+	       andalso 1 = Vector.length vbs
+	       andalso let
+			  val pat = #pat (Vector.sub (vbs, 0))
+		       in
+			  Pat.isWild pat orelse Pat.isUnit pat
+		       end
+	  | _ => false
       fun decIsNeeded (d: Dec.t): bool =
 	 case d of
 	    Datatype _ => true
@@ -30,8 +41,8 @@ fun deadCode {basis, user} =
 	  | Fun {decs, ...} => Vector.exists (decs, varIsUsed o #var)
 	  | Val {rvbs, vbs, ...} =>
 	       Vector.exists (rvbs, varIsUsed o #var)
-	       orelse Vector.exists (vbs, fn {pat, ...} =>
-				     Pat.isWild pat orelse patVarIsUsed pat)
+	       orelse Vector.exists (vbs, patVarIsUsed o #pat)
+	       orelse decIsWild d
       fun useVar x = setVarIsUsed (x, true)
       fun useExp (e: Exp.t): unit = Exp.foreachVar (e, useVar)
       fun useLambda (l: Lambda.t): unit =
@@ -44,13 +55,6 @@ fun deadCode {basis, user} =
 	  | Val {rvbs, vbs, ...} =>
 	       (Vector.foreach (rvbs, useLambda o #lambda)
 		; Vector.foreach (vbs, useExp o #exp))
-      fun decIsWild (d: Dec.t): bool =
-	 case d of
-	    Val {rvbs, vbs, ...} =>
-	       0 = Vector.length rvbs
-	       andalso 1 = Vector.length vbs
-	       andalso Pat.isWild (#pat (Vector.sub (vbs, 0)))
-	  | _ => false
       val _ = List.foreach (user, useDec)
       val _ = List.foreach (basis, fn d => if decIsWild d then useDec d else ())
       val res =
