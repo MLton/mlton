@@ -24,7 +24,7 @@ val (sub, up, subV) =
 
 fun start (i, n) = 
    let
-      val i = Int.* (bytesPerElem, i )
+      val i = Int.* (bytesPerElem, i)
       val _ =
 	 if Primitive.safe
 	    andalso Int.geu (Int.+ (i, Int.- (bytesPerElem, 1)), n)
