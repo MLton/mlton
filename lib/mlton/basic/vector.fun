@@ -106,7 +106,7 @@ fun foldr2 (a, a', b, f) =
    in
       if n = n'
 	 then loop (n - 1, b)
-      else raise Fail "Array.foldr2"
+      else raise Fail "Vector.foldr2"
    end
    
 fun fold2From (a, a', start, b, f) =
@@ -120,7 +120,7 @@ fun fold2From (a, a', start, b, f) =
    in
       if n = n' andalso 0 <= start andalso start <= n 
 	 then loop (start, b)
-      else Error.bug "Array.fold2"
+      else Error.bug "Vector.fold2"
    end
 
 fun fold2 (a, a', b, f) = fold2From (a, a', 0, b, f)
@@ -140,7 +140,7 @@ fun fold3From (a, a', a'', start, b, f) =
    in
       if n = n' andalso n = n'' andalso 0 <= start andalso start <= n
 	 then loop (start, b)
-      else Error.bug "Array.fold3"
+      else Error.bug "Vector.fold3"
    end
 
 fun fold3 (a, a', a'', b, f) = fold3From (a, a', a'', 0, b, f)
@@ -212,7 +212,7 @@ fun layout l v = Layout.tuple (toListMap (v, l))
 
 fun maxIndex a = Int.sub1 (length a)
 
-fun new0 () = fromList []
+fun new0 () = tabulate (0, fn _ => Error.bug "Vector.new0")
 
 fun new1 x = tabulate (1, fn _ => x)
 
@@ -356,19 +356,24 @@ fun last v =
       else unsafeSub (v, n - 1)
    end
 
-fun tabulator (n, f) =
+fun tabulator (n: int, f: ('a -> unit) -> unit) =
    let
-      val gen = Thread.generate f
-      val v =
-	 tabulate (n, fn _ =>
-		   case gen () of
-		      NONE => Error.bug "Vector.tabulator: not enough elements"
-		    | SOME x => x)
+      val a = Pervasive.Array.array (n, NONE)
+      val r = ref 0
       val _ =
-	 case gen () of
-	    NONE => ()
-	  | _ => Error.bug "Vector.tabulator: too many elements"
-   in v
+	 f (fn x =>
+	    let
+	       val i = !r
+	    in
+	       if i >= n
+		  then Error.bug "Vector.tabulator: too many elements"
+	       else (Pervasive.Array.update (a, i, SOME x)
+		     ; r := i + 1)
+	    end)
+   in
+      if !r < n
+	 then Error.bug "Vector.tabulator: not enough elements"
+      else tabulate (n, fn i => valOf (Pervasive.Array.sub (a, i)))
    end
 
 fun 'a concat (vs: 'a t list): 'a t =
