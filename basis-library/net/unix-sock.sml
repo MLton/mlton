@@ -12,7 +12,7 @@ structure UnixSock : UNIX_SOCK =
       fun toAddr s = 
 	let
 	  val (sa, salen, finish) = Socket.new_sock_addr ()
-	  val _ = Prim.toAddr (s, String.size s, sa, salen)
+	  val _ = Prim.toAddr (NullString.nullTerm s, String.size s, sa, salen)
 	in 
 	  finish ()
 	end

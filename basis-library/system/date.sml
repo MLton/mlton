@@ -301,8 +301,10 @@ structure Date :> DATE =
 	     val buf = Primitive.Array.array bufLen
 	     fun strftime fmtChar =
 		let
-		   val len = Prim.strfTime (buf, bufLen,
-					    concat ["%", str fmtChar, "\000"])
+		   val len =
+		      Prim.strfTime
+		      (buf, bufLen,
+		       NullString.fromString (concat ["%", str fmtChar, "\000"]))
 		in if len = 0
 		      then raise Fail "Date.fmt"
 		   else ArraySlice.vector (ArraySlice.slice (buf, 0, SOME len))

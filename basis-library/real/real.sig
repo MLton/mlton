@@ -42,7 +42,7 @@ signature PRE_REAL =
       val precision: int
       val radix: int
       val signBit: real -> bool
-      val strto: nullString -> real
+      val strto: NullString.t -> real
       val toInt: real -> int
       val toLarge: real -> LargeReal.real	 
   end

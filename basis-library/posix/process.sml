@@ -78,7 +78,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	       DynamicWind.wind (doit, close)
 	    end
 
-      val conv = String.nullTerm
+      val conv = NullString.nullTerm
       val convs = C.CSS.fromList
 
       fun exece (path, args, env): 'a =

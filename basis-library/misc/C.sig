@@ -30,9 +30,9 @@ signature C =
 	 sig
 	    type t
 
-	    val fromList: string list -> string array
+	    val fromList: string list -> NullString.t array
 	    (* extract first n strings from array *)
-	    val toArrayOfLength: t * int -> string array 	    
+	    val toArrayOfLength: t * int -> string array
 	    val toList: t -> string list
 	 end
    end

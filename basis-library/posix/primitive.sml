@@ -7,7 +7,6 @@
  *)
 structure PosixPrimitive =
    struct
-      type nullString = string
       type cstring = Primitive.C.CS.t
       type cstringArray = Primitive.C.CSS.t
 
@@ -197,10 +196,10 @@ structure PosixPrimitive =
 	    val alarm = _import "Posix_Process_alarm": int -> int;
 	    val exece =
 	       _import "Posix_Process_exece"
-	       : nullString * nullString array * nullString array -> int;
+	       : NullString.t * NullString.t array * NullString.t array -> int;
 	    val execp =
 	       _import "Posix_Process_execp"
-	       : nullString * nullString array -> int;
+	       : NullString.t * NullString.t array -> int;
 	    val exit = _import "Posix_Process_exit": int -> unit;
 	    val exitStatus = _import "Posix_Process_exitStatus": Status.t -> int;
 	    val fork = _import "Posix_Process_fork": unit -> Pid.t;
@@ -264,7 +263,7 @@ structure PosixPrimitive =
 	    val getppid = _import "Posix_ProcEnv_getppid": unit -> Pid.t;
 	    val getuid = _import "Posix_ProcEnv_getuid": unit -> uid;
 	    val setenv =
-	       _import "Posix_ProcEnv_setenv": nullString * nullString -> int;
+	       _import "Posix_ProcEnv_setenv": NullString.t * NullString.t -> int;
 	    val setgid = _import "Posix_ProcEnv_setgid": gid -> int;
 	    val setpgid = _import "Posix_ProcEnv_setpgid": Pid.t * Pid.t -> int;
 	    val setsid = _import "Posix_ProcEnv_setsid": unit -> Pid.t;
@@ -297,7 +296,7 @@ structure PosixPrimitive =
 
 	    val ctermid = _import "Posix_ProcEnv_ctermid" : unit -> cstring;
 	    val environ = _import "Posix_ProcEnv_environ" : cstringArray;
-	    val getenv = _import "Posix_ProcEnv_getenv" : nullString -> cstring;
+	    val getenv = _import "Posix_ProcEnv_getenv" : NullString.t -> cstring;
 	    val isatty = _import "Posix_ProcEnv_isatty" : fd -> bool;
 	    val sysconf = _import "Posix_ProcEnv_sysconf" : int -> int;
 	    val times = _import "Posix_ProcEnv_times" : unit -> clock_t;
@@ -386,7 +385,7 @@ structure PosixPrimitive =
 		     _import "Posix_FileSys_Dirstream_closedir": dirstream -> int;
 		  val opendir =
 		     _import "Posix_FileSys_Dirstream_opendir"
-		     : nullString -> dirstream;
+		     : NullString.t -> dirstream;
 		  val readdir =
 		     _import "Posix_FileSys_Dirstream_readdir"
 		     : dirstream -> cstring;
@@ -413,9 +412,9 @@ structure PosixPrimitive =
 		     _import "Posix_FileSys_Stat_ctime": unit -> time;
 		  val fstat = _import "Posix_FileSys_Stat_fstat": fd -> int;
 		  val lstat =
-		     _import "Posix_FileSys_Stat_lstat": nullString -> int;
+		     _import "Posix_FileSys_Stat_lstat": NullString.t -> int;
 		  val stat =
-		     _import "Posix_FileSys_Stat_stat": nullString -> int;
+		     _import "Posix_FileSys_Stat_stat": NullString.t -> int;
 	       end
 
 	    structure Utimbuf =
@@ -425,16 +424,16 @@ structure PosixPrimitive =
 		  val setModtime =
 		     _import "Posix_FileSys_Utimbuf_setModTime": time -> unit;
 		  val utime =
-		     _import "Posix_FileSys_Utimbuf_utime": nullString -> int;
+		     _import "Posix_FileSys_Utimbuf_utime": NullString.t -> int;
 	       end
 
 	    val access =
-	       _import "Posix_FileSys_access": nullString * word -> int;
-	    val chdir = _import "Posix_FileSys_chdir": nullString -> int;
+	       _import "Posix_FileSys_access": NullString.t * word -> int;
+	    val chdir = _import "Posix_FileSys_chdir": NullString.t -> int;
 	    val chmod =
-	       _import "Posix_FileSys_chmod": nullString * mode -> int;
+	       _import "Posix_FileSys_chmod": NullString.t * mode -> int;
 	    val chown =
-	       _import "Posix_FileSys_chown": nullString * uid * gid -> int;
+	       _import "Posix_FileSys_chown": NullString.t * uid * gid -> int;
 	    val fchmod =
 	       _import "Posix_FileSys_fchmod": fd * mode -> int;
 	    val fchown =
@@ -446,26 +445,26 @@ structure PosixPrimitive =
 	    val getcwd =
 	       _import "Posix_FileSys_getcwd": char array * size -> cstring;
 	    val link =
-	       _import "Posix_FileSys_link": nullString * nullString -> int;
+	       _import "Posix_FileSys_link": NullString.t * NullString.t -> int;
 	    val mkdir =
-	       _import "Posix_FileSys_mkdir": nullString * word -> int;
+	       _import "Posix_FileSys_mkdir": NullString.t * word -> int;
 	    val mkfifo =
-	       _import "Posix_FileSys_mkfifo": nullString * word -> int;
+	       _import "Posix_FileSys_mkfifo": NullString.t * word -> int;
 	    val openn =
-	       _import "Posix_FileSys_open": nullString * word * mode -> fd;
+	       _import "Posix_FileSys_open": NullString.t * word * mode -> fd;
 	    val pathconf =
-	       _import "Posix_FileSys_pathconf": nullString * int -> int;
+	       _import "Posix_FileSys_pathconf": NullString.t * int -> int;
 	    val readlink =
 	       _import "Posix_FileSys_readlink"
-	       : nullString * word8 array * int -> int;
+	       : NullString.t * word8 array * int -> int;
 	    val rename =
-	       _import "Posix_FileSys_rename": nullString * nullString -> int;
-	    val rmdir = _import "Posix_FileSys_rmdir": nullString -> int;
+	       _import "Posix_FileSys_rename": NullString.t * NullString.t -> int;
+	    val rmdir = _import "Posix_FileSys_rmdir": NullString.t -> int;
 	    val symlink =
 	       _import "Posix_FileSys_symlink"
-	       : nullString * nullString -> int;
+	       : NullString.t * NullString.t -> int;
 	    val umask = _import "Posix_FileSys_umask": word -> word;
-	    val unlink = _import "Posix_FileSys_unlink": nullString -> int;
+	    val unlink = _import "Posix_FileSys_unlink": NullString.t -> int;
 
 	    structure ST =
 	       struct
@@ -564,21 +563,23 @@ structure PosixPrimitive =
 		  val uid = _import "Posix_SysDB_Passwd_uid": unit -> uid;
 		  val gid = _import "Posix_SysDB_Passwd_gid": unit -> gid;
 		  val dir = _import "Posix_SysDB_Passwd_dir": unit -> cstring;
-		  val shell = _import "Posix_SysDB_Passwd_shell": unit -> cstring;
+		  val shell =
+		     _import "Posix_SysDB_Passwd_shell": unit -> cstring;
 	       end
 
-	    val getpwnam = _import "Posix_SysDB_getpwnam": nullString -> bool;
+	    val getpwnam = _import "Posix_SysDB_getpwnam": NullString.t -> bool;
 	    val getpwuid = _import "Posix_SysDB_getpwuid": uid -> bool;
 
 	    structure Group =
 	       struct
 		  val name = _import "Posix_SysDB_Group_name": unit -> cstring;
 		  val gid = _import "Posix_SysDB_Group_gid": unit -> gid;
-		  val mem = _import "Posix_SysDB_Group_mem": unit -> cstringArray;
+		  val mem =
+		     _import "Posix_SysDB_Group_mem": unit -> cstringArray;
 	       end
 
 	    val getgrgid = _import "Posix_SysDB_getgrgid": gid -> bool;
-	    val getgrnam = _import "Posix_SysDB_getgrnam": nullString -> bool;
+	    val getgrnam = _import "Posix_SysDB_getgrnam": NullString.t -> bool;
 	 end
 
       structure TTY =

@@ -44,16 +44,17 @@ structure NetServDB: NET_SERV_DB =
       in
 	fun getByName (name, proto) = 
 	  case proto of
-	    SOME proto => get (Prim.getByName (String.nullTerm name,
-					       String.nullTerm proto))
-	  | NONE => get (Prim.getByNameNull (String.nullTerm name))
+	    SOME proto => get (Prim.getByName (NullString.nullTerm name,
+					       NullString.nullTerm proto))
+	  | NONE => get (Prim.getByNameNull (NullString.nullTerm name))
 	fun getByPort (port, proto) = 
 	  let
 	    val port = Net.htons port
 	  in
 	    case proto of
-	      SOME proto => get (Prim.getByPort (port, String.nullTerm proto))
-	    | NONE => get (Prim.getByPortNull port)
+	       NONE => get (Prim.getByPortNull port)
+	     | SOME proto =>
+		  get (Prim.getByPort (port, NullString.nullTerm proto))
 	  end
       end
    end

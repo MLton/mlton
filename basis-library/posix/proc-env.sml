@@ -115,7 +115,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
       fun getenv name =
 	 let
-	    val cs = Prim.getenv (String.nullTerm name)
+	    val cs = Prim.getenv (NullString.nullTerm name)
 	 in
 	    if Primitive.Pointer.isNull cs
 	       then NONE

@@ -51,3 +51,10 @@ structure String: STRING_EXTRA =
 
 structure StringGlobal: STRING_GLOBAL = String
 open StringGlobal
+
+structure NullString =
+   struct
+      open NullString
+
+      val nullTerm = fromString o String.nullTerm
+   end

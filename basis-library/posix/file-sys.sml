@@ -52,7 +52,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	    
 	 fun opendir s =
 	    let
-	       val d = Prim.opendir (String.nullTerm s)
+	       val d = Prim.opendir (NullString.nullTerm s)
 	    in
 	       if Primitive.Pointer.isNull d
 		  then Error.error ()
@@ -96,7 +96,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       end
 	 
       fun chdir s =
-	 checkResult (Prim.chdir (String.nullTerm s))
+	 checkResult (Prim.chdir (NullString.nullTerm s))
 
       local
 	 val size: int ref = ref 1
@@ -158,7 +158,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	 let
 	    val fd =
 	       checkReturnResult
-	       (Prim.openn (String.nullTerm pathname,
+	       (Prim.openn (NullString.nullTerm pathname,
 			    Flags.flags [openModeToWord openMode,
 					 flags,
 					 O.creat],
@@ -170,7 +170,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	 let 
 	    val fd = 
 	       checkReturnResult
-	       (Prim.openn (String.nullTerm pathname,
+	       (Prim.openn (NullString.nullTerm pathname,
 			    Flags.flags [openModeToWord openMode, flags],
 			    Flags.empty))
 	 in FD fd
@@ -183,18 +183,19 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       local
 	 fun wrap p arg = (checkResult (p arg); ())
 	 fun wrapOldNew p =
-	    wrap (fn {old,new} => p (String.nullTerm old, String.nullTerm new))
+	    wrap (fn {old,new} => p (NullString.nullTerm old,
+				     NullString.nullTerm new))
       in
 	 val link = wrapOldNew Prim.link
-	 val mkdir = wrap (fn (p, m) => Prim.mkdir (String.nullTerm p, m))
-	 val mkfifo = wrap (fn (p, m) => Prim.mkfifo (String.nullTerm p, m))
-	 val unlink = wrap (Prim.unlink o String.nullTerm)
-	 val rmdir = wrap (Prim.rmdir o String.nullTerm)
+	 val mkdir = wrap (fn (p, m) => Prim.mkdir (NullString.nullTerm p, m))
+	 val mkfifo = wrap (fn (p, m) => Prim.mkfifo (NullString.nullTerm p, m))
+	 val unlink = wrap (Prim.unlink o NullString.nullTerm)
+	 val rmdir = wrap (Prim.rmdir o NullString.nullTerm)
 	 val rename = wrapOldNew Prim.rename
 	 val symlink = wrapOldNew Prim.symlink
-	 val chmod = wrap (fn (p, m) => Prim.chmod (String.nullTerm p, m))
+	 val chmod = wrap (fn (p, m) => Prim.chmod (NullString.nullTerm p, m))
 	 val fchmod = wrap (fn (FD n, m) => Prim.fchmod (n, m))
-	 val chown = wrap (fn (s, u, g) => Prim.chown (String.nullTerm s, u, g))
+	 val chown = wrap (fn (s, u, g) => Prim.chown (NullString.nullTerm s, u, g))
 	 val fchown = wrap (fn (FD n, u, g) => Prim.fchown (n, u, g))
 	 val ftruncate = wrap (fn (FD n, pos) => Prim.ftruncate (n, pos))
       end	    
@@ -206,7 +207,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	 fun readlink (path: string): string =
 	    let
 	       val len =
-		  Prim.readlink (String.nullTerm path,
+		  Prim.readlink (NullString.nullTerm path,
 				 Word8Array.toPoly buf,
 				 size)
 	    in
@@ -283,8 +284,8 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	    (checkResult (prim (f arg))
 	     ; ST.fromC ())
       in
-	 val stat = make (Prim.Stat.stat, String.nullTerm)
-	 val lstat = make (Prim.Stat.lstat, String.nullTerm)
+	 val stat = make (Prim.Stat.stat, NullString.nullTerm)
+	 val lstat = make (Prim.Stat.lstat, NullString.nullTerm)
 	 val fstat = make (Prim.Stat.fstat, fn FD fd => fd)
       end
 
@@ -297,7 +298,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       fun access (path: string, mode: access_mode list): bool =
 	 let val mode = Flags.flags (F_OK :: (map conv_access_mode mode))
-	 in case Prim.access (String.nullTerm path, mode) of
+	 in case Prim.access (NullString.nullTerm path, mode) of
 	    ~1 => false
 	  | _ => true
 	 end
@@ -318,7 +319,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	       val m = Time.toSeconds m
 	    in U.setActime a
 	       ; U.setModtime m
-	       ; checkResult (U.utime (String.nullTerm f))
+	       ; checkResult (U.utime (NullString.nullTerm f))
 	    end
       end
 
@@ -342,7 +343,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	       
       in
 	 val pathconf = make (fn (path, s) =>
-			      Prim.pathconf (String.nullTerm path, s))
+			      Prim.pathconf (NullString.nullTerm path, s))
 	 val fpathconf = make (fn (FD n, s) => Prim.fpathconf (n, s))
       end
    end

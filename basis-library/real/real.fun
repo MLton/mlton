@@ -350,7 +350,7 @@ functor Real (R: PRE_REAL): REAL =
 				       else Char.chr (Int.+ (d, Char.ord #"0")))
 				      digits),
 			     "E", exp, "\000"]
-		  val x = Prim.strto x
+		  val x = Prim.strto (NullString.fromString x)
 	       in
 		  if sign
 		     then ~ x
@@ -615,7 +615,8 @@ functor Real (R: PRE_REAL): REAL =
 		  if LargeInt.< (i, 0)
 		     then (LargeInt.~ i, true)
 		  else (i, false)
-	       val x = Prim.strto (concat [LargeInt.toString i, "\000"])
+	       val x = Prim.strto (NullString.fromString
+				   (concat [LargeInt.toString i, "\000"]))
 	    in
 	       if sign then ~ x else x		   
 	    end

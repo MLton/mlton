@@ -13,9 +13,10 @@ structure MLtonProcess =
 	 if isCygwin
 	    then
 	       let
-		  val pid = Prim.spawne (String.nullTerm path,
-					 C.CSS.fromList args,
-					 C.CSS.fromList env)
+		  val pid =
+		     Prim.spawne (NullString.fromString (String.nullTerm path),
+				  C.CSS.fromList args,
+				  C.CSS.fromList env)
 		  val _ = Error.checkResult (Pid.toInt pid)
 	       in
 		  pid
@@ -32,7 +33,7 @@ structure MLtonProcess =
 	 if isCygwin
 	    then
 	       let
-		  val pid = Prim.spawnp (String.nullTerm file,
+		  val pid = Prim.spawnp (NullString.nullTerm file,
 					 C.CSS.fromList args)
 		  val _ = Error.checkResult (Pid.toInt pid)
 	       in

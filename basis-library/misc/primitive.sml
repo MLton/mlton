@@ -96,7 +96,22 @@ structure LargeWord = Word64
 type 'a vector = 'a vector
 type 'a weak = 'a weak
 
-type nullString = string
+(* NullString is used for strings that must be passed to C and hence must be
+ * null terminated.  After the Primitive structure is defined,
+ * NullString.fromString is replaced by a version that checks that the string
+ * is indeed null terminated.  See the bottom of this file.
+ *)
+structure NullString:>
+   sig
+      type t
+
+      val fromString: string -> t
+   end =
+   struct
+      type t = string
+
+      val fromString = fn s => s
+   end
 
 type int = Int.int
 type real = Real.real
@@ -177,7 +192,6 @@ structure Primitive =
 
       type cstring = C.CS.t
       type cstringArray = C.CSS.t
-      type nullString = string
 
       structure Char =
 	 struct
@@ -231,7 +245,7 @@ structure Primitive =
 	    val localTime = _import "Date_localTime": time ref -> unit;
 	    val mkTime = _import "Date_mkTime": unit -> time;
 	    val strfTime =
-	       _import "Date_strfTime": char array * size * nullString -> size;
+	       _import "Date_strfTime": char array * size * NullString.t -> size;
 	 end
 
       structure Exn =
@@ -598,10 +612,10 @@ structure Primitive =
 	       struct
 		  val spawne =
 		     _import "MLton_Process_spawne"
-		     : nullString * nullString array * nullString array -> Pid.t;
+		     : NullString.t * NullString.t array * NullString.t array -> Pid.t;
 		  val spawnp =
 		     _import "MLton_Process_spawnp"
-		     : nullString * nullString array -> Pid.t;
+		     : NullString.t * NullString.t array -> Pid.t;
 	       end
 	    
 	    structure Weak =
@@ -640,7 +654,7 @@ structure Primitive =
 	       _import "NetHostDB_Entry_addrsN": int * pre_in_addr -> unit;
 	    val getByAddress =
 	       _import "NetHostDB_getByAddress": in_addr * int -> bool;
-	    val getByName = _import "NetHostDB_getByName": nullString -> bool;
+	    val getByName = _import "NetHostDB_getByName": NullString.t -> bool;
 	    val getHostName =
 	       _import "NetHostDB_getHostName": char array * int -> int;
 	 end
@@ -651,7 +665,7 @@ structure Primitive =
 	    val entryNumAliases = _import "NetProtDB_Entry_numAliases": unit -> int;
 	    val entryAliasesN = _import "NetProtDB_Entry_aliasesN": int -> cstring;
 	    val entryProtocol = _import "NetProtDB_Entry_protocol": unit -> int;
-	    val getByName = _import "NetProtDB_getByName": nullString -> bool;
+	    val getByName = _import "NetProtDB_getByName": NullString.t -> bool;
 	    val getByNumber = _import "NetProtDB_getByNumber": int -> bool;
 	 end
 
@@ -662,9 +676,9 @@ structure Primitive =
 	    val entryAliasesN = _import "NetServDB_Entry_aliasesN": int -> cstring;
 	    val entryPort = _import "NetServDB_Entry_port": unit -> int;
 	    val entryProtocol = _import "NetServDB_Entry_protocol": unit -> cstring;
-	    val getByName = _import "NetServDB_getByName": nullString * nullString -> bool;
-	    val getByNameNull = _import "NetServDB_getByNameNull": nullString -> bool;
-	    val getByPort = _import "NetServDB_getByPort": int * nullString -> bool;
+	    val getByName = _import "NetServDB_getByName": NullString.t * NullString.t -> bool;
+	    val getByNameNull = _import "NetServDB_getByNameNull": NullString.t -> bool;
+	    val getByPort = _import "NetServDB_getByPort": int * NullString.t -> bool;
 	    val getByPortNull = _import "NetServDB_getByPortNull": int -> bool;
 	 end
 
@@ -817,7 +831,7 @@ structure Primitive =
 		  then _prim "Real64_round": real -> real;
 	       else _import "rint": real -> real;
 	    val signBit = _import "Real64_signBit": real -> bool;
-	    val strto = _import "Real64_strto": nullString -> real;
+	    val strto = _import "Real64_strto": NullString.t -> real;
 	    val toInt = _prim "Real64_toInt32": real -> int;
 	    val ~ = _prim "Real64_neg": real -> real;
 
@@ -907,7 +921,7 @@ structure Primitive =
 	    val minPos = _import "Real32_minPos": real;
 	    val modf = _import "Real32_modf": real * real ref -> real;
 	    val signBit = _import "Real32_signBit": real -> bool;
-	    val strto = _import "Real32_strto": nullString -> real;
+	    val strto = _import "Real32_strto": NullString.t -> real;
 	    val toInt = _prim "Real32_toInt32": real -> int;
 	    val ~ = _prim "Real32_neg": real -> real;
 	 end
@@ -1064,8 +1078,9 @@ structure Primitive =
 	       end
 	    structure UnixSock =
 	       struct
-		  val toAddr = _import "UnixSock_toAddr": nullString * int *
-                                                       pre_sock_addr * int ref -> unit;
+		  val toAddr =
+		     _import "UnixSock_toAddr"
+		     : NullString.t * int * pre_sock_addr * int ref -> unit;
 		  val pathLen = _import "UnixSock_pathLen": sock_addr -> int;
 		  val fromAddr =
 		     _import "UnixSock_fromAddr"
@@ -1348,4 +1363,20 @@ structure Primitive =
 	    end
 	 end
       structure Int = Int32
+   end
+
+structure NullString =
+   struct
+      open NullString
+
+      fun fromString s =
+	 if #"\000" = let
+			 open Primitive
+		      in
+			 Vector.sub (s, Int.- (Vector.length s, 1))
+		      end
+	    then NullString.fromString s
+	 else raise Fail "NullString.fromString"
+
+      val empty = fromString "\000"
    end

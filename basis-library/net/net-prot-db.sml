@@ -39,7 +39,7 @@ structure NetProtDB: NET_PROT_DB =
 	    else NONE
       in
 	fun getByName name = 
-	  get (Prim.getByName (String.nullTerm name))
+	  get (Prim.getByName (NullString.nullTerm name))
 	fun getByNumber proto = 
 	  get (Prim.getByNumber proto)
       end

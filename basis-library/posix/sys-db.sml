@@ -42,7 +42,7 @@ structure PosixSysDB: POSIX_SYS_DB =
 	    val shell: passwd -> string = #shell 
 	 end
 
-      val getpwnam = Passwd.fromC o Prim.getpwnam o String.nullTerm
+      val getpwnam = Passwd.fromC o Prim.getpwnam o NullString.nullTerm
       val getpwuid = Passwd.fromC o Prim.getpwuid
    
       structure Group =
@@ -65,6 +65,6 @@ structure PosixSysDB: POSIX_SYS_DB =
 	    val members: group -> string list = #members
 	 end
 
-      val getgrnam = Group.fromC o Prim.getgrnam o String.nullTerm
+      val getgrnam = Group.fromC o Prim.getgrnam o NullString.nullTerm
       val getgrgid = Group.fromC o Prim.getgrgid
    end

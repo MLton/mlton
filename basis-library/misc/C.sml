@@ -71,10 +71,10 @@ structure C: C =
 	     *)
 	    fun fromList l =
 	       let
-		  val a = Array.array (1 +? List.length l, "")
+		  val a = Array.array (1 +? List.length l, NullString.empty)
 		  val _ =
 		     List.foldl (fn (s, i) =>
-				 (Array.update (a, i, String.nullTerm s)
+				 (Array.update (a, i, NullString.nullTerm s)
 				  ; i +? 1))
 		     0 l
 	       in

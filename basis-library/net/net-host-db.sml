@@ -88,9 +88,9 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
 	    else NONE
       in
 	fun getByAddr in_addr = 
-	  get (Prim.getByAddress (in_addr, Vector.length in_addr))
+	   get (Prim.getByAddress (in_addr, Vector.length in_addr))
 	fun getByName name = 
-	  get (Prim.getByName (String.nullTerm name))
+	   get (Prim.getByName (NullString.nullTerm name))
       end
 
       fun getHostName () = 
