@@ -14,10 +14,14 @@ set -e
 
 # You may need to change the version numbers below.
 # You also might want to change the installation prefix.
+#
+# I had problems with cygwin-1.3.18-1, since its libcygwin.a contained a
+# a file, pseudo-reloc.o, with some strangeness that binutils didn't 
+# correctly handle.
 
-binutils='binutils-2.11.2'
-cygwin='cygwin-1.3.18-1'
-gccVers='3.0.3'
+binutils='binutils-2.12'
+cygwin='cygwin-1.3.17-1'
+gccVers='2.95.3'
 gcc="gcc-$gccVers"
 gccTar="gcc-core-$gccVers.tar"
 w32api='w32api-2.1-1'
