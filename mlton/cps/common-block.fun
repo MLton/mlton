@@ -25,16 +25,21 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
       val {get = varInfo: Var.t -> 
 	                  {returner: (Func.t * Jump.t) option ref,
 			   raiser: (Func.t * Jump.t) option ref,
-			   jumpers: (Func.t * (Jump.t * Jump.t) list) option ref} 
+			   jumpers: (Func.t * {inside: (Jump.t * Jump.t) list ref,
+					       outside: (Jump.t * Jump.t) list ref}) option ref} 
 			  option,
 	   set = setVarInfo}
 	= Property.getSetOnce
           (Var.plist, Property.initConst NONE)
 
-      val {get = jumpInfo: Jump.t -> Dec.t list ref,
+      val {get = jumpInfo: Jump.t -> {nest: bool ref,
+				      inside: Dec.t list ref,
+				      outside: Dec.t list ref},
 	   set = setJumpInfo}
 	= Property.getSetOnce
-	  (Jump.plist, Property.initFun (fn _ => ref []))
+	  (Jump.plist, Property.initFun (fn _ => {nest = ref false,
+						  inside = ref [],
+						  outside = ref []}))
 
       val _
 	= Vector.foreach
@@ -103,27 +108,45 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 		  of NONE => NONE
 		   | SOME {jumpers, ...}
 		   => let
+			val info as {nest, ...} = jumpInfo k
+			val io = if !nest then #inside else #outside
+			val io' = if !nest then #inside else #outside
+
 			fun install kjs
 			  = let
 			      val j = Jump.newNoname ()
 			      val dec = Fun {name = j,
 					     args = Vector.new0 (),
 					     body = makeJump (k, var)}
+			      val {nest, inside, outside} = jumpInfo k
 			    in
-			      List.push(jumpInfo k, dec) ;
-			      jumpers := SOME (name, (k, j)::kjs) ;
+			      List.push (io info, dec) ;
+			      List.push (kjs, (k, j)) ;
 			      SOME j
+			    end
+			fun install' ()
+			  = let
+			      val info = {inside = ref [], 
+					  outside = ref []}
+			    in
+			      jumpers := SOME (name, info) ;
+			      install (io' info)
 			    end
 		      in
 			case !jumpers
-			  of NONE => install []
-			   | SOME (name', kjs')
+			  of NONE => install' ()
+			   | SOME (name', info')
 			   => if Func.equals(name, name')
-				then case List.peek
-				          (kjs', fn (k', _) => Jump.equals(k, k'))
-				       of NONE => install kjs'
-					| SOME (_, j') => SOME j'
-				else install []
+				then let
+				       val kjs' = io' info'
+				     in
+				       case List.peek
+				            (!kjs',
+					     fn (k', _) => Jump.equals(k, k'))
+					 of NONE => install kjs'
+					  | SOME (_, j') => SOME j'
+				     end
+				else install' ()
 		      end
 
 	    fun loopExp (e : Exp.t) : Exp.t
@@ -135,18 +158,24 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 		       [],
 		       fn (Fun {name, args, body}, decs)
 		        => let
-			     fun doit dec
-			       = dec::(List.appendRev(!(jumpInfo name), decs))
+			     val {nest, inside, outside} = jumpInfo name
+			     val _ = nest := true
+
+			     fun finish body
+			       = let
+				   val _ = nest := false
+				 in
+				   (Fun {name = name,
+					 args = args,
+					 body = Exp.prefixs(body, !inside)})::
+				   (List.appendRev(!outside, decs))
+				 end
 
 			     fun default ()
-			       = doit (Fun {name = name,
-					    args = args,
-					    body = loopExp body})
+			       = finish (loopExp body)
 			       
 			     fun default' dst
-			       = doit (Fun {name = name,
-					    args = args,
-					    body = makeNullaryJump dst})
+			       = finish (makeNullaryJump dst)
 
 			     val {decs, transfer} = Exp.dest body
 			   in
