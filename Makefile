@@ -21,11 +21,7 @@ all:
 	$(CP) $(COMP)/$(AOUT) $(LIB)
 	$(MAKE) world
 	$(MAKE) runtimes
-	@echo 'Setting lib and cygwin in mlton script'
-	cat bin/mlton | \
-		sed "/^lib=/s;'.*';'$(LIB)';" | \
-		sed "/^cygwin=/s;'.*';'$(CYGWIN)';" >$(MLTON)
-	chmod a+x $(MLTON) 
+	$(MAKE) script
 	cd $(LEX) && $(MAKE) && $(CP) $(LEX) $(BIN)
 	cd $(YACC) && $(MAKE) && $(CP) $(YACC) $(BIN)
 	cd $(PROF) && $(MAKE) && $(CP) $(PROF) $(BIN)
@@ -50,6 +46,14 @@ runtime:
 	$(CP) $(RUN)/*.a $(LIB)/$(HOST)
 	$(CP) runtime/*.h include/*.h $(LIB)/$(HOST)/include
 	cd runtime && $(MAKE) clean
+
+.PHONY: script
+script:
+	@echo 'Setting lib and cygwin in mlton script'
+	cat bin/mlton | \
+		sed "/^lib=/s;'.*';'$(LIB)';" | \
+		sed "/^cygwin=/s;'.*';'$(CYGWIN)';" >$(MLTON)
+	chmod a+x $(MLTON) 
 
 .PHONY: world
 world: 
