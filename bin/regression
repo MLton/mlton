@@ -75,12 +75,12 @@ for f in `ls *.sml`; do
 		esac
 		if [ $runOnly = 'no' ]; then
 			$mlton $flags $extraFlags $f.sml
-			if [ $? -ne 0 ]; then
+			if [ $? -ne 0 -o ! -x $f ]; then
 				compFail $f
 #				exit 1
 			fi
 		fi
-		if [ ! -r $f.nonterm -a $cross = 'no' ]; then
+		if [ ! -r $f.nonterm -a $cross = 'no' -a -x $f ]; then
 			./$f >$tmp 2>&1
 			if [ -r $f.ok ] && ! diff $f.ok $tmp ; then
 				echo "difference with $flags"
