@@ -239,7 +239,7 @@ in
     ../../sml-nj/unsafe.sml
 
     top-level/basis.sig
-    ann 
+    ann
       allowRebindEquals true 
     in 
       top-level/basis.sml 
@@ -248,6 +248,11 @@ in
     structure BasisExtra 
     top-level/basis-sigs.sml
     top-level/basis-funs.sml
-    top-level/top-level.sml 
+    ann
+      (* for _basis_done *)
+      allowPrim true 
+    in
+      top-level/top-level.sml 
+    end
   end
 end

@@ -11,6 +11,12 @@ struct
 open S
 
 local
+   open Control.Elaborate
+in
+   val allowPrim = fn () => current allowPrim
+end
+
+local
    open Ast
 in
    structure FctArg = FctArg
@@ -224,15 +230,20 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
 	 (fn (d: Topdec.t) =>
 	  case Topdec.node d of
 	     Topdec.BasisDone {ffi} =>
-		let
-		   val _ =
-		      Option.app
-		      (Env.lookupLongstrid (E, ffi), fn S =>
-		       (Env.Structure.ffi := SOME S
-			; Env.Structure.forceUsed S))
-		in
-		   Decs.empty
-		end
+		(if not (allowPrim ())
+		    then let open Layout
+			 in Control.error (Topdec.region d, str "_basis_done disallowed", empty)
+			 end
+		    else ()
+		 ; let
+		      val _ =
+			 Option.app
+			 (Env.lookupLongstrid (E, ffi), fn S =>
+			  (Env.Structure.ffi := SOME S
+			   ; Env.Structure.forceUsed S))
+		   in
+		      Decs.empty
+		   end)
 	   | Topdec.Signature sigbinds =>
 		let
 		   val sigbinds =
