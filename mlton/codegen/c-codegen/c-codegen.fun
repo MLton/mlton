@@ -401,7 +401,7 @@ fun output {program as Machine.Program.T {chunks,
 		  print (concat ["{", size, ",", offsetIndex, "}"])
 	       end)
       fun declareNextChunks () =
-	 make ("void ( *nextChunks []) ()", fn l =>
+	 make ("struct cont ( *nextChunks []) ()", fn l =>
 	       let
 		  val {chunkLabel, frameIndex, ...} = labelInfo l
 	       in
