@@ -10,6 +10,7 @@ TEX_FILES = \
 	drawbacks.tex		\
 	extensions.tex		\
 	features.tex		\
+	freebsd.tex		\
 	ffi.tex			\
 	getting-started.tex	\
 	macros.tex		\
