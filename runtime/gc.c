@@ -1979,7 +1979,6 @@ static inline Pointer tableInsert
 		Bool mightBeThere, Header header, Pointer max) {
 	GC_ObjectHashElement e;
 	Header header2;
-	W32 i;
 	static Bool init = FALSE;
 	static int maxNumProbes = 0;
 	static W64 mult; // magic multiplier for hashing
@@ -1987,24 +1986,25 @@ static inline Pointer tableInsert
 	W32 probe;
 	word *p;
 	word *p2;
+	W32 slot; // slot in hash table we are considering
 
 	if (! init) {
 		init = TRUE;
 		mult = floor (((sqrt (5.0) - 1.0) / 2.0)
 				* (double)0x100000000llu);
 	}
-	i = (W32)(mult * (W64)hash) >> (32 - t->log2ElementsSize);
-	probe = (1 == i % 2) ? i : i - 1;
+	slot = (W32)(mult * (W64)hash) >> (32 - t->log2ElementsSize);
+	probe = (1 == slot % 2) ? slot : slot - 1;
 	if (DEBUG_SHARE)
 		fprintf (stderr, "probe = 0x%08x\n", (uint)probe);
 	assert (1 == probe % 2);
 	numProbes = 0;
 look:
 	if (DEBUG_SHARE)
-		fprintf (stderr, "i = 0x%08x\n", (uint)i);
-	assert (0 <= i and i < t->elementsSize);
+		fprintf (stderr, "slot = 0x%08x\n", (uint)slot);
+	assert (0 <= slot and slot < t->elementsSize);
 	numProbes++;
-	e = &t->elements[i];
+	e = &t->elements[slot];
 	if (NULL == e->object) {
 		/* It's not in the table.  Add it. */
 		e->hash = hash;
@@ -2012,13 +2012,14 @@ look:
 		t->numElements++;
 		if (numProbes > maxNumProbes) {
 			maxNumProbes = numProbes;
-			fprintf (stderr, "numProbes = %d\n", numProbes);
+			if (DEBUG_SHARE)
+				fprintf (stderr, "numProbes = %d\n", numProbes);
 		}
 		return object;
 	}
 	unless (hash == e->hash) {
 lookNext:
-		i = (i + probe) % t->elementsSize;
+		slot = (slot + probe) % t->elementsSize;
 		goto look;
 	}
 	unless (mightBeThere)
