@@ -2768,10 +2768,16 @@ copy:
 		*h = h2;
 	} else {
 		/* Write the heap to a file and try again. */
-		FILE *stream;
-		char template[80] = "/tmp/FromSpaceXXXXXX";
 		int fd;
+		FILE *stream;
+		char template[80];
+		char *tmpDir;
 
+		tmpDir = getenv ("TMPDIR");
+		if (NULL == tmpDir)
+			tmpDir = "/tmp";
+		strcpy (template, tmpDir);
+		strcat (template, "/FromSpaceXXXXXX");
 		fd = smkstemp (template);
 		sclose (fd);
 		if (s->messages)
