@@ -131,4 +131,6 @@ fun toVector ds = Vector.tabulator (length ds, fn call => foreach (ds, call))
 
 fun layout layoutX l = List.layout layoutX (toList l)
 
+fun push (r, x) = r := cons (x, !r)
+   
 end

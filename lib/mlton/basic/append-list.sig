@@ -23,6 +23,7 @@ signature APPEND_LIST =
       val layout: ('a -> Layout.t) -> 'a t -> Layout.t
       val length: 'a t -> int
       val map: 'a t * ('a -> 'b) -> 'b t
+      val push: 'a t ref * 'a -> unit
       val single: 'a -> 'a t
       val snoc: 'a t * 'a -> 'a t
       val toList: 'a t -> 'a list
