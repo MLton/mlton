@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
@@ -13,11 +13,11 @@ datatype 'a t =
 	 mask: word ref,
 	 numItems: int ref}
    
-fun 'a newWithBuckets {hash, numBuckets}: 'a t =
+fun 'a newWithBuckets {hash, numBuckets: int}: 'a t =
    let
-      val mask: word = numBuckets - 0w1
+      val mask: word = Word.fromInt numBuckets - 0w1
    in
-      T {buckets = ref (Array.new (Word.toInt numBuckets, [])),
+      T {buckets = ref (Array.new (numBuckets, [])),
 	 hash = hash,
 	 numItems = ref 0,
 	 mask = ref mask}
@@ -26,12 +26,11 @@ fun 'a newWithBuckets {hash, numBuckets}: 'a t =
 val initialSize: int = Int.pow (2, 6)
 
 fun new {hash} = newWithBuckets {hash = hash,
-				 numBuckets = Word.fromInt initialSize}
+				 numBuckets = initialSize}
 
 fun newOfSize {hash, size} =
-   newWithBuckets
-   {hash = hash,
-    numBuckets = 0w4 * Word.roundUpToPowerOfTwo (Word.fromInt size)}
+   newWithBuckets {hash = hash,
+		   numBuckets = 4 * Int.roundUpToPowerOfTwo size}
 
 fun size (T {numItems, ...}) = !numItems
 
@@ -185,12 +184,11 @@ fun layout lay t = List.layout lay (toList t)
 fun fromList (l, {hash, equals}) =
    let
       val s = new {hash = hash}
-      val _ =
+      val () =
 	 List.foreach (l, fn a =>
-		       (ignore (lookupOrInsert (s, hash a,
-						fn b => equals (a, b),
-						fn _ => a)) 
-			; ()))
+		       ignore (lookupOrInsert (s, hash a,
+					       fn b => equals (a, b),
+					       fn _ => a)))
    in
       s
    end
