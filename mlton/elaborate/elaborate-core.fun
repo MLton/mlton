@@ -341,13 +341,13 @@ fun approximate (l: Layout.t): Layout.t =
 
 val elaboratePat:
    unit
-   -> Apat.t * Env.t * {bind: bool} * (unit -> unit)
+   -> Apat.t * Env.t * {bind: bool, isRvb: bool} * (unit -> unit)
    -> Cpat.t * (Avar.t * Var.t * Type.t) vector =
    fn () =>
    let
       val others: (Apat.t * (Avar.t * Var.t * Type.t) vector) list ref = ref []
    in
-      fn (p: Apat.t, E: Env.t, {bind}, preError: unit -> unit) =>
+      fn (p: Apat.t, E: Env.t, {bind, isRvb}, preError: unit -> unit) =>
       let
 	 val xts: (Avar.t * Var.t * Type.t) list ref = ref []
 	 fun bindToType (x: Avar.t, t: Type.t): Var.t =
@@ -585,6 +585,15 @@ val elaboratePat:
 				  end
 			  | SOME (c, s) =>
 			       let
+				  val _ =
+				     if not isRvb
+					then ()
+				     else
+					Control.error
+					(region,
+					 seq [str "constructor can not be redefined by val rec: ",
+					      Ast.Longvid.layout name],
+					 empty)
 				  val {args, instance} = Scheme.instantiate s
 			       in
 				  Cpat.make
@@ -1308,7 +1317,9 @@ fun elaborateDec (d, {env = E,
 					Vector.map
 					(args, fn p =>
 					 {pat = #1 (elaboratePat
-						    (p, E, {bind = true},
+						    (p, E,
+						     {bind = true,
+						      isRvb = false},
 						     preError)),
 					  region = Apat.region p})
 				     val bodyRegion = Aexp.region body
@@ -1565,7 +1576,9 @@ fun elaborateDec (d, {env = E,
 			  let
 			     val region = Apat.region pat
 			     val (pat, bound) =
-				elaboratePat (pat, E, {bind = false}, preError)
+				elaboratePat (pat, E, {bind = false,
+						       isRvb = true},
+					      preError)
 			     val (nest, var, ty) =
 				if 0 = Vector.length bound
 				   then ("anon" :: nest,
@@ -1647,7 +1660,8 @@ fun elaborateDec (d, {env = E,
 			  fn {exp = e, expRegion, lay, pat, patRegion, ...} =>
 			  let
 			     val (p, bound) =
-				elaboratePat (pat, E, {bind = false}, preError)
+				elaboratePat (pat, E, {bind = false,
+						       isRvb = false}, preError)
 			     val _ =
 				unify
 				(Cpat.ty p, Cexp.ty e, fn (p, e) =>
@@ -2242,7 +2256,8 @@ fun elaborateDec (d, {env = E,
 			  (seq [Apat.layout pat, str " => ", Aexp.layout exp])
 		       end
 		    val (p, _) =
-		       elaboratePat () (pat, E, {bind = true}, preError)
+		       elaboratePat () (pat, E, {bind = true, isRvb = false},
+					preError)
 		    val _ =
 		       unify
 		       (Cpat.ty p, argType, preError, fn (l1, l2) =>
