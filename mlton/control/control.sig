@@ -198,13 +198,15 @@ signature CONTROL =
 	 } option ref
 
       (* Insert profiling information. *)
-      datatype profile = ProfileNone | ProfileAlloc | ProfileTime
+      datatype profile = ProfileNone | ProfileAlloc | ProfileCount | ProfileTime
       val profile: profile ref
 
       val profileBasis: bool ref
 
       datatype profileIL = ProfileSSA | ProfileSource
       val profileIL: profileIL ref
+
+      val profileBranch: bool ref
 
       val profileStack: bool ref
 

@@ -117,10 +117,14 @@ fun profile program =
    let
       val Program.T {functions, handlesSignals, main, objectTypes} = program
       val debug = false
-      val profile = !Control.profile
-      val profileAlloc: bool = profile = Control.ProfileAlloc
+      datatype profile = Alloc | Count | Time
+      val profile =
+	 (case !Control.profile of
+	     Control.ProfileAlloc => Alloc
+	   | Control.ProfileCount => Count
+	   | Control.ProfileTime => Time
+	   | _ => Error.bug "impossible Control.profile")
       val profileStack: bool = !Control.profileStack
-      val profileTime: bool = profile = Control.ProfileTime
       val frameProfileIndices: (Label.t * int) list ref = ref []
       val infoNodes: InfoNode.t list ref = ref []
       val nameCounter = Counter.new 0
@@ -272,30 +276,38 @@ fun profile program =
 		  val node = Promise.lazy (fn () => sourceInfoNode si)
 		  fun yes () = (Push.Enter (node ()) :: ps, true)
 		  fun no () = (Push.Skip si :: ps, false)
+		  fun countOk () =
+		     !Control.profileBasis
+		     orelse profile <> Count
+		     orelse not (SourceInfo.isBasis si orelse SourceInfo.isC si)
 	       in
 		  if SourceInfo.equals (si, SourceInfo.unknown)
 		     then no ()
 		  else
 		     case firstEnter ps of
 			NONE =>
-			   (List.push (enters, node ())
-			    ; yes ())
+			   if countOk ()
+			      then (List.push (enters, node ())
+				    ; yes ())
+			   else no ()
 		      | SOME (node' as InfoNode.T {info = si', ...}) =>
-			   if let
+			   if countOk () andalso
+			      let
 				 open SourceInfo
 			      in
-				 not (!Control.profileBasis)
-				 andalso not (equals (si', unknown))
-				 andalso
-				 (equals (si, gcArrayAllocate)
-				  orelse isBasis si
-				  orelse (isC si
-					  andalso (isBasis si'
-						   orelse equals (si', main))))
+				 (!Control.profileBasis)
+				 orelse (equals (si', unknown))
+				 orelse
+				 (not
+				  (equals (si, gcArrayAllocate)
+				   orelse isBasis si
+				   orelse (isC si
+					   andalso (isBasis si'
+						    orelse equals (si', main)))))
 			      end
-			      then no ()
-			   else (InfoNode.call {from = node', to = node ()}
-				 ; yes ())
+			      then (InfoNode.call {from = node', to = node ()}
+				    ; yes ())
+			   else no ()
 	       end
 	    val enter =
 	       Trace.trace2 ("Profile.enter",
@@ -313,7 +325,7 @@ fun profile program =
 	     * front of the function.
 	     *)
 	    local
-	       exception Yes of Label.t * SourceInfo.t
+	       exception Yes of Label.t * Statement.t
 	       fun goto l =
 		  let
 		     val {block, ...} = labelInfo l
@@ -322,18 +334,15 @@ fun profile program =
 			Vector.foreach
 			(statements, fn s =>
 			 case s of
-			    Statement.Profile (ProfileExp.Enter si) =>
-			       raise Yes (l, si)
+			    Statement.Profile (ProfileExp.Enter _) =>
+			       raise Yes (l, s)
 			  | _ => ())
 		     val _ = Transfer.foreachLabel (transfer, goto)
 		  in
 		     ()
 		  end
 	    in
-	       val (firstLabel, firstSource) =
-		  (goto start
-		   ; (Label.bogus, SourceInfo.unknown))
-		  handle Yes z => z
+	       val first = (goto start; NONE) handle Yes z => SOME z
 	    end
 	    val blocks = ref []
 	    datatype z = datatype Statement.t
@@ -356,13 +365,14 @@ fun profile program =
 		       | Profile ps =>
 			    let
 			       val (npl, ss) =
-				  if profileAlloc
-				     then (false, ss)
-				  else (* profileTime *)
-				     if npl andalso not (List.isEmpty sourceSeq)
-					then (false,
-					      profileLabel sourceSeq :: ss)
-				     else (true, ss)
+				  if profile = Time
+				     then
+					if npl
+					   andalso not (List.isEmpty sourceSeq)
+					   then (false,
+						 profileLabel sourceSeq :: ss)
+					else (true, ss)
+				  else (false, ss)
 			       val (leaves, sourceSeq) = 
 				  case ps of
 				     Enter _ =>
@@ -381,7 +391,7 @@ fun profile program =
 			    end
 		       | _ => (leaves, true, sourceSeq, s :: ss))
 		  val statements =
-		     if profileTime andalso npl
+		     if profile = Time andalso npl
 			then profileLabel sourceSeq :: statements
 		     else statements
 		  val {args, kind, label} =
@@ -397,7 +407,7 @@ fun profile program =
 				 addFrameProfileIndex
 				 (newLabel, sourceSeqIndex sourceSeq)
 			      val statements =
-				 if profileTime
+				 if profile = Time
 				    then (Vector.new1
 					  (profileLabelIndex
 					   (sourceSeqIndex sourceSeq)))
@@ -447,7 +457,7 @@ fun profile program =
 		  val index = sourceSeqIndex (Push.toSources pushes)
 		  val _ = addFrameProfileIndex (newLabel, index)
 		  val statements =
-		     if profileTime
+		     if profile = Time
 			then Vector.new1 (profileLabelIndex index)
 		     else Vector.new0 ()
 		  val _ =
@@ -489,14 +499,22 @@ fun profile program =
 			val Block.T {args, kind, label, statements, transfer,
 				     ...} = block
 			val statements =
-			   if Label.equals (label, firstLabel)
-			      then
-				 Vector.removeFirst
-				 (statements, fn s =>
-				  case s of
-				     Profile (Enter _) => true
-				   | _ => false)
-			   else statements
+			   case first of
+			      NONE => statements
+			    | SOME (firstLabel, firstEnter) =>
+				 if Label.equals (label, firstLabel)
+				    then
+				       Vector.removeFirst
+				       (statements, fn s =>
+					case s of
+					   Profile (Enter _) => true
+					 | _ => false)
+				 else if Label.equals (label, start)
+					 then
+					    Vector.concat
+					    [Vector.new1 firstEnter,
+					     statements]
+				      else statements
 			val _ =
 			   let
 			      fun add pushes =
@@ -527,49 +545,53 @@ fun profile program =
 					label,
 					leaves,
 					pushes: Push.t list,
+					shouldSplit: bool,
 					statements} =
-			   if profileAlloc
-			      andalso Bytes.> (bytesAllocated, Bytes.zero)
-			      then
-				 let
-				    val newLabel = Label.newNoname ()
-				    val _ =
-				       addFrameProfilePushes (newLabel, pushes)
-				    val func = CFunction.profileInc
-				    val transfer =
-				       Transfer.CCall
-				       {args = (Vector.new2
-						(Operand.GCState,
-						 Operand.word
-						 (WordX.fromIntInf
-						  (IntInf.fromInt
-						   (Bytes.toInt bytesAllocated),
-						   WordSize.default)))),
-					func = func,
-					return = SOME newLabel}
-				    val sourceSeq = Push.toSources pushes
-				    val _ =
-				       backward {args = args,
-						 kind = kind,
-						 label = label,
-						 leaves = leaves,
-						 sourceSeq = sourceSeq,
-						 statements = statements,
-						 transfer = transfer}
-				 in
-				    {args = Vector.new0 (),
-				     bytesAllocated = Bytes.zero,
-				     kind = Kind.CReturn {func = func},
-				     label = newLabel,
-				     leaves = [],
-				     statements = []}
-				 end
-			   else {args = args,
-				 bytesAllocated = Bytes.zero,
-				 kind = kind,
-				 label = label,
-				 leaves = leaves,
-				 statements = statements}
+			   if not shouldSplit
+			      then {args = args,
+				    bytesAllocated = Bytes.zero,
+				    kind = kind,
+				    label = label,
+				    leaves = leaves,
+				    statements = statements}
+			   else
+			      let
+				 val newLabel = Label.newNoname ()
+				 val _ =
+				    addFrameProfilePushes (newLabel, pushes)
+				 val func = CFunction.profileInc
+				 val bytesAllocated =
+				    case profile of
+				       Alloc => Bytes.toInt bytesAllocated
+				     | Count => 1
+				     | Time => Error.bug "imposible"
+				 val transfer =
+				    Transfer.CCall
+				    {args = (Vector.new2
+					     (Operand.GCState,
+					      Operand.word
+					      (WordX.fromIntInf
+					       (IntInf.fromInt bytesAllocated,
+						WordSize.default)))),
+				     func = func,
+				     return = SOME newLabel}
+				 val sourceSeq = Push.toSources pushes
+				 val _ =
+				    backward {args = args,
+					      kind = kind,
+					      label = label,
+					      leaves = leaves,
+					      sourceSeq = sourceSeq,
+					      statements = statements,
+					      transfer = transfer}
+			      in
+				 {args = Vector.new0 (),
+				  bytesAllocated = Bytes.zero,
+				  kind = Kind.CReturn {func = func},
+				  label = newLabel,
+				  leaves = [],
+				  statements = []}
+			      end
 			val {args, bytesAllocated, kind, label, leaves, pushes,
 			     statements} =
 			   Vector.fold
@@ -610,6 +632,10 @@ fun profile program =
 				   statements = s :: statements}
 			     | Profile ps =>
 				  let
+				     val shouldSplit =
+					profile = Alloc
+					andalso Bytes.> (bytesAllocated,
+							 Bytes.zero)
 				     val {args, bytesAllocated, kind, label,
 					  leaves, statements} =
 					maybeSplit
@@ -619,6 +645,7 @@ fun profile program =
 					 label = label,
 					 leaves = leaves,
 					 pushes = pushes,
+					 shouldSplit = shouldSplit,
 					 statements = statements}
 				     datatype z = datatype ProfileExp.t
 				     val (pushes, keep, leaves) =
@@ -654,6 +681,22 @@ fun profile program =
 								 leaves)
 							else Error.bug "mismatched Leave"
 						     end)
+				     val shouldSplit =
+					profile = Count
+					andalso (case ps of
+						    Enter si => keep
+						  | _ => false)
+				     val {args, bytesAllocated, kind, label,
+					  leaves, statements} =
+					maybeSplit
+					{args = args,
+					 bytesAllocated = bytesAllocated,
+					 kind = kind,
+					 label = label,
+					 leaves = leaves,
+					 pushes = pushes,
+					 shouldSplit = shouldSplit,
+					 statements = statements}
 				     val statements =
 					if keep
 					   then s :: statements
@@ -676,6 +719,9 @@ fun profile program =
 				   pushes = pushes,
 				   statements = s :: statements})
 			    )
+			val shouldSplit =
+			   profile = Alloc
+			   andalso Bytes.> (bytesAllocated, Bytes.zero)
 			val {args, kind, label, leaves, statements, ...} =
 			   maybeSplit {args = args,
 				       bytesAllocated = bytesAllocated,
@@ -683,6 +729,7 @@ fun profile program =
 				       label = label,
 				       leaves = leaves,
 				       pushes = pushes,
+				       shouldSplit = shouldSplit,
 				       statements = statements}
 			val _ =
 			   Transfer.foreachLabel
@@ -724,7 +771,7 @@ fun profile program =
 				  transfer = transfer}
 		     end
 	       end
-	    val _ = goto (start, #1 (enter ([], firstSource)))
+	    val _ = goto (start, [])
 	    val blocks = Vector.fromList (!blocks)
 	 in
 	    Function.new {args = args,

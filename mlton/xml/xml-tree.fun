@@ -344,9 +344,27 @@ structure Exp =
 				      ty = ty,
 				      var = res}],
 		     result = VarExp.mono res}
+	    val touch =
+	       if !Control.profile = Control.ProfileCount
+		  then
+		     let
+			val unit = Var.newNoname ()
+		     in
+			[MonoVal {exp = Tuple (Vector.new0 ()),
+				  ty = Type.unit,
+				  var = unit},
+			 MonoVal
+			 {exp = PrimApp {args = Vector.new1 (VarExp.mono unit),
+					 prim = Prim.touch,
+					 targs = Vector.new1 Type.unit},
+			  ty = Type.unit,
+			  var = Var.newNoname ()}]
+		     end
+	       else []
 	    val {decs, result} = dest e
 	    val decs =
 	       List.concat [[prof ProfileExp.Enter],
+			    touch,
 			    decs,
 			    [prof ProfileExp.Leave]]
 	    val try = make {decs = decs, result = result}

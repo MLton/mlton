@@ -393,6 +393,12 @@ fun outputDeclarations
 	    val magic = C.word (case Random.useed () of
 				   NONE => String.hash (!Control.inputFile)
 				 | SOME w => w)
+	    val profile =
+	       case !Control.profile of
+		  Control.ProfileAlloc => "PROFILE_ALLOC"
+		| Control.ProfileCount => "PROFILE_COUNT"
+		| Control.ProfileNone => "PROFILE_NONE"
+		| Control.ProfileTime => "PROFILE_TIME"
 	 in 
 	    C.callNoSemi ("Main",
 			  [C.int align,
@@ -400,6 +406,7 @@ fun outputDeclarations
 			   magic,
 			   C.bytes maxFrameSize,
 			   C.bool (!Control.markCards),
+			   profile,
 			   C.bool (!Control.profileStack)]
 			  @ additionalMainArgs,
 			  print)

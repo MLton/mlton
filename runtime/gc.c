@@ -3677,12 +3677,27 @@ static void profileWriteCount (GC_state s, GC_profile p, int fd, uint i) {
 
 void GC_profileWrite (GC_state s, GC_profile p, int fd) {
 	int i;
+	string kind;
 
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "GC_profileWrite\n");
 	writeString (fd, "MLton prof\n");
-	writeString (fd, (PROFILE_ALLOC == s->profileKind) 
-				? "alloc\n" : "time\n");
+	kind = "";
+	switch (s->profileKind) {
+	case PROFILE_ALLOC:
+		kind = "alloc\n";
+	break;
+	case PROFILE_COUNT:
+		kind = "count\n";
+	break;
+	case PROFILE_NONE:
+		die ("impossible PROFILE_NONE");
+	break;
+	case PROFILE_TIME:
+		kind = "time\n";
+	break;
+	}
+	writeString (fd, kind);
 	writeString (fd, s->profileStack 
 				? "stack\n" : "current\n");
 	writeWord (fd, s->magic);
@@ -3845,7 +3860,7 @@ static void profileTimeInit (GC_state s) {
 #elif (defined (__CYGWIN__))
 
 /* No time profiling on Cygwin. 
- * There is a check in mlton/main/main.sml to make sure that time profiling is
+ * There is a check in mlton/main/main.fun to make sure that time profiling is
  * never turned on on Cygwin.
  */
 static void profileTimeInit (GC_state s) {
@@ -4446,31 +4461,36 @@ int GC_init (GC_state s, int argc, char **argv) {
          * arguments, because those may just be doing a show prof, in which 
          * case we don't want to initialize the atExit.
          */
-	if (s->sourcesSize > 0) {
+	if (PROFILE_NONE == s->profileKind)
+		s->profilingIsOn = FALSE;
+	else {
 		s->profilingIsOn = TRUE;
 		assert (s->frameSourcesSize == s->frameLayoutsSize);
-		if (s->sourceLabelsSize > 0) {
-			s->profileKind = PROFILE_TIME;
-			profileTimeInit (s);
-		} else {
-			s->profileKind = PROFILE_ALLOC;
+		switch (s->profileKind) {
+		case PROFILE_ALLOC:
+		case PROFILE_COUNT:
 			s->profile = GC_profileNew (s);
+		break;
+		case PROFILE_NONE:
+			die ("impossible PROFILE_NONE");
+		case PROFILE_TIME:
+			profileTimeInit (s);
+		break;
 		}
 		profileEndState = s;
 		atexit (profileEnd);
-	} else
-		s->profilingIsOn = FALSE;
+	}
 	if (s->isOriginal) {
 		newWorld (s);
 		/* The mutator stack invariant doesn't hold,
 		 * because the mutator has yet to run.
 		 */
-		assert (mutatorInvariant(s, TRUE, FALSE));
+		assert (mutatorInvariant (s, TRUE, FALSE));
 	} else {
 		loadWorld (s, worldFile);
 		if (s->profilingIsOn and s->profileStack)
 			GC_foreachStackFrame (s, enterFrame);
-		assert (mutatorInvariant(s, TRUE, TRUE));
+		assert (mutatorInvariant (s, TRUE, TRUE));
 	}
 	s->amInGC = FALSE;
 	return i;

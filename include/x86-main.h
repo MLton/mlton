@@ -43,7 +43,7 @@ word threadTemp;
 #error ReturnToC not defined
 #endif
 
-#define Main(al, cs, mg, mfs, mmc, ps, ml, reserveEsp)			\
+#define Main(al, cs, mg, mfs, mmc, pk, ps, ml, reserveEsp)		\
 void MLton_jumpToSML (pointer jump) {					\
 	word lc_stackP;							\
 			       						\
@@ -90,7 +90,7 @@ int main (int argc, char **argv) {					\
 	pointer jump;  							\
 	extern pointer ml;						\
 	gcState.native = TRUE;						\
-	Initialize (al, cs, mg, mfs, mmc, ps);				\
+	Initialize (al, cs, mg, mfs, mmc, pk, ps);			\
 	if (gcState.isOriginal) {					\
 		real_Init();						\
 		jump = (pointer)&ml;   					\

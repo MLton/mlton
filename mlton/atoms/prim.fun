@@ -643,6 +643,7 @@ val intInfNeg = IntInf_neg
 val intInfNotb = IntInf_notb
 val reff = Ref_ref
 val serialize = MLton_serialize
+val touch = MLton_touch
 val vectorLength = Vector_length
 val vectorSub = Vector_sub
 val wordAdd = Word_add

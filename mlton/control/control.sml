@@ -348,11 +348,12 @@ val polyvariance =
 
 structure Profile =
    struct
-      datatype t = ProfileNone | ProfileAlloc | ProfileTime
+      datatype t = ProfileNone | ProfileAlloc | ProfileCount | ProfileTime
 
       val toString =
 	 fn ProfileNone => "None"
 	  | ProfileAlloc => "Alloc"
+	  | ProfileCount => "Count"
 	  | ProfileTime => "Time"
    end
 
@@ -362,6 +363,14 @@ val profile = control {name = "profile",
 		       default = ProfileNone,
 		       toString = Profile.toString}
 
+val profileBasis = control {name = "profile basis",
+			    default = false,
+			    toString = Bool.toString}
+
+val profileBranch = control {name = "profile branch",
+			     default = true,
+			     toString = Bool.toString}
+
 structure ProfileIL =
    struct
       datatype t = ProfileSSA | ProfileSource
@@ -370,10 +379,6 @@ structure ProfileIL =
 	 fn ProfileSSA => "ProfileSSA"
 	  | ProfileSource => "ProfileSource"
    end
-
-val profileBasis = control {name = "profile basis",
-			    default = false,
-			    toString = Bool.toString}
 
 datatype profileIL = datatype ProfileIL.t
    

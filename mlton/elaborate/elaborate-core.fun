@@ -1945,6 +1945,21 @@ fun elaborateDec (d, {env = E,
 			   str "then and else branches disagree",
 			   align [seq [str "then: ", l1],
 				  seq [str "else: ", l2]]))
+		      val (b', c') =
+			 if !Control.profile <> Control.ProfileCount
+			    orelse not (!Control.profileBranch)
+			    then (b', c')
+			 else
+			    let
+			       fun wrap (e, e', name) =
+				  Cexp.enterLeave
+				  (e',
+				   SourceInfo.function
+				   {name = name :: nest,
+				    region = Aexp.region e})
+			    in
+			       (wrap (b, b', "<true>"), wrap (c, c', "<false>"))
+			    end
 		   in
 		      Cexp.iff (a', b', c')
 		   end
@@ -2347,6 +2362,14 @@ fun elaborateDec (d, {env = E,
 			 align [seq [str "result:   ", l1],
 				seq [str "previous: ", l2],
 				seq [str "in: ", lay ()]]))
+		    val e =
+		       if !Control.profile <> Control.ProfileCount
+			  orelse not (!Control.profileBranch)
+			  then e
+		       else
+			  Cexp.enterLeave
+			  (e, SourceInfo.function {name = "<branch>" :: nest,
+						   region = Aexp.region exp})
 		 in
 		    {exp = e,
 		     lay = SOME lay,

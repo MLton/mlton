@@ -4,7 +4,7 @@
 #include "main.h"
 #include "c-common.h"
 
-#define Main(al, cs, mg, mfs, mmc, ps, mc, ml)				\
+#define Main(al, cs, mg, mfs, mmc, pk, ps, mc, ml)			\
 /* Globals */								\
 int nextFun;								\
 bool returnToC;								\
@@ -33,7 +33,7 @@ void MLton_callFromC () {						\
 int main (int argc, char **argv) {					\
 	struct cont cont;						\
 	gcState.native = FALSE;						\
-	Initialize (al, cs, mg, mfs, mmc, ps);				\
+	Initialize (al, cs, mg, mfs, mmc, pk, ps);			\
 	if (gcState.isOriginal) {					\
 		real_Init();						\
 		PrepFarJump(mc, ml);					\

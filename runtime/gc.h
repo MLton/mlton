@@ -221,6 +221,8 @@ typedef struct GC_weak {
 
 typedef enum {
 	PROFILE_ALLOC,
+	PROFILE_COUNT,
+	PROFILE_NONE,
 	PROFILE_TIME,
 } ProfileKind;
 

@@ -283,7 +283,7 @@ fun makeOptions {usage} =
 	Bool (fn b => if b then () else polyvariance := NONE)),
        (Normal, "output", " <file>", "name of output file",
 	SpaceString (fn s => output := SOME s)),
-       (Normal, "profile", " {no|alloc|time}",
+       (Normal, "profile", " {no|alloc|count|time}",
 	"produce executable suitable for profiling",
 	SpaceString
 	(fn s =>
@@ -294,12 +294,16 @@ fun makeOptions {usage} =
 	     ; profile := (case s of
 			      "no" => ProfileNone
 			    | "alloc" => ProfileAlloc
+			    | "count" => ProfileCount
 			    | "time" => ProfileTime
 			    | _ => usage (concat
 					  ["invalid -profile arg: ", s]))))),
        (Expert, "profile-basis", " {false|true}",
 	"profile the basis implementation",
 	boolRef profileBasis),
+       (Expert, "profile-branch", " {true|false}",
+	"profile branches in addition to functions",
+	boolRef profileBranch),
        (Expert, "profile-il", " {source}", "where to insert profile exps",
 	SpaceString
 	(fn s =>

@@ -200,10 +200,11 @@ structure AFile =
 
 structure Kind =
    struct
-      datatype t = Alloc | Empty | Time
+      datatype t = Alloc | Count | Empty | Time
 
       val toString =
 	 fn Alloc => "Alloc"
+	  | Count => "Count"
 	  | Empty => "Empty"
 	  | Time => "Time"
 
@@ -213,6 +214,7 @@ structure Kind =
 	 fn (k, k') =>
 	 case (k, k') of
 	    (Alloc, Alloc) => Alloc
+	  | (Count, Count) => Count
 	  | (_, Empty) => k
 	  | (Empty, _) => k'
 	  | (Time, Time) => Time
@@ -335,6 +337,7 @@ structure ProfFile =
 	     val kind =
 		case line () of
 		   "alloc" => Kind.Alloc
+		 | "count" => Kind.Count
 		 | "time" => Kind.Time
 		 | _ => Error.bug "invalid profile kind"
 	     val style =
@@ -704,6 +707,8 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
 			  (case kind of
 			      Kind.Alloc =>
 				 ["(", IntInf.toCommaString ticks, ")"]
+			    | Kind.Count =>
+				 ["(", IntInf.toCommaString ticks, ")"]
 			    | Kind.Empty => []
 			    | Kind.Time =>
 				 ["(",
@@ -723,7 +728,7 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
 		  val pc = per current
 		  val isNonZero = current > 0 orelse stack > 0 orelse stackGC > 0
 		  val tableInfo = 
-		     if isNonZero
+		     if isNonZero orelse kind = Kind.Count
 			then SOME {per = pc,
 				   row = Source.toStringMaybeLine source :: row}
 		     else NONE
@@ -927,6 +932,8 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
 	      Kind.Alloc =>
 		 [IntInf.toCommaString total, " bytes allocated (",
 		  IntInf.toCommaString totalGC, " bytes by GC)\n"]
+	    | Kind.Count =>
+		 [IntInf.toCommaString total, " ticks\n"]
 	    | Kind.Empty => []
 	    | Kind.Time =>
 		 let

@@ -20,7 +20,7 @@
 #define LoadArray(a, f) sfread (a, sizeof(*a), cardof(a), f)
 #define SaveArray(a, fd) swrite (fd, a, sizeof(*a) * cardof(a))
 
-#define Initialize(al, cs, mg, mfs, mmc, ps)				\
+#define Initialize(al, cs, mg, mfs, mmc, pk, ps)			\
 	gcState.alignment = al;						\
 	gcState.atMLtons = atMLtons;					\
 	gcState.atMLtonsSize = cardof(atMLtons);		       	\
@@ -39,6 +39,7 @@
 	gcState.mutatorMarksCards = mmc;				\
 	gcState.objectTypes = objectTypes;				\
 	gcState.objectTypesSize = cardof(objectTypes);			\
+	gcState.profileKind = pk;					\
 	gcState.profileStack = ps;					\
 	gcState.saveGlobals = saveGlobals;				\
 	gcState.sourceLabels = sourceLabels;				\

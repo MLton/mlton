@@ -250,6 +250,7 @@ signature PRIM =
       val reff: 'a t
       val serialize: 'a t
       val toString: 'a t -> string
+      val touch: 'a t
       val vectorLength: 'a t
       val vectorSub: 'a t
       val wordAdd: WordSize.t -> 'a t
