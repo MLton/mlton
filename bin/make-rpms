@@ -92,8 +92,8 @@ echo 'Building rpms'
 (
 	export HOME="$root"
 	echo "%_topdir $root" >$root/.rpmmacros
-	time rpm -ba --quiet --clean --buildroot \
-		$root/install $root/SPECS/mlton.spec
+	time rpm -ba --quiet --clean --buildroot $root/install \
+		$root/SPECS/mlton.spec
 )
 
 echo 'Cleaning up'

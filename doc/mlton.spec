@@ -5,6 +5,7 @@ Release:
 Copyright: GPL
 Group: Development/Languages
 Source: mlton-%{version}.tgz
+URL: http://www.sourcelight.com/MLton
 Buildroot: %{_tmppath}/%{name}/mlton
 
 %description
@@ -19,8 +20,8 @@ cd src
 make
 
 %install
-cd src
 rm -rf $RPM_BUILD_ROOT
+cd src
 make PREFIX=$RPM_BUILD_ROOT VERSION=%{version} install
 
 %files
