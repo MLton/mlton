@@ -71,6 +71,7 @@ val hostMap: unit -> {arch: Control.hostArch,
 		    "cygwin" => Control.Cygwin
 		  | "freebsd" => Control.FreeBSD
 		  | "linux" => Control.Linux
+		  | "netbsd" => Control.NetBSD
 		  | "sunos" => Control.SunOS
 		  | _ => Error.bug (concat ["strange os: ", os])
 	   in
@@ -507,6 +508,7 @@ fun commandLine (args: string list): unit =
 		     NONE => ["-lgmp"]
 		   | SOME lib => [lib]
 	       end
+	  | NetBSD => ["-Wl,-R/usr/pkg/lib", "-L/usr/pkg/lib", "-lgmp"]
 	  | Sun => ["-lgmp"]
       val linkOpts =
 	 List.concat [[concat ["-L", lib],

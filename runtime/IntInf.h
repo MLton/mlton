@@ -24,6 +24,13 @@
  * MLton package.
  */
 #include "/usr/local/include/gmp.h"
+#elif (defined (__NetBSD__))
+/* On NetBSD, we want gmp to be installed into the pkg tree (which represents
+ * the FreeBSD ports tree). For now we use the same method as in the FreeBSD
+ * case, but we note that this should be changed so the makefile provides the
+ * correct -I flags to the compiler
+ */
+#include "/usr/pkg/include/gmp.h"
 #elif (defined (__linux__) || defined (__sun__))
 #include <gmp.h>
 #else

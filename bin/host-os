@@ -19,6 +19,9 @@ CYGWIN*)
 FreeBSD*)
 	os=freebsd
 ;;
+NetBSD*)
+	os=netbsd
+;;
 SunOS)
 	os=sunos
 ;;

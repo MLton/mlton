@@ -3,6 +3,6 @@ signature MLTON_PLATFORM =
       datatype arch = Sparc | X86
       val arch: arch
 	 
-      datatype os = Cygwin | FreeBSD | Linux | SunOS
+      datatype os = Cygwin | FreeBSD | Linux | NetBSD | SunOS
       val os: os
    end

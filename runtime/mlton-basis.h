@@ -165,7 +165,7 @@ Int Ptrace_ptrace4 (Int request, Int pid, Word addr, Pointer data);
 #define MLton_Rlimit_numProcesses RLIMIT_NPROC
 #define MLton_Rlimit_residentSetSize RLIMIT_RSS
 #define MLton_Rlimit_stackSize RLIMIT_STACK
-#if (defined (__FreeBSD__))
+#if (defined (__FreeBSD__) || defined (__NetBSD__))
 #define MLton_Rlimit_virtualMemorySize RLIMIT_DATA
 #elif (defined (__CYGWIN__) || defined (__linux__) || defined (__sun__))
 #define MLton_Rlimit_virtualMemorySize RLIMIT_AS

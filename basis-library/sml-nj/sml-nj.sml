@@ -39,6 +39,7 @@ structure SMLofNJ: SML_OF_NJ =
 		     Cygwin => "Cygwin"
 		   | FreeBSD => "FreeBSD"
 		   | Linux => "Linux"
+		   | NetBSD => "NetBSD"
 		   | SunOS => "Solaris"
 	       end
 	 end

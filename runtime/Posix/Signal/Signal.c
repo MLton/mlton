@@ -10,7 +10,7 @@ static void handler (int signum) {
 }
 
 enum {
-#if  (defined  (__linux__) || defined  (__FreeBSD__) || defined (__sun__))
+#if  (defined (__FreeBSD__) || defined  (__linux__) || defined (__NetBSD__) || defined (__sun__))
 	SA_FLAGS = SA_ONSTACK,
 #elif  (defined  (__CYGWIN__))
 	SA_FLAGS = 0,

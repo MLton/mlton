@@ -38,8 +38,6 @@ structure MLton: MLTON =
       val deserialize = fn _ => raise Fail "deserialize"
       val eq = fn _ => false
       val errno = fn _ => raise Fail "errno"
-      datatype hostType = Cygwin | FreeBSD | Linux | Sun
-      val hostType = Linux
       val isMLton = false
       val safe = true
       val serialize = fn _ => raise Fail "serialize"
@@ -149,7 +147,7 @@ structure MLton: MLTON =
 			     
 	    val arch: arch = X86
 			   
-	    datatype os = Cygwin | FreeBSD | Linux | SunOS
+	    datatype os = Cygwin | FreeBSD | Linux | NetBSD | SunOS
 
 	    val os: os = SunOS
 	 end

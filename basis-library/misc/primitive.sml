@@ -522,14 +522,15 @@ structure Primitive =
 		      | 1 => X86
 		      | _ => raise Fail "strange MLton_Platform_arch"
 			   
-		  datatype os = Cygwin | FreeBSD | Linux | SunOS
+		  datatype os = Cygwin | FreeBSD | Linux | NetBSD | SunOS
 
 		  val os: os =
 		     case _const "MLton_Platform_os": int; of
 			0 => Cygwin
 		      | 1 => FreeBSD
 		      | 2 => Linux
-		      | 3 => SunOS
+		      | 3 => NetBSD
+		      | 4 => SunOS
 		      | _ => raise Fail "strange MLton_Platform_os"
 
 		  val isBigEndian =

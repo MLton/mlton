@@ -44,8 +44,10 @@
 #define MLton_Platform_os 1
 #elif (defined (__linux__))
 #define MLton_Platform_os 2
-#elif (defined (__sun__))
+#elif (defined (__NetBSD__))
 #define MLton_Platform_os 3
+#elif (defined (__sun__))
+#define MLton_Platform_os 4
 #else
 #error MLton_Platform_os not defined
 #endif
@@ -71,7 +73,9 @@
 
 /* Nothing to do -- everything comes from sys/ptrace.h. */
 
-#elif (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__sun__))
+#elif (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__NetBSD__) || defined (__sun__))
+
+/* Note: NetBSD has a ptrace() interface, but for now, we ignore it */
 
 #define PTRACE_BOGUS 0xFFFFFFFF
 #define PTRACE_SYSCALL PTRACE_BOGUS

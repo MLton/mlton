@@ -59,7 +59,7 @@ string intToCommaString (int n) {
 	
 	if (0 == n)
 		buf[i--] = '0';
-#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__sun__))
+#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__NetBSD__) || defined (__sun__))
 #define MININT 0x80000000
 #endif
  	else if (MININT == n) {

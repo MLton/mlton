@@ -1,9 +1,7 @@
 #include <stdlib.h>
 #include "mlton-posix.h"
 
-
-
-#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__linux__))
+#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__))
 
 Int Posix_ProcEnv_setenv (NullString s, NullString v) {
 	return setenv ((char *)s, (char *)v, 1);

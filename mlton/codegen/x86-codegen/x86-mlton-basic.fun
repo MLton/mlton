@@ -375,6 +375,7 @@ struct
 			   Control.Cygwin => "_LINE__"
 			 | Control.FreeBSD => "__LINE__"
 			 | Control.Linux => "__LINE__"
+			 | Control.NetBSD => "__LINE__"
 			 | _ => Error.bug "x86 can't handle hostOS"))
 					 
   val fileLine

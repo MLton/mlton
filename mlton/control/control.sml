@@ -168,6 +168,7 @@ structure HostOS =
 	 fn Cygwin => "Cygwin"
 	  | FreeBSD => "FreeBSD"
 	  | Linux => "Linux"
+	  | NetBSD => "NetBSD"
 	  | SunOS => "SunOS"
    end
 

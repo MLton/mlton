@@ -16,6 +16,11 @@
 #include <sys/sysctl.h>
 #endif
 
+#if (defined (__NetBSD__))
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#endif
+
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/times.h>
@@ -138,7 +143,7 @@ static inline uint toBytes (uint n) {
 	return n << 2;
 }
 
-#if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
+#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
 static inline uint min (uint x, uint y) {
 	return ((x < y) ? x : y);
 }
@@ -303,7 +308,7 @@ static void showMem () {
 	showMaps();
 }
 
-#elif (defined (__FreeBSD__))
+#elif (defined (__FreeBSD__) || defined (__NetBSD__))
 
 static void showMem () {
 	static char buffer[256];
@@ -343,7 +348,7 @@ static void *mmapAnon (void *start, size_t length) {
 				PAGE_READWRITE);
 	if (NULL == result)
 		result = (void*)-1;
-#elif (defined (__linux__) || defined (__FreeBSD__))
+#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__))
 	result = mmap (start, length, PROT_READ | PROT_WRITE, 
 			MAP_PRIVATE | MAP_ANON, -1, 0);
 #elif (defined (__sun__))
@@ -390,7 +395,7 @@ static void smunmap (void *base, size_t length) {
 		diee ("munmap failed");
 }
 
-#if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
+#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
 /* A super-safe mmap.
  *  Allocates a region of memory with dead zones at the high and low ends.
  *  Any attempt to touch the dead zone (read or write) will cause a
@@ -427,7 +432,7 @@ static void release (void *base, size_t length) {
 #if (defined (__CYGWIN__))
 	if (0 == VirtualFree (base, 0, MEM_RELEASE))
 		die ("VirtualFree release failed");
-#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
+#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
 	smunmap (base, length);
 #else
 #error release not defined
@@ -441,7 +446,7 @@ static void decommit (void *base, size_t length) {
 #if (defined (__CYGWIN__))
 	if (0 == VirtualFree (base, length, MEM_DECOMMIT))
 		die ("VirtualFree decommit failed");
-#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
+#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
 	smunmap (base, length);
 #else
 #error decommit not defined	
@@ -2654,7 +2659,7 @@ static void translateHeap (GC_state s, pointer from, pointer to, uint size) {
 /*                            heapRemap                             */
 /* ---------------------------------------------------------------- */
 
-#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__sun__))
+#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__NetBSD__) || defined (__sun__))
 
 static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	return FALSE;
@@ -3746,7 +3751,7 @@ static void profileTimeInit (GC_state s) {
 	setProfTimer (10000);
 }
 
-#elif (defined (__CYGWIN__))
+#elif (defined (__CYGWIN__) || defined (__NetBSD__))
 
 /* No time profiling on Cygwin. 
  * There is a check in mlton/main/main.sml to make sure that time profiling is
@@ -3792,7 +3797,7 @@ static void initSignalStack (GC_state s) {
 
 	/* Nothing */
 
-#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
+#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
 
         static stack_t altstack;
 	size_t ss_size = align (SIGSTKSZ, s->pageSize);
@@ -3907,7 +3912,7 @@ static int totalSwap () {
 }
 
 /* returns total amount of memory available */
-static int totalRam() {
+static int totalRam () {
 	int mem, len;
 
 	len = sizeof (int);
@@ -3917,8 +3922,45 @@ static int totalRam() {
 }
 
 static void setMemInfo (GC_state s) {
-	s->totalRam = totalRam();
-	s->totalSwap = totalSwap();
+	s->totalRam = totalRam ();
+	s->totalSwap = totalSwap ();
+}
+
+#elif (defined (__NetBSD__))
+
+/* returns total amount of swap available */
+static int totalSwap () {
+	static char buffer[256];
+	FILE *file;
+	int total_size = 0;
+
+	file = popen ("/sbin/swapctl -s | awk '{ print $8; }'\n", "r");
+	if (file == NULL)
+	    diee ("swapinfo failed");
+	/* read in data */
+	fgets (buffer, 255, file);
+	total_size = atoi (buffer);
+	pclose (file);
+	printf ("Total amount of swap we think there is: %d\n", 
+		total_size * 1024);
+	return total_size * 1024;
+}
+
+/* returns total amount of memory available */
+static int totalRam () {
+	int mem, len, mib[2];
+	
+	mib[0] = CTL_HW;
+	mib[1] = HW_PHYSMEM;
+	len = sizeof(mem);
+	if (-1 == sysctl (mib, 2, &mem, &len, NULL, 0))
+	    diee ("sysctl failed");
+ 	return mem;
+}
+
+static void setMemInfo (GC_state s) {
+	s->totalRam = totalRam ();
+	s->totalSwap = totalSwap ();
 }
 
 #elif (defined (__sun__))
