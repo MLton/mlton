@@ -114,7 +114,10 @@ fun elaborateType (ty: Atype.t, E: Env.t, I: Interface.t)
 				       Ast.Longtycon.layout c,
 				       str " given ",
 				       Int.layout numArgs,
-				       str " arguments but wants ",
+				       str (if numArgs = 1
+					       then " argument"
+					       else " arguments"),
+				       str " but wants ",
 				       Kind.layout kind],
 				  empty)
 			   in
