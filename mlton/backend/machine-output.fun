@@ -345,6 +345,9 @@ structure Block =
 		   align (Array.toListMap(statements, Statement.layout)),
 		   Transfer.layout transfer]
 	  end
+
+      fun layouts (block, output' : Layout.t -> unit)
+	= output'(layout block)
    end
 
 structure Chunk =
@@ -360,6 +363,11 @@ structure Chunk =
 	= let open Layout
 	  in
 	    align (List.map(blocks, Block.layout))
+	  end
+
+      fun layouts (c as T {blocks, ...}, output' : Layout.t -> unit)
+	= let open Layout
+	  in List.foreach(blocks, fn block => Block.layouts(block, output'))
 	  end
    end
 
@@ -385,8 +393,10 @@ structure Program =
 	    align (List.map(chunks, Chunk.layout))
 	  end
 
-      fun layouts (p, output: Layout.t -> unit)
-	= output (layout p)
+      fun layouts (p as T {chunks, ...}, output': Layout.t -> unit)
+	= let open Layout
+	  in List.foreach(chunks, fn chunk => Chunk.layouts(chunk, output'))
+	  end 
    end
 
 end
