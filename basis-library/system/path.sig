@@ -22,8 +22,8 @@ signature OS_PATH =
       val ext: string -> string option 
       val mkCanonical: string -> string 
       val isCanonical: string -> bool 
-      val mkAbsolute: {path:string, relativeTo:string} -> string
-      val mkRelative: {path:string, relativeTo:string} -> string
+      val mkAbsolute: string * string -> string
+      val mkRelative: string * string -> string
 
       val isAbsolute: string -> bool 
       val isRelative: string -> bool 

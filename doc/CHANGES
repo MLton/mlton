@@ -1,5 +1,8 @@
 Here are the changes from version 20020410 to version VERSION.
 
+* 2002-06-04
+  - Fixed types of OS.Path.mk{Absolute,Relative} to match Basis spec.
+
 * 2002-05-31
   - Fixed bug in overloading of / so that the following now type checks:
 	fun f (x, y) = x + y / y
