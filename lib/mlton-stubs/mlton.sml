@@ -336,19 +336,6 @@ structure MLton: MLTON =
 	    val prof = alrm
 	    val vtalrm = alrm
 
-	    structure Mask =
-	       struct
-		  type t = unit
-
-		  val all = ()
-		  fun allBut _ = ()
-		  fun block _ = raise Fail "block"
-		  val none = ()
-		  fun set _ = raise Fail "set"
-		  fun some _ = ()
-		  fun unblock _ = raise Fail "unblock"
-	       end
-
 	    structure Handler =
 	       struct
 		  type t = unit
@@ -358,6 +345,20 @@ structure MLton: MLTON =
 		  val ignore = ()
 		  val isDefault = fn _ => raise Fail "isDefault"
 		  val isIgnore = fn _ => raise Fail "isIgnore"
+		  fun simple _ = ()
+	       end
+
+	    structure Mask =
+	       struct
+		  type t = unit
+
+		  val all = ()
+		  fun allBut _ = ()
+		  fun block _ = raise Fail "block"
+		  val none = ()
+		  fun setBlocked _ = raise Fail "setBlocked"
+		  fun some _ = ()
+		  fun unblock _ = raise Fail "unblock"
 	       end
 
 	    fun getHandler _ = raise Fail "getHandler"
