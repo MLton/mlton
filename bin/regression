@@ -132,12 +132,15 @@ for f in `ls *.sml`; do
 				libs='-lmlton -lgmp -lgdtoa -lm'
 			;;
 			esac
+			# Must use $f.[0-9].[cS], not $f.*.[cS], because the
+			# latter will include other files, e.g. for finalize,
+			# it will also include finalize.2.
 			gcc -o $f -w -O1				\
 				-I "$src/build/lib/include"		\
 				-L "$src/build/lib/$crossTarget"	\
 				-L /usr/pkg/lib				\
 				-L /usr/local/lib			\
-				$f.*.[cS]				\
+				$f.[0-9].[cS]				\
 				$libs				
 		;;
 		esac
