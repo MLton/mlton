@@ -554,10 +554,8 @@ structure Type =
       fun hom (ty, z) =
 	 let
 	    val {hom, destroy} = makeHom z
-	    val res = hom ty
-	    val _ = destroy ()
 	 in
-	    res
+	    DynamicWind.wind (fn () => hom ty, destroy)
 	 end
 
       fun makeLayoutPretty (): {destroy: unit -> unit,
