@@ -353,7 +353,7 @@ fun closureConvert
 		     (lambda,
 		      LambdaInfo.T {con = ref Con.bogus,
 				    frees = ref (Vector.new0 ()),
-				    name = Func.newString (Var.originalName x),
+				    name = Func.newSymbol (Var.originalName x),
 				    recs = ref (Vector.new0 ()),
 				    ty = ref NONE})
 		  val _ = newVar (arg, Value.fromType argType)

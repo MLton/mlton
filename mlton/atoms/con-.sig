@@ -7,11 +7,12 @@
  *)
 signature CON_STRUCTS = 
    sig
+      structure Symbol: SYMBOL
    end
 
 signature CON = 
    sig
-      include HASH_ID
+      include ID
       include PRIM_CONS where type con = t
 
       val fromBool: bool -> t

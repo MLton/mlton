@@ -12,12 +12,13 @@ signature TYCON_STRUCTS =
    sig
       structure IntSize: INT_SIZE
       structure RealSize: REAL_SIZE
+      structure Symbol: SYMBOL
       structure WordSize: WORD_SIZE
    end
 
 signature TYCON =
    sig
-      include HASH_ID
+      include ID
       include PRIM_TYCONS	 
       sharing type t = tycon
 

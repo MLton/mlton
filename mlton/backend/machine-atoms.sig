@@ -13,7 +13,7 @@ signature MACHINE_ATOMS_STRUCTS =
       structure CType: C_TYPE
       structure IntSize: INT_SIZE
       structure IntX: INT_X
-      structure Label: HASH_ID
+      structure Label: ID
       structure Prim: PRIM
       structure RealSize: REAL_SIZE
       structure RealX: REAL_X

@@ -13,7 +13,7 @@ signature RSSA_STRUCTS =
       include MACHINE_ATOMS
 
       structure Const: CONST
-      structure Func: HASH_ID
+      structure Func: ID
       structure Handler: HANDLER
       structure ProfileExp: PROFILE_EXP
       structure Return: RETURN

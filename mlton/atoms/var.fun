@@ -10,7 +10,8 @@ struct
 
 open S
 
-structure V = HashId (val noname = "x")
+structure V = Id (structure Symbol = Symbol
+		  val noname = "x")
 open V
    
 end

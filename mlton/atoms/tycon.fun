@@ -10,7 +10,8 @@ struct
 
 open S
 
-structure Id = HashId (val noname = "t")
+structure Id = Id (structure Symbol = Symbol
+		   val noname = "t")
 open Id
 
 structure AdmitsEquality = AdmitsEquality ()

@@ -559,7 +559,7 @@ structure Transform =
 
 		     fun contify prefixes
 		       = let
-			   val f_label = Label.newString (Func.originalName f)
+			   val f_label = Label.newSymbol (Func.originalName f)
 			   val _ = Control.diagnostics
 			           (fn display 
 				     => let open Layout

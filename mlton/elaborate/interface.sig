@@ -79,12 +79,6 @@ signature INTERFACE =
       sharing TypeStr.Type = Type
       sharing TypeStr.Tyvar = EnvTypeStr.Tyvar = Tyvar
 
-      structure Instance:
-	 sig
-	    type t
-
-	    val equals: t * t -> bool
-	 end
       structure Time:
 	 sig
 	    type t
@@ -106,10 +100,9 @@ signature INTERFACE =
 				    interface: t} -> unit,
 			handleType: {name: Ast.Tycon.t,
 				     typeStr: EnvTypeStr.t} -> unit,
-			handleVal: {name: Ast.Vid.t,
-				    scheme: EnvTypeStr.Scheme.t,
-				    status: Status.t} -> unit} -> unit
-      val instance: t -> Instance.t
+			handleVal: ({name: Ast.Vid.t,
+				     scheme: EnvTypeStr.Scheme.t,
+				     status: Status.t} -> unit) option} -> unit
       val layout: t -> Layout.t
       val lookupLongtycon: t * Ast.Longtycon.t * (TypeStr.t -> unit) -> unit
       val peekLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
@@ -122,6 +115,7 @@ signature INTERFACE =
 			* {hasCons: bool} -> EnvTypeStr.t) -> t
       val renameTycons: (unit -> unit) ref
       val reportDuplicates: t * Region.t -> unit
+      val sameShape: t * t -> bool
       val share: t * Ast.Longstrid.t * Ast.Longstrid.t * Time.t -> unit
       val shareType: t * Ast.Longtycon.t * Ast.Longtycon.t * Time.t -> unit
       val strs: {name: Ast.Strid.t, interface: t} vector -> t
@@ -129,5 +123,5 @@ signature INTERFACE =
       val vals: {name: Ast.Vid.t,
 		 scheme: Scheme.t,
 		 status: Status.t} vector -> t
-      val wheres: t * Time.t * (Ast.Longtycon.t * TypeStr.t) vector -> t
+      val wheres: t * Time.t * (Ast.Longtycon.t * TypeStr.t) vector -> unit
    end

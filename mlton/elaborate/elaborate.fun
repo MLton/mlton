@@ -99,11 +99,14 @@ fun elaborateProgram (program,
 		   | SOME S => 
 			let
 			   val (S, decs) =
-			      Env.cut (E, S, elabSigexp sigexp,
-				       {isFunctor = false,
-					opaque = opaque,
-					prefix = prefix},
-				       Sigexp.region sigexp)
+			      case elabSigexp sigexp of
+				 NONE => (S, Decs.empty)
+			       | SOME I => 
+				    Env.cut (E, S, I,
+					     {isFunctor = false,
+					      opaque = opaque,
+					      prefix = prefix},
+					     Sigexp.region sigexp)
 			in
 			   (decs, SOME S)
 			end
@@ -210,7 +213,10 @@ fun elaborateProgram (program,
 	   | Topdec.Signature sigbinds =>
 		(Vector.foreach
 		 (sigbinds, fn (sigid, sigexp) =>
-		  Env.extendSigid (E, sigid, elabSigexp sigexp))
+		  Env.extendSigid (E, sigid,
+				   case elabSigexp sigexp of
+				      NONE => Interface.empty
+				    | SOME I => I))
 		 ; Decs.empty)
 	   | Topdec.Functor funbinds =>
 		(* Appendix A, p.58 *)
@@ -238,15 +244,21 @@ fun elaborateProgram (program,
 				   body),
 				  "")
 			      end
-		     val argInt = elabSigexp argSig
-		     val closure =
-			Env.functorClosure
-			(E, prefix, argInt,
-			 fn (formal, nest) =>
-			 Env.scope (E, fn () =>
-				    (Env.extendStrid (E, arg, formal)
-				     ; elabStrexp (body, nest))))
-		  in Env.extendFctid (E, name, closure)
+		  in
+		     case elabSigexp argSig of
+			NONE => ()
+		      | SOME argInt =>
+			   let
+			      val closure =
+				 Env.functorClosure
+				 (E, prefix, argInt,
+				  fn (formal, nest) =>
+				  Env.scope (E, fn () =>
+					     (Env.extendStrid (E, arg, formal)
+					      ; elabStrexp (body, nest))))
+			   in
+			      Env.extendFctid (E, name, closure)
+			   end
 		  end)
 		 ; Decs.empty)
 		) arg

@@ -14,11 +14,11 @@ open S
 structure IntSize = IntX.IntSize
 structure RealSize = RealX.RealSize
 structure WordSize = WordX.WordSize
-
-datatype z = datatype IntSize.t
-datatype z = datatype RealSize.t
-datatype z = datatype WordSize.t
-
+local
+   open Label
+in
+   structure Symbol = Symbol
+end
 structure Runtime = Runtime (structure CType = CType)
 local
    open Runtime
@@ -33,7 +33,8 @@ structure Atoms = MachineAtoms (open S
 				structure WordSize = WordSize)
 open Atoms
 
-structure ChunkLabel = Id (val noname = "ChunkLabel")
+structure ChunkLabel = Id (structure Symbol = Symbol
+			   val noname = "ChunkLabel")
 
 structure SmallIntInf =
    struct
@@ -1055,9 +1056,9 @@ structure Program =
 			       andalso (Type.equals (ty, ty')
 					orelse
 					(* Get a word from a word8 array.*)
-					(Type.equals (ty, Type.word W32)
+					(Type.equals (ty, Type.word WordSize.W32)
 					 andalso
-					 Type.equals (ty', Type.word W8)))
+					 Type.equals (ty', Type.word WordSize.W8)))
 			    end
 		       | _ => false)
 		| t => Type.isCPointer t
@@ -1505,6 +1506,13 @@ structure Program =
 	    ()
 	 end handle Err.E e => (Layout.outputl (Err.layout e, Out.error)
 				; Error.bug "Machine type error")
+
+      fun clearLabelNames (T {chunks, ...}): unit =
+	 List.foreach
+	 (chunks, fn Chunk.T {blocks, ...} =>
+	  Vector.foreach
+	  (blocks, fn Block.T {label, ...} =>
+	   Label.clearPrintName label))
    end
 
 end

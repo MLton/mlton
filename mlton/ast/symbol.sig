@@ -25,5 +25,9 @@ signature SYMBOL =
       val layout: t -> Layout.t
       val plist: t -> PropertyList.t
       val toString: t -> string
+      (* uniqueString adds a suffix of the form _n for that makes the symbol
+       * unique.
+       *)
+      val uniqueString: t -> string
       val unit: t
    end

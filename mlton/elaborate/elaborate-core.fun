@@ -972,9 +972,10 @@ fun elaborateDec (d, {env = E,
 		   val kind = Kind.Arity (Vector.length tyvars)
 		   val tycon =
 		      Env.newTycon
-		      (concat (List.separate
-			       (rev (Ast.Tycon.toString name :: nest),
-				".")),
+		      (Symbol.fromString
+		       (concat (List.separate
+				(rev (Ast.Tycon.toString name :: nest),
+				 "."))),
 		       kind,
 		       AdmitsEquality.Sometimes)
 		   val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, kind))

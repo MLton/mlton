@@ -10,7 +10,8 @@ functor ImplementExceptions (S: IMPLEMENT_EXCEPTIONS_STRUCTS):
 struct
 
 open S
-open Dec PrimExp
+datatype z = datatype Dec.t
+datatype z = datatype PrimExp.t
 structure Dexp = DirectExp
 
 fun doit (Program.T {datatypes, body, ...}): Program.t =
@@ -511,7 +512,8 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 					   arg = SOME (Var.newNoname (), arg)},
 				    const
 				    (Const.string
-				     (Con.originalName con))))),
+				     (Symbol.toString
+				      (Con.originalName con)))))),
 				 default = NONE,
 				 ty = Type.string}))
 			   end})

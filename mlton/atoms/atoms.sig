@@ -12,6 +12,7 @@ signature ATOMS_STRUCTS =
       structure RealSize: REAL_SIZE
       structure Record: RECORD
       structure SortedRecord: RECORD
+      structure Symbol: SYMBOL
       structure Tyvar: TYVAR
       structure WordSize: WORD_SIZE
       sharing Field = Record.Field = SortedRecord.Field
@@ -82,6 +83,7 @@ signature ATOMS =
       sharing Record = Atoms.Record
       sharing SortedRecord = Atoms.SortedRecord
       sharing SourceInfo = Atoms.SourceInfo
+      sharing Symbol = Con.Symbol = Tycon.Symbol = Var.Symbol
       sharing Tycon = Atoms.Tycon
       sharing Tycons = Atoms.Tycons
       sharing Tyvar = Atoms.Tyvar

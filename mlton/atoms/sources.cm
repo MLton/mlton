@@ -17,7 +17,7 @@ signature CON
 signature CONST
 signature FFI
 signature GENERIC_SCHEME
-signature HASH_ID
+signature ID
 signature HASH_TYPE
 signature PRIM
 signature PROFILE_EXP

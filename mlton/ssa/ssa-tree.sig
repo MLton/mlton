@@ -13,7 +13,7 @@ signature SSA_TREE_STRUCTS =
       include ATOMS
    end
 
-signature LABEL = HASH_ID
+signature LABEL = ID
 
 signature HANDLER =
    sig
@@ -79,8 +79,9 @@ signature SSA_TREE =
 	 end
       sharing Atoms = Type.Atoms
 
-      structure Func: HASH_ID
+      structure Func: ID
       structure Label: LABEL
+      sharing Symbol = Func.Symbol = Label.Symbol
       
       structure Exp:
 	 sig

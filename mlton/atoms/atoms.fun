@@ -14,12 +14,12 @@ structure Atoms =
 
       structure SourceInfo = SourceInfo ()
       structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)
-      structure Var = Var ()
+      structure Var = Var (structure Symbol = Symbol)
       structure Tycon = Tycon (structure IntSize = IntSize
 			       structure RealSize = RealSize
+			       structure Symbol = Symbol
 			       structure WordSize = WordSize)
-      fun f (x: IntSize.t): Tycon.IntSize.t = x
-      structure Con = Con (structure Var = Var)
+      structure Con = Con (structure Symbol = Symbol)
       structure CType = CType (structure IntSize = IntSize
 			       structure RealSize = RealSize
 			       structure WordSize = WordSize)

@@ -16,5 +16,5 @@ signature ELABORATE_SIGEXP =
    sig
       include ELABORATE_SIGEXP_STRUCTS
 
-      val elaborateSigexp: Ast.Sigexp.t * Env.t -> Env.Interface.t
+      val elaborateSigexp: Ast.Sigexp.t * Env.t -> Env.Interface.t option
    end

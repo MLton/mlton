@@ -16,6 +16,7 @@ signature PRIM_CONS
 signature PRIM_TYCONS
 signature REAL_SIZE
 signature RECORD
+signature SYMBOL
 signature TYCON_KIND
 signature TYVAR
 signature WORD_SIZE

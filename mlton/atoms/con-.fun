@@ -10,7 +10,8 @@ struct
 
 open S
 
-structure C = HashId (val noname = "C")
+structure C = Id (structure Symbol = Symbol
+		  val noname = "C")
 open C
 
 structure P = PrimCons (C)

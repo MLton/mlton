@@ -7,10 +7,7 @@
  *)
 signature VAR_STRUCTS =
    sig
+      structure Symbol: SYMBOL
    end
 
-signature VAR =
-   sig
-      (*include VAR_STRUCTS*)
-      include HASH_ID
-   end
+signature VAR = ID

@@ -36,6 +36,7 @@ structure Atoms = Atoms (structure Ast = Ast
 			 structure RealSize = RealSize
 			 structure Record = Record
 			 structure SortedRecord = SortedRecord
+			 structure Symbol = Symbol
 			 structure Tyvar = Tyvar
 			 structure WordSize = WordSize)
 local
@@ -231,8 +232,7 @@ in
 		  List.foreach
 		  (Tycon.prims, fn (tycon, kind, _) =>
 		   extendTycon
-		   (E, Ast.Tycon.fromSymbol (Symbol.fromString
-					     (Tycon.originalName tycon),
+		   (E, Ast.Tycon.fromSymbol (Tycon.originalName tycon,
 					     Region.bogus),
 		    TypeStr.tycon (tycon, kind)))
 	       val _ =
@@ -448,6 +448,7 @@ fun elaborate {input: File.t list}: Xml.Program.t =
 		  ; Process.succeed ())
 	 else ()
       val input = parseAndElab ()
+      val _ = Symbol.foreach (PropertyList.clear o Symbol.plist)
       val _ = if !Control.elaborateOnly then raise Done else ()
       val _ =
 	 if !Control.showBasis
@@ -597,6 +598,8 @@ fun compile {input: File.t list, outputC, outputS}: unit =
       val machine =
 	 Control.trace (Control.Top, "pre codegen")
 	 preCodegen {input = input}
+      val _ = Machine.Program.clearLabelNames machine
+      val _ = Machine.Label.printNameAlphaNumeric := true
       val _ =
 	 if !Control.Native.native
 	    then

@@ -377,7 +377,7 @@ fun makeOptions {usage} =
 	intRef textIOBufSize),
        (Expert, "type-check", " {false|true}", "type check ILs",
 	boolRef typeCheck),
-       (Normal, "type-error", " {concise|full}", "type error verbosity",
+       (Expert, "type-error", " {concise|full}", "type error verbosity",
 	SpaceString
 	(fn s =>
 	 typeError := (case s of

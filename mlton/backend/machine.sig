@@ -13,7 +13,7 @@ signature MACHINE_STRUCTS =
       structure CFunction: C_FUNCTION
       structure CType: C_TYPE
       structure IntX: INT_X
-      structure Label: HASH_ID
+      structure Label: ID
       structure Prim: PRIM
       structure SourceInfo: SOURCE_INFO
       structure RealX: REAL_X
@@ -262,6 +262,7 @@ signature MACHINE =
 		     strings: (Global.t * string) list}
 
 	    val frameSize: t * FrameInfo.t -> int
+	    val clearLabelNames: t -> unit
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val typeCheck: t -> unit
 	 end

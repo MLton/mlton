@@ -11,7 +11,7 @@ type word = Word.t
 signature X86_PSEUDO =
   sig
     structure CFunction: C_FUNCTION
-    structure Label : HASH_ID
+    structure Label: ID
     structure Runtime: RUNTIME
     sharing CFunction.CType = Runtime.CType
 

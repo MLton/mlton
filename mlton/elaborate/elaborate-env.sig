@@ -13,8 +13,10 @@ signature ELABORATE_ENV_STRUCTS =
       structure Ast: AST
       structure CoreML: CORE_ML
       structure TypeEnv: TYPE_ENV
+      sharing Ast.Symbol = CoreML.Symbol
       sharing Ast.Record = CoreML.Record
       sharing Ast.SortedRecord = CoreML.SortedRecord
+      sharing Ast.Symbol = CoreML.Symbol
       sharing Ast.Tyvar = CoreML.Tyvar
       sharing CoreML.Atoms = TypeEnv.Atoms
       sharing CoreML.Type = TypeEnv.Type
@@ -27,6 +29,9 @@ signature ELABORATE_ENV =
       structure Decs: DECS
       sharing CoreML = Decs.CoreML
 
+      structure Symbol: SYMBOL
+      sharing Symbol = Ast.Symbol = CoreML.Symbol
+	 
       structure Tycon: TYCON
       sharing Tycon = TypeEnv.Tycon
       structure Type:
@@ -117,9 +122,9 @@ signature ELABORATE_ENV =
       val lookupLongtycon: t * Ast.Longtycon.t -> TypeStr.t
       val lookupLongvar: t * Ast.Longvar.t -> CoreML.Var.t * Scheme.t
       val lookupLongvid: t * Ast.Longvid.t -> Vid.t * Scheme.t
-      val lookupSigid: t * Ast.Sigid.t -> Interface.t
+      val lookupSigid: t * Ast.Sigid.t -> Interface.t option
       val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
-      val newTycon: string * Tycon.Kind.t * Tycon.AdmitsEquality.t -> Tycon.t
+      val newTycon: Symbol.t * Tycon.Kind.t * Tycon.AdmitsEquality.t -> Tycon.t
       (* openStructure (E, S) opens S in the environment E. *) 
       val openStructure: t * Structure.t -> unit
       val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option

@@ -5,122 +5,112 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure IdCounter:
-   sig
-      val getCounter: string -> Counter.t
-   end =
-   struct
-      val getCounter = String.memoize (fn _ => Counter.new 0)
-   end
 
-functor HashId (S: ID_STRUCTS): HASH_ID =
+functor Id (S: ID_STRUCTS): ID =
 struct
 
 open S
 
 structure Plist = PropertyList
-   
-datatype t = T of {originalName: string,
+
+(* Can't use the same hash as Symbol.hash original name, because many later
+ * passes would be really slow due to lots of ids (with the same noname symbol)
+ * hashing to the same value.
+ *)
+datatype t = T of {hash: word,
+		   originalName: Symbol.t,
 		   printName: string option ref,
-		   hash: Word.t,
 		   plist: Plist.t}
 
 local
    fun make f (T r) = f r
 in
    val hash = make #hash
-   val plist = make #plist
    val originalName = make #originalName
+   val plist = make #plist
+   val printName= make #printName
 end
 
-fun setPrintName (T {printName, ...}, s) = printName := SOME s
+fun clearPrintName x = printName x := NONE
+   
+fun setPrintName (x, s) = printName x := SOME s
 
+val printNameAlphaNumeric: bool ref = ref false
+   
 fun toString (T {printName, originalName, ...}) =
    case !printName of
       NONE =>
 	 let
 	    val s =
-	       concat [String.translate (originalName, fn c =>
-					 case c of
-					    #"'" => "P"
-					  | #"." => "D"
-					  | c => str c),
-		       "_",
-		       Int.toString (Counter.next
-				     (IdCounter.getCounter originalName))]
-	 in printName := SOME s
-	    ; s
+	       if not (!printNameAlphaNumeric)
+		  orelse String.forall (Symbol.toString originalName, fn c =>
+					Char.isAlphaNum c orelse c = #"_")
+		  then originalName
+	       else
+		  Symbol.fromString
+		  (String.translate
+		   (Symbol.toString originalName,
+		    fn #"!" => "Bang"
+		     | #"#" => "Hash"
+		     | #"$" => "Dollar"
+		     | #"%" => "Percent"
+		     | #"&" => "Ampersand"
+		     | #"'" => "P"
+		     | #"*" => "Star"
+		     | #"+" => "Plus"
+		     | #"-" => "Minus"
+		     | #"." => "D"
+		     | #"/" => "Divide"
+		     | #":" => "Colon"
+		     | #"<" => "Lt"
+		     | #"=" => "Eq"
+		     | #">" => "Gt"
+		     | #"?" => "Ques"
+		     | #"@" => "At"
+		     | #"\\" => "Slash"
+		     | #"^" => "Caret"
+		     | #"`" => "Quote"
+		     | #"|" => "Pipe"
+		     | #"~" => "Tilde"
+		     | c => str c))
+	    val s = Symbol.uniqueString s
+	    val _ = printName := SOME s
+	 in
+	    s
 	 end
     | SOME s => s
 
 val layout = String.layout o toString
    
-fun sameName (id, id') = 
-   String.equals (originalName id, originalName id')
+fun sameName (id, id') = Symbol.equals (originalName id, originalName id')
 
 fun equals (id, id') = Plist.equals (plist id, plist id')
 
-fun fromString s =
-   T {originalName = s,
-      printName = ref (SOME s),
-      hash = Random.word (),
-      plist = Plist.new ()}
-   
-fun isOperator s =
-   let val c = String.sub (s, 0)
-   in not (Char.isAlpha c orelse Char.equals (c, #"'"))
-   end
+local
+   fun make (originalName, printName) =
+      T {hash = Random.word (),
+	 originalName = originalName,
+	 printName = ref printName,
+	 plist = Plist.new ()}
+in
+   fun fromString s =
+      make (Symbol.fromString s,
+	    SOME s)
+   fun newSymbol s = make (s, NONE)
+end
 
-fun translateOperator s =
-   let val map
-         = fn #"!" => "Bang"
-            | #"%" => "Percent"
-            | #"&" => "Ampersand"
-            | #"$" => "Dollar"
-            | #"#" => "Hash"
-            | #"+" => "Plus"
-            | #"-" => "Minus"
-            | #"/" => "Divide"
-            | #":" => "Colon"
-            | #"<" => "Lt"
-            | #"=" => "Eq"
-            | #">" => "Gt"
-            | #"?" => "Ques"
-            | #"@" => "At"
-            | #"\\" => "Slash"
-            | #"~" => "Tilde"
-            | #"`" => "Quote"
-            | #"^" => "Caret"
-            | #"|" => "Pipe"
-            | #"*" => "Star"
-            | _ => ""
-   in
-     "operator" ^ (String.translate(s, map))
-   end
+val new = newSymbol o originalName
 
-fun newString s =
-   let val s = if isOperator s then translateOperator s else s
-   in fn () => T {originalName = s,
-		  printName = ref NONE,
-		  hash = Random.word (),
-		  plist = Plist.new ()}
-   end
+val newString = newSymbol o Symbol.fromString
 
-val newNoname = newString noname
+local
+   val noname = Symbol.fromString noname
+in
+   fun newNoname () = newSymbol noname
+end
 
-val newString = fn s => newString s ()
-   
-val bogus = newString "BOGUS"
-
-fun new (T {originalName, ...}) =
-   T {originalName = originalName,
-      printName = ref NONE,
-      hash = Random.word (),
-      plist = Plist.new ()}
+val bogus = newSymbol Symbol.bogus
 
 val clear = Plist.clear o plist
    
 end
-
-
-functor Id (S: ID_STRUCTS): ID = HashId (S)

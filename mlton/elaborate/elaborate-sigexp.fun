@@ -308,14 +308,14 @@ val info = Trace.info "elaborateSigexp"
 val info' = Trace.info "elaborateSpec"
 
 (* rule 65 *)
-fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
+fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t option =
    let
       val _ = Interface.renameTycons := (fn () => Env.setTyconNames E)
-      fun elaborateSigexp arg : Interface.t =
+      fun elaborateSigexp arg : Interface.t option =
 	 Trace.traceInfo' (info,
 			   Layout.tuple2 (Sigexp.layout,
 					  Interface.layout),
-			   Interface.layout)
+			   Option.layout Interface.layout)
 	 (fn (sigexp: Sigexp.t, I: Interface.t) =>
 	  case Sigexp.node sigexp of
 	     Sigexp.Spec spec => (* rule 62 *)
@@ -323,22 +323,30 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
 		   val I = elaborateSpec (spec, I)
 		   val _ = Interface.reportDuplicates (I, Sigexp.region sigexp)
 		in
-		   I
+		   SOME I
 		end
 	   | Sigexp.Var x => (* rule 63 *)
-		Interface.copy (Env.lookupSigid (E, x))
+		Option.map (Env.lookupSigid (E, x), Interface.copy)
 	   | Sigexp.Where (sigexp, wheres) => (* rule 64 *)
 		let
 		   val time = Interface.Time.tick ()
 		in
-		   Interface.wheres
-		   (elaborateSigexp (sigexp, I), time,
-		    Vector.fromListMap
-		    (wheres, fn {tyvars, longtycon, ty} =>
-		     (longtycon,
-		      TypeStr.def
-		      (elaborateScheme (tyvars, ty, E, I),
-		       Kind.Arity (Vector.length tyvars)))))
+		   Option.map
+		   (elaborateSigexp (sigexp, I),
+		    fn I' =>
+		    let
+		       val _ = 
+			  Interface.wheres
+			  (I', time,
+			   Vector.fromListMap
+			   (wheres, fn {tyvars, longtycon, ty} =>
+			    (longtycon,
+			     TypeStr.def
+			     (elaborateScheme (tyvars, ty, E, I),
+			      Kind.Arity (Vector.length tyvars)))))
+		    in
+		       I'
+		    end)
 		end) arg
       and elaborateSpec arg : Interface.t =
 	 Trace.traceInfo' (info',
@@ -388,12 +396,15 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
 		       scheme = Scheme.make (Vector.new0 (), ty)}
 		   end)))
 	   | Spec.IncludeSigexp sigexp => (* rule 75 *)
-		elaborateSigexp (sigexp, I)
+		(case elaborateSigexp (sigexp, I) of
+		    NONE => Interface.empty
+		  | SOME I => I)
 	   | Spec.IncludeSigids sigids => (* Appendix A, p.59 *)
 		List.fold
 		(sigids, Interface.empty, fn (sigid, I) =>
-		 Interface.+
-		 (I, Interface.copy (Env.lookupSigid (E, sigid))))
+		 case Env.lookupSigid (E, sigid) of
+		    NONE => I
+		  | SOME I' => Interface.+ (I, Interface.copy I'))
 	   | Spec.Seq (s, s') => (* rule 77 *)
 		let
 		   val I' = elaborateSpec (s, I)
@@ -436,7 +447,9 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
 		Interface.strs
 		(Vector.fromListMap
 		 (ss, fn (strid, sigexp) =>
-		  {interface = elaborateSigexp (sigexp, I),
+		  {interface = (case elaborateSigexp (sigexp, I) of
+				   NONE => Interface.empty
+				 | SOME I => I),
 		   name = strid}))
 	   | Spec.Type typedescs => (* rule 69 *)
 		elaborateTypedescs (typedescs, {equality = false})
