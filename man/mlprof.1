@@ -33,6 +33,10 @@ the allowed expressions, see the \fBMLton User Guide\fP.
 \fB-graph-title \fI{\fBstring\fP}\fP
 Set the call-graph title.
 .TP
+\fB-gray \fI{\fBfalse\fP|\fBtrue\fP}\fP
+Gray nodes according to stack %.  This only makes sense if the
+executable was compiled \fB-profile-stack true\fP.
+.TP
 \fB-mlmon \fI{\fBfile\fP}\fP
 Process the list of whitespace-separated mlmon.out files found in the
 specified file.

@@ -15,6 +15,7 @@ val debug = false
 
 val sourcesIndexGC: int = 1
 
+val gray: bool ref = ref false
 val mlmonFiles: string list ref = ref []
 val raw = ref false
 val showLine = ref false
@@ -607,15 +608,21 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
 		     | ThreshStack x => perStack >= x
 		 end)
 	     val _ = 
-		List.push
-		(options,
-		 Dot.NodeOption.Label
-		 (Source.toDotLabel source
-		  @ (if per > 0.0
-			then [(concat (List.separate (row, " ")),
-			       Dot.Center)]
-		     else [])))
-	     val _ = List.push (options, Dot.NodeOption.Shape Dot.Box)
+		options :=
+		List.append
+		([Dot.NodeOption.Label
+		  (Source.toDotLabel source
+		   @ (if per > 0.0
+			 then [(concat (List.separate (row, " ")),
+				Dot.Center)]
+		      else [])),
+		  Dot.NodeOption.Shape Dot.Box,
+		  if !gray
+		     then
+			Dot.NodeOption.Color (DotColor.gray
+					      (100 - (Real.round perStack)))
+		  else Dot.NodeOption.Color DotColor.Black],
+		 !options)
 	  in
 	     {sortPer = sortPer,
 	      row = Source.toString source :: row,
@@ -757,7 +764,9 @@ fun makeOptions {usage} =
 						 Exn.toString e]))),
 	(Normal, "graph-title", " <string>", "set call-graph title",
 	 SpaceString (fn s => title := SOME s)),
-	(Normal, "mlmon", " <file>", "file with list of mlmon files",
+	(Normal, "gray", " {false|true}", "gray nodes according to stack %",
+	 boolRef gray),
+	(Normal, "mlmon", " <file>", "proces mlmon files listed in <file>",
 	 SpaceString (fn s =>
 		      mlmonFiles :=
 		      List.concat [String.tokens (File.contents s, Char.isSpace),
