@@ -916,7 +916,8 @@ val doMany
 		      val conValues' 
 			= TyconValue.newKnown 
 			  (cons, con, 
-			   Vector.map (argsDst, valOf o VarInfo.replace o varInfo o #1))
+			   Vector.map 
+			   (argsDst, valOf o VarInfo.replace o varInfo o #1))
 		    in
 		      if LabelInfo.onePred liDst
 			then LabelInfo.addActivation
