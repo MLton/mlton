@@ -335,6 +335,7 @@ structure Primitive =
 	       else ~?
 	    val fromInt = _prim "Int32_toInt8": Int.int -> int;
 	    val toInt = _prim "Int8_toInt32": int -> Int.int;
+	    val toWord8 = _prim "Int8_toWord8": int -> Word8.word;
 	 end
       structure Int16 =
 	 struct
@@ -372,6 +373,7 @@ structure Primitive =
 	       else ~?
 	    val fromInt = _prim "Int32_toInt16": Int.int -> int;
 	    val toInt = _prim "Int16_toInt32": int -> Int.int;
+	    val toWord16 = _prim "Int16_toWord16": int -> Word16.word;
 	 end
       structure Int32 =
 	 struct
@@ -1332,8 +1334,7 @@ structure Primitive =
 	    open Int8
 	       
 	    local
-	       fun make f (i: Int.int, i': Int.int): bool =
-		  f (Primitive.Word8.fromInt i, Primitive.Word8.fromInt i')
+	       fun make f (i: int, i': int): bool = f (toWord8 i, toWord8 i')
 	    in
 	       val geu = make Primitive.Word8.>=
 	       val gtu = make Primitive.Word8.> 
@@ -1344,8 +1345,7 @@ structure Primitive =
 	    open Int16
 	       
 	    local
-	       fun make f (i: Int.int, i': Int.int): bool =
-		  f (Primitive.Word16.fromInt i, Primitive.Word16.fromInt i')
+	       fun make f (i: int, i': int): bool = f (toWord16 i, toWord16 i')
 	    in
 	       val geu = make Primitive.Word16.>=
 	       val gtu = make Primitive.Word16.> 
