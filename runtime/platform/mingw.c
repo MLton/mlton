@@ -369,9 +369,11 @@ static void setMachine (struct utsname *buf) {
 		platform = "i%d86"; 
 		break;
 	case PROCESSOR_ARCHITECTURE_IA64:  platform = "ia64";  break;
-#ifdef PROCESSOR_ARCHITECTURE_AMD64
-	case PROCESSOR_ARCHITECTURE_AMD64: platform = "amd64"; break; 
+#ifndef PROCESSOR_ARCHITECTURE_AMD64
+#define PROCESSOR_ARCHITECTURE_AMD64 9
 #endif
+	case PROCESSOR_ARCHITECTURE_AMD64: platform = "amd64"; break; 
+
 	case PROCESSOR_ARCHITECTURE_ALPHA: platform = "alpha"; break;
 	case PROCESSOR_ARCHITECTURE_MIPS:  platform = "mips";  break;
 	}
