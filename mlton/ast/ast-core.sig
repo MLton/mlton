@@ -157,6 +157,8 @@ signature AST_CORE =
 	    include WRAPPED
 	    sharing type node' = node
             sharing type obj = t
+
+            val layout: t -> Layout.t
 	 end where type t = Exp.match
       
       structure EbRhs:

@@ -286,7 +286,7 @@ fun unifyList (trs: (Type.t * Region.t) vector,
 	    (trs, fn (t', r) =>
 	     unify (t, t', fn (l, l') =>
 		    (r,
-		     str "list elements must be of same type",
+		     str "list elements of different types",
 		     align [seq [str "element:  ", l'],
 			    seq [str "previous: ", l],
 			    lay ()])))
@@ -1476,6 +1476,13 @@ fun elaborateDec (d, {env = E,
 	 (fn (e: Aexp.t, nest) =>
 	  let
 	     fun lay () = seq [str "exp: ", approximate (Aexp.layout e)]
+	     val unify =
+		fn (a, b, f) => unify (a, b, fn z =>
+				       let
+					  val (r, l, l') = f z
+				       in
+					  (r, l, align [l', lay ()])
+				       end)
 	     val region = Aexp.region e
 	     fun constant (c: Aconst.t) =
 		case Aconst.node c of
@@ -1501,8 +1508,8 @@ fun elaborateDec (d, {env = E,
 			  fn (l, _) =>
 			  (Aexp.region e,
 			   str (concat
-				[br, " branch of andalso must be of type bool"]),
-			   seq [str (concat [br, " branch: "]), l]))
+				[br, " branch of andalso not a bool"]),
+			   seq [str " branch: ", l]))
 		      val _ = doit (ce, "left")
 		      val _ = doit (ce', "right")
 		   in
@@ -1540,8 +1547,8 @@ fun elaborateDec (d, {env = E,
 			 (Cexp.ty e, argType, fn (l1, l2) =>
 			  (region,
 			   str "case object and rules disagree",
-			   align [seq [str "object: ", l1],
-				  seq [str "rules:  ", l2]]))
+			   align [seq [str "object type:  ", l1],
+				  seq [str "rules expect: ", l2]]))
 		   in
 		      Cexp.casee {noMatch = Cexp.RaiseMatch,
 				  region = region,
@@ -1556,15 +1563,12 @@ fun elaborateDec (d, {env = E,
 			 unify
 			 (Cexp.ty e, elabType t', fn (l1, l2) =>
 			  (region,
-			   str "expression and constraint mismatch",
-			   align [seq [str "expression: ", l1],
-				  seq [str "constraint: ", l2]]))
+			   str "expression and constraint don't agree",
+			   seq [str "exp type:   ", l1]))
 		   in
 		      e
 		   end
-	      | Aexp.FlatApp items =>
-		   elab (Parse.parseExp (items, E, fn () =>
-					 seq [str "expression: ", lay ()]))
+	      | Aexp.FlatApp items => elab (Parse.parseExp (items, E, lay))
 	      | Aexp.Fn m =>
 		   let
 		      val {arg, argType, body} =
@@ -1588,14 +1592,14 @@ fun elaborateDec (d, {env = E,
 			 unify
 			 (Cexp.ty try, Cexp.ty body, fn (l1, l2) =>
 			  (region,
-			   str "expression and handler don't agree",
+			   str "expression and handler of different types",
 			   align [seq [str "expression: ", l1],
 				  seq [str "handler: ", l2]]))
 		      val _ =
 			 unify
 			 (argType, Type.exn, fn (l1, _) =>
 			  (Amatch.region match,
-			   seq [str "handler must handle exn: ", l1],
+			   seq [str "handler handles wrong type: ", l1],
 			   empty))
 		   in
 		      Cexp.make (Cexp.Handle {catch = (arg, Type.exn),
@@ -1612,13 +1616,13 @@ fun elaborateDec (d, {env = E,
 			 unify
 			 (Cexp.ty a', Type.bool, fn (l1, _) =>
 			  (Aexp.region a,
-			   str "if test must be of type bool",
-			   seq [str "test: ", l1]))
+			   str "if test not a bool",
+			   seq [str "test type: ", l1]))
 		      val _ =
 			 unify
 			 (Cexp.ty b', Cexp.ty c', fn (l1, l2) =>
 			  (region,
-			   str "then and else branches disagree",
+			   str "then and else branches of different types",
 			   align [seq [str "then: ", l1],
 				  seq [str "else: ", l2]]))
 		   in
@@ -1653,8 +1657,8 @@ fun elaborateDec (d, {env = E,
 			  fn (l, _) =>
 			  (Aexp.region e,
 			   str (concat
-				[br, " branch of orelse must be of type bool"]),
-			   seq [str (concat [br, " branch: "]), l]))
+				[br, " branch of orelse not a bool"]),
+			   seq [str " branch: ", l]))
 		      val _ = doit (ce, "left")
 		      val _ = doit (ce', "right")
 		   in
@@ -1780,8 +1784,8 @@ fun elaborateDec (d, {env = E,
 			 unify
 			 (Cexp.ty exn, Type.exn, fn (l1, _) =>
 			  (region,
-			   str "raise must get an exception",
-			   seq [str "exp: ", l1]))
+			   str "raise of non-exnception",
+			   seq [str "exp type: ", l1]))
 		      val resultType = newType ()
 		   in
 		      Cexp.make (Cexp.Raise {exn = exn, region = region},
@@ -1861,7 +1865,7 @@ fun elaborateDec (d, {env = E,
 			 unify
 			 (Cexp.ty test', Type.bool, fn (l1, _) =>
 			  (Aexp.region test,
-			   str "while-test must be of type bool",
+			   str "while-test not a bool",
 			   seq [str "test: ", l1]))
 		      (* Could put warning here if the expr is not of type unit.
 		       *)
@@ -1901,17 +1905,19 @@ fun elaborateDec (d, {env = E,
 		       unify
 		       (Cpat.ty p, argType, fn (l1, l2) =>
 			(Apat.region pat,
-			 str "rule patterns not of same type",
+			 str "rule patterns of different types",
 			 align [seq [str "this rule: ", l1],
-				seq [str "previous:  ", l2]]))
+				seq [str "previous:  ", l2],
+				Amatch.layout m]))
 		    val e = elabExp (exp, nest)
 		    val _ =
 		       unify
 		       (Cexp.ty e, resultType, fn (l1, l2) =>
 			(Aexp.region exp,
-			 str "cases not of same type",
-			 align [seq [str "this case:      ", l1],
-				seq [str "previous cases: ", l2]]))
+			 str "rule results of different types",
+			 align [seq [str "this case: ", l1],
+				seq [str "previous:  ", l2],
+				Amatch.layout m]))
 		 in
 		    (p, e)
 		 end))

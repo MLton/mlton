@@ -398,7 +398,7 @@ fun layoutExp arg =
 			      layoutTuple = layoutTuple,
 			      layoutElt = layoutExpT}
 	    end
-       | List es => vector (Vector.map (es, layoutExpT))
+       | List es => list (Vector.toListMap (es, layoutExpT))
        | Selector f => seq [str "#", Field.layout f]
        | Constraint (expr, constraint) =>
 	    delimit (layoutConstraint (layoutExpF expr, constraint))
@@ -480,6 +480,13 @@ and layoutClause ({pats, resultType, body}) =
 	     str " ="],
 	 layoutExpF body] (* this has to be layoutExpF in case body
 			   is a case expression *)
+
+structure Match =
+   struct
+      open Match
+
+      val layout = layoutMatch
+   end
 
 structure Exp =
    struct
