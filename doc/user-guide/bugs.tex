@@ -26,22 +26,6 @@ This may be an oversight in the Definition of SML, since unchecked use
 of this feature can lead to type unsoundness.
 
 \item
-In signatures, {\mlton} does not use {\tt where} clauses to simplify
-type definitions.  This may cause {\mlton} to reject certain
-redefinitions, as in the following example due to Martin Elsman.
-\begin{verbatim}
-signature T =	
-   sig
-      type s
-      structure U:
-	 sig
-	    type 'a t
-	    type u = (int * real) t
-	 end where type 'a t = s
-   end where type U.u = int;
-\end{verbatim}
-
-\item
 {\mlton} allows local type names to escape their scope, as in
 \begin{verbatim}
 let

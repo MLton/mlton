@@ -600,27 +600,50 @@ structure TypeStr =
 		  NONE
 	       end
 	    fun loop (s: t): FlexibleTycon.t option =
-	       case toTyconOpt s of
-		  NONE => error "a definition"
-		| SOME c =>
-		     case c of
-			Tycon.Flexible c =>
-			   let
-			      val {creationTime, defn, ...} =
-				 FlexibleTycon.dest c
-			   in
-			      case Defn.dest (!defn) of
-				 Defn.Realized _ =>
-				    Error.bug "getFlex of realized"
-			       | Defn.TypeStr s => loop s
-			       | Defn.Undefined =>
-				    if Time.< (creationTime, time)
-				       then error "not local"
-				    else SOME c
-			   end
-		      | Tycon.Rigid (c, _) =>
-			   error (concat ["already defined as ",
-					  Layout.toString (Etycon.layout c)])
+	       case node s of
+		  Datatype {tycon, ...} => loopTycon tycon
+		| Scheme (Scheme.T {ty, tyvars}) =>
+		     let
+			fun con (c, ts) =
+			   case c of
+			      Tycon.Flexible f =>
+				 (case Defn.dest (FlexibleTycon.defn f) of
+				     Defn.Realized _ =>
+					Error.bug "getFlex saw Realized"
+				   | Defn.TypeStr s =>
+					expandTy (TypeStr.apply (s, ts))
+				   | Defn.Undefined => Type.Con (c, ts))
+			    | Tycon.Rigid _ => Type.Con (c, ts)
+			and expandTy (ty: Type.t): Type.t =
+			   Type.hom (ty, {con = con,
+					  record = Type.Record,
+					  var = Type.Var})
+			val ty = expandTy ty 
+		     in
+			case Type.deEta (ty, tyvars) of
+			   NONE => error "a definition"
+			 | SOME c => loopTycon c
+		     end
+		| Tycon c => loopTycon c
+	    and loopTycon (c: Tycon.t): FlexibleTycon.t option =
+	       case c of
+		  Tycon.Flexible c =>
+		     let
+			val {creationTime, defn, ...} =
+			   FlexibleTycon.dest c
+		     in
+			case Defn.dest (!defn) of
+			   Defn.Realized _ =>
+			      Error.bug "getFlex of realized"
+			 | Defn.TypeStr s => loop s
+			 | Defn.Undefined =>
+			      if Time.< (creationTime, time)
+				 then error "not local"
+			      else SOME c
+		     end
+		| Tycon.Rigid (c, _) =>
+		     error (concat ["already defined as ",
+				    Layout.toString (Etycon.layout c)])
 	 in
 	    loop s
 	 end
