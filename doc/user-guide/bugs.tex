@@ -27,10 +27,10 @@ This may be an oversight in the Definition, since unchecked use of
 this feature can lead to type unsoundness.
 
 \item
-{\mlton} allows rebinding of constructors with {\tt val rec}
+{\mlton} rejects rebinding of constructors with {\tt val rec}
 declarations, as in
 \begin{verbatim}
-val rec NONE = fn x => x;
+val rec NONE = fn () => ()
 \end{verbatim}
 The Definition requires this program to type check, but to raise {\tt
 Bind}.

@@ -19,3 +19,10 @@ sig
     end
     sharing type s = A.t
 end;
+
+signature S =
+   sig
+      structure T: sig end
+      structure U: sig type t = int end
+      sharing T = U
+   end

@@ -365,13 +365,13 @@ fun approximate (l: Layout.t): Layout.t =
 
 val elaboratePat:
    unit
-   -> Apat.t * Env.t * (unit -> unit) * bool
+   -> Apat.t * Env.t * (unit -> unit)
    -> Cpat.t * (Avar.t * Var.t * Type.t) vector =
    fn () =>
    let
       val others: (Apat.t * (Avar.t * Var.t * Type.t) vector) list ref = ref []
    in
-      fn (p: Apat.t, E: Env.t, preError: unit -> unit, amInRvb: bool) =>
+      fn (p: Apat.t, E: Env.t, preError: unit -> unit) =>
       let
 	 val region = Apat.region p
 	 val xts: (Avar.t * Var.t * Type.t) list ref = ref []
@@ -589,32 +589,29 @@ val elaboratePat:
 			    end
 
 		      in
-			 if amInRvb andalso List.isEmpty strids
-			    then var ()
-			 else
-			    (case Env.peekLongcon (E, Ast.Longvid.toLongcon name) of
-				NONE =>
-				   if List.isEmpty strids
-				      then var ()
-				   else
-				      let
-					 val _ = 
-					    Control.error
-					    (region,
-					     seq [str "undefined constructor: ",
-						  Ast.Longvid.layout name],
-					     empty)
-				      in
-					 Cpat.make (Cpat.Wild, Type.new ())
-				      end
-			      | SOME (c, s) =>
-				   let
-				      val {args, instance} = Scheme.instantiate s
-				   in
-				      Cpat.make
-				      (Cpat.Con {arg = NONE, con = c, targs = args ()},
-				       instance)
-				   end)
+			 case Env.peekLongcon (E, Ast.Longvid.toLongcon name) of
+			    NONE =>
+			       if List.isEmpty strids
+				  then var ()
+			       else
+				  let
+				     val _ = 
+					Control.error
+					(region,
+					 seq [str "undefined constructor: ",
+					      Ast.Longvid.layout name],
+					 empty)
+				  in
+				     Cpat.make (Cpat.Wild, Type.new ())
+				  end
+			  | SOME (c, s) =>
+			       let
+				  val {args, instance} = Scheme.instantiate s
+			       in
+				  Cpat.make
+				  (Cpat.Con {arg = NONE, con = c, targs = args ()},
+				   instance)
+			       end
 		      end
 		 | Apat.Wild =>
 		      Cpat.make (Cpat.Wild, Type.new ())
@@ -1313,7 +1310,7 @@ fun elaborateDec (d, {env = E,
 					Vector.map
 					(args, fn p =>
 					 {pat = #1 (elaboratePat
-						    (p, E, preError, false)),
+						    (p, E, preError)),
 					  region = Apat.region p})
 				     val bodyRegion = Aexp.region body
 				     val body = elabExp (body, nest)
@@ -1564,8 +1561,7 @@ fun elaborateDec (d, {env = E,
 			 (rvbs, fn {pat, match} =>
 			  let
 			     val region = Apat.region pat
-			     val (pat, bound) =
-				elaboratePat (pat, E, preError, true)
+			     val (pat, bound) = elaboratePat (pat, E, preError)
 			     val (nest, var, ty) =
 				if 0 = Vector.length bound
 				   then ("anon" :: nest,
@@ -1644,8 +1640,7 @@ fun elaborateDec (d, {env = E,
 			 (vbs,
 			  fn {exp = e, expRegion, lay, pat, patRegion, ...} =>
 			  let
-			     val (p, bound) =
-				elaboratePat (pat, E, preError, false)
+			     val (p, bound) = elaboratePat (pat, E, preError)
 			     val _ =
 				unify
 				(Cpat.ty p, Cexp.ty e, fn (p, e) =>
@@ -2214,12 +2209,12 @@ fun elaborateDec (d, {env = E,
 			  approximate
 			  (seq [Apat.layout pat, str " => ", Aexp.layout exp])
 		       end
-		    val (p, xts) = elaboratePat () (pat, E, preError, false)
+		    val (p, xts) = elaboratePat () (pat, E, preError)
 		    val _ =
 		       unify
 		       (Cpat.ty p, argType, preError, fn (l1, l2) =>
 			(Apat.region pat,
-			 str "rule patterns of disagree",
+			 str "rule patterns disagree",
 			 align [seq [str "pattern:  ", l1],
 				seq [str "previous: ", l2],
 				seq [str "in: ", lay ()]]))
@@ -2228,7 +2223,7 @@ fun elaborateDec (d, {env = E,
 		       unify
 		       (Cexp.ty e, resultType, preError, fn (l1, l2) =>
 			(Aexp.region exp,
-			 str "rule results of disagree",
+			 str "rule results disagree",
 			 align [seq [str "result:   ", l1],
 				seq [str "previous: ", l2],
 				seq [str "in: ", lay ()]]))

@@ -99,6 +99,11 @@ structure Time:>
 
 structure FlexibleTycon =
    struct
+      (* hasCons is true if this tycon occurs in any type structure where the
+       * cons are nonempty.  This allows us to do a quick check of the side
+       * condition on rule 64 that requires all type structures to be well-formed
+       * when implementing "where type". 
+       *)
       datatype t = T of {admitsEquality: AdmitsEquality.t ref,
 			 copy: copy,
 			 creationTime: Time.t,
@@ -151,12 +156,12 @@ structure Tycon =
 	 Flexible of FlexibleTycon.t
        | Rigid of Etycon.t * Kind.t
 
-      fun admitsEquality (t: t): AdmitsEquality.t ref =
-	 case t of
+      val fromEnv: Etycon.t * Kind.t -> t = Rigid
+
+      fun admitsEquality c =
+	 case c of
 	    Flexible f => FlexibleTycon.admitsEquality f
 	  | Rigid (e, _) => Etycon.admitsEquality e
-
-      val fromEnv: Etycon.t * Kind.t -> t = Rigid
 
       val arrow = fromEnv (Etycon.arrow, Kind.Arity 2)
 
@@ -283,23 +288,8 @@ structure Scheme = GenericScheme (structure Type = Type
 structure Scheme =
    struct
       open Scheme
-	 
-      fun admitsEquality (s: t): bool =
-	 let
-	    fun con (c, bs) =
-	       let
-		  datatype z = datatype AdmitsEquality.t
-	       in
-		  case ! (Tycon.admitsEquality c) of
-		     Always => true
-		   | Never => false
-		   | Sometimes => Vector.forall (bs, fn b => b)
-	       end
-	 in
-	    Type.hom (ty s, {con = con,
-			     record = fn r => Record.forall (r, fn b => b),
-			     var = fn _ => true})
-	 end
+
+      fun admitsEquality _ = raise Fail "Interface.Scheme.admitsEquality"
 
       fun bogus () = T {ty = Type.bogus, tyvars = Vector.new0 ()}
 
@@ -341,6 +331,24 @@ structure Defn =
 	  | _ => Error.bug "Defn.dest"
    end
 
+(* expandTy expands all type definitions in ty *)
+local
+   fun con (c, ts) =
+      case c of
+	 Tycon.Flexible f =>
+	    (case Defn.dest (FlexibleTycon.defn f) of
+		Defn.Realized _ => Error.bug "expandTy saw Realized"
+	      | Defn.TypeStr s => expandTy (TypeStr.apply (s, ts))
+	      | Defn.Undefined => Type.Con (c, ts))
+       | Tycon.Rigid _ => Type.Con (c, ts)
+   and expandTy (ty: Type.t): Type.t =
+      Type.hom (ty, {con = con,
+		     record = Type.Record,
+		     var = Type.Var})
+in
+   val expandTy = expandTy
+end
+
 fun copyCons (Cons.T v): Cons.t =
    Cons.T (Vector.map (v, fn {con, name, scheme} =>
 		       {con = con,
@@ -351,7 +359,7 @@ and copyDefn (d: Defn.t): Defn.t =
       open Defn
    in
       case dest d of
-	 Realized _ => Error.bug "copyDefn"
+	 Realized _ => Error.bug "copyDefn Realized"
        | TypeStr s => Defn.typeStr (copyTypeStr s)
        | Undefined => Defn.undefined
    end
@@ -466,6 +474,64 @@ and typeStrToEnv (s: TypeStr.t): EtypeStr.t =
        | Tycon c => EtypeStr.abs (tyconToEnv c)
    end
 
+structure AdmitsEquality =
+   struct
+      open AdmitsEquality
+
+      fun fromBool b = if b then Sometimes else Never
+	 
+      fun toBool a = 
+	 case a of
+		  Always => true
+		| Never => false
+		| Sometimes => true
+   end
+
+fun flexibleTyconAdmitsEquality (FlexibleTycon.T s): AdmitsEquality.t =
+   let
+      val {admitsEquality, defn, ...} = Set.value s
+      datatype z = datatype Defn.dest
+   in
+      case Defn.dest (!defn) of
+	 Realized _ => Error.bug "flexibleTyconAdmitsEquality Realized"
+       | TypeStr s => typeStrAdmitsEquality s
+       | Undefined => !admitsEquality
+   end
+and schemeAdmitsEquality (s: Scheme.t): bool =
+   let
+      fun con (c, bs) =
+	 let
+	    datatype z = datatype AdmitsEquality.t
+	 in
+	    case ! (Tycon.admitsEquality c) of
+	       Always => true
+	     | Never => false
+	     | Sometimes => Vector.forall (bs, fn b => b)
+	 end
+   in
+      Type.hom (expandTy (Scheme.ty s),
+		{con = con,
+		 record = fn r => Record.forall (r, fn b => b),
+		 var = fn _ => true})
+   end
+and tyconAdmitsEquality (t: Tycon.t): AdmitsEquality.t =
+   let
+      datatype z = datatype Tycon.t
+   in
+      case t of
+	 Flexible c => flexibleTyconAdmitsEquality c
+       | Rigid (e, _) => ! (Etycon.admitsEquality e)
+   end
+and typeStrAdmitsEquality (s: TypeStr.t): AdmitsEquality.t =
+   let
+      datatype z = datatype TypeStr.node
+   in
+      case TypeStr.node s of
+	 Datatype {tycon = c, ...} => tyconAdmitsEquality c
+       | Scheme s => AdmitsEquality.fromBool (schemeAdmitsEquality s)
+       | Tycon c => tyconAdmitsEquality c
+   end
+
 structure FlexibleTycon =
    struct
       open FlexibleTycon
@@ -529,6 +595,8 @@ structure Scheme =
    struct
       open Scheme
 
+      val admitsEquality = schemeAdmitsEquality
+ 
       val copy = copyScheme
 
       val toEnv = schemeToEnv
@@ -566,6 +634,8 @@ structure TypeStr =
       structure Tycon = Tycon'
       structure Type = Type'
 
+      val admitsEquality = typeStrAdmitsEquality
+	 
       val copy = copyTypeStr
 
       val toEnv = typeStrToEnv
@@ -605,27 +675,9 @@ structure TypeStr =
 	       case node s of
 		  Datatype {tycon, ...} => loopTycon tycon
 		| Scheme (Scheme.T {ty, tyvars}) =>
-		     let
-			fun con (c, ts) =
-			   case c of
-			      Tycon.Flexible f =>
-				 (case Defn.dest (FlexibleTycon.defn f) of
-				     Defn.Realized _ =>
-					Error.bug "getFlex saw Realized"
-				   | Defn.TypeStr s =>
-					expandTy (TypeStr.apply (s, ts))
-				   | Defn.Undefined => Type.Con (c, ts))
-			    | Tycon.Rigid _ => Type.Con (c, ts)
-			and expandTy (ty: Type.t): Type.t =
-			   Type.hom (ty, {con = con,
-					  record = Type.Record,
-					  var = Type.Var})
-			val ty = expandTy ty 
-		     in
-			case Type.deEta (ty, tyvars) of
-			   NONE => error "a definition"
-			 | SOME c => loopTycon c
-		     end
+		     (case Type.deEta (expandTy ty, tyvars) of
+			 NONE => error "a definition"
+		       | SOME c => loopTycon c)
 		| Tycon c => loopTycon c
 	    and loopTycon (c: Tycon.t): FlexibleTycon.t option =
 	       case c of
@@ -635,8 +687,7 @@ structure TypeStr =
 			   FlexibleTycon.dest c
 		     in
 			case Defn.dest (!defn) of
-			   Defn.Realized _ =>
-			      Error.bug "getFlex of realized"
+			   Defn.Realized _ => Error.bug "getFlex of realized"
 			 | Defn.TypeStr s => loop s
 			 | Defn.Undefined =>
 			      if Time.< (creationTime, time)
@@ -1035,7 +1086,7 @@ fun wheres (I as T s, v: (Longtycon.t * TypeStr.t) vector, time): unit =
 			   seq [str "type ",
 				Longtycon.layout c,
 				str " has arity ", Kind.layout k',
-				str " and cannot be redefined to have arity ",
+				str " and cannot be defined to have arity ",
 				Kind.layout k],
 			   empty)
 		       end
@@ -1049,17 +1100,20 @@ fun wheres (I as T s, v: (Longtycon.t * TypeStr.t) vector, time): unit =
 			       (reg,
 				seq [str "eqtype ",
 				     Longtycon.layout c,
-				     str " cannot be redefined as a non-equality type"],
+				     str " cannot be defined as a non-equality type"],
 				empty)
 			    end
 		      else
 			 let
-			    val {admitsEquality, defn, hasCons, ...} =
-			       FlexibleTycon.dest flex
+			    val {defn, hasCons, ...} = FlexibleTycon.dest flex
 			 in
-			    if hasCons andalso (case TypeStr.node s of
-						   TypeStr.Scheme _ => true
-						 | _ => false)
+			    if hasCons
+			       andalso
+			       (case TypeStr.node s of
+				   TypeStr.Scheme (Scheme.T {ty, tyvars}) =>
+				      Option.isNone
+				      (Type.deEta (expandTy ty, tyvars))
+				 | _ => false)
 			       then
 				  let
 				     open Layout
