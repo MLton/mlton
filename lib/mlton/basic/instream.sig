@@ -6,6 +6,7 @@ signature INSTREAM =
 
       val close: t -> unit
       val endOf: t -> bool
+      val foldChars: t * 'a * (char * 'a -> 'a) -> 'a
       (* Each line includes the newline. *)
       val foldLines: t * 'a * (string * 'a -> 'a) -> 'a
       val foreachLine: t * (string -> unit) -> unit

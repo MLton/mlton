@@ -14,6 +14,16 @@ val inputChar = input1
 val peekChar = lookahead   
 val endOf = endOfStream
 
+fun foldChars (ins, a, f) =
+   let
+      fun loop a =
+	 case inputLine ins of
+	    "" => a
+	  | l => loop (String.fold (l, a, f))
+   in
+      loop a
+   end
+   
 fun foldLines (ins, ac, f) =
    let
       fun loop ac =
