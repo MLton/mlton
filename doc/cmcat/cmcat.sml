@@ -1,5 +1,5 @@
 (*
- * Authors: Stephen Weeks (sweeks@acm.org)
+ * Authors: Stephen Weeks (sweeks@sweeks.com)
  *          Matthew Fluet (fluet@cs.cornell.edu) 
  *
  * This requires that you have SML/NJ installed.
@@ -24,7 +24,7 @@
  * 3. mv cmcat.x86-linux <smlnj>/bin/.heap
  *
  * Once it is installed, the usage is as follows:
- *   cmcat [-comments] [-Dsym ...] [-filter] sources.cm
+ *   cmcat [-comments] [-Dsym ...] sources.cm
  *
  * -comments can be used to add comments to the output, including import dependencies.
  * -Dsym can be used to define CM preprocessor symbols.
