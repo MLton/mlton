@@ -21,7 +21,6 @@ TEX_FILES = \
 	man-page.tex		\
 	mingw.tex		\
 	mlb.tex			\
-	mlb-formal.tex		\
 	netbsd.tex		\
 	nj-deviations.tex	\
 	openbsd.tex		\

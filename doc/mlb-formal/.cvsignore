@@ -1,0 +1,13 @@
+*~
+*.aux
+*.bbl
+*.blg
+*.log
+*.toc
+TAGS
+core
+mlb-formal
+mlb-formal.dvi
+mlb-formal.pdf
+mlb-formal.ps
+mlb-formal.ps.gz
