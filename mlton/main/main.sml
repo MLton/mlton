@@ -433,7 +433,7 @@ fun commandLine (args: string list): unit =
 	     * pentiumpro is the same as i686.
 	     *)
 	     "-mcpu=pentiumpro"] 
-      val x86LinkLibs = ["m"]
+      val x86LinkLibs = []
       val sparcCFlags =
 	 standardCFlags
 	 @ [
@@ -461,7 +461,7 @@ fun commandLine (args: string list): unit =
 	 case !hostArch of
 	    X86 => (x86CFlags, x86LinkLibs)
 	  | Sparc => (sparcCFlags, sparcLinkLibs)
-      val defaultLibs = ["gdtoa", "m"]
+      val defaultLibs = defaultLibs @ ["gdtoa", "m"]
       val ccOpts =
 	 List.fold
 	 (!ccOpts, cFlags, fn (ccOpt, ac) => 
