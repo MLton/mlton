@@ -495,12 +495,9 @@ structure Time:>
 
       val >= : t * t -> bool
       val next: unit -> t
-      val toString: t -> string
    end =
    struct
       type t = int
-
-      val toString = Int.toString
 
       val layout = Int.layout
 

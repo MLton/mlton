@@ -76,10 +76,10 @@ fun checkSyntaxBasexp (e: basexp): unit =
       Bas dec => checkSyntaxBasdec dec
     | Let (dec, exp) => (checkSyntaxBasdec dec
 			 ; checkSyntaxBasexp exp)
-    | Var basid => ()
+    | Var _ => ()
 and checkSyntaxBasdec (d: basdec): unit =
    case node d of
-      Ann (anns, dec) => checkSyntaxBasdec dec
+      Ann (_, dec) => checkSyntaxBasdec dec
     | Basis basbnds =>
 	 reportDuplicates
 	 (basbnds, {equals = (fn ({name = id, ...}, {name = id', ...}) =>
@@ -92,10 +92,10 @@ and checkSyntaxBasdec (d: basdec): unit =
     | Local (dec1, dec2) => 
 	 (checkSyntaxBasdec dec1
 	  ; checkSyntaxBasdec dec2)
-    | MLB (_,_) => ()
-    | Open bs => ()
+    | MLB _ => ()
+    | Open _ => ()
     | Prim => ()
-    | Prog (_,_) => ()
+    | Prog _ => ()
     | Seq decs => List.foreach (decs, checkSyntaxBasdec)
 
 fun sourceFiles (d: basdec): File.t vector =

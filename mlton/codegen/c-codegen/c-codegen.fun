@@ -640,7 +640,6 @@ fun output {program as Machine.Program.T {chunks,
 				    print)
 			    ))
 	 end
-      val profiling = !Control.profile <> Control.ProfileNone
       val amTimeProfiling = !Control.profile = Control.ProfileTime
       fun outputChunk (Chunk.T {chunkLabel, blocks, regMax, ...}) =
 	 let
