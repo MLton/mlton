@@ -14,14 +14,12 @@ $(NAME): $(shell $(MLTON) -stop f $(NAME).cm)
 ifeq ($(MAKECMDGOALS),$(NAME).cm)
 .PHONY:	$(NAME).cm
 $(NAME).cm:
-else
-$(NAME).cm:
-endif
 	(								\
 		echo 'Group is' &&					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' &&	\
 		echo 'call-main.sml';					\
 	) >$(NAME).cm
+endif
 
 .PHONY: clean
 clean:
