@@ -4,6 +4,7 @@ Here are the changes from version 20020410 to version VERSION.
   - Fixed load/save world so that they use binary mode.  This should fix the
     "sread failed" problem that Byron Hale saw on Cygwin that caused mlton to
     fail to start.
+  - Added IntInf.log2.
 
 * 2002-04-23
   - Rewrote heap resizing code.  This fixed bug that was triggered with large

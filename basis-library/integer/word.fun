@@ -8,15 +8,10 @@
 functor Word (W: sig
 		   include PRE_WORD
 		   val zero: word
-		end): WORD_EXTRA =
+		end) =
 struct
 
 open W
-   
-(* These are overriden in patch.sml after int-inf.sml has been defined. *)
-fun toLargeInt _ = raise Fail "toLargeInt"
-fun toLargeIntX _ = raise Fail "toLargeIntX"
-fun fromLargeInt _ = raise Fail "fromLargeInt"
 
 local
    fun make f (w, w') =
