@@ -10,29 +10,32 @@ PORTVERSION=	MLTONVERSION
 CATEGORIES=	lang
 MASTER_SITES=	http://www.mlton.org/download/	\
 		http://www.mlton.org/experimental/
-DISTFILES=	${BOOT_DIST} ${SRC_DIST}
+#DISTFILES=	${BOOT_DIST} ${SRC_DIST}
+DISTFILES=	${SRC_DIST}
 EXTRACT_ONLY=	${SRC_DIST}
 
 MAINTAINER=	MLton@mlton.org
 COMMENT=	An optimizing Standard ML compiler
 
 # MLton build depends on itself.  There is no easy way to avoid this.
-# This Makefile is supposed to install an alread-built version of
+# This Makefile fetches and installs an alread-built version of
 # MLton, BOOT_DIST, to use for bootstrapping.
 BUILD_DEPENDS=	hevea:${PORTSDIR}/textproc/hevea: \
-		latex:${PORTSDIR}/print/teTeX: \
-		mlton:${PORTSDIR}/lang/mlton:
+		latex:${PORTSDIR}/print/teTeX:
+#		mlton:${PORTSDIR}/lang/mlton:
 LIB_DEPENDS=	gmp.6:${PORTSDIR}/math/libgmp4
 
 SRC_DIST=	${DISTNAME}-1.freebsd.src.tgz
-BOOT_DIST=	${DISTNAME}-1.i386-freebsd.tbz
+#BOOT_DIST=	${DISTNAME}-1.i386-freebsd.tbz
 
 ONLY_FOR_ARCHS=	i386
 
 MAN1=		mllex.1 mlprof.1 mlton.1 mlyacc.1
 MANCOMPRESSED=	yes
 
-BOOT_WRKSRC=	${WRKDIR}/mlton-bootstrap
+#BOOT_WRKSRC=	${WRKDIR}/mlton-bootstrap
+
+#PATH=		${BOOT_WRKSRC}/bin:${PATH}
 
 USE_REINPLACE=	yes
 ALL_TARGET=	all
@@ -42,13 +45,32 @@ MAKE_ARGS=	DESTDIR='' \
 
 PORTDIR=	usr/ports/lang/mlton
 
+#.PHONY: post-extract
+#post-extract:
+#	@${MKDIR} ${BOOT_WRKSRC}
+#	@${TAR} xf ${DISTDIR}/${BOOT_DIST} --bzip -C ${BOOT_WRKSRC}
+#	@${REINPLACE_CMD} -e \
+#		"s|lib=\'${LOCALBASE}/|lib=\'${BOOT_WRKSRC}/|" \
+#	${BOOT_WRKSRC}/bin/mlton
+
+# Stuff below this line is for maintainer use only.
+
 .PHONY: build-package
 build-package:
-	export PATH=${BOOT_WRKSRC}/bin:${PATH} && ${MAKE} makesum build pkg-plist
-	portlint .
+	${MAKE} build
+	${MAKE} pkg-plist
 	${MAKE} deinstall
 	${MAKE} install
 	${MAKE} package
+	${MAKE} deinstall
+	pkg_add ${PORTNAME}-${PORTVERSION}.tbz
+	${MAKE} deinstall
+	${MAKE} reinstall
+	${MAKE} package
+	cp ${PORTNAME}-${PORTVERSION}.tbz	\
+		${DISTDIR}/${PORTNAME}-${PORTVERSION}-1.i386-freebsd.tbz
+	${MAKE} makesum
+	portlint .
 	${TAR} -cpf - Makefile distinfo pkg-descr pkg-plist | \
 		( ${MKDIR} ${PORTDIR} && cd ${PORTDIR} && ${TAR} -xpf - )
 	shar `find ${PORTDIR}` >/tmp/mlton-${PORTVERSION}-portdir.shar
@@ -68,13 +90,5 @@ pkg-plist:
 		<${PLIST} >${TMP_PLIST}
 	${SED} -e 's;share/doc/mlton;%%PORTDOCS%%%%DOCSDIR%%;'	\
 		<${TMP_PLIST} >${PLIST}
-
-.PHONY: post-extract
-post-extract:
-	@${MKDIR} ${BOOT_WRKSRC}
-	@${TAR} xf ${DISTDIR}/${BOOT_DIST} --bzip -C ${BOOT_WRKSRC}
-	@${REINPLACE_CMD} -e \
-		"s|lib=\'${LOCALBASE}/|lib=\'${BOOT_WRKSRC}/|" \
-	${BOOT_WRKSRC}/bin/mlton
 
 .include <bsd.port.mk>
