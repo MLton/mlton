@@ -170,14 +170,14 @@ struct
 	val getLiveFltRegsTransfers
 	  = #2 o x86LiveTransfers.getLiveTransfers
 
-	val layoutInfo as {get : Label.t -> Block.t option,
+	val layoutInfo as {get = getLayoutInfo : Label.t -> Block.t option,
 			   set = setLayoutInfo}
 	  = Property.getSet(Label.plist, 
-			    Property.initRaise (Label.layout, "layoutInfo"))
-	val profileInfo as {get : Label.t -> ProfileInfo.t,
+			    Property.initRaise ("layoutInfo", Label.layout))
+	val profileInfo as {get = getProfileInfo : Label.t -> ProfileInfo.t,
 			    set = setProfileInfo}
 	  = Property.getSet(Label.plist, 
-			    Property.initRaise (Label.layout, "profileInfo"))
+			    Property.initRaise ("profileInfo", Label.layout))
 
 	val _ 
 	  = List.foreach
@@ -203,7 +203,6 @@ struct
 	fun enqueCompensationBlock {label, id}
 	  = let
 	      val label' = Label.new label
-	      val profileInfo = getProfileInfo label
 	      val profileInfo
 		= ProfileInfo.add
 		  (getProfileInfo label,
@@ -213,7 +212,7 @@ struct
 	      val live = getLive(liveInfo, label)
 	      val block
 		= Block.T {entry = Entry.jump {label = label'},
-			   profileInfo = ProfileInfo.none,
+			   profileInfo = profileInfo,
 			   statements 
 			   = (Assembly.directive_restoreregalloc
 			      {live = stackTop::
@@ -230,7 +229,8 @@ struct
 	      Assert.assert("enqueCompensationBlock",
 			    fn () => getNear(jumpInfo, label') = Count 1);
 	      x86LiveTransfers.setLiveTransfersEmpty(liveTransfers, label');
-	      set(label', SOME block);
+	      setLayoutInfo(label', SOME block);
+	      setProfileInfo(label', profileInfo);
 	      enque label';
 	      label'
 	    end
@@ -239,12 +239,12 @@ struct
 	fun generateAll (gef as GEF {generate,effect,fall})
 	                {label, falling, unique} : 
 			Assembly.t AppendList.t
-	  = (case get label
+	  = (case getLayoutInfo label
 	       of NONE => AppendList.empty
 	        | SOME (Block.T {entry, profileInfo,
 				 statements, transfer})
 		=> let
-		     val _ = set(label, NONE)
+		     val _ = setLayoutInfo(label, NONE)
 
 		     val profile_assembly
 		       = ProfileInfo.profile_assembly profileInfo
@@ -1612,7 +1612,7 @@ struct
 			  => register))})::
 		   nil)
 	    in
-	      case get label
+	      case getLayoutInfo label
 		of NONE
 		 => default ()
 		 | SOME (block as Block.T {entry,...})
@@ -1687,7 +1687,7 @@ struct
 			  => register))})::
 		   nil)
 	    in
-	      case get label
+	      case getLayoutInfo label
 		of NONE 
 		 => default ()
 		 | SOME (block as Block.T {entry,...})
