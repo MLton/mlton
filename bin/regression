@@ -65,7 +65,7 @@ $mlton -verbose 1 || echo 'no mlton present'
 echo "flags = $flags"
 
 cd $src/regression
-for f in `ls *.sml`; do
+for f in `ls *.sml fail/*.sml`; do
 	f=`basename $f .sml`
 	case "$f" in
 	serialize)
@@ -110,6 +110,12 @@ done
 if [ "$cross" = 'yes' -o "$runOnly" = 'yes' ]; then
  	exit 0
 fi
+for f in `ls fail/*.sml`; do
+	echo "testing $f"
+	( $mlton $flags $extraFlags -stop tc $f >/dev/null 2>&1 &&
+		echo "compilation of $f should have failed but did not" ) ||
+		true
+done
 make clean >/dev/null
 cd $src/benchmark/tests
 for f in `ls *.sml`; do
