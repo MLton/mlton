@@ -320,8 +320,9 @@ structure InitReachCallersCallees =
 	  Graph.dfsNodes (G, [fm_node], dfs_param);
 	  reset (fn _ => true)
 	end
-    val initReachCallersCallees 
-      = Control.trace (Control.Pass, "initReachCallerCallees") initReachCallersCallees 
+    val initReachCallersCallees =
+       Control.trace (Control.Detail, "initReachCallerCallees")
+       initReachCallersCallees 
   end
 
 structure AnalyzeDom =
@@ -422,14 +423,14 @@ structure AnalyzeDom =
 		   end)
           in () end
 	  val buildGraph 
-	    = Control.trace (Control.Pass, "buildGraph") buildGraph
+	    = Control.trace (Control.Detail, "buildGraph") buildGraph
 	  val _ = buildGraph ()
 
 	  fun computeDominators () = let
 	  val {idom} = Graph.dominators (G, {root = Root})
           in idom end
 	  val computeDominators 
-	    = Control.trace (Control.Pass, "computeDominators") computeDominators
+	    = Control.trace (Control.Detail, "computeDominators") computeDominators
 	  val idom = computeDominators ()
 
 	  fun computeADom () = let
@@ -475,7 +476,7 @@ structure AnalyzeDom =
 		   end)
 	  in () end
 	  val computeADom 
-	    = Control.trace (Control.Pass, "compute ADom") computeADom
+	    = Control.trace (Control.Detail, "compute ADom") computeADom
 	  val _ = computeADom ()
 
 	  val _ = reset (fn n => not (Node.equals (n, Root)))
@@ -483,7 +484,7 @@ structure AnalyzeDom =
 	  ()
 	end
     val analyzeDom 
-      = Control.trace (Control.Pass, "analyzeDom") analyzeDom
+      = Control.trace (Control.Detail, "analyzeDom") analyzeDom
 end
 
 structure Transform =
@@ -744,7 +745,7 @@ structure Transform =
 	  program
 	end
     val transform 
-      = Control.trace (Control.Pass, "transform") transform
+      = Control.trace (Control.Detail, "transform") transform
   end
 
 fun contify (program as Program.T {functions, ...})
