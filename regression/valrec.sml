@@ -52,8 +52,3 @@ and rec b = fn x => a(b(c(d(e(f(g x))))))
 and c : 'a -> 'a as d : 'a -> 'a = fn x => x
 and rec e as f as g = fn x => x
 and h : 'b -> 'b : 'b -> 'b = fn x => x;
-
-val rec LESS = fn x => x
-and NONE as SOME = fn x => x
-val SOME = 13
-val _ = print (concat [Int.toString SOME, "\n"])
