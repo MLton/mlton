@@ -646,45 +646,49 @@ fun updateCard (addr: Operand.t): Statement.t list =
 	     src = Operand.word (WordX.one (WordSize.fromBits Bits.inByte))}]
    end
 
-fun arrayUpdate {array, index, elt, ty}: Statement.t list =
-   if not (!Control.markCards) orelse not (Type.isPointer ty)
-      then
-	 [Move {dst = ArrayOffset {base = array, index = index, ty = ty},
-		src = elt}]
-   else
-      let
-	 val bytes = Bytes.toIntInf (Type.bytes ty)
-	 val shift = IntInf.log2 bytes
-	 val _ =
-	    if bytes = IntInf.pow (2, shift)
-	       then ()
-	    else Error.bug "can't handle shift"
-	 val shift = Bits.fromInt shift
-	 val addr = Var.newNoname ()
-	 val addrTy = Type.address ty
-	 val addrOp = Operand.Var {ty = addrTy, var = addr}
-	 val temp = Var.newNoname ()
-	 val tempTy =
-	    Type.seq
-	    (Vector.new2 (Type.constant (WordX.zero (WordSize.fromBits shift)),
-			  Type.word (Bits.- (Bits.inWord, shift))))
-	 val tempOp = Operand.Var {ty = tempTy, var = temp}
-      in
-	 [PrimApp {args = Vector.new2 (Operand.cast (index, Type.defaultWord),
-				       Operand.word (WordX.fromIntInf
-						     (Bits.toIntInf shift,
-						      WordSize.default))),
-		   dst = SOME (temp, tempTy),
-		   prim = Prim.wordLshift WordSize.default},
-	  PrimApp {args = Vector.new2 (Cast (array, addrTy), tempOp),
-		   dst = SOME (addr, addrTy),
-		   prim = Prim.wordAdd WordSize.default}]
-	 @ updateCard addrOp
-	 @ [Move {dst = Operand.Offset {base = addrOp,
-					offset = Bytes.zero,
-					ty = ty},
-		  src = elt}]
-      end
+fun arrayUpdate {array, arrayElementTy, index, elt}: Statement.t list =
+   let
+      val (elt, ss) = Statement.resize (elt, Type.width arrayElementTy)
+      val ty = Operand.ty elt
+   in
+      if not (!Control.markCards) orelse not (Type.isPointer ty)
+	 then
+	    ss @ [Move {dst = ArrayOffset {base = array, index = index, ty = ty},
+			src = elt}]
+      else
+	 let
+	    val bytes = Bytes.toIntInf (Type.bytes ty)
+	    val shift = IntInf.log2 bytes
+	    val _ =
+	       if bytes = IntInf.pow (2, shift)
+		  then ()
+	       else Error.bug "can't handle shift"
+	    val shift = Bits.fromInt shift
+	    val addr = Var.newNoname ()
+	    val addrTy = Type.address ty
+	    val addrOp = Operand.Var {ty = addrTy, var = addr}
+	    val temp = Var.newNoname ()
+	    val shiftOp = Operand.word (WordX.fromIntInf (Bits.toIntInf shift,
+							  WordSize.default))
+	    val tempTy = Type.lshift (Type.defaultWord, Operand.ty shiftOp)
+	    val tempOp = Operand.Var {ty = tempTy, var = temp}
+	 in
+	    ss
+	    @ [PrimApp {args = Vector.new2 (Operand.cast
+					    (index, Type.defaultWord),
+					    shiftOp),
+			dst = SOME (temp, tempTy),
+			prim = Prim.wordLshift WordSize.default},
+	       PrimApp {args = Vector.new2 (Cast (array, addrTy), tempOp),
+			dst = SOME (addr, addrTy),
+			prim = Prim.wordAdd WordSize.default}]
+	    @ updateCard addrOp
+	    @ [Move {dst = Operand.Offset {base = addrOp,
+					   offset = Bytes.zero,
+					   ty = ty},
+		     src = elt}]
+	 end
+   end
 
 val word = Type.word o WordSize.bits
 
@@ -701,6 +705,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	 Vector.foreachi
 	 (objectTypes, fn (i, (pt, _)) => PointerTycon.setIndex (pt, i))
       val objectTypes = Vector.map (objectTypes, #2)
+      fun arrayElementType (z: Operand.t): Type.t =
+	 case Type.dest (Operand.ty z) of
+	    Type.Pointer pt =>
+	       (case Vector.sub (objectTypes, PointerTycon.index pt) of
+		   ObjectType.Array t => t
+		 | _ => Error.bug "arrayElementType of non array")
+	  | _ =>  Error.bug "arrayElementType of non pointer"
       val () = diagnostic ()
       val {get = varInfo: Var.t -> {ty: S.Type.t},
 	   set = setVarInfo, ...} =
@@ -1038,11 +1049,26 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				       {base = a 0,
 					offset = Runtime.arrayLengthOffset,
 					ty = Type.defaultInt})
-			      fun arrayOffset (ty: Type.t): Operand.t =
-				 ArrayOffset {base = a 0,
-					      index = a 1,
-					      ty = ty}
-			      fun sub (ty: Type.t) = move (arrayOffset ty)
+			      fun sub (ty: Type.t) =
+				 let
+				    val base = a 0
+				    val index = a 1
+				    val (oper, ss) =
+				       Statement.resize
+				       (ArrayOffset {base = base,
+						     index = index,
+						     ty = arrayElementType base},
+					Type.width ty)
+				    val s = Bind {isMutable = false,
+						  oper = oper,
+						  var = valOf var}
+				 in
+				    adds (ss @ [s])
+				 end
+			      fun subWord () =
+				 move (ArrayOffset {base = a 0,
+						    index = a 1,
+						    ty = Type.defaultWord})
 			      fun dst () =
 				 case var of
 				    SOME x =>
@@ -1188,13 +1214,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				  | SOME f => simpleCCall f)
 			end
 		     val arrayUpdate =
-			fn ty =>
+			fn elementTy =>
 			loop (i - 1,
 			      arrayUpdate {array = a 0,
+					   arrayElementTy = elementTy,
 					   index = a 1,
-					   elt = a 2,
-					   ty = ty}
-			      @ ss, t)
+					   elt = a 2}
+			      @ ss,
+			      t)
 		     datatype z = datatype Prim.Name.t
 			   in
 			      case Prim.name prim of
@@ -1231,7 +1258,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | Array_update =>
 				    (case targ () of
 					NONE => none ()
-				      | SOME ty => arrayUpdate ty)
+				      | SOME t => arrayUpdate t)
 			       | FFI f => simpleCCall f
 			       | GC_collect =>
 				    ccall
@@ -1483,10 +1510,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				       else nativeOrC (Prim.wordToWord (s1, s2))
 				    end
 			       | WordVector_toIntInf => cast ()
-			       | Word8Array_subWord => sub Type.defaultWord
+			       | Word8Array_subWord => subWord ()
 			       | Word8Array_updateWord =>
 				    arrayUpdate Type.defaultWord
-			       | Word8Vector_subWord => sub Type.defaultWord
+			       | Word8Vector_subWord => subWord ()
 			       | World_save =>
 				    ccall {args = (Vector.new2
 						   (Operand.GCState,

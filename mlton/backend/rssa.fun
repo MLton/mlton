@@ -261,6 +261,26 @@ structure Statement =
 
       fun clear (s: t) =
 	 foreachDef (s, Var.clear o #1)
+
+      fun resize (z: Operand.t, b: Bits.t): Operand.t * t list =
+	 let
+	    val ty = Operand.ty z
+	    val w = Type.width ty
+	 in
+	    if Bits.equals (b, w)
+	       then (z, [])
+	    else
+	       let
+		  val tmp = Var.newNoname ()
+		  val tmpTy = Type.resize (ty, b)
+	       in
+		  (Operand.Var {ty = tmpTy, var = tmp},
+		   [PrimApp {args = Vector.new1 z,
+			     dst = SOME (tmp, tmpTy),
+			     prim = Prim.wordToWord (WordSize.fromBits w,
+						     WordSize.fromBits b)}])
+	       end
+	 end
    end
 
 structure Transfer =

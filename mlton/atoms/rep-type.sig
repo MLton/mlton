@@ -92,6 +92,7 @@ signature REP_TYPE =
       val isValidInit: t * {offset: Bytes.t, ty: t} vector -> bool
       val isReal: t -> bool
       val isSubtype: t * t -> bool
+      val isZero: t -> bool
       val junk: Bits.t -> t
       val label: Label.t -> t
       val layout: t -> Layout.t

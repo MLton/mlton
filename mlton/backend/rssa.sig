@@ -101,6 +101,7 @@ signature RSSA =
 	    val foldUse: t * 'a * (Var.t * 'a -> 'a) -> 'a
 	    val foreachUse: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
+	    val resize: Operand.t * Bits.t -> Operand.t * t list
 	    val toString: t -> string
 	 end
 

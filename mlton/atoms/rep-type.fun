@@ -132,6 +132,11 @@ structure Type =
 
       fun zero b = constant (WordX.zero (WordSize.fromBits b))
 
+      fun isZero t =
+	 case dest t of
+	    Constant w => WordX.isZero w
+	  | _ => false
+
       fun isUnit t = Bits.zero = width t
 	 
       local
@@ -174,6 +179,13 @@ structure Type =
 	    end
 	    then
 	       let
+		  fun sumOnto (ts: t vector, ts': t list): t list =
+		     Vector.foldr
+		     (ts, ts', fn (t, ts') =>
+		      case dest t of
+			 Sum ts => sumOnto (ts, ts')
+		       | _ => t :: ts')
+		  val ts = Vector.fromList (sumOnto (ts, []))
 		  val ts =
 		     Vector.removeDuplicates
 		     (QuickSort.sortVector (ts, lessEq), equals)
@@ -406,6 +418,14 @@ structure Type =
 		    loop (0, t)
 		 end
 	    | (Sum ts, _) => Vector.forall (ts, fn t => isSubtype (t, t'))
+	    | (Word b, Sum _) =>
+		 let
+		    val s = WordSize.fromBits b
+		 in
+		    IntInf.forall
+		    (0, IntInf.pow (2, Bits.toInt b), fn i =>
+		     isSubtype (constant (WordX.fromIntInf (i, s)), t'))
+		 end
 	    | (_, Sum ts') => Vector.exists (ts', fn t' => isSubtype (t, t'))
 	    | (_, Word _) => true
 	    | _ => false))
@@ -565,8 +585,39 @@ structure Type =
 		     case (dest t, dest t') of
 			(Constant w, _) => SOME (doConstant (t', w))
 		      | (_, Constant w') => SOME (doConstant (t, w'))
+		      | (Sum ts, _) => doSum (ts, t')
+		      | (_, Sum ts') => doSum (ts', t)
+		      | (Seq ts, _) => doSeq (ts, t')
+		      | (_, Seq ts') => doSeq (ts', t)
 		      | (Word _, Word _) => SOME t
 		      | _ => NONE
+	       and doSeq =
+		  fn (ts, t') =>
+		  let
+		     val ts =
+			Vector.fold
+			(ts, SOME (t', []), fn (t, z) =>
+			 case z of
+			    NONE => NONE
+			  | SOME (t', ac) =>
+			       let
+				  val {hi, lo} = split (t', {lo = width t})
+			       in
+				  Option.map (doit (t, lo),
+					      fn t => (hi, t :: ac))
+			       end)
+		  in
+		     Option.map (ts, fn (_, ac) => seq (Vector.fromListRev ac))
+		  end
+	       and doSum =
+		  fn (ts, t') =>
+		  let
+		     val ts2 = Vector.keepAllMap (ts, fn t => doit (t, t'))
+		  in
+		     if Vector.length ts = Vector.length ts2
+			then SOME (sum ts2)
+		     else NONE
+		  end
 	       and doConstant: t * WordX.t -> t =
 		  fn (t, w) =>
 		  if not (Bits.equals (width t, WordSize.bits (WordX.size w)))
