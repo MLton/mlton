@@ -67,7 +67,7 @@ end
 (*---------------------------------------------------*)
 
 structure FrontEnd = FrontEnd (structure Ast = Ast)
-(* structure DeadCode = DeadCode (structure CoreML = CoreML) *)
+structure DeadCode = DeadCode (structure CoreML = CoreML)
 structure Defunctorize = Defunctorize (structure CoreML = CoreML
 				       structure Xml = Xml)
 structure Elaborate = Elaborate (structure Ast = Ast
@@ -467,15 +467,14 @@ fun elaborate {input: File.t list} =
 	    val _ = parseElabMsg ()
 	    val basis = Decs.toList basis
 	    val user = Decs.toList user
-(* 	    val basis = 
- * 	       Control.pass
- * 	       {name = "deadCode",
- * 		suffix = "basis",
- * 		style = Control.ML,
- * 		thunk = fn () => DeadCode.deadCode {basis = basis,
- * 						    user = user},
- * 		display = Control.Layout (List.layout CoreML.Dec.layout)}
- *)
+ 	    val basis = 
+ 	       Control.pass
+ 	       {name = "deadCode",
+ 		suffix = "basis",
+ 		style = Control.ML,
+ 		thunk = fn () => DeadCode.deadCode {basis = basis,
+ 						    user = user},
+ 		display = Control.Layout (List.layout CoreML.Dec.layout)}
 	 in
 	    Vector.concat [primitiveDecs,
 			   Vector.fromList basis,

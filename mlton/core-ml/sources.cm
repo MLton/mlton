@@ -9,7 +9,7 @@ Group
 
 signature CORE_ML
 functor CoreML
-(*functor DeadCode *)
+functor DeadCode
 
 is
 
@@ -20,5 +20,5 @@ is
 
 core-ml.fun
 core-ml.sig
-(*dead-code.fun *)
+dead-code.fun
 dead-code.sig

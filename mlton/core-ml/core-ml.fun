@@ -101,6 +101,22 @@ structure Pat =
 	  | Tuple ps => Vector.exists (ps, isRefutable)
 	  | Var _ => false
 	  | Wild => false
+
+      fun foreachVar (p: t, f: Var.t -> unit): unit =
+	 let
+	    fun loop (p: t): unit =
+	       case node p of
+		  Con _ => ()
+		| Const _ => ()
+		| Layered (x, p) => (f x; loop p)
+		| List ps => Vector.foreach (ps, loop)
+		| Record r => Record.foreach (r, loop)
+		| Tuple ps => Vector.foreach (ps, loop)
+		| Var x => f x
+		| Wild => ()
+	 in
+	    loop p
+	 end
    end
 
 structure NoMatch =
@@ -380,6 +396,40 @@ structure Exp =
 	     Type.unit)
 	 end
 
+      fun foreachVar (e: t, f: Var.t -> unit): unit =
+	 let
+	    fun loop (e: t): unit =
+	       case node e of
+		  App (e1, e2) => (loop e1; loop e2)
+		| Case {rules, test, ...} =>
+		     (loop test
+		      ; Vector.foreach (rules, loop o #exp))
+		| Con _ => ()
+		| Const _ => ()
+		| EnterLeave (e, _) => loop e
+		| Handle {handler, try, ...} => (loop handler; loop try)
+		| Lambda l => loopLambda l
+		| Let (ds, e) =>
+		     (Vector.foreach (ds, loopDec)
+		      ; loop e)
+		| List es => Vector.foreach (es, loop)
+		| PrimApp {args, ...} => Vector.foreach (args, loop)
+		| Raise {exn, ...} => loop exn
+		| Record r => Record.foreach (r, loop)
+		| Seq es => Vector.foreach (es, loop)
+		| Var (x, _) => f (x ())
+	    and loopDec d =
+	       case d of
+		  Datatype _ => ()
+		| Exception _ => ()
+		| Fun {decs, ...} => Vector.foreach (decs, loopLambda o #lambda)
+		| Val {rvbs, vbs, ...} =>
+		     (Vector.foreach (rvbs, loopLambda o #lambda)
+		      ; Vector.foreach (vbs, loop o #exp))
+	    and loopLambda (Lam {body, ...}) = loop body
+	 in
+	    loop e
+	 end
    end
 
 structure Dec =

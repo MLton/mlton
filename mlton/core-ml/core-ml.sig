@@ -47,7 +47,8 @@ signature CORE_ML =
 	     | Wild
 
 	    val dest: t -> node * Type.t
-	    val falsee: t 
+	    val falsee: t
+	    val foreachVar: t * (Var.t -> unit) -> unit
 	    (* true if pattern contains a constant, constructor or variable *)
 	    val isRefutable: t -> bool
 	    val isWild: t -> bool
@@ -107,6 +108,7 @@ signature CORE_ML =
 	    val enterLeave: t * SourceInfo.t -> t
 	    val iff: t * t * t -> t
 	    val falsee: t
+	    val foreachVar: t * (Var.t -> unit) -> unit
 	    (* true if the expression may side-effect. See p 19 of Definition *)
 	    val isExpansive: t -> bool
 	    val lambda: lambda -> t

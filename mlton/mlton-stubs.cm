@@ -152,10 +152,10 @@ ast/tyvar.sig
 ast/field.sig
 ast/record.sig
 ../lib/mlton/basic/large-word.sml
-ast/word-size.sig
-ast/real-size.sig
 ../lib/mlton/basic/int-inf.sig
 ../lib/mlton/basic/int-inf.sml
+ast/word-size.sig
+ast/real-size.sig
 ast/int-size.sig
 ast/tycon-kind.sig
 ast/prim-tycons.sig
@@ -187,8 +187,6 @@ xml/xml-type.sig
 xml/xml-tree.sig
 xml/sxml-tree.sig
 xml/sxml-tree.fun
-core-ml/core-ml.sig
-core-ml/dead-code.sig
 ../lib/mlton/basic/counter.sig
 ../lib/mlton/basic/counter.sml
 ../lib/mlton/basic/dot-color.sml
@@ -469,6 +467,9 @@ codegen/x86-codegen/x86-allocate-registers.fun
 codegen/x86-codegen/x86-validate.sig
 codegen/x86-codegen/x86-validate.fun
 codegen/x86-codegen/x86-codegen.fun
+core-ml/core-ml.sig
+core-ml/dead-code.sig
+core-ml/dead-code.fun
 core-ml/core-ml.fun
 match-compile/nested-pat.sig
 match-compile/nested-pat.fun
