@@ -549,4 +549,28 @@ fun removeFirst (v, f) =
       v
    end
 
+fun partitioni (v, f) =
+   let
+     val n = ref 0
+     val v' = mapi (v, fn (i, x) =>
+		    let
+		      val b = f (i, x)
+		      val _ = if b then n := 1 + !n else ()
+		    in
+		      (x,b)
+		    end)
+     val n = !n
+     val r = ref 0
+     fun loop b (i:int) =
+       case unsafeSub (v', i) of
+	 (x, b') => if b = b' 
+		      then (r := i + 1; x)
+		      else loop b (i + 1)
+     val yes = tabulate (n, fn _ => loop true (!r))
+     val _ = r := 0
+     val no = tabulate (length v - n, fn _ => loop false (!r))
+   in
+     {yes = yes, no = no}
+   end
+fun partition (v, f) = partitioni (v, f o #2)
 end
