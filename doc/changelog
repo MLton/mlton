@@ -1,15 +1,15 @@
 Here are the changes from version 20030716 to 20040227.
 
 Summary:
-  + A new front end that follows the Definition of SML and produces
-    readable error messages. 
+  + The front end now follows the Definition of SML and produces
+    readable error messages.
   + Added support for NetBSD.
   + Basis library changes tracking revisions to the specification.
   + Added structures: Int64, Real32, Word64.
   + File positions use Int64.
   + Major improvements to -show-basis, which now displays the basis in
     a very readable way with full type information.
-  + Changes to command-line switches.
+  + Command-line switch changes.
     o Deprecated: -basis.
     o Removed: -lib-search, -link, -may-load-world, -static.
     o Added: -link-opt, -runtime, -sequence-unit, -show-def-use,
@@ -20,6 +20,10 @@ Summary:
     o Renamed _ffi as _import.
     o Added cdecl and stdcall attributes to _import and _export
       expressions. 
+  + MLton structure changes.
+    o Added: Pointer.
+    o Removed: Ptrace.
+    o Changed: Finalizable, IntInf, Platform, Random, Signal, Word.
 
 * 2004-02-16
   - Changed -export-header, -show-basis, -show-basis-used to take a
