@@ -150,7 +150,7 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 		in
 		   Vector.foreach (children, loop)
 		end
-	     val _ = loop (Function.dominatorTree f)
+	     val _ = loop (Function.dfsTree f)
 
 	     val _ = 
 	        Control.diagnostics
