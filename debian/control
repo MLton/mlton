@@ -3,7 +3,7 @@ Section: devel
 Priority: optional
 Maintainer: Stephen Weeks <sweeks@sweeks.com>
 Build-Depends: mlton (>= 20020410.1), libgmp3-dev (>= 4.0.1), tetex-bin, tetex-extra, latex2html, time
-Standards-Version: 3.5.7.1
+Standards-Version: 3.6.0
 
 Package: mlton
 Architecture: i386
