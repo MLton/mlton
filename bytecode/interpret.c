@@ -283,7 +283,7 @@ typedef enum {
 #define temps(ty)				\
 	ty Temp (ty, 0);			\
 	ty Temp (ty, 1);			\
-	ty Temp (ty, 2);			\
+	ty Temp (ty, 2)				\
 
 #define Fetch(z)				\
 	do {					\
@@ -496,7 +496,7 @@ void MLton_Bytecode_interpret (Pointer code, Word32 codeOffset) {
 	temps (Word8);
 	temps (Word16);
 	temps (Word32);
-	temps (Word64)
+	temps (Word64);
 
 	// Quell unused variable warnings.
 	Word8_2 = 0;
