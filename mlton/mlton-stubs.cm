@@ -5,21 +5,19 @@ Group is
 ../lib/mlyacc/parser2.sml
 ../lib/mlyacc/join.sml
 upgrade-basis.sml
+../lib/mlton/basic/error.sig
+../lib/mlton/basic/error.sml
 ../lib/mlton-stubs/int-inf.sml
 ../lib/mlton-stubs/real.sml
 ../lib/mlton/pervasive/pervasive.sml
 ../lib/mlton/basic/dynamic-wind.sig
 ../lib/mlton/basic/dynamic-wind.sml
-../lib/mlton/basic/error.sig
-../lib/mlton/basic/error.sml
 ../lib/mlton/basic/outstream0.sml
 ../lib/mlton/basic/relation0.sml
 ../lib/mlton/basic/char0.sml
 ../lib/mlton/basic/string0.sml
 ../lib/mlton/basic/layout.sig
 ../lib/mlton/basic/layout.sml
-ast/admits-equality.sig
-ast/admits-equality.fun
 ../lib/mlton-stubs/thread.sml
 ../lib/mlton-stubs/random.sig
 ../lib/mlton-stubs/random.sml
@@ -160,6 +158,7 @@ ast/word-size.sig
 ast/real-size.sig
 ast/int-size.sig
 ast/tycon-kind.sig
+ast/admits-equality.sig
 ast/prim-tycons.sig
 atoms/id.sig
 atoms/tycon.sig
@@ -178,7 +177,7 @@ atoms/profile-exp.sig
 atoms/c-type.sig
 atoms/c-function.sig
 ast/prim-cons.sig
-atoms/con.sig
+atoms/con-.sig
 atoms/int-x.sig
 atoms/const.sig
 atoms/prim.sig
@@ -256,6 +255,7 @@ ast/prim-tycons.fun
 ast/prim-cons.fun
 ast/longid.fun
 ast/int-size.fun
+ast/admits-equality.fun
 ast/ast-id.fun
 ast/ast-atoms.fun
 ast/ast-core.fun
@@ -271,7 +271,7 @@ atoms/prim.fun
 atoms/int-x.fun
 atoms/ffi.fun
 atoms/const.fun
-atoms/con.fun
+atoms/con-.fun
 atoms/c-type.fun
 atoms/c-function.fun
 atoms/atoms.fun
