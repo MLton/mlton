@@ -14,6 +14,23 @@ open Ast
 structure Field = Record.Field
 structure Srecord = SortedRecord
 
+fun reportDuplicateFields (v, name: string, reg: Region.t) =
+   Vector.foreachi
+   (v, fn (i, (f, _)) =>
+    if Vector.existsi (v, fn (i', (f', _)) =>
+		       i < i' andalso Field.equals (f, f'))
+       then
+	  let
+	     open Layout
+	  in
+	     Control.error
+	     (reg,
+	      seq [str (concat ["duplicate field in ", name, ": "]),
+		   Field.layout f],
+	      empty)
+	  end
+    else ())
+
 structure Type =
    struct
       open Type
@@ -890,7 +907,13 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 	| const                 (Exp.Const const)
 	| HASH field		(Exp.Selector field)
 	| LBRACE elabels RBRACE
-	    (Exp.Record (Record.fromVector (Vector.fromList elabels)))
+	  (let
+	      val v = Vector.fromList elabels
+	      val _ = reportDuplicateFields (v, "expression",
+					     reg (elabelsleft, elabelsright))
+	   in
+	      Exp.Record (Record.fromVector v)
+	   end)
 	| LBRACE RBRACE		(Exp.unit)
 	| LPAREN RPAREN		(Exp.unit)
 	| LPAREN expnode RPAREN (expnode)
@@ -998,7 +1021,13 @@ ty' : ty'node (Type.makeRegion' (ty'node, ty'nodeleft, ty'noderight))
 
 ty'node	: tyvar		                  (Type.Var tyvar)
 	| LBRACE tlabels RBRACE
-	    (Type.Record (Srecord.fromVector (Vector.fromList tlabels)))
+	  (let
+	      val v = Vector.fromList tlabels
+	      val _ = reportDuplicateFields (v, "type",
+					     reg (tlabelsleft, tlabelsright))
+	   in
+	      Type.Record (Srecord.fromVector v)
+	   end)
 	| LBRACE RBRACE	                  (Type.unit)
 	| LPAREN ty0_pc RPAREN longtycon  (Type.Con (longtycon,
 						     Vector.fromList ty0_pc))
