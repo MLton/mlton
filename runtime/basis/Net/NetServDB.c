@@ -32,8 +32,7 @@ Int NetServDB_getByName(Cstring name, Cstring proto) {
 }
 
 Int NetServDB_getByNameNull(Cstring name) {
-	servent = getservbyname((char*)name, NULL);
-	return (servent != NULL and servent->s_name != NULL);
+	return NetServDB_getByName(name, (Cstring)NULL);
 }
 
 Int NetServDB_getByPort(Int port, Cstring proto) {
@@ -42,6 +41,5 @@ Int NetServDB_getByPort(Int port, Cstring proto) {
 }
 
 Int NetServDB_getByPortNull(Int port) {
-	servent = getservbyport(port, NULL);
-	return (servent != NULL and servent->s_name != NULL);
+	return NetServDB_getByPort(port, (Cstring)NULL);
 }
