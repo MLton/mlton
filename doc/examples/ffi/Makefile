@@ -1,4 +1,6 @@
-mlton = mlton
+PATH = ../../../build/bin:$(shell echo $$PATH)
+
+mlton = mlton -allow-export true -allow-import true
 
 .PHONY: all
 all: import export
