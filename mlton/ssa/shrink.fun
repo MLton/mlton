@@ -857,13 +857,9 @@ fun shrinkFunction (globals: Statement.t vector) =
 				 fun tail statements =
 				    (deleteLabelMeaning m
 				     ; (statements, Return.Tail))
-				 fun cont (handlerIsEta: bool) =
+				 fun cont () =
 				    case LabelMeaning.aux m of
-				       LabelMeaning.Bug =>
-					  if handlerIsEta
-					     then tail []
-					  else nonTail ()
-				     | LabelMeaning.Return {args, canMove} =>
+				       LabelMeaning.Return {args, canMove} =>
 					  if isEta (m, args)
 					     then tail canMove
 					  else nonTail ()
@@ -871,17 +867,17 @@ fun shrinkFunction (globals: Statement.t vector) =
 
 			      in
 				 case handler of
-				    Handler.Caller => cont false
-				  | Handler.Dead => cont false
+				    Handler.Caller => cont ()
+				  | Handler.Dead => cont ()
 				  | Handler.Handle l =>
 				       let
 					  val m = labelMeaning l
 				       in
 					  case LabelMeaning.aux m of
-					     LabelMeaning.Bug => cont false
+					     LabelMeaning.Bug => cont ()
 					   | LabelMeaning.Raise {args, ...} =>
 						if isEta (m, args)
-						   then cont true
+						   then cont ()
 						else nonTail ()
 					   | _ => nonTail ()
 				       end
