@@ -222,33 +222,16 @@ functor Real (R: PRE_REAL): REAL =
 		  let
 		     val frac = Prim.modf (x, int)
 		     val whole = !int
-		     (* FreeBSD, NetBSD, and Solaris don't always get sign of
-		      * zero right.
+		     (* Some platforms' C libraries don't get sign of zero right.
 		      *)
-		     val (frac, whole) =
-			if let
-			      open MLton.Platform.OS
-			   in
-			      case host of
-				 FreeBSD => true
-			       | NetBSD => true
-			       | Solaris => true
-			       | _ => false
-			   end
-			   then
-			      let
-				 fun fix y =
-				    if class y = ZERO
-				       andalso not (sameSign (x, y))
-				       then ~ y
-				    else y
-			      in
-				 (fix frac, fix whole)
-			      end
-			else (frac, whole)
+		     fun fix y =
+			if class y = ZERO
+			   andalso not (sameSign (x, y))
+			   then ~ y
+			else y
 		  in
-		     {frac = frac,
-		      whole = whole}
+		     {frac = fix frac,
+		      whole = fix whole}
 		  end
       end
 
