@@ -583,10 +583,11 @@ fun output {program as Machine.Program.T {chunks,
 	 datatype z = datatype Operand.t
       	 fun toString (z: Operand.t): string =
 	    case z of
-	       ArrayOffset {base, index, ty} =>
+	       ArrayOffset {base, index, offset, ty} =>
 		  concat ["X", C.args [Type.toC ty,
 				       toString base,
-				       toString index]]
+				       toString index,
+				       C.bytes offset]]
 	     | Cast (z, ty) => concat ["(", Type.toC ty, ")", toString z]
 	     | Contents {oper, ty} => contents (ty, toString oper)
 	     | File => "__FILE__"

@@ -46,6 +46,7 @@ signature REP_TYPE =
       val andb: t * t -> t option
       val arrayOffsetIsOk: {base: t,
 			    index: t,
+			    offset: Bytes.t,
 			    pointerTy: PointerTycon.t -> ObjectType.t,
 			    result: t} -> bool
       val arshift: t * t -> t

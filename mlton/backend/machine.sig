@@ -74,6 +74,7 @@ signature MACHINE =
 	    datatype t =
 	       ArrayOffset of {base: t,
 			       index: t,
+			       offset: Bytes.t,
 			       ty: Type.t}
 	     | Cast of t * Type.t
 	     | Contents of {oper: t,

@@ -196,6 +196,7 @@ structure Operand =
       datatype t =
 	 ArrayOffset of {base: t,
 			 index: t,
+			 offset: Bytes.t,
 			 ty: Type.t}
        | Cast of t * Type.t
        | Contents of {oper: t,
@@ -241,9 +242,9 @@ structure Operand =
 	       else empty
 	 in
 	    case z of
-	       ArrayOffset {base, index, ty} =>
+	       ArrayOffset {base, index, offset, ty} =>
 		  seq [str (concat ["X", Type.name ty, " "]),
-		       tuple [layout base, layout index],
+		       tuple [layout base, layout index, Bytes.layout offset],
 		       constrain ty]
 	     | Cast (z, ty) =>
 		  seq [str "Cast ", tuple [layout z, Type.layout ty]]
@@ -1014,13 +1015,14 @@ structure Program =
 		  datatype z = datatype Operand.t
 		  fun ok () =
 		     case x of
-			ArrayOffset {base, index, ty} =>
+			ArrayOffset {base, index, offset, ty} =>
 			   (checkOperand (base, alloc)
 			    ; checkOperand (index, alloc)
 			    ; (Operand.isLocation base
 			       andalso
 			       (Type.arrayOffsetIsOk {base = Operand.ty base,
 						      index = Operand.ty index,
+						      offset = offset,
 						      pointerTy = tyconTy,
 						      result = ty})))
 		      | Cast (z, t) =>

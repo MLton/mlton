@@ -429,9 +429,10 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 	    datatype z = datatype R.Operand.t
 	 in
 	    case oper of
-	       ArrayOffset {base, index, ty} =>
+	       ArrayOffset {base, index, offset, ty} =>
 		  M.Operand.ArrayOffset {base = translateOperand base,
 					 index = translateOperand index,
+					 offset = offset,
 					 ty = ty}
 	     | Cast (z, t) => M.Operand.Cast (translateOperand z, t)
 	     | Const c => constOperand c

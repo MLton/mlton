@@ -339,6 +339,7 @@ fun updateCard (addr: Operand.t): Statement.t list =
        Move {dst = (ArrayOffset
 		    {base = Runtime GCField.CardMap,
 		     index = Var {ty = indexTy, var = index},
+		     offset = Bytes.zero,
 		     ty = Type.word Bits.inByte}),
 	     src = Operand.word (WordX.one (WordSize.fromBits Bits.inByte))}]
    end
@@ -352,6 +353,7 @@ fun arrayUpdate {array, arrayElementTy, index, elt}: Statement.t list =
 	 then
 	    ss @ [Move {dst = ArrayOffset {base = array,
 					   index = index,
+					   offset = Bytes.zero,
 					   ty = arrayElementTy},
 			src = elt}]
       else
@@ -718,6 +720,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				       Statement.resize
 				       (ArrayOffset {base = base,
 						     index = index,
+						     offset = Bytes.zero,
 						     ty = arrayElementType base},
 					Type.width ty)
 				    val s = Bind {dst = (valOf var, ty),
@@ -729,6 +732,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 			      fun subWord () =
 				 move (ArrayOffset {base = a 0,
 						    index = a 1,
+						    offset = Bytes.zero,
 						    ty = Type.defaultWord})
 			      fun dst () =
 				 case var of
@@ -800,10 +804,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 		     fun pointerGet ty =
 			move (ArrayOffset {base = a 0,
 					   index = a 1,
+					   offset = Bytes.zero,
 					   ty = ty})
 		     fun pointerSet ty =
 			add (Move {dst = ArrayOffset {base = a 0,
 						      index = a 1,
+						      offset = Bytes.zero,
 						      ty = ty},
 				   src = a 2})
 		     fun codegenOrC (p: Prim.t) =
@@ -1098,6 +1104,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				    add (Move {dst = (ArrayOffset
 						      {base = a 0,
 						       index = a 1,
+						       offset = Bytes.zero,
 						       ty = Type.defaultWord}),
 					       src = a 2})
 			       | Word8Vector_subWord => subWord ()
