@@ -13,13 +13,17 @@ PATH = $(BIN):$(shell echo $$PATH)
 ifeq (self, $(shell if [ -x $(BIN)/mlton ]; then echo self; fi))
   CM = $(NAME).cm
 else
+ifeq (1997, $(shell $(SRC)/bin/mlton-basis-version))
+  CM = $(NAME)-stubs-1997.cm
+else
   CM = $(NAME)-stubs.cm
+endif
 endif
 
 .PHONY: all
 all: $(AOUT)
 
-$(AOUT): $(NAME).cm $(shell $(MLTON) -stop f mlton.cm)
+$(AOUT): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	@echo 'Compiling mlton (takes a while)'
 	$(MLTON) $(FLAGS) $(CM)
 	size $(AOUT)
@@ -27,6 +31,14 @@ $(AOUT): $(NAME).cm $(shell $(MLTON) -stop f mlton.cm)
 .PHONY:	$(NAME)_cm
 $(NAME)_cm: $(NAME)-stubs_cm
 	grep -v mlton-stubs $(NAME)-stubs.cm >$(NAME).cm
+
+.PHONY: $(NAME)-stubs-1997_cm
+$(NAME)-stubs-1997_cm: $(NAME)-stubs_cm
+	(								\
+		echo 'Group is' &&					\
+		echo '$(SRC)/lib/mlton-stubs/1997-to-2002.sml' &&	\
+		grep -v Group $(NAME)-stubs.cm;				\
+	) >$(NAME)-stubs-1997.cm
 
 # This makes a version of MLton that can be compiled in the standard basis
 # library.  I.E. it doesn't require a MLton structure.
