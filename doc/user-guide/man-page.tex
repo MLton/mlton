@@ -73,17 +73,17 @@ performed at each exception construction, raise, and handle.
 
 \end{description}
 
-\option{-default-ann {\it anns}}
+\option{-default-ann {\it ann}}
 Specify the default annotation values for {\tt mlb} files.  For
 example, {\tt -default-ann 'warnUnused true'} causes unused variable
 warnings to be enabled by default.  Defaults may be overridden by an
 annotation in an {\tt mlb} file.
 
 \option{-disable-ann {\it anns}}
-Ignore the specified annotations in every ML basis file.  You can
-supply multiple annotations separated by commas.  For example, to see
-{\em all} match and unused warnings, use {\tt -disable-ann 'warnMatch,
-warnUnused, forceUsed' -default-ann 'warnUnused true'}.
+Ignore the specified annotation in every {\tt mlb} file.  For example,
+to see {\em all} match and unused warnings, use {\tt -disable-ann
+'warnMatch' -disable-ann 'warnUnused' -disable-ann 'forceUsed'
+-default-ann 'warnUnused true'}.
 
 \option{-export-header {\it file}}
 Write to {\it file} C prototypes for all of the functions exported

@@ -74,19 +74,18 @@ construction, raise, and handle.
 .in -.5i
 
 .TP
-\fB-default-ann \fIanns\fR
+\fB-default-ann \fIann\fR
 Specify the default annotation values for \fBmlb\fP files.  For
 example, \fB-default-ann 'warnUnused true'\fP 
 causes unused variable warnings to be enabled by default.
 Defaults may be overridden by an annotation in an \fBmlb\fP file.
 
 .TP
-\fB-disable-ann \fIanns\fR
-Ignore the specified annotations in every ML basis file.  You can
-supply multiple annotations separated by commas.  For example, to see
-\fIall\fP match and unused warnings, use 
-\fB-disable-ann 'warnMatch, warnUnused, forceUsed' -default-ann
-'warnUnused true'\fP.
+\fB-disable-ann \fIann\fR
+Ignore the specified annotation in every \fBmlb\fP file.  For example,
+to see \fIall\fP match and unused warnings, use \fB-disable-ann
+'warnMatch' -disable-ann 'warnUnused' -disable-ann 'forceUsed'
+-default-ann 'warnUnused true'\fP.
 
 .TP
 \fB-export-header \fIfile\fR
