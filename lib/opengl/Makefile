@@ -11,7 +11,7 @@ smlgllib: gl glut
 
 gl: GL.sml GL.sig GL_h.h GL_c.o
 
-GL.sml: ../gl/gl.sml
+GL.sml: ../gl/gl.sml ../gl/gl.sig
 	gcc -DMLTON_SOURCE $(CPPFLAGS) ../gl/gl.sml > GL.sml
 
 GL.sig: ../gl/gl.sig
@@ -25,10 +25,10 @@ GL_c.o: GL_c.c
 
 glu: GLU.sml GLU.sig GLU_h.h GLU_c.o
 
-GLU.sml: ../glu/glu.sml
+GLU.sml: ../glu/glu.sml ../gl/gl.sml ../gl/gl.sig
 	gcc -DMLTON_SOURCE $(CPPFLAGS) ../glu/glu.sml > GLU.sml
 
-GLU.sig: ../glu/glu.sig
+GLU.sig: ../glu/glu.sig ../gl/gl.sml ../gl/gl.sig
 	gcc -DMLTON_SOURCE $(CPPFLAGS) ../glu/glu.sig > GLU.sig
 
 GLU_h.h: GLU.sml
@@ -39,10 +39,10 @@ GLU_c.o: GLU_c.c
 
 glut: GLUT.sml GLUT.sig GLUT_h.h GLUT_c.o
 
-GLUT.sml: ../glut/glut.sml
+GLUT.sml: ../glut/glut.sml ../glut/glut.sig ../gl/gl.sml ../gl/gl.sig
 	gcc -DMLTON_SOURCE $(CPPFLAGS) ../glut/glut.sml > GLUT.sml
 
-GLUT.sig: ../glut/glut.sig
+GLUT.sig: ../glut/glut.sig ../gl/gl.sml ../gl/gl.sig
 	gcc -DMLTON_SOURCE $(CPPFLAGS) ../glut/glut.sig > GLUT.sig
 
 GLUT_h.h: GLUT.sml

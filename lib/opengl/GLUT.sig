@@ -2,7 +2,7 @@ open GL
 signature GLUT =
     sig
 
-        type glutfont = GL.GLenum
+        type glutfont = Word32.word
         (* Display mode bit masks. *)
         val GLUT_RGB : GL.GLenum
         val GLUT_RGBA : GL.GLenum

@@ -8,7 +8,8 @@ fun bmstring (x : GLdouble) (y : GLdouble) (f : int -> unit) (s : string) =
     in
 	glColor3d 1.0 1.0 1.0;
 	glRasterPos2d x y;
-	app f (map ord chars)
+	glutBitmapCharacter GLUT_BITMAP_HELVETICA_10 65
+	(*app f (map ord chars)*)
     end
 
 fun ststring (x : GLdouble) (y : GLdouble) (f : int -> unit) (s : string) =
@@ -18,7 +19,7 @@ fun ststring (x : GLdouble) (y : GLdouble) (f : int -> unit) (s : string) =
 	glColor3d 1.0 0.0 0.0;
 	glPushMatrix();
 	glTranslated x y 0.0;
-	app f (map ord chars);
+	(*app f (map ord chars);*)
 	glPopMatrix()
     end
 

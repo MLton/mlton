@@ -16,41 +16,40 @@ void callGlutInit ()
 }
 
 
-void *mlton_glut_stroke_roman(void)
+Word32 mlton_glut_stroke_roman(void)
 {
-  return (GLUT_STROKE_ROMAN);
+  return ((Word32) GLUT_STROKE_ROMAN);
 }
-void *mlton_glut_stroke_mono_roman(void)
+Word32 mlton_glut_stroke_mono_roman(void)
 {
-  return (GLUT_STROKE_MONO_ROMAN);
+  return ((Word32) GLUT_STROKE_MONO_ROMAN);
 }
 	    
-void *mlton_glut_bitmap_9_by_15(void)
+Word32 mlton_glut_bitmap_9_by_15(void)
 {
-  return (GLUT_BITMAP_9_BY_15);
+  return ((Word32) GLUT_BITMAP_9_BY_15);
 }
-void *mlton_glut_bitmap_8_by_13(void)
+Word32 mlton_glut_bitmap_8_by_13(void)
 {
-  return (GLUT_BITMAP_8_BY_13);
+  return ((Word32) GLUT_BITMAP_8_BY_13);
 }
-void *mlton_glut_bitmap_times_roman_10(void)
+Word32 mlton_glut_bitmap_times_roman_10(void)
 {
-  return (GLUT_BITMAP_TIMES_ROMAN_10);
+  return ((Word32) GLUT_BITMAP_TIMES_ROMAN_10);
 }
-void *mlton_glut_bitmap_times_roman_24(void)
+Word32 mlton_glut_bitmap_times_roman_24(void)
 {
-  return (GLUT_BITMAP_TIMES_ROMAN_24);
+  return ((Word32) GLUT_BITMAP_TIMES_ROMAN_24);
 }
-void *mlton_glut_bitmap_helvetica_10(void)
+Word32 mlton_glut_bitmap_helvetica_10(void)
 {
-  return (GLUT_BITMAP_HELVETICA_10);
+  return ((Word32) GLUT_BITMAP_HELVETICA_10);
 }
-void *mlton_glut_bitmap_helvetica_12(void)
+Word32 mlton_glut_bitmap_helvetica_12(void)
 {
-  return (GLUT_BITMAP_HELVETICA_12);
+  return ((Word32) GLUT_BITMAP_HELVETICA_12);
 }
-void *mlton_glut_bitmap_helvetica_18(void)
+Word32 mlton_glut_bitmap_helvetica_18(void)
 {
-  return (GLUT_BITMAP_HELVETICA_18);
+  return ((Word32) GLUT_BITMAP_HELVETICA_18);
 }
-
