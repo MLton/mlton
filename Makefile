@@ -30,7 +30,7 @@ all:
 
 .PHONY: dirs
 dirs:
-	mkdir -p $(BUILD) $(BIN) $(LIB) $(LIB)/$(HOST) $(LIB)/$(HOST)/include
+	mkdir -p $(BUILD) $(BIN) $(LIB)/$(HOST)/include
 
 HOSTMAP=$(LIB)/hostmap
 .PHONY: runtime
