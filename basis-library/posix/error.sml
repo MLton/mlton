@@ -37,13 +37,6 @@ structure PosixError: POSIX_ERROR_EXTRA =
 	 end
 
       fun raiseSys n = raise SysErr (errorMsg n, SOME n)
-      structure Old =
-	 struct
-	    fun error () = raiseSys (getErrno ())
-	    fun checkReturnResult (n: int) = if n = ~1 then error () else n
-	    fun checkResult n = (ignore (checkReturnResult n); ())
-	    val getErrno = getErrno
-	 end
 
       structure SysCall =
 	 struct

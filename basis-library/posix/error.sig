@@ -62,18 +62,7 @@ signature POSIX_ERROR_EXTRA =
       exception SysErr of string * syserror option
 
       val cleared: syserror
-
       val raiseSys: syserror -> 'a
-	 
-      structure Old:
-	 sig
-	    (* raiseSys if arg is -1 *)
-	    val checkResult: int -> unit
-	    val checkReturnResult: int -> int
-	    val getErrno: unit -> int
-	    (* raises SysErr with ERRNO *)
-	    val error: unit -> 'a
-	 end
 
       structure SysCall :
 	 sig

@@ -6,7 +6,6 @@ struct
 
 structure Prim = Primitive.Socket
 structure PE = Posix.Error
-structure PEO = PE.Old
 structure PESC = PE.SysCall
 structure PFS = Posix.FileSys
 
@@ -236,51 +235,55 @@ fun bind (S s, SA sa) =
 fun listen (S s, n) = 
    PESC.simple (fn () => Prim.listen (s, n))
 
-fun nonBlock' (res: int, again, no, f) =
-   if ~1 = res
-      then
-	 let
-	    val e = PEO.getErrno ()
-	 in
-	    if e = again
-	       then no
-	    else PE.raiseSys e
-	 end
-   else f res
+fun nonBlock' ({restart: bool},
+	       f : unit -> int, post : int -> 'a, again, no : 'a) =
+   PESC.syscallErr
+   ({clear = false, restart = restart},
+    fn () => let val res = f ()
+	     in 
+		{return = res,
+		 post = fn () => post res,
+		 handlers = [(again, fn () => no)]}
+	     end)
 
-fun nonBlock (res, no, f) = nonBlock' (res, PE.again, no, f)
-   
+fun nonBlock (f, post, no) =
+   nonBlock' ({restart = true}, f, post, PE.again, no)
+
 local
    structure PIO = PosixPrimitive.IO
 in
    fun withNonBlock (fd, f: unit -> 'a) =
       let
-	 val flags = PEO.checkReturnResult (PIO.fcntl2 (fd, PIO.F_GETFL))
+	 val flags = 
+	    PESC.simpleResultRestart 
+	    (fn () => PIO.fcntl2 (fd, PIO.F_GETFL))
 	 val _ =
-	    PEO.checkResult
-	    (PIO.fcntl3 (fd, PIO.F_SETFL,
+	    PESC.simpleResultRestart
+	    (fn () => 
+	     PIO.fcntl3 (fd, PIO.F_SETFL,
 			 Word.toIntX
 			 (Word.orb (Word.fromInt flags,
 				    PosixPrimitive.FileSys.O.nonblock))))
       in
 	 DynamicWind.wind
-	 (f, fn () => PEO.checkResult (PIO.fcntl3 (fd, PIO.F_SETFL, flags)))
+	 (f, fn () => PESC.simple (fn () => PIO.fcntl3 (fd, PIO.F_SETFL, flags)))
       end
 end
 
 fun connect (S s, SA sa) =
-   PEO.checkResult (Prim.connect (s, sa, Vector.length sa))
+   PESC.simple (fn () => Prim.connect (s, sa, Vector.length sa))
 
 fun connectNB (S s, SA sa) =
-   nonBlock' (withNonBlock (s, fn () => Prim.connect (s, sa, Vector.length sa)),
-	      PE.inprogress,
-	      false,
-	      fn _ => true)
+   nonBlock'
+   ({restart = false}, fn () => 
+    withNonBlock (s, fn () => Prim.connect (s, sa, Vector.length sa)),
+    fn _ => true,
+    PE.inprogress, false)
 
 fun accept (S s) =
    let
       val (sa, salen, finish) = new_sock_addr ()
-      val s = PEO.checkReturnResult (Prim.accept (s, sa, salen))
+      val s = PESC.simpleResultRestart (fn () => Prim.accept (s, sa, salen))
    in
       (S s, finish ())
    end
@@ -289,12 +292,13 @@ fun acceptNB (S s) =
    let
       val (sa, salen, finish) = new_sock_addr ()
    in
-      nonBlock (withNonBlock (s, fn () => Prim.accept (s, sa, salen)),
-		NONE,
-		fn s => SOME (S s, finish ()))
+      nonBlock
+      (fn () => withNonBlock (s, fn () => Prim.accept (s, sa, salen)),
+       fn s => SOME (S s, finish ()),
+       NONE)
    end
 
-fun close (S s) = PEO.checkResult (Prim.close (s))
+fun close (S s) = PESC.simple (fn () => Prim.close (s))
 
 datatype shutdown_mode = NO_RECVS | NO_SENDS | NO_RECVS_OR_SENDS
 
@@ -305,8 +309,9 @@ fun shutdownModeToHow m =
     | NO_RECVS_OR_SENDS => Prim.SHUT_RDWR
 
 fun shutdown (S s, m) =
-   PEO.checkResult
-   (Prim.shutdown (s, shutdownModeToHow m))
+   let val m = shutdownModeToHow m
+   in PESC.simple (fn () => Prim.shutdown (s, m))
+   end
 
 type sock_desc = OS.IO.iodesc
 
@@ -365,36 +370,33 @@ val no_out_flags = {don't_route = false, oob = false}
 local
    fun make (base, toPoly, primSend, primSendTo) =
       let
-	 val base = fn sl => let
-				val (buf, i, sz) = base sl
-			     in
-				(toPoly buf, i, sz)
+	 val base = fn sl => let val (buf, i, sz) = base sl
+			     in (toPoly buf, i, sz)
 			     end
 	 fun send' (S s, sl, out_flags) =
 	    let
 	       val (buf, i, sz) = base sl
 	    in
-	       PEO.checkReturnResult
-	       (primSend (s, buf, i, sz, mk_out_flags out_flags))
+	       PESC.simpleResultRestart
+	       (fn () => primSend (s, buf, i, sz, mk_out_flags out_flags))
 	    end
 	 fun send (sock, buf) = send' (sock, buf, no_out_flags)
 	 fun sendNB' (S s, sl, out_flags) =
 	    let
 	       val (buf, i, sz) = base sl
-	       val res =
-		  primSend (s, buf, i, sz,
-			    Word.orb (Prim.MSG_DONTWAIT, mk_out_flags out_flags))
 	    in
-	       nonBlock (res, NONE, SOME)
+	       nonBlock
+	       (fn () => primSend (s, buf, i, sz, Word.orb (Prim.MSG_DONTWAIT, mk_out_flags out_flags)),
+		SOME, 
+		NONE)
 	    end
 	 fun sendNB (sock, sl) = sendNB' (sock, sl, no_out_flags)
 	 fun sendTo' (S s, SA sa, sl, out_flags) =
 	    let
 	       val (buf, i, sz) = base sl
 	    in
-	       PEO.checkResult
-	       (primSendTo (s, buf, i, sz, mk_out_flags out_flags, sa,
-			    Vector.length sa))
+	       PESC.simpleRestart
+	       (fn () => primSendTo (s, buf, i, sz, mk_out_flags out_flags, sa, Vector.length sa))
 	    end
 	 fun sendTo (sock, sock_addr, sl) =
 	    sendTo' (sock, sock_addr, sl, no_out_flags)
@@ -402,12 +404,11 @@ local
 	    let
 	       val (buf, i, sz) = base sl
 	    in
-	       nonBlock (primSendTo (s, buf, i, sz,
-				     Word.orb (Prim.MSG_DONTWAIT,
-					       mk_out_flags out_flags),
+	       nonBlock 
+	       (fn () => primSendTo (s, buf, i, sz, Word.orb (Prim.MSG_DONTWAIT, mk_out_flags out_flags),
 				     sa, Vector.length sa),
-			 false,
-			 fn _ => true)
+		fn _ => true,
+		false)
 	    end
 	 fun sendToNB (sock, sa, sl) =
 	    sendToNB' (sock, sa, sl, no_out_flags)
@@ -415,7 +416,6 @@ local
 	 (send, send', sendNB, sendNB', sendTo, sendTo', sendToNB, sendToNB')
       end
 in
-   
    val (sendArr, sendArr', sendArrNB, sendArrNB',
 	sendArrTo, sendArrTo', sendArrToNB, sendArrToNB') =
       make (Word8ArraySlice.base, Word8Array.toPoly,
@@ -439,8 +439,8 @@ fun recvArr' (S s, sl, in_flags) =
    let
       val (buf, i, sz) = Word8ArraySlice.base sl
    in
-      PEO.checkReturnResult
-      (Prim.recv (s, Word8Array.toPoly buf, i, sz, mk_in_flags in_flags))
+      PESC.simpleResultRestart
+      (fn () => Prim.recv (s, Word8Array.toPoly buf, i, sz, mk_in_flags in_flags))
    end
 
 fun getVec (a, n, bytesRead) =
@@ -466,9 +466,8 @@ fun recvArrFrom' (S s, sl, in_flags) =
       val (buf, i, sz) = Word8ArraySlice.base sl
       val (sa, salen, finish) = new_sock_addr ()
       val n =
-	 PEO.checkReturnResult
-	 (Prim.recvFrom
-	  (s, Word8Array.toPoly buf, i, sz, mk_in_flags in_flags, sa, salen))
+	 PESC.simpleResultRestart
+	 (fn () => Prim.recvFrom (s, Word8Array.toPoly buf, i, sz, mk_in_flags in_flags, sa, salen))
    in
       (n, finish ())
    end
@@ -492,21 +491,20 @@ fun recvArrNB' (S s, sl, in_flags) =
    let
       val (buf, i, sz) = Word8ArraySlice.base sl
    in
-      nonBlock (Prim.recv (s, Word8Array.toPoly buf, i, sz,
-			   mk_in_flagsNB in_flags),
-		NONE,
-		SOME)
-		      
+      nonBlock
+      (fn () => Prim.recv (s, Word8Array.toPoly buf, i, sz, mk_in_flagsNB in_flags),
+       SOME, 
+       NONE)
    end
 
 fun recvVecNB' (S s, n, in_flags) =
    let
       val a = Word8Array.rawArray n
    in
-      nonBlock (Prim.recv (s, Word8Array.toPoly a, 0, n, mk_in_flagsNB in_flags),
-		NONE,
-		fn bytesRead =>
-		SOME (getVec (a, n, bytesRead)))
+      nonBlock
+      (fn () => Prim.recv (s, Word8Array.toPoly a, 0, n, mk_in_flagsNB in_flags),
+       fn bytesRead => SOME (getVec (a, n, bytesRead)),
+       NONE)
    end
 
 fun recvArrNB (sock, sl) = recvArrNB' (sock, sl, no_in_flags)
@@ -519,10 +517,9 @@ fun recvArrFromNB' (S s, sl, in_flags) =
       val (sa, salen, finish) = new_sock_addr ()
    in
       nonBlock
-      (Prim.recvFrom (s, Word8Array.toPoly buf, i, sz, mk_in_flagsNB in_flags,
-		      sa, salen),
-       NONE,
-       fn n => SOME (n, finish ()))
+      (fn () => Prim.recvFrom (s, Word8Array.toPoly buf, i, sz, mk_in_flagsNB in_flags, sa, salen),
+       fn n => SOME (n, finish ()),
+       NONE)
    end
 
 fun recvVecFromNB' (S s, n, in_flags) =
@@ -531,10 +528,9 @@ fun recvVecFromNB' (S s, n, in_flags) =
       val (sa, salen, finish) = new_sock_addr ()
    in
       nonBlock
-      (Prim.recvFrom (s, Word8Array.toPoly a, 0, n, mk_in_flagsNB in_flags,
-		      sa, salen),
-       NONE,
-       fn bytesRead => SOME (getVec (a, n, bytesRead), finish ()))
+      (fn () => Prim.recvFrom (s, Word8Array.toPoly a, 0, n, mk_in_flagsNB in_flags, sa, salen),
+       fn bytesRead => SOME (getVec (a, n, bytesRead), finish ()),
+       NONE)
    end
 
 fun recvArrFromNB (sock, sl) = recvArrFromNB' (sock, sl, no_in_flags)
