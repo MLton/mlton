@@ -465,6 +465,7 @@ void GC_display (GC_state s, FILE *stream) {
 			s->frontier - s->heap.nursery,
 			s->limitPlusSlop - s->frontier);
 	fprintf (stream, "\tcanHandle = %d\n", s->canHandle);
+	fprintf (stderr, "\tcurrentThread = 0x%08x\n", (uint) s->currentThread);
 	fprintf (stream, "\texnStack = %u  bytesNeeded = %u  reserved = %u  used = %u\n",
 			s->currentThread->exnStack,
 			s->currentThread->bytesNeeded,
@@ -1212,7 +1213,7 @@ static inline void setCrossMap (GC_state s, pointer p) {
 	if (s->generational and isAligned ((uint)p, s->cardSize)) {
 		GC_heap h;	
 
-		h = s->heapp;
+		h = s->crossMapHeap;
 		if (DEBUG_GENERATIONAL)
 			fprintf (stderr, "crossMap[%u] = TRUE\n",
 					divCardSize (s, p - h->oldGen));
@@ -1330,7 +1331,7 @@ static void swapSemis (GC_state s) {
 
 static inline void cheneyCopy (GC_state s) {
 	s->numCopyingGCs++;
-	s->heapp = &s->heap2;
+	s->crossMapHeap = &s->heap2;
  	if (DEBUG or s->messages) {
 		fprintf (stderr, "Major copying GC.\n");
 	 	fprintf (stderr, "fromSpace = 0x%08x of size %s\n", 
@@ -1416,25 +1417,31 @@ checkCard:
 	if (cardMap[cardNum]) {
 		pointer cardStart;
 		pointer cardEnd;
+		pointer orig;
 		uint size;
 
+		s->markedCards++;
 		if (DEBUG_GENERATIONAL)
 			fprintf (stderr, "card %u is marked  objectStart = 0x%08x\n", 
 					cardNum, (uint)objectStart);
 		cardStart = oldGenStart + cardNumToSize (s, cardNum);
+		orig = objectStart;
 skipObjects:
 		size = objectSize (s, toData (objectStart));
 		if (objectStart + size < cardStart) {
 			objectStart += size;
 			goto skipObjects;
 		}
+		s->minorBytesSkipped += objectStart - orig;
 		cardEnd = cardStart + s->cardSize;
 		if (oldGenEnd < cardEnd) 
 			cardEnd = oldGenEnd;
 		assert (objectStart < cardEnd);
+		orig = objectStart;
 		objectStart = 
 			foreachPointerInRange (s, objectStart, &cardEnd,
 						forwardIfInNursery);
+		s->minorBytesScanned += objectStart - orig;
 		if (objectStart == oldGenEnd)
 			goto done;
 		cardNum = divCardSize (s, objectStart - oldGenStart);
@@ -1458,18 +1465,20 @@ done:
 static inline void minorGC (GC_state s) {
 	pointer toSpace;
 
-	if (not MINOR) {
+	if (not MINOR or not s->generational) {
 		s->heap.oldGenSize += s->frontier - s->heap.nursery;
 		s->heap.nursery = s->frontier;
 		return;
 	}
+	if (s->frontier == s->heap.nursery)
+		return;
 	if (DEBUG_GENERATIONAL or s->messages)
 		fprintf (stderr, "Minor GC.\n");
 	assert (invariant (s));
 	s->numMinorGCs++;
 	s->numMinorsSinceLastMajor++;
 	s->doingMinorGC = TRUE;
-	s->heapp = &s->heap;
+	s->crossMapHeap = &s->heap;
 	toSpace = s->heap.oldGen + s->heap.oldGenSize;
 	s->back = toSpace;
 	/* Forward all globals.  Would like to avoid doing this once all the
@@ -1956,12 +1965,11 @@ static inline void markCompact (GC_state s) {
 	/* markCompact relies on all the objects being contiguous.  So, if
 	 * we haven't yet done a minorGC to make them contiguous, do so.
 	 */
-	if (s->generational and s->frontier > s->heap.nursery)
-		minorGC (s);
+	minorGC (s);
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Major mark-compact GC.\n");
 	s->numMarkCompactGCs++;
-	s->heapp = &s->heap;
+	s->crossMapHeap = &s->heap;
 	heapClearCardMap (&s->heap);
 	heapClearCrossMap (&s->heap);
 	foreachGlobal (s, markGlobal);
@@ -2916,12 +2924,15 @@ int GC_init (GC_state s, int argc, char **argv) {
 	rusageZero (&s->ru_gc);
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
+	s->markedCards = 0;
 	s->maxBytesLive = 0;
 	s->maxHeap = 0;
 	s->maxHeapSizeSeen = 0;
 	s->maxPause = 0;
 	s->maxStackSizeSeen = 0;
 	s->messages = FALSE;
+	s->minorBytesScanned = 0;
+	s->minorBytesSkipped = 0;
 	s->numCopyingGCs = 0;
 	s->numLCs = 0;
 	s->numMarkCompactGCs = 0;
@@ -3038,6 +3049,9 @@ inline void GC_done (GC_state s) {
 		displayUllong ("bytes copied (major)", s->bytesCopied);
 		displayUllong ("bytes mark-compacted", s->bytesMarkCompacted);
 		displayUint ("max bytes live", s->maxBytesLive);
+		displayUllong ("marked cards", s->markedCards);
+		displayUllong ("minor bytes scanned", s->minorBytesScanned);
+		displayUllong ("minor bytes skipped", s->minorBytesSkipped);
 #if METER
 		{
 			int i;

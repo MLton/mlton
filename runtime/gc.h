@@ -250,10 +250,11 @@ typedef struct GC_state {
 	ullong bytesAllocated;
  	ullong bytesCopied;
 	ullong bytesCopiedMinor;
-	int bytesLive;		/* Number of bytes copied by most recent GC. */
+	int bytesLive; /* Number of bytes live at most recent major GC. */
 	ullong bytesMarkCompacted;
 	uint cardSize;
 	uint cardSizeLog2;
+	GC_heap crossMapHeap;	/* only used during GC. */
 	GC_thread currentThread; /* This points to a thread in the heap. */
 	bool doingMinorGC;	/* Set to true during a minor GC. */
 	uint fixedHeapSize; 	/* Only meaningful if useFixedHeap. */
@@ -262,7 +263,6 @@ typedef struct GC_state {
 	pointer *globals; 	/* An array of size numGlobals. */
 	struct GC_heap heap;
 	struct GC_heap heap2;
-	GC_heap heapp;	/* only used during GC. */
 	bool inSignalHandler; 	/* TRUE iff a signal handler is running. */
 	/* canHandle == 0 iff GC may switch to the signal handler
  	 * thread.  This is used to implement critical sections.
@@ -274,6 +274,7 @@ typedef struct GC_state {
 	/* loadGlobals loads the globals from the stream. */
 	void (*loadGlobals)(FILE *file);
 	uint magic; /* The magic number required for a valid world file. */
+	ullong markedCards; /* Number of marked cards seen during minor GCs. */
 	uint maxBytesLive;
 	uint maxFrameIndex; /* 0 <= frameIndex < maxFrameIndex */
 	uint maxFrameSize;
@@ -283,6 +284,8 @@ typedef struct GC_state {
 	uint maxPause;		/* max time spent in any gc in milliseconds. */
 	uint maxStackSizeSeen;
 	bool messages; /* Print out a message at the start and end of each gc. */
+	ullong minorBytesScanned;
+	ullong minorBytesSkipped;
 	/* native is true iff the native codegen was used.
 	 * The GC needs to know this because it affects how it finds the
 	 * layout of stack frames.
