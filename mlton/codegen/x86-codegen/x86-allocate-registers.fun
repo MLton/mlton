@@ -831,6 +831,15 @@ struct
 					      fltstack}: t}
 	= List.keepAll(entries, filter)
 
+      fun valueRegister {register,
+			 registerAllocation}
+	= case valueFilter {filter = fn {register = register', ...}
+			              => Register.eq(register, register'),
+			    registerAllocation = registerAllocation}
+	    of [] => NONE
+	     | [value] => SOME value
+	     | _ => Error.bug "valueRegister"
+
       fun valuesRegister {register as Register.T {reg, part}, 
 			  registerAllocation as {entries, 
 						 reserved, 
@@ -4901,6 +4910,323 @@ struct
 	     registerAllocation = registerAllocation}
 	  end
 
+      fun cache {caches: {register: Register.t,
+			  memloc: MemLoc.t,
+			  reserve: bool} list,
+		 info,
+		 registerAllocation}
+	= let
+	    val supports
+	      = List.map
+	        (caches,
+		 fn {memloc, ...} => Operand.memloc memloc)
+
+	    datatype u = None | Reg of Register.t | Mem of MemLoc.t
+	      
+	    fun computeEdges' {reg,
+			       registerAllocation}
+	      = List.map
+	        (Register.coincident' reg,
+		 fn register'
+		  => let
+		       val (from, m)
+			 = case List.peek
+			        (caches,
+				 fn {register, ...} 
+				  => Register.eq(register, register'))
+			     of NONE => (None, NONE)
+			      | SOME {memloc, ...}
+			      => (case allocated {memloc = memloc,
+						  registerAllocation 
+						  = registerAllocation}
+				    of NONE 
+				     => (Mem memloc, SOME memloc)
+				     | SOME {register, ...} 
+				     => (Reg register, SOME memloc))
+
+		       val to
+			 = case valueRegister
+			        {register = register',
+				 registerAllocation = registerAllocation}
+			     of NONE => None
+			      | SOME {memloc = memloc', ...}
+			      => (case List.peek
+				       (caches,
+					fn {memloc, ...}
+				         => MemLoc.eq(memloc, memloc'))
+				    of NONE => None
+				     | SOME {register, ...} => Reg register)
+		     in
+		       (from, m, register', to)
+		     end)
+
+	    fun computeEdges {registerAllocation}
+	      = List.map
+	        (Register.allReg,
+		 fn reg
+		  => (reg, computeEdges' {reg = reg,
+					  registerAllocation = registerAllocation}))
+
+	    fun doitSelf {edges,
+			  saves,
+			  assembly,
+			  registerAllocation}
+	      = let
+		  val {yes = self, no = edges}
+		    = List.partition
+		      (edges,
+		       fn (reg, edges')
+		        => List.forall
+		           (edges', 
+			    fn (Reg rf, m, r, Reg rt)
+			     => Register.eq(rf, r) andalso
+			        Register.eq(r, rt)
+			     | _ => false))
+		in
+		  if not (List.isEmpty self)
+		    then let
+			   val saves_self 
+			     = List.fold
+			       (self,
+				[],
+				fn ((reg, edges'), saves)
+				 => List.fold
+				    (edges',
+				     saves,
+				     fn ((_,_,r,_), saves)
+				      => (Operand.register r)::saves))
+			 in
+			   doit {edges = edges,
+				 saves = saves_self @ saves,
+				 assembly = assembly,
+				 registerAllocation = registerAllocation}
+			 end
+		    else doitEasy {edges = edges,
+				   saves = saves,
+				   assembly = assembly,
+				   registerAllocation = registerAllocation}
+		end
+
+	    and doitEasy {edges,
+			  saves,
+			  assembly,
+			  registerAllocation}
+	      = let
+		  val {easy}
+		    = List.fold
+		      (edges,
+		       {easy = NONE},
+		       fn ((reg, edges'), {easy = NONE})
+		        => let
+			     val {easy}
+			       = List.fold
+			         (edges',
+				  {easy = NONE},
+				  fn ((Reg rf, SOME m, r, None), 
+				      {easy = NONE})
+				   => {easy = SOME (m, r)}
+				   | (edge', {easy})
+				   => {easy = easy})
+			   in
+			     {easy = easy}
+			   end
+			| ((reg, edges'), {easy})
+			=> {easy = easy})
+		in
+		  case easy
+		    of SOME (m, r)
+		     => let
+			  val {register,
+			       assembly = assembly_register,
+			       registerAllocation}
+			    = toRegisterMemLoc 
+			      {memloc = m,
+			       info = info,
+			       size = MemLoc.size m,
+			       move = true,
+			       supports = supports,
+			       saves = saves, 
+			       force = [r], 
+			       registerAllocation = registerAllocation}
+
+			  val edges = computeEdges 
+			              {registerAllocation = registerAllocation}
+			in
+			  doit {edges = edges,
+				saves = [],
+				assembly = AppendList.append
+				           (assembly, assembly_register),
+			        registerAllocation = registerAllocation}
+			end
+		     | NONE => doitHard {edges = edges,
+					 saves = saves,
+					 assembly = assembly,
+					 registerAllocation = registerAllocation}
+		end
+
+	    and doitHard {edges,
+			  saves,
+			  assembly,
+			  registerAllocation}
+	      = let
+		  val {hard}
+		    = List.fold
+		      (edges,
+		       {hard = NONE},
+		       fn ((reg, edges'), {hard = NONE})
+		        => let
+			     val {hard}
+			       = List.fold
+			         (edges',
+				  {hard = NONE},
+				  fn ((Mem mf, SOME m, r, None), 
+				      {hard = NONE})
+				   => {hard = SOME (m, r)}
+				   | (edge', {hard})
+				   => {hard = hard})
+			   in
+			     {hard = hard}
+			   end
+			| ((reg, edges'), {hard})
+			=> {hard = hard})
+		in
+		  case hard
+		    of SOME (m, r)
+		     => let
+			  val {register,
+			       assembly = assembly_register,
+			       registerAllocation}
+			    = toRegisterMemLoc 
+			      {memloc = m,
+			       info = info,
+			       size = MemLoc.size m,
+			       move = true,
+			       supports = supports,
+			       saves = saves, 
+			       force = [r], 
+			       registerAllocation = registerAllocation}
+
+			  val edges = computeEdges 
+			              {registerAllocation = registerAllocation}
+			in
+			  doit {edges = edges,
+				saves = [],
+				assembly = AppendList.append
+				           (assembly, assembly_register),
+			        registerAllocation = registerAllocation}
+			end
+		     | NONE => doitCycle {edges = edges,
+					  saves = saves,
+					  assembly = assembly,
+					  registerAllocation = registerAllocation}
+		end
+
+	    and doitCycle {edges,
+			   saves,
+			   assembly,
+			   registerAllocation = registerAllocation}
+	      = let
+		  val {cycle}
+		    = List.fold
+		      (edges,
+		       {cycle = NONE},
+		       fn ((reg, edges'), {cycle = NONE})
+		        => let
+			     val {cycle}
+			       = List.fold
+			         (edges',
+				  {cycle = NONE},
+				  fn ((Reg rf, SOME m, r, Reg rt), 
+				      {cycle = NONE})
+				   => {cycle = SOME (m, r)}
+				   | (edge', {cycle})
+				   => {cycle = cycle})
+			   in
+			     {cycle = cycle}
+			   end
+			| ((reg, edges'), {cycle})
+			=> {cycle = cycle})
+		in
+		  case cycle
+		    of SOME (m, r)
+		     => let
+			  val {register,
+			       assembly = assembly_register,
+			       registerAllocation}
+			    = toRegisterMemLoc 
+			      {memloc = m,
+			       info = info,
+			       size = MemLoc.size m,
+			       move = true,
+			       supports = supports,
+			       saves = saves, 
+			       force = [r], 
+			       registerAllocation = registerAllocation}
+
+			  val edges = computeEdges 
+			              {registerAllocation = registerAllocation}
+			in
+			  doit {edges = edges,
+				saves = [],
+				assembly = AppendList.append
+				           (assembly, assembly_register),
+			        registerAllocation = registerAllocation}
+			end
+		     | NONE => doitCycle {edges = edges,
+					  saves = saves,
+					  assembly = assembly,
+					  registerAllocation = registerAllocation}
+		end
+
+	    and doit {edges,
+		      saves,
+		      assembly,
+		      registerAllocation}
+	      = let
+		  val edges
+		    = List.fold
+		      (edges,
+		       [],
+		       fn ((reg, edges'), edges)
+		        => let
+			     val edges' 
+			       = List.removeAll
+			         (edges',
+				  fn (None, _, _, None) => true
+				   | _ => false)
+			   in
+			     if List.isEmpty edges'
+			       then edges
+			       else (reg, edges')::edges
+			   end)
+		in
+		  if List.isEmpty edges
+		    then {assembly = assembly,
+			  registerAllocation = registerAllocation}
+		    else doitSelf {edges = edges,
+				   saves = saves,
+				   assembly = assembly,
+				   registerAllocation = registerAllocation}
+		end
+
+	    val {assembly = assembly_force,
+		 registerAllocation}
+	      = doit {edges = computeEdges {registerAllocation = registerAllocation},
+		      saves = [],
+		      assembly = AppendList.empty,
+		      registerAllocation = registerAllocation}
+
+	    val {assembly = assembly_reserve,
+		 registerAllocation}
+	      = reserve {registers = List.map(caches, fn {register, ...} => register),
+			 registerAllocation = registerAllocation}
+
+	  in
+	    {assembly = AppendList.append(assembly_force, assembly_reserve),
+	     registerAllocation = registerAllocation}
+	  end
+
+(*
       fun cache {caches : {register: Register.t,
 			   memloc: MemLoc.t,
 			   reserve: bool} list,
@@ -4958,6 +5284,7 @@ struct
 	    {assembly = assembly,
 	     registerAllocation = registerAllocation}
 	  end
+*)
 
       fun fltcache {caches : {memloc: MemLoc.t} list,
 		    info,
