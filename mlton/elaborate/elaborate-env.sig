@@ -102,6 +102,7 @@ signature ELABORATE_ENV =
 	 -> FunctorClosure.t
       val layout: t -> Layout.t
       val layoutPretty: t -> Layout.t
+      val layoutUsed: t -> Layout.t
       val localCore: t * (unit -> 'a) * (unit -> 'b) -> 'a * 'b
       val localModule: t * (unit -> 'a) * (unit -> 'b) -> 'a * 'b
       val localTop: t * (unit -> 'a) * (unit -> 'b) -> 'a * 'b
@@ -121,8 +122,11 @@ signature ELABORATE_ENV =
       val peekLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
       (* scope f evaluates f () in a new scope so that extensions that occur
        * during f () are forgotten afterwards.
+       * scope works for infixes, types, values, and structures
        *)
       val scope: t * (unit -> 'a) -> 'a
+      (* like scope, but works for signatures and functors as well *)
+      val scopeAll: t * (unit -> 'a) -> 'a
       val sizeMessage: t -> Layout.t
    end
 

@@ -152,6 +152,9 @@ signature CONTROL =
 
       (* Array bounds checking. *)
       val safe: bool ref
+
+      (* Show the basis library used and exit. *)
+      val showBasisUsed: bool ref
 	 
       (* Should types be printed in ILs. *)
       val showTypes: bool ref

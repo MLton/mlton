@@ -227,10 +227,24 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	       let
 		  val {prefix, suffix} = basisLibrary ()
 		  val basis = Decs.toList prefix
-		  val user =
-		     Decs.toList
-		     (Decs.append (parseAndElaborateFiles (input, basisEnv),
-				   suffix))
+		  val decs =
+		     if !Control.showBasisUsed
+			then
+			   let
+			      val decs = 
+				 Elaborate.Env.scopeAll
+				 (basisEnv, fn () =>
+				  parseAndElaborateFiles (input, basisEnv))
+			      val _ =
+				 Layout.outputl
+				 (Elaborate.Env.layoutUsed basisEnv,
+				  Out.standard)
+			   in
+			      Process.succeed ()
+			   end
+		     else
+			parseAndElaborateFiles (input, basisEnv)
+		  val user = Decs.toList (Decs.append (decs, suffix))
 		  val _ = parseElabMsg ()
 		  val basis =
 		     Control.pass

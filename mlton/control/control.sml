@@ -244,7 +244,10 @@ val safe = control {name = "safe",
 		    default = true,
 		    toString = Bool.toString}
 
-
+val showBasisUsed = control {name = "show basis used",
+			     default = false,
+			     toString = Bool.toString}
+   
 val showTypes = control {name = "show types",
 			 default = false,
 			 toString = Bool.toString}

@@ -1,5 +1,11 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2002-01-26
+  - Added -show-basis-used, which prints out the parts of the basis library 
+    that the input program uses.
+  - Changed several other flags (-print-at-fun-entry, -show-basis, -static)
+    to follow the {false|true} convention.
+
 * 2002-01-22
   - Improved MLton.profile so that multiple profile arrays can exist
     simultaneously and so that the current one being used can be set from

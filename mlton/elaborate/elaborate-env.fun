@@ -136,9 +136,12 @@ fun layoutSize z = Int.layout (MLton.size z)
 structure Values =
    struct
       datatype ('a, 'b) t = T of {domain: 'a,
-				  ranges: {scope: Scope.t,
+				  ranges: {isUsed: bool ref,
+					   scope: Scope.t,
 					   value: 'b} list ref}
 
+      fun domain (T {domain, ...}) = domain
+	    
       fun sizeMessage (vs as T {domain, ranges}, layoutA, layoutB) =
 	 let
 	    open Layout
@@ -163,8 +166,10 @@ structure Values =
 
       fun isEmpty (T {ranges, ...}) = List.isEmpty (!ranges)
 
-      val pop: ('a, 'b) t -> 'b =
-	 fn T {ranges, ...} => #value (List.pop ranges)
+      val pop: ('a, 'b) t -> {isUsed: bool ref,
+			      scope: Scope.t,
+			      value: 'b} =
+	 fn T {ranges, ...} => List.pop ranges
    end
 
 structure ShapeId = UniqueId ()
@@ -196,13 +201,14 @@ structure Interface =
       structure Info =
 	 struct
 	    (* The array is sorted by domain element. *)
-	    datatype ('a, 'b) t = T of {range: 'b,
+	    datatype ('a, 'b) t = T of {isUsed: bool ref,
+					range: 'b,
 					values: ('a, 'b) Values.t} array
 
 	    fun bogus () = T (Array.tabulate (0, fn _ => Error.bug "impossible"))
 
 	    fun layout (layoutDomain, layoutRange) (T a) =
-	       Array.layout (fn {range, values} =>
+	       Array.layout (fn {range, values, ...} =>
 			     Layout.tuple [layoutDomain (Values.domain values),
 					   layoutRange range])
 	       a
@@ -215,9 +221,15 @@ structure Interface =
 	       Option.map
 	       (BinarySearch.search
 		(a, fn {values, ...} => compare (domain, Values.domain values)),
-		fn i => Array.sub (a, i))
+		fn i =>
+		let
+		   val v as {isUsed, ...} =  Array.sub (a, i)
+		   val _ = isUsed := !Control.showBasisUsed
+		in
+		   v
+		end)
 	 end
-
+      
       structure TypeStr =
 	 struct
 	    datatype t =
@@ -290,9 +302,27 @@ structure Structure =
 
       datatype t = T of {shapeId: ShapeId.t option,
 			 strs: (Ast.Strid.t, t) Info.t,
-			 vals: (Ast.Vid.t, Vid.t) Info.t,
-			 types: (Ast.Tycon.t, TypeStr.t) Info.t}
+			 types: (Ast.Tycon.t, TypeStr.t) Info.t,
+			 vals: (Ast.Vid.t, Vid.t) Info.t}
 
+      fun layoutUsed (T {strs, types, vals, ...}) =
+	 let
+	    open Layout
+	    fun doit (Info.T a, lay): Layout.t =
+	       align
+	       (Array.foldr (a, [], fn ({isUsed, range, values}, ac) =>
+			     if not (!isUsed)
+				then ac
+			     else lay (Values.domain values, range) :: ac))
+	    fun doitn (i, name, lay) =
+	       doit (i, fn (d, _) => seq [str name, lay d])
+	 in
+	    align [doitn (types, "type ", Ast.Tycon.layout),
+		   doitn (vals, "val ", Ast.Vid.layout),
+		   doit (strs, fn (d, r) =>
+			 align [seq [str "structure ", Ast.Strid.layout d],
+				indent (layoutUsed r, 3)])]
+	 end
       fun layout (T {strs, vals, types, ...}) =
 	 Layout.record
 	 [("types", Info.layout (Ast.Tycon.layout, TypeStr.layout) types),
@@ -318,7 +348,7 @@ structure Structure =
 	 and layoutPretty (T {strs, vals, types, ...}) =
 	    let
 	       fun doit (Info.T a, layout) =
-		  align (Array.foldr (a, [], fn ({range, values}, ac) =>
+		  align (Array.foldr (a, [], fn ({range, values, ...}, ac) =>
 				      layout (Values.domain values,
 					      range)
 				      :: ac))
@@ -375,10 +405,12 @@ structure Structure =
 		| SOME S => peekStrids (S, strids)
 
       fun peekLongtycon (S, t) =
-	 let val (strids, t) = Ast.Longtycon.split t
-	 in case peekStrids (S, strids) of
-	    NONE => NONE
-	  | SOME S => peekTycon (S, t)
+	 let
+	    val (strids, t) = Ast.Longtycon.split t
+	 in
+	    case peekStrids (S, strids) of
+	       NONE => NONE
+	     | SOME S => peekTycon (S, t)
 	 end
 
       val lookupLongtycon = valOf o peekLongtycon
@@ -403,118 +435,123 @@ structure Structure =
 			   if ShapeId.equals (shapeId, shapeId')
 			      then SOME S
 			   else NONE
-	       in case cutoff of
-		  SOME S => S
-		| NONE =>
-		     let
-			val strs = ref []
-			val vals: {range: Vid.t,
-				   values: (Ast.Vid.t, Vid.t) Values.t} list ref
-			   = ref []
-			val types: {range: TypeStr.t,
-				    values: (Ast.Tycon.t, TypeStr.t) Values.t}
-			   list ref = ref []
-			fun handleStr (name, I) =
-			   case peekStrid' (S, name) of
-			      NONE =>
-				 error
-				 (Longstrid.className,
-				  Longstrid.layout	
-				  (Longstrid.long(rev strids, name)))
-			    | SOME {range, values} =>
-				 List.push
-				 (strs, {range = cut (range, I, name :: strids),
-					 values = values})
-			fun handleType (name: Ast.Tycon.t,
-					typeStr: Interface.TypeStr.t) =
-			   case peekTycon' (S, name) of
-			      NONE =>
-				 error
-				 (Longtycon.className,
-				  Longtycon.layout
-				  (Longtycon.long (rev strids, name)))
-			    | SOME {range = typeStr', values} =>
-				 let
-				    datatype z = datatype TypeStr.t
-				    val typeStr'' =
-				       case typeStr of
-					  Interface.TypeStr.Datatype {cons} =>
-					     (case typeStr' of
-						 Datatype _ => typeStr'
-					       | _ =>
-						    (Control.error
-						     (region,
-						      let open Layout
-						      in seq [str "type ",
-							      str " is a datatype in signature but not in structure"]
-						      end)
-						     ; TypeStr.bogus))
-					| Interface.TypeStr.Tycon =>
-					     let
-						datatype z = datatype TypeStr.t
-					     in case typeStr' of
-						Datatype {tycon, ...} =>
-						   Tycon tycon
-					      | _ => typeStr'
-					     end
-				 in List.push (types, {range = typeStr'',
-						       values = values})
-				 end
-			fun handleVal (name, status) =
-			   case peekVid' (S, name) of
-			      NONE =>
-				 error (Longvid.className,
-					Longvid.layout (Longvid.long
-							(rev strids, name)))
-			    | SOME {range = vid, values} =>
-				 let
-				    val vid =
-				       case (vid, status) of
-					  (Vid.Con c, Status.Var) =>
-					     Vid.ConAsVar c
-					| (Vid.Exn c, Status.Var) =>
-					     Vid.ConAsVar c
-					| (_, Status.Var) => vid
-					| (Vid.Con _, Status.Con) => vid
-					| (Vid.Exn _, Status.Exn) => vid
-					| _ =>
-					     (Control.error
-					      (region,
-					       Layout.str
-					       (concat
-						[Longvid.className,
-						 " ",
-						 Longvid.toString
-						 (Longvid.long (rev strids,
-								name)),
-						 " has status ",
-						 Vid.statusString vid,
-						 " in structure but status ",
-						 Status.toString status,
-						 " in signature "]))
-					      ; vid)
-				 in List.push (vals, {range = vid,
-						      values = values})
-				 end
-			val _ =
-			   Interface.foreach
-			   (I, {handleStr = handleStr,
-				handleType = handleType,
-				handleVal = handleVal})
-			fun doit (elts, less) =
-			   Info.T
-			   (Array.fromList
-			    (MergeSort.sort
-			     (!elts,
-			      fn ({values = v, ...}, {values = v', ...}) =>
-			      less (Values.domain v, Values.domain v'))))
-		     in T {shapeId = SOME shapeId',
-			   strs = doit (strs, Ast.Strid.<=),
-			   vals = doit (vals, Ast.Vid.<=),
-			   types = doit (types, Ast.Tycon.<=)}
-		     end
+	       in
+		  case cutoff of
+		     SOME S => S
+		   | NONE =>
+			let
+			   val strs = ref []
+			   val vals = ref []
+			   val types = ref []
+			   fun handleStr (name, I) =
+			      case peekStrid' (S, name) of
+				 NONE =>
+				    error
+				    (Longstrid.className,
+				     Longstrid.layout	
+				     (Longstrid.long(rev strids, name)))
+			       | SOME {range, values, ...} =>
+				    List.push
+				    (strs,
+				     {isUsed = ref false,
+				      range = cut (range, I, name :: strids),
+				      values = values})
+			   fun handleType (name: Ast.Tycon.t,
+					   typeStr: Interface.TypeStr.t) =
+			      case peekTycon' (S, name) of
+				 NONE =>
+				    error
+				    (Longtycon.className,
+				     Longtycon.layout
+				     (Longtycon.long (rev strids, name)))
+			       | SOME {range = typeStr', values, ...} =>
+				    let
+				       datatype z = datatype TypeStr.t
+				       val typeStr'' =
+					  case typeStr of
+					     Interface.TypeStr.Datatype {cons} =>
+						(case typeStr' of
+						    Datatype _ => typeStr'
+						  | _ =>
+						       (Control.error
+							(region,
+							 let open Layout
+							 in seq [str "type ",
+								 str " is a datatype in signature but not in structure"]
+							 end)
+							; TypeStr.bogus))
+					   | Interface.TypeStr.Tycon =>
+						let
+						   datatype z = datatype TypeStr.t
+						in case typeStr' of
+						   Datatype {tycon, ...} =>
+						      Tycon tycon
+						 | _ => typeStr'
+						end
+				    in List.push (types,
+						  {isUsed = ref false,
+						   range = typeStr'',
+						   values = values})
+				    end
+			   fun handleVal (name, status) =
+			      case peekVid' (S, name) of
+				 NONE =>
+				    error (Longvid.className,
+					   Longvid.layout (Longvid.long
+							   (rev strids, name)))
+			       | SOME {range = vid, values, ...} =>
+				    let
+				       val vid =
+					  case (vid, status) of
+					     (Vid.Con c, Status.Var) =>
+						Vid.ConAsVar c
+					   | (Vid.Exn c, Status.Var) =>
+						Vid.ConAsVar c
+					   | (_, Status.Var) => vid
+					   | (Vid.Con _, Status.Con) => vid
+					   | (Vid.Exn _, Status.Exn) => vid
+					   | _ =>
+						(Control.error
+						 (region,
+						  Layout.str
+						  (concat
+						   [Longvid.className,
+						    " ",
+						    Longvid.toString
+						    (Longvid.long (rev strids,
+								   name)),
+						    " has status ",
+						    Vid.statusString vid,
+						    " in structure but status ",
+						    Status.toString status,
+						    " in signature "]))
+						 ; vid)
+				    in List.push (vals,
+						  {isUsed = ref false,
+						   range = vid,
+						   values = values})
+				    end
+			   val _ =
+			      Interface.foreach
+			      (I, {handleStr = handleStr,
+				   handleType = handleType,
+				   handleVal = handleVal})
+			   fun doit (elts, less) =
+			      Info.T
+			      (Array.fromList
+			       (MergeSort.sort
+				(!elts,
+				 fn ({values = v, ...}, {values = v', ...}) =>
+				 less (Values.domain v, Values.domain v'))))
+			in
+			   T {shapeId = SOME shapeId',
+			      strs = doit (strs, Ast.Strid.<=),
+			      vals = doit (vals, Ast.Vid.<=),
+			      types = doit (types, Ast.Tycon.<=)}
+			end
 	       end
-	 in cut (str, interface, [])
+	 in
+	    cut (str, interface, [])
 	 end
 
       val cut =
@@ -534,6 +571,7 @@ structure FunctorClosure =
  		     sizeMessage = fn _ => Layout.str "<bogus>"}
 
       fun apply (T {apply, ...}, s, r) = apply (s, r)
+
       fun sizeMessage (T {sizeMessage, ...}) = sizeMessage ()
 	 
       fun layout _ = Layout.str "<functor closure>"
@@ -564,26 +602,35 @@ structure NameSpace =
 	 let
 	    val old = !current
 	    val _ = current := []
-	 in fn () =>
+	 in
+	    fn () =>
 	    let
 	       val elts =
 		  List.revMap (!current, fn values =>
-			       {range = Values.pop values,
-				values = values})
+			       let
+				  val {isUsed, value, ...} = Values.pop values
+			       in
+				  {isUsed = isUsed,
+				   range = value,
+				   values = values}
+			       end)
 	       val _ = current := old
 	       val a =
 		  Array.fromList
 		  (MergeSort.sort
 		   (elts, fn ({values = v, ...}, {values = v', ...}) =>
 		    le (Values.domain v, Values.domain v')))
-	    in Structure.Info.T a
+	    in
+	       Structure.Info.T a
 	    end
 	 end
 
       fun peek (T {equals, hash, table, ...}, a) =
 	 case HashSet.peek (table, hash a, fn vs =>
 			    equals (a, Values.domain vs)) of
-	    SOME (Values.T {ranges = ref ({value, ...} :: _), ...}) => SOME value
+	    SOME (Values.T {ranges = ref ({isUsed, value, ...} :: _), ...}) =>
+	       (isUsed := !Control.showBasisUsed
+		; SOME value)
 	  | _ => NONE
 
       fun sizeMessage (i as T {table, ...}: ('a, 'b) t,
@@ -612,18 +659,25 @@ structure NameSpace =
 				 fn vs => equals (a, Values.domain vs),
 				 fn () => Values.new a)
 
-      val update: ('a, 'b) t * Scope.t * ('a, 'b) Values.t * 'b -> unit =
-	 fn (T {current, ...}, scope, values as Values.T {ranges, ...}, value) =>
+      val update: ('a, 'b) t * Scope.t * {isUsed: bool ref,
+					  range: 'b,
+					  values: ('a, 'b) Values.t} -> unit =
+	 fn (T {current, ...}, scope, {isUsed,
+				       range,
+				       values as Values.T {ranges, ...}}) =>
 	 let
-	    val value = {scope = scope, value = value}
+	    val value = {isUsed = isUsed,
+			 scope = scope,
+			 value = range}
 	    fun new () = (List.push (current, values)
 			  ; List.push (ranges, value))
-	 in case !ranges of
-	    [] => new ()
-	  | {scope = scope', ...} :: l =>
-	       if Scope.equals (scope, scope')
-		  then ranges := value :: l
-	       else new ()
+	 in
+	    case !ranges of
+	       [] => new ()
+	     | {scope = scope', ...} :: l =>
+		  if Scope.equals (scope, scope')
+		     then ranges := value :: l
+		  else new ()
 	 end
    end
 
@@ -702,6 +756,40 @@ fun layoutPretty (T {fcts, sigs, strs, types, vals, ...}) =
 	     doit (strs, Ast.Strid.<=, Structure.layoutStrSpec)]
    end
 
+fun layoutUsed (T {fcts, sigs, strs, types, vals, ...}) =
+   let
+      open Layout
+      fun doit (NameSpace.T {table, ...}, le, layout) =
+	 let
+	    val all =
+	       HashSet.fold
+	       (table, [], fn (Values.T {domain, ranges}, ac) =>
+		case !ranges of
+		   [] => ac
+		 | {isUsed, value, ...} :: _ =>
+		      if !isUsed
+			 then (domain, layout (domain, value)) :: ac
+		      else ac)
+	 in
+	    align (List.map
+		   (MergeSort.sort
+		    (all, fn ((d, _), (d', _)) => le (d, d')),
+		    #2))
+	 end
+      fun doitn (ns, name, le, lay) =
+	 doit (ns, le, fn (d, _) => seq [str name, str " ", lay d])
+
+   in
+      align [doitn (types, "type", Ast.Tycon.<=, Ast.Tycon.layout),
+	     doitn (vals, "val", Ast.Vid.<=, Ast.Vid.layout),
+	     doitn (sigs, "signature", Ast.Sigid.<=, Ast.Sigid.layout),
+	     doitn (fcts, "functor", Ast.Fctid.<=, Ast.Fctid.layout),
+	     doit (strs, Ast.Strid.<=,
+		   fn (d, r) =>
+		   align [seq [str "structure ", Ast.Strid.layout d],
+			  indent (Structure.layoutUsed r, 3)])]
+   end
+
 (* ------------------------------------------------- *)
 (*                  functorClosure                   *)
 (* ------------------------------------------------- *)
@@ -709,24 +797,32 @@ fun layoutPretty (T {fcts, sigs, strs, types, vals, ...}) =
 fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals}):
    (unit -> 'a) -> 'a =
    let
-      val s0 = Scope.new ()
       fun doit (NameSpace.T {current, table, ...}) =
 	 let
 	    val all =
 	       HashSet.fold (table, [], fn (vs as Values.T {ranges, ...}, ac) =>
-			     case !ranges of
-				[] => ac
-			      | {value, ...} :: _ => (value, vs) :: ac)
-
-	 in fn () =>
+			     if List.isEmpty (!ranges)
+				then ac
+			     else vs :: ac)
+	 in
+	    fn s0 =>
 	    let
 	       val current0 = !current
 	       val _ =
 		  current :=
 		  List.fold
-		  (all, [], fn ((v, vs as Values.T {ranges, ...}), ac) =>
-		   (List.push (ranges, {scope = s0, value = v})
-		    ; vs :: ac))
+		  (all, [], fn (vs as Values.T {ranges, ...}, ac) =>
+		   let
+		      val _ =
+			 case !ranges of
+			    [] => Error.bug "saved ranges should be nonempty"
+			  | {isUsed, value, ...} :: _ =>
+			       List.push (ranges, {isUsed = isUsed,
+						   scope = s0,
+						   value = value})
+		   in
+		      vs :: ac
+		   end)
 	       val removed =
 		  HashSet.fold
 		  (table, [], fn (Values.T {ranges, ...}, ac) =>
@@ -755,13 +851,14 @@ fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals}):
       val vals = doit vals
    in fn th =>
       let
+	 val s0 = Scope.new ()
+	 val fcts = fcts s0
+	 val fixs = fixs s0
+	 val sigs = sigs s0
+	 val strs = strs s0
+	 val types = types s0
+	 val vals = vals s0
 	 val s1 = !currentScope
-	 val fcts = fcts ()
-	 val fixs = fixs ()
-	 val sigs = sigs ()
-	 val strs = strs ()
-	 val types = types ()
-	 val vals = vals ()
 	 val _ = currentScope := s0
 	 val res = th ()
 	 val _ = currentScope := s1
@@ -827,15 +924,16 @@ local
    fun make (split, peek, strPeek) (E, x) =
       let
 	 val (strids, x) = split x
-      in case strids of
-	 [] => peek (E, x)
-       | strid :: strids =>
-	    case peekStrid (E, strid) of
-	       NONE => NONE
-	     | SOME S =>
-		  case Structure.peekStrids (S, strids) of
-		     NONE => NONE
-		   | SOME S => strPeek (S, x)
+      in
+	 case strids of
+	    [] => peek (E, x)
+	  | strid :: strids =>
+	       case peekStrid (E, strid) of
+		  NONE => NONE
+		| SOME S =>
+		     case Structure.peekStrids (S, strids) of
+			NONE => NONE
+		      | SOME S => strPeek (S, x)
       end
 in
    val peekLongstrid = make (Ast.Longstrid.split, peekStrid, Structure.peekStrid)
@@ -876,9 +974,11 @@ local
    fun make get (T (fields as {currentScope, ...}), domain, range) =
       let
 	 val ns = get fields
-      in NameSpace.update (ns, !currentScope,
-			   NameSpace.values (ns, domain),
-			   range)
+      in
+	 NameSpace.update (ns, !currentScope,
+			   {isUsed = ref false,
+			    range = range,
+			    values = NameSpace.values (ns, domain)})
       end
 in
    val extendFctid = make #fcts
@@ -922,19 +1022,26 @@ local
       let
 	 val old = !current
 	 val _ = current := []
-      in fn () =>
+      in
+	 fn () =>
 	 let
 	    val c1 = !current
 	    val _ = current := []
-	 in fn () =>
+	 in
+	    fn () =>
 	    let
 	       val c2 = !current
 	       val lift = List.map (c2, Values.pop)
 	       val _ = List.foreach (c1, fn v => (Values.pop v; ()))
 	       val _ = current := old
-	       val _ = List.foreach2 (lift, c2, fn (v, vs) =>
-				      NameSpace.update (info, s0, vs, v))
-	    in ()
+	       val _ =
+		  List.foreach2 (lift, c2, fn ({isUsed, value, ...}, values) =>
+				 NameSpace.update
+				 (info, s0, {isUsed = isUsed,
+					     range = value,
+					     values = values}))
+	    in
+	       ()
 	    end
 	 end
       end
@@ -988,7 +1095,7 @@ in
    (* Can't eliminate the use of strs in localCore, because openn still modifies
     * module level constructs.
     *)
-   val localCore = localTop
+   val localCore = localModule
 end
 
 fun makeStructure (T {currentScope, fixs, strs, types, vals, ...}, make) =
@@ -1030,6 +1137,30 @@ fun scope (T {currentScope, fixs, strs, types, vals, ...}, th) =
    in res
    end
 
+fun scopeAll (T {currentScope, fcts, fixs, sigs, strs, types, vals, ...}, th) =
+   let
+      fun doit (NameSpace.T {current, ...}) =
+	 let
+	    val old = !current
+	    val _ = current := []
+	 in fn () => (List.foreach (!current, fn v => (Values.pop v; ()))
+		      ; current := old)
+	 end
+      val s0 = !currentScope
+      val _ = currentScope := Scope.new ()
+      val fc = doit fcts
+      val f = doit fixs
+      val si = doit sigs
+      val s = doit strs
+      val t = doit types
+      val v = doit vals
+      val res = th ()
+      val _ = (fc (); f (); si (); s (); t (); v ())
+      val _ = currentScope := s0
+   in
+      res
+   end
+
 fun openStructure (T {currentScope, strs, vals, types, ...},
 		   Structure.T {strs = strs',
 				vals = vals',
@@ -1037,8 +1168,7 @@ fun openStructure (T {currentScope, strs, vals, types, ...},
    let
       val scope = !currentScope
       fun doit (info, Structure.Info.T a) =
-	 Array.foreach (a, fn {range, values} =>
-			NameSpace.update (info, scope, values, range))
+	 Array.foreach (a, fn z => NameSpace.update (info, scope, z))
    in doit (strs, strs')
       ; doit (vals, vals')
       ; doit (types, types')
@@ -1061,19 +1191,26 @@ structure InterfaceMaker =
 	 struct
 	    open NameSpace
 
-	    fun update (T {current, ...}, scope, values, value) =
+	    fun update (T {current, ...}, scope, {isUsed, range, values}) =
 	       let
 		  val ranges = Values.ranges values
-		  val value = {scope = scope, value = value}
-		  fun new () = (List.push (current, values)
-				; List.push (ranges, value))
-	       in case !ranges of
-		  [] => new ()
-		| {scope = scope', ...} :: l =>
-		     if Scope.equals (scope, scope')
-			then Control.error (Region.bogus,
-					    Layout.str "duplicate spec")
-		     else new ()
+		  fun new () =
+		     let
+			val value = {isUsed = isUsed,
+				     scope = scope,
+				     value = range}
+		     in
+			List.push (current, values)
+			; List.push (ranges, value)
+		     end
+	       in
+		  case !ranges of
+		     [] => new ()
+		   | {scope = scope', ...} :: l =>
+			if Scope.equals (scope, scope')
+			   then Control.error (Region.bogus,
+					       Layout.str "duplicate spec")
+			else new ()
 	       end
 	 end
 
@@ -1089,10 +1226,12 @@ structure InterfaceMaker =
 	       val info as NameSpace.T {equals, hash, table, ...} = sel fields
 	    in NameSpace.update
 	       (info, !currentScope,
-		HashSet.lookupOrInsert (table, hash d,
-					fn vs => equals (d, Values.domain vs),
-					fn () => Values.new d),
-		r)
+		{isUsed = ref false,
+		 range = r,
+		 values =
+		 HashSet.lookupOrInsert (table, hash d,
+					 fn vs => equals (d, Values.domain vs),
+					 fn () => Values.new d)})
 	    end
       in
 	 val addStrid = make #strs
@@ -1125,8 +1264,7 @@ structure InterfaceMaker =
 	 let
 	    val scope = !currentScope
 	    fun doit (info, Interface.Info.T a) =
-	       Array.foreach (a, fn {range, values} =>
-			      NameSpace.update (info, scope, values, range))
+	       Array.foreach (a, fn z => NameSpace.update (info, scope, z))
 	 in doit (strs, strs')
 	    ; doit (vals, vals')
 	    ; doit (types, types')
@@ -1188,5 +1326,5 @@ fun makeInterfaceMaker E =
    
 fun addEquals E =
    extendVals (E, Ast.Vid.fromString "=", Vid.Prim Prim.equal)
-
+ 
 end
