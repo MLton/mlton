@@ -177,7 +177,7 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 	    val l = Label.newNoname ()
 	    val _ = List.push (extraBlocks,
 			       Block.T {args = args,
-					kind = Kind.Normal,
+					kind = Kind.Jump,
 					label = l,
 					statements = statements,
 					transfer = transfer})
@@ -504,10 +504,19 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 		     fun allocate (ys: Var.t vector,
 				   {size, offsets, numPointers,
 				    numWordsNonPointers}) =
-			add (Object {dst = valOf var,
-				     numPointers = numPointers,
-				     numWordsNonPointers = numWordsNonPointers,
-				     stores = makeStores (ys, offsets)})
+			let
+			   val (p, np) =
+			      if 0 = numPointers
+				 andalso 0 = numWordsNonPointers
+				 then (0, 1)
+			      else (numPointers, numWordsNonPointers)
+			in
+			   add (Object {dst = valOf var,
+					numPointers = p,
+					numWordsNonPointers = np,
+					size = size,
+					stores = makeStores (ys, offsets)})
+			end
 		     fun allocateTagged (n: int,
 					 ys: Var.t vector,
 					 {size, offsets,
@@ -517,6 +526,7 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 			      numPointers = numPointers,
 			      numWordsNonPointers =
 			      (* for the tag *) 1 + numWordsNonPointers,
+			      size = size,
 			      stores = (Vector.concat
 					[Vector.new1 {offset = tagOffset,
 						      value = Operand.int n},
@@ -541,7 +551,7 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 			      fun a i = Vector.sub (args, i)
 			      fun targ () = toType (Vector.sub (targs, 0))
 			      fun arrayOffset (ty: Type.t): Operand.t =
-				 OffsetScale {base = a 0,
+				 ArrayOffset {base = a 0,
 					      index = a 1,
 					      ty = ty}
 			      fun sub (ty: Type.t) = move (arrayOffset ty)
@@ -699,7 +709,7 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 					    translateTransfer transfer)
 	 in
 	    Block.T {args = translateFormals args,
-		     kind = Kind.Normal,
+		     kind = Kind.Jump,
 		     label = label,
 		     statements = ss,
 		     transfer = t}

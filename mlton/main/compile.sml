@@ -322,12 +322,13 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	    else ()
 	 end
       val machine =
-	 Control.pass
+	 Control.passTypeCheck
 	 {name = "backend",
 	  suffix = "machine",
 	  style = Control.No,
-	  display = Control.NoDisplay,
-	  thunk = fn () => Backend.toMachine ssa}
+	  thunk = fn () => Backend.toMachine ssa,
+	  typeCheck = Machine.Program.typeCheck,
+	  display = Control.NoDisplay}
    in
       machine
    end

@@ -148,10 +148,10 @@ struct
 	      in
 		x86.Operand.memloc memloc
 	      end
-	   | ArrayOffset {base, offset, ty}
+	   | ArrayOffset {base, index, ty}
 	   => let
 		val base = toX86Operand base
-		val index = toX86Operand offset
+		val index = toX86Operand index
 
 		val memloc
 		  = case (x86.Operand.deMemloc base,
@@ -1277,7 +1277,7 @@ struct
 		      transfer = NONE}),
 		    comment_end]
 		 end 
-	      | Assign {dst, prim, args}
+	      | PrimApp {dst, prim, args}
    	      => let
 		   val (comment_begin,
 			comment_end) = comments statement
@@ -1406,7 +1406,7 @@ struct
 		      transfer = NONE}),
 		    comment_end]
 		 end
-	      | Allocate {dst, size, stores, numPointers, numWordsNonPointers}
+	      | Object {dst, size, stores, numPointers, numWordsNonPointers}
 	      => let
 		   val (comment_begin,
 			comment_end) = comments statement

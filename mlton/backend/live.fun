@@ -154,10 +154,10 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 		  datatype z = datatype Operand.t
 	       in
 		  case z of
-		     CastInt x => use x
+		     ArrayOffset {base, index, ...} => (use base; use index)
+		   | CastInt x => use x
 		   | Const _ => ()
 		   | Offset {base, ...} => use base
-		   | OffsetScale {base, index, ...} => (use base; use index)
 		   | Var {var, ...} => use var
 	       end
 	    fun useOperands zs = Vector.foreach (zs, useOperand)
@@ -218,7 +218,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 			; goto dst
 		     end
 		| LimitCheck {failure, kind, success, ...} =>
-		     (LimitCheck.forVar (kind, use)
+		     (LimitCheck.foreachVar (kind, use)
 		      ; goto failure
 		      ; goto success)
 		| Raise xs => useOperands xs

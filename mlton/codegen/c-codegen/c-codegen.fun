@@ -128,9 +128,9 @@ structure Operand =
       open Operand
 	 
       val rec toString =
-	 fn ArrayOffset {base, offset, ty} =>
+	 fn ArrayOffset {base, index, ty} =>
 	       concat ["X", Type.name ty,
-		       C.args [toString base, toString offset]]
+		       C.args [toString base, toString index]]
           | CastInt oper => concat ["PointerToInt", C.args [toString oper]]
           | Char c => C.char c
           | Contents {oper, ty} =>
@@ -164,22 +164,7 @@ structure Statement =
 	  | _ =>
 	       (print "\t"
 		; (case s of
-		      Allocate {dst, numPointers, numWordsNonPointers,
-				size, stores} =>
-		         (C.call ("Object", [Operand.toString dst,
-					     C.int numWordsNonPointers,
-					     C.int numPointers],
-				  print)
-			  ; print "\t"
-			  ; (Vector.foreach
-			     (stores, fn {offset, value} =>
-			      (C.call
-			       (concat ["A", Type.name (Operand.ty value)],
-				[C.int offset, Operand.toString value], 
-				print)
-			       ; print "\t")))
-			  ; C.call ("EndObject", [C.int size], print))
-		    | Array {dst, numElts, numPointers, numBytesNonPointers} =>
+		      Array {dst, numElts, numPointers, numBytesNonPointers} =>
 			 let
 			    val dst = Operand.toString dst
 			    val numElts = Operand.toString numElts
@@ -196,7 +181,26 @@ structure Statement =
 						 print)
 				 else Error.unimplemented "tricky arrays"
 			 end
-		    | Assign {args, dst, prim} =>
+		    | Move {dst, src} =>
+			 print (concat [Operand.toString dst, " = ",
+				      Operand.toString src, ";\n"])
+		    | Noop => ()
+		    | Object {dst, numPointers, numWordsNonPointers, size,
+			      stores} =>
+		         (C.call ("Object", [Operand.toString dst,
+					     C.int numWordsNonPointers,
+					     C.int numPointers],
+				  print)
+			  ; print "\t"
+			  ; (Vector.foreach
+			     (stores, fn {offset, value} =>
+			      (C.call
+			       (concat ["A", Type.name (Operand.ty value)],
+				[C.int offset, Operand.toString value], 
+				print)
+			       ; print "\t")))
+			  ; C.call ("EndObject", [C.int size], print))
+		    | PrimApp {args, dst, prim} =>
 			 let
 			    val _ =
 			       case dst of
@@ -215,10 +219,6 @@ structure Statement =
 				    | SOME _ => doit ())
 			     | _ => doit ()
 			 end
-		    | Move {dst, src} =>
-			 print (concat [Operand.toString dst, " = ",
-				      Operand.toString src, ";\n"])
-		    | Noop => ()
 		    | SetExnStackLocal {offset} =>
 			 C.call ("SetExnStackLocal", [C.int offset], print)
 		    | SetExnStackSlot {offset} =>

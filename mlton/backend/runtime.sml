@@ -1,0 +1,41 @@
+structure Runtime: RUNTIME =
+struct
+   
+(* These checks, and in particular pointerBits and nonPointerBits
+ * must agree with runtime/gc.h.
+ *)
+
+val pointerBits: int = 15
+val nonPointerBits: int = 15
+
+fun make (p', np') =
+   let
+      val p' = Int.^ (2, p')
+      val np' = Int.^ (2, np')
+   in
+      fn (p, np) => p < p' andalso np < np'
+   end
+
+local
+   val f = make (pointerBits, nonPointerBits)
+in
+   fun isValidObjectHeader {numPointers, numWordsNonPointers} =
+      f (numPointers, numWordsNonPointers)
+end
+
+local
+   val f = make (pointerBits, nonPointerBits - 1)
+in
+   fun isValidArrayHeader {numBytesNonPointers, numPointers} =
+      f (numPointers, numBytesNonPointers)
+end
+
+val wordSize: int = 4
+   
+fun isWordAligned (n: int): bool =
+   0 = Int.rem (n, wordSize)
+   
+fun isValidObjectSize (n: int): bool =
+   n > 0 andalso isWordAligned n
+   
+end

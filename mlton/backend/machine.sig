@@ -45,7 +45,7 @@ signature MACHINE =
 	 sig
 	    datatype t =
 	       ArrayOffset of {base: t,
-			       offset: t,
+			       index: t,
 			       ty: Type.t}
 	     | CastInt of t (* takes an IntOrPointer and makes it an int *)
 	     | Char of char
@@ -60,44 +60,27 @@ signature MACHINE =
 	     | Offset of {base: t,
 			  offset: int,
 			  ty: Type.t}
-	     | Pointer of int (* In (Pointer n), n must be nonzero mod 4. *)
+	     | Pointer of int (* the int must be nonzero mod 4. *)
 	     | Register of Register.t
 	     | StackOffset of {offset: int,
 			       ty: Type.t}
 	     | Uint of Word.t
 
-
-	    val deRegister: t -> Register.t option
-	    val deStackOffset: t -> {offset: int, ty: Type.t} option
 	    val equals: t * t -> bool
-	    val intInf: Word.t -> t
 	    val interfere: {write: t, read: t} -> bool
-	    val isPointer: t -> bool
-	    val label: Label.t -> t
 	    val layout: t -> Layout.t
 	    val toString: t -> string
 	    val ty: t -> Type.t
-	    val uint: word -> t
 	 end
 
       structure Statement:
 	 sig
 	    datatype t =
-	       (* Fixed-size allocation. *)
-	       Allocate of {dst: Operand.t,
-			    numPointers: int,
-			    numWordsNonPointers: int,
-			    size: int,
-			    stores: {offset: int,
-				     value: Operand.t} vector}
-	     (* Variable-sized allocation. *)
-	     | Array of {dst: Operand.t,
+	       (* Variable-sized allocation. *)
+	       Array of {dst: Operand.t,
 			 numElts: Operand.t,
 			 numPointers: int,
 			 numBytesNonPointers: int}
-	     | Assign of {dst: Operand.t option,
-			  prim: Prim.t, 
-			  args: Operand.t vector}
 	     (* When registers or offsets appear in operands, there is an
 	      * implicit contents of.
 	      * When they appear as locations, there is not.
@@ -105,6 +88,16 @@ signature MACHINE =
 	     | Move of {dst: Operand.t,
 			src: Operand.t}
 	     | Noop
+	     (* Fixed-size allocation. *)
+	     | Object of {dst: Operand.t,
+			  numPointers: int,
+			  numWordsNonPointers: int,
+			  size: int, (* in bytes, not including header *)
+			  stores: {offset: int,
+				   value: Operand.t} vector}
+	     | PrimApp of {args: Operand.t vector,
+			   dst: Operand.t option,
+			   prim: Prim.t}
 	     | SetExnStackLocal of {offset: int}
 	     | SetExnStackSlot of {offset: int}
 	     | SetSlotExnStack of {offset: int}
@@ -122,7 +115,7 @@ signature MACHINE =
 	 sig
 	    datatype t =
 	       Array of {bytesPerElt: int, (* > 0 *)
-			 extraBytes: int, (* for subsequent allocation *)
+			 extraBytes: int, (* >= 0.  for subsequent allocation. *)
 			 numElts: Operand.t, (* of type int, but not an immediate *)
 			 stackToo: bool}
 	     | Heap of {bytes: int,

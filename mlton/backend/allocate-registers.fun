@@ -179,7 +179,7 @@ fun allocate {function = f: Rssa.Function.t,
 			  (fn r => Option.layout Operand.layout (!r))
 			  (#operand (varInfo x))])
 	     fun diagStatement (s: R.Statement.t): unit =
-		R.Statement.forDef (s, diagVar o #var)
+		R.Statement.foreachDef (s, diagVar o #var)
 	  in
 	     f (display, diagVar, diagStatement)
 	  end)
@@ -371,9 +371,10 @@ fun allocate {function = f: Rssa.Function.t,
 					     ["live register ",
 					      Layout.toString (Var.layout x)])
 				       | Stack =>
-					    case Operand.deStackOffset (^r) of
-					       NONE => Error.bug "live slot"
-					     | SOME _ => (^r)::operands)
+					    case ^r of
+					       z as Operand.StackOffset _ =>
+						  z :: operands
+					     | _ => Error.bug "need live slot")
 			     else (^r)::operands
 		    end))
 	       end
@@ -399,9 +400,9 @@ fun allocate {function = f: Rssa.Function.t,
 		   getOperands ((beginNoFormals, hs), R.Kind.isOnStack kind)
 		val stack =
 		   Stack.new (Vector.fold (liveNoFormals, [], fn (oper, ac) =>
-					   case Operand.deStackOffset oper of
-					      NONE => ac
-					    | SOME a => a :: ac))
+					   case oper of
+					      Operand.StackOffset a => a :: ac
+					    | _ => ac))
 		fun adjustSize size =
 		   let
 		      val (offset, offset') =

@@ -41,19 +41,20 @@ signature RSSA =
       structure Operand:
 	 sig
 	    datatype t =
-	       CastInt of Var.t
+	       ArrayOffset of {base: Var.t,
+			       index: Var.t,
+			       ty: Type.t}
+	     | CastInt of Var.t
 	     | Const of Const.t
 	     | Offset of {base: Var.t,
 			  bytes: int,
 			  ty: Type.t}
-	     | OffsetScale of {base: Var.t,
-			       index: Var.t,
-			       ty: Type.t}
 	     | Var of {var: Var.t,
 		       ty: Type.t}
 
 	    val int: int -> t
 	    val layout: t -> Layout.t
+	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val ty: t -> Type.t
 	 end
 	       
@@ -71,11 +72,12 @@ signature RSSA =
 	     | Object of {dst: Var.t,
 			  numPointers: int,
 			  numWordsNonPointers: int,
+			  size: int, (* in bytes, not including header *)
 			  stores: {offset: int, (* bytes *)
 				   value: Operand.t} vector}
-	     | PrimApp of {dst: (Var.t * Type.t) option,
-			   prim: Prim.t,
-			   args: Var.t vector}
+	     | PrimApp of {args: Var.t vector,
+			   dst: (Var.t * Type.t) option,
+			   prim: Prim.t}
 	     | SetExnStackLocal
 	     | SetExnStackSlot
 	     | SetHandler of Label.t (* label must be of Handler kind. *)
@@ -86,7 +88,9 @@ signature RSSA =
 	     *)
 	    val foldDef: t * 'a * ({var: Var.t, ty: Type.t} * 'a -> 'a) -> 'a
 	    (* forDef (s, f) = foldDef (s, (), fn (x, ()) => f x) *)
-	    val forDef: t * ({var: Var.t, ty: Type.t} -> unit) -> unit
+	    val foreachDef: t * ({var: Var.t, ty: Type.t} -> unit) -> unit
+	    val foldUses: t * 'a * (Var.t * 'a -> 'a) -> 'a
+	    val foreachUse: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
 	 end
 
@@ -102,18 +106,17 @@ signature RSSA =
 	     | Signal
 	     | Stack
 
-	    val forVar: t * (Var.t -> unit) -> unit
+	    val foreachVar: t * (Var.t -> unit) -> unit
 	 end
       
       structure Transfer:
 	 sig
 	    datatype t =
-	       Arith of {dst: Var.t,
-			 prim: Prim.t,
-			 args: Var.t vector,
+	       Arith of {args: Var.t vector,
+			 dst: Var.t,
 			 overflow: Label.t, (* Must be nullary. *)
-			 success: Label.t (* Must be nullary. *)
-			}
+			 prim: Prim.t,
+			 success: Label.t} (* Must be nullary. *)
 	     | Bug  (* MLton thought control couldn't reach here. *)
 	     | CCall of {args: Operand.t vector,
 			 prim: Prim.t,
@@ -125,8 +128,8 @@ signature RSSA =
 					   * accept the result.
 					   *)
 			 returnTy: Type.t option}
-	     | Call of {func: Func.t,
-			args: Operand.t vector,
+	     | Call of {args: Operand.t vector,
+			func: Func.t,
 			return: Return.t}
 	     | Goto of {dst: Label.t,
 			args: Operand.t vector}
@@ -148,6 +151,9 @@ signature RSSA =
 			    pointer: Label.t,
 			    test: Operand.t}
 
+	    val foreachDef: t * ({var: Var.t, ty: Type.t} -> unit) -> unit
+	    val foreachLabel: t * (Label.t -> unit) -> unit
+	    val foreachUse: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
 	 end
 
@@ -157,7 +163,7 @@ signature RSSA =
 	       Cont of {handler: Label.t option}
 	     | CReturn of {prim: Prim.t}
 	     | Handler
-	     | Normal
+	     | Jump
 	     | Runtime of {prim: Prim.t}
 
 	    val isOnStack: t -> bool
@@ -206,9 +212,9 @@ signature RSSA =
 	 sig
 	    (* The main function defines the globals. *)
 	    datatype t =
-	       T of {
-		     functions: Function.t list,
-		     main: Func.t (* Must be nullary. *)
-		    }
+	       T of {functions: Function.t list,
+		     main: Func.t} (* Must be nullary. *)
+
+	    val typeCheck: t -> unit
 	 end
    end

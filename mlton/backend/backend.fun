@@ -120,6 +120,7 @@ structure Chunk =
 fun toMachine (program: Ssa.Program.t) =
    let
       val program = SsaToRssa.convert program
+      val _ = R.Program.typeCheck program
       (* NEED TO INSERT LIMIT CHECKS*)
       val program as R.Program.T {functions, main, ...} = program
       (* Chunk information *)
@@ -169,12 +170,12 @@ fun toMachine (program: Ssa.Program.t) =
 	    val offsets =
 	       Vector.fold
 	       (live, [], fn (oper, liveOffsets) =>
-		case M.Operand.deStackOffset oper of
-		   NONE => liveOffsets
-		 | SOME {offset, ty} =>
+		case oper of
+		   M.Operand.StackOffset {offset, ty} =>
 		      (case Type.dest ty
 			  of Type.Pointer => offset::liveOffsets
-			| _ => liveOffsets))
+			| _ => liveOffsets)
+		 | _ => liveOffsets)
 	 in
 	    List.push (frames, {chunkLabel = chunkLabel,
 				offsets = offsets,
@@ -326,16 +327,16 @@ fun toMachine (program: Ssa.Program.t) =
 	    datatype z = datatype R.Operand.t
 	 in
 	    case oper of
-	       CastInt x => M.Operand.CastInt (varOperand x)
+	       ArrayOffset {base, index, ty} =>
+		  M.Operand.ArrayOffset {base = varOperand base,
+					 index = varOperand index,
+					 ty = ty}
+	     | CastInt x => M.Operand.CastInt (varOperand x)
 	     | Const c => constOperand c
 	     | Offset {base, bytes, ty} =>
 		  M.Operand.Offset {base = varOperand base,
 				    offset = bytes,
 				    ty = ty}
-	     | OffsetScale {base, index, ty} =>
-		  M.Operand.ArrayOffset {base = varOperand base,
-					 offset = varOperand index,
-					 ty = ty}
 	     | Var {var, ...} => varOperand var
 	 end
       fun translateOperands ops = Vector.map (ops, translateOperand)
@@ -352,20 +353,19 @@ fun toMachine (program: Ssa.Program.t) =
 	     | Move {dst, src} =>
 		  M.Statement.move {dst = translateOperand dst,
 				    src = translateOperand src}
-	     | Object {dst, numPointers, numWordsNonPointers, stores} =>
-		  M.Statement.Allocate
+	     | Object {dst, numPointers, numWordsNonPointers, size, stores} =>
+		  M.Statement.Object
 		  {dst = varOperand dst,
-		   size = wordSize * (numPointers + numWordsNonPointers),
+		   size = size,
 		   numPointers = numPointers,
 		   numWordsNonPointers = numWordsNonPointers,
 		   stores = Vector.map (stores, fn {offset, value} =>
 					{offset = offset,
 					 value = translateOperand value})}
 	     | PrimApp {dst, prim, args} =>
-		  M.Statement.Assign {dst = Option.map (dst, fn (x, _) =>
-							varOperand x),
-				      prim = prim,
-				      args = Vector.map (args, varOperand)}
+		  M.Statement.PrimApp {args = Vector.map (args, varOperand),
+				       dst = Option.map (dst, varOperand o #1),
+				       prim = prim}
 	     | SetExnStackLocal =>
 		  M.Statement.SetExnStackLocal {offset = valOf handlerOffset}
 	     | SetExnStackSlot =>
@@ -413,8 +413,8 @@ fun toMachine (program: Ssa.Program.t) =
 		      (statements, fn s =>
 		       let
 			  fun normal () =
-			     R.Statement.forDef (s, fn {var, ty} =>
-						 newVarInfo (var, ty))
+			     R.Statement.foreachDef (s, fn {var, ty} =>
+						     newVarInfo (var, ty))
 		       in
 			  case s of
 			     R.Statement.Move {dst = R.Operand.Var {var, ty}, src} =>
@@ -721,7 +721,7 @@ fun toMachine (program: Ssa.Program.t) =
 				srcs = (raiseOperands
 					(Vector.map (dsts, M.Operand.ty)))})
 			   end
-		      | R.Kind.Normal => (M.Kind.Jump, Vector.new0 ())
+		      | R.Kind.Jump => (M.Kind.Jump, Vector.new0 ())
 		      | R.Kind.Runtime {prim} =>
 			   (M.Kind.Runtime {frameInfo = M.FrameInfo.bogus,
 					    prim = prim},

@@ -63,10 +63,13 @@ structure Global =
 structure Operand =
    struct
       datatype t =
-	 ArrayOffset of {base: t, offset: t, ty: Type.t}
+	 ArrayOffset of {base: t,
+			 index: t,
+			 ty: Type.t}
        | CastInt of t
        | Char of char
-       | Contents of {oper: t, ty: Type.t}
+       | Contents of {oper: t,
+		      ty: Type.t}
        | Float of string
        | Global of Global.t
        | GlobalPointerNonRoot of int
@@ -80,9 +83,9 @@ structure Operand =
        | Uint of Word.t
 
     val rec toString =
-       fn ArrayOffset {base, offset, ty} =>
+       fn ArrayOffset {base, index, ty} =>
             concat ["X", Type.name ty, 
-		    "(", toString base, ",", toString offset, ")"]
+		    "(", toString base, ",", toString index, ")"]
 	| CastInt oper => concat ["PointerToInt (", toString oper, ")"]
 	| Char c => Char.escapeC c
 	| Contents {oper, ty} =>
@@ -106,81 +109,36 @@ structure Operand =
     val layout = Layout.str o toString
 
     val ty =
-	 fn ArrayOffset {ty, ...} => ty
-	  | CastInt _ => Type.int
-	  | Char _ => Type.char
-	  | Contents {ty, ...} => ty
-	  | Float _ => Type.double
-	  | Global g => Global.ty g
-	  | GlobalPointerNonRoot _ => Type.pointer
-	  | Int _ => Type.int
-	  | IntInf _ => Type.pointer
-	  | Label _ => Type.label
-	  | Offset {ty, ...} => ty
-	  | Pointer _ => Type.pointer
-	  | Register r => Register.ty r
-	  | StackOffset {ty, ...} => ty
-	  | Uint _ => Type.uint
-
-	             fun isPointer (x: t): bool =
-	 Type.isPointer (ty x)
-	 andalso (case x of
-		     ArrayOffset _ => true
-		   | Contents _ => true
-		   | Global _ => true
-		   | GlobalPointerNonRoot _ => true
-		   | Offset _ => true
-		   | Register _ => true
-		   | StackOffset _ => true
-		   | _ => false)
-
-      fun ensurePointer s (x: t): unit =
-	 Assert.assert (concat ["ensurePointer:", s, ":", toString x], fn () =>
-			isPointer x)
+       fn ArrayOffset {ty, ...} => ty
+	| CastInt _ => Type.int
+	| Char _ => Type.char
+	| Contents {ty, ...} => ty
+	| Float _ => Type.double
+	| Global g => Global.ty g
+	| GlobalPointerNonRoot _ => Type.pointer
+	| Int _ => Type.int
+	| IntInf _ => Type.pointer
+	| Label _ => Type.label
+	| Offset {ty, ...} => ty
+	| Pointer _ => Type.pointer
+	| Register r => Register.ty r
+	| StackOffset {ty, ...} => ty
+	| Uint _ => Type.uint
 	 
-      fun arrayOffset arg =
-	 (ensurePointer "arrayOffset" (#base arg); ArrayOffset arg)
-      val castInt = CastInt
-      val char = Char
-      fun contents (z, t) =
-	 (ensurePointer "contents" z; Contents {oper = z, ty = t})
-      val float = Float
-      val global = Global
-      val int = Int
-      val intInf = IntInf
-      val label = Label
-      fun offset arg = (ensurePointer "offset" (#base arg); Offset arg)
-      val pointer = Pointer
-      val register = Register
-      val maxStackOffset: int ref = ref 0
-      fun stackOffset {offset, ty} =
-	 let
-	    val n = offset + Type.size ty
-	    val _ = if n > !maxStackOffset then maxStackOffset := n else ()
-	 in StackOffset {offset = offset, ty = ty}
-	 end
-      val uint = Uint
-	 
-      val deRegister =
-	 fn Register r => SOME r
-	  | _ => NONE
-
-      val deStackOffset =
-	 fn StackOffset s => SOME s
-	  | _ => NONE
-
       val rec equals =
-	 fn (ArrayOffset {base = b, offset = i, ...},
-	     ArrayOffset {base = b', offset = i', ...}) =>
+	 fn (ArrayOffset {base = b, index = i, ...},
+	     ArrayOffset {base = b', index = i', ...}) =>
 	        equals (b, b') andalso equals (i, i') 
 	   | (CastInt z, CastInt z') => equals (z, z')
 	   | (Char c, Char c') => c = c'
-	   | (Contents {oper = z, ...}, Contents {oper = z', ...}) => equals (z, z')
+	   | (Contents {oper = z, ...}, Contents {oper = z', ...}) =>
+		equals (z, z')
 	   | (Float f, Float f') => f = f'
 	   | (Int n, Int n') => n = n'
 	   | (IntInf w, IntInf w') => Word.equals (w, w')
 	   | (Offset {base = b, offset = i, ...},
-	      Offset {base = b', offset = i', ...}) => equals (b, b') andalso i = i' 
+	      Offset {base = b', offset = i', ...}) =>
+	        equals (b, b') andalso i = i' 
 	   | (Pointer n, Pointer n') => n = n'
 	   | (Register r, Register r') => Register.equals (r, r')
 	   | (StackOffset {offset = n, ...}, StackOffset {offset = n', ...}) =>
@@ -191,8 +149,8 @@ structure Operand =
       fun interfere {write: t, read: t}: bool =
 	 let fun inter read = interfere {write = write, read = read}
 	 in case (read, write) 
-	    of (ArrayOffset {base, offset, ...}, _) => 
-	       inter base orelse inter offset
+	    of (ArrayOffset {base, index, ...}, _) => 
+	       inter base orelse inter index
 	  | (Contents {oper, ...}, _) => inter oper
 	  | (Global g, Global g') => Global.equals (g, g')
 	  | (GlobalPointerNonRoot i, GlobalPointerNonRoot j) => i = j
@@ -212,22 +170,22 @@ structure Operand =
 structure Statement =
    struct
       datatype t =
-	 Allocate of {dst: Operand.t,
-		      numPointers: int,
-		      numWordsNonPointers: int,
-		      size: int,
-		      stores: {offset: int,
-			       value: Operand.t} vector}
-       | Array of {dst: Operand.t,
+	 Array of {dst: Operand.t,
 		   numElts: Operand.t,
 		   numPointers: int,
 		   numBytesNonPointers: int}
-       | Assign of {dst: Operand.t option,
-		    prim: Prim.t, 
-		    args: Operand.t vector}
        | Move of {dst: Operand.t,
 		  src: Operand.t}
        | Noop
+       | Object of {dst: Operand.t,
+		    numPointers: int,
+		    numWordsNonPointers: int,
+		    size: int,
+		    stores: {offset: int,
+			     value: Operand.t} vector}
+       | PrimApp of {args: Operand.t vector,
+		     dst: Operand.t option,
+		     prim: Prim.t}
        | SetExnStackLocal of {offset: int}
        | SetExnStackSlot of {offset: int}
        | SetSlotExnStack of {offset: int}
@@ -236,15 +194,15 @@ structure Statement =
 	 let
 	    open Layout
 	 in
-	    fn Allocate {dst, ...} => seq [Operand.layout dst, str " = Allocate"]
-	     | Array {dst, ...} => seq [Operand.layout dst, str " = Array"]
-	     | Assign {dst, prim, args, ...} =>
-		  seq [Option.layout Operand.layout dst, str " = ",
-		       Prim.layout prim, str " ",
-		       Vector.layout Operand.layout args]
+	    fn Array {dst, ...} => seq [Operand.layout dst, str " = Array"]
 	     | Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
 	     | Noop => str "Noop"
+	     | Object {dst, ...} => seq [Operand.layout dst, str " = Object"]
+	     | PrimApp {args, dst, prim, ...} =>
+		  seq [Option.layout Operand.layout dst, str " = ",
+		       Prim.layout prim, str " ",
+		       Vector.layout Operand.layout args]
 	     | SetExnStackLocal {offset} =>
 		  seq [str "SetExnStackLocal ", Int.layout offset]
 	     | SetExnStackSlot {offset} =>
@@ -257,46 +215,6 @@ structure Statement =
 	 if Operand.equals (dst, src)
 	    then Noop
 	 else Move arg
-
-      val assign = Assign
-      val setExnStackLocal = SetExnStackLocal
-      val setExnStackSlot = SetExnStackSlot
-      val setSlotExnStack = SetSlotExnStack
-
-      (* These checks, and in particular POINTER_BITS and NON_POINTER_BITS must
-       * agree with runtime/gc.h.
-       *)
-      local
-	 val POINTER_BITS: int = 15
-	 val NON_POINTER_BITS: int = 15
-	 fun make (p', np') (p, np) =
-	    let val p' = Int.^(2, p')
-	       val np' = Int.^(2, np')
-	    in (if p < p'
-		   then ()
-		else Error.bug "object with too many pointers")
-	       ; if np < np'
-		    then ()
-		 else Error.bug "object with too many non pointers"
-	    end
-      in
-	 val checkObjectHeader = make (POINTER_BITS, NON_POINTER_BITS)
-	 val checkArrayHeader = make (POINTER_BITS, NON_POINTER_BITS - 1)
-      end
-   
-      fun allocate (arg as {dst, size, numPointers, numWordsNonPointers, ...}) =
-	 (checkObjectHeader (numPointers, numWordsNonPointers)
-	  ; Allocate (if size = 0
-			 then {dst = dst,
-			       numPointers = 0,
-			       numWordsNonPointers = 1,
-			       size = wordSize (* min size *),
-			       stores = Vector.new0 ()}
-		      else arg))
-	 
-      fun array (r as {numPointers, numBytesNonPointers, ...}) =
-	 (checkArrayHeader (numPointers, numBytesNonPointers)
-	  ; Array r)
 	 
       fun moves {srcs, dsts} =
 	 Vector.fromListRev
@@ -515,7 +433,7 @@ structure Block =
 	 val label = make #label
       end
 
-      fun layout (T {label, kind, live, profileInfo, statements, transfer}) =
+      fun layout (T {kind, label, live, profileInfo, statements, transfer}) =
 	 let
 	    open Layout
 	 in
@@ -636,11 +554,12 @@ structure Program =
 		   datatype z = datatype Operand.t
 		   fun ok () =
 		      case x of
-			 ArrayOffset {base, offset, ty} =>
+			 ArrayOffset {base, index, ty} =>
 			    (checkOperand base
-			     ; checkOperand offset
+			     ; checkOperand index
 			     ; (Type.equals (Operand.ty base, Type.pointer)
-				andalso Type.equals (Operand.ty offset, Type.int)))
+				andalso Type.equals (Operand.ty index,
+						     Type.int)))
 		       | CastInt x =>
 			    (checkOperand x
 			     ; Type.equals (Operand.ty x, Type.pointer))
@@ -676,27 +595,6 @@ structure Program =
 	       andalso 0 = Int.rem (size, 4)
 	    fun checkFrameInfo i =
 	       check' (i, "frame info", frameInfoOk, FrameInfo.layout)
-	    (* These checks, and in particular POINTER_BITS and NON_POINTER_BITS
-	     * must agree with runtime/gc.h.
-	     *)
-	    local
-	       val POINTER_BITS: int = 15
-	       val NON_POINTER_BITS: int = 15
-	       fun make (p', np') (p, np) =
-		  let
-		     val p' = Int.^ (2, p')
-		     val np' = Int.^ (2, np')
-		  in (if p < p'
-			 then ()
-		      else Error.bug "object with too many pointers")
-		     ; if np < np'
-			  then ()
-		       else Error.bug "object with too many non pointers"
-		  end
-	    in
-	       val checkObjectHeader = make (POINTER_BITS, NON_POINTER_BITS)
-	       val checkArrayHeader = make (POINTER_BITS, NON_POINTER_BITS - 1)
-	    end
 	    fun kindOk (k: Kind.t): bool =
 	       let
 		  datatype z = datatype Kind.t
@@ -718,28 +616,34 @@ structure Program =
 		  datatype z = datatype Statement.t
 	       in
 		  case s of
-		     Allocate {dst, numPointers, numWordsNonPointers, size,
-			       stores} =>
-		        (checkObjectHeader (numPointers, numWordsNonPointers)
-			 ; checkOperand dst
-			 ; Vector.foreach (stores, fn {offset, value} =>
-					   checkOperand value)
-			 ; true)
-		   | Array {dst, numElts, numPointers, numBytesNonPointers} =>
+		     Array {dst, numElts, numPointers, numBytesNonPointers} =>
 			(checkOperand dst
 			 ; checkOperand numElts
-			 ; checkArrayHeader (numPointers, numBytesNonPointers)
 			 ; (Type.equals (Operand.ty dst, Type.pointer)
-			    andalso Type.equals (Operand.ty numElts, Type.int)))
-		   | Assign {dst, prim, args} =>
-			(Option.app (dst, checkOperand)
-			 ; checkOperands args
-			 ; true)
+			    andalso Type.equals (Operand.ty numElts, Type.int)
+			    andalso (Runtime.isValidArrayHeader
+				     {numPointers = numPointers,
+				      numBytesNonPointers =
+				      numBytesNonPointers})))
 		   | Move {dst, src} =>
 			(checkOperand dst
 			 ; checkOperand src
 			 ; Type.equals (Operand.ty dst, Operand.ty src))
 		   | Noop => true
+		   | Object {dst, numPointers, numWordsNonPointers, size,
+			     stores} =>
+		        (checkOperand dst
+			 ; Vector.foreach (stores, fn {offset, value} =>
+					   checkOperand value)
+			 ; (Runtime.isValidObjectSize size
+			    andalso
+			    Runtime.isValidObjectHeader
+			    {numPointers = numPointers,
+			     numWordsNonPointers = numWordsNonPointers}))
+		   | PrimApp {args, dst, prim} =>
+			(Option.app (dst, checkOperand)
+			 ; checkOperands args
+			 ; true)
 		   | SetExnStackLocal _ => true
 		   | SetExnStackSlot _ => true
 		   | SetSlotExnStack _ => true
@@ -804,11 +708,13 @@ structure Program =
 				      datatype z = datatype LimitCheck.t
 				   in
 				      case kind of
-					 Array {bytesPerElt, numElts, ...} =>
+					 Array {bytesPerElt, extraBytes, numElts,
+						...} =>
 					    (checkOperand numElts
 					     ; (Type.equals (Type.int,
 							     Operand.ty numElts)
-						andalso bytesPerElt > 0))
+						andalso bytesPerElt > 0
+						andalso extraBytes >= 0))
 				       | Heap {bytes, ...} => bytes >= 0
 				       | _ => true
 				   end
@@ -821,14 +727,20 @@ structure Program =
 		      | Switch {cases, default, test} =>
 			   (checkOperand test
 			    ; (Cases.forall (cases, labelIsJump)
-			       andalso Option.forall (default, labelIsJump)))
+			       andalso Option.forall (default, labelIsJump)
+			       andalso (Type.equals
+					(Operand.ty test,
+					 case cases of
+					    Cases.Char _ => Type.char
+					  | Cases.Int _ => Type.int
+					  | Cases.Word _ => Type.uint))))
 		      | SwitchIP {int, pointer, test} =>
 			   (checkOperand test
 			    ; (labelIsJump pointer
 			       andalso labelIsJump int))
 	       end
-	    fun blockOk (Block.T {label, kind, live, profileInfo,
-				  statements, transfer}): bool =
+	    fun blockOk (Block.T {kind, label, live, profileInfo, statements,
+				  transfer}): bool =
 	       let
 		  val _ = check' (kind, "kind", kindOk, Kind.layout)
 		  val _ =

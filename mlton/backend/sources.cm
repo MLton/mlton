@@ -34,8 +34,10 @@ parallel-move.fun
 parallel-move.sig
 representation.fun
 representation.sig
-rssa.sig
 rssa.fun
+rssa.sig
+runtime.sig
+runtime.sml
 ssa-to-rssa.fun
 ssa-to-rssa.sig
 
