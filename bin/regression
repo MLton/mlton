@@ -13,6 +13,7 @@ usage () {
 }
 
 cross='no'
+fail='no'
 runOnly='no'
 while [ "$#" -gt 0 ]; do
 	case "$1" in
@@ -23,6 +24,10 @@ while [ "$#" -gt 0 ]; do
 			usage
 		fi
 		crossTarget="$1"
+		shift
+		;;
+	-fail)
+		fail='yes'
 		shift
 		;;
 	-run-only)
@@ -65,6 +70,17 @@ $mlton -verbose 1 || echo 'no mlton present'
 echo "flags = $flags"
 
 cd $src/regression
+
+if [ "$fail" = 'yes' ]; then
+	for f in `ls fail/*.sml`; do
+		echo "testing $f"
+		( $mlton $flags $extraFlags -stop tc $f >/dev/null 2>&1 &&
+			echo "compilation of $f should have failed but did not" ) ||
+			true
+	done
+	exit 0
+fi
+
 for f in `ls *.sml`; do
 	f=`basename $f .sml`
 	case "$f" in
@@ -110,12 +126,6 @@ done
 if [ "$cross" = 'yes' -o "$runOnly" = 'yes' ]; then
  	exit 0
 fi
-for f in `ls fail/*.sml`; do
-	echo "testing $f"
-	( $mlton $flags $extraFlags -stop tc $f >/dev/null 2>&1 &&
-		echo "compilation of $f should have failed but did not" ) ||
-		true
-done
 make clean >/dev/null
 cd $src/benchmark/tests
 for f in `ls *.sml`; do
