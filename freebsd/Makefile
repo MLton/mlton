@@ -31,7 +31,7 @@ MAKE_ARGS=	DESTDIR='' PREFIX=$(PREFIX)
 
 .PHONY: build-package
 build-package:
-	$(MAKE) makesum build pkg-plist
+	$(MAKE) makesum build
 	portlint .
 	$(MAKE) deinstall
 	$(MAKE) install
@@ -51,5 +51,9 @@ pkg-plist:
 	cd $(WRKSRC)/install/usr && 					\
 		find -d * -type d | $(GREP) mlton | $(SED) -e 's/^/@dirrm /'	\
 		>>$(.CURDIR)/pkg-plist
+
+.PHONY: post-build
+post-build:
+	$(MAKE) pkg-plist
 
 .include <bsd.port.mk>
