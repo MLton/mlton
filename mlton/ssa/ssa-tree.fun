@@ -1669,27 +1669,16 @@ structure Program =
 			  f (valOf var, ty))
 	  ; List.foreach (functions, fn g => Function.foreachVar (g, f)))
 
-      fun hasPrim (T {globals, functions, ...},  f) =
-	 DynamicWind.withEscape
-	 (fn escape =>
-	  let
-	     fun loopStatement (Statement.T {exp, ...}) =
+      fun foreachPrim (T {globals, functions, ...}, f) =
+	 let
+	    fun loopStatement (Statement.T {exp, ...}) =
 		case exp of
-		   PrimApp {prim, ...} =>
-		      if f prim
-			 then escape true
-		      else ()
+		   PrimApp {prim, ...} => f prim
 		 | _ => ()
 	     fun loopTransfer t =
 	        case t of
-		   Arith {prim, ...} =>
-		      if f prim
-			 then escape true
-		      else ()
-		 | Runtime {prim, ...} =>
-		      if f prim
-			 then escape true
-		      else ()
+		   Arith {prim, ...} => f prim
+		 | Runtime {prim, ...} => f prim
 		 | _ => ()
 	     val _ = Vector.foreach (globals, loopStatement)
 	     val _ =
@@ -1699,9 +1688,15 @@ structure Program =
 		 (Function.blocks f, fn Block.T {statements, transfer, ...} =>
 		  (Vector.foreach (statements, loopStatement);
 		   loopTransfer transfer)))
-	  in
-	     false
-	  end)
+	 in
+	    ()
+	 end
+
+      fun hasPrim (p, f) =
+	 DynamicWind.withEscape
+	 (fn escape =>
+	  (foreachPrim (p, fn prim => if f prim then escape true else ())
+	   ; false))
 
       (* Print information about the number of arithmetic operations that check
        * for overflow and how many have one constant argument.
