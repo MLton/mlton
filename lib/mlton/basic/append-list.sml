@@ -11,6 +11,7 @@ datatype 'a t =
  | Empty
  | List of 'a list (* Nonempty. *)
  | Single of 'a
+ | Snoc of 'a t (* Nonempty *) * 'a 
  | Vector of 'a vector (* Nonempty. *)
    
 val empty = Empty
@@ -53,7 +54,9 @@ fun fromVector v =
 val single = Single
 
 fun snoc (l, a) =
-   append(l, single a)
+   case l of
+      Empty => Single a
+    | _ => Snoc (l, a)
 
 fun fold (l, b, f) =
    let
@@ -65,6 +68,7 @@ fun fold (l, b, f) =
 	  | Empty => b
 	  | List l => List.fold (l, b, f)
 	  | Single x => f (x, b)
+	  | Snoc (l, x) => f (x, loop (l, b))
 	  | Vector v => Vector.fold (v, b, f)
    in loop (l, b)
    end
@@ -83,6 +87,7 @@ fun foldr (l, b, f) =
 	  | Empty => b
 	  | List l => List.foldr (l, b, f)
 	  | Single x => f (x, b)
+	  | Snoc (l, x) => loop (l, f (x, b))
 	  | Vector v => Vector.foldr (v, b, f)
    in loop (l, b)
    end
@@ -96,6 +101,7 @@ fun map (l, f) =
 	  | Empty => Empty
 	  | List l => List (List.map (l, f))
 	  | Single x => Single (f x)
+	  | Snoc (l, x) => Snoc (loop l, f x)
 	  | Vector v => Vector (Vector.map (v, f))
    in loop l
    end
