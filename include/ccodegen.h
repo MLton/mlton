@@ -3,25 +3,18 @@
 
 #include "codegen.h"
 
-/* Globals */
-static pointer arrayAllocateRes;
-static int nextFun;
-static int sizeRes;
-static pointer stackRes;
-
-/* The CReturn's must be globals and cannot be per chunk because
- * they may be assigned in one chunk and read in another.  See, e.g.
- * Array_allocate.
- */
-static char CReturnC;
-static double CReturnD;
-static int CReturnI;
-static char *CReturnP;
-static uint CReturnU;
-
 #ifndef DEBUG_CCODEGEN
 #define DEBUG_CCODEGEN FALSE
 #endif
+
+extern char CReturnC;
+extern double CReturnD;
+extern int CReturnI;
+extern char *CReturnP;
+extern uint CReturnU;
+extern struct cont (*nextChunks []) ();
+extern int nextFun;
+extern bool returnToC;
 
 #define IsInt(p) (0x3 & (int)(p))
 
@@ -54,7 +47,7 @@ struct cont {
 };
 
 #define DeclareChunk(n)				\
-	static struct cont ChunkName(n)(void)
+	struct cont ChunkName(n)(void)
 
 #define Chunk(n)				\
 	DeclareChunk(n) {			\
@@ -90,8 +83,6 @@ struct cont {
 /*                Calling SML from C                 */
 /* ------------------------------------------------- */
 
-static bool returnToC;
-
 #define Thread_returnToC()						\
 	do {								\
 		if (DEBUG_CCODEGEN)					\
@@ -101,58 +92,63 @@ static bool returnToC;
 		return cont;						\
 	} while (0)
 
-static struct cont (*nextChunks[])();
-
-void MLton_callFromC () {
-	struct cont cont;
-	GC_state s;
-
-	if (DEBUG_CCODEGEN)
-		fprintf (stderr, "MLton_callFromC() starting\n");
-	s = &gcState;
-	s->savedThread = s->currentThread;
-	/* Return to the C Handler thread. */
-	GC_switchToThread (s, s->callFromCHandler);
-	nextFun = *(int*)(s->stackTop - WORD_SIZE);
-	cont.nextChunk = nextChunks[nextFun];
-	returnToC = FALSE;
-	do {
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();
-	} while (not returnToC);
-	GC_switchToThread (s, s->savedThread);
-	s->savedThread = BOGUS_THREAD;
-	if (DEBUG_CCODEGEN)
-		fprintf (stderr, "MLton_callFromC done\n");
-}
-
 /* ------------------------------------------------- */
 /*                       main                        */
 /* ------------------------------------------------- */
 
-#define Main(cs, mg, mfs, mlw, mmc, ps, mc, ml)				\
-int main (int argc, char **argv) {					\
-	struct cont cont;						\
-	gcState.native = FALSE;						\
-	Initialize(cs, mg, mfs, mlw, mmc, ps);				\
-	if (gcState.isOriginal) {					\
-		real_Init();						\
-		PrepFarJump(mc, ml);					\
-	} else {							\
-		/* Return to the saved world */				\
-		nextFun = *(int*)(gcState.stackTop - WORD_SIZE);	\
-		cont.nextChunk = nextChunks[nextFun];			\
-	}								\
-	/* Trampoline */						\
-	while (1) {							\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
-	}								\
+#define Main(cs, mg, mfs, mlw, mmc, ps, mc, ml)					\
+/* Globals */									\
+char CReturnC;   /* The CReturn's must be globals and cannot be per chunk */	\
+double CReturnD; /* because they may be assigned in one chunk and read in */	\
+int CReturnI;    /* another.  See, e.g. Array_allocate. */			\
+char *CReturnP;									\
+uint CReturnU;									\
+int nextFun;									\
+bool returnToC;									\
+void MLton_callFromC () {							\
+	struct cont cont;							\
+	GC_state s;								\
+										\
+	if (DEBUG_CCODEGEN)							\
+		fprintf (stderr, "MLton_callFromC() starting\n");		\
+	s = &gcState;								\
+	s->savedThread = s->currentThread;					\
+	/* Return to the C Handler thread. */					\
+	GC_switchToThread (s, s->callFromCHandler);				\
+	nextFun = *(int*)(s->stackTop - WORD_SIZE);				\
+	cont.nextChunk = nextChunks[nextFun];					\
+	returnToC = FALSE;							\
+	do {									\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
+	} while (not returnToC);						\
+	GC_switchToThread (s, s->savedThread);					\
+	s->savedThread = BOGUS_THREAD;						\
+	if (DEBUG_CCODEGEN)							\
+		fprintf (stderr, "MLton_callFromC done\n");			\
+}										\
+int main (int argc, char **argv) {						\
+	struct cont cont;							\
+	gcState.native = FALSE;							\
+	Initialize(cs, mg, mfs, mlw, mmc, ps);					\
+	if (gcState.isOriginal) {						\
+		real_Init();							\
+		PrepFarJump(mc, ml);						\
+	} else {								\
+		/* Return to the saved world */					\
+		nextFun = *(int*)(gcState.stackTop - WORD_SIZE);		\
+		cont.nextChunk = nextChunks[nextFun];				\
+	}									\
+	/* Trampoline */							\
+	while (1) {								\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
+	}									\
 }
 
 /* ------------------------------------------------- */

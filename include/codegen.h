@@ -1,6 +1,14 @@
 #ifndef _CODEGEN_H_
 #define _CODEGEN_H_
 
+extern struct GC_state gcState;
+extern char globaluchar[];
+extern double globaldouble[];
+extern int globalint[];
+extern pointer globalpointer[];
+extern uint globaluint[];
+extern pointer globalpointerNonRoot[];
+
 /* The label must be declared as weak because gcc's optimizer may prove that
  * the code that declares the label is dead and hence eliminate declaration.
  */
@@ -19,29 +27,31 @@
 #define Real(c, f) globaldouble[c] = f;
 #define EndReals }
 
-/* gcState can't be static because stuff in mlton-lib.c refers to it */
-struct GC_state gcState;
+#define LoadArray(a, f) sfread (a, sizeof(*a), cardof(a), f)
+#define SaveArray(a, fd) swrite (fd, a, sizeof(*a) * cardof(a))
 
-#define Globals(c, d, i, p, u, nr)					\
-	char globaluchar[c];						\
-	double globaldouble[d];						\
-	int globalint[i];						\
-	pointer globalpointer[p];					\
-        uint globaluint[u];						\
-	pointer globalpointerNonRoot[nr];				\
-	void saveGlobals (int fd) {					\
-		swrite (fd, globaluchar, sizeof(char) * c);		\
-		swrite (fd, globaldouble, sizeof(double) * d);		\
-		swrite (fd, globalint, sizeof(int) * i);		\
-		swrite (fd, globalpointer, sizeof(pointer) * p); 	\
-		swrite (fd, globaluint, sizeof(uint) * u);		\
-	}								\
-	static void loadGlobals (FILE *file) {				\
-		sfread (globaluchar, sizeof(char), c, file);		\
-		sfread (globaldouble, sizeof(double), d, file);		\
-		sfread (globalint, sizeof(int), i, file);		\
-		sfread (globalpointer, sizeof(pointer), p, file);	\
-		sfread (globaluint, sizeof(uint), u, file);		\
+/* gcState can't be static because stuff in mlton-lib.c refers to it */ \
+#define Globals(c, d, i, p, u, nr)			\
+	struct GC_state gcState;			\
+	char globaluchar[c];				\
+	double globaldouble[d];				\
+	int globalint[i];				\
+	pointer globalpointer[p];			\
+        uint globaluint[u];				\
+	pointer globalpointerNonRoot[nr];		\
+	static void saveGlobals (int fd) {		\
+		SaveArray (globaluchar, fd);		\
+		SaveArray (globaldouble, fd);		\
+		SaveArray (globalint, fd);		\
+		SaveArray (globalpointer, fd);		\
+		SaveArray (globaluint, fd);		\
+	}						\
+	static void loadGlobals (FILE *file) {		\
+		LoadArray (globaluchar, file);		\
+		LoadArray (globaldouble, file);		\
+		LoadArray (globalint, file);		\
+		LoadArray (globalpointer, file);	\
+		LoadArray (globaluint, file);		\
 	}
 
 #define Initialize(cs, mg, mfs, mlw, mmc, ps)				\

@@ -25,7 +25,7 @@ structure Atoms = MachineAtoms (structure Label = Label
 				structure SourceInfo = SourceInfo)
 open Atoms
 
-structure ChunkLabel = IntUniqueId ()
+structure ChunkLabel = IdNoAst (val noname = "ChunkLabel")
 
 structure SmallIntInf =
    struct
@@ -605,8 +605,8 @@ structure Block =
 
 structure Chunk =
    struct
-      datatype t = T of {chunkLabel: ChunkLabel.t,
-			 blocks: Block.t vector,
+      datatype t = T of {blocks: Block.t vector,
+			 chunkLabel: ChunkLabel.t,
 			 regMax: Runtime.Type.t -> int}
 
       fun layout (T {blocks, ...}) =

@@ -116,17 +116,9 @@ structure C =
 	 print (concat [dst, " = ", src, ";\n"])
    end
 
-structure Label =
-   struct
-      open Label
-
-      fun toStringIndex l = (toString l) ^ "_index"
-   end
-
 structure Operand =
    struct
       open Operand
-	 
 
       val layout = Layout.str o toString
    end
@@ -134,6 +126,12 @@ structure Operand =
 fun creturn (t: Runtime.Type.t): string =
    concat ["CReturn", Runtime.Type.name t]
 
+fun outputIncludes (includes, print) =
+   (List.foreach (includes, fn i => (print "#include <";
+				     print i;
+				     print ">\n"))
+    ; print "\n")
+   
 fun outputDeclarations
    {additionalMainArgs: string list,
     includes: string list,
@@ -147,11 +145,6 @@ fun outputDeclarations
     rest: unit -> unit
     }: unit =
    let
-      fun outputIncludes () =
-	 (List.foreach (includes, fn i => (print "#include <";
-					   print i;
-					   print ">\n"))
-	  ; print "\n")
       fun declareGlobals () =
 	 C.call ("Globals",
 		 List.map (List.map (let open Runtime.Type
@@ -280,7 +273,7 @@ fun outputDeclarations
 	 end
    in
       print (concat ["#define ", name, "CODEGEN\n\n"])
-      ; outputIncludes ()
+      ; outputIncludes (includes, print)
       ; declareGlobals ()
       ; declareIntInfs ()
       ; declareStrings ()
@@ -349,30 +342,31 @@ fun output {program as Machine.Program.T {chunks,
 	 in
 	    Kind.frameInfoOpt kind
 	 end
-      val {print, done, ...} = outputC ()
-      fun declareChunks () =
-	 List.foreach (chunks, fn Chunk.T {chunkLabel, ...} =>
-		       C.call ("DeclareChunk",
-			       [ChunkLabel.toString chunkLabel],
-			       print))
-      fun declareNextChunks () =
-	 (print "static struct cont ( *nextChunks []) () = {"
-	  ; Vector.foreach (entryLabels, fn l =>
-			    let
-			       val {chunkLabel, ...} = labelInfo l
-			    in
-			       print "\t"
-			       ; C.callNoSemi ("Chunkp",
-					       [ChunkLabel.toString chunkLabel],
-					       print)
-			       ; print ",\n"
-			    end)
-	  ; print "};\n")
-      fun declareIndices () =
-	 Vector.foreachi
-	 (entryLabels, fn (i, l) =>
-	  (print (concat ["#define ", Label.toStringIndex l, " ",
-			  C.int i, "\n"])))
+      val {get = chunkLabelIndex: ChunkLabel.t -> int, ...} =
+	 Property.getSet (ChunkLabel.plist,
+			  Property.initFun (let
+					       val c = Counter.new 0
+					    in
+					       fn _ => Counter.next c
+					    end))
+      val chunkLabelToString = C.int o chunkLabelIndex
+      fun declareChunk (Chunk.T {chunkLabel, ...}, print) =
+	 C.call ("DeclareChunk",
+		 [chunkLabelToString chunkLabel],
+		 print)
+      val {get = labelIndex, set = setLabelIndex, ...} =
+	 Property.getSetOnce (Label.plist,
+			      Property.initRaise ("index", Label.layout))
+      val _ =
+	 Vector.foreachi (entryLabels, fn (i, l) => setLabelIndex (l, i))
+      fun labelToStringIndex (l: Label.t): string =
+	 let
+	    val s = C.int (labelIndex l)
+	 in
+	    if 0 = !Control.Native.commented
+	       then s
+	    else concat [s, " /* ", Label.toString l, " */"]
+	 end
       local
 	 datatype z = datatype Operand.t
       	 fun toString (z: Operand.t): string =
@@ -395,7 +389,7 @@ fun output {program as Machine.Program.T {chunks,
 			  else "NR",
 			     "(", Int.toString (Global.index g), ")"]
 	     | Int n => C.int n
-	     | Label l => Label.toStringIndex l
+	     | Label l => labelToStringIndex l
 	     | Line => "__LINE__"
 	     | Offset {base, offset, ty} =>
 		  concat ["O", Type.name ty,
@@ -431,7 +425,7 @@ fun output {program as Machine.Program.T {chunks,
 	 val operandToString = toString
       end
    
-      fun outputStatement s =
+      fun outputStatement (s, print) =
 	 let
 	    datatype z = datatype Statement.t
 	 in
@@ -495,6 +489,28 @@ fun output {program as Machine.Program.T {chunks,
       val profiling = !Control.profile <> Control.ProfileNone
       fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, regMax, ...}) =
 	 let
+	    val {done, print, ...} = outputC ()
+	    fun declareChunks () =
+	       let
+		  val {get, ...} =
+		     Property.get (ChunkLabel.plist,
+				   Property.initFun (fn _ => ref false))
+		  val _ =
+		     Vector.foreach
+		     (blocks, fn Block.T {transfer, ...} =>
+		      case transfer of
+			 Transfer.Call {label, ...} =>
+			    get (labelChunk label) := true
+		       | _ => ())
+		  val _ =
+		     List.foreach
+		     (chunks, fn c as Chunk.T {chunkLabel, ...} =>
+		      if ! (get chunkLabel)
+			 then declareChunk (c, print)
+		      else ())
+	       in
+		  ()
+	       end
 	    fun labelFrameSize (l: Label.t): int =
 	       Program.frameSize (program, valOf (labelFrameInfo l))
 	    (* Count how many times each label is jumped to. *)
@@ -655,7 +671,8 @@ fun output {program as Machine.Program.T {chunks,
 					   Vector.layout Operand.layout live,
 					   str " */\n"])
 				  end)
-		  val _ = Vector.foreach (statements, outputStatement)
+		  val _ = Vector.foreach (statements, fn s =>
+					  outputStatement (s, print))
 		  val _ = outputTransfer (transfer, l)
 	       in ()
 	       end) arg
@@ -782,8 +799,8 @@ fun output {program as Machine.Program.T {chunks,
 			      then gotoLabel label
 			   else
 			      C.call ("\tFarJump", 
-				      [ChunkLabel.toString dstChunk, 
-				       Label.toStringIndex label],
+				      [chunkLabelToString dstChunk, 
+				       labelToStringIndex label],
 				      print)
 			end
 		   | Goto dst => gotoLabel dst
@@ -874,37 +891,54 @@ fun output {program as Machine.Program.T {chunks,
 			    C.call (d, [C.int i], print))
 		end)
 	 in
-	    C.callNoSemi ("Chunk", [ChunkLabel.toString chunkLabel], print)
+	    print (concat ["#define CCODEGEN\n\n"])
+	    ; outputIncludes (includes, print)
+	    ; declareChunks ()
+	    ; C.callNoSemi ("Chunk", [chunkLabelToString chunkLabel], print)
 	    ; print "\n"
 	    ; declareRegisters ()
-	    ; C.callNoSemi ("ChunkSwitch", [ChunkLabel.toString chunkLabel],
+	    ; C.callNoSemi ("ChunkSwitch", [chunkLabelToString chunkLabel],
 			    print)
 	    ; print "\n"
 	    ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
 			      if Kind.isEntry kind
 				 then (print "case "
-				       ; print (Label.toStringIndex label)
+				       ; print (labelToStringIndex label)
 				       ; print ":\n"
 				       ; gotoLabel label)
 			      else ())
 	    ; print "EndChunk\n"
+	    ; done ()
 	 end
       val additionalMainArgs =
-	 [ChunkLabel.toString chunkLabel,
-	  Label.toStringIndex label]
+	 [chunkLabelToString chunkLabel,
+	  labelToStringIndex label]
+      val {print, done, ...} = outputC ()
       fun rest () =
-	 (declareChunks ()
-	  ; declareNextChunks ()
-	  ; declareIndices ()
-	  ; List.foreach (chunks, outputChunk))
+	 (List.foreach (chunks, fn c => declareChunk (c, print))
+	  ; print "struct cont ( *nextChunks []) () = {"
+	  ; Vector.foreach (entryLabels, fn l =>
+			    let
+			       val {chunkLabel, ...} = labelInfo l
+			    in
+			       print "\t"
+			       ; C.callNoSemi ("Chunkp",
+					       [chunkLabelToString chunkLabel],
+					       print)
+			       ; print ",\n"
+			    end)
+	  ; print "};\n")
+      val _ = 
+	 outputDeclarations {additionalMainArgs = additionalMainArgs,
+                             includes = includes,
+			     name = "C",
+			     program = program,
+			     print = print,
+			     rest = rest}
+      val _ = done ()
+      val _ = List.foreach (chunks, outputChunk)
    in
-      outputDeclarations {additionalMainArgs = additionalMainArgs,
-			  includes = includes,
-			  name = "C",
-			  program = program,
-			  print = print,
-			  rest = rest}
-      ; done ()
+      ()
    end
 
 end

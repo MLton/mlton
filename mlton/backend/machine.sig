@@ -25,7 +25,7 @@ signature MACHINE =
       sharing Type = Switch.Type
       structure CFunction: C_FUNCTION
       sharing CFunction = Runtime.CFunction
-      structure ChunkLabel: UNIQUE_ID
+      structure ChunkLabel: ID_NO_AST
 
       structure Register:
 	 sig

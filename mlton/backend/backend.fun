@@ -105,7 +105,7 @@ structure Chunk =
 	 
       fun new (): t =
 	 T {blocks = ref [],
-	    chunkLabel = M.ChunkLabel.new ()}
+	    chunkLabel = M.ChunkLabel.newNoname ()}
 	 
       fun newBlock (T {blocks, ...}, z) =
 	 List.push (blocks, M.Block.T z)

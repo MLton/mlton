@@ -131,7 +131,8 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("class", Label.layout))
       (* Build the initial partition.
-       * Ensure that all Ssa labels are in the same equivalence class.
+       * Ensure that all Ssa labels that jump to one another are in the same
+       * equivalence class.
        *)
       val _ =
 	 List.foreach
@@ -141,7 +142,8 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
 	     val _ =
 		Vector.foreach
 		(blocks, fn b as Block.T {label, ...} =>
-		 setLabelClass (label, Graph.newClass (graph, blockSize b)))
+		 setLabelClass (label,
+				Graph.newClass (graph, {size = blockSize b})))
 	     val _ = setFuncClass (name, labelClass start)
 	     val _ =
 		Vector.foreach
@@ -175,16 +177,15 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
 		(blocks, fn Block.T {label, transfer, ...} =>
 		 case transfer of
 		    Call {func, ...} =>
-		       Graph.addEdge (graph, {from = labelClass label,
-					      to = funcClass func})
+		       Graph.addEdge (graph, labelClass label,
+				      funcClass func)
 		  | Return _ =>
 		       let
 			  val from = labelClass label
 		       in
 			  List.foreach
 			  (returnsTo, fn c =>
-			   Graph.addEdge (graph, {from = from,
-						  to = c}))
+			   Graph.addEdge (graph, from, c))
 		       end
 		  | _ => ())
 	  in
@@ -193,7 +194,7 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
       val _ =
 	 if limit = 0
 	    then ()
-	 else Graph.greedy {graph = graph, maxClassSize = limit}
+	 else Graph.coarsen (graph, {maxClassSize = limit})
       type chunk = {funcs: Func.t list ref,
 		    labels: Label.t list ref}
       val chunks: chunk list ref = ref []
@@ -201,10 +202,12 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
 	 Property.get
 	 (Class.plist,
 	  Property.initFun (fn _ =>
-			    let val c = {funcs = ref [],
-					 labels = ref []}
-			    in List.push (chunks, c)
-			       ; c
+			    let
+			       val c = {funcs = ref [],
+					labels = ref []}
+			       val _ = List.push (chunks, c)
+			    in
+			       c
 			    end))
       val _ =
 	 let

@@ -342,7 +342,7 @@ fun makeOptions {usage} =
    end
 
 val mainUsage =
-   "mlton [option ...] file.{cm|sml|c|o} [file.{S|o} ...] [library ...]"
+   "mlton [option ...] file.{cm|sml|c|o} [file.{c|S|o} ...] [library ...]"
 
 val {parse, usage} =
    Popt.makeUsage {mainUsage = mainUsage,
@@ -411,7 +411,7 @@ fun commandLine (args: string list): unit =
 		   ; outputHeader' (No, Out.standard)))
     | Result.Yes (input :: rest) =>
 	 let
-	    val _ = inputFile := (File.base o File.fileOf) input
+	    val _ = inputFile := File.base (File.fileOf input)
 	    val (start, base) =
 	       let
 		  val rec loop =
@@ -423,261 +423,233 @@ fun commandLine (args: string list): unit =
 						       String.size suf))
 			   else loop sufs
 		  datatype z = datatype Place.t
-	       in loop [(".cm", CM),
+	       in
+		  loop [(".cm", CM),
 			(".sml", SML),
 			(".c", Generated),
 			(".o", O)]
 	       end
-	    val (sfiles, rest) =
-	       case start of
-		  Place.Generated =>
-		     List.splitPrefix (rest, fn s => 
-				       String.isSuffix {string = s,
-							suffix = ".S"})
-		| _ => ([], rest)
+	    val (csoFiles, rest) =
+	       List.splitPrefix (rest, fn s =>
+				 List.exists
+				 ([".c", ".o", ".s", ".S"], fn suffix =>
+				  String.isSuffix {string = s,
+						   suffix = suffix}))
 	    val stop = !stop
-	 in case Place.compare (start, stop) of
-	    GREATER => usage (concat ["cannot go from ", Place.toString start,
-				      " to ", Place.toString stop])
-	  | EQUAL => usage "nothing to do"
-	  | LESS =>
-	       let
-		  val _ =
-		     if !verbosity = Top
-			then printVersion ()
-		     else ()
-		  val tempFiles: File.t list ref = ref []
-		  val tmpDir =
-		     case Process.getEnv "TMPDIR" of
-			NONE => "/tmp"
-		      | SOME d => d
-		  fun temp (suf: string): File.t =
-		     let
-			val (f, out) =
-			   File.temp {prefix = concat [tmpDir, "/file"],
-				      suffix = suf}
-			val _ = Out.close out
-			val _ = List.push (tempFiles, f)
-		     in
-			f
-		     end
-		  fun suffix s = concat [base, s]
-		  fun file (b, suf) = (if b then suffix else temp) suf
-		  fun maybeOut suf =
-		     case !output of
-			NONE => suffix suf
-		      | SOME f => f
-		  fun list (prefix: string, l: string list): string list =
-		     List.map (l, fn s => prefix ^ s)
-		  fun docc (inputs: File.t list,
-			    output: File.t,
-			    switches: string list,
-			    linkLibs: string list) =
-		     System.system
-		     (gcc, List.concat [switches,
-					["-o", output],
-					inputs,
-					linkLibs])
-		  val definesAndIncludes =
-		     List.concat [list ("-D", !defines),
-				  list ("-I", rev (includeDirs))]
-		  (* This mess is necessary because the linker on linux
-		   * adds a dependency to a shared library even if there are
-		   * no references to it.  So, on linux, we explicitly link
-		   * with libgmp.a instead of using -lgmp.
-		   *)
-		  val linkWithGmp =
-		     case !hostType of
-			Cygwin => ["-lgmp"]
-		      | FreeBSD => ["-L/usr/local/lib/", "-lgmp"]
-		      | Linux =>
-			   let
-			      val conf = "/etc/ld.so.conf"
-			      val dirs =
-				 if File.canRead conf
-				    then File.lines conf
-				 else []
-			      val dirs = "/lib\n" :: "/usr/lib\n" :: dirs
-			   in
-			      case (List.peekMap
-				    (dirs, fn d =>
-				     let
-					val lib =
-					   concat [String.dropSuffix (d, 1),
-						   "/libgmp.a"]
-				     in
-					if File.canRead lib
-					   then SOME lib
-					else NONE
-				     end)) of
-				 NONE => ["-lgmp"]
-			       | SOME lib => [lib]
-			   end
-		  val linkLibs: string list =
-		     List.concat [list ("-L", rev (libDirs)),
-				  list ("-l",
-					(if !debug
-					    then "mlton-gdb"
-					 else "mlton")
-					    :: !libs),
-				  linkWithGmp]
-		  datatype debugFormat =
-		     Dwarf | DwarfPlus | Dwarf2 | Stabs | StabsPlus
-		  val debugFormat = StabsPlus
-		  val (gccDebug, asDebug) =
-		     case debugFormat of
-			Dwarf => (["-gdwarf", "-g2"], "-Wa,--gdwarf2")
-		      | DwarfPlus => (["-gdwarf+", "-g2"], "-Wa,--gdwarf2")
-		      | Dwarf2 => (["-gdwarf-2", "-g2"], "-Wa,--gdwarf2")
-		      | Stabs => (["-gstabs", "-g2"], "-Wa,--gstabs")
-		      | StabsPlus => (["-gstabs+", "-g2"], "-Wa,--gstabs")
-		  fun compileO (inputs: File.t list) =
-		     let
-			val output = maybeOut ""
-			val _ =
-			   trace (Top, "Link")
-			   (fn () =>
-			    docc (inputs, output,
-				  List.concat
-				  [case host of
-				      Cross s => ["-b", s]
-				    | Self => [],
-					 if !debug then gccDebug else [],
-					    if !static then ["-static"] else []],
-				  rest @ linkLibs))
+	 in
+	    case Place.compare (start, stop) of
+	       GREATER => usage (concat ["cannot go from ", Place.toString start,
+					 " to ", Place.toString stop])
+	     | EQUAL => usage "nothing to do"
+	     | LESS =>
+		  let
+		     val _ =
+			if !verbosity = Top
+			   then printVersion ()
+			else ()
+		     val tempFiles: File.t list ref = ref []
+		     val tmpDir =
+			case Process.getEnv "TMPDIR" of
+			   NONE => "/tmp"
+			 | SOME d => d
+		     fun temp (suf: string): File.t =
+			let
+			   val (f, out) =
+			      File.temp {prefix = concat [tmpDir, "/file"],
+					 suffix = suf}
+			   val _ = Out.close out
+			   val _ = List.push (tempFiles, f)
+			in
+			   f
+			end
+		     fun suffix s = concat [base, s]
+		     fun file (b, suf) = (if b then suffix else temp) suf
+		     fun maybeOut suf =
+			case !output of
+			   NONE => suffix suf
+			 | SOME f => f
+		     fun list (prefix: string, l: string list): string list =
+			List.map (l, fn s => prefix ^ s)
+		     fun docc (inputs: File.t list,
+			       output: File.t,
+			       switches: string list,
+			       linkLibs: string list): unit =
+			System.system
+			(gcc, List.concat [switches,
+					   ["-o", output],
+					   inputs,
+					   linkLibs])
+		     val definesAndIncludes =
+			List.concat [list ("-D", !defines),
+				     list ("-I", rev (includeDirs))]
+		     (* This mess is necessary because the linker on linux
+		      * adds a dependency to a shared library even if there are
+		      * no references to it.  So, on linux, we explicitly link
+		      * with libgmp.a instead of using -lgmp.
+		      *)
+		     val linkWithGmp =
+			case !hostType of
+			   Cygwin => ["-lgmp"]
+			 | FreeBSD => ["-L/usr/local/lib/", "-lgmp"]
+			 | Linux =>
+			      let
+				 val conf = "/etc/ld.so.conf"
+				 val dirs =
+				    if File.canRead conf
+				       then File.lines conf
+				    else []
+				 val dirs = "/lib\n" :: "/usr/lib\n" :: dirs
+			      in
+				 case (List.peekMap
+				       (dirs, fn d =>
+					let
+					   val lib =
+					      concat [String.dropSuffix (d, 1),
+						      "/libgmp.a"]
+					in
+					   if File.canRead lib
+					      then SOME lib
+					   else NONE
+					end)) of
+				    NONE => ["-lgmp"]
+				  | SOME lib => [lib]
+			      end
+                     val linkLibs: string list =
+			List.concat [list ("-L", rev (libDirs)),
+				     list ("-l",
+					   (if !debug
+					       then "mlton-gdb"
+					    else "mlton")
+					       :: !libs),
+				     linkWithGmp]
+		     datatype debugFormat =
+			Dwarf | DwarfPlus | Dwarf2 | Stabs | StabsPlus
+		     (* The -Wa,--gstabs says to pass the --gstabs option to the
+		      * assembler. This tells the assembler to generate stabs
+		      * debugging information for each assembler line.
+		      *)
+		     val debugFormat = StabsPlus
+		     val (gccDebug, asDebug) =
+			case debugFormat of
+			   Dwarf => (["-gdwarf", "-g2"], "-Wa,--gdwarf2")
+			 | DwarfPlus => (["-gdwarf+", "-g2"], "-Wa,--gdwarf2")
+			 | Dwarf2 => (["-gdwarf-2", "-g2"], "-Wa,--gdwarf2")
+			 | Stabs => (["-gstabs", "-g2"], "-Wa,--gstabs")
+			 | StabsPlus => (["-gstabs+", "-g2"], "-Wa,--gstabs")
+		     fun compileO (inputs: File.t list): unit =
+			let
+			   val output = maybeOut ""
+			   val _ =
+			      trace (Top, "Link")
+			      (fn () =>
+			       docc (inputs, output,
+				     List.concat
+				     [case host of
+					 Cross s => ["-b", s]
+				       | Self => [],
+				      if !debug then gccDebug else [],
+				      if !static then ["-static"] else []],
+				     rest @ linkLibs))
+			      ()
+			   (* gcc on Cygwin appends .exe, which I don't want, so
+			    * move the output file to it's rightful place.
+			    *)
+			   val _ =
+			      case MLton.hostType of
+				 MLton.Cygwin =>
+				    if String.contains (output, #".")
+				       then ()
+				    else
+				       File.move {from = concat [output, ".exe"],
+						  to = output}
+			       | MLton.FreeBSD => ()
+			       | MLton.Linux => ()
+			in
 			   ()
-			(* gcc on Cygwin appends .exe, which I don't want, so
-			 * move the output file to it's rightful place.
-			 *)
-			val _ =
-			   case MLton.hostType of
-			      MLton.Cygwin =>
-				 if String.contains (output, #".")
-				    then ()
-				 else
-				    File.move {from = concat [output, ".exe"],
-					       to = output}
-			    | MLton.FreeBSD => ()
-			    | MLton.Linux => ()
-		     in
-			()
-		     end
-		  fun compileS (main: File.t, inputs: File.t list) =
+			end
+		  fun compileCSO (inputs: File.t list): unit =
 		     let
-			val switches = ["-c"]
 			val r = ref 0
-			fun doit (input: File.t, isMain: bool): File.t =
-			   let
-			      val switches =
-				 if !debug
-				    then
-				       (* The -Wa,--gstabs says to pass the
-					* --gstabs option to the assembler.
-					* This tells the assembler to generate
-					* stabs debugging information for each
-					* assembler line.
-					*)
-				       (if isMain
-					   then gccDebug
-					else [asDebug]) @ switches
-				 else switches
-			      val switches =
-				 case host of
-				    Cross s => "-b" :: s :: switches
-				  | Self => switches
-			      val output =
-				 if stop = Place.O orelse !keepO
-				    then
-				       if isMain
-					  then suffix ".o"
-				       else
-					  if !keepGenerated
-					     then
-						concat
-						[String.dropSuffix (input, 1),
-						 "o"]
-					  else
-					     suffix
-					     (Int.inc r
-					      ; concat [".", Int.toString (!r),
-							".o"])
-				 else temp ".o"
-			   in docc ([input], output, switches, [])
-			      ; output
-			   end
-			val outputs =
-			   trace (Top, "Assemble")
+			val oFiles =
+			   trace (Top, "Compile C and Assemble")
 			   (fn () =>
-			    doit (main, true)
-			    :: List.revMap (inputs, fn i => doit (i, false)))
+			    List.fold
+			    (inputs, [], fn (input, ac) =>
+			     if String.isSuffix {string = input,
+						 suffix = ".o"}
+				then input :: ac
+			     else
+			     let
+				val (debugSwitches, switches) =
+				   if String.isSuffix {string = input,
+						       suffix = ".c"}
+				      then
+					 (gccDebug,
+					  List.concat
+					  [definesAndIncludes,
+					   [concat
+					    ["-O",
+					     Int.toString (!optimization)]],
+					   if !Native.native
+					      then []
+					   else String.tokens (!gccSwitches,
+							       Char.isSpace)])
+				   else ([asDebug], [])
+				val switches =
+				   if !debug
+				      then debugSwitches @ switches
+				   else switches
+				val switches =
+				   case host of
+				      Cross s => "-b" :: s :: switches
+				    | Self => switches
+				val switches = "-c" :: switches
+				val output =
+				   if stop = Place.O orelse !keepO
+				      then
+					 if !keepGenerated
+					    then
+					       concat
+					       [String.dropSuffix (input, 1),
+						"o"]
+					 else
+					    (Int.inc r
+					     ; (suffix
+						(concat [".", Int.toString (!r),
+							 ".o"])))
+				   else temp ".o"
+				val _ = docc ([input], output, switches, [])
+			     in
+				output :: ac
+			     end))
 			   ()
-		     in case stop of
-			Place.O => ()
-		      | _ => compileO outputs
-		     end
-		  fun compileC (cFile: File.t,
-				sFiles: File.t list) =
-		     let
-			val switches =
-			   List.concat
-			   [["-S"],
-			    if !debug then gccDebug else [],
-			    definesAndIncludes,
-			    [concat ["-O", Int.toString (!optimization)]],
-			    if !Native.native
-			       then []
-			    else String.tokens (!gccSwitches, Char.isSpace)]
-			val switches =
-			   case host of
-			      Cross s => "-b" :: s :: switches
-			    | Self => switches
-			val output = temp ".s"
-			val _ =
-			   trace (Top, "Compile C")
-			   (fn () => docc ([cFile], output, switches, []))
-			   ()
-		     in compileS (output, sFiles)
+		     in
+			case stop of
+			   Place.O => ()
+			 | _ => compileO oFiles
 		     end
 		  fun compileSml (files: File.t list) =
 		     let
 			val docc =
 			   fn {input, output} =>
 			   docc ([input], output, definesAndIncludes, linkLibs)
-			val cFile = ref NONE
-			val sFiles = ref []
-			fun cOut () =
-			   let
-			      val suf = ".c"
-			      val file = 
-				 case stop of
-				    Place.Generated => maybeOut suf
-				  | _ => file (!keepGenerated, suf)
-			   in cFile := SOME file
-			      ; file
-			   end
+			val outputs: File.t list ref = ref []
 			val r = ref 0
-			fun sOut () =
+			fun make (style: style, suf: string) () =
 			   let
-			      val suf = concat [".",
-                                                Int.toString (!r),
-                                                if !debug then ".s" else ".S"]
+			      val suf = concat [".", Int.toString (!r), suf]
+			      val _ = Int.inc r
 			      val file = (if !keepGenerated
 					     orelse stop = Place.Generated
 					     then suffix
 					  else temp) suf
-			      val _ = Int.inc r
-			   in List.push (sFiles, file)
-			      ; file
-			   end
-			fun make (style: style,
-				  f: unit -> File.t) () =
-			   let
-			      val f = f ()
-			      val out = Out.openOut f
+			      val _ = List.push (outputs, file)
+			      val out = Out.openOut file
 			      fun print s = Out.output (out, s)
 			      val _ = outputHeader' (style, out)
 			      fun done () = Out.close out
-			   in {file = f,
+			   in
+			      {file = file,
 			       print = print,
 			       done = done}
 			   end
@@ -697,14 +669,15 @@ fun commandLine (args: string list): unit =
 			   Compile.compile
 			   {input = files,
 			    docc = docc,
-			    outputC = make (Control.C, cOut),
-			    outputS = make (Control.Assembly, sOut)}
+			    outputC = make (Control.C, ".c"),
+			    outputS = make (Control.Assembly,
+					    if !debug then ".s" else ".S")}
 			(* Shrink the heap before calling gcc. *)
 			val _ = MLton.GC.pack ()
 		     in
 			case stop of
 			   Place.Generated => ()
-			 | _ => compileC (valOf (!cFile), !sFiles)
+			 | _ => compileCSO (List.concat [!outputs, csoFiles])
 		     end
 		  fun compileCM input =
 		     let
@@ -718,22 +691,24 @@ fun commandLine (args: string list): unit =
 				 (Out.output
 				  (out, concat ["(*#line 0.0 \"", f, "\"*)\n"])
 				  ; File.outputContents (f, out))))))
-		     in case stop of
-			Place.Files =>
-			   List.foreach (files, fn f => print (concat [f, "\n"]))
-		      | Place.SML => saveSML (maybeOut ".sml")
-		      | _ =>
-			   (if !keepSML
-			       then saveSML (suffix ".sml")
-			    else ()
-			       ; compileSml files)
+		     in
+			case stop of
+			   Place.Files =>
+			      List.foreach
+			      (files, fn f => print (concat [f, "\n"]))
+			 | Place.SML => saveSML (maybeOut ".sml")
+			 | _ =>
+			      (if !keepSML
+				  then saveSML (suffix ".sml")
+			       else ()
+				  ; compileSml files)
 		     end
 		  fun compile () =
 		     case start of
 			Place.CM => compileCM input
 		      | Place.SML => compileSml [input]
-		      | Place.Generated => compileC (input, sfiles)
-		      | Place.O => compileO [input]
+		      | Place.Generated => compileCSO (input :: csoFiles)
+		      | Place.O => compileCSO (input :: csoFiles)
 		      | _ => Error.bug "invalid start"
 		  val doit 
 		    = trace (Top, "MLton")

@@ -10,6 +10,7 @@ Group
 signature AST
 signature ATOMS
 signature ID
+signature ID_NO_AST
 signature CASES
 signature CON
 signature CONST
