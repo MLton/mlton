@@ -1,5 +1,10 @@
 Here are the changes since version 20030716.
 
+* 2003-12-01
+  - Added structure MLton.Pointer, which includes a type t for
+    pointers (memory addresses, not SML heap pointers) and operations 
+    for loading from and storing to memory.
+
 * 2003-11-03
   - Fixed Timer.checkGCTime so that only the GC user time is included,
     not GC system time.
