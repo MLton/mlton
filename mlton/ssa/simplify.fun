@@ -151,12 +151,8 @@ val simplify = fn p => let
 			 val p' = simplify p
 			 val _ = typeCheck p'
 			 val _ =
-			    Control.pass
-			    {name = "check handlers",
-			     suffix = "",
-			     style = Control.No,
-			     thunk = fn () => Program.checkHandlers p',
-			     display = Control.NoDisplay}
+			    Control.trace (Control.Pass, "checkHandlers")
+			    checkHandlers p'
 		       in
 			 p'
 		       end
