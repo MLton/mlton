@@ -2091,12 +2091,13 @@ static Pointer hashCons (GC_state s, Pointer object) {
 		fprintf (stderr, "hashCons (0x%08x)\n", (uint)object);
 	t = s->objectHashTable;
 	header = GC_getHeader (object);
-	SPLIT_HEADER();
-	if (hasIdentity) {
+	SPLIT_HEADER ();
+	if (hasIdentity or tag != NORMAL_TAG) {
 		/* Don't hash cons. */
 		res = object;
 		goto done;
 	}
+	assert (NORMAL_TAG == tag);
 	/* Compute the hash. */
 	max = (word*)(object + toBytes (numPointers + numNonPointers));
 	hash = header;
