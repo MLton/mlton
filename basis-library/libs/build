@@ -9,9 +9,9 @@ misc/dynamic-wind.sig
 misc/dynamic-wind.sml
 general/general.sig
 general/general.sml
-misc/util.sml
 general/option.sig
 general/option.sml
+misc/util.sml
 list/list.sig
 list/list.sml
 list/list-pair.sig

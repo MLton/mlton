@@ -7,7 +7,7 @@
 structure Option: OPTION =
 struct
 
-datatype 'a option = NONE | SOME of 'a
+datatype option = datatype option
 
 exception Option
 

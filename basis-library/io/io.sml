@@ -8,11 +8,24 @@
 structure IO: IO =
    struct
       exception BlockingNotSupported
+
       exception ClosedStream
+
       exception Io of {cause : exn,
 		       function : string,
 		       name : string}
+
+      val _ =
+	 General.addExnMessager
+	 (fn e =>
+	  case e of
+	     Io {cause, function, name, ...} => 
+   	        SOME (concat ["Io: ", function, " \"", name, "\" failed with ",
+			      exnMessage cause])
+	   | _ => NONE)
+      
       exception NonblockingNotSupported
+
       exception RandomAccessNotSupported
 
       datatype buffer_mode = NO_BUF | LINE_BUF | BLOCK_BUF

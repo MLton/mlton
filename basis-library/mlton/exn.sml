@@ -4,6 +4,8 @@ structure MLtonExn =
 
       type t = exn
 
+      val addExnMessager = General.addExnMessager
+
       val history: t -> string list =
 	 if keepHistory
 	    then (setInitExtra ([]: extra)
@@ -11,18 +13,6 @@ structure MLtonExn =
 		  ; extra)
 	 else fn _ => []
 
-      val rec exnMessage: t -> string =
-	 fn Fail s => concat ["Fail: ", s]
-	  | IO.Io {cause, function, name, ...} => 
-	       concat ["Io: ", function, " \"", name, "\" failed with ",
-		       exnMessage cause]
-	  | PosixError.SysErr (s, eo) =>
-	       concat ["SysErr: ", s,
-		       case eo of
-			  NONE => ""
-			| SOME e => concat [" [", PosixError.errorName e, "]"]]
-	  | e => exnName e
-	    
       local
 	 val message = Primitive.Stdio.print
       in
@@ -40,13 +30,3 @@ structure MLtonExn =
 			 ; raise Fail "bug")
       end
    end
-
-structure General: GENERAL =
-   struct
-      open General
-
-      val exnMessage = MLtonExn.exnMessage
-   end
-
-structure GeneralGlobal: GENERAL_GLOBAL = General
-open GeneralGlobal

@@ -22,6 +22,17 @@ structure PosixError: POSIX_ERROR_EXTRA =
 	    NONE => "<UNKNOWN>"
 	  | SOME (_, s) => s
 
+      val _ =
+	 General.addExnMessager
+	 (fn e =>
+	  case e of
+	     SysErr (s, eo) =>
+	        SOME (concat ["SysErr: ", s,
+			      case eo of
+				 NONE => ""
+			       | SOME e => concat [" [", errorName e, "]"]])
+	   | _ => NONE)
+
       fun syserror s =
 	 case List.find (fn (_, s') => s = s') errorNames of
 	    NONE => NONE

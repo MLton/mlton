@@ -1,5 +1,8 @@
 Here are the changes since version 20040227.
 
+* 2004-07-01
+  - Added val MLton.Exn.addExnMessager: (exn -> string option) -> unit
+
 * 2004-06-23
   - Runtime system options that take memory sizes now accept a "g"
     suffix indicating gigabytes.  They also now take a real instead of

@@ -172,12 +172,17 @@ continuation.
 \begin{verbatim}
 signature MLTON_EXN =
    sig
+      val addExnMessager: (exn -> string option) -> unit
       val history: exn -> string list
       val topLevelHandler: exn -> 'a
    end
 \end{verbatim}
 
 \begin{description}
+
+\entry{addExnMessager}
+add a pretty-printer to be used by {\tt General.exnMessage} for
+converting exceptions to strings.
 
 \entry{history e}
 returns the file positions that have raised the exception {\tt e}, in reverse

@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure General =
+structure General: GENERAL_EXTRA =
    struct
       type unit = unit
 
@@ -20,8 +20,7 @@ structure General =
       exception Size = Size
       exception Span
       exception Subscript
-      val exnName = Primitive.Exn.name
- 
+
       datatype order = LESS | EQUAL | GREATER
 
       val ! = Primitive.Ref.deref
@@ -29,21 +28,29 @@ structure General =
       fun (f o g) x = f (g x)
       fun x before () = x
       fun ignore _ = ()
+      val exnName = Primitive.Exn.name
+
+      local
+	 val messagers: (exn -> string option) list ref = ref []
+      in
+	 val addExnMessager: (exn -> string option) -> unit =
+	    fn f => messagers := f :: !messagers
+	    
+	 val rec exnMessage: exn -> string =
+	    fn e =>
+	    let
+	       val rec find =
+		  fn [] => exnName e
+		   | m :: ms =>
+			case m e of
+			   NONE => find ms
+			 | SOME s => s
+	    in
+	       find (!messagers)
+	    end
+      end
    end
 
-local
-   open General
-in
-   datatype order = datatype order
-   exception Chr = Chr
-   exception Div = Div
-   exception Domain = Domain
-   exception Span = Span
-   exception Subscript = Subscript
-   val ! = !
-   val op := = op :=
-   val op before = op before
-   val exnName = exnName
-   val ignore = ignore
-   val op o = op o
-end
+structure GeneralGlobal: GENERAL_GLOBAL = General
+open GeneralGlobal
+

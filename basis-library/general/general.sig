@@ -13,6 +13,7 @@ signature GENERAL_GLOBAL =
      exception Size
      exception Span
      exception Subscript
+
      val exnName: exn -> string 
      val exnMessage: exn -> string
 
@@ -28,4 +29,11 @@ signature GENERAL_GLOBAL =
 signature GENERAL =
    sig
       include GENERAL_GLOBAL
+   end
+
+signature GENERAL_EXTRA =
+   sig
+      include GENERAL
+      
+      val addExnMessager: (exn -> string option) -> unit
    end

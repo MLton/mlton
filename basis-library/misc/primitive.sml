@@ -151,6 +151,8 @@ exception Match = Match
 exception Overflow = Overflow
 exception Size
 
+datatype 'a option = NONE | SOME of 'a
+
 structure Primitive =
    struct
       val detectOverflow = _build_const "MLton_detectOverflow": bool;
