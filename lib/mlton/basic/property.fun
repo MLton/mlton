@@ -32,10 +32,12 @@ fun print s = TextIO.output (TextIO.stdErr, s)
 fun ('sym, 'val) nondestructable (plist: 'sym -> Plist.t,
 				  init: ('sym, 'val) init) =
    let
-      val {add, peek, remove, set, ...} = Plist.newProperty ()
+      val {add, peek, remove, ...} = Plist.newProperty ()
       fun get (s: 'sym) =
-	 let val p = plist s
-	 in case peek p of
+	 let
+	    val p = plist s
+	 in
+	    case peek p of
 	    NONE => (case init of
 			Const c => c
 		      | Fun f =>
@@ -84,7 +86,8 @@ fun destGet z =
    end
 
 fun getSetOnce z =
-   let val {get, rem, set, ...} = nondestructable z
+   let
+      val {get, rem, set, ...} = nondestructable z
    in {get = get, rem = rem, set = setToSetOnce set}
    end
 

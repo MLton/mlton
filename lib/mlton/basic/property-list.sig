@@ -24,15 +24,6 @@ signature PROPERTY_LIST =
 		   * NONE if it isn't.
 		   *)
 		  peek: t -> 'a option,
-		  (* get a property from a property list.
-		   * Raises error if the property isn't there.
-		   *)
-		  get: t -> 'a,
-		  (* set(p, v, f)
-		   * Change the value of property.
-		   * Create a new property and call f if it isn't already there.
-		   *)
-		  set: t * 'a * (unit -> unit) -> unit,
 		  (* Add the value of the property -- must not already exist. *)
 		  add: t * 'a -> unit,
 		  (* Remove a property from a property list.

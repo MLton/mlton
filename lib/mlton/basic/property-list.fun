@@ -60,26 +60,11 @@ fun 'a newProperty () =
 	    loop (!hs, 0)
 	 end
 
-      fun get (plist: t) =
-	 case peek plist of
-	    SOME x => x
-	  | NONE => Error.bug "get"
-
-      fun set (T hs, v: 'a, f: unit -> unit): unit =
-	 let val h = make v
-	    val rec loop =
-	       fn [] => (f (); [h])
-		| h' :: hs => if pred h'
-				 then h :: hs
-			      else h' :: loop hs
-	 in hs := loop (!hs)
-	 end
-
       fun add (T hs, v: 'a): unit = hs := make v :: !hs
 
       fun remove (T hs) = hs := List.remove (!hs, pred)
    in
-      {add = add, peek = peek, get = get, set = set, remove = remove}
+      {add = add, peek = peek, remove = remove}
    end
 
 end
