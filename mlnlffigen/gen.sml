@@ -125,7 +125,7 @@ let
    in
       fun openPP (f, src) =
 	 let
-	    val device = CPIFDev.openOut (f, width)
+            val device = CPIFDev.openOut (f, width)
 	    val stream = PP.openStream device
 	       
 	    fun nl () = PP.newline stream
@@ -242,8 +242,8 @@ let
 	 val umap = ref SM.empty
 	 val emap = ref SM.empty
 	 val ty_queue = ref []
-	 fun ty_sched t = ty_queue := t :: !ty_queue
-	 fun fs_sched (S.OFIELD { spec = (_, t), ... }) = ty_sched t
+	 fun ty_sched ty = List.push (ty_queue, ty)
+	 fun fs_sched (S.OFIELD { spec = (_, ty), ... }) = ty_sched ty
 	   | fs_sched _ = ()
 	 fun f_sched { name, spec } = fs_sched spec
 
@@ -317,8 +317,8 @@ let
 	    (f, s, u, taginsert (t, e))
 	 fun maybe_insert (t, ss, acc, insert) =
 	    case $? (ss, t) of
-	       SOME _ => insert (t, acc)
-	     | NONE => acc
+	       SOME _ => acc
+	     | NONE => insert (t, acc)
 
 	 fun do_ty (ty, acc) =
 	    case ty of 
@@ -1116,7 +1116,7 @@ let
 	      pr_tdef ("t", witness_type spec);
 	      Option.app 
 	      (rtti_val_opt, fn rtti_val =>
-	       pr_vdef ("typ", EConstr (rtti_val, Con ("T.type", [Type "t"]))));
+	       pr_vdef ("typ", EConstr (rtti_val, Con ("T.typ", [Type "t"]))));
 	      endBox ();
 	      nl (); str "end";
 	      endBox ();
@@ -1312,7 +1312,7 @@ let
 		       handle Incomplete => true
 		 in
 		    if dolight orelse incomplete then pr_field_acc' f else ();
-		       if doheavy andalso not incomplete then pr_field_acc f else ()
+		    if doheavy andalso not incomplete then pr_field_acc f else ()
 		 end
 	   in
 	      str "local";
@@ -1468,6 +1468,7 @@ let
    fun do_mlbfile () = 
       let
 	 val file = descrFile mlbfile
+	 val () = File.remove file
 	 val {closePP, line, str, nl, VBox, endBox, ... } =
 	    openPP (file, NONE)
       in
