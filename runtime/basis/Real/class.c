@@ -81,6 +81,34 @@ Int Real64_class (Real64 d) {
 	return res;
 }
 
+#elif (defined __sparc__)
+
+Int Real64_class (Real64 d) {
+	fpclass_t c;
+
+	c = fpclass (d);
+	switch (c) {
+	case FP_SNAN: return Real_Class_nanSignalling;
+	case FP_QNAN: return Real_Class_nanQuiet;
+	case FP_NINF: return Real_Class_inf;
+	case FP_PINF: return Real_Class_inf;
+	case FP_NDENORM: return Real_Class_subnormal;
+	case FP_PDENORM: return Real_Class_subnormal;
+	case FP_NZERO: return Real_Class_zero;
+	case FP_PZERO: return Real_Class_zero;
+	case FP_NNORM: return Real_Class_normal;
+	case FP_PNORM: return Real_Class_normal;
+	default:
+		die ("Real_class error: invalid class %d\n", c);
+	}
+}
+
+#else
+
+#error Real64_class not implemented
+
+#endif
+
 /* masks for word 0 */
 #define EXPONENT_MASK32 0x7F800000
 #define MANTISSA_MASK32 0x007FFFFF
@@ -116,35 +144,3 @@ Int Real32_class (Real32 f) {
 		fprintf (stderr, "%d = Real32_class (%g)\n", (int)res, f);
 	return res;
 }
-
-#elif (defined __sparc__)
-
-Int Real64_class (Real64 d) {
-	fpclass_t c;
-
-	c = fpclass (d);
-	switch (c) {
-	case FP_SNAN: return Real_Class_nanSignalling;
-	case FP_QNAN: return Real_Class_nanQuiet;
-	case FP_NINF: return Real_Class_inf;
-	case FP_PINF: return Real_Class_inf;
-	case FP_NDENORM: return Real_Class_subnormal;
-	case FP_PDENORM: return Real_Class_subnormal;
-	case FP_NZERO: return Real_Class_zero;
-	case FP_PZERO: return Real_Class_zero;
-	case FP_NNORM: return Real_Class_normal;
-	case FP_PNORM: return Real_Class_normal;
-	default:
-		die ("Real_class error: invalid class %d\n", c);
-	}
-}
-
-Int Real32_class (Real32 f) {
-	diee ("Real32_class unimplemented.");
-}
-
-#else
-
-#error Real_class not defined
-
-#endif
