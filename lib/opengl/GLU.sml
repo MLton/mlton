@@ -3452,6 +3452,7 @@ signature GL =
 open GL
 signature GLU =
     sig
+        type GLUnurb = MLton.Pointer.t
         (**** Generic constants ****)
 
         (* Version *)
@@ -3616,6 +3617,12 @@ signature GLU =
         val GLU_ERROR : GL.GLenum
         val GLU_EDGE_FLAG : GL.GLenum
 
+        val c_gluBeginSurface : GLUnurb -> unit;
+        val gluBeginSurface : GLUnurb -> unit;
+
+        val c_gluEndSurface : GLUnurb -> unit;
+        val gluEndSurface : GLUnurb -> unit;
+
           val c_gluOrtho2D : GLdouble * GLdouble * GLdouble * GLdouble -> unit
           val gluOrtho2D : GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
 
@@ -3626,11 +3633,23 @@ signature GLU =
                           GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit
           val gluLookAt : GLdouble -> GLdouble -> GLdouble -> GLdouble ->
                           GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
+
+          val c_gluNewNurbsRenderer : unit -> GLUnurb
+          val gluNewNurbsRenderer : unit -> GLUnurb
+
+          val c_gluNurbsProperty : GLUnurb * GLenum * GLreal -> unit
+          val gluNurbsProperty : GLUnurb -> GLenum -> GLreal -> unit
+
+          val c_gluNurbsSurface : GLUnurb * int * GLreal array * int * GLreal array
+                                    * int * int * GLreal array * int * int * GLenum -> unit
+          val gluNurbsSurface : GLUnurb -> int -> GLreal array -> int -> GLreal array
+                                    -> int -> int -> GLreal array -> int -> int -> GLenum -> unit
   end
 
 
 structure GLU :> GLU =
     struct
+        type GLUnurb = MLton.Pointer.t
         (**** Generic constants ****)
 
         (* Version *)
@@ -3794,6 +3813,12 @@ structure GLU :> GLU =
         val GLU_END = GLU_TESS_END
         val GLU_ERROR = GLU_TESS_ERROR
         val GLU_EDGE_FLAG = GLU_TESS_EDGE_FLAG
+            val c_gluBeginSurface = _import "gluBeginSurface" stdcall: GLUnurb -> unit;
+            fun gluBeginSurface (a:GLUnurb) = c_gluBeginSurface (a) :unit
+
+            val c_gluEndSurface = _import "gluEndSurface" stdcall: GLUnurb -> unit;
+            fun gluEndSurface (a:GLUnurb) = c_gluEndSurface (a) :unit
+
             val c_gluOrtho2D = _import "gluOrtho2D" stdcall: GLdouble * GLdouble * GLdouble * GLdouble -> unit;
             fun gluOrtho2D (a:GLdouble) (b:GLdouble) (c:GLdouble) (d:GLdouble)
               = c_gluOrtho2D (a,b,c,d):unit
@@ -3806,6 +3831,17 @@ structure GLU :> GLU =
                                                            GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit;
             fun gluLookAt (a0:GLdouble) (a1:GLdouble) (a2:GLdouble) (a3:GLdouble) (a4:GLdouble) (a5:GLdouble) (a6:GLdouble)
                           (a7:GLdouble) (a8:GLdouble) = c_gluLookAt (a0,a1,a2,a3,a4,a5,a6,a7,a8):unit
+
+            val c_gluNewNurbsRenderer = _import "gluNewNurbsRenderer" stdcall: unit -> GLUnurb;
+            fun gluNewNurbsRenderer () = c_gluNewNurbsRenderer (): GLUnurb
+
+            val c_gluNurbsProperty = _import "gluNurbsProperty" stdcall: GLUnurb * GLenum * GLreal -> unit;
+            fun gluNurbsProperty (a:GLUnurb) (b:GLenum) (c:GLreal) = c_gluNurbsProperty (a,b,c) : unit
+
+            val c_gluNurbsSurface = _import "gluNurbsSurface" stdcall: GLUnurb * int * GLreal array * int * GLreal array
+                                                                       * int * int * GLreal array * int * int * GLenum -> unit;
+            fun gluNurbsSurface (a:GLUnurb) (b:int) (c:GLreal array) (d:int) (e:GLreal array) (f:int) (g:int) (h:GLreal array)
+                                 (i:int) (j:int) (k:GLenum) = c_gluNurbsSurface (a,b,c,d,e,f,g,h,i,j,k) : unit
 
 
     end

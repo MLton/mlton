@@ -852,6 +852,7 @@ signature GL =
 open GL
 signature GLU =
     sig
+        type GLUnurb = MLton.Pointer.t
         (**** Generic constants ****)
 
         (* Version *)
@@ -1016,6 +1017,12 @@ signature GLU =
         val GLU_ERROR : GL.GLenum
         val GLU_EDGE_FLAG : GL.GLenum
 
+        val c_gluBeginSurface : GLUnurb -> unit;
+        val gluBeginSurface : GLUnurb -> unit;
+
+        val c_gluEndSurface : GLUnurb -> unit;
+        val gluEndSurface : GLUnurb -> unit;
+
           val c_gluOrtho2D : GLdouble * GLdouble * GLdouble * GLdouble -> unit
           val gluOrtho2D : GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
 
@@ -1026,4 +1033,15 @@ signature GLU =
                           GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit
           val gluLookAt : GLdouble -> GLdouble -> GLdouble -> GLdouble ->
                           GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
+
+          val c_gluNewNurbsRenderer : unit -> GLUnurb
+          val gluNewNurbsRenderer : unit -> GLUnurb
+
+          val c_gluNurbsProperty : GLUnurb * GLenum * GLreal -> unit
+          val gluNurbsProperty : GLUnurb -> GLenum -> GLreal -> unit
+
+          val c_gluNurbsSurface : GLUnurb * int * GLreal array * int * GLreal array
+                                    * int * int * GLreal array * int * int * GLenum -> unit
+          val gluNurbsSurface : GLUnurb -> int -> GLreal array -> int -> GLreal array
+                                    -> int -> int -> GLreal array -> int -> int -> GLenum -> unit
   end

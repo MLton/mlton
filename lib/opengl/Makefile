@@ -81,7 +81,7 @@ GLUT_h.h: $(GLUT_SML)
 GLUT_c.o: $(GLUT_C)
 	gcc -c GLUT_c.c
 
-test: shortest hello solar atom triangle spin_cube blender
+test: shortest hello solar atom triangle spin_cube blender molehill
 
 shortest: $(GLUT_SML) $(GL_SML) shortest.sml
 	mlton $(GL_LINK_OPTS) shortest.cm GL_c.c GLUT_c.c
@@ -104,5 +104,8 @@ spin_cube: $(GLUT_SML) $(GLU_SML) $(GL_SML) spin_cube.sml
 blender: $(GLUT_SML) $(GLU_SML) $(GL_SML) blender.sml
 	mlton $(GL_LINK_OPTS) blender.cm GL_c.c GLUT_c.c
 
+molehill: $(GLUT_SML) $(GLU_SML) $(GL_SML) molehill.sml
+	mlton $(GL_LINK_OPTS) molehill.cm GL_c.c GLUT_c.c
+
 clean:
-	rm -f *_h.h *.stackdump *~ *.o *.exe Glut *.a hello shortest atom solar triangle spin_cube blender
+	rm -f *_h.h *.stackdump *~ *.o *.exe Glut *.a hello shortest atom solar triangle spin_cube blender molehill
