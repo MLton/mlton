@@ -40,10 +40,24 @@ fun make (r: string, s: RealSize.t): t option =
        | R64 => doit (Real64.fromString, Real64.isFinite, Real64)
    end
 
+(* We need to check the sign bit when comparing reals so that we don't treat
+ * 0.0 and ~0.0 identically.  The difference between the two is detectable by
+ * user programs that look at the sign bit.
+ *)
 fun equals (r, r') =
    case (r, r') of
-      (Real32 r, Real32 r') => Real32.equals (r, r')
-    | (Real64 r, Real64 r') => Real64.equals (r, r')
+      (Real32 r, Real32 r') =>
+	 let
+	    open Real32
+	 in
+	    equals (r, r') andalso signBit r = signBit r'
+	 end
+    | (Real64 r, Real64 r') =>
+	 let
+	    open Real64
+	 in
+	    equals (r, r') andalso signBit r = signBit r'
+	 end
     | _ => false
 
 fun toString r =
