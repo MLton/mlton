@@ -82,7 +82,7 @@ val (get, set, handlers) =
 	  (fn (s, _) => if Prim.isDefault s
 			   then Default
 			else Ignore)
-	  (handlers, 0, NONE))
+	  handlers)
    in
       (fn s => Array.sub (handlers, s),
        fn (s, h) => if Primitive.MLton.Profile.profile andalso s = prof
@@ -152,7 +152,7 @@ structure Handler =
 			else t)
 		  | _ => t)
 		t
-		(handlers, 0, NONE))
+		handlers)
 	 in
 	    Handler
 	 end

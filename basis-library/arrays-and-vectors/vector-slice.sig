@@ -40,4 +40,6 @@ signature VECTOR_SLICE_EXTRA =
 
       val toList: 'a slice -> 'a list
       val unsafeSub: 'a slice * int -> 'a
+      val unsafeSlice: 'a vector * int * int option -> 'a slice
+      val unsafeSubslice: 'a slice * int * int option -> 'a slice
    end

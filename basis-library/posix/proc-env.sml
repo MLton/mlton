@@ -30,12 +30,16 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       end
 
       local
+	 (* QUESTION: Why Primitive.Array.array and not Array.array? 
+	  * I guess we don't need to fill in values because getgroups
+	  *  will fill in the array; but wouldn't hurt to use Array.array.
+	  *)
 	 val a: word array = Primitive.Array.array Prim.numgroups
       in
 	 fun getgroups () =
 	    let val n = Prim.getgroups a
 	    in Error.checkResult n
-	       ; Array.prefixToList (a, n)
+	       ; ArraySlice.toList (ArraySlice.slice (a, 0, SOME n))
 	    end
       end
 

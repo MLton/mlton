@@ -29,10 +29,11 @@ structure String0 =
 
       fun substring (s, i, j) = extract (s, i, SOME j)
 
-      fun copy s = tabulate (length s, fn i => sub (s, i))
-	 
-      fun map f s =
-	 fromArray (Array.tabulate (size s, fn i => f (sub (s, i))))
+      fun update (v, i, x) = 
+	tabulate (length v,
+		  fn j => if i = j 
+			     then x
+			  else unsafeSub (v, j))
 
       fun s ^ s' = concat [s, s']
 

@@ -14,6 +14,7 @@ structure Array: ARRAY_EXTRA =
 			      val length = Primitive.Array.length
 			      val sub = Primitive.Array.sub)
       open A
+      open Primitive.Int
 
       type 'a array = 'a array
       type 'a vector = 'a Vector.vector
@@ -46,7 +47,7 @@ structure Array: ARRAY_EXTRA =
 		       then let val sl = slice (dst, di, SOME (length src))
 			    in 
 			       foldri (fn (i, _, _) => 
-				       unsafeUpdate (sl, i, unsafeSub (src, i))) 
+				       unsafeUpdate (sl, i, unsafeSub (src, i)))
 			       () sl
 			    end
 		    else make (length, unsafeSub) arg

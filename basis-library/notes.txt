@@ -18,6 +18,22 @@ and invoke the user-supplied function argument, but raise the
 exception when it arrives at the end of one list before the end of the
 other."
 
+PACK_WORD:
+structure Pack<N>Big :> PACK_WORD  (* OPTIONAL *)
+structure Pack<N>Little :> PACK_WORD  (* OPTIONAL *)
+but PACK_WORD has
+val subVec  : Word8Vector.vector * int -> LargeWord.word
+i.e., reference to LargeWord.word.
+Should it be
+PACK_WORD
+type word
+val subVec  : Word8Vector.vector * int -> word
+with
+structure Pack<N>Big :> PACK_WORD with word = Word<N>.word  (* OPTIONAL *)
+Should there be PackBig and PackLittle with word = Word.word?
+Should there be PackLargeBig with word = LargeWord.word?
+There aren't many structures that refine on LargeXYZ; most refine on XYZ<N>.
+
 Math:
 "The top-level structure Math provides these functions for the default
 real type Real.real."
@@ -31,11 +47,17 @@ toString prepends a #"~" even when the class is NAN?
 
 PACK_REAL:
 syntax/scope of where clauses in structure bindings is incorrect.
+reference Real.real instead of real; 
+MONO_VECTOR/MONO_ARRAY reference real instead of Real.real.
 
 Array2:
 Why no ARRAY2_REGION analagous to ARRAY_SLICE?
 Types of Array2 operations don't match corresponding Array ops.
+find,exists,all?  collate?
 How about Matrix (== Vector2) and MATRIX_REGION?
+
+ARRAY2/MONO_ARRAY2
+Order of foldi/fold and modifyi/modify differs between them.
 
 VECTOR_SLICE:
 Description of subslice references |arr| when it should reference |sl|.
@@ -46,6 +68,13 @@ Description of findi references appi when it should reference findi.
 
 MONO_ARRAY:
 CharArray has where type elem = char, not Char.char.
+
+(In general, probably a good idea to look at the entire top-level
+structure/signature matches and choose a consistent usage of base
+types.  For example, Int:>INTEGER would seem to hide the top-level
+int; unless Int is opened afterwards.  But, then what about all the
+other structures that reference int?  Is top-level int = Int.int or is
+Int.int = top-level int.)
 
 SLICES:
 Why not existsi, alli?
@@ -89,3 +118,5 @@ MLton specific:
  + Real:>REAL doesn't match basis because it may peform
     arithmetic at extended precision.  Should this be mentioned
     in the user guide?
+ + QUESTION: proc-env.sml
+ + check uses of {Vector,Array}Slice.slice for replacement by unsafeSlice.

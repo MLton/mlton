@@ -57,6 +57,7 @@ structure Time: TIME_EXTRA =
 	 else
 	    let
 	       val (sec, ms) = IntInf.quotRem (ms, 1000)
+	       val (sec, ms) = (IntInf.toLarge sec, IntInf.toLarge ms)
 	    in
 	       T {sec = convert sec,
 		  usec = LargeInt.toInt ms * 1000}
@@ -68,6 +69,7 @@ structure Time: TIME_EXTRA =
 	 else
 	    let
 	       val (sec, usec) = IntInf.quotRem (usec, 1000000)
+	       val (sec, usec) = (IntInf.toLarge sec, IntInf.toLarge usec)
 	    in
 	       T {sec = convert sec,
 		  usec = LargeInt.toInt usec}

@@ -22,7 +22,9 @@ signature SLICE =
                          ('a slice * int * 'a elt) -> unit
       val full: 'a sequence -> 'a slice
       val slice: 'a sequence * int * int option -> 'a slice
+      val unsafeSlice: 'a sequence * int * int option -> 'a slice
       val subslice: 'a slice * int * int option -> 'a slice
+      val unsafeSubslice: 'a slice * int * int option -> 'a slice
       val base: 'a slice -> 'a sequence * int * int
       val concat: 'a slice list -> 'a sequence
       val isEmpty: 'a slice -> bool

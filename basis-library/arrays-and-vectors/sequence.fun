@@ -114,9 +114,7 @@ functor Sequence (S: sig
 	       update (seq, start +? i, x)
 	    fun full (seq: 'a sequence) : 'a slice = 
 	       {seq = seq, start = 0, len = S.length seq}
-	    fun subslice (sl: 'a slice as {seq, start, len}, 
-			  start': int, 
-			  len': int option) =
+	    fun subslice (sl: 'a slice as {seq, start, len}, start', len') = 
 	       case len' of
 		  NONE => if Primitive.safe andalso
 		             (start' < 0 orelse start' > len)
@@ -131,8 +129,16 @@ functor Sequence (S: sig
 			       else {seq = seq,
 				     start = start +? start',
 				     len = len'}
-	    fun slice (seq: 'a sequence, start: int, len: int option) = 
+	    fun unsafeSubslice (sl: 'a slice as {seq, start, len}, start', len') = 
+	       {seq = seq, 
+		start = start +? start',
+		len = case len' of
+		        NONE => len -? start'
+		      | SOME len' => len'}
+	    fun slice (seq: 'a sequence, start, len) =
 	       subslice (full seq, start, len)
+	    fun unsafeSlice (seq: 'a sequence, start, len) =
+	       unsafeSubslice (full seq, start, len)
 	    fun isEmpty sl = length sl = 0
 	    fun getItem (sl: 'a slice as {seq, start, len}) =
 	       if isEmpty sl

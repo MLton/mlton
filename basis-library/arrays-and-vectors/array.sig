@@ -38,7 +38,6 @@ signature ARRAY_EXTRA =
    sig
       include ARRAY
       structure ArraySlice: ARRAY_SLICE_EXTRA where type 'a array = 'a array
-						and type 'a vector = 'a vector
 
       val toList: 'a array -> 'a list
       val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b array

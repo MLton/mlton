@@ -7,8 +7,8 @@
  *)
 functor MonoArray2 (V: CONCRETE_MONO_VECTOR): MONO_ARRAY2 =
    struct
-      structure Vector = V
       type elem = V.elem
+      type vector = V.vector
       open Array2
       type array = elem array
       type region = {base: array,
@@ -19,11 +19,11 @@ functor MonoArray2 (V: CONCRETE_MONO_VECTOR): MONO_ARRAY2 =
    end
 
 structure Word8Array2 = MonoArray2 (Word8Vector)
-(*
+
 structure CharArray2: MONO_ARRAY2 =
    struct
-      structure Vector = CharVector
       type elem = char
+      type vector = CharVector.vector
       open Array2
       type array = elem array
       type region = {base: array,
@@ -34,8 +34,12 @@ structure CharArray2: MONO_ARRAY2 =
       val row = Primitive.String.fromCharVector o row
       val column = Primitive.String.fromCharVector o column
    end
-*)
+
 structure BoolArray2 = MonoArray2 (BoolVector)
 structure IntArray2 = MonoArray2 (IntVector)
+structure Int32Array2 = IntArray2
 structure RealArray2 = MonoArray2 (RealVector)
+structure Real64Array2 = RealArray2
+structure WordArray2 = MonoArray2 (WordVector)
+structure Word32Array2 = WordArray2
 

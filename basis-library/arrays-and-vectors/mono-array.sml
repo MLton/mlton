@@ -35,5 +35,8 @@ structure CharArray: MONO_ARRAY =
 
 structure BoolArray = MonoArray (BoolVector)
 structure IntArray = MonoArray (IntVector)
+structure Int32Array = IntArray
 structure RealArray = MonoArray (RealVector)
 structure Real64Array = RealArray
+structure WordArray = MonoArray (WordVector)
+structure Word32Array = WordArray

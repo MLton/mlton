@@ -33,8 +33,7 @@ structure PosixTTY: POSIX_TTY =
 
 	    fun update (a, l) =
 	       let val a' = new ()
-	       in Array.copy {src = a, si = 0, len = NONE,
-			     dst = a', di = 0}
+	       in Array.copy {src = a, dst = a', di = 0}
 		  ; updates (a', l)
 		  ; a'
 	       end

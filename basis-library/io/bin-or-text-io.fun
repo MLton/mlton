@@ -240,8 +240,7 @@ fun output (out as ref (Out {fd, closed, bufStyle, ...}), s): unit =
 	       if newSize >= Array.length array orelse maybe ()
 		  then (flush (fd, b); put ())
 	       else
-		  (Array.copyVec {src = v, si = 0, len = NONE,
-				  dst = array, di = curSize}
+		  (Array.copyVec {src = v, dst = array, di = curSize}
 		   ; size := newSize)
 	    end
       in
@@ -435,8 +434,9 @@ structure Buf =
 		  let
 		     val dst = Primitive.Array.array bytesToRead
 		     val _ =
-			(Array.copy {src = buf, si = !first,
-				     len = SOME size, dst = dst, di = 0}
+			(ArraySlice.copy 
+			 {src = ArraySlice.slice (buf, !first, SOME size),
+			  dst = dst, di = 0}
 			 ; first := !last)
 		     fun loop (bytesRead: int): int =
 			if bytesRead = bytesToRead
