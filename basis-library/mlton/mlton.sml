@@ -48,7 +48,6 @@ structure BinIO =
 	 val stdOut = stdOut
       end
    end
-structure Callback = MLtonCallback
 structure Cont = MLtonCont
 structure Exn = MLtonExn
 structure FFI = MLtonFFI

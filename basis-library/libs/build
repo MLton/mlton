@@ -188,8 +188,6 @@ net/unix-sock.sig
 net/unix-sock.sml
 
 mlton/array.sig
-mlton/callback.sig
-mlton/callback.sml
 mlton/cont.sig
 mlton/cont.sml
 mlton/random.sig

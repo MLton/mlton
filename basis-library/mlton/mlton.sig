@@ -26,7 +26,6 @@ signature MLTON =
 
       structure Array: MLTON_ARRAY
       structure BinIO: MLTON_BIN_IO
-      structure Callback: MLTON_CALLBACK
       structure Cont: MLTON_CONT
       structure Exn: MLTON_EXN
       structure FFI: MLTON_FFI
