@@ -40,7 +40,8 @@ signature FILE =
       val withOutIn: (Out.t -> unit) * (In.t -> 'a) -> 'a
       val withString: string * (t -> 'a) -> 'a
       val withStringIn: string * (In.t -> 'a) -> 'a
-      val withTemp: (Out.t -> unit) * (t -> 'a) -> 'a
-      val withTemp':
+      val withTemp: (t -> 'a) -> 'a
+      val withTempOut: (Out.t -> unit) * (t -> 'a) -> 'a
+      val withTempOut':
 	 {prefix: string, suffix: string} * (Out.t -> unit) * (t -> 'a) -> 'a
    end

@@ -78,8 +78,23 @@ fun concat (sources, dest) =
 	   List.foreach (sources, fn f => outputContents (f, out)))
 
 val temp = MLton.TextIO.mkstemps
+
+fun tempName z =
+   let
+      val (f, out) = temp z
+      val _ = Out.close out
+   in
+      f
+   end
+
+fun withTemp f =
+   let
+      val name = tempName {prefix = "/tmp/file", suffix = ""}
+   in
+      DynamicWind.wind (fn () => f name, fn () => remove name)
+   end
    
-fun withTemp' (z as {prefix, ...}, f, g) =
+fun withTempOut' (z, f, g) =
    let
       val (name, out) = temp z
    in
@@ -90,14 +105,14 @@ fun withTemp' (z as {prefix, ...}, f, g) =
 			fn () => remove name)
    end
 
-fun withTemp (f, g) =
-   withTemp' ({prefix = "/tmp/file", suffix = ""}, f, g)
+fun withTempOut (f, g) =
+   withTempOut' ({prefix = "/tmp/file", suffix = ""}, f, g)
 
 fun withString (s, f) =
-   withTemp (fn out => Out.output (out, s), f)
+   withTempOut (fn out => Out.output (out, s), f)
    
 fun withOutIn (fout, fin) =
-   withTemp (fout, fn tmp => withIn (tmp, fin))
+   withTempOut (fout, fn tmp => withIn (tmp, fin))
 
 fun withStringIn (s, fin) =
    withOutIn (fn out => Out.output (out, s),
