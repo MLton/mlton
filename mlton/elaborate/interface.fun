@@ -727,7 +727,17 @@ fun shapeId (T s) = #shapeId (Set.value s)
 fun extendTycon (I, tycon, typeStr) =
    explicit (elements I @ [Type {name = tycon, typeStr = typeStr}])
 
-val op + = fn (I, I') => explicit (elements I @ elements I')
+fun (T s) + (T s') =
+   let
+      val {elements = es, wheres = ws, ...} = Set.value s
+      val {elements = es', wheres = ws', ...} = Set.value s'
+   in
+      T (Set.singleton {copy = ref NONE,
+			elements = es @ es',
+			plist = PropertyList.new (),
+			shapeId = ShapeId.new (),
+			wheres = ref (!ws @ !ws')})
+   end
 
 fun peekTyconElements (elements: element list, tycon): TypeStr.t option =
    case List.peek (elements,
