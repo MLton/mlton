@@ -5,20 +5,6 @@
  * Copyright 1989 by AT&T Bell Laboratories
  *
  * $Log: ml.lex,v $
- * Revision 1.3  2001/10/04 22:34:56  sweeks
- * Fixed bug that caused tyvars of length 1 (i.e. ') to be rejected.  This is now
- * checked in the id.sml regression test.  Again, thanks to Andreas Rossberg for
- * the test.
- *
- * Revision 1.2  2001/08/23 00:49:17  sweeks
- * Added support for #line directives of the form
- * 	(*#line line.col "file"*)
- * These directives only affect error messages produced by the parser and
- * elaborator.
- *
- * Revision 1.1.1.1  2001/07/18 05:51:01  sweeks
- * initial import
- *
  * Revision 1.3  1997/05/22  20:17:22  jhr
  * Changed lexer to accept "1e1" style floating-point literals.
  *
