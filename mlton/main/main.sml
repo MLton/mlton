@@ -432,17 +432,32 @@ fun commandLine (args: string list): unit =
 					    then "mlton-gdb"
 					 else "mlton") :: !libs)]
 		  fun compileO (inputs: File.t list) =
-		     trace (Top, "Link")
-		     (fn () =>
-		      docc (inputs,
-			    maybeOut "",
-			    List.concat [case host of
-					    Cross s => ["-b", s]
-					  | Self => [],
+		     let
+			val output = maybeOut ""
+			val _ =
+			   trace (Top, "Link")
+			   (fn () =>
+			    docc (inputs, output,
+				  List.concat
+				  [case host of
+				      Cross s => ["-b", s]
+				    | Self => [],
 					 if !debug then ["-g"] else [],
-					 if !static then ["-static"] else []],
-			    rest @ linkLibs))
-		     ()
+					    if !static then ["-static"] else []],
+				  rest @ linkLibs))
+			   ()
+			(* gcc on Cygwin appends .exe, which I don't want, so
+			 * move the output file to it's rightful place.
+			 *)
+			val _ =
+			   case MLton.hostType of
+			      MLton.Cygwin =>
+				 File.move {from = concat [output, ".exe"],
+					    to = output}
+			    | MLton.Linux => ()
+		     in
+			()
+		     end
 		  fun compileS (main: File.t, inputs: File.t list) =
 		     let
 			val switches = ["-c"]
@@ -588,9 +603,10 @@ fun commandLine (args: string list): unit =
 			 *)
 			val _ = MLton.GC.collect ()
 			val _ = MLton.GC.collect ()
-		     in case stop of
-			Place.Generated => ()
-		      | _ => compileC (valOf (!cFile), !sFiles)
+		     in
+			case stop of
+			   Place.Generated => ()
+			 | _ => compileC (valOf (!cFile), !sFiles)
 		     end
 		  fun compileCM input =
 		     let
