@@ -177,6 +177,7 @@ signature RSSA =
 	    val clear: t -> unit
 	    val kind: t -> Kind.t
 	    val label: t -> Label.t
+	    val layout: t -> Layout.t
 	    val statements: t -> Statement.t vector
 	    val transfer: t -> Transfer.t
 	 end

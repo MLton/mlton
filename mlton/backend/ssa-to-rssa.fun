@@ -1022,10 +1022,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		      | S.Exp.PrimApp {prim, targs, args, ...} =>
 			   let
 			      val prim = translatePrim prim
-			      fun a i = Vector.sub (args, i)
+			      fun a i = varOp (Vector.sub (args, i))
 			      fun cast () =
-				 move (Operand.cast (varOp (a 0),
-						     valOf (toRtype ty)))
+				 move (Operand.cast (a 0, valOf (toRtype ty)))
 			      fun targ () = toRtype (Vector.sub (targs, 0))
 			      fun ifTargIsPointer (yes, no) =
 				 case targ () of
@@ -1036,12 +1035,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				       else no ()
 			      fun arrayOrVectorLength () =
 				 move (Operand.Offset
-				       {base = varOp (a 0),
+				       {base = a 0,
 					offset = Runtime.arrayLengthOffset,
 					ty = Type.defaultInt})
 			      fun arrayOffset (ty: Type.t): Operand.t =
-				 ArrayOffset {base = varOp (a 0),
-					      index = varOp (a 1),
+				 ArrayOffset {base = a 0,
+					      index = a 1,
 					      ty = ty}
 			      fun sub (ty: Type.t) = move (arrayOffset ty)
 			      fun dst () =
@@ -1150,17 +1149,17 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    ccall {args = args, func = func}
 				 end
 		     fun pointerGet ty =
-			move (ArrayOffset {base = varOp (a 0),
-					   index = varOp (a 1),
+			move (ArrayOffset {base = a 0,
+					   index = a 1,
 					   ty = ty})
 		     fun pointerSet ty =
-			add (Move {dst = ArrayOffset {base = varOp (a 0),
-						      index = varOp (a 1),
+			add (Move {dst = ArrayOffset {base = a 0,
+						      index = a 1,
 						      ty = ty},
-				   src = varOp (a 2)})
+				   src = a 2})
 		     fun refAssign (ty, src) =
 		        let
-			   val addr = varOp (a 0)
+			   val addr = a 0
 			   val ss =
 			      Move {dst = Operand.Offset {base = addr,
 							  offset = Bytes.zero,
@@ -1191,15 +1190,15 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		     val arrayUpdate =
 			fn ty =>
 			loop (i - 1,
-			      arrayUpdate {array = varOp (a 0),
-					   index = varOp (a 1),
-					   elt = varOp (a 2),
+			      arrayUpdate {array = a 0,
+					   index = a 1,
+					   elt = a 2,
 					   ty = ty}
 			      @ ss, t)
 		     datatype z = datatype Prim.Name.t
 			   in
 			      case Prim.name prim of
-				 Array_array => array (varOp (a 0))
+				 Array_array => array (a 0)
 			       | Array_length => arrayOrVectorLength ()
 			       | Array_sub =>
 				    (case targ () of
@@ -1207,7 +1206,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				      | SOME t => sub t)
 			       | Array_toVector =>
 				    let
-				       val array = varOp (a 0)
+				       val array = a 0
 				       val vecTy = valOf (toRtype ty)
 				       val pt =
 					  case Type.dest vecTy of
@@ -1276,7 +1275,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | MLton_installSignalHandler => none ()
 			       | MLton_size =>
 				    simpleCCall
-				    (CFunction.size (Operand.ty (varOp (a 0))))
+				    (CFunction.size (Operand.ty (a 0)))
 			       | MLton_touch => none ()
 			       | Pointer_getInt s => pointerGet (Type.int s)
 			       | Pointer_getPointer =>
@@ -1295,16 +1294,16 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | Ref_assign =>
 				    (case targ () of
 					NONE => none ()
-				      | SOME ty => refAssign (ty, varOp (a 1)))
+				      | SOME ty => refAssign (ty, a 1))
 			       | Ref_deref =>
 				    (case targ () of
 					NONE => none ()
 				      | SOME ty =>
-					   move (Offset {base = varOp (a 0),
+					   move (Offset {base = a 0,
 							 offset = Bytes.zero,
 							 ty = ty}))
 			       | Ref_ref =>
-				    adds (reff {arg = fn () => varOp (a 0),
+				    adds (reff {arg = fn () => a 0,
 						dst = valOf var,
 						ty = Vector.sub (targs, 0)})
 			       | Thread_atomicBegin =>
@@ -1428,7 +1427,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					   func = CFunction.copyThread}
 			       | Thread_switchTo =>
 				    ccall {args = (Vector.new2
-						   (varOp (a 0),
+						   (a 0,
 						    Operand.EnsuresBytesFree)),
 					   func = CFunction.threadSwitchTo}
 			       | Vector_length => arrayOrVectorLength ()
@@ -1438,15 +1437,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				      | SOME t => sub t)
 			       | Weak_canGet =>
 				    ifTargIsPointer
-				    (fn _ => (simpleCCall
-					       (CFunction.weakCanGet
-						(Operand.ty (varOp (a 0))))),
+				    (fn _ => simpleCCall (CFunction.weakCanGet
+							  (Operand.ty (a 0))),
 				     fn () => move (Operand.bool false))
 			       | Weak_get =>
 				    ifTargIsPointer
 				    (fn t => (simpleCCall
 					      (CFunction.weakGet
-					       {arg = Operand.ty (varOp (a 0)),
+					       {arg = Operand.ty (a 0),
 						return = t})),
 				     none)
 			       | Weak_new =>

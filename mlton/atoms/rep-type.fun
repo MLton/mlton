@@ -130,6 +130,8 @@ structure Type =
 
       val char = word Bits.inByte
 
+      fun zero b = constant (WordX.zero (WordSize.fromBits b))
+
       fun isUnit t = Bits.zero = width t
 	 
       local
@@ -182,7 +184,7 @@ structure Type =
 	       end
 	 else Error.bug "invalid sum"
 	       
-      val sum = Trace.trace ("Type.sum", Vector.layout layout, layout) sum
+      val sum = Trace.trace ("RepType.sum", Vector.layout layout, layout) sum
 	       
       val bool = sum (Vector.new2
 		      (constant (WordX.fromIntInf (0, WordSize.default)),
@@ -243,7 +245,7 @@ structure Type =
 	  | _ => false
 
       val traceSplit =
-	 Trace.trace2 ("Type.split", layout,
+	 Trace.trace2 ("RepType.split", layout,
 		       fn {lo} => Layout.record [("lo", Bits.layout lo)],
 		       fn {hi, lo} =>
 		       Layout.record [("hi", layout hi),
@@ -335,7 +337,7 @@ structure Type =
 	 prefix (dropPrefix (t, start), width)
 
       val fragment =
-	 Trace.trace2 ("Type.fragment",
+	 Trace.trace2 ("RepType.fragment",
 		       layout,
 		       fn {start, width} =>
 		       Layout.record [("start", Bits.layout start),
@@ -409,7 +411,8 @@ structure Type =
 	    | _ => false))
 
       val isSubtype =
-	 Trace.trace2 ("Type.isSubtype", layout, layout, Bool.layout) isSubtype
+	 Trace.trace2 ("RepType.isSubtype", layout, layout, Bool.layout)
+	 isSubtype
 
       fun isValidInit (t, v) =
 	 let
@@ -434,7 +437,7 @@ structure Type =
 	 end
 
       val isValidInit =
-	 Trace.trace2 ("Type.isValidInit",
+	 Trace.trace2 ("RepType.isValidInit",
 		       layout,
 		       Vector.layout (fn {offset, ty} =>
 				      Layout.record
@@ -474,7 +477,7 @@ structure Type =
 		  end
 	     | _ => binaryWord (t1, t2)
 
-      val add = Trace.trace2 ("Type.add", layout, layout, layout) add
+      val add = Trace.trace2 ("RepType.add", layout, layout, layout) add
 
       fun mulConstant (t: t, w: WordX.t): t =
 	 case dest t of
@@ -507,7 +510,7 @@ structure Type =
 	     | (_, Constant w') => mulConstant (t, w')
 	     | _ => binaryWord (t, t')
 
-      val mul = Trace.trace2 ("Type.mul", layout, layout, layout) mul
+      val mul = Trace.trace2 ("RepType.mul", layout, layout, layout) mul
 
       fun shift (t1, t2) =
 	 let
@@ -526,12 +529,13 @@ structure Type =
 	       let
 		  val shift = Bits.fromIntInf (WordX.toIntInf w)
 	       in
-		  seq (Vector.new2 (constant (WordX.zero (WordSize.fromBits shift)),
-				    dropSuffix (t, shift)))
+		  seq (Vector.new2
+		       (constant (WordX.zero (WordSize.fromBits shift)),
+			dropSuffix (t, shift)))
 	       end
 	  | _ => shift (t, t')
 
-      val lshift = Trace.trace2 ("Type.lshift", layout, layout, layout) lshift
+      val lshift = Trace.trace2 ("RepType.lshift", layout, layout, layout) lshift
 
       fun rshift (t, t'): t =
 	 case dest t' of
@@ -545,7 +549,7 @@ structure Type =
 	       end
 	  | _ => shift (t, t')
 	 
-      val rshift = Trace.trace2 ("Type.rshift", layout, layout, layout) rshift
+      val rshift = Trace.trace2 ("RepType.rshift", layout, layout, layout) rshift
 
       local
 	 fun make (name: string,
@@ -581,6 +585,16 @@ structure Type =
 			       in
 				  (hi, doConstant (t, lo) :: ac)
 			       end))))
+		      | Pointer _ =>
+			   let
+			      val zeros = Bits.fromInt 2
+			   in
+			      doConstant
+			      (seq (Vector.new2
+				    (zero zeros,
+				     word (Bits.- (Bits.inPointer, zeros)))),
+			       w)
+			   end
 		      | Sum ts =>
 			   sum (Vector.map (ts, fn t => doConstant (t, w)))
 		      | Word _ =>
@@ -605,11 +619,20 @@ structure Type =
       end
 
       val andb =
-	 Trace.trace2 ("Type.andb", layout, layout, Option.layout layout) andb
+	 Trace.trace2 ("RepType.andb", layout, layout, Option.layout layout) andb
 	 
       val orb =
-	 Trace.trace2 ("Type.orb", layout, layout, Option.layout layout) orb
-	 
+	 Trace.trace2 ("RepType.orb", layout, layout, Option.layout layout) orb
+
+      fun resize (t: t, b: Bits.t): t =
+	 let
+	    val tb = width t
+	 in
+	    if Bits.< (b, tb)
+	       then prefix (t, b)
+	    else seq (Vector.new2 (t, zero (Bits.- (b, tb))))
+	 end
+
       local
 	 structure C =
 	    struct
@@ -818,13 +841,12 @@ fun offset (t: t, {offset, pointerTy, width}): t option =
    end
 
 val offset =
-   Trace.trace2
-   ("Type.offset",
-    layout,
-    fn {offset, width, ...} =>
-    Layout.record [("offset", Bytes.layout offset),
-		   ("width", Bits.layout width)],
-    Option.layout layout)
+   Trace.trace2 ("RepType.offset",
+		 layout,
+		 fn {offset, width, ...} =>
+		 Layout.record [("offset", Bytes.layout offset),
+				("width", Bits.layout width)],
+		 Option.layout layout)
    offset
 
 fun offsetIsOk {base, offset = off, pointerTy, result} =
@@ -867,10 +889,8 @@ fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
 	 0 = Vector.length args
 	 andalso done res
       fun arg i = Vector.sub (args, i)
-      fun unary (t0, res) =
-	 1 = Vector.length args
-	 andalso isSubtype (arg 0, t0)
-	 andalso done res
+      fun one f = 1 = Vector.length args andalso f (arg 0)
+      fun unary (t0, res) = one (fn z => isSubtype (z, t0) andalso done res)
       fun two f = 2 = Vector.length args andalso f (arg 0, arg 1)
       fun twoOpt f =
 	 two (fn z =>
@@ -1014,7 +1034,15 @@ fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
        | Word_sub s => wordBinary s
        | Word_toInt (s, s') => unary (word s, int s')
        | Word_toIntX (s, s') => unary (word s, int s')
-       | Word_toWord (s, s') => unary (word s, word s')
+       | Word_toWord (s, s') =>
+	    one (fn t =>
+		 let
+		    val b = WordSize.bits s
+		    val b' = WordSize.bits s'
+		 in
+		    isSubtype (t, word s)
+		    andalso done (resize (t, b'))
+		 end)
        | Word_toWordX (s, s') => unary (word s, word s')
        | Word_xorb s => wordBinary s
        | _ => Error.bug (concat ["strange primitive to Prim.typeCheck: ",

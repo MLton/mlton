@@ -1132,12 +1132,14 @@ structure Program =
 				     Type.isSubtype (Type.pointer tycon,
 						     Operand.ty dst)
 				     andalso
-				     Type.isValidInit
-				     (t, 
-				      Vector.map
-				      (stores, fn {offset, value} =>
-				       {offset = offset,
-					ty = Operand.ty value}))
+				     (Vector.isEmpty stores
+				      orelse
+				      Type.isValidInit
+				      (t, 
+				       Vector.map
+				       (stores, fn {offset, value} =>
+					{offset = offset,
+					 ty = Operand.ty value})))
 				     then SOME alloc
 				  else NONE)
 			    | _ => NONE

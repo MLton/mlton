@@ -107,6 +107,7 @@ signature REP_TYPE =
       val pointer: PointerTycon.t -> t
       val pointerHeader: PointerTycon.t -> t
       val real: RealSize.t -> t
+      val resize: t * Bits.t -> t
       val rshift: t * t -> t
       val seq: t vector -> t
       val string: t
@@ -120,6 +121,7 @@ signature REP_TYPE =
       val word8: t
       val wordVector: t
       val word8Vector: t
+      val zero: Bits.t -> t
 
       structure BuiltInCFunction:
 	 sig

@@ -226,7 +226,7 @@ structure Statement =
 	     | Object {dst = (dst, ty), header, size, stores} =>
 		  mayAlign
 		  [seq [Var.layout dst, constrain ty],
-		   seq [str " = Object ",
+		   seq [str "= Object ",
 			record
 			[("header", seq [str "0x", Word.layout header]),
 			 ("size", Bytes.layout size),
@@ -902,6 +902,14 @@ structure Program =
 	       in (bind, reference, unbind)
 	       end
 	    val (bindVar, getVar, unbindVar) = make (Var.layout, Var.plist)
+	    val bindVar =
+	       Trace.trace2
+	       ("Rssa.bindVar", Var.layout, Bool.layout, Unit.layout)
+	       bindVar
+	    val getVar =
+	       Trace.trace ("Rssa.getVar", Var.layout, Unit.layout) getVar
+	    val unbindVar =
+	       Trace.trace ("Rssa.unbindVar", Var.layout, Unit.layout) unbindVar
 	    val (bindFunc, _, _) = make (Func.layout, Func.plist)
 	    val bindFunc = fn f => bindFunc (f, false)
 	    val (bindLabel, getLabel, unbindLabel) =
@@ -1061,12 +1069,14 @@ structure Program =
 				  (size, Bytes.+ (Runtime.normalHeaderSize,
 						  Type.bytes t))
 				  andalso
-				  Type.isValidInit
-				  (t, 
-				   Vector.map
-				   (stores, fn {offset, value} =>
-				    {offset = offset,
-				     ty = Operand.ty value}))
+				  (Vector.isEmpty stores
+				   orelse
+				   Type.isValidInit
+				   (t, 
+				    Vector.map
+				    (stores, fn {offset, value} =>
+				     {offset = offset,
+				      ty = Operand.ty value})))
 			      | _ => false)
 			end
 		   | PrimApp {args, dst, prim} =>
