@@ -184,16 +184,6 @@ structure CFunction =
 				 name = "Word64_equal",
 				 return = SOME CType.defaultInt}
 
-      val getPointer =
-	 vanilla {args = Vector.new1 Int32,
-		  name = "MLton_FFI_getPointer",
-		  return = SOME Pointer}
-
-      val setPointer =
-	 vanilla {args = Vector.new1 Pointer,
-		  name = "MLton_FFI_setPointer",
-		  return = NONE}
-
       val copyCurrentThread =
 	 T {args = Vector.new1 Pointer,
 	    bytesNeeded = NONE,
@@ -1318,9 +1308,17 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				      | SOME _ => normal ())
 			       | MLton_size => simpleCCall CFunction.size
 			       | Pointer_getInt s => pointerGet (Type.Int s)
+			       | Pointer_getPointer =>
+				    (case targ () of
+					NONE => Error.bug "getPointer"
+				      | SOME t => pointerGet t)
 			       | Pointer_getReal s => pointerGet (Type.Real s)
 			       | Pointer_getWord s => pointerGet (Type.Word s)
 			       | Pointer_setInt s => pointerSet (Type.Int s)
+			       | Pointer_setPointer =>
+				    (case targ () of
+					NONE => Error.bug "setPointer"
+				      | SOME t => pointerSet t)
 			       | Pointer_setReal s => pointerSet (Type.Real s)
 			       | Pointer_setWord s => pointerSet (Type.Word s)
 			       | Ref_assign =>

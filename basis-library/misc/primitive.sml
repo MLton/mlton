@@ -259,26 +259,19 @@ structure Primitive =
 
       structure FFI =
 	 struct
-	    val getInt8 = _import "MLton_FFI_getInt8": int -> Int8.int;
-	    val getInt16 = _import "MLton_FFI_getInt16": int -> Int16.int;
-	    val getInt32 = _import "MLton_FFI_getInt32": int -> Int32.int;
-	    val getInt64 = _import "MLton_FFI_getInt64": int -> Int64.int;
-	    val getOp = _import "MLton_FFI_getOp": unit -> int;
-	    val getReal32 = _import "MLton_FFI_getReal32": int -> Real32.real;
-	    val getReal64 = _import "MLton_FFI_getReal64": int -> Real64.real;
-	    val getWord8 = _import "MLton_FFI_getWord8": int -> Word8.word;
-	    val getWord16 = _import "MLton_FFI_getWord16": int -> Word16.word;
-	    val getWord32 = _import "MLton_FFI_getWord32": int -> Word32.word;
+	    val int8Array = _import "MLton_FFI_Int8": Pointer.t;
+	    val int16Array = _import "MLton_FFI_Int16": Pointer.t;
+	    val int32Array = _import "MLton_FFI_Int32": Pointer.t;
+	    val int64Array = _import "MLton_FFI_Int64": Pointer.t;
+	    val getOp = fn () => _import "MLton_FFI_op": int;
 	    val numExports = _build_const "MLton_FFI_numExports": int;
-	    val setInt8 = _import "MLton_FFI_setInt8": Int8.int -> unit;
-	    val setInt16 = _import "MLton_FFI_setInt16": Int16.int -> unit;
-	    val setInt32 = _import "MLton_FFI_setInt32": Int32.int -> unit;
-	    val setInt64 = _import "MLton_FFI_setInt64": Int64.int -> unit;
-	    val setReal32 = _import "MLton_FFI_setReal32": Real32.real -> unit;
-	    val setReal64 = _import "MLton_FFI_setReal64": Real64.real -> unit;
-  	    val setWord8 = _import "MLton_FFI_setWord8": Word8.word -> unit;
-	    val setWord16 = _import "MLton_FFI_setWord16": Word16.word -> unit;
-	    val setWord32 = _import "MLton_FFI_setWord32": Word32.word -> unit;
+	    val pointerArray = _import "MLton_FFI_Pointer": Pointer.t;
+	    val real32Array = _import "MLton_FFI_Real32": Pointer.t;
+	    val real64Array = _import "MLton_FFI_Real64": Pointer.t;
+	    val word8Array = _import "MLton_FFI_Word8": Pointer.t;
+	    val word16Array = _import "MLton_FFI_Word16": Pointer.t;
+	    val word32Array = _import "MLton_FFI_Word32": Pointer.t;
+	    val word64Array = _import "MLton_FFI_Word64": Pointer.t;
 	 end
 
       structure GC =
@@ -730,6 +723,7 @@ structure Primitive =
 	    val getInt16 = _prim "Pointer_getInt16": t * int -> Int16.int;
 	    val getInt32 = _prim "Pointer_getInt32": t * int -> Int32.int;
 	    val getInt64 = _prim "Pointer_getInt64": t * int -> Int64.int;
+	    val getPointer = _prim "Pointer_getPointer": t * int -> 'a;
 	    val getReal32 = _prim "Pointer_getReal32": t * int -> Real32.real;
 	    val getReal64 = _prim "Pointer_getReal64": t * int -> Real64.real;
 	    val getWord8 = _prim "Pointer_getWord8": t * int -> Word8.word;
@@ -740,6 +734,7 @@ structure Primitive =
 	    val setInt16 = _prim "Pointer_setInt16": t * int * Int16.int -> unit;
 	    val setInt32 = _prim "Pointer_setInt32": t * int * Int32.int -> unit;
 	    val setInt64 = _prim "Pointer_setInt64": t * int * Int64.int -> unit;
+	    val setPointer = _prim "Pointer_setPointer": t * int * 'a -> unit;
 	    val setReal32 =
 	       _prim "Pointer_setReal32": t * int * Real32.real -> unit;
 	    val setReal64 =

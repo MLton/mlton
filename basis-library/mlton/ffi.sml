@@ -3,7 +3,35 @@ struct
 
 structure Prim = Primitive.FFI
 
-open Prim
+structure Pointer = Primitive.Pointer
+
+local
+   fun make (p: Pointer.t, get, set) =
+      (fn i => get (p, i), fn x => set (p, 0, x))
+in
+   val (getInt8, setInt8) =
+      make (Prim.int8Array, Pointer.getInt8, Pointer.setInt8)
+   val (getInt16, setInt16) =
+      make (Prim.int16Array, Pointer.getInt16, Pointer.setInt16)
+   val (getInt32, setInt32) =
+      make (Prim.int32Array, Pointer.getInt32, Pointer.setInt32)
+   val (getInt64, setInt64) =
+      make (Prim.int64Array, Pointer.getInt64, Pointer.setInt64)
+   fun getPointer i = Pointer.getPointer (Prim.pointerArray, i)
+   fun setPointer x = Pointer.setPointer (Prim.pointerArray, 0, x)
+   val (getReal32, setReal32) =
+      make (Prim.real32Array, Pointer.getReal32, Pointer.setReal32)
+   val (getReal64, setReal64) =
+      make (Prim.real64Array, Pointer.getReal64, Pointer.setReal64)
+   val (getWord8, setWord8) =
+      make (Prim.word8Array, Pointer.getWord8, Pointer.setWord8)
+   val (getWord16, setWord16) =
+      make (Prim.word16Array, Pointer.getWord16, Pointer.setWord16)
+   val (getWord32, setWord32) =
+      make (Prim.word32Array, Pointer.getWord32, Pointer.setWord32)
+   val (getWord64, setWord64) =
+      make (Prim.word64Array, Pointer.getWord64, Pointer.setWord64)
+end
 
 val atomicBegin = MLtonThread.atomicBegin
 val atomicEnd = MLtonThread.atomicEnd

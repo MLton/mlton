@@ -61,22 +61,14 @@ fun declareExports {print} =
 		   let
 		      val size = Int.toString (1 + n)
 		      val t = CType.toString t
+		      val array = concat ["MLton_FFI_", t, "_array"]
 		   in
-		      print (concat [t, " MLton_FFI_", t, "[", size, "];\n"])
-		      ; print (concat [t, " MLton_FFI_get", t, " (Int i) {\n",
-				       "\treturn MLton_FFI_", t, "[i];\n",
-				       "}\n"])
-		      ; print (concat
-			       [t, " MLton_FFI_set", t, " (", t, " x) {\n",
-				"\tMLton_FFI_", t, "[0] = x;\n",
-				"}\n"])
+		      print (concat [t, " ", array, "[", size, "];\n",
+				     t, " *MLton_FFI_", t, " = &", array, ";\n"])
 		   end
 	     else ()
 	  end)
       val _ = print "Int MLton_FFI_op;\n"
-      val _ = print (concat ["Int MLton_FFI_getOp () {\n",
-			     "\treturn MLton_FFI_op;\n",
-			     "}\n"])
    in
       List.foreach
       (!exports, fn {args, convention, id, name, res} =>
@@ -93,8 +85,8 @@ fun declareExports {print} =
 	      in
 		 (x,
 		  concat [t, " ", x],
-		  concat ["\tMLton_FFI_", t, "[", Int.toString index, "] = ",
-			  x, ";\n"])
+		  concat ["\tMLton_FFI_", t, "_array[", Int.toString index,
+			  "] = ", x, ";\n"])
 	      end)
 	  val header =
 	     concat [case res of
@@ -118,7 +110,7 @@ fun declareExports {print} =
 		NONE => ()
 	      | SOME t =>
 		   print (concat
-			  ["\treturn MLton_FFI_", CType.toString t, "[0];\n"]))
+			  ["\treturn MLton_FFI_", CType.toString t, "_array[0];\n"]))
 	  ; print "}\n"
        end)
    end

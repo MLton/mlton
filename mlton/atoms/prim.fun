@@ -121,9 +121,11 @@ structure Name =
        | MLton_size (* ssa to rssa *)
        | MLton_touch (* backend *)
        | Pointer_getInt of IntSize.t (* backend *)
+       | Pointer_getPointer (* backend *)
        | Pointer_getReal of RealSize.t (* backend *)
        | Pointer_getWord of WordSize.t (* backend *)
        | Pointer_setInt of IntSize.t (* backend *)
+       | Pointer_setPointer (* backend *)
        | Pointer_setReal of RealSize.t (* backend *)
        | Pointer_setWord of WordSize.t (* backend *)
        | Real_Math_acos of RealSize.t (* codegen *)
@@ -447,6 +449,9 @@ structure Name =
 	  in
 	     List.concat [doit ("Int", IntSize.all, IntSize.toString,
 				Pointer_getInt, Pointer_setInt),
+			  doit ("Pointer", [()], fn () => "",
+				fn () => Pointer_getPointer,
+				fn () => Pointer_setPointer),
 			  doit ("Real", RealSize.all, RealSize.toString,
 				Pointer_getReal, Pointer_setReal),
 			  doit ("Word", WordSize.all, WordSize.toString,
@@ -629,6 +634,8 @@ fun 'a extractTargs {args: 'a vector,
        | MLton_serialize => one (arg 0)
        | MLton_size => one (deRef (arg 0))
        | MLton_touch => one (arg 0)
+       | Pointer_getPointer => one result
+       | Pointer_setPointer => one (arg 2)
        | Ref_assign => one (arg 1)
        | Ref_deref => one result
        | Ref_ref => one (arg 0)
