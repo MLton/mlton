@@ -256,19 +256,6 @@ int main(int argc, char **argv) {					\
 		ExnStack = *(uint*)(stackTop + (offset) + WORD_SIZE);	\
 	} while (0)
 
-#define SaveExnStack(offset)					\
-	do {							\
-		pointer p;					\
-		p = stackTop + (offset);			\
-		*(uint*)(p + WORD_SIZE) = ExnStack;		\
-		ExnStack = p - StackBottom;			\
-	} while (0)
-
-#define RestoreExnStack(offset)						\
-	do {								\
-		ExnStack = *(uint*)(stackTop + (offset) + WORD_SIZE);	\
-	} while (0)
-
 /* ------------------------------------------------- */
 /*                      Runtime                      */
 /* ------------------------------------------------- */
