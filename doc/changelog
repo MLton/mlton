@@ -1,5 +1,9 @@
 Here are the changes since version 20040227.
 
+* 2004-03-20
+  - Fixed Time.now and Time.fromString which were treating 
+    microseconds as nanoseconds.
+	
 * 2004-03-14
   - Fixed SSA optimizer bug that could cause the error "<type> has no
     tyconInfo property".

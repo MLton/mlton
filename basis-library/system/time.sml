@@ -12,7 +12,7 @@ structure Prim = Primitive.Time
 
 (* A time is represented as a number of nanoseconds. *)
 val ticksPerSecond: LargeInt.int = 1000000000
-   
+
 datatype time = T of LargeInt.int
 
 val fromTicks = T
@@ -53,6 +53,12 @@ in
    val op > = make LargeInt.>
    val op >= = make LargeInt.>=
 end
+local
+   fun make f (T i, T i') = T (f (i, i'))
+in
+   val timeAdd = make LargeInt.+
+   val timeSub = make LargeInt.-
+end
 
 (* There's a mess here to work around a bug in vmware virtual machines
  * that may return a decreasing(!) sequence of time values.  This will
@@ -64,9 +70,8 @@ local
       (if ~1 = Prim.gettimeofday ()
 	  then raise Fail "Time.now"
        else ()
-       ; T (LargeInt.+ (LargeInt.* (LargeInt.fromInt (Prim.sec ()),
-				    ticksPerSecond),
-			LargeInt.fromInt (Prim.usec ()))))
+       ; timeAdd(fromSeconds (LargeInt.fromInt (Prim.sec ())),
+		 fromMicroseconds (LargeInt.fromInt (Prim.usec ()))))
    val prev = ref (getNow ())
 in
    fun now (): time =
@@ -95,11 +100,11 @@ fun scan getc src =
 	 let
 	    val usec = (pow10 (10-decs) * fracv + 5) div 10
 	    val t =
-	       LargeInt.+ (LargeInt.* (Int.toLarge intv, ticksPerSecond),
-			   Int.toLarge usec)
-	    val t = if sign then t else LargeInt.~ t
+	       timeAdd (fromSeconds (Int.toLarge intv),
+			fromMicroseconds (Int.toLarge usec))
+	    val t = if sign then t else timeSub (zeroTime, t)
 	 in
-	    T t
+	    t
 	 end
       fun frac' sign intv fracv decs src =
 	 if Int.>= (decs, 7)
@@ -149,11 +154,7 @@ handle Overflow => raise Time
 
 val fromString = StringCvt.scanString scan
 
-local
-   fun make f (T i, T i') = T (f (i, i'))
-in
-   val op + = make LargeInt.+
-   val op - = make LargeInt.-
-end
+val op + = timeAdd
+val op - = timeSub
 
 end
