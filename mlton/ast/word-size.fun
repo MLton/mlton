@@ -81,7 +81,7 @@ val primOpt = memoize (fn T {bits, ...} =>
 
 fun prim s =
    case primOpt s of
-      NONE => Error.bug "IntSize.prim"
+      NONE => Error.bug "WordSize.prim"
     | SOME p => p
 
 end
