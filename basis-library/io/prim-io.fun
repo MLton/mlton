@@ -186,19 +186,6 @@ functor PrimIOExtra
 			     getPos, setPos, endPos, verifyPos,
 			     close, ioDesc}) =
 	let
-	  val print = fn s => () (* Primitive.Stdio.print s *)
-	  fun check (name, f) =
-	    (print name;
-	     print " ";
-	     case f of NONE => print "NONE\n" | SOME _ => print "SOME\n")
-	  fun checkAll (readVec, readArr, readVecNB, readArrNB) =
-	    (check ("readVec", readVec);
-	     check ("readArr", readArr);
-	     check ("readVecNB", readVecNB);
-	     check ("readArrNB", readArrNB))
-	     
-	  val _ = print "augmentReader: \n"
-	  val _ = checkAll (readVec, readArr, readVecNB, readArrNB)
 	  fun augmentRead (readVec, readArr) =
 	    case (readVec, readArr) of
 	      (SOME readVec, SOME readArr) => (SOME readVec, SOME readArr)
@@ -272,7 +259,6 @@ functor PrimIOExtra
 	  val ((readVec,readVecNB),(readArr,readArrNB)) =
 	    (augmentSeq (readVec, readVecNB),
 	     augmentSeq (readArr, readArrNB))
-	  val _ = checkAll (readVec, readArr, readVecNB, readArrNB)
 	in
 	  RD {name = name, chunkSize = chunkSize,
 	      readVec = readVec, readArr = readArr, 
