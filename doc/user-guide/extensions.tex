@@ -153,8 +153,8 @@ callcc} takes time proportional to the current stack size.
 
 \entry{prepend (k, f)}
 compose a function {\tt f} with a continuation {\tt k} to create a
-continuation that first does {\tt f} and then does {\tt k}.  {\tt
-prepend} is a constant time operation.
+continuation that first does {\tt f} and then does {\tt k}.  This
+is a constant time operation.
 
 \entry{throw (k, v)}
 throw value {\tt v} to continuation {\tt k}.  At present, {\tt throw}
