@@ -211,8 +211,7 @@ local
 		  open Primitive.MLton.Platform.OS
 	       in
 		  case host of
-		     Cygwin => true
-		   | MinGW => true
+		     MinGW => true
 		   | _ => false
 	       end
 	       then setMode fd
