@@ -157,11 +157,6 @@ struct
 		      in 
 			Word.fromInt (maxFrameSize div 4)
 		      end
-(*
-	  val hash' = fn {size, offsetIndex} 
-	               => Word.andb(Word.<<(Word.fromInt (offsetIndex), shift),
-				    Word.fromInt (size div 4))
-*)
 	  val hash' = fn {size, offsetIndex} => Word.fromInt (offsetIndex)
 	  val hash = fn {size, offsetIndex, frameLayoutsIndex}
 	              => hash' {size = size, offsetIndex = offsetIndex}
@@ -200,42 +195,7 @@ struct
 		   end)
 	  val frameLayoutsData = List.rev (!frameLayoutsData')
 	  val maxFrameLayoutIndex = !maxFrameLayoutIndex'
-	  val _ = Control.message
-	          (Control.Detail, 
-		   fn () => Layout.align [Layout.seq [Layout.str "size/offset table: ",
-						      HashSet.stats' table],
-					  HashSet.stats ()])
 	end
-
-(*
-	val (frameLayoutsData,maxFrameLayoutIndex)
-	  = List.fold
-	    (return_labels,
-	     ([],0),
-	     fn (label,(frameLayoutsData,maxFrameLayoutIndex))
-	      => let
-		   val info as {size, ...} = valOf(frameLayouts label)
-		 in
-		   case List.index(frameLayoutsData,
-				   fn info' => info = info')
-		     of SOME index 
-		      => (setFrameLayoutIndex
-			  (label, 
-			   SOME {size = size,
-				 frameLayoutsIndex 
-				 = maxFrameLayoutIndex - (index + 1)});
-			  (frameLayoutsData,
-			   maxFrameLayoutIndex))
-		      | NONE => (setFrameLayoutIndex
-				 (label, 
-				  SOME {size = size,
-					frameLayoutsIndex 
-					= maxFrameLayoutIndex});
-				 (info::frameLayoutsData,
-				  maxFrameLayoutIndex + 1))
-		 end)
-	val frameLayoutsData = List.rev frameLayoutsData
-*)
 
 	(* C specific *)
 	fun outputC ()
@@ -487,16 +447,9 @@ struct
 
 	      val validated_assembly = allocated_assembly
 
-	      val _ = Control.message
-		      (Control.Detail,
-		       fn () => Label.layout (hd entries))
 	      val _ = List.foreach(entries, Label.clear)
 	      val _ = x86.Immediate.clearAll ()
 	      val _ = x86.MemLoc.clearAll ()
-	      val _ = Control.message
-		      (Control.Detail, HashSet.stats)
-	      val _ = Control.message
-		      (Control.Detail, PropertyList.stats)
 	    in
 	      List.fold
 	      (validated_assembly,

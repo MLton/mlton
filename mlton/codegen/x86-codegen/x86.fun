@@ -576,26 +576,11 @@ struct
 	  = fn T {immediate, ...} => immediate
 
 	fun clearAll ()
-	  = (Control.message
-	     (Control.Detail,
-	      fn () => Layout.seq [Layout.str "immediate table: ",
-				   HashSet.stats' (!table)]);
+	  = ((* Control.message
+	        (Control.Detail,
+	         fn () => Layout.seq [Layout.str "immediate table: ",
+			  	      HashSet.stats' (!table)]); *)
 	     table := HashSet.new {hash = hash})
-
-(*
-	fun clearAll ()
-	  = (Control.message
-	     (Control.Detail,
-	      fn () => Layout.seq [Layout.str "immediate table size: ",
-				   Int.layout (HashSet.size table)]);
-	     HashSet.foreach
-	     (table,
-	      fn T {immediate, plist, ...}
-	       => (PropertyList.clear plist;
-		   case immediate
-		     of Label l => Label.clear l
-		      | _ => ())))
-*)
       end
 
       val const = construct o Const
@@ -850,21 +835,11 @@ struct
 	     => memloc
 
 	fun clearAll ()
-	  = (Control.message
-	     (Control.Detail,
-	      fn () => Layout.seq [Layout.str "memloc table size: ",
-				   HashSet.stats' (!table)]);
+	  = ((* Control.message
+	        (Control.Detail,
+	         fn () => Layout.seq [Layout.str "memloc table size: ",
+			  	      HashSet.stats' (!table)]); *)
 	     table := HashSet.new {hash = hash})
-(*
-	fun clearAll ()
-	  = (Control.message
-	     (Control.Detail,
-	      fn () => Layout.seq [Layout.str "memloc table size: ",
-				   Int.layout (HashSet.size table)]);
-	     HashSet.foreach
-	     (table,
-	      fn T {plist, ...} => PropertyList.clear plist))
-*)
       end
 
       val rec mayAliasU
