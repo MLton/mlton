@@ -36,12 +36,21 @@ structure Finish =
 
 structure Value =
    struct
-      datatype t = T of {value: value} Set.t
-      and flat =
-	 NotFlat
-	| Offset of {object: object,
-		     offset: int}
-	| Unknown
+      datatype t =
+	 GroundV of Type.t
+       | Complex of complex Set.t
+      and complex =
+	 Computed of computed
+	 (* If a value is Uncomputed then nothing is known about any of its
+	  * subcomponents.  Maintining this invariant is essential to allowing
+	  * unification to completely drop an uncomputed value without looking
+	  * at it.
+	  *)
+	| Uncomputed of unit -> computed
+      and computed =
+	 ObjectC of object
+	| WeakC of {arg: t,
+		    finalType: Type.t option ref}
       and object =
 	 Obj of {args: t Prod.t,
 		 con: ObjectCon.t,
@@ -49,23 +58,57 @@ structure Value =
 		 finalOffsets: int vector option ref,
 		 finalType: Type.t option ref,
 		 flat: flat ref}
-      and value =
-	 Ground of Type.t
-       | Object of object
-       | Weak of {arg: t,
-		  finalType: Type.t option ref}
+      and flat =
+	 NotFlat
+	| Offset of {object: object,
+		     offset: int}
+	| Unknown
 
-      fun new v = T (Set.singleton {value = v})
-      fun value (T s) = #value (Set.! s)
+      fun delay (f: unit -> computed): t =
+	 Complex (Set.singleton
+		  (if false
+		      then Computed (f ())
+		   else Uncomputed f))
+
+      datatype value =
+	 Ground of Type.t
+	| Object of object
+	| Weak of {arg: t,
+		   finalType: Type.t option ref}
+
+      val value: t -> value =
+	 fn GroundV t => Ground t
+	  | Complex s =>
+	       let
+		  val c = 
+		     case Set.! s of
+			Computed c => c
+		      | Uncomputed f =>
+			   let
+			      val c = f ()
+			      val () = Set.:= (s, Computed c)
+			   in
+			      c
+			   end
+	       in
+		  case c of
+		     ObjectC obj => Object obj
+		   | WeakC w => Weak w
+	       end
 
       local
 	 open Layout
       in
 	 fun layout v: Layout.t =
-	    case value v of
-	       Ground t => Type.layout t
-	     | Object ob => layoutObject ob
-	     | Weak {arg, ...} => seq [str "Weak ", layout arg]
+	    case v of
+	       GroundV t => Type.layout t
+	     | Complex s =>
+		  (case Set.! s of
+		      Computed c =>
+			 (case c of
+			     ObjectC ob => layoutObject ob
+			   | WeakC {arg, ...} => seq [str "Weak ", layout arg])
+		    | Uncomputed _ => str "<uncomputed>")
 	 and layoutFlat (f: flat): Layout.t =
 	    case f of
 	       NotFlat => str "NotFlat"
@@ -107,9 +150,7 @@ structure Value =
    struct
       open Value
 
-      val ground = new o Ground
-
-      fun weak (a: t): t = new (Weak {arg = a, finalType = ref NONE})
+      val ground = GroundV
 
       val deObject: t -> Object.t option =
 	 fn v =>
@@ -132,67 +173,89 @@ structure Value =
 	  | _ => ()
 
       fun isUnit v =
-	 case value v of
-	    Ground t => Type.isUnit t
+	 case v of
+	    GroundV t => Type.isUnit t
 	  | _ => false
 	       
-      fun object {args, con} =
+      fun objectC {args: t Prod.t, con: ObjectCon.t}: computed =
 	 let
-	    (* Only may flatten objects with mutable fields, and where the field
-	     * isn't unit.  Flattening a unit field could lead to a problem
-	     * because the containing object might be otherwise immutable, and
-	     * hence the unit ref would lose its identity.  We can fix this
-	     * once objects have a notion of identity independent of mutability.
-	     *)
-	    val flat =
-	       ref
-	       (if Vector.exists (Prod.dest args, fn {elt, isMutable} =>
-				  isMutable andalso not (isUnit elt))
-		   andalso not (ObjectCon.isVector con)
-		   then Unknown
-		else NotFlat)
-	 in
-	    new (Object (Obj {args = args,
-			      con = con,
-			      finalComponents = ref NONE,
-			      finalOffsets = ref NONE,
-			      finalType = ref NONE,
-			      flat = flat}))
-	 end
-	    
+	     (* Only may flatten objects with mutable fields, and where the field
+	      * isn't unit.  Flattening a unit field could lead to a problem
+	      * because the containing object might be otherwise immutable, and
+	      * hence the unit ref would lose its identity.  We can fix this
+	      * once objects have a notion of identity independent of mutability.
+	      *)
+	     val flat =
+		ref
+		(if Vector.exists (Prod.dest args, fn {elt, isMutable} =>
+				   isMutable andalso not (isUnit elt))
+		    andalso not (ObjectCon.isVector con)
+		    then Unknown
+		 else NotFlat)
+	  in
+	     ObjectC (Obj {args = args,
+			   con = con,
+			   finalComponents = ref NONE,
+			   finalOffsets = ref NONE,
+			   finalType = ref NONE,
+			   flat = flat})
+	  end
+
+      val computed: computed -> t =
+	 fn c => Complex (Set.singleton (Computed c))
+
+      fun weakC (a: t): computed =
+	 WeakC {arg = a, finalType = ref NONE}
+
+      val weak = computed o weakC
+
       val tuple: t Prod.t -> t =
-	 fn vs => object {args = vs, con = ObjectCon.Tuple}
+	 fn args => computed (objectC {args = args,
+				       con = ObjectCon.Tuple})
 
       val tuple =
 	 Trace.trace ("Value.tuple", fn p => Prod.layout (p, layout), layout)
 	 tuple
 
       val rec unify: t * t -> unit =
-	 fn (T s, T s') =>
-	 if Set.equals (s, s') then () else
-	 let
-	    val {value = v, ...} = Set.! s
-	    val {value = v', ...} = Set.! s'
-	    val () = Set.union (s, s')
-	 in
-	    case (v, v') of
-	       (Ground _, Ground _) => ()
-	     | (Object (Obj {args = a, flat = f, ...}),
-		Object (Obj {args = a', flat = f', ...})) =>
-	          let
-		     val () =
-			case (!f, !f') of
-			   (_, NotFlat) => f := NotFlat
-			 | (NotFlat, _) => f' := NotFlat
-			 | (Offset _, _) => Error.bug "unify saw Offset"
-			 | (_, Offset _) => Error.bug "unify saw Offset"
-			 | _ => ()
+	 fn z =>
+	 case z of
+	    (GroundV t, GroundV t') =>
+	       if Type.equals (t, t') then ()
+	       else Error.bug "unify of unequal Grounds"
+	  | (Complex s, Complex s') =>
+	       if Set.equals (s, s') then ()
+	       else
+		  let
+		     val c = Set.! s
+		     val c' = Set.! s'
+		     val () = Set.union (s, s')
 		  in
-		     unifyProd (a, a')
+		     case (c, c') of
+			(Computed c, Computed c') => 
+			   (case (c, c') of
+			       (ObjectC (Obj {args = a, flat = f, ...}),
+				ObjectC (Obj {args = a', flat = f', ...})) =>
+			       let
+				  val () =
+				     case (!f, !f') of
+					(_, NotFlat) => f := NotFlat
+				      | (NotFlat, _) => f' := NotFlat
+				      | (Offset _, _) =>
+					   Error.bug "unify saw Offset"
+				      | (_, Offset _) =>
+					   Error.bug "unify saw Offset"
+				      | _ => ()
+			       in
+				  unifyProd (a, a')
+			       end
+			      | (WeakC {arg = a, ...}, WeakC {arg = a', ...}) =>
+				   unify (a, a')
+			      | _ => Error.bug "strange unify")
+		      | (Uncomputed _, _) => Set.:= (s, c')
+		      | (_, Uncomputed _) => Set.:= (s, c)
 		  end
-	     | (Weak {arg = a, ...}, Weak {arg = a', ...}) => unify (a, a')
-	     | _ => Error.bug "strange unify"
-	 end
+	  | _ => Error.bug "unify Complex with Ground"
       and unifyProd =
 	 fn (p, p') =>
 	 Vector.foreach2
@@ -238,11 +301,6 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	  (fn (t, makeTypeValue) =>
 	   let
 	      fun const () = Const (Value.ground t)
-	      fun make f =
-		 (* control whether all values of a single type are merged. *)
-		 if true
-		    then Const (f ())
-		 else Make f
 	      datatype z = datatype Type.dest
 	   in
 	      case Type.dest t of
@@ -257,8 +315,10 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			  in
 			     if mayFlatten orelse needToMakeProd args
 				then Make (fn () =>
-					   Value.object {args = makeProd args,
-							 con = con})
+					   Value.delay
+					   (fn () =>
+					    Value.objectC {args = makeProd args,
+							   con = con}))
 			     else const ()
 			  end
 		       datatype z = datatype ObjectCon.t
@@ -286,7 +346,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	       | Weak t =>
 		    (case makeTypeValue t of
 			Const _ => const ()
-		      | Make f => Make (fn () => Value.weak (f ())))
+		      | Make f =>
+			   Make (fn () =>
+				 Value.delay (fn () => Value.weakC (f ()))))
 	       | _ => const ()
 	   end))
       fun typeValue (t: Type.t): Value.t =
@@ -325,7 +387,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 end
       val object =
 	 Trace.trace
-	 ("object",
+	 ("RefFlatten.object",
 	  fn {args, con, ...} =>
 	  Layout.record [("args", Prod.layout (args, Value.layout)),
 			 ("con", Option.layout Con.layout con)],

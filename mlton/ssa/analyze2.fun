@@ -28,7 +28,7 @@ fun 'a analyze
 	 Property.getSetOnce
 	 (Var.plist,
 	  Property.initRaise ("analyze var value", Var.layout))
-      val value = Trace.trace ("Analyze.value", Var.layout, layout) value
+      val value = Trace.trace ("Analyze2.value", Var.layout, layout) value
       fun values xs = Vector.map (xs, value)
       val {get = func, set = setFunc, ...} =
 	 Property.getSetOnce
@@ -192,7 +192,7 @@ fun 'a analyze
 				| _ => "")])
       val loopTransfer =
 	 Trace.trace3
-	 ("Analyze.loopTransfer",
+	 ("Analyze2.loopTransfer",
 	  Transfer.layout, 
 	  Option.layout (Vector.layout layout),
 	  Option.layout (Vector.layout layout),
@@ -271,7 +271,7 @@ fun 'a analyze
 				       Fail msg => msg
 				     | _ => "")])
       val loopStatement =
-	 Trace.trace ("Analyze.loopStatement",
+	 Trace.trace ("Analyze2.loopStatement",
 		      Statement.layout,
 		      Unit.layout)
 	 loopStatement
