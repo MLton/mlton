@@ -7,72 +7,38 @@ executable.
 
 \subsection{Compiling with {\mlton}}
 
-To compile with {\mlton}, you need binary versions of {\tt mlton},
-{\tt mllex}, and {\tt mlyacc} that come with a {\mlton} binary {\tt
-rpm} or {\tt tgz} (an older or newer version of {\mlton} should work).
-To compile, run {\tt make} from within the root directory directory of the
-sources.
-\begin{verbatim}
-% make
-mlyacc front-end/ml.grm
-1 shift/reduce conflict
-chmod -w front-end/ml.grm.*
-rm -f front-end/ml.lex.sml
-mllex front-end/ml.lex
+To compile with {\mlton}, you need the binary versions of {\tt mlton},
+{\tt mllex}, and {\tt mlyacc} that come with the {\mlton} binary
+package.  An older, the same, or a newer version of {\mlton} should
+work.  To build {\mlton}, run {\tt make} from within the root
+directory of the sources.  This will make the {\tt bootstrap} target,
+which will build {\mlton} first with the already installed binary
+version of {\mlton} and will then rebuild {\mlton} with itself.
 
-Number of states = 329
-Number of distinct rows = 216
-Approx. memory size of trans. table = 222912 bytes
-chmod -w front-end/ml.lex.sml
-Compiling mlton (takes a while)
-time mlton @MLton  gc-summary -- -host self -verbose 1 -output mlton-compile mlton.cm
-MLton starting
-   Compile SML starting
-      pre codegen starting
-...
-\end{verbatim}
-This calls {\tt mlyacc} and {\tt mllex} to build the parser and lexer, and then
-calls {\tt mlton} to compile itself.  If you make {\mlton} using another version
-of {\mlton}, then the Makefile will automatically use {\tt mlton-stubs.cm},
-which will put in enough stubs to emulate the {\tt MLton} structure.  Once you
-have successfully built {\mlton}, you should recompile it with itself, which
-will use {\tt mlton.cm} to bypass the stubs and use the real {\tt MLton}
-structure from the basis library.
+First, the Makefile calls {\tt mllex} and {\tt mlyacc} to build the
+lexer and parser, and then calls {\tt mlton} to compile itself.  When
+making {\mlton} using another version the Makefile automatically uses
+{\tt mlton-stubs.cm}, which will put in enough stubs to emulate the
+{\tt MLton} structure.  Once {\mlton} is built, the Makefile will
+rebuild {\mlton} with itself, this time using {\tt mlton.cm} and the
+real {\tt MLton} structure from the basis library.  This second round
+of compilation is essential in order to achieve a fast and robust
+{\mlton}.
 
-Compiling {\mlton} requires at least 256M of actual RAM.  Thus, if your machine
-has less than this, it is likely that self-compilation will take a very long
-time due to paging.  Even if you have enough memory, there simply may not be
-enough available, due to memory consumed by other processes.  In this case, you
-may see an {\tt Out of memory} message, or self-compilation may become extremely
-slow.  The only fix is to make sure that enough memory is available.
+Compiling {\mlton} requires at least 256M of actual RAM.  Thus, if
+your machine has less than this, it is likely that self-compilation
+will take a very long time due to paging.  Even if you have enough
+memory, there simply may not be enough available, due to memory
+consumed by other processes.  In this case, you may see an {\tt Out of
+memory} message, or self-compilation may become extremely slow.  The
+only fix is to make sure that enough memory is available.
 
 \subsection{Compiling with {\smlnj}}
 
-To compile with {\smlnj} version 110.39 or later, do {\tt make nj-mlton} from
-within the root directory of the sources.
-\begin{verbatim}
-% make nj-mlton
-make dirs
-make[1]: Entering directory `/tmp/mlton'
-mkdir -p /tmp/mlton/build/bin /tmp/mlton/build/lib/self/include
-make[1]: Leaving directory `/tmp/mlton'
-cd /tmp/mlton/mlton && make nj-mlton
-make[1]: Entering directory `/tmp/mlton/mlton'
-(									\
-	echo 'SMLofNJ.Internals.GC.messages false;';			\
-	echo '#set CM.Control.verbose false;';				\
-	echo '#set CM.Control.warn_obsolete false;';			\
-	echo 'Control.polyEqWarn := false;';				\
-	echo 'CM.make "sources.cm";';					\
-	echo 'Main.exportNJ("/tmp/mlton/basis-library", "/tmp/mlton/build/lib/mlton");'	\
-) | time sml
-Standard ML of New Jersey v110.39 [FLINT v1.5], February 15, 2002
-...
-Creating constants file.
-/tmp/mlton/build/bin/mlton -build-constants >tmp.c
-/tmp/mlton/build/bin/mlton -o tmp tmp.c
-./tmp >/tmp/mlton/build/lib/self/constants
-rm -f tmp tmp.c
-make[1]: Leaving directory `/tmp/mlton'
-Build of MLton succeeded.
-\end{verbatim}
+To compile with {\smlnj}, run {\tt make nj-mlton} from within the root
+directory of the sources.  First, the Makefile calls {\tt mllex} and
+{\tt mlyacc} to build the lexer and parser.  Then, it calls {\smlnj}
+with the appropriate {\tt sources.cm} file.  Building with {\smlnj}
+takes some time (5-10 minutes on a 1.6GHz machine).  Unless you are
+doing compiler development and need rapid recompilation, we recommend
+compiling with {\mlton}.

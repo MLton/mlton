@@ -79,23 +79,7 @@ gcc -c -I/usr/lib/mlton/self/include ffi-export.c
 mlton export.sml ffi-export.o
 % ./export
 g starting
-i = 13  r = 17.15
-g done  char = g
-g starting
-i = 13  r = 17.15
-g done  char = g
-g2 starting
-g2 done
-0wxFF
-g3 starting
-hello
-g3 done
-g4 (13)
-g4 (12)
 ...
-g4 (3)
-g4 (2)
-g4 (1)
 g4 (0)
 success
 \end{verbatim}
@@ -110,12 +94,13 @@ between SML and C.  The following types are allowed: {\tt bool}, {\tt
 char}, {\tt int}, {\tt real}, {\tt string}, {\tt word}.  Strings are
 not null terminated, unless you manually do so from the SML side.  All
 of the different sizes of integers, reals, and words are supported as
-well: {\tt Int32.int}, {\tt Real64.real}, {\tt Word8.word}, {\tt
-Word32.word}.  Arrays, refs, and vectors of the above types are also
-allowed.  Because in {\mlton}, monomorphic arrays and vectors are
-exactly the same as their polymorphic counterpart these are also
-allowed.  Unfortunately, passing tuples or datatypes is not allowed
-because that would interfere with representation optimizations.
+well: {\tt Int8.int}, {\tt Int16.int}, {\tt Int32.int}, {\tt
+Real64.real}, {\tt Word8.word}, {\tt Word32.word}.  Arrays, refs, and
+vectors of the above types are also allowed.  Because in {\mlton}
+monomorphic arrays and vectors are exactly the same as their
+polymorphic counterpart, these are also allowed.  Unfortunately,
+passing tuples or datatypes is not allowed because that would
+interfere with representation optimizations.
 
 The file {\tt types.h} in the MLton include directory includes
 typedefs for the C types corresponding to the SML types.
@@ -128,6 +113,8 @@ SML type & C typedef & C type\\
 {\tt array} & {\tt Pointer} & {\tt char *} \\
 {\tt bool} & {\tt Bool} & {\tt long} \\
 {\tt char} & {\tt Char} & {\tt unsigned char} \\
+{\tt Int8.int} & {\tt Int8} & {\tt char} \\
+{\tt Int16.int} & {\tt Int16} & {\tt short} \\
 {\tt int} & {\tt Int32} & {\tt long} \\
 {\tt real} & {\tt Real64} & {\tt double} \\
 {\tt ref} & {\tt Pointer} & {\tt char *} \\

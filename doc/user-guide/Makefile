@@ -33,6 +33,9 @@ main/main.html: $(TEX_FILES)
 
 main.dvi: $(TEX_FILES)
 	latex main; bibtex main; latex main; latex main
+
+main.pdf: main.ps
+	ps2pdf main.ps
 	
 main.ps: main.dvi
 	dvips -o main.ps main

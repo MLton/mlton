@@ -2,19 +2,14 @@
 
 \subsection{Installation}
 
-{\mlton} runs on X86 machines with either Linux, FreeBSD, or Cygwin/Windows.
-and is distributed in source and binary RPM and gzipped tar ({\tt
-tgz}) format.  You can install the binary RPM with\\
-\hspace*{2em}{\tt rpm -i mlton-\version-1.i386.rpm}\\
-You can install the binary tgz with\\
-\hspace*{2em}{\tt zcat mlton-\version-1.i386-linux.tgz | tar x}\\
-Or, if your distribution doesn't use rpm, but you have {\tt rpm2cpio},
-you can use\\
-\hspace*{2em}{\tt rpm2cpio mlton-\version-1.i386.rpm | cpio -id}\\
-If you do not install {\mlton} in the root directory, you must
-set the {\tt lib} variable in {\tt \prefix/bin/mlton} to the
-directory that contains the libraries ({\tt /\prefix/lib/mlton} by
-default).
+{\mlton} runs on {\intel} machines with either Linux, FreeBSD, or
+Cygwin/Windows and on {\sparc} machines with SunOS.  {\mlton} is
+distributed in both source and binary form -- the format for the
+binary package depends on the platform.  The binary package is
+designed to be installed in the root directory.  If you do not install
+{\mlton} in the root directory, you must set the {\tt lib} variable in
+{\tt \prefix/bin/mlton} to the directory that contains the libraries
+({\tt /\prefix/lib/mlton} by default).
 
 {\mlton} requires that you have the
 \htmladdnormallink{GNU multiprecision library (gmp)}
@@ -71,12 +66,11 @@ hello-world.sml} with the following contents.
 \begin{verbatim}
 print "Hello, world!\n";
 \end{verbatim}
-Now, create an executable, {\tt hello-world}, with the following command.
+Now create an executable, {\tt hello-world}, with the following command.
 \begin{verbatim}
 mlton hello-world.sml
 \end{verbatim}
-You can now run this executable to verify that it works.  There are
+You can now run {\tt hello-world} to verify that it works.  There are
 more small examples in {\tt \prefix/share/doc/mlton/examples}.  In
-particular, there are examples that demonstrate world save and
-restore, callcc, object size primitive, threads, profiling, and the
-FFI.
+particular, there are examples that demonstrate callcc, heap save and
+restore, object size primitive, threads, profiling, and the C FFI.

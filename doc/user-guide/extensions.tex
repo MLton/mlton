@@ -26,8 +26,6 @@ structure MLton:
       type pointer
 
       val eq: 'a * 'a -> bool
-      datatype hostType = Cygwin | FreeBSD | Linux
-      val hostType: hostType
       val isMLton: bool
       val safe: bool
       val size: 'a -> int
@@ -40,6 +38,7 @@ structure MLton:
       structure GC: MLTON_GC
       structure IntInf: MLTON_INT_INF
       structure Itimer: MLTON_ITIMER
+      structure Platform: MLTON_PLATFORM
       structure ProcEnv: MLTON_PROC_ENV
       structure Process: MLTON_PROCESS
       structure Profile: MLTON_PROFILE
@@ -73,12 +72,6 @@ returns true if {\tt x} and {\tt y} are equal as pointers.  For simple types
 like {\tt char}, {\tt int}, and {\tt word}, this is the same as equals.  For
 arrays, datatypes, strings, tuples, and vectors, this is a simple pointer
 equality.  The semantics is a bit murky.
-
-\entry{datatype hostType}
-the possible host types that {\mlton} can generate executables for.
-
-\entry{hostType}
-the host type that the executable was generated for.
 
 \entry{isMLton}
 is always true in a {\mlton} basis library, and is always false in a stub
@@ -208,7 +201,7 @@ signature MLTON_FINALIZABLE =
    sig
       type 'a t
 
-      val finalize: 'a t * ('a -> unit) -> unit
+      val addFinalizer: 'a t * ('a -> unit) -> unit
       val finalizeBefore: 'a t * 'b t -> unit
       val new: 'a -> 'a t
       val withValue: 'a t * ('a -> 'b) -> 'b
@@ -218,9 +211,9 @@ signature MLTON_FINALIZABLE =
 \begin{description}
 
 \entry{addFinalizer (v, f)}
-adds {\tt f} as a finalizer to {\tt v}.  This means that after the
-last call to {\tt withValue} on {\tt v} completes and {\tt v} becomes
-unreachable, {\tt f x} will run.
+adds {\tt f} as a finalizer to {\tt v}.  This means that sometime
+after the last call to {\tt withValue} on {\tt v} completes and {\tt
+v} becomes unreachable, {\tt f x} will run.
 
 \entry{finalizeBefore (v1, v2)}
 ensures that {\tt v1} will be finalized before {\tt v2}.  A cycle of
@@ -287,18 +280,23 @@ signature MLTON_INT_INF =
    sig
       include INT_INF
 
-       val areSmall: int * int -> bool
-       val gcd: int * int -> int 
-       val isSmall: int -> bool
-       datatype rep =
+      datatype rep =
           Big of word vector
-        | Small of word
-       val rep: int -> rep
-       val size: int -> Int.int
+        | Small of int
+
+      val areSmall: int * int -> bool
+      val gcd: int * int -> int 
+      val isSmall: int -> bool
+      val rep: int -> rep
+      val size: int -> Int.int
    end
 \end{verbatim}
 
 \begin{description}
+
+\entry{datatype rep}
+the underlying representation of an IntInf.
+
 \entry{areSmall (a, b)}
 returns true iff both {\tt a} and {\tt b} are small.
 
@@ -307,10 +305,6 @@ using the gmp's fast gcd implementation.
 
 \entry{isSmall a}
 returns true iff {\tt a} is small.
-
-\entry{datatype rep}
-the underlying representation of an IntInf.  {\tt Small} has already
-stripped off the tag and shifted the word, so the top bit is zero.
 
 \entry{rep i}
 return the underlying representation of i.
@@ -386,6 +380,34 @@ the given {\tt interval} and {\tt value}.
 return the signal corresponding to {\tt t}.
 \end{description}
 
+\subsubsection{\tt MLton.Platform}
+\begin{verbatim}
+signature MLTON_PLATFORM =
+   sig
+      datatype arch = Sparc | X86
+      val arch: arch
+	 
+      datatype os = Cygwin | FreeBSD | Linux | SunOS
+      val os: os
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{datatype arch}
+the architectures to which {\mlton} can compile.
+
+\entry{arch}
+the architecture for which the program is compiled.
+
+\entry{datatype os}
+the operating systems to which {\mlton} can compile.
+
+\entry{os}
+the operating system for which the program is compiled.
+
+\end{description}
+
 \subsubsection{\tt MLton.ProcEnv}
 \begin{verbatim}
 signature MLTON_PROC_ENV =
@@ -453,6 +475,7 @@ signature MLTON_PROFILE =
             val malloc: unit -> t
             val write: t * string -> unit
          end
+
       val isOn: bool
       val withData: Data.t * (unit -> 'a) -> 'a
    end
@@ -538,21 +561,21 @@ signature MLTON_RLIMIT =
                
       val infinity: rlim
 
-      type resource
+      type t
                
-      val cpuTime: resource             (* CPU     CPU time in seconds *)
-      val coreFileSize: resource        (* CORE    max core file size *)
-      val dataSize: resource            (* DATA    max data size *)
-      val fileSize: resource            (* FSIZE   Maximum filesize *)
-      val lockedInMemorySize: resource  (* MEMLOCK max locked address space *)
-      val numFiles: resource            (* NOFILE  max number of open files *)  
-      val numProcesses: resource        (* NPROC   max number of processes *)
-      val residentSetSize: resource     (* RSS     max resident set size *)
-      val stackSize: resource           (* STACK   max stack size *)
-      val virtualMemorySize: resource   (* AS      virtual memory limit *)
+      val cpuTime: t             (* CPU     CPU time in seconds *)
+      val coreFileSize: t        (* CORE    max core file size *)
+      val dataSize: t            (* DATA    max data size *)
+      val fileSize: t            (* FSIZE   Maximum filesize *)
+      val lockedInMemorySize: t  (* MEMLOCK max locked address space *)
+      val numFiles: t            (* NOFILE  max number of open files *)  
+      val numProcesses: t        (* NPROC   max number of processes *)
+      val residentSetSize: t     (* RSS     max resident set size *)
+      val stackSize: t           (* STACK   max stack size *)
+      val virtualMemorySize: t   (* AS      virtual memory limit *)
       
-      val get: resource -> {hard: rlim, soft: rlim}
-      val set: resource * {hard: rlim, soft: rlim} -> unit
+      val get: t -> {hard: rlim, soft: rlim}
+      val set: t * {hard: rlim, soft: rlim} -> unit
    end
 \end{verbatim}
 
@@ -563,7 +586,7 @@ the type of resource limits.
 \entry{infinity}
 indicates that a resource is unlimited.
 
-\entry{type resource}
+\entry{type t}
 the types of resources that can be inspected and modified.
 
 \entry{get r}
@@ -603,7 +626,8 @@ handler is invoked, it receives as an argument the thread that was
 interrupted by the signal.  The signal handler returns the thread that 
 it would like to resume execution.  It is an error for a signal
 handler to raise an exception.  All signals are automatically blocked
-for the duration of a handler.
+for the duration of a handler.  Signal handlers will never run during
+a critical section (see \secref{thread}).
 
 \begin{verbatim}
 signature MLTON_SIGNAL =
@@ -961,8 +985,8 @@ the type of weak pointers to objects of type 'a
 
 \entry{get w}
 returns {\tt NONE} if the object pointed to by {\tt w} no longer
-exist.  Otherwise, returns {\tt SOME} of the object pointed to by {\tt
-w}.
+exists.  Otherwise, returns {\tt SOME} of the object pointed to by
+{\tt w}.
 
 \entry{new x}
 returns a weak pointer to {\tt x}.
@@ -974,15 +998,12 @@ signature MLTON_WORD =
    sig
       type word
          
-      val ~ : word -> word
       val rol: word * Word.word -> word
       val ror: word * Word.word -> word
    end
 \end{verbatim}
 
 \begin{description}
-\entry{\~{} w}
-unary negation of {\tt w}.
 \entry{rol (w, w')}
 rotate left.
 \entry{ror (w, w')}
@@ -1155,8 +1176,3 @@ time-values.  Second, since Standard ML does not support declaring
 signatures within structures, opening this module will not introduce
 signatures.  To recover such signatures, compile with {\tt -basis
 1997} instead.
-
-\subsection{{\tt SML90: SML90}}
-
-This module has been removed from the latest Basis Library
-specification.  It is included for backwards compatiblility.

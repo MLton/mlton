@@ -28,7 +28,7 @@ This is a contrived example with two mutually recursive copies of the
 examples shows how {\tt mlprof} indicates lexical nesting via a
 sequence of period-separated names indicating the structures and
 functions in which a function definition is nested.  The profiling
-data shows us that roughly three-quarters of the time is spent in the
+data shows that roughly three-quarters of the time is spent in the
 {\tt Tak.tak1.tak2} function, while the rest is spent in {\tt
 Tak.tak1}.
 
@@ -71,7 +71,7 @@ rev  list-rev.sml: 6     0.2%
 \end{verbatim}
 
 The data shows that most of the allocation is done by the {\tt append}
-function, defined on line 1 of {\tt list-rev.sml}.  The table also
+function defined on line 1 of {\tt list-rev.sml}.  The table also
 shows how special functions like {\tt gc} and {\tt main} are handled:
 they are printed with surrounding brackets.  C functions are displayed
 similarly.  Finally, as is usually the case, the allocation done by
@@ -111,17 +111,17 @@ since there is some extra bookkeeping at every nontail call.
 \subsection{Call graphs}
 
 For easier visualization of profiling data, {\tt mlprof} creates a
-call graph of the program in dot format, from which you can create a
-postscript graph using the
+call graph of the program in dot format, from which you can use the
 \htmladdnormallink{{\tt graphviz}}
 		  {http://www.research.att.com/sw/tools/graphviz/}
-software package.  For example, {\tt mlprof foo mlmon.out} will create
-{\tt foo.dot} with a complete call graph.  For each source function,
-there will be one node in the graph that contains the function name
-(and source position with {\tt -show-line true}), as well as the
-percentage of ticks.  If you want to create a call graph for your
-program without any profiling data, you can simply call {\tt mlprof}
-without any {\tt mlmon.out} files, e.g. {\tt mlprof foo}.
+software package to create a postscript graph.  For example, {\tt
+mlprof foo mlmon.out} will create {\tt foo.dot} with a complete call
+graph.  For each source function, there will be one node in the graph
+that contains the function name (and source position with {\tt
+-show-line true}), as well as the percentage of ticks.  If you want to
+create a call graph for your program without any profiling data, you
+can simply call {\tt mlprof} without any {\tt mlmon.out} files,
+e.g. {\tt mlprof foo}.
 
 Because SML has higher-order functions, the call graph is is dependent
 on {\mlton}'s analysis of which functions call each other.  This
@@ -130,7 +130,7 @@ spurious edges that a human could conclude are impossible.  However,
 in practice, the call graphs tend to be very accurate.
 
 Because call graphs can get big, {\tt mlprof} provides the {\tt -keep}
-option to specify the functions that you would like to see.  This
+option to specify the nodes that you would like to see.  This
 option also controls which functions appear in the table that {\tt
 mlprof} prints.  The argument to {\tt -keep} is an expression
 describing a set of source functions (i.e. graph nodes), taken from
@@ -175,7 +175,7 @@ the following grammar.
 
 In the grammar, {\tt all} denotes the set of all nodes.  {\tt "{\it
 s}"} is a regular expression denoting the set of functions whose name
-has a prefix matchin the regexp.  The {\tt and}, {\tt not}, and {\tt
+has a prefix matching the regexp.  The {\tt and}, {\tt not}, and {\tt
 or} expressions denote intersection, complement, and union,
 respectively.  The {\tt pred} and {\tt succ} expressions add the set
 of immediate predecessors or successors to their argument,
@@ -208,7 +208,7 @@ their stack percentage is higher or lower.
 number of reasons (functor duplication, monomorphisation,
 polyvariance, inlining).  By default, all duplicates of a function are
 treated as one.  If you would like to treat the duplicates separately,
-you can use {\tt mlprof -profile-split <regexp>}, which will cause all
+you can use {\tt mlprof -split} {\it regexp}, which will cause all
 duplicates of functions whose name has a prefix matching the regular
 expression to be treated separately.  This can be especially useful
 for higher-order utility functions like {\tt General.o}.
@@ -221,8 +221,8 @@ allows you to create many units of profiling data (essentially,
 mappings from functions to counts) during a run of a program, to
 switch between them while the program is running, and to output
 multiple {\tt mlmon.out} files.  Executing {\tt mlprof} with multiple
-{\tt mlmon.out} files sums the profiling data in each file to produce
-the output profiling information.
+{\tt mlmon.out} files sums the profiling data to produce the output
+profiling information.
 
 Here is an example, run from within the {\tt examples/profiling}
 directory, showing how to profile the executions of the {\tt fib} and
@@ -232,6 +232,7 @@ directory, showing how to profile the executions of the {\tt fib} and
 % mlton -profile time fib-tak.sml
 % ./fib-tak
 % mlprof fib-tak mlmon.fib.out
+5.77 seconds of CPU time (0.00 seconds GC)
 function   cur 
 --------- -----
 fib       96.9%
@@ -282,7 +283,7 @@ signal handler.\\
 \begin{tabular}{l}
 \tt MLton.Itimer.set (MLton.Itimer.Prof, ...)\}\\
 \tt MLton.Signal.setHandler (MLton.Signal.prof, ...)
-\end{tabular}
+\end{tabular}\\
 Also, because of the random sampling used to implement {\tt -profile
 time}, it is best to have a long running program (at least tens of
 seconds) in order to get reasonable time data.
@@ -290,4 +291,5 @@ seconds) in order to get reasonable time data.
 There may be a few missed clock ticks or bytes allocated at the
 very end of the program after the data is written.
 
-Profiling has not been tested with threads.
+Profiling has not been tested with threads.  In particular, stack
+profiling may behave strangely.

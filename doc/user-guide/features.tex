@@ -13,21 +13,20 @@ inlining, unboxing, argument flattening, redundant-argument removal, constant
 folding, and representation selection.  Whole-program compilation is an integral
 part of the design of {\mlton} and is not likely to change.
 
-\feature{SML 97 compliant}
-{\mlton} compiles the full Standard ML language as given in The
-Definition of Standard ML (Revised)\cite{MTHM97}.  If there is a
-program that is valid according to The Definition that is rejected by
-{\mlton}, it is a bug.
+\feature{supports the full SML 97 language}
+{\mlton} compiles the Standard ML language as given in The Definition
+of Standard ML (Revised)\cite{MTHM97}.  If there is a program that is
+valid according to The Definition that is rejected by {\mlton}, it is
+a bug.
 
-\feature{mostly complete basis library}
-{\mlton} contains a mostly complete implementation of the basis
-library.  Both the 1997 and 2002 basis library specifications are
-available via the {\tt -basis} switch.  A few functions are missing
-from {\tt BinIO}, {\tt OS.Path}, {\tt Real}, {\tt StreamIO}, and {\tt
-TextIO}.  See \secref{basis-library} for details.
+\feature{complete basis library}
+{\mlton} contains a complete implementation of the 2002 basis library
+specification, except for the {\tt use} function.  The 1997 library is
+also available via the {\tt -basis} switch.  See
+\secref{basis-library} for details.
 
 \feature{excellent running times}
-{\mlton} generated executables have excellent running times.
+{\mlton}-generated executables have excellent running times.
 For a comparison with other SML compilers, see
 \link{\makeurl{performance.html}}.
 For a comparison of many compilers, including {\mlton}, see
@@ -79,16 +78,12 @@ Hence, for {\tt IntInf} intensive programs, {\mlton} can be an order
 of magnitude or more faster than {\poly} or {\smlnj}.
 
 \feature{simple and fast C FFI}
-{\mlton} has a straightforward and fast FFI for calling C routines
-from SML.  In fact, much of the {\tt Posix} structure in the basis library is
-implemented using the C FFI.
-%The FFI also supports the definition of
-%compile-time constants.
-See \secref{ffi} for details.
+{\mlton} has a straightforward and fast FFI for calling from SML to C
+and from C to SML.  See \secref{ffi} for details.
 
-\feature{source-level profiling}
-{\mlton} has support for source-level profiling and can profile both
-time and allocation.  See \secref{profiling} for details.
+\feature{source-level profiling of allocation and time}
+{\mlton} and {\mlprof} provide source-level profiling information.
+See \secref{profiling} for details.
 
 \feature{useful libraries}
 {\mlton} has a collection of libraries that provide useful functionality that
@@ -100,12 +95,25 @@ overview and \secref{mlton} for details.
 \feature{continuations}
 {\mlton} supports continuations via {\tt callcc} and {\tt throw}.
 
+\feature{finalization}
+{\mlton} supports finalizable values of arbitrary type.
+
+\feature{heap save and restore}
+{\mlton} has a facility for saving the entire state of a computation
+to a file and restarting it later.  This facility can be used for
+staging and for checkpointing computations.  It can even be used from
+within signal handlers, allowing interrupt driven checkpointing.
+
 \feature{interval timers}
 {\mlton} supports the functionality of the C {\tt setitimer} function.
 
 \feature{random numbers}
 {\mlton} has functions similar to the C {\tt rand} and {\tt srand} functions, as
 well as support for access to {\tt /dev/random} and {\tt /dev/urandom}.
+
+\feature{resource limits}
+{\mlton} has functions similar to the C {\tt getrlimit} and {\tt
+setrlimit} functions.
 
 \feature{resource usage}
 {\mlton} supports a subset of the functionality of the C {\tt getrusage}
@@ -131,11 +139,10 @@ preemptive or non-preemptive multitasking can be implemented.  At some
 point in the future, {\mlton} may support CML, but there is still a
 ways to go.
 
-\feature{world save and restore}
-{\mlton} has a facility for saving the entire state of a computation
-to a file and restarting it later.  This facility can be used for
-staging and for checkpointing computations.  It can even be used from
-within signal handlers, allowing interrupt driven checkpointing.
+\feature{weak pointers}
+{\mlton} suports weak pointers, which allow the garbage collector to
+reclaim objects that it would otherwise be forced to keep.  Weak
+pointers are also used to provide finalization.
 
 \end{description}
 \end{description}

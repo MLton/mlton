@@ -1,4 +1,4 @@
-.TH mlton 1 "April 28, 2003"
+.TH mlton 1 "July 8, 2003"
 .SH NAME
 \fBmlton\fP \- whole-program compiler for the Standard ML (SML) programming
 language
@@ -20,8 +20,7 @@ which intermediate files are saved and to stop the compilation process
 early, at some intermediate pass, in which case compilation can be
 resumed by passing the resulting files to \fBMLton\fP.  \fBMLton\fP
 uses the input file suffix to determine the type of input program.
-The possibilities are \fB.cm\fR, \fB.sml\fR, \fB.c\fR, \fB.S\fR, and
-\fB.o\fR.
+The possibilities are \fB.cm\fR, \fB.sml\fR, \fB.c\fR, \fB.S\fR, and \fB.o\fR.
 
 For developing large programs spanning many files, \fBMLton\fP upports
 a limited subset of SML/NJ Compilation Manager (CM) files.  From
@@ -64,17 +63,19 @@ compiling \fB-native false\fP.
 \fB-detect-overflow \fI{\fBtrue\fI|\fBfalse\fI}\fR
 This flag controls whether or not overflow checking is performed on integer
 arithmetic.
-.COM .TP
-.COM !\fB-D\fIdefine\fR
-.COM !Define a compile-time constant accessible via \fBMLton\fR's \fB_prim\fR
-.COM !syntax.
 
 .TP
 \fB-exn-history \fI{\fBfalse\fI|\fBtrue\fI}\fR
 Enable \fBExn.history\fP.  There is a performance cost to
 \fB-exn-history true\fP, both in memory usage of exceptions and in
-runtime, because of additional work that must be performed at each
+run time, because of additional work that must be performed at each
 exception construction, raise, and handle.
+
+.TP
+\fB-export-header \fI{\fBfalse\fI|\fBtrue\fI}\fR
+This flag is useful for programs that use \fB_export\fP expressions.
+It causes \fBMLton\fP to output to standard output a C header file
+with prototypes for all of the functions exported from SML.
 
 .TP
 \fB-host \fI{\fBself\fP|\fI...}\fR
@@ -87,20 +88,12 @@ compiler.  See the \fBMLton User Guide\fP for details.
 \fB-ieee-fp \fI{\fBfalse\fP|\fBtrue\fP}\fR
 Control whether or not the code generator is pedantic about following
 the IEEE floating point standard.  By default, it is not, because of the
-performance cost.
-.COM .TP
-.COM \fB-include \fIfile.h\fR
-.COM Specify an additional \fB.h\fP file to be included for defining compile-time
-.COM constants.  The file will be included with \fB#include <file.h>\fP.
+performance cost.  This has no effect with \fB-native false\fP.
 
 .TP
 \fB-inline \fIn\fR
 Set the inlining threshold used in the optimizer.
 The default is 320.
-.COM .TP
-.COM \fB-I\fIdir\fR
-.COM Specify an additional directory to be searched for include files (included with
-.COM \fB-i\fR).
 
 .TP
 \fB-keep \fI{\fBg\fP|\fBo\fP|\fBsml\fP}\fR
@@ -117,16 +110,17 @@ If no \fB-keep\fP argument is given, then only the final file is saved.
 .TP
 \fB-lib-search \fIdir\fR
 Specify an additional directory to be searched for libraries when
-linking.  Like \fBgcc -L\fP.
+linking.  Like \fBgcc -L\fP\fIdir\fP.
 
 .TP
 \fB-link \fIlib\fR
-Specify an additional library to link with.  Like \fBgcc -l\fP.
+Specify an additional library to link with.  Like \fBgcc
+-l\fP\fIlib\fP.
 
 .TP
 \fB-may-load-world \fI{\fBtrue\fP|\fBfalse\fP}\fP
 Controls whether or not the generated executable supports the
-\fB@MLton load-world\fP runtime system option. 
+\fBload-world\fP runtime system option. 
 
 .TP
 \fB-native \fI{\fBtrue\fP|\fBfalse\fP}\fP
@@ -147,13 +141,6 @@ Produce an executable that will gather allocation or time profiling
 information.  When such an executable is run, it will produce an
 \fBmlmon.out\fP file.  The man page on \fBmlprof\fP describes how to
 extract information from this file. 
-
-.TP
-\fB-profile-split \fIregexp\fP
-Attribute time or allocation costs separately to duplicates of
-functions whose name and source position matches \fIregexp\fP.
-Multiple \fB-profile-split\fP args can be used and will be or-ed
-together.
 
 .TP
 \fB-profile-stack \fI{\fBfalse\fP|\fBtrue\fP}\fR
@@ -180,33 +167,36 @@ then exits.
 
 .TP
 \fB-static \fI{\fBfalse\fP|\fBtrue\fP}\fR
-If true, then produce a statically linked executable.  This option only affects
-the linker.
+If true, then produce a statically linked executable.  This option
+only affects linking.
 
 .TP
 \fB-stop \fI{\fBf\fP|\fBg\fP|\fBo\fP|\fBsml\fP}\fR
 Specify pass to stop at.
 .in +.5i
-\fBf\fP    List of files on stdout.
+\fBf\fP    list of files on stdout (only makes sense when input is \fBfoo.cm\fP)
 .br
-\fBg\fP    generated \fB.S\fP and \fB.c\fP files.
+\fBg\fP    generated \fB.S\fP and \fB.c\fP files
 .br
-\fBsml\fP  SML file.
+\fBo\fP    object file (\fI*\fB.o\fR).
 .br
-\fBo\fP    Object file (\fI*\fB.o\fR).
+\fBsml\fP  SML file (only makes sense when input is \fBfoo.cm\fP)
 .in -.5i
+If you compile \fB-stop g\fP or \fB-stop o\fP, you can resume
+compilation by running \fBMLton\fP on the generated \fB.c\fP and \fB.S\fP
+or \fB.o\fP files.
 
 .TP
 \fB-verbose\fP \fI{\fB0\fP|\fB1\fP|\fB2\fP|\fB3\fP}\fP
 Be verbose about what passes are running.  The default is 0.
 .in +.5i
-\fB0\fP  silent.
+\fB0\fP  silent
 .br
-\fB1\fP  calls to compiler, assembler, and linker.
+\fB1\fP  calls to compiler, assembler, and linker
 .br
-\fB2\fP  1 + intermediate compiler passes.
+\fB2\fP  1 + intermediate compiler passes
 .br
-\fB3\fP  2 + some data structure sizes.
+\fB3\fP  2 + some data structure sizes
 .in -.5i
 
 .SH Runtime system options

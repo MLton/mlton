@@ -50,8 +50,8 @@ is performed on integer arithmetic.
 
 \option{-align \choiceTwo{4}{8}}
 Aligns object sizes and doubles in memory by the specified alignment.
-On x86, the default is {\tt 4} and on Sparc the default is {\tt
-8}.
+On {\intel}, the default is {\tt 4} and on {\sparc} the default is
+{\tt 8}.
 
 \option{-basis \choices 2002\choice 2002-strict\choice 1997\choice none\choicesEnd}
 Selects a Basis Library to be used by the input program.  {\tt 2002}
@@ -69,16 +69,17 @@ compiling {\tt -native false}.
 This flag controls whether or not overflow checking is performed on integer
 arithmetic, in particular on {\tt Int.\{+,-,*,\~{},div,quot\}}.
 
-\option{-export-header \falseTrue}
-This flag is useful for programs that use {\export} expressions (see
-\secref{export}).  It causes {\mlton} to output to standard output a C
-header file with prototypes for all of functions exported from SML.
-
 \option{-exn-history \falseTrue}
 Enable {\tt Exn.history}.  See \secref{exn} for details.  There is a
 performance cost to {\tt -exn-history true}, both in memory usage of
-exceptions and in runtime, because of additional work that must be
+exceptions and in run time, because of additional work that must be
 performed at each exception construction, raise, and handle.
+
+\option{-export-header \falseTrue}
+This flag is useful for programs that use {\export} expressions (see
+\secref{export}).  It causes {\mlton} to output to standard output a C
+header file with prototypes for all of the functions exported from
+SML.
 
 \option{-host \choiceTwo{self}{\ldots}}
 Generate an executable that runs on the specified host.  The default is {\tt
@@ -91,17 +92,8 @@ Control whether or not the native code generator is pedantic about following
 the IEEE floating point standard.  By default, it is not, because of the
 performance cost.  This has no effect with {\tt -native false}.
 
-%\option{-include \mbox{\rm file.h}}
-%Specify an additional {\tt .h} file to be included for defining compile-time
-%constants (see \secref{compile-time-constant}).  The file will be included with
-%{\tt \#include <file.h>}.
-
 \option{-inline {\it n}}
 Set the inlining threshold used in the optimizer.  The default is 320.
-
-%\option{-I\mbox{\rm dir}}
-%Specify an additional directory to be searched for include files (included with
-%{\tt -i}).
 
 \option{-keep \choiceThree{g}{o}{sml}}
 Save the intermediate file(s) corresponding to the given arg.  If
@@ -122,7 +114,7 @@ lib}.
 
 \option{-may-load-world \trueFalse}
 Controls whether or not the generated executable supports the {\tt
-@MLton load-world} runtime system option.
+load-world} runtime system option.
 
 \option{-native \trueFalse}
 Controls whether or not to use native code generation, as opposed to
@@ -139,75 +131,52 @@ Produce an executable that will gather allocation or time profiling
 information.  When such an executable is run, it will produce an {\tt
 mlmon.out} file.  See \secref{profiling} for details.
 
-\option{-profile-split {\it regexp}}
-Attribute time or allocation costs separately to duplicates of
-functions whose name and source position matches {\it regexp}.
-Multiple {\tt -profile-split} args can be used and will be or-ed
-together.
-
 \option{-profile-stack \falseTrue}
 If true, the profiler will count the time spent (or bytes allocated)
 while a function is on the stack.
 
 \option{-safe \trueFalse}
-This switch determines the value of the SML variable {\tt MLton.safe}, which
-controls whether the basis library performs array, string, and vector bounds
-checks, division for zero checks, and other checks.  Compiling {\tt -safe false}
-changes the behavior of some programs, does not conform to the basis library
-specification, and may cause programs to seg fault.
+This switch determines the value of the SML variable {\tt MLton.safe},
+which controls whether the basis library performs array, string, and
+vector bounds checks, division for zero checks, and other checks.
+Compiling {\tt -safe false} changes the behavior of some programs,
+does not conform to the basis library specification, and may cause
+programs to seg fault.
 
 \option{-show-basis \falseTrue}
 If true, the compiler shows the basis library and exits.
 
 \option{-show-basis-used \falseTrue}
-If true, then the compiler prints out the types, values, signatures, structures,
-and functors from the basis library that the input program uses, and then exits.
+If true, then the compiler prints out the types, values, signatures,
+structures, and functors from the basis library that the input program
+uses, and then exits.
 
 \option{-static \falseTrue}
-If true, then produce a statically linked executable.  This option only
-affects the linker.
+If true, then produce a statically linked executable.  This option
+only affects linking.
 
 \option{-stop \choiceFour{f}{g}{o}{sml}}
 Secify pass to stop at.\\
 \begin{tabular}{ll}
 {\tt f} & list of files on stdout (only makes sense when input is {\tt foo.cm})\\
 {\tt g} & generated {\tt .S} and {\tt .c} files\\
-{\tt sml} & SML file (only makes sense when input is {\tt foo.cm})\\
 {\tt o} & object file\\
+{\tt sml} & SML file (only makes sense when input is {\tt foo.cm})\\
 \end{tabular}\\
-If you compile {\tt -stop g} or {\tt -stop o}, you can resume compilation by
-running {\tt mlton} on the generated {\tt .c} and {\tt .S} or {\tt .o} files.
+If you compile {\tt -stop g} or {\tt -stop o}, you can resume
+compilation by running {\tt mlton} on the generated {\tt .c} and {\tt
+.S} or {\tt .o} files. 
 
 \option{-verbose \choiceFour{0}{1}{2}{3}}
 How verbose to be about what passes are running.  The default is 0.\\
 \begin{tabular}{ll}
 {\tt 0} & silent\\
-{\tt 1} & show calls to compiler, assembler, and linker\\
-{\tt 2} & show all intermediate compiler passes\\
-{\tt 3} & show all intermediate compiler passes, and some data structure sizes\\
+{\tt 1} & calls to compiler, assembler, and linker\\
+{\tt 2} & 1 + intermediate compiler passes\\
+{\tt 3} & 2 + some data structure sizes\\
 \end{tabular}\\
 
 \end{description}
-
-%\subsec{Compiler hacker options}{hacker-options}
-%
-%Some options are useful only to compiler hackers.  They can be seen by
-%calling {\tt mlton -expert true -z}.  Some are documented here.
-%
-%\begin{description}
-%
-%\option{-}
-%Add debugging information for gdb.  Link with a version of the runtime
-%system that has asserts turned on (and runs about half as fast).
-%The default is not to produce debugging information.
-%
-%\option{-indentation \mbox{\rm n}}
-%Set the indentation level used when printing various ILs.
-%
-%\option{-show-types}
-%Print types of bound variables when displaying ILs.
-%
-%\end{description}
 
 \subsec{Runtime system options}{runtime-options}
 
@@ -220,15 +189,16 @@ The optional arguments are {\em not} made available to the SML
 program via {\tt CommandLine.arguments}.  For example, a valid call
 to {\tt hello-world} is: 
 \begin{verbatim}
-hello-world @MLton gc-summary fixed-heap 10k --
+hello-world @MLton gc-summary fixed-heap 10k -- a b c
 \end{verbatim}
-In the above example, {\tt CommandLine.arguments () = []}.
+In the above example, {\tt CommandLine.arguments () = ["a", "b",
+"c"]}.
 
 \begin{description}
 \option{fixed-heap \mbox{\rm n[}km\mbox{\rm ]}}
  Use a fixed size heap of {\tt n} bytes.
  A trailing {\tt k} means that {\tt n} is in units of 1024 bytes. 
- A trailing {\tt m} means that {\tt n} is in megabytes. 
+ A trailing {\tt m} means that {\tt n} is in units of 1,048,576 bytes. 
  If neither appear, then {\tt n} is in bytes.
  A value of {\tt 0} means to use almost all the RAM present on the
  machine.
