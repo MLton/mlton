@@ -35,6 +35,7 @@ signature X86 =
 
 	val toString : t -> string
 	val toString' : t -> string
+	val fromBytes : int -> t
 	val toBytes : t -> int
 	val class : t -> class
 	val toFPI : t -> t
@@ -180,6 +181,7 @@ signature X86 =
 
 	    val new : {name: string} -> t
 	    val Temp : t
+	    val StaticTemp : t
 	    val CStack : t
 	    val Code : t
 
@@ -233,6 +235,15 @@ signature X86 =
 	val mayAliasOrd : t * t -> order option
 
 	val replace : (t -> t) -> t -> t
+
+	(*
+	 * Static memory locations
+	 *)
+	val makeContents : {base: Immediate.t,
+			    size: Size.t,
+			    class: Class.t} -> t
+	(* CReturn locations *)
+	val cReturnTempContents : Size.t -> t
     end
 
     structure ClassSet : SET

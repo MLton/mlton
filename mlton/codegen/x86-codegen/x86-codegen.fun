@@ -9,12 +9,6 @@ functor x86Codegen(S: X86_CODEGEN_STRUCTS): X86_CODEGEN =
 struct
   open S
 
-  val wordSize: int = 4
-  val pointerSize = wordSize
-  val objectHeaderSize = wordSize
-  val arrayHeaderSize = 2 * wordSize
-  val intInfOverhead = arrayHeaderSize + wordSize (* for the sign *)
-
   structure x86 
     = x86(structure Label = Machine.Label
 	  structure Runtime = Machine.Runtime)
@@ -163,18 +157,6 @@ struct
 			       | SOME fi => (label, fi) :: l))
 
 	local
-	  val shift = let
-			val w = Word.fromInt (maxFrameSize div 4)
-			fun loop i
-			  = if i = Word.wordSize
-			       orelse
-			       Word.nthBitIsSet(w, i)
-			      then Word.wordSize - i
-			      else loop (i + 1)
-			val shift = loop 0
-		      in 
-			Word.fromInt (maxFrameSize div 4)
-		      end
 	  val hash' = fn {size, offsetIndex} => Word.fromInt (offsetIndex)
 	  val hash = fn {size, offsetIndex, frameLayoutsIndex}
 	              => hash' {size = size, offsetIndex = offsetIndex}
@@ -186,26 +168,25 @@ struct
 	  val _
 	    = List.foreach
 	      (return_labels,
-	       fn (label,
-		   Machine.FrameInfo.T {size, frameOffsetsIndex = offsetIndex})
+	       fn (label, Machine.FrameInfo.T {size, frameOffsetsIndex = offsetIndex})
 	        => let
-		      val info = {size = size, offsetIndex = offsetIndex}
+		     val info = {size = size, offsetIndex = offsetIndex}
 		     val {frameLayoutsIndex, ...}
 		       = HashSet.lookupOrInsert
 		         (table,
 			  hash' info,
-			  fn {size = size', offsetIndex = offsetIndex', ...}
-			   => size = size' andalso offsetIndex = offsetIndex',
-			  fn ()
-			   => let
-				val _ = List.push(frameLayoutsData', info)
-				val frameLayoutsIndex = !maxFrameLayoutIndex'
-				val _ = Int.inc maxFrameLayoutIndex'
-			      in
-				{size = size,
-				 offsetIndex = offsetIndex,
-				 frameLayoutsIndex = frameLayoutsIndex}
-			      end)
+			  fn {size = size', offsetIndex = offsetIndex', ...} => 
+			  size = size' andalso offsetIndex = offsetIndex',
+			  fn () => 
+			  let
+			    val _ = List.push(frameLayoutsData', info)
+			    val frameLayoutsIndex = !maxFrameLayoutIndex'
+			    val _ = Int.inc maxFrameLayoutIndex'
+			  in
+			    {size = size,
+			     offsetIndex = offsetIndex,
+			     frameLayoutsIndex = frameLayoutsIndex}
+			  end)
 		   in
 		     setFrameLayoutIndex
 		     (label,
@@ -220,13 +201,6 @@ struct
 	fun outputC ()
 	  = let
 	      val {file, print, done} = makeC ()
-	      fun locals ty
-		= List.fold(chunks,
-			    0,
-			    fn (Machine.Chunk.T {regMax, ...},max)
-			     => if regMax ty > max
-				  then regMax ty
-				  else max)
 	      fun make(name, l, pr)
 		= (print (concat["static ", name, " = {"]);
 		   List.foreachi(l,
@@ -252,7 +226,7 @@ struct
 			| Control.Linux => mainLabel
 		 in
 		    [mainLabel,
-		     if reserveEsp then "TRUE" else "FALSE"]
+		     if reserveEsp then C.truee else C.falsee]
 		 end
 	      fun rest () =
 		 declareFrameLayouts()

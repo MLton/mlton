@@ -16,17 +16,17 @@ struct
   (*
    * x86.Size.t equivalents
    *)
-  val wordSize = Size.LONG
-  val wordBytes = Size.toBytes wordSize
-  val wordScale = Scale.Four
-  val pointerSize = Size.LONG
-  val pointerBytes = Size.toBytes pointerSize
-  val pointerScale = Scale.Four
+  val wordBytes = Runtime.wordSize
+  val wordSize = Size.fromBytes wordBytes
+  val wordScale = Scale.fromBytes wordBytes
+  val pointerBytes = Runtime.pointerSize
+  val pointerSize = Size.fromBytes pointerBytes
+  val pointerScale = Scale.fromBytes pointerBytes
   val floatSize = Size.DBLE
   val floatBytes = Size.toBytes floatSize
-  val objectHeaderBytes = wordBytes
+  val normalHeaderBytes = Runtime.normalHeaderSize
   val arrayHeaderBytes = Runtime.arrayHeaderSize
-  val intInfOverheadBytes = arrayHeaderBytes + wordBytes
+  val intInfOverheadBytes = Runtime.intInfOverheadSize
    
   local
     open Machine.Type
@@ -62,12 +62,12 @@ struct
 	val Locals = new "Locals"
 	val Globals = new "Globals"
 	  
-	val Temp = MemLoc.Class.Temp
+	val Temp = MemLoc.Class.Temp	
+	val StaticTemp = MemLoc.Class.StaticTemp
 	val CStack = MemLoc.Class.CStack
 	val Code = MemLoc.Class.Code
 	  
 	val CStatic = new "CStatic"
-	val StaticTemp = new "StaticTemp"
 	val StaticNonTemp = new "StaticNonTemp"
 
 	val GCState = new "GCState"
@@ -94,10 +94,10 @@ struct
 		     Locals::
 		     Globals::
 		     Temp::
+		     StaticTemp::
 		     CStack::
 		     Code::
 		     CStatic::
-		     StaticTemp::
 		     StaticNonTemp::
 		     GCState::
 		     GCStateHold::
@@ -154,16 +154,7 @@ struct
 	  end
     end
 
-  (*
-   * Static memory locations
-   *)
-  fun makeContents {base, size, class}
-    = MemLoc.imm {base = base,
-		  index = Immediate.const_int 0,
-		  scale = wordScale,
-		  size = size,
-		  class = class}
-
+  val makeContents = x86.MemLoc.makeContents
   val c_stackP = Label.fromString "c_stackP"
   val c_stackPContents 
     = makeContents {base = Immediate.label c_stackP,
@@ -187,33 +178,6 @@ struct
 		     class = Classes.CStack}
   val c_stackPDerefDoubleOperand
     = Operand.memloc c_stackPDerefDouble
-
-  local
-    open Machine.Type
-    val cReturnTempBYTE = Label.fromString "cReturnTempB"
-    val cReturnTempBYTEContents 
-      = makeContents {base = Immediate.label cReturnTempBYTE,
-		      size = x86.Size.BYTE,
-		      class = Classes.StaticTemp}
-    val cReturnTempDBLE = Label.fromString "cReturnTempD"
-    val cReturnTempDBLEContents 
-      = makeContents {base = Immediate.label cReturnTempDBLE,
-		      size = x86.Size.DBLE,
-		      class = Classes.StaticTemp}
-    val cReturnTempLONG = Label.fromString "cReturnTempL"
-    val cReturnTempLONGContents 
-      = makeContents {base = Immediate.label cReturnTempLONG,
-		      size = x86.Size.LONG,
-		      class = Classes.StaticTemp}
-  in
-    fun cReturnTempContents size
-      = case size
-	  of x86.Size.BYTE => cReturnTempBYTEContents
-	   | x86.Size.DBLE => cReturnTempDBLEContents
-	   | x86.Size.LONG => cReturnTempLONGContents
-	   | _ => Error.bug "cReturnTempContents: size"
-    val cReturnTempContentsOperand = Operand.memloc o cReturnTempContents
-  end
 
   val intInfTemp = Label.fromString "intInfTemp"
   val intInfTempContents 

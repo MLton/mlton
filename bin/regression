@@ -6,7 +6,7 @@
 name=`basename $0`
 
 function usage {
-	echo >&2 "usage: $name [-cross host] [-run-only] [mlton flag ...]"
+	echo >&2 "usage: $name [-cross host] [-run-only] [mlton flags ...]"
 	exit 1
 }
 
@@ -77,7 +77,7 @@ for f in `ls *.sml`; do
 			$mlton $flags $extraFlags $f.sml
 			if [ $? -ne 0 ]; then
 				compFail $f
-				exit 1
+#				exit 1
 			fi
 		fi
 		if [ ! -r $f.nonterm -a $cross = 'no' ]; then

@@ -112,8 +112,10 @@ struct
 		      => ()
 		      | Raise {...}
 		      => ()
-		      | CCall {return, ...}
-		      => Option.app (return, doit')
+		      | CCall {return, func, ...}
+		      => Option.app (return, if Runtime.CFunction.mayGC func
+					       then doit''
+					       else doit')
 		 end)
 
 	val lf = Graph.loopForestSteensgaard (G, {root = root})

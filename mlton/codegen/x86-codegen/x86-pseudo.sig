@@ -25,6 +25,7 @@ signature X86_PSEUDO =
 	  = BYTE | WORD | LONG 
 	  | SNGL | DBLE | EXTD
 	  | FPIS | FPIL | FPIQ
+	val fromBytes : int -> t
 	val toBytes : t -> int
 	val class : t -> class
 	val eq : t * t -> bool
@@ -80,6 +81,7 @@ signature X86_PSEUDO =
 	    type t
 	    val new : {name: string} -> t
 	    val Temp : t
+	    val StaticTemp : t
 	    val CStack : t
 	    val Code : t
 
@@ -111,6 +113,12 @@ signature X86_PSEUDO =
 	  
 	val class : t -> Class.t
 	val compare : t * t -> order
+	(*
+	 * Static memory locations
+	 *)
+	val makeContents : {base: Immediate.t,
+			    size: Size.t,
+			    class: Class.t} -> t
       end
 
     structure ClassSet : SET

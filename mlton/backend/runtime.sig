@@ -73,6 +73,7 @@ signature RUNTIME =
       val array0Size: int
       val headerToTypeIndex: word -> int
       val isWordAligned: int -> bool
+      val intInfOverheadSize: int
       val labelSize: int
       (* Same as LIMIT_SLOP from gc.c. *)
       val limitSlop: int

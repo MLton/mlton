@@ -143,6 +143,7 @@ fun headerToTypeIndex w = Word.toInt (Word.>> (w, 0w1))
 
 val wordSize: int = 4
 val arrayHeaderSize = 3 * wordSize
+val intInfOverheadSize = arrayHeaderSize + wordSize (* for the sign *)
 val labelSize = wordSize
 val limitSlop: int = 512
 val normalHeaderSize = wordSize

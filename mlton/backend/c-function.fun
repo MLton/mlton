@@ -49,17 +49,25 @@ end
 
 fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
 	     modifiesStackTop, needsArrayInit, returnTy, ...}): bool =
+   (if maySwitchThreads
+      then (case returnTy of
+	      NONE => true
+	    | SOME t => false)
+      else true)
+   andalso
    (if ensuresBytesFree orelse maySwitchThreads
        then mayGC
     else true)
-       andalso (if mayGC
-		   then modifiesFrontier andalso modifiesStackTop
-		else true)
-       andalso (if needsArrayInit
-		   then (case returnTy of
-			    NONE => false
-			  | SOME t => Type.equals (t, Type.pointer))
-		else true)
+   andalso 
+   (if mayGC
+       then modifiesFrontier andalso modifiesStackTop
+    else true)
+   andalso 
+   (if needsArrayInit
+      then (case returnTy of
+	      NONE => false
+	    | SOME t => Type.equals (t, Type.pointer))
+    else true)
 
 val isOk = Trace.trace ("CFunction.isOk", layout, Bool.layout) isOk
 

@@ -21,5 +21,15 @@ Thread Thread_saved() {
 }
 
 void Thread_setHandler(Thread t) {
- 	gcState.signalHandler = (GC_thread)t;
+	gcState.signalHandler = (GC_thread)t;
+}
+
+void Thread_switchTo(Thread thread) {
+	GC_thread t = (GC_thread)thread;
+	gcState.currentThread->stack->used = gcState.stackTop - gcState.stackBottom;
+	gcState.currentThread = t;
+	gcState.stackBottom = ((pointer)t->stack) + sizeof(struct GC_stack); 
+	gcState.stackTop = gcState.stackBottom + t->stack->used;
+	gcState.stackLimit = 
+	  gcState.stackBottom + t->stack->reserved - 2 * gcState.maxFrameSize;
 }

@@ -53,12 +53,6 @@ structure Kind =
 
 val traceGotoLabel = Trace.trace ("gotoLabel", Label.layout, Unit.layout) 
 
-val wordSize: int = 4
-val pointerSize = wordSize
-val objectHeaderSize = wordSize
-val arrayHeaderSize = 2 * wordSize
-val intInfOverhead = arrayHeaderSize + wordSize (* for the sign *)
-
 val overhead = "**C overhead**"
    
 structure C =
@@ -217,8 +211,8 @@ fun outputDeclarations
 	 C.call ("Globals",
 		 List.map (List.map (let open Type
 				     in [char, double, int, pointer, uint]
-				     end,
-					globals) @ [globalsNonRoot],
+				     end, 
+				     globals) @ [globalsNonRoot],
 			   C.int),
 		 print)
       fun locals ty =
@@ -228,12 +222,10 @@ fun outputDeclarations
 		    else max)
       fun declareLocals () =
 	 C.call ("Locals",
-		 List.map (List.map (let 
-					open Type
-				     in 
-					[char, double, int, pointer, uint]
+		 List.map (List.map (let open Type
+				     in [char, double, int, pointer, uint]
 				     end,
-					locals),
+				     locals),
 			   C.int),
 		 print)
       fun declareIntInfs () =
@@ -294,11 +286,11 @@ fun outputDeclarations
 	 let
 	    val stringSizes =
 	       List.fold (strings, 0, fn ((_, s), n) =>
-			  n + arrayHeaderSize
+			  n + Runtime.arrayHeaderSize
 			  + Type.align (Type.pointer, String.size s))
 	    val intInfSizes =
 	       List.fold (intInfs, 0, fn ((_, s), n) =>
-			  n + intInfOverhead
+			  n + Runtime.intInfOverheadSize
 			  + Type.align (Type.pointer, String.size s))
 	    val bytesLive = intInfSizes + stringSizes
 	    val (usedFixedHeap, fromSize) =

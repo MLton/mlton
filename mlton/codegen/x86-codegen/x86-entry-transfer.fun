@@ -39,36 +39,40 @@ struct
 	fun isHandler l = case get l
 			    of SOME (Block.T {entry = Entry.Handler _, ...}) => true
 			     | _ => false
-	fun isCReturn l = case get l
-			    of SOME (Block.T {entry = Entry.CReturn _, ...}) => true
-			     | _ => false
+	fun isCReturn l f = case get l
+			      of SOME (Block.T {entry = Entry.CReturn {func, ...}, ...})
+			       => Runtime.CFunction.equals (f, func)
+			       | _ => false
+	val b = List.forall
+	        (blocks,
+		 fn block as Block.T {entry, transfer, ...}
+		  => (case transfer
+			of Transfer.Goto {target, ...}
+			 => isJump target
+			 | Transfer.Iff {truee, falsee, ...}
+			 => isJump truee andalso isJump falsee
+			 | Transfer.Switch {cases, default, ...}
+			 => isJump default andalso
+			    Transfer.Cases.forall(cases, isJump)
+			 | Transfer.Tail {target, ...}
+			 => isFunc target
+			 | Transfer.NonTail {target, return, handler, ...}
+			 => isFunc target andalso
+			    isCont return andalso
+			    (case handler
+			       of SOME handler => isHandler handler
+				| NONE => true)
+		         | Transfer.Return {...} => true
+			 | Transfer.Raise {...} => true
+			 | Transfer.CCall {return, func, ...} 
+			 => (case return
+			       of NONE => true
+				| SOME l => isCReturn l func)))
+	val _ = destroy ()
+	val _ = if b then ()
+		  else List.foreach(blocks, Block.printBlock)
       in
-	List.forall
-	(blocks,
-	 fn block as Block.T {entry, transfer, ...}
-	  => (case transfer
-		of Transfer.Goto {target, ...}
-		 => isJump target
-		 | Transfer.Iff {truee, falsee, ...}
-		 => isJump truee andalso isJump falsee
-		 | Transfer.Switch {cases, default, ...}
-	         => isJump default andalso
-	            Transfer.Cases.forall(cases, isJump)
-	         | Transfer.Tail {target, ...}
-	         => isFunc target
-	         | Transfer.NonTail {target, return, handler, ...}
-	         => isFunc target andalso
-	            isCont return andalso
-	            (case handler
-		       of SOME handler => isHandler handler
-			| NONE => true)
-		 | Transfer.Return {...} => true
-	         | Transfer.Raise {...} => true
-	         | Transfer.CCall {return, ...} =>
-		      (case return of
-			  NONE => true
-			| SOME l => isCReturn l)))
-	before destroy ()
+	b
       end
 
   val (verifyEntryTranfer, verifyEntryTransfer_msg)

@@ -111,6 +111,11 @@ struct
 	  end
       val toString' = Layout.toString o layout'
 	    
+      val fromBytes : int -> t
+	= fn 1 => BYTE
+	   | 2 => WORD
+	   | 4 => LONG
+	   | _ => Error.bug "Size.fromBytes"
       val toBytes : t -> int
 	= fn BYTE => 1
 	   | WORD => 2
@@ -759,6 +764,7 @@ struct
 	  val mayAlias = eq
 
 	  val Temp = new {name = "Temp"}
+	  val StaticTemp = new {name = "StaticTemp"}
 	  val CStack = new {name = "CStack"}
 	  val Code = new {name = "Code"}
 	end
@@ -1171,6 +1177,42 @@ struct
 				      size = size,
 				      class = Class.Temp})
       end
+
+      (*
+       * Static memory locations
+       *)
+      fun makeContents {base, size, class}
+	= imm {base = base,
+	       index = Immediate.const_int 0,
+	       scale = Scale.Four,
+	       size = size,
+	       class = class}
+      local
+	open Runtime.Type
+	val cReturnTempBYTE = Label.fromString "cReturnTempB"
+	val cReturnTempBYTEContents 
+	  = makeContents {base = Immediate.label cReturnTempBYTE,
+			  size = Size.BYTE,
+			  class = Class.StaticTemp}
+	val cReturnTempDBLE = Label.fromString "cReturnTempD"
+	val cReturnTempDBLEContents 
+	  = makeContents {base = Immediate.label cReturnTempDBLE,
+			  size = Size.DBLE,
+			  class = Class.StaticTemp}
+	val cReturnTempLONG = Label.fromString "cReturnTempL"
+	val cReturnTempLONGContents 
+	  = makeContents {base = Immediate.label cReturnTempLONG,
+			  size = Size.LONG,
+			  class = Class.StaticTemp}
+      in
+	fun cReturnTempContents size
+	  = case size
+	      of Size.BYTE => cReturnTempBYTEContents
+	       | Size.DBLE => cReturnTempDBLEContents
+	       | Size.LONG => cReturnTempLONGContents
+	       | _ => Error.bug "cReturnTempContents: size"
+      end
+
     end
 
   local
@@ -3630,8 +3672,9 @@ struct
       val layout = Layout.str o toString
 
       val uses_defs_kills
-	= fn CReturn {dst = SOME (dst, _), ...} 
-	   => {uses = [], defs = [dst], kills = []}
+	= fn CReturn {dst = SOME (dst, dstsize), ...} 
+	   => {uses = [Operand.memloc (MemLoc.cReturnTempContents dstsize)],
+	       defs = [dst], kills = []}
 	   | _ => {uses = [], defs = [], kills = []}
 	   
       val label
@@ -3655,7 +3698,8 @@ struct
       val creturn = CReturn
 
       val isNear = fn Jump _ => true
-	            | CReturn _ => true
+	            | CReturn {func = CFunction.T {maySwitchThreads, ... }, ...} 
+	            => not maySwitchThreads
 	            | _ => false
     end
 
@@ -4002,9 +4046,12 @@ struct
       val uses_defs_kills
 	= fn Switch {test, cases, default}
 	   => {uses = [test], defs = [], kills = []}
-	   | CCall {args, ...}
+	   | CCall {args, dstsize, ...}
 	   => {uses = List.map(args, fn (oper,_) => oper),
-	       defs = [],
+	       defs = case dstsize 
+			of NONE => []
+			 | SOME dstsize 
+			 => [Operand.memloc (MemLoc.cReturnTempContents dstsize)],
 	       kills = []}
 	   | _ => {uses = [], defs = [], kills = []}
 
@@ -4021,9 +4068,10 @@ struct
 	   | NonTail {return,handler,...} => return::(case handler 
 							of NONE => nil
 							 | SOME handler => [handler])
-	   | CCall {return,...} => (case return of
-				       NONE => []
-				     | SOME l => [l])
+	   | CCall {return, func = CFunction.T {maySwitchThreads, ...}, ...} 
+	   => (case return of
+		 NONE => []
+	       | SOME l => [l])
 	   | _ => []
 
       val live

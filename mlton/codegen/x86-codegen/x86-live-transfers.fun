@@ -261,7 +261,7 @@ struct
 				 of Entry.Func _ => label::funcs
 				  | _ => funcs
 		 in
-		   (labels, funcs)
+	   (labels, funcs)
 		 end)
 
 	val labels = Vector.fromList labels
@@ -273,13 +273,7 @@ struct
 	     fn label
 	      => let
 		   val {block, ...} = getInfo label
-		   fun doit' target
-		     = let
-			 val {pred = pred', ...} = getInfo target
-		       in
-			 List.push (pred', label)
-		       end
-		   fun doit'' target
+		   fun doit target
 		     = let
 			 val {pred = pred', ...} = getInfo target
 		       in
@@ -291,26 +285,26 @@ struct
 		 in
 		   case transfer
 		     of Goto {target, ...} 
-		      => doit' target
+		      => doit target
 		      | Iff {truee, falsee, ...} 
-		      => (doit' truee; 
-			  doit' falsee)
+		      => (doit truee; 
+			  doit falsee)
 		      | Switch {cases, default, ...}
-		      => (doit' default;
-			  Transfer.Cases.foreach(cases, doit'))
+		      => (doit default;
+			  Transfer.Cases.foreach(cases, doit))
 		      | Tail {...}
 		      => ()
 		      | NonTail {return, handler, ...}
-		      => (doit'' return;
+		      => (doit return;
 			  case handler 
-			    of SOME handler => doit'' handler
+			    of SOME handler => doit handler
 			     | NONE => ())
 		      | Return {...}
 		      => ()
 		      | Raise {...}
 		      => ()
 		      | CCall {return, ...}
-		      => Option.app (return, doit')
+		      => Option.app (return, doit)
 		 end)
 
 	val _
@@ -928,8 +922,8 @@ struct
 		       => ()
 		       | CCall {func, return, ...}
 		       => if CFunction.mayGC func
-			     then Option.app (return, doit'')
-			  else Option.app (return, doit')
+			    then Option.app (return, doit'')
+			    else Option.app (return, doit')
 		  end
 	    in
 	      case !defed

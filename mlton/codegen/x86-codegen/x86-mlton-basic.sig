@@ -25,13 +25,13 @@ signature X86_MLTON_BASIC =
     (*
      * x86.Size.t equivalents
      *)
-    val wordSize : x86.Size.t
     val wordBytes : int
+    val wordSize : x86.Size.t
     val wordScale : x86.Scale.t
-    val pointerSize : x86.Size.t
     val pointerBytes : int
+    val pointerSize : x86.Size.t
     val pointerScale : x86.Scale.t
-    val objectHeaderBytes : int
+    val normalHeaderBytes : int
     val arrayHeaderBytes : int
     val intInfOverheadBytes : int
 
@@ -49,11 +49,11 @@ signature X86_MLTON_BASIC =
 	val Globals : x86.MemLoc.Class.t
 
 	val Temp : x86.MemLoc.Class.t
+	val StaticTemp : x86.MemLoc.Class.t
 	val CStack : x86.MemLoc.Class.t
 	val Code : x86.MemLoc.Class.t
 
 	val CStatic : x86.MemLoc.Class.t
-	val StaticTemp : x86.MemLoc.Class.t
 	val StaticNonTemp : x86.MemLoc.Class.t
 	  
 	val GCState : x86.MemLoc.Class.t
@@ -70,21 +70,11 @@ signature X86_MLTON_BASIC =
 	val cstaticClasses : x86.ClassSet.t ref
       end
 
-    (*
-     * Static memory locations
-     *)
-    val makeContents : {base: x86.Immediate.t,
-			size: x86.Size.t,
-			class: x86.MemLoc.Class.t} -> x86.MemLoc.t
     (* CStack locations *)
     val c_stackPContents : x86.MemLoc.t
     val c_stackPContentsOperand : x86.Operand.t
     val c_stackPDerefOperand : x86.Operand.t
     val c_stackPDerefDoubleOperand : x86.Operand.t
-
-    (* CReturn locations *)
-    val cReturnTempContents : x86.Size.t -> x86.MemLoc.t
-    val cReturnTempContentsOperand : x86.Size.t -> x86.Operand.t
 
     (* Static temps defined in x86codegen.h *)
     val applyFFTempContentsOperand : x86.Operand.t

@@ -746,7 +746,7 @@ struct
 			 val (dst,dstsize) = getDst ()
 
 			 val memloc
-			   = makeContents 
+			   = x86.MemLoc.makeContents 
 			     {base = Immediate.label (Label.fromString s),
 			      size = dstsize,
 			      class = Classes.CStatic}
@@ -1424,7 +1424,7 @@ struct
 	       label: x86.Label.t, 
 	       transInfo as {live, liveInfo, ...}: transInfo}
     = let
-	 val name = CFunction.name func
+	val name = CFunction.name func
 	fun getDst ()
 	  = case dst
 	      of SOME dst => dst
@@ -1432,7 +1432,7 @@ struct
 	fun default ()
 	  = let
 	      val _ = x86Liveness.LiveInfo.setLiveOperands
-	              (liveInfo, label, live label)
+		      (liveInfo, label, live label)
 	    in 
 	      AppendList.single
 	      (x86.Block.T'
@@ -1449,11 +1449,10 @@ struct
 	      then (AppendList.single
 		    (x86.Block.T' {entry = NONE,
 				   profileInfo = x86.ProfileInfo.none,
-				   statements 
-				   = [x86.Assembly.comment 
-				      ("end creturn: " ^ name)],
+				   statements = [x86.Assembly.comment 
+						 ("end creturn: " ^ name)],
 				   transfer = NONE}))
-	    else AppendList.empty
+	      else AppendList.empty
       in
 	AppendList.appends [default (), comment_end]
       end

@@ -15,7 +15,7 @@ struct
 
   val wordBytes = x86MLton.wordBytes
   val pointerBytes = x86MLton.pointerBytes
-  val objectHeaderBytes = x86MLton.objectHeaderBytes
+  val normalHeaderBytes = x86MLton.normalHeaderBytes
   val arrayHeaderBytes = x86MLton.arrayHeaderBytes
   val intInfOverheadBytes = x86MLton.intInfOverheadBytes
 
@@ -96,7 +96,7 @@ struct
 	   => x86.Operand.immediate_const_word w
 	   | IntInf ii
 	   => x86.Operand.immediate_const_word ii
-	   | File => x86MLton.fileLine ()
+	   | File => x86MLton.fileName
 	   | Float f
 	     => Error.bug "toX86Operand: Float, unimplemented"
 	   | GCState => x86.Operand.label x86MLton.gcState_label
@@ -234,10 +234,7 @@ struct
       val toX86Operand 
 	= fn operand => (toX86Operand operand)
 	                handle exn
-			 => Error.bug ("x86Translate.Operand.toX86Operand::" ^ 
-				       (case exn
-					  of Fail s => s
-					   | _ => "?"))
+			 => Error.reraise (exn, "x86Translate.Operand.toX86Operand")
     end
 
   type transInfo = x86MLton.transInfo
@@ -559,7 +556,7 @@ struct
 		   val frontierPlusOHW
 		     = (x86.Operand.memloc o x86.MemLoc.simple)
 		       {base = x86MLton.gcState_frontierContents (), 
-			index = x86.Immediate.const_int objectHeaderBytes,
+			index = x86.Immediate.const_int normalHeaderBytes,
 			scale = x86.Scale.One,
 			size = x86MLton.pointerSize,
 			class = x86MLton.Classes.Heap}
@@ -606,8 +603,7 @@ struct
 		      = ((* *(frontier) = header *)
 			 x86.Assembly.instruction_mov 
 			 {dst = frontierDeref,
-			  src = (x86.Operand.immediate
-				 (x86.Immediate.const_word header)),
+			  src = x86.Operand.immediate_const_word header,
 			  size = x86MLton.pointerSize})::
 		        ((* dst = frontier + objectHeaderSize *)
 			 x86.Assembly.instruction_lea
@@ -615,50 +611,19 @@ struct
 			  src = frontierPlusOHW,
 			  size = x86MLton.pointerSize})::
 			(Vector.foldr(stores,
-				      [(* frontier += objectHeaderSize + size *)
+				      [(* frontier += size *)
 				       x86.Assembly.instruction_binal
 				       {oper = x86.Instruction.ADD,
 					dst = frontier,
-					src = (x86.Operand.immediate_const_int
-					       size),
+					src = x86.Operand.immediate_const_int size,
 					size = x86MLton.pointerSize}],
 				      stores_toX86Assembly)),
-(*
-		      = List.concat
-		        [[(* *(frontier) 
-			   *    = gcObjectHeader(numWordsNonPointers, 
-			   *                     numPointers)
-			   *)
-			  x86.Assembly.instruction_mov 
-			  {dst = frontierDeref,
-			   src = gcObjectHeaderWord,
-			   size = x86MLton.pointerSize},
-			  (* dst = frontier + objectHeaderSize *)
-			  x86.Assembly.instruction_lea
-			  {dst = dst,
-			   src = frontierPlusOHW,
-			   size = x86MLton.pointerSize}],
-			 (Vector.foldr(stores,
-				       [],
-				       stores_toX86Assembly)),
-			 [(* frontier += objectHeaderSize + size *)
-			  x86.Assembly.instruction_binal
-			  {oper = x86.Instruction.ADD,
-			   dst = frontier,
-			   src = x86.Operand.immediate_const_int 
-			         (objectHeaderSize + size),
-			   size = x86MLton.pointerSize}]],
-*)
 		      transfer = NONE}),
 		    comment_end]
-		 end
+		 end)
 	  handle exn
-	   => Error.bug (concat ["x86Translate.Statement.toX86Blocks::",
-				 Layout.toString (layout statement),
-				 "::",
-				 (case exn
-				     of Fail s => s
-				   | _ => "?")]))
+	   => Error.reraise (exn, concat ["x86Translate.Statement.toX86Blocks::",
+					  Layout.toString (layout statement)])
     end
 
   structure Transfer =
@@ -984,10 +949,7 @@ struct
 					      => x86.MemLocSet.add(live, memloc)
 					      | NONE => live)})}))))
 	  handle exn
-	   => Error.bug ("x86Translate.Transfer.toX86Blocks::" ^ 
-			 (case exn
-			    of Fail s => s
-			     | _ => "?"))
+	   => Error.reraise (exn, "x86Translate.Transfer.toX86Blocks")
     end
 
   structure Block =
@@ -1080,10 +1042,7 @@ struct
 	    blocks
 	  end
 	  handle exn
-	   => Error.bug ("x86Translate.Block.toX86Blocks::" ^ 
-			 (case exn
-			    of Fail s => s
-			     | _ => "?"))
+	   => Error.reraise (exn, "x86Translate.Block.toX86Blocks")
     end
 
   structure Chunk =
@@ -1127,10 +1086,7 @@ struct
 	    x86.Chunk.T {data = data, blocks = x86Blocks}
 	  end
 	  handle exn
-	   => Error.bug ("x86Translate.Chunk.toX86Chunk::" ^ 
-			 (case exn
-			    of Fail s => s
-			     | _ => "?"))
+	   => Error.reraise (exn, "x86Translate.Chunk.toX86Chunk")
     end
 
   structure Program =
