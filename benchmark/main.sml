@@ -141,7 +141,8 @@ val benchCount =
 	     open MLton.Platform.Arch
 	  in
 	     case host of
-		Sparc => sparc
+		PowerPC => x86
+	      | Sparc => sparc
 	      | X86 => x86
 	  end)
 
