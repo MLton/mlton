@@ -424,6 +424,12 @@ fun makeOptions {usage} =
 	 case !Control.ssaPassesSet s of
 	    Result.Yes ss => Control.ssaPasses := ss
 	  | Result.No s' => usage (concat ["invalid -ssa-pass arg: ", s']))),
+       (Expert, "ssa2-passes", " <passes>", "ssa2 optimization passes",
+	SpaceString
+	(fn s =>
+	 case !Control.ssa2PassesSet s of
+	    Result.Yes ss => Control.ssa2Passes := ss
+	  | Result.No s' => usage (concat ["invalid -ssa2-pass arg: ", s']))),
        (Expert, "stack-cont", " {false|true}",
 	"force continuation formals to stack",
 	boolRef stackCont),

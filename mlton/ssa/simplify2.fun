@@ -203,6 +203,7 @@ local
  		 ("removeUnused", RemoveUnused2.remove), 
 (* 		 ("simplifyTypes", SimplifyTypes.simplify), *)
 (* 		 ("useless", Useless.useless), *)
+		 ("zone", Zone.zone),
  		 ("shrink", S.shrink)],
 		mkSimplePassGen))
 
