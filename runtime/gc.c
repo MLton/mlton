@@ -80,6 +80,7 @@ enum {
 	DEBUG_WEAK = FALSE,
 	DEBUG_WORLD = FALSE,
 	FORCE_GENERATIONAL = FALSE,
+	FORCE_MARK_COMPACT = FALSE,
 	FORWARDED = 0xFFFFFFFF,
 	STACK_HEADER_SIZE = WORD_SIZE,
 };
@@ -1674,7 +1675,9 @@ static void updateWeaks (GC_state s) {
 			fprintf (stderr, "updateWeaks  w = 0x%08x  ", (uint)w);
 		if (FORWARDED == GC_getHeader ((pointer)w->object)) {
 			if (DEBUG_WEAK)
-				fprintf (stderr, "forwarded\n");
+				fprintf (stderr, "forwarded from 0x%08x to 0x%08x\n",
+						(uint)w->object,
+						(uint)*(pointer*)w->object);
 			w->object = *(pointer*)w->object;
 		} else {
 			if (DEBUG_WEAK)
@@ -2784,7 +2787,8 @@ static void growStack (GC_state s) {
 
 static void majorGC (GC_state s, W32 bytesRequested, bool mayResize) {
 	s->numMinorsSinceLastMajor = 0;
-        if (not s->useFixedHeap
+        if (not FORCE_MARK_COMPACT
+		and not s->useFixedHeap
  		and s->heap.size < s->ram
 		and (not heapIsInit (&s->heap2)
 			or heapCreate (s, &s->heap2,
