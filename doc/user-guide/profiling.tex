@@ -113,11 +113,11 @@ since there is some extra bookkeeping at every nontail call.
 
 \subsection{Call graphs}
 
-For easier visualization of data, {\tt mlprof} creates a call graph of
-the program in dot format.  The graph nodes contain the function name
-(and source position with {\tt -show-line true}), as well as the
-percentage of ticks.  You can create a postscript graph from the dot
-file using the
+For easier visualization of profiling data, {\tt mlprof} creates a
+call graph of the program in dot format.  The graph nodes contain the
+function name (and source position with {\tt -show-line true}), as
+well as the percentage of ticks.  You can create a postscript graph
+from the dot file using the
 \htmladdnormallink{{\tt graphviz}}
 		  {http://www.research.att.com/sw/tools/graphviz/}
 software package.
@@ -132,7 +132,7 @@ following grammar.
 \begin{center}
 \begin{tabular}{lcl}
 {\it e} & ::= & {\tt all} \\
-& $\alt$ & {\tt "{\it s}"} \\
+& $\alt$ & {\tt ``{\it s}''} \\
 & $\alt$ & {\tt (and {\it e} ...)} \\
 & $\alt$ & {\tt (from {\it e})} \\
 & $\alt$ & {\tt (not {\it e})} \\
@@ -165,39 +165,58 @@ following grammar.
 \end{center}
 \end{htmlonly}
 
-In the grammar, {\tt all} denotes the set of all nodes, {\it s} is a
-regular expression denoting the set of nodes whose function name (and
-source position) matches {\it s}.  The {\tt and}, {\tt not}, and {\tt
-or} expressionds denote intersection, complement, and union,
-respectively.  The {\tt pred} and {\tt succ} expressions add the set
-of immediate predecessors or successors to their argument,
-respectively.  The {\tt from} and {\tt to} expressions denote the set
-of nodes that have paths from or to the set of nodes denoted by its
-argument, respectively.  Finally, {\tt thresh}, {\tt thresh-gc}, and
-{\tt thresh-stack} denote the set of nodes whose percentage of ticks,
-gc ticks, or stack ticks, respectively, is above the real number {\it
-x}.
+In the grammar, {\tt all} denotes the set of all nodes.  In {\tt "{\it
+s}"}, {\it s} is a regular expression denoting the set of nodes whose
+function name matches {\it s}.  The regexp must match the entire
+function name, including the source position if you use {\tt
+-show-line true}.  So, with {\tt -show-line false}, you would use {\tt
+"foo"}, but with {\tt -show-line true}, you would use {\tt "foo .*"}.
+
+The {\tt and}, {\tt not}, and {\tt or} expressions denote
+intersection, complement, and union, respectively.  The {\tt pred} and
+{\tt succ} expressions add the set of immediate predecessors or
+successors to their argument, respectively.  The {\tt from} and {\tt
+to} expressions denote the set of nodes that have paths from or to the
+set of nodes denoted by their arguments, respectively.  Finally, {\tt
+thresh}, {\tt thresh-gc}, and {\tt thresh-stack} denote the set of
+nodes whose percentage of ticks, gc ticks, or stack ticks,
+respectively, is greater than or equal to the real number {\it x}.
 
 For example, if you want to see the entire call-graph for a program,
 you can use {\tt -graph all}.  If you want to see all nodes reachable
 from function {\tt foo} in your program, you would use {\tt -graph
 '(from "foo")'}.  Or, if you want to see all the functions defined in
-subdirectory {\tt bar} of your project that recieved any ticks, you
-would use {\tt -show-line true -graph '(and ".*/bar/.*" (thresh
-0.0))'}.
+subdirectory {\tt bar} of your project that used at least 1\% of the
+ticks, you would use {\tt -show-line true -graph '(and ".*/bar/.*"
+(thresh 1.0))'}.
 
 When compiling with {\tt -profile-stack false}, the default is {\tt
--graph '(to (thresh {\it x}))'} where {\it x} is the threshold.
-When compiling with {\tt -profile-stack true}, the default is {\tt
--graph '(thresh {\it x})'} where {\it x} is the threshold.
+-graph '(to (thresh {\it x}))'} where {\it x} is the threshold.  When
+compiling with {\tt -profile-stack true}, the default is {\tt -graph
+'(thresh {\it x})'} where {\it x} is the threshold.
 
-As a side note, technically speaking, the graph is a call-stack graph
-rather than a call graph because it describes the set of possible call
-stacks.  The difference is in how tail calls are displayed.  For
-example if {\tt f} nontail calls {\tt g} and {\tt g} tail calls {\tt
-h}, then the call-stack graph has edges from {\tt f} to {\tt g} and
-{\tt f} to {\tt h}, while the call-graph has edges from {\tt f} to
-{\tt g} and {\tt g} to {\tt h}.
+Another {\tt mlprof} option to improve the readability of call graphs
+is {\tt -ignore}, which takes a regexp specifying functions to ignore
+when creating the call graph.  For example, suppose you define a
+library function like {\tt o} (compose), and then define {\tt fun f x
+= (g o h) x}.  Then the call graph would contain edges from {\tt f} to
+{\tt o}, from {\tt o} to {\tt g}, and from {\tt o} to {\tt h}.  You
+might prefer to see only edges from {\tt f} to {\tt g} and from {\tt
+f} to {\tt h}.  To do this, you can pass {\tt -ignore 'o'} to {\tt
+mlprof}, which will cause it to remove {\tt o} and connect its
+predecessors and successors in the call graph.  Note that this is
+different than using {\tt -graph (not "o")}, which would only remove
+the node from the graph, leaving it disconnected.  Also, as with {\tt
+-graph}, the regexp must match the entire function name, including the
+source position with {\tt -show-line true}.
+
+Technically speaking, the graph is a call-stack graph rather than a
+call graph because it describes the set of possible call stacks.  The
+difference is in how tail calls are displayed.  For example if {\tt f}
+nontail calls {\tt g} and {\tt g} tail calls {\tt h}, then the
+call-stack graph has edges from {\tt f} to {\tt g} and {\tt f} to {\tt
+h}, while the call-graph has edges from {\tt f} to {\tt g} and {\tt g}
+to {\tt h}.
 
 \subsection{Using {\tt MLton.Profile}}
 
@@ -242,6 +261,14 @@ tak       11.3%
 
 \subsection{Profiling details}
 
+{\mlton}'s optimizer may duplicate source functions for any of a
+number of reasons.  By default, each of these duplicates is treated as
+a different function for the purposes of profiling.  It you would like
+all of the copies of a function to be treated as one, you can compile
+the program with {\tt -profile-combine true}.  Even with this, copies
+of a function that arise from functor duplication are still kept
+separate.
+
 Conceptually, both allocation and time profiling work in the same way.
 The compiler produces information that maps machine code positions to
 source functions that the profiler uses while the program is running
@@ -264,7 +291,7 @@ signal handler.\\
 \begin{tabular}{l}
 \tt MLton.Itimer.set (MLton.Itimer.Prof, ...)\}\\
 \tt MLton.Signal.setHandler (MLton.Signal.prof, ...)
-\end{tabular}\\
+\end{tabular}
 Also, because of the random sampling used to implement {\tt -profile
 time}, it is best to have a long running program (at least tens of
 seconds) in order to get reasonable time data.
@@ -277,6 +304,3 @@ Posix.Process.exit}, you will bypass the code responsible for writing
 out the profiling data and thus get no {\tt mlmon.out} file.
 
 Profiling has not been tested with threads.
-
-Because {\mlton} duplicates functor bodies, sometimes the same function will
-appear multiple times in the profiling output.
