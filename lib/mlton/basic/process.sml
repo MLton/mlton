@@ -199,8 +199,10 @@ in
 end
 
 fun exec (c: string, a: string list, ins: In.t, out: Out.t): unit =
-   let open FileDesc
-   in if MLton.isMLton
+   let
+      open FileDesc
+   in
+      if MLton.isMLton
 	 then (move {from = MLton.TextIO.inFd ins,
 		     to = stdin}
 	       ; move {from = MLton.TextIO.outFd out,
@@ -209,8 +211,10 @@ fun exec (c: string, a: string list, ins: In.t, out: Out.t): unit =
 		       to = stderr})
       else ()
       ; (Posix.Process.execp (c, c :: a)
-	 handle e => (messageStr (concat ["unable to exec ", c, "\n"])
-		      ; raise e))
+	 handle e => (Out.output (Out.error,
+				  (concat ("unable to exec "
+					   :: List.separate (c :: a, " "))))
+		      ; OS.Process.exit OS.Process.failure))
    end
 
 val exec =
