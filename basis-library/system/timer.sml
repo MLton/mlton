@@ -1,39 +1,54 @@
 structure Timer: TIMER =
    struct
-      type cpu_timer = {gc: Time.time,
-			sys: Time.time,
-			usr: Time.time}
+      structure SysUsr =
+	 struct
+	    datatype t = T of {sys: Time.time, usr: Time.time}
+
+	    fun export (T r) = r
+	       
+	    fun (T {sys, usr}) - (T {sys = s', usr = u'}) =
+	       T {sys = Time.- (sys, s'),
+		  usr = Time.- (usr, u')}
+	 end
+      
+      type cpu_timer = {gc: SysUsr.t, self: SysUsr.t}
 
       fun startCPUTimer (): cpu_timer =
 	 let
-	    val {gc = {utime = gcu, ...},
+	    val {gc = {utime = gcu, stime = gcs, ...},
 		 self = {utime = selfu, stime = selfs}, ...} =
 	       MLtonRusage.rusage ()
 	 in
-	    {gc = gcu,
-	     sys = selfs,
-	     usr = selfu}
+	    {gc = SysUsr.T {sys = gcs, usr = gcu},
+	     self = SysUsr.T {sys = selfs, usr = selfu}}
 	 end
 
-      fun checkCPUTimer ({gc, sys, usr}: cpu_timer) =
+      fun checkCPUTimes {gc, self} =
 	 let
-	    val {gc = g, sys = s, usr = u} = startCPUTimer ()
-	    val op - = Time.-
+	    val {gc = g', self = s'} = startCPUTimer ()
+	    val gc = SysUsr.- (g', gc)
+	    val self = SysUsr.- (s', self)
 	 in
-	    {gc = g - gc,
-	     sys = s - sys,
-	     usr = u - usr}
+	    {gc = SysUsr.export gc,
+	     nongc = SysUsr.export (SysUsr.- (self, gc))}
 	 end
 
+      fun checkCPUTimer timer =
+	 let
+	    val {nongc, gc} = checkCPUTimes timer
+	 in
+	    {sys = Time.+ (#sys gc, #sys nongc),
+	     usr = Time.+ (#usr gc, #usr nongc)}
+	 end
+	       
       val totalCPUTimer =
-	 let val t = startCPUTimer ()
-	 in fn () => checkCPUTimer t
+	 let
+	    val t = startCPUTimer ()
+	 in
+	    fn () => t
 	 end
 
-      val checkGCTime = #gc o checkCPUTimer
-      val checkCPUTimer = fn t => let val {usr, sys, ...} = checkCPUTimer t
-				  in {usr = usr, sys = sys}
-				  end
+      val checkGCTime = #usr o #gc o checkCPUTimes
 
       type real_timer = Time.time
 
@@ -43,7 +58,9 @@ structure Timer: TIMER =
 	 Time.- (startRealTimer (), t)
 	 
       val totalRealTimer =
-	 let val t = startRealTimer ()
-	 in fn () => checkRealTimer t
+	 let
+	    val t = startRealTimer ()
+	 in
+	    fn () => t
 	 end
    end

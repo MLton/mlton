@@ -1,5 +1,10 @@
 Here are the changes since version 20040227.
 
+* 2004-04-23
+  - Added Timer.checkCPUTimes, and updated the Timer structure to
+    match the latest basis spec.  Also fixed totalCPUTimer and
+    totalRealTimer, which were wrong.
+
 * 2004-04-13
   - Added MLton.Signal.Mask.{getBlocked,member}.
 	
