@@ -11,10 +11,12 @@ $(NAME): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	strip $(NAME)
 	size $(NAME)
 
+ifeq ($(MAKECMDGOALS),$(NAME).cm)
+.PHONY:	$(NAME).cm
+$(NAME).cm: src/yacc.lex.sml src/yacc.grm.sig src/yacc.grm.sml
+else
 $(NAME).cm:
-	$(MAKE) src/yacc.lex.sml &&					\
-	$(MAKE) src/yacc.grm.sig &&					\
-	$(MAKE) src/yacc.grm.sml &&					\
+endif
 	(								\
 		echo 'Group is' &&					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' &&	\
@@ -22,10 +24,14 @@ $(NAME).cm:
 	) >$(NAME).cm
 
 src/yacc.lex.sml: src/yacc.lex
-	mllex src/yacc.lex
+	rm -f src/yacc.lex && \
+		mllex src/yacc.lex && \
+		chmod -w src/yacc.lex.sml
 
 src/yacc.grm.sig src/yacc.grm.sml: src/yacc.grm
-	mlyacc src/yacc.grm
+	rm -f src/yacc.grm.* && \
+		mlyacc src/yacc.grm && \
+		chmod -w src/yacc.grm.*
 
 .PHONY: clean
 clean:
