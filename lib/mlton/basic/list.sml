@@ -24,9 +24,59 @@ structure F =
 	 end
    end
 structure F = Fold (open F
-		   type 'a elt = 'a)
+		    type 'a elt = 'a)
 open F
 
+fun nth (l, i: int) =
+   let
+      fun loop (l, i) =
+	 case l of
+	    [] => Error.bug "List.nth"
+	  | x :: l =>
+	       if i = 0
+		  then x
+	       else loop (l, i - 1)
+   in
+      if i < 0
+	 then Error.bug "List.nth"
+      else loop (l, i)
+   end
+
+fun exists (l, f) =
+   let
+      fun loop l =
+	 case l of
+	    [] => false
+	  | x :: l => f x orelse loop l
+   in
+      loop l
+   end
+
+fun first l =
+   case l of
+      [] => Error.bug "List.first"
+    | x :: _ => x
+	 
+fun forall (l, f) =
+   let
+      fun loop l =
+	 case l of
+	    [] => true
+	  | x :: l => f x andalso loop l
+   in
+      loop l
+   end
+
+fun foralli (l, f) =
+   let
+      fun loop (l, i: int) =
+	 case l of
+	    [] => true
+	  | x :: l => f (i, x) andalso loop (l, i + 1)
+   in
+      loop (l, 0)
+   end
+   
 fun fold2 (l1, l2, b, f) =
    let
       fun loop (l1, l2, b) =
@@ -49,6 +99,54 @@ fun fold3 (l1, l2, l3, b, f) =
    end
 
 fun foreach2 (l1, l2, f) = fold2 (l1, l2, (), fn (x1, x2, ()) => f (x1, x2))
+
+fun index (l, f) =
+   let
+      fun loop (l, i: int) =
+	 case l of
+	    [] => NONE
+	  | x :: l => if f x then SOME i else loop (l, i + 1)
+   in
+      loop (l, 0)
+   end
+	    
+fun isEmpty l =
+   case l of
+      [] => true
+    | _ :: _ => false
+
+fun peek (l, f) =
+   let
+      fun loop l =
+	 case l of
+	    [] => NONE
+	  | x :: l => if f x then SOME x else loop l
+   in
+      loop l
+   end
+
+fun peeki (l, f) =
+   let
+      fun loop (l, i: int) =
+	 case l of
+	    [] => NONE
+	  | x :: l => if f (i, x) then SOME (i, x) else loop (l, i + 1)
+   in
+      loop (l, 0)
+   end
+
+fun peekMap (l, f) =
+   let
+      fun loop l =
+	 case l of
+	    [] => NONE
+	  | x :: l =>
+	       (case f x of
+		   NONE => loop l
+		 | SOME x => SOME x)
+   in
+      loop l
+   end
 
 fun appendRev (l, l') = fold (l, l', op ::)
    

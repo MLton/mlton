@@ -4,10 +4,10 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+type int = Pervasive.Int.int
+
 signature LIST =
    sig
-      type int = Pervasive.Int.int
-	 
       type 'a t = 'a list
 
       val allButLast: 'a t -> 'a t
@@ -72,7 +72,6 @@ signature LIST =
       (* Specify a string to separate the elements *)
 (*      val layoutSep: string * ('a -> Layout.t) -> 'a t -> Layout.t *)
       val length: 'a t -> int
-      val lookup: 'a t * ('a -> bool) -> 'a
       val map: 'a t * ('a -> 'b) -> 'b t
       val mapi: 'a t * (int * 'a -> 'b) -> 'b t
       val map2: 'a t * 'b t * ('a * 'b -> 'c) -> 'c t

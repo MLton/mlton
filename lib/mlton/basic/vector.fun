@@ -49,15 +49,6 @@ fun foldFrom (v, start, b, f) =
 
 fun fold (a, b, f) = foldFrom (a, 0, b, f)
 
-local
-   structure F = Fold (type 'a t = 'a t
-		       type 'a elt = 'a
-		       val fold = fold)
-   open F
-in
-   val peekMapi = peekMapi
-end
-
 fun isEmpty a = 0 = length a
 
 fun dropPrefix (v, n) = tabulate (length v - n, fn i => sub (v, i + n))
@@ -91,6 +82,20 @@ fun loopi (v, f, g) =
 	  g)
 
 fun loop (v, f, g) = loopi (v, f o #2, g)
+
+fun peekMapi (v, f) =
+   let
+      val n = length v
+      fun loop i =
+	 if i = n
+	    then NONE
+	 else
+	    (case f (sub (v, i)) of
+		NONE => loop (i + 1)
+	      | SOME b => SOME (i, b))
+   in
+      loop 0
+   end
 
 fun peekMap (v, f) =
    loop (v,
@@ -183,21 +188,39 @@ fun foreachR (v, start, stop, f) =
 fun foreach2 (a, a', f) =
    fold2 (a, a', (), fn (x, x', ()) => f (x, x'))
 
-fun forall2 (a, a', f) =
-   DynamicWind.withEscape
-   (fn escape =>
-    (foreach2 (a, a', fn (a, a') => if f (a, a') then () else escape false)
-     ; true))
+fun forall2 (v, v', f) =
+   let
+      val n = length v
+      fun loop i =
+	 i = n
+	 orelse (f (sub (v, i), sub (v', i))
+		 andalso loop (i + 1))
+   in
+      if n = length v'
+	 then loop 0
+      else Error.bug "Vector.forall2"
+   end
 
 fun foreachi (a, f) = foldi (a, (), fn (i, x, ()) => f (i, x))
 
 fun foreach (a, f) = foreachi (a, f o #2)
 
-fun 'a peeki (a, f) =
-   DynamicWind.withEscape
-   (fn escape => 
-    (foreachi (a, fn (i, x) => if f (i, x) then escape (SOME (i, x)) else ())
-     ; NONE))
+fun 'a peeki (v, f) =
+   let
+      val n = length v
+      fun loop i =
+	 if i = n
+	    then NONE
+	 else let
+		 val x = sub (v, i)
+	      in
+		 if f (i, x)
+		    then SOME (i, x)
+		 else loop (i + 1)
+	      end
+   in
+      loop 0
+   end
 
 fun peek (a, f) = Option.map (peeki (a, f o #2), #2)
 

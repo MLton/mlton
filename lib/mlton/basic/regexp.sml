@@ -122,7 +122,6 @@ local
 	 type 'a t
 
 	 val clear: 'a t -> unit
-	 val exists: 'a t * ('a -> bool) -> bool
 	 val foreach: 'a t * ('a -> unit) -> unit
 	 val new: int * 'a -> 'a t
 	 val peekMap: 'a t * ('a ->'b option) -> 'b option
@@ -146,17 +145,21 @@ local
 
 	 fun clear (T {size, ...}) = size := 0
 
-	 structure F =
-	    struct
-	       type 'a t = 'a t
-	       type 'a elt = 'a
-		  
-	       fun fold (T {elts, size, ...}, b, f) =
-		  Int.fold (0, !size, b, fn (i, b) =>
-			    f (Array.sub (elts, i), b))
+	 fun foreach (T {elts, size, ...}, f) =
+	    Int.for (0, !size, fn i => f (Array.sub (elts, i)))
+
+	 fun peekMap (T {elts, size, ...}, f) =
+	    let
+	       val n = !size
+	       fun loop i =
+		  if i = n
+		     then NONE
+		  else (case f (Array.sub (elts, i)) of
+			   NONE => loop (i + 1)
+			 | SOME z => SOME z)
+	    in
+	       loop 0
 	    end
-	 structure F = Fold (F)
-	 open F
       end
 
    (* NFA state. *)

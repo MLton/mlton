@@ -189,9 +189,11 @@ local
 		       val fold = fold)
    open F
 in
-   val forall = forall
    val foreach = foreach
 end
+
+fun forall (T {buckets, ...}, f) =
+   Array.forall (!buckets, fn r => List.forall (r, f))
 
 fun toList t = fold (t, [], fn (a, l) => a :: l)
 

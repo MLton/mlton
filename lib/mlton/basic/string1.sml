@@ -13,18 +13,63 @@ structure F = Fold (type 'a t = string
 		    type 'a elt = char
 		    val fold = fold)
 open F
+
 type t = string
-	 
+
 val last = String0.last
 	 
 val layout = Layout.str o escapeSML
 
+fun forall (s, f) =
+   let
+      val n = length s
+      fun loop i =
+	 i = n
+	 orelse (f (sub (s, i)) andalso loop (i + 1))
+   in
+      loop 0
+   end
+   
 (* This hash function is taken from pages 56-57 of
  * The Practice of Programming by Kernighan and Pike.
  *)
 fun hash (s: t): Word.t =
    fold (s, 0w0, fn (c, h) => Word.fromChar c + Word.* (h, 0w31))
-	 
+
+fun peek (v, f) =
+   let
+      val n = length v
+      fun loop i =
+	 if i = n
+	    then NONE
+	 else let
+		 val x = sub (v, i)
+	      in
+		 if f x
+		    then SOME x
+		 else loop (i + 1)
+	      end
+   in
+      loop 0
+   end
+
+fun peeki (v, f) =
+   let
+      val n = length v
+      fun loop i =
+	 if i = n
+	    then NONE
+	 else let
+		 val x = sub (v, i)
+	      in
+		 if f (i, x)
+		    then SOME (i, x)
+		 else loop (i + 1)
+	      end
+   in
+      loop 0
+   end
+
 fun dropl (s, p) =
    case peeki (s, fn (_, c) => not (p c)) of
       NONE => ""
