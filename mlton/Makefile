@@ -8,15 +8,22 @@ FLAGS = @MLton $(RUNTIME_ARGS) gc-summary -- -host $(HOST)
 NAME = mlton
 AOUT = mlton-compile
 PATH = $(BIN):$(shell echo $$PATH)
-# If we're compiling MLton with an older version of itself, use the stubs for
-# the MLton structure.  If we're compiling it with itself, don't.
 ifeq (self, $(shell if [ -x $(BIN)/mlton ]; then echo self; fi))
+  # We're compiling MLton with itself, so don't use any stubs.
   CM = $(NAME).cm
 else
+ifeq (cygwin, $(shell $(SRC)/bin/host-os))
+  # The stubs don't work on Cygwin, since they define spawn in terms of
+  # fork, and fork doesn't work on Cygwin.  So, make without the stubs.
+  CM = $(NAME).cm
+else
+  # We're compiling MLton with an older version of itself, so use the stubs for
+  # the MLton structure.
 ifeq (1997, $(shell $(SRC)/bin/mlton-basis-version))
   CM = $(NAME)-stubs-1997.cm
 else
   CM = $(NAME)-stubs.cm
+endif
 endif
 endif
 
