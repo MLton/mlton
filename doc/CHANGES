@@ -1,6 +1,10 @@
 Here are the changes from version 20010806 to version VERSION.
 
-* 2001-921
+* 2001-9-22
+  - Bug fixes found from Ramsey's lrtl in contify.fun and unused-args.fun, both
+    of which caused compile-time exceptions to be raised.
+
+* 2001-9-21
   - Fixed MLton.World.{load,save} so that the saved world does not store the
     max heap size.  Instead, the max heap size is computed upon load world in
     exactly the same way as at program startup.  This fixes a long standing (but
