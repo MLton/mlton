@@ -829,15 +829,13 @@ fun time () =
 fun timeToString {total, gc} =
    let
       fun fmt (x, n) = Real.format (x, Real.Format.fix (SOME n))
-      val toReal = Int.toReal o LargeInt.toInt o Time.toMilliseconds
+      val toReal = Real.fromIntInf o Time.toMilliseconds
       val per =
 	 if Time.equals (total, Time.zero)
 	    then "0"
 	 else fmt (100.0 * (toReal gc / toReal total), 0)
       fun t2s t =
-	 fmt (Real./ (Int.toReal (LargeInt.toInt (Time.toMilliseconds t)),
-		      1000.0),
-	      2)
+	 fmt (Real./ (toReal t, 1000.0), 2)
    in concat [t2s (Time.- (total, gc)), " + ", t2s gc, " (", per, "% GC)"]
    end
 
