@@ -619,6 +619,7 @@ fun commandLine (args: string list): unit =
 	    FreeBSD => ()
 	  | Linux => ()
 	  | NetBSD => ()
+	  | OpenBSD => ()
 	  | Solaris => ()
 	  | _ =>
 	       if !profile = ProfileTime
