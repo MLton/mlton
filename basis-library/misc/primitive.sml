@@ -46,6 +46,7 @@ structure Primitive =
    struct
       val debug = _prim "MLton_debug": bool;
       val detectOverflow = _prim "MLton_detectOverflow": bool;
+      val eq = fn z => _prim "MLton_eq": 'a * 'a -> bool; z
       val halt = _prim "MLton_halt": int -> unit;
       val isLittleEndian = _prim "MLton_isLittleEndian": bool;
       val safe = _prim "MLton_safe": bool;

@@ -22,6 +22,7 @@ that are not part of the standard basis library.
 structure MLton:
    sig
       val debug: bool
+      val eq: 'a * 'a -> bool
       val isMLton: bool
       val safe: bool
       val size: 'a -> int
@@ -55,6 +56,13 @@ structure MLton:
 a compile-time constant that is true when compiling {\tt
 -DMLton\_debug=1} and false when compiling {\tt -DMLton\_debug=0}.
 The default is false.
+
+\entry{eq (x, y)}
+returns true if {\tt x} and {\tt y} are equal as pointers.  For simple types
+like {\tt char}, {\tt int}, and {\tt word}, this is the same as equals.  For
+arrays, datatypes, strings, tuples, and vectors, this is a simple pointer
+equality.  The semantics is a bit murky.
+
 
 \entry{isMLton} always true in a {\mlton} basis library.
 

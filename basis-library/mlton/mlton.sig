@@ -8,6 +8,10 @@ signature MLTON =
    sig
       val cleanAtExit: unit -> unit
       val debug: bool
+      (* Pointer equality.  The usual caveats about lack of a well-defined
+       * semantics.
+       *)
+      val eq: 'a * 'a -> bool
 (*      val deserialize: Word8Vector.vector -> 'a *)
       val isMLton: bool
       val safe: bool
