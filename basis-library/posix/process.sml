@@ -15,14 +15,56 @@ structure PosixProcess: POSIX_PROCESS =
 
       structure MLton = Primitive.MLton
       fun fork () =
-(* 	 if MLton.hostType = MLton.Cygwin
- * 	    then raise Fail "fork does not work correctly on Cygwin"
- * 	 else
- *)
-	    case Prim.fork () of
-	       ~1 => Error.error ()
-	     | 0 => NONE
-	     | n => SOME n
+	 case Prim.fork () of
+	    ~1 => Error.error ()
+	  | 0 => NONE
+	  | n => SOME n
+
+      val fork =
+	 if MLton.hostType <> MLton.Cygwin
+	    then fork
+ 	 else
+	    fn () =>
+	    (* On Cygwin, need to have the parent wait around until the child
+	     * starts to work around a Cygwin fork/mmap bug.
+	     * We accomplish this by creating a pipe that the child writes a
+	     * single byte to and the parent reads from.
+	     *)
+	    let
+	       val {infd, outfd} = PosixIO.pipe ()
+	       fun close () = (PosixIO.close infd
+			       ; PosixIO.close outfd)
+	       fun doit () =
+		  case fork () of
+		     NONE => 
+			(PosixIO.writeVec (outfd,
+					   {buf = (Word8Vector.tabulate
+						   (1, fn _ => 0w0)),
+					    i = 0, sz = NONE})
+			 ; NONE)
+		   | SOME n =>
+			let
+			   (* Wait in the parent until the child writes the
+			    * byte to the pipe.  Need to restart the read system
+			    * call in case the child also sends a signal.
+			    *)
+			   fun loop () =
+			      (if 1 = Word8Vector.length (PosixIO.readVec
+							  (infd, 1))
+				  then ()
+			       else raise Fail "bug in fork")
+				  handle
+				  e as (PosixError.SysErr (_, SOME err)) =>
+				     if err = PosixError.intr
+					then loop ()
+				     else raise e
+			   val _ = loop ()
+			in
+			   SOME n
+			end
+	    in
+	       DynamicWind.wind (doit, close)
+	    end
 
       val conv = String.nullTerm
       val convs = C.CSS.fromList

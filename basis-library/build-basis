@@ -85,12 +85,12 @@ posix/signal.sig
 posix/signal.sml
 posix/proc-env.sig
 posix/proc-env.sml
-posix/process.sig
-posix/process.sml
 posix/file-sys.sig
 posix/file-sys.sml
 posix/io.sig
 posix/io.sml
+posix/process.sig
+posix/process.sml
 posix/sys-db.sig
 posix/sys-db.sml
 posix/tty.sig
