@@ -1,3 +1,5 @@
+(* This code is not working -- it is not even in sources.cm *)
+
 (* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
