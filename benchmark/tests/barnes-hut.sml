@@ -490,10 +490,10 @@ functor DataIO (S : SPACE) : DATA_IO =
    *)
     fun inputData fname = let
 	  val strm = TextIO.openIn fname
-	  val buf = ref(SS.all "")
+	  val buf = ref(SS.full "")
 	  fun getLn () = (case (TextIO.inputLine strm)
 		 of "" => raise Fail "inputData: EOF"
-		  | s => buf := SS.all s
+		  | s => buf := SS.full s
 		(* end case *))
 	  fun skipWS () = let
 		val buf' = SS.dropl Char.isSpace (!buf)
@@ -740,7 +740,7 @@ structure GetParam : sig
     fun getParam name = let
 	  fun scanBind [] = NONE
 	    | scanBind (s::r) = let
-		val (_, suffix) = SS.position name (SS.all s)
+		val (_, suffix) = SS.position name (SS.full s)
 		in
 		  if (SS.isEmpty suffix)
 		    then scanBind r

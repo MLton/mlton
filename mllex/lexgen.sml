@@ -1038,7 +1038,7 @@ fun makeaccept ends =
     let fun startline f = if f then say "  " else say "| "
 	 fun make(nil,f) = (startline f; say "_ => raise Internal.LexerError\n")
 	  | make((x,a)::y,f) = (startline f; say x; say " => ";
-				if Substring.size(#2 (Substring.position "yytext" (Substring.all a))) = 0
+				if Substring.size(#2 (Substring.position "yytext" (Substring.full a))) = 0
  then
                                      (say "("; say a; say ")")
                                 else (say "let val yytext=yymktext() in ";
