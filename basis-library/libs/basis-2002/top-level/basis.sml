@@ -150,6 +150,11 @@ structure Basis2002:> BASIS_2002 =
 (*
       structure Windows = Windows
 *)
+      structure WordArray = WordArray
+      structure WordArray2 = WordArray2
+      structure WordArraySlice = WordArraySlice
+      structure WordVector = WordVector
+      structure WordVectorSlice = WordVectorSlice
       structure Word16 = Word16
       structure Word16Array = Word16Array
       structure Word16Array2 = Word16Array2
@@ -162,11 +167,12 @@ structure Basis2002:> BASIS_2002 =
       structure Word32ArraySlice = Word32ArraySlice
       structure Word32Vector = Word32Vector
       structure Word32VectorSlice = Word32VectorSlice
-      structure WordArray = WordArray
-      structure WordArray2 = WordArray2
-      structure WordArraySlice = WordArraySlice
-      structure WordVector = WordVector
-      structure WordVectorSlice = WordVectorSlice
+      structure Word64 = Word64
+      structure Word64Array = Word64Array
+      structure Word64Array2 = Word64Array2
+      structure Word64ArraySlice = Word64ArraySlice
+      structure Word64Vector = Word64Vector
+      structure Word64VectorSlice = Word64VectorSlice
 
       open ArrayGlobal
 	   BoolGlobal

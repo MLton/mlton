@@ -121,6 +121,34 @@ structure Word32: WORD32_EXTRA =
       end
    end
 
+structure Word64: WORD =
+   struct
+      open Word64
+
+      structure W = Word64
+
+      val t32 = IntInf.pow (2, 32)
+      val t64 = IntInf.pow (2, 64)
+	 
+      fun toLargeInt w =
+	 IntInf.+ (Word32.toLargeInt (Word32.fromLarge w),
+		   IntInf.<< (Word32.toLargeInt (Word32.fromLarge (>> (w, 0w32))),
+			      0w32))
+
+      fun toLargeIntX w =
+	 if 0w0 = andb (w, << (0w1, 0w63))
+	    then toLargeInt w
+	 else IntInf.- (toLargeInt w, t64)
+
+      fun fromLargeInt (i: IntInf.int): word =
+	 let
+	    val (d, m) = IntInf.divMod (i, t32)
+	 in
+	    W.orb (W.<< (Word32.toLarge (Word32.fromLargeInt d), 0w32),
+		   Word32.toLarge (Word32.fromLargeInt m))
+	 end
+   end
+
 structure Word = Word32
-structure LargeWord = Word32
+structure LargeWord = Word64
 structure SysWord = Word32

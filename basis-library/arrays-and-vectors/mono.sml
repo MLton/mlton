@@ -148,6 +148,16 @@ in
    structure Word32ArraySlice = ArraySlice
    structure Word32Array2 = Array2
 end
+local
+   structure S = EqMono (type elem = Word64.word)
+   open S
+in
+   structure Word64Vector = Vector
+   structure Word64VectorSlice = VectorSlice
+   structure Word64Array = Array
+   structure Word64ArraySlice = ArraySlice
+   structure Word64Array2 = Array2
+end
 
 structure IntVector = Int32Vector
 structure IntVectorSlice = Int32VectorSlice
@@ -179,8 +189,8 @@ structure WordArray = Word32Array
 structure WordArraySlice = Word32ArraySlice
 structure WordArray2 = Word32Array2
 
-structure LargeWordVector = Word32Vector
-structure LargeWordVectorSlice = Word32VectorSlice
-structure LargeWordArray = Word32Array
-structure LargeWordArraySlice = Word32ArraySlice
-structure LargeWordArray2 = Word32Array2
+structure LargeWordVector = Word64Vector
+structure LargeWordVectorSlice = Word64VectorSlice
+structure LargeWordArray = Word64Array
+structure LargeWordArraySlice = Word64ArraySlice
+structure LargeWordArray2 = Word64Array2

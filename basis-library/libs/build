@@ -59,10 +59,7 @@ text/string.sml
 misc/C.sig
 misc/C.sml
 integer/word.sig
-integer/word.fun
-integer/word8.sml
-integer/word16.sml
-integer/word32.sml
+integer/word.sml
 integer/int-inf.sig
 integer/int-inf.sml
 real/IEEE-real.sig

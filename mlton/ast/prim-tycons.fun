@@ -88,9 +88,9 @@ val defaultWord = word WordSize.default
 local
    fun is l t = List.exists (l, fn t' => equals (t, t'))
 in
-   val isIntX = is [int8, int16, int32, int64, int8, intInf]
+   val isIntX = is [int8, int16, int32, int64, intInf]
    val isRealX = is [real32, real64]
-   val isWordX = is [word8, word16, word32]
+   val isWordX = is [word8, word16, word32, word64]
 end
 
 end

@@ -36,6 +36,7 @@ structure CFunction =
 	 val Int32 = Int I32
 	 val Int64 = Int I64
 	 val Word32 = Word W32
+	 val Word64 = Word W64
       end
 
       datatype z = datatype CType.t
@@ -127,6 +128,10 @@ structure CFunction =
       in
 	 val int64Equal = make "Int64_equal"
       end
+
+      val word64Equal = vanilla {args = Vector.new2 (Word64, Word64),
+				 name = "Word64_equal",
+				 return = SOME CType.defaultInt}
 
       val getPointer =
 	 vanilla {args = Vector.new1 Int32,
@@ -1365,6 +1370,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					       func = CFunction.weakNew}
 				     end,
 				     none)
+			       | Word_equal s =>
+				    if s = WordSize.W64
+				       then simpleCCall CFunction.word64Equal
+				    else normal ()
 			       | Word_toIntInf => cast ()
 			       | WordVector_toIntInf => cast ()
 			       | Word8Array_subWord => sub Type.defaultWord

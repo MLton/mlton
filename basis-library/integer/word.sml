@@ -5,9 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor Word (W: sig
-		   include PRE_WORD_EXTRA
-		end) : WORD_EXTRA =
+functor Word (W: PRE_WORD_EXTRA): WORD_EXTRA =
 struct
 
 open W
@@ -21,42 +19,37 @@ val toLargeIntX: word -> LargeInt.int = fn _ => raise Fail "toLargeIntX"
 val fromLargeInt: LargeInt.int -> word = fn _ => raise Fail "fromLargeInt"
 
 val wordSizeWord: Word.word = PW.fromInt wordSize
-val wordSizeMinusOneWord: Word.word = PW.fromInt (Int.-?(wordSize, 1))
+val wordSizeMinusOneWord: Word.word = PW.fromInt (Int.-? (wordSize, 1))
 val zero: word = fromInt 0
 val one: word = fromInt 1
-val highBit: word = <<(one, wordSizeMinusOneWord)
-val allOnes: word = ~>>(highBit, wordSizeMinusOneWord)
+val allOnes: word = notb zero
 
 val toLargeWord = toLarge
 val toLargeWordX = toLargeX
 val fromLargeWord = fromLarge
 
-val (toInt,toIntX) =
-  if detectOverflow andalso
-     Int.>=(wordSize, Int.precision')
-    then let
-           val max: word = fromInt (Int.maxInt')
-	   val shift: Word.word = PW.fromInt (Int.-?(Int.precision', 1))
-	 in
-	   (fn w => if w > max 
-		      then raise Overflow 
-		      else W.toInt w,
-	    fn w => let
-		      val w' = ~>>(w, shift)
-		    in
-		      if (w' = zero) orelse (w' = allOnes)
-			then W.toIntX w
-			else raise Overflow
-		    end)
-	 end
-    else (W.toInt, W.toIntX)
+fun toInt w =
+   if detectOverflow
+      andalso Int.>= (wordSize, Int.precision')
+      andalso w > fromInt Int.maxInt'
+      then raise Overflow
+   else W.toInt w
+		      
+fun toIntX w =
+  if detectOverflow
+     andalso Int.> (wordSize, Int.precision')
+     andalso fromInt Int.maxInt' < w
+     andalso w < fromInt Int.minInt'
+     then raise Overflow
+  else W.toIntX w
 
 local
    fun make f (w, w') =
       if Primitive.safe andalso w' = zero
 	 then raise Div
       else f (w, w')
-in val op div = make (op div)
+in
+   val op div = make (op div)
    val op mod = make (op mod)
 end
 
@@ -157,3 +150,11 @@ fun scan radix reader state =
 val fromString = StringCvt.scanString (scan StringCvt.HEX)
 
 end
+
+structure Word8 = Word (Primitive.Word8)
+structure Word16 = Word (Primitive.Word16)
+structure Word32 = Word (Primitive.Word32)
+structure Word64 = Word (Primitive.Word64)
+structure Word = Word32
+structure WordGlobal: WORD_GLOBAL = Word
+open WordGlobal

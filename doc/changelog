@@ -1,5 +1,8 @@
 Here are the changes since version 20030716.
 
+* 2003-09-10
+  - Word64 is now there.
+
 * 2003-09-09
   - Replaced Pack32{Big,Little} with PackWord32{Big,Little}.
   - Fixed bug in OS.FileSys.fullPath, which mistakenly stopped as soon

@@ -37,6 +37,7 @@ structure Int32 =
    struct
       type int = int32
    end
+structure Int = Int32
 structure Int64 =
    struct
       type int = int64
@@ -45,8 +46,10 @@ structure IntInf =
    struct
       type int = intInf
    end
+structure LargeInt = IntInf
 datatype list = datatype list
 type pointer = pointer (* C integer, not SML heap pointer *)
+
 structure Real32 =
    struct
       type real = real32
@@ -55,9 +58,12 @@ structure Real64 =
    struct
       type real = real64
    end
+structure Real = Real64
+
 datatype ref = datatype ref
 type preThread = preThread
 type thread = thread
+
 structure Word8 =
    struct
       type word = word8
@@ -70,16 +76,20 @@ structure Word32 =
    struct
       type word = word32
    end
+structure Word = Word32
+structure Word64 =
+   struct
+      type word = word64
+   end
+structure LargeWord = Word64
+
 type 'a vector = 'a vector
 type 'a weak = 'a weak
 type string = char vector
 type nullString = string
 
-structure Int = Int32
 type int = Int.int
-structure Real = Real64
 type real = Real.real
-structure Word = Word32
 type word = Word.word
 
 exception Bind = Bind
@@ -1155,20 +1165,21 @@ structure Primitive =
 
       structure Word8 =
 	 struct
-	    type word = word8
+	    open Word8
+	       
 	    val wordSize: int = 8
 
 	    val + = _prim "Word8_add": word * word -> word;
 	    val addCheck = _prim "Word8_addCheck": word * word -> word;
 	    val andb = _prim "Word8_andb": word * word -> word;
-	    val ~>> = _prim "Word8_arshift": word * word32 -> word;
+	    val ~>> = _prim "Word8_arshift": word * Word.word -> word;
 	    val div = _prim "Word8_div": word * word -> word;
 	    val fromInt = _prim "Int32_toWord8": int -> word;
-	    val fromLarge = _prim "Word32_toWord8": word32 -> word;
+	    val fromLarge = _import "Word64_toWord8": LargeWord.word -> word;
 	    val >= = _prim "Word8_ge": word * word -> bool;
 	    val > = _prim "Word8_gt" : word * word -> bool;
 	    val <= = _prim "Word8_le": word * word -> bool;
-	    val << = _prim "Word8_lshift": word * word32 -> word;
+	    val << = _prim "Word8_lshift": word * Word.word -> word;
 	    val < = _prim "Word8_lt" : word * word -> bool;
 	    val mod = _prim "Word8_mod": word * word -> word;
 	    val * = _prim "Word8_mul": word * word -> word;
@@ -1176,15 +1187,15 @@ structure Primitive =
 	    val ~ = _prim "Word8_neg": word -> word;
 	    val notb = _prim "Word8_notb": word -> word;
 	    val orb = _prim "Word8_orb": word * word -> word;
-	    val rol = _prim "Word8_rol": word * word32 -> word;
-	    val ror = _prim "Word8_ror": word * word32 -> word;
-	    val >> = _prim "Word8_rshift": word * word32 -> word;
+	    val rol = _prim "Word8_rol": word * Word.word -> word;
+	    val ror = _prim "Word8_ror": word * Word.word -> word;
+	    val >> = _prim "Word8_rshift": word * Word.word -> word;
 	    val - = _prim "Word8_sub": word * word -> word;
 	    val toChar = _prim "Word8_toChar": word -> char;
 	    val toInt = _prim "Word8_toInt32": word -> int;
 	    val toIntX = _prim "Word8_toInt32X": word -> int;
-	    val toLarge = _prim "Word8_toWord32": word -> word32;
-	    val toLargeX = _prim "Word8_toWord32X": word -> word32;
+	    val toLarge = _import "Word8_toWord64": word -> LargeWord.word;
+	    val toLargeX = _import "Word8_toWord64X": word -> LargeWord.word;
 	    val xorb = _prim "Word8_xorb": word * word -> word;
 	 end
 
@@ -1210,20 +1221,21 @@ structure Primitive =
 
       structure Word16 =
 	 struct
-	    type word = word16
+	    open Word16
+	       
 	    val wordSize: int = 16
 
 	    val + = _prim "Word16_add": word * word -> word;
 	    val addCheck = _prim "Word16_addCheck": word * word -> word;
 	    val andb = _prim "Word16_andb": word * word -> word;
-	    val ~>> = _prim "Word16_arshift": word * word32 -> word;
+	    val ~>> = _prim "Word16_arshift": word * Word.word -> word;
 	    val div = _prim "Word16_div": word * word -> word;
 	    val fromInt = _prim "Int32_toWord16": int -> word;
-	    val fromLarge = _prim "Word32_toWord16": word32 -> word;
+	    val fromLarge = _import "Word64_toWord16": LargeWord.word -> word;
 	    val >= = _prim "Word16_ge": word * word -> bool;
 	    val > = _prim "Word16_gt" : word * word -> bool;
 	    val <= = _prim "Word16_le": word * word -> bool;
-	    val << = _prim "Word16_lshift": word * word32 -> word;
+	    val << = _prim "Word16_lshift": word * Word.word -> word;
 	    val < = _prim "Word16_lt" : word * word -> bool;
 	    val mod = _prim "Word16_mod": word * word -> word;
 	    val * = _prim "Word16_mul": word * word -> word;
@@ -1231,14 +1243,14 @@ structure Primitive =
 	    val ~ = _prim "Word16_neg": word -> word;
 	    val notb = _prim "Word16_notb": word -> word;
 	    val orb = _prim "Word16_orb": word * word -> word;
-	    val rol = _prim "Word16_rol": word * word32 -> word;
-	    val ror = _prim "Word16_ror": word * word32 -> word;
-	    val >> = _prim "Word16_rshift": word * word32 -> word;
+	    val rol = _prim "Word16_rol": word * Word.word -> word;
+	    val ror = _prim "Word16_ror": word * Word.word -> word;
+	    val >> = _prim "Word16_rshift": word * Word.word -> word;
 	    val - = _prim "Word16_sub": word * word -> word;
 	    val toInt = _prim "Word16_toInt32": word -> int;
 	    val toIntX = _prim "Word16_toInt32X": word -> int;
-	    val toLarge = _prim "Word16_toWord32": word -> word32;
-	    val toLargeX = _prim "Word16_toWord32X": word -> word32;
+	    val toLarge = _import "Word16_toWord64": word -> LargeWord.word;
+	    val toLargeX = _import "Word16_toWord64X": word -> LargeWord.word;
 	    val xorb = _prim "Word16_xorb": word * word -> word;
 	 end
 
@@ -1253,7 +1265,7 @@ structure Primitive =
 	    val ~>> = _prim "Word32_arshift": word * word -> word;
 	    val div = _prim "Word32_div": word * word -> word;
 	    val fromInt = _prim "Int32_toWord32": int -> word;
-	    val fromLarge : word -> word = fn x => x
+	    val fromLarge = _import "Word64_toWord32": LargeWord.word -> word;
 	    val >= = _prim "Word32_ge": word * word -> bool;
 	    val > = _prim "Word32_gt" : word * word -> bool;
 	    val <= = _prim "Word32_le": word * word -> bool;
@@ -1271,12 +1283,47 @@ structure Primitive =
 	    val - = _prim "Word32_sub": word * word -> word;
 	    val toInt = _prim "Word32_toInt32": word -> int;
 	    val toIntX = _prim "Word32_toInt32X": word -> int;
-	    val toLarge : word -> word = fn x => x
-	    val toLargeX : word -> word = fn x => x
+	    val toLarge = _import "Word32_toWord64": word -> LargeWord.word;
+	    val toLargeX = _import "Word32_toWord64X": word -> LargeWord.word;
 	    val xorb = _prim "Word32_xorb": word * word -> word;
 	 end
       structure Word = Word32
+      structure Word64 =
+	 struct
+	    open Word64
+	       
+	    val wordSize: int = 64
 
+	    val + = _import "Word64_add": word * word -> word;
+(*	    val addCheck = _import "Word64_addCheck": word * word -> word; *)
+	    val andb = _import "Word64_andb": word * word -> word;
+	    val ~>> = _import "Word64_arshift": word * Word.word -> word;
+	    val div = _import "Word64_div": word * word -> word;
+	    val fromInt = _import "Int32_toWord64": int -> word;
+	    val fromLarge: LargeWord.word -> word = fn x => x
+	    val >= = _import "Word64_ge": word * word -> bool;
+	    val > = _import "Word64_gt" : word * word -> bool;
+	    val <= = _import "Word64_le": word * word -> bool;
+	    val << = _import "Word64_lshift": word * Word.word -> word;
+	    val < = _import "Word64_lt" : word * word -> bool;
+	    val mod = _import "Word64_mod": word * word -> word;
+	    val * = _import "Word64_mul": word * word -> word;
+(*	    val mulCheck = _import "Word64_mulCheck": word * word -> word; *)
+	    val ~ = _import "Word64_neg": word -> word;
+	    val notb = _import "Word64_notb": word -> word;
+	    val orb = _import "Word64_orb": word * word -> word;
+	    val rol = _import "Word64_rol": word * Word.word -> word;
+	    val ror = _import "Word64_ror": word * Word.word -> word;
+	    val >> = _import "Word64_rshift": word * Word.word -> word;
+	    val - = _import "Word64_sub": word * word -> word;
+	    val toInt = _import "Word64_toInt32": word -> int;
+	    val toIntX = _import "Word64_toInt32X": word -> int;
+	    val toLarge: word -> LargeWord.word = fn x => x
+	    val toLargeX: word -> LargeWord.word = fn x => x
+	    val xorb = _import "Word64_xorb": word * word -> word;
+	 end
+      structure LargeWord = Word64
+	 
       structure World =
 	 struct
 	    val isOriginal = _import "World_isOriginal": unit -> bool;

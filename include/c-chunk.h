@@ -239,7 +239,7 @@ extern struct GC_state gcState;
 #define Word8_max (Word8)0xFF
 #define Word16_max (Word16)0xFFFF
 #define Word32_max (Word32)0xFFFFFFFF
-#define Word64_max (Word64)0xFFFFFFFFFFFFFFFF
+//#define Word64_max (Word64)0xFFFFFFFFFFFFFFFF
 
 #define Int_addCheckXC(size, dst, x, c, l)		\
 	do {						\
@@ -319,16 +319,16 @@ extern struct GC_state gcState;
 #define Word8_addCheckXC(dst, x, c, l) Word_addCheckXC(8, dst, x, c, l)
 #define Word16_addCheckXC(dst, x, c, l) Word_addCheckXC(16, dst, x, c, l)
 #define Word32_addCheckXC(dst, x, c, l) Word_addCheckXC(32, dst, x, c, l)
-#define Word64_addCheckXC(dst, x, c, l) Word_addCheckXC(64, dst, x, c, l)
+//#define Word64_addCheckXC(dst, x, c, l) Word_addCheckXC(64, dst, x, c, l)
 #define Word8_addCheckCX(dst, c, x, l) Word_addCheckXC(8, dst, x, c, l)
 #define Word16_addCheckCX(dst, c, x, l) Word_addCheckXC(16, dst, x, c, l)
 #define Word32_addCheckCX(dst, c, x, l) Word_addCheckXC(32, dst, x, c, l)
-#define Word64_addCheckCX(dst, c, x, l) Word_addCheckXC(64, dst, x, c, l)
+//#define Word64_addCheckCX(dst, c, x, l) Word_addCheckXC(64, dst, x, c, l)
 
 #define Word8_addCheck Word8_addCheckXC
 #define Word16_addCheck Word16_addCheckXC
 #define Word32_addCheck Word32_addCheckXC
-#define Word64_addCheck Word64_addCheckXC
+//#define Word64_addCheck Word64_addCheckXC
 
 #define mulOverflow(kind, small, large)						\
 	static inline kind##small kind##small##_##mulOverflow			\
@@ -379,8 +379,8 @@ mulOverflow(Word, 32, 64)
 	check (dst, n1, n2, l, Word16_mulOverflow)
 #define Word32_mulCheck(dst, n1, n2, l)			\
 	check (dst, n1, n2, l, Word32_mulOverflow)
-#define Word64_mulCheck(dst, n1, n2, l)			\
-	fprintf (stderr, "FIXME: Word64_mulCheck\n");
+//#define Word64_mulCheck(dst, n1, n2, l)			\
+//	fprintf (stderr, "FIXME: Word64_mulCheck\n");
 
 #endif /* INT_TEST */
 
@@ -595,7 +595,7 @@ static inline void Real64_store (Real64 *dp, Real64 d) {
 wordOps(8)
 wordOps(16)
 wordOps(32)
-wordOps(64)
+//wordOps(64)
 #undef wordBinary wordCmp wordShift wordUnary
 
 #define coerce(f, t)				\

@@ -34,6 +34,7 @@ OBJS =						\
 	basis/Int/Int64.o			\
 	basis/Int/Word8Array.o			\
 	basis/Int/Word8Vector.o			\
+	basis/Int/Word64.o			\
 	basis/Int/addOverflow.o			\
 	basis/Int/mulOverflow.o			\
 	basis/Int/negOverflow.o			\
@@ -201,6 +202,7 @@ DEBUG_OBJS =					\
 	basis/Int/Int64-gdb.o			\
 	basis/Int/Word8Array-gdb.o		\
 	basis/Int/Word8Vector-gdb.o		\
+	basis/Int/Word64-gdb.o			\
 	basis/Int/addOverflow-gdb.o		\
 	basis/Int/mulOverflow-gdb.o		\
 	basis/Int/negOverflow-gdb.o		\

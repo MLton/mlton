@@ -9,7 +9,7 @@
 (*
  *     * int  = {Int.int, Int8.int, Int16.int, Int32.int, Int64.int, 
  *               IntInf.int, LargeInt.int, FixedInt.int, Position.int}
- *     * word = {Word.word, Word8.word, Word16.word, Word32.word, 
+ *     * word = {Word.word, Word8.word, Word16.word, Word32.word, Word64.word,
  *               LargeWord.word, SysWord.word}
  *     * real = {Real.real, Real32.real, Real.64.real,
  *               LargeReal.real}
@@ -34,6 +34,7 @@
  * and Word8.f
  * and Word16.f
  * and Word32.f
+ * and Word64.f
  * and LargeWord.f
  * and SysWord.f
  * and Real.f
@@ -56,6 +57,7 @@
  * and Word8.f
  * and Word16.f
  * and Word32.f
+ * and Word64.f
  * and LargeWord.f
  * and SysWord.f
  * 
@@ -90,6 +92,7 @@
  * and Word8.f
  * and Word16.f
  * and Word32.f
+ * and Word64.f
  * and LargeWord.f
  * and SysWord.f
  * and Real.f
@@ -114,6 +117,7 @@ and Word.~
 and Word8.~
 and Word16.~
 and Word32.~
+and Word64.~
 and LargeWord.~
 and SysWord.~
 and Real.~
@@ -135,6 +139,7 @@ and Word.+
 and Word8.+
 and Word16.+
 and Word32.+
+and Word64.+
 and LargeWord.+
 and SysWord.+
 and Real.+
@@ -156,6 +161,7 @@ and Word.-
 and Word8.-
 and Word16.-
 and Word32.-
+and Word64.-
 and LargeWord.-
 and SysWord.-
 and Real.-
@@ -177,6 +183,7 @@ and Word.*
 and Word8.*
 and Word16.*
 and Word32.*
+and Word64.*
 and LargeWord.*
 and SysWord.*
 and Real.*
@@ -213,6 +220,7 @@ and Word.div
 and Word8.div
 and Word16.div
 and Word32.div
+and Word64.div
 and LargeWord.div
 and SysWord.div
 
@@ -230,6 +238,7 @@ and Word.mod
 and Word8.mod
 and Word16.mod
 and Word32.mod
+and Word64.mod
 and LargeWord.mod
 and SysWord.mod
 
@@ -262,6 +271,7 @@ and Word.<
 and Word8.<
 and Word16.<
 and Word32.<
+and Word64.<
 and LargeWord.<
 and SysWord.<
 and Real.<
@@ -285,6 +295,7 @@ and Word.<=
 and Word8.<=
 and Word16.<=
 and Word32.<=
+and Word64.<=
 and LargeWord.<=
 and SysWord.<=
 and Real.<=
@@ -308,6 +319,7 @@ and Word.>
 and Word8.>
 and Word16.>
 and Word32.>
+and Word64.>
 and LargeWord.>
 and SysWord.>
 and Real.>
@@ -331,6 +343,7 @@ and Word.>=
 and Word8.>=
 and Word16.>=
 and Word32.>=
+and Word64.>=
 and LargeWord.>=
 and SysWord.>=
 and Real.>=

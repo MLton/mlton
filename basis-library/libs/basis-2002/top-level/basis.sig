@@ -231,6 +231,11 @@ signature BASIS_2002 =
 (*
       structure Windows : WINDOWS
 *)
+      structure WordArray : MONO_ARRAY
+      structure WordArray2 : MONO_ARRAY2
+      structure WordArraySlice : MONO_ARRAY_SLICE
+      structure WordVector : MONO_VECTOR
+      structure WordVectorSlice : MONO_VECTOR_SLICE
       structure Word16 : WORD
       structure Word16Array : MONO_ARRAY
       structure Word16Array2 : MONO_ARRAY2
@@ -243,11 +248,12 @@ signature BASIS_2002 =
       structure Word32ArraySlice : MONO_ARRAY_SLICE
       structure Word32Vector : MONO_VECTOR
       structure Word32VectorSlice : MONO_VECTOR_SLICE
-      structure WordArray : MONO_ARRAY
-      structure WordArray2 : MONO_ARRAY2
-      structure WordArraySlice : MONO_ARRAY_SLICE
-      structure WordVector : MONO_VECTOR
-      structure WordVectorSlice : MONO_VECTOR_SLICE
+      structure Word64 : WORD
+      structure Word64Array : MONO_ARRAY
+      structure Word64Array2 : MONO_ARRAY2
+      structure Word64ArraySlice : MONO_ARRAY_SLICE
+      structure Word64Vector : MONO_VECTOR
+      structure Word64VectorSlice : MONO_VECTOR_SLICE
 
       (* ************************************************** *)
       (* ************************************************** *)

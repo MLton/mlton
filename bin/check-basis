@@ -130,6 +130,7 @@ cat >>$basis <<-EOF
           type word8 = Word8.word
 	  type word16 = Word32.word
           type word32 = Word32.word
+	  type word64 = Word32.word
           type 'a vector = 'a vector
           
           datatype 'a option = T
