@@ -105,6 +105,16 @@ signature DIRECTED_GRAPH =
       val newNode: t -> Node.t
       val nodes: t -> Node.t list
       val numNodes: t -> int
+      (* quotient (g, v)
+       * Pre: v should be an equivalence relation on the nodes of g.  That is,
+       *   each node in g should appear exactly once in some vector in v.
+       * The result is a graph with one node per equivalence class, and an edge
+       * between classes iff there is an edge between nodes in the classes.
+       *)
+      val quotient:
+	 t * (Node.t vector vector)
+	 -> t * {destroy: unit -> unit,
+		 newNode: Node.t -> Node.t}
       (* Strongly-connected components.
        * Each component is given as a list of nodes.
        * The components are returned topologically sorted.

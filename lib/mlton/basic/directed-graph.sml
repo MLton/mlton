@@ -933,6 +933,62 @@ fun loopForestSteensgaard (g: t, {root: Node.t}): LoopForest.t =
       treeFor g
    end
 
+fun quotient (g, vs) =
+   let
+      val numClasses = Vector.length vs
+      val {destroy, get = nodeClass: Node.t -> int, set = setNodeClass, ...} =
+	 Property.destGetSetOnce (Node.plist,
+				  Property.initRaise ("newNode", Node.layout))
+      val g' = new ()
+      val newNodes =
+	 Vector.mapi (vs, fn (i, v) =>
+		      let
+			 val n' = newNode g'
+			 val _ =
+			    Vector.foreach (v, fn n => setNodeClass (n, i))
+		      in
+			 n'
+		      end)
+      val successors = Array.array (numClasses, [])
+      val _ =
+	 foreachNode
+	 (g, fn n =>
+	  let
+	     val class = nodeClass n
+	  in
+	     Array.update
+	     (successors, class,
+	      List.fold (Node.successors n,
+			 Array.sub (successors, class),
+			 fn (e, ac) => nodeClass (Edge.to e) :: ac))
+	  end)
+      (* Eliminate duplicates from successor lists and add the graph edges. *)
+      val hasIt = Array.array (numClasses, false)
+      val _ =
+	 Array.foreachi
+	 (successors, fn (i, cs) =>
+	  let
+	     val from = Vector.sub (newNodes, i)
+	     val _ =
+		List.foreach
+		(cs, fn c =>
+		 if Array.sub (hasIt, c)
+		    then ()
+		 else (Array.update (hasIt, c, true)
+		       ; addEdge (g', {from = from,
+				       to = Vector.sub (newNodes, c)})
+		       ; ()))
+	     val _ =
+		List.foreach (cs, fn c => Array.update (hasIt, c, false))
+	  in
+	     ()
+	  end)
+      fun newNode n = Vector.sub (newNodes, nodeClass n)
+   in
+      (g', {destroy = destroy,
+	    newNode = newNode})
+   end
+
 fun subgraph (g: t, keep: Node.t -> bool) =
    let
       val sub = new ()
