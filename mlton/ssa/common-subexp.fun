@@ -90,6 +90,14 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
       (* Keep a hash table of canonicalized Exps that are in scope. *)
       val table: {hash: word, exp: Exp.t, var: Var.t} HashSet.t =
 	 HashSet.new {hash = #hash}
+      fun lookup (var, exp, hash) =
+	 HashSet.lookupOrInsert
+	 (table, hash, 
+	  fn {exp = exp', ...} => Exp.equals (exp, exp'),
+	  fn () => {exp = exp,
+		    hash = hash,
+		    var = var})
+	 
       (* All of the globals are in scope, and never go out of scope. *)
       (* The hash-cons'ing of globals in ConstantPropagation ensures
        *  that each global is unique.
@@ -101,13 +109,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 	    => let
 		 val exp = canon exp
 		 val hash = Exp.hash exp
-		 val {var = var', ...}
-		   = HashSet.lookupOrInsert
-		     (table, hash, 
-		      fn {exp = exp', ...} => Exp.equals (exp, exp'),
-		      fn () => {exp = exp,
-				hash = hash,
-				var = valOf var})
+		 val _ = lookup (valOf var, exp, Exp.hash exp)
 	       in
 		 ()
 	       end)
@@ -125,16 +127,10 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 		          (!success, fn exp =>
 			   let
 			      val hash = Exp.hash exp
-			      val var = #1 (Vector.sub(args, 0))
-			      val {var = var', ...} = 
-				 HashSet.lookupOrInsert
-				 (table, hash, 
-				  fn {exp = exp', ...} => Exp.equals (exp, exp'),
-				  fn () => {exp = exp,
-					    hash = hash,
-					    var = var})
-			      val _ = if Var.equals(var, var')
-					 then List.push(removes, (var, hash))
+			      val var = #1 (Vector.sub (args, 0))
+			      val {var = var', ...} = lookup (var, exp, hash)
+			      val _ = if Var.equals (var, var')
+					 then List.push (removes, (var, hash))
 				      else ()
 			   in
 			      ()
@@ -144,19 +140,12 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 			   let
 			      val hash = Exp.hash exp
 			      val var = Var.newNoname ()
-			      val {var = var', ...} = 
-				 HashSet.lookupOrInsert
-				 (table, hash, 
-				  fn {exp = exp', ...} => Exp.equals (exp, exp'),
-				  fn () => {exp = exp,
-					    hash = hash,
-					    var = var})
-			      val _ = if Var.equals(var, var')
-					 then (setFailureVar(var, true) 
-					       ; List.push(removes, (var, hash)))
-				      else ()
+			      val {var = var', ...} = lookup (var, exp, hash)
 			   in
-			      ()
+			      if Var.equals (var, var')
+				 then (setFailureVar (var, true) 
+				       ; List.push (removes, (var, hash)))
+			      else ()
 			   end)
 
 		  val statements =
@@ -173,22 +162,17 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 			    NONE => keep ()
 			  | SOME var => 
 			       let
-				  fun replace var' = (setReplace (var, SOME var');
-						      NONE)
-				  fun lookup () =
+				  fun replace var' =
+				     (setReplace (var, SOME var'); NONE)
+				  fun doit () =
 				     let
 				        val hash = Exp.hash exp
 					val {var = var', ...} =
-					   HashSet.lookupOrInsert
-					   (table, hash, fn {exp = exp', ...} =>
-					    Exp.equals (exp, exp'),
-					    fn () => {exp = exp,
-						      hash = hash,
-						      var = var})
+					   lookup (var, exp, hash)
 				     in
 				        if Var.equals (var, var')
-					  then (List.push(removes, (var, hash));
-						keep ())
+					  then (List.push (removes, (var, hash))
+						; keep ())
 					  else replace var'
 				     end
 			       in
@@ -208,7 +192,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 					       | SOME var' => knownLength var'
 					   fun length () =
 					      case getLength (arg ()) of
-						 NONE => lookup ()
+						 NONE => doit ()
 					       | SOME var' => replace var'
 					   datatype z = datatype Prim.Name.t
 					in
@@ -223,11 +207,10 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 					    | String_size => length ()
 					    | Vector_length => length ()
 					    | _ => if Prim.isFunctional prim
-						      orelse Prim.mayOverflow prim
-						      then lookup ()
+						      then doit ()
 						   else keep ()
 					end
-				   | _ => lookup ()
+				   | _ => doit ()
 			       end
 		      end)
 		  val transfer = Transfer.replaceVar (transfer, canonVar)
