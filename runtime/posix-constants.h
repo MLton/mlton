@@ -77,22 +77,12 @@
 #define Posix_FileSys_S_ifchr S_IFCHR
 #define Posix_FileSys_S_ififo S_IFIFO
 
-/* Cygwin/Windows distinguish between text and binary files, but Linux,
- * FreeBSD, NetBSD, and Solaris do not.
- */
-#if (defined (__CYGWIN__))
-
-/* Nothing. */
-
-#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
-
+#ifndef O_BINARY
 #define O_BINARY 0
+#endif
+
+#ifndef O_TEXT
 #define O_TEXT 0
-
-#else 
-
-#error May need to define O_BINARY and O_TEXT on platform.
-
 #endif
 
 #define Posix_FileSys_O_append O_APPEND
@@ -101,12 +91,10 @@
 #define Posix_FileSys_O_excl O_EXCL
 #define Posix_FileSys_O_noctty O_NOCTTY
 #define Posix_FileSys_O_nonblock O_NONBLOCK
-#if (defined (__CYGWIN__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
+#if (defined (O_SYNC))
 #define Posix_FileSys_O_sync O_SYNC
-#elif (defined (__FreeBSD__))
-#define Posix_FileSys_O_sync 0
 #else
-#error Posix_FileSys_O_sync not defined
+#define Posix_FileSys_O_sync 0
 #endif
 #define Posix_FileSys_O_text O_TEXT
 #define Posix_FileSys_O_trunc O_TRUNC
@@ -143,19 +131,24 @@
 #define Posix_FileSys_PATH_MAX _PC_PATH_MAX
 #define Posix_FileSys_PIPE_BUF _PC_PIPE_BUF
 #define Posix_FileSys_VDISABLE _PC_VDISABLE
-#define Posix_FileSys_SYNC_IO _PC_SYNC_IO
 
-#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__linux__) || defined (__sun__))
+#if (defined (_PC_SYNC_IO))
+#define Posix_FileSys_SYNC_IO _PC_SYNC_IO
+#else
+#define Posix_FileSys_SYNC_IO 0
+#endif
+
+#if (defined (_PC_ASYNC_IO))
 #define Posix_FileSys_ASYNC_IO _PC_ASYNC_IO
-#define Posix_FileSys_PRIO_IO _PC_PRIO_IO
-#elif (defined (__NetBSD__))
-/* NetBSD does not define these constants in version 1.6.1, so we
- * define them here.
- */
+#else
 #define Posix_FileSys_ASYNC_IO 0
 #define Posix_FileSys_PRIO_IO 0
+#endif
+
+#if (defined (_PC_PRIO_IO))
+#define Posix_FileSys_PRIO_IO _PC_PRIO_IO
 #else
-#error Posix_FileSys_{ASYNC,PRIO}_IO undefined
+#define Posix_FileSys_PRIO_IO 0
 #endif
 
 #define Posix_IO_F_DUPFD F_DUPFD
@@ -249,9 +242,9 @@ enum {
 #define Posix_Signal_vtalrm SIGVTALRM
 
 #define Posix_Signal_block SIG_BLOCK
-#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__NetBSD__) || defined (__sun__))
+#if (defined (NSIG))
 #define Posix_Signal_numSignals NSIG
-#elif (defined (__linux__))
+#elif (defined (_NSIG))
 #define Posix_Signal_numSignals _NSIG
 #else
 #error Posix_Signal_numSignals not defined
