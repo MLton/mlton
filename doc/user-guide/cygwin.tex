@@ -24,11 +24,6 @@ Posix.Process.fork} is disabled.  Any use of {\tt fork} will raise
 you can instead use the {\tt MLton.Process.spawn} family of functions, which
 work on both Cygwin and Linux.
 
-\item There are problems with {\tt mmap}ing large amounts of memory that may
-cause programs with large heaps to fail.  Hopefully, the runtime will produce a
-valid error message (``out of memor'') in this case, but, unfortunately, I have
-seen segfaults as well.
-
 \item I have seen some strangeness in Cygwin's emulation of signals and
 signal handlers, but have not been able to pin it down.
 
