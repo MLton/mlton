@@ -115,8 +115,8 @@ val options =
        (Expert, "keep-pass", " pass", "keep the results of pass",
 	SpaceString (fn s => List.push (keepPasses, s))),
        (Normal, "l", "library", "link with library", push libs),
-       (Expert, "limit-check-per-block", " {true|false}",
-	" force limit checks at each block",
+       (Expert, "limit-check-per-block", " {false|true}",
+	"force limit checks at each block",
 	boolRef limitCheckPerBlock),
        (Expert, "loop-passes", " n", "loop optimization passes (1)",
 	Int 
