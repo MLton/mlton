@@ -1254,8 +1254,8 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 	 in
 	    Control.error
 	    (region,
-	     seq [str (concat [name, " "]), l,
-		  str " in ", str sign, str " but not in structure"],
+	     seq [str (concat [name, " in ", sign, " but not in structure: "]),
+		  l],
 	     empty)
 	 end
       (* pre: arities are equal. *)
@@ -1297,7 +1297,8 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 						  Scheme.layout s'],
 	  Unit.layout)
 	 equalSchemes
-      fun checkCons (Cons.T v, Cons.T v', strids): unit =
+      fun checkCons (Cons.T v, Cons.T v', strids: Strid.t list,
+		     layoutTycon: unit -> Layout.t): unit =
 	 let
 	    fun lay (c: Ast.Con.t) =
 	       Longcon.layout (Longcon.long (rev strids, c))
@@ -1327,7 +1328,10 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 		  in
 		     Control.error
 		     (region,
-		      seq [str (concat ["constructors in ", name, " only: "]),
+		      seq [str "type ",
+			   layoutTycon (),
+			   str (concat [" has constructors in ", name,
+					" only: "]),
 			   seq (List.separate (Vector.toListMap (v, lay),
 					       str ", "))],
 		      empty)
@@ -1386,7 +1390,6 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 		in
 		   typeStr
 		end)
-	 
       val {destroy,
 	   get: Structure.t -> (Interface.t * Structure.t) list ref,
 	   ...} =
@@ -1449,8 +1452,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 			   val k' = TypeStr.kind typeStr'
 			   fun typeStrScheme (s: TypeStr.t) =
 			      case TypeStr.node s of
-				 Datatype {tycon, ...} =>
-				    tyconScheme tycon
+				 Datatype {tycon, ...} => tyconScheme tycon
 			       | Scheme s => s
 			       | Tycon c' => tyconScheme c'
 			   val typeStr =
@@ -1473,8 +1475,8 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 				    Datatype {cons = c, ...} =>
 				       (case TypeStr.node typeStr' of
 					   Datatype {cons = c', ...} =>
-					      (checkCons (c', c,
-							  strids)
+					      (checkCons (c', c, strids,
+							  layoutName)
 					       ; typeStr')
 					 | _ =>
 					      let
