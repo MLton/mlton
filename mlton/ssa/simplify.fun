@@ -39,6 +39,7 @@ val passes =
      * pass that only looks at main -- hence want as much in main as possible.
      *)
      ("contify1", Contify.contify),
+     ("removeUnusedX1", RemoveUnused.remove),
      ("localFlatten1", LocalFlatten.flatten),
     (* constantPropagation cannot be omitted. It implements Array_array0. *)
 (*    ("constantPropagation", ConstantPropagation.simplify), *)
@@ -56,15 +57,20 @@ val passes =
      *)
 (*    ("polyEqual", PolyEqual.polyEqual), *)
      ("contify2", Contify.contify),
+     ("removeUnusedX2", RemoveUnused.remove),
 (*    ("inline", Inline.inline), *)
      ("localFlatten2", LocalFlatten.flatten),
      ("removeUnused3", RemoveUnused.remove),
      ("contify3", Contify.contify),
+     ("removeUnusedX3", RemoveUnused.remove),
      ("introduceLoops", IntroduceLoops.introduceLoops),
+     ("removeUnusedX4", RemoveUnused.remove),
 (*    ("loopInvariant", LoopInvariant.loopInvariant), *)
 (*    ("flatten", Flatten.flatten), *)
      ("localFlatten3", LocalFlatten.flatten),
+     ("removeUnusedX5", RemoveUnused.remove),
      ("commonSubexp", CommonSubexp.eliminate),
+     ("removeUnusedX5", RemoveUnused.remove),
      ("commonBlock", CommonBlock.eliminate),
 (*    ("redundantTests", RedundantTests.simplify), *)
 (*    ("redundant", Redundant.redundant), *)
