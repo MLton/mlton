@@ -219,10 +219,10 @@ local
    exception TypeError
 in
    fun error (msg, lay) =
-      (print ("Type error: " ^ msg ^ "\n") ;
-       Layout.output (lay, out) ;
-       print "\n" ;
-       raise TypeError)
+      (print (concat ["Type error: ", msg, "\n"])
+       ; Layout.output (lay, out)
+       ; print "\n"
+       ; raise TypeError)
 end
 
 local
