@@ -2890,6 +2890,12 @@ struct
 	= tracer
 	  "copyPropagate"
 	  copyPropagate
+
+      val copyPropagate =
+	 fn arg as {block as LivenessBlock.T {statements, ...}, ...} =>
+	 if List.length statements <= !Control.Native.copyPropCutoff
+	    then copyPropagate arg
+	 else {block = block, changed = false}
     end
 
   structure PeepholeLivenessBlock =

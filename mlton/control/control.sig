@@ -173,6 +173,9 @@ signature CONTROL =
 	       
 	    (* whether or not to use copy propagation in native codegen *)
 	    val copyProp: bool ref
+
+	    (* Don't use copy propagation on blocks larger than this. *)
+	    val copyPropCutoff: int ref
 	       
 	    (* live transfer cutoff distance *)
 	    val cutoff: int ref 

@@ -330,6 +330,10 @@ structure Native =
 			      default = true,
 			      toString = Bool.toString}
 
+      val copyPropCutoff = control {name = "native copy prop cutoff",
+				    default = 1000,
+				    toString = Int.toString}
+
       val cutoff = control {name = "native cutoff",
 			    default = 100,
 			    toString = Int.toString}
