@@ -76,6 +76,7 @@ structure Basis1997: BASIS_1997 =
 
       structure Pack32Big = PackWord32Big
       structure Pack32Little = PackWord32Little
+      local open Pack32Big Pack32Little in end (* quell unused warning *)
 
       structure Text = TextConvert(structure Text = Text)
       structure Char = Text.Char
