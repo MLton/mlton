@@ -22,9 +22,9 @@ signature TYPE =
       include TYPE_OPS where type tycon = Tycon.t
 	    
       datatype t' =
-	 Var of Tyvar.t
-       | Con of Tycon.t * t' vector
+	 Con of Tycon.t * t' vector
        | Record of t' Record.t
+       | Var of Tyvar.t
       sharing type t = t'
 	 
       val hom: {ty: t,
