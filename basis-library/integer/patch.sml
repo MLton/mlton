@@ -15,23 +15,25 @@ structure Int32: INTEGER_EXTRA =
       val fromLarge = IntInf.toInt
       val toLarge = IntInf.fromInt
    end
-structure Int = Int32
-structure Position = Int
-structure FixedInt = Int
 structure Int16: INTEGER_EXTRA =
    struct
       open Int16
        
-      val fromLarge = fromInt o Int.fromLarge
-      val toLarge = Int.toLarge o toInt
+      val fromLarge = fromInt o Int32fromLarge
+      val toLarge = Int32toLarge o toInt
    end
 structure Int8: INTEGER_EXTRA =
    struct
       open Int8
        
-      val fromLarge = fromInt o Int.fromLarge
-      val toLarge = Int.toLarge o toInt
+      val fromLarge = fromInt o Int32fromLarge
+      val toLarge = Int32toLarge o toInt
    end
+
+structure Int = Int32
+structure Position = Int
+structure FixedInt = Int
+
 
 structure Word8: WORD_EXTRA =
    struct
@@ -40,8 +42,19 @@ structure Word8: WORD_EXTRA =
       val toLargeIntX = IntInf.fromInt o toIntX
       val toLargeInt = IntInf.fromInt o toInt
 
-     fun fromLargeInt (i: IntInf.int): word =
-	fromInt (IntInf.toInt (IntInf.mod (i, 256)))
+      fun fromLargeInt (i: IntInf.int): word =
+	 fromInt (IntInf.toInt (IntInf.mod (i, 256)))
+   end
+
+structure Word16: WORD_EXTRA =
+   struct
+      open Word16
+
+      val toLargeIntX = IntInf.fromInt o toIntX
+      val toLargeInt = IntInf.fromInt o toInt
+
+      fun fromLargeInt (i: IntInf.int): word =
+	 fromInt (IntInf.toInt (IntInf.mod (i, 65536)))
    end
 
 structure Word32: WORD32_EXTRA =

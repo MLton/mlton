@@ -9,9 +9,6 @@ structure Int8: INTEGER_EXTRA =
    Integer
    (structure P = Primitive.Int8
     open P
-    val precision' : Int.int = 8
-    val maxInt' : int = 0x7f
-    val minInt' : int = ~0x80
    )
       
 

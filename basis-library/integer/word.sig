@@ -37,19 +37,23 @@ signature PRE_WORD =
       val div: word * word -> word 
       val mod: word * word -> word
       val ~ : word -> word
-      val compare: word * word -> order 
       val < : word * word -> bool 
       val > : word * word -> bool 
       val >= : word * word -> bool 
       val <= : word * word -> bool 
-      val min: word * word -> word 
-      val max: word * word -> word
+   end
+signature PRE_WORD_EXTRA =
+   sig
+      include PRE_WORD
    end
 
 signature WORD =
    sig
       include PRE_WORD
 	 
+      val compare: word * word -> order 
+      val min: word * word -> word 
+      val max: word * word -> word
       val toLargeInt: word -> LargeInt.int 
       val toLargeIntX: word -> LargeInt.int 
       val fromLargeInt: LargeInt.int -> word
@@ -64,6 +68,7 @@ signature WORD =
 signature WORD_EXTRA =
    sig
       include WORD
+      (* include PRE_WORD_EXTRA *)
    end
 
 signature WORD32_EXTRA =

@@ -119,13 +119,13 @@ signature BASIS_2002 =
       structure Timer : TIMER	
       structure VectorSlice : VECTOR_SLICE	
       structure Vector : VECTOR	
+      structure Word : WORD	
       structure Word8 : WORD	
       structure Word8Array : MONO_ARRAY	
       structure Word8ArraySlice : MONO_ARRAY_SLICE	
       structure Word8Vector : MONO_VECTOR	
       structure Word8VectorSlice : MONO_VECTOR_SLICE	
       structure Word8Array2 : MONO_ARRAY2	
-      structure Word : WORD	
 
       (* Optional structures *)
       structure Array2 : ARRAY2
@@ -144,7 +144,17 @@ signature BASIS_2002 =
       structure IntVectorSlice : MONO_VECTOR_SLICE
       structure IntArray2 : MONO_ARRAY2
       structure Int8 : INTEGER
+      structure Int8Array : MONO_ARRAY
+      structure Int8ArraySlice : MONO_ARRAY_SLICE
+      structure Int8Vector : MONO_VECTOR
+      structure Int8VectorSlice : MONO_VECTOR_SLICE
+      structure Int8Array2 : MONO_ARRAY2
       structure Int16 : INTEGER
+      structure Int16Array : MONO_ARRAY
+      structure Int16ArraySlice : MONO_ARRAY_SLICE
+      structure Int16Vector : MONO_VECTOR
+      structure Int16VectorSlice : MONO_VECTOR_SLICE
+      structure Int16Array2 : MONO_ARRAY2
       structure Int32 : INTEGER
       structure Int32Array : MONO_ARRAY
       structure Int32ArraySlice : MONO_ARRAY_SLICE
@@ -196,6 +206,17 @@ signature BASIS_2002 =
 (*
       structure Windows : WINDOWS
 *)
+      structure WordArray : MONO_ARRAY	
+      structure WordArraySlice : MONO_ARRAY_SLICE	
+      structure WordVector : MONO_VECTOR	
+      structure WordVectorSlice : MONO_VECTOR_SLICE	
+      structure WordArray2 : MONO_ARRAY2	
+      structure Word16 : WORD
+      structure Word16Array : MONO_ARRAY
+      structure Word16ArraySlice : MONO_ARRAY_SLICE
+      structure Word16Vector : MONO_VECTOR
+      structure Word16VectorSlice : MONO_VECTOR_SLICE
+      structure Word16Array2 : MONO_ARRAY2
       structure Word32 : WORD
       structure Word32Array : MONO_ARRAY
       structure Word32ArraySlice : MONO_ARRAY_SLICE
@@ -299,6 +320,28 @@ signature BASIS_2002 =
       sharing type IntVectorSlice.vector = IntVector.vector
       sharing type IntArray2.elem = int
       sharing type IntArray2.vector = IntVector.vector
+      sharing type Int8Array.elem = Int8.int
+      sharing type Int8Array.vector = Int8Vector.vector
+      sharing type Int8ArraySlice.elem = Int8.int
+      sharing type Int8ArraySlice.array = Int8Array.array
+      sharing type Int8ArraySlice.vector = Int8Vector.vector
+      sharing type Int8ArraySlice.vector_slice = Int8VectorSlice.slice
+      sharing type Int8Vector.elem = Int8.int
+      sharing type Int8VectorSlice.elem = Int8.int
+      sharing type Int8VectorSlice.vector = Int8Vector.vector
+      sharing type Int8Array2.elem = Int8.int
+      sharing type Int8Array2.vector = Int8Vector.vector
+      sharing type Int16Array.elem = Int16.int
+      sharing type Int16Array.vector = Int16Vector.vector
+      sharing type Int16ArraySlice.elem = Int16.int
+      sharing type Int16ArraySlice.array = Int16Array.array
+      sharing type Int16ArraySlice.vector = Int16Vector.vector
+      sharing type Int16ArraySlice.vector_slice = Int16VectorSlice.slice
+      sharing type Int16Vector.elem = Int16.int
+      sharing type Int16VectorSlice.elem = Int16.int
+      sharing type Int16VectorSlice.vector = Int16Vector.vector
+      sharing type Int16Array2.elem = Int16.int
+      sharing type Int16Array2.vector = Int16Vector.vector
       sharing type Int32Array.elem = Int32.int
       sharing type Int32Array.vector = Int32Vector.vector
       sharing type Int32ArraySlice.elem = Int32.int
@@ -345,6 +388,28 @@ signature BASIS_2002 =
       sharing type Real64Array2.elem = Real64.real
       sharing type Real64Array2.vector = Real64Vector.vector
       sharing type Unix.exit_status = Posix.Process.exit_status
+      sharing type WordArray.elem = Word.word
+      sharing type WordArray.vector = WordVector.vector
+      sharing type WordArraySlice.elem = Word.word
+      sharing type WordArraySlice.array = WordArray.array
+      sharing type WordArraySlice.vector = WordVector.vector
+      sharing type WordArraySlice.vector_slice = WordVectorSlice.slice
+      sharing type WordVector.elem = Word.word
+      sharing type WordVectorSlice.elem = Word.word
+      sharing type WordVectorSlice.vector = WordVector.vector
+      sharing type WordArray2.elem = Word.word
+      sharing type WordArray2.vector = WordVector.vector
+      sharing type Word16Array.elem = Word16.word
+      sharing type Word16Array.vector = Word16Vector.vector
+      sharing type Word16ArraySlice.elem = Word16.word
+      sharing type Word16ArraySlice.array = Word16Array.array
+      sharing type Word16ArraySlice.vector = Word16Vector.vector
+      sharing type Word16ArraySlice.vector_slice = Word16VectorSlice.slice
+      sharing type Word16Vector.elem = Word16.word
+      sharing type Word16VectorSlice.elem = Word16.word
+      sharing type Word16VectorSlice.vector = Word16Vector.vector
+      sharing type Word16Array2.elem = Word16.word
+      sharing type Word16Array2.vector = Word16Vector.vector
       sharing type Word32Array.elem = Word32.word
       sharing type Word32Array.vector = Word32Vector.vector
       sharing type Word32ArraySlice.elem = Word32.word

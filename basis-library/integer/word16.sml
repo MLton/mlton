@@ -5,11 +5,8 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure Word32 =
+structure Word16 =
    Word
-   (structure P = Primitive.Word32
+   (structure P = Primitive.Word16
     open P
    )
-structure Word = Word32
-structure WordGlobal: WORD_GLOBAL = Word
-open WordGlobal

@@ -603,12 +603,29 @@ struct
 	     | Int_gt _ => cmp Instruction.G
 	     | Int_le _ => cmp Instruction.LE
 	     | Int_lt _ => cmp Instruction.L
-	     | Int_mul _ => imul2 () 
+	     | Int_mul s =>
+		  (case s of
+		      I8 => pmd Instruction.IMUL
+		    | I16 => imul2 () 
+		    | I32 => imul2 ()
+		    | I64 => Error.bug "FIXME")
 	     | Int_neg _ => unal Instruction.NEG 
 	     | Int_quot _ => pmd Instruction.IDIV
 	     | Int_rem _ => pmd Instruction.IMOD
 	     | Int_sub _ => binal Instruction.SUB
              | Int_add _ => binal Instruction.ADD
+	     | Int_toInt (s, s') =>
+		(case (s, s') of
+		   (I32, I32) => mov ()
+		 | (I32, I16) => xvom ()
+		 | (I32, I8) => xvom ()
+		 | (I16, I32) => movx Instruction.MOVSX
+		 | (I16, I16) => mov ()
+		 | (I16, I8) => xvom ()
+		 | (I8, I32) => movx Instruction.MOVSX
+		 | (I8, I16) => movx Instruction.MOVSX
+		 | (I8, I8) => mov ()
+		 | _ => Error.bug (Prim.toString prim))
 	     | Int_toReal _
 	     => let
 		  val (dst,dstsize) = getDst ()
@@ -626,10 +643,17 @@ struct
 		    transfer = NONE}]
 		end 
 	     | Int_toWord (s, s') =>
-		  (case (s, s') of
-		      (I32, W8) => xvom ()
-		    | (I32, W32) => mov ()
-		    | _ => Error.bug (Prim.toString prim))
+		(case (s, s') of
+		   (I32, W32) => mov ()
+		 | (I32, W16) => xvom ()
+		 | (I32, W8) => xvom ()
+		 | (I16, W32) => movx Instruction.MOVSX
+		 | (I16, W16) => mov ()
+		 | (I16, W8) => xvom ()
+		 | (I8, W32) => movx Instruction.MOVSX
+		 | (I8, W16) => movx Instruction.MOVSX
+		 | (I8, W8) => mov ()
+		 | _ => Error.bug (Prim.toString prim))
 	     | MLton_eq => cmp Instruction.E
 	     | Real_Math_acos _
 	     => let
@@ -1126,7 +1150,7 @@ struct
 	     | Word_mul s =>
 		  (case s of
 		      W8 => pmd Instruction.MUL
-		    | W16 => Error.bug "FIXME"
+		    | W16 => imul2 ()
 		    | W32 => imul2 ())
 	     | Word_neg _ => unal Instruction.NEG
 	     | Word_notb _ => unal Instruction.NOT
@@ -1136,23 +1160,51 @@ struct
 	     | Word_rshift _ => sral Instruction.SHR
 	     | Word_sub _ => binal Instruction.SUB
 	     | Word_toInt (s, s') =>
-		  (case (s, s') of
-		      (W8, I32) => movx Instruction.MOVZX
-		    | _ => Error.bug (Prim.toString prim))
+		(case (s, s') of
+		   (W32, I32) => mov ()
+		 | (W32, I16) => xvom ()
+		 | (W32, I8) => xvom ()
+		 | (W16, I32) => movx Instruction.MOVZX
+		 | (W16, I16) => mov ()
+		 | (W16, I8) => xvom ()
+		 | (W8, I32) => movx Instruction.MOVZX
+		 | (W8, I16) => movx Instruction.MOVZX
+		 | (W8, I8) => mov ()
+		 | _ => Error.bug (Prim.toString prim))
 	     | Word_toIntX (s, s') =>
-		  (case (s, s') of
-		      (W8, I32) => movx Instruction.MOVSX
-		    | (W32, I32) => mov ()
-		    | _ => Error.bug (Prim.toString prim))
+		(case (s, s') of
+		   (W32, I32) => mov ()
+		 | (W32, I16) => xvom ()
+		 | (W32, I8) => xvom ()
+		 | (W16, I32) => movx Instruction.MOVSX
+		 | (W16, I16) => mov ()
+		 | (W16, I8) => xvom ()
+		 | (W8, I32) => movx Instruction.MOVSX
+		 | (W8, I16) => movx Instruction.MOVSX
+		 | (W8, I8) => mov ()
+		 | _ => Error.bug (Prim.toString prim))
 	     | Word_toWord (s, s') =>
-		  (case (s, s') of
-		      (W8, W32) => movx Instruction.MOVZX
-		    | (W32, W8) => xvom ()
-		    | _ => Error.bug (Prim.toString prim))
+	        (case (s, s') of
+		   (W32, W32) => mov ()
+		 | (W32, W16) => xvom ()
+		 | (W32, W8) => xvom ()
+		 | (W16, W32) => movx Instruction.MOVZX
+		 | (W16, W16) => mov ()
+		 | (W16, W8) => xvom ()
+		 | (W8, W32) => movx Instruction.MOVZX
+		 | (W8, W16) => movx Instruction.MOVZX
+		 | (W8, W8) => mov ())
 	     | Word_toWordX (s, s') =>
-		  (case (s, s') of
-		      (W8, W32) => movx Instruction.MOVSX
-		    | _ => Error.bug (Prim.toString prim))
+		(case (s, s') of
+		   (W32, W32) => mov ()
+		 | (W32, W16) => xvom ()
+		 | (W32, W8) => xvom ()
+		 | (W16, W32) => movx Instruction.MOVSX
+		 | (W16, W16) => mov ()
+		 | (W16, W8) => xvom ()
+		 | (W8, W32) => movx Instruction.MOVSX
+		 | (W8, W16) => movx Instruction.MOVSX
+		 | (W8, W8) => mov ())
 	     | Word_xorb _ => binal Instruction.XOR
 	     | _ => Error.bug ("prim: strange Prim.Name.t: " ^ primName)),
 	 comment_end]
@@ -1384,10 +1436,19 @@ struct
 	 (case Prim.name prim of
 	     Int_addCheck _ => binal (x86.Instruction.ADD, x86.Instruction.O)
 	   | Int_subCheck _ => binal (x86.Instruction.SUB, x86.Instruction.O)
-	   | Int_mulCheck _ => imul2_check x86.Instruction.O
+	   | Int_mulCheck s => 
+	       (case s of
+		  I8 => pmd (x86.Instruction.IMUL, x86.Instruction.O)
+		| I16 => imul2_check x86.Instruction.O
+		| I32 => imul2_check x86.Instruction.O
+		| I64 => Error.bug "FIXME")
 	   | Int_negCheck _ => unal (x86.Instruction.NEG, x86.Instruction.O)
 	   | Word_addCheck _ => binal (x86.Instruction.ADD, x86.Instruction.C)
-	   | Word_mulCheck _ => pmd (x86.Instruction.MUL, x86.Instruction.C)
+	   | Word_mulCheck s => 
+	       (case s of
+		  W8 => pmd (x86.Instruction.MUL, x86.Instruction.C)
+		| W16 => pmd (x86.Instruction.MUL, x86.Instruction.C)
+		| W32 => pmd (x86.Instruction.MUL, x86.Instruction.C))
 	   | _ => Error.bug ("arith: strange Prim.Name.t: " ^ primName))]
       end
 

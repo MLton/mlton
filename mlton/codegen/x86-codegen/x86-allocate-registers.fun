@@ -8498,7 +8498,7 @@ struct
 		  val temp_reg
 		    = case final_src
 			of Operand.Register r 
-			 => Register.lowPartOf (r, Size.BYTE)
+			 => Register.lowPartOf (r, dstsize)
 			 | _ 
 			 => Error.bug "allocateRegisters: XVOM, temp_reg"
 

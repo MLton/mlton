@@ -886,6 +886,8 @@ fun 'a apply (p, args, varEquals) =
 	   | (Int_rem _, [Int i1, Int i2]) => io (IntX.rem, i1, i2)
 	   | (Int_sub _, [Int i1, Int i2]) => io (IntX.-, i1, i2)
 	   | (Int_subCheck _, [Int i1, Int i2]) => io (IntX.-, i1, i2)
+	   | (Int_toInt (_, s), [Int i]) =>
+	        int (IntX.make (IntX.toIntInf i, s))
 	   | (Int_toWord (_, s), [Int i]) =>
 		word (WordX.fromLargeInt (IntX.toIntInf i, s))
 	   | (IntInf_compare, [IntInf i1, IntInf i2]) =>

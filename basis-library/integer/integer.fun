@@ -11,28 +11,40 @@ functor Integer (I: sig
 struct
 
 open I
+structure PI = Primitive.Int
 
 val detectOverflow = Primitive.detectOverflow
 
-fun fromInt (i: Int.int): int =
-   if not detectOverflow
-      orelse (Primitive.Int.<= (toInt minInt', i)
-	      andalso Primitive.Int.<= (i, toInt maxInt'))
-      then I.fromInt i
-   else raise Overflow
+val (toInt, fromInt) =
+   if detectOverflow andalso
+      precision' <> PI.precision'
+      then if PI.<(precision', PI.precision')
+	     then (I.toInt, 
+		   fn i =>
+		   if (PI.<= (I.toInt minInt', i)
+		       andalso PI.<= (i, I.toInt maxInt'))
+		      then I.fromInt i
+		   else raise Overflow)
+	     else (fn i => 
+		   if (I.<= (I.fromInt PI.minInt', i)
+		       andalso I.<= (i, I.fromInt PI.maxInt'))
+		      then I.toInt i
+		   else raise Overflow,
+		   I.fromInt)
+   else (I.toInt, I.fromInt)
 
 val precision: Int.int option = SOME precision'
 
 val maxInt: int option = SOME maxInt'
 val minInt: int option = SOME minInt'
 
+val one: int = fromInt 1
+val zero: int = fromInt 0
+
 (* These are overriden in patch.sml after int-inf.sml has been defined. *)
 val toLarge: int -> LargeInt.int = fn _ => raise Fail "toLarge"
 val fromLarge: LargeInt.int -> int = fn _ => raise Fail "fromLarge"
 
-val zero: int = fromInt 0
-val one: int = fromInt 1
-	 
 fun quot (x, y) =
   if y = zero
     then raise Div

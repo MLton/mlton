@@ -141,9 +141,7 @@ struct
 	       let
 		  val i' = IntX.toIntInf i
 	       in
-		  case IntX.size i of
-		     I32 => x86.Operand.immediate_const_int (IntInf.toInt i')
-		   | _ => Error.bug "FIXME"
+		  x86.Operand.immediate_const_int (IntInf.toInt i')
 	       end
 	  | Label l => x86.Operand.immediate_label l
 	  | Line => x86MLton.fileLine ()
@@ -205,12 +203,7 @@ struct
 	       let
 		  val w' = WordX.toWord w
 	       in
-		  case WordX.size w of
-		     W8 =>
-			x86.Operand.immediate_const_char
-			(Word8.toChar (Word8.fromWord w'))
-		   | W16 => Error.bug "FIXME"
-		   | W32 => x86.Operand.immediate_const_word w'
+		  x86.Operand.immediate_const_word w'
 	       end
 	       
       val toX86Operand =
@@ -732,15 +725,12 @@ struct
 					 falsee = pointers})}))
 			  end
 		     | Int {cases, default, size, test} =>
-			  (case size of
-			      I32 =>
-				 simple ({cases = (Vector.map
-						   (cases, fn (i, l) =>
-						    (IntX.toInt i, l))),
-					  default = default,
-					  test = test},
-					 doSwitchInt)
-			    | _ => Error.bug "FIXME")
+			  simple ({cases = (Vector.map
+					    (cases, fn (i, l) =>
+					     (IntX.toInt i, l))),
+				   default = default,
+				   test = test},
+				  doSwitchInt)
 		     | Pointer {cases, default, tag, ...} =>
 			  simple ({cases = (Vector.map
 					    (cases, fn {dst, tag, ...} =>
@@ -749,25 +739,12 @@ struct
 				   test = tag},
 				  doSwitchInt)
 		     | Word {cases, default, size, test} =>
-			  (case size of
-			      W8 =>
-				 simple ({cases = (Vector.map
-						   (cases, fn (w, l) =>
-						    (Word8.toChar
-						     (Word8.fromWord
-						      (WordX.toWord w)),
-						     l))),
-					  default = default,
-					  test = test},
-					 doSwitchChar)
-			    | W32 =>
-				 simple ({cases = (Vector.map
-						   (cases, fn (w, l) =>
-						    (WordX.toWord w, l))),
-					  default = default,
-					  test = test},
-					 doSwitchWord)
-			    | _ => Error.bug "FIXME")
+			  simple ({cases = (Vector.map
+					    (cases, fn (w, l) =>
+					     (WordX.toWord w, l))),
+				   default = default,
+				   test = test},
+				  doSwitchWord)
 		 end
 	      | Goto label
 	      => (AppendList.append

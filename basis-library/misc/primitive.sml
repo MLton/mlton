@@ -278,6 +278,9 @@ structure Primitive =
       structure Int8 =
 	 struct
 	    type int = int8
+	    val precision' : Int.int = 8
+	    val maxInt' : int = 0x7f
+	    val minInt' : int = ~0x80
 
 	    val *? = _prim "Int8_mul": int * int -> int;
 	    val * =
@@ -311,6 +314,9 @@ structure Primitive =
       structure Int16 =
 	 struct
 	    type int = int16
+	    val precision' : Int.int = 16
+	    val maxInt' : int = 0x7fff
+	    val minInt' : int = ~0x8000
 
 	    val *? = _prim "Int16_mul": int * int -> int;
 	    val * =
@@ -344,6 +350,9 @@ structure Primitive =
       structure Int32 =
 	 struct
 	    type int = int32
+	    val precision' : Int.int = 32
+	    val maxInt' : int = 0x7fffffff
+	    val minInt' : int = ~0x80000000
 
 	    val *? = _prim "Int32_mul": int * int -> int;
 	    val * =
@@ -964,8 +973,10 @@ structure Primitive =
       structure Word8 =
 	 struct
 	    type word = word8
+	    val wordSize: int = 8
 
 	    val + = _prim "Word8_add": word * word -> word;
+	    val addCheck = _prim "Word8_addCheck": word * word -> word;
 	    val andb = _prim "Word8_andb": word * word -> word;
 	    val ~>> = _prim "Word8_arshift": word * word32 -> word;
 	    val div = _prim "Word8_div": word * word -> word;
@@ -978,6 +989,7 @@ structure Primitive =
 	    val < = _prim "Word8_lt" : word * word -> bool;
 	    val mod = _prim "Word8_mod": word * word -> word;
 	    val * = _prim "Word8_mul": word * word -> word;
+	    val mulCheck = _prim "Word8_mulCheck": word * word -> word;
 	    val ~ = _prim "Word8_neg": word -> word;
 	    val notb = _prim "Word8_notb": word -> word;
 	    val orb = _prim "Word8_orb": word * word -> word;
@@ -1009,8 +1021,10 @@ structure Primitive =
       structure Word16 =
 	 struct
 	    type word = word16
+	    val wordSize: int = 16
 
 	    val + = _prim "Word16_add": word * word -> word;
+	    val addCheck = _prim "Word16_addCheck": word * word -> word;
 	    val andb = _prim "Word16_andb": word * word -> word;
 	    val ~>> = _prim "Word16_arshift": word * word32 -> word;
 	    val div = _prim "Word16_div": word * word -> word;
@@ -1023,6 +1037,7 @@ structure Primitive =
 	    val < = _prim "Word16_lt" : word * word -> bool;
 	    val mod = _prim "Word16_mod": word * word -> word;
 	    val * = _prim "Word16_mul": word * word -> word;
+	    val mulCheck = _prim "Word16_mulCheck": word * word -> word;
 	    val ~ = _prim "Word16_neg": word -> word;
 	    val notb = _prim "Word16_notb": word -> word;
 	    val orb = _prim "Word16_orb": word * word -> word;
@@ -1040,6 +1055,7 @@ structure Primitive =
       structure Word32 =
 	 struct
 	    type word = word32
+	    val wordSize: int = 32
 
 	    val + = _prim "Word32_add": word * word -> word;
 	    val addCheck = _prim "Word32_addCheck": word * word -> word;
@@ -1047,6 +1063,7 @@ structure Primitive =
 	    val ~>> = _prim "Word32_arshift": word * word -> word;
 	    val div = _prim "Word32_div": word * word -> word;
 	    val fromInt = _prim "Int32_toWord32": int -> word;
+	    val fromLargeWord : word -> word = fn x => x
 	    val >= = _prim "Word32_ge": word * word -> bool;
 	    val > = _prim "Word32_gt" : word * word -> bool;
 	    val <= = _prim "Word32_le": word * word -> bool;
@@ -1062,7 +1079,10 @@ structure Primitive =
 	    val ror = _prim "Word32_ror": word * word -> word;
 	    val >> = _prim "Word32_rshift": word * word -> word;
 	    val - = _prim "Word32_sub": word * word -> word;
+	    val toInt = _prim "Word32_toInt32": word -> int;
 	    val toIntX = _prim "Word32_toInt32X": word -> int;
+	    val toLargeWord : word -> word = fn x => x
+	    val toLargeWordX : word -> word = fn x => x
 	    val xorb = _prim "Word32_xorb": word * word -> word;
 	 end
       structure Word = Word32
