@@ -320,7 +320,7 @@ DEBUG_OBJS =					\
 %.o: %.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: libmlton.a libmlton-gdb.a
+all: ensure-gmp libmlton.a libmlton-gdb.a
 
 libmlton.a: $(OBJS) 
 	$(AR) libmlton.a $(OBJS)
@@ -331,7 +331,21 @@ libmlton-gdb.a: $(DEBUG_OBJS)
 .PHONY: clean
 clean:
 	../bin/clean
+	rm -f gmp.h
 
 .PHONY: depend
 depend:
 	makedepend -f- -- $(CFLAGS) -- $(SRCS)
+
+.PHONY: ensure-gmp
+ensure-gmp:
+	if [ $(HOSTTYPE) = cygwin -o $(HOSTTYPE) = freebsd ] && 		\
+		! [ -r gmp.h -a -r libgmp.a ]; then 				\
+		echo 'Must get gmp.h and libgmp.a.  See get-gmp target.'; 	\
+		exit 1; 							\
+	fi		
+
+LIBMLTON = /usr/local/lib/mlton/self
+.PHONY: get-gmp
+get-gmp:
+	cp $(LIBMLTON)/libgmp.a $(LIBMLTON)/include/gmp.h .
