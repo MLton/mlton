@@ -18,14 +18,12 @@ signature C_CODEGEN =
       include C_CODEGEN_STRUCTS
 
       val output: {program: Machine.Program.t,
-                   includes: string list,
 		   outputC: unit -> {file: File.t,
 				     print: string -> unit,
 				     done: unit -> unit}
 		   } -> unit
       val outputDeclarations: {additionalMainArgs: string list,
 			       includes: string list,
-			       name: string,
 			       print: string -> unit,
 			       program: Machine.Program.t,
 			       rest: unit -> unit

@@ -53,42 +53,6 @@ struct
 	     {entry = NONE,
 	      statements = [Assembly.comment ("UNIMPLEMENTED PRIM: " ^ s)],
 	      transfer = NONE}]
-		
-	fun lengthArrayVectorString ()
-	  = let
-	      val (dst,dstsize) = getDst ();
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: lengthArrayVectorString, dstsize",
-		   fn () => dstsize = wordSize)
-	      val (src,srcsize) = getSrc1 ();
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: lengthArrayVectorString, srcsize",
-		   fn () => srcsize = wordSize)
-
-	      val memloc
-		= case (Operand.deMemloc src)
-		    of SOME base
-		     => MemLoc.simple 
-		        {base = base,
-			 index = Immediate.const_int ~2,
-			 scale = wordScale,
-			 size = wordSize,
-			 class = Classes.Heap}
-		     | NONE => Error.bug 
-                               "applyPrim: lengthArrayVectorString, src"
-	    in
-	      AppendList.fromList
-	      [Block.mkBlock'
-	       {entry = NONE,
-		statements 
-		= [Assembly.instruction_mov
-		   {dst = dst,
-		    src = Operand.memloc memloc,
-		    size = wordSize}],
-		transfer = NONE}]
-	    end
 
 	fun subWord8ArrayVector ()
 	  = let
@@ -686,9 +650,7 @@ struct
 	AppendList.appends
 	[comment_begin,
 	 (case Prim.name prim of
-	       Array_length => lengthArrayVectorString ()
-
-	     | Char_lt => cmp Instruction.B
+	       Char_lt => cmp Instruction.B
 	     | Char_le => cmp Instruction.BE
 	     | Char_gt => cmp Instruction.A
 	     | Char_ge => cmp Instruction.AE
@@ -1257,7 +1219,6 @@ struct
 		end
 	     | Real_neg => funa Instruction.FCHS
 	     | Real_round => funa Instruction.FRNDINT
-	     | Vector_length => lengthArrayVectorString ()
 	     | Word8_toInt => movx Instruction.MOVZX
 	     | Word8_toIntX => movx Instruction.MOVSX
 	     | Word8_fromInt => xvom ()

@@ -145,7 +145,6 @@ fun declareProfileLabel (l, print) =
 fun outputDeclarations
    {additionalMainArgs: string list,
     includes: string list,
-    name: string,
     print: string -> unit,
     program = (Program.T
 	       {chunks, frameLayouts, frameOffsets, intInfs, maxFrameSize,
@@ -289,8 +288,7 @@ fun outputDeclarations
 			    C.int o #2)
 	 end
    in
-      print (concat ["#define ", name, "CODEGEN\n\n"])
-      ; outputIncludes (includes, print)
+      outputIncludes (includes, print)
       ; declareGlobals ()
       ; declareIntInfs ()
       ; declareStrings ()
@@ -366,7 +364,6 @@ structure Prim =
 fun output {program as Machine.Program.T {chunks,
 					  frameLayouts,
 					  main = {chunkLabel, label}, ...},
-            includes,
 	    outputC: unit -> {file: File.t,
 			      print: string -> unit,
 			      done: unit -> unit}} =
@@ -479,7 +476,7 @@ fun output {program as Machine.Program.T {chunks,
 	     | Contents {oper, ty} =>
 		  concat ["C", Type.name ty, "(", toString oper, ")"]
 	     | File => "__FILE__"
-	     | GCState => "&gcState"
+	     | GCState => "GCState"
 	     | Global g =>
 		  concat ["G", Type.name (Global.ty g),
 			  if Global.isRoot g
@@ -496,24 +493,7 @@ fun output {program as Machine.Program.T {chunks,
 	     | Register r =>
 		  concat ["R", Type.name (Register.ty r),
 			  "(", Int.toString (Register.index r), ")"]
-	     | Runtime r =>
-		  let
-		     datatype z = datatype GCField.t
-		  in
-		     case r of
-			CanHandle => "gcState.canHandle"
-		      | CardMap => "gcState.cardMapForMutator"
-		      | CurrentThread => "gcState.currentThread"
-		      | ExnStack => "ExnStack"
-		      | Frontier => "frontier"
-		      | Limit => "gcState.limit"
-		      | LimitPlusSlop => "gcState.limitPlusSlop"
-		      | MaxFrameSize => "gcState.maxFrameSize"
-		      | SignalIsPending => "gcState.signalIsPending"
-		      | StackBottom => "gcState.stackBottom"
-		      | StackLimit => "gcState.stackLimit"
-		      | StackTop => "stackTop"
-		  end
+	     | Runtime _ => Error.bug "C codegen saw Runtime operand"
 	     | SmallIntInf w =>
 		  concat ["SmallIntInf", C.args [concat ["0x", Word.toString w]]]
 	     | StackOffset {offset, ty} =>
@@ -556,7 +536,7 @@ fun output {program as Machine.Program.T {chunks,
 				    val dst =
 				       concat
 				       ["C", Type.name (Operand.ty value),
-					"(frontier + ",
+					"(Frontier + ",
 					C.int (offset
 					       + Runtime.normalHeaderSize),
 					")"]
@@ -650,6 +630,9 @@ fun output {program as Machine.Program.T {chunks,
 			       let
 				  val {name, returnTy, ...} = CFunction.dest func
 			       in
+				  if name = "Thread_returnToC"
+				     then ()
+				  else
 				  doit
 				  (name, fn () =>
 				   let
@@ -664,7 +647,7 @@ fun output {program as Machine.Program.T {chunks,
 						 Int.toString (Counter.next c)]
 				   in
 				      (concat
-				       ["extern ", res, " ",
+				       [res, " ",
 					CFunction.name func,
 					" (",
 					concat (List.separate
@@ -750,10 +733,7 @@ fun output {program as Machine.Program.T {chunks,
 			       src = operandToString (Operand.Label return),
 			       srcIsMem = false,
 			       ty = Type.Label return})
-		; C.push (size, print)
-		; if profiling
-		     then print "\tFlushStackTop();\n"
-		  else ())
+		; C.push (size, print))
 	    fun copyArgs (args: Operand.t vector): string list * (unit -> unit) =
 	       if Vector.exists (args,
 				 fn Operand.StackOffset _ => true
@@ -828,10 +808,7 @@ fun output {program as Machine.Program.T {chunks,
 			   end 
 		      | _ => ()
 		  fun pop (fi: FrameInfo.t) =
-		     (C.push (~ (Program.frameSize (program, fi)), print)
-		      ; if profiling
-			   then print "\tFlushStackTop();\n"
-			else ())
+		     C.push (~ (Program.frameSize (program, fi)), print)
 		  val _ =
 		     case kind of
 			Kind.Cont {frameInfo, ...} => pop frameInfo
@@ -941,12 +918,8 @@ fun output {program as Machine.Program.T {chunks,
 			end
 		   | CCall {args, frameInfo, func, return} =>
 			let
-			   val {maySwitchThreads,
-				modifiesFrontier,
-				modifiesStackTop,
-				name,
-				returnTy,
-				...} = CFunction.dest func
+			   val {maySwitchThreads, name, returnTy, ...} =
+			      CFunction.dest func
 			   val (args, afterCall) =
 			      case frameInfo of
 				 NONE =>
@@ -961,16 +934,6 @@ fun output {program as Machine.Program.T {chunks,
 				    in
 				       res
 				    end
-			   val _ =
-			      if modifiesFrontier
-				 then print "\tFlushFrontier();\n"
-			      else ()
-			   val _ =
-			      if modifiesStackTop
-				 andalso (Option.isNone frameInfo
-					  orelse not profiling)
-				 then print "\tFlushStackTop();\n"
-			      else ()
 			   val _ = print "\t"
 			   val _ =
 			      case returnTy of
@@ -978,14 +941,6 @@ fun output {program as Machine.Program.T {chunks,
 			       | SOME t => print (concat [creturn t, " = "])
 			   val _ = C.call (name, args, print)
 			   val _ = afterCall ()
-			   val _ =
-			      if modifiesFrontier
-				 then print "\tCacheFrontier();\n"
-			      else ()
-			   val _ =
-			      if modifiesStackTop
-				 then print "\tCacheStackTop();\n"
-			      else ()
 			   val _ =
 			      if maySwitchThreads
 				 then print "\tReturn();\n"
@@ -1097,10 +1052,19 @@ fun output {program as Machine.Program.T {chunks,
 		   Int.for (0, 1 + regMax t, fn i =>
 			    C.call (d, [C.int i], print))
 		end)
+	    fun outputOffsets () =
+	       List.foreach
+	       ([("ExnStackOffset", GCField.ExnStack),
+		 ("FrontierOffset", GCField.Frontier),
+		 ("StackBottomOffset", GCField.StackBottom),
+		 ("StackTopOffset", GCField.StackTop)],
+		fn (name, f) =>
+		print (concat ["#define ", name, " ",
+			       Int.toString (GCField.offset f), "\n"]))
 	 in
-	    print (concat ["#define CCODEGEN\n\n"])
-	    ; outputIncludes (includes, print)
-(*	    ; declareFFI () *)
+	    outputOffsets ()
+	    ; outputIncludes (["c-chunk.h"], print)
+	    ; declareFFI ()
 	    ; declareChunks ()
 	    ; declareProfileLabels ()
 	    ; C.callNoSemi ("Chunk", [chunkLabelToString chunkLabel], print)
@@ -1139,8 +1103,7 @@ fun output {program as Machine.Program.T {chunks,
 	  ; print "};\n")
       val _ = 
 	 outputDeclarations {additionalMainArgs = additionalMainArgs,
-                             includes = includes,
-			     name = "C",
+			     includes = ["c-main.h"],
 			     program = program,
 			     print = print,
 			     rest = rest}

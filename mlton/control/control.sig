@@ -76,9 +76,6 @@ signature CONTROL =
       (* Indentation used in laying out ILs. *)
       val indentation: int ref
 	 
-      (* The .h files that should be #include'd in the .c file. *)
-      val includes: string list ref
-	 
       datatype inline =
 	 NonRecursive of {product: int,
 			  small: int}

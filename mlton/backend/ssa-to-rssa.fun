@@ -808,6 +808,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				       if Type.isPointer t
 					  then yes ()
 				       else no ()
+			      fun arrayOrVectorLength () =
+				 move (Operand.Offset
+				       {base = varOp (a 0),
+					offset = Runtime.arrayLengthOffset,
+					ty = Type.int})
 			      fun arrayOffset (ty: Type.t): Operand.t =
 				 ArrayOffset {base = varOp (a 0),
 					      index = varOp (a 1),
@@ -1002,6 +1007,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				 Array_array =>
 				    array (Operand.Var {var = a 0,
 							ty = Type.int})
+			       | Array_length => arrayOrVectorLength ()
 			       | Array_sub =>
 				    (case targ () of
 					NONE => none ()
@@ -1026,11 +1032,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					 mayGC = callsFromC,
 					 maySwitchThreads = false,
 					 name = name,
-					 returnTy =
-					 Option.map
-					 (var, fn x =>
-					  Type.toRuntime
-					  (valOf (toRtype (varType x))))})
+					 returnTy = Option.map (toRtype ty,
+								Type.toRuntime)})
 			       | GC_collect =>
 				    ccall
 				    {args = Vector.new5 (Operand.GCState,
@@ -1238,6 +1241,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					:: ss,
 					t)
 				    end
+			       | Vector_length => arrayOrVectorLength ()
 			       | Vector_sub =>
 				    (case targ () of
 					NONE => none ()

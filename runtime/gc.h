@@ -310,6 +310,7 @@ typedef struct GC_state {
 	pointer limit; 		/* end of from space */
 	pointer stackTop;
 	pointer stackLimit;	/* stackBottom + stackSize - maxFrameSize */
+	uint exnStack;
 
 	uint alignment;		/* Either WORD_SIZE or 2 * WORD_SIZE. */
 	bool amInGC;

@@ -1,6 +1,8 @@
 #ifndef _BASIS_CONSTANTS_H_
 #define _BASIS_CONSTANTS_H_
 
+#include <syslog.h>
+
 #include <sys/time.h>
 #if (defined (__linux__))
 #include <sys/ptrace.h>

@@ -41,6 +41,7 @@ signature RUNTIME =
 	    val setOffsets: {canHandle: int,
 			     cardMap: int,
 			     currentThread: int,
+			     exnStack: int,
 			     frontier: int,
 			     limit: int,
 			     limitPlusSlop: int,

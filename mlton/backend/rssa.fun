@@ -1095,6 +1095,9 @@ structure Program =
 			 (offset = Runtime.headerOffset
 			  andalso Type.equals (ty, Type.word))
 			 orelse
+			 (offset = Runtime.arrayLengthOffset
+			  andalso Type.equals (ty, Type.int))
+			 orelse
 			 Vector.forall
 			 (pointers, fn p =>
 			  case tyconTy p of

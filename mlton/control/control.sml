@@ -196,11 +196,6 @@ structure Inline =
       val toString = Layout.toString o layout
    end
 
-val includes: string list ref =
-   control {name = "includes",
-	    default = ["mlton.h"],
-	    toString = List.toString String.toString}
-   
 datatype inline = datatype Inline.t
 
 val layoutInline = Inline.layout

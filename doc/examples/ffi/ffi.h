@@ -1,6 +1,6 @@
 /* ffi.h */
 
-#include "mlton.h"
+#include "libmlton.h"
 
 #define BOOL0 0
 #define BOOL1 1

@@ -23,11 +23,11 @@ fun dest (T {dest, ...}) = dest
 
 fun toString t =
    case dest t of
-      Char => "uchar"
-    | Double => "double"
-    | Int => "int"
-    | Pointer => "pointer"
-    | Uint => "uint"
+      Char => "Char"
+    | Double => "Double"
+    | Int => "Int"
+    | Pointer => "Pointer"
+    | Uint => "Word"
 
 val layout = Layout.str o toString
 

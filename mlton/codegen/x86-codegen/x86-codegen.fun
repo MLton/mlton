@@ -80,7 +80,6 @@ struct
   open x86
   structure Type = Machine.Type
   fun output {program as Machine.Program.T {chunks, frameLayouts, main, ...},
-              includes: string list,
 	      outputC,
 	      outputS}: unit
     = let
@@ -181,8 +180,7 @@ struct
 	    in
 	      CCodegen.outputDeclarations
 	      {additionalMainArgs = additionalMainArgs,
-	       includes = includes,
-	       name = "X86",
+	       includes = ["x86-main.h"],
 	       print = print,
 	       program = program,
 	       rest = rest}

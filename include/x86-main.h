@@ -1,7 +1,7 @@
-#ifndef _X86CODEGEN_H_
-#define _X86CODEGEN_H_
+#ifndef _X86_MAIN_H_
+#define _X86_MAIN_H_
 
-#include "codegen.h"
+#include "main.h"
 
 /* Globals */
 word applyFFTemp;
@@ -31,13 +31,20 @@ word threadTemp;
 #define DEBUG_X86CODEGEN FALSE
 #endif
 
-
 #define Locals(c, d, i, p, u)						\
 	char localuchar[c];						\
 	double localdouble[d];				       		\
 	int localint[i];						\
 	pointer localpointer[p];					\
 	uint localuint[u]
+
+#if (defined (__CYGWIN__))
+#define ReturnToC "_Thread_returnToC"
+#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__sun__))
+#define ReturnToC "Thread_returnToC"
+#else
+#error ReturnToC not defined
+#endif
 
 #define Main(al, cs, mg, mfs, mlw, mmc, ps, ml, reserveEsp)		\
 void MLton_jumpToSML (pointer jump) {					\
@@ -48,13 +55,13 @@ void MLton_jumpToSML (pointer jump) {					\
 	lc_stackP = c_stackP;						\
 	if (reserveEsp)							\
 		__asm__ __volatile__					\
-		("pusha\nmovl %%esp,%0\nmovl %1,%%ebp\nmovl %2,%%edi\njmp *%3\n.global Thread_returnToC\nThread_returnToC:\nmovl %0,%%esp\npopa" \
+		("pusha\nmovl %%esp,%0\nmovl %1,%%ebp\nmovl %2,%%edi\njmp *%3\n.global "ReturnToC"\n"ReturnToC":\nmovl %0,%%esp\npopa" \
 		: "=o" (c_stackP)					\
 		: "o" (gcState.stackTop), "o" (gcState.frontier), "r" (jump) \
 		);							\
 	else								\
 		__asm__ __volatile__ 					\
-		("pusha\nmovl %%esp,%0\nmovl %1,%%ebp\nmovl %2,%%esp\njmp *%3\n.global Thread_returnToC\nThread_returnToC:\nmovl %0,%%esp\npopa" \
+		("pusha\nmovl %%esp,%0\nmovl %1,%%ebp\nmovl %2,%%esp\njmp *%3\n.global "ReturnToC"\n"ReturnToC":\nmovl %0,%%esp\npopa" \
 		: "=o" (c_stackP)					\
 		: "o" (gcState.stackTop), "o" (gcState.frontier), "r" (jump) \
 		);							\

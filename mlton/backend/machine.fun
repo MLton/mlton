@@ -1036,12 +1036,16 @@ structure Program =
 				  
 	       in
 		  case Operand.ty base of
-		     Type.EnumPointers {enum, pointers} =>
+		     Type.CPointer => true
+		   | Type.EnumPointers {enum, pointers} =>
 			0 = Vector.length enum
 			andalso
 			((* Vector_fromArray header update. *)
 			 (offset = Runtime.headerOffset
 			  andalso Type.equals (ty, Type.word))
+			 orelse
+			 (offset = Runtime.arrayLengthOffset
+			  andalso Type.equals (ty, Type.int))
 			 orelse
 			 Vector.forall
 			 (pointers, fn p =>

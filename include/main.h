@@ -1,13 +1,7 @@
-#ifndef _CODEGEN_H_
-#define _CODEGEN_H_
+#ifndef _MAIN_H_
+#define _MAIN_H_
 
-extern struct GC_state gcState;
-extern char globaluchar[];
-extern double globaldouble[];
-extern int globalint[];
-extern pointer globalpointer[];
-extern uint globaluint[];
-extern pointer globalpointerNonRoot[];
+#include "libmlton.h"
 
 /* The label must be declared as weak because gcc's optimizer may prove that
  * the code that declares the label is dead and hence eliminate declaration.
@@ -30,7 +24,8 @@ extern pointer globalpointerNonRoot[];
 #define LoadArray(a, f) sfread (a, sizeof(*a), cardof(a), f)
 #define SaveArray(a, fd) swrite (fd, a, sizeof(*a) * cardof(a))
 
-/* gcState can't be static because stuff in mlton-lib.c refers to it */ \
+/* gcState can't be static because stuff in mlton-lib.c refers to it */
+
 #define Globals(c, d, i, p, u, nr)			\
 	struct GC_state gcState;			\
 	char globaluchar[c];				\

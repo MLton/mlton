@@ -20,7 +20,6 @@ signature X86_CODEGEN =
     include X86_CODEGEN_STRUCTS
 
     val output: {program: Machine.Program.t,
-                 includes: string list,
                  outputC: unit -> {file: File.t,
 				   print: string -> unit,
 				   done: unit -> unit},

@@ -421,6 +421,16 @@ fun toMachine (program: Ssa.Program.t) =
 				temp = temp
 				})
 	 end
+      fun runtimeOp (field: GCField.t, ty: Type.t): M.Operand.t =
+	 if !Control.Native.native
+	    then M.Operand.Runtime field
+	 else
+	    M.Operand.Offset {base = M.Operand.GCState,
+			      offset = GCField.offset field,
+			      ty = ty}
+      val exnStackOp = runtimeOp (GCField.ExnStack, Type.ExnStack)
+      val stackBottomOp = runtimeOp (GCField.StackBottom, Type.Word)
+      val stackTopOp = runtimeOp (GCField.StackTop, Type.Word)
       fun translateOperand (oper: R.Operand.t): M.Operand.t =
 	 let
 	    datatype z = datatype R.Operand.t
@@ -444,7 +454,10 @@ fun toMachine (program: Ssa.Program.t) =
 	     | PointerTycon pt =>
 		  M.Operand.Word (Runtime.typeIndexToHeader
 				  (PointerTycon.index pt))
-	     | Runtime r => M.Operand.Runtime r
+	     | Runtime f =>
+		  if !Control.Native.native
+		     then M.Operand.Runtime f
+		  else runtimeOp (f, R.Operand.ty oper)
 	     | SmallIntInf w => M.Operand.SmallIntInf w
 	     | Var {var, ...} => varOperand var
 	 end
@@ -505,25 +518,21 @@ fun toMachine (program: Ssa.Program.t) =
 		     Vector.new2
 		     (M.Statement.PrimApp
 		      {args = (Vector.new2
-			       (M.Operand.Runtime GCField.StackTop,
+			       (stackTopOp,
 				M.Operand.Int
 				(handlerOffset () + Runtime.wordSize))),
 		       dst = SOME tmp,
 		       prim = Prim.word32Add},
 		      M.Statement.PrimApp
-		      {args = (Vector.new2
-			       (tmp,
-				M.Operand.Cast
-				(M.Operand.Runtime GCField.StackBottom,
-				 M.Type.word))),
-		       dst = SOME (M.Operand.Runtime GCField.ExnStack),
+		      {args = Vector.new2 (tmp, stackBottomOp),
+		       dst = SOME exnStackOp,
 		       prim = Prim.word32Sub})
 		  end
 	     | SetExnStackSlot =>
 		  (* ExnStack = *(uint* )(stackTop + offset);	*)
 		  Vector.new1
 		  (M.Statement.move
-		   {dst = M.Operand.Runtime GCField.ExnStack,
+		   {dst = exnStackOp,
 		    src = M.Operand.StackOffset {offset = linkOffset (),
 						 ty = Type.ExnStack}})
 	     | SetHandler h =>
@@ -538,7 +547,7 @@ fun toMachine (program: Ssa.Program.t) =
 		  (M.Statement.move
 		   {dst = M.Operand.StackOffset {offset = linkOffset (),
 						 ty = Type.ExnStack},
-		    src = M.Operand.Runtime GCField.ExnStack})
+		    src = exnStackOp})
 	     | _ => Error.bug (concat
 			       ["backend saw strange statement: ",
 				R.Statement.toString s])

@@ -803,6 +803,7 @@ static GC_stack newStack (GC_state s, uint reserved, bool allocInOldGen) {
 static void setStack (GC_state s) {
 	GC_stack stack;
 
+	s->exnStack = s->currentThread->exnStack;
 	stack = s->currentThread->stack;
 	s->stackBottom = stackBottom (s, stack);
 	s->stackTop = stackTop (s, stack);
@@ -1212,6 +1213,7 @@ void enter (GC_state s) {
 		fprintf (stderr, "enter\n");
 	/* used needs to be set because the mutator has changed s->stackTop. */
 	s->currentThread->stack->used = currentStackUsed (s);
+	s->currentThread->exnStack = s->exnStack;
 	if (DEBUG) 
 		GC_display (s, stderr);
 	unless (s->inSignalHandler) {

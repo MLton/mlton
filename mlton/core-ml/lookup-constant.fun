@@ -123,6 +123,7 @@ val gcFields =
    [
     "canHandle",
     "currentThread",
+    "exnStack",
     "frontier",
     "cardMapForMutator",
     "limit",
@@ -150,7 +151,7 @@ fun build (decs: CoreML.Dec.t vector, out: Out.t): unit =
    (List.concat
     [["#include <stddef.h>", (* for offsetof *)
       "#include <stdio.h>"],
-     List.map (!Control.includes, fn i =>
+     List.map (["libmlton.h"], fn i =>
 	       concat ["#include <", i, ">"]),
      ["struct GC_state gcState;",
       "int main (int argc, char **argv) {"],

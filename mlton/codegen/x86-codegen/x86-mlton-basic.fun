@@ -435,14 +435,9 @@ struct
   fun stackTopTempMinusWordDerefOperand () =
      Operand.memloc (stackTopTempMinusWordDeref ())
 
-  fun gcState_currentThread_exnStackContents () =
-     MemLoc.simple {base = gcState_currentThreadContents (),
-		    index = Immediate.const_int 0,
-		    size = pointerSize,
-		    scale = wordScale,
-		    class = Classes.Heap}
-  fun gcState_currentThread_exnStackContentsOperand () =
-     Operand.memloc (gcState_currentThread_exnStackContents ())
+  val (_, gcState_currentThread_exnStackContents,
+       gcState_currentThread_exnStackContentsOperand) =
+     make (Field.ExnStack, wordSize, Classes.GCState)
 
   (* init *)
   fun init () = let

@@ -373,6 +373,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	     canHandle = get "canHandle",
 	     cardMap = get "cardMapForMutator",
 	     currentThread = get "currentThread",
+	     exnStack = get "exnStack",
 	     frontier = get "frontier",
 	     limit = get "limit",
 	     limitPlusSlop = get "limitPlusSlop",
@@ -457,13 +458,11 @@ fun compile {input: File.t list, outputC, outputS, docc}: unit =
 	    then
 	       Control.trace (Control.Top, "x86 code gen")
 	       x86Codegen.output {program = machine,
-                                  includes = !Control.includes,
 				  outputC = outputC,
 				  outputS = outputS}
 	 else
 	    Control.trace (Control.Top, "C code gen")
 	    CCodegen.output {program = machine,
-                             includes = !Control.includes,
 			     outputC = outputC}
       val _ = Control.message (Control.Detail, PropertyList.stats)
       val _ = Control.message (Control.Detail, HashSet.stats)

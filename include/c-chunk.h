@@ -1,20 +1,46 @@
-#ifndef _CCODEGEN_H_
-#define _CCODEGEN_H_
+#ifndef _C_CHUNK_H_
+#define _C_CHUNK_H_
 
-#include "codegen.h"
+#include "my-lib.h"
+#include "c-common.h"
+
+#define WORD_SIZE 4
 
 #ifndef DEBUG_CCODEGEN
 #define DEBUG_CCODEGEN FALSE
 #endif
 
-extern char CReturnC;
-extern double CReturnD;
-extern int CReturnI;
-extern char *CReturnP;
-extern uint CReturnU;
+typedef unsigned char Char;
+typedef double Double;
+typedef int Int;
+typedef char *Pointer;
+typedef unsigned long Word32;
+typedef Word32 Word;
+typedef unsigned long long Word64;
+
+#define Bool Int
+
+extern Char CReturnC;
+extern Double CReturnD;
+extern Int CReturnI;
+extern Char *CReturnP;
+extern Word CReturnU;
 extern struct cont (*nextChunks []) ();
-extern int nextFun;
-extern bool returnToC;
+extern Int nextFun;
+extern Int returnToC;
+extern struct GC_state gcState;
+extern Char globaluchar[];
+extern Double globaldouble[];
+extern Int globalint[];
+extern Pointer globalpointer[];
+extern Word globaluint[];
+extern Pointer globalpointerNonRoot[];
+
+#define GCState ((Pointer)&gcState)
+#define ExnStack *(Word*)(GCState + ExnStackOffset)
+#define Frontier *(Word*)(GCState + FrontierOffset)
+#define StackBottom *(Word*)(GCState + StackBottomOffset)
+#define StackTop *(Word*)(GCState + StackTopOffset)
 
 #define IsInt(p) (0x3 & (int)(p))
 
@@ -38,30 +64,15 @@ extern bool returnToC;
 /*                       Chunk                       */
 /* ------------------------------------------------- */
 
-#define ChunkName(n) Chunk ## n
-
-#define Chunkp(n) &(ChunkName(n))
-
-struct cont {
-	void *nextChunk;
-};
-
-#define DeclareChunk(n)				\
-	struct cont ChunkName(n)(void)
-
 #define Chunk(n)				\
 	DeclareChunk(n) {			\
 		struct cont cont;		\
-		int l_nextFun = nextFun;	\
-		char *stackTop;			\
-		pointer frontier;		\
+		int l_nextFun = nextFun;
 
 #define ChunkSwitch(n)							\
 		if (DEBUG_CCODEGEN)					\
-			fprintf (stderr, "%s:%d: entering chunk %d\n",	\
-					__FILE__, __LINE__, n);		\
-		CacheFrontier();					\
-		CacheStackTop();					\
+			fprintf (stderr, "%s:%d: entering chunk %d  l_nextFun = %d\n",	\
+					__FILE__, __LINE__, n, l_nextFun);	\
 		while (1) {						\
 		top:							\
 		switch (l_nextFun) {
@@ -72,8 +83,6 @@ struct cont {
 			nextFun = l_nextFun;				\
 			cont.nextChunk = (void*)nextChunks[nextFun];	\
 			leaveChunk:					\
-				FlushFrontier();			\
-				FlushStackTop();			\
 				return cont;				\
 		} /* end switch (l_nextFun) */				\
 		} /* end while (1) */					\
@@ -93,80 +102,14 @@ struct cont {
 	} while (0)
 
 /* ------------------------------------------------- */
-/*                       main                        */
-/* ------------------------------------------------- */
-
-#define Main(al, cs, mg, mfs, mlw, mmc, ps, mc, ml)				\
-/* Globals */									\
-char CReturnC;   /* The CReturn's must be globals and cannot be per chunk */	\
-double CReturnD; /* because they may be assigned in one chunk and read in */	\
-int CReturnI;    /* another.  See, e.g. Array_allocate. */			\
-char *CReturnP;									\
-uint CReturnU;									\
-int nextFun;									\
-bool returnToC;									\
-void MLton_callFromC () {							\
-	struct cont cont;							\
-	GC_state s;								\
-										\
-	if (DEBUG_CCODEGEN)							\
-		fprintf (stderr, "MLton_callFromC() starting\n");		\
-	s = &gcState;								\
-	s->savedThread = s->currentThread;					\
-	/* Return to the C Handler thread. */					\
-	GC_switchToThread (s, s->callFromCHandler);				\
-	nextFun = *(int*)(s->stackTop - WORD_SIZE);				\
-	cont.nextChunk = nextChunks[nextFun];					\
-	returnToC = FALSE;							\
-	do {									\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
-	} while (not returnToC);						\
-	GC_switchToThread (s, s->savedThread);					\
-	s->savedThread = BOGUS_THREAD;						\
-	if (DEBUG_CCODEGEN)							\
-		fprintf (stderr, "MLton_callFromC done\n");			\
-}										\
-int main (int argc, char **argv) {						\
-	struct cont cont;							\
-	gcState.native = FALSE;							\
-	Initialize (al, cs, mg, mfs, mlw, mmc, ps);				\
-	if (gcState.isOriginal) {						\
-		real_Init();							\
-		PrepFarJump(mc, ml);						\
-	} else {								\
-		/* Return to the saved world */					\
-		nextFun = *(int*)(gcState.stackTop - WORD_SIZE);		\
-		cont.nextChunk = nextChunks[nextFun];				\
-	}									\
-	/* Trampoline */							\
-	while (1) {								\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
- 		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
-	}									\
-}
-
-/* ------------------------------------------------- */
 /*                      farJump                      */
 /* ------------------------------------------------- */
-
-#define PrepFarJump(n, l)				\
-	do {						\
-		cont.nextChunk = (void*)ChunkName(n);	\
-		nextFun = l;				\
-	} while (0)
 
 #define FarJump(n, l)	 			\
 	do {					\
 		PrepFarJump(n, l); 		\
 		goto leaveChunk;		\
 	} while (0)
-
 
 /* ------------------------------------------------- */
 /*                      Globals                      */
@@ -185,11 +128,11 @@ int main (int argc, char **argv) {						\
 /* ------------------------------------------------- */
 
 #define Declare(ty, name, i) ty Reg(name, i)
-#define DC(n) Declare(uchar, c, n)
-#define DD(n) Declare(double, d, n)
-#define DI(n) Declare(int, i, n)
-#define DP(n) Declare(pointer, p, n)
-#define DU(n) Declare(uint, u, n)
+#define DC(n) Declare(Char, c, n)
+#define DD(n) Declare(Double, d, n)
+#define DI(n) Declare(Int, i, n)
+#define DP(n) Declare(Pointer, p, n)
+#define DU(n) Declare(Word, u, n)
 
 #define Reg(name, i) local ## name ## i
 #define RC(n) Reg(c, n)
@@ -203,139 +146,87 @@ int main (int argc, char **argv) {						\
 /* ------------------------------------------------- */
 
 #define Offset(ty, b, o) (*(ty*)((b) + (o)))
-#define OC(b, i) Offset(uchar, b, i)
-#define OD(b, i) Offset(double, b, i)
-#define OI(b, i) Offset(int, b, i)
-#define OP(b, i) Offset(pointer, b, i)
-#define OU(b, i) Offset(uint, b, i)
+#define OC(b, i) Offset(Char, b, i)
+#define OD(b, i) Offset(Double, b, i)
+#define OI(b, i) Offset(Int, b, i)
+#define OP(b, i) Offset(Pointer, b, i)
+#define OU(b, i) Offset(Word, b, i)
 
 #define Contents(t, x) (*(t*)(x))
-#define CC(x) Contents(uchar, x)
-#define CD(x) Contents(double, x)
-#define CI(x) Contents(int, x)
-#define CP(x) Contents(pointer, x)
-#define CU(x) Contents(uint, x)
+#define CC(x) Contents(Char, x)
+#define CD(x) Contents(Double, x)
+#define CI(x) Contents(Int, x)
+#define CP(x) Contents(Pointer, x)
+#define CU(x) Contents(Word, x)
 
 /* ------------------------------------------------- */
 /*                       Stack                       */
 /* ------------------------------------------------- */
 
-#define Slot(ty, i) *(ty*)(stackTop + (i))
-#define SC(i) Slot(uchar, i)
-#define SD(i)							\
-	(assert (0 == ((uint)stackTop + (i)) % gcState.alignment),	\
-	Slot(double, i))
-#define SI(i) Slot(int, i)
-#define SP(i) Slot(pointer, i)
-#define SU(i) Slot(uint, i)
-
-#define ExnStack gcState.currentThread->exnStack
-#define StackBottom gcState.stackBottom
+#define Slot(ty, i) *(ty*)(StackTop + (i))
+#define SC(i) Slot(Char, i)
+#define SD(i) Slot(Double, i)
+#define SI(i) Slot(Int, i)
+#define SP(i) Slot(Pointer, i)
+#define SU(i) Slot(Word, i)
 
 #define Push(bytes)							\
 	do {								\
 		if (DEBUG_CCODEGEN)					\
 			fprintf (stderr, "%s:%d: Push (%d)\n",		\
 					__FILE__, __LINE__, bytes);	\
-		stackTop += (bytes);					\
-		assert (0 == (uint)stackTop % gcState.alignment);	\
-		assert (StackBottom <= stackTop);			\
+		StackTop += (bytes);					\
+		assert (StackBottom <= StackTop);			\
 	} while (0)
 
 #define Return()								\
 	do {									\
-		l_nextFun = *(word*)(stackTop - WORD_SIZE);			\
+		l_nextFun = *(Word*)(StackTop - WORD_SIZE);			\
 		if (DEBUG_CCODEGEN)						\
 			fprintf (stderr, "%s:%d: Return()  l_nextFun = %d\n",	\
 					__FILE__, __LINE__, l_nextFun);		\
 		goto top;							\
 	} while (0)
 
-#define Raise()							\
-	do {							\
-		if (DEBUG_CCODEGEN)				\
-			fprintf (stderr, "%s:%d: Raise\n", 	\
-					__FILE__, __LINE__);	\
-		stackTop = StackBottom + ExnStack;		\
-		Return();					\
-	} while (0)
-
-/* ------------------------------------------------- */
-/*                      Runtime                      */
-/* ------------------------------------------------- */
+#define Raise()									\
+	do {									\
+		if (DEBUG_CCODEGEN)						\
+			fprintf (stderr, "%s:%d: Raise\n",			\
+					__FILE__, __LINE__);			\
+		StackTop = StackBottom + ExnStack;	\
+		Return();							\
+	} while (0)								\
 
 #define ProfileLabel(l)				\
 	__asm__ __volatile__ (#l ## ":" : : )
 
-#define CheckPointer(p)						\
-	do {							\
-		assert (not GC_isPointer (p)			\
-			or (gcState.heap.start <= p 		\
-				and p < gcState.heap.start 	\
-					+ gcState.oldGenSize)	\
-			or (gcState.nursery <= p 		\
-				and p < frontier));		\
-	} while (0)
-
-#define FlushFrontier()				\
-	do {					\
-		gcState.frontier = frontier;	\
-	} while (0)
-
-#define FlushStackTop()				\
-	do {					\
-		gcState.stackTop = stackTop;	\
-	} while (0)
-
-#define CacheFrontier()							\
-	do {								\
-		frontier = gcState.frontier;				\
-		assert (0 == ((uint)frontier + GC_NORMAL_HEADER_SIZE)	\
-				% gcState.alignment);			\
-	} while (0)
-
-#define CacheStackTop()							\
-	do {								\
-		stackTop = gcState.stackTop;				\
-/* The following assert is not true when trampolining from one chunk	\
- * to another as part of a Raise.					\
- */									\
-/*		assert (0 == (uint)stackTop % gcState.alignment); */	\
-	} while (0)
-
-#define SmallIntInf(n) ((pointer)(n))
-#define IntAsPointer(n) ((pointer)(n))
-#define PointerToInt(p) ((int)(p))
+#define SmallIntInf(n) ((Pointer)(n))
 
 #define Object(x, h)							\
 	do {								\
-		*(word*)frontier = (h);					\
-		x = frontier + GC_NORMAL_HEADER_SIZE;			\
-		assert (0 == (uint)x % gcState.alignment);		\
+		*(Word*)Frontier = (h);					\
+		x = Frontier + WORD_SIZE;				\
 		if (DEBUG_CCODEGEN)					\
 			fprintf (stderr, "%s:%d: 0x%x = Object(%d)\n",	\
 					__FILE__, __LINE__, x, h);	\
-		assert (frontier <= gcState.limitPlusSlop);		\
 	} while (0)
 
-#define EndObject(bytes)					\
-	do {							\
-		frontier += (bytes);				\
+#define EndObject(bytes)			\
+	do {					\
+		Frontier += (bytes);		\
 	} while (0)
 
 /* ------------------------------------------------- */
 /*                      Arrays                       */
 /* ------------------------------------------------- */
 
-#define Array_length GC_arrayNumElements
-
 #define ArrayOffset(ty, b, i) (*(ty*)((b) + ((i) * sizeof(ty))))
 
-#define XC(b, i) ArrayOffset(uchar, b, i)
-#define XD(b, i) ArrayOffset(double, b, i)
-#define XI(b, i) ArrayOffset(int, b, i)
-#define XP(b, i) ArrayOffset(pointer, b, i)
-#define XU(b, i) ArrayOffset(uint, b, i)
+#define XC(b, i) ArrayOffset (Char, b, i)
+#define XD(b, i) ArrayOffset (Double, b, i)
+#define XI(b, i) ArrayOffset (Int, b, i)
+#define XP(b, i) ArrayOffset (Pointer, b, i)
+#define XU(b, i) ArrayOffset (Word, b, i)
 
 /* ------------------------------------------------- */
 /*                       Char                        */
@@ -345,8 +236,8 @@ int main (int argc, char **argv) {						\
 #define Char_le(c1, c2) ((c1) <= (c2))
 #define Char_gt(c1, c2) ((c1) > (c2))
 #define Char_ge(c1, c2) ((c1) >= (c2))
-#define Char_chr(c) ((uchar)(c))
-#define Char_ord(c) ((int)(c))
+#define Char_chr(c) ((Char)(c))
+#define Char_ord(c) ((Int)(c))
 
 /* ------------------------------------------------- */
 /*                     Cpointer                      */
@@ -448,16 +339,16 @@ static inline Int Int_subOverflow (Int lhs, Int rhs, Bool *overflow) {
 	return tmp;
 }
 static inline Word32 Word32_addOverflow (Word32 lhs, Word32 rhs, Bool *overflow) {
-	ullong tmp;
+	Word64 tmp;
 
-	tmp = (ullong)lhs + rhs;
+	tmp = (Word64)lhs + rhs;
 	*overflow = (tmp != (Word32)tmp);
 	return tmp;
 }
 static inline Word32 Word32_mulOverflow (Word32 lhs, Word32 rhs, Bool *overflow) {
-	ullong tmp;
+	Word64 tmp;
 
-	tmp = (ullong)lhs * rhs;
+	tmp = (Word64)lhs * rhs;
 	*overflow = (tmp != (Word32)tmp);
 	return tmp;
 }
@@ -578,8 +469,8 @@ static inline Word Word32_mulCheckFast (Word n1, Word n2) {
 #define Int_le(n1, n2) ((n1) <= (n2))
 #define Int_gt(n1, n2) ((n1) > (n2))
 #define Int_ge(n1, n2) ((n1) >= (n2))
-#define Int_geu(x, y) ((uint)(x) >= (uint)(y))
-#define Int_gtu(x, y) ((uint)(x) > (uint)(y))
+#define Int_geu(x, y) ((Word)(x) >= (Word)(y))
+#define Int_gtu(x, y) ((Word)(x) > (Word)(y))
 #define Int_neg(n) (-(n))
 
 /* ------------------------------------------------- */
@@ -596,21 +487,35 @@ static inline Word Word32_mulCheckFast (Word n1, Word n2) {
 /*                       Real                        */
 /* ------------------------------------------------- */
 
-#include <math.h>
+Double acos (Double x);
 #define Real_Math_acos acos
+Double asin (Double x);
 #define Real_Math_asin asin
+Double atan (Double x);
 #define Real_Math_atan atan
+Double atan2 (Double x, Double y);
 #define Real_Math_atan2 atan2
+Double cos (Double x);
 #define Real_Math_cos cos
+Double cosh (Double x);
 #define Real_Math_cosh cosh
+Double exp (Double x);
 #define Real_Math_exp exp
+Double log (Double x);
 #define Real_Math_ln log
+Double log10 (Double x);
 #define Real_Math_log10 log10
+Double pow (Double x, Double y);
 #define Real_Math_pow pow
+Double sin (Double x);
 #define Real_Math_sin sin
+Double sinh (Double x);
 #define Real_Math_sinh sinh
+Double sqrt (Double x);
 #define Real_Math_sqrt sqrt
+Double tan (Double x);
 #define Real_Math_tan tan
+Double tanh (Double x);
 #define Real_Math_tanh tanh
 
 #define Real_abs fabs
@@ -618,24 +523,25 @@ static inline Word Word32_mulCheckFast (Word n1, Word n2) {
 #define Real_copysign copysign
 #define Real_div(x, y) ((x) / (y))
 #define Real_equal(x1, x2) ((x1) == (x2))
-#define Real_frexp frexp
-#define Real_fromInt(n) ((double)(n))
+#define Real_fromInt(n) ((Double)(n))
 #define Real_ge(x1, x2) ((x1) >= (x2))
 #define Real_gt(x1, x2) ((x1) > (x2))
+Double ldexp (Double x, Int i);
 #define Real_ldexp ldexp
 #define Real_le(x1, x2) ((x1) <= (x2))
 #define Real_lt(x1, x2) ((x1) < (x2))
-#define Real_modf modf
 #define Real_mul(x, y) ((x) * (y))
 #define Real_muladd(x, y, z) ((x) * (y) + (z))
 #define Real_mulsub(x, y, z) ((x) * (y) - (z))
 #define Real_neg(x) (-(x))
+Int Real_qequal (Double x1, Double x2);
+Double Real_round (Double x);
 #define Real_sub(x, y) ((x) - (y))
 #define Real_toInt(x) ((int)(x))
 
 typedef volatile union {
-	word tab[2];
-	double d;
+	Word tab[2];
+	Double d;
 } DoubleOr2Words;
 
 static inline double Real_fetch (double *dp) {
@@ -671,12 +577,6 @@ static inline void Real_store (double *dp, double d) {
 }
 
 /* ------------------------------------------------- */
-/*                      Vector                       */
-/* ------------------------------------------------- */
-
-#define Vector_length GC_arrayNumElements
-
-/* ------------------------------------------------- */
 /*                       Word8                       */
 /* ------------------------------------------------- */
 
@@ -687,8 +587,8 @@ static inline void Real_store (double *dp, double d) {
  */
 #define Word8_arshift(w, s) ((signed char)(w) >> (s))
 #define Word8_div(w1, w2) ((w1) / (w2))
-#define Word8_fromInt(x) ((uchar)(x))
-#define Word8_fromLargeWord(w) ((uchar)(w))
+#define Word8_fromInt(x) ((Char)(x))
+#define Word8_fromLargeWord(w) ((Char)(w))
 #define Word8_ge(w1, w2) ((w1) >= (w2))
 #define Word8_gt(w1, w2) ((w1) > (w2))
 #define Word8_le(w1, w2) ((w1) <= (w2))
@@ -699,8 +599,8 @@ static inline void Real_store (double *dp, double d) {
 #define Word8_neg(w) (-(w))
 #define Word8_notb(w) (~(w))
 #define Word8_orb(w1, w2) ((w1) | (w2))
-#define Word8_ror(x, y) ((x)>>(y) | ((x)<<(8-(y))))
 #define Word8_rol(x, y) ((x)>>(8-(y)) | ((x)<<(y)))
+#define Word8_ror(x, y) ((x)>>(y) | ((x)<<(8-(y))))
 #define Word8_rshift(w, s) ((w) >> (s))
 #define Word8_sub(w1, w2) ((w1) - (w2))
 #define Word8_toInt(w) ((int)(w))
