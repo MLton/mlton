@@ -10,6 +10,8 @@ struct
 
 open S
 
+structure ProfileLabel = ProfileLabel ()
+
 structure PointerTycon =
    struct
       datatype t = T of {index: int,

@@ -19,7 +19,6 @@ signature ATOMS' =
       structure Const: CONST
       structure Prim: PRIM 
       structure ProfileExp: PROFILE_EXP
-      structure ProfileLabel: PROFILE_LABEL
       structure Record: RECORD
       structure Scheme: SCHEME
       structure SortedRecord: RECORD

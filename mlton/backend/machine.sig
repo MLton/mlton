@@ -12,7 +12,6 @@ signature MACHINE_STRUCTS =
    sig
       structure Label: HASH_ID
       structure Prim: PRIM
-      structure ProfileLabel: PROFILE_LABEL
       structure SourceInfo: SOURCE_INFO
    end
 

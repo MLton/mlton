@@ -8,6 +8,7 @@
 Group
 
 signature MACHINE
+signature PROFILE_LABEL
 signature RUNTIME
 
 functor Backend
@@ -47,6 +48,8 @@ parallel-move.fun
 parallel-move.sig
 profile.fun
 profile.sig
+profile-label.fun
+profile-label.sig
 representation.fun
 representation.sig
 rssa.fun

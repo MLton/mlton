@@ -18,7 +18,6 @@ signature HASH_ID
 signature HASH_TYPE
 signature PRIM
 signature PROFILE_EXP
-signature PROFILE_LABEL
 signature RECORD
 signature SCHEME
 signature SOURCE_INFO
@@ -61,8 +60,6 @@ prim.fun
 prim.sig
 profile-exp.fun
 profile-exp.sig
-profile-label.fun
-profile-label.sig
 scheme.sig
 source-info.fun
 source-info.sig

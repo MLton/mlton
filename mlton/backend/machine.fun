@@ -21,10 +21,8 @@ end
 
 structure Atoms = MachineAtoms (structure Label = Label
 				structure Prim = Prim
-				structure ProfileLabel = ProfileLabel
 				structure Runtime = Runtime
 				structure SourceInfo = SourceInfo)
-   
 open Atoms
 
 structure ChunkLabel = IntUniqueId ()

@@ -11,7 +11,6 @@ signature MACHINE_ATOMS_STRUCTS =
    sig
       structure Label: HASH_ID
       structure Prim: PRIM
-      structure ProfileLabel: PROFILE_LABEL
       structure Runtime: RUNTIME
       structure SourceInfo: SOURCE_INFO
    end
@@ -19,6 +18,8 @@ signature MACHINE_ATOMS_STRUCTS =
 signature MACHINE_ATOMS =
    sig
       include MACHINE_ATOMS_STRUCTS
+
+      structure ProfileLabel: PROFILE_LABEL
 
       structure PointerTycon:
 	 sig

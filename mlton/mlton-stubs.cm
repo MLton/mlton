@@ -326,6 +326,7 @@ ssa/ssa.fun
 backend/mtype.sig
 backend/c-function.sig
 backend/runtime.sig
+backend/profile-label.sig
 backend/machine-atoms.sig
 backend/switch.sig
 backend/switch.fun
@@ -333,6 +334,7 @@ backend/mtype.fun
 backend/c-function.fun
 backend/runtime.fun
 backend/err.sml
+backend/profile-label.fun
 backend/machine-atoms.fun
 backend/machine.sig
 backend/machine.fun
