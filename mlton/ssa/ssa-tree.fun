@@ -1910,6 +1910,79 @@ structure Program =
 	     false
 	  end)
 
+      (* Print information about the number of arithmetic operations that check
+       * for overflow and how many have one constant argument.
+       *)
+      fun printArithStats (T {functions, globals, ...}): unit =
+	 let
+	    open Ssa
+	    val {get = isConst, set = setIsConst, ...} =
+	       Property.getSetOnce (Var.plist, Property.initConst false)
+	    val _ =
+	       Vector.foreach
+	       (globals, fn Statement.T {var, exp, ...} =>
+		case (var, exp) of
+		   (SOME x, Exp.Const _) => setIsConst (x, true)
+		 | _ => ())
+	    fun newStats () =
+	       {one = ref 0,
+		two = ref 0,
+		zero = ref 0}
+	    fun printStats (name, {one, two, zero}) =
+	       let
+		  val zero = !zero
+		  val one = !one
+		  val two = !two
+		  val total = Real.fromInt (zero + one + two)
+		  fun per i =
+		     if Real.equals (0.0, total)
+			then "0"
+		     else Real.format (100.0 * Real.fromInt i / total,
+				       Real.Format.fix (SOME 1))
+		  fun line i = concat [Int.toString i, " (", per i, "%)  "]
+	       in
+		  print (concat [line zero, line one])
+	       end
+	    val add = newStats ()
+	    val mul = newStats ()
+	    val sub = newStats ()
+	    val _ =
+	       List.foreach
+	       (functions, fn f =>
+		let
+		   val {blocks, ...} = Function.dest f
+		in
+		   Vector.foreach
+		   (blocks, fn Block.T {transfer, ...} =>
+		    case transfer of
+		       Transfer.Arith {prim, args, ...} =>
+			  let
+			     fun doit {one, two, zero} =
+				let
+				   val x = Vector.sub (args, 0)
+				   val y = Vector.sub (args, 1)
+				in
+				   Int.inc
+				   (if isConst x
+				       then if isConst y then two else one
+				    else if isConst y then one else zero)
+				end
+			     datatype z = datatype Prim.Name.t
+			  in
+			     case Prim.name prim of
+				Int_addCheck => doit add
+			      | Int_subCheck => doit sub
+			      | Int_mulCheck => doit mul
+			      | _ => ()
+			  end
+		     | _ => ())
+		end)
+	    val _ = (printStats ("add", add)
+		     ; printStats ("sub", sub)
+		     ; printStats ("mul", mul))
+	 in
+	    ()
+	 end
    end
 
 end
