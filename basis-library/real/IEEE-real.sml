@@ -50,13 +50,19 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 		   | SOME (_, m) => m
 			
 	       val toInt: t -> int =
+		  fn m =>
 		  let
 		     open Prim.RoundingMode
+		     val i =
+			case m of
+			   TO_NEAREST => toNearest
+			 | TO_NEGINF => downward
+			 | TO_POSINF => upward
+			 | TO_ZERO => towardZero
 		  in
-		     fn TO_NEAREST => toNearest
-		      | TO_NEGINF => downward
-		      | TO_POSINF => upward
-		      | TO_ZERO => towardZero
+		     if i = noSupport
+			then raise Fail "IEEEReal rounding mode not supported"
+		     else i
 		  end
 	    end
 	 end

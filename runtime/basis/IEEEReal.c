@@ -5,5 +5,6 @@ Int IEEEReal_getRoundingMode () {
 }
 
 void IEEEReal_setRoundingMode (Int m) {
+	assert (m != FE_NOSUPPORT);
 	fesetround (m);
 }

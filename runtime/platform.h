@@ -296,6 +296,20 @@ void GC_setSummary (Int b);
 /*                     IEEEReal                      */
 /* ------------------------------------------------- */
 
+#define FE_NOSUPPORT -1
+#ifndef FE_TONEAREST
+#define FE_TONEAREST FE_NOSUPPORT
+#endif
+#ifndef FE_DOWNWARD
+#define FE_DOWNWARD FE_NOSUPPORT
+#endif
+#ifndef FE_UPWARD
+#define FE_UPWARD FE_NOSUPPORT
+#endif
+#ifndef FE_TOWARDZERO
+#define FE_TOWARDZERO FE_NOSUPPORT
+#endif
+
 void IEEEReal_setRoundingMode (Int mode);
 Int IEEEReal_getRoundingMode ();
 

@@ -391,6 +391,7 @@ structure Primitive =
 		     
 		  val toNearest = _const "FE_TONEAREST": t;
 		  val downward = _const "FE_DOWNWARD": t;
+		  val noSupport = _const "FE_NOSUPPORT": t;
 		  val upward = _const "FE_UPWARD": t;
 		  val towardZero = _const "FE_TOWARDZERO": t;
 	       end
