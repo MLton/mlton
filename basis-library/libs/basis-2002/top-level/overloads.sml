@@ -8,7 +8,7 @@
 
 _overload ~ :   ('a -> 'a)
 as  Int.~
-and Int64.~
+(* and Int64.~ *)
 and Int32.~
 and Int16.~
 and Int8.~
@@ -25,7 +25,7 @@ and Real32.~
 
 _overload + :   ('a * 'a -> 'a)
 as  Int.+
-and Int64.+
+(* and Int64.+ *)
 and Int32.+
 and Int16.+
 and Int8.+
@@ -42,7 +42,7 @@ and Real32.+
 
 _overload - :   ('a * 'a -> 'a)
 as  Int.-
-and Int64.-
+(* and Int64.- *)
 and Int32.-
 and Int16.-
 and Int8.-
@@ -59,7 +59,7 @@ and Real32.-
 
 _overload * :   ('a * 'a -> 'a)
 as  Int.*
-and Int64.*
+(* and Int64.* *)
 and Int32.*
 and Int16.*
 and Int8.*
@@ -91,7 +91,7 @@ val op / = Real./
 
 _overload div: ('a * 'a -> 'a)
 as  Int.div
-and Int64.div
+(* and Int64.div *)
 and Int32.div
 and Int16.div
 and Int8.div
@@ -105,7 +105,7 @@ and SysWord.div
 
 _overload mod: ('a * 'a -> 'a)
 as  Int.mod
-and Int64.mod
+(* and Int64.mod *)
 and Int32.mod
 and Int16.mod
 and Int8.mod
@@ -119,7 +119,7 @@ and SysWord.mod
 
 _overload < :   ('a * 'a -> bool)
 as  Int.<
-and Int64.<
+(* and Int64.< *)
 and Int32.<
 and Int16.<
 and Int8.<
@@ -138,7 +138,7 @@ and Char.<
 
 _overload <= :   ('a * 'a -> bool)
 as  Int.<=
-and Int64.<=
+(* and Int64.<= *)
 and Int32.<=
 and Int16.<=
 and Int8.<=
@@ -157,7 +157,7 @@ and Char.<=
 
 _overload > :   ('a * 'a -> bool)
 as  Int.>
-and Int64.>
+(* and Int64.> *)
 and Int32.>
 and Int16.>
 and Int8.>
@@ -176,7 +176,7 @@ and Char.>
 
 _overload >= :   ('a * 'a -> bool)
 as  Int.>=
-and Int64.>=
+(* and Int64.>= *)
 and Int32.>=
 and Int16.>=
 and Int8.>=
@@ -195,7 +195,7 @@ and Char.>=
 
 _overload abs: ('a -> 'a)
 as  Int.abs
-and Int64.abs
+(* and Int64.abs *)
 and Int32.abs
 and Int16.abs
 and Int8.abs
