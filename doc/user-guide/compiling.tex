@@ -3,7 +3,7 @@
 If you want to compile {\mlton}, you need either the source {\tt rpm}
 or {\tt tgz}.  You can compile with either {\mlton} or {\smlnj}, but
 we strongly recommend using {\mlton}, since it generates a much faster
-executable.
+and more robust executable.  
 %
 \subsection{Compiling with {\mlton}}
 
@@ -16,15 +16,15 @@ the root directory of the sources.  This will build {\mlton} first
 with the already installed binary version of {\mlton} and will then
 rebuild {\mlton} with itself.
 
-First, the Makefile calls {\tt mllex} and {\tt mlyacc} to build the
-lexer and parser, and then calls {\tt mlton} to compile itself.  When
-making {\mlton} using another version the Makefile automatically uses
-{\tt mlton-stubs.cm}, which will put in enough stubs to emulate the
-{\tt MLton} structure.  Once {\mlton} is built, the Makefile will
-rebuild {\mlton} with itself, this time using {\tt mlton.cm} and the
-real {\tt MLton} structure from the basis library.  This second round
-of compilation is essential in order to achieve a fast and robust
-{\mlton}.
+First, the {\tt Makefile} calls {\tt mllex} and {\tt mlyacc} to build
+the lexer and parser, and then calls {\tt mlton} to compile itself.
+When making {\mlton} using another version the {\tt Makefile}
+automatically uses {\tt mlton-stubs.cm}, which will put in enough
+stubs to emulate the {\tt MLton} structure.  Once {\mlton} is built,
+the {\tt Makefile} will rebuild {\mlton} with itself, this time using
+{\tt mlton.cm} and the real {\tt MLton} structure from the basis
+library.  This second round of compilation is essential in order to
+achieve a fast and robust {\mlton}.
 
 Compiling {\mlton} requires at least 256M of actual RAM.  Thus, if
 your machine has less than this, it is likely that self-compilation
@@ -38,9 +38,9 @@ only fix is to make sure that enough memory is available.
 
 To compile with {\smlnj}, run {\tt make nj-mlton} from within the root
 directory of the sources.  You must use the SML/NJ version 110.44,
-which is what {\mlton} is developed with.  First, the Makefile calls
-{\tt mllex} and {\tt mlyacc} to build the lexer and parser.  Then, it
-calls {\smlnj} with the appropriate {\tt sources.cm} file.  Building
-with {\smlnj} takes some time (5-10 minutes on a 1.6GHz machine).
-Unless you are doing compiler development and need rapid
+which is what {\mlton} is tested with.  First, the {\tt Makefile}
+calls {\tt mllex} and {\tt mlyacc} to build the lexer and parser.
+Then, it calls {\smlnj} with the appropriate {\tt sources.cm} file.
+Building with {\smlnj} takes some time (5-10 minutes on a 1.6GHz
+machine).  Unless you are doing compiler development and need rapid
 recompilation, we recommend compiling with {\mlton}.

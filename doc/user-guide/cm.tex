@@ -4,7 +4,6 @@ For porting code from SML/NJ and for developing code for MLton under
 SML/NJ, {\mlton} supports a very limited subset of
 \htmladdnormallink{Compilation Manager}
                   {http://www.smlnj.org/doc/CM/index.html}
-
 (CM) files.  From {\mlton}'s point of view, a CM file {\tt foo.cm}
 defines a list of SML source files.  The call {\tt mlton foo.cm} is
 equivalent to compiling an SML program consisting of the concatenation
@@ -103,7 +102,7 @@ there may be a large number of file dependencies implicit in your
 sources that are not reflected in your CM files.  Because {\mlton}
 relies on ordering in CM files, your CM files probably will not work
 with {\mlton}.  To help in porting CM files to {\mlton}, the {\mlton}
-distribution includes the SML sources for a utility, {\tt cmcat}, that
+distribution includes the sources for a utility, {\tt cmcat}, that
 will print an ordered list of files corresponding to a CM file.  See
 {\tt \doc/cmcat/cmcat.sml} for details.  Building {\tt cmcat} requires
 that you have already installed {\smlnj} version 110.44.

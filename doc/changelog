@@ -1,8 +1,15 @@
 Here are the changes since version 20030716.
 
+* 2004-02-10
+  - Lots of changes to MLton.Signal: name changes, removal of
+    superfluous functions, additional functions.
+
 * 2004-02-09
   - Extended -show-basis so that when used with an input program, it
-    shows the basis defined by the input program. 
+    shows the basis defined by the input program.
+  - Added "stop" runtime argument.
+  - Made -call-graph {false|true} an option to mlprof that determines
+    whether or not a call graph file is written.
 
 * 2004-01-20
   - Fixed a bug in IEEEReal.{fromString,scan}, which would improperly

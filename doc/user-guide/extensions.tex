@@ -4,15 +4,17 @@
 
 To aid in the debugging of code produced by program genenerators such as
 \htmladdnormallink{Noweb}{http://www.eecs.harvard.edu/~nr/noweb/},
-{\mlton} supports comments with {\nline} directives of the form {\tt (*\#line
-}{\it line}{\tt.}{\it col} {\tt "}{\it file}{\tt"*)}.  Here, {\it line} and {\it
-col} are sequences of decimal digits and {\it file} is the source file.  A
-{\nline} directive causes the front end to believe that the character following
-the right parenthesis is at the line and column of the specified file.  A
-{\nline} directive only affects the reporting of error messages and does not
-affect program semantics (except for functions like {\tt MLton.Exn.history}
-which report source file positions).  Syntactically invalid {\nline} directives
-are ignored.
+{\mlton} supports comments with {\nline} directives of the form {\tt
+(*\#line }{\it line}{\tt.}{\it col} {\tt "}{\it file}{\tt"*)}.  Here,
+{\it line} and {\it col} are sequences of decimal digits and {\it
+file} is the source file.  A {\nline} directive causes the front end
+to believe that the character following the right parenthesis is at
+the line and column of the specified file.  A {\nline} directive only
+affects the reporting of error messages and does not affect program
+semantics (except for functions like {\tt MLton.Exn.history} which
+report source file positions).  Syntactically invalid {\nline}
+directives are ignored.  To prevent incompatibilites with SML, the
+file name may not contain the character sequence {\tt *)}.
 %
 \subsection{The {\tt MLton} structure}
 
@@ -169,7 +171,7 @@ continuation.
 signature MLTON_EXN =
    sig
       val history: exn -> string list
-      val topLevelHandler: exn -> unit
+      val topLevelHandler: exn -> 'a
    end
 \end{verbatim}
 
@@ -233,13 +235,13 @@ withValue} on {\tt v} when the gc determines that {\tt v} is
 unreachable.
 
 \entry{touch v}
-Ensures that {\tt v}'s finalizers will run sometime after the call to
+Ensures that {\tt v}'s finalizers will not run before the call to
 {\tt touch}.
 
 \entry{withValue (v, f)}
 returns the result of applying {\tt f} to the value of {\tt v} and
 ensures that {\tt v}'s finalizers will not run before {\tt f}
-completes.
+completes.  The call to {\tt f} is a nontail call.
 
 \end{description}
 
@@ -261,21 +263,21 @@ signature MLTON_GC =
 causes a garbage collection to occur.
 
 \entry{pack ()}
-shrinks the heap as much as possible so that other processes can use available
-RAM.
+shrinks the heap as much as possible so that other processes can use
+available RAM.
 
 \entry{setMessages b}
-controls whether diagnostic messages are
-printed at the beginning and end of each garbage collection.  It is
-the same as the {\tt gc-messages} runtime system option.
+controls whether diagnostic messages are printed at the beginning and
+end of each garbage collection.  It is the same as the {\tt
+gc-messages} runtime system option.
 
 \entry{setSummary b}
-controls whether a summary of garbage
-collection statistics is printed upon termination of the program.  It
-is the same as the {\tt gc-summary} runtime system option.
+controls whether a summary of garbage collection statistics is printed
+upon termination of the program.  It is the same as the {\tt
+gc-summary} runtime system option.
 
 \entry{unpack ()}
-resizes the heap to the desired size.
+resizes a packed heap to the size desired by the runtime.
 
 \end{description}
 %
@@ -495,19 +497,17 @@ returns the number of bytes {\tt w} such that {\tt add (p2, w) = p1}.
 Does not check for overflow.
 
 \entry{get\mbox{\it X} (p, i)}
-returns the object stored at address {\tt p}, offset by {\tt i}.  For
-example, {\tt getWord32 (p, 7)} returns the 32-bit word stored 28
-bytes beyond {\tt p}.
-
-\entry{isNull p}
-returns {\tt true} if {\tt p} is the null pointer.
+returns the object stored at index i of the array of {\it X} objects
+pointed to by {\tt p}.  For example, {\tt getWord32 (p, 7)} returns
+the 32-bit word stored 28 bytes beyond {\tt p}.
 
 \entry{null}
 the null pointer, i.e. 0.
 
 \entry{set\mbox{\it X} (p, i, v)}
-assigns the object stored at address {\tt p} offset by {\tt i}.  For
-example, {\tt setWord32 (p, 7, w)} stores {\tt w} 28 bytes beyond {\tt
+assigns {\tt v} to the object stored at index i of the array of {\it
+X} objects pointed to by {\tt p}.  For example, {\tt setWord32 (p, 7,
+w)} stores the 32-bit word {\tt w} at the address 28 bytes beyond {\tt
 p}.
 
 \entry{sub (p, w)}
@@ -527,7 +527,8 @@ signature MLTON_PROC_ENV =
 
 \begin{description}
 \entry{setenv \{name, value\}}
-Like the C {\tt setenv} function.
+Like the C {\tt setenv} function.  Does not require {\tt name} or {\tt
+value} to be null terminated.
 \end{description}
 %
 \subsubsection{\tt MLton.Process}
@@ -566,12 +567,13 @@ Like {\tt Posix.Process.execp}.
 \end{description}
 
 \subsubsec{{\tt MLton.Profile}}{profile-structure}
+
 This structure provides profiling control from within the program.
 For more on profiling, see \secref{profiling} and {\tt
-examples/profiling}. In order to most efficiently execute
-non-profiled programs, all of the operations in {\tt
-MLton.Profile} are no-ops when compiling {\tt -profile no} (the
-default).
+examples/profiling}.  In order to most efficiently execute non-profiled
+programs, when compiling {\tt -profile no} (the default), type {\tt
+Data.t} is equivalent to {\tt unit} and all of the operations in {\tt
+MLton.Profile} are no-ops.
 
 \begin{verbatim}
 signature MLTON_PROFILE =
@@ -606,24 +608,29 @@ data.
 \entry{Data.free x}
 frees the memory associated with the unit of profiling data {\tt x}.
 It is an error to free the current unit of profiling data or to free a
-previously freed unit of profiling data.
+previously freed unit of profiling data.  When compiling {\tt -profile
+no}, {\tt Data.free x} is a no-op.
 
 \entry{Data.malloc ()}
 returns a new unit of profiling data.  Each unit of profiling data is
 allocated from the process heap (\emph{not} the {\mlton} heap) and
-consumes memory proportional to the number of source functions.
+consumes memory proportional to the number of source functions.  When
+compiling {\tt -profile no}, {\tt Data.malloc ()} is equivalent to
+allocating a new {\tt unit ref}.
 
 \entry{\tt write (x, f)}
 writes the accumulated ticks in the unit of profiling data {\tt x} to
 file {\tt f}.  It is an error to write a previously freed unit of
-profiling data.  Note: a program compiled with {\tt -profile time} or
-{\tt -profile alloc} will always write the current unit of profiling
-data at program exit to a file named {\tt mlmon.out}.
+profiling data.  When compiling {\tt -profile no}, {\tt write (x, f)}
+is a no-op.  Note: a program compiled with {\tt -profile time} or {\tt
+-profile alloc} will always write the current unit of profiling data
+at program exit to a file named {\tt mlmon.out}.
 
 \entry{withData (d, f)}
 runs {\tt f} with {\tt d} as the unit of profiling data, and returns
 the result of {\tt f} after restoring the current unit of profiling
-data.
+data.  When compiling {\tt -profile no}, {\tt withData (d, f)} is
+equivalent to {\tt f ()}.
 
 \end{description}
 %
@@ -654,7 +661,8 @@ return the next pseudrandom number.
 \entry{seed ()}
 return a random word from {\tt /dev/random}.  Useful as an arg to {\tt
 srand}.  If {\tt /dev/random} can not be read from, {\tt seed ()}
-returns {\tt NONE}.
+returns {\tt NONE}.  {\tt seed ()} may block until enough random bits
+are available.
 
 \entry{srand w}
 set the seed used by {\tt rand} to {\tt w}.
@@ -662,7 +670,8 @@ set the seed used by {\tt rand} to {\tt w}.
 \entry{useed ()}
 return a random word from {\tt /dev/urandom}.  Useful as an arg to
 {\tt srand}.  If {\tt /dev/urandom} can not be read from, {\tt useed
-()} returns {\tt NONE}.
+()} returns {\tt NONE}.  {\tt useed ()} will never block -- it will
+instead return lower quality random bits.
 
 \end{description}
 %
@@ -732,19 +741,23 @@ signature MLTON_RUSAGE =
 corresponds to a subset of the C {\tt struct rusage}.
 
 \entry{rusage ()}
-corresponds to the C {\tt getrusage} function.  It returns the resource usage of
-the exited children, the garbage collector, and the process itself.  The process
-time includes the gc time.
+corresponds to the C {\tt getrusage} function.  It returns the
+resource usage of the exited children, the garbage collector, and the
+process itself.  The process time ({\tt self}) includes the gc time.
 \end{description}
 
 \subsubsec{{\tt MLton.Signal}}{signal}
-Signals handlers are functions from threads to threads.  When a signal 
+Signals handlers are functions from threads to threads.  When a signal
 handler is invoked, it receives as an argument the thread that was
-interrupted by the signal.  The signal handler returns the thread that 
-it would like to resume execution.  It is an error for a signal
-handler to raise an exception.  All signals are automatically blocked
-for the duration of a handler.  Signal handlers will never run during
-a critical section (see \secref{thread}).
+interrupted by the signal.  The signal handler returns the thread that
+it would like to resume execution (this is often the thread that it
+was passed).  It is an error for a signal handler to raise an
+unhandled exception.  It is an error for to {\tt Thread.switch'} to an
+interrupted thread with a thunk that raises an exception (either
+directly, or via {\tt Thread.prepend}).  This is to avoid the
+possibility of aynchronous exceptions.  All signals are automatically
+blocked for the duration of a handler.  Signal handlers will never run
+during a critical section (see \secref{thread}).
 
 \begin{verbatim}
 signature MLTON_SIGNAL =
@@ -764,6 +777,7 @@ signature MLTON_SIGNAL =
             val ignore: t
             val isDefault: t -> bool
             val isIgnore: t -> bool
+	    val simple: (unit -> unit) -> t
          end
 
       structure Mask:
@@ -774,18 +788,12 @@ signature MLTON_SIGNAL =
             val allBut: signal list -> t
             val block: t -> unit
             val none: t
-            val set: t -> unit
+            val setBlocked: t -> unit
             val some: signal list -> t
             val unblock: t -> unit
          end
 
       val getHandler: t -> Handler.t
-      val handleDefault: t -> unit
-      val handleWith: t * (unit -> unit) -> unit
-      val handleWith': t * (unit Thread.t -> unit Thread.t) -> unit
-      val ignore: t -> unit
-      val isHandledDefault: t -> bool
-      val isIgnored: t -> bool
       val setHandler: t * Handler.t -> unit
       val suspend: Mask.t -> unit
    end
@@ -801,58 +809,58 @@ signature MLTON_SIGNAL =
 \entry{vtalrm}
 {\tt SIGVTALRM}, the signal for virtual timers.
 
-\entry{type Handler.t} the type of signal handlers.
+\entry{type Handler.t}
+the type of signal handlers.
 
-\entry{Handler.default} handles the signal with the default action.
+\entry{Handler.default}
+handles the signal with the default action.
 
-\entry{Handler.handler f} handles the signal with {\tt f}.
+\entry{Handler.handler f}
+returns a handler {\tt h} such that when a signal {\tt s} is handled
+by {\tt h}, {\tt f} will be passed the thread that was interrupted by
+{\tt s} and should return the thread that will resume execution.
 
-\entry{Handler.ignore} ignores the signal.
+\entry{Handler.ignore}
+is a handler that will ignore the signal.
 
-\entry{Handler.isDefault} returns true if the handler is the default handler.
+\entry{Handler.isDefault}
+returns true if the handler is the default handler.
 
-\entry{Handler.isIgnore} returns true if the handler is the ignore handler.
+\entry{Handler.isIgnore}
+returns true if the handler is the ignore handler.
 
-\entry{type Mask.t} the type of signal masks.
+\entry{Handler.simple f}
+returns a handler that executes {\tt f ()} and does not change
+threads.
 
-\entry{Mask.all} a mask of all signals.
+\entry{type Mask.t}
+the type of signal masks, which are sets of blocked signals.
 
-\entry{Mask.allBut l} a mask of all signals except for those in l.
+\entry{Mask.all}
+a mask of all signals.
 
-\entry{Mask.block m} block all signals in {\tt m}.
+\entry{Mask.allBut l}
+a mask of all signals except for those in l.
 
-\entry{Mask.none} a mask of no signals.
+\entry{Mask.block m}
+block all signals in {\tt m}.
 
-\entry{Mask.set m} set the signal mask to {\tt m}.
+\entry{Mask.none}
+a mask of no signals.
+
+\entry{Mask.setBlocked m}
+set the signal mask to {\tt m}, i.e. a signal is blocked if and only
+if it is in {\tt m}.
 
 \entry{Mask.some l} a mask of the signals in {\tt l}.
 
 \entry{Mask.unblock m} unblock all signals in {\tt m}.
 
-\entry{getHandler s} return the current handler for signal {\tt s}.
+\entry{getHandler s}
+returns the current handler for signal {\tt s}.
 
-\entry{handleDefault s} set the handler for signal {\tt s} to default.
-
-\entry{handleWith (s, f)} like {\tt handleWith'}, but always resumes with the
-interrupted thread.
-
-\entry{handleWith' (s, f)}
-set the handler for signal {\tt s} to be the function {\tt f}.  When
-run, {\tt f} will be passed the thread that was interrupted by signal
-{\tt s}, and should return the thread that will resume execution.  It
-is an error for {\tt f} to raise an exception.  It is an error to {\tt
-Thread.switch'} to an interrupted thread with a thunk that raises an
-exception (either directly, or via {\tt Thread.prepend}).  This is to
-avoid the possibility of aynchronous exceptions.
-
-\entry{ignore s} set the handler for signal {\tt s} to ignore the signal.
-
-\entry{isHandledDefault s} returns {\tt true} if the default handler
-is installed for {\tt s}.
-
-\entry{isIgnored s} returns {\tt true} if {\tt s} is being ignored.
-
-\entry{setHandler (s, h)} set the handler for signal {\tt s} to {\tt h}.
+\entry{setHandler (s, h)}
+sets the handler for signal {\tt s} to {\tt h}.
 
 \entry{suspend m}
 temporarily sets the signal mask to {\tt m} and suspends until an
@@ -1129,10 +1137,10 @@ the type of words.  For {\tt MLton.Word} this is {\tt Word.word}, for
 {\tt MLton.Word8} this is {\tt Word8.word}.
 
 \entry{rol (w, w')}
-rotate left.
+rotate left (circular).
 
 \entry{ror (w, w')}
-rotate right.
+rotate right (circular).
 \end{description}
 
 \subsubsec{{\tt MLton.World}}{world}

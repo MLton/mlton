@@ -3,12 +3,11 @@
 \subsection{Installation}
 %
 {\mlton} runs on a variety of platforms and is distributed in both
-source and binary form -- the format for the package depends on the
-platform.  The binary package is designed to be installed in the root
-directory.  It may install in {\tt /usr} or {\tt /usr/local},
-depending on the platform.  If you do not install {\mlton} in the root
-directory, you must set the {\tt lib} variable in {\tt
-\prefix/bin/mlton} to the directory that contains the libraries ({\tt
+source and binary form.  The format for the binary package depends on
+the platform.  The binary package will install under {\tt /usr} or
+{\tt /usr/local}, depending on the platform.  If you install {\mlton}
+somewhere else, you must set the {\tt lib} variable in the {\tt
+bin/mlton} script to the directory that contains the libraries ({\tt
 /\prefix/lib/mlton} by default).
 
 {\mlton} requires that you have the

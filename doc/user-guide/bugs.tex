@@ -14,6 +14,18 @@ Definition of SML.
 \begin{itemize}
 
 \item
+{\mlton} does not correctly parse case expressions nested within other
+matches.  For example, the following fails.
+\begin{verbatim}
+fun f 0 y =
+      case x of
+         1 => 2
+       | _ => 3
+  | f _ y = 4
+\end{verbatim}
+The fix is to parenthesize the case expression.
+
+\item
 {\mlton} rejects rebinding of constructors with {\tt val rec}
 declarations, as in
 \begin{verbatim}

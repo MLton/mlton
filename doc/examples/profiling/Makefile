@@ -29,7 +29,7 @@ profile-multiple:
 profile-stack:
 	$(mlton) -profile alloc -profile-stack true $(ALLOC_EX).sml
 	./$(ALLOC_EX)
-	$(mlprof) -show-line true $(ALLOC_EX) mlmon.out
+	$(mlprof) -call-graph true -show-line true $(ALLOC_EX) mlmon.out
 	dot -Tps $(ALLOC_EX).dot >$(ALLOC_EX).ps || true
 
 .PHONY: profile-time

@@ -18,27 +18,28 @@ part of the design of {\mlton} and is not likely to change.
 {\mlton} compiles the Standard ML language as given in The Definition
 of Standard ML (Revised)\cite{MTHM97}.  If there is a program that is
 valid according to The Definition that is rejected by {\mlton}, it is
-a bug.
+a bug.  For a list of known bugs, see \secref{bugs}.
 
 \feature{complete basis library}
-{\mlton} contains a complete implementation of the required parts of
-the Standard ML basis library specification.  See
+{\mlton} implements the latest Standard ML basis library
+specification, with a complete implementation of all the required
+modules, as well as many of the optional modules.  See
 \secref{basis-library} for details.
 
 \feature{excellent running times}
 {\mlton} generates executables with excellent running times.
 For a comparison with other SML compilers, see
 \link{\makeurl{performance.html}}.
-For a comparison of many compilers, including {\mlton}, see
-\link{http://www.bagley.org/\~{}doug/shootout/}.
 
 \feature{native integers and words}
 In {\mlton}, integers and words are 32 bits and arithmetic does not have
 any overhead due to tagging.
 
 \feature{unboxed native arrays}
-In {\mlton}, an array of integers, words, or reals uses the natural C-like
-representation.  This is fast and supports easy exchange of data with C.
+In {\mlton}, an array (or vector) of integers, words, or reals uses
+the natural C-like representation.  This is fast and supports easy
+exchange of data with C.  Monomorphic arrays (and vectors) use the
+same C-like representations as their polymorphic counterparts.
 
 \feature{runtime system supports large arrays}
 In {\mlton}, array lengths can be up to $2^{31} - 1$, the largest possible
@@ -56,8 +57,9 @@ within RAM if at all possible.
 
 \feature{standalone executables}
 {\mlton} generates standalone executables.  No additional code or
-libraries are necessary in order to run an executable.  MLton can also generate
-statically linked executables.
+libraries are necessary in order to run an executable, except for
+the standard shared libraries.  {\mlton} can also generate statically
+linked executables.
 
 \feature{small executables}
 Because of whole-program compilation, {\mlton} can use very aggressive 
@@ -119,7 +121,7 @@ function.
 
 \feature{signal handlers}
 {\mlton} supports signal handlers written in SML.  Signal handlers run
-in a separate thread, and have access to the thread that was
+in a separate {\mlton} thread, and have access to the thread that was
 interrupted by the signal.  Signal handlers can be used in conjunction
 with threads to implement preemptive multitasking.
 
@@ -132,10 +134,9 @@ of a program.
 {\mlton} has a complete interface to the C {\tt syslog} function.
 
 \feature{threads}
-{\mlton} has preliminary support for threads, upon which either
-preemptive or non-preemptive multitasking can be implemented.  At some
-point in the future, {\mlton} may support CML, but there is still a
-ways to go.
+{\mlton} has support for its own threads, upon which either preemptive
+or non-preemptive multitasking can be implemented.  At some point in
+the future, {\mlton} will support CML.
 
 \feature{weak pointers}
 {\mlton} suports weak pointers, which allow the garbage collector to

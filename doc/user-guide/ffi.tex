@@ -70,11 +70,11 @@ Int32 foo (Real64 x0, Char x1);
 The {\export} expression denotes a function of type {\tt (real * char
 -> int) -> unit}, that when called with a function {\tt f} arranges
 for the exported {\tt foo} function to call {\tt f} when {\tt foo} is
-called.  So, for example, the following expression both exports and
-defines {\tt foo}.
+called.  So, for example, the following exports and defines {\tt
+foo}.
 \begin{verbatim}
-_export "foo": real * char -> int;
-(fn (x, c) => 13 + Real.floor x + Char.ord c)
+val e = _export "foo": real * char -> int;
+val _ = e (fn (x, c) => 13 + Real.floor x + Char.ord c)
 \end{verbatim}
 
 {\mlton}'s {\tt -export-header true} option generates a C header file

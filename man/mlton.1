@@ -32,7 +32,7 @@ The possibilities are \fB.cm\fR, \fB.sml\fR, \fB.c\fR, and \fB.o\fR.
 
 With no arguments, \fBMLton\fP prints the version number and exits.
 For a usage message, run \fBMLton\fP with an invalid switch, e.g.,
-\fBmlton -z\fP.  In the explanation below and in the usage message,
+\fBmlton -\fP.  In the explanation below and in the usage message,
 for flags that take a boolean argument
 (\fI{\fBtrue\fI|\fBfalse\fI}\fR), the first value listed is the
 default. For example, by default, overflow checking on is performed on
@@ -47,8 +47,7 @@ On x86, the default is \fB4\fP and on Sparc the default is
 
 .TP
 \fB-cc-opt \fIoption\fP\fP
-Pass the option to gcc for compiling C code.  This is only useful when
-compiling \fB-native false\fP.
+Pass the option to gcc when compiling C code.
 
 .TP
 \fB-detect-overflow \fI{\fBtrue\fI|\fBfalse\fI}\fR
@@ -64,9 +63,9 @@ exception construction, raise, and handle.
 
 .TP
 \fB-export-header \fI{\fBfalse\fI|\fBtrue\fI}\fR
-This flag is useful for programs that use \fB_export\fP expressions.
-It causes \fBMLton\fP to print to standard output a C header file
-with prototypes for all of the functions exported from SML.
+Causes \fBMLton\fP to print a C header file with prototypes for all of
+the functions exported from SML, and then exit.  This flag is useful
+for programs that use \fB_export\fP expressions.
 
 .TP
 \fB-ieee-fp \fI{\fBfalse\fP|\fBtrue\fP}\fR
@@ -76,8 +75,8 @@ performance cost.  This has no effect with \fB-native false\fP.
 
 .TP
 \fB-inline \fIn\fR
-Set the inlining threshold used in the optimizer.
-The default is 320.
+Set the inlining threshold used in the optimizer.  The threshold is an
+approximate measure of code size of a procedure.  The default is 320.
 
 .TP
 \fB-keep \fI{\fBg\fP|\fBo\fP|\fBsml\fP}\fR
@@ -130,7 +129,8 @@ while a function is on the stack.
 Pass argument to the runtime via \fB@MLton\fP.  The argument will be
 processed before other \fB@MLton\fP command line switches.  Multiple
 uses of \fB-runtime\fP are allowed, and will pass all the arguments in
-order.
+order.  If the same runtime switch occurs more than once, then the
+last setting will dominate, except for \fBno-load-world\fP.
 
 .TP
 \fB-safe \fI{\fBtrue\fP|\fBfalse\fP}\fR
@@ -142,12 +142,14 @@ specification, and may cause programs to seg fault.
 
 .TP
 \fB-show-basis \fI{\fBfalse\fP|\fBtrue\fP}\fR
-If true, the compiler displays the basis library and exits.
+If true, \fBMLton\fP prints the basis library and exits.  When used
+with an input file, \fBmlton\fP prints the basis defined by the input
+program.
 
 .TP
 \fB-show-basis-used \fI{\fBfalse\fP|\fBtrue\fP}\fR
-If true, then the compiler prints out the types, values, signatures,
-structures, and functors from the basis library that the input program uses, and
+If true, \fBMLton\fP prints the types, values, signatures, structures,
+and functors from the basis library that the input program uses, and
 then exits.
 
 .TP
@@ -228,12 +230,22 @@ The meaning of \fI[\fBkm\fI]\fR is the same as with the \fBfixed-heap\fP
 option.
 .TP
 \fB-no-load-world\fP
-Disable \fBload-world\fP.  Can use this with the \fB-runtime\fP
-compiler switch to prevent executables from loading a world.
+Disable \fBload-world\fP.  This can be used as an argument to the
+compiler via \fB-runtime no-load-world\fP to create executables that
+will not load a world.  This may be useful for ensuring that set-uid
+executables do not load some strange world.
 .TP
 \fBram-slop \fIx\fR
 Multiply \fBx\fP by the amount of RAM on the machine to obtain what
-the runtime views as the amount of RAM it can use.
+the runtime views as the amount of RAM it can use.  Typically \fBx\fP
+is less than 1, and is used to account for space used by other
+programs running on the same machine.
+.TP
+\fBstop\fP
+Causes the runtime to stop processing \fB@MLton\fP arguments once the
+next \fB--\fP is reached.  This can be used as an argument to the
+compiler via \fB-runtime stop\fP to create executables that don't
+process any \fB@MLton\fP arguments.
 
 .SH "SEE ALSO"
 .BR mlprof (1)

@@ -112,18 +112,18 @@ return.
 %
 \subsection{Call graphs}
 
-For easier visualization of profiling data, {\tt mlprof} creates a
+For easier visualization of profiling data, {\tt mlprof} can create a
 call graph of the program in dot format, from which you can use the
 \htmladdnormallink{{\tt graphviz}}
 		  {http://www.research.att.com/sw/tools/graphviz/}
 software package to create a postscript graph.  For example, {\tt
-mlprof foo mlmon.out} will create {\tt foo.dot} with a complete call
-graph.  For each source function, there will be one node in the graph
-that contains the function name (and source position with {\tt
--show-line true}), as well as the percentage of ticks.  If you want to
-create a call graph for your program without any profiling data, you
-can simply call {\tt mlprof} without any {\tt mlmon.out} files,
-e.g. {\tt mlprof foo}.
+mlprof -call-graph true foo mlmon.out} will create {\tt foo.dot} with
+a complete call graph.  For each source function, there will be one
+node in the graph that contains the function name (and source position
+with {\tt -show-line true}), as well as the percentage of ticks.  If
+you want to create a call graph for your program without any profiling
+data, you can simply call {\tt mlprof} without any {\tt mlmon.out}
+files, e.g. {\tt mlprof -call-graph true foo}.
 
 Because SML has higher-order functions, the call graph is is dependent
 on {\mlton}'s analysis of which functions call each other.  This
@@ -261,7 +261,8 @@ stacks.  The difference is in how tail calls are displayed.  For
 example if {\tt f} nontail calls {\tt g} and {\tt g} tail calls {\tt
 h}, then the call-stack graph has edges from {\tt f} to {\tt g} and
 {\tt f} to {\tt h}, while the call graph has edges from {\tt f} to {\tt
-g} and {\tt g} to {\tt h}.
+g} and {\tt g} to {\tt h}.  That is, a tail call from {\tt g} to {\tt
+h} removes {\tt g} from the call stack and replaces it with {\tt h}.
 
 Conceptually, both allocation and time profiling work in the same way.
 The compiler produces information that maps machine code positions to

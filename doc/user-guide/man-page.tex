@@ -4,7 +4,7 @@
 followed by a file name and a list of files to compile, assemble, and
 link with.
 \begin{verbatim}
-mlton [option ...] file.{cm|sml|c|o} [file.{c|S|o} ...]
+mlton [option ...] file.{c|cm|o|sml} [file.{c|o|s|S} ...]
 \end{verbatim}
 The simplest case is to run {\tt mlton foo.sml}, where {\tt foo.sml}
 contains a valid SML program, in which case {\mlton} compiles the
@@ -32,7 +32,7 @@ possibilities are {\tt .cm}, {\tt .sml}, {\tt .c}, and {\tt .o}.
 
 With no arguments, {\mlton} prints the version number and exits.  For
 a usage message, run {\mlton} with an invalid switch, e.g. {\tt mlton
--z}.  In the explanation below and in the usage message, for flags
+-}.  In the explanation below and in the usage message, for flags
 that take a boolean argument {\tt \{true|false\}}, the first value
 listed is the default.  For example, by default, overflow checking on
 is performed on integer arithmetic.
@@ -57,8 +57,7 @@ On {\intel}, the default is {\tt 4} and on {\sparc} the default is
 {\tt 8}.
 
 \option{-cc-opt {\it option}}
-Pass the option to gcc for compiling C code.  This is only useful when
-compiling {\tt -native false}.
+Pass the option to gcc when compiling C code.
 
 \option{-detect-overflow \trueFalse}
 This flag controls whether or not overflow checking is performed on integer
@@ -71,10 +70,9 @@ exceptions and in run time, because of additional work that must be
 performed at each exception construction, raise, and handle.
 
 \option{-export-header \falseTrue}
-This flag is useful for programs that use {\export} expressions (see
-\secref{export}).  It causes {\mlton} to print to standard output a C
-header file with prototypes for all of the functions exported from
-SML.
+Causes {\mlton} to print a C header file with prototypes for all of
+the functions exported from SML, and then exit.  This flag is useful
+for programs that use {\export} expressions (see \secref{export}).
 
 \option{-ieee-fp \falseTrue}
 Control whether or not the native code generator is pedantic about following
@@ -82,7 +80,8 @@ the IEEE floating point standard.  By default, it is not, because of the
 performance cost.  This has no effect with {\tt -native false}.
 
 \option{-inline {\it n}}
-Set the inlining threshold used in the optimizer.  The default is 320.
+Set the inlining threshold used in the optimizer.  The threshold is an
+approximate measure of code size of a procedure.  The default is 320.
 
 \option{-keep \choiceThree{g}{o}{sml}}
 Save intermediate files.  If no {\tt -keep} argument is given, then
@@ -124,7 +123,8 @@ while a function is on the stack.
 Pass argument to the runtime via {\tt @MLton}.  The argument will be
 processed before other {\tt @MLton} command line switches.  Multiple
 uses of {\tt -runtime} are allowed, and will pass all the arguments in
-order.
+order.  If the same runtime switch occurs more than once, then the
+last setting will take effect.
 
 \option{-safe \trueFalse}
 This switch determines the value of the SML variable {\tt MLton.safe},
@@ -135,12 +135,13 @@ does not conform to the basis library specification, and may cause
 programs to seg fault.
 
 \option{-show-basis \falseTrue}
-If true, the compiler displays the basis library and exits.
+If true, {\mlton} prints the basis library and exits.  When used with
+an input file, {\mlton} prints the basis defined by the input program.
 
 \option{-show-basis-used \falseTrue}
-If true, then the compiler prints out the types, values, signatures,
-structures, and functors from the basis library that the input program
-uses, and then exits.
+If true, {\mlton} prints the types, values, signatures, structures,
+and functors from the basis library that the input program uses, and
+then exits.
 
 \option{-stop \choiceFour{f}{g}{o}{sml}}
 Secify pass to stop at.\\
@@ -225,14 +226,24 @@ larger than n.  The meaning of [{\tt km}] is the same as with the
 {\tt fixed-heap} option.
 
 \option{no-load-world}
-Disable {\tt load-world}.  Can use this with the {\tt -runtime}
-compiler switch to prevent executables from loading a world.
+Disable {\tt load-world}.  This can be used as an argument to the
+compiler via {\tt -runtime no-load-world} to create executables that
+will not load a world.  This may be useful for ensuring that set-uid
+executables do not load some strange world.
 
 \option{ram-slop {\mbox{\rm x}}}
 Multiply {\tt x} by the amount of RAM on the machine to obtain what
-the runtime views as the amount of RAM it can use.
+the runtime views as the amount of RAM it can use.  Typically {\tt x}
+is less than 1, and is used to account for space used by other
+programs running on the same machine.
+
+\option{stop}
+Causes the runtime to stop processing {\tt @MLton} arguments once the
+next {\tt --} is reached.  This can be used as an argument to the
+compiler via {\tt -runtime stop} to create executables that don't
+process any {\tt @MLton} arguments.
 \end{description}
-These options can also control the compiler, as in
+These options can also control {\mlton}, as in
 \begin{verbatim}
 mlton @MLton fixed-heap 100m -- foo.sml
 \end{verbatim}
