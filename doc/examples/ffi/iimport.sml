@@ -74,7 +74,7 @@ structure DynLink :> DYN_LINK =
 	 end
 
       val dlclose = fn hndl =>
-	 if MLton.Platform.OS = MLton.Platform.Darwin
+	 if MLton.Platform.OS.host = MLton.Platform.OS.Darwin
 	    then ()  (* Darwin reports the following error message if you
 		      * try to close a dynamic library.
 		      *   "dynamic libraries cannot be closed"
