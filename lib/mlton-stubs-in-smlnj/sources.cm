@@ -1,9 +1,7 @@
 Library
 
 signature INT_INF
-#if (SMLNJ_VERSION == 110) && (SMLNJ_MINOR_VERSION >= 20)
 signature POSIX_SIGNAL
-#endif
 signature REAL
 signature WORD
    
@@ -65,9 +63,9 @@ structure Word8Vector
 
 is
 
-#if (SMLNJ_VERSION == 110) && (SMLNJ_MINOR_VERSION >= 20)
+#if (defined (SMLNJ_VERSION))
+
 $/basis.cm
-#endif
 import.cm
 
 array.sml
@@ -91,3 +89,5 @@ time.sml
 unsafe.sml
 vector.sml
 word.sml
+
+#endif

@@ -18,7 +18,9 @@ functor SplayMapFn
 
 is
 
+#if (defined (SMLNJ_VERSION))
 ../mlton-stubs/sources.cm
+#endif
 
 splaytree-sig.sml
 splaytree.sml

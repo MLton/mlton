@@ -6,6 +6,8 @@ structure Pervasive
 
 is
 
+#if (defined (SMLNJ_VERSION))
 ../../mlton-stubs/sources.cm
+#endif
 
 pervasive.sml

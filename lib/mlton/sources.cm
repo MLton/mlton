@@ -185,9 +185,10 @@ is
 
 ../mlyacc/sources.cm
 ../smlnj/sources.cm
-
 basic/sources.cm
-directed-graph/sources.cm
-(* heap/sources.cm *)
 set/sources.cm
 env/sources.cm
+
+#if (defined (SMLNJ_VERSION))
+directed-graph/sources.cm
+#endif

@@ -2,9 +2,7 @@ Library
 
 signature MLTON_THREAD
 signature INT_INF
-#if (SMLNJ_VERSION == 110) && (SMLNJ_MINOR_VERSION >= 20)
 signature POSIX_SIGNAL
-#endif   
 signature REAL
 signature WORD
 
@@ -65,36 +63,35 @@ is
 
 ../mlton-stubs-in-smlnj/sources.cm
 
-array.sig
-bin-io.sig
-bin-io.sml
-cont.sig
-exn.sig
-finalizable.sig
-gc.sig
-int-inf.sig
-io.sig
-itimer.sig
-mlton.sig
-mlton.sml
-platform.sig
-pointer.sig
-proc-env.sig
-process.sig
-profile.sig
-ptrace.sig
-random.sig
-random.sml
-real.sml
-rlimit.sig
-rusage.sig
-signal.sig
-socket.sig
-syslog.sig
-text-io.sig
 thread.sig
 thread.sml
-vector.sig
-weak.sig
-word.sig
 world.sig
+word.sig
+weak.sig
+vector.sig
+io.sig
+text-io.sig
+syslog.sig
+socket.sig
+signal.sig
+rusage.sig
+rlimit.sig
+random.sig
+profile.sig
+process.sig
+proc-env.sig
+pointer.sig
+platform.sig
+itimer.sig
+int-inf.sig
+gc.sig
+finalizable.sig
+exn.sig
+cont.sig
+bin-io.sml
+bin-io.sig
+array.sig
+mlton.sig
+random.sml
+mlton.sml
+real.sml

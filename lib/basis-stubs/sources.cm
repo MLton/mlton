@@ -4,7 +4,7 @@ structure Basis2002
 
 is
 
-#if (SMLNJ_VERSION == 110) && (SMLNJ_MINOR_VERSION >= 20)
+#if (defined (SMLNJ_VERSION))
 $/basis.cm
 $/smlnj-lib.cm
 #endif

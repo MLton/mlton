@@ -22,7 +22,9 @@ structure LrParser
 
 is
 
+#if (defined (SMLNJ_VERSION))
 ../mlton-stubs/sources.cm
+#endif
 
 base.sig
 join.sml

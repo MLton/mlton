@@ -8,33 +8,19 @@ functor HashedUniqueSet
 functor OrderedUniqueSet
 functor UnorderedSet
 
-(* 
-structure DisjointCollection
-functor DisjointMax
-functor DisjointCollection 
-*) 
-
 is
 
 ../basic/sources.cm
-set.sig
-bit-vector-set.fun
+
 disjoint.sig
 disjoint.fun
-hashed-unique-set.fun
-ordered-unique-set.fun
+set.sig
 unordered.fun
+ordered-unique-set.fun
 
-(*
-disjoint-collection.sig
-disjoint-collection.fun
-disjoint-max.sig
-disjoint-max.fun
-poly-set.sig
-poly-unordered.fun
-universe.sig
-unordered-universe.fun
-type.sig
-type.fun
-universe-type-check.fun
-*)
+#if (defined (SMLNJ_VERSION))
+
+bit-vector-set.fun
+hashed-unique-set.fun
+
+#endif
