@@ -186,6 +186,8 @@ signature BASIS_2002 =
       structure NetHostDB : NET_HOST_DB
       structure NetProtDB : NET_PROT_DB
       structure NetServDB : NET_SERV_DB
+      structure Pack32Big : PACK_WORD
+      structure Pack32Little : PACK_WORD
       structure PackWord32Big : PACK_WORD
       structure PackWord32Little : PACK_WORD
       structure PackReal32Big : PACK_REAL
