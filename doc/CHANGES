@@ -1,5 +1,9 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2002-01-09
+  - Fixed bug in match compiler that caused case expressions on datatypes
+    with redundant cases to be compiled incorrectly.
+
 * 2001-12-06
   - Changed the interface for MLton.Signal.  There is no longer a separate
     Handler substructure.  This was done so that programs that just use

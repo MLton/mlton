@@ -526,12 +526,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			   cases = Xcases.Con (Vector.fromList ac)}
 	    fun step (_, (p, e), ac) =
 	       case NestedPat.node p of
-		  NestedPat.Con {con, targs, arg = NONE} =>
-		     Vector.Continue ((Xpat.T {con = con,
-					       targs = targs,
-					       arg = NONE},
-				       e) :: ac)
-		| NestedPat.Wild =>
+		  NestedPat.Wild =>
 		     Vector.Done
 		     (case ac of
 			 [] => wild e
