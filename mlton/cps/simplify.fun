@@ -107,6 +107,37 @@ fun simplify p =
 	      p
 	   end)))
 
+(*
+fun simplify p =
+   (stats p
+    ; (List.fold
+       (passes, p, fn ((name, pass), p) =>
+      if List.contains (!Control.dropPasses, name, String.equals)
+         then p
+      else
+         let
+            val p =
+               Control.passTypeCheck
+               {name = name,
+                suffix = "pre.cps",
+                style = Control.No,
+                thunk = fn () => p,
+                display = Control.Layouts Program.layouts,
+                typeCheck = typeCheck}
+            val p =
+               Control.passTypeCheck
+               {name = name,
+                suffix = "post.cps",
+                style = Control.No,
+                thunk = fn () => pass p,
+                display = Control.Layouts Program.layouts,
+                typeCheck = typeCheck}
+            val _ = stats p
+         in
+            p
+         end)))
+*)
+
 val typeCheck = S.typeCheck
 
 val simplify = fn p => let
