@@ -19,6 +19,7 @@ fun stats () =
    let open Layout
    in align
       [seq [str "numPeeks = ", Int.layout (!numPeeks)],
+       seq [str "maxLength = ", Int.layout (!maxLength)],
        seq [str "average position in property list = ",
 	    str let open Real
 		in format (fromInt (!numLinks) / fromInt (!numPeeks),
@@ -35,15 +36,8 @@ fun 'a newProperty () =
 	 let
 	    fun loop (l, n) =
 	       let
-		  fun update () =
-		     numLinks := n + !numLinks
-	       (* 		      if n > !maxLength
-		* 			 then (maxLength := n;
-		* 			       print (concat ["peek followed ",
-		* 					    Int.toString n,
-		* 					    " links \n"]))
-		* 		      else ())
-		     *)
+		  fun update () = (numLinks := n + !numLinks;
+				   maxLength := Int.max(!maxLength, n))
 	       in case l of
 		  [] => (update (); NONE)
 		| e :: l =>
