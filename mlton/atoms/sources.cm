@@ -36,8 +36,8 @@ atoms.fun
 atoms.sig
 cases.fun
 cases.sig
-con.fun
-con.sig
+cons.fun
+cons.sig
 const.fun
 const.sig
 generic-scheme.fun
