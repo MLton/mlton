@@ -75,7 +75,7 @@ structure CFunction =
 	    modifiesStackTop = true,
 	    name = "GC_copyCurrentThread",
 	    needsArrayInit = false,
-	    returnTy = NONE}
+	    returnTy = SOME Type.pointer}
 
       val copyThread =
 	 T {bytesNeeded = NONE,
@@ -86,7 +86,7 @@ structure CFunction =
 	    modifiesStackTop = true,
 	    name = "GC_copyThread",
 	    needsArrayInit = false,
-	    returnTy = NONE}
+	    returnTy = SOME Type.pointer}
 
       val exit =
 	 T {bytesNeeded = NONE,
@@ -655,13 +655,18 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 		   | Thread_copyCurrent =>
 			let
 			   val func = CFunction.copyCurrentThread
+			   val t = Var.newNoname ()
 			   val l =
-			      newBlock {args = Vector.new0 (),
+			      newBlock {args = Vector.new1 (t, Type.pointer),
 					kind = Kind.CReturn {func = func},
 					profileInfo = profileInfo,
 					statements = Vector.new0 (),
-					transfer = Goto {args = Vector.new0 (),
-							 dst = return}}
+					transfer =
+					(Goto {args = (Vector.new1
+						       (Operand.Var
+							{var = t,
+							 ty = Type.pointer})),
+					       dst = return})}
 			in
 			   Transfer.CCall
 			   {args = (Vector.concat

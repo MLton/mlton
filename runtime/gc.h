@@ -307,15 +307,13 @@ static inline void GC_arrayShrink (pointer array, uint numElements) {
 	*GC_arrayNumElementsp (array) = numElements;
 }
 
-/* GC_copyThread (s, t) copies the thread pointed to by t and places the
- * result in s->savedThread.
+/* GC_copyThread (s, t) returns a copy of the thread pointed to by t.
  */
-void GC_copyThread (GC_state s, GC_thread t);
+pointer GC_copyThread (GC_state s, GC_thread t);
 
-/* GC_copyThread (s) copies the current thread, s->currentThread, and places 
- * the result in s->savedThread.
+/* GC_copyThread (s) returns a copy of the current thread, s->currentThread.
  */
-void GC_copyCurrentThread (GC_state s);
+pointer GC_copyCurrentThread (GC_state s);
 
 /* GC_createStrings allocates a collection of strings in the heap.
  * It assumes that there is enough space.

@@ -18,15 +18,10 @@ signature ANALYZE =
       include ANALYZE_STRUCTS
       
       val analyze:
-	 {
-	  coerce: {
-		   from: 'a,
-		   to: 'a
-		  } -> unit,
-	  conApp: {
-		   con: Con.t,
-		   args: 'a vector
-		   } -> 'a,
+	 {coerce: {from: 'a,
+		   to: 'a} -> unit,
+	  conApp: {args: 'a vector,
+		   con: Con.t} -> 'a,
 	  const: Const.t -> 'a,
 	  copy: 'a -> 'a,
 	  filter: 'a * Con.t * 'a vector -> unit,
@@ -36,19 +31,15 @@ signature ANALYZE =
 	  filterWord8: 'a -> unit,
 	  fromType: Type.t -> 'a,
 	  layout: 'a -> Layout.t,
-	  primApp: {
+	  primApp: {args: 'a vector,
 		    prim: Prim.t,
-		    targs: Type.t vector,
-		    args: 'a vector,
 		    resultType: Type.t,
-		    resultVar: Var.t option
-		    } -> 'a,
+		    resultVar: Var.t option,
+		    targs: Type.t vector} -> 'a,
 	  program: Program.t,
-	  select: {
-		   tuple: 'a,
-		   offset: int,
-		   resultType: Type.t
-		  } -> 'a,
+	  select: {offset: int,
+		   resultType: Type.t,
+		   tuple: 'a} -> 'a,
 	  tuple: 'a vector -> 'a,
 	  useFromTypeOnBinds: bool
 	 }

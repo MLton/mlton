@@ -48,14 +48,15 @@ datatype t =
 	       args: t vector,
 	       ty: Type.t}
  | Raise of t
- | Runtime of {prim: Prim.t,
-	       args: t vector,
+ | Runtime of {args: t vector,
+	       prim: Prim.t,
 	       ty: Type.t}
  | Select of {tuple: t,
 	      offset: int,
 	      ty: Type.t}
  | Seq of t * t
- | Tuple of {exps: t vector, ty: Type.t}
+ | Tuple of {exps: t vector,
+	     ty: Type.t}
  | Var of Var.t * Type.t
 and cases =
    Char of (char * t) vector
@@ -87,18 +88,21 @@ fun tuple (r as {exps, ...}) =
 
 val var = Var
 
-fun primApp {args, prim, targs, ty} = 
-   if (case Prim.name prim of
-	  Prim.Name.MLton_halt => true
-	| Prim.Name.Thread_copyCurrent => true
-	| _ => false)
-      then Runtime {args = args,
-		    prim = prim,
-		    ty = ty}
-   else PrimApp {args = args,
-		 prim = prim,
-		 targs = targs,
-		 ty = ty}
+fun primApp {args, prim, targs, ty} =
+   let
+      fun runtime resultTy =
+	 Runtime {args = args,
+		  prim = prim,
+		  ty = ty}
+   in
+      case Prim.name prim of
+	 Prim.Name.MLton_halt => runtime NONE
+       | Prim.Name.Thread_copyCurrent => runtime (SOME Type.preThread)
+       | _ => PrimApp {args = args,
+		       prim = prim,
+		       targs = targs,
+		       ty = ty}
+   end
 
 local
    fun make c = conApp {con = c, args = Vector.new0 (), ty = Type.bool}
@@ -183,7 +187,7 @@ in
        | PrimApp {prim, targs, args, ty} =>
 	    Prim.layoutApp (prim, args, layout)
        | Raise e => seq [str "raise ", layout e]
-       | Runtime {prim, args, ty} =>
+       | Runtime {args, prim, ...} =>
 	    Prim.layoutApp (prim, args, layout)
        | Select {tuple, offset, ...} =>
 	    seq [str "#", str (Int.toString (1 + offset)), str " ",
@@ -539,19 +543,38 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 			      Transfer.Goto {dst = l,
 					     args = Vector.new1 x}
 			 | Handler.None => Error.bug "raise to None")})
-	  | Runtime {prim, args, ty} =>
+	  | Runtime {args, prim, ty} =>
 	       loops
 	       (args, h, fn xs =>
 		let
 		   val l = reify (k, ty)
 		   val k = Cont.goto l
+		   val (args, exps) =
+		      case Type.detupleOpt ty of
+			 NONE =>
+			    let
+			       val res = Var.newNoname ()
+			    in
+			       (Vector.new1 (res, ty),
+				Vector.new1 (Var (res, ty)))
+			    end
+		       | SOME ts =>
+			    if 0 = Vector.length ts
+			       then (Vector.new0 (), Vector.new0 ())
+			    else
+			       Error.bug
+			       (concat ["prim with multiple return values: ",
+					Prim.toString prim])
 		in
 		   {statements = [],
 		    transfer =
-		    Transfer.Runtime {prim = prim,
-				      args = xs,
-				      return = newLabel0 (tuple {exps = Vector.new0 (),
-								 ty = ty}, h, k)}}
+		    Transfer.Runtime
+		    {prim = prim,
+		     args = xs,
+		     return = newLabel (args,
+					tuple {exps = exps,
+					       ty = ty},
+					h, k)}}
 		end)
 	  | Select {tuple, offset, ty} =>
 	       loopf (tuple, h, fn (tuple, _) =>

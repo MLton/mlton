@@ -563,16 +563,11 @@ structure Primitive =
 			then raise Fail "Thread.atomicEnd with no atomicBegin"
 		     else _prim "Thread_atomicEnd": unit -> unit; ()
 	       else ()
-	    (* copy stores a thread that should be gotten using saved (). *)
-	    val copy = _prim "Thread_copy": preThread -> unit;
-	    (* copyCurrent stores a preThread that should be gotten using
-	     * savedPre ().
-	     *)
-	    val copyCurrent = _prim "Thread_copyCurrent": unit -> unit;
+	    val copy = _prim "Thread_copy": preThread -> thread;
+	    val copyCurrent = _prim "Thread_copyCurrent": unit -> preThread;
 	    val current = _prim "Thread_current": unit -> thread;
 	    val finishHandler = _ffi "Thread_finishHandler": unit -> unit;
 	    val saved = _ffi "Thread_saved": unit -> thread;
-	    val savedPre = _ffi "Thread_saved": unit -> preThread;
 	    val setHandler = _ffi "Thread_setHandler": thread -> unit;
 	    val switchTo = _prim "Thread_switchTo": thread -> unit;
 	 end      

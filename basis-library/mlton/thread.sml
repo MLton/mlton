@@ -39,7 +39,7 @@ fun new f = T (ref (New f))
    
 local
    val func: (unit -> unit) option ref = ref NONE
-   val base: Prim.preThread = (Prim.copyCurrent (); Prim.savedPre ())
+   val base: Prim.preThread = Prim.copyCurrent ()
    val _ = (case !func of
 	       NONE => ()
 	     | SOME x =>
@@ -69,8 +69,7 @@ in
 	       case !t' before (t' := Dead; switching := false) of
 		  Dead => fail (Fail "switch to a Dead thread")
 		| New g => (func := SOME (g o x)
-			    ; Prim.copy base
-			    ; Prim.saved ())
+			    ; Prim.copy base)
 		| Paused (f, t) => (f x; t)
 	    val _ = switching := false
 	    val _ = Prim.switchTo primThread

@@ -344,20 +344,6 @@ int main(int argc, char **argv) {					\
 #define XP(b, i) ArrayOffset(pointer, b, i)
 #define XU(b, i) ArrayOffset(uint, b, i)
 
-#define Array_allocate(numElts, numBytes, header)	(		\
-		assert(numBytes > 0),					\
-		assert(isWordAligned(numBytes)),			\
-		*(word*)(frontier) = 0,					\
-		*(word*)(frontier + WORD_SIZE) = (numElts),		\
-		*(word*)((frontier) + 2 * WORD_SIZE) = (header),	\
-		(FALSE)							\
-		? fprintf(stderr, "%d  Array(%d)\n",			\
-				__LINE__, numElts)			\
-		: 0,							\
-	        arrayAllocateRes = (frontier) + 3 * WORD_SIZE,		\
-		frontier += (numBytes),					\
-		arrayAllocateRes)
-
 /* ------------------------------------------------- */
 /*                       Byte                        */
 /* ------------------------------------------------- */
@@ -518,18 +504,6 @@ int Int_bogus;
  */
 #define MLton_eq(x, y) ((x) == (y))
 
-/* #define MLton_deserialize(z)	(				\ */
-/* 	FlushGCExp,						\ */
-/* 	deserializeRes = GC_deserialize(&gcState, (z)),			\ */
-/* 	CacheGCExp,						\ */
-/* 	deserializeRes) */
-
-/* #define MLton_serialize(z)	(				\ */
-/* 	FlushGCExp,						\ */
-/* 	serializeRes = GC_serialize(&gcState, (z)),			\ */
-/* 	CacheGCExp,						\ */
-/* 	serializeRes) */
-
 /* ------------------------------------------------- */
 /*                       Real                        */
 /* ------------------------------------------------- */
@@ -588,6 +562,10 @@ int Int_bogus;
 #define Thread_switchTo(thread)							\
 	do {									\
 		GC_thread t = thread;						\
+										\
+		if (FALSE)							\
+			fprintf (stderr, "%d  Thread_switchTo (0x%08x)\n",	\
+					__LINE__, t);				\
 	 	gcState.currentThread->stack->used = stackTop - StackBottom;	\
 	 	gcState.currentThread = t;					\
 		StackBottom = ((pointer)t->stack) + sizeof(struct GC_stack);	\

@@ -28,7 +28,7 @@ fun callcc (f: 'a t -> 'a): 'a =
 		 | Clear
 		val r: 'a state ref = ref (Original f)
 		val _ = Thread.atomicBegin () (* Match 1 *)
-		val t = (Thread.copyCurrent (); Thread.savedPre ())
+		val t = Thread.copyCurrent ()
 	     in
 		case (!r before r := Clear) of
 		   Clear => raise Fail "callcc saw Clear"
@@ -40,7 +40,7 @@ fun callcc (f: 'a t -> 'a): 'a =
 			    let
 			       val _ = Thread.atomicBegin () (* Match 2 *)
 			       val _ = r := Copy v
-			       val new = (Thread.copy t; Thread.saved ())
+			       val new = Thread.copy t
 			       (* The following Thread.atomicBegin () 
 				* is matched by Thread.switchTo.
 				*)

@@ -50,10 +50,11 @@ enum {
 	DEBUG_MARK_SIZE = FALSE,
 	DEBUG_MEM = FALSE,
 	DEBUG_SIGNALS = FALSE,
+	DEBUG_THREADS = FALSE,
 	FORWARDED = 0xFFFFFFFF,
 	HEADER_SIZE = WORD_SIZE,
 	STACK_HEADER_SIZE = WORD_SIZE,
-	VERIFY_MARK = TRUE,
+	VERIFY_MARK = FALSE,
 };
 
 typedef enum {
@@ -957,7 +958,7 @@ switchToThread(GC_state s, GC_thread t)
 	GC_setStack(s);
 }
 
-static inline void
+static inline GC_thread
 copyThread (GC_state s, GC_thread from, uint size)
 {
 	GC_thread to;
@@ -967,10 +968,13 @@ copyThread (GC_state s, GC_thread from, uint size)
 	 */
 	s->savedThread = from;
 	to = newThreadOfSize (s, size);
+	if (DEBUG_THREADS)
+		fprintf (stderr, "0x%08x = copyThread (0x%08x)\n", 
+				(uint)to, (uint)from);
 	from = s->savedThread;
 	stackCopy (from->stack, to->stack);
 	to->exnStack = from->exnStack;
-	s->savedThread = to;
+	return to;
 }
 
 /* ------------------------------------------------- */
@@ -1028,15 +1032,22 @@ void GC_leave (GC_state s)
 		unblockSignals (s);
 }
 
-inline void
+pointer
 GC_copyCurrentThread (GC_state s)
 {
 	GC_thread t;
-
+	GC_thread res;
+	
+	if (DEBUG_THREADS)
+		fprintf (stderr, "GC_copyCurrentThread\n");
 	GC_enter (s);
 	t = s->currentThread;
-	copyThread (s, t, t->stack->used);
+	res = copyThread (s, t, t->stack->used);
+	assert (res->stack->reserved == res->stack->used);
 	GC_leave (s);
+	if (DEBUG_THREADS)
+		fprintf (stderr, "0x%08x = GC_copyCurrentThread\n", (uint)res);
+	return (pointer)res;
 }
 
 static inline uint
@@ -1045,13 +1056,18 @@ stackNeedsReserved (GC_state s, GC_stack stack)
 	return stack->used + stackSlop(s) - topFrameSize(s, stack);
 }
 
-inline void
+pointer
 GC_copyThread (GC_state s, GC_thread t)
 {
+	GC_thread res;
+
+	if (DEBUG_THREADS)
+		fprintf (stderr, "GC_copyThread (0x%08x)\n", (uint)t);
 	GC_enter (s);
 	assert (t->stack->reserved == t->stack->used);
-	copyThread (s, t, stackNeedsReserved (s, t->stack));
+	res = copyThread (s, t, stackNeedsReserved (s, t->stack));
 	GC_leave (s);
+	return (pointer)res;
 }
 
 extern struct GC_state gcState;
