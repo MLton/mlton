@@ -1966,6 +1966,8 @@ static GC_ObjectHashTable newTable () {
 	t->log2ElementsSize = 10;
 	t->numElements = 0;
 	ARRAY (t->elements, t->elementsSize);
+	if (DEBUG_SHARE)
+		fprintf (stderr, "0x%08x = newTable ()\n", (uint)t);
 	return t;
 }
 
@@ -1988,6 +1990,11 @@ static inline Pointer tableInsert
 	word *p2;
 	W32 slot; // slot in hash table we are considering
 
+	if (DEBUG_SHARE)
+		fprintf (stderr, "tableInsert (%u, 0x%08x, %s, 0x%08x, 0x%08x)\n",
+				(uint)hash, (uint)object, 
+				boolToString (mightBeThere),
+				(uint)header, (uint)max);
 	if (! init) {
 		init = TRUE;
 		mult = floor (((sqrt (5.0) - 1.0) / 2.0)
@@ -2205,13 +2212,18 @@ mark:
 	header = (MARK_MODE == mode)
 			? header | MARK_MASK
 			: header & ~MARK_MASK;
+	/* Store the mark.  In the case of an object that contains a pointer to
+	 * itself, it is essential that we store the marked header before marking
+	 * the internal pointers (markInNormal below).  If we didn't, then we
+	 * would see the object as unmarked and traverse it again.
+         */
+	*headerp = header;
 	SPLIT_HEADER();
 	if (NORMAL_TAG == tag) {
 		if (0 == numPointers) {
 			/* There is nothing to mark.  Store the marked header and
 			 * return.
 			 */
-			*headerp = header;
 			size += GC_NORMAL_HEADER_SIZE + toBytes (numNonPointers);
 			if (s->shouldHashCons)
 				cur = hashCons (s, cur);
@@ -2250,7 +2262,6 @@ markNextInNormal:
 		goto markNext;
 	} else if (WEAK_TAG == tag) {
 		/* Store the marked header and don't follow any pointers. */
-		*headerp = header;
 		goto ret;
 	} else if (ARRAY_TAG == tag) {
 		/* When marking arrays:
@@ -2262,13 +2273,11 @@ markNextInNormal:
 		 */
 		size += GC_ARRAY_HEADER_SIZE
 			+ arrayNumBytes (s, cur, numPointers, numNonPointers);
-		if (0 == numPointers or 0 == GC_arrayNumElements (cur)) {
+		if (0 == numPointers or 0 == GC_arrayNumElements (cur))
 			/* There is nothing to mark.  Store the marked header
 			 * and return.
 			 */
-			*headerp = header;
 			goto ret;
-		}
 		/* Begin marking first element. */
 		arrayIndex = 0;
 		todo = cur;
@@ -2316,7 +2325,6 @@ markNextInArray:
 		goto markNext;
 	} else {
 		assert (STACK_TAG == tag);
-		*headerp = header;
 		size += stackBytes (s, ((GC_stack)cur)->reserved);
 		top = stackTop (s, (GC_stack)cur);
 		assert (((GC_stack)cur)->used <= ((GC_stack)cur)->reserved);
