@@ -239,9 +239,10 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	   let
 	      fun const () = Const (Value.ground t)
 	      fun make f =
+		 (* control whether all values of a single type are merged. *)
 		 if true
-		    then Make f
-		 else Const (f ())
+		    then Const (f ())
+		 else Make f
 	      datatype z = datatype Type.dest
 	   in
 	      case Type.dest t of
