@@ -8,6 +8,8 @@
 structure Equatable: EQUATABLE =
 struct
 
+type int = Int.t
+   
 structure Set = DisjointSet
 
 datatype 'a delay =
@@ -17,7 +19,7 @@ datatype 'a delay =
 
 datatype 'a t = T of 'a delay Set.t
 
-fun layout f (T s) =
+fun layout (T s, f) =
    case Set.! s of
       Computed a => f a
     | Uncomputed _ => Layout.str "<uncomputed>"
@@ -51,8 +53,12 @@ fun equate (T s, T s', combine) =
 	 val d' = Set.! s'
 	 val () = Set.union (s, s')
 	 fun one (a, {compute = _, whenComputed}) =
-	    (AppendList.foreach (!whenComputed, fn f => f a)
-	     ; Set.:= (s, Computed a))
+	    (* Must set the value before calling the whenComputed, because
+	     * those may look at the value (which would cause it to be set,
+	     * which would then be overwritten).
+	     *)
+	    (Set.:= (s, Computed a)
+	     ; AppendList.foreach (!whenComputed, fn f => f a))
       in
 	 case (d, d') of
 	    (Computed a, Computed a') =>
@@ -67,10 +73,11 @@ fun equate (T s, T s', combine) =
       end
 
 fun whenComputed (e as T s, f): unit =
-   if !Control.deepFlattenDelay
+   (if !Control.deepFlattenDelay
       then (case Set.! s of
 	       Computed a => f a
-	     | Uncomputed {whenComputed = w, ...} => AppendList.push (w, f))
-   else f (value e)
+	     | Uncomputed {whenComputed = w, ...} =>
+		  AppendList.push (w, f))
+   else f (value e))
 
 end

@@ -25,7 +25,7 @@ signature EQUATABLE =
       val equals: 'a t * 'a t -> bool
       val delay: (unit -> 'a) -> 'a t
       val equate: 'a t * 'a t * ('a * 'a -> 'a) -> unit
-      val layout: ('a -> Layout.t) -> 'a t -> Layout.t
+      val layout: 'a t * ('a -> Layout.t) -> Layout.t
       val new: 'a -> 'a t
       val value: 'a t -> 'a
       val whenComputed: 'a t * ('a -> unit) -> unit

@@ -292,19 +292,21 @@ structure Value =
 
       fun value (T e) = #value (Equatable.value e)
 
-      fun layout v: Layout.t =
-	 let
-	    open Layout
-	 in
-	    case value v of
-	       Ground t => Type.layout t
-	     | Object {args, con, flat, ...} => 
-		  seq [str "Object ",
-		       record [("args", Prod.layout (args, layout)),
-			       ("con", ObjectCon.layout con),
-			       ("flat", Flat.layout (! flat))]]
-	     | Weak {arg, ...} => seq [str "Weak ", layout arg]
-	 end
+      fun layout (T e): Layout.t =
+	 Equatable.layout
+	 (e, fn {value, ...} =>
+	  let
+	     open Layout
+	  in
+	     case value of
+		Ground t => Type.layout t
+	      | Object {args, con, flat, ...} => 
+		   seq [str "Object ",
+			record [("args", Prod.layout (args, layout)),
+				("con", ObjectCon.layout con),
+				("flat", Flat.layout (! flat))]]
+	      | Weak {arg, ...} => seq [str "Weak ", layout arg]
+	  end)
 
       val ground = new o Ground
 

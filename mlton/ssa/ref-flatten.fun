@@ -80,9 +80,9 @@ structure Value =
 	       GroundV t => Type.layout t
 	     | Complex e =>
 		  Equatable.layout 
-		  (fn ObjectC ob => layoutObject ob
+		  (e,
+		   fn ObjectC ob => layoutObject ob
 		    | WeakC {arg, ...} => seq [str "Weak ", layout arg])
-		  e
 	 and layoutFlat (f: flat): Layout.t =
 	    case f of
 	       NotFlat => str "NotFlat"

@@ -89,7 +89,7 @@ val debug = control {name = "debug",
 
 val deepFlattenDelay =
    control {name = "deepFlattenDelay",
-	    default = false,
+	    default = true,
 	    toString = Bool.toString}
 
 val deepFlattenUnify =
