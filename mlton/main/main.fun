@@ -325,15 +325,6 @@ fun makeOptions {usage} =
 	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
        (Normal, "profile-stack", " {false|true}", "profile the stack",
 	boolRef profileStack),
-       (Expert, "representation", " {packed|unpacked}",
-	"tuples and datatypes",
-	SpaceString
-	(fn s =>
-	 (representation :=
-	  (case s of
-	      "packed" => Control.Packed
-	    | "unpacked" => Control.Unpacked
-	    | _ => usage (concat ["invalid -representation arg: ", s]))))),
        (Expert, "reserve-esp", " {false|true}", "reserve %ESP on x86",
 	SpaceString
 	(fn s =>

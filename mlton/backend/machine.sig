@@ -129,9 +129,7 @@ signature MACHINE =
 	     (* Fixed-size allocation. *)
 	     | Object of {dst: Operand.t,
 			  header: word,
-			  size: Bytes.t,
-			  stores: {offset: Bytes.t,
-				   value: Operand.t} vector}
+			  size: Bytes.t}
 	     | PrimApp of {args: Operand.t vector,
 			   dst: Operand.t option,
 			   prim: Type.t Prim.t}

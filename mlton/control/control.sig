@@ -214,9 +214,6 @@ signature CONTROL =
 
       val profileStack: bool ref
 
-      datatype representation = Packed | Unpacked
-      val representation: representation ref
-
       val reserveEsp: bool option ref
 
       (* Array bounds checking. *)

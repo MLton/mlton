@@ -84,10 +84,7 @@ signature RSSA =
 			src: Operand.t}
 	     | Object of {dst: Var.t * Type.t,
 			  header: word,
-			  size: Words.t, (* including header *)
-			  (* The stores are in increasing order of offset. *)
-			  stores: {offset: Bytes.t,
-				   value: Operand.t} vector}
+			  size: Words.t (* including header *)}
 	     | PrimApp of {args: Operand.t vector,
 			   dst: (Var.t * Type.t) option,
 			   prim: Type.t Prim.t}

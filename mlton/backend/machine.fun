@@ -332,9 +332,7 @@ structure Statement =
        | Noop
        | Object of {dst: Operand.t,
 		    header: word,
-		    size: Bytes.t,
-		    stores: {offset: Bytes.t,
-			     value: Operand.t} vector}
+		    size: Bytes.t}
        | PrimApp of {args: Operand.t vector,
 		     dst: Operand.t option,
 		     prim: Type.t Prim.t}
@@ -348,18 +346,12 @@ structure Statement =
 		  mayAlign [Operand.layout dst,
 			    seq [str " = ", Operand.layout src]]
 	     | Noop => str "Noop"
-	     | Object {dst, header, size, stores} =>
+	     | Object {dst, header, size} =>
 		  mayAlign
 		  [Operand.layout dst,
 		   seq [str " = Object ",
 			record [("header", Word.layout header),
-				("size", Bytes.layout size)],
-			str " ",
-			Vector.layout
-			(fn {offset, value} =>
-			 record [("offset", Bytes.layout offset),
-				 ("value", Operand.layout value)])
-			stores]]
+				("size", Bytes.layout size)]]]
 	     | PrimApp {args, dst, prim, ...} =>
 		  let
 		     val rest =
@@ -397,9 +389,7 @@ structure Statement =
       fun foldOperands (s, ac, f) =
 	 case s of
 	    Move {dst, src} => f (dst, f (src, ac))
-	  | Object {dst, stores, ...} =>
-	       Vector.fold
-	       (stores, f (dst, ac), fn ({value, ...}, ac) => f (value, ac))
+	  | Object {dst, ...} => f (dst, ac)
 	  | PrimApp {args, dst, ...} =>
 	       Vector.fold (args, Option.fold (dst, ac, f), f)
 	  | _ => ac
@@ -1203,11 +1193,8 @@ structure Program =
 			   else NONE
 			end
 		   | Noop => SOME alloc
-		   | Object {dst, header, size, stores} =>
+		   | Object {dst, header, size} =>
 			let
-			   val () =
-			      Vector.foreach (stores, fn {value, ...} =>
-					      checkOperand (value, alloc))
 			   val alloc = Alloc.define (alloc, dst)
 			   val () = checkOperand (dst, alloc)
 			   val index = Runtime.headerToTypeIndex header
@@ -1222,15 +1209,6 @@ structure Program =
 				     andalso
 				     Type.isSubtype (Type.pointer tycon,
 						     Operand.ty dst)
-				     andalso
-				     (Vector.isEmpty stores
-				      orelse
-				      Type.isValidInit
-				      (t, 
-				       Vector.map
-				       (stores, fn {offset, value} =>
-					{offset = offset,
-					 ty = Operand.ty value})))
 				     then SOME alloc
 				  else NONE)
 			    | _ => NONE

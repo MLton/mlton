@@ -319,9 +319,6 @@ datatype z = datatype Operand.t
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
-(* structure Representation = Representation (structure Rssa = Rssa
- * 					   structure Ssa = Ssa)
- *)
 structure PackedRepresentation = PackedRepresentation (structure Rssa = Rssa
 						       structure Ssa = Ssa)
 
@@ -405,11 +402,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 	     {codegenImplementsPrim}): Rssa.Program.t =
    let
       val {diagnostic, genCase, object, objectTypes, select, toRtype, update} =
-	 (case !Control.representation of
-	     Control.Packed => PackedRepresentation.compute
-	   | Control.Unpacked =>
-		Error.bug "-representation unpacked is not implemented"
-		(*Representation.compute*)) program
+	 PackedRepresentation.compute program
       val objectTypes = Vector.concat [ObjectType.basic, objectTypes]
       val () =
 	 Vector.foreachi

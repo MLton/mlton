@@ -637,31 +637,10 @@ fun output {program as Machine.Program.T {chunks,
 				   srcIsMem = Operand.isMem src,
 				   ty = Operand.ty dst})
 		       | Noop => ()
-		       | Object {dst, header, size, stores} =>
+		       | Object {dst, header, size} =>
 			    (C.call ("Object", [operandToString dst,
 						C.word header],
 				     print)
-			     ; (Vector.foreach
-				(stores, fn {offset, value} =>
-				 let
-				    val ty = Operand.ty value
-				    val dst =
-				       contents
-				       (Operand.ty value,
-					concat ["Frontier + ",
-						C.bytes
-						(Bytes.+
-						 (offset,
-						  Runtime.normalHeaderSize))])
-				 in
-				    print "\t"
-				    ; (print
-				       (move {dst = dst,
-					      dstIsMem = true,
-					      src = operandToString value,
-					      srcIsMem = Operand.isMem value,
-					      ty = ty}))
-				 end))
 			     ; print "\t"
 			     ; C.call ("EndObject", [C.bytes size], print))
 		       | PrimApp {args, dst, prim} =>

@@ -458,7 +458,7 @@ struct
 		   AppendList.single
 		   (x86.Block.mkProfileBlock'
 		    {profileLabel = l})
-	      | Object {dst, header, size, stores}
+	      | Object {dst, header, size}
 	      => let
 		   val (comment_begin,
 			comment_end) = comments statement
@@ -476,44 +476,6 @@ struct
 			scale = x86.Scale.One,
 			size = x86MLton.pointerSize,
 			class = x86MLton.Classes.Heap}
-		       
-		   fun stores_toX86Assembly ({offset, value}, l)
-		     = let
-			  val offset = Bytes.toInt offset
-			 val origin =
-			    x86.MemLoc.simple
-			    {base = dst',
-			     index = x86.Immediate.const_int offset,
-			     scale = x86.Scale.One,
-			     size = x86.Size.BYTE,
-			     class = x86MLton.Classes.Heap}
-		       in
-			 (
-			 (Vector.toList o #1 o Vector.mapAndFold)
-			 (Operand.toX86Operand value, 0, fn ((src,srcsize),offset) =>
-			  let
-			     val dst =
-				(x86.Operand.memloc o x86.MemLoc.shift)
-				{origin = origin,
-				 disp = x86.Immediate.const_int offset,
-				 scale = x86.Scale.One,
-				 size = srcsize}
-			  in
-			     (case x86.Size.class srcsize of 
-				 x86.Size.INT => 
-				    x86.Assembly.instruction_mov 
-				    {dst = dst,
-				     src = src,
-				     size = srcsize}
-			       | x86.Size.FLT => 
-				    x86.Assembly.instruction_pfmov
-				    {dst = dst,
-				     src = src,
-				     size = srcsize}
-			       | _ => Error.bug "toX86Blocks: Allocate",
-			      offset + x86.Size.toBytes srcsize)
-			  end)) @ l
-		       end
 		 in
 		   AppendList.appends
 		   [comment_begin,
@@ -531,15 +493,13 @@ struct
 			 {dst = dst,
 			  src = frontierPlusOHW,
 			  size = x86MLton.pointerSize})::
-			(Vector.foldr(stores,
-				      [(* frontier += size *)
-				       x86.Assembly.instruction_binal
-				       {oper = x86.Instruction.ADD,
-					dst = frontier,
-					src = x86.Operand.immediate_const_int
-					      (Bytes.toInt size),
-					size = x86MLton.pointerSize}],
-				      stores_toX86Assembly)),
+			[(* frontier += size *)
+			 x86.Assembly.instruction_binal
+			 {oper = x86.Instruction.ADD,
+			  dst = frontier,
+			  src = x86.Operand.immediate_const_int
+			  (Bytes.toInt size),
+			  size = x86MLton.pointerSize}],
 		      transfer = NONE}),
 		    comment_end]
 		 end)

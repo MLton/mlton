@@ -471,15 +471,11 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 		  Vector.new1
 		  (M.Statement.move {dst = translateOperand dst,
 				     src = translateOperand src})
-	     | Object {dst, header, size, stores} =>
+	     | Object {dst, header, size} =>
 		  Vector.new1
-		  (M.Statement.Object
-		   {dst = varOperand (#1 dst),
-		    header = header,
-		    size = Words.toBytes size,
-		    stores = Vector.map (stores, fn {offset, value} =>
-					 {offset = offset,
-					  value = translateOperand value})})
+		  (M.Statement.Object {dst = varOperand (#1 dst),
+				       header = header,
+				       size = Words.toBytes size})
 	     | PrimApp {dst, prim, args} =>
 		  Vector.new1
 		  (M.Statement.PrimApp

@@ -758,8 +758,7 @@ structure PointerRep =
 	    Object {dst = (dst, ty),
 		    header = (Runtime.typeIndexToHeader
 			      (PointerTycon.index tycon)),
-		    size = size,
-		    stores = Vector.new0 ()}
+		    size = size}
 	    :: stores
 	 end
 

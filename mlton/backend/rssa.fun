@@ -178,9 +178,7 @@ structure Statement =
 		  src: Operand.t}
        | Object of {dst: Var.t * Type.t,
 		    header: word,
-		    size: Words.t,
-		    stores: {offset: Bytes.t,
-			     value: Operand.t} vector}
+		    size: Words.t}
        | PrimApp of {args: Operand.t vector,
 		     dst: (Var.t * Type.t) option,
 		     prim: Type.t Prim.t}
@@ -199,9 +197,7 @@ structure Statement =
 	    case s of
 	       Bind {dst = (x, t), src, ...} => def (x, t, useOperand (src, a))
 	     | Move {dst, src} => useOperand (src, useOperand (dst, a))
-	     | Object {dst = (dst, ty), stores, ...} =>
-		  Vector.fold (stores, def (dst, ty, a),
-			       fn ({value, ...}, a) => useOperand (value, a))
+	     | Object {dst = (dst, ty), ...} => def (dst, ty, a)
 	     | PrimApp {dst, args, ...} =>
 		  Vector.fold (args,
 			       Option.fold (dst, a, fn ((x, t), a) =>
@@ -239,19 +235,12 @@ structure Statement =
 	     | Move {dst, src} =>
 		  mayAlign [Operand.layout dst,
 			    seq [str " = ", Operand.layout src]]
-	     | Object {dst = (dst, ty), header, size, stores} =>
+	     | Object {dst = (dst, ty), header, size} =>
 		  mayAlign
 		  [seq [Var.layout dst, constrain ty],
 		   seq [str "= Object ",
-			record
-			[("header", seq [str "0x", Word.layout header]),
-			 ("size", Words.layout size),
-			 ("stores",
-			  Vector.layout
-			  (fn {offset, value} =>
-			   record [("offset", Bytes.layout offset),
-				   ("value", Operand.layout value)])
-			  stores)]]]
+			record [("header", seq [str "0x", Word.layout header]),
+				("size", Words.layout size)]]]
 	     | PrimApp {dst, prim, args, ...} =>
 		  let
 		     val rest =
@@ -1085,10 +1074,8 @@ structure Program =
 			 ; checkOperand src
 			 ; (Type.isSubtype (Operand.ty src, Operand.ty dst)
 			    andalso Operand.isLocation dst))
-		   | Object {dst = (_, ty), header, size, stores} =>
+		   | Object {dst = (_, ty), header, size} =>
 			let
-			   val () =
-			      Vector.foreach (stores, checkOperand o # value)
 			   val tycon =
 			      PointerTycon.fromIndex
 			      (Runtime.headerToTypeIndex header)
@@ -1110,15 +1097,6 @@ structure Program =
 				  Bytes.equals
 				  (size, Bytes.+ (Runtime.normalHeaderSize,
 						  Type.bytes t))
-				  andalso
-				  (Vector.isEmpty stores
-				   orelse
-				   Type.isValidInit
-				   (t, 
-				    Vector.map
-				    (stores, fn {offset, value} =>
-				     {offset = offset,
-				      ty = Operand.ty value})))
 			      | _ => false)
 			end
 		   | PrimApp {args, dst, prim} =>
