@@ -15,9 +15,9 @@ structure Timer: TIMER =
 	     usr = selfu}
 	 end
 
-      fun checkCPUTimer ({gc, sys, usr, ...}: cpu_timer) =
+      fun checkCPUTimer ({gc, sys, usr}: cpu_timer) =
 	 let
-	    val {gc = g, sys = s, usr = u, ...} = startCPUTimer ()
+	    val {gc = g, sys = s, usr = u} = startCPUTimer ()
 	    val op - = Time.-
 	 in
 	    {gc = g - gc,
@@ -30,9 +30,7 @@ structure Timer: TIMER =
 	 in fn () => checkCPUTimer t
 	 end
 
-      val checkGCTime = fn t => let val {gc, ...} = checkCPUTimer t
-				in gc
-				end
+      val checkGCTime = #gc o checkCPUTimer
       val checkCPUTimer = fn t => let val {usr, sys, ...} = checkCPUTimer t
 				  in {usr = usr, sys = sys}
 				  end
