@@ -213,12 +213,20 @@ is the same as the {\tt gc-summary} runtime system option.
 \end{description}
 
 \subsubsection{{\tt MLton.IntInf}}
+
+{\mlton} represents an arbitrary precision integer either as an
+unboxed 32 bit word with one tag bit and 31 bits representing a small
+integer in $[-2^{30}, 2^{30})$, or as a vector of words where the
+first word indicates the sign and the rest are the limbs of gmp big
+integer.
 \begin{verbatim}
 signature MLTON_INT_INF =
    sig
       include INT_INF
 
+       val areSmall: int * int -> bool
        val gcd: int * int -> int 
+       val isSmall: int -> bool
        datatype rep =
           Small of word
         | Big of word vector
@@ -228,14 +236,18 @@ signature MLTON_INT_INF =
 \end{verbatim}
 
 \begin{description}
+\entry{areSmall (a, b)}
+returns true iff both {\tt a} and {\tt b} are small.
 
 \entry{gcd (a, b)}
 using the gmp's fast gcd implementation.
 
+\entry{isSmall a}
+returns true iff {\tt a} is small.
+
 \entry{datatype rep}
-the underlying representation of an IntInf, which is either a 31 bit word
-representing a small integer in $[-2^{30}, 2^{30})$ or a vector of words
-representing the limbs of gmp big integer.
+the underlying representation of an IntInf.  {\tt Small} has already stripped
+off the tag, so that the top bit of the word is zero.
 
 \entry{rep i}
 return the underlying representation of i.
