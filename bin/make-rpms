@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 
 # This script makes binary and source RPMs and puts them in the current 
 # directory.
