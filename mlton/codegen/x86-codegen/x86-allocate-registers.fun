@@ -296,7 +296,7 @@ struct
 			      | FMREMOVEP => NO
 		      else sawUse future
 	    and sawUseCommit
-	      = fn [] => NO
+	      = fn [] => if track memloc then NO else COMMIT
 	         | (M (tag',memloc'))::future
 	         => if MemLoc.eq(memloc, memloc')
 		      then case tag'
@@ -3778,7 +3778,14 @@ struct
 			       = (MemLocSet.contains
 				  (MemLocSet.-(allKills, dead_memlocs), memloc))
 			     val commit
-			       = if must_commit3
+			       = if MemLocSet.contains(allDefs, memloc)
+				   then if must_commit1
+					  then case commit
+						 of TRYREMOVE _ => REMOVE 0
+						  | REMOVE _ => REMOVE 0
+						  | _ => COMMIT 0
+					  else commit
+				 else if must_commit3
 				   then COMMIT 0
 				 else if must_commit2
 				   then if MemLocSet.contains
