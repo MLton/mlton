@@ -473,14 +473,12 @@ fun main args =
 			in
 			   ()
 			end
-		     val _ = show ("compile time", compiles, r2s)
-		     val _ = show ("run time", runs, r2s)
 		     val bases = List.keepAll (runs, fn {compiler, ...} =>
 					       compiler = base)
-		     val runs =
+		     val ratios =
 			List.fold
 			(runs, [], fn ({bench, compiler, value}, ac) =>
-			 if compiler = base
+			 if compiler = base andalso not showAll
 			    then ac
 			 else
 			    {bench = bench,
@@ -492,6 +490,8 @@ fun main args =
 			      | SOME {value = v, ...} => value / v} :: ac)
 		     val _ = show ("run time ratio", runs, r2s)
 		     val _ = show ("size", sizes, i2s)
+		     val _ = show ("compile time", compiles, r2s)
+		     val _ = show ("run time", runs, r2s)
 		     val _ = case !outData of
 			SOME (out, _) => show (concat ["out: ", out], outs, s2s)
 		      | NONE => ()
