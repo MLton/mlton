@@ -41,7 +41,6 @@ OBJS =						\
 	basis/Int/Word8Vector.o			\
 	basis/Int/Word64.o			\
 	basis/Int/quot.o			\
-	basis/Int/subOverflow.o			\
 	basis/Itimer/set.o			\
 	basis/MLton/allocTooLarge.o		\
 	basis/MLton/bug.o			\
@@ -203,7 +202,6 @@ DEBUG_OBJS =					\
 	basis/Int/Word8Vector-gdb.o		\
 	basis/Int/Word64-gdb.o			\
 	basis/Int/quot-gdb.o			\
-	basis/Int/subOverflow-gdb.o		\
 	basis/Itimer/set-gdb.o			\
 	basis/MLton/allocTooLarge-gdb.o		\
 	basis/MLton/bug-gdb.o			\
