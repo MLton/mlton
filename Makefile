@@ -157,14 +157,14 @@ libraries:
 nj-mlton:
 	$(MAKE) dirs runtime 
 	$(MAKE) -C $(COMP) nj-mlton
-	$(MAKE) script basis mlbpathmap targetmap constants
+	$(MAKE) script basis mlbpathmap targetmap constants libraries
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual:
 	$(MAKE) dirs runtime
 	$(MAKE) -C $(COMP) nj-mlton-dual
-	$(MAKE) script basis mlbpathmap targetmap constants
+	$(MAKE) script basis mlbpathmap targetmap constants libraries
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: mlbpathmap
