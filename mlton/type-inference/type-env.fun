@@ -49,12 +49,12 @@ structure Unknown =
 
 structure Type =
    struct
-      structure Set = DisjointSet
-    
       (* Tuples of length <> 1 are always represented as records.
        * There will never be tuples of length one.
        *)
-      datatype ty =
+      datatype t = T of {ty: ty,
+			 plist: PropertyList.t} Set.t
+      and ty =
 	 Unknown of Unknown.t
        | Var of Tyvar.t
        | Con of Tycon.t * t vector
@@ -62,12 +62,18 @@ structure Type =
        | Int (* an unresolved int type *)
        | Record of {flexible: bool,
 		    record: t Srecord.t}
-      withtype t = {ty: ty,
-		    plist: PropertyList.t} Set.t
 
-      val toType: t -> ty = #ty o Set.value
-      val plist: t -> PropertyList.t = #plist o Set.value
+      local
+	 fun make f (T s) = f (Set.value s)
+      in
+	 val toType: t -> ty = make #ty
+	 val plist: t -> PropertyList.t = make #plist
+      end
 
+      fun union (T s, T s') = Set.union (s, s')
+
+      fun set (T s, v) = Set.setValue (s, v)
+	 
       (* unknown is a bit strange because frees needs the reference to the
        * whole type (Set.t) and not just the unknown info
        *)
@@ -142,8 +148,8 @@ structure Type =
       end
 
       fun newTy (ty: ty): t =
-	 Set.singleton {ty = ty,
-			plist = PropertyList.new ()}
+	 T (Set.singleton {ty = ty,
+			   plist = PropertyList.new ()})
 
       val new = newTy o Unknown o Unknown.new
 
@@ -175,7 +181,7 @@ structure Type =
 				  normal = Ast.Type.layout o toAst}
       val layout = layoutDetailed
 	 
-      val equals: t * t -> bool = Set.equals
+      val equals: t * t -> bool = fn (T s, T s') => Set.equals (s, s')
    end
 
 structure Ops = TypeOps (structure Tycon = Tycon
@@ -208,10 +214,8 @@ structure Type =
 	 in loop t
 	 end
 
-      (* val substitute =
-       *    Trace.trace2 ("substitute", layout, Layout.ignore, layout) substitute		
-       *)
-
+      val substitute =
+	 Trace.trace2 ("substitute", layout, Layout.ignore, layout) substitute		
       val var = newTy o Var
 
       (*val con = Trace.trace2 ("con", Tycon.layout,
@@ -270,7 +274,7 @@ structure Type =
       fun unify arg =
 	 traceUnify
 	 (fn (s, s') =>
-	  if Set.equals (s, s') then ()
+	  if equals (s, s') then ()
 	  else
 	     let
 		val t = toType s
@@ -383,8 +387,8 @@ structure Type =
 				      else Error.bug "unify mismatch: different length records"
 			 end
 			| _ => Error.bug "unify mismatch"
-		val _ = Set.union (s, s')
-		val _ = Set.setValue (s, {ty = t, plist = PropertyList.new ()})
+		val _ = union (s, s')
+		val _ = set (s, {ty = t, plist = PropertyList.new ()})
 	     in
 		()
 	     end) arg
@@ -553,7 +557,6 @@ structure Free =
 fun close (e, ty: Type.t, ensure: Tyvar.t vector): Tyvar.t list =
    let
       val frees: Free.t list ref = ref []
-	 
       fun addFree f =
 	 if List.contains (!frees, f, Free.equals)
 	    then ()
@@ -622,13 +625,13 @@ fun close (e, ty: Type.t, ensure: Tyvar.t vector): Tyvar.t list =
       (!frees, fn free =>
        case free of
 	  Free.Tyvar a => a
-	| Free.Type s => 
-	     case Type.toType s of
+	| Free.Type t => 
+	     case Type.toType t of
 		Type.Unknown (Unknown.T {equality, ...}) =>
 		   let
 		      val a = Tyvar.newNoname {equality = equality}
-		      val _ = Set.setValue (s, {ty = Type.Var a,
-						plist = PropertyList.new ()})
+		      val _ = Type.set (t, {ty = Type.Var a,
+					    plist = PropertyList.new ()})
 		   in
 		      a
 		   end
