@@ -41,10 +41,17 @@ tags:
 	etags *.fun *.sig *.sml
 
 BENCH = barnes-hut checksum count-graphs DLXSimulator fft fib hamlet knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc mpuz nucleic peek psdes-random ratio-regions ray raytrace simple smith-normal-form tak tensor tsp vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
-BENCH = DLXSimulator
 
 BFLAGS = -mlkit -mosml -smlnj
 
 .PHONY: test
 test: $(NAME)
 	export PATH=$(PATH):$$PATH && cd tests && ../benchmark $(BFLAGS) $(BENCH)
+
+QBENCH = $(BENCH)
+
+QBFLAGS =
+
+.PHONY: qtest
+qtest: $(NAME)
+	export PATH=$(PATH):$$PATH && cd tests && ../benchmark $(QBFLAGS) $(QBENCH)

@@ -21,7 +21,7 @@ ARITHI  int10/R8 := zero/R0 iadd 10
 NOP
 NOP
 NOP
-GETREAL real3.0/R9 := 3.0
+GETREAL real3.0/R9 := 3
 NOP
 NOP
 NOP
@@ -196,7 +196,7 @@ ARITHI  int10/R8 := zero/R0 iadd 10
 NOP
 NOP
 NOP
-GETREAL real4.0/R9 := 4.0
+GETREAL real4.0/R9 := 4
 NOP
 NOP
 NOP

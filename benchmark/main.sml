@@ -9,6 +9,7 @@ val doHtml = ref false
 val doKit = ref false
 val doMLton = ref true
 val doMLtonTop = ref false
+val doMLtonStable = ref false
 val doMosml = ref false
 val doNJ = ref false
 val doPoly = ref false
@@ -36,6 +37,7 @@ fun compileSizeRun {args, compiler, exe, doTextPlusData: bool} =
    Escape.new
    (fn e =>
     let
+       val exe = "./" ^ exe
        val {system, user} =
 	  Process.time (fn () => Process.call' (compiler, args))
 	  handle _ => Escape.escape (e, {compile = NONE,
@@ -72,8 +74,9 @@ local
       end
 in
    val mltonCompile  = make ("mlton", [])
-(*   val mltonTopCompile = make ("/usr/local/bin/mlton", []) *)
-   val mltonTopCompile = make ("mlton", ["-local-flatten", "false"])
+   val mltonStableCompile  = make ("mlton-stable", [])
+   val mltonTopCompile = make ("/usr/local/bin/mlton", [])
+(*   val mltonTopCompile = make ("mlton", ["-local-flatten", "false"]) *)
 end
 
 fun kitCompile {bench} =
@@ -205,6 +208,9 @@ val compilers: {doit: bool ref,
     {doit = doMLton,
      name = "MLton",
      test = mltonCompile},
+    {doit = doMLtonStable,
+     name = "stable MLton",
+     test = mltonStableCompile},
     {doit = doMLtonTop,
      name = "old MLton",
      test = mltonTopCompile},
@@ -241,6 +247,7 @@ fun main args =
 	    parse {switches = args,
 		   opts = [("html", trueRef doHtml),
 			   ("mlkit", trueRef doKit),
+			   ("mltonStable", trueRef doMLtonStable),
 			   ("mltonTop", trueRef doMLtonTop),
 			   ("mosml", trueRef doMosml),
 			   ("smlnj", trueRef doNJ),
