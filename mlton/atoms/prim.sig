@@ -236,6 +236,7 @@ signature PRIM =
       val entersRuntime: t -> bool
       val eq: t    (* pointer equality *)
       val equal: t (* polymorphic equality *)
+      val equals: t * t -> bool
       val extractTargs: {prim: t,
 			 args: 'a vector,
 			 result: 'a,
@@ -249,6 +250,7 @@ signature PRIM =
       val impCall: t -> bool
       val intInfEqual: t
       val intPlus: t
+      val isCommutative: t -> bool
       (*
        * isFunctional p = true iff p always returns same result when given
        *   same args and has no side effects.

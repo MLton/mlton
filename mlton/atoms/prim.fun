@@ -195,6 +195,33 @@ structure Name =
        | Word8_xorb
        | World_save
 
+      val equals: t * t -> bool = op =
+
+      val isCommutative =
+	 fn IntInf_areSmall => true
+	  | IntInf_equal => true
+	  | Int_add => true
+	  | Int_addCheck => true
+	  | Int_mul => true
+	  | Int_mulCheck => true
+	  | MLton_eq => true
+	  | MLton_equal => true
+	  | Real_add => true
+	  | Real_mul => true
+	  | Real_qequal => true
+	  | String_equal => true
+	  | Word32_add => true
+	  | Word32_andb => true
+	  | Word32_mul => true
+	  | Word32_orb => true
+	  | Word32_xorb => true
+	  | Word8_add => true
+	  | Word8_andb => true
+	  | Word8_mul => true
+	  | Word8_orb => true
+	  | Word8_xorb => true
+	  | _ => false
+
       val mayOverflow =
 	 fn Int_addCheck => true
 	  | Int_mulCheck => true
@@ -459,6 +486,7 @@ in
 end
 val isFunctional = Trace.trace ("isFunctional", layout, Bool.layout) isFunctional
 
+val isCommutative = Name.isCommutative o name
 val mayOverflow = Name.mayOverflow o name
 val mayRaise = Name.mayRaise o name
 val isArrayAllocation = Name.isArrayAllocation o name
@@ -489,6 +517,8 @@ fun new (n: Name.t, k: Kind.t, s: Scheme.t): t =
      plist = PropertyList.new (),
      scheme = s
      }
+
+fun equals (p, p') = Name.equals (name p, name p')
 
 local
    val newPrim = new

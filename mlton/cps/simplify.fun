@@ -23,6 +23,10 @@ val typeCheck =
 fun trace (name, pass) =
    Control.trace (Control.Pass, name)
    (Trace.trace ("Simplify." ^ name, Program.layout, Program.layout) pass)
+
+structure CommonSubexp = CommonSubexp (S)
+val commonSubexp =
+   trace ("commonSubexp", CommonSubexp.eliminate)
    
 structure ConstantPropagation = ConstantPropagation (S)
 val constantPropagation =
@@ -45,6 +49,7 @@ structure IntroduceLoops = IntroduceLoops (S)
 val introduceLoops = trace ("introduce-loops", IntroduceLoops.introduceLoops)
 
 (*structure LoopCount = LoopCount (S) *)
+
 structure LocalFlatten = LocalFlatten (S)
 val localFlatten = trace ("local-flatten", LocalFlatten.flatten)
    
@@ -127,6 +132,7 @@ val passes =
     loopInvariant,
     flatten,
     localFlatten,
+    commonSubexp,
     redundant,
     unusedArgs,
     removeUnused  (* removeUnused cannot be omitted.

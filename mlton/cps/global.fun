@@ -27,25 +27,6 @@ val primExpEquals =
     | (Tuple xs, Tuple xs') => equalss (xs, xs')
     | _ => false
 
-local
-   val newHash = Random.word
-   val tuple = newHash ()
-   val conApp = newHash ()
-   val primApp = newHash ()
-   fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
-      Vector.fold (xs, w, fn (x, w) => Word.xorb (w, Var.hash x))
-in
-   val hash: PrimExp.t -> Word.t =
-      fn Const c => Const.hash c
-       | Tuple xs => hashVars (xs, tuple)
-       | ConApp {con, args, ...} => hashVars (args, Con.hash con)
-       | PrimApp {args, ...} => hashVars (args, primApp)
-       | _ => Error.bug "hash not implemented for prim exp"
-end
-
-val hash =
-   Trace.trace ("PrimExp.hash", PrimExp.layout, Word.layout) hash
-
 fun make () =
    let
       type bind = {var: Var.t, ty: Type.t, exp: PrimExp.t}

@@ -24,6 +24,8 @@ signature CONTROL =
 
       val chunk: chunk ref
 
+      val commonSubexp: bool ref
+
       (* The current SML source being processed. *)
       val currentSource: Source.t ref
 

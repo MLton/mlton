@@ -291,6 +291,8 @@ cps/type-check.sig
 cps/shrink.sig
 cps/simplify.sig
 cps/cps.sig
+cps/common-subexp.sig
+cps/common-subexp.fun
 cps/constant-propagation.sig
 cps/once.sig
 cps/once.fun

@@ -11,6 +11,10 @@ val aux = control {name = "aux",
 		   default = false,
 		   toString = Bool.toString}
 
+val commonSubexp = control {name = "common subexpression elimintation",
+			    default = false,
+			    toString = Bool.toString}
+
 structure Chunk =
    struct
       datatype t =
@@ -108,19 +112,19 @@ val instrumentSxml = control {name = "instrument Sxml",
 			      default = false,
 			      toString = Bool.toString}
 
-val keepCps = control {name = "keep Cps",
+val keepCps = control {name = "keep CPS",
 		       default = false,
 		       toString = Bool.toString}
 
-val keepDot = control {name = "keep Dot",
+val keepDot = control {name = "keep dot",
 		       default = false,
 		       toString = Bool.toString}
 
-val keepMach = control {name = "keep Mach",
+val keepMach = control {name = "keep mach",
 			default = false,
 			toString = Bool.toString}
-
-val localFlatten = control {name = "localFlatten",
+   
+val localFlatten = control {name = "local flatten",
 			    default = true,
 			    toString = Bool.toString}
 

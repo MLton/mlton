@@ -88,9 +88,12 @@ signature CPS_TREE =
 			  offset: int}
 	     | Tuple of Var.t vector
 	     | Var of Var.t
-	       
+
+	    val equals: t * t -> bool
 	    val foreachJumpVar: t * (Jump.t -> unit) * (Var.t -> unit) -> unit
 	    val foreachVar: t * (Var.t -> unit) -> unit
+	    val hash: t -> Word.t
+	    val isFunctional: t -> bool
 	    val layout: t -> Layout.t
 	    val maySideEffect: t -> bool
 	    val replaceJumpVar: t * (Jump.t -> Jump.t) * (Var.t -> Var.t) -> t

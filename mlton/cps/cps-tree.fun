@@ -155,17 +155,17 @@ structure PrimInfo =
 structure PrimExp =
    struct
       datatype t =
-	 Const of Const.t
-       | Var of Var.t
-       | Tuple of Var.t vector
-       | Select of {tuple: Var.t,
-		    offset: int}
-       | ConApp of {con: Con.t,
+	 ConApp of {con: Con.t,
 		    args: Var.t vector}
+       | Const of Const.t
        | PrimApp of {prim: Prim.t,
 		     info: PrimInfo.t,
 		     targs: Type.t vector,
 		     args: Var.t vector}
+       | Select of {tuple: Var.t,
+		    offset: int}
+       | Tuple of Var.t vector
+       | Var of Var.t
 
       val unit = Tuple (Vector.new0 ())
 	 
@@ -226,6 +226,47 @@ structure PrimExp =
 							    Jump.layout j]]
       end
 
+      val isFunctional =
+	 fn PrimApp {prim, ...} => Prim.isFunctional prim
+	  | _ => true
+	       
+      fun varsEquals (xs, xs') = Vector.equals (xs, xs', Var.equals)
+
+      fun equals (e: t, e': t): bool =
+	 case (e, e') of
+	    (ConApp {con, args}, ConApp {con = con', args = args'}) =>
+	       Con.equals (con, con') andalso varsEquals (args, args')
+	  | (Const c, Const c') => Const.equals (c, c')
+	  | (PrimApp {prim = p, args = a, ...},
+	     PrimApp {prim = p', args = a', ...}) =>
+	       Prim.equals (p, p') andalso varsEquals (a, a')
+	  | (Select {tuple = t, offset = i}, Select {tuple = t', offset = i'}) =>
+	       Var.equals (t, t') andalso i = i'
+	  | (Tuple xs, Tuple xs') => varsEquals (xs, xs')
+	  | (Var x, Var x') => Var.equals (x, x')
+	  | _ => false
+
+      local
+	 val newHash = Random.word
+	 val conApp = newHash ()
+	 val primApp = newHash ()
+	 val select = newHash ()
+	 val tuple = newHash ()
+	 fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
+	    Vector.fold (xs, w, fn (x, w) => Word.xorb (w, Var.hash x))
+      in
+	 val hash: t -> Word.t =
+	    fn ConApp {con, args, ...} => hashVars (args, Con.hash con)
+	     | Const c => Const.hash c
+	     | PrimApp {args, ...} => hashVars (args, primApp)
+	     | Select {tuple, offset} =>
+		  Word.xorb (select, Var.hash tuple + Word.fromInt offset)
+	     | Tuple xs => hashVars (xs, tuple)
+	     | Var x => Var.hash x
+      end
+
+      val hash = Trace.trace ("PrimExp.hash", layout, Word.layout) hash
+
       val toString = Layout.toString o layout
 
       fun toPretty (e: t, global: Var.t -> string option): string =
@@ -265,11 +306,7 @@ structure PrimExp =
 		   | Int_gtu => two ">u"
 		   | Int_neg => one "-?"
 		   | Int_negCheck => one "-"
-		   | IntInf_add => two "+"
 		   | IntInf_equal => two "="
-		   | IntInf_mul => two "*"
-		   | IntInf_neg => one "-"
-		   | IntInf_sub => two "-"
 		   | MLton_eq => two "="
 		   | Real_Math_acos => one "acos"
 		   | Real_Math_asin => one "asin"
@@ -311,7 +348,7 @@ structure PrimExp =
 		   | Word32_lshift => two "<<"
 		   | Word32_lt => two "<"
 		   | Word32_mul => two "*"
-		   | Word32_neg => two "-"
+		   | Word32_neg => one "-"
 		   | Word32_orb => two "|"
 		   | Word32_rol => two "rol"
 		   | Word32_ror => two "ror"
@@ -326,7 +363,7 @@ structure PrimExp =
 		   | Word8_lshift => two "<<"
 		   | Word8_lt => two "<"
 		   | Word8_mul => two "*"
-		   | Word8_neg => two "-"
+		   | Word8_neg => one "-"
 		   | Word8_orb => two "|"
 		   | Word8_rol => two "rol"
 		   | Word8_ror => two "ror"
@@ -1372,12 +1409,13 @@ structure Function =
 		  in
 		     ()
 		  end
-	       val _ = loop (body, newNode (), Func.toString name)
+	       val root = newNode ()
+	       val _ = loop (body, root, Func.toString name)
 	       val l =
 		  Graph.LayoutDot.layout
 		  {graph = g,
 		   title = Func.toString name,
-		   options = [],
+		   options = [GraphOption.Rank (Min, [root])],
 		   edgeOptions = edgeOptions,
 		   nodeOptions = ! o nodeOptions}
 	       val _ = destroy ()

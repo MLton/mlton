@@ -138,11 +138,16 @@ structure LayoutDot =
 
       fun escapeString s =
 	 String.translate
-	 (s,
-	  fn #"\n" => "\\n"
-	   | #"\t" => "\\t"
-	   | #"\"" => "\\\""
-	   | c => Char.toString c)
+	 (s, fn c =>
+	  if Char.isPrint c
+	     then (case c of
+		      #"\"" => "\\\""
+		      | _ => Char.toString c)
+	  else
+	     case c of
+		#"\n" => "\\n"
+	      | #"\t" => "\\t"
+	      | c => concat ["\\", Int.format (Char.ord c, StringCvt.OCT)])
 
       val dquote = "\""
       fun quote s = concat [dquote, s, dquote]

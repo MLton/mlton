@@ -1,5 +1,8 @@
 Here are the changes from the 20010706 version to the VERSION version.
 
+* 2000-7-21
+  - Added common-supexpression elimination CPS optimization.
+
 * 2000-7-20
   - Bug fix to x86 codegen.  The commuteBinALMD peephole optimization would
     rewrite  mov 2,Y; add Y,Y  as  mov Y,Y; add 2,Y.  Now the appropriate
