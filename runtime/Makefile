@@ -40,6 +40,7 @@ OBJS =						\
 	basis/MLton/spawnp.o			\
 	basis/MLton/size.o			\
 	basis/MLton/world.o			\
+	basis/Net/NetHostDB.o			\
 	basis/OS/FileSys/tmpnam.o		\
 	basis/OS/IO/poll.o			\
 	basis/PackReal/subVec.o			\
@@ -187,6 +188,7 @@ DEBUG_OBJS =					\
 	basis/MLton/spawnp-gdb.o		\
 	basis/MLton/size-gdb.o			\
 	basis/MLton/world-gdb.o			\
+	basis/Net/NetHostDB-gdb.o		\
 	basis/OS/FileSys/tmpnam-gdb.o		\
 	basis/OS/IO/poll-gdb.o			\
 	basis/PackReal/subVec-gdb.o		\

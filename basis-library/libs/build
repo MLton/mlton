@@ -202,6 +202,11 @@ system/unix.sml
 system/timer.sig
 system/timer.sml
 
+net/net-host-db.sig
+net/net-host-db.sml
+net/net-prot-db.sig
+net/net-serv-db.sig
+
 sml-nj/sml-nj.sig
 sml-nj/sml-nj.sml
 sml-nj/unsafe-array.sig

@@ -152,8 +152,8 @@ signature BASIS_2002 =
       structure Int32Vector : MONO_VECTOR
       structure Int32VectorSlice : MONO_VECTOR_SLICE
       structure IntInf : INT_INF
-(*
       structure NetHostDB : NET_HOST_DB
+(*
       structure NetProtDB : NET_PROT_DB
       structure NetServDB : NET_SERV_DB
 *)
@@ -394,6 +394,8 @@ signature BASIS_2002 =
    where type IEEEReal.real_order = IEEEReal.real_order
    where type IEEEReal.float_class = IEEEReal.float_class
    where type IEEEReal.rounding_mode = IEEEReal.rounding_mode
+   where type NetHostDB.in_addr = NetHostDB.in_addr
+   where type NetHostDB.addr_family = NetHostDB.addr_family
    where type OS.IO.iodesc = OS.IO.iodesc
    where type OS.Process.status = OS.Process.status
    where type Position.int = Position.int

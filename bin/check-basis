@@ -278,6 +278,12 @@ cat <<-EOF
         signature POSIX_SIGNAL = sig end
         signature POSIX_SYS_DB = sig end
         signature POSIX_TTY = sig end
+        signature NET_HOST_DB = sig end
+        structure NetHostDB = struct end
+        signature NET_PROT_DB = sig end
+        structure NetProtDB = struct end
+        signature NET_SERV_DB = sig end
+        structure NetServDB = struct end
 	nonfix * / mod div ^ + - := o > < >= <= = <> :: @ before
 
         open Types

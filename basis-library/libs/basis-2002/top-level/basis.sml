@@ -71,8 +71,8 @@ structure Basis2002:> BASIS_2002 =
       structure Int32VectorSlice = Int32VectorSlice
       structure Int32Array2 = Int32Array2
       structure IntInf = IntInf
-(*
       structure NetHostDB = NetHostDB
+(*
       structure NetProtDB = NetProtDB
       structure NetServDB = NetServDB
 *)

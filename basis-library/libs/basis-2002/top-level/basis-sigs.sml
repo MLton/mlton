@@ -50,11 +50,9 @@ signature INET_SOCK = INET_SOCK
 *)
 signature INT_INF = INT_INF 
 signature MONO_ARRAY2 = MONO_ARRAY2 
-(*
 signature NET_HOST_DB = NET_HOST_DB 
 signature NET_PROT_DB = NET_PROT_DB 
 signature NET_SERV_DB = NET_SERV_DB 
-*)
 signature PACK_REAL = PACK_REAL 
 signature PACK_WORD = PACK_WORD 
 signature POSIX = POSIX 

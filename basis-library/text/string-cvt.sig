@@ -28,18 +28,25 @@ signature STRING_CVT_EXTRA =
       include STRING_CVT
 
       val radixToInt: radix -> int
+      val radixToWord: radix -> word
       val charToDigit: radix -> char -> int option
+      val charToWDigit: radix -> char -> word option
       val charsToInt: radix -> char list -> int option
+      val charsToWord: radix -> char list -> word option
 
       (* maps 0...15 to #"0", #"1", ..., #"F" *)
       val digitToChar: int -> char
+      val wdigitToChar: word -> char
 
       (* digitsExact(r, n) reads exactly n digits of radix r *)
       val digitsExact: radix * int -> (char, 'a) reader -> (int, 'a) reader
+      val wdigitsExact: radix * int -> (char, 'a) reader -> (word, 'a) reader
 	 
       (* digitsPlus(r, m) reads between 1 and m digits of radix r *)
       val digitsPlus: radix * int -> (char, 'a) reader -> (int, 'a) reader
+      val wdigitsPlus: radix * int -> (char, 'a) reader -> (word, 'a) reader
 
       (* digits r reads as many digits of radix r as possible *)
       val digits: radix -> (char, 'a) reader -> (int, 'a) reader
+      val wdigits: radix -> (char, 'a) reader -> (word, 'a) reader
    end

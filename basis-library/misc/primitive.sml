@@ -418,6 +418,20 @@ structure Primitive =
 	    val size = fn x => _prim "MLton_size": 'a ref -> int; x
 	 end
 
+      structure NetHostDB =
+	 struct
+	    val entryName = _ffi "NetHostDB_Entry_name": unit -> cstring;
+	    val entryNumAliases = _ffi "NetHostDB_Entry_numAliases": unit -> int;
+	    val entryAliasesN = _ffi "NetHostDB_Entry_aliasesN": int -> cstring;
+	    val entryAddrType = _ffi "NetHostDB_Entry_addrType": unit -> int;
+	    val entryLength = _ffi "NetHostDB_Entry_length": unit -> int;
+	    val entryNumAddrs = _ffi "NetHostDB_Entry_numAddrs": unit -> int;
+	    val entryAddrsN = _ffi "NetHostDB_Entry_addrsN": int * word8 array -> unit;
+	    val getByAddress = _ffi "NetHostDB_getByAddress": word8 vector * int -> bool;
+	    val getByName = _ffi "NetHostDB_getByName": string -> bool;
+	    val getHostName = _ffi "NetHostDB_getHostName": char array * int -> int;
+	 end
+
       structure OS =
 	 struct
 	    structure FileSys =
