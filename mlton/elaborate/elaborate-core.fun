@@ -64,6 +64,7 @@ local
    open TypeEnv
 in
    structure Scheme = Scheme
+   structure Time = Time
    structure Type = Type
 end
 
@@ -1489,7 +1490,8 @@ fun elaborateDec (d, {env = E, nest}) =
 			       lay = lay,
 			       resultType = resultType}
 			   end))
-		      val close = TypeEnv.close tyvars
+		      val close =
+			 TypeEnv.close (tyvars, {useBeforeDef = useBeforeDef})
 		      val {markFunc, setBound, unmarkFunc} = recursiveFun ()
 		      val fbs =
 			 Vector.map
@@ -1819,7 +1821,8 @@ fun elaborateDec (d, {env = E, nest}) =
 		    ; Decs.empty)
 	      | Adec.Val {tyvars, rvbs, vbs} =>
 		   let
-		      val close = TypeEnv.close tyvars
+		      val close =
+			 TypeEnv.close (tyvars, {useBeforeDef = useBeforeDef})
 		      (* Must do all the es and rvbs before the ps because of
 		       * scoping rules.
 		       *)
@@ -2191,18 +2194,11 @@ fun elaborateDec (d, {env = E, nest}) =
 		   Env.scope
 		   (E, fn () =>
 		    let
-		       (* Create a new type (at the current time) before
-			* elaborating the decs.  Then, unification with this
-			* type makes sure that any datatypes declared in the
-			* decs don't escape.
-			*)
-		       val t = Type.new ()
+		       val time = Time.now ()
 		       val d = Decs.toVector (elabDec (d, nest, false))
 		       val e = elab e
 		       val ty = Cexp.ty e
-		       val _ =
-			  unify
-			  (t, ty, fn _ => Error.bug "elabExp Let unify failure")
+		       val () = Type.minTime (ty, time)
 		    in
 		       Cexp.make (Cexp.Let (d, e), ty)
 		    end)

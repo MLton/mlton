@@ -75,6 +75,8 @@ structure Time:>
 	    current := T {clock = 1 + clock (!current),
 			  useBeforeDef = useBeforeDef}
       end
+
+      val tick = Trace.trace ("Time.tick", Layout.ignore, Unit.layout) tick
    end
 
 val tick = Time.tick
@@ -362,6 +364,9 @@ structure Spine:
 val {get = tyvarTime: Tyvar.t -> Time.t ref, ...} =
    Property.get (Tyvar.plist, Property.initFun (fn _ => ref (Time.now ())))
 
+val tyvarTime =
+   Trace.trace ("tyvarTime", Tyvar.layout, Ref.layout Time.layout) tyvarTime
+
 local
    type z = Layout.t * {isChar: bool, needsParen: bool}
    open Layout
@@ -469,27 +474,34 @@ structure Type =
       in
 	 fun layoutFields fs =
 	    List.layout (Layout.tuple2 (Field.layout, layout)) fs
-	 and layout ty =
-	    case toType ty of
-	       Con (c, ts) =>
-		  paren (align [seq [str "Con ", Tycon.layout c],
-				Vector.layout layout ts])
-	     | FlexRecord {fields, spine} =>
-		  seq [str "Flex ",
-		       record [("fields", layoutFields fields),
-			       ("spine", Spine.layout spine)]]
-	     | GenFlexRecord {fields, spine, ...} =>
-		  seq [str "GenFlex ",
-		       record [("fields", layoutFields fields),
-			       ("spine", Spine.layout spine)]]
-	     | Overload ov => Overload.layout ov
-	     | Record r => Srecord.layout {record = r,
-					   separator = ": ",
-					   extra = "",
-					   layoutTuple = Vector.layout layout,
-					   layoutElt = layout}
-	     | Unknown u => Unknown.layout u
-	     | Var a => paren (seq [str "Var ", Tyvar.layout a])
+	 and layout (T s) =
+	    let
+	       val {time, ty, ...} = Set.! s
+	    in
+	       record
+	       [("time", Time.layout (!time)),
+		("ty",
+		 case ty of
+		    Con (c, ts) =>
+		       paren (align [seq [str "Con ", Tycon.layout c],
+				     Vector.layout layout ts])
+		  | FlexRecord {fields, spine} =>
+		       seq [str "Flex ",
+			    record [("fields", layoutFields fields),
+				    ("spine", Spine.layout spine)]]
+		  | GenFlexRecord {fields, spine, ...} =>
+		       seq [str "GenFlex ",
+			    record [("fields", layoutFields fields),
+				    ("spine", Spine.layout spine)]]
+		  | Overload ov => Overload.layout ov
+		  | Record r => Srecord.layout {record = r,
+						separator = ": ",
+						extra = "",
+						layoutTuple = Vector.layout layout,
+						layoutElt = layout}
+		  | Unknown u => Unknown.layout u
+		  | Var a => paren (seq [str "Var ", Tyvar.layout a]))]
+	    end
       end
 
       val toString = Layout.toString o layout
@@ -1572,10 +1584,10 @@ fun generalize (tyvars: Tyvar.t vector) =
 			   not (Time.<= (genTime, !(tyvarTime a)))))}
    end
 
-fun close (ensure: Tyvar.t vector) =
+fun close (ensure: Tyvar.t vector, ubd) =
    let
       val beforeGen = Time.now ()
-      val () = Time.tick {useBeforeDef = fn _ => Error.bug "close useBeforeDef"}
+      val () = Time.tick ubd
       val genTime = Time.now ()
       val () = Vector.foreach (ensure, fn a => ignore (tyvarTime a))
       val savedCloses = !Type.newCloses

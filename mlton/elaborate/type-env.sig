@@ -14,6 +14,13 @@ signature TYPE_ENV =
    sig
       include TYPE_ENV_STRUCTS
 
+      structure Time:
+	 sig
+	    type t
+
+	    val now: unit -> t
+	 end
+
       structure Type:
 	 sig
 	    include TYPE_OPS
@@ -43,6 +50,11 @@ signature TYPE_ENV =
 	       unit -> {destroy: unit -> unit,
 			lay: t -> Layout.t * {isChar: bool,
 					      needsParen: bool}}
+	    (* minTime (t, time) makes every component of t occur no later than
+	     * time.  This will display a type error message if time is before
+	     * the definition time of some component of t.
+	     *)
+	    val minTime: t * Time.t -> unit
 	    val new: unit -> t
 	    val record: t SortedRecord.t -> t
 	    val string: t
@@ -83,7 +95,7 @@ signature TYPE_ENV =
 	 end
 
       val close:
-	 Tyvar.t vector
+	 Tyvar.t vector * {useBeforeDef: Tycon.t -> unit}
 	 -> {isExpansive: bool, ty: Type.t} vector
 	 -> {bound: unit -> Tyvar.t vector,
 	     schemes: Scheme.t vector,
