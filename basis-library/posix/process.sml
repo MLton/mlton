@@ -26,7 +26,7 @@ structure PosixProcess: POSIX_PROCESS =
  	 else
 	    fn () =>
 	    if true
-	       then raise Fail "Posix.Process.fork does not work on Cygwin"
+	       then Error.raiseSys Error.nosys
 	    else
 	    (* On Cygwin, need to have the parent wait around until the child
 	     * starts to work around a Cygwin fork/mmap bug.
