@@ -62,6 +62,7 @@ is
 
 array.sig
 bin-io.sig
+bin-io.sml
 cont.sig
 exn.sig
 gc.sig
