@@ -107,6 +107,7 @@ structure MLton: MLTON =
 	    fun addFinalizer _ = ()
 	    fun finalizeBefore _ = ()
 	    fun new x = x
+	    fun touch _ = ()
 	    fun withValue (x, f) = f x
 	 end
       
@@ -178,6 +179,39 @@ structure MLton: MLTON =
 
 		  fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
 	       end
+	 end
+
+      structure Pointer =
+	 struct
+	    type t = unit
+	       
+	    val add = fn _ => raise Fail "Pointer.add"
+	    val diff = fn _ => raise Fail "Pointer.diff"
+	    val getInt8 = fn _ => raise Fail "Pointer.getInt8"
+	    val getInt16 = fn _ => raise Fail "Pointer.getInt16"
+	    val getInt32 = fn _ => raise Fail "Pointer.getInt32"
+	    val getInt64 = fn _ => raise Fail "Pointer.getInt64"
+	    val getPointer = fn _ => raise Fail "Pointer.getPointer"
+	    val getReal32 = fn _ => raise Fail "Pointer.getReal32"
+	    val getReal64 = fn _ => raise Fail "Pointer.getReal64"
+	    val getWord8 = fn _ => raise Fail "Pointer.getWord8"
+	    val getWord16 = fn _ => raise Fail "Pointer.getWord16"
+	    val getWord32 = fn _ => raise Fail "Pointer.getWord32"
+	    val getWord64 = fn _ => raise Fail "Pointer.getWord64"
+	    val isNull = fn _ => raise Fail "Pointer.isNull"
+	    val null = ()
+	    val setInt8 = fn _ => raise Fail "Pointer.setInt8"
+	    val setInt16 = fn _ => raise Fail "Pointer.setInt16"
+	    val setInt32 = fn _ => raise Fail "Pointer.setInt32"
+	    val setInt64 = fn _ => raise Fail "Pointer.setInt64"
+	    val setPointer = fn _ => raise Fail "Pointer.setPointer"
+	    val setReal32 = fn _ => raise Fail "Pointer.setReal32"
+	    val setReal64 = fn _ => raise Fail "Pointer.setReal64"
+	    val setWord8 = fn _ => raise Fail "Pointer.setWord8"
+	    val setWord16 = fn _ => raise Fail "Pointer.setWord16"
+	    val setWord32 = fn _ => raise Fail "Pointer.setWord32"
+	    val setWord64 = fn _ => raise Fail "Pointer.setWord64"
+	    val sub = fn _ => raise Fail "Pointer.sub"
 	 end
 
       structure ProcEnv =

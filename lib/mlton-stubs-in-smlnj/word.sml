@@ -143,6 +143,7 @@ structure Word32 =
 
       end
    end
+structure Word16 = Word32
 structure Word64 = FixWord (LargeWord)
 structure Word = Word32
 structure SysWord = Word32

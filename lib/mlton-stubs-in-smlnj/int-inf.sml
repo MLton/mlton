@@ -85,3 +85,7 @@ structure Int =
 structure Int32 = Int
 
 structure Position = Int
+
+structure Int8 = Int32
+structure Int16 = Int32
+structure Int64 = Int32

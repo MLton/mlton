@@ -76,6 +76,7 @@ itimer.sig
 mlton.sig
 mlton.sml
 platform.sig
+pointer.sig
 proc-env.sig
 process.sig
 profile.sig

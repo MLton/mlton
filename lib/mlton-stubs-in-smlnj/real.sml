@@ -136,3 +136,6 @@ structure Real: REAL =
 
       val fromDecimal = SOME o fromDecimal
    end
+
+structure Real32 = Real
+structure Real64 = Real
