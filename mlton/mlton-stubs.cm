@@ -103,11 +103,11 @@ upgrade-basis.sml
 ../lib/mlton/basic/ring-with-identity.sig
 ../lib/mlton/basic/euclidean-ring.sig
 ../lib/mlton/basic/integer.sig
-../lib/mlton/basic/power.sml
 ../lib/mlton/basic/euclidean-ring.fun
 ../lib/mlton/basic/ring.fun
 ../lib/mlton/basic/ordered-ring.sig
 ../lib/mlton/basic/ordered-ring.fun
+../lib/mlton/basic/power.sml
 ../lib/mlton/basic/ring-with-identity.fun
 ../lib/mlton/basic/integer.fun
 ../lib/mlton/basic/int.sml
@@ -405,8 +405,6 @@ ssa/remove-unused.sig
 ssa/remove-unused.fun
 ssa/redundant-tests.sig
 ssa/redundant-tests.fun
-ssa/equivalence-relation.sig
-ssa/equivalence-relation.fun
 ssa/redundant.sig
 ssa/redundant.fun
 ssa/poly-equal.sig

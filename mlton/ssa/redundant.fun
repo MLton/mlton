@@ -13,75 +13,268 @@ open S
 type int = Int.t
 type word = Word.t
 
+datatype z = datatype Exp.t
+datatype z = datatype Transfer.t
+
+structure Element:
+   sig
+      structure Class:
+	 sig
+	    type t
+	       
+	    val plist: t -> PropertyList.t
+	 end
+
+      type t
+      type cfs = {coarse: t, fine: t} vector
+
+      val areEquivalent: t * t -> bool
+      val class: t -> Class.t
+      val forceDistinct: t vector -> unit
+      val new: 'a vector * ('a -> PropertyList.t) -> t vector
+      val new1: unit -> t
+      val refine: cfs -> cfs list * {change: bool}
+   end =
+   struct
+      datatype t = T of {class: class ref}
+      and class = Class of {elements: t vector,
+			    plist: PropertyList.t}
+
+      type cfs = {coarse: t, fine: t} vector
+
+      structure Class =
+	 struct
+	    datatype t = datatype class
+
+	    local
+	       fun make f (Class r) = f r
+	    in
+	       val elements = make #elements
+	       val plist = make #plist
+	    end
+
+	    val size = Vector.length o elements
+
+	    fun new elements =
+	       Class {elements = elements,
+		      plist = PropertyList.new ()}
+
+	    val bogus = new (Vector.new0 ())
+
+	    fun equals (c, c') = PropertyList.equals (plist c, plist c')
+	 end
+
+      local
+	 fun make f (T r) = f r
+      in
+	 val class = ! o make #class
+      end
+
+      fun setClass (T {class, ...}, c) = class := c
+
+      fun areEquivalent (e, e') = Class.equals (class e, class e')
+	 
+      fun 'a new (elements: 'a vector, plist: 'a -> PropertyList.t): t vector =
+	 let
+	    val classes: t list ref list ref = ref []
+	    val {destroy, get = class: 'a -> t list ref, ...} =
+	       Property.destGet
+	       (plist, Property.initFun (fn _ =>
+					 let
+					    val class = ref []
+					    val () = List.push (classes, class)
+					 in
+					    class
+					 end))
+	    val elements =
+	       Vector.map (elements, fn a =>
+			   let
+			      val elt = T {class = ref Class.bogus}
+			      val () = List.push (class a, elt)
+			   in
+			      elt
+			   end)
+	    val () = destroy ()
+	    val () = List.foreach (!classes, fn r =>
+				   let
+				      val elements = Vector.fromList (!r)
+				      val class = Class.new elements
+				      val () =
+					 Vector.foreach
+					 (elements, fn e => setClass (e, class))
+				   in
+				      ()
+				   end)
+	 in
+	    elements
+	 end
+
+      fun new1 () =
+	 let
+	    val e = T {class = ref Class.bogus}
+	    val c = Class.new (Vector.new1 e)
+	    val () = setClass (e, c)
+	 in
+	    e
+	 end
+
+      fun forceDistinct (es: t vector): unit =
+	 Vector.foreach
+	 (es, fn e =>
+	  let
+	     val c = Class.new (Vector.new1 e)
+	     val () = setClass (e, c)
+	  in
+	     ()
+	  end)
+
+      fun refine (v: cfs): cfs list * {change: bool} =
+	 let
+	    fun group (v: cfs, sel): cfs list =
+	       let
+		  val classes = ref []
+		  val {destroy, get: Class.t -> {coarse: t, fine: t} list ref,
+		       ...} =
+		     Property.destGet
+		     (Class.plist,
+		      Property.initFun (fn _ =>
+					let
+					   val r = ref []
+					   val () = List.push (classes, r)
+					in
+					   r
+					end))
+		  val () =
+		     Vector.foreach
+		     (v, fn cf => List.push (get (class (sel cf)), cf))
+		  val () = destroy ()
+	       in 
+		  List.fold (!classes, [], fn (r, ac) =>
+			     Vector.fromList (!r) :: ac)
+	       end
+	    val change = ref false
+	    val res = ref []
+	    val () =
+	       List.foreach
+	       (group (v, #fine), fn v =>
+		List.foreach
+		(group (v, #coarse), fn v =>
+		 let
+		    val elements = Vector.map (v, #fine)
+		    val oldClass = class (Vector.sub (elements, 0))
+		    val () =
+		       if Vector.length elements > 1
+			  then List.push (res, v)
+		       else ()
+		 in
+		    if Vector.length elements = Class.size oldClass
+		       then () (* No change *)
+		    else
+		       let
+			  val _ = change := true
+			  val c = Class.new elements
+			  val () = Vector.foreach (elements, fn e =>
+						   setClass (e, c))
+		       in
+			  ()
+		       end
+		 end))
+	 in
+	    (!res, {change = !change})
+	 end
+   end
+
+structure Class = Element.Class
+   
 structure Eqrel:>
    sig
       type t
 	 
-      val areEquivalent: t * int * int -> bool
       val classes: t -> int list list
-      val equals: t * t -> bool
+      val element: t * int -> Element.t
+      val elements: t -> Element.t vector
       val fixedPoint: unit -> unit
+      val forceDistinct: t -> unit
       val fromTypes: Type.t vector -> t
       val layout: t -> Layout.t
-      val refine: t * (int * int -> bool) -> unit
+      val make: Element.t vector -> t
+      val refine: {coarse: t, fine: t} -> unit
       val unify: t * t -> unit
    end =
    struct
-      structure R = EquivalenceRelation
-      structure Set = DisjointSet
+      datatype t = T of Element.t vector
 
-      datatype t = T of {me: R.t Set.t,
-			 refinements: (int * int -> bool) list ref}
+      val make = T
 
-      val all: t list ref = ref []
+      fun elements (T v) = v
+	 
+      fun element (r, i) = Vector.sub (elements r, i)
 
-      fun fromTypes ts =
-	 let val er = T {me = Set.singleton (R.make (Vector.toList ts,
-						     Type.equals)),
-			 refinements = ref []}
-	 in List.push (all, er); er
-	 end
+      fun forceDistinct (T v) = Element.forceDistinct v
 
-      fun me (T {me, ...}) = Set.value me
+      fun fromTypes ts = T (Element.new (ts, Type.plist))
 
-      fun areEquivalent (er, i, j) = R.areEquivalent (me er, i, j)
+      type cfs = Element.cfs
+	 
+      val refinements: cfs list ref = ref []
 
-      val classes = R.classes o me
-
-      fun equals (T {me, ...}, T {me = me', ...}) = Set.equals (me, me')
-
-      val layout = R.layout o me
-
-      fun refine (T {refinements, ...}, f) = List.push (refinements, f)
-
-      (* Relies on the fact that all unifications happen before the fixed point.
-       *)
-      fun unify (T {me, ...}, T {me = me', ...}) = Set.union (me, me')
+      fun refine {coarse = T cv, fine = T fv} =
+	 List.push (refinements,
+		    Vector.map2 (cv, fv, fn (c, f) => {coarse = c, fine = f}))
 
       fun fixedPoint () =
-	 (FixedPoint.fix'
-	  (fn continue =>
-	   List.foreach (!all, fn T {me, refinements} =>
-			 let val r = Set.value me
-			    val r' = List.fold (!refinements, r,
-						fn (refinement, r) =>
-						R.refine (r, refinement))
-			 in if R.equals (r, r')
-			       then ()
-			    else (continue (); Set.setValue (me, r'))
-			 end))
-	  ; all := [])
+	 let
+	    fun loop ac =
+	       let
+		  val (ac, change) =
+		     List.fold (ac, ([], false), fn (r, (ac, c)) =>
+				let
+				   val (cfss, {change}) = Element.refine r
+				in
+				   (cfss @ ac, c orelse change)
+				end)
+	       in
+		  if change
+		     then loop ac
+		  else ()
+	       end
+	    val () = loop (!refinements)
+	 in
+	    ()
+	 end
+
+      fun unify (r, r') =
+	 (refine {coarse = r, fine = r'}
+	  ; refine {coarse = r', fine = r})
+	 
+      fun classes (T v) =
+	 let
+	    val classes = ref []
+	    val {get = classIndices: Class.t -> int list ref, destroy, ...} =
+	       Property.destGet (Class.plist,
+				 Property.initFun
+				 (fn _ =>
+				  let
+				     val r = ref []
+				     val () = List.push (classes, r)
+				  in
+				     r
+				  end))
+	    val () =
+	       Vector.foreachi
+	       (v, fn (i, e) =>
+		List.push (classIndices (Element.class e), i))
+	    val () = destroy ()
+	 in
+	    List.fold (!classes, [], fn (r, ac) => !r :: ac)
+	 end
+
+      val layout = (List.layout (List.layout Int.layout)) o classes
    end
-
-
-open Exp Transfer
 
 fun redundant (Program.T {datatypes, globals, functions, main}) =
    let
-      val {get = funcInfo: Func.t -> {
-				      arg: Eqrel.t,
-				      return: Eqrel.t option
-				      },
+      val {get = funcInfo: Func.t -> {arg: Eqrel.t, return: Eqrel.t option},
 	   set = setFuncInfo, ...} =
 	 Property.getSetOnce
 	 (Func.plist, Property.initRaise ("Redundant.info", Func.layout))
@@ -89,62 +282,54 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce
 	 (Label.plist, Property.initRaise ("Redundant.info", Label.layout))
-      val {get = varInfo : Var.t -> {
-				     index: int,
-				     arg: Eqrel.t
-				     } option,
+      val {get = varInfo : Var.t -> Element.t,
 	   set = setVarInfo, ...} =
-	 Property.getSetOnce (Var.plist, Property.initConst NONE)
-      fun varEquiv (x, y) =
-	 Var.equals (x, y)
-	 orelse (case (varInfo x, varInfo y) of
-		    (SOME {index = i, arg = r},
-		     SOME {index = i', arg = r'}) =>
-		       Eqrel.equals (r, r') andalso Eqrel.areEquivalent (r, i, i')
-		  | _ => false)
+	 Property.getSetOnce
+	 (Var.plist, Property.initFun (fn _ => Element.new1 ()))
+      fun varEquiv xs = Eqrel.make (Vector.map (xs, varInfo))
       (* compute the fixed point *)
-      val _ =
+      val () =
 	 let
 	    fun makeFormalsRel (xs: (Var.t * Type.t) vector): Eqrel.t =
 	       let
 		  val eqrel = Eqrel.fromTypes (Vector.map (xs, #2))
-	       in Vector.foreachi (xs, fn (i, (x, _)) =>
-				   setVarInfo (x, SOME {index = i, arg = eqrel}))
-		  ; eqrel
+		  val () =
+		     Vector.foreachi
+		     (xs, fn (i, (x, _)) =>
+		      setVarInfo (x, Eqrel.element (eqrel, i)))
+	       in
+		  eqrel
 	       end
 	    (* initialize all varInfo and funcInfo *)
-	    val _ =
+	    val () =
 	       List.foreach
 	       (functions, fn f =>
-		let val {name, args, returns, ...} = Function.dest f
-		in setFuncInfo (name, {
-				       arg = makeFormalsRel args,
+		let
+		   val {name, args, returns, ...} = Function.dest f
+		in
+		   setFuncInfo (name, {arg = makeFormalsRel args,
 				       return = Option.map (returns,
-							    Eqrel.fromTypes)
-				       })
+							    Eqrel.fromTypes)})
 		end)
-
 	    (* Add the calls to all the funcInfos *)
-	    val _ =
+	    val () =
 	       List.foreach
 	       (functions, fn f =>
 		let 
-		   val varEquiv =
-		      fn vars => fn (i, j) => varEquiv (Vector.sub (vars, i),
-							Vector.sub (vars, j))
 		   val {name, blocks, ...} = Function.dest f
 		   val {return, ...} = funcInfo name
-		in 
-		   Vector.foreach
-		   (blocks, fn Block.T {label, args, ...} =>
-		    setLabelInfo (label, (makeFormalsRel args))) ;
+		   val _ =
+		      Vector.foreach (blocks, fn Block.T {label, args, ...} =>
+				      setLabelInfo (label, makeFormalsRel args))
+		in
 		   Vector.foreach
 		   (blocks, fn Block.T {transfer, ...} =>
 		    case transfer of
 		       Call {func, args, return = ret, ...} =>
 		          let
 			     val {arg = arg', return = return'} = funcInfo func
-			     val _ = Eqrel.refine (arg', varEquiv args)
+			     val _ = Eqrel.refine {coarse = varEquiv args,
+						   fine = arg'}
 			  in
 			     case ret of
 				Return.Dead => ()
@@ -162,11 +347,14 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 			    * need to have trivial equivalence relations.
 			    *)
 			   Vector.foreach (cases, fn (_, l) =>
-					   Eqrel.refine (labelInfo l,
-							 fn _ => false))
+					   Eqrel.forceDistinct (labelInfo l))
+							
 		      | Goto {dst, args, ...} =>
-			   Eqrel.refine (labelInfo dst, varEquiv args)
-		      | Return xs => Eqrel.refine (valOf return, varEquiv xs)
+			   Eqrel.refine {coarse = varEquiv args,
+					 fine = labelInfo dst}
+		      | Return xs =>
+			   Eqrel.refine {coarse = varEquiv xs,
+					 fine = valOf return}
 		      | _ => ())
 		end)
 	    val _ = Eqrel.fixedPoint ()
@@ -177,56 +365,61 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 	 (fn display =>
 	  List.foreach
 	  (functions, fn f => 
-	   let open Layout
+	   let
+	      open Layout
 	       val {name, blocks, ...} = Function.dest f
 	       val {arg, return} = funcInfo name
-	   in display (seq [Func.layout name,
-			    str "  ",
-			    Eqrel.layout arg,
-			    Option.layout Eqrel.layout return]) ;
-	      Vector.foreach
-	      (blocks, fn Block.T {label, ...} =>
-	       let val arg = labelInfo label
-	       in display (seq [str "\t",
-				Label.layout label,
-				str " ",
-				Eqrel.layout arg])
-	       end)
+	       val () =
+		  display (seq [Func.layout name,
+				str "  ",
+				Eqrel.layout arg,
+				Option.layout Eqrel.layout return])
+	       val () =
+		  Vector.foreach
+		  (blocks, fn Block.T {label, ...} =>
+		   let
+		      val arg = labelInfo label
+		   in
+		      display (seq [str "\t",
+				    Label.layout label,
+				    str " ",
+				    Eqrel.layout arg])
+		   end)
+	   in
+	      ()
 	   end))
-      val {get = replacement : Var.t -> Var.t option, set = setReplacement, ...} =
+      val {get = replacement : Var.t -> Var.t option,
+	   set = setReplacement, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst NONE)
       datatype red =
 	 Useful
        | Redundant of int (* the index it is the same as *)
-
-      (* Turn an equivalence relation on 0 ... n -1 into a list of length n,
-       * by choosing a representative of each class.
+      (* Turn an equivalence relation on 0 ... n - 1 into a red vector by
+       * choosing a representative of each class.
        *)
-      fun 'a makeReds (xs: 'a vector, r: Eqrel.t): red vector =
+      fun makeReds (r: Eqrel.t): red vector =
 	 let
-	    val classes = Eqrel.classes r
-	    fun getRed i =
-	       let
-		  val rec loop =
-		     fn [] => Useful
-		      | class :: classes =>
-			   case class of
-			      [] => Error.bug "empty class"
-			    | [_] => Error.bug "trivial class"
-			    | j :: js =>
-				 if i = j
-				    then Useful
-				 else if List.exists (js, fn j => i = j)
-					 then Redundant j
-				      else loop classes
-	       in loop classes
-	       end
-	 in Vector.tabulate (Vector.length xs, getRed)
+	    val {get = rep: Class.t -> int option ref, destroy, ...} =
+	       Property.destGet (Class.plist,
+				 Property.initFun (fn _ => ref NONE))
+	    val reds =
+	       Vector.mapi
+	       (Eqrel.elements r, fn (i, e) =>
+		let
+		   val r = rep (Element.class e)
+		in
+		   case !r of
+		      NONE => (r := SOME i; Useful)
+		    | SOME i => Redundant i
+		end)
+	    val () = destroy ()
+	 in
+	    reds
 	 end
       fun redundantFormals (xs: (Var.t * Type.t) vector, r: Eqrel.t)
 	 : red vector * (Var.t * Type.t) vector =
 	 let
-	    val reds = makeReds (xs, r)
+	    val reds = makeReds r
 	    val xs =
 	       Vector.keepAllMap2
 	       (xs, reds, fn (x, red) =>
@@ -235,7 +428,8 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 		 | Redundant i =>
 		      (setReplacement (#1 x, SOME (#1 (Vector.sub (xs, i))))
 		       ; NONE))
-	 in (reds, xs)
+	 in
+	    (reds, xs)
 	 end
       fun keepUseful (reds: red vector, xs: 'a vector): 'a vector =
 	 Vector.keepAllMap2 (reds, xs, fn (r, x) =>
@@ -264,7 +458,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 		(case (returns, return) of
 		    (SOME r, SOME r') =>
 		       let
-			  val returnsRed = makeReds (r, r')
+			  val returnsRed = makeReds r'
 			  val returns = keepUseful (returnsRed, r)
 		       in
 			  (SOME returnsRed, SOME returns)
@@ -296,20 +490,17 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 	  let
 	     val {blocks, name, raises, start, ...} = Function.dest f
 	     val {args, returns, returnsRed, ...} = funcReds name
-
 	     val blocks =
 	        Vector.map
 		(blocks, fn Block.T {label, statements, transfer, ...} =>
 		 let
 		    val {args, ...} = labelReds label
-
 		    val statements =
 		       Vector.map
 		       (statements, fn Statement.T {var, ty, exp} =>
 			Statement.T {var = var,
 				     ty = ty,
 				     exp = Exp.replaceVar (exp, loopVar)})
-
 		    val transfer =
 		       case transfer of
 			  Arith {prim, args, overflow, success, ty} =>
