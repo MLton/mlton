@@ -38,6 +38,13 @@ structure Operand =
 
       val layout: t -> Layout.t = Layout.str o toString
 
+      val isLocation =
+	 fn ArrayOffset _ => true
+	  | Offset _ => true
+	  | Runtime _ => true
+	  | Var _ => true
+	  | _ => false
+
       val ty =
 	 fn ArrayOffset {ty, ...} => ty
 	  | CastInt _ => Type.int
@@ -64,7 +71,9 @@ structure Operand =
 	       end
 	  | Offset {ty, ...} => ty
 	  | Pointer _ => Type.pointer
-	  | Runtime _ => Type.uint
+	  | Runtime z => (case RuntimeOperand.ty z of
+			     RuntimeOperand.Int => Type.int
+			   | RuntimeOperand.Word => Type.word)
 	  | Var {ty, ...} => ty
 
       fun 'a foldVars (z: t, a: 'a, f: Var.t * 'a -> 'a): 'a =
@@ -805,7 +814,8 @@ structure Program =
 		   | Move {dst, src} =>
 			(checkOperand dst
 			 ; checkOperand src
-			 ; Type.equals (Operand.ty dst, Operand.ty src))
+			 ; (Type.equals (Operand.ty dst, Operand.ty src)
+			    andalso Operand.isLocation dst))
 		   | Object {dst, numPointers, numWordsNonPointers, stores} =>
 			 (Vector.foreach (stores, fn {offset, value} =>
 					  checkOperand value)

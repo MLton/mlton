@@ -617,6 +617,22 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			      fun array0 () =
 				 add (Array0 {dst = valOf var})
 			      datatype z = datatype Prim.Name.t
+			      fun bumpCanHandle n =
+				 let
+				    val canHandle =
+				       Operand.Runtime RuntimeOperand.CanHandle
+				    val res = Var.newNoname ()
+				 in
+				    [Statement.PrimApp
+				     {args = Vector.new2 (canHandle,
+							  Operand.int n),
+				      dst = SOME (res, Type.int),
+				      prim = Prim.intAdd},
+				     Statement.Move
+				     {dst = canHandle,
+				      src = Operand.Var {var = res,
+							 ty = Type.int}}]
+				 end
 			   in
 			      if Prim.impCall prim
 				 then
@@ -810,6 +826,92 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				       in allocate (ys, sortTypes (0, ts))
 				       end
 				  | String_sub => sub Type.char
+				  | Thread_atomicBegin =>
+				       split
+				       (Vector.new0 (), Kind.Jump, ss, fn l =>
+					let
+					   fun doit (dst, prim, a, b) =
+					      let
+						 val tmp = Var.newNoname ()
+					      in
+						 Vector.new2
+						 (Statement.PrimApp
+						  {args = Vector.new2 (a, b),
+						   dst = SOME (tmp, Type.word),
+						   prim = prim},
+						  Statement.Move
+						  {dst = Operand.Runtime dst,
+						   src = (Operand.Var
+							  {var = tmp,
+							   ty = Type.word})})
+					      end
+					   datatype z = datatype RuntimeOperand.t
+					   val statements =
+					      Vector.concat
+					      [doit (LimitPlusSlop,
+						     Prim.word32Add,
+						     Operand.Runtime Base,
+						     Operand.Runtime Frontier),
+					       doit (Limit,
+						     Prim.word32Sub,
+						     Operand.Runtime LimitPlusSlop,
+						     Operand.word
+						     (Word.fromInt
+						      Runtime.limitSlop))]
+					   val l' =
+					      newBlock
+					      {args = Vector.new0 (),
+					       kind = Kind.Jump,
+					       profileInfo = profileInfo,
+					       statements = statements,
+					       transfer = (Transfer.Goto
+							   {args = Vector.new0 (),
+							    dst = l})}
+					in
+					   (bumpCanHandle 1,
+					    Transfer.iff
+					    (Operand.Runtime SignalIsPending,
+					     {falsee = l,
+					      truee = l'}))
+					end)
+				  | Thread_atomicEnd =>
+				       split
+				       (Vector.new0 (), Kind.Jump, ss, fn l =>
+					let
+					   datatype z = datatype RuntimeOperand.t
+					   val statements =
+					      Vector.new1
+					      (Statement.Move
+					       {dst = Operand.Runtime Limit,
+						src = Operand.word 0w0})
+					   val l'' =
+					      newBlock
+					      {args = Vector.new0 (),
+					       kind = Kind.Jump,
+					       profileInfo = profileInfo,
+					       statements = statements,
+					       transfer =
+					       Transfer.Goto
+					       {args = Vector.new0 (),
+						dst = l}}
+					   val l' =
+					      newBlock
+					      {args = Vector.new0 (),
+					       kind = Kind.Jump,
+					       profileInfo = profileInfo,
+					       statements = Vector.new0 (),
+					       transfer =
+					       Transfer.iff
+					       (Operand.Runtime CanHandle,
+						{truee = l,
+						 falsee = l''})}
+					in
+					   (bumpCanHandle ~1,
+					    Transfer.iff
+					    (Operand.Runtime SignalIsPending,
+					     {falsee = l,
+					      truee = l'}))
+					end)
 				  | Vector_fromArray => move (varOp (a 0))
 				  | Vector_sub =>
 				       (case targ () of

@@ -143,6 +143,8 @@ structure Name =
        | String_sub
        | String_toCharVector
        | String_toWord8Vector
+       | Thread_atomicBegin
+       | Thread_atomicEnd
        | Thread_copy
        | Thread_copyCurrent
        | Thread_current
@@ -398,6 +400,8 @@ structure Name =
 	  (String_sub, Functional, "String_sub"),
 	  (String_toCharVector, Functional, "String_toCharVector"),
 	  (String_toWord8Vector, Functional, "String_toWord8Vector"),
+	  (Thread_atomicBegin, SideEffect, "Thread_atomicBegin"),
+	  (Thread_atomicEnd, SideEffect, "Thread_atomicEnd"),
 	  (Thread_copy, SideEffect, "Thread_copy"),
 	  (Thread_copyCurrent, SideEffect, "Thread_copyCurrent"),
 	  (Thread_current, DependsOnState, "Thread_current"),

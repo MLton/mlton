@@ -784,34 +784,6 @@ GC_copyThread(GC_state s, GC_thread t)
 extern struct GC_state gcState;
 
 inline void
-Thread_atomicBegin()
-{
-	if (DEBUG)
-		fprintf(stderr, "atomicBegin %d -> %d\n", 
-				gcState.canHandle, gcState.canHandle + 1);
-	assert(gcState.canHandle >= 0);
- 	gcState.canHandle++;
-	if (gcState.signalIsPending)
-		setLimit(&gcState);
-}
-
-/* Warning: If you change this, you must also change Thread_switchTo in
- * ccodegen.h and the implementation of Thread_switchTo in 
- * x86-generate-transfers.fun.
- */
-inline void
-Thread_atomicEnd()
-{
-	if (DEBUG)
-		fprintf(stderr, "atomicEnd %d -> %d\n", 
-				gcState.canHandle, gcState.canHandle - 1);
-	gcState.canHandle--;
-	assert(gcState.canHandle >= 0);
-	if (gcState.signalIsPending && 0 == gcState.canHandle)
-		gcState.limit = 0;
-}
-
-inline void
 GC_fromSpace(GC_state s)
 {
 	s->base = smmap(s->fromSize);

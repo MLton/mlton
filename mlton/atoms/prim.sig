@@ -19,12 +19,12 @@ signature PRIM =
       structure Name:
 	 sig
 	    datatype t =
-	       Array_array (* implemented in backend.fun *)
-	     | Array_array0 (* implemented in backend.fun *)
+	       Array_array (* implemented in backend *)
+	     | Array_array0 (* implemented in backend *)
 	     | Array_array0Const (* implemented in constant-propagation.fun *)
 	     | Array_length
-	     | Array_sub (* implemented in backend.fun *)
-	     | Array_update (* implemented in backend.fun *)
+	     | Array_sub (* implemented in backend *)
+	     | Array_update (* implemented in backend *)
 	     | BuildConstant of string
 	     | Byte_byteToChar
 	     | Byte_charToByte
@@ -79,9 +79,9 @@ signature PRIM =
 	     | IntInf_toString
 	     | IntInf_toVector
 	     | IntInf_toWord
-	     | MLton_bogus (* implemented in backend/machine.fun
-			    *  of type unit -> 'a.
-			    * Makes a bogus value of any type
+	     | MLton_bogus (* of type unit -> 'a.
+			    * implemented in backend.
+			    * Makes a bogus value of any type.
 			    *)
 	     | MLton_bug
 	     | MLton_deserialize
@@ -126,16 +126,18 @@ signature PRIM =
 	     | Real_toInt
 	     | Real_neg	 
 	     | Real_round
-	     | Ref_assign (* implemented in backend/backend.fun *)
-	     | Ref_deref (* implemented in backend/backend.fun *)
-	     | Ref_ref (* implemented in backend/backend.fun *)
+	     | Ref_assign (* implemented in backend *)
+	     | Ref_deref (* implemented in backend *)
+	     | Ref_ref (* implemented in backend *)
 	     | String_equal
 	     | String_fromCharVector
 	     | String_fromWord8Vector
 	     | String_size
-	     | String_sub (* implemented in backend/backend.fun *)
+	     | String_sub (* implemented in backend *)
 	     | String_toCharVector
 	     | String_toWord8Vector
+	     | Thread_atomicBegin (* implemented in backend *)
+	     | Thread_atomicEnd (* implemented in backend *)
 	     | Thread_copy
 	     | Thread_copyCurrent
 	     | Thread_current
@@ -145,9 +147,9 @@ signature PRIM =
 	      * on the stack.
 	      *)
 	     | Thread_switchTo
-	     | Vector_fromArray (* implemented in backend/backend.fun *)
+	     | Vector_fromArray (* implemented in backend *)
 	     | Vector_length
-	     | Vector_sub (* implemented in backend/backend.fun *)
+	     | Vector_sub (* implemented in backend *)
 	     | Word32_add
 	     | Word32_addCheck
 	     | Word32_andb

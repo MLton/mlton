@@ -30,4 +30,6 @@ signature GC_FIELD =
 		       stackLimit: int,
 		       stackTop: int} -> unit
       val toString: t -> string
+      datatype ty = Int | Word
+      val ty: t -> ty
    end

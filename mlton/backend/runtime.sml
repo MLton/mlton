@@ -16,6 +16,21 @@ structure GCField =
        | StackLimit
        | StackTop
 
+      datatype ty = Int | Word
+
+      val ty =
+	 fn Base => Word
+	  | CanHandle => Int
+	  | CurrentThread => Word
+	  | Frontier => Word
+	  | Limit => Word
+	  | LimitPlusSlop => Word
+	  | MaxFrameSize => Int
+	  | SignalIsPending => Int
+	  | StackBottom => Word
+	  | StackLimit => Word
+	  | StackTop => Word
+
       val baseOffset: int ref = ref 0
       val canHandleOffset: int ref = ref 0
       val currentThreadOffset: int ref = ref 0
@@ -56,19 +71,18 @@ structure GCField =
 	  | StackLimit => !stackLimitOffset
 	  | StackTop => !stackTopOffset
 
-      (* These strings are carefully chosen to be what the C codegen wants. *)
       val toString =
-	 fn Base => "gcState.base"
-	  | CanHandle => "gcState.canHandle"
-	  | CurrentThread => "gcState.currentThread"
-	  | Frontier => "frontier"
-	  | Limit => "gcState.limit"
-	  | LimitPlusSlop => "gcState.limitPlusSlop"
-	  | MaxFrameSize => "gcState.maxFrameSize"
-	  | SignalIsPending => "gcState.signalIsPending"
-	  | StackBottom => "gcState.stackBottom"
-	  | StackLimit => "gcState.stackLimit"
-	  | StackTop => "stackTop"
+	 fn Base => "Base"
+	  | CanHandle => "CanHandle"
+	  | CurrentThread => "CurrentThread"
+	  | Frontier => "Frontier"
+	  | Limit => "Limit"
+	  | LimitPlusSlop => "LimitPlusSlop"
+	  | MaxFrameSize => "MaxFrameSize"
+	  | SignalIsPending => "SignalIsPending"
+	  | StackBottom => "StackBottom"
+	  | StackLimit => "StackLimit"
+	  | StackTop => "StackTop"
 
       val layout = Layout.str o toString
    end

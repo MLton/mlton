@@ -535,8 +535,8 @@ structure Primitive =
 	    type preThread = preThread
 	    type thread = thread
 
-	    val atomicBegin = _ffi "Thread_atomicBegin": unit -> unit;
-	    val atomicEnd = _ffi "Thread_atomicEnd": unit -> unit;
+	    val atomicBegin = _prim "Thread_atomicBegin": unit -> unit;
+	    val atomicEnd = _prim "Thread_atomicEnd": unit -> unit;
 	    (* copy stores a thread that should be gotten using saved (). *)
 	    val copy = _prim "Thread_copy": preThread -> unit;
 	    (* copyCurrent stores a preThread that should be gotten using

@@ -89,6 +89,7 @@ structure Operand =
 	  | GlobalPointerNonRoot _ => true
 	  | Offset _ => true
 	  | Register _ => true
+	  | Runtime _ => true
 	  | StackOffset _ => true
 	  | _ => false
 
@@ -133,7 +134,9 @@ structure Operand =
 	| Offset {ty, ...} => ty
 	| Pointer _ => Type.pointer
 	| Register r => Register.ty r
-	| Runtime _ => Type.word
+	| Runtime z => (case RuntimeOperand.ty z of
+			   RuntimeOperand.Int => Type.int
+			 | RuntimeOperand.Word => Type.word)
 	| StackOffset {ty, ...} => ty
 	| Uint _ => Type.uint
 	 

@@ -148,7 +148,23 @@ structure Operand =
 	       concat ["O", Type.name ty, C.args [toString base, C.int offset]]
           | Pointer n => concat ["IntAsPointer", C.args [C.int n]]
           | Register r => Register.toString r
-	  | Runtime r => RuntimeOperand.toString r
+	  | Runtime r =>
+	       let
+		  datatype z = datatype RuntimeOperand.t
+	       in
+		  case r of
+		     Base => "((Word)gcState.base)"
+		   | CanHandle => "gcState.canHandle"
+		   | CurrentThread => "((Word)gcState.currentThread)"
+		   | Frontier => "((Word)frontier)"
+		   | Limit => "((Word)gcState.limit)"
+		   | LimitPlusSlop => "((Word)gcState.limitPlusSlop)"
+		   | MaxFrameSize => "gcState.maxFrameSize"
+		   | SignalIsPending => "gcState.signalIsPending"
+		   | StackBottom => "((Word)gcState.stackBottom)"
+		   | StackLimit => "((Word)gcState.stackLimit)"
+		   | StackTop => "stackTop"
+	       end
           | StackOffset {offset, ty} =>
 	       concat ["S", Type.name ty, "(", C.int offset, ")"]
           | Uint w => C.word w
