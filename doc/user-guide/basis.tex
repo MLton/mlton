@@ -1,85 +1,236 @@
 \sec{Basis library}{basis-library}
 
-This section describes the portion that {\mlton} implements of the
-Standard ML Basis Library specified at
-\link{http://SML.sourceforge.net/Basis/index.html}.
-There are two versions of the basis library specification, one from
-1997 and one from 2002.  By default, {\mlton} uses the 2002
-specification.  You can compile with {\tt -basis 1997} to force use of
-the 1997 library.  We encourage you to update your programs to the
-2002 library since some day we may disable {\tt -basis 1997}.
+This section describes {\mlton}'s implementation of the Standard ML
+Basis Library that is specified at
+\link{http://www.standardml.org/Basis/}.
+By default, {\mlton} makes this library available to user programs.
+There is also an older version of the specification from 1997 that is
+somewhat different.  You can compile with {\tt -basis 1997} to force
+use of that library.  We encourage you to update your programs to the
+current specification since we will disable {\tt -basis 1997} at some
+point.
 
-\subsection{Top level values}
-
-The only top level value that is {\em not} implemented is:
-\begin{verbatim}
-val use: string -> unit
-\end{verbatim}
+In summary, {\mlton} implements all of the required portions of the
+Basis Library, except for the top level value
+\verb+use: string -> unit+.
 {\mlton} does not implement {\tt use} because it conflicts with whole
 program compilation, since {\tt use} allows new code to be loaded
-dynamically.
+dynamically.  {\mlton} also implements some of the optional
+structures, which are included in the list below.  You can always
+obtain a complete and current list of what's available by calling {\tt
+mlton -show-basis true}.
 
-\subsection{Modules}
-The following table lists for each module what functions are unimplemented and
-which of the implemented functions are known to deviate from the basis library
-specification.  If a module does not appear, it is completely unimplemented.
-\\
-\newcommand{\module}[3]{{\tt #1:} & {\tt #2} & #3\\}
-\newcommand{\extra}[1]{&& #1\\}
-\newcommand{\fullmodule}[2]{\module{#1}{#2}{Fully implemented}}
+Toplevel types and constructors:\\
+{
+\tt eqtype 'a array\\
+\tt datatype bool = false | true\\
+\tt eqtype char\\
+\tt type exn\\
+\tt eqtype int\\
+\tt datatype 'a list = nil | :: of ('a * 'a list)\\
+\tt datatype 'a option = NONE | SOME of 'a\\
+\tt datatype order = LESS | EQUAL | GREATER\\
+\tt type real\\
+\tt eqtype 'a ref\\
+\tt eqtype string\\
+\tt type substring\\
+\tt eqtype unit\\
+\tt eqtype 'a vector\\
+\tt eqtype word\\
+}
 
-\begin{longtable}{lll}
+Top level exception constructors:\\
+{\tt Bind},
+{\tt Chr},
+{\tt Div},
+{\tt Domain},
+{\tt Empty},
+{\tt Fail},
+{\tt Match},
+{\tt Option},
+{\tt Overflow},
+{\tt Size},
+{\tt Span},
+{\tt Subscript}.
+
+Top level values:\\
+{\tt !},
+{\tt *},
+{\tt +},
+{\tt -},
+{\tt /},
+{\tt :=},
+{\tt <},
+{\tt <=},
+{\tt <>},
+{\tt =},
+{\tt >},
+{\tt >=},
+{\tt @},
+{\tt o},
+{\tt \char94},
+{\tt \char126}.
+{\tt abs},
+{\tt app},
+{\tt before},
+{\tt ceil},
+{\tt chr},
+{\tt concat},
+{\tt div},
+{\tt exnMessage},
+{\tt exnName},
+{\tt explode},
+{\tt floor},
+{\tt foldl},
+{\tt foldr},
+{\tt getOpt},
+{\tt hd},
+{\tt ignore},
+{\tt implode},
+{\tt isSome},
+{\tt length},
+{\tt map},
+{\tt mod},
+{\tt not},
+{\tt null},
+{\tt ord},
+{\tt print},
+{\tt real},
+{\tt rev},
+{\tt round},
+{\tt size},
+{\tt str},
+{\tt substring},
+{\tt tl},
+{\tt trunc},
+{\tt valOf},
+{\tt vector}.
+
+\newcommand{\signature}[1]{{\tt #1}\\}
+Top level signatures:\\
+\signature{ARRAY}
+\signature{ARRAY2}
+\signature{ARRAY\_SLICE}
+\signature{BIN\_IO}
+\signature{BIT\_FLAGS}
+\signature{BOOL}
+\signature{BYTE}
+\signature{CHAR}
+\signature{COMMAND\_LINE}
+\signature{DATE}
+\signature{GENERAL}
+\signature{GENERIC\_SOCK}
+\signature{IEEE\_REAL}
+\signature{IMPERATIVE\_IO}
+\signature{INET\_SOCK}
+\signature{INTEGER}
+\signature{INT\_INF}
+\signature{IO}
+\signature{LIST}
+\signature{LIST\_PAIR}
+\signature{MATH}
+\signature{MONO\_ARRAY}
+\signature{MONO\_ARRAY2}
+\signature{MONO\_ARRAY\_SLICE}
+\signature{MONO\_VECTOR}
+\signature{MONO\_VECTOR\_SLICE}
+\signature{NET\_HOST\_DB}
+\signature{NET\_PROT\_DB}
+\signature{NET\_SERV\_DB}
+\signature{OPTION}
+\signature{OS}
+\signature{OS\_FILE\_SYS}
+\signature{OS\_IO}
+\signature{OS\_PATH}
+\signature{OS\_PROCESS}
+\signature{PACK\_REAL}
+\signature{PACK\_WORD}
+\signature{POSIX}
+\signature{POSIX\_ERROR}
+\signature{POSIX\_FILE\_SYS}
+\signature{POSIX\_IO}
+\signature{POSIX\_PROCESS}
+\signature{POSIX\_PROC\_ENV}
+\signature{POSIX\_SIGNAL}
+\signature{POSIX\_SYS\_DB}
+\signature{POSIX\_TTY}
+\signature{PRIM\_IO}
+\signature{REAL}
+\signature{SOCKET}
+\signature{STREAM\_IO}
+\signature{STRING}
+\signature{STRING\_CVT}
+\signature{SUBSTRING}
+\signature{TEXT}
+\signature{TEXT\_IO}
+\signature{TEXT\_STREAM\_IO}
+\signature{TIME}
+\signature{TIMER}
+\signature{UNIX}
+\signature{UNIX\_SOCK}
+\signature{VECTOR}
+\signature{VECTOR\_SLICE}
+{\tt WORD}.
+
+\newcommand{\fullmodule}[2]{{\tt #1: #2}\\ }
+Top level structures:\\
 \fullmodule{Array}{ARRAY}
-\fullmodule{ArraySlice}{ARRAY\_SLICE}
 \fullmodule{Array2}{ARRAY2}
+\fullmodule{ArraySlice}{ARRAY\_SLICE}
 \fullmodule{BinIO}{BIN\_IO}
 \fullmodule{BinPrimIO}{PRIM\_IO}
 \fullmodule{Bool}{BOOL}
 \fullmodule{BoolArray}{MONO\_ARRAY}
+\fullmodule{BoolArray2}{MONO\_ARRAY2}
 \fullmodule{BoolArraySlice}{MONO\_ARRAY\_SLICE}
 \fullmodule{BoolVector}{MONO\_VECTOR}
 \fullmodule{BoolVectorSlice}{MONO\_VECTOR\_SLICE}
-\fullmodule{BoolArray2}{MONO\_ARRAY2}
 \fullmodule{Byte}{BYTE}
 \fullmodule{Char}{CHAR}
 \fullmodule{CharArray}{MONO\_ARRAY}
+\fullmodule{CharArray2}{MONO\_ARRAY2}
 \fullmodule{CharArraySlice}{MONO\_ARRAY\_SLICE}
 \fullmodule{CharVector}{MONO\_VECTOR}
 \fullmodule{CharVectorSlice}{MONO\_VECTOR\_SLICE}
-\fullmodule{CharArray2}{MONO\_ARRAY2}
 \fullmodule{CommandLine}{COMMAND\_LINE}
 \fullmodule{Date}{DATE}
 \fullmodule{FixedInt}{INTEGER}
 \fullmodule{General}{GENERAL}
 \fullmodule{GenericSock}{GENERIC\_SOCK}
 \fullmodule{IEEEReal}{IEEE\_REAL}
-\fullmodule{IO}{IO}
 \fullmodule{INetSock}{INET\_SOCK}
+\fullmodule{IO}{IO}
 \fullmodule{Int}{INTEGER}
+\fullmodule{IntInf}{INT\_INF}
 \fullmodule{IntArray}{MONO\_ARRAY}
+\fullmodule{IntArray2}{MONO\_ARRAY2}
 \fullmodule{IntArraySlice}{MONO\_ARRAY\_SLICE}
 \fullmodule{IntVector}{MONO\_VECTOR}
 \fullmodule{IntVectorSlice}{MONO\_VECTOR\_SLICE}
-\fullmodule{IntArray2}{MONO\_ARRAY2}
-\fullmodule{Int32}{INTEGER}
-\fullmodule{Int32Array}{MONO\_ARRAY}
-\fullmodule{Int32ArraySlice}{MONO\_ARRAY\_SLICE}
-\fullmodule{Int32Vector}{MONO\_VECTOR}
-\fullmodule{Int32VectorSlice}{MONO\_VECTOR\_SLICE}
-\fullmodule{Int32Array2}{MONO\_ARRAY2}
-\fullmodule{Int16}{INTEGER}
-\fullmodule{Int16Array}{MONO\_ARRAY}
-\fullmodule{Int16ArraySlice}{MONO\_ARRAY\_SLICE}
-\fullmodule{Int16Vector}{MONO\_VECTOR}
-\fullmodule{Int16VectorSlice}{MONO\_VECTOR\_SLICE}
-\fullmodule{Int16Array2}{MONO\_ARRAY2}
 \fullmodule{Int8}{INTEGER}
 \fullmodule{Int8Array}{MONO\_ARRAY}
+\fullmodule{Int8Array2}{MONO\_ARRAY2}
 \fullmodule{Int8ArraySlice}{MONO\_ARRAY\_SLICE}
 \fullmodule{Int8Vector}{MONO\_VECTOR}
 \fullmodule{Int8VectorSlice}{MONO\_VECTOR\_SLICE}
-\fullmodule{Int8Array2}{MONO\_ARRAY2}
-\fullmodule{IntInf}{INT\_INF}
+\fullmodule{Int16}{INTEGER}
+\fullmodule{Int16Array}{MONO\_ARRAY}
+\fullmodule{Int16Array2}{MONO\_ARRAY2}
+\fullmodule{Int16ArraySlice}{MONO\_ARRAY\_SLICE}
+\fullmodule{Int16Vector}{MONO\_VECTOR}
+\fullmodule{Int16VectorSlice}{MONO\_VECTOR\_SLICE}
+\fullmodule{Int32}{INTEGER}
+\fullmodule{Int32Array}{MONO\_ARRAY}
+\fullmodule{Int32Array2}{MONO\_ARRAY2}
+\fullmodule{Int32ArraySlice}{MONO\_ARRAY\_SLICE}
+\fullmodule{Int32Vector}{MONO\_VECTOR}
+\fullmodule{Int32VectorSlice}{MONO\_VECTOR\_SLICE}
+\fullmodule{Int64}{INTEGER}
+\fullmodule{Int64Array}{MONO\_ARRAY}
+\fullmodule{Int64Array2}{MONO\_ARRAY2}
+\fullmodule{Int64ArraySlice}{MONO\_ARRAY\_SLICE}
+\fullmodule{Int64Vector}{MONO\_VECTOR}
+\fullmodule{Int64VectorSlice}{MONO\_VECTOR\_SLICE}
 \fullmodule{LargeInt}{INTEGER}
 \fullmodule{LargeReal}{REAL}
 \fullmodule{LargeWord}{WORD}
@@ -89,31 +240,26 @@ specification.  If a module does not appear, it is completely unimplemented.
 \fullmodule{NetHostDB}{NET\_HOST\_DB}
 \fullmodule{NetProtDB}{NET\_PROT\_DB}
 \fullmodule{NetServDB}{NET\_SERV\_DB}
+\fullmodule{OS}{OS}
 \fullmodule{Option}{OPTION}
-\fullmodule{OS.FileSys}{OS\_FILE\_SYS}
-\extra{Use of {\tt OS.FileSys.tmpName} causes a link-time warning.}
-\extra{You can use {\tt MLton.TextIO.mkstemp} instead.}
-\fullmodule{OS.IO}{OS\_IO}
-\fullmodule{OS.Path}{OS\_PATH}
-\fullmodule{OS.Process}{OS\_PROCESS}
 \fullmodule{Pack32Big}{PACK\_WORD}
 \fullmodule{Pack32Little}{PACK\_WORD}
-\fullmodule{PackReal64Little}{PACK\_REAL}
 \fullmodule{PackRealLittle}{PACK\_REAL}
+\fullmodule{PackReal64Little}{PACK\_REAL}
 \fullmodule{Position}{INTEGER}
 \fullmodule{Posix}{POSIX}
 \fullmodule{Real}{REAL}
 \fullmodule{RealArray}{MONO\_ARRAY}
+\fullmodule{RealArray2}{MONO\_ARRAY2}
 \fullmodule{RealArraySlice}{MONO\_ARRAY\_SLICE}
 \fullmodule{RealVector}{MONO\_VECTOR}
 \fullmodule{RealVectorSlice}{MONO\_VECTOR\_SLICE}
-\fullmodule{RealArray2}{MONO\_ARRAY2}
 \fullmodule{Real64}{REAL}
 \fullmodule{Real64Array}{MONO\_ARRAY}
+\fullmodule{Real64Array2}{MONO\_ARRAY2}
 \fullmodule{Real64ArraySlice}{MONO\_ARRAY\_SLICE}
 \fullmodule{Real64Vector}{MONO\_VECTOR}
 \fullmodule{Real64VectorSlice}{MONO\_VECTOR\_SLICE}
-\fullmodule{Real64Array2}{MONO\_ARRAY2}
 \fullmodule{Socket}{SOCKET}
 \fullmodule{String}{STRING}
 \fullmodule{StringCvt}{STRING\_CVT}
@@ -131,20 +277,36 @@ specification.  If a module does not appear, it is completely unimplemented.
 \fullmodule{Word}{WORD}
 \fullmodule{Word8}{WORD}
 \fullmodule{Word8Array}{MONO\_ARRAY}
+\fullmodule{Word8Array2}{MONO\_ARRAY2}
 \fullmodule{Word8ArraySlice}{MONO\_ARRAY\_SLICE}
 \fullmodule{Word8Vector}{MONO\_VECTOR}
 \fullmodule{Word8VectorSlice}{MONO\_VECTOR\_SLICE}
-\fullmodule{Word8Array2}{MONO\_ARRAY2}
 \fullmodule{Word16}{WORD}
 \fullmodule{Word16Array}{MONO\_ARRAY}
+\fullmodule{Word16Array2}{MONO\_ARRAY2}
 \fullmodule{Word16ArraySlice}{MONO\_ARRAY\_SLICE}
 \fullmodule{Word16Vector}{MONO\_VECTOR}
 \fullmodule{Word16VectorSlice}{MONO\_VECTOR\_SLICE}
-\fullmodule{Word16Array2}{MONO\_ARRAY2}
 \fullmodule{Word32}{WORD}
 \fullmodule{Word32Array}{MONO\_ARRAY}
+\fullmodule{Word32Array2}{MONO\_ARRAY2}
 \fullmodule{Word32ArraySlice}{MONO\_ARRAY\_SLICE}
 \fullmodule{Word32Vector}{MONO\_VECTOR}
-\fullmodule{Word32VectorSlice}{MONO\_VECTOR\_SLICE}
-\fullmodule{Word32Array2}{MONO\_ARRAY2}
-\end{longtable}
+% \fullmodule{Word32VectorSlice}{MONO\_VECTOR\_SLICE}
+{\tt Word32VectorSlice}.
+
+Top level functors:\\
+{\tt ImperativeIO}\\
+{\tt PrimIO}\\
+{\tt StreamIO}
+
+The following structures equivalences hold.
+\begin{tabular}{l}
+\tt Int = Int32 = FixedInt = Position\\
+\tt IntInf = LargeInt\\
+\tt Real = Real64 = LargeReal\\
+\tt Word = Word32 = LargeWord = SysWord
+\end{tabular}
+
+Use of {\tt OS.FileSys.tmpName} causes a link-time warning due to a
+security risk.  You should use {\tt MLton.TextIO.mkstemp} instead.
