@@ -602,11 +602,11 @@ functor Real (R: PRE_REAL): REAL =
 
       val fromLargeInt: LargeInt.int -> real =
 	 fn i =>
-	 fromInt (Int.fromLarge i)
+	 fromInt (IntInf.toInt i)
 	 handle Overflow =>
 	    let
 	       val (i, sign) =
-		  if LargeInt.< (i, LargeInt.fromInt 0)
+		  if LargeInt.< (i, 0)
 		     then (LargeInt.~ i, true)
 		  else (i, false)
 	       val x = Prim.strto (concat [LargeInt.toString i, "\000"])
@@ -619,7 +619,7 @@ functor Real (R: PRE_REAL): REAL =
 	 case class x of
 	    INF => raise Overflow
 	  | NAN => raise Domain
-	  | ZERO => Int.toLarge 0
+	  | ZERO => 0
 	  | _ =>
 	       let
 		  val x = roundReal (x, mode)
