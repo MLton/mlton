@@ -1,5 +1,10 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2001-10-18
+  - Fixed type inference of flexrecord so that it now follows the Definition.
+    Many programs containing flexrecords were incorrectly rejected.  Added many
+    new tests to regression/flexrecord.sml.
+
 * 2001-10-11
   - Fixed a bug in the type inference that caused type variables to be
     mistakenly generalized.  The bug was exposed in Norman Ramsey's sled.sml.

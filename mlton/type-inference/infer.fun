@@ -15,7 +15,6 @@ structure Env = TypeEnv (open CoreML
 			 structure XmlType = Xml.Type)
 structure Scheme = Env.InferScheme
 structure Type = Env.Type
-
 structure PScheme = Prim.Scheme
 
 local open Ast
@@ -56,21 +55,10 @@ structure Type =
 				      record = Srecord.map (r, fromCoreML)}
    end
 
-fun instantiate arg =
-   let val {instance, args} = Scheme.instantiate arg
-   in {instance = instance,
-       args = fn () => Vector.map (args, Type.toXml)}
-   end
-
-val instantiate =
-   Trace.trace ("instantiate",
-		Scheme.layout o #scheme,
-		Type.layout o #instance)
-   instantiate
-
 fun instantiatePrim (PScheme.T {tyvars, ty}) =
-   instantiate {scheme = Scheme.T {tyvars = tyvars, ty = Type.fromCoreML ty},
-		canGeneralize = true}
+   Scheme.instantiate (Scheme.make {canGeneralize = true,
+				    tyvars = tyvars,
+				    ty = Type.fromCoreML ty})
 
 structure VarRange = Env.VarRange
 
@@ -136,7 +124,7 @@ in
 end
 
 fun newType () = Type.new {equality = false,
-			 canGeneralize = true}
+			   canGeneralize = true}
 
 (* Warning:
  * stringToIntInf will raise the Subscript exception on inputs "" and "~". 
@@ -241,7 +229,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 	 Property.destGetSetOnce (Tycon.plist,
 				  Property.initRaise ("tyconCons", Tycon.layout))
       val {get = conInfo: Con.t -> {tycon: Tycon.t,
-				    scheme: Prim.Scheme.t},
+				    scheme: PScheme.t},
 	   set = setConInfo, destroy = destroyCon} =
 	 Property.destGetSetOnce (Con.plist,
 				  Property.initRaise ("conInfo", Con.layout))
@@ -249,7 +237,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
       val conScheme = #scheme o conInfo
       val conTycon = Trace.trace ("conTycon", Con.layout, Tycon.layout) conTycon
       val conScheme =
-	 Trace.trace ("conScheme", Con.layout, Prim.Scheme.layout) conScheme
+	 Trace.trace ("conScheme", Con.layout, PScheme.layout) conScheme
       fun instCon c  = instantiatePrim (conScheme c)
       (*---------------------------------------------------*)
       (*                     inferPat                      *)
@@ -309,25 +297,15 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			 then sortByField (Vector.map2
 					   (fs, ps, fn (f, p) =>
 					    (f, finishPat p)))
-		      else let
-			      val {flexible, record = record'} = Type.derecord t
-			   in
-			      if flexible
-				 then (Layout.output (Cpat.layout p,
-						      Out.error)
-				       ; Out.newline Out.error
-				       ; Error.bug "unresolved flexible pattern")
-			      else
-				 let
-				    val record = Record.zip (fs, ps)
-				 in Vector.map
-				    (Srecord.toVector record', fn (f, t) =>
-				     case Record.peek (record, f) of
-					NONE => NestedPat.new (NestedPat.Wild,
-							       Type.toXml t)
-				      | SOME p => finishPat p)
-				 end
-			   end),
+		      else
+			 let
+			    val record = Record.zip (fs, ps)
+			 in Vector.map
+			    (Type.derecord t, fn (f, t) =>
+			     case Record.peek (record, f) of
+				NONE => NestedPat.new (NestedPat.Wild, t)
+			      | SOME p => finishPat p)
+			 end),
 			 t),
 		    ac)
 		end
@@ -373,41 +351,45 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 	 in
 	    case kind of
 	       VarRange.Normal =>
-		  let val {instance, args} = instantiate {scheme = scheme,
-							  canGeneralize = true}
-		  in (fn () => Xexp.var {var = x,
-					 targs = args (),
-					 ty = Type.toXml instance},
+		  let
+		     val {instance, args} = Scheme.instantiate scheme
+		  in (fn () =>
+		      let
+			 val args = args ()
+		      in
+			 Xexp.var {var = x,
+				   targs = args,
+				   ty = Type.toXml instance}
+		      end,
 		      instance)
 		  end
-	     | VarRange.Recursive tyvars =>
+	     | VarRange.Recursive targs =>
 		  let
 		     val ty = Scheme.ty scheme
 		  in
 		     (fn () => Xexp.var {var = x,
-					 targs = Vector.map (!tyvars, Xtype.var),
+					 targs = targs (),
 					 ty = Type.toXml ty},
 		      ty)
 		  end
 	     | VarRange.Delayed =>
 		  let
-		     val {instance, args} = instantiate {scheme = scheme,
-							 canGeneralize = true}
+		     val {instance, args} = Scheme.instantiate scheme
 		     val (_, t') = Type.dearrow instance
 		  in
 		     (fn () =>
-		      Xexp.app {func = Xexp.var {var = x,
-						 targs = args (),
-						 ty = Xtype.arrow (Xtype.unit,
-								   Type.toXml t')},
-				arg = Xexp.unit (),
-				ty = Type.toXml t'},
+		      Xexp.app
+		      {func = Xexp.var {var = x,
+					targs = args (),
+					ty = Xtype.arrow (Xtype.unit,
+							  Type.toXml t')},
+		       arg = Xexp.unit (),
+		       ty = Type.toXml t'},
 		      t')
 		  end
 	     | VarRange.Overload yts =>
 		  let
-		     val {instance, args} = instantiate {scheme = scheme,
-							 canGeneralize = false}
+		     val {instance, args} = Scheme.instantiate scheme
 		     val promise =
 			Promise.lazy
 			(fn () =>
@@ -590,22 +572,19 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
       fun appendDec (d: decCode, d': decCode): decCode = d o d'
       fun cons (thunk: unit -> Xdec.t list): decCode = 
 	 fn (e, t) => (Xexp.lett {decs = thunk (), body = e}, t)
-      fun valDec (tyvars: Tyvar.t list,
-		  var: Var.t,
+      fun valDec (var: Var.t,
+		  scheme: Scheme.t,
+		  bound: unit -> Tyvar.t vector,
 		  exp as (_, t): expCode,
 		  kind: VarRange.kind,
 		  env: Env.t): decCode * Env.t =
-	 let
-	    val tyvars = Vector.fromList tyvars
-	 in (cons (fn () => [Xdec.PolyVal {tyvars = tyvars,
-					   var = var,
-					   ty = Type.toXml t,
-					   exp = Xexp.toExp (finishExp exp)}]),
-	     Env.extendVarRange (env, var,
-				 VarRange.T
-				 {scheme = Scheme.T {tyvars = tyvars, ty = t},
-				  kind = kind}))
-	 end
+	 (cons (fn () =>
+		[Xdec.PolyVal {tyvars = bound (),
+			       var = var,
+			       ty = Type.toXml t,
+			       exp = Xexp.toExp (finishExp exp)}]),
+	  Env.extendVarRange (env, var, VarRange.T {scheme = scheme,
+						    kind = kind}))
       fun patDec (p as (_, tp): patCode,
 		  e as (_, te): expCode,
 		  filePos): decCode =
@@ -645,10 +624,11 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			  ; Error.bug "can't generalize an expansive exp")
 	    else
 	       let
-		  val tyvarsClose = Env.close (env, te, tyvars)
-		  fun vd x = valDec (tyvarsClose, x, e, VarRange.Normal, env)
-	       in case (tyvarsClose, pat) of
-		  ([], _) => simple ()
+		  val {bound, mayHaveTyvars, scheme} =
+		     Env.close (env, te, tyvars)
+		  fun vd x = valDec (x, scheme, bound, e, VarRange.Normal, env)
+	       in case (mayHaveTyvars, pat) of
+		  (false, _) => simple ()
 		| (_, Cpat.Wild) => vd (Var.newNoname ())
 		| (_, Cpat.Var x) => vd x
 		| (_, Cpat.Constraint (Cpat.Var x, _)) => vd x
@@ -685,9 +665,10 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			       delayExp
 			       (letExp (patDec (p, varExp (x, env), filePos),
 					varExp (y', multiExtend (env, xts))))
+			    val {bound, scheme, ...} =
+			       Env.close (env, te, Vector.new0 ())
 			    val (d', env) =
-			       valDec (Env.close (env, te, Vector.new0 ()),
-				       y, e, VarRange.Delayed, env)
+			       valDec (y, scheme, bound, e, VarRange.Delayed, env)
 			 in (appendDec (d, d'), env)
 			 end)
 		     end
@@ -740,13 +721,15 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		in (cons (fn () => [Xdec.Exception ca]),
 		    env)
 		end
-	   | Cdec.Overload {var, scheme=CoreML.Scheme.T {tyvars, ty}, ovlds} =>
+	   | Cdec.Overload {var, scheme = CoreML.Scheme.T {tyvars, ty}, ovlds} =>
 		(emptyDec,
 		 let val ty = Type.fromCoreML ty
 		 in Env.extendVarRange
 		    (env, var,
 		     VarRange.T
-		     {scheme = Scheme.T {tyvars = tyvars, ty = ty},
+		     {scheme = Scheme.make {canGeneralize = false,
+					    tyvars = tyvars,
+					    ty = ty},
 		      kind =
 		      VarRange.Overload
 		      (Vector.map (ovlds, fn y =>
@@ -755,7 +738,10 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 	   | Cdec.Fun {tyvars, decs} =>
 		let
 		   (* type args to recursive calls *)
-		   val args: Tyvar.t vector ref = ref (Vector.new0 ())
+		   val argsRef: (unit -> Tyvar.t vector) option ref = ref NONE
+		   val args =
+		      Promise.lazy
+		      (fn () => Vector.map (valOf (!argsRef) (), Xtype.var))
 		   val (decs, env') =
 		      Vector.mapAndFold
 		      (decs, env, fn ({var, types, match}, env) =>
@@ -786,30 +772,21 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			   ty = Type.arrow (argType, resultType),
 			   rules = rs}
 		       end)
-		   val tyvarsClose =
-		      Tyvars.toList
-		      (Vector.fold
-		       (decs, Tyvars.empty, fn ({ty, ...}, ac) =>
-			Tyvars.+ (ac,
-				  Tyvars.fromList
-				  (Env.close (env, ty, tyvars)))))
-		   val tyvarsCloseV = Vector.fromList tyvarsClose
-		   val _ = args := tyvarsCloseV
+		   val {bound, schemes} =
+		      Env.closes (env, Vector.map (decs, #ty), tyvars)
+		   val _ = argsRef := SOME bound
 		   val env =
-		      Vector.fold
-		      (decs, env, fn ({var, ty, ...}, env) =>
-		       Env.extendVar (env, var,
-				      Scheme.T {tyvars = tyvarsCloseV,
-						ty = ty}))
+		      Vector.fold2
+		      (decs, schemes, env, fn ({var, ...}, scheme, env) =>
+		       Env.extendVar (env, var, scheme))
 		in (cons (fn () =>
 			  [Xdec.Fun
-			   {tyvars = Vector.fromList tyvarsClose,
-			    decs =
-			    Vector.map
-			    (decs, fn {var, ty, rules} =>
-			     {var = var,
-			      ty = Type.toXml ty,
-			      lambda = forceRulesMatch rules})}]),
+			   {tyvars = bound (),
+			    decs = (Vector.map
+				    (decs, fn {var, ty, rules} =>
+				     {var = var,
+				      ty = Type.toXml ty,
+				      lambda = forceRulesMatch rules}))}]),
 		    env)
 		end) arg
       and inferDecs (ds: Cdec.t vector, env: Env.t): decCode * Env.t =

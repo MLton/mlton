@@ -20,17 +20,12 @@ signature TYPE_ENV =
 
             (* can two types be unified?  not side-effecting. *)
             val canUnify: t * t -> bool
-	    val derecord: t -> {flexible: bool,
-				record: t SortedRecord.t}
-	    val isUnit: t -> bool
+	    val derecord: t -> (Record.Field.t * XmlType.t) vector
+(*	    val isUnit: t -> bool *)
 	    val layout: t -> Layout.t
 	    val new: {equality: bool, canGeneralize: bool} -> t
 	    val ofConst: Ast.Const.t -> t
 	    val record: {flexible: bool, record: t SortedRecord.t} -> t
-	    (* substitute(t, [(a1, t1), ..., (an, tn)]) performs simultaneous
-	     * substitution of the ti for ai in t.
-	     *)
-	    val substitute: t * (Tyvar.t * t) vector -> t
 	    (* cached for speed *)
 	    val toXml: t -> XmlType.t
 	    (* make two types identical (recursively).  side-effecting. *)
@@ -45,22 +40,24 @@ signature TYPE_ENV =
 	 
       structure InferScheme:
 	 sig
-	    include GENERIC_SCHEME
-	       
-	    val instantiate:
-	       {scheme: t,
-		canGeneralize: bool} -> {args: Type.t vector,
-					 instance: Type.t}
+	    type t
+
+	    val fromType: Type.t -> t
+	    val instantiate: t -> {args: unit -> XmlType.t vector,
+				   instance: Type.t}
+	    val layout: t -> Layout.t
+	    val make: {canGeneralize: bool,
+		       tyvars: Tyvar.t vector,
+		       ty: Type.t} -> t
+	    val ty: t -> Type.t
 	 end
-      sharing type InferScheme.tyvar = Tyvar.t
-      sharing type InferScheme.ty = Type.t
 	 
       structure VarRange:
 	 sig
 	    datatype kind =
 	       Normal
 	     | Delayed
-	     | Recursive of Tyvar.t vector ref
+	     | Recursive of unit -> XmlType.t vector
 	     | Overload of (Var.t * Type.t) vector
 	       
 	    datatype t = T of {scheme: InferScheme.t,
@@ -72,10 +69,21 @@ signature TYPE_ENV =
 
       type t
 
-      (* close (e, t, ts) close type t with respect to environment e, and ensure
-       * that no variable in ts occurs free in e.
+      (* close (e, t, ts) = (ts', f) close type t with respect to environment
+       * e, and ensure that no variable in ts occurs free in e.
+       * ts' are the type variables in t that do not occur in e.
+       * f is a function that returns type variables that occur in flexible
+       * record types (which aren't known until the fields are determined, after
+       * unification is complete).
+       * if f is NONE, then there are no flexible record types in t.
        *)
-      val close: t * Type.t * Tyvar.t vector -> Tyvar.t list
+      val close:
+	 t * Type.t * Tyvar.t vector -> {bound: unit -> Tyvar.t vector,
+					 mayHaveTyvars: bool,
+					 scheme: InferScheme.t}
+      val closes:
+	 t * Type.t vector * Tyvar.t vector -> {bound: unit -> Tyvar.t vector,
+						schemes: InferScheme.t vector}
       val empty: t 
       val extendVar: t * Var.t * InferScheme.t -> t
       val extendVarRange: t * Var.t * VarRange.t -> t

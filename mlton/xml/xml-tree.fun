@@ -44,12 +44,16 @@ structure Pat =
       end
 
       fun toAst (T {con, arg, ...}) =
-	 let val con = Con.toAst con
-	 in case arg of
-	    NONE => Apat.con con
-	  | SOME (x, t) =>
-	       Apat.app (con, Apat.var (Var.toAst x))
-	 (*Apat.app (con, Apat.constraint (Apat.var (Var.toAst x), Type.toAst t)) *)
+	 let
+	    val con = Con.toAst con
+	 in
+	    case arg of
+	       NONE => Apat.con con
+	     | SOME (x, t) =>
+		  if !Control.showTypes
+		     then Apat.app (con, Apat.constraint (Apat.var (Var.toAst x),
+							  Type.toAst t))
+		  else Apat.app (con, Apat.var (Var.toAst x))
 	 end
 
       val layout = Apat.layout o toAst

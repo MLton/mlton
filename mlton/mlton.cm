@@ -421,6 +421,10 @@ front-end/ml.grm.sig
 front-end/ml.grm.sml
 front-end/ml.lex.sml
 front-end/front-end.fun
+../lib/mlton/basic/quick-sort.sig
+../lib/mlton/basic/insertion-sort.sig
+../lib/mlton/basic/insertion-sort.sml
+../lib/mlton/basic/quick-sort.sml
 type-inference/type-env.sig
 type-inference/type-env.fun
 type-inference/scope.sig
