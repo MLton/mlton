@@ -53,7 +53,7 @@ signature MLTON_SYSLOG =
       (* log a message at a particular loglevel. *)
       val log: loglevel * string -> unit
 
-         (*
+      (*
        * Openlog opens a connection to the system logger.
        * Calling openlog is optional but recommended.
        * From the man pages.
