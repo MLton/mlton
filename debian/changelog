@@ -1,0 +1,47 @@
+mlton (20020728.1-1) unstable; urgency=low
+
+  * new upstream version
+
+ -- Barak Pearlmutter <bap@cs.unm.edu>  Mon, 29 Jul 2002 10:57:36 -0600
+
+mlton (20020410.1-1) unstable; urgency=low
+
+  * new upstream version
+
+ -- Barak Pearlmutter <bap@cs.unm.edu>  Sun, 14 Apr 2002 13:49:16 -0600
+
+mlton (20011006.1-2) unstable; urgency=low
+
+  * remove dependency on gcc; upstream 20011006 no longer uses it.
+
+ -- Barak Pearlmutter <bap@cs.unm.edu>  Mon, 15 Oct 2001 02:49:26 -0600
+
+mlton (20011006.1-1) unstable; urgency=low
+
+  * new upstream source
+
+ -- Barak Pearlmutter <bap@cs.unm.edu>  Thu, 11 Oct 2001 02:20:57 -0600
+
+mlton (20010806-3) unstable; urgency=low
+
+  * add build-time dependency on package time
+  * ignore upstream, use libgmp3-dev (closes: #111000) (closes: #111327)
+
+ -- Barak Pearlmutter <bap@cs.unm.edu>  Thu,  6 Sep 2001 01:35:40 -0600
+
+mlton (20010806-2) unstable; urgency=low
+
+  * add dependency on libgmp2-dev; mlton links its output with libgmp2
+  * add dependency on gcc; mlton calls it
+  * stop dh_strip from gnawing crucial bits off libmlton.a (closes: #109825)
+  * remove redundant license files
+  * longer explanation of compilation requirements in README.Debian
+  * rename upstream documentation file CHANGES.gz to changelog
+
+ -- Barak Pearlmutter <bap@cs.unm.edu>  Fri, 24 Aug 2001 01:05:27 -0600
+
+mlton (20010806-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Barak Pearlmutter <bap@cs.unm.edu>  Mon, 20 Aug 2001 01:57:57 -0600

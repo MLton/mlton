@@ -1,0 +1,62 @@
+mlton for Debian
+----------------
+
+Reasonably simple to package.  Main issues: remove internal copy of
+gmp2 library; fiddle with Makefiles.
+
+		   NOTE TO PORTERS AND AUTOBUILDERS
+
+MLton is self-hosting, ie building MLton requires a working ML
+compiler, and the Makefiles assume that this is MLton itself.  This
+means MLton build-depends upon itself.  Please don't whine about this
+fact (eg file bugs) unless you have something constructive to suggest.
+
+The upstream authors are attempting to make newer versions of mlton
+buildable using older versions, or using SML-NJ.  But so far without
+complete success.
+
+It is easy enough to manually build: fetch
+http://prdownloads.sourceforge.net/mlton/mlton-20020410-1.i386.tgz,
+symbolic link the binaries it contain into /usr/local/bin/ and its
+library directory as /usr/local/lib/mlton, and you're good to go.
+
+			 LIBRARY REQUIREMENTS
+
+The upstream mlton tarball contains gmp4.  I've removed this, and
+compiled mlton using the Debian dynamic library gmp3.  To do this you
+need /usr/lib/mlton/lib/*.a to be compiled against gmp3 in order to
+compile mlton against gmp3, so after installing the upstream
+precompiled binary you'll need to recompile libmlton.a before running
+mlton itself.
+
+			HARDWARE REQUIREMENTS
+
+A build requires at least 0.5 Gb of *actual* *RAM*.  Swap space will
+not do - mlton doesn't want to thrash your machine, so it is sensitive
+to the amount of actually RAM.  Please don't send "failed build" bug
+reports when the problem was just lack of memory, as in
+
+    $ debian/rules binary (or whatever)
+    ...
+    time mlton @MLton -- -v -o mlton-compile mlton.cm
+    MLton starting
+       Compile SML starting
+	  pre codegen starting
+	     gcc -DNODEBUG -DMLton_safe=TRUE -DMLton_detectOverflow=TRUE \
+		 -I/usr/local/lib/mlton/include -o /tmp/fileQZubwH \
+		 /tmp/filegz2Jsf.c -L/usr/local/lib/mlton/lib -lmlton -lm -lgmp
+	     /tmp/fileQZubwH /tmp/fileAPmdeJ
+    Command terminated by signal 9
+
+    $ dmesg | egrep Killed
+    Out of Memory: Killed process 1773 (mlton-compile).
+
+or
+    $ debian/rules binary (or whatever)
+    ...
+          pre codegen starting
+    mmap failed (Cannot allocate memory)
+
+Now, get out there and have a MLton of fun!
+
+ -- Barak Pearlmutter <bap@cs.unm.edu>, Fri, 12 Oct 2001 11:31:16 -0600
