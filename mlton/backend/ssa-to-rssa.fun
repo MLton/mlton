@@ -537,6 +537,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 	 in
 	    l
 	 end
+      val {get = labelInfo: (Label.t ->
+			     {args: (Var.t * S.Type.t) vector,
+			      cont: (Handler.t * Label.t) list ref,
+			      handler: Label.t option ref}),
+	   set = setLabelInfo, ...} =
+	 Property.getSetOnce (Label.plist,
+			      Property.initRaise ("label info", Label.layout))
       fun translateCase ({test: Var.t,
 			  cases: S.Cases.t,
 			  default: Label.t option})
@@ -550,6 +557,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 			  S.Type.Datatype tycon =>
 			     let
 				val test = fn () => varOp test
+				val cases =
+				   Vector.map
+				   (cases, fn (con, dst) =>
+				    {con = con,
+				     dst = dst,
+				     dstHasArg =
+				     0 < Vector.length (#args (labelInfo dst))})
 				val (ss, t, blocks) =
 				   genCase {cases = cases,
 					    default = default,
@@ -571,13 +585,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 		  default = default,
 		  size = s,
 		  test = varOp test}))
-      val {get = labelInfo: (Label.t ->
-			     {args: (Var.t * S.Type.t) vector,
-			      cont: (Handler.t * Label.t) list ref,
-			      handler: Label.t option ref}),
-	   set = setLabelInfo, ...} =
-	 Property.getSetOnce (Label.plist,
-			      Property.initRaise ("label info", Label.layout))
       fun eta (l: Label.t, kind: Kind.t): Label.t =
 	 let
 	    val {args, ...} = labelInfo l

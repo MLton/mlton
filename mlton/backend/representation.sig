@@ -22,7 +22,9 @@ signature REPRESENTATION =
       val compute:
 	 Ssa.Program.t
 	 -> {diagnostic: unit -> unit,
-	     genCase: {cases: (Ssa.Con.t * Rssa.Label.t) vector,
+	     genCase: {cases: {con: Ssa.Con.t,
+			       dst: Rssa.Label.t,
+			       dstHasArg: bool} vector,
 		       default: Rssa.Label.t option,
 		       test: unit -> Rssa.Operand.t,
 		       tycon: Ssa.Tycon.t} -> (Rssa.Statement.t list

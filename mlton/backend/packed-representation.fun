@@ -1302,6 +1302,19 @@ structure Block =
 	 end
    end
 
+structure Cases =
+   struct
+      type t = {con: Con.t, dst: Label.t, dstHasArg: bool} vector
+
+      fun layout (v: t): Layout.t =
+	 Vector.layout
+	 (fn {con, dst, dstHasArg} =>
+	  Layout.record [("con", Con.layout con),
+			 ("dst", Label.layout dst),
+			 ("dstHasArg", Bool.layout dstHasArg)])
+	 v
+   end
+
 structure Pointers =
    struct
       (* 1 < Vector.length variants *)
@@ -1349,7 +1362,7 @@ structure Pointers =
 	 end
 
       fun genCase (T {headerTy, variants, ...},
-		   {cases: (Con.t * Label.t) vector,
+		   {cases: Cases.t,
 		    conRep: Con.t -> ConRep.t,
 		    default: Label.t option,
 		    test: Operand.t})
@@ -1358,8 +1371,8 @@ structure Pointers =
 	    val wordSize = WordSize.pointer ()
 	    val cases =
 	       Vector.keepAllMap
-	       (cases, fn (c, l) =>
-		case conRep c of
+	       (cases, fn {con, dst, dstHasArg} =>
+		case conRep con of
 		   ConRep.Tuple (TupleRep.Indirect
 				 (PointerRep.T {ty, tycon, ...})) =>
 		      SOME (WordX.fromIntInf (Int.toIntInf
@@ -1368,8 +1381,10 @@ structure Pointers =
 			    Block.new
 			    {statements = Vector.new0 (),
 			     transfer =
-			     Goto {args = Vector.new1 (Cast (test, ty)),
-				   dst = l}})
+			     Goto {args = if dstHasArg
+					     then Vector.new1 (Cast (test, ty))
+					  else Vector.new0 (),
+				   dst = dst}})
 		 | _ => NONE)
 	    val default =
 	       if Vector.length variants = Vector.length cases
@@ -1422,7 +1437,7 @@ structure Small =
 	    variants = Vector.new2 (Con.falsee, Con.truee)}
 
       fun genCase (T {isEnum, tagBits, variants, ...},
-		   {cases: (Con.t * Label.t) vector,
+		   {cases: Cases.t,
 		    conRep: Con.t -> ConRep.t,
 		    isPointer: bool,
 		    notSmall: Label.t option,
@@ -1434,20 +1449,24 @@ structure Small =
 	    val wordSize = WordSize.fromBits testBits
 	    val cases =
 	       Vector.keepAllMap
-	       (cases, fn (c, l) =>
-		case conRep c of
+	       (cases, fn {con, dst, dstHasArg} =>
+		case conRep con of
 		   ConRep.ShiftAndTag {tag, ty, ...} =>
 		      let
 			 val test = Cast (test, Type.padToWidth (ty, testBits))
 			 val (test, ss) = Statement.resize (test, Type.width ty)
-			 val transfer = Goto {args = Vector.new1 test, dst = l}
+			 val transfer =
+			    Goto {args = if dstHasArg
+					    then Vector.new1 test
+					 else Vector.new0 (),
+				  dst = dst}
 		      in
 			 SOME (WordX.resize (tag, wordSize),
 			       Block.new {statements = Vector.fromList ss,
 					  transfer = transfer})
 		      end
 		 | ConRep.Tag {tag, ...} =>
-		      SOME (WordX.resize (tag, wordSize), l)
+		      SOME (WordX.resize (tag, wordSize), dst)
 		 | _ => NONE)
 	    val cases = QuickSort.sortVector (cases, fn ((w, _), (w', _)) =>
 					      WordX.le (w, w', {signed = false}))
@@ -1972,7 +1991,7 @@ structure TyconRep =
 	 make
 
       fun genCase (r: t,
-		   {cases: (Con.t * Label.t) vector,
+		   {cases: Cases.t,
 		    conRep: Con.t -> ConRep.t,
 		    default: Label.t option,
 		    test: unit -> Operand.t})
@@ -1987,13 +2006,17 @@ structure TyconRep =
 			     * there may be an unreachable default case.
 			     *)
 			    let
-			       val (c, l) = Vector.sub (cases, 0)
+			       val {con = c, dst, dstHasArg} =
+				  Vector.sub (cases, 0)
 			    in
 			       if not (Con.equals (c, con))
 				  then Error.bug "genCase One"
 			       else
-				  ([], Goto {args = Vector.new1 (test ()),
-					     dst = l})
+				  ([],
+				   Goto {args = (if dstHasArg
+						    then Vector.new1 (test ())
+						 else Vector.new0 ()),
+					 dst = dst})
 			    end
 		       | (0, SOME l) =>
 			    ([], Goto {dst = l, args = Vector.new0 ()})
@@ -2013,10 +2036,10 @@ structure TyconRep =
 		| SmallAndBox {box = {con, pointer}, small, ...} =>
 		     let
 			val notSmall =
-			   case Vector.peek (cases, fn (c, _) =>
+			   case Vector.peek (cases, fn {con = c, ...} =>
 					     Con.equals (c, con)) of
 			      NONE => default
-			    | SOME (_, l) =>
+			    | SOME {dst, dstHasArg, ...} =>
 				 let
 				    val test =
 				       Cast (test (), PointerRep.ty pointer)
@@ -2024,8 +2047,11 @@ structure TyconRep =
 				    SOME
 				    (Block.new
 				     {statements = Vector.new0 (),
-				      transfer = Goto {args = Vector.new1 test,
-						       dst = l}})
+				      transfer =
+				      Goto {args = (if dstHasArg
+						       then Vector.new1 test
+						    else Vector.new0 ()),
+					    dst = dst}})
 				 end
 		     in
 			Small.genCase (small, {cases = cases,
@@ -2038,19 +2064,24 @@ structure TyconRep =
 		| SmallAndPointer {pointer = {component, con}, small, ...} =>
 		     let
 			val notSmall =
-			   case Vector.peek (cases, fn (c, _) =>
+			   case Vector.peek (cases, fn {con = c, ...} =>
 					     Con.equals (c, con)) of
 			      NONE => default
-			    | SOME (_, l) =>
-				 SOME
-				 (Block.new
-				  {statements = Vector.new0 (),
-				   transfer =
-				   Goto {args = (Vector.new1
-						 (Cast
-						  (test (),
-						   Component.ty component))),
-					 dst = l}})
+			    | SOME {dst, dstHasArg, ...} =>
+				 let
+				    val args =
+				       if dstHasArg
+					  then (Vector.new1
+						(Cast
+						 (test (),
+						  Component.ty component)))
+				       else Vector.new0 ()
+				 in
+				    SOME (Block.new
+					  {statements = Vector.new0 (),
+					   transfer = Goto {args = args,
+							    dst = dst}})
+				 end
 		     in
 			Small.genCase (small, {cases = cases,
 					       conRep = conRep,
@@ -2090,10 +2121,7 @@ structure TyconRep =
 	  fn (r, {cases, default, ...}) =>
 	  Layout.tuple [layout r,
 			Layout.record
-			[("cases",
-			  Vector.layout
-			  (Layout.tuple2 (Con.layout, Label.layout))
-			  cases),
+			[("cases", Cases.layout cases),
 			 ("default", Option.layout Label.layout default)]],
 	  Layout.tuple3 (List.layout Statement.layout,
 			 Transfer.layout,
