@@ -174,14 +174,11 @@ fun makeOptions {usage} =
        (Expert, "eliminate-overflow", " {true|false}",
 	"eliminate useless overflow tests",
 	boolRef eliminateOverflow),
-       (Expert, "error-threshhold", " 20",
-	"error threshhold",
+       (Expert, "error-threshhold", " 20", "error threshhold",
 	intRef errorThreshhold),
-       (Normal, "exn-history", " {false|true}",
-	"enable Exn.history",
+       (Normal, "exn-history", " {false|true}", "enable Exn.history",
 	boolRef exnHistory),
-       (Expert, "expert", " {false|true}",
-	"enable expert status",
+       (Expert, "expert", " {false|true}", "enable expert status",
 	boolRef expert),
        (Normal, "export-header", " {false|true}",
 	"output header file for _export's",
@@ -527,6 +524,14 @@ fun commandLine (args: string list): unit =
 	 if targetOS = Cygwin andalso !profile = ProfileTime
 	    then usage "can't use -profile time on Cygwin"
 	 else ()
+      val _ =
+	 case List.keepAll ([("-export-header", exportHeader),
+			     ("-show-basis", showBasis),
+			     ("-show-basis-used", showBasisUsed)],
+			    fn (_, r) => !r) of
+	    (a, _) :: (b, _) :: _ =>
+	       usage (concat ["can't use both ", a, " and ", b])
+	  | _ => ()
       fun printVersion (out: Out.t): unit =
 	 Out.output (out, concat [version, " ", build, "\n"])
    in
