@@ -26,7 +26,6 @@ src/absyn.sig
 src/yacc.sml
 src/absyn.sml
 src/link.sml
-../lib/mlton-stubs/int-inf.sml
 ../lib/mlton-stubs/real.sml
 ../lib/mlton/pervasive/pervasive.sml
 ../lib/mlton/basic/dynamic-wind.sig

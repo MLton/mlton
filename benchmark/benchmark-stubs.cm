@@ -1,6 +1,5 @@
 Group is
 ../lib/mlton-stubs/thread.sml
-../lib/mlton-stubs/int-inf.sml
 ../lib/mlton-stubs/random.sig
 ../lib/mlton-stubs/random.sml
 ../lib/mlton-stubs/world.sig

@@ -1,7 +1,6 @@
 Group is
 ../lib/mlton/basic/error.sig
 ../lib/mlton/basic/error.sml
-../lib/mlton-stubs/int-inf.sml
 ../lib/mlton-stubs/real.sml
 ../lib/mlton/pervasive/pervasive.sml
 ../lib/mlton/basic/dynamic-wind.sig
