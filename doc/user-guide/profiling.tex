@@ -135,12 +135,11 @@ from the dot file using the
 		  {http://www.research.att.com/sw/tools/graphviz/}
 software package.
 
-Because SML has higher-order functions, the call graph is an
-over-approximation that is dependent on the precision of {\mlton}'s
-analysis of where functions can be called.  This analysis is dependent
-on many implementation details and might display spurious edges that a
-human could conclude are impossible.  However, in practice, the
-call graphs tend to be very accurate.
+Because SML has higher-order functions, the call graph is is dependent
+on {\mlton}'s analysis of where functions can be called.  This
+analysis depends on many implementation details and might display
+spurious edges that a human could conclude are impossible.  However,
+in practice, the call graphs tend to be very accurate.
 
 Because call graphs can get big, you may want to control what nodes
 appear in the graph.  For this, you can use the {\tt -graph} option to
