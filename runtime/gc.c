@@ -1416,7 +1416,7 @@ toSpaceReady:
 			100.0 * ((double) s->bytesLive) / size);
 	}
 	unless (s->frontier + bytesRequested <= s->limit) {
-		if (s->useFixedHeap) {
+		if (s->useFixedHeap or s->fromSize == s->maxHeapSize) {
 			die("Out of memory (doGC).");
 		} 
 		if (DEBUG)
