@@ -88,17 +88,22 @@ structure BoolArray2: MONO_ARRAY2 where type vector = BoolVector.vector
                                   where type elem = Bool.bool = BoolArray2
 (* Basis:
 structure Bool: BOOL
-structure BoolVector:> MONO_VECTOR where type elem = bool
-structure BoolVectorSlice:> MONO_VECTOR_SLICE where type vector = BoolVector.vector
-                                              where type elem = bool
-structure BoolArray:> MONO_ARRAY where type vector = BoolVector.vector
-                                 where type elem = bool
-structure BoolArraySlice:> MONO_ARRAY_SLICE where type vector = BoolVector.vector
-                                            where type vector_slice = BoolVectorSlice.slice
-                                            where type array = BoolArray.array
-                                            where type elem = bool
-structure BoolArray2:> MONO_ARRAY2 where type vector = BoolVector.vector
-                                   where type bool = bool
+structure BoolVector:> MONO_VECTOR 
+                       where type elem = bool
+structure BoolVectorSlice:> MONO_VECTOR_SLICE 
+                            where type vector = BoolVector.vector
+                            where type elem = bool
+structure BoolArray:> MONO_ARRAY 
+                      where type vector = BoolVector.vector
+                      where type elem = bool
+structure BoolArraySlice:> MONO_ARRAY_SLICE 
+                           where type vector = BoolVector.vector
+                           where type vector_slice = BoolVectorSlice.slice
+                           where type array = BoolArray.array
+                           where type elem = bool
+structure BoolArray2:> MONO_ARRAY2 
+                       where type vector = BoolVector.vector
+                       where type bool = bool
 *)
 structure Byte: BYTE = Byte
 structure Char: CHAR = Char
@@ -162,19 +167,22 @@ structure IntArray2: MONO_ARRAY2 where type vector = IntVector.vector
                                  where type elem = Int.int = IntArray2
 (* Basis:
 structure Int:> INTEGER
-structure IntVector:> MONO_VECTOR where type elem = int
-structure IntVectorSlice :> MONO_VECTOR_SLICE  (* OPTIONAL *)
-  where type vector = IntVector.vector
-  where type elem = int
-structure IntArray:> MONO_ARRAY where type vector = IntVector.vector
-                                where type elem = int
-sstructure IntArraySlice :> MONO_ARRAY_SLICE  (* OPTIONAL *)
-  where type vector = IntVector.vector
-  where type vector_slice = IntVectorSlice.slice
-  where type array = IntArray.array
-  where type elem = int
-tructure IntArray2:> MONO_ARRAY2 where type vector = IntVector.vector
-                                  where type elem = int
+structure IntVector:> MONO_VECTOR 
+                      where type elem = int
+structure IntVectorSlice:> MONO_VECTOR_SLICE
+                           where type vector = IntVector.vector
+                           where type elem = int
+structure IntArray:> MONO_ARRAY 
+                     where type vector = IntVector.vector
+                     where type elem = int
+structure IntArraySlice:> MONO_ARRAY_SLICE
+                          where type vector = IntVector.vector
+                          where type vector_slice = IntVectorSlice.slice
+                          where type array = IntArray.array
+                          where type elem = int
+structure IntArray2:> MONO_ARRAY2 
+                      where type vector = IntVector.vector
+                      where type elem = int
 *)
 structure Int32: INTEGER = Int32
 structure Int32Vector: MONO_VECTOR where type elem = Int32.int = Int32Vector
@@ -313,7 +321,7 @@ structure WordArraySlice:> MONO_ARRAY_SLICE where type vector = WordVector.vecto
                                             where type elem = word
 structure WordArray2:> MONO_ARRAY2 where type vector = WordVector.vector
                                    where type elem = word
-*)
+
 structure Word8: WORD = Word8
 structure Word8Vector: MONO_VECTOR where type elem = Word8.word = Word8Vector
 structure Word8VectorSlice: MONO_VECTOR_SLICE where type vector = Word8Vector.vector
