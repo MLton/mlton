@@ -1394,10 +1394,10 @@ structure Function =
 	       val root = newNode ()
 	       val _ = loop (body, root, [], Func.toString name, args)
 	       val graphLayout =
-		  Graph.layoutDot
-		  (graph,
+		  Graph.layoutDot'
+		  (graph, fn {nodeName} =>
 		   {title = concat [Func.toString name, " control-flow graph"],
-		    options = [GraphOption.Rank (Min, [(*root*)])],
+		    options = [GraphOption.Rank (Min, [{nodeName = nodeName root}])],
 		    edgeOptions = edgeOptions,
 		    nodeOptions =
 		    fn n => let

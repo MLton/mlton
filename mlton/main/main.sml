@@ -142,7 +142,7 @@ val options =
        (Normal, "o", " file", "name of output file",
 	SpaceString (fn s => output := SOME s)),
        (Normal, "p", "", "produce executable suitable for profiling",
-	None (fn () => (profile := true; keepCps := true; keepSSA := true))),
+	None (fn () => (profile := true; keepSSA := true))),
        (Expert, "print-at-fun-entry", "",
 	"print debugging message at every call",
 	trueRef printAtFunEntry),

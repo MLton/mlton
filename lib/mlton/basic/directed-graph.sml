@@ -141,11 +141,12 @@ fun addEdge (_, e as {from as Node.Node {successors, ...}, to}) =
 
 (*fun removeEdge (_, {from, to}) = Node.removeSuccessor (from, to) *)
 
-fun layoutDot (T {nodes, ...},
-	       {edgeOptions: Edge.t -> Dot.EdgeOption.t list,
-		nodeOptions: Node.t -> Dot.NodeOption.t list,
-		options,
-		title}): Layout.t =
+fun layoutDot' (T {nodes, ...},
+		mkOptions : {nodeName: Node.t -> string} ->
+		            {edgeOptions: Edge.t -> Dot.EdgeOption.t list,
+			     nodeOptions: Node.t -> Dot.NodeOption.t list,
+			     options: Dot.GraphOption.t list,
+			     title: string}): Layout.t =
    let
       val c = Counter.new 0
       val {get = nodeId, destroy, ...} =
@@ -153,6 +154,8 @@ fun layoutDot (T {nodes, ...},
 	 (Node.plist,
 	  Property.initFun
 	  (fn _ => concat ["n", Int.toString (Counter.next c)]))
+      val {edgeOptions, nodeOptions, options, title} =
+	 mkOptions {nodeName = nodeId}
       val nodes =
 	 List.revMap
 	 (!nodes, fn n as Node.Node {successors, ...} =>
@@ -169,6 +172,8 @@ fun layoutDot (T {nodes, ...},
    in
       res
    end
+
+fun layoutDot (g, options) = layoutDot' (g, fn _ => options)
 
 (*--------------------------------------------------------*)
 (*                   Depth-First Search                   *)

@@ -1114,7 +1114,7 @@ structure Function =
 
 	 fun layoutDot (f, global: Var.t -> string option) =
 	    let
-	       val {name, args, start, blocks, ...} = dest f
+	       val {name, args, start, blocks, returns, raises, ...} = dest f
 	       fun makeName (name: string,
 			     formals: (Var.t * Type.t) vector): string =
 		  concat [name, " ",
@@ -1131,6 +1131,25 @@ structure Function =
 					     Type.layout ty]
 				else Var.layout var)))
 			  end]
+	       fun makeName' (name: string,
+			      formals: (Var.t * Type.t) vector,
+			      returns: Type.t vector option,
+			      raises: Type.t vector option): string =
+		  concat [makeName (name, formals),
+			  if !Control.showTypes
+			     then let
+				     open Layout
+				  in
+				     toString
+				     (seq [str ": ",
+					   Option.layout
+					   (Vector.layout Type.layout) returns,
+					   str " (",
+					   Option.layout
+					   (Vector.layout Type.layout) raises,
+					   str ")"])
+				  end
+			  else ""]
 	       open Dot
 	       val graph = Graph.new ()
 	       val {get = nodeOptions, ...} =
@@ -1246,11 +1265,12 @@ structure Function =
 		   end)
 	       val root = labelNode start
 	       val graphLayout =
-		  Graph.layoutDot
-		  (graph,
-		   {title = concat [makeName (Func.toString name, args),
+		  Graph.layoutDot'
+		  (graph, fn {nodeName} => 
+		   {title = concat [makeName' (Func.toString name, 
+					       args, returns, raises),
 				    " control-flow graph"],
-		    options = [GraphOption.Rank (Min, [(*root*)])],
+		    options = [GraphOption.Rank (Min, [{nodeName = nodeName root}])],
 		    edgeOptions = edgeOptions,
 		    nodeOptions =
 		    fn n => let

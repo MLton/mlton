@@ -72,6 +72,12 @@ signature DIRECTED_GRAPH =
 (*      exception Input *)
 (*     val input: In.t * (In.t -> 'a)* (In.t -> 'b) -> t * 'a * (Edge.t -> 'b) *)
 (*      val isCyclic: t -> bool*)
+      val layoutDot':
+	 t * ({nodeName: Node.t -> string} ->
+	      {title: string,
+	       options: Dot.GraphOption.t list,
+	       edgeOptions: Edge.t -> Dot.EdgeOption.t list,
+	       nodeOptions: Node.t -> Dot.NodeOption.t list}) -> Layout.t
       val layoutDot:
 	 t * {title: string,
 	      options: Dot.GraphOption.t list,
