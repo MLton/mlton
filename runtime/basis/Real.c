@@ -10,16 +10,16 @@ Double Real_posInf;
  *
  * In memory, the 64 bits of a double are layed out as follows.
  *
- * bits 7-0 of mantissa
- * bits 15-8 of mantissa
- * bits 23-16 of mantissa
- * bits 31-24 of mantissa
- * bits 39-32 of mantissa
- * bits 47-40 of mantissa
- * bits 3-0 of exponent
- * bits 51-48 of mantissa
- * sign bit
- * bits 10-4 of exponent
+ * d[0]  bits 7-0 of mantissa
+ * d[1]  bits 15-8 of mantissa
+ * d[2]  bits 23-16 of mantissa
+ * d[3]  bits 31-24 of mantissa
+ * d[4]  bits 39-32 of mantissa
+ * d[5]  bits 47-40 of mantissa
+ * d[6]  bits 3-0 of exponent
+ *       bits 51-48 of mantissa
+ * d[7]  sign bit
+ *       bits 10-4 of exponent
  */
 
 Int Real_signBit(Double d) {
@@ -72,11 +72,8 @@ Int Real_class(Double d) {
 }
 
 Int Real_isFinite(Double d) {
-	Word word1;
-
-	word1 = ((Word *)&d)[1];
-
-	return !((word1 & EXPONENT_MASK) == EXPONENT_MASK);
+	/* finite is from math.h */
+	return finite(d);
 }
 
 Int Real_isNan(Double d) {

@@ -52,30 +52,30 @@
     "CHANGES">CHANGES</a> file.  Notable changes include:
     <ul>
       <li> Added <tt>MLton.Exn.history</tt>, which is similar to
-	<tt>SMLofNJ.exnHistory</tt>
+	<tt>SMLofNJ.exnHistory</tt>.
       </li>
       <li> Support for <tt>#line</tt> directives of the form
-	<tt>(*#line line.col "file"*)</tt>
+	<tt>(*#line line.col "file"*)</tt>.
       </li>
       <li> Bug fix in heap save and restore to solve problem with excessive
-	heap usage by compiler
+	heap usage by compiler.
       </li>
-      <li> Performance improvements in native codegenerator
-      <li> Bug fixes in optimizer, register allocator
+      <li> Performance improvements in native codegenerator.
+      <li> Bug fixes in optimizer, register allocator, <tt>Real.maxFinite</tt>.
       </li>
     </ul>
 
     Version 20010806 was a bug-fix release over 20010706, and
     included the following changes.
     <ul> 
-      <li> <tt>Word.andb (w, 0xFF)</tt> now works correctly
+      <li> <tt>Word.andb (w, 0xFF)</tt> now works correctly.
       <li> <tt>MLton.Rusage.rusage</tt> has a patch to work around a linux
-	kernel bug
+	kernel bug.
       <li> Programs of the form <tt>exp ; program</tt> are
-	now accepted
-      <li> Added the <tt>MLton.Rlimit</tt> structure
+	now accepted.
+      <li> Added the <tt>MLton.Rlimit</tt> structure.
       <li> Added the <tt>-keep dot</tt> flag, which produces call graphs,
-	intraprocedural control-flow graphs, and dominator trees
+	intraprocedural control-flow graphs, and dominator trees.
     </ul>
 
     <h3><a href = "download.html">Download MLton</a></h3>

@@ -1,17 +1,19 @@
 Here are the changes from version 20010806 to version VERSION.
 
 Summary:
-   + Added MLton.Exn.history, which is similar to SMLofNJ.exnHistory
-   + Support for #line directives of the form (*#line line.col "file"*)
+   + Added MLton.Exn.history, which is similar to SMLofNJ.exnHistory.
+   + Support for #line directives of the form (*#line line.col "file"*).
    + Bug fix in heap save and restore to solve problem with excessive heap
      usage by compiler. 
    + Performance improvements in native codegenerator.
-   + Bug fixes in optimizer, register allocator.
+   + Bug fixes in optimizer, register allocator, Real.maxFinite.
 
 * 2001-10-1
   - added MLton.Exn.history.
   - Fixed register allocation bug with fucom instruction.  Was
     allowing fucomp when the first source was not removable.
+  - Changed Real.isFinite to use the C math.h finite function.  This fixed the
+    nontermination bug which occurred in any program that used Real.maxFinite.
 
 * 2001-9-22
   - Bug fixes found from Ramsey's lrtl in contify.fun and unused-args.fun, both
