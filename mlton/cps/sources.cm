@@ -54,6 +54,8 @@ common-subexp.sig
 common-subexp.fun
 redundant-tests.sig
 redundant-tests.fun
+common-block.sig
+common-block.fun
 unused-args.sig
 unused-args.fun
 simplify.fun

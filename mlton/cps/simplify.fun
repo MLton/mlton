@@ -6,6 +6,7 @@ struct
 
 open S
 
+structure CommonBlock = CommonBlock (S)
 structure CommonSubexp = CommonSubexp (S)
 structure ConstantPropagation = ConstantPropagation (S)
 structure Contify = Contify (S)
@@ -70,6 +71,7 @@ val passes =
     ("commonSubexp", CommonSubexp.eliminate),
     ("redundantTests", RedundantTests.simplify),
     ("redundant", Redundant.redundant),
+    ("commonBlock", CommonBlock.eliminate),
     ("unusedArgs3", UnusedArgs.unusedArgs),
      (* removeUnused cannot be omitted.
       * The final shrink pass ensures that constant operands are
