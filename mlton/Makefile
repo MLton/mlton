@@ -59,6 +59,15 @@ SML	= sml
 nj-mlton: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
+		echo '#set CM.Control.verbose true;';				\
+		echo 'CM.make "sources.cm";';					\
+		echo 'Main.exportNJ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
+	) | time $(SML)
+
+.PHONY: nj-mlton-110.9.1
+nj-mlton-110.9.1: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
+	(									\
+		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo 'CM.verbose(SOME false);';					\
 		echo 'CM.make'\''{group = "sources.cm", force_relink = true};';	\
 		echo 'Main.exportNJ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
