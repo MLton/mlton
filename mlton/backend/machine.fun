@@ -330,9 +330,6 @@ structure Statement =
 	 Move of {dst: Operand.t,
 		  src: Operand.t}
        | Noop
-       | Object of {dst: Operand.t,
-		    header: word,
-		    size: Bytes.t}
        | PrimApp of {args: Operand.t vector,
 		     dst: Operand.t option,
 		     prim: Type.t Prim.t}
@@ -346,12 +343,6 @@ structure Statement =
 		  mayAlign [Operand.layout dst,
 			    seq [str " = ", Operand.layout src]]
 	     | Noop => str "Noop"
-	     | Object {dst, header, size} =>
-		  mayAlign
-		  [Operand.layout dst,
-		   seq [str " = Object ",
-			record [("header", seq [str "0x", Word.layout header]),
-				("size", Bytes.layout size)]]]
 	     | PrimApp {args, dst, prim, ...} =>
 		  let
 		     val rest =
@@ -386,10 +377,29 @@ structure Statement =
 	 (Vector.fold2 (srcs, dsts, [], fn (src, dst, ac)  =>
 			move {src = src, dst = dst} :: ac))
 
+      fun object {dst, header, size} =
+	 let
+	    datatype z = datatype Operand.t
+	    fun bytes (b: Bytes.t): Operand.t =
+	       Word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.default))
+	 in
+	    Vector.new3
+	    (Move {dst = Contents {oper = Frontier,
+				   ty = Type.defaultWord},
+		   src = Word (WordX.fromIntInf (Word.toIntInf header,
+						 WordSize.default))},
+	     PrimApp {args = Vector.new2 (Frontier,
+					  bytes Runtime.normalHeaderSize),
+		      dst = SOME dst,
+		      prim = Prim.wordAdd WordSize.default},
+	     PrimApp {args = Vector.new2 (Frontier, bytes (Words.toBytes size)),
+		      dst = SOME Frontier,
+		      prim = Prim.wordAdd WordSize.default})
+	 end
+
       fun foldOperands (s, ac, f) =
 	 case s of
 	    Move {dst, src} => f (dst, f (src, ac))
-	  | Object {dst, ...} => f (dst, ac)
 	  | PrimApp {args, dst, ...} =>
 	       Vector.fold (args, Option.fold (dst, ac, f), f)
 	  | _ => ac
@@ -397,7 +407,6 @@ structure Statement =
       fun foldDefs (s, a, f) =
 	 case s of
 	    Move {dst, ...} => f (dst, a)
-	  | Object {dst, ...} => f (dst, a)
 	  | PrimApp {dst, ...} => (case dst of
 				      NONE => a
 				    | SOME z => f (z, a))
@@ -1193,26 +1202,6 @@ structure Program =
 			   else NONE
 			end
 		   | Noop => SOME alloc
-		   | Object {dst, header, size} =>
-			let
-			   val alloc = Alloc.define (alloc, dst)
-			   val () = checkOperand (dst, alloc)
-			   val index = Runtime.headerToTypeIndex header
-			   val tycon = PointerTycon.fromIndex index
-			in
-			   case (SOME (Vector.sub (objectTypes, index))
-				 handle Subscript => NONE) of
-			      SOME (ObjectType.Normal t) =>
-				 (if Bytes.equals
-				     (size, Bytes.+ (Runtime.normalHeaderSize,
-						     Type.bytes t))
-				     andalso
-				     Type.isSubtype (Type.pointer tycon,
-						     Operand.ty dst)
-				     then SOME alloc
-				  else NONE)
-			    | _ => NONE
-			end
 		   | PrimApp {args, dst, ...} =>
 			let
 			   val _ = checkOperands (args, alloc)

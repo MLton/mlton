@@ -457,52 +457,7 @@ struct
 	      | ProfileLabel l =>
 		   AppendList.single
 		   (x86.Block.mkProfileBlock'
-		    {profileLabel = l})
-	      | Object {dst, header, size}
-	      => let
-		   val (comment_begin,
-			comment_end) = comments statement
-		   val (dst,_) = Vector.sub(Operand.toX86Operand dst, 0)
-		   val dst' = case x86.Operand.deMemloc dst
-				of SOME dst' => dst'
-				 | NONE => Error.bug "Allocate: strange dst"
-		       
-		   val frontier = x86MLton.gcState_frontierContentsOperand ()
-		   val frontierDeref = x86MLton.gcState_frontierDerefOperand ()
-		   val frontierPlusOHW
-		     = (x86.Operand.memloc o x86.MemLoc.simple)
-		       {base = x86MLton.gcState_frontierContents (), 
-			index = x86.Immediate.const_int normalHeaderBytes,
-			scale = x86.Scale.One,
-			size = x86MLton.pointerSize,
-			class = x86MLton.Classes.Heap}
-		 in
-		   AppendList.appends
-		   [comment_begin,
-		    AppendList.single
-		    (x86.Block.mkBlock'
-		     {entry = NONE,
-		      statements
-		      = ((* *(frontier) = header *)
-			 x86.Assembly.instruction_mov 
-			 {dst = frontierDeref,
-			  src = x86.Operand.immediate_const_word header,
-			  size = x86MLton.pointerSize})::
-		        ((* dst = frontier + objectHeaderSize *)
-			 x86.Assembly.instruction_lea
-			 {dst = dst,
-			  src = frontierPlusOHW,
-			  size = x86MLton.pointerSize})::
-			[(* frontier += size *)
-			 x86.Assembly.instruction_binal
-			 {oper = x86.Instruction.ADD,
-			  dst = frontier,
-			  src = x86.Operand.immediate_const_int
-			  (Bytes.toInt size),
-			  size = x86MLton.pointerSize}],
-		      transfer = NONE}),
-		    comment_end]
-		 end)
+		    {profileLabel = l}))
 	  handle exn
 	   => Error.reraise (exn, concat ["x86Translate.Statement.toX86Blocks::",
 					  Layout.toString (layout statement)])

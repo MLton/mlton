@@ -276,10 +276,6 @@ fun output {program, outputC} =
 		   ; emitOperand src
 		   ; emitOperand dst)
 	     | Noop => ()
-	     | Object {dst, header, size, ...} =>
-		  (emitOpcode object
-		   ; emitWord32 (Word.toIntInf header)
-		   ; emitWord16 (Bytes.toIntInf size))
 	     | PrimApp {args, dst, prim} =>
 		  (case Prim.name prim of
 		      Prim.Name.FFI_Symbol {name, ...} =>

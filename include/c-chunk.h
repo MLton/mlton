@@ -180,20 +180,6 @@ extern struct GC_state gcState;
 #define ProfileLabel(l)				\
 	__asm__ __volatile__ (#l "_internal:" : : )
 
-#define Object(x, h)							\
-	do {								\
-		*(Word*)Frontier = (h);					\
-		x = Frontier + WORD_SIZE;				\
-		if (DEBUG_CCODEGEN)					\
-			fprintf (stderr, "%s:%d: 0x%x = Object(%d)\n",	\
-					__FILE__, __LINE__, x, h);	\
-	} while (0)
-
-#define EndObject(bytes)			\
-	do {					\
-		Frontier += (bytes);		\
-	} while (0)
-
 /* ------------------------------------------------- */
 /*                       Real                        */
 /* ------------------------------------------------- */

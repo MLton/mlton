@@ -126,10 +126,6 @@ signature MACHINE =
 	       Move of {dst: Operand.t,
 			src: Operand.t}
 	     | Noop
-	     (* Fixed-size allocation. *)
-	     | Object of {dst: Operand.t,
-			  header: word,
-			  size: Bytes.t}
 	     | PrimApp of {args: Operand.t vector,
 			   dst: Operand.t option,
 			   prim: Type.t Prim.t}
@@ -141,6 +137,7 @@ signature MACHINE =
 	    (* Error if dsts and srcs aren't of same length. *)
 	    val moves: {dsts: Operand.t vector,
 			srcs: Operand.t vector} -> t vector
+	    val object: {dst: Operand.t, header: word, size: Words.t} -> t vector
 	 end
 
       structure FrameInfo:

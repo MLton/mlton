@@ -637,12 +637,6 @@ fun output {program as Machine.Program.T {chunks,
 				   srcIsMem = Operand.isMem src,
 				   ty = Operand.ty dst})
 		       | Noop => ()
-		       | Object {dst, header, size} =>
-			    (C.call ("Object", [operandToString dst,
-						C.word header],
-				     print)
-			     ; print "\t"
-			     ; C.call ("EndObject", [C.bytes size], print))
 		       | PrimApp {args, dst, prim} =>
 			    let
 			       fun call (): string =
