@@ -56,7 +56,7 @@ compFail () {
 	echo "compilation of $f failed with $flags"
 }
 
-$mlton -v
+$mlton -verbose 1
 echo "flags = $flags"
 
 cd $src/regression
