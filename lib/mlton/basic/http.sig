@@ -42,6 +42,7 @@ signature HTTP =
 			       minor: int}
 
 	    val v10: t
+	    val v11: t
 	 end
 
       structure Header:

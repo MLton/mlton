@@ -164,6 +164,7 @@ structure Version =
       val layout = Layout.str o toString
 
       val v10 = T {major = 1, minor = 0}
+      val v11 = T {major = 1, minor = 1}
 
       fun extract m =
 	 T (let
