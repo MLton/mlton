@@ -379,11 +379,7 @@ functor StreamIOExtra
 	if n < 0 orelse n > V.maxLen 
 	  then raise Size
 	  else let
-		 fun finish (inps, is) =
-		   let val inp = V.concat (List.rev inps)
-		   in (inp, is)
-		   end
-		 fun loop (is as In {pos, state, ...}, inps, n) =
+		 fun first (is as In {pos, state, ...}, n) =
 		   case !state of
 		     Link {inp, next} =>
 		       if pos + n < V.length inp
@@ -391,19 +387,41 @@ functor StreamIOExtra
 				val inp' = V.tabulate
 				           (n, fn i => 
 					    V.sub (inp, pos + i))
-				val inps = inp'::inps
 			      in
-				finish (inps, updatePos (is, pos + n))
+				(inp', updatePos (is, pos + n))
 			      end
 			 else let
 				val inp' = V.tabulate
 				           (V.length inp - pos, fn i => 
 					    V.sub (inp, pos + i))
-				val inps = inp'::inps
 			      in
 				loop (updateState (is, next), 
-				      inps, n - (V.length inp - pos))
+				      [inp'], n - (V.length inp - pos))
 			      end
+		   | Eos {next} => 
+		       (empty, if n > 0
+				 then updateState (is, next)
+				 else is)
+		   | End => 
+		       let val _ = extendB "inputN" is 
+		       in first (is, n)
+		       end
+		   | _ => (empty, is)
+		 and loop (is as In {pos, state, ...}, inps, n) =
+		   (* pos = 0, List.length inps > 0 *)
+		   case !state of
+		     Link {inp, next} =>
+		       if n < V.length inp
+			 then let
+				val inp' = V.tabulate
+				           (n, fn i => 
+					    V.sub (inp, i))
+				val inps = inp'::inps
+			      in
+				finish (inps, updatePos (is, pos + n))
+			      end
+			 else loop (updateState (is, next), 
+				    inp::inps, n - V.length inp)
 		   | Eos {next} => 
 		       finish (inps, if n > 0
 				       then updateState (is, next)
@@ -413,8 +431,12 @@ functor StreamIOExtra
 		       in loop (is, inps, n)
 		       end
 		   | _ => finish (inps, is)
+		 and finish (inps, is) =
+		   let val inp = V.concat (List.rev inps)
+		   in (inp, is)
+		   end
 	       in
-		 loop (is, [], n)
+		 first (is, n)
 	       end
 
       (* input1' will move past a temporary end of stream *)
@@ -466,16 +488,7 @@ functor StreamIOExtra
 	    in
 	      loop i
 	    end
-	  fun finish (inps, is, trail) =
-	    let
-	      val inps = if trail
-			   then line::inps
-			   else inps
-	      val inp = V.concat (List.rev inps)
-	    in
-	      (inp, is)
-	    end
-	  fun loop (is as In {pos, state, ...}, inps) =
+	  fun first (is as In {pos, state, ...}) =
 	    case !state of
 	      Link {inp, next} =>
 		(case findLine (inp, pos) of
@@ -484,6 +497,33 @@ functor StreamIOExtra
 			       val inp' = V.tabulate
 				          (j - pos,
 					   fn i => V.sub (inp, pos + i))
+			     in
+			       (inp', if j < V.length inp
+					then updatePos (is, j)
+					else updateState (is, next))
+			     end
+		 | NONE => let
+			     val inp' = V.tabulate
+			                (V.length inp - pos,
+					 fn i => V.sub (inp, pos + i))
+			   in
+			     loop (updateState (is, next), [inp'])
+			   end)
+	    | Eos {next} => (empty, updateState (is, next))
+	    | End =>
+	       let val _ = extendB "inputLine" is
+	       in first is
+	       end
+	    | _ => (empty, is)
+	  and loop (is as In {pos, state, ...}, inps) =
+	    (* pos = 0, List.lengt inps > 0 *)
+	    case !state of
+	      Link {inp, next} =>
+		(case findLine (inp, pos) of
+		   SOME i => let
+			       val j = i + 1
+			       val inp' = V.tabulate
+				          (j, fn i => V.sub (inp, i))
 			       val inps = inp'::inps
 			     in
 			       finish (inps, 
@@ -492,25 +532,24 @@ functor StreamIOExtra
 					 else updateState (is, next),
 				       false)
 			     end
-		 | NONE => let
-			     val inp' = V.tabulate
-			                (V.length inp - pos,
-					 fn i => V.sub (inp, pos + i))
-			     val inps = inp'::inps
-			   in
-			     loop (updateState (is, next), inps)
-			   end)
-	    | Eos {next} => 
-		if List.length inps > 0
-		  then finish (inps, is, true)
-		  else (empty, updateState (is, next))
+		 | NONE => loop (updateState (is, next), inp::inps))
+	    | Eos {next} => finish (inps, updateState (is, next), true)
 	    | End => 
 		let val _ = extendB "inputLine" is 
 		in loop (is, inps)
 		end
 	    | _ => finish (inps, is, true)
+	  and finish (inps, is, trail) =
+	    let
+	      val inps = if trail
+			   then line::inps
+			   else inps
+	      val inp = V.concat (List.rev inps)
+	    in
+	      (inp, is)
+	    end
 	in
-	  loop (is, [])
+	  first is
 	end
 
       fun canInput (is as In {pos, state, ...}, n) =

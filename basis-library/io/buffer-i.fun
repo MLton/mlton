@@ -312,14 +312,15 @@ functor BufferIExtra
 	  fun loop inps =
 	    if updateB "inputLine" ib
 	      then let
+		     val f = !first
+		     val l = !last
 		     (* !first < !last *) 
 		     fun loop' i = (* pre: !first <= i <= !last *)
 		       let
-			 val f = !first
-			 val l = !last
 			 fun done j = (* pre: !first < j <= !last *)
 			   let
-			     val inp = V.tabulate(j - f, fn k => A.sub (buf, f + k))
+			     val inp = V.tabulate(j - f, fn k => 
+						  A.sub (buf, f + k))
 			   in
 			     first := j;
 			     inp::inps
@@ -332,7 +333,7 @@ functor BufferIExtra
 				  else loop' (i + 1)
 		       end
 		   in
-		     loop' (!first)
+		     loop' f
 		   end
 	      else finish (inps, List.length inps > 0)
 	in
