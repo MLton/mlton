@@ -41,7 +41,7 @@ structure MLtonProcess: MLTON_PROCESS =
 	    (exiting := true
 	     ; if 0 <= status andalso status < 256
 		  then (let open Cleaner in clean atExit end
-			; Posix.Process.exit (Word8.fromInt status)
+			; Primitive.halt status
 			; raise Fail "exit")
 	       else raise Fail (concat ["exit must have 0 <= status < 256: saw ",
 					Int.toString status]))
