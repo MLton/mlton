@@ -327,7 +327,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	  suffix = "machine",
 	  style = Control.No,
 	  display = Control.NoDisplay,
-	  thunk = fn () => Backend.generate ssa}
+	  thunk = fn () => Backend.toMachine ssa}
    in
       machine
    end

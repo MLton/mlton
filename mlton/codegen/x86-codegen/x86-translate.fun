@@ -215,8 +215,11 @@ struct
 
   structure Entry =
     struct
-      structure Kind = Machine.Block.Kind
-
+      structure Kind = Machine.Kind
+      fun translateFrameInfo (Machine.FrameInfo.T {frameOffsetsIndex, size}) =
+	 x86.Entry.FrameInfo.frameInfo {frameLayoutsIndex = frameOffsetsIndex,
+					size = size}
+	 
       fun toX86Blocks {label, kind, 
 		       transInfo as {frameLayouts, live, liveInfo, ...} : transInfo}
 	= (case kind
@@ -255,11 +258,11 @@ struct
 		     statements = [],
 		     transfer = NONE})
 		 end
-	      | Kind.Cont {args, size}
+	      | Kind.Cont {args, frameInfo}
 	      => let
 		   val _ = x86Liveness.LiveInfo.setLiveOperands
 		           (liveInfo, label, live label)
-			   
+	           val frameInfo = translateFrameInfo frameInfo
 		   val args
 		     = List.fold
 		       (args,
@@ -269,14 +272,6 @@ struct
 			         (Operand.toX86Operand operand)
 			      of SOME memloc => x86.MemLocSet.add(args, memloc)
 			       | NONE => args)
-
-		   val frameInfo
-		     = case frameLayouts label
-			 of NONE => Error.bug "toX86Blocks: frameInfo"
-			   | SOME {size, frameLayoutsIndex}
-			   => x86.Entry.FrameInfo.frameInfo
-			      {size = size,
-			       frameLayoutsIndex = frameLayoutsIndex}
 		 in
 		   AppendList.single
 		   (x86.Block.T'
@@ -317,15 +312,51 @@ struct
 		    dst = dst,
 		    transInfo = transInfo}
 		 end
-	      | Kind.Runtime {prim}
+	      | Kind.Runtime {frameInfo, prim}
 	      => let
 		   val _ = x86Liveness.LiveInfo.setLiveOperands
 		           (liveInfo, label, live label)
+		   val primName = Prim.toString prim
+		   datatype z = datatype Prim.Name.t
+		   fun default () =
+		      AppendList.single
+		      (x86.Block.T'
+		       {entry =
+			SOME (x86.Entry.runtime
+			      {label = label,
+			       frameInfo = translateFrameInfo frameInfo}),
+			profileInfo = x86.ProfileInfo.none,
+			statements = [],
+			transfer = NONE})
+		   val comment_end
+		      = if !Control.Native.commented > 0
+			   then let
+				   val comment = primName
+				in
+				   AppendList.single
+				   (x86.Block.T'
+				    {entry = NONE,
+				     profileInfo = x86.ProfileInfo.none,
+				     statements 
+				     = [x86.Assembly.comment 
+					("end runtimereturn: " ^ comment)],
+				     transfer = NONE})
+				end
+			else AppendList.empty
 		 in
-		   x86MLton.runtimereturn
-		   {prim = prim,
-		    label = label,
-		    transInfo = transInfo}
+		    AppendList.appends
+		    [(case Prim.name prim
+			 of GC_collect => default ()
+		       | MLton_halt => default ()
+		       | Thread_copy => default ()
+		       | Thread_copyCurrent => default ()
+		       | Thread_finishHandler => default ()
+		       | Thread_switchTo => default ()
+		       | World_save => default ()
+		       | _ => Error.bug (concat
+					 ["runtimereturn: strange Prim.Name.t: ",
+					  primName])),
+		     comment_end]
 		 end)
     end
 
@@ -2040,7 +2071,7 @@ struct
 		 rem = remLive, ...}
 	      = Property.getSetOnce
 	        (Label.plist, Property.initRaise ("live", Label.layout))
-	    val _ = List.foreach
+	    val _ = Vector.foreach
 	            (blocks, fn Block.T {label, live, ...} =>
 		     setLive (label, List.map (live, Operand.toX86Operand)))
 	    val transInfo = {addData = addData,
@@ -2048,13 +2079,14 @@ struct
 			     live = live,
 			     liveInfo = liveInfo}
 	    val x86Blocks 
-	      = List.concatMap(blocks, 
+	      = List.concat (Vector.toListMap
+			     (blocks, 
 				fn block
 				 => Block.toX86Blocks 
 				    {block = block,
-				     transInfo = transInfo})
-	    val _ = List.foreach (blocks, fn Block.T {label, ...} =>
-				  remLive label)
+				     transInfo = transInfo}))
+	    val _ = Vector.foreach (blocks, fn Block.T {label, ...} =>
+				    remLive label)
 	    val _ = addData [x86.Assembly.pseudoop_text ()]
 	    val data = List.concatRev (!data)
 	  in

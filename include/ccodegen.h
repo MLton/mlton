@@ -283,8 +283,6 @@ int main(int argc, char **argv) {					\
 		call;					\
 		CacheGC();				\
 		Return();				\
-		ret:					\
-		stackTop -= (frameSize);		\
 	} while (0)
 
 #define GC_collect(frameSize, ret)						\
@@ -428,33 +426,9 @@ int main(int argc, char **argv) {					\
 
 #define Int_add(n1, n2) ((n1) + (n2))
 #define Int_mul(n1, n2) ((n1) * (n2))
-#define Int_sub(n1, n2) (/*fprintf(stderr, "Int_sub(%d, %d) = %d\n", n1, n2, (n1) - (n2)),*/ (n1) - (n2))
+#define Int_sub(n1, n2) ((n1) - (n2))
 int Int_bogus;
-#define Int_addCheck(dst, n1, n2, l)				\
-	do {							\
-		int res;					\
-		if (Int_addOverflow(n1, n2, &res)) goto l;	\
-		dst = res;					\
-	} while (0)
-#define Int_mulCheck(dst, n1, n2, l)				\
-	do {							\
-		int res;					\
-		if (Int_mulOverflow(n1, n2, &res)) goto l;	\
-		dst = res;					\
-	} while (0)
-#define Int_negCheck(dst, n, l)					\
-	do {							\
-		int res;					\
-		if (Int_negOverflow(n, &res)) goto l;		\
-		dst = res;					\
-	} while (0)
-#define Int_subCheck(dst, n1, n2, l)				\
-	do {							\
-		int res;					\
-		if (Int_subOverflow(n1, n2, &res)) goto l;	\
-		dst = res;					\
-	} while (0)
-#define checkNew(dst, n1, n2, l, f);						\
+#define check(dst, n1, n2, l, f);						\
 	do {									\
 		int overflow;							\
 		dst = f(n1, n2, &overflow);					\
@@ -466,16 +440,16 @@ int Int_bogus;
 			goto l;							\
 		}								\
 	} while (0)
-#define Int_addCheckNew(dst, n1, n2, l)				\
-	checkNew(dst, n1, n2, l, Int_addOverflowNew)
-#define Int_mulCheckNew(dst, n1, n2, l)				\
-	checkNew(dst, n1, n2, l, Int_mulOverflowNew)
-#define Int_subCheckNew(dst, n1, n2, l)				\
-	checkNew(dst, n1, n2, l, Int_subOverflowNew)
-#define Int_negCheckNew(dst, n, l)			\
+#define Int_addCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Int_addOverflow)
+#define Int_mulCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Int_mulOverflow)
+#define Int_subCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Int_subOverflow)
+#define Int_negCheck(dst, n, l)				\
 	do {						\
 		int overflow;				\
-		dst = Int_negOverflowNew(n, &overflow);	\
+		dst = Int_negOverflow(n, &overflow);	\
 		if (overflow) goto l;			\
 	} while (0)
 
@@ -629,20 +603,19 @@ int Int_bogus;
 
 #define Thread_copy(frameSize, ret, thread)					\
 	do {									\
-		pointer t = thread;						\
+		GC_thread t = thread;						\
 		InvokeRuntime(GC_copyThread(&gcState, t), frameSize, ret);	\
 	} while (0)
 
-#define Thread_copyCurrent(frameSize, ret)					\
+#define Thread_copyCurrent(frameSize)						\
 	do {									\
 		InvokeRuntime(GC_copyCurrentThread(&gcState), frameSize, ret);	\
 	} while (0)
 
-#define Thread_finishHandler(frameSize, ret, thread)			\
-	do {								\
-		GC_thread t = thread;					\
-		InvokeRuntime(GC_finishHandler(&gcState, t),		\
-					frameSize, ret);		\
+#define Thread_finishHandler(frameSize, ret, thread)				\
+	do {									\
+		GC_thread t = thread;						\
+		InvokeRuntime(GC_finishHandler(&gcState, t), frameSize, ret);	\
 	} while (0)
 
 #define Thread_switchTo(frameSize, ret, thread)					\
@@ -665,8 +638,6 @@ int Int_bogus;
 			gcState.limit = 0;					\
 		/* Thread_atomicEnd () */					\
 		Return();							\
-		ret:								\
-		stackTop -= (frameSize);					\
 	} while (0)
 
 /* ------------------------------------------------- */
@@ -758,11 +729,11 @@ int Int_bogus;
 /*                       World                       */
 /* ------------------------------------------------- */
 
-#define World_save(frameSize, ret, file)					\
-	do {									\
-		pointer f = (file);						\
-		InvokeRuntime(GC_saveWorld(&gcState, f, &saveGlobals),		\
-					frameSize, ret);			\
+#define World_save(frameSize, ret, file)				\
+	do {								\
+		pointer f = (file);					\
+		InvokeRuntime(GC_saveWorld(&gcState, f, &saveGlobals),	\
+					frameSize, ret);		\
 	} while (0)
 
 #endif /* #ifndef _CCODEGEN_H_ */

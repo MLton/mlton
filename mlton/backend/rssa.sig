@@ -155,10 +155,12 @@ signature RSSA =
 	 sig
 	    datatype t =
 	       Cont of {handler: Label.t option}
-	     | CReturn
+	     | CReturn of {prim: Prim.t}
 	     | Handler
 	     | Normal
-	     | Runtime
+	     | Runtime of {prim: Prim.t}
+
+	    val isOnStack: t -> bool
 	 end
 
       structure Block:

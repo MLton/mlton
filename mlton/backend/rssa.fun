@@ -285,10 +285,17 @@ structure Kind =
    struct
       datatype t =
 	 Cont of {handler: Label.t option}
-       | CReturn
+       | CReturn of {prim: Prim.t}
        | Handler
        | Normal
-       | Runtime
+       | Runtime of {prim: Prim.t}
+
+      val isOnStack =
+	 fn Cont _ => true
+	  | CReturn _ => false
+	  | Handler => true
+	  | Normal => false
+	  | Runtime _ => true
    end
 
 structure Block =

@@ -474,14 +474,21 @@ structure Transfer =
 
 structure FrameInfo =
    struct
-      datatype t = T of {offsetIndex: int,
+      datatype t = T of {frameOffsetsIndex: int,
 			 size: int}
 
-      fun layout (T {offsetIndex, size}) =
-	 Layout.record [("offsetIndex", Int.layout offsetIndex),
+      local
+	 fun make f (T r) = f r
+      in
+	 val frameOffsetsIndex = make #frameOffsetsIndex
+	 val size = make #size
+      end
+   
+      fun layout (T {frameOffsetsIndex, size}) =
+	 Layout.record [("frameOffsetsIndex", Int.layout frameOffsetsIndex),
 			("size", Int.layout size)]
 
-      val bogus = T {offsetIndex = ~1, size = ~1}
+      val bogus = T {frameOffsetsIndex = ~1, size = ~1}
    end
 
 structure Kind =
@@ -489,12 +496,13 @@ structure Kind =
       datatype t =
 	 Cont of {args: Operand.t list,
 		  frameInfo: FrameInfo.t}
-       | CReturn of {arg: Operand.t,
-		     ty: Type.t} option
+       | CReturn of {dst: Operand.t option,
+		     prim: Prim.t}
        | Func of {args: Operand.t list}
        | Handler of {offset: int}
        | Jump
-       | Runtime of {frameInfo: FrameInfo.t}
+       | Runtime of {frameInfo: FrameInfo.t,
+		     prim: Prim.t}
 
       fun layout k =
 	 let
@@ -505,23 +513,26 @@ structure Kind =
 		  seq [str "Cont ",
 		       record [("args", List.layout Operand.layout args),
 			       ("frameInfo", FrameInfo.layout frameInfo)]]
-	     | CReturn opt =>
+	     | CReturn {dst, prim} =>
 		  seq [str "CReturn ",
-		       Option.layout
-		       (fn {arg, ty} =>
-			record [("arg", Operand.layout arg),
-				("ty", Type.layout ty)])
-		       opt]
+		       record [("dst", Option.layout Operand.layout dst),
+			       ("prim", Prim.layout prim)]]
 	     | Func {args} =>
 		  seq [str "Func ",
 		       record [("args", List.layout Operand.layout args)]]
 	     | Handler {offset} =>
 		  seq [str "Handler", paren(Int.layout offset)]
 	     | Jump => str "Jump"
-	     | Runtime {frameInfo} =>
+	     | Runtime {frameInfo, prim} =>
 		  seq [str "Runtime ",
-		       record [("frameInfo", FrameInfo.layout frameInfo)]]
+		       record [("frameInfo", FrameInfo.layout frameInfo),
+			       ("prim", Prim.layout prim)]]
 	 end
+
+      val frameInfoOpt =
+	 fn Cont {frameInfo, ...} => SOME frameInfo
+	  | Runtime {frameInfo, ...} => SOME frameInfo
+	  | _ => NONE
    end
 
 structure Block =
@@ -602,7 +613,7 @@ structure Program =
 	 end
 
       fun typeCheck _ = ()
-(*       fun typeCheck (T {chunks, floats, frameLayouts, frameOffsets,
+(*       fun typeCheck (T {chunks, floats, frameOffsets, frameOffsets,
  * 			globals, globalsNonRoot, intInfs, main,
  * 			maxFrameSize, nextChunks, strings}) =
  * 	 let

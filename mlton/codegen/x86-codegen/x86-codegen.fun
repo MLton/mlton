@@ -120,16 +120,15 @@ struct
   open x86
   structure Type = Machine.Type
   fun output {program as Machine.Program.T 
-	                 {globals,
-			  globalsNonRoot,
-			  intInfs,
-			  strings,
+	                 {chunks,
 			  floats, 
 			  frameOffsets,
-			  frameLayouts,
-			  maxFrameSize,
-			  chunks,
+			  globals,
+			  globalsNonRoot,
+			  intInfs,
 			  main,
+			  maxFrameSize,
+			  strings,
 			  ...}: Machine.Program.t,
 	      includes: string list,
 	      outputC,
@@ -149,13 +148,12 @@ struct
 	  = List.fold
 	    (chunks,
 	     [],
-	     fn (Machine.Chunk.T {entries,gcReturns,...}, l)
-	      => List.fold(entries @ gcReturns,
-			   l,
-			   fn (label, l')
-			    => case frameLayouts label
-				 of NONE => l'
-			          | SOME _ => label::l'))
+	     fn (Machine.Chunk.T {blocks, ...}, l)
+	      => Vector.fold (blocks, l,
+			      fn (Machine.Block.T {kind, label, ...}, l) =>
+			      case Machine.Kind.frameInfoOpt kind of
+				 NONE => l
+			       | SOME fi => (label, fi) :: l))
 
 	local
 	  val shift = let
@@ -181,9 +179,10 @@ struct
 	  val _
 	    = List.foreach
 	      (return_labels,
-	       fn label
+	       fn (label,
+		   Machine.FrameInfo.T {size, frameOffsetsIndex = offsetIndex})
 	        => let
-		     val info as {size, offsetIndex} = valOf (frameLayouts label)
+		      val info = {size = size, offsetIndex = offsetIndex}
 		     val {frameLayoutsIndex, ...}
 		       = HashSet.lookupOrInsert
 		         (table,
@@ -297,16 +296,14 @@ struct
 		   print "EndFloats\n");
 
 	      fun declareFrameOffsets()
-		= List.foreachi
+		= Vector.foreachi
 		  (frameOffsets,
 		   fn (i,l) 
 		    => (print (concat["static ushort frameOffsets",
 				      C.int i,
 				      "[] = {"]);
-			print (C.int(List.length l));
-			List.foreach(l, 
-				     fn i => (print ",";
-					      print (C.int i)));
+			print (C.int (Vector.length l));
+			Vector.foreach (l, fn i => (print ","; print (C.int i)));
 			print "};\n"));
 
 	      fun declareFrameLayouts()
@@ -389,8 +386,7 @@ struct
 	val liveInfo = x86Liveness.LiveInfo.newLiveInfo ()
 	val jumpInfo = x86JumpInfo.newJumpInfo ()
 
-	fun outputChunk (chunk as Machine.Chunk.T {chunkLabel, 
-						   entries, ...},
+	fun outputChunk (chunk as Machine.Chunk.T {blocks, chunkLabel, ...},
 			 print)
 	  = let
 	      val isMain 
@@ -469,7 +465,7 @@ struct
 
 	      val validated_assembly = allocated_assembly
 
-	      val _ = List.foreach(entries, Label.clear)
+	      val _ = Vector.foreach (blocks, Label.clear o Machine.Block.label)
 	      val _ = x86.Immediate.clearAll ()
 	      val _ = x86.MemLoc.clearAll ()
 	    in

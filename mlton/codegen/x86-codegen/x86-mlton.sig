@@ -34,10 +34,6 @@ signature X86_MLTON =
 		   dst : (x86.Operand.t * x86.Size.t) option,
 		   transInfo : transInfo} 
                   -> x86.Block.t' AppendList.t
-    val runtimereturn : {prim : Machine.Prim.t,
-			 label : x86.Label.t, 
-			 transInfo : transInfo}
-                        -> x86.Block.t' AppendList.t
     val prim : {prim : Machine.Prim.t,
 		args : (x86.Operand.t * x86.Size.t) vector,
 		dst : (x86.Operand.t * x86.Size.t) option,

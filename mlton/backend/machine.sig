@@ -188,7 +188,7 @@ signature MACHINE =
 	 sig
 	    datatype t =
 	       T of {(* Index into frameOffsets *)
-		     offsetIndex: int,
+		     frameOffsetsIndex: int,
 		     (* Size of frame in bytes, including return address. *)
 		     size: int}
 
@@ -201,12 +201,15 @@ signature MACHINE =
 	    datatype t =
 	       Cont of {args: Operand.t list,
 			frameInfo: FrameInfo.t}
-	     | CReturn of {arg: Operand.t,
-			   ty: Type.t} option
+	     | CReturn of {dst: Operand.t option,
+			   prim: Prim.t}
 	     | Func of {args: Operand.t list}
 	     | Handler of {offset: int}
 	     | Jump
-	     | Runtime of {frameInfo: FrameInfo.t}
+	     | Runtime of {frameInfo: FrameInfo.t,
+			   prim: Prim.t}
+
+	    val frameInfoOpt: t -> FrameInfo.t option
 	 end
       
       structure Block:
@@ -236,6 +239,10 @@ signature MACHINE =
 	    datatype t =
 	       T of {chunks: Chunk.t list,
 		     floats: (Global.t * string) list,
+		     (* Each vector in frame Offsets is a specifies the offsets
+		      * of live pointers in a stack frame.  A vector is referred
+		      * to by index as the frameOffsetsIndex in a block kind.
+		      *)
 		     frameOffsets: int vector vector,
 		     globals: Type.t -> int,
 		     globalsNonRoot: int,

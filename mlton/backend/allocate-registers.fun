@@ -238,7 +238,7 @@ fun allocate {function = f: Rssa.Function.t,
 			  ; List.foreach (beginNoFormals, forceStack))
 		    | Kind.Handler =>
 			 List.foreach (beginNoFormals, forceStack)
-		    | Kind.Runtime =>
+		    | Kind.Runtime _ =>
 			 List.foreach (beginNoFormals, forceStack)
 		    | _ => ()
 		val _ =
@@ -395,13 +395,7 @@ fun allocate {function = f: Rssa.Function.t,
 		val {begin, beginNoFormals, handlerSlots = hs} = labelLive label
 		val live = getOperands ((begin, hs), false)
 		val liveNoFormals =
-		   getOperands ((beginNoFormals, hs),
-				case kind of
-				   Kind.Cont _ => true
-				 | Kind.CReturn => false
-				 | Kind.Handler => true
-				 | Kind.Normal => false
-				 | Kind.Runtime => true)
+		   getOperands ((beginNoFormals, hs), R.Kind.isOnStack kind)
 		val stack =
 		   Stack.new (List.fold (liveNoFormals, [], fn (oper, ac) =>
 					 case Operand.deStackOffset oper of

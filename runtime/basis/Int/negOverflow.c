@@ -1,12 +1,10 @@
 #include "mlton-basis.h"
 #include "my-lib.h"
 
-Bool Int_negOverflow(Int n, Int *res) {
+Int Int_negOverflow(Int n, Bool *overflow) {
 	long long	tmp;
 
 	tmp = -(long long)n;
-	if (tmp != (int)tmp)
-		return (TRUE);
-	*res = tmp;
-	return (FALSE);
+	*overflow = (tmp != (int)tmp);
+	return tmp;
 }

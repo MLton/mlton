@@ -203,16 +203,7 @@ fun toMachine (program: Ssa.Program.t) =
 	  in
 	     Vector.foreach
 	     (blocks, fn R.Block.T {kind, label, ...} =>
-	      if let
-		    datatype z = datatype R.Kind.t
-		 in
-		    (case kind of
-			Cont _ => true
-		      | CReturn => false
-		      | Handler => true
-		      | Normal => false
-		      | Runtime => true)
-		 end
+	      if R.Kind.isOnStack kind
 		 then Chunk.addEntry (labelChunk label, label)
 	      else ())
 	  end)
@@ -699,19 +690,17 @@ fun toMachine (program: Ssa.Program.t) =
 				dsts = Vector.map (args, varOperand o #1),
 				srcs = srcs})
 			   end
-		      | R.Kind.CReturn =>
+		      | R.Kind.CReturn {prim} =>
 			   let
-			      val ret =
+			      val dst =
 				 if 0 < Vector.length args
-				    then
-				       let
-					  val (x, t) = Vector.sub (args, 0)
-				       in
-					  SOME {arg = varOperand x, ty = t}
-				       end
+				    then SOME (varOperand
+					       (#1 (Vector.sub (args, 0))))
 				 else NONE
 			   in
-			      (M.Kind.CReturn ret, Vector.new0 ())
+			      (M.Kind.CReturn {dst = dst,
+					       prim = prim},
+			       Vector.new0 ())
 			   end
 		      | R.Kind.Handler =>
 			   let
@@ -728,8 +717,9 @@ fun toMachine (program: Ssa.Program.t) =
 					(Vector.map (dsts, M.Operand.ty)))})
 			   end
 		      | R.Kind.Normal => (M.Kind.Jump, Vector.new0 ())
-		      | R.Kind.Runtime =>
-			   (M.Kind.Runtime {frameInfo = M.FrameInfo.bogus},
+		      | R.Kind.Runtime {prim} =>
+			   (M.Kind.Runtime {frameInfo = M.FrameInfo.bogus,
+					    prim = prim},
 			    Vector.new0 ())
 		  val statements = Vector.concat [pre, statements, preTransfer]
 	       in
@@ -774,9 +764,7 @@ fun toMachine (program: Ssa.Program.t) =
 	   in List.push (frameOffsets, IntSet.toList offsets)
 	      ; index
 	   end))
-      val getFrameLayoutOffsetIndex = get o IntSet.fromList
-      val {get = frameInfo: Label.t -> M.FrameInfo.t,
-	   set = setFrameInfo, ...} = 
+      val {get = frameInfo: Label.t -> M.FrameInfo.t, set = setFrameInfo, ...} = 
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("frameInfo", Label.layout))
       val _ =
@@ -785,7 +773,7 @@ fun toMachine (program: Ssa.Program.t) =
 	  setFrameInfo
 	  (return,
 	   M.FrameInfo.T {size = size,
-			  offsetIndex = getFrameLayoutOffsetIndex offsets}))
+			  frameOffsetsIndex = get (IntSet.fromList offsets)}))
       (* Reverse the list of frameOffsets because offsetIndex 
        * is from back of list.
        *)
@@ -799,7 +787,8 @@ fun toMachine (program: Ssa.Program.t) =
 	       case kind of
 		  Cont {args, ...} => Cont {args = args,
 					    frameInfo = frameInfo label}
-		| Runtime _ => Runtime {frameInfo = frameInfo label}
+		| Runtime {prim, ...} => Runtime {frameInfo = frameInfo label,
+						  prim = prim}
 		| _ => kind
 	 in
 	    M.Block.T {kind = kind,

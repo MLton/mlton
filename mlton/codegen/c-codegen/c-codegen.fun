@@ -67,8 +67,9 @@ structure C =
 					     fn x => (print ", "; print x))))
 	    ; print ")")
 
-      fun call (f, xs, print) = (callNoSemi (f, xs, print)
-                                ; print ";\n")
+      fun call (f, xs, print) =
+	 (callNoSemi (f, xs, print)
+	  ; print ";\n")
 
       fun int (n: int): string =
 	 if n >= 0
@@ -290,12 +291,8 @@ fun output {program = Machine.Program.T {chunks,
       fun labelFrameInfo (l: Label.t): FrameInfo.t option =
 	 let
 	    val {block = Block.T {kind, ...}, ...} = labelInfo l
-	    datatype z = datatype Kind.t
 	 in
-	    case kind of
-	       Cont {frameInfo, ...} => SOME frameInfo
-	     | Runtime {frameInfo, ...} => SOME frameInfo
-	     | _ => NONE
+	    Kind.frameInfoOpt kind
 	 end
       val {print, done, ...} = outputC ()
       fun outputIncludes () =
@@ -380,13 +377,11 @@ fun output {program = Machine.Program.T {chunks,
       fun declareFrameLayouts () =
 	 make ("GC_frameLayout frameLayouts []", fn l =>
 	       let
-		  val {size, offsetIndex} =
+		  val (size, offsetIndex) =
 		     case labelFrameInfo l of
-			NONE => {size = "0", 
-				 offsetIndex = "NULL"} 
-		      | SOME (FrameInfo.T {size, offsetIndex}) =>
-			   {size = C.int size, 
-			    offsetIndex = "frameOffsets" ^ C.int offsetIndex}
+			NONE => ("0", "NULL")
+		      | SOME (FrameInfo.T {size, frameOffsetsIndex}) =>
+			   (C.int size, "frameOffsets" ^ C.int frameOffsetsIndex)
 	       in 
 		  print (concat ["{", size, ",", offsetIndex, "}"])
 	       end)
@@ -492,12 +487,10 @@ fun output {program = Machine.Program.T {chunks,
 		     case kind of
 			Kind.Cont {frameInfo, ...} =>
 			   Statement.push (~ (FrameInfo.size frameInfo), print)
-		      | Kind.CReturn opt =>
-			   (case opt of
-			       NONE => ()
-			     | SOME {arg, ty} => 
-				  print (concat [Operand.toString arg, " = ",
-						 creturn ty]))
+		      | Kind.CReturn {dst, ...} =>
+			   Option.app (dst, fn x =>
+				       print (concat [Operand.toString x, " = ",
+						      creturn (Operand.ty x)]))
 		      | Kind.Func {args} => ()
 		      | Kind.Handler {offset} =>
 			   Statement.push (~ offset, print)

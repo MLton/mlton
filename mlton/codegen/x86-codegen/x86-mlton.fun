@@ -4608,63 +4608,6 @@ struct
 	     | _ => Error.bug ("runtimecall: strange Prim.Name.t: " ^ primName))]
       end
 
-  fun runtimereturn {prim : Machine.Prim.t,
-		     label : Label.t,
-		     transInfo as {frameLayouts, live, liveInfo, ...} : transInfo}
-    = let
-	val primName = Prim.toString prim
-	datatype z = datatype Prim.Name.t
-
-	fun default ()
-	  = let
-	      val _ = x86Liveness.LiveInfo.setLiveOperands
-	              (liveInfo, label, live label)
-	      val frameInfo
-		= case frameLayouts label
-		    of NONE => Error.bug "runtimereturn: frameInfo"
-		     | SOME {size, frameLayoutsIndex}
-		     => Entry.FrameInfo.frameInfo 
-		        {size = size,
-			 frameLayoutsIndex = frameLayoutsIndex}
-	    in 
-	      AppendList.single
-	      (x86.Block.T'
-	       {entry = SOME (Entry.runtime {label = label,
-					     frameInfo = frameInfo}),
-		profileInfo = ProfileInfo.none,
-		statements = [],
-		transfer = NONE})
-	    end
-
-	val comment_end
-	  = if !Control.Native.commented > 0
-	      then let
-		     val comment = primName
-		   in
-		     AppendList.single
-		     (x86.Block.T'
-		      {entry = NONE,
-		       profileInfo = x86.ProfileInfo.none,
-		       statements 
-		       = [x86.Assembly.comment 
-			  ("end runtimereturn: " ^ comment)],
-		       transfer = NONE})
-		   end
-	      else AppendList.empty
-      in
-	AppendList.appends
-	[(case Prim.name prim
-	    of GC_collect => default ()
-	     | MLton_halt => default ()
-	     | Thread_copy => default ()
-	     | Thread_copyCurrent => default ()
-	     | Thread_finishHandler => default ()
-	     | Thread_switchTo => default ()
-	     | World_save => default ()
-	     | _ => Error.bug ("runtimereturn: strange Prim.Name.t: " ^ primName)),
-	 comment_end]
-      end
-
   fun arith {prim : Prim.t,
 	     args : (Operand.t * Size.t) vector,
 	     dst : (Operand.t * Size.t),
