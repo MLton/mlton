@@ -33,6 +33,9 @@ GLUT_STRUCT = GLUT.sml
 GLUT_SML = $(GLUT_STRUCT) $(GLUT_SIG)
 GLUT_C   = GLUT_c.c GLUT_h.h
 
+GL_OBJS  = GL_c.o GLUT_c.o
+
+
 .PHONY: all
 all:  gl glu glut test
 
@@ -83,33 +86,33 @@ GLUT_c.o: $(GLUT_C)
 
 test: shortest hello solar atom triangle spin_cube blender molehill bits
 
-shortest: $(GLUT_SML) $(GL_SML) shortest.sml
-	mlton $(GL_LINK_OPTS) shortest.cm GL_c.c GLUT_c.c
+shortest: $(GLUT_SML) $(GL_SML) $(GL_OBJS) shortest.sml
+	$(mlton) $(GL_LINK_OPTS) shortest.cm $(GL_OBJS)
 
-hello: $(GLUT_SML) $(GLU_SML) $(GL_SML) hello.sml
-	mlton $(GL_LINK_OPTS) hello.cm GL_c.c GLUT_c.c
+hello: $(GLUT_SML) $(GLU_SML) $(GL_SML) $(GL_OBJS) hello.sml
+	$(mlton) $(GL_LINK_OPTS) hello.cm $(GL_OBJS)
 
-solar: $(GLUT_SML) $(GLU_SML) $(GL_SML) solar.sml
-	mlton $(GL_LINK_OPTS) solar.cm GL_c.c GLUT_c.c
+solar: $(GLUT_SML) $(GLU_SML) $(GL_SML) $(GL_OBJS) solar.sml
+	$(mlton) $(GL_LINK_OPTS) solar.cm $(GL_OBJS)
 
-atom: $(GLUT_SML) $(GLU_SML) $(GL_SML) atom.sml
-	mlton $(GL_LINK_OPTS) atom.cm GL_c.c GLUT_c.c
+atom: $(GLUT_SML) $(GLU_SML) $(GL_SML) $(GL_OBJS) atom.sml
+	$(mlton) $(GL_LINK_OPTS) atom.cm $(GL_OBJS)
 
-bits: $(GLUT_SML) $(GLU_SML) $(GL_SML) bits.sml
-	mlton $(GL_LINK_OPTS) bits.cm Gl_c.c Glut_c.c
+bits: $(GLUT_SML) $(GLU_SML) $(GL_SML) $(GL_OBJS) bits.sml
+	$(mlton) $(GL_LINK_OPTS) bits.cm $(GL_OBJS)
 
-triangle: $(GLUT_SML) $(GLU_SML) $(GL_SML) triangle.sml
-	mlton $(GL_LINK_OPTS) triangle.cm GL_c.c GLUT_c.c
+triangle: $(GLUT_SML) $(GLU_SML) $(GL_SML) $(GL_OBJS) triangle.sml
+	$(mlton) $(GL_LINK_OPTS) triangle.cm $(GL_OBJS)
 
-spin_cube: $(GLUT_SML) $(GLU_SML) $(GL_SML) spin_cube.sml
-	mlton $(GL_LINK_OPTS) spin_cube.cm GL_c.c GLUT_c.c
+spin_cube: $(GLUT_SML) $(GLU_SML) $(GL_SML) $(GL_OBJS) spin_cube.sml
+	$(mlton) $(GL_LINK_OPTS) spin_cube.cm $(GL_OBJS)
 
-blender: $(GLUT_SML) $(GLU_SML) $(GL_SML) blender.sml
-	mlton $(GL_LINK_OPTS) blender.cm GL_c.c GLUT_c.c
+blender: $(GLUT_SML) $(GLU_SML) $(GL_SML) $(GL_OBJS) blender.sml
+	$(mlton) $(GL_LINK_OPTS) blender.cm $(GL_OBJS)
 
-molehill: $(GLUT_SML) $(GLU_SML) $(GL_SML) molehill.sml
-	mlton $(GL_LINK_OPTS) molehill.cm GL_c.c GLUT_c.c
+molehill: $(GLUT_SML) $(GLU_SML) $(GL_SML) $(GL_OBJS) molehill.sml
+	$(mlton) $(GL_LINK_OPTS) molehill.cm $(GL_OBJS)
 
+.PHONY: clean
 clean:
-	rm -f *_h.h *.stackdump *~ *.o *.exe Glut *.a hello shortest atom solar triangle spin_cube blender molehill bits
-
+	../../../bin/clean
