@@ -253,24 +253,46 @@ structure IntInf: INT_INF_EXTRA =
 		 end
 	 else Prim.~ (arg, reserve (1 +? bigSize arg))
 
+      val dontInline: (unit -> 'a) -> 'a =
+	 fn f =>
+	 let
+	    val rec recur: int -> 'a =
+	       fn i =>
+	       if i = 0
+		  then f ()
+	       else (ignore (recur (i - 1))
+		     ; recur (i - 2))
+	 in
+	    recur 0
+	 end
+	    
       (*
        * bigInt multiplication.
        *)
-      local fun expensive (lhs: bigInt, rhs: bigInt): bigInt =
-	 let val tsize = size lhs +? size rhs
-	 in Prim.* (lhs, rhs, reserve tsize)
-	 end
-	    val carry: Word.word ref = ref 0w0
-      in fun bigMul (lhs: bigInt, rhs: bigInt): bigInt =
-	 if areSmall (lhs, rhs)
-	    then let val lhsv = stripTag lhs
-		     val rhs0 = zeroTag rhs
-		     val ans0 = Prim.smallMul (lhsv, rhs0, carry)
-		 in if (! carry) = Word.~>> (ans0, 0w31)
-		       then Prim.fromWord (incTag ans0)
-		    else expensive (lhs, rhs)
-		 end
-	 else expensive (lhs, rhs)
+      local 
+	 val carry: Word.word ref = ref 0w0
+      in
+	 fun bigMul (lhs: bigInt, rhs: bigInt): bigInt =
+	    let
+	       val res =
+		  if areSmall (lhs, rhs)
+		     then let
+			     val lhsv = stripTag lhs
+			     val rhs0 = zeroTag rhs
+			     val ans0 = Prim.smallMul (lhsv, rhs0, carry)
+			  in
+			     if (! carry) = Word.~>> (ans0, 0w31)
+				then SOME (Prim.fromWord (incTag ans0))
+			     else NONE
+			  end
+		  else NONE
+	    in
+	       case res of
+		  NONE =>
+		     dontInline
+		     (fn () => Prim.* (lhs, rhs, reserve (size lhs +? size rhs)))
+		| SOME i => i
+	    end
       end
 
       (*
@@ -347,45 +369,55 @@ structure IntInf: INT_INF_EXTRA =
       (*
        * bigInt addition.
        *)
-      local fun expensive (lhs: bigInt, rhs: bigInt): bigInt =
-	 let val tsize = Int.max (size lhs, size rhs) +? 1
-	 in Prim.+ (lhs, rhs, reserve tsize)
+      fun bigPlus (lhs: bigInt, rhs: bigInt): bigInt =
+	 let
+	    val res =
+	       if areSmall (lhs, rhs)
+		  then let val ansv = Word.+ (stripTag lhs, stripTag rhs)
+			   val ans = addTag ansv
+		       in if sameSign (ans, ansv)
+			     then SOME (Prim.fromWord ans)
+			  else NONE
+		       end
+	       else NONE
+	 in
+	    case res of
+	       NONE => 
+		  dontInline
+		  (fn () =>
+		   Prim.+ (lhs, rhs,
+			   reserve (Int.max (size lhs, size rhs) +? 1)))
+	     | SOME i => i
 	 end
-      in fun bigPlus (lhs: bigInt, rhs: bigInt): bigInt =
-	 if areSmall (lhs, rhs)
-	    then let val ansv = Word.+ (stripTag lhs, stripTag rhs)
-		     val ans = addTag ansv
-		 in if sameSign (ans, ansv)
-		       then Prim.fromWord ans
-		    else expensive (lhs, rhs)
-		 end
-	 else expensive (lhs, rhs)
-      end
 
       (*
        * bigInt subtraction.
        *)
-      local
-	 fun expensive (lhs: bigInt, rhs: bigInt): bigInt =
-	    let
-	       val tsize = Int.max (size lhs, size rhs) +? 1
-	    in
-	       Prim.- (lhs, rhs, reserve tsize)
-	    end
-      in
-	 fun bigMinus (lhs: bigInt, rhs: bigInt): bigInt =
-	    if areSmall (lhs, rhs)
-	       then
-		  let
-		     val ansv = Word.- (stripTag lhs, stripTag rhs)
-		     val ans = addTag ansv
-		  in
-		     if sameSign (ans, ansv)
-			then Prim.fromWord ans
-		     else expensive (lhs, rhs)
-		  end
-	    else expensive (lhs, rhs)
-      end
+      fun bigMinus (lhs: bigInt, rhs: bigInt): bigInt =
+	 let
+	    val res =
+	       if areSmall (lhs, rhs)
+		  then
+		     let
+			val ansv = Word.- (stripTag lhs, stripTag rhs)
+			val ans = addTag ansv
+		     in
+			if sameSign (ans, ansv)
+			   then SOME (Prim.fromWord ans)
+			else NONE
+		     end
+	       else NONE
+	 in
+	    case res of
+	       NONE =>
+		  dontInline (fn () =>
+			      let
+				 val tsize = Int.max (size lhs, size rhs) +? 1
+			      in
+				 Prim.- (lhs, rhs, reserve tsize)
+			      end)
+	     | SOME i => i
+	 end
 
       (*
        * bigInt compare.
@@ -468,13 +500,6 @@ structure IntInf: INT_INF_EXTRA =
       local
 	 open Int
 
-	 fun expensive (lhs: bigInt, rhs: bigInt): bigInt =
-	    let
-	       val tsize = max (size lhs, size rhs)
-	    in
-	       Prim.gcd (lhs, rhs, reserve tsize)
-	    end
-	 
 	 fun mod2 x = Word.toIntX (Word.andb (Word.fromInt x, 0w1))
 	 fun div2 x = Word.toIntX (Word.>> (Word.fromInt x, 0w1))
 	    
@@ -516,9 +541,9 @@ structure IntInf: INT_INF_EXTRA =
 		  (addTag
 		   (Word.fromInt
 		    (gcdInt (Int.abs (Word.toIntX (stripTag lhs)),
-			     Int.abs (Word.toIntX(stripTag rhs)),
+			     Int.abs (Word.toIntX (stripTag rhs)),
 			     1))))
-	    else expensive (lhs, rhs)
+	    else Prim.gcd (lhs, rhs, reserve (max (size lhs, size rhs)))
       end
 
       (*
@@ -896,61 +921,44 @@ structure IntInf: INT_INF_EXTRA =
       (* 
        * bigInt bit operations.
        *)
-      local fun make (wordOp, bigIntOp): bigInt * bigInt -> bigInt =
-	 let fun expensive (lhs: bigInt, rhs: bigInt): bigInt =
-	    let val tsize = Int.max (size lhs, size rhs)
-	    in bigIntOp (lhs, rhs, reserve tsize)
-	    end
-	 in fn (lhs: bigInt, rhs: bigInt) =>
+      local
+	 fun make (wordOp, bigIntOp): bigInt * bigInt -> bigInt =
+	    fn (lhs: bigInt, rhs: bigInt) =>
 	    if areSmall (lhs, rhs)
-	       then let val ansv = wordOp (stripTag lhs, stripTag rhs)
-			val ans = addTag ansv
-		    in Prim.fromWord ans
-		    end
-	    else expensive (lhs, rhs)
-	 end
+	       then
+		  let val ansv = wordOp (stripTag lhs, stripTag rhs)
+		     val ans = addTag ansv
+		  in Prim.fromWord ans
+		  end
+	    else
+	       dontInline
+	       (fn () => 
+		bigIntOp (lhs, rhs, reserve (Int.max (size lhs, size rhs))))
       in
-	val bigAndb = make (Word.andb, Prim.andb)
-	val bigOrb = make (Word.orb, Prim.orb)
-	val bigXorb = make (Word.xorb, Prim.xorb)
+	 val bigAndb = make (Word.andb, Prim.andb)
+	 val bigOrb = make (Word.orb, Prim.orb)
+	 val bigXorb = make (Word.xorb, Prim.xorb)
       end
 
-      local fun expensive (arg: bigInt): bigInt =
-	 let val tsize = size arg
-	 in Prim.notb (arg, reserve tsize)
-	 end
-      in fun bigNotb (arg: bigInt): bigInt =
+      fun bigNotb (arg: bigInt): bigInt =
 	 if isSmall arg
-	    then let val ansv = Word.notb (stripTag arg)
-	             val ans = addTag ansv
-		 in Prim.fromWord ans
-		 end
-	 else expensive arg
-      end
+	    then Prim.fromWord (addTag (Word.notb (stripTag arg)))
+	 else dontInline (fn () => Prim.notb (arg, reserve (size arg)))
 
       local
 	 val bitsPerLimb : Word.word = 0w32
 	 fun shiftSize shift = Word.toIntX (Word.div (shift, bitsPerLimb))
       in
-      local fun expensive (arg: bigInt, shift: word): bigInt =
-	 let val tsize = Int.max (1, (size arg) -? (shiftSize shift))
-	 in Prim.~>> (arg, shift, reserve tsize)
-	 end
-      in fun bigArshift (arg: bigInt, shift: word): bigInt =
-	 if shift = 0wx0
-	    then arg
-	 else expensive (arg, shift)
-      end
+	 fun bigArshift (arg: bigInt, shift: word): bigInt =
+	    if shift = 0wx0
+	       then arg
+	    else Prim.~>> (arg, shift,
+			   reserve (Int.max (1, size arg -? shiftSize shift)))
 
-      local fun expensive (arg: bigInt, shift: word): bigInt =
-	 let val tsize = (size arg) +? (shiftSize shift) +? 1
-	 in Prim.<< (arg, shift, reserve tsize)
-	 end
-      in fun bigLshift (arg: bigInt, shift: word): bigInt =
-	 if shift = 0wx0
-	    then arg
-	 else expensive (arg, shift)
-      end
+	 fun bigLshift (arg: bigInt, shift: word): bigInt =
+	    if shift = 0wx0
+	       then arg
+	    else Prim.<< (arg, shift, reserve (size arg +? shiftSize shift +? 1))
       end
    
       type int = bigInt
