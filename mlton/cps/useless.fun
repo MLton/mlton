@@ -537,7 +537,7 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 							    Value.unify)
 	  | _ => ()}))
       val _ =
-	 Control.diagnostic
+	 Control.diagnostics
 	 (fn display =>
 	  let open Layout
 	  in

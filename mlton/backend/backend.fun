@@ -106,7 +106,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
    let
       val {tyconRep, conRep, toMtype} = Representation.compute program
       val _ =
-	 Control.diagnostic
+	 Control.diagnostics
 	 (fn display =>
 	  (display (Layout.str "Representations:")
 	   ; (Vector.foreach
@@ -131,7 +131,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
       val chunks = Chunkify.chunkify {program = program,
 				      jumpHandlers = jumpHandlers}
       val _ = 
-	 Control.diagnostic
+	 Control.diagnostics
 	 (fn display =>
 	  (display (Layout.str "Chunkification:")
 	   ; (List.foreach

@@ -398,7 +398,7 @@ fun allocate {program = program as Program.T {globals, functions, ...},
 	 Vector.foreach (functions, fn Function.T {name, args, body, ...} =>
 			 allocateFunc (name, args, body))
       val _ =
-	 Control.diagnostic
+	 Control.diagnostics
 	 (fn display =>
 	  let
 	     open Layout

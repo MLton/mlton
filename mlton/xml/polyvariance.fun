@@ -194,7 +194,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
       fun sort l =
 	 List.insertionSort (l, fn ((_, _, _, c), (_, _, _, c')) => c < c')
       val _ =
-	 Control.diagnostic
+	 Control.diagnostics
 	 (fn layout => 
 	  List.foreach
 	  (sort (!costs), fn (x, size, numOcc, c) =>

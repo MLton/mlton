@@ -202,33 +202,6 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 		  else List.push (#children (nodeInfo (idom n)), n)
 		  ; List.foreach (Node.successors n, fn e =>
 				  Int.inc (#numPreds (nodeInfo (Edge.to e))))))
-	     local
-		val g = Graph.new ()
-		val {get = nodeNode} =
-		   Property.get
-		   (Node.plist, Property.initFun (fn _ => Graph.newNode g))
-	     in
-		val _ =
-		   List.foreach
-		   (Graph.nodes graph, fn n =>
-		    let
-		       val m = nodeNode n
-		    in
-		       List.foreach (! (#children (nodeInfo n)), fn n' =>
-				     (Graph.addEdge (g, {from = m,
-							 to = nodeNode n'})
-				      ; ()))
-		    end)
-		val _ =
-		   Control.diagnostic
-		   (fn disp =>
-		    disp (Graph.LayoutDot.layout
-			  {graph = g,
-			   title = "dominator tree",
-			   options = [],
-			   edgeOptions = fn _ => [],
-			   nodeOptions = fn _ => []}))
-	     end				     
 	     fun loopTransfer (t, n: Node.t) =
 		case t of
 		   Case {test, cases, default, ...} =>
@@ -330,7 +303,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 	     val _ = loop (root, NONE)
 	     (* Diagnostic. *)
 	     val _ = 
-		Control.diagnostic
+		Control.diagnostics
 		(fn display =>
 		 Exp.foreachDec
 		 (body,
@@ -366,11 +339,12 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 			     let
 				fun doit x =
 				   (Int.inc numSimplified
-				    ; let open Layout
-				      in outputl (seq [Var.layout var, str " ",
-						       Var.layout x],
-						  Out.error)
-				      end
+				    ; (Control.diagnostic
+				       (fn () =>
+					let open Layout
+					in seq [Var.layout var, str " ",
+						Var.layout x]
+					end))
 				    ; Bind {var = var, ty = ty,
 					    exp = Var x})
 				fun falsee () = doit falseVar
@@ -414,9 +388,9 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
       val functions = Vector.map (functions, simplifyFunction)
       val _ =
 	 Control.diagnostic
-	 (fn disp =>
+	 (fn () =>
 	  let open Layout
-	  in disp (seq [str "numSimplified = ", Int.layout (!numSimplified)])
+	  in seq [str "numSimplified = ", Int.layout (!numSimplified)]
 	  end)
       val program = 
 	 Program.T {datatypes = datatypes,

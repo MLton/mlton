@@ -107,7 +107,7 @@ fun once (program as Program.T {globals, functions, main, ...}) =
 	    loop (body, vars, n, [])
 	 end
       val _ =
-	 Control.diagnostic
+	 Control.diagnostics
 	 (fn display =>
 	  (display (Exp.layout body)
 	   ; display (Layout.str "\n\n")
@@ -131,7 +131,7 @@ fun once (program as Program.T {globals, functions, main, ...}) =
 	   | _ => ())
       val _ = Vector.foreach (globals, fn {var, ...} => setOnce (var, true))
       val _ =
-	 Control.diagnostic
+	 Control.diagnostics
 	 (fn display =>
 	  Exp.foreachVar (body, fn (x, _) =>
 			  if once x then display (Var.layout x)

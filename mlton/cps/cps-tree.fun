@@ -1355,40 +1355,31 @@ structure Function =
 	 fun layoutDot (T {name, args, body, returns}, jumpHandlers, global) =
 	    let
 	       open Graph.LayoutDot
-	       val g = Graph.new ()
+	       val graph = Graph.new ()
 	       val {get = nodeOptions, ...} =
-		  Property.get
-		  (Node.plist, Property.initFun (fn _ => ref []))
-	       fun newNode () =
-		  let
-		     val n = Graph.newNode g
-		     val _ = List.push (nodeOptions n,
-					NodeOption.Shape Box)
-		  in n
-		  end
+		  Property.get (Node.plist, Property.initFun (fn _ => ref []))
+	       fun label (n: Node.t, s: string): unit =
+		  List.push (nodeOptions n, NodeOption.Label s)
+	       fun newNode () = Graph.newNode graph
 	       val {destroy, get = jumpNode} =
-		  Property.destGet
-		  (Jump.plist, Property.initFun (fn _ => newNode ()))
+		  Property.destGet (Jump.plist,
+				    Property.initFun (fn _ => newNode ()))
 	       val {get = edgeOptions, set = setEdgeOptions} =
-		  Property.getSetOnce
-		  (Edge.plist, Property.initConst [])
-	       fun addEdge (from, to, opts) =
-		  let
-		     val e = Graph.addEdge (g, {from = from,
-						to = jumpNode to})
-		     val _ = setEdgeOptions (e, opts)
-		  in
-		     ()
-		  end
+		  Property.getSetOnce (Edge.plist, Property.initConst [])
 	       fun loop (e: Exp.t, from: Node.t, handlers, name: string) =
 		  let
 		     val {decs, transfer} = Exp.dest e
-		     fun edge (j: Jump.t,
+		     fun edge (to: Jump.t,
 			       label: string,
 			       style: style): unit =
-			addEdge (from, j,
-				 [EdgeOption.Label label,
-				  EdgeOption.Style style])
+			let
+			   val e = Graph.addEdge (graph, {from = from,
+							  to = jumpNode to})
+			   val _ = setEdgeOptions (e, [EdgeOption.Label label,
+						       EdgeOption.Style style])
+			in
+			   ()
+			end
 		     val rest =
 			case transfer of
 			   Bug => ["bug"]
@@ -1415,16 +1406,11 @@ structure Function =
 				     edge (j, toString x, Solid))
 				 val _ =
 				    case cases of
-				       Cases.Char v =>
-					  doit (v, Char.toString)
-				     | Cases.Con v =>
-					  doit (v, Con.toString)
-				     | Cases.Int v =>
-					  doit (v, Int.toString)
-				     | Cases.Word v =>
-					  doit (v, Word.toString)
-				     | Cases.Word8 v =>
-					  doit (v, Word8.toString)
+				       Cases.Char v => doit (v, Char.toString)
+				     | Cases.Con v => doit (v, Con.toString)
+				     | Cases.Int v => doit (v, Int.toString)
+				     | Cases.Word v => doit (v, Word.toString)
+				     | Cases.Word8 v => doit (v, Word8.toString)
 				 val _ = 
 				    case default of
 				       NONE => ()
@@ -1476,25 +1462,43 @@ structure Function =
 			  | HandlerPop => "HandlerPop\\l" :: ac
 			  | HandlerPush l =>
 			       ["HandlerPush ", Jump.toString l, "\\l"] @ ac)
-		     val _ = 
-			List.push
-			(nodeOptions from,
-			 NodeOption.Label (concat (name :: "\\l" :: lab)))
+		     val _ = label (from, concat (name :: "\\l" :: lab))
 		  in
 		     ()
 		  end
 	       val root = newNode ()
 	       val _ = loop (body, root, [], Func.toString name)
-	       val l =
+	       val graphLayout =
 		  Graph.LayoutDot.layout
-		  {graph = g,
+		  {graph = graph,
 		   title = Func.toString name,
 		   options = [GraphOption.Rank (Min, [root])],
 		   edgeOptions = edgeOptions,
+		   nodeOptions =
+		   fn n => let val l = ! (nodeOptions n)
+			   in NodeOption.Shape Box :: l
+			   end}
+	       val {tree, graphToTree} =
+		  Graph.dominatorTree {graph = graph, root = root}
+	       val _ =
+		  Exp.foreachDec
+		  (body, fn d =>
+		   case d of
+		      Fun {name, ...} =>
+			 label (graphToTree (jumpNode name), Jump.toString name)
+		    | _ => ())
+	       val _ = label (graphToTree root, Func.toString name)
+	       val treeLayout =
+		  Graph.LayoutDot.layout
+		  {graph = tree,
+		   title = concat [Func.toString name, " dominator tree"],
+		   options = [],
+		   edgeOptions = fn _ => [],
 		   nodeOptions = ! o nodeOptions}
 	       val _ = destroy ()
 	    in
-	       l
+	       {graph = graphLayout,
+		tree = treeLayout}
 	    end
       end
    
@@ -1504,12 +1508,19 @@ structure Function =
 	    val _ =
 	       if !Control.keepDot
 		  then
-		     File.withOut
-		     (concat [!Control.inputFile, ".",
-			      Func.toString name, ".dot"],
-		      fn out =>
-		      Layout.outputl (layoutDot (func, jumpHandlers, global),
-				      out))
+		     let
+			val {graph, tree} =
+			   layoutDot (func, jumpHandlers, global)
+			fun doit (s, g) =
+			   File.withOut
+			   (concat [!Control.inputFile, ".", Func.toString name,
+				    ".", s, ".dot"],
+			    fn out => Layout.outputl (g, out))
+			val _ = doit ("cfg", graph)
+			val _ = doit ("dom", tree)
+		     in
+			()
+		     end
 	       else ()
 	    open Layout
 	 in align [seq [str "fun ",
@@ -1646,7 +1657,7 @@ structure Program =
 			      title: string): Layout.t =
 	    let
 	       open Graph.LayoutDot
-	       val g = Graph.new ()
+	       val graph = Graph.new ()
 	       val {get = nodeOptions, set = setNodeOptions, ...} =
 		  Property.getSetOnce
 		  (Node.plist, Property.initRaise ("options", Node.layout))
@@ -1655,7 +1666,7 @@ structure Program =
 		  (Func.plist, Property.initFun
 		   (fn f =>
 		    let
-		       val n = Graph.newNode g
+		       val n = Graph.newNode graph
 		       val _ = setNodeOptions (n, [NodeOption.Label
 						   (Func.toString f)])
 		    in
@@ -1685,7 +1696,8 @@ structure Program =
 				then ()
 			     else (r := true
 				   ; (setEdgeOptions
-				      (Graph.addEdge (g, {from = from, to = to}),
+				      (Graph.addEdge (graph,
+						      {from = from, to = to}),
 				       if isSome cont
 					  then []
 				       else [EdgeOption.Style Dotted])))
@@ -1696,7 +1708,7 @@ structure Program =
 		   end)
 	       val l =
 		  Graph.LayoutDot.layout
-		  {graph = g,
+		  {graph = graph,
 		   title = title,
 		   options = [],
 		   edgeOptions = edgeOptions,

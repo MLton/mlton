@@ -751,7 +751,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main})
 		  useFromTypeOnBinds = false
 		  }
       val _ =
-	 Control.diagnostic
+	 Control.diagnostics
 	 (fn display =>
 	  let open Layout
 	  in 

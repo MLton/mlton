@@ -70,7 +70,7 @@ fun raiseToJump (program as Program.T {datatypes, globals, functions, main}) =
 	  in loopExp (body, [])
 	  end)
       val _ =
-	 Control.diagnostic
+	 Control.diagnostics
 	 (fn display =>
 	  let open Layout
 	  in Vector.foreach (functions, fn Function.T {name, ...} =>

@@ -207,19 +207,19 @@ fun nonRecursive (program as Program.T {functions, ...}, {size: int option}) =
 	   | ns => List.foreach (ns, fn n =>
 				 #shouldInline (funcInfo (nodeFunc n)) := false))
       val _ =
-	 Control.diagnostic
-	 (fn layout =>
+	 Control.diagnostics
+	 (fn disp =>
 	  let open Layout
 	  in Vector.foreach
 	     (functions, fn Function.T {name, body, ...} =>
 	      let val {shouldInline, numCalls, ...} = funcInfo name
-	      in layout (seq [Func.layout name, str " ",
-			      Int.layout (expSize body), str " ",
-			      Int.layout (!numCalls), str " ",
-			      Int.layout (expSize body * !numCalls), str " ",
-			      Bool.layout (!shouldInline)])
+	      in disp (seq [Func.layout name, str " ",
+			    Int.layout (expSize body), str " ",
+			    Int.layout (!numCalls), str " ",
+			    Int.layout (expSize body * !numCalls), str " ",
+			    Bool.layout (!shouldInline)])
 	      end)
-	     ; Program.layouts (program, layout)
+	     ; Program.layouts (program, disp)
 	  end)
    in
       ! o #shouldInline o funcInfo
@@ -348,18 +348,18 @@ fun product (program as Program.T {functions, ...},
 	   | _ => ())
 
       val _ =
-	 Control.diagnostic
-	 (fn layout =>
+	 Control.diagnostics
+	 (fn display =>
 	  let open Layout
 	  in Vector.foreach
 	     (functions, fn Function.T {name, body, ...} =>
 	      let val {numCalls, shouldInline, size, ...} = funcInfo name
-	      in layout (seq [Func.layout name, str " ",
-			      Int.layout (!numCalls), str " ",
-			      Int.layout (!size), str " ",
-			      Bool.layout (!shouldInline)])
+	      in display (seq [Func.layout name, str " ",
+			       Int.layout (!numCalls), str " ",
+			       Int.layout (!size), str " ",
+			       Bool.layout (!shouldInline)])
 	      end)
-	     ; Program.layouts (program, layout)
+	     ; Program.layouts (program, display)
 	  end)
    in ! o #shouldInline o funcInfo
    end

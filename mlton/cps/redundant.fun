@@ -155,7 +155,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 	 in ()
 	 end
       val _ = 
-	 Control.diagnostic
+	 Control.diagnostics
 	 (fn display =>
 	  Vector.foreach
 	  (functions, fn Function.T {name, ...} =>

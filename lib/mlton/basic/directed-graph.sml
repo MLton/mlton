@@ -973,4 +973,24 @@ fun dominators {graph, root} =
    in {idom = idom}
    end
 
+fun dominatorTree {graph: t, root: Node.t} =
+   let
+      val {idom} = dominators {graph = graph, root = root}
+      val tree = new ()
+      val {get = graphToTree} =
+	 Property.get (Node.plist, Property.initFun (fn _ => newNode tree))
+      val _ =
+	 List.foreach
+	 (nodes graph, fn n =>
+	  if Node.equals (n, root)
+	     then ()
+	  else (addEdge (tree, {from = graphToTree (idom n),
+				to = graphToTree n})
+		; ()))
+   in
+      {tree = tree,
+       graphToTree = graphToTree}
+   end
+
+
 end

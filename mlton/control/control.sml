@@ -490,10 +490,12 @@ fun 'a sizeMessage (name: string, a: 'a): Layout.t =
 
 val diagnosticWriter: (Layout.t -> unit) option ref = ref NONE
 
-fun diagnostic f =
+fun diagnostics f =
    case !diagnosticWriter of
       NONE => ()
     | SOME w => f w
+
+fun diagnostic f = diagnostics (fn disp => disp (f ()))
 
 fun displays (suffix: string, thunk: (Layout.t -> unit) -> 'a): 'a =
    trace (Pass, "display")

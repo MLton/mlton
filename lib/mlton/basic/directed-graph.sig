@@ -59,7 +59,15 @@ signature DIRECTED_GRAPH =
       val dominators:
 	 {graph: t,
 	  root: Node.t}
-	 -> {idom: Node.t -> Node.t}
+	 ->
+	 (* The immediate dominator of each node.
+	  * The root's immediate dominator is itself.
+	  *)
+	 {idom: Node.t -> Node.t}
+      val dominatorTree:
+	 {graph: t, root: Node.t}
+	 -> {graphToTree: Node.t -> Node.t,
+	     tree: t}
       val foreachDescendent: t * Node.t * (Node.t -> unit) -> unit
       val foreachEdge: t * (Node.t * Edge.t -> unit) -> unit
       val foreachNode: t * (Node.t -> unit) -> unit

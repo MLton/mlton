@@ -148,7 +148,7 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 		end
 	     val _ = loop body
 	     val _ =
-		Control.diagnostic
+		Control.diagnostics
 		(fn display =>
 		 Exp.foreachVar (body, fn (x, _) =>
 				 case varInfo x of

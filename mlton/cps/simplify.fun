@@ -23,21 +23,8 @@ structure SimplifyTypes = SimplifyTypes (S)
 structure UnusedArgs = UnusedArgs (S)
 structure Useless = Useless (S)
 
-fun $ (f, g) x = g (f x)
-infixr $
-
 fun stats p =
    Control.message (Control.Detail, fn () => Program.layoutStats p)
-
-fun typeCheck p =
-   (stats p
-    ; if !Control.typeCheck
-	 then Control.trace (Control.Pass, "typeCheck") typeCheck p
-      else ())
-
-fun trace (name, pass) =
-   Control.trace (Control.Pass, name)
-   (Trace.trace ("Simplify." ^ name, Program.layout, Program.layout) pass)
 
 fun leafInline p =
    Ref.fluidLet
@@ -99,17 +86,24 @@ val passes =
    
 fun simplify p =
    (stats p
-    ; List.fold (passes, p, fn ((name, pass), p) =>
-		 if List.contains (!Control.dropCpsPasses, name, String.equals)
-		    then p
-		 else
-		    Control.passTypeCheck
-		    {name = name,
-		     suffix = "cps",
-		     style = Control.No,
-		     thunk = fn () => pass p,
-		     display = Control.Layouts Program.layouts,
-		     typeCheck = typeCheck}))
+    ; (List.fold
+       (passes, p, fn ((name, pass), p) =>
+	if List.contains (!Control.dropCpsPasses, name, String.equals)
+	   then p
+	else
+	   let
+	      val p =
+		 Control.passTypeCheck
+		 {name = name,
+		  suffix = "cps",
+		  style = Control.No,
+		  thunk = fn () => pass p,
+		  display = Control.Layouts Program.layouts,
+		  typeCheck = typeCheck}
+	      val _ = stats p
+	   in
+	      p
+	   end)))
 
 val typeCheck = S.typeCheck
 

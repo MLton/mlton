@@ -187,7 +187,8 @@ signature CONTROL =
        | Layout of 'a -> Layout.t
        | Layouts of 'a * (Layout.t -> unit) -> unit
 
-      val diagnostic: ((Layout.t -> unit) -> unit) -> unit
+      val diagnostic: (unit -> Layout.t) -> unit
+      val diagnostics: ((Layout.t -> unit) -> unit) -> unit
       val outputHeader: style * (Layout.t -> unit) -> unit
       val outputHeader': style * Out.t -> unit
 
