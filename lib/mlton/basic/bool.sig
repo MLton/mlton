@@ -12,5 +12,6 @@ signature BOOL =
       val equals: t * t -> bool
       val fromString: string -> t option
       val layout: t -> Layout.t
+      val not: t -> t
       val toString: t -> string
    end where type t = bool
