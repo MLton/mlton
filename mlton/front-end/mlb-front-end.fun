@@ -89,12 +89,15 @@ fun mkLexAndParse () =
       local
 	 fun make (file : File.t) =
 	    if File.canRead file
-	       then List.map
+	       then List.keepAllMap
 		    (File.lines file, fn line =>
-		     case String.tokens (line, Char.isSpace) of
-			[var, path] => {var = var, path = path}
-		      | _ => Error.bug (concat ["strange mlb path mapping: ", 
-						file, ":: ", line]))
+		     if String.forall (line, Char.isSpace)
+			then NONE
+			else 
+			   case String.tokens (line, Char.isSpace) of
+			      [var, path] => SOME {var = var, path = path}
+			    | _ => Error.bug (concat ["strange mlb path mapping: ", 
+						      file, ":: ", line]))
 	       else []
 
 	 val pathMap =
