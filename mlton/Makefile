@@ -4,35 +4,31 @@ BIN = $(BUILD)/bin
 LIB = $(BUILD)/lib
 MLTON = mlton
 TARGET = self
-NAME = mlton
 AOUT = mlton-compile
+UP = upgrade-basis.sml
 PATH = $(BIN):$(shell echo $$PATH)
 ifeq (self, $(shell if [ -x $(BIN)/mlton ]; then echo self; fi))
   # We're compiling MLton with itself, so don't use any stubs.
-  CM = $(NAME).cm
+  CM = mlton.cm
 else
 ifeq (cygwin, $(shell $(SRC)/bin/host-os))
   # The stubs don't work on Cygwin, since they define spawn in terms of
   # fork, and fork doesn't work on Cygwin.  So, make without the stubs.
-  CM = $(NAME).cm
+  CM = mlton.cm
 else
   # We're compiling MLton with an older version of itself, so use the stubs for
   # the MLton structure.
-ifeq (1997, $(shell $(SRC)/bin/mlton-basis-version))
-  CM = $(NAME)-stubs-1997.cm
-else
-  CM = $(NAME)-stubs.cm
-endif
+  CM = mlton-stubs.cm
 endif
 endif
 
 FLAGS = @MLton $(RUNTIME_ARGS) gc-summary --
-ifeq (new,$(shell PATH=$(BIN):$$PATH; $(MLTON) -target self >/dev/null 2>&1 && echo new))
+ifeq (new,$(shell PATH=$(BIN):$$PATH; mlton -target self >/dev/null 2>&1 && echo new))
   FLAGS += -target $(TARGET)
 else
   FLAGS += -host $(TARGET)
 endif
-ifeq (new,$(shell PATH=$(BIN):$$PATH; $(MLTON) -verbose 1 >/dev/null 2>&1 && echo new))
+ifeq (new,$(shell PATH=$(BIN):$$PATH; mlton -verbose 1 >/dev/null 2>&1 && echo new))
   FLAGS += -verbose 1 -output $(AOUT)
 else
   FLAGS += -v -o $(AOUT)
@@ -41,57 +37,39 @@ endif
 .PHONY: all
 all: $(AOUT)
 
-$(AOUT): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
+$(AOUT): mlton.cm $(shell mlton -stop f mlton.cm)
+	rm -f $(UP)
+	make $(UP)
 	@echo 'Compiling mlton (takes a while)'
-	$(MLTON) $(FLAGS) $(CM)
+	mlton $(FLAGS) $(CM)
 	size $(AOUT)
 
-.PHONY:	$(NAME)_cm
-$(NAME)_cm: $(NAME)-stubs_cm
-	grep -v mlton-stubs $(NAME)-stubs.cm >$(NAME).cm
+# We pass the full path to mlton, via `which mlton`, because
+# upgrade-basis is written with #!/usr/bin/env sh, which ignores the
+# current path.
+$(UP):
+	$(SRC)/bin/upgrade-basis `which mlton` >$(UP)
 
-.PHONY: $(NAME)-stubs-1997_cm
-$(NAME)-stubs-1997_cm: $(NAME)-stubs_cm
-	(								\
-		echo 'Group is' &&					\
-		echo '../lib/mlton-stubs/1997-to-2002.sml' &&		\
-		grep -v Group $(NAME)-stubs.cm;				\
-	) >$(NAME)-stubs-1997.cm
+mlton.cm: mlton-stubs.cm
+	grep -v mlton-stubs mlton-stubs.cm >mlton.cm
 
 # This makes a version of MLton that can be compiled in the standard basis
 # library.  I.E. it doesn't require a MLton structure.
-.PHONY:	$(NAME)-stubs_cm
-$(NAME)-stubs_cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
+.PHONY:	mlton-stubs_cm
+mlton-stubs_cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	(								\
 		echo 'Group is' &&					\
 		cmcat sources.cm | grep -v 'basis-stubs' | 		\
 			grep -v 'mlton-stubs-in-smlnj' |		\
 			grep mlyacc &&					\
+		echo '$(UP)' &&						\
 		cmcat sources.cm | grep -v 'basis-stubs' | 		\
 			grep -v 'mlton-stubs-in-smlnj' |		\
 			grep -v mlyacc &&				\
 		echo 'call-main.sml';					\
-	) >$(NAME)-stubs.cm
+	) >mlton-stubs.cm
 
-.PHONY: nj-whole
-nj-whole: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
-	(									\
-		echo 'SMLofNJ.Internals.GC.messages false;';			\
-		echo '#set CM.Control.verbose false;';				\
-		echo '#set CM.Control.warn_obsolete false;';			\
-		echo 'Control.polyEqWarn := false;'; 				\
-		echo 'local'; 							\
-		cmcat sources.cm | grep 'mlton-stubs-in-smlnj' | xargs cat;	\
-		cmcat sources.cm | grep 'mlyacc' | xargs cat;			\
-		cmcat sources.cm | grep -v 'mlyacc' |				\
-			grep -v 'mlton-stubs-in-smlnj' | xargs cat; 		\
-		echo 'in';							\
-		echo 'val _ = Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton")';	\
-		echo 'end';							\
-	) >$(NAME).whole.sml
-	$(SML) <$(NAME).whole.sml
-
-mlton.sml: $(NAME).cm $(shell $(MLTON) -stop f mlton.cm)
+mlton.sml: mlton.cm $(shell mlton -stop f mlton.cm)
 	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
 
 front-end/ml.lex.sml: front-end/ml.lex
@@ -141,11 +119,20 @@ nj-mlton-dual: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
 	) | $(SML)
 
-.PHONY: nj-mlton-110.9.1
-nj-mlton-110.9.1: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
+.PHONY: nj-whole
+nj-whole: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
-		echo 'CM.verbose (SOME false);';				\
-		echo 'CM.make'\''{group = "sources.cm", force_relink = true};';	\
-		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
-	) | $(SML)
+		echo '#set CM.Control.verbose false;';				\
+		echo '#set CM.Control.warn_obsolete false;';			\
+		echo 'Control.polyEqWarn := false;'; 				\
+		echo 'local'; 							\
+		cmcat sources.cm | grep 'mlton-stubs-in-smlnj' | xargs cat;	\
+		cmcat sources.cm | grep 'mlyacc' | xargs cat;			\
+		cmcat sources.cm | grep -v 'mlyacc' |				\
+			grep -v 'mlton-stubs-in-smlnj' | xargs cat; 		\
+		echo 'in';							\
+		echo 'val _ = Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton")';	\
+		echo 'end';							\
+	) >mlton.whole.sml
+	$(SML) <mlton.whole.sml

@@ -50,7 +50,7 @@ clean-cvs:
 
 .PHONY: cm
 cm:
-	$(MAKE) -C $(COMP) mlton_cm mlton-stubs-1997_cm
+	$(MAKE) -C $(COMP) mlton-stubs_cm
 	$(MAKE) -C $(LEX) mllex_cm
 	$(MAKE) -C $(PROF) mlprof_cm
 	$(MAKE) -C $(YACC) mlyacc_cm
