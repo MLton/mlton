@@ -1,0 +1,28 @@
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-1999 NEC Research Institute.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
+ *)
+local
+    ../../lib/mlton/sources.mlb
+    ../../lib/mlyacc/mlyacc-lib.mlb
+    ../ast/sources.mlb
+    ../control/sources.mlb
+
+    ml.grm.sig
+    ml.grm.sml
+    ml.lex.sml
+    front-end.sig
+    front-end.fun
+
+    mlb.grm.sig
+    mlb.grm.sml
+    mlb.lex.sml
+    mlb-front-end.sig
+    mlb-front-end.fun
+in
+    functor FrontEnd
+    functor MLBFrontEnd
+end
