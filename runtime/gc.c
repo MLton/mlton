@@ -2192,7 +2192,11 @@ static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 
 #elif (defined (__linux__))
 
+/* The following include is for MREMAP_MAYMOVE, which I would think should come
+ * from sys/mman.h, but doesn't.
+ */
 #include <linux/mman.h>
+
 static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	W32 backoff;
 	W32 size;
