@@ -18,8 +18,8 @@ signature ARRAY2 =
       val fromList: 'a list list -> 'a t
       val layout: ('a -> Layout.t) -> 'a t -> Layout.t
       val nCols: 'a t -> int
-      val new: int * int * 'a -> 'a t
       val nRows: 'a t -> int
+      val new: int * int * 'a -> 'a t
       val sub: 'a t * int * int -> 'a 
       val tabulate: int * int * (int * int -> 'a) -> 'a t
       val update: 'a t * int * int * 'a -> unit 
