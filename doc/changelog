@@ -1,5 +1,19 @@
 Here are the changes since version 20030716.
 
+* 2003-09-03
+  - Lots of fixes to Real functions.
+    o Real32 is now completely in place, except for Real32.nextAfter
+      on SunOS. 
+    o Fixed Real.Math.exp on x86 to return the right value when
+      applied to posInf and negInf.
+    o Changed Real.Math.{cos,sin,tan} on x86 to always use a call to
+      the C math library instead of using the x86 instruction.  This
+      eliminates some anomalies between compiling -native false and
+      -native true.
+    o Change Real.Math.pow to handle exceptional cases in the SML
+      code. 
+    o Fixed Real.signBit on Sparcs.
+
 * 2003-08-28
   - Fixed PackReal{,64}Little to work correctly on Sparc.
   - Added PackReal{,64}Big, PackReal32{Big,Little}.

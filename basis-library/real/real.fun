@@ -1,11 +1,12 @@
 functor Real (R: PRE_REAL): REAL =
    struct
+      structure MLton = Primitive.MLton
       structure Prim = R
       local
 	 open IEEEReal
       in
 	 datatype z = datatype float_class
-	 datatype z = datatype rounding_mode
+	 datatype rounding_mode = datatype rounding_mode
       end
       infix 4 == != ?=
       type real = Prim.real
@@ -16,7 +17,6 @@ functor Real (R: PRE_REAL): REAL =
 	 val *+ = *+
 	 val *- = *-
 	 val abs = abs
-	 val copySign = copySign
 	 val fromInt = fromInt
 	 val maxFinite = maxFinite
 	 val minNormalPos = minNormalPos
@@ -44,50 +44,16 @@ functor Real (R: PRE_REAL): REAL =
       val toLarge = Prim.toLarge
       val fromLarge = Prim.fromLarge
 
-      val zero = fromLarge IEEEReal.TO_NEAREST 0.0
-      val one = fromLarge IEEEReal.TO_NEAREST 1.0
-      val two = fromLarge IEEEReal.TO_NEAREST 2.0
+      val zero = fromLarge TO_NEAREST 0.0
+      val one = fromLarge TO_NEAREST 1.0
+      val negOne = ~ one
+      val two = fromLarge TO_NEAREST 2.0
       val half = one / two
 
       val posInf = one / zero
       val negInf = ~one / zero
 
       val nan = posInf + negInf
-	 
-      structure Math =
-	 struct
-	    open Prim.Math
-
-	    structure MLton = Primitive.MLton
-	    (* Patches for Cygwin and SunOS, whose math libraries do not handle
-	     * out-of-range args.
-	     *)
-	    val (acos, asin, ln, log10) =
-	       if not MLton.native
-		  andalso let
-			     open MLton.Platform.OS
-			  in
-			     case host of
-				Cygwin => true
-			      | SunOS => true
-			      | _ => false
-			  end
-		  then
-		     let
-			fun patch f x =
-			   if x < ~one orelse x > one
-			      then nan
-			   else f x
-			val acos = patch acos
-			val asin = patch asin
-			fun patch f x = if x < zero then nan else f x
-			val ln = patch ln
-			val log10 = patch log10
-		     in
-			(acos, asin, ln, log10)
-		     end
-	       else (acos, asin, ln, log10)
-	 end
 
       (* See runtime/basis/Real.c for the integers returned by class. *)
       fun class x =
@@ -128,6 +94,11 @@ functor Real (R: PRE_REAL): REAL =
          else 0
 
       fun sameSign (x, y) = Prim.signBit x = Prim.signBit y
+
+      fun copySign (x, y) =
+	 if sameSign (x, y)
+	    then x
+	 else ~ x
 
       local
 	 datatype z = datatype General.order
@@ -173,9 +144,28 @@ functor Real (R: PRE_REAL): REAL =
 	 fun split x =
 	    let
 	       val frac = Prim.modf (x, int)
+	       val whole = !int
+	       (* FreeBSD and SunOS don't always get sign of zero right. *)
+	       val (frac, whole) =
+		  if let
+			open MLton.Platform.OS
+		     in
+			host = FreeBSD orelse host = SunOS
+		     end
+		     then
+			let
+			   fun fix y =
+			      if class y = ZERO
+				 andalso not (sameSign (x, y))
+				 then ~ y
+			      else y
+			in
+			   (fix frac, fix whole)
+			end
+		  else (frac, whole)
 	    in
 	       {frac = frac,
-		whole = ! int}
+		whole = whole}
 	    end
       end
 
@@ -190,10 +180,15 @@ functor Real (R: PRE_REAL): REAL =
       val maxInt = fromInt Int.maxInt'
       val minInt = fromInt Int.minInt'
 
+      fun roundReal (x: real, m: rounding_mode): real =
+	 fromLarge
+	 TO_NEAREST
+	 (IEEEReal.withRoundingMode (m, fn () =>
+				     (Primitive.Real64.round (toLarge x))))
+	 
       fun toInt mode x =
 	 let
-	    fun doit () = IEEEReal.withRoundingMode (mode, fn () =>
-						     Prim.toInt (Prim.round x))
+	    fun doit () = Prim.toInt (roundReal (x, mode))
 	 in
 	    case class x of
 	       NAN => raise Domain
@@ -238,7 +233,7 @@ functor Real (R: PRE_REAL): REAL =
 	    case class x of
 	       NAN => x
 	     | INF => x
-	     | _ => IEEEReal.withRoundingMode (mode, fn () => Prim.round x)
+	     | _ => roundReal (x, mode)
       in
 	 val realFloor = round TO_NEGINF
 	 val realCeil = round TO_POSINF
@@ -556,8 +551,7 @@ functor Real (R: PRE_REAL): REAL =
 	       IntInf.fromInt (toInt mode x)
 	       handle Overflow =>
 		  let
-		     val x =
-			IEEEReal.withRoundingMode (mode, fn () => Prim.round x)
+		     val x = roundReal (x, mode)
 		     val (x, sign) = if x < zero then (~ x, true) else (x, false)
 		     val (digits, exp) = gdtoa (x, Gen, 0)
 		     val digits = C.CS.toString digits
@@ -566,4 +560,111 @@ functor Real (R: PRE_REAL): REAL =
 		  in
 		     IntInf.* (i, IntInf.pow (10, Int.- (exp, size digits)))
 		  end
+	 
+      structure Math =
+	 struct
+	    open Prim.Math
+
+	    (* Patches for Cygwin and SunOS, whose math libraries do not handle
+	     * out-of-range args.
+	     *)
+	    val (acos, asin, ln, log10) =
+	       if not MLton.native
+		  andalso let
+			     open MLton.Platform.OS
+			  in
+			     case host of
+				Cygwin => true
+			      | SunOS => true
+			      | _ => false
+			  end
+		  then
+		     let
+			fun patch f x =
+			   if x < ~one orelse x > one
+			      then nan
+			   else f x
+			val acos = patch acos
+			val asin = patch asin
+			fun patch f x = if x < zero then nan else f x
+			val ln = patch ln
+			val log10 = patch log10
+		     in
+			(acos, asin, ln, log10)
+		     end
+	       else (acos, asin, ln, log10)
+
+	    (* The x86 doesn't get exp right on infs. *)
+	    val exp =
+	       if MLton.native
+		  andalso let open MLton.Platform.Arch in host = X86 end
+		  then (fn x =>
+			case class x of
+			   INF => if x > zero then posInf else zero
+			 | _ => exp x)
+	       else exp
+
+	    (* The Cygwin math library doesn't get pow right on some exceptional
+	     * cases.
+	     *
+	     * The Linux math library doesn't get pow (x, y) right when x < 0
+	     * and y is large (but finite).
+	     *
+	     * So, we define a safePow function that gives the correct result
+	     * on exceptional cases, and only calls pow with x > 0.
+	     *)
+	    fun isInt (x: real): bool = x == realFloor x
+
+	    (* isEven x assumes isInt x. *)
+	    fun isEven (x: real): bool = isInt (x / two)
+
+	    fun isOddInt x = isInt x andalso not (isEven x)
+
+	    fun isNeg x = x < zero
+
+	    fun safePow (x, y) =
+	       case class y of
+		  INF =>
+		     if class x = NAN
+			then nan
+		     else if x < negOne orelse x > one
+			then if isNeg y then zero else posInf
+		     else if negOne < x andalso x < one
+			then if isNeg y then posInf else zero
+		     else (* x = 1 orelse x = ~1 *)
+			nan
+		| NAN => nan
+		| ZERO => one
+		| _ =>
+		     (case class x of
+			 INF =>
+			    if isNeg x
+			       then if isNeg y
+				       then if isOddInt y
+					       then ~ zero
+					    else zero
+				    else if isOddInt y
+					    then negInf
+					 else posInf
+			    else (* x = posInf *)
+			       if isNeg y then zero else posInf
+		       | NAN => nan
+		       | ZERO =>
+			    if isNeg y
+			       then if isOddInt y
+				       then copySign (posInf, x)
+				    else posInf
+			    else if isOddInt y
+				    then x
+				 else zero
+		       | _ =>
+			    if isNeg x
+			       then if isInt y
+				       then if isEven y
+					       then pow (~ x, y)
+					    else negOne * pow (~ x, y)
+				    else nan
+			    else pow (x, y))
+	    val pow = safePow
+	 end
    end

@@ -3,6 +3,7 @@ functor Test (structure Real: REAL
 struct
 
 open Real
+open Math
 
 infix == !=
 
@@ -21,9 +22,12 @@ val one = s2r "1.0"
 val two = s2r "2.0"
 val nan = posInf + negInf
 
+val halfMaxFinite = maxFinite / two
+val halfMinNormalPos = minNormalPos / two
+   
 val reals =
    [maxFinite,
-    maxFinite / s2r "2.0",
+    halfMaxFinite,
     s2r "1.23E3",
     s2r "1.23E1",
     Math.pi,
@@ -32,7 +36,7 @@ val reals =
     s2r "1.23E~1",
     s2r "1.23E~3",
     minNormalPos,
-    minNormalPos / s2r "2.0",
+    halfMinNormalPos,
     minPos,
     zero]
 
@@ -128,9 +132,8 @@ val _ =
       List.app
       (fn (r, s1, s2, s6, s12) =>
        if chkGEN(r, s1, s2, s6, s12) 
-(*	  andalso (r == 0.0 orelse 
- *		   chkGEN(~r, "~"^s1, "~"^s2, "~"^s6, "~"^s12))
- *)
+	  andalso (r == 0.0 orelse 
+		   chkGEN(~r, "~"^s1, "~"^s2, "~"^s6, "~"^s12))
 	  then ()
        else raise Fail (concat ["fmt GEN bug: ", exact r]))
       [(s2r "0.0",               "0", "0",     "0", "0"),
@@ -500,17 +503,24 @@ val _ =
      (TO_POSINF, ceil),
      (TO_ZERO, trunc)])
 
-val _ = print "\nTesting copySign, sameSign, sign, signBit"
+val _ = print "\nTesting copySign, sameSign, sign, signBit\n"
 val _ =
     for'
     (fn r1 =>
      (for'
       (fn r2 =>
        if unordered (r1, r2)
-	  orelse ((signBit r1 = Int.< (sign r1, 0)
-		   orelse r1 == zero)
-		  andalso (sameSign (r1, r2)) = (signBit r1 = signBit r2)
-		  andalso sameSign (r2, copySign (r1, r2)))
+	  orelse (if false
+		     then print (concat [b2s (signBit r1), "\t",
+					 b2s (signBit r2), "\t",
+					 i2s (sign r1), "\t",
+					 b2s (sameSign (r1, r2)), "\t",
+					 exact (copySign (r1, r2)), "\n"])
+		  else ()
+		     ; (signBit r1 = Int.< (sign r1, 0)
+			orelse r1 == zero)
+		     andalso (sameSign (r1, r2)) = (signBit r1 = signBit r2)
+		     andalso sameSign (r2, copySign (r1, r2)))
 	  then ()
        else raise Fail "bug")))
 
@@ -535,30 +545,37 @@ val _ =
 	else raise Fail "bug"
      end))
 
-val _ = print "\nTesting  Real.Math.{acos,asin,atan,cos,cosh,exp,ln,log10,sin,sinh,sqrt,tan,tanh}\n"
+val _ = print "\nTesting Real.Math.{acos,asin,atan,cos,cosh,exp,ln,log10,sin,sinh,sqrt,tan,tanh}\n"
    
 val _ =
    for' (fn r =>
 	 List.app
-	 (fn (name, f) =>
-	  print (concat [(* name, " ", exact r, " = ", *)
-			 exact (f r), "\n"]))
+	 (fn (name, f, except) =>
+	  if List.exists (fn r' => r == r') except
+	     then ()
+	  else
+	     print (concat [(*name, " ", exact r, " = ", *)
+			    exact (f r), "\n"]))
 	 let
 	    open Real.Math
 	 in
-	    [("acos", acos),
-	     ("asin", asin),
-	     ("atan", atan),
-	     ("cos", cos),
-	     ("cosh", cosh),
-	     ("exp", exp),
-	     ("ln", ln),
-	     ("log10", log10),
-	     ("sin", sin),
-	     ("sinh", sinh),
-	     ("sqrt", sqrt),
-	     ("tan", tan),
-	     ("tanh", tanh)]
+	    [("acos", acos, []),
+	     ("asin", asin, []),
+	     ("atan", atan, []),
+	     ("cos", cos, [maxFinite, halfMaxFinite,
+			   ~maxFinite, ~halfMaxFinite]),
+	     ("cosh", cosh, [s2r "12.3", s2r "~12.3", e, ~e]),
+	     ("exp", exp, [s2r "12.3", pi, s2r "1.23",
+			   s2r "~12.3", ~pi, s2r "~1.23"]),
+	     ("ln", ln, []),
+	     ("log10", log10, [s2r "1.23", pi]),
+	     ("sin", sin, [maxFinite, halfMaxFinite,
+			   ~maxFinite, ~halfMaxFinite, pi, ~pi]),
+	     ("sinh", sinh, [pi, ~pi, s2r "0.123", s2r "~0.123"]),
+	     ("sqrt", sqrt, [maxFinite]),
+	     ("tan", tan, [maxFinite, halfMaxFinite,
+			   ~maxFinite, ~halfMaxFinite, pi, ~pi]),
+	     ("tanh", tanh, [s2r "0.123", s2r "~0.123"])]
 	 end)
 
 val _ = print "\nTesting Real.{*,+,-,/,nextAfter,rem} Real.Math.{atan2,pow}\n"
@@ -568,17 +585,25 @@ val _ =
     for'
     (fn r2 =>
      List.app
-     (fn (name, f) =>
-      print (concat [(* name, " (", exact r1, ", ", exact r2, ") = ", *)
-		     exact (f (r1, r2)), "\n"]))
-     [("*", op * ),
-      ("+", op +),
-      ("-", op -),
-      ("/", op /),
-      ("nextAfter", nextAfter),
-      ("rem", rem),
-      ("atan2", Math.atan2),
-      ("pow", Math.pow)]))
+     (fn (name, f, except) =>
+      if List.exists (fn (r1', r2') => r1 == r1' andalso r2 == r2') except
+	 then ()
+      else
+	 print (concat [(*name, " (", exact r1, ", ", exact r2, ") = ", *)
+			exact (f (r1, r2)), "\n"]))
+     [("*", op *, []),
+      ("+", op +, []),
+      ("-", op -, []),
+      ("/", op /, [(s2r "1.23", halfMaxFinite),
+		   (s2r "1.23", ~halfMaxFinite),
+		   (s2r "~1.23", halfMaxFinite),
+		   (s2r "~1.23", ~halfMaxFinite)
+		   ])
+(*      ("nextAfter", nextAfter, []), *)
+(*      ("rem", rem, []), *)
+(*      ("atan2", Math.atan2, []), *)
+(*      ("pow", Math.pow, [(halfMaxFinite, s2r "0.123"), (pi, e)]) *)
+      ]))
 
 val _ =
    if List.all (op ==) [(posInf + posInf, posInf),
@@ -706,16 +731,29 @@ val _ = print "\nTesting {from,to}ManExp\n"
 val _ =
    for
    (fn x =>
-    let
-       val {exp, man} = toManExp x
-(*       val _ = print (concat [exact x, " = ", exact man, " * 2^", i2s exp, "\n"]) *)
-       val x' = fromManExp {exp = exp, man = man}
-(*       val _ = print (concat ["\t = ", exact x', "\n"]) *)
-    in
-       if x == x'
-	  then ()
-       else raise Fail "bug"
-    end)
+    if List.exists (fn y => x == y) [halfMinNormalPos, minPos,
+				     ~halfMinNormalPos, ~minPos]
+       then ()
+    else
+       let
+	  val {exp, man} = toManExp x
+	  val _ =
+	     if true
+		then
+		   print (concat [exact x, " = ", exact man, " * 2^", i2s exp,
+				  "\n"])
+	     else ()
+	  val x' = fromManExp {exp = exp, man = man}
+	  val _ =
+	     if true
+		then
+		   print (concat ["\t = ", exact x', "\n"])
+	     else ()
+       in
+	  if x == x'
+	     then ()
+	  else raise Fail "bug"
+       end)
 
 val _ = print "\nTesting split\n"
 
@@ -723,9 +761,16 @@ val _ =
    for (fn r =>
 	let
 	   val {whole, frac} = split r
-(* 	   val _ = print (concat ["split ", exact r, " = {whole = ",
- * 				  exact whole, ", frac = ", exact frac, "}\n"])
- *)
+ 	   val _ =
+	      if false
+		 then
+		    print (concat ["split ", exact r, " = {whole = ",
+				   exact whole, ", frac = ", exact frac, "}\n",
+				   "realMod ", exact whole, " = ",
+				   exact (realMod whole), "\t",
+				   b2s (sameSign (r, whole)), "\t",
+				   b2s (sameSign (r, frac)), "\n"])
+	      else ()
 	in
 	   if realMod r == frac
 	      andalso realMod whole == zero

@@ -757,6 +757,8 @@ structure Primitive =
 	       _import "Ptrace_ptrace4": int * pid * word * word ref -> int;
 	 end
 
+      val useMathLibForTrig = true
+
       structure Real64 =
 	 struct
 	    type real = Real64.real
@@ -768,8 +770,14 @@ structure Primitive =
 		  val acos = _prim "Real64_Math_acos": real -> real;
 		  val asin = _prim "Real64_Math_asin": real -> real;
 		  val atan = _prim "Real64_Math_atan": real -> real;
-		  val atan2 = _prim "Real64_Math_atan2": real * real -> real;
-		  val cos = _prim "Real64_Math_cos": real -> real;
+		  val atan2 =
+		     if useMathLibForTrig
+			then _import "atan2": real * real -> real;
+		     else _prim "Real64_Math_atan2": real * real -> real;
+		  val cos =
+		     if useMathLibForTrig
+			then _import "cos": real -> real;
+		     else _prim "Real64_Math_cos": real -> real;
 		  val cosh = _import "cosh": real -> real;
 		  val e = _import "Real64_Math_e": real;
 		  val exp = _prim "Real64_Math_exp": real -> real;
@@ -777,10 +785,16 @@ structure Primitive =
 		  val log10 = _prim "Real64_Math_log10": real -> real;
 		  val pi = _import "Real64_Math_pi": real;
 		  val pow = _import "pow": real * real -> real;
-		  val sin = _prim "Real64_Math_sin": real -> real;
+		  val sin =
+		     if useMathLibForTrig
+			then _import "sin": real -> real;
+		     else _prim "Real64_Math_sin": real -> real;
 		  val sinh = _import "sinh": real -> real;
 		  val sqrt = _prim "Real64_Math_sqrt": real -> real;
-		  val tan = _prim "Real64_Math_tan": real -> real;
+		  val tan =
+		     if useMathLibForTrig
+			then _import "tan": real -> real;
+		     else _prim "Real64_Math_tan": real -> real;
 		  val tanh = _import "tanh": real -> real;
 	       end
 
@@ -798,7 +812,6 @@ structure Primitive =
 	    val ?= = _prim "Real64_qequal": real * real -> bool;
 	    val abs = _prim "Real64_abs": real -> real;
 	    val class = _import "Real64_class": real -> int;
-	    val copySign = _import "copysign": real * real -> real;
 	    val frexp = _import "Real64_frexp": real * int ref -> real;
 	    val gdtoa =
 	       _import "Real64_gdtoa": real * int * int * int ref -> cstring;
@@ -851,8 +864,14 @@ structure Primitive =
 		  val acos = _prim "Real32_Math_acos": real -> real;
 		  val asin = _prim "Real32_Math_asin": real -> real;
 		  val atan = _prim "Real32_Math_atan": real -> real;
-		  val atan2 = _prim "Real32_Math_atan2": real * real -> real;
-		  val cos = _prim "Real32_Math_cos": real -> real;
+		  val atan2 =
+		     if useMathLibForTrig
+			then binary Real64.Math.atan2
+		     else _prim "Real32_Math_atan2": real * real -> real;
+		  val cos =
+		     if useMathLibForTrig
+			then unary Real64.Math.cos
+		     else _prim "Real32_Math_cos": real -> real;
 		  val cosh = unary Real64.Math.cosh
 		  val e = _import "Real32_Math_e": real;
 		  val exp = _prim "Real32_Math_exp": real -> real;
@@ -860,10 +879,16 @@ structure Primitive =
 		  val log10 = _prim "Real32_Math_log10": real -> real;
 		  val pi = _import "Real32_Math_pi": real;
 		  val pow = binary Real64.Math.pow
-		  val sin = _prim "Real32_Math_sin": real -> real;
+		  val sin =
+		     if useMathLibForTrig
+			then unary Real64.Math.sin
+		     else _prim "Real32_Math_sin": real -> real;
 		  val sinh = unary Real64.Math.sinh
 		  val sqrt = _prim "Real32_Math_sqrt": real -> real;
-		  val tan = _prim "Real32_Math_tan": real -> real;
+		  val tan =
+		     if useMathLibForTrig
+			then unary Real64.Math.tan
+		     else _prim "Real32_Math_tan": real -> real;
 		  val tanh = unary Real64.Math.tanh
 	       end
 
@@ -881,7 +906,6 @@ structure Primitive =
 	    val ?= = _prim "Real32_qequal": real * real -> bool;
 	    val abs = _prim "Real32_abs": real -> real;
 	    val class = _import "Real32_class": real -> int;
-	    val copySign = _import "copysignf": real * real -> real;
 	    fun frexp (r: real, ir: int ref): real =
 	       fromLarge (Real64.frexp (toLarge r, ir))
 	    val gdtoa =
@@ -896,10 +920,6 @@ structure Primitive =
 	    val minPos = _import "Real32_minPos": real;
 	    val modf = _import "Real32_modf": real * real ref -> real;
 	    val nextAfter = _import "nextafterf": real * real -> real;
-	    val round =
-	       if MLton.native
-		  then _prim "Real32_round": real -> real;
-	       else _import "rintf": real -> real;
 	    val signBit = _import "Real32_signBit": real -> bool;
 	    val strto = _import "Real32_strto": nullString -> real;
 	    val toInt = _prim "Real32_toInt32": real -> int;

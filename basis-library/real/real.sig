@@ -33,7 +33,6 @@ signature PRE_REAL =
       val ~ : real -> real
       val abs: real -> real
       val class: real -> int
-      val copySign: real * real -> real
       val frexp: real * int ref -> real
       val gdtoa: real * int * int * int ref -> Primitive.cstring
       val fromInt: int -> real
@@ -46,7 +45,6 @@ signature PRE_REAL =
       val nextAfter: real * real -> real
       val precision: int
       val radix: int
-      val round: real -> real
       val signBit: real -> bool
       val strto: nullString -> real
       val toInt: real -> int
