@@ -12,6 +12,8 @@ structure MLton: MLTON =
       val deserialize = fn _ => raise Fail "deserialize"
       val eq = fn _ => raise Fail "eq"
       val errno = fn _ => raise Fail "errno"
+      datatype hostType = Cygwin | Linux
+      val hostType = Linux
       val isMLton = false
       val safe = true
       val serialize = fn _ => raise Fail "serialize"
@@ -48,6 +50,8 @@ structure MLton: MLTON =
       structure Exn =
 	 struct
 	    val history = fn _ => []
+
+	    val topLevelHandler = fn _ => raise Fail "Exn.topLevelHandler"
 	 end
 
       structure GC =
@@ -88,6 +92,13 @@ structure MLton: MLTON =
 	 struct
 	    type pid = Posix.Process.pid
 
+	    fun exit n =
+	       let
+		  open OS.Process
+	       in
+		  exit (if n = 0 then success else failure)
+	       end
+	       
 	    fun spawne {path, args, env} =
 	       case Posix.Process.fork () of
 		  NONE => Posix.Process.exece (path, args, env)

@@ -35,7 +35,7 @@ signature MLTON_THREAD_EXTRA =
 
       datatype state =
 	 Normal
-       | InHandler of unit t (* The thread input to the handler *)
+       | InHandler
 	 
       val state: state ref
    end

@@ -14,6 +14,8 @@ signature MLTON =
        *)
       val eq: 'a * 'a -> bool
       val errno: unit -> int (* the value of the C errno global *)
+      datatype hostType = Cygwin | Linux
+      val hostType: hostType
       val isMLton: bool
       val safe: bool
 (*      val serialize: 'a -> Word8Vector.vector *)
