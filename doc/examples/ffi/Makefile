@@ -2,6 +2,8 @@ mlton = mlton
 
 .PHONY: all
 all: import export
+	./import
+	./export
 
 export: export.sml ffi-export.c
 	$(mlton) -export-header true >export.h export.sml
