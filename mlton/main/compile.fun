@@ -200,17 +200,17 @@ in
 	 fun toAst c = Ast.Con.fromString (Con.toString c, Region.bogus)
       end
 
-   structure Tycon =
-      struct
-	 open Tycon
-
-	 fun toAst c = Ast.Tycon.fromString (Tycon.toString c, Region.bogus)
-      end
-   
    structure Env =
       struct
 	 open Env 
 
+	 structure Tycon =
+	    struct
+	       open Tycon
+
+	       fun toAst c =
+		  Ast.Tycon.fromString (Tycon.toString c, Region.bogus)
+	    end
 	 structure Type = TypeEnv.Type
 	 structure Scheme = TypeEnv.Scheme
 
