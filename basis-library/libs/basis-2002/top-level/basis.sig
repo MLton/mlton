@@ -206,11 +206,6 @@ signature BASIS_2002 =
 (*
       structure Windows : WINDOWS
 *)
-      structure WordArray : MONO_ARRAY	
-      structure WordArraySlice : MONO_ARRAY_SLICE	
-      structure WordVector : MONO_VECTOR	
-      structure WordVectorSlice : MONO_VECTOR_SLICE	
-      structure WordArray2 : MONO_ARRAY2	
       structure Word16 : WORD
       structure Word16Array : MONO_ARRAY
       structure Word16ArraySlice : MONO_ARRAY_SLICE
@@ -388,17 +383,6 @@ signature BASIS_2002 =
       sharing type Real64Array2.elem = Real64.real
       sharing type Real64Array2.vector = Real64Vector.vector
       sharing type Unix.exit_status = Posix.Process.exit_status
-      sharing type WordArray.elem = Word.word
-      sharing type WordArray.vector = WordVector.vector
-      sharing type WordArraySlice.elem = Word.word
-      sharing type WordArraySlice.array = WordArray.array
-      sharing type WordArraySlice.vector = WordVector.vector
-      sharing type WordArraySlice.vector_slice = WordVectorSlice.slice
-      sharing type WordVector.elem = Word.word
-      sharing type WordVectorSlice.elem = Word.word
-      sharing type WordVectorSlice.vector = WordVector.vector
-      sharing type WordArray2.elem = Word.word
-      sharing type WordArray2.vector = WordVector.vector
       sharing type Word16Array.elem = Word16.word
       sharing type Word16Array.vector = Word16Vector.vector
       sharing type Word16ArraySlice.elem = Word16.word

@@ -126,11 +126,6 @@ structure Basis2002:> BASIS_2002 =
       structure Windows = Windows
 *)
       structure Word = Word
-      structure WordArray = WordArray
-      structure WordArraySlice = WordArraySlice
-      structure WordVector = WordVector
-      structure WordVectorSlice = WordVectorSlice
-      structure WordArray2 = WordArray2
       structure Word16 = Word16
       structure Word16Array = Word16Array
       structure Word16ArraySlice = Word16ArraySlice

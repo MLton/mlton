@@ -19,15 +19,15 @@ structure Int16: INTEGER_EXTRA =
    struct
       open Int16
        
-      val fromLarge = fromInt o Int32fromLarge
-      val toLarge = Int32toLarge o toInt
+      val fromLarge = fromInt o Int32.fromLarge
+      val toLarge = Int32.toLarge o toInt
    end
 structure Int8: INTEGER_EXTRA =
    struct
       open Int8
        
-      val fromLarge = fromInt o Int32fromLarge
-      val toLarge = Int32toLarge o toInt
+      val fromLarge = fromInt o Int32.fromLarge
+      val toLarge = Int32.toLarge o toInt
    end
 
 structure Int = Int32
