@@ -71,6 +71,7 @@ and Word28.~
 and Word29.~
 and Word30.~
 and Word31.~
+and Word32.~
 and Word64.~
 and Real.~
 and Real32.~
@@ -148,6 +149,7 @@ and Word28.+
 and Word29.+
 and Word30.+
 and Word31.+
+and Word32.+
 and Word64.+
 and Real.+
 and Real32.+
@@ -225,6 +227,7 @@ and Word28.-
 and Word29.-
 and Word30.-
 and Word31.-
+and Word32.-
 and Word64.-
 and Real.-
 and Real32.-
@@ -302,6 +305,7 @@ and Word28.*
 and Word29.*
 and Word30.*
 and Word31.*
+and Word32.*
 and Word64.*
 and Real.*
 and Real32.*
@@ -385,6 +389,7 @@ and Word28.div
 and Word29.div
 and Word30.div
 and Word31.div
+and Word32.div
 and Word64.div
 
 _overload 3 mod : 'a * 'a -> 'a
@@ -458,6 +463,7 @@ and Word28.mod
 and Word29.mod
 and Word30.mod
 and Word31.mod
+and Word32.mod
 and Word64.mod
 
 _overload 3 abs : 'a -> 'a
@@ -574,6 +580,7 @@ and Word28.<
 and Word29.<
 and Word30.<
 and Word31.<
+and Word32.<
 and Word64.<
 and Real.<
 and Real32.<
@@ -653,6 +660,7 @@ and Word28.<=
 and Word29.<=
 and Word30.<=
 and Word31.<=
+and Word32.<=
 and Word64.<=
 and Real.<=
 and Real32.<=
@@ -732,6 +740,7 @@ and Word28.>
 and Word29.>
 and Word30.>
 and Word31.>
+and Word32.>
 and Word64.>
 and Real.>
 and Real32.>
@@ -811,6 +820,7 @@ and Word28.>=
 and Word29.>=
 and Word30.>=
 and Word31.>=
+and Word32.>=
 and Word64.>=
 and Real.>=
 and Real32.>=
