@@ -77,7 +77,7 @@ runtime:
 .PHONY: script
 script:
 	@echo 'Setting lib in mlton script.'
-	sed "/^lib=/s;'.*';'$(LIB)';" <bin/mlton >$(MLTON)
+	sed "/^lib=/s;'.*';\"\`dirname \$$0\`/../lib\";" <bin/mlton >$(MLTON)
 	chmod a+x $(MLTON) 
 
 .PHONY: tools
