@@ -22,3 +22,52 @@ fun 'a f () =
    in
       ()
    end
+
+(* This example shows that type variables can be rebound in nested datatype
+ * declarations, unlike the situation for nested value declarations.
+ *)
+val 'a x =
+   fn () =>
+   let
+      datatype 'a t = T of 'a
+   in
+      ()
+   end
+
+(* The following examples demonstrate acceptable forms of type variable scoping.
+ *)
+fun f (x: 'a) =
+   let
+      fun g (y: 'a) = y
+   in
+      ()
+   end
+
+fun f (x: 'a) =
+   let
+      fun 'b g (y: 'b) = y
+   in
+      ()
+   end
+
+fun 'a f (x: 'a) =
+   let
+      fun g (y: 'a) = y
+   in
+      ()
+   end
+
+fun 'a f (x: 'a) =
+   let
+      fun 'b g (y: 'b) = y
+   in
+      ()
+   end
+
+val 'a x =
+   fn () =>
+   let
+      datatype 'a t = T of 'a
+   in
+      ()
+   end

@@ -48,6 +48,10 @@ fun newRegion ({name, equality}, region) =
 
 fun new f = newRegion (f, Region.bogus)
 
+fun newLike a = newRegion ({equality = isEquality a,
+			    name = name a},
+			   region a)
+
 fun newString (s, {left, right}) =
    newRegion (if String.size s > 1
 		 andalso Char.equals (#"'", String.sub (s, 1))

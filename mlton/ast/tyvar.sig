@@ -21,7 +21,8 @@ signature TYVAR =
       val hash: t -> Word.t
       val isEquality: t -> bool
       val layouts: t vector -> Layout.t
-      val new: {name: string, equality: bool} -> t
+      val name: t -> string
+      val newLike: t -> t
       (* newNoname creates a new type variable named a_n, where n is a
        * counter.
        *)

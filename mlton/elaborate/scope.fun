@@ -26,29 +26,31 @@ structure Env =
 	 let
 	    val (tyvars, env) =
 	       Vector.mapAndFold
-	       (tyvars, env, fn (tyv, env) =>
+	       (tyvars, env, fn (a, env) =>
 		let
-		   val tyv' =
-		      Tyvar.newNoname {equality = Tyvar.isEquality tyv}
-		in (tyv', extend (env, tyv, tyv'))
+		   val a' = Tyvar.newLike a
+		in
+		   (a', extend (env, a, a'))
 		end)
-	 in (env, tyvars)
+	 in
+	    (env, tyvars)
 	 end
    end
 
 fun ('down, 'up)
    processDec (d: Dec.t,
 	       {
-		bind: 'down * Tyvar.t vector -> ('down
-						 * Tyvar.t vector
-						 * ('up -> 'up)),
-		bind': 'down * Tyvar.t vector -> ('down
-						  * ('up -> (Tyvar.t vector
-							     * 'up))),
+		(* bindDatatype is used at datatype declarations. *)
 		bindDatatype: ('down * Tyvar.t vector * Region.t
 			       -> ('down
 				   * Tyvar.t vector
 				   * ('up -> 'up))),
+		(* bindType is used at type declarations. *)
+		bindType: ('down * Tyvar.t vector
+			   -> 'down * Tyvar.t vector * ('up -> 'up)),
+		(* bindFunVal is used at fun, overload, and val declarations. *)
+		bindFunVal: ('down * Tyvar.t vector
+			     -> ('down * ('up -> Tyvar.t vector * 'up))),
 		combineUp: 'up * 'up -> 'up,
 		initDown: 'down,
 		initUp: 'up,
@@ -109,7 +111,7 @@ fun ('down, 'up)
 	    val (tbs, u) =
 	       loops (tbs, fn {def, tycon, tyvars} =>
 		      let
-			 val (d, tyvars, finish) = bind (d, tyvars)
+			 val (d, tyvars, finish) = bindType (d, tyvars)
 			 val (def, u) = loopTy (def, d)
 		      in
 			 ({def = def,
@@ -288,7 +290,7 @@ fun ('down, 'up)
 	     | Fix _ => (d, initUp)
 	     | Fun (tyvars, decs) =>
 		  let
-		     val (down, finish) = bind' (down, tyvars)
+		     val (down, finish) = bindFunVal (down, tyvars)
 		     val (decs, u) =
 			loops (decs, fn clauses =>
 			       let
@@ -320,7 +322,7 @@ fun ('down, 'up)
 	     | Open _ => empty ()
 	     | Overload (x, tyvars, ty, ys) =>
 		  let
-		     val (down, finish) = bind' (down, tyvars)
+		     val (down, finish) = bindFunVal (down, tyvars)
 		     val (ty, up) = loopTy (ty, down)
 		     val (tyvars, up) = finish up
 		  in
@@ -330,7 +332,7 @@ fun ('down, 'up)
 	     | Type tb => do1 (loopTypBind (tb, down), Type)
 	     | Val {rvbs, tyvars, vbs} =>
 		  let
-		     val (down, finish) = bind' (down, tyvars)
+		     val (down, finish) = bindFunVal (down, tyvars)
 		     val (rvbs, u) =
 			loops (rvbs, fn {match, pat} =>
 			       let
@@ -439,24 +441,19 @@ fun ('down, 'up)
 
 fun scope (dec: Dec.t): Dec.t =
    let
-      (* Walks down the tree renaming all explicitly bound tyvars, and on the way
-       * back up, try to bind implicitly scoped tyvars at each possible point.
+      type up = {free: Tyvars.t,
+		 mayNotBind: Tyvar.t list}
+      (* Walk down the tree and rename all explicitly bound tyvars.  On the way 
+       * back up, bind implicitly scoped tyvars at each possible point.
        *)
-      fun bind (env, tyvars) =
-	 let
-	    val (env, tyvars) = Env.rename (env, tyvars)
-	    fun finish u = Tyvars.- (u, Tyvars.fromList (Vector.toList tyvars))
-	 in
-	    (env, tyvars, finish)
-	 end
       fun bindDatatype (_, tyvars, region) =
 	 let
 	    val (env, tyvars) = Env.rename (Env.empty, tyvars)
-	    fun finish u =
+	    fun finish ({free, ...}: up): up =
 	       let
 		  val free =
 		     Tyvars.toList
-		     (Tyvars.- (u, Tyvars.fromList (Vector.toList tyvars)))
+		     (Tyvars.- (free, Tyvars.fromList (Vector.toList tyvars)))
 		  val _ =
 		     if 0 = List.length free
 			then ()
@@ -476,21 +473,55 @@ fun scope (dec: Dec.t): Dec.t =
 			    empty)
 			end
 	       in
-		  Tyvars.empty
+		  {free = Tyvars.empty,
+		   mayNotBind = []}
 	       end
 	 in
 	    (env, tyvars, finish)
 	 end
-      fun bind' (env, tyvars) =
+      fun bindFunVal (env, tyvars) =
 	 let
 	    val (env, tyvars) = Env.rename (env, tyvars)
-	    fun finish u =
-	       (Vector.fromList
-		(Tyvars.toList
-		 (Tyvars.+ (u, Tyvars.fromList (Vector.toList tyvars)))),
-		Tyvars.empty)
+	    fun finish {free, mayNotBind} =
+	       let
+		  val bound =
+		     Vector.fromList
+		     (Tyvars.toList
+		      (Tyvars.+ (free, Tyvars.fromList (Vector.toList tyvars))))
+		  val mayNotBind =
+		     List.keepAll
+		     (mayNotBind, fn a =>
+		      not (Vector.exists (bound, fn a' =>
+					  Tyvar.sameName (a, a')))
+		      orelse
+		      let
+			 open Layout
+			 val _ =
+			    Control.error
+			    (Tyvar.region a,
+			     seq [str "type variable ",
+				  Tyvar.layout a,
+				  str " scoped at an outer declaration"],
+			     empty)
+		      in
+			 false
+		      end)
+	       in
+		  (bound,
+		   {free = Tyvars.empty,
+		    mayNotBind = List.append (Vector.toList tyvars, mayNotBind)})
+	       end
 	 in
 	    (env, finish)
+	 end
+      fun bindType (env, tyvars) =
+	 let
+	    val (env, tyvars) = Env.rename (env, tyvars)
+	    fun finish {free, mayNotBind} =
+	       {free = Tyvars.- (free, Tyvars.fromList (Vector.toList tyvars)),
+		mayNotBind = Tyvars.empty}
+	 in
+	    (env, tyvars, finish)
 	 end
       fun tyvar (a, env) =
 	 let
@@ -499,49 +530,54 @@ fun scope (dec: Dec.t): Dec.t =
 		  NONE => a
 		| SOME a => a
 	 in
-	    (a, Tyvars.singleton a)
+	    (a, {free = Tyvars.singleton a,
+		 mayNotBind = []})
 	 end
-      val (dec, unguarded) =
-	 processDec (dec, {bind = bind,
-			   bind' = bind',
-			   bindDatatype = bindDatatype,
-			   combineUp = Tyvars.+,
+      fun combineUp ({free = f, mayNotBind = m}, {free = f', mayNotBind = m'}) =
+	 {free = Tyvars.+ (f, f'),
+	  mayNotBind = List.append (m, m')}
+      val (dec, {free = unguarded, ...}) =
+	 processDec (dec, {bindDatatype = bindDatatype,
+			   bindFunVal = bindFunVal,
+			   bindType = bindType,
+			   combineUp = combineUp,
 			   initDown = Env.empty,
-			   initUp = Tyvars.empty,
+			   initUp = {free = Tyvars.empty, mayNotBind = []},
 			   tyvar = tyvar})
    in
       if Tyvars.isEmpty unguarded
 	 then
 	    let
-	       (* Walks down and bind a tyvar as soon as you sees it, removing
-		* all lower binding occurrences of the tyvar.  Also, renames all
+	       (* Walk down and bind a tyvar as soon as you sees it, removing
+		* all lower binding occurrences of the tyvar.  Also, rename all
 		* lower free occurrences of the tyvar to be the same as the
 		* binding occurrence (so that they can share info).
 		*)
-	       fun bind (env, tyvars) =
+	       fun bindFunVal (env, tyvars: Tyvar.t vector) =
+		  let
+		     val domain = Env.domain env
+		     val (env, tyvars) =
+			Env.rename
+			(env,
+			 Vector.keepAll
+			 (tyvars, fn a =>
+			  not (List.exists
+			       (domain, fn a' => Tyvar.sameName (a, a')))))
+		  in
+		     (env, fn () => (tyvars, ()))
+		  end
+	       fun bindType (env, tyvars) =
 		  let
 		     val (env, tyvars) = Env.rename (env, tyvars)
 		  in
 		     (env, tyvars, fn () => ())
 		  end
-	       fun bind' (env, tyvars) =
-		  let
-		     val (env, tyvars) =
-			Env.rename
-			(env,
-			 Vector.fromList
-			 (Tyvars.toList
-			  (Tyvars.- (Tyvars.fromList (Vector.toList tyvars),
-				     Tyvars.fromList (Env.domain env)))))
-		  in
-		     (env, fn () => (tyvars, ()))
-		  end
-	       fun bindDatatype (env, tyvars, _) = bind (env, tyvars)
+	       fun bindDatatype (env, tyvars, _) = bindType (env, tyvars)
 	       fun tyvar (a, env) = (Env.lookup (env, a), ())
 	       val (dec, ()) =
-		  processDec (dec, {bind = bind,
-				    bind' = bind',
-				    bindDatatype = bindDatatype,
+		  processDec (dec, {bindDatatype = bindDatatype,
+				    bindFunVal = bindFunVal,
+				    bindType = bindType,
 				    combineUp = fn ((), ()) => (),
 				    initDown = Env.empty,
 				    initUp = (),
