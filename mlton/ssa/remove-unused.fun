@@ -98,7 +98,9 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	fun flowVarTysVarTys (xs, ys) = Vector.foreach2(xs, ys, flowVarTyVarTy)
       end
 
-      val {get = tyInfo: Type.t -> {deconed: bool ref}, ...}
+      val {get = tyInfo: Type.t -> 
+	                 {deconed: bool ref}, 
+	   ...}
 	= Property.get
 	  (Type.plist,
 	   Property.initFun (fn _ => {deconed = ref false}))
@@ -108,8 +110,9 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	val (deconedTy, deconedTy') = make #deconed
       end
 
-      val {get = tyconInfo: Tycon.t -> {cons: {con: Con.t, args: Type.t vector} vector,
-					numCons: int ref},
+      val {get = tyconInfo: Tycon.t -> 
+	                    {cons: {con: Con.t, args: Type.t vector} vector,
+			     numCons: int ref},
 	   set = setTyconInfo, ...}
 	= Property.getSetOnce
 	  (Tycon.plist, 
@@ -121,11 +124,12 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	val (numConsTycon, numConsTycon') = make #numCons
       end
 
-      val {get = conInfo: Con.t -> {args: (Var.t * Type.t) vector,
-				    coned: Coned.t,
-				    deconed: Deconed.t,
-				    dummy: Exp.t option ref,
-				    tycon: Tycon.t},
+      val {get = conInfo: Con.t -> 
+	                  {args: (Var.t * Type.t) vector,
+			   coned: Coned.t,
+			   deconed: Deconed.t,
+			   dummy: Exp.t option ref,
+			   tycon: Tycon.t},
 	   set = setConInfo, ...}
 	= Property.getSetOnce
 	  (Con.plist, 
@@ -162,15 +166,16 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 			    tycon = tycon})
 
 
-      val {get = funcInfo: Func.t -> {used: Used.t,
-				      args: (Var.t * Type.t) vector,
-				      returns: (Var.t * Type.t) vector,
-				      sideEffects: SideEffects.t,
-				      terminates: Terminates.t,
-				      fails: Fails.t,
-				      bug: Label.t option ref,
-				      bugConts: (Type.t vector * Label.t) list ref,
-				      wrappers: Block.t list ref},
+      val {get = funcInfo: Func.t -> 
+	                   {used: Used.t,
+			    args: (Var.t * Type.t) vector,
+			    returns: (Var.t * Type.t) vector,
+			    sideEffects: SideEffects.t,
+			    terminates: Terminates.t,
+			    fails: Fails.t,
+			    bug: Label.t option ref,
+			    bugConts: (Type.t vector * Label.t) list ref,
+			    wrappers: Block.t list ref},
 	   set = setFuncInfo, ...}
 	= Property.getSetOnce
 	  (Func.plist,
@@ -218,11 +223,12 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	val (wrappersFunc, wrappersFunc') = make #wrappers
       end
 
-      val {get = labelInfo: Label.t -> {used: Used.t,
-					catches: Catches.t,
-					func: Func.t,
-					args: (Var.t * Type.t) vector,
-					wrappers: (Type.t vector * Label.t) list ref},
+      val {get = labelInfo: Label.t -> 
+	                    {used: Used.t,
+			     catches: Catches.t,
+			     func: Func.t,
+			     args: (Var.t * Type.t) vector,
+			     wrappers: (Type.t vector * Label.t) list ref},
 	   set = setLabelInfo, ...}
 	= Property.getSetOnce
 	  (Label.plist,
