@@ -308,7 +308,7 @@ struct
 		   fn (i,l) 
 		    => (print (concat["static ushort frameOffsets",
 				      C.int i,
-				      "[] = {\n"]);
+				      "[] = {\n\t"]);
 			print (C.int (Vector.length l));
 			Vector.foreach (l, fn i => (print ","; print (C.int i)));
 			print "};\n"));
