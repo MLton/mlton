@@ -85,16 +85,13 @@ Set the inlining threshold used in the optimizer.  The default is 320.
 %Specify an additional directory to be searched for include files (included with
 %{\tt -i}).
 
-\option{-keep \{dot|g|o|sml|ssa\}}
+\option{-keep \{g|o|sml|...\}}
 Save the intermediate file(s) corresponding to the given arg.  If
 no {\tt -keep} argument is given, then only the final file(s) is saved.\\
 \begin{tabular}{ll}
-{\tt dot} & dot files.  Implies {\tt -keep ssa}.  See \secref{profiling} for
-details.\\
 {\tt g} & generated {\tt .S} and {\tt .c} files passed to gcc and the assembler\\
 {\tt o} & object files\\
 {\tt sml} & SML file\\
-{\tt ssa} & SSA file\\
 \end{tabular}
 
 \option{-l\mbox{\rm lib}}
@@ -115,11 +112,14 @@ Specify the name of the final output file.
 The default name is the input file name with its
 suffix removed and an appropriate suffix added.
 
-\option{-profile \{no|space|time\}}
-Produce an executable that will gather space or time profiling information.
-{\tt -profile space} and {\tt -profile time} imply {\tt -keep ssa}.
-When such an executable is run, it will produce an {\tt mlmon.out} file.
-See \secref{profiling} for details.
+\option{-profile \{no|alloc|time\}}
+Produce an executable that will gather allocation or time profiling
+information.  When such an executable is run, it will produce an {\tt
+mlmon.out} file.  See \secref{profiling} for details.
+
+\option{-profile-stack \{false|true\}}
+If true, the profiler will count the time spent (or bytes allocated)
+while a function is on the stack.
 
 \option{-safe \{true|false\}}
 This switch determines the value of the SML variable {\tt MLton.safe}, which
@@ -127,6 +127,9 @@ controls whether the basis library performs array, string, and vector bounds
 checks, division for zero checks, and other checks.  Compiling {\tt -safe false}
 changes the behavior of some programs, does not conform to the basis library
 specification, and may cause programs to seg fault.
+
+\option{-show-basis \{false|true\}}
+If true, the compiler shows the basis library and exits.
 
 \option{-show-basis-used \{false|true\}}
 If true, then the compiler prints out the types, values, signatures, structures,

@@ -39,8 +39,7 @@ structure MLton:
       structure Itimer: MLTON_ITIMER
       structure ProcEnv: MLTON_PROC_ENV
       structure Process: MLTON_PROCESS
-      structure ProfileAlloc: MLTON_PROFILE
-      structure ProfileTime: MLTON_PROFILE
+      structure Profile: MLTON_PROFILE
       structure Random: MLTON_RANDOM
       structure Rlimit: MLTON_RLIMIT
       structure Rusage: MLTON_RUSAGE
@@ -375,36 +374,34 @@ and start a new process running that executable with the arguments {\tt args}.
 Like {\tt Posix.Process.execp}.
 \end{description}
 
-\subsubsec{{\tt MLton.ProfileAlloc}, {\tt MLton.ProfileTime}}{profile-structures}
+\subsubsec{{\tt MLton.Profile}}{profile-structure}
 This structure provides profiling control from within the program.
 For more on profiling, see \secref{profiling} and {\tt
 examples/profiling}. In order to most efficiently execute
 non-profiled programs, all of the operations in {\tt
-MLton.ProfileAlloc} are no-ops except when compiling {\tt -profile
-alloc} and all the operations in {\tt MLton.ProfileTime} are no-ops
-except when compiling {\tt -profile time}.
+MLton.Profile} are no-ops when compiling {\tt -profile no} (the
+default).
 
 \begin{verbatim}
 signature MLTON_PROFILE =
    sig
-      val profile: bool
       structure Data:
          sig
             type t
+
             val equals: t * t -> bool
             val free: t -> unit
             val malloc: unit -> t
-            val reset: t -> unit
             val write: t * string -> unit
          end
-      val current: unit -> Data.t
-      val setCurrent: Data.t -> unit
+      val isOn: bool
+      val withData: Data.t * (unit -> 'a) -> 'a
    end
 \end{verbatim}
 
 \begin{description}
 
-\entry{profile}
+\entry{isOn}
 a compile-time constant that is true when compiling {\tt -profile
 time} or {\tt -profile alloc}.
 
@@ -424,10 +421,6 @@ returns new unit of profiling data.  Each unit of profiling data is
 allocated from the process heap (\emph{not} the {\mlton} heap) and
 consumes memory equal in size to text segment of the executable.
 
-\entry{Data.reset x} 
-clears the accumulated ticks in the unit of profiling data {\tt x}.
-It is an error to reset a previously freed unit of profiling data.
-
 \entry{\tt write (x, f)}
 writes the accumulated ticks in the unit of profiling data {\tt x} to
 file {\tt f}.  It is an error to write a previously freed unit of
@@ -435,12 +428,10 @@ profiling data.  Note: a program compiled with {\tt -profile time} or
 {\tt -profile alloc} will always write the current unit of profiling
 data at program exit to a file named {\tt mlmon.out}.
 
-\entry{current}
-returns the current unit of profiling data.
-
-\entry{setCurrent x}
-sets the current unit of profiling data.  It is an error to set a
-previously freed unit of profiling data.  
+\entry{withData (d, f)}
+runs {\tt f} with {\tt d} as the unit of profiling data, and returns
+the result of {\tt f} after restoring the current unit of profiling
+data.
 
 \end{description}
 
