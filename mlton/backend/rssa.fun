@@ -524,9 +524,6 @@ structure Function =
 	  ; Vector.foreach (args, Var.clear o #1)
 	  ; Vector.foreach (blocks, Block.clear))
 
-      fun hasPrim (T {blocks, ...}, pred) =
-	 Vector.exists (blocks, fn b => Block.hasPrim (b, pred))
-
       fun layoutHeader (T {args, name, raises, returns, start, ...}): Layout.t =
 	 let
 	    open Layout

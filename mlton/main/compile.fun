@@ -234,7 +234,7 @@ in
 					     (Tycon.originalName tycon),
 					     Region.bogus),
 		    TypeStr.tycon (tycon, kind),
-		    {isRebind = false}))
+		    {forceUsed = false, isRebind = false}))
 	       val _ =
 		  Vector.foreach
 		  (primitiveDatatypes, fn {tyvars, tycon, cons} =>
@@ -262,14 +262,14 @@ in
 		       TypeStr.data (tycon,
 				     TypeStr.Kind.Arity (Vector.length tyvars),
 				     cons),
-		       {isRebind = false})
+		       {forceUsed = false, isRebind = false})
 		   end)
 	       val _ =
 		  extendTycon (E,
 			       Ast.Tycon.fromSymbol (Symbol.unit, Region.bogus),
 			       TypeStr.def (Scheme.fromType Type.unit,
 					    TypeStr.Kind.Arity 0),
-			       {isRebind = false})
+			       {forceUsed = false, isRebind = false})
 	       val scheme = Scheme.fromType Type.exn
 	       val _ = List.foreach (primitiveExcons, fn c =>
 				     extendExn (E, Con.toAst c, c, scheme))

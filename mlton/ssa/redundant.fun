@@ -53,7 +53,6 @@ structure Element:
 	       fun make f (Class r) = f r
 	    in
 	       val coarserThan = make #coarserThan
-	       val elements = make #elements
 	       val plist = make #plist
 	    end
 
@@ -63,8 +62,6 @@ structure Element:
 		      plist = PropertyList.new ()}
 
 	    val bogus = new (Vector.new0 ())
-
-	    fun equals (c, c') = PropertyList.equals (plist c, plist c')
 	 end
 
       local

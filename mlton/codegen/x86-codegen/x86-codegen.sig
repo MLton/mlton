@@ -5,8 +5,6 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-type int = Int.t
-
 signature X86_CODEGEN_STRUCTS =
    sig
       structure CCodegen: C_CODEGEN

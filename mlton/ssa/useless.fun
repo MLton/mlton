@@ -491,8 +491,6 @@ fun useless (program: Program.t): Program.t =
 		| Weak {arg, useful} => (Useful.makeUseful useful; slot arg)
 	    end
 
-	 type value = t
-
 	 fun primApp {args: t vector, prim, resultVar = _, resultType,
 		      targs = _} =
 	    let

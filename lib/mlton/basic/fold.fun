@@ -12,7 +12,7 @@ type int = Int.int
    
 open S
 
-fun foldi (l, b, f) =
+fun foldi (l: 'a t, b, f) =
    #1 (fold (l, (b, 0: int), fn (x, (b, i)) => (f (i, x, b), i + 1)))
 
 fun foreachi (l, f) = foldi (l, (), fn (i, x, ()) => f (i, x))
