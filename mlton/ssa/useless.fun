@@ -276,7 +276,17 @@ structure Value =
 	    loop (t, [])
 	 end
 
-      val const = fromType o Type.ofConst
+      fun const (c: Const.t): t =
+	 let
+	    val v = fromType (Type.ofConst c)
+	    (* allOrNothing v because constants are not transformed and their
+	     * type cannot change.  So they must either be completely eliminated
+	     * or completely kept.
+	     *)
+	    val _ = allOrNothing v
+	 in
+	    v
+	 end
       val int = fromType Type.int
 
       fun detupleSlots (v: t): slot vector =

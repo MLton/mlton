@@ -2,6 +2,13 @@ Here are the changes since version 20030312.
 
 At this point, the only missing basis library function is "use".
 
+* 2003-06-03
+  - Fixed bug in SSA optimizer that could cause the error message
+	Type error: Type.equals
+	{from = char vector, to = unit vector}
+	Type error: analyze raised exception loopStatement: ...
+	unhandled exception: TypeError
+
 * 2003-06-02
   - Fixed Real.rem to work correctly on infs and nans.
   - Fixed bug in profiling that caused the function name to be omitted
