@@ -37,13 +37,7 @@ structure Finish =
 
 structure Value =
    struct
-      datatype t =
-	 Ground of Type.t
-       | Object of object
-       | Vector of {elt: t Prod.t,
-		    finalType: Type.t option ref}
-       | Weak of {arg: t,
-		  finalType: Type.t option ref}
+      datatype t = T of {value: value} Set.t
       and flat =
 	 NotFlat
 	| Offset of {object: object,
@@ -55,13 +49,23 @@ structure Value =
 		 finalComponents: Type.t Prod.t option ref,
 		 finalOffsets: int vector option ref,
 		 finalType: Type.t option ref,
-		 flat: flat Set.t}
+		 flat: flat ref}
+      and value =
+	 Ground of Type.t
+       | Object of object
+       | Vector of {elt: t Prod.t,
+		    finalType: Type.t option ref}
+       | Weak of {arg: t,
+		  finalType: Type.t option ref}
+
+      fun new v = T (Set.singleton {value = v})
+      fun value (T s) = #value (Set.value s)
 
       local
 	 open Layout
       in
 	 fun layout v: Layout.t =
-	    case v of
+	    case value v of
 	       Ground t => Type.layout t
 	     | Object ob => layoutObject ob
 	     | Vector {elt, ...} =>
@@ -78,7 +82,7 @@ structure Value =
 	    seq [str "Object ",
 		 record [("args", Prod.layout (args, layout)),
 			 ("con", Option.layout Con.layout con),
-			 ("flat", layoutFlat (Set.value flat))]]
+			 ("flat", layoutFlat (! flat))]]
       end
    end
 
@@ -95,7 +99,7 @@ structure Object =
 
       val layout = Value.layoutObject
 
-      fun equals (Obj {flat = f, ...}, Obj {flat = f', ...}) = Set.equals (f, f')
+      fun equals (Obj {flat = f, ...}, Obj {flat = f', ...}) = f = f'
 
       val select: t * int -> Value.t =
 	 fn (Obj {args, ...}, offset) =>
@@ -108,32 +112,36 @@ structure Value =
    struct
       open Value
 
-      fun weak a = Weak {arg = a, finalType = ref NONE}
+      val ground = new o Ground
 
-      fun vector p = Vector {elt = p, finalType = ref NONE}
+      fun weak (a: t): t = new (Weak {arg = a, finalType = ref NONE})
+
+      fun vector (p): t = new (Vector {elt = p, finalType = ref NONE})
 
       val deObject: t -> Object.t option =
-	 fn Object ob => SOME ob
+	 fn v =>
+	 case value v of
+	    Object ob => SOME ob
 	  | _ => NONE
 
       fun deFlat {inner: t, outer: Object.t}: Object.t option =
-	 case inner of
+	 case value inner of
 	    Object (z as Obj {flat, ...}) =>
-	       (case Set.value flat of
+	       (case ! flat of
 		   Flat.Offset {object, ...} =>
 		      if Object.equals (object, outer) then SOME z else NONE
 		 | _ => NONE)
 	  | _ => NONE
 	       
       fun dontFlatten (v: t): unit =
-	 case v of
-	    Object (Obj {flat, ...}) => Set.setValue (flat, NotFlat)
+	 case value v of
+	    Object (Obj {flat, ...}) => flat := NotFlat
 	  | _ => ()
 
-      val unit = Ground Type.unit
+      val unit = ground Type.unit
 
       fun isUnit v =
-	 case v of
+	 case value v of
 	    Ground t => Type.isUnit t
 	  | _ => false
 	       
@@ -141,18 +149,18 @@ structure Value =
 	 let
 	    (* Only may flatten objects with mutable fields. *)
 	    val flat =
-	       Set.singleton
+	       ref
 	       (if Vector.exists (Prod.dest args, fn {elt, isMutable} =>
 				  isMutable andalso not (isUnit elt))
 		   then Unknown
 		else NotFlat)
 	 in
-	    Object (Obj {args = args,
-			 con = con,
-			 finalComponents = ref NONE,
-			 finalOffsets = ref NONE,
-			 finalType = ref NONE,
-			 flat = flat})
+	    new (Object (Obj {args = args,
+			      con = con,
+			      finalComponents = ref NONE,
+			      finalOffsets = ref NONE,
+			      finalType = ref NONE,
+			      flat = flat}))
 	 end
 	    
       val tuple: t Prod.t -> t =
@@ -163,16 +171,21 @@ structure Value =
 	 tuple
 
       val rec unify: t * t -> unit =
-	 fn (v, v') =>
-	 case (v, v') of
-	    (Ground t, Ground t') => ()
-	  | (Object (Obj {args = a, flat = f, ...}),
-	     Object (Obj {args = a', flat = f', ...})) =>
-	       (Set.union (f, f')
-		; unifyProd (a, a'))
-	  | (Vector {elt = p, ...}, Vector {elt = p', ...}) => unifyProd (p, p')
-	  | (Weak {arg = a, ...}, Weak {arg = a', ...}) => unify (a, a')
-	  | _ => Error.bug "strange unify"
+	 fn (T s, T s') =>
+	 let
+	    val {value = v, ...} = Set.value s
+	    val {value = v', ...} = Set.value s'
+	    val () = Set.union (s, s')
+	 in
+	    case (v, v') of
+	       (Ground t, Ground t') => ()
+	     | (Object (Obj {args = a, ...}), Object (Obj {args = a', ...})) =>
+		  unifyProd (a, a')
+	     | (Vector {elt = p, ...}, Vector {elt = p', ...}) =>
+		  unifyProd (p, p')
+	     | (Weak {arg = a, ...}, Weak {arg = a', ...}) => unify (a, a')
+	     | _ => Error.bug "strange unify"
+	 end
       and unifyProd =
 	 fn (p, p') =>
 	 Vector.foreach2
@@ -228,7 +241,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	  Property.initRec
 	  (fn (t, makeTypeValue) =>
 	   let
-	      fun const () = Const (Value.Ground t)
+	      fun const () = Const (Value.ground t)
 	      datatype z = datatype Type.dest
 	   in
 	      case Type.dest t of
@@ -328,7 +341,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 object
       val deWeak: Value.t -> Value.t =
 	 fn v =>
-	 case v of
+	 case Value.value v of
 	    Value.Ground t =>
 	       typeValue (case Type.dest t of
 			     Type.Weak t => t
@@ -361,9 +374,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	       Array_toVector =>
 		  let
 		     val res = result ()
-		     datatype z = datatype Value.t
+		     datatype z = datatype Value.value
 		     val () =
-			case (arg 0, res) of
+			case (Value.value (arg 0), Value.value res) of
 			   (Ground _, Ground _) => ()
 			 | (Vector {elt = p, ...}, Vector {elt = p', ...}) =>
 			      Vector.foreach2
@@ -388,9 +401,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 end
       fun select {object, offset} =
 	 let
-	    datatype z = datatype Value.t
+	    datatype z = datatype Value.value
 	 in
-	    case object of
+	    case Value.value object of
 	       Ground t =>
 		  (case Type.dest t of
 		      Type.Object {args, ...} =>
@@ -402,16 +415,16 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       fun update {object, offset, value} =
 	 coerce {from = value,
 		 to = select {object = object, offset = offset}}
-      fun vectorSub {index = _, offset, vector} =
-	 case vector of
+      fun vectorSub {index = _, offset, vector: Value.t}: Value.t =
+	 case Value.value vector of
 	    Value.Ground t =>
 	        (case Type.dest t of
 		    Type.Vector p => typeValue (Prod.elt (p, offset))
 		  | _ => Error.bug "vectorSub Ground")
 	  | Value.Vector {elt, ...} => Prod.elt (elt, offset)
 	  | _ => Error.bug "vectorSub of non vector"
-      fun vectorUpdate {index = _, offset, value, vector} =
-	 case vector of
+      fun vectorUpdate {index = _, offset, value: Value.t, vector: Value.t} =
+	 case Value.value vector of
 	    Value.Ground _ => ()
 	  | Value.Vector {elt, ...} =>
 	       coerce {from = value,
@@ -509,7 +522,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		  Exp.Object {args, ...} =>
 		     Option.app
 		     (var, fn var =>
-		      case varValue var of
+		      case Value.value (varValue var) of
 			 Value.Ground _ => ()
 		       | Value.Object obj => f (var, args, obj)
 		       | _ => Error.bug "Object with strange value")
@@ -539,18 +552,18 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		   NonObject => Error.bug "Object with NonObject"
 		 | Object {flat, ...} => flat
 	     fun notFlat () =
-		(Set.setValue (flat, NotFlat)
+		(flat := NotFlat
 		 ; flat'Ref := NotFlat)
 	  in
 	     case flat' of
 		Offset {object = obj, offset = i} =>
-		   (case Set.value flat of
+		   (case ! flat of
 		       NotFlat => notFlat ()
 		     | Offset {object = obj', offset = i'} =>
 			  if i = i' andalso Object.equals (obj, obj')
 			     then ()
 			  else notFlat ()
-		     | Unknown => Set.setValue (flat, flat'))
+		     | Unknown => flat := flat')
 	      | _ => notFlat ()
 	  end)
       (* Disallow flattening into object components that aren't explicitly
@@ -607,9 +620,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 traceValueType
 	 (fn (v: Value.t) =>
 	 let
-	    datatype z = datatype Value.t
+	    datatype z = datatype Value.value
 	 in
-	    case v of
+	    case Value.value v of
 	       Ground t => t
 	     | Object z => objectType z
 	     | Vector {elt, finalType} =>
@@ -637,7 +650,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 (finalOffsets, fn () =>
 	  let
 	     val initial =
-		case Set.value flat of
+		case ! flat of
 		   Flat.Offset {object, offset} => objectOffset (object, offset)
 		 | _ => 0
 	     val (_, offsets) =
@@ -659,7 +672,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       and objectType (z as Obj {con, finalType, flat, ...}): Type.t =
 	 memoize
 	 (finalType, fn () =>
-	  case Set.value flat of
+	  case ! flat of
 	     Flat.Offset {object, ...} => objectType object
 	   | _ => Type.object {args = objectFinalComponents z,
 			       con = con})
@@ -730,7 +743,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			 (case varObject var of
 			     NONE => make exp
 			   | SOME (z as Obj {flat, ...}) =>
-				case Set.value flat of
+				case ! flat of
 				   Flat.Offset _ => none ()
 				 | _ =>
 				      let
