@@ -177,7 +177,7 @@ fun makeOptions {usage} =
        (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
        (Normal, "codegen",
-	if hasNative () then " {native|c}" else " {c}",
+	concat [" {", if hasNative () then "native|" else "", "bytecode|c}"],
 	"which code generator to use",
 	SpaceString (fn s =>
 		     case s of
