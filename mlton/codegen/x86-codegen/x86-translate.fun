@@ -166,6 +166,7 @@ struct
 		   case oper of
 		      CanHandle => gcState_canHandleContentsOperand ()
 		    | CardMap => gcState_cardMapContentsOperand ()
+		    | CurrentSource => gcState_currentSourceContentsOperand ()
 		    | CurrentThread => gcState_currentThreadContentsOperand ()
 		    | ExnStack =>
 			 gcState_currentThread_exnStackContentsOperand ()

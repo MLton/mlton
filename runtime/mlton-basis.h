@@ -129,26 +129,16 @@ void MLton_exit (Int status);
 Word MLton_random ();
 Word MLton_size (Pointer p);
 
-enum {
-	MLPROF_KIND_ALLOC = 0,
-	MLPROF_KIND_TIME = 1,
-};
+void MLton_Profile_Data_free (Pointer d);
+Pointer MLton_Profile_Data_malloc (void);
+void MLton_Profile_Data_write (Pointer data, Word fd);
 
-void MLton_ProfileAlloc_Data_free (Pointer d);
-Pointer MLton_ProfileAlloc_Data_malloc (void);
-void MLton_ProfileAlloc_Data_reset (Pointer d);
-void MLton_ProfileAlloc_Data_write (Pointer d, Word fd);
-Pointer MLton_ProfileAlloc_current (void);
-void MLton_ProfileAlloc_inc (Word amount);
-void MLton_ProfileAlloc_setCurrent (Pointer d);
-
-void MLton_ProfileTime_Data_free (Pointer d);
-Pointer MLton_ProfileTime_Data_malloc (void);
-void MLton_ProfileTime_Data_reset (Pointer data);
-void MLton_ProfileTime_Data_write (Pointer data, Cstring name);
-Pointer MLton_ProfileTime_current (void);
-void MLton_ProfileTime_init (void);
-void MLton_ProfileTime_setCurrent (Pointer d);
+Pointer MLton_Profile_current (void);
+void MLton_Profile_enter (Word sourceSeqsIndex);
+/* Must set s->currentSource before calling MLton_Profile_inc. */
+void MLton_Profile_inc (Word amount);
+void MLton_Profile_leave (Word sourceSeqsIndex);
+void MLton_Profile_setCurrent (Pointer d);
 
 #if (defined (__CYGWIN__))
 Int MLton_Process_spawne (NullString p, Pointer a, Pointer e);

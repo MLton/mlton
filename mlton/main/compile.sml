@@ -350,8 +350,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	    [("Exn_keepHistory", Bool (!exnHistory)),
 	     ("MLton_detectOverflow", Bool (!detectOverflow)),
 	     ("MLton_native", Bool (!Native.native)),
-	     ("MLton_profile_alloc", Bool (!profile = ProfileAlloc)),
-	     ("MLton_profile_time", Bool (!profile = ProfileTime)),
+	     ("MLton_profile_isOn", Bool (!profile <> ProfileNone)),
 	     ("MLton_safe", Bool (!safe)),
 	     ("TextIO_bufSize", Int (!textIOBufSize))]
 	 end
@@ -375,6 +374,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	    {
 	     canHandle = get "canHandle",
 	     cardMap = get "cardMapForMutator",
+	     currentSource = get "currentSource",
 	     currentThread = get "currentThread",
 	     frontier = get "frontier",
 	     limit = get "limit",

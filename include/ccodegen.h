@@ -90,11 +90,11 @@ struct cont {
 /*                       main                        */
 /* ------------------------------------------------- */
 
-#define Main(cs, mmc, mfs, mg, mc, ml)					\
+#define Main(cs, mmc, mfs, mg, ps, mc, ml)				\
 int main (int argc, char **argv) {					\
 	struct cont cont;						\
 	gcState.native = FALSE;						\
-	Initialize(cs, mmc, mfs, mg);					\
+	Initialize(cs, mmc, mfs, mg, ps);				\
 	if (gcState.isOriginal) {					\
 		real_Init();						\
 		PrepFarJump(mc, ml);					\

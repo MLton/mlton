@@ -15,11 +15,13 @@ datatype t = T of {bytesNeeded: int option,
 		   maySwitchThreads: bool,
 		   modifiesFrontier: bool,
 		   modifiesStackTop: bool,
+		   needsCurrentSource: bool,
 		   name: string,
 		   returnTy: Type.t option}
    
 fun layout (T {bytesNeeded, ensuresBytesFree, mayGC, maySwitchThreads,
-	       modifiesFrontier, modifiesStackTop, name, returnTy}) =
+	       modifiesFrontier, modifiesStackTop, name, needsCurrentSource,
+	       returnTy}) =
    Layout.record
    [("bytesNeeded", Option.layout Int.layout bytesNeeded),
     ("ensuresBytesFree", Bool.layout ensuresBytesFree),
@@ -28,6 +30,7 @@ fun layout (T {bytesNeeded, ensuresBytesFree, mayGC, maySwitchThreads,
     ("modifiesFrontier", Bool.layout modifiesFrontier),
     ("modifiesStackTop", Bool.layout modifiesStackTop),
     ("name", String.layout name),
+    ("needsCurrentSource", Bool.layout needsCurrentSource),
     ("returnTy", Option.layout Type.layout returnTy)]
 
 local
@@ -40,6 +43,7 @@ in
    val modifiesFrontier = make #modifiesFrontier
    val modifiesStackTop = make #modifiesStackTop
    val name = make #name
+   val needsCurrentSource = make #needsCurrentSource
    val returnTy = make #returnTy
 end
 
@@ -75,6 +79,7 @@ local
 	 modifiesFrontier = true,
 	 modifiesStackTop = true,
 	 name = "GC_gc",
+	 needsCurrentSource = false,
 	 returnTy = NONE}
    val t = make true
    val f = make false
@@ -90,20 +95,30 @@ fun vanilla {name, returnTy} =
       modifiesFrontier = false,
       modifiesStackTop = false,
       name = name,
+      needsCurrentSource = false,
       returnTy = returnTy}
 
 val bug = vanilla {name = "MLton_bug",
 		   returnTy = NONE}
 
+val profileEnter = vanilla {name = "MLton_Profile_enter",
+			    returnTy = NONE}
+
+val profileLeave = vanilla {name = "MLton_Profile_leave",
+			    returnTy = NONE}
+
 val size = vanilla {name = "MLton_size",
 		    returnTy = SOME Type.int}
 
-val profileAllocIncLeaveEnter =
-   vanilla {name = "MLton_ProfileAlloc_incLeaveEnter",
-	    returnTy = NONE}
-
-val profileAllocSetCurrentSource =
-   vanilla {name = "MLton_ProfileAlloc_setCurrentSource",
-	    returnTy = NONE}
+val profileInc =
+   T {bytesNeeded = NONE,
+      ensuresBytesFree = false,
+      mayGC = false,
+      maySwitchThreads = false,
+      modifiesFrontier = false,
+      modifiesStackTop = false,
+      name = "MLton_Profile_inc",
+      needsCurrentSource = true,
+      returnTy = NONE}
 
 end

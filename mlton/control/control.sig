@@ -196,6 +196,8 @@ signature CONTROL =
       datatype profile = ProfileNone | ProfileAlloc | ProfileTime
       val profile: profile ref
 
+      val profileStack: bool ref
+
       (* Array bounds checking. *)
       val safe: bool ref
 

@@ -3,6 +3,7 @@ struct
 
 open S
 open Rssa
+
 structure Graph = DirectedGraph
 local
    open Graph
@@ -67,6 +68,7 @@ fun profile program =
       val debug = false
       val profile = !Control.profile
       val profileAlloc: bool = profile = Control.ProfileAlloc
+      val profileStack: bool = !Control.profileStack
       val profileTime: bool = profile = Control.ProfileTime
       val frameProfileIndices = ref []
       local
@@ -136,7 +138,7 @@ fun profile program =
       in
 	 fun sourceSeqIndex (s: sourceSeq): int =
 	    let
-	       val s = Vector.fromList s
+	       val s = Vector.fromListRev s
 	       val hash =
 		  Vector.fold (s, 0w0, fn (i, w) =>
 			       w * 0w31 + Word.fromInt i)
@@ -158,7 +160,7 @@ fun profile program =
       (* Ensure that SourceInfo unknown is index 0. *)
       val unknownSourceSeq = sourceSeqIndex [sourceInfoIndex SourceInfo.unknown]
       (* Treat the empty source sequence as unknown. *)
-      val sourceSeqIndexSafe =
+      val sourceSeqIndex =
 	 fn [] => unknownSourceSeq
 	  | s => sourceSeqIndex s
       val {get = labelInfo: Label.t -> {block: Block.t,
@@ -167,15 +169,16 @@ fun profile program =
 	 Property.getSetOnce
 	 (Label.plist, Property.initRaise ("info", Label.layout))
       val labels = ref []
-      fun profileLabel (sourceSeq: int list): Statement.t =
+      fun profileLabelIndex (sourceSeqsIndex: int): Statement.t =
 	 let
-	    val index = sourceSeqIndexSafe sourceSeq
 	    val l = ProfileLabel.new ()
 	    val _ = List.push (labels, {label = l,
-					sourceSeqsIndex = index})
+					sourceSeqsIndex = sourceSeqsIndex})
 	 in
 	    Statement.ProfileLabel l
 	 end
+      fun profileLabel (sourceSeq: int list): Statement.t =
+	 profileLabelIndex (sourceSeqIndex sourceSeq)
       fun shouldPush (si: SourceInfo.t, ps: Push.t list): bool =
 	 case firstEnter ps of
 	    NONE => true
@@ -207,6 +210,17 @@ fun profile program =
 	 let
 	    val {args, blocks, name, raises, returns, start} = Function.dest f
 	    val {callees, ...} = funcInfo name
+	    fun enter (si: SourceInfo.t, ps: Push.t list) =
+	       let
+		  val n as InfoNode.T {node, ...} = sourceInfoNode si
+		  val _ = 
+		     case firstEnter ps of
+			NONE => List.push (callees, node)
+		      | SOME (InfoNode.T {node = node', ...}) =>
+			   addEdge {from = node', to = node}
+	       in
+		  Push.Enter n :: ps
+	       end
 	    val _ =
 	       Vector.foreach
 	       (blocks, fn block as Block.T {label, ...} =>
@@ -218,16 +232,19 @@ fun profile program =
 	    fun backward {args,
 			  kind,
 			  label,
+			  needsCurrentSource,
 			  sourceSeq,
 			  statements: Statement.t list,
 			  transfer: Transfer.t}: unit =
 	       let
-		  val (npl, sourceSeq, statements) =
+		  val (_, npl, sourceSeq, statements) =
 		     List.fold
 		     (statements,
-		      (true, sourceSeq, []), fn (s, (npl, sourceSeq, ss)) =>
+		      (needsCurrentSource, true, sourceSeq, []),
+		      fn (s, (ncs, npl, sourceSeq, ss)) =>
 		      case s of
-			 Profile ps =>
+			 Object _ => (true, true, sourceSeq, s :: ss)
+		       | Profile ps =>
 			    let
 			       val ss =
 				  if profileTime andalso npl
@@ -243,28 +260,31 @@ fun profile program =
 						  then sis
 					       else Error.bug "mismatched Enter")
 				   | Leave si => sourceInfoIndex si :: sourceSeq
+			       val ss =
+				  if profileAlloc andalso needsCurrentSource
+				     then
+					Statement.Move
+					{dst = (Operand.Runtime
+						Runtime.GCField.CurrentSource),
+					 src = (Operand.word
+						(Word.fromInt
+						 (sourceSeqIndex  sourceSeq)))}
+					:: ss
+				  else ss
 			    in
-			       (false, sourceSeq', ss)
+			       (false, false, sourceSeq', ss)
 			    end
-		       | _ => (true, sourceSeq, s :: ss))
-		  val statements =
-		     if profileTime andalso npl
-			then profileLabel sourceSeq :: statements
-		     else statements
-		  val (args, kind, label) =
-		     if profileAlloc
-			andalso (case kind of
-				    Kind.Cont _ => true
-				  | Kind.Handler => true
-				  | _ => false)
+		       | _ => (ncs, true, sourceSeq, s :: ss))
+		  val {args, kind, label} =
+		     if profileStack andalso (case kind of
+						 Kind.Cont _ => true
+					       | Kind.Handler => true
+					       | _ => false)
 			then
 			   let
+			      val func = CFunction.profileLeave
 			      val newLabel = Label.newNoname ()
-			      val func = CFunction.profileAllocSetCurrentSource
-			      val sourceIndex =
-				 case sourceSeq of
-				    [] => unknownIndex
-				  | n :: _ => n
+			      val index = sourceSeqIndex sourceSeq
 			      val _ =
 				 List.push
 				 (blocks,
@@ -272,20 +292,26 @@ fun profile program =
 				  {args = args,
 				   kind = kind,
 				   label = label,
-				   statements = Vector.new0 (),
-				   transfer =
-				   Transfer.CCall {args = (Vector.new1
-							   (Operand.word
-							    (Word.fromInt
-							     sourceIndex))),
-						   func = func,
-						   return = SOME newLabel}})
+				   statements =
+				   if profileTime
+				      then Vector.new1 (profileLabelIndex index)
+				   else Vector.new0 (),
+				   transfer = 
+				   Transfer.CCall
+				   {args = (Vector.new1
+					    (Operand.word (Word.fromInt index))),
+				    func = func,
+				    return = SOME newLabel}})
 			   in
-			      (Vector.new0 (),
-			       Kind.CReturn {func = func},
-			       newLabel)
+			      {args = Vector.new0 (),
+			       kind = Kind.CReturn {func = func},
+			       label = newLabel}
 			   end
-		     else (args, kind, label)
+		     else {args = args, kind = kind, label = label}
+		  val statements =
+		     if profileTime andalso npl
+			then profileLabel sourceSeq :: statements
+		     else statements
 	       in		       
 		  List.push (blocks,
 			     Block.T {args = args,
@@ -302,202 +328,6 @@ fun profile program =
 			      List.layout Statement.layout statements],
 		Unit.layout)
 	       backward
-	    fun maybeSplit {args,
-			    bytesAllocated,
-			    enters: InfoNode.t list,
-			    kind,
-			    label,
-			    leaves: InfoNode.t list,
-			    maybe: bool,
-			    sourceSeq,
-			    statements} =
-	       if profileAlloc
-		  andalso (not (List.isEmpty enters)
-			   orelse not (List.isEmpty leaves)
-			   orelse maybe)
-		  then
-		     let
-			val newLabel = Label.newNoname ()
-			val func = CFunction.profileAllocIncLeaveEnter
-			fun ssi (ns: InfoNode.t list): int =
-			   sourceSeqIndex (List.revMap (ns, InfoNode.index))
-			val enters =
-			   (* add the current source to the enters *)
-			   (case firstEnter sourceSeq of
-			       NONE => unknownInfoNode
-			     | SOME n => n) :: enters
-			val transfer =
-			   Transfer.CCall
-			   {args = (Vector.new3
-				    (Operand.word (Word.fromInt bytesAllocated),
-				     Operand.word (Word.fromInt (ssi leaves)),
-				     Operand.word (Word.fromInt (ssi enters)))),
-			    func = func,
-			    return = SOME newLabel}
-			val sourceSeq = Push.toSources sourceSeq
-			val _ =
-			   backward {args = args,
-				     kind = kind,
-				     label = label,
-				     sourceSeq = sourceSeq,
-				     statements = statements,
-				     transfer = transfer}
-		     in
-			{args = Vector.new0 (),
-			 bytesAllocated = 0,
-			 enters = [],
-			 kind = Kind.CReturn {func = func},
-			 label = newLabel,
-			 leaves = [],
-			 statements = []}
-		     end
-	       else
-		  {args = args,
-		   bytesAllocated = bytesAllocated,
-		   enters = enters,
-		   kind = kind,
-		   label = label,
-		   leaves = leaves,
-		   statements = statements}
-	    val maybeSplit =
-	       Trace.trace
-	       ("Profile.maybeSplit",
-		fn {enters, leaves, sourceSeq, ...} =>
-		Layout.record [("enters", List.layout InfoNode.layout enters),
-			       ("leaves", List.layout InfoNode.layout leaves),
-			       ("sourceSeq", List.layout Push.layout sourceSeq)],
-		Layout.ignore)
-	       maybeSplit
-	    fun forward {args, kind, label, sourceSeq, statements} =
-	       Vector.fold
-	       (statements,
-		{args = args,
-		 bytesAllocated = 0,
-		 enters = [],
-		 kind = kind,
-		 label = label,
-		 leaves = [],
-		 sourceSeq = sourceSeq,
-		 statements = []},
-		fn (s, {args, bytesAllocated, enters, kind, label, leaves,
-			sourceSeq, statements}) =>
-		(
-		 if debug
-		    then
-		       let
-			  open Layout
-		       in
-			  outputl (record
-				   [("statement", Statement.layout s),
-				    ("enters", List.layout InfoNode.layout enters),
-				    ("leaves", List.layout InfoNode.layout leaves)],
-				   Out.error)
-		       end
-		 else ()
-		 ;
-		 case s of
-		    Object {size, ...} =>
-		       let
-			  val {args, bytesAllocated, enters, kind, label,
-			       leaves, statements} =
-			     maybeSplit {args = args,
-					 bytesAllocated = bytesAllocated,
-					 enters = enters,
-					 kind = kind,
-					 label = label,
-					 leaves = leaves,
-					 maybe = false,
-					 sourceSeq = sourceSeq,
-					 statements = statements}
-		       in
-			  {args = args,
-			   bytesAllocated = bytesAllocated + size,
-			   enters = enters,
-			   kind = kind,
-			   label = label,
-			   leaves = leaves,
-			   sourceSeq = sourceSeq,
-			   statements = s :: statements}
-		       end
-		  | Profile ps =>
-		       let
-			  val (enters, leaves, sourceSeq, statements) =
-			     case ps of
-				Enter si =>
-				   (if shouldPush (si, sourceSeq)
-				       then
-					  let
-					     val n
-						as InfoNode.T {node, ...} =
-						sourceInfoNode si
-					     val _ = 
-						case firstEnter sourceSeq of
-						   NONE =>
-						      List.push (callees, node)
-						    | SOME
-						      (InfoNode.T
-						       {node = node', ...}) =>
-						      addEdge {from = node',
-							       to = node}
-					  in
-					     (n :: enters,
-					      leaves,
-					      Push.Enter n :: sourceSeq,
-					      s :: statements)
-					  end
-				    else (enters,
-					  leaves,
-					  Push.Skip si :: sourceSeq,
-					  statements))
-			      | Leave si =>
-				   (case sourceSeq of
-				       [] => Error.bug "unmatched Leave"
-				     | p :: sourceSeq' =>
-					  (case p of
-					      Push.Enter (n as InfoNode.T {index, ...}) =>
-						 if index = sourceInfoIndex si
-						    then
-						       let
-							  val (enters, leaves) =
-							     case enters of
-								[] =>
-								   ([],
-								    n :: leaves)
-							      | _ :: enters =>
-								   (enters, leaves)
-						       in
-							  (enters,
-							   leaves,
-							   sourceSeq',
-							   s :: statements)
-						       end
-						 else Error.bug "mismatched leave"
-					    | Push.Skip si' =>
-						 if SourceInfo.equals (si, si')
-						    then (enters,
-							  leaves,
-							  sourceSeq',
-							  statements)
-						 else Error.bug "mismatched leave"))
-		       in
-			  {args = args,
-			   bytesAllocated = bytesAllocated,
-			   enters = enters,
-			   kind = kind,
-			   label = label,
-			   leaves = leaves,
-			   sourceSeq = sourceSeq,
-			   statements = statements}
-		       end
-		  | _ => {args = args,
-			  bytesAllocated = bytesAllocated,
-			  enters = enters,
-			  kind = kind,
-			  label = label,
-			  leaves = leaves,
-			  sourceSeq = sourceSeq,
-			  statements = s :: statements})
-		)
 	    fun goto (l: Label.t, sourceSeq: Push.t list): unit =
 	       let
 		  val _ =
@@ -527,29 +357,148 @@ fun profile program =
 			   if Kind.isFrame kind
 			      then List.push (frameProfileIndices,
 					      (label,
-					       sourceSeqIndexSafe
+					       sourceSeqIndex
 					       (Push.toSources sourceSeq)))
 			   else ()
-			val {args, bytesAllocated, enters, kind, label, leaves,
-			     sourceSeq, statements} =
-			   forward {args = args,
-				    kind = kind,
-				    label = label,
-				    sourceSeq = sourceSeq,
-				    statements = statements}
-			val {args, kind, label, statements, ...} =
-			   maybeSplit {args = args,
-				       bytesAllocated = bytesAllocated,
-				       enters = enters,
-				       kind = kind,
-				       label = label,
-				       leaves = leaves,
-				       maybe = bytesAllocated > 0,
-				       sourceSeq = sourceSeq,
-				       statements = statements}
+			fun maybeSplit {args, bytesAllocated, kind, label,
+					sourceSeq: Push.t list,
+					statements} =
+			   if profileAlloc andalso bytesAllocated > 0
+			      then
+				 let
+				    val newLabel = Label.newNoname ()
+				    val func = CFunction.profileInc
+				    val transfer =
+				       Transfer.CCall
+				       {args = (Vector.new1
+						(Operand.word
+						 (Word.fromInt bytesAllocated))),
+					func = func,
+					return = SOME newLabel}
+				    val sourceSeq = Push.toSources sourceSeq
+				    val _ =
+				       backward {args = args,
+						 kind = kind,
+						 label = label,
+						 needsCurrentSource = true,
+						 sourceSeq = sourceSeq,
+						 statements = statements,
+						 transfer = transfer}
+				 in
+				    {args = Vector.new0 (),
+				     bytesAllocated = 0,
+				     kind = Kind.CReturn {func = func},
+				     label = newLabel,
+				     statements = []}
+				 end
+			   else {args = args,
+				 bytesAllocated = 0,
+				 kind = kind,
+				 label = label,
+				 statements = statements}
+			val {args, bytesAllocated, kind, label, sourceSeq,
+			     statements} =
+			   Vector.fold
+			   (statements,
+			    {args = args,
+			     bytesAllocated = 0,
+			     kind = kind,
+			     label = label,
+			     sourceSeq = sourceSeq,
+			     statements = []},
+			    fn (s, {args, bytesAllocated, kind, label,
+				    sourceSeq: Push.t list,
+				    statements}) =>
+			    (if not debug
+				then ()
+			     else
+				let
+				   open Layout
+				in
+				   outputl
+				   (seq [List.layout Push.layout sourceSeq,
+					 str " ",
+					 Statement.layout s],
+				    Out.error)
+				end
+			     ;
+			    case s of
+			       Object {size, ...} =>
+				  {args = args,
+				   bytesAllocated = bytesAllocated + size,
+				   kind = kind,
+				   label = label,
+				   sourceSeq = sourceSeq,
+				   statements = s :: statements}
+			     | Profile ps =>
+				  let
+				     val {args, bytesAllocated, kind, label,
+					  statements} =
+					maybeSplit
+					{args = args,
+					 bytesAllocated = bytesAllocated,
+					 kind = kind,
+					 label = label,
+					 sourceSeq = sourceSeq,
+					 statements = statements}
+				     datatype z = datatype ProfileExp.t
+				     val (keep, sourceSeq) =
+					case ps of
+					   Enter si =>
+					      if shouldPush (si, sourceSeq)
+						 then (true,
+						       enter (si, sourceSeq))
+					      else (false,
+						    Push.Skip si :: sourceSeq)
+					 | Leave si =>
+					      (case sourceSeq of
+						  [] =>
+						     Error.bug "unmatched Leave"
+						| p :: sourceSeq' =>
+						     let
+							val (keep, isOk) =
+							   case p of
+							      Push.Enter
+							      (InfoNode.T
+							       {index, ...}) =>
+								 (true,
+								  index = sourceInfoIndex si)
+							    | Push.Skip si' =>
+								 (false,
+								  SourceInfo.equals (si, si'))
+						     in
+							if isOk
+							   then (keep, sourceSeq')
+							else Error.bug "mismatched Leave"
+						     end)
+				     val statements =
+					if keep
+					   then s :: statements
+					else statements
+				  in
+				     {args = args,
+				      bytesAllocated = bytesAllocated,
+				      kind = kind,
+				      label = label,
+				      sourceSeq = sourceSeq,
+				      statements = statements}
+				  end
+			     | _ =>
+				  {args = args,
+				   bytesAllocated = bytesAllocated,
+				   kind = kind,
+				   label = label,
+				   sourceSeq = sourceSeq,
+				   statements = s :: statements})
+			    )
 			val _ =
 			   Transfer.foreachLabel
 			   (transfer, fn l => goto (l, sourceSeq))
+			val ncs =
+			   case transfer of
+			      Transfer.CCall {func, ...} =>
+				 CFunction.needsCurrentSource func
+			    | _ => false
 			(* Record the call for the call graph. *)
 			val _ =
 			   case transfer of
@@ -559,11 +508,54 @@ fun profile program =
 				  fn InfoNode.T {node, ...} =>
 				  List.push (#callers (funcInfo func), node))
 			    | _ => ()
+			val {args, kind, label, statements, ...} =
+			   maybeSplit {args = args,
+				       bytesAllocated = bytesAllocated,
+				       kind = kind,
+				       label = label,
+				       sourceSeq = sourceSeq,
+				       statements = statements}
+			val sourceSeq = Push.toSources sourceSeq
+			val transfer =
+			   if profileStack
+			      andalso
+			      (case transfer of
+				  Transfer.Call {return = Return.NonTail _, ...} =>
+				     true
+				| _ => false)
+			      then
+				 let
+				    val func = CFunction.profileEnter
+				    val newLabel = Label.newNoname ()
+				    val index = sourceSeqIndex sourceSeq
+				    val _ =
+				       List.push
+				       (blocks,
+					Block.T
+					{args = Vector.new0 (),
+					 kind = Kind.CReturn {func = func},
+					 label = newLabel,
+					 statements =
+					 if profileTime
+					    then (Vector.new1
+						  (profileLabelIndex index))
+					 else Vector.new0 (),
+					 transfer = transfer})
+				 in
+				    Transfer.CCall
+				    {args = (Vector.new1
+					     (Operand.word
+					      (Word.fromInt index))),
+				     func = func,
+				     return = SOME newLabel}
+				 end
+			   else transfer
 		     in
 			backward {args = args,
 				  kind = kind,
 				  label = label,
-				  sourceSeq = Push.toSources sourceSeq,
+				  needsCurrentSource = ncs,
+				  sourceSeq = sourceSeq,
 				  statements = statements,
 				  transfer = transfer}
 		     end

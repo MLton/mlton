@@ -63,8 +63,6 @@ typedef W32 Header;
 
 /* Sizes are (almost) always measured in bytes. */
 enum {
-	DEBUG_PROFILE_ALLOC = 	FALSE,
-	DEBUG_PROFILE_TIME = 	FALSE,
 	WORD_SIZE = 		4,
 	COUNTER_MASK =		0x7FF00000,
 	COUNTER_SHIFT =		20,
@@ -86,11 +84,6 @@ enum {
 };
 
 #define TWOPOWER(n) (1 << (n))
-
-typedef enum {
-	PROFILE_CURRENT,
-	PROFILE_CUMULATIVE,
-} ProfileStyle;
 
 /* ------------------------------------------------- */
 /*                    object type                    */
@@ -203,47 +196,41 @@ typedef struct GC_thread {
 /*                     Profiling                     */
 /* ------------------------------------------------- */
 
+typedef enum {
+	PROFILE_ALLOC,
+	PROFILE_TIME,
+} ProfileKind;
+
 typedef struct GC_sourceLabel {
 	pointer label;
 	uint sourceSeqsIndex;
 } *GC_profileLabel;
 
-typedef struct GC_profileAlloc {
-	/* bytesAllocated is an array of length sourcesSize that counts for
-	 * each function the number of bytes that have been allocated.
-	 * If profileStyle == PROFILE_CURRENT, then it is the number while
-	 * that function was current.  If profileStyle == PROFILE_CUMULATIVE,
-	 * then it is the number while the function was on the stack.
+/* GC_profile is used for both time and allocation profiling.
+ */
+typedef struct GC_profile {
+	/* count is an array of length sourcesSize that counts for each function
+         * the number of bytes that have been allocated or the number of clock
+	 * ticks that have occurred while the function was on top of the stack.
+	 * If profileStack, then it is the number while the function was 
+	 * anywhere on the stack. 
 	 */
-	ullong *bytesAllocated;
+	ullong *count;
 	/* lastTotal is an array of length sourcesSize that for each function, 
-	 * f, stores the value of totalBytesAllocated when the oldest occurrence
-	 * of f on the stack was pushed, i.e., the most recent time that 
-	 * stackCount[f] was changed from 0 to 1.  lastTotal is used to compute
-	 * the number of bytes to attribute to f when the oldest occurrence is
-	 * finally popped.  lastTotal is only used if 
-	 * profileStyle == PROFILE_CUMULATIVE.
+	 * f, stores the value of total when the oldest occurrence of f on the
+         * stack was pushed, i.e., the most recent time that stackCount[f] was 
+	 * changed from 0 to 1.  lastTotal is used to compute the amount to
+	 * attribute to f when the oldest occurrence is finally popped.
+	 * lastTotal is only used if profileStack.
 	 */
 	ullong *lastTotal;
 	/* stackCount is an array of length sourcesSize that counts the number 
 	 * of times each function is on the stack.  It is only used if 
-	 * profileStyle == PROFILE_CUMULATIVE.
+	 * profileStack.
 	 */
  	uint *stackCount;
-	ullong totalBytesAllocated;
-} *GC_profileAlloc;
-
-typedef struct GC_profileTime {
-	/* ticks is an array of length sourcesSize that counts for each function
-	 * the number of clock ticks that have happened while the function was
-	 * on top of the stack (if profileStyle == PROFILE_CURRENT) or anywhere
-	 * on the stack (if profileStyle == PROFILE_CUMULATIVE).
- 	 * With a 32 bits, a counter cannot overflow for 2^32 / 100 seconds,
-	 * or a bit over 1 CPU year. 
-	 */
-	uint *ticks;
-	uint totalTicks;
-} *GC_profileTime;
+	ullong total;
+} *GC_profile;
 
 /* ------------------------------------------------- */
 /*                      GC_heap                      */
@@ -307,8 +294,7 @@ typedef struct GC_state {
 	pointer crossMap;
 	uint crossMapSize;
 	/* currentSource is the index in sources of the currently executing
-	 * function.   This is only used when allocation profiling with
-	 * profileStyle = PROFILE_CURRENT;
+	 * function.
 	 */
 	uint currentSource;
 	GC_thread currentThread; /* This points to a thread in the heap. */
@@ -379,11 +365,10 @@ typedef struct GC_state {
 	W32 oldGenArraySize; 
 	uint oldGenSize;
 	uint pageSize; /* bytes */
-	GC_profileAlloc profileAlloc;
-	bool profileAllocIsOn;
-	ProfileStyle profileStyle;
-	GC_profileTime profileTime;
-	bool profileTimeIsOn;
+	GC_profile profile;
+ 	ProfileKind profileKind;
+	bool profileStack;
+	bool profilingIsOn;
 	W32 ram;		/* ramSlop * totalRam */
 	float ramSlop;
  	struct rusage ru_gc; /* total resource usage spent in gc */
@@ -412,12 +397,6 @@ typedef struct GC_state {
 	 * signal handler.
 	 */
 	sigset_t signalsPending;
-	/* sourceIsOnStack is an array of bools of length sourcesSize.  It is
-	 * used during stack walking (when time profiling with
-	 * profileStyle == PROFILE_CUMULATIVE) to count each source function
-	 * only once no matter how many times it appears on the stack.
- 	 */
-	char *sourceIsOnStack;
 	struct GC_sourceLabel *sourceLabels;
 	uint sourceLabelsSize;
 	/* sources is an array of strings identifying source positions. */
@@ -584,18 +563,6 @@ static inline bool GC_isValidSlot (GC_state s, pointer slot) {
 		and slot < s->stackBottom + s->currentThread->stack->reserved;
 }
 
-/* Write a profile data array out to a file descriptor.
- *
- * The `unknown ticks' is a count of the number of times that the monitored
- * program counter was not in the range of a bin.  This almost certainly
- * corresponds to times when it was pointing at shared library code.
- */
-void GC_profileAllocFree (GC_state s, GC_profileAlloc pa);
-GC_profileAlloc GC_profileAllocNew (GC_state s);
-void GC_profileAllocWrite (GC_state s, GC_profileAlloc pa, int fd);
-void GC_profileTimeFree (GC_state s, GC_profileTime pt);
-GC_profileTime GC_profileTimeNew (GC_state s);
-void GC_profileTimeWrite (GC_state s, GC_profileTime pt, int fd);
 
 /*
  * Build the header for an object, given the index to its type info.
@@ -608,7 +575,13 @@ static inline word GC_objectHeader (W32 t) {
 /* Pack the heap into a small amount of RAM. */
 void GC_pack (GC_state s);
 
-void GC_profile (GC_state s, uint sourceSeqsIndex);
+void GC_profileDone (GC_state s);
+
+void GC_profileFree (GC_state s, GC_profile p);
+
+GC_profile GC_profileNew (GC_state s);
+
+void GC_profileWrite (GC_state s, GC_profile p, int fd);
 
 /* Write out the current world to the file descriptor. */
 void GC_saveWorld (GC_state s, int fd);

@@ -299,56 +299,26 @@ structure Primitive =
 
 	    val native = _build_const "MLton_native": bool;
 
-	    structure ProfileAlloc =
+	    structure Profile =
 	       struct
-		  val isOn = _build_const "MLton_profile_alloc": bool;
+		  val isOn = _build_const "MLton_profile_isOn": bool;
 		  structure Data =
 		     struct
 		        type t = word
 
 			val dummy:t = 0w0
-			val free =
-			   _ffi "MLton_ProfileAlloc_Data_free": t -> unit;
-			val malloc =
-			   _ffi "MLton_ProfileAlloc_Data_malloc": unit -> t;
-			val reset =
-			   _ffi "MLton_ProfileAlloc_Data_reset": t -> unit;
+			val free = _ffi "MLton_Profile_Data_free": t -> unit;
+			val malloc = _ffi "MLton_Profile_Data_malloc": unit -> t;
 			val write =
-			   _ffi "MLton_ProfileAlloc_Data_write"
+			   _ffi "MLton_Profile_Data_write"
 			   : t * word (* fd *) -> unit;
 		     end
-		  val current =
-		     _ffi "MLton_ProfileAlloc_current": unit -> Data.t;
-		  val done = _ffi "MLton_ProfileAlloc_done": unit -> unit;
+		  val current = _ffi "MLton_Profile_current": unit -> Data.t;
+		  val done = _ffi "MLton_Profile_done": unit -> unit;
 		  val setCurrent =
-		     _ffi "MLton_ProfileAlloc_setCurrent": Data.t -> unit;
+		     _ffi "MLton_Profile_setCurrent": Data.t -> unit;
 	       end
-
-	    structure ProfileTime =
-	       struct
-		  val isOn = _build_const "MLton_profile_time": bool;
-		  structure Data =
-		     struct
-		        type t = word
-
-			val dummy:t = 0w0
-			val free =
-			   _ffi "MLton_ProfileTime_Data_free": t -> unit;
-			val malloc =
-			   _ffi "MLton_ProfileTime_Data_malloc": unit -> t;
-			val reset =
-			   _ffi "MLton_ProfileTime_Data_reset": t -> unit;
-			val write =
-			   _ffi "MLton_ProfileTime_Data_write"
-			   : t * word (* fd *) -> unit;
-		     end
-		  val current =
-		     _ffi "MLton_ProfileTime_current": unit -> Data.t;
-		  val init = _ffi "MLton_ProfileTime_init": unit -> unit;
-		  val setCurrent =
-		     _ffi "MLton_ProfileTime_setCurrent": Data.t -> unit;
-	       end
-
+	    
 	    structure Rlimit =
 	       struct
 		  type rlim = word

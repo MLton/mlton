@@ -151,6 +151,7 @@ fun toMachine (program: Ssa.Program.t) =
       val program = pass ("ssaToRssa", SsaToRssa.convert, program)
       val program = pass ("insertLimitChecks", LimitCheck.insert, program)
       val program = pass ("insertSignalChecks", SignalCheck.insert, program)
+      val program = pass ("implementHandlers", ImplementHandlers.doit, program)
       val {frameProfileIndices, labels = profileLabels, program, sources,
 	   sourceSeqs} =
 	 Control.passTypeCheck
@@ -161,7 +162,6 @@ fun toMachine (program: Ssa.Program.t) =
 	  suffix = "rssa",
 	  thunk = fn () => Profile.profile program,
 	  typeCheck = R.Program.typeCheck o #program}
-      val program = pass ("implementHandlers", ImplementHandlers.doit, program)
       val _ = R.Program.checkHandlers program
       val frameProfileIndex =
 	 if !Control.profile = Control.ProfileNone
@@ -927,7 +927,10 @@ fun toMachine (program: Ssa.Program.t) =
 					  s as M.Statement.ProfileLabel _ =>
 					     SOME s
 					| _ => NONE)) of
-			      NONE => Error.bug "missing ProfileLabel"
+			      NONE =>
+				 Error.bug
+				 (concat ["missing ProfileLabel in ",
+					  Label.toString label])
 			    | SOME s =>
 				 (Vector.new1 s,
 				  Vector.dropPrefix (statements, 1))

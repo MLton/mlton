@@ -18,6 +18,7 @@ structure GCField =
       datatype t =
 	 CanHandle
        | CardMap
+       | CurrentSource
        | CurrentThread
        | ExnStack
        | Frontier
@@ -34,6 +35,7 @@ structure GCField =
       val ty =
 	 fn CanHandle => Type.int
 	  | CardMap => Type.pointer
+	  | CurrentSource => Type.word
 	  | CurrentThread => Type.pointer
 	  | ExnStack => Type.word
 	  | Frontier => Type.pointer
@@ -47,6 +49,7 @@ structure GCField =
 
       val canHandleOffset: int ref = ref 0
       val cardMapOffset: int ref = ref 0
+      val currentSourceOffset: int ref = ref 0
       val currentThreadOffset: int ref = ref 0
       val frontierOffset: int ref = ref 0
       val limitOffset: int ref = ref 0
@@ -57,11 +60,12 @@ structure GCField =
       val stackLimitOffset: int ref = ref 0
       val stackTopOffset: int ref = ref 0
 
-      fun setOffsets {canHandle, cardMap, currentThread, frontier, limit,
-		      limitPlusSlop, maxFrameSize, signalIsPending, stackBottom,
-		      stackLimit, stackTop} =
+      fun setOffsets {canHandle, cardMap, currentSource, currentThread, frontier,
+		      limit, limitPlusSlop, maxFrameSize, signalIsPending,
+		      stackBottom, stackLimit, stackTop} =
 	 (canHandleOffset := canHandle
 	  ; cardMapOffset := cardMap
+	  ; currentSourceOffset := currentSource
 	  ; currentThreadOffset := currentThread
 	  ; frontierOffset := frontier
 	  ; limitOffset := limit
@@ -75,6 +79,7 @@ structure GCField =
       val offset =
 	 fn CanHandle => !canHandleOffset
 	  | CardMap => !cardMapOffset
+	  | CurrentSource => !currentSourceOffset
 	  | CurrentThread => !currentThreadOffset
 	  | ExnStack => Error.bug "exn stack offset not defined"
 	  | Frontier => !frontierOffset
@@ -89,6 +94,7 @@ structure GCField =
       val toString =
 	 fn CanHandle => "CanHandle"
 	  | CardMap => "CardMap"
+	  | CurrentSource => "CurrentSource"
 	  | CurrentThread => "CurrentThread"
 	  | ExnStack => "ExnStack"
 	  | Frontier => "Frontier"

@@ -133,6 +133,7 @@ fun insertFunction (f: Function.t,
 				     modifiesFrontier = false,
 				     modifiesStackTop = false,
 				     name = "MLton_allocTooLarge",
+				     needsCurrentSource = false,
 				     returnTy = NONE}
 		     val _ =
 			newBlocks :=

@@ -237,7 +237,8 @@ fun outputDeclarations
 			  [C.int (!Control.cardSizeLog2),
 			   C.bool (!Control.markCards),
 			   C.int maxFrameSize,
-			   magic]
+			   magic,
+			   C.bool (!Control.profileStack)]
 			  @ additionalMainArgs,
 			  print)
 	    ; print "\n"
@@ -403,6 +404,7 @@ fun output {program as Machine.Program.T {chunks,
 		     case r of
 			CanHandle => "gcState.canHandle"
 		      | CardMap => "gcState.cardMapForMutator"
+		      | CurrentSource => "gcState.currentSource"
 		      | CurrentThread => "gcState.currentThread"
 		      | ExnStack => "ExnStack"
 		      | Frontier => "frontier"

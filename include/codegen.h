@@ -37,7 +37,7 @@
 		sfread (globaluint, sizeof(uint), u, file);		\
 	}
 
-#define Initialize(cs, mmc, mfs, mg)					\
+#define Initialize(cs, mmc, mfs, mg, ps)				\
 	gcState.cardSizeLog2 = cs;					\
 	gcState.frameLayouts = frameLayouts;				\
 	gcState.frameLayoutsSize = cardof(frameLayouts); 		\
@@ -52,6 +52,7 @@
 	gcState.mutatorMarksCards = mmc;				\
 	gcState.objectTypes = objectTypes;				\
 	gcState.objectTypesSize = cardof(objectTypes);			\
+	gcState.profileStack = ps;					\
 	gcState.sourceLabels = sourceLabels;				\
 	gcState.sourceLabelsSize = cardof(sourceLabels);		\
 	gcState.saveGlobals = saveGlobals;				\

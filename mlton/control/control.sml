@@ -342,6 +342,10 @@ val profile = control {name = "profile",
 		       default = ProfileNone,
 		       toString = Profile.toString}
 
+val profileStack = control {name = "profile stack",
+			    default = false,
+			    toString = Bool.toString}
+
 val safe = control {name = "safe",
 		    default = true,
 		    toString = Bool.toString}

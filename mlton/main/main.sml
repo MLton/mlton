@@ -253,6 +253,9 @@ fun makeOptions {usage} =
 		      | "alloc" => ProfileAlloc
 		      | "time" => ProfileTime
 		      | _ => usage (concat ["invalid -profile arg: ", s])))),
+       (Normal, "profile-stack", " {false|true}",
+	"profile the stack",
+	boolRef profileStack),
        (Expert, "print-at-fun-entry", " {false|true}",
 	"print debugging message at every call",
 	boolRef printAtFunEntry),

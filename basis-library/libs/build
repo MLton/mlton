@@ -200,11 +200,8 @@ mlton/gc.sml
 mlton/int-inf.sig
 mlton/proc-env.sig
 mlton/proc-env.sml
-mlton/profile-data.sig
 mlton/profile.sig
-mlton/profile.fun
-mlton/profile-alloc.sml
-mlton/profile-time.sml
+mlton/profile.sml
 mlton/ptrace.sig
 mlton/ptrace.sml
 mlton/rlimit.sig

@@ -13,7 +13,6 @@
 #include <string.h>
 
 #if (defined (__FreeBSD__))
-#include <sys/types.h>
 #include <sys/sysctl.h>
 #endif
 
@@ -35,6 +34,14 @@
 #endif
 #if (defined (__FreeBSD__))
 #include <limits.h>
+#endif
+
+#if (defined (__linux__) || defined (__FreeBSD__))
+#include <signal.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <ucontext.h>
 #endif
 
 #include "IntInf.h"
@@ -62,6 +69,7 @@ enum {
 	DEBUG_GENERATIONAL = FALSE,
 	DEBUG_MARK_COMPACT = FALSE,
 	DEBUG_MEM = FALSE,
+	DEBUG_PROFILE = FALSE,
 	DEBUG_RESIZING = FALSE,
 	DEBUG_SIGNALS = FALSE,
 	DEBUG_STACKS = FALSE,
@@ -2774,6 +2782,10 @@ pointer GC_copyThread (GC_state s, pointer thread) {
 /*                            Profiling                             */
 /* ---------------------------------------------------------------- */
 
+static void enterFrame (GC_state s, uint i) {
+	MLton_Profile_enter (s->frameSources[i]);
+}
+
 void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i)) {
 	pointer bottom;
 	word index;
@@ -2781,17 +2793,17 @@ void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i)) {
 	word returnAddress;
 	pointer top;
 
-	if (DEBUG_PROFILE_TIME)
+	if (DEBUG_PROFILE)
 		fprintf (stderr, "walking stack");
 	assert (s->native);
 	bottom = stackBottom (s->currentThread->stack);
-	if (DEBUG_PROFILE_TIME)
+	if (DEBUG_PROFILE)
 		fprintf (stderr, "  bottom = 0x%08x  top = 0x%08x.\n",
 				(uint)bottom, (uint)s->stackTop);
 	for (top = s->stackTop; top > bottom; top -= layout->numBytes) {
 		returnAddress = *(word*)(top - WORD_SIZE);
 		index = *(word*)(returnAddress - WORD_SIZE);
-		if (DEBUG_PROFILE_TIME)
+		if (DEBUG_PROFILE)
 			fprintf (stderr, "top = 0x%08x  index = %u\n",
 					(uint)top, index);
 		unless (0 <= index and index < s->frameLayoutsSize)
@@ -2801,13 +2813,14 @@ void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i)) {
 		layout = &(s->frameLayouts[index]);
 		assert (layout->numBytes > 0);
 	}
-	if (DEBUG_PROFILE_TIME)
+	if (DEBUG_PROFILE)
 		fprintf (stderr, "done walking stack\n");
 }
 
+/* s->currentSource must be set. */
 void GC_incProfileAlloc (GC_state s, W32 amount) {
-	if (s->profileAllocIsOn)
-		MLton_ProfileAlloc_inc (amount);
+	if (s->profilingIsOn and (PROFILE_ALLOC == s->profileKind))
+		MLton_Profile_inc (amount);
 }
 
 static void showProf (GC_state s) {
@@ -2818,25 +2831,33 @@ static void showProf (GC_state s) {
 		fprintf (stdout, "%s\n", s->sources[i]);
 }
 
-static int compareProfileLabels (const void *v1, const void *v2) {
-	GC_profileLabel l1;
-	GC_profileLabel l2;
+void GC_profileFree (GC_state s, GC_profile p) {
+	free (p->count);
+	if (s->profileStack) {
+		free (p->lastTotal);
+		free (p->stackCount);
+	}
+	free (p);
+}
 
-	l1 = (GC_profileLabel)v1;
-	l2 = (GC_profileLabel)v2;
-	return (int)l1->label - (int)l2->label;
+GC_profile GC_profileNew (GC_state s) {
+	GC_profile p;
+
+	NEW(p);
+	p->total = 0;
+	ARRAY (p->count, s->sourcesSize);
+	if (s->profileStack) {
+		ARRAY (p->lastTotal, s->sourcesSize);
+		ARRAY (p->stackCount, s->sourcesSize);
+	}
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "0x%08x = GC_profileNew ()\n", (uint)p);
+	return p;
 }
 
 static void writeString (int fd, string s) {
 	swrite (fd, s, strlen(s));
 	swrite (fd, "\n", 1);
-}
-
-static void writeUint (int fd, uint w) {
-	char buf[20];
-
-	sprintf (buf, "%u", w);
-	writeString (fd, buf);
 }
 
 static void writeUllong (int fd, ullong u) {
@@ -2853,85 +2874,155 @@ static void writeWord (int fd, word w) {
 	writeString (fd, buf);
 }
 
-static void profileHeaderWrite (GC_state s, string kind, int fd, ullong total) {
+void GC_profileWrite (GC_state s, GC_profile p, int fd) {
+	int i;
+
 	writeString (fd, "MLton prof");
-	writeString (fd, kind);
-	switch (s->profileStyle) {
-	case PROFILE_CUMULATIVE:
-		writeString (fd, "cumulative");
-	break;
-	case PROFILE_CURRENT:
-		writeString (fd, "current");
-	break;
-	}
+	writeString (fd, (PROFILE_ALLOC == s->profileKind) ? "alloc" : "time");
+	writeString (fd, s->profileStack ? "cumulative" : "current");
 	writeWord (fd, s->magic);
-	writeUllong (fd, total);
-}
-
-void GC_profileAllocFree (GC_state s, GC_profileAlloc pa) {
-	free (pa->bytesAllocated);
-	switch (s->profileStyle) {
-	case PROFILE_CUMULATIVE:
-		free (pa->lastTotal);
-		free (pa->stackCount);
-	break;
-	case PROFILE_CURRENT:
-	break;
-	}
-	free (pa);
-}
-
-GC_profileAlloc GC_profileAllocNew (GC_state s) {
-	GC_profileAlloc pa;
-
-	NEW(pa);
-	pa->totalBytesAllocated = 0;
-	ARRAY (pa->bytesAllocated, s->sourcesSize);
-	switch (s->profileStyle) {
-	case PROFILE_CUMULATIVE:
-		ARRAY (pa->lastTotal, s->sourcesSize);
-		ARRAY (pa->stackCount, s->sourcesSize);
-	break;
-	case PROFILE_CURRENT:
-	break;
-	}
-	if (DEBUG_PROFILE_ALLOC)
-		fprintf (stderr, "0x%08x = GC_profileAllocNew()\n",
-				(uint)pa);
-	return pa;
-}
-
-void GC_profileAllocWrite (GC_state s, GC_profileAlloc pa, int fd) {
-	int i;
-
-	profileHeaderWrite (s, "alloc", fd, 
-				pa->totalBytesAllocated 
-				+ pa->bytesAllocated[SOURCES_INDEX_GC]);
+	writeUllong (fd, p->total + p->count[SOURCES_INDEX_GC]);
 	for (i = 0; i < s->sourcesSize; ++i)
-		writeUllong (fd, pa->bytesAllocated[i]);
+		writeUllong (fd, p->count[i]);
 }
 
-void GC_profileTimeFree (GC_state s, GC_profileTime pt) {
-	free (pt->ticks);
-	free (pt);
+#if (defined (__linux__) || defined (__FreeBSD__))
+
+#ifndef EIP
+#define EIP	14
+#endif
+
+static GC_state catcherState;
+
+/*
+ * Called on each SIGPROF interrupt.
+ */
+static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
+	GC_state s;
+	pointer pc;
+
+	s = catcherState;
+#if (defined (__linux__))
+        pc = (pointer) ucp->uc_mcontext.gregs[EIP];
+#elif (defined (__FreeBSD__))
+	pc = (pointer) ucp->uc_mcontext.mc_eip;
+#else
+#error pc not defined
+#endif
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "pc = 0x%08x\n", (uint)pc);
+	if (s->textStart <= pc and pc < s->textEnd)
+		s->currentSource = s->textSources [pc - s->textStart];
+	else
+		s->currentSource = SOURCE_SEQ_UNKNOWN;
+	MLton_Profile_inc (1);
 }
 
-GC_profileTime GC_profileTimeNew (GC_state s) {
-	GC_profileTime pt;
-	
-	NEW(pt);
-	ARRAY(pt->ticks, s->sourcesSize);
-	pt->totalTicks = 0;
-	return pt;
+/* To get the beginning and end of the text segment. */
+extern void	_start(void),
+		etext(void);
+
+static int compareProfileLabels (const void *v1, const void *v2) {
+	GC_profileLabel l1;
+	GC_profileLabel l2;
+
+	l1 = (GC_profileLabel)v1;
+	l2 = (GC_profileLabel)v2;
+	return (int)l1->label - (int)l2->label;
 }
 
-void GC_profileTimeWrite (GC_state s, GC_profileTime pt, int fd) {
+static void setProfTimer (long usec) {
+	struct itimerval iv;
+
+	iv.it_interval.tv_sec = 0;
+	iv.it_interval.tv_usec = 10000;
+	iv.it_value.tv_sec = 0;
+	iv.it_value.tv_usec = 10000;
+	unless (0 == setitimer (ITIMER_PROF, &iv, NULL))
+		die ("setProfTimer failed");
+}
+
+void GC_profileDone (GC_state s) {
+	assert (s->profilingIsOn);
+	if (PROFILE_TIME == s->profileKind)
+		setProfTimer (0);
+	s->profilingIsOn = FALSE;
+}
+
+static void profileTimeInit (GC_state s) {
 	int i;
+	pointer p;
+	struct sigaction sa;
+	uint sourceSeqsIndex;
 
-	profileHeaderWrite (s, "time", fd, pt->totalTicks);
-	for (i = 0; i < s->sourcesSize; ++i)
-		writeUint (fd, pt->ticks[i]);
+	s->profile = GC_profileNew (s);
+	/* Sort sourceLabels by address. */
+	qsort (s->sourceLabels, s->sourceLabelsSize, sizeof(*s->sourceLabels),
+		compareProfileLabels);
+	if (DEBUG_PROFILE)
+		for (i = 0; i < s->sourceLabelsSize; ++i)
+			fprintf (stderr, "0x%08x  %u\n",
+					(uint)s->sourceLabels[i].label,
+					s->sourceLabels[i].sourceSeqsIndex);
+	if (ASSERT)
+		for (i = 1; i < s->sourceLabelsSize; ++i)
+			assert (s->sourceLabels[i-1].label
+				<= s->sourceLabels[i].label);
+	/* Initialize s->textSources. */
+	s->textEnd = (pointer)&etext;
+	s->textStart = (pointer)&_start;
+	if (ASSERT)
+		for (i = 0; i < s->sourceLabelsSize; ++i)
+			assert (s->textStart <= s->sourceLabels[i].label
+				and s->sourceLabels[i].label < s->textEnd);
+	ARRAY (s->textSources, s->textEnd - s->textStart);
+	p = s->textStart;
+	sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
+	for (i = 0; i < s->sourceLabelsSize; ++i) {
+		for ( ; p < s->sourceLabels[i].label; ++p)
+			s->textSources[p - s->textStart] = sourceSeqsIndex;
+		sourceSeqsIndex = s->sourceLabels[i].sourceSeqsIndex;
+	}
+	for ( ; p < s->textEnd; ++p)
+		s->textSources[p - s->textStart] = sourceSeqsIndex;
+ 	/*
+	 * Install catcher, which handles SIGPROF and calls MLton_Profile_inc.
+	 * 
+	 * One thing I should point out that I discovered the hard way: If
+	 * the call to sigaction does NOT specify the SA_ONSTACK flag, then
+	 * even if you have called sigaltstack(), it will NOT switch stacks,
+	 * so you will probably die.  Worse, if the call to sigaction DOES
+	 * have SA_ONSTACK and you have NOT called sigaltstack(), it still
+	 * switches stacks (to location 0) and you die of a SEGV.  Thus the
+	 * sigaction() call MUST occur after the call to sigaltstack(), and
+	 * in order to have profiling cover as much as possible, you want it
+	 * to occur right after the sigaltstack() call.
+	 */
+	catcherState = s;
+	sa.sa_handler = (void (*)(int))catcher;
+	sigemptyset (&sa.sa_mask);
+	sa.sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
+	unless (sigaction (SIGPROF, &sa, NULL) == 0)
+		diee ("sigaction() failed");
+	/* Start the SIGPROF timer. */
+	setProfTimer (10000);
 }
+
+#elif (defined (__CYGWIN__))
+
+/* No time profiling on Cygwin. 
+ * There is a check in mlton/main/main.sml to make sure that time profiling is
+ * never turned on on Cygwin.
+ */
+static void profileTimeInit (GC_state s) {
+	die ("no time profiling on Cygwin");
+}
+
+#else
+
+#error time profiling not implemented
+
+#endif
 
 /* ---------------------------------------------------------------- */
 /*                          Initialization                          */
@@ -3336,10 +3427,6 @@ static void loadWorld (GC_state s, char *fileName) {
 /*                             GC_init                              */
 /* ---------------------------------------------------------------- */
 
-/* To get the beginning and end of the text segment. */
-extern void	_start(void),
-		etext(void);
-
 int GC_init (GC_state s, int argc, char **argv) {
 	char *worldFile;
 	int i;
@@ -3376,8 +3463,6 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->numMinorsSinceLastMajor = 0;
 	s->nurseryRatio = 10.0;
 	s->oldGenArraySize = 0x100000;
-	s->profileStyle = PROFILE_CURRENT;
-	s->profileStyle = PROFILE_CUMULATIVE;
 	s->pageSize = getpagesize ();
 	s->ramSlop = 0.80;
 	s->savedThread = BOGUS_THREAD;
@@ -3401,62 +3486,16 @@ int GC_init (GC_state s, int argc, char **argv) {
 		die ("page size must be a multiple of card size");
 	/* Initialize profiling. */
 	if (s->sourcesSize > 0) {
+		s->profilingIsOn = TRUE;
 		if (s->sourceLabelsSize > 0) {
-			s->profileAllocIsOn = FALSE;
-			s->profileTimeIsOn = TRUE;
+			s->profileKind = PROFILE_TIME;
+			profileTimeInit (s);
 		} else {
-			s->profileAllocIsOn = TRUE;
-			s->profileTimeIsOn = FALSE;
+			s->profileKind = PROFILE_ALLOC;
+			s->profile = GC_profileNew (s);
 		}
-	}
-	if (s->profileAllocIsOn) {
-		s->profileAlloc = GC_profileAllocNew (s);
-	}
-	if (s->profileTimeIsOn) {
-		pointer p;
-		uint sourceSeqsIndex;
-
-		if (PROFILE_CUMULATIVE == s->profileStyle)
-			ARRAY (s->sourceIsOnStack, s->sourcesSize);
-		/* Sort profileLabels by address. */
-		qsort (s->sourceLabels, 
-			s->sourceLabelsSize,
-			sizeof(*s->sourceLabels),
-			compareProfileLabels);
-		if (DEBUG_PROFILE_TIME)
-			for (i = 0; i < s->sourceLabelsSize; ++i)
-				fprintf (stderr, "0x%08x  %u\n",
-						(uint)s->sourceLabels[i].label,
-						s->sourceLabels[i].sourceSeqsIndex);
-		if (ASSERT)
-			for (i = 1; i < s->sourceLabelsSize; ++i)
-				assert (s->sourceLabels[i-1].label
-					<= s->sourceLabels[i].label);
-		/* Initialize s->textSources. */
-		s->textEnd = (pointer)&etext;
-		s->textStart = (pointer)&_start;
-		if (DEBUG)
-			for (i = 0; i < s->sourceLabelsSize; ++i)
-				assert (s->textStart <= s->sourceLabels[i].label
-					and s->sourceLabels[i].label < s->textEnd);
-		s->textSources = 
-			(uint*)malloc ((s->textEnd - s->textStart) 
-						* sizeof(*s->textSources));
-		if (NULL == s->textSources)
-			die ("Out of memory: unable to allocate textSources");
-		p = s->textStart;
-		sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
-		for (i = 0; i < s->sourceLabelsSize; ++i) {
-			while (p < s->sourceLabels[i].label) {
-				s->textSources[p - s->textStart]
-					= sourceSeqsIndex;
-				++p;
-			}
-			sourceSeqsIndex = s->sourceLabels[i].sourceSeqsIndex;
-		}
-		for ( ; p < s->textEnd; ++p)
-			s->textSources[p - s->textStart] = sourceSeqsIndex;
-	}
+	} else
+		s->profilingIsOn = FALSE;
 	/* Process command-line arguments. */
 	i = 1;
 	if (argc > 1 and (0 == strcmp (argv [1], "@MLton"))) {
@@ -3572,8 +3611,11 @@ int GC_init (GC_state s, int argc, char **argv) {
 				uintToCommaString (s->ram));
 	if (s->isOriginal)
 		newWorld (s);
-	else
+	else {
 		loadWorld (s, worldFile);
+		if (s->profilingIsOn and s->profileStack)
+			GC_foreachStackFrame (s, enterFrame);
+	}
 	s->amInGC = FALSE;
 	assert (mutatorInvariant (s));
 	return i;

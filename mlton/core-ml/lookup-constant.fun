@@ -122,6 +122,7 @@ fun decsConstants (decs: CoreML.Dec.t vector): res =
 val gcFields =
    [
     "canHandle",
+    "currentSource",
     "currentThread",
     "frontier",
     "cardMapForMutator",
