@@ -174,8 +174,8 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	  then ()
 	  else (flushOut os;
 		if terminated (!state)
-		  then (writerSel (outstreamWriter os, #close)) ()
-		  else ();
+		  then ()
+		  else (writerSel (outstreamWriter os, #close)) ();
 		state := Closed)
 	handle exn => liftExn (outstreamName os) "closeOut" exn
 
