@@ -1,6 +1,16 @@
 #!/bin/sh
 
-mail -s 'MLton survey' sweeks@sweeks.com
+set -e
+
+file='surveys'
+date=`date +%Y-%m-%d-%H:%M`
+
+cat >>$file <<EOF
+--------------------------------------------------------------------------------
+$date
+EOF
+
+tee -a $file | mail -s 'MLton survey' sweeks@sweeks.com
 
 cat<<EOF
 Content-Type: text/html
