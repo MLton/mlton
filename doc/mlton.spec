@@ -25,7 +25,7 @@ rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT VERSION=%{version}
 
 %files
-%attr(-, root, root)		/usr/doc/mlton
+%attr(-, root, root)		/usr/share/doc/mlton
 %attr(-, root, root)		/usr/bin/mllex
 %attr(-, root, root)		/usr/bin/mlprof
 %attr(-, root, root)		/usr/bin/mlton

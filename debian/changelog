@@ -1,3 +1,10 @@
+mlton (20021017.1-1) unstable; urgency=low
+
+  * Build in a testing environment instead of stable.
+  * Put doc files in /usr/share/doc, not /usr/doc.
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Thu, 17 Oct 2002 15:07:53 -0700
+
 mlton (20020930.1-1) unstable; urgency=low
 
   * Recompiling without setting rpath.
