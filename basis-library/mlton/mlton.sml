@@ -9,11 +9,7 @@ structure MLton: MLTON =
 struct
 
 structure Prim = Primitive.MLton
-
-datatype hostType = datatype Prim.hostType
-
-val hostType = Prim.hostType
-   
+  
 val isMLton = true
    
 (* The ref stuff is so that the (de)serializer always deals with pointers
@@ -56,6 +52,7 @@ structure FFI = MLtonFFI
 structure GC = MLtonGC
 structure IntInf = IntInf
 structure Itimer = MLtonItimer
+structure Platform = MLtonPlatform
 structure ProcEnv = MLtonProcEnv
 structure Process = MLtonProcess
 structure Ptrace = MLtonPtrace

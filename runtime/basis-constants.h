@@ -27,16 +27,24 @@
 /*                       MLton                       */
 /* ------------------------------------------------- */
 
-#if (defined (__CYGWIN__))
-#define MLton_hostType 0
-#elif (defined (__FreeBSD__))
-#define MLton_hostType 1
-#elif (defined (__linux__))
-#define MLton_hostType 2
-#elif (defined (__sun__))
-#define MLton_hostType 3
+#if (defined (__sparc__))
+#define MLton_Platform_arch 0
+#elif (defined (__i386__))
+#define MLton_Platform_arch 1
 #else
-#error MLton_hostType not defined
+#error MLton_Platform_arch not defined
+#endif
+
+#if (defined (__CYGWIN__))
+#define MLton_Platform_os 0
+#elif (defined (__FreeBSD__))
+#define MLton_Platform_os 1
+#elif (defined (__linux__))
+#define MLton_Platform_os 2
+#elif (defined (__sun__))
+#define MLton_Platform_os 3
+#else
+#error MLton_Platform_os not defined
 #endif
 
 #if (defined (__sun__))

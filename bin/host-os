@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+set -e
+
+die () {
+	echo >&2 "$1"
+	exit 1
+}
+
+uname=`uname`
+
+case "$uname" in
+Linux)
+	os=linux
+;;
+CYGWIN*)
+	os=cygwin
+;;
+FreeBSD*)
+	os=freebsd
+;;
+SunOS)
+	os=sunos
+;;
+*)
+	die "Unknown OS $uname."
+;;
+esac
+
+echo $os

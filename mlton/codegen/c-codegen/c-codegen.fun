@@ -378,7 +378,7 @@ fun output {program as Machine.Program.T {chunks,
 	 end
       val handleMisalignedReals =
 	 !Control.alignDoubles = Control.AlignNo
-	 andalso !Control.hostType = Control.Sun
+	 andalso !Control.hostArch = Control.Sparc
       fun addr z = concat ["&(", z, ")"]
       fun realFetch z = concat ["Real_fetch(", addr z, ")"]
       fun realMove {dst, src} =

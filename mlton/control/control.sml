@@ -138,22 +138,37 @@ val host = control {name = "host",
 		    default = Self,
 		    toString = Host.toString}
 
-structure HostType =
+structure HostArch =
    struct
-      datatype t = datatype MLton.hostType
+      datatype t = datatype MLton.Platform.arch
 
+      val toString =
+	 fn X86 => "X86"
+	  | Sparc => "SPARC"
+   end
+
+datatype hostArch = datatype HostArch.t
+
+val hostArch = control {name = "host arch",
+			default = X86,
+			toString = HostArch.toString}
+
+structure HostOS =
+   struct
+      datatype t = datatype MLton.Platform.os
+	 
       val toString =
 	 fn Cygwin => "Cygwin"
 	  | FreeBSD => "FreeBSD"
 	  | Linux => "Linux"
-	  | Sun => "Sun"
+	  | SunOS => "SunOS"
    end
 
-datatype hostType = datatype HostType.t
+datatype hostOS = datatype HostOS.t
    
-val hostType = control {name = "host type",
-			default = Linux,
-			toString = HostType.toString}
+val hostOS = control {name = "host OS",
+		      default = Linux,
+		      toString = HostOS.toString}
 
 val indentation = control {name = "indentation",
 			   default = 3,

@@ -11,13 +11,22 @@
 # should be the same as target in build-cross-gcc.  Examples are
 # i386-pc-cygwin and sparc-sun-solaris.
 #
-# 2. {cygwin|sun}, specifies the kind of system.  There are only two
-# possibilities.
+# 2. <crossArch> specifies the target architecture.  
+#    The posibilities are: sparc, x86.
 #
-# 3. <machine> specifies a remote machine of the cross type.  After
+# 3. <crossOS> specifies the target OS.
+#    The possibilities are: cygwin, sunos.
+#
+# 4. <machine> specifies a remote machine of the target type.  After
 # cross compiling the runtime, this script will ssh to that machine to
 # get the values of the constants that the MLton basis library needs.
 # Of course, you must be able to ssh to this machine.
+#
+# For example,
+#   add-cross i386-pc-cygwin x86 cygwin cygwin
+#   add-cross sparc-sun-solaris sparc sunos blade
+# (Here cygwin happens to be the name of my Cygwin machine and blade
+#  happens to be the name of my Sparc machine.)
 #
 # You also may need to set $libDir, which determines where the
 # cross-compiler target will be installed.
@@ -30,14 +39,15 @@ die () {
 }
 
 usage () {
-	die "usage: $name <crossHost> {cygwin|sun} <machine>"
+	die "usage: $name <crossHost> <crossArch> <crossOS> <machine>"
 }
 
 case "$#" in
-3)
+4)
 	crossHost="$1"
-	crossType="$2"
-	machine="$3"
+	crossArch="$2"
+	crossOS="$3"
+	machine="$4"
 	;;
 *)
 	usage
@@ -58,14 +68,6 @@ lib="$src/build/lib"
 
 # You shouldn't need to change anything below this line.
 
-case "$crossType" in
-cygwin|sun)
-;;
-*)
-	die "invalid crossType: $crossType"
-;;
-esac
-
 PATH=$src/build/bin:$PATH
 
 mkdir -p "$lib/$crossHost/include" ||
@@ -73,7 +75,8 @@ mkdir -p "$lib/$crossHost/include" ||
 
 echo 'Making runtime.' 
 (cd $src && 
-	make HOST=$crossHost HOSTTYPE=$crossType LIB=$lib hostmap runtime \
+	make HOST=$crossHost HOST_ARCH=$crossArch HOST_OS=$crossOS LIB=$lib \
+		hostmap runtime \
 		>runtime-log 2>&1 &&
 	rm -f runtime-log) ||
 	die "Unable to make runtime.  See $src/runtime-log."

@@ -1,5 +1,5 @@
 HOST = self
-HOSTTYPE = $(shell ../bin/hosttype)
+HOST_ARCH = $(shell ../bin/host-arch)
 
 ifeq ($(HOST), self)
 AR = ar rc
@@ -9,17 +9,10 @@ AR = $(HOST)-ar rc
 HOSTFLAGS = -b $(HOST)
 endif
 
-X86FLAGS = -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer
-ifeq ($(HOSTTYPE), cygwin)
-ARCHFLAGS = $(X86FLAGS)
+ifeq ($(HOST_ARCH), x86)
+ARCHFLAGS = -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer
 endif
-ifeq ($(HOSTTYPE), freebsd)
-ARCHFLAGS = $(X86FLAGS)
-endif
-ifeq ($(HOSTTYPE), linux)
-ARCHFLAGS = $(X86FLAGS)
-endif
-ifeq ($(HOSTTYPE), sun)
+ifeq ($(HOST_ARCH), sun)
 ARCHFLAGS = 
 endif
 

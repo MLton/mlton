@@ -23,25 +23,23 @@ structure SMLofNJ: SML_OF_NJ =
 
 	    fun getHostArch () =
 	       let
-		  open Primitive.MLton
+		  open Primitive.MLton.Platform
 	       in
-		  case hostType of
-		     Cygwin => "X86"
-		   | FreeBSD => "X86"
-		   | Linux => "X86"
-		   | Sun => "SPARC"
+		  case arch of
+		     X86 => "X86"
+		   | Sparc => "SPARC"
 	       end
 		     
 	    fun getOSKind () = UNIX
 	    fun getOSName () =
 	       let
-		  open Primitive.MLton
+		  open Primitive.MLton.Platform
 	       in
-		  case hostType of
+		  case os of
 		     Cygwin => "Cygwin"
 		   | FreeBSD => "FreeBSD"
 		   | Linux => "Linux"
-		   | Sun => "Solaris"
+		   | SunOS => "Solaris"
 	       end
 	 end
       

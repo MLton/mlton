@@ -28,14 +28,15 @@ structure Real64: REAL =
 	    open Math
 
 	    structure MLton = Primitive.MLton
-	    (* Patches for Cygwin and Sun, whose math libraries do not handle
-	     * out of range args.
+	    structure Platform = MLton.Platform
+	    (* Patches for Cygwin and SunOS, whose math libraries do not handle
+	     * out-of-range args.
 	     *)
 	    val (acos, asin, ln, log10) =
 	       if not MLton.native
-		  andalso (case MLton.hostType of
-			      MLton.Cygwin => true
-			    | MLton.Sun => true
+		  andalso (case Platform.os of
+			      Platform.Cygwin => true
+			    | Platform.SunOS => true
 			    | _ => false)
 		  then
 		     let

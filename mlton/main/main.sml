@@ -52,30 +52,41 @@ val profileSet: bool ref = ref false
 val showBasis: bool ref = ref false
 val stop = ref Place.OUT
 
-val hostMap: unit -> {host: string, hostType: Control.hostType} list =
+val hostMap: unit -> {arch: Control.hostArch,
+		      host: string,
+		      os: Control.hostOS} list =
    Promise.lazy
    (fn () =>
     List.map
     (File.lines (concat [!Control.libDir, "/hostmap"]), fn line =>
      case String.tokens (line, Char.isSpace) of
-	[host, hostType] =>
-	   {host = host,
-	    hostType =
-	    (case hostType of
-		"cygwin" => Control.Cygwin
-	      | "freebsd" => Control.FreeBSD
-	      | "linux" => Control.Linux
-	      | "sun" => Control.Sun
-	      | _ => Error.bug (concat ["strange hostType: ", hostType]))}
+	[host, arch, os] =>
+	   let
+	      val arch =
+		 case arch of
+		    "x86" => Control.X86
+		  | "sparc" => Control.Sparc
+		  | _ => Error.bug (concat ["strange arch: ", arch])
+	      val os =
+		 case os of
+		    "cygwin" => Control.Cygwin
+		  | "freebsd" => Control.FreeBSD
+		  | "linux" => Control.Linux
+		  | "sunos" => Control.SunOS
+		  | _ => Error.bug (concat ["strange os: ", os])
+	   in
+	      {arch = arch, host = host, os = os}
+	   end
       | _ => Error.bug (concat ["strange host mapping: ", line])))
 
 fun setHostType (hostString: string, usage): unit =
    case List.peek (hostMap (), fn {host = h, ...} => h = hostString) of
       NONE => usage (concat ["invalid host ", hostString])
-    | SOME {hostType = t, ...} =>
-	 (Control.hostType := t
-	  ; (case !Control.hostType of
-		Control.Sun => Control.Native.native := false
+    | SOME {arch, os, ...} =>
+	 (Control.hostArch := arch
+	  ; Control.hostOS := os
+	  ; (case arch of
+		Control.Sparc => Control.Native.native := false
 	      | _ => ()))
    
 fun makeOptions {usage} = 
@@ -225,7 +236,7 @@ fun makeOptions {usage} =
 	"may @MLton load-world be used",
 	boolRef mayLoadWorld),
        (Normal, "native",
-	if !hostType = Sun then " {false}" else " {true|false}",
+	if !hostArch = Sparc then " {false}" else " {true|false}",
 	"use native code generator",
 	boolRef Native.native),
        (Expert, "native-commented", " <n>", "level of comments  (0)",
@@ -392,11 +403,9 @@ fun commandLine (args: string list): unit =
 	  "-w"]
       val sparcLinkLibs = ["dl", "m", "nsl", "socket"]
       val (cFlags, defaultLibs) =
-	 case !hostType of
-	    Cygwin => (x86CFlags, x86LinkLibs)
-	  | FreeBSD => (x86CFlags, x86LinkLibs)
-	  | Linux => (x86CFlags, x86LinkLibs)
-	  | Sun => (sparcCFlags, sparcLinkLibs)
+	 case !hostArch of
+	    X86 => (x86CFlags, x86LinkLibs)
+	  | Sparc => (sparcCFlags, sparcLinkLibs)
       val ccOpts =
 	 List.fold
 	 (!ccOpts, cFlags, fn (ccOpt, ac) => 
@@ -411,7 +420,7 @@ fun commandLine (args: string list): unit =
       val ccOpts = String.tokens (concat (List.separate (ccOpts, " ")),
 				  Char.isSpace)
       val _ =
-	 if !Native.native andalso !hostType = Sun
+	 if !Native.native andalso !hostArch = Sparc
 	    then usage "can't use -native true on Sparc"
 	 else ()
       val _ =
@@ -431,7 +440,7 @@ fun commandLine (args: string list): unit =
 	    then keepSSA := true
 	 else ()
       val _ =
-	 if !hostType = Cygwin andalso !profile = ProfileTime
+	 if !hostOS = Cygwin andalso !profile = ProfileTime
 	    then usage "can't use -profile time on Cygwin"
 	 else ()
       fun printVersion () = print (concat [version, " ", build, "\n"])
@@ -533,7 +542,7 @@ fun commandLine (args: string list): unit =
 		      * with libgmp.a instead of using -lgmp.
 		      *)
 		     val linkWithGmp =
-			case !hostType of
+			case !hostOS of
 			   Cygwin => ["-lgmp"]
 			 | FreeBSD => ["-L/usr/local/lib/", "-lgmp"]
 			 | Linux =>
@@ -598,9 +607,12 @@ fun commandLine (args: string list): unit =
 			      ()
 			   (* gcc on Cygwin appends .exe, which I don't want, so
 			    * move the output file to it's rightful place.
+			    * Notice that we do not use !hostOS here, since we
+			    * care about the platform we're running on, not the
+			    * platform we're generating for.
 			    *)
 			   val _ =
-			      if MLton.hostType = MLton.Cygwin
+			      if MLton.Platform.os = Cygwin
 				 then
 				    if String.contains (output, #".")
 				       then ()

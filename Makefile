@@ -1,5 +1,6 @@
 export HOST = self
-export HOSTTYPE = $(shell bin/hosttype)
+export HOST_ARCH = $(shell bin/host-arch)
+export HOST_OS = $(shell bin/host-os)
 ROOT = $(shell pwd)
 BUILD = $(ROOT)/build
 SRC = $(ROOT)
@@ -115,7 +116,8 @@ freebsd:
 .PHONY: hostmap
 hostmap:
 	touch $(HOSTMAP)
-	( sed '/$(HOST)/d' <$(HOSTMAP); echo '$(HOST) $(HOSTTYPE)' ) \
+	( sed '/$(HOST)/d' <$(HOSTMAP); 			\
+		echo '$(HOST) $(HOST_ARCH) $(HOST_OS)' ) 	\
 		>>$(HOSTMAP).tmp
 	mv $(HOSTMAP).tmp $(HOSTMAP)
 
@@ -195,7 +197,7 @@ world:
 # puts them.
 DESTDIR = $(CURDIR)/install
 PREFIX = /usr
-ifeq ($(HOSTTYPE), sun)
+ifeq ($(HOST_OS), sun)
 PREFIX = /usr/local
 endif
 prefix = $(PREFIX)
@@ -205,12 +207,12 @@ ULIB = lib/mlton
 TLIB = $(DESTDIR)$(prefix)/$(ULIB)
 TMAN = $(DESTDIR)$(prefix)$(MAN_PREFIX_EXTRA)/man/man1
 TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
-ifeq ($(HOSTTYPE), sun)
+ifeq ($(HOST_OS), sun)
 TDOC = $(DESTDIR)$(prefix)/doc/mlton
 endif
 
 GZIP_MAN = true
-ifeq ($(HOSTTYPE), sun)
+ifeq ($(HOST_OS), sun)
 GZIP_MAN = false
 endif
 

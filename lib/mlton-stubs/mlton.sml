@@ -131,6 +131,17 @@ structure MLton: MLTON =
 	    fun set _ = raise Fail "Itimer.set"
 	 end
 
+      structure Platform =
+	 struct
+	    datatype arch = Sparc | X86
+			     
+	    val arch: arch = X86
+			   
+	    datatype os = Cygwin | FreeBSD | Linux | SunOS
+
+	    val os: os = SunOS
+	 end
+
       structure ProcEnv =
 	 struct
 	    fun setenv _ = raise Fail "setenv"

@@ -54,11 +54,11 @@ struct
 	open Label
 
 	fun toString l =
-	   case !Control.hostType of
+	   case !Control.hostOS of
 	      Control.Cygwin => concat ["_", Label.toString l]
 	    | Control.FreeBSD => Label.toString l
 	    | Control.Linux => Label.toString l
-	    | _ => Error.bug "x86 can't handle hostType"
+	    | _ => Error.bug "x86 can't handle hostOS"
 
 	val layout = Layout.str o toString
      end

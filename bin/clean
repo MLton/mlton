@@ -2,7 +2,11 @@
 
 set -e
 
-case `hosttype` in
+dir=`dirname $0`
+root=`cd $dir/.. && pwd`
+bin="$root/bin"
+
+case `$bin/host-os` in
 cygwin|freebsd|linux)
 	grepFlags='-q'
 ;;

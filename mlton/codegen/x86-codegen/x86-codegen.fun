@@ -90,7 +90,7 @@ struct
 	     * that don't handle signals, since signals get used under the hood
 	     * in Cygwin.
 	     *)
-	    case !Control.hostType of
+	    case !Control.hostOS of
 	       Control.Cygwin => true
 	     | Control.FreeBSD => false
 	     | Control.Linux => false
@@ -151,7 +151,7 @@ struct
 		    (* Drop the leading _ with Cygwin, because gcc will add it.
 		     *)
 		    val mainLabel =
-		       case !Control.hostType of
+		       case !Control.hostOS of
 			  Control.Cygwin => String.dropPrefix (mainLabel, 1)
 			| Control.FreeBSD => mainLabel
 			| Control.Linux => mainLabel

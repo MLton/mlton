@@ -59,6 +59,7 @@ src/link.sml
 ../lib/mlton-stubs/profile.sig
 ../lib/mlton-stubs/process.sig
 ../lib/mlton-stubs/proc-env.sig
+../lib/mlton-stubs/platform.sig
 ../lib/mlton-stubs/array.sig
 ../lib/mlton-stubs/bin-io.sml
 ../lib/mlton-stubs/bin-io.sig

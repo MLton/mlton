@@ -17,8 +17,6 @@ signature MLTON =
        *)
       val eq: 'a * 'a -> bool
       val errno: unit -> int (* the value of the C errno global *)
-      datatype hostType = Cygwin | FreeBSD | Linux | Sun
-      val hostType: hostType
       val isMLton: bool
       val safe: bool
 (*      val serialize: 'a -> Word8Vector.vector *)
@@ -32,6 +30,7 @@ signature MLTON =
       structure GC: MLTON_GC
       structure IntInf: MLTON_INT_INF
       structure Itimer: MLTON_ITIMER
+      structure Platform: MLTON_PLATFORM
       structure ProcEnv: MLTON_PROC_ENV
       structure Process: MLTON_PROCESS
       structure Profile: MLTON_PROFILE
