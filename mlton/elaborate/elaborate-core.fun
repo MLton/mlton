@@ -2147,7 +2147,7 @@ fun elaborateDec (d, {env = E,
 		   let
 		      val es' = Vector.map (es, elab)
 		      val last = Vector.length es - 1
-		      (* Warning for expressions before a ; that don't return
+		      (* Error for expressions before a ; that don't return
 		       * unit.
 		       *)
 		      val _ =
@@ -2235,9 +2235,16 @@ fun elaborateDec (d, {env = E,
 			  (Aexp.region test,
 			   str "while test not a bool",
 			   seq [str "test type: ", l1]))
-		      (* Could put warning here if the expr is not of type unit.
-		       *)
 		      val expr = elab expr
+		      (* Error if expr is not of type unit. *)
+		      val _ =
+			 if not (!Control.sequenceUnit)
+			    then ()
+			 else
+			    unify (Cexp.ty expr, Type.unit, fn (l, _) =>
+				   (region,
+				    str "while body not of type unit",
+				    seq [str "body type: ", l]))
 		   in
 		      Cexp.whilee {expr = expr, test = test'}
 		   end
