@@ -35,13 +35,17 @@ signature TYPE_ENV =
 			  expandOpaque: expandOpaque,
 			  record: 'a SortedRecord.t -> 'a,
 			  var: Tyvar.t -> 'a} -> 'a
+	    val isUnit: t -> bool
+	    val layout: t -> Layout.t
+	    val layoutPretty: t -> Layout.t
 	    val makeHom: {con: Tycon.t * 'a vector -> 'a,
 			  expandOpaque: expandOpaque,
 			  var: Tyvar.t -> 'a} -> {destroy: unit -> unit,
 						  hom: t -> 'a}
-	    val isUnit: t -> bool
-	    val layout: t -> Layout.t
-	    val layoutPretty: t -> Layout.t
+	    val makeLayoutPretty:
+	       unit -> {destroy: unit -> unit,
+			lay: t -> Layout.t * {isChar: bool,
+					      needsParen: bool}}
 	    val new: unit -> t
 	    val record: t SortedRecord.t -> t
 	    val string: t

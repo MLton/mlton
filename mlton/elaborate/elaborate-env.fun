@@ -331,28 +331,53 @@ structure Structure =
 	 open Layout
       in
 	 fun layoutTypeSpec (c, s) =
-	    seq [str "type ",
-		 case TypeStr.kind s of
-		    Kind.Arity n =>
-		       (case n of
-			   0 => empty
-			 | 1 => str "'a "
-			 | _ =>
-			      seq
-			      [paren
-			       (str (concat
-				     (List.separate
-				      (Vector.toList
-				       (Vector.tabulate
-					(n, fn i =>
-					 concat ["'",
-						 Char.toString
-						 (Char.fromInt
-						  (Char.toInt #"a" + i))])),
-				       ", ")))),
-			       str " "])
-		  | Kind.Nary => empty,
-		 Ast.Tycon.layout c]
+	    let
+	       val {destroy, lay} = Type.makeLayoutPretty ()
+	       val lay = #1 o lay
+	       val tyvars =
+		  case TypeStr.kind s of
+		     Kind.Arity n =>
+			Vector.tabulate
+			(n, fn _ => Tyvar.newNoname {equality = false})
+		   | Kind.Nary => Vector.new0 ()
+	       val name = Ast.Tycon.layout c
+	       val args =
+		  case Vector.length tyvars of
+		     0 => empty
+		   | 1 => seq [lay (Type.var (Vector.sub (tyvars, 0))),
+			       str " "]
+		   | _ =>
+			seq
+			[paren (seq (separateRight
+				     (Vector.toListMap (tyvars, lay o Type.var),
+				      ", "))),
+			 str " "]
+	       val def = seq [str "type ", args, name, str " = "]
+	       val tyvars = Vector.map (tyvars, Type.var)
+	       val res = 
+		  case TypeStr.node s of
+		     TypeStr.Datatype {cons = Cons.T cs, ...} =>
+			let
+			   val cs =
+			      Vector.toListMap
+			      (cs, fn {name, scheme, ...} =>
+			       seq [Ast.Con.layout name,
+				    case (Type.deArrowOpt
+					  (Scheme.apply (scheme, tyvars))) of
+				       NONE => empty
+				     | SOME (t, _) => seq [str " of ", lay t]])
+			in
+			   seq [str "data", def,
+				mayAlign (separateLeft (cs, "| "))]
+			end
+		   | TypeStr.Scheme s =>
+			seq [def, lay (Scheme.apply (s, tyvars))]
+		   | TypeStr.Tycon c =>
+			seq [def, lay (Type.con (c, tyvars))]
+	       val _ = destroy ()
+	    in
+	       res
+	    end
 	 fun layoutValSpec (d, (vid, scheme)) =
 	    let
 	       fun simple s =
