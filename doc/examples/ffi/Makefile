@@ -1,10 +1,11 @@
 PATH = ../../../build/bin:$(shell echo $$PATH)
 
-mlton = mlton -default-ann 'allowExport true' -default-ann 'allowImport true'
+mlton = mlton -default-ann 'allowExport true' -default-ann 'allowImport true' 
 
 .PHONY: all
 all: import export iimport
 	./import
+	./import2
 	./export
 	./iimport
 
@@ -15,6 +16,9 @@ export: export.sml ffi-export.c
 
 import: import.sml ffi-import.o
 	$(mlton) import.sml ffi-import.o
+
+import2: import2.sml ffi-import.o
+	$(mlton) import2.sml ffi-import.o
 
 ffi-import.o:
 	$(mlton) -stop o ffi-import.c

@@ -1040,6 +1040,9 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 	| IMPORT ASTERISK attributes COLON ty SEMICOLON
 	  (Exp.Prim {kind = PrimKind.IImport {attributes = attributes},
 		     ty = ty})
+	| IMPORT HASH string COLON ty SEMICOLON
+	  (Exp.Prim {kind = PrimKind.Symbol {name = string},
+		     ty = ty})
         | PRIM string COLON ty SEMICOLON
 	  (Exp.Prim {kind = PrimKind.Prim {name = string}, 
                      ty = ty})

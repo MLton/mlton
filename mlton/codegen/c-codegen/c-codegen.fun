@@ -450,7 +450,7 @@ fun declareFFI (Chunk.T {blocks, ...}, {print: string -> unit}) =
 	      case s of
 		 Statement.PrimApp {prim, ...} =>
 		    (case Prim.name prim of
-			Prim.Name.FFI_Symbol {name, ty} =>
+			Prim.Name.FFI_Symbol {fetch, name, ty} =>
 			   doit
 			   (name, fn () =>
 			    concat ["extern ", CType.toString (Type.toCType ty),
@@ -648,7 +648,10 @@ fun output {program as Machine.Program.T {chunks,
 				   ")"]
 			       fun app (): string =
 				  case Prim.name prim of
-				     Prim.Name.FFI_Symbol {name, ...} => name
+				     Prim.Name.FFI_Symbol {fetch, name, ...} => 
+					if fetch
+					   then name
+					   else concat ["(", "(Pointer)","(&", name, ")", ")"]
 				   | _ => call ()
 			    in
 			       case dst of

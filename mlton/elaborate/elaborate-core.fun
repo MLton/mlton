@@ -816,7 +816,7 @@ fun parseAttributes (attributes: Attribute.t list): Convention.t option =
 		     else Convention.Cdecl)
     | _ => NONE
 
-fun dimport {attributes: Attribute.t list,
+fun iimport {attributes: Attribute.t list,
 	     ty: Type.t,
 	     region: Region.t}: Type.t Prim.t =
    let
@@ -882,7 +882,9 @@ fun import {attributes: Attribute.t list,
 	    if isSome (Type.toCType ty)
 	       then
 		  (case attributes of
-		      [] => Prim.ffiSymbol {name = name, ty = ty}
+		      [] => Prim.ffiSymbol {fetch = true, 
+					    name = name, 
+					    ty = ty}
 		    | _ => 
 			 let
 			    val () = invalidAttributes ()
@@ -925,6 +927,38 @@ fun import {attributes: Attribute.t list,
 
 	    in
 	       Prim.ffi func
+	    end
+   end
+
+fun symbol {name: string,
+	    ty: Type.t,
+	    region: Region.t}: Type.t Prim.t =
+   let
+      fun error l = Control.error (region, l, Layout.empty)
+   in
+      case Type.parse ty of
+	 NONE =>
+	    if isSome (Type.toCType ty)
+	       then Prim.ffiSymbol {fetch = false,
+				    name = name,
+				    ty = Type.word (WordSize.pointer ())}
+	    else
+	       let
+		  val () =
+		     Control.error (region,
+				    str "invalid type for import",
+				    Type.layoutPretty ty)
+	       in
+		  Prim.bogus
+	       end
+       | SOME (args, result) =>
+	    let
+	       val () =
+		  Control.error (region,
+				 str "invalid type for import",
+				 Type.layoutPretty ty)
+	    in
+	       Prim.bogus
 	    end
    end
 
@@ -2431,7 +2465,7 @@ fun elaborateDec (d, {env = E, nest}) =
 					   argType = fptrTy,
 					   body = etaExtra (Vector.new1 fptrArg,
 							    ty, expandedTy,
-							    dimport 
+							    iimport
 							    {attributes = attributes,
 							     region = region,
 							     ty = expandedTy}),
@@ -2449,6 +2483,11 @@ fun elaborateDec (d, {env = E, nest}) =
 			    (check (ElabControl.allowImport, "_import")
 			     ; eta (import {attributes = attributes,
 					    name = name,
+					    region = region,
+					    ty = expandedTy}))
+		       | Symbol {name} =>
+			    (check (ElabControl.allowImport, "_import")
+			     ; eta (symbol {name = name,
 					    region = region,
 					    ty = expandedTy}))
 		       | Prim {name} => 

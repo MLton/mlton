@@ -699,33 +699,47 @@ struct
 	AppendList.appends
 	[comment_begin,
 	 (case Prim.name prim of
-	     FFI_Symbol {name, ...}
-	     => let
-		   val (dst,dstsize) = getDst1 ()
-		   val memloc
-		      = x86.MemLoc.makeContents 
-		      {base = Immediate.label (Label.fromString name),
-		       size = dstsize,
-		       class = Classes.CStatic}
-		in
-		   AppendList.fromList
-		   [Block.mkBlock'
-		    {entry = NONE,
-		     statements
-		     = [case Size.class dstsize
-			   of Size.INT 
-			      => Assembly.instruction_mov 
-				 {dst = dst,
-				  src = Operand.memloc memloc,
-				  size = dstsize}
-			    | Size.FLT 
-			      => Assembly.instruction_pfmov
-				 {dst = dst,
-				  src = Operand.memloc memloc,
-				  size = dstsize}
-			    | _ => Error.bug "prim: FFI"],
-		     transfer = NONE}]
-		end
+	     FFI_Symbol {fetch, name, ...}
+	     => if fetch
+		   then let	
+			   val (dst,dstsize) = getDst1 ()
+			   val memloc
+			      = x86.MemLoc.makeContents 
+			        {base = Immediate.label (Label.fromString name),
+				 size = dstsize,
+				 class = Classes.CStatic}
+			in
+			   AppendList.fromList
+			   [Block.mkBlock'
+			    {entry = NONE,
+			     statements
+			     = [case Size.class dstsize
+				   of Size.INT 
+				      => Assembly.instruction_mov 
+				      {dst = dst,
+				       src = Operand.memloc memloc,
+				       size = dstsize}
+				    | Size.FLT 
+				      => Assembly.instruction_pfmov
+				      {dst = dst,
+				       src = Operand.memloc memloc,
+				       size = dstsize}
+				    | _ => Error.bug "prim: FFI_Symbol"],
+			     transfer = NONE}]
+			end
+		   else let	
+			   val (dst,dstsize) = getDst1 ()
+			in
+			   AppendList.fromList
+			   [Block.mkBlock'
+			    {entry = NONE,
+			     statements =
+			     [Assembly.instruction_mov
+			      {dst = dst,
+			       src = Operand.immediate_label (Label.fromString name),
+			       size = dstsize}],
+			     transfer = NONE}]
+			end
 	     | Real_Math_acos _
 	     => let
 		  val (dst,dstsize) = getDst1 ()

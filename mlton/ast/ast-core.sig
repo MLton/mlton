@@ -99,6 +99,7 @@ signature AST_CORE =
 	     | Export of {attributes: Attribute.t list, name: string}
 	     | IImport of {attributes: Attribute.t list}
 	     | Import of {attributes: Attribute.t list, name: string}
+	     | Symbol of {name: string}
 	     | Prim of {name: string}
 	 end
 

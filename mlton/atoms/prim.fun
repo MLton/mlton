@@ -1,3 +1,4 @@
+
 (* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
@@ -45,7 +46,8 @@ datatype 'a t =
  | Exn_setExtendExtra (* implement exceptions *)
  | Exn_setInitExtra (* implement exceptions *)
  | FFI of 'a CFunction.t (* ssa to rssa *)
- | FFI_Symbol of {name: string,
+ | FFI_Symbol of {fetch: bool,
+		  name: string,
 		  ty: 'a} (* codegen *)
  | GC_collect (* ssa to rssa *)
  | IntInf_add (* ssa to rssa *)
@@ -486,7 +488,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Exn_setExtendExtra => Exn_setExtendExtra
     | Exn_setInitExtra => Exn_setInitExtra
     | FFI func => FFI (CFunction.map (func, f))
-    | FFI_Symbol {name, ty} => FFI_Symbol {name = name, ty = f ty}
+    | FFI_Symbol {fetch, name, ty} => FFI_Symbol {fetch = fetch, name = name, ty = f ty}
     | GC_collect => GC_collect
     | IntInf_add => IntInf_add
     | IntInf_andb => IntInf_andb
@@ -681,7 +683,7 @@ val kind: 'a t -> Kind.t =
        | Exn_setExtendExtra => SideEffect
        | Exn_setInitExtra => SideEffect
        | FFI _ => Kind.SideEffect
-       | FFI_Symbol _ => Kind.DependsOnState
+       | FFI_Symbol {fetch, ...} => if fetch then DependsOnState else Functional
        | GC_collect => SideEffect
        | IntInf_add => Functional
        | IntInf_andb => Functional
