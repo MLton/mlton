@@ -178,7 +178,7 @@ fun njCompile {bench} =
 		   datatype z = datatype MLton.Platform.os
 		 in
 		   case (MLton.Platform.arch, MLton.Platform.os) of
-		     (X86, Linxu) => ".x86-linux"
+		     (X86, Linux) => ".x86-linux"
 		   | (Sparc, SunOS) => ".sparc-solaris"
 		   | _ => raise Fail "don't know SML/NJ suffix for host type"
 		 end
