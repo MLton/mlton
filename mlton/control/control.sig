@@ -144,7 +144,10 @@ signature CONTROL =
 
 	    (* size of future list for register allocation *)
 	    val future: int ref
-	       
+
+	    (* whether or not to shuffle registers around C-calls *)
+	    val shuffle: bool ref
+
 	    (* whether or not to use strict IEEE floating-point in native codegen *)
 	    val IEEEFP: bool ref
 

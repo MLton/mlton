@@ -271,6 +271,10 @@ structure Native =
 			    default = 64,
 			    toString = Int.toString}
 
+      val shuffle = control {name = "native shuffle",
+			     default = true,
+			     toString = Bool.toString}
+
       val IEEEFP = control {name = "native ieee fp",
 			    default = false,
 			    toString = Bool.toString}

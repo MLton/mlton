@@ -2618,7 +2618,7 @@ struct
 	    (* everything is unspilled *)
 	    val _ = spill := spillStart
 
-	    (* commit all the memlocs that got spilt.
+	    (* commit all the memlocs that got spilled.
 	     *)
 	    val {assembly = assembly_commit2,
 		 registerAllocation = registerAllocation}
@@ -5798,6 +5798,47 @@ struct
 			registerAllocation = registerAllocation}
 		     end)
 
+	    val {assembly = assembly_shuffle,
+		 registerAllocation, ...}
+	      = if !Control.Native.shuffle then 
+	        List.fold
+	        (valueFilter {filter = fn value as {register, ...}
+			                => List.contains
+			                   (Register.callerSaveRegisters,
+					    register,
+					    Register.eq),
+			      registerAllocation = registerAllocation},
+		 {assembly = AppendList.empty, 
+		  registerAllocation = registerAllocation,
+		  saves = []},
+		 fn (value as {memloc, ...}, {assembly, registerAllocation, saves})
+		  => let
+		       val {operand,
+			    assembly = assembly_shuffle,
+			    registerAllocation, ...} 
+			 = allocateOperand {operand = Operand.memloc memloc,
+					    options = {register = true,
+						       immediate = false,
+						       label = false,
+						       address = true},
+					    info = info,
+					    size = MemLoc.size memloc,
+					    move = true,
+					    supports = [],
+					    saves = saves,
+					    force = Register.calleeSaveRegisters,
+					    registerAllocation
+					    = registerAllocation}
+		     in
+		       {assembly = AppendList.append (assembly,
+						      assembly_shuffle),
+			registerAllocation = registerAllocation,
+			saves = operand::saves}
+		     end)
+		else {assembly = AppendList.empty,
+		      registerAllocation = registerAllocation,
+		      saves = []}
+
 	    val registerAllocation
 	      = valueMap {map = fn value as {register,
 					     memloc,
@@ -5874,6 +5915,7 @@ struct
 	  in
 	    {assembly = AppendList.appends
 	                [assembly_reserve,
+			 assembly_shuffle,
 			 assembly_commit_registers,
 			 assembly_commit_fltregisters,
 			 assembly_unreserve],

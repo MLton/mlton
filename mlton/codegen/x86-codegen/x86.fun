@@ -309,6 +309,14 @@ struct
 				 T {reg = EDX, part = X},
 				 T {reg = EDX, part = L},
 				 T {reg = EDX, part = H}]
+      val calleeSaveRegisters = [T {reg = EBX, part = E},
+				 T {reg = EBX, part = X},
+				 T {reg = EBX, part = L},
+				 T {reg = EBX, part = H},
+				 T {reg = EDI, part = E},
+				 T {reg = EDI, part = X},
+				 T {reg = ESI, part = E},
+				 T {reg = ESI, part = X}]
 
       val withLowPart (* (fullsize,lowsize) *)
 	= fn (Size.WORD,Size.BYTE) => [T {reg = EAX, part = X},

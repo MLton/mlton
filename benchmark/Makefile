@@ -57,7 +57,7 @@ test: $(NAME)
 
 QBENCH = $(BENCH)
 
-QBFLAGS = -mlton "mlton"
+QBFLAGS = -mlton "mlton-stable -native-shuffle {true,false}"
 
 .PHONY: qtest
 qtest: $(NAME)

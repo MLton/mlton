@@ -81,6 +81,7 @@ signature X86 =
 	val baseRegisters : t list
 	val indexRegisters : t list
 	val callerSaveRegisters : t list
+	val calleeSaveRegisters : t list
 
 	val withLowPart : Size.t * Size.t -> t list
 	val lowPartOf : t * Size.t -> t
