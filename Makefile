@@ -309,10 +309,10 @@ install: install-docs install-no-docs
 install-no-docs:
 	mkdir -p $(TLIB) $(TBIN) $(TMAN)
 	$(CP) $(LIB)/. $(TLIB)/
+	rm -f $(TLIB)/self/libmlton-gdb.a
 	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
-			<$(SRC)/bin/mlton-script >$(TBIN)/mlton
-	chmod +x $(TBIN)/mlton
-	$(CP) $(SRC)/bin/platform $(LIB)
+		<$(SRC)/bin/mlton-script >$(TBIN)/mlton
+	chmod a+x $(TBIN)/mlton
 	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
 	( cd $(SRC)/man && tar cf - mllex.1 mlprof.1 mlton.1 mlyacc.1 ) | \
 		( cd $(TMAN)/ && tar xf - )
