@@ -530,6 +530,7 @@ signature BASIS_2002 =
       sharing type Posix.FileSys.dirstream = OS.FileSys.dirstream
       sharing type Posix.FileSys.access_mode = OS.FileSys.access_mode
       sharing type Posix.Process.exit_status = Unix.exit_status
+      sharing type Posix.Signal.signal = Unix.signal
       sharing type RealArray.elem = real
       sharing type RealArray.vector = RealVector.vector
       sharing type RealArraySlice.elem = real
