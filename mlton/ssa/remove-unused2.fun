@@ -91,18 +91,48 @@ structure VarInfo =
       fun whenUsed (vi, th) = Used.whenUsed (used vi, th)
    end
 
-structure TypeInfo = 
+
+structure ConInfo =
    struct
-      datatype t = T of {deconed: bool ref}
+      datatype t = T of {args: (VarInfo.t * Type.t) Prod.t,
+			 coned: Coned.t,
+			 deconed: Deconed.t,
+			 dummy: ({con: Con.t, args: Type.t Prod.t} * Exp.t) option ref,
+			 used: Used.t}
+	 
+      fun layout (T {args, coned, deconed, used, ...}) =
+	 Layout.record [("args", Prod.layout (args, VarInfo.layout o #1)),
+			("coned", Coned.layout coned),
+			("deconed", Deconed.layout deconed),
+			("used", Used.layout used)]
 	 
       local
 	 fun make f (T r) = f r
-	 fun make' f = (make f, ! o (make f))
       in
-	 val (deconed', _) = make' #deconed
+	 val args = make #args
+	 val coned = make #coned
+	 val deconed = make #deconed
+	 val dummy = make #dummy
+	 val used = make #used
       end
    
-      fun new (): t = T {deconed = ref false}
+      val con = Coned.con o coned
+      val isConed = Coned.isConed o coned
+      fun whenConed (ci, th) = Coned.whenConed (coned ci, th)
+	 
+      val decon = Deconed.decon o deconed
+      val isDeconed = Deconed.isDeconed o deconed
+	 
+      val use = Used.use o used
+      val isUsed = Used.isUsed o used
+      fun whenUsed (vi, th) = Used.whenUsed (used vi, th)
+
+      fun new {args: Type.t Prod.t}: t =
+	 T {args = Prod.map (args, fn t => (VarInfo.new t, t)),
+	    coned = Coned.new (),
+	    deconed = Deconed.new (),
+	    dummy = ref NONE,
+	    used = Used.new ()}
    end
 
 structure TyconInfo =
@@ -133,51 +163,26 @@ structure TyconInfo =
       fun whenUsed (vi, th) = Used.whenUsed (used vi, th)
    end
 
-structure ConInfo =
+structure TypeInfo = 
    struct
-      datatype t = T of {args: (VarInfo.t * Type.t) Prod.t,
-			 coned: Coned.t,
-			 deconed: Deconed.t,
-			 dummy: (Type.t * Exp.t) option ref,
-			 tycon: Tycon.t,
-			 used: Used.t}
-	 
-      fun layout (T {args, coned, deconed, used, ...}) =
-	 Layout.record [("args", Prod.layout (args, VarInfo.layout o #1)),
-			("coned", Coned.layout coned),
-			("deconed", Deconed.layout deconed),
-			("used", Used.layout used)]
+      datatype t = T of {deconed: bool ref,
+			 simplify: Type.t option ref,
+			 used: bool ref}
 	 
       local
 	 fun make f (T r) = f r
+	 fun make' f = (make f, ! o (make f))
       in
-	 val args = make #args
-	 val coned = make #coned
-	 val deconed = make #deconed
-	 val dummy = make #dummy
-	 val tycon = make #tycon
-	 val used = make #used
+	 val (deconed', _) = make' #deconed
+	 val (simplify', simplify) = make' #simplify
+	 val (used', _) = make' #used
       end
    
-      val con = Coned.con o coned
-      val isConed = Coned.isConed o coned
-      fun whenConed (ci, th) = Coned.whenConed (coned ci, th)
-	 
-      val decon = Deconed.decon o deconed
-      val isDeconed = Deconed.isDeconed o deconed
-	 
-      val use = Used.use o used
-      val isUsed = Used.isUsed o used
-      fun whenUsed (vi, th) = Used.whenUsed (used vi, th)
-
-      fun new {args: Type.t Prod.t, tycon: Tycon.t}: t =
-	 T {args = Prod.map (args, fn t => (VarInfo.new t, t)),
-	    coned = Coned.new (),
-	    deconed = Deconed.new (),
-	    dummy = ref NONE,
-	    tycon = tycon,
-	    used = Used.new ()}
+      fun new (): t = T {deconed = ref false,
+			 simplify = ref NONE,
+			 used = ref false}
    end
+
 
 structure FuncInfo =
    struct
@@ -295,21 +300,16 @@ structure LabelInfo =
       fun whenUsed (li, th) = Used.whenUsed (used li, th)
    end
 
+
 fun remove (program as Program.T {datatypes, globals, functions, main}) = 
    let
-      val {get = varInfo: Var.t -> VarInfo.t, 
-	   set = setVarInfo, ...} = 
+      val {get = conInfo: Con.t -> ConInfo.t, 
+	   set = setConInfo, ...} =
 	 Property.getSetOnce
-	 (Var.plist, 
-	  Property.initRaise ("RemoveUnused.varInfo", Var.layout))
-
-      val {get = typeInfo: Type.t -> TypeInfo.t, 
-	   destroy, ...} =
-	 Property.destGet 
-	 (Type.plist, 
-	  Property.initFun (fn _ => TypeInfo.new ()))
-      fun newVarInfo (var, ty) =
-	 setVarInfo (var, VarInfo.new ty)
+	 (Con.plist, 
+	  Property.initRaise ("RemoveUnused.conInfo", Con.layout))
+      fun newConInfo (con, args) =
+	 setConInfo (con, ConInfo.new {args = args})
 
       val {get = tyconInfo: Tycon.t -> TyconInfo.t,
 	   set = setTyconInfo, ...} =
@@ -319,13 +319,21 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
       fun newTyconInfo (tycon, cons) =
 	 setTyconInfo (tycon, TyconInfo.new {cons = cons})
 
-      val {get = conInfo: Con.t -> ConInfo.t, 
-	   set = setConInfo, ...} =
+      val {get = typeInfo: Type.t -> TypeInfo.t, 
+	   destroy, ...} =
+	 Property.destGet 
+	 (Type.plist, 
+	  Property.initFun (fn _ => TypeInfo.new ()))
+
+
+      val {get = varInfo: Var.t -> VarInfo.t, 
+	   set = setVarInfo, ...} = 
 	 Property.getSetOnce
-	 (Con.plist, 
-	  Property.initRaise ("RemoveUnused.conInfo", Con.layout))
-      fun newConInfo (con, args, tycon) =
-	 setConInfo (con, ConInfo.new {args = args, tycon = tycon})
+	 (Var.plist, 
+	  Property.initRaise ("RemoveUnused.varInfo", Var.layout))
+      fun newVarInfo (var, ty) =
+	 setVarInfo (var, VarInfo.new ty)
+
 
       val {get = labelInfo: Label.t -> LabelInfo.t, 
 	   set = setLabelInfo, ...} =
@@ -339,36 +347,56 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 	 (Func.plist,
 	  Property.initRaise ("RemoveUnused.funcInfo", Func.layout))
 
+
       val usedTycon = TyconInfo.used o tyconInfo
       val useTycon = Used.use o usedTycon
       val isUsedTycon = Used.isUsed o usedTycon
       val usedCon = ConInfo.used o conInfo
       val useCon = Used.use o usedCon
       val isUsedCon = Used.isUsed o usedCon
+      val whenUsedCon = fn (con, th) => ConInfo.whenUsed (conInfo con, th)
 
       fun visitTycon (tycon: Tycon.t) = useTycon tycon
       fun visitCon (con: Con.t) = useCon con
       fun visitType (ty: Type.t) =
-	 let 
-	    datatype z = datatype Type.dest
-	    datatype z = datatype ObjectCon.t
+	 let
+	    val ti = typeInfo ty
+	    val used = TypeInfo.used' ti
 	 in
-	    case Type.dest ty of
-	       Datatype tycon => visitTycon tycon
-	     | Object {args, con} => 
-		  (Prod.foreach (args, visitType)
-		   ; case con of
-		        Con con => visitCon con
-		      | Tuple => ()
-		      | Vector => ())
-	     | Weak ty => visitType ty
-	     | _ => ()
+	    if !used
+	       then ()
+	       else let
+		       val  () = used := true
+		       datatype z = datatype Type.dest
+		       datatype z = datatype ObjectCon.t
+		       val () =
+			  case Type.dest ty of
+			     Datatype tycon => visitTycon tycon
+			   | Object {args, con} => 
+				let
+				   val () = Prod.foreach (args, visitType)
+				   val () =
+				      case con of
+					 Con con => visitCon con
+				       | Tuple => ()
+				       | Vector => ()
+				in
+				   ()
+				end
+			   | Weak ty => visitType ty
+			   | _ => ()
+		    in
+		       ()
+		    end
 	 end
       val visitTypeTh = fn ty => fn () => visitType ty
+	 
 
       val tyVar = VarInfo.ty o varInfo
       val usedVar = VarInfo.used o varInfo
       val useVar = Used.use o usedVar
+      val isUsedVar = Used.isUsed o usedVar
+      val whenUsedVar = fn (var, th) => VarInfo.whenUsed (varInfo var, th)
       fun flowVarInfoTyVarInfoTy ((vi, _), (vi', _)) =
 	 Used.<= (VarInfo.used vi, VarInfo.used vi')
       fun flowVarInfoTysVarInfoTys (xs, ys) =
@@ -377,8 +405,6 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 	 Used.<= (VarInfo.used vi, usedVar x)
       fun flowVarInfoTysVars (xs, ys) =
 	 Vector.foreach2 (xs, ys, flowVarInfoTyVar)
-      val isUsedVar = Used.isUsed o usedVar
-      val whenUsedVar = fn (var, th) => VarInfo.whenUsed (varInfo var, th)
 
       val newVarInfo = fn (var, ty) =>
 	 (newVarInfo (var, ty)
@@ -424,32 +450,37 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 		  datatype z = datatype Type.dest
 		  datatype z = datatype ObjectCon.t
 
-		  fun decon t = 
+		  fun deconType (ty: Type.t) = 
 		     let
-		        val ti = typeInfo t
+		        val ti = typeInfo ty
 			val deconed = TypeInfo.deconed' ti
 		     in
 			if !deconed
 			   then ()
-			   else (deconed := true;
-				 case Type.dest t of 
-				    Datatype t => 
-				       Vector.foreach
-				       (TyconInfo.cons (tyconInfo t), 
-					fn con => deconCon con)
-				  | Object {args, con} =>
-				       let
-					  fun default () =
-					     Prod.foreach (args, decon)
-					  val () =
-					     case con of
-						Con con => deconCon con
-					      | Tuple => default ()
-					      | Vector => default ()
-				       in
-					  ()
-				       end
-				  | _ => ())
+			   else let
+				   val () = deconed := true
+				   val () =
+				      case Type.dest ty of 
+					 Datatype t => 
+					    Vector.foreach
+					    (TyconInfo.cons (tyconInfo t), 
+					     fn con => deconCon con)
+				       | Object {args, con} =>
+					    let
+					       fun default () =
+						  Prod.foreach (args, deconType)
+					       val () =
+						  case con of
+						     Con con => deconCon con
+						   | Tuple => default ()
+						   | Vector => default ()
+					    in
+					       ()
+					    end
+				       | _ => ()
+				in
+				   ()
+				end
 		     end
 		  and deconCon con =
 		     let
@@ -458,47 +489,50 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 			val () =
 			   Prod.foreach
 			   (ConInfo.args ci, fn (x, t) =>
-			    (VarInfo.use x; decon t))
+			    (VarInfo.use x; deconType t))
 		     in
 			()
 		     end
-	       in
-		  case Prim.name prim of 
-		     Prim.Name.MLton_eq => 
-			(* MLton_eq may be used on datatypes used as enums. *)
-			decon (tyVar (Vector.sub (args, 0)))
-		   | Prim.Name.MLton_equal =>
-			(* MLton_equal will be expanded by poly-equal into uses
-			 * of constructors as patterns.
-			 *)
-			decon (tyVar (Vector.sub (args, 0)))
+		  val () =
+		     case Prim.name prim of 
+			Prim.Name.MLton_eq => 
+			   (* MLton_eq may be used on datatypes used as enums. *)
+			   deconType (tyVar (Vector.sub (args, 0)))
+		      | Prim.Name.MLton_equal =>
+			   (* MLton_equal will be expanded by poly-equal into uses
+			    * of constructors as patterns.
+			    *)
+			   deconType (tyVar (Vector.sub (args, 0)))
 (*
-	           | (Prim.Name.MLton_size, 1) => 
-			decon (tyVar (Vector.sub (args, 0)))
+		      | (Prim.Name.MLton_size, 1) => 
+			   deconType (tyVar (Vector.sub (args, 0)))
 *)
-		   | _ => ()
+		      | _ => ()
+	       in
+		  ()
 	       end
 	  | Select {base, offset} => 
 	       let
 		  datatype z = datatype Base.t
+		  datatype z = datatype ObjectCon.t
 	       in
 		  case base of
 		     Object base => 
 			let
 			   val () = visitVar base
-			   datatype z = datatype Type.dest
-			   datatype z = datatype ObjectCon.t
 			   val () =
 			      case Type.dest (tyVar base) of
-				 Object {con, ...} =>
+				 Type.Object {con, ...} =>
 				    (case con of
 					Con con => 
 					   let
 					      val ci = conInfo con
+					      val ciArgs = ConInfo.args ci
+					      val {elt = (vi, _), ...} =
+						 Prod.sub (ciArgs, offset)
+
 					      val () = ConInfo.decon ci
-					      val () = 
-						 (VarInfo.use o #1 o #elt)
-						 (Prod.sub (ConInfo.args ci, offset))
+					      val () = VarInfo.use vi
 					   in
 					      ()
 					   end
@@ -520,52 +554,43 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
       fun visitStatement (s, fi: FuncInfo.t option) =
 	 case s of
 	    Bind {exp, ty, var} =>
-	       let
-		  val () = Option.app (var, fn var => newVarInfo (var, ty))
-		  val () =
-		     if Exp.maySideEffect exp
-			then (Option.app(fi, FuncInfo.sideEffect)
-			      ; visitType ty
-			      ; visitExp exp)
-			else maybeVisitVarExp (var, exp)
-	       in
-		  ()
-	       end
+	       (Option.app (var, fn var => newVarInfo (var, ty))
+		; if Exp.maySideEffect exp
+		     then (Option.app(fi, FuncInfo.sideEffect)
+			   ; visitType ty
+			   ; visitExp exp)
+		     else maybeVisitVarExp (var, exp))
 	  | Profile _ => ()
 	  | Update {base, offset, value} =>
 	       let
 		  datatype z = datatype Base.t
+		  datatype z = datatype ObjectCon.t
 	       in
 		  case base of
 		     Object base =>
-			let
-			   datatype z = datatype ObjectCon.t
-			   datatype z =datatype Type.dest
-			in
-			   case Type.dest (tyVar base) of
-			      Object {con, ...} => 
-				 (case con of
-				     Con con =>
-					let
-					   val ci = conInfo con
-					   val ciArgs = ConInfo.args ci
-					   val {elt = (vi, _), ...} =
-					      Prod.sub (ciArgs, offset)
-					in
-					   VarInfo.whenUsed
-					   (vi, fn () =>
-					    (Option.app (fi, FuncInfo.sideEffect)
-					     ; ConInfo.decon ci
-					     ; visitVar base
-					     ; visitVar value))
-					end
-				   | Tuple => 
-					(Option.app (fi, FuncInfo.sideEffect)
-					 ; visitVar base
-					 ; visitVar value)
-				   | Vector => Error.bug "Update:non-Con|Tuple")
-			    | _ => Error.bug "Update:non-Object"
-			end
+			(case Type.dest (tyVar base) of
+			    Type.Object {con, ...} => 
+			       (case con of
+				   Con con =>
+				      let
+					 val ci = conInfo con
+					 val ciArgs = ConInfo.args ci
+					 val {elt = (vi, _), ...} =
+					    Prod.sub (ciArgs, offset)
+				      in
+					 VarInfo.whenUsed
+					 (vi, fn () =>
+					  (Option.app (fi, FuncInfo.sideEffect)
+					   ; ConInfo.decon ci
+					   ; visitVar base
+					   ; visitVar value))
+				      end
+				 | Tuple => 
+				      (Option.app (fi, FuncInfo.sideEffect)
+				       ; visitVar base
+				       ; visitVar value)
+				 | Vector => Error.bug "Update:non-Con|Tuple")
+			  | _ => Error.bug "Update:non-Object")
 		   | VectorSub {index, vector} =>
 			(Option.app(fi, FuncInfo.sideEffect)
 			 ; visitVar index
@@ -685,10 +710,11 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 				       in
 					  ()
 				       end)
-				   val cons =
-				      (TyconInfo.cons o tyconInfo o
-				       ConInfo.tycon o conInfo o #1)
-				      (Vector.sub (cases, 0))
+				   val tycon = 
+				      case Type.dest (tyVar test) of
+					 Type.Datatype tycon => tycon
+				       | _ => Error.bug "Case:non-Datatype"
+				   val cons = TyconInfo.cons (tyconInfo tycon)
 				in
 				   case default of 
 				      NONE => ()
@@ -733,14 +759,16 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 	  (newTyconInfo (tycon, Vector.map (cons, fn {con, ...} => con))
 	   ; Vector.foreach 
 	     (cons, fn {con, args} => 
-	      newConInfo (con, args, tycon))))
+	      (newConInfo (con, args)
+	       ; whenUsedCon (con, fn () => useTycon tycon)))))
       val () = 
 	 let
 	    fun doit c = 
 	       let
 		  val ci = conInfo c
 	       in
-		  ConInfo.con ci 
+		  ConInfo.use ci
+		  ; ConInfo.con ci 
 		  ; ConInfo.decon ci
 	       end
 	 in
@@ -833,72 +861,6 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 	  end)
 
       (* Analysis is done,  Now build the resulting program. *)
-      val datatypes =
-	 Vector.keepAllMap
-	 (datatypes, fn Datatype.T {tycon, cons} =>
-	  if isUsedTycon tycon
-	     then let
-		     val dummy : (Type.t * Exp.t) option ref = ref NONE
-		     val cons =
-			Vector.keepAllMap
-			(cons, fn {con, ...} =>
-			 let
-			    val ci = conInfo con
-			 in
-			    case (ConInfo.isConed ci, 
-				  ConInfo.isDeconed ci) of
-			       (false, _) => NONE
-			     | (true, true) => 
-				  SOME {con = con,
-					args = Prod.keepAllMap
-					(ConInfo.args ci, fn (x, t) =>
-					 if VarInfo.isUsed x
-					    then SOME t
-					    else NONE)}
-			     | (true, false) =>
-				  let
-				     val (dummy, res) =
-					case !dummy of 
-					   NONE => 
-					      let
-						 val con = Con.newString "dummy"
-						 val args = Prod.empty ()
-						 val ty = 
-						    Type.object 
-						    {args = args,
-						     con = ObjectCon.Con con}
-						 val e = 
-						    Object 
-						    {args = Vector.new0 (),
-						     con = SOME con}
-					      in
-						 dummy := SOME (ty, e)
-						 ; newConInfo (con, args, tycon) 
-						 ; ((ty, e), 
-						    SOME {con = con, args = args})
-					      end
-					 | SOME dummy => (dummy, NONE)
-				     val () = ConInfo.dummy ci := SOME dummy
-				  in
-				     res
-				  end
-			 end)
-		     val num = Vector.length cons
-		     val () = TyconInfo.numCons' (tyconInfo tycon) := num
-		     (* If there are no constructors used, we still need to keep around
-		      * the type, which may appear in places.  Do so with a single
-		      * bogus nullary constructor.
-		      *)
-		     val cons =
-			if 0 = num
-			   then Vector.new1 {args = Prod.empty (),
-					     con = Con.newNoname ()}
-			   else cons
-		  in
-		     SOME (Datatype.T {tycon = tycon, cons = cons})
-		  end
-	     else NONE)
-
       fun getWrapperLabel (l: Label.t,
 			   args: (VarInfo.t * Type.t) vector) = 
 	 let
@@ -1049,35 +1011,133 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 	 end
       fun getRaiseHandlerFunc (fi, args) = getWrapperLabel (getRaiseFunc fi, args)
 
-      fun simplifyType (ty: Type.t): Type.t = 
-	 let 
-	    datatype z = datatype Type.dest
-	    datatype z = datatype ObjectCon.t
+
+      val () =
+	 Vector.foreach
+	 (datatypes, fn Datatype.T {tycon, cons} =>
+	  let
+	     val dummy : ({con: Con.t, args: Type.t Prod.t} * Exp.t) option ref = ref NONE
+	  in
+	     Vector.foreach
+	     (cons, fn {con, ...} =>
+	      let
+		 val ci = conInfo con
+	      in
+		 case (ConInfo.isConed ci,
+		       ConInfo.isDeconed ci) of
+		    (true, false) =>
+		       let
+			  val dummy =
+			     case !dummy of 
+				NONE => 
+				   let
+				      val con = Con.newString "dummy"
+				      val args = Prod.empty ()
+				      val () = newConInfo (con, args)
+				      val e = 
+					 Object 
+					 {con = SOME con,
+					  args = Vector.new0 ()}
+				      val res =
+					 ({con = con, args = args}, e)
+				   in
+				      dummy := SOME res
+				      ; res
+				   end
+			      | SOME dummy => dummy
+			  val () = ConInfo.dummy ci := SOME dummy
+		       in
+			  ()
+		       end
+		  | _ => ()
+	      end)
+	  end)
+
+      fun simplifyType (ty: Type.t): Type.t =
+	 let
+	    val ti = typeInfo ty
+	    val simplify = TypeInfo.simplify' ti
 	 in
-	    case Type.dest ty of
-	       Object {args, con} => 
-		  (case con of
-		      Con con => 
+	    case !simplify of
+	       NONE => let
+			  datatype z = datatype Type.dest
+			  datatype z = datatype ObjectCon.t
+			  val ty =
+			     case Type.dest ty of
+				Object {args, con} => 
+				   (case con of
+				       Con con => 
+					  let
+					     val ci = conInfo con
+					  in
+					     case ! (ConInfo.dummy ci) of
+						SOME ({args, con}, _) => 
+						   Type.object
+						   {args = args,
+						    con = Con con}
+					      | NONE => 
+						   Type.object 
+						   {args = Prod.keepAllMap 
+						    (ConInfo.args ci, fn (x,t) =>
+						     if VarInfo.isUsed x
+							then SOME (simplifyType t)
+							else NONE),
+						    con = Con con}
+					  end
+				     | _ => Type.object {args = Prod.map (args, simplifyType),
+							 con = con})
+			      | Weak ty => Type.weak (simplifyType ty)
+			      | _ => ty
+		       in
+			  simplify := SOME ty
+			  ; ty
+		       end
+	     | SOME ty => ty 
+	 end
+
+      val datatypes =
+	 Vector.keepAllMap
+	 (datatypes, fn Datatype.T {tycon, cons} =>
+	  if isUsedTycon tycon
+	     then let
+		     val dummy : bool ref = ref false
+		     val cons =
+			Vector.keepAllMap
+			(cons, fn {con, ...} =>
 			 let
 			    val ci = conInfo con
 			 in
-			    case ! (ConInfo.dummy ci) of
-			       SOME (ty, _) => ty
-			     | NONE => 
-				  Type.object 
-				  {args = Prod.keepAllMap 
-				          (ConInfo.args ci, fn (x,t) =>
-					   if VarInfo.isUsed x
-					      then SOME (simplifyType t)
-					      else NONE),
-				   con = Con con}
-			 end
-		    | _ => Type.object {args = Prod.map (args, simplifyType),
-					con = con})
-	     | Weak ty => Type.weak (simplifyType ty)
-	     | _ => ty
-	 end
-	 
+			    case (ConInfo.isConed ci, 
+				  ConInfo.isDeconed ci) of
+			       (false, _) => NONE
+			     | (true, true) => 
+				  SOME {con = con,
+					args = Prod.keepAllMap
+					(ConInfo.args ci, fn (x, ty) =>
+					 if VarInfo.isUsed x
+					    then SOME (simplifyType ty)
+					    else NONE)}
+			     | (true, false) =>
+				  if !dummy
+				     then NONE
+				     else let
+					     val ({con, args}, _) =
+						valOf (! (ConInfo.dummy ci))
+					  in
+					     dummy := true
+					     ; SOME {con = con,
+						     args = args}
+					  end
+			 end)
+		     val num = Vector.length cons
+		     val () = TyconInfo.numCons' (tyconInfo tycon) := num
+		  in
+		     if 0 = num
+			then NONE
+			else SOME (Datatype.T {tycon = tycon, cons = cons})
+		  end
+	     else NONE)
+
       fun simplifyExp (e: Exp.t): Exp.t =
 	 case e of
 	    Object {con, args} =>
@@ -1340,12 +1400,11 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 					  then Goto {dst = l, args = Vector.new0 ()}
 					  else Bug
 				  else let
-					  val numCons =
-					     TyconInfo.numCons
-					     (tyconInfo
-					      (ConInfo.tycon
-					       (conInfo
-						(#1 (Vector.sub (cases, 0))))))
+					  val tycon = 
+					     case Type.dest (tyVar test) of
+						Type.Datatype tycon => tycon
+					      | _ => Error.bug "Case:non-Datatype"
+					  val numCons = TyconInfo.numCons (tyconInfo tycon)
 				       in 
 					  if Vector.length cases = numCons
 					     then none ()
