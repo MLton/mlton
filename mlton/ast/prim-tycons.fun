@@ -10,6 +10,8 @@ struct
 
 open S
 
+type int = Int.int
+
 datatype z = datatype RealSize.t
 
 type tycon = t

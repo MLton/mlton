@@ -11,7 +11,6 @@ struct
 open S
 
 type int = Int.t
-type word = Word.t
 
 datatype z = datatype Exp.t
 datatype z = datatype Transfer.t
@@ -27,7 +26,6 @@ structure Element:
 
       type t
 
-      val areEquivalent: t * t -> bool
       val class: t -> Class.t
       val fixedPoint: unit -> unit
       val forceDistinct: t vector -> unit
@@ -59,8 +57,6 @@ structure Element:
 	       val plist = make #plist
 	    end
 
-	    val size = Vector.length o elements
-
 	    fun new elements =
 	       Class {coarserThan = ref [],
 		      elements = elements,
@@ -79,8 +75,6 @@ structure Element:
 
       fun setClass (T {class, ...}, c) = class := c
 
-      fun areEquivalent (e, e') = Class.equals (class e, class e')
-	 
       fun 'a new (elements: 'a vector, plist: 'a -> PropertyList.t): t vector =
 	 let
 	    val classes: t list ref list ref = ref []

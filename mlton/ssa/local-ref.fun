@@ -12,9 +12,6 @@ struct
 open S
 open Exp Transfer
 
-type int = Int.t
-type word = Word.t
-
 structure FuncLattice = FlatLattice(structure Point = Func)
 
 structure GlobalInfo =

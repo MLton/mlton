@@ -25,7 +25,6 @@ struct
      structure IntSize = IntSize
      structure IntX = IntX
      structure Label = Label
-     structure RealSize = RealSize
      structure Register = Register
      structure Type = Type
      structure WordSize = WordSize

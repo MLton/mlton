@@ -7,7 +7,6 @@
  *)
 
 type int = Int.t
-type word = Word.t
    
 signature AST_CONST_STRUCTS =
    sig

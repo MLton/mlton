@@ -6,7 +6,6 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 type int = Int.t
-type word = Word.t
 
 signature X86_CODEGEN_STRUCTS =
    sig

@@ -8,7 +8,9 @@ structure QuickSort: QUICK_SORT =
 struct
 
 open Array
-   
+
+type int = Int.int
+
 val rand = Word.toIntX o MLton.Random.rand
 
 fun randInt (lo, hi) = lo + Int.mod (rand(), hi - lo + 1)

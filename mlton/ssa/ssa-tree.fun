@@ -10,6 +10,8 @@ struct
 
 open S
 
+type word = Word.t
+
 structure Type =
    struct
       local structure T = HashType (S)

@@ -28,6 +28,8 @@ struct
 open S
 open Exp Transfer
 
+type int = Int.t
+
 structure LabelInfo =
   struct
     datatype t = T of {args: (Var.t * Type.t) vector ref,

@@ -10,17 +10,6 @@ struct
 
 open S
 
-local
-   open IntX
-in
-   structure IntSize = IntSize
-end
-local
-   open WordX
-in
-   structure WordSize = WordSize
-end
-
 structure SmallIntInf =
    struct
       structure Word = Pervasive.Word

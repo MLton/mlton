@@ -54,7 +54,6 @@ struct
 open S
 open Exp Transfer
 type int = Int.t
-type word = Word.t
 
 structure Cardinality =
    struct

@@ -1,5 +1,4 @@
 type int = Int.t
-type word = Word.t
    
 signature WORD_SIZE_STRUCTS =
    sig

@@ -15,7 +15,6 @@ local
    open Machine
 in
    structure Global = Global
-   structure IntSize = IntSize
    structure IntX = IntX
    structure Label = Label
    structure PointerTycon = PointerTycon

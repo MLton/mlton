@@ -3,6 +3,8 @@ struct
 
 open S
 
+type word = Word.t
+
 val modulus: WordSize.t -> IntInf.t =
    fn s => IntInf.<< (1, Word.fromInt (WordSize.bits s))
 

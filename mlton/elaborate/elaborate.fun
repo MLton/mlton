@@ -34,7 +34,6 @@ local
 in
    structure Decs = Decs
    structure FunctorClosure = FunctorClosure
-   structure Interface = Interface
    structure Structure = Structure
 end
 

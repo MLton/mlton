@@ -16,6 +16,8 @@ struct
 open S
 open Dec PrimExp
 
+type int = Int.t
+   
 val traceShrinkExp =
    Trace.trace ("Xml.shrinkExp", Exp.layout, Exp.layout)
 

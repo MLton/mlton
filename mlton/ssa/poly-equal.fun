@@ -11,7 +11,6 @@ struct
 open S
 
 type int = Int.t
-type word = Word.t
 
 (*
  * This pass implements polymorphic equality.

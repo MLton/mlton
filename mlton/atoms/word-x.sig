@@ -1,6 +1,3 @@
-type int = Int.t
-type word = Word.t
-   
 signature WORD_X_STRUCTS = 
    sig
       structure WordSize: WORD_SIZE

@@ -14,7 +14,6 @@ in
    structure Prim = Prim
    structure Record = Record
    structure Ctype = Type
-   structure WordSize = WordSize
 end
 
 structure IntX = Const.IntX

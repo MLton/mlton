@@ -11,7 +11,6 @@ struct
 open S
 
 type int = Int.t
-type word = Word.t
 
 structure Rel =
    struct

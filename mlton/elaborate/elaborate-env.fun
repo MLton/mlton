@@ -10,6 +10,8 @@ struct
 
 open S
 
+type int = Int.t
+
 local
    open Ast
 in
@@ -2880,8 +2882,6 @@ structure InterfaceEnv =
 	 structure Status = Status
 	 structure TypeStr = TypeStr
       end
-
-      type env = Env.t
 	 
       datatype t = T of {currentScope: Scope.t ref,
 			 env: Env.t,

@@ -9,6 +9,9 @@ functor AstCore (S: AST_CORE_STRUCTS): AST_CORE =
 struct
 
 open S Layout
+
+type int = Int.t
+   
 structure Field = Record.Field
 structure Wrap = Region.Wrap
 

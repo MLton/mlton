@@ -1,5 +1,4 @@
 type int = Int.t
-type word = Word.t
    
 signature FFI_STRUCTS = 
    sig

@@ -4,8 +4,6 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-type int = Int.t
-   
 signature UNIQUE_ID =
    sig
       type t

@@ -10,6 +10,8 @@ struct
 
 open S
 
+type int = Int.t
+
 structure Array =
    struct
       open Array

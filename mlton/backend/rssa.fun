@@ -641,13 +641,6 @@ structure Program =
 	 (List.foreach (functions, Function.clear)
 	  ; Function.clear main)
 
-      fun hasPrim (T {functions, main, ...}, pred) =
-	 let
-	    fun has f = Function.hasPrim (f, pred)
-	 in
-	    has main orelse List.exists (functions, has)
-	 end
-
       fun layouts (T {functions, main, objectTypes, ...},
 		   output': Layout.t -> unit): unit =
 	 let

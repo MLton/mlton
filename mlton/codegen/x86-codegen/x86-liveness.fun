@@ -10,6 +10,8 @@ functor x86Liveness(S: X86_LIVENESS_STRUCTS) : X86_LIVENESS =
 struct
   open S
   open x86
+
+  type int = Int.t
     
   val tracer = x86.tracer
   val tracerTop = x86.tracerTop

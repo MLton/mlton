@@ -5,7 +5,6 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 type int = Int.t
-type word = Word.t
 
 signature INSERTION_SORT =
    sig

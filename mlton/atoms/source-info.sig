@@ -1,4 +1,3 @@
-type int = Int.t
 type word = Word.t
    
 signature SOURCE_INFO_STRUCTS =

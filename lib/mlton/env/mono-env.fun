@@ -35,7 +35,6 @@ BasicEnvToEnv
 (open S
 
  datatype t = T of (Domain.t * Range.t) List.t
- type range = Range.t
 
  val fromList = T
     

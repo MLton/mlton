@@ -15,7 +15,6 @@ datatype t = T of {name: Symbol.t,
 
 type obj = t
 type node' = Symbol.t
-type region = Region.t
 
 local
    fun make f (T r) = f r

@@ -5,9 +5,6 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-type int = Int.t
-type word = Word.t
-
 signature X86_VALIDATE_STRUCTS =
   sig
     structure x86 : X86

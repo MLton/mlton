@@ -4,8 +4,6 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-type int = Pervasive.Int.int
-   
 signature FILE =
    sig
       type t = string

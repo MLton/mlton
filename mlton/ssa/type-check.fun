@@ -9,6 +9,10 @@ functor TypeCheck (S: TYPE_CHECK_STRUCTS): TYPE_CHECK =
 struct
 
 open S
+
+type int = Int.t
+type word = Word.t
+   
 datatype z = datatype Exp.t
 datatype z = datatype Transfer.t
 

@@ -6,7 +6,6 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 type int = Int.t
-type word = Word.t
    
 signature SSA_TO_RSSA_STRUCTS =
    sig

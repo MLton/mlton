@@ -10,6 +10,8 @@ struct
 
 open S
 
+type int = Int.t
+
 structure AdmitsEquality = Tycon.AdmitsEquality
 structure Field = Record.Field
 structure Srecord = SortedRecord

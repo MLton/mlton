@@ -10,7 +10,6 @@ struct
 
 open S
 type int = Int.t
-type word = Word.t
    
 (* useless thing elimination
  *  remove components of tuples that are constants (use unification)

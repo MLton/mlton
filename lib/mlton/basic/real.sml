@@ -12,7 +12,6 @@ functor Real (Real: sig
 		    end): REAL =
 struct
 
-type int = Int.t
 type real = Real.real
 
 structure In = In0
