@@ -1,4 +1,4 @@
-structure Itimer: MLTON_ITIMER =
+structure Itimer =
    struct
       structure Prim = Primitive.Itimer
 	 
@@ -14,8 +14,11 @@ structure Itimer: MLTON_ITIMER =
 	  | Real => Prim.real
 	  | Virtual => Prim.virtual
 
-      fun set (t, {interval = Time.T {sec = s1, usec = u1},
+      fun set' (t, {interval = Time.T {sec = s1, usec = u1},
 		   value = Time.T {sec = s2, usec = u2}}) =
+	 Prim.set (toInt t, s1, u1, s2, u2)
+	    
+      fun set (z as (t, _)) =
 	 if Primitive.MLton.Profile.profile
 	    andalso t = Prof
 	    then let
@@ -23,5 +26,5 @@ structure Itimer: MLTON_ITIMER =
 		 in
 		    raiseSys inval
 		 end
-	 else Prim.set (toInt t, s1, u1, s2, u2)
+	 else set' z
    end

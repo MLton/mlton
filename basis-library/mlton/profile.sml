@@ -109,7 +109,7 @@ structure Data =
    end
 
 fun setItimer (t: Time.time): unit =
-   Itimer.set (Itimer.Prof, {interval = t, value = t})
+   Itimer.set' (Itimer.Prof, {interval = t, value = t})
 
 val _ =
    if not profile
