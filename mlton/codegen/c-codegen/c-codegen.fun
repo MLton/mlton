@@ -303,6 +303,66 @@ fun outputDeclarations
       ; declareMain ()
    end
 
+structure Type =
+   struct
+      open Type
+
+      fun toC (t: t): string =
+	 case t of
+	    Char => "Char"
+	  | CPointer => "Pointer"
+	  | EnumPointers {pointers, ...} =>
+	       if 0 = Vector.length pointers
+		  then "Int"
+	       else "Pointer"
+	  | ExnStack => "Word"
+	  | Int => "Int"
+	  | IntInf => "Pointer"
+	  | Label _ => "Word"
+	  | Real => "Double"
+	  | Word => "Word"
+	  | _ => Error.bug (concat ["Type.toC strange type: ", toString t])
+   end
+
+structure Prim =
+   struct
+      open Prim
+      structure Type =
+	 struct
+	    open Type
+
+	    local
+	       val {get: Tycon.t -> string option, set, ...} =
+		  Property.getSetOnce (Tycon.plist, Property.initConst NONE)
+	       val tycons =
+		  [(Tycon.char, "Char"),
+		   (Tycon.int, "Int"),
+		   (Tycon.intInf, "Pointer"),
+		   (Tycon.pointer, "Pointer"),
+		   (Tycon.preThread, "Pointer"),
+		   (Tycon.real, "Double"),
+		   (Tycon.reff, "Pointer"),
+		   (Tycon.thread, "Pointer"),
+		   (Tycon.tuple, "Pointer"),
+		   (Tycon.vector, "Pointer"),
+		   (Tycon.weak, "Pointer"),
+		   (Tycon.word, "Word32"),
+		   (Tycon.word8, "Word8")]
+	       val _ =
+		  List.foreach (tycons, fn (tycon, s) => set (tycon, SOME s))
+	    in
+	       fun toC (ty: t): string =
+		  case ty of
+		     Con (c, _) =>
+			(case get c of
+			    NONE => Error.bug (concat ["strange tycon: ",
+						       Tycon.toString c])
+			  | SOME s => s)
+		   | _ => Error.bug "strange type"
+	    end
+	 end
+   end
+   
 fun output {program as Machine.Program.T {chunks,
 					  frameLayouts,
 					  main = {chunkLabel, label}, ...},
@@ -549,6 +609,75 @@ fun output {program as Machine.Program.T {chunks,
       fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, regMax, ...}) =
 	 let
 	    val {done, print, ...} = outputC ()
+	    fun declareFFI () =
+	       let
+		  val seen = String.memoize (fn _ => ref false)
+		  fun doit (name: string, declare: unit -> string): unit =
+		     let
+			val r = seen name
+		     in
+			if !r
+			   then ()
+			else (r := true; print (declare ()))
+		     end
+	       in
+		  Vector.foreach
+		  (blocks, fn Block.T {statements, transfer, ...} =>
+		   let
+		      val _ =
+			 Vector.foreach
+			 (statements, fn s =>
+			  case s of
+			     Statement.PrimApp {prim, ...} =>
+				(case Prim.name prim of
+				    Prim.Name.FFI name =>
+				       doit
+				       (name, fn () =>
+					let
+					   val ty =
+					      Prim.Type.toC
+					      (Prim.Scheme.ty
+					       (Prim.scheme prim))
+					in
+					   concat
+					   ["extern ", ty, " ", name, ";\n"]
+					end)
+				  | _ => ())
+			   | _ => ())
+		      val _ =
+			 case transfer of
+			    Transfer.CCall {args, func, ...} =>
+			       let
+				  val {name, returnTy, ...} = CFunction.dest func
+			       in
+				  doit
+				  (name, fn () =>
+				   let
+				      val res =
+					 case returnTy of
+					    NONE => "void"
+					  | SOME t => CFunction.Type.toString t
+				      val c = Counter.new 0
+				      fun arg z =
+					 concat [Type.toC (Operand.ty z),
+						 " x",
+						 Int.toString (Counter.next c)]
+				   in
+				      (concat
+				       ["extern ", res, " ",
+					CFunction.name func,
+					" (",
+					concat (List.separate
+						(Vector.toListMap (args, arg),
+						 ", ")),
+					");\n"])
+				   end)
+			       end
+			  | _ => ()
+		   in
+		      ()
+		   end)
+	       end
 	    fun declareChunks () =
 	       let
 		  val {get, ...} =
@@ -971,6 +1100,7 @@ fun output {program as Machine.Program.T {chunks,
 	 in
 	    print (concat ["#define CCODEGEN\n\n"])
 	    ; outputIncludes (includes, print)
+(*	    ; declareFFI () *)
 	    ; declareChunks ()
 	    ; declareProfileLabels ()
 	    ; C.callNoSemi ("Chunk", [chunkLabelToString chunkLabel], print)
