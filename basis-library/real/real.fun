@@ -56,17 +56,31 @@ functor Real (R: PRE_REAL): REAL =
 
       val nan = posInf + negInf
 
-      (* See runtime/basis/Real.c for the integers returned by class. *)
-      fun class x =
-	 case Prim.class x of
-	    0 => NAN
-	  | 1 => NAN
-	  | 2 => INF
-	  | 3 => ZERO
-	  | 4 => NORMAL
-	  | 5 => SUBNORMAL
-	  | _ => raise Fail "Real_class returned bogus integer"
-
+      local
+	 val classes =
+	    let
+	       open Primitive.Real64.Class
+	    in
+	       (* order here is chosen based on putting the more commonly used
+		* classes at the front.
+		*)
+	       [(normal, NORMAL),
+		(zero, ZERO),
+		(inf, INF),
+		(nan, NAN),
+		(subnormal, SUBNORMAL)]
+	    end
+      in
+	 fun class x =
+	    let
+	       val i = Prim.class x
+	    in
+	       case List.find (fn (i', _) => i = i') classes of
+		  NONE => raise Fail "Real_class returned bogus integer"
+		| SOME (_, c) => c
+	    end
+      end
+   
       val abs =
 	 if MLton.Codegen.isNative
 	    then abs

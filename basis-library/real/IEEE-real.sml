@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 structure IEEEReal: IEEE_REAL_EXTRA =
    struct
       val op + = Int.+
@@ -21,29 +22,49 @@ structure IEEEReal: IEEE_REAL_EXTRA =
        | SUBNORMAL
        | ZERO
 	 
-      datatype rounding_mode =
-	 TO_NEAREST
-       | TO_NEGINF
-       | TO_POSINF
-       | TO_ZERO
-
-      val intToRounding_mode: int -> rounding_mode =
-	 fn 0 => TO_NEAREST
-	  | 1 => TO_NEGINF
-	  | 2 => TO_POSINF
-	  | 3 => TO_ZERO
-	  | _ => raise Fail "IEEEReal.intToRounding_mode"
-
-      val rounding_modeToInt: rounding_mode -> int =
-	 fn TO_NEAREST => 0
-	  | TO_NEGINF => 1
-	  | TO_POSINF => 2
-	  | TO_ZERO => 3
-
       structure Prim = Primitive.IEEEReal
 
-      val setRoundingMode = Prim.setRoundingMode o rounding_modeToInt
-      val getRoundingMode = intToRounding_mode o Prim.getRoundingMode
+      structure RoundingMode =
+	 struct
+	    datatype t =
+	       TO_NEAREST
+	     | TO_NEGINF
+	     | TO_POSINF
+	     | TO_ZERO
+
+	    local
+	       val modes =
+		  let
+		     open Prim.RoundingMode
+		  in
+		     [(toNearest, TO_NEAREST),
+		      (downward, TO_NEGINF),
+		      (upward, TO_POSINF),
+		      (towardZero, TO_ZERO)]
+		  end
+	    in
+	       val fromInt: int -> t =
+		  fn i =>
+		  case List.find (fn (i', _) => i = i') modes of
+		     NONE => raise Fail "IEEEReal.RoundingMode.fromInt"
+		   | SOME (_, m) => m
+			
+	       val toInt: t -> int =
+		  let
+		     open Prim.RoundingMode
+		  in
+		     fn TO_NEAREST => toNearest
+		      | TO_NEGINF => downward
+		      | TO_POSINF => upward
+		      | TO_ZERO => towardZero
+		  end
+	    end
+	 end
+
+      datatype rounding_mode = datatype RoundingMode.t
+
+      val setRoundingMode = Prim.setRoundingMode o RoundingMode.toInt
+      val getRoundingMode = RoundingMode.fromInt o Prim.getRoundingMode
 
       fun withRoundingMode (m: rounding_mode, th: unit -> 'a): 'a =
 	 let

@@ -385,6 +385,16 @@ structure Primitive =
       
       structure IEEEReal =
 	 struct
+	    structure RoundingMode =
+	       struct
+		  type t = int
+		     
+		  val toNearest = _const "FE_TONEAREST": t;
+		  val downward = _const "FE_DOWNWARD": t;
+		  val upward = _const "FE_UPWARD": t;
+		  val towardZero = _const "FE_TOWARDZERO": t;
+	       end
+	    
 	    val getRoundingMode =
 	       _import "IEEEReal_getRoundingMode": unit -> int;
 	    val setRoundingMode =
@@ -1235,6 +1245,17 @@ structure Primitive =
 	 struct
 	    open Real64
 
+	    structure Class =
+	       struct
+		  type t = int
+		     
+		  val inf = _const "FP_INFINITE": t;
+		  val nan = _const "FP_NAN": t;
+		  val normal = _const "FP_NORMAL": t;
+		  val subnormal = _const "FP_SUBNORMAL": t;
+		  val zero = _const "FP_ZERO": t;
+	       end
+	    
 	    structure Math =
 	       struct
 		  type real = real
@@ -1359,7 +1380,7 @@ structure Primitive =
 	    val toInt = _prim "Real32_toWordS32": real -> int;
 	    val ~ = _prim "Real32_neg": real -> real;
 	 end
-
+    
       structure Real32 =
 	 struct
 	    open Real32
