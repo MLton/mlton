@@ -55,7 +55,7 @@ dir=`dirname $0`
 src=`cd $dir/.. && pwd`
 bin="$src/build/bin"
 mlton="$bin/mlton"
-flags="-warn-match false -type-check true $flags"
+flags="-disable-ann warnMatch -type-check true $flags"
 if [ $cross = 'yes' ]; then
 	flags="$flags -target $crossTarget -stop g"
 fi
