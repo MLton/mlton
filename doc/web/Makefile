@@ -8,11 +8,11 @@ benchmarks:
 CHANGES: ../CHANGES
 	cp -p ../CHANGES .
 
-HTML:
+user-guide:
 	cd ../user-guide && make
 	gzip -c ../user-guide/main.ps >user-guide.ps.gz
 	(cd ../user-guide/main && tar.write .) | \
-		(mkdir HTML && cd HTML && tar.read)
+		(mkdir user-guide && cd user-guide && tar.read)
 
 .PHONY: clean
 clean:
