@@ -75,6 +75,8 @@ structure Pat =
 	     | Wild => str "_"
 	 end
 
+      fun wild t = make (Wild, t)
+
       fun var (x, t) = make (Var x, t)
 
       fun tuple ps = make (Tuple ps, Type.tuple (Vector.map (ps, ty)))

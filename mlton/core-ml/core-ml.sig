@@ -61,6 +61,7 @@ signature CORE_ML =
 	    val truee: t
 	    val tuple: t vector -> t
 	    val ty: t -> Type.t
+	    val wild: Type.t -> t
 	 end
 
       structure Exp:
