@@ -41,8 +41,8 @@ signature MLTON =
       structure Signal: MLTON_SIGNAL
       structure Socket: MLTON_SOCKET
       structure Syslog: MLTON_SYSLOG
-      structure Thread: MLTON_THREAD
       structure TextIO: MLTON_TEXT_IO
+      structure Thread: MLTON_THREAD
       structure Vector: MLTON_VECTOR
       structure Word:
 	 sig

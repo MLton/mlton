@@ -13,18 +13,26 @@ signature MLTON_SIGNAL =
 	    type t
 	       
 	    val all: t
-	    val some: signal list -> t
+	    val allBut: signal list -> t
 	    val block: t -> unit
-	    val unblock: t -> unit
+	    val none: t
 	    val set: t -> unit
+	    val some: signal list -> t
+	    val unblock: t -> unit
 	 end
 
-      datatype handler =
-	 Default
-       | Ignore
-       | Handler of unit Thread.t -> unit Thread.t
+      structure Handler:
+	 sig
+	    type t
 
-      val getHandler: t -> handler
+	    val default: t
+	    val handler: (unit Thread.t -> unit Thread.t) -> t
+	    val ignore: t
+	    val isDefault: t -> bool
+	    val isIgnore: t -> bool
+	 end
+
+      val getHandler: t -> Handler.t
       val handleDefault: t -> unit
       (*
        * It is an error for a handler to raise an exception.
@@ -36,5 +44,9 @@ signature MLTON_SIGNAL =
       val handleWith': t * (unit Thread.t -> unit Thread.t) -> unit
       val handleWith: t * (unit -> unit) -> unit
       val ignore: t -> unit
-      val setHandler: t * handler -> unit
+      val setHandler: t * Handler.t -> unit
+      (* suspend m temporarily sets the signal mask to m and suspends until an
+       * unmasked signal is received and handled, and then resets the mask.
+       *)
+      val suspend: Mask.t -> unit
    end

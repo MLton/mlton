@@ -14,9 +14,9 @@ signature MLTON_RANDOM =
       (* Use /dev/random to get a word.  Useful as an arg to srand. *)
       val seed: unit -> word
 	 
-      (* Use /dev/urandom to get a word.  Useful as an arg to srand. *)
-      val useed: unit -> word
-
       (* Set the seed used by rand. *)
       val srand: word -> unit
+
+      (* Use /dev/urandom to get a word.  Useful as an arg to srand. *)
+      val useed: unit -> word
    end

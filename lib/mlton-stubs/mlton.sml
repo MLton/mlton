@@ -257,16 +257,24 @@ structure MLton: MLTON =
 		  type t = unit
 
 		  val all = ()
-		  fun some _ = ()
+		  fun allBut _ = ()
 		  fun block _ = raise Fail "block"
-		  fun unblock _ = raise Fail "unblock"
+		  val none = ()
 		  fun set _ = raise Fail "set"
+		  fun some _ = ()
+		  fun unblock _ = raise Fail "unblock"
 	       end
 
-	    datatype handler =
-	       Default
-	     | Ignore
-	     | Handler of unit Thread.t -> unit Thread.t
+	    structure Handler =
+	       struct
+		  type t = unit
+
+		  val default = ()
+		  val handler = fn _ => ()
+		  val ignore = ()
+		  val isDefault = fn _ => raise Fail "isDefault"
+		  val isIgnore = fn _ => raise Fail "isIgnore"
+	       end
 
 	    fun getHandler _ = raise Fail "getHandler"
 	    fun handleDefault _ = raise Fail "handleDefault"
@@ -274,6 +282,7 @@ structure MLton: MLTON =
 	    fun handleWith _ = raise Fail "handleWith"
 	    fun ignore _ = raise Fail "ignore"
 	    fun setHandler _ = raise Fail "setHandler"
+	    fun suspend _ = raise Fail "suspend"
 	 end
 
       structure Socket =
