@@ -39,7 +39,7 @@ val () =
     (4, "/", binary, real),
     (3, "div", binary, wordint),
     (3, "mod", binary, wordint),
-    (3, "abs", compare, realint),
+    (3, "abs", unary, realint),
     (1, "<", compare, numtext),
     (1, "<=", compare, numtext),
     (1, ">", compare, numtext),

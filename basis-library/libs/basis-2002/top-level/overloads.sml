@@ -460,7 +460,7 @@ and Int31.mod
 and Int32.mod
 and Int64.mod
 
-_overload 3 abs : 'a * 'a -> bool
+_overload 3 abs : 'a -> 'a
 as  Real.abs
 and Real32.abs
 and Real64.abs
