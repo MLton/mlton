@@ -78,6 +78,8 @@ signature REP_TYPE =
       val defaultInt: t
       val defaultWord: t
       val dest: t -> dest
+      val dropPrefix: t * Bits.t -> t
+      val dropSuffix: t * Bits.t -> t
       val equals: t * t -> bool
       val exnStack: t
       val fragment: t * {start: Bits.t, width: Bits.t} -> t
@@ -107,11 +109,13 @@ signature REP_TYPE =
       val orb: t * t -> t option
       val pointer: PointerTycon.t -> t
       val pointerHeader: PointerTycon.t -> t
+      val prefix: t * Bits.t -> t
       val real: RealSize.t -> t
       val resize: t * Bits.t -> t
       val rshift: t * t -> t
       val seq: t vector -> t
       val string: t
+      val suffix: t * Bits.t -> t
       val sum: t vector -> t
       val thread: t
       val toCType: t -> CType.t
