@@ -270,7 +270,7 @@ install-docs:
 	mkdir -p $(TDOC)
 	(									\
 		cd $(SRC)/doc &&						\
-		$(CP) changelog cmcat.sml examples license README $(TDOC)/	\
+		$(CP) changelog cmcat examples license README $(TDOC)/		\
 	)
 	rm -rf $(TDOC)/user-guide
 	$(CP) $(SRC)/doc/user-guide/main $(TDOC)/user-guide
