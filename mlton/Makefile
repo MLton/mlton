@@ -5,7 +5,7 @@ LIB = $(BUILD)/lib
 MLTON = mlton
 NAME = mlton
 AOUT = mlton-compile
-FLAGS = @MLton gc-summary -- -keep o -v -o $(AOUT)
+FLAGS = @MLton gc-summary -- -v -o $(AOUT)
 PATH = $(BIN):$(shell echo $$PATH)
 
 all: $(AOUT)
