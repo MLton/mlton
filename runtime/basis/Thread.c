@@ -24,16 +24,14 @@ void Thread_setHandler(Thread t) {
 	gcState.signalHandler = (GC_thread)t;
 }
 
-void Thread_switchTo (Thread thread) {
-	GC_thread t;
+void Thread_switchTo (Thread thread, W32 ensureBytesFree) {
 	GC_state s;
 
-	t = (GC_thread)thread;
+	if (FALSE)
+		fprintf (stderr, "Thread_switchTo (0x%08x, %u)\n",
+				(uint)thread, (uint)ensureBytesFree);
 	s = &gcState;
 	s->currentThread->stack->used = s->stackTop - s->stackBottom;
-	s->currentThread = t;
-	s->stackBottom = ((pointer)t->stack) + sizeof(struct GC_stack); 
-	s->stackTop = s->stackBottom + t->stack->used;
-	s->stackLimit = 
-		s->stackBottom + t->stack->reserved - 2 * s->maxFrameSize;
+	s->currentThread->bytesNeeded = ensureBytesFree;
+	GC_switchToThread (s, (GC_thread)thread);
 }

@@ -39,15 +39,17 @@ fun new f = T (ref (New f))
    
 local
    val func: (unit -> unit) option ref = ref NONE
-   val base: Prim.preThread = Prim.copyCurrent ()
-   val _ = (case !func of
-	       NONE => ()
-	     | SOME x =>
-		  (func := NONE
-		   (* Close the atomicBegin of the thread that switched to me. *)
-		   ; atomicEnd ()
-		   ; (x () handle e => Exn.topLevelHandler e)
-		   ; die "Thread didn't exit properly.\n"))
+   val base: Prim.preThread =
+      (Prim.copyCurrent ()
+       ; (case !func of
+	     NONE => Prim.savedPre ()
+	   | SOME x =>
+		(* This branch never returns. *)
+		(func := NONE
+		 (* Close the atomicBegin of the thread that switched to me. *)
+		 ; atomicEnd ()
+		 ; (x () handle e => Exn.topLevelHandler e)
+		 ; die "Thread didn't exit properly.\n")))
    val switching = ref false
 in
    fun ('a, 'b) switch'NoAtomicBegin (f: 'a t -> 'b t * (unit -> 'b)): 'a =
@@ -123,7 +125,7 @@ fun setHandler (f: unit t -> unit t): unit =
 		   val _ =
 		      case !r of
 			 Paused (f, _) => f (fn () => ())
-		       | _ => raise Fail "setHandler saw strange pause"
+		       | _ => raise Fail "setHandler saw strange Paused"
 		in
 		   (t, fn () => ())
 		end)

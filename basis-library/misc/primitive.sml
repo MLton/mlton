@@ -564,10 +564,24 @@ structure Primitive =
 		     else _prim "Thread_atomicEnd": unit -> unit; ()
 	       else ()
 	    val copy = _prim "Thread_copy": preThread -> thread;
-	    val copyCurrent = _prim "Thread_copyCurrent": unit -> preThread;
+	    (* copyCurrent's result is accesible via savedPre ().
+	     * It is not possible to have the type of copyCurrent as
+	     * unit -> preThread, because there are two different ways to
+	     * return from the call to copyCurrent.  One way is the direct
+	     * obvious way, in the thread that called copyCurrent.  That one,
+	     * of course, wants to call savedPre ().  However, another way to
+	     * return is by making a copy of the preThread and then switching
+	     * to it.  In that case, there is no preThread to return.  Making
+	     * copyCurrent return a preThread creates nasty bugs where the
+	     * return code from the CCall expects to see a preThread result
+	     * according to the C return convention, but there isn't one when
+	     * switching to a copy.
+	     *)
+	    val copyCurrent = _prim "Thread_copyCurrent": unit -> unit;
 	    val current = _prim "Thread_current": unit -> thread;
 	    val finishHandler = _ffi "Thread_finishHandler": unit -> unit;
 	    val saved = _ffi "Thread_saved": unit -> thread;
+	    val savedPre = _ffi "Thread_saved": unit -> preThread;
 	    val setHandler = _ffi "Thread_setHandler": thread -> unit;
 	    val switchTo = _prim "Thread_switchTo": thread -> unit;
 	 end      

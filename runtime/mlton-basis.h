@@ -248,7 +248,7 @@ Thread Thread_current();
 void Thread_finishHandler();
 Thread Thread_saved();
 void Thread_setHandler(Thread t);
-void Thread_switchTo(Thread t);
+void Thread_switchTo (Thread t, W32 ensureBytesFree);
 
 /* ------------------------------------------------- */
 /*                       Time                        */

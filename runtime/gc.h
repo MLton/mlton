@@ -240,8 +240,7 @@ typedef struct GC_state {
 	/* savedThread is only set
          *    when executing a signal handler.  It is set to the thread that
 	 *    was running when the signal arrived.
-         * or by GC_copyThread and GC_copyCurrentThread, which used it to store
-         *    their result.
+         * GC_copyCurrentThread also uses it to store its result.
 	 */
 	GC_thread savedThread;
 	/* Save globals writes out the values of all of the globals to fd. */
@@ -311,11 +310,13 @@ static inline int GC_arrayNumElements (pointer a) {
 
 /* GC_copyThread (s, t) returns a copy of the thread pointed to by t.
  */
-pointer GC_copyThread (GC_state s, GC_thread t);
+pointer GC_copyThread (GC_state s, pointer t);
 
-/* GC_copyThread (s) returns a copy of the current thread, s->currentThread.
+/* GC_copyThread (s) stores a copy of the current thread, s->currentThread
+ * in s->savedThread.  See the comment in basis-library/misc/primitive.sml for
+ * why it's a bad idea to have copyCurrentThread return the copy directly.
  */
-pointer GC_copyCurrentThread (GC_state s);
+void GC_copyCurrentThread (GC_state s);
 
 /* GC_createStrings allocates a collection of strings in the heap.
  * It assumes that there is enough space.
@@ -406,11 +407,6 @@ static inline bool GC_isValidSlot (GC_state s, pointer slot) {
 		and slot < s->stackBottom + s->currentThread->stack->reserved;
 }
 
-void GC_loadWorld (GC_state s, 
-			char *fileName,
-			void (*loadGlobals)(FILE *file));
-
-
 /*
  * Build the header for an object, given the index to its type info.
  */
@@ -427,5 +423,7 @@ void GC_saveWorld (GC_state s, int fd);
 
 /* Return the amount of heap space taken by the object pointed to by root. */
 uint GC_size (GC_state s, pointer root);
+
+void GC_switchToThread (GC_state s, GC_thread t);
 
 #endif /* #ifndef _MLTON_GC_H */

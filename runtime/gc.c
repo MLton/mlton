@@ -49,6 +49,7 @@ enum {
 	DEBUG_MEM = FALSE,
 	DEBUG_RESIZING = FALSE,
 	DEBUG_SIGNALS = FALSE,
+	DEBUG_STACKS = FALSE,
 	DEBUG_THREADS = FALSE,
 	FORWARDED = 0xFFFFFFFF,
 	HEADER_SIZE = WORD_SIZE,
@@ -453,8 +454,6 @@ static inline uint currentTime () {
 
 /* stackSlop returns the amount of "slop" space needed between the top of 
  * the stack and the end of the stack space.
- * If you change this, make sure and change Thread_switchTo in ccodegen.h
- *   and thread_switchTo in x86-generate-transfers.sml.
  */
 static inline uint stackSlop (GC_state s) {
 	return 2 * s->maxFrameSize;
@@ -464,31 +463,20 @@ static inline uint initialStackSize (GC_state s) {
 	return stackSlop (s);
 }
 
-static inline uint
-stackBytes (uint size)
-{
+static inline uint stackBytes (uint size) {
 	return wordAlign (HEADER_SIZE + sizeof (struct GC_stack) + size);
 }
 
-/* If you change this, make sure and change Thread_switchTo in ccodegen.h
- *   and thread_switchTo in x86-generate-transfers.sml.
- */
 static inline pointer stackBottom (GC_stack stack) {
 	return ((pointer)stack) + sizeof (struct GC_stack);
 }
 
 /* Pointer to the topmost word in use on the stack. */
-/* If you change this, make sure and change Thread_switchTo in ccodegen.h
- *   and thread_switchTo in x86-generate-transfers.sml.
- */
 static inline pointer stackTop (GC_stack stack) {
-	return stackBottom(stack) + stack->used;
+	return stackBottom (stack) + stack->used;
 }
 
 /* The maximum value stackTop may take on. */
-/* If you change this, make sure and change Thread_switchTo in ccodegen.h
- *   and thread_switchTo in x86-generate-transfers.sml.
- */
 static inline pointer stackLimit (GC_state s, GC_stack stack) {
 	return stackBottom (stack) + stack->reserved - stackSlop (s);
 }
@@ -535,10 +523,14 @@ static inline bool stackTopIsOk (GC_state s, GC_stack stack) {
 static inline pointer object (GC_state s, uint header, uint bytesRequested) {
 	pointer result;
 
-	assert (s->frontier + bytesRequested <= s->limit);
+	assert (bytesRequested <= s->limitPlusSlop - s->frontier);
 	assert (isWordAligned (bytesRequested));
 	*(uint*)s->frontier = header;
 	result = s->frontier + HEADER_SIZE;
+	if (DEBUG_DETAILED)
+		fprintf (stderr, "frontier changed from 0x%08x to 0x%08x\n",
+				(uint)s->frontier, 
+				(uint)(s->frontier + bytesRequested));
 	s->frontier += bytesRequested;
 	return result;
 }
@@ -549,7 +541,7 @@ static inline GC_stack newStack (GC_state s, uint size) {
 	stack = (GC_stack) object (s, STACK_HEADER, stackBytes (size));
 	stack->reserved = size;
 	stack->used = 0;
-	if (DEBUG_DETAILED)
+	if (DEBUG_THREADS)
 		fprintf (stderr, "0x%x = newStack (%u)\n", (uint)stack, size);
 	return stack;
 }
@@ -563,24 +555,19 @@ inline void setStack (GC_state s) {
 	s->stackLimit = stackLimit (s, stack);
 }
 
-static inline void switchToThread (GC_state s, GC_thread t) {
-	s->currentThread = t;
-	setStack(s);
-}
-
 static inline void stackCopy (GC_stack from, GC_stack to) {
 	assert (from->used <= to->reserved);
 	to->used = from->used;
+	if (DEBUG_STACKS)
+		fprintf (stderr, "stackCopy from 0x%08x to 0x%08x of length %u\n",
+				(uint) stackBottom (from), 
+				(uint) stackBottom (to),
+				from->used);
 	memcpy (stackBottom (to), stackBottom (from), from->used);
 }
 
 /* Number of bytes used by the stack. */
-/* If you change this, make sure and change Thread_switchTo in ccodegen.h
- *   and thread_switchTo in x86-generate-transfers.sml.
- */
-static inline uint
-currentStackUsed (GC_state s)
-{
+static inline uint currentStackUsed (GC_state s) {
 	return s->stackTop - s->stackBottom;
 }
 
@@ -708,10 +695,10 @@ inline pointer foreachPointerInObject (GC_state s, GC_pointerFun f, pointer p) {
 			returnAddress = *(word*) (top - WORD_SIZE);
 			if (DEBUG)
 				fprintf(stderr, 
-					"  top = %d  return address = %u.\n", 
+					"  top = %d  return address = 0x%08x.\n", 
 					top - bottom, 
 					returnAddress);
-			layout = getFrameLayout(s, returnAddress); 
+			layout = getFrameLayout (s, returnAddress); 
 			frameOffsets = layout->offsets;
 			top -= layout->numBytes;
 			for (i = 0 ; i < frameOffsets[0] ; ++i) {
@@ -794,81 +781,61 @@ static inline bool isInFromSpace (GC_state s, pointer p) {
  	return (s->base <= p and p < s->frontier);
 }
 
-static inline void 
-assertIsInFromSpace (GC_state s, pointer *p) 
-{
+static inline void assertIsInFromSpace (GC_state s, pointer *p) {
 #ifndef NODEBUG
 	unless (isInFromSpace (s, *p))
-		die ("gc.c: assertIsInFromSpace (0x%x);\n", (uint)*p);
+		die ("gc.c: assertIsInFromSpace p = 0x%08x  *p = 0x%08x);\n",
+			(uint)p, (uint)*p);
 #endif
 }
 
-static inline bool
-isInToSpace (GC_state s, pointer p)
-{
+static inline bool isInToSpace (GC_state s, pointer p) {
 	return (not(GC_isPointer(p))
 		or (s->toBase <= p and p < s->toBase + s->toSize));
 }
 
-static bool
-invariant (GC_state s)
-{
+static bool invariant (GC_state s) {
 	/* would be nice to add divisiblity by pagesize of various things */
+	int i;
+	GC_stack stack;
 
+//	if (DEBUG)
+//		fprintf (stderr, "invariant\n");
 	/* Frame layouts */
-	{	
-		int i;
-
-		for (i = 0; i < s->maxFrameIndex; ++i) {
-			GC_frameLayout *layout;
-
- 			layout = &(s->frameLayouts[i]);
-			if (layout->numBytes > 0) {
-				GC_offsets offsets;
-				int j;
-
-				assert(layout->numBytes <= s->maxFrameSize);
-				offsets = layout->offsets;
-				for (j = 0; j < offsets[0]; ++j)
-					assert(offsets[j + 1] < layout->numBytes);
-			}
+	for (i = 0; i < s->maxFrameIndex; ++i) {
+		GC_frameLayout *layout;
+			layout = &(s->frameLayouts[i]);
+		if (layout->numBytes > 0) {
+			GC_offsets offsets;
+			int j;
+			assert(layout->numBytes <= s->maxFrameSize);
+			offsets = layout->offsets;
+			for (j = 0; j < offsets[0]; ++j)
+				assert(offsets[j + 1] < layout->numBytes);
 		}
 	}
 	/* Heap */
-	assert(isWordAligned((uint)s->frontier));
-	assert(s->base <= s->frontier);
-	assert(0 == s->fromSize 
-		or (s->frontier <= s->limit + LIMIT_SLOP
-			and s->limit == s->base + s->fromSize - LIMIT_SLOP));
-	assert(s->toBase == NULL or s->toSize == s->fromSize);
+	assert (isWordAligned ((uint)s->frontier));
+	assert (s->base <= s->frontier);
+	assert (0 == s->fromSize 
+		or (s->frontier <= s->limitPlusSlop
+			and s->limitPlusSlop == s->base + s->fromSize
+			and s->limit == s->limitPlusSlop - LIMIT_SLOP));
+	assert (s->toBase == NULL or s->toSize == s->fromSize);
 	/* Check that all pointers are into from space. */
-	foreachGlobal(s, assertIsInFromSpace);
-	foreachPointerInRange(s, s->base, &s->frontier, assertIsInFromSpace);
+	foreachGlobal (s, assertIsInFromSpace);
+	foreachPointerInRange (s, s->base, &s->frontier, assertIsInFromSpace);
 	/* Current thread. */
-	{
-/*		uint offset; */
-		GC_stack stack;
-
-		stack = s->currentThread->stack;
-		assert(isWordAligned(stack->reserved));
-		assert(s->stackBottom == stackBottom(stack));
-		assert(s->stackTop == stackTop(stack));
-	 	assert(s->stackLimit == stackLimit(s, stack));
-		assert(stack->used == currentStackUsed(s));
-		assert(stack->used < stack->reserved);
-	 	assert(s->stackBottom <= s->stackTop);
-/* Can't walk down the exception stack these days, because there is no 
- * guarantee that the handler link and slot are next to each other.
- */
-/* 		for (offset = s->currentThread->exnStack;  */
-/* 			offset != BOGUS_EXN_STACK; ) { */
-/* 			unless (s->stackBottom + offset <= s->stackTop) */
-/* 				fprintf(stderr, "s->stackBottom = %d  offset = %d s->stackTop = %d\n", (uint)(s->stackBottom), offset, (uint)(s->stackTop)); */
-/* 			assert(s->stackBottom + offset <= s->stackTop); */
-/* 			offset = *(uint*)(s->stackBottom + offset + WORD_SIZE); */
-/* 		} */
-	}
-
+	stack = s->currentThread->stack;
+	assert (isWordAligned (stack->reserved));
+	assert (s->stackBottom == stackBottom (stack));
+	assert (s->stackTop == stackTop (stack));
+ 	assert (s->stackLimit == stackLimit (s, stack));
+	assert (stack->used == currentStackUsed (s));
+	assert (stack->used < stack->reserved);
+ 	assert (s->stackBottom <= s->stackTop);
+//	if (DEBUG)
+//		fprintf (stderr, "invariant passed\n");
 	return TRUE;
 }
 
@@ -900,25 +867,32 @@ static inline void unblockSignals (GC_state s) {
  * from within an ML signal handler.
  */
 void enter (GC_state s) {
+	if (DEBUG)
+		fprintf (stderr, "enter\n");
 	/* used needs to be set because the mutator has changed s->stackTop. */
 	s->currentThread->stack->used = currentStackUsed (s);
 	if (DEBUG) 
 		GC_display (s, stderr);
 	unless (s->inSignalHandler) {
 		blockSignals (s);
-		if (s->limit == 0)
+		if (0 == s->limit)
 			s->limit = s->limitPlusSlop - LIMIT_SLOP;
 	}
 	assert (invariant (s));
+	if (DEBUG)
+		fprintf (stderr, "enter ok\n");
 }
 
-void leave (GC_state s)
-{
+void leave (GC_state s) {
+	if (DEBUG)
+		fprintf (stderr, "leave\n");
 	assert (mutatorInvariant (s));
 	if (s->signalIsPending and 0 == s->canHandle)
 		s->limit = 0;
 	unless (s->inSignalHandler)
 		unblockSignals (s);
+	if (DEBUG)
+		fprintf (stderr, "leave ok\n");
 }
 
 static inline void releaseFromSpace (GC_state s) {
@@ -944,11 +918,10 @@ static inline void releaseToSpace (GC_state s) {
 /* ---------------------------------------------------------------- */
 
 void GC_display (GC_state s, FILE *stream) {
-	fprintf (stream, "GC state\n\tbase = 0x%x\n\tfrontier - base = %u\n\tlimit - base = %u\n\tlimit - frontier = %d\n",
+	fprintf (stream, "GC state\n\tbase = 0x%x\n\tfrontier - base = %u\n\tlimitPlusSlop - frontier = %d\n",
 			(uint) s->base, 
 			s->frontier - s->base,
-			s->limit - s->base,
-			s->limit - s->frontier);
+			s->limitPlusSlop - s->frontier);
 	fprintf (stream, "\tcanHandle = %d\n", s->canHandle);
 	fprintf (stream, "\texnStack = %u  bytesNeeded = %u  reserved = %u  used = %u\n",
 			s->currentThread->exnStack,
@@ -1860,7 +1833,7 @@ static void growStack (GC_state s) {
 
 	size = 2 * s->currentThread->stack->reserved;
 	assert (stackBytes (size) <= s->limitPlusSlop - s->frontier);
-	if (DEBUG or s->messages)
+	if (DEBUG_STACKS or s->messages)
 		fprintf (stderr, "Growing stack to size %u.\n", size);
 	if (size > s->maxStackSizeSeen)
 		s->maxStackSizeSeen = size;
@@ -1925,7 +1898,56 @@ void doGC (GC_state s, uint bytesRequested) {
 	}
 	if (DEBUG) 
 		GC_display (s, stderr);
+	assert (bytesRequested <= s->limitPlusSlop - s->frontier);
 	assert (invariant (s));
+}
+
+/* ensureFree (s, b) ensures that upon return
+ *      b <= s->limitPlusSlop - s->frontier
+ */
+static inline void ensureFree (GC_state s, uint b) {
+	assert (s->frontier <= s->limitPlusSlop);
+	if (b > s->limitPlusSlop - s->frontier)
+		doGC (s, b);
+	assert (b <= s->limitPlusSlop - s->frontier);
+}
+
+static inline void switchToThread (GC_state s, GC_thread t) {
+	if (DEBUG_THREADS)
+		fprintf (stderr, "switchToThread (0x%08x)  used = %u  reserved = %u\n", 
+				(uint)t, t->stack->used, t->stack->reserved);
+	assert (stackTopIsOk (s, t->stack));
+	s->currentThread = t;
+	setStack (s);
+	ensureFree (s, t->bytesNeeded);
+	/* Can not refer to t, because ensureFree may have GC'ed. */
+	assert (s->currentThread->bytesNeeded <= s->limitPlusSlop - s->frontier);
+}
+
+void GC_switchToThread (GC_state s, GC_thread t) {
+	if (DEBUG_THREADS)
+		fprintf (stderr, "GC_switchToThread (0x%08x)\n", (uint)t);
+	if (FALSE) {
+		/* This branch is slower than the else branch, especially 
+		 * when debugging is turned on, because it does an invariant
+		 * check on every thread switch.
+		 * So, we'll stick with the else branch for now.
+		 */
+	 	enter (s);
+	  	switchToThread (s, t);
+	 	leave (s);
+	} else {
+		s->currentThread->stack->used = currentStackUsed (s);
+		s->currentThread = t;
+		setStack (s);
+		if (t->bytesNeeded > s->limitPlusSlop - s->frontier)  {
+			enter (s);
+			doGC (s, t->bytesNeeded);
+			leave (s);
+		}
+	}
+	/* Can not refer to t, because we may have GC'ed. */
+	assert (s->currentThread->bytesNeeded <= s->limitPlusSlop - s->frontier);
 }
 
 void GC_gc (GC_state s, uint bytesRequested, bool force,
@@ -1933,8 +1955,12 @@ void GC_gc (GC_state s, uint bytesRequested, bool force,
 	uint stackBytesRequested;
 
 	enter (s);
+	/* When the mutator requests zero bytes, it may actually need as much
+	 * as LIMIT_SLOP.
+	 */
+	if (0 == bytesRequested)
+		bytesRequested = LIMIT_SLOP;
 	s->currentThread->bytesNeeded = bytesRequested;
-start:
 	stackBytesRequested = getStackBytesRequested (s);
 	if (DEBUG) {
 		fprintf (stderr, "%s %d: ", file, line);
@@ -1944,7 +1970,7 @@ start:
 	}
 	if (force or
 		(W64)(W32)s->frontier + (W64)bytesRequested 
-			+ (W64)stackBytesRequested > (W64)(W32)s->limit) {
+		+ (W64)stackBytesRequested > (W64)(W32)s->limitPlusSlop) {
 		if (s->messages)
 			fprintf(stderr, "%s %d: doGC\n", file, line);
 		/* This GC will grow the stack, if necessary. */
@@ -1953,12 +1979,12 @@ start:
 		growStack (s);
 	else {
 		/* Switch to the signal handler thread. */
-		assert (0 == s->canHandle);
 		if (DEBUG_SIGNALS) {
-			fprintf(stderr, "switching to signal handler\n");
-			GC_display(s, stderr);
+			fprintf (stderr, "switching to signal handler\n");
+			GC_display (s, stderr);
 		}
-		assert(s->signalIsPending);
+		assert (0 == s->canHandle);
+		assert (s->signalIsPending);
 		s->signalIsPending = FALSE;
 		s->inSignalHandler = TRUE;
 		s->savedThread = s->currentThread;
@@ -1969,19 +1995,9 @@ start:
                  */
 		s->canHandle = 2;
 		switchToThread (s, s->signalHandler);
-		bytesRequested = s->currentThread->bytesNeeded;
-		assert (0 == bytesRequested);
-		if (bytesRequested > s->limit - s->frontier)
-			goto start;
 	}
-	assert (s->currentThread->bytesNeeded <= s->limit - s->frontier);
-	/* The enter and leave must be outside the start loop.  If they
-         * were inside and force == TRUE, a signal handler could intervene just
-         * before the enter or just after the leave, which would set 
-         * limit to 0 and cause the while loop to go forever, performing a GC 
-         * at each iteration and never switching to the signal handler.
-         */
-	leave(s);
+	assert (s->currentThread->bytesNeeded <= s->limitPlusSlop - s->frontier);
+	leave (s);
 }
 
 /* ---------------------------------------------------------------- */
@@ -2035,7 +2051,7 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 	res = (pointer)frontier;
 	if (1 == numPointers)
 		for ( ; frontier < last; frontier++)
-			*frontier = 0x1;
+			*frontier = BOGUS_POINTER;
 	s->frontier = (pointer)last;
 	/* Unfortunately, the invariant isn't quite true here, because unless we
  	 * did the GC, we never set s->currentThread->stack->used to reflect
@@ -2050,12 +2066,6 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 	assert (ensureBytesFree <= s->limitPlusSlop - s->frontier);
 	return res;
 }	
-
-static inline void ensureFree (GC_state s, uint bytesRequested) {
-	if (bytesRequested > s->limit - s->frontier) {
-		doGC (s, bytesRequested);
-	}
-}
 
 /* ---------------------------------------------------------------- */
 /*                             Threads                              */
@@ -2078,7 +2088,7 @@ static inline GC_thread newThreadOfSize (GC_state s, uint stackSize) {
 	t = (GC_thread) object (s, THREAD_HEADER, threadBytes ());
 	t->exnStack = BOGUS_EXN_STACK;
 	t->stack = stack;
-	if (DEBUG_DETAILED)
+	if (DEBUG_THREADS)
 		fprintf (stderr, "0x%x = newThreadOfSize (%u)\n",
 				(uint)t, stackSize);;
 	return t;
@@ -2087,21 +2097,27 @@ static inline GC_thread newThreadOfSize (GC_state s, uint stackSize) {
 static inline GC_thread copyThread (GC_state s, GC_thread from, uint size) {
 	GC_thread to;
 
+	if (DEBUG_THREADS)
+		fprintf (stderr, "copyThread (0x%08x)\n", (uint)from);
 	/* newThreadOfSize may do a GC, which invalidates from.  
 	 * Hence we need to stash from where the GC can find it.
 	 */
 	s->savedThread = from;
-	to = newThreadOfSize (s, size);
-	if (DEBUG_THREADS)
+	to = newThreadOfSize (s, size);	
+	from = s->savedThread;
+	s->savedThread = BOGUS_THREAD;
+	if (DEBUG_THREADS) {
+		fprintf (stderr, "free space = %u\n",
+				s->limitPlusSlop - s->frontier);
 		fprintf (stderr, "0x%08x = copyThread (0x%08x)\n", 
 				(uint)to, (uint)from);
-	from = s->savedThread;
+	}
 	stackCopy (from->stack, to->stack);
 	to->exnStack = from->exnStack;
 	return to;
 }
 
-pointer GC_copyCurrentThread (GC_state s) {
+void GC_copyCurrentThread (GC_state s) {
 	GC_thread t;
 	GC_thread res;
 	
@@ -2114,17 +2130,20 @@ pointer GC_copyCurrentThread (GC_state s) {
 	leave (s);
 	if (DEBUG_THREADS)
 		fprintf (stderr, "0x%08x = GC_copyCurrentThread\n", (uint)res);
-	return (pointer)res;
+	s->savedThread = res;
 }
 
-pointer GC_copyThread (GC_state s, GC_thread t) {
+pointer GC_copyThread (GC_state s, pointer thread) {
 	GC_thread res;
+	GC_thread t;
 
+	t = (GC_thread)thread;
 	if (DEBUG_THREADS)
 		fprintf (stderr, "GC_copyThread (0x%08x)\n", (uint)t);
 	enter (s);
 	assert (t->stack->reserved == t->stack->used);
 	res = copyThread (s, t, stackNeedsReserved (s, t->stack));
+	assert (stackTopIsOk (s, res->stack));
 	leave (s);
 	return (pointer)res;
 }
@@ -2349,7 +2368,49 @@ static void newWorld (GC_state s)
 	s->toBase = NULL;
 	switchToThread (s, newThreadOfSize (s, initialStackSize (s)));
 	assert (initialThreadBytes (s) == s->frontier - s->base);
-	assert (s->frontier + s->bytesLive <= s->limit);
+	assert (s->frontier + s->bytesLive <= s->limitPlusSlop);
+	assert (mutatorInvariant (s));
+}
+
+/* worldTerminator is used to separate the human readable messages at the 
+ * beginning of the world file from the machine readable data.
+ */
+static const char worldTerminator = '\000';
+
+static void loadWorld (GC_state s, 
+			char *fileName,
+			void (*loadGlobals)(FILE *file)) {
+	FILE *file;
+	uint heapSize, magic;
+	pointer base, frontier;
+	char c;
+	
+	file = sfopen(fileName, "rb");
+	until ((c = fgetc(file)) == worldTerminator or EOF == c);
+	if (EOF == c) die("Invalid world.");
+	magic = sfreadUint(file);
+	unless (s->magic == magic)
+		die("Invalid world: wrong magic number.");
+	base = (pointer)sfreadUint(file);
+	frontier = (pointer)sfreadUint(file);
+	s->currentThread = (GC_thread)sfreadUint(file);
+	s->signalHandler = (GC_thread)sfreadUint(file);
+	heapSize = frontier - base;
+	s->bytesLive = heapSize;
+       	fromSpace (s, heapSize);
+	sfread (s->base, 1, heapSize, file);
+	s->frontier = s->base + heapSize;
+	(*loadGlobals)(file);
+	unless (EOF == fgetc (file))
+		die("Invalid world: junk at end of file.");
+	fclose(file);
+	/* translateHeap must occur after loading the heap and globals, since it
+	 * changes pointers in all of them.
+	 */
+	translateHeap (s, base, s->base, heapSize);
+	setStack (s);
+	s->toSize = 0;
+	s->toBase = NULL;
 	assert (mutatorInvariant (s));
 }
 
@@ -2443,12 +2504,12 @@ int GC_init (GC_state s, int argc, char **argv,
 	}
 	setMemInfo(s);
 	if (DEBUG or DEBUG_RESIZING)
-		fprintf(stderr, "totalRam = %u  totalSwap = %u\n",
-			s->totalRam, s->totalSwap);
+		fprintf (stderr, "totalRam = %u  totalSwap = %u\n",
+				s->totalRam, s->totalSwap);
 	if (s->isOriginal)
-		newWorld(s);
+		newWorld (s);
 	else
-		GC_loadWorld (s, worldFile, loadGlobals);
+		loadWorld (s, worldFile, loadGlobals);
 	return i;
 }
 
@@ -2560,48 +2621,6 @@ inline void GC_handler (GC_state s, int signum) {
 	s->signalIsPending = TRUE;
 	if (DEBUG_SIGNALS)
 		fprintf (stderr, "GC_handler done\n");
-}
-
-/* worldTerminator is used to separate the human readable messages at the 
- * beginning of the world file from the machine readable data.
- */
-static const char worldTerminator = '\000';
-
-void GC_loadWorld (GC_state s, 
-			char *fileName,
-			void (*loadGlobals)(FILE *file)) {
-	FILE *file;
-	uint heapSize, magic;
-	pointer base, frontier;
-	char c;
-	
-	file = sfopen(fileName, "rb");
-	until ((c = fgetc(file)) == worldTerminator or EOF == c);
-	if (EOF == c) die("Invalid world.");
-	magic = sfreadUint(file);
-	unless (s->magic == magic)
-		die("Invalid world: wrong magic number.");
-	base = (pointer)sfreadUint(file);
-	frontier = (pointer)sfreadUint(file);
-	s->currentThread = (GC_thread)sfreadUint(file);
-	s->signalHandler = (GC_thread)sfreadUint(file);
-	heapSize = frontier - base;
-	s->bytesLive = heapSize;
-       	fromSpace (s, heapSize);
-	sfread (s->base, 1, heapSize, file);
-	s->frontier = s->base + heapSize;
-	(*loadGlobals)(file);
-	unless (EOF == fgetc (file))
-		die("Invalid world: junk at end of file.");
-	fclose(file);
-	/* translateHeap must occur after loading the heap and globals, since it
-	 * changes pointers in all of them.
-	 */
-	translateHeap (s, base, s->base, heapSize);
-	setStack (s);
-	s->toSize = 0;
-	s->toBase = NULL;
-	assert (mutatorInvariant (s));
 }
 
 uint GC_size (GC_state s, pointer root) {

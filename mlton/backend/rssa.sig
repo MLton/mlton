@@ -63,8 +63,11 @@ signature RSSA =
 	     | CastInt of t
 	     | CastWord of t
 	     | Const of Const.t
-	       (* EnsuresBytesFree is a pseudo-op used by GC_allocateArray, and
-		* is replaced by the limit check pass with a real operand.
+	       (* EnsuresBytesFree is a pseudo-op used by C functions (like
+		* GC_allocateArray) that take a number of bytes as an argument
+		* and ensure that that number of bytes is free upon return.
+		* EnsuresBytesFree is replaced by the limit check pass with
+		* a real operand.
 		*)
 	     | EnsuresBytesFree
 	     | File (* expand by codegen into string constant *)
