@@ -2854,7 +2854,6 @@ get_total_mem()
 {
         static char buffer[256];
         FILE *file;
-        int total_size = 0;
 
         file = popen("/sbin/sysctl hw.physmem | awk '{ print $2; }'\n", "r");
         if (file == NULL) 
