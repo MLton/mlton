@@ -223,6 +223,7 @@ TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
 ifeq ($(HOST_OS), sunos)
 TDOC = $(DESTDIR)$(prefix)/doc/mlton
 endif
+TEXM = $(TDOC)/examples
 
 GZIP_MAN = true
 ifeq ($(HOST_OS), sunos)
@@ -261,13 +262,17 @@ install-docs:
 	rm -rf $(TDOC)/user-guide
 	$(CP) $(SRC)/doc/user-guide/main $(TDOC)/user-guide
 	$(GZIP) -c $(SRC)/doc/user-guide/main.ps >$(TDOC)/user-guide.ps.gz
-	for f in callcc command-line hello-world same-fringe signals size taut thread1 thread2 thread-switch timeout; do \
- 		$(CP) $(SRC)/regression/$$f.sml $(TDOC)/examples; \
+	for f in callcc command-line hello-world same-fringe signals	\
+			size taut thread1 thread2 thread-switch timeout \
+		; do 							\
+ 		$(CP) $(SRC)/regression/$$f.sml $(TEXM)/; 		\
 	done
 	$(GZIP) -c $(LEX)/$(LEX).ps >$(TDOC)/$(LEX).ps.gz
 	$(GZIP) -c $(YACC)/$(YACC).ps >$(TDOC)/$(YACC).ps.gz
 	find $(TDOC)/ -name CVS -type d | xargs rm -rf
 	find $(TDOC)/ -name .cvsignore -type f | xargs rm -rf
+	find $(TEXM)/ -name CVS -type d | xargs rm -rf
+	find $(TEXM)/ -name .cvsignore -type f | xargs rm -rf
 
 TDOCBASE = $(DESTDIR)$(prefix)/share/doc-base
 
