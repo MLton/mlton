@@ -10,14 +10,10 @@ AOUT = mlton-compile
 PATH = $(BIN):$(shell echo $$PATH)
 # If we're compiling MLton with an older version of itself, use the stubs for
 # the MLton structure.  If we're compiling it with itself, don't.
-ifeq ($(STUBS), no)
-  CM = $(NAME).cm
-else
 ifeq (self, $(shell if [ -x $(BIN)/mlton ]; then echo self; fi))
   CM = $(NAME).cm
 else
   CM = $(NAME)-stubs.cm
-endif
 endif
 
 .PHONY: all
