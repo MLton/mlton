@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -9,7 +9,7 @@ Group
 
 signature HANDLER
 signature RETURN
-signature SSA
+signature SSA2
 
 functor FlatLattice
 functor Ssa
@@ -21,15 +21,25 @@ is
 ../../lib/mlton/sources.cm
 
 ssa-tree.sig
+ssa-tree2.sig
 ssa-tree.fun
+ssa-tree2.fun
 direct-exp.sig
+direct-exp2.sig
 direct-exp.fun
+direct-exp2.fun
 analyze.sig
+analyze2.sig
 analyze.fun
+analyze2.fun
 type-check.sig
+type-check2.sig
 type-check.fun
+type-check2.fun
 shrink.sig
+shrink2.sig
 shrink.fun
+shrink2.fun
 flat-lattice.sig
 flat-lattice.fun
 common-arg.sig
@@ -59,7 +69,9 @@ n-point-lattice.fun
 three-point-lattice.sig
 three-point-lattice.fun
 restore.sig
+restore2.sig
 restore.fun
+restore2.fun
 known-case.sig
 known-case.fun
 local-flatten.sig
@@ -83,6 +95,12 @@ simplify-types.fun
 useless.sig
 useless.fun
 simplify.sig
+simplify2.sig
 simplify.fun
+simplify2.fun
 ssa.sig
+ssa2.sig
 ssa.fun
+ssa2.fun
+ssa-to-ssa2.sig
+ssa-to-ssa2.fun

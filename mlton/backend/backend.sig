@@ -11,7 +11,7 @@ type word = Word.t
 signature BACKEND_STRUCTS = 
    sig
       structure Machine: MACHINE
-      structure Ssa: SSA
+      structure Ssa: SSA2
       sharing Machine.Atoms = Ssa.Atoms
 
       val funcToLabel: Ssa.Func.t -> Machine.Label.t

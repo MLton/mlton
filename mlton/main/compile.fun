@@ -64,6 +64,7 @@ structure CoreML = CoreML (open Atoms
 structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)
 structure Ssa = Ssa (open Atoms)
+structure Ssa2 = Ssa2 (open Atoms)
 structure Machine = Machine (open Atoms
 			     structure Label = Ssa.Label)
 local
@@ -96,7 +97,9 @@ structure Monomorphise = Monomorphise (structure Xml = Xml
 				       structure Sxml = Sxml)
 structure ClosureConvert = ClosureConvert (structure Ssa = Ssa
 					   structure Sxml = Sxml)
-structure Backend = Backend (structure Ssa = Ssa
+structure SsaToSsa2 = SsaToSsa2 (structure Ssa = Ssa
+				 structure Ssa2 = Ssa2)
+structure Backend = Backend (structure Ssa = Ssa2
 			     structure Machine = Machine
 			     fun funcToLabel f = f)
 structure CCodegen = CCodegen (structure Ffi = Ffi
@@ -571,13 +574,22 @@ fun preCodegen {input}: Machine.Program.t =
 	  typeCheck = Ssa.typeCheck,
 	  display = Control.Layouts Ssa.Program.layouts,
 	  simplify = Ssa.simplify}
+      val ssa =
+	 Control.passSimplify
+	 {name = "toSsa2",
+	  suffix = "ssa",
+	  style = Control.No,
+	  thunk = fn () => SsaToSsa2.convert ssa,
+	  typeCheck = Ssa2.typeCheck,
+	  display = Control.Layouts Ssa2.Program.layouts,
+	  simplify = Ssa2.simplify}
       val _ =
 	 let
 	    open Control
 	 in
 	    if !keepSSA
 	       then saveToFile ({suffix = "ssa"}, No, ssa,
-				 Layouts Ssa.Program.layouts)
+				 Layouts Ssa2.Program.layouts)
 	    else ()
 	 end
       val codegenImplementsPrim =

@@ -25,7 +25,6 @@ structure LoopInvariant = LoopInvariant (S)
 structure PolyEqual = PolyEqual (S)
 structure Redundant = Redundant (S)
 structure RedundantTests = RedundantTests (S)
-structure RefFlatten = RefFlatten (S)
 structure RemoveUnused = RemoveUnused (S)
 structure SimplifyTypes = SimplifyTypes (S)
 structure Useless = Useless (S)
@@ -88,11 +87,7 @@ val ssaPasses : pass list ref = ref
     {name = "redundantTests", doit = RedundantTests.simplify},
     {name = "redundant", doit = Redundant.redundant},
     {name = "knownCase", doit = KnownCase.simplify}, 
-    {name = "removeUnused4", doit = RemoveUnused.remove},
-    (* For now, do ref flattening last, because each pass that follows it will
-     * have to be modified to correctly handle mutable fields.
-     *)
-    {name = "refFlatten", doit = RefFlatten.flatten}
+    {name = "removeUnused4", doit = RemoveUnused.remove}
     ]
 
 local

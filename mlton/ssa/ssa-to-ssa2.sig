@@ -5,14 +5,16 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
-signature REF_FLATTEN_STRUCTS = 
+signature SSA_TO_SSA2_STRUCTS = 
    sig
-      include SHRINK2
+      structure Ssa: SSA
+      structure Ssa2: SSA2
+      sharing Ssa.Atoms = Ssa2.Atoms
    end
 
-signature REF_FLATTEN = 
+signature SSA_TO_SSA2 = 
    sig
-      include REF_FLATTEN_STRUCTS
+      include SSA_TO_SSA2_STRUCTS
       
-      val flatten: Program.t -> Program.t
+      val convert: Ssa.Program.t -> Ssa2.Program.t
    end
