@@ -712,6 +712,9 @@ signature GL =
         val c_glBegin : GLenum -> unit
         val glBegin : GLenum -> unit
 
+        val c_glBitmap : int * int * GLreal * GLreal * GLreal * GLreal * Word8Vector.vector -> unit
+        val glBitmap : int -> int -> GLreal -> GLreal -> GLreal -> GLreal -> Word8Vector.vector -> unit
+
         val c_glBlendFunc : GLenum * GLenum -> unit
         val glBlendFunc : GLenum -> GLenum -> unit
 
@@ -753,6 +756,9 @@ signature GL =
 
         val c_glEnd : unit -> unit
         val glEnd : unit -> unit
+
+        val c_glFinish : unit -> unit
+        val glFinish : unit -> unit
 
         val c_glEndList : unit -> unit
         val glEndList : unit -> unit
@@ -798,6 +804,9 @@ signature GL =
 
         val c_glOrtho : GLdouble * GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit
         val glOrtho : GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
+
+        val c_glPixelTransferi : GLenum * int -> unit
+        val glPixelTransferi : GLenum -> int -> unit
 
         val c_glPushMatrix : unit -> unit
         val glPushMatrix : unit -> unit

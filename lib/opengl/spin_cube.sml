@@ -2,9 +2,9 @@ open GL;
 open GLU;
 open GLUT;
 
-val whiteLight =  [0.5, 0.5, 0.5, 1.0]
-val sourceLight =  [0.8, 0.8, 0.8, 1.0]
-val lightPos =  [0.0, 0.0, 0.0, 1.0]
+val whiteLight : GLreal list =  [0.5, 0.5, 0.5, 1.0]
+val sourceLight : GLreal list =  [0.8, 0.8, 0.8, 1.0]
+val lightPos : GLreal list =  [0.0, 0.0, 0.0, 1.0]
 
 datatype spec = RGB of GLreal * GLreal * GLreal;
 

@@ -262,11 +262,12 @@ signature GLUT =
         val glutAttachMenu : GL.GLenum -> unit
         val glutDetachMenu : GL.GLenum -> unit
 
-        val glutDisplayFunc: (unit -> unit) -> unit;
-        val glutIdleFunc : (unit -> unit ) -> unit ;
-        val glutReshapeFunc : (int * int -> unit) -> unit ;
-        val glutKeyboardFunc : (char * int * int -> unit) -> unit ;
-        val glutSpecialFunc : (int * int * int -> unit ) -> unit ;
+        val glutDisplayFunc: (unit -> unit) -> unit
+        val glutIdleFunc : (unit -> unit ) -> unit
+        val glutReshapeFunc : (int * int -> unit) -> unit
+        val glutKeyboardFunc : (char * int * int -> unit) -> unit
+        val glutMouseFunc : (GL.GLenum * GL.GLenum * int * int -> unit) -> unit
+        val glutSpecialFunc : (int * int * int -> unit ) -> unit
         val glutVisibilityFunc : (Word32.word -> unit ) -> unit
 
         val glutInit: unit -> unit;

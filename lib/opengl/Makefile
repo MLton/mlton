@@ -48,7 +48,7 @@ GL.sig: $(GL_CPP)
 	gcc -DMLTON_SOURCE $(CPPFLAGS) $(GL_CPP_SIG) > $(GL_SIG)
 
 GL_h.h: $(GL_SML)
-	$(mlton) -export-header true $(GL_STRUCT) > GL_h.h
+	$(mlton) -export-header true GL.cm > GL_h.h
 
 GL_c.o: $(GL_C)
 	gcc -c GL_c.c
@@ -62,7 +62,7 @@ GLU.sig:  $(GLU_CPP) $(GL_CPP)
 	gcc -DMLTON_SOURCE $(CPPFLAGS) $(GLU_CPP_SIG) > $(GLU_SIG)
 
 GLU_h.h: $(GLU_SML)
-	$(mlton) -export-header true $(GLU_STRUCT) > GLU_h.h
+	$(mlton) -export-header true GLU.cm > GLU_h.h
 
 GLU_c.o: $(GLU_C)
 	gcc -c GLU_c.c
@@ -76,12 +76,12 @@ GLUT.sig: $(GLUT_CPP) $(GL_CPP)
 	gcc -DMLTON_SOURCE $(CPPFLAGS)  $(GLUT_CPP_SIG) > $(GLUT_SIG)
 
 GLUT_h.h: $(GLUT_SML)
-	$(mlton) $(MLTONFLAGS) -export-header true $(GLUT_STRUCT) > GLUT_h.h
+	$(mlton) $(MLTONFLAGS) -export-header true GLUT.cm > GLUT_h.h
 
 GLUT_c.o: $(GLUT_C)
 	gcc -c GLUT_c.c
 
-test: shortest hello solar atom triangle spin_cube blender molehill
+test: shortest hello solar atom triangle spin_cube blender molehill bits
 
 shortest: $(GLUT_SML) $(GL_SML) shortest.sml
 	mlton $(GL_LINK_OPTS) shortest.cm GL_c.c GLUT_c.c
@@ -94,6 +94,9 @@ solar: $(GLUT_SML) $(GLU_SML) $(GL_SML) solar.sml
 
 atom: $(GLUT_SML) $(GLU_SML) $(GL_SML) atom.sml
 	mlton $(GL_LINK_OPTS) atom.cm GL_c.c GLUT_c.c
+
+bits: $(GLUT_SML) $(GLU_SML) $(GL_SML) bits.sml
+	mlton $(GL_LINK_OPTS) bits.cm Gl_c.c Glut_c.c
 
 triangle: $(GLUT_SML) $(GLU_SML) $(GL_SML) triangle.sml
 	mlton $(GL_LINK_OPTS) triangle.cm GL_c.c GLUT_c.c
@@ -108,4 +111,5 @@ molehill: $(GLUT_SML) $(GLU_SML) $(GL_SML) molehill.sml
 	mlton $(GL_LINK_OPTS) molehill.cm GL_c.c GLUT_c.c
 
 clean:
-	rm -f *_h.h *.stackdump *~ *.o *.exe Glut *.a hello shortest atom solar triangle spin_cube blender molehill
+	rm -f *_h.h *.stackdump *~ *.o *.exe Glut *.a hello shortest atom solar triangle spin_cube blender molehill bits
+
