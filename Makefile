@@ -18,7 +18,13 @@ CP = /bin/cp -fp
 
 all:
 	$(MAKE) compiler
-	$(MAKE) support
+	$(MAKE) dirs
+	mv $(COMP)/$(AOUT) $(LIB)
+	$(MAKE) script
+	$(MAKE) world
+	$(MAKE) runtime
+	$(MAKE) hostmap
+	$(MAKE) constants
 	$(MAKE) tools
 	$(MAKE) docs
 	@echo 'Build of MLton succeeded.'
@@ -61,7 +67,6 @@ runtime:
 	$(CP) $(RUN)/*.a $(LIB)/$(HOST)
 	$(CP) runtime/*.h include/*.h $(LIB)/$(HOST)/include
 	cd runtime && $(MAKE) clean
-	$(MAKE) hostmap
 
 .PHONY: script
 script:
@@ -69,20 +74,12 @@ script:
 	sed "/^lib=/s;'.*';'$(LIB)';" <bin/mlton >$(MLTON)
 	chmod a+x $(MLTON) 
 
-.PHONY: support
-support:
-	$(MAKE) dirs
-	mv $(COMP)/$(AOUT) $(LIB)
-	$(MAKE) script
-	$(MAKE) world
-	$(MAKE) runtime
-	$(MAKE) constants
-
 .PHONY: tools
 tools:
-	cd $(LEX) && $(MAKE) && $(CP) $(LEX) $(BIN)
-	cd $(YACC) && $(MAKE) && $(CP) $(YACC) $(BIN)
-	cd $(PROF) && $(MAKE) && $(CP) $(PROF) $(BIN)
+	cd $(LEX) && $(MAKE)
+	cd $(PROF) && $(MAKE)
+	cd $(YACC) && $(MAKE)
+	$(CP) $(LEX) $(PROF) $(YACC) $(BIN)
 
 .PHONY: world
 world: 
