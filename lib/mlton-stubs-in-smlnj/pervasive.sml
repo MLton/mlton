@@ -1,3 +1,4 @@
+signature PERVASIVE_WORD = WORD
 structure Pervasive =
    struct
       open Basis2002

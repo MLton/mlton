@@ -3,7 +3,9 @@ Library
 signature INT_INF
 #if (SMLNJ_VERSION == 110) && (SMLNJ_MINOR_VERSION >= 20)
 signature POSIX_SIGNAL
-#endif   
+#endif
+signature WORD
+   
 structure Array
 structure Array2
 structure BinIO
@@ -48,8 +50,9 @@ structure Unix
 structure Unsafe
 structure Vector
 structure Word
-structure Word32
 structure Word8
+structure Word32
+structure Word64
 structure Word8Array
 structure Word8Vector
 

@@ -1,5 +1,6 @@
 Library
 
+signature PERVASIVE_WORD
 structure Pervasive
    
 is

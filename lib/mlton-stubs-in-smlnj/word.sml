@@ -1,34 +1,114 @@
-functor FixWord (W: WORD) =
-   struct
-      open W
+structure LargeWord:> WORD = Word32
+   
+signature WORD =
+   sig
+      eqtype word
+	 
+      val * : word * word -> word 
+      val + : word * word -> word 
+      val - : word * word -> word 
+      val < : word * word -> bool 
+      val << : word * Word32.word -> word 
+      val <= : word * word -> bool 
+      val > : word * word -> bool 
+      val >= : word * word -> bool 
+      val >> : word * Word32.word -> word 
+      val ~ : word -> word
+      val ~>> : word * Word32.word -> word 
+      val andb: word * word -> word 
+      val compare: word * word -> order 
+      val div: word * word -> word 
+      val fmt: StringCvt.radix -> word -> string 
+      val fromInt: Int32.int -> word 
+      val fromLarge: LargeWord.word -> word 
+      val fromLargeInt: IntInf.int -> word
+      val fromLargeWord: LargeWord.word -> word 
+      val fromString: string -> word option 
+      val max: word * word -> word
+      val min: word * word -> word 
+      val mod: word * word -> word
+      val notb: word -> word 
+      val orb: word * word -> word 
+      val scan:
+	 StringCvt.radix
+	 -> (char, 'a) StringCvt.reader
+	 -> (word, 'a) StringCvt.reader
+      val toInt: word -> Int32.int 
+      val toIntX: word -> Int32.int 
+      val toLarge: word -> LargeWord.word
+      val toLargeInt: word -> IntInf.int 
+      val toLargeIntX: word -> IntInf.int 
+      val toLargeWord: word -> LargeWord.word 
+      val toLargeWordX: word -> LargeWord.word 
+      val toLargeX: word -> LargeWord.word
+      val toString: word -> string 
+      val wordSize: Int32.int 
+      val xorb: word * word -> word 
+   end
 
-      type t = word
-      val wordSize = Pervasive.Int32.fromInt wordSize
+functor FixWord (W: PERVASIVE_WORD): WORD =
+   struct
       local
-	 fun fix (f: t * Word31.word -> t) (w: t, w': Word32.word): t =
+	 open W
+      in
+	 type word = word
+	 val op * = op *
+	 val op + = op +
+	 val op - = op -
+	 val op < = op <
+	 val op <= = op <=
+	 val op > = op >
+	 val op >= = op >=
+	 val ~ = ~
+	 val andb = andb
+	 val compare = compare
+	 val op div = op div
+	 val fromString = fromString
+	 val max = max
+	 val min = min
+	 val op mod = op mod
+	 val notb = notb
+	 val orb = orb
+	 val scan = scan
+	 val xorb = xorb
+      end
+   
+      val wordSize = Pervasive.Int32.fromInt W.wordSize
+	 
+      local
+	 fun fix (f: word * Word31.word -> word)
+	    (w: word, w': Word32.word): word =
 	    f (w, Word31.fromLargeWord w')
       in
-	 val << = fix <<
-	 val >> = fix >>
-	 val ~>> = fix ~>>
+	 val << = fix W.<<
+	 val >> = fix W.>>
+	 val ~>> = fix W.~>>
       end
-      val toInt = toLargeInt
-      val toIntX = toLargeIntX
-      val fromInt = fromLargeInt
-      val fromLargeInt = fromInt o Int.fromLarge
+      val fromInt = W.fromLargeInt
+      val fromLarge = W.fromLargeWord o LargeWord.toLargeWord
+      val fromLargeInt = W.fromLargeInt o Int.fromLarge
+      val fromLargeWord = fromLarge
+      val toInt = W.toLargeInt
+      val toIntX = W.toLargeIntX
+      val toLarge = LargeWord.fromLargeWord o W.toLargeWord
       val toLargeInt = Int.toLarge o toInt
-      val toLargeIntX: word -> LargeInt.int = Int.toLarge o toIntX
+      val toLargeIntX = Int.toLarge o toIntX
+      val toLargeWord = toLarge
+      val toLargeWordX = LargeWord.fromLargeWord o W.toLargeWordX
+      val toLargeX = toLargeWordX
       local
 	 (* Bug in SML/NJ -- they use lower instead of upper case. *)
 	 val toUpper = Pervasive.String.translate (Char.toString o Char.toUpper)
       in
 	 fun fmt r i = toUpper (W.fmt r i)
-	 val toString = toUpper o toString
+	 val toString = toUpper o W.toString
       end
+
+      fun ~ (w: word) = fromInt 0 - w
    end
 
 structure Word8 = FixWord (Pervasive.Word8)
-structure Word =
+structure Word32 =
    struct
       local
 	 structure S = FixWord (Pervasive.Word32)
@@ -54,5 +134,7 @@ structure Word =
 
       end
    end
-structure Word32 = Word
-structure SysWord = Word
+structure Word64 = FixWord (LargeWord)
+structure Word = Word32
+structure SysWord = Word32
+structure LargeWord = Word64

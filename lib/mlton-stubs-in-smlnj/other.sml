@@ -5,7 +5,6 @@ structure General = General
 structure IEEEReal = IEEEReal
 structure IO = IO
 structure LargeReal = LargeReal
-structure LargeWord = LargeWord
 structure ListPair = ListPair
 structure Math = Math
 structure Option = Option
