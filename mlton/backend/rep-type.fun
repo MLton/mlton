@@ -339,7 +339,7 @@ structure Type =
 
       fun dropPrefix (t, b) = #hi (split (t, {lo = b}))
 
-(*      fun suffix (t, b) = dropPrefix (t, Bits.- (width t, b)) *)
+      fun suffix (t, b) = dropPrefix (t, Bits.- (width t, b))
 
       fun fragment (t: t, {start, width}): t =
 	 prefix (dropPrefix (t, start), width)
