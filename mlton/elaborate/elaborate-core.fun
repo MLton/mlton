@@ -56,6 +56,7 @@ local
    open TypeEnv
 in
    structure Scheme = Scheme
+   structure Time = Time
    structure Type = Type
 end
 
@@ -965,7 +966,8 @@ fun elaborateDec (d, {env = E,
 		      (concat (List.separate
 			       (rev (Ast.Tycon.toString name :: nest),
 				".")),
-		       kind)
+		       kind,
+		       AdmitsEquality.Sometimes)
 		   val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, kind))
 		in
 		   tycon
@@ -1067,10 +1069,7 @@ fun elaborateDec (d, {env = E,
 		      (freeTyvarChecks,
 		       fn () =>
 		       Vector.foreach2
-		       (v,
-			Scheme.haveFrees (Vector.map (v, #2),
-					  fn () =>
-					  Env.newTycon ("X", Kind.Arity 0)),
+		       (v, Scheme.haveFrees (Vector.map (v, #2)),
 			fn ((x, s), b) =>
 			if b
 			   then
@@ -1080,7 +1079,7 @@ fun elaborateDec (d, {env = E,
 			      in
 				 Control.warning
 				 (region,
-				  seq [str "unable to determine type of variable within declaration: ",
+				  seq [str "unable to locally determine type of variable: ",
 				       Var.layout x],
 				  align [seq [str "type: ", Scheme.layoutPretty s],
 					 lay ()])
@@ -1851,10 +1850,33 @@ fun elaborateDec (d, {env = E,
 		   Env.scope
 		   (E, fn () =>
 		    let
+		       val time = Time.tick ()
 		       val d = Decs.toVector (elabDec (d, nest, false))
 		       val e = elab e
+		       val ty = Cexp.ty e
+		       val cs = Type.tyconsCreatedAfter (ty, time)
+		       val n = List.length cs
+		       val _ =
+			  if n > 0
+			     then
+				let
+				   val _ = preError ()
+				   open Layout
+				in
+				   Control.error
+				   (region,
+				    seq [str (concat ["datatype",
+						      if n > 1 then "s escape"
+						      else " escapes",
+						      " defining let: "]),
+					 seq (separate (List.map
+							(cs, Tycon.layout),
+							", "))],
+				    lay ())
+				end
+			  else ()
 		    in
-		       Cexp.make (Cexp.Let (d, e), Cexp.ty e)
+		       Cexp.make (Cexp.Let (d, e), ty)
 		    end)
 	      | Aexp.List es =>
 		   let

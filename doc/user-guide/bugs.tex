@@ -27,29 +27,6 @@ This may be an oversight in the Definition, since unchecked use of
 this feature can lead to type unsoundness.
 
 \item
-{\mlton} allows local type names to escape their scope, and so accepts
-the programs like the following, while the Definition, for technical
-reasons, rejects them.
-\begin{verbatim}
-let
-   datatype t = T
-in
-   T
-end
-\end{verbatim}
-%
-\item
-{\mlton} does not enforce the restriction that types must be defined
-before they are implicitly used.  So, {\mlton} accepts programs like
-the following, while the Definition, for technical reasons, rejects
-them.
-\begin{verbatim}
-val r = ref NONE
-datatype t = T
-val _ = r := SOME T
-\end{verbatim}
-%
-\item
 {\mlton} allows rebinding of constructors with {\tt val rec}
 declarations, as in
 \begin{verbatim}

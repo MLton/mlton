@@ -270,10 +270,16 @@ structure Info =
 val allTycons: Tycon.t list ref = ref []
 val newTycons: (Tycon.t * Kind.t) list ref = ref []
 
-val newTycon: string * Kind.t -> Tycon.t =
-   fn (s, k) =>
+val newTycon: string * Kind.t * AdmitsEquality.t -> Tycon.t =
+   fn (s, k, a) =>
    let
       val c = Tycon.fromString s
+      val _ = TypeEnv.initAdmitsEquality (c, a)
+      (* The tick is after initAdmitsEquality so that any unknowns subsequently
+       * created will have a later time than the tycon, and hence can be
+       * unified with it.
+       *)
+      val _ = TypeEnv.Time.tick ()
       val _ = List.push (allTycons, c)
       val _ = List.push (newTycons, (c, k))
    in
@@ -1238,8 +1244,7 @@ fun dummyStructure (T {strs, types, vals, ...}, prefix: string, I: Interface.t)
 	 Interface.realize
 	 (I, fn (c, a, k) =>
 	  let
-	     val c' = newTycon (concat [prefix, Longtycon.toString c], k)
-	     val _ = TypeEnv.tyconAdmitsEquality c' := a
+	     val c' = newTycon (concat [prefix, Longtycon.toString c], k, a)
 	     val _ = List.push (tycons, (c, c'))
 	  in
 	     TypeStr.tycon (c', k)
@@ -1866,7 +1871,8 @@ fun functorClosure
 			(generative, fn (c, k) =>
 			 setTyconTypeStr
 			 (c, SOME (TypeStr.tycon
-				   (newTycon (Tycon.originalName c, k),
+				   (newTycon (Tycon.originalName c, k,
+					      AdmitsEquality.Sometimes),
 				    k))))
 		     fun replaceType (t: Type.t): Type.t =
 			let

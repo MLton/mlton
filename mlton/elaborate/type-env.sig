@@ -15,6 +15,12 @@ signature TYPE_ENV_STRUCTS =
 signature TYPE_ENV = 
    sig
       include TYPE_ENV_STRUCTS
+      structure Time:
+	 sig
+	    type t
+
+	    val tick: unit -> t
+	 end
       structure Type:
 	 sig
 	    include TYPE_OPS
@@ -47,6 +53,7 @@ signature TYPE_ENV =
 	    val record: t SortedRecord.t -> t
 	    val string: t
 	    val toString: t -> string
+	    val tyconsCreatedAfter: t * Time.t -> Tycon.t list
 	    (* make two types identical (recursively).  side-effecting. *)
 	    val unify:
 	       t * t * (unit -> unit)
@@ -70,7 +77,7 @@ signature TYPE_ENV =
 	    val bound: t -> Tyvar.t vector
 	    val dest: t -> Tyvar.t vector * Type.t
 	    val fromType: Type.t -> t
-	    val haveFrees: t vector * (unit -> Tycon.t) -> bool vector
+	    val haveFrees: t vector -> bool vector
 	    val instantiate: t -> {args: unit -> Type.t vector,
 				   instance: Type.t}
 	    val layout: t -> Layout.t
@@ -80,7 +87,6 @@ signature TYPE_ENV =
 		       tyvars: Tyvar.t vector} -> t
 	    val ty: t -> Type.t
 	 end
-
       (* close (e, t, ts, r) = {bound, scheme} close type
        * t with respect to environment e, including all the tyvars in ts
        * and ensuring than no tyvar in ts occurs free in e.  bound returns
@@ -93,6 +99,7 @@ signature TYPE_ENV =
 	 -> Type.t vector
 	 -> {bound: unit -> Tyvar.t vector,
 	     schemes: Scheme.t vector}
+      val initAdmitsEquality: Tycon.t * Tycon.AdmitsEquality.t -> unit
       val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
       val tyconAdmitsEquality: Tycon.t -> Tycon.AdmitsEquality.t ref
    end

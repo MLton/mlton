@@ -121,7 +121,7 @@ signature ELABORATE_ENV =
       val lookupLongvid: t * Ast.Longvid.t -> Vid.t * Scheme.t
       val lookupSigid: t * Ast.Sigid.t -> Interface.t
       val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
-      val newTycon: string * Tycon.Kind.t -> Tycon.t
+      val newTycon: string * Tycon.Kind.t * Tycon.AdmitsEquality.t -> Tycon.t
       (* openStructure (E, S) opens S in the environment E. *) 
       val openStructure: t * Structure.t -> unit
       val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option

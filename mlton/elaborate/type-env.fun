@@ -82,12 +82,18 @@ structure UnifyResult =
 	 end
    end
 
-val {get = tyconAdmitsEquality: Tycon.t -> AdmitsEquality.t ref, ...} =
-   Property.get (Tycon.plist,
-		 Property.initFun (fn _ => ref AdmitsEquality.Sometimes))
+val {get = tyconInfo: Tycon.t -> {admitsEquality: AdmitsEquality.t ref,
+				  creation: Time.t},
+     set = setTyconInfo, ...} =
+   Property.getSet (Tycon.plist, Property.initRaise ("info", Tycon.layout))
 
-val _ =
-   List.foreach (Tycon.prims, fn (c, _, a) => tyconAdmitsEquality c := a)
+val tyconAdmitsEquality = #admitsEquality o tyconInfo
+
+fun initAdmitsEquality (c, a) =
+   setTyconInfo (c, {admitsEquality = ref a,
+		     creation = Time.now ()})
+   
+val _ = List.foreach (Tycon.prims, fn (c, _, a) => initAdmitsEquality (c, a))
 
 structure Equality:>
    sig
@@ -217,8 +223,8 @@ structure Equality:>
 	       fun lay e =
 		  Lay.simple
 		  (Layout.str (if toBool e
-				  then "<equality>"
-			       else "<non-equality>"))
+				  then "[<equality>]"
+			       else "[<non-equality>]"))
 	    in
 	       UnifyResult.NotUnifiable (lay e, lay e')
 	    end
@@ -707,6 +713,34 @@ structure Type =
       val string = con (Tycon.vector, Vector.new1 char)
 
       fun var a = newTy (Var a, Equality.fromBool (Tyvar.isEquality a))
+
+      fun tyconsCreatedAfter (t: t, time: Time.t): Tycon.t list =
+	 let
+	    val tycons = ref []
+	    fun con (_, c, _) =
+	       let
+		  val {creation, ...} = tyconInfo c
+	       in
+		  if Time.<= (time, creation)
+		     andalso not (List.exists (!tycons, fn c' =>
+					       Tycon.equals (c, c')))
+		     then List.push (tycons, c)
+		  else ()
+	       end
+	    val _ = hom (t, {con = con,
+			     expandOpaque = false,
+			     flexRecord = fn _ => (),
+			     genFlexRecord = fn _ => (),
+			     int = fn _ => (),
+			     real = fn _ => (),
+			     record = fn _ => (),
+			     recursive = fn _ => (),
+			     unknown = fn _ => (),
+			     var = fn _ => (),
+			     word = fn _ => ()})
+	 in
+	    !tycons
+	 end
    end
 
 fun setOpaqueTyconExpansion (c, f) =
@@ -984,18 +1018,40 @@ structure Type =
 				  else not ()
 			     | _ => not ()
 			 end
-		      fun oneUnknown (u, t, outer) =
+		      fun oneUnknown (u, t, outer, swap) =
 			 let
-			    val _ = minTime (outer, Unknown.time u)
+			    val time = Unknown.time u
+			    val _ = minTime (outer, time)
+			    val cs = tyconsCreatedAfter (outer, time)
+			    val n = List.length cs
 			 in
-			    (Unified, t)
+			    if n = 0
+			       then (Unified, t)
+			    else
+			       let
+				  val _ = preError ()
+				  open Layout
+				  val l =
+				     Lay.simple
+				     (seq [str (concat ["<can not contain type",
+							if n > 1 then "s "
+							else " "]),
+					   seq (separate
+						(List.map (cs, Tycon.layout),
+						 ", ")),
+					   str " due to use before def>"])
+				  val l' = layoutPretty outer
+				  val (l, l') = if swap then (l', l) else (l, l')
+			       in
+				  notUnifiableBracket (l, l')
+			       end
 			 end
 		      val (res, t) =
 			 case (t, t') of
 			    (Unknown r, Unknown r') =>
 			       (Unified, Unknown (Unknown.join (r, r')))
-			  | (_, Unknown u) => oneUnknown (u, t, outer)
-			  | (Unknown u, _) => oneUnknown (u, t', outer')
+			  | (Unknown u, _) => oneUnknown (u, t', outer', false)
+			  | (_, Unknown u) => oneUnknown (u, t, outer, true)
 			  | (Con (c, ts), _) => conAnd (c, ts, t', t, false)
 			  | (_, Con (c, ts)) => conAnd (c, ts, t, t', true)
 			  | (FlexRecord f, Record r) =>
@@ -1414,7 +1470,7 @@ structure Scheme =
 	    Type.unknown {canGeneralize = canGeneralize,
 			  equality = Equality.truee})))
 
-      fun haveFrees (v: t vector, newTycon): bool vector =
+      fun haveFrees (v: t vector): bool vector =
 	 let
 	    fun con (_, _, bs) = Vector.exists (bs, fn b => b)
 	    fun no _ = false
