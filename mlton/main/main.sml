@@ -457,7 +457,9 @@ fun commandLine (args: string list): unit =
 		      | FreeBSD => "-lgmp"
 		      | Linux =>
 			   case (List.peekMap
-				 (File.lines "/etc/ld.so.conf", fn d =>
+				 ("/lib\n" :: "/usr/lib\n"
+				  :: File.lines "/etc/ld.so.conf",
+				  fn d =>
 				  let
 				     val lib = concat [String.dropSuffix (d, 1),
 						       "/libgmp.a"]
