@@ -203,7 +203,7 @@ in
    fun layoutDec d =
       case d of
 	 Datatype v =>
-	    seq [str "datatype",
+	    seq [str "datatype ",
 		 align
 		 (Vector.toListMap
 		  (v, fn {cons, tycon, tyvars} =>
