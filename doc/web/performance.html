@@ -20,16 +20,17 @@
     This page compares the performance of the following SML compilers on a range
     of benchmarks.
     <ul>
-      <li> <a href = "http://www.mlton.org/">MLton</a> 20020410
-      <li> <a href = "http://www.itu.dk/research/mlkit/">ML Kit</a> 4.1.0
+      <li> <a href = "http://www.mlton.org/">MLton</a> 20020923
+      <li> <a href = "http://www.itu.dk/research/mlkit/">ML Kit</a> 4.1.1
       <li> <a href = "http://www.dina.kvl.dk/~sestoft/mosml.html">Moscow ML</a>
 	2.00
       <li> <a href = "http://www.polyml.org/">Poly/ML</a> 4.1.2
       <li> <a href =
 	      "http://cm.bell-labs.com/cm/cs/what/smlnj/index.html">SML/NJ</a>
-	110.39
+	110.41
     </ul>
-    There are tables comparing <a href = "#run-time">run time</a>,
+    There are tables for <a href = "#run-time-ratio">run time ratio</a>,
+    <a href = "#run-time">absolute run time</a>,
     <a href = "#compile-time">compile time</a>, 
     and <a href = "#code-size">code size</a>.
     <p>
@@ -39,8 +40,8 @@
     <a href="benchmarks/DATA/"><tt>DATA</tt></a> subdirectory.
 
     <h3>Setup</h3>
-    All benchmarks were compiled and run on a 1.6 GHz Pentium 4 with 512M of
-    physical memory. The benchmarks were compiled with the default settings for
+    All benchmarks were compiled and run on a 1.6 GHz Pentium 4 with 4G of RAM.
+    The benchmarks were compiled with the default settings for
     all the compilers, except for Moscow ML, which was passed the <tt>-orthodox
     -standalone -toplevel</tt> switches.  The Poly/ML executables were produced
     by <tt>use</tt>ing the file, followed by a <tt>PolyML.commit</tt>.  The
@@ -51,7 +52,7 @@
     For more details, or if you want to run the benchmarks yourself, please see
     the <tt>benchmark</tt> directory of the MLton sources.
     
-    <h3><a name = "run-time">Run time ratio</a></h3>
+    <h3><a name = "run-time-ratio">Run time ratio</a></h3>
     <p>
       The following table gives the ratio of the run time of each benchmark when
       compiled by another compiler to the run time when compiled by MLton.  That
@@ -63,6 +64,7 @@
     <p>
     <table border=2 cellpadding=5 cellspacing=2>
 <tr>
+<tr>
 <th align = left>benchmark</th>
 <th align = right>ML-Kit</th>
 <th align = right>Moscow-ML</th>
@@ -71,280 +73,295 @@
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/barnes-hut.sml">barnes-hut</a></td>
-<td align = right>3.8</td>
-<td align = right>25.2</td>
 <td align = right>*</td>
-<td align = right>0.9</td>
+<td align = right>12.5</td>
+<td align = right>*</td>
+<td align = right>1.1</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/boyer.sml">boyer</a></td>
+<td align = right>*</td>
+<td align = right>7.8</td>
+<td align = right>1.9</td>
+<td align = right>2.6</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/checksum.sml">checksum</a></td>
-<td align = right>9.3</td>
+<td align = right>8.7</td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>6.3</td>
+<td align = right>4.0</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/count-graphs.sml">count-graphs</a></td>
-<td align = right>6.4</td>
-<td align = right>47.0</td>
-<td align = right>4.0</td>
-<td align = right>2.3</td>
+<td align = right>6.3</td>
+<td align = right>37.1</td>
+<td align = right>6.6</td>
+<td align = right>2.4</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/DLXSimulator.sml">DLXSimulator</a></td>
-<td align = right>1.4</td>
+<td align = right>1.8</td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>*</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/fft.sml">fft</a></td>
-<td align = right>2.1</td>
-<td align = right>18.7</td>
-<td align = right>11.6</td>
-<td align = right>0.8</td>
+<td align = right>2.4</td>
+<td align = right>*</td>
+<td align = right>42.7</td>
+<td align = right>0.9</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/fib.sml">fib</a></td>
-<td align = right>0.8</td>
-<td align = right>4.1</td>
-<td align = right>1.1</td>
-<td align = right>1.0</td>
+<td align = right>1.3</td>
+<td align = right>5.4</td>
+<td align = right>0.9</td>
+<td align = right>1.4</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/hamlet.sml">hamlet</a></td>
 <td align = right>*</td>
-<td align = right>16.3</td>
+<td align = right>10.6</td>
 <td align = right>2.3</td>
-<td align = right>2.2</td>
+<td align = right>1.8</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/imp-for.sml">imp-for</a></td>
-<td align = right>2.4</td>
-<td align = right>55.9</td>
-<td align = right>5.2</td>
-<td align = right>4.9</td>
+<td align = right>4.0</td>
+<td align = right>62.7</td>
+<td align = right>10.2</td>
+<td align = right>5.6</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/knuth-bendix.sml">knuth-bendix</a></td>
-<td align = right>5.5</td>
-<td align = right>17.3</td>
-<td align = right>3.8</td>
-<td align = right>2.5</td>
+<td align = right>*</td>
+<td align = right>15.1</td>
+<td align = right>7.0</td>
+<td align = right>2.9</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/lexgen.sml">lexgen</a></td>
-<td align = right>2.3</td>
-<td align = right>6.8</td>
-<td align = right>2.1</td>
-<td align = right>1.4</td>
+<td align = right>2.0</td>
+<td align = right>5.7</td>
+<td align = right>2.0</td>
+<td align = right>1.5</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/life.sml">life</a></td>
 <td align = right>2.4</td>
-<td align = right>36.8</td>
-<td align = right>8.9</td>
+<td align = right>25.0</td>
+<td align = right>9.7</td>
 <td align = right>1.4</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/logic.sml">logic</a></td>
-<td align = right>2.9</td>
-<td align = right>9.2</td>
+<td align = right>*</td>
+<td align = right>5.2</td>
 <td align = right>1.2</td>
-<td align = right>1.4</td>
+<td align = right>0.8</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/mandelbrot.sml">mandelbrot</a></td>
-<td align = right>6.1</td>
-<td align = right>70.7</td>
-<td align = right>85.9</td>
-<td align = right>2.3</td>
+<td align = right>13.3</td>
+<td align = right>42.7</td>
+<td align = right>67.1</td>
+<td align = right>1.4</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/matrix-multiply.sml">matrix-multiply</a></td>
-<td align = right>14.2</td>
-<td align = right>125.6</td>
-<td align = right>31.2</td>
-<td align = right>8.8</td>
+<td align = right>*</td>
+<td align = right>71.2</td>
+<td align = right>22.4</td>
+<td align = right>5.4</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/md5.sml">md5</a></td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>14.1</td>
+<td align = right>5.6</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/merge.sml">merge</a></td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>1.3</td>
-<td align = right>10.5</td>
+<td align = right>1.5</td>
+<td align = right>5.7</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/mlyacc.sml">mlyacc</a></td>
-<td align = right>1.9</td>
-<td align = right>8.7</td>
+<td align = right>*</td>
+<td align = right>6.2</td>
 <td align = right>1.3</td>
-<td align = right>1.7</td>
+<td align = right>1.4</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/model-elimination.sml">model-elimination</a></td>
+<td align = right>*</td>
+<td align = right>7.5</td>
+<td align = right>3.0</td>
+<td align = right>1.9</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/mpuz.sml">mpuz</a></td>
-<td align = right>2.2</td>
-<td align = right>68.3</td>
-<td align = right>6.3</td>
-<td align = right>3.5</td>
+<td align = right>3.8</td>
+<td align = right>62.9</td>
+<td align = right>6.6</td>
+<td align = right>4.0</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/nucleic.sml">nucleic</a></td>
-<td align = right>2.8</td>
-<td align = right>21.9</td>
-<td align = right>27.0</td>
+<td align = right>*</td>
+<td align = right>12.3</td>
+<td align = right>22.5</td>
 <td align = right>0.4</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/peek.sml">peek</a></td>
-<td align = right>15.7</td>
-<td align = right>159.5</td>
-<td align = right>22.9</td>
-<td align = right>10.3</td>
+<td align = right>28.9</td>
+<td align = right>169.3</td>
+<td align = right>28.5</td>
+<td align = right>20.8</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/psdes-random.sml">psdes-random</a></td>
-<td align = right>4.7</td>
+<td align = right>8.4</td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>3.5</td>
+<td align = right>6.1</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/ratio-regions.sml">ratio-regions</a></td>
-<td align = right>3.5</td>
-<td align = right>62.0</td>
 <td align = right>3.1</td>
-<td align = right>6.2</td>
+<td align = right>36.6</td>
+<td align = right>4.0</td>
+<td align = right>6.7</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/ray.sml">ray</a></td>
-<td align = right>5.2</td>
-<td align = right>25.6</td>
-<td align = right>33.4</td>
-<td align = right>1.0</td>
+<td align = right>*</td>
+<td align = right>21.1</td>
+<td align = right>34.5</td>
+<td align = right>1.3</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/raytrace.sml">raytrace</a></td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>39.2</td>
-<td align = right>2.4</td>
+<td align = right>38.1</td>
+<td align = right>2.7</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/simple.sml">simple</a></td>
+<td align = right>1.8</td>
+<td align = right>14.2</td>
+<td align = right>7.5</td>
 <td align = right>1.6</td>
-<td align = right>17.3</td>
-<td align = right>6.4</td>
-<td align = right>1.4</td>
 </tr>
-<tr>
+</tr>
 <td align = left><a href = "benchmarks/smith-normal-form.sml">smith-normal-form</a></td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>20.1</td>
-<td align = right>102.2</td>
+<td align = right>*</td>
+<td align = right><a href = "#snf-note">>1090</a></td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tailfib.sml">tailfib</a></td>
-<td align = right>1.0</td>
-<td align = right>38.1</td>
-<td align = right>3.7</td>
-<td align = right>1.7</td>
+<td align = right>1.4</td>
+<td align = right>35.1</td>
+<td align = right>2.3</td>
+<td align = right>1.4</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tak.sml">tak</a></td>
-<td align = right>0.9</td>
-<td align = right>13.0</td>
-<td align = right>1.3</td>
-<td align = right>1.6</td>
+<td align = right>2.2</td>
+<td align = right>9.4</td>
+<td align = right>0.8</td>
+<td align = right>1.5</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tensor.sml">tensor</a></td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>5.3</td>
+<td align = right>20.6</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tsp.sml">tsp</a></td>
-<td align = right>3.7</td>
-<td align = right>44.6</td>
+<td align = right>2.9</td>
+<td align = right>22.6</td>
 <td align = right>*</td>
-<td align = right>2.0</td>
+<td align = right>13.7</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tyan.sml">tyan</a></td>
 <td align = right>*</td>
-<td align = right>20.1</td>
-<td align = right>1.3</td>
-<td align = right>1.4</td>
+<td align = right>13.3</td>
+<td align = right>1.6</td>
+<td align = right>0.9</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/vector-concat.sml">vector-concat</a></td>
-<td align = right>0.8</td>
-<td align = right>26.7</td>
-<td align = right>2.4</td>
-<td align = right>6.5</td>
+<td align = right>1.6</td>
+<td align = right>16.2</td>
+<td align = right>1.7</td>
+<td align = right>9.4</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/vector-rev.sml">vector-rev</a></td>
-<td align = right>3.1</td>
-<td align = right>89.4</td>
-<td align = right>4.7</td>
-<td align = right>33.7</td>
+<td align = right>2.1</td>
+<td align = right>22.3</td>
+<td align = right>3.3</td>
+<td align = right>75.4</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/vliw.sml">vliw</a></td>
-<td align = right>2.3</td>
-<td align = right>12.1</td>
-<td align = right>1.7</td>
-<td align = right>1.9</td>
+<td align = right>1.8</td>
+<td align = right>8.6</td>
+<td align = right>2.0</td>
+<td align = right>1.3</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/wc-input1.sml">wc-input1</a></td>
-<td align = right>7.9</td>
+<td align = right>18.4</td>
 <td align = right>*</td>
-<td align = right>8.8</td>
-<td align = right>12.0</td>
+<td align = right>16.8</td>
+<td align = right>10.0</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/wc-scanStream.sml">wc-scanStream</a></td>
-<td align = right>18.2</td>
+<td align = right>18.0</td>
 <td align = right>*</td>
-<td align = right>161.2</td>
-<td align = right>6.2</td>
+<td align = right>340.1</td>
+<td align = right>7.6</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/zebra.sml">zebra</a></td>
-<td align = right>10.0</td>
-<td align = right>48.5</td>
-<td align = right>6.0</td>
-<td align = right>11.6</td>
+<td align = right>6.2</td>
+<td align = right>27.4</td>
+<td align = right>6.6</td>
+<td align = right>7.9</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/zern.sml">zern</a></td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>1.6</td>
+<td align = right>2.8</td>
 </tr>
     </table>	
 
-    <h3><a name = "compile-time">Compile time</a></h3>
-    The following table gives the compile time of each benchmark in seconds.
-    A * in an entry means that the compiler failed to compile the benchmark.
-    <p>
-    <table border=2 cellpadding=5 cellspacing=2> 
+    <h3><a name = "run-time">Absolute run time</a></h3>
+    The following table gives the run time of each benchmark in seconds.
+    If an entry is <tt>*</tt>, that means that the corresponding compiler failed
+    to compile the benchmark or that the benchmark failed to run. 
+<p>
+    <table border=2 cellpadding=5 cellspacing=2>
 <tr>
 <th align = left>benchmark</th>
-<th align = right>MLton</th>
+<th align = right>MLton0</th>
 <th align = right>ML-Kit</th>
 <th align = right>Moscow-ML</th>
 <th align = right>Poly/ML</th>
@@ -352,32 +369,380 @@
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/barnes-hut.sml">barnes-hut</a></td>
-<td align = right>1.5</td>
-<td align = right>6.1</td>
-<td align = right>0.6</td>
+<td align = right>31.1</td>
+<td align = right>*</td>
+<td align = right>387.8</td>
+<td align = right>*</td>
+<td align = right>34.6</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/boyer.sml">boyer</a></td>
+<td align = right>37.3</td>
+<td align = right>*</td>
+<td align = right>291.2</td>
+<td align = right>71.2</td>
+<td align = right>97.9</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/checksum.sml">checksum</a></td>
+<td align = right>1.6</td>
+<td align = right>14.0</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>6.4</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/count-graphs.sml">count-graphs</a></td>
+<td align = right>32.3</td>
+<td align = right>202.3</td>
+<td align = right>1197.7</td>
+<td align = right>212.7</td>
+<td align = right>76.2</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/DLXSimulator.sml">DLXSimulator</a></td>
+<td align = right>74.1</td>
+<td align = right>136.2</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>*</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/fft.sml">fft</a></td>
+<td align = right>42.1</td>
+<td align = right>101.8</td>
+<td align = right>*</td>
+<td align = right>1796.7</td>
+<td align = right>39.2</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/fib.sml">fib</a></td>
+<td align = right>26.4</td>
+<td align = right>34.4</td>
+<td align = right>143.2</td>
+<td align = right>23.4</td>
+<td align = right>36.0</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/hamlet.sml">hamlet</a></td>
+<td align = right>36.1</td>
+<td align = right>*</td>
+<td align = right>382.1</td>
+<td align = right>84.4</td>
+<td align = right>64.8</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/imp-for.sml">imp-for</a></td>
+<td align = right>37.6</td>
+<td align = right>148.8</td>
+<td align = right>2353.6</td>
+<td align = right>381.8</td>
+<td align = right>210.9</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/knuth-bendix.sml">knuth-bendix</a></td>
+<td align = right>31.4</td>
+<td align = right>*</td>
+<td align = right>475.0</td>
+<td align = right>219.3</td>
+<td align = right>92.7</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/lexgen.sml">lexgen</a></td>
+<td align = right>32.4</td>
+<td align = right>66.0</td>
+<td align = right>185.3</td>
+<td align = right>64.6</td>
+<td align = right>50.1</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/life.sml">life</a></td>
+<td align = right>37.4</td>
+<td align = right>89.4</td>
+<td align = right>935.8</td>
+<td align = right>361.6</td>
+<td align = right>52.4</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/logic.sml">logic</a></td>
+<td align = right>40.5</td>
+<td align = right>*</td>
+<td align = right>212.5</td>
+<td align = right>48.0</td>
+<td align = right>34.0</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/mandelbrot.sml">mandelbrot</a></td>
+<td align = right>36.3</td>
+<td align = right>483.5</td>
+<td align = right>1549.4</td>
+<td align = right>2435.0</td>
+<td align = right>49.0</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/matrix-multiply.sml">matrix-multiply</a></td>
+<td align = right>34.2</td>
+<td align = right>*</td>
+<td align = right>2430.9</td>
+<td align = right>766.6</td>
+<td align = right>183.3</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/md5.sml">md5</a></td>
+<td align = right>95.9</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>542.0</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/merge.sml">merge</a></td>
+<td align = right>57.1</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>88.4</td>
+<td align = right>323.9</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/mlyacc.sml">mlyacc</a></td>
+<td align = right>32.1</td>
+<td align = right>*</td>
+<td align = right>200.6</td>
+<td align = right>42.2</td>
+<td align = right>46.1</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/model-elimination.sml">model-elimination</a></td>
+<td align = right>46.9</td>
+<td align = right>*</td>
+<td align = right>349.8</td>
+<td align = right>142.4</td>
+<td align = right>87.9</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/mpuz.sml">mpuz</a></td>
+<td align = right>24.6</td>
+<td align = right>92.2</td>
+<td align = right>1545.8</td>
+<td align = right>161.0</td>
+<td align = right>97.2</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/nucleic.sml">nucleic</a></td>
+<td align = right>39.0</td>
+<td align = right>*</td>
+<td align = right>480.1</td>
+<td align = right>877.9</td>
+<td align = right>16.2</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/peek.sml">peek</a></td>
+<td align = right>18.8</td>
+<td align = right>541.9</td>
+<td align = right>3176.5</td>
+<td align = right>535.5</td>
+<td align = right>390.5</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/psdes-random.sml">psdes-random</a></td>
+<td align = right>17.9</td>
+<td align = right>150.2</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>109.5</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/ratio-regions.sml">ratio-regions</a></td>
+<td align = right>31.2</td>
+<td align = right>98.3</td>
+<td align = right>1145.3</td>
+<td align = right>125.6</td>
+<td align = right>210.2</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/ray.sml">ray</a></td>
+<td align = right>16.1</td>
+<td align = right>*</td>
+<td align = right>340.1</td>
+<td align = right>555.1</td>
+<td align = right>20.6</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/raytrace.sml">raytrace</a></td>
+<td align = right>22.6</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>861.7</td>
+<td align = right>62.1</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/simple.sml">simple</a></td>
+<td align = right>31.3</td>
+<td align = right>56.3</td>
+<td align = right>443.9</td>
+<td align = right>234.2</td>
+<td align = right>49.0</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/smith-normal-form.sml">smith-normal-form</a></td>
+<td align = right>33.0</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right><a href = "#snf-note">>36,000</a></td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/tailfib.sml">tailfib</a></td>
+<td align = right>29.6</td>
+<td align = right>42.7</td>
+<td align = right>1040.6</td>
+<td align = right>69.3</td>
+<td align = right>42.0</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/tak.sml">tak</a></td>
+<td align = right>56.5</td>
+<td align = right>122.5</td>
+<td align = right>530.7</td>
+<td align = right>46.2</td>
+<td align = right>86.6</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/tensor.sml">tensor</a></td>
+<td align = right>20.1</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>415.1</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/tsp.sml">tsp</a></td>
+<td align = right>36.0</td>
+<td align = right>106.2</td>
+<td align = right>815.3</td>
+<td align = right>*</td>
+<td align = right>494.1</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/tyan.sml">tyan</a></td>
+<td align = right>37.2</td>
+<td align = right>*</td>
+<td align = right>492.6</td>
+<td align = right>57.8</td>
+<td align = right>34.2</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/vector-concat.sml">vector-concat</a></td>
+<td align = right>63.9</td>
+<td align = right>104.2</td>
+<td align = right>1033.7</td>
+<td align = right>106.2</td>
+<td align = right>601.7</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/vector-rev.sml">vector-rev</a></td>
+<td align = right>75.0</td>
+<td align = right>157.7</td>
+<td align = right>1671.5</td>
+<td align = right>245.4</td>
+<td align = right>5655.5</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/vliw.sml">vliw</a></td>
+<td align = right>31.1</td>
+<td align = right>55.7</td>
+<td align = right>267.5</td>
+<td align = right>60.6</td>
+<td align = right>40.1</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/wc-input1.sml">wc-input1</a></td>
+<td align = right>33.5</td>
+<td align = right>615.5</td>
+<td align = right>*</td>
+<td align = right>562.0</td>
+<td align = right>333.0</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/wc-scanStream.sml">wc-scanStream</a></td>
+<td align = right>30.8</td>
+<td align = right>555.2</td>
+<td align = right>*</td>
+<td align = right>10487.8</td>
+<td align = right>233.0</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/zebra.sml">zebra</a></td>
+<td align = right>36.6</td>
+<td align = right>227.9</td>
+<td align = right>1000.9</td>
+<td align = right>239.7</td>
+<td align = right>287.7</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/zern.sml">zern</a></td>
+<td align = right>40.0</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>112.2</td>
+</tr>
+    </table>
+
+<p>
+<a name = "snf-note">For SML/NJ, the smith-normal-form benchmark was killed
+		after running for 36,000 seconds.</a>
+
+    <h3><a name = "compile-time">Compile time</a></h3>
+    The following table gives the compile time of each benchmark in seconds.
+    A <tt>*</tt> in an entry means that the compiler failed to compile the
+    benchmark. 
+    <p>
+    <table border=2 cellpadding=5 cellspacing=2> 
+<tr>
+<th align = left>benchmark</th>
+<th align = right>MLton0</th>
+<th align = right>ML-Kit</th>
+<th align = right>Moscow-ML</th>
+<th align = right>Poly/ML</th>
+<th align = right>SML/NJ</th>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/barnes-hut.sml">barnes-hut</a></td>
+<td align = right>1.6</td>
+<td align = right>5.5</td>
+<td align = right>0.5</td>
 <td align = right>*</td>
 <td align = right>1.1</td>
 </tr>
 <tr>
+<td align = left><a href = "benchmarks/boyer.sml">boyer</a></td>
+<td align = right>3.2</td>
+<td align = right>9.3</td>
+<td align = right>0.4</td>
+<td align = right>0.1</td>
+<td align = right>3.3</td>
+</tr>
+<tr>
 <td align = left><a href = "benchmarks/checksum.sml">checksum</a></td>
 <td align = right>0.4</td>
-<td align = right>0.8</td>
+<td align = right>0.9</td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>0.1</td>
+<td align = right>0.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/count-graphs.sml">count-graphs</a></td>
 <td align = right>1.0</td>
 <td align = right>2.0</td>
-<td align = right>0.2</td>
+<td align = right>0.1</td>
 <td align = right>0.1</td>
 <td align = right>0.7</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/DLXSimulator.sml">DLXSimulator</a></td>
-<td align = right>2.7</td>
-<td align = right>8.0</td>
+<td align = right>2.5</td>
+<td align = right>7.3</td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>*</td>
@@ -394,118 +759,126 @@
 <td align = left><a href = "benchmarks/fib.sml">fib</a></td>
 <td align = right>0.4</td>
 <td align = right>0.8</td>
-<td align = right>0.1</td>
 <td align = right>0.0</td>
-<td align = right>0.1</td>
+<td align = right>0.0</td>
+<td align = right>0.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/hamlet.sml">hamlet</a></td>
-<td align = right>30.1</td>
+<td align = right>33.1</td>
 <td align = right>*</td>
-<td align = right>27.9</td>
-<td align = right>11.1</td>
-<td align = right>52.2</td>
+<td align = right>21.1</td>
+<td align = right>12.8</td>
+<td align = right>48.6</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/imp-for.sml">imp-for</a></td>
-<td align = right>0.3</td>
-<td align = right>0.9</td>
-<td align = right>0.1</td>
+<td align = right>0.4</td>
+<td align = right>1.0</td>
+<td align = right>0.0</td>
 <td align = right>0.0</td>
 <td align = right>0.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/knuth-bendix.sml">knuth-bendix</a></td>
-<td align = right>1.2</td>
-<td align = right>4.4</td>
+<td align = right>1.4</td>
+<td align = right>4.2</td>
 <td align = right>0.2</td>
 <td align = right>0.1</td>
-<td align = right>1.2</td>
+<td align = right>1.4</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/lexgen.sml">lexgen</a></td>
-<td align = right>3.4</td>
-<td align = right>7.2</td>
-<td align = right>0.5</td>
-<td align = right>0.3</td>
-<td align = right>3.1</td>
+<td align = right>3.6</td>
+<td align = right>6.4</td>
+<td align = right>0.4</td>
+<td align = right>0.4</td>
+<td align = right>3.3</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/life.sml">life</a></td>
 <td align = right>0.8</td>
-<td align = right>2.0</td>
+<td align = right>2.4</td>
 <td align = right>0.1</td>
 <td align = right>0.1</td>
 <td align = right>0.5</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/logic.sml">logic</a></td>
-<td align = right>1.7</td>
-<td align = right>5.0</td>
-<td align = right>0.3</td>
+<td align = right>1.9</td>
+<td align = right>4.8</td>
+<td align = right>0.2</td>
 <td align = right>0.1</td>
-<td align = right>1.2</td>
+<td align = right>1.4</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/mandelbrot.sml">mandelbrot</a></td>
-<td align = right>0.3</td>
-<td align = right>0.9</td>
-<td align = right>0.1</td>
+<td align = right>0.4</td>
+<td align = right>1.0</td>
+<td align = right>0.0</td>
 <td align = right>0.0</td>
 <td align = right>0.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/matrix-multiply.sml">matrix-multiply</a></td>
-<td align = right>0.4</td>
-<td align = right>0.9</td>
+<td align = right>0.5</td>
+<td align = right>1.0</td>
 <td align = right>0.1</td>
 <td align = right>0.0</td>
 <td align = right>0.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/md5.sml">md5</a></td>
-<td align = right>0.7</td>
+<td align = right>0.8</td>
 <td align = right>1.8</td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>1.1</td>
+<td align = right>1.6</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/merge.sml">merge</a></td>
 <td align = right>0.4</td>
-<td align = right>0.8</td>
-<td align = right>0.1</td>
+<td align = right>1.1</td>
+<td align = right>0.0</td>
 <td align = right>0.0</td>
 <td align = right>0.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/mlyacc.sml">mlyacc</a></td>
-<td align = right>13.2</td>
-<td align = right>39.9</td>
-<td align = right>4.5</td>
-<td align = right>1.5</td>
-<td align = right>15.3</td>
+<td align = right>16.3</td>
+<td align = right>37.1</td>
+<td align = right>3.7</td>
+<td align = right>1.6</td>
+<td align = right>14.9</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/model-elimination.sml">model-elimination</a></td>
+<td align = right>14.4</td>
+<td align = right>*</td>
+<td align = right>2.3</td>
+<td align = right>2.8</td>
+<td align = right>24.8</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/mpuz.sml">mpuz</a></td>
-<td align = right>0.6</td>
-<td align = right>1.3</td>
+<td align = right>0.5</td>
+<td align = right>1.2</td>
 <td align = right>0.1</td>
-<td align = right>0.1</td>
+<td align = right>0.0</td>
 <td align = right>0.3</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/nucleic.sml">nucleic</a></td>
-<td align = right>1.5</td>
-<td align = right>16.3</td>
-<td align = right>1.3</td>
-<td align = right>0.4</td>
+<td align = right>3.7</td>
+<td align = right>17.6</td>
+<td align = right>1.1</td>
+<td align = right>0.3</td>
 <td align = right>1.5</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/peek.sml">peek</a></td>
-<td align = right>0.7</td>
-<td align = right>1.0</td>
+<td align = right>0.6</td>
+<td align = right>0.9</td>
 <td align = right>0.1</td>
 <td align = right>0.0</td>
 <td align = right>0.2</td>
@@ -513,138 +886,138 @@
 <tr>
 <td align = left><a href = "benchmarks/psdes-random.sml">psdes-random</a></td>
 <td align = right>0.4</td>
-<td align = right>0.9</td>
+<td align = right>1.0</td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>0.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/ratio-regions.sml">ratio-regions</a></td>
-<td align = right>1.4</td>
-<td align = right>4.1</td>
+<td align = right>1.5</td>
+<td align = right>3.8</td>
 <td align = right>0.2</td>
 <td align = right>0.1</td>
-<td align = right>1.2</td>
+<td align = right>1.4</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/ray.sml">ray</a></td>
-<td align = right>2.3</td>
-<td align = right>3.4</td>
-<td align = right>0.2</td>
+<td align = right>2.2</td>
+<td align = right>3.2</td>
 <td align = right>0.1</td>
-<td align = right>0.7</td>
+<td align = right>0.1</td>
+<td align = right>0.8</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/raytrace.sml">raytrace</a></td>
-<td align = right>6.3</td>
+<td align = right>7.0</td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>0.6</td>
-<td align = right>4.3</td>
+<td align = right>4.7</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/simple.sml">simple</a></td>
-<td align = right>4.2</td>
-<td align = right>13.2</td>
-<td align = right>0.6</td>
-<td align = right>0.2</td>
-<td align = right>3.1</td>
+<td align = right>4.5</td>
+<td align = right>11.9</td>
+<td align = right>0.4</td>
+<td align = right>0.3</td>
+<td align = right>3.3</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/smith-normal-form.sml">smith-normal-form</a></td>
-<td align = right>3.9</td>
+<td align = right>4.9</td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>0.1</td>
-<td align = right>2.0</td>
+<td align = right>2.1</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tailfib.sml">tailfib</a></td>
-<td align = right>0.3</td>
-<td align = right>0.8</td>
+<td align = right>0.4</td>
+<td align = right>0.9</td>
 <td align = right>0.0</td>
 <td align = right>0.0</td>
-<td align = right>0.1</td>
+<td align = right>0.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tak.sml">tak</a></td>
-<td align = right>0.3</td>
-<td align = right>0.7</td>
-<td align = right>0.1</td>
+<td align = right>0.4</td>
+<td align = right>0.9</td>
 <td align = right>0.0</td>
-<td align = right>0.1</td>
+<td align = right>0.0</td>
+<td align = right>0.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tensor.sml">tensor</a></td>
-<td align = right>1.8</td>
+<td align = right>2.0</td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>2.2</td>
+<td align = right>2.1</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tsp.sml">tsp</a></td>
-<td align = right>0.8</td>
+<td align = right>0.9</td>
 <td align = right>1.9</td>
-<td align = right>0.2</td>
+<td align = right>0.1</td>
 <td align = right>*</td>
 <td align = right>0.5</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tyan.sml">tyan</a></td>
-<td align = right>2.2</td>
-<td align = right>6.4</td>
-<td align = right>0.4</td>
+<td align = right>2.5</td>
+<td align = right>5.8</td>
+<td align = right>0.3</td>
 <td align = right>0.2</td>
-<td align = right>1.8</td>
+<td align = right>1.9</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/vector-concat.sml">vector-concat</a></td>
 <td align = right>0.4</td>
-<td align = right>0.8</td>
-<td align = right>0.1</td>
+<td align = right>0.9</td>
+<td align = right>0.0</td>
 <td align = right>0.0</td>
 <td align = right>0.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/vector-rev.sml">vector-rev</a></td>
 <td align = right>0.4</td>
-<td align = right>0.8</td>
+<td align = right>0.9</td>
 <td align = right>0.0</td>
 <td align = right>0.0</td>
 <td align = right>0.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/vliw.sml">vliw</a></td>
-<td align = right>7.7</td>
-<td align = right>29.8</td>
-<td align = right>2.0</td>
+<td align = right>8.1</td>
+<td align = right>27.0</td>
+<td align = right>1.4</td>
 <td align = right>1.3</td>
-<td align = right>11.2</td>
+<td align = right>12.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/wc-input1.sml">wc-input1</a></td>
-<td align = right>1.1</td>
-<td align = right>0.8</td>
-<td align = right>0.1</td>
+<td align = right>1.0</td>
+<td align = right>0.9</td>
+<td align = right>0.0</td>
 <td align = right>0.0</td>
 <td align = right>0.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/wc-scanStream.sml">wc-scanStream</a></td>
-<td align = right>1.1</td>
-<td align = right>0.8</td>
+<td align = right>1.0</td>
+<td align = right>0.9</td>
 <td align = right>0.1</td>
 <td align = right>0.0</td>
 <td align = right>0.2</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/zebra.sml">zebra</a></td>
-<td align = right>3.5</td>
-<td align = right>2.1</td>
+<td align = right>4.3</td>
+<td align = right>2.6</td>
 <td align = right>0.1</td>
 <td align = right>0.1</td>
-<td align = right>0.5</td>
+<td align = right>0.6</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/zern.sml">zern</a></td>
@@ -670,7 +1043,7 @@
     <table border=2 cellpadding=5 cellspacing=2> 
 <tr>
 <th align = left>benchmark</th>
-<th align = right>MLton</th>
+<th align = right>MLton0</th>
 <th align = right>ML-Kit</th>
 <th align = right>Moscow-ML</th>
 <th align = right>Poly/ML</th>
@@ -678,314 +1051,330 @@
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/barnes-hut.sml">barnes-hut</a></td>
-<td align = right>57,119</td>
-<td align = right>172,121</td>
-<td align = right>94,990</td>
+<td align = right>103,248</td>
+<td align = right>171,081</td>
+<td align = right>94,952</td>
 <td align = right>*</td>
-<td align = right>328,696</td>
+<td align = right>332,792</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/boyer.sml">boyer</a></td>
+<td align = right>140,287</td>
+<td align = right>156,737</td>
+<td align = right>116,301</td>
+<td align = right>122,880</td>
+<td align = right>421,856</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/checksum.sml">checksum</a></td>
-<td align = right>23,021</td>
-<td align = right>72,877</td>
+<td align = right>43,567</td>
+<td align = right>72,413</td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>333,528</td>
+<td align = right>320,512</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/count-graphs.sml">count-graphs</a></td>
-<td align = right>44,333</td>
-<td align = right>88,905</td>
-<td align = right>84,575</td>
+<td align = right>64,567</td>
+<td align = right>88,617</td>
+<td align = right>84,613</td>
 <td align = right>98,304</td>
-<td align = right>355,376</td>
+<td align = right>359,472</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/DLXSimulator.sml">DLXSimulator</a></td>
-<td align = right>88,445</td>
-<td align = right>161,869</td>
+<td align = right>102,224</td>
+<td align = right>162,261</td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>*</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/fft.sml">fft</a></td>
-<td align = right>32,893</td>
-<td align = right>86,121</td>
-<td align = right>84,095</td>
+<td align = right>52,747</td>
+<td align = right>85,689</td>
+<td align = right>84,094</td>
 <td align = right>65,536</td>
-<td align = right>329,736</td>
+<td align = right>332,808</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/fib.sml">fib</a></td>
-<td align = right>23,053</td>
-<td align = right>16,525</td>
+<td align = right>43,575</td>
+<td align = right>16,125</td>
 <td align = right>79,878</td>
 <td align = right>49,152</td>
-<td align = right>307,896</td>
+<td align = right>294,880</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/hamlet.sml">hamlet</a></td>
-<td align = right>1,106,524</td>
+<td align = right>1,227,872</td>
 <td align = right>*</td>
 <td align = right>277,168</td>
 <td align = right>5,316,608</td>
-<td align = right>1,259,720</td>
+<td align = right>1,275,080</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/imp-for.sml">imp-for</a></td>
-<td align = right>23,053</td>
-<td align = right>17,253</td>
-<td align = right>80,040</td>
+<td align = right>43,591</td>
+<td align = right>16,853</td>
+<td align = right>80,041</td>
 <td align = right>57,344</td>
-<td align = right>308,920</td>
+<td align = right>295,904</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/knuth-bendix.sml">knuth-bendix</a></td>
-<td align = right>64,582</td>
-<td align = right>97,609</td>
-<td align = right>88,439</td>
+<td align = right>86,096</td>
+<td align = right>97,177</td>
+<td align = right>88,440</td>
 <td align = right>180,224</td>
-<td align = right>322,528</td>
+<td align = right>326,624</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/lexgen.sml">lexgen</a></td>
-<td align = right>152,293</td>
-<td align = right>214,401</td>
-<td align = right>104,883</td>
+<td align = right>172,765</td>
+<td align = right>215,745</td>
+<td align = right>104,884</td>
 <td align = right>188,416</td>
-<td align = right>392,184</td>
+<td align = right>396,280</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/life.sml">life</a></td>
-<td align = right>39,629</td>
-<td align = right>79,477</td>
+<td align = right>61,951</td>
+<td align = right>79,253</td>
 <td align = right>83,390</td>
 <td align = right>90,112</td>
-<td align = right>318,424</td>
+<td align = right>309,216</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/logic.sml">logic</a></td>
-<td align = right>80,205</td>
-<td align = right>115,073</td>
+<td align = right>103,623</td>
+<td align = right>115,217</td>
 <td align = right>87,252</td>
 <td align = right>114,688</td>
-<td align = right>331,744</td>
+<td align = right>335,840</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/mandelbrot.sml">mandelbrot</a></td>
-<td align = right>23,085</td>
-<td align = right>78,289</td>
-<td align = right>81,341</td>
+<td align = right>43,671</td>
+<td align = right>77,905</td>
+<td align = right>81,340</td>
 <td align = right>57,344</td>
-<td align = right>313,016</td>
+<td align = right>300,000</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/matrix-multiply.sml">matrix-multiply</a></td>
-<td align = right>23,629</td>
-<td align = right>96,537</td>
-<td align = right>82,419</td>
+<td align = right>44,111</td>
+<td align = right>96,121</td>
+<td align = right>82,417</td>
 <td align = right>57,344</td>
-<td align = right>339,656</td>
+<td align = right>326,640</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/md5.sml">md5</a></td>
-<td align = right>32,678</td>
-<td align = right>91,841</td>
+<td align = right>52,712</td>
+<td align = right>91,441</td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>332,816</td>
+<td align = right>335,888</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/merge.sml">merge</a></td>
-<td align = right>24,301</td>
-<td align = right>26,001</td>
+<td align = right>44,895</td>
+<td align = right>25,585</td>
 <td align = right>80,091</td>
 <td align = right>49,152</td>
-<td align = right>308,928</td>
+<td align = right>295,912</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/mlyacc.sml">mlyacc</a></td>
-<td align = right>471,909</td>
-<td align = right>493,345</td>
-<td align = right>148,286</td>
+<td align = right>536,605</td>
+<td align = right>502,081</td>
+<td align = right>148,287</td>
 <td align = right>2,908,160</td>
-<td align = right>690,216</td>
+<td align = right>701,480</td>
+</tr>
+<tr>
+<td align = left><a href = "benchmarks/model-elimination.sml">model-elimination</a></td>
+<td align = right>636,000</td>
+<td align = right>*</td>
+<td align = right>175,885</td>
+<td align = right>2,187,264</td>
+<td align = right>896,136</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/mpuz.sml">mpuz</a></td>
-<td align = right>27,437</td>
-<td align = right>76,357</td>
-<td align = right>82,381</td>
+<td align = right>47,751</td>
+<td align = right>75,925</td>
+<td align = right>82,383</td>
 <td align = right>81,920</td>
-<td align = right>321,208</td>
+<td align = right>308,192</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/nucleic.sml">nucleic</a></td>
-<td align = right>62,061</td>
-<td align = right>221,585</td>
+<td align = right>82,623</td>
+<td align = right>221,121</td>
 <td align = right>207,154</td>
 <td align = right>204,800</td>
-<td align = right>352,240</td>
+<td align = right>355,312</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/peek.sml">peek</a></td>
-<td align = right>31,622</td>
-<td align = right>61,245</td>
-<td align = right>81,618</td>
+<td align = right>51,784</td>
+<td align = right>60,829</td>
+<td align = right>81,619</td>
 <td align = right>57,344</td>
-<td align = right>312,040</td>
+<td align = right>303,120</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/psdes-random.sml">psdes-random</a></td>
-<td align = right>24,397</td>
-<td align = right>25,985</td>
+<td align = right>44,615</td>
+<td align = right>25,617</td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>314,040</td>
+<td align = right>301,024</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/ratio-regions.sml">ratio-regions</a></td>
-<td align = right>42,765</td>
-<td align = right>98,729</td>
+<td align = right>62,367</td>
+<td align = right>98,345</td>
 <td align = right>87,485</td>
 <td align = right>73,728</td>
-<td align = right>334,832</td>
+<td align = right>337,904</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/ray.sml">ray</a></td>
-<td align = right>85,788</td>
-<td align = right>112,709</td>
+<td align = right>104,080</td>
+<td align = right>112,309</td>
 <td align = right>89,860</td>
 <td align = right>147,456</td>
-<td align = right>383,048</td>
+<td align = right>387,144</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/raytrace.sml">raytrace</a></td>
-<td align = right>237,545</td>
+<td align = right>277,789</td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>524,288</td>
-<td align = right>502,888</td>
+<td align = right>508,008</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/simple.sml">simple</a></td>
-<td align = right>182,141</td>
-<td align = right>202,945</td>
+<td align = right>199,499</td>
+<td align = right>202,561</td>
 <td align = right>94,397</td>
 <td align = right>475,136</td>
-<td align = right>637,984</td>
+<td align = right>643,104</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/smith-normal-form.sml">smith-normal-form</a></td>
-<td align = right>137,679</td>
+<td align = right>181,612</td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>131,072</td>
-<td align = right>484,424</td>
+<td align = right>488,520</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tailfib.sml">tailfib</a></td>
-<td align = right>22,765</td>
-<td align = right>16,685</td>
+<td align = right>43,303</td>
+<td align = right>16,285</td>
 <td align = right>79,939</td>
 <td align = right>57,344</td>
-<td align = right>307,896</td>
+<td align = right>294,880</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tak.sml">tak</a></td>
-<td align = right>23,149</td>
-<td align = right>16,441</td>
-<td align = right>79,928</td>
+<td align = right>43,735</td>
+<td align = right>16,041</td>
+<td align = right>79,926</td>
 <td align = right>57,344</td>
-<td align = right>303,800</td>
+<td align = right>290,784</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tensor.sml">tensor</a></td>
-<td align = right>56,910</td>
+<td align = right>104,347</td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>342,048</td>
+<td align = right>345,120</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tsp.sml">tsp</a></td>
-<td align = right>38,022</td>
-<td align = right>100,409</td>
-<td align = right>86,140</td>
+<td align = right>59,296</td>
+<td align = right>99,497</td>
+<td align = right>86,147</td>
 <td align = right>*</td>
-<td align = right>332,784</td>
+<td align = right>323,576</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/tyan.sml">tyan</a></td>
-<td align = right>85,894</td>
-<td align = right>145,605</td>
+<td align = right>107,152</td>
+<td align = right>146,117</td>
 <td align = right>91,587</td>
 <td align = right>204,800</td>
-<td align = right>368,656</td>
+<td align = right>371,728</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/vector-concat.sml">vector-concat</a></td>
-<td align = right>23,853</td>
-<td align = right>24,853</td>
-<td align = right>80,191</td>
+<td align = right>44,079</td>
+<td align = right>24,485</td>
+<td align = right>80,193</td>
 <td align = right>49,152</td>
-<td align = right>318,152</td>
+<td align = right>305,136</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/vector-rev.sml">vector-rev</a></td>
-<td align = right>23,821</td>
-<td align = right>25,049</td>
-<td align = right>80,073</td>
+<td align = right>43,967</td>
+<td align = right>24,681</td>
+<td align = right>80,075</td>
 <td align = right>57,344</td>
-<td align = right>318,152</td>
+<td align = right>305,136</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/vliw.sml">vliw</a></td>
-<td align = right>300,117</td>
-<td align = right>471,721</td>
-<td align = right>135,386</td>
+<td align = right>323,593</td>
+<td align = right>477,129</td>
+<td align = right>135,387</td>
 <td align = right>696,320</td>
-<td align = right>618,576</td>
+<td align = right>628,816</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/wc-input1.sml">wc-input1</a></td>
-<td align = right>48,798</td>
-<td align = right>132,565</td>
-<td align = right>86,900</td>
+<td align = right>66,045</td>
+<td align = right>132,749</td>
+<td align = right>85,772</td>
 <td align = right>49,152</td>
-<td align = right>313,016</td>
+<td align = right>300,000</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/wc-scanStream.sml">wc-scanStream</a></td>
-<td align = right>49,726</td>
-<td align = right>132,997</td>
-<td align = right>87,076</td>
+<td align = right>66,717</td>
+<td align = right>133,261</td>
+<td align = right>85,948</td>
 <td align = right>49,152</td>
-<td align = right>314,040</td>
+<td align = right>301,024</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/zebra.sml">zebra</a></td>
-<td align = right>109,926</td>
-<td align = right>45,077</td>
+<td align = right>142,296</td>
+<td align = right>44,709</td>
 <td align = right>83,419</td>
 <td align = right>90,112</td>
-<td align = right>323,560</td>
+<td align = right>314,352</td>
 </tr>
 <tr>
 <td align = left><a href = "benchmarks/zern.sml">zern</a></td>
-<td align = right>30,524</td>
+<td align = right>50,450</td>
 <td align = right>*</td>
 <td align = right>*</td>
 <td align = right>*</td>
-<td align = right>365,296</td>
+<td align = right>339,992</td>
 </tr>
     </table>
 
     <hr>
 <a href = "http://www.mlton.org">MLton</a><br>
 <!-- hhmts start -->
-Last modified: Mon Sep 16 12:02:46 PDT 2002
+Last modified: Sun Sep 29 00:43:05 PDT 2002
 <!-- hhmts end -->
   </body>
 </html>
