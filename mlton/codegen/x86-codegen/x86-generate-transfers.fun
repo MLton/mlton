@@ -695,11 +695,12 @@ struct
 		       = List.foldr
 		         (statements,
 			  ([], 
-			   #liveIn (livenessTransfer {transfer = transfer, 
-						      liveInfo = liveInfo})),
+			   Liveness.liveIn
+			   (livenessTransfer {transfer = transfer, 
+					      liveInfo = liveInfo})),
 			  fn (assembly,(statements,live))
 			   => let
-				val live as {liveIn,dead, ...}
+				val live as Liveness.T {liveIn,dead, ...}
 				  = livenessAssembly {assembly = assembly,
 						      live = live}
 			      in
@@ -850,7 +851,7 @@ struct
 		   end
 		| Switch {test, cases, default}
 		=> let
-		     val {dead, ...}
+		     val Liveness.T {dead, ...}
 		       = livenessTransfer {transfer = transfer,
 					   liveInfo = liveInfo}
 
@@ -1087,7 +1088,7 @@ struct
 				      return = returnTy, ...} = func
 		     val stackTopMinusWordDeref
 		       = x86MLton.gcState_stackTopMinusWordDerefOperand ()
-		     val {dead, ...}
+		     val Liveness.T {dead, ...}
 		       = livenessTransfer {transfer = transfer,
 					   liveInfo = liveInfo}
 		     val c_stackP = x86MLton.c_stackPContentsOperand
@@ -1351,7 +1352,7 @@ struct
 	  = case transfer
 	      of Switch {test, cases, default}
 	       => let
-		    val {dead, ...}
+		    val Liveness.T {dead, ...}
 		      = livenessTransfer {transfer = transfer,
 					  liveInfo = liveInfo}
 

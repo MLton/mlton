@@ -106,11 +106,19 @@ struct
 
   structure Liveness = 
     struct
-      type t = {liveIn: LiveSet.t,
-		liveOut: LiveSet.t,
-		dead: LiveSet.t}
+       datatype t = T of {liveIn: LiveSet.t,
+			  liveOut: LiveSet.t,
+			  dead: LiveSet.t}
 
-      fun toString {liveIn, liveOut, dead}
+       local
+	  fun make f (T r) = f r
+       in
+	  val dead = make #dead
+	  val liveIn = make #liveIn
+	  val liveOut = make #liveOut
+       end
+
+      fun toString (T {liveIn, liveOut, dead})
 	= let
 	    fun doit (name, l, toString, s)
 	      = LiveSet.fold(l, s,
@@ -124,19 +132,19 @@ struct
 	  end
 	
 
-      fun eq ({liveIn = liveIn1,
-	       liveOut = liveOut1,
-	       dead = dead1},
-	      {liveIn = liveIn2,
-	       liveOut = liveOut2,
-	       dead = dead2})
+      fun eq (T {liveIn = liveIn1,
+		 liveOut = liveOut1,
+		 dead = dead1},
+	      T {liveIn = liveIn2,
+		 liveOut = liveOut2,
+		 dead = dead2})
 	= LiveSet.equals(liveIn1, liveIn2) andalso
 	  LiveSet.equals(liveOut1, liveOut2) andalso
 	  LiveSet.equals(dead1, dead2)	      
 
-      fun invariant {liveIn : LiveSet.t,
-		     liveOut : LiveSet.t,
-		     dead : LiveSet.t}
+      fun invariant (T {liveIn : LiveSet.t,
+			liveOut : LiveSet.t,
+			dead : LiveSet.t})
 	= let
 	    val rec check 
 	      = fn [] => true
@@ -171,9 +179,9 @@ struct
 	     dead = doit dead}
 	  end
 
-      fun liveness {uses : LiveSet.t,
-		    defs : LiveSet.t,
-		    live : LiveSet.t} : t
+      fun liveness ({uses : LiveSet.t,
+		     defs : LiveSet.t,
+		     live : LiveSet.t}) : t
 	= let
 	    val liveOut = live
 
@@ -183,9 +191,9 @@ struct
 	    (* dead = (liveIn \/ defs) - liveOut *)
 	    val dead = LiveSet.-(LiveSet.+(liveIn, defs), liveOut)
 	  in
-	    (* invariant *) {liveIn = liveIn,
-			     liveOut = liveOut,
-			     dead = dead}
+	    (* invariant *) T {liveIn = liveIn,
+			       liveOut = liveOut,
+			       dead = dead}
 	  end
 
       fun livenessEntry {entry : Entry.t,
@@ -258,7 +266,7 @@ struct
       fun livenessBlock {block as Block.T {entry, statements, transfer, ...},
 			 liveInfo : LiveInfo.t}
 	= let
-	    val {liveIn = live, ...}
+	    val T {liveIn = live, ...}
 	      = livenessTransfer {transfer = transfer,
 				  liveInfo = liveInfo}
 
@@ -268,14 +276,14 @@ struct
 		 live,
 		 fn (asm,live)
 		  => let
-		       val {liveIn = live, ...}
+		       val T {liveIn = live, ...}
 			 = livenessAssembly {assembly = asm,
 					     live = live}
 		     in
 		       live
 		     end)
 
-	    val {liveIn = live, ...} 
+	    val T {liveIn = live, ...} 
 	      = livenessEntry {entry = entry,
 			       live = live}
 	  in
@@ -560,7 +568,7 @@ struct
       fun toLivenessEntry {entry,
 			   live}
 	= let
-	    val info as {liveIn = live, ...}
+	    val info as Liveness.T {liveIn = live, ...}
 	      = Liveness.livenessEntry {entry = entry,
 					live = live}
 	  in
@@ -572,7 +580,7 @@ struct
 			   live}
 	= let
 	    val (entry,_) = entry
-	    val info as {liveIn = live, ...}
+	    val info as Liveness.T {liveIn = live, ...}
 	      = Liveness.livenessEntry {entry = entry,
 					live = live}
 	  in
@@ -588,7 +596,7 @@ struct
 			   {statements = [], live = live},
 			   fn (asm,{statements,live})
 			    => let
-				 val info as {liveIn = live, ...}
+				 val info as Liveness.T {liveIn = live, ...}
 				   = Liveness.livenessAssembly 
 				     {assembly = asm,
 				      live = live}
@@ -612,10 +620,10 @@ struct
 			   fn ((asm,info),{statements,live,continue})
 			    => if continue
 				 then {statements = (asm,info)::statements,
-				       live = #liveIn info,
+				       live = Liveness.liveIn info,
 				       continue = continue}
 				 else let
-				       val info' as {liveIn = live',...}
+				       val info' as Liveness.T {liveIn = live',...}
 					 = Liveness.livenessAssembly 
 					   {assembly = asm,
 					    live = live}
@@ -632,7 +640,7 @@ struct
       fun toLivenessTransfer {transfer,
 			      liveInfo}
 	= let
-	    val info as {liveIn = live, ...}
+	    val info as Liveness.T {liveIn = live, ...}
 	      = Liveness.livenessTransfer {transfer = transfer,
 					   liveInfo = liveInfo}
 	  in
@@ -642,8 +650,8 @@ struct
 
       fun reLivenessTransfer {transfer: Transfer.t * Liveness.t}
 	= let
-	    val (transfer,{liveOut,...}) = transfer
-	    val info as {liveIn = live, ...} 
+	    val (transfer, Liveness.T {liveOut,...}) = transfer
+	    val info as Liveness.T {liveIn = live, ...} 
 	      = Liveness.livenessTransfer' {transfer = transfer,
 					    live = liveOut}
 	  in
@@ -685,7 +693,7 @@ struct
       fun verifyLivenessEntry {entry = (entry,info),
 			       live}
 	= let
-	    val info' as {liveIn = live', ...}
+	    val info' as Liveness.T {liveIn = live', ...}
 	      = Liveness.livenessEntry {entry = entry,
 					live = live}
 	  in
@@ -699,7 +707,7 @@ struct
 		     {verified = true, live = live},
 		     fn ((asm,info),{verified, live})
 		      => let
-			   val info' as {liveIn = live', ...}
+			   val info' as Liveness.T {liveIn = live', ...}
 			     = Liveness.livenessAssembly 
 			       {assembly = asm,
 				live = live}
@@ -712,7 +720,7 @@ struct
       fun verifyLivenessTransfer {transfer = (transfer,info),
 				  liveInfo}
 	= let
-	    val info' as {liveIn = live', ...}
+	    val info' as Liveness.T {liveIn = live', ...}
 	      = Liveness.livenessTransfer {transfer = transfer,
 					   liveInfo = liveInfo}
 	  in

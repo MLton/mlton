@@ -50,16 +50,16 @@ struct
 
       local
 	val isInstructionMOV : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.MOV {...})
+	  = fn Assembly.Instruction (Instruction.MOV _)
 	     => true
 	     | _ => false
 
 	val isInstructionBinALMD : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.BinAL {...})
+	  = fn Assembly.Instruction (Instruction.BinAL _)
 	     => true
-	     | Assembly.Instruction (Instruction.pMD {...})
+	     | Assembly.Instruction (Instruction.pMD _)
 	     => true
-	     | Assembly.Instruction (Instruction.IMUL2 {...})
+	     | Assembly.Instruction (Instruction.IMUL2 _)
 	     => true
 	     | _ => false
 
@@ -219,16 +219,16 @@ struct
 
       local
 	val isInstructionFMOV : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.pFMOV {...})
+	  = fn Assembly.Instruction (Instruction.pFMOV _)
 	     => true
 	     | _ => false
 
 	val isInstructionFBinA : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.pFBinA {...})
+	  = fn Assembly.Instruction (Instruction.pFBinA _)
 	     => true
-	     | Assembly.Instruction (Instruction.pFBinAS {...})
+	     | Assembly.Instruction (Instruction.pFBinAS _)
 	     => true
-	     | Assembly.Instruction (Instruction.pFBinASP {...})
+	     | Assembly.Instruction (Instruction.pFBinASP _)
 	     => true
 	     | _ => false
 
@@ -877,7 +877,7 @@ struct
 
       local
 	val isInstructionMOV : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.MOV {...})
+	  = fn Assembly.Instruction (Instruction.MOV _)
 	     => true
 	     | _ => false
 
@@ -1897,12 +1897,12 @@ struct
 	     | _ => false
 
 	val isInstructionMOV : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.MOV {...})
+	  = fn Assembly.Instruction (Instruction.MOV _)
 	     => true
 	     | _ => false
 
 	val isInstructionSETcc : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.SETcc {...})
+	  = fn Assembly.Instruction (Instruction.SETcc _)
 	     => true
 	     | _ => false
 
@@ -1912,7 +1912,7 @@ struct
 	     | _ => false
 
 	val isTransfer_Iff : transfer_type -> bool
-	  = fn Transfer.Iff {...}
+	  = fn Transfer.Iff _
 	     => true
 	     | _ => false
 
@@ -2060,7 +2060,7 @@ struct
 
       local
 	val isInstructionAL_setZF
-	  = fn Assembly.Instruction (Instruction.BinAL {...})
+	  = fn Assembly.Instruction (Instruction.BinAL _)
 	     => true
 	     | Assembly.Instruction (Instruction.UnAL {oper, ...})
 	     => (case oper
@@ -2845,7 +2845,7 @@ struct
 		  changed = false,
 		  moves = [],
 		  live = live},
-		 fn ((asm: Assembly.t,info as {dead,...}: Liveness.t),
+		 fn ((asm: Assembly.t,info as Liveness.T {dead,...}),
 		     {statements: (Assembly.t * Liveness.t) list,
 		      changed : bool,
 		      moves,
@@ -3310,7 +3310,7 @@ struct
 				 else NONE
 			    else NONE
 			end
-		     | (asm,{dead,...})::statements
+		     | (asm, Liveness.T {dead, ...}) :: statements
 		     => let
 			  val asm = Assembly.replace replacer asm
 			  val {uses,defs,...} = Assembly.uses_defs_kills asm
@@ -3323,8 +3323,7 @@ struct
 			    then if LiveSet.contains(dead,memloc_dst)
 				   then let
 					  val statements 
-					    = List.map(statements, 
-						       fn (asm,{...}) => asm)
+					    = List.map (statements, #1)
 					in 
 					  SOME {statements = asm::statements,
 						transfer = transfer}
@@ -3384,7 +3383,7 @@ struct
 			      {src,
 			       dst as Operand.MemLoc memloc_dst,
 			       size}),
-		      info),
+		      info: Liveness.t),
 		     {pblock as {statements, transfer},
 		      changed})
 		   => let
@@ -3396,10 +3395,10 @@ struct
 			   (List.fold
 			    (statements,
 			     false,
-			     fn ((_,{dead,...}),b)
+			     fn ((_, Liveness.T {dead,...}),b)
 			      => b orelse LiveSet.contains(dead,memloc_dst))
 			    orelse
-			    LiveSet.contains(#dead(#2(transfer)),memloc_dst))
+			    LiveSet.contains(Liveness.dead(#2(transfer)),memloc_dst))
 			  then case copyPropagate' {src = src,
 						    dst = dst,
 						    pblock = pblock,
@@ -3430,10 +3429,11 @@ struct
 			   (List.fold
 			    (statements,
 			     false,
-			     fn ((_,{dead,...}),b)
+			     fn ((_, Liveness.T {dead,...}),b)
 			      => b orelse LiveSet.contains(dead,memloc_dst))
 			    orelse
-			    LiveSet.contains(#dead(#2(transfer)),memloc_dst))
+			    LiveSet.contains(Liveness.dead (#2 transfer),
+					     memloc_dst))
 			  then case copyPropagate' {src = src,
 						    dst = dst,
 						    pblock = pblock,
@@ -3510,14 +3510,13 @@ struct
 	  end
 
       val isComment : statement_type -> bool
-	= fn (Assembly.Comment _, 
-	      {...}) => true
+	= fn (Assembly.Comment _, _) => true
 	   | _ => false
 
       local
 	val isInstruction_dstsTemp_dstsDead : statement_type -> bool
 	  = fn (Assembly.Instruction instruction,
-		{dead,...})
+		Liveness.T {dead,...})
 	     => let
 		  val {dsts,...} = Instruction.srcs_dsts instruction
 		in 
@@ -3545,7 +3544,7 @@ struct
 		start, 
 		statements as
 		[[(Assembly.Instruction instruction,
-		   info as {liveOut,...})]],
+		   info as Liveness.T {liveOut,...})]],
 		finish, 
 		transfer}
 	     => if (case List.fold
@@ -3553,7 +3552,7 @@ struct
 			  case asm
 			    of Assembly.Comment _ => (b, b')
 			     | Assembly.Instruction
-			       (Instruction.SETcc {...}) 
+			       (Instruction.SETcc _) 
 			     => (true, if b then b' else true)
 			     | _ => (true, b'))
 		      of (_, true) => true
@@ -3620,41 +3619,41 @@ struct
 	val isInstructionMOV_dstTemp : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.MOV 
 				      {dst = Operand.MemLoc memloc,...}), 
-		{...})
+		_)
 	     => x86Liveness.track memloc
 	     | _ => false
 
 	val isInstructionAL_dstTemp : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.BinAL
 				      {dst = Operand.MemLoc memloc,...}),
-		{...})
+		_)
 	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.pMD
 				      {dst = Operand.MemLoc memloc,...}),
 		
-		{...})
+		_)
 	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.IMUL2
 				      {dst = Operand.MemLoc memloc,...}),
 		
-		{...})
+		_)
 	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.UnAL
 				      {dst = Operand.MemLoc memloc,...}),
 		
-		{...})
+		_)
 	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.SRAL
 				      {dst = Operand.MemLoc memloc,...}),
 		
-		{...})
+		_)
 	     => x86Liveness.track memloc
 	     | _ => false
 
 	val isInstructionMOV_srcTemp_srcDead : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.MOV 
 				      {src = Operand.MemLoc memloc,...}),
-		{dead,...})
+		Liveness.T {dead,...})
 	     => x86Liveness.track memloc
 	        andalso
 		LiveSet.contains(dead, memloc)
@@ -3680,13 +3679,13 @@ struct
 					 {src = src1,
 					  dst = dst1 as Operand.MemLoc memloc1,
 					  size = size1}),
-		   {...})],
+		   _)],
 		 statements',
 		 [(Assembly.Instruction (Instruction.MOV 
 					 {src = src2 as Operand.MemLoc memloc2,
 					  dst = dst2,
 					  size = size2}),
-		   {liveOut = liveOut2,...})]],
+		   Liveness.T {liveOut = liveOut2,...})]],
 		finish, 
 		transfer}
 	     => if Size.eq(size1,size2) andalso
@@ -3821,7 +3820,7 @@ struct
 	= fn (Assembly.Instruction (Instruction.MOV 
 				    {dst = Operand.MemLoc memloc1,
 				     src = Operand.MemLoc memloc2,...}),
-	      {...}) 
+	      _) 
 	   => MemLoc.eq(memloc1,memloc2) 
 	   | _ => false
 
@@ -3840,7 +3839,7 @@ struct
 					 {src = src1, 
 					  dst = dst1, 
 					  size = size1}),
-		   {...})]],
+		   _)]],
 		finish, 
 		transfer}
 	     => let
@@ -3871,7 +3870,7 @@ struct
 	val isInstructionMOV_dstMemloc : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.MOV 
 				      {dst = Operand.MemLoc memloc,...}),
-		{...})
+		_)
 	     => true
 	     | _ => false
 
@@ -3879,7 +3878,7 @@ struct
 	  = fn (Assembly.Instruction (Instruction.BinAL
 				      {oper,
 				       dst = Operand.MemLoc memloc,...}),
-		{...})
+		_)
 	     => (oper = Instruction.ADD)
 	        orelse
 		(oper = Instruction.ADC)
@@ -3892,13 +3891,13 @@ struct
 	     | (Assembly.Instruction (Instruction.pMD
 				      {oper,
 				       dst = Operand.MemLoc memloc,...}),
-		{...})
+		_)
 	     => (oper = Instruction.IMUL)
 	        orelse
 		(oper = Instruction.MUL)
 	     | (Assembly.Instruction (Instruction.IMUL2
 				      {dst = Operand.MemLoc memloc,...}),
-		{...})
+		_)
 	     => true 
 	     | _ => false
 
@@ -3920,7 +3919,7 @@ struct
 					  dst 
 					  = dst1 as Operand.MemLoc memloc_dst1,
 					  size = size1}),
-		   {dead = dead1,...})],
+		   Liveness.T {dead = dead1,...})],
 		 comments,
 		 [(Assembly.Instruction (Instruction.BinAL 
 					 {oper = oper2,
@@ -3928,8 +3927,8 @@ struct
 					  dst 
 					  = dst2 as Operand.MemLoc memloc_dst2,
 					  size = size2}),
-		   {dead = dead2,
-		    liveOut = liveOut2,...})]],
+		   Liveness.T {dead = dead2,
+			       liveOut = liveOut2, ...})]],
 		finish, 
 		transfer}
 	     => if Size.eq(size1,size2) andalso
@@ -4002,7 +4001,7 @@ struct
 					  dst 
 					  = dst1 as Operand.MemLoc memloc_dst1,
 					  size = size1}),
-		   {dead = dead1,...})],
+		   Liveness.T {dead = dead1,...})],
 		 comments,
 		 [(Assembly.Instruction (Instruction.pMD 
 					 {oper = oper2,
@@ -4010,8 +4009,8 @@ struct
 					  dst 
 					  = dst2 as Operand.MemLoc memloc_dst2,
 					  size = size2}),
-		   {dead = dead2,
-		    liveOut = liveOut2,...})]],
+		   Liveness.T {dead = dead2,
+			       liveOut = liveOut2,...})]],
 		finish, 
 		transfer}
 	     => if Size.eq(size1,size2) andalso
@@ -4084,15 +4083,15 @@ struct
 					  dst 
 					  = dst1 as Operand.MemLoc memloc_dst1,
 					  size = size1}),
-		   {dead = dead1,...})],
+		   Liveness.T {dead = dead1,...})],
 		 comments,
 		 [(Assembly.Instruction (Instruction.IMUL2
 					 {src = src2,
 					  dst 
 					  = dst2 as Operand.MemLoc memloc_dst2,
 					  size = size2}),
-		   {dead = dead2,
-		    liveOut = liveOut2,...})]],
+		   Liveness.T {dead = dead2,
+			       liveOut = liveOut2,...})]],
 		finish, 
 		transfer}
 	     => if Size.eq(size1,size2) andalso
@@ -4171,39 +4170,39 @@ struct
 	val isInstructionFMOV_dstTemp : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.pFMOV 
 				      {dst = Operand.MemLoc memloc,...}), 
-		{...})
+		_)
 	     => x86Liveness.track memloc
 	     | _ => false
 
 	val isInstructionFltA_dstTemp : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.pFBinA
 				      {dst = Operand.MemLoc memloc,...}),
-		{...})
+		_)
 	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.pFUnA
 				      {dst = Operand.MemLoc memloc,...}),
 		
-		{...})
+		_)
 	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.pFPTAN
 				      {dst = Operand.MemLoc memloc,...}),
 		
-		{...})
+		_)
 	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.pFBinAS
 				      {dst = Operand.MemLoc memloc,...}),
-		{...})
+		_)
 	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.pFBinASP
 				      {dst = Operand.MemLoc memloc,...}),
-		{...})
+		_)
 	     => x86Liveness.track memloc
 	     | _ => false
 
 	val isInstructionFMOV_srcTemp_srcDead : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.pFMOV 
 				      {src = Operand.MemLoc memloc,...}),
-		{dead,...})
+		Liveness.T {dead,...})
 	     => x86Liveness.track memloc
 	        andalso
 		LiveSet.contains(dead, memloc)
@@ -4229,13 +4228,13 @@ struct
 					 {src = src1,
 					  dst = dst1 as Operand.MemLoc memloc1,
 					  size = size1}),
-		   {...})],
+		   _)],
 		 statements',
 		 [(Assembly.Instruction (Instruction.pFMOV 
 					 {src = src2 as Operand.MemLoc memloc2,
 					  dst = dst2,
 					  size = size2}),
-		   {liveOut = liveOut2,...})]],
+		   Liveness.T {liveOut = liveOut2,...})]],
 		finish, 
 		transfer}
 	     => if Size.eq(size1,size2) andalso
@@ -4360,7 +4359,7 @@ struct
 	= fn (Assembly.Instruction (Instruction.pFMOV 
 				    {dst = Operand.MemLoc memloc1,
 				     src = Operand.MemLoc memloc2,...}),
-	      {...}) 
+	      _) 
 	   => MemLoc.eq(memloc1,memloc2) 
 	   | _ => false
 
@@ -4379,7 +4378,7 @@ struct
 					 {src = src1, 
 					  dst = dst1, 
 					  size = size1}),
-		   {...})]],
+		   _)]],
 		finish, 
 		transfer}
 	     => let
@@ -4411,7 +4410,7 @@ struct
 	val isInstructionFMOV_dstMemloc : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.pFMOV 
 				      {dst = Operand.MemLoc memloc,...}),
-		{...})
+		_)
 	     => true
 	     | _ => false
 
@@ -4419,7 +4418,7 @@ struct
 	  = fn (Assembly.Instruction (Instruction.pFBinA
 				      {oper,
 				       dst = Operand.MemLoc memloc,...}),
-		{...})
+		_)
 	     => true
 	     | _ => false
 
@@ -4441,7 +4440,7 @@ struct
 					  dst 
 					  = dst1 as Operand.MemLoc memloc_dst1,
 					  size = size1}),
-		   {dead = dead1,...})],
+		   Liveness.T {dead = dead1,...})],
 		 comments,
 		 [(Assembly.Instruction (Instruction.pFBinA 
 					 {oper = oper2,
@@ -4449,8 +4448,8 @@ struct
 					  dst 
 					  = dst2 as Operand.MemLoc memloc_dst2,
 					  size = size2}),
-		   {dead = dead2,
-		    liveOut = liveOut2,...})]],
+		   Liveness.T {dead = dead2,
+			       liveOut = liveOut2,...})]],
 		finish, 
 		transfer}
 	     => if Size.eq(size1,size2) andalso
@@ -4530,7 +4529,7 @@ struct
 	val isInstructionSETcc : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.SETcc 
 				      {dst = Operand.MemLoc memloc,...}),
-		{...}) 
+		_) 
 	     => true
 	     | _ => false
 
@@ -4538,13 +4537,13 @@ struct
 	  = fn (Assembly.Instruction (Instruction.TEST 
 				      {src1 = Operand.MemLoc memloc1,
 				       src2 = Operand.MemLoc memloc2,...}),
-		{dead,...})
+		Liveness.T {dead,...})
 	     => MemLoc.eq(memloc1, memloc2) 
 	     | _ => false
 
 	val isIff_conditionZorNZ : transfer_type -> bool
 	  = fn (Transfer.Iff {condition,...},
-		{...})
+		_)
 	     => (case condition
 		   of Instruction.Z => true
 		    | Instruction.NZ => true
@@ -4571,7 +4570,7 @@ struct
 					  dst 
 					  = dst1 as Operand.MemLoc memloc1,
 					  size = size1}),
-		   {...})],
+		   _)],
 		 comments1,
 		 [(Assembly.Instruction (Instruction.TEST
 					 {src1 
@@ -4579,12 +4578,12 @@ struct
 					  src2 
 					  = src22 as Operand.MemLoc memloc22,
 					  size = size2}),
-		   {dead, ...})],
+		   Liveness.T {dead, ...})],
 		 comments2],
 		finish as [],
 		transfer as
 		(Transfer.Iff {condition, truee, falsee},
-		 infoT as {...})}
+		 infoT as _)}
 	     => if MemLoc.eq(memloc1,memloc12)
 		  then let
 			 val condition 
@@ -4626,7 +4625,7 @@ struct
 
 			 val live
 			   = case statements
-			       of (_,{liveIn,...})::_ => liveIn
+			       of (_, Liveness.T {liveIn,...})::_ => liveIn
 				| _ => Error.bug "Peephole: conditionalJump"
 
 			 val {entry, ...}
