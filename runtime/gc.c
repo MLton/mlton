@@ -672,7 +672,7 @@ static pointer object (GC_state s, uint header, W32 bytesRequested,
 		frontier = s->frontier;
 		s->frontier += bytesRequested;
 	}
-	GC_incProfileAlloc (s, bytesRequested);
+	GC_profileAllocInc (s, bytesRequested);
 	*(uint*)(frontier) = header;
 	result = frontier + HEADER_SIZE;
 	return result;
@@ -2681,7 +2681,7 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 	if (1 == numPointers)
 		for ( ; frontier < last; frontier++)
 			*frontier = BOGUS_POINTER;
-	GC_incProfileAlloc (s, arraySize);
+	GC_profileAllocInc (s, arraySize);
 	if (DEBUG_ARRAY) {
 		fprintf (stderr, "GC_arrayAllocate done.  res = 0x%x  frontier = 0x%x\n",
 				(uint)res, (uint)s->frontier);
@@ -2782,7 +2782,7 @@ pointer GC_copyThread (GC_state s, pointer thread) {
 /* ---------------------------------------------------------------- */
 
 static void enterFrame (GC_state s, uint i) {
-	MLton_Profile_enter (s->frameSources[i]);
+	GC_profileEnter (s, s->frameSources[i]);
 }
 
 void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i)) {
@@ -2816,10 +2816,129 @@ void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i)) {
 		fprintf (stderr, "done walking stack\n");
 }
 
+static inline void removeFromStack (GC_state s, GC_profile p, uint i) {
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "removing %s from stack\n", s->sources[i]);
+	p->countStack[i] += p->total - p->lastTotal[i];
+	p->countStackGC[i] += p->totalGC - p->lastTotalGC[i];
+}
+
+static void setProfTimer (long usec) {
+	struct itimerval iv;
+
+	iv.it_interval.tv_sec = 0;
+	iv.it_interval.tv_usec = 10000;
+	iv.it_value.tv_sec = 0;
+	iv.it_value.tv_usec = 10000;
+	unless (0 == setitimer (ITIMER_PROF, &iv, NULL))
+		die ("setProfTimer failed");
+}
+
+void GC_profileDone (GC_state s) {
+	GC_profile p;
+	uint sourceIndex;
+
+	if (DEBUG_PROFILE) 
+		fprintf (stderr, "GC_profileDone ()\n");
+	assert (s->profilingIsOn);
+	if (PROFILE_TIME == s->profileKind)
+		setProfTimer (0);
+	s->profilingIsOn = FALSE;
+	p = s->profile;
+	if (s->profileStack) {
+		for (sourceIndex = 0; sourceIndex < s->sourcesSize;
+			++sourceIndex) {
+			if (p->stackCount[sourceIndex] > 0) {
+				if (DEBUG_PROFILE)
+					fprintf (stderr, "done leaving %s\n", 
+							s->sources[sourceIndex]);
+				removeFromStack (s, p, sourceIndex);
+			}
+		}
+	}
+}
+
+void GC_profileEnter (GC_state s, Word sourceSeqsIndex) {
+	int i;
+	GC_profile p;
+	uint sourceIndex;
+	uint *sourceSeq;
+
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "GC_profileEnter (%u)\n",
+				(uint)sourceSeqsIndex);
+	assert (s->profileStack);
+	assert (sourceSeqsIndex < s->sourceSeqsSize);
+	p = s->profile;
+	sourceSeq = s->sourceSeqs[sourceSeqsIndex];
+	for (i = 1; i <= sourceSeq[0]; ++i) {
+		sourceIndex = sourceSeq[i];
+		if (DEBUG_PROFILE)
+			fprintf (stderr, "entering %s\n", 
+					s->sources[sourceIndex]);
+		if (0 == p->stackCount[sourceIndex]) {
+			p->lastTotal[sourceIndex] = p->total;
+			p->lastTotalGC[sourceIndex] = p->totalGC;
+		}
+		p->stackCount[sourceIndex]++;
+	}
+}
+
+/* Pre: s->currentSource is set. */
+void GC_profileInc (GC_state s, W32 amount) {
+	uint source;
+	uint *sourceSeq;
+
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "GC_profileInc (%u) currentSource = %u\n",
+				(uint)amount,
+				s->currentSource);
+	assert (s->currentSource < s->sourceSeqsSize);
+	sourceSeq = s->sourceSeqs[s->currentSource];
+	source = sourceSeq[sourceSeq[0]];
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "bumping %s by %u\n",
+				s->sources[source], (uint)amount);
+	s->profile->countTop[source] += amount;
+	if (s->profileStack)
+		GC_profileEnter (s, s->currentSource);
+	if (SOURCES_INDEX_GC == source)
+		s->profile->totalGC += amount;
+	else
+		s->profile->total += amount;
+	if (s->profileStack)
+		GC_profileLeave (s, s->currentSource);
+}
+
 /* s->currentSource must be set. */
-void GC_incProfileAlloc (GC_state s, W32 amount) {
+void GC_profileAllocInc (GC_state s, W32 amount) {
 	if (s->profilingIsOn and (PROFILE_ALLOC == s->profileKind))
 		MLton_Profile_inc (amount);
+}
+
+void GC_profileLeave (GC_state s, Word sourceSeqsIndex) {
+	int i;
+	GC_profile p;
+	uint sourceIndex;
+	uint *sourceSeq;
+
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "GC_profileLeave (%u)\n",
+				(uint)sourceSeqsIndex);
+	assert (s->profileStack);
+	assert (sourceSeqsIndex < s->sourceSeqsSize);
+	p = s->profile;
+	sourceSeq = s->sourceSeqs[sourceSeqsIndex];
+	for (i = sourceSeq[0]; i > 0; --i) {
+		sourceIndex = sourceSeq[i];
+		if (DEBUG_PROFILE)
+			fprintf (stderr, "leaving %s\n",
+					s->sources[sourceIndex]);
+		assert (p->stackCount[sourceIndex] > 0);
+		p->stackCount[sourceIndex]--;
+		if (0 == p->stackCount[sourceIndex])
+			removeFromStack (s, p, sourceIndex);
+	}
 }
 
 static void showProf (GC_state s) {
@@ -2967,24 +3086,6 @@ static int compareProfileLabels (const void *v1, const void *v2) {
 	l1 = (GC_profileLabel)v1;
 	l2 = (GC_profileLabel)v2;
 	return (int)l1->label - (int)l2->label;
-}
-
-static void setProfTimer (long usec) {
-	struct itimerval iv;
-
-	iv.it_interval.tv_sec = 0;
-	iv.it_interval.tv_usec = 10000;
-	iv.it_value.tv_sec = 0;
-	iv.it_value.tv_usec = 10000;
-	unless (0 == setitimer (ITIMER_PROF, &iv, NULL))
-		die ("setProfTimer failed");
-}
-
-void GC_profileDone (GC_state s) {
-	assert (s->profilingIsOn);
-	if (PROFILE_TIME == s->profileKind)
-		setProfTimer (0);
-	s->profilingIsOn = FALSE;
 }
 
 static void profileTimeInit (GC_state s) {
@@ -3361,7 +3462,7 @@ static void initIntInfs (GC_state s) {
 		frontier = (pointer)&bp->limbs[alen];
 	}
 	s->frontier = frontier;
-	GC_incProfileAlloc (s, frontier - s->frontier);
+	GC_profileAllocInc (s, frontier - s->frontier);
 	s->bytesAllocated += frontier - s->frontier;
 }
 
@@ -3401,7 +3502,7 @@ static void initStrings (GC_state s) {
 	if (DEBUG_DETAILED)
 		fprintf (stderr, "frontier after string allocation is 0x%08x\n",
 				(uint)frontier);
-	GC_incProfileAlloc (s, frontier - s->frontier);
+	GC_profileAllocInc (s, frontier - s->frontier);
 	s->bytesAllocated += frontier - s->frontier;
 	s->frontier = frontier;
 }

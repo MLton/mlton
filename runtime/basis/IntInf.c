@@ -121,7 +121,7 @@ static inline uint leadingZeros (mp_limb_t word) {
 }
 
 static inline void setFrontier (pointer p) {
-	GC_incProfileAlloc (&gcState, p - gcState.frontier);
+	GC_profileAllocInc (&gcState, p - gcState.frontier);
 	gcState.frontier = p;
 	assert (gcState.frontier <= gcState.limitPlusSlop);
 }

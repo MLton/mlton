@@ -544,8 +544,6 @@ static inline Header GC_getHeader (pointer p) {
  */
 void GC_handler (GC_state s, int signum);
 
-void GC_incProfileAlloc (GC_state s, W32 amount);
-
 /* GC_init must be called before doing any allocation.
  * It processes command line arguments, creates the heap, initializes the global
  * strings and intInfs.
@@ -597,9 +595,17 @@ static inline word GC_objectHeader (W32 t) {
 /* Pack the heap into a small amount of RAM. */
 void GC_pack (GC_state s);
 
+void GC_profileAllocInc (GC_state s, W32 amount);
+
 void GC_profileDone (GC_state s);
 
+void GC_profileEnter (GC_state s, W32 sourceSeqsIndex);
+
 void GC_profileFree (GC_state s, GC_profile p);
+
+void GC_profileInc (GC_state s, W32 amount);
+
+void GC_profileLeave (GC_state s, W32 sourceSeqsIndex);
 
 GC_profile GC_profileNew (GC_state s);
 
