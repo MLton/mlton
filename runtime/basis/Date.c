@@ -79,10 +79,6 @@ void Date_Tm_setIsdst(Int x) {
 	tm.tm_isdst = x;
 }
 
-Cstring Date_ascTime() {
-	return (Cstring)asctime(&tm);
-}
-
 void Date_gmTime(Pointer p) {
 	tmp = gmtime((time_t*)p);
 }

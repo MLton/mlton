@@ -50,9 +50,6 @@ structure C: C =
 	    val length = makeLength (sub, fn #"\000" => true | _ => false)
 
 	    fun toString cs = toStringOfLength (cs, length cs)
-
-	    fun extractToChar (s: t, c: char): string =
-	       toStringOfLength (s, makeLength (sub, fn c' => c = c') s)
 	 end
       
       structure CSS =

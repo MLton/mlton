@@ -230,7 +230,6 @@ structure Primitive =
 		  val setIsdst = _import "Date_Tm_setIsdst": int -> unit;
 	       end
 	       
-	    val ascTime = _import "Date_ascTime": unit -> cstring;
 	    val gmTime = _import "Date_gmTime": time ref -> unit;
 	    val localOffset = _import "Date_localOffset": unit -> int;
 	    val localTime = _import "Date_localTime": time ref -> unit;

@@ -12,8 +12,6 @@ signature C =
 	 sig
 	    type t
 
-	    (* string must be terminated by char *)
-	    val extractToChar: t * char -> string
 	    (* string must be null terminated *)
 	    val length: t -> int
 	    val sub: t * int -> char

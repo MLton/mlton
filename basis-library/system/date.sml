@@ -279,10 +279,6 @@ structure Date :> DATE =
 
     fun localOffset () = Time.fromSeconds (localoffset mod 86400)
 
-    fun toString date =
-       (setTmBuf (dateToTmoz date)
-	; C.CS.extractToChar (Prim.ascTime (), #"\n"))
-
     local
        val isFormatChar =
 	  let
@@ -344,6 +340,8 @@ structure Date :> DATE =
 	  in concat (rev (loop (0, 0, [])))
 	  end
     end
+
+    val toString = fmt "%a %b %d %H:%M:%S %Y"
 
     (* To scan dates in the format "Wed Mar  8 19:06:45 1995" *)
 
