@@ -18,7 +18,7 @@ src=`cd $dir/.. && pwd`
 # permission there. 
 
 lib="$src/build/lib"
-lib=/usr/local/lib/mlton
+
 # crossHost will be used via the -b flag passed to the GCC cross-compiler tools.
 # You must already have installed the GCC cross-compiler tools.  This script
 # does not do that, although you may find the script build-cross-gcc helpful.
