@@ -18,6 +18,8 @@ signature CONTROL =
       (*            Begin Flags             *)
       (*------------------------------------*)
 
+      val cardSizeLog2: int ref
+
       datatype chunk =
 	 OneChunk
        | ChunkPerFunc
@@ -46,6 +48,9 @@ signature CONTROL =
        | First
        | Every
       val gcCheck: gcCheck ref
+
+      (* Does the runtime use generational GC. *)
+      val generational: bool ref
 
       datatype host =
 	 Cross of string

@@ -90,6 +90,9 @@ fun options () =
        (Expert, "build-constants", "",
 	"output C file that prints basis constants",
 	trueRef buildConstants),
+       (Expert, "card-size-log2", " n",
+	"log (base 2) of card size used by GC",
+	intRef cardSizeLog2),
        (Expert, "coalesce", " n", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
@@ -123,6 +126,8 @@ fun options () =
 		       | "first" => First
 		       | "every" => Every
 		       | _ => usage (concat ["invalid -gc-check flag: ", s])))),
+       (Expert, "generational", " {true|false}", "use generational GC",
+	boolRef Control.generational),
        (Normal, "host",
 	concat [" {",
 		concat (List.separate (List.map (hostMap (), #host), "|")),
@@ -138,9 +143,13 @@ fun options () =
  *)
        (Normal, "inline", " n", "inlining threshold",
 	Int setInlineSize),
-       (Expert, "inline-array", " {false|true}",
-	"inline array allocation",
-	boolRef inlineArrayAllocation),
+       (* -inline-array true is no longer allowed, because GC_arrayAllocate
+	* knows intimate details of the generational GC.
+	*)
+(*        (Expert, "inline-array", " {false|true}",
+ * 	"inline array allocation",
+ *	boolRef inlineArrayAllocation),
+ *)
 (*        (Normal, "I", "dir", "search dir for include files",
  * 	push includeDirs),
  *)
@@ -628,11 +637,8 @@ fun commandLine (args: string list): unit =
 			    docc = docc,
 			    outputC = make (Control.C, cOut),
 			    outputS = make (Control.Assembly, sOut)}
-			(* These collects are so that the heap is shrunk
-			 * as much as possible before calling gcc.
-			 *)
-			val _ = MLton.GC.collect ()
-			val _ = MLton.GC.collect ()
+			(* Shrink the heap before calling gcc. *)
+			val _ = MLton.GC.pack ()
 		     in
 			case stop of
 			   Place.Generated => ()

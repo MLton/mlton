@@ -581,7 +581,7 @@ structure Primitive =
 	     * switching to a copy.
 	     *)
 	    val copyCurrent = _prim "Thread_copyCurrent": unit -> unit;
-	    val current = _prim "Thread_current": unit -> thread;
+	    val current = _ffi "Thread_current": unit -> thread;
 	    val finishHandler = _ffi "Thread_finishHandler": unit -> unit;
 	    val saved = _ffi "Thread_saved": unit -> thread;
 	    val savedPre = _ffi "Thread_saved": unit -> preThread;

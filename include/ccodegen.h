@@ -118,12 +118,14 @@ struct cont {
 /*                       main                        */
 /* ------------------------------------------------- */
 
-#define Main(ufh, fhs, mfs, mfi, mot, mg, mc, ml)			\
-int main(int argc, char **argv) {					\
+#define Main(cs, ufh, fhs, g, mfs, mfi, mot, mg, mc, ml) 		\
+int main (int argc, char **argv) {					\
 	struct cont cont;						\
 	int l_nextFun;							\
+	gcState.cardSizeLog2 = cs;					\
 	gcState.fixedHeapSize = fhs;					\
 	gcState.frameLayouts = frameLayouts;				\
+	gcState.generational = g;					\
 	gcState.globals = globalpointer;				\
 	gcState.intInfInits = intInfInits;				\
 	gcState.loadGlobals = &loadGlobals;				\
@@ -272,7 +274,8 @@ int main(int argc, char **argv) {					\
 #define CheckPointer(p)							\
 	do {								\
 		assert (not GC_isPointer (p) or				\
-				(gcState.base <= p and p < frontier));	\
+				(gcState.heap.oldGen <= p 	        \
+					and p < gcState.heap.oldGen + gcState.heap.size)); \
 	} while (0)
 
 #define FlushFrontier()				\

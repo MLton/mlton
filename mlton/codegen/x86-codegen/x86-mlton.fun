@@ -1308,25 +1308,6 @@ struct
 	     | String_size => lengthArrayVectorString ()
 	     | String_toCharVector => mov ()
 	     | String_toWord8Vector => mov ()
-	     | Thread_current
-	     => let
-		  val (dst,dstsize) = getDst ()
-		  val _
-		    = Assert.assert
-		      ("applyPrim: Thread_current, dstsize",
-		       fn () => dstsize = pointerSize)
-		in
-		  AppendList.fromList
-		  [Block.T'
-		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
-		    statements 
-		    = [Assembly.instruction_mov
-		       {dst = dst,
-			src = gcState_currentThreadContentsOperand (),
-			size = wordSize}],
-		    transfer = NONE}]
-		end
 	     | Vector_length => lengthArrayVectorString ()
 	     | Word8_toInt => movx Instruction.MOVZX
 	     | Word8_toIntX => movx Instruction.MOVSX

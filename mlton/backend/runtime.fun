@@ -147,8 +147,6 @@ val array0Size = arrayHeaderSize + wordSize (* for the forwarding pointer *)
 val arrayLengthOffset = ~ (2 * wordSize)
 val allocTooLarge: word = 0wxFFFFFFFC
 
-val bytesPerCardLog2: word = 0w8
-   
 fun normalSize {numPointers, numWordsNonPointers} =
    wordSize * (numPointers + numWordsNonPointers)
 

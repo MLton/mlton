@@ -64,12 +64,14 @@
 #define Float(c, f) globaldouble[c] = f;
 #define EndFloats }
 
-#define Main(ufh, fhs, mfs, mfi, mot, mg, ml, reserveEsp)		\
+#define Main(cs, ufh, fhs, g, mfs, mfi, mot, mg, ml, reserveEsp)	\
 extern pointer ml;							\
-int main(int argc, char **argv) {					\
+int main (int argc, char **argv) {					\
 	pointer jump;  							\
+	gcState.cardSizeLog2 = cs;					\
 	gcState.fixedHeapSize = fhs;					\
 	gcState.frameLayouts = frameLayouts;				\
+	gcState.generational = g;					\
 	gcState.globals = globalpointer;				\
 	gcState.intInfInits = intInfInits;				\
 	gcState.loadGlobals = &loadGlobals;				\

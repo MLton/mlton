@@ -178,6 +178,8 @@ typedef struct GC_thread {
 	/* The order of these fields is important.  The nonpointer fields
 	 * must be first, because this object must appear to be a normal heap
 	 * object.
+	 * Furthermore, the exnStack field must be first, because the native
+	 * codegen depends on this (which is bad and should be fixed).
 	 */
 	uint exnStack;    	/* An offset added to stackBottom that specifies 
 				 * where the top of the exnStack is.
@@ -216,7 +218,6 @@ typedef struct GC_heap {
 	*/
 	uint size;
 	pointer start;		/* start of memory area */
-	pointer toSpace;
 	/* totalSize is the total length of the memory area.  i.e., the memory
 	 * range is [start, start + totalSize)
          */
@@ -248,15 +249,20 @@ typedef struct GC_state {
 	pointer back;     	/* Points at next available word in toSpace. */
 	ullong bytesAllocated;
  	ullong bytesCopied;
+	ullong bytesCopiedMinor;
 	int bytesLive;		/* Number of bytes copied by most recent GC. */
 	ullong bytesMarkCompacted;
+	uint cardSize;
+	uint cardSizeLog2;
 	GC_thread currentThread; /* This points to a thread in the heap. */
+	bool doingMinorGC;	/* Set to true during a minor GC. */
 	uint fixedHeapSize; 	/* Only meaningful if useFixedHeap. */
 	GC_frameLayout *frameLayouts;
 	bool generational;	/* Whether or not to use generational gc. */
 	pointer *globals; 	/* An array of size numGlobals. */
 	struct GC_heap heap;
 	struct GC_heap heap2;
+	GC_heap heapp;	/* only used during GC. */
 	bool inSignalHandler; 	/* TRUE iff a signal handler is running. */
 	/* canHandle == 0 iff GC may switch to the signal handler
  	 * thread.  This is used to implement critical sections.
@@ -286,6 +292,8 @@ typedef struct GC_state {
 	uint numGlobals;	/* Number of pointers in globals array. */
  	ullong numLCs;
  	uint numMarkCompactGCs;
+	uint numMinorGCs;
+	uint numMinorsSinceLastMajor;
 	GC_ObjectType *objectTypes; /* Array of object types. */
 	uint pageSize; /* bytes */
 	float ramSlop;

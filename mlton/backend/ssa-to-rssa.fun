@@ -882,7 +882,9 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			      (PrimApp
 			       {args = (Vector.new2
 					(Operand.CastWord addr,
-					 Operand.word Runtime.bytesPerCardLog2)),
+					 Operand.word
+					 (Word.fromInt
+					  (!Control.cardSizeLog2)))),
 				dst = SOME (index, Type.int),
 				prim = Prim.word32Rshift})
 			      :: (Bind {isMutable = false,
@@ -900,7 +902,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			  loop (i - 1, prefix ss, t)
 			end
 		     fun arrayUpdate (ty, src) =
-		        if Type.isPointer ty
+		        if !Control.generational andalso Type.isPointer ty
 			   then let
 				   val temp = Var.newNoname ()
 				   val tempOp = Operand.Var {var = temp,
@@ -942,7 +944,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 								    ty = ty},
 					      src = src}
 			in
-			   if Type.isPointer ty
+			   if !Control.generational andalso Type.isPointer ty
 			      then updateCard (varOp addr, fn ss => ss, assign)
 			   else loop (i - 1, assign::ss, t)
 			end

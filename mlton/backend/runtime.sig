@@ -69,7 +69,6 @@ signature RUNTIME =
       val arrayHeaderSize: int
       val arrayLengthOffset: int
       val array0Size: int
-      val bytesPerCardLog2: word
       val headerToTypeIndex: word -> int
       val isWordAligned: int -> bool
       val intInfOverheadSize: int

@@ -154,13 +154,22 @@ string intToCommaString(int n) {
  	return buf + i + 1;
 }
 
-string uintToCommaString(uint n) {
-	static char buf[BUF_SIZE];
+string uintToCommaString (uint n) {
+	static char buf1[BUF_SIZE];
+	static char buf2[BUF_SIZE];
+	static char buf3[BUF_SIZE];
+	static char buf4[BUF_SIZE];
+	static char buf5[BUF_SIZE];
+	static char *bufs[] = {buf1, buf2, buf3, buf4, buf5};
+	static int bufIndex = 0;
+	static char *buf;
 	int i;
-	
+
+	buf = bufs[bufIndex++];
+	bufIndex %= 5;
+
 	i = BUF_SIZE - 1;
 	buf[i--] = '\000';
-	
 	if (0 == n)
 		buf[i--] = '0';
         else {

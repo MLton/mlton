@@ -11,6 +11,10 @@ struct
 structure C = Control ()
 open C
 
+val cardSizeLog2 = control {name = "log2 (card size)",
+			    default = 8,
+			    toString = Int.toString}
+   
 structure Chunk =
    struct
       datatype t =
@@ -78,6 +82,10 @@ datatype gcCheck = datatype GcCheck.t
 val gcCheck = control {name = "gc check",
 		       default = Limit,
 		       toString = GcCheck.toString}
+
+val generational = control {name = "generational",
+			    default = true,
+			    toString = Bool.toString}
 
 structure Host =
    struct

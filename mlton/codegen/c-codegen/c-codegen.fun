@@ -60,6 +60,8 @@ structure C =
       val truee = "TRUE"
       val falsee = "FALSE"
 
+      fun bool b = if b then truee else falsee
+	 
       fun args (ss: string list): string
 	 = concat ("(" :: List.separate (ss, ", ") @ [")"])
          
@@ -290,8 +292,10 @@ fun outputDeclarations
 	    val magic = C.word (Random.useed ())
 	 in 
 	    C.callNoSemi ("Main",
-			  [usedFixedHeap,
+			  [C.int (!Control.cardSizeLog2),
+			   usedFixedHeap,
 			   C.int fixedHeapSize,
+			   C.bool (!Control.generational),
 			   C.int maxFrameSize,
 			   C.int maxFrameIndex,
 			   C.int (Vector.length objectTypes),
