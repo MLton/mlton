@@ -306,7 +306,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 	       end
 	    val _ = loop tree
 	 in
-	    Vector.fromListRev (!blocks)
+	    Vector.fromList (!blocks)
 	 end
 
       val shrink = shrinkFunction globals
