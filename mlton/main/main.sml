@@ -347,9 +347,6 @@ fun commandLine (args: string list): unit =
 	 if !keepDot andalso List.isEmpty (!keepPasses)
 	    then keepSSA := true
 	 else ()
-      val _ =
-	 List.push (defines,
-		    concat ["TextIO_bufSize=", Int.toString (!textIOBufSize)])
       val _ = if !debug then () else List.push (defines, "NODEBUG")
       val _ = Control.includes := !includes
    in case result of
