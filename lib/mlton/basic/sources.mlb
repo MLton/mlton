@@ -167,16 +167,20 @@ local
     port.sig
     port.sml
     itimer.sml
-    thread.sig
-    thread.sml
-    engine.sig
-    engine.sml
-    net.sig
-    net.sml
-    uri.sig
-    uri.sml
-    http.sig
-    http.sml
+(* Including threads causes all of MLton.Thread to be drawn in, which causes
+ * a big slowdown on self compiles.
+ *)
+(*     thread.sig
+ *     thread.sml
+ *     engine.sig
+ *     engine.sml
+ *     net.sig
+ *     net.sml
+ *     uri.sig
+ *     uri.sml
+ *     http.sig
+ *     http.sml
+ *)
     popt.sig
     popt.sml
     sexp.sig
@@ -235,7 +239,7 @@ in
     structure FixedPoint
     structure Function
     structure HashSet
-    structure Http
+(*    structure Http *)
     structure In
     structure Int
     structure Int32

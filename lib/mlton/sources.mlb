@@ -56,7 +56,7 @@ in
     structure FixedPoint
     structure Function
     structure HashSet
-    structure Http
+(*    structure Http *)
     structure In
     structure Int
     structure Int32
