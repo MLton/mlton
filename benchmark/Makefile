@@ -38,7 +38,7 @@ clean:
 .PHONY: install
 install: $(NAME)
 	if [ `whoami` != 'root' ]; then echo >&2 'You should be root'; exit 1; fi
-	cp -p $(NAME) /usr/local/bin/
+	cp -p $(NAME) /usr/bin/
 
 .PHONY: tags
 tags:
@@ -47,7 +47,7 @@ tags:
 BENCH = barnes-hut boyer checksum count-graphs DLXSimulator fft fib hamlet imp-for knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc mpuz nucleic peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tensor tsp tyan vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
 FPBENCH = barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace simple tensor tsp tyan vliw zern
 
-BFLAGS = -mlton "/usr/local/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
+BFLAGS = -mlton "/usr/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
 BFLAGS = -mlton "mlton"
 BFLAGS = -html -mlton "mlton" -mlkit -mosml -poly -smlnj
 
