@@ -104,6 +104,9 @@ val options =
 		     in r := true
 		     end)),
        (Normal, "l", "library", "link with library", push libs),
+       (Expert, "local-flatten", " {true|false}",
+	"CPS local flattening optimization",
+	boolRef Control.localFlatten),
        (Normal, "L", "dir", "search dir for libraries",
 	push libDirs),
        (Normal, "native", " {true|false}", "use native x86 code generator",

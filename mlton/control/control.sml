@@ -112,6 +112,10 @@ val keepCps = control {name = "keep Cps",
 		       default = false,
 		       toString = Bool.toString}
 
+val localFlatten = control {name = "localFlatten",
+			    default = true,
+			    toString = Bool.toString}
+   
 structure Native =
    struct
       val native = control {name = "native",

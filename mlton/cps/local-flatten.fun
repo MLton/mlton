@@ -1,0 +1,246 @@
+functor LocalFlatten (S: LOCAL_FLATTEN_STRUCTS): LOCAL_FLATTEN = 
+struct
+
+open S
+open Dec PrimExp Transfer
+
+(* Flatten a jump arg as long as it is only used in selects.
+ *)
+   
+structure Rep =
+   struct
+      structure L = TwoPointLattice (val bottom = "flat"
+				     val top = "tupled")
+      open L
+   end
+
+fun flatten (program as Program.T {globals, datatypes, functions, main}) =
+   if not (!Control.localFlatten)
+      then program
+   else
+   let
+      val {get = argRep: Var.t -> Rep.t option,
+	   set = setArgRep} =
+	 Property.getSetOnce (Var.plist,
+			      Property.initConst NONE)
+      type argReps = (Rep.t * Type.t) option vector
+      val {get = jumpArgs: Jump.t -> argReps,
+	   set = setJumpArgs} =
+	 Property.getSetOnce (Jump.plist,
+			      Property.initRaise ("args", Jump.layout))
+      val shrinkExp = shrinkExp globals
+      val functions =
+	 Vector.map
+	 (functions, fn {name, args, body, returns} =>
+	  let
+	     fun loop (e: Exp.t) =
+		let
+		   val {decs, transfer} = Exp.dest e
+		   fun force (x: Var.t): unit =
+		      case argRep x of
+			 NONE => ()
+		       | SOME r => Rep.makeTop r
+		   fun forces (xs: Var.t vector): unit =
+		      Vector.foreach (xs, force)
+		   fun forceArgs (j: Jump.t): unit =
+		      Vector.foreach (jumpArgs j,
+				      fn NONE => ()
+				       | SOME (r, _) => Rep.makeTop r)
+		   val _ =
+		      List.foreach
+		      (decs,
+		       fn Bind {exp, ...} =>
+		             (case exp of
+				 ConApp {args, ...} => forces args
+			       | PrimApp {args, ...} => forces args
+			       | Tuple args => forces args
+			       | Var x => force x
+			       | _ => ())
+			| Fun {name, args, body, ...} =>
+			     (setJumpArgs
+			      (name, (Vector.map
+				      (args, fn (x, t) =>
+				       if Type.isTuple t
+					  then
+					     let
+						val r = Rep.new ()
+						val _ = setArgRep (x, SOME r)
+					     in
+						SOME (r, t)
+					     end
+				       else NONE)))
+			      ; loop body)
+			| HandlerPush j => forceArgs j
+			| HandlerPop => ())
+		   val _ =
+		      case transfer of
+			 Bug => ()
+		       | Call {args, cont, ...} =>
+			    (forces args
+			     ; Option.app (cont, forceArgs))
+		       | Case {cases, default, ...} =>
+			    (Cases.foreach (cases, forceArgs)
+			     ; Option.app (default, forceArgs))
+		       | Jump {dst, args} =>
+			    Vector.foreach2
+			    (args, jumpArgs dst,
+			     fn (_, NONE) => ()
+			      | (x, SOME (r, _)) =>
+				   Option.app (argRep x, fn r' =>
+					       Rep.<= (r, r')))
+		       | Raise xs => forces xs
+		       | Return xs => forces xs
+		in
+		   ()
+		end
+	     val _ = loop body
+	     fun makeTuple (formals: (Var.t * Type.t) vector,
+			    reps: argReps)
+		: (Var.t * Type.t) vector * Dec.t list =
+		let
+		   val (argss, decs) =
+		      Vector.map2AndFold
+		      (formals, reps, [], fn ((x, t), rep, decs) =>
+		       case rep of
+			  NONE => (Vector.new1 (x, t), decs)
+			| SOME (r, t) =>
+			     if Rep.isTop r
+				then (Vector.new1 (x, t), decs)
+			     else
+				let
+				   val vars =
+				      Vector.map
+				      (Type.detuple t, fn t =>
+				       (Var.newNoname (), t))
+				in
+				   (vars,
+				    Bind {var = x,
+					  ty = t,
+					  exp = Tuple (Vector.map (vars, #1))}
+				    :: decs)
+				end)
+		in (Vector.concatV argss, decs)
+		end
+	     fun makeSelects (args: Var.t vector,
+			      formals: argReps): Var.t vector * Dec.t list =
+		let
+		   val (argss, decs) =
+		      Vector.map2AndFold
+		      (args, formals, [], fn (arg, formal, ac) =>
+		       case formal of
+			  NONE => (Vector.new1 arg, ac)
+			| SOME (r, t) =>
+			     if Rep.isTop r
+				then (Vector.new1 arg, ac)
+			     else
+				let
+				   val (vars, decs) =
+				      Vector.foldi
+				      (Type.detuple t, ([], ac),
+				       fn (i, ty, (vars, decs)) =>
+				       let val var = Var.newNoname ()
+				       in (var :: vars,
+					   Bind {var = var,
+						 ty = ty,
+						 exp = Select {tuple = arg,
+							       offset = i}}
+					   :: decs)
+				       end)
+				in (Vector.fromListRev vars, decs)
+				end)
+		in (Vector.concatV argss, decs)
+		end
+	     fun anyFlat (v: argReps): bool =
+		Vector.exists (v,
+			       fn NONE => false
+				| SOME (r, _) => Rep.isBottom r)
+	     fun loop (e: Exp.t): Exp.t =
+		let
+		   val {decs, transfer} = Exp.dest e
+		   val (rest, transfer) =
+		      case transfer of
+			 Jump {dst, args} =>
+			    let
+			       val formals = jumpArgs dst
+			    in
+			       if anyFlat formals
+				  then
+				     let
+					val (args, decs) =
+					   makeSelects (args, formals)
+				     in
+					(decs, Jump {dst = dst, args = args})
+				     end
+			       else ([], transfer)
+			    end
+		       | _ => ([], transfer)
+		   val decs =
+		      List.fold
+		      (rev decs, rest, fn (d, ac) =>
+		       let
+			  val d =
+			     case d of
+				Fun {name, args, body} =>
+				   let
+				      val formals = jumpArgs name
+				      val body = loop body
+				      val (args, body) =
+					 if anyFlat formals
+					    then
+					       let
+						  val (args, decs) =
+						     makeTuple (args, formals)
+					       in
+						  (args,
+						   Exp.prefixs (body, decs))
+					       end
+					 else (args, body) 
+				   in
+				      Fun {name = name,
+					   args = args,
+					   body = body}
+				   end
+			      | _ => d
+		       in
+			  d :: ac
+		       end)
+		in
+		   Exp.make {decs = decs,
+			     transfer = transfer}
+		end
+	     val body = shrinkExp (loop body)
+	     val _ = Exp.clear body
+	  in
+	     {name = name,
+	      args = args,
+	      body = body,
+	      returns = returns}
+	  end)
+      val program' = 
+	 Program.T {datatypes = datatypes,
+		    globals = globals,
+		    functions = functions,
+		    main = main}
+      val _ =
+	 if false
+	    then
+	       Control.displays
+	       ("local-flatten", fn display =>
+		(Program.layouts (program, display)
+		 ; Program.foreachVar (program, fn (x, _) =>
+				       case argRep x of
+					  NONE => ()
+					| SOME r =>
+					     display (let open Layout
+						      in seq [Var.layout x,
+							      str " ",
+							      Rep.layout r]
+						      end))
+		 ; Program.layouts (program', display)))
+	 else ()
+   in
+      program'
+   end
+
+
+end

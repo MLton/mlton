@@ -188,8 +188,8 @@ atoms/generic-scheme.sig
 atoms/type-ops.sig
 atoms/type.sig
 atoms/scheme.sig
-atoms/const.sig
 atoms/con.sig
+atoms/const.sig
 atoms/prim.sig
 atoms/unary-tycon.sig
 atoms/var.sig
@@ -306,13 +306,15 @@ cps/inline.sig
 cps/inline.fun
 cps/introduce-loops.sig
 cps/introduce-loops.fun
+cps/local-flatten.sig
+cps/two-point-lattice.sig
+cps/two-point-lattice.fun
+cps/local-flatten.fun
 cps/loop-invariant.sig
 cps/loop-invariant.fun
 cps/poly-equal.sig
 cps/poly-equal.fun
 cps/raise-to-jump.sig
-cps/two-point-lattice.sig
-cps/two-point-lattice.fun
 cps/raise-to-jump.fun
 ../lib/mlton/basic/fixed-point.sig
 ../lib/mlton/basic/fixed-point.sml

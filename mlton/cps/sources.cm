@@ -33,6 +33,8 @@ contify.sig
 contify.fun
 flatten.sig
 flatten.fun
+local-flatten.sig
+local-flatten.fun
 inline.sig
 inline.fun
 introduce-loops.sig

@@ -45,7 +45,9 @@ structure IntroduceLoops = IntroduceLoops (S)
 val introduceLoops = trace ("introduce-loops", IntroduceLoops.introduceLoops)
 
 (*structure LoopCount = LoopCount (S) *)
-
+structure LocalFlatten = LocalFlatten (S)
+val localFlatten = trace ("local-flatten", LocalFlatten.flatten)
+   
 structure LoopInvariant = LoopInvariant (S)
 val loopInvariant = trace ("loop-invariant", LoopInvariant.loopInvariant)
    
@@ -102,6 +104,7 @@ val passes =
     leafInline,
     raiseToJump,
     contify,
+    localFlatten,
     constantPropagation,  (* constantPropagation cannot be omitted.
 			   * It implements Array_array0.
 			   *)
@@ -111,12 +114,14 @@ val passes =
     polyEqual, (* polyEqual cannot be omitted.  It implements MLton_equal. *)
     contify,
     inline,
+    localFlatten,
     removeUnused,
     raiseToJump,
     contify,
     introduceLoops,
     loopInvariant,
     flatten,
+    localFlatten,
     redundant,
     removeUnused  (* removeUnused cannot be omitted.
 		   * The final shrink pass ensures that constant operands are

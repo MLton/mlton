@@ -60,6 +60,8 @@ signature CONTROL =
 
       val keepCps: bool ref
 
+      val localFlatten: bool ref
+
       structure Native:
 	 sig
 	    (* whether or not to use native codegen *)

@@ -22,5 +22,5 @@ signature TWO_POINT_LATTICE =
       val isTop: t -> bool
       val layout: t -> Layout.t
       val makeTop: t -> unit
-      val new: unit -> t
+      val new: unit -> t (* a new bottom *)
    end
