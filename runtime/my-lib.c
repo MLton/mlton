@@ -59,7 +59,7 @@ FILE *sfopen(char *fileName, char *mode) {
 	FILE *file;
 	
 	if (NULL == (file = fopen((char*)fileName, mode)))
-		diee("sopen unable to open file %s", fileName);
+		diee("sfopen unable to open file %s", fileName);
 	return file;
 }
 
