@@ -1,4 +1,4 @@
-#if (defined (__linux__))
+#if (defined (__linux__) || defined (__FreeBSD__))
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
@@ -114,7 +114,11 @@ catcher(int sig, siginfo_t *sip, ucontext_t *ucp)
 {
 	uint	pc;
 
-	pc = ucp->uc_mcontext.gregs[EIP];
+#if (defined (__linux__))
+        pc = ucp->uc_mcontext.gregs[EIP];
+#elif (defined (__FreeBSD__))
+	pc = ucp->uc_mcontext.mc_eip;
+#endif
 	if (((uint)&_start <= pc) and (pc <= (uint)&etext))
 		++current[pc - (uint)&_start + 1];
 	else
@@ -145,4 +149,13 @@ void MLton_Profile_installHandler (void)
 	unless (sigaction(SIGPROF, &sa, NULL) == 0)
 		diee("sigaction() failed");
 }
+
+#elif (defined (__CYGWIN__))
+
+/* No profiling on Cygwin. */
+
+#else
+
+#error profiling not defined
+
 #endif /* (defined (__linux__)) */
