@@ -197,7 +197,7 @@ fun printTable {rdb as T {body, heading, ...}, row, col, entry, out}: unit =
       val justs =
 	 (Value.justification (hd rows)
 	  :: List.map (cols, Value.justification))
-      val t = Justify.table {justs = justs, rows = table}
+      val t = Justify.table {columnHeads = NONE, justs = justs, rows = table}
    in outputTable (t, out)
    end
 
@@ -214,13 +214,15 @@ fun printTable' {rdb as T {body, heading = Heading.T ads, ...},
 		     end)
       val justs = List.map (hd rows, Value.justification)
       val i = valOf (List.index (cols, fn a => Attribute.equals (a, sortBy)))
-      val rows = MergeSort.sort (rows, fn (r, r') =>
-				Value.<= (List.nth (r, i), List.nth (r', i)))
+      val rows =
+	 QuickSort.sortList (rows, fn (r, r') =>
+			     Value.<= (List.nth (r, i), List.nth (r', i)))
       val rows =
 	 List.map (cols, Attribute.toString)
 	 :: List.map (rows, fn r => List.map (r, Value.toString))
-      val t = Justify.table {justs = justs,
-			    rows = rows}
+      val t = Justify.table {columnHeads = NONE,
+			     justs = justs,
+			     rows = rows}
    in outputTable (t, out)
    end
 

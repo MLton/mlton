@@ -173,7 +173,8 @@ fun makeUsage {mainUsage, makeOptions, showExpert} =
 		let
 		   open Justify
 		in
-		   table {justs = [Left, Left],
+		   table {columnHeads = NONE,
+			  justs = [Left, Left],
 			  rows = opts}
 		end
 	  in

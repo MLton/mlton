@@ -68,8 +68,8 @@ structure Lines
 structure List
 structure List
 structure MLton
-structure MergeSortList
-structure MergeSortVector
+(* structure MergeSortList *)
+(* structure MergeSortVector *)
 structure Net
 structure OS
 structure Option
@@ -262,8 +262,8 @@ list.sig
 list.sml
 mark.sig
 mark.sml
-merge-sort.sig
-merge-sort.sml
+(* merge-sort.sig *)
+(* merge-sort.sml *)
 mono-list.fun
 mono-option.fun
 mono-vector.fun

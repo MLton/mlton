@@ -15,6 +15,7 @@ signature JUSTIFY =
 
       val justify: string * int * t -> string
       val outputTable: string list list * Out.t -> unit
-      val table: {justs: t list,
+      val table: {columnHeads: string list option,
+		  justs: t list,
 		  rows: string list list} -> string list list
    end

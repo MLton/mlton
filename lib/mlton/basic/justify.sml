@@ -37,19 +37,43 @@ fun justify (s, width, just) =
 	 | Right => [spaces numspaces, s])
     end
 
-fun table {justs: t list,
+fun table {columnHeads: string list option,
+	   justs: t list,
 	   rows: string list list} =
    let
+      val headsAndRows =
+	 case columnHeads of
+	    NONE => rows
+	  | SOME h => h :: rows
       val maxs =
-	 List.fold (rows, List.revMap (justs, fn _ => 0), fn (row, ms) =>
+	 List.fold (headsAndRows,
+		    List.revMap (justs, fn _ => 0),
+		    fn (row, ms) =>
 		    List.map2 (row, ms, fn (s, m) => Int.max (m, String.size s)))
-   in List.map (rows, fn row => List.map3(row, maxs, justs, justify))
+      val rows =
+	 List.map (rows, fn row => List.map3 (row, maxs, justs, justify))
+      val rows =
+	 case columnHeads of
+	    NONE => rows
+	  | SOME heads =>
+	       let
+		  val heads = List.map2 (heads, maxs, fn (s, i) =>
+					 justify (s, i, Center))
+		  val dashes = List.map (maxs, fn i => String.make (i, #"-"))
+	       in
+		  heads :: dashes :: rows
+	       end
+   in
+      rows
    end
 
 val table =
    Trace.trace ("table",
-		fn {justs, rows} =>
-		Layout.record [("justs", List.layout layout justs),
+		fn {columnHeads, justs, rows} =>
+		Layout.record [("columnHeads",
+				Option.layout (List.layout String.layout)
+				columnHeads),
+			       ("justs", List.layout layout justs),
 			       ("rows",
 				List.layout (List.layout String.layout) rows)],
 		List.layout (List.layout String.layout))
