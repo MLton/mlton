@@ -129,6 +129,7 @@ structure SysWord
 structure Thread
 structure Time
 structure Trace
+structure Tree
 structure TwoListQueue
 structure Unimplemented
 structure Unit

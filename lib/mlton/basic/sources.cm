@@ -102,6 +102,7 @@ structure SysWord
 structure Thread
 structure Time
 structure Trace
+structure Tree
 structure TwoListQueue
 structure Unimplemented
 structure Unit
@@ -337,6 +338,8 @@ time.sig
 time.sml
 trace.sig
 trace.sml
+tree.sig
+tree.sml
 two-list-queue-mutable.sml
 two-list-queue.sml
 unimplemented.sml
