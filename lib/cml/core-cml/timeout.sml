@@ -81,8 +81,8 @@ structure TimeOut : TIME_OUT_EXTRA =
 		  val () =
 		     S.atomicSwitch
 		     (fn t =>
-		      (timeWait (Time.+(time, getTime ()), transId, cleanUp, t)
-		       ; (next (), ())))
+		      (timeWait (Time.+(time, getTime ()), transId, cleanUp, S.prep t)
+		       ; next ()))
 		  val () = debug' "timeOutEvt(3.2.3)" (* NonAtomic *)
 		  val () = Assert.assertNonAtomic' "TimeOut.timeOutEvt(3.2.3)"
 	       in
@@ -112,8 +112,8 @@ structure TimeOut : TIME_OUT_EXTRA =
 		  val () =
 		     S.atomicSwitch
 		     (fn t =>
-		      (timeWait (time, transId, cleanUp, t)
-		       ; (next (), ())))
+		      (timeWait (time, transId, cleanUp, S.prep t)
+		       ; next ()))
 		  val () = debug' "atTimeEvt(3.2.3)" (* NonAtomic *)
 		  val () = Assert.assertNonAtomic' "TimeOut.atTimeEvt(3.2.3)"
 	       in
@@ -135,6 +135,7 @@ structure TimeOut : TIME_OUT_EXTRA =
 
       (* reset various pieces of state *)
       fun reset () = timeQ := TQ.new ()
+
       (* what to do at a preemption *)
       fun preempt () : Time.time option option = 
 	 let 

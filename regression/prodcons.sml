@@ -67,31 +67,32 @@ structure Thread:
       open MLton
       open Itimer Signal Thread
 
-      val topLevel: unit Thread.t option ref = ref NONE
+      val topLevel: Thread.ready_t option ref = ref NONE
 
       local
-	 val threads: unit Thread.t Queue.t = Queue.new ()
+	 val threads: Thread.ready_t Queue.t = Queue.new ()
       in
-	 fun ready (t): unit = Queue.enque (threads, t)
-	 fun next () =
+	 fun ready t: unit = Queue.enque (threads, t)
+	 fun next () : Thread.ready_t =
 	    case Queue.deque threads of
 	       NONE => (print "switching to toplevel\n"
 			; valOf (!topLevel))
 	     | SOME t => t
       end
    
-      fun 'a exit (): 'a = switch (fn _ => (next (), ()))
+      fun 'a exit (): 'a = switch (fn _ => next ())
       
-      fun new (f: unit -> unit): unit Thread.t =
-	 Thread.new (fn () => ((f () handle _ => exit ())
-			      ; exit ()))
+      fun new (f: unit -> unit): Thread.ready_t =
+	 (Thread.prep o Thread.new) 
+	 (fn () => ((f () handle _ => exit ())
+		    ; exit ()))
 	 
       fun schedule t =
 	 (print "scheduling\n"
 	  ; ready t
 	  ; next ())
 
-      fun yield (): unit = switch (fn t => (schedule t, ()))
+      fun yield (): unit = switch (fn t => schedule (Thread.prep t))
 
       val spawn = ready o new
 
@@ -102,10 +103,9 @@ structure Thread:
 
       fun run (): unit =
 	 (switch (fn t =>
-		  (topLevel := SOME t
-		   ; (new (fn () => (setHandler (alrm, Handler.handler schedule)
-				     ; setItimer (Time.fromMilliseconds 20))),
-		      ())))
+		  (topLevel := SOME (Thread.prep t)
+		   ; new (fn () => (setHandler (alrm, Handler.handler schedule)
+				    ; setItimer (Time.fromMilliseconds 20)))))
 	  ; setItimer Time.zeroTime
 	  ; ignore alrm
 	  ; topLevel := NONE)
@@ -129,7 +129,7 @@ structure Thread:
 				 ; switch (fn t =>
 					   (Thread.atomicEnd ()
 					    ; Queue.enque (waiting, t)
-					    ; (next (), ())))
+					    ; next ()))
 				 ; loop ())
 			else (print "mutex is not locked\n"
 			      ; locked := true
@@ -142,7 +142,7 @@ structure Thread:
 		; (case Queue.deque waiting of
 		      NONE => ()
 		    | SOME t => (print "unlock found waiting thread\n"
-				 ; ready t)))
+				 ; ready (Thread.prep t))))
 
 	    fun unlock (m: t) =
 	       (print "unlock atomicBegin\n"
@@ -162,13 +162,13 @@ structure Thread:
 			(Mutex.safeUnlock m
 			 ; print "wait unlocked mutex\n"
 			 ; Queue.enque (waiting, t)
-			 ; (next (), ())))
+			 ; next ()))
 		; Mutex.lock (m, "wait"))
 
 	    fun signal (T {waiting, ...}) =
 	       case Queue.deque waiting of
 		  NONE => ()
-		| SOME t => ready t
+		| SOME t => ready (Thread.prep t)
 	 end
 
    end

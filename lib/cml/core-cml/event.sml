@@ -124,14 +124,14 @@ structure Event : EVENT_EXTRA =
 		      let
 			 val item = {transId = transId,
 				     cleanUp = cleanUp,
-				     thread = t}
+				     thread = S.prep t}
 			 val waiting =
 			    case !state of
 			       CVAR_unset waiting => waiting
 			     | _ => raise Fail "cvarGetEvt:blockFn"
 		      in
 			 state := CVAR_unset (item::waiting)
-			 ; (next (), ())
+			 ; next ()
 		      end)
 		  val () = debug' "cvarGetEvt(3.2.2)" (* NonAtomic *)
 		  val () = Assert.assertNonAtomic' "Event.cvarGetEvt(3.2.2)"
@@ -374,18 +374,18 @@ structure Event : EVENT_EXTRA =
 				     case blockFns of
 					[] => S.next ()
 				      | blockFn::blockFns =>
-					   S.new
+					   (S.prep o S.new)
 					   (fn _ => fn () =>
 					    let 
 					       val () = S.atomicBegin ()
 					       val x = blockFn {transId = transId,
 								cleanUp = cleanUp,
 								next = fn () => log blockFns}
-					    in S.switch(fn _ => (t, x))
+					    in S.switch(fn _ => S.prepVal (t, x))
 					    end)
 				  end
 			    in
-			       (log blockFns, ())
+			       log blockFns
 			    end)
 			end
 		   | pollFn::bevts =>
@@ -551,18 +551,18 @@ structure Event : EVENT_EXTRA =
 				     case blockFns of
 					[] => S.next ()
 				      | (blockFn,ackFlg)::blockFns =>
-					   S.new
+					   (S.prep o S.new)
 					   (fn _ => fn () =>
 					    let 
 					       val () = S.atomicBegin ()
 					       val x = blockFn {transId = transId,
 								cleanUp = cleanUp ackFlg,
 								next = fn () => log blockFns}
-					    in S.switch(fn _ => (t, x))
+					    in S.switch(fn _ => S.prepVal (t, x))
 					    end)
 				  end
 			    in
-			       (log blockFns, ())
+			       log blockFns
 			    end)
 			end
 		   | (pollFn,ackFlg)::backs =>

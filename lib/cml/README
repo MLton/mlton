@@ -22,11 +22,11 @@ CML.timeOutEvt and CML.atTimeEvt functions, and a preemptive scheduler
 that knows to sleep when there are no ready threads and some threads
 blocked on time events.
 
-NOTE: None of the Standard ML Basis Library has been made neither
-MLton.Thread nor CML safe.  Much of the IO and OS structures have
-event based equivalents, which should be implemented.  The "right" way
-to call a Basis Library fuction that is stateful is to wrap the call
-with MLton.Thread.atomically.
+NOTE: None of the Standard ML Basis Library has been made either
+MLton.Thread or CML safe.  Much of the IO and OS structures have event
+based equivalents, which should be implemented.  The "right" way to
+call a Basis Library fuction that is stateful is to wrap the call with
+MLton.Thread.atomically.
 
 
 Implementation notes:
@@ -41,8 +41,10 @@ continuations of the SMLofNJ.Cont module:
 The implementation of CML in MLton is built upon the first-class
 threads of the MLton.Thread module:
   type 'a t
+  type ready_t
   val new : ('a -> unit) -> 'a t
-  val switch : ('a t -> 'b t * 'b) -> 'a
+  val prepVal : 'a t * 'a -> ready_t
+  val switch : ('a t -> ready_t) -> 'a
 
 The port is relatively straightforward, because CML throws to a
 continuation at most once.  Hence, an "abstract" implementation of
@@ -52,7 +54,7 @@ equally well to SML/NJ's continuations and MLton's threads.
 The "essence" of the port is to transform:
   ... callcc (fn k => ... throw k' v') ...
 to
-  ... switch (fn t => ... (t', v')) ...
+  ... switch (fn t => ... prepVal (t', v')) ...
 which suffices for the vast majority of the CML implementation.
 
 There was only one complicated transformation: blocking multiple base
@@ -122,17 +124,17 @@ and
 		      case blockFns of
 			 [] => S.next ()
 		       | blockFn::blockFns =>
-			    S.new
+			    (S.prep o S.new)
 			    (fn _ => fn () =>
 			     let 
 				val () = S.atomicBegin ()
 				val x = blockFn {transId = transId,
 						 cleanUp = cleanUp,
 						 next = fn () => log blockFns}
-			     in S.switch(fn _ => (t, x))
+			     in S.switch(fn _ => S.prepVal (t, x))
 			     end)
 		in
-		   (log blockFns, ())
+		   log blockFns
 		end)
 To avoid the nested switch-es, I run the blockFn in it's own thread,
 whose only purpose is to return to the synchronization point.  This

@@ -87,7 +87,8 @@ if [ "$fail" = 'yes' ]; then
 	exit 0
 fi
 
-for f in `ls *.sml`; do
+# for f in `ls *.sml`; do
+for f in $cont $signal $thread $world; do
 	f=`basename $f .sml`
 	case "$f" in
 	serialize)

@@ -72,7 +72,7 @@ structure Mailbox : MAILBOX_EXTRA =
 				    (fn () =>
 				     (state := EMPTY q'
 				      ; TransID.force transId'
-				      ; (t', x))))
+				      ; S.prepVal (t', x))))
 		| NONEMPTY (p, q) => 
 		     (* we force a context switch here to prevent 
 		      * a producer from outrunning a consumer.
@@ -136,7 +136,7 @@ structure Mailbox : MAILBOX_EXTRA =
 		  val msg = 
 		     S.atomicSwitch
 		     (fn t => (state := EMPTY (Q.enque (q, (transId, t)))
-			       ; (next (), ())))
+			       ; next ()))
 	       in
 		  cleanUp()
 		  ; S.atomicEnd()

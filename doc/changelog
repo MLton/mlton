@@ -1,5 +1,9 @@
 Here are the changes since version 20040227.
 
+* 2004-08-18
+  - Changed MLton.{Thread,Signal,World} to distinguish between 
+    implicitly and explicitly paused threads.
+	
 * 2004-07-28
   - Added support for programming in the large using the ML Basis
     system.

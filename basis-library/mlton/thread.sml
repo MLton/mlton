@@ -30,22 +30,33 @@ fun atomically f =
 
 datatype 'a thread =
    Dead
+ | Interrupted of Prim.thread
  | New of 'a -> unit
  (* In Paused (f, t), f is guaranteed to not raise an exception. *)
  | Paused of ((unit -> 'a) -> unit) * Prim.thread
 
 datatype 'a t = T of 'a thread ref
+type ready_t = unit t
 
 fun prepend (T r: 'a t, f: 'b -> 'a): 'b t =
    let
       val t =
 	 case !r of
 	    Dead => raise Fail "prepend to a Dead thread"
+	  | Interrupted _ => raise Fail "prepend to a Interrupted thread"
 	  | New g => New (g o f)
 	  | Paused (g, t) => Paused (fn h => g (f o h), t)
    in r := Dead
       ; T (ref t)
    end
+
+fun prep (t: unit t): ready_t = t
+
+fun prepFn (t: 'a t, f: unit -> 'a): ready_t =
+   prep (prepend (t, f))
+
+fun prepVal (t: 'a t, v: 'a): ready_t =
+   prepFn (t, fn () => v)
 
 fun new f = T (ref (New f))
 
@@ -81,7 +92,7 @@ local
    end
    val switching = ref false
 in
-   fun ('a, 'b) atomicSwitch' (f: 'a t -> 'b t * (unit -> 'b)): 'a =
+   fun 'a atomicSwitch (f: 'a t -> ready_t): 'a =
       (* Atomic 1 *)
       if !switching
 	 then let
@@ -94,128 +105,54 @@ in
 	 let
 	    val _ = switching := true
 	    val r : (unit -> 'a) ref = 
-	       ref (fn () => die "Thread.atomicSwitch' didn't set r.\n")
+	       ref (fn () => die "Thread.atomicSwitch didn't set r.\n")
 	    val t: 'a thread ref =
 	       ref (Paused (fn x => r := x, Prim.current ()))
 	    fun fail e = (t := Dead
 			  ; switching := false
 			  ; atomicEnd ()
 			  ; raise e)	
-	    val (T t': 'b t, x: unit -> 'b) = f (T t) handle e => fail e
+	    val (T t': ready_t) = f (T t) handle e => fail e
 	    val primThread =
 	       case !t' before t' := Dead of
 		  Dead => fail (Fail "switch to a Dead thread")
-		| New g => (atomicBegin (); newThread (g o x))
-		| Paused (f, t) => (f x; t)
+		| Interrupted t => t
+		| New g => (atomicBegin (); newThread g)
+		| Paused (f, t) => (f (fn () => ()); t)
 	    val _ = switching := false
-	    (* Atomic 1 when Paused, Atomic 2 when New *)
+	    (* Atomic 1 when Paused/Interrupted, Atomic 2 when New *)
 	    val _ = Prim.switchTo primThread (* implicit atomicEnd() *)
 	    (* Atomic 0 when resuming *)
 	 in
 	    !r ()
 	 end
 
-   fun switch' f =
+   fun switch f =
       (atomicBegin ()
-       ; atomicSwitch' f)
-
-(* 
-   (* One-shot continuations. *)
-   fun 'a atomicEscape' (T t : 'a t, x : unit -> 'a) : 'b =
-      let
-	 val switchee : Prim.thread =
-	    case !t before t := Dead of
-	       Dead => raise (Fail "escape to a Dead thread")
-	     | New g => (atomicBegin (); newThread (g o x))
-	     | Paused (f, t) => (f x; t)
-      in
-	 Prim.switchTo switchee
-	 ; die "Thread.atomicEscape' reached impossible.\n"
-      end
-   fun 'a atomicEscape (t : 'a t, v : 'a) : 'b =
-      atomicEscape' (t, fn () => v)
-   fun escape' (t, x) =
-      (atomicBegin ()
-       ; atomicEscape' (t, x))
-   fun escape (t, x) =
-      (atomicBegin ()
-       ; atomicEscape (t, x))
-
-   fun 'a atomicCapture (f: 'a t -> 'a) : 'a =
-      let
-	 val r : (unit -> 'a) ref = 
-	    ref (fn () => die "Thread.atomicCapture didn't set r.\n")
-	 val t : 'a t = 
-	    T (ref (Paused (fn x => r := x, Prim.current ())))
-	 val switcher : Prim.thread =
-	    (atomicBegin ()
-	     ; newThread (fn () => 
-			  let val v = f t
-			  in escape (t, v)
-			  end 
-			  handle e =>
-			     escape' (t, fn () => raise e)))
-	 val _ = Prim.switchTo switcher
-      in
-	 !r ()
-      end
-   fun capture f =
-      (atomicBegin ()
-       ; atomicCapture f)
-
-   fun ('a, 'b) atomicSwitch' (f: 'a t -> 'b t * (unit -> 'b)): 'a =
-      if !switching
-	 then (atomicEnd ()
-	       ; raise Fail "nested Thread.switch")
-      else
-	 let
-	    val () = switching := true
-	    fun finish v () = (switching := false; atomicEnd (); v ())
-	    fun fail e = finish (fn () => raise e) ()
-	    val v = capture (fn t => 
-			     let val (t', v') = f t
-			     in escape' (t', finish v')
-			     end)
-	            handle e => fail e
-	 in
-	    v
-	 end
-*)
+       ; atomicSwitch f)
 end
 
-fun atomicSwitch f =
-   atomicSwitch' (fn t => let val (t, x) = f t
-			  in (t, fn () => x)
-			  end)
-fun switch f =
-   (atomicBegin ()
-    ; atomicSwitch f)
-
-
-fun fromPrimitive (t: Prim.thread): unit t =
-   let
-      fun f x =
-	 x ()
-	 handle _ => 
-	    die "Asynchronous exceptions are not allowed.\n"
-   in
-      T(ref(Paused (f,t)))
-   end
+fun fromPrimitive (t: Prim.thread): ready_t =
+   T (ref (Interrupted t))
 
 fun toPrimitive (t as T r : unit t): Prim.thread =
    case !r of
-      Dead => die "toPrimitive of Dead.\n"
+      Dead => die "Thread.toPrimitive saw Dead.\n"
+    | Interrupted t => 
+	 (r := Dead
+	  ; t)
+    | New _ =>
+	 switch
+	 (fn cur : Prim.thread t =>
+	  prepFn
+	  (t, fn () =>
+	   switch
+	   (fn t' : unit t =>
+	    prepVal (cur, toPrimitive t'))))
     | Paused (f, t) =>
 	 (r := Dead
 	  ; f (fn () => ()) 
 	  ; t)
-    | New _ =>
-	 switch' 
-	 (fn cur: Prim.thread t =>
-	  (t: unit t, fn () => 
-	   switch 
-	   (fn t : unit t => 
-	    (cur, toPrimitive t))))
 
 
 local
@@ -225,7 +162,7 @@ local
 in
    fun amInSignalHandler () = InHandler = !state
 
-   fun setHandler (f: unit t -> unit t): unit =
+   fun setHandler (f: ready_t -> ready_t): unit =
       let
 	 val _ = Primitive.installSignalHandler ()
 	 fun loop (): unit =
@@ -236,15 +173,15 @@ in
 	       val _ = state := Normal
 	       val _ = Prim.finishHandler ()
 	       val _ =
-		  atomicSwitch'
+		  atomicSwitch
 		  (fn (T r) =>
 		   let
 		      val _ =
 			 case !r of
 			    Paused (f, _) => f (fn () => ())
-			  | _ => raise Fail "setHandler saw strange thread"
+			  | _ => raise die "Thread.setHandler saw strange thread"
 		   in
-		      (t, fn () => ())
+		      t
 		   end) (* implicit atomicEnd () *)
 	    in
 	       loop ()

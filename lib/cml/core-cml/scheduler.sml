@@ -27,8 +27,11 @@ structure Scheduler : SCHEDULER =
 
       type thread_id = ThreadID.thread_id
       datatype thread = datatype RepTypes.thread
-      type rdy_thread = unit thread
+      datatype rdy_thread = datatype RepTypes.rdy_thread
 
+      fun prep (THRD (tid, t)) = RTHRD (tid, T.prep t)
+      fun prepVal (THRD (tid, t), v) = RTHRD (tid, T.prepVal (t, v))
+      fun prepFn (THRD (tid, t), f) = RTHRD (tid, T.prepFn (t, f))
 
       (* the dummy thread Id; this is used when an ID is needed to get
        * the types right
@@ -39,7 +42,7 @@ structure Scheduler : SCHEDULER =
        * enqueued by reset.
        *)
       val errorTid = TID.bogus "error"
-      val errorThrd : rdy_thread =
+      fun errorThrd () : unit thread =
 	 THRD (errorTid, T.new (fn () =>
 	       (GlobalDebug.sayDebug 
 		([fn () => "CML"], fn () => "**** Use RunCML.doit to run CML ****")
@@ -123,10 +126,10 @@ structure Scheduler : SCHEDULER =
 			       let
 				  val tid = getCurThreadId ()
 				  val () = TID.mark tid
-				  val (THRD (tid',t'), x') = f (THRD (tid, t))
+				  val RTHRD (tid',t') = f (THRD (tid, t))
 				  val () = setCurThreadId tid'
 			       in 
-				  (t', x')
+				  t'
 			       end))
       in
 	 fun atomicSwitch f =
@@ -134,20 +137,20 @@ structure Scheduler : SCHEDULER =
 	 fun switch f =
 	    (atomicBegin (); atomicSwitch f)
 	 fun atomicSwitchToNext f =
-	    atomicSwitchAux "atomicSwitchToNext" (fn thrd => (f thrd; (next (), ())))
+	    atomicSwitchAux "atomicSwitchToNext" (fn thrd => (f thrd; next ()))
 	 fun switchToNext f =
 	    (atomicBegin (); atomicSwitchToNext f)
 	 fun atomicReadyAndSwitch f =
-	    atomicSwitchAux "atomicReadyAndSwitch" (fn thrd => (ready thrd; f ()))
+	    atomicSwitchAux "atomicReadyAndSwitch" (fn thrd => (ready (prep thrd); f ()))
 	 fun readyAndSwitch f =
 	    (atomicBegin (); atomicReadyAndSwitch f)
 	 fun atomicReadyAndSwitchToNext f =
-	    atomicSwitchAux "atomicReadyAndSwitchToNext" (fn thrd => (ready thrd; f (); (next (), ())))
+	    atomicSwitchAux "atomicReadyAndSwitchToNext" (fn thrd => (ready (prep thrd); f (); next ()))
 	 fun readyAndSwitchToNext f =
 	    (atomicBegin (); atomicReadyAndSwitchToNext f)
       end
 
-      fun new (f : thread_id -> 'a -> unit) : 'a thread =
+      fun new (f : thread_id -> ('a -> unit)) : 'a thread =
 	 let
 	    val () = Assert.assertAtomic' ("Scheduler.new", NONE)
 	    val tid = TID.new ()
@@ -165,11 +168,11 @@ structure Scheduler : SCHEDULER =
 	    THRD (tid, t)
 	 end
 
-      fun unwrap (f : rdy_thread -> rdy_thread) (t: unit T.t) : unit T.t =
+      fun unwrap (f : rdy_thread -> rdy_thread) (t: T.ready_t) : T.ready_t =
 	 let
 	    val () = Assert.assertAtomic' ("Scheduler.unwrap", NONE)
 	    val tid = getCurThreadId ()
-	    val THRD (tid', t') = f (THRD (tid, t))
+	    val RTHRD (tid', t') = f (RTHRD (tid, t))
 	    val () = setCurThreadId tid'
 	 in
 	    t'
@@ -181,10 +184,10 @@ structure Scheduler : SCHEDULER =
 	 (atomicBegin ()
 	  ; setCurThreadId dummyTid
 	  ; Q.reset rdyQ1; Q.reset rdyQ2
-	  ; if not running then ready errorThrd else ()
+	  ; if not running then ready (prep (errorThrd ())) else ()
 	  ; atomicEnd ())
       (* what to do at a preemption (with the current thread) *)
-      fun preempt (thrd as THRD (tid, _)) =
+      fun preempt (thrd as RTHRD (tid, _)) =
 	 let
 	    val () = Assert.assertAtomic' ("Scheduler.preempt", NONE)
 	    val () = debug' "Scheduler.preempt" (* Atomic 1 *)

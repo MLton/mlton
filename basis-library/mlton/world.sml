@@ -38,9 +38,9 @@ structure MLtonWorld: MLTON_WORLD =
 		  ; Clone)
 	 end
 
-      fun saveThread (file: string, t: unit MLtonThread.t): unit =
+      fun saveThread (file: string, t: MLtonThread.ready_t): unit =
 	 case save' file of
-	    Clone => MLtonThread.switch (fn _ => (t, ()))
+	    Clone => MLtonThread.switch (fn _ => t)
 	  | Original => ()
 	 
       fun save (file: string): status =

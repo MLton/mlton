@@ -94,7 +94,7 @@ structure Handler =
    struct
       datatype t =
 	 Default
-       | Handler of unit MLtonThread.t -> unit MLtonThread.t
+       | Handler of MLtonThread.ready_t -> MLtonThread.ready_t
        | Ignore
        | InvalidSignal
    end

@@ -56,13 +56,13 @@ structure Thread:
       open MLton
       open Itimer Signal Thread
 
-      val topLevel: unit Thread.t option ref = ref NONE
+      val topLevel: Thread.ready_t option ref = ref NONE
 
       local
-	 val threads: unit Thread.t Queue.t = Queue.new ()
+	 val threads: Thread.ready_t Queue.t = Queue.new ()
       in
 	 fun ready t = Queue.enque (threads, t)
-	 fun next () =
+	 fun next () : Thread.ready_t =
 	    case Queue.deque threads of
 	       NONE => valOf (!topLevel)
 	     | SOME t => t
@@ -70,15 +70,16 @@ structure Thread:
       
       fun 'a exit (): 'a = switch (fn _ =>
 				   (print "exiting\n"
-				    ; (next (), ())))
+				    ; next ()))
    
-      fun new (f: unit -> unit): unit Thread.t =
-	 Thread.new (fn () => ((f () handle _ => exit ())
-			       ; exit ()))
+      fun new (f: unit -> unit): Thread.ready_t =
+	 (Thread.prep o Thread.new)
+	 (fn () => ((f () handle _ => exit ())
+		    ; exit ()))
 	    
       fun schedule t = (ready t; next ())
 
-      fun yield (): unit = switch (fn t => (schedule t, ()))
+      fun yield (): unit = switch (fn t => schedule (Thread.prep t))
 
       val spawn = ready o new
 
@@ -89,11 +90,10 @@ structure Thread:
 
       fun run (): unit =
 	 (switch (fn t =>
-		  (topLevel := SOME t
-		   ; (new (fn () =>
-			   (setHandler (alrm, Handler.handler schedule)
-			    ; setItimer (Time.fromMilliseconds 10))),
-		      ())))
+		  (topLevel := SOME (Thread.prep t)
+		   ; new (fn () =>
+			  (setHandler (alrm, Handler.handler schedule)
+			   ; setItimer (Time.fromMilliseconds 10)))))
 	  ; setItimer Time.zeroTime
 	  ; setHandler (alrm, Handler.ignore)
 	  ; topLevel := NONE)
@@ -115,7 +115,7 @@ structure Thread:
 			   then (Thread.atomicEnd ()
 				 ; switch (fn t =>
 					   (Queue.enque (waiting, t)
-					    ; (next (), ())))
+					    ; next ()))
 				 ; loop ())
 			else (locked := true
 			      ; Thread.atomicEnd ()))
@@ -126,7 +126,7 @@ structure Thread:
 	       (locked := false
 		; (case Queue.deque waiting of
 		      NONE => ()
-		    | SOME t => ready t))
+		    | SOME t => ready (Thread.prep t)))
 
 	    fun unlock (m: t) =
 	       (Thread.atomicBegin ()

@@ -763,3 +763,4 @@ signature BASIS_EXTRA =
    where type Word64.word = Word64.word
 
    where type 'a MLton.Thread.t = 'a MLton.Thread.t
+   where type MLton.Thread.ready_t = MLton.Thread.ready_t

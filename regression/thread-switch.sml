@@ -12,12 +12,12 @@ open Thread
 
 datatype t = T of (int * t) Thread.t
 
-val done: unit Thread.t option ref = ref NONE
+val done: Thread.ready_t option ref = ref NONE
    
 fun loop(n: int, T t): unit =
    if n = 0
-      then switch(fn _ => (valOf(!done), ()))
-   else let val (n, t) = switch(fn t' => (t, (n - 1, T t')))
+      then switch(fn _ => valOf(!done))
+   else let val (n, t) = switch(fn t' => readyVal (t, (n - 1, T t')))
 	in loop(n, t)
 	end
    
@@ -29,9 +29,9 @@ fun main() =
 	  | s :: _ => valOf (Int.fromString s)
    in
       switch(fn cur =>
-	     (done := SOME cur
-	      ; (new loop,
-		 (numSwitches, T(new loop)))))
+	     (done := SOME (ready cur)
+	      ; readyVal (new loop,
+			  (numSwitches, T(new loop)))))
       ; print "ok\n"
    end
 

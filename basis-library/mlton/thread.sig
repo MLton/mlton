@@ -16,6 +16,7 @@ signature MLTON_THREAD =
       val atomicState: unit -> AtomicState.t
 
       type 'a t
+      type ready_t
 
       (* new f creates a new thread that will apply f to whatever is thrown
        * to the thread.  f must terminate by throwing to another thread or
@@ -27,47 +28,40 @@ signature MLTON_THREAD =
        * f and passes the result to t.
        *)
       val prepend: 'a t * ('b -> 'a) -> 'b t
-      (* switch f = (t, x)
-       * Applies f to the current thread, and then switches to t with
-       * argument x.  f runs in a critical section.
+      (* ready(t)
+       * Create a new ready thread (destroying t in the process)
+       * that will evaluate t.
+       *)
+      val prep: unit t -> ready_t
+      (* readyFn(t, f)
+       * Create a new ready thread (destroying t in the process)
+       * that will evaluate t on f ().
+       *)
+      val prepFn: 'a t * (unit -> 'a) -> ready_t
+      (* readyVal(t, v)
+       * Create a new ready thread (destroying t in the process)
+       * that will evaluate t on v.
+       *)
+      val prepVal: 'a t * 'a -> ready_t
+      (* Equivalences
+       *
+       * prepFn(t, f) ==
+       * prep(prepend(t, f))
+       *
+       * prepVal(t, v) ==
+       * prepFn(t, fn () => v)
+       *
+       *)
+      (* switch f = rt
+       * Applies f to the current thread, and then switches to rt.  
+       * f runs in a critical section.
        * It is an error for f to call switch.
        *)
-      val switch: ('a t -> 'b t * 'b) -> 'a
-      (* switch' is a generalization of switch that evaluates the thunk
-       * x in the context of t (i.e. t's stack and exception handlers are in
-       * place).
+      val switch: ('a t -> ready_t) -> 'a
+      (* atomicSwitch is as above,
+       * but assumes an atomic calling context.
        *)
-      val switch': ('a t -> 'b t * (unit -> 'b)) -> 'a
-      (* atomicSwitch and atomicSwitch' are as above,
-       * but assume an atomic calling context.
-       *)
-      val atomicSwitch': ('a t -> 'b t * (unit -> 'b)) -> 'a
-      val atomicSwitch: ('a t -> 'b t * 'b) -> 'a
-
-      (*
-      (* One-shot continuations. *)
-      (* capture f
-       * Applies f to the current thread.
-       * If f returns or raises, then it implicitly escapes to the
-       * current thread.
-       *)
-      val capture: ('a t -> 'a) -> 'a
-      (* escape (t, x)
-       * Switch to t with argument x.
-       * It is illegal for another thread to later escape to t.
-       *)
-      val escape: 'a t * 'a -> 'b
-      (* escape' (t, th)
-       * Generalization of escape that evaluates the thunk th in the
-       * context of t (i.e., t's stack and exception handlers are in
-       * place).
-       *)
-      val escape': 'a t * (unit -> 'a) -> 'b
-
-      val atomicCapture: ('a t -> 'a) -> 'a
-      val atomicEscape: 'a t * 'a -> 'b
-      val atomicEscape': 'a t * (unit -> 'a) -> 'b
-      *)
+      val atomicSwitch: ('a t -> ready_t) -> 'a
    end
 
 signature MLTON_THREAD_EXTRA =
@@ -76,6 +70,6 @@ signature MLTON_THREAD_EXTRA =
 
       val amInSignalHandler: unit -> bool
       val register: int * (unit -> unit) -> unit
-      val setHandler: (unit t -> unit t) -> unit
+      val setHandler: (ready_t -> ready_t) -> unit
       val switchToHandler: unit -> unit
    end

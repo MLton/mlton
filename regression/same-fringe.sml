@@ -12,13 +12,13 @@ fun generate(f: ('a -> unit) -> unit): unit -> 'a option =
 		       let val _ = gen := SOME t'
 			  val t = valOf(!paused)
 			  val _ = paused := NONE
-		       in (t, a)
+		       in Thread.prepVal (t, a)
 		       end)
       val _ =
 	 gen := SOME(Thread.new(fn () => (f (return o SOME)
 					  ; return NONE)))
    in fn () => Thread.switch(fn t => (paused := SOME t
-				      ; (valOf(!gen), ())))
+				      ; Thread.prep (valOf(!gen))))
    end
    
 datatype 'a tree =

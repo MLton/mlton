@@ -25,5 +25,6 @@ structure SchedulerHooks: SCHEDULER_HOOKS =
 
       fun reset () =
 	 (pauseHook := pauseHookDefault
-	  ; shutdownHook := shutdownHookDefault)
+	  ; shutdownHook := shutdownHookDefault
+	  ; ())
    end

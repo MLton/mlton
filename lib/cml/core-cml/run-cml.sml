@@ -89,7 +89,7 @@ structure RunCML : RUN_CML =
 	    case to of
 	       NONE =>
 		  (* no waiting threads *) 
-		  S.prepend(!SH.shutdownHook, fn () => (true, OS.Process.failure))
+		  S.prepFn (!SH.shutdownHook, fn () => (true, OS.Process.failure))
 	     | SOME NONE =>
 		  (* enqueued a waiting thread *)
 		  S.next ()
@@ -132,6 +132,6 @@ structure RunCML : RUN_CML =
 
       fun shutdown status =
 	 if isRunning ()
-	    then S.switch (fn _ => (!SH.shutdownHook, (true, status)))
+	    then S.switch (fn _ => S.prepVal (!SH.shutdownHook, (true, status)))
 	    else raise Fail "CML is not running"
    end

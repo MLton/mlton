@@ -72,7 +72,7 @@ structure SyncVar : SYNC_VAR_EXTRA =
 	       S.readyAndSwitch
 	       (fn () =>
 		(TransID.force txid
-		 ; (t, msg)))
+		 ; S.prepVal (t, msg)))
 
       (** G-variables **)
       (* Generalized synchronized variables,
@@ -102,7 +102,7 @@ structure SyncVar : SYNC_VAR_EXTRA =
 				 (fn () =>
 				  (prio := 1
 				   ; TransID.force rtxid
-				   ; (rt, x)))
+				   ; S.prepVal (rt, x)))
 			val () = debug (fn () => concat [name, "(3.1.2)"]) (* NonAtomic *)
 			val () = Assert.assertNonAtomic (fn () => concat ["SyncVar.", name, "(3.1.2)"])
 		     in
@@ -196,7 +196,7 @@ structure SyncVar : SYNC_VAR_EXTRA =
 		     S.atomicSwitch
 		     (fn rt =>
 		      (enqueAndClean (readQ, (transId, rt))
-		       ; (next (), ())))
+		       ; next ()))
 		  val () = debug (fn () => concat [name, "(3.2.2)"]) (* Atomic 1 *)
 		  val () = Assert.assertAtomic (fn () => concat ["SyncVar.", name, "(3.2.2)"], SOME 1)
 		  val () = cleanUp ()

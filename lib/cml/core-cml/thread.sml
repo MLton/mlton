@@ -56,7 +56,7 @@ structure Thread : THREAD =
 		; generalExit (SOME tid, false))
 	    val t = S.new thread
 	    val tid = S.getThreadId t
-	    val _ = S.ready t
+	    val () = S.ready (S.prep t)
 	    val () = S.atomicEnd ()
 	    val () = debug (fn () => concat ["spawnc ", tidToString tid])  (* NonAtomic *)
 	 in
@@ -79,7 +79,7 @@ structure Thread : THREAD =
 
       fun yield () = 
 	 let
-	    val () = Assert.assertNonAtomic' "Thread.exit"
+	    val () = Assert.assertNonAtomic' "Thread.yield"
 	    val () = debug' "yield" (* NonAtomic *)
 	    val () = Assert.assertNonAtomic' "Thread.yield"
 	 in

@@ -10,15 +10,15 @@ fun timeLimit (t: Time.time, f: unit -> 'a): 'a option =
 	  let
 	     val _ = setHandler (signal,
 				 Handler.handler
-				 (fn _ => Thread.prepend (cur, fn () => NONE)))
+				 (fn _ => Thread.prepFn (cur, fn () => NONE)))
 	     val _ =
 		Itimer.set (which, {value = t,
 				    interval = Time.zeroTime})
 	     val t = Thread.new (fn () =>
-				let val res = SOME (f ()) handle _ => NONE
-				in Thread.switch (fn _ => (cur, res))
-				end)
-	  in (t, ())
+				 let val res = SOME (f ()) handle _ => NONE
+				 in Thread.switch (fn _ => Thread.prepVal (cur, res))
+				 end)
+	  in Thread.prep t
 	  end)
       val _ = setHandler (signal, Handler.default)
    in
@@ -27,8 +27,8 @@ fun timeLimit (t: Time.time, f: unit -> 'a): 'a option =
 		 
 val _ =
    case timeLimit (Time.fromSeconds 10,
-		  let fun loop () = loop ()
-		  in loop
-		  end) of
+		   let fun loop () = loop ()
+		   in loop
+		   end) of
       NONE => print "success\n"
     | SOME _ => print "failure\n"

@@ -36,34 +36,36 @@ structure Thread:
       open MLton
       open Thread
 
-      val topLevel: unit Thread.t option ref = ref NONE
+      val topLevel: Thread.ready_t option ref = ref NONE
 
       local
-	 val threads: unit Thread.t Queue.t = Queue.new()
+	 val threads: Thread.ready_t Queue.t = Queue.new()
       in
-	 fun ready t = Queue.enque(threads, t)
-	 fun next() =
+	 fun ready (t: Thread.ready_t) : unit = 
+	    Queue.enque(threads, t)
+	 fun next () : Thread.ready_t =
 	    case Queue.deque threads of
 	       NONE => valOf(!topLevel)
 	     | SOME t => t
       end
    
-      fun 'a exit(): 'a = switch(fn _ => (next(), ()))
+      fun 'a exit(): 'a = switch(fn _ => next())
       
-      fun new(f: unit -> unit): unit Thread.t =
-	 Thread.new(fn () => ((f() handle _ => exit())
-			      ; exit()))
+      fun new(f: unit -> unit): Thread.ready_t =
+	 (Thread.prep o Thread.new)
+	 (fn () => ((f() handle _ => exit())
+		    ; exit()))
 	 
       fun schedule t = (ready t; next())
 
-      fun yield(): unit = switch(fn t => (schedule t, ()))
+      fun yield(): unit = switch(fn t => schedule (Thread.prep t))
 
       val spawn = ready o new
 
       fun run(): unit =
 	 (switch(fn t =>
-		 (topLevel := SOME t
-		  ; (next(), ())))
+		 (topLevel := SOME (Thread.prep t)
+		  ; next()))
 	  ; topLevel := NONE)
    end
 

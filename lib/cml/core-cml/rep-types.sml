@@ -47,7 +47,7 @@ structure RepTypes =
 
       (** threads --- see scheduler.sml and threads.sml **)
       and 'a thread = THRD of thread_id * 'a MLton.Thread.t
-      withtype rdy_thread = unit thread
+      and rdy_thread = RTHRD of thread_id * MLton.Thread.ready_t
 
       (** events --- see events.sml **)
       datatype 'a status =

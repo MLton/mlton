@@ -72,8 +72,8 @@ equals.  For arrays, datatypes, strings, tuples, and vectors, this is
 a simple pointer equality.  The semantics is a bit murky.
 
 \entry{isMLton}
-is always true in a {\mlton} basis library, and is always false in a stub
-library.
+is always true in a {\mlton} implementation, and is always false in a
+stub implementation.
 
 \entry{safe}
 a compile time constant that reflects the value of the {\tt -safe}
@@ -227,7 +227,7 @@ signature MLTON_FINALIZABLE =
 \entry{addFinalizer (v, f)}
 adds {\tt f} as a finalizer to {\tt v}.  This means that sometime
 after the last call to {\tt withValue} on {\tt v} completes and {\tt
-v} becomes unreachable, {\tt f} will be caleed with the value of {\tt
+v} becomes unreachable, {\tt f} will be called with the value of {\tt
 v}.
 
 \entry{finalizeBefore (v1, v2)}
@@ -243,7 +243,7 @@ withValue} on {\tt v} when the garbage collector determines that {\tt
 v} is unreachable.
 
 \entry{touch v}
-Ensures that {\tt v}'s finalizers will not run before the call to
+ensures that {\tt v}'s finalizers will not run before the call to
 {\tt touch}.
 
 \entry{withValue (v, f)}
@@ -753,15 +753,12 @@ process itself.  The process time ({\tt self}) includes the gc time.
 \end{description}
 
 \subsubsec{{\tt MLton.Signal}}{signal}
-Signals handlers are functions from threads to threads.  When a signal
-handler is invoked, it receives as an argument the thread that was
-interrupted by the signal.  The signal handler returns the thread that
-it would like to resume execution (this is often the thread that it
-was passed).  It is an error for a signal handler to raise an
-unhandled exception.  To avoid the possibility of aynchronous
-exceptions, it is an error to {\tt Thread.switch'} to an
-interrupted thread with a thunk that raises an exception (either
-directly, or via {\tt Thread.prepend}).
+Signals handlers are functions from (ready) threads to (ready)
+threads.  When a signal handler is invoked, it receives as an argument
+the thread that was interrupted by the signal.  The signal handler
+returns the thread that it would like to resume execution (this is
+often the thread that it was passed).  It is an error for a signal
+handler to raise an unhandled exception.
 
 A signal handler is never invoked while the running thread is in a
 critical section (see \secref{thread}).  Invoking a signal handler
@@ -808,7 +805,7 @@ signature MLTON_SIGNAL =
             type t
 
             val default: t
-            val handler: (unit Thread.t -> unit Thread.t) -> t
+            val handler: (Thread.ready_t -> Thread.ready_t) -> t
             val ignore: t
             val isDefault: t -> bool
             val isIgnore: t -> bool
@@ -894,9 +891,11 @@ a mask of no signals.
 set the signal mask to {\tt m}, i.e. a signal is blocked if and only
 if it is in {\tt m}.
 
-\entry{Mask.some l} a mask of the signals in {\tt l}.
+\entry{Mask.some l} 
+a mask of the signals in {\tt l}.
 
-\entry{Mask.unblock m} unblock all signals in {\tt m}.
+\entry{Mask.unblock m} 
+unblock all signals in {\tt m}.
 
 \entry{getHandler s}
 returns the current handler for signal {\tt s}.
@@ -1078,11 +1077,12 @@ signature MLTON_TEXT_IO =
 See \secref{mlton-io}.
 
 \subsubsec{{\tt MLton.Thread}}{thread}
-Threads are data structures that will begin computing when {\tt
-switch}ed to with a value.  {\tt MLton.Thread} does not include a
-default scheduling mechanism, but it can be used to implement both
-preemptive and non-preemptive threads.  For examples, see {\tt
-thread1.sml} and {\tt thread2.sml} in the {\tt examples} directory.
+Threads are data structures that represent a paused computation.
+Ready threads are threads that will begin or continue computing when
+{\tt switch}ed to.  {\tt MLton.Thread} does not include a default
+scheduling mechanism, but it can be used to implement both preemptive
+and non-preemptive threads.  For examples, see {\tt thread1.sml} and
+{\tt thread2.sml} in the {\tt examples} directory.
 \begin{verbatim}
 signature MLTON_THREAD =
    sig
@@ -1096,11 +1096,15 @@ signature MLTON_THREAD =
       val atomicState: unit -> AtomicState.t
 
       type 'a t
+      type ready_t
 
       val new: ('a -> unit) -> 'a t
       val prepend: 'a t * ('b -> 'a) -> 'b t
-      val switch: ('a t -> 'b t * 'b) -> 'a
-      val switch': ('a t -> 'b t * (unit -> 'b)) -> 'a
+      val prep: unit t -> ready_t
+      val prepFn: 'a t * (unit -> 'a) -> ready_t
+      val prepVal: 'a t * 'a -> ready_t
+      val switch: ('a t -> ready_t) -> 'a
+      val atomicSwitch: ('a t -> ready_t) -> 'a
    end
 \end{verbatim}
 
@@ -1124,24 +1128,41 @@ return the current atomic state.
 \entry{type 'a t}
 the type of threads that expect a value of type {\tt 'a}.
 
+\entry{type ready_t}
+the type of threads that can be resumed.
+
 \entry{new f}
-create a new thread that, when run, applies {\tt f} to the
-value given to the thread. 
+create a new thread that, when run, applies {\tt f} to the value given
+to the thread.  {\tt f} must terminate by {\tt switch}ing to another
+thread or exiting the process.
 
 \entry{prepend (t, f)}
-create a new thread (destroying {\tt t} in the process) that first applies
-{\tt f} to the value given to the thread and then continues with {\tt
-t}.  This is a constant time operation.
+create a new thread (destroying {\tt t} in the process) that first
+applies {\tt f} to the value given to the thread and then continues
+with {\tt t}.  This is a constant time operation.
+
+\entry{prep t}
+create a new ready thread (destroying {\tt t} in the process)
+that will evaluate {\tt t}.
+
+\entry{prepFn (t, f)}
+create a new ready thread (destroying {\tt t} in the process)
+that will evaluate {\tt t} on {\tt f ()}.
+
+\entry{prepVal (t, v)}
+create a new ready thread (destroying {\tt t} in the process)
+that will evaluate {\tt t} on {\tt v}.
 
 \entry{switch f}
-apply {\tt f} to the current thread to get {\tt (t, v)}, and then
-start running thread {\tt t} on value {\tt v}.  It is an error for
-{\tt f} to perform another {\tt switch}.  {\tt f} is guaranteed
-to run atomically.
+apply {\tt f} to the current thread to get {\tt rt}, and then start
+running (ready) thread {\tt rt}.  It is an error for {\tt f} to
+perform another {\tt switch}.  {\tt f} is guaranteed to run
+atomically.
 
-\entry{switch' f}
-apply {\tt f} to the current thread to get {\tt (t, g)}, and then
-start running thread {\tt t} computing the value {\tt g ()}.
+\entry{atomicSwitch f}
+as {\tt switch}, but assumes an atomic calling context.  Upon {\tt
+switch}ing back to the current thread, an implicit {\tt atomicEnd} is
+performed.
 
 \end{description}
 %
@@ -1182,7 +1203,7 @@ signature MLTON_WEAK =
 
 \begin{description}
 \entry{type 'a t}
-the type of weak pointers to objects of type 'a
+the type of weak pointers to objects of type {\tt 'a}
 
 \entry{get w}
 returns {\tt NONE} if the object pointed to by {\tt w} no longer

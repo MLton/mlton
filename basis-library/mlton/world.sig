@@ -5,5 +5,5 @@ signature MLTON_WORLD =
       datatype status = Clone | Original
       val save: string -> status
       (* Save the world to resume with the given thread. *)
-      val saveThread: string * unit MLtonThread.t -> unit
+      val saveThread: string * MLtonThread.ready_t -> unit
    end
