@@ -9,7 +9,7 @@ structure SMLofNJ: SML_OF_NJ =
 
 	    type 'a cont = 'a C.t
 	    val callcc = C.callcc
-	    fun throw k v = C.throw(k, v)
+	    fun throw k v = C.throw (k, v)
 	 end
       	 
       structure SysInfo =
@@ -17,9 +17,16 @@ structure SMLofNJ: SML_OF_NJ =
 	    exception UNKNOWN
 	    datatype os_kind = BEOS | MACOS | OS2 | UNIX | WIN32
 
-	    fun getHostArch() = "X86"
-	    fun getOSKind() = UNIX
-	    fun getOSName() = "Linux"
+	    fun getHostArch () = "X86"
+	    fun getOSKind () = UNIX
+	    fun getOSName () =
+	       let
+		  open Primitive.MLton
+	       in
+		  case hostType of
+		     Cygwin => "Cygwin"
+		   | Linux => "Linux"
+	       end
 	 end
       
       structure Internals =
