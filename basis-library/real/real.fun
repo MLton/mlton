@@ -16,12 +16,6 @@ functor Real (R: PRE_REAL): REAL =
       in
 	 val *+ = *+
 	 val *- = *-
-	 val abs = abs
-	 val fromInt = fromInt
-	 val maxFinite = maxFinite
-	 val minNormalPos = minNormalPos
-	 val minPos = minPos
-	 val nextAfter = nextAfter
 	 val op * = op *
 	 val op + = op +
 	 val op - = op -
@@ -29,20 +23,21 @@ functor Real (R: PRE_REAL): REAL =
 	 val op / = op /
 	 val op < = op <
 	 val op <= = op <=
-	 val op == = op ==
 	 val op > = op >
 	 val op >= = op >=
-	 val op ?= = op ?=
-	 val signBit = signBit
 	 val ~ = ~
+	 val abs = abs
+	 val fromInt = fromInt
+	 val fromLarge = fromLarge
+	 val maxFinite = maxFinite
+	 val minNormalPos = minNormalPos
+	 val minPos = minPos
+	 val nextAfter = nextAfter
+	 val precision = precision
+	 val radix = radix
+	 val signBit = signBit
+	 val toLarge = toLarge
       end
-	 
-      val radix: int = Prim.radix
-
-      val precision: int = Prim.precision
-
-      val toLarge = Prim.toLarge
-      val fromLarge = Prim.fromLarge
 
       val zero = fromLarge TO_NEAREST 0.0
       val one = fromLarge TO_NEAREST 1.0
@@ -66,6 +61,16 @@ functor Real (R: PRE_REAL): REAL =
 	  | 5 => SUBNORMAL
 	  | _ => raise Fail "Real_class returned bogus integer"
 
+      val abs =
+	 if MLton.native
+	    then abs
+	 else
+	    fn x =>
+	    case class x of
+	       INF => posInf
+	     | NAN => x
+	     | _ => if signBit x then ~x else x
+	 
       fun isFinite r =
 	 case class r of
 	    INF => false
@@ -76,24 +81,48 @@ functor Real (R: PRE_REAL): REAL =
 
       fun isNormal r = class r = NORMAL
 
-      val op ?= =
-	 if Primitive.MLton.native
-	    then op ?=
-	 else fn (r, r') => isNan r orelse isNan r' orelse r == r'
+      val op == =
+	 fn (x, y) =>
+	 case (class x, class y) of
+	    (NAN, _) => false
+	  | (_, NAN) => false
+	  | (ZERO, ZERO) => true
+	  | _ => Prim.== (x, y)
 
       val op != = not o op ==
 
-      fun min (x, y) = if x < y orelse isNan y then x else y
+      val op ?= =
+	 if MLton.native
+	    then Prim.?=
+	 else
+	    fn (x, y) =>
+	    case (class x, class y) of
+	       (NAN, _) => true
+	     | (_, NAN) => true
+	     | (ZERO, ZERO) => true
+	     | _ => Prim.== (x, y)
 
-      fun max (x, y) = if x > y orelse isNan y then x else y
+      fun min (x, y) =
+	 if isNan x
+	    then y
+	 else if isNan y
+		 then x
+	      else if x < y then x else y
+
+      fun max (x, y) =
+	 if isNan x
+	    then y
+	 else if isNan y
+		 then x
+	      else if x > y then x else y
 
       fun sign (x: real): int =
-	 if x > zero then 1
-         else if x < zero then ~1
-	 else if isNan x then raise Domain
-         else 0
+	 case class x of
+	    NAN => raise Domain
+	  | ZERO => 0
+	  | _ => if x > zero then 1 else ~1
 
-      fun sameSign (x, y) = Prim.signBit x = Prim.signBit y
+      fun sameSign (x, y) = signBit x = signBit y
 
       fun copySign (x, y) =
 	 if sameSign (x, y)
@@ -101,23 +130,28 @@ functor Real (R: PRE_REAL): REAL =
 	 else ~ x
 
       local
-	 datatype z = datatype General.order
+	 datatype z = datatype IEEEReal.real_order
       in
-	 fun compare (x, y) =
-	    if x < y then LESS
-	    else if x > y then GREATER
-            else if x == y then EQUAL
-            else raise IEEEReal.Unordered
+	 fun compareReal (x, y) =
+	    case (class x, class y) of
+	       (NAN, _) => UNORDERED
+	     | (_, NAN) => UNORDERED
+	     | (ZERO, ZERO) => EQUAL
+	     | _ => if x < y then LESS
+		    else if x > y then GREATER
+			 else EQUAL
       end
 
       local
-	 datatype z = datatype IEEEReal.real_order
+	 structure I = IEEEReal
+	 structure G = General
       in
-	 fun compareReal (x, y) = 
-	    if x < y then LESS
-	    else if x > y then GREATER
-            else if x == y then EQUAL 
-            else UNORDERED
+	 fun compare (x, y) =
+	    case compareReal (x, y) of
+	       I.EQUAL => G.EQUAL
+	     | I.GREATER => G.GREATER
+	     | I.LESS => G.LESS
+	     | I.UNORDERED => raise IEEEReal.Unordered
       end
    
       fun unordered (x, y) = isNan x orelse isNan y
@@ -152,47 +186,66 @@ functor Real (R: PRE_REAL): REAL =
 	 let
 	    val r: int ref = ref 0
 	 in
-	    fn x => if x == zero
-		       then {exp = 0, man = zero}
-		    else
-		       let
-			  val man = Prim.frexp (x, r)
-		       in
-			  {man = man * two, exp = Int.- (!r, 1)}
-		       end
+	    fn x =>
+	    case class x of
+	       INF => {exp = 0, man = x}
+	     | NAN => {exp = 0, man = nan}
+	     | ZERO => {exp = 0, man = x}
+	     | _ => 
+		  let
+		     val man = Prim.frexp (x, r)
+		  in
+		     {exp = Int.- (!r, 1), man = man * two}
+		  end
 	 end
 
-      fun fromManExp {man, exp} = Prim.ldexp (man, exp)
+      fun fromManExp {exp, man} = Prim.ldexp (man, exp)
+
+      val fromManExp =
+	 if MLton.native
+	    then fromManExp
+	 else
+	    fn {exp, man} =>
+	    case class man of
+	       INF => man
+	     | NAN => man
+	     | ZERO => man
+	     | _ => fromManExp {exp = exp, man = man}
 
       local
 	 val int = ref zero
       in
 	 fun split x =
-	    let
-	       val frac = Prim.modf (x, int)
-	       val whole = !int
-	       (* FreeBSD and SunOS don't always get sign of zero right. *)
-	       val (frac, whole) =
-		  if let
-			open MLton.Platform.OS
-		     in
-			host = FreeBSD orelse host = SunOS
-		     end
-		     then
-			let
-			   fun fix y =
-			      if class y = ZERO
-				 andalso not (sameSign (x, y))
-				 then ~ y
-			      else y
-			in
-			   (fix frac, fix whole)
-			end
-		  else (frac, whole)
-	    in
-	       {frac = frac,
-		whole = whole}
-	    end
+	    case class x of
+	       INF => {frac = if x > zero then zero else ~zero,
+		       whole = x}
+	     | NAN => {frac = nan, whole = nan}
+	     | _ => 
+		  let
+		     val frac = Prim.modf (x, int)
+		     val whole = !int
+		     (* FreeBSD and SunOS don't always get sign of zero right. *)
+		     val (frac, whole) =
+			if let
+			      open MLton.Platform.OS
+			   in
+			      host = FreeBSD orelse host = SunOS
+			   end
+			   then
+			      let
+				 fun fix y =
+				    if class y = ZERO
+				       andalso not (sameSign (x, y))
+				       then ~ y
+				    else y
+			      in
+				 (fix frac, fix whole)
+			      end
+			else (frac, whole)
+		  in
+		     {frac = frac,
+		      whole = whole}
+		  end
       end
 
       val realMod = #frac o split
@@ -213,41 +266,35 @@ functor Real (R: PRE_REAL): REAL =
 				     (Primitive.Real64.round (toLarge x))))
 	 
       fun toInt mode x =
-	 let
-	    fun doit () = Prim.toInt (roundReal (x, mode))
-	 in
-	    case class x of
-	       NAN => raise Domain
-	     | INF => raise Overflow
-	     | ZERO => 0
-	     | NORMAL =>
-		  if minInt <= x
-		     then if x <= maxInt
-			     then doit ()
-			  else if x < maxInt + one
-				  then (case mode of
-					   TO_NEGINF => Int.maxInt'
-					 | TO_POSINF => raise Overflow
-					 | TO_ZERO => Int.maxInt'
-					 | TO_NEAREST =>
-					      (* Depends on maxInt being odd. *)
-					      if x - maxInt >= half
-						 then raise Overflow
-					      else Int.maxInt')
-			       else raise Overflow
-		  else if x > minInt - one
-			  then (case mode of
-				   TO_NEGINF => raise Overflow
-				 | TO_POSINF => Int.minInt'
-				 | TO_ZERO => Int.minInt'
-				 | TO_NEAREST =>
-				      (* Depends on minInt being even. *)
-				      if x - minInt < ~half
-					 then raise Overflow
-				      else Int.minInt')
-		       else raise Overflow
-           | SUBNORMAL => doit ()
-	 end
+	 case class x of
+	    INF => raise Overflow
+	  | NAN => raise Domain
+	  | _ =>
+	       if minInt <= x
+		  then if x <= maxInt
+			  then Prim.toInt (roundReal (x, mode))
+		       else if x < maxInt + one
+			       then (case mode of
+					TO_NEGINF => Int.maxInt'
+				      | TO_POSINF => raise Overflow
+				      | TO_ZERO => Int.maxInt'
+				      | TO_NEAREST =>
+					   (* Depends on maxInt being odd. *)
+					   if x - maxInt >= half
+					      then raise Overflow
+					   else Int.maxInt')
+			    else raise Overflow
+	       else if x > minInt - one
+		       then (case mode of
+				TO_NEGINF => raise Overflow
+			      | TO_POSINF => Int.minInt'
+			      | TO_ZERO => Int.minInt'
+			      | TO_NEAREST =>
+				   (* Depends on minInt being even. *)
+				   if x - minInt < ~half
+				      then raise Overflow
+				   else Int.minInt')
+		    else raise Overflow
       
       val floor = toInt TO_NEGINF
       val ceil = toInt TO_POSINF
@@ -257,8 +304,8 @@ functor Real (R: PRE_REAL): REAL =
       local
 	 fun round mode x =
 	    case class x of
-	       NAN => x
-	     | INF => x
+	       INF => x
+	     | NAN => x
 	     | _ => roundReal (x, mode)
       in
 	 val realFloor = round TO_NEGINF
@@ -340,14 +387,14 @@ functor Real (R: PRE_REAL): REAL =
    
       fun toDecimal (x: real): IEEEReal.decimal_approx =
 	 case class x of
-	    NAN => {class = NAN,
-		    digits = [],
-		    exp = 0,
-		    sign = false}
-	  | INF => {class = INF,
+	    INF => {class = INF,
 		    digits = [],
 		    exp = 0,
 		    sign = x < zero}
+	  | NAN => {class = NAN,
+		    digits = [],
+		    exp = 0,
+		    sign = false}
 	  | ZERO => {class = ZERO,
 		     digits = [],
 		     exp = 0,
@@ -364,7 +411,7 @@ functor Real (R: PRE_REAL): REAL =
 				:: ac)
 		  val digits = loop (Int.- (C.CS.length cs, 1), [])
 	       in
-		  {class = NORMAL,
+		  {class = c,
 		   digits = digits,
 		   exp = exp,
 		   sign = x < zero}
@@ -574,18 +621,14 @@ functor Real (R: PRE_REAL): REAL =
 	  | NAN => raise Domain
 	  | ZERO => 0
 	  | _ =>
-	       IntInf.fromInt (toInt mode x)
-	       handle Overflow =>
-		  let
-		     val x = roundReal (x, mode)
-		     val (x, sign) = if x < zero then (~ x, true) else (x, false)
-		     val (digits, exp) = gdtoa (x, Gen, 0)
-		     val digits = C.CS.toString digits
-		     val i = valOf (IntInf.fromString digits)
-		     val i = if sign then IntInf.~ i else i
-		  in
-		     IntInf.* (i, IntInf.pow (10, Int.- (exp, size digits)))
-		  end
+	       let
+		  val x = roundReal (x, mode)
+	       in
+		  if minInt <= x andalso x <= maxInt
+		     then IntInf.fromInt (Prim.toInt x)
+		  else
+		     valOf (IntInf.fromString (fmt (StringCvt.FIX (SOME 0)) x))
+	       end
 	 
       structure Math =
 	 struct

@@ -757,7 +757,7 @@ structure Primitive =
 	       _import "Ptrace_ptrace4": int * pid * word * word ref -> int;
 	 end
 
-      val useMathLibForTrig = true
+      val useMathLibForTrig = false
 
       structure Real64 =
 	 struct

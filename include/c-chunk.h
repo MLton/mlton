@@ -467,15 +467,6 @@ unaryReal(sin, sin)
 unaryReal(sqrt, sqrt)
 unaryReal(tan, tan)
 
-Real64 fabs (Real64 x);
-static inline Real64 Real64_abs (Real64 x) {
-	return fabs (x);
-}
-Real32 fabsf (Real32 x);
-static inline Real32 Real32_abs (Real32 x) {
-	return fabsf (x);
-}
-
 #define binaryReal(name, op)						\
 	static inline Real32 Real32_##name (Real32 x, Real32 y) {	\
 		return x op y;						\
