@@ -425,7 +425,6 @@ structure Return =
 
 structure Transfer =
    struct
-
       datatype t =
 	 Bug
        | Call of {func: Func.t,

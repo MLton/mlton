@@ -87,6 +87,8 @@ signature SSA_TREE =
 
 	    val clear: t -> unit (* clear the var *)
 	    val exp: t -> Exp.t
+	    val handlerPop: Label.t -> t
+	    val handlerPush: Label.t -> t
 	    val layout: t -> Layout.t
 	    val mayAllocate: t -> bool
 	    val prettifyGlobals: t vector -> (Var.t -> string option)

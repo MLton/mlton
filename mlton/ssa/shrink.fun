@@ -150,24 +150,7 @@ structure LabelMeaning =
 		  | Return ps => seq [str "Return ", Positions.layout ps]]
 	 end
 
-      fun usesFormal (T {aux, ...}): bool =
-	 case aux of
-	    Block => true
-	  | Bug => false
-	  | Case _ => true
-	  | Goto {args, ...} => Positions.usesFormal args
-	  | Raise ps => Positions.usesFormal ps
-	  | Return ps => Positions.usesFormal ps
 
-      fun equals (m: t, m': t): bool =
-	 case (aux m, aux m') of
-	    (Block, Block) => blockIndex m = blockIndex m'
-	  | (Goto {dst, args}, Goto {dst = dst', args = args'}) =>
-	       equals (dst, dst')
-	       andalso Positions.equals (args, args')
-	  | (Raise ps, Raise ps') => Positions.equals (ps, ps')
-	  | (Return ps, Return ps') => Positions.equals (ps, ps')
-	  | _ => false
    end
 
 structure State =
@@ -196,8 +179,6 @@ val traceApply =
 				     (Var.layout o VarInfo.var)) args]
 		end,
 		Prim.ApplyResult.layout (Var.layout o VarInfo.var))
-
-val bug = ([], Bug)
 
 fun shrinkFunction (globals: Statement.t vector) =
    let
@@ -254,8 +235,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 	 (* Do a DFS to compute occurrence counts and set label meanings *)
 	 val states = Array.array (numBlocks, State.Unvisited)
 	 val inDegree = Array.array (numBlocks, 0)
-	 fun addLabelIndex i =
-	    Array.update (inDegree, i, 1 + Array.sub (inDegree, i))
+	 fun addLabelIndex i = Array.inc (inDegree, i)
 	 val isHeader = Array.array (numBlocks, false)
 	 val numHandlerUses = Array.array (numBlocks, 0)
 	 fun layoutLabel (l: Label.t): Layout.t =
@@ -265,6 +245,11 @@ fun shrinkFunction (globals: Statement.t vector) =
 	       Layout.record [("label", Label.layout l),
 			      ("inDegree", Int.layout (Array.sub (inDegree, i)))]
 	    end
+	 fun incAux aux =
+	    case aux of
+	       LabelMeaning.Goto {dst, ...} =>
+		  addLabelIndex (LabelMeaning.blockIndex dst)
+	     | _ => ()
 	 fun incLabel (l: Label.t): unit =
 	    incLabelMeaning (labelMeaning l)
 	 and incLabelMeaning (LabelMeaning.T {aux, blockIndex, ...}): unit =
@@ -272,14 +257,9 @@ fun shrinkFunction (globals: Statement.t vector) =
 	       val i = blockIndex
 	       val n = Array.sub (inDegree, i)
 	       val _ = Array.update (inDegree, i, 1 + n)
-	       datatype z = datatype LabelMeaning.aux
 	    in
 	       if n = 0
-		  then
-		     (case aux of
-			 Goto {dst, ...} =>
-			    addLabelIndex (LabelMeaning.blockIndex dst)
-		       | _ => ())
+		  then incAux aux
 	       else ()
 	    end
 	 and labelMeaning (l: Label.t): LabelMeaning.t =
@@ -361,28 +341,29 @@ fun shrinkFunction (globals: Statement.t vector) =
 			if 0 = Vector.length statements
 			   andalso not (Array.sub (isHeader, i))
 			   andalso 1 = Vector.length args
-			   andalso
-			      let
-				 val (x, _) = Vector.sub (args, 0)
-			      in
-				 Var.equals (x, test)
-				 andalso 1 = numVarOccurrences x
-			      end
+			   andalso 1 = numVarOccurrences test
+			   andalso Var.equals (test, #1 (Vector.sub (args, 0)))
 			   then
 			      doit (LabelMeaning.Case {cases = cases,
 						       default = default})
-			else normal ()
+			else
+			   normal ()
 		     end
 		| Goto {dst, args = actuals} =>
 		     let
 			val _ = incVars actuals
 			val m = labelMeaning dst
 		     in
-			if Array.sub (isHeader, i)
-			   orelse 0 <> Vector.length statements
+			if 0 <> Vector.length statements
+			   orelse Array.sub (isHeader, i)
 			   then (incLabelMeaning m
 				 ; normal ())
 			else
+			   if Vector.equals (args, actuals, fn ((x, _), x') =>
+					     Var.equals (x, x')
+					     andalso 1 = numVarOccurrences x)
+			      then m (* It's an eta. *)
+			   else
 			   let
 			      val ps = extract actuals
 			      val n =
@@ -460,6 +441,9 @@ fun shrinkFunction (globals: Statement.t vector) =
 	       State.Visited m => m
 	     | _ => Error.bug "indexMeaning not computed"
 	 val labelMeaning = indexMeaning o labelIndex
+	 val labelIndex = LabelMeaning.blockIndex o labelMeaning
+	 fun meaningLabel m =
+	    Block.label (Vector.sub (blocks, LabelMeaning.blockIndex m))
 	 fun save (f, s) =
 	    File.withOut
 	    (concat ["/tmp/", Func.toString (Function.name f),
@@ -489,13 +473,9 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    ("Shrink.labelMeanings", fn () =>
 	     let
 		val inDegree' = Array.array (numBlocks, 0)
-		fun bumpIndex i =
-		   Array.update (inDegree', i, 1 + Array.sub (inDegree', i))
+		fun bumpIndex i = Array.inc (inDegree', i)
 		fun bumpMeaning m = bumpIndex (LabelMeaning.blockIndex m)
-		fun bumpLabel l =
-		   case Array.sub (states, labelIndex l) of
-		      State.Visited m => bumpMeaning m
-		    | _ => Error.bug "unvisited"
+		val bumpLabel = bumpMeaning o labelMeaning
 		fun doit (LabelMeaning.T {aux, blockIndex, ...}) =
 		   let
 		      datatype z = datatype LabelMeaning.aux
@@ -551,6 +531,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 			    Array.sub (inDegree, i) > 0)
 	     ; addLabelIndex i)
 	 val addLabel = addLabelIndex o labelIndex
+	 val addLabel =
+	    Trace.trace ("Shrink.addLabel", layoutLabel, Unit.layout) addLabel
 	 val addLabelMeaning = addLabelIndex o LabelMeaning.blockIndex
 	 fun layoutLabelMeaning m =
 	    Layout.record
@@ -560,7 +542,6 @@ fun shrinkFunction (globals: Statement.t vector) =
 	 val traceDeleteLabelMeaning =
 	    Trace.trace ("Shrink.deleteLabelMeaning",
 			 layoutLabelMeaning, Unit.layout)
-	 fun indexToLabel i = Block.label (Vector.sub (blocks, i))
 	 fun deleteLabel l = deleteLabelMeaning (labelMeaning l)
 	 and deleteLabelMeaning arg: unit =
 	    traceDeleteLabelMeaning
@@ -587,7 +568,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 					  Return.foreachHandler
 					  (return, fn l =>
 					   Array.dec (numHandlerUses,
-						      labelIndex l))
+						      (LabelMeaning.blockIndex
+						       (labelMeaning l))))
 				     | _ => ()
 			      in
 				 ()
@@ -650,7 +632,14 @@ fun shrinkFunction (globals: Statement.t vector) =
 	     Vector.layout VarInfo.layout,
 	     Layout.tuple2 (List.layout Statement.layout, Transfer.layout))
 	 val newBlocks = ref []
-	 fun forceBlock (l: Label.t): unit = forceMeaningBlock (labelMeaning l)
+	 fun simplifyLabel l =
+	    let
+	       val m = labelMeaning l
+	       val _ = forceMeaningBlock m
+	    in
+	       meaningLabel m
+	    end
+	 and forceBlock (l: Label.t): unit = forceMeaningBlock (labelMeaning l)
 	 and forceMeaningBlock arg =
 	    traceForceMeaningBlock
 	    (fn (LabelMeaning.T {aux, blockIndex = i, ...}) =>
@@ -711,8 +700,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 			case return of
 			   Return.NonTail {cont, handler} =>
 			      let
-				 val i = labelIndex cont
-				 val m = indexMeaning i
+				 val m = labelMeaning cont
+				 val i = LabelMeaning.blockIndex m
 				 val isTail =
 				    (case handler of
 					Handler.CallerHandler => true
@@ -733,14 +722,21 @@ fun shrinkFunction (globals: Statement.t vector) =
 				      | _ => false)
 			      in
 				 if isTail
-				    then (deleteIndex i; Return.Tail)
+				    then (deleteLabelMeaning m; Return.Tail)
 				 else
 				    let
-				       val _ = forceBlock cont
-				       val _ = Handler.foreachLabel (handler,
-								     forceBlock)
+				       val _ = forceMeaningBlock m
+				       val handler =
+					  Handler.map
+					  (handler, fn l =>
+					   let
+					      val m = labelMeaning l
+					      val _ = forceMeaningBlock m
+					   in
+					      meaningLabel m
+					   end)
 				    in
-				       Return.NonTail {cont = cont,
+				       Return.NonTail {cont = meaningLabel m,
 						       handler = handler}
 				    end
 			      end
@@ -754,19 +750,18 @@ fun shrinkFunction (globals: Statement.t vector) =
 		   let
 		      val test = varInfo test
 		      fun cantSimplify () =
-			 let
-			    val _ = Cases.foreach (cases, forceBlock)
-			    val _ = Option.app (default, forceBlock)
-			 in
-			    ([], Case {test = use test,
-				       cases = cases,
-				       default = default})
-			 end
+			 ([],
+			  Case {test = use test,
+				cases = Cases.map (cases, simplifyLabel),
+				default = Option.map (default, simplifyLabel)})
 		   in
-		      simplifyCase {test = test,
-				    cases = cases,
-				    default = default,
-				    cantSimplify = cantSimplify}
+		      simplifyCase
+		      {cantSimplify = cantSimplify,
+		       cases = cases,
+		       default = default,
+		       gone = fn () => (Cases.foreach (cases, deleteLabel)
+					; Option.app (default, deleteLabel)),
+		       test = test}
 		   end
 	      | Goto {dst, args} => goto (dst, varInfos args)
 	      | Prim {prim, args, failure, success} =>
@@ -803,116 +798,127 @@ fun shrinkFunction (globals: Statement.t vector) =
 			       (ss, t)
 			    end
 		       | _ =>
-			    let
-			       val _ = forceBlock failure
-			       val _ = forceBlock success
-			    in
-			       ([],
-				Prim {prim = prim,
-				      args = uses args,
-				      failure = failure,
-				      success = success})
-			    end
+			    ([], Prim {prim = prim,
+				       args = uses args,
+				       failure = simplifyLabel failure,
+				       success = simplifyLabel success})
 		   end
 	      | Raise xs => ([], Raise (simplifyVars xs))
 	      | Return xs => ([], Return (simplifyVars xs))
-	 and simplifyCase {test: VarInfo.t, cases, default, cantSimplify}
+	 and simplifyCase {cantSimplify, cases, default, gone, test: VarInfo.t}
 	    : Statement.t list * Transfer.t =
 	    if Cases.isEmpty cases
 	       then (case default of
 			NONE => ([], Bug)
-		      | SOME l => goto (l, Vector.new0 ()))
+		      | SOME l =>
+			   let
+			      val m = labelMeaning l
+			      val _ = incLabelMeaning m
+			      val _ = gone ()
+			   in
+			      gotoMeaning (m, Vector.new0 ())
+			   end)
 	    else
 	       let
-		  fun findCase (cases, is, args) =
+		  val m = labelMeaning (Cases.hd cases)
+		  local
+		     open LabelMeaning
+		  in
+		     fun usesFormal (T {aux, blockIndex = i, ...}): bool =
+			case aux of
+			   Block =>
+			      0 < Vector.length (Block.args
+						 (Vector.sub (blocks, i)))
+			 | Bug => false
+			 | Goto {args, ...} => Positions.usesFormal args
+			 | Raise ps => Positions.usesFormal ps
+			 | Return ps => Positions.usesFormal ps
+			 | _ => true
+		     fun equals (m: t, m': t): bool =
+			case (aux m, aux m') of
+			   (Block, Block) => blockIndex m = blockIndex m'
+			 | (Bug, Bug) => true
+			 | (Goto {dst, args}, Goto {dst = dst', args = args'}) =>
+			      equals (dst, dst')
+			      andalso Positions.equals (args, args')
+			 | (Raise ps, Raise ps') => Positions.equals (ps, ps')
+			 | (Return ps, Return ps') => Positions.equals (ps, ps')
+			 | _ => false
+		  end
+		  fun isOk (l: Label.t): bool =
 		     let
-			val n = Vector.length cases
-			fun loop k =
-			   if k = n
-			      then
-				 (case default of
-				     NONE => ([], Bug)
-				   | SOME j => goto (j, Vector.new0 ()))
-			   else
-			      let
-				 val (i, j) = Vector.sub (cases, k)
-			      in
-				 if is i
-				    then (Int.for (k + 1, n, fn k =>
-						   deleteLabel
-						   (#2 (Vector.sub (cases, k))))
-					  ; Option.app (default, deleteLabel)
-					  ; goto (j, args))
-				 else (deleteLabel j; loop (k + 1))
-			      end
-		     in loop 0
+			val m' = labelMeaning l
+		     in
+			not (usesFormal m') andalso equals (m, m')
 		     end
 	       in
-		  case (VarInfo.value test, cases) of
-		     (SOME (Value.Const c), _) =>
+		  if Cases.forall (cases, isOk)
+		     andalso (case default of
+				 NONE => true
+			       | SOME l => isOk l)
+		     then
+			(* All cases the same -- eliminate the case. *)
 			let
-			   fun doit (l, z) =
-			      findCase (l, fn z' => z = z', Vector.new0 ())
+			   val _ = addLabelMeaning m
+			   val _ = gone ()
 			in
-			   case (cases, Const.node c) of
-			      (Cases.Char l, Const.Node.Char c) => doit (l, c)
-			    | (Cases.Int l, Const.Node.Int i) => doit (l, i)
-			    | (Cases.Word l, Const.Node.Word w) => doit (l, w)
-			    | (Cases.Word8 l, Const.Node.Word w) =>
-				 doit (l, Word8.fromWord w)
-			    | _ => Error.bug "strange constant for cases"
+			   gotoMeaning (m, Vector.new0 ())
 			end
-		   | (SOME (Value.Con {con, args}), Cases.Con cases) =>
-			findCase (cases, fn c => Con.equals (con, c), args)
-		   | (SOME v, _) =>
-			Error.bug (concat ["strange bind for case test: ",
-					   Layout.toString (Value.layout v)])
-		   | (NONE, _) =>
-			(* If all cases are the same, eliminate the case. *)
-			let
-			   val m = labelMeaning (Cases.hd cases)
-			   fun isOk (l: Label.t): bool =
-			      let
-				 val m' = labelMeaning l
-			      in
-				 not (LabelMeaning.usesFormal m')
-				 andalso LabelMeaning.equals (m, m')
-			      end
-			in
-			   if (not (LabelMeaning.usesFormal m)
-			       andalso Cases.forall (cases, isOk)
-			       andalso (case default of
-					   NONE => true
-					 | SOME l => isOk l))
-			      then
+		  else
+		     let
+			fun findCase (cases, is, args) =
+			   let
+			      val n = Vector.length cases
+			      fun doit (j, args) =
 				 let
-				    fun free (p: Position.t): VarInfo.t =
-				       case p of
-					  Position.Free x => varInfo x
-					| _ => Error.bug "free"
+				    val m = labelMeaning j
 				    val _ = addLabelMeaning m
-				    val _ = Cases.foreach (cases, deleteLabel)
-				    val _ = Option.app (default, deleteLabel)
+				    val _ = gone ()
 				 in
-				    case LabelMeaning.aux m of
-				       LabelMeaning.Goto {dst, args} =>
-					  (addLabelMeaning dst
-					   ; deleteLabelMeaning m
-					   ; (gotoMeaning
-					      (dst, Vector.map (args, free))))
-				     | LabelMeaning.Raise ps =>
-					  (deleteLabelMeaning m
-					   ; ([], Raise (Vector.map
-							 (ps, use o free))))
-				     | LabelMeaning.Return ps =>
-					  (deleteLabelMeaning m
-					   ; ([], Return (Vector.map
-							  (ps, use o free))))
-				     | _ => Error.bug "strange useless case"
+				    gotoMeaning (m, args)
 				 end
-			   else
-			      cantSimplify ()
-			end
+			      fun loop k =
+				 if k = n
+				    then
+				       (case default of
+					   NONE => (gone (); ([], Bug))
+					 | SOME j => doit (j, Vector.new0 ()))
+				 else
+				    let
+				       val (i, j) = Vector.sub (cases, k)
+				    in
+				       if is i
+					  then doit (j, args)
+				       else loop (k + 1)
+				    end
+			   in loop 0
+			   end
+		     in
+			case (VarInfo.value test, cases) of
+			   (SOME (Value.Const c), _) =>
+			      let
+				 fun doit (l, z) =
+				    findCase (l, fn z' => z = z', Vector.new0 ())
+			      in
+				 case (cases, Const.node c) of
+				    (Cases.Char l, Const.Node.Char c) =>
+				       doit (l, c)
+				  | (Cases.Int l, Const.Node.Int i) =>
+				       doit (l, i)
+				  | (Cases.Word l, Const.Node.Word w) =>
+				       doit (l, w)
+				  | (Cases.Word8 l, Const.Node.Word w) =>
+				       doit (l, Word8.fromWord w)
+				  | _ => Error.bug "strange constant for cases"
+			      end
+			 | (SOME (Value.Con {con, args}), Cases.Con cases) =>
+			      findCase (cases, fn c => Con.equals (con, c), args)
+			 | (NONE, _) => cantSimplify ()
+			 | (_, _) =>
+			      Error.bug
+			      (concat ["strange bind for case test: ",
+				       Layout.toString (VarInfo.layout test)])
+		     end
 	       end
 	 and goto (dst: Label.t, args: VarInfo.t vector)
 	    : Statement.t list * Transfer.t =
@@ -955,21 +961,11 @@ fun shrinkFunction (globals: Statement.t vector) =
 		   Block => normal ()
 		 | Bug => ([], Transfer.Bug)
 		 | Case {cases, default} =>
-		      let
-			 val _ = Array.update (inDegree, i, n - 1)
-			 val _ = Cases.foreach (cases, addLabel)
-			 val _ = Option.app (default, addLabel)
-			 fun cantSimplify () =
-			    (Array.update (inDegree, i, n)
-			     ; Cases.foreach (cases, deleteLabel)
-			     ; Option.app (default, deleteLabel)
-			     ; normal ())
-		      in
-			 simplifyCase {cantSimplify = cantSimplify,
-				       cases = cases,
-				       default = default,
-				       test = Vector.sub (args, 0)}
-		      end
+		      simplifyCase {cantSimplify = normal,
+				    cases = cases,
+				    default = default,
+				    gone = fn () => deleteLabelMeaning m,
+				    test = Vector.sub (args, 0)}
 		 | Goto {dst, args} =>
 		      if Array.sub (isHeader, i)
 			 orelse Array.sub (isBlock, i)
@@ -1048,21 +1044,28 @@ fun shrinkFunction (globals: Statement.t vector) =
 		      * HandlerPop.
 		      *)
 		     (fn ss =>
-		      if 0 = Array.sub (numHandlerUses, labelIndex l)
-			then ss
-		      else s :: ss)
+		      let
+			 val m = labelMeaning l
+		      in
+			 if 0 = Array.sub (numHandlerUses,
+					   LabelMeaning.blockIndex m)
+			    then ss
+			 else Statement.handlerPush (meaningLabel m) :: ss
+		      end)
 		| HandlerPop l =>
 		     (fn ss =>
 		      let
-			 val i = labelIndex l
+			 val m = labelMeaning l
+			 val i = LabelMeaning.blockIndex m
 		      in
 			 if 0 = Array.sub (numHandlerUses, i)
 			    then ss
 			 else
 			    ((* Ensure that this label isn't deleted*)
 			     Array.inc (inDegree, i)
+			     ; Array.inc (numHandlerUses, i)
 			     ; forceMeaningBlock (indexMeaning i)
-			     ; s :: ss)
+			     ; Statement.handlerPop (meaningLabel m) :: ss)
 		      end)
 		| PrimApp {prim, targs, args} =>
 		     let
@@ -1122,14 +1125,15 @@ fun shrinkFunction (globals: Statement.t vector) =
 			     sideEffect = true,
 			     value = NONE}
 	    end
-	 val _ = forceMeaningBlock (labelMeaning start)
+	 val start = labelMeaning start
+	 val _ = forceMeaningBlock start
 	 val f = 
 	    Function.new {args = args,
 			  blocks = Vector.fromList (!newBlocks),
 			  name = name,
 			  raises = raises,
 			  returns = returns,
-			  start = start}
+			  start = meaningLabel start}
 (*	 val _ = save (f, "post") *)
 	 val _ = Function.clear f
       in
