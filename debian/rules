@@ -57,7 +57,7 @@ binary-arch: build install
 	dh_installcron
 	dh_installman
 	dh_installinfo
-	dh_undocumented mllex.1 mlyacc.1
+	dh_undocumented mlyacc.1
 	dh_installchangelogs 
 	dh_link
 	dh_strip --exclude=libmlton

@@ -11,3 +11,13 @@ Files: /usr/share/doc/mlton/user-guide.ps.gz
 Format: HTML
 Index: /usr/share/doc/mlton/user-guide/index.html
 Files: /usr/share/doc/mlton/user-guide/*.html
+
+Document: mllex
+Title: A lexical analyzer generator for Standard ML
+Author: Andrew W. Appel, James S. Mattson, David R. Tarditi
+Abstract: This document describes how to use mllex and how to write lexer
+specification files for mllex.
+Section: Apps/Programming
+
+Format: postscript
+Files: /usr/share/doc/mlton/mllex.ps.gz

@@ -1,10 +1,10 @@
 all:
 
-mlprof.ps: mlprof.1
-	man -t ./mlprof.1 >mlprof.ps
+.PHONY: ps
+ps: mllex.ps mlprof.ps mlton.ps
 
-mlton.ps: mlton.1
-	man -t ./mlton.1 >mlton.ps
+%.ps: %.1
+	man -t ./$< >$@
 
 .PHONY: clean
 clean:

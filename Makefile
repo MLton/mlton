@@ -81,6 +81,7 @@ dirs:
 .PHONY: docs
 docs:
 	$(MAKE) -C $(SRC)/doc/user-guide
+	$(MAKE) -C $(LEX) docs
 
 BSDSRC = /tmp/mlton-$(VERSION)
 .PHONY: freebsd
@@ -199,12 +200,14 @@ install:
 	for f in callcc command-line hello-world same-fringe signals size taut thread1 thread2 thread-switch timeout; do \
  		cp $(SRC)/regression/$$f.sml $(TDOC)/examples; \
 	done
+	gzip -c $(LEX)/$(LEX).ps >$(TDOC)/
 	$(CP) $(LIB)/. $(TLIB)/
 	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
 			<$(SRC)/bin/mlton >$(TBIN)/mlton
 	chmod +x $(TBIN)/mlton
 	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
-	$(CP) $(SRC)/man/mlprof.1 $(SRC)/man/mlton.1 $(TMAN)/
+	( cd $(SRC)/man && tar cf - mllex.1 mlprof.1 mlton.1 ) | \
+		( cd $(TMAN)/ && tar xf - )
 	find $(TDOC) -name CVS -type d | xargs --no-run-if-empty rm -rf
 	find $(TDOC) -name .cvsignore -type f | xargs --no-run-if-empty rm -rf
 

@@ -1,2 +1,7 @@
+lexgen.aux
+lexgen.dvi
+lexgen.log
+lexgen.toc
 mllex
+mllex.ps
 mllex.sml

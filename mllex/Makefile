@@ -31,9 +31,18 @@ $(NAME)-stubs_cm:
 		echo 'call-main.sml';					\
 	) >$(NAME)-stubs.cm
 
+lexgen.dvi: lexgen.tex
+	latex lexgen.tex; latex lexgen.tex
+
+mllex.ps: lexgen.dvi
+	dvips -o mllex.ps lexgen.dvi
+
 .PHONY: clean
 clean:
 	../bin/clean
+
+.PHONY: docs
+docs: mllex.ps
 
 .PHONY: test
 test: $(NAME)
