@@ -259,6 +259,11 @@ structure Lambda =
       val make = Lam
 
       fun dest (Lam r) = r
+
+      val bogus = make {arg = Var.newNoname (),
+			argType = Type.unit,
+			body = Exp {node = Seq (Vector.new0 ()),
+				    ty = Type.unit}}
    end
 
 structure Exp =

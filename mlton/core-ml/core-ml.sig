@@ -118,6 +118,7 @@ signature CORE_ML =
 	 sig
 	    type t
 
+	    val bogus: t
 	    val dest: t -> {arg: Var.t,
 			    argType: Type.t,
 			    body: Exp.t}
