@@ -19,7 +19,6 @@ signature INT_INF_EXTRA =
       include INT_INF
 
       val areSmall: int * int -> bool
-      val bigIntConstant: Int.int -> int
       val fromInt64: Int64.int -> int
       val gcd: int * int -> int 
       val isSmall: int -> bool
