@@ -17,8 +17,6 @@ type t = signal
 val prof = Prim.prof
 val vtalrm = Prim.vtalrm
 
-type how = Prim.how
-
 (* val toString = SysWord.toString o toWord *)
    
 val checkResult = Error.checkResult
@@ -35,6 +33,33 @@ structure Mask =
       val all = allBut []
       val none = some []
 
+      local
+	 fun member (sigs, s) = List.exists (fn s' => s = s') sigs
+	 fun inter (sigs1, sigs2) =
+	    List.filter (fn s => member (sigs2, s)) sigs1
+	 fun diff (sigs1, sigs2) =
+	    List.filter (fn s => not (member (sigs2, s))) sigs1
+	 fun union (sigs1, sigs2) =
+	    List.foldl (fn (s,sigs) => if member (sigs, s) then sigs else s::sigs) sigs1 sigs2
+      in
+	 fun block (mask1, mask2) =
+	    case (mask1, mask2) of
+	       (AllBut sigs1, AllBut sigs2) => AllBut (inter (sigs1, sigs2))
+	     | (AllBut sigs1, Some sigs2) => AllBut (diff (sigs1, sigs2))
+	     | (Some sigs1, AllBut sigs2) => AllBut (diff (sigs2, sigs1))
+	     | (Some sigs1, Some sigs2) => Some (union (sigs1, sigs2)) 
+	 fun unblock (mask1, mask2) =
+	    case (mask1, mask2) of
+	       (AllBut sigs1, AllBut sigs2) => Some (diff (sigs2, sigs1))
+	     | (AllBut sigs1, Some sigs2) => AllBut (union (sigs1, sigs2))
+	     | (Some sigs1, AllBut sigs2) => Some (inter (sigs1, sigs2))
+	     | (Some sigs1, Some sigs2) => Some (diff (sigs1, sigs2))
+	 val member = fn (mask, s) =>
+	    case mask of
+	       AllBut sigs => not (member (sigs, s))
+	     | Some sigs => member (sigs, s)
+      end
+
       fun create m =
 	 case m of
 	    AllBut signals =>
@@ -43,14 +68,19 @@ structure Mask =
 	  | Some signals =>
 	       (checkResult (Prim.sigemptyset ())
 		; List.app (checkResult o Prim.sigaddset) signals)
-
+	       
       local
-	 fun make (how: how) (m: t) =
-	    (create m; checkResult (Prim.sigprocmask how))
+	 val blocked = ref none
+	    
+	 fun make (m: t) =
+	    (create m
+	     ; checkResult (Prim.sigprocmask ())
+	     ; blocked := m)
       in
-	 val block = make Prim.block
-	 val unblock = make Prim.unblock
-	 val setBlocked = make Prim.setmask
+	 val block = fn m => make (block (!blocked, m))
+	 val unblock = fn m => make (unblock (!blocked, m))
+	 val setBlocked = fn m => make m
+	 val getBlocked = fn () => !blocked
       end
    end
 

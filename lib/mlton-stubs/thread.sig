@@ -1,9 +1,18 @@
+type int = Int.int
+
 signature MLTON_THREAD =
    sig
-      type 'a t
-
+      structure AtomicState :
+	 sig
+	    datatype t = NonAtomic | Atomic of int
+	 end
       val atomicBegin: unit -> unit
       val atomicEnd: unit -> unit
+      val atomically: (unit -> 'a) -> 'a
+      val atomicState: unit -> AtomicState.t
+
+      type 'a t
+
       (* new f creates a new thread that will apply f to whatever is thrown
        * to the thread.  f must terminate by throwing to another thread or
        * exiting the process.

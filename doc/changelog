@@ -1,5 +1,8 @@
 Here are the changes since version 20040227.
 
+* 2004-04-13
+  - Added MLton.Signal.Mask.{getBlocked,member}.
+	
 * 2004-04-12
   - Fix bug that mistakenly generalized variable types containing
     unknown types when matching against a signature.

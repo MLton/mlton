@@ -122,14 +122,12 @@ structure PosixPrimitive =
       structure Signal:>
 	 sig
 	    eqtype t
-	    type how
 
 	    val fromInt: int -> t
 	    val toInt: t -> int
 	 end =
 	 struct
 	    type t = int
-      	    type how = int
 
 	    val fromInt = fn s => s
 	    val toInt = fn s => s
@@ -162,7 +160,6 @@ structure PosixPrimitive =
 	    val usr2 = _const "Posix_Signal_usr2": t;
 	    val vtalrm = _const "Posix_Signal_vtalrm": t;
 
-	    val block = _const "Posix_Signal_block": how;
 	    val default = _import "Posix_Signal_default": t -> int;
 	    val handleGC = _import "Posix_Signal_handleGC": unit -> unit;
 	    val handlee = _import "Posix_Signal_handle": t -> int;
@@ -172,14 +169,12 @@ structure PosixPrimitive =
 	    val isGCPending = _import "Posix_Signal_isGCPending": unit -> bool;
 	    val isPending = _import "Posix_Signal_isPending": t -> bool;
 	    val numSignals = _const "Posix_Signal_numSignals": int;
-	    val setmask = _const "Posix_Signal_setmask": how;
 	    val sigaddset = _import "Posix_Signal_sigaddset": t -> int;
 	    val sigdelset = _import "Posix_Signal_sigdelset": t -> int;
 	    val sigemptyset = _import "Posix_Signal_sigemptyset": unit -> int;
 	    val sigfillset = _import "Posix_Signal_sigfillset": unit -> int;
-	    val sigprocmask = _import "Posix_Signal_sigprocmask": how -> int;
+	    val sigprocmask = _import "Posix_Signal_sigprocmask": unit -> int;
 	    val suspend = _import "Posix_Signal_suspend": unit -> unit;
-	    val unblock = _const "Posix_Signal_unblock": how;
 	 end
       
       structure Process =

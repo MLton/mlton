@@ -189,7 +189,7 @@ Int Posix_Signal_sigaddset (Int signum);
 Int Posix_Signal_sigdelset (Int signum);
 Int Posix_Signal_sigemptyset ();
 Int Posix_Signal_sigfillset ();
-Int Posix_Signal_sigprocmask (Int how);
+Int Posix_Signal_sigprocmask ();
 Int Posix_Signal_sigsuspend ();
 
 /* ------------------------------------------------- */
