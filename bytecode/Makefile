@@ -3,7 +3,6 @@ all: interpret.o interpret-gdb.o print-opcodes
 INCLUDES = -I../runtime -I../include
 
 interpret.o: interpret.c interpret.h opcode.h
-	gcc -E -o /tmp/z.out $(INCLUDES) interpret.c
 	gcc -O2 -Wall -c $(INCLUDES) interpret.c
 
 interpret-gdb.o: interpret.c interpret.h
@@ -20,4 +19,3 @@ clean:
 .PHONY: exp
 exp:
 	gcc -E -I../runtime -I../include interpret.c >/tmp/z.exp
-	
