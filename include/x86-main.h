@@ -4,33 +4,39 @@
 #include "main.h"
 
 /* Globals */
-Word applyFFTemp;
-Word applyFFTemp2;
-Word checkTemp;
-Word cReturnTemp[16];
-Word c_stackP;
-Word divTemp;
-Word eq1Temp;
-Word eq2Temp;
-Word fileTemp;
-Word fildTemp;
-Word fpswTemp;
-Word indexTemp;
-Word intInfTemp;
+Word32 applyFFTemp;
+Word32 applyFFTemp2;
+Word32 checkTemp;
+Word32 cReturnTemp[16];
+Word32 c_stackP;
+Word32 divTemp;
+Word32 eq1Temp;
+Word32 eq2Temp;
+Word32 fileTemp;
+Word32 fildTemp;
+Word32 fpswTemp;
+Word32 indexTemp;
+Word32 intInfTemp;
 char MLton_bug_msg[] = "cps machine";
-Word raTemp1;
-double raTemp2;
-double realTemp1D;
-double realTemp2D;
-double realTemp3D;
-float realTemp1S;
-float realTemp2S;
-float realTemp3S;
-Word spill[16];
-Word stackTopTemp;
-Word statusTemp;
-Word switchTemp;
-Word threadTemp;
+Word32 raTemp1;
+Real64 raTemp2;
+Real64 realTemp1D;
+Real64 realTemp2D;
+Real64 realTemp3D;
+Real32 realTemp1S;
+Real32 realTemp2S;
+Real32 realTemp3S;
+Word32 spill[16];
+Word32 stackTopTemp;
+Word32 statusTemp;
+Word32 switchTemp;
+Word32 threadTemp;
+Word8 wordTemp1B;
+Word8 wordTemp2B;
+Word16 wordTemp1W;
+Word16 wordTemp2W;
+Word32 wordTemp1L;
+Word32 wordTemp2L;
 
 #ifndef DEBUG_X86CODEGEN
 #define DEBUG_X86CODEGEN FALSE

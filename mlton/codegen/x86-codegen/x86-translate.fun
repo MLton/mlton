@@ -425,6 +425,18 @@ struct
 		     
 		   val dsts = Operand.toX86Operand dst
 		   val srcs = Operand.toX86Operand src
+		   (* Operand.toX86Operand returns multi-word 
+		    * operands in and they will be moved in order,
+		    * so it suffices to check for aliasing between 
+		    * the first dst and second src.
+		    *)
+		   val (dsts,srcs) =
+		      if Vector.length srcs > 1
+			 andalso x86.Operand.mayAlias
+			         (#1 (Vector.sub (dsts, 0)), 
+				  #1 (Vector.sub (srcs, 1)))
+			 then (Vector.rev dsts, Vector.rev srcs)
+			 else (dsts,srcs)
 		 in
 		   AppendList.appends
 		   [comment_begin,

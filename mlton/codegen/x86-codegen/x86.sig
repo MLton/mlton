@@ -310,6 +310,7 @@ signature X86 =
 
 	val size : t -> Size.t option
 	val eq : t * t -> bool
+	val mayAlias : t * t -> bool
 
 	val cReturnTemps: RepType.t -> {src: t, dst: MemLoc.t} list
       end

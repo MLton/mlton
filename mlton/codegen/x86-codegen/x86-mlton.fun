@@ -284,28 +284,46 @@ struct
 			    src2size = dst2size andalso
 		            src4size = dst2size andalso
 		            dst1size = dst2size)
+	      val tdst1 =
+		 if List.exists ([src2,src3,src4], fn src =>
+				 Operand.mayAlias (dst1, src))
+		    then wordTemp1ContentsOperand dst1size
+		    else dst1
+	      val tdst2 =
+		 if List.exists ([src3,src4], fn src =>
+				 Operand.mayAlias (dst2, src))
+		    then wordTemp1ContentsOperand dst2size
+		    else dst2
 	    in
 	      AppendList.fromList
 	      [Block.mkBlock'
 	       {entry = NONE,
 		statements
 		= [Assembly.instruction_mov
-		   {dst = dst1,
+		   {dst = tdst1,
 		    src = src1,
 		    size = src1size},
 		   Assembly.instruction_mov
-		   {dst = dst2,
+		   {dst = tdst2,
 		    src = src2,
 		    size = src2size},
 		   Assembly.instruction_binal
 		   {oper = oper1,
-		    dst = dst1,
+		    dst = tdst1,
 		    src = src3,
 		    size = dst1size},
 		   Assembly.instruction_binal
 		   {oper = oper2,
-		    dst = dst2,
+		    dst = tdst2,
 		    src = src4,
+		    size = dst2size},
+		   Assembly.instruction_mov
+		   {dst = dst1,
+		    src = tdst1,
+		    size = dst1size},
+		   Assembly.instruction_mov
+		   {dst = dst2,
+		    src = tdst2,
 		    size = dst2size}],
 		transfer = NONE}]
 	    end
@@ -427,19 +445,28 @@ struct
 		   fn () => src1size = dst1size andalso
                             src2size = dst2size andalso
                             dst1size = dst2size)
+	      val tdst1 =
+		 if List.exists ([src2], fn src =>
+				 Operand.mayAlias (dst1, src))
+		    then wordTemp1ContentsOperand dst1size
+		    else dst1
 	    in
 	      AppendList.fromList
 	      [Block.mkBlock'
 	       {entry = NONE,
 		statements 
 		= [Assembly.instruction_mov
-		   {dst = dst1,
+		   {dst = tdst1,
 		    src = src1,
 		    size = src1size},
 		   Assembly.instruction_mov
 		   {dst = dst2,
 		    src = src2,
 		    size = src2size},
+		   Assembly.instruction_mov
+		   {dst = dst1,
+		    src = tdst1,
+		    size = dst1size},
 		   Assembly.instruction_unal
 		   {oper = oper,
 		    dst = dst1,
@@ -509,8 +536,7 @@ struct
 				   src2 = src1,
 				   size = src1size},
 				  Assembly.instruction_setcc
-				  {condition 
-				   = Instruction.condition_reverse condition,
+				  {condition = Instruction.condition_reverse condition,
 				   dst = dst,
 				   size = dstsize}],
 			       transfer = NONE}]
@@ -1524,24 +1550,42 @@ struct
 		       fn () => src1size = dst1size andalso src3size = dst1size andalso
                                 src2size = dst2size andalso src4size = dst2size andalso
                                 dst1size = dst2size)
+	      val tdst1 =
+		 if List.exists ([src2,src3,src4], fn src =>
+				 Operand.mayAlias (dst1, src))
+		    then wordTemp1ContentsOperand dst1size
+		    else dst1
+	      val tdst2 =
+		 if List.exists ([src3,src4], fn src =>
+				 Operand.mayAlias (dst2, src))
+		    then wordTemp1ContentsOperand dst2size
+		    else dst2
 	    in
 	      check ([Assembly.instruction_mov
-		      {dst = dst1,
+		      {dst = tdst1,
 		       src = src1,
 		       size = dst1size},
 		      Assembly.instruction_mov
-		      {dst = dst2,
+		      {dst = tdst2,
 		       src = src2,
 		       size = dst2size},
 		      Assembly.instruction_binal
 		      {oper = oper1,
-		       dst = dst1,
+		       dst = tdst1,
 		       src = src3,
 		       size = dst1size},
 		      Assembly.instruction_binal
 		      {oper = oper2,
-		       dst = dst2,
+		       dst = tdst2,
 		       src = src4,
+		       size = dst2size},
+		      Assembly.instruction_mov
+		      {dst = dst1,
+		       src = tdst1,
+		       size = dst1size},
+		      Assembly.instruction_mov
+		      {dst = dst2,
+		       src = tdst2,
 		       size = dst2size}],
 		     condition)
 	    end
@@ -1607,6 +1651,11 @@ struct
 		       fn () => src1size = dst1size andalso
 		                src2size = dst2size andalso
 				dst1size = dst2size)
+	      val tdst1 =
+		 if List.exists ([src2], fn src =>
+				 Operand.mayAlias (dst1, src))
+		    then wordTemp1ContentsOperand dst1size
+		    else dst1
 	      val loZ = Label.newString "loZ"
 	      val _ = x86Liveness.LiveInfo.setLiveOperands
 		      (liveInfo, loZ, dst2::((live success) @ (live overflow)))
@@ -1618,13 +1667,17 @@ struct
 	       [x86.Block.mkBlock'
 		{entry = NONE,
 		 statements = [Assembly.instruction_mov
-			       {dst = dst1,
+			       {dst = tdst1,
 				src = src1,
 				size = dst1size},
 			       Assembly.instruction_mov
 			       {dst = dst2,
 				src = src2,
 				size = dst2size},
+			       Assembly.instruction_mov
+			       {dst = dst1,
+				src = tdst1,
+				size = dst1size},
 			       Assembly.instruction_unal 
 			       {oper = x86.Instruction.NEG,
 				dst = dst1,
@@ -1723,8 +1776,7 @@ struct
 		      W8 => binal (x86.Instruction.ADD, flag)
 		    | W16 => binal (x86.Instruction.ADD, flag)
 		    | W32 => binal (x86.Instruction.ADD, flag)
-		    | W64 =>
-			 binal64 (x86.Instruction.ADD, x86.Instruction.ADC, flag)
+		    | W64 => binal64 (x86.Instruction.ADD, x86.Instruction.ADC, flag)
 		end
 	   | Word_mulCheck (s, {signed}) =>
 		let

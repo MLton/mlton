@@ -158,6 +158,7 @@ signature X86_PSEUDO =
 
 	val size : t -> Size.t option
 	val eq : t * t -> bool
+	val mayAlias : t * t -> bool
       end
 
     structure Instruction : 

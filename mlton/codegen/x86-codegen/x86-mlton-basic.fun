@@ -306,6 +306,62 @@ struct
   val eq2TempContentsOperand
     = Operand.memloc eq2TempContents
 
+  val wordTemp1B = Label.fromString "wordTemp1B"
+  val wordTemp1ContentsB
+    = makeContents {base = Immediate.label wordTemp1B,
+		    size = Size.BYTE,
+		    class = Classes.StaticTemp}
+  val wordTemp1ContentsOperandB
+    = Operand.memloc wordTemp1ContentsB
+  val wordTemp1W = Label.fromString "wordTemp1W"
+  val wordTemp1ContentsW
+    = makeContents {base = Immediate.label wordTemp1W,
+		    size = Size.WORD,
+		    class = Classes.StaticTemp}
+  val wordTemp1ContentsOperandW
+    = Operand.memloc wordTemp1ContentsW
+  val wordTemp1L = Label.fromString "wordTemp1L"
+  val wordTemp1ContentsL
+    = makeContents {base = Immediate.label wordTemp1L,
+		    size = Size.LONG,
+		    class = Classes.StaticTemp}
+  val wordTemp1ContentsOperandL
+    = Operand.memloc wordTemp1ContentsL
+  fun wordTemp1ContentsOperand wordSize
+    = case wordSize of
+        Size.BYTE => wordTemp1ContentsOperandB
+      | Size.WORD => wordTemp1ContentsOperandW
+      | Size.LONG => wordTemp1ContentsOperandL
+      | _ => Error.bug "wordTemp1ContentsOperand: wordSize"
+
+  val wordTemp2B = Label.fromString "wordTemp2B"
+  val wordTemp2ContentsB
+    = makeContents {base = Immediate.label wordTemp2B,
+		    size = Size.BYTE,
+		    class = Classes.StaticTemp}
+  val wordTemp2ContentsOperandB
+    = Operand.memloc wordTemp2ContentsB
+  val wordTemp2W = Label.fromString "wordTemp2W"
+  val wordTemp2ContentsW
+    = makeContents {base = Immediate.label wordTemp2W,
+		    size = Size.WORD,
+		    class = Classes.StaticTemp}
+  val wordTemp2ContentsOperandW
+    = Operand.memloc wordTemp2ContentsW
+  val wordTemp2L = Label.fromString "wordTemp2L"
+  val wordTemp2ContentsL
+    = makeContents {base = Immediate.label wordTemp2L,
+		    size = Size.LONG,
+		    class = Classes.StaticTemp}
+  val wordTemp2ContentsOperandL
+    = Operand.memloc wordTemp2ContentsL
+  fun wordTemp2ContentsOperand wordSize
+    = case wordSize of
+        Size.BYTE => wordTemp2ContentsOperandB
+      | Size.WORD => wordTemp2ContentsOperandW
+      | Size.LONG => wordTemp2ContentsOperandL
+      | _ => Error.bug "wordTemp2ContentsOperand: wordSize"
+
 
   local
      fun make prefix =

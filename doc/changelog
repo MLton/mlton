@@ -1,5 +1,10 @@
 Here are the changes since version 20041109.
 
+* 2005-01-22
+  - Fixed x86 codegen bug which failed to account for the possibility that
+    a 64-bit move could interfere with itself (as simulated by 32-bit
+    moves).
+	
 * 2004-12-22
   - Fixed Real32.fmt StringCvt.EXACT, which had been producing too
     many digits of precision because it was converting to a

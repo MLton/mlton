@@ -96,6 +96,8 @@ signature X86_MLTON_BASIC =
     val statusTempContentsOperand : x86.Operand.t
     val eq1TempContentsOperand : x86.Operand.t
     val eq2TempContentsOperand : x86.Operand.t
+    val wordTemp1ContentsOperand : x86.Size.t -> x86.Operand.t
+    val wordTemp2ContentsOperand : x86.Size.t -> x86.Operand.t
 
     (* Static arrays defined in main.h and x86-main.h *)
     val local_base : x86.CType.t -> x86.Label.t
