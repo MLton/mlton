@@ -259,7 +259,7 @@ fun makeCommandLine commandLine args =
 	  ; OS.Process.failure
        end)
 
-fun makeMain z () =
+fun makeMain z (): unit =
    OS.Process.exit (makeCommandLine z (CommandLine.arguments ()))
 
 fun basename s = #file (OS.Path.splitDirFile s)

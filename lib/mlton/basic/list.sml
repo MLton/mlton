@@ -431,13 +431,13 @@ fun 'a set {equals: 'a * 'a -> bool,
       val equals = fn (s, s') => s <= s' andalso s' <= s
       fun s < s' = s <= s' andalso exists (s', fn x => not (contains (s, x)))
       fun s' > s = s < s'
-      fun singleton x = cons (x, [])
+      fun singleton (x: 'a) = cons (x, [])
       fun add (s, x) = if contains (s, x) then s else cons (x, s)
       fun areDisjoint (s, s') = forall (s, fn x => not (contains (s', x)))
 (*      val subset = keepAll *)
-      fun subset (s, p) =
+      fun subset (s: 'a t, p) =
 	 fold (s, [], fn (x, s'') => if p x then x::s'' else s'')
-      fun subsetSize (s, p) =
+      fun subsetSize (s: 'a t, p) =
 	 fold (s, 0: int, fn (x, n) => if p x then n + 1 else n)
       fun s - s' = subset (s, fn x => not (contains (s', x)))
 (*      fun s + s' = append (s - s', s') *)
@@ -445,7 +445,7 @@ fun 'a set {equals: 'a * 'a -> bool,
 	 fold (s, s', fn (x, s'') => if not (contains (s', x)) then x::s'' else s'')
       fun intersect (s, s') = subset (s, fn x => contains (s', x))
       fun unions ss = fold (ss, [], op +)
-      val size = length
+      val size: 'a t -> int = length
 	 
       val layout = fn vs =>
 	 let open Layout
@@ -456,11 +456,11 @@ fun 'a set {equals: 'a * 'a -> bool,
 
       val remove = fn (s, x) => remove (s, equalTo x)
    
-      fun replace (s, f) =
+      fun replace (s: 'a t, f): 'a t =
 	 fold (s, [], fn (x, s) => (case f x of
 					NONE => s
 				      | SOME y => add (s, y)))
-      fun map (s, f) = replace (s, fn x => SOME (f x))
+      fun map (s: 'a t, f) = replace (s, fn x => SOME (f x))
 
    in {empty = [],
        singleton = singleton,

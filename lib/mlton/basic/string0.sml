@@ -115,7 +115,7 @@ fun isSuffix {string, suffix} =
    in n' <= n andalso loop (n - n', 0)
    end
 
-fun findSubstring {string, substring} =
+fun findSubstring {string: t, substring: t} =
    let
       val n = length substring
       val maxIndex = length string - n
