@@ -124,6 +124,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 	   set = setFuncInfo, ...}
 	= Property.getSetOnce
 	  (Func.plist, Property.initRaise ("LocalRef.funcInfo", Func.layout))
+
       val {get = nodeInfo: Node.t -> Func.t,
 	   set = setNodeInfo, ...}
 	= Property.getSetOnce
@@ -153,6 +154,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 	      (globals, fn Statement.T {var, ...} =>
 	       Option.app (var, fn var => setGlobalInfo(var, GlobalInfo.new true)))
 
+(*
       (* Update call and use counts *)
       val _ = List.foreach
 	      (functions, fn f =>
@@ -194,10 +196,42 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 	       fn [] => ()
 	        | [n] => if Node.hasEdge {from = n, to = n}
 			   then FuncInfo.once (funcInfo (nodeInfo n)) := false
-			   else FuncInfo.once (funcInfo (nodeInfo n)) := true
+			   else FuncInfo.once (funcInfo (nodeInfo n)) := false
 	        | ns => List.foreach
 	                (ns, fn n =>
 			 FuncInfo.once (funcInfo (nodeInfo n)) := false))
+*)
+
+      (* Update once and use counts *)
+      val _ = List.foreach
+	      (functions, fn f =>
+	       let
+		 val {name, blocks, ...} = Function.dest f
+		 val fi = funcInfo name
+		   
+		 val _ = if Func.equals (name, main)
+			   then FuncInfo.once fi := true
+			   else FuncInfo.once fi := false
+
+		 fun doit var 
+		   = let
+		       val gi = globalInfo var
+		     in
+		       if GlobalInfo.isGlobal gi
+			 then if List.contains 
+			         (GlobalInfo.funcs' gi, name, Func.equals)
+				then ()
+				else List.push (GlobalInfo.funcs gi, name)
+			 else ()
+		     end
+	       in
+		 Vector.foreach
+		 (blocks, fn Block.T {statements, transfer, ...} =>
+		  (Vector.foreach
+		   (statements, fn Statement.T {exp, ...} =>
+		    Exp.foreachVar (exp, doit)) ;
+		   Transfer.foreachVar (transfer, doit)))
+	       end)
 
       (* varInfo *)
       val {get = varInfo: Var.t -> VarInfo.t,
