@@ -123,6 +123,7 @@ signature DIRECTED_GRAPH =
 	 'a t * ('a Node.t vector vector)
 	 -> 'a u t * {destroy: unit -> unit,
 		      newNode: 'a Node.t -> 'a u Node.t}
+      val removeDuplicateEdges: 'a t -> unit
       (* Strongly-connected components.
        * Each component is given as a list of nodes.
        * The components are returned topologically sorted.

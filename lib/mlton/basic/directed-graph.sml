@@ -48,6 +48,24 @@ structure Node =
 
       fun hasEdge {from, to} =
 	 List.exists (successors from, fn e => equals (to, Edge.to e))
+
+      fun removeDuplicateSuccessors (Node {successors, ...}) =
+	 let
+	    val {get, ...} = Property.get (plist,
+					   Property.initFun (fn _ => ref false))
+	    val ns =
+	       List.fold (! successors, [], fn (e, ac) =>
+			  let
+			     val r = get (Edge.to e)
+			  in
+			     if !r
+				then ac
+			     else (r := true ; e :: ac)
+			  end)
+	    val _ = successors := ns
+	 in
+	    ()
+	 end
    end
 
 structure Edge =
@@ -78,6 +96,9 @@ fun nodes (T {nodes, ...}) = !nodes
 fun foldNodes (g, a, f) = List.fold (nodes g, a, f)
    
 val numNodes = List.length o nodes
+
+fun removeDuplicateEdges (g: t): unit =
+   List.foreach (nodes g, Node.removeDuplicateSuccessors)
 
 fun new () = T {nodes = ref []}
    
