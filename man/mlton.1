@@ -62,9 +62,9 @@ run time, because of additional work that must be performed at each
 exception construction, raise, and handle.
 
 .TP
-\fB-export-header \fI{\fBfalse\fI|\fBtrue\fI}\fR
-Causes \fBMLton\fP to print a C header file with prototypes for all of
-the functions exported from SML, and then exit.  This flag is useful
+\fB-export-header \fIfile\fR
+Causes \fBMLton\fP to create \fIfile\fP with with C prototypes for all
+of the functions exported from SML to C.  This flag is useful
 for programs that use \fB_export\fP expressions.
 
 .TP
@@ -148,16 +148,19 @@ detecting curried applications that are mistakenly not fully applied.
 To silence spurious errors, you can use \fBignore e1\fP.
 
 .TP
-\fB-show-basis \fI{\fBfalse\fP|\fBtrue\fP}\fR
-If true, \fBMLton\fP prints the basis library and exits.  When used
-with an input file, \fBmlton\fP prints the basis defined by the input
-program.
+\fB-show-basis \fIfile\fR
+Causes \fBMLton\fP to pretty print to \fIfile\fP the basis defined by
+the input program.  When used with no input, \fBMLton\fP pretty prints
+the entire basis library.
 
 .TP
-\fB-show-basis-used \fI{\fBfalse\fP|\fBtrue\fP}\fR
-If true, \fBMLton\fP prints the types, values, signatures, structures,
-and functors from the basis library that the input program uses, and
-then exits.
+\fB-show-basis-used \fIfile\fR
+Causes \fBMLton\fP to pretty print to \fIfile\fP the portion of the
+basis library that the input program uses.
+
+.TP
+\fB-show-def-use \fIfile\fR
+Causes \fBMLton\fP to output def-use information to \fIfile\fP.
 
 .TP
 \fB-stop \fI{\fBf\fP|\fBg\fP|\fBo\fP|\fBsml\fP|\fBtc\fP}\fR
@@ -201,6 +204,10 @@ Be verbose about what passes are running.  The default is 0.
 .TP
 \fB-warn-match \fI{\fBtrue\fP|\fBfalse\fP}\fR
 Whether or not to display nonexhaustive and redundant match warnings.
+
+.TP
+\fB-warn-unused \fI{\fBfalse\fP|\fBtrue\fP}\fR
+Whether or not to report unused identifiers.
 
 .SH Runtime system options
 To control the runtime system, executables produced by \fBMLton\fP take
