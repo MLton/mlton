@@ -96,12 +96,18 @@ clean:
 # Manager (CM) installed.  You may need to replace the following with
 # 'sml-cm'.
 #
-SMLNJ_VERSION = 110.44
+SMLNJ_VERSION = 110.45
 SML	= sml
+
+.PHONY: check-nj-version
+check-nj-version:
+	if ! echo | $(SML) | grep -q $(SMLNJ_VERSION); then	\
+		echo You must use SML/NJ $(SMLNJ_VERSION);	\
+	fi
 
 .PHONY: nj-mlton
 nj-mlton: $(SOURCES)
-	@echo You must use SML/NJ $(SMLNJ_VERSION).
+	$(MAKE) check-nj-version
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -110,11 +116,10 @@ nj-mlton: $(SOURCES)
 		echo 'CM.make "sources.cm";';					\
 		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
 	) | $(SML)
-	@echo You must use SML/NJ $(SMLNJ_VERSION).
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual: $(SOURCES)
-	@echo You must use SML/NJ $(SMLNJ_VERSION).
+	$(MAKE) check-nj-version
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -125,11 +130,10 @@ nj-mlton-dual: $(SOURCES)
 		echo 'CM.make "sources.cm";';					\
 		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
 	) | $(SML)
-	@echo You must use SML/NJ $(SMLNJ_VERSION).
 
 .PHONY: nj-whole
 nj-whole: $(SOURCES)
-	@echo You must use SML/NJ $(SMLNJ_VERSION).
+	$(MAKE) check-nj-version
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -145,4 +149,4 @@ nj-whole: $(SOURCES)
 		echo 'end';							\
 	) >mlton.whole.sml
 	$(SML) <mlton.whole.sml
-	@echo You must use SML/NJ $(SMLNJ_VERSION).
+
