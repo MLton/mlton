@@ -176,16 +176,16 @@ fun ('down, 'up)
 			let
 			   val (items, u) =
 			      Vector.mapAndFold
-			      (items, initUp, fn (i, u) =>
+			      (items, initUp, fn ((f, i), u) =>
 			       let
 				  datatype z = datatype Pat.Item.t
 				  val (i, u') =
 				     case i of
-					Field (f, p) =>
+					Field p =>
 					   let
 					      val (p, u) = loop p
 					   in
-					      (Field (f, p), u)
+					      (Field p, u)
 					   end
 				      | Vid (v, to, po) =>
 					   let
@@ -196,11 +196,11 @@ fun ('down, 'up)
 					       combineUp (u, u'))
 					   end
 			       in
-				  (i, combineUp (u, u'))
+				  ((f, i), combineUp (u, u'))
 			       end)
 			in
-			   (doit (Record {items = items,
-					  flexible = flexible}),
+			   (doit (Record {flexible = flexible,
+					  items = items}),
 			    u)
 			end
 		   | Tuple ps => do1 (loops (ps, loop), Tuple)

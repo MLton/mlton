@@ -14,7 +14,7 @@ open Ast
 structure Field = Record.Field
 structure Srecord = SortedRecord
 
-fun reportDuplicateFields (v, name: string, reg: Region.t) =
+fun reportDuplicateFields (v, name: string, left, right) =
    Vector.foreachi
    (v, fn (i, (f, _)) =>
     if Vector.existsi (v, fn (i', (f', _)) =>
@@ -24,8 +24,8 @@ fun reportDuplicateFields (v, name: string, reg: Region.t) =
 	     open Layout
 	  in
 	     Control.error
-	     (reg,
-	      seq [str (concat ["duplicate field in ", name, ": "]),
+	     (reg (left, right),
+	      seq [str (concat ["duplicate label in ", name, ": "]),
 		   Field.layout f],
 	      empty)
 	  end
@@ -321,8 +321,8 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | ot_list of Exp.t list
        | pat of Pat.t
        | pat_2c of Pat.t list
-       | patitem of Pat.Item.t
-       | patitems of (Pat.Item.t list * bool)
+       | patitem of (Field.t * Pat.Item.t)
+       | patitems of ((Field.t * Pat.Item.t) list * bool)
        | patnode of Pat.node
        | pats of Pat.t list
        | program of Program.t
@@ -910,7 +910,7 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 	  (let
 	      val v = Vector.fromList elabels
 	      val _ = reportDuplicateFields (v, "expression",
-					     reg (elabelsleft, elabelsright))
+					     elabelsleft, elabelsright)
 	   in
 	      Exp.Record (Record.fromVector v)
 	   end)
@@ -983,10 +983,16 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
 	| LPAREN pats RPAREN     (Pat.tuple (Vector.fromList pats))
 	| LBRACKET pats RBRACKET (Pat.List (Vector.fromList pats))
 	| LBRACE RBRACE          (Pat.unit)
-	| LBRACE patitems RBRACE (let val (items, f) = patitems
-				  in Pat.Record {items = Vector.fromList items,
-						 flexible = f}
-				  end)
+	| LBRACE patitems RBRACE
+	  (let
+	      val (items, flexible) = patitems
+	      val items = Vector.fromList items
+	      val _ = reportDuplicateFields (items, "pattern",
+					     patitemsleft, patitemsright)
+	   in
+	      Pat.Record {flexible = flexible,
+			  items = items}
+	   end)
 
 pats: ([])
     | pat commapats (pat :: commapats)
@@ -1000,9 +1006,11 @@ patitems : patitem COMMA patitems  (let val (items, f) = patitems
          | patitem		([patitem], false)
 	 | DOTDOTDOT		([], true)
 
-patitem	: field EQUALOP pat              (Pat.Item.Field (field,pat))
-	| vidNoEqual constraint opaspat  (Pat.Item.Vid (vidNoEqual,
-							constraint, opaspat))
+patitem	: field EQUALOP pat
+          ((field, Pat.Item.Field pat))
+	| vidNoEqual constraint opaspat
+	  (Field.String (Ast.Vid.toString vidNoEqual),
+	   Pat.Item.Vid (vidNoEqual, constraint, opaspat))
 
 opaspat :         (NONE)
         | AS pat  (SOME pat)
@@ -1024,7 +1032,7 @@ ty'node	: tyvar		                  (Type.Var tyvar)
 	  (let
 	      val v = Vector.fromList tlabels
 	      val _ = reportDuplicateFields (v, "type",
-					     reg (tlabelsleft, tlabelsright))
+					     tlabelsleft, tlabelsright)
 	   in
 	      Type.Record (Srecord.fromVector v)
 	   end)

@@ -93,12 +93,12 @@ structure Pat =
 		     pat: t}
        | List of t vector
        | Record of {flexible: bool,
-		    items: item vector}
+		    items: (Record.Field.t * item) vector}
        | Tuple of t vector
        | Var of {fixop: Fixop.t, name: Longvid.t}
        | Wild
       and item =
-	 Field of Record.Field.t * t
+	 Field of t
 	| Vid of Vid.t * Type.t option * t option 
       withtype t = node Wrap.t
       type node' = node
@@ -204,17 +204,17 @@ structure Pat =
       and layoutF p = layout (p, false)
       and layoutT p = layout (p, true)
       and layoutFlatApp ps = seq (separate (Vector.toListMap (ps, layoutF), " "))
-      and layoutItem i =
-	 case i of
-	    Field (f, p) => seq [Field.layout f, str " = ", layoutT p]
-	  | Vid (vid, tyo, po) =>
-	       seq [Vid.layout vid,
-		    case tyo of
-		       NONE => empty
-		     | SOME ty => seq [str ": ", Type.layout ty],
-			  case po of
-			     NONE => empty
-			   | SOME p => seq [str " as ", layoutT p]]
+      and layoutItem (f, i) =
+	 seq [Field.layout f,
+	      case i of
+		 Field p => seq [str " = ", layoutT p]
+	       | Vid (_, tyo, po) =>
+		    seq [case tyo of
+			    NONE => empty
+			  | SOME ty => seq [str ": ", Type.layout ty],
+                         case po of
+			    NONE => empty
+			  | SOME p => seq [str " as ", layoutT p]]]
 
       val layoutDelimit = layoutF
       val layout = layoutT

@@ -488,9 +488,11 @@ fun elaboratePat (p: Apat.t, E: Env.t, preError: unit -> unit, amInRvb: bool)
 			 Vector.unzip
 			 (Vector.map
 			  (items,
-			   fn Apat.Item.Field fp => fp
-			    | Apat.Item.Vid (vid, tyo, po) =>
-				 (Field.String (Ast.Vid.toString vid),
+			   fn (f, i) =>
+			   (f,
+			    case i of
+			       Apat.Item.Field p => p
+			     | Apat.Item.Vid (vid, tyo, po) =>
 				  let
 				     val p =
 					case po of
@@ -851,7 +853,7 @@ structure Aexp =
 		 (Apat.makeRegion
 		  (Apat.Record {flexible = true,
 				items = (Vector.new1
-					 (Apat.Item.Field (f, Apat.var x)))},
+					 (f, Apat.Item.Field (Apat.var x)))},
 		   r),
 		  var x))
 	 end

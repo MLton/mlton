@@ -39,7 +39,7 @@ signature AST_CORE =
 	       sig
 		  type pat
 		  datatype t =
-		     Field of Record.Field.t * pat
+		     Field of pat
 		   | Vid of Vid.t * Type.t option * pat option 
 		     (* vid <:ty> <as pat> *)
 	       end
@@ -56,7 +56,7 @@ signature AST_CORE =
 			   var: Var.t}
 	     | List of t vector
 	     | Record of {flexible: bool,
-			  items: Item.t vector}
+			  items: (Record.Field.t * Item.t) vector}
 	     | Tuple of t vector
 	     | Var of {fixop: Fixop.t,
 		       name: Longvid.t}
