@@ -285,7 +285,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 				  cons])
 		  end)
 	       end)
-      fun optimizeTycon tycon = not (Tycon.equals (tycon, Tycon.bool))	      
+      fun optimizeTycon tycon = true
       fun optimizeType ty = case Type.dest ty
 			      of Type.Datatype tycon => optimizeTycon tycon
 			       | _ => false
