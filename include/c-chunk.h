@@ -436,11 +436,27 @@ Int_neg(64)
 /*                       Real                        */
 /* ------------------------------------------------- */
 
-Real64 atan2 (Real64 x, Real64 y);
-#define Real64_Math_atan2 atan2
-static inline Real32 Real32_Math_atan2 (Real32 x, Real32 y) {
-	return (Real32)(Real64_Math_atan2 ((Real64)x, (Real64)y));
-}
+#define unaryReal(f,g)						\
+	Real64 g (Real64 x);					\
+	static inline Real64 Real64_##f (Real64 x) {		\
+		return g (x);					\
+	}							\
+	static inline Real32 Real32_##f (Real32 x) {		\
+		return (Real32)(Real64_##f ((Real64)x));	\
+	}
+unaryReal(round, rint)
+#undef unaryReal
+
+#define binaryReal(f,g)								\
+	Real64 g (Real64 x, Real64 y);						\
+	static inline Real64 Real64_Math_##f (Real64 x, Real64 y) {		\
+		return g (x, y);						\
+	}									\
+	static inline Real32 Real32_Math_##f (Real32 x, Real32 y) {		\
+		return (Real32)(Real64_Math_##f ((Real64)x, (Real64)y));	\
+	}
+binaryReal(atan2, atan2)
+#undef binaryReal
 
 #define unaryReal(f,g)						\
 	Real64 g (Real64 x);					\
@@ -460,6 +476,15 @@ unaryReal(log10, log10)
 unaryReal(sin, sin)
 unaryReal(sqrt, sqrt)
 unaryReal(tan, tan)
+#undef unaryReal
+
+Real64 ldexp (Real64 x, Int32 i);
+static inline Real64 Real64_ldexp (Real64 x, Int32 i) {
+	return ldexp (x, i);
+}
+static inline Real32 Real32_ldexp (Real32 x, Int32 i) {
+	return (Real32)Real64_ldexp ((Real64)x, i);
+}
 
 #define binaryReal(name, op)						\
 	static inline Real32 Real32_##name (Real32 x, Real32 y) {	\
@@ -472,8 +497,8 @@ binaryReal(add, +)
 binaryReal(div, /)
 binaryReal(mul, *)
 binaryReal(sub, -)
-
 #undef binaryReal
+
 #define binaryReal(name, op)					\
 	static inline Bool Real32_##name (Real32 x, Real32 y) {	\
 		return x op y;					\
@@ -486,6 +511,7 @@ binaryReal(ge, >=)
 binaryReal(gt, >)
 binaryReal(le, <=)
 binaryReal(lt, <)
+#undef binaryReal
 
 #define Real32_muladd(x, y, z) ((x) * (y) + (z))
 #define Real32_mulsub(x, y, z) ((x) * (y) - (z))
@@ -493,8 +519,6 @@ binaryReal(lt, <)
 #define Real64_mulsub(x, y, z) ((x) * (y) - (z))
 #define Real32_neg(x) (-(x))
 #define Real64_neg(x) (-(x))
-#define Real32_toInt(x) ((Int)(x))
-#define Real64_toInt(x) ((Int)(x))
 
 typedef volatile union {
 	Word tab[2];
@@ -596,74 +620,68 @@ wordOps(64)
 	static inline t f##_to##t (f x) {	\
 		return (t)x;			\
 	}
-//coerce (Int64, Int64)
-coerce (Int64, Int32)
-//coerce (Int64, Int16)
-//coerce (Int64, Int8)
-coerce (Int32, Int64)
-coerce (Int32, Int32)
-coerce (Int32, Int16)
-coerce (Int32, Int8)
-//coerce (Int16, Int64)
-coerce (Int16, Int32)
 coerce (Int16, Int16)
+coerce (Int16, Int32)
 coerce (Int16, Int8)
-//coerce (Int8, Int64)
-coerce (Int8, Int32)
-coerce (Int8, Int16)
-coerce (Int8, Int8)
-//coerce (Int64, Real64)
-//coerce (Int64, Real32)
-coerce (Int32, Real64)
-coerce (Int32, Real32)
-coerce (Int16, Real64)
 coerce (Int16, Real32)
-coerce (Int8, Real64)
-coerce (Int8, Real32)
-coerce (Int64, Word32)
-//coerce (Int64, Word16)
-//coerce (Int64, Word8)  
-coerce (Int32, Word32)
-coerce (Int32, Word16)
-coerce (Int32, Word8)
-coerce (Int16, Word32)
+coerce (Int16, Real64)
 coerce (Int16, Word16)
+coerce (Int16, Word32)
 coerce (Int16, Word8)
-coerce (Int8, Word32)
+coerce (Int32, Int16)
+coerce (Int32, Int32)
+coerce (Int32, Int64)
+coerce (Int32, Int8)
+coerce (Int32, Real32)
+coerce (Int32, Real64)
+coerce (Int32, Word16)
+coerce (Int32, Word32)
+coerce (Int32, Word64)
+coerce (Int32, Word8)
+coerce (Int64, Int32)
+coerce (Int64, Word32)
+coerce (Int8, Int16)
+coerce (Int8, Int32)
+coerce (Int8, Int8)
+coerce (Int8, Real32)
+coerce (Int8, Real64)
 coerce (Int8, Word16)
+coerce (Int8, Word32)
 coerce (Int8, Word8)
-//coerce (Real64, Int64)
-coerce (Real64, Int32)
-coerce (Real64, Int16)
-coerce (Real64, Int8)
-//coerce (Real32, Int64)
-coerce (Real32, Int32)
 coerce (Real32, Int16)
+coerce (Real32, Int32)
 coerce (Real32, Int8)
-coerce (Real64, Real64)
-coerce (Real64, Real32)
-coerce (Real32, Real64)
 coerce (Real32, Real32)
-coerce (Word32, Int64)
-coerce (Word32, Int32)
-coerce (Word32, Int16)
-coerce (Word32, Int8)
-//coerce (Word16, Int64)
-coerce (Word16, Int32)
+coerce (Real32, Real64)
+coerce (Real64, Int16)
+coerce (Real64, Int32)
+coerce (Real64, Int8)
+coerce (Real64, Real32)
+coerce (Real64, Real64)
 coerce (Word16, Int16)
+coerce (Word16, Int32)
 coerce (Word16, Int8)
-//coerce (Word8, Int64)
-coerce (Word8, Int32)
-coerce (Word8, Int16)
-coerce (Word8, Int8)
-coerce (Word32, Word32)
-coerce (Word32, Word16)
-coerce (Word32, Word8)
-coerce (Word16, Word32)
 coerce (Word16, Word16)
+coerce (Word16, Word32)
+coerce (Word16, Word64)
 coerce (Word16, Word8)
-coerce (Word8, Word32)
+coerce (Word32, Int16)
+coerce (Word32, Int32)
+coerce (Word32, Int64)
+coerce (Word32, Int8)
+coerce (Word32, Word16)
+coerce (Word32, Word32)
+coerce (Word32, Word64)
+coerce (Word32, Word8)
+coerce (Word64, Word16)
+coerce (Word64, Word32)
+coerce (Word64, Word8)
+coerce (Word8, Int16)
+coerce (Word8, Int32)
+coerce (Word8, Int8)
 coerce (Word8, Word16)
+coerce (Word8, Word32)
+coerce (Word8, Word64)
 coerce (Word8, Word8)
 #undef coerce
 

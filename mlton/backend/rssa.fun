@@ -633,6 +633,7 @@ structure Program =
    struct
       datatype t =
 	 T of {functions: Function.t list,
+	       handlesSignals: bool,
 	       main: Function.t,
 	       objectTypes: ObjectType.t vector}
 
@@ -647,12 +648,6 @@ structure Program =
 	    has main orelse List.exists (functions, has)
 	 end
 
-      fun handlesSignals p =
-	 hasPrim (p, fn p =>
-		  case Prim.name p of
-		     Prim.Name.MLton_installSignalHandler => true
-		   | _ => false)
-	 
       fun layouts (T {functions, main, objectTypes, ...},
 		   output': Layout.t -> unit): unit =
 	 let

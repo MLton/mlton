@@ -87,7 +87,7 @@ fun profile program =
       then (program, fn _ => NONE)
    else
    let
-      val Program.T {functions, main, objectTypes} = program
+      val Program.T {functions, handlesSignals, main, objectTypes} = program
       val debug = false
       val profile = !Control.profile
       val profileAlloc: bool = profile = Control.ProfileAlloc
@@ -701,6 +701,7 @@ fun profile program =
 			  start = start}
 	 end
       val program = Program.T {functions = List.revMap (functions, doFunction),
+			       handlesSignals = handlesSignals,
 			       main = doFunction main,
 			       objectTypes = objectTypes}
       val _ = addFuncEdges ()

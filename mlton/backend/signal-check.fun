@@ -177,15 +177,16 @@ fun insertInFunction (f: Function.t): Function.t =
    end
 
 fun insert p =
-   if not (Program.handlesSignals p)
-      then p
-   else
-      let
-	 val Program.T {functions, main, objectTypes} = p
-      in
+   let
+      val Program.T {functions, handlesSignals, main, objectTypes} = p
+   in
+      if not handlesSignals
+	 then p
+      else
 	 Program.T {functions = List.revMap (functions, insertInFunction),
+		    handlesSignals = handlesSignals,
 		    main = main,
 		    objectTypes = objectTypes}
-      end
+   end
 
 end

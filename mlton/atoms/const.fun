@@ -66,7 +66,7 @@ in
       fn Int i => IntX.layout i
        | IntInf i => IntInf.layout i
        | Real r => RealX.layout r
-       | Word w => WordX.layout w
+       | Word w => seq [str "0wx", WordX.layout w]
        | Word8Vector v => wrap ("\"", "\"", Word8.vectorToString v)
 end	 
 

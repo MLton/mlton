@@ -262,7 +262,7 @@ fun simple (f: Function.t): Function.t =
 		    start = newStart}
    end
 
-fun doit (Program.T {functions, main, objectTypes}) =
+fun doit (Program.T {functions, handlesSignals, main, objectTypes}) =
    let
       val implementFunction =
 	 case !Control.handlers of
@@ -270,6 +270,7 @@ fun doit (Program.T {functions, main, objectTypes}) =
 	  | Control.Simple => simple
    in
       Program.T {functions = List.revMap (functions, implementFunction),
+		 handlesSignals = handlesSignals,
 		 main = main,
 		 objectTypes = objectTypes}
    end

@@ -672,8 +672,8 @@ structure Primitive =
 	    val op <= = _prim "Int64_le": int * int -> bool;
 	    val op > = _prim "Int64_gt": int * int -> bool;
 	    val op >= = _prim "Int64_ge": int * int -> bool;
-	    val quot = _import "Int64_quot": int * int -> int;
-	    val rem = _import "Int64_rem": int * int -> int;
+	    val quot = _prim "Int64_quot": int * int -> int;
+	    val rem = _prim "Int64_rem": int * int -> int;
 	    val ~? = _prim "Int64_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
@@ -990,8 +990,6 @@ structure Primitive =
 	       _prim "Pointer_setWord64": t * int * Word64.word -> unit;
 	 end
 
-      val useMathLibForTrig = false
-
       structure Real64 =
 	 struct
 	    type real = Real64.real
@@ -1003,14 +1001,8 @@ structure Primitive =
 		  val acos = _prim "Real64_Math_acos": real -> real;
 		  val asin = _prim "Real64_Math_asin": real -> real;
 		  val atan = _prim "Real64_Math_atan": real -> real;
-		  val atan2 =
-		     if useMathLibForTrig
-			then _import "atan2": real * real -> real;
-		     else _prim "Real64_Math_atan2": real * real -> real;
-		  val cos =
-		     if useMathLibForTrig
-			then _import "cos": real -> real;
-		     else _prim "Real64_Math_cos": real -> real;
+		  val atan2 = _prim "Real64_Math_atan2": real * real -> real;
+		  val cos = _prim "Real64_Math_cos": real -> real;
 		  val cosh = _import "cosh": real -> real;
 		  val e = _import "Real64_Math_e": real;
 		  val exp = _prim "Real64_Math_exp": real -> real;
@@ -1018,16 +1010,10 @@ structure Primitive =
 		  val log10 = _prim "Real64_Math_log10": real -> real;
 		  val pi = _import "Real64_Math_pi": real;
 		  val pow = _import "pow": real * real -> real;
-		  val sin =
-		     if useMathLibForTrig
-			then _import "sin": real -> real;
-		     else _prim "Real64_Math_sin": real -> real;
+		  val sin = _prim "Real64_Math_sin": real -> real;
 		  val sinh = _import "sinh": real -> real;
 		  val sqrt = _prim "Real64_Math_sqrt": real -> real;
-		  val tan =
-		     if useMathLibForTrig
-			then _import "tan": real -> real;
-		     else _prim "Real64_Math_tan": real -> real;
+		  val tan = _prim "Real64_Math_tan": real -> real;
 		  val tanh = _import "tanh": real -> real;
 	       end
 
@@ -1049,19 +1035,13 @@ structure Primitive =
 	    val gdtoa =
 	       _import "Real64_gdtoa": real * int * int * int ref -> cstring;
 	    val fromInt = _prim "Int32_toReal64": int -> real;
-	    val ldexp =
-	       if MLton.native
-		  then _prim "Real64_ldexp": real * int -> real;
-	       else _import "ldexp": real * int -> real;
+	    val ldexp = _prim "Real64_ldexp": real * int -> real;
 	    val maxFinite = _import "Real64_maxFinite": real;
 	    val minNormalPos = _import "Real64_minNormalPos": real;
 	    val minPos = _import "Real64_minPos": real;
 	    val modf = _import "Real64_modf": real * real ref -> real;
 	    val nextAfter = _import "Real64_nextAfter": real * real -> real;
-	    val round =
-	       if MLton.native
-		  then _prim "Real64_round": real -> real;
-	       else _import "rint": real -> real;
+	    val round = _prim "Real64_round": real -> real;
 	    val signBit = _import "Real64_signBit": real -> bool;
 	    val strto = _import "Real64_strto": NullString.t -> real;
 	    val toInt = _prim "Real64_toInt32": real -> int;
@@ -1097,14 +1077,8 @@ structure Primitive =
 		  val acos = _prim "Real32_Math_acos": real -> real;
 		  val asin = _prim "Real32_Math_asin": real -> real;
 		  val atan = _prim "Real32_Math_atan": real -> real;
-		  val atan2 =
-		     if useMathLibForTrig
-			then binary Real64.Math.atan2
-		     else _prim "Real32_Math_atan2": real * real -> real;
-		  val cos =
-		     if useMathLibForTrig
-			then unary Real64.Math.cos
-		     else _prim "Real32_Math_cos": real -> real;
+		  val atan2 = _prim "Real32_Math_atan2": real * real -> real;
+		  val cos = _prim "Real32_Math_cos": real -> real;
 		  val cosh = unary Real64.Math.cosh
 		  val e = _import "Real32_Math_e": real;
 		  val exp = _prim "Real32_Math_exp": real -> real;
@@ -1112,16 +1086,10 @@ structure Primitive =
 		  val log10 = _prim "Real32_Math_log10": real -> real;
 		  val pi = _import "Real32_Math_pi": real;
 		  val pow = binary Real64.Math.pow
-		  val sin =
-		     if useMathLibForTrig
-			then unary Real64.Math.sin
-		     else _prim "Real32_Math_sin": real -> real;
+		  val sin = _prim "Real32_Math_sin": real -> real;
 		  val sinh = unary Real64.Math.sinh
 		  val sqrt = _prim "Real32_Math_sqrt": real -> real;
-		  val tan =
-		     if useMathLibForTrig
-			then unary Real64.Math.tan
-		     else _prim "Real32_Math_tan": real -> real;
+		  val tan = _prim "Real32_Math_tan": real -> real;
 		  val tanh = unary Real64.Math.tanh
 	       end
 
@@ -1144,10 +1112,7 @@ structure Primitive =
 	    val gdtoa =
 	       _import "Real32_gdtoa": real * int * int * int ref -> cstring;
 	    val fromInt = _prim "Int32_toReal32": int -> real;
-	    val ldexp =
-	       if MLton.native
-		  then _prim "Real32_ldexp": real * int -> real;
-	       else fn (r, i) => fromLarge (Real64.ldexp (toLarge r, i))
+	    val ldexp = _prim "Real32_ldexp": real * int -> real;
 	    val maxFinite = _import "Real32_maxFinite": real;
 	    val minNormalPos = _import "Real32_minNormalPos": real;
 	    val minPos = _import "Real32_minPos": real;
@@ -1417,12 +1382,11 @@ structure Primitive =
 	    val wordSize: int = 8
 
 	    val + = _prim "Word8_add": word * word -> word;
-(*	    val addCheck = _prim "Word8_addCheck": word * word -> word; *)
 	    val andb = _prim "Word8_andb": word * word -> word;
 	    val ~>> = _prim "Word8_arshift": word * Word.word -> word;
 	    val div = _prim "Word8_div": word * word -> word;
 	    val fromInt = _prim "Int32_toWord8": int -> word;
-	    val fromLarge = _import "Word64_toWord8": LargeWord.word -> word;
+	    val fromLarge = _prim "Word64_toWord8": LargeWord.word -> word;
 	    val op >= = _prim "Word8_ge": word * word -> bool;
 	    val op > = _prim "Word8_gt" : word * word -> bool;
 	    val op <= = _prim "Word8_le": word * word -> bool;
@@ -1430,7 +1394,6 @@ structure Primitive =
 	    val op < = _prim "Word8_lt" : word * word -> bool;
 	    val mod = _prim "Word8_mod": word * word -> word;
 	    val * = _prim "Word8_mul": word * word -> word;
-(*	    val mulCheck = _prim "Word8_mulCheck": word * word -> word; *)
 	    val ~ = _prim "Word8_neg": word -> word;
 	    val notb = _prim "Word8_notb": word -> word;
 	    val orb = _prim "Word8_orb": word * word -> word;
@@ -1473,12 +1436,11 @@ structure Primitive =
 	    val wordSize: int = 16
 
 	    val + = _prim "Word16_add": word * word -> word;
-(*	    val addCheck = _prim "Word16_addCheck": word * word -> word; *)
 	    val andb = _prim "Word16_andb": word * word -> word;
 	    val ~>> = _prim "Word16_arshift": word * Word.word -> word;
 	    val div = _prim "Word16_div": word * word -> word;
 	    val fromInt = _prim "Int32_toWord16": int -> word;
-	    val fromLarge = _import "Word64_toWord16": LargeWord.word -> word;
+	    val fromLarge = _prim "Word64_toWord16": LargeWord.word -> word;
 	    val op >= = _prim "Word16_ge": word * word -> bool;
 	    val op > = _prim "Word16_gt" : word * word -> bool;
 	    val op <= = _prim "Word16_le": word * word -> bool;
@@ -1486,12 +1448,9 @@ structure Primitive =
 	    val op < = _prim "Word16_lt" : word * word -> bool;
 	    val mod = _prim "Word16_mod": word * word -> word;
 	    val * = _prim "Word16_mul": word * word -> word;
-(*	    val mulCheck = _prim "Word16_mulCheck": word * word -> word; *)
 	    val ~ = _prim "Word16_neg": word -> word;
 	    val notb = _prim "Word16_notb": word -> word;
 	    val orb = _prim "Word16_orb": word * word -> word;
-(*	    val rol = _prim "Word16_rol": word * Word.word -> word; *)
-(*	    val ror = _prim "Word16_ror": word * Word.word -> word; *)
 	    val >> = _prim "Word16_rshift": word * Word.word -> word;
 	    val - = _prim "Word16_sub": word * word -> word;
 	    val toInt = _prim "Word16_toInt32": word -> int;
@@ -1512,7 +1471,7 @@ structure Primitive =
 	    val ~>> = _prim "Word32_arshift": word * word -> word;
 	    val div = _prim "Word32_div": word * word -> word;
 	    val fromInt = _prim "Int32_toWord32": int -> word;
-	    val fromLarge = _import "Word64_toWord32": LargeWord.word -> word;
+	    val fromLarge = _prim "Word64_toWord32": LargeWord.word -> word;
 	    val op >= = _prim "Word32_ge": word * word -> bool;
 	    val op > = _prim "Word32_gt" : word * word -> bool;
 	    val op <= = _prim "Word32_le": word * word -> bool;
@@ -1542,29 +1501,25 @@ structure Primitive =
 	    val wordSize: int = 64
 
 	    val + = _prim "Word64_add": word * word -> word;
-(*	    val addCheck = _prim "Word64_addCheck": word * word -> word; *)
 	    val andb = _prim "Word64_andb": word * word -> word;
-	    val ~>> = _import "Word64_arshift": word * Word.word -> word;
-	    val div = _import "Word64_div": word * word -> word;
-	    val fromInt = _import "Int32_toWord64": int -> word;
+	    val ~>> = _prim "Word64_arshift": word * Word.word -> word;
+	    val div = _prim "Word64_div": word * word -> word;
+	    val fromInt = _prim "Int32_toWord64": int -> word;
 	    val fromLarge: LargeWord.word -> word = fn x => x
-	    val op >= = _import "Word64_ge": word * word -> bool;
-	    val op > = _import "Word64_gt" : word * word -> bool;
-	    val op <= = _import "Word64_le": word * word -> bool;
-	    val << = _import "Word64_lshift": word * Word.word -> word;
-	    val op < = _import "Word64_lt" : word * word -> bool;
-	    val mod = _import "Word64_mod": word * word -> word;
-	    val * = _import "Word64_mul": word * word -> word;
-(*	    val mulCheck = _import "Word64_mulCheck": word * word -> word; *)
+	    val op >= = _prim "Word64_ge": word * word -> bool;
+	    val op > = _prim "Word64_gt" : word * word -> bool;
+	    val op <= = _prim "Word64_le": word * word -> bool;
+	    val << = _prim "Word64_lshift": word * Word.word -> word;
+	    val op < = _prim "Word64_lt" : word * word -> bool;
+	    val mod = _prim "Word64_mod": word * word -> word;
+	    val * = _prim "Word64_mul": word * word -> word;
 	    val ~ = _prim "Word64_neg": word -> word;
 	    val notb = _prim "Word64_notb": word -> word;
 	    val orb = _prim "Word64_orb": word * word -> word;
-(*	    val rol = _import "Word64_rol": word * Word.word -> word; *)
-(*	    val ror = _import "Word64_ror": word * Word.word -> word; *)
-	    val >> = _import "Word64_rshift": word * Word.word -> word;
+	    val >> = _prim "Word64_rshift": word * Word.word -> word;
 	    val - = _prim "Word64_sub": word * word -> word;
-	    val toInt = _import "Word64_toInt32": word -> int;
-	    val toIntX = _import "Word64_toInt32X": word -> int;
+	    val toInt = _prim "Word64_toInt32": word -> int;
+	    val toIntX = _prim "Word64_toInt32X": word -> int;
 	    val toLarge: word -> LargeWord.word = fn x => x
 	    val toLargeX: word -> LargeWord.word = fn x => x
 	    val xorb = _prim "Word64_xorb": word * word -> word;

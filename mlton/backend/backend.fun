@@ -169,8 +169,7 @@ fun toMachine (program: Ssa.Program.t) =
 				Layouts Rssa.Program.layouts)
 	    else ()
 	 end
-      val program as R.Program.T {functions, main, objectTypes} = program
-      val handlesSignals = Rssa.Program.handlesSignals program
+      val R.Program.T {functions, handlesSignals, main, objectTypes} = program
       (* Chunk information *)
       val {get = labelChunk, set = setLabelChunk, ...} =
 	 Property.getSetOnce (Label.plist,
@@ -481,19 +480,11 @@ fun toMachine (program: Ssa.Program.t) =
 					 {offset = offset,
 					  value = translateOperand value})})
 	     | PrimApp {dst, prim, args} =>
-		  let
-		     datatype z = datatype Prim.Name.t
-		  in
-		     case Prim.name prim of
-			MLton_installSignalHandler => Vector.new0 ()
-		      | MLton_touch => Vector.new0 ()
-		      | _ => 
-			   Vector.new1
-			   (M.Statement.PrimApp
-			    {args = translateOperands args,
-			     dst = Option.map (dst, varOperand o #1),
-			     prim = prim})
-		  end
+		  Vector.new1
+		  (M.Statement.PrimApp
+		   {args = translateOperands args,
+		    dst = Option.map (dst, varOperand o #1),
+		    prim = prim})
 	     | ProfileLabel s => Vector.new1 (M.Statement.ProfileLabel s)
 	     | SetExnStackLocal =>
 		  (* ExnStack = stackTop + (offset + WORD_SIZE) - StackBottom; *)

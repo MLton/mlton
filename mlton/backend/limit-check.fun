@@ -717,11 +717,10 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
       f
    end
 
-fun insert (p as Program.T {functions, main, objectTypes}) =
+fun insert (p as Program.T {functions, handlesSignals, main, objectTypes}) =
    let
       val _ = Control.diagnostic (fn () => Layout.str "Limit Check maxPaths")
       datatype z = datatype Control.limitCheck
-      val handlesSignals = Program.handlesSignals p
       fun insert f =
 	 case !Control.limitCheck of
 	    PerBlock => insertPerBlock (f, handlesSignals)
@@ -750,6 +749,7 @@ fun insert (p as Program.T {functions, main, objectTypes}) =
 			       start = newStart}
    in
       Program.T {functions = functions,
+		 handlesSignals = handlesSignals,
 		 main = main,
 		 objectTypes = objectTypes}
    end

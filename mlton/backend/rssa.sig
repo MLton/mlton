@@ -222,12 +222,12 @@ signature RSSA =
 	 sig
 	    datatype t =
 	       T of {functions: Function.t list,
+		     handlesSignals: bool,
 		     main: Function.t,
 		     objectTypes: ObjectType.t vector}
 
 	    val clear: t -> unit
 	    val checkHandlers: t -> unit
-	    val handlesSignals: t -> bool
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val typeCheck: t -> unit
 	 end
