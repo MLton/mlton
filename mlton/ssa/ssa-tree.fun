@@ -1608,8 +1608,25 @@ structure Program =
 		 end
 	 end
 
-      fun layoutStats (T {globals, functions, ...}) =
+      fun layoutStats (T {globals, functions, main, ...}) =
 	 let
+	    open Layout
+	    val mainInfo =
+	       case List.peek (functions, fn f =>
+			       Func.equals (main, Function.name f)) of
+		  NONE => Error.bug "no main"
+		| SOME f =>
+		     let
+			val numVars = ref 0
+			val _ = Function.foreachVar (f, fn _ => Int.inc numVars)
+			val {blocks, ...} = Function.dest f
+			val numBlocks = Vector.length blocks
+		     in
+			align [seq [str "main num vars: ",
+				    Int.layout (!numVars)],
+			       seq [str "main num blocks: ",
+				    Int.layout numBlocks]]
+		     end
 	    val numTypes = ref 0
 	    fun inc _ = Int.inc numTypes
 	    val {hom = countType, destroy} =
@@ -1634,15 +1651,15 @@ structure Program =
 			     ; Int.inc numStatements))))))
 		end)
 	    val numFunctions = List.length functions
-	    open Layout
 	    val _ = destroy ()
 	 in
 	    align
-	    (List.map
-	     ([("num functions", Int.layout numFunctions),
-	       ("num blocks", Int.layout (!numBlocks)),
-	       ("num statements", Int.layout (!numStatements))],
-	      fn (name, value) => seq [str (name ^ " "), value]))
+	    [align (List.map
+		    ([("num functions", Int.layout numFunctions),
+		      ("num blocks", Int.layout (!numBlocks)),
+		      ("num statements", Int.layout (!numStatements))],
+		     fn (name, value) => seq [str (name ^ " "), value])),
+	     mainInfo]
 	 end
 
       (* clear all property lists reachable from program *)
