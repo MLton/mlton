@@ -106,14 +106,9 @@ if [ $home = 'yes' ]; then
 	cd doc
 	instantiate
 	cd web
+	make
 	cvs -Q co -d benchmarks mlton/benchmark/tests
 	cvs -Q release benchmarks
-	find benchmarks -type d | grep CVS | xargs rm -rf
-	cp -p ../CHANGES .
-	(cd ../user-guide && make)
-	gzip -c ../user-guide/main.ps >user-guide.ps.gz
-	(cd ../user-guide/main && tar.write .) | 
-		(mkdir HTML && cd HTML && tar.read)
 	cp $root/$package.i386.rpm $root/$package.src.rpm .
 	find . -type d | grep CVS | xargs rm -rf
 	find . -type f | grep cvsignore | xargs rm -f
