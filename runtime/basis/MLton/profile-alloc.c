@@ -99,6 +99,19 @@ void MLton_ProfileAlloc_Data_write (Pointer d, Word fd) {
  * turned on on Cygwin.
  */
 
+/* We have to put some stubs here because the runtime initialization code uses
+ * them.
+ */
+#include "mlton-basis.h"
+
+Pointer MLton_ProfileAlloc_Data_malloc (void) {
+	die ("no allocation profiling on Cygwin");
+}
+
+void MLton_ProfileAlloc_setCurrent (Pointer d) {
+	die ("no allocation profiling on Cygwin");
+}
+
 #else
 
 #error profiling not defined
