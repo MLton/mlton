@@ -63,13 +63,13 @@ in
       let
 	 open CharSize
       in
-	 make ("char", all, bits, default, equals, memoize, Always)
+	 make ("char", all, bits, default, equals, memoize, Sometimes)
       end
    val (defaultInt, int, ints, isIntX, primInts) =
       let
 	 open IntSize
       in
-	 make ("int", all, bits, default, equals, memoize, Always)
+	 make ("int", all, bits, default, equals, memoize, Sometimes)
       end
    val (defaultReal, real, reals, isRealX, primReals) =
       let
@@ -81,7 +81,7 @@ in
       let
 	 open WordSize
       in
-	 make ("word", all, bits, default, equals, memoize, Always)
+	 make ("word", all, bits, default, equals, memoize, Sometimes)
       end
 end
 
@@ -90,9 +90,9 @@ val isIntX = fn c => equals (c, intInf) orelse isIntX c
 val prims =
    [(array, Arity 1, Always),
     (arrow, Arity 2, Never),
-    (bool, Arity 0, Always),
+    (bool, Arity 0, Sometimes),
     (exn, Arity 0, Never),
-    (intInf, Arity 0, Always),
+    (intInf, Arity 0, Sometimes),
     (list, Arity 1, Sometimes),
     (preThread, Arity 0, Never),
     (reff, Arity 1, Always),
