@@ -288,6 +288,8 @@ ssa/common-subexp.sig
 ssa/common-subexp.fun
 ssa/contify.sig
 ssa/contify.fun
+ssa/flatten.sig
+ssa/flatten.fun
 ssa/implement-handlers.sig
 ssa/implement-handlers.fun
 ssa/inline.sig
@@ -296,6 +298,8 @@ ssa/introduce-loops.sig
 ssa/introduce-loops.fun
 ssa/local-flatten.sig
 ssa/local-flatten.fun
+ssa/loop-invariant.sig
+ssa/loop-invariant.fun
 ssa/poly-equal.sig
 ssa/direct-exp.sig
 ssa/direct-exp.fun

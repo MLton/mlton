@@ -23,6 +23,8 @@ direct-exp.fun
 direct-exp.sig
 equivalence-relation.fun
 equivalence-relation.sig
+flatten.fun
+flatten.sig
 flat-lattice.fun
 flat-lattice.sig
 implement-handlers.fun

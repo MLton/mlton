@@ -10,7 +10,7 @@ structure CommonBlock = CommonBlock (S)
 structure CommonSubexp = CommonSubexp (S)
 (* structure ConstantPropagation = ConstantPropagation (S) *)
 structure Contify = Contify (S)
-(* structure Flatten = Flatten (S) *)
+structure Flatten = Flatten (S)
 structure ImplementHandlers = ImplementHandlers (S)
 structure Inline = Inline (S)
 structure IntroduceLoops = IntroduceLoops (S)
@@ -73,15 +73,16 @@ val passes =
       * allocations occur between allocation of an intInf return 
       * and the call to the primitive.
       *)
-(*    ("flatten", Flatten.flatten), *)
-     ("localFlatten3", LocalFlatten.flatten),
+     ("flatten", Flatten.flatten),
      ("removeUnusedX9", RemoveUnused.remove),
-     ("commonSubexp", CommonSubexp.eliminate),
+     ("localFlatten3", LocalFlatten.flatten),
      ("removeUnusedX10", RemoveUnused.remove),
-     ("commonBlock", CommonBlock.eliminate),
+     ("commonSubexp", CommonSubexp.eliminate),
      ("removeUnusedX11", RemoveUnused.remove),
-     ("redundantTests", RedundantTests.simplify),
+     ("commonBlock", CommonBlock.eliminate),
      ("removeUnusedX12", RemoveUnused.remove),
+     ("redundantTests", RedundantTests.simplify),
+     ("removeUnusedX13", RemoveUnused.remove),
      ("redundant", Redundant.redundant),
      (* removeUnused cannot be omitted.
       * The final shrink pass ensures that constant operands are
