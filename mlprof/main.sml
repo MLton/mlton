@@ -184,9 +184,9 @@ structure AFile =
 			       to = #node (Vector.sub (split, to))})
 		      ; ())))
 		val _ =
-		   case line () of
-		      "" => ()
-		    | _ => Error.bug "expected end of file"
+		   case In.inputLine ins of
+		      NONE => ()
+		    | SOME _ => Error.bug "expected end of file"
 	     in
 		T {callGraph = graph,
 		   magic = magic,
@@ -325,7 +325,7 @@ structure ProfFile =
 	     fun line () =
 		case In.inputLine ins of
 		   NONE => Error.bug "unexpected end of mlmon file"
-		 | SOME l => String.dropSuffix (line (), 1)
+		 | SOME s => String.dropSuffix (s, 1)
 	     val _ =
 		if "MLton prof" = line ()
 		   then ()
