@@ -118,10 +118,4 @@ fun expandTree (t: t): string list =
 fun expand (s: string): string list Result.t =
    Result.map (fromString s, expandTree)
 
-val _ = let open Trace.Immediate
-	in
-	   debug := Out Out.error
-	   ; flagged ()
-	   ; on ["ChoicePattern.fromString"]
-	end
 end      
