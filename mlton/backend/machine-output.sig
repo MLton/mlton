@@ -63,51 +63,25 @@ signature MACHINE_OUTPUT =
 	    val ty: t -> Type.t
 	 end
 
-      structure GCInfo:
-	 sig
-	    datatype t = T of {(* Size of frame, including return address. *)
-			       frameSize: int,
-			       (* Live stack offsets. *)
-			       live: Operand.t list,
-			       return: Label.t}
-	 end
-
-      structure PrimInfo:
-	 sig
-	    datatype t =
-	       None
-	     | Runtime of GCInfo.t
-	     | Normal of Operand.t list
-	 end
-
       structure Statement:
 	 sig
 	    datatype t =
 	       Allocate of {dst: Operand.t,
-			    size: int,
 			    numPointers: int,
 			    numWordsNonPointers: int,
+			    size: int,
 			    stores: {offset: int,
-				     value: Operand.t} list}
-	     | AllocateArray of {dst: Operand.t,
-				 numElts: Operand.t,
-				 numPointers: int,
-				 numBytesNonPointers: int,
-				 live: Operand.t list,
-				 limitCheck: {gcInfo: GCInfo.t,
-					      bytesPerElt: int,
-					      bytesAllocated: int} option}
+				     value: Operand.t} vector}
+	     | Array of {dst: Operand.t,
+			 numElts: Operand.t,
+			 numPointers: int,
+			 numBytesNonPointers: int}
 	     | Assign of {dst: Operand.t option,
 			  prim: Prim.t, 
-			  pinfo: PrimInfo.t,
 			  args: Operand.t vector}
-	     | LimitCheck of {info: GCInfo.t,
-			      bytes: int,
-			      stackCheck: bool}
 	     | Move of {dst: Operand.t,
 			src: Operand.t}
 	     | Noop
-	     | Push of int
 	     | SetExnStackLocal of {offset: int}
 	     | SetExnStackSlot of {offset: int}
 	     | SetSlotExnStack of {offset: int}
@@ -116,6 +90,18 @@ signature MACHINE_OUTPUT =
 	 end
 
       structure Cases: MACHINE_CASES sharing Label = Cases.Label
+
+      structure LimitCheck:
+	 sig
+	    datatype t =
+	       Array of {numElts: Operand.t,
+			 bytesPerElt: int,
+			 extraBytes: int} (* for subsequent allocation *)
+	     | Heap of {bytes: int,
+			stackToo: bool}
+	     | Signal
+	     | Stack
+	 end
 
       structure Transfer:
 	 sig
@@ -126,18 +112,35 @@ signature MACHINE_OUTPUT =
 			 overflow: Label.t,
 			 success: Label.t}
 	     | Bug
+	     | CCall of {args: Operand.t vector,
+			 prim: Prim.t,
+			 return: Label.t, (* return should be nullary if the
+					   * C function returns void.  Else,
+					   * return should be either nullary or
+					   * unary with a var of the appropriate
+					   * type to accept the result.
+					   *)
+			 returnTy: Type.t option}
 	     | FarJump of {chunkLabel: ChunkLabel.t,
 			   label: Label.t,
 			   live: Operand.t list,
 			   return: {return: Label.t,
 				    handler: Label.t option,
 				    size: int} option}
+	     | LimitCheck of {frameSize: int,
+			      kind: LimitCheck.t,
+			      live: Operand.t list, (* live in stack frame. *)
+			      return: Label.t}
 	     | NearJump of {label: Label.t,
 			    return: {return: Label.t,
 				     handler: Label.t option,
 				     size: int} option}
 	     | Raise
 	     | Return of {live: Operand.t list}
+	     | Runtime of {args: Operand.t vector,
+			   frameSize: int,
+			   prim: Prim.t,
+			   return: Label.t}
 	     | Switch of {test: Operand.t,
 			  cases: Cases.t,
 			  default: Label.t option}
@@ -152,21 +155,27 @@ signature MACHINE_OUTPUT =
 	 sig
 	   structure Kind:
 	     sig
-	       datatype t = Func of {args: Operand.t list}
-		          | Jump
-		          | Cont of {args: Operand.t list,
-				     size: int}
-		          | Handler of {offset: int}
+	       datatype t =
+		  Cont of {args: Operand.t list,
+			   size: int}
+		| CReturn of {arg: Operand.t,
+			      ty: Type.t} option
+		| Func of {args: Operand.t list}
+		| Handler of {offset: int}
+		| Jump
 	     end
 	  
-	    datatype t = T of {label: Label.t,
-			       kind: Kind.t,
-			       (* Live registers and stack offsets at beginning of block. *)
+	    datatype t = T of {kind: Kind.t,
+			       label: Label.t,
+			       (* Live registers and stack offsets at beginning
+				* of block.
+				*)
 			       live: Operand.t list,
 			       profileInfo: {func: string, label: string},
-			       statements: Statement.t array,
+			       statements: Statement.t vector,
 			       transfer: Transfer.t}
 
+	    val clear: t -> unit
 	    val label: t -> Label.t
 	 end
 

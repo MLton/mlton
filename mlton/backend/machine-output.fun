@@ -112,154 +112,116 @@ structure Operand =
 	  | StackOffset {ty, ...} => ty
 	  | Uint _ => Type.uint
    end
-
-structure GCInfo =
-   struct
-      datatype t = T of {(* Size of frame, including return address. *)
-			 frameSize: int,
-			 (* Live stack offsets. *)
-			 live: Operand.t list,
-			 return: Label.t}
-
-      fun layout (T {frameSize, live, return})
-	= let open Layout
-	  in
-	    seq [str "GCInfo ",
-		 record [("frameSize", Int.layout frameSize),
-			 ("live", List.layout Operand.layout live),
-			 ("return", Label.layout (return))]]
-	  end
-   end
-
-structure PrimInfo =
-   struct
-      datatype t =
-	 None
-       | Runtime of GCInfo.t
-       | Normal of Operand.t list
-
-      fun layout i
-	= let open Layout
-	  in
-	    case i
-	      of None => empty
-	       | Runtime gcInfo 
-	       => seq [str "Runtime ",
-		       record [("gcInfo", GCInfo.layout gcInfo)]]
-	       | Normal live 
-	       => seq [str "Normal ",
-		       record [("live", List.layout Operand.layout live)]]
-	  end
-   end
-
 structure Statement =
    struct
       datatype t =
 	 Allocate of {dst: Operand.t,
-		      size: int,
 		      numPointers: int,
 		      numWordsNonPointers: int,
+		      size: int,
 		      stores: {offset: int,
-			       value: Operand.t} list}
-       | AllocateArray of {dst: Operand.t,
-			   numElts: Operand.t,
-			   numPointers: int,
-			   numBytesNonPointers: int,
-			   live: Operand.t list,
-			   limitCheck: {gcInfo: GCInfo.t,
-					bytesPerElt: int,
-					bytesAllocated: int} option}
+			       value: Operand.t} vector}
+       | Array of {dst: Operand.t,
+		   numElts: Operand.t,
+		   numPointers: int,
+		   numBytesNonPointers: int}
        | Assign of {dst: Operand.t option,
 		    prim: Prim.t, 
-		    pinfo: PrimInfo.t,
 		    args: Operand.t vector}
-       | LimitCheck of {info: GCInfo.t,
-			bytes: int,
-			stackCheck: bool}
        | Move of {dst: Operand.t,
 		  src: Operand.t}
        | Noop
-       | Push of int
        | SetExnStackLocal of {offset: int}
        | SetExnStackSlot of {offset: int}
        | SetSlotExnStack of {offset: int}
 
       val layout =
-	 let open Layout
+	 let
+	    open Layout
 	 in
-	    fn Noop => str "Noop"
+	    fn Allocate {dst, ...} => seq [Operand.layout dst, str " = Allocate"]
+	     | Array {dst, ...} => seq [Operand.layout dst, str " = Array"]
+	     | Assign {dst, prim, args, ...} =>
+		  seq [Option.layout Operand.layout dst, str " = ",
+		       Prim.layout prim, str " ",
+		       Vector.layout Operand.layout args]
 	     | Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
-	     | Push i => seq [str "Push (", Int.layout i, str ")"]
-	     | Assign {dst, prim, args, pinfo} =>
-		  seq [case dst
-			 of NONE => empty
-			  | SOME dst => seq [Operand.layout dst, str " = "],
-		       Prim.layout prim, str " ",
-		       Vector.layout Operand.layout args, str " ",
-		       PrimInfo.layout pinfo]
-	     | LimitCheck {info, bytes, stackCheck} => 
-		  seq [str "LimitCheck ",
-		       record [("info", GCInfo.layout info),
-			       ("bytes", Int.layout bytes),
-			       ("stackCheck", Bool.layout stackCheck)]]
+	     | Noop => str "Noop"
 	     | SetExnStackLocal {offset} =>
 		  seq [str "SetExnStackLocal ", Int.layout offset]
 	     | SetExnStackSlot {offset} =>
 		  seq [str "SetExnStackSlot ", Int.layout offset]
 	     | SetSlotExnStack {offset} =>
 		  seq [str "SetSlotExnStack ", Int.layout offset]
-	     | Allocate {dst, stores, ...} =>
-		  seq [Operand.layout dst, 
-		       str " = Allocate[",
-		       (paren o seq)
-		       (separateRight(List.map(stores,
-					       fn {offset, value}
-					        => seq [Int.layout offset,
-							str " <- ",
-							Operand.layout value]),
-				      ", ")),
-		       str "]"]
-	     | AllocateArray {dst, numElts, limitCheck, ...} =>
-		  seq [Operand.layout dst, 
-		       str " = AllocateArray[",
-		       Operand.layout numElts,
-		       str "] ",
-		       case limitCheck
-			 of NONE => empty
-			  | SOME {bytesPerElt, bytesAllocated, gcInfo, ...} =>
-			       record [("bytesPerElt", Int.layout bytesPerElt),
-				       ("bytesAllocated",
-					Int.layout bytesAllocated),
-				       ("gcInfo", GCInfo.layout gcInfo)
-				       ]]
 	 end
-
    end
 
 structure Cases = MachineCases (structure Label = Label)
+   
+structure LimitCheck =
+   struct
+      datatype t =
+	 Array of {bytesPerElt: int,
+		   extraBytes: int, (* for subsequent allocation *)
+		   numElts: Operand.t}
+       | Heap of {bytes: int,
+		  stackToo: bool}
+       | Signal
+       | Stack
+
+      fun layout (l: t): Layout.t =
+	 let
+	    open Layout
+	 in
+	    case l of
+	       Array {bytesPerElt, extraBytes, numElts} =>
+		  seq [str "Array ",
+		       record [("bytesPerElt", Int.layout bytesPerElt),
+			       ("extraBytes", Int.layout extraBytes),
+			       ("numElts", Operand.layout numElts)]]
+	     | Heap {bytes, stackToo} =>
+		  seq [str "Heap ",
+		       record [("bytes", Int.layout bytes),
+			       ("stackToo", Bool.layout stackToo)]]
+	     | Signal => str "Signal"
+	     | Stack => str "Stack"
+	 end
+   end
 
 structure Transfer =
    struct
       datatype t =
-	 Bug
+	 Arith of {prim: Prim.t,
+		   args: Operand.t vector,
+		   dst: Operand.t,
+		   overflow: Label.t,
+		   success: Label.t}
+       | Bug
+       | CCall of {args: Operand.t vector,
+		   prim: Prim.t,
+		   return: Label.t,
+		   returnTy: Type.t option}
        | FarJump of {chunkLabel: ChunkLabel.t,
 		     label: Label.t,
 		     live: Operand.t list,
 		     return: {return: Label.t,
 			      handler: Label.t option,
 			      size: int} option}
+       | LimitCheck of {frameSize: int,
+			kind: LimitCheck.t,
+			live: Operand.t list,
+			return: Label.t}
        | NearJump of {label: Label.t,
 		      return: {return: Label.t,
 			       handler: Label.t option,
 			       size: int} option}
-       | Arith of {prim: Prim.t,
-		   args: Operand.t vector,
-		   dst: Operand.t,
-		   overflow: Label.t,
-		   success: Label.t}
        | Raise
        | Return of {live: Operand.t list}
+       | Runtime of {args: Operand.t vector,
+		     frameSize: int,
+		     prim: Prim.t,
+		     return: Label.t}
        | Switch of {test: Operand.t,
 		    cases: Cases.t,
 		    default: Label.t option}
@@ -267,50 +229,69 @@ structure Transfer =
 		      int: Label.t,
 		      pointer: Label.t}
 
-
       fun layout t =
-	 let open Layout
-	 in case t of
-	    Arith {prim, args, dst, overflow, success} =>
-	       seq [str "Arith ",
-		    record [("prim", Prim.layout prim),
-			    ("args", Vector.layout Operand.layout args),
-			    ("dst", Operand.layout dst),
-			    ("overflow", Label.layout overflow),
-			    ("success", Label.layout success)]]
-	  | Bug => str "Bug"
-	  | FarJump {label, live, return, ...} => 
-               seq [str "FarJump ", 
-		    record [("label", Label.layout label),
-			    ("live", List.layout Operand.layout live),
-			    ("return", Option.layout 
-			               (fn {return, handler, size}
-					 => record [("return", Label.layout return),
-						    ("handler", Option.layout Label.layout handler),
-						    ("size", Int.layout size)])
-                                       return)]]
-	  | NearJump {label, return} => 
-               seq [str "NearJump ", 
-		    record [("label", Label.layout label),
-			    ("return", Option.layout 
-			               (fn {return, handler, size}
-					 => record [("return", Label.layout return),
-						    ("handler", Option.layout Label.layout handler),
-						    ("size", Int.layout size)])
-				       return)]]
-	  | Raise => str "Raise"
-	  | Return {live} => 
-               seq [str "Return ",
-		    record [("live", List.layout Operand.layout live)]]
-	  | Switch {test, cases, default} =>
-	       seq [str "Switch ",
-		    tuple [Operand.layout test,
-			   Cases.layout cases,
-			   Option.layout Label.layout default]]
-	  | SwitchIP {test, int, pointer} =>
-	       seq [str "SwitchIP ", tuple [Operand.layout test,
-					    Label.layout int,
-					    Label.layout pointer]]
+	 let
+	    open Layout
+	 in
+	    case t of
+	       Arith {prim, args, dst, overflow, success} =>
+		  seq [str "Arith ",
+		       record [("prim", Prim.layout prim),
+			       ("args", Vector.layout Operand.layout args),
+			       ("dst", Operand.layout dst),
+			       ("overflow", Label.layout overflow),
+			       ("success", Label.layout success)]]
+	     | Bug => str "Bug"
+	     | CCall {args, prim, return, returnTy} =>
+		  seq [str "CCall",
+		       record [("args", Vector.layout Operand.layout args),
+			       ("prim", Prim.layout prim),
+			       ("return", Label.layout return),
+			       ("returnTy", Option.layout Type.layout returnTy)]]
+	     | FarJump {label, live, return, ...} => 
+		  seq [str "FarJump ", 
+		       record [("label", Label.layout label),
+			       ("live", List.layout Operand.layout live),
+			       ("return", Option.layout 
+				(fn {return, handler, size}
+				 => record [("return", Label.layout return),
+					    ("handler", Option.layout Label.layout handler),
+					    ("size", Int.layout size)])
+				return)]]
+	     | LimitCheck {frameSize, kind, live, return} =>
+		  seq [str "LimitCheck",
+		       record [("frameSize", Int.layout frameSize),
+			       ("kind", LimitCheck.layout kind),
+			       ("live", List.layout Operand.layout live),
+			       ("return", Label.layout return)]]
+	     | NearJump {label, return} => 
+		  seq [str "NearJump ", 
+		       record [("label", Label.layout label),
+			       ("return", Option.layout 
+				(fn {return, handler, size}
+				 => record [("return", Label.layout return),
+					    ("handler", Option.layout Label.layout handler),
+					    ("size", Int.layout size)])
+				return)]]
+	     | Raise => str "Raise"
+	     | Return {live} => 
+		  seq [str "Return ",
+		       record [("live", List.layout Operand.layout live)]]
+	     | Runtime {args, prim, return} =>
+		  seq [str "Runtime ",
+		       record [("args", Vector.layout Operand.layout args),
+			       ("frameSize", Int.layout frameSize),
+			       ("prim", Prim.layout prim),
+			       ("return", Label.layout return)]]
+	     | Switch {test, cases, default} =>
+		  seq [str "Switch ",
+		       tuple [Operand.layout test,
+			      Cases.layout cases,
+			      Option.layout Label.layout default]]
+	     | SwitchIP {test, int, pointer} =>
+		  seq [str "SwitchIP ", tuple [Operand.layout test,
+					       Label.layout int,
+					       Label.layout pointer]]
 	 end
    end
 
@@ -318,33 +299,47 @@ structure Block =
    struct
       structure Kind =
 	struct
-	  datatype t = Func of {args: Operand.t list}
-	             | Jump
-	             | Cont of {args: Operand.t list,
-				size: int}
-	             | Handler of {offset: int}
+	  datatype t =
+	     Cont of {args: Operand.t list,
+		      size: int}
+	   | CReturn of {arg: Operand.t,
+			 ty: Type.t} option
+	   | Func of {args: Operand.t list}
+	   | Handler of {offset: int}
+	   | Jump
 
-	  val layout
-	    = let open Layout
-	      in
-		fn Func {args} 
-		 => seq [str "Func ",
-			 record [("args", List.layout Operand.layout args)]]
+	  fun layout k =
+	     let
+		open Layout
+	     in
+		case k of
+		   Cont {args, size} =>
+		      seq [str "Cont", paren (Int.layout size), str " ",
+			   record [("args", List.layout Operand.layout args)]]
+		 | CReturn opt =>
+		      seq [str "CReturn ",
+			   Option.layout
+			   (fn {arg, ty} =>
+			    record [("arg", Operand.layout arg),
+				    ("ty", Type.layout ty)])
+			   opt]
+		 | Func {args} =>
+		      seq [str "Func ",
+			   record [("args", List.layout Operand.layout args)]]
+		 | Handler {offset} =>
+		      seq [str "Handler", paren(Int.layout offset)]
 		 | Jump => str "Jump"
-		 | Cont {args, size} 
-		 => seq [str "Cont", paren(Int.layout size), str " ",
-			 record [("args", List.layout Operand.layout args)]]
-		 | Handler {offset} 
-		 => seq [str "Handler", paren(Int.layout offset)]
-	      end
+	     end
 	end
 
       datatype t = T of {label: Label.t,
 			 kind: Kind.t,
 			 live: Operand.t list,
 			 profileInfo: {func: string, label: string},
-			 statements: Statement.t array,
+			 statements: Statement.t vector,
 			 transfer: Transfer.t}
+
+      fun clear (T {label, ...}) = Label.clear label
 
       local
 	 fun make g (T r) = g r
@@ -352,20 +347,20 @@ structure Block =
 	 val label = make #label
       end
 
-      fun layout (T {label, kind, live, profileInfo, statements, transfer})
-	= let open Layout
-	  in
+      fun layout (T {label, kind, live, profileInfo, statements, transfer}) =
+	 let
+	    open Layout
+	 in
 	    align [seq [Label.layout label, 
 			str " ",
 			record [("kind", Kind.layout kind),
 				("live", List.layout Operand.layout live)],
 			str ":"],		   
-		   align (Array.toListMap(statements, Statement.layout)),
+		   align (Vector.toListMap (statements, Statement.layout)),
 		   Transfer.layout transfer]
-	  end
+	 end
 
-      fun layouts (block, output' : Layout.t -> unit)
-	= output'(layout block)
+      fun layouts (block, output' : Layout.t -> unit) = output' (layout block)
    end
 
 structure Chunk =
@@ -377,16 +372,16 @@ structure Chunk =
 			 blocks: Block.t list,
 			 (* for each type, gives the max # regs used *)
 			 regMax: Type.t -> int}
-      fun layout (T {blocks, ...})
-	= let open Layout
-	  in
+      fun layout (T {blocks, ...}) =
+	 let open Layout
+	 in
 	    align (List.map(blocks, Block.layout))
-	  end
+	 end
 
-      fun layouts (c as T {blocks, ...}, output' : Layout.t -> unit)
-	= let open Layout
-	  in List.foreach(blocks, fn block => Block.layouts(block, output'))
-	  end
+      fun layouts (c as T {blocks, ...}, output' : Layout.t -> unit) =
+	 let open Layout
+	 in List.foreach(blocks, fn block => Block.layouts(block, output'))
+	 end
    end
 
 structure Program =
@@ -405,17 +400,16 @@ structure Program =
 			 main: {chunkLabel: ChunkLabel.t,
 				label: Label.t}}
 
-      fun layout (T {chunks, ...})
-	= let open Layout
-	  in 
+      fun layout (T {chunks, ...}) =
+	 let open Layout
+	 in 
 	    align (List.map(chunks, Chunk.layout))
-	  end
+	 end
 
-      fun layouts (p as T {chunks, ...}, output': Layout.t -> unit)
-	= let open Layout
-	  in List.foreach(chunks, fn chunk => Chunk.layouts(chunk, output'))
-	  end 
+      fun layouts (p as T {chunks, ...}, output': Layout.t -> unit) =
+	 let open Layout
+	 in List.foreach(chunks, fn chunk => Chunk.layouts(chunk, output'))
+	 end 
    end
 
 end
-

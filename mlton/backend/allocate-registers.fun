@@ -5,45 +5,37 @@ functor AllocateRegisters (S: ALLOCATE_REGISTERS_STRUCTS): ALLOCATE_REGISTERS =
 struct
 
 open S
+structure R = Rssa
+structure M = Machine
 
-local open Ssa
+local
+   open Rssa
 in
-   structure Sblock = Block
-   structure Exp = Exp
+   structure Block = Block
    structure Func = Func
    structure Function = Function
-   structure Handler = Handler
-   structure Slabel = Label
-   structure Prim = Prim
-   structure Program = Program
-   structure Return = Return
-   structure Sstatement = Statement
-   structure Stransfer = Transfer
-   structure Stype = Type
+   structure Kind = Block.Kind
    structure Var = Var
+   structure Type = Type
 end
 
-local open Machine
+local
+   open Machine
 in
    structure Chunk = Chunk
-   structure GCInfo = GCInfo
    structure Operand = Operand
-   structure MlimitCheck = LimitCheck
-   structure MprimInfo = PrimInfo   
-   structure Mtype = Type
    structure Register = Register
-   structure Statement = Statement
 end
 
 val traceAllocateBlock =
    Trace.trace ("Allocate.block",
-		fn (Tree.T (Sblock.T {label, ...}, _),
-		    _: Chunk.t) => Slabel.layout label,
+		fn (Tree.T (Block.T {label, ...}, _),
+		    _: Chunk.t) => R.Label.layout label,
 		Unit.layout)
 
 val traceAllocateStatement =
    Trace.trace ("Allocate.statement",
-		fn (s, _: Chunk.t) => Sstatement.layout s,
+		fn (s, _: Chunk.t) => R.Statement.layout s,
 		Unit.layout)
 
 val traceForceStack =
@@ -53,45 +45,124 @@ val traceForceStack =
  * the old handler and space for the handler itself
  *)
 local
-   open Mtype
+   open Type
 in
    val labelSize = size label
    val handlerSize = labelSize + size uint
 end
 
-structure Live = Live (open Ssa)
-structure LimitCheck = LimitCheck (open Ssa)
+structure Live = Live (open Rssa)
+
+structure Stack:
+   sig
+      type t
+
+      val empty: t
+      val get: t * Type.t -> t * {offset: int}
+(*      val getAt: t * {offset: int, size: int} -> t option *)
+      val layout: t -> Layout.t
+      (* new takes a list of already allocated nonoverlapping spots *)
+      val new: {offset: int, ty: Type.t} list -> t
+      val size: t -> int
+   end =
+   struct
+      (* Keep a list of allocated slots sorted in increasing order of offset.
+       *)
+      datatype t = T of {offset: int, size: int} list
+
+      fun layout (T alloc) =
+	 List.layout (fn {offset, size} =>
+		      Layout.record [("offset", Int.layout offset),
+				     ("size", Int.layout size)])
+	 alloc
+	 
+      val empty = T []
+
+      fun size (T alloc) =
+	 case alloc of
+	    [] => 0
+	  | _ => let
+		    val {offset, size} = List.last alloc
+		 in
+		    offset + size
+		 end
+
+      fun new (alloc): t =
+	 let
+	    val a = Array.fromListMap (alloc, fn {offset, ty} =>
+				       {offset = offset,
+					size = Type.size ty})
+	    val _ = QuickSort.sort (a, fn (r, r') => #offset r <= #offset r')
+	 in
+	    T (Array.toList a)
+	 end
+
+      fun get (T alloc, ty) =
+	 let
+	    val slotSize = Type.size ty
+	 in
+	    case alloc of
+	       [] => (T [{offset = 0, size = slotSize}],
+		      {offset = 0})
+	     | a :: alloc =>
+		  let
+		     fun loop (alloc, a as {offset, size}, ac) =
+			let
+			   val prevEnd = offset + size
+			   val begin = Type.align (ty, prevEnd)
+			   fun coalesce () =
+			      if prevEnd = begin
+				 then ({offset = offset,
+					size = size + slotSize},
+				       ac)
+			      else ({offset = begin, size = slotSize},
+				    {offset = offset, size = size} :: ac)
+			in
+			   case alloc of
+			      [] =>
+				 let
+				    val (a, ac) = coalesce ()
+				 in
+				    (T (rev (a :: ac)), {offset = begin})
+				 end
+			    | (a' as {offset, size}) :: alloc =>
+				 if begin + slotSize > offset
+				    then loop (alloc, a', a :: ac)
+				 else
+				     let
+					val (a'' as {offset = o', size = s'}, ac)
+					   = coalesce ()
+					val alloc =
+					   List.appendRev
+					   (ac,
+					    if o' + s' = offset
+					       then
+						  {offset = o', size = size + s'}
+						  :: alloc
+					    else a'' :: a' :: alloc)
+				     in
+					(T alloc, {offset = begin})
+				     end
+			end
+		  in
+		     loop (alloc, a, [])
+		  end
+	 end
+   end
 
 structure Info =
    struct
-      datatype t =
-	 T of {
-	       limitCheck: Machine.LimitCheck.t,
-	       live: Operand.t list,
-	       liveNoFormals: Operand.t list,
-	       liveFrame: (Handler.t * Operand.t list) list,
-	       size: int,
-	       adjustSize: int -> {size: int, shift: int}
-	       }
+      type t = {
+		live: Operand.t list,
+		liveNoFormals: Operand.t list,
+		size: int,
+		adjustSize: int -> {size: int, shift: int}
+		}
 
-      local
-	 fun make f (T r) = f r
-      in
-	 val live = make #live
-	 val size = make #size
-      end
-
-      fun layout (T {limitCheck, 
-		     live, liveNoFormals, liveFrame,
-		     size, adjustSize}) =
+      fun layout ({live, liveNoFormals, size, ...}: t) =
 	 Layout.record
-	 [("limitCheck", Machine.LimitCheck.layout limitCheck),
-	  ("live", List.layout Operand.layout live),
+	 [("live", List.layout Operand.layout live),
 	  ("liveNoFormals", List.layout Operand.layout liveNoFormals),
-	  ("liveFrame", 
-	   List.layout
-	   (Layout.tuple2 (Handler.layout, List.layout Operand.layout)) 
-	   liveFrame),
 	  ("size", Int.layout size)]
    end
 
@@ -102,99 +173,51 @@ fun ^ r = valOf (!r)
 (*                     allocate                      *)
 (* ------------------------------------------------- *)
 
-fun allocate {program = program as Program.T {globals, ...},
-	      funcChunk,
-	      isCont,
-	      isHandler,
-	      labelChunk,
-	      labelToLabel,
+fun allocate {chunk: Machine.Chunk.t,
+	      function = f: Rssa.Function.t,
+	      labelChunk: Rssa.Label.t -> Machine.Chunk.t,
 	      varInfo: Var.t -> {operand: Machine.Operand.t option ref option,
-				 primInfo: Machine.PrimInfo.t ref,
 				 ty: Machine.Type.t}} =
    let
-      val limitCheck = LimitCheck.limitCheck program
-      val _ =
-	 Vector.foreach
-	 (globals, fn Sstatement.T {var, exp, ...} =>
-	  case exp of
-	     Exp.PrimApp {prim, ...} =>
-	       let
-		 val {primInfo, ...} = varInfo (valOf var)
-	       in 
-		 if Prim.entersRuntime prim
-		   then primInfo :=
-		        MprimInfo.runtime (GCInfo.make {frameSize = labelSize,
-							live = []})
-		   else primInfo :=  MprimInfo.normal []
-	       end
-	   | _ => ())
       fun diagnostics f =
 	 Control.diagnostics
 	 (fn display =>
 	  let
 	     open Layout
-	     fun diagVar x =
+	     fun diagVar (x: Var.t): unit =
 		display (seq
 			 [Var.layout x, str " ",
 			  Option.layout
 			  (fn r => Option.layout Operand.layout (!r))
 			  (#operand (varInfo x))])
-	     fun diagStatement (Sstatement.T {var, ...}) =
-		Option.app (var, diagVar)
+	     fun diagStatement (s: R.Statement.t): unit =
+		R.Statement.forDef (s, diagVar o #var)
 	  in
 	     f (display, diagVar, diagStatement)
 	  end)
-      val _ = diagnostics (fn (display, _, diagStatement) =>
-			   (display (Layout.str "Global allocs:")
-			    ; Vector.foreach (globals, diagStatement)))
-   in
-      fn f =>
-      let
-	 val _ =
-	    Control.diagnostic (fn () =>
-				let open Layout
-				in seq [str "Function allocs for ",
-					Func.layout (Function.name f)]
-				end)
-	 val limitCheck = limitCheck f
-	 val {get = labelInfo: Slabel.t -> Info.t,
-	      set = setSlabelInfo, ...} =
-	    Property.getSetOnce
-	    (Slabel.plist,
-	     Property.initRaise ("label info", Slabel.layout))
-	 val setSlabelInfo =
-	    Trace.trace2
-	    ("Allocate.setSlabelInfo", Slabel.layout, Info.layout, Unit.layout)
-	    setSlabelInfo
-	 val {get = funcInfo: Func.t -> {
-					 info: Info.t,
-					 handlerOffset: int option
-					 }, 
-	      set = setFuncInfo, ...} =
-	    Property.getSetOnce (Func.plist,
-				 Property.initRaise ("func info", Func.layout))
-	 val {labelLive, primLive} =
-	    Live.live (f, {shouldConsider = isSome o #operand o varInfo})
-	 val liveBegin = #begin o labelLive
-	 val liveBeginNoFormals = #beginNoFormals o labelLive
-	 val livePrim = #vars o primLive
-	 fun liveBegin' l =
-	    let val i = labelLive l
-	    in (#begin i, #handlerSlots i)
-	    end
-	 fun liveBeginNoFormals' l =
-	    let val i = labelLive l
-	    in (#beginNoFormals i, #handlerSlots i)
-	    end
-	 fun liveBeginFrame' l =
-	    let val i = labelLive l
-	    in (#frame i, #handlerSlots i)
-	    end
-	 fun livePrim' x =
-	    let val i = primLive x
-	    in (#vars i, #handlerSlots i)
-	    end
-	 val {args, blocks, name, start, ...} = Function.dest f
+      val _ =
+	 Control.diagnostic (fn () =>
+			     let open Layout
+			     in seq [str "Function allocs for ",
+				     Func.layout (Function.name f)]
+			     end)
+      val {get = labelInfo: R.Label.t -> Info.t, set = setLabelInfo, ...} =
+	 Property.getSetOnce (R.Label.plist,
+			      Property.initRaise ("label info", R.Label.layout))
+      val setLabelInfo =
+	 Trace.trace2
+	 ("Allocate.setLabelInfo", R.Label.layout, Info.layout, Unit.layout)
+	 setLabelInfo
+      val {get = funcInfo: Func.t -> {
+				      info: Info.t,
+				      handlerOffset: int option
+				      }, 
+	   set = setFuncInfo, ...} =
+	 Property.getSetOnce (Func.plist,
+			      Property.initRaise ("func info", Func.layout))
+      val labelLive =
+	 Live.live (f, {shouldConsider = isSome o #operand o varInfo})
+      val {args, blocks, name, start, ...} = Function.dest f
 	 (*
 	  * Decide which variables will live in stack slots and which
 	  * will live in registers.
@@ -213,68 +236,52 @@ fun allocate {program = program as Program.T {globals, ...},
 	 val hasHandler: bool ref = ref false
 	 fun forceStack (x: Var.t): unit = setPlace (x, Stack)
 	 val forceStack = traceForceStack forceStack
-	 fun forceStacks (xs: Var.t list): unit = List.foreach (xs, forceStack)
 	 val _ = Vector.foreach (args, forceStack o #1)
 	 val _ =
 	    Vector.foreach
-	    (blocks, fn Sblock.T {label, args, statements, transfer, ...} =>
+	    (blocks,
+	     fn R.Block.T {args, kind, label, statements, transfer, ...} =>
 	     let
-	        val _ = if isCont label andalso !Control.stackCont
-			  then Vector.foreach(args, forceStack o #1)
-			else ()
-		val _ =
-		   case limitCheck label of
-		      LimitCheck.No => ()
-		    | _ => forceStacks (liveBegin label)
+		val {begin, beginNoFormals, ...} = labelLive label
+	        val _ =
+		   case kind of
+		      Kind.Cont _ =>
+			 (Vector.foreach (args, forceStack o #1)
+			  ; List.foreach (beginNoFormals, forceStack))
+		    | Kind.Handler =>
+			 List.foreach (beginNoFormals, forceStack)
+		    | _ => ()
 		val _ =
 		   Vector.foreach
-		   (statements, fn Sstatement.T {var, exp, ...} =>
-		    case exp of
-		       Exp.PrimApp {prim, args, ...} =>
-			  (* Array_array is treated specially because a
-			   * limit check is inserted before the allocation,
-			   * which refers to the size.  Therefore the size
-			   * is live at the limit check.
-			   *)
-			  if Prim.name prim = Prim.Name.Array_array
-			     then (forceStacks
-				   (Vector.sub (args, 0)
-				    :: livePrim (valOf var)))
-			  else if Prim.entersRuntime prim
-				  then forceStacks (livePrim (valOf var))
-			       else ()
-		     | Exp.SetHandler h => hasHandler := true
-		     | Exp.SetExnStackLocal => hasHandler := true
-		     | Exp.SetExnStackSlot => hasHandler := true
-		     | Exp.SetSlotExnStack => hasHandler := true
-		     | _ => ())
+		   (statements, fn s =>
+		    let
+		       datatype z = datatype R.Statement.t
+		    in
+		       case s of
+			  SetHandler h => hasHandler := true
+			| SetExnStackLocal => hasHandler := true
+			| SetExnStackSlot => hasHandler := true
+			| SetSlotExnStack => hasHandler := true
+			| _ => ()
+		    end)
 		val _ =
-		   case transfer of
-		      Stransfer.Call {return = Return.NonTail {cont, handler, ...}, ...} =>
-			 (forceStacks (liveBeginNoFormals cont)
-			  ; (Handler.foreachLabel
-			     (handler, fn l =>
-			      forceStacks (liveBeginNoFormals l))))
-			 
-		    | _ => ()
+		   let
+		      fun force l =
+			 List.foreach (#beginNoFormals (labelLive l),
+				       forceStack)
+		      datatype z = datatype R.Transfer.t
+		   in
+		      case transfer of
+			 LimitCheck {return, ...} => force return
+		       | Runtime {return, ...} => force return
+		       | _ => ()
+		   end
 	     in
 		()
 	     end)
-	 (* The next available offset on the stack.
-	  * It is labelSize initially because the stack pointer always points
-	  * at the return label in the previous frame.
-	  *)
-	 val nextOffset = ref labelSize
-	 fun getNextOffset (ty: Mtype.t, size) =
-	    let
-	       val offset = Mtype.align (ty, !nextOffset)
-	       val _ = nextOffset := offset + size
-	    in
-	       offset
-	    end
 	 (* The next available register number for each type. *)
-	 val nextReg = Mtype.memo (fn _ => ref 0)
-	 fun nextRegister (ty: Mtype.t, c: Chunk.t): Register.t =
+	 val nextReg = Type.memo (fn _ => ref 0)
+	 fun nextRegister (ty: Type.t, c: Chunk.t): Register.t =
 	    let
 	       val r = nextReg ty
 	       val reg = Chunk.register (c, !r, ty)
@@ -282,44 +289,66 @@ fun allocate {program = program as Program.T {globals, ...},
 	    in
 	       reg
 	    end
-	 fun allocateVarInfo (x: Var.t, 
-			      {operand, ty, primInfo},
+	 fun allocateVarInfo (x: Var.t, {operand, ty},
 			      c: Chunk.t, 
-			      force: bool): unit =
+			      force: bool,
+			      s: Stack.t): Stack.t =
 	    if force orelse isSome operand
 	       then let
-		       val oper =
+		       val (s, oper) =
 			  case place x of
 			     Stack =>
-				Operand.stackOffset
-				{ty = ty,
-				 offset = getNextOffset (ty, Mtype.size ty)}
+				let
+				   val (s, {offset}) = Stack.get (s, ty)
+				in
+				   (s, Operand.stackOffset {ty = ty,
+							    offset = offset})
+				end
 			   | Register =>
-				Operand.register (nextRegister (ty, c))
-		    in case operand of
-		       NONE => ()
-		     | SOME r => r := SOME oper
+				(s, Operand.register (nextRegister (ty, c)))
+		       val _ = 
+			  case operand of
+			     NONE => ()
+			   | SOME r => r := SOME oper
+		    in
+		       s
 		    end
-	    else ()
+	    else s
 	 val allocateVarInfo =
-	    Trace.trace4
+	    Trace.trace5
 	    ("Allocate.allocateVarInfo",
 	     Var.layout,
 	     fn {operand, ...} =>
 	     Option.layout (Ref.layout (Option.layout Operand.layout)) operand,
-	     Layout.ignore, Bool.layout, Unit.layout)
+	     Layout.ignore, Bool.layout, Stack.layout,
+	     Stack.layout)
 	    allocateVarInfo
-	 fun allocateVar (x, c, f) = allocateVarInfo (x, varInfo x, c, f)
-	 val chunk = funcChunk name
-	 (* Get the stack slots for the formals.  This has to happen first
-	  * So that the calling convention is followed.
+	 fun allocateVar (x, c, f, s) = allocateVarInfo (x, varInfo x, c, f, s)
+	 (* The initial stack has one element, a label, because the stack
+	  * pointer always points at the return label in the previous frame.
 	  *)
-	 val _ = Vector.foreach (args, fn (x, _) =>
-				 allocateVar (x, chunk, true))
-	 val handlerOffset =
+	 val (stack, _) = Stack.get (Stack.empty, Type.label)
+	 (* Get the stack slots for the formals.  These are done in the
+	  * initial stack so that the calling convention is followed.
+	  *)
+	 val stack =
+	    Vector.fold (args, stack, fn ((x, _), s) =>
+			 allocateVar (x, chunk, true, s))
+	 (* Allocate slots for the link and handler, if necessary.
+	  * This code relies on Stack.get putting them together, since for now
+	  * the machine IL assumes they are and only has the ability to refer
+	  * to one of them.
+	  *)
+	 val (stack, handlerOffset) =
 	    if !hasHandler
-	       then (SOME (getNextOffset (Mtype.label, handlerSize)))
-	    else NONE
+	       then
+		  let
+		     val (s, {offset}) = Stack.get (stack, Type.label)
+		     val (s, {...}) = Stack.get (s, Type.uint)
+		  in
+		     (s, SOME offset)
+		  end
+	    else (stack, NONE)
 	 local
 	    fun getOperands ((xs: Var.t list,
 			      (code, link): bool * bool),
@@ -332,7 +361,7 @@ fun allocate {program = program as Program.T {globals, ...},
 				val handlerOffset = valOf handlerOffset
 			     in
 				(Operand.stackOffset {offset = handlerOffset,
-						      ty = Mtype.uint})
+						      ty = Type.uint})
 				:: ops
 			     end
 		     else ops
@@ -343,7 +372,7 @@ fun allocate {program = program as Program.T {globals, ...},
 			     in
 				(Operand.stackOffset
 				 {offset = handlerOffset + labelSize,
-				  ty = Mtype.uint})
+				  ty = Type.uint})
 				:: ops
 			     end
 		     else ops
@@ -380,171 +409,65 @@ fun allocate {program = program as Program.T {globals, ...},
 					  Bool.layout force],
 			    List.layout Operand.layout)
 	       getOperands
-	    fun getLiveOperands (j, force) =
-	       let
-		  val {begin, beginNoFormals, frame, handlerSlots = hs} =
-		     labelLive j
-	       in
-		  {live = getOperands ((begin, hs), false),
-		   liveNoFormals = getOperands ((beginNoFormals, hs), force),
-		   liveFrame = List.map(frame, fn (h, frame) => 
-					(h, getOperands ((frame, hs), force)))}
-	       end
-	    val getLiveOperands =
-	       Trace.trace ("Allocate.getLiveOperands",
-			    fn (j, force) =>
-			    Layout.tuple [Slabel.layout j,
-					  Bool.layout force],
-			    fn {live, liveNoFormals, liveFrame} =>
-			    Layout.record [("live", 
-					    List.layout Operand.layout live),
-					   ("liveNoFormals",
-					    List.layout Operand.layout liveNoFormals),
-					   ("liveFrame", 
-					    List.layout 
-					    (Layout.tuple2
-					     (Handler.layout,
-					      List.layout Operand.layout))
-					    liveFrame)])
-	                   getLiveOperands
-	    fun getLivePrimOperands x = getOperands (livePrim' x, false)
-	    fun getLivePrimRuntimeOperands x = getOperands (livePrim' x, true)
 	 end
-	 local
-	    fun getGCInfo' live = GCInfo.make {frameSize = !nextOffset,
-					       live = live}
-	 in
-	    val getGCInfo' = getGCInfo'
-	    fun getGCInfo j = getGCInfo' (getOperands (liveBegin' j, true))
-	    val getGCInfo =
-	       Trace.trace ("Allocate.getGCInfo",
-			    Slabel.layout,
-			    GCInfo.layout)
-                           getGCInfo
-	    fun getGCInfoPrimRuntime x =
-	       getGCInfo' (getLivePrimRuntimeOperands x)
-	 end
-	 fun allocateStatement (Sstatement.T {var, exp, ...},
-				c: Chunk.t) =
-	    case var of
-	       NONE => ()
-	     | SOME var =>
-		  let
-		     val info as {primInfo, ...} = varInfo var
-		     val _ = allocateVarInfo (var, info, c, false)
-		  in
-		     case exp of
-			Exp.PrimApp {prim, ...} =>
-			   if Prim.entersRuntime prim
-			      then
-				 primInfo :=
-				 MprimInfo.runtime
-				 (getGCInfoPrimRuntime var)
-			   else if Prim.impCall prim
-				   then
-				      primInfo :=
-				      (MprimInfo.normal
-				       (getLivePrimOperands var))
-				else ()
-		      | _ => ()
-		  end
-	 val allocateStatement = traceAllocateStatement allocateStatement
-	 val todo : (unit -> unit) list ref = ref []
-	 (* Descend the dominator tree. *)
-	 fun loop arg : unit =
-	    traceAllocateBlock
-	    (fn (Tree.T (Sblock.T {args, label, statements, ...}, children),
-		 c: Chunk.t) =>
-	    let	
-	       val isCont = isCont label
-	       val isHandler = isHandler label
-	       val c' = labelChunk label
-	       val saveReg = Mtype.memo (! o nextReg)
-	       val saveOffset = !nextOffset
-	       val _ = List.foreach (Mtype.all, ignore o saveReg)
-	       val _ =
-		  if Chunk.equals (c, c')
-		     then ()
-		  else (* We can reset all of the register counters
-			* because we know that no registers live
-			* across a chunk boundary.
-			*)
-		     List.foreach (Mtype.all, fn t => nextReg t := 0)
-	       fun adjustSize size
-		 = let
-		     val (offset,offset') =
-		        Vector.fold
-			(args, (0,size), fn ((x, _), (offset, offset')) =>
-			 let val ty = #ty (varInfo x)
-			 in (Mtype.align (ty, offset) + Mtype.size ty,
-			     Mtype.align (ty, offset') + Mtype.size ty)
-			 end)
-		     val (offset,offset') = (Mtype.wordAlign offset,
-					     Mtype.wordAlign offset')
-		     val shift = Int.abs((offset' - size) - offset)
+	 (* Do a DFS of the control-flow graph. *)
+	 val _ =
+	    Function.dfs
+	    (f, fn R.Block.T {args, label, kind, statements, ...} =>
+	     let
+		val {begin, beginNoFormals, handlerSlots = hs} = labelLive label
+		val live = getOperands ((begin, hs), false)
+		val liveNoFormals =
+		   getOperands ((beginNoFormals, hs),
+				case kind of
+				   Kind.Cont _ => true
+				 | Kind.CReturn => false
+				 | Kind.Handler => true
+				 | Kind.Normal => false)
+		val stack =
+		   Stack.new (List.fold (liveNoFormals, [], fn (oper, ac) =>
+					 case Operand.deStackOffset oper of
+					    NONE => ac
+					  | SOME a => a :: ac))
+		fun adjustSize size =
+		   let
+		      val (offset, offset') =
+			 Vector.fold
+			 (args, (0, size), fn ((x, _), (offset, offset')) =>
+			  let val ty = #ty (varInfo x)
+			  in (Type.align (ty, offset) + Type.size ty,
+			      Type.align (ty, offset') + Type.size ty)
+			  end)
+		      val offset = Type.wordAlign offset
+		      val offset' = Type.wordAlign offset'
+		      val shift = Int.abs ((offset' - size) - offset)
 		   in
-		     {size = size + shift + offset,
-		      shift = shift}
+		      {size = size + shift + offset,
+		       shift = shift}
 		   end
-	       val _ = if isCont andalso !Control.newReturn
-			 then let
-				val {shift, ...} = adjustSize saveOffset
-			      in
-				nextOffset := saveOffset + shift
-			      end
-		       else ()
-	       val _ = Vector.foreach (args, fn (x, _) =>
-				       allocateVar (x, c', false))
-	       (* This must occur after allocating slots for the
-		* args, since it must have the correct stack frame
-		* size.
-		*)
-	       val limitCheck = 
-		  let
-		     fun doit make = make (getGCInfo label) 
-		  in
-		     case limitCheck label of
-			LimitCheck.No => MlimitCheck.No
-		      | LimitCheck.Maybe => doit MlimitCheck.Maybe
-		      | LimitCheck.Yes => doit MlimitCheck.Yes
-		  end
-	       val _ = Vector.foreach (statements, fn s =>
-				       allocateStatement (s, c'))
-	       val bodyOffset = !nextOffset
-	       val _ = Vector.foreach (children, fn n => loop (n, c'))
-	       val _ = List.foreach (Mtype.all, fn t => nextReg t := saveReg t)
-	       val _ = nextOffset := saveOffset
-	       val size = saveOffset
-	       val th = fn () => let
-				   val {live, liveNoFormals, liveFrame} =
-				      getLiveOperands (label, 
-						       isCont orelse isHandler)
-				 in 
-				    setSlabelInfo
-				    (label, Info.T {limitCheck = limitCheck,
-						    live = live,
-						    liveNoFormals = liveNoFormals,
-						    liveFrame = liveFrame,
-						    size = size,
-						    adjustSize = adjustSize})
-				 end
-	       val _ = if isCont
-			  then (* If this is a cont, then some handlers paired
-				* with it may not have yet been allocated;
-				* this can cause getLiveOperands to fail when
-				* looping through the liveFrames, which include
-				* variables live down the handlers.
-				* So, delay it for now and do it after all allocation
-				* has taken place.
-				*)
-			       List.push(todo, th)
-		       else th ()
-	    in ()
-	    end) arg
-	 val _ = loop (Function.dominatorTree f, chunk)
-	 val _ = List.foreach(!todo, fn th => th ())
-	 val Info.T {live, ...} = labelInfo start
-	 val limitCheck = MlimitCheck.Stack (getGCInfo' live)
+		val _ =
+		   if !Control.newReturn
+		      andalso (case kind of
+				  Kind.Cont _ => true
+				| _ => false)
+		      then Error.bug "newReturn not implemented"
+		   else ()
+		val c = labelChunk label
+		val s =
+		   Vector.fold (args, stack, fn ((x, _), s) =>
+				allocateVar (x, c, false, s))
+		val _ =
+		   Vector.fold
+		   (statements, s, fn (s, stack) =>
+		    R.Statement.foldDef (s, stack, fn ({var, ...}, stack) =>
+					 allocateVar (var, c, false, stack)))
+		val _ = setLabelInfo (label, {live = live,
+					       liveNoFormals = liveNoFormals,
+					       size = Stack.size stack,
+					       adjustSize = adjustSize})
+	     in
+		fn () => ()
+	     end)
 	 val _ =
 	    diagnostics
 	    (fn (display, diagVar, diagStatement) =>
@@ -557,16 +480,22 @@ fun allocate {program = program as Program.T {globals, ...},
 		val _ = Vector.foreach (args, diagVar o #1)
 		val _ =
 		   Vector.foreach
-		   (blocks, fn Sblock.T {label, args, statements, ...} =>
-		    (display (Slabel.layout label)
+		   (blocks, fn R.Block.T {label, args, statements, ...} =>
+		    (display (R.Label.layout label)
 		     ; Vector.foreach (args, diagVar o #1)
 		     ; Vector.foreach (statements, diagStatement)))
 	     in ()
 	     end)
       in
 	 {handlerOffset = handlerOffset,
-	  labelInfo = labelInfo,
-	  limitCheck = limitCheck}
+	  labelInfo = labelInfo}
       end
-   end
+
+val allocate = 
+   Trace.trace
+   ("AllocateRegisters.allocate",
+    fn {function, ...} => Func.layout (Function.name function),
+    Layout.ignore)
+   allocate
+   
 end

@@ -8,6 +8,12 @@ datatype t =
  | Int of (int * Label.t) list
  | Word of (word * Label.t) list
 
+fun length c =
+   case c of
+      Char l => List.length l
+    | Int l => List.length l
+    | Word l => List.length l
+
 fun fold (c, a, f) =
    let
       fun doit cs = List.fold (cs, a, fn ((_, l), a) => f (l, a))

@@ -1,12 +1,11 @@
 Group
 
 signature MACHINE_OUTPUT
-signature MTYPE
 
 functor Backend
 functor Machine
-functor MachineOutput 
-  
+functor MachineOutput
+   
 is
 
 ../../lib/mlton/sources.cm
@@ -14,8 +13,8 @@ is
 ../control/sources.cm
 ../ssa/sources.cm
 
-allocate-registers.fun
 allocate-registers.sig
+allocate-registers.fun
 backend.fun
 backend.sig
 chunkify.fun
@@ -24,8 +23,6 @@ equivalence-graph.fun
 equivalence-graph.sig
 implement-handlers.fun
 implement-handlers.sig
-limit-check.fun
-limit-check.sig
 live.fun
 live.sig
 machine-cases.fun
@@ -40,3 +37,8 @@ parallel-move.fun
 parallel-move.sig
 representation.fun
 representation.sig
+rssa.sig
+rssa.fun
+ssa-to-rssa.fun
+ssa-to-rssa.sig
+

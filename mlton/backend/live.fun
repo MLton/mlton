@@ -2,7 +2,7 @@
  * Please see the file LICENSE for license information.
  *
  * This pass is based on the liveness algorithm described in section 4.13,
- * page 132, of Morgan's "Building and Optimizing Compiler".  BTW, the Dragon
+ * page 132, of Morgan's "Building an Optimizing Compiler".  BTW, the Dragon
  * book and Muchnick's book provided no help at all on speeding up liveness.
  * They suggest using bit-vectors, which is infeasible for MLton due to the
  * large size of and number of variables in SSA functions.
@@ -28,7 +28,7 @@ functor Live (S: LIVE_STRUCTS): LIVE =
 struct
 
 open S
-datatype z = datatype Exp.t
+datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
 structure LiveInfo =
@@ -77,35 +77,29 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	                    {
 			     argInfo: LiveInfo.t,
 			     block: Block.t,
-			     bodyInfo: LiveInfo.t,
-			     frameInfo: (Handler.t * LiveInfo.t) list ref
+			     bodyInfo: LiveInfo.t
 			    },
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("live info", Label.layout))
-      val {get = varInfo: Var.t -> {defined: LiveInfo.t,
-				    used: LiveInfo.t list ref},
-	   set = setVarInfo,
-	   destroy = destroyVarInfo} =
-	 Property.destGetSetOnce (Var.plist,
-				  Property.initRaise ("live info", Var.layout))
+      val {get = varInfo: Var.t -> {defined: LiveInfo.t option ref,
+				    used: LiveInfo.t list ref}, ...} =
+	 Property.get (Var.plist,
+		       Property.initFun (fn _ => {defined = ref NONE,
+						  used = ref []}))
       datatype u = Def of LiveInfo.t | Use of LiveInfo.t
-      val handlerSlotInfo = ({defuse = ref [] : u list ref}, 
-			     {defuse = ref [] : u list ref})
-      val allPrims: (Var.t * LiveInfo.t) list ref = ref []
+      val handlerCodeDefUses: u list ref = ref []
+      val handlerLinkDefUses: u list ref = ref []
       val allVars: Var.t list ref = ref []
-      fun newVarInfo (x: Var.t, {defined}): unit =
+      fun setDefined (x: Var.t, defined): unit =
 	 if shouldConsider x
 	    then (List.push (allVars, x)
-		  ; setVarInfo (x, {defined = defined,
-				    used = ref []}))
+		  ; #defined (varInfo x) := SOME defined)
 	 else ()
-      val _ =
-	 Trace.trace2 ("Live.newVarInfo", Var.layout, Layout.ignore, Unit.layout)
-	 newVarInfo
+      (* Set the labelInfo for each block. *)
       val _ =
 	 Vector.foreach
-	 (blocks, fn block as Block.T {label, args, ...} =>
+	 (blocks, fn block as Block.T {args, label, ...} =>
 	  let
 	     val name = Label.toString label
 	     val (argInfo, bodyInfo) =
@@ -118,143 +112,100 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 			    val _ = LiveInfo.addEdge (b, b')
 			in (b, b')
 			end
-	     val _ =
-	        Vector.foreach (args, fn (x, _) =>
-				newVarInfo (x, {defined = argInfo}))
 	  in
 	     setLabelInfo (label, {argInfo = argInfo,
 				   block = block,
-				   bodyInfo = bodyInfo,
-				   frameInfo = ref []
-				   })
+				   bodyInfo = bodyInfo})
 	  end)
-      fun getFrameInfo (cont, handler) =
-	 let
-	    val {frameInfo, argInfo, ...} = labelInfo cont
-	 in
-	    case List.peek
-	         (!frameInfo, fn (handler', _) =>
-		  Handler.equals (handler, handler')) of
-	       NONE => let val name = Label.toString cont
-			   val b = LiveInfo.new (name ^ "d")
-			   val _ = LiveInfo.addEdge (b, argInfo)
-			   val _ = List.push(frameInfo, (handler, b))
-		       in b 
-		       end
-	     | SOME (_, b) => b
-	 end
-      fun use (b, x) =
-	 if shouldConsider x
-	    then
-	       let val {used, ...} = varInfo x
-	       in if (case !used of
-			 [] => false
-		       | b' :: _ => LiveInfo.equals (b, b'))
-		     then ()
-		  else List.push (used, b)
-	       end
-	 else ()
-      fun uses (b: LiveInfo.t, xs: Var.t vector) =
-	 Vector.foreach (xs, fn x => use (b, x))
-      fun addEdgesForBlock (Block.T {label, statements, transfer, ...}): unit =
-	 let
-	    val {bodyInfo, ...} = labelInfo label
-	    val b =
-	       Vector.fold
-	       (statements, bodyInfo,
-		fn (Statement.T {var, exp, ...}, b) =>
-		let
-		   val b =
-		      case exp of
-			 ConApp {args, ...} => (uses (b, args); b)
-		       | Const _ => b
-		       | PrimApp {prim, args, ...} =>
-			    (uses (b, args)
-			     ; if (Prim.entersRuntime prim
-				   orelse Prim.impCall prim)
-				  then 
-				     let
-					val b' = 
-					   LiveInfo.new (Label.toString label ^ "e")
-					val var =
-					   case var of
-					      NONE =>
-						 Error.bug "Live.live needs var"
-					    | SOME var => var
-				     in
-					LiveInfo.addEdge (b, b')
-					; List.push (allPrims, (var, b'))
-					; b'
-				     end
-			       else b)
-		       | Select {tuple, ...} => (use (b, tuple); b)
-		       | SetExnStackLocal => b
-		       | SetExnStackSlot =>
-			    let
-			       val (_, {defuse}) = handlerSlotInfo
-			       val _ = List.push (defuse, Use b)
-			    in
-			       b
-			    end
-		       | SetHandler _ =>
-			    let
-			       val ({defuse, ...}, _) = handlerSlotInfo
-			       val _ = List.push (defuse, Def b)
-			    in
-			       b
-			    end
-		       | SetSlotExnStack =>
-			    let
-			       val (_, {defuse}) = handlerSlotInfo
-			       val _ = List.push (defuse, Def b)
-			    in
-			       b
-			    end
-		       | Tuple xs => (uses (b, xs); b)
-		       | Var y => (use (b, y); b)
-		       | _ => Error.bug "backend saw strange statement"
-		   val _ =
-		      Option.app (var, fn x =>
-				  newVarInfo (x, {defined = b}))
-		in
-		   b
-		end)
+      (* Add the control-flow edges and set the defines and uses for each
+       * variable.
+       *)
+      val head = LiveInfo.new "main"
+      val _ = Vector.foreach (args, fn (x, _) => setDefined (x, head))
+      val _ =
+	 Vector.foreach
+	 (blocks, fn block as Block.T {kind, label, statements, transfer, ...} =>
+	  let
+	    val {argInfo, bodyInfo = b, ...} = labelInfo label
+	    val _ = Vector.foreach (args, fn (x, _) => setDefined (x, argInfo))
 	    fun goto l = LiveInfo.addEdge (b, #argInfo (labelInfo l))
+	    (* Make sure that a cont's live vars includes variables live in its
+	     * handler.
+	     *)
+	    val _ =
+	       case kind of
+		  Block.Kind.Cont {handler, ...} => Option.app (handler, goto)
+		| _ => ()
+	    fun define (x: Var.t): unit = setDefined (x, b)
+	    fun use (x: Var.t): unit =
+	       if shouldConsider x
+		  then
+		     let val {used, ...} = varInfo x
+		     in if (case !used of
+			       [] => false
+			     | b' :: _ => LiveInfo.equals (b, b'))
+			   then ()
+			else List.push (used, b)
+		     end
+	       else ()
+	    fun uses (xs: Var.t vector): unit = Vector.foreach (xs, use)
+	    fun useOperand (z: Operand.t): unit =
+	       let
+		  datatype z = datatype Operand.t
+	       in
+		  case z of
+		     CastInt x => use x
+		   | Const _ => ()
+		   | Offset {base, ...} => use base
+		   | OffsetScale {base, index, ...} => (use base; use index)
+		   | Var {var, ...} => use var
+	       end
+	    fun useOperands zs = Vector.foreach (zs, useOperand)
+	    val _ =
+	       Vector.foreach
+	       (statements, fn s =>
+		case s of
+		   Array {dst, numElts, ...} =>
+		      (use numElts
+		       ; define dst)
+		 | Move {dst, src} =>
+		      ((case dst of
+			   Operand.Var {var, ...} => define var
+			 | _ => useOperand dst)
+		       ; useOperand src)
+		 | Object {dst, stores, ...} =>
+		      (Vector.foreach (stores, fn {value, ...} =>
+				       useOperand value)
+		       ; define dst)
+		 | PrimApp {dst, args, ...} =>
+		      (uses args
+		       ; Option.app (dst, define o #1))
+		 | SetExnStackLocal => ()
+		 | SetExnStackSlot => List.push (handlerLinkDefUses, Use b)
+		 | SetHandler _ => List.push (handlerCodeDefUses, Def b)
+		 | SetSlotExnStack => List.push (handlerLinkDefUses, Def b))
 	    val _ =
 	       case transfer of
 		  Arith {args, overflow, success, ...} =>
-		     (uses (b, args)
+		     (uses args
 		      ; goto overflow
 		      ; goto success)
 		| Bug => ()
+		| CCall {args, return, ...} =>
+		     (useOperands args
+		      ; goto return)
 		| Call {args, return, ...} =>
-		     (uses (b, args)
+		     (useOperands args
 		      ; (case return of
 			    Return.NonTail {cont, handler} =>
 			       let
-				  val frameInfo = getFrameInfo (cont, handler)
-				  val _ = LiveInfo.addEdge (b, frameInfo)
+				  val _ = goto cont
 			       in
 				  Handler.foreachLabel
 				  (handler, fn h =>
-				   let
-				      val {argInfo, ...} = labelInfo h
-				      val _ = LiveInfo.addEdge (frameInfo, argInfo)
-
-				      val ({defuse = code_defuse, ...},
-					   {defuse = link_defuse, ...}) =
-					 handlerSlotInfo
-				      val _ = List.push (code_defuse, Use b)
-				      val _ = List.push (link_defuse, Use b)
-				   in
-				      ()
-				   end)
+				   List.push (handlerCodeDefUses, Use b))
 			       end
 			  | _ => ()))
-		| Case {test, cases, default, ...} =>
-		     (use (b, test)
-		      ; Option.app (default, goto)
-		      ; Cases.foreach (cases, goto))
 		| Goto {dst, args, ...} =>
 		     let
 			val {block = Block.T {args = formals, ...}, ...} =
@@ -262,33 +213,36 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 		     in
 			Vector.foreach2 (formals, args, fn ((f, _), a) =>
 					 if shouldConsider f
-					    then use (b, a)
+					    then useOperand a
 					 else ())
 			; goto dst
 		     end
-		| Raise xs => uses (b, xs)
-		| Return xs => uses (b, xs)
-		| Runtime {args, return, ...} =>
-		     (uses (b, args)
+		| LimitCheck {kind, return, ...} =>
+		     (LimitCheck.forVar (kind, use)
 		      ; goto return)
-	 in ()
-	 end
-      val addEdgesForBlock =
-	 Trace.trace ("Live.addEdgesForBlock",
-		      Label.layout o Block.label,
-		      Unit.layout)
-	 addEdgesForBlock
-      val head = LiveInfo.new "main"
-      val _ = Vector.foreach (args, fn (x, _) =>
-			      newVarInfo (x, {defined = head}))
-      val _ = Tree.foreachPre (Function.dominatorTree function,
-			       addEdgesForBlock)
+		| Raise xs => useOperands xs
+		| Return xs => useOperands xs
+		| Runtime {args, return, ...} =>
+		     (useOperands args
+		      ; goto return)
+		| Switch {cases, default, test, ...} => 
+		     (Cases.foreach (cases, goto)
+		      ; Option.app (default, goto)
+		      ; useOperand test)
+		| SwitchIP {int, pointer, test} =>
+		     (goto int
+		      ; goto pointer
+		      ; useOperand test)
+	  in ()
+	  end)
+      (* Back-propagate every variable from uses to define point. *)
       fun processVar (x: Var.t): unit =
 	 if not (shouldConsider x)
 	    then ()
 	 else
 	    let
 	       val {defined, used, ...} = varInfo x
+	       val defined = valOf (!defined)
 	       val todo: LiveInfo.t list ref = ref []
 	       fun consider (b as LiveInfo.T {live, ...}) =
 		  if LiveInfo.equals (b, defined)
@@ -314,13 +268,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	    end
       val processVar =
 	 Trace.trace ("Live.processVar", Var.layout, Unit.layout) processVar
-      val _ = Vector.foreach (args, processVar o #1)
-      val _ =
-	 Vector.foreach
-	 (blocks, fn Block.T {args, statements, ...} =>
-	  (Vector.foreach (args, processVar o #1)
-	   ; Vector.foreach (statements, fn Statement.T {var, ...} =>
-			     Option.app (var, processVar))))
+      val _ = List.foreach (!allVars, processVar)
       (* handler code and link slots are harder; in particular, they don't
        * satisfy the SSA invariant -- there are multiple definitions;
        * furthermore, a def and use in a block does not mean that the def 
@@ -329,9 +277,9 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
        *)
       val _ =
 	 List.foreach
-	 ([(#1, #1), (#2, #2)], fn (sel, sel') =>
+	 ([(handlerCodeDefUses, #1),
+	   (handlerLinkDefUses, #2)], fn (defuse, sel) =>
 	  let
-	    val {defuse,...} = sel handlerSlotInfo
 	    val todo: LiveInfo.t list ref = ref []
 	    val defs =
 	       List.foldr
@@ -340,14 +288,14 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 		 | (Use (b as LiveInfo.T {liveHS, ...}), defs) =>
 		      if List.exists (defs, fn b' => LiveInfo.equals (b, b'))
 			 then defs
-		      else (sel' liveHS := true
+		      else (sel liveHS := true
 			    ; List.push(todo, b)
 			    ; defs))
 	    fun consider (b as LiveInfo.T {liveHS, ...}) =
 	       if List.exists (defs, fn b' => LiveInfo.equals (b, b'))
-		  orelse !(sel' liveHS)
+		  orelse !(sel liveHS)
 		  then ()
-	       else (sel' liveHS := true
+	       else (sel liveHS := true
 		     ; List.push (todo, b))
 	    fun loop () =
 	       case !todo of
@@ -360,23 +308,12 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	 in
 	   ()
 	 end)
-      val {get = primLive: Var.t -> {vars: Var.t list,
-				     handlerSlots: bool * bool},
-	   set, ...} =
-	 Property.getSetOnce (Var.plist,
-			      Property.initRaise ("primLive", Var.layout))
-      val _ =
-	 List.foreach (!allPrims, fn (x, b) =>
-		       set (x, {vars = LiveInfo.live b, 
-				handlerSlots = LiveInfo.liveHS b}))
       fun labelLive (l: Label.t) =
 	 let
-	    val {bodyInfo, argInfo, frameInfo, ...} = labelInfo l
+	    val {bodyInfo, argInfo, ...} = labelInfo l
 	 in
 	    {begin = LiveInfo.live bodyInfo,
 	     beginNoFormals = LiveInfo.live argInfo,
-	     frame = List.map (!frameInfo, fn (handler, frameInfo) =>
-			       (handler, LiveInfo.live frameInfo)),
 	     handlerSlots = LiveInfo.liveHS bodyInfo}
 	 end
       val _ =
@@ -388,28 +325,20 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	     (blocks, fn b =>
 	      let
 		 val l = Block.label b		 
-		 val {begin, beginNoFormals, frame, handlerSlots, ...} =
-		    labelLive l
+		 val {begin, beginNoFormals, handlerSlots} = labelLive l
 	      in
 		 display (seq [Label.layout l,
 			       str " ",
 			       record [("begin", List.layout Var.layout begin),
 				       ("beginNoFormals",
 					List.layout Var.layout beginNoFormals),
-				       ("frame",
-					List.layout 
-					(Layout.tuple2 (Handler.layout,
-							List.layout Var.layout)) 
-					frame),
 				       ("handlerSlots",
 					Layout.tuple2 (Bool.layout, Bool.layout)
 					handlerSlots)]])
 	      end)
 	  end)
-   in {
-       labelLive = labelLive,
-       primLive = primLive
-       }
+   in 
+      labelLive
    end
 
 val live =

@@ -18,6 +18,7 @@ signature MACHINE_CASES =
       val fold: t * 'a * (Label.t * 'a -> 'a) -> 'a
       val foreach: t * (Label.t -> unit) -> unit
       val layout: t -> Layout.t
+      val length: t -> int
    end
 
 

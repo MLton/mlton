@@ -11,8 +11,8 @@ signature MACHINE_STRUCTS =
 
 signature MACHINE = 
    sig
-      structure MachineOutput: MACHINE_OUTPUT
-     
+      include MACHINE_STRUCTS
+	 
       structure Label: HASH_ID sharing Label = MachineOutput.Label
       structure ChunkLabel: UNIQUE_ID
       structure Prim: PRIM
@@ -61,45 +61,6 @@ signature MACHINE =
 	    val uint: word -> t
 	 end
 
-      (* GCInfo.t is the information that the garbage collector needs to know
-       * at a program point in order to do a collection.
-       *)
-      structure GCInfo:
-	 sig
-	    type t
-
-	    val layout: t -> Layout.t
-	    val make:
-	       {(* Size of stack frame in bytes, including return address. *)
-		frameSize: int,
-		(* Live stack offsets. *)
-		live: Operand.t list
-		} -> t
-	 end
-
-      structure LimitCheck:
-	 sig
-	    datatype t =
-	       No
-	     | Maybe of GCInfo.t
-	     | Yes of GCInfo.t
-	     | Stack of GCInfo.t
-
-	    val layout: t -> Layout.t
-	    val live : t -> Operand.t list
-	 end
-
-      structure PrimInfo:
-	 sig
-	    type t
-	      
-	    val deRuntime: t -> GCInfo.t
-	    val layout: t -> Layout.t
-	    val none: t
-	    val normal: Operand.t list -> t
-	    val runtime: GCInfo.t -> t
-	 end
-
       structure Statement:
 	 sig
 	    type t
@@ -107,25 +68,21 @@ signature MACHINE =
 	    (* Fixed-size allocation. *)
 	    val allocate:
 	       {dst: Operand.t,
-		size: int,
 		numPointers: int,
 		numWordsNonPointers: int,
+		size: int,
 		stores: {offset: int,
-			 value: Operand.t} list
+			 value: Operand.t} vector
 		} -> t
 	    (* Variable-sized allocation. *)
-	    val allocateArray: {dst: Operand.t,
-				numElts: Operand.t,
-				numPointers: int,
-				numBytesNonPointers: int,
-				gcInfo: GCInfo.t
-				} -> t
+	    val array: {dst: Operand.t,
+			numElts: Operand.t,
+			numPointers: int,
+			numBytesNonPointers: int} -> t
 	    val assign: {dst: Operand.t option,
 			 prim: Prim.t,
-			 pinfo: PrimInfo.t,
 			 args: Operand.t vector} -> t
 	    val layout: t -> Layout.t
-	    val limitCheck: LimitCheck.t -> t
 	    (* When registers or offsets appear in operands, there is an
 	     * implicit contents of.
 	     * When they appear as locations, there is not.
@@ -135,7 +92,7 @@ signature MACHINE =
 	    val moves: {
 			dsts: Operand.t vector,
 			srcs: Operand.t vector
-		       } -> t list
+		       } -> t vector
 	    (* pop number of bytes from stack *)
 	    val pop: int -> t
 	    (* push number of bytes from stack *)
@@ -147,6 +104,18 @@ signature MACHINE =
 
       structure Cases: MACHINE_CASES sharing Label = Cases.Label
 
+      structure LimitCheck:
+	 sig
+	    datatype t =
+	       Array of {numElts: Operand.t,
+			 bytesPerElt: int,
+			 extraBytes: int} (* for subsequent allocation *)
+	     | Heap of {bytes: int,
+			stackToo: bool}
+	     | Signal
+	     | Stack
+	 end
+   
       structure Transfer:
 	 sig
 	    type t
@@ -154,12 +123,16 @@ signature MACHINE =
 	    (* In an arith transfer, dst is modified whether or not the
 	     * prim succeeds.
 	     *)
-	    val arith: {prim: Prim.t,
-			args: Operand.t vector,
+	    val arith: {args: Operand.t vector,
 			dst: Operand.t,
 			overflow: Label.t,
+			prim: Prim.t,
 			success: Label.t} -> t
 	    val bug: t
+	    val ccall: {args: Operand.t vector,
+			prim: Prim.t,
+			return: Label.t,
+			returnTy: Type.t option} -> t
 	    val farJump: {chunkLabel: ChunkLabel.t,
 			  label: Label.t,
 			  live: Operand.t list,
@@ -168,12 +141,22 @@ signature MACHINE =
 				   size: int} option} -> t
 	    val isSwitch: t -> bool
 	    val layout: t -> Layout.t
+	    val limitCheck:
+	       {frameSize: int,
+		kind: LimitCheck.t,
+		live: Operand.t list, (* live in stack frame. *)
+		return: Label.t} (* return must be of cont kind. *)
+	       -> t 
 	    val nearJump: {label: Label.t,
 			   return: {return: Label.t,
 				    handler: Label.t option,
 				    size: int} option} -> t
-	    val return: {live: Operand.t list} -> t
 	    val raisee: t
+	    val return: {live: Operand.t list} -> t
+	    val runtime: {args: Operand.t vector,
+			  frameSize: int,
+			  prim: Prim.t,
+			  return: Label.t} -> t
 	    val switch: {
 			 test: Operand.t,
 			 cases: Cases.t,
@@ -188,21 +171,23 @@ signature MACHINE =
 			   int: Label.t,
 			   pointer: Label.t
 			  } -> t
-	    val toMOut: t -> MachineOutput.Transfer.t
 	 end
 
       structure Block:
-	sig
-	  structure Kind:
-	    sig
-	      type t
+	 sig
+	    structure Kind:
+	       sig
+		  type t
 
-	      val func: {args: Operand.t list} -> t
-	      val jump: t
-	      val cont: {args: Operand.t list, size: int} -> t
-	      val handler: {offset: int} -> t
-	    end
-	end
+		  val cont: {args: Operand.t list,
+			     size: int} (* Size of stack frame in bytes, including return address. *)
+		     -> t
+		  val creturn: {arg: Operand.t, ty: Type.t} option -> t
+		  val func: {args: Operand.t list} -> t
+		  val handler: {offset: int} -> t
+		  val jump: t
+	       end
+	 end
 
       structure Chunk:
 	 sig
@@ -212,11 +197,11 @@ signature MACHINE =
 	    val equals: t * t -> bool
 	    val newBlock: 
 	       t * {
-		    label: Label.t,
 		    kind: Block.Kind.t,
+		    label: Label.t,
 		    live: Operand.t list,
 		    profileInfo: {func: string, label: string},
-		    statements: Statement.t list,
+		    statements: Statement.t vector,
 		    transfer: Transfer.t
 		   } -> unit
 	    val register: t * int * Type.t -> Register.t

@@ -15,39 +15,24 @@ val intInfOverhead = arrayHeaderSize + wordSize (* for the sign *)
 local
    open MachineOutput
 in
-   structure Mtype = Type
    structure Cases = Cases
    structure ChunkLabel = ChunkLabel
+   structure LimitCheck = LimitCheck
    structure Prim = Prim
-   structure PrimInfo = PrimInfo
+   structure Type = Type
 end
 
 structure Label =
    struct
       open MachineOutput.Label
-      fun newNoname () = newString "L"
-   end
 
-structure Type =
-   struct
-      open MachineOutput.Type
-	 
-      fun name t =
-	 case dest t of
-	    Char => "C"
-	  | Double => "D"
-	  | Int => "I" 
-	  | Pointer => "P"
-	  | Uint => "U"
-	  | Void => "V"
+      fun newNoname () = newString "L"
    end
 
 structure Register =
    struct
       open MachineOutput.Register
 
-      fun toMOut (x: t) = x
-	 
       fun equals (r1, r2) = 
 	 Type.equals (ty r1, ty r2) 
 	 andalso index r1 = index r2
@@ -57,8 +42,6 @@ structure Global =
    struct
       open MachineOutput.Global
 
-      fun toMOut (x: t) = x
-
       fun equals (g1, g2) = 
 	 Type.equals (ty g1, ty g2)
 	 andalso index g1 = index g2
@@ -67,8 +50,6 @@ structure Global =
 structure Operand =
    struct
       open MachineOutput.Operand
-
-      fun toMOut (x: t) = x
 
       fun isPointer (x: t): bool =
 	 Type.isPointer (ty x)
@@ -157,261 +138,23 @@ structure Operand =
 	 end
    end
 
-structure GCInfo =
-   struct
-      datatype t = T of {(* Size of frame, including return address. *)
-			 frameSize: int,
-			 (* Live stack offsets. *)
-			 live: Operand.t list,
-			 return: Label.t option ref}
-
-      fun layout (T {frameSize, live, return}) =
-	 Layout.record [("frameSize", Int.layout frameSize),
-			("live", List.layout Operand.layout live),
-			("return", Option.layout Label.layout (!return))]
-	 
-      fun toMOut (T {frameSize, live, return})
-	 = MachineOutput.GCInfo.T 
-	   {frameSize = frameSize,
-	    live = live,
-	    return = case !return
-		       of NONE => Error.bug "GCInfo.toMOut"
-			| SOME l => l};
-
-      fun make {frameSize, live} =
-	 T {frameSize = Type.wordAlign frameSize,
-	    live = live,
-	    return = ref NONE}
-   end
-
-structure PrimInfo =
-  struct
-    datatype t =
-      None
-    | Runtime of GCInfo.t
-    | Normal of Operand.t list
-
-    val none = None
-    val runtime = Runtime
-    val normal = Normal
-
-    val deRuntime = fn Runtime gcInfo => gcInfo
-		     | _ => Error.bug "deRuntime"
-
-    fun layout i
-      = let open Layout
-	in
-	  case i
-	    of None => empty
-	     | Runtime gcInfo 
-	     => seq [str "Runtime ",
-		     record [("gcInfo", GCInfo.layout gcInfo)]]
-	     | Normal live 
-	     => seq [str "Normal ",
-		     record [("live", List.layout Operand.layout live)]]
-	  end
-
-    local
-      structure P = MachineOutput.PrimInfo
-    in
-      val toMOut =
-	 fn None => P.None
-	  | Runtime gcInfo 
-	  => P.Runtime (GCInfo.toMOut gcInfo)
-	  | Normal live 
-	  => P.Normal (List.map(live,Operand.toMOut))
-    end
-  end
-  
-(* ------------------------------------------------- *)
-(*                    LimitCheck                     *)
-(* ------------------------------------------------- *)
-
-structure LimitCheck =
-   struct
-      datatype info = No
-       | Maybe of GCInfo.t
-       | Yes of GCInfo.t
-       | Stack of GCInfo.t
-
-      fun layoutInfo i =
-	 let open Layout
-	 in case i of
-	    No => str "No"
-	  | Maybe i => seq [str "Maybe ", GCInfo.layout i]
-	  | Stack i => seq [str "Stack ", GCInfo.layout i]
-	  | Yes i => seq [str "Yes ", GCInfo.layout i]
-	 end
-
-      val live
-	= fn No => []
-	   | Maybe (GCInfo.T {live,...}) => live
-	   | Stack (GCInfo.T {live,...}) => live
-	   | Yes (GCInfo.T {live,...}) => live
-
-      datatype t = T of {info: info,
-			 bytes: int option ref}
-	 
-      fun toMOut (T {info, bytes}) =
-	 case !bytes of
-	    NONE => NONE
-	  | SOME b =>
-	       case info of
-		  No => NONE
-		| Maybe i => SOME {info = GCInfo.toMOut i,
-				   bytes = b,
-				   stackCheck = false}
-		| Yes i => SOME {info = GCInfo.toMOut i,
-				 bytes = b,
-				 stackCheck = false}
-		| Stack i => SOME {info = GCInfo.toMOut i,
-				   bytes = b,
-				   stackCheck = true}
-		     
-      fun new info = T {info = info, bytes = ref NONE}
-
-      val limitSlop: int = 512 (* should agree with LIMIT_SLOP in gc.c *)
-	 
-      fun set (T {info, bytes}, n: int, newFrame): int =
-	 let
-	    fun yes i =
-	       (newFrame i
-		; bytes := SOME (if n >= limitSlop then n - limitSlop else 0)
-		; 0)
-	 in case info 
-	    of No => n
-	  | Maybe i => if n = 0 then 0 else yes i
-	  | Yes i => yes i
-	  | Stack i => yes i
-	 end
-   end
-
 structure Statement =
    struct
-      type allocateArray =
-	 {user: {dst: Operand.t,
-		 numElts: Operand.t,
-		 numPointers: int,
-		 numBytesNonPointers: int,
-		 gcInfo: GCInfo.t},
-	  limitCheck: {bytesPerElt: int,
-		       bytesAllocated: int} option ref}
-	 
-      datatype t =
-	 Noop
-       | Move of {dst: Operand.t,
-		  src: Operand.t}
-       | Push of int
-       | Assign of {dst: Operand.t option,
-		    prim: Prim.t,
-		    pinfo: PrimInfo.t,
-		    args: Operand.t vector}
-       | LimitCheck of LimitCheck.t
-       | SetExnStackLocal of {offset: int}
-       | SetExnStackSlot of {offset: int}
-       | SetSlotExnStack of {offset: int}
-       | Allocate of {dst: Operand.t,
-		      size: int,
-		      numPointers: int,
-		      numWordsNonPointers: int,
-		      stores: {offset: int,
-			       value: Operand.t} list}
-       | AllocateArray of allocateArray
-
-      val layout =
-	 let open Layout
-	 in
-	    fn Noop => str "Noop"
-	     | Move {dst, src} =>
-		  seq [Operand.layout dst, str " = ", Operand.layout src]
-	     | Push i => seq [str "Push (", Int.layout i, str ")"]
-	     | Assign {dst, prim, args, ...} =>
-		  seq [Option.layout Operand.layout dst, str " = ",
-		       Prim.layout prim, str " ",
-		       Vector.layout Operand.layout args]
-	     | LimitCheck _ => str "LimitCheck"
-	     | SetExnStackLocal {offset} =>
-		  seq [str "SetExnStackLocal ", Int.layout offset]
-	     | SetExnStackSlot {offset} =>
-		  seq [str "SetExnStackSlot ", Int.layout offset]
-	     | SetSlotExnStack {offset} =>
-		  seq [str "SetSlotExnStack ", Int.layout offset]
-	     | Allocate {dst, ...} =>
-		  seq [Operand.layout dst, str " = Allocate"]
-	     | AllocateArray {user = {dst, ...}, ...} =>
-		  seq [Operand.layout dst, str " = AllocateArray"]
-	 end
-
-      local
-	 structure S = MachineOutput.Statement
-      in
-	 val toMOut =
-	    fn Allocate {dst, size, numPointers, numWordsNonPointers, stores} 
-	     => S.Allocate {dst = Operand.toMOut dst,
-			    size = size,
-			    numPointers = numPointers,
-			    numWordsNonPointers = numWordsNonPointers,
-			    stores = List.map (stores, fn {offset, value} =>
-					       {offset = offset,
-						value = Operand.toMOut value})}
-	     | AllocateArray {user = {dst, numElts, numPointers,
-				      numBytesNonPointers, 
-				      gcInfo as GCInfo.T {live, ...}},
-			      limitCheck} 
-	     => S.AllocateArray {dst = Operand.toMOut dst,
-				 numElts = Operand.toMOut numElts,
-				 numPointers = numPointers,
-				 numBytesNonPointers = numBytesNonPointers,
-				 live = live,
-				 limitCheck =
-				 Option.map
-				 (!limitCheck, fn {bytesPerElt, bytesAllocated} =>
-				  {bytesPerElt = bytesPerElt,
-				   bytesAllocated = bytesAllocated,
-				   gcInfo = GCInfo.toMOut gcInfo})}
-	     | Assign {dst, prim, pinfo, args} 
-	     => S.Assign {dst = Option.map (dst, Operand.toMOut),
-			  pinfo = PrimInfo.toMOut pinfo,
-			  prim = prim,
-			  args = Vector.map (args, Operand.toMOut)}
-	     | LimitCheck lc
-	     => (case LimitCheck.toMOut lc 
-		   of NONE => S.Noop
-		    | SOME lc => S.LimitCheck lc)
-	     | Move {dst, src} => S.Move {dst = Operand.toMOut dst,
-					  src = Operand.toMOut src}
-	     | Noop => S.Noop
-	     | Push i => S.Push i
-	     | SetExnStackLocal z => S.SetExnStackLocal z
-	     | SetExnStackSlot z => S.SetExnStackSlot z
-	     | SetSlotExnStack z => S.SetSlotExnStack z
-      end
+      open MachineOutput.Statement
 
       fun push x =
 	 if 0 = Int.rem (x, 4)
 	   then Push x
-	   else Error.bug "frame size must be word aligned"
+	 else Error.bug "frame size must be word aligned"
+	    
       val pop = push o ~
 	 
-      fun foldOverOperands (s, b, f) =
-	 case s of
-	    Move {dst, src} => f (dst, f (src, b))
-	  | Assign {dst, args, ...} =>
-	       Vector.fold (args, Option.fold (dst, b, f), f)
-	  | Allocate {dst, stores, ...} =>
-	       List.fold (stores, f (dst, b), fn ({value, ...}, b) =>
-			  f (value, b))
-	  | AllocateArray {user = {dst, numElts, ...}, ...} =>
-	       f (numElts, f (dst, b))
-	  | _ => b
-
       fun move (arg as {dst, src}) =
 	 if Operand.equals (dst, src)
 	    then Noop
 	 else Move arg
 
       val assign = Assign
-      val limitCheck = LimitCheck o LimitCheck.new
       val setExnStackLocal = SetExnStackLocal
       val setExnStackSlot = SetExnStackSlot
       val setSlotExnStack = SetSlotExnStack
@@ -441,20 +184,20 @@ structure Statement =
 	 (checkObjectHeader (numPointers, numWordsNonPointers)
 	  ; Allocate (if size = 0
 			 then {dst = dst,
-			       size = wordSize (* min size *),
 			       numPointers = 0,
 			       numWordsNonPointers = 1,
-			       stores = []}
+			       size = wordSize (* min size *),
+			       stores = Vector.new0 ()}
 		      else arg))
 	 
-      fun allocateArray (user as {numPointers, numBytesNonPointers, ...}) =
+      fun array (r as {numPointers, numBytesNonPointers, ...}) =
 	 (checkArrayHeader (numPointers, numBytesNonPointers)
-	  ; AllocateArray {user = user, limitCheck = ref NONE})
+	  ; Array r)
 	 
       fun moves {srcs, dsts} =
-	 rev (Vector.fold2
-	      (srcs, dsts, [], fn (src, dst, ac)  =>
-	       move {src = src, dst = dst} :: ac))
+	 Vector.fromListRev
+	 (Vector.fold2 (srcs, dsts, [], fn (src, dst, ac)  =>
+			move {src = src, dst = dst} :: ac))
    end
 
 (* ------------------------------------------------- *)
@@ -467,9 +210,8 @@ structure Frames =
 		chunkLabel: ChunkLabel.t,
 		size: int,
 		offsets: int list} list ref
-(*		liveOffsets: {offset: int, ty: Type.t} list} list ref *)
 	 
-      val maxFrameSize = Int.^(2, 16)
+      val maxFrameSize = Int.^ (2, 16)
 	 
       fun add (frames: t, f as {size, ...}) =
 	 if size >= maxFrameSize
@@ -480,26 +222,23 @@ structure Frames =
 	 else List.push (frames, f)
    end
 
-(* ------------------------------------------------- *)
-(*                     Transfer                      *)
-(* ------------------------------------------------- *)
-
 structure Transfer =
    struct
       open MachineOutput.Transfer
 
-      fun toMOut (x: t) = x
-
       val isSwitch =
 	 fn Switch _ => true
 	  | _ => false
-	       
-      val bug = Bug
-      val farJump = FarJump
-      val nearJump = NearJump
+
       val arith = Arith
-      val return = Return
+      val bug = Bug
+      val ccall = CCall
+      val farJump = FarJump
+      val limitCheck = LimitCheck
+      val nearJump = NearJump
       val raisee = Raise
+      val return = Return
+      val runtime = Runtime
       val switchIP = SwitchIP
 
       fun switch (arg as {cases, default, ...}) =
@@ -510,56 +249,29 @@ structure Transfer =
 		| ([(_, l)], NONE) => nearJump {label = l, return = NONE}
 		| ([], SOME l) => nearJump {label = l, return = NONE}
 		| _ => Switch arg
-	 in case cases of
-	    Cases.Char l => doit l
-	  | Cases.Int l => doit l
-	  | Cases.Word l => doit l
+	 in
+	    case cases of
+	       Cases.Char l => doit l
+	     | Cases.Int l => doit l
+	     | Cases.Word l => doit l
 	 end
    end
 
-(* ------------------------------------------------- *)
-(*                       Block                       *)
-(* ------------------------------------------------- *)
-
 structure Block =
    struct
-     structure Kind =
-       struct
-	 open MachineOutput.Block.Kind
-
-	 val func = Func
-	 val jump = Jump
-	 val cont = Cont
-	 val handler = Handler
-
-	 fun toMOut (x: t) = x
-       end
-
-      datatype t = T of {bytesNeeded: int option ref,
-			 kind: Kind.t,
-			 label: Label.t,
-			 live: Operand.t list,
-			 profileInfo: {func: string, label: string},
-			 statements: Statement.t array,
-			 transfer: Transfer.t}
-
-      fun clear (T {label, ...}) = PropertyList.clear (Label.plist label)
+      open MachineOutput.Block
 	 
-      fun toMOut (T {label, kind, live, 
-		     profileInfo, statements, transfer, ...}) =
-	 MachineOutput.Block.T {label = label,
-				kind = Kind.toMOut kind,
-				live = live,
-				statements = Array.map (statements,
-							Statement.toMOut),
-				transfer = Transfer.toMOut transfer,
-				profileInfo = profileInfo}
+      structure Kind =
+	 struct
+	    open Kind
+
+	    val func = Func
+	    val jump = Jump
+	    val cont = Cont
+	    val creturn = CReturn
+	    val handler = Handler
+	 end
    end
-
-
-(* ------------------------------------------------- *)
-(*                       Chunk                       *)
-(* ------------------------------------------------- *)
 
 structure Chunk =
    struct
@@ -581,178 +293,12 @@ structure Chunk =
 				gcReturns = (case !gcReturns of
 						NONE => Error.bug "gcReturns"
 					      | SOME gcReturns => gcReturns),
-				blocks = List.revMap (!blocks, Block.toMOut),
+				blocks = !blocks,
 				regMax = ! o regMax}
 
       fun numRegsOfType (T {regMax, ...}, ty: Type.t): int = !(regMax ty)
 	 
       fun numPointers (c) = numRegsOfType (c, Type.pointer)
-	 
-      (* ------------------------------------------------- *)
-      (*                 insertLimitChecks                 *)
-      (* ------------------------------------------------- *)
-	 
-      fun insertLimitChecks (self as T {chunkLabel, blocks,
-					entries, gcReturns, ...},
-			     frames): unit =
-	 let
-	    val _ =
-	       Control.diagnostics
-	       (fn display =>
-		let
-		   open Layout
-		   val _ = display (seq [str "limit checks for ",
-					 ChunkLabel.layout chunkLabel])
-		in
-		   ()
-		end)
-	    val returns: Label.t list ref = ref []
-
-	    fun newFrame (GCInfo.T {frameSize, live, return, ...}) =
-	       let val l = Label.newNoname ()
-		   val liveOffsets
-		     = List.fold
-		       (live,
-			[],
-			fn (oper, liveOffsets)
-			 => case Operand.deStackOffset oper
-			      of SOME {offset, ty}
-			       => (case Type.dest ty
-				     of Type.Pointer => offset::liveOffsets
-				      | _ => liveOffsets)
-			       | NONE => liveOffsets)
-	       in List.push (returns, l)
-		  ; Frames.add (frames, {return = l,
-					 chunkLabel = chunkLabel,
-					 size = frameSize,
-					 offsets = liveOffsets})
-		  ; return := SOME l
-	       end
-	    val {get = labelBlock, set = setLabelBlock, destroy} =
-	       Property.destGetSetOnce
-	       (Label.plist, Property.initRaise ("block", Label.layout))
-	    open Block Transfer
-	    val _ = List.foreach (!blocks, fn b as T {label, ...} =>
-				  setLabelBlock (label, b))
-	    fun memo (l: Label.t): int =
-	       let
-		  val T {bytesNeeded, label, statements, transfer, ...} =
-		     labelBlock l
-	       in
-		  case !bytesNeeded of
-		     SOME n => n
-		   | NONE =>
-			let
-			   val _ = bytesNeeded := SOME 0
-			   val goto = memo
-			   val rest =
-			      case transfer of
-			         Arith {overflow, success, ...} =>
-				    Int.max (goto overflow, goto success)
-			       | NearJump {label, ...} => goto label
-			       | SwitchIP {int, pointer, ...} =>
-				    Int.max (goto int, goto pointer)
-			       | Switch {cases, default, ...} =>
-				    Cases.fold
-				    (cases, (case default of
-						NONE => 0
-					      | SOME l => goto l),
-				     fn (j, rest) => Int.max (goto j, rest))
-			       | _ => 0
-			   fun allocateArray
-			      ({user = {gcInfo, numElts, numPointers,
-					numBytesNonPointers, ...},
-				limitCheck}: Statement.allocateArray,
-			       bytesAllocated: int): int =
-			      let
-				 val bytesPerElt =
-				    if numPointers = 0
-				       then numBytesNonPointers
-				    else if numBytesNonPointers = 0
-					    then numPointers * pointerSize
-					 else Error.unimplemented "tricky arrays"
-				 val bytesAllocated =
-				    bytesAllocated
-				    (* space for array header *)
-				    + arrayHeaderSize
-				    (* space for forwarding pointer for zero
-				     * length arrays *)
-				    + pointerSize
-				 fun here () =
-				    let
-				       val _ = newFrame gcInfo
-				       val lc = {bytesPerElt = bytesPerElt,
-						 bytesAllocated = bytesAllocated}
-				       val _ = limitCheck := SOME lc
-				    in
-				       0
-				    end
-				 (* maxArrayLimitCheck is arbitrary -- it's just
-				  * there to ensure that really huge array
-				  * allocations don't get moved too early.
-				  *)
-				 val maxArrayLimitCheck = 10000
-			      in
-				 case numElts of
-				    Operand.Int numElts =>
-				       if numElts <= maxArrayLimitCheck
-					  then
-					     (bytesAllocated +
-					      Type.align (Type.pointer,
-							  numElts * bytesPerElt))
-					     handle Exn.Overflow => here ()
-				       else here ()
-				  | _ => here ()
-			      end
-			   val bytesAllocated =
-			      Array.foldr
-			      (statements, rest,
-			       fn (statement, bytesAllocated) =>
-			       let datatype z = datatype Statement.t
-			       in case statement of
-				  AllocateArray r =>
-				     allocateArray (r, bytesAllocated)
-				| Allocate {size, ...} =>
-				     objectHeaderSize + size + bytesAllocated
-				| Assign {pinfo, ...} =>
-				     (case pinfo
-					 of PrimInfo.Runtime gcInfo =>
-					    newFrame gcInfo
-				       | _ => ()
-					    ; bytesAllocated)
-				| LimitCheck lc =>
-				     LimitCheck.set
-				     (lc, bytesAllocated, newFrame)
-				| _ => bytesAllocated
-			       end)
-			in bytesNeeded := SOME bytesAllocated
-			   ; bytesAllocated
-			end
-	       end
-	    val _ =
-	       List.foreach (!entries, fn l => (memo l; ()))
-	       handle Exn.Overflow => Error.bug "limit check insertion overflow"
-	    val _ = gcReturns := SOME (!returns)
-	    val _ = destroy ()
-	    val _ =
-	       Control.diagnostics
-	       (fn display =>
-		let
-		   open Layout
-		   val _ = display (seq [str "limit checks for ",
-					 ChunkLabel.layout chunkLabel])
-		   val _ =
-		      List.foreach
-		      (!blocks, fn Block.T {bytesNeeded, label, ...} =>
-		       display
-		       (seq [Label.layout label, str " ",
-			     Option.layout Int.layout (!bytesNeeded)]))
-		in
-		   ()
-		end)
-	 in
-	    ()
-	 end
       
       fun label (T {chunkLabel, ...}) = chunkLabel
 	 
@@ -777,12 +323,11 @@ structure Chunk =
       fun newBlock (T {blocks, ...},
 		    {label, kind, live, profileInfo, statements, transfer}) =
 	 List.push
-	 (blocks, Block.T {bytesNeeded = ref NONE,
+	 (blocks, Block.T {kind = kind,
 			   label = label,
-			   kind = kind,
 			   live = live,
 			   profileInfo = profileInfo,
-			   statements = Array.fromList statements,
+			   statements = statements,
 			   transfer = transfer})
    end
 
@@ -898,9 +443,6 @@ structure Program =
 					    constantCounter}) =
 	    let
 	       val chunks = !chunks
-	       (* Insert limit checks. *)
-	       val _ = List.foreach (chunks, fn c =>
-				     Chunk.insertLimitChecks (c, frames))
 	       val _ = IntSet.reset ()
 	       val c = Counter.new 0
 	       val frameOffsets = ref []
@@ -913,16 +455,7 @@ structure Program =
 		    in List.push (frameOffsets, IntSet.toList offsets)
 		       ; index
 		    end))
-	       val getFrameLayoutOffsetIndex 
-		 = get o IntSet.fromList
-(*
-		   (fn offsets => List.keepAllMap
-		                  (offsets,
-				   fn {offset, ty}
-				    => case Mtype.dest ty
-					 of Mtype.Pointer => SOME offset
-					  | _ => NONE))
-*)
+	       val getFrameLayoutOffsetIndex = get o IntSet.fromList
 	       val {get = getFrameLayout: Label.t -> {size: int,
 						      offsetIndex: int} option,
 		    set = setFrameLayout, ...} = 
@@ -946,8 +479,6 @@ structure Program =
 		* is from back of list.
 		*)
 	       val frameOffsets: int list list = List.rev (!frameOffsets)
-	       val globals: Type.t -> int = Counter.value o globalCounter
-	       val globalsNonRoot: int = Counter.value (globalPointerNonRootCounter)
 	       val chunks: MachineOutput.Chunk.t list =
 		  List.revMap (chunks, Chunk.toMOut)
 	       val main: {chunkLabel: ChunkLabel.t, label: Label.t} =
@@ -957,8 +488,8 @@ structure Program =
 						  label = label}
 	    in
 	       MachineOutput.Program.T 
-	       {globals = globals, 
-		globalsNonRoot = globalsNonRoot, 
+	       {globals = Counter.value o globalCounter,
+		globalsNonRoot = Counter.value globalPointerNonRootCounter,
 		intInfs = !intInfs, 
 		strings = !strings,
 		floats = !floats,
@@ -970,14 +501,6 @@ structure Program =
 		main = main}
 	    end
       end
-   end
-
-structure LimitCheck =
-   struct
-      datatype t = datatype LimitCheck.info
-
-      val layout = LimitCheck.layoutInfo
-      val live = LimitCheck.live
    end
 
 end

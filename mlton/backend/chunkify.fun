@@ -5,9 +5,8 @@ functor Chunkify (S: CHUNKIFY_STRUCTS): CHUNKIFY =
 struct
 
 open S
-datatype z = datatype Exp.t
 datatype z = datatype Transfer.t
-
+   
 (* A chunkifier that puts each function in its own chunk. *)
 fun chunkPerFunc (Program.T {functions, ...}) =
    Vector.fromListMap
@@ -34,7 +33,7 @@ fun blockSize (Block.T {statements, transfer, ...}): int =
    let
       val transferSize =
 	 case transfer of
-	    Case {cases, ...} => 1 + Cases.length cases
+	    Switch {cases, ...} => 1 + Cases.length cases
 	  | _ => 1
    in transferSize + Vector.length statements
    end
@@ -120,11 +119,15 @@ fun coalesce (program as Program.T {functions, ...}, limit) =
 		    case transfer of
 		       Arith {overflow, success, ...} =>
 			  (same overflow; same success)
-		     | Case {cases, default, ...} =>
+		     | CCall {return, ...} => same return (* needed? *)
+		     | Goto {dst, ...} => same dst
+		     | LimitCheck {return, ...} => same return (* needed? *)
+		     | Runtime {return, ...} => same return (* needed? *)
+		     | Switch {cases, default, ...} =>
 			  (Cases.foreach (cases, same)
 			   ; Option.app (default, same))
-		     | Goto {dst, ...} => same dst
-		     | Runtime {return, ...} => same return
+		     | SwitchIP {int, pointer, ...} =>
+			  (same int; same pointer)
 		     | _ => ()
 		 end)
 	  in

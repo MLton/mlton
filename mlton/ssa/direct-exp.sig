@@ -61,14 +61,11 @@ signature DIRECT_EXP =
 	   (* linearize with respect to Handler.None *)
 	   val linearizeGoto: t * Label.t -> Label.t * Block.t list
 	   val name: t * (Var.t -> t) -> t
-	   val primApp: {prim: Prim.t, 
+	   val primApp: {args: t vector,
+			 prim: Prim.t,
 			 targs: Type.t vector, 
-			 args: t vector,
 			 ty: Type.t} -> t 
 	   val raisee: t -> t
-	   val runtime: {prim: Prim.t,
-			 args: t vector,
-			 ty: Type.t} -> t
 	   val select: {tuple: t, 
 			offset: int, 
 			ty: Type.t} -> t
