@@ -1,5 +1,8 @@
 Here are the changes since version 20041109.
 
+* 2005-04-01
+  - Fixed a bug in GC_arrayAllocate that could cause a segfault.
+
 * 2005-03-22
   - Added structures Int1, Word1.
 

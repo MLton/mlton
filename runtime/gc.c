@@ -3235,17 +3235,17 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 	uint eltSize;
 	W32 *frontier;
 	Bool hasIdentity;
-	W32 *last;
+	Pointer last;
 	uint numPointers;
 	uint numNonPointers;
 	pointer res;
 	uint tag;
 
+	SPLIT_HEADER();
 	if (DEBUG)
 		fprintf (stderr, "GC_arrayAllocate (0x%08x, %u, %u, 0x%08x)\n",
 				(uint)s, (uint)ensureBytesFree, 
 				(uint)numElts, (uint)header);
-	SPLIT_HEADER();
 	eltSize = numPointers * POINTER_SIZE + numNonPointers;
 	arraySize64 = 
 		w64align ((W64)eltSize * (W64)numElts + GC_ARRAY_HEADER_SIZE,
@@ -3268,7 +3268,7 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 		doGC (s,  arraySize, ensureBytesFree, FALSE, TRUE);
 		leave (s);
 		frontier = (W32*)(s->heap.start + s->oldGenSize);
-		last = (W32*)((pointer)frontier + arraySize);
+		last = (pointer)frontier + arraySize;
 		s->oldGenSize += arraySize;
 		s->bytesAllocated += arraySize;
 	} else {
@@ -3281,29 +3281,30 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 			leave (s);
 		}
 		frontier = (W32*)s->frontier;
-		last = (W32*)((pointer)frontier + arraySize);
-		assert (isAlignedFrontier (s, (pointer)last));
-		s->frontier = (pointer)last;
+		last = (pointer)frontier + arraySize;
+		assert (isAlignedFrontier (s, last));
+		s->frontier = last;
 	}
 	*frontier++ = 0; /* counter word */
 	*frontier++ = numElts;
 	*frontier++ = header;
 	res = (pointer)frontier;
 	/* Initialize all pointers with BOGUS_POINTER. */
-	if (1 <= numPointers) {
+	if (1 <= numPointers and 0 < numElts) {
 		pointer p;
 
 		if (0 == numNonPointers)
-			for (p = (Pointer)frontier; 
-				p < (Pointer)last; 
+			for (p = (pointer)frontier; 
+				p < last; 
 				p += POINTER_SIZE)
 				*(Pointer*)p = (Pointer)BOGUS_POINTER;
 		else
-			for (p = (Pointer)frontier; p < (Pointer)last; ) {
+			for (p = (Pointer)frontier; p < last; ) {
 				pointer next;
 
 				p += numNonPointers;
 				next = p + numPointers * POINTER_SIZE;
+				assert (next <= last);
 				while (p < next) {
 					*(Pointer*)p = (Pointer)BOGUS_POINTER;
 					p += POINTER_SIZE;
