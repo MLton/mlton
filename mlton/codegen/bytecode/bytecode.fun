@@ -41,7 +41,27 @@ end
 
 structure Target = CFunction.Target
 
-val implementsPrim = CCodegen.implementsPrim
+fun implementsPrim p =
+   let
+      datatype z = datatype Prim.Name.t
+   in
+      case Prim.name p of
+	 Real_Math_acos _ => false
+       | Real_Math_asin _ => false
+       | Real_Math_atan _ => false
+       | Real_Math_atan2 _ => false
+       | Real_Math_cos _ => false
+       | Real_Math_exp _ => false
+       | Real_Math_ln _ => false
+       | Real_Math_log10 _ => false
+       | Real_Math_sin _ => false
+       | Real_Math_sqrt _ => false
+       | Real_Math_tan _ => false
+       | Real_ldexp _ => false
+       | Real_muladd _ => false
+       | Real_mulsub _ => false
+       | _ => CCodegen.implementsPrim p
+   end
 
 structure Opcode = IntInf
 
@@ -122,7 +142,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		  (table, String.hash name,
 		   fn {name = name', ...} => name = name',
 		   fn () =>
-		   (print (concat ["missing opcode: ", name])
+		   (print (concat ["missing opcode: ", name, "\n"])
 		    ; {hash = String.hash name,
 		       opcode = 0,
 		       name = name})))

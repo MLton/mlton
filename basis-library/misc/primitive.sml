@@ -751,7 +751,22 @@ structure Primitive =
 
       structure MLton =
 	 struct
-	    val native = _build_const "MLton_native": bool;
+	    structure Codegen =
+	       struct
+		  datatype t = Bytecode | C | Native
+
+		  val codegen =
+		     case _build_const "MLton_codegen": int; of
+			0 => Bytecode
+		      | 1 => C
+		      | 2 => Native
+		      | _ => raise Fail "MLton_codegen"
+
+		  val isBytecode = codegen = Bytecode
+(*		  val isC = codegen = C *)
+		  val isNative = codegen = Native
+	       end
+	    
 (*       val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
 (*       val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
 	    val share = _prim "MLton_share": 'a -> unit;
@@ -1073,7 +1088,7 @@ structure Primitive =
 	    structure Math =
 	       struct
 		  type real = real
-		     
+
 		  val acos = _prim "Real64_Math_acos": real -> real;
 		  val asin = _prim "Real64_Math_asin": real -> real;
 		  val atan = _prim "Real64_Math_atan": real -> real;
@@ -1149,7 +1164,7 @@ structure Primitive =
 	    structure Math =
 	       struct
 		  type real = real
-		     
+
 		  val acos = _prim "Real32_Math_acos": real -> real;
 		  val asin = _prim "Real32_Math_asin": real -> real;
 		  val atan = _prim "Real32_Math_atan": real -> real;

@@ -38,6 +38,8 @@ BFLAGS = -mlton "/usr/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
 BFLAGS = -html -mlton "/usr/bin/mlton" -mlkit -mosml -poly -smlnj
 BFLAGS = -mlton "$(BIN)/mlton"
 
+BFLAGS = -mlton "$(BIN)/mlton -codegen {native,bytecode}"
+
 .PHONY: test
 test: $(NAME)
 	cd tests && ../benchmark $(BFLAGS) $(BENCH)

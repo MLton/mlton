@@ -111,6 +111,12 @@ fun name t =
 fun align (t: t, b: Bytes.t): Bytes.t =
    Bytes.align (b, {alignment = size t})
 
+fun real (s: RealSize.t): t =
+   case Bits.toInt (RealSize.bits s) of
+      32 => Real32
+    | 64 => Real64
+    | _ => Error.bug "CType.real"
+   
 fun word (s: WordSize.t, {signed: bool}): t =
    case (signed, Bits.toInt (WordSize.bits s)) of
       (false, 8) => Word8

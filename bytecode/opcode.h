@@ -60,8 +60,6 @@
 	compare (Real##size, Real##size##_le)		\
 	compare (Real##size, Real##size##_lt)		\
 	binary (Real##size, Real##size##_mul)		\
-	ternary (Real##size, Real##size##_muladd)	\
-	ternary (Real##size, Real##size##_mulsub)	\
 	unary (Real##size, Real##size##_neg)		\
 	unary (Real##size, Real##size##_round)		\
 	binary (Real##size, Real##size##_sub)
@@ -151,7 +149,6 @@
 #define loadStoreStackTop(mode)  opcodeGen (mode##StackTop)
 #define loadWord(size)  opcodeName (Word, size, loadWord)
 #define shift(ty, f)  opcodeGen (f)
-#define ternary(ty, f)  opcodeGen (f)
 #define unary(ty, f)  opcodeGen (f)
 #define unaryCheck(ty, f)  opcodeGen (f)
 
@@ -195,7 +192,6 @@ typedef Word16 Opcode;
 #undef loadStoreStackTop
 #undef loadWord
 #undef shift
-#undef ternary
 #undef unary
 #undef unaryCheck
 

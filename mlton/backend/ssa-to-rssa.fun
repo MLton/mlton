@@ -250,6 +250,7 @@ structure Name =
 	    datatype z = datatype CFunction.Convention.t
 	    datatype z = datatype CFunction.Target.t
 	    val name = toString n
+	    val real = Type.real
 	    val word = Type.word o WordSize.bits
 	    val vanilla = CFunction.vanilla
 	    fun coerce (t1, t2, sg) =
@@ -337,6 +338,35 @@ structure Name =
 			    return = Type.intInf,
 			    target = Direct name,
 			    writesStackTop = false}
+	    local
+	       fun make n s =
+		  let
+		     val t = real s
+		     val ct = CType.real s
+		  in
+		     vanilla {args = Vector.new (n, t),
+			      name = name,
+			      prototype = (Vector.new (n, ct), SOME ct),
+			      return = t}
+		  end
+	    in
+	       val realBinary = make 2
+	       val realTernary = make 3
+	       val realUnary = make 1
+	    end
+	    fun realCompare s =
+	       let
+		  val t = real s
+	       in
+		  vanilla {args = Vector.new2 (t, t),
+			   name = name,
+			   prototype = let
+					  val t = CType.real s
+				       in
+					  (Vector.new2 (t, t), SOME CType.bool)
+				       end,
+			   return = Type.bool}
+	       end
 	    fun wordBinary (s, sg) =
 	       let
 		  val t = word s
@@ -416,6 +446,43 @@ structure Name =
 	     | IntInf_toString => intInfToString ()
 	     | IntInf_xorb => intInfBinary ()
 	     | MLton_bug => CFunction.bug
+	     | Real_Math_acos s => realUnary s
+	     | Real_Math_asin s => realUnary s
+	     | Real_Math_atan s => realUnary s
+	     | Real_Math_atan2 s => realBinary s
+	     | Real_Math_cos s => realUnary s
+	     | Real_Math_exp s => realUnary s
+	     | Real_Math_ln s => realUnary s
+	     | Real_Math_log10 s => realUnary s
+	     | Real_Math_sin s => realUnary s
+	     | Real_Math_sqrt s => realUnary s
+	     | Real_Math_tan s => realUnary s
+	     | Real_abs s => realUnary s
+	     | Real_add s => realBinary s
+	     | Real_div s => realBinary s
+	     | Real_equal s => realCompare s
+	     | Real_ge s => realCompare s
+	     | Real_gt s => realCompare s
+	     | Real_ldexp s =>
+		  let
+		     val t = real s
+		     val ct = CType.real s
+		  in
+		     vanilla {args = Vector.new2 (t, Type.defaultWord),
+			      name = name,
+			      prototype = (Vector.new2 (ct, CType.Int32),
+					   SOME ct),
+			      return = t}
+		  end
+	     | Real_le s => realCompare s
+	     | Real_lt s => realCompare s
+	     | Real_mul s => realBinary s
+	     | Real_muladd s => realTernary s
+	     | Real_mulsub s => realTernary s
+	     | Real_neg s => realUnary s
+	     | Real_qequal s => realCompare s
+	     | Real_round s => realUnary s
+	     | Real_sub s => realBinary s
 	     | Thread_returnToC => CFunction.returnToC
 	     | Word_add s => wordBinary (s, {signed = false})
 	     | Word_andb s => wordBinary (s, {signed = false})

@@ -7,6 +7,7 @@
 
 signature C_TYPE_STRUCTS = 
    sig
+      structure RealSize: REAL_SIZE
       structure WordSize: WORD_SIZE
    end
 
@@ -37,6 +38,7 @@ signature C_TYPE =
       val name: t -> string
       val layout: t -> Layout.t
       val pointer: t
+      val real: RealSize.t -> t
       val size: t -> Bytes.t
       val thread: t
       val toString: t -> string

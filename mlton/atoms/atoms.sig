@@ -46,7 +46,8 @@ signature ATOMS' =
       sharing Con = Prim.Con
       sharing Const = Prim.Const
       sharing IntSize = Tycon.IntSize
-      sharing RealSize = Prim.RealSize = RealX.RealSize = Tycon.RealSize
+      sharing RealSize = CType.RealSize = Prim.RealSize = RealX.RealSize
+	 = Tycon.RealSize
       sharing RealX = Const.RealX
       sharing SourceInfo = ProfileExp.SourceInfo
       sharing WordSize = CType.WordSize = Prim.WordSize = Tycon.WordSize

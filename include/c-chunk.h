@@ -203,7 +203,7 @@ extern struct GC_state gcState;
 /*                       Real                        */
 /* ------------------------------------------------- */
 
-#define unaryReal(f,g)						\
+#define unaryReal(f, g)						\
 	Real64 g (Real64 x);					\
 	static inline Real64 Real64_##f (Real64 x) {		\
 		return g (x);					\
@@ -214,7 +214,7 @@ extern struct GC_state gcState;
 unaryReal(round, rint)
 #undef unaryReal
 
-#define binaryReal(f,g)								\
+#define binaryReal(f, g)							\
 	Real64 g (Real64 x, Real64 y);						\
 	static inline Real64 Real64_Math_##f (Real64 x, Real64 y) {		\
 		return g (x, y);						\
@@ -225,7 +225,7 @@ unaryReal(round, rint)
 binaryReal(atan2, atan2)
 #undef binaryReal
 
-#define unaryReal(f,g)						\
+#define unaryReal(f, g)						\
 	Real64 g (Real64 x);					\
 	static inline Real64 Real64_Math_##f (Real64 x) {	\
 		return g (x);					\
@@ -560,33 +560,29 @@ mulOverflow(U16, U32)
 mulOverflow(U32, U64)
 #undef mulOverflow
 
-#define check(dst, n1, n2, l, f);						\
+#define check(dst, n1, n2, l, ty);						\
 	do {									\
 		Bool overflow;							\
-		dst = f (n1, n2, &overflow);					\
+		ty tmp;								\
+		tmp = ty##_mulOverflow (n1, n2, &overflow);			\
 		if (DEBUG_CCODEGEN)						\
-			fprintf (stderr, "%s:%d: " #f "(%d, %d) = %d\n",	\
+			fprintf (stderr, "%s:%d: " #ty "_mulOverflow (%d, %d) = %d\n",	\
 					__FILE__, __LINE__, 			\
-					(int)n1, (int)n2, (int)dst);		\
+					(int)n1, (int)n2, (int)tmp);		\
 		if (overflow) {							\
 			if (DEBUG_CCODEGEN)					\
 				fprintf (stderr, "%s:%d: overflow\n",		\
 						__FILE__, __LINE__);		\
 			goto l;							\
 		}								\
+		dst = tmp;							\
 	} while (0)
 
-#define WordS8_mulCheck(dst, n1, n2, l)			\
-	check (dst, n1, n2, l, WordS8_mulOverflow)
-#define WordS16_mulCheck(dst, n1, n2, l)		\
-	check (dst, n1, n2, l, WordS16_mulOverflow)
-#define WordS32_mulCheck(dst, n1, n2, l)		\
-	check (dst, n1, n2, l, WordS32_mulOverflow)
-#define WordU8_mulCheck(dst, n1, n2, l)			\
-	check (dst, n1, n2, l, WordU8_mulOverflow)
-#define WordU16_mulCheck(dst, n1, n2, l)		\
-	check (dst, n1, n2, l, WordU16_mulOverflow)
-#define WordU32_mulCheck(dst, n1, n2, l)		\
-	check (dst, n1, n2, l, WordU32_mulOverflow)
+#define WordS8_mulCheck(dst, n1, n2, l)  check (dst, n1, n2, l, WordS8)
+#define WordS16_mulCheck(dst, n1, n2, l)  check (dst, n1, n2, l, WordS16)
+#define WordS32_mulCheck(dst, n1, n2, l)  check (dst, n1, n2, l, WordS32)
+#define WordU8_mulCheck(dst, n1, n2, l)  check (dst, n1, n2, l, WordU8)
+#define WordU16_mulCheck(dst, n1, n2, l)  check (dst, n1, n2, l, WordU16)
+#define WordU32_mulCheck(dst, n1, n2, l)  check (dst, n1, n2, l, WordU32)
 
 #endif /* #ifndef _C_CHUNK_H_ */

@@ -13,9 +13,16 @@ functor Real (R: PRE_REAL): REAL =
 
       local
 	 open Prim
+	 val isBytecode = MLton.Codegen.isBytecode
       in
-	 val *+ = *+
-	 val *- = *-
+	 val *+ =
+	    if isBytecode
+	       then fn (r1, r2, r3) => r1 * r2 + r3
+	    else *+
+	 val *- =
+	    if isBytecode
+	       then fn (r1, r2, r3) => r1 * r2 - r3
+	    else *-
 	 val op * = op *
 	 val op + = op +
 	 val op - = op -
@@ -61,7 +68,7 @@ functor Real (R: PRE_REAL): REAL =
 	  | _ => raise Fail "Real_class returned bogus integer"
 
       val abs =
-	 if MLton.native
+	 if MLton.Codegen.isNative
 	    then abs
 	 else
 	    fn x =>
@@ -91,7 +98,7 @@ functor Real (R: PRE_REAL): REAL =
       val op != = not o op ==
 
       val op ?= =
-	 if MLton.native
+	 if MLton.Codegen.isNative
 	    then Prim.?=
 	 else
 	    fn (x, y) =>
@@ -200,7 +207,7 @@ functor Real (R: PRE_REAL): REAL =
       fun fromManExp {exp, man} = Prim.ldexp (man, exp)
 
       val fromManExp =
-	 if MLton.native
+	 if MLton.Codegen.isNative
 	    then fromManExp
 	 else
 	    fn {exp, man} =>
@@ -663,7 +670,7 @@ functor Real (R: PRE_REAL): REAL =
 
 	    (* The x86 doesn't get exp right on infs. *)
 	    val exp =
-	       if MLton.native
+	       if MLton.Codegen.isNative
 		  andalso let open MLton.Platform.Arch in host = X86 end
 		  then (fn x =>
 			case class x of
