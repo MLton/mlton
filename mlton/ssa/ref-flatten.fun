@@ -559,8 +559,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 				    | Unflattenable => ()
 				end)
 			    end)
-	  | Statement.Updates (base, us) =>
-	       (Vector.foreach (us, use o #value)
+	  | Statement.Update {base, value, ...} =>
+	       (use value
 		; (case base of
 		      Base.Object r =>
 			 let
@@ -959,7 +959,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 case s of
 	    Bind b => transformBind b
 	  | Profile _ => Vector.new1 s
-	  | Updates (base, us) =>
+	  | Update {base, offset, value} =>
 	       (case base of
 		   Base.Object object =>
 		      Vector.new1
@@ -976,11 +976,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 					   | _ => base)
 				    | Unflattenable => base
 			     in
-				Updates
-				(base,
-				 Vector.map (us, fn {offset, value} =>
-					     {offset = objectOffset (obj, offset),
-					      value = value}))
+				Update {base = base,
+					offset = objectOffset (obj, offset),
+					value = value}
 			     end)
 		 | Base.VectorSub _ => Vector.new1 s)
       val transformStatement =

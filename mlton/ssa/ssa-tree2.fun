@@ -778,8 +778,9 @@ structure Statement =
 		  ty: Type.t,
 		  exp: Exp.t}
        | Profile of ProfileExp.t
-       | Updates of Var.t Base.t * {offset: int,
-				    value: Var.t} vector
+       | Update of {base: Var.t Base.t,
+		    offset: int,
+		    value: Var.t}
 
       fun layout' (s: t, layoutVar): Layout.t =
 	 let
@@ -797,14 +798,12 @@ structure Statement =
 					  str " = "]],
 		       Exp.layout' (exp, layoutVar)]
 	     | Profile p => ProfileExp.layout p
-      	     | Updates (base, us) =>
-		  align (Vector.toListMap
-			 (us, fn {offset, value} =>
-			  seq [if 0 = offset
-				  then empty
-			       else seq [str "#", Int.layout offset, str " "],
-				  Base.layout (base, layoutVar),
-				  str " := ", layoutVar value]))
+      	     | Update {base, offset, value} =>
+		  seq [(if 0 = offset
+			   then empty
+			else seq [str "#", Int.layout offset, str " "]),
+		       Base.layout (base, layoutVar),
+		       str " := ", layoutVar value]
 	 end
 
       fun layout s = layout' (s, Var.layout)
@@ -869,8 +868,7 @@ structure Statement =
 	 case s of
 	    Bind {exp, ...} => Exp.foreachVar (exp, f)
 	  | Profile _ => ()
-	  | Updates (base, us) =>
-	       (Base.foreach (base, f); Vector.foreach (us, f o #value))
+	  | Update {base, value, ...} => (Base.foreach (base, f); f value)
 	       
       fun replaceDefsUses (s: t, {def: Var.t -> Var.t, use: Var.t -> Var.t}): t =
 	 case s of
@@ -879,10 +877,10 @@ structure Statement =
 		     ty = ty,
 		     var = Option.map (var, def)}
 	  | Profile _ => s
-	  | Updates (base, us) =>
-	       Updates (Base.map (base, use),
-			Vector.map (us, fn {offset, value} =>
-				    {offset = offset, value = use value}))
+	  | Update {base, offset, value} =>
+	       Update {base = Base.map (base, use),
+		       offset = offset,
+		       value = use value}
 
       fun replaceUses (s, f) = replaceDefsUses (s, {def = fn x => x, use = f})
    end

@@ -254,15 +254,10 @@ fun 'a analyze
 		    else setValue (var, v))
 		end
 	  | Profile _ => ()
-	  | Updates (base, us) =>
-	       let
-		  val base = baseValue base
-	       in
-		  Vector.foreach (us, fn {offset, value = v} =>
-				  update {base = base,
-					  offset = offset,
-					  value = value v})
-	       end)
+	  | Update {base, offset, value = v} =>
+	     update {base = baseValue base,
+		     offset = offset,
+		     value = value v})
 	     handle exn =>
 		Error.bug (concat ["loopStatement: ",
 				   Layout.toString (Statement.layout s),

@@ -130,8 +130,9 @@ signature SSA_TREE2 =
 			ty: Type.t,
 			var: Var.t option}
 	     | Profile of ProfileExp.t
-	     | Updates of Var.t Base.t * {offset: int,
-					  value: Var.t} vector
+	     | Update of {base: Var.t Base.t,
+			  offset: int,
+			  value: Var.t}
 
 	    val clear: t -> unit (* clear the var *)
 	    val foreachDef: t * (Var.t * Type.t -> unit) -> unit

@@ -115,16 +115,16 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 			 Array_sub => sub ()
 		       | Array_update =>
 			    Vector.new1
-			    (S2.Statement.Updates
-			     (Base.VectorSub {index = arg 1,
-					      vector = arg 0},
-			      Vector.new1 {offset = 0,
-					   value = arg 2}))
+			    (S2.Statement.Update
+			     {base = Base.VectorSub {index = arg 1,
+						     vector = arg 0},
+			      offset = 0,
+			      value = arg 2})
 		       | Ref_assign =>
-			    Vector.new1 (S2.Statement.Updates
-					 (Base.Object (arg 0),
-					  Vector.new1 {offset = 0,
-						       value = arg 1}))
+			    Vector.new1 (S2.Statement.Update
+					 {base = Base.Object (arg 0),
+					  offset = 0,
+					  value = arg 1})
 		       | Ref_deref =>
 			    simple (S2.Exp.Select {base = Base.Object (arg 0),
 						   offset = 0})

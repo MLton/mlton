@@ -913,7 +913,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	    case s of
 	       Bind b => transformBind b
 	     | Profile _ => simple ()
-	     | Updates (base, us) =>
+	     | Update {base, offset, value} =>
 		  let
 		     val baseVar =
 			case base of
@@ -921,44 +921,42 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			 | Base.VectorSub {vector = x, ...} => x
 		     val objectValue = varValue baseVar
 		     val ss = ref []
+		     val child =
+			Value.finalTree
+			(Value.select {base = objectValue,
+				       offset = offset})
+		     val offset = Value.finalOffset (objectValue, offset)
+		     val base = Base.map (base, replaceVar)
 		     val us =
-			Vector.foldr
-			(us, [], fn ({offset, value}, ac) =>
-			 let
-			    val child =
-			       Value.finalTree
-			       (Value.select {base = objectValue,
-					      offset = offset})
-			    val offset = Value.finalOffset (objectValue, offset)
-			 in
-			    if not (TypeTree.isFlat child)
-			       then {offset = offset,
-				     value = replaceVar value} :: ac
-			    else
-			       let
-				  val (vt, ss') =
-				     coerceTree {from = varTree value,
-						 to = child}
-				  val () = ss := ss' @ (!ss)
-				  val r = ref offset
-				  val us = ref ac
-				  val () =
-				     VarTree.foreachRoot
-				     (vt, fn var =>
-				      let
-					 val offset = !r
-					 val () = r := 1 + !r
-				      in
-					 List.push (us, {offset = offset,
-							 value = var})
-				      end)
-			       in
-				  !us
-			       end
-			 end)
+			if not (TypeTree.isFlat child)
+			   then [Update {base = base,
+					 offset = offset,
+					 value = replaceVar value}]
+			else
+			   let
+			      val (vt, ss') =
+				 coerceTree {from = varTree value,
+					     to = child}
+			      val () = ss := ss' @ (!ss)
+			      val r = ref offset
+			      val us = ref []
+			      val () =
+				 VarTree.foreachRoot
+				 (vt, fn var =>
+				  let
+				     val offset = !r
+				     val () = r := 1 + !r
+				  in
+				     List.push (us,
+						Update {base = base,
+							offset = offset,
+							value = var})
+				  end)
+			   in
+			      !us
+			   end
 		  in
-		     !ss @ [Updates (Base.map (base, replaceVar),
-				     Vector.fromList us)]
+		     !ss @ us
 		  end
 	 end
       val transformStatement =

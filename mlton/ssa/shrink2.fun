@@ -1244,7 +1244,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 		case s of
 		   Bind b => evalBind b
 		 | Profile _ => simple ()
-		 | Updates _ => simple ()
+		 | Update _ => simple ()
 	     end) arg
 	 val start = labelMeaning start
 	 val () = forceMeaningBlock start

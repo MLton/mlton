@@ -759,33 +759,28 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 		  in
 		     case s of
 			S.Statement.Profile e => add (Statement.Profile e)
-		      | S.Statement.Updates (base, us) =>
-			   let
-			      val baseOp = Base.map (base, varOp)
-			      val baseTy = varType (Base.object base)
-			      val ({isPointerUpdate}, ss) =
-				 Vector.foldr
-				 (us, ({isPointerUpdate = false}, []),
-				  fn ({offset, value},
-				      z as ({isPointerUpdate}, ac)) =>
-				  case toRtype (varType value) of
-				     NONE => z
-				   | SOME t => 
-					({isPointerUpdate =
-					  (isPointerUpdate
-					   orelse Type.isPointer t)},
-					 update {base = baseOp,
-						 baseTy = baseTy,
-						 offset = offset,
-						 value = varOp value} @ ac))
-			      val ss =
-				 if !Control.markCards
-				    andalso isPointerUpdate
-				    then updateCard (Base.object baseOp) @ ss
-				 else ss
-			   in
-			      adds ss
-			   end
+		      | S.Statement.Update {base, offset, value} =>
+			   (case toRtype (varType value) of
+			       NONE => none ()
+			     | SOME t => 
+				  let
+				     val baseOp = Base.map (base, varOp)
+				     val ss =
+					update
+					{base = baseOp,
+					 baseTy = varType (Base.object base),
+					 offset = offset,
+					 value = varOp value}
+				     val ss =
+					if !Control.markCards
+					   andalso Type.isPointer t
+					   then
+					      updateCard (Base.object baseOp)
+					      @ ss
+					else ss
+				  in
+				     adds ss
+				  end)
 		      | S.Statement.Bind {exp, ty, var} =>
 	          let
 		     fun split (args, kind,

@@ -477,7 +477,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 		  ()
 	       end
 	  | Profile _ => ()
-	  | Updates (base, args) =>
+	  | Update {base, offset, value} =>
 	       let
 		  datatype z = datatype Base.t
 	       in
@@ -494,26 +494,20 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 					let
 					   val ci = conInfo con
 					   val ciArgs = ConInfo.args ci
+					   val {elt = (vi, _), ...} =
+					      Prod.sub (ciArgs, offset)
 					in
-					   Vector.foreach
-					   (args, fn {offset, value} =>
-					    let
-					       val {elt = (vi, _), ...} =
-						  Prod.sub (ciArgs, offset)
-					    in
-					       VarInfo.whenUsed
-					       (vi, fn () =>
-						(Option.app (fi, FuncInfo.sideEffect)
-						 ; ConInfo.decon ci
-						 ; visitVar base
-						 ; visitVar value))
-					    end)
+					   VarInfo.whenUsed
+					   (vi, fn () =>
+					    (Option.app (fi, FuncInfo.sideEffect)
+					     ; ConInfo.decon ci
+					     ; visitVar base
+					     ; visitVar value))
 					end
 				   | Tuple => 
 					(Option.app (fi, FuncInfo.sideEffect)
 					 ; visitVar base
-					 ; Vector.foreach 
-					   (args, visitVar o #value))
+					 ; visitVar value)
 				   | Vector => Error.bug "Update:non-Con|Tuple")
 			    | _ => Error.bug "Update:non-Object"
 			end
@@ -521,7 +515,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 			(Option.app(fi, FuncInfo.sideEffect)
 			 ; visitVar index
 			 ; visitVar vector
-			 ; Vector.foreach (args, visitVar o #value))
+			 ; visitVar value)
 	       end
       fun visitTransfer (t: Transfer.t, fi: FuncInfo.t) =
 	 case t of
@@ -1076,7 +1070,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 		   | NONE => doit NONE
 	       end
 	  | Profile _ => SOME s
-	  | Updates (base, args) => 
+	  | Update {base, offset, value} =>
 	       let
 		  datatype z = datatype Base.t
 	       in
@@ -1093,28 +1087,28 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 					let
 					   val ci = conInfo con
 					   val ciArgs = ConInfo.args ci
-					   val args =
-					      Vector.keepAllMap
-					      (args, fn {offset, value, ...} =>
-					       if (VarInfo.isUsed o #1 o #elt)
-						  (Prod.sub (ciArgs, offset))
-						  then let
-							  val offset =
-							     Int.fold
-							     (0, offset, 0, fn (i, offset) =>
-							      if (VarInfo.isUsed o #1 o #elt)
-								 (Prod.sub (ciArgs, i))
-								 then offset + 1
-								 else offset)
-						       in
-							  SOME {offset = offset, 
-								value = value}
-						       end
-						  else NONE)
+					   fun argIsUsed i =
+					      VarInfo.isUsed
+					      (#1 (#elt (Prod.sub (ciArgs, i))))
 					in
-					   if Vector.length args > 0
-					      then SOME (Updates (Base.Object base, args))
-					      else NONE
+					   if argIsUsed offset
+					      then
+						 let
+						    val offset =
+						       Int.fold
+						       (0, offset, 0,
+							fn (i, offset) =>
+							if argIsUsed i
+							   then offset + 1
+							else offset)
+						 in
+						    SOME
+						    (Update
+						     {base = Base.Object base,
+						      offset = offset, 
+						      value = value})
+						 end
+					   else NONE
 					end
 				   | Tuple => SOME s
 				   | Vector => Error.bug "Update:non-Con|Tuple")
