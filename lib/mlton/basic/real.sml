@@ -35,8 +35,14 @@ fun input i =
    case fromString(In.inputToSpace i) of
       SOME x => x
     | NONE => raise Input
-	 
-val fromInt = Pervasive.Real.fromInt
+
+local
+   open Pervasive.Real
+in
+   val fromInt = fromInt
+   val fromIntInf = fromLargeInt
+   val toIntInf = fromLargeInt
+end
 
 structure Format =
    struct

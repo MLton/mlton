@@ -44,6 +44,7 @@ signature REAL =
       val sin: real -> real
       val sqrt: t -> t
       val tan: t -> t
+      val toIntInf: t -> IntInf.t
       val toString: t -> string
       val trunc: t -> int
    end
