@@ -78,6 +78,8 @@ signature DIRECTED_GRAPH =
 	  root: (* graph *) Node.t}
 	 -> {forest: t,
 	     graphToForest: (* graph *) Node.t -> (* forest *) Node.t,
+	     headers: (* graph *) Node.t list -> (* graph *) Node.t list,
+	     isHeader: (* graph *) Node.t -> bool,
 	     loopNodes: (* forest *) Node.t -> (* graph *) Node.t list,
 	     parent: (* forest *) Node.t -> (* forest *) Node.t option}
       val loopForestSteensgaard:
@@ -85,6 +87,8 @@ signature DIRECTED_GRAPH =
 	  root: (* graph *) Node.t}
 	 -> {forest: t,
 	     graphToForest: (* graph *) Node.t -> (* forest *) Node.t,
+	     headers: (* graph *) Node.t list -> (* graph *) Node.t list,
+	     isHeader: (* graph *) Node.t -> bool,
 	     loopNodes: (* forest *) Node.t -> (* graph *) Node.t list,
 	     parent: (* forest *) Node.t -> (* forest *) Node.t option}
       val new: unit -> t

@@ -749,6 +749,10 @@ structure SubGraphNodeInfo =
  *                      denote vertices belonging to L but not to any inner loop of L,
  *                      and these become 'leaves' of the 'forest'."
  *          graphToForest -- maps a node in graph to it's corresponding leaf in forest
+ *          headers -- a function mapping strongly connected components of graph
+ *                      to a set of header nodes; compose with loopNodes to get
+ *                      the loop headers of an internal node in the forest
+ *          isHeader -- predicate indicating that the node is the header for some loop
  *          loopNodes -- maps an internal node in the forest to a set of nodes
  *                        in graph that compose a loop
  *          parent -- maps a node in forest to it's parent in forest
@@ -763,6 +767,11 @@ fun loopForest {headers, graph, root}
 	= Property.getSetOnce 
 	  (Node.plist, Property.initRaise ("graphNodeInfo", Node.layout))
       val forestNode = #forestNode o graphNodeInfo
+
+      val {get = getIsHeader : Node.t -> bool ref, 
+	   set = setIsHeader, ...}
+	= Property.getSetOnce
+	  (Node.plist, Property.initFun (fn _ => ref false))
 
       val {get = forestNodeInfo : Node.t -> ForestNodeInfo.t,
 	   set = setForestNodeInfo, ...}
@@ -787,7 +796,9 @@ fun loopForest {headers, graph, root}
 	= let
 	    val scc' = List.map(scc, #graphNode o subGraphNodeInfo)
 	    val headers = headers scc'
-	      
+	    val _ = List.foreach
+	            (headers, fn header => getIsHeader header := true)
+
 	    val graph' = new ()
 	  in
 	    List.foreach
@@ -850,7 +861,7 @@ fun loopForest {headers, graph, root}
 			   in
 			      setForestNodeInfo (n', {loopNodes = [graphNode n], 
 						      parent = parent}) ;
-			     setGraphNodeInfo (graphNode n, {forestNode = n'})
+			      setGraphNodeInfo (graphNode n, {forestNode = n'})
 			   end
 		     in
 		       case parent
@@ -898,6 +909,8 @@ fun loopForest {headers, graph, root}
     in
       {forest = F,
        graphToForest = forestNode,
+       headers = headers,
+       isHeader = ! o getIsHeader,
        loopNodes = loopNodes,
        parent = parent}
     end
