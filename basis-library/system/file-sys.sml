@@ -96,16 +96,21 @@ structure OS_FileSys =
 	 end
 
       fun realPath p =
-	 if (P.isAbsolute p)
+	 if P.isAbsolute p
 	    then fullPath p
-	 else P.mkRelative {path = fullPath p, relativeTo = fullPath(getDir())}
+	 else P.mkRelative {path = fullPath p,
+			    relativeTo = fullPath (getDir ())}
 
       val fileSize = P_FSys.ST.size o P_FSys.stat
-      val modTime  = P_FSys.ST.mtime o P_FSys.stat
-      fun setTime (path, NONE) = P_FSys.utime(path, NONE)
-	| setTime (path, SOME t) = P_FSys.utime(path, SOME{actime=t, modtime=t})
-      val remove   = P_FSys.unlink
-      val rename   = P_FSys.rename
+
+      val modTime = P_FSys.ST.mtime o P_FSys.stat
+
+      fun setTime (path, t) =
+	 P_FSys.utime (path, Option.map (fn t => {actime = t, modtime = t}) t)
+
+      val remove = P_FSys.unlink
+	 
+      val rename = P_FSys.rename
 
       datatype access_mode = datatype Posix.FileSys.access_mode
 

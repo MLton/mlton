@@ -5,15 +5,15 @@ structure Socket:> SOCKET_EXTRA
 struct
 
 structure Prim = Primitive.Socket
-structure PE = Posix.Error
-structure PESC = PE.SysCall
-structure PFS = Posix.FileSys
+structure Error = Posix.Error
+structure Syscall = Error.SysCall
+structure FileSys = Posix.FileSys
 
 datatype sock = S of Prim.sock
 fun sockToWord (S s) = SysWord.fromInt s
 fun wordToSock s = S (SysWord.toInt s)
-fun sockToFD sock = PFS.wordToFD (sockToWord sock)
-fun fdToSock fd = wordToSock (PFS.fdToWord fd)
+fun sockToFD sock = FileSys.wordToFD (sockToWord sock)
+fun fdToSock fd = wordToSock (FileSys.fdToWord fd)
 
 type pre_sock_addr = Prim.pre_sock_addr
 datatype sock_addr = SA of Prim.sock_addr
@@ -111,9 +111,11 @@ structure CtlExtra =
 	 case t of
 	    NONE => (marshalBool (false, wa, s)
 		     ; marshalInt (0, wa, s + boolLen))
-	  | SOME t => (marshalBool (true, wa, s)
-		       ; marshalWord (Word.fromLargeInt (Time.toSeconds t), 
-				      wa, s + boolLen))
+	  | SOME t =>
+	       (marshalBool (true, wa, s)
+		; marshalWord (Word.fromLargeInt (Time.toSeconds t)
+			       handle Overflow => Error.raiseSys Error.inval,
+			       wa, s + boolLen))
 
       local
 	 fun make (optlen: int,
@@ -132,7 +134,7 @@ structure CtlExtra =
 		     val optval = Word8Array.array (optlen, 0wx0)
 		     val optlen = ref optlen
 		  in
-		     PESC.simple
+		     Syscall.simple
 		     (fn () =>
 		      Prim.Ctl.getSockOpt (s, level, optname,
 					   Word8Array.toPoly optval,
@@ -144,7 +146,7 @@ structure CtlExtra =
 		     val optval = marshal optval
 		     val optlen = Word8Vector.length optval
 		  in
-		     PESC.simple
+		     Syscall.simple
 		     (fn () => 
 		      Prim.Ctl.setSockOpt (s, level, optname,
 					   Word8Vector.toPoly optval,
@@ -154,7 +156,7 @@ structure CtlExtra =
 		  let
 		     val optval = Word8Array.array (optlen, 0wx0)
 		  in
-		     PESC.simple
+		     Syscall.simple
 		     (fn () =>
 		      Prim.Ctl.getIOCtl
 		      (s, request, Word8Array.toPoly optval))
@@ -164,7 +166,7 @@ structure CtlExtra =
 		  let
 		     val optval = marshal optval
 		  in
-		     PESC.simple
+		     Syscall.simple
 		     (fn () =>
 		      Prim.Ctl.setIOCtl
 		      (s, request, Word8Vector.toPoly optval))
@@ -213,7 +215,7 @@ structure Ctl =
 	    (S s) =
 	    let
 	       val (sa, salen, finish) = new_sock_addr ()
-	       val () = PESC.simple (fn () => f (s, sa, salen))
+	       val () = Syscall.simple (fn () => f (s, sa, salen))
 	    in
 	       finish ()
 	    end
@@ -230,14 +232,14 @@ fun sameAddr (SA sa1, SA sa2) = sa1 = sa2
 fun familyOfAddr (SA sa) = NetHostDB.intToAddrFamily (Prim.familyOfAddr sa)
 
 fun bind (S s, SA sa) =
-   PESC.simple (fn () => Prim.bind (s, sa, Vector.length sa))
+   Syscall.simple (fn () => Prim.bind (s, sa, Vector.length sa))
 
 fun listen (S s, n) = 
-   PESC.simple (fn () => Prim.listen (s, n))
+   Syscall.simple (fn () => Prim.listen (s, n))
 
 fun nonBlock' ({restart: bool},
 	       f : unit -> int, post : int -> 'a, again, no : 'a) =
-   PESC.syscallErr
+   Syscall.syscallErr
    ({clear = false, restart = restart},
     fn () => let val res = f ()
 	     in 
@@ -247,7 +249,7 @@ fun nonBlock' ({restart: bool},
 	     end)
 
 fun nonBlock (f, post, no) =
-   nonBlock' ({restart = true}, f, post, PE.again, no)
+   nonBlock' ({restart = true}, f, post, Error.again, no)
 
 local
    structure PIO = PosixPrimitive.IO
@@ -255,10 +257,10 @@ in
    fun withNonBlock (fd, f: unit -> 'a) =
       let
 	 val flags = 
-	    PESC.simpleResultRestart 
+	    Syscall.simpleResultRestart 
 	    (fn () => PIO.fcntl2 (fd, PIO.F_GETFL))
 	 val _ =
-	    PESC.simpleResultRestart
+	    Syscall.simpleResultRestart
 	    (fn () => 
 	     PIO.fcntl3 (fd, PIO.F_SETFL,
 			 Word.toIntX
@@ -266,24 +268,24 @@ in
 				    PosixPrimitive.FileSys.O.nonblock))))
       in
 	 DynamicWind.wind
-	 (f, fn () => PESC.simple (fn () => PIO.fcntl3 (fd, PIO.F_SETFL, flags)))
+	 (f, fn () => Syscall.simple (fn () => PIO.fcntl3 (fd, PIO.F_SETFL, flags)))
       end
 end
 
 fun connect (S s, SA sa) =
-   PESC.simple (fn () => Prim.connect (s, sa, Vector.length sa))
+   Syscall.simple (fn () => Prim.connect (s, sa, Vector.length sa))
 
 fun connectNB (S s, SA sa) =
    nonBlock'
    ({restart = false}, fn () => 
     withNonBlock (s, fn () => Prim.connect (s, sa, Vector.length sa)),
     fn _ => true,
-    PE.inprogress, false)
+    Error.inprogress, false)
 
 fun accept (S s) =
    let
       val (sa, salen, finish) = new_sock_addr ()
-      val s = PESC.simpleResultRestart (fn () => Prim.accept (s, sa, salen))
+      val s = Syscall.simpleResultRestart (fn () => Prim.accept (s, sa, salen))
    in
       (S s, finish ())
    end
@@ -298,7 +300,7 @@ fun acceptNB (S s) =
        NONE)
    end
 
-fun close (S s) = PESC.simple (fn () => Prim.close (s))
+fun close (S s) = Syscall.simple (fn () => Prim.close (s))
 
 datatype shutdown_mode = NO_RECVS | NO_SENDS | NO_RECVS_OR_SENDS
 
@@ -310,12 +312,12 @@ fun shutdownModeToHow m =
 
 fun shutdown (S s, m) =
    let val m = shutdownModeToHow m
-   in PESC.simple (fn () => Prim.shutdown (s, m))
+   in Syscall.simple (fn () => Prim.shutdown (s, m))
    end
 
 type sock_desc = OS.IO.iodesc
 
-fun sockDesc sock = PFS.fdToIOD (sockToFD sock)
+fun sockDesc sock = FileSys.fdToIOD (sockToFD sock)
 
 fun sameDesc (desc1, desc2) =
    OS.IO.compare (desc1, desc2) = EQUAL
@@ -377,7 +379,7 @@ local
 	    let
 	       val (buf, i, sz) = base sl
 	    in
-	       PESC.simpleResultRestart
+	       Syscall.simpleResultRestart
 	       (fn () => primSend (s, buf, i, sz, mk_out_flags out_flags))
 	    end
 	 fun send (sock, buf) = send' (sock, buf, no_out_flags)
@@ -395,7 +397,7 @@ local
 	    let
 	       val (buf, i, sz) = base sl
 	    in
-	       PESC.simpleRestart
+	       Syscall.simpleRestart
 	       (fn () => primSendTo (s, buf, i, sz, mk_out_flags out_flags, sa, Vector.length sa))
 	    end
 	 fun sendTo (sock, sock_addr, sl) =
@@ -439,7 +441,7 @@ fun recvArr' (S s, sl, in_flags) =
    let
       val (buf, i, sz) = Word8ArraySlice.base sl
    in
-      PESC.simpleResultRestart
+      Syscall.simpleResultRestart
       (fn () => Prim.recv (s, Word8Array.toPoly buf, i, sz, mk_in_flags in_flags))
    end
 
@@ -466,7 +468,7 @@ fun recvArrFrom' (S s, sl, in_flags) =
       val (buf, i, sz) = Word8ArraySlice.base sl
       val (sa, salen, finish) = new_sock_addr ()
       val n =
-	 PESC.simpleResultRestart
+	 Syscall.simpleResultRestart
 	 (fn () => Prim.recvFrom (s, Word8Array.toPoly buf, i, sz, mk_in_flags in_flags, sa, salen))
    in
       (n, finish ())

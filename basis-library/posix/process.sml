@@ -201,9 +201,11 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 
       local
 	 fun wrap prim (t: Time.time): Time.time =
-	    (Time.fromSeconds (LargeInt.fromInt 
-	    (prim 
-	    (LargeInt.toInt (Time.toSeconds t)))))
+	    Time.fromSeconds
+	    (LargeInt.fromInt 
+	     (prim 
+	      (LargeInt.toInt (Time.toSeconds t)
+	       handle Overflow => Error.raiseSys Error.inval)))
       in
 	 val alarm = wrap Prim.alarm
 	 val sleep = wrap Prim.sleep

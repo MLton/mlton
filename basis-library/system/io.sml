@@ -13,6 +13,7 @@
 
 structure OS_IO: OS_IO =
   struct
+     structure Error = PosixError
 
   (* an iodesc is an abstract descriptor for an OS object that
    * supports I/O (e.g., file, tty device, socket, ...).
@@ -120,7 +121,8 @@ structure OS_IO: OS_IO =
 	      | SOME t =>
 		   if Time.< (t, Time.zeroTime)
 		      then let open PosixError in raiseSys inval end
-		   else Int.fromLarge (Time.toMilliseconds t)
+		   else (Int.fromLarge (Time.toMilliseconds t)
+			 handle Overflow => Error.raiseSys Error.inval)
 	  val reventss = Array.array (n, 0w0)
 	  val _ = Posix.Error.SysCall.simpleRestart
 	          (fn () => Prim.poll (fds, eventss, n, timeOut, reventss))

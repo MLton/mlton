@@ -7,17 +7,22 @@
  *)
 structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
    struct
+      structure Error = PosixError
+
       (* Patch to make Time look like it deals with Int.int
        * instead of LargeInt.int.
        *)
       structure Time =
 	 struct
 	    open Time
-	    val toSeconds = LargeInt.toInt o toSeconds
+
 	    val fromSeconds = fromSeconds o LargeInt.fromInt
+
+	    fun toSeconds t =
+	       LargeInt.toInt (Time.toSeconds t)
+	       handle Overflow => Error.raiseSys Error.inval
 	 end
       
-      structure Error = PosixError
       structure SysCall = Error.SysCall
       structure Prim = PosixPrimitive.FileSys
       open Prim
