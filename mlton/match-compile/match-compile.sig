@@ -26,31 +26,31 @@ signature MATCH_COMPILE_STRUCTS =
 	    type exp
 	    type t
 
-	    val con: {con: Con.t,
-		      targs: Type.t vector,
-		      arg: (Var.t * Type.t) option,
-		      rhs: exp} vector -> t
+	    val con: {arg: (Var.t * Type.t) option,
+		      con: Con.t,
+		      rhs: exp,
+		      targs: Type.t vector} vector -> t
 	    val word: WordSize.t * (WordX.t * exp) vector -> t
 	 end
       structure Exp:
 	 sig
 	    type t
 	       
-	    val const: Const.t -> t
-	    val var: Var.t * Type.t -> t
-	    val detuple: {tuple: t,
-			  body: (Var.t * Type.t) vector -> t} -> t
 	    val casee:
 	       {cases: Cases.t,
 		default: (t * Region.t) option,
 		test: t,
 		ty: Type.t}  (* type of entire case expression *)
 	       -> t
-	    val lett: {var: Var.t, exp: t, body: t} -> t
-	    val iff: {test: t, thenn: t, elsee: t, ty: Type.t} -> t
-	    val equal: t * t -> t
+	    val const: Const.t -> t
 	    val deref: t -> t
+	    val detuple: {tuple: t,
+			  body: (Var.t * Type.t) vector -> t} -> t
+	    val equal: t * t -> t
+	    val iff: {test: t, thenn: t, elsee: t, ty: Type.t} -> t
 	    val layout: t -> Layout.t
+	    val lett: {var: Var.t, exp: t, body: t} -> t
+	    val var: Var.t * Type.t -> t
 	 end
       sharing type Cases.exp = Exp.t
       structure NestedPat: NESTED_PAT

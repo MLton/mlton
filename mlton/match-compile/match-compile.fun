@@ -13,153 +13,188 @@ open S
 
 structure Env = MonoEnv (structure Domain = Var
 			 structure Range = Var)
-   
-structure FlatPat =
+
+structure Fact =
    struct
       datatype t =
-	 Any
-       | Const of {const: Const.t,
+	 Con of {arg: Var.t option,
+		 con: Con.t}
+       | Tuple of Var.t vector
+
+      fun layout (f: t): Layout.t =
+	 let
+	    open Layout
+	 in
+	    case f of
+	       Con {arg, con} =>
+		  seq [Con.layout con,
+		       case arg of
+			  NONE => empty
+			| SOME x => seq [str " ", Var.layout x]]
+	     | Tuple xs => tuple (Vector.toListMap (xs, Var.layout))
+	 end
+   end
+
+structure Facts =
+   struct
+      datatype t = T of {fact: Fact.t,
+			 var: Var.t} list
+
+      fun layout (T fs) =
+	 let
+	    open Layout
+	 in
+	    List.layout (fn {fact, var} =>
+			 seq [Var.layout var, str " = ", Fact.layout fact])
+	    fs
+	 end
+
+      val empty: t = T []
+
+      fun add (T fs, x, f) = T ({fact = f, var = x} :: fs)
+
+      fun bind (T facts, x: Var.t, p: NestedPat.t): Env.t =
+	 let
+	    val {destroy, get = fact: Var.t -> Fact.t, set = setFact, ...} =
+	       Property.destGetSetOnce
+	       (Var.plist, Property.initRaise ("fact", Var.layout))
+	    val () = List.foreach (facts, fn {fact, var} => setFact (var, fact))
+	    fun loop (p: NestedPat.t, x: Var.t, env: Env.t): Env.t =
+	       let
+		  datatype z = datatype NestedPat.node
+	       in
+		  case NestedPat.node p of
+		     Con {arg, ...} =>
+			(case arg of
+			    NONE => env
+			  | SOME p => 
+			       (case fact x of
+				   Fact.Con {arg = SOME x, ...} =>
+				      loop (p, x, env)
+				 | _ => Error.bug "wrong fact"))
+		   | Const _ => env
+		   | Layered (y, p) => loop (p, x, Env.extend (env, y, x))
+		   | Tuple ps =>
+			if 0 = Vector.length ps
+			   then env
+			else (case fact x of
+				 Fact.Tuple xs =>
+				    Vector.fold2 (ps, xs, env, loop)
+			       | _ => Error.bug "wrong fact")
+		   | Var y => Env.extend (env, y, x)
+		   | Wild => env
+	       end
+	    val env = loop (p, x, Env.empty)
+	    val () = destroy ()
+	 in
+	    env
+	 end
+      val bind =
+	 Trace.trace3 ("Facts.bind",
+		       layout, Var.layout, NestedPat.layout, Env.layout)
+	 bind
+   end
+   
+structure Pat =
+   struct
+      datatype t =
+	 Const of {const: Const.t,
 		   isChar: bool,
 		   isInt: bool}
-       | Con of {arg: NestedPat.t option,
+       | Con of {arg: (t * Type.t) option,
 		 con: Con.t,
 		 targs: Type.t vector}
-       | Tuple of NestedPat.t vector
+       | Tuple of t vector
+       | Wild
 
-      fun layout p =
+      fun layout (p: t): Layout.t =
 	 let
 	    open Layout
 	 in
 	    case p of
-	       Any => str "Any"
-	     | Const {const = c, ...} => Const.layout c
-	     | Con {con, arg, ...} =>
-		  seq [Con.layout con, str " ",
-		       Option.layout NestedPat.layout arg]
-	     | Tuple v => Vector.layout NestedPat.layout v
+	       Const {const, ...} => Const.layout const
+	     | Con {arg, con, ...} =>
+		  seq [Con.layout con,
+		       case arg of
+			  NONE => empty
+			| SOME (p, _) => seq [str " ", layout p]]
+	     | Tuple ps => tuple (Vector.toListMap (ps, layout))
+	     | Wild => str "_"
 	 end
 
-      (* get rid of Wild, Var, Layered - also remove unary tuples *)
-      fun flatten (var: Var.t, pat: NestedPat.t, env: Env.t): t * Env.t =
+      val isWild: t -> bool =
+	 fn Wild => true
+	  | _ => false
+
+      val fromNestedPat: NestedPat.t -> t =
 	 let
-	    fun extend x = Env.extend (env, x, var)
+	    fun loop (p: NestedPat.t): t =
+	       case NestedPat.node p of
+		  NestedPat.Con {arg, con, targs} =>
+		     let
+			val arg =
+			   Option.map (arg, fn p => (loop p, NestedPat.ty p))
+		     in
+			Con {arg = arg, con = con, targs = targs}
+		     end
+		| NestedPat.Const r => Const r
+		| NestedPat.Layered (_, p) => loop p
+		| NestedPat.Tuple ps => Tuple (Vector.map (ps, loop))
+		| NestedPat.Var _ => Wild
+		| NestedPat.Wild => Wild
 	 in
-	    case NestedPat.node pat of
-	       NestedPat.Con x => (Con x, env)
-	     | NestedPat.Const c => (Const c, env)
-	     | NestedPat.Layered (x, p) => flatten (var, p, extend x)
-	     | NestedPat.Tuple ps =>
-		  if 1 = Vector.length ps
-		     then flatten (var, Vector.sub (ps, 0), env)
-		  else (Tuple ps, env)
-	     | NestedPat.Var x => (Any, extend x)
-	     | NestedPat.Wild => (Any, env)
-	 end
-
-      fun flattens (vars: Var.t vector,
-		    pats: NestedPat.t vector,
-		    env: Env.t): t vector * Env.t =
-	 Vector.map2AndFold (vars, pats, env, flatten)
-   end   
-
-structure Continue =
-   struct
-      datatype t =
-	 Finish of Layout.t list ref * ((Var.t -> Var.t) -> Exp.t)
-       | Matches of FlatPat.t vector option * t
-
-      fun layout c =
-	 let
-	    open Layout
-	 in
-	    case c of
-	       Finish _ => str "Finish"
-	     | Matches (opt, c) =>
-		  seq [str "Matches",
-		       tuple [Option.layout (Vector.layout FlatPat.layout) opt,
-			      layout c]]
+	    loop
 	 end
    end
-datatype z = datatype Continue.t
 
-structure Info =
+structure Vector =
    struct
-      datatype t = T of {accum: Env.t,
-			 continue: Continue.t}
+      open Vector
 
-      fun layout (T {accum, continue}) =
-	 Layout.record [("accum", Env.layout accum),
-			("continue", Continue.layout continue)]
+      fun dropNth (v: 'a t, n: int): 'a t =
+	 keepAllMapi (v, fn (i, a) => if i = n then NONE else SOME a)
    end
 
 structure Rule =
    struct
-      datatype t = T of {info: Info.t,
-			 pat: NestedPat.t}
+      datatype t = T of {pats: Pat.t vector,
+			 rest: {examples: Layout.t list ref,
+				finish: (Var.t -> Var.t) -> Exp.t,
+				nestedPat: NestedPat.t}}
+
+
+      fun layout (T {pats, ...}) =
+	 Layout.tuple (Vector.toListMap (pats, Pat.layout))
+
+      fun allWild (T {pats, ...}) = Vector.forall (pats, Pat.isWild)
+
+      fun dropNth (T {pats, rest}, n) =
+	 T {pats = Vector.dropNth (pats, n),
+	    rest = rest}
    end
 
-structure FlatRule =
+structure Rules =
    struct
-      datatype t = T of {info: Info.t,
-			 pat: FlatPat.t}
+      type t = Rule.t vector
 
-      local
-	 fun make f (T r) = f r
-      in
-	 val info = make #info
-      end
-
-      fun layout (T {info, pat}) =
-	 Layout.record [("info", Info.layout info),
-			("pat", FlatPat.layout pat)]
-   end
-
-structure Finish =
-   struct
-      datatype t =
-	 ConApp of {con: Con.t, finish: t}
-       | Done
-       | MatchesFlat of {finish: t,
-			 i: int,
-			 pats: Layout.t list,
-			 vars: (Var.t * Type.t) vector}
+      fun layout (rs: t) = Layout.align (Vector.toListMap (rs, Rule.layout))
 	 
-      fun layout (_: t) = Layout.str "<finish>"
+      fun dropNth (rs: t, n: int): t =
+	 Vector.map (rs, fn r => Rule.dropNth (r, n))
    end
 
-local
-   fun make (name, layout) = 
-      Trace.trace4
-      (concat ["MatchCompile.", name],
-       layout, Type.layout, Vector.layout FlatRule.layout, Finish.layout,
-       Exp.layout)
-in
-   val traceMatchFlat = make ("matchFlat", Var.layout)
-   val traceTuple = make ("tuple", Exp.layout)
-   val traceConst = make ("const", Exp.layout)
-end
+structure Vars =
+   struct
+      type t = (Var.t * Type.t) vector
 
-local
-   fun make (all, cardinality, ty, inj, get) =
-      List.map (all, fn s =>
-		(ty s,
-		 cardinality s,
-		 fn (cases, finish) =>
-		 inj (s,
-		      Vector.map
-		      (cases, fn {const, infos: Info.t list} =>
-		       (get const,
-			finish (Const.layout const,
-				Vector.fromList infos))))))
-in
-   val directCases =
-      make (List.remove (WordSize.all, fn s =>
-			 WordSize.equals
-			 (s, WordSize.fromBits (Bits.fromInt 64))),
-	    WordSize.cardinality, Type.word, Cases.word,
-	    fn Const.Word w => w
-	     | _ => Error.bug "caseWord type error")
-end
+      val layout = Vector.layout (Layout.tuple2 (Var.layout, Type.layout))
+   end
+
+val directCases =
+   List.keepAllMap (WordSize.all, fn s =>
+		    if WordSize.equals (s, WordSize.fromBits (Bits.fromInt 64))
+		       then NONE
+		    else SOME {size = s, ty = Type.word s})
 
 (* unhandledConst cs returns a constant (of the appropriate type) not in cs. *)
 fun unhandledConst (cs: Const.t vector): Const.t =
@@ -250,6 +285,31 @@ in
    fun conApp (c, p) = paren (seq [Con.layout c, str " ", p])
 end
 
+val traceMatch =
+   Trace.trace3 ("MatchCompile.match",
+		 Vars.layout, Rules.layout, Facts.layout, Exp.layout)
+val traceConst =
+   Trace.trace ("MatchCompile.const",
+		fn (vars, rules, facts, _: Int.t, _: Exp.t) =>
+		Layout.tuple [Vars.layout vars,
+			      Rules.layout rules,
+			      Facts.layout facts],
+		Exp.layout)
+val traceSum =
+   Trace.trace ("MatchCompile.sum",
+		fn (vars, rules, facts, _: Int.t, _: Exp.t, _: Tycon.t) =>
+		Layout.tuple [Vars.layout vars,
+			      Rules.layout rules,
+			      Facts.layout facts],
+		Exp.layout)
+val traceTuple =
+   Trace.trace ("MatchCompile.tuple",
+		fn (vars, rules, facts, _: Int.t, _: Exp.t) =>
+		Layout.tuple [Vars.layout vars,
+			      Rules.layout rules,
+			      Facts.layout facts],
+		Exp.layout)
+
 (*---------------------------------------------------*)
 (*                   matchCompile                    *)
 (*---------------------------------------------------*)
@@ -263,294 +323,52 @@ fun matchCompile {caseType: Type.t,
 		  tyconCons: Tycon.t -> {con: Con.t,
 					 hasArg: bool} vector} =
    let
-      fun match (var: Var.t,
-		 ty: Type.t,
-		 rules: Rule.t vector,
-		 finish: Finish.t): Exp.t =
-	 let
-	    val rules =
-	       Vector.map
-	       (rules, fn Rule.T {pat, info = Info.T {accum, continue}} =>
-		let
-		   val (pat, accum) = FlatPat.flatten (var, pat, accum)
-		in
-		   FlatRule.T {pat = pat,
-			       info = Info.T {accum = accum,
-					      continue = continue}}
-		end)
-	 in
-	    matchFlat (var, ty, rules, finish)
-	 end
-      and matchFlat arg: Exp.t =
-	 traceMatchFlat
-	 (fn (var: Var.t,
-	      ty: Type.t,
-	      rules: FlatRule.t vector,
-	      finish: Finish.t) =>
-	  case Vector.peek (rules, fn FlatRule.T {pat, ...} =>
-			    case pat of
-			       FlatPat.Any => false
-			     | _ => true) of
-	     NONE => applyFinish (finish,
-				  wild, Vector.map (rules, FlatRule.info))
-	   | SOME (FlatRule.T {pat, ...}) =>
-		let
-		   val test = Exp.var (var, ty)
-		in
-		   case pat of
-		      FlatPat.Any => Error.bug "matchFlat"
-		    | FlatPat.Const _ => const (test, ty, rules, finish)
-		    | FlatPat.Con _ => sum (test, ty, rules, finish)
-		    | FlatPat.Tuple _ => tuple (test, ty, rules, finish)
-		end) arg
-      and matches (vars: (Var.t * Type.t) vector,
-		   rules: {pats: NestedPat.t vector option, info: Info.t} vector,
-		   finish: Finish.t): Exp.t =
-	 let
-	    val rules =
-	       Vector.map
-	       (rules, fn {pats, info as Info.T {accum, continue}} =>
-		case pats of
-		   NONE => {pats = NONE, info = info}
-		 | SOME pats =>
-		      let
-			 val (pats, accum) =
-			    FlatPat.flattens (Vector.map (vars, #1),
-					      pats,
-					      accum)
-		      in {pats = SOME pats,
-			  info = Info.T {accum = accum, continue = continue}}
-		      end)
-	 in
-	    matchesFlat (0, vars, [], rules, finish)
-	 end
-      and matchesFlat (i: int,
-		       vars: (Var.t * Type.t) vector,
-		       pats: Layout.t list,
-		       rules: {pats: FlatPat.t vector option,
-			       info: Info.t} vector,
-		       finish: Finish.t): Exp.t =
-	 if i = Vector.length vars
-	    then applyFinish (finish,
-			      Layout.tuple (rev pats),
- 			      Vector.map (rules, #info))
+      fun chooseColumn _ = 0
+      fun match arg : Exp.t =
+	 traceMatch
+	 (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t) =>
+	 if 0 = Vector.length rules
+	    then Error.bug "match with no rules"
+	 else if Rule.allWild (Vector.sub (rules, 0))
+	    then (* The first rule matches. *)
+	       let
+		  val Rule.T {rest = {finish, nestedPat, ...}, ...} =
+		     Vector.sub (rules, 0)
+		  val env = Facts.bind (facts, test, nestedPat)
+	       in
+		  finish (fn x => Env.lookup (env, x))
+	       end
 	 else
 	    let
-	       val (var, ty) = Vector.sub (vars, i)
-	       val rules =
-		  Vector.map
-		  (rules, fn {pats, info = Info.T {accum, continue}} =>
-		   case pats of
-		      NONE =>
-			 FlatRule.T
-			 {pat = FlatPat.Any,
-			  info = Info.T {accum = accum,
-					 continue = Matches (NONE, continue)}}
-		    | SOME pats =>
-			 FlatRule.T
-			 {pat = Vector.sub (pats, i),
-			  info =
-			  Info.T {accum = accum,
-				  continue = Matches (SOME pats, continue)}})
+	       val i = chooseColumn rules
 	    in
-	       matchFlat (var, ty, rules,
-			  Finish.MatchesFlat {finish = finish,
-					      i = i,
-					      pats = pats,
-					      vars = vars})
-	    end
-      (*------------------------------------*)
-      (*               tuple                *)
-      (*------------------------------------*)
-      and tuple arg =
-	 traceTuple
-	 (fn (test: Exp.t,
-	      _,
-	      rules: FlatRule.t vector,
-	      finish: Finish.t) =>
-	  let
-	     val rules =
-		Vector.map
-		(rules, fn FlatRule.T {pat, info} =>
-		 case pat of
-		    FlatPat.Any => {pats = NONE, info = info}
-		  | FlatPat.Tuple pats => {pats = SOME pats, info = info}
-		  | _ => Error.bug "expected tuple pattern")
-	  in
-	     Exp.detuple {tuple = test,
-			  body = fn vars => matches (vars, rules, finish)}
-	  end) arg
-      (*------------------------------------*)
-      (*                sum                 *)
-      (*------------------------------------*)
-      and sum (test, _: Type.t, rules: FlatRule.t vector, finish: Finish.t) =
-	 let
-	    datatype arg = 
-	       NoArg of Info.t list
-	     | Arg of {var: Var.t,
-		       ty: Type.t,
-		       rules: Rule.t list}
-	    val (cases, defaults) =
-	       Vector.foldr
-	       (rules, ([], []),
-		fn (FlatRule.T {pat, info}, (cases, defaults)) =>
-		case pat of
-		   FlatPat.Any =>
-		      (List.map
-		       (cases, fn {con, tys, arg} =>
-			{con = con, tys = tys,
-			 arg = (case arg of
-				   NoArg infos => NoArg (info :: infos)
-				 | Arg {var, ty, rules} =>
-				      Arg {var = var,
-					   ty = ty,
-					   rules = Rule.T {pat = NestedPat.wild ty,
-							   info = info} :: rules})}),
-		       info :: defaults)
-		 | FlatPat.Con {con=c, targs=tys, arg} => 
-		      let
-			 fun insert cases =
-			    case cases of
-			       [] =>
-				  [{con = c, tys = tys,
-				    arg =
-				    (case arg of
-					NONE => NoArg (info :: defaults)
-				      | SOME p =>
-					   let val ty = NestedPat.ty p
-					   in Arg {var = Var.newNoname (),
-						   ty = ty,
-						   rules =
-						   Rule.T {pat = p, info = info}
-						   :: (List.map
-						       (defaults, fn info =>
-							Rule.T
-							{pat = NestedPat.wild ty,
-							 info = info}))}
-					   end)}]
-			     | (cas as {con, tys, arg=a}) :: cases =>
-				  if Con.equals (c, con)
-				     then {con = con, tys = tys,
-					   arg = (case (a, arg) of
-						     (NoArg infos, NONE) =>
-							NoArg (info :: infos)
-						      | (Arg {var, ty, rules},
-							 SOME p) =>
-							Arg {var = var,
-							     ty = ty,
-							     rules = 
-							     Rule.T {pat = p,
-								     info = info}
-							     :: rules}
-						       | _ => Error.bug "use of constructor with and without arg in pattern match")}
-					:: cases
-				  else cas :: (insert cases)
-		      in (insert cases, defaults)
-		      end
-		 | _ => Error.bug "expected constructor pat")
-	    val cases = Vector.fromList cases
-	    val defaults = Vector.fromList defaults
-	    val default =
-	       if Vector.isEmpty cases
-		  then SOME (applyFinish (finish, wild, defaults), region)
-	       else
-		  let
-		     val {con, ...} = Vector.sub (cases, 0)
-		     val tycon = conTycon con
-		     fun done (defaultPat: Layout.t) =
-			SOME (applyFinish (finish, defaultPat, defaults),
-			      region)
-		  in
-		     if Tycon.equals (tycon, Tycon.exn)
-			then done (Layout.str  "e")
-		     else
-			let
-			   val cons = tyconCons tycon
-			in
-			   if Vector.length cases = Vector.length cons
-			      then NONE
-			   else
-			      let
-				 val unhandled =
-				    Vector.keepAllMap
-				    (cons, fn {con, hasArg, ...} =>
-				     if Vector.exists
-					(cases, fn {con = con', ...} =>
-					 Con.equals (con, con'))
-					then NONE
-				     else SOME (if hasArg
-						   then conApp (con, wild)
-						else Con.layout con))
-				 open Layout
-			      in
-				 done (seq (separate (Vector.toList unhandled,
-						      " | ")))
-			      end
-			end
-		  end
-	    fun normal () =
-	       Exp.casee
-	       {test = test, default = default,
-		ty = caseType,
-		cases =
-		Cases.con (Vector.map
-			   (cases, fn {con, tys, arg} =>
-			    let
-			       val (arg, rhs) =
-				  case arg of
-				     NoArg infos =>
-					(NONE,
-					 applyFinish
-					 (finish, Con.layout con,
-					  Vector.fromList infos))
-				   | Arg {var, ty, rules} =>
-					(SOME (var, ty),
-					 match
-					 (var, ty, Vector.fromList rules,
-					  Finish.ConApp {con = con,
-							 finish = finish}))
-			    in
-			       {con = con,
-				targs = tys,
-				arg = arg,
-				rhs = rhs}
-			    end))}
-	 in
-	    if 1 = Vector.length cases
-	       then
-		  let
-		     val {arg, con, ...} = Vector.sub (cases, 0)
-		  in
-		     case arg of
-			Arg {var, ty, rules} =>
-			   if Con.equals (con, Con.reff)
-			      then
-				 Exp.lett
-				 {var = var,
-				  exp = Exp.deref test,
-				  body = match (var, ty,
-						Vector.fromList rules,
-						Finish.ConApp {con = con,
-							       finish = finish})}
-			   else normal ()
-		      | _ => normal ()
-		  end
-	    else normal ()
-	 end
-      (*------------------------------------*)
-      (*               const                *)
-      (*------------------------------------*)
+	       case Vector.peek (rules, fn Rule.T {pats, ...} =>
+				 not (Pat.isWild (Vector.sub (pats, i)))) of
+		  NONE => match (Vector.dropNth (vars, i),
+				 Rules.dropNth (rules, i),
+				 facts)
+		| SOME (Rule.T {pats, ...}) =>
+		     let
+			datatype z = datatype Pat.t
+			val test = Exp.var (Vector.sub (vars, i))
+		     in
+			case Vector.sub (pats, i) of
+			   Const _ => const (vars, rules, facts, i, test)
+			 | Con {con, ...} =>
+			      sum (vars, rules, facts, i, test, conTycon con)
+			 | Tuple _ => tuple (vars, rules, facts, i, test)
+			 | Wild => Error.bug "matches Wild"
+		     end
+	    end) arg
       and const arg =
 	 traceConst
-	 (fn (test: Exp.t,
-	      ty: Type.t,
-	      rules: FlatRule.t vector,
-	      finish: Finish.t) =>
+	 (fn (vars, rules, facts, i, test) =>
 	 let
+	    val (_, ty) = Vector.sub (vars, i)
 	    val {isChar, isInt} =
-	       case Vector.peekMap (rules, fn FlatRule.T {pat, ...} =>
-				    case pat of
-				       FlatPat.Const {isChar, isInt, ...} =>
+	       case Vector.peekMap (rules, fn Rule.T {pats, ...} =>
+				    case Vector.sub (pats, i) of
+				       Pat.Const {isChar, isInt, ...} =>
 					  SOME {isChar = isChar, isInt = isInt}
 				     | _ => NONE) of
 		  NONE => {isChar = false, isInt = false}
@@ -558,36 +376,42 @@ fun matchCompile {caseType: Type.t,
 	    val (cases, defaults) =
 	       Vector.foldr
 	       (rules, ([], []),
-		fn (FlatRule.T {pat, info}, (cases, defaults)) =>
-		case pat of
-		   FlatPat.Any =>
-		      (List.map (cases, fn {const, infos} =>
-				 {const = const, infos = info :: infos}),
-		       info :: defaults)
-		 | FlatPat.Const {const = c, ...} =>
-		      let
-			 fun insert (cases, ac) =
-			    case cases of
-			       [] => Error.bug "match-compile insert"
-			     | (casee as {const, infos}) :: cases =>
-				  if Const.equals (c, const)
-				     then
-					{const = c,
-					 infos = info :: infos}
-					:: List.appendRev (ac, cases)
-				  else insert (cases, casee :: ac)
-			 val cases =
-			    if List.exists (cases, fn {const, ...} =>
-					    Const.equals (c, const))
-			       then insert (cases, [])
-			    else {const = c, infos = info :: defaults} :: cases
-		      in
-			 (cases, defaults)
-		      end
-		 | _ => Error.bug "expected Const pat")
-	    fun default () =
+		fn (rule as Rule.T {pats, rest}, (cases, defaults)) =>
+		let
+		   val rule = Rule.dropNth (rule, i)
+		in
+		   case Vector.sub (pats, i) of
+		      Pat.Const {const = c, ...} =>
+			 let
+			    fun insert (cases, ac) =
+			       case cases of
+				  [] =>
+				     {const = c, rules = rule :: defaults} :: ac
+				| (casee as {const, rules}) :: cases =>
+				     if Const.equals (c, const)
+					then
+					   {const = c, rules = rule :: rules}
+					   :: List.appendRev (ac, cases)
+				     else insert (cases, casee :: ac)
+			 in
+			    (insert (cases, []), defaults)
+			 end
+		    | Pat.Wild =>
+			 (List.map (cases, fn {const, rules} =>
+				    {const = const, rules = rule :: rules}),
+			  rule :: defaults)
+		    | _ => Error.bug "expected Const pat"
+		end)
+	    val cases = Vector.fromListMap (cases, fn {const, rules} =>
+					    {const = const,
+					     rules = Vector.fromList rules})
+	    val defaults = Vector.fromList defaults
+	    val vars = Vector.dropNth (vars, i)
+	    fun finish (rules: Rule.t vector): Exp.t =
+	       match (vars, rules, facts)
+	    fun default (): Exp.t =
 	       let
-		  val cs = Vector.fromListMap (cases, #const)
+		  val cs = Vector.map (cases, #const)
 		  val unhandled = 
 		     if 0 = Vector.length cs
 			then wild
@@ -603,7 +427,7 @@ fun matchCompile {caseType: Type.t,
 					  in
 					     seq [str "#\"",
 						  Char.layout (WordX.toChar w),
-						  str "\""]
+						  str String.dquote]
 					  end
 				     | _ => Error.bug "strange char")
 			   else (if isInt
@@ -616,79 +440,234 @@ fun matchCompile {caseType: Type.t,
 				 else Const.layout c)
 			end
 	       in
-		  applyFinish (finish, unhandled, Vector.fromList defaults)
+                  finish defaults
 	       end
 	 in
-	    case List.peek (directCases, fn (ty', _, _) =>
+	    case List.peek (directCases, fn {ty = ty', ...} =>
 			    Type.equals (ty, ty')) of
-	       NONE =>
-		  List.fold
-		  (cases, default (), fn ({const, infos}, rest) =>
-		   Exp.iff {test = Exp.equal (test, Exp.const const),
-			    thenn = applyFinish (finish,
-						 Const.layout const,
-						 Vector.fromList infos),
-			    elsee = rest,
-			    ty = caseType})
-	     | SOME (_, cardinality, make) =>
+	       NONE => 
+		  Vector.fold (cases, default (), fn ({const, rules}, rest) =>
+			       Exp.iff {test = Exp.equal (test, Exp.const const),
+					thenn = finish rules,
+					elsee = rest,
+					ty = caseType})
+	     | SOME {size, ...} =>
 		  let
-		     val cases = Vector.fromList cases
 		     val default =
-			if cardinality = IntInf.fromInt (Vector.length cases)
+			if WordSize.cardinality size
+			   = IntInf.fromInt (Vector.length cases)
 			   then NONE
 			else SOME (default (), region)
+		     val cases =
+			Vector.map
+			(cases, fn {const, rules} =>
+			 let
+			    val const = 
+			       case const of
+				  Const.Word w => w
+				| _ => Error.bug "caseWord type error"
+			 in
+			    (const, finish rules)
+			 end)
 		  in
-		     Exp.casee {cases = make (cases, fn (p, is) =>
-					      applyFinish (finish, p, is)),
+		     Exp.casee {cases = Cases.word (size, cases),
 				default = default,
 				test = test,
 				ty = caseType}
 		  end
 	 end) arg
-      and applyFinish (f: Finish.t, pat, infos) =
+      and sum arg =
+	 traceSum
+	 (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t, i, test, tycon) =>
 	 let
-	    datatype z = datatype Finish.t
+	    val (var, _) = Vector.sub (vars, i)
+	    val (cases, defaults) =
+	       Vector.foldr
+	       (rules, ([], []),
+		fn (rule as Rule.T {pats, ...}, (cases, defaults)) =>
+		case Vector.sub (pats, i) of
+		   Pat.Con {arg, con, targs} =>
+		      let
+			 fun oneCase () =
+			    let
+			       val (arg, vars) =
+				  case arg of
+				     NONE =>
+					(NONE,
+					 Vector.keepAllMapi
+					 (vars, fn (i', x) =>
+					  if i = i' then NONE else SOME x))
+				   | SOME (_, ty) => 
+					let
+					   val arg = Var.newNoname ()
+					in
+					   (SOME (arg, ty),
+					    Vector.mapi
+					    (vars, fn (i', x) =>
+					     if i = i' then (arg, ty) else x))
+					end
+			       val facts =
+				  Facts.add
+				  (facts, var,
+				   Fact.Con {arg = Option.map (arg, #1),
+					     con = con})
+			    in
+			       {rest = {arg = arg,
+					con = con,
+					facts = facts,
+					targs = targs,
+					vars = vars},
+				rules = rule :: defaults}
+			    end
+			 fun insert (cases, ac) =
+			    case cases of
+			       [] => oneCase () :: ac
+			   | ((casee as {rest as {con = con', ...}, rules})
+			      :: cases) =>
+			     if Con.equals (con, con')
+				then
+				   {rest = rest, rules = rule :: rules}
+				   :: List.appendRev (ac, cases)
+			     else insert (cases, casee :: ac)
+		      in
+			 (insert (cases, []), defaults)
+		      end
+		 | Pat.Wild =>
+		      (List.map (cases, fn {rest, rules} =>
+				 {rest = rest, rules = rule :: rules}),
+		       rule :: defaults)
+		 | _ => Error.bug "expected Con pat")
+	    val cases =
+	       Vector.fromListMap
+	       (cases, fn {rest = {arg, con, facts, targs, vars}, rules} =>
+		let
+		   val rules =
+		      Vector.fromListMap
+		      (rules, fn Rule.T {pats, rest} =>
+		       let
+			  val pats =
+			     Vector.keepAllMapi
+			     (pats, fn (i', p') =>
+			      if i <> i' then SOME p'
+			      else
+				 case p' of
+				    Pat.Con {arg, ...} => Option.map (arg, #1)
+				  | Pat.Wild =>
+				       Option.map (arg, fn _ => Pat.Wild)
+				  | _ => Error.bug "decon got strange pattern")
+		       in
+			  Rule.T {pats = pats, rest = rest}
+		       end)
+		in
+		   {arg = arg,
+		    con = con,
+		    rhs = match (vars, rules, facts),
+		    targs = targs}
+		end)
+	    fun done _ =
+	       SOME (match (Vector.dropNth (vars, i),
+			    Rules.dropNth (Vector.fromList defaults, i),
+			    facts))
+	    val default =
+	       if Vector.isEmpty cases
+		  then done ()
+	       else if Tycon.equals (tycon, Tycon.exn)
+		  then done (Layout.str "e")
+	       else
+		  let
+		     val cons = tyconCons tycon
+		  in
+		     if Vector.length cases = Vector.length cons
+			then NONE
+		     else
+			let
+			   val unhandled =
+			      Vector.keepAllMap
+			      (cons, fn {con, hasArg, ...} =>
+			       if Vector.exists (cases, fn {con = con', ...} =>
+						 Con.equals (con, con'))
+				  then NONE
+			       else SOME (if hasArg
+					     then conApp (con, wild)
+					  else Con.layout con))
+			   open Layout
+			in
+			   done (seq (separate (Vector.toList unhandled, " | ")))
+			end
+		  end
+	    fun normal () =
+	       Exp.casee {cases = Cases.con cases,
+			  default = Option.map (default, fn e => (e, region)),
+			  test = test,
+			  ty = caseType}
 	 in
-	    case f of
-	       ConApp {con, finish} =>
-		  applyFinish (finish, conApp (con, pat), infos)
-	     | Done => 
-		  if Vector.isEmpty infos
-		     then Error.bug "matchRules: no default"
-		  else
-		     let
-			val Info.T {accum = env, continue} =
-			   Vector.sub (infos, 0)
-		     in
-			case continue of
-			   Finish (r, f) =>
-			      (List.push (r, pat)
-			       ; f (fn x => Env.lookup (env, x)))
-			 | _ => Error.bug "matchRules: expecting Finish"
-		     end
-	     | MatchesFlat {finish, i, pats, vars} =>
-		  matchesFlat
-		  (i + 1, vars, pat :: pats,
-		   Vector.map (infos, fn Info.T {accum, continue} =>
-			       case continue of
-				  Matches (pats, continue) =>
-				     {pats = pats,
-				      info = Info.T {accum = accum,
-						     continue = continue}}
-				| _ => Error.bug "matchesFlat:"),
-		   finish)
-	 end
-      (*------------------------------------*)
-      (*    main code for match compile     *)
-      (*------------------------------------*)
+	    if 1 <> Vector.length cases
+	       then normal ()
+	    else
+	       let
+		  val {arg, con, rhs, ...} = Vector.sub (cases, 0)
+	       in
+		  if not (Con.equals (con, Con.reff))
+		     then normal ()
+		  else 
+		     case arg of
+			NONE => Error.bug "ref missing arg"
+		      | SOME (var, _) => 
+			   Exp.lett {body = rhs,
+				     exp = Exp.deref test,
+				     var = var}
+	       end
+	 end) arg
+      and tuple arg =
+	 traceTuple
+	 (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t, i, test) =>
+	 let
+	    val (var, _) = Vector.sub (vars, i)
+	    fun body vars' =
+	       let
+		  val n = Vector.length vars'
+		  val vars =
+		     Vector.concatV
+		     (Vector.mapi
+		      (vars, fn (i', x) =>
+		       if i = i'
+			  then vars'
+		       else Vector.new1 x))
+		  val rules =
+		     Vector.map
+		     (rules, fn Rule.T {pats, rest} =>
+		      let
+			 val pats =
+			    Vector.concatV
+			    (Vector.mapi
+			     (pats, fn (i', p) =>
+			      if i <> i'
+				 then Vector.new1 p
+			      else (case p of
+				       Pat.Tuple ps => ps
+				     | Pat.Wild =>
+					  Vector.tabulate (n, fn _ => Pat.Wild)
+				     | _ => Error.bug "Rule.detuple")))
+		      in
+			 Rule.T {pats = pats, rest = rest}
+		      end)
+	       in
+		  match (vars, rules,
+			 Facts.add (facts, var,
+				    Fact.Tuple (Vector.map (vars', #1))))
+	       end
+	 in
+	    Exp.detuple {body = body, tuple = test}
+	 end) arg
       val examples = Vector.tabulate (Vector.length cases, fn _ => ref [])
       val res =
-	 match (test, testType,
+	 match (Vector.new1 (test, testType),
 		Vector.map2 (cases, examples, fn ((p, f), r) =>
-			     Rule.T {pat = p,
-				     info = Info.T {accum = Env.empty,
-						    continue = Finish (r, f)}}),
-		Finish.Done)
+			     Rule.T {pats = Vector.new1 (Pat.fromNestedPat p),
+				     rest = {examples = r,
+					     finish = f,
+					     nestedPat = p}}),
+		Facts.empty)
    in
       (res,
        fn () => Vector.map (examples, fn r => Layout.alignPrefix (! r, "| ")))
@@ -704,5 +683,7 @@ val matchCompile =
 		   ("testType", Type.layout testType)],
     Exp.layout o #1)
    matchCompile
+
+structure Vars = S.Vars
    
 end
