@@ -2112,8 +2112,10 @@ done:
 	return res;
 }
 
-static inline void maybeSharePointer (GC_state s, Pointer *pp) {
-	unless (s->shouldHashCons)
+static inline void maybeSharePointer (GC_state s,
+					Pointer *pp, 
+					Bool shouldHashCons) {
+	unless (shouldHashCons)
 		return;
 	if (DEBUG_SHARE)
 		fprintf (stderr, "maybeSharePointer  pp = 0x%08x  *pp = 0x%08x\n",
@@ -2147,7 +2149,7 @@ static bool modeEqMark (MarkMode m, pointer p) {
  *
  * It returns the total size in bytes of the objects marked.
  */
-W32 mark (GC_state s, pointer root, MarkMode mode) {
+W32 mark (GC_state s, pointer root, MarkMode mode, Bool shouldHashCons) {
 	uint arrayIndex;
 	pointer cur;  /* The current object being marked. */
 	GC_offsets frameOffsets;
@@ -2225,7 +2227,7 @@ mark:
 			 * return.
 			 */
 			size += GC_NORMAL_HEADER_SIZE + toBytes (numNonPointers);
-			if (s->shouldHashCons)
+			if (shouldHashCons)
 				cur = hashCons (s, cur);
 			goto ret;
 		}
@@ -2243,7 +2245,7 @@ markNextInNormal:
        			index++;
 			if (index == numPointers) {
 				*headerp = header & ~COUNTER_MASK;
-				if (s->shouldHashCons)
+				if (shouldHashCons)
 					cur = hashCons (s, cur);
 				goto ret;
 			}
@@ -2254,7 +2256,7 @@ markNextInNormal:
 		nextHeader = *nextHeaderp;
 		if ((nextHeader & MARK_MASK)
 			== (MARK_MODE == mode ? MARK_MASK : 0)) {
-			maybeSharePointer (s, (pointer*)todo);
+			maybeSharePointer (s, (pointer*)todo, shouldHashCons);
 			goto markNextInNormal;
 		}
 		*headerp = (header & ~COUNTER_MASK) |
@@ -2315,7 +2317,7 @@ markNextInArray:
 		nextHeader = *nextHeaderp;
 		if ((nextHeader & MARK_MASK)
 			== (MARK_MODE == mode ? MARK_MASK : 0)) {
-			maybeSharePointer (s, (pointer*)todo);
+			maybeSharePointer (s, (pointer*)todo, shouldHashCons);
 			goto markNextInArray;
 		}
 		/* Recur and mark next. */
@@ -2364,7 +2366,7 @@ markInFrame:
 		if ((nextHeader & MARK_MASK)
 			== (MARK_MODE == mode ? MARK_MASK : 0)) {
 			index++;
-			maybeSharePointer (s, (pointer*)todo);
+			maybeSharePointer (s, (pointer*)todo, shouldHashCons);
 			goto markInFrame;
 		}
 		((GC_stack)cur)->markIndex = index;		
@@ -2425,24 +2427,28 @@ ret:
 void GC_share (GC_state s, Pointer object) {
 	if (DEBUG_SHARE)
 		fprintf (stderr, "GC_share 0x%08x\n", (uint)object);
-	mark (s, object, MARK_MODE);
-	s->shouldHashCons = TRUE;
+	// Don't hash cons during the first round of marking.
+	mark (s, object, MARK_MODE, FALSE);
 	s->objectHashTable = newTable ();
-	mark (s, object, UNMARK_MODE);
+	// Hash cons during the second round of marking.
+	mark (s, object, UNMARK_MODE, TRUE);
 	destroyTable (s->objectHashTable);
-	s->shouldHashCons = FALSE;
 }
 
 /* ---------------------------------------------------------------- */
 /*                 Jonkers Mark-compact Collection                  */
 /* ---------------------------------------------------------------- */
 
-static inline void markGlobal (GC_state s, pointer *pp) {
-	mark (s, *pp, MARK_MODE);
+static inline void markGlobalTrue (GC_state s, pointer *pp) {
+	mark (s, *pp, MARK_MODE, TRUE);
+}
+
+static inline void markGlobalFalse (GC_state s, pointer *pp) {
+	mark (s, *pp, MARK_MODE, FALSE);
 }
 
 static inline void unmarkGlobal (GC_state s, pointer *pp) {
-       	mark (s, *pp, UNMARK_MODE);
+       	mark (s, *pp, UNMARK_MODE, FALSE);
 }
 
 static inline void threadInternal (GC_state s, pointer *pp) {
@@ -2678,15 +2684,13 @@ static void markCompact (GC_state s) {
 	if (detailedGCTime (s))
 		startTiming (&ru_start);
 	s->numMarkCompactGCs++;
-	if (s->hashConsDuringGC) {
-		s->shouldHashCons = TRUE;
+	if (s->hashConsDuringGC)
 		s->objectHashTable = newTable ();
-	}
-	foreachGlobal (s, markGlobal);
-	if (s->hashConsDuringGC) {
+	foreachGlobal (s, s->hashConsDuringGC 
+				? markGlobalTrue 
+				: markGlobalFalse);
+	if (s->hashConsDuringGC)
 		destroyTable (s->objectHashTable);
-		s->shouldHashCons = FALSE;
-	}
 	foreachGlobal (s, threadInternal);
 	updateForwardPointers (s);
 	updateBackwardPointersAndSlide (s);
@@ -4463,7 +4467,6 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->pageSize = getpagesize ();
 	s->ramSlop = 0.5;
 	s->savedThread = BOGUS_THREAD;
-	s->shouldHashCons = FALSE;
 	s->signalHandler = BOGUS_THREAD;
 	s->signalIsPending = FALSE;
 	s->startTime = currentTime ();
@@ -4673,10 +4676,10 @@ uint GC_size (GC_state s, pointer root) {
 
 	if (DEBUG_SIZE)
 		fprintf (stderr, "GC_size marking\n");
-	res = mark (s, root, MARK_MODE);
+	res = mark (s, root, MARK_MODE, FALSE);
 	if (DEBUG_SIZE)
 		fprintf (stderr, "GC_size unmarking\n");
-	mark (s, root, UNMARK_MODE);
+	mark (s, root, UNMARK_MODE, FALSE);
 	return res;
 }
 

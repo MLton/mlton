@@ -471,7 +471,6 @@ typedef struct GC_state {
 	 * signal handler.
 	 */
 	sigset_t signalsPending;
-	Bool shouldHashCons;
 	struct GC_sourceLabel *sourceLabels;
 	uint sourceLabelsSize;
 	/* sourcesNames is an array of strings identifying source positions. */
