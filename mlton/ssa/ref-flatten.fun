@@ -172,6 +172,7 @@ structure Value =
 
       val rec unify: t * t -> unit =
 	 fn (T s, T s') =>
+	 if Set.equals (s, s') then () else
 	 let
 	    val {value = v, ...} = Set.! s
 	    val {value = v', ...} = Set.! s'
@@ -211,17 +212,6 @@ structure Value =
 		      Unit.layout)
 	 coerce
    end
-
-fun memoize (r: 'a option ref, f: unit -> 'a): 'a =
-   case !r of
-      NONE =>
-	 let
-	    val a = f ()
-	    val () = r := SOME a
-	 in
-	    a
-	 end
-    | SOME a => a
 
 fun flatten (program as Program.T {datatypes, functions, globals, main}) =
    let
@@ -272,25 +262,21 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		       case con of
 			  NONE => doit ()
 			| SOME c =>
-			     let
-				val r = conValue c
-			     in
-				Const
-				(memoize
-				 (r, fn () =>
-				  case doit () of
-				     Const v => v
-				   | Make f =>
-					let
-					   val v = f ()
-					   (* Constructors can never be
-					    * flattened into other objects.
-					    *)
-					   val () = Value.dontFlatten v
-					in
-					   v
-					end))
-			     end
+			     Const
+			     (Ref.memoize
+			      (conValue c, fn () =>
+			       case doit () of
+				  Const v => v
+				| Make f =>
+				     let
+					val v = f ()
+					(* Constructors can never be
+					 * flattened into other objects.
+					 *)
+					val () = Value.dontFlatten v
+				     in
+					v
+				     end))
 		    end
 	       | Vector p =>
 		    let
@@ -635,13 +621,13 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	       Ground t => t
 	     | Object z => objectType z
 	     | Vector {elt, finalType} =>
-		  memoize (finalType, fn () =>
-			   Type.vector (Prod.map (elt, valueType)))
+		  Ref.memoize (finalType, fn () =>
+			       Type.vector (Prod.map (elt, valueType)))
 	     | Weak {arg, finalType} =>
-		  memoize (finalType, fn () => Type.weak (valueType arg))
+		  Ref.memoize (finalType, fn () => Type.weak (valueType arg))
 	 end) arg
       and objectFinalComponents (obj as Obj {args, finalComponents, ...}) =
-	 memoize
+	 Ref.memoize
 	 (finalComponents, fn () =>
 	  Prod.make
 	  (Vector.fromList
@@ -655,7 +641,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		    fn ({elt, isMutable = i'}, ac) =>
 		    {elt = elt, isMutable = i orelse i'} :: ac)))))
       and objectFinalOffsets (z as Obj {args, finalOffsets, flat, ...}) =
-	 memoize
+	 Ref.memoize
 	 (finalOffsets, fn () =>
 	  let
 	     val initial =
@@ -679,7 +665,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       and objectOffset (z: Object.t, offset: int): int =
 	 Vector.sub (objectFinalOffsets z, offset)
       and objectType (z as Obj {con, finalType, flat, ...}): Type.t =
-	 memoize
+	 Ref.memoize
 	 (finalType, fn () =>
 	  case ! flat of
 	     Flat.Offset {object, ...} => objectType object
