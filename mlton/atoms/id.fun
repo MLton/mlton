@@ -59,8 +59,35 @@ fun isOperator s =
    in not (Char.isAlpha c orelse Char.equals (c, #"'"))
    end
 
+fun translateOperator s =
+   let val map
+         = fn #"!" => "Bang"
+            | #"%" => "Percent"
+            | #"&" => "Ampersand"
+            | #"$" => "Dollar"
+            | #"#" => "Hash"
+            | #"+" => "Plus"
+            | #"-" => "Minus"
+            | #"/" => "Divide"
+            | #":" => "Colon"
+            | #"<" => "Lt"
+            | #"=" => "Eq"
+            | #">" => "Gt"
+            | #"?" => "Ques"
+            | #"@" => "At"
+            | #"\\" => "Slash"
+            | #"~" => "Tilde"
+            | #"`" => "Quote"
+            | #"^" => "Caret"
+            | #"|" => "Pipe"
+            | #"*" => "Star"
+            | _ => ""
+   in
+     "operator" ^ (String.translate(s, map))
+   end
+
 fun newString s =
-   let val s = if isOperator s then "operator" else s
+   let val s = if isOperator s then translateOperator s else s
    in fn () => T {originalName = s,
 		  printName = ref NONE,
 		  plist = Plist.new ()}
@@ -139,8 +166,35 @@ fun isOperator s =
    in not (Char.isAlpha c orelse Char.equals (c, #"'"))
    end
 
+fun translateOperator s =
+   let val map
+         = fn #"!" => "Bang"
+            | #"%" => "Percent"
+            | #"&" => "Ampersand"
+            | #"$" => "Dollar"
+            | #"#" => "Hash"
+            | #"+" => "Plus"
+            | #"-" => "Minus"
+            | #"/" => "Divide"
+            | #":" => "Colon"
+            | #"<" => "Lt"
+            | #"=" => "Eq"
+            | #">" => "Gt"
+            | #"?" => "Ques"
+            | #"@" => "At"
+            | #"\\" => "Slash"
+            | #"~" => "Tilde"
+            | #"`" => "Quote"
+            | #"^" => "Caret"
+            | #"|" => "Pipe"
+            | #"*" => "Star"
+            | _ => ""
+   in
+     "operator" ^ (String.translate(s, map))
+   end
+
 fun newString s =
-   let val s = if isOperator s then "operator" else s
+   let val s = if isOperator s then translateOperator s else s
    in fn () => T {originalName = s,
 		  printName = ref NONE,
 		  hash = Random.word (),
