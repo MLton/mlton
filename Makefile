@@ -17,27 +17,28 @@ PATH = $(BIN):$(shell echo $$PATH)
 CP = /bin/cp -fp
 VERSION = $(shell echo `date +%Y%m%d`)
 
+.PHONY: all
 all:
 	$(MAKE) compiler dirs
-	mv $(COMP)/$(AOUT) $(LIB)
+	$(CP) $(COMP)/$(AOUT) $(LIB)
 	$(MAKE) script world runtime hostmap constants tools docs
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: clean
 clean:
-	cd regression && $(MAKE) clean
+	$(MAKE) -c regression clean
 	bin/clean
 
 .PHONY: cm
 cm:
-	cd $(COMP) && $(MAKE) mlton_cm
-	cd $(LEX) && $(MAKE) mllex_cm
-	cd $(PROF) && $(MAKE) mlprof_cm
-	cd $(YACC) && $(MAKE) mlyacc_cm
+	$(MAKE) -C $(COMP) mlton_cm
+	$(MAKE) -C $(LEX) mllex_cm
+	$(MAKE) -C $(PROF) mlprof_cm
+	$(MAKE) -C $(YACC) mlyacc_cm
 
 .PHONY: compiler
 compiler:
-	cd $(COMP) && $(MAKE)
+	$(MAKE) -C $(COMP)
 
 .PHONY: constants
 constants:
@@ -53,7 +54,7 @@ dirs:
 
 .PHONY: docs
 docs:
-	cd $(SRC)/doc/user-guide && $(MAKE)
+	$(MAKE) -C $(SRC)/doc/user-guide
 
 .PHONY: hostmap
 hostmap:
@@ -65,23 +66,23 @@ hostmap:
 .PHONY: nj-mlton
 nj-mlton:
 	$(MAKE) dirs
-	cd $(COMP) && $(MAKE) nj-mlton
+	$(MAKE) -C $(COMP) nj-mlton
 	$(MAKE) script runtime hostmap constants
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual:
 	$(MAKE) dirs	
-	cd $(COMP) && $(MAKE) nj-mlton-dual
+	$(MAKE) -C $(COMP) nj-mlton-dual
 	$(MAKE) script runtime hostmap constants
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: runtime
 runtime:
 	@echo 'Compiling MLton runtime system for $(HOST).'
-	cd runtime && $(MAKE)
-	$(CP) $(RUN)/*.a $(LIB)/$(HOST)
-	$(CP) runtime/*.h include/*.h $(LIB)/$(HOST)/include
+	$(MAKE) -C runtime
+	$(CP) $(RUN)/*.a $(LIB)/$(HOST)/
+	$(CP) runtime/*.h include/*.h $(LIB)/$(HOST)/include/
 
 .PHONY: script
 script:
@@ -91,16 +92,15 @@ script:
 
 .PHONY: tools
 tools:
-	cd $(LEX) && $(MAKE)
-	cd $(PROF) && $(MAKE)
-	cd $(YACC) && $(MAKE)
-	$(CP) $(LEX)/$(LEX) $(PROF)/$(PROF) $(YACC)/$(YACC) $(BIN)
+	$(MAKE) -C $(LEX)
+	$(MAKE) -C $(PROF)
+	$(MAKE) -C $(YACC)
+	$(CP) $(LEX)/$(LEX) $(PROF)/$(PROF) $(YACC)/$(YACC) $(BIN)/
 
 .PHONY: version
 version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
-		doc/web/index.html 					\
 		doc/user-guide/macros.tex				\
 		doc/CHANGES 						\
 		doc/README						\
@@ -118,12 +118,12 @@ world:
 # The TBIN and TLIB are where the files are going to be after installing.
 # The PREFIX is added onto them to indicate where the Makefile actually
 # puts them.  (PREFIX is mainly used when building RPMs.)
-PREFIX =
-TBIN = $(PREFIX)/usr/local/bin
+prefix = /usr/local
+TBIN = $(DESTDIR)$(prefix)/bin
 ULIB = /usr/local/lib/mlton
-TLIB = $(PREFIX)$(ULIB)
-TMAN = $(PREFIX)/usr/local/man/man1
-TDOC = $(PREFIX)/usr/share/doc/mlton-$(VERSION)
+TLIB = $(DESTDIR)$(prefix)$(ULIB)
+TMAN = $(DESTDIR)$(prefix)/share/man/man1
+TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
 
 .PHONY: install
 install:
@@ -131,20 +131,19 @@ install:
 	(								\
 		cd $(SRC)/doc &&					\
 		$(CP) -r CHANGES cmcat.sml examples			\
-			license README $(TDOC) &&			\
-		mv user-guide/main $(TDOC)/user-guide &&		\
+			license README $(TDOC)/ &&			\
+		rm -rf $(TDOC)/user-guide &&				\
+		cp -a user-guide/main $(TDOC)/user-guide &&		\
 		gzip -c user-guide/main.ps >$(TDOC)/user-guide.ps.gz	\
 	) &&								\
-	( 								\
-		cd $(LIB) && $(CP) -r . $(TLIB) 			\
-	) &&								\
+	$(CP) -r $(LIB)/. $(TLIB) &&					\
 	(								\
 		cd $(BIN) &&						\
 		sed "/^lib=/s;\".*\";'$(ULIB)';" <mlton >$(TBIN)/mlton &&	\
 		chmod +x $(TBIN)/mlton &&				\
-		$(CP) $(LEX) $(PROF) $(YACC) $(TBIN)			\
+		$(CP) $(LEX) $(PROF) $(YACC) $(TBIN)/			\
 	) &&								\
 	(								\
 		cd $(SRC)/man &&					\
-		$(CP) mlton.1 mlprof.1 $(TMAN)				\
+		$(CP) mlton.1 mlprof.1 $(TMAN)/				\
 	)

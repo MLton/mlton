@@ -21,7 +21,7 @@ make STUBS=no
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make PREFIX=$RPM_BUILD_ROOT VERSION=%{version} install
+make prefix=$RPM_BUILD_ROOT VERSION=%{version} install
 
 %files
 %attr(-, root, root)		/usr/share/doc/mlton-%{version}

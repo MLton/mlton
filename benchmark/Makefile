@@ -38,7 +38,7 @@ clean:
 .PHONY: install
 install: $(NAME)
 	if [ `whoami` != 'root' ]; then echo >&2 'You should be root'; exit 1; fi
-	cp -p $(NAME) /usr/local/bin
+	cp -p $(NAME) /usr/local/bin/
 
 .PHONY: tags
 tags:
