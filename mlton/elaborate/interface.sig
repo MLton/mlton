@@ -118,7 +118,8 @@ signature INTERFACE =
       (* realize makes a copy, and instantiate longtycons *)
       val realize: t * (Ast.Longtycon.t
 			* TypeStr.AdmitsEquality.t
-			* TypeStr.Kind.t -> EnvTypeStr.t) -> t
+			* TypeStr.Kind.t
+			* {hasCons: bool} -> EnvTypeStr.t) -> t
       val renameTycons: (unit -> unit) ref
       val reportDuplicates: t * Region.t -> unit
       val share: t * Ast.Longstrid.t * Ast.Longstrid.t * Time.t -> unit

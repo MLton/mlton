@@ -1160,7 +1160,8 @@ fun copyAndRealize (I: t, getTypeFcnOpt): t =
 					(SOME (Tycon.Flexible c), SOME f) =>
 					   let
 					      val FlexibleTycon.T s = c
-					      val {admitsEquality, defn, ...} =
+					      val {admitsEquality, defn, hasCons,
+						   ...} =
 						 Set.value s
 					   in
 					      case Defn.dest (!defn) of
@@ -1172,7 +1173,8 @@ fun copyAndRealize (I: t, getTypeFcnOpt): t =
 						     f
 						     (Longtycon.long (strids, name),
 						      !admitsEquality,
-						      TypeStr.kind typeStr))
+						      TypeStr.kind typeStr,
+						      {hasCons = hasCons}))
 					   end
 				      | _ => ()
 			       in

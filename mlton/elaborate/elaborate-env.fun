@@ -1236,7 +1236,7 @@ fun dummyStructure (T {strs, types, vals, ...}, prefix: string, I: Interface.t)
       val tycons: (Longtycon.t * Tycon.t) list ref = ref []
       val I =
 	 Interface.realize
-	 (I, fn (c, a, k) =>
+	 (I, fn (c, a, k, _) =>
 	  let
 	     val c' = newTycon (concat [prefix, Longtycon.toString c], k, a)
 	     val _ = List.push (tycons, (c, c'))
@@ -1668,15 +1668,13 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 					   (region,
 					    Layout.str
 					    (concat
-					     ["identifier ",
-					      Longvid.toString
-					      (Longvid.long (rev strids,
-							     name)),
-					      " is ",
-					      Vid.statusPretty vid,
-					      " in the structure but ",
+					     [Vid.statusPretty vid,
+					      " in structure but ",
 					      Status.pretty status,
-					      " in the ", sign]),
+					      " in ", sign, ": ",
+					      Longvid.toString
+					      (Longvid.long
+					       (rev strids, name))]),
 					    Layout.empty)
 					   ; vid)
 		     in
@@ -1691,46 +1689,65 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	 end
       val I' =
 	 Interface.realize
-	 (I, fn (c, a, k) =>
-	  case Structure.peekLongtycon (S, c) of
-	     NONE => TypeStr.bogus k
-	   | SOME typeStr =>
-		let
-		   val _ =
-		      if AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr)
-			 then ()
-		      else
-			 let
-			    open Layout
-			 in
-			    Control.error
-			    (region,
-			     seq [str "type ", Longtycon.layout c,
-				  str " admits equality in ",
-				  str sign, str " but not in structure"],
-			     empty)
-			 end
-		   val k' = TypeStr.kind typeStr
-		   val typeStr =
-		      if Kind.equals (k, k')
-			 then typeStr
-		      else
+	 (I, fn (c, a, k, {hasCons}) =>
+	  let
+	     fun bad () =
+		TypeStr.tycon (newTycon (Longtycon.toString c, k, a), k)
+	  in
+	     case Structure.peekLongtycon (S, c) of
+		NONE => bad ()
+	      | SOME typeStr =>
+		   if not (AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr))
+		      then 
 			 let
 			    open Layout
 			    val _ =
 			       Control.error
 			       (region,
 				seq [str "type ", Longtycon.layout c,
-				     str " has arity ", Kind.layout k',
-				     str " in structure but arity ",
-				     Kind.layout k, str " in ", str sign],
+				     str " admits equality in ", str sign,
+				     str " but not in structure"],
 				empty)
 			 in
-			    TypeStr.bogus k
+			    bad ()
 			 end
-		in
-		   typeStr
-		end)
+		   else if (hasCons
+			    andalso Option.isNone (TypeStr.toTyconOpt typeStr))
+		      then
+			 let
+			    open Layout
+			    val _ =
+			       Control.error
+			       (region,
+				seq [str "type ", Longtycon.layout c,
+				     str " is a datatype in ", str sign,
+				     str " but not in structure"],
+				empty)
+			 in
+			    bad ()
+			 end
+	           else
+		      let
+			 val k' = TypeStr.kind typeStr
+		      in
+			 if not (Kind.equals (k, k'))
+			    then
+			       let
+				  open Layout
+				  val _ =
+				     Control.error
+				     (region,
+				      seq [str "type ", Longtycon.layout c,
+					   str " has arity ", Kind.layout k',
+					   str " in structure but arity ",
+					   Kind.layout k, str " in ", str sign],
+				      empty)
+			       in
+				  bad ()
+			       end
+			 else typeStr
+		      end
+	  end)
       val S = cut (S, I', [])
       val _ = destroy ()
    in
