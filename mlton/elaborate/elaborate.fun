@@ -93,7 +93,8 @@ fun elaborateProgram (program,
 						s :: "." :: ac))
 		  val (S, decs) =
 		     Env.cut (E, S, elabSigexp sigexp,
-			      {opaque = opaque,
+			      {isFunctor = false,
+			       opaque = opaque,
 			       prefix = prefix},
 			      Sigexp.region sigexp)
 	       in

@@ -1300,9 +1300,13 @@ val dummyStructure =
 	 
 (* section 5.3, 5.5, 5.6 and rules 52, 53 *)
 fun cut (E: t, S: Structure.t, I: Interface.t,
-	 {opaque: bool, prefix: string}, region)
+	 {isFunctor: bool, opaque: bool, prefix: string}, region)
    : Structure.t * Decs.t =
    let
+      val sign =
+	 if isFunctor
+	    then "argument signature"
+	 else "signature"
       val preError =
 	 Promise.lazy
 	 (fn () =>
@@ -1317,7 +1321,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 	    Control.error
 	    (region,
 	     seq [str (concat [name, " "]), l,
-		  str " in signature but not in structure"],
+		  str " in ", str sign, str " but not in structure"],
 	     empty)
 	 end
       (* pre: arities are equal. *)
@@ -1344,7 +1348,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 	     in
 		(r,
 		 seq [str "type ", name (),
-		      str " in structure disagrees with signature"],
+		      str " in structure disagrees with ", str sign],
 		 align [seq [str "structure: ", l1],
 			seq [str "signature: ", l2]])
 	     end)
@@ -1410,8 +1414,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 	 Interface.realize
 	 (I, fn (c, a, k) =>
 	  case Structure.peekLongtycon (S, c) of
-	     NONE => (error ("type", Longtycon.layout c)
-		      ; TypeStr.bogus k)
+	     NONE => TypeStr.bogus k
 	   | SOME typeStr =>
 		let
 		   val _ =
@@ -1424,7 +1427,8 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 			    Control.error
 			    (region,
 			     seq [str "type ", Longtycon.layout c,
-				  str " admits equality in signature but not in structure"],
+				  str " admits equality in ",
+				  str sign, str " but not in structure"],
 			     empty)
 			 end
 		   val k' = TypeStr.kind typeStr
@@ -1440,7 +1444,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 				seq [str "type ", Longtycon.layout c,
 				     str "has arity ", Kind.layout k',
 				     str "in structure but arity ",
-				     Kind.layout k, str " in signature"],
+				     Kind.layout k, str " in ", str sign],
 				empty)
 			 in
 			    TypeStr.bogus k
@@ -1511,7 +1515,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 					      seq [str "type ", layoutName (),
 						   str " has arity ", Kind.layout k',
 						   str " in structure but arity ", Kind.layout k,
-						   str " in signature"],
+						   str " in ", str sign],
 					      empty)
 					     ; typeStr
 					  end
@@ -1531,7 +1535,9 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 						       (region,
 							seq [str "type ",
 							     layoutName (),
-							     str " is a datatype in signature but not in structure"],
+							     str " is a datatype in ",
+							     str sign,
+							     str " but not in structure"],
 							Layout.empty)
 						       ; typeStr
 						    end)
@@ -1569,7 +1575,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 				     open Layout
 				  in
 				     (region,
-				      seq [str "variable type in structure disagrees with signature"],
+				      seq [str "variable type in structure disagrees with ", str sign],
 				      align [seq [str "variable:  ",
 						  Longvid.layout	
 						  (Longvid.long
@@ -1623,7 +1629,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 						    Vid.statusPretty vid,
 						    " in the structure but ",
 						    Status.pretty status,
-						    " in the signature "]),
+						    " in the ", sign]),
 						  Layout.empty)
 						 ; vid)
 			   in
@@ -1835,7 +1841,8 @@ fun functorClosure
       fun apply (arg, nest, region) =
 	 let
 	    val (actual, decs) =
-	       cut (E, arg, argInt, {opaque = false, prefix = ""}, region)
+	       cut (E, arg, argInt,
+		    {isFunctor = true, opaque = false, prefix = ""}, region)
 	 in
 	    if !useFunctorSummary
 	       then

@@ -89,7 +89,7 @@ signature ELABORATE_ENV =
        *)
       val cut:
 	 t * Structure.t * Interface.t
-	 * {opaque: bool, prefix: string} * Region.t
+	 * {isFunctor: bool, opaque: bool, prefix: string} * Region.t
 	 -> Structure.t * Decs.t
       val empty: unit -> t
       val extendCon: t * Ast.Con.t * CoreML.Con.t * Scheme.t -> unit
