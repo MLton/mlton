@@ -148,6 +148,11 @@ structure Real: REAL =
       val fromInt = fromLargeInt o Pervasive.Int32.toLarge
 
       val fromDecimal = SOME o fromDecimal
+
+      fun fromString s =
+	 case SOME (Pervasive.Real.fromString s) handle Overflow => NONE of
+	    NONE => SOME 0.0
+	  | SOME ro => ro
    end
 
 structure Real32 = Real
