@@ -22,6 +22,7 @@ structure Array =
    end
    
 datatype z = datatype Exp.t
+datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
 structure VarInfo =
@@ -202,26 +203,30 @@ fun shrinkFunction {globals: Statement.t vector} =
 	 ! (VarInfo.numOccurrences (varInfo x))
       val () =
 	 Vector.foreach
-	 (globals, fn Statement.T {var, exp, ty} =>
-	  let
-	     val () = Option.app
-	             (var, fn x =>
-		      setVarInfo (x, VarInfo.new (x, SOME ty)))
-	     fun construct v =
-		Option.app (var, fn x => VarInfo.setValue (varInfo x, v))
-	  in
-	     case exp of
-		Const c => construct (Value.Const c)
-	      | Object {args, con} =>
-		   construct
-		   (Value.Object {args = Vector.map (args, varInfo),
-				  con = con})
-	      | Select {object, offset} =>
-		   construct (Value.Select {object = varInfo object,
-					    offset = offset})
-	      | Var y => Option.app (var, fn x => setVarInfo (x, varInfo y))
-	      | _ => ()
-	  end)
+	 (globals, fn s =>
+	  case s of
+	     Bind {exp, ty, var} =>
+		let
+		   val () = Option.app
+		      (var, fn x =>
+		       setVarInfo (x, VarInfo.new (x, SOME ty)))
+		   fun construct v =
+		      Option.app (var, fn x => VarInfo.setValue (varInfo x, v))
+		in
+		   case exp of
+		      Const c => construct (Value.Const c)
+		    | Object {args, con} =>
+			 construct
+			 (Value.Object {args = Vector.map (args, varInfo),
+					con = con})
+		    | Select {object, offset} =>
+			 construct (Value.Select {object = varInfo object,
+						  offset = offset})
+		    | Var y =>
+			 Option.app (var, fn x => setVarInfo (x, varInfo y))
+		    | _ => ()
+		end
+	   | _ => ())
    in
       fn f: Function.t =>
       let
@@ -295,7 +300,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 	       val () = Vector.foreach (args, fn (x, ty) =>
 					setVarInfo (x, VarInfo.new (x, SOME ty)))
 	       val () = Vector.foreach (statements, fn s =>
-					Exp.foreachVar (Statement.exp s, incVar))
+					Statement.foreachUse (s, incVar))
 	       fun extract (actuals: Var.t vector): Positions.t =
 		  let
 		     val {get: Var.t -> Position.t, set, destroy} =
@@ -326,17 +331,15 @@ fun shrinkFunction {globals: Statement.t vector} =
 			      else normal ()
 			else
 			   let
-			      val Statement.T {exp, ty, ...} =
-				 Vector.sub (statements, i)
+			      val s = Vector.sub (statements, i)
 			   in
-			      if (case exp of
-				     Exp.Profile _ => true
-				   | _ => false)
-				 then loop (i + 1,
-					    Statement.T {exp = exp,
-							 ty = ty,
-							 var = NONE} :: ac)
-			      else normal ()
+			      case s of
+				 Bind {exp as Profile _, ...} =>
+				    loop (i + 1,
+					  Bind {exp = exp,
+						ty = Type.unit,
+						var = NONE} :: ac)
+			       | _ => normal ()
 			   end
 		  in
 		     loop (0, [])
@@ -759,10 +762,9 @@ fun shrinkFunction {globals: Statement.t vector} =
 			       val (ss, t) = goto (success, Vector.new1 vi)
 			       val ss =
 				  if !isUsed
-				     then Statement.T {var = SOME x,
-						       ty = Type.ofConst c,
-						       exp = Exp.Const c}
-					:: ss
+				     then Bind {var = SOME x,
+						ty = Type.ofConst c,
+						exp = Exp.Const c} :: ss
 				  else ss
 			    in
 			       (ss, t)
@@ -1058,21 +1060,17 @@ fun shrinkFunction {globals: Statement.t vector} =
 		 | Raise z => rr (z, Transfer.Raise)
 		 | Return z => rr (z, Transfer.Return)
 	     end) arg
-	 and evalStatement arg : Statement.t list -> Statement.t list =
-	    traceEvalStatement
-	    (fn (Statement.T {var, ty, exp}) =>
+	 and evalBind {exp, ty, var} =
 	    let
-	       val () = Option.app (var, fn x => 
-				    setVarInfo (x, VarInfo.new (x, SOME ty)))
+	       val () =
+		  Option.app (var, fn x => 
+			      setVarInfo (x, VarInfo.new (x, SOME ty)))
 	       fun delete ss = ss
 	       fun doit {makeExp: unit -> Exp.t,
 			 sideEffect: bool,
 			 value: Value.t option} =
 		  let
-		     fun make var =
-			Statement.T {var = var,
-				     ty = ty,
-				     exp = makeExp ()}
+		     fun make var = Bind {exp = makeExp (), ty = ty, var = var}
 		  in
 		     case var of
 			NONE =>
@@ -1189,17 +1187,15 @@ fun shrinkFunction {globals: Statement.t vector} =
 			      in
 				 evalStatements
 				 (Vector.new2
-				  (Statement.T
-				   {exp = Object {args = Vector.new0 (),
-						  con = con},
-				    ty = Type.object {args = Prod.empty (),
-						      con = con},
-				    var = SOME variant},
-				   Statement.T
-				   {exp = Inject {sum = Tycon.bool,
-						  variant = variant},
-				    ty = Type.bool,
-				    var = var}))
+				  (Bind {exp = Object {args = Vector.new0 (),
+						       con = con},
+					 ty = Type.object {args = Prod.empty (),
+							   con = con},
+					 var = SOME variant},
+				   Bind {exp = Inject {sum = Tycon.bool,
+						       variant = variant},
+					 ty = Type.bool,
+					 var = var}))
 			      end
 			 | Const c => construct (Value.Const c,
 						 fn () => Exp.Const c)
@@ -1232,11 +1228,17 @@ fun shrinkFunction {globals: Statement.t vector} =
 				| _ => Error.bug "select of non object")
 			 | _ => dontChange ()
 		     end
-		| Update _ => simple {sideEffect = true}
 		| Var x => setVar (varInfo x)
 		| VectorSub _ => simple {sideEffect = false}
 		| VectorUpdates _ => simple {sideEffect = true}
-	    end) arg
+	    end
+	 and evalStatement arg : Statement.t list -> Statement.t list =
+	    traceEvalStatement
+	    (fn s =>
+	     case s of
+		Bind b => evalBind b
+	      | Update _ =>
+		   fn ss => Statement.replaceUses (s, use o varInfo) :: ss) arg
 	 val start = labelMeaning start
 	 val () = forceMeaningBlock start
 	 val f = 
@@ -1267,7 +1269,10 @@ structure Statement =
    struct
       open Statement
 
-      fun isProfile (T {exp, ...}) = Exp.isProfile exp
+      fun isProfile (s: t): bool =
+	 case s of
+	    Bind {exp, ...} => Exp.isProfile exp
+	  | _ => false
    end
 
 fun eliminateUselessProfile (f: Function.t): Function.t =
@@ -1285,11 +1290,11 @@ fun eliminateUselessProfile (f: Function.t): Function.t =
 		  datatype z = datatype ProfileExp.t
 		  val stack =
 		     Vector.fold
-		     (statements, [], fn (s as Statement.T {exp, ...}, stack) =>
-		      case exp of
-			 Profile (Leave si) =>
+		     (statements, [], fn (s, stack) =>
+		      case s of
+			 Bind {exp = Profile (Leave si), ...} =>
 			    (case stack of
-				Statement.T {exp = Profile (Enter si'), ...}
+				Bind {exp = Profile (Enter si'), ...}
 				:: rest =>
 				   if SourceInfo.equals (si, si')
 				      then rest

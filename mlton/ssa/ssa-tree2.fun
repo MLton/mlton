@@ -561,9 +561,6 @@ structure Exp =
        | Profile of ProfileExp.t
        | Select of {object: Var.t,
 		    offset: int}
-       | Update of {object: Var.t,
-		    offset: int,
-		    value: Var.t}
        | Var of Var.t
        | VectorSub of {index: Var.t,
 		       offset: int,
@@ -586,7 +583,6 @@ structure Exp =
 	     | PrimApp {args, ...} => vs args
 	     | Profile _ => ()
 	     | Select {object, ...} => v object
-	     | Update {object, value, ...} => (v object; v value)
 	     | Var x => v x
 	     | VectorSub {index, vector, ...} => (v index; v vector)
 	     | VectorUpdates (x, us) =>
@@ -607,8 +603,6 @@ structure Exp =
 	     | Profile _ => e
 	     | Select {object, offset} =>
 		  Select {object = fx object, offset = offset}
-	     | Update {object, offset, value} =>
-		  Update {object = fx object, offset = offset, value = fx value}
 	     | Var x => Var (fx x)
 	     | VectorSub {index, offset, vector} =>
 		  VectorSub {index = fx index,
@@ -647,10 +641,6 @@ structure Exp =
 	     | Select {object, offset} =>
 		  seq [str "#", Int.layout offset, str " ",
 		       layoutVar object]
-	     | Update {object, offset, value} =>
-		  seq [str "#", Int.layout offset, str " ",
-		       layoutVar object,
-		       str " := ", layoutVar value]
 	     | Var x => layoutVar x
 	     | VectorSub {index, offset, vector} =>
 		  seq [if 0 = offset
@@ -687,7 +677,6 @@ structure Exp =
 	  | PrimApp {prim,...} => Prim.maySideEffect prim
 	  | Profile _ => false
 	  | Select _ => false
-	  | Update _ => true
 	  | Var _ => false
 	  | VectorSub _ => false
 	  | VectorUpdates _ => true
@@ -707,9 +696,6 @@ structure Exp =
 	  | (Select {object = o1, offset = i1},
 	     Select {object = o2, offset = i2}) =>
 	       Var.equals (o1, o2) andalso i1 = i2
-	  | (Update {object = o1, offset = i1, value = v1},
-	     Update {object = o2, offset = i2, value = v2}) =>
-	     i1 = i2 andalso Var.equals (o1, o2) andalso Var.equals (v1, v2)
 	  | (Var x, Var x') => Var.equals (x, x')
   	  | (VectorSub {index = i1, offset = o1, vector = v1},
 	     VectorSub {index = i2, offset = o2, vector = v2}) =>
@@ -754,10 +740,6 @@ structure Exp =
 	     | Profile p => Word.xorb (profile, ProfileExp.hash p)
 	     | Select {object, offset} =>
 		  Word.xorb (select, Var.hash object + Word.fromInt offset)
-	     | Update {object, offset, value} =>
-		  Word.xorb (update,
-			     Word.xorb (Var.hash object + Word.fromInt offset,
-					Var.hash value))
 	     | Var x => Var.hash x
 	     | VectorSub {index, offset, vector} =>
 		  Word.xorb
@@ -783,86 +765,143 @@ datatype z = datatype Exp.t
 
 structure Statement =
    struct
-      datatype t = T of {var: Var.t option,
-			 ty: Type.t,
-			 exp: Exp.t}
+      datatype t =
+	 Bind of {var: Var.t option,
+		  ty: Type.t,
+		  exp: Exp.t}
+       | Update of {object: Var.t,
+		    offset: int,
+		    value: Var.t}
 
-      local
-	 fun make f (T r) = f r
-      in
-	 val var = make #var
-	 val exp = make #exp
-      end
-
-      fun layout (T {var, ty, exp}) =
+      fun layout' (s: t, layoutVar): Layout.t =
 	 let
 	    open Layout
 	 in
-	    seq [seq [case var of
-			 NONE => empty
-		       | SOME var =>
-			    seq [Var.layout var,
-				 if !Control.showTypes
-				    then seq [str ": ", Type.layout ty]
-				 else empty,
-				 str " = "]],
-                 Exp.layout exp]
+	    case s of
+	       Bind {var, ty, exp} =>
+		  seq [seq [case var of
+			       NONE => empty
+			     | SOME var =>
+				  seq [Var.layout var,
+				       if !Control.showTypes
+					  then seq [str ": ", Type.layout ty]
+				       else empty,
+					  str " = "]],
+		       Exp.layout' (exp, layoutVar)]
+      	     | Update {object, offset, value} =>
+		  seq [str "#", Int.layout offset, str " ",
+		       layoutVar object,
+		       str " := ", layoutVar value]
 	 end
 
-      fun equals (T {exp = e, ty = t, var = v},
-		  T {exp = e', ty = t', var = v'}): bool =
-	 Option.equals (v, v', Var.equals)
-	 andalso Type.equals (t, t')
-	 andalso Exp.equals (e, e')
+      fun layout s = layout' (s, Var.layout)
+
+      fun toPretty (s: t, global: Var.t -> string option): string =
+	 Layout.toString (layout' (s, fn x =>
+				   case global x of
+				      NONE => Var.layout x
+				    | SOME s => Layout.str s))
+
+      fun equals (s: t, s': t): bool =
+	 case (s, s') of
+	    (Bind {exp = e, ty = t, var = v},
+	     Bind {exp = e', ty = t', var = v'}) =>
+	       Option.equals (v, v', Var.equals)
+	       andalso Type.equals (t, t')
+	       andalso Exp.equals (e, e')
+	  | (Update {object = o1, offset = i1, value = v1},
+	     Update {object = o2, offset = i2, value = v2}) =>
+	       i1 = i2 andalso Var.equals (o1, o2) andalso Var.equals (v1, v2)
+	  | _ => false
+
+      fun maySideEffect (s: t): bool =
+	 case s of
+	    Bind {exp, ...} => Exp.maySideEffect exp
+	  | Update _ => true
 
       local
 	 fun make f x =
-	    T {var = NONE,
-	       ty = Type.unit,
-	       exp = f x}
+	    Bind {var = NONE,
+		  ty = Type.unit,
+		  exp = f x}
       in
 	 val profile = make Exp.Profile
       end
 
-      fun clear s = Option.app (var s, Var.clear)
+      fun foreachDef (s: t, f: Var.t * Type.t -> unit): unit =
+	 case s of
+	    Bind {ty, var, ...} => Option.app (var, fn x => f (x, ty))
+	  | _ => ()
 
+      fun clear s = foreachDef (s, Var.clear o #1)
+	 
       fun prettifyGlobals (v: t vector): Var.t -> string option =
 	 let
 	    val {get = global: Var.t -> string option, set = setGlobal, ...} =
 	       Property.getSet (Var.plist, Property.initConst NONE)
 	    val _ = 
 	       Vector.foreach
-	       (v, fn T {var, exp, ...} =>
-		Option.app
-		(var, fn var =>
-		 let
-		    fun set s =
+	       (v, fn s =>
+		case s of
+		   Bind {var, exp, ...} =>
+		      Option.app
+		      (var, fn var =>
 		       let
-			  val maxSize = 10
-			  val s = 
-			     if String.size s > maxSize
-				then concat [String.prefix (s, maxSize), "..."]
-			     else s
+			  fun set s =
+			     let
+				val maxSize = 10
+				val s = 
+				   if String.size s > maxSize
+				      then concat [String.prefix (s, maxSize),
+						   "..."]
+				   else s
+			     in
+				setGlobal (var, SOME s)
+			     end
 		       in
-			  setGlobal (var, SOME s)
-		       end
-		 in
-		    case exp of
-		       Const c => set (Layout.toString (Const.layout c))
-		     | Object {con, args, ...} =>
-			  (case con of
-			      NONE => ()
-			    | SOME c =>
-				 set (if Vector.isEmpty args
-					 then Con.toString c
-				      else concat [Con.toString c, "(...)"]))
-		     | _ => ()
-		 end))
+			  case exp of
+			     Const c => set (Layout.toString (Const.layout c))
+			   | Object {con, args, ...} =>
+				(case con of
+				    NONE => ()
+				  | SOME c =>
+				       set (if Vector.isEmpty args
+					       then Con.toString c
+					    else concat [Con.toString c,
+							 "(...)"]))
+			   | _ => ()
+		       end)
+		 | _ => ())
 	 in
 	    global
 	 end
+
+      fun foreachUse (s: t, f: Var.t -> unit): unit =
+	 case s of
+	    Bind {exp, ...} => Exp.foreachVar (exp, f)
+	  | Update {object, value, ...} => (f object; f value)
+
+      fun replaceDefsUses (s: t, f: Var.t -> Var.t): t =
+	 case s of
+	    Bind {exp, ty, var} =>
+	       Bind {exp = Exp.replaceVar (exp, f),
+		     ty = ty,
+		     var = Option.map (var, f)}
+	  | Update {object, offset, value} =>
+	       Update {object = f object, offset = offset, value = f value}
+	       
+      fun replaceUses (s: t, f: Var.t -> Var.t): t =
+	 case s of
+	    Bind {exp, ty, var} =>
+	       Bind {exp = Exp.replaceVar (exp, f),
+		     ty = ty,
+		     var = var}
+	  | Update {object, offset, value} =>
+	       Update {object = f object, offset = offset, value = f value}
    end
 
+datatype z = datatype Statement.t
+   
 structure Handler =
    struct
       structure Label = Label
@@ -1349,8 +1388,8 @@ structure Function =
 	       Vector.foreach
 	       (blocks, fn Block.T {args, statements, ...} =>
 		(Vector.foreach (args, fx)
-		 ; Vector.foreach (statements, fn Statement.T {var, ty, ...} => 
-				   Option.app (var, fn x => fx (x, ty)))))
+		 ; Vector.foreach (statements, fn s =>
+				   Statement.foreachDef (s, fx))))
 	 in
 	    ()
 	 end
@@ -1571,24 +1610,29 @@ structure Function =
 						    (Var.pretty (x, global))))])
 		      val lab =
 			 Vector.foldr
-			 (statements, [(concat rest, Left)],
-			  fn (Statement.T {var, ty, exp, ...}, ac) =>
+			 (statements, [(concat rest, Left)], fn (s, ac) =>
 			  let
-			     val exp = Exp.toPretty (exp, global)
 			     val s =
-				if Type.isUnit ty
-				   then exp
-				else
-				   case var of
-				      NONE => exp
-				    | SOME var =>
-					 concat [Var.toString var,
-						 if !Control.showTypes
-						    then concat [": ",
-								 Layout.toString
-								 (Type.layout ty)]
-						 else "",
-						    " = ", exp]
+				case s of
+				   Bind {exp, ty, var} =>
+				      let
+					 val exp = Exp.toPretty (exp, global)
+				      in
+					 if Type.isUnit ty
+					    then exp
+					 else
+					    case var of
+					       NONE => exp
+					     | SOME var =>
+						  concat [Var.toString var,
+							  if !Control.showTypes
+							     then concat [": ",
+									  Layout.toString
+									  (Type.layout ty)]
+							  else "",
+							     " = ", exp]
+				      end
+				 | _ => Statement.toPretty (s, global)
 			  in
 			     (s, Left) :: ac
 			  end)
@@ -1751,9 +1795,8 @@ structure Function =
 	       (blocks, fn Block.T {label, args, statements, ...} => 
 		(bindLabel label
 		 ; Vector.foreach (args, fn (x, _) => bindVar x)
-		 ; Vector.foreach (statements, 
-				   fn Statement.T {var, ...} => 
-				   Option.app (var, bindVar))))
+		 ; Vector.foreach (statements, fn s =>
+				   Statement.foreachDef (s, bindVar o #1))))
 	    val blocks = 
 	       Vector.map
 	       (blocks, fn Block.T {label, args, statements, transfer} =>
@@ -1761,13 +1804,8 @@ structure Function =
 			 args = Vector.map (args, fn (x, ty) =>
 					    (lookupVar x, ty)),
 			 statements = Vector.map
-			              (statements, 
-				       fn Statement.T {var, ty, exp} =>
-				       Statement.T 
-				       {var = Option.map (var, lookupVar),
-					ty = ty,
-					exp = Exp.replaceVar
-					      (exp, lookupVar)}),
+			              (statements, fn s =>
+				       Statement.replaceDefsUses (s, lookupVar)),
 			 transfer = Transfer.replaceLabelVar
 			            (transfer, lookupLabel, lookupVar)})
 	    val start = lookupLabel start
@@ -1804,9 +1842,9 @@ structure Function =
 	       (blocks, fn Block.T {args, label, statements, transfer} =>
 		let
 		   fun make (exp: Exp.t): Statement.t =
-		      Statement.T {exp = exp,
-				   ty = Type.unit,
-				   var = NONE}
+		      Statement.Bind {exp = exp,
+				      ty = Type.unit,
+				      var = NONE}
 		   val statements =
 		      if Label.equals (label, start)
 			 then (Vector.concat
@@ -2095,15 +2133,14 @@ structure Program =
 	  ; clearGlobals p)
 
       fun foreachVar (T {globals, functions, ...}, f) =
-	 (Vector.foreach (globals, fn Statement.T {var, ty, ...} =>
-			  f (valOf var, ty))
+	 (Vector.foreach (globals, fn s => Statement.foreachDef (s, f))
 	  ; List.foreach (functions, fn g => Function.foreachVar (g, f)))
 
       fun foreachPrim (T {globals, functions, ...}, f) =
 	 let
-	    fun loopStatement (Statement.T {exp, ...}) =
-		case exp of
-		   PrimApp {prim, ...} => f prim
+	    fun loopStatement (s: Statement.t) =
+	       case s of
+		  Bind {exp = PrimApp {prim, ...}, ...} => f prim
 		 | _ => ()
 	     fun loopTransfer t =
 	        case t of

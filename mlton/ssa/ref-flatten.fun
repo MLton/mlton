@@ -13,6 +13,7 @@ open S
 type int = Int.t
 
 datatype z = datatype Exp.t
+datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
 structure Set = DisjointSet
@@ -474,9 +475,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	  | _ => ()
       val use = Trace.trace ("RefFlatten.use", Var.layout, Unit.layout) use
       fun uses xs = Vector.foreach (xs, use)
-      fun loopStatement (Statement.T {exp, ty, var}) =
-	 case exp of
-	    Exp.Object {args, ...} =>
+      fun loopStatement (s: Statement.t): unit =
+	 case s of
+	    Bind {exp = Exp.Object {args, ...}, ty, var} =>
 	       (case var of
 		   NONE => uses args
 		 | SOME var =>
@@ -505,7 +506,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 					  | _ => flat := NotFlat
 				      end)
 			    end)
-	  | _ => Exp.foreachVar (exp, use)
+	  | _ => Statement.foreachUse (s, use)
       val loopStatement =
 	 Trace.trace ("RefFlatten.loopStatement", Statement.layout, Unit.layout)
 	 loopStatement
@@ -528,9 +529,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	    ; fn () => ())))
       fun foreachObject (f): unit =
 	 let
-	    fun loopStatement (Statement.T {exp, var, ...}) =
-	       case exp of
-		  Exp.Object {args, ...} =>
+	    fun loopStatement s =
+	       case s of
+		  Bind {exp = Exp.Object {args, ...}, var, ...} =>
 		     Option.app
 		     (var, fn var =>
 		      case Value.value (varValue var) of
@@ -704,7 +705,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		   val () =
 		      List.push
 		      (extraSelects,
-		       Statement.T
+		       Bind
 		       {exp = Select {object = object,
 				      offset = objectOffset (obj, i)},
 			ty = valueType elt,
@@ -734,16 +735,15 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		       List.layout Var.layout,
 		       List.layout Var.layout)
 	 flattenArgs
-      fun transformStatement (s as Statement.T {exp, ty, var})
-	 : Statement.t vector =
+      fun transformBind {exp, ty, var}: Statement.t vector =
 	 let
 	    fun make e =
 	       Vector.new1
-	       (Statement.T {exp = e,
-			     ty = (case var of
-				      NONE => ty
-				    | SOME var => valueType (varValue var)),
-			     var = var})
+	       (Bind {exp = e,
+		      ty = (case var of
+			       NONE => ty
+			     | SOME var => valueType (varValue var)),
+		      var = var})
 	    fun none () = Vector.new0 ()
 	 in
 	    case exp of
@@ -806,15 +806,19 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 				 else (Select
 				       {object = object,
 					offset = objectOffset (obj, offset)}))))
-	     | Update {object, offset, value} =>
-		  (case varObject object of
-		      NONE => make exp
-		    | SOME obj => 
-			 make (Update {object = object,
-				       offset = objectOffset (obj, offset),
-				       value = value}))
 	     | _ => make exp
 	 end
+      fun transformStatement (s: Statement.t): Statement.t vector =
+	 case s of
+	    Bind b => transformBind b
+	  | Update {object, offset, value} =>
+	       Vector.new1
+	       (case varObject object of
+		   NONE => s
+		 | SOME obj => 
+		      Update {object = object,
+			      offset = objectOffset (obj, offset),
+			      value = value})
       val transformStatement =
 	 Trace.trace ("transformStatement",
 		      Statement.layout,

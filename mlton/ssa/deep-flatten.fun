@@ -13,6 +13,7 @@ open S
 type int = Int.t
 
 datatype z = datatype Exp.t
+datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
 structure Set = DisjointSet
@@ -122,7 +123,7 @@ structure VarTree =
 				    val var = Var.newNoname ()
 				 in
 				    (T (NotFlat {ty = ty, var = SOME var}, ts),
-				     Statement.T
+				     Bind
 				     {exp = Select {object = object,
 						    offset = offset},
 				      ty = ty,
@@ -175,10 +176,10 @@ fun flatten {from: VarTree.t,
 			   val result = Var.newNoname ()
 			in
 			   (result,
-			    [Statement.T {exp = Select {object = object,
-							offset = offset},
-					  ty = ty,
-					  var = SOME result}])
+			    [Bind {exp = Select {object = object,
+						 offset = offset},
+				   ty = ty,
+				   var = SOME result}])
 			end
 		   | SOME var => (var, [])
 	       val (r, ss) =
@@ -810,7 +811,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		   | SOME y => y
 	 end
       fun replaceVars xs = Vector.map (xs, replaceVar)
-      fun transformStatement (Statement.T {exp, ty, var}): Statement.t list =
+      fun transformBind {exp, ty, var}: Statement.t list =
 	 let
 	    fun simpleTree () = Option.app (var, simpleVarTree)
 	    fun doit (e: Exp.t) =
@@ -820,7 +821,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			NONE => ty
 		      | SOME var => valueType (varValue var)
 	       in
-		  [Statement.T {exp = e, ty = ty, var = var}]
+		  [Bind {exp = e, ty = ty, var = var}]
 	       end
 	    fun simple () =
 	       (simpleTree ()
@@ -876,7 +877,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 						   fn ({elt = vt, ...}, ac) =>
 						   VarTree.rootsOnto (vt, ac)))
 					      val obj =
-						 Statement.T
+						 Bind
 						 {exp = Object {args = args,
 								con = con},
 						  ty = ty,
@@ -951,50 +952,6 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			 in
 			    ss
 			 end)
-	     | Update {object, offset, value} =>
-		  let
-		     val objectValue = varValue object
-		     val object = replaceVar object
-		     val child =
-			Value.finalTree
-			(Value.select {object = objectValue,
-				       offset = offset})
-		     val offset = Value.finalOffset (objectValue, offset)
-		  in
-		     if not (TypeTree.isFlat child)
-			then
-			   [Statement.T
-			    {exp = Update {object = object,
-					   offset = offset,
-					   value = replaceVar value},
-			     ty = Type.unit,
-			     var = NONE}]
-		     else
-			let
-			   val (vt, ss) =
-			      coerceTree {from = varTree value,
-					  to = child}
-			   val r = ref offset
-			   val ss' = ref []
-			   val () =
-			      VarTree.foreachRoot
-			      (vt, fn var =>
-			       let
-				  val offset = !r
-				  val () = r := 1 + !r
-			       in
-				  List.push (ss',
-					     Statement.T
-					     {exp = Update {object = object,
-							    offset = offset,
-							    value = var},
-					      ty = Type.unit,
-					      var = NONE})
-			       end)
-			in
-			   ss @ (!ss')
-			end
-		  end
 	     | Var x =>
 		  (Option.app (var, fn y => setVarTree (y, varTree x))
 		   ; none ())
@@ -1009,6 +966,45 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		   *)
 		  simple ()
 	 end
+      fun transformStatement (s: Statement.t): Statement.t list =
+	 case s of
+	    Bind b => transformBind b
+	  | Update {object, offset, value} =>
+	       let
+		  val objectValue = varValue object
+		  val object = replaceVar object
+		  val child =
+		     Value.finalTree
+		     (Value.select {object = objectValue,
+				    offset = offset})
+		  val offset = Value.finalOffset (objectValue, offset)
+	       in
+		  if not (TypeTree.isFlat child)
+		     then [Update {object = object,
+				   offset = offset,
+				   value = replaceVar value}]
+		  else
+		     let
+			val (vt, ss) =
+			   coerceTree {from = varTree value,
+				       to = child}
+			val r = ref offset
+			val ss' = ref []
+			val () =
+			   VarTree.foreachRoot
+			   (vt, fn var =>
+			    let
+			       val offset = !r
+			       val () = r := 1 + !r
+			    in
+			       List.push (ss', Update {object = object,
+						       offset = offset,
+						       value = var})
+			    end)
+		     in
+			ss @ (!ss')
+		     end
+	       end
       val transformStatement =
 	 Trace.trace ("DeepFlatten.transformStatement",
 		      Statement.layout,

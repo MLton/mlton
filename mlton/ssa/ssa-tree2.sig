@@ -90,9 +90,6 @@ signature SSA_TREE2 =
 	     | Profile of ProfileExp.t
 	     | Select of {object: Var.t,
 			  offset: int}
-	     | Update of {object: Var.t,
-			  offset: int,
-			  value: Var.t}
 	     | Var of Var.t
 	     | VectorSub of {index: Var.t,
 			     offset: int,
@@ -114,17 +111,22 @@ signature SSA_TREE2 =
 
       structure Statement:
 	 sig
-	    datatype t = T of {exp: Exp.t,
-			       ty: Type.t,
-			       var: Var.t option}
+	    datatype t =
+	       Bind of {exp: Exp.t,
+			ty: Type.t,
+			var: Var.t option}
+	     | Update of {object: Var.t,
+			  offset: int,
+			  value: Var.t}
 
 	    val clear: t -> unit (* clear the var *)
 	    val equals: t * t -> bool
-	    val exp: t -> Exp.t
+	    val foreachDef: t * (Var.t * Type.t -> unit) -> unit
+	    val foreachUse: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
 	    val prettifyGlobals: t vector -> (Var.t -> string option)
 	    val profile: ProfileExp.t -> t
-	    val var: t -> Var.t option
+	    val replaceUses: t * (Var.t -> Var.t) -> t
 	 end
       
       structure Cases:

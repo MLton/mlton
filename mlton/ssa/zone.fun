@@ -28,6 +28,7 @@ fun zoneFunction f =
    let
       val {args, mayInline, name, raises, returns, start, ...} = Function.dest f
       datatype z = datatype Exp.t
+      datatype z = datatype Statement.t
       val {get = labelInfo: Label.t -> {isInLoop: bool ref,
 					isCut: bool ref}, ...} =
 	 Property.get (Label.plist,
@@ -158,9 +159,9 @@ fun zoneFunction f =
 			      List.push
 			      (blockSelects,
 			       {blockCache = blockCache,
-				statement = Statement.T {exp = exp,
-							 ty = ty,
-							 var = SOME y}})
+				statement = Bind {exp = exp,
+						  ty = ty,
+						  var = SOME y}})
 			in
 			   y
 			end
@@ -177,12 +178,13 @@ fun zoneFunction f =
 	    val () = Vector.foreach (args, define)
 	    val statements =
 	       Vector.map
-	       (statements, fn Statement.T {exp, ty, var} =>
+	       (statements, fn s =>
 		let
-		   val exp = Exp.replaceVar (exp, fn x => replaceVar (x, info'))
-		   val () = Option.app (var, fn x => define (x, ty))
+		   val s = Statement.replaceUses (s, fn x =>
+						  replaceVar (x, info'))
+		   val () = Statement.foreachDef (s, define)
 		in
-		   Statement.T {exp = exp, ty = ty, var = var}
+		   s
 		end)
 	    val transfer =
 		Transfer.replaceVar (transfer, fn x => replaceVar (x, info'))
@@ -213,7 +215,7 @@ fun zoneFunction f =
 			      Vector.map (components, fn x =>
 					  replaceVar (x, info))
 			   val s =
-			      Statement.T
+			      Bind
 			      {exp = Object {args = components, con = NONE},
 			       ty = Type.tuple (Prod.make componentTys),
 			       var = SOME tuple}

@@ -11,6 +11,7 @@ struct
 
 open S
 datatype z = datatype Exp.t
+datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
    
 fun 'a analyze
@@ -200,79 +201,81 @@ fun 'a analyze
 	  Option.layout (Vector.layout layout),
 	  Layout.ignore)
 	 loopTransfer
-      fun loopStatement (s as Statement.T {exp, ty, var}): unit =
-	 let
-	    val v =
-	       case exp of
-		  Const c => const c
-		| Inject {sum, variant} =>
-		     inject {sum = sum,
-			     variant = value variant}
-		| Object {args, con} =>
-		     let
-			val args =
-			   case Type.dest ty of
-			      Type.Object {args = ts, ...} =>
-				 Prod.make
-				 (Vector.map2
-				  (args, Prod.dest ts,
-				   fn (x, {isMutable, ...}) =>
-				   {elt = value x,
-				    isMutable = isMutable}))
-			    | _ => Error.bug "analyze saw strange object"
-		     in
-			object {args = args,
-				con = con,
-				resultType = ty}
-		     end
-		| PrimApp {prim, targs, args, ...} =>
-		     primApp {prim = prim,
-			      targs = targs,
-			      args = values args,
-			      resultType = ty,
-			      resultVar = var}
-		| Profile _ => unit
-		| Select {object, offset} =>
-		     select {object = value object,
-			     offset = offset,
-			     resultType = ty}
-		| Update {object, offset, value = v} =>
-		     (update {object = value object,
-			      offset = offset,
-			      value = value v}
-		      ; unit)
-		| Var x => value x
-		| VectorSub {index, offset, vector} =>
-		     vectorSub {index = value index,
-				offset = offset,
-				vector = value vector}
-		| VectorUpdates (vector, us) =>
-		     (Vector.foreach (us, fn {index, offset, value = v} =>
-				      vectorUpdate {index = value index,
-						    offset = offset,
-						    value = value v,
-						    vector = value vector})
-		      ; unit)
-	 in
-	    Option.app
-	    (var, fn var =>
-	     if useFromTypeOnBinds
-		then let
-			val v' = fromType ty
-			val _ = coerce {from = v, to = v'}
-			val _ = setValue (var, v')
-		     in
-			()
-		     end
-	     else setValue (var, v))
-	 end
-         handle exn =>
-	    Error.bug (concat ["loopStatement: ",
-			       Layout.toString (Statement.layout s),
-			       ": ",
-			       (case exn of 
-				   Fail msg => msg
-				 | _ => "")])
+      fun loopBind {exp, ty, var}: 'a =
+	 case exp of
+	    Const c => const c
+	  | Inject {sum, variant} =>
+	       inject {sum = sum,
+		       variant = value variant}
+	  | Object {args, con} =>
+	       let
+		  val args =
+		     case Type.dest ty of
+			Type.Object {args = ts, ...} =>
+			   Prod.make
+			   (Vector.map2
+			    (args, Prod.dest ts,
+			     fn (x, {isMutable, ...}) =>
+			     {elt = value x,
+			      isMutable = isMutable}))
+		      | _ => Error.bug "analyze saw strange object"
+	       in
+		  object {args = args,
+			  con = con,
+			  resultType = ty}
+	       end
+	  | PrimApp {prim, targs, args, ...} =>
+	       primApp {prim = prim,
+			targs = targs,
+			args = values args,
+			resultType = ty,
+			resultVar = var}
+	  | Profile _ => unit
+	  | Select {object, offset} =>
+	       select {object = value object,
+		       offset = offset,
+		       resultType = ty}
+	  | Var x => value x
+	  | VectorSub {index, offset, vector} =>
+	       vectorSub {index = value index,
+			  offset = offset,
+			  vector = value vector}
+	  | VectorUpdates (vector, us) =>
+	       (Vector.foreach (us, fn {index, offset, value = v} =>
+				vectorUpdate {index = value index,
+					      offset = offset,
+					      value = value v,
+					      vector = value vector})
+		; unit)
+      fun loopStatement (s: Statement.t): unit =
+	 (case s of
+	     Bind (b as {ty, var, ...}) =>
+		let
+		   val v = loopBind b
+		in
+		   Option.app
+		   (var, fn var =>
+		    if useFromTypeOnBinds
+		       then let
+			       val v' = fromType ty
+			       val _ = coerce {from = v, to = v'}
+			       val _ = setValue (var, v')
+			    in
+			       ()
+			    end
+		    else setValue (var, v))
+		end
+	   | Update {object, offset, value = v} =>
+		update {object = value object,
+			offset = offset,
+			value = value v})
+	     handle exn =>
+		Error.bug (concat ["loopStatement: ",
+				   Layout.toString (Statement.layout s),
+				   ": ",
+				   (case exn of 
+				       Fail msg => msg
+				     | _ => "")])
       val loopStatement =
 	 Trace.trace ("Analyze.loopStatement",
 		      Statement.layout,

@@ -618,11 +618,36 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 		  then (Vector.fromList ss, t)
 	       else
 		  let
-		     val statement as S.Statement.T {exp, ty, var} =
-			Vector.sub (statements, i)
 		     fun none () = loop (i - 1, ss, t)
 		     fun add s = loop (i - 1, s :: ss, t)
 		     fun adds ss' = loop (i - 1, ss' @ ss, t)
+		     val s = Vector.sub (statements, i)
+		  in
+		     case s of
+			S.Statement.Update {object, offset, value} =>
+			   (case toRtype (varType value) of
+			       NONE => none ()
+			     | SOME _ => 
+				  let
+				     val objectTy = varType object
+				     val object = varOp object
+				     val value = varOp value
+				     val ss =
+					update {object = object,
+						objectTy = objectTy,
+						offset = offset,
+						value = value}
+				     val ss =
+					if !Control.markCards
+					   andalso
+					   Type.isPointer (Operand.ty value)
+					   then updateCard object @ ss
+					else ss
+				  in
+				     adds ss
+				  end)
+		       | S.Statement.Bind {exp, ty, var} =>
+	          let
 		     fun split (args, kind,
 				ss: Statement.t list,
 				make: Label.t -> Statement.t list * Transfer.t) =
@@ -1049,28 +1074,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 						       object = varOp object,
 						       objectTy = varType object,
 						       offset = offset})))
-		      | S.Exp.Update {object, offset, value} =>
-			   (case toRtype (varType value) of
-			       NONE => none ()
-			     | SOME _ => 
-				  let
-				     val objectTy = varType object
-				     val object = varOp object
-				     val value = varOp value
-				     val ss =
-					update {object = object,
-						objectTy = objectTy,
-						offset = offset,
-						value = value}
-				     val ss =
-					if !Control.markCards
-					   andalso
-					   Type.isPointer (Operand.ty value)
-					   then updateCard object @ ss
-					else ss
-				  in
-				     adds ss
-				  end)
 		      | S.Exp.Var y =>
 			   (case toRtype ty of
 			       NONE => none ()
@@ -1116,6 +1119,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 			   in
 			      adds ss
 			   end
+		  end
 		  end
 	 in
 	    loop (Vector.length statements - 1, ss, transfer)

@@ -78,7 +78,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 	 let
 	    val ty = convertType ty
 	    fun simple (exp: S2.Exp.t): S2.Statement.t vector =
-	       Vector.new1 (S2.Statement.T {exp = exp, ty = ty, var = var})
+	       Vector.new1 (S2.Statement.Bind {exp = exp, ty = ty, var = var})
 	 in
 	    case exp of
 	       S.Exp.ConApp {args, con} =>
@@ -90,32 +90,33 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 		     val variant = Var.newNoname ()
 		  in
 		     Vector.new2
-		     (S2.Statement.T {exp = S2.Exp.Object {args = args,
-							   con = SOME con},
-				      ty = conType con,
-				      var = SOME variant},
-		      S2.Statement.T {exp = S2.Exp.Inject {variant = variant,
-							   sum = sum},
-				      ty = ty,
-				      var = var})
+		     (S2.Statement.Bind {exp = S2.Exp.Object {args = args,
+							      con = SOME con},
+					 ty = conType con,
+					 var = SOME variant},
+		      S2.Statement.Bind {exp = S2.Exp.Inject {variant = variant,
+							      sum = sum},
+					 ty = ty,
+					 var = var})
 		  end
 	     | S.Exp.Const c => simple (S2.Exp.Const c)
 	     | S.Exp.PrimApp {args, prim, targs} =>
-		  simple
-		  (let
-		      fun arg i = Vector.sub (args, i)
-		      fun targ i = convertType (Vector.sub (targs, i))
-		      fun sub () =
-			 S2.Exp.VectorSub {index = arg 1,
+		  let
+		     fun arg i = Vector.sub (args, i)
+		     fun targ i = convertType (Vector.sub (targs, i))
+		     fun sub () =
+			simple
+			(S2.Exp.VectorSub {index = arg 1,
 					   offset = 0,
-					   vector = arg 0}
-		      fun doit targs =
-			 S2.Exp.PrimApp {args = args,
+					   vector = arg 0})
+		     fun doit targs =
+			simple
+			(S2.Exp.PrimApp {args = args,
 					 prim = convertPrim prim,
-					 targs = targs}
-		      fun doArray () =
-			 doit (Vector.new1 (S2.Type.array (targ 0)))
-		      datatype z = datatype Prim.Name.t
+					 targs = targs})
+		     fun doArray () =
+			doit (Vector.new1 (S2.Type.array (targ 0)))
+		     datatype z = datatype Prim.Name.t
 		   in
 		      case Prim.name prim of
 			 Array_array => doArray ()
@@ -129,28 +130,30 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 						  S2.Type.vector1 t))
 			    end
 		       | Array_update =>
-			    S2.Exp.VectorUpdates
-			    (arg 0, Vector.new1 {index = arg 1,
-						 offset = 0,
-						 value = arg 2})
+			    simple
+			    (S2.Exp.VectorUpdates
+			     (arg 0, Vector.new1 {index = arg 1,
+						  offset = 0,
+						  value = arg 2}))
 		       | Ref_assign =>
-			    S2.Exp.Update {object = arg 0,
-					   offset = 0,
-					   value = arg 1}
+			    Vector.new1 (S2.Statement.Update {object = arg 0,
+							      offset = 0,
+							      value = arg 1})
 		       | Ref_deref =>
-			    S2.Exp.Select {object = arg 0,
-					   offset = 0}
+			    simple (S2.Exp.Select {object = arg 0,
+						   offset = 0})
 		       | Ref_ref =>
-			    S2.Exp.Object {args = Vector.new1 (arg 0),
-					   con = NONE}
+			    simple (S2.Exp.Object {args = Vector.new1 (arg 0),
+						   con = NONE})
 		       | Vector_length =>
-			    S2.Exp.PrimApp
-			    {args = args,
-			     prim = Prim.arrayLength,
-			     targs = Vector.new1 (S2.Type.vector1 (targ 0))}
+			    simple (S2.Exp.PrimApp
+				    {args = args,
+				     prim = Prim.arrayLength,
+				     targs = (Vector.new1
+					      (S2.Type.vector1 (targ 0)))})
 		       | Vector_sub => sub ()
 		       | _ => doit (convertTypes targs)
-		   end)
+		   end
 	     | S.Exp.Profile e => simple (S2.Exp.Profile e)
 	     | S.Exp.Select {offset, tuple} =>
 		  simple (S2.Exp.Select {object = tuple, offset = offset})
@@ -203,9 +206,9 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 							  offset = i}
 				     in
 					(x,
-					 S2.Statement.T {exp = exp,
-							 ty = ty,
-							 var = SOME x})
+					 S2.Statement.Bind {exp = exp,
+							    ty = ty,
+							    var = SOME x})
 				     end))
 				val transfer =
 				   S2.Transfer.Goto {args = xs, dst = l}

@@ -15,6 +15,7 @@ type int = Int.t
 type word = Word.t
    
 datatype z = datatype Exp.t
+datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
 fun checkScopes (program as
@@ -54,14 +55,14 @@ fun checkScopes (program as
       fun getVars xs = Vector.foreach (xs, getVar)
       val (bindFunc, getFunc, _) = make (Func.layout, Func.plist)
       val (bindLabel, getLabel, unbindLabel) = make (Label.layout, Label.plist)
-      fun loopStatement (Statement.T {var, ty, exp, ...}) =
+      fun loopStatement (s: Statement.t): unit =
 	 let
-	    val () = Exp.foreachVar (exp, getVar)
+	    val () = Statement.foreachUse (s, getVar)
+	    val () = Statement.foreachDef (s, bindVar)
 	    val () =
-	       case exp of
-		  Object {con, ...} => Option.app (con, getCon)
+	       case s of
+		  Bind {exp = Object {con, ...}, ...} => Option.app (con, getCon)
 		| _ => ()
-	    val () = Option.app (var, fn x => bindVar (x, ty))
 	 in
 	    ()
 	 end
@@ -147,7 +148,7 @@ fun checkScopes (program as
 		  val _ = Vector.foreach (children, loop)
 		  val _ =
 		     Vector.foreach (statements, fn s =>
-				     Option.app (Statement.var s, unbindVar))
+				     Statement.foreachDef (s, unbindVar o #1))
 		  val _ = Vector.foreach (args, unbindVar o #1)
 	       in
 		  ()
@@ -245,10 +246,9 @@ structure Function =
 			   datatype z = datatype ProfileExp.t
 			   val sources =
 			      Vector.fold
-			      (statements, sources,
-			       fn (Statement.T {exp, ...}, sources) =>
-			       case exp of
-				  Profile pe =>
+			      (statements, sources, fn (s, sources) =>
+			       case s of
+				  Bind {exp = Profile pe, ...} =>
 				     (case pe of
 					 Enter s => s :: sources
 				       | Leave s =>
