@@ -53,7 +53,7 @@ for f in `ls *.sml`;
 do
 	f=`basename $f .sml`
 	case "$f" in
-	cobol|serialize|testdyn2)
+	cobol|serialize)
 		echo "skipping $f"
 	;;
 	*)

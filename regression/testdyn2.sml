@@ -9,7 +9,7 @@ open SML90
    
 val _ =
 let 
-  fun digit n = chr(ord #"0" + n)
+  fun digit n = chr(ord "0" + n)
   fun digits(n,acc) =
     if n >=0 andalso n<=9 then digit n:: acc
     else digits (n div 10, digit(n mod 10) :: acc)
@@ -87,21 +87,22 @@ let
 	     | _ => print "Error - open_in (2) raised some unknown exception!!\n")
     end
 
-  val _ =
-    let
-      val _ = print "Testing [std_in, input] (interactively)\n"
-      val _ = print "\nWrite the word 'Potato' (and return)\n\n"
-      val s = ((input(std_in, 7))
-	       handle Io s => fail ("Error - input (3) raised Io \"" ^ s ^ "\".\n")
-		    | _ => fail "Error - input (3) raised some unknown exception!!\n")
-      val _ = print "\nNow, write the word 'hello' (and return)\n\n"
-      val s2 = ((input(std_in, 6))
-		handle Io s => fail ("Error - input (3) raised Io \"" ^ s ^ "\".\n")
-		     | _ => fail "Error - input (3) raised some unknown exception!!\n")
-    in
-      error (s = "Potato\n") "std_in, input (Potato)";
-      error (s2 = "hello\n") "std_in, input (hello)"
-    end
+(*   val _ =
+ *     let
+ *       val _ = print "Testing [std_in, input] (interactively)\n"
+ *       val _ = print "\nWrite the word 'Potato' (and return)\n\n"
+ *       val s = ((input(std_in, 7))
+ * 	       handle Io s => fail ("Error - input (3) raised Io \"" ^ s ^ "\".\n")
+ * 		    | _ => fail "Error - input (3) raised some unknown exception!!\n")
+ *       val _ = print "\nNow, write the word 'hello' (and return)\n\n"
+ *       val s2 = ((input(std_in, 6))
+ * 		handle Io s => fail ("Error - input (3) raised Io \"" ^ s ^ "\".\n")
+ * 		     | _ => fail "Error - input (3) raised some unknown exception!!\n")
+ *     in
+ *       error (s = "Potato\n") "std_in, input (Potato)";
+ *       error (s2 = "hello\n") "std_in, input (hello)"
+ *     end
+ *)
 
 in
   print "End of test.\n"

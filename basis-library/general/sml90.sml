@@ -51,16 +51,19 @@ structure SML90:> SML90 =
 	    NONE => ""
 	  | SOME c => str c
 	       
-      local open TextIO
-      in
-	 val std_in = stdIn
-	 val open_in = openIn
-	 val input = inputN
-	 val close_in = closeIn
-	 val end_of_stream = endOfStream
-	 val std_out = stdOut
-	 val open_out = openOut
-	 val output = output
-	 val close_out = closeOut
-      end
+      val std_in = TextIO.stdIn
+      fun open_in f =
+	 TextIO.openIn f handle IO.Io _ => raise Io (concat ["Cannot open ", f])
+      fun input ins =
+	 TextIO.inputN ins handle IO.Io _ => raise Io "Input stream is closed"
+      val close_in = TextIO.closeIn
+      fun end_of_stream ins = TextIO.endOfStream ins handle _ => true
+      val std_out = TextIO.stdOut
+      fun open_out f =
+	 TextIO.openOut f
+	 handle IO.Io _ => raise Io (concat ["Cannot open ", f]) 
+      fun output (out, s) =
+	 TextIO.output (out, s)
+	 handle IO.Io _ => raise Io "Output stream is closed"
+      val close_out = TextIO.closeOut
    end
