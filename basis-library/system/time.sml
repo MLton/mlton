@@ -10,9 +10,9 @@ struct
 
 structure Prim = Primitive.Time
 
-(* A time is represented as a number of microseconds. *)
-val precision: int = 6
-val ticksPerSec: LargeInt.int = 1000000
+(* A time is represented as a number of nanoseconds. *)
+val precision: int = 9
+val ticksPerSec: LargeInt.int = 1000000000
    
 datatype time = T of LargeInt.int 
 
@@ -38,6 +38,7 @@ in
    val (fromSeconds, toSeconds) = make 1
    val (fromMilliseconds, toMilliseconds) = make 1000
    val (fromMicroseconds, toMicroseconds) = make 1000000
+   val (fromNanoseconds, toNanoseconds) = make 1000000000
 end
 
 local
@@ -87,7 +88,7 @@ fun scan getc src =
       fun mkTime sign intv fracv decs =
 	 let
 	    val sec = intv
-	    val usec = (pow10 (7-decs) * fracv + 5) div 10
+	    val usec = (pow10 (10-decs) * fracv + 5) div 10
 	    val t =
 	       LargeInt.+ (LargeInt.* (Int.toLarge intv, ticksPerSec),
 			   Int.toLarge usec)
