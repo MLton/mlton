@@ -21,7 +21,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       structure Prim = PosixPrimitive.FileSys
       open Prim
       structure Stat = Prim.Stat
-      structure Flags = BitFlags(val all = 0w255: SysWord.word)
+      structure Flags = BitFlags
 
       val checkResult = Error.checkResult
 
@@ -157,8 +157,8 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	 let
 	    val fd =
 	       Prim.openn (String.nullTerm pathname,
-			  Flags.flags [openModeToWord openMode, flags, O.creat],
-			  mode)
+			   Flags.flags [openModeToWord openMode, flags, O.creat],
+			   mode)
 	 in if fd = ~1
 	       then error ()
 	    else FD fd
@@ -166,8 +166,8 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       fun openf (pathname, openMode, flags) =
 	 let val fd = Prim.openn (String.nullTerm pathname,
-				 Flags.flags [openModeToWord openMode, flags],
-				 Flags.empty)
+				  Flags.flags [openModeToWord openMode, flags],
+				  Flags.empty)
 	 in if fd = ~1
 	       then error ()
 	    else FD fd

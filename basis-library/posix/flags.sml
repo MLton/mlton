@@ -26,3 +26,4 @@ functor BitFlags(val all: SysWord.word): BIT_FLAGS_EXTRA =
       fun anySet(f, f') = SysWord.andb(f, f') <> 0w0
 
    end
+structure BitFlags = BitFlags(val all = 0wxFFFF: SysWord.word)

@@ -21,6 +21,8 @@ structure OS_Process: OS_PROCESS_EXTRA =
       val success: status = 0
       val failure: status = 1
 
+      fun isSuccess st = st = success
+
       fun wait pid =
 	 case #2 (waitpid (W_CHILD pid, [])) of
 	    W_EXITED => success
@@ -47,10 +49,14 @@ structure OS_Process: OS_PROCESS_EXTRA =
 	 end
 
       fun atExit f = Cleaner.addNew (Cleaner.atExit, f)
-
-      fun terminate x = exit (Word8.fromInt x)
-
+ 
       val exit = MLton.Process.exit
 
+      fun terminate x = Posix.Process.exit (Word8.fromInt x)
+
       val getEnv = Posix.ProcEnv.getenv
+
+      fun sleep t = if Time.<=(t, Time.zeroTime)
+		       then ()
+		    else (Posix.Process.sleep t; ())
    end

@@ -29,9 +29,7 @@ structure Basis:> BASIS =
       structure ListPair = ListPair
       structure Math = Math
       structure Option = Option
-(*
       structure OS = OS
-*)
       structure Position = Position
       structure Real = Real
       structure StringCvt = StringCvt

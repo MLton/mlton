@@ -103,9 +103,7 @@ signature BASIS =
       structure ListPair : LIST_PAIR	
       structure Math : MATH	
       structure Option : OPTION	
-(*
       structure OS : OS	
-*)
       structure Position : INTEGER	
       structure Real : REAL	
       structure StringCvt : STRING_CVT	
@@ -329,12 +327,10 @@ signature BASIS =
       sharing type PackReal64Big.real = Real64.real
 *)
       sharing type PackReal64Little.real = Real64.real
-(*
       sharing type Posix.Error.syserror = OS.syserror
       sharing type Posix.Process.exit_status = Unix.exit_status
       sharing type Posix.FileSys.dirstream = OS.FileSys.dirstream
       sharing type Posix.FileSys.access_mode = OS.FileSys.access_mode
-*)
       sharing type RealArray.vector = RealVector.vector
       sharing type RealArray.elem = real
       sharing type RealArray2.vector = RealVector.vector

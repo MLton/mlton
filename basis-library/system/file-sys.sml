@@ -137,8 +137,7 @@ structure OS_FileSys: OS_FILE_SYS =
 				}
 			 end
 
-      fun hash (FID{dev, ino}) = sysWordToWord(
-					       SysWord.+(SysWord.<<(dev, 0w16), ino))
+      fun hash (FID{dev, ino}) = sysWordToWord(SysWord.+(SysWord.<<(dev, 0w16), ino))
 
       fun compare (FID{dev=d1, ino=i1}, FID{dev=d2, ino=i2}) =
 	 if (SysWord.<(d1, d2))

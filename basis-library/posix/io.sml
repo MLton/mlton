@@ -62,9 +62,7 @@ structure PosixIO: POSIX_IO =
 		      
       structure FD =
 	 struct
-	    open FD 
-	    structure Flags = BitFlags(val all = 0wx255: SysWord.word)
-	    open Flags
+	    open FD BitFlags
 	 end
 
       structure O = PosixFileSys.O

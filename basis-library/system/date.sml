@@ -35,7 +35,7 @@ structure Date :> DATE =
 	yday   : int,		        (* 0-365 *)
 	isDst  : bool option,		(* daylight savings time in force *)
 	offset : int option		(* signed seconds East of UTC:
-				           this zone = UTC+t; ~43200 < t <= 43200 *)
+				           this zone = UTC+t; ~82800 < t <= 82800 *)
       }
 
     exception Date
@@ -462,7 +462,7 @@ structure Date :> DATE =
 		  | SOME time => 
 			let val secs      = Time.toSeconds time
 			    val secoffset = 
-				if secs <= 43200 then ~secs else 86400 - secs
+				if secs <= 82800 then ~secs else 86400 - secs
 			in (Int.quot (secs, 86400), SOME secoffset) end
 		val day' = day + dayoffset
 	    in

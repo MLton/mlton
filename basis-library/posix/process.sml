@@ -113,9 +113,7 @@ structure PosixProcess: POSIX_PROCESS =
 
       structure W =
 	 struct
-	    open W 
-	    structure Flags = BitFlags(val all = 0w255: SysWord.word)
-	    open Flags
+	    open W BitFlags
 	 end
 
       local

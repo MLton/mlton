@@ -287,7 +287,6 @@ structure PosixPrimitive =
 	    val ttyname = _ffi "Posix_ProcEnv_ttyname" : fd -> cstring;
 	 end 
       
-
       structure FileSys =
 	 struct
 	    datatype file_desc = datatype file_desc

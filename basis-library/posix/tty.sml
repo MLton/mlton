@@ -43,30 +43,22 @@ structure PosixTTY: POSIX_TTY =
       
       structure I =
 	 struct
-	    open I 
-	    structure Flags = BitFlags(val all = 0wx255: SysWord.word)
-	    open Flags
+	    open I BitFlags
 	 end
       
       structure O =
 	 struct
-	    open O 
-	    structure Flags = BitFlags(val all = 0wx255: SysWord.word)
-	    open Flags
+	    open O BitFlags
 	 end
       
       structure C =
 	 struct
-	    open C 
-	    structure Flags = BitFlags(val all = 0wx255: SysWord.word)
-	    open Flags
+	    open C BitFlags
 	 end
       
       structure L =
 	 struct
-	    open L 
-	    structure Flags = BitFlags(val all = 0wx255: SysWord.word)
-	    open Flags
+	    open L BitFlags
 	 end
 
       type speed = Prim.speed

@@ -27,12 +27,12 @@ signature MONO_ARRAY_SLICE = MONO_ARRAY_SLICE
 signature MONO_VECTOR = MONO_VECTOR 
 signature MONO_VECTOR_SLICE = MONO_VECTOR_SLICE 
 signature OPTION = OPTION 
-(*
 signature OS = OS 
 signature OS_FILE_SYS = OS_FILE_SYS 
 signature OS_IO = OS_IO 
 signature OS_PATH = OS_PATH 
 signature OS_PROCESS = OS_PROCESS 
+(*
 signature PRIM_IO = PRIM_IO 
 *)
 signature REAL = REAL 
