@@ -122,67 +122,67 @@ signature BASIS_2002 =
       structure Word : WORD	
       structure Word8 : WORD	
       structure Word8Array : MONO_ARRAY	
+      structure Word8Array2 : MONO_ARRAY2	
       structure Word8ArraySlice : MONO_ARRAY_SLICE	
       structure Word8Vector : MONO_VECTOR	
       structure Word8VectorSlice : MONO_VECTOR_SLICE	
-      structure Word8Array2 : MONO_ARRAY2	
 
       (* Optional structures *)
       structure Array2 : ARRAY2
       structure BoolArray : MONO_ARRAY
+      structure BoolArray2 : MONO_ARRAY2
       structure BoolArraySlice : MONO_ARRAY_SLICE
       structure BoolVector : MONO_VECTOR
       structure BoolVectorSlice : MONO_VECTOR_SLICE
-      structure BoolArray2 : MONO_ARRAY2
       structure CharArray2 : MONO_ARRAY2
       structure FixedInt : INTEGER
       structure GenericSock : GENERIC_SOCK
       structure INetSock : INET_SOCK
-      structure IntArray : MONO_ARRAY
-      structure IntArraySlice : MONO_ARRAY_SLICE
-      structure IntVector : MONO_VECTOR
-      structure IntVectorSlice : MONO_VECTOR_SLICE
-      structure IntArray2 : MONO_ARRAY2
-      structure Int8 : INTEGER
-      structure Int8Array : MONO_ARRAY
-      structure Int8ArraySlice : MONO_ARRAY_SLICE
-      structure Int8Vector : MONO_VECTOR
-      structure Int8VectorSlice : MONO_VECTOR_SLICE
-      structure Int8Array2 : MONO_ARRAY2
       structure Int16 : INTEGER
       structure Int16Array : MONO_ARRAY
+      structure Int16Array2 : MONO_ARRAY2
       structure Int16ArraySlice : MONO_ARRAY_SLICE
       structure Int16Vector : MONO_VECTOR
       structure Int16VectorSlice : MONO_VECTOR_SLICE
-      structure Int16Array2 : MONO_ARRAY2
       structure Int32 : INTEGER
       structure Int32Array : MONO_ARRAY
+      structure Int32Array2 : MONO_ARRAY2
       structure Int32ArraySlice : MONO_ARRAY_SLICE
       structure Int32Vector : MONO_VECTOR
       structure Int32VectorSlice : MONO_VECTOR_SLICE
-      structure Int32Array2 : MONO_ARRAY2
       structure Int64 : INTEGER
       structure Int64Array : MONO_ARRAY
+      structure Int64Array2 : MONO_ARRAY2
       structure Int64ArraySlice : MONO_ARRAY_SLICE
       structure Int64Vector : MONO_VECTOR
       structure Int64VectorSlice : MONO_VECTOR_SLICE
-      structure Int64Array2 : MONO_ARRAY2
+      structure Int8 : INTEGER
+      structure Int8Array : MONO_ARRAY
+      structure Int8Array2 : MONO_ARRAY2
+      structure Int8ArraySlice : MONO_ARRAY_SLICE
+      structure Int8Vector : MONO_VECTOR
+      structure Int8VectorSlice : MONO_VECTOR_SLICE
+      structure IntArray : MONO_ARRAY
+      structure IntArray2 : MONO_ARRAY2
+      structure IntArraySlice : MONO_ARRAY_SLICE
       structure IntInf : INT_INF
+      structure IntVector : MONO_VECTOR
+      structure IntVectorSlice : MONO_VECTOR_SLICE
       structure LargeIntArray : MONO_ARRAY
+      structure LargeIntArray2 : MONO_ARRAY2
       structure LargeIntArraySlice : MONO_ARRAY_SLICE
       structure LargeIntVector : MONO_VECTOR
       structure LargeIntVectorSlice : MONO_VECTOR_SLICE
-      structure LargeIntArray2 : MONO_ARRAY2
       structure LargeRealArray : MONO_ARRAY
+      structure LargeRealArray2 : MONO_ARRAY2
       structure LargeRealArraySlice : MONO_ARRAY_SLICE
       structure LargeRealVector : MONO_VECTOR
       structure LargeRealVectorSlice : MONO_VECTOR_SLICE
-      structure LargeRealArray2 : MONO_ARRAY2
       structure LargeWordArray : MONO_ARRAY
+      structure LargeWordArray2 : MONO_ARRAY2
       structure LargeWordArraySlice : MONO_ARRAY_SLICE
       structure LargeWordVector : MONO_VECTOR
       structure LargeWordVectorSlice : MONO_VECTOR_SLICE
-      structure LargeWordArray2 : MONO_ARRAY2
       structure NetHostDB : NET_HOST_DB
       structure NetProtDB : NET_PROT_DB
       structure NetServDB : NET_SERV_DB
@@ -195,59 +195,59 @@ signature BASIS_2002 =
       structure PackRealBig : PACK_REAL
       structure PackRealLittle : PACK_REAL
       structure Posix : POSIX
-      structure RealArray : MONO_ARRAY
-      structure RealArraySlice : MONO_ARRAY_SLICE
-      structure RealVector : MONO_VECTOR
-      structure RealVectorSlice : MONO_VECTOR_SLICE
-      structure RealArray2 : MONO_ARRAY2
       structure Real32 : REAL
       structure Real32Array : MONO_ARRAY
+      structure Real32Array2 : MONO_ARRAY2
       structure Real32ArraySlice : MONO_ARRAY_SLICE
       structure Real32Vector : MONO_VECTOR
       structure Real32VectorSlice : MONO_VECTOR_SLICE
-      structure Real32Array2 : MONO_ARRAY2
       structure Real64 : REAL
       structure Real64Array : MONO_ARRAY
+      structure Real64Array2 : MONO_ARRAY2
       structure Real64ArraySlice : MONO_ARRAY_SLICE
       structure Real64Vector : MONO_VECTOR
       structure Real64VectorSlice : MONO_VECTOR_SLICE
-      structure Real64Array2 : MONO_ARRAY2
+      structure RealArray : MONO_ARRAY
+      structure RealArray2 : MONO_ARRAY2
+      structure RealArraySlice : MONO_ARRAY_SLICE
+      structure RealVector : MONO_VECTOR
+      structure RealVectorSlice : MONO_VECTOR_SLICE
       structure Socket : SOCKET
       structure SysWord : WORD
-      structure UnixSock : UNIX_SOCK
       structure Unix : UNIX
+      structure UnixSock : UNIX_SOCK
 (*
       structure WideChar : CHAR
       structure WideCharArray : MONO_ARRAY
+      structure WideCharArray2 : MONO_ARRAY2
       structure WideCharArraySlice : MONO_ARRAY_SLICE
       structure WideCharVector : MONO_VECTOR
       structure WideCharVectorSlice : MONO_VECTOR_SLICE
-      structure WideCharArray2 : MONO_ARRAY2
       structure WideString : STRING
       structure WideSubstring : SUBSTRING
-      structure WideTextPrimIO : PRIM_IO
       structure WideText : TEXT
+      structure WideTextPrimIO : PRIM_IO
 *)
 (*
       structure Windows : WINDOWS
 *)
-      structure WordArray : MONO_ARRAY
-      structure WordArraySlice : MONO_ARRAY_SLICE
-      structure WordVector : MONO_VECTOR
-      structure WordVectorSlice : MONO_VECTOR_SLICE
-      structure WordArray2 : MONO_ARRAY2
       structure Word16 : WORD
       structure Word16Array : MONO_ARRAY
+      structure Word16Array2 : MONO_ARRAY2
       structure Word16ArraySlice : MONO_ARRAY_SLICE
       structure Word16Vector : MONO_VECTOR
       structure Word16VectorSlice : MONO_VECTOR_SLICE
-      structure Word16Array2 : MONO_ARRAY2
       structure Word32 : WORD
       structure Word32Array : MONO_ARRAY
+      structure Word32Array2 : MONO_ARRAY2
       structure Word32ArraySlice : MONO_ARRAY_SLICE
       structure Word32Vector : MONO_VECTOR
       structure Word32VectorSlice : MONO_VECTOR_SLICE
-      structure Word32Array2 : MONO_ARRAY2
+      structure WordArray : MONO_ARRAY
+      structure WordArray2 : MONO_ARRAY2
+      structure WordArraySlice : MONO_ARRAY_SLICE
+      structure WordVector : MONO_VECTOR
+      structure WordVectorSlice : MONO_VECTOR_SLICE
 
       (* ************************************************** *)
       (* ************************************************** *)
