@@ -109,26 +109,10 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 			(S2.Exp.VectorSub {index = arg 1,
 					   offset = 0,
 					   vector = arg 0})
-		     fun doit targs =
-			simple
-			(S2.Exp.PrimApp {args = args,
-					 prim = convertPrim prim,
-					 targs = targs})
-		     fun doArray () =
-			doit (Vector.new1 (S2.Type.array (targ 0)))
 		     datatype z = datatype Prim.Name.t
 		   in
 		      case Prim.name prim of
-			 Array_array => doArray ()
-		       | Array_length => doArray ()
-		       | Array_sub => sub ()
-		       | Array_toVector =>
-			    let
-			       val t = targ 0
-			    in
-			       doit (Vector.new2 (S2.Type.array t,
-						  S2.Type.vector1 t))
-			    end
+			 Array_sub => sub ()
 		       | Array_update =>
 			    Vector.new1
 			    (S2.Statement.VectorUpdates
@@ -148,13 +132,12 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 			    simple (S2.Exp.Object {args = Vector.new1 (arg 0),
 						   con = NONE})
 		       | Vector_length =>
-			    simple (S2.Exp.PrimApp
-				    {args = args,
-				     prim = Prim.arrayLength,
-				     targs = (Vector.new1
-					      (S2.Type.vector1 (targ 0)))})
+			    simple (S2.Exp.PrimApp {args = args,
+						    prim = Prim.arrayLength})
 		       | Vector_sub => sub ()
-		       | _ => doit (convertTypes targs)
+		       | _ =>
+			    simple (S2.Exp.PrimApp {args = args,
+						    prim = convertPrim prim})
 		   end
 	     | S.Exp.Profile e => Vector.new1 (S2.Statement.Profile e)
 	     | S.Exp.Select {offset, tuple} =>

@@ -64,7 +64,6 @@ fun 'a analyze
 	    Arith {prim, args, overflow, success, ty} =>
 	       (coerces ("arith", Vector.new0 (), labelValues overflow)
 		; coerce {from = primApp {prim = prim,
-					  targs = Vector.new0 (),
 					  args = values args,
 					  resultType = ty,
 					  resultVar = NONE},
@@ -179,7 +178,6 @@ fun 'a analyze
 			end
 		  val _ =
 		     primApp {prim = prim,
-			      targs = Vector.new0 (),
 			      args = values args,
 			      resultType = resultType,
 			      resultVar = resultVar}
@@ -224,9 +222,8 @@ fun 'a analyze
 			  con = con,
 			  resultType = ty}
 	       end
-	  | PrimApp {prim, targs, args, ...} =>
+	  | PrimApp {prim, args, ...} =>
 	       primApp {prim = prim,
-			targs = targs,
 			args = values args,
 			resultType = ty,
 			resultVar = var}

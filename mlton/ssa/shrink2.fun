@@ -1161,20 +1161,18 @@ fun shrinkFunction {globals: Statement.t vector} =
 							  con = con})
 			else tuple args
 		     end
-		| PrimApp {prim, targs, args} =>
+		| PrimApp {args, prim} =>
 		     let
 			val args = varInfos args
-			fun apply {prim, targs, args} =
-			   doit {makeExp = fn () => PrimApp {prim = prim,
-							     targs = targs,
-							     args = uses args},
+			fun apply {prim, args} =
+			   doit {makeExp = fn () => PrimApp {args = uses args,
+							     prim = prim},
 				 sideEffect = Prim.maySideEffect prim,
 				 value = NONE}
 			datatype z = datatype Prim.ApplyResult.t
 		     in
 			case primApp (prim, args) of
 			   Apply (p, args) => apply {prim = p,
-						     targs = Vector.new0 (),
 						     args = Vector.fromList args}
 			 | Bool b =>
 			      let
@@ -1196,9 +1194,8 @@ fun shrinkFunction {globals: Statement.t vector} =
 			 | Const c => construct (Value.Const c,
 						 fn () => Exp.Const c)
 			 | Var vi => setVar vi
-			 | _ => apply {prim = prim,
-				       targs = targs,
-				       args = args}
+			 | _ => apply {args = args, prim = prim}
+				       
 		     end
 		| Select {object, offset} =>
 		     let

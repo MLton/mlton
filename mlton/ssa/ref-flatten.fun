@@ -344,7 +344,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			   | _ => Error.bug "deWeak")
 	  | Value.Weak {arg, ...} => arg
 	  | _ => Error.bug "deWeak"
-      fun primApp {args, prim, resultVar, resultType, targs} =
+      fun primApp {args, prim, resultVar, resultType} =
 	 let
 	    fun vector1 v =
 	       case makeTypeValue resultType of
@@ -769,29 +769,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 					  make (Exp.Object
 						{args = args, con = con})]
 				      end))
-	      | PrimApp {args, prim, targs} =>
-		   let
-		      val vargs = Vector.map (args, varValue)
-		      datatype z = datatype Prim.Name.t
-		      val targs =
-			 Vector.map
-			 (Prim.extractTargs
-			  (prim,
-			   {args = vargs,
-			    deArray = fn _ => Error.bug "deArray",
-			    deArrow = fn _ => Error.bug "deArrow",
-			    deRef = fn _ => Error.bug "deRef",
-			    deVector = fn _ => Error.bug "deVector",
-			    deWeak = deWeak,
-			    result = (case var of
-					 NONE => Value.unit
-				       | SOME x => varValue x)}),
-			  valueType)
-		   in
-		      make (PrimApp {args = args,
-				     prim = prim,
-				     targs = targs})
-		   end
+	      | PrimApp {args, prim} =>
+		   make (PrimApp {args = args, prim = prim})
 	     | Select {object, offset} =>
 		  (case var of
 		      NONE => none ()

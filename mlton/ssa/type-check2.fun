@@ -417,20 +417,19 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	    ()
 	 end
       fun filterWord (from, s) = coerce {from = from, to = Type.word s}
-      fun primApp {args, prim, resultType, resultVar = _, targs} =
+      fun primApp {args, prim, resultType, resultVar = _} =
 	 let
 	    datatype z = datatype Prim.Name.t
 	    val () =
 	       if Type.checkPrimApp {args = args,
 				     prim = prim,
-				     result = resultType,
-				     targs = targs}
+				     result = resultType}
 		  then ()
 	       else error ("bad primapp",
 			   let
 			      open Layout
 			   in
-			      seq [Prim.layout prim,
+			      seq [Prim.layout prim, str " ",
 				   tuple (Vector.toListMap (args, Type.layout))]
 			   end)
 	 in

@@ -13,23 +13,6 @@ open S
 
 type word = Word.t
 
-structure Prim =
-   struct
-      open Prim
-
-      fun extractTargs (p, z as {args, result, ...}) =
-	 let
-	    fun arg i = Vector.sub (args, i)
-	    datatype z = datatype Prim.Name.t
-	 in
-	    case name p of
-	       Array_array => Vector.new1 result
-	     | Array_length => Vector.new1 (arg 0)
-	     | Array_toVector => Vector.new2 (arg 0, result)
-	     | _ => Prim.extractTargs (p, z)
-	 end
-   end
-
 structure Prod =
    struct
       datatype 'a t = T of {elt: 'a, isMutable: bool} vector
@@ -118,6 +101,16 @@ structure Type =
       val dest = tree
 
       fun equals (t, t') = PropertyList.equals (plist t, plist t')
+
+      fun isVector t =
+	 case dest t of
+	    Vector _ => true
+	  | _ => false
+
+      fun isWeak t =
+	 case dest t of
+	    Weak _ => true
+	  | _ => false
 
       local
 	 val same: tree * tree -> bool =
@@ -272,16 +265,12 @@ structure Type =
    struct
       open Type
 	 
-      fun checkPrimApp {args, prim, result, targs}: bool =
+      fun checkPrimApp {args, prim, result}: bool =
 	 let
 	    datatype z = datatype Prim.Name.t
 	    fun done (args', result') =
 	       Vector.equals (args, Vector.fromList args', equals)
 	       andalso equals (result, result')
-	    fun targ i = Vector.sub (targs, i)
-	    fun oneTarg f =
-	       1 = Vector.length targs
-	       andalso done (f (targ 0))
 	    local
 	       fun make f s = let val t = f s in done ([t], t) end
 	    in
@@ -309,27 +298,34 @@ structure Type =
 	    val word8Array = array word8
 	    val wordVector = vector1 defaultWord
 	    fun wordShift s = done ([word s, defaultWord], word s)
+	    fun arg i = Vector.sub (args, i)
+	    fun noArgs () = 0 = Vector.length args
+	    fun oneArg f = 1 = Vector.length args andalso f (arg 0)
+	    fun twoArgs f = 2 = Vector.length args andalso f (arg 0, arg 1)
+	    fun threeArgs f =
+	       3 = Vector.length args andalso f (arg 0, arg 1, arg 2)
+	    fun eq () =
+	       twoArgs (fn (x1, x2) =>
+			equals (x1, x2) andalso equals (result, bool))
 	 in
 	    case Prim.name prim of
-	       Array_array => oneTarg (fn t => ([defaultWord], t))
-	     | Array_length => oneTarg (fn t => ([t], defaultWord))
+	       Array_array =>
+		  oneArg (fn n =>
+			  equals (n, defaultWord) andalso isVector result)
+	     | Array_length =>
+		  oneArg (fn a =>
+			  isVector a andalso equals (result, defaultWord))
 	     | Array_toVector =>
-		  2 = Vector.length targs
-		  andalso
-		  let
-		     val a = targ 0
-		     val v = targ 1
-		  in
-		     case (Type.dest a, Type.dest v) of
-			(Type.Vector ap, Type.Vector vp) =>
-			   (Vector.equals (Prod.dest ap, Prod.dest vp,
-					   fn ({elt = ae, isMutable = ai},
-					       {elt = ve, isMutable = vi}) =>
-					   (not vi orelse ai)
-					   andalso Type.equals (ae, ve))
-			    andalso done ([a], v))
-		      | _ => false
-		  end
+		  oneArg
+		  (fn a =>
+		   case (dest a, dest result) of
+		      (Vector ap, Vector vp) =>
+			 Vector.equals (Prod.dest ap, Prod.dest vp,
+					fn ({elt = ae, isMutable = ai},
+					    {elt = ve, isMutable = vi}) =>
+					(not vi orelse ai)
+					andalso Type.equals (ae, ve))
+		    | _ => false)
 	     | FFI f => done (Vector.toList (CFunction.args f),
 			      CFunction.return f)
 	     | FFI_Symbol {ty, ...} => done ([], ty)
@@ -355,21 +351,22 @@ structure Type =
 	     | IntInf_toVector => done ([intInf], vector1 defaultWord)
 	     | IntInf_toWord => done ([intInf], defaultWord)
 	     | IntInf_xorb => intInfBinary ()
-	     | MLton_bogus => oneTarg (fn t => ([], t))
+	     | MLton_bogus => noArgs ()
 	     | MLton_bug => done ([string], unit)
-	     | MLton_eq => oneTarg (fn t => ([t, t], bool))
-	     | MLton_equal => oneTarg (fn t => ([t, t], bool))
+	     | MLton_eq => eq ()
+	     | MLton_equal => eq ()
 	     | MLton_halt => done ([defaultWord], unit)
 	     | MLton_handlesSignals => done ([], bool)
 	     | MLton_installSignalHandler => done ([], unit)
-	     | MLton_size => oneTarg (fn t => ([t], defaultWord))
-	     | MLton_touch => oneTarg (fn t => ([t], unit))
+	     | MLton_size => oneArg (fn x => done ([x], defaultWord))
+	     | MLton_touch => oneArg (fn x => done ([x], unit))
 	     | Pointer_getPointer =>
-		  oneTarg (fn t => ([pointer, defaultWord], t))
+		  twoArgs (fn _ => done ([pointer, defaultWord], result))
 	     | Pointer_getReal s => done ([pointer, defaultWord], real s)
 	     | Pointer_getWord s => done ([pointer, defaultWord], word s)
 	     | Pointer_setPointer =>
-		  oneTarg (fn t => ([pointer, defaultWord, t], unit))
+		  threeArgs (fn (_, _, t) =>
+			     done ([pointer, defaultWord, t], unit))
 	     | Pointer_setReal s => done ([pointer, defaultWord, real s], unit)
 	     | Pointer_setWord s => done ([pointer, defaultWord, word s], unit)
 	     | Real_Math_acos s => realUnary s
@@ -408,9 +405,10 @@ structure Type =
 	     | Thread_copyCurrent => done ([], unit)
 	     | Thread_returnToC => done ([], unit)
 	     | Thread_switchTo => done ([thread], unit)
-	     | Weak_canGet => oneTarg (fn t => ([weak t], bool))
-	     | Weak_get => oneTarg (fn t => ([weak t], t))
-	     | Weak_new => oneTarg (fn t => ([t], weak t))
+	     | Weak_canGet =>
+		  oneArg (fn w => isWeak w andalso equals (result, bool))
+	     | Weak_get => oneArg (fn w => done ([weak result], result))
+	     | Weak_new => oneArg (fn x => done ([x], weak x))
 	     | Word8Array_subWord =>
 		  done ([word8Array, defaultWord], defaultWord)
 	     | Word8Array_updateWord =>
@@ -556,7 +554,6 @@ structure Exp =
        | Object of {con: Con.t option,
 		    args: Var.t vector}
        | PrimApp of {prim: Type.t Prim.t,
-		     targs: Type.t vector,
 		     args: Var.t vector}
        | Select of {object: Var.t,
 		    offset: int}
@@ -590,8 +587,7 @@ structure Exp =
 	       Const _ => e
 	     | Inject {sum, variant} => Inject {sum = sum, variant = fx variant}
 	     | Object {con, args} => Object {con = con, args = fxs args}
-	     | PrimApp {prim, targs, args} =>
-		  PrimApp {prim = prim, targs = targs, args = fxs args}
+	     | PrimApp {prim, args} => PrimApp {args = fxs args, prim = prim}
 	     | Select {object, offset} =>
 		  Select {object = fx object, offset = offset}
 	     | Var x => Var (fx x)
@@ -614,14 +610,8 @@ structure Exp =
 			   NONE => empty
 			 | SOME c => seq [Con.layout c, str " "]),
 		       layoutTuple args]
-	     | PrimApp {prim, targs, args} =>
-		  seq [Prim.layout prim,
-		       if !Control.showTypes
-			  then if 0 = Vector.length targs
-				  then empty
-			       else Vector.layout Type.layout targs
-		       else empty,
-		       seq [str " ", layoutTuple args]]
+	     | PrimApp {args, prim} =>
+		  seq [Prim.layout prim, seq [str " ", layoutTuple args]]
 	     | Select {object, offset} =>
 		  seq [str "#", Int.layout offset, str " ",
 		       layoutVar object]

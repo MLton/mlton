@@ -685,10 +685,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 			in
 			   loop (i - 1, ss, t)
 			end
-		     fun move (src: Operand.t) =
-			add (Bind {dst = (valOf var, valOf (toRtype ty)),
-				   isMutable = false,
-				   src = src})				   
+		     fun maybeMove (f: Type.t -> Operand.t) =
+			case toRtype ty of
+			   NONE => none ()
+			 | SOME ty =>
+			      add (Bind {dst = (valOf var, ty),
+					 isMutable = false,
+					 src = f ty})
+		     fun move (src: Operand.t) = maybeMove (fn _ => src)
 		  in
 		     case exp of
 			S.Exp.Const c => move (Const (convertConst c))
@@ -705,20 +709,23 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 						dst = (valOf var, dstTy),
 						objectTy = ty,
 						oper = varOp}))
-		      | S.Exp.PrimApp {prim, targs, args, ...} =>
+		      | S.Exp.PrimApp {args, prim} =>
 			   let
 			      val prim = translatePrim prim
-			      fun a i = varOp (Vector.sub (args, i))
+			      fun arg i = Vector.sub (args, i)
+			      fun a i = varOp (arg i)
 			      fun cast () =
 				 move (Operand.cast (a 0, valOf (toRtype ty)))
-			      fun targ () = toRtype (Vector.sub (targs, 0))
-			      fun ifTargIsPointer (yes, no) =
-				 case targ () of
-				    NONE => no ()
-				  | SOME t =>
-				       if Type.isPointer t
-					  then yes t
-				       else no ()
+			      fun ifIsWeakPointer (ty: S.Type.t, yes, no) =
+				 case S.Type.dest ty of
+				    S.Type.Weak ty =>
+				       (case toRtype ty of
+					   NONE => no ()
+					 | SOME t =>
+					      if Type.isPointer t
+						 then yes t
+					      else no ())
+				  | _ => Error.bug "ifIsWeakPointer"
 			      fun arrayOrVectorLength () =
 				 move (Offset
 				       {base = a 0,
@@ -796,17 +803,22 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				 in
 				    ccall {args = args, func = func}
 				 end
-		     fun pointerGet ty =
-			move (ArrayOffset {base = a 0,
-					   index = a 1,
-					   offset = Bytes.zero,
-					   ty = ty})
-		     fun pointerSet ty =
-			add (Move {dst = ArrayOffset {base = a 0,
-						      index = a 1,
-						      offset = Bytes.zero,
-						      ty = ty},
-				   src = a 2})
+		     fun pointerGet () =
+			maybeMove (fn ty =>
+				   ArrayOffset {base = a 0,
+						index = a 1,
+						offset = Bytes.zero,
+						ty = ty})
+		     fun pointerSet () =
+			let
+			   val src = a 2
+			in
+			   add (Move {dst = ArrayOffset {base = a 0,
+							 index = a 1,
+							 offset = Bytes.zero,
+							 ty = Operand.ty src},
+				      src = a 2})
+			end
 		     fun codegenOrC (p: Prim.t) =
 			let
 			   val n = Prim.name p
@@ -871,7 +883,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 					NONE => none ()
 				      | SOME t => move (bogus t))
 			       | MLton_eq =>
-				    (case targ () of
+				    (case toRtype (varType (arg 0)) of
 					NONE => move (Operand.bool true)
 				      | SOME t =>
 					   codegenOrC
@@ -882,18 +894,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				    simpleCCall
 				    (CFunction.size (Operand.ty (a 0)))
 			       | MLton_touch => none ()
-			       | Pointer_getPointer =>
-				    (case targ () of
-					NONE => Error.bug "getPointer"
-				      | SOME t => pointerGet t)
-			       | Pointer_getReal s => pointerGet (Type.real s)
-			       | Pointer_getWord s => pointerGet (word s)
-			       | Pointer_setPointer =>
-				    (case targ () of
-					NONE => Error.bug "setPointer"
-				      | SOME t => pointerSet t)
-			       | Pointer_setReal s => pointerSet (Type.real s)
-			       | Pointer_setWord s => pointerSet (word s)
+			       | Pointer_getPointer => pointerGet ()
+			       | Pointer_getReal s => pointerGet ()
+			       | Pointer_getWord s => pointerGet ()
+			       | Pointer_setPointer => pointerSet ()
+			       | Pointer_setReal s => pointerSet ()
+			       | Pointer_setWord s => pointerSet ()
 			       | Thread_atomicBegin =>
 				    (* gcState.canHandle++;
 				     * if (gcState.signalIsPending)
@@ -1015,20 +1021,23 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 					   func = CFunction.threadSwitchTo}
 			       | Vector_length => arrayOrVectorLength ()
 			       | Weak_canGet =>
-				    ifTargIsPointer
-				    (fn _ => simpleCCall (CFunction.weakCanGet
+				    ifIsWeakPointer
+				    (varType (arg 0),
+				     fn _ => simpleCCall (CFunction.weakCanGet
 							  (Operand.ty (a 0))),
 				     fn () => move (Operand.bool false))
 			       | Weak_get =>
-				    ifTargIsPointer
-				    (fn t => (simpleCCall
+				    ifIsWeakPointer
+				    (varType (arg 0),
+				     fn t => (simpleCCall
 					      (CFunction.weakGet
 					       {arg = Operand.ty (a 0),
 						return = t})),
 				     none)
 			       | Weak_new =>
-				    ifTargIsPointer
-				    (fn t =>
+				    ifIsWeakPointer
+				    (ty,
+				     fn t =>
 				     let
 					val result = valOf (toRtype ty)
 					val header =

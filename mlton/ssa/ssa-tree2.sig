@@ -54,8 +54,7 @@ signature SSA_TREE2 =
 	    val conApp: Con.t * t Prod.t -> t
 	    val checkPrimApp: {args: t vector,
 			       prim: t Prim.t,
-			       result: t,
-			       targs: t vector} -> bool
+			       result: t} -> bool
 	    val datatypee: Tycon.t -> t
 	    val dest: t -> dest
 	    val equals: t * t -> bool
@@ -85,8 +84,7 @@ signature SSA_TREE2 =
 	     | Object of {args: Var.t vector,
 			  con: Con.t option}
 	     | PrimApp of {args: Var.t vector,
-			   prim: Type.t Prim.t,
-			   targs: Type.t vector}
+			   prim: Type.t Prim.t}
 	     | Select of {object: Var.t,
 			  offset: int}
 	     | Var of Var.t

@@ -652,7 +652,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			 ("con", Option.layout Con.layout con)],
 	  Value.layout)
 	 object
-      fun primApp {args, prim, resultVar, resultType, targs} =
+      fun primApp {args, prim, resultVar, resultType} =
 	 let
 	    fun arg i = Vector.sub (args, i)
 	    fun result () = typeValue resultType
@@ -890,29 +890,12 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 				  end
 			  | _ => Error.bug "transformStatement Object"
 			 end)
-	     | PrimApp {args, prim, targs} =>
+	     | PrimApp {args, prim} =>
 		  let
-		     val vargs = Vector.map (args, varValue)
-		     datatype z = datatype Prim.Name.t
-		     val targs =
-			Vector.map
-			(Prim.extractTargs
-			 (prim,
-			  {args = vargs,
-			   deArray = fn _ => Error.bug "deArray",
-			   deArrow = fn _ => Error.bug "deArrow",
-			   deRef = fn _ => Error.bug "deRef",
-			   deVector = fn _ => Error.bug "deVector",
-			   deWeak = Value.deWeak,
-			   result = (case var of
-					NONE => Value.unit
-				      | SOME x => varValue x)}),
-			 valueType)
 		     val () = simpleTree ()
 		  in
 		     doit (PrimApp {args = replaceVars args,
-				    prim = prim,
-				    targs = targs})
+				    prim = prim})
 		  end
 	     | Select {object, offset} =>
 		  (case var of
