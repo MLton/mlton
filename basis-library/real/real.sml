@@ -363,53 +363,76 @@ structure Real: REAL =
 
       fun fromString s = StringCvt.scanString scan s
 
-      val fromLargeInt: IntInf.int -> real =
-	 let
-	    val m = 52 (* The number of mantissa bits in 64 bit IEEE 854. *)
-	    val half = Int.quot (m, 2)
-	    val two = IntInf.fromInt 2
-	    val twoPowHalf = IntInf.pow (two, half)
-	    fun pos (i: IntInf.int): real = 
-	       let
-		  val exp: Int.int = IntInf.log2 i
-	       in
-		  if Int.< (exp, Int.- (valOf Int.precision, 1))
-		     then fromInt (IntInf.toInt i)
-		  else if Int.>= (exp, 1024)
-		     then posInf
-		  else
-		     let
-			val shift = Int.- (exp, m)
-			val man: IntInf.int =
-			   if Int.>= (shift, 0)
-			      then IntInf.quot (i, IntInf.pow (two, shift))
-			   else IntInf.* (i, IntInf.pow (two, Int.~ shift))
-			(* 2^m <= man < 2^(m+1) *)
-			val (q, r) = IntInf.quotRem (man, twoPowHalf)
-			fun conv (man, exp) =
-			   fromManExp {man = fromInt (IntInf.toInt man),
-				       exp = exp}
-		     in
-			conv (q, Int.+ (half, shift)) + conv (r, shift)
-		     end
-	       end
-	 in
-	    fn i =>
-	    case IntInf.compare (i, IntInf.fromInt 0) of
-	       General.LESS => ~ (pos (IntInf.~ i))
-	     | General.EQUAL => 0.0
-	     | General.GREATER => pos i
-	 end
+      local
+	 fun negateMode m =
+	    case m of
+	       TO_NEAREST => TO_NEAREST
+	     | TO_NEGINF => TO_POSINF
+	     | TO_POSINF => TO_NEGINF
+	     | TO_ZERO => TO_ZERO
 
-      val toLargeInt: IEEEReal.rounding_mode -> real -> IntInf.int =
-	 let
-	    val m = 52 (* The number of mantissa bits in 64 bit IEEE 854. *)
-	    val half = Int.quot (m, 2)
-	    val two = IntInf.fromInt 2
-	    val twoPowHalf = IntInf.pow (two, half)
-	    datatype z = datatype IEEEReal.rounding_mode
-	    datatype z = datatype IEEEReal.float_class
-	 in
+	 val m: int = 52 (* The number of mantissa bits in 64 bit IEEE 854. *)
+	 val half = Int.quot (m, 2)
+	 val two = IntInf.fromInt 2
+	 val twoPowHalf = IntInf.pow (two, half)
+      in
+	 fun fromLargeInt (i: IntInf.int): real =
+	    let
+	       fun pos (i: IntInf.int, mode): real = 
+		  case SOME (IntInf.log2 i) handle Overflow => NONE of
+		     NONE => posInf
+		   | SOME exp =>
+			if Int.< (exp, Int.- (valOf Int.precision, 1))
+			   then fromInt (IntInf.toInt i)
+			else if Int.>= (exp, 1024)
+		           then posInf
+			else
+			   let
+			      val shift = Int.- (exp, m)
+			      val (man: IntInf.int, extra: IntInf.int) =
+				 if Int.>= (shift, 0)
+				    then
+				       let
+					  val (q, r) =
+					     IntInf.quotRem
+					     (i, IntInf.pow (two, shift))
+					  val extra =
+					     case mode of
+						TO_NEAREST =>
+						   if IntInf.log2 r =
+						      Int.- (shift, 1)
+						      then 1
+						   else 0
+					      | TO_NEGINF => 0
+					      | TO_POSINF =>
+						   if IntInf.>= (r, 0)
+						      then 1
+						   else 0
+					      | TO_ZERO => 0
+				       in
+					  (q, extra)
+				       end
+				 else
+				    (IntInf.* (i, IntInf.pow (two, Int.~ shift)),
+				     0)
+			      (* 2^m <= man < 2^(m+1) *)
+			      val (q, r) = IntInf.quotRem (man, twoPowHalf)
+			      fun conv (man, exp) =
+				 fromManExp {man = fromInt (IntInf.toInt man),
+					     exp = exp}
+			   in
+			      conv (q, Int.+ (half, shift))
+			      + conv (IntInf.+ (r, extra), shift)
+			   end
+	       val mode = getRoundingMode ()
+	    in
+	       case IntInf.compare (i, IntInf.fromInt 0) of
+		  General.LESS => ~ (pos (IntInf.~ i, negateMode mode))
+		| General.EQUAL => 0.0
+		| General.GREATER => pos (i, mode)
+	    end
+
+	 val toLargeInt: IEEEReal.rounding_mode -> real -> IntInf.int =
 	    fn mode => fn x =>
  	    (IntInf.fromInt (toInt mode x)
  	     handle Overflow =>
@@ -446,22 +469,17 @@ structure Real: REAL =
 			    val int =
 			       if Int.>= (shift, 0)
 				  then IntInf.* (int, IntInf.pow (2, shift))
-			       else IntInf.quot (int, IntInf.pow (2, Int.~ shift))
+			       else IntInf.quot (int,
+						 IntInf.pow (2, Int.~ shift))
 			 in
 			    IntInf.+ (int, extra)
 			 end
 		   in
 		      if x > 0.0
 			 then pos (x, mode)
-		      else IntInf.~ (pos (~ x,
-					  case mode of
-					     TO_NEAREST => TO_NEAREST
-					   | TO_NEGINF => TO_POSINF
-					   | TO_POSINF => TO_NEGINF
-					   | TO_ZERO => TO_ZERO))
+		      else IntInf.~ (pos (~ x, negateMode mode))
 		   end)
-	 end
-
+      end
    end
 
 structure RealGlobal: REAL_GLOBAL = Real
