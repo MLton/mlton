@@ -28,7 +28,6 @@ structure MLton:
    sig
       val eq: 'a * 'a -> bool
       val isMLton: bool
-      val safe: bool
       val share: 'a -> unit
       val size: 'a -> int
 
@@ -75,21 +74,6 @@ a simple pointer equality.  The semantics is a bit murky.
 \entry{isMLton}
 is always true in a {\mlton} implementation, and is always false in a
 stub implementation.
-
-\entry{safe}
-a compile time constant that reflects the value of the {\tt -safe}
-switch.  It make it easy to include assertions and checks in code that
-you would like removed when running at full speed.  {\mlton}'s
-optimizer will remove any uses of {\tt safe} at compile time.  For
-example, array subscripting might be implemented as:
-\begin{verbatim}
-fun sub (a, i) =
-   if MLton.safe andalso (i < 0 orelse i >= length a)
-      then raise Subscript
-   else unsafeSub (a, i)
-\end{verbatim}
-When compiled {\tt -safe false}, {\tt sub} will reduce to
-{\tt unsafeSub}.
 
 \entry{share x}
 maximizes sharing in the heap for the object graph reachable from {\tt
