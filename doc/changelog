@@ -1,5 +1,8 @@
 Here are the changes since version 20030716.
 
+* 2003-09-09
+  - Replaced Pack32{Big,Little} with PackWord32{Big,Little}.
+
 * 2003-09-08
   - Fixed @MLton max-heap, which was mistakenly ignored.  Cleaned up
     @MLton fixed-heap.  Both fixed-heap and max-heap can use copying
