@@ -315,6 +315,17 @@ in
       else Env.extendVar (E, x, x', s)
 end
 
+fun approximate (l: Layout.t): Layout.t =
+   let
+      val s = Layout.toString l
+      val n = String.size s
+   in
+      Layout.str
+      (if n <= 60
+	  then s
+       else concat [String.prefix (s, 35), "  ...  ", String.suffix (s, 25)])
+   end
+
 fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
    : Cpat.t * (Avar.t * Var.t * Type.t) vector =
    let
@@ -323,8 +334,22 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
       fun bindToType (x: Avar.t, t: Type.t): Var.t =
 	 let
 	    val x' = Var.fromAst x
-	    val _ = List.push (xts, (x, x', t))
-	    val _ = extendVar (E, x, x', Scheme.fromType t, region)
+	    val _ =
+	       if List.exists (!xts, fn (x', _, _) => Avar.equals (x, x'))
+		  then
+		     let
+			open Layout
+		     in
+			Control.error (region,
+				       seq [str "variable ",
+					    Avar.layout x,
+					    str " occurs more than once in pattern "],
+				       seq [str "pattern: ",
+					    approximate (Apat.layout p)])
+		     end
+	       else
+		  (List.push (xts, (x, x', t))
+		   ; extendVar (E, x, x', Scheme.fromType t, region))
 	 in
 	    x'
 	 end
@@ -804,17 +829,6 @@ structure Con =
       val fromAst = fromString o Ast.Con.toString
    end
 
-fun approximate (l: Layout.t): Layout.t =
-   let
-      val s = Layout.toString l
-      val n = String.size s
-   in
-      Layout.str
-      (if n <= 60
-	  then s
-       else concat [String.prefix (s, 35), "  ...  ", String.suffix (s, 25)])
-   end
-   
 fun elaborateDec (d, {env = E,
 		      lookupConstant: string * ConstType.t -> CoreML.Const.t,
 		      nest}) =
