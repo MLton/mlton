@@ -239,7 +239,7 @@ structure PrimExp =
 	  | (Const c, Const c') => Const.equals (c, c')
 	  | (PrimApp {prim = p, args = a, ...},
 	     PrimApp {prim = p', args = a', ...}) =>
-	       Prim.equals (p, p') andalso varsEquals (a, a')
+	    Prim.equals (p, p') andalso varsEquals (a, a')
 	  | (Select {tuple = t, offset = i}, Select {tuple = t', offset = i'}) =>
 	       Var.equals (t, t') andalso i = i'
 	  | (Tuple xs, Tuple xs') => varsEquals (xs, xs')
@@ -1206,7 +1206,6 @@ structure Function =
 	 fun controlFlowGraph (T {name, args, body, returns},
 			       jumpHandlers) =
 	    let
-    	       open Graph.LayoutDot
 	       val g = Graph.new ()
 	       fun newNode () = Graph.newNode g
 	       val {get = jumpNode} =
@@ -1262,9 +1261,9 @@ structure Function =
 
 	 fun layoutDot (T {name, args, body, returns}, jumpHandlers, global) =
 	    let
-	       open Graph.LayoutDot
+	       open Dot
 	       val graph = Graph.new ()
-	       val {get = nodeOptions, ...} =
+	       val {get = nodeOptions} =
 		  Property.get (Node.plist, Property.initFun (fn _ => ref []))
 	       fun label (n: Node.t, l): unit =
 		  List.push (nodeOptions n, NodeOption.Label l)
@@ -1395,41 +1394,40 @@ structure Function =
 	       val root = newNode ()
 	       val _ = loop (body, root, [], Func.toString name, args)
 	       val graphLayout =
-		  Graph.LayoutDot.layout
-		  {graph = graph,
-		   title = concat [Func.toString name, " control-flow graph"],
-		   options = [GraphOption.Rank (Min, [root])],
-		   edgeOptions = edgeOptions,
-		   nodeOptions =
-		   fn n => let
-			      val l = ! (nodeOptions n)
-			      open NodeOption
-			   in FontColor Black :: Shape Box :: l
-			   end}
+		  Graph.layoutDot
+		  (graph,
+		   {title = concat [Func.toString name, " control-flow graph"],
+		    options = [GraphOption.Rank (Min, [(*root*)])],
+		    edgeOptions = edgeOptions,
+		    nodeOptions =
+		    fn n => let
+			       val l = ! (nodeOptions n)
+			       open NodeOption
+			    in FontColor Black :: Shape Box :: l
+			    end})
 	       fun treeLayout () =
 		  let
-		     val {tree, graphToTree} =
-			Graph.dominatorTree {graph = graph, root = root}
 		     val _ =
 			Exp.foreachDec
 			(body, fn d =>
 			 case d of
 			    Fun {name, ...} =>
-			       label (graphToTree (jumpNode name),
-				      [(Jump.toString name, Center)])
+			       nodeOptions (jumpNode name) :=
+			       [Dot.NodeOption.label (Jump.toString name)]
 			  | _ => ())
-		     val _ = label (graphToTree root,
-				    [(Func.toString name, Center)])
-		     val treeLayout =
-			Graph.LayoutDot.layout
-			{graph = tree,
-			 title = concat [Func.toString name, " dominator tree"],
-			 options = [],
-			 edgeOptions = fn _ => [],
-			 nodeOptions = ! o nodeOptions}
-		     val _ = destroy ()
+		     val _ =
+			nodeOptions root :=
+			[Dot.NodeOption.label (Func.toString name)]
+		     val tree =
+			Graph.dominatorTree
+			(graph, {root = root,
+				 nodeValue = nodeOptions})
 		  in
-		     treeLayout
+		     Tree.layoutDot
+		     (tree,
+		      {nodeOptions = !,
+		       options = [],
+		       title = concat [Func.toString name, " dominator tree"]})
 		  end
 	    in
 	       {graph = graphLayout,
@@ -1596,7 +1594,7 @@ structure Program =
 	 fun layoutCallGraph (T {functions, main, ...},
 			      title: string): Layout.t =
 	    let
-	       open Graph.LayoutDot
+	       open Dot
 	       val graph = Graph.new ()
 	       val {get = nodeOptions, set = setNodeOptions, ...} =
 		  Property.getSetOnce
@@ -1651,12 +1649,11 @@ structure Program =
 		      ()
 		   end)
 	       val l =
-		  Graph.LayoutDot.layout
-		  {graph = graph,
-		   title = title,
-		   options = [],
-		   edgeOptions = edgeOptions,
-		   nodeOptions = nodeOptions}
+		  Graph.layoutDot (graph,
+				   {title = title,
+				    options = [],
+				    edgeOptions = edgeOptions,
+				    nodeOptions = nodeOptions})
 	       val _ = destroy ()
 	    in
 	       l

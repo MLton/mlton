@@ -39,10 +39,10 @@ structure ImplementExceptions = ImplementExceptions (open Sxml)
 structure Polyvariance = Polyvariance (open Sxml)
 structure ClosureConvert = ClosureConvert (structure Cps = Cps
 					   structure Sxml = Sxml)
-structure Backend = Backend (structure Cps = Cps
+structure Backend = Backend (structure Ssa = Ssa
 			     structure Machine = Machine
 			     fun funcToLabel f = f
-			     fun jumpToLabel j = j)
+			     fun labelToLabel l = l)
 structure CCodeGen = CCodeGen (structure MachineOutput = MachineOutput)
 structure x86CodeGen = x86CodeGen (structure MachineOutput = MachineOutput)
 
@@ -325,8 +325,7 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
 		   end)
 	    else ()
 	 end
-(*
-      val _ =
+      val ssa =
 	 Control.passSimplify
 	 {display = Control.Layouts Ssa.Program.layouts,
 	  name = "toSSA",
@@ -337,14 +336,27 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
 						{funcToFunc = fn f => f,
 						 jumpToLabel = fn j => j}),
 	  typeCheck = Ssa.typeCheck}
-*)
+      val _ =
+	 let open Control
+	 in if !keepSSA
+	       then
+		  File.withOut
+		  (concat [!inputFile, ".ssa"], fn out =>
+		   let
+		      fun disp l = Layout.outputl (l, out)
+		   in
+		      outputHeader (No, disp)
+		      ; Ssa.Program.layouts (ssa, disp)
+		   end)
+	    else ()
+	 end
       val machine =
 	 Control.pass
 	 {name = "backend",
 	  suffix = "machine",
 	  style = Control.No,
 	  display = Control.NoDisplay,
-	  thunk = fn () => Backend.generate cps}
+	  thunk = fn () => Backend.generate ssa}
       val mprogram =
 	 Control.pass
 	 {name = "toMOut",

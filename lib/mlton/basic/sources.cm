@@ -30,6 +30,7 @@ structure Char
 structure CharArray
 structure CharBuffer
 structure CharVector
+structure ClearablePromise
 structure CommandLine
 structure Computation
 structure Console
@@ -38,6 +39,7 @@ structure Date
 structure Dir
 structure DirectedGraph
 structure DotColor
+structure Dot
 structure DynamicWind
 structure Engine
 structure Error
@@ -164,6 +166,8 @@ char.sml
 char0.sml
 circular-list.fun
 circular-list.sig
+clearable-promise.sig
+clearable-promise.sml
 computation.sig
 console.sig
 console.sml
@@ -177,6 +181,8 @@ dir.sig
 dir.sml
 directed-graph.sig
 directed-graph.sml
+dot.sig
+dot.sml
 dot-color.sml
 doubly-linked.fun
 doubly-linked.sig

@@ -68,9 +68,12 @@ fun checkScopes (program as
 	 end
       val loopTransfer =
 	 fn Bug => ()
-	  | Call {func, args, return} => (getFunc func
-					  ; getVars args
-					  ; Option.app (return, getLabel))
+	  | Call {func, args, return} =>
+	       (getFunc func
+		; getVars args
+		; Option.app (return, fn {cont, handler} =>
+			      (getLabel cont
+			       ; Option.app (handler, getLabel))))
 	  | Case {test, cases, default, ...} =>
 	       (getVar test
 		; Cases.foreach' (cases, getLabel, getCon)
@@ -80,9 +83,9 @@ fun checkScopes (program as
 	       (getVars args; getLabel failure; getLabel success)
 	  | Raise xs => getVars xs
 	  | Return xs => getVars xs
-      val handlers = Program.inferHandlers program
-      fun loopFunc (f as Function.T {name, args, start, blocks, returns}) =
+      fun loopFunc (f: Function.t) =
 	 let
+	    val {name, args, start, blocks, returns, ...} = Function.dest f
 	    (* Descend the dominator tree, verifying that variables are
 	     * defined before they are used.
 	     *)
@@ -92,28 +95,27 @@ fun checkScopes (program as
 		  val _ = Vector.foreach (args, bindVar o #1)
 		  val _ = Vector.foreach (statements, loopStatement)
 		  val _ = loopTransfer transfer
-		  val _ = List.foreach (children, loop)
+		  val _ = Vector.foreach (children, loop)
 		  val _ =
-		     Vector.foreach (statements, fn Statement.T {var, ...} =>
-				     Option.app (var, unbindVar))
+		     Vector.foreach (statements, fn s =>
+				     Option.app (Statement.var s, unbindVar))
 		  val _ = Vector.foreach (args, unbindVar o #1)
 	       in
 		  ()
 	       end
 	    val _ = Vector.foreach (args, bindVar o #1)
 	    val _ = Vector.foreach (blocks, bindLabel o Block.label)
-	    val _ = loop (Function.dominatorTree (f, handlers))
+	    val _ = loop (Function.dominatorTree f)
 	    val _ = Vector.foreach (blocks, unbindLabel o Block.label)
 	    val _ = Vector.foreach (args, unbindVar o #1)
 	 in
 	     ()
 	 end
-      val _ = Vector.foreach (datatypes, fn Datatype.T {tycon, cons} =>
+      val _ = Vector.foreach (datatypes, fn Datatype.T {cons, ...} =>
 			      Vector.foreach (cons, bindCon o #con))
       val _ = Vector.foreach (globals, loopStatement)
-      val _ = Vector.foreach (functions, fn Function.T {name, ...} =>
-			      bindFunc name)
-      val _ = Vector.foreach (functions, loopFunc)
+      val _ = List.foreach (functions, bindFunc o Function.name)
+      val _ = List.foreach (functions, loopFunc)
       val _ = getFunc main
       val _ = Program.clear program
    in ()
@@ -225,6 +227,7 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 		  }
 	 handle e => error (concat ["analyze raised exception ",
 				    Layout.toString (Exn.layout e)])
+      val _ = Program.clear program
       val _ = destroyCon ()
    in
       ()

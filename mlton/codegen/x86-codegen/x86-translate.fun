@@ -211,8 +211,6 @@ struct
 
       val toX86PrimInfo
 	= fn None => x86MLton.PrimInfo.None
-	   | Overflow (label, live)
-	   => x86MLton.PrimInfo.Overflow (label, List.map(live, Operand.toX86Operand))
 	   | Runtime (MachineOutput.GCInfo.T {frameSize, live, return})
            => x86MLton.PrimInfo.Runtime {frameSize = frameSize,
 					 live = List.map(live, Operand.toX86Operand),
@@ -1165,29 +1163,50 @@ struct
 		     liveInfo = liveInfo}),
 		   comment_end]
 		end
-	     | SaveExnStack {offset}
+	     | SetSlotExnStack {offset} =>
+		  let
+		     val (comment_begin, comment_end) = comments statement
+		  val exnStack =
+		     x86MLton.gcState_currentThread_exnStackContentsOperand
+		  val stackTop = x86MLton.gcState_stackTopContentsOperand
+		  val stackBottom = x86MLton.gcState_stackBottomContentsOperand
+		  val tempP =
+		     let
+			val index = x86.Immediate.const_int (offset + wordBytes)
+			val memloc =
+			   x86.MemLoc.simple 
+			   {base = x86MLton.gcState_stackTopContents, 
+			    index = index,
+			    scale = x86.Scale.One,
+			    size = x86MLton.pointerSize,
+			    class = x86MLton.Classes.Stack}
+		     in
+			x86.Operand.memloc memloc
+		     end
+		in
+		  AppendList.appends
+		  [comment_begin,
+		   AppendList.single
+		   (x86.Block.T'
+		    {entry = NONE,
+		     profileInfo = x86.ProfileInfo.none,
+		     statements =
+		     [(* *(stackTop + offset + wordSize) = exnStack *)
+		      x86.Assembly.instruction_mov 
+		      {dst = tempP,
+		       src = exnStack,
+		       size = x86MLton.pointerSize}],
+		     transfer = NONE}),
+		   comment_end]
+		end
+	     | SetExnStackLocal {offset}
 	     => let
 		  val (comment_begin,
 		       comment_end) = comments statement
-
-		  val exnStack = x86MLton.gcState_currentThread_exnStackContentsOperand
+		  val exnStack =
+		     x86MLton.gcState_currentThread_exnStackContentsOperand
 		  val stackTop = x86MLton.gcState_stackTopContentsOperand
 		  val stackBottom = x86MLton.gcState_stackBottomContentsOperand
-		    
-		  val tempP 
-		    = let
-			val index 
-			  = x86.Immediate.const_int (offset + wordBytes)
-			val memloc 
-			  = x86.MemLoc.simple 
-			    {base = x86MLton.gcState_stackTopContents, 
-			     index = index,
-			     scale = x86.Scale.One,
-			     size = x86MLton.pointerSize,
-			     class = x86MLton.Classes.Stack}
-		      in
-			x86.Operand.memloc memloc
-		      end
 		in
 		  AppendList.appends
 		  [comment_begin,
@@ -1196,11 +1215,7 @@ struct
 		    {entry = NONE,
 		     profileInfo = x86.ProfileInfo.none,
 		     statements
-		     = [(* *(stackTop + offset + wordSize) = exnStack *)
-			x86.Assembly.instruction_mov 
-			{dst = tempP,
-			 src = exnStack,
-			 size = x86MLton.pointerSize},
+		     = [
 			(* exnStack = (stackTop + offset) - stackBottom *)
 			x86.Assembly.instruction_mov 
 			{dst = exnStack,
@@ -1219,7 +1234,7 @@ struct
 		     transfer = NONE}),
 		   comment_end]
 		end
-	     | RestoreExnStack {offset}
+	     | SetExnStackSlot {offset}
 	     => let
 		  val (comment_begin,
 		       comment_end) = comments statement
@@ -1577,12 +1592,139 @@ struct
 		 end
 	    else AppendList.empty
 
-      fun toX86Blocks {transfer, liveInfo}
+	fun toX86Blocks {transfer, liveInfo}
 	= (case transfer
 	     of Bug 
 	      => AppendList.append
 	         (comments transfer,
 		  x86MLton.bug {liveInfo = liveInfo})
+	       | Overflow {args, dst, failure, prim, success} =>
+		    let
+		       fun convert a =
+			  (Operand.toX86Operand a,
+			   x86MLton.toX86Size (Operand.ty a))
+		       fun arg i = convert (Vector.sub (args, i))
+		       val (src1, src1size) = arg 0
+		       val (dst, dstsize) = convert dst
+		       val _ =
+			  Assert.assert
+			  ("applyPrim: Overflow dstsize/srcsize",
+			   fn () => src1size = dstsize)
+		       fun check s =
+			  AppendList.single
+			  (x86.Block.T'
+			   {entry = NONE,	
+			    profileInfo = x86.ProfileInfo.none,
+			    statements = [x86.Assembly.instruction_mov
+					  {dst = dst,
+					   src = src1,
+					   size = src1size},
+					  s],
+			    transfer = SOME (x86.Transfer.iff
+					     {condition = x86.Instruction.O,
+					      truee = failure,
+					      falsee = success})})
+		       fun binal (oper: x86.Instruction.binal) =
+			  let
+			     val (src2, src2size) = arg 1
+			     val _ =
+				Assert.assert
+				("toX86Blocks: binal, dstsize/src2size",
+				 fn () => src2size = dstsize)
+			     (* Reverse src1/src2 when src1 and src2 are
+			      * temporaries and the oper is commutative. 
+			      *)
+			     val (src1,src2) =
+				if (oper = x86.Instruction.ADD)
+				   then
+				      case (x86.Operand.deMemloc src1,
+					    x86.Operand.deMemloc src2) of
+					 (SOME memloc_src1, SOME memloc_src2)
+					 => if x86Liveness.track memloc_src1
+					    andalso
+					    x86Liveness.track memloc_src2
+					       then (src2,src1)
+					    else (src1,src2)
+				       | _ => (src1,src2)
+				else (src1,src2)
+			  in
+			     check (x86.Assembly.instruction_binal
+				    {oper = oper,
+				     dst = dst,
+				     src = src2,
+				     size = dstsize})
+			  end
+		       fun pmd (oper: x86.Instruction.md) =
+			  let
+			     val (src2, src2size) = arg 1
+			     val _ 
+				= Assert.assert
+				("toX86Blocks: pmd, dstsize/src2size",
+				 fn () => src2size = dstsize)
+			     (* Reverse src1/src2 when src1 and src2 are
+			      * temporaries and the oper is commutative. 
+			      *)
+			     val (src1, src2) =
+				if oper = x86.Instruction.IMUL
+				   then
+				      case (x86.Operand.deMemloc src1,
+					    x86.Operand.deMemloc src2) of
+					 (SOME memloc_src1, SOME memloc_src2)
+					 => if x86Liveness.track memloc_src1
+					    andalso
+					    x86Liveness.track memloc_src2
+					       then (src2,src1)
+					    else (src1,src2)
+				       | _ => (src1,src2)
+				else (src1,src2)
+			  in
+			     check (x86.Assembly.instruction_pmd
+				    {oper = oper,
+				     dst = dst,
+				     src = src2,
+				     size = dstsize})
+			  end
+		       fun unal (oper: x86.Instruction.unal) =
+			  check
+			  (x86.Assembly.instruction_unal {oper = oper,
+							  dst = dst,
+							  size = dstsize})
+		       fun imul2_check () =
+			  let
+			     val (src2, src2size) = arg 1
+			     val _ =
+				Assert.assert
+				("toX86Blocks: imul2_check, dstsizesrc2size",
+				 fn () => src2size = dstsize)
+			     (* Reverse src1/src2 when src1 and src2 are
+			      * temporaries and the oper is commutative. 
+			      *)
+			     val (src1, src2) =
+				case (x86.Operand.deMemloc src1,
+				      x86.Operand.deMemloc src2) of
+				   (SOME memloc_src1, SOME memloc_src2)
+				   => if x86Liveness.track memloc_src1
+				      andalso
+				      x86Liveness.track memloc_src2
+					 then (src2,src1)
+				      else (src1,src2)
+				 | _ => (src1,src2)
+			  in
+			     check (x86.Assembly.instruction_imul2
+				    {dst = dst,
+				     src = src2,
+				     size = dstsize})
+			  end
+		       datatype z = datatype Prim.Name.t
+		    in
+		       case Prim.name prim of
+			  Int_addCheck => binal x86.Instruction.ADD
+			| Int_subCheck => binal x86.Instruction.SUB
+(*			| Int_mulCheck => pmd x86.Instruction.IMUL *)
+			| Int_mulCheck => imul2_check ()
+			| Int_negCheck => unal x86.Instruction.NEG
+			| _ => Error.bug "strange overflow transfer"
+		    end
 	      | Return {live}
 	      => AppendList.append
 	         (comments transfer,

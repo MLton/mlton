@@ -114,7 +114,11 @@ val instrumentSxml = control {name = "instrument Sxml",
 val keepCps = control {name = "keepCps",
 		       default = false,
 		       toString = Bool.toString}
-   
+
+val keepSSA = control {name = "keepSSA",
+		       default = false,
+		       toString = Bool.toString}
+
 val keepDiagnostics = control {name = "keep diagnostics",
 			       default = [],
 			       toString = List.toString (fn s => s)}
@@ -130,7 +134,7 @@ val keepPasses = control {name = "keep passes",
 structure Native =
    struct
       val native = control {name = "native",
-			    default = true,
+			    default = false,
 			    toString = Bool.toString}
 
       val commented = control {name = "native commented",

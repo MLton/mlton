@@ -8,16 +8,20 @@ open S
 
 local open MachineOutput
 in
+   structure Block = Block
    structure Cases = Cases
    structure ChunkLabel = ChunkLabel
    structure GCInfo = GCInfo
    structure Global = Global
+   structure Label = Label
    structure Operand = Operand
    structure Prim = Prim
    structure PrimInfo = PrimInfo
    structure Register = Register
    structure Type = Type
 end
+
+val traceGotoLabel = Trace.trace ("gotoLabel", Label.layout, Unit.layout) 
 
 val wordSize: int = 4
 val pointerSize = wordSize
@@ -162,15 +166,8 @@ structure Statement =
 	    fun doit () =
 	       let 
 		  val s = Prim.toString oper
+		  val _ = printDst ()
 		  val args = List.map (args, Operand.toString)
-		  val args =
-		     case pinfo of
-		        PrimInfo.Overflow (l,_) =>
-			   (case dst of
-			       NONE => "Int_bogus"
-			     | SOME d => Operand.toString d)
-			       :: (args @ [Label.toString l])
-		      | _ => (printDst (); args)
 		  val gcInfo =
 		     case pinfo of
 		        PrimInfo.Runtime gcInfo => SOME gcInfo
@@ -205,10 +202,12 @@ structure Statement =
 				      Operand.toString src, ";\n"])
 		    | Push n => C.call ("Push", [C.int n], print)
 		    | Assign z => assign (z, print)
-		    | SaveExnStack {offset} =>
-			 C.call ("SaveExnStack", [C.int offset], print)
-		    | RestoreExnStack {offset} =>
-			 C.call ("RestoreExnStack", [C.int offset], print)
+		    | SetExnStackLocal {offset} =>
+			 C.call ("SetExnStackLocal", [C.int offset], print)
+		    | SetExnStackSlot {offset} =>
+			 C.call ("SetExnStackSlot", [C.int offset], print)
+		    | SetSlotExnStack {offset} =>
+			 C.call ("SetSlotExnStack", [C.int offset], print)
 		    | Allocate {dst, size, stores, numPointers,
 				numWordsNonPointers} =>
 			 (C.call ("Object", [Operand.toString dst,
@@ -307,6 +306,27 @@ structure Transfer =
 					    print))
 		      | NONE => ();
 		   gotoLabel label)
+	     | Overflow {args, dst, failure, prim, success} =>
+		  let
+		     val prim =
+			let
+			   datatype z = datatype Prim.Name.t
+			in
+			   case Prim.name prim of
+			      Int_addCheck => "\tInt_addCheckNew"
+			    | Int_mulCheck => "\tInt_mulCheckNew"
+			    | Int_negCheck => "\tInt_negCheckNew"
+			    | Int_subCheck => "\tInt_subCheckNew"
+			    | _ => Error.bug "strange overflow prim"
+			end
+		  in
+		     C.call (prim,
+			     Operand.toString dst
+			     :: (Vector.toListMap (args, Operand.toString)
+				 @ [Label.toString failure]),
+			     print)
+		     ; gotoLabel success
+		  end
 	     | Raise => C.call ("\tRaise", [], print)
 	     | Return {...} => C.call ("\tReturn", [], print)
 	     | Switch {test, cases, default} =>
@@ -348,13 +368,8 @@ structure Transfer =
 		  end
 	     | SwitchIP {test, int, pointer} =>
 		  iff (concat ["IsInt (", Operand.toString test, ")"],
-		      int, pointer)
+		       int, pointer)
 	 end
-   end
-
-structure Block =
-   struct
-      open MachineOutput.Block
    end
 
 structure Chunk =
@@ -380,7 +395,6 @@ structure Chunk =
 		| Many => ()
 	       end
 	    fun force l = #status (labelInfo l) := Many
-	    fun handlePinfo i = PrimInfo.foreachLabel (i, force)
 	    (* Count how many times each label is jumped to. *)
 	    val _ =
 	       (List.foreach
@@ -391,41 +405,51 @@ structure Chunk =
 		; List.foreach (entries, jump)
 		; (List.foreach
 		   (blocks, fn Block.T {statements, transfer, ...} =>
-		    (Array.foreach (statements,
-				    fn Statement.Assign {pinfo, ...} =>
-				    handlePinfo pinfo
-					    | _ => ())
-		     ; let
-			  datatype z = datatype Transfer.t
-		       in
-			  case transfer of
-			     Switch {cases, default, ...} =>
-				(Cases.foreach (cases, force)
-				 ; (case default
-				       of NONE => ()
-				     | SOME l => force l))
-			   | SwitchIP {int, pointer, ...} =>
-				(jump int; force pointer)
-			   | NearJump {label, ...} => jump label
-			   | _ => ()
-		       end))))
+		    let
+		       datatype z = datatype Transfer.t
+		    in
+		       case transfer of
+			  NearJump {label, ...} => jump label
+			| Overflow {failure, success, ...} =>
+			     (force failure; jump success)
+			| Switch {cases, default, ...} =>
+			     (Cases.foreach (cases, force)
+			      ; (case default
+				    of NONE => ()
+				  | SOME l => force l))
+			| SwitchIP {int, pointer, ...} =>
+			     (jump int; force pointer)
+					| _ => ()
+		    end)))
 	    fun printGotoLabel l =
 	       print (concat ["\tgoto ", Label.toString l, ";\n"])
+	    val tracePrintLabelCode =
+	       Trace.trace
+	       ("printLabelCode",
+		fn {block, layedOut, status: status ref} =>
+		Layout.record [("block", Label.layout (Block.label block)),
+			       ("layedOut", Bool.layout (!layedOut))],
+		Unit.layout)
 	    fun maybePrintLabel l =
 	       if ! (#layedOut (labelInfo l))
 		  then ()
 	       else gotoLabel l
-	    and gotoLabel l =
-	       let val info as {layedOut, ...} = labelInfo l
-	       in if !layedOut 
-		     then printGotoLabel l
-		  else printLabelCode info
-	       end
-	    and printLabelCode {block = Block.T {label = l,
+	    and gotoLabel arg =
+	       traceGotoLabel
+	       (fn l =>
+		let
+		   val info as {layedOut, ...} = labelInfo l
+		in if !layedOut 
+		      then printGotoLabel l
+		   else printLabelCode info
+		end) arg
+	    and printLabelCode arg =
+	       tracePrintLabelCode
+	       (fn {block = Block.T {label = l,
 						 kind,
 						 live, profileName,
 						 statements, transfer, ...},
-				layedOut, status} =
+				layedOut, status} =>
 	       let
 		  val _ = layedOut := true
 		  val _ = C.profile (profileName, profileName, print)
@@ -437,11 +461,6 @@ structure Chunk =
 			      ; print ":\n"
 			   end 
 		      | _ => ()
-(* 		  val _ =
- * 		     print (concat ["if (gcState.messages) fprintf (stderr, \"%d ",
- * 				    Label.toString l,
- * 				    "\\n\", __LINE__);\n"])
- *)
 		  val _ =
 		     print (let open Layout
 			   in toString
@@ -466,7 +485,7 @@ structure Chunk =
 		     Transfer.output (transfer, print, gotoLabel,
 				      maybePrintLabel)
 	       in ()
-	       end
+	       end) arg
 	    val numPointers = regMax Type.pointer
 	    fun profChunkSwitch () =
 	       C.profile ("ChunkSwitch (magic)", overhead, print)
@@ -491,22 +510,28 @@ structure Chunk =
 			  ; print (Label.toStringIndex l)
 			  ; print ":\n"
 			  ; gotoLabel l));
-	    List.foreach (blocks, fn Block.T {label, ...} =>
-			 let val info as {layedOut, ...} = labelInfo label
-			 in if !layedOut
-			       then ()
-			    else printLabelCode info
-			 end);
-	    profChunkSwitch ();
-	    List.foreach (gcReturns, fn l =>
-			 (print "case "
-			  ; print (Label.toStringIndex l)
-			  ; print ": goto "
-			  ; print (Label.toString l)
-			  ; print ";\n"));
-	    C.profile ("EndChunk (magic)", overhead, print);
-	    print "EndChunk\n";
-	    destroyLabelInfo ()
+	    List.foreach (blocks,
+			  Trace.trace
+			  ("CLayoutBlock",
+			   Label.layout o Block.label,
+			   Unit.layout)
+			  (fn Block.T {label, ...} =>
+			   let
+			      val info as {layedOut, ...} = labelInfo label
+			   in if !layedOut
+				 then ()
+			      else printLabelCode info
+			   end))
+	    ; profChunkSwitch ()
+	    ; List.foreach (gcReturns, fn l =>
+			    (print "case "
+			     ; print (Label.toStringIndex l)
+			     ; print ": goto "
+			     ; print (Label.toString l)
+			     ; print ";\n"))
+	    ; C.profile ("EndChunk (magic)", overhead, print)
+	    ; print "EndChunk\n"
+	    ; destroyLabelInfo ()
 	 end
    end
 
