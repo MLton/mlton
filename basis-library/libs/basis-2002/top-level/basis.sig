@@ -299,6 +299,11 @@ signature BASIS_2002 =
       *)
 
       (* Required structures *)
+(*      sharing type BinIO.StreamIO.elem = Word8.word *)
+      sharing type BinIO.StreamIO.reader = BinPrimIO.reader
+      sharing type BinIO.StreamIO.pos = BinPrimIO.pos
+(*      sharing type BinIO.StreamIO.vector = Word8Vector.vector *)
+      sharing type BinIO.StreamIO.writer = BinPrimIO.writer
       sharing type BinPrimIO.array = Word8Array.array
       sharing type BinPrimIO.array_slice = Word8ArraySlice.slice
       sharing type BinPrimIO.elem = Word8.word
