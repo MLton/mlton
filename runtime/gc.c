@@ -49,6 +49,15 @@
 
 #include "IntInf.h"
 
+/* SUPPORTS_WEAK is true if the platform supports the weak attribute. */
+#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
+#define SUPPORTS_WEAK 1
+#elif (defined (__CYGWIN__))
+#define SUPPORTS_WEAK 0
+#elif
+#error SUPPORTS_WEAK not defined on platform
+#endif
+
 /* On Linux, We need the value of MREMAP_MAYMOVE, which should come from
  * sys/mman.h, but isn't there.  It is in linux/mman.h, but we can't #include
  * that here, because kernel headers don't mix with system headers.  We could
@@ -388,6 +397,7 @@ static void *smmap (size_t length) {
 	return result;
 }
 
+#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
 static void smunmap (void *base, size_t length) {
 	if (DEBUG_MEM)
 		fprintf (stderr, "smunmap (0x%08x, %s)\n",
@@ -399,6 +409,7 @@ static void smunmap (void *base, size_t length) {
 	if (0 != munmap (base, length))
 		diee ("munmap failed");
 }
+#endif
 
 #if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
 /* A super-safe mmap.
@@ -1274,7 +1285,11 @@ bool mutatorInvariant (GC_state s) {
  * signals, we don't need to block them.  This can be tested via the weak symbol
  * Posix_Signal_handle.
  */
+#if SUPPORTS_WEAK
 void Posix_Signal_handle () __attribute__ ((weak)); 
+#else
+void Posix_Signal_handle ();
+#endif
 static inline bool shouldBlockSignals () {
 	return 0 != Posix_Signal_handle;
 }
@@ -2951,7 +2966,11 @@ static inline void leaveGC (GC_state s) {
  * defined in a file all to itself (basis/MLton/rusage.c), it is called iff it
  * is linked in, which we can test via a weak symbol.
  */
+#if SUPPORTS_WEAK
 void MLton_Rusage_ru () __attribute__ ((weak));
+#elif
+void MLton_Rusage_ru ();
+#endif
 static inline bool needGCTime (GC_state s) {
 	return DEBUG or s->summary or s->messages
 		or (0 != MLton_Rusage_ru != 0);
