@@ -762,7 +762,6 @@ structure Program =
 					Out.error)
 				    end
 			      else ()
-			   datatype z = datatype ExnStack.t
 			   datatype z = datatype Statement.t
 			   val {global, handler, slot} =
 			      Vector.fold
