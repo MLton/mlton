@@ -212,7 +212,7 @@ fun setInlineSize (size: int): unit =
 	       | Leaf _ => Leaf {size = SOME size}
 	       | LeafNoLoop _ => LeafNoLoop {size = SOME size})
 
-val inlineIntoMain = control {name = "inlintIntoMain",
+val inlineIntoMain = control {name = "inlineIntoMain",
 			      default = true,
 			      toString = Bool.toString}
 
