@@ -329,7 +329,7 @@ fun commandLine (args: string list): unit =
       val includeDirs = concat [lib, "/include"] :: !includeDirs
       val _ =
 	 case List.peek (hostMap (), fn {host = h, ...} => h = hostString) of
-	    NONE => usage (concat ["host ", hostString, " not in hostmap"])
+	    NONE => usage (concat ["invalid host ", hostString])
 	  | SOME {hostType = t, ...} => hostType := t
       val _ =
 	 chunk := (if !Native.native
