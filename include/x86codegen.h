@@ -69,6 +69,7 @@
 #define Main(ufh, fs, bl, mfs, mfi, mg, ml)				\
 extern pointer ml;							\
 int main(int argc, char **argv) {					\
+	pointer jump;  							\
 	gcState.useFixedHeap = ufh;					\
 	gcState.fromSize = fs;						\
 	gcState.bytesLive = bl;						\
@@ -88,13 +89,15 @@ int main(int argc, char **argv) {					\
 			IntInf_init(&gcState, intInfInits);		\
 		GC_createStrings(&gcState, stringInits);		\
 		float_Init();						\
-		*(pointer *)gcState.stackTop = (pointer)&ml;		\
+		jump = (pointer)&ml;   					\
+	} else {       							\
+		jump = *(pointer*)gcState.stackTop;			\
 	}								\
 	__asm__ __volatile__ 						\
-        ("movl %%esp,%0\nmovl %1,%%ebp\nmovl %2,%%esp\njmp *(%%ebp)"	\
+        ("movl %%esp,%0;movl %1,%%eax;movl %2,%%ebp;movl %3,%%esp;jmp *%%eax" \
 	 : "=m" (c_stackP) 						\
-	 : "g" (gcState.stackTop), "g" (gcState.frontier) 		\
-	 : "%edi", "%esi");						\
+	 : "m" (jump), "m" (gcState.stackTop), "m" (gcState.frontier)	\
+	 : "%ebp", "%esp");						\
 	return 1;							\
 }
 
