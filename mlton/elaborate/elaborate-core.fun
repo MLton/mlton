@@ -551,13 +551,16 @@ fun elaborateDec (d, E) =
 		   let
 		      val x' = Cvar.fromAst x
 		      val scheme = elabType t
+		      (* Elaborate the overloads before extending the var in
+		       * case x appears in the xs.
+		       *)
+		      val ovlds =
+			 Vector.map (xs, fn x => Env.lookupLongvar (E, x))
 		      val _ = Env.extendVar (E, x, x')
 		   in
-		      Decs.single
-		      (Cdec.Overload
-		       {var = x',
-			scheme = scheme,
-			ovlds = Vector.map (xs, fn x => Env.lookupLongvar (E, x))})
+		      Decs.single (Cdec.Overload {var = x',
+						  scheme = scheme,
+						  ovlds = ovlds})
 		   end
 	      | Adec.SeqDec ds =>
 		   Vector.fold (ds, Decs.empty, fn (d, decs) =>
