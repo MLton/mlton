@@ -108,9 +108,15 @@ fun toString t =
 	    Empty => accum
 	  | String s => s :: accum
 	  | Sequence ts => fold (ts, accum, loop)
-	  | Align {force, rows} => fold (rows, accum, loop)
+	  | Align {rows, ...} =>
+	       (case rows of
+		   [] => accum
+		 | t :: ts =>
+		      fold (ts, loop (t, accum), fn (t, ac) =>
+			    loop (t, " " :: ac)))
 	  | Indent (t, _) => loop (t, accum)
-   in String.concat (rev (loop (t, [])))
+   in
+      String.concat (rev (loop (t, [])))
    end
 
 fun print {tree: t,
