@@ -16,7 +16,6 @@ struct
   in
      structure CFunction = CFunction
      structure Prim = Prim
-     structure Runtime = Runtime
      datatype z = datatype IntSize.t
      datatype z = datatype RealSize.t
      datatype z = datatype WordSize.t
@@ -883,7 +882,6 @@ struct
 		       fn () => srcsize = dstsize)
 		  val realTemp1ContentsOperand = realTemp1ContentsOperand srcsize
 		  val realTemp2ContentsOperand = realTemp2ContentsOperand srcsize
-		  val realTemp3ContentsOperand = realTemp3ContentsOperand srcsize
 		in
 		  AppendList.fromList
 		  [Block.mkBlock'
@@ -931,8 +929,6 @@ struct
 		      ("applyPrim: Real_Math_atan, dstsize/srcsize",
 		       fn () => srcsize = dstsize)
 		  val realTemp1ContentsOperand = realTemp1ContentsOperand srcsize
-		  val realTemp2ContentsOperand = realTemp2ContentsOperand srcsize
-		  val realTemp3ContentsOperand = realTemp3ContentsOperand srcsize
 		in
 		  AppendList.fromList
 		  [Block.mkBlock'
@@ -990,7 +986,6 @@ struct
 		       fn () => srcsize = dstsize)
 		  val realTemp1ContentsOperand = realTemp1ContentsOperand srcsize
 		  val realTemp2ContentsOperand = realTemp2ContentsOperand srcsize
-		  val realTemp3ContentsOperand = realTemp3ContentsOperand srcsize
 		in
 		  AppendList.fromList
 		  [Block.mkBlock'
@@ -1371,8 +1366,6 @@ struct
 		      ("applyPrim: Real_qequal, src2size",
 		       fn () => src2size = Size.LONG)
 		  val realTemp1ContentsOperand = realTemp1ContentsOperand src1size
-		  val realTemp2ContentsOperand = realTemp2ContentsOperand src1size
-		  val realTemp3ContentsOperand = realTemp3ContentsOperand src1size
 		in
 		  AppendList.fromList
 		  [Block.mkBlock'
@@ -1601,7 +1594,7 @@ struct
 	     frameInfo,
 	     func,
 	     return: x86.Label.t option,
-	     transInfo: transInfo}
+	     transInfo = {live, liveInfo, ...}: transInfo}
     = let
 	val CFunction.T {convention, name, ...} = func
 	val name =
@@ -1643,7 +1636,7 @@ struct
 	       frameInfo: x86.FrameInfo.t option,
 	       func: CFunction.t,
 	       label: x86.Label.t, 
-	       transInfo as {live, liveInfo, ...}: transInfo}
+	       transInfo = {live, liveInfo, ...}: transInfo}
     = let
 	val name = CFunction.name func
 	fun default ()
@@ -1677,7 +1670,7 @@ struct
 	     dsts : (Operand.t * Size.t) vector,
 	     overflow : Label.t,
 	     success : Label.t,
-	     transInfo as {live, liveInfo, ...} : transInfo}
+	     transInfo = {live, liveInfo, ...} : transInfo}
     = let
 	val primName = Prim.toString prim
 	datatype z = datatype Prim.Name.t
@@ -1694,9 +1687,6 @@ struct
 	fun getSrc2 ()
 	  = (Vector.sub (args, 0), Vector.sub (args, 1))
 	    handle _ => Error.bug "arith: getSrc2"
-	fun getSrc3 ()
-	  = (Vector.sub (args, 0), Vector.sub (args, 1), Vector.sub (args, 2))
-	    handle _ => Error.bug "arith: getSrc3"
 	fun getSrc4 ()
 	  = (Vector.sub (args, 0), Vector.sub (args, 1), 
 	     Vector.sub (args, 2), Vector.sub (args, 3))
@@ -1974,8 +1964,7 @@ struct
 		     condition)
 	    end
 
-	val (comment_begin,
-	     comment_end)
+	val (comment_begin,_)
 	  = if !Control.Native.commented > 0
 	      then let
 		     val comment = primName

@@ -15,10 +15,6 @@ struct
     
   datatype status = Count of int | None
 
-  val status_lt
-    = fn (Count i1, None) => true
-       | (Count i1, Count i2) => i1 < i2
-       | _ => false
   val status_eq
     = fn (None    , None    ) => true
        | (Count i1, Count i2) => i1 = i2
@@ -39,21 +35,20 @@ struct
 	T {get = get}
       end
 
-  fun resetNear (jumpInfo as T {get}, label) = (get label) := Count 0
   local
     fun doit (status_ref, maybe_fn)
       = case !status_ref
 	  of None => ()
 	   | Count i => status_ref := (maybe_fn i)
   in
-    fun incNear (jumpInfo as T {get}, label)
+    fun incNear (T {get}, label)
       = doit (get label, fn i => Count (i+1))
-    fun decNear (jumpInfo as T {get}, label)
+    fun decNear (T {get}, label)
       = doit (get label, fn i => Count (i-1))
-    fun forceNear (jumpInfo as T {get}, label)
-      = doit (get label, fn i => None)
+    fun forceNear (T {get}, label)
+      = doit (get label, fn _ => None)
   end
-  fun getNear (jumpInfo as T {get}, label) = !(get label)
+  fun getNear (T {get}, label) = !(get label)
 
   fun completeJumpInfo {chunk = Chunk.T {blocks, ...},
 			jumpInfo: t}
@@ -61,7 +56,7 @@ struct
       (blocks,
        fn Block.T {entry, transfer,...}
         => (case entry
-	      of Entry.Jump {label, ...} => ()
+	      of Entry.Jump _ => ()
 	       | Entry.Func {label, ...} => forceNear (jumpInfo, label)
 	       | Entry.Cont {label, ...} => forceNear (jumpInfo, label)
 	       | Entry.Handler {label, ...} => forceNear (jumpInfo, label)

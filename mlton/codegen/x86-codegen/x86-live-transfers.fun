@@ -41,7 +41,6 @@ struct
 
   val track = x86Liveness.track
 
-  val tracer = x86.tracer
   val tracerTop = x86.tracerTop
 
   fun temp_uses_defs {uses : Operand.t list,
@@ -124,24 +123,22 @@ struct
 	     | Finite n => I'.toString n
 	     | PosInfinity => "+inf"
 	val zero = Finite (I'.zero)
-	val one = Finite (I'.one)
-	val two = Finite (I'.two)
 
 	fun NegInfinity < NegInfinity = false
 	  | NegInfinity < _ = true
-	  | (Finite x) < NegInfinity = false
+	  | (Finite _) < NegInfinity = false
 	  | (Finite x) < (Finite y) = I'.<(x,y)
-	  | (Finite x) < PosInfinity = true
+	  | (Finite _) < PosInfinity = true
 	  | PosInfinity < _ = false
 
 	fun NegInfinity + PosInfinity = zero
 	  | NegInfinity + _ = NegInfinity
-	  | (Finite x) + NegInfinity = NegInfinity
+	  | (Finite _) + NegInfinity = NegInfinity
 	  | (Finite x) + (Finite y) 
 	  = ((Finite (I'.+(x,y))) handle Overflow => if x > 0 
 						       then PosInfinity
 						       else NegInfinity)
-	  | (Finite x) + PosInfinity = PosInfinity
+	  | (Finite _) + PosInfinity = PosInfinity
 	  | PosInfinity + NegInfinity = zero
 	  | PosInfinity + _ = PosInfinity
 
@@ -175,17 +172,10 @@ struct
 		| 0 => zero
 		| _ => PosInfinity)
 	  | PosInfinity * PosInfinity = PosInfinity
-
-	fun min (NegInfinity, y) = NegInfinity
-	  | min (x, NegInfinity) = NegInfinity
-	  | min (PosInfinity, y) = y
-	  | min (x, PosInfinity) = x
-	  | min (Finite x, Finite y) = Finite (I'.min(x, y))
       end
-    datatype u = Position of I.t | Length of I'.t
   end
 
-  fun computeLiveTransfers {chunk as Chunk.T {blocks,...},
+  fun computeLiveTransfers {chunk = Chunk.T {blocks,...},
 			    transferRegs : Entry.t -> Register.t list,
 			    transferFltRegs : Entry.t -> Int.t,
 			    liveInfo : x86Liveness.LiveInfo.t,
@@ -206,22 +196,21 @@ struct
 	val cutoff = !Control.Native.cutoff
 	datatype u = Position of I.t | Length of I'.t
 
-	val info
-	  as {get = getInfo :
-	            Label.t -> 
-		    {block: Block.t,
-		     pred: Label.t list ref,
-		     succ: Label.t list ref,
-		     live: {memloc: MemLoc.t,
-			    distanceF': u option ref,
-			    distanceF: (I.t * Label.t option) option ref,
-			    distanceB': u option ref,
-			    distanceB: (I.t * Label.t option) option ref} vector,
-		     liveTransfers: ((MemLoc.t * Register.t * bool ref) list *
-				     (MemLoc.t * bool ref) list) option ref,
-		     defed: MemLocSet.t option ref},
-	      set = setInfo,
-	      destroy = destInfo}
+	val {get = getInfo :
+	           Label.t -> 
+		   {block: Block.t,
+		    pred: Label.t list ref,
+		    succ: Label.t list ref,
+		    live: {memloc: MemLoc.t,
+			   distanceF': u option ref,
+			   distanceF: (I.t * Label.t option) option ref,
+			   distanceB': u option ref,
+			   distanceB: (I.t * Label.t option) option ref} vector,
+		    liveTransfers: ((MemLoc.t * Register.t * bool ref) list *
+				    (MemLoc.t * bool ref) list) option ref,
+		    defed: MemLocSet.t option ref},
+	     set = setInfo,
+	     destroy = destInfo}
 	  = Property.destGetSetOnce
 	    (Label.plist,
 	     Property.initRaise ("x86LiveTransfers:getInfo", Label.layout))
@@ -279,8 +268,7 @@ struct
 		       in
 			 List.push (pred', label)
 		       end
-		   val Block.T {entry, transfer, ...} = block
-		   datatype z = datatype Entry.t
+		   val Block.T {transfer, ...} = block
 		   datatype z = datatype Transfer.t
 		 in
 		   case transfer
@@ -411,7 +399,7 @@ struct
 	      case Vector.peek
 		   (live, 
 		    fn {memloc, ...} => MemLoc.eq(temp, memloc))
-		of SOME {distanceF as ref (SOME (df, dfl)), ...}
+		of SOME {distanceF = ref (SOME (df, dfl)), ...}
 		 => (df, dfl)
 		 | SOME {distanceF', distanceF, ...}
 		 => (case valOf (!distanceF')
@@ -481,7 +469,7 @@ struct
 	      case Vector.peek
 		   (live, 
 		    fn {memloc, ...} => MemLoc.eq(temp, memloc))
-		of SOME {distanceB as ref (SOME (db, dbl)), ...}
+		of SOME {distanceB = ref (SOME (db, dbl)), ...}
 		 => (db, dbl)
 		 | SOME {distanceB, ...}
 		 => let
@@ -559,8 +547,8 @@ struct
 
 	fun doit {label, hints}
 	  = let
-	      val {block as Block.T {entry, ...}, pred, succ, 
-		   live as liveData, liveTransfers, ...} = getInfo label
+	      val {block as Block.T {entry, ...}, 
+		   live = liveData, liveTransfers, ...} = getInfo label
 	    in
 	      case !liveTransfers
 		of SOME _ => ()
@@ -573,18 +561,16 @@ struct
 
 		      val live = LiveSet.toList(LiveInfo.getLive(liveInfo, label))
 
-(*
 		      val _ 
-			= (print (Label.toString label);
-(*
+			= if true then ()
+			  else
+			  (print (Label.toString label);
 			   print "\nloopLabels: ";
 			   print (List.toString Label.toString loopLabels);
-*)
 			   print "\nliveData:\n";
 			   Vector.foreach
 			   (liveData,
-			    fn {memloc, distanceF', distanceF,
-				distanceB', distanceB} =>
+			    fn {memloc, distanceF', distanceB', ...} => 
 			    (print (MemLoc.toString memloc);
 			     print ": ";
 			     case !distanceF' of
@@ -651,7 +637,6 @@ struct
 				   print (Option.toString Label.toString l)
 				 end;
 				 print "\n")))
-*)
 
 		      val live
 			= if not useB
@@ -720,9 +705,9 @@ struct
 			= List.insertionSort
 			  (live, fn ((_,n1),(_,n2)) => I'.>(n1, n2))
 
-(*
 		      val _ 
-			= (print "live:\n";
+			= if true then () else
+                          (print "live:\n";
 			   List.foreach
 			   (live,
 			    fn (memloc,n)
@@ -730,7 +715,6 @@ struct
 				 print ": ";
 				 print (I'.toString n);
 				 print "\n")))
-*)
 
 		      val {yes = liveRegs, no = liveFltRegs}
 			= List.partition
@@ -744,9 +728,9 @@ struct
 			   fn (memloc,weight)
 			    => case List.peek
 			            (regHints,
-				     fn (memloc',register',_)
+				     fn (memloc',_,_)
 				      => MemLoc.eq(memloc,memloc'))
-				 of SOME (memloc',register',_)
+				 of SOME (_,register',_)
 				 => (memloc,weight,SOME register')
 				 | NONE 
 				 => (memloc,weight,NONE))		  
@@ -755,7 +739,7 @@ struct
 			= fn ([],_,liveTransfers) => liveTransfers
 		           | (_,[],liveTransfers) => liveTransfers
 		           | (transferRegs,
-			      (memloc,weight,register)::live,
+			      (memloc,_,register)::live,
 			      liveTransfers)
 		           => let
 				fun finish register
@@ -872,7 +856,7 @@ struct
 					       case src of
 						  Operand.Register reg =>
 						     ((dst, reg, ref true)::regHints, fltregHints)
-						| Operand.FltRegister reg =>
+						| Operand.FltRegister _ =>
 						     (regHints, (dst, ref true)::fltregHints)
 						| _ => (regHints, fltregHints))}
 		      datatype z = datatype Transfer.t
@@ -916,7 +900,7 @@ struct
 		    loop ()))
 	val _ = loop ()
 
-	fun doit {label, defed as defed'}
+	fun doit {label, defed = defed'}
 	  = let
 
 	      val {block, liveTransfers, defed, ...} = getInfo label
@@ -1032,8 +1016,7 @@ struct
 		 fn label => doit {label = label, 
 				   defed = MemLocSet.empty})
 
-	val liveTransferInfo
-	 as {get = getLiveTransfers : 
+	val {get = getLiveTransfers : 
 	     Label.t -> ((MemLoc.t * Register.t * bool) list *
 			 (MemLoc.t * bool) list),
 	     set = setLiveTransfers, ...}
@@ -1045,7 +1028,7 @@ struct
 	        (labels,
 		 fn label
 		  => let
-		       val {liveTransfers, live, ...} = getInfo label
+		       val {liveTransfers, ...} = getInfo label
 		       val (liveRegs, liveFltRegs) = valOf (!liveTransfers)
 		       val (liveRegs, liveFltRegs)
 			 = if sync
@@ -1057,10 +1040,10 @@ struct
 				    fn (memloc, sync) => (memloc, !sync)))
 			     else (List.map
 				   (liveRegs, 
-				    fn (memloc,reg, sync) => (memloc, reg, false)),
+				    fn (memloc,reg, _) => (memloc, reg, false)),
 				   List.map
 				   (liveFltRegs, 
-				    fn (memloc, sync) => (memloc, false)))
+				    fn (memloc, _) => (memloc, false)))
 		     in
 		       setLiveTransfers(label, (liveRegs, liveFltRegs))
 		     end)
@@ -1082,8 +1065,7 @@ struct
 				       jumpInfo = jumpInfo,
 				       loopInfo = loopInfo}
 	    else let
-		   val liveTransfers
-		    as {get = getLiveTransfers,
+		   val {get = getLiveTransfers,
 			set = setLiveTransfers, ...}
 		     = Property.getSetOnce(Label.plist, 
 					   Property.initConst ([], []))
@@ -1106,7 +1088,7 @@ struct
   fun computeLiveTransfers_totals ()
     = (computeLiveTransfers_msg ())
       
-  fun getLiveTransfers (T {get, set}, label) = get label
+  fun getLiveTransfers (T {get, ...}, label) = get label
 
-  fun setLiveTransfersEmpty (T {get, set}, label) = set(label, ([], []))
+  fun setLiveTransfersEmpty (T {set, ...}, label) = set(label, ([], []))
 end

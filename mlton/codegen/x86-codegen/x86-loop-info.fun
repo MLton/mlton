@@ -13,7 +13,6 @@ struct
 
   structure Graph = DirectedGraph
   structure Node = Graph.Node
-  structure Edge = Graph.Edge
   structure LoopForest = Graph.LoopForest
 
   val tracer = x86.tracer
@@ -27,14 +26,14 @@ struct
     = let
 	val G = Graph.new ()
 
-	val nodeInfo as {get = getNodeInfo : unit Node.t -> Label.t,
-			 set = setNodeInfo, ...}
+	val {get = getNodeInfo : unit Node.t -> Label.t,
+	     set = setNodeInfo, ...}
 	  = Property.getSetOnce
 	    (Node.plist,
 	     Property.initRaise ("x86LoopInfo:getNodeInfo", Node.layout))
 
-	val info as {get = getInfo : Label.t -> unit Node.t,
-		     destroy = destInfo}
+	val {get = getInfo : Label.t -> unit Node.t,
+	     destroy = destInfo}
 	  = Property.destGet
 	    (Label.plist,
 	     Property.initFun (fn l => let
@@ -44,12 +43,12 @@ struct
 					 n
 				       end))
 
-	val loopInfo as {get = getLoopInfo : 
-			       Label.t -> 
-			       {loopHeader: bool,
-				loopLabels: Label.t list,
-				loopPath: int list},
-			 set = setLoopInfo, ...}
+	val {get = getLoopInfo : 
+	           Label.t -> 
+		   {loopHeader: bool,
+		    loopLabels: Label.t list,
+		    loopPath: int list},
+	     set = setLoopInfo, ...}
 	  = Property.getSetOnce
 	    (Label.plist,
 	     Property.initRaise ("x86LoopInfo:getLoopInfo", Label.layout))
@@ -67,7 +66,7 @@ struct
 	val _
 	  = List.foreach
 	    (blocks,
-	     fn block as Block.T {entry, transfer, ...}
+	     fn Block.T {entry, transfer, ...}
 	      => let
 		   val label = Entry.label entry
 		   val node = getInfo label
@@ -117,6 +116,7 @@ struct
 					       then doit''
 					       else doit')
 		 end)
+	val _ = destInfo ()
 
 	val lf = Graph.loopForestSteensgaard (G, {root = root})
 	  

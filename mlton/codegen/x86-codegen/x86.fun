@@ -174,7 +174,7 @@ struct
 	   | EXTD => FLT
 	   | FPIS => FPI
 	   | FPIL => FPI
-	   | QUAD => FPI
+	   | FPIQ => FPI
 
       val toFPI
 	= fn WORD => FPIS
@@ -186,15 +186,6 @@ struct
 	
       val eq = fn (s1, s2) => s1 = s2
       val lt = fn (s1, s2) => (toBytes s1) < (toBytes s2)
-      val compare
-	= let
-	    val enum
-	      = fn BYTE => 1 | WORD => 2 | LONG => 3
-		 | SNGL => 4 | DBLE => 5 | EXTD => 6
-		 | FPIS => 7 | FPIL => 6 | FPIQ => 9
-	  in
-	    fn (s1, s2) => Int.compare (enum s1, enum s2)
-	  end
     end
 
   structure Register =
@@ -209,7 +200,7 @@ struct
 
       datatype t = T of {reg: reg, part: part}
 
-      fun size (T {reg, part})
+      fun size (T {part, ...})
 	= case part
 	    of E => Size.LONG
 	     | X => Size.WORD
@@ -320,7 +311,7 @@ struct
 				  else NONE
 			      end)
 
-      fun coincident (register as T {reg, ...}) = coincident' reg
+      fun coincident (T {reg, ...}) = coincident' reg
 
       val registers
 	= fn Size.BYTE => byteRegisters
@@ -373,12 +364,12 @@ struct
       val lowPartOf (* (register,lowsize) *)
 	= fn (T {reg,       part = L},Size.BYTE) => T {reg = reg, part = L}
 	   | (T {reg,       part = H},Size.BYTE) => T {reg = reg, part = H}
-	   | (T {reg = EAX, part},    Size.BYTE) => T {reg = EAX, part = L}
-	   | (T {reg = EBX, part},    Size.BYTE) => T {reg = EBX, part = L}
-	   | (T {reg = ECX, part},    Size.BYTE) => T {reg = ECX, part = L}
-	   | (T {reg = EDX, part},    Size.BYTE) => T {reg = EDX, part = L}
+	   | (T {reg = EAX, ...},     Size.BYTE) => T {reg = EAX, part = L}
+	   | (T {reg = EBX, ...},     Size.BYTE) => T {reg = EBX, part = L}
+	   | (T {reg = ECX, ...},     Size.BYTE) => T {reg = ECX, part = L}
+	   | (T {reg = EDX, ...},     Size.BYTE) => T {reg = EDX, part = L}
 	   | (T {reg,       part = X},Size.WORD) => T {reg = reg, part = X}
-	   | (T {reg,       part},    Size.WORD) => T {reg = reg, part = X}
+	   | (T {reg,       ...},     Size.WORD) => T {reg = reg, part = X}
 	   | _ => Error.bug "lowPartOf: register,lowsize"
 
       val fullPartOf (* (register,fullsize) *)
@@ -395,8 +386,6 @@ struct
   structure FltRegister =
     struct
       datatype t = T of int
-
-      fun size _ = Size.EXTD
 
       fun layout (T i)
 	= let
@@ -438,7 +427,6 @@ struct
 				    str (String.dropPrefix(Int.toString i, 1))]
 	     | Word w => seq [str "0x", Word.layout w]
 	  end
-      val const_toString = Layout.toString o const_layout
       val const_eval
 	= fn Char c => (Word.fromInt o Char.ord) c
 	   | Int i => Word.fromInt i
@@ -446,10 +434,10 @@ struct
       val const_hash = const_eval
       val const_compare
 	= fn (Char c1, Char c2) => Char.compare (c1, c2)
-	   | (Char c1, Int i2) => LESS
-	   | (Char c1, Word w2) => LESS
+	   | (Char _, Int _) => LESS
+	   | (Char _, Word _) => LESS
 	   | (Int i1, Int i2) => Int.compare (i1, i2)
-	   | (Int i1, Word w2) => LESS
+	   | (Int _, Word _) => LESS
 	   | (Word w1, Word w2) => Word.compare (w1, w2)
 	   | _ => GREATER
 
@@ -463,7 +451,6 @@ struct
 	    fn Negation => str "-"
 	     | Complementation => str "~"
 	  end
-      val un_toString = Layout.toString o un_layout
       val un_hash : un -> Word.t
 	= fn Negation => 0w1
 	   | Complementation => 0w2
@@ -498,7 +485,6 @@ struct
 	     | Addition => str "+"
 	     | Subtraction => str "-"
 	  end
-      val bin_toString = Layout.toString o bin_layout
       val bin_hash : bin -> Word.t
 	= fn Multiplication => 0w1
            | Division => 0w2
@@ -542,8 +528,6 @@ struct
 	and layout
 	  = fn T {immediate, ...} => layoutU immediate
       end
-      val toStringU = Layout.toString o layoutU
-      val toString = Layout.toString o layout
  
       val rec eqU
 	= fn (Const c1, Const c2) => c1 = c2
@@ -565,21 +549,20 @@ struct
 
       val rec compareU
 	= fn (Const c1, Const c2) => const_compare (c1, c2)
-	   | (Const c1, Label l2) => LESS
-	   | (Const c1, ImmedUnExp _) => LESS
-	   | (Const c1, ImmedBinExp _) => LESS
+	   | (Const _, Label _) => LESS
+	   | (Const _, ImmedUnExp _) => LESS
+	   | (Const _, ImmedBinExp _) => LESS
 	   | (Label l1, Label l2) 
 	   => lexical [fn () => EQUAL,
 		       fn () => String.compare (Label.toString l1,
 						Label.toString l2)]
-	   | (Label l1, ImmedUnExp _) => LESS
-	   | (Label l1, ImmedBinExp _) => LESS
+	   | (Label _, ImmedUnExp _) => LESS
+	   | (Label _, ImmedBinExp _) => LESS
 	   | (ImmedUnExp {oper = oper1, exp = exp1},
 	      ImmedUnExp {oper = oper2, exp = exp2})
 	   => lexical [fn () => un_compare (oper1, oper2),
 		       fn () => compare (exp1, exp2)]
-	   | (ImmedUnExp {oper = oper1, exp = exp1}, 
-	      ImmedBinExp _) => LESS
+	   | (ImmedUnExp _, ImmedBinExp _) => LESS
 	   | (ImmedBinExp {oper = oper1, exp1 = exp11, exp2 = exp12},
 	      ImmedBinExp {oper = oper2, exp1 = exp21, exp2 = exp22})
 	   => lexical [fn () => bin_compare (oper1, oper2),
@@ -596,7 +579,7 @@ struct
       in
 	val rec evalU
 	  = fn Const c => SOME (const_eval c)
-	     | Label l => NONE
+	     | Label _ => NONE
 	     | ImmedUnExp {oper, exp}
 	     => (case eval exp
 		   of SOME i 
@@ -632,9 +615,9 @@ struct
 	val rec hashU
 	  = fn Const c => const_hash c
 	     | Label l => Label.hash l
-	     | ImmedUnExp {oper, exp}
+	     | ImmedUnExp {exp, ...}
 	     => hash exp
-	     | ImmedBinExp {oper, exp1, exp2}
+	     | ImmedBinExp {exp1, exp2, ...}
 	     => Word.xorb(0wx5555 * (hash exp1), hash exp2)
 	and hash
 	  = fn T {hash, ...} => hash
@@ -678,11 +661,11 @@ struct
       val const_int = const o Int
       val const_word = const o Word
       val deConst
-	= fn T {immediate as Const c, ...} => SOME c
+	= fn T {immediate = Const c, ...} => SOME c
 	   | _ => NONE
       val label = construct o Label
       val deLabel
-	= fn T {immediate as Label l, ...} => SOME l
+	= fn T {immediate = Label l, ...} => SOME l
 	   | _ => NONE
       val unexp = construct o ImmedUnExp
       val binexp = construct o ImmedBinExp
@@ -702,7 +685,6 @@ struct
 	     | Four => str "4"
 	     | Eight => str "8"
 	  end
-      val toString = Layout.toString o layout
 
       val fromBytes : int -> t
 	= fn 1 => One
@@ -710,11 +692,6 @@ struct
 	   | 4 => Four
 	   | 8 => Eight
 	   | _ => Error.bug "Scale.fromBytes"
-      val toBytes : t -> int
-	= fn One => 1
-	   | Two => 2
-	   | Four => 4
-	   | Eight => 8
       local
 	 datatype z = datatype CType.t
       in
@@ -746,7 +723,6 @@ struct
       end
 
       fun eq(s1, s2) = s1 = s2
-      val compare = fn (s1, s2) => Int.compare (toBytes s1, toBytes s2)
 
       val toImmediate
 	= fn One => Immediate.const_int 1
@@ -785,7 +761,6 @@ struct
 				  => seq [str ",", Scale.layout scale]])
 		   else empty]
 	  end
-      val toString = Layout.toString o layout
 
       fun eq(T {disp = disp,  base = base,  index = index,  scale = scale},
 	     T {disp = disp', base = base', index = index', scale = scale'})
@@ -815,7 +790,7 @@ struct
 	  datatype t = T of {counter: int,
 			     name: string}
 
-	  fun layout (T {counter, name})
+	  fun layout (T {name, ...})
 	    = let
 		open Layout
 	      in
@@ -865,12 +840,6 @@ struct
 		utilized: t list}
 
       local
-	 fun make f (T r) = f r
-      in
-	 val plist = make #plist
-      end
-
-      local
 	open Layout
       in
 	val rec layoutImmMem 
@@ -899,7 +868,6 @@ struct
 	and layout
 	  = fn T {memloc, ...} => layoutU memloc
       end
-      val toStringU = Layout.toString o layoutU
       val toString = Layout.toString o layout
 
       val rec hashImmMem
@@ -1018,10 +986,10 @@ struct
       and mayAliasU
 	= fn (U {immBase = SOME immBase1, memBase = NONE,
 		 immIndex = immIndex1, memIndex = NONE,
-		 scale = scale1, size = size1, ...},
+		 size = size1, ...},
 	      U {immBase = SOME immBase2, memBase = NONE,
 		 immIndex = immIndex2, memIndex = NONE,
-		 scale = scale2, size = size2, ...})
+		 size = size2, ...})
 	   => Immediate.eq(immBase1, immBase2)
 	      andalso
 	      mayAliasImmIndex ({immIndex = immIndex1, 
@@ -1034,9 +1002,13 @@ struct
 	      U {immBase = SOME immBase2, memBase = NONE,
 		 immIndex = immIndex2, memIndex = SOME memIndex2,
 		 scale = scale2, size = size2, ...})
-	   => Immediate.eq(immBase1, immBase2)
+	   => not (Immediate.eq(immBase1, immBase2))
 	      andalso
 	      (not (eq(memIndex1, memIndex2))
+(*
+	       orelse
+	       not (Scale.eq(scale1, scale2))
+*)
 	       orelse
 	       mayAliasImmIndex ({immIndex = immIndex1,
 				  size = size1},
@@ -1044,10 +1016,10 @@ struct
 				  size = size2}))
 	   | (U {immBase = NONE, memBase = SOME memBase1,
 		 immIndex = immIndex1, memIndex = NONE,
-		 scale = scale1, size = size1, ...},
+		 size = size1, ...},
 	      U {immBase = NONE, memBase = SOME memBase2,
 		 immIndex = immIndex2, memIndex = NONE,
-		 scale = scale2, size = size2, ...})
+		 size = size2, ...})
 	   => not (eq(memBase1, memBase2))
 	      orelse
 	      mayAliasImmIndex ({immIndex = immIndex1,
@@ -1062,12 +1034,16 @@ struct
 		 scale = scale2, size = size2, ...})
 	   => not (eq(memBase1, memBase2))
 	      orelse
-	      (not (eq(memIndex1, memIndex2))
-	       orelse
-	       mayAliasImmIndex ({immIndex = immIndex1,
-				  size = size1},
-				 {immIndex = immIndex2,
-				  size = size2}))
+	      not (eq(memIndex1, memIndex2))
+(*
+	      orelse
+	      not (Scale.eq(scale1, scale2))
+*)
+	      orelse
+	      mayAliasImmIndex ({immIndex = immIndex1,
+				 size = size1},
+				{immIndex = immIndex2,
+				 size = size2})
 	   | _ => true
       and mayAlias
 	= fn (T {memloc = memloc1 as U {class = class1, ...}, ...},
@@ -1107,10 +1083,10 @@ struct
       and mayAliasOrdU
 	= fn (U {immBase = SOME immBase1, memBase = NONE,
 		 immIndex = immIndex1, memIndex = NONE,
-		 scale = scale1, size = size1, ...},
+		 size = size1, ...},
 	      U {immBase = SOME immBase2, memBase = NONE,
 		 immIndex = immIndex2, memIndex = NONE,
-		 scale = scale2, size = size2, ...})
+		 size = size2, ...})
 	   => if Immediate.eq(immBase1, immBase2)
 		then mayAliasOrdImmIndex ({immIndex = immIndex1, 
 					   size = size1},
@@ -1124,7 +1100,12 @@ struct
 		 immIndex = immIndex2, memIndex = SOME memIndex2,
 		 scale = scale2, size = size2, ...})
 	   => if Immediate.eq(immBase1, immBase2)
-		then if not (eq(memIndex1, memIndex2))
+		then if (not (eq(memIndex1, memIndex2))
+(*
+			 orelse
+			 not (Scale.eq(scale1, scale2))
+*)
+			 )
 		       then SOME EQUAL
 		       else mayAliasOrdImmIndex ({immIndex = immIndex1,
 						  size = size1},
@@ -1133,10 +1114,10 @@ struct
 		else NONE
 	   | (U {immBase = NONE, memBase = SOME memBase1,
 		 immIndex = immIndex1, memIndex = NONE,
-		 scale = scale1, size = size1, ...},
+		 size = size1, ...},
 	      U {immBase = NONE, memBase = SOME memBase2,
 		 immIndex = immIndex2, memIndex = NONE,
-		 scale = scale2, size = size2, ...})
+		 size = size2, ...})
 	   => if not (eq(memBase1, memBase2))
 		then SOME EQUAL
 		else mayAliasOrdImmIndex ({immIndex = immIndex1,
@@ -1151,7 +1132,12 @@ struct
 		 scale = scale2, size = size2, ...})
 	   => if (not (eq(memBase1, memBase2))
 		  orelse
-		  not (eq(memIndex1, memIndex2)))
+		  not (eq(memIndex1, memIndex2))
+(*
+		  orelse
+		  not (Scale.eq(scale1, scale2))
+*)
+		  )
 		then SOME EQUAL
 		else mayAliasOrdImmIndex ({immIndex = immIndex1,
 					   size = size1},
@@ -1169,8 +1155,6 @@ struct
 	= fn (T {counter = counter1, ...},
 	      T {counter = counter2, ...})
 	   => Int.compare(counter1, counter2)
-      val counter
-	= fn (T {counter, ...}) => counter
 
       fun replaceMem replacer
 	= fn NONE => NONE
@@ -1359,7 +1343,10 @@ struct
   local 
     structure MemLocElement =
       struct
-	type t = MemLoc.t
+	type t = MemLoc.t	
+	val equals = MemLoc.eq
+	val layout = MemLoc.layout
+(*
 	val compare = MemLoc.compare
 	local
 	  fun make f = fn (a, b) => f (MemLoc.counter a, MemLoc.counter b)
@@ -1373,9 +1360,8 @@ struct
 				 then a
 				 else b
 	val max = fn (a, b) => min (b, a)
-	val equals = MemLoc.eq
-	val layout = MemLoc.layout
 	val hash = MemLoc.hash
+*)
       end
   in
     structure MemLocSet = UnorderedSet(open MemLocElement)
@@ -1401,10 +1387,10 @@ struct
 
       val size
 	= fn Register r => SOME (Register.size r)
-	   | FltRegister f => SOME Size.EXTD
-	   | Immediate i => NONE
-	   | Label l => NONE
-	   | Address a => NONE
+	   | FltRegister _ => SOME Size.EXTD
+	   | Immediate _ => NONE
+	   | Label _ => NONE
+	   | Address _ => NONE
 	   | MemLoc m => SOME (MemLoc.size m)
 
       val layout
@@ -1531,7 +1517,6 @@ struct
 	     | OR  => str "or"
 	     | XOR => str "xor"
 	  end
-      val binal_toString = Layout.toString o binal_layout
 
       (* Integer multiplication and division. *)
       datatype md
@@ -1552,7 +1537,6 @@ struct
 	     | IMOD => str "imod"
 	     | MOD  => str "mod"
 	  end
-      val md_toString = Layout.toString o md_layout
 
       (* Integer unary arithmetic/logic instructions. *)
       datatype unal
@@ -1569,7 +1553,6 @@ struct
 	     | NEG => str "neg"
 	     | NOT => str "not"
 	  end
-      val unal_toString = Layout.toString o unal_layout
 	    
       (* Integer shift/rotate arithmetic/logic instructions. *)
       datatype sral
@@ -1594,7 +1577,6 @@ struct
 	     | ROR => str "ror"
 	     | RCR => str "rcr"
 	  end
-      val sral_toString = Layout.toString o sral_layout
 
       (* Move with extention instructions. *)
       datatype movx
@@ -1607,7 +1589,6 @@ struct
 	    fn MOVSX => str "movs"
 	     | MOVZX => str "movz"
 	  end
-      val movx_toString = Layout.toString o movx_layout
 
       (* Condition test field; p. 795 *)
       datatype condition
@@ -1703,7 +1684,6 @@ struct
 	     | FDIV => str "fdiv"
 	     | FDIVR => str "fdivr"
 	  end
-      val fbina_toString = Layout.toString o fbina_layout
       val fbina_reverse
 	= fn FADD  => FADD
            | FSUB  => FSUBR
@@ -1733,7 +1713,6 @@ struct
 	     | FCOS => str "fcos"
 	     | FRNDINT => str "frndint"
 	  end
-      val funa_toString = Layout.toString o funa_layout
 
       (* Floating-point binary arithmetic stack instructions. *)
       datatype fbinas
@@ -1748,7 +1727,6 @@ struct
 	     | FPREM=> str "fprem"
 	     | FPREM1 => str "fprem1"
 	  end
-      val fbinas_toString = Layout.toString o fbinas_layout
 
       (* floating point binary arithmetic stack pop instructions. *)
       datatype fbinasp
@@ -1763,7 +1741,6 @@ struct
 	     | FYL2XP1 => str "fyl2xp1"
 	     | FPATAN => str "fpatan"
 	  end
-      val fbinasp_toString = Layout.toString o fbinasp_layout
 
       (* Floating-point constants. *)
       datatype fldc
@@ -1786,7 +1763,6 @@ struct
 	     | L2T => str "fldl2t"
 	     | LG2 => str "fldlg2"
 	  end
-      val fldc_toString = Layout.toString o fldc_layout
 
       (* x86 Instructions.
        * src operands are not changed by the instruction.
@@ -2106,7 +2082,7 @@ struct
 		     Size.layout size,
 		     Operand.layout src2,
 		     Operand.layout src1)
-	     | SETcc {condition, dst, size}
+	     | SETcc {condition, dst, ...}
 	     => seq [str "set", 
 		     condition_layout condition, 
 		     str " ",
@@ -2339,9 +2315,9 @@ struct
       val uses_defs_kills
 	= fn NOP
 	   => {uses = [], defs = [], kills = []}
-           | BinAL {oper, src, dst, size}
+           | BinAL {src, dst, ...}
 	   => {uses = [src, dst], defs = [dst], kills = []}
-	   | pMD {oper, src, dst, size}
+	   | pMD {src, dst, ...}
 	   => {uses = [src, dst], defs = [dst], kills = []}
 	   | MD {oper, src, size}
 	   => let
@@ -2366,11 +2342,11 @@ struct
 			defs = [Operand.register hi, Operand.register lo],
 			kills = []}
 	      end
-	   | IMUL2 {src, dst, size}
+	   | IMUL2 {src, dst, ...}
 	   => {uses = [src, dst], defs = [dst], kills = []}
-	   | UnAL {oper, dst, size}
+	   | UnAL {dst, ...}
 	   => {uses = [dst], defs = [dst], kills = []}
-	   | SRAL {oper, count, dst, size}
+	   | SRAL {count, dst, size, ...}
 	   => if isSome (Operand.deMemloc count)
 		then let
 		       val reg
@@ -2393,29 +2369,29 @@ struct
 		else {uses = [count, dst], 
 		      defs = [dst], 
 		      kills = []}
-	   | CMP {src1, src2, size}
+	   | CMP {src1, src2, ...}
 	   => {uses = [src1, src2], defs = [], kills = []}
-	   | TEST {src1, src2, size}
+	   | TEST {src1, src2, ...}
 	   => {uses = [src1, src2], defs = [], kills = []}
-	   | SETcc {condition, dst, size}
+	   | SETcc {dst, ...}
 	   => {uses = [], defs = [dst], kills = []}
-	   | JMP {target, absolute}
+	   | JMP {target, ...}
 	   => {uses = [target], defs = [], kills = []}
-	   | Jcc {condition, target}
+	   | Jcc {target, ...}
 	   => {uses = [target], defs = [], kills = []}
-	   | CALL {target, absolute}
+	   | CALL {target, ...}
 	   => {uses = [target], defs = [], kills = []}
 	   | RET {src}
 	   => {uses = case src of NONE => [] | SOME src => [src], 
 	       defs = [], 
 	       kills = []}
-	   | MOV {src, dst, size}
+	   | MOV {src, dst, ...}
 	   => {uses = [src], defs = [dst], kills = []}
-	   | CMOVcc {condition, src, dst, size}
+	   | CMOVcc {src, dst, ...}
 	   => {uses = [src], defs = [dst], kills = []}
-	   | XCHG {src, dst, size}
+	   | XCHG {src, dst, ...}
 	   => {uses = [src,dst], defs = [src,dst], kills = []}
-	   | pPUSH {src, base, size}
+	   | pPUSH {src, base, size, ...}
 	   => {uses = [src,base], 
 	       defs = base::
 	              (case base
@@ -2428,7 +2404,7 @@ struct
 					      class = MemLoc.Class.CStack})]
 			  | _ => []),
 	       kills = []}
-	   | pPOP {dst, base, size}
+	   | pPOP {dst, base, size, ...}
 	   => {uses = base::
 	              (case base
 			 of Operand.MemLoc base
@@ -2441,7 +2417,7 @@ struct
 			  | _ => []),
 	       defs = [dst,base],
 	       kills = []}
-	   | PUSH {src, size}
+	   | PUSH {src, ...}
 	   => {uses = [src, Operand.register Register.esp],
 	       defs = [Operand.register Register.esp,
 		       Operand.address (Address.T {disp = NONE,
@@ -2449,7 +2425,7 @@ struct
 						   index = NONE,
 						   scale = NONE})], 
 	       kills = []}
-	   | POP {dst, size}
+	   | POP {dst, ...}
 	   => {uses = [Operand.register Register.esp,
 		       Operand.address (Address.T {disp = NONE,
 						   base = SOME Register.esp,
@@ -2476,57 +2452,57 @@ struct
 		 defs = [Operand.register hi, Operand.register lo], 
 		 kills = []}
 	      end
-	   | MOVX {oper, src, srcsize, dst, dstsize}
+	   | MOVX {src, dst, ...}
 	   => {uses = [src], defs = [dst], kills = []}
-	   | XVOM {src, srcsize, dst, dstsize}
+	   | XVOM {src, dst, ...}
 	   => {uses = [src], defs = [dst], kills = []}
-	   | LEA {src, dst, size}
+	   | LEA {src, dst, ...}
 	   => {uses = [src], defs = [dst], kills = []}
-	   | pFMOV {src, dst, size}
+	   | pFMOV {src, dst, ...}
 	   => {uses = [src], defs = [dst], kills = []}
-	   | pFMOVX {src, dst, srcsize, dstsize}
+	   | pFMOVX {src, dst, ...}
 	   => {uses = [src], defs = [dst], kills = []}
-	   | pFXVOM {src, dst, srcsize, dstsize}
+	   | pFXVOM {src, dst, ...}
 	   => {uses = [src], defs = [dst], kills = []}
-	   | pFLDC {oper, dst, size}
+	   | pFLDC {dst, ...}
 	   => {uses = [], defs = [dst], kills = []}
-	   | pFMOVFI {src, dst, srcsize, dstsize}
+	   | pFMOVFI {src, dst, ...}
 	   => {uses = [src], defs = [dst], kills = []}
-	   | pFMOVTI {src, dst, srcsize, dstsize}
+	   | pFMOVTI {src, dst, ...}
 	   => {uses = [src], defs = [dst], kills = []}
-	   | pFCOM {src1, src2, size}
+	   | pFCOM {src1, src2, ...}
 	   => {uses = [src1, src2], defs = [], kills = []}
-	   | pFUCOM {src1, src2, size}
+	   | pFUCOM {src1, src2, ...}
 	   => {uses = [src1, src2], defs = [], kills = []}
-	   | pFBinA {oper, src, dst, size}
+	   | pFBinA {src, dst, ...}
 	   => {uses = [src, dst], defs = [dst], kills = []}
-	   | pFUnA {oper, dst, size}
+	   | pFUnA {dst, ...}
 	   => {uses = [dst], defs = [dst], kills = []}
-	   | pFPTAN {dst, size}
+	   | pFPTAN {dst, ...}
 	   => {uses = [dst], defs = [dst], kills = []}
-	   | pFBinAS {oper, src, dst, size}
+	   | pFBinAS {src, dst, ...}
 	   => {uses = [src, dst], defs = [dst], kills = []}
-	   | pFBinASP {oper, src, dst, size}
+	   | pFBinASP {src, dst, ...}
 	   => {uses = [src, dst], 
 	       defs = [dst], 
 	       kills = if Operand.eq(src,dst)
 			 then []
 			 else [src]}
-	   | FLD {src, size}
+	   | FLD {src, ...}
 	   => {uses = [src], 
 	       defs = [Operand.fltregister FltRegister.top], 
 	       kills = []}
-	   | FST {dst, size, pop}
+	   | FST {dst, pop, ...}
 	   => {uses = [Operand.fltregister FltRegister.top], 
 	       defs = [dst], 
 	       kills = if pop 
 			 then [Operand.fltregister FltRegister.top] 
 			 else []}
-	   | FILD {src, size}
+	   | FILD {src, ...}
 	   => {uses = [src], 
 	       defs = [Operand.fltregister FltRegister.top], 
 	       kills = []}
-	   | FIST {dst, size, pop}
+	   | FIST {dst, pop, ...}
 	   => {uses = [Operand.fltregister FltRegister.top], 
 	       defs = [dst], 
 	       kills = if pop 
@@ -2536,17 +2512,17 @@ struct
 	   => {uses = [src, Operand.fltregister FltRegister.top],
 	       defs = [src, Operand.fltregister FltRegister.top], 
 	       kills = []}
-	   | FLDC {oper}
+	   | FLDC {...}
 	   => {uses = [], 
 	       defs = [Operand.fltregister FltRegister.top], 
 	       kills = []}
 	   | FLDCW {src}
            => {uses = [src], defs = [], kills = []}
-	   | FSTCW {dst, check}
+	   | FSTCW {dst, ...}
 	   => {uses = [], defs = [dst], kills = []}
-	   | FSTSW {dst, check}
+	   | FSTSW {dst, ...}
 	   => {uses = [], defs = [dst], kills = []}
-	   | FCOM {src, size, pop, pop'}
+	   | FCOM {src, pop, pop', ...}
 	   => {uses = [src, Operand.fltregister FltRegister.top],
 	       defs = [],
 	       kills = if pop andalso pop'
@@ -2562,30 +2538,30 @@ struct
 		       else if pop
 			 then [Operand.fltregister FltRegister.top]
 		       else []}
-	   | FBinA {oper, src, dst, size, pop}
+	   | FBinA {src, dst, pop, ...}
 	   => {uses = [src, dst], 
 	       defs = [dst], 
 	       kills = if pop then [src] else []}
-	   | FUnA {oper}
+	   | FUnA {...}
 	   => {uses = [Operand.fltregister FltRegister.top],
 	       defs = [Operand.fltregister FltRegister.top], kills = []}
 	   | FPTAN
 	   => {uses = [Operand.fltregister FltRegister.top],
 	       defs = [Operand.fltregister FltRegister.top], kills = []}
-	   | FBinAS {oper}
+	   | FBinAS {...}
 	   => {uses = [Operand.fltregister FltRegister.top,
 		       Operand.fltregister FltRegister.one],
 	       defs = [Operand.fltregister FltRegister.top,
 		       Operand.fltregister FltRegister.one], 
 	       kills = []}
-	   | FBinASP {oper}
+	   | FBinASP {...}
 	   => {uses = [Operand.fltregister FltRegister.top,
 		       Operand.fltregister FltRegister.one],
 	       defs = [Operand.fltregister FltRegister.one],
 	       kills = [Operand.fltregister FltRegister.top]}
 
       val hints
-	= fn pMD {oper, src, dst, size}
+	= fn pMD {dst, size, ...}
 	   => let
 		val (hi,lo) 
 		  = case size
@@ -2607,7 +2583,7 @@ struct
 		    of SOME memloc => (memloc, lo)
 		     | NONE => (temp, lo))]
 	      end
-	  | MD {oper, src, size}
+	  | MD {src, size, ...}
 	   => let
 		val (hi,lo) 
 		  = case size
@@ -2629,7 +2605,7 @@ struct
 		    of SOME memloc => (memloc, lo)
 		     | NONE => (temp, lo))]
 	      end
-	   | SRAL {oper, count, dst, size}
+	   | SRAL {count, size, ...}
 	   => (case Operand.deMemloc count
 		 of SOME memloc 
 		  => let
@@ -2649,21 +2625,21 @@ struct
 		       [(memloc, reg)]
 		     end
 		  | NONE => [])
-	   | pPUSH {src, base, size}
+	   | pPUSH {base, ...}
 	   => (case Operand.deMemloc base
 		 of SOME base => [(base,Register.esp)]
 		  | NONE => [])
-	   | pPOP {dst, base, size}
+	   | pPOP {base, ...}
 	   => (case Operand.deMemloc base
 		 of SOME base => [(base,Register.esp)]
 		  | NONE => [])
-	   | PUSH {src, size}
+	   | PUSH {...}
 	   => let
 		val temp = MemLoc.temp {size = Size.LONG}
 	      in
 		[(temp,Register.esp)]
 	      end
-	   | POP {dst, size}
+	   | POP {...}
 	   => let
 		val temp = MemLoc.temp {size = Size.LONG}
 	      in
@@ -2674,11 +2650,11 @@ struct
       val srcs_dsts
 	= fn NOP
 	   => {srcs = NONE, dsts = NONE}
-           | BinAL {oper, src, dst, size}
+           | BinAL {src, dst, ...}
 	   => {srcs = SOME [src, dst], dsts = SOME [dst]}
-	   | pMD {oper, src, dst, size}
+	   | pMD {src, dst, ...}
 	   => {srcs = SOME [src, dst], dsts = SOME [dst]}
-	   | MD {oper, src, size}
+	   | MD {oper, src, size, ...}
 	   => let
 		val (hi,lo) 
 		  = case size
@@ -2704,11 +2680,11 @@ struct
 			dsts = SOME [Operand.register hi, 
 				     Operand.register lo]}
 	      end
-	   | IMUL2 {src, dst, size}
+	   | IMUL2 {src, dst, ...}
 	   => {srcs = SOME [src, dst], dsts = SOME [dst]}
-	   | UnAL {oper, dst, size}
+	   | UnAL {dst, ...}
 	   => {srcs = SOME [dst], dsts = SOME [dst]}
-	   | SRAL {oper, count, dst, size}
+	   | SRAL {count, dst, size, ...}
 	   => if isSome (Operand.deMemloc count)
 		then let
 		       val reg
@@ -2729,38 +2705,38 @@ struct
 		     end
 		else {srcs = SOME [count, dst],
 		      dsts = SOME [dst]}
-	   | CMP {src1, src2, size}
+	   | CMP {src1, src2, ...}
 	   => {srcs = SOME [src1, src2], dsts = NONE}
-	   | TEST {src1, src2, size}
+	   | TEST {src1, src2, ...}
 	   => {srcs = SOME [src1, src2], dsts = NONE}
-	   | SETcc {condition, dst, size}
+	   | SETcc {dst, ...}
 	   => {srcs = NONE, dsts = SOME [dst]}
-	   | JMP {target, absolute}
+	   | JMP {target, ...}
 	   => {srcs = SOME [target], dsts = NONE}
-	   | Jcc {condition, target}
+	   | Jcc {target, ...}
 	   => {srcs = SOME [target], dsts = NONE}
-	   | CALL {target, absolute}
+	   | CALL {target, ...}
 	   => {srcs = SOME [target], dsts = NONE}
 	   | RET {src}
 	   => {srcs = case src of NONE => NONE | SOME src => SOME [src], 
 	       dsts = NONE} 
-	   | MOV {src, dst, size}
+	   | MOV {src, dst, ...}
 	   => {srcs = SOME [src], dsts = SOME [dst]}
-	   | CMOVcc {condition, src, dst, size}
+	   | CMOVcc {src, dst, ...}
 	   => {srcs = SOME [src], dsts = SOME [dst]}
-	   | XCHG {src, dst, size}
+	   | XCHG {src, dst, ...}
 	   => {srcs = SOME [src,dst], dsts = SOME [src,dst]}
-	   | pPUSH {src, base, size}
+	   | pPUSH {src, base, ...}
 	   => {srcs = SOME [src,base], dsts = SOME [base]}
-	   | pPOP {dst, base, size}
+	   | pPOP {dst, base, ...}
 	   => {srcs = SOME [base], dsts = SOME [dst,base]}
-	   | PUSH {src, size}
+	   | PUSH {src, ...}
 	   => {srcs = SOME [src, Operand.register Register.esp],
 	       dsts = SOME [Operand.register Register.esp]}
-	   | POP {dst, size}
+	   | POP {dst, ...}
 	   => {srcs = SOME [Operand.register Register.esp],
 	       dsts = SOME [dst, Operand.register Register.esp]}
-	   | CX {size}
+	   | CX {size, ...}
 	   => let
 		val (hi,lo) 
 		  = case size
@@ -2778,84 +2754,84 @@ struct
 		{srcs = SOME [Operand.register lo],
 		 dsts = SOME [Operand.register hi, Operand.register lo]}
 	      end
-	   | MOVX {oper, src, srcsize, dst, dstsize}
+	   | MOVX {src, dst, ...}
 	   => {srcs = SOME [src], dsts = SOME [dst]}
-	   | XVOM {src, srcsize, dst, dstsize}
+	   | XVOM {src, dst, ...}
 	   => {srcs = SOME [src], dsts = SOME [dst]}
-	   | LEA {src, dst, size}
+	   | LEA {src, dst, ...}
 	   => {srcs = SOME [src], dsts = SOME [dst]}
-	   | pFMOV {src, dst, size}
+	   | pFMOV {src, dst, ...}
 	   => {srcs = SOME [src], dsts = SOME [dst]}
-	   | pFMOVX {src, dst, srcsize, dstsize}
+	   | pFMOVX {src, dst, ...}
 	   => {srcs = SOME [src], dsts = SOME [dst]}
-	   | pFXVOM {src, dst, srcsize, dstsize}
+	   | pFXVOM {src, dst, ...}
 	   => {srcs = SOME [src], dsts = SOME [dst]}
-	   | pFLDC {oper, dst, size}
+	   | pFLDC {dst, ...}
 	   => {srcs = SOME [], dsts = SOME [dst]}
-	   | pFMOVFI {src, dst, srcsize, dstsize}
+	   | pFMOVFI {src, dst, ...}
 	   => {srcs = SOME [src], dsts = SOME [dst]}
-	   | pFMOVTI {src, dst, srcsize, dstsize}
+	   | pFMOVTI {src, dst, ...}
 	   => {srcs = SOME [src], dsts = SOME [dst]}
-	   | pFCOM {src1, src2, size}
+	   | pFCOM {src1, src2, ...}
 	   => {srcs = SOME [src1, src2], dsts = NONE}
-	   | pFUCOM {src1, src2, size}
+	   | pFUCOM {src1, src2, ...}
 	   => {srcs = SOME [src1, src2], dsts = NONE}
-	   | pFBinA {oper, src, dst, size}
+	   | pFBinA {src, dst, ...}
 	   => {srcs = SOME [src, dst], dsts = SOME [dst]}
-	   | pFUnA {oper, dst, size}
+	   | pFUnA {dst, ...}
 	   => {srcs = SOME [dst], dsts = SOME [dst]}
-	   | pFPTAN {dst, size}
+	   | pFPTAN {dst, ...}
 	   => {srcs = SOME [dst], dsts = SOME [dst]}
-	   | pFBinAS {oper, src, dst, size}
+	   | pFBinAS {src, dst, ...}
 	   => {srcs = SOME [src, dst], dsts = SOME [dst]}
-	   | pFBinASP {oper, src, dst, size}
+	   | pFBinASP {src, dst, ...}
 	   => {srcs = SOME [src, dst], 
 	       dsts = SOME [dst]}
-	   | FLD {src, size}
+	   | FLD {src, ...}
 	   => {srcs = SOME [src], 
 	       dsts = SOME [Operand.fltregister FltRegister.top]}
-	   | FST {dst, size, pop}
+	   | FST {dst, ...}
 	   => {srcs = SOME [Operand.fltregister FltRegister.top], 
 	       dsts = SOME [dst]}
-	   | FILD {src, size}
+	   | FILD {src, ...}
 	   => {srcs = SOME [src], 
 	       dsts = SOME [Operand.fltregister FltRegister.top]}
-	   | FIST {dst, size, pop}
+	   | FIST {dst, ...}
 	   => {srcs = SOME [Operand.fltregister FltRegister.top], 
 	       dsts = SOME [dst]}
 	   | FXCH {src}
 	   => {srcs = SOME [src, Operand.fltregister FltRegister.top],
 	       dsts = SOME [src, Operand.fltregister FltRegister.top]}
-	   | FLDC {oper}
+	   | FLDC {...}
 	   => {srcs = NONE, 
 	       dsts = SOME [Operand.fltregister FltRegister.top]}
 	   | FLDCW {src}
            => {srcs = SOME [src], dsts = NONE}
-	   | FSTCW {dst, check}
+	   | FSTCW {dst, ...}
 	   => {srcs = NONE, dsts = SOME [dst]}
-	   | FSTSW {dst, check}
+	   | FSTSW {dst, ...}
 	   => {srcs = NONE, dsts = SOME [dst]}
-	   | FCOM {src, size, pop, pop'}
+	   | FCOM {src, ...}
 	   => {srcs = SOME [src, Operand.fltregister FltRegister.top],
 	       dsts = NONE}
-	   | FUCOM {src, pop, pop'}
+	   | FUCOM {src, ...}
 	   => {srcs = SOME [src, Operand.fltregister FltRegister.top],
 	       dsts = NONE}
-	   | FBinA {oper, src, dst, size, pop}
+	   | FBinA {src, dst, ...}
 	   => {srcs = SOME [src, dst], 
 	       dsts = SOME [dst]}
-	   | FUnA {oper}
+	   | FUnA {...}
 	   => {srcs = SOME [Operand.fltregister FltRegister.top],
 	       dsts = SOME [Operand.fltregister FltRegister.top]}
 	   | FPTAN
 	   => {srcs = SOME [Operand.fltregister FltRegister.top],
 	       dsts = SOME [Operand.fltregister FltRegister.top]}
-	   | FBinAS {oper}
+	   | FBinAS {...}
 	   => {srcs = SOME [Operand.fltregister FltRegister.top,
 			    Operand.fltregister FltRegister.one],
 	       dsts = SOME [Operand.fltregister FltRegister.top,
 			    Operand.fltregister FltRegister.one]}
-	   | FBinASP {oper}
+	   | FBinASP {...}
 	   => {srcs = SOME [Operand.fltregister FltRegister.top,
 			    Operand.fltregister FltRegister.one],
 	       dsts = SOME [Operand.fltregister FltRegister.one]}
@@ -3227,7 +3203,7 @@ struct
 		     List.fold
 		     (assumes,
 		      "",
-		      fn ({register, memloc, weight, sync, reserve}, s)
+		      fn ({register, memloc, sync, reserve, ...}, s)
 		       => concat[MemLoc.toString memloc, 
 				 " -> ", Register.toString register,
 				 if reserve then " (reserved)" else "",
@@ -3240,7 +3216,7 @@ struct
 		     List.fold
 		     (assumes,
 		      "",
-		      fn ({memloc, weight, sync}, s)
+		      fn ({memloc, sync, ...}, s)
 		       => concat[MemLoc.toString memloc, 
 				 if sync then " (sync)" else "",
 				 " ",
@@ -3357,7 +3333,7 @@ struct
 	      (assumes,
 	       {uses = [], defs = [], kills = []},
 	       fn ({register, memloc, ...},
-		   {uses, defs, kills})
+		   {uses, defs, ...})
 	        => {uses = (Operand.memloc memloc)::uses,
 		    defs = (Operand.register register)::defs, 
 		    kills = []})
@@ -3366,7 +3342,7 @@ struct
 	      (assumes,
 	       {uses = [], defs = [], kills = []},
 	       fn ({memloc, ...},
-		   {uses, defs, kills})
+		   {uses, defs, ...})
 	        => {uses = (Operand.memloc memloc)::uses,
 		    defs = defs, 
 		    kills = []})
@@ -3375,7 +3351,7 @@ struct
 	      (caches,
 	       {uses = [], defs = [], kills = []},
 	       fn ({register, memloc, ...},
-		   {uses, defs, kills})
+		   {uses, defs, ...})
 	        => {uses = (Operand.memloc memloc)::uses,
 		    defs = (Operand.register register)::defs, 
 		    kills = []})
@@ -3384,12 +3360,12 @@ struct
 	      (caches,
 	       {uses = [], defs = [], kills = []},
 	       fn ({memloc, ...},
-		   {uses, defs, kills})
+		   {uses, defs, ...})
 	        => {uses = (Operand.memloc memloc)::uses,
 		    defs = defs, 
 		    kills = []})
 	   | Reset => {uses = [], defs = [], kills = []}
-           | Force {commit_memlocs, remove_memlocs, dead_memlocs, ...}
+           | Force {commit_memlocs, remove_memlocs, ...}
 	   => {uses = List.map(MemLocSet.toList commit_memlocs, Operand.memloc) @
 	              List.map(MemLocSet.toList remove_memlocs, Operand.memloc),
 	       defs = [], 
@@ -3402,21 +3378,21 @@ struct
 	      in
 		 {uses = uses, defs = defs, kills = []}
 	      end
-	   | Reserve {registers} => {uses = [], defs = [], kills = []}
-	   | Unreserve {registers} => {uses = [], defs = [], kills = []}
+	   | Reserve {...} => {uses = [], defs = [], kills = []}
+	   | Unreserve {...} => {uses = [], defs = [], kills = []}
 	   | ClearFlt => {uses = [], defs = [], kills = []}
-	   | SaveRegAlloc {live, id} 
+	   | SaveRegAlloc {live, ...} 
 	   => {uses = List.map(MemLocSet.toList live, Operand.memloc), 
 	       defs = [], 
 	       kills = []}
-	   | RestoreRegAlloc {live, id} 
+	   | RestoreRegAlloc {...} 
 	   => {uses = [], defs = [], kills = []}
 
       val hints
 	= fn Cache {caches}
 	   => List.map
 	      (caches,
-	       fn {register, memloc, reserve} 
+	       fn {register, memloc, ...} 
 	        => (memloc, register))
 	   | _ => []
 
@@ -3683,17 +3659,17 @@ struct
       val toString = Layout.toString o layout
 
       val uses_defs_kills
-	= fn Comment s => {uses = [], defs = [], kills = []}
+	= fn Comment _ => {uses = [], defs = [], kills = []}
 	   | Directive d => Directive.uses_defs_kills d
-	   | PseudoOp p => {uses = [], defs = [], kills = []}
-	   | Label l => {uses = [], defs = [], kills = []}
+	   | PseudoOp _ => {uses = [], defs = [], kills = []}
+	   | Label _ => {uses = [], defs = [], kills = []}
 	   | Instruction i => Instruction.uses_defs_kills i
 
       val hints
-	= fn Comment s => []
+	= fn Comment _ => []
 	   | Directive d => Directive.hints d
-	   | PseudoOp p => []
-	   | Label l => []
+	   | PseudoOp _ => []
+	   | Label _ => []
 	   | Instruction i => Instruction.hints i
 
       fun replace replacer
@@ -3804,7 +3780,6 @@ struct
 		     "size = ", Int.toString size, ", ",
 		     "frameLayoutsIndex = ", 
 		     Int.toString frameLayoutsIndex, "}"]
-	val layout = Layout.str o toString
 
 	val frameInfo = T
      end
@@ -3869,14 +3844,13 @@ struct
 	   => concat ["CReturn::",
 		      Label.toString label,
 		      " ",
-		      Vector.toString (fn (dst,dstsize) => Operand.toString dst) dsts,
+		      Vector.toString (fn (dst,_) => Operand.toString dst) dsts,
 		      " ",
 		      CFunction.name func,
 		      " ",
 		      case frameInfo of
 			 NONE => ""
 		       | SOME f => FrameInfo.toString f]
-      val layout = Layout.str o toString
 
       val uses_defs_kills
 	= fn CReturn {dsts, func, ...} 
@@ -3887,10 +3861,10 @@ struct
 		     | SOME ty => 
 			  List.map
 			  (Operand.cReturnTemps ty,
-			   fn {src, dst} => Operand.memloc dst)
+			   fn {dst, ...} => Operand.memloc dst)
 	      in
 		 {uses = uses, 
-		  defs = Vector.toListMap(dsts, fn (dst, dstsize) => dst), 
+		  defs = Vector.toListMap(dsts, fn (dst, _) => dst), 
 		  kills = []}
 	      end
 	   | _ => {uses = [], defs = [], kills = []}
@@ -3950,7 +3924,7 @@ struct
 
 	  fun extract(cases,f)
 	    = let
-		fun doit [(k,target)] = f target
+		fun doit [(_,target)] = f target
 		  | doit _ = Error.bug "Transfer.Cases.extract"
 	      in
 		case cases
@@ -4009,7 +3983,7 @@ struct
 
 	  fun forall(cases, f)
 	    = let
-		fun doit l = List.forall(l, fn (k, target) => f target)
+		fun doit l = List.forall(l, fn (_, target) => f target)
 	      in
 		case cases
 		  of Char cases => doit cases
@@ -4029,7 +4003,7 @@ struct
 
 	  fun foreach(cases, f)
 	    = let
-		fun doit l = List.foreach(l, fn (k, target) => f target)
+		fun doit l = List.foreach(l, fn (_, target) => f target)
 	      in
 		case cases
 		  of Char cases => doit cases
@@ -4065,27 +4039,6 @@ struct
 		  of Char cases => doit(cases, cf')
 		   | Int cases => doit(cases, if')
 		   | Word cases => doit(cases, wf')
-	      end
-
-	  fun fold'(cases, b, f, cf', if', wf')
-	    = let
-		fun doit(l,f') = List.fold(l, b, f o f')
-	      in
-		case cases
-		  of Char cases => doit(cases, cf')
-		   | Int cases => doit(cases, if')
-		   | Word cases => doit(cases, wf')
-	      end
-
-	  fun zip(cases, l')
-	    = let
-		fun doit l  = List.map(List.zip(l,l'),
-				       fn ((k,a),b) => (k,(a,b)))
-	      in
-		case cases
-		  of Char cases => Char (doit cases)
-		   | Int cases => Int (doit cases)
-		   | Word cases => Word (doit cases)
 	      end
 	end
 
@@ -4188,7 +4141,7 @@ struct
 			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "]"]
-	   | CCall {args, frameInfo, func, return, target}
+	   | CCall {args, return, target, ...}
 	   => concat ["CCALL ",
 		      Label.toString target,
 		      "(",
@@ -4198,10 +4151,9 @@ struct
 		      ") <",
 		      Option.toString Label.toString return,
 		      ">"]
-      val layout = Layout.str o toString
 
       val uses_defs_kills
-	= fn Switch {test, cases, default}
+	= fn Switch {test, ...}
 	   => {uses = [test], defs = [], kills = []}
 	   | CCall {args, func, ...}
 	   => let
@@ -4211,7 +4163,7 @@ struct
 		     | SOME ty => 
 			  List.map
 			  (Operand.cReturnTemps ty,
-			   fn {src, dst} => Operand.memloc dst)
+			   fn {dst, ...} => Operand.memloc dst)
 	      in
 		 {uses = List.map(args, fn (oper,_) => oper),
 		  defs = defs, kills = []}
@@ -4225,9 +4177,9 @@ struct
 	   => default::(Cases.map'
 			(cases,
 			 fn target => target,
-			 fn (c,target) => target,
-			 fn (i,target) => target,
-			 fn (w,target) => target))
+			 fn (_,target) => target,
+			 fn (_,target) => target,
+			 fn (_,target) => target))
 	   | NonTail {return,handler,...} => return::(case handler 
 							of NONE => nil
 							 | SOME handler => [handler])

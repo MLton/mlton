@@ -12,11 +12,10 @@ struct
 
   val tracer = x86.tracer
 
-  fun verifyEntryTransfer {chunk as Chunk.T {blocks, ...}}
+  fun verifyEntryTransfer {chunk = Chunk.T {blocks, ...}}
     = let
-	val info as {get : Label.t -> Block.t option,
-		     set,
-		     destroy}
+	val {get : Label.t -> Block.t option, 
+	     set, destroy}
 	  = Property.destGetSetOnce(Label.plist,
 				    Property.initConst NONE)
 
@@ -45,7 +44,7 @@ struct
 			       | _ => false
 	val b = List.forall
 	        (blocks,
-		 fn block as Block.T {entry, transfer, ...}
+		 fn Block.T {transfer, ...}
 		  => (case transfer
 			of Transfer.Goto {target, ...}
 			 => isJump target
@@ -75,7 +74,7 @@ struct
 	b
       end
 
-  val (verifyEntryTranfer, verifyEntryTransfer_msg)
+  val (verifyEntryTransfer, verifyEntryTransfer_msg)
     = tracer
       "verifyEntryTransfer"
       verifyEntryTransfer

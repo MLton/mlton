@@ -63,7 +63,7 @@ structure Cache:
 
       type 'a t = (Stype.t vector, 'a) Cache.t S.map ref
 
-      fun new () = ref S.empty
+      fun new () : 'a t = ref S.empty
 
       local
 	 fun equal (v, v') =

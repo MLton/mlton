@@ -57,15 +57,16 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 			       finish: statement_type list,
 			       transfer: transfer_type}}
 
-    val rec split
-      = fn ([], p) => ([],[])
-         | (l as h::t, p) => if p h
-			       then let
-				      val (tt,ff) = split (t, p)
-				    in
-				      (h::tt,ff)
-				    end
-			       else ([],l)
+    fun split (l, p) 
+      = case l 
+          of [] => ([],[])
+	   | l as h::t => if p h
+			    then let
+				    val (tt,ff) = split (t, p)
+				 in
+				    (h::tt,ff)
+				 end
+			    else ([],l)
 
     val rec matcher' : {template_statement: statement_element,
 			statement: statement_type list,
@@ -73,7 +74,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
                        {statement: statement_type list,
 			finish: statement_type list} option
       = fn (* Zero *)
-	   {template_statement = ((0, SOME 0), p),
+	   {template_statement = ((0, SOME 0), _),
 	    statement,
 	    finish}
 	 => SOME {statement = List.rev statement,
@@ -185,20 +186,20 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 			   state = state})
      
 	  fun findMatch' (find_state 
-			  as {remaining as {template as {start 
-							 = template_start,
-							 statements 
-							 = template_statements,
-							 finish 
-							 = template_finish,
-							 transfer 
-							 = template_transfer},
+			  as {remaining as {template = {start 
+							= template_start,
+							statements 
+							= template_statements,
+							finish 
+							= template_finish,
+							transfer 
+							= template_transfer},
 					    ...}::_,
-			      state as {entry,
-					profileLabel,
-					start, 
-					finish, 
-					transfer}}) : 
+			      state = {entry,
+				       profileLabel,
+				       start, 
+				       finish, 
+				       transfer}}) : 
 	                 match_state
 	    = let
 		fun loop ()
@@ -240,8 +241,8 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 
 	  fun findMatch (match_state: match_state) : match_state
 	    = case match_state
-		of Start {block as T {entry, profileLabel, 
-				      statements, transfer}}
+		of Start {block = T {entry, profileLabel, 
+				     statements, transfer}}
 		 => let
 		      val find_state
 			= {remaining = optimizations,
@@ -254,12 +255,12 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 		      findMatch' find_state
 		    end
 	         | Continue {remaining,
-			     match as {entry, 
-				       profileLabel,
-				       start, 
-				       statements, 
-				       finish, 
-				       transfer},
+			     match = {entry, 
+				      profileLabel,
+				      start, 
+				      statements, 
+				      finish, 
+				      transfer},
 			     ...}
 		 => let
 		      val finish = List.foldr(statements,
@@ -288,9 +289,9 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 	  fun peepholeBlock'' {match_state: match_state,
 			       changed: bool}
 	    = case findMatch match_state
-		of match_state as Continue {remaining as ({rewriter,
-							   callback,
-							   ...})::_,
+		of match_state as Continue {remaining = {rewriter,
+							 callback,
+							 ...}::_,
 					    match}
 		 => (case rewriter match
 		       of SOME block 
@@ -302,8 +303,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 			=> (callback false;
 			    peepholeBlock'' {match_state = match_state,
 					     changed = changed}))
-	         | match_state as Done {block} => {block = block,
-						   changed = changed}
+	         | Done {block} => {block = block, changed = changed}
 		 | _ => Error.bug "Peephole: peepholeBlock''"
 	in
 	  case optimizations

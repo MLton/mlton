@@ -50,21 +50,21 @@ struct
       
       fun newLiveInfo ()
 	= let
-	    val liveInfo as {get : Label.t -> LiveSet.t,
-			     set : Label.t * LiveSet.t -> unit, ...}
+	    val {get : Label.t -> LiveSet.t,
+		 set : Label.t * LiveSet.t -> unit, ...}
 	      = Property.getSet
 	        (Label.plist, Property.initRaise ("liveInfo", Label.layout))
 	  in
 	    T {get = get, set = set}
 	  end
 
-      fun setLiveOperands (liveInfo as T {get, set}, label, live)
+      fun setLiveOperands (T {set, ...}, label, live)
 	= set(label, livenessOperands live)
-      fun setLiveMemlocs (liveInfo as T {get, set}, label, live)
+      fun setLiveMemlocs (T {set, ...}, label, live)
 	= set(label, livenessMemlocs live)
-      fun setLive (liveInfo as T {get, set}, label, live)
+      fun setLive (T {set, ...}, label, live)
 	= set(label, live)
-      fun getLive (liveInfo as T {get, set}, label)
+      fun getLive (T {get, ...}, label)
 	= get label
     end
 
@@ -142,6 +142,7 @@ struct
 	  LiveSet.equals(liveOut1, liveOut2) andalso
 	  LiveSet.equals(dead1, dead2)	      
 
+(*
       fun invariant (T {liveIn : LiveSet.t,
 			liveOut : LiveSet.t,
 			dead : LiveSet.t})
@@ -178,6 +179,7 @@ struct
 	     liveOut = doit liveOut,
 	     dead = doit dead}
 	  end
+*)
 
       fun liveness ({uses : LiveSet.t,
 		     defs : LiveSet.t,
@@ -263,7 +265,7 @@ struct
 			       live = live}
 	  end
 
-      fun livenessBlock {block as Block.T {entry, statements, transfer, ...},
+      fun livenessBlock {block = Block.T {entry, statements, transfer, ...},
 			 liveInfo : LiveInfo.t}
 	= let
 	    val T {liveIn = live, ...}
@@ -295,23 +297,21 @@ struct
     struct
       open LiveInfo
 
-      fun completeLiveInfo {chunk as Chunk.T {blocks, ...}, 
+      fun completeLiveInfo {chunk = Chunk.T {blocks, ...}, 
 			    liveInfo : LiveInfo.t,
 			    pass: string}
 	= let
-	    val blockInfo
-	      as {get = getBlockInfo : 
-		        Label.t -> {pred: Label.t list ref,
-				    block: Block.t option ref,
-				    topo: int ref},
-		  destroy = destBlockInfo}
+	    val {get = getBlockInfo : 
+		       Label.t -> {pred: Label.t list ref,
+				   block: Block.t option ref,
+				   topo: int ref},
+		 destroy = destBlockInfo}
 	      = Property.destGet
 	        (Label.plist,
-		 Property.initFun (fn label => {pred = ref [],
-						block = ref NONE,
-						topo = ref ~1}))
+		 Property.initFun (fn _ => {pred = ref [],
+					    block = ref NONE,
+					    topo = ref ~1}))
 	    val get_pred = (#pred o getBlockInfo)
-	    val get_block = (#block o getBlockInfo)
 	    val get_topo = (#topo o getBlockInfo)
 	    val get_pred' = (! o #pred o getBlockInfo)
 	    val get_block' = (! o #block o getBlockInfo)
@@ -440,35 +440,32 @@ struct
 			   then ()
 			   else (LiveInfo.setLive(liveInfo, label, live);
 				 List.foreach(!pred, add_todo);
-(*
-				 print "completeLiveInfo:";
-				 print pass;
-				 print ": ";
-				 print (Label.toString label);
-				 print ": ";
-				 if LiveSet.<(live, live')
-				   then print "new < old"
-				 else if LiveSet.<(live', live)
-				   then print "old < new"
-				 else print "?";
-				 print "\n";
-				 if true
-				   then (print "old: ";
-					 LiveSet.foreach
-					 (live',
-					  fn m 
-					   => (print (MemLoc.toString m);
-					       print " "));
-					 print "\n";
-					 print "new: ";
-					 LiveSet.foreach
-					 (live,
-					  fn m 
-					   => (print (MemLoc.toString m);
-					       print " "));
-					 print "\n")
-				   else ();
-*)
+				 if true then () else
+				 (print "completeLiveInfo:";
+				  print pass;
+				  print ": ";
+				  print (Label.toString label);
+				  print ": ";
+				  if LiveSet.<(live, live')
+				    then print "new < old"
+				  else if LiveSet.<(live', live)
+				    then print "old < new"
+				  else print "?";
+				  print "\n";
+				  if true
+				    then (print "old: ";
+				 	  LiveSet.foreach
+				 	  (live', fn m => 
+					   (print (MemLoc.toString m);
+					    print " "));
+					  print "\n";
+					  print "new: ";
+					  LiveSet.foreach
+					  (live, fn m => 
+					   (print (MemLoc.toString m);
+					    print " "));
+					  print "\n")
+				     else ());
 				 changed := true);
 			 doit ()
 		       end)
@@ -487,7 +484,7 @@ struct
 	  "completeLiveInfo"
 	  completeLiveInfo
 
-      fun verifyLiveInfo {chunk as Chunk.T {blocks, ...},
+      fun verifyLiveInfo {chunk = Chunk.T {blocks, ...},
 			  liveInfo : t}
 	= List.forall
 	  (blocks,
@@ -659,8 +656,8 @@ struct
 	     live = live}
 	  end
 
-      fun toLivenessBlock {block as Block.T {entry, profileLabel,
-					     statements, transfer},
+      fun toLivenessBlock {block = Block.T {entry, profileLabel,
+					    statements, transfer},
 			   liveInfo : LiveInfo.t}
 	= let
 	    val {transfer, live}
@@ -671,7 +668,7 @@ struct
 	      = toLivenessStatements {statements =statements,
 				      live = live}
 
-	    val {entry, live}
+	    val {entry, ...}
 	      = toLivenessEntry {entry = entry,
 				 live = live}
 
@@ -728,7 +725,7 @@ struct
 	     live = live'}
 	  end
 
-      fun verifyLivenessBlock {block as T {entry, statements, transfer, ...},
+      fun verifyLivenessBlock {block = T {entry, statements, transfer, ...},
 			       liveInfo: LiveInfo.t}
 	= let
 	    val {verified = verified_transfer,
@@ -742,7 +739,7 @@ struct
 					  live = live}
 
 	    val {verified = verified_entry,
-		 live}
+		 ...}
 	      = verifyLivenessEntry {entry = entry,
 				     live = live}
 
@@ -765,12 +762,12 @@ struct
 	  "verifyLivenessBlock"
           verifyLivenessBlock
 
-      fun toBlock {block as T {entry, profileLabel,
-			       statements, transfer}}
+      fun toBlock {block = T {entry, profileLabel,
+			      statements, transfer}}
 	= let
-	    val (entry,info) = entry
-	    val statements = List.map(statements, fn (asm,info) => asm)
-	    val (transfer,info) = transfer
+	    val (entry,_) = entry
+	    val statements = List.map(statements, fn (asm,_) => asm)
+	    val (transfer,_) = transfer
 	  in 
 	    Block.T {entry = entry,
 		     profileLabel = profileLabel,

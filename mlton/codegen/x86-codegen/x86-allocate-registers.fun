@@ -30,10 +30,6 @@ struct
 		       ClassSet.contains(volatileClasses, MemLoc.class memloc)
 		     end
 
-  fun mkBorder c
-    = AppendList.single
-      (Assembly.comment (String.make(40, c)))
-
   fun partition(l, p)
     = let
 	val rec partition' 
@@ -117,14 +113,14 @@ struct
       val future_toString
 	= fn (M (tag, memloc))
 	   => concat [futureMemlocTag_toString tag, " ", MemLoc.toString memloc]
-	   | (MP (tag, memlocOred))
+	   | (MP (tag, _))
 	   => concat [futureMemlocPredTag_toString tag]
 
 
       type hint = Register.t * MemLoc.t list * MemLocSet.t
 
       val hint_toString
-	= fn (register, memlocs, ignores) 
+	= fn (register, memlocs, _) 
 	   => concat ["{ ",
 		      List.fold
 		      (memlocs,
@@ -140,7 +136,7 @@ struct
 			  post: future list},
 		hint: hint list}
 
-      fun toString {dead, commit, remove, futures as {pre, post}, hint}
+      fun toString {dead, commit, remove, futures = {pre, post}, hint}
 	= let
 	    fun doit (name, l, toString, s)
 	      = List.fold(l, s,
@@ -159,7 +155,7 @@ struct
 	    doit("hint: ", hint, hint_toString, ""))))))
 	  end
 
-      fun toComments {dead, commit, remove, futures as {pre, post}, hint} 
+      fun toComments {dead, commit, remove, futures = {pre, post}, hint} 
 	= let
 	    fun doit (name, l, toString, ac)
 	      = List.fold(l, ac, 
@@ -400,7 +396,7 @@ struct
 	    val current_def
 	      = MemLocSet.-(allDefs, current_usedef)
 
-	    val (no,commit,remove,dead)
+	    val (_,commit,remove,dead)
 	      = split(current, fn memloc => predict(future, memloc))
 
 	    val future
@@ -556,7 +552,7 @@ struct
 			      commit = MemLocSet.empty,
 			      remove = MemLocSet.empty,
 			      futures = {pre = future, post = future}}
-	    val info as {dead, commit, remove, futures}
+	    val {dead, commit, remove, futures}
 	      = case assembly
 		  of Assembly.Comment _ => default ()
 		   | Assembly.Directive d 
@@ -603,8 +599,8 @@ struct
 	    val hint
 	      = case assembly
 		  of (Assembly.Instruction (Instruction.MOV 
-					    {src as Operand.MemLoc src', 
-					     dst as Operand.MemLoc dst',
+					    {src = Operand.MemLoc src', 
+					     dst = Operand.MemLoc dst',
 					     ...}))
 		   => List.revMap
 		      (hint,
@@ -633,7 +629,7 @@ struct
 		 {assembly = [], future = [], hint = []},
 		 fn (asm, {assembly,future,hint})
 		  => let
-		       val info as {futures as {pre, ...}, hint, ...}
+		       val info as {futures = {pre, ...}, hint, ...}
 			 = livenessAssembly {assembly = asm,
 					     future = future,
 					     hint = hint}
@@ -698,26 +694,6 @@ struct
 		  Bool.toString sync, " ",
 		  commit_toString commit]
 
-      fun value_eq (value1 as {register = register1,
-			       memloc = memloc1,
-			       weight = weight1,
-			       sync = sync1,
-			       commit = commit1},
-		    value2 as {register = register2,
-			       memloc = memloc2,
-			       weight = weight2,
-			       sync = sync2,
-			       commit = commit2})
-	= Register.eq(register1, register2)
-	  andalso
-	  MemLoc.eq(memloc1, memloc2)
-	  andalso
-	  weight1 = weight2
-	  andalso
-	  sync1 = sync2
-	  andalso
-	  commit1 = commit2
-
       type fltvalue = {fltregister: FltRegister.t,
 		       memloc: MemLoc.t,
 		       weight: int,
@@ -731,36 +707,16 @@ struct
 		  Bool.toString sync, " ",
 		  commit_toString commit]
 
-      fun fltvalue_eq (value1 as {fltregister = fltregister1,
-				  memloc = memloc1,
-				  weight = weight1,
-				  sync = sync1,
-				  commit = commit1},
-		       value2 as {fltregister = fltregister2,
-				  memloc = memloc2,
-				  weight = weight2,
-				  sync = sync2,
-				  commit = commit2})
-	= FltRegister.eq(fltregister1, fltregister2)
-	  andalso
-	  MemLoc.eq(memloc1, memloc2)
-	  andalso
-	  weight1 = weight2
-	  andalso
-	  sync1 = sync2
-	  andalso
-	  commit1 = commit2
-		      
       type t = {entries: value list,
 		reserved: Register.t list,
 		fltstack: fltvalue list}
 
-      fun unique (registerAllocation as {entries, reserved, fltstack}: t)
+      fun unique ({entries, fltstack, ...}: t)
 	= let
 	    fun check_entries (entries: value list, res) =
 	      case entries of
 		[] => res
-	      | (value as {register, memloc, ...})::entries =>
+	      | ({register, memloc, ...})::entries =>
 		  check_entries
 		  (entries,
 		   List.foldr
@@ -773,7 +729,7 @@ struct
 	    fun check_fltstack (fltstack: fltvalue list, res) =
 	      case fltstack of
 		[] => res
-	      | (value as {fltregister, memloc, ...})::fltstack =>
+	      | ({fltregister, memloc, ...})::fltstack =>
 		  check_fltstack
 		  (fltstack,
 		   List.foldr
@@ -789,7 +745,7 @@ struct
 	    check_fltstack(fltstack, true)
 	  end
 
-      fun toString (registerAllocation as {entries, reserved, fltstack}: t) 
+      fun toString ({entries, reserved, fltstack}: t) 
 	= let
 	    fun doit (name, l, toString, ac)
 	      = (name ^ "\n") ^
@@ -803,7 +759,7 @@ struct
 		 "")))
 	  end
 
-      fun toComments (registerAllocation as {entries, reserved, fltstack}: t)
+      fun toComments ({entries, reserved, fltstack}: t)
 	= let
 	    fun doit (name, l, toString, ac)
 	      = (Assembly.comment name)::
@@ -824,24 +780,6 @@ struct
 	= Property.getSetOnce
 	  (Directive.Id.plist,
 	   Property.initRaise ("getRA", fn _ => Layout.empty))
-
-      fun eq (registerAllocation1 as {entries = entries1, 
-				      reserved = reserved1,
-				      fltstack = fltstack1},
-	      registerAllocation2 as {entries = entries2, 
-				      reserved = reserved2,
-				      fltstack = fltstack2})
-	= List.equalsAsSet(entries1, 
-			   entries2,
-			   value_eq)
-	  andalso
-	  List.equalsAsSet(reserved1,
-			   reserved2,
-			   Register.eq)
-	  andalso
-	  List.equals(fltstack1,
-		      fltstack2,
-		      fltvalue_eq)
 
       fun empty () : t
 	= {entries = [],
@@ -888,17 +826,16 @@ struct
 				 fltstack = fltstack}}
 
       fun valueMap {map, 
-		    registerAllocation as {entries,
-					   reserved, 
-					   fltstack}: t}
+		    registerAllocation = {entries,
+					  reserved, 
+					  fltstack}: t}
 	= {entries = List.revMap(entries, map),
 	   reserved = reserved,
 	   fltstack = fltstack}
 
       fun valueFilter {filter,
-		       registerAllocation as {entries, 
-					      reserved, 
-					      fltstack}: t}
+		       registerAllocation = {entries, 
+					     ...}: t}
 	= List.revKeepAll(entries, filter)
 
       fun valueRegister {register,
@@ -910,41 +847,31 @@ struct
 	     | [value] => SOME value
 	     | _ => Error.bug "valueRegister"
 
-      fun valuesRegister {register as Register.T {reg, part}, 
-			  registerAllocation as {entries, 
-						 reserved, 
-						 fltstack}: t}
+      fun valuesRegister {register = Register.T {reg, ...}, 
+			  registerAllocation = {entries, 
+						...}: t}
 	= List.revKeepAll(entries, 
 			  fn {register 
-			      = register' as Register.T {reg = reg',
-							 part = part'},...}
+			      = Register.T {reg = reg',
+					    ...},
+			      ...}
 			   => reg = reg')
 
       fun fltvalueMap {map,
-		       registerAllocation as {entries, 
-					      reserved, 
-					      fltstack}: t}
+		       registerAllocation = {entries, 
+					     reserved, 
+					     fltstack}: t}
 	= {entries = entries,
 	   reserved = reserved,
 	   fltstack = List.map(fltstack, map)}
 
       fun fltvalueFilter {filter,
-			  registerAllocation as {entries, 
-						 reserved, 
-						 fltstack} :t}
+			  registerAllocation = {fltstack, 
+						...} :t}
 	= List.keepAll(fltstack, filter)
 
-      fun valuesFltRegister {fltregister as FltRegister.T i,
-			     registerAllocation as {entries,
-						    reserved,
-						    fltstack} : t}
-	= List.revKeepAll(fltstack,
-			  fn {fltregister 
-			      = fltregister' as FltRegister.T i', ...}
-			   => i = i')
-
       fun update {value as {register,...},
-		  registerAllocation as {entries, reserved, fltstack}: t}
+		  registerAllocation = {entries, reserved, fltstack}: t}
 	= {entries = let
 		       val entries 
 			 = List.revRemoveAll(entries,
@@ -955,15 +882,9 @@ struct
 		     end,
 	   reserved = reserved,
 	   fltstack = fltstack}
-      fun updates {values, registerAllocation: t}
-	= List.fold(values,
-		    registerAllocation,
-		    fn (value, registerAllocation)
-		     => update {value = value,
-				registerAllocation = registerAllocation})
 
       fun fltupdate {value as {fltregister, ...},
-		     registerAllocation as {entries, reserved, fltstack}: t}
+		     registerAllocation = {entries, reserved, fltstack}: t}
 	= {entries = entries,
 	   reserved = reserved,
 	   fltstack = let
@@ -977,15 +898,8 @@ struct
 			fltupdate' fltstack
 		      end}
 
-      fun fltupdates {values, registerAllocation: t}
-	= List.fold(values,
-		    registerAllocation,
-		    fn (value, registerAllocation)
-		     => fltupdate {value = value,
-				   registerAllocation = registerAllocation})
-
       fun delete {register,
-		  registerAllocation as {entries, reserved, fltstack}: t}
+		  registerAllocation = {entries, reserved, fltstack}: t}
 	= {entries = List.revRemoveAll(entries,
 				       fn {register = register',...}
 				        => Register.eq(register, register')),
@@ -999,7 +913,7 @@ struct
 				registerAllocation = registerAllocation})
 
       fun fltpush {value,
-		   registerAllocation as {entries, reserved, fltstack}: t}
+		   registerAllocation = {entries, reserved, fltstack}: t}
 	= {fltrename = FltRegister.push,
 	   registerAllocation
 	   = {entries = entries,
@@ -1008,7 +922,7 @@ struct
 			   of FltRegister.T 0
 			    => value::(List.map(fltstack,
 						fn {fltregister 
-						    as FltRegister.T i,
+						    = FltRegister.T i,
 						    memloc,
 						    weight,
 						    sync,
@@ -1021,16 +935,16 @@ struct
 						     commit = commit}))
 			    | _ => Error.bug "fltpush"}}
 
-      fun fltpop {registerAllocation as {entries, reserved, fltstack}: t}
+      fun fltpop {registerAllocation = {entries, reserved, fltstack}: t}
 	= {fltrename = FltRegister.pop,
 	   registerAllocation
 	   = {entries = entries,
 	      reserved = reserved,
 	      fltstack = case fltstack
 			   of [] => Error.bug "fltpop"
-			    | value::fltstack
+			    | _::fltstack
 			    => List.map(fltstack,
-					fn {fltregister as FltRegister.T i,
+					fn {fltregister = FltRegister.T i,
 					    memloc,
 					    weight,
 					    sync,
@@ -1043,10 +957,10 @@ struct
 					     commit = commit})}}
 
       fun fltxch' {fltregister: FltRegister.t,
-		   registerAllocation as {entries, reserved, fltstack}: t}
+		   registerAllocation = {entries, reserved, fltstack}: t}
 	= let
 	    val rec split
-	      = fn (fltstack : fltvalue list, []) => Error.bug "fltxch': split"
+	      = fn (_ : fltvalue list, []) => Error.bug "fltxch': split"
 	         | (fltstack_pre,value::fltstack_post)
 	         => if FltRegister.eq(fltregister, #fltregister value)
 		      then (List.rev fltstack_pre, value, fltstack_post)
@@ -1073,11 +987,11 @@ struct
 		reserved = reserved,
 		fltstack = case fltstack_pre
 			     of [] => Error.bug "fltxch'"
-			      | (value as {fltregister,
-					   memloc,
-					   weight,
-					   sync,
-					   commit})::fltstack_pre
+			      | ({fltregister,
+				  memloc,
+				  weight,
+				  sync,
+				  commit})::fltstack_pre
 			      => ({fltregister = fltregister,
 				   memloc = memloc',
 				   weight = weight',
@@ -1290,10 +1204,11 @@ struct
 		  end
 	     else raise Spill)
 
-      fun potentialRegisters {size: Size.t,
-			      saves: Operand.t list,
-			      force: Register.t list,
-			      registerAllocation: t} :
+      fun potentialRegisters ({size, force, ...}:
+			      {size: Size.t,
+			       saves: Operand.t list,
+			       force: Register.t list,
+			       registerAllocation: t}):
                              Register.t list
 	= case force
 	    of [] => Register.registers size
@@ -1303,8 +1218,8 @@ struct
 							      register, 
 							      Register.eq))
 
-      fun chooseRegister {info as {futures as {pre = future, ...},
-				   hint,...}: Liveness.t,
+      fun chooseRegister {info = {futures = {pre = future, ...},
+				  hint,...}: Liveness.t,
 			  memloc: MemLoc.t option,
 			  size: Size.t,
 			  supports: Operand.t list,
@@ -1457,7 +1372,7 @@ struct
 					 val weight_cost' = weight
 				       in
 					 (support_cost orelse support_cost',
-					  commit_cost orelse support_cost',
+					  commit_cost orelse commit_cost',
 					  case (future_cost,future_cost')
 					    of (_, NONE) => future_cost
 					     | (NONE, _) => future_cost'
@@ -1537,8 +1452,10 @@ struct
 					 "chooseRegister:\n",
 					 (toString registerAllocation),
 					 "size = ", size, "\n",
+					 "supports = ", supports, "\n",
 					 "saves = ", saves, "\n",
 					 "force = ", force, "\n",
+					 "reserved = ", reserved, "\n",
 					 "depth = ", Int.toString (!depth), "\n"]
 
 			val _ = print msg
@@ -1553,20 +1470,20 @@ struct
 					 = registerAllocation}
 	    val coincide_values
 	      = List.revKeepAll(values,
-				fn value as {register = register',...}
+				fn {register = register',...}
 				 => Register.coincide(register',register))
 	  in
 	    {register = register,
 	     coincide_values = coincide_values}
 	  end
 
-      fun freeRegister (args as {info: Liveness.t,
-				 memloc: MemLoc.t option,
-				 size: Size.t,
-				 supports: Operand.t list,
-				 saves: Operand.t list,
-				 force: Register.t list, 
-				 registerAllocation: t}) :
+      fun freeRegister ({info: Liveness.t,
+			 memloc: MemLoc.t option,
+			 size: Size.t,
+			 supports: Operand.t list,
+			 saves: Operand.t list,
+			 force: Register.t list, 
+			 registerAllocation: t}) :
                        {register: Register.t,
 			assembly: Assembly.t AppendList.t,
 			registerAllocation: t}
@@ -1611,7 +1528,7 @@ struct
 	        (coincide_values,
 		 {assembly = AppendList.empty,
 		  registerAllocation = registerAllocation},
-		 fn (value as {memloc,...},
+		 fn ({memloc,...},
 		     {assembly,
 		      registerAllocation})
 		  => if List.contains(supported,
@@ -1627,9 +1544,9 @@ struct
 				    => Register.coincide(final_register,
 							 register'))
 				  
-			      val {register,
-				   assembly = assembly_register,
-				   registerAllocation}
+			      val {assembly = assembly_register,
+				   registerAllocation,
+				   ...}
 				= toRegisterMemLoc
 				  {memloc = memloc,
 				   info = info,
@@ -1654,7 +1571,7 @@ struct
 				    memloc,
 				    weight,
 				    sync,
-				    commit}
+				    ...}
 		        => if Register.coincide(register,
 						final_register)
 			     then {register = register,
@@ -1715,7 +1632,7 @@ struct
 			   fltrename: FltRegister.t -> FltRegister.t,
 			   registerAllocation: t}
 	= let
-	    val info as {futures as {pre = future, ...},...} = info
+	    val info as {futures = {pre = future, ...},...} = info
 	    val values
 	      = fltvalueFilter {filter = fn _ => true,
 				registerAllocation = registerAllocation}
@@ -1812,7 +1729,7 @@ struct
 			   memloc,
 			   weight,
 			   sync,
-			   commit}::_
+			   ...}::_
 			=> let
 			     val registerAllocation
 			       = fltupdate {value = {fltregister = fltregister,
@@ -1906,11 +1823,11 @@ struct
 				      = registerAllocation}
 			of NONE => {assembly = assembly,
 				    registerAllocation = registerAllocation}
-			 | SOME (value as {register,
-					   memloc,
-					   weight,
-					   sync,
-					   commit})
+			 | SOME ({register,
+				  memloc,
+				  weight,
+				  sync,
+				  commit})
 			 => let
 			      fun doCommitFalse ()
 				= let
@@ -2124,11 +2041,11 @@ struct
 		 {assembly = AppendList.empty,
 		  fltrename = FltRegister.id,
 		  registerAllocation = registerAllocation},
-		 fn (value as {fltregister,
-			       memloc,
-			       weight,
-			       sync,
-			       commit},
+		 fn ({fltregister,
+		      memloc,
+		      weight,
+		      sync,
+		      commit},
 		     {assembly, fltrename, registerAllocation})
 		  => let
 		       fun doCommitFalse ()
@@ -2591,7 +2508,7 @@ struct
 		    = fn ([],{assembly,registerAllocation}) 
 		       => {assembly = assembly,
 			   registerAllocation = registerAllocation}
-		       | ((value as {memloc, weight, sync, commit, ...},
+		       | (({memloc, weight, sync, commit, ...},
 			   spillMemLoc)::spillMap,
 			  {assembly, registerAllocation})
 		       => let
@@ -2678,7 +2595,7 @@ struct
 	        (saves,
 		 {assembly = AppendList.empty,
 		  registerAllocation = registerAllocation},
-		 fn (value as {register, memloc, weight, commit, ...},
+		 fn ({register, memloc, weight, commit, ...},
 		     {assembly, registerAllocation})
 		  => let
 		       val {assembly = assembly_register,
@@ -2711,7 +2628,7 @@ struct
 			registerAllocation = registerAllocation}
 		     end)
 	        handle Spill => Error.bug "spillRegisters::reSpill:restore"
-	    val {assembly = assembly_unreserve,
+	    val {assembly = assembly_unreserve',
 		 registerAllocation}
 	      = List.fold
 	        (saved,
@@ -2720,14 +2637,14 @@ struct
 		 fn (register, 
 		     {assembly, registerAllocation})
 		  => let
-		       val {assembly = assembly_unreserve,
+		       val {assembly = assembly_unreserve',
 			    registerAllocation}
 			 = unreserve'
 			   {register = register,
 			    registerAllocation = registerAllocation}
 		     in
 		       {assembly = AppendList.append (assembly,
-						      assembly_unreserve),
+						      assembly_unreserve'),
 			registerAllocation = registerAllocation}
 		     end)
 	    val {assembly = assembly_reserve,
@@ -2757,6 +2674,7 @@ struct
 					    assembly_unspill,
 					    assembly_commit2,
 					    assembly_restore,
+					    assembly_unreserve',
 					    assembly_reserve],
 	     registerAllocation = registerAllocation}
 	  end
@@ -2776,7 +2694,7 @@ struct
 	= (Int.inc depth;
 	   (case allocated {memloc = memloc,
 			    registerAllocation = registerAllocation}
-	      of SOME (value as {register,memloc,weight,sync,commit})
+	      of SOME {register,memloc,weight,sync,commit}
 	       => let
 		    val registers
 		      = potentialRegisters {size = size,
@@ -2872,11 +2790,11 @@ struct
 					     registerAllocation
 					     = registerAllocation}
 					  end
-				| [value' as {register = register',
-					      memloc = memloc',
-					      weight = weight',
-					      sync = sync',
-					      commit = commit'}] 
+				| [{register = register',
+				    memloc = memloc',
+				    weight = weight',
+				    sync = sync',
+				    commit = commit'}] 
 				=> if Register.eq(register',final_register)
 				     then let
 					    val registerAllocation
@@ -3015,7 +2933,7 @@ struct
 						      = registerAllocation}
 						   end
 					  end
-				| coincide_values 
+				| _ 
 				=> let
 				     val {register = final_register,
 					  assembly = assembly_register,
@@ -3325,8 +3243,8 @@ struct
 				 size = size,
 				 pop = true})
 
-			   val {fltrename = fltrename_push,
-				registerAllocation}
+			   val {registerAllocation,
+				...}
 			     = fltpush {value = {fltregister = FltRegister.top,
 						 memloc = memloc,
 						 weight = weight,
@@ -3362,8 +3280,8 @@ struct
 				 size = size,
 				 pop = true})
 
-			   val {fltrename = fltrename_push,
-				registerAllocation}
+			   val {registerAllocation,
+				...}
 			     = fltpush {value = {fltregister = FltRegister.top,
 						 memloc = memloc,
 						 weight = weight,
@@ -3414,8 +3332,8 @@ struct
 						registerAllocation
 						= registerAllocation}
 
-			   val {fltrename = fltrename_push,
-				registerAllocation}
+			   val {registerAllocation, 
+				...}
 			     = fltpush {value = {fltregister = FltRegister.top,
 						 memloc = memloc,
 						 weight = 1024,
@@ -3528,7 +3446,7 @@ struct
 			   registerAllocation: t}
         = (Int.inc depth;
 	   (let
-	      val MemLoc.U {immBase, memBase, immIndex, memIndex, scale, size, ...}
+	      val MemLoc.U {immBase, memBase, immIndex, memIndex, scale, ...}
 		= MemLoc.destruct memloc
 
 	      val disp 
@@ -3829,7 +3747,6 @@ struct
 	       defs: Operand.t list,
 	       kills: Operand.t list,
 	       info as {dead,
-			commit,
 			remove,
 			...}: Liveness.t,
 	       registerAllocation: t} :
@@ -3846,7 +3763,6 @@ struct
 		   fn () => unique ra)
 
 	    val dead_memlocs = dead
-	    val commit_memlocs = commit
 	    val remove_memlocs = remove
 
 	    val (allUses, allDefs, allKills)
@@ -3890,11 +3806,11 @@ struct
 
 	    val registerAllocation
 	      = fltvalueMap
-	        {map = fn value as {fltregister,
-				    memloc,
-				    weight, 
-				    sync, 
-				    commit}
+	        {map = fn {fltregister,
+			   memloc,
+			   weight, 
+			   sync, 
+			   commit}
 		        => let
 		             val must_commit0
 			       = (MemLocSet.exists
@@ -3946,8 +3862,8 @@ struct
 		 registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_fltregisters,
-		 fltrename = fltrename_commit_fltregisters,
-		 registerAllocation}
+		 registerAllocation,
+		 ...}
 	      = commitFltRegisters {info = info,
 				    supports = [],
 				    saves = [],
@@ -3955,11 +3871,11 @@ struct
 
 	    val registerAllocation
 	      = valueMap
-	        {map = fn value as {register,
-				    memloc,
-				    weight, 
-				    sync, 
-				    commit}
+	        {map = fn {register,
+			   memloc,
+			   weight, 
+			   sync, 
+			   commit}
 		        => let
 		             val must_commit0
 			       = (MemLocSet.exists
@@ -4111,7 +4027,7 @@ struct
 	    val commit_memlocs = commit
 	    val remove_memlocs = remove
 
-	    val (allUses, allDefs, allKills)
+	    val (_, allDefs, allKills)
 	      = let
 		  fun doit operands
 		    = List.fold
@@ -4150,11 +4066,11 @@ struct
 
 	    val registerAllocation
 	      = fltvalueMap 
-	        {map = fn value as {fltregister,
-				    memloc,
-				    weight,
-				    sync,
-				    commit}
+	        {map = fn {fltregister,
+			   memloc,
+			   weight,
+			   sync,
+			   commit}
 		        => if volatile memloc
 		             then let
 				    val isDst
@@ -4225,8 +4141,8 @@ struct
 		  registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_fltregisters,
-		 fltrename = fltrename_commit_fltregisters,
-		 registerAllocation}
+		 registerAllocation,
+		 ...}
 	      = commitFltRegisters {info = info,
 				    supports = [],
 				    saves = [],
@@ -4312,8 +4228,7 @@ struct
 	        {map = fn value as {register,
 				    memloc,
 				    weight,
-				    sync,
-				    commit}
+				    ...}
 		        => if MemLocSet.contains
 		              (dead_memlocs, memloc)
 			     then {register = register,
@@ -4359,7 +4274,6 @@ struct
 				      label: bool,
 				      address: bool},
 			   info as {dead, 
-				    commit,
 				    remove,
 				    ...}: Liveness.t,
 			   size: Size.t,
@@ -4489,7 +4403,7 @@ struct
 						     memloc,
 						     weight,
 						     sync,
-						     commit}
+						     ...}
 				         => if MemLoc.eq(memloc, m)
 					      then {register = register, 
 						    memloc = memloc, 
@@ -4551,7 +4465,6 @@ struct
 			      options = {fltregister: bool,
 					 address: bool},
 			      info as {dead, 
-				       commit,
 				       remove,
 				       ...}: Liveness.t,
 			      size: Size.t,
@@ -4664,7 +4577,7 @@ struct
 							 memloc,
 							 weight,
 							 sync,
-							 commit}
+							 ...}
 				             => if MemLoc.eq(memloc, m)
 						  then {fltregister 
 							= fltregister, 
@@ -4876,10 +4789,10 @@ struct
 					  registerAllocation
 					  = registerAllocation}
 
-		     val {operand = operand_allocate_top_one,
-			  assembly = assembly_allocate_top_one,
+		     val {assembly = assembly_allocate_top_one,
 			  fltrename = fltrename_allocate_top_one,
-			  registerAllocation}
+			  registerAllocation,
+			  ...}
 		       = allocateFltOperand 
 		         {operand = operand_top,
 			  options = {fltregister = true,
@@ -5049,16 +4962,6 @@ struct
 	   => Operand.FltRegister (fltrename f)
 	   | operand => operand
 
-      fun renameLift rename
-	= fn Operand.Register r
-	   => Operand.Register (rename r)
-           | Operand.Address (Address.T {disp, base, index, scale})
-	   => Operand.Address (Address.T {disp = disp,
-					  base = Option.map(base, rename),
-					  index = Option.map(index, rename),
-					  scale = scale})
-	   | operand => operand
-
       (* Implementation of directives. *)
 
       fun assume {assumes : {register: Register.t, 
@@ -5066,7 +4969,7 @@ struct
 			     weight: int,
 			     sync: bool,
 			     reserve: bool} list,
-		  info,
+		  info = _,
 		  registerAllocation}
 	= let
 	    val {assembly,
@@ -5075,11 +4978,11 @@ struct
 	        (assumes,
 		 {assembly = AppendList.empty,
 		  registerAllocation = registerAllocation},
-		 fn (assume as {register,
-				memloc,
-				weight,
-				sync,
-				reserve},
+		 fn ({register,
+		      memloc,
+		      weight,
+		      sync,
+		      reserve},
 		     {assembly, registerAllocation})
 		  => let
 		       val registerAllocation
@@ -5111,10 +5014,10 @@ struct
       fun fltassume {assumes : {memloc: MemLoc.t,
 				weight: int,
 				sync: bool} list,
-		     info,
-		     registerAllocation as {entries,
-					    reserved,
-					    fltstack}}
+		     info = _,
+		     registerAllocation = {entries,
+					   reserved,
+					   ...} : t}
 	= let
 	    val registerAllocation
 	      = {entries = entries,
@@ -5127,9 +5030,9 @@ struct
 	        (assumes,
 		 {assembly = AppendList.empty,
 		  registerAllocation = registerAllocation},
-		 fn (assume as {memloc,
-				weight,
-				sync},
+		 fn ({memloc,
+		      weight,
+		      sync},
 		     {assembly, registerAllocation})
 		  => let
 		       val {registerAllocation, ...}
@@ -5213,10 +5116,10 @@ struct
 		  val {yes = self, no = edges}
 		    = List.partition
 		      (edges,
-		       fn (reg, edges')
+		       fn (_, edges')
 		        => List.forall
 		           (edges', 
-			    fn (Reg rf, m, r, Reg rt)
+			    fn (Reg rf, _, r, Reg rt)
 			     => Register.eq(rf, r) andalso
 			        Register.eq(r, rt)
 			     | _ => false))
@@ -5227,7 +5130,7 @@ struct
 			     = List.fold
 			       (self,
 				[],
-				fn ((reg, edges'), saves)
+				fn ((_, edges'), saves)
 				 => List.fold
 				    (edges',
 				     saves,
@@ -5254,29 +5157,29 @@ struct
 		    = List.fold
 		      (edges,
 		       {easy = NONE},
-		       fn ((reg, edges'), {easy = NONE})
+		       fn ((_, edges'), {easy = NONE})
 		        => let
 			     val {easy}
 			       = List.fold
 			         (edges',
 				  {easy = NONE},
-				  fn ((Reg rf, SOME m, r, None), 
+				  fn ((Reg _, SOME m, r, None), 
 				      {easy = NONE})
 				   => {easy = SOME (m, r)}
-				   | (edge', {easy})
+				   | (_, {easy})
 				   => {easy = easy})
 			   in
 			     {easy = easy}
 			   end
-			| ((reg, edges'), {easy})
+			| ((_, _), {easy})
 			=> {easy = easy})
 		in
 		  case easy
 		    of SOME (m, r)
 		     => let
-			  val {register,
-			       assembly = assembly_register,
-			       registerAllocation}
+			  val {assembly = assembly_register,
+			       registerAllocation,
+			       ...}
 			    = toRegisterMemLoc 
 			      {memloc = m,
 			       info = info,
@@ -5311,29 +5214,29 @@ struct
 		    = List.fold
 		      (edges,
 		       {hard = NONE},
-		       fn ((reg, edges'), {hard = NONE})
+		       fn ((_, edges'), {hard = NONE})
 		        => let
 			     val {hard}
 			       = List.fold
 			         (edges',
 				  {hard = NONE},
-				  fn ((Mem mf, SOME m, r, None), 
+				  fn ((Mem _, SOME m, r, None), 
 				      {hard = NONE})
 				   => {hard = SOME (m, r)}
-				   | (edge', {hard})
+				   | (_, {hard})
 				   => {hard = hard})
 			   in
 			     {hard = hard}
 			   end
-			| ((reg, edges'), {hard})
+			| ((_, _), {hard})
 			=> {hard = hard})
 		in
 		  case hard
 		    of SOME (m, r)
 		     => let
-			  val {register,
-			       assembly = assembly_register,
-			       registerAllocation}
+			  val {assembly = assembly_register,
+			       registerAllocation,
+			       ...}
 			    = toRegisterMemLoc 
 			      {memloc = m,
 			       info = info,
@@ -5368,29 +5271,29 @@ struct
 		    = List.fold
 		      (edges,
 		       {cycle = NONE},
-		       fn ((reg, edges'), {cycle = NONE})
+		       fn ((_, edges'), {cycle = NONE})
 		        => let
 			     val {cycle}
 			       = List.fold
 			         (edges',
 				  {cycle = NONE},
-				  fn ((Reg rf, SOME m, r, Reg rt), 
+				  fn ((Reg _, SOME m, r, Reg _), 
 				      {cycle = NONE})
 				   => {cycle = SOME (m, r)}
-				   | (edge', {cycle})
+				   | (_, {cycle})
 				   => {cycle = cycle})
 			   in
 			     {cycle = cycle}
 			   end
-			| ((reg, edges'), {cycle})
+			| ((_, _), {cycle})
 			=> {cycle = cycle})
 		in
 		  case cycle
 		    of SOME (m, r)
 		     => let
-			  val {register,
-			       assembly = assembly_register,
-			       registerAllocation}
+			  val {assembly = assembly_register,
+			       registerAllocation,
+			       ...}
 			    = toRegisterMemLoc 
 			      {memloc = m,
 			       info = info,
@@ -5546,15 +5449,14 @@ struct
 		 {assembly = AppendList.empty,
 		  registerAllocation = registerAllocation,
 		  saves = []},
-		 fn (cache as {memloc: MemLoc.t},
+		 fn ({memloc: MemLoc.t},
 		     {assembly,
 		      registerAllocation,
 		      saves})
 		  => let
-		       val {fltregister,
-			    assembly = assembly_fltregister,
-			    fltrename,
-			    registerAllocation}
+		       val {assembly = assembly_fltregister,
+			    registerAllocation,
+			    ...}
 			 = toFltRegisterMemLoc 
 			   {memloc = memloc,
 			    info = info,
@@ -5593,11 +5495,9 @@ struct
 		  val rec check'
 		    = fn [] => {assembly = assembly,
 				registerAllocation = registerAllocation}
-		       | (value as {fltregister,
-				    memloc,
-				    weight,
-				    sync,
-				    commit})::fltstack
+		       | ({fltregister,
+			   memloc,
+			   ...}: fltvalue)::fltstack
 		       => (case List.peek
 			        (dest_caches,
 				 fn {memloc = memloc', ...}
@@ -5646,7 +5546,7 @@ struct
 							   memloc,
 							   weight,
 							   sync,
-							   commit}
+							   ...}
 					       => if FltRegister.eq
 					             (fltregister,
 						      FltRegister.top)
@@ -5688,7 +5588,7 @@ struct
 	  end
 
 
-      fun reset {registerAllocation: t}
+      fun reset ({...}: {registerAllocation: t})
 	= {assembly = AppendList.empty,
 	   registerAllocation = empty ()}
 
@@ -5777,8 +5677,8 @@ struct
 			  registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_fltregisters,
-		 fltrename = fltrename_commit_fltregisters,
-		 registerAllocation}
+		 registerAllocation, 
+		 ...}
 	      = commitFltRegisters {info = info,
 				    supports = [],
 				    saves = [],
@@ -5843,8 +5743,8 @@ struct
 			  = fn value as {register,
 					 memloc,
 					 weight,
-					 sync,
-					 commit}
+					 commit,
+					 ...}
 			     => if shouldDead memloc
 				  then {register = register, 
 					memloc = memloc, 
@@ -5898,7 +5798,7 @@ struct
 		 registerAllocation, ...}
 	      = if !Control.Native.shuffle then 
 	        List.fold
-	        (valueFilter {filter = fn value as {register, ...}
+	        (valueFilter {filter = fn {register, ...}
 			                => List.contains
 			                   (Register.callerSaveRegisters,
 					    register,
@@ -5907,10 +5807,9 @@ struct
 		 {assembly = AppendList.empty, 
 		  registerAllocation = registerAllocation,
 		  saves = []},
-		 fn (value as {memloc, ...}, {assembly, registerAllocation, saves})
+		 fn ({memloc, ...}, {assembly, registerAllocation, saves})
 		  => let
-		       val {operand,
-			    assembly = assembly_shuffle,
+		       val {assembly = assembly_shuffle,
 			    registerAllocation, ...} 
 			 = allocateOperand {operand = Operand.memloc memloc,
 					    options = {register = true,
@@ -5940,7 +5839,7 @@ struct
 					     memloc,
 					     weight,
 					     sync,
-					     commit}
+					     ...}
 				 => if List.contains
 			               (Register.callerSaveRegisters,
 					register,
@@ -5958,11 +5857,11 @@ struct
 			  registerAllocation = registerAllocation}
 
 	    val registerAllocation
-	      = fltvalueMap {map = fn value as {fltregister,
-						memloc,
-						weight,
-						sync,
-						commit}
+	      = fltvalueMap {map = fn {fltregister,
+				       memloc,
+				       weight,
+				       sync,
+				       ...}
 			            => {fltregister = fltregister, 
 					memloc = memloc, 
 					weight = weight, 
@@ -5971,8 +5870,7 @@ struct
 			     registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_fltregisters,
-		 fltrename = fltrename_commit_fltregisters,
-		 registerAllocation}
+		 registerAllocation, ...}
 	      = commitFltRegisters {info = info,
 				    supports = [],
 				    saves = [],
@@ -6001,7 +5899,7 @@ struct
 				       registerAllocation = registerAllocation}
 		     in
 		       {assembly = AppendList.append (assembly,
-						      assembly_reserve),
+						      assembly_unreserve),
 			registerAllocation = registerAllocation}
 		     end)
 
@@ -6023,7 +5921,7 @@ struct
 		  registerAllocation: t} =
 	 let
 	    val killed_values =
-	       valueFilter {filter = fn value as {memloc, ...} =>
+	       valueFilter {filter = fn {memloc, ...} =>
 			    List.exists
 			    (returns, fn {dst = return_memloc, ...} =>
 			     List.exists(MemLoc.utilized memloc,
@@ -6160,11 +6058,11 @@ struct
 		    registerAllocation: t}
 	= let
 	    val registerAllocation
-	      = fltvalueMap {map = fn value as {fltregister,
-						memloc,
-						weight,
-						sync,
-						commit}
+	      = fltvalueMap {map = fn {fltregister,
+				       memloc,
+				       weight,
+				       sync,
+				       ...}
 			            => {fltregister = fltregister, 
 					memloc = memloc, 
 					weight = weight, 
@@ -6173,8 +6071,8 @@ struct
 			     registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_fltregisters,
-		 fltrename = fltrename_commit_fltregisters,
-		 registerAllocation}
+		 registerAllocation,
+		 ...}
 	      = commitFltRegisters {info = info,
 				    supports = [],
 				    saves = [],
@@ -6184,10 +6082,11 @@ struct
 	     registerAllocation = registerAllocation}
 	  end
 
-      fun saveregalloc {live: MemLocSet.t,
-			id: Directive.Id.t,
-			info: Liveness.t,
-			registerAllocation: t}
+      fun saveregalloc ({id, registerAllocation, ...}: 
+			{live: MemLocSet.t,
+			 id: Directive.Id.t,
+			 info: Liveness.t,
+			 registerAllocation: t})
 	= let
 	    val _ = setRA(id, {registerAllocation = registerAllocation})
 	  in
@@ -6197,10 +6096,11 @@ struct
 	     registerAllocation = registerAllocation}
 	  end
 
-      fun restoreregalloc {live: MemLocSet.t,
-			   id: Directive.Id.t,
-			   info: Liveness.t,
-			   registerAllocation: t}
+      fun restoreregalloc ({live, id, info, ...}: 
+			   {live: MemLocSet.t,
+			    id: Directive.Id.t,
+			    info: Liveness.t,
+			    registerAllocation: t})
 	= let
 	    val {registerAllocation} = getRA id
 
@@ -6214,7 +6114,7 @@ struct
 				    memloc,
 				    weight,
 				    sync,
-				    commit}
+				    ...}
 		        => if dump memloc
 			     then {fltregister = fltregister,
 				   memloc = memloc,
@@ -6244,7 +6144,7 @@ struct
 				    memloc,
 				    weight,
 				    sync,
-				    commit}
+				    ...}
 		        => if dump memloc
 			     then {register = register,
 				   memloc = memloc,
@@ -6293,7 +6193,7 @@ struct
 			  dst: Operand.t,
 			  move_dst: bool,
 			  size: Size.t,
-			  info as {dead, commit, remove, ...}: Liveness.t,
+			  info as {dead, remove, ...}: Liveness.t,
 			  registerAllocation: RegisterAllocation.t}
 	= if Operand.eq(src, dst)
 	    then let
@@ -6321,7 +6221,7 @@ struct
 		    registerAllocation = registerAllocation}
 		 end
 	    else case (src, dst)
-		   of (Operand.MemLoc memloc_src,
+		   of (Operand.MemLoc _,
 		       Operand.MemLoc memloc_dst)
 		    => if MemLocSet.contains(dead,
 					     memloc_dst)
@@ -6527,7 +6427,7 @@ struct
       fun allocateSrc1Src2 {src1: Operand.t,
 			    src2: Operand.t,
 			    size: Size.t,
-			    info as {dead, commit, remove, ...}: Liveness.t,
+			    info: Liveness.t,
 			    registerAllocation: RegisterAllocation.t}
 	= if Operand.eq(src1, src2)
 	    then let
@@ -6610,7 +6510,7 @@ struct
 		    registerAllocation = registerAllocation}
 		 end
 
-      fun pfmov {instruction, info as {dead, commit, remove, ...}, 
+      fun pfmov {instruction, info as {dead, remove, ...}, 
 		 registerAllocation,
 		 src, dst, srcsize, dstsize} =
 	 let
@@ -6628,8 +6528,8 @@ struct
 		       
 		    val {operand = final_src,
 			 assembly = assembly_src,
-			 fltrename = fltrename_src,
-			 registerAllocation}
+			 registerAllocation,
+			 ...}
 		       = RA.allocateFltOperand 
 		         {operand = src,
 			  options = {fltregister = true,
@@ -6643,10 +6543,10 @@ struct
 			  registerAllocation
 			  = registerAllocation}
 			 
-		    val {operand = final_dst,
-			 assembly = assembly_dst,
+		    val {assembly = assembly_dst,
 			 fltrename = fltrename_dst,
-			 registerAllocation}
+			 registerAllocation,
+			 ...}
 		       = RA.allocateFltOperand 
 		         {operand = dst,
 			  options = {fltregister = true,
@@ -6707,8 +6607,8 @@ struct
 		       
 		    val {operand = final_src,
 			 assembly = assembly_src,
-			 fltrename = fltrename_src,
-			 registerAllocation}
+			 registerAllocation,
+			 ...}
 		       = RA.allocateFltOperand 
 		         {operand = src,
 			  options = {fltregister = true,
@@ -6723,8 +6623,8 @@ struct
 			 
 		    val {operand = final_dst,
 			 assembly = assembly_dst,
-			 fltrename = fltrename_dst,
-			 registerAllocation}
+			 registerAllocation,
+			 ...}
 		       = RA.allocateFltOperand 
 		         {operand = dst,
 			  options = {fltregister = false,
@@ -6737,8 +6637,6 @@ struct
 			  top = SOME false,
 			  registerAllocation = registerAllocation}
 			 
-		    val final_src = (RA.fltrenameLift fltrename_dst) final_src
-		       
 		    val instruction
 		       = Instruction.FST
 		         {dst = final_dst,
@@ -6860,7 +6758,7 @@ struct
 
 
       fun removable {memloc,
-		     info as {dead, commit, remove, ...}: Liveness.t,
+		     info = {dead, remove, ...}: Liveness.t,
 		     registerAllocation}
 	= MemLocSet.contains(dead,
 			     memloc)
@@ -6873,14 +6771,8 @@ struct
 	      of SOME {sync,...} => sync
 	       | NONE => true))
 
-      fun assemblyMsg s
-	= ([Assembly.comment (String.make(60,#"*")),
-	    Assembly.comment (s ^ "begin")],
-	   [Assembly.comment (s ^ "end"),
-	    Assembly.comment (String.make(60,#"*"))])
-
       fun allocateRegisters {instruction: t,
-			     info as {dead, commit, remove, ...}: Liveness.t,
+			     info as {dead, remove, ...}: Liveness.t,
 			     registerAllocation: RegisterAllocation.t}
 	= case instruction
 	    of NOP
@@ -7021,9 +6913,9 @@ struct
 			    Register.T {reg = Register.EAX, part = Register.E})
 			| _ => Error.bug "allocateRegisters: pMD, size"
 
-		  val {register,
-		       assembly = assembly_clear,
-		       registerAllocation}
+		  val {assembly = assembly_clear,
+		       registerAllocation,
+		       ...}
 		    = RA.freeRegister 
 		      {info = info,
 		       memloc = NONE,
@@ -7038,9 +6930,9 @@ struct
 				 registerAllocation = registerAllocation}
 
 		  val {final_src,
-		       final_dst,
 		       assembly_src_dst,
-		       registerAllocation}
+		       registerAllocation,
+		       ...}
 		    = if Operand.eq(src, dst)
 			then let
 			       val {operand = final_src_dst,
@@ -7134,11 +7026,11 @@ struct
 			then case RA.valuesRegister {register = lo,
 						     registerAllocation
 						     = registerAllocation}
-			       of [value as {register,
-					     memloc,
-					     weight,
-					     sync,
-					     commit}]
+			       of [{memloc,
+				    weight,
+				    sync,
+				    commit, 
+				    ...}]
 				=> let
 				     val registerAllocation
 				       = RA.delete {register = lo,
@@ -7703,8 +7595,6 @@ struct
 			      info = info,
 			      registerAllocation = registerAllocation}
 
-		  val force = Register.withLowPart (size, Size.BYTE)
-
 		  val {operand = final_dst,
 		       assembly = assembly_dst,
 		       registerAllocation = registerAllocation}
@@ -8031,6 +7921,7 @@ struct
 		  {assembly 
 		   = AppendList.appends 
 		     [assembly_pre,
+		      assembly_src,
 		      AppendList.single
 		      (Assembly.instruction instruction),
 		      assembly_post],
@@ -8164,10 +8055,8 @@ struct
 		      end
 
 		  fun default' ({register = register_src,
-				 memloc = memloc_src,
-				 weight = weight_src,
-				 sync = sync_src,
-				 commit = commit_src},
+				 commit = commit_src,
+				 ...} : RegisterAllocation.value,
 				memloc_dst)
 		    = let
 			val registerAllocation
@@ -8465,9 +8354,9 @@ struct
 			      info = info,
 			      registerAllocation = registerAllocation}
 
-		  val {operand = final_base,
-		       assembly = assembly_base,
-		       registerAllocation}
+		  val {assembly = assembly_base,
+		       registerAllocation,
+		       ...}
 		    = RA.allocateOperand {operand = base,
 					  options = {register = true,
 						     immediate = false,
@@ -8568,9 +8457,9 @@ struct
 			      info = info,
 			      registerAllocation = registerAllocation}
 
-		  val {operand = final_base,
-		       assembly = assembly_base,
-		       registerAllocation}
+		  val {assembly = assembly_base,
+		       registerAllocation,
+		       ...}
 		    = RA.allocateOperand {operand = base,
 					  options = {register = true,
 						     immediate = false,
@@ -8950,10 +8839,9 @@ struct
 			      info = info,
 			      registerAllocation = registerAllocation}
 
-		  val {operand = final_dst,
-		       assembly = assembly_dst,
-		       fltrename = fltrename_dst,
-		       registerAllocation}
+		  val {assembly = assembly_dst,
+		       registerAllocation,
+		       ...}
 		    = RA.allocateFltOperand {operand = dst,
 					     options = {fltregister = true,
 							address = false},
@@ -9025,10 +8913,9 @@ struct
 					  registerAllocation
 					  = registerAllocation}
 
-		  val {operand = final_dst,
-		       assembly = assembly_dst,
-		       fltrename = fltrename_dst,
-		       registerAllocation}
+		  val {assembly = assembly_dst,
+		       registerAllocation,
+		       ...}
 		    = RA.allocateFltOperand {operand = dst,
 					     options = {fltregister = true,
 							address = false},
@@ -9089,8 +8976,8 @@ struct
 		    = let
 			val {operand = final_src,
 			     assembly = assembly_src,
-			     fltrename = fltrename_src,
-			     registerAllocation}
+			     registerAllocation,
+			     ...}
 			  = RA.allocateFltOperand 
 			    {operand = src,
 			     options = {fltregister = true,
@@ -9156,8 +9043,8 @@ struct
 		    = let
 			val {operand = final_src,
 			     assembly = assembly_src,
-			     fltrename = fltrename_src,
-			     registerAllocation}
+			     registerAllocation,
+			     ...}
 			  = RA.allocateFltOperand 
 			    {operand = src,
 			     options = {fltregister = true,
@@ -9172,8 +9059,8 @@ struct
 
 			val {operand = final_dst,
 			     assembly = assembly_dst,
-			     fltrename = fltrename_dst,
-			     registerAllocation}
+			     registerAllocation,
+			     ...}
 			  = RA.allocateFltOperand 
 			    {operand = dst,
 			     options = {fltregister = false,
@@ -9185,9 +9072,6 @@ struct
 			     saves = [src,final_src],
 			     top = SOME false,
 			     registerAllocation = registerAllocation}
-
-			val final_src 
-			  = (RA.fltrenameLift fltrename_dst) final_src
 
 			val instruction
 			  = Instruction.FIST
@@ -9263,13 +9147,12 @@ struct
 			      info = info,
 			      registerAllocation = registerAllocation}
 		    
-		  val {final_src1,
-		       final_src2,
+		  val {final_src2,
 		       assembly_src1_src2,
-		       fltrename_src1_src2,
 		       pop,
 		       pop',
-		       registerAllocation}
+		       registerAllocation,
+		       ...}
 		    = if Operand.eq(src1,src2)
 			then let
 			       fun default b
@@ -9502,13 +9385,12 @@ struct
 			      info = info,
 			      registerAllocation = registerAllocation}
 
-		  val {final_src1,
-		       final_src2,
+		  val {final_src2,
 		       assembly_src1_src2,
-		       fltrename_src1_src2,
 		       pop,
 		       pop',
-		       registerAllocation}
+		       registerAllocation,
+		       ...}
 		    = if Operand.eq(src1,src2)
 			then let
 			       fun default b
@@ -9771,10 +9653,10 @@ struct
 		  val {final_src,
 		       final_dst,
 		       assembly_src_dst,
-		       fltrename_src_dst,
 		       oper,
 		       pop,
-		       registerAllocation}
+		       registerAllocation,
+		       ...}
 		    = if Operand.eq(src,dst)
 			then let
 			       val {operand = final_src_dst,
@@ -9980,11 +9862,11 @@ struct
 				     val final_dst 
 				       = (RA.fltrenameLift fltrename_src) final_dst
 
-				     val {fltregister = fltregister_dst,
-					  memloc = memloc_dst,
+				     val {memloc = memloc_dst,
 					  weight = weight_dst,
 					  sync = sync_dst,
-					  commit = commit_dst}
+					  commit = commit_dst,
+					  ...} : RegisterAllocation.fltvalue
 				       = value_dst
 
 				     val fltregister_src
@@ -10100,10 +9982,7 @@ struct
 					    {memloc = memloc_dst,
 					     registerAllocation
 					     = registerAllocation})
-					of (SOME (value_src as
-						  {fltregister
-						   = fltregister_src,
-						   sync = sync_src,
+					of (SOME ({sync = sync_src,
 						   ...}),
 					    SOME (value_dst as
 						  {fltregister 
@@ -10235,10 +10114,9 @@ struct
 			      info = info,
 			      registerAllocation = registerAllocation}
 
-		  val {operand = final_dst,
-		       assembly = assembly_dst,
-		       fltrename = fltrename_dst,
-		       registerAllocation}
+		  val {assembly = assembly_dst,
+		       registerAllocation,
+		       ...}
 		    = RA.allocateFltOperand {operand = dst,
 					     options = {fltregister = true,
 							address = false},
@@ -10303,8 +10181,8 @@ struct
 			      registerAllocation = registerAllocation}
 
 		  val {assembly = assembly_free,
-		       fltrename = fltrename_free,
-		       registerAllocation}
+		       registerAllocation, 
+		       ...}
 		    = RA.freeFltRegister
 		      {info = info,
 		       size = Size.DBLE,
@@ -10312,10 +10190,9 @@ struct
 		       saves = [],
 		       registerAllocation = registerAllocation}
 
-		  val {operand = final_dst,
-		       assembly = assembly_dst,
-		       fltrename = fltrename_dst,
-		       registerAllocation}
+		  val {assembly = assembly_dst,
+		       registerAllocation,
+		       ...}
 		    = RA.allocateFltOperand {operand = dst,
 					     options = {fltregister = true,
 							address = false},
@@ -10349,6 +10226,7 @@ struct
 		  {assembly 
 		   = AppendList.appends
 		     [assembly_pre,
+		      assembly_free,
 		      assembly_dst,
 		      AppendList.single
 		      (Assembly.instruction instruction),
@@ -10389,11 +10267,9 @@ struct
 			      info = info,
 			      registerAllocation = registerAllocation}
 
-		  val {operand_top = final_dst,
-		       operand_one = final_src,
-		       assembly = assembly_dst_src,
-		       fltrename = fltrename_dst_src,
-		       registerAllocation}
+		  val {assembly = assembly_dst_src,
+		       registerAllocation,
+		       ...}
 		    = RA.allocateFltStackOperands
 		      {operand_top = dst,
 		       move_top = true,
@@ -10463,11 +10339,8 @@ struct
 			      info = info,
 			      registerAllocation = registerAllocation}
 
-		  val {operand_top = final_src,
-		       operand_one = final_dst,
-		       assembly = assembly_src_dst,
-		       fltrename = fltrename_src_dst,
-		       registerAllocation}
+		  val {assembly = assembly_src_dst,
+		       registerAllocation, ...}
 		    = RA.allocateFltStackOperands
 		      {operand_top = src,
 		       move_top = true,
@@ -10821,7 +10694,7 @@ struct
 	        (assembly,
 		 {assembly = AppendList.empty,
 		  registerAllocation = registerAllocation},
-		 fn ((Comment s,info), {assembly, registerAllocation})
+		 fn ((Comment s,_), {assembly, registerAllocation})
 		  => {assembly = AppendList.snoc
 		                 (assembly,
 				  Comment s),
@@ -10873,12 +10746,12 @@ struct
 				     assembly''),
 			 registerAllocation = registerAllocation}
 		      end
-		   | ((PseudoOp p,info), {assembly, registerAllocation})
+		   | ((PseudoOp p,_), {assembly, registerAllocation})
 		   => {assembly = AppendList.snoc
 		                  (assembly,
 				   PseudoOp p),
 		       registerAllocation = registerAllocation}
-		   | ((Label l,info), {assembly, registerAllocation})
+		   | ((Label l,_), {assembly, registerAllocation})
 		   => {assembly = AppendList.snoc
 		                  (assembly,
 				   Label l),
@@ -10976,7 +10849,7 @@ struct
 			 then Liveness.toLiveness assembly
 			 else Liveness.toNoLiveness assembly
 
-		   val {assembly, registerAllocation}
+		   val {assembly, ...}
 		     = Assembly.allocateRegisters
 		       {assembly = assembly,
 			registerAllocation

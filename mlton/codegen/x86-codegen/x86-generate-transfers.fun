@@ -27,7 +27,6 @@ struct
     = fn 0 => 0wx0
        | n => Word.orb(Word.<<(ones (n-1), 0wx1),0wx1)
 
-  val tracer = x86.tracer
   val tracerTop = x86.tracerTop
 
   structure x86LiveTransfers 
@@ -140,14 +139,9 @@ struct
 					   x86MLton.Classes.StaticNonTemp)
 	val nonlivenessClasses = ClassSet.-(allClasses, livenessClasses)
 	val holdClasses = !x86MLton.Classes.holdClasses
-	val nonholdClasses = ClassSet.-(allClasses, holdClasses)
-	val volatileClasses = !x86MLton.Classes.volatileClasses
-	val nonvolatileClasses = ClassSet.-(allClasses, volatileClasses)
 	val farflushClasses = ClassSet.-(nonlivenessClasses, holdClasses)
 	val nearflushClasses = ClassSet.-(nonlivenessClasses, holdClasses)
 	val runtimeClasses = !x86MLton.Classes.runtimeClasses
-	val nonruntimeClasses = ClassSet.-(allClasses, runtimeClasses)
-	val threadflushClasses = ClassSet.-(runtimeClasses, holdClasses)
 	val cstaticClasses = !x86MLton.Classes.cstaticClasses
 	val heapClasses = !x86MLton.Classes.heapClasses
 	val ccallflushClasses = ClassSet.+(cstaticClasses, heapClasses)
@@ -203,8 +197,6 @@ struct
 		dead_memlocs = MemLocSet.empty,
 		dead_classes = ClassSet.empty})],
 	     trans]
-
-	fun runtimeEntry l = AppendList.cons (blockAssumes [], l)
 
 	fun farEntry l = AppendList.cons (blockAssumes [], l)
 
@@ -267,9 +259,9 @@ struct
 	     fn () => x86EntryTransfer.verifyEntryTransfer {chunk = chunk})
 
 	local
-	  val gotoInfo as {get: Label.t -> {block:Block.t},
-			   set,
-			   destroy}
+	  val {get: Label.t -> {block:Block.t},
+	       set,
+	       destroy}
 	    = Property.destGetSetOnce
 	      (Label.plist, Property.initRaise ("gotoInfo", Label.layout))
 
@@ -293,7 +285,7 @@ struct
 		      => case x86JumpInfo.getNear (jumpInfo, label)
 			   of x86JumpInfo.Count 0 
 			    => let
-				 val {block as Block.T {transfer, ...}}
+				 val {block = Block.T {transfer, ...}}
 				   = get label
 			       in
 				 List.foreach 
@@ -337,9 +329,9 @@ struct
 	val getLiveFltRegsTransfers
 	  = #2 o x86LiveTransfers.getLiveTransfers
 
-	val layoutInfo as {get = getLayoutInfo : Label.t -> Block.t option,
-			   set = setLayoutInfo,
-			   destroy = destLayoutInfo}
+	val {get = getLayoutInfo : Label.t -> Block.t option,
+	     set = setLayoutInfo,
+	     destroy = destLayoutInfo}
 	  = Property.destGetSet(Label.plist, 
 				Property.initRaise ("layoutInfo", Label.layout))
 	val _ 
@@ -352,16 +344,16 @@ struct
 		   setLayoutInfo(label, SOME block)
 		 end)
 
- 	val profileLabel as {get = getProfileLabel : Label.t -> ProfileLabel.t option,
-			     set = setProfileLabel,
-			     destroy = destProfileLabel}
+ 	val {get = getProfileLabel : Label.t -> ProfileLabel.t option,
+	     set = setProfileLabel,
+	     destroy = destProfileLabel}
 	  = Property.destGetSetOnce
 	    (Label.plist, 
 	     Property.initRaise ("profileLabel", Label.layout))
 	val _ 
 	  = List.foreach
 	    (blocks,
-	     fn block as Block.T {entry, profileLabel, ...}
+	     fn Block.T {entry, profileLabel, ...}
 	      => let
 		   val label = Entry.label entry
 		 in 
@@ -436,7 +428,7 @@ struct
 
 	datatype z = datatype Entry.t
 	datatype z = datatype Transfer.t
-	fun generateAll (gef as GEF {generate,effect,fall})
+	fun generateAll (gef as GEF {effect,...})
 	                {label, falling, unique} : 
 			Assembly.t AppendList.t
 	  = (case getLayoutInfo label
@@ -518,7 +510,7 @@ struct
 						   | SOME ty =>
 							(Vector.fromList o List.map)
 							(Operand.cReturnTemps ty,
-							 fn {src, dst} => dst)
+							 fn {dst,...} => dst)
 					    in
 					       (AppendList.fromList o Vector.fold2)
 					       (dsts, srcs, [], fn ((dst,dstsize),src,stmts) =>
@@ -691,7 +683,7 @@ struct
 			    else AppendList.empty,
 			  pre]
 
-		     val (statements,live)
+		     val (statements,_)
 		       = List.foldr
 		         (statements,
 			  ([], 
@@ -700,7 +692,7 @@ struct
 					      liveInfo = liveInfo})),
 			  fn (assembly,(statements,live))
 			   => let
-				val live as Liveness.T {liveIn,dead, ...}
+				val Liveness.T {liveIn,dead, ...}
 				  = livenessAssembly {assembly = assembly,
 						      live = live}
 			      in
@@ -729,7 +721,7 @@ struct
 		      transfer]
 		   end)
 	  
-	and effectDefault (gef as GEF {generate,effect,fall})
+	and effectDefault (gef as GEF {fall,...})
 	                  {label, transfer} : Assembly.t AppendList.t
 	  = AppendList.append
 	    (if !Control.Native.commented > 1
@@ -846,7 +838,7 @@ struct
 				=> (case Int.compare(dtruee, dfalsee)
 				      of EQUAL => default ()
 				       | LESS => fall_falsee ()
-				       | MORE => fall_truee ())
+				       | GREATER => fall_truee ())
 			   end
 		   end
 		| Switch {test, cases, default}
@@ -1037,8 +1029,6 @@ struct
 		       = x86MLton.stackTopTempContentsOperand ()
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand ()
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand ()
 		     val stackBottom 
 		       = x86MLton.gcState_stackBottomContentsOperand ()
 		    in
@@ -1347,23 +1337,35 @@ struct
 		      continue]
 		   end)
 
-        and effectJumpTable (gef as GEF {generate,effect,fall})
+        and effectJumpTable (gef as GEF {...})
 	                     {label, transfer} : Assembly.t AppendList.t
 	  = case transfer
 	      of Switch {test, cases, default}
 	       => let
+		     type 'a ops =
+			{zero: 'a,
+			 even: 'a -> bool,
+			 incFn: 'a -> 'a,
+			 decFn: 'a -> 'a,
+			 halfFn: 'a -> 'a,
+			 ltFn: 'a * 'a -> bool,
+			 gtFn: 'a * 'a -> bool,
+			 min: 'a,
+			 minFn: 'a * 'a -> 'a,
+			 max: 'a,
+			 maxFn: 'a * 'a -> 'a,
+			 range: 'a * 'a -> int}
+
 		    val Liveness.T {dead, ...}
 		      = livenessTransfer {transfer = transfer,
 					  liveInfo = liveInfo}
 
 		    fun reduce(cases,
-			       ops as {zero,
-				       even,
-				       incFn, decFn, halfFn,
-				       ltFn, gtFn,
-				       min, minFn,
-				       max, maxFn,
-				       range})
+			       {even,
+				decFn, halfFn,
+				min, minFn,
+				max, maxFn,
+				...} : 'a ops)
 		      = let
 			  fun reduce' cases
 			    = let
@@ -1373,7 +1375,7 @@ struct
 				    (cases,
 				     (max, min, 0,
 				      true, true),
-				     fn ((k,target),
+				     fn ((k,_),
 					 (minK,maxK,length,
 					  allEven,allOdd))
 				      => let
@@ -1424,14 +1426,10 @@ struct
 			end
 		      
 		    fun doitTable(cases,
-				  ops as {zero,
-					  even,
-					  incFn, decFn, halfFn,
-					  ltFn, gtFn,
-					  min, minFn,
-					  max, maxFn,
-					  range},
-				  minK, maxK, rangeK, shift, mask,
+				  {zero,
+				   incFn, 
+				   ...} : ''a ops,
+				  minK, _, rangeK, shift, mask,
 				  constFn)
 		      = let
 			  val jump_table_label
@@ -1465,7 +1463,7 @@ struct
 			    = List.fold
 			      (cases,
 			       default_live,
-			       fn ((i,target), live)
+			       fn ((_,target), live)
 			        => LiveSet.+(live, getLive(liveInfo, target)))
 
 			  val indexTemp
@@ -1631,13 +1629,9 @@ struct
 			end
 
 		    fun doit(cases,
-			     ops as {zero,
-				     even,
-				     incFn, decFn, halfFn,
-				     ltFn, gtFn,
-				     min, minFn,
-				     max, maxFn,
-				     range},
+			     ops as {ltFn, 
+				     range,
+				     ...} : ''a ops,
 			     constFn)
 		      = let
 			  val (cases, 
@@ -1661,7 +1655,7 @@ struct
 				   val cases 
 				     = List.insertionSort
 				       (cases, 
-					fn ((k,target),(k',target')) 
+					fn ((k,_),(k',_)) 
 					 => ltFn(k,k'))
 				 in 
 				   doitTable(cases, 
@@ -1732,7 +1726,7 @@ struct
 		                    {label = label,
 				     transfer = transfer}
 
-	and fallNone (gef as GEF {generate,effect,fall})
+	and fallNone (GEF {...})
 	             {label, live} : Assembly.t AppendList.t
 	  = let
 	      val liveRegsTransfer = getLiveRegsTransfers
@@ -1767,13 +1761,13 @@ struct
 		    {caches 
 		     = List.map
 		       (liveFltRegsTransfer,
-			fn (memloc,sync) 
+			fn (memloc,_) 
 			 => {memloc = memloc})})::
 		   (Assembly.directive_cache
 		    {caches
 		     = List.map
 		       (liveRegsTransfer,
-			fn (temp,register,sync)
+			fn (temp,register,_)
 			 => {register = register,
 			     memloc = temp,
 			     reserve = true})})::
@@ -1793,19 +1787,19 @@ struct
 		       (frontierReg)::
 		       (List.map
 			(liveRegsTransfer,
-			 fn (temp,register,sync)
+			 fn (_,register,_)
 			  => register))})::
 		   nil)
 	    in
 	      case getLayoutInfo label
 		of NONE
 		 => default ()
-		 | SOME (block as Block.T {entry,...})
+		 | SOME (Block.T {...})
 		 => (push label;
 		     default ())
 	    end
 
-	and fallDefault (gef as GEF {generate,effect,fall})
+	and fallDefault (gef as GEF {generate,...})
 	                {label, live} : Assembly.t AppendList.t
 	  = let	
 	      datatype z = datatype x86JumpInfo.status
@@ -1842,13 +1836,13 @@ struct
 		     {caches 
 		      = List.map
 		        (liveFltRegsTransfer,
-			 fn (memloc,sync) 
+			 fn (memloc,_) 
 			  => {memloc = memloc})}),
 		    (Assembly.directive_cache
 		     {caches
 		      = List.map
 		        (liveRegsTransfer,
-			 fn (temp,register,sync)
+			 fn (temp,register,_)
 			  => {register = register,
 			      memloc = temp,
 			      reserve = true})}),
@@ -1872,13 +1866,13 @@ struct
 		       (frontierReg)::
 		       (List.map
 			(liveRegsTransfer,
-			 fn (temp,register,sync)
+			 fn (_,register,_)
 			  => register))})]
 	    in
 	      case getLayoutInfo label
 		of NONE 
 		 => default true
-		 | SOME (block as Block.T {entry,...})
+		 | SOME (Block.T {...})
 		 => (case getNear(jumpInfo, label)
 		       of Count 1 
 			=> generate gef

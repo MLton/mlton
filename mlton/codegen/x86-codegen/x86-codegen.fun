@@ -68,24 +68,17 @@ struct
     struct
       val truee = "TRUE"
       val falsee = "FALSE"
-
-      fun bool b = if b then truee else falsee
-
-      fun int(n: int): string 
-	= if n >= 0
-            then Int.toString n
-	    else if n = Int.minInt
-		   then "(int)0x80000000" (* because of goofy gcc warning *)
-		   else concat ["-", String.dropPrefix (Int.toString n, 1)]
-      (* This overflows on Int32.minInt: Int32.toString(~ n) *)
     end
 
   open x86
-  structure Type = Machine.Type
   fun output {program as Machine.Program.T {chunks, frameLayouts, handlesSignals,
 					    main, ...},
-	      outputC,
-	      outputS}: unit
+	      outputC: unit -> {file: File.t,
+				print: string -> unit,
+				done: unit -> unit},
+	      outputS: unit -> {file: File.t,
+				print: string -> unit,
+				done: unit -> unit}}: unit
     = let
 	 val reserveEsp =
 	    (* There is no sigaltstack on cygwin, we need to reserve %esp to
@@ -141,17 +134,7 @@ struct
 		   reals = reals, 
 		   strings = strings} 
 	      end
-	      val {file, print, done} = makeC ()
-	      fun make (name, l, pr, last) =
-		 (print (concat ["static ", name, " = {"])
-		  ; List.foreachi (l, fn (i, x) =>
-				   (if i > 0 then print "," else ()
-				       ; print "\n\t"
-				       ; pr x))
-		  ; (case last of
-			NONE => ()
-		      | SOME s => print (concat [",\n\t", s, "\n"]))
-		  ; print "};\n")
+	      val {print, done, ...} = makeC ()
 	      val additionalMainArgs =
 		 let
 		    val mainLabel = Label.toString (#label main)

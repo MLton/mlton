@@ -31,8 +31,6 @@ struct
   val pointerBytes = Runtime.pointerSize
   val pointerSize = Size.fromBytes pointerBytes
   val pointerScale = Scale.fromBytes pointerBytes
-  val floatSize = Size.DBLE
-  val floatBytes = Size.toBytes floatSize
   val normalHeaderBytes = Runtime.normalHeaderSize
   val arrayHeaderBytes = Runtime.arrayHeaderSize
   val intInfOverheadBytes = Runtime.intInfOverheadSize
@@ -231,7 +229,7 @@ struct
   fun realTemp1ContentsOperand floatSize
     = case floatSize of
         Size.DBLE => realTemp1ContentsOperandD
-      | Size.SNGL => realTemp1ContentsOperandD
+      | Size.SNGL => realTemp1ContentsOperandS
       | _ => Error.bug "realTemp1ContentsOperand: floatSize"
 
   val realTemp2D = Label.fromString "realTemp2D"
@@ -251,7 +249,7 @@ struct
   fun realTemp2ContentsOperand floatSize
     = case floatSize of
         Size.DBLE => realTemp2ContentsOperandD
-      | Size.SNGL => realTemp2ContentsOperandD
+      | Size.SNGL => realTemp2ContentsOperandS
       | _ => Error.bug "realTemp2ContentsOperand: floatSize"
 
   val realTemp3D = Label.fromString "realTemp3D"
@@ -271,7 +269,7 @@ struct
   fun realTemp3ContentsOperand floatSize
     = case floatSize of
         Size.DBLE => realTemp3ContentsOperandD
-      | Size.SNGL => realTemp3ContentsOperandD
+      | Size.SNGL => realTemp3ContentsOperandS
       | _ => Error.bug "realTemp3ContentsOperand: floatSize"
 
   val fpswTemp = Label.fromString "fpswTemp"
@@ -329,17 +327,13 @@ struct
 
   local
      fun make (name, memo, toString) =
-	(memo (fn s =>
-	       Label.fromString (concat ["global", name, toString s])),
-	 memo (fn s =>
-	       Label.fromString (concat ["num_global", name, toString s])))
-     val (globalI_base, globalI_num) =
+	memo (fn s => Label.fromString (concat ["global", name, toString s]))
+     val globalI_base =
 	make ("Int", IntSize.memoize, IntSize.toString)
      val globalP_base = Label.fromString "globalPointer"
-     val globalP_num = Label.fromString "num_globalpointer"
-     val (globalR_base, globalR_num) =
+     val globalR_base =
 	make ("Real", RealSize.memoize, RealSize.toString)
-     val (globalW_base, globalW_num) =
+     val globalW_base =
 	make ("Word", WordSize.memoize, WordSize.toString)
     datatype z = datatype CType.t
     datatype z = datatype IntSize.t
@@ -444,7 +438,6 @@ struct
     val stackTopTempContentsOperand = 
       Operand.memloc (stackTopTempContents)
   in
-    val stackTopTemp = fn () => stackTopTemp
     val stackTopTempContents = fn () => stackTopTempContents
     val stackTopTempContentsOperand = fn () => stackTopTempContentsOperand
   end

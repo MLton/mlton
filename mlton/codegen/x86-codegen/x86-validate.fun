@@ -11,7 +11,6 @@ struct
   open S;
   open x86;
 
-  val tracer = x86.tracer
   val tracerTop = x86.tracerTop
 
   structure Register =
@@ -48,7 +47,7 @@ struct
     struct
       open FltRegister
 
-      fun validate {fltregister as FltRegister.T i}
+      fun validate {fltregister = FltRegister.T i}
 	= if 0 > i orelse i > 7
 	    then Error.bug "validate: FltRegister"
 	    else true
@@ -58,7 +57,7 @@ struct
     struct
       open Address
 
-      fun validate {address as Address.T {disp, base, index, scale}}
+      fun validate {address as Address.T {base, index, ...}}
 	= let
 	    val _ = case base
 	              of NONE => ()
@@ -76,8 +75,7 @@ struct
 	      of Address.T {disp = NONE, base = NONE, 
 			    index = NONE, scale = NONE}
 	       => Error.bug "validate: Address"
-	       | Address.T {disp, base, 
-			    index = NONE, scale = SOME _}
+	       | Address.T {index = NONE, scale = SOME _, ...}
 	       => Error.bug "validate: Address, scale"
 	       | _ => true
 	  end
@@ -104,7 +102,7 @@ struct
       fun validate {instruction: t}
 	= case instruction
 	    of NOP => true
-	     | BinAL {oper, src, dst, size}
+	     | BinAL {src, dst, size, ...}
 	       (* Integer binary arithmetic(w/o mult & div)/logic instructions.
 		* Require src/dst operands as follows:
 		*
@@ -154,7 +152,7 @@ struct
 		     | _ => (Operand.validate {operand = src}) andalso
                             (Operand.validate {operand = dst})
 		end
-	     | MD {oper, src, size} 
+	     | MD {src, size, ...} 
 	       (* Integer multiplication and division.
 		* Require src operand as follows:
 		*
@@ -237,7 +235,7 @@ struct
 		     | _ => (Operand.validate {operand = src}) andalso
                             (Operand.validate {operand = dst})
 		end
-	     | UnAL {oper, dst, size}
+	     | UnAL {dst, size, ...}
 	       (* Integer unary arithmetic/logic instructions.
 		* Require dst operand as follows:
 		*
@@ -269,7 +267,7 @@ struct
 		     => Error.bug "validate: UnAL, dst:Label"
 		     | _ => (Operand.validate {operand = dst})
 		end
-	     | SRAL {oper, count, dst, size}
+	     | SRAL {count, dst, size, ...}
 	       (* Integer shift/rotate arithmetic/logic instructions.
 		* Require count operand as follows:
 		*
@@ -425,7 +423,7 @@ struct
 		     | _ => (Operand.validate {operand = src1}) andalso
                             (Operand.validate {operand = src2})
 		end
-	     | SETcc {condition, dst, size}
+	     | SETcc {dst, size, ...}
 	       (* Set byte on condition; p. 672
 		* Require dst operand as follows:
 		*
@@ -458,7 +456,7 @@ struct
 		     => Error.bug "validate: SETcc, dst:Label"
 		     | _ => (Operand.validate {operand = dst})
 		end
-             | JMP {target, absolute}
+             | JMP {target, ...}
 	       (* Jump; p. 373
 		* Require target operand as follows:
 		*
@@ -475,7 +473,7 @@ struct
 		     => Error.bug "validate: JMP, target:FltRegister"
 		     | _ => (Operand.validate {operand = target})
 		end
-	     | Jcc {condition, target}
+	     | Jcc {target, ...}
 	       (* Jump if condition is met; p. 369
 		* Require target operand as follows:
 		*
@@ -496,7 +494,7 @@ struct
 		     => Error.bug "validate: Jcc, target:Address"
 		     | _ => (Operand.validate {operand = target})
 		end
-             | CALL {target, absolute}
+             | CALL {target, ...}
 	       (* Call procedure; p. 93 
 		* Require target operand as follows:
 		*
@@ -587,7 +585,7 @@ struct
 		     | _ => (Operand.validate {operand = src}) andalso
                             (Operand.validate {operand = dst})
 		end
-             | CMOVcc {condition, src, dst, size}
+             | CMOVcc {src, dst, size, ...}
                (* Conditional move; p. 112
 		* Require src/dst operands as follows:
 		*
@@ -773,7 +771,7 @@ struct
 		in
 		  true
 		end
-	     | MOVX {oper, src, dst, srcsize, dstsize}
+	     | MOVX {src, dst, srcsize, dstsize, ...}
 	       (* Move with extention.
 		* Require src/dst operands as follows:
 		*
@@ -963,7 +961,7 @@ struct
 		     => Error.bug "validate: FILD, src:Label"
 		     | _ => Operand.validate {operand = src}
 		end
-             | FIST {dst, size, pop}
+             | FIST {dst, size, ...}
 	       (* Floating-point store integer; p. 245
 		* Require dst operand as follows:
 		*
@@ -1012,7 +1010,7 @@ struct
 		     => Error.bug "validate: FXCH, dst:Label"
 		     | _ => Operand.validate {operand = src}
 		end
-             | FLDC {oper}
+             | FLDC {...}
                (* Floating-point load constant; p. 250
 		*)
 	     => true
@@ -1039,7 +1037,7 @@ struct
 		     => Error.bug "validate: FLDCW, src:Label"
 		     | _ => Operand.validate {operand = src}
 		end
-	     | FSTCW {dst, check}
+	     | FSTCW {dst, ...}
 	       (* Floating-point store control word; p. 289
 		* Require dst operand as follows:
 		*
@@ -1062,7 +1060,7 @@ struct
 		     => Error.bug "validate: FSTCW, dst:Label"
 		     | _ => Operand.validate {operand = dst}
 		end
-	     | FSTSW {dst, check}
+	     | FSTSW {dst, ...}
 	       (* Floating-point store status word; p. 294
 		* Require dst operand as follows:
 		*
@@ -1162,7 +1160,7 @@ struct
 			  then Error.bug "validate: FUCOM, pop, pop'"
 			  else Operand.validate {operand = src}
 		end
-	     | FBinA {oper, src, dst, size, pop}
+	     | FBinA {src, dst, size, pop, ...}
 	       (* Floating-point unary arithmetic instructions; p. 248
 		* Require src operand as follows:
 		*
@@ -1230,7 +1228,7 @@ struct
 			  else (Operand.validate {operand = src}) andalso
 			       (Operand.validate {operand = dst})
 		end
-	     | FUnA {oper}
+	     | FUnA {...}
 	       (* Floating-point unary arithmetic instructions.
 		*)
 	     => true
@@ -1238,11 +1236,11 @@ struct
 	       (* Floating-point partial tangent instruction.
 		*)
 	     => true
-	     | FBinAS {oper}
+	     | FBinAS {...}
 	       (* Floating-point binary arithmetic stack instructions.
 		*)
 	     => true
-	     | FBinASP {oper}
+	     | FBinASP {...}
 	       (* Floating-point binary arithmetic stack pop instructions.
 		*)
 	     => true
@@ -1257,13 +1255,13 @@ struct
       fun validate {assembly: t list} : bool
  	= List.fold(assembly,
 		    true,
-		    fn (Comment s, b)
+		    fn (Comment _, b)
 		     => b
-		     | (Directive d, b)
+		     | (Directive _, _)
 		     => Error.bug "validate: Directive"
-		     | (PseudoOp p, b)
+		     | (PseudoOp _, b)
 		     => b
-		     | (Label l, b)
+		     | (Label _, b)
 		     => b
 		     | (Instruction i, b)
 		     => (Instruction.validate {instruction = i}) andalso b

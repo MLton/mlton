@@ -10,14 +10,9 @@ struct
 
   open S
 
-  val tracer = x86.tracer
   val tracerTop = x86.tracerTop
 
-  val wordBytes = x86MLton.wordBytes
-  val pointerBytes = x86MLton.pointerBytes
   val normalHeaderBytes = x86MLton.normalHeaderBytes
-  val arrayHeaderBytes = x86MLton.arrayHeaderBytes
-  val intInfOverheadBytes = x86MLton.intInfOverheadBytes
 
   fun argsToString(ss: string list): string
     = "(" ^ (concat (List.separate(ss, ", "))) ^ ")"
@@ -30,16 +25,8 @@ struct
      structure IntSize = IntSize
      structure IntX = IntX
      structure Label = Label
-     structure Prim = Prim
      structure RealSize = RealSize
-     structure RealX = RealX
      structure Register = Register
-     structure Runtime = Runtime
-     local
-       open Runtime
-     in
-       structure GCField = GCField
-     end
      structure Type = Type
      structure WordSize = WordSize
      structure WordX = WordX
@@ -79,8 +66,6 @@ struct
 		  scale = x86.Scale.One,
 		  size = size}, size), offset + x86.Size.toBytes size))
 	   end
-
-	val toString = Layout.toString o layout
      end
 
   structure Operand =
@@ -147,7 +132,6 @@ struct
 		  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Contents/base",
 					fn () => Vector.length base = 1)
 		  val base = getOp0 base
-		  val offset = x86.Immediate.const_int 0
 		  val origin =
 		     case x86.Operand.deMemloc base of
 			SOME base =>
@@ -243,7 +227,7 @@ struct
 						     | #"d" => "2"
 						     | #"e" => "1"
 						     | #"f" => "0"
-						     | c => "")
+						     | _ => "")
 					     in
 						finish (iis, #"F")
 					     end
@@ -306,7 +290,6 @@ struct
 		  val ty = Machine.Type.toCType (Register.ty r)
 		  val index = Machine.Register.index r
 		  val base = x86.Immediate.label (x86MLton.local_base ty)
-		  val sizes = x86.Size.fromCType ty
 		  val origin =
 		     x86.MemLoc.imm
 		     {base = base,
@@ -431,7 +414,7 @@ struct
 			fn (operand,args) =>
 			Vector.fold
 			(Operand.toX86Operand operand, args,
-			 fn ((operand,size),args) =>
+			 fn ((operand,_),args) =>
 			 case x86.Operand.deMemloc operand of
 			    SOME memloc => x86.MemLocSet.add(args, memloc)
 			  | NONE => args))
@@ -499,7 +482,7 @@ struct
 	    else (AppendList.empty,AppendList.empty)
 
       fun toX86Blocks {statement,
-		       transInfo as {liveInfo, ...} : transInfo}
+		       transInfo as {...} : transInfo}
 	= (case statement
 	     of Noop
 	      => AppendList.empty
@@ -518,7 +501,7 @@ struct
 		     {entry = NONE,
 		      statements
 		      = (Vector.toList o Vector.map2)
-		        (dsts,srcs,fn ((dst,dstsize),(src,srcsize)) =>
+		        (dsts,srcs,fn ((dst,_),(src,srcsize)) =>
 			 (* dst = src *)
 			 case x86.Size.class srcsize
 			    of x86.Size.INT => x86.Assembly.instruction_mov 
@@ -559,7 +542,7 @@ struct
 	      => let
 		   val (comment_begin,
 			comment_end) = comments statement
-		   val (dst,dstsize) = Vector.sub(Operand.toX86Operand dst, 0)
+		   val (dst,_) = Vector.sub(Operand.toX86Operand dst, 0)
 		   val dst' = case x86.Operand.deMemloc dst
 				of SOME dst' => dst'
 				 | NONE => Error.bug "Allocate: strange dst"
@@ -716,7 +699,7 @@ struct
       fun switch(test, cases, default)
 	= let
 	    val test = Operand.toX86Operand test
-	    val (test,testsize) = Vector.sub(test, 0)
+	    val (test,_) = Vector.sub(test, 0)
 	  in
 	    AppendList.single
 	    (x86.Block.mkBlock'
@@ -727,23 +710,6 @@ struct
 				cases = cases,
 				default = default})})
 	  end
-
-      fun doSwitchChar (test, cases, default)
-	= (case (cases, default)
-	     of ([],            NONE)
-	      => Error.bug "toX86Blocks: doSwitchChar"
-	      | ([(_,l)],       NONE) => goto l
-	      | ([],            SOME l) => goto l
-	      | ([(#"\000",f),(#"\001",t)], NONE) => iff(test,t,f)
-	      | ([(#"\001",t),(#"\000",f)], NONE) => iff(test,t,f)
-	      | ([(_,l),(k',l')],NONE) 
-	      => cmp(test,x86.Immediate.const_char k',l',l)
-	      | ([(k',l')],      SOME l)
-	      => cmp(test,x86.Immediate.const_char k',l',l)
-	      | ((_,l)::cases,  NONE) 
-	      => switch(test, x86.Transfer.Cases.char cases, l)
-	      | (cases,         SOME l) 
-	      => switch(test, x86.Transfer.Cases.char cases, l))
 
       fun doSwitchInt (test, cases, default)
 	= (case (cases, default)
@@ -796,7 +762,7 @@ struct
       fun toX86Blocks {returns, transfer,
 		       transInfo as {frameInfoToX86, ...}: transInfo}
 	= (case transfer
-	     of Arith {prim, args, dst, overflow, success, ty}
+	     of Arith {prim, args, dst, overflow, success, ...}
 	      => let
 		   val args = (Vector.concatV o Vector.map)
 		              (args, Operand.toX86Operand)
@@ -843,7 +809,7 @@ struct
 				fn (operand, live) =>
 				Vector.fold
 				(Operand.toX86Operand operand, live,
-				 fn ((operand,size),live) =>
+				 fn ((operand,_),live) =>
 				 case x86.Operand.deMemloc operand of
 				    SOME memloc => x86.MemLocSet.add(live, memloc)
 				  | NONE => live))})}))
@@ -912,7 +878,7 @@ struct
 				   default = default,
 				   test = tag},
 				  doSwitchInt)
-		     | Word {cases, default, size, test} =>
+		     | Word {cases, default, test, ...} =>
 			  simple ({cases = (Vector.map
 					    (cases, fn (w, l) =>
 					     (Word.fromLarge
@@ -937,7 +903,7 @@ struct
 		       Vector.fold
 		       (live, x86.MemLocSet.empty, fn (operand, live) =>
 			Vector.fold
-			(Operand.toX86Operand operand, live, fn ((operand,size),live) =>
+			(Operand.toX86Operand operand, live, fn ((operand,_),live) =>
 			 case x86.Operand.deMemloc operand of
 			    NONE => live
 			  | SOME memloc => x86.MemLocSet.add (live, memloc)))
@@ -968,14 +934,13 @@ struct
     struct
       open Machine.Block
 
-      fun toX86Blocks {block as T {label, 
-				   live, 
-				   kind, 
-				   raises,
-				   returns,
-				   statements, 
-				   transfer,
-				   ...},
+      fun toX86Blocks {block = T {label, 
+				  live, 
+				  kind, 
+				  returns,
+				  statements, 
+				  transfer,
+				  ...},
 		       transInfo as {...} : transInfo}
 	= let
 	    val pseudo_blocks
@@ -1023,7 +988,7 @@ struct
     struct
       open Machine.Chunk
 
-      fun toX86Chunk {chunk as T {blocks, ...}, 
+      fun toX86Chunk {chunk = T {blocks, ...}, 
 		      frameInfoToX86,
 		      liveInfo}
 	= let

@@ -75,7 +75,7 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.MOV
 					{src = src1,
 					 dst = dst1, 
@@ -120,7 +120,7 @@ struct
 	     | {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.MOV
 					{src = src1,
 					 dst = dst1, 
@@ -165,7 +165,7 @@ struct
 	     | {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.MOV
 					{src = src1,
 					 dst = dst1, 
@@ -244,7 +244,7 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.pFMOV
 					{src = src1,
 					 dst = dst1, 
@@ -289,7 +289,7 @@ struct
 	     | {entry,
 		profileLabel, 
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.pFMOV
 					{src = src1,
 					 dst = dst1, 
@@ -334,7 +334,7 @@ struct
 	     | {entry,
 	        profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.pFMOV
 					{src = src1,
 					 dst = dst1, 
@@ -391,7 +391,7 @@ struct
       local
 	val isInstructionMOV_srcImmediate : statement_type -> bool
 	  = fn Assembly.Instruction (Instruction.MOV 
-				     {src = Operand.Immediate immediate,
+				     {src = Operand.Immediate _,
 				      ...})
 	     => true
 	     | _ => false				     
@@ -452,7 +452,7 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.MOV
 					{src = src1, 
 					 dst = dst1, 
@@ -501,7 +501,7 @@ struct
 	     | {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.MOV
 					{src = src1, 
 					 dst = dst1, 
@@ -550,7 +550,7 @@ struct
 	     | {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.MOV
 					{src = src1, 
 					 dst = dst1, 
@@ -607,535 +607,6 @@ struct
       end
 
       local
-	val isInstructionMOV_srcImmediate0 : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.MOV
-				     {src = Operand.Immediate immediate,
-				      ...})
-	     => Immediate.zero immediate
-	     | _ => false
-
-	val isInstructionBinAL : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.BinAL
-				     {oper,
-				      ...})
-       	     => (case oper
-		   of Instruction.ADC => false
-		    | Instruction.SBB => false
-		    | _ => true)
-	     | _ => false
-
-	val template : template
-	  = {start = EmptyOrNonEmpty,
-	     statements = [One isInstructionMOV_srcImmediate0,
-			   All isComment,
-			   One isInstructionBinAL],
-	     finish = EmptyOrNonEmpty,
-	     transfer = fn _ => true}
-
-	val rewriter : rewriter
-	  = fn {entry,
-		profileLabel,
-		start,
-		statements as
-		[[Assembly.Instruction (Instruction.MOV
-					{src = src1 as Operand.Immediate immediate, 
-					 dst = dst1, 
-					 size = size1})],
-		 comments,
-		 [Assembly.Instruction (Instruction.BinAL
-					{oper = oper2,
-					 src = src2,
-					 dst = dst2,
-					 size = size2})]],
-		finish as [], 
-		transfer as Transfer.Iff {condition = Instruction.O,
-					  truee,
-					  falsee}}
-	     => if Size.eq(size1, size2) andalso
-	           Operand.eq(dst1, dst2)
-		  then let
-			 val statements
-			   = (fn l
-			       => case oper2
-				    of Instruction.ADD
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-				        l
-			             | Instruction.SUB
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-					(Assembly.instruction_unal
-					 {oper = Instruction.NEG,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.AND
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.OR
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.XOR
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-					l
-				     | _ => Error.bug "elimBinAL0L")
-			     finish
-
-			 val statements
-			   = List.fold(start,
-				       List.concat [comments, 
-						    statements],
-				       op ::)
-
-			 val transfer
-			   = case oper2
-			       of Instruction.SUB => transfer
-				| _ => Transfer.Goto {target = falsee}
-		       in
-			 SOME (Block.T
-			       {entry = entry,
-				profileLabel = profileLabel,
-				statements = statements,
-				transfer = transfer})
-		       end
-		  else NONE
-	     | {entry,
-		profileLabel,
-		start,
-		statements as
-		[[Assembly.Instruction (Instruction.MOV
-					{src = src1 as Operand.Immediate immediate, 
-					 dst = dst1, 
-					 size = size1})],
-		 comments,
-		 [Assembly.Instruction (Instruction.BinAL
-					{oper = oper2,
-					 src = src2,
-					 dst = dst2,
-					 size = size2})]],
-		finish as [], 
-		transfer as Transfer.Iff {condition = Instruction.NO,
-					  truee,
-					  falsee}}
-	     => if Size.eq(size1, size2) andalso
-	           Operand.eq(dst1, dst2)
-		  then let
-			 val statements
-			   = (fn l 
-			       => case oper2
-				    of Instruction.ADD
-				     => (Assembly.instruction_mov
-				         {src = src2,
-					  dst = dst1,
-					  size = size1})::
-				        l
-			             | Instruction.SUB
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-					(Assembly.instruction_unal
-					 {oper = Instruction.NEG,
-					  dst = dst2,
-					  size = size2})::
-					l
-			             | Instruction.AND
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.OR
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.XOR
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-					l
-				     | _ => Error.bug "elimBinAL0L")
-                             finish
-
-			 val statements
-			   = List.fold(start,
-				       List.concat [comments,
-						    statements],
-				       op ::)
-			     
-			 val transfer
-			   = case oper2
-			       of Instruction.SUB => transfer
-				| _ => Transfer.Goto {target = truee}
-		       in
-			 SOME (Block.T
-			       {entry = entry,
-				profileLabel = profileLabel,
-				statements = statements,
-				transfer = transfer})
-		       end
-		  else NONE
-	     | {entry,
-		profileLabel,
-		start, 
-		statements as
-		[[Assembly.Instruction (Instruction.MOV
-					{src = src1 as Operand.Immediate immediate, 
-					 dst = dst1, 
-					 size = size1})],
-		 comments,
-		 [Assembly.Instruction (Instruction.BinAL
-					{oper = oper2,
-					 src = src2,
-					 dst = dst2,
-					 size = size2})]],
-		finish, 
-		transfer}
-	     => if Size.eq(size1, size2) andalso
-	           Operand.eq(dst1, dst2)
-		  then let
-			 val statements
-			   = (fn l 
-			       => case oper2
-				    of Instruction.ADD
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-				        l
-			             | Instruction.SUB
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-					(Assembly.instruction_unal
-					 {oper = Instruction.NEG,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.AND
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.OR
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.XOR
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-					l
-				     | _ => Error.bug "elimBinAL0L")
-                             finish
-
-			 val statements
-			   = List.fold(start,
-				       List.concat [comments,
-						    statements],
-				       op ::)
-		       in
-			 SOME (Block.T
-			       {entry = entry,
-				profileLabel = profileLabel,
-				statements = statements,
-				transfer = transfer})
-		       end
-		  else NONE
-	     | _ => Error.bug "Peephole: elimBinAL0L"
-
-	val (callback,elimBinAL0L_msg) 
-	  = make_callback_msg "elimBinAL0L"
-      in
-	val elimBinAL0L : optimization
-	  = {template = template,
-	     rewriter = rewriter,
-	     callback = callback}
-	val elimBinAL0L_msg = elimBinAL0L_msg
-      end
-
-      local
-	val isInstructionMOV : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.MOV _)
-	     => true
-	     | _ => false
-
-	val isInstructionBinAL_srcImmediate0 : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.BinAL
-				     {oper,
-				      src = Operand.Immediate immediate,
-				      ...})
-       	     => (case oper
-		   of Instruction.ADC => false
-		    | Instruction.SBB => false
-		    | _ => true)
-                andalso
-		Immediate.zero immediate
-	     | _ => false
-
-	val template : template
-	  = {start = EmptyOrNonEmpty,
-	     statements = [One isInstructionMOV,
-			   All isComment,
-			   One isInstructionBinAL_srcImmediate0],
-	     finish = EmptyOrNonEmpty,
-	     transfer = fn _ => true}
-
-	val rewriter : rewriter
-	  = fn {entry,
-		profileLabel,
-		start, 
-		statements as
-		[[Assembly.Instruction (Instruction.MOV
-					{src = src1,
-					 dst = dst1, 
-					 size = size1})],
-		 comments,
-		 [Assembly.Instruction (Instruction.BinAL
-					{oper = oper2,
-					 src = src2 as Operand.Immediate immediate,
-					 dst = dst2,
-					 size = size2})]],
-		finish as [], 
-		transfer as Transfer.Iff {condition = Instruction.O,
-					  truee,
-					  falsee}}
-	     => if Size.eq(size1, size2) andalso
-	           Operand.eq(dst1, dst2)
-		  then let
-			 val statements
-			   = (fn l 
-			       => case oper2
-				    of Instruction.ADD
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-				        l
-			             | Instruction.SUB
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.AND
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.OR
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.XOR
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-					l
-				     | _ => Error.bug "elimBinAL0R")
-                             finish
-
-			 val statements
-			   = List.fold(start,
-				       List.concat [comments,
-						    statements],
-				       op ::)
-
-			 val transfer = Transfer.Goto {target = falsee}
-		       in
-			 SOME (Block.T
-			       {entry = entry,
-				profileLabel = profileLabel,
-				statements = statements,
-				transfer = transfer})
-		       end
-		  else NONE
-	     | {entry,
-		profileLabel,
-		start, 
-		statements as
-		[[Assembly.Instruction (Instruction.MOV
-					{src = src1,
-					 dst = dst1, 
-					 size = size1})],
-		 comments,
-		 [Assembly.Instruction (Instruction.BinAL
-					{oper = oper2,
-					 src = src2 as Operand.Immediate immediate,
-					 dst = dst2,
-					 size = size2})]],
-		finish as [], 
-		transfer as Transfer.Iff {condition = Instruction.NO,
-					  truee,
-					  falsee}}
-	     => if Size.eq(size1, size2) andalso
-	           Operand.eq(dst1, dst2)
-		  then let
-			 val statements
-			   = (fn l
-			       => case oper2
-				    of Instruction.ADD
-				     => (Assembly.instruction_mov
-				         {src = src1,
-					  dst = dst1,
-					  size = size1})::
-				        l
-			             | Instruction.SUB
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.AND
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.OR
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.XOR
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-					l
-				     | _ => Error.bug "elimBinAL0R")
-                             finish
-
-			 val statements
-			   = List.fold(start,
-				       List.concat [comments,
-						    statements],
-				       op ::)
-
-			 val transfer = Transfer.Goto {target = truee}
-		       in
-			 SOME (Block.T
-			       {entry = entry,
-				profileLabel = profileLabel,
-				statements = statements,
-				transfer = transfer})
-		       end
-		  else NONE
-	     | {entry,
-		profileLabel,
-		start, 
-		statements as
-		[[Assembly.Instruction (Instruction.MOV
-					{src = src1,
-					 dst = dst1, 
-					 size = size1})],
-		 comments,
-		 [Assembly.Instruction (Instruction.BinAL
-					{oper = oper2,
-					 src = src2 as Operand.Immediate immediate,
-					 dst = dst2,
-					 size = size2})]],
-		finish, 
-		transfer}
-	     => if Size.eq(size1, size2) andalso
-	           Operand.eq(dst1, dst2)
-		  then let
-			 val statements
-			   = (fn l
-			       => case oper2
-				    of Instruction.ADD
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-				        l
-			             | Instruction.SUB
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.AND
-				     => (Assembly.instruction_mov
-					 {src = src2,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.OR
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-					l
-			             | Instruction.XOR
-				     => (Assembly.instruction_mov
-					 {src = src1,
-					  dst = dst1,
-					  size = size1})::
-					l
-				     | _ => Error.bug "elimBinAL0R")
-                             finish
-
-			 val statements
-			   = List.fold(start,
-				       List.concat [comments,
-						    statements],
-				       op ::)
-		       in
-			 SOME (Block.T
-			       {entry = entry,
-				profileLabel = profileLabel,
-				statements = statements,
-				transfer = transfer})
-		       end
-		  else NONE
-	     | _ => Error.bug "Peephole: elimBinAL0R"
-
-	val (callback,elimBinAL0R_msg) 
-	  = make_callback_msg "elimBinAL0R"
-      in
-	val elimBinAL0R : optimization
-	  = {template = template,
-	     rewriter = rewriter,
-	     callback = callback}
-	val elimBinAL0R_msg = elimBinAL0R_msg
-      end
-
-      local
-	val isImmediate1
-	  = fn Immediate.Const (Immediate.Char #"\001") => true
-	     | Immediate.Const (Immediate.Int 1) => true
-	     | Immediate.Const (Immediate.Int ~1) => true
-	     | Immediate.Const (Immediate.Word 0wx1) => true
-	     | Immediate.Const (Immediate.Word 0wxFFFFFFFF) => true
-	     | _ => false
-
 	val getImmediate1
 	  = fn Immediate.Const (Immediate.Char #"\001") => SOME false
 	     | Immediate.Const (Immediate.Int 1) => SOME false
@@ -1167,7 +638,7 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.BinAL 
 					{oper,
 					 src = Operand.Immediate immediate, 
@@ -1311,14 +782,14 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.pMD 
 					{oper = Instruction.IMUL, 
 					 src = Operand.Immediate immediate, 
 					 dst, 
 					 size})],
 		 comments],
-		finish as [], 
+		finish = [], 
 		transfer as Transfer.Iff {condition,
 					  truee,
 					  falsee}}
@@ -1394,7 +865,7 @@ struct
 	     | {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.pMD 
 					{oper = Instruction.IMUL, 
 					 src = Operand.Immediate immediate, 
@@ -1494,7 +965,7 @@ struct
 	     | {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.pMD 
 					 {oper = Instruction.MUL, 
 					  src = Operand.Immediate immediate, 
@@ -1536,12 +1007,12 @@ struct
 				       transfer = transfer})
 			      end
 			 else NONE
-		    | SOME (i,true)
+		    | SOME (_,true)
 		    => NONE)
 	     | {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.pMD
 					{oper = Instruction.IDIV,
 					 src = Operand.Immediate immediate, 
@@ -1652,7 +1123,7 @@ struct
 	     | {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.pMD
 					{oper = Instruction.DIV,
 					 src = Operand.Immediate immediate, 
@@ -1694,17 +1165,17 @@ struct
 				       transfer = transfer})
 			      end
 			 else NONE
-	            | SOME (i,true) => NONE)
+	            | SOME (_,true) => NONE)
 	     | {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.IMUL2
 					{src = Operand.Immediate immediate, 
 					 dst, 
 					 size})],
 		 comments],
-		finish as [], 
+		finish = [], 
 		transfer as Transfer.Iff {condition,
 					  truee,
 					  falsee}}
@@ -1780,7 +1251,7 @@ struct
 	     | {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction (Instruction.IMUL2
 					{src = Operand.Immediate immediate, 
 					 dst, 
@@ -1927,8 +1398,8 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
-		[[Assembly.Instruction instruction],
+		statements =
+		[[Assembly.Instruction _],
 		 comments],
 		finish,
 		transfer}
@@ -2002,12 +1473,12 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction
 		  (Instruction.CMP {src1, src2, size})],
 		 comments],
-		finish as [],
-		transfer as Transfer.Iff {condition, truee, falsee}}
+		finish = [],
+		transfer = Transfer.Iff {condition, truee, falsee}}
 	     => let
 		  val condition
 		    = case condition
@@ -2020,8 +1491,7 @@ struct
 			    Operand.deImmediate src2)
 			of (SOME _, NONE) => src2
 			 | (NONE, SOME _) => src1
-			 | (SOME immediate1, 
-			    SOME immediate2)
+			 | (SOME immediate1, SOME _)
 			 => if Immediate.zero immediate1
 			      then src2
 			      else src1
@@ -2100,14 +1570,14 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[Assembly.Instruction instruction],
 		 comments1,
 		 [Assembly.Instruction
-		  (Instruction.TEST {src1, src2, size})],
+		  (Instruction.TEST {src1, ...})],
 		 comments2],
-		finish as [],
-		transfer as Transfer.Iff {condition, truee, falsee}}
+		finish = [],
+		transfer as Transfer.Iff {...}}
 	     => let
 		  val dst
 		    = case instruction
@@ -2218,17 +1688,6 @@ struct
       fun makeElimIff {jumpInfo : x86JumpInfo.t} :
 	              optimization
 	= let
-	    val isComment
-	      = fn Assembly.Comment _ => true
-	         | _ => false
-
-	    val isInstructionCMPorTEST
-	      = fn Assembly.Instruction (Instruction.CMP _)
-	         => true
-	         | Assembly.Instruction (Instruction.TEST _)
-	         => true
-	         | _ => false
-
 	    val isTransferIff_eqTargets
 	      = fn Transfer.Iff {truee, falsee, ...}
 	         => Label.equals(truee, falsee)
@@ -2244,9 +1703,9 @@ struct
 	      = fn {entry,
 		    profileLabel,
 		    start, 
-		    statements as [],
-		    finish as [],
-		    transfer as Transfer.Iff {condition, truee, falsee}}
+		    statements = [],
+		    finish = [],
+		    transfer = Transfer.Iff {truee, falsee, ...}}
 	         => let
 		      val _ = x86JumpInfo.decNear(jumpInfo, falsee)
 			
@@ -2274,12 +1733,8 @@ struct
       fun makeElimSwitchTest {jumpInfo : x86JumpInfo.t} :
 	                     optimization
 	= let
-	    val isComment
-	      = fn Assembly.Comment _ => true
-	         | _ => false
-
 	    val isTransferSwitch_testImmediateEval
-	      = fn Transfer.Switch {test as Operand.Immediate immediate, ...}
+	      = fn Transfer.Switch {test = Operand.Immediate immediate, ...}
 	         => isSome (Immediate.eval immediate)
                  | _ => false
 
@@ -2292,11 +1747,11 @@ struct
 	    val rewriter 
 	      = fn {entry,
 		    profileLabel,
-		    start as [], 
-		    statements as [statements'],
-		    finish as [],
-		    transfer as 
-		    Transfer.Switch {test as Operand.Immediate immediate,
+		    start = [], 
+		    statements = [statements'],
+		    finish = [],
+		    transfer = 
+		    Transfer.Switch {test = Operand.Immediate immediate,
 				     cases, 
 				     default}}
 	         => let
@@ -2352,10 +1807,6 @@ struct
       fun makeElimSwitchCases {jumpInfo : x86JumpInfo.t} :
 	                      optimization
 	= let
-	    val isComment
-	      = fn Assembly.Comment _ => true
-	         | _ => false
-
 	    val isTransferSwitch_casesDefault
 	      = fn Transfer.Switch {cases, default, ...}
 	         => let
@@ -2376,10 +1827,10 @@ struct
 	    val rewriter 
 	      = fn {entry,
 		    profileLabel,
-		    start as [], 
-		    statements as [statements'],
-		    finish as [],
-		    transfer as Transfer.Switch {test, cases, default}}
+		    start = [], 
+		    statements = [statements'],
+		    finish = [],
+		    transfer = Transfer.Switch {test, cases, default}}
 	         => let
 		      val statements = statements'
 		      val cases
@@ -2442,23 +1893,23 @@ struct
 
   structure ElimGoto =
     struct
-      fun elimSimpleGoto {chunk as Chunk.T {data, blocks, ...},
+      fun elimSimpleGoto {chunk = Chunk.T {data, blocks, ...},
 			  delProfileLabel : x86.ProfileLabel.t -> unit,
 			  jumpInfo : x86JumpInfo.t} 
 	= let
-	    val gotoInfo as {get: Label.t -> Label.t option,
-			     set: Label.t * Label.t option -> unit,
-			     destroy}
+	    val {get: Label.t -> Label.t option,
+		 set: Label.t * Label.t option -> unit,
+		 destroy}
 	      = Property.destGetSet(Label.plist, Property.initConst NONE)
 	    val changed = ref false
 	      
 	    val labels
 	      = List.keepAllMap
 	        (blocks,
-		 fn block as Block.T {entry as Entry.Jump {label}, 
-				      profileLabel,
-				      statements, 
-				      transfer as Transfer.Goto {target}}
+		 fn Block.T {entry = Entry.Jump {label}, 
+			     profileLabel,
+			     statements, 
+			     transfer = Transfer.Goto {target}}
 		  => if List.forall(statements,
 				    fn Assembly.Comment _ => true
 				     | _ => false)
@@ -2547,20 +1998,20 @@ struct
 	  "elimSimpleGoto"
 	  elimSimpleGoto
 
-      fun elimComplexGoto {chunk as Chunk.T {data, blocks, ...},
+      fun elimComplexGoto {chunk = Chunk.T {data, blocks, ...},
 			   jumpInfo : x86JumpInfo.t}
 	= let
 	    datatype z = datatype x86JumpInfo.status
 
-	    val gotoInfo as {get: Label.t -> Block.t option,
-			     set: Label.t * Block.t option -> unit,
-			     destroy}
+	    val {get: Label.t -> Block.t option,
+		 set: Label.t * Block.t option -> unit,
+		 destroy}
 	      = Property.destGetSet(Label.plist, Property.initConst NONE)
 
 	    val labels
 	      = List.keepAllMap
 	        (blocks,
-		 fn block as Block.T {entry as Entry.Jump {label},...}
+		 fn block as Block.T {entry = Entry.Jump {label},...}
 		  => if x86JumpInfo.getNear(jumpInfo, label) = Count 1
 			 then (set(label, SOME block); SOME label)
 			 else NONE
@@ -2576,7 +2027,7 @@ struct
 				   {entry,
 				    profileLabel,
 				    statements,
-				    transfer as Transfer.Goto {target}})
+				    transfer = Transfer.Goto {target}})
 			   => (if Label.equals(label,target)
 				 then b
 				 else (case get target
@@ -2612,7 +2063,7 @@ struct
 	      = fn block as Block.T {entry, 
 				     profileLabel,
 				     statements, 
-				     transfer as Transfer.Goto {target}}
+				     transfer = Transfer.Goto {target}}
 		 => if Label.equals(Entry.label entry,target)
 		      then block
 		      else (case get target
@@ -2663,13 +2114,13 @@ struct
 	  "elimComplexGoto"
 	  elimComplexGoto
 
-      fun elimBlocks {chunk as Chunk.T {data, blocks, ...},
+      fun elimBlocks {chunk = Chunk.T {data, blocks, ...},
 		      jumpInfo : x86JumpInfo.t}
 	= let
-	    val gotoInfo as {get: Label.t -> {block: Block.t,
-					      reach: bool ref},
-			     set, 
-			     destroy}
+	    val {get: Label.t -> {block: Block.t,
+				  reach: bool ref},
+		 set, 
+		 destroy}
 	      = Property.destGetSetOnce
 	        (Label.plist, Property.initRaise ("gotoInfo", Label.layout))
 
@@ -2689,7 +2140,7 @@ struct
 
 	    fun loop label
 	      = let
-		  val {block as Block.T {transfer, ...}, reach} = get label
+		  val {block = Block.T {transfer, ...}, reach} = get label
 		in
 		  if !reach
 		    then ()
@@ -2713,10 +2164,10 @@ struct
 	        (labels,
 		 fn label 
 		  => let
-		       val {block as Block.T {entry, 
-					      profileLabel, 
-					      statements, 
-					      transfer}, 
+		       val {block = Block.T {entry, 
+					     profileLabel, 
+					     statements, 
+					     transfer}, 
 			    reach} = get label
 		     in
 		       if !reach
@@ -2828,13 +2279,12 @@ struct
   structure MoveHoistLivenessBlock = 
     struct
       structure LiveSet = x86Liveness.LiveSet
-      structure LiveInfo = x86Liveness.LiveInfo
       structure Liveness = x86Liveness.Liveness
       structure LivenessBlock = x86Liveness.LivenessBlock
 
-      fun moveHoist {block as LivenessBlock.T 
-		              {entry, profileLabel, statements, transfer}}
-	= let
+      fun moveHoist {block = LivenessBlock.T 
+		             {entry, profileLabel, statements, transfer}}
+	 = let
 	    val {transfer,live} 
 	      = LivenessBlock.reLivenessTransfer {transfer = transfer}
 
@@ -2845,7 +2295,7 @@ struct
 		  changed = false,
 		  moves = [],
 		  live = live},
-		 fn ((asm: Assembly.t,info as Liveness.T {dead,...}),
+		 fn ((asm: Assembly.t, Liveness.T {dead,...}),
 		     {statements: (Assembly.t * Liveness.t) list,
 		      changed : bool,
 		      moves,
@@ -2972,7 +2422,7 @@ struct
 			     val moves 
 			       = List.revMap
 			         (moves,
-				  fn move as {src,dst,size,age}
+				  fn {src,dst,size,age}
 				   => {src = src,
 				       dst = dst,
 				       size = size,
@@ -2981,7 +2431,7 @@ struct
 			     val statements_forces
 			       = List.revMap
 			         (forces,
-				  fn force as {src,dst,size,...}
+				  fn {src,dst,size,...}
 				   => (case Size.class size
 					 of Size.INT
 					  => Assembly.instruction_mov
@@ -3008,55 +2458,17 @@ struct
 			      = changed 
 			        orelse
 				List.exists(forces,
-					    fn force as {age,...}
+					    fn {age,...}
 					     => age <> 0),
 			      moves = moves,
-			      live = live}
-			   end
-
-		       fun force ()
-			 = let
-			     val forces = moves
-			     val statements_forces
-			       = List.map
-			         (forces,
-				  fn force as {src,dst,size,...}
-				   => (case Size.class size
-					 of Size.INT
-					  => Assembly.instruction_mov
-					     {src = Operand.memloc src,
-					      dst = Operand.memloc dst,
-					      size = size}
-					  | _
-					  => Assembly.instruction_pfmov
-					     {src = Operand.memloc src,
-					      dst = Operand.memloc dst,
-					      size = size}))
-				 
-			     val {statements = statements_asm_forces,
-				  live}
-			       = LivenessBlock.toLivenessStatements
-			         {statements = asm::statements_forces,
-				  live = live}
-			   in
-			     {statements 
-			      = List.concat
-			        [statements_asm_forces,
-				 statements],
-			      changed = changed
-			                orelse
-					List.exists(forces,
-						    fn force as {age,...}
-						     => age <> 0),
-			      moves = [],
 			      live = live}
 			   end
 		     in
 		       case asm
 			 of Assembly.Instruction 
 			    (Instruction.MOV
-			     {src as Operand.MemLoc memloc_src,
-			      dst as Operand.MemLoc memloc_dst,
+			     {src = Operand.MemLoc memloc_src,
+			      dst = Operand.MemLoc memloc_dst,
 			      size})
 			  => if LiveSet.contains(dead,
 						 memloc_src)
@@ -3074,8 +2486,8 @@ struct
 			       else default ()
 			  | Assembly.Instruction 
 			    (Instruction.pFMOV
-			     {src as Operand.MemLoc memloc_src,
-			      dst as Operand.MemLoc memloc_dst,
+			     {src = Operand.MemLoc memloc_src,
+			      dst = Operand.MemLoc memloc_dst,
 			      size})
 			  => if LiveSet.contains(dead,
 						 memloc_src)
@@ -3098,7 +2510,7 @@ struct
 	    val statements_forces
 	      = List.map
 	        (forces,
-		 fn move as {src,dst,size,...}
+		 fn {src,dst,size,...}
 		  => (case Size.class size
 			of Size.INT
 			 => Assembly.instruction_mov
@@ -3111,7 +2523,7 @@ struct
 			     dst = Operand.memloc dst,
 			     size = size}))
 	    val {statements = statements_forces,
-		 live}
+		 ...}
 	      = LivenessBlock.toLivenessStatements
 	        {statements = statements_forces,
 		 live = live}
@@ -3120,7 +2532,7 @@ struct
 	    val changed = changed
 	                  orelse
 			  List.exists(forces,
-				      fn force as {age,...}
+				      fn {age,...}
 				       => age <> 0)
 	    val block = LivenessBlock.T {entry = entry,
 					 profileLabel = profileLabel,
@@ -3157,7 +2569,7 @@ struct
 
       fun copyPropagate' {src,
 			  dst as Operand.MemLoc memloc_dst,
-			  pblock as {statements, transfer},
+			  pblock = {statements, transfer},
 			  liveInfo}
 	= let
 	    val changed = ref 0
@@ -3355,7 +2767,7 @@ struct
 		      = LivenessBlock.toLivenessTransfer 
 		        {transfer = transfer,
 			 liveInfo = liveInfo}
-		    val {statements, live} 
+		    val {statements, ...} 
 		      = LivenessBlock.toLivenessStatements
 		        {statements = statements,
 			 live = live}
@@ -3368,11 +2780,11 @@ struct
 	| copyPropagate' _ = Error.bug "copyPropagate'"
 
 
-      fun copyPropagate {block as LivenessBlock.T 
-			          {entry, profileLabel, statements, transfer},
+      fun copyPropagate {block = LivenessBlock.T 
+			         {entry, profileLabel, statements, transfer},
 			 liveInfo}
 	= let
-	    val {pblock as {statements,transfer},changed}
+	    val {pblock = {statements,transfer},changed}
 	      = List.foldr
 	        (statements,
 		 {pblock = {statements = [],
@@ -3382,7 +2794,7 @@ struct
 		             (Instruction.MOV
 			      {src,
 			       dst as Operand.MemLoc memloc_dst,
-			       size}),
+			       ...}),
 		      info: Liveness.t),
 		     {pblock as {statements, transfer},
 		      changed})
@@ -3416,7 +2828,7 @@ struct
 		             (Instruction.pFMOV
 			      {src,
 			       dst as Operand.MemLoc memloc_dst,
-			       size}),
+			       ...}),
 		      info),
 		     {pblock as {statements, transfer},
 		      changed})
@@ -3448,7 +2860,7 @@ struct
 			       changed = changed}
 		      end
 		   | ((asm,info),
-		      {pblock as {statements, transfer},
+		      {pblock = {statements, transfer},
 		       changed})
 		   => {pblock = {statements = (asm,info)::statements,
 				 transfer = transfer},
@@ -3542,9 +2954,9 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
-		[[(Assembly.Instruction instruction,
-		   info as Liveness.T {liveOut,...})]],
+		statements =
+		[[(Assembly.Instruction _,
+		   Liveness.T {liveOut,...})]],
 		finish, 
 		transfer}
 	     => if (case List.fold
@@ -3674,7 +3086,7 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[(Assembly.Instruction (Instruction.MOV 
 					 {src = src1,
 					  dst = dst1 as Operand.MemLoc memloc1,
@@ -3682,7 +3094,7 @@ struct
 		   _)],
 		 statements',
 		 [(Assembly.Instruction (Instruction.MOV 
-					 {src = src2 as Operand.MemLoc memloc2,
+					 {src = Operand.MemLoc memloc2,
 					  dst = dst2,
 					  size = size2}),
 		   Liveness.T {liveOut = liveOut2,...})]],
@@ -3692,13 +3104,13 @@ struct
 	           MemLoc.eq(memloc1,memloc2) andalso
 		   List.forall
 		   (statements',
-		    fn (Assembly.Comment _, liveInfo) => true
+		    fn (Assembly.Comment _, _) => true
 		     | (Assembly.Instruction (Instruction.BinAL
-					      {oper, 
-					       src, 
-					       dst as Operand.MemLoc memloc, 
-					       size}),
-			liveInfo)
+					      {src, 
+					       dst = Operand.MemLoc memloc, 
+					       size,
+					       ...}),
+			_)
 		     => Size.eq(size1,size) andalso
                         MemLoc.eq(memloc1,memloc) andalso
 			(case (src,dst2)
@@ -3711,11 +3123,11 @@ struct
 			    | (Operand.Immediate _, _) => true
 			    | _ => false)
 		     | (Assembly.Instruction (Instruction.pMD
-					      {oper, 
-					       src, 
-					       dst as Operand.MemLoc memloc, 
-					       size}),
-			liveInfo)
+					      {src, 
+					       dst = Operand.MemLoc memloc, 
+					       size,
+					       ...}),
+			_)
 		     => Size.eq(size1,size) andalso
                         MemLoc.eq(memloc1,memloc) andalso
 			(case (src,dst2)
@@ -3729,9 +3141,9 @@ struct
 			    | _ => false)
 		     | (Assembly.Instruction (Instruction.IMUL2
 					      {src, 
-					       dst as Operand.MemLoc memloc, 
+					       dst = Operand.MemLoc memloc, 
 					       size}),
-			liveInfo)
+			_)
 		     => Size.eq(size1,size) andalso
                         MemLoc.eq(memloc1,memloc) andalso
 			(case (src,dst2)
@@ -3744,18 +3156,18 @@ struct
 			    | (Operand.Immediate _, _) => true
 			    | _ => false)
 		     | (Assembly.Instruction (Instruction.UnAL
-					      {oper, 
-					       dst as Operand.MemLoc memloc, 
-					       size}),
-			liveInfo)
+					      {dst = Operand.MemLoc memloc, 
+					       size,
+					       ...}),
+			_)
 		     => Size.eq(size1,size) andalso
                         MemLoc.eq(memloc1,memloc) 
 		     | (Assembly.Instruction (Instruction.SRAL
-					      {oper, 
-					       count,
-					       dst as Operand.MemLoc memloc, 
-					       size}),
-			liveInfo)
+					      {count,
+					       dst = Operand.MemLoc memloc, 
+					       size, 
+					       ...}),
+			_)
 		     => Size.eq(size1,size) andalso
                         MemLoc.eq(memloc1,memloc) andalso
 			(case (count,dst2)
@@ -3772,9 +3184,9 @@ struct
 			 val statements
 			   = List.map
 			     (statements',
-			      fn (asm,info)
+			      fn (asm,_)
 			       => Assembly.replace
-			          (fn {use, def} 
+			          (fn {...} 
 				    => fn operand 
 				        => if Operand.eq(operand,dst1)
 					     then dst2
@@ -3834,11 +3246,9 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[(Assembly.Instruction (Instruction.MOV 
-					 {src = src1, 
-					  dst = dst1, 
-					  size = size1}),
+					 {...}),
 		   _)]],
 		finish, 
 		transfer}
@@ -3869,7 +3279,7 @@ struct
       local
 	val isInstructionMOV_dstMemloc : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.MOV 
-				      {dst = Operand.MemLoc memloc,...}),
+				      {dst = Operand.MemLoc _,...}),
 		_)
 	     => true
 	     | _ => false
@@ -3877,7 +3287,7 @@ struct
 	val isInstructionBinALMD_dstMemloc_operCommute : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.BinAL
 				      {oper,
-				       dst = Operand.MemLoc memloc,...}),
+				       dst = Operand.MemLoc _,...}),
 		_)
 	     => (oper = Instruction.ADD)
 	        orelse
@@ -3890,13 +3300,13 @@ struct
 		(oper = Instruction.XOR)
 	     | (Assembly.Instruction (Instruction.pMD
 				      {oper,
-				       dst = Operand.MemLoc memloc,...}),
+				       dst = Operand.MemLoc _,...}),
 		_)
 	     => (oper = Instruction.IMUL)
 	        orelse
 		(oper = Instruction.MUL)
 	     | (Assembly.Instruction (Instruction.IMUL2
-				      {dst = Operand.MemLoc memloc,...}),
+				      {dst = Operand.MemLoc _,...}),
 		_)
 	     => true 
 	     | _ => false
@@ -3913,7 +3323,7 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[(Assembly.Instruction (Instruction.MOV 
 					 {src = src1,
 					  dst 
@@ -3925,7 +3335,7 @@ struct
 					 {oper = oper2,
 					  src = src2,
 					  dst 
-					  = dst2 as Operand.MemLoc memloc_dst2,
+					  = dst2 as Operand.MemLoc _,
 					  size = size2}),
 		   Liveness.T {dead = dead2,
 			       liveOut = liveOut2, ...})]],
@@ -3995,7 +3405,7 @@ struct
 	     | {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[(Assembly.Instruction (Instruction.MOV 
 					 {src = src1,
 					  dst 
@@ -4007,7 +3417,7 @@ struct
 					 {oper = oper2,
 					  src = src2,
 					  dst 
-					  = dst2 as Operand.MemLoc memloc_dst2,
+					  = dst2 as Operand.MemLoc _,
 					  size = size2}),
 		   Liveness.T {dead = dead2,
 			       liveOut = liveOut2,...})]],
@@ -4077,7 +3487,7 @@ struct
 	     | {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[(Assembly.Instruction (Instruction.MOV 
 					 {src = src1,
 					  dst 
@@ -4088,7 +3498,7 @@ struct
 		 [(Assembly.Instruction (Instruction.IMUL2
 					 {src = src2,
 					  dst 
-					  = dst2 as Operand.MemLoc memloc_dst2,
+					  = dst2 as Operand.MemLoc _,
 					  size = size2}),
 		   Liveness.T {dead = dead2,
 			       liveOut = liveOut2,...})]],
@@ -4223,7 +3633,7 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[(Assembly.Instruction (Instruction.pFMOV 
 					 {src = src1,
 					  dst = dst1 as Operand.MemLoc memloc1,
@@ -4231,7 +3641,7 @@ struct
 		   _)],
 		 statements',
 		 [(Assembly.Instruction (Instruction.pFMOV 
-					 {src = src2 as Operand.MemLoc memloc2,
+					 {src = Operand.MemLoc memloc2,
 					  dst = dst2,
 					  size = size2}),
 		   Liveness.T {liveOut = liveOut2,...})]],
@@ -4241,13 +3651,13 @@ struct
 	           MemLoc.eq(memloc1,memloc2) andalso
 		   List.forall
 		   (statements',
-		    fn (Assembly.Comment _, liveInfo) => true
+		    fn (Assembly.Comment _, _) => true
 		     | (Assembly.Instruction (Instruction.pFBinA
-					      {oper, 
-					       src, 
-					       dst as Operand.MemLoc memloc, 
-					       size}),
-			liveInfo)
+					      {src, 
+					       dst = Operand.MemLoc memloc, 
+					       size,
+					       ...}),
+			_)
 		     => Size.eq(size1,size) andalso
                         MemLoc.eq(memloc1,memloc) andalso
 			(case (src,dst2)
@@ -4260,24 +3670,24 @@ struct
 			    | (Operand.Immediate _, _) => true
 			    | _ => false)
 		     | (Assembly.Instruction (Instruction.pFUnA
-					      {oper, 
-					       dst as Operand.MemLoc memloc, 
-					       size}),
-			liveInfo)
+					      {dst = Operand.MemLoc memloc, 
+					       size, 
+					       ...}),
+			_)
 		     => Size.eq(size1,size) andalso
                         MemLoc.eq(memloc1,memloc) 
 		     | (Assembly.Instruction (Instruction.pFPTAN
-					      {dst as Operand.MemLoc memloc, 
+					      {dst = Operand.MemLoc memloc, 
 					       size}),
-			liveInfo)
+			_)
 		     => Size.eq(size1,size) andalso
                         MemLoc.eq(memloc1,memloc) 
 		     | (Assembly.Instruction (Instruction.pFBinAS
-					      {oper, 
-					       src, 
-					       dst as Operand.MemLoc memloc, 
-					       size}),
-			liveInfo)
+					      {src, 
+					       dst = Operand.MemLoc memloc, 
+					       size,
+					       ...}),
+			_)
 		     => Size.eq(size1,size) andalso
                         MemLoc.eq(memloc1,memloc) andalso
 			(case (src,dst2)
@@ -4290,11 +3700,11 @@ struct
 			    | (Operand.Immediate _, _) => true
 			    | _ => false)
 		     | (Assembly.Instruction (Instruction.pFBinASP
-					      {oper, 
-					       src, 
-					       dst as Operand.MemLoc memloc, 
-					       size}),
-			liveInfo)
+					      {src, 
+					       dst = Operand.MemLoc memloc, 
+					       size, 
+					       ...}),
+			_)
 		     => Size.eq(size1,size) andalso
                         MemLoc.eq(memloc1,memloc) andalso
 			(case (src,dst2)
@@ -4311,9 +3721,9 @@ struct
 			 val statements
 			   = List.map
 			     (statements',
-			      fn (asm,info)
+			      fn (asm,_)
 			       => Assembly.replace
-			          (fn {use, def} 
+			          (fn {...} 
 				    => fn operand 
 				        => if Operand.eq(operand,dst1)
 					     then dst2
@@ -4373,11 +3783,9 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[(Assembly.Instruction (Instruction.pFMOV 
-					 {src = src1, 
-					  dst = dst1, 
-					  size = size1}),
+					 {...}),
 		   _)]],
 		finish, 
 		transfer}
@@ -4409,15 +3817,14 @@ struct
       local
 	val isInstructionFMOV_dstMemloc : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.pFMOV 
-				      {dst = Operand.MemLoc memloc,...}),
+				      {dst = Operand.MemLoc _,...}),
 		_)
 	     => true
 	     | _ => false
 
 	val isInstructionFltBinA_dstMemloc : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.pFBinA
-				      {oper,
-				       dst = Operand.MemLoc memloc,...}),
+				      {dst = Operand.MemLoc _,...}),
 		_)
 	     => true
 	     | _ => false
@@ -4434,7 +3841,7 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[(Assembly.Instruction (Instruction.pFMOV 
 					 {src = src1,
 					  dst 
@@ -4446,7 +3853,7 @@ struct
 					 {oper = oper2,
 					  src = src2,
 					  dst 
-					  = dst2 as Operand.MemLoc memloc_dst2,
+					  = dst2 as Operand.MemLoc _,
 					  size = size2}),
 		   Liveness.T {dead = dead2,
 			       liveOut = liveOut2,...})]],
@@ -4528,7 +3935,7 @@ struct
       local
 	val isInstructionSETcc : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.SETcc 
-				      {dst = Operand.MemLoc memloc,...}),
+				      {...}),
 		_) 
 	     => true
 	     | _ => false
@@ -4537,7 +3944,7 @@ struct
 	  = fn (Assembly.Instruction (Instruction.TEST 
 				      {src1 = Operand.MemLoc memloc1,
 				       src2 = Operand.MemLoc memloc2,...}),
-		Liveness.T {dead,...})
+		Liveness.T {...})
 	     => MemLoc.eq(memloc1, memloc2) 
 	     | _ => false
 
@@ -4563,25 +3970,23 @@ struct
 	  = fn {entry,
 		profileLabel,
 		start, 
-		statements as
+		statements =
 		[[(statement as 
 		   Assembly.Instruction (Instruction.SETcc
 					 {condition = condition1,
 					  dst 
-					  = dst1 as Operand.MemLoc memloc1,
-					  size = size1}),
+					  = Operand.MemLoc memloc1,
+					  ...}),
 		   _)],
 		 comments1,
 		 [(Assembly.Instruction (Instruction.TEST
 					 {src1 
-					  = src12 as Operand.MemLoc memloc12,
-					  src2 
-					  = src22 as Operand.MemLoc memloc22,
-					  size = size2}),
+					  = Operand.MemLoc memloc12,
+					  ...}),
 		   Liveness.T {dead, ...})],
 		 comments2],
-		finish as [],
-		transfer as
+		finish = [],
+		transfer =
 		(Transfer.Iff {condition, truee, falsee},
 		 infoT as _)}
 	     => if MemLoc.eq(memloc1,memloc12)
@@ -4613,7 +4018,7 @@ struct
 			       then statements
 			       else statement::statements
 
-			 val {statements, live}
+			 val {statements, ...}
 			   = LivenessBlock.toLivenessStatements
 			     {statements = statements,
 			      live = live}
@@ -4761,24 +4166,21 @@ struct
       end
     end
 
-  fun simplify {chunk as Chunk.T {data, blocks, ...}: Chunk.t,
+  fun simplify {chunk : Chunk.t,
 		optimize : int,
 		delProfileLabel : x86.ProfileLabel.t -> unit,
 		liveInfo : x86Liveness.LiveInfo.t,
 		jumpInfo : x86JumpInfo.t} :
                Chunk.t
     = let
-	val labels
-	  = List.map(blocks, fn Block.T {entry,...} => Entry.label entry)
-
 	fun changedChunk_msg 
-            {chunk as Chunk.T {data, blocks, ...}, changed, msg}
+            ({...} : {chunk : Chunk.t, changed: bool, msg: string})
 	  = ()
 	fun changedBlock_msg 
-	    {block as Block.T {entry, ...}, changed, msg}
+	    ({...} : {block : Block.t, changed: bool, msg: string})
 	  = ()
 	fun changedLivenessBlock_msg 
-	    {block as x86Liveness.LivenessBlock.T {entry, ...}, changed, msg}
+	    ({...} : {block : x86Liveness.LivenessBlock.t, changed: bool, msg: string})
 	  = ()
 
 (*
@@ -5251,7 +4653,7 @@ struct
 	(*********************************************************************)
 	(* chunk                                                            *)
 	(*********************************************************************)
-	val {chunk, changed}
+	val {chunk, ...}
 	  = case optimize
 	      of 0 => {chunk = chunk, changed = false}
 	       | 1 => optimizer chunk
