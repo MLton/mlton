@@ -22,6 +22,8 @@ is
 
 analyze.fun
 analyze.sig
+common-arg.sig
+common-arg.fun
 common-block.sig
 common-block.fun
 common-subexp.fun

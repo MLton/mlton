@@ -10,6 +10,7 @@ struct
 
 open S
 
+structure CommonArg = CommonArg (S)
 structure CommonBlock = CommonBlock (S)
 structure CommonSubexp = CommonSubexp (S)
 structure ConstantPropagation = ConstantPropagation (S)
@@ -69,11 +70,12 @@ val passes =
     ("localRef", LocalRef.eliminate),
     ("flatten", Flatten.flatten),
     ("localFlatten3", LocalFlatten.flatten),
+    ("commonArg", CommonArg.eliminate),
     ("commonSubexp", CommonSubexp.eliminate),
     ("commonBlock", CommonBlock.eliminate),
     ("redundantTests", RedundantTests.simplify),
     ("redundant", Redundant.redundant),
-    ("knownCase", KnownCase.simplify),
+    ("knownCase", KnownCase.simplify), 
     ("removeUnused4", RemoveUnused.remove)
     ]
    
