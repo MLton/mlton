@@ -10,7 +10,15 @@ functor TextIO (
 	       structure Primitive:
 		  sig
 		     val safe: bool
-			
+
+		     structure Array:
+			sig
+			   val array: int -> 'a array
+			end
+		     structure Stdio:
+			sig
+			   val print: string -> unit
+			end
 		     structure String:
 			sig
 			   val fromWord8Vector: Word8Vector.vector -> string
@@ -65,7 +73,7 @@ datatype buf =
 
 fun isFull (Buf {size, ...}) = !size = bufSize
 
-(* write out to fd size bytes of buf starting at index i *)
+(* Write out to fd size bytes of buf starting at index i. *)
 fun flushGen (fd: FS.file_desc,
 	      buf: 'a,
 	      i: int,
@@ -74,14 +82,14 @@ fun flushGen (fd: FS.file_desc,
 				     i: int,
 				     sz: int option} -> int): unit =
    let
-      val max = i +? size
+      val max = i + size
       fun loop i =
 	 if i = max
 	    then ()
 	 else
-	    loop (i +? write (fd, {buf = buf,
-				   i = i,
-				   sz = SOME (max -? i)}))
+	    loop (i + write (fd, {buf = buf,
+				  i = i,
+				  sz = SOME (max - i)}))
    in loop i
    end
 
@@ -161,10 +169,14 @@ val stdErr = newOut (FS.stderr, Unbuffered)
 
 val newOut =
    fn fd =>
-   newOut (fd,
-	   (if Posix.ProcEnv.isatty fd then Line else Buffered)
-	       (Buf {size = ref 0,
-		     array = Array.array (bufSize, 0w0)}))
+   let
+      val b = Buf {size = ref 0,
+		   array = Primitive.Array.array bufSize}
+   in newOut (fd,
+	      if Posix.ProcEnv.isatty fd
+		 then Line b
+	      else Buffered b)
+   end
 
 val stdOut = newOut FS.stdout
 
@@ -188,69 +200,34 @@ in
 end
 
 fun output (out as ref (Out {fd, closed, bufStyle, ...}), s: string): unit =
-   let val v = String.toWord8Vector s
-   in if !closed
+   let
+      val v = String.toWord8Vector s
+   in
+      if !closed
 	 then raise IO.Io {name = "<unimplemented>",
 			   function = "output",
 			   cause = IO.ClosedStream}
       else
 	 let
-	    val vecSize = Vector.length v
-	    fun store (b as Buf {size, array}) =
+	    fun put () =
+	       flushGen (fd, v, 0, Vector.length v, PIO.writeVec)
+	    fun doit (b as Buf {size, array}, maybe) =
 	       let
 		  val curSize = !size
-		  val newSize = vecSize +? curSize
+		  val newSize = curSize + Vector.length v
 	       in
-		  if newSize > bufSize
-		     then
-			let
-			   (* flush the current buffer + a prefix of the
-			    * vector, if the current buffer is empty
-			    *)
-			   val veci =
-			      if curSize = 0
-				 then 0
-			      else
-				 let val fill = bufSize -? curSize
-				 in Array.copyVec {src = v,
-						   si = 0,
-						   len = SOME fill,
-						   dst = array,
-						   di = curSize}
-				    ; size := bufSize
-				    ; flush (fd, b)
-				    ; fill
-				 end
-			   (* flush out as much of the vector as needed
-			    * so that <= bufSize remains
-			    *)
-			   fun loop i =
-			      let val remaining = vecSize -? i
-			      in if remaining <= bufSize
-				    then
-				       (Array.copyVec {src = v,
-						       si = i,
-						       len = SOME remaining,
-						       dst = array,
-						       di = 0}
-					; size := remaining)
-				 else
-				    (flushGen (fd, v, i, bufSize, PIO.writeVec)
-				     ; loop (i +? bufSize))
-			      end
-			in loop veci
-			end
-		  else (Array.copyVec {src = v, si = 0, len = NONE,
-				       dst = array, di = curSize}
-			; size := newSize)
+		  if newSize >= Array.length array orelse maybe ()
+		     then (flush (fd, b); put ())
+		  else
+		     (Array.copyVec {src = v, si = 0, len = NONE,
+				     dst = array, di = curSize}
+		      ; size := newSize)
 	       end
-	 in case bufStyle of
-	    Unbuffered => flushGen (fd, v, 0, vecSize, PIO.writeVec)
-	  | Line b => (store b
-		       ; if Char.contains s #"\n"
-			    then flush (fd, b)
-			 else ())
-	  | Buffered b => store b
+	 in
+	    case bufStyle of
+	       Unbuffered => put ()
+	     | Line b => doit (b, fn () => Char.contains s #"\n")
+	     | Buffered b => doit (b, fn () => false)
 	 end handle exn => raise IO.Io {name = "<unimplemented>",
 					function = "output",
 					cause = exn}
@@ -348,7 +325,7 @@ structure Buf =
 
       val empty = ""
 
-      fun input (b as T {eof, buf, first, last, ...}) =
+      fun input (b as T {buf, closed, eof, fd, first, last, ...}) =
 	 let
 	    val f = !first
 	    val l = !last
@@ -356,15 +333,19 @@ structure Buf =
 	    if f < l
 	       then
 		  (first := l
-		   ; String.fromWord8Vector (Array.extract
-					     (buf, f, SOME (l -? f))))
-	    else if update (b, "input")
-		    then let val l = !last
-			 in first := l
-			    ; (String.fromWord8Vector
-			       (Array.extract (buf, 0, SOME l)))
-			 end
-		 else (eof := false; empty)
+		   ; (String.fromWord8Vector
+		      (Array.extract (buf, f, SOME (l - f)))))
+	    else
+	       if !closed orelse !eof
+		  then empty
+	       else
+		  let
+		     val v = PIO.readVec (fd, bufSize)
+		  in
+		     if 0 = Word8Vector.length v
+			then (eof := true; empty)
+		     else String.fromWord8Vector  v
+		  end
 	 end
 
       fun lastChar s = String.sub (s, String.size s - 1)
@@ -622,8 +603,10 @@ structure StreamIO =
 	 end
 
       fun input (T {pos, chain as Chain.T {buf, ...}}): vector * t =
-	 let val rest = T {pos = 0, chain = Chain.next chain}
-	 in if pos < Array.length buf orelse pos = 0
+	 let
+	    val rest = T {pos = 0, chain = Chain.next chain}
+	 in
+	    if pos < Array.length buf orelse pos = 0
 	       then (Primitive.String.fromWord8Vector
 		     (Array.extract (buf, pos, NONE)),
 		     rest)
