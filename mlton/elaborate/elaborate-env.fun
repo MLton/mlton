@@ -338,22 +338,21 @@ structure Structure =
 		  case TypeStr.kind s of
 		     Kind.Arity n =>
 			Vector.tabulate
-			(n, fn _ => Tyvar.newNoname {equality = false})
+			(n, fn _ =>
+			 Type.var (Tyvar.newNoname {equality = false}))
 		   | Kind.Nary => Vector.new0 ()
 	       val name = Ast.Tycon.layout c
 	       val args =
 		  case Vector.length tyvars of
 		     0 => empty
-		   | 1 => seq [lay (Type.var (Vector.sub (tyvars, 0))),
-			       str " "]
+		   | 1 => seq [lay (Vector.sub (tyvars, 0)), str " "]
 		   | _ =>
 			seq
 			[paren (seq (separateRight
-				     (Vector.toListMap (tyvars, lay o Type.var),
+				     (Vector.toList (Vector.map (tyvars, lay)),
 				      ", "))),
 			 str " "]
 	       val def = seq [str "type ", args, name, str " = "]
-	       val tyvars = Vector.map (tyvars, Type.var)
 	       val res = 
 		  case TypeStr.node s of
 		     TypeStr.Datatype {cons = Cons.T cs, ...} =>
@@ -1134,22 +1133,23 @@ fun openStructure (T {currentScope, strs, vals, types, ...},
 
 fun setTyconNames (T {strs, types, ...}) =
    let
-      val {get = seen: Tycon.t -> bool ref, ...} =
-	 Property.get (Tycon.plist, Property.initFun (fn _ => ref false))
+      val {get = shortest: Tycon.t -> int ref, ...} =
+	 Property.get (Tycon.plist, Property.initFun (fn _ => ref Int.maxInt))
       fun doType (typeStr: TypeStr.t,
 		  name: Ast.Tycon.t,
+		  length: int,
 		  strids: Strid.t list): unit =
 	 case TypeStr.toTyconOpt typeStr of
 	    NONE => ()
 	  | SOME c => 
 	       let
-		  val r = seen c
+		  val r = shortest c
 	       in
-		  if !r
+		  if length >= !r
 		     then ()
 		  else
 		     let
-			val _ = r := true
+			val _ = r := length
 			val name =
 			   Ast.Longtycon.toString
 			   (Ast.Longtycon.long (strids, name))
@@ -1157,16 +1157,28 @@ fun setTyconNames (T {strs, types, ...}) =
 			Tycon.setPrintName (c, name)
 		     end
 	       end
-      fun foreach (NameSpace.T {table, ...}, f) =
-	 HashSet.foreach
-	 (table, fn Values.T {domain, ranges} =>
-	  case !ranges of
-	     [] => ()
-	   | {value, ...} :: _ => f (domain, value))
-      val _ = foreach (types, fn (name, typeStr) => doType (typeStr, name, []))
+      fun foreach (NameSpace.T {table, ...}, op <=, f) =
+	 let
+	    val all = ref []
+	    val _ =
+	       HashSet.foreach
+	       (table, fn Values.T {domain, ranges} =>
+		case !ranges of
+		   [] => ()
+		 | {value, ...} :: _ => List.push (all, (domain, value)))
+	    val v =
+	       QuickSort.sortVector
+	       (Vector.fromList (!all), fn ((d, _), (d', _)) => d <= d')
+	 in
+	    Vector.foreach (v, f)
+	 end
+      val _ = foreach (types, Ast.Tycon.<=,
+		       fn (name, typeStr) => doType (typeStr, name, 0, []))
       val {get = strSeen: Structure.t -> bool ref, ...} =
 	 Property.get (Structure.plist, Property.initFun (fn _ => ref false))
-      fun loopStr (s as Structure.T {strs, types, ...}, strids: Strid.t list)
+      fun loopStr (s as Structure.T {strs, types, ...},
+		   length: int,
+		   strids: Strid.t list)
 	 : unit =
 	 let
 	    val r = strSeen s
@@ -1176,15 +1188,16 @@ fun setTyconNames (T {strs, types, ...}) =
 	    else
 	       (r := true
 		; Info.foreach (types, fn (name, typeStr) =>
-				doType (typeStr, name, strids))
+				doType (typeStr, name, length, strids))
 		; Info.foreach (strs, fn (strid, str) =>
-				loopStr (str, strids @ [strid])))
+				loopStr (str, 1 + length, strids @ [strid])))
 	 end
-      val _ = foreach (strs, fn (strid, str) => loopStr (str, [strid]))
+      val _ = foreach (strs, Ast.Strid.<=,
+		       fn (strid, str) => loopStr (str, 1, [strid]))
       val _ =
 	 List.foreach
 	 (!allTycons, fn c =>
-	  if ! (seen c)
+	  if ! (shortest c) < Int.maxInt
 	     then ()
 	  else Tycon.setPrintName (c, concat ["?.", Tycon.originalName c]))
    in
