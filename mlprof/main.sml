@@ -522,12 +522,11 @@ end
 fun attribute (AFile.T {data, etext = e, start = s}, 
 	       ProfFile.T {buckets, etext = e', kind, start = s', ...}) : 
     {profileInfo: {name: string} ProfileInfo.t,
-     ticks: IntInf.t} list
-  = let
-       val _ =
-	  if e <> e' orelse s <> s'
-	     then die "incompatible a.out and mlmon.out"
-	  else ()
+     ticks: IntInf.t} list option
+  = if e <> e' orelse s <> s'
+       then NONE
+    else
+    let
       fun loop (profileInfoCurrent, ticks, l, buckets)
 	= let
 	    fun done (ticks, rest)
@@ -551,12 +550,13 @@ fun attribute (AFile.T {data, etext = e, start = s},
 			       IntInf.+ (ticks, count), l, buckets')
 	  end
     in
-      loop (ProfileInfo.T ([{data = {name =
+       SOME
+       (loop (ProfileInfo.T ([{data = {name =
 				     (case kind of
 					 Kind.Alloc => "<runtime>"
 				       | Kind.Time => "<shared libraries>")},
 			     minor = ProfileInfo.T []}]),
-	    IntInf.fromInt 0, data, buckets)
+	    IntInf.fromInt 0, data, buckets))
     end
 
 fun coalesce (counts: {profileInfo: {name: string} ProfileInfo.t,
@@ -865,7 +865,11 @@ fun commandLine args =
 		      andalso ProfFile.kind profFile = Kind.Alloc
 		      then usage "-depth 2 is meaningless with allocation profiling"
 		   else ()
-		val info = coalesce (attribute (aInfo, profFile))
+		val info =
+		   case attribute (aInfo, profFile) of
+		      NONE => die (concat [afile, " is incompatible with ",
+					   mlmonfile])
+		    | SOME z => coalesce z
 		val _ = display (ProfFile.kind profFile, info, afile, !depth)
 	     in
 		()
