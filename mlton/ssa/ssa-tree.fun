@@ -1303,7 +1303,7 @@ structure Program =
 		   | Tuple z => normal (Exp.Tuple z)
 		   | Var z => normal (Exp.Var z)
 	       end
-	    fun loopTransfer t =
+	    fun loopTransfer (t, handlers) =
 	       let
 		  datatype z = datatype Cps.Transfer.t
 	       in
@@ -1329,7 +1329,10 @@ structure Program =
 			Transfer.Goto {dst = dst, args = args}
 		   | Raise xs =>
 			if 1 = Vector.length xs
-			   then Transfer.Raise (Vector.sub (xs, 0))
+			   then case handlers of
+			           [] => Transfer.Raise (Vector.sub (xs, 0))
+				 | h :: _ => Transfer.Goto {dst = h,
+							    args = xs}
 			else Error.bug "Raise must have one var"
 		   | Return xs => Transfer.Return xs
 	       end
@@ -1357,7 +1360,7 @@ structure Program =
 				     transfer = t})
 		     in
 			case decs of
-			   [] => addBlock (loopTransfer transfer)
+			   [] => addBlock (loopTransfer (transfer, handlers))
 			 | d :: decs =>
 			      let
 				 fun continue statements =
