@@ -46,8 +46,8 @@ OBJS =						\
 	basis/OS/FileSys/tmpnam.o		\
 	basis/PackReal/subVec.o			\
 	basis/PackReal/update.o			\
- 	basis/Ptrace/ptrace2.o			\
- 	basis/Ptrace/ptrace4.o			\
+	basis/Ptrace/ptrace2.o			\
+	basis/Ptrace/ptrace4.o			\
 	basis/Real.o				\
 	basis/Real_const.o			\
 	basis/Socket/Host.o			\
@@ -186,7 +186,7 @@ DEBUG_OBJS =					\
 	basis/MLton/bug-gdb.o			\
 	basis/MLton/errno-gdb.o			\
 	basis/MLton/exit-gdb.o			\
- 	basis/MLton/profile-gdb.o		\
+	basis/MLton/profile-gdb.o		\
 	basis/MLton/random-gdb.o		\
 	basis/MLton/rlimit-gdb.o		\
 	basis/MLton/rusage-gdb.o		\
@@ -197,8 +197,8 @@ DEBUG_OBJS =					\
 	basis/OS/FileSys/tmpnam-gdb.o		\
 	basis/PackReal/subVec-gdb.o		\
 	basis/PackReal/update-gdb.o		\
- 	basis/Ptrace/ptrace2-gdb.o		\
- 	basis/Ptrace/ptrace4-gdb.o		\
+	basis/Ptrace/ptrace2-gdb.o		\
+	basis/Ptrace/ptrace4-gdb.o		\
 	basis/Real-gdb.o			\
 	basis/Real_const-gdb.o			\
 	basis/Socket/Host-gdb.o			\
