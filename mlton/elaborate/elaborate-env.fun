@@ -436,25 +436,36 @@ structure Structure =
 	 val peekVar = make (Ast.Vid.fromVar, Vid.deVar)
       end
 
+      datatype peekResult =
+	 Found of t
+	| UndefinedStructure of Strid.t list
+	  
       fun peekStrids (S, strids) =
-	 case strids of
-	    [] => SOME S
-	  | strid :: strids =>
-	       case peekStrid (S, strid) of
-		  NONE => NONE
-		| SOME S => peekStrids (S, strids)
-
-      fun peekLongtycon (S, t) =
 	 let
-	    val (strids, t) = Ast.Longtycon.split t
+	    fun loop (S, strids, ac) =
+	       case strids of
+		  [] => Found S
+		| strid :: strids =>
+		     case peekStrid (S, strid) of
+			NONE => UndefinedStructure (rev (strid :: ac))
+		      | SOME S => loop (S, strids, strid :: ac)
 	 in
-	    case peekStrids (S, strids) of
-	       NONE => NONE
-	     | SOME S => peekTycon (S, t)
+	    loop (S, strids, [])
 	 end
 
-      val lookupLongtycon = valOf o peekLongtycon
-	 
+(*       fun peekLongtycon (S, t) =
+ * 	 let
+ * 	    val (strids, t) = Ast.Longtycon.split t
+ * 	 in
+ * 	    case peekStrids (S, strids) of
+ * 	       NONE => NONE
+ * 	     | SOME S => peekTycon (S, t)
+ * 	 end
+ *)
+
+(*       val lookupLongtycon = valOf o peekLongtycon
+ * 	 
+ *)
       (* section 5.3, 5.5, 5.6 and rules 52, 53 *)
       fun cut {str, interface, opaque, region}: t =
 	 let
@@ -487,7 +498,7 @@ structure Structure =
 			      case peekStrid' (S, name) of
 				 NONE =>
 				    error
-				    (Longstrid.className,
+				    ("structure",
 				     Longstrid.layout	
 				     (Longstrid.long(rev strids, name)))
 			       | SOME {range, values, ...} =>
@@ -501,7 +512,7 @@ structure Structure =
 			      case peekTycon' (S, name) of
 				 NONE =>
 				    error
-				    (Longtycon.className,
+				    ("type",
 				     Longtycon.layout
 				     (Longtycon.long (rev strids, name)))
 			       | SOME {range = typeStr', values, ...} =>
@@ -538,7 +549,7 @@ structure Structure =
 			   fun handleVal (name, status) =
 			      case peekVid' (S, name) of
 				 NONE =>
-				    error (Longvid.className,
+				    error ("variable",
 					   Longvid.layout (Longvid.long
 							   (rev strids, name)))
 			       | SOME {range = (vid, s), values, ...} =>
@@ -557,8 +568,7 @@ structure Structure =
 						 (region,
 						  Layout.str
 						  (concat
-						   [Longvid.className,
-						    " ",
+						   ["identifier ",
 						    Longvid.toString
 						    (Longvid.long (rev strids,
 								   name)),
@@ -969,20 +979,49 @@ fun peekCon (E: t, c: Ast.Con.t): (Con.t * Scheme.t) option =
       NONE => NONE
     | SOME (vid, s) => Option.map (Vid.deCon vid, fn c => (c, s))
 
+fun layoutStrids (ss: Strid.t list): Layout.t =
+   Layout.str (concat (List.separate (List.map (ss, Strid.toString), ".")))
+   
+structure PeekResult =
+   struct
+      datatype 'a t =
+	 Found of 'a
+       | UndefinedStructure of Strid.t list
+       | Undefined
+
+      fun layout lay =
+	 fn Found z => lay z
+	  | UndefinedStructure ss => layoutStrids ss
+	  | Undefined => Layout.str "Undefined"
+
+      val toOption: 'a t -> 'a option =
+	 fn Found z => SOME z
+	  | _ => NONE
+   end
+    
 local
-   fun make (split, peek, strPeek) (E, x) =
+   datatype z = datatype PeekResult.t
+   fun make (split: 'a -> Strid.t list * 'b,
+	     peek: t * 'b -> 'c option,
+	     strPeek: Structure.t * 'b -> 'c option) (E, x) =
       let
 	 val (strids, x) = split x
       in
 	 case strids of
-	    [] => peek (E, x)
+	    [] => (case peek (E, x) of
+		      NONE => Undefined
+		    | SOME z => Found z)
 	  | strid :: strids =>
 	       case peekStrid (E, strid) of
-		  NONE => NONE
+		  NONE => UndefinedStructure [strid]
 		| SOME S =>
 		     case Structure.peekStrids (S, strids) of
-			NONE => NONE
-		      | SOME S => strPeek (S, x)
+			Structure.Found S =>
+			   (case strPeek (S, x) of
+			       NONE => Undefined
+			     | SOME z => Found z)
+		      | Structure.UndefinedStructure ss =>
+			   UndefinedStructure (strid :: ss)
       end
 in
    val peekLongstrid =
@@ -996,42 +1035,93 @@ end
 
 val peekLongcon =
    Trace.trace2 ("peekLongcon", Layout.ignore, Ast.Longcon.layout,
-		 Option.layout (Layout.tuple2
-				(CoreML.Con.layout, TypeScheme.layout)))
+		 PeekResult.layout (Layout.tuple2
+				    (CoreML.Con.layout, TypeScheme.layout)))
    peekLongcon
 (* ------------------------------------------------- *)
 (*                      lookup                       *)
 (* ------------------------------------------------- *)
 
+fun unbound (r: Region.t, className, x: Layout.t): unit =
+   Control.error
+   (r,
+    let open Layout
+    in seq [str "undefined ", str className, str " ", x]
+    end,
+    Layout.empty)
+
 local
    fun make (peek: t * 'a -> 'b option,
 	     bogus: unit -> 'b,
-	     unbound: 'a -> unit) (E: t, x: 'a): 'b =
+	     className: string,
+	     region: 'a -> Region.t,
+	     layout: 'a -> Layout.t)
+      (E: t, x: 'a): 'b =
       case peek (E, x) of
 	 SOME y => y
-       | NONE => (unbound x; bogus ())
+       | NONE => (unbound (region x, className, layout x); bogus ())
 in
    val lookupFctid =
-      make (peekFctid, fn _ => FunctorClosure.bogus, Ast.Fctid.unbound)
+      make (peekFctid, fn () => FunctorClosure.bogus,
+	    "functor", Ast.Fctid.region, Ast.Fctid.layout)
+   val lookupSigid =
+      make (peekSigid, fn () => Interface.bogus,
+	    "signature", Ast.Sigid.region, Ast.Sigid.layout)
+end
+
+local
+   fun make (peek: t * 'a -> 'b PeekResult.t,
+	     bogus: unit -> 'b,
+	     className: string,
+	     region: 'a -> Region.t,
+	     layout: 'a -> Layout.t)
+      (E: t, x: 'a): 'b =
+      let
+	 datatype z = datatype PeekResult.t
+      in
+	 case peek (E, x) of
+	    Found z => z
+	  | UndefinedStructure ss =>
+	       (unbound (region x, "structure", layoutStrids ss); bogus ())
+	  | Undefined =>
+	       (unbound (region x, className, layout x); bogus ())
+      end
+in
    val lookupLongcon =
       make (peekLongcon,
 	    fn () => (Con.bogus, Scheme.bogus ()),
-	    Ast.Longcon.unbound)
+	    "constructor",
+	    Ast.Longcon.region,
+	    Ast.Longcon.layout)
    val lookupLongstrid =
-      make (peekLongstrid, fn _ => Structure.bogus, Ast.Longstrid.unbound)
+      make (peekLongstrid,
+	    fn () => Structure.bogus,
+	    "structure",
+	    Ast.Longstrid.region,
+	    Ast.Longstrid.layout)
    val lookupLongtycon =
-      make (peekLongtycon, TypeStr.bogus, Ast.Longtycon.unbound)
+      make (peekLongtycon,
+	    TypeStr.bogus,
+	    "type",
+	    Ast.Longtycon.region,
+	    Ast.Longtycon.layout)
    val lookupLongvid =
       make (peekLongvid,
 	    fn () => (Vid.bogus, Scheme.bogus ()),
-	    Ast.Longvid.unbound)
+	    "variable",
+	    Ast.Longvid.region,
+	    Ast.Longvid.layout)
    val lookupLongvar =
       make (peekLongvar,
 	    fn () => (Var.bogus, Scheme.bogus ()),
-	    Ast.Longvar.unbound)
-   val lookupSigid = make (peekSigid, fn _ => Interface.bogus, Ast.Sigid.unbound)
+	    "variable",
+	    Ast.Longvar.region,
+	    Ast.Longvar.layout)
 end
 
+val peekLongcon = PeekResult.toOption o peekLongcon
+val peekLongtycon = PeekResult.toOption o peekLongtycon
+   
 (* ------------------------------------------------- *)
 (*                      extend                       *)
 (* ------------------------------------------------- *)
@@ -1350,7 +1440,12 @@ structure InterfaceMaker =
       fun lookupLongtycon (T {env, strs, types, ...},
 			   x): Ast.Con.t vector =
 	 let
-	    fun unbound () = (Ast.Longtycon.unbound x; Vector.new0 ())
+	    val unbound =
+	       fn () =>
+	       (unbound (Ast.Longtycon.region x,
+			 "type",
+			 Ast.Longtycon.layout x)
+		; Vector.new0 ())
 	    fun lookInEnv () =
 	       let
 		  val typeStr = Env.lookupLongtycon (env, x)

@@ -64,12 +64,4 @@ val equals = fn (T {string = s, hash = h, ...},
 
 val equals = Trace.trace2 ("AstId.equals", layout, layout, Bool.layout) equals
 
-fun unbound (x: t): unit =
-   Control.error
-   (region x,
-    let open Layout
-    in seq [str "undefined ", str className, str " ", layout x]
-    end,
-    Layout.empty)
-
 end

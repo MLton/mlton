@@ -7,8 +7,6 @@
  *)
 signature AST_ID_STRUCTS =
    sig
-      (* the name to print out for error messages *)
-      val className: string
    end
 
 signature AST_ID =
@@ -30,5 +28,4 @@ signature AST_ID =
       val hash: t -> Word.t
       val layout: t -> Layout.t
       val toString: t -> string
-      val unbound: t -> unit  (* report an unbound error message *)
    end

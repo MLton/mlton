@@ -80,16 +80,6 @@ fun fromString (longid: string, region: Region.t): t =
 		  region)
    end
 
-val className = Id.className
-
 val bogus = short Id.bogus
-   
-fun unbound (x: t): unit =
-   Control.error
-   (region x,
-    let open Layout
-    in seq [str "undefined ", str className, str " ", layout x]
-    end,
-    Layout.empty)
 
 end

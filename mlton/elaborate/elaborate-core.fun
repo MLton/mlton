@@ -1483,7 +1483,7 @@ fun elaborateDec (d, {env = E,
 			 unify
 			 (argType, Cexp.ty e2, fn (l1, l2) =>
 			  (region,
-			   str "function applied to incorrect arguments",
+			   str "function applied to incorrect argument",
 			   align [seq [str "expects: ", l1],
 				  seq [str "but got: ", l2]]))
 		   in

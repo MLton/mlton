@@ -23,7 +23,6 @@ signature LONGID =
 		      sharing type obj = t
 
       val bogus: t
-      val className: string (* the name to print out for error messages *)
       val fromString: string * Region.t -> t
       val isLong: t -> bool (* returns true if the list of strids is nonempty *)
       val long: Strid.t list * Id.t -> t
@@ -37,5 +36,4 @@ signature LONGID =
       val split: t -> Strid.t list * Id.t
       val toId: t -> Id.t
       val toString: t -> string
-      val unbound: t -> unit (* report an unbound error message *)
    end
