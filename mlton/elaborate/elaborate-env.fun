@@ -2560,101 +2560,106 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		      sigStr: Interface.TypeStr.t,
 		      strids: Strid.t list,
 		      name: Ast.Tycon.t): TypeStr.t =
-	 let
-	    val sigStr = TypeStr.ignoreNone (Interface.TypeStr.toEnv sigStr)
-	    val structKind = TypeStr.kind structStr
-	    val sigKind = TypeStr.kind sigStr
-	    fun tyconScheme (c: Tycon.t): Scheme.t =
+	 case Interface.TypeStr.toEnv sigStr of
+	    NONE => structStr
+	  | SOME sigStr => 
 	       let
-		  val tyvars =
-		     case TypeStr.kind structStr of
-			Kind.Arity n =>
-			   Vector.tabulate
-			   (n, fn _ =>
-			    Tyvar.newNoname {equality = false})
-		      | _ => Error.bug "Nary tycon"
+		  val structKind = TypeStr.kind structStr
+		  val sigKind = TypeStr.kind sigStr
+		  fun tyconScheme (c: Tycon.t): Scheme.t =
+		     let
+			val tyvars =
+			   case TypeStr.kind structStr of
+			      Kind.Arity n =>
+				 Vector.tabulate
+				 (n, fn _ =>
+				  Tyvar.newNoname {equality = false})
+			    | _ => Error.bug "Nary tycon"
+		     in
+			Scheme.make
+			{canGeneralize = true,
+			 ty = Type.con (c, Vector.map (tyvars, Type.var)),
+			 tyvars = tyvars}
+		     end
+		  datatype z = datatype TypeStr.node
+		  fun checkScheme (sigScheme: Scheme.t) =
+		     let
+			val structScheme =
+			   case TypeStr.node structStr of
+			      Datatype {tycon = c, ...} => tyconScheme c
+			    | Scheme s => s
+			    | Tycon c => tyconScheme c
+			val _ =
+			   equalSchemes
+			   (structScheme, sigScheme,
+			    "type", "type definition",
+			    fn () =>
+			    layout (strids, Ast.Tycon.layout name), region)
+		     in
+			sigStr
+		     end
 	       in
-		  Scheme.make
-		  {canGeneralize = true,
-		   ty = Type.con (c, Vector.map (tyvars, Type.var)),
-		   tyvars = tyvars}
+		  if not (AdmitsEquality.<= (TypeStr.admitsEquality sigStr,
+					     TypeStr.admitsEquality structStr))
+		     then
+			let
+			   val () = preError ()
+			   open Layout
+			   val _ =
+			      Control.error
+			      (region,
+			       seq [str "type ",
+				    layout (strids, Ast.Tycon.layout name),
+				    str " admits equality in ", str sign,
+				    str " but not in structure"],
+			       seq [str "not equality: ",
+				    TypeStr.explainDoesNotAdmitEquality
+				    structStr])
+			in
+			   sigStr
+			end
+		  else if not (Kind.equals (structKind, sigKind))
+		     then
+			let
+			   open Layout
+			   val _ =
+			      Control.error
+			      (region,
+			       seq [str "type ",
+				    layout (strids, Ast.Tycon.layout name),
+				    str " has arity ", Kind.layout structKind,
+				    str " in structure but arity ",
+				    Kind.layout sigKind, str " in ",
+				    str sign],
+			       empty)
+			in
+			   sigStr
+			end
+		  else
+		     case TypeStr.node sigStr of
+			Datatype {cons = sigCons, ...} =>
+			   (case TypeStr.node structStr of
+			       Datatype {cons = structCons, ...} =>
+				  (checkCons (structCons, sigCons, strids, name)
+				   ; structStr)
+			     | _ =>
+				  let
+				     open Layout
+				     val _ = 
+					Control.error
+					(region,
+					 seq [str "type ",
+					      layout (strids,
+						      Ast.Tycon.layout name),
+					      str " is a datatype in ", str sign,
+					      str " but not in structure"],
+					 Layout.empty)
+				  in
+				     sigStr
+				  end)
+		      | Scheme s => checkScheme s
+		      | Tycon c => checkScheme (tyconScheme c)
 	       end
-	    datatype z = datatype TypeStr.node
-	    fun checkScheme (sigScheme: Scheme.t) =
-	       let
-		  val structScheme =
-		     case TypeStr.node structStr of
-			Datatype {tycon = c, ...} => tyconScheme c
-		      | Scheme s => s
-		      | Tycon c => tyconScheme c
-		  val _ =
-		     equalSchemes
-		     (structScheme, sigScheme,
-		      "type", "type definition",
-		      fn () => layout (strids, Ast.Tycon.layout name), region)
-	       in
-		  sigStr
-	       end
-	 in
-	    if not (AdmitsEquality.<= (TypeStr.admitsEquality sigStr,
-				       TypeStr.admitsEquality structStr))
-	       then
-		  let
-		     val () = preError ()
-		     open Layout
-		     val _ =
-			Control.error
-			(region,
-			 seq [str "type ",
-			      layout (strids, Ast.Tycon.layout name),
-			      str " admits equality in ", str sign,
-			      str " but not in structure"],
-			 seq [str "not equality: ",
-			      TypeStr.explainDoesNotAdmitEquality structStr])
-		  in
-		     sigStr
-		  end
-	    else if not (Kind.equals (structKind, sigKind))
-	       then
-		  let
-		     open Layout
-		     val _ =
-			Control.error
-			(region,
-			 seq [str "type ",
-			      layout (strids, Ast.Tycon.layout name),
-			      str " has arity ", Kind.layout structKind,
-			      str " in structure but arity ",
-			      Kind.layout sigKind, str " in ",
-			      str sign],
-			 empty)
-		  in
-		     sigStr
-		  end
-	    else
-	       case TypeStr.node sigStr of
-		  Datatype {cons = sigCons, ...} =>
-		     (case TypeStr.node structStr of
-			 Datatype {cons = structCons, ...} =>
-			    (checkCons (structCons, sigCons, strids, name)
-			     ; structStr)
-		       | _ =>
-			    let
-			       open Layout
-			       val _ = 
-				  Control.error
-				  (region,
-				   seq [str "type ",
-					layout (strids, Ast.Tycon.layout name),
-					str " is a datatype in ", str sign,
-					str " but not in structure"],
-				   Layout.empty)
-			    in
-			       sigStr
-			    end)
-		| Scheme s => checkScheme s
-		| Tycon c => checkScheme (tyconScheme c)
-	 end
       fun map (structInfo: ('a, 'b) Info.t,
 	       sigArray: ('a * 'c) array,
 	       strids: Strid.t list,
