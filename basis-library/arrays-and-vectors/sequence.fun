@@ -24,7 +24,7 @@ functor Sequence (S: sig
 	 let
 	    open Primitive.Array
 	 in
-	    if isMutable orelse n > 0
+	    if isMutable orelse n <> 0 (* can't use n > 0.  need to raise Size *)
 	       then array n
 	    else array0 ()
 	 end
