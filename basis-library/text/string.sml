@@ -21,14 +21,63 @@ structure String: STRING_EXTRA =
 
       fun translate f s = concat (List.map f (explode s))
 
+      fun isSubstring s s' =
+	 let
+	    val n = size s
+	    val n' = size s'
+	 in
+	    if n <= n'
+	       then let
+		       val n'' = n' - n
+		       fun loop (i, j) =
+			  if i > n''
+			     then false
+			  else if j >= n
+			     then true
+			  else if sub (s, j) = sub (s', i + j)
+			     then loop (i, j + 1)
+			  else loop (i + 1, 0)
+		    in
+		       loop (0, 0)
+		    end
+	    else false
+	 end
       fun isPrefix s s' =
 	 let
 	    val n = size s
 	    val n' = size s'
-	    fun loop i =
-	       i >= n orelse (sub (s, i) = sub (s', i)
-			      andalso loop (i + 1))
-	 in n <= n' andalso loop 0
+	 in
+	    if n <= n'
+	       then let
+		       fun loop (j) =
+			  if j >= n
+			     then true
+			  else if sub (s, j) = sub (s', j)
+			     then loop (j + 1)
+			  else false
+		    in
+		       loop (0)
+		    end
+	    else false
+	 end
+      fun isSuffix s s' =
+	 let
+	    val n = size s
+	    val n' = size s'
+	 in
+	    if n <= n'
+	       then let
+		       val n'' = n' - n
+		       fun loop (j) =
+			  if j >= n
+			     then true
+			  else if sub (s, j) = sub (s', n'' + j)
+			     then loop (j + 1)
+			  else false
+		    in
+		       loop (0)
+		    end
+	    else false
 	 end
 
       local
@@ -40,7 +89,8 @@ structure String: STRING_EXTRA =
 	 val tokens = make (Reader.tokens, "tokens")
 	 val fields = make (Reader.fields, "fields")
       end
-   
+
+(*   
       fun collate comp (s, s') =
 	 let val n = size s
 	    val n' = size s'
@@ -56,6 +106,7 @@ structure String: STRING_EXTRA =
 			   | r => r)
 	 in loop 0
 	 end
+*)
 
       val compare = collate Char.compare
 

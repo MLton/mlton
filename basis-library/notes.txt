@@ -76,6 +76,9 @@ int; unless Int is opened afterwards.  But, then what about all the
 other structures that reference int?  Is top-level int = Int.int or is
 Int.int = top-level int.)
 
+MONO_{VECTOR[SLICE],ARRAY[_SLICE],ARRAY2}
+Have Word<N> structures, but not Word structures.
+
 SLICES:
 Why not existsi, alli?
 Should signature matching be opaque to hide implementation of 'a slice?
@@ -95,6 +98,16 @@ Probably Vector and Array signatures matching should be opaque as well.
 
 Vector:
 Why no vector: int * 'a -> 'a vector?
+
+CHAR
+Ordering of:
+val isAscii : char -> bool
+val toLower : char -> char
+val toUpper : char -> char
+val isAlpha : char -> bool
+seems bad; move isAscii down to other isXYZ
+Similarly with isXYZ's (not quite alphabetical, separation of isLower
+and isUpper seems awkward).
 
 
 Question: 
@@ -119,4 +132,5 @@ MLton specific:
     arithmetic at extended precision.  Should this be mentioned
     in the user guide?
  + QUESTION: proc-env.sml
+ + QUESTION: char.sml
  + check uses of {Vector,Array}Slice.slice for replacement by unsafeSlice.

@@ -17,17 +17,15 @@ structure String0 =
 			      open Primitive.String
 			      val length = size)
       open S
+      structure String0Slice = Slice
 
       open Primitive.Int
 	 
       type string = string
+      type char = char
       type array = string
 
       val maxSize = maxLen
-
-      val size = length
-
-      fun substring (s, i, j) = extract (s, i, SOME j)
 
       fun update (v, i, x) = 
 	tabulate (length v,
@@ -35,7 +33,20 @@ structure String0 =
 			     then x
 			  else unsafeSub (v, j))
 
+      val size = length
+
+      fun extract (s, i, j) = Slice.copy (Slice.slice (s, i, j))
+      fun substring (s, i, j) = extract (s, i, SOME j)
+
+      (* QUESTION: is it worth writing a concat2 that doesn't need to build and
+       *  traverse a list?  concat is too complicated for knownCase to unroll it.
+       *)
       fun s ^ s' = concat [s, s']
+      fun concatWith sep ss =
+	 (case ss of
+	     [] => ""
+	   | [s] => s
+	   | s::ss => List.foldl (fn (s,res) => concat [res, sep, s]) s ss)
 
       fun implode cs =
 	 let val a = Primitive.Array.array (List.length cs)

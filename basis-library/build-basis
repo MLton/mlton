@@ -56,8 +56,10 @@ arrays-and-vectors/array2.sml
 
 top-level/overloads.sml
 
+arrays-and-vectors/mono-vector-slice.sig
 arrays-and-vectors/mono-vector.sig
 arrays-and-vectors/mono-vector.sml
+arrays-and-vectors/mono-array-slice.sig
 arrays-and-vectors/mono-array.sig
 arrays-and-vectors/mono-array.sml
 arrays-and-vectors/mono-array2.sig

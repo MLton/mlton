@@ -69,6 +69,7 @@ structure Char: CHAR_EXTRA =
 
       val fromString = StringCvt.scanString scan
 
+      (* QUESTION: was scanC specifically accepting more than the old basis? *)
       fun 'a scanC (reader: (char, 'a) StringCvt.reader)
 	: (char, 'a) StringCvt.reader =
 	 let
@@ -86,18 +87,14 @@ structure Char: CHAR_EXTRA =
 		      | #"v" => yes #"\v"
 		      | #"f" => yes #"\f"
 		      | #"r" => yes #"\r"
+		      | #"?" => yes #"?"
 		      | #"\\" => yes #"\\"
 		      | #"\"" => yes #"\""
-		      | #"?" => yes #"?"
 		      | #"'" => yes #"'"
 		      | #"^" => control reader state'
 		      | #"x" =>
 			   Reader.mapOpt chrOpt
-			   (StringCvt.digits StringCvt.HEX reader)
-			   state'
-		      | #"u" =>
-			   Reader.mapOpt chrOpt
-			   (StringCvt.digitsExact (StringCvt.HEX, 4) reader)
+			   (StringCvt.digitsExact (StringCvt.HEX, 2) reader)
 			   state'
 		      | _ =>
 			   Reader.mapOpt chrOpt
@@ -151,7 +148,8 @@ structure Char: CHAR_EXTRA =
 		   if c < #" "
 		      then (String.concat
 			    ["\\^", String0.str (chr (ord c +? ord #"@"))])
-		   else String.concat ["\\", padLeft (Int.toString (ord c), 3)])
+		   else String.concat 
+		        ["\\", padLeft (Int.fmt StringCvt.DEC (ord c), 3)])
       
       val toCString =
 	 memoize

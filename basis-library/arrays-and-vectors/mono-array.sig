@@ -31,3 +31,13 @@ signature MONO_ARRAY =
       (* Depreciated *)
       val extract: array * int * int option -> vector 
    end
+
+signature MONO_ARRAY_EXTRA =
+   sig
+      include MONO_ARRAY
+      type vector_slice
+      structure MonoArraySlice: MONO_ARRAY_SLICE where type elem = elem
+	                                           and type array = array
+						   and type vector = vector
+						   and type vector_slice = vector_slice
+   end

@@ -26,6 +26,13 @@ signature MONO_VECTOR =
       val extract: vector * int * int option -> vector 
    end
 
+signature MONO_VECTOR_EXTRA =
+   sig
+      include MONO_VECTOR
+      structure MonoVectorSlice: MONO_VECTOR_SLICE where type elem = elem
+	                                             and type vector = vector
+   end
+
 (* The only difference between CONCRETE_MONO_VECTOR and MONO_VECTOR is that
  * the former specifies the type of vector.  I couldn't figure out a way to do
  * this in SML using sharing/with, so I had to duplicate the signature.
@@ -58,6 +65,15 @@ signature CONCRETE_MONO_VECTOR =
       val extract: vector * int * int option -> vector 
    end
 
+signature CONCRETE_MONO_VECTOR_EXTRA =
+   sig
+      include CONCRETE_MONO_VECTOR
+      structure MonoVectorSlice: MONO_VECTOR_SLICE where type elem = elem
+	                                             and type vector = vector
+   end
+
+(* Depreciated *)
+(*
 signature EQTYPE_MONO_VECTOR =
    sig
       eqtype elem
@@ -85,3 +101,4 @@ signature EQTYPE_MONO_VECTOR =
       (* Depreciated *)
       val extract: vector * int * int option -> vector 
    end
+*)
