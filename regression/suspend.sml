@@ -6,10 +6,10 @@ val _ =
 	 (handleWith (int, fn () => print "child got an int\n")
  	  ; print "child suspending\n"
  	  ; suspend Mask.none
- 	  ; print "child done\n")
+	  ; print "done\n")
     | SOME pid =>
-	 (print "parent sleeping\n"
-	  ; sleep (Time.fromSeconds 1)
+	 (sleep (Time.fromSeconds 1)
 	  ; print "parent sending int\n"
 	  ; kill (K_PROC pid, int)
-	  ; print "parent done\n")
+	  ; wait ()
+	  ; print "done\n")

@@ -1,6 +1,5 @@
-parent sleeping
 child suspending
 parent sending int
-parent done
 child got an int
-child done
+done
+done
