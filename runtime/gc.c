@@ -11,6 +11,9 @@
 #include <sys/resource.h>
 #include <sys/times.h>
 #include <time.h>
+#if (defined (__CYGWIN__))
+#include <windows.h>
+#endif
 #if (defined (__linux__))
 #include <values.h>
 #endif
@@ -32,6 +35,7 @@ enum {
 	BOGUS_POINTER = 0x1,
 	DEBUG = FALSE,
 	DEBUG_DETAILED = FALSE,
+	DEBUG_MEM = FALSE,
 	DEBUG_SIGNALS = FALSE,
 	FORWARDED = 0xFFFFFFFF,
 	HEADER_SIZE = WORD_SIZE,
@@ -55,6 +59,7 @@ static inline uint toBytes(uint n) {
 	return n << 2;
 }
 
+#if (defined (__linux__))
 static inline uint min(uint x, uint y) {
 	return ((x < y) ? x : y);
 }
@@ -62,7 +67,9 @@ static inline uint min(uint x, uint y) {
 static inline uint max(uint x, uint y) {
 	return ((x > y) ? x : y);
 }
+#endif
 
+#if (defined (__linux__))
 /* A super-safe mmap.
  *  Allocates a region of memory with dead zones at the high and low ends.
  *  Any attempt to touch the dead zone (read or write) will cause a
@@ -84,6 +91,31 @@ static void *ssmmap(size_t length, size_t dead_low, size_t dead_high) {
     diee("mprotect failed");
 
   return result;
+}
+#endif
+
+static void release (void *base, size_t length) {
+#if (defined (__CYGWIN__))
+	if (DEBUG_MEM)
+		fprintf(stderr, "VirtualFree (0x%x, 0, MEM_RELEASE)\n", 
+				(uint)base);
+	if (0 == VirtualFree (base, 0, MEM_RELEASE))
+		die ("VirtualFree release failed");
+#elif (defined (__linux__))
+	smunmap (base, length);
+#endif
+}
+
+static void decommit (void *base, size_t length) {
+#if (defined (__CYGWIN__))
+	if (DEBUG_MEM)
+		fprintf(stderr, "VirtualFree (0x%x, %u, MEM_RELEASE)\n", 
+				(uint)base, (uint)length);
+	if (0 == VirtualFree (base, length, MEM_DECOMMIT))
+		die ("VirtualFree decommit failed");
+#elif (defined (__linux__))
+	smunmap (base, length);
+#endif
 }
 
 /* ------------------------------------------------- */
@@ -801,13 +833,26 @@ static void *smmap_dienot(size_t length, int direction) {
 	for (i = 0; i < 32; i++) {
 		unsigned long address;
 
-		address = i*0x08000000ul;
+		address = i * 0x08000000ul;
 		if (direction)
 			address = 0xf8000000ul - address;
+#if (defined (__CYGWIN__))
+		address = 0; /* FIXME */
+		result = VirtualAlloc ((LPVOID)address, length,
+					MEM_COMMIT,
+					PAGE_READWRITE);
+		if (DEBUG_MEM)
+			fprintf (stderr, "0x%x = VirtualAlloc (0x%x, %u, MEM_COMMIT, PAGE_READWRITE)\n",
+					(uint)result, (uint)address,
+					(uint)length);
+		unless (NULL == result)
+			break;
+#elif (defined (__linux__))
 		result = mmap(address+(void*)0, length, PROT_READ | PROT_WRITE,
 				MAP_PRIVATE | MAP_ANON, -1, 0);
-	  if ((void*)-1 != result)
-		break;
+		unless ((void*)-1 == result)
+			break;
+#endif
 	}
 	return result;
 }
@@ -1431,7 +1476,7 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			if (s->toSize < needed) {
 				if (DEBUG or s->messages)
 					fprintf(stderr, "Unmapping toSpace\n");
-				smunmap(s->toBase, s->toSize);
+				release(s->toBase, s->toSize);
 				s->toBase = NULL;
 			 } else if (s->toSize > needed) {
 				uint delete;
@@ -1440,7 +1485,7 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 				if (DEBUG or s->messages)
 					fprintf(stderr, "Shrinking toSpace by %u\n",
 						 delete);
-				smunmap(s->toBase + needed, delete);
+				decommit(s->toBase + needed, delete);
 			 }
 		}
 		s->toSize = needed;
@@ -1448,11 +1493,12 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			toSpace(s);
 			if ((void*)-1 == s->toBase) {
 				s->toBase = (void*)NULL;
-				try++;
-				if (13 == try) {
+				if (++try < 13)
+					goto retry;
+				else {
+#if (defined (__linux__))
 					static char buffer[256];
 
-#if (defined (__linux__))
 					sprintf(buffer, 
 						"/bin/cat /proc/%d/maps\n", 
 						getpid());
@@ -1460,7 +1506,6 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 #endif
 					die("Out of swap space: cannot obtain %u bytes.", s->toSize);
 				}
-				goto retry;
 			}
 		}
 	}
@@ -1542,7 +1587,7 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 					"Shrinking new space at %x to %u bytes.\n",
 					(uint)s->base , keep);
 			assert(keep <= s->fromSize);
-			smunmap(s->base + keep, s->fromSize - keep);
+			decommit(s->base + keep, s->fromSize - keep);
 			s->fromSize = keep;
 		}
 		/* Determine the size of old space, and possibly unmap it. */
@@ -1573,7 +1618,7 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 					"Shrinking old space at %x to %u bytes.\n",
 					(uint)s->toBase , keep);
 			assert(keep <= s->toSize);
-			smunmap(s->toBase + keep, s->toSize - keep);
+			decommit(s->toBase + keep, s->toSize - keep);
 			s->toSize = keep;
 			if (0 == keep)
 				s->toBase = NULL;
@@ -1737,8 +1782,8 @@ inline void
 GC_done (GC_state s)
 {
 	GC_enter(s);
-	smunmap(s->base, s->fromSize);
-	if (s->toBase != NULL) smunmap(s->toBase, s->toSize);
+	release(s->base, s->fromSize);
+	if (s->toBase != NULL) release(s->toBase, s->toSize);
 	if (s->summary) {
 		double time;
 		uint gcTime = rusageTime(&s->ru_gc);
