@@ -17,6 +17,7 @@ in
    structure Longtycon = Longtycon
    structure Record = SortedRecord
    structure Strid = Strid
+   structure Symbol = Symbol
    structure Tyvar = Tyvar
 end
 
@@ -754,44 +755,43 @@ withtype copy = t option ref
 fun reportDuplicates (T s, region) =
    let
       val {elements, ...} = Set.value s
-      fun make (kind, toString) =
+      val destroys: (unit -> unit) list ref = ref []
+      fun make (kind, toSymbol) =
 	 let
-	    val h = HashSet.new {hash = #hash}
+	    val {get, destroy, ...} =
+	       Property.destGet (Symbol.plist,
+				 Property.initFun (fn _ => ref false))
+	    val _ = List.push (destroys, destroy)
 	 in
 	    fn n => let
-		       val s = toString n
-		       val hash = String.hash s
-		       val isNew = ref true
-		       val _ = 
-			  HashSet.lookupOrInsert
-			  (h, hash,
-			   fn {name, ...} => (s = name
-					      andalso (isNew := false
-						       ; true)),
-			   fn () => {hash = hash,
-				     name = s})
+		       val sym = toSymbol n
+		       val r = get sym
 		    in
-		       if !isNew
-			  then ()
-		       else Control.error (region,
-					   Layout.str
-					   (concat ["duplicate ",
-						    kind,
-						    " specification: ",
-						    s]),
-					   Layout.empty)
+		       if !r
+			  then
+			     Control.error (region,
+					    Layout.str
+					    (concat ["duplicate ",
+						     kind,
+						     " specification: ",
+						     Symbol.toString sym]),
+					    Layout.empty)
+		       else r := true
 		    end
 	 end
-      val str = make ("structure", Ast.Strid.toString)
-      val ty = make ("type", Ast.Tycon.toString)
-      val vid = make ("variable", Ast.Vid.toString)
+      val str = make ("structure", Ast.Strid.toSymbol)
+      val ty = make ("type", Ast.Tycon.toSymbol)
+      val vid = make ("variable", Ast.Vid.toSymbol)
+      val _ = 
+	 List.foreach
+	 (elements, fn e =>
+	  case e of
+	     Str {name, ...} => str name
+	   | Type {name, ...} => ty name
+	   | Val {name, ...} => vid name)
+      val _ = List.foreach (!destroys, fn d => d ())
    in
-      List.foreach
-      (elements, fn e =>
-       case e of
-	  Str {name, ...} => str name
-	| Type {name, ...} => ty name
-	| Val {name, ...} => vid name)
+      ()
    end
    
 type interface = t
