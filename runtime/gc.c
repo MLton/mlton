@@ -78,6 +78,7 @@ enum {
 	DEBUG_STACKS = FALSE,
 	DEBUG_THREADS = FALSE,
 	DEBUG_WEAK = FALSE,
+	DEBUG_WORLD = FALSE,
 	FORCE_GENERATIONAL = FALSE,
 	FORWARDED = 0xFFFFFFFF,
 	STACK_HEADER_SIZE = WORD_SIZE,
@@ -2934,7 +2935,7 @@ static void startHandler (GC_state s) {
 	s->inSignalHandler = TRUE;
 	s->savedThread = s->currentThread;
 	/* Set s->canHandle to 2, which will be decremented to 1
-	 * when swithching to the signal handler thread, which will then
+	 * when switching to the signal handler thread, which will then
  	 * run atomically and will finish by switching to the thread
 	 * to continue with, which will decrement s->canHandle to 0.
  	 */
@@ -3983,6 +3984,8 @@ static void loadWorld (GC_state s, char *fileName) {
 	pointer oldGen;
 	char c;
 	
+	if (DEBUG_WORLD)
+		fprintf (stderr, "loadWorld (%s)\n", fileName);
 	file = sfopen (fileName, "rb");
 	until ((c = fgetc (file)) == worldTerminator or EOF == c);
 	if (EOF == c) die ("Invalid world.");
@@ -3992,6 +3995,7 @@ static void loadWorld (GC_state s, char *fileName) {
 	oldGen = (pointer) sfreadUint (file);
 	s->oldGenSize = sfreadUint (file);
 	s->callFromCHandler = (GC_thread) sfreadUint (file);
+	s->canHandle = sfreadUint (file);
 	s->currentThread = (GC_thread) sfreadUint (file);
 	s->signalHandler = (GC_thread) sfreadUint (file);
        	heapCreate (s, &s->heap, heapDesiredSize (s, s->oldGenSize, 0),
@@ -4345,8 +4349,8 @@ uint GC_size (GC_state s, pointer root) {
 void GC_saveWorld (GC_state s, int fd) {
 	char buf[80];
 
-	if (DEBUG)
-		fprintf (stderr, "Save world.\n");
+	if (DEBUG_WORLD)
+		fprintf (stderr, "GC_saveWorld (%d).\n", fd);
 	enter (s);
 	/* Compact the heap. */
 	doGC (s, 0, 0, TRUE, TRUE);
@@ -4358,6 +4362,11 @@ void GC_saveWorld (GC_state s, int fd) {
 	swriteUint (fd, (uint)s->heap.start);
 	swriteUint (fd, (uint)s->oldGenSize);
 	swriteUint (fd, (uint)s->callFromCHandler);
+	/* canHandle must be saved in the heap, because the saveWorld may be
+	 * run in the context of a critical section, which will expect to be in	
+	 * the same context when it is restored.
+	 */
+	swriteUint (fd, s->canHandle);
 	swriteUint (fd, (uint)s->currentThread);
 	swriteUint (fd, (uint)s->signalHandler);
  	swrite (fd, s->heap.start, s->oldGenSize);
