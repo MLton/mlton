@@ -232,7 +232,7 @@ structure Vid =
       datatype t =
 	 Con of Con.t
        | Exn of Con.t
-       | Overload of Priority.t * (Var.t * Type.t) vector
+       | Overload of Priority.t * (Var.t * Type.t option) vector
        | Var of Var.t
 
       val statusPretty =
@@ -251,8 +251,11 @@ structure Vid =
 		  Con c => ("Con", Con.layout c)
 		| Exn c => ("Exn", Con.layout c)
 		| Overload (p,xts) =>
-		     ("Overload(" ^ (Layout.toString (Priority.layout p)) ^ ")",
-		      Vector.layout (Layout.tuple2 (Var.layout, Type.layout))
+		     (concat ["Overload (",
+			      Layout.toString (Priority.layout p),
+			      ")"],
+		      Vector.layout (Layout.tuple2 (Var.layout,
+						    Option.layout Type.layout))
 		      xts)
 		| Var v => ("Var", Var.layout v)
 	 in
@@ -404,6 +407,11 @@ structure TypeStr =
 
       fun tycon (c, kind) = T {kind = kind,
 			       node = Tycon c}
+
+      fun ignoreNone (s: t option): t =
+	 case s of
+	    NONE => tycon (Tycon.tuple, Kind.Nary)
+	  | SOME s => s
    end
 
 local
@@ -432,40 +440,51 @@ structure Interface =
       structure EtypeStr = TypeStr
       open Interface
 
-      fun flexibleTyconToEnv (c: FlexibleTycon.t): EtypeStr.t =
+      fun flexibleTyconToEnv (c: FlexibleTycon.t): EtypeStr.t option =
 	 let
 	    datatype z = datatype FlexibleTycon.realization
 	 in
 	    case FlexibleTycon.realization c of
-	       ETypeStr s =>
-		  (case s of
-		      NONE => EtypeStr.tycon (EtypeStr.Tycon.tuple, Kind.Nary)
-		    | SOME s => s)
+	       ETypeStr s => s
 	     | TypeStr s => typeStrToEnv s
 	 end
-      and tyconToEnv (t: Tycon.t): EtypeStr.t =
+      and tyconToEnv (t: Tycon.t): EtypeStr.t option =
 	 let
 	    open Tycon
 	 in
 	    case t of
 	       Flexible c => flexibleTyconToEnv c
-	     | Rigid (c, k) => EtypeStr.tycon (c, k)
+	     | Rigid (c, k) => SOME (EtypeStr.tycon (c, k))
 	 end
-      and typeToEnv (t: Type.t): Etype.t =
-	 Type.hom (t, {con = fn (c, ts) => EtypeStr.apply (tyconToEnv c, ts),
-		       record = Etype.record,
-		       var = Etype.var})
-      and schemeToEnv (Scheme.T {ty, tyvars}): Escheme.t =
-	 Escheme.make {canGeneralize = true,
-		       ty = typeToEnv ty,
-		       tyvars = tyvars}
-      and consToEnv (Cons.T v): Econs.t =
-	 Econs.T (Vector.map (v, fn {name, scheme} =>
-			      {con = Con.newNoname (),
-			       name = name,
-			       scheme = schemeToEnv scheme,
-			       uses = Uses.new ()}))
-      and typeStrToEnv (s: TypeStr.t): EtypeStr.t =
+      and typeToEnv (t: Type.t): Etype.t option =
+	 DynamicWind.withEscape
+	 (fn escape =>
+	  SOME
+	  (Type.hom (t, {con = fn (c, ts) => (case tyconToEnv c of
+						 NONE => escape NONE
+					       | SOME s => 
+						    EtypeStr.apply (s, ts)),
+			 record = Etype.record,
+			 var = Etype.var})))
+      and schemeToEnv (Scheme.T {ty, tyvars}): Escheme.t option =
+	 DynamicWind.withEscape
+	 (fn escape =>
+	  SOME (Escheme.make {canGeneralize = true,
+			      ty = (case typeToEnv ty of
+				       NONE => escape NONE
+				     | SOME ty => ty),
+			      tyvars = tyvars}))
+      and consToEnv (Cons.T v): Econs.t option =
+	 DynamicWind.withEscape
+	 (fn escape =>
+	  SOME (Econs.T (Vector.map (v, fn {name, scheme} =>
+				     {con = Con.newNoname (),
+				      name = name,
+				      scheme = (case schemeToEnv scheme of
+						   NONE => escape NONE
+						 | SOME s => s),
+				      uses = Uses.new ()}))))
+      and typeStrToEnv (s: TypeStr.t): EtypeStr.t option =
 	 let
 	    val k = TypeStr.kind s
 	    datatype z = datatype TypeStr.node
@@ -473,33 +492,34 @@ structure Interface =
 	    case TypeStr.node s of
 	       Datatype {cons, tycon} =>
 		  let
-		     val tycon: Etycon.t =
-			case tycon of
-			   Tycon.Flexible c =>
-			      let
-				 val typeStr = flexibleTyconToEnv c
-			      in
-				 case EtypeStr.node typeStr of
-				    EtypeStr.Datatype {tycon, ...} => tycon
-				  | EtypeStr.Tycon c => c
-				  | _ =>
-				       let
-					  open Layout
-				       in
-					  Error.bug
-					  (toString
-					   (seq [str "datatype ",
-						 TypeStr.layout s,
-						 str " realized with scheme ",
-						 EtypeStr.layout typeStr]))
-				       end
-			      end
-			 | Tycon.Rigid (c, _) => c
+		     fun data c =
+			Option.map (consToEnv cons, fn cs =>
+				    EtypeStr.data (c, k, cs))
 		  in
-		     EtypeStr.data (tycon, k, consToEnv cons)
+		     case tycon of
+			Tycon.Flexible c =>
+			   (case flexibleTyconToEnv c of
+			       NONE => NONE
+			     | SOME typeStr =>
+				  case EtypeStr.node typeStr of
+				     EtypeStr.Datatype {tycon, ...} => data tycon
+				   | EtypeStr.Tycon c => data c
+				   | _ =>
+					let
+					   open Layout
+					in
+					   Error.bug
+					   (toString
+					    (seq [str "datatype ",
+						  TypeStr.layout s,
+						  str " realized with scheme ",
+						  EtypeStr.layout typeStr]))
+					end)
+		      | Tycon.Rigid (c, _) => data c
 		  end
-	     | Scheme s => EtypeStr.def (schemeToEnv s, k)
-	     | Tycon c => EtypeStr.abs (tyconToEnv c)
+	     | Scheme s =>
+		  Option.map (schemeToEnv s, fn s => EtypeStr.def (s, k))
+	     | Tycon c => Option.map (tyconToEnv c, EtypeStr.abs)
 	 end
 
       structure Tycon =
@@ -709,7 +729,7 @@ structure Structure =
 			 plist: PropertyList.t,
 			 strs: (Ast.Strid.t, t) Info.t,
 			 types: (Ast.Tycon.t, TypeStr.t) Info.t,
-			 vals: (Ast.Vid.t, Vid.t * Scheme.t) Info.t}
+			 vals: (Ast.Vid.t, Vid.t * Scheme.t option) Info.t}
 
       local
 	 fun make f (T r) = f r
@@ -747,7 +767,8 @@ structure Structure =
 	 Layout.record
 	 [("types", Info.layout (Ast.Tycon.layout, TypeStr.layout) types),
 	  ("vals", (Info.layout (Ast.Vid.layout,
-				 Layout.tuple2 (Vid.layout, Scheme.layout))
+				 Layout.tuple2 (Vid.layout,
+						Option.layout Scheme.layout))
 		    vals)),
 	  ("strs", Info.layout (Strid.layout, layout) strs)]
 
@@ -890,23 +911,29 @@ structure Structure =
 		  in
 		     res
 		  end
-	       fun layoutValSpec (d: Ast.Vid.t, (vid, scheme)) =
+	       fun layoutValSpec (d: Ast.Vid.t, (vid, scheme))= 
 		  let
 		     fun simple s =
 			seq [str s, str " ", Ast.Vid.layout d,
 			     if Ast.Vid.isSymbolic d then str " " else empty,
-			     str ": ", Scheme.layoutPretty scheme]
+				str ": ",
+				case scheme of
+				   NONE => str "<NONE>"
+				 | SOME s => Scheme.layoutPretty s]
 		     datatype z = datatype Vid.t
 		  in
 		     case vid of
 			Con _ => NONE
 		      | Exn c =>
 			   SOME
-			   (seq [str "exception ", Con.layout c, 
-				 case Type.deArrowOpt (Scheme.ty scheme) of
-				    NONE => empty
-				  | SOME (t, _) =>
-				       seq [str " of ", Type.layoutPretty t]])
+			   (seq [str "exception ", Con.layout c,
+				 case scheme of
+				    NONE => str " of <NONE>"
+				  | SOME s => 
+				       case Type.deArrowOpt (Scheme.ty s) of
+					  NONE => empty
+					| SOME (t, _) =>
+					     seq [str " of ", Type.layoutPretty t]])
 		      | Overload  _ => SOME (simple "val")
 		      | Var _ => SOME (simple "val")
 		  end
@@ -951,30 +978,30 @@ structure Structure =
 				      Option.map (interfaceSigid I, fn s =>
 						  (s, I))
 				   end) of
-		     NONE => (layoutStr S, {messy = true})
-		   | SOME (s, I) =>
-			let
-			   val wheres = ref []
-			   val () =
-			      realize
-			      (S, Interface.flexibleTycons I,
-			       fn (name, _, typeStr, {nest}) =>
-			       case typeStr of
-				  NONE => Error.bug "missing typeStr"
-				| SOME typeStr =>
-				     List.push
-				     (wheres,
-				      seq [str "where ",
-					   layoutTypeSpec'
-					   (Ast.Longtycon.layout
-					    (Ast.Longtycon.long (rev nest,
-								 name)),
-					    typeStr,
-					    {isWhere = true})]))
-			in
-			   (align (Sigid.layout s :: (rev (!wheres))),
-			    {messy = false})
-			end
+			  NONE => (layoutStr S, {messy = true})
+			| SOME (s, I) =>
+			     let
+				val wheres = ref []
+				val () =
+				   realize
+				   (S, Interface.flexibleTycons I,
+				    fn (name, _, typeStr, {nest}) =>
+				    case typeStr of
+				       NONE => Error.bug "missing typeStr"
+				     | SOME typeStr =>
+					  List.push
+					  (wheres,
+					   seq [str "where ",
+						layoutTypeSpec'
+						(Ast.Longtycon.layout
+						 (Ast.Longtycon.long (rev nest,
+								      name)),
+						 typeStr,
+						 {isWhere = true})]))
+			     in
+				(align (Sigid.layout s :: (rev (!wheres))),
+				 {messy = false})
+			     end
 	    in
 	       {layoutAbbrev = layoutAbbrev,
 		layoutStr = layoutStr,
@@ -1052,7 +1079,7 @@ structure Basis =
 			 sigs: (Ast.Sigid.t, Interface.t) Info.t,
 			 strs: (Ast.Strid.t, Structure.t) Info.t,
 			 types: (Ast.Tycon.t, TypeStr.t) Info.t,
-			 vals: (Ast.Vid.t, Vid.t * Scheme.t) Info.t}
+			 vals: (Ast.Vid.t, Vid.t * Scheme.t option) Info.t}
 
       fun layout (T {bass, fcts, sigs, strs, types, vals, ...}) =
 	 Layout.record
@@ -1062,7 +1089,8 @@ structure Basis =
 	  ("strs", Info.layout (Ast.Strid.layout, Structure.layout) strs),
 	  ("types", Info.layout (Ast.Tycon.layout, TypeStr.layout) types),
 	  ("vals", (Info.layout (Ast.Vid.layout,
-				 Layout.tuple2 (Vid.layout, Scheme.layout))
+				 Layout.tuple2 (Vid.layout,
+						Option.layout Scheme.layout))
 		    vals))]
    end
 
@@ -1171,7 +1199,7 @@ structure All =
        | Sig of (Sigid.t, Interface.t) Values.t
        | Str of (Strid.t, Structure.t) Values.t
        | Tyc of (Ast.Tycon.t, TypeStr.t) Values.t
-       | Val of (Ast.Vid.t, Vid.t * Scheme.t) Values.t
+       | Val of (Ast.Vid.t, Vid.t * Scheme.t option) Values.t
 
       val basOpt = fn Bas z => SOME z | _ => NONE
       val fctOpt = fn Fct z => SOME z | _ => NONE
@@ -1199,7 +1227,7 @@ datatype t =
 	  *)
 	 topSymbols: Symbol.t list ref,
 	 types: (Ast.Tycon.t, TypeStr.t) NameSpace.t,
-	 vals: (Ast.Vid.t, Vid.t * Scheme.t) NameSpace.t}
+	 vals: (Ast.Vid.t, Vid.t * Scheme.t option) NameSpace.t}
 
 fun sizeMessage (E: t): Layout.t =
    let
@@ -1478,25 +1506,27 @@ fun dummyStructure (I: Interface.t, {prefix: string})
 	      val types =
 		 Array.map (types, fn (name, s) =>
 			    {domain = name,
-			     range = Interface.TypeStr.toEnv s,
+			     range = (TypeStr.ignoreNone
+				      (Interface.TypeStr.toEnv s)),
 			     time = time,
 			     uses = Uses.new ()})
 	      val vals =
-		 Array.map (vals, fn (name, (status, scheme)) =>
-			    let
-			       val con = CoreML.Con.fromString o Ast.Vid.toString
-			       val var = CoreML.Var.fromString o Ast.Vid.toString
-			       val vid =
-				  case status of
-				     Status.Con => Vid.Con (con name)
-				   | Status.Exn => Vid.Exn (con name)
-				   | Status.Var => Vid.Var (var name)
-			    in
-			       {domain = name,
-				range = (vid, Interface.Scheme.toEnv scheme),
-				time = time,
-				uses = Uses.new ()}
-			    end)
+		 Array.map
+		 (vals, fn (name, (status, scheme)) =>
+		  let
+		     val con = CoreML.Con.fromString o Ast.Vid.toString
+		     val var = CoreML.Var.fromString o Ast.Vid.toString
+		     val vid =
+			case status of
+			   Status.Con => Vid.Con (con name)
+			 | Status.Exn => Vid.Exn (con name)
+			 | Status.Var => Vid.Var (var name)
+		  in
+		     {domain = name,
+		      range = (vid, Interface.Scheme.toEnv scheme),
+		      time = time,
+		      uses = Uses.new ()}
+		  end)
 	   in
 	      Structure.T {interface = SOME I,
 			   plist = PropertyList.new (),
@@ -1756,7 +1786,7 @@ in
        | SOME (vid, s) => Option.map (Vid.deVar vid, fn x => (x, s))
 end
 
-fun peekCon (T {vals, ...}, c: Ast.Con.t): (Con.t * Scheme.t) option =
+fun peekCon (T {vals, ...}, c: Ast.Con.t): (Con.t * Scheme.t option) option =
    case NameSpace.peek (vals, Ast.Vid.fromCon c,
 			{markUse = fn (vid, _) => isSome (Vid.deCon vid)}) of
       NONE => NONE
@@ -1880,7 +1910,7 @@ local
 in
    val lookupLongcon =
       make (peekLongcon,
-	    fn () => (Con.bogus, Scheme.bogus ()),
+	    fn () => (Con.bogus, NONE),
 	    "constructor",
 	    Ast.Longcon.region,
 	    Ast.Longcon.layout)
@@ -1898,13 +1928,13 @@ in
 	    Longtycon.layout)
    val lookupLongvid =
       make (peekLongvid,
-	    fn () => (Vid.bogus, Scheme.bogus ()),
+	    fn () => (Vid.bogus, NONE),
 	    "variable",
 	    Ast.Longvid.region,
 	    Ast.Longvid.layout)
    val lookupLongvar =
       make (peekLongvar,
-	    fn () => (Var.bogus, Scheme.bogus ()),
+	    fn () => (Var.bogus, NONE),
 	    "variable",
 	    Ast.Longvar.region,
 	    Ast.Longvar.layout)
@@ -2030,7 +2060,7 @@ in
 		     Vector.foreach
 		     (v, fn {con, name, scheme, uses} => 
 		      extendVals (E, Ast.Vid.fromCon name,
-				  (Vid.Con con, scheme),
+				  (Vid.Con con, SOME scheme),
 				  ExtendUses.Old uses))
 		| _ => ()
 	    end
@@ -2046,7 +2076,7 @@ fun extendExn (E, c, c', s) =
    extendVals (E, Ast.Vid.fromCon c, (Vid.Exn c', s), ExtendUses.New)
 	       
 fun extendVar (E, x, x', s, ir) =
-   extendVals (E, Ast.Vid.fromVar x, (Vid.Var x', s),
+   extendVals (E, Ast.Vid.fromVar x, (Vid.Var x', SOME s),
 	       ExtendUses.fromIsRebind ir)
 
 val extendVar =
@@ -2058,7 +2088,8 @@ val extendVar =
    extendVar
 
 fun extendOverload (E, p, x, yts, s) =
-   extendVals (E, Ast.Vid.fromVar x, (Vid.Overload (p, yts), s), ExtendUses.New)
+   extendVals (E, Ast.Vid.fromVar x, (Vid.Overload (p, yts), SOME s),
+	       ExtendUses.New)
 
 (* ------------------------------------------------- *)   
 (*                       local                       *)
@@ -2530,7 +2561,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		      strids: Strid.t list,
 		      name: Ast.Tycon.t): TypeStr.t =
 	 let
-	    val sigStr = Interface.TypeStr.toEnv sigStr
+	    val sigStr = TypeStr.ignoreNone (Interface.TypeStr.toEnv sigStr)
 	    val structKind = TypeStr.kind structStr
 	    val sigKind = TypeStr.kind sigStr
 	    fun tyconScheme (c: Tycon.t): Scheme.t =
@@ -2761,7 +2792,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	    val types =
 	       map (structTypes, sigTypes, strids,
 		    "type", Ast.Tycon.equals, Ast.Tycon.layout,
-		    Interface.TypeStr.toEnv,
+		    TypeStr.ignoreNone o Interface.TypeStr.toEnv,
 		    fn (name, s, s') => handleType (s, s', strids, name))
 	    val vals =
 	       map
@@ -2778,109 +2809,118 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		   (vid, Interface.Scheme.toEnv sigScheme)
 		end,
 		fn (name, (vid, strScheme), (status, sigScheme)) =>
-		let
-		   val sigScheme = Interface.Scheme.toEnv sigScheme
-		   val (sigArgs, sigType) = Scheme.dest sigScheme
-		   val generalize = TypeEnv.generalize sigArgs
-		   val {args = strArgs, instance = strType} =
-		      Scheme.instantiate strScheme
-		   fun error rest =
+		case (strScheme, Interface.Scheme.toEnv sigScheme) of
+		   (SOME strScheme, SOME sigScheme) =>
 		      let
-			 open Layout
-		      in
-			 Control.error
-			 (region,
-			  seq [str "variable type in structure disagrees with ",
-			       str sign],
-			  align [seq [str "variable: ",
-				      Longvid.layout	
-				      (Longvid.long (rev strids, name))],
-				 rest])
-		      end
-		   val _ =
-		      Type.unify
-		      (strType, sigType,
-		       {error = (fn (l, l') =>
-				 let
-				    open Layout
-				 in
-				    error (align [seq [str "structure: ", l],
-						  seq [str "signature: ", l']])
-				 end),
-			preError = preError})
-		   (* Now that we've unified, find any type variables that
-		    * can't be generalized because they occur at an earlier
-		    * point.
-		    *)
-		   val {unable} = generalize ()
-		   val () =
-		      if 0 = Vector.length unable
-			 then ()
-		      else
-			 let
-			    val () = preError ()
-			    open Layout
-			 in
-			    error
-			    (align
-			     [seq [str "unable to generalize: ",
-				   seq (List.separate (Vector.toListMap
-						       (unable, Tyvar.layout),
-						       str ", "))],
-			      seq [str "signature: ",
-				   Scheme.layoutPretty sigScheme]])
-
-			 end
-		   fun addDec (n: Exp.node): Vid.t =
-		      let
-			 val x = Var.newNoname ()
-			 val e = Exp.make (n, strType)
-			 val _ =
-			    List.push
-			    (decs,
-			     Dec.Val {rvbs = Vector.new0 (),
-				      tyvars = fn () => sigArgs,
-				      vbs = (Vector.new1
-					     {exp = e,
-					      lay = fn _ => Layout.empty,
-					      pat = Pat.var (x, strType),
-					      patRegion = region}),
-				      warnMatch = warnMatch ()})
-		      in
-			 Vid.Var x
-		      end
-		   fun con (c: Con.t): Vid.t =
-		      addDec (Exp.Con (c, strArgs ()))
-		   val vid =
-		      case (vid, status) of
-			 (Vid.Con c, Status.Var) => con c
-		       | (Vid.Exn c, Status.Var) => con c
-		       | (Vid.Var x, Status.Var) =>
-			    if 0 < Vector.length sigArgs
-			       orelse 0 < Vector.length (strArgs ())
-			       then addDec (Exp.Var (fn () => x, strArgs))
-			    else vid
-		       | (Vid.Con _, Status.Con) => vid
-		       | (Vid.Exn _, Status.Exn) => vid
-		       | _ =>
+			 val (sigArgs, sigType) = Scheme.dest sigScheme
+			 val generalize = TypeEnv.generalize sigArgs
+			 val {args = strArgs, instance = strType} =
+			    Scheme.instantiate strScheme
+			 fun error rest =
 			    let
 			       open Layout
-			       val _ =
-				  Control.error
-				  (region,
-				   seq [str (concat
-					     [Vid.statusPretty vid,
-					      " in structure but ",
-					      Status.pretty status, " in ",
-					      sign, ": "]),
-					layout (strids, Ast.Vid.layout name)],
-				   Layout.empty)
 			    in
-			       vid
+			       Control.error
+			       (region,
+				seq [str "variable type in structure disagrees with ",
+				     str sign],
+				align [seq [str "variable: ",
+					    Longvid.layout	
+					    (Longvid.long (rev strids, name))],
+				       rest])
 			    end
-		in
-		   (vid, sigScheme)
-		end)
+			 val _ =
+			    Type.unify
+			    (strType, sigType,
+			     {error = (fn (l, l') =>
+				       let
+					  open Layout
+				       in
+					  error (align [seq [str "structure: ", l],
+							seq [str "signature: ", l']])
+				       end),
+			      preError = preError})
+			 (* Now that we've unified, find any type variables that
+			  * can't be generalized because they occur at an earlier
+			  * point.
+			  *)
+			 val {unable} = generalize ()
+			 val () =
+			    if 0 = Vector.length unable
+			       then ()
+			    else
+			       let
+				  val () = preError ()
+				  open Layout
+			       in
+				  error
+				  (align
+				   [seq [str "unable to generalize: ",
+					 seq (List.separate (Vector.toListMap
+							     (unable, Tyvar.layout),
+							     str ", "))],
+				    seq [str "signature: ",
+					 Scheme.layoutPretty sigScheme]])
+
+			       end
+			 fun addDec (n: Exp.node): Vid.t =
+			    let
+			       val x = Var.newNoname ()
+			       val e = Exp.make (n, strType)
+			       val _ =
+				  List.push
+				  (decs,
+				   Dec.Val {rvbs = Vector.new0 (),
+					    tyvars = fn () => sigArgs,
+					    vbs = (Vector.new1
+						   {exp = e,
+						    lay = fn _ => Layout.empty,
+						    pat = Pat.var (x, strType),
+						    patRegion = region}),
+					    warnMatch = warnMatch ()})
+			    in
+			       Vid.Var x
+			    end
+			 fun con (c: Con.t): Vid.t =
+			    addDec (Exp.Con (c, strArgs ()))
+			 val vid =
+			    case (vid, status) of
+			       (Vid.Con c, Status.Var) => con c
+			     | (Vid.Exn c, Status.Var) => con c
+			     | (Vid.Var x, Status.Var) =>
+				  if 0 < Vector.length sigArgs
+				     orelse 0 < Vector.length (strArgs ())
+				     then addDec (Exp.Var (fn () => x, strArgs))
+				  else vid
+				   | (Vid.Con _, Status.Con) => vid
+				   | (Vid.Exn _, Status.Exn) => vid
+				   | _ =>
+					let
+					   open Layout
+					   val _ =
+					      Control.error
+					      (region,
+					       seq [str (concat
+							 [Vid.statusPretty vid,
+							  " in structure but ",
+							  Status.pretty status, " in ",
+							  sign, ": "]),
+						    layout (strids, Ast.Vid.layout name)],
+					       Layout.empty)
+					in
+					   vid
+					end
+		      in
+			 (vid, SOME sigScheme)
+		      end
+		 | _ => 
+		      (* We don't want to cause spurious errors by guessing.
+		       * Putting strScheme here would be
+		       * wrong, because it isn't what the signature says --
+		       * it might expose stuff hidden by the signature.
+		       *)
+		      (vid, NONE))
+
 	 in
 	    Structure.T {interface = SOME I,
 			 plist = PropertyList.new (),
@@ -3171,7 +3211,7 @@ fun functorClosure
 		     strs = Info.map (strs, replacement),
 		     types = Info.map (types, replaceTypeStr),
 		     vals = Info.map (vals, fn (v, s) =>
-				      (v, replaceScheme s))}))
+				      (v, Option.map (s, replaceScheme)))}))
 	       val result = Option.map (result, replacement)
 	       val _ = destroy1 ()
 	       val _ = destroy2 ()

@@ -47,7 +47,7 @@ signature ELABORATE_ENV =
 	    datatype t =
 	       Con of CoreML.Con.t
 	     | Exn of CoreML.Con.t
-	     | Overload of Ast.Priority.t * (CoreML.Var.t * Type.t) vector
+	     | Overload of Ast.Priority.t * (CoreML.Var.t * Type.t option) vector
 	     | Var of CoreML.Var.t
 
 	    val layout: t -> Layout.t
@@ -163,7 +163,7 @@ signature ELABORATE_ENV =
 	 -> Structure.t * Decs.t
       val empty: unit -> t
       val extendBasid: t * Ast.Basid.t * Basis.t -> unit
-      val extendExn: t * Ast.Con.t * CoreML.Con.t * Scheme.t -> unit
+      val extendExn: t * Ast.Con.t * CoreML.Con.t * Scheme.t option -> unit
       val extendFctid: t * Ast.Fctid.t * FunctorClosure.t -> unit
       val extendFix: t * Ast.Vid.t * Ast.Fixity.t -> unit
       val extendSigid: t * Ast.Sigid.t * Interface.t -> unit
@@ -173,7 +173,8 @@ signature ELABORATE_ENV =
       val extendVar:
 	 t * Ast.Var.t * CoreML.Var.t * Scheme.t * {isRebind: bool} -> unit
       val extendOverload:
-	 t * Ast.Priority.t * Ast.Var.t * (CoreML.Var.t * Type.t) vector * Scheme.t
+	 t * Ast.Priority.t * Ast.Var.t * (CoreML.Var.t * Type.t option) vector
+	 * Scheme.t
 	 -> unit
       val forceUsed: t -> unit
       val forceUsedLocal: t * (unit -> 'a) -> 'a
@@ -189,11 +190,11 @@ signature ELABORATE_ENV =
       val localModule: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val lookupBasid: t * Ast.Basid.t -> Basis.t option
       val lookupFctid: t * Ast.Fctid.t -> FunctorClosure.t option
-      val lookupLongcon: t * Ast.Longcon.t -> CoreML.Con.t * Scheme.t
+      val lookupLongcon: t * Ast.Longcon.t -> CoreML.Con.t * Scheme.t option
       val lookupLongstrid: t * Ast.Longstrid.t -> Structure.t option
       val lookupLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
-      val lookupLongvar: t * Ast.Longvar.t -> CoreML.Var.t * Scheme.t
-      val lookupLongvid: t * Ast.Longvid.t -> Vid.t * Scheme.t
+      val lookupLongvar: t * Ast.Longvar.t -> CoreML.Var.t * Scheme.t option
+      val lookupLongvid: t * Ast.Longvid.t -> Vid.t * Scheme.t option
       val lookupSigid: t * Ast.Sigid.t -> Interface.t option
       val lookupStrid: t * Ast.Strid.t -> Structure.t option
       val makeBasis: t * (unit -> 'a) -> 'a * Basis.t
@@ -209,7 +210,8 @@ signature ELABORATE_ENV =
       (* openBasis (E, B) opens B in the environment E. *) 
       val openBasis: t * Basis.t -> unit
       val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option
-      val peekLongcon: t * Ast.Longcon.t -> (CoreML.Con.t * Scheme.t) option
+      val peekLongcon:
+	 t * Ast.Longcon.t -> (CoreML.Con.t * Scheme.t option) option
       val peekLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
       val processDefUse: t -> unit
       (* scope f evaluates f () in a new scope so that extensions that occur

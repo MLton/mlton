@@ -441,36 +441,44 @@ val elaboratePat:
 			    seq [str "but got: ", l1],
 			    seq [str "in: ", lay ()]]))
 		fun lay () = approximate (Apat.layout p)
+		fun dontCare () =
+		   Cpat.wild (Type.new ())
 	     in
 		case Apat.node p of
 		   Apat.App (c, p) =>
 		      let
 			 val (con, s) = Env.lookupLongcon (E, c)
-			 val {args, instance} = Scheme.instantiate s
-			 val args = args ()
-			 val p = loop p
-			 val argType = Type.new ()
-			 val resultType = Type.new ()
-			 val _ =
-			    unify
-			    (instance, Type.arrow (argType, resultType),
-			     fn _ =>
-			     (region,
-			      str "constant constructor applied to argument",
-			      seq [str "in: ", lay ()]))
-			 val _ =
-			    unify
-			    (Cpat.ty p, argType, fn (l, l') =>
-			     (region,
-			      str "constructor applied to incorrect argument",
-			      align [seq [str "expects: ", l'],
-				     seq [str "but got: ", l],
-				     seq [str "in: ", lay ()]]))
 		      in
-			 Cpat.make (Cpat.Con {arg = SOME p,
-					      con = con,
-					      targs = args},
-				    resultType)
+			 case s of
+			    NONE => dontCare ()
+			  | SOME s => 
+			       let
+				  val {args, instance} = Scheme.instantiate s
+				  val args = args ()
+				  val p = loop p
+				  val argType = Type.new ()
+				  val resultType = Type.new ()
+				  val _ =
+				     unify
+				     (instance, Type.arrow (argType, resultType),
+				      fn _ =>
+				      (region,
+				       str "constant constructor applied to argument",
+				       seq [str "in: ", lay ()]))
+				  val _ =
+				     unify
+				     (Cpat.ty p, argType, fn (l, l') =>
+				      (region,
+				       str "constructor applied to incorrect argument",
+				       align [seq [str "expects: ", l'],
+					      seq [str "but got: ", l],
+					      seq [str "in: ", lay ()]]))
+			       in
+				  Cpat.make (Cpat.Con {arg = SOME p,
+						       con = con,
+						       targs = args},
+					     resultType)
+			       end
 		      end
 		 | Apat.Const c =>
 		      elabConst
@@ -614,11 +622,20 @@ val elaboratePat:
 					 seq [str "constructor can not be redefined by val rec: ",
 					      Ast.Longvid.layout name],
 					 empty)
-				  val {args, instance} = Scheme.instantiate s
 			       in
-				  Cpat.make
-				  (Cpat.Con {arg = NONE, con = c, targs = args ()},
-				   instance)
+				  case s of
+				     NONE => dontCare ()
+				   | SOME s =>
+					let 
+					   val {args, instance} =
+					      Scheme.instantiate s
+					in
+					   Cpat.make
+					   (Cpat.Con {arg = NONE,
+						      con = c,
+						      targs = args ()},
+					    instance)
+					end
 			       end
 		      end
 		 | Apat.Wild =>
@@ -1359,7 +1376,7 @@ fun elaborateDec (d, {env = E, nest}) =
 						    Cdec.Exception {arg = arg,
 								    con = exn'}),
 					  exn',
-					  scheme)
+					  SOME scheme)
 				      end
 			     val _ = Env.extendExn (E, exn, exn', scheme)
 			  in
@@ -1714,7 +1731,8 @@ fun elaborateDec (d, {env = E, nest}) =
 			 val _ =
 			    Env.extendOverload
 			    (E, p, x, 
-			     Vector.map (ovlds, fn (x, s) => (x, Scheme.ty s)),
+			     Vector.map (ovlds, fn (x, s) =>
+					 (x, Option.map (s, Scheme.ty))),
 			     Scheme.make {canGeneralize = false,
 					  tyvars = tyvars,
 					  ty = elabType ty})
@@ -2469,47 +2487,60 @@ fun elaborateDec (d, {env = E, nest}) =
 	      | Aexp.Var {name = id, ...} =>
 		   let
 		      val (vid, scheme) = Env.lookupLongvid (E, id)
-		      val {args, instance} = Scheme.instantiate scheme
-		      fun con c = Cexp.Con (c, args ())
-		      val e =
-			 case vid of
-			    Vid.Con c => con c
-			  | Vid.Exn c => con c
-			  | Vid.Overload (p, yts) =>
-			       let
-				  val resolve =
-				     Promise.lazy
-				     (fn () =>
-				      case (Vector.peek
-					    (yts, fn (_, t) =>
-					     Type.canUnify (instance, t))) of
-					 NONE =>
-					    let
-					       val _ =
-						  Control.error
-						  (region,
-						   seq [str "impossible use of overloaded var: ",
-							str (Longvid.toString id)],
-						   Type.layoutPretty instance)
-					    in
-					       Var.newNoname ()
-					    end
-				       | SOME (y, t) =>  
-					    (unify (instance, t, fn _ =>
-						    Error.bug "overload unify")
-					     ; y))
-				  val _ = 
-				     List.push (overloads, (p, ignore o resolve))
-			       in
-				  Cexp.Var (resolve, fn () => Vector.new0 ())
-			       end
-			  | Vid.Var x =>
-			       Cexp.Var (fn () => x,
-					 case ! (recursiveTargs x) of
-					    NONE => args
-					  | SOME f => f)
+		      fun dontCare () =
+			 Cexp.var (Var.newNoname (), Type.new ())
 		   in
-		      Cexp.make (e, instance)
+		      case scheme of
+			 NONE => dontCare ()
+		       | SOME scheme => 
+			    let
+			       val {args, instance} = Scheme.instantiate scheme
+			       fun con c = Cexp.Con (c, args ())
+			       val e =
+				  case vid of
+				     Vid.Con c => con c
+				   | Vid.Exn c => con c
+				   | Vid.Overload (p, yts) =>
+					let
+					   val resolve =
+					      Promise.lazy
+					      (fn () =>
+					       case (Vector.peek
+						     (yts, fn (_, t) =>
+						      case t of
+							 NONE => false
+						       | SOME t => 
+							    Type.canUnify
+							    (instance, t))) of
+						  NONE =>
+						     let
+							val _ =
+							   Control.error
+							   (region,
+							    seq [str "impossible use of overloaded var: ",
+								 str (Longvid.toString id)],
+							    Type.layoutPretty instance)
+						     in
+							Var.newNoname ()
+						     end
+						| SOME (y, t) =>  
+						     (unify (instance,
+							     valOf t, fn _ =>
+							     Error.bug "overload unify")
+						      ; y))
+					   val _ = 
+					      List.push (overloads, (p, ignore o resolve))
+					in
+					   Cexp.Var (resolve, fn () => Vector.new0 ())
+					end
+				   | Vid.Var x =>
+					Cexp.Var (fn () => x,
+						  case ! (recursiveTargs x) of
+						     NONE => args
+						   | SOME f => f)
+			    in
+			       Cexp.make (e, instance)
+			    end
 		   end
 	      | Aexp.While {expr, test} =>
 		   let
