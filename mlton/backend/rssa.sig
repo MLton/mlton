@@ -215,6 +215,7 @@ signature RSSA =
 			    name: Func.t,
 			    raises: Type.t vector option,
 			    returns: Type.t vector option,
+			    sourceInfo: SourceInfo.t,
 			    start: Label.t}
 	    (* dfs (f, v) visits the blocks in depth-first order, applying v b
 	     * for block b to yield v', then visiting b's descendents,
@@ -227,6 +228,7 @@ signature RSSA =
 		      name: Func.t,
 		      raises: Type.t vector option,
 		      returns: Type.t vector option,
+		      sourceInfo: SourceInfo.t,
 		      start: Label.t} -> t
 	    val start: t -> Label.t
 	 end

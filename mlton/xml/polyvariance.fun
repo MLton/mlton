@@ -57,7 +57,7 @@ fun lambdaSize (Program.T {body, ...}): Lambda.t -> int =
 	       (cases,
 		(case default of
 		    NONE => n
-		  | SOME e => loopExp (e, n)),
+		  | SOME (e, _) => loopExp (e, n)),
 		    fn (e, n) => loopExp (e, n))
 	  | Handle {try, handler, ...} =>
 	       loopExp (try, loopExp (handler, n))
@@ -136,7 +136,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
 				       | Case {test, cases, default} =>
 					    (loopVar test
 					     ; Cases.foreach (cases, loopExp)
-					     ; Option.app (default, loopExp))
+					     ; Option.app (default, loopExp o #1))
 				       | Handle {try, handler, ...} =>
 					    (loopExp try; loopExp handler)
 				       | _ => Error.bug "unexpected primExp")
@@ -257,10 +257,13 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 	 in Exp.new (loopDecs (decs, result))
 	 end
       and loopLambda (l: Lambda.t): Lambda.t =
-	 let val {arg, argType, body} = Lambda.dest l
-	 in Lambda.new {arg = bind arg,
+	 let
+	    val {arg, argType, body, region} = Lambda.dest l
+	 in
+	    Lambda.new {arg = bind arg,
 			argType = argType,
-			body = loopExp body}
+			body = loopExp body,
+			region = region}
 	 end
       and loopDecs (ds: Dec.t list, result): {decs: Dec.t list,
 					      result: VarExp.t} =
@@ -330,10 +333,13 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 					       | Word cases => Word (doit cases)
 					       | Word8 cases =>
 						    Word8 (doit cases)
-					in Case {test = loopVar test,
+					in
+					   Case {test = loopVar test,
 						 cases = cases,
-						 default = Option.map (default,
-								       loopExp)}
+						 default =
+						 Option.map
+						 (default, fn (e, r) =>
+						  (loopExp e, r))}
 					end
 				   | Handle {try, catch, handler} =>
 					Handle {try = loopExp try,

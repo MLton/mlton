@@ -129,6 +129,7 @@ int main (int argc, char **argv) {					\
 	gcState.native = FALSE;						\
 	gcState.numGlobals = cardof(globalpointer);			\
 	gcState.objectTypes = objectTypes;				\
+	gcState.profileInfo = NULL;					\
 	gcState.saveGlobals = &saveGlobals;				\
 	gcState.stringInits = stringInits;				\
 	MLton_init (argc, argv, &gcState);				\

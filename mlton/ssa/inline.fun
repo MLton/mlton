@@ -503,20 +503,21 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 	 List.fold
 	 (functions, [], fn (f, ac) =>
 	  let
-	     val {name, args, start, blocks, returns, raises} = Function.dest f
+	     val {args, blocks, name, raises, returns, sourceInfo, start} =
+		Function.dest f
 	  in
 	     if Func.equals (name, main)
-	        orelse
-		not (shouldInline name)
+	        orelse not (shouldInline name)
 		then let
 		        val blocks = doit (blocks, Return.Tail)
 		     in
-			shrink (Function.new {name = name,
-					      args = args,
-					      start = start,
+			shrink (Function.new {args = args,
 					      blocks = blocks,
+					      name = name,
+					      raises = raises,
 					      returns = returns,
-					      raises = raises})
+					      sourceInfo = sourceInfo,
+					      start = start})
 			:: ac
 		     end
 	      else ac

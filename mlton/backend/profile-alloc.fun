@@ -37,7 +37,8 @@ fun doit (Program.T {functions, main, objectTypes, ...}) =
 					; Counter.next counter))
       fun doFunction (f: Function.t): Function.t =
 	 let
-	    val {args, blocks, name, raises, returns, start} = Function.dest f
+	    val {args, blocks, name, raises, returns, sourceInfo, start} =
+	       Function.dest f
 	    val extraBlocks = ref []
 	    val blocks =
 	       Vector.map
@@ -115,6 +116,7 @@ fun doit (Program.T {functions, main, objectTypes, ...}) =
 			  name = name,
 			  raises = raises,
 			  returns = returns,
+			  sourceInfo = sourceInfo,
 			  start = start}
 	 end
       val functions = List.revMap (functions, doFunction)

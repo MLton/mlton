@@ -17,6 +17,8 @@ signature SSA_TREE =
    sig
       include SSA_TREE_STRUCTS
 
+      structure SourceInfo: SOURCE_INFO
+	 
       structure Type:
 	 sig
 	    include HASH_TYPE
@@ -251,6 +253,7 @@ signature SSA_TREE =
 			    name: Func.t,
 			    raises: Type.t vector option,
 			    returns: Type.t vector option,
+			    sourceInfo: SourceInfo.t,
 			    start: Label.t}
 	    (* dfs (f, v) visits the blocks in depth-first order, applying v b
 	     * for block b to yield v', then visiting b's descendents,
@@ -273,6 +276,7 @@ signature SSA_TREE =
 		      name: Func.t,
 		      raises: Type.t vector option,
 		      returns: Type.t vector option,
+		      sourceInfo: SourceInfo.t,
 		      start: Label.t} -> t
 	    val start: t -> Label.t
 	 end

@@ -1242,14 +1242,14 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	 in
 	    loop (Vector.length statements - 1, [], transfer)
 	 end
-      fun translateBlock (profileInfo,
-			  S.Block.T {label, args, statements, transfer}) =
+      fun translateBlock (S.Block.T {label, args, statements, transfer},
+			  profileInfo)= 
 	 let
-	    val profileInfo = profileInfo label
 	    val (ss, t) =
-	       translateStatementsTransfer (profileInfo,
-					    statements,
-					    translateTransfer (profileInfo, transfer))
+	       translateStatementsTransfer
+	       (profileInfo,
+		statements,
+		translateTransfer (profileInfo, transfer))
 	 in
 	    Block.T {args = translateFormals args,
 		     kind = Kind.Jump,
@@ -1263,7 +1263,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	    val _ = resetAllocTooLarge ()
 	    val _ =
 	       S.Function.foreachVar (f, fn (x, t) => setVarInfo (x, {ty = t}))
-	    val {args, blocks, name, raises, returns, start, ...} =
+	    val {args, blocks, name, raises, returns, sourceInfo, start, ...} =
 	       S.Function.dest f
 	    val _ =
 	       Vector.foreach
@@ -1271,12 +1271,18 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 		setLabelInfo (label, {args = args,
 				      cont = ref [],
 				      handler = ref NONE}))
-	    val profileInfoFunc = Func.toString name
-	    fun profileInfo label =
-	       {ssa = {func = profileInfoFunc,
-		       label = Label.toString label}}
-	    val blocks = Vector.map (blocks, fn block =>
-				     translateBlock (profileInfo, block))
+	    val blocks =
+	       Vector.map
+	       (blocks,
+		let
+		   val func = Func.toString name
+		in
+		   fn block =>
+		   translateBlock
+		   (block,
+		    {ssa = {func = func,
+			    label = Label.toString (S.Block.label block)}})
+		end)
 	    val blocks = Vector.concat [Vector.fromList (!extraBlocks), blocks]
 	    val _ = extraBlocks := []
 	    fun transTypes (ts : S.Type.t vector option)
@@ -1288,6 +1294,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			  name = name,
 			  raises = transTypes raises,
 			  returns = transTypes returns,
+			  sourceInfo = sourceInfo,
 			  start = start}
 	 end
       val main =
@@ -1317,6 +1324,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	       name = Func.newNoname (),
 	       raises = NONE,
 	       returns = NONE,
+	       sourceInfo = S.SourceInfo.main,
 	       start = start})
 	  end
       val functions = List.revMap (functions, translateFunction)

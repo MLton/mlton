@@ -18,6 +18,7 @@ signature SSA_TO_RSSA_STRUCTS =
       sharing Rssa.Label = Ssa.Label
       sharing Rssa.Prim = Ssa.Prim
       sharing Rssa.Return = Ssa.Return
+      sharing Rssa.SourceInfo = Ssa.SourceInfo
       sharing Rssa.Var = Ssa.Var
    end
 

@@ -7,6 +7,8 @@
  *)
 Group
 
+signature REGION
+   
 structure Control
 structure Region
 structure Source

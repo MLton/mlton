@@ -244,6 +244,7 @@ atoms/cons.fun
 atoms/atoms.fun
 atoms/hash-type.sig
 atoms/cases.sig
+ssa/source-info.sig
 ssa/ssa-tree.sig
 ssa/direct-exp.sig
 ssa/analyze.sig

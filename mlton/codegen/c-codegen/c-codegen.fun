@@ -300,7 +300,7 @@ fun output {program as Machine.Program.T {chunks,
 		  val (size, offsetIndex) =
 		     case labelFrameInfo l of
 			NONE => ("0", "NULL")
-		      | SOME (FrameInfo.T {size, frameOffsetsIndex}) =>
+		      | SOME (FrameInfo.T {size, frameOffsetsIndex, ...}) =>
 			   (C.int size, "frameOffsets" ^ C.int frameOffsetsIndex)
 	       in 
 		  print (concat ["{", size, ",", offsetIndex, "}"])

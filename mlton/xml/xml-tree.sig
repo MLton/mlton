@@ -51,11 +51,18 @@ signature XML_TREE =
 	    val arg: t -> Var.t
 	    val argType: t -> Type.t
 	    val body: t -> exp
-	    val dest: t -> {arg: Var.t, argType: Type.t, body: exp}
+	    val dest: t -> {arg: Var.t,
+			    argType: Type.t,
+			    body: exp,
+			    region: Region.t}
 	    val equals: t * t -> bool
 	    val layout: t -> Layout.t
-	    val new: {arg: Var.t, argType: Type.t, body: exp} -> t
+	    val new: {arg: Var.t,
+		      argType: Type.t,
+		      body: exp,
+		      region: Region.t} -> t
 	    val plist: t -> PropertyList.t
+	    val region: t -> Region.t
 	 end
 
       (* VarExp is a type application.
@@ -80,7 +87,7 @@ signature XML_TREE =
 		       arg: VarExp.t}
 	     | Case of {test: VarExp.t,
 			cases: exp Cases.t,
-			default: exp option}
+			default: (exp * Region.t) option}
 	     | ConApp of {con: Con.t,
 			  targs: Type.t vector,
 			  arg: VarExp.t option}
@@ -167,11 +174,12 @@ signature XML_TREE =
 	    type t
 
 	    val app: {func: t, arg: t, ty: Type.t} -> t
-	    val casee: {test: t,
-			cases: t Cases.t,
-			default: t option,
-			ty: Type.t (* type of entire case expression *)
-			} -> t
+	    val casee:
+	       {cases: t Cases.t,
+		default: (t * Region.t) option,
+		test: t,
+		ty: Type.t} (* type of entire case expression *)
+	       -> t
 	    val conApp: {con: Con.t,
 			 targs: Type.t vector,
 			 arg: t option,
@@ -191,7 +199,8 @@ signature XML_TREE =
 	    val lambda: {arg: Var.t,
 			 argType: Type.t,
 			 body: t,
-			 bodyType: Type.t} -> t
+			 bodyType: Type.t,
+			 region: Region.t} -> t
 	    val layout: t -> Layout.t
 	    val let1: {var: Var.t, exp: t, body: t} -> t
 	    val lett: {decs: Dec.t list, body: t} -> t

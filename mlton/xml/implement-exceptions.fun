@@ -324,101 +324,109 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 	  | Case {test, cases, default} =>
 	       let
 		  fun normal () =
-		     primExp (Case
-			      {test = test,
-			       cases = Cases.map (cases, loop),
-			       default = loopOpt default})
-	       in case cases of
-		  Cases.Con cases =>
-		     if Vector.isEmpty cases
-			then normal ()
-		     else
-			let
-			   val (Pat.T {con, ...}, _) = Vector.sub (cases, 0)
-			in
-			   if not (isExcon con)
-			      then normal ()
-			   else (* convert to an exception match *)
-			      let
-				 open Dexp
-				 val defaultVar = Var.newString "default"
-				 fun callDefault () =
-				    app {func = monoVar (defaultVar,
-							 Type.arrow (Type.unit, ty)),
-					 arg = unit (),
-					 ty = ty}
-				 val unit = Var.newString "unit"
-				 val decs =
-				    vall
-				    {var = defaultVar,
-				     exp =
-				     lambda {arg = unit,
-					     argType = Type.unit,
-					     bodyType = ty,
-					     body =
-					     case default of
-						SOME e => fromExp (loop e, ty)
-					      | NONE =>
-						   Error.bug "no default for exception case"}}
-			      in makeExp
-				 (lett
-				  {decs = decs,
-				   body =
-				   extract
-				   (VarExp.var test, ty, fn tuple =>
-				    casee
-				    {test = extractSum tuple,
-				     ty = ty,
-				     default = SOME (callDefault ()),
-				     cases =
-				     Cases.Con
-				     (Vector.map
-				      (cases, fn (Pat.T {con, arg, ...}, e) =>
-				       let
-					  val refVar = Var.newNoname ()
-					  val body =
-					     iff {test =
-						  equal (monoVar (refVar, Type.unitRef),
-							 monoVar
-							 (#refVar (valOf (exconInfo con)),
-							  Type.unitRef)),
-						  ty = ty,
-						  thenn = fromExp (loop e, ty),
-						  elsee = callDefault ()}
-					  fun make (arg, body) = 
-					     (Pat.T {con = con,
-						     targs = Vector.new0 (),
-						     arg = SOME arg},
-					      body)
-				       in case arg of
-					  NONE => make ((refVar, Type.unitRef), body)
-					| SOME (x, t) =>
-					     let
-						val tuple =
-						   (Var.newNoname (),
-						    Type.tuple (Vector.new2
-								(Type.unitRef, t)))
-					     in make (tuple,
-						      detupleBind
-						      {tuple = monoVar tuple,
-						       components =
-						       Vector.new2 (refVar, x),
-						       body = body})
-					     end
-				       end))})})
-			      end
-			end
-		| _ => normal ()
+		     primExp (Case {cases = Cases.map (cases, loop),
+				    default = Option.map (default, fn (e, r) =>
+							  (loop e, r)),
+				    test = test})
+	       in
+		  case cases of
+		     Cases.Con cases =>
+			if Vector.isEmpty cases
+			   then normal ()
+			else
+			   let
+			      val (Pat.T {con, ...}, _) = Vector.sub (cases, 0)
+			   in
+			      if not (isExcon con)
+				 then normal ()
+			      else (* convert to an exception match *)
+				 let
+				    open Dexp
+				    val defaultVar = Var.newString "default"
+				    fun callDefault () =
+				       app {func = monoVar (defaultVar,
+							    Type.arrow (Type.unit, ty)),
+					    arg = unit (),
+					    ty = ty}
+				    val unit = Var.newString "unit"
+				    val (body, region) =
+				       case default of
+					  NONE =>
+					     Error.bug "no default for exception case"
+					| SOME (e, r) =>
+					     (fromExp (loop e, ty), r)
+				    val decs =
+				       vall
+				       {var = defaultVar,
+					exp = lambda {arg = unit,
+						      argType = Type.unit,
+						      bodyType = ty,
+						      body = body,
+						      region = region}}
+				 in makeExp
+				    (lett
+				     {decs = decs,
+				      body =
+				      extract
+				      (VarExp.var test, ty, fn tuple =>
+				       casee
+				       {test = extractSum tuple,
+					ty = ty,
+					default = SOME (callDefault (), region),
+					cases =
+					Cases.Con
+					(Vector.map
+					 (cases, fn (Pat.T {con, arg, ...}, e) =>
+					  let
+					     val refVar = Var.newNoname ()
+					     val body =
+						iff {test =
+						     equal
+						     (monoVar
+						      (refVar, Type.unitRef),
+						      monoVar
+						      (#refVar (valOf (exconInfo con)),
+						       Type.unitRef)),
+						     ty = ty,
+						     thenn = fromExp (loop e, ty),
+						     elsee = callDefault ()}
+					     fun make (arg, body) = 
+						(Pat.T {con = con,
+							targs = Vector.new0 (),
+							arg = SOME arg},
+						 body)
+					  in case arg of
+					     NONE => make ((refVar, Type.unitRef), body)
+					   | SOME (x, t) =>
+						let
+						   val tuple =
+						      (Var.newNoname (),
+						       Type.tuple (Vector.new2
+								   (Type.unitRef, t)))
+						in make (tuple,
+							 detupleBind
+							 {tuple = monoVar tuple,
+							  components =
+							  Vector.new2 (refVar, x),
+							  body = body})
+						end
+					  end))})})
+				 end
+			   end
+		   | _ => normal ()
 	       end
           | Raise {exn, filePos} =>
 	       raisee {var = var, ty = ty, exn = exn, filePos = filePos}
 	  | _ => keep ()
 	 end
       and loopLambda l =
-	 let val {arg, argType, body} = Lambda.dest l
-	 in Lambda.new {arg = arg,
+	 let
+	    val {arg, argType, body, region} = Lambda.dest l
+	 in
+	    Lambda.new {arg = arg,
 			argType = argType,
-			body = loop body}
+			body = loop body,
+			region = region}
 	 end
       val body =
 	 let
@@ -449,7 +457,8 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 			   {arg = Var.newNoname (),
 			    argType = Type.exn,
 			    bodyType = Type.unit,
-			    body = bug "toplevel handler not installed"}),
+			    body = bug "toplevel handler not installed",
+			    region = Region.bogus}),
 	  body = body}
       val body = wrapBody body
       val (datatypes, body) =
@@ -463,10 +472,12 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 		     {var = exnName,
 		      ty = Type.arrow (Type.exn, Type.string),
 		      exp =
-		      Lambda
-		      (Lambda.new
-		       let val exn = Var.newNoname ()
-		       in {arg = exn,
+		      let
+			 val exn = Var.newNoname ()
+		      in
+			 Lambda
+			 (Lambda.new
+			  {arg = exn,
 			   argType = Type.exn,
 			   body =
 			   let
@@ -488,9 +499,11 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 				     (Con.originalName con))))),
 				 default = NONE,
 				 ty = Type.string}))
-			   end}
-		       end)}
-	       in (Vector.concat
+			   end,
+			   region = Region.bogus})
+		       end}
+	       in
+		  (Vector.concat
 		   [Vector.new1
 		    {tycon = sumTycon,
 		     tyvars = Vector.new0 (),

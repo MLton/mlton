@@ -168,12 +168,14 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		  in
 		     val _ = List.push
 		             (newFunctions,
-			      shrink (Function.new {name = name,
-						    args = args,
-						    start = start,
-						    blocks = blocks,
-						    returns = returns,
-						    raises = NONE}))
+			      shrink (Function.new
+				      {args = args,
+				       blocks = blocks,
+				       name = name,
+				       raises = NONE,
+				       returns = returns,
+				       sourceInfo = SourceInfo.polyEqual,
+				       start = start}))
 		  end
 	       in
 		  name
@@ -220,12 +222,14 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		  in
 		     val _ = List.push
 		             (newFunctions,
-			      shrink (Function.new {name = name,
-						    args = args,
-						    start = start,
-						    blocks = blocks,
-						    returns = returns,
-						    raises = NONE}))
+			      shrink (Function.new
+				      {args = args,
+				       blocks = blocks,
+				       name = name,
+				       raises = NONE,
+				       returns = returns,
+				       sourceInfo = SourceInfo.polyEqual,
+				       start = start}))
 		  end
 		  local
 		     val i = (Var.newNoname (), Type.int)
@@ -262,12 +266,14 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		  in
 		     val _ = List.push
 		             (newFunctions,
-			      shrink (Function.new {name = loop,
-						    args = args,
-						    start = start,
-						    blocks = blocks,
-						    returns = returns,
-						    raises = NONE}))
+			      shrink (Function.new
+				      {args = args,
+				       blocks = blocks,
+				       name = loop,
+				       raises = NONE,
+				       returns = returns,
+				       sourceInfo = SourceInfo.polyEqual,
+				       start = start}))
 		  end
 	       in
 		  name
@@ -409,14 +415,16 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	 List.revMap 
 	 (functions, fn f =>
 	  let
-	     val {name, args, start, blocks, returns, raises} = Function.dest f
+	     val {args, blocks, name, raises, returns, sourceInfo, start} =
+		Function.dest f
 	  in
-	     shrink (Function.new {name = name,
-				   args = args,
-				   start = start,
+	     shrink (Function.new {args = args,
 				   blocks = doit blocks,
+				   name = name,
+				   raises = raises,
 				   returns = returns,
-				   raises = raises})
+				   sourceInfo = sourceInfo,
+				   start = start})
 	  end)
       val program =
 	 Program.T {datatypes = datatypes,

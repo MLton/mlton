@@ -975,7 +975,8 @@ fun useless (program: Program.t): Program.t =
 	 doitBlock
       fun doitFunction f =
 	 let
-	    val {name, args, start, blocks, returns, raises} = Function.dest f
+	    val {args, blocks, name, raises, returns, sourceInfo, start} =
+	       Function.dest f
 	    val {args = argsvs, returns = returnvs, raises = raisevs, ...} =
 	       func name
 	    val args = keepUsefulArgs args
@@ -990,12 +991,13 @@ fun useless (program: Program.t): Program.t =
 	    val returns = Option.map (returnvs, Value.newTypes)
 	    val raises = Option.map (raisevs, Value.newTypes)
 	 in
-	    Function.new {name = name,
-			  args = args,
-			  start = start,
+	    Function.new {args = args,
 			  blocks = blocks,
+			  name = name,
+			  raises = raises,
 			  returns = returns,
-			  raises = raises}
+			  sourceInfo = sourceInfo,
+			  start = start}
 	 end
       val datatypes =
 	 Vector.map

@@ -22,6 +22,7 @@ in
    structure PointerTycon = PointerTycon
    structure Register = Register
    structure Runtime = Runtime
+   structure SourceInfo = SourceInfo
    structure Type = Type
 end
 local
@@ -113,7 +114,8 @@ val traceGenBlock =
 
 fun eliminateDeadCode (f: R.Function.t): R.Function.t =
    let
-      val {args, blocks, name, returns, raises, start} = R.Function.dest f
+      val {args, blocks, name, returns, raises, sourceInfo, start} =
+	 R.Function.dest f
       val {get, set, ...} =
 	 Property.getSetOnce (Label.plist, Property.initConst false)
       val get = Trace.trace ("Backend.labelIsReachable",
@@ -131,6 +133,7 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
 		      name = name,
 		      returns = returns,
 		      raises = raises,
+		      sourceInfo = sourceInfo,
 		      start = start}
    end
 
@@ -182,6 +185,7 @@ fun toMachine (program: Ssa.Program.t) =
 	 end
       val handlers = ref []
       val frames: {chunkLabel: M.ChunkLabel.t,
+		   func: string,
 		   offsets: int list,
 		   return: Label.t,
 		   size: int} list ref = ref []
@@ -440,6 +444,7 @@ fun toMachine (program: Ssa.Program.t) =
 	    val f = eliminateDeadCode f
 	    val {args, blocks, name, raises, returns, start, ...} =
 	       Function.dest f
+	    val func = Func.toString name
 	    val raises = Option.map (raises, fn ts => raiseOperands ts)
 	    val returns =
 	       Option.map (returns, fn ts =>
@@ -730,6 +735,7 @@ fun toMachine (program: Ssa.Program.t) =
 			     | _ => ac)
 		     in
 			List.push (frames, {chunkLabel = Chunk.label chunk,
+					    func = func,
 					    offsets = offsets,
 					    return = label,
 					    size = size})
@@ -825,6 +831,15 @@ fun toMachine (program: Ssa.Program.t) =
        *)
       val _ = genFunc (main, true)
       val _ = List.foreach (functions, fn f => genFunc (f, false))
+      val funcSources =
+	 Vector.fromListMap
+	 (main :: functions, fn f =>
+	  let
+	     val {name, sourceInfo, ...} = R.Function.dest f
+	  in
+	     {func = Func.toString name,
+	      sourceInfo = sourceInfo}
+	  end)
       val chunks = !chunks
       val _ = IntSet.reset ()
       val c = Counter.new 0
@@ -848,11 +863,12 @@ fun toMachine (program: Ssa.Program.t) =
 	 setFrameInfo
       val _ =
 	 List.foreach
-	 (!frames, fn {return, size, offsets, ...} =>
+	 (!frames, fn {func, offsets, return, size, ...} =>
 	  setFrameInfo
 	  (return,
-	   M.FrameInfo.T {size = size,
-			  frameOffsetsIndex = get (IntSet.fromList offsets)}))
+	   M.FrameInfo.T {frameOffsetsIndex = get (IntSet.fromList offsets),
+			  func = func,
+			  size = size}))
       (* Reverse the list of frameOffsets because offsetIndex 
        * is from back of list.
        *)
@@ -978,7 +994,8 @@ fun toMachine (program: Ssa.Program.t) =
    in
       Machine.Program.T 
       {chunks = chunks,
-       frameOffsets = frameOffsets, 
+       frameOffsets = frameOffsets,
+       funcSources = funcSources,
        handlesSignals = handlesSignals,
        intInfs = allIntInfs (), 
        main = main,

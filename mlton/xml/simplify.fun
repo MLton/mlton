@@ -408,12 +408,12 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 				    (Vector.foreachR (cases, i + 1,
 						      Vector.length cases,
 						      deleteExp o #2)
-				     ; Option.app (default, deleteExp)
+				     ; Option.app (default, deleteExp o #1)
 				     ; Vector.Done (expression e))
 			      else (deleteExp e; Vector.Continue ())
 			   fun done () =
 			      case default of
-				 SOME e => expression e
+				 SOME (e, _) => expression e
 			       | NONE => Error.bug "simplifyPrimExp: Case"
 			in Vector.fold' (cases, 0, (), step, done)
 			end
@@ -422,9 +422,10 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 			   (* Eliminate redundant default case. *)
 			   val default =
 			      if isExhaustive cases
-				 then (Option.app (default, deleteExp)
+				 then (Option.app (default, deleteExp o #1)
 				       ; NONE)
-			      else Option.map (default, simplifyExp)
+			      else Option.map (default, fn (e, r) =>
+					       (simplifyExp e, r))
 			in
 			   expansive
 			   (Case {test = test,
@@ -472,10 +473,13 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
       and simplifyLambda l: Lambda.t =
 	 traceSimplifyLambda
 	 (fn l => 
-	  let val {arg, argType, body} = Lambda.dest l
-	  in Lambda.new {arg = arg,
+	  let
+	     val {arg, argType, body, region} = Lambda.dest l
+	  in
+	     Lambda.new {arg = arg,
 			 argType = argType,
-			 body = simplifyExp body}
+			 body = simplifyExp body,
+			 region = region}
 	  end) l
       val _ = countExp body
       val _ = Option.app (overflow, fn x => VarInfo.inc (varInfo x, 1))

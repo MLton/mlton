@@ -392,18 +392,22 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 		      | Xcases.Int l => Scases.Int (doit l)
 		      | Xcases.Word l => Scases.Word (doit l)
 		      | Xcases.Word8 l => Scases.Word8 (doit l)
-	       in SprimExp.Case
+	       in
+		  SprimExp.Case
 		  {test = monoVarExp test,
 		   cases = cases,
-		   default = Option.map (default, monoExp)}
+		   default = Option.map (default, fn (e, r) =>
+					 (monoExp e, r))}
 	       end
       and monoLambda l: Slambda.t =
 	 let
-	    val {arg, argType, body} = Xlambda.dest l
+	    val {arg, argType, body, region} = Xlambda.dest l
 	    val (arg, argType) = renameMono (arg, argType)
-	 in Slambda.new {arg = arg,
+	 in
+	    Slambda.new {arg = arg,
 			 argType = argType,
-			 body = monoExp body}
+			 body = monoExp body,
+			 region = region}
 	 end
       (*------------------------------------*)
       (*              monoDec               *)

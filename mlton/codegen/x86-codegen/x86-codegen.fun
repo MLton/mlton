@@ -80,6 +80,7 @@ struct
   structure Type = Machine.Type
   fun output {program as Machine.Program.T {chunks,
 					    frameOffsets,
+					    funcSources,
 					    handlesSignals,
 					    intInfs,
 					    main,
@@ -174,76 +175,102 @@ struct
 	  = Property.getSetOnce(Label.plist,
 				Property.initConst NONE)
 
-	val return_labels
-	  = List.fold
-	    (chunks,
-	     [],
-	     fn (Machine.Chunk.T {blocks, ...}, l)
-	      => Vector.fold (blocks, l,
-			      fn (Machine.Block.T {kind, label, ...}, l) =>
-			      case Machine.Kind.frameInfoOpt kind of
-				 NONE => l
-			       | SOME fi => (label, fi) :: l))
-
 	local
 	  val hash' = fn {size, offsetIndex} => Word.fromInt (offsetIndex)
 	  val hash = fn {size, offsetIndex, frameLayoutsIndex}
 	              => hash' {size = size, offsetIndex = offsetIndex}
 
 	  val table = HashSet.new {hash = hash}
-	  val frameLayoutsData' = ref []
+	  val frameLayoutsData = ref []
 	  val maxFrameLayoutIndex' = ref 0
+	  val _ =
+	     List.foreach
+	     (chunks, fn Machine.Chunk.T {blocks, ...} =>
+	      Vector.foreach
+	      (blocks, fn Machine.Block.T {kind, label, ...} =>
+	       Option.app
+	       (Machine.Kind.frameInfoOpt kind,
+		fn (Machine.FrameInfo.T {frameOffsetsIndex = offsetIndex,
+					 func, size}) =>
+		let
+		   val info = {size = size, offsetIndex = offsetIndex}
+		   val {frameLayoutsIndex, ...} =
+		      HashSet.lookupOrInsert
+		      (table, hash' info,
+		       fn {size = size', offsetIndex = offsetIndex', ...} => 
+		       size = size' andalso offsetIndex = offsetIndex',
+		       fn () => 
+		       let
+			  val _ =
+			     List.push
+			     (frameLayoutsData,
+			      {func = func,
+			       offsetIndex = offsetIndex,
+			       size = size})
+			  val frameLayoutsIndex = !maxFrameLayoutIndex'
+			  val _ = Int.inc maxFrameLayoutIndex'
+		       in
+			  {size = size,
+			   offsetIndex = offsetIndex,
+			   frameLayoutsIndex = frameLayoutsIndex}
+		       end)
+		in
+		   setFrameLayoutIndex
+		   (label,
+		    SOME {size = size,
+			  frameLayoutsIndex = frameLayoutsIndex})
+		end)))
 	in
-	  val _
-	    = List.foreach
-	      (return_labels,
-	       fn (label, Machine.FrameInfo.T {size, frameOffsetsIndex = offsetIndex})
-	        => let
-		     val info = {size = size, offsetIndex = offsetIndex}
-		     val {frameLayoutsIndex, ...}
-		       = HashSet.lookupOrInsert
-		         (table,
-			  hash' info,
-			  fn {size = size', offsetIndex = offsetIndex', ...} => 
-			  size = size' andalso offsetIndex = offsetIndex',
-			  fn () => 
-			  let
-			    val _ = List.push(frameLayoutsData', info)
-			    val frameLayoutsIndex = !maxFrameLayoutIndex'
-			    val _ = Int.inc maxFrameLayoutIndex'
-			  in
-			    {size = size,
-			     offsetIndex = offsetIndex,
-			     frameLayoutsIndex = frameLayoutsIndex}
-			  end)
-		   in
-		     setFrameLayoutIndex
-		     (label,
-		      SOME {size = size,
-			    frameLayoutsIndex = frameLayoutsIndex})
-		   end)
-	  val frameLayoutsData = List.rev (!frameLayoutsData')
-	  val maxFrameLayoutIndex = !maxFrameLayoutIndex'
+	   val frameLayoutsData = List.rev (!frameLayoutsData)
+	   val maxFrameLayoutIndex = !maxFrameLayoutIndex'
 	end
-
 	(* C specific *)
 	fun outputC ()
 	  = let
 	      val {file, print, done} = makeC ()
-	      fun make(name, l, pr)
-		= (print (concat["static ", name, " = {"]);
-		   List.foreachi(l,
-				 fn (i,x) => (if i > 0 then print "," else ();
-					      pr x));
-		   print "};\n");
-	      fun declareFrameLayouts()
-		= make("GC_frameLayout frameLayouts[]",
+	      fun make (name, l, pr, last) =
+		 (print (concat ["static ", name, " = {"])
+		  ; List.foreachi (l, fn (i, x) =>
+				   (if i > 0 then print "," else ()
+				       ; print "\n\t"
+				       ; pr x))
+		  ; (case last of
+			NONE => ()
+		      | SOME s => print (concat [",\n\t", s, "\n"]))
+		  ; print "};\n")
+	      val (pi, declareProfileInfo) =
+		 if !Control.profile = Control.ProfileNone
+		    then ("NULL", fn () => ())
+		 else
+		    ("profileInfo",
+		     fn () =>
+		     let
+			val rest = ["\";\n"]
+			val rest =
+			   "\\n"
+			   :: (Vector.fold
+			       (funcSources, rest, fn ({func, sourceInfo}, ac) =>
+				func :: " "
+				:: Machine.SourceInfo.toString sourceInfo
+				:: "\\n" :: ac))
+		     in
+			print
+			(concat
+			 ("string profileInfo = \""
+			  :: (List.fold
+			      (rev frameLayoutsData, rest,
+			       fn ({func, ...}, ac) =>
+			       func :: "\\n" :: ac))))
+		     end)
+	      fun declareFrameLayouts () =
+                 make ("GC_frameLayout frameLayouts[]",
 		       frameLayoutsData,
-		       fn {size, offsetIndex}
-		        => print (concat["\n\t{", 
-					 C.int size, ",", 
-					 "frameOffsets" ^ (C.int offsetIndex), 
-					 "}"]))
+		       fn {size, offsetIndex, ...} =>
+		       print (concat ["{", 
+				      C.int size, ",", 
+				      "frameOffsets" ^ (C.int offsetIndex), 
+				      "}"]),
+		       NONE)
 	      val additionalMainArgs =
 		 let
 		    val mainLabel = Label.toString (#label main)
@@ -263,7 +290,7 @@ struct
 		 in
 		    [mainLabel,
 		     if reserveEsp then C.truee else C.falsee,
-		     a1, a2, a3]
+		     a1, a2, a3, pi]
 		 end
 	      fun declareLocals () =
 		 let
@@ -285,7 +312,10 @@ struct
 	      fun rest () =
 		 (declareLocals ()
 		  ; declareFrameLayouts ()
-		  ; print "extern uint profileAllocLabels;\n")
+		  ; declareProfileInfo ()
+		  ; if !Control.profile = Control.ProfileAlloc
+		       then print "extern uint profileAllocLabels;\n"
+		    else ())
 	    in
 	      CCodegen.outputDeclarations
 	      {additionalMainArgs = additionalMainArgs,

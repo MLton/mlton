@@ -393,7 +393,8 @@ fun infer {program = p: CoreML.Program.t,
 	 (fn () => Xexp.lambda {arg = Var.newNoname (),
 				argType = Xtype.unit,
 				body = finishExp e,
-				bodyType = Type.toXml (t, r)},
+				bodyType = Type.toXml (t, r),
+				region = r},
 	  Type.arrow (Type.unit, t),
 	  r)
       fun letExp (d: decCode, e as (_, t, r): expCode): expCode =
@@ -496,7 +497,8 @@ fun infer {program = p: CoreML.Program.t,
       fun casee {test: Xexp.t,
 		 testType: Xtype.t,
 		 caseType: Xtype.t,
-		 cases: (NestedPat.t * Xexp.t) vector}: Xexp.t =
+		 cases: (NestedPat.t * Xexp.t) vector,
+		 region: Region.t}: Xexp.t =
 	 let
 	    fun matchCompile () =		     		     
 	       let
@@ -524,7 +526,8 @@ fun infer {program = p: CoreML.Program.t,
 			       (Xexp.detupleBind
 				{tuple = Xexp.monoVar (arg, argType),
 				 components = vars,
-				 body = e})})}
+				 body = e}),
+			       region = region})}
 			 fun finish rename =
 			    Xexp.app
 			    {func = Xexp.monoVar (func, funcType),
@@ -538,7 +541,8 @@ fun infer {program = p: CoreML.Program.t,
 		      end)
 		  val testVar = Var.newNoname ()
 		  val _ = Int.inc matchCompileCalls
-	       in Xexp.let1
+	       in
+		  Xexp.let1
 		  {var = testVar,
 		   exp = test,
 		   body = 
@@ -549,7 +553,8 @@ fun infer {program = p: CoreML.Program.t,
 						      test = testVar,
 						      testType = testType,
 						      caseType = caseType,
-						      cases = cases}}}
+						      cases = cases,
+						      region = region}}}
 	       end
 	    datatype z = datatype NestedPat.node
 	    fun lett (x, e) = Xexp.let1 {var = x, exp = test, body = e}
@@ -607,10 +612,11 @@ fun infer {program = p: CoreML.Program.t,
 		     Vector.Done
 		     (case ac of
 			 [] => wild e
-		       | _ => make (ac, SOME e))
+		       | _ => make (ac, SOME (e, region)))
 		| _ => Vector.Done (normal ())
 	    fun done ac = make (ac, NONE)
-	 in Vector.fold' (cases, 0, [], step, done)
+	 in
+	    Vector.fold' (cases, 0, [], step, done)
 	 end
       fun forceRules ({argType: Type.t,
 		       resultType,
@@ -623,7 +629,8 @@ fun infer {program = p: CoreML.Program.t,
 	    val arg = Var.newNoname ()
 	    val argType = Type.toXml (argType, region)
 	    val resultType = Type.toXml (resultType, region)
-	 in Xml.Lambda.new
+	 in
+	    Xml.Lambda.new
 	    {arg = arg, argType = argType,
 	     body = (Xexp.toExp
 		     (casee {test = Xexp.monoVar (arg, argType),
@@ -636,7 +643,9 @@ fun infer {program = p: CoreML.Program.t,
 					Xexp.raisee ({exn = e,
 						      filePos = filePos},
 						     resultType))]),
-			     caseType = resultType}))}
+			     caseType = resultType,
+			     region = region})),
+	     region = region}
 	 end
       fun forceRulesMatch (rs, region) =
 	 forceRules (rs, NestedPat.Wild, match (), region)
@@ -681,7 +690,8 @@ fun infer {program = p: CoreML.Program.t,
 				   (NestedPat.Wild, NestedPat.ty p),
 				   Xexp.raisee ({exn = bind (),
 						 filePos = filePos},
-						ty))))},
+						ty)))),
+			region = Region.append (rp, re)},
 		 ty)
 	     end))
       fun multiExtend (env, xts) =
@@ -969,14 +979,16 @@ fun infer {program = p: CoreML.Program.t,
 			 inferMatch (m, env)
 		   in (fn () =>
 		       let
-			  val {arg, argType, body} =
+			  val {arg, argType, body, ...} =
 			     Xlambda.dest (forceRulesMatch (rs, region))
 			  val resultType = Type.toXml (resultType, region)
-		       in Xexp.lambda
+		       in
+			  Xexp.lambda
 			  {arg = arg,
 			   argType = argType,
 			   body = Xexp.fromExp (body, resultType),
-			   bodyType = resultType}
+			   bodyType = resultType,
+			   region = region}
 		       end,
 		       Type.arrow (argType, resultType),
 		       region)
@@ -1074,7 +1086,8 @@ fun infer {program = p: CoreML.Program.t,
 			    {arg = x,
 			     argType = t1,
 			     body = make (SOME (Xexp.monoVar (x, t1), t1), t2),
-			     bodyType = t2}
+			     bodyType = t2,
+			     region = region}
 			 end,
 			 ty, region)
 		     end

@@ -113,7 +113,7 @@ and primExp =
 	    arg: VarExp.t}
   | Case of {test: VarExp.t,
 	     cases: exp Cases.t,
-	     default: exp option}
+	     default: (exp * Region.t) option}
   | ConApp of {con: Con.t,
 	       targs: Type.t vector,
 	       arg: VarExp.t option}
@@ -145,10 +145,11 @@ and dec =
 		ty: Type.t,
 		var: Var.t,
 		exp: exp}
-and lambda = Lam of {plist: PropertyList.t,
-		     arg: Var.t,
+and lambda = Lam of {arg: Var.t,
 		     argType: Type.t,
-		     body: exp}
+		     body: exp,
+		     plist: PropertyList.t,
+		     region: Region.t}
 
 (*---------------------------------------------------*)
 (*                 Conversion to Ast                 *)
@@ -251,11 +252,13 @@ and primExpToAst e : Aexp.t =
 	    val cases =
 	       case default of
 		  NONE => cases
-		| SOME e =>
+		| SOME (e, _) =>
 		     Vector.concat [cases,
 				    Vector.new1 (Ast.Pat.wild, expToAst e)]
-	 in Aexp.casee (VarExp.toAst test, Amatch.T {rules = cases,
-						     filePos = ""})
+	 in
+	    Aexp.casee (VarExp.toAst test,
+			Amatch.T {rules = cases,
+				  filePos = ""})
 	 end
 
 and lambdaToAst (Lam {arg, body, argType, ...}): Amatch.t =
@@ -364,7 +367,7 @@ structure Exp =
 					    case arg of
 					       NONE => ()
 					     | SOME x => monoVar x)
-			  ; Option.app (default, loopExp))))
+			  ; Option.app (default, loopExp o #1))))
 	    and loopDec d =
 	       case d of
 		  MonoVal {var, ty, exp} =>
@@ -460,7 +463,7 @@ structure Exp =
 		  Lambda l => clearLambda l
 		| Case {cases, default, ...} =>
 		     (Cases.foreach' (cases, clearExp, clearPat)
-		      ; Option.app (default, clearExp))
+		      ; Option.app (default, clearExp o #1))
 		| Handle {try, catch, handler, ...} => 
 		     (clearExp try
 		      ; Var.clear (#1 catch)
@@ -481,20 +484,24 @@ structure Lambda =
       type exp = exp
       datatype t = datatype lambda
 
-      fun arg (Lam {arg, ...}) = arg
-      fun argType (Lam {argType, ...}) = argType 
-      fun body (Lam {body, ...}) = body
+      local
+	 fun make f (Lam r) = f r
+      in
+	 val arg = make #arg
+	 val argType = make #argType
+	 val body = make #body
+	 val region = make #region
+      end
 
-      type node = {arg: Var.t,
-		   argType: Type.t,
-		   body: exp}
+      fun new {arg, argType, body, region} =
+	 Lam {arg = arg,
+	      argType = argType,
+	      body = body,
+	      plist = PropertyList.new (),
+	      region = region}
 
-      fun new {arg, argType, body} =
-	 Lam {plist = PropertyList.new (),
-	      arg = arg, argType = argType, body = body}
-
-      fun dest (Lam {arg, argType, body, ...}) =
-	 {arg = arg, argType = argType, body = body}
+      fun dest (Lam {arg, argType, body, region, ...}) =
+	 {arg = arg, argType = argType, body = body, region = region}
 	 
       fun plist (Lam {plist, ...}) = plist
 	 
@@ -623,9 +630,8 @@ structure DirectExp =
 		  (Case
 		   {test = test,
 		    cases = Cases.map (cases, toExp),
-		    default = (case default of
-				  NONE => NONE
-				| SOME e => SOME (toExp e))},
+		    default = (Option.map
+			       (default, fn (e, r) => (toExp e, r)))},
 		   ty))
 
       fun raisee ({exn: t, filePos}, t: Type.t): t =
@@ -695,9 +701,11 @@ structure DirectExp =
 			   Dec.MonoVal {var = var, ty = ty, exp = exp}))
 	 
 
-      fun lambda {arg, argType, body, bodyType} =
-	 simple (Lambda (Lambda.new {arg = arg, argType = argType,
-				     body = toExp body}),
+      fun lambda {arg, argType, body, bodyType, region} =
+	 simple (Lambda (Lambda.new {arg = arg,
+				     argType = argType,
+				     body = toExp body,
+				     region = region}),
 		 Type.arrow (argType, bodyType))
 
       fun detupleGen (e: PrimExp.t,

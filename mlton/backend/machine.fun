@@ -21,7 +21,9 @@ end
 
 structure Atoms = MachineAtoms (structure Label = Label
 				structure Prim = Prim
-				structure Runtime = Runtime)
+				structure Runtime = Runtime
+				structure SourceInfo = SourceInfo)
+   
 open Atoms
 
 structure ChunkLabel = IntUniqueId ()
@@ -34,14 +36,12 @@ structure SmallIntInf =
 structure Register =
    struct
       datatype t = T of {index: int option ref,
-			 plist: PropertyList.t,
 			 ty: Type.t}
 
       local
 	 fun make f (T r) = f r
       in
 	 val indexOpt = ! o (make #index)
-(*	 val plist = make #plist *)
 	 val ty = make #ty
       end
 
@@ -75,7 +75,6 @@ structure Register =
 	 val c = Counter.new 0
       in
 	 fun new (ty, i) = T {index = ref i,
-			      plist = PropertyList.new (),
 			      ty = ty}
       end
 
@@ -406,6 +405,7 @@ structure Statement =
 structure FrameInfo =
    struct
       datatype t = T of {frameOffsetsIndex: int,
+			 func: string,
 			 size: int}
 
       local
@@ -415,11 +415,13 @@ structure FrameInfo =
 	 val size = make #size
       end
    
-      fun layout (T {frameOffsetsIndex, size}) =
+      fun layout (T {frameOffsetsIndex, size, ...}) =
 	 Layout.record [("frameOffsetsIndex", Int.layout frameOffsetsIndex),
 			("size", Int.layout size)]
 
-      val bogus = T {frameOffsetsIndex = ~1, size = ~1}
+      val bogus = T {frameOffsetsIndex = ~1,
+		     func = "<unknown>",
+ 		     size = ~1}
    end
 
 structure Transfer =
@@ -624,6 +626,8 @@ structure Program =
    struct
       datatype t = T of {chunks: Chunk.t list,
 			 frameOffsets: int vector vector,
+			 funcSources: {func: string,
+				       sourceInfo: SourceInfo.t} vector,
 			 handlesSignals: bool,
 			 intInfs: (Global.t * string) list,
 			 main: {chunkLabel: ChunkLabel.t,
@@ -824,7 +828,7 @@ structure Program =
 	       Vector.foreach (v, fn z => checkOperand (z, a))
 	    fun check' (x, name, isOk, layout) =
 	       Err.check (name, fn () => isOk x, fn () => layout x)
-	    fun frameInfoOk (FrameInfo.T {frameOffsetsIndex, size}) =
+	    fun frameInfoOk (FrameInfo.T {frameOffsetsIndex, size, ...}) =
 	       0 <= frameOffsetsIndex
 	       andalso frameOffsetsIndex <= Vector.length frameOffsets
 	       andalso 0 <= size

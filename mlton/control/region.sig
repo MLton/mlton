@@ -20,9 +20,11 @@ signature REGION =
       val append: t * t -> t
       val bogus: t
       val extendRight: t * SourcePos.t -> t
+      val left: t -> SourcePos.t option
       val layout: t -> Layout.t
       val list: 'a list * ('a -> t) -> t
       val make: {left: SourcePos.t, right: SourcePos.t} -> t
+      val right: t -> SourcePos.t option
       val toString: t -> string
 
       structure Wrap:

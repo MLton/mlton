@@ -411,8 +411,8 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 	= List.revMap
 	  (functions, fn f =>
 	   let
-	     val {name, args, start, blocks, returns, raises} = Function.dest f
-
+	     val {args, blocks, name, raises, returns, sourceInfo, start} =
+		Function.dest f
 	     val _ = Vector.foreach
 	             (blocks, fn block as Block.T {label, ...} =>
 		      setLabelInfo (label, LabelInfo.new block))
@@ -1004,12 +1004,13 @@ val doMany
 	     val _ = bindVarArgs args
 	     val blocks = doitTree (Function.dominatorTree f)
 
-	     val f = Function.new {name = name,
-				   args = args,
-				   start = start,
+	     val f = Function.new {args = args,
 				   blocks = blocks,
+				   name = name,
+				   raises = raises,
 				   returns = returns,
-				   raises = raises}
+				   sourceInfo = sourceInfo,
+				   start = start}
 	     val _ = Control.diagnostics
 	             (fn display =>
 		      display (Function.layout f))

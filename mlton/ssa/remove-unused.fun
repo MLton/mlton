@@ -1151,7 +1151,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
       val shrink = shrinkFunction globals
       fun simplifyFunction (f: Function.t): Function.t option
 	= let
-	    val {args, blocks, name, start, ...} = Function.dest f
+	    val {args, blocks, name, sourceInfo, start, ...} = Function.dest f
 	    val fi = funcInfo name
 	  in
 	    if FuncInfo.isUsed fi
@@ -1188,12 +1188,13 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 					       else NONE))
 				 else NONE
 		   in
-		      SOME (shrink (Function.new {name = name,
-						  args = args,
-						  start = start,
+		      SOME (shrink (Function.new {args = args,
 						  blocks = blocks,
+						  name = name,
+						  raises = raises,
 						  returns = returns,
-						  raises = raises}))
+						  sourceInfo = sourceInfo,
+						  start = start}))
 		   end
 	      else NONE
 	  end

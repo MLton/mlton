@@ -29,7 +29,8 @@ fun loopInvariant (program as Program.T {globals, datatypes, functions, main}) =
 
       fun simplifyFunction f =
 	 let
-	    val {name, args, start, blocks, returns, raises} = Function.dest f
+	    val {args, blocks, name, raises, returns, sourceInfo, start} =
+	       Function.dest f
 	    val {get = labelInfo: Label.t -> {callsSelf: bool ref,
 					      visited: bool ref,
 					      invariant: (Var.t * bool ref) vector,
@@ -152,12 +153,13 @@ fun loopInvariant (program as Program.T {globals, datatypes, functions, main}) =
 	    val _ = Function.dfs (f, visit)
 	    val blocks = Vector.fromList (!newBlocks)
 	 in
-	    shrink (Function.new {name = name,
-				  args = args,
-				  start = start,
+	    shrink (Function.new {args = args,
 				  blocks = blocks,
+				  name = name,
+				  raises = raises,
 				  returns = returns,
-				  raises = raises})
+				  sourceInfo = sourceInfo,
+				  start = start})
 	 end
       val program = 
 	 Program.T {datatypes = datatypes,

@@ -210,7 +210,8 @@ fun restoreFunction (globals: Statement.t vector)
     in
       fn (f: Function.t) =>
       let
-	val {name, args, start, blocks, returns, raises} = Function.dest f
+	val {args, blocks, name, returns, raises, sourceInfo, start} =
+	   Function.dest f
 
 	(* check for violations *)
 	val violations = ref []
@@ -740,12 +741,13 @@ fun restoreFunction (globals: Statement.t vector)
 	      val _ = Tree.traverse (Function.dominatorTree f, visitBlock)
 	      val _ = post ()
 	    in
-	      Function.new {name = name,
-			    args = args,
-			    start = entry,
+	      Function.new {args = args,
 			    blocks = Vector.fromList (!blocks),
+			    name = name,
 			    returns = returns,
-			    raises = raises}
+			    raises = raises,
+			    sourceInfo = sourceInfo,
+			    start = entry}
 	    end
 	val f = rewrite ()
       in

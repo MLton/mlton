@@ -20,7 +20,8 @@ fun introduceLoops (Program.T {datatypes, globals, functions, main}) =
 	 List.map
 	 (functions, fn f =>
 	  let
-	     val {name, args, start, blocks, returns, raises} = Function.dest f
+	     val {args, blocks, name, raises, returns, sourceInfo, start} =
+		Function.dest f
 	     val tailCallsItself = ref false
 	     val noChange = (args, start, blocks)
 	     val (args, start, blocks) =
@@ -87,12 +88,14 @@ fun introduceLoops (Program.T {datatypes, globals, functions, main}) =
 			  blocks)
 		       end
 		 else noChange)
-	  in Function.new {name = name,
-			   args = args,
-			   start = start,
+	  in
+	     Function.new {args = args,
 			   blocks = blocks,
+			   name = name,
+			   raises = raises,
 			   returns = returns,
-			   raises = raises}
+			   sourceInfo = sourceInfo,
+			   start = start}
 	  end)
    in
       Program.T {datatypes = datatypes,

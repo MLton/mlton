@@ -85,7 +85,8 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 	 List.revMap
 	 (functions, fn f =>
 	  let
-	     val {name, args, start, blocks, returns, raises} = Function.dest f
+	     val {args, blocks, name, raises, returns, sourceInfo, start} =
+		Function.dest f
 
 	     val _ =
 	        Vector.foreach
@@ -281,12 +282,13 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 			     transfer = transfer}
 		 end)
 	  in
-	     shrink (Function.new {name = name,
-				   args = args,
-				   start = start,
+	     shrink (Function.new {args = args,
 				   blocks = blocks,
+				   raises = raises,
 				   returns = returns,
-				   raises = raises})
+				   name = name,
+				   sourceInfo = sourceInfo,
+				   start = start})
 	  end)
       val program = Program.T {datatypes = datatypes,
 			       globals = globals,

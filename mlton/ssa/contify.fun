@@ -708,12 +708,13 @@ structure Transform =
 	    = List.fold
 	      (functions, [], fn (func, ac) =>
 	       let
-		  val {name = f, 
-		       start = f_start,
-		       args = f_args, 
+		  val {args = f_args, 
 		       blocks = f_blocks,
+		       name = f, 
 		       returns = f_returns,
-		       raises = f_raises, ...} = Function.dest func
+		       raises = f_raises,
+		       sourceInfo = f_sourceInfo,
+		       start = f_start} = Function.dest func
 	       in
 		  case FuncData.A (getFuncData f)
 		     of Unknown
@@ -729,12 +730,13 @@ structure Transform =
 			      val f_blocks
 				 = Vector.fromList (List.concat f_blocks)
 			   in 
-			      shrink (Function.new {name = f,
-						    start = f_start,
-						    args = f_args,
+			      shrink (Function.new {args = f_args,
 						    blocks = f_blocks,
+						    name = f,
 						    returns = f_returns,
-						    raises = f_raises})
+						    raises = f_raises,
+						    sourceInfo = f_sourceInfo,
+						    start = f_start})
 			      :: ac
 			   end
 		      | _ => ac

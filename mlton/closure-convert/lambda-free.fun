@@ -128,14 +128,10 @@ fun lambdaFree (Program.T {body, ...},
 	       (exp (try, s); bind (#1 catch, s); exp (handler, s))
 	  | Case {test, cases, default} =>
 	       (varExp (test, s)
-		; expOpt (default, s)
+		; Option.app (default, fn (e, _) => exp (e, s))
 		; Cases.foreach' (cases, fn e => exp (e, s),
 				  fn Pat.T {arg, ...} =>
 				  Option.app (arg, fn (x, _) => bind (x, s))))
-      and expOpt (e, s) =
-	 case e of
-	    NONE => ()
-	  | SOME e => exp (e, s)
       and lambda (l: Lambda.t) : Var.t vector =
 	 let val {arg, body, ...} = Lambda.dest l
 	 in newScope (fn s => (bind (arg, s); exp (body, s)))

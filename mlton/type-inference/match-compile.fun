@@ -49,16 +49,17 @@ structure FlatPat =
       fun flatten (var: Var.t, pat: NestedPat.t, env: Env.t): t * Env.t =
 	 let
 	    fun extend x = Env.extend (env, x, var)
-	 in case NestedPat.node pat of
-	    NestedPat.Wild => (Any, env)
-	  | NestedPat.Var x => (Any, extend x)
-	  | NestedPat.Layered (x, p) => flatten (var, p, extend x)
-	  | NestedPat.Const c => (Const c, env)
-	  | NestedPat.Con x => (Con x, env)
-	  | NestedPat.Tuple ps =>
-	       if 1 = Vector.length ps
-		  then flatten (var, Vector.sub (ps, 0), env)
-	       else (Tuple ps, env)
+	 in
+	    case NestedPat.node pat of
+	       NestedPat.Wild => (Any, env)
+	     | NestedPat.Var x => (Any, extend x)
+	     | NestedPat.Layered (x, p) => flatten (var, p, extend x)
+	     | NestedPat.Const c => (Const c, env)
+	     | NestedPat.Con x => (Con x, env)
+	     | NestedPat.Tuple ps =>
+		  if 1 = Vector.length ps
+		     then flatten (var, Vector.sub (ps, 0), env)
+		  else (Tuple ps, env)
 	 end
 
       fun flattens (vars: Var.t vector,
@@ -171,13 +172,13 @@ end
 (*                   matchCompile                    *)
 (*---------------------------------------------------*)
 
-fun matchCompile {test: Var.t,
+fun matchCompile {caseType: Type.t,
+		  cases: (NestedPat.t * ((Var.t -> Var.t) -> Exp.t)) vector,
 		  conTycon: Con.t -> Tycon.t,
-		  tyconCons: Tycon.t -> Con.t vector,
+		  region: Region.t,
+		  test: Var.t,
 		  testType: Type.t,
-		  caseType: Type.t,
-		  cases: (NestedPat.t * ((Var.t -> Var.t) -> Exp.t)) vector}
-   : Exp.t =
+		  tyconCons: Tycon.t -> Con.t vector}: Exp.t =
    let
       fun match (var: Var.t,
 		 ty: Type.t,
@@ -370,7 +371,7 @@ fun matchCompile {test: Var.t,
 	    val default =
 	       if Vector.isEmpty cases
 		  then
-		     SOME (finish defaults)
+		     SOME (finish defaults, region)
 	       else
 		  let
 		     val {con, ...} = Vector.sub (cases, 0)
@@ -378,7 +379,7 @@ fun matchCompile {test: Var.t,
 		  in if Tycon.equals (tycon, Tycon.exn)
 		     orelse Vector.length cases <> (Vector.length
 						    (tyconCons tycon))
-			then SOME (finish defaults)
+			then SOME (finish defaults, region)
 		     else NONE
 		  end
 	    fun normal () =
@@ -475,7 +476,7 @@ fun matchCompile {test: Var.t,
 		| (ty', make) :: ds  =>
 		     if Type.equals (ty, ty')
 			then Exp.casee {test = test,
-					default = SOME default,
+					default = SOME (default, region),
 					ty = caseType,
 					cases = make (Vector.fromList cases,
 						      finish)}

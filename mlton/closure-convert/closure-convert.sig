@@ -7,8 +7,8 @@
  *)
 signature CLOSURE_CONVERT_STRUCTS = 
    sig
-      structure Sxml: SXML
       structure Ssa: SSA
+      structure Sxml: SXML
       sharing Sxml.Atoms = Ssa.Atoms
    end
 

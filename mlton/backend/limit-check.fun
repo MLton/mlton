@@ -113,7 +113,8 @@ fun insertFunction (f: Function.t,
 		    blockCheckAmount: {blockIndex: int} -> word,
 		    ensureBytesFree: Label.t -> word) =
    let
-      val {args, blocks, name, raises, returns, start} = Function.dest f
+      val {args, blocks, name, raises, returns, sourceInfo, start} =
+	 Function.dest f
       val newBlocks = ref []
       val (_, allocTooLarge) = Block.allocTooLarge newBlocks
       val _ =
@@ -390,6 +391,7 @@ fun insertFunction (f: Function.t,
 		    name = name,
 		    raises = raises,
 		    returns = returns,
+		    sourceInfo = sourceInfo,
 		    start = start}
    end
 
@@ -411,7 +413,8 @@ val traceMaxPath = Trace.trace ("maxPath", Int.layout, Word.layout)
 
 fun insertCoalesce (f: Function.t, handlesSignals) =
    let
-      val {args, blocks, name, raises, returns, start} = Function.dest f
+      val {args, blocks, name, raises, returns, sourceInfo, start} =
+	 Function.dest f
       val n = Vector.length blocks
       val {get = labelIndex, set = setLabelIndex, rem = remLabelIndex, ...} =
 	 Property.getSetOnce
@@ -681,7 +684,7 @@ fun insert (p as Program.T {functions, main, objectTypes, profileAllocLabels}) =
 	    PerBlock => insertPerBlock (f, handlesSignals)
 	  | _ => insertCoalesce (f, handlesSignals)
       val functions = List.revMap (functions, insert)
-      val {args, blocks, name, raises, returns, start} =
+      val {args, blocks, name, raises, returns, sourceInfo, start} =
 	 Function.dest (insert main)
       val newStart = Label.newNoname ()
       val block =
@@ -703,6 +706,7 @@ fun insert (p as Program.T {functions, main, objectTypes, profileAllocLabels}) =
 			       name = name,
 			       raises = raises,
 			       returns = returns,
+			       sourceInfo = sourceInfo,
 			       start = newStart}
    in
       Program.T {functions = functions,

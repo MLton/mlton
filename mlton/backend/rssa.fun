@@ -551,6 +551,7 @@ structure Function =
 			 name: Func.t,
 			 raises: Type.t vector option,
 			 returns: Type.t vector option,
+			 sourceInfo: SourceInfo.t,
 			 start: Label.t}
 
       local
@@ -559,6 +560,9 @@ structure Function =
 	 val args = make #args
 	 val blocks = make #blocks
 	 val name = make #name
+	 val raises = make #raises
+	 val returns = make #returns
+	 val sourceInfo = make #sourceInfo
 	 val start = make #start
       end
 

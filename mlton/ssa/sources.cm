@@ -7,6 +7,7 @@
  *)
 Group
 
+signature SOURCE_INFO
 signature SSA
    
 functor Ssa
@@ -69,6 +70,7 @@ simplify.fun
 simplify.sig
 simplify-types.fun
 simplify-types.sig
+source-info.sig
 ssa-tree.fun
 ssa-tree.sig
 ssa.fun

@@ -14,6 +14,7 @@ signature BACKEND_STRUCTS =
       structure Ssa: SSA
       sharing Machine.Label = Ssa.Label
       sharing Machine.Prim = Ssa.Prim
+      sharing Machine.SourceInfo = Ssa.SourceInfo
 
       val funcToLabel: Ssa.Func.t -> Machine.Label.t
    end

@@ -12,6 +12,7 @@ signature MACHINE_ATOMS_STRUCTS =
       structure Label: HASH_ID
       structure Prim: PRIM
       structure Runtime: RUNTIME
+      structure SourceInfo: SOURCE_INFO
    end
 
 signature MACHINE_ATOMS =

@@ -64,7 +64,7 @@
 #define Real(c, f) globaldouble[c] = f;
 #define EndReals }
 
-#define Main(cs, mmc, mfs, mfi, mot, mg, ml, reserveEsp, a1, a2, a3) 	\
+#define Main(cs, mmc, mfs, mfi, mot, mg, ml, reserveEsp, a1, a2, a3, pi) \
 extern pointer ml;							\
 int main (int argc, char **argv) {					\
 	pointer jump;  							\
@@ -73,6 +73,7 @@ int main (int argc, char **argv) {					\
 	gcState.profileAllocNumLabels = a3;				\
 	gcState.cardSizeLog2 = cs;					\
 	gcState.frameLayouts = frameLayouts;				\
+	gcState.profileInfo = pi;					\
 	gcState.globals = globalpointer;				\
 	gcState.intInfInits = intInfInits;				\
 	gcState.loadGlobals = &loadGlobals;				\

@@ -43,6 +43,7 @@ in
    structure Dexp = DirectExp
    structure Func = Func
    structure Function = Function
+   structure SourceInfo = SourceInfo
    structure Type = Type
 end
 
@@ -110,6 +111,7 @@ structure Accum =
 				name = Func.newNoname (),
 				raises = NONE,
 				returns = NONE, (* bogus *)
+				sourceInfo = SourceInfo.bogus,
 				start = start}))
 	  in
 	     if 1 <> Vector.length blocks
@@ -310,7 +312,7 @@ fun closureConvert
 			       | (SOME (x, _), SOME v)     => newVar (x, v)
 			       | _ => Error.bug "constructor mismatch"
 			   val _ = Cases.foreach' (cases, branch, handlePat)
-			   val _ = Option.app (default, branch)
+			   val _ = Option.app (default, branch o #1)
 			in ()
 			end
 		   | ConApp {con, arg, ...} =>
@@ -680,7 +682,7 @@ fun closureConvert
 	    handle Yes ts => SOME ts
 	 end
       val shrinkFunction = Ssa.shrinkFunction (Vector.new0 ())
-      fun addFunc (ac, {args, body, name, returns}) =
+      fun addFunc (ac, {args, body, name, returns, sourceInfo}) =
 	 let
 	    val (start, blocks) =
 	       Dexp.linearize (body, Ssa.Handler.CallerHandler)
@@ -692,6 +694,7 @@ fun closureConvert
 					  name = name,
 					  raises = raises,
 					  returns = SOME returns,
+					  sourceInfo = sourceInfo,
 					  start = start}))
 	 end
       (* Closure convert an expression, returning:
@@ -914,9 +917,11 @@ fun closureConvert
 		  val (default, ac) =
 		     case default of
 			NONE => (NONE, ac)
-		      | SOME e => let val (e, ac) =  convertJoin (e, ac)
-				  in (SOME e, ac)
-				  end
+		      | SOME (e, _) => let
+					  val (e, ac) =  convertJoin (e, ac)
+				       in
+					  (SOME e, ac)
+				       end
 		  fun doCases (cases, finish, make) =
 		     let
 			val (cases, ac) =
@@ -984,7 +989,8 @@ fun closureConvert
 				     varInfoType argVarInfo))
 	    val returns = Vector.new1 (valueType (expValue body))
 	    val recs = !recs
-	 in newScope
+	 in
+	    newScope
 	    (!frees, fn components =>
 	     newScope
 	     (recs, fn recs' =>
@@ -999,10 +1005,13 @@ fun closureConvert
 					      tupleTy = envType,
 					      components = components,
 					      body = body}}
-	      in addFunc (ac, {args = args,
+	      in
+		 addFunc (ac, {args = args,
 			       body = body,
 			       name = name,
-			       returns = returns})
+			       returns = returns,
+			       sourceInfo = (SourceInfo.fromRegion
+					     (Slambda.region lambda))})
 	      end))
 	 end
       (*------------------------------------*)
@@ -1017,7 +1026,8 @@ fun closureConvert
 	     val ac = addFunc (ac, {args = Vector.new0 (),
 				    body = body,
 				    name = main,
-				    returns = Vector.new1 Type.unit})
+				    returns = Vector.new1 Type.unit,
+				    sourceInfo = SourceInfo.main})
 	  in Accum.done ac
 	  end) ()
       val datatypes = Vector.concat [datatypes, Vector.fromList (!newDatatypes)]

@@ -20,7 +20,8 @@ structure Xml = Xml (open Atoms)
 structure Sxml = Xml
 structure Ssa = Ssa (open Atoms)
 structure Machine = Machine (structure Label = Ssa.Label
-			     structure Prim = Atoms.Prim)
+			     structure Prim = Atoms.Prim
+			     structure SourceInfo = Ssa.SourceInfo)
 local
    open Machine
 in

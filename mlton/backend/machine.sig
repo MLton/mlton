@@ -12,6 +12,7 @@ signature MACHINE_STRUCTS =
    sig
       structure Label: HASH_ID
       structure Prim: PRIM
+      structure SourceInfo: SOURCE_INFO
    end
 
 signature MACHINE = 
@@ -35,7 +36,6 @@ signature MACHINE =
 	    val indexOpt: t -> int option
 	    val layout: t -> Layout.t
 	    val new: Type.t * int option -> t
-(*	    val plist: t -> PropertyList.t *)
 	    val setIndex: t * int -> unit
 	    val toString: t -> string
 	    val ty: t -> Type.t
@@ -127,6 +127,7 @@ signature MACHINE =
 	    datatype t =
 	       T of {(* Index into frameOffsets *)
 		     frameOffsetsIndex: int,
+		     func: string,
 		     (* Size of frame in bytes, including return address. *)
 		     size: int}
 
@@ -224,6 +225,8 @@ signature MACHINE =
 		      * to by index as the frameOffsetsIndex in a block kind.
 		      *)
 		     frameOffsets: int vector vector,
+		     funcSources: {func: string,
+				   sourceInfo: SourceInfo.t} vector,
 		     handlesSignals: bool,
 		     intInfs: (Global.t * string) list,
 		     main: {chunkLabel: ChunkLabel.t,

@@ -295,7 +295,8 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 	 List.revMap
 	 (functions, fn f =>
 	  let
-	     val {name, args, start, blocks, returns, raises} = Function.dest f
+	     val {args, blocks, name, raises, returns, sourceInfo, start} =
+		Function.dest f
 	     val {args, returns, returnsRed, ...} = funcReds name
 
 	     val blocks =
@@ -349,12 +350,13 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 			     statements = statements,
 			     transfer = transfer}
 		 end)
-	     val f = Function.new {name = name,
-				   args = args,
-				   start = start,
+	     val f = Function.new {args = args,
 				   blocks = blocks,
+				   name = name,
+				   raises = raises,
 				   returns = returns,
-				   raises = raises}
+				   sourceInfo = sourceInfo,
+				   start = start}
 	     val _ = Function.clear f
 	  in
 	     f

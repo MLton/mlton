@@ -50,8 +50,8 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 
       fun eliminateFunction f
 	= let
-	    val {name, args, start, blocks, returns, raises} 
-	      = Function.dest f
+	    val {args, blocks, name, returns, raises, sourceInfo, start} =
+	       Function.dest f
 
 	    val newBlocks = ref []
 
@@ -152,12 +152,13 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 		     end)
 	    val blocks = Vector.concat [Vector.fromList (!newBlocks), blocks]
 	  in
-	    shrink (Function.new {name = name,
-				  start = start,
-				  args = args,
+	    shrink (Function.new {args = args,
 				  blocks = blocks,
+				  name = name,
 				  returns = returns,
-				  raises = raises})
+				  raises = raises,
+				  sourceInfo = sourceInfo,
+				  start = start})
 	  end
 
       val program 

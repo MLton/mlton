@@ -238,7 +238,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 			   then
 			      case default of
 				 NONE => ety
-			       | SOME e =>
+			       | SOME (e, _) =>
 				    if Type.equals (ety, checkExp e)
 				       then ety
 				    else error "default of wrong type"
@@ -247,7 +247,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	 end) arg
       and checkLambda l: Type.t =
 	 let
-	    val {arg, argType, body} = Lambda.dest l
+	    val {arg, argType, body, ...} = Lambda.dest l
 	    val _ = checkType argType
 	    val _ = setVar (arg, {tyvars = Vector.new0 (), ty = argType})
 	 in

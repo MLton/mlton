@@ -317,6 +317,7 @@ typedef struct GC_state {
 	bool profileAllocIsOn;
 	uint *profileAllocLabels;
 	uint profileAllocNumLabels;
+	string profileInfo;
 	W32 ram;		/* ramSlop * totalRam */
 	float ramSlop;
  	struct rusage ru_gc; /* total resource usage spent in gc */

@@ -81,7 +81,7 @@ fun globalize {program = Program.T {datatypes, body, ...},
 				    loopExp (e, once) andalso b)
 				val once' =
 				   Option.fold (default, once',
-						fn (e, b) =>
+						fn ((e, _), b) =>
 						loopExp (e, once) andalso b)
 			     in (false, once')
 			     end

@@ -114,7 +114,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
       val _ = 
 	 List.foreach
 	 (functions, fn f =>
-	  let val {name, args, returns, raises, ...} = Function.dest f
+	  let val {args, name, raises, returns, ...} = Function.dest f
 	  in 
 	    setFuncInfo (name, {args = fromFormals args,
 				returns = Option.map (returns, Rep.fromTypes),
@@ -133,8 +133,8 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	 List.foreach
 	 (functions, fn f =>
 	  let
-	     val {name, blocks, ...} = Function.dest f
-	     val {returns, raises, ...} = funcInfo name
+	     val {blocks, name, ...} = Function.dest f
+	     val {raises, returns, ...} = funcInfo name
 	  in
 	     Vector.foreach
 	     (blocks, fn Block.T {label, args, statements, ...} =>
@@ -197,7 +197,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	  (functions, fn f => 
 	   let 
 	      val name = Function.name f
-	      val {args, returns, raises} = funcInfo name
+	      val {args, raises, returns} = funcInfo name
 	      open Layout
 	   in 
 	      display
@@ -250,7 +250,8 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 
       fun doitFunction f =
 	 let
-	    val {name, args, start, blocks, returns, raises} = Function.dest f
+	    val {args, blocks, name, raises, returns, sourceInfo, start} =
+	       Function.dest f
 	    val {args = argsReps, returns = returnsReps, raises = raisesReps} = 
 	      funcInfo name
 
@@ -440,12 +441,13 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	       (raises, fn ts =>
 		flattenTypes (ts, valOf raisesReps))
 	 in
-	    Function.new {name = name,
-			  args = args,
-			  start = start,
+	    Function.new {args = args,
 			  blocks = blocks,
+			  name = name,
+			  raises = raises,
 			  returns = returns,
-			  raises = raises}
+			  sourceInfo = sourceInfo,
+			  start = start}
 	 end
 
       val shrink = shrinkFunction globals

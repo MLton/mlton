@@ -24,7 +24,8 @@ fun insert p =
 	 val Program.T {functions, main, objectTypes, profileAllocLabels} = p
 	 fun insert (f: Function.t): Function.t =
 	    let
-	       val {args, blocks, name, raises, returns, start} = Function.dest f
+	       val {args, blocks, name, raises, returns, sourceInfo, start} =
+		  Function.dest f
 	       val {get = labelIndex: Label.t -> int, set = setLabelIndex,
 		    rem = remLabelIndex, ...} =
 		  Property.getSetOnce
@@ -166,6 +167,7 @@ fun insert p =
 				     name = name,
 				     raises = raises,
 				     returns = returns,
+				     sourceInfo = sourceInfo,
 				     start = start}
 	       val _ = Function.clear f
 	    in

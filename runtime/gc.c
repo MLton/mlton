@@ -3177,6 +3177,12 @@ static void loadWorld (GC_state s, char *fileName) {
 	setStack (s);
 }
 
+static void showProf (GC_state s) {
+	if (NULL == s->profileInfo)
+		die ("executable missing profiling info\n");
+	fprintf (stdout, "%s", s->profileInfo);
+}
+
 int GC_init (GC_state s, int argc, char **argv) {
 	char *worldFile;
 	int i;
@@ -3332,6 +3338,9 @@ int GC_init (GC_state s, int argc, char **argv) {
 						usage (argv[0]);
 					s->ramSlop =
 						stringToFloat (argv[i++]);
+				} else if (0 == strcmp (arg, "show-prof")) {
+					showProf (s);
+					exit (0);
 				} else if (0 == strcmp (arg, "--")) {
 					++i;
 					done = TRUE;

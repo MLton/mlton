@@ -10,6 +10,32 @@ struct
 
 open S
 
+structure SourceInfo =
+   struct
+      datatype t =
+	 Bogus
+       | Main
+       | PolyEqual
+       | Region of Region.t
+
+      val bogus = Bogus
+      val fromRegion = Region
+      val main = Main
+      val polyEqual = PolyEqual
+
+      val toString =
+	 fn Bogus => "<unknown>"
+	  | Main => "<main>"
+	  | PolyEqual => "<poly equal>"
+	  | Region r =>
+	       (case Region.left r of
+		   NONE => "<unknown>"
+		 | SOME (SourcePos.T {file, line, ...}) =>
+		      concat [file, ":", Int.toString line])
+
+      val layout = Layout.str o toString
+   end
+
 structure Type =
    struct
       local structure T = HashType (S)
@@ -952,6 +978,7 @@ structure Function =
 		   name: Func.t,
 		   raises: Type.t vector option,
 		   returns: Type.t vector option,
+		   sourceInfo: SourceInfo.t,
 		   start: Label.t}
 
       (* There is a messy interaction between the laziness used in controlFlow
@@ -1658,8 +1685,8 @@ structure Function =
 		  make (Label.new, Label.plist, Label.layout)
 	    end
 	    fun lookupVars xs = Vector.map (xs, lookupVar)
-
-	    val {args, blocks, name, raises, returns, start, ...} = dest f
+	    val {args, blocks, name, raises, returns, sourceInfo, start, ...} =
+	       dest f
 	    val args = Vector.map (args, fn (x, ty) => (bindVar x, ty))
 	    val bindLabel = ignore o bindLabel
 	    val bindVar = ignore o bindVar
@@ -1691,12 +1718,13 @@ structure Function =
 	    val _ = destroyVar ()
 	    val _ = destroyLabel ()
 	 in
-	    new {name = name,
-		 args = args,
-		 start = start,
+	    new {args = args,
 		 blocks = blocks,
+		 name = name,
+		 raises = raises,
 		 returns = returns,
-		 raises = raises}
+		 sourceInfo = sourceInfo,
+		 start = start}
 	 end
    end
 

@@ -15,6 +15,16 @@ datatype t =
 
 val bogus = Bogus
 
+local
+   fun make f r =
+      case r of
+	 Bogus => NONE
+       | T r => SOME (f r)
+in
+   val left = make #left
+   val right = make #right
+end
+
 val extendRight =
    fn (Bogus, _) => Bogus
     | (T {left, ...}, right) => T {left = left, right = right}

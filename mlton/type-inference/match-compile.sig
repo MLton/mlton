@@ -46,11 +46,12 @@ signature MATCH_COMPILE_STRUCTS =
 	    val var: Var.t * Type.t -> t
 	    val detuple: {tuple: t,
 			  body: (Var.t * Type.t) vector -> t} -> t
-	    val casee: {cases: Cases.t,
-			default: t option,
-			test: t,
-			ty: Type.t  (* type of entire case expression *)
-			} -> t
+	    val casee:
+	       {cases: Cases.t,
+		default: (t * Region.t) option,
+		test: t,
+		ty: Type.t}  (* type of entire case expression *)
+	       -> t
 	    val lett: {var: Var.t, exp: t, body: t} -> t
 	    val iff: {test: t, thenn: t, elsee: t, ty: Type.t} -> t
 	    val equal: t * t -> t
@@ -73,6 +74,7 @@ signature MATCH_COMPILE =
 	  test: Var.t,
 	  testType: Type.t,
 	  caseType: Type.t, (* type of entire expression *)
-	  cases: (NestedPat.t * ((Var.t -> Var.t) -> Exp.t)) vector}
+	  cases: (NestedPat.t * ((Var.t -> Var.t) -> Exp.t)) vector,
+	  region: Region.t}
 	 -> Exp.t
    end
