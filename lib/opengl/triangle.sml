@@ -105,18 +105,6 @@ fun renderScene () =
 	glutSwapBuffers()
     end
 
-fun cKeyCallback() : unit =
-    (
-     bCull := not (!bCull);
-     print ("Toggled Cull " ^ (Bool.toString (!bCull)) ^ "\n")
-     )
-
-fun oKeyCallback() : unit =
-    (
-     bOutline := not (!bOutline);
-     print ("Toggled outline rendering " ^ (Bool.toString (!bOutline)) ^ "\n")
-     )
-
 fun limitXRot() : unit =
     (
      if !xRot > 356.0 then
@@ -139,17 +127,31 @@ fun limitYRot() : unit =
 	      ()
      )
 
+fun cKeyCallback() : unit =
+    (
+     bCull := not (!bCull);
+     print ("Toggled Cull " ^ (Bool.toString (!bCull)) ^ "\n")
+     )
+
+fun oKeyCallback() : unit =
+    (
+     bOutline := not (!bOutline);
+     print ("Toggled outline rendering " ^ (Bool.toString (!bOutline)) ^ "\n")
+     )
+
 fun dKeyCallback() : unit =
     (
      bDepth := not (!bDepth);
      print ("Toggled depth " ^ (Bool.toString (!bDepth)) ^ "\n")
      )
 
-fun keyCallback ((c:char), (x:int), (y:int)) : unit
-    if c == 'c' then cKeyCallback()
-    else if c == 'o' then oKeyCallback()
-    else if c == 'd' then dKeyCallback()
-	  
+fun keyCallback ((c:char), (x:int), (y:int)) : unit =
+    case c of
+	#"c" => ( cKeyCallback() )
+      | #"o" => ( oKeyCallback() )
+      | #"d" => ( dKeyCallback() )
+      | _    => ()
+
 fun upKeyCallback() : unit =
     (
      xRot := !xRot - 5.0;
@@ -174,20 +176,26 @@ fun rightKeyCallback() : unit =
      limitYRot()
      )
 
+fun specialCallback ((c:int), (x:int), (y:int)) : unit =
+    if c = Word.toInt GLUT_KEY_UP then ( upKeyCallback() )
+    else if c = Word.toInt GLUT_KEY_DOWN then ( downKeyCallback() )
+    else if c = Word.toInt GLUT_KEY_LEFT then ( leftKeyCallback() )
+    else if c = Word.toInt GLUT_KEY_RIGHT then ( rightKeyCallback() )
+    else if c = Word.toInt GLUT_KEY_F1 then ( cKeyCallback() )
+    else if c = Word.toInt GLUT_KEY_F2 then ( oKeyCallback() )
+    else if c = Word.toInt GLUT_KEY_F3 then ( dKeyCallback() )
+    else ()
+	  
 fun main () = 
     (
      initialise();
-     print ("Press c - Toggle culling, o - Toggle outline, d - Toggle depth,\n Arrow keys rotate\n");
+     print ("Press F1 - Toggle culling, F2 - Toggle outline, F3 - Toggle depth,\n Arrow keys rotate\n");
      glutReshapeFunc changeSize;
-     glutKeyFunc AUX_c cKeyCallback;
-     auxKeyFunc AUX_o oKeyCallback;
-     auxKeyFunc AUX_d dKeyCallback;
-     auxKeyFunc AUX_UP upKeyCallback;
-     auxKeyFunc AUX_DOWN downKeyCallback;
-     auxKeyFunc AUX_LEFT leftKeyCallback;
-     auxKeyFunc AUX_RIGHT rightKeyCallback;
+     (*glutKeyboardFunc keyCallback;*)
+     glutSpecialFunc specialCallback;
      glutIdleFunc renderScene;
-     glutMainLoop renderScene
+     glutDisplayFunc renderScene;
+     glutMainLoop ()
      )
 
 val _ = main();
