@@ -5,7 +5,7 @@
 #include "opcode.h"
 
 enum {
-	DEBUG = TRUE,
+	DEBUG = FALSE,
 };
 
 typedef Word32 ArrayIndex;
@@ -31,6 +31,9 @@ struct GC_state gcState;
 	extern ty global##ty[];			\
 	static ty ty##VReg[1000];		\
 	ty ty##Reg[1000]
+
+extern Pointer globalPointer[];
+static Pointer PointerVReg[1000];
 
 regs(Real32);
 regs(Real64);
@@ -89,38 +92,34 @@ enum {
 
 #define StoreReg(t, z) maybe PushReg(t) = z
 
-#define loadStore(mode, t, z)			\
+#define loadStoreGen(mode, t, t2, z)		\
 	switch (MODE_##mode) {			\
 	case MODE_load:				\
-		StoreReg (t, z);		\
+		StoreReg (t2, (t2)z);		\
 	break;					\
 	case MODE_store:			\
-		maybe z = PopReg (t);		\
+		maybe z = (t) (PopReg (t2));	\
 	break;					\
 	}
 
-#define loadStoreArrayOffset(mode, ty, size)					\
-	case opcodeSymOfTy (ty, size, mode##ArrayOffset):			\
+#define loadStore(mode, t, z)  loadStoreGen(mode, t, t, z)
+
+#define loadStoreArrayOffset(mode, ty)						\
+	case opcodeSymOfTy2 (ty, mode##ArrayOffset):				\
 		unless (disassemble) {						\
 			index = PopReg (Word32);				\
 			base = (Pointer) (PopReg (Word32));			\
 		}								\
 		Fetch (arrayOffset);						\
 		Fetch (scale);							\
-		loadStore (mode, ty##size,					\
-				X (ty##size, base, index, offset, scale));	\
+		loadStore (mode, ty, 						\
+				*(ty*)(base + (index * scale) + arrayOffset));	\
 	goto mainLoop;
 
-#define loadStoreContents(mode, ty, size)			\
-	case opcodeSymOfTy (ty, size, mode##Contents):		\
+#define loadStoreContents(mode, ty)				\
+	case opcodeSymOfTy2 (ty, mode##Contents):		\
 		maybe base = (Pointer) (PopReg (Word32));	\
-		loadStore (mode, ty##size, C (ty##size, base));	\
-	goto mainLoop;
-
-#define loadWord(size)							\
-	case opcodeSymOfTy (Word, size, loadWord):			\
-		Fetch (Temp (Word##size, 0));				\
-		loadStore (load, Word##size, Temp (Word##size, 0));	\
+		loadStore (mode, ty, C (ty, base));		\
 	goto mainLoop;
 
 #define loadStoreFrontier(mode)					\
@@ -133,29 +132,29 @@ enum {
 		StoreReg (Word32, (Word32)&gcState);			\
 	goto mainLoop;
 
-#define loadStoreGlobal(mode, ty, size)					\
-	case opcodeSymOfTy (ty, size, mode##Global):			\
+#define loadStoreGlobal(mode, ty, ty2)					\
+	case opcodeSymOfTy2 (ty, mode##Global):				\
 		Fetch (globalIndex);					\
-		loadStore (mode, ty##size, G (ty##size, globalIndex));	\
+		loadStoreGen (mode, ty, ty2, G (ty, globalIndex));	\
 	goto mainLoop;
 
-#define loadStoreOffset(mode, ty, size)					\
-	case opcodeSymOfTy (ty, size, mode##Offset):			\
-		maybe base = (Pointer) (PopReg (Word32));		\
-		Fetch (offset);						\
-		loadStore (mode, ty##size, O (ty##size, base, offset));	\
+#define loadStoreOffset(mode, ty)				\
+	case opcodeSymOfTy2 (ty, mode##Offset):			\
+		maybe base = (Pointer) (PopReg (Word32));	\
+		Fetch (offset);					\
+		loadStore (mode, ty, O (ty, base, offset));	\
 	goto mainLoop;
 
-#define loadStoreRegister(mode, ty, size)				\
-	case opcodeSymOfTy (ty, size, mode##Register):			\
-		Fetch (regIndex);					\
-		loadStore (mode, ty##size, R (ty##size, regIndex));	\
+#define loadStoreRegister(mode, ty, ty2)			\
+	case opcodeSymOfTy2 (ty, mode##Register):		\
+		Fetch (regIndex);				\
+		loadStoreGen (mode, ty, ty2, R (ty, regIndex));	\
 	goto mainLoop;
 
-#define loadStoreStackOffset(mode, ty, size)				\
-	case opcodeSymOfTy (ty, size, mode##StackOffset):		\
-		Fetch (stackOffset);					\
-		loadStore (mode, ty##size, S (ty, stackOffset));	\
+#define loadStoreStackOffset(mode, ty)				\
+	case opcodeSymOfTy2 (ty, mode##StackOffset):		\
+		Fetch (stackOffset);				\
+		loadStore (mode, ty, S (ty, stackOffset));	\
 	goto mainLoop;
 
 #define loadStoreStackTop(mode)					\
@@ -163,16 +162,27 @@ enum {
 		loadStore (mode, Word32, (Word32)StackTop);	\
 	goto mainLoop;
 
+#define loadWord(size)							\
+	case opcodeSymOfTy (Word, size, loadWord):			\
+		Fetch (Temp (Word##size, 0));				\
+		loadStore (load, Word##size, Temp (Word##size, 0));	\
+	goto mainLoop;
+
 #define opcode(ty, size, name) OPCODE_##ty##size##_##name
 
 #define coerceOp(f, t) OPCODE_##f##_to##t
 
-#define binary(ty, f)						\
-	case opcodeSym (f):					\
-		if (disassemble) goto mainLoop;			\
-		Temp (ty, 0) = PopReg (ty);			\
-		Temp (ty, 1) = PopReg (ty);			\
-		PushReg (ty) = f (Temp (ty, 0), Temp (ty, 1));	\
+#define binary(ty, f)							\
+	case opcodeSym (f):						\
+		if (disassemble) goto mainLoop;				\
+		Temp (ty, 0) = PopReg (ty);				\
+		Temp (ty, 1) = PopReg (ty);				\
+		PushReg (ty) = f (Temp (ty, 0), Temp (ty, 1));		\
+		if (DEBUG)						\
+			fprintf (stderr, "\n%u = " #f " (%u, %u)",	\
+				(uint)Word32Reg[Word32RegI-1],		\
+				(uint)Temp (ty, 0),			\
+				(uint)Temp (ty, 1));			\
 	goto mainLoop;
 
 #define binaryCheck(ty, f)							\
@@ -210,6 +220,11 @@ enum {
 		Temp (ty, 0) = PopReg (ty);				\
 		Temp (ty, 1) = PopReg (ty);				\
 		PushReg (Word32) = f (Temp (ty, 0), Temp (ty, 1));	\
+		if (DEBUG) 						\
+			fprintf (stderr, "\n%u = " #f " (%u, %u)",	\
+				(uint)Word32Reg[Word32RegI-1],		\
+				(uint)Temp (ty, 0), 			\
+				(uint)Temp (ty, 1));			\
 	goto mainLoop;
 
 #define shift(ty, f)						\
@@ -278,6 +293,23 @@ typedef char *String;
 		gcState.stackTop = stackTop;	\
 	} while (0)
 
+
+#define disp(ty)						\
+	for (i = 0; i < ty##RegI; ++i)				\
+		fprintf (stderr, "\n" #ty "Reg[%d] = 0x%08x",	\
+				i, (uint)(ty##Reg[i]));
+
+void displayRegs () {
+	int i;
+
+	disp (Word8);
+	disp (Word16);
+	disp (Word32);
+	disp (Word64);
+	disp (Real32);
+	disp (Real64);
+}
+
 static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
 	int addressNameIndex;
 	Pointer base;
@@ -333,7 +365,10 @@ static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
 		Cache ();
 	}
 mainLoop:
-	fprintf (stderr, "\n frontier = 0x%08x", (uint)frontier);
+	if (DEBUG) {
+		fprintf (stderr, "\nfrontier = 0x%08x", (uint)frontier);
+		displayRegs ();
+	}
 	if (DEBUG or disassemble) {
 		if (pc == pcMax)
 			goto done;
@@ -359,6 +394,12 @@ mainLoop:
 		}
 		goto doReturn;
  	case opcodeSym (Goto):
+		assert (0 == Word8RegI);
+		assert (0 == Word16RegI);
+		assert (0 == Word32RegI);
+		assert (0 == Word64RegI);
+		assert (0 == Real32RegI);
+		assert (0 == Real64RegI);
 		Fetch (label);
  		Goto (label);
 	case opcodeSym (JumpOnOverflow):

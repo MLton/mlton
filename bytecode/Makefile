@@ -2,7 +2,7 @@ all: interpret.o interpret-gdb.o print-opcodes
 
 INCLUDES = -I../runtime -I../include
 
-interpret.o: interpret.c interpret.h
+interpret.o: interpret.c interpret.h opcode.h
 	gcc -E -o /tmp/z.out $(INCLUDES) interpret.c
 	gcc -Wall -c $(INCLUDES) interpret.c
 

@@ -31,22 +31,24 @@
 	coerce (Word8, Word32, WordU8, Word32)		\
 	coerce (Word8, Word64, WordU8, Word64)
 
-#define loadStorePrimsOfSize(mode, ty, size)	\
-	loadStoreArrayOffset (mode, ty, size)	\
-	loadStoreContents (mode, ty, size)	\
-	loadStoreGlobal (mode, ty, size)	\
-	loadStoreOffset (mode, ty, size)	\
-	loadStoreRegister (mode, ty, size)	\
-	loadStoreStackOffset (mode, ty, size)
+#define loadStorePrimsOfTy(mode, ty)		\
+	loadStoreArrayOffset (mode, ty)		\
+	loadStoreContents (mode, ty)		\
+	loadStoreGlobal (mode, ty, ty)		\
+	loadStoreOffset (mode, ty)		\
+	loadStoreRegister (mode, ty, ty)		\
+	loadStoreStackOffset (mode, ty)
 
-#define loadStorePrims(mode)			\
-	loadStorePrimsOfSize (mode, Word, 8)	\
-	loadStorePrimsOfSize (mode, Word, 16)	\
-	loadStorePrimsOfSize (mode, Word, 32)	\
-	loadStorePrimsOfSize (mode, Word, 64)	\
-	loadStorePrimsOfSize (mode, Real, 32)	\
-	loadStorePrimsOfSize (mode, Real, 64)	\
-	loadStoreFrontier (mode)		\
+#define loadStorePrims(mode)				\
+	loadStorePrimsOfTy (mode, Real32)		\
+	loadStorePrimsOfTy (mode, Real64)		\
+	loadStorePrimsOfTy (mode, Word8)		\
+	loadStorePrimsOfTy (mode, Word16)		\
+	loadStorePrimsOfTy (mode, Word32)		\
+	loadStorePrimsOfTy (mode, Word64)		\
+	loadStoreGlobal (mode, Pointer, Word32)		\
+	loadStoreRegister (mode, Pointer, Word32)	\
+	loadStoreFrontier (mode)			\
 	loadStoreStackTop (mode)
 
 #define realPrimsOfSize(size)				\
@@ -131,23 +133,21 @@
 
 #define opcodeSym(z)  OPCODE_##z
 #define opcodeSymOfTy(ty, size, name)  opcodeSym (ty##size##_##name)
+#define opcodeSymOfTy2(ty, name)  opcodeSym (ty##_##name)
 #define opcodeName(ty, size, name) opcodeGen (ty##size##_##name)
 #define opcodeName2(ty, name) opcodeGen (ty##_##name)
 
 #define binary(ty, f)  opcodeGen (f)
 #define binaryCheck(ty, f)  opcodeGen (f)
 #define compare(ty, f)  opcodeGen (f)
-#define loadStoreArrayOffset(mode, ty, size) \
-	opcodeName (ty, size, mode##ArrayOffset)
-#define	loadStoreContents(mode, ty, size) \
-	opcodeName (ty, size, mode##Contents)
+#define loadStoreArrayOffset(mode, ty)  opcodeName2 (ty, mode##ArrayOffset)
+#define	loadStoreContents(mode, ty)  opcodeName2 (ty, mode##Contents)
 #define loadStoreFrontier(mode) opcodeGen (mode##Frontier)
 #define loadGCState() opcodeGen (loadGCState)
-#define	loadStoreGlobal(mode, ty, size)  opcodeName2 (ty##size, mode##Global)
-#define	loadStoreOffset(mode, ty, size)  opcodeName (ty, size, mode##Offset)
-#define	loadStoreRegister(mode, ty, size)  opcodeName (ty, size, mode##Register)
-#define	loadStoreStackOffset(mode, ty, size) \
-	opcodeName (ty, size, mode##StackOffset)
+#define	loadStoreGlobal(mode, ty, ty2)  opcodeName2 (ty, mode##Global)
+#define	loadStoreOffset(mode, ty)  opcodeName2 (ty, mode##Offset)
+#define	loadStoreRegister(mode, ty, ty2)  opcodeName2 (ty, mode##Register)
+#define	loadStoreStackOffset(mode, ty)  opcodeName2 (ty, mode##StackOffset)
 #define loadStoreStackTop(mode)  opcodeGen (mode##StackTop)
 #define loadWord(size)  opcodeName (Word, size, loadWord)
 #define shift(ty, f)  opcodeGen (f)

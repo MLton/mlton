@@ -23,6 +23,7 @@ in
    structure Global = Global
    structure Kind = Kind
    structure Label = Label
+   structure Live = Live
    structure Operand = Operand
    structure Prim = Prim
    structure Program = Program
@@ -63,6 +64,7 @@ structure CType =
 				| _ => m t))
 	 end
 
+      val toStringOrig = toString
       val toString = memo toString
    end
 
@@ -122,13 +124,12 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		 prototype}: string =
 	 let
 	    val (args, result) = prototype
-	    val memo = CType.memo (fn _ => Counter.new 0)
+	    val c = Counter.new 0
 	    val args =
 	       Vector.map
 	       (args, fn cty =>
 		let
-		   val temp =
-		      concat ["t", Int.toString (Counter.next (memo cty))]
+		   val temp = concat ["t", Int.toString (Counter.next c)]
 		   val cty = CType.toString cty
 		in
 		   {declare = concat ["\t", cty, " ",
@@ -271,17 +272,21 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 end
       val thread_returnToC = opcode "Thread_returnToC"
       local
-	 fun make name (ls: LoadStore.t, cty: CType.t): Opcode.t =
+	 fun make (name, distinguishPointers: bool)
+	    (ls: LoadStore.t, cty: CType.t): Opcode.t =
 	    opcode
-	    (concat [CType.toString cty, "_", LoadStore.toString ls, name])
+	    (concat [if distinguishPointers
+			then CType.toStringOrig cty
+		     else CType.toString cty,
+		     "_", LoadStore.toString ls, name])
       in
-	 val arrayOffset = make "ArrayOffset"
-	 val contents = make "Contents"
-	 val global = make "Global"
-	 val offsetOp = make "Offset"
-	 val register = make "Register"
-	 val stackOffset = make "StackOffset"
-	 val wordOpcode = make "Word"
+	 val arrayOffset = make ("ArrayOffset", false)
+	 val contents = make ("Contents", false)
+   	 val global = make ("Global", true)
+	 val offsetOp = make ("Offset", false)
+	 val register = make ("Register", true)
+	 val stackOffset = make ("StackOffset", false)
+	 val wordOpcode = make ("Word", false)
       end
       local
 	 fun make name (ls: LoadStore.t): Opcode.t =
@@ -354,7 +359,6 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 (emitOpcode (wordOpcode (Load, CType.Word32))
 	  ; emitWord32 0)
       val rec emitLoadOperand = fn z => emitOperand (z, Load)
-      and emitStoreOperand = fn z => emitOperand (z, Store)
       and emitOperand: Operand.t * LoadStore.t -> unit =
 	 fn (z, ls) =>
 	 let
@@ -403,6 +407,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 Trace.trace2
 	 ("emitOperand", Operand.layout, LoadStore.layout, Unit.layout)
 	 emitOperand
+      fun emitStoreOperand z = emitOperand (z, Store)
       fun move {dst, src} =
 	 (emitLoadOperand src
 	  ; emitStoreOperand dst)
@@ -435,19 +440,22 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	    (emitOpcode gotoOp; emitLabel l)
       end
       val pointerSize = WordSize.pointer ()
+      fun shiftStackTop (size: Bytes.t) =
+	 primApp {args = (Vector.new2
+			  (Operand.StackTop,
+			   Operand.Word (WordX.fromIntInf
+					 (Bytes.toIntInf size,
+					  pointerSize)))),
+		  dst = SOME Operand.StackTop,
+		  prim = Prim.wordAdd pointerSize}
       fun push (label: Label.t, size: Bytes.t): unit =
 	 (move {dst = (Operand.StackOffset
 		       (StackOffset.T
 			{offset = Bytes.- (size, Runtime.labelSize),
 			 ty = Type.label label})),
 		src = Operand.Label label}
-	  ; primApp {args = (Vector.new2
-			     (Operand.StackTop,
-			      Operand.Word (WordX.fromIntInf
-					    (Bytes.toIntInf size,
-					     pointerSize)))),
-		     dst = SOME Operand.StackTop,
-		     prim = Prim.wordAdd pointerSize})
+	  ; shiftStackTop size)
+      fun pop (size: Bytes.t) = shiftStackTop (Bytes.~ size)
       fun emitTransfer (t: Transfer.t): unit =
 	 let
 	    datatype z = datatype Transfer.t
@@ -510,6 +518,13 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 			fn FrameInfo.T {frameLayoutsIndex} =>
 			emitWord32 (Int.toIntInf frameLayoutsIndex))
 	    ; setLabelOffset (label, !offset)
+	    ; Option.app (Kind.frameInfoOpt kind, fn fi =>
+			  pop (Program.frameSize (program, fi)))
+	    ; (case kind of
+		  Kind.CReturn {dst, ...} =>
+		     Option.app (dst, fn x =>
+				 emitStoreOperand (Live.toOperand x))
+		| _ => ())
 	    ; Vector.foreach (statements, emitStatement)
 	    ; emitTransfer transfer)))
       val word8ArrayToString: Word8.t array -> string =
@@ -546,7 +561,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	   ; List.foreach (!callCs, fn {display, index} =>
 			   (print (concat ["case ", Int.toString index, ":\n\t"])
 			    ; print display
-			    ; print "\nbreak;\n"))
+			    ; print "break;\n"))
 	   ; print "}}\n")
       val () =
 	  (print "#include \"bytecode.h\"\n\n"
