@@ -75,15 +75,7 @@ functor ImperativeIOExtra
       fun getInstream (In is) = !is
       fun setInstream (In is, is') = is := is'
 
-
-      val empty = V.fromList []
-
-      val openVector = fn v =>
-	let
-	  val instream = SIO.openVector v
-	in
-	  mkInstream instream
-	end
+      fun openVector v = mkInstream (SIO.openVector v)
 
       fun scanStream f is =
 	case f SIO.input1 (getInstream is) of
@@ -154,8 +146,6 @@ functor ImperativeIOExtraFile
 						     function = function,
 						     cause = cause}
 
-      val empty = V.fromList []
-
       (*---------------*)
       (*   outstream   *)
       (*---------------*)
@@ -222,7 +212,7 @@ functor ImperativeIOExtraFile
           handle exn => liftExn file "openAppend" exn
       end
       val newOut = fn fd => newOut {fd = fd, 
-				    name = "<not implemented>", 
+				    name = "<unknown>", 
 				    appendMode = false}
       val outFd = SIO.outFd o getOutstream
 
@@ -230,16 +220,20 @@ functor ImperativeIOExtraFile
       (*   instream   *)
       (*---------------*)
 
-      fun newIn {fd, name} =
+      fun newIn {fd, name, buffer_contents, atExit} =
 	let 
 	  val reader = mkReader {fd = fd, name = name, initBlkMode = true}
 	  val instream = SIO.mkInstream'' {reader = reader,
 					   closed = false,
-					   buffer_contents = NONE,
-					   atExit = {close = true}}
+					   buffer_contents = buffer_contents,
+					   atExit = atExit}
 	in
 	  mkInstream instream
 	end
+      val newIn = fn {fd, name, atExit} =>
+	newIn {fd = fd, name = name, buffer_contents = NONE, atExit = atExit}
+      val newIn = fn {fd, name} =>
+	newIn {fd = fd, name = name, atExit = {close = true}}
       val stdIn = newIn {fd = PFS.stdin, 
 			 name = "<stdin>"}
       fun openIn file =
@@ -251,6 +245,6 @@ functor ImperativeIOExtraFile
 		 name = file}
 	end
         handle exn => liftExn file "newIn" exn
-      val newIn = fn fd => newIn {fd = fd, name = "<not implemented>"}
+      val newIn = fn fd => newIn {fd = fd, name = "<unknown>"}
       val inFd = SIO.inFd o getInstream
    end

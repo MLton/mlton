@@ -122,13 +122,14 @@ io/buffer-i.sig
 io/buffer-i.fun
 io/imperative-io.sig
 io/imperative-io.fun
+io/fast-imperative-io.sig
+io/fast-imperative-io.fun
 io/bin-stream-io.sig
 io/text-stream-io.sig
 io/bin-io.sig
 io/bin-io.sml
 io/text-io.sig
 io/text-io.sml
-io/bin-or-text-io.fun
 
 system/path.sig
 system/path.sml

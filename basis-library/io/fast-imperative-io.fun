@@ -1,34 +1,28 @@
 signature FAST_IMPERATIVE_IO_EXTRA_ARG =
    sig
       structure StreamIO: STREAM_IO_EXTRA
-      structure BufferI: BUFFER_IO_EXTRA
-      sharing StreamIO = BufferI.StreamIO
+      structure BufferI: BUFFER_I_EXTRA
       structure Vector: MONO_VECTOR
       structure Array: MONO_ARRAY
-      sharing type PrimIO.reader = StreamIO.reader
-      sharing type PrimIO.writer = StreamIO.writer
-      sharing type PrimoIO.pos = StreamIO.pos
-      sharing type PrimIO.elem = StreamIO.elem = Vector.elem = Array.elem
-      sharing type PrimIO.vector = StreamIO.vector = Vector.vector = Array.vector
-      sharing type PrimIO.array = Array.array
-      val someElem: PrimIO.elem
-      val lineElem: Vector.elem
-      val isLine: Vector.elem -> bool
-      val hasLine: Vector.vector -> bool
+      sharing type StreamIO.elem = BufferI.elem = Vector.elem = Array.elem
+      sharing type StreamIO.vector = BufferI.vector = Vector.vector = Array.vector
+      sharing type StreamIO.instream = BufferI.instream
+      sharing type StreamIO.reader = BufferI.reader
+      sharing type StreamIO.pos = BufferI.pos
    end
 
 functor FastImperativeIOExtra
-        (S: FAST_IMPERATIVE_IO_EXTRA_ARG) =
+        (S: FAST_IMPERATIVE_IO_EXTRA_ARG): FAST_IMPERATIVE_IO_EXTRA =
    struct
       open S
 
-      structure PIO = PrimIO
       structure SIO = StreamIO
+      structure BI = BufferI
       structure V = Vector
       structure A = Array
 
-      type vector = PrimIO.vector
-      type elem = PrimIO.elem
+      type vector = SIO.vector
+      type elem = SIO.elem
 
       fun liftExn name function cause = raise IO.Io {name = name,
 						     function = function,
@@ -57,11 +51,7 @@ functor FastImperativeIOExtra
       (*   instream    *)
       (*---------------*)
 
-      structure Buf =
-	 struct
-	 end
-   
-      datatype instream' = Buf of Buf.buf
+      datatype instream' = Buffer of BI.inbuffer
 	                 | Stream of SIO.instream
       datatype instream = In of instream' ref
 
@@ -69,20 +59,20 @@ functor FastImperativeIOExtra
 
       fun input (In is) =
 	case !is of
-	  Buf buf => Buf.input buf
+	  Buffer b => BI.input b
 	| Stream s => let val (v, s') = SIO.input s
 		      in is := Stream s'; v
 		      end
       (* input1 will never move past a temporary end of stream *)
       fun input1 (In is) =
 	case !is of
-	  Buf buf => Buf.input1 buf
+	  Buffer b => BI.input1 b
 	| Stream s => 
 	    Option.map (fn (c,s') => (is := Stream s'; c)) (SIO.input1 s)
       (* input1 will move past a temporary end of stream *)
       fun input1 (In is) =
 	case !is of
-	  Buf buf => Buf.input1 buf
+	  Buffer b => BI.input1 b
 	| Stream s => let val (v, s') = SIO.inputN (s, 1)
 		      in 
 			is := Stream s';
@@ -90,53 +80,53 @@ functor FastImperativeIOExtra
 		      end
       fun inputN (In is, n) = 
 	case !is of
-	  Buf buf => Buf.inputN (buf, n)
+	  Buffer b => BI.inputN (b, n)
 	| Stream s => let val (v, s') = SIO.inputN (s, n)
 		      in is := Stream s'; v
 		      end
       fun inputAll (In is) =
 	case !is of
-	  Buf buf => Buf.inputAll buf
+	  Buffer b => BI.inputAll b
 	| Stream s => let val (v, s') = SIO.inputAll s
 		      in is := Stream s'; v
 		      end
       fun inputLine (In is) =
 	case !is of
-	  Buf buf => Buf.inputLine buf
+	  Buffer b => BI.inputLine b
 	| Stream s => let val (v, s') = SIO.inputAll s
 		      in is := Stream s'; v
 		      end
       fun canInput (In is, n) = 
 	case !is of
-	  Buf buf => Buf.canInput (buf, n)
+	  Buffer b => BI.canInput (b, n)
 	| Stream s => SIO.canInput (s, n)
       fun lookahead (In is) =
 	case !is of
-	  Buf buf => Buf.lookahead buf
+	  Buffer b => BI.lookahead b
 	| Stream s => Option.map (fn (c, s') => c) (SIO.input1 s)
       fun closeIn (In is) =
 	case !is of
-	  Buf buf => Buf.closeIn buf
+	  Buffer b => BI.closeIn b
 	| Stream s => SIO.closeIn s
       fun endOfStream (In is) =
 	case !is of
-	  Buf buf => Buf.endOfStream buf
+	  Buffer b => BI.endOfStream b
 	| Stream s => SIO.endOfStream s
+      fun mkInbuffer b = In (ref (Buffer b))
       fun mkInstream s = In (ref (Stream s))
       fun getInstream (In is) =
 	case !is of
-	  Buf buf => Buf.mkInstream buf
+	  Buffer b => let val s = BI.getInstream b
+		      in is := Stream s; s
+		      end
 	| Stream s => s
-      fun setInstream (In is, s') = is := Stream s'
+      fun setInstream (In is, s) = is := Stream s
+      fun withIn (In is, bf, sf) =
+	case !is of
+	  Buffer b => bf b
+	| Stream s => sf s
 
-      val empty = V.fromList []
-
-      val openVector = fn v =>
-	let
-	  val instream = SIO.openVector v
-	in
-	  mkInstream instream
-	end
+      fun openVector v = mkInbuffer (BI.openVector v)
 
       fun scanStream f is =
 	case f SIO.input1 (getInstream is) of
@@ -147,22 +137,16 @@ functor FastImperativeIOExtra
 
 signature FAST_IMPERATIVE_IO_EXTRA_FILE_ARG =
    sig
-      structure PrimIO: PRIM_IO
       structure StreamIO: STREAM_IO_EXTRA_FILE
+      structure BufferI: BUFFER_I_EXTRA_FILE
       structure Vector: MONO_VECTOR
       structure Array: MONO_ARRAY
-      sharing type PrimIO.reader = StreamIO.reader
-      sharing type PrimIO.writer = StreamIO.writer
-      sharing type PrimIO.pos = StreamIO.pos
-      sharing type PrimIO.elem = StreamIO.elem = Vector.elem = Array.elem
-      sharing type PrimIO.vector = StreamIO.vector = Vector.vector = Array.vector
-      sharing type PrimIO.array = Array.array
-      val someElem: PrimIO.elem
-      val lineElem: Vector.elem
-      val isLine: Vector.elem -> bool
-      val hasLine: Vector.vector -> bool
+      sharing type StreamIO.elem = BufferI.elem = Vector.elem = Array.elem
+      sharing type StreamIO.vector = BufferI.vector = Vector.vector = Array.vector
+      sharing type StreamIO.instream = BufferI.instream
+      sharing type StreamIO.reader = BufferI.reader
+      sharing type StreamIO.pos = BufferI.pos 
 
-      structure Cleaner: CLEANER
       val chunkSize: int
       val fileTypeFlags: Posix.FileSys.O.flags list
       val mkReader: {fd: Posix.FileSys.file_desc,
@@ -176,12 +160,13 @@ signature FAST_IMPERATIVE_IO_EXTRA_FILE_ARG =
    end
 
 functor FastImperativeIOExtraFile
-        (S: FAST_IMPERATIVE_IO_EXTRA_FILE_ARG): IMPERATIVE_IO_EXTRA_FILE =
+        (S: FAST_IMPERATIVE_IO_EXTRA_FILE_ARG): FAST_IMPERATIVE_IO_EXTRA_FILE =
    struct
       structure ImperativeIO = FastImperativeIOExtra(open S)
       open ImperativeIO
       open S
       structure SIO = StreamIO
+      structure BI = BufferI
       structure V = Vector
 
       structure PIO = Posix.IO
@@ -259,7 +244,7 @@ functor FastImperativeIOExtraFile
           handle exn => liftExn file "openAppend" exn
       end
       val newOut = fn fd => newOut {fd = fd, 
-				    name = "<not implemented>", 
+				    name = "<unknown>", 
 				    appendMode = false}
       val outFd = SIO.outFd o getOutstream
 
@@ -267,27 +252,20 @@ functor FastImperativeIOExtraFile
       (*   instream   *)
       (*---------------*)
 
-      structure Buf =
-	struct
-	  open Buf
-
-	  val openInstreams : (buf * {close: bool}) list ref = ref []
-	  fun mkBuf'' {reader, closed, atExit} =
-	    let
-	      val b = mkBuf' {reader = reader, closed = closed}
-	  val mkInstream 
-	end
-
-      fun newIn {fd, name} =
+      fun newIn {fd, name, buffer_contents, atExit} =
 	let 
 	  val reader = mkReader {fd = fd, name = name, initBlkMode = true}
-	  val instream = SIO.mkInstream'' {reader = reader,
-					   closed = false,
-					   buffer_contents = NONE,
-					   atExit = {close = true}}
+	  val inbuffer = BI.mkInbuffer'' {reader = reader,
+					  closed = false,
+					  buffer_contents = buffer_contents,
+					  atExit = atExit}
 	in
-	  mkInstream instream
+	  mkInbuffer inbuffer
 	end
+      val newIn = fn {fd, name, atExit} =>
+	newIn {fd = fd, name = name, buffer_contents = NONE, atExit = atExit}
+      val newIn = fn {fd, name} =>
+	newIn {fd = fd, name = name, atExit = {close = true}}
       val stdIn = newIn {fd = PFS.stdin, 
 			 name = "<stdin>"}
       fun openIn file =
@@ -299,10 +277,6 @@ functor FastImperativeIOExtraFile
 		 name = file}
 	end
         handle exn => liftExn file "newIn" exn
-      val newIn = fn fd => newIn {fd = fd, name = "<not implemented>"}
-      val inFd = SIO.inFd o getInstream
+      val newIn = fn fd => newIn {fd = fd, name = "<unknown>"}
+      fun inFd is = withIn (is, BI.inFd, SIO.inFd)
    end
-
-functor FastImperativeIOExtra
-        (S: FAST_IMPERATIVE_IO_EXTRA_ARG): IMPERATIVE_IO_EXTRA =
-   FastImperativeIOExtra(open S)
