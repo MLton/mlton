@@ -3,7 +3,10 @@ signature BUFFER_I_EXTRA_ARG =
       structure PrimIO: PRIM_IO
       structure StreamIO: STREAM_IO_EXTRA
       structure Array: MONO_ARRAY
-      structure Vector: MONO_VECTOR
+      structure Vector: sig 
+	                   include MONO_VECTOR
+                           val fromArray: Array.array -> vector
+			end
       sharing type PrimIO.elem = StreamIO.elem = Vector.elem = Array.elem
       sharing type PrimIO.vector = StreamIO.vector = Vector.vector = Array.vector
       sharing type PrimIO.array = Array.array
@@ -34,8 +37,6 @@ functor BufferIExtra
       fun liftExn name function cause = raise IO.Io {name = name,
 						     function = function,
 						     cause = cause}
-
-      val hasLine = V.exists isLine
 
       (*---------------*)
       (*   inbuffer    *)
@@ -233,7 +234,7 @@ functor BufferIExtra
 				       IO.BlockingNotSupported 
 			     | SOME readArr => 
 				 let
-				   val inp = Primitive.Array.array n
+				   val inp = A.array (n, someElem)
 				   fun fill k =
 				     if k >= size
 				       then ()
@@ -260,7 +261,7 @@ functor BufferIExtra
 				   val i = loop size
 				 in
 				   if i = n
-				     then Primitive.Vector.fromArray inp
+				     then V.fromArray inp
 				     else V.tabulate (i, fn k => A.sub (inp, k))
 				 end)
 	       end
@@ -455,6 +456,12 @@ signature BUFFER_I_ARG =
 functor BufferI
         (S: BUFFER_I_ARG): BUFFER_I = 
   BufferIExtra(open S
+	       structure Vector =
+		  struct
+		     open Vector
+		     fun fromArray a = 
+		       tabulate(Array.length a, fn i => Array.sub (a, i))
+		  end
 	       structure StreamIO =
 		  struct
 		     open StreamIO
@@ -477,7 +484,10 @@ signature BUFFER_I_EXTRA_FILE_ARG =
       structure PrimIO: PRIM_IO
       structure StreamIO: STREAM_IO_EXTRA_FILE
       structure Array: MONO_ARRAY
-      structure Vector: MONO_VECTOR
+      structure Vector: sig 
+	                   include MONO_VECTOR
+                           val fromArray: Array.array -> vector
+			end
       sharing type PrimIO.elem = StreamIO.elem = Vector.elem = Array.elem
       sharing type PrimIO.vector = StreamIO.vector = Vector.vector = Array.vector
       sharing type PrimIO.array = Array.array

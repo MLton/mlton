@@ -68,7 +68,7 @@ functor FastImperativeIOExtra
 	case !is of
 	  Buffer b => BI.input1 b
 	| Stream s => (case SIO.input1 s of
-			 SOME (c, s') => (is := Stream s'; c)
+			 SOME (c, s') => (is := Stream s'; SOME c)
 		       | NONE => NONE)
       (* input1 will move past a temporary end of stream *)
       fun input1 (In is) =

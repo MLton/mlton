@@ -52,7 +52,7 @@ functor ImperativeIOExtra
       (* input1 will never move past a temporary end of stream *)
       fun input1 (In is) = 
 	case SIO.input1 (!is) of
-	  SOME (c,is') => (is := is'; c)
+	  SOME (c,is') => (is := is'; SOME c)
 	| NONE => NONE
       (* input1 will move past a temporary end of stream *)
       fun input1 (In is) = 
