@@ -8,7 +8,7 @@ structure Engine: ENGINE =
 struct
 
 datatype 'a t = T of {return: 'a res Thread.t option ref,
-		      thread: unit Thread.t}
+		      thread: Thread.Runnable.t}
 and 'a res =
    Done of 'a
  | Raise of exn
@@ -36,6 +36,7 @@ fun new (f: unit -> 'a): 'a t =
 	  in
 	     Thread.switch (fn _ => Thread.prepare (ret, res))
 	  end)
+      val thread = Thread.prepare (thread, ())
    in
       T {return = return, thread = thread}
    end
@@ -45,15 +46,17 @@ fun run (T {return, thread}, time: Time.t): 'a res =
    (fn cur: 'a res Thread.t =>
     let
        val _ = return := SOME cur
-       fun handler (me: unit Thread.t): unit Thread.t =
-	  Thread.prepend (cur, fn () => (done return
-					 ; TimeOut (T {return = return,
-						       thread = me})))
+       fun handler (me: Thread.Runnable.t): Thread.Runnable.t =
+	  Thread.prepare
+	  (Thread.prepend (cur, fn () => (done return
+					  ; TimeOut (T {return = return,
+							thread = me}))),
+	   ())
        val _ = Signal.setHandler (signal, Signal.Handler.handler handler)
        val _ = Itimer.set (which, {value = time,
 				   interval = Time.zero})
     in
-       Thread.prepare (thread, ())
+       thread
     end)
 
 fun timeLimit (t: Time.t, f: unit -> 'a): 'a option =
