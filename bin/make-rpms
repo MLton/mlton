@@ -1,16 +1,5 @@
 #!/bin/sh
 
-# Check version number
-#		src/doc/web/index.html
-#		src/doc/user-guide/macros.tex
-#		src/doc/ANNOUNCE
-#		src/doc/CHANGES
-#		src/doc/README
-#		src/mlton/control/control.sml
-#		man/mlprof.1
-#		man/mlton.1
-#
-
 name=`basename $0`
 
 function usage() {
@@ -55,11 +44,28 @@ cvs -Q co -d src mlton
 cvs -Q release src
 find src -type d | grep CVS | xargs rm -rf
 
-echo 'Creating mlton.spec'
+echo 'Instantiating version numbers'
 cd $rpms/SOURCES/$version/src/doc
 sed "/^Version:/s;.*;Version: $date;" <mlton.spec >z
 sed "/^Release:/s;.*;Release: $release;" <z >$rpms/SPECS/mlton.spec
 rm -f z
+cd $rpms/SOURCES/$version/src/
+for f in doc/web/index.html \
+		doc/user-guide/macros.tex \
+ 		doc/ANNOUNCE \
+ 		doc/CHANGES \
+ 		doc/README \
+ 		mlton/control/control.sml; do
+	sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <$f >z
+	mv z f
+done
+
+manvers=`date '+%B %d, %Y'`
+cd $rpms/SOURCES/$version/man
+for f in mlprof.1 mlton.1; do
+	sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <$f >z
+	mv z f
+done
 
 echo 'Creating source tgz'
 cd $rpms/SOURCES

@@ -2,7 +2,7 @@ We are pleased to announce a new release of MLton, the whole-program
 optimizing compiler for Standard ML.  MLton runs on X86 machines with
 Linux. 
 
-Version 20010706 is a major release over 20000906, and includes the
+Version VERSION is a major release over 20000906, and includes the
 following changes.
 
     + Native X86 code generator (instead of using gcc)

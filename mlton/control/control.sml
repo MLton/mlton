@@ -243,7 +243,7 @@ val verbosity = control {name = "verbosity",
 			 default = Silent,
 			 toString = Verbosity.toString}
 
-val version = "MLton internal"
+val version = "MLton VERSION"
 
 datatype style = No | Assembly | C | ML
 
