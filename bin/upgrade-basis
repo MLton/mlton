@@ -7,6 +7,7 @@ die () {
 	exit 1
 }
 
+bin=`dirname $0`
 name=`basename $0`
 
 usage () {
@@ -67,9 +68,59 @@ structure IntInf =
 	 fn _ => raise Fail "IntInf.~>>"
    end'
 
-(
+feature 'val _ = Word8.~' '
+structure Word8 =
+   struct
+      open Word8
+
+      fun ~ w = 0w0 - w
+   end'
+
+feature 'val _ = Word.~' '
+structure Word =
+   struct
+      open Word
+
+      fun ~ w = 0w0 - w
+   end
+structure Word32 = Word
+structure LargeWord = Word'
+
+eval `$bin/platform`
+case $HOST_ARCH in
+sparc)
+	arch='Sparc'
+;;
+x86)
+	arch='X86'
+;;
+*)
+	die "strange HOST_ARCH: $HOST_ARCH"
+esac
+
+case $HOST_OS in
+cygwin)
+	os='Cygwin'
+;;
+freebsd)
+	os='FreeBSD'
+;;
+linux)
+	os='Linux'
+;;
+netbsd)
+	os='NetBSD'
+;;
+solaris)
+	os='Solaris'
+;;
+*)
+	die "strange HOST_OS: $HOST_OS"
+;;
+esac
+
 cat <<-EOF
-structure MLton =
+structure MLton = 
    struct
       open MLton
 
@@ -77,38 +128,50 @@ structure MLton =
          struct
             fun peek (l, f) = List.find f l
             fun omap (opt, f) = Option.map f opt
-               
+	    val toLower = String.translate (str o Char.toLower)
+
             structure Arch =
                struct
-                  datatype t = datatype Platform.arch
+                  datatype t = Sparc | X86
 
-                  val host = Platform.arch
+                  val all = [(Sparc, "Sparc"), (X86, "X86")]
 
-                  val all = [(Sparc, "sparc"), (X86, "x86")]
+                  fun fromString s =
+                     let
+                        val s = toLower s
+                     in
+                        omap (peek (all, fn (_, s') => s = toLower s'), #1)
+                     end
 
-                  fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
+                  val host = $arch
 
                   fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
                end
-            
+
             structure OS =
                struct
-                  datatype t = datatype Platform.os
+                  datatype t = Cygwin | FreeBSD | Linux | NetBSD | Solaris
 
-                  val host = Platform.os
+                  val all = [(Cygwin, "Cygwin"),
+                             (FreeBSD, "FreeBSD"),
+                             (Linux, "Linux"),
+                             (NetBSD, "NetBSD"),
+                             (Solaris, "Solaris")]
 
-                  val all = [(Cygwin, "cygwin"),
-                             (FreeBSD, "freebsd"),
-                             (Linux, "linux")]
-               
-                  fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
+                  fun fromString s =
+                     let
+                        val s = toLower s
+                     in
+                        omap (peek (all, fn (_, s') => s = toLower s'), #1)
+                     end
+
+                  val host = $os
 
                   fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
                end
          end
    end
 EOF
-) | feature 'val _ = MLton.Platform.Arch.host' "`cat`"
 
 rm -f $tmp
 rm -f `basename $tmp .sml`
