@@ -557,8 +557,8 @@ functor DataIO (S : SPACE) : DATA_IO =
     in
     fun initTimer () = timer := Timer.startCPUTimer()
     fun cputime () = let
-	  val {usr, sys, gc} = Timer.checkCPUTimer(!timer)
-	  val totTim = Time.+(usr, gc)
+	  val {usr, sys, ...} = Timer.checkCPUTimer(!timer)
+	  val totTim = usr
 	  in
 	    (Time.toReal totTim) / 60.0
 	  end
