@@ -353,8 +353,9 @@ fun commandLine (args: string list): unit =
 	  | FreeBSD => ()
 	  | Linux => ()
       fun printVersion () = print (concat [version, " ", build, "\n"])
-   in case result of
-      Result.No switch => usage (concat ["invalid switch: ", switch])
+   in
+      case result of
+      Result.No msg => usage msg
     | Result.Yes [] =>
 	 (case !verbosity of
 	     Silent =>

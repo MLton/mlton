@@ -11,14 +11,14 @@ structure Popt: POPT =
 struct
 
 datatype t =
-   None of unit -> unit
- | Int of int -> unit
- | Bool of bool -> unit
+   Bool of bool -> unit
  | Digit of int -> unit
+ | Int of int -> unit
  | Mem of int -> unit
- | String of string -> unit
+ | None of unit -> unit
  | SpaceString of string -> unit
  | SpaceString2 of string * string -> unit
+ | String of string -> unit
 
 local
    fun make b (r: bool ref): t = None (fn () => r := b)
@@ -71,7 +71,7 @@ fun parse {switches: string list,
 	 fn [] => []
 	  | switch :: switches =>
 	       let
-		  fun error () = raise (Error switch)
+		  fun error s = raise (Error s)
 	       in
 		  case String.sub (switch, 0) of
 		     #"-" =>
@@ -80,8 +80,12 @@ fun parse {switches: string list,
 					switch = switch') of
 			NONE =>
 			   let
+			      (* Handle the switches where there is no space
+			       * separating the argument.
+			       *)
 			      val rec loop' =
-				 fn [] => error ()
+				 fn [] => error (concat ["unknown switch: -",
+							 switch])
 				  | (switch', arg) :: opts =>
 				       let
 					  fun doit f =
@@ -93,12 +97,18 @@ fun parse {switches: string list,
 				       in case arg of
 					  Digit f =>
 					     doit (fn s =>
-						   if size s = 1
-						      then (case Char.digitToInt
-							       (String.sub (s, 0)) of
-							       NONE => error ()
-							     | SOME i => f i)
-						   else error ())
+						   let
+						      val error =
+							 fn () =>
+							 error (concat ["invalid digit ", s, " used with -", switch])
+						   in
+						      if size s = 1
+							 then (case Char.digitToInt
+								  (String.sub (s, 0)) of
+								  NONE => error ()
+								| SOME i => f i)
+						      else error ()
+						   end)
 					| String f => doit f
 					| _ => loop' opts
 				       end
@@ -107,26 +117,29 @@ fun parse {switches: string list,
 			   end
 		      | SOME (_, arg) =>
 			   let
-			      fun next (f, get) =
+			      fun next (f, get, msg) =
 				 case switches of
-				    switch :: switches =>
-				       (case get switch of
-					   SOME n => (f n; loop switches)
-					 | _ => error ())
-				  | _ => error ()
-			   in case arg of
-			      None f => (f (); loop switches)
-			    | Int f => next (f, Int.fromString)
-			    | Bool f => next (f, Bool.fromString)
-			    | SpaceString f => next (f, SOME)
-			    | SpaceString2 f =>
-				 (case switches of
-				     s1 :: s2 :: switches =>
-					(f (s1, s2); loop switches)
-				   | _ => error ())
-			    | String f => (f ""; loop switches)
-			    | Mem f => next (f, memString)
-			    | _ => error ()
+				    [] =>
+				       error (concat ["-", switch, " requires an argument"])
+				  | switch' :: switches =>
+				       case get switch' of
+					  NONE => error (concat ["-", switch, " requires ", msg])
+					| SOME n => (f n; loop switches)
+			   in
+			      case arg of
+				 Bool f => next (f, Bool.fromString, "a boolean")
+			       | Digit _ =>
+				    error (concat ["-", switch, " requires a digit"])
+			       | Int f => next (f, Int.fromString, "an integer")
+			       | Mem f => next (f, memString, "a memory amount")
+			       | None f => (f (); loop switches)
+			       | SpaceString f => next (f, SOME, "")
+			       | SpaceString2 f =>
+				    (case switches of
+					s1 :: s2 :: switches =>
+					   (f (s1, s2); loop switches)
+				      | _ => error (concat ["-", switch, " requires two arguments"]))
+			       | String f => (f ""; loop switches)
 			   end
 		     end
 		   | _ => switch :: switches
@@ -165,14 +178,14 @@ fun makeUsage {mainUsage, makeOptions, showExpert} =
 		end
 	  in
 	     message s
-	     ; message mainUsage
+	     ; message (concat ["usage: ", mainUsage])
 	     ; List.foreach (table, fn ss =>
 			     message (String.removeTrailing
 				      (concat ss, Char.isSpace)))
 	     ; let open OS.Process
 	       in if MLton.isMLton
 		     then exit failure
-		  else raise Fail "failure"
+		  else raise Fail "error"
 	       end
 	  end)
       val parse =

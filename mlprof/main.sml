@@ -840,7 +840,7 @@ fun commandLine args =
       val rest = parse args
     in
        case rest of
-	  Result.No s => usage (concat ["invalid switch: ", s])
+	  Result.No msg => usage msg
 	| Result.Yes (afile::mlmonfile::mlmonfiles) =>
 	     let
 		val aInfo = AFile.new {afile = afile}

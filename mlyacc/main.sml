@@ -13,7 +13,7 @@ fun main args =
 		   opts = []}
 	 end
    in case rest of
-      Result.No s => usage (concat ["invalid switch: ", s])
+      Result.No msg => usage msg
     | Result.Yes [file] => ParseGen.parseGen file
     | _ => usage "too many files"
    end

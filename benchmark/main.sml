@@ -465,7 +465,7 @@ fun main args =
       end
    in
       case res of
-	 Result.No s => usage (concat ["invalid switch: ", s])
+	 Result.No msg => usage msg
        | Result.Yes benchmarks =>
 	    let
 	       val compilers = List.rev (!compilers)
@@ -693,6 +693,6 @@ fun main args =
 	    end
    end
 
-val main = Process.makeMain ("benchmark", main)
+val main = Process.makeMain main
 
 end

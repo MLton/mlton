@@ -13,7 +13,7 @@ fun main args =
 	 end
    in
       case rest of
-	 Result.No s => usage (concat ["invalid switch: ", s])
+	 Result.No msg => usage msg
        | Result.Yes [] => usage "no files"
        | Result.Yes files => List.foreach (files, LexGen.lexGen)
    end
