@@ -67,7 +67,7 @@ signature X86_MLTON =
     val loadGlobals : x86.Label.t
     val fileNameLabel : x86.Label.t
     val fileName : x86.Operand.t
-    val fileLine : x86.Operand.t
+    val fileLine : unit -> x86.Operand.t
 
     val GC_OBJECT_HEADER_SIZE : int
     val gcObjectHeader : {nonPointers: int, pointers: int} -> x86.Immediate.t

@@ -388,7 +388,7 @@ struct
 		       (bytes, x86MLton.wordSize),
 		       (x86.Operand.immediate_const_int 0, x86MLton.wordSize),
 		       (x86MLton.fileName, x86MLton.pointerSize),
-		       (x86MLton.fileLine, x86MLton.wordSize)],
+		       (x86MLton.fileLine (), x86MLton.wordSize)],
 	       frameSize = frameSize, 
 	       return = return,
 	       liveInfo = liveInfo}),

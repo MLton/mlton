@@ -290,10 +290,13 @@ struct
    * However, there are probably cases where this is different.
    *)
   val fileLineLabel = Label.fromString "__LINE__"
-  val fileLine = Operand.immediate (Immediate.binexp
-				    {oper = Immediate.Addition,
-				     exp1 = Immediate.label fileLineLabel,
-				     exp2 = Immediate.const_int 7})
+  val fileLine
+    = fn () => if !Control.debug
+		 then Operand.immediate (Immediate.const_int 0)
+		 else Operand.immediate (Immediate.binexp
+					 {oper = Immediate.Addition,
+					  exp1 = Immediate.label fileLineLabel,
+					  exp2 = Immediate.const_int 7})
 
   val gcState_base 
     = Immediate.binexp {oper = Immediate.Addition,
@@ -2047,7 +2050,7 @@ struct
 			   (Operand.immediate_const_int 0, wordSize),
 			   (Operand.immediate_const_int 1, wordSize),
 			   (fileName, pointerSize),
-			   (fileLine, wordSize)],
+			   (fileLine (), wordSize)],
 		   frameSize = frameSize,
 		   return = return,
 		   liveInfo = liveInfo}
