@@ -141,6 +141,8 @@ following grammar.
 & $\alt$ & {\tt (succ {\it e})} \\
 & $\alt$ & {\tt (to {\it e})} \\
 & $\alt$ & {\tt (thresh {\it x})} \\
+& $\alt$ & {\tt (thresh-gc {\it x})} \\
+& $\alt$ & {\tt (thresh-stack {\it x})} \\
 \end{tabular}
 \end{center}
 \end{latexonly}
@@ -157,6 +159,8 @@ following grammar.
 & | & {\tt (succ {\it e})} \\
 & | & {\tt (to {\it e})} \\
 & | & {\tt (thresh {\it x})} \\
+& | & {\tt (thresh-gc {\it x})} \\
+& | & {\tt (thresh-stack {\it x})} \\
 \end{tabular}
 \end{center}
 \end{htmlonly}
@@ -169,8 +173,10 @@ respectively.  The {\tt pred} and {\tt succ} expressions add the set
 of immediate predecessors or successors to their argument,
 respectively.  The {\tt from} and {\tt to} expressions denote the set
 of nodes that have paths from or to the set of nodes denoted by its
-argument, respectively Finally, {\tt thresh} denotes the set of nodes
-whose percentage of ticks is above the real number {\it x}.
+argument, respectively.  Finally, {\tt thresh}, {\tt thresh-gc}, and
+{\tt thresh-stack} denote the set of nodes whose percentage of ticks,
+gc ticks, or stack ticks, respectively, is above the real number {\it
+x}.
 
 For example, if you want to see the entire call-graph for a program,
 you can use {\tt -graph all}.  If you want to see all nodes reachable
