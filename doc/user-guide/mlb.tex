@@ -1,2 +1,75 @@
 \sec{ML Basis System}{mlb}{MLBs.html}
 %
+
+%
+\subsection{Syntax}
+
+\begin{latexonly}
+\begin{center}
+\begin{tabular}{lcl}
+{\it basdec} 
+& ::=    & {\tt basis} {\it basid} {\tt =} {\it basexp}
+            ({\tt and} {\it basid} {\tt =} {\it basexp})* \\
+& $\alt$ & {\tt local} {\it basdec} {\tt in} {\it basdec} {\tt end} \\
+& $\alt$ & {\tt open} {\it basid}$_1$ $\cdots$ {\it basid}$_n$ \\
+& $\alt$ & {\tt structure} {\it strid} [{\tt =} {\it strid}] 
+                ({\tt and} {\it strid} [{\tt =} {\it strid}])* \\
+& $\alt$ & {\tt signature} {\it sigid} [{\tt =} {\it sigid}] 
+                ({\tt and} {\it sigid} [{\tt =} {\it sigid}])* \\
+& $\alt$ &   {\tt functor} {\it funid} [{\tt =} {\it funid}] 
+                ({\tt and} {\it funid} [{\tt =} {\it funid}])* \\
+& $\alt$ & {\it basdec} [{\tt;}] {\it basdec} \\
+& $\alt$ & {\it path.}{\tt mlb} \\
+& $\alt$ & {\it path.}{\tt sml} \\
+& $\alt$ & {\tt ann} {\it id} ({\it id})* [{\tt ,}  {\it id} ({\it id})*] 
+           {\tt in} {\it basdec} {\tt end} \\
+\\
+{\it basexp}
+& ::=    & {\tt basis} {\it basdec} {\tt end} \\
+& $\alt$ & {\it basid} \\
+& $\alt$ & {\tt let} {\it basdec} {\tt in} {\it basexp} {\tt end}
+\end{tabular}
+\end{center}
+\end{latexonly}
+\begin{htmlonly}
+\begin{center}
+\begin{tabular{lcl}
+\end{tabular{lcl}
+\end{center}
+\end{htmlonly}
+
+
+%
+\subsection{Annotations}
+
+\begin{description}
+\option{allowExport \falseTrue}
+\option{allowImport \falseTrue}
+\option{forceUsed}
+\option{sequenceUnit \falseTrue}
+If true, then in the sequence expression {\tt (e1; e2)}, it is a type
+error if {\tt e1} is not of type {\tt unit}.  This can be helpful in
+detecting curried applications that are mistakenly not fully applied.
+To silence spurious errors, you can use {\tt ignore e1}.
+
+\option{warnMatch \trueFalse}
+Report nonexhaustive and redundant matches.
+
+\option{warnUnused \falseTrue}
+Report unused identifiers.
+\end{description}
+
+
+%
+\subsection{The Standard ML Basis Library}
+
+%
+\subsection{}
+
+\begin{verbatim}
+local
+  $(MLTON_ROOT)/basis/basis.mlb
+in
+  foo.sml
+end
+\end{verbatim}
