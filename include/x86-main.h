@@ -44,6 +44,10 @@ Word threadTemp;
 #error ReturnToC not defined
 #endif
 
+static Word32 returnAddressToFrameIndex (Word32 w) {
+	return *((Word32*)(w - sizeof(Word32)));
+}
+
 #define Main(al, cs, mg, mfs, mmc, pk, ps, ml, reserveEsp)		\
 void MLton_jumpToSML (pointer jump) {					\
 	Word lc_stackP;							\
@@ -90,7 +94,7 @@ void MLton_callFromC () {						\
 int main (int argc, char **argv) {					\
 	pointer jump;  							\
 	extern pointer ml;						\
-	gcState.native = TRUE;						\
+									\
 	Initialize (al, cs, mg, mfs, mmc, pk, ps);			\
 	if (gcState.isOriginal) {					\
 		real_Init();						\

@@ -27,8 +27,8 @@ struct GC_state gcState;
 //----------------------------------------------------------------------
 
 #define regs(ty)				\
-	int ty##RegI = 0;			\
-	ty global##ty[0];			\
+	int ty##RegI;				\
+	extern ty global##ty[];			\
 	static ty ty##VReg[1000];		\
 	ty ty##Reg[1000]
 
@@ -128,9 +128,9 @@ enum {
 		loadStore (mode, Word32, (Word32)Frontier);	\
 	goto mainLoop;
 
-#define loadGCState()					\
-	case opcodeSym (loadGCState):			\
-		StoreReg (Word32, (Word32)&gcState);	\
+#define loadGCState()							\
+	case opcodeSym (loadGCState):					\
+		StoreReg (Word32, (Word32)&gcState);			\
 	goto mainLoop;
 
 #define loadStoreGlobal(mode, ty, size)					\
@@ -244,26 +244,39 @@ enum {
 
 #define Switch(size)							\
 	case OPCODE_Switch##size:					\
-		caseTest##size = PopReg (Word##size);			\
+		maybe caseTest##size = PopReg (Word##size);		\
 		Fetch (numCases);					\
 		lastCase = pc + (4 + size/8) * numCases;		\
 		while (pc < lastCase) {					\
-			if (disassemble)				\
+			if (DEBUG or disassemble)			\
 				fprintf (stderr, "\n\t  ");		\
 			Fetch (caseWord##size);				\
-			if (disassemble)				\
+			if (DEBUG or disassemble)			\
 				fprintf (stderr, " =>");		\
 			Fetch (label);					\
 			if (not disassemble 				\
 				and caseTest##size == caseWord##size)	\
 				Goto (label);				\
 		}							\
-		fprintf (stderr, "\n\t   _ =>");			\
+		if (DEBUG or disassemble)				\
+			fprintf (stderr, "\n\t   _ =>"); 		\
        		/* Default case. */					\
 		Fetch (label);						\
 		Goto (label);
 
 typedef char *String;
+
+#define Cache()						\
+	do {						\
+			frontier = gcState.frontier;	\
+			stackTop = gcState.stackTop;	\
+	} while (0)
+
+#define Flush()					\
+	do {					\
+		gcState.frontier = frontier;	\
+		gcState.stackTop = stackTop;	\
+	} while (0)
 
 static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
 	int addressNameIndex;
@@ -315,9 +328,12 @@ static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
 	}
 	if (disassemble)
 		pc = code;
-	else
+	else {
 		pc = code + codeOffset;
+		Cache ();
+	}
 mainLoop:
+	fprintf (stderr, "\n frontier = 0x%08x", (uint)frontier);
 	if (DEBUG or disassemble) {
 		if (pc == pcMax)
 			goto done;
@@ -337,11 +353,9 @@ mainLoop:
  	case opcodeSym (CallC):
  		Fetch (callCIndex);
 		unless (disassemble) {
-			gcState.frontier = frontier;
-			gcState.stackTop = stackTop;
+			Flush ();
  			MLton_callC (callCIndex);
-			frontier = gcState.frontier;
-			stackTop = gcState.stackTop;
+			Cache ();
 		}
 		goto doReturn;
  	case opcodeSym (Goto):
@@ -397,3 +411,4 @@ void MLton_Bytecode_interpret (Bytecode b, Word32 codeOffset) {
 	}
 	interpret (b, codeOffset, FALSE);
 }
+

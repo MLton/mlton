@@ -41,6 +41,7 @@
 	gcState.objectTypesSize = cardof(objectTypes);			\
 	gcState.profileKind = pk;					\
 	gcState.profileStack = ps;					\
+	gcState.returnAddressToFrameIndex = returnAddressToFrameIndex;	\
 	gcState.saveGlobals = saveGlobals;				\
 	gcState.sourceLabels = sourceLabels;				\
 	gcState.sourceLabelsSize = cardof(sourceLabels);		\

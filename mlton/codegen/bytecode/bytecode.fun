@@ -19,7 +19,9 @@ in
    structure CFunction = CFunction
    structure Chunk = Chunk
    structure CType = CType
+   structure FrameInfo = FrameInfo
    structure Global = Global
+   structure Kind = Kind
    structure Label = Label
    structure Operand = Operand
    structure Prim = Prim
@@ -120,15 +122,32 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		 prototype}: string =
 	 let
 	    val (args, result) = prototype
+	    val memo = CType.memo (fn _ => Counter.new 0)
 	    val args =
-	       Vector.toListMap
-	       (args, fn cty => concat ["PopReg (", CType.toString cty, ")"])
-	    val args = concat (List.separate (args, ", "))
-	    val call = concat [function, " (", args, ");"]
+	       Vector.map
+	       (args, fn cty =>
+		let
+		   val temp =
+		      concat ["t", Int.toString (Counter.next (memo cty))]
+		   val cty = CType.toString cty
+		in
+		   {declare = concat ["\t", cty, " ",
+				      temp, " = PopReg (", cty, ");\n"],
+		    temp = temp}
+		end)
+	    val result =
+	       case result of
+		  NONE => ""
+		| SOME cty => concat ["PushReg (", CType.toString cty, ") = "]
 	 in
-	    case result of
-	       NONE => call
-	     | SOME cty => concat ["PushReg (", CType.toString cty, ") = ", call]
+	    concat
+	    ["{\n",
+	     concat (Vector.toListMap (args, #declare)),
+	     "\t", result, function,
+	     " (",
+	     concat (List.separate (Vector.toListMap (args, #temp), ", ")),
+	     ");\n",
+	     "\t}\n"]
 	 end
       local
 	 val calls = HashSet.new {hash = #hash}
@@ -331,6 +350,9 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	  ; emitWord32 0)
       val emitLabel =
 	 Trace.trace ("emitLabel", Label.layout, Unit.layout) emitLabel
+      fun emitLoadWord32Zero () =
+	 (emitOpcode (wordOpcode (Load, CType.Word32))
+	  ; emitWord32 0)
       val rec emitLoadOperand = fn z => emitOperand (z, Load)
       and emitStoreOperand = fn z => emitOperand (z, Store)
       and emitOperand: Operand.t * LoadStore.t -> unit =
@@ -350,7 +372,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	     | Contents {oper, ...} =>
 		   (emitLoadOperand oper
 		    ; emitOpcode (contents (ls, cty)))
-	     | File => emitWord32 0
+	     | File => emitLoadWord32Zero ()
 	     | Frontier => emitOpcode (frontier ls)
 	     | GCState => emitOpcode (gcState ls)
 	     | Global g =>
@@ -359,7 +381,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	     | Label l =>
 		  (emitOpcode (wordOpcode (ls, cty))
 		   ; emitLabel l)
-	     | Line => emitWord32 0
+	     | Line => emitLoadWord32Zero ()
 	     | Offset {base, offset = off, ...} =>
 		  (emitLoadOperand base
 		   ; emitOpcode (offsetOp (ls, cty))
@@ -484,7 +506,10 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 (chunks, fn Chunk.T {blocks, ...} =>
 	  Vector.foreach
 	  (blocks, fn Block.T {kind, label, statements, transfer, ...} =>
-	   (setLabelOffset (label, !offset)
+	   (Option.app (Kind.frameInfoOpt kind,
+			fn FrameInfo.T {frameLayoutsIndex} =>
+			emitWord32 (Int.toIntInf frameLayoutsIndex))
+	    ; setLabelOffset (label, !offset)
 	    ; Vector.foreach (statements, emitStatement)
 	    ; emitTransfer transfer)))
       val word8ArrayToString: Word8.t array -> string =

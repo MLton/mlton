@@ -1,6 +1,7 @@
 #ifndef _INTERPRET_H_
 #define _INTERPRET_H_
 
+#include <stdio.h>
 #include "types.h"
 
 #define regs(ty)				\
@@ -28,7 +29,7 @@ typedef struct Bytecode {
 	Word32 codeSize;
 } *Bytecode;
 
-#define PopReg(ty) ty##Reg [ty##RegI--]
+#define PopReg(ty) (ty##RegI -= 1, ty##Reg [ty##RegI])
 #define PushReg(ty) ty##Reg [ty##RegI++]
 
 void MLton_callC (int i);  // provided by client

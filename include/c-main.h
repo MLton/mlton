@@ -4,6 +4,10 @@
 #include "main.h"
 #include "c-common.h"
 
+static Word32 returnAddressToFrameIndex (Word32 w) {
+	return w;
+}
+
 #define Main(al, cs, mg, mfs, mmc, pk, ps, mc, ml)			\
 /* Globals */								\
 int nextFun;								\

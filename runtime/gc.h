@@ -83,6 +83,12 @@ enum {
 
 #define TWOPOWER(n) (1 << (n))
 
+typedef enum {
+	CODEGEN_BYTECODE,
+	CODEGEN_C,
+	CODEGEN_NATIVE,
+} Codegen;
+
 /* ------------------------------------------------- */
 /*                    object type                    */
 /* ------------------------------------------------- */
@@ -418,11 +424,6 @@ typedef struct GC_state {
 	ullong minorBytesScanned;
 	ullong minorBytesSkipped;
 	bool mutatorMarksCards;
-	/* native is true iff the native codegen was used.
-	 * The GC needs to know this because it affects how it finds the
-	 * layout of stack frames.
- 	 */
-	bool native;
 	uint numCopyingGCs;
  	ullong numLCs;
 	uint numHashConsGCs;
@@ -448,6 +449,7 @@ typedef struct GC_state {
 	bool profileStack;
 	bool profilingIsOn;
 	W32 ram;		/* ramSlop * totalRam */
+	W32 (*returnAddressToFrameIndex) (W32 w);
 	float ramSlop;
  	struct rusage ru_gc; /* total resource usage spent in gc */
 	struct rusage ru_gcCopy; /* resource usage in major copying gcs. */

@@ -10,6 +10,10 @@
 
 struct Bytecode MLton_bytecode;
 
+static Word32 returnAddressToFrameIndex (Word32 w) {
+	return *(Word32*)(MLton_bytecode.code + w - sizeof (Word32));
+}
+
 #define Main(al, cs, mg, mfs, mmc, pk, ps, ml)				\
 void MLton_callFromC () {						\
 	int nextFun;							\
@@ -31,7 +35,6 @@ void MLton_callFromC () {						\
 }									\
 int main (int argc, char **argv) {					\
 	int nextFun;							\
-	gcState.native = FALSE;						\
 	Initialize (al, cs, mg, mfs, mmc, pk, ps);			\
 	if (gcState.isOriginal) {					\
 		real_Init();						\

@@ -132,6 +132,7 @@
 #define opcodeSym(z)  OPCODE_##z
 #define opcodeSymOfTy(ty, size, name)  opcodeSym (ty##size##_##name)
 #define opcodeName(ty, size, name) opcodeGen (ty##size##_##name)
+#define opcodeName2(ty, name) opcodeGen (ty##_##name)
 
 #define binary(ty, f)  opcodeGen (f)
 #define binaryCheck(ty, f)  opcodeGen (f)
@@ -142,7 +143,7 @@
 	opcodeName (ty, size, mode##Contents)
 #define loadStoreFrontier(mode) opcodeGen (mode##Frontier)
 #define loadGCState() opcodeGen (loadGCState)
-#define	loadStoreGlobal(mode, ty, size)  opcodeName (ty, size, mode##Global)
+#define	loadStoreGlobal(mode, ty, size)  opcodeName2 (ty##size, mode##Global)
 #define	loadStoreOffset(mode, ty, size)  opcodeName (ty, size, mode##Offset)
 #define	loadStoreRegister(mode, ty, size)  opcodeName (ty, size, mode##Register)
 #define	loadStoreStackOffset(mode, ty, size) \

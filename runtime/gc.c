@@ -19,7 +19,7 @@
  */
 
 #ifndef DEBUG
-#define DEBUG FALSE
+#define DEBUG TRUE
 #endif
 
 #ifndef DEBUG_PROFILE
@@ -33,7 +33,7 @@ enum {
 	CURRENT_SOURCE_UNDEFINED = 0xFFFFFFFF,
 	DEBUG_ARRAY = FALSE,
 	DEBUG_CARD_MARKING = FALSE,
-	DEBUG_DETAILED = FALSE,
+	DEBUG_DETAILED = TRUE,
 	DEBUG_ENTER_LEAVE = FALSE,
 	DEBUG_GENERATIONAL = FALSE,
 	DEBUG_MARK_COMPACT = FALSE,
@@ -494,18 +494,10 @@ static inline bool stackIsEmpty (GC_stack stack) {
 static inline uint getFrameIndex (GC_state s, word returnAddress) {
 	uint res;
 
-	if (s->native) {
-		if (DEBUG_PROFILE)
-			fprintf (stderr, "getFrameIndex (0x%08x) = ", 
-					returnAddress);
-		res = *((uint*)(returnAddress - WORD_SIZE));
-	} else {
-		if (DEBUG_PROFILE)
-			fprintf (stderr, "getFrameIndex () = ");
-		res = (uint)returnAddress;
-	}
+	res = s->returnAddressToFrameIndex (returnAddress);
 	if (DEBUG_PROFILE)
-		fprintf (stderr, "%u\n", res);
+		fprintf (stderr, "%u = getFrameIndex (0x%08x)\n",
+				returnAddress, res);
 	return res;
 }
 
@@ -819,11 +811,7 @@ static inline pointer foreachPointerInObject (GC_state s, pointer p,
 			if (DEBUG) {
 				fprintf (stderr, "  top = %d  return address = ",
 						top - bottom);
-				if (s->native)
-					fprintf (stderr, "0x%08x.\n", 
-							returnAddress);
-				else
-					fprintf (stderr, "%u\n", returnAddress);
+				fprintf (stderr, "0x%08x.\n", returnAddress);
 			}
 			layout = getFrameLayout (s, returnAddress); 
 			frameOffsets = layout->offsets;
@@ -3279,6 +3267,11 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 	pointer res;
 	uint tag;
 
+	fprintf (stderr, "GC_arrayAllocate (0x%08x, %u, %u, 0x%08x)\n",
+			(uint)s, 
+			(uint)ensureBytesFree, 
+			(uint)numElts,
+			(uint)header);
 	SPLIT_HEADER();
 	eltSize = numPointers * POINTER_SIZE + numNonPointers;
 	arraySize64 = 
@@ -3474,7 +3467,6 @@ void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i)) {
 
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "walking stack");
-	assert (s->native);
 	bottom = stackBottom (s, s->currentThread->stack);
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "  bottom = 0x%08x  top = 0x%08x.\n",
