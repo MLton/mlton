@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
 
-set -x
+set -e
 
 # This script adds a new crosscompiler target for MLton.
 #
-# It takes three arguments.
+# It takes four arguments.
 #
-# 1. <crossTarget>, will be used via the -b flag passed to the GCC
-# cross-compiler tools.  You must already have installed the GCC
-# cross-compiler tools.  This script does not do that, although you
-# may find the script build-cross-gcc helpful.  <crossTarget> here
-# should be the same as target in build-cross-gcc.  Examples are
-# i386-pc-cygwin and sparc-sun-solaris.
+# 1. <crossTarget>, which is waht MLton will pass via the -b flag to the GCC
+#    cross-compiler tools.  You don't need to have installed these tools in order
+#    to run this script, since it uses ssh and the native gcc on the target.
+#    Examples of $crossTarget are i386-pc-cygwin and sparc-sun-solaris.
 #
 # 2. <crossArch> specifies the target architecture.  
 #    The posibilities are: sparc, x86.
@@ -19,21 +17,21 @@ set -x
 # 3. <crossOS> specifies the target OS.
 #    The possibilities are: cygwin, sunos.
 #
-# 4. <machine> specifies a remote machine of the target type.  After
-# cross compiling the runtime, this script will ssh to that machine to
-# get the values of the constants that the MLton basis library needs.
-# Of course, you must be able to ssh to this machine.
+# 4. <machine> specifies a remote machine of the target type.  This script
+#    will ssh to $machine to compile the runtime and to compile and run the
+#    program that will print the values of all the constants that the MLton 
+#    basis library needs.
 #
-# For example,
+# Here are some example uses of this script.
+#
 #   add-cross i386-pc-cygwin x86 cygwin cygwin
 #   add-cross sparc-sun-solaris sparc sunos blade
+#
 # (Here cygwin happens to be the name of my Cygwin machine and blade
 #  happens to be the name of my Sparc machine.)
 #
 # You also may need to set $libDir, which determines where the
 # cross-compiler target will be installed.
-
-set -e
 
 die () {
 	echo >&2 "$1"
@@ -70,35 +68,36 @@ lib="$src/build/lib"
 
 # You shouldn't need to change anything below this line.
 
-PATH=$src/build/bin:$PATH
-
 rm -rf "$lib/$crossTarget"
+mkdir -p "$lib/$crossTarget" || die "Cannot write to $lib."
 
-mkdir -p "$lib/$crossTarget" ||
-	die "Cannot write to $lib."
+tmp=/tmp/mlton-add-cross
+
+( cd $src && make dirs )
+
+ssh $machine "rm -rf $tmp && mkdir $tmp"
 
 echo 'Making runtime.' 
-cd $src/runtime
-make clean
-make gdtoa/arithchk.out TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS
-scp gdtoa/arithchk.out $machine:/tmp
-ssh $machine '/tmp/arithchk.out && rm -f /tmp/arithchk.out' >gdtoa/arith.h
-( cd $src && make TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
-	runtime targetmap ) ||
-	die "Unable to make runtime.  See $src/runtime-log."
+( cd $src && tar cf - bin runtime ) | 
+	ssh $machine "cd $tmp && tar xf - && cd runtime && make clean all"
+ssh $machine "cd $tmp/runtime && tar cf - *.a" | 
+	( cd $lib/$crossTarget && tar xf - )
+( cd $src &&
+	make TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
+		targetmap )
+( cd $src/runtime && make clean )
 
 exe='print-constants'
-echo 'Building print-constants executable.'
-(
-	mlton -build-constants true >$exe.c
-	mlton -output $original/$exe -target $crossTarget $exe.c
-	rm -f $exe.c
-) || die "Unable to build $exe executable."
-
-echo "Running print-constants on $machine."
+echo "Compiling and running print-constants on $machine."
 cd $original
-tar cf - $exe |
-	ssh $machine "tar xf - && ./$exe && rm -f $exe" \
-	>"$lib/$crossTarget/constants"
+$src/build/bin/mlton -build-constants true |
+	ssh $machine "cd $tmp/runtime &&
+			cat >$exe.c && 
+			gcc -I. -o $exe $exe.c libmlton.a && 
+			./$exe" \
+		>"$lib/$crossTarget/constants"
 
-rm -f $original/$exe
+exit 0
+ssh $machine "rm -rf $tmp"
+
+
