@@ -49,8 +49,8 @@ BENCH = barnes-hut boyer checksum count-graphs DLXSimulator fft fib hamlet imp-f
 FPBENCH = barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace simple tensor tsp tyan vliw zern
 
 BFLAGS = -mlton "/usr/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
-BFLAGS = -mlton "mlton"
 BFLAGS = -html -mlton "/usr/bin/mlton" -mlkit -mosml -poly -smlnj
+BFLAGS = -mlton "mlton"
 
 .PHONY: test
 test: $(NAME)
