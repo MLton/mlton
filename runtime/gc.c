@@ -1712,7 +1712,7 @@ static inline void forward (GC_state s, pointer *pp) {
 				 * but don't violate the stack invariant.
 				 */
 				if (stack->used <= stack->reserved / 4) {
-					uint new = stackReserved (s, max (s->threadShrinkRatio * stack->reserved,
+					uint new = stackReserved (s, max (stack->reserved / 2,
 										stackNeedsReserved (s, stack)));
 					/* It's possible that new > stack->reserved if
 					 * the stack invariant is violated. In that case, 
