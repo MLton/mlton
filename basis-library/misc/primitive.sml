@@ -985,9 +985,20 @@ structure Primitive =
 		  val INET6 = _const "Socket_AF_INET6": addr_family;
 		  val UNSPEC = _const "Socket_AF_UNSPEC": addr_family;
 	       end
-	    structure SOCK =
+	    structure SOCK:>
+	       sig
+		  eqtype sock_type
+
+		  val fromInt: int -> sock_type
+	       end =
 	       struct
 		  type sock_type = int
+
+		  val fromInt = fn i => i
+	       end
+	    structure SOCK =
+	       struct
+		  open SOCK
 		  val STREAM = _const "Socket_SOCK_STREAM": sock_type;
 		  val DGRAM = _const "Socket_SOCK_DGRAM": sock_type;
 	       end

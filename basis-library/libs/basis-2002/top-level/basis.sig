@@ -612,6 +612,8 @@ signature BASIS_2002 =
    where type Socket.dgram = Socket.dgram
    where type ('a, 'b) Socket.sock = ('a, 'b) Socket.sock
    where type 'a Socket.sock_addr = 'a Socket.sock_addr
+   (* sock_type appears free in GENERIC_SOCK *)
+   where type Socket.SOCK.sock_type = Socket.SOCK.sock_type
    where type 'a Socket.stream = 'a Socket.stream
    where type StringCvt.radix = StringCvt.radix
    where type StringCvt.realfmt = StringCvt.realfmt

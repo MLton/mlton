@@ -1,5 +1,5 @@
 structure Socket:> SOCKET_EXTRA
-   where type SOCK.sock_type = int
+   where type SOCK.sock_type = Primitive.Socket.SOCK.sock_type
    where type pre_sock_addr = Word8.word array
 =
 struct
@@ -203,7 +203,8 @@ structure Ctl =
       val setSNDBUF = setSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.SNDBUF)
       val getRCVBUF = getSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.RCVBUF)
       val setRCVBUF = setSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.RCVBUF)
-      val getTYPE = getSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.TYPE)
+      fun getTYPE s =
+	 Prim.SOCK.fromInt (getSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.TYPE) s)
       val getERROR = getSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.ERROR)
       local
 	 fun getName 
