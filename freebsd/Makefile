@@ -21,9 +21,11 @@ EXTRACT_ONLY=	${SRC_DIST}
 MAINTAINER=	MLton@mlton.org
 COMMENT=	An optimizing Standard ML compiler
 
-BUILD_DEPENDS=	hevea:${PORTSDIR}/textproc/hevea: 	\
-		latex:${PORTSDIR}/print/teTeX:
+BUILD_DEPENDS=	bash:${PORTSDIR}/shells/bash2		\
+		hevea:${PORTSDIR}/textproc/hevea 	\
+		latex:${PORTSDIR}/print/teTeX
 LIB_DEPENDS=	gmp.6:${PORTSDIR}/math/libgmp4
+RUN_DEPENDS=	bash:${PORTSDIR}/shells/bash2
 
 SRC_DIST=	${DISTNAME}-1.freebsd.src.tgz
 BOOT_DIST=	${PORTNAME}-20040623-1.i386-freebsd.tbz
@@ -35,11 +37,12 @@ MANCOMPRESSED=	yes
 
 BOOT_WRKSRC=	${WRKDIR}/mlton-bootstrap
 
+USE_GETTEXT=	yes
 USE_REINPLACE=	yes
 ALL_TARGET=	all
 USE_GMAKE=	yes
 MAKE_ARGS=	DESTDIR='' \
-		PATH=${WRKSRC}/build/bin:${BOOT_WRKSRC}/bin:${PATH} \
+		PATH=${WRKSRC}/build/bin:${PREFIX}/bin:${BOOT_WRKSRC}/bin:${PATH} \
 		PREFIX=${PREFIX}
 
 PORTDIR=	usr/ports/lang/mlton
@@ -67,7 +70,7 @@ build-package:
 	${MAKE} deinstall
 	${MAKE} reinstall
 	${MAKE} package
-	cp ${PORTNAME}-${PORTVERSION}.tbz	\
+	${CP} ${PORTNAME}-${PORTVERSION}.tbz	\
 		${DISTDIR}/${PORTNAME}-${PORTVERSION}-1.i386-freebsd.tbz
 	${TAR} -cpf - Makefile distinfo pkg-descr pkg-plist | \
 		( ${MKDIR} ${PORTDIR} && cd ${PORTDIR} && ${TAR} -xpf - )
