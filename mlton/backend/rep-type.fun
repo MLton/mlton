@@ -54,6 +54,21 @@ structure Type =
 
       val toString = Layout.toString o layout
 
+      fun deLabel t =
+	 case dest t of
+	    Label l => SOME l
+	  | _ => NONE
+	       
+      fun dePointer t =
+	 case dest t of
+	    Pointer pt => SOME pt
+	  | _ => NONE
+
+      fun deReal t =
+	 case dest t of
+	    Real s => SOME s
+	  | _ => NONE
+
       val toInt: t -> int =
 	 fn t =>
 	 case dest t of
@@ -772,6 +787,29 @@ structure Type =
 		   else (b, p)
 		end)
 	  | _ => (bytes t, 0)
+	       
+      fun bogusWord (t: t): WordX.t =
+	 case dest t of
+	    Constant w => w
+	  | Pointer _ => WordX.one (WordSize.pointer ())
+	  | Seq ts =>
+	       if 0 = Vector.length ts
+		  then Error.bug "no bogus unit"
+	       else
+		  valOf
+		  (Vector.fold (ts, NONE, fn (t, ac) =>
+				let
+				   val w = bogusWord t
+				in
+				   case ac of
+				      NONE => SOME w
+				    | SOME w' =>
+					 SOME (WordX.splice {lo = w', hi = w})
+				end))
+	  | Sum ts => bogusWord (Vector.sub (ts, 0))
+	  | Word s => WordX.zero (WordSize.fromBits s)
+	  | _ => Error.bug (concat ["no bogus value of type ",
+				    Layout.toString (layout t)])
    end
 
 structure ObjectType =

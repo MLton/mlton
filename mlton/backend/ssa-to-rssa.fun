@@ -409,12 +409,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 	 (objectTypes, fn (i, (pt, _)) => PointerTycon.setIndex (pt, i))
       val objectTypes = Vector.map (objectTypes, #2)
       fun arrayElementType (z: Operand.t): Type.t =
-	 case Type.dest (Operand.ty z) of
-	    Type.Pointer pt =>
+	 case Type.dePointer (Operand.ty z) of
+	    NONE => Error.bug "arrayElementType of non pointer"
+	  | SOME pt =>
 	       (case Vector.sub (objectTypes, PointerTycon.index pt) of
 		   ObjectType.Array t => t
 		 | _ => Error.bug "arrayElementType of non array")
-	  | _ =>  Error.bug "arrayElementType of non pointer"
       val () = diagnostic ()
       val {get = varInfo: Var.t -> {ty: S.Type.t},
 	   set = setVarInfo, ...} =
@@ -637,36 +637,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
       fun translateFormals v =
 	 Vector.keepAllMap (v, fn (x, t) =>
 			    Option.map (toRtype t, fn t => (x, t)))
-      fun bogusWord (t: Type.t): WordX.t =
-	 let
-	    datatype z = datatype Type.dest
-	 in
-	    case Type.dest t of
-	       Constant w => w
-	     | Pointer _ => WordX.one (WordSize.pointer ())
-	     | Seq ts =>
-		  if 0 = Vector.length ts
-		     then Error.bug "no bogus unit"
-		  else
-		     valOf
-		     (Vector.fold (ts, NONE, fn (t, ac) =>
-				   let
-				      val w = bogusWord t
-				   in
-				      case ac of
-					 NONE => SOME w
-				       | SOME w' =>
-					    SOME (WordX.splice {lo = w', hi = w})
-				   end))
-	     | Sum ts => bogusWord (Vector.sub (ts, 0))
-	     | Word s => WordX.zero (WordSize.fromBits s)
-	     | _ => Error.bug (concat ["no bogus value of type ",
-				       Layout.toString (Type.layout t)])
-	 end
       fun bogus (t: Type.t): Operand.t =
-	 case Type.dest t of
-	    Type.Real s => Operand.Const (Const.real (RealX.zero s))
-	  | _ => Operand.cast (Operand.word (bogusWord t), t)
+	 case Type.deReal t of
+	    NONE => Operand.cast (Operand.word (Type.bogusWord t), t)
+	  | SOME s => Operand.Const (Const.real (RealX.zero s))
       val handlesSignals = 
 	 S.Program.hasPrim 
 	 (program, fn p => 
@@ -841,9 +815,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				 let
 				    val result = valOf (toRtype ty)
 				    val pt =
-				       case Type.dest result of
-					  Type.Pointer pt => PointerTycon pt
-					| _ => Error.bug "strange array"
+				       case Type.dePointer result of
+					  NONE => Error.bug "strange array"
+					| SOME pt => PointerTycon pt
 				    val args =
 				       Vector.new4 (GCState,
 						    EnsuresBytesFree,
@@ -890,9 +864,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				       val array = a 0
 				       val vecTy = valOf (toRtype ty)
 				       val pt =
-					  case Type.dest vecTy of
-					     Type.Pointer pt => pt
-					   | _ => Error.bug "strange Array_toVector"
+					  case Type.dePointer vecTy of
+					     NONE => Error.bug "strange Array_toVector"
+					   | SOME pt => pt
 				    in
 				       loop
 				       (i - 1,
@@ -1113,9 +1087,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 					val result = valOf (toRtype ty)
 					val header =
 					   PointerTycon
-					   (case Type.dest result of
-					       Type.Pointer pt => pt
-					     | _ => Error.bug "Weak_new")
+					   (case Type.dePointer result of
+					       NONE => Error.bug "Weak_new"
+					     | SOME pt => pt)
 					val func =
 					   CFunction.weakNew {arg = t,
 							      return = result}

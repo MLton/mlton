@@ -1043,8 +1043,9 @@ structure Program =
 			   Bytes.<= (Bytes.+ (offset, Type.bytes ty),
 				     maxFrameSize)
 			   andalso Alloc.doesDefine (alloc, Live.StackOffset so)
-			   andalso (case Type.dest ty of
-				       Type.Label l =>
+			   andalso (case Type.deLabel ty of
+				       NONE => true
+				     | SOME l =>
 					  let
 					     val Block.T {kind, ...} =
 						labelBlock l
@@ -1070,8 +1071,7 @@ structure Program =
 					      | Kind.Handler {frameInfo, ...} =>
 						   doit frameInfo
 					      | Kind.Jump => true
-					  end
-				     | _ => true)
+					  end)
 		      | StackTop => true
 		      | Word _ => true
 	       in

@@ -38,20 +38,9 @@ signature REP_TYPE =
        *)
       type t
       sharing type t = ObjectType.ty
-      datatype dest =
-	 Address of t (* an internal pointer *)
-       | Constant of WordX.t
-       | ExnStack
-       | GCState (* The address of gcState. *)
-       | Junk of Bits.t
-       | Label of Label.t
-       | Pointer of PointerTycon.t
-       | Real of RealSize.t
-       | Seq of t vector
-       | Sum of t vector
-       | Word of Bits.t
 
       val add: t * t -> t
+      val bogusWord: t -> WordX.t
       val address: t -> t
       val align: t * Bytes.t -> Bytes.t
       val andb: t * t -> t option
@@ -71,8 +60,10 @@ signature REP_TYPE =
       val char: t
       val cPointer: unit -> t
       val constant: WordX.t -> t
+      val deLabel: t -> Label.t option
+      val dePointer: t -> PointerTycon.t option
+      val deReal: t -> RealSize.t option
       val defaultWord: t
-      val dest: t -> dest
       val dropPrefix: t * Bits.t -> t
       val dropSuffix: t * Bits.t -> t
       val equals: t * t -> bool
