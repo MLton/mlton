@@ -60,6 +60,10 @@
 #error HAS_SIGALTSTACK not defined
 #endif
 
+#ifndef HAS_SPAWN
+#error HAS_SPAWN not defined
+#endif
+
 #ifndef HAS_TIME_PROFILING
 #error HAS_TIME_PROFILING not defined
 #endif

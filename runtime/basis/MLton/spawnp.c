@@ -1,5 +1,6 @@
 #include "platform.h"
 
+#if HAS_SPAWN
 Int MLton_Process_spawnp (NullString p, Pointer a) {
 	char	*path;
 	char	*asaved;
@@ -16,3 +17,4 @@ Int MLton_Process_spawnp (NullString p, Pointer a) {
 	args[an] = asaved;
 	return result;
 }
+#endif
