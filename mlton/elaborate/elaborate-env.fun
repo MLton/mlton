@@ -797,13 +797,16 @@ fun layoutUsed (T {fcts, sigs, strs, types, vals, ...}) =
 fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals}):
    (unit -> 'a) -> 'a =
    let
-      fun doit (NameSpace.T {current, table, ...}) =
+      fun m l = Layout.outputl (l, Out.error)
+      open Layout
+      fun doit (NameSpace.T {current, table, ...}, lay) =
 	 let
 	    val all =
-	       HashSet.fold (table, [], fn (vs as Values.T {ranges, ...}, ac) =>
-			     if List.isEmpty (!ranges)
-				then ac
-			     else vs :: ac)
+	       HashSet.fold
+	       (table, [], fn (vs as Values.T {ranges, ...}, ac) =>
+		case !ranges of
+		   [] => ac
+		 | z :: _ => (z, vs) :: ac)
 	 in
 	    fn s0 =>
 	    let
@@ -811,18 +814,12 @@ fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals}):
 	       val _ =
 		  current :=
 		  List.fold
-		  (all, [], fn (vs as Values.T {ranges, ...}, ac) =>
-		   let
-		      val _ =
-			 case !ranges of
-			    [] => Error.bug "saved ranges should be nonempty"
-			  | {isUsed, value, ...} :: _ =>
-			       List.push (ranges, {isUsed = isUsed,
-						   scope = s0,
-						   value = value})
-		   in
-		      vs :: ac
-		   end)
+		  (all, [], fn (({isUsed, value, ...},
+				 vs as Values.T {ranges, ...}), ac) =>
+		   (List.push (ranges, {isUsed = isUsed,
+					scope = s0,
+					value = value})
+		    ; vs :: ac))
 	       val removed =
 		  HashSet.fold
 		  (table, [], fn (Values.T {ranges, ...}, ac) =>
@@ -839,16 +836,15 @@ fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals}):
 		   end)
 	    in fn () => (List.foreach (!current, fn v => (Values.pop v; ()))
 			 ; current := current0
-			 ; List.foreach (removed, fn (ranges, r) =>
-					 ranges := r))
+			 ; List.foreach (removed, op :=))
 	    end
 	 end
-      val fcts = doit fcts
-      val fixs = doit fixs
-      val sigs = doit sigs
-      val strs = doit strs
-      val types = doit types
-      val vals = doit vals
+      val fcts = doit (fcts, Ast.Fctid.layout)
+      val fixs = doit (fixs, Ast.Vid.layout)
+      val sigs = doit (sigs, Ast.Sigid.layout)
+      val strs = doit (strs, Ast.Strid.layout)
+      val types = doit (types, Ast.Tycon.layout)
+      val vals = doit (vals, Ast.Vid.layout)
    in fn th =>
       let
 	 val s0 = Scope.new ()
