@@ -323,13 +323,14 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 			  Int.inc(#inDeg (labelInfo label')))))
 
 	     val blocks = doitTree (Function.dominatorTree f)
-	     val _ = Function.clear f
-	  in
-	     shrink (Function.new {name = name,
+	     val f = Function.new {name = name,
 				   args = args,
 				   start = start,
 				   blocks = blocks,
-				   returns = returns})
+				   returns = returns}
+	     val _ = Function.clear f
+	  in
+	     shrink f
 	  end)
       val program = 
 	 Program.T {datatypes = datatypes,
