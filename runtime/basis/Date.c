@@ -85,7 +85,7 @@ void Date_gmTime(Pointer p) {
 	tmp = gmtime((time_t*)p);
 }
 
-/* The idea for Date_localoffset comes from KitV3 src/Runtime/Time.c */
+/* The idea for Date_localOffset comes from KitV3 src/Runtime/Time.c */
 Int Date_localOffset() {
 	time_t t1, t2;
 
