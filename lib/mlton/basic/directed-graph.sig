@@ -24,6 +24,7 @@ signature DIRECTED_GRAPH =
 	    type 'a t
 
 	    val equals: 'a t * 'a t -> bool
+	    val layout: 'a t -> Layout.t
 	    val plist: 'a t -> PropertyList.t
 	    val to: 'a t -> 'a Node.t
 	 end

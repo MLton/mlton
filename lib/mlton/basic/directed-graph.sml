@@ -80,6 +80,10 @@ structure Edge =
 	       plist = PropertyList.new ()}
 	 
       fun equals (e, e') = PropertyList.equals (plist e, plist e')
+
+      fun layout e =
+	 Layout.record [("from", Node.layout (from e)),
+			("to", Node.layout (to e))]
    end
 
 (*---------------------------------------------------*)
