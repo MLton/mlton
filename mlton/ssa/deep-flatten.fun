@@ -425,13 +425,6 @@ structure Value =
 					  then ()
 				       else dontFlatten elt)
 	       else ()
-	    (* FIXME: This should be enabled once we have flattening in
-	     * vectors.
-	     *)
-	    val () =
-	       case con of
-		  ObjectCon.Vector => Prod.foreach (args, dontFlatten)
-		| _ => ()
 	    (* Don't flatten constructors, since they are part of a sum type.
 	     * Don't flatten unit.
 	     * Don't flatten vectors (of course their components can be

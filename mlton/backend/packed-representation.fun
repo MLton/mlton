@@ -322,6 +322,16 @@ structure Component =
       fun maybePadToWidth (c, b) =
 	 if Bits.< (b, width c) then c else padToWidth (c, b)
 
+      fun padToPrim (c: t): t =
+	 let
+	    val t = ty c
+	    val t' = Type.padToPrim t
+	 in
+	    if Type.equals (t, t')
+	       then c
+	    else padToWidth (c, Type.width t')
+	 end
+
       fun tuple (c: t, {dst: Var.t * Type.t,
 			src: {index: int} -> Operand.t})
 	 : Statement.t list =
@@ -456,17 +466,59 @@ structure Base =
    struct
       open Base
 
-      fun toOperand (b: Operand.t t, offset: Bytes.t, ty: Type.t): Operand.t =
-	 case b of
+      fun toOperand {base: Operand.t t,
+		     eltWidth: Bytes.t option,
+		     offset: Bytes.t,
+		     ty: Type.t}: Operand.t * Statement.t list =
+	 case base of
 	    Object base =>
-	       Offset {base = base,
-		       offset = offset,
-		       ty = ty}
+	       (Offset {base = base,
+			offset = offset,
+			ty = ty},
+		[])
 	  | VectorSub {index, vector} =>
-	       ArrayOffset {base = vector,
-			    index = index,
-			    offset = offset,
-			    ty = ty}
+	       let
+		  val eltWidth =
+		     case eltWidth of
+			NONE => Error.bug "Base.toOperand missing eltWidth"
+		      | SOME w => w
+	       in
+		  if Bytes.equals (eltWidth, Type.bytes ty)
+		     then (ArrayOffset {base = vector,
+					index = index,
+					offset = offset,
+					ty = ty},
+			   [])
+		  else
+		     let
+			val size = WordSize.default
+			val wty = Type.word (WordSize.bits size)
+			(* vector + (width * index) + offset *)
+			val prod = Var.newNoname ()
+			val s1 =
+			   PrimApp {args = (Vector.new2
+					    (index,
+					     Operand.word
+					     (WordX.fromIntInf
+					      (Bytes.toIntInf eltWidth, size)))),
+				    dst = SOME (prod, wty),
+				    prim = Prim.wordMul (size, {signed = false})}
+			val eltBase = Var.newNoname ()
+			val s2 =
+			   PrimApp {args = (Vector.new2
+					    (vector,
+					     Operand.Var {ty = wty,
+							  var = prod})),
+				    dst = SOME (eltBase, wty),
+				    prim = Prim.wordAdd size}
+		     in
+			(Offset {base = Operand.Var {ty = wty,
+						     var = eltBase},
+				 offset = offset,
+				 ty = ty},
+			 [s1, s2])
+		     end
+	       end
    end
 
 structure Select =
@@ -522,31 +574,41 @@ structure Select =
 			      ty = ty}
 
       fun select (s: t, {base: Operand.t Base.t,
-			 dst: Var.t * Type.t}): Statement.t list =
+			 dst: Var.t * Type.t,
+			 eltWidth: Bytes.t option}): Statement.t list =
 	 let
-	    fun move src =
+	    fun move (src, ss) =
 	       let
 		  val (dst, dstTy) = dst
-		  val (src, ss) = Statement.resize (src, Type.width dstTy)
+		  val (src, ss') = Statement.resize (src, Type.width dstTy)
 	       in
-		  ss @ [Bind {dst = (dst, dstTy),
-			      isMutable = false,
-			      src = src}]
+		  ss @ ss' @ [Bind {dst = (dst, dstTy),
+				    isMutable = false,
+				    src = src}]
 	       end
 	 in
 	    case s of
 	       None => []
-	     | Direct _ => move (Base.object base)
-	     | Indirect {offset, ty} => move (Base.toOperand (base, offset, ty))
+	     | Direct _ => move (Base.object base, [])
+	     | Indirect {offset, ty} =>
+		  move (Base.toOperand {base = base,
+					eltWidth = eltWidth,
+					offset = offset,
+					ty = ty})
 	     | IndirectUnpack {offset, rest, ty} =>
 		  let
 		     val tmpVar = Var.newNoname ()
 		     val tmpOp = Var {ty = ty, var = tmpVar}
+		     val (src, ss) =
+			Base.toOperand {base = base,
+					eltWidth = eltWidth,
+					offset = Words.toBytes offset,
+					ty = ty}
 		  in
-		     Bind {dst = (tmpVar, ty),
-			   isMutable = false,
-			   src = Base.toOperand (base, Words.toBytes offset, ty)}
-		     :: Unpack.select (rest, {dst = dst, src = tmpOp})
+		     ss @ (Bind {dst = (tmpVar, ty),
+				 isMutable = false,
+				 src = src}
+			   :: Unpack.select (rest, {dst = dst, src = tmpOp}))
 		  end
 	     | Unpack u =>
 		  Unpack.select (u, {dst = dst, src = Base.object base})
@@ -557,21 +619,33 @@ structure Select =
 	 select
 
       fun update (s: t, {base: Operand.t Base.t,
+			 eltWidth: Bytes.t option,
 			 value: Operand.t}): Statement.t list =
 	 case s of
 	    Indirect {offset, ty} =>
-	       [Move {dst = Base.toOperand (base, offset, ty),
-		      src = value}]
+	       let
+		  val (dst, ss) =
+		     Base.toOperand {base = base,
+				     eltWidth = eltWidth,
+				     offset = offset,
+				     ty = ty}
+	       in
+		  ss @ [Move {dst = dst, src = value}]
+	       end
 	  | IndirectUnpack {offset, rest, ty} =>
 	       let
 		  val tmpVar = Var.newNoname ()
 		  val tmpOp = Var {ty = ty, var = tmpVar}
-		  val chunk = Base.toOperand (base, Words.toBytes offset, ty)
-		  val (newChunk, ss) = 
+		  val (chunk, ss) =
+		     Base.toOperand {base = base,
+				     eltWidth = eltWidth,
+				     offset = Words.toBytes offset,
+				     ty = ty}
+		  val (newChunk, ss') = 
 		     Unpack.update (rest, {chunk = chunk,
 					   component = value})
 	       in
-		  ss @ [Move {dst = chunk, src = newChunk}]
+		  ss @ ss' @ [Move {dst = chunk, src = newChunk}]
 	       end
 	  | _ => Error.bug "Select.update of non indirect"
 
@@ -596,13 +670,14 @@ structure Selects =
 
       fun select (T v, {base: Operand.t Base.t,
 			dst: Var.t * Type.t,
+			eltWidth: Bytes.t option,
 			offset: int}): Statement.t list =
 	 Select.select (#select (Vector.sub (v, offset)),
-			{base = base, dst = dst})
+			{base = base, eltWidth = eltWidth, dst = dst})
 
-      fun update (T v, {base, offset, value}) =
+      fun update (T v, {base, eltWidth, offset, value}) =
 	 Select.update (#select (Vector.sub (v, offset)),
-			{base = base, value = value})
+			{base = base, eltWidth = eltWidth, value = value})
 
       fun lshift (T v, b: Bits.t) =
 	 T (Vector.map (v, fn {orig, select} =>
@@ -616,11 +691,10 @@ structure PointerRep =
 				      offset: Words.t} vector,
 			 componentsTy: Type.t,
 			 selects: Selects.t,
-			 size: Words.t,
 			 ty: Type.t,
 			 tycon: PointerTycon.t}
 
-      fun layout (T {components, componentsTy, selects, size, ty, tycon}) =
+      fun layout (T {components, componentsTy, selects, ty, tycon}) =
 	 let
 	    open Layout
 	 in
@@ -632,7 +706,6 @@ structure PointerRep =
 	      components),
 	     ("componentsTy", Type.layout componentsTy),
 	     ("selects", Selects.layout selects),
-	     ("size", Words.layout size),
 	     ("ty", Type.layout ty),
 	     ("tycon", PointerTycon.layout tycon)]
 	 end
@@ -653,20 +726,23 @@ structure PointerRep =
 	 Rep.T {rep = Rep.Pointer {endsIn00 = true},
 		ty = ty}
 
-      fun make {components, selects, tycon} =
+      fun make {components, isVector, selects, tycon} =
 	 let
 	    val width =
 	       Vector.fold
-	       (components, Words.zero, fn ({component = c, ...}, ac) =>
-		Words.+ (ac, Type.words (Component.ty c)))
-	    val totalWidth = Words.+ (width,
-				      Bytes.toWords Runtime.normalHeaderSize)
+	       (components, Bytes.zero, fn ({component = c, ...}, ac) =>
+		Bytes.+ (ac, Type.bytes (Component.ty c)))
 	    val (components, selects) =
-	       if !Control.align = Control.Align4
-		  orelse (Bytes.equals
-			  (Words.toBytes totalWidth,
-			   Bytes.align (Words.toBytes totalWidth,
-					{alignment = Bytes.fromInt 8})))
+	       if isVector
+		  orelse !Control.align = Control.Align4
+		  orelse
+		  let
+		     val totalWidth = Bytes.+ (width, Runtime.normalHeaderSize)
+		  in
+		     Bytes.equals
+		     (totalWidth,
+		      Bytes.align (totalWidth, {alignment = Bytes.fromInt 8}))
+		  end
 		  then (components, selects)
 	       else
 		  (* Need to insert a pad word before the first pointer. *)
@@ -677,7 +753,7 @@ structure PointerRep =
 			 Rep.isPointer (Component.rep c))
 		     val padOffset =
 			if 0 = Vector.length pointers
-			   then width
+			   then Bytes.toWords width
 			else #offset (Vector.sub (pointers, 0))
 		     val pad =			      
 			{component = Component.padToWidth (Component.unit,
@@ -706,16 +782,38 @@ structure PointerRep =
 		  end
 	    val componentsTy =
 	       Type.seq (Vector.map (components, Component.ty o #component))
-	    val componentsTy = Type.maybePadToWidth (componentsTy, Bits.inWord)
+	    (* If there are no components, then add a pad word. *)
+	    val componentsTy =
+	       if Bits.isZero (Type.width componentsTy)
+		  then Type.zero Bits.inWord
+	       else componentsTy
 	 in
 	    T {components = components,
 	       componentsTy = componentsTy,
 	       selects = selects,
-	       size = Bytes.toWords (Bytes.+ (Type.bytes componentsTy,
-					      Runtime.normalHeaderSize)),
 	       ty = Type.pointer tycon,
 	       tycon = tycon}
 	 end
+
+      val make =
+	 let
+	    open Layout
+	 in
+	    Trace.trace
+	    ("PointerRep.make",
+	     fn {components, isVector, selects, tycon} =>
+	     record
+	     [("components",
+	       Vector.layout (fn {component, offset} =>
+			      record [("component", Component.layout component),
+				      ("offset", Words.layout offset)])
+	       components),
+	      ("isVector", Bool.layout isVector),
+	      ("selects", Selects.layout selects),
+	      ("tycon", PointerTycon.layout tycon)],
+	     layout)
+	 end
+	 make
 
       fun box (component: Component.t, pt: PointerTycon.t, selects: Selects.t) =
 	 let
@@ -737,11 +835,12 @@ structure PointerRep =
 	 in
 	    make {components = Vector.new1 {component = component,
 					    offset = Words.zero},
+		  isVector = false,
 		  selects = selects,
 		  tycon = pt}
 	 end
       
-      fun tuple (T {components, size, ty, tycon, ...},
+      fun tuple (T {components, componentsTy, ty, tycon, ...},
 		 {dst = dst: Var.t,
 		  src: {index: int} -> Operand.t}) =
 	 let
@@ -765,7 +864,8 @@ structure PointerRep =
 	    Object {dst = (dst, ty),
 		    header = (Runtime.typeIndexToHeader
 			      (PointerTycon.index tycon)),
-		    size = size}
+		    size = Bytes.toWords (Bytes.+ (Type.bytes componentsTy,
+						   Runtime.normalHeaderSize))}
 	    :: stores
 	 end
 
@@ -834,11 +934,23 @@ structure TupleRep =
 		       List.layout Statement.layout)
 	 tuple
 
+      (* TupleRep.make decides how to layout a sequence of types in an object,
+       * or in the case of a vector, in a vector element.
+       * Vectors are treated slightly specially because we don't require element
+       * widths to be a multiple of the word size.
+       * At the front of the object, we place all the doubleWords, followed by
+       * all the words.  Then, we pack in all the types that are smaller than a
+       * word.  This is done by packing in a sequence of words, greedily,
+       * starting with the largest type and moving to the smallest.  We pad to
+       * ensure that a value never crosses a word boundary.  Finally, if there
+       * are any pointers, they go at the end of the object.
+       *)
       fun make (pointerTycon: PointerTycon.t,
-		{forceBox: bool},
 		rs: {isMutable: bool,
 		     rep: Rep.t,
-		     ty: S.Type.t} vector): t =
+		     ty: S.Type.t} vector,
+		{forceBox: bool,
+		 isVector: bool}): t =
 	 let
 	    val pointers = ref []
 	    val doubleWords = ref []
@@ -847,30 +959,27 @@ structure TupleRep =
 	    val () =
 	       Vector.foreachi
 	       (rs, fn (i, {rep = r as Rep.T {rep, ty}, ...}) =>
-		case rep of
-		   Rep.NonPointer =>
-		      let
-			 val b = Bits.toInt (Type.width ty)
-			 fun direct l =
-			    List.push
-			    (l, {component = Component.Direct {index = i,
-							       rep = r},
-				 index = i})
-		      in
-			 if b = 64
-			    then direct doubleWords
-			 else if b = 32
-				 then direct words
-			      else
-				 Array.update
-				 (a, b, {index = i, rep = r} :: Array.sub (a, b))
-		      end
-		 | Rep.Pointer _ =>
+		let
+		   fun direct l =
 		      List.push
-		      (pointers,
-		       {component = Component.Direct {index = i,
-						      rep = r},
-			index = i}))
+		      (l, {component = Component.Direct {index = i, rep = r},
+			   index = i})
+		in
+		   case rep of
+		      Rep.NonPointer =>
+			 let
+			    val b = Bits.toInt (Type.width ty)
+			 in
+			    case b of
+			       32 => direct words
+			     | 64 => direct doubleWords
+			     | _ =>
+				  Array.update
+				  (a, b,
+				   {index = i, rep = r} :: Array.sub (a, b))
+			 end
+		    | Rep.Pointer _ => direct pointers
+		end)
 	    val selects = Array.array (Vector.length rs,
 				       (Select.None, Select.None))
 	    fun simple (l, width: Words.t, offset: Words.t, components) =
@@ -887,11 +996,12 @@ structure TupleRep =
 			 Select.Indirect {offset = Words.toBytes offset,
 					  ty = ty}))
 		 in
-		    {component = component, offset = offset} :: ac
+		    {component = component,
+		     offset = offset,
+		     setSelects = fn _ => ()} :: ac
 		 end))
 	    val offset = Words.zero
 	    val components = []
-	    (* Start with all the doubleWords followed by all the words. *)
 	    val (offset, components) =
 	       simple (!doubleWords, Words.fromInt 2, offset, components)
 	    val (offset, components) =
@@ -936,38 +1046,51 @@ structure TupleRep =
 			   wordComponents (max, Bits.inWord, [])
 			val componentTy =
 			   Type.seq (Vector.map (components, Rep.ty o #rep))
-			val wordTy = Type.padToWidth (componentTy, Bits.inWord)
-			val _ =
-			   Vector.fold
-			   (components, Bits.zero, fn ({index, rep}, shift) =>
-			    let
-			       val unpack = Unpack.T {shift = shift,
-						      ty = Rep.ty rep}
-			       val () =
-				  Array.update
-				  (selects, index,
-				   (Select.Unpack unpack,
-				    Select.indirectUnpack {offset = offset,
-							   rest = unpack,
-							   ty = wordTy}))
-			    in
-			       Bits.+ (shift, Rep.width rep)
-			    end)
+			fun setSelects (padToPrim: bool): unit =
+			   let
+			      val wordTy =
+				 if padToPrim
+				    then Type.padToPrim componentTy
+				 else Type.padToWidth (componentTy, Bits.inWord)
+			   in
+			      ignore
+			      (Vector.fold
+			       (components, Bits.zero,
+				fn ({index, rep}, shift) =>
+				let
+				   val unpack = Unpack.T {shift = shift,
+							  ty = Rep.ty rep}
+				   val () =
+				      Array.update
+				      (selects, index,
+				       (Select.Unpack unpack,
+					Select.indirectUnpack {offset = offset,
+							       rest = unpack,
+							       ty = wordTy}))
+				in
+				   Bits.+ (shift, Rep.width rep)
+				end))
+			   end
 			val component =
 			   Component.Word
 			   (WordRep.T {components = components,
 				       rep = Rep.T {rep = Rep.NonPointer,
 						    ty = componentTy}})
-			val ac = {component = component, offset = offset} :: ac
+			val ac = {component = component,
+				  offset = offset,
+				  setSelects = setSelects} :: ac
 		     in
 			makeWords (max, Words.+ (offset, Words.one), ac)
 		     end
 	    val (offset, components) =
 	       makeWords (Bits.toInt Bits.inWord - 1, offset, components)
-	    (* Add the pointers at the end. *)
 	    val (_, components) =
 	       simple (!pointers, Words.inPointer, offset, components)
 	    val components = Vector.fromListRev components
+	    val padToPrim = isVector andalso 1 = Vector.length components
+	    val () =
+	       Vector.foreach
+	       (components, fn {setSelects, ...} => setSelects padToPrim)
 	    fun getSelects s =
 	       Selects.T (Vector.tabulate
 			  (Array.length selects, fn i =>
@@ -977,11 +1100,19 @@ structure TupleRep =
 	       let
 		  val components =
 		     Vector.map
-		     (components, fn {component = c, offset} =>
-		      {component = Component.maybePadToWidth (c, Bits.inWord),
-		       offset = offset})
+		     (components, fn {component = c, offset, ...} =>
+		      let
+			 val c =
+			    if padToPrim
+			       then Component.padToPrim c
+			    else Component.maybePadToWidth (c, Bits.inWord)
+		      in
+			 {component = c,
+			  offset = offset}
+		      end)
 	       in
 		  Indirect (PointerRep.make {components = components,
+					     isVector = isVector,
 					     selects = getSelects #2,
 					     tycon = pointerTycon})
 	       end
@@ -1001,11 +1132,14 @@ structure TupleRep =
 	 Trace.trace3
 	 ("TupleRep.make",
 	  PointerTycon.layout,
-	  fn {forceBox} => Layout.record [("forceBox", Bool.layout forceBox)],
 	  Vector.layout (fn {isMutable, rep, ty} =>
 			 Layout.record [("isMutable", Bool.layout isMutable),
 					("rep", Rep.layout rep),
 					("ty", S.Type.layout ty)]),
+	  fn {forceBox, isVector} =>
+	  Layout.record [("forceBox", Bool.layout forceBox),
+			 ("isVector", Bool.layout isVector)],
+
 	  layout)
 	 make
    end
@@ -1499,7 +1633,9 @@ structure TyconRep =
 	       let
 		  val {args, con, pointerTycon} = Vector.sub (variants, 0)
 		  val tupleRep =
-		     TupleRep.make (pointerTycon, {forceBox = false}, args)
+		     TupleRep.make (pointerTycon, args,
+				    {forceBox = false,
+				     isVector = false})
 		  val conRep = ConRep.Tuple tupleRep
 	       in
 		  (One {con = con, tupleRep = tupleRep},
@@ -1524,7 +1660,9 @@ structure TyconRep =
 	       (variants, fn {args, con, pointerTycon} =>
 		let
 		   val tr =
-		      TupleRep.make (pointerTycon, {forceBox = false}, args)
+		      TupleRep.make (pointerTycon, args,
+				     {forceBox = false,
+				      isVector = false})
 		   fun makeBig () =
 		      List.push (big,
 				 {con = con,
@@ -2183,12 +2321,13 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				 Vector.map (Prod.dest args, typeRep o #elt)
 			      fun compute () =
 				 TupleRep.make
-				 (pt, {forceBox = false},
+				 (pt,
 				  Vector.map2 (rs, Prod.dest args,
 					       fn (r, {elt, isMutable}) =>
 					       {isMutable = isMutable,
 						rep = Value.get r,
-						ty = elt}))
+						ty = elt}),
+				  {forceBox = false, isVector = false})
 			      val tr =
 				 Value.new {compute = compute,
 					    equals = TupleRep.equals,
@@ -2224,12 +2363,14 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 					let
 					   val tr =
 					      TupleRep.make
-					      (pt, {forceBox = true},
+					      (pt,
 					       Vector.map
 					       (args, fn {elt, isMutable} =>
 						{isMutable = isMutable,
 						 rep = Value.get (typeRep elt),
-						 ty = elt}))
+						 ty = elt}),
+					       {forceBox = true,
+						isVector = true})
 					   val () = setVectorRep (t, tr)
 					   val ty =
 					      case tr of
@@ -2346,11 +2487,13 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	      setVectorRep (S.Type.vector (Prod.make (Vector.new1
 						      {elt = elt,
 						       isMutable = isMutable})),
-			    TupleRep.make (pt, {forceBox = true},
+			    TupleRep.make (pt,
 					   Vector.new1
 					   {isMutable = isMutable,
 					    rep = Value.get (typeRep elt),
-					    ty = elt})))
+					    ty = elt},
+					   {forceBox = true,
+					    isVector = true})))
 	  end)
       val () =
 	 List.foreach (!delayedObjectTypes, fn f =>
@@ -2410,28 +2553,41 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	    case con of
 	       Con con =>
 		  (case conRep con of
-		      ConRep.ShiftAndTag {selects, ...} => selects
-		    | ConRep.Tuple tr => TupleRep.selects tr
+		      ConRep.ShiftAndTag {selects, ...} => (selects, NONE)
+		    | ConRep.Tuple tr => (TupleRep.selects tr, NONE)
 		    | _ => Error.bug "can't get con selects")
-	     | Tuple => TupleRep.selects (tupleRep objectTy)
-	     | Vector => TupleRep.selects (vectorRep objectTy)
+	     | Tuple => (TupleRep.selects (tupleRep objectTy), NONE)
+	     | Vector =>
+		  case vectorRep objectTy of
+		     tr as TupleRep.Indirect pr =>
+			(TupleRep.selects tr,
+			 SOME (Type.bytes (PointerRep.componentsTy pr)))
+		   | _ => Error.bug "Vector not Indirect"
 	 end
       fun select {base, baseTy, dst, offset} =
 	 case S.Type.dest baseTy of
 	    S.Type.Object {args, con} =>
-	       Selects.select
-	       (getSelects (con, baseTy),
-		{base = base,
-		 dst = dst,
-		 offset = offset})
+	       let
+		  val (ss, eltWidth) = getSelects (con, baseTy)
+	       in
+		  Selects.select
+		  (ss, {base = base,
+			eltWidth = eltWidth,
+			dst = dst,
+			offset = offset})
+	       end
 	  | _ => Error.bug "select of non object"
       fun update {base, baseTy, offset, value} =
 	 case S.Type.dest baseTy of
 	    S.Type.Object {args, con} =>
-	       Selects.update (getSelects (con, baseTy),
-			       {base = base,
-				offset = offset,
-				value = value})
+	       let
+		  val (ss, eltWidth) = getSelects (con, baseTy)
+	       in
+		  Selects.update (ss, {base = base,
+				       eltWidth = eltWidth,
+				       offset = offset,
+				       value = value})
+	       end
 	  | _ => Error.bug "update of non object"
    in
       {diagnostic = diagnostic,

@@ -1042,7 +1042,6 @@ static inline pointer foreachPointerInObject (GC_state s, pointer p,
 		} else {
 			uint numBytesPointers;
 			
-			fprintf (stderr, "funky array in foreachPointerInObject\n");
 			numBytesPointers = toBytes (numPointers);
 			/* For each array element. */
 			while (p < max) {
@@ -3243,8 +3242,6 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 	pointer res;
 
 	SPLIT_HEADER();
-	assert ((numPointers == 1 and numNonPointers == 0)
-			or (numPointers == 0 and numNonPointers > 0));
 	eltSize = numPointers * POINTER_SIZE + numNonPointers;
 	arraySize64 = 
 		w64align ((W64)eltSize * (W64)numElts + GC_ARRAY_HEADER_SIZE,
@@ -3257,7 +3254,7 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 		/* Create space for forwarding pointer. */
  		arraySize = GC_ARRAY_HEADER_SIZE + WORD_SIZE;
 	if (DEBUG_ARRAY)
-		fprintf (stderr, "array with %s elts of size %u and total size %s.  ensure %s bytes free.\n",
+		fprintf (stderr, "array with %s elts of size %u and total size %s.  Ensure %s bytes free.\n",
 			uintToCommaString (numElts), 
 			(uint)eltSize, 
 			uintToCommaString (arraySize),
@@ -3288,9 +3285,27 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 	*frontier++ = numElts;
 	*frontier++ = header;
 	res = (pointer)frontier;
-	if (1 == numPointers)
-		for ( ; frontier < last; frontier++)
-			*frontier = BOGUS_POINTER;
+	/* Initialize all pointers with BOGUS_POINTER. */
+	if (1 <= numPointers) {
+		pointer p;
+
+		if (0 == numNonPointers)
+			for (p = (Pointer)frontier; 
+				p < (Pointer)last; 
+				p += POINTER_SIZE)
+				*(Pointer*)p = (Pointer)BOGUS_POINTER;
+		else
+			for (p = (Pointer)frontier; p < (Pointer)last; ) {
+				pointer next;
+
+				p += numNonPointers;
+				next = p + numPointers * POINTER_SIZE;
+				while (p < next) {
+					*(Pointer*)p = (Pointer)BOGUS_POINTER;
+					p += POINTER_SIZE;
+				}	
+			}
+	}
 	GC_profileAllocInc (s, arraySize);
 	if (DEBUG_ARRAY) {
 		fprintf (stderr, "GC_arrayAllocate done.  res = 0x%x  frontier = 0x%x\n",
