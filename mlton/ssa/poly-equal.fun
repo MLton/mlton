@@ -151,7 +151,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 				   fn ((x, ty), (y, _), de) =>
 				   DirectExp.conjoin (de, equal (x, y, ty)))})}}
 			   end))}
-		     val (start, blocks) = DirectExp.toBlocks body
+		     val (start, blocks) = DirectExp.sendReturn body
 		     val blocks = Vector.fromList blocks
 		  in
 		     val _ = List.push
@@ -212,7 +212,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 				 ty = Type.bool})
 			    end))
 			end
-		     val (start, blocks) = DirectExp.toBlocks body
+		     val (start, blocks) = DirectExp.sendReturn body
 		     val blocks = Vector.fromList blocks
 		  in
 		     val _ = List.push
@@ -259,7 +259,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 					dlen, dv1, dv2),
 			        ty = Type.bool}))))
 			end
-		     val (start, blocks) = DirectExp.toBlocks body
+		     val (start, blocks) = DirectExp.sendReturn body
 		     val blocks = Vector.fromList blocks
 		  in
 		     val _ = List.push

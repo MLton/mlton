@@ -103,8 +103,6 @@ struct
 
   fun sendReturn (e: t): u = sendCont (e, Cont.return)
 
-  val toBlocks = sendReturn
-
 
   fun convertsGen (es: t vector, k: Var.t vector -> u): u =
      let
