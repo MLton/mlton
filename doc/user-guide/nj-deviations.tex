@@ -2,7 +2,8 @@
     {Deviations_SML_NJ_from.html}
 %
 This section lists some deviations of {\smlnj} from The Definition of
-Standard ML.  Some of these are documented in the 
+Standard ML (henceforth, the Definition).  Some of these are
+documented in the
 \htmladdnormallink
   {SML '97 Conversion Guide}
   {http://www.smlnj.org/doc/Conversion/index.html}.
@@ -75,7 +76,7 @@ signature SIG =
       sharing type t = u
    end
 \end{verbatim}
-These are disallowed by rule 78 of the definition.
+These are disallowed by rule 78 of the Definition.
 
 \item
 {\smlnj} allows {\tt and} in {\tt sharing} specs in signatures, as in
@@ -162,7 +163,7 @@ signature SIG =
 \item
 {\smlnj} disallows binding non-datatypes with datatype replication.
 For example, it rejects the following program that should be allowed
-according to The Definition.
+according to the Definition.
 \begin{verbatim}
 type ('a, 'b) t = 'a * 'b
 datatype u = datatype t
@@ -174,6 +175,22 @@ to be written in SML/NJ as follows.
 type ('a, 'b) t = 'a * 'b
 type ('a, 'b) u = ('a, 'b) t
 \end{verbatim}
+%
+\item
+{\smlnj} disallows sharing a structure with one of its substructures.
+For example, {\smlnj} disallows the following.
+\begin{verbatim}
+signature SIG =
+   sig
+      structure S:
+         sig
+            type t
+            structure T: sig type t end
+         end
+      sharing S = S.T
+   end
+\end{verbatim}
+This signature is allowed by the Definition.
 
 \end{itemize}
 
