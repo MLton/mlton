@@ -3031,8 +3031,6 @@ struct
 			          {entry, profileInfo, statements, transfer},
 			 liveInfo}
 	= let
-	    val _ = LivenessBlock.printBlock block
-
 	    val {pblock as {statements,transfer},changed}
 	      = List.foldr
 	        (statements,
