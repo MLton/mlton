@@ -9,13 +9,10 @@ signature ELABORATE_ENV_STRUCTS =
    sig
       structure Ast: AST
       structure CoreML: CORE_ML
-      structure Ctrls: ELABORATE_CONTROLS
       structure TypeEnv: TYPE_ENV
-      sharing Ast = Ctrls.Ast
       sharing Ast.Record = CoreML.Record
       sharing Ast.SortedRecord = CoreML.SortedRecord
       sharing Ast.Tyvar = CoreML.Tyvar
-      sharing CoreML = Ctrls.CoreML
       sharing CoreML.Atoms = TypeEnv.Atoms
       sharing CoreML.Type = TypeEnv.Type
    end

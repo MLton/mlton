@@ -21,13 +21,8 @@ structure ConstType =
 	  | Word => "Word"
    end
 
-structure Ctrls = ElaborateControls(structure Ast = Ast
-				    structure ConstType = ConstType
-				    structure CoreML = CoreML)
-
 structure Env = ElaborateEnv (structure Ast = Ast
 			      structure CoreML = CoreML
-			      structure Ctrls = Ctrls
 			      structure TypeEnv = TypeEnv)
 
 local
@@ -39,7 +34,6 @@ end
 structure ElaborateMLBs = ElaborateMLBs (structure Ast = Ast
 					 structure ConstType = ConstType
 					 structure CoreML = CoreML
-					 structure Ctrls = Ctrls
 					 structure Decs = Decs
 					 structure Env = Env)
 

@@ -1,6 +1,6 @@
 PATH = ../../../build/bin:$(shell echo $$PATH)
 
-mlton = mlton -allow-export true -allow-import true
+mlton = mlton -default-ann 'allowExport true, allowImport true'
 
 .PHONY: all
 all: import export

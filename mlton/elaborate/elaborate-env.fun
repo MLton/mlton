@@ -13,6 +13,13 @@ open S
 type int = Int.t
 
 local
+   open Control.Elaborate
+in
+   val warnMatch = fn () => current warnMatch
+   val warnUnused = fn () => current warnUnused
+end
+
+local
    open Ast
 in
    structure Basid = Basid
@@ -1656,7 +1663,7 @@ fun newCons (T {vals, ...}, v) =
 			val uses = NameSpace.newUses (vals, Class.Con,
 						      Ast.Vid.fromCon name)
 			val () = 
-			   if not (!Ctrls.warnUnused) orelse forceUsed
+			   if not (warnUnused ()) orelse forceUsed
 			      then Uses.forceUsed uses
 			      else ()
 		     in
@@ -1879,7 +1886,7 @@ val extend:
 	 let
 	    val u = NameSpace.newUses (ns, class range, domain)
 	    val () = 
-	       if not (!Ctrls.warnUnused) orelse forceUsed
+	       if not (warnUnused ()) orelse forceUsed
 		  then Uses.forceUsed u
 		  else ()
 	 in
@@ -2734,7 +2741,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 					      lay = fn _ => Layout.empty,
 					      pat = Pat.var (x, strType),
 					      patRegion = region}),
-				      warnMatch = !Ctrls.warnMatch})
+				      warnMatch = warnMatch ()})
 		      in
 			 Vid.Var x
 		      end

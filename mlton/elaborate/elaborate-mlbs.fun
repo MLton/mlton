@@ -11,6 +11,41 @@ struct
 open S
 
 local
+   open Control.Elaborate
+in
+   val withDef = withDef
+   fun withAnns (anns, f) =
+      let
+	 val restore = 
+	    List.fold
+	    (anns, fn () => (), fn ((ann,reg), restore) =>
+	     let
+		fun warn () =
+		   if !Control.warnAnn
+		      then let open Layout
+			   in
+			      Control.warning
+			      (reg,
+			       seq [str "unrecognized annotation: ",
+				    (seq o separate) (List.map (ann, str), " ")],
+			       empty)
+			   end
+		      else ()
+	     in
+		case withAnn ann of
+		   SOME restore' => restore o restore'
+		 | NONE => (warn (); restore)
+	     end)
+      in
+	 DynamicWind.wind (f, restore)
+      end
+
+   val allowPrim = fn () => current allowPrim
+   val deadCode = fn () => current deadCode
+   val forceUsed = fn () => current forceUsed
+end
+
+local
    open Ast
 in
    structure Basid = Basid
@@ -28,9 +63,9 @@ end
 structure ElaboratePrograms = ElaboratePrograms (structure Ast = Ast
 						 structure ConstType = ConstType
 						 structure CoreML = CoreML
-						 structure Ctrls = Ctrls
 						 structure Decs = Decs
 						 structure Env = Env)
+val lookupConstant = ElaboratePrograms.lookupConstant
 
 local
    open ElaboratePrograms
@@ -48,7 +83,7 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
       val emptySnapshot : (unit -> Env.Basis.t) -> Env.Basis.t = 
 	 Env.snapshot E
       val emptySnapshot = fn f =>
-	 emptySnapshot (fn () => Ctrls.withDefault f)
+	 emptySnapshot (fn () => withDef f)
 	 
       val primBasis =
 	 emptySnapshot
@@ -136,7 +171,7 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 	       (Vector.map (basids, fn basid => Env.lookupBasid (E, basid)),
 		fn bo => Option.app (bo, fn b => Env.openBasis (E, b)))
 	  | Basdec.Prog (_, prog) =>
-	       Buffer.add (decs, (elabProg prog, !Ctrls.deadCode))
+	       Buffer.add (decs, (elabProg prog, deadCode ()))
 	  | Basdec.MLB (_, fid, basdec) =>
 	       let
 		  val fid = valOf fid
@@ -157,7 +192,7 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 		  Env.openBasis (E, B)
 	       end
 	  | Basdec.Prim => 
-	       (if not (!Ctrls.allowPrim)
+	       (if not (allowPrim ())
 		   then let open Layout
 			in Control.error (Basdec.region basdec, str "_prim disallowed", empty)
 			end
@@ -165,16 +200,16 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 		; Env.openBasis (E, primBasis))
 	  | Basdec.Ann (anns, basdec) =>
 	       let
-		  val old = !Ctrls.forceUsed
+		  val old = forceUsed ()
 	       in
-		  Ctrls.withAnns 
+		  withAnns 
 		  (anns, fn () => 
 		   (elabBasdec basdec
-		    ; if !Ctrls.forceUsed <> old
+		    ; if forceUsed () <> old
 			 then Env.forceUsed E
 			 else ()))
 	       end) basdec
-      val _ = Ctrls.withDefault (fn () => elabBasdec mlb)
+      val _ = withDef (fn () => elabBasdec mlb)
    in
       (E, Buffer.toVector decs)
    end

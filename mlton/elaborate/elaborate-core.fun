@@ -11,6 +11,22 @@ struct
 open S
 
 local
+   open Control.Elaborate
+in
+   val allowConstant = fn () => current allowConstant
+   val allowExport = fn () => current allowExport
+   val allowImport = fn () => current allowImport
+   val allowPrim = fn () => current allowPrim
+   val allowOverload = fn () => current allowOverload
+   val allowRebindEquals = fn () => current allowRebindEquals
+   val sequenceUnit = fn () => current sequenceUnit
+   val warnMatch = fn () => current warnMatch
+   val warnUnused = fn () => current warnUnused
+end
+val lookupConstant : (string * ConstType.t -> CoreML.Const.t) ref = 
+   ref (fn _ => Error.bug "lookupConstant not set")
+
+local
    open Ast
 in
    structure Acon = Con
@@ -323,7 +339,7 @@ local
    val eq = Avar.fromSymbol (Symbol.equal, Region.bogus)
 in
    fun ensureNotEquals x =
-      if not (!Ctrls.allowRebindEquals) andalso Avar.equals (x, eq)
+      if not (allowRebindEquals ()) andalso Avar.equals (x, eq)
 	 then
 	    let
 	       open Layout
@@ -1502,7 +1518,7 @@ fun elaborateDec (d, {env = E, nest}) =
 					     Cexp.tuple
 					     (Vector.map2
 					      (xs, argTypes, Cexp.var)),
-					     warnMatch = !Ctrls.warnMatch}
+					     warnMatch = warnMatch ()}
 				      in
 					 Cexp.enterLeave (e, sourceInfo)
 				      end
@@ -1580,7 +1596,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		      Decs.empty
 		   end
 	      | Adec.Overload (p, x, tyvars, ty, xs) =>
-		   (if not (!Ctrls.allowOverload)
+		   (if not (allowOverload ())
 		       then let open Layout
 			    in Control.error (region, str "_overload disallowed", empty)
 			    end
@@ -1731,7 +1747,7 @@ fun elaborateDec (d, {env = E, nest}) =
 					     region = region,
 					     rules = rules,
 					     test = Cexp.var (arg, argType),
-					     warnMatch = !Ctrls.warnMatch},
+					     warnMatch = warnMatch ()},
 				 fn () => SourceInfo.function {name = nest,
 							       region = region})
 			     val lambda =
@@ -1810,7 +1826,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		      Decs.single (Cdec.Val {rvbs = rvbs,
 					     tyvars = bound,
 					     vbs = vbs,
-					     warnMatch = !Ctrls.warnMatch})
+					     warnMatch = warnMatch ()})
 		   end
 	  end) arg
       and elabExp (arg: Aexp.t * Nest.t * string option): Cexp.t =
@@ -1892,7 +1908,7 @@ fun elaborateDec (d, {env = E, nest}) =
 				  region = region,
 				  rules = rules,
 				  test = e,
-				  warnMatch = !Ctrls.warnMatch}
+				  warnMatch = warnMatch ()}
 		   end
 	      | Aexp.Const c =>
 		   elabConst
@@ -2118,7 +2134,7 @@ fun elaborateDec (d, {env = E, nest}) =
 						(Cpat.tuple
 						 (Vector.map (vars, Cpat.var)))},
 					       test = Cexp.var (arg, argType),
-					       warnMatch = !Ctrls.warnMatch}
+					       warnMatch = warnMatch ()}
 					   end
 			       in
 				  Cexp.make (Cexp.Lambda
@@ -2168,7 +2184,7 @@ fun elaborateDec (d, {env = E, nest}) =
 					     else
 						bug ()
 				  val finish =
-				     let val lookupConstant = !Ctrls.lookupConstant
+				     let val lookupConstant = !lookupConstant
 				     in fn () => lookupConstant (name, ct)
 				     end
 			       in
@@ -2179,17 +2195,17 @@ fun elaborateDec (d, {env = E, nest}) =
 		   in
 		      case kind of
 			 BuildConst => 
-			    (if not (!Ctrls.allowConstant)
+			    (if not (allowConstant ())
 				then disallowed "_build_const"
 				else ()
 			     ; lookConst name)
 		       | Const => 
-			    (if not (!Ctrls.allowConstant)
+			    (if not (allowConstant ())
 				then disallowed "_const"
 				else ()
 			     ; lookConst name)
 		       | Export attributes =>
-			    (if not (!Ctrls.allowExport)
+			    (if not (allowExport ())
 				then disallowed "_export"
 				else ()
 			     ; let
@@ -2221,7 +2237,7 @@ fun elaborateDec (d, {env = E, nest}) =
 				  wrap (e, Type.arrow (ty, Type.unit))
 			       end)
 		       | Import attributes =>
-			    (if not (!Ctrls.allowImport)
+			    (if not (allowImport ())
 				then disallowed "_import"
 				else ()
 			     ; eta (import {attributes = attributes,
@@ -2229,7 +2245,7 @@ fun elaborateDec (d, {env = E, nest}) =
 					    region = region,
 					    ty = expandedTy}))
 		       | Prim => 
-			    (if not (!Ctrls.allowPrim)
+			    (if not (allowPrim ())
 				then disallowed "_prim"
 				else ()
 			     ; eta (Prim.fromString name))
@@ -2268,7 +2284,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		       * unit.
 		       *)
 		      val _ =
-			 if not (!Ctrls.sequenceUnit)
+			 if not (sequenceUnit ())
 			    then ()
 			 else
 			    Vector.foreachi
@@ -2354,7 +2370,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		      val expr = elab expr
 		      (* Error if expr is not of type unit. *)
 		      val _ =
-			 if not (!Ctrls.sequenceUnit)
+			 if not (sequenceUnit ())
 			    then ()
 			 else
 			    unify (Cexp.ty expr, Type.unit, fn (l, _) =>
@@ -2376,7 +2392,7 @@ fun elaborateDec (d, {env = E, nest}) =
 			   region = region,
 			   rules = rules,
 			   test = Cexp.var (arg, argType),
-			   warnMatch = !Ctrls.warnMatch}
+			   warnMatch = warnMatch ()}
 	 in
 	   {arg = arg,
 	    argType = argType,

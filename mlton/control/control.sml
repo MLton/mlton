@@ -26,20 +26,6 @@ val align = control {name = "align",
 		     default = Align4,
 		     toString = Align.toString}
 
-val allowExportAnn = control {name = "allow _export (annotation)",
-			      default = true,
-			      toString = Bool.toString}
-val allowExportDef = control {name = "allow _export",
-			      default = false,
-			      toString = Bool.toString}
-val allowImportAnn = control {name = "allow _import (annotation)",
-			      default = true,
-			      toString = Bool.toString}
-val allowImportDef = control {name = "allow _import",
-			      default = false,
-			      toString = Bool.toString}
-
-
 val atMLtons = control {name = "atMLtons",
 			default = Vector.new0 (),
 			toString = fn v => Layout.toString (Vector.layout
@@ -97,10 +83,6 @@ val contifyIntoMain = control {name = "contifyIntoMain",
 			       default = false,
 			       toString = Bool.toString}
 
-val deadCodeAnn = control {name = "dead code (annotation)",
-			   default = true,
-			   toString = Bool.toString}
-   
 val debug = control {name = "debug",
 		     default = false,
 		     toString = Bool.toString}
@@ -126,6 +108,191 @@ val dropPasses =
 	    toString = List.toString
 	               (Layout.toString o
 			Regexp.Compiled.layout)}
+
+structure Elaborate =
+   struct
+      datatype 'a t = T of {cur: 'a ref,
+			    def: 'a ref,
+			    enabled: bool ref}
+      fun current (T {cur, ...}) = !cur
+      fun default (T {def, ...}) = def
+      fun enabled (T {enabled, ...}) = enabled
+
+      local
+	 fun make {name: string, 
+		   default: 'a, 
+		   toString: 'a -> string,
+		   expert: bool,
+		   options: string list -> 'b option,
+		   newCur: 'a * 'b -> 'a,
+		   newDef: 'a * 'b -> 'a,
+		   withDef: unit -> (unit -> unit),
+		   withAnn: string list -> (unit -> unit) option,
+		   setDef: string list -> bool,
+		   setAble: bool * string -> bool} =
+	    let
+	       val ctrl as T {cur, def, enabled} =
+		  T {cur = ref default,
+		     def = control {name = concat ["elaborate ",name,
+						   " (default)"],
+				    default = default,
+				    toString = toString},
+		     enabled = control {name = concat ["elaborate ",name,
+						       " (enabled)"],
+					default = true,
+					toString = Bool.toString}}
+	       val withDef : unit -> (unit -> unit) =
+		  fn () =>
+		  let
+		     val restore = withDef ()
+		     val old = !cur
+		  in
+		     cur := !def
+		     ; fn () => (cur := old
+				 ; restore ())
+		  end
+	       val withAnn : string list -> (unit -> unit) option = 
+		  fn ss' =>
+		  case ss' of
+		     s::ss => 
+			if String.equals(s, name)
+			   then 
+			      case options ss of
+				 SOME v => 
+				    if !enabled
+				       then let
+					       val old = !cur
+					       val new = newCur (old, v)
+					    in
+					       cur := new
+					       ; SOME (fn () => cur := old)
+					    end
+				       else SOME (fn () => ())
+			       | NONE => NONE
+			   else withAnn ss'
+		   | _ => NONE
+	       val setDef : string list -> bool =
+		  if expert
+		     then setDef
+		  else
+		  fn ss' =>
+		  case ss' of
+		     s::ss => if String.equals(s, name)
+				 then 
+				    case options ss of
+				       SOME v => 
+					  let
+					     val old = !def
+					     val new = newDef (old, v)
+					  in
+					     def := new
+					     ; true
+					  end
+				     | NONE => false
+				 else setDef ss'
+		   | _ => false
+	       val setAble : bool * string -> bool =
+		  if expert
+		     then setAble
+		  else
+		  fn (b, s) =>
+		  if String.equals(s, name)
+		     then (enabled := b; true)
+		     else setAble (b, s)
+	    in
+	       {ctrl = ctrl,
+		withDef = withDef,
+		withAnn = withAnn,
+		setDef = setDef,
+		setAble = setAble}
+	    end
+
+	 fun makeBool {name, default, expert,
+		       withDef: unit -> (unit -> unit),
+		       withAnn: string list -> (unit -> unit) option,
+		       setDef: string list -> bool,
+		       setAble: bool * string -> bool} =
+	    make {name = name,
+		  default = default, 
+		  toString = Bool.toString,
+		  expert = expert,
+		  options = fn ss => 
+		    case ss of 
+		       [s] => Bool.fromString s 
+		     | _ => NONE,
+		  newCur = fn (_,b) => b,
+		  newDef = fn (_,b) => b,
+		  withDef = withDef, withAnn = withAnn,
+		  setDef = setDef, setAble = setAble}
+      in
+	 val {withDef, withAnn, setDef, setAble} =
+	    {withDef = fn () => (fn () => ()),
+	     withAnn = fn _ => NONE,
+	     setDef = fn _ => false,
+	     setAble = fn _ => false}
+	 val {ctrl = allowConstant, withDef, withAnn, setDef, setAble} =
+	    makeBool {name = "allowConstant", default = false, expert = true,
+		      withDef = withDef, withAnn = withAnn,
+		      setDef = setDef, setAble = setAble}
+	 val {ctrl = allowExport, withDef, withAnn, setDef, setAble} =
+	    makeBool {name = "allowExport", default = false, expert = false,
+		      withDef = withDef, withAnn = withAnn,
+		      setDef = setDef, setAble = setAble}
+	 val {ctrl = allowImport, withDef, withAnn, setDef, setAble} =
+	    makeBool {name = "allowImport", default = false, expert = false,
+		      withDef = withDef, withAnn = withAnn,
+		      setDef = setDef, setAble = setAble}
+	 val {ctrl = allowPrim, withDef, withAnn, setDef, setAble} =
+	    makeBool {name = "allowPrim", default = false, expert = true,
+		      withDef = withDef, withAnn = withAnn,
+		      setDef = setDef, setAble = setAble}
+	 val {ctrl = allowOverload, withDef, withAnn, setDef, setAble} =
+	    makeBool {name = "allowOverload", default = false, expert = true,
+		      withDef = withDef, withAnn = withAnn,
+		      setDef = setDef, setAble = setAble}
+	 val {ctrl = allowRebindEquals, withDef, withAnn, setDef, setAble} =
+	    makeBool {name = "allowRebindEquals", default = false, expert = true,
+		      withDef = withDef, withAnn = withAnn,
+		      setDef = setDef, setAble = setAble}
+	 val {ctrl = deadCode, withDef, withAnn, setDef, setAble} =
+	    makeBool {name = "deadCode", default = false, expert = false,
+		      withDef = withDef, withAnn = withAnn,
+		      setDef = setDef, setAble = setAble}
+	 val {ctrl = forceUsed, withDef, withAnn, setDef, setAble} =
+	    make {name = "forceUsed",
+		  default = 0, 
+		  toString = Int.toString,
+		  expert = true,
+		  options = fn ss => 
+		    case ss of 
+		       [] => SOME ()
+		     | _ => NONE,
+		  newCur = fn (i,()) => i + 1,
+		  newDef = fn (_,()) => 0,
+		  withDef = withDef, withAnn = withAnn,
+		  setDef = setDef, setAble = setAble}
+	 val {ctrl = sequenceUnit, withDef, withAnn, setDef, setAble} =
+	    makeBool {name = "sequenceUnit", default = false, expert = false,
+		      withDef = withDef, withAnn = withAnn,
+		      setDef = setDef, setAble = setAble}
+	 val {ctrl = warnMatch, withDef, withAnn, setDef, setAble} =
+	    makeBool {name = "warnMatch", default = true, expert = false,
+		      withDef = withDef, withAnn = withAnn,
+		      setDef = setDef, setAble = setAble}
+	 val {ctrl = warnUnused, withDef, withAnn, setDef, setAble} =
+	    makeBool {name = "warnUnused", default = false, expert = false,
+		      withDef = withDef, withAnn = withAnn,
+		      setDef = setDef, setAble = setAble}
+      end
+
+      val withDef : (unit -> 'a) -> 'a = fn f =>
+	 let val restore = withDef ()
+	 in DynamicWind.wind (f, restore)
+	 end
+      val withAnn = withAnn
+      val setDef = setDef
+      val setAble = setAble
+   end
 
 val elaborateOnly =
    control {name = "elaborate only",
@@ -447,13 +614,6 @@ val safe = control {name = "safe",
 		    default = true,
 		    toString = Bool.toString}
 
-val sequenceUnitAnn = control {name = "sequence unit (annotation)",
-			       default = true,
-			       toString = Bool.toString}
-val sequenceUnitDef = control {name = "sequence unit (default)",
-			       default = false,
-			       toString = Bool.toString}
-
 val showBasis = control {name = "show basis",
 			 default = NONE,
 			 toString = Option.toString File.toString}
@@ -584,23 +744,9 @@ val verbosity = control {name = "verbosity",
 
 val version = "MLton MLTONVERSION"
 
-val warnAnn = control {name = "warn annotation",
+val warnAnn = control {name = "warn unrecognized annotation",
 		       default = true,
 		       toString = Bool.toString}
-
-val warnMatchAnn = control {name = "warn match (annotation)",
-			    default = true,
-			    toString = Bool.toString}
-val warnMatchDef = control {name = "warn match (default)",
-			    default = true,
-			    toString = Bool.toString}
-
-val warnUnusedAnn = control {name = "warn unused (annotation)",
-			     default = true,
-			     toString = Bool.toString}
-val warnUnusedDef = control {name = "warn unused (default)",
-			     default = false,
-			     toString = Bool.toString}
 
 val xmlPassesSet: (string -> string list Result.t) ref = 
    control {name = "xmlPassesSet",

@@ -21,11 +21,6 @@ signature CONTROL =
       datatype align = Align4 | Align8
       val align: align ref
 
-      val allowExportAnn : bool ref
-      val allowExportDef : bool ref
-      val allowImportAnn : bool ref
-      val allowImportDef : bool ref
-
       val atMLtons: string vector ref
 
       val basisLibs: string list
@@ -52,8 +47,6 @@ signature CONTROL =
 
       val contifyIntoMain: bool ref
 
-      val deadCodeAnn: bool ref
-	 
       (* Generate an executable with debugging info. *)
       val debug: bool ref
 
@@ -67,6 +60,33 @@ signature CONTROL =
 
       (* List of optimization passes to skip. *)
       val dropPasses: Regexp.Compiled.t list ref
+
+      structure Elaborate :
+	 sig
+	    type 'a t
+
+	    val allowConstant: bool t
+	    val allowExport: bool t
+	    val allowImport: bool t
+	    val allowOverload: bool t
+	    val allowPrim: bool t
+	    val allowRebindEquals: bool t
+	    val deadCode: bool t
+	    val forceUsed: int t
+	    (* in (e1; e2), require e1: unit. *)
+	    val sequenceUnit: bool t
+	    val warnMatch: bool t
+	    val warnUnused: bool t
+
+	    val current: 'a t -> 'a
+	    val default: 'a t -> 'a ref
+	    val enabled: 'a t -> bool ref
+
+	    val withDef: (unit -> 'a) -> 'a
+	    val withAnn: string list -> (unit -> unit) option
+	    val setDef: string list -> bool
+	    val setAble: bool * string -> bool
+	 end
 
       (* stop after elaboration.  So, no need for the elaborator to generate
        * valid CoreML.
@@ -234,10 +254,6 @@ signature CONTROL =
       (* Array bounds checking. *)
       val safe: bool ref
 
-      (* in (e1; e2), require e1: unit. *)
-      val sequenceUnitAnn: bool ref
-      val sequenceUnitDef: bool ref
-
       (* Show the basis library. *)
       val showBasis: File.t option ref
 	 
@@ -296,12 +312,6 @@ signature CONTROL =
       val version: string
 
       val warnAnn: bool ref
-
-      val warnMatchAnn: bool ref
-      val warnMatchDef: bool ref
-
-      val warnUnusedAnn: bool ref
-      val warnUnusedDef: bool ref
 
       (* XML Passes *)
       val xmlPassesSet: (string -> string list Result.t) ref

@@ -127,10 +127,14 @@ fun makeOptions {usage} =
 						 s]))))),
        (Expert, "allow-export", " {false|true}",
 	"allow _export expression in program",
-	boolRef allowExportDef),
+	Bool (fn b =>
+	      (warnDeprecated "allow-export"
+	       ; (Control.Elaborate.default Control.Elaborate.allowExport) := b))),
        (Expert, "allow-import", " {false|true}",
 	"allow _import expression in program",
-	boolRef allowImportDef),
+	Bool (fn b =>
+	      (warnDeprecated "allow-import"
+	       ; (Control.Elaborate.default Control.Elaborate.allowImport) := b))),
        (Expert, "basis", " {2002|1997|...}",
 	"select Basis Library revision to prefix to the program",
 	SpaceString (fn s =>
@@ -171,9 +175,17 @@ fun makeOptions {usage} =
 	"annotated dead code elimination",
 	Bool (fn b =>
 	      (warnDeprecated "dead-code"
-	       ; deadCodeAnn := b))),
+	       ; (Control.Elaborate.enabled Control.Elaborate.deadCode) := b))),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
 	boolRef debug),
+       (Expert, "default-ann", " <ann>", "annotation default",
+	SpaceString 
+	(fn s =>
+	 List.foreach
+	 (String.tokens (s, fn #"," => true | _ => false), fn s =>
+	  if Control.Elaborate.setDef (String.tokens (s, fn #" " => true | _ => false))
+	     then ()
+	     else usage (concat ["invalid -default-ann flag: ", s])))),
        (Normal, "detect-overflow", " {true|false}",
 	"overflow checking on integer arithmetic",
 	boolRef detectOverflow),
@@ -190,14 +202,12 @@ fun makeOptions {usage} =
        (Expert, "disable-ann", " <ann>", "globally disable annotation",
 	SpaceString 
 	(fn s =>
-	 (case s of
-	     "allowExport" => allowExportAnn := false
-	   | "allowImport" => allowImportAnn := false
-	   | "deadCode" => deadCodeAnn := false
-	   | "sequenceUnit" => sequenceUnitAnn := false
-	   | "warnMatch" => warnMatchAnn := false
-	   | "warnUnused" => warnUnusedAnn := false
-	   | _ => usage (concat ["invalid -disable-ann flag: ", s])))),
+	 List.foreach
+	 (String.tokens (s, fn #"," => true | _ => false), fn s =>
+	  if Control.Elaborate.setAble 
+	     (false, String.deleteSurroundingWhitespace s)
+	     then ()
+	     else usage (concat ["invalid -disable-ann flag: ", s])))),
        (Expert, "drop-pass", " <pass>", "omit optimization pass",
 	SpaceString
 	(fn s => (case Regexp.fromString s of
@@ -211,14 +221,12 @@ fun makeOptions {usage} =
        (Expert, "enable-ann", " <ann>", "globally enable annotation",
 	SpaceString 
 	(fn s =>
-	 (case s of
-	     "allowExport" => allowExportAnn := true
-	   | "allowImport" => allowImportAnn := true
-	   | "deadCode" => deadCodeAnn := true
-	   | "sequenceUnit" => sequenceUnitAnn := true
-	   | "warnMatch" => warnMatchAnn := true
-	   | "warnUnused" => warnUnusedAnn := true
-	   | _ => usage (concat ["invalid -enable-ann flag: ", s])))),
+	 List.foreach
+	 (String.tokens (s, fn #"," => true | _ => false), fn s =>
+	  if Control.Elaborate.setAble 
+	     (true, String.deleteSurroundingWhitespace s)
+	     then ()
+	     else usage (concat ["invalid -enable-ann flag: ", s])))),
        (Expert, "error-threshhold", " 20", "error threshhold",
 	intRef errorThreshhold),
        (Normal, "exn-history", " {false|true}", "enable Exn.history",
@@ -385,7 +393,9 @@ fun makeOptions {usage} =
 	boolRef safe),
        (Normal, "sequence-unit", " {false|true}",
 	"in (e1; e2), require e1: unit",
-	boolRef sequenceUnitDef),
+	Bool (fn b =>
+	      (warnDeprecated "sequence-unit"
+	       ; (Control.Elaborate.default Control.Elaborate.sequenceUnit) := b))),
        (Normal, "show-basis", " <file>", "write out the final basis environment",
 	SpaceString (fn s => showBasis := SOME s)),
        (Normal, "show-def-use", " <file>", "write def-use information",
@@ -461,10 +471,14 @@ fun makeOptions {usage} =
 	boolRef warnAnn),
        (Normal, "warn-match", " {true|false}",
 	"nonexhaustive and redundant match warnings",
-	boolRef warnMatchDef),
+	Bool (fn b =>
+	      (warnDeprecated "warn-match"
+	       ; (Control.Elaborate.default Control.Elaborate.warnMatch) := b))),
        (Normal, "warn-unused", " {false|true}",
 	"unused identifier warnings",
-	boolRef warnUnusedDef),
+	Bool (fn b =>
+	      (warnDeprecated "warn-unused"
+	       ; (Control.Elaborate.default Control.Elaborate.warnUnused) := b))),
        (Expert, "xml-passes", " <passes>", "xml optimization passes",
 	SpaceString
 	(fn s =>
@@ -590,11 +604,11 @@ fun commandLine (args: string list): unit =
 	 else ()
       val keepDefUse = 
 	 isSome (!showDefUse)
-	 orelse !warnUnusedAnn 
-	 orelse !warnUnusedDef
+	 orelse !(Control.Elaborate.enabled Control.Elaborate.warnUnused)
+	 orelse !(Control.Elaborate.default Control.Elaborate.warnUnused)
       val warnMatch =
-	 !warnMatchAnn 
-	 orelse !warnMatchDef
+	 !(Control.Elaborate.enabled Control.Elaborate.warnMatch)
+	 orelse !(Control.Elaborate.default Control.Elaborate.warnMatch)
       val _ = elaborateOnly := (stop = Place.TypeCheck
 				andalso not (warnMatch)
 				andalso not (keepDefUse))

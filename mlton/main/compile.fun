@@ -331,7 +331,7 @@ fun parseAndElaborateMLB (fs: input): Env.t * (Decs.t * bool) vector =
     style = Control.ML,
     thunk = fn () => 
     Ref.fluidLet
-    (Elaborate.Ctrls.lookupConstant, lookupConstant, fn () =>
+    (Elaborate.lookupConstant, lookupConstant, fn () =>
      elaborateMLB (lexAndParseMLB fs, {addPrim = addPrim})),
     display = displayEnvDecs}
    

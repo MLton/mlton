@@ -27,8 +27,6 @@ type-env.sig
 type-env.fun
 interface.sig
 interface.fun
-elaborate-controls.sig
-elaborate-controls.fun
 elaborate-env.sig
 elaborate-env.fun
 precedence-parse.sig

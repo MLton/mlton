@@ -1,6 +1,6 @@
 PATH = ../../../build/bin:$(shell echo $$PATH)
 
-mlton = mlton -allow-import true
+mlton = mlton -default-ann 'allowImport true'
 
 all:
 	$(mlton) finalizable.sml cons.c
