@@ -112,7 +112,7 @@ fun newNode (T {nodes, ...}) =
       ; n
    end
 
-fun addEdge (_, e as {from as Node.Node {successors, ...}, to}) =
+fun addEdge (_, e as {from = Node.Node {successors, ...}, to}) =
    let val e = Edge.new e
    in List.push (successors, e)
       ; e
