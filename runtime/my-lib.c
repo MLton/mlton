@@ -83,7 +83,7 @@ void sfread(void *ptr, size_t size, size_t nmemb, FILE *file) {
 	bytes = size * nmemb;
 	if (0 == bytes) return;
 	unless (1 == fread(ptr, bytes, 1, file))
-		diee("sread failed");
+		diee("sfread failed");
 }
 
 uint sfreadUint(FILE *file) {
