@@ -16,6 +16,7 @@ val debug = false
 val sourcesIndexGC: int = 1
 
 val gray: bool ref = ref false
+val ignore: Regexp.t ref = ref Regexp.none
 val mlmonFiles: string list ref = ref []
 val raw = ref false
 val showLine = ref false
@@ -70,15 +71,15 @@ structure AFile =
       datatype t = T of {callGraph: Graph.t,
 			 magic: word,
 			 name: string,
-			 nodeIndex: Node.t -> int,
 			 sources: {node: Node.t,
-				   source: Source.t} vector}
+				   source: Source.t} option vector}
 
       fun layout (T {magic, name, sources, ...}) =
 	 Layout.record
 	 [("name", String.layout name),
 	  ("magic", Word.layout magic),
-	  ("sources", Vector.layout (Source.layout o #source) sources)]
+	  ("sources",
+	   Vector.layout (Option.layout (Source.layout o #source)) sources)]
 
       fun new {afile: File.t}: t =
 	 if not (File.doesExist afile)
@@ -135,11 +136,28 @@ structure AFile =
 		   case line () of
 		      "" => ()
 		    | _ => Error.bug "expected end of file"
+		val rc = Regexp.compileNFA (!ignore)
+		val {get = shouldIgnore: Node.t -> bool, ...} =
+		   Property.get
+		   (Node.plist,
+		    Property.initFun
+		    (fn n =>
+		     Regexp.Compiled.matchesAll
+		     (rc,
+		      Source.toString
+		      (#source (Vector.sub (sources, nodeIndex n))))))
+		val (graph, {newNode, ...}) =
+		   Graph.ignoreNodes (graph, shouldIgnore)
+		val sources =
+		   Vector.map (sources, fn {node, source} =>
+			       if shouldIgnore node
+				  then NONE
+			       else SOME {node = newNode node,
+					  source = source})
 	     in
 		T {callGraph = graph,
 		   magic = magic,
 		   name = afile,
-		   nodeIndex = nodeIndex,
 		   sources = sources}
 	     end)
    end
@@ -222,7 +240,7 @@ structure ProfFile =
 			 total: IntInf.t,
 			 totalGC: IntInf.t}
 
-      fun empty (AFile.T {magic, sources, ...}) =
+      fun empty (AFile.T {magic, ...}) =
 	 T {counts = Counts.Empty,
 	    kind = Kind.Empty,
 	    magic = magic,
@@ -585,48 +603,53 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
 	 (v, fn (i, x) =>
 	  let
 	     val {per, perGC, perStack, row, sortPer} = f x
-	     val showInTable =
-		per > 0.0
-		andalso (per >= thresh
-			 orelse (not profileStack andalso i = sourcesIndexGC))
-	     val {node, source, ...} = Vector.sub (sources, i)
-	     val {mayKeep, options, ...} = nodeInfo node
-	     val _ =
-		mayKeep :=
-		(fn a =>
-		 let
-		    datatype z = datatype Atomic.t
-		 in
-		    case a of
-		       Name (_, rc) =>
-			  (case (Regexp.Compiled.findShort
-				 (rc, Source.toString source, 0)) of
-			      NONE => false
-			    | SOME _ => true)
-		     | Thresh x => per >= x
-		     | ThreshGC x => perGC >= x
-		     | ThreshStack x => perStack >= x
-		 end)
-	     val _ = 
-		options :=
-		List.append
-		([Dot.NodeOption.Label
-		  (Source.toDotLabel source
-		   @ (if per > 0.0
-			 then [(concat (List.separate (row, " ")),
-				Dot.Center)]
-		      else [])),
-		  Dot.NodeOption.Shape Dot.Box,
-		  if !gray
-		     then
-			Dot.NodeOption.Color (DotColor.gray
-					      (100 - (Real.round perStack)))
-		  else Dot.NodeOption.Color DotColor.Black],
-		 !options)
 	  in
-	     {sortPer = sortPer,
-	      row = Source.toString source :: row,
-	      showInTable = showInTable}
+	     case Vector.sub (sources, i) of
+		NONE => NONE
+	      | SOME {node, source, ...} =>
+		   let
+		      val {mayKeep, options, ...} = nodeInfo node
+		      val _ =
+			 mayKeep :=
+			 (fn a =>
+			  let
+			     datatype z = datatype Atomic.t
+			  in
+			     case a of
+				Name (_, rc) =>
+				   Regexp.Compiled.matchesAll
+				   (rc, Source.toString source)
+			      | Thresh x => per >= x
+			      | ThreshGC x => perGC >= x
+			      | ThreshStack x => perStack >= x
+			  end)
+		      val _ = 
+			 options :=
+			 List.append
+			 ([Dot.NodeOption.Label
+			   (Source.toDotLabel source
+			    @ (if per > 0.0
+				  then [(concat (List.separate (row, " ")),
+					 Dot.Center)]
+			       else [])),
+			   Dot.NodeOption.Shape Dot.Box,
+			   if !gray
+			      then
+				 Dot.NodeOption.Color (DotColor.gray
+						       (100 - (Real.round perStack)))
+			   else Dot.NodeOption.Color DotColor.Black],
+			  !options)
+		      val showInTable =
+			 per > 0.0
+			 andalso (per >= thresh
+				  orelse (not profileStack
+					  andalso i = sourcesIndexGC))
+		   in
+		      if showInTable
+			 then SOME {sortPer = sortPer,
+				    row = Source.toString source :: row}
+		      else NONE
+		   end
 	  end)
       val counts =
 	 case counts of
@@ -705,7 +728,7 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
       (* Display the table. *)
       val tableRows =
 	 QuickSort.sortVector
-	 (Vector.keepAll (counts, #showInTable),
+	 (Vector.keepAllMap (counts, fn z => z),
 	  fn (z, z') => #sortPer z >= #sortPer z')
       val _ = 
 	 print
@@ -766,6 +789,11 @@ fun makeOptions {usage} =
 	 SpaceString (fn s => title := SOME s)),
 	(Normal, "gray", " {false|true}", "gray nodes according to stack %",
 	 boolRef gray),
+	(Normal, "ignore", " <regexp>", "ignore matching functions",
+	 SpaceString (fn s =>
+		      case Regexp.fromString s of
+			 NONE => usage (concat ["invalid -ignore regexp: ", s])
+		       | SOME (r, _) => ignore := Regexp.or [r, !ignore])),
 	(Normal, "mlmon", " <file>", "proces mlmon files listed in <file>",
 	 SpaceString (fn s =>
 		      mlmonFiles :=

@@ -2,7 +2,7 @@
 .SH NAME
 \fBmlprof\fP \- display profiling information from MLton-compiled executable
 .SH SYNOPSIS
-\fBmlprof \fI[option ...] a.out mlmon.out [mlmon.out ...]\fR
+\fBmlprof \fI[option ...] a.out [mlmon.out ...]\fR
 .SH DESCRIPTION
 .PP
 \fBmlprof\fP extracts information from an executable compiled by
@@ -18,8 +18,8 @@ used, in decreasing order.  If the program was compiled with
 bytes allocated while the function was on the stack and in GC in
 addition to the time or bytes that the function is responsible for.
 
-\fBmlprof\fP writes a call graph containing the table data to a file
-with the executable name and suffix \fB.dot\fP.
+\fBmlprof\fP also writes a call graph containing the table data to a
+file with the executable name and suffix \fB.dot\fP.
 
 With multiple \fBmlmon.out\fP files, \fBmlprof\fP will sum the
 profiling information.
@@ -30,15 +30,22 @@ profiling information.
 Show nodes in the call graph specified by \fBexp\fP.  For details on
 the allowed expressions, see the \fBMLton User Guide\fP.
 .TP
-\fB-graph-title \fI{\fBstring\fP}\fP
+\fB-graph-title \fIstring\fP
 Set the call-graph title.
 .TP
 \fB-gray \fI{\fBfalse\fP|\fBtrue\fP}\fP
-Gray nodes according to stack %.  This only makes sense if the
-executable was compiled \fB-profile-stack true\fP.
+Gray call-graph nodes according to stack %.  This only makes sense if
+the executable was compiled \fB-profile-stack true\fP.
 .TP
-\fB-mlmon \fI{\fBfile\fP}\fP
-Process the list of whitespace-separated mlmon.out files found in the
+\fB-ignore \fIregexp\fP
+Ignore functions whose name matches \fBregexp\fP.  With \fB-show-line
+true\fP, the function name is followed by a space and the file
+position, so you may need to put \fB .*\fP at the end of the regexp.
+Multiple \fB-ignore\fPs are allowed, and will be or-ed together as
+regexps.
+.TP
+\fB-mlmon \fIfile\fP
+Process the list of whitespace-separated \fBmlmon.out\fP files found in the
 specified file.
 .TP
 \fB-raw \fI{\fBfalse\fP|\fBtrue\fP}\fP
@@ -47,11 +54,11 @@ Show the raw counts in addition to the percentages.
 \fB-show-line \fI{\fBfalse\fP|\fBtrue\fP}\fP
 Show the file and line for each function.
 .TP
-\fB-thresh \fI{\fBx\fP}\fP
+\fB-thresh \fIx\fP
 Only print information about functions whose percentage is above
 \fBx\fP, where 0 <= \fBx\fP <= 100.0.
 .TP
 \fB-tolerant \fI{\fBfalse\fP|\fBtrue\fP}\fP
-Ignore broken mlmon files.
+Print a warning about broken mlmon files, but do not exit.
 .SH "SEE ALSO"
 .BR mlton (1)
