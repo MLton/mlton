@@ -1264,26 +1264,40 @@ This module is a subset of the {\tt Unsafe} module provided by
 ML-Yacc includes references to unsafe subscript operations.
 
 \begin{verbatim}
+signature UNSAFE_MONO_ARRAY =
+   sig
+      type array
+      type elem
+
+      val create: int -> array
+      val sub: array * int -> elem
+      val update: array * int * elem -> unit
+   end
+
+signature UNSAFE_MONO_VECTOR =
+   sig
+      type elem
+      type vector
+
+      val sub: vector * int -> elem
+   end
+
 signature UNSAFE =
-  sig
-    structure Vector: UNSAFE_VECTOR
-    structure Array: UNSAFE_ARRAY
-
-    structure CharVector: UNSAFE_MONO_VECTOR
-      where type vector = CharVector.vector
-      where type elem = CharVector.elem
-    structure CharArray: UNSAFE_MONO_ARRAY
-      where type array = CharArray.array
-      where type elem = CharArray.elem
-
-    structure Word8Vector: UNSAFE_MONO_VECTOR
-      where type vector = Word8Vector.vector
-      where type elem = Word8Vector.elem
-    structure Word8Array: UNSAFE_MONO_ARRAY
-      where type array = Word8Array.array
-      where type elem = Word8Array.elem
-    structure Real64Array: UNSAFE_MONO_ARRAY
-      where type array = Real64Array.array
-      where type elem = Real64Array.elem
-  end
+   sig
+      structure Array:
+         sig
+            val create: int * 'a -> 'a array
+            val sub: 'a array * int -> 'a
+            val update: 'a array * int * 'a -> unit
+         end
+      structure CharArray: UNSAFE_MONO_ARRAY
+      structure CharVector: UNSAFE_MONO_VECTOR
+      structure Real64Array: UNSAFE_MONO_ARRAY
+      structure Vector:
+         sig
+            val sub: 'a vector * int -> 'a
+         end
+      structure Word8Array: UNSAFE_MONO_ARRAY
+      structure Word8Vector: UNSAFE_MONO_VECTOR
+   end
 \end{verbatim}
