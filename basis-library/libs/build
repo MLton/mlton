@@ -71,7 +71,7 @@ real/math.sig
 real/real.sig
 real/real.fun
 integer/pack-word.sig
-integer/pack32.sml
+integer/pack-word32.sml
 text/byte.sig
 text/byte.sml
 text/text.sig

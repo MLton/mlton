@@ -6,7 +6,7 @@ structure Real32 =
       IEEEReal.withRoundingMode (m, fn () => P.fromLarge r)
 
    val realToWord: real -> word =
-      fn r => Pack32Little.subVec (PackReal32Little.toBytes r, 0)
+      fn r => PackWord32Little.subVec (PackReal32Little.toBytes r, 0)
 	 
    val wordToReal: word -> real =
       let
@@ -14,7 +14,7 @@ structure Real32 =
       in
 	 fn w =>
 	 let
-	    val _ = Pack32Little.update (a, 0, w)
+	    val _ = PackWord32Little.update (a, 0, w)
 	 in
 	    PackReal32Little.subArr (a, 0)
 	 end

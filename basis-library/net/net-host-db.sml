@@ -5,7 +5,7 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
       (* network byte order (MSB) *)
       type pre_in_addr = Prim.pre_in_addr
       type in_addr = Prim.in_addr
-      structure PW = Pack32Big
+      structure PW = PackWord32Big
       fun new_in_addr () =
 	let
 	  val ia = Word8Array.array (Prim.inAddrLen, 0wx0)

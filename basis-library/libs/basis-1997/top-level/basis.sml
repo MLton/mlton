@@ -74,6 +74,9 @@ structure Basis1997: BASIS_1997 =
       structure Word8Array = Word8VectorArray.Array
       structure Word8Array2 = Word8VectorArray.Array2
 
+      structure Pack32Big = PackWord32Big
+      structure Pack32Little = PackWord32Little
+
       structure Text = TextConvert(structure Text = Text)
       structure Char = Text.Char
       structure String = Text.String

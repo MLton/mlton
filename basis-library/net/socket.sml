@@ -77,7 +77,7 @@ structure Socket : SOCKET_EXTRA =
 	    (* host byte order (LSB) *)
 	    type read_data = Prim.Ctl.read_data
 	    type write_data = Prim.Ctl.write_data
-	    structure PW = Pack32Little
+	    structure PW = PackWord32Little
 
 	    fun ('a, 'af, 'sock_type)
 	        getSockOpt

@@ -6,9 +6,9 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
-functor Pack (S: sig
-		    val isBigEndian: bool
-		 end): PACK_WORD =
+functor PackWord32 (S: sig
+			  val isBigEndian: bool
+		       end): PACK_WORD =
 struct
 
 open S
@@ -61,7 +61,5 @@ fun update (a, i, w) =
 
 end
 
-structure Pack32Big = Pack (val isBigEndian = true
-			    open Primitive.Word8Array)
-structure Pack32Little = Pack (val isBigEndian = false
-			       open Primitive.Word8Array)
+structure PackWord32Big = PackWord32 (val isBigEndian = true)
+structure PackWord32Little = PackWord32 (val isBigEndian = false)
