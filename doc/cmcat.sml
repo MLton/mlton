@@ -111,7 +111,7 @@ structure Cmcat:
 	 SMLofNJ.exportFn
 	 ("cmcat", fn (_, args) =>
 	  let
-	     val defines = ref []
+	     val defines = ref ["MLton"]
 	     fun loop args = 
 		case args of
 		   [file] =>
