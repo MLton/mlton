@@ -50,4 +50,6 @@ val memoize: (t -> 'a) -> t -> 'a =
        | W64 => a64
    end
    
+val cardinality = memoize (fn s => IntInf.pow (2, size s))
+
 end

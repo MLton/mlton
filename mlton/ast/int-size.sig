@@ -12,6 +12,7 @@ signature INT_SIZE =
 
       val all: t list
       val bytes: t -> int
+      val cardinality: t -> IntInf.t
       val default: t
       val equals: t * t -> bool
       val isInRange: t * IntInf.t -> bool

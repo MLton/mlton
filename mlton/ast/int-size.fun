@@ -20,7 +20,7 @@ fun size s = 8 * bytes s
 val toString = Int.toString o size
 
 val layout = Layout.str o toString
-
+   
 val memoize: (t -> 'a) -> t -> 'a =
    fn f =>
    let
@@ -34,6 +34,8 @@ val memoize: (t -> 'a) -> t -> 'a =
        | I32 => a32
        | I64 => a64
    end
+
+val cardinality = memoize (fn s => IntInf.pow (2, size s))
 
 val range =
    memoize

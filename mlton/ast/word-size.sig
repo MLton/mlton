@@ -14,6 +14,7 @@ signature WORD_SIZE =
       val all: t list
       val allOnes: t -> LargeWord.t
       val bytes: t -> int
+      val cardinality: t -> IntInf.t
       val default: t
       val equals: t * t -> bool
       val max: t -> LargeWord.t
