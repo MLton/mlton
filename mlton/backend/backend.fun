@@ -35,6 +35,7 @@ end
 structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
 						 structure Rssa = Rssa)
 structure Chunkify = Chunkify (Rssa)
+structure LimitCheck = LimitCheck (structure Rssa = Rssa)
 structure ParallelMove = ParallelMove ()
 structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
 				 structure Ssa = Ssa)
@@ -77,30 +78,19 @@ structure IntSet = UniqueSet (val cacheSize: int = 1
 
 structure Chunk =
    struct
-      datatype t = T of {chunkLabel: M.ChunkLabel.t,
-			 (* where to start *)
-			 entries: Label.t list ref,
-			 gcReturns: Label.t list ref,
-			 blocks: M.Block.t list ref,
+      datatype t = T of {blocks: M.Block.t list ref,
+			 chunkLabel: M.ChunkLabel.t,
 			 (* for each type, gives the max # registers used *)
 			 regMax: Type.t -> int ref}
 
-      fun addEntry (T {entries, ...}, l) = List.push (entries, l)
-
-      fun numRegsOfType (T {regMax, ...}, ty: Type.t): int = !(regMax ty)
-	 
-      fun numPointers (c) = numRegsOfType (c, Type.pointer)
-      
       fun label (T {chunkLabel, ...}) = chunkLabel
 	 
       fun equals (T {blocks = r, ...}, T {blocks = r', ...}) = r = r'
 	 
       fun new (): t =
-	 T {chunkLabel = M.ChunkLabel.new (),
-	    entries = ref [],
-	    blocks = ref [],
-	    regMax = Type.memo (fn _ => ref 0),
-	    gcReturns = ref []}
+	 T {blocks = ref [],
+	    chunkLabel = M.ChunkLabel.new (),
+	    regMax = Type.memo (fn _ => ref 0)}
 	 
       fun register (T {regMax, ...}, n, ty) =
 	 let
@@ -119,10 +109,21 @@ structure Chunk =
 
 fun toMachine (program: Ssa.Program.t) =
    let
-      val program = SsaToRssa.convert program
-      val _ = R.Program.typeCheck program
-      (* NEED TO INSERT LIMIT CHECKS*)
-      val program as R.Program.T {functions, main, ...} = program
+      val program =
+	 Control.passTypeCheck {name = "ssaToRssa",
+				suffix = "rssa",
+				style = Control.No,
+				thunk = fn () => SsaToRssa.convert program,
+				display = Control.Layouts Rssa.Program.layouts,
+				typeCheck = R.Program.typeCheck}
+      val program = 
+	 Control.passTypeCheck {name = "insertLimitChecks",
+				suffix = "rssa",
+				style = Control.No,
+				thunk = fn () => LimitCheck.insert program,
+				display = Control.Layouts Rssa.Program.layouts,
+				typeCheck = R.Program.typeCheck}
+      val R.Program.T {functions, main, ...} = program
       (* Chunk information *)
       val {get = labelChunk, set = setLabelChunk, ...} =
 	 Property.getSetOnce (Label.plist,
@@ -168,45 +169,32 @@ fun toMachine (program: Ssa.Program.t) =
 				 " bytes."]))
 	       else ()
 	    val offsets =
-	       Vector.fold
-	       (live, [], fn (oper, liveOffsets) =>
-		case oper of
-		   M.Operand.StackOffset {offset, ty} =>
-		      (case Type.dest ty
-			  of Type.Pointer => offset::liveOffsets
-			| _ => liveOffsets)
-		 | _ => liveOffsets)
+	       Vector.fold (live, [], fn (oper, ac) =>
+			    case oper of
+			       M.Operand.StackOffset {offset, ty} =>
+				  (case Type.dest ty of
+				      Type.Pointer => offset :: ac
+				    | _ => ac)
+			     | _ => ac)
 	 in
 	    List.push (frames, {chunkLabel = chunkLabel,
 				offsets = offsets,
 				return = return,
 				size = size})
 	 end
+      val newFrame =
+	 Trace.trace ("Backend.newFrame", Label.layout o #return, Unit.layout)
+	 newFrame
       (* Set funcChunk and labelChunk. *)
       val _ =
 	 Vector.foreach
 	 (Chunkify.chunkify program, fn {funcs, labels} =>
 	  let 
 	     val c = newChunk ()
-	     val _ = Vector.foreach (funcs, fn f =>
-				     (Chunk.addEntry (c, funcToLabel f)
-				      ; setFuncChunk (f, c)))
+	     val _ = Vector.foreach (funcs, fn f => setFuncChunk (f, c))
 	     val _ = Vector.foreach (labels, fn l => setLabelChunk (l, c))
 	  in
 	     ()
-	  end)
-      (* Add chunk entries for all conts and handlers. *)
-      val _ =
-	 List.foreach
-	 (functions, fn f =>
-	  let
-	     val {blocks, ...} = R.Function.dest f
-	  in
-	     Vector.foreach
-	     (blocks, fn R.Block.T {kind, label, ...} =>
-	      if R.Kind.isOnStack kind
-		 then Chunk.addEntry (labelChunk label, label)
-	      else ())
 	  end)
       (* The global raise operands. *)
       local
@@ -353,10 +341,9 @@ fun toMachine (program: Ssa.Program.t) =
 	     | Move {dst, src} =>
 		  M.Statement.move {dst = translateOperand dst,
 				    src = translateOperand src}
-	     | Object {dst, numPointers, numWordsNonPointers, size, stores} =>
+	     | Object {dst, numPointers, numWordsNonPointers, stores} =>
 		  M.Statement.Object
 		  {dst = varOperand dst,
-		   size = size,
 		   numPointers = numPointers,
 		   numWordsNonPointers = numWordsNonPointers,
 		   stores = Vector.map (stores, fn {offset, value} =>
@@ -723,9 +710,17 @@ fun toMachine (program: Ssa.Program.t) =
 			   end
 		      | R.Kind.Jump => (M.Kind.Jump, Vector.new0 ())
 		      | R.Kind.Runtime {prim} =>
-			   (M.Kind.Runtime {frameInfo = M.FrameInfo.bogus,
-					    prim = prim},
-			    Vector.new0 ())
+			   let
+			      val _ =
+				 newFrame {chunkLabel = Chunk.label chunk,
+					   live = liveNoFormals,
+					   return = label,
+					   size = size}
+			   in
+			      (M.Kind.Runtime {frameInfo = M.FrameInfo.bogus,
+					       prim = prim},
+			       Vector.new0 ())
+			   end
 		  val statements = Vector.concat [pre, statements, preTransfer]
 	       in
 		  Chunk.newBlock (chunk,
@@ -742,6 +737,12 @@ fun toMachine (program: Ssa.Program.t) =
 	 in
 	    ()
 	 end
+      val genFunc =
+	 Trace.trace2 ("Backend.genFunc",
+		       Func.layout o Function.name,
+		       Bool.layout,
+		       Unit.layout)
+	 genFunc
       (* Generate the main function first.
        * Need to do this in order to set globals.
        *)
@@ -750,13 +751,11 @@ fun toMachine (program: Ssa.Program.t) =
 			 Func.equals (main, R.Function.name f)) of
 	    NONE => Error.bug "missing main function"
 	  | SOME f => genFunc (f, true)
-      val _ = List.foreach (functions, fn f => genFunc (f, false))
+      val _ = List.foreach (functions, fn f =>
+			    if Func.equals (main, R.Function.name f)
+			       then ()
+			    else genFunc (f, false))
       val chunks = !chunks
-      (* The clear is necessary because properties have been attached to Funcs
-       * and Labels, and they appear as labels in the resulting program
-       *)
-      val _ = List.foreach (chunks, fn Chunk.T {blocks, ...} =>
-			    List.foreach (!blocks, Label.clear o M.Block.label))
       val _ = IntSet.reset ()
       val c = Counter.new 0
       val frameOffsets = ref []
@@ -766,12 +765,17 @@ fun toMachine (program: Ssa.Program.t) =
 	  Property.initFun
 	  (fn offsets =>
 	   let val index = Counter.next c
-	   in List.push (frameOffsets, IntSet.toList offsets)
+	   in
+	      List.push (frameOffsets, IntSet.toList offsets)
 	      ; index
 	   end))
       val {get = frameInfo: Label.t -> M.FrameInfo.t, set = setFrameInfo, ...} = 
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("frameInfo", Label.layout))
+      val setFrameInfo =
+	 Trace.trace2 ("Backend.setFrameInfo",
+		       Label.layout, M.FrameInfo.layout, Unit.layout)
+	 setFrameInfo
       val _ =
 	 List.foreach
 	 (!frames, fn {return, size, offsets, ...} =>
@@ -803,23 +807,28 @@ fun toMachine (program: Ssa.Program.t) =
 		       statements = statements,
 		       transfer = transfer}
 	 end
-      fun chunkToMachine (Chunk.T
-			  {chunkLabel, entries, gcReturns, blocks, regMax, ...})
-	 =
+      fun chunkToMachine (Chunk.T {chunkLabel, blocks, regMax}) =
 	 Machine.Chunk.T {chunkLabel = chunkLabel,
 			  blocks = Vector.fromListMap (!blocks, blockToMachine),
 			  regMax = ! o regMax}
+      val main = {chunkLabel = Chunk.label (funcChunk main),
+		  label = funcToLabel main}
+      val chunks = List.revMap (chunks, chunkToMachine)
+      (* The clear is necessary because properties have been attached to Funcs
+       * and Labels, and they appear as labels in the resulting program.
+       *)
+      val _ = List.foreach (chunks, fn M.Chunk.T {blocks, ...} =>
+			    Vector.foreach (blocks, Label.clear o M.Block.label))
 
    in
       Machine.Program.T 
-      {chunks = List.revMap (chunks, chunkToMachine),
+      {chunks = chunks,
        floats = allFloats (),
        frameOffsets = frameOffsets, 
        globals = Counter.value o globalCounter,
        globalsNonRoot = Counter.value globalPointerNonRootCounter,
        intInfs = allIntInfs (), 
-       main = {chunkLabel = Chunk.label (funcChunk main),
-	       label = funcToLabel main},
+       main = main,
        maxFrameSize = Type.wordAlign (!maxStackOffset),
        strings = allStrings ()}
    end

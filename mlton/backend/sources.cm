@@ -2,6 +2,8 @@ Group
 
 signature MACHINE
 
+structure Runtime
+   
 functor Backend
 functor Machine
    
@@ -12,16 +14,19 @@ is
 ../control/sources.cm
 ../ssa/sources.cm
 
-allocate-registers.sig
 allocate-registers.fun
+allocate-registers.sig
 backend.fun
 backend.sig
 chunkify.fun
 chunkify.sig
 equivalence-graph.fun
 equivalence-graph.sig
+err.sml
 implement-handlers.fun
 implement-handlers.sig
+limit-check.fun
+limit-check.sig
 live.fun
 live.sig
 machine-cases.fun

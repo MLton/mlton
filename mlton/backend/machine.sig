@@ -92,7 +92,6 @@ signature MACHINE =
 	     | Object of {dst: Operand.t,
 			  numPointers: int,
 			  numWordsNonPointers: int,
-			  size: int, (* in bytes, not including header *)
 			  stores: {offset: int,
 				   value: Operand.t} vector}
 	     | PrimApp of {args: Operand.t vector,
@@ -181,6 +180,7 @@ signature MACHINE =
 		     size: int}
 
 	    val bogus: t
+	    val layout: t -> Layout.t
 	    val size: t -> int
 	 end
       
@@ -216,8 +216,8 @@ signature MACHINE =
 
       structure Chunk:
 	 sig
-	    datatype t = T of {chunkLabel: ChunkLabel.t,
-			       blocks: Block.t vector,
+	    datatype t = T of {blocks: Block.t vector,
+			       chunkLabel: ChunkLabel.t,
 			       (* for each type, gives the max # regs used *)
 			       regMax: Type.t -> int}
 	 end

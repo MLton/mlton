@@ -78,22 +78,19 @@ structure Statement =
 		   numBytesNonPointers: int,
 		   numElts: Var.t,
 		   numPointers: int}
-       | Move of {dst: Operand.t, (* If the dst is var, then it is the
-				   * SSA defining occurrence.
-				   *)
+       | Move of {dst: Operand.t,
 		  src: Operand.t}
        | Object of {dst: Var.t,
 		    numPointers: int,
 		    numWordsNonPointers: int,
-		    size: int,
-		    stores: {offset: int, (* bytes *)
+		    stores: {offset: int,
 			     value: Operand.t} vector}
        | PrimApp of {dst: (Var.t * Type.t) option,
 		     prim: Prim.t,
 		     args: Var.t vector}
        | SetExnStackLocal
        | SetExnStackSlot
-       | SetHandler of Label.t (* label must be of Handler kind. *)
+       | SetHandler of Label.t
        | SetSlotExnStack
 
       fun foldDef (s, a, f) =
@@ -243,7 +240,7 @@ structure Transfer =
 			       ("success", Label.layout success)]]
 	     | Bug => str "Bug"
 	     | CCall {args, prim, return, returnTy} =>
-		  seq [str "CCall",
+		  seq [str "CCall ",
 		       record [("args", Vector.layout Operand.layout args),
 			       ("prim", Prim.layout prim),
 			       ("return", Label.layout return),
@@ -280,9 +277,7 @@ structure Transfer =
 			       ("kind", LimitCheck.layout kind),
 			       ("success", Label.layout success)]]
 	     | Raise xs => seq [str "Raise", Vector.layout Operand.layout xs]
-	     | Return xs => 
-		  seq [str "Return ",
-		       seq [str "Raise", Vector.layout Operand.layout xs]]
+	     | Return xs => seq [str "Return ", Vector.layout Operand.layout xs]
 	     | Runtime {args, prim, return} =>
 		  seq [str "Runtime ",
 		       record [("args", Vector.layout Operand.layout args),
@@ -413,13 +408,13 @@ structure Block =
 	 let
 	    open Layout
 	 in
-	    align [seq [Label.layout label,
-			str " ", Kind.layout kind, str " ",
+	    align [seq [Label.layout label, str " ",
 			Vector.layout (fn (x, t) =>
 				       if !Control.showTypes
 					  then seq [Var.layout x, str ": ",
 						    Type.layout t]
-				       else Var.layout x) args],
+				       else Var.layout x) args,
+			str " ", Kind.layout kind, str " = "],
 		   indent (align
 			   [align
 			    (Vector.toListMap (statements, Statement.layout)),
@@ -451,6 +446,20 @@ structure Function =
 	 (Func.clear name
 	  ; Vector.foreach (args, Var.clear o #1)
 	  ; Vector.foreach (blocks, Block.clear))
+
+      fun layout (T {args, blocks, name, start}): Layout.t =
+	 let
+	    open Layout
+	 in
+	    align
+	    [seq [Func.layout name,
+		  Vector.layout (Layout.tuple2 (Var.layout, Type.layout)) args,
+		  str " = ",
+		  Label.layout start,
+		  str " ()"],
+	     indent (align (Vector.toListMap (blocks, Block.layout)),
+		     2)]
+	 end
 
       fun dfs (T {blocks, start, ...}, v) =
 	 let
@@ -530,36 +539,14 @@ structure Program =
       fun clear (T {functions, ...}) =
 	 List.foreach (functions, Function.clear)
 	 
-      structure Err =
-	 struct
-	    datatype t = T of {inner: t option,
-			       name: string,
-			       obj: Layout.t}
-
-	    fun layout (T {inner, name, obj}) =
-	       let
-		  open Layout
-	       in
-		  align [seq [str (concat ["invalid ", name, ": "]),
-			      obj],
-			 case inner of
-			    NONE => empty
-			  | SOME e => seq [str "in ", layout e]]
-	       end
-
-	    exception E of t
-
-	    fun check (name: string,
-		       ok: unit -> bool,
-		       layout: unit -> Layout.t): unit =
-	       if ok () handle E e => raise E (T {inner = SOME e,
-						  name = name,
-						  obj = layout ()})
-		  then ()
-	       else raise E (T {inner = NONE,
-				name = name,
-				obj = layout ()})
-
+      fun layouts (T {functions, main}, output': Layout.t -> unit): unit =
+	 let
+	    open Layout
+	    val output = output'
+	 in
+	    output (seq [str "\n\nMain: ", Func.layout main])
+	    ; output (str "\n\nFunctions:")
+	    ; List.foreach (functions, output o Function.layout)
 	 end
 	    
       fun checkScopes (program as T {functions, main}): unit =
@@ -649,7 +636,7 @@ structure Program =
 	    val _ = clear program
 	 in ()
 	 end
-      
+
       fun typeCheck (p as T {functions, main}) =
 	 let
 	    val _ = checkScopes p
@@ -729,13 +716,10 @@ structure Program =
 			(checkOperand dst
 			 ; checkOperand src
 			 ; Type.equals (Operand.ty dst, Operand.ty src))
-		   | Object {dst, numPointers, numWordsNonPointers, size,
-			     stores} =>
+		   | Object {dst, numPointers, numWordsNonPointers, stores} =>
 			 (Vector.foreach (stores, fn {offset, value} =>
 					  checkOperand value)
-			  ; (Runtime.isValidObjectSize size
-			     andalso
-			     Runtime.isValidObjectHeader
+			  ; (Runtime.isValidObjectHeader
 			     {numPointers = numPointers,
 			      numWordsNonPointers = numWordsNonPointers}))
 		   | PrimApp {args, dst, prim} => true

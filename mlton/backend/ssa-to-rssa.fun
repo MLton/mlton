@@ -4,11 +4,6 @@ struct
 open S
 
 structure S = Ssa
-local
-   open Ssa
-in
-   structure Stype = Type
-end
 
 open Rssa
 datatype z = datatype Operand.t
@@ -30,16 +25,17 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
       val program as Ssa.Program.T {datatypes, globals, functions, main} =
 	 ImplementHandlers.doit p
       val {tyconRep, conRep, toMtype = toType} = Representation.compute program
-      val {get = varInfo: Var.t -> {ty: Stype.t},
+      val {get = varInfo: Var.t -> {ty: S.Type.t},
 	   set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist,
 			      Property.initRaise ("varInfo", Var.layout))
+      val setVarInfo =
+	 Trace.trace2 ("SsaToRssa.setVarInfo",
+		       Var.layout, S.Type.layout o #ty, Unit.layout)
+	 setVarInfo
       val varType = #ty o varInfo
       fun varOp (x: Var.t): Operand.t =
 	 Var {var = x, ty = valOf (toType (varType x))}
-      val _ =
-	 Vector.foreach (globals, fn Ssa.Statement.T {var, ty, ...} =>
-			 Option.app (var, fn x => setVarInfo (x, {ty = ty})))
       val _ =
 	 Control.diagnostics
 	 (fn display =>
@@ -59,7 +55,6 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 			      2))
 	       end))))
       fun toTypes ts = Vector.map (ts, toType)
-      val wordSize = 4
       val labelSize = Type.size Type.label
       val tagOffset = 0
       val tagType = Type.int
@@ -103,7 +98,8 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 		      build (words, 4,
 			     build (doubleWords, 8, ([], initialOffset))))
 	    val offset = Type.align (Type.pointer, offset)
-	    val numWordsNonPointers = (offset - initialOffset) div wordSize
+	    val numWordsNonPointers =
+	       (offset - initialOffset) div Runtime.wordSize
 	    val (components, size) = build (pointers, 4, (accum, offset))
 	    val offsets =
 	       Vector.mapi
@@ -151,9 +147,9 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
       end
       (* Compute layout for each tuple type. *)
       val {get = tupleInfo, ...} =
-	 Property.get (Stype.plist,
+	 Property.get (S.Type.plist,
 		       Property.initFun
-		       (fn t => sortTypes (0, toTypes (Stype.detuple t))))
+		       (fn t => sortTypes (0, toTypes (S.Type.detuple t))))
       fun conSelects (variant: Var.t, con: Con.t): Operand.t vector =
 	 let
 	    val _ = Assert.assert ("conSelects", fn () =>
@@ -350,7 +346,7 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 		      (0, NONE) => Bug
 		    | _ => 
 			 let
-			    val (tycon, tys) = Stype.tyconArgs (varType test)
+			    val (tycon, tys) = S.Type.tyconArgs (varType test)
 			 in
 			    if Vector.isEmpty tys
 			       then genCase {cases = cases,
@@ -361,7 +357,7 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 			 end)
 	 end
       val {get = labelInfo: (Label.t ->
-			     {args: (Var.t * Stype.t) vector,
+			     {args: (Var.t * S.Type.t) vector,
 			      cont: (Label.t option * Label.t) list ref,
 			      handler: Label.t option ref}),
 	   set = setLabelInfo, ...} =
@@ -514,7 +510,6 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 			   add (Object {dst = valOf var,
 					numPointers = p,
 					numWordsNonPointers = np,
-					size = size,
 					stores = makeStores (ys, offsets)})
 			end
 		     fun allocateTagged (n: int,
@@ -526,7 +521,6 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 			      numPointers = numPointers,
 			      numWordsNonPointers =
 			      (* for the tag *) 1 + numWordsNonPointers,
-			      size = size,
 			      stores = (Vector.concat
 					[Vector.new1 {offset = tagOffset,
 						      value = Operand.int n},
@@ -757,7 +751,7 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 	  end)
    in
       Program.T {functions = functions,
-		 main = main}
+		 main = globalsFun}
    end
 
 end

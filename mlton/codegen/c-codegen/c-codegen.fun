@@ -185,8 +185,7 @@ structure Statement =
 			 print (concat [Operand.toString dst, " = ",
 				      Operand.toString src, ";\n"])
 		    | Noop => ()
-		    | Object {dst, numPointers, numWordsNonPointers, size,
-			      stores} =>
+		    | Object {dst, numPointers, numWordsNonPointers, stores} =>
 		         (C.call ("Object", [Operand.toString dst,
 					     C.int numWordsNonPointers,
 					     C.int numPointers],
@@ -199,7 +198,14 @@ structure Statement =
 				[C.int offset, Operand.toString value], 
 				print)
 			       ; print "\t")))
-			  ; C.call ("EndObject", [C.int size], print))
+			  ; C.call ("EndObject",
+				    [C.int
+				     (Runtime.objectHeaderSize
+				      +
+				      Runtime.objectSize
+				      {numPointers = numPointers,
+				       numWordsNonPointers = numWordsNonPointers})],
+				    print))
 		    | PrimApp {args, dst, prim} =>
 			 let
 			    val _ =
@@ -413,29 +419,28 @@ fun output {program = Machine.Program.T {chunks,
 	    fun force l = #status (labelInfo l) := Many
 	    val _ =
 		Vector.foreach
-		(blocks, fn Block.T {statements, transfer, ...} =>
+		(blocks, fn Block.T {kind, label, statements, transfer, ...} =>
 		 let
+		    val _ = if Kind.isEntry kind then jump label else ()
 		    datatype z = datatype Transfer.t
 		 in
 		    case transfer of
 		       Arith {overflow, success, ...} =>
-			  (force overflow; jump success)
+			  (jump overflow; jump success)
 		     | Bug => ()
 		     | CCall _ => ()
-		     | Call _ => ()
+		     | Call {label, ...} => jump label
 		     | Goto dst => jump dst
 		     | LimitCheck {success, ...} => jump success
 		     | Raise => ()
 		     | Return _ => ()
 		     | Runtime _ => ()
 		     | Switch {cases, default, ...} =>
-			  (Cases.foreach (cases, force)
-			   ; Option.app (default, force))
+			  (Cases.foreach (cases, jump)
+			   ; Option.app (default, jump))
 		     | SwitchIP {int, pointer, ...} =>
-			  (jump int; force pointer)
+			  (jump int; jump pointer)
 		 end)
-	    fun printGotoLabel l =
-	       print (concat ["\tgoto ", Label.toString l, ";\n"])
 	    val tracePrintLabelCode =
 	       Trace.trace
 	       ("printLabelCode",
@@ -454,18 +459,15 @@ fun output {program = Machine.Program.T {chunks,
 		   val info as {layedOut, ...} = labelInfo l
 		in
 		   if !layedOut 
-		      then printGotoLabel l
+		      then print (concat ["\tgoto ", Label.toString l, ";\n"])
 		   else printLabelCode info
 		end) arg
 	    and printLabelCode arg =
 	       tracePrintLabelCode
-	       (fn {block =
-		    Block.T {label = l,
-			     kind,
-			     live,
-			     profileInfo = {func = profileInfoFunc, 
-					    label = profileInfoLabel},
-			     statements, transfer, ...},
+	       (fn {block = Block.T {kind, label = l, live,
+				     profileInfo = {func = profileInfoFunc, 
+						    label = profileInfoLabel},
+				     statements, transfer, ...},
 		    layedOut, status, ...} =>
 		let
 		  val _ = layedOut := true
@@ -473,8 +475,10 @@ fun output {program = Machine.Program.T {chunks,
 		  val _ =
 		     case !status of
 			Many =>
-			   let val s = Label.toString l
-			   in print s
+			   let
+			      val s = Label.toString l
+			   in
+			      print s
 			      ; print ":\n"
 			   end 
 		      | _ => ()
@@ -605,7 +609,7 @@ fun output {program = Machine.Program.T {chunks,
 			   ; gotoLabel success
 			end
 		   | Raise => C.call ("\tRaise", [], print)
-		   | Return {...} => C.call ("\tReturn", [], print)
+		   | Return _ => C.call ("\tReturn", [], print)
 		   | Runtime {args, prim, return, ...} =>
 			C.call (Prim.toString prim,
 				[C.int (labelFrameSize return), Label.toString return]

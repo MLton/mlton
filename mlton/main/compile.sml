@@ -328,7 +328,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	  style = Control.No,
 	  thunk = fn () => Backend.toMachine ssa,
 	  typeCheck = Machine.Program.typeCheck,
-	  display = Control.NoDisplay}
+	  display = Control.Layouts Machine.Program.layouts}
    in
       machine
    end

@@ -72,7 +72,6 @@ signature RSSA =
 	     | Object of {dst: Var.t,
 			  numPointers: int,
 			  numWordsNonPointers: int,
-			  size: int, (* in bytes, not including header *)
 			  stores: {offset: int, (* bytes *)
 				   value: Operand.t} vector}
 	     | PrimApp of {args: Var.t vector,
@@ -185,7 +184,6 @@ signature RSSA =
 	    val statements: t -> Statement.t vector
 	    val transfer: t -> Transfer.t
 	 end
-
       structure Function:
 	 sig
 	    type t
@@ -215,6 +213,7 @@ signature RSSA =
 	       T of {functions: Function.t list,
 		     main: Func.t} (* Must be nullary. *)
 
+	    val layouts: t * (Layout.t -> unit) -> unit
 	    val typeCheck: t -> unit
 	 end
    end

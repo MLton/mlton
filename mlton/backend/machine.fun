@@ -180,7 +180,6 @@ structure Statement =
        | Object of {dst: Operand.t,
 		    numPointers: int,
 		    numWordsNonPointers: int,
-		    size: int,
 		    stores: {offset: int,
 			     value: Operand.t} vector}
        | PrimApp of {args: Operand.t vector,
@@ -304,7 +303,7 @@ structure Transfer =
 			       ("success", Label.layout success)]]
 	     | Bug => str "Bug"
 	     | CCall {args, prim, return, returnTy} =>
-		  seq [str "CCall",
+		  seq [str "CCall ",
 		       record [("args", Vector.layout Operand.layout args),
 			       ("prim", Prim.layout prim),
 			       ("return", Label.layout return),
@@ -322,7 +321,7 @@ structure Transfer =
 				return)]]
 	     | Goto l => seq [str "Goto ", Label.layout l]
 	     | LimitCheck {failure, kind, success} =>
-		  seq [str "LimitCheck",
+		  seq [str "LimitCheck ",
 		       record [("failure", Label.layout failure),
 			       ("kind", LimitCheck.layout kind),
 			       ("success", Label.layout success)]]
@@ -442,8 +441,10 @@ structure Block =
 			record [("kind", Kind.layout kind),
 				("live", Vector.layout Operand.layout live)],
 			str ":"],		   
-		   align (Vector.toListMap (statements, Statement.layout)),
-		   Transfer.layout transfer]
+		   indent (align
+			   [align (Vector.toListMap (statements, Statement.layout)),
+			    Transfer.layout transfer],
+			   4)]
 	 end
 
       fun layouts (block, output' : Layout.t -> unit) = output' (layout block)
@@ -491,38 +492,6 @@ structure Program =
 	    open Layout
 	 in
 	    List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output'))
-	 end
-
-      structure Err =
-	 struct
-	    datatype t = T of {inner: t option,
-			       name: string,
-			       obj: Layout.t}
-
-	    fun layout (T {inner, name, obj}) =
-	       let
-		  open Layout
-	       in
-		  align [seq [str (concat ["invalid ", name, ": "]),
-			      obj],
-			 case inner of
-			    NONE => empty
-			  | SOME e => seq [str "in ", layout e]]
-	       end
-
-	    exception E of t
-
-	    fun check (name: string,
-		       ok: unit -> bool,
-		       layout: unit -> Layout.t): unit =
-	       if ok () handle E e => raise E (T {inner = SOME e,
-						  name = name,
-						  obj = layout ()})
-		  then ()
-	       else raise E (T {inner = NONE,
-				name = name,
-				obj = layout ()})
-
 	 end
 	    
       fun typeCheck (T {chunks, floats, frameOffsets, globals, globalsNonRoot,
@@ -630,14 +599,11 @@ structure Program =
 			 ; checkOperand src
 			 ; Type.equals (Operand.ty dst, Operand.ty src))
 		   | Noop => true
-		   | Object {dst, numPointers, numWordsNonPointers, size,
-			     stores} =>
+		   | Object {dst, numPointers, numWordsNonPointers, stores} =>
 		        (checkOperand dst
 			 ; Vector.foreach (stores, fn {offset, value} =>
 					   checkOperand value)
-			 ; (Runtime.isValidObjectSize size
-			    andalso
-			    Runtime.isValidObjectHeader
+			 ; (Runtime.isValidObjectHeader
 			    {numPointers = numPointers,
 			     numWordsNonPointers = numWordsNonPointers}))
 		   | PrimApp {args, dst, prim} =>

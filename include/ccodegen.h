@@ -314,7 +314,7 @@ int main(int argc, char **argv) {					\
 
 #define EndObject(bytes)					\
 	do {							\
-		frontier += GC_OBJECT_HEADER_SIZE + (bytes);	\
+		frontier += (bytes);				\
 	} while (0)
 
 #define LimitCheck(frameSize, ret, b, other)				\

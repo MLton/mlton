@@ -1,6 +1,11 @@
 structure Runtime: RUNTIME =
 struct
-   
+
+val wordSize: int = 4
+val pointerSize = wordSize
+val objectHeaderSize = wordSize
+val arrayHeaderSize = 2 * wordSize
+
 (* These checks, and in particular pointerBits and nonPointerBits
  * must agree with runtime/gc.h.
  *)
@@ -23,14 +28,15 @@ in
       f (numPointers, numWordsNonPointers)
 end
 
+fun objectSize {numPointers, numWordsNonPointers} =
+   wordSize * (numPointers + numWordsNonPointers)
+
 local
    val f = make (pointerBits, nonPointerBits - 1)
 in
    fun isValidArrayHeader {numBytesNonPointers, numPointers} =
       f (numPointers, numBytesNonPointers)
 end
-
-val wordSize: int = 4
    
 fun isWordAligned (n: int): bool =
    0 = Int.rem (n, wordSize)

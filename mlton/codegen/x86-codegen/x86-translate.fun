@@ -1406,7 +1406,7 @@ struct
 		      transfer = NONE}),
 		    comment_end]
 		 end
-	      | Object {dst, size, stores, numPointers, numWordsNonPointers}
+	      | Object {dst, stores, numPointers, numWordsNonPointers}
 	      => let
 		   val (comment_begin,
 			comment_end) = comments statement
@@ -1494,8 +1494,12 @@ struct
 				       {oper = x86.Instruction.ADD,
 					dst = frontier,
 					src = x86.Operand.immediate_const_int 
-					      (objectHeaderBytes + size),
-				      size = x86MLton.pointerSize}],
+					      (objectHeaderBytes
+					       + (Runtime.objectSize
+						  {numPointers = numPointers,
+						   numWordsNonPointers =
+						   numWordsNonPointers})),
+					size = x86MLton.pointerSize}],
 				      stores_toX86Assembly)),
 (*
 		      = List.concat
