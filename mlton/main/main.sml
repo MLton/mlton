@@ -473,20 +473,28 @@ fun commandLine (args: string list): unit =
 			Cygwin => ["-lgmp"]
 		      | FreeBSD => ["-L/usr/local/lib/", "-lgmp"]
 		      | Linux =>
-			   case (List.peekMap
-				 ("/lib\n" :: "/usr/lib\n"
-				  :: File.lines "/etc/ld.so.conf",
-				  fn d =>
-				  let
-				     val lib = concat [String.dropSuffix (d, 1),
-						       "/libgmp.a"]
-				  in
-				     if File.canRead lib
-					then SOME lib
-				     else NONE
-				  end)) of
-			      NONE => ["-lgmp"]
-			    | SOME lib => [lib]
+			   let
+			      val conf = "/etc/ld.so.conf"
+			      val dirs =
+				 if File.canRead conf
+				    then File.lines conf
+				 else []
+			      val dirs = "/lib\n" :: "/usr/lib\n" :: dirs
+			   in
+			      case (List.peekMap
+				    (dirs, fn d =>
+				     let
+					val lib =
+					   concat [String.dropSuffix (d, 1),
+						   "/libgmp.a"]
+				     in
+					if File.canRead lib
+					   then SOME lib
+					else NONE
+				     end)) of
+				 NONE => ["-lgmp"]
+			       | SOME lib => [lib]
+			   end
 		  val linkLibs: string list =
 		     List.concat [list ("-L", rev (libDirs)),
 				  list ("-l",
