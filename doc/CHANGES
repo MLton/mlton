@@ -1,5 +1,9 @@
 Here are the changes from version 20020410 to version VERSION.
 
+* 2002-05-31
+  - Fixed bug in overloading of / so that the following now type checks:
+	fun f (x, y) = x + y / y
+
 * 2002-04-26
   - Added back max-heap runtime option.
 
