@@ -14,7 +14,6 @@
     (<a href = "papers/index.html">papers</a>)
     (<a href = "performance.html">performance</a>)
     (<a href = "projects.html">projects</a>)
-    (<a href = "sources.html">sources</a>)
     (<a href = "team.html">team</a>)
     (<a href = "user-guide/index.html">user guide</a>)
     (<a href = "users.html">users</a>)
@@ -24,7 +23,9 @@
     MLton is a whole-program optimizing compiler for the 
     <a href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard
       ML</a> programming language.  MLton runs on X86 machines with
-    Linux or <a href = "http://www.cygwin.com">Cygwin</a>/Windows.
+    Linux,
+    <a href = "http://www.freebsd.org">FreeBSD</a>, 
+    or <a href = "http://www.cygwin.com">Cygwin</a>/Windows. 
 
     <h3>Features of MLton</h3>
     <ul>
@@ -58,6 +59,8 @@
     20020410, include:
 
     <ul>
+      <li> MLton now runs on FreeBSD.
+
       <li> Major runtime system improvements.  The runtime now implements
       mark-compact and generational collection, in addition to the copying
       collection that was there before.  It automatically switches between the
@@ -71,7 +74,7 @@
 
       <li> Fixed bug in load world that could cause <tt>sread failed</tt> on 
 	      Cygwin.
-      <li> Fixed optimizer bug that could cause </tt> no analyze var value
+      <li> Fixed optimizer bug that could cause <tt>no analyze var value
 		property</tt> message. 
     </ul>
 
@@ -92,7 +95,7 @@
     <hr>
 <a href = "http://www.mlton.org">MLton</a><br>
 <!-- hhmts start -->
-Last modified: Sun Aug 25 17:39:17 PDT 2002
+Last modified: Mon Sep 16 12:09:59 PDT 2002
 <!-- hhmts end -->
 <p><a href="http://sourceforge.net">
     <img src="http://sourceforge.net/sflogo.php?group_id=50419&type=4"

@@ -2,7 +2,7 @@
 
 \subsection{Installation}
 
-{\mlton} runs on X86 machines with either Linux or Cygwin/Windows.
+{\mlton} runs on X86 machines with either Linux, FreeBSD, or Cygwin/Windows.
 and is distributed in source and binary RPM and gzipped tar ({\tt
 tgz}) format.  You can install the binary RPM with\\
 \hspace*{2em}{\tt rpm -i mlton-\version-1.i386.rpm}\\
@@ -12,7 +12,7 @@ Or, if your distribution doesn't use rpm, but you have {\tt rpm2cpio},
 you can use\\
 \hspace*{2em}{\tt rpm2cpio mlton-\version-1.i386.rpm | cpio -id}\\
 If you do not install {\mlton} in the root directory, you must
-set the {\tt lib} variable in {\tt /usr/local/bin/mlton} to the
+set the {\tt lib} variable in {\tt usr/local/bin/mlton} to the
 directory that contains the libraries ({\tt /usr/local/lib/mlton} by
 default).
 Installation creates the following files and directories.
@@ -21,32 +21,32 @@ Installation creates the following files and directories.
 
 \begin{description}
 
-\place{/usr/local/bin/mllex}
+\place{usr/local/bin/mllex}
 A lexer generator.
 
-\place{/usr/local/bin/mlprof}
+\place{usr/local/bin/mlprof}
 A profiler (see \secref{profiling}).
 
-\place{/usr/local/bin/mlton}
+\place{usr/local/bin/mlton}
 A script to call the compiler.
 This script may be moved anywhere, however,
 it makes use of files in {\tt /usr/local/lib/mlton}.
 
-\place{/usr/local/bin/mlyacc}
+\place{usr/local/bin/mlyacc}
 A parser generator.
 
-\place{/usr/local/share/man/man1/mlprof.1}
+\place{usr/local/share/man/man1/mlprof.1}
 Man page for {\tt mlprof}.
 
-\place{/usr/local/share/man/man1/mlton.1}
+\place{usr/local/share/man/man1/mlton.1}
 Man page for {\tt mlton}.
 
-\place{/usr/local/share/doc/mlton}
+\place{usr/local/share/doc/mlton}
 
 Directory containing the user guide, example SML programs (in the {\tt examples}
 dir), and license information.
 
-\place{/usr/local/lib/mlton}
+\place{usr/local/lib/mlton}
 Directory containing libraries and include files needed during
 compilation.
 
