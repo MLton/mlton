@@ -1,0 +1,22 @@
+functor PosixFileSysConvert
+        (structure FileSys: POSIX_FILE_SYS) :
+        POSIX_FILE_SYS_1997 =
+  struct
+     open FileSys
+     val readdir = fn d =>
+       case readdir d of
+	 NONE => ""
+       | SOME s => s
+     structure S =
+        struct
+	   open S
+	   structure Flags = FlagsConvert(structure Flags = S)
+	   open Flags
+	end
+     structure O =
+        struct
+	   open O
+	   structure Flags = FlagsConvert(structure Flags = O)
+	   open Flags
+	end
+  end

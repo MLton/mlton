@@ -1,22 +1,22 @@
-signature BASIS_2002 =
+signature BASIS_1997 =
    sig
       (* Top-level types *)
-      eqtype unit
-      eqtype int 
-      eqtype word 
+      eqtype unit 
+      eqtype int
+      eqtype word
       type real
       eqtype char
       eqtype string
-      type substring 
+      type substring
       type exn
-      eqtype 'a array 
+      eqtype 'a array
       eqtype 'a vector
 (*
       eqtype 'a ref
 *)
       datatype 'a ref = ref of 'a
       datatype bool = false | true
-      datatype 'a option = NONE | SOME of 'a 
+      datatype 'a option = NONE | SOME of 'a
       datatype order = LESS | EQUAL | GREATER 
       datatype 'a list = nil | :: of ('a * 'a list)
 
@@ -80,146 +80,125 @@ signature BASIS_2002 =
       val vector : 'a list -> 'a vector
 
       val <> : ''a * ''a -> bool
-	
+
       (* Required structures *)
-      structure Array : ARRAY	
-      structure ArraySlice : ARRAY_SLICE	
-      structure BinIO : BIN_IO	
-      structure BinPrimIO : PRIM_IO	
-      structure Bool : BOOL	
-      structure Byte : BYTE	
-      structure CharArray : MONO_ARRAY	
-      structure CharArraySlice : MONO_ARRAY_SLICE	
-      structure Char : CHAR	
-      structure CharVector : MONO_VECTOR	
-      structure CharVectorSlice : MONO_VECTOR_SLICE	
-      structure CommandLine : COMMAND_LINE	
-      structure Date : DATE	
-      structure General : GENERAL	
-      structure IEEEReal : IEEE_REAL	
-      structure Int : INTEGER	
-      structure IO : IO	
-      structure LargeInt : INTEGER	
-      structure LargeReal : REAL	
-      structure LargeWord : WORD	
-      structure List : LIST	
-      structure ListPair : LIST_PAIR	
-      structure Math : MATH	
-      structure Option : OPTION	
-      structure OS : OS	
-      structure Position : INTEGER	
-      structure Real : REAL	
-      structure StringCvt : STRING_CVT	
-      structure String : STRING	
-      structure Substring : SUBSTRING	
-      structure TextIO : TEXT_IO	
-      structure TextPrimIO : PRIM_IO	
-      structure Text : TEXT	
-      structure Time : TIME	
-      structure Timer : TIMER	
-      structure VectorSlice : VECTOR_SLICE	
-      structure Vector : VECTOR	
-      structure Word8Array2 : MONO_ARRAY2	
-      structure Word8Array : MONO_ARRAY	
-      structure Word8ArraySlice : MONO_ARRAY_SLICE	
-      structure Word8Vector : MONO_VECTOR	
-      structure Word8VectorSlice : MONO_VECTOR_SLICE	
-      structure Word8 : WORD	
-      structure Word : WORD	
+      structure Array : ARRAY_1997
+(*
+      structure BinIO : BIN_IO
+      structure BinPrimIO : PRIM_IO
+*)
+      structure Bool : BOOL
+      structure Byte : BYTE
+      structure Char : CHAR
+      structure CharArray : MONO_ARRAY_1997
+      structure CharVector : MONO_VECTOR_1997
+      structure CommandLine : COMMAND_LINE
+      structure Date : DATE
+      structure General : GENERAL
+      structure IEEEReal : IEEE_REAL_1997
+      structure Int : INTEGER
+      structure IO : IO_1997
+      structure LargeInt : INTEGER
+      structure LargeReal : REAL
+      structure LargeWord : WORD
+      structure List : LIST
+      structure ListPair : LIST_PAIR
+      structure Math : MATH
+      structure Option : OPTION
+      structure OS : OS_1997
+(*
+      structure OS.FileSys : OS_FILE_SYS_1997
+      structure OS.Path : OS_PATH
+      structure OS.Process : OS_PROCESS_1997
+      structure OS.IO : OS_IO
+*)
+      structure Position : INTEGER
+      structure Real : REAL
+      structure SML90 : SML90
+      structure String : STRING_1997
+      structure StringCvt : STRING_CVT
+      structure Substring : SUBSTRING_1997
+(*
+      structure TextIO : TEXT_IO
+      structure TextPrimIO : PRIM_IO
+*)
+      structure Time : TIME
+      structure Timer : TIMER_1997
+      structure Vector : VECTOR_1997
+      structure Word : WORD
+      structure Word8 : WORD
+      structure Word8Array : MONO_ARRAY_1997
+      structure Word8Vector : MONO_VECTOR_1997
 
       (* Optional structures *)
       structure Array2 : ARRAY2
-      structure BoolArray : MONO_ARRAY
-      structure BoolArray2 : MONO_ARRAY2
-      structure BoolArraySlice : MONO_ARRAY_SLICE
-      structure BoolVector : MONO_VECTOR
-      structure BoolVectorSlice : MONO_VECTOR_SLICE
-      structure CharArray2 : MONO_ARRAY2
+      structure BoolArray : MONO_ARRAY_1997
+      structure BoolArray2 : MONO_ARRAY2_1997
+      structure BoolVector : MONO_VECTOR_1997
+      structure CharArray2 : MONO_ARRAY2_1997
       structure FixedInt : INTEGER
-(*
-      structure GenericSock : GENERIC_SOCK
-      structure INetSock : INET_SOCK
-*)
-      structure IntArray : MONO_ARRAY
-      structure IntArray2 : MONO_ARRAY2
-      structure IntArraySlice : MONO_ARRAY_SLICE
-      structure IntVector : MONO_VECTOR
-      structure IntVectorSlice : MONO_VECTOR_SLICE
-      structure Int32Array : MONO_ARRAY
-      structure Int32Array2 : MONO_ARRAY2
-      structure Int32ArraySlice : MONO_ARRAY_SLICE
-      structure Int32 : INTEGER
-      structure Int32Vector : MONO_VECTOR
-      structure Int32VectorSlice : MONO_VECTOR_SLICE
       structure IntInf : INT_INF
+      structure Int32 : INTEGER
+      structure IntArray : MONO_ARRAY_1997
+      structure Int32Array : MONO_ARRAY_1997
+      structure IntArray2 : MONO_ARRAY2_1997
+      structure Int32Array2 : MONO_ARRAY2_1997
+      structure IntVector : MONO_VECTOR_1997
+      structure Int32Vector : MONO_VECTOR_1997
 (*
-      structure NetHostDB : NET_HOST_DB
-      structure NetProtDB : NET_PROT_DB
-      structure NetServDB : NET_SERV_DB
+      structure Locale : LOCALE
+      structure MultiByte : MULTIBYTE
 *)
-      structure Pack32Big : PACK_WORD
-      structure Pack32Little : PACK_WORD
-(*
-      structure PackRealBig : PACK_REAL
-*)
-      structure PackRealLittle : PACK_REAL
 (*
       structure PackReal64Big : PACK_REAL
 *)
       structure PackReal64Little : PACK_REAL
-      structure Posix : POSIX
-      structure RealArray2 : MONO_ARRAY2
-      structure RealArray : MONO_ARRAY
-      structure RealArraySlice : MONO_ARRAY_SLICE
-      structure RealVector : MONO_VECTOR
-      structure RealVectorSlice : MONO_VECTOR_SLICE
-      structure Real64Array : MONO_ARRAY
-      structure Real64Array2 : MONO_ARRAY2
-      structure Real64ArraySlice : MONO_ARRAY_SLICE
-      structure Real64 : REAL
-      structure Real64Vector : MONO_VECTOR
-      structure Real64VectorSlice : MONO_VECTOR_SLICE
 (*
-      structure Socket : SOCKET
+      structure PackRealBig : PACK_REAL
 *)
+      structure PackRealLittle : PACK_REAL
+      structure Pack32Big : PACK_WORD
+      structure Pack32Little : PACK_WORD
+
+      structure Posix : POSIX_1997
+(*
+      structure Posix.Error : POSIX_ERROR
+      structure Posix.Signal : POSIX_SIGNAL
+      structure Posix.Process : POSIX_PROCESS_1997
+      structure Posix.ProcEnv : POSIX_PROC_ENV
+      structure Posix.FileSys : POSIX_FILE_SYS_1997
+      structure Posix.IO : POSIX_IO_1997
+      structure Posix.SysDB : POSIX_SYS_DB
+      structure Posix.TTY : POSIX_TTY_1997
+*)
+      structure RealArray : MONO_ARRAY_1997
+      structure RealVector : MONO_VECTOR_1997
+      structure Real64 : REAL
+      structure Real64Array : MONO_ARRAY_1997
+      structure Real64Vector : MONO_VECTOR_1997
+      structure RealArray2 : MONO_ARRAY2_1997
+      structure Real64Array2 : MONO_ARRAY2_1997
       structure SysWord : WORD
 (*
-      structure UnixSock : UNIX_SOCK
-*)
-      structure Unix : UNIX
-(*
-      structure WideCharArray : MONO_ARRAY
-      structure WideCharArray2 : MONO_ARRAY2
-      structure WideCharArraySlice : MONO_ARRAY_SLICE
       structure WideChar : CHAR
-      structure WideCharVector : MONO_VECTOR
-      structure WideCharVectorSlice : MONO_VECTOR_SLICE
+      structure WideCharArray : MONO_ARRAY_1997
+      structure WideCharArray2 : MONO_ARRAY2_1997
+      structure WideCharVector : MONO_VECTOR_1997
       structure WideString : STRING
       structure WideSubstring : SUBSTRING
       structure WideTextPrimIO : PRIM_IO
-      structure WideText : TEXT
+      structure WideTextIO : TEXT_IO
 *)
-(*
-      structure Windows : WINDOWS
-*)
-      structure Word32Array : MONO_ARRAY
-      structure Word32Array2 : MONO_ARRAY2
-      structure Word32ArraySlice : MONO_ARRAY_SLICE
-      structure Word32Vector : MONO_VECTOR
-      structure Word32VectorSlice : MONO_VECTOR_SLICE
       structure Word32 : WORD
-
-      (* Non-standard structures *)
-      structure MLton : MLTON
-      structure SMLofNJ : SML_OF_NJ
-      structure Unsafe : UNSAFE
-      structure SML90 : SML90
+      structure Word8Array2 : MONO_ARRAY2_1997
+      structure Unix : UNIX
 
       (* ************************************************** *)
       (* ************************************************** *)
 
       (* Sharing constraints *)
 
+(*
       (* Top-level types *)
       sharing type unit = General.unit
       sharing type int = Int.int
@@ -242,7 +221,9 @@ signature BASIS_2002 =
       (*
       sharing type list = List.list
       *)
+*)
 
+(*
       (* Required structures *)
       sharing type Array.vector = Vector.vector
       sharing type BinPrimIO.array = Word8Array.array
@@ -368,12 +349,9 @@ signature BASIS_2002 =
       sharing type Word32Vector.elem = Word32.word
       sharing type Word32VectorSlice.vector = Word32Vector.vector
       sharing type Word32VectorSlice.elem = Word32.word
-
-      (* Non-standard *)
-      sharing type Array.vector = ArraySlice.vector = Vector.vector = VectorSlice.vector
-      sharing type ArraySlice.vector_slice = VectorSlice.slice
-      sharing type Array.array = ArraySlice.array
+*)
    end
+(*
    (* Top-level types *)
    where type unit = unit
    where type int = int
@@ -417,3 +395,4 @@ signature BASIS_2002 =
    where type Word8.word = Word8.word
    where type Word8Array.array = Word8Array.array
    where type Word8Vector.vector = Word8Vector.vector
+*)

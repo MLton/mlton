@@ -26,7 +26,7 @@ signature POSIX_FILE_SYS =
 
       structure S: 
 	 sig
-	    type mode
+	    eqtype mode
 	    include BIT_FLAGS where type flags = mode
 
 	    val irwxu: mode

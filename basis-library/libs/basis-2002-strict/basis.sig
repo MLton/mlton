@@ -1,4 +1,4 @@
-signature BASIS_2002 =
+signature BASIS_2002_STRICT =
    sig
       (* Top-level types *)
       eqtype unit
@@ -208,12 +208,6 @@ signature BASIS_2002 =
       structure Word32Vector : MONO_VECTOR
       structure Word32VectorSlice : MONO_VECTOR_SLICE
       structure Word32 : WORD
-
-      (* Non-standard structures *)
-      structure MLton : MLTON
-      structure SMLofNJ : SML_OF_NJ
-      structure Unsafe : UNSAFE
-      structure SML90 : SML90
 
       (* ************************************************** *)
       (* ************************************************** *)

@@ -350,6 +350,10 @@ General comments:
 ******************************************************************************
 ******************************************************************************
 
+Posix.FileSys:
+* Within structure S, the type mode is constrained equal to flags,
+  but flags is an eqtype.
+
 Not sent to list:
 
 * (In general, probably a good idea to look at the entire top-level
