@@ -132,7 +132,6 @@ structure TyconValue =
 structure VarInfo =
   struct
     datatype t = T of {active: bool ref,
-		       replaces: Var.t ref list ref,
 		       tyconValues: TyconValue.t list ref,
 		       var: Var.t}
 
@@ -141,19 +140,16 @@ structure VarInfo =
       fun make' f = (make f, ! o (make f))
     in
       val (active, active') = make' #active
-      val (replaces, replaces') = make' #replaces
       val (tyconValues, tyconValues') = make' #tyconValues
       val var = make #var
     end
 
-    fun layout (T {active, replaces, tyconValues, var, ...}) 
+    fun layout (T {active, tyconValues, var, ...}) 
       = Layout.record [("active", Bool.layout (!active)),
-		       ("replaces", List.layout (Var.layout o !) (!replaces)),
 		       ("tyconValues", List.layout TyconValue.layout (!tyconValues)),
 		       ("var", Var.layout var)]
 
     fun new var = T {active = ref false,
-		     replaces = ref [ref var],
 		     tyconValues = ref [],
 		     var = var}
 
@@ -163,36 +159,6 @@ structure VarInfo =
       = (addPost (fn () => deactivate vi);
 	 activate vi)
     val active = active'
-
-    fun replace (T {replaces, ...})
-      = case !replaces of h::_ => SOME h | _ => NONE
-    fun popReplace (T {replaces, ...}) = ignore (List.pop replaces)
-    fun pushReplace (T {replaces, ...}, rep) = List.push (replaces, ref rep)
-    fun pushReplace' (vi, rep, addPost)
-      = let
-	  val _ = pushReplace (vi, rep)
-	  val _ = addPost (fn () => popReplace vi)
-	in
-	  ()
-	end
-    fun flipReplace (vi, rep) 
-      = case replace vi 
-	  of SOME r => !r before (r := rep) 
-	   | _ => Error.bug "KnownCase.VarInfo.flipReplace"
-    fun flipReplace' (vi, rep, addPost)
-      = let 
-	  val rep = flipReplace (vi, rep)
-	  val _ = addPost (fn () => ignore (flipReplace (vi, rep)))
-	in 
-	  rep
-	end
-    fun nextReplace' (vi, rep, addPost)
-      = let 
-	  val rep = flipReplace' (vi, rep, addPost)
-	  val _ = pushReplace' (vi, rep, addPost)
-	in
-	  ()
-	end
 
     fun tyconValue (T {tyconValues, ...})
       = case !tyconValues of h::_ => SOME h | _ => NONE
@@ -214,6 +180,53 @@ structure VarInfo =
 	       end
 	  else (activate' (vi, addPost');
 		pushTyconValue' (vi, tcv, addPost))
+  end
+
+structure ReplaceInfo =
+  struct
+    datatype t = T of {replaces: Var.t ref list ref}
+
+    local 
+      fun make f (T r) = f r
+      fun make' f = (make f, ! o (make f))
+    in
+      val (replaces, replaces') = make' #replaces
+    end
+
+    fun layout (T {replaces, ...}) 
+      = Layout.record [("replaces", List.layout (Var.layout o !) (!replaces))]
+
+    fun new var = T {replaces = ref [ref var]}
+
+    fun replace (T {replaces, ...})
+      = case !replaces of h::_ => h | _ => Error.bug "KnownCase.ReplaceInfo.replace"
+    fun popReplace (T {replaces, ...}) = ignore (List.pop replaces)
+    fun pushReplace (T {replaces, ...}, rep) = List.push (replaces, ref rep)
+    fun pushReplace' (vi, rep, addPost)
+      = let
+	  val _ = pushReplace (vi, rep)
+	  val _ = addPost (fn () => popReplace vi)
+	in
+	  ()
+	end
+    fun flipReplace (vi, rep) 
+      = let val r = replace vi 
+	in !r before (r := rep) 
+	end
+    fun flipReplace' (vi, rep, addPost)
+      = let 
+	  val rep = flipReplace (vi, rep)
+	  val _ = addPost (fn () => ignore (flipReplace (vi, rep)))
+	in 
+	  rep
+	end
+    fun nextReplace' (vi, rep, addPost)
+      = let 
+	  val rep = flipReplace' (vi, rep, addPost)
+	  val _ = pushReplace' (vi, rep, addPost)
+	in
+	  ()
+	end
   end
 
 structure LabelInfo =
@@ -345,6 +358,10 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 	   set = setVarInfo, ...}
 	= Property.getSetOnce
 	  (Var.plist, Property.initFun (fn x => VarInfo.new x))
+      (* replaceInfo *)
+      val {get = replaceInfo: Var.t -> ReplaceInfo.t, ...}
+	= Property.get
+	  (Var.plist, Property.initFun (fn x => ReplaceInfo.new x))
 
 
       fun bindVar' (x, ty, exp, addPost)
@@ -359,7 +376,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 				=> TyconValue.newKnown 
 				   (cons, con, 
 				    Vector.map 
-				    (args, valOf o VarInfo.replace o varInfo))
+				    (args, ReplaceInfo.replace o replaceInfo))
 			        | _ => TyconValue.newUnknown cons
 		       in
 			 VarInfo.pushTyconValue'
@@ -555,11 +572,11 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 						  VarInfo.pushTyconValue'
 						  (tvi,
 						   valOf (VarInfo.tyconValue zvi),
-						   addPost);
-						  VarInfo.nextReplace'
-						  (zvi, t, addPost)
+						   addPost)
 						end
 					   else ();
+					 ReplaceInfo.nextReplace'
+					 (replaceInfo z, t, addPost);
 					 Statement.T {var = SOME t,
 						      ty = ty,
 						      exp = Var z}))
@@ -709,7 +726,7 @@ fun doOneNone con
 	      val conValues' = TyconValue.newKnown 
 		               (cons, con,
 				Vector.map 
-				(xs, valOf o VarInfo.replace o varInfo))
+				(xs, ReplaceInfo.replace o replaceInfo))
 	      val label = Label.newNoname ()
 	      val (statements, transfer)
 		= case rewriteDefault conValues'
@@ -937,7 +954,7 @@ val doMany
 			= TyconValue.newKnown 
 			  (cons, con, 
 			   Vector.map 
-			   (argsDst, valOf o VarInfo.replace o varInfo o #1))
+			   (argsDst, ReplaceInfo.replace o replaceInfo o #1))
 		    in
 		      if LabelInfo.onePred liDst
 			then LabelInfo.addActivation
