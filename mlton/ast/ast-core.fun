@@ -508,8 +508,6 @@ structure Exp =
       type node' = node
       type obj = t
 
-(*      fun make n = makeRegion (n, Region.bogus) *)
-
       fun const c = makeRegion (Const c, Const.region c)
 
       fun constraint (e, t) = makeRegion (Constraint (e, t), region e)

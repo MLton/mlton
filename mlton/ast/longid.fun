@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -12,6 +12,7 @@ open S
 
 datatype node = T of {strids: Strid.t list,
 		      id: Id.t}
+   
 type node' = node
 structure Wrap = Region.Wrap
 open Wrap
@@ -19,41 +20,56 @@ type t = node Wrap.t
 type obj = t
 
 fun split id =
-   let val T {strids, id, ...} = node id
-   in (strids, id)
+   let
+      val T {strids, id, ...} = node id
+   in
+      (strids, id)
    end
 
 fun prepend (id, strid) =
-   let val (T {strids, id}, region) = dest id
-   in makeRegion (T {strids = strid :: strids, id = id},
+   let
+      val (T {strids, id}, region) = dest id
+   in
+      makeRegion (T {strids = strid :: strids, id = id},
 		 region)
    end
 
 fun prepends (id, strids') =
-   let val (T {strids, id}, region) = dest id
-   in makeRegion (T {strids = strids' @ strids, id = id},
+   let
+      val (T {strids, id}, region) = dest id
+   in
+      makeRegion (T {strids = strids' @ strids, id = id},
 		 region)
    end
 
 fun isLong id =
-   let val T {strids, ...} = node id
-   in not (List.isEmpty strids)
+   let
+      val T {strids, ...} = node id
+   in
+      not (List.isEmpty strids)
    end
 
 fun toId id =
-   let val T {id, ...} = node id
-   in id
+   let
+      val T {id, ...} = node id
+   in
+      id
    end
    
 val equals =
    fn (id, id') =>
-   let val T {strids=ss, id=i} = node id
+   let
+      val T {strids=ss, id=i} = node id
       val T {strids=ss', id=i'} = node id'
-   in List.equals (ss, ss', Strid.equals) andalso Id.equals (i, i')
+   in
+      List.equals (ss, ss', Strid.equals) andalso Id.equals (i, i')
    end
    
-fun long (strids, id) = makeRegion (T {strids = strids, id = id},
-				    Region.bogus)
+fun long (strids, id) =
+   makeRegion (T {strids = strids, id = id},
+	       case strids of
+		  [] => Id.region id
+		| s :: _ => Region.append (Strid.region s, Id.region id))
 
 fun short id = long ([], id)
 
@@ -61,7 +77,8 @@ fun layout id =
    let
       val T {strids, id} = node id
       open Layout
-   in seq [case strids of
+   in
+      seq [case strids of
 	      [] => empty
 	    | _ => seq [seq (separate (List.map (strids, Strid.layout), ".")),
 			str "."],
