@@ -29,7 +29,7 @@ fun check (c: (bool,bool) ElabControl.t, keyword: string, region) =
 	 Control.error (region,
 			str (concat (if ElabControl.expert c
 					then [keyword, " disallowed"]
-					else [keyword, "disallowed, compile with -default-ann '", 
+					else [keyword, " disallowed, compile with -default-ann '", 
 					      ElabControl.name c, " true'"])),
 			empty)
       end
