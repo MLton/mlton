@@ -1,8 +1,8 @@
 ann  
-   "deadCode true, \
-   \sequenceUnit true, \
-   \warnMatch true, \
-   \warnUnused true, forceUsed"
+   "deadCode true"
+   "sequenceUnit true"
+   "warnMatch true"
+   "warnUnused true" "forceUsed"
 in
    local
       ../basis-2002/basis-2002.mlb

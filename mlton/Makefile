@@ -12,17 +12,17 @@ FLAGS = @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
 
 ifeq (self, $(shell if [ -x $(BIN)/mlton ]; then echo self; fi))
   # We're compiling MLton with itself, so don't use any stubs.
-  CM = mlton.cm
+  FILE = mlton.mlb
   FLAGS += -default-ann 'sequenceUnit true'
 else
 ifeq (cygwin, $(shell $(SRC)/bin/host-os))
   # The stubs don't work on Cygwin, since they define spawn in terms of
   # fork, and fork doesn't work on Cygwin.  So, make without the stubs.
-  CM = mlton.cm
+  FILE = mlton.cm
 else
   # We're compiling MLton with an older version of itself, so use the stubs for
   # the MLton structure.
-  CM = mlton-stubs.cm
+  FILE = mlton-stubs.cm
 endif
 endif
 
@@ -39,7 +39,7 @@ endif
 FLAGS += $(COMPILE_ARGS)
 
 SOURCES =			\
-	mlton.cm		\
+	$(FILE)			\
 	$(UP)			\
 	front-end/ml.lex.sml 	\
 	front-end/ml.grm.sig 	\
@@ -47,7 +47,7 @@ SOURCES =			\
 	front-end/mlb.lex.sml 	\
 	front-end/mlb.grm.sig 	\
 	front-end/mlb.grm.sml	\
-	$(shell if [ -r mlton.cm ]; then mlton -stop f mlton.cm; fi)
+	$(shell if [ -r $(FILE) ]; then mlton -stop f $(FILE); fi)
 
 .PHONY: all
 all: $(AOUT)
@@ -59,7 +59,7 @@ $(AOUT): $(SOURCES)
 	rm -f $(UP)
 	$(MAKE) $(UP)
 	@echo 'Compiling mlton (takes a while)'
-	mlton $(FLAGS) $(CM)
+	mlton $(FLAGS) $(FILE)
 	size $(AOUT)
 
 #! Pass $(PATH) to upgrade-basis because it is run via #!/usr/bin/env
@@ -92,7 +92,7 @@ check-nj-version:
 
 .PHONY: def-use
 def-use:
-	mlton -stop tc -show-def-use /tmp/z.def-use $(MLTON).cm
+	mlton -stop tc -show-def-use /tmp/z.def-use $(FILE)
 
 .PHONY: nj-mlton
 nj-mlton: $(SOURCES)
@@ -157,4 +157,4 @@ nj-whole: $(SOURCES)
 
 .PHONY: warn
 warn:
-	mlton -stop tc -default-ann 'warnUnused true' $(MLTON).cm
+	mlton -stop tc -default-ann 'warnUnused true' $(FILE)

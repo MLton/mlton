@@ -4,7 +4,7 @@ BIN = $(BUILD)/bin
 LIB = $(BUILD)/lib
 MLTON = mlton
 TARGET = self
-FLAGS = -target $(TARGET) -default-ann 'sequenceUnit true, warnUnused true'
+FLAGS = -target $(TARGET) -default-ann 'sequenceUnit true' -default-ann 'warnUnused true'
 NAME = mlprof
 PATH = $(BIN):$(shell echo $$PATH)
 

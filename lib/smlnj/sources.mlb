@@ -13,9 +13,9 @@
  *)
 
 ann  
-   "sequenceUnit true, \
-   \warnMatch true, \
-   \warnUnused false, forceUsed"
+   "sequenceUnit true"
+   "warnMatch true"
+   "warnUnused false" "forceUsed"
 in
 local
     $(MLTON_ROOT)/basis/basis.mlb

@@ -225,11 +225,11 @@ structure Elaborate =
 		   toString = Bool.toString,
 		   expert = expert,
 		   options = fn ss => 
-		   case ss of 
-		      [s] => Bool.fromString s 
-		    | _ => NONE,
-			 newCur = fn (_,b) => b,
-			 newDef = fn (_,b) => b},
+		             case ss of 
+				[s] => Bool.fromString s 
+			      | _ => NONE,
+		   newCur = fn (_,b) => b,
+		   newDef = fn (_,b) => b},
 		  ac)
       in
 	 val ac =
@@ -260,8 +260,8 @@ structure Elaborate =
 		   case ss of 
 		      [] => SOME ()
 		    | _ => NONE,
-			 newCur = fn (i,()) => i + 1,
-			 newDef = fn (_,()) => 1}, ac)
+		   newCur = fn (i,()) => i + 1,
+		   newDef = fn (_,()) => 1}, ac)
 	 val (sequenceUnit, ac) =
 	    makeBool ({name = "sequenceUnit", default = false, expert = false}, ac)
 	 val (warnMatch, ac) =
@@ -278,10 +278,7 @@ structure Elaborate =
       val setDef = setDef
       val setAble = setAble
 
-      fun parse s = 
-	 List.map (String.tokens (s, fn #"," => true | _ => false), fn s =>
-		   String.tokens (s, Char.isSpace))
-      fun fold (s, b, f) = List.fold (parse s, b, f)
+      fun parse s = String.tokens (s, Char.isSpace)
    end
 
 val elaborateOnly =

@@ -58,7 +58,7 @@ following grammar:
                 ({\tt and} {\it funid} [{\tt =} {\it funid}])* \\
 & $\alt$ & {\it path.}{\tt sml} \\
 & $\alt$ & {\it path.}{\tt mlb} \\
-& $\alt$ & {\tt ann} {\tt"}{\it anns}{\tt"} {\tt in} {\it basdec} {\tt end} \\
+& $\alt$ & {\tt ann} {\tt"}{\it ann}{\tt"} {\tt in} {\it basdec} {\tt end} \\
 \\
 {\it basexp}
 & ::=    & {\tt bas} {\it basdec} {\tt end} \\
@@ -84,8 +84,7 @@ following grammar:
                 ({\tt and} {\it funid} [{\tt =} {\it funid}])* \\
 & | & {\it path.}{\tt sml} \\
 & | & {\it path.}{\tt mlb} \\
-& | & {\tt ann} {\it id} ({\it id})* ({\tt ,}  {\it id} ({\it id})*)*
-           {\tt in} {\it basdec} {\tt end} \\
+& | & {\tt ann} {\tt"}{\it ann}{\tt"} {\tt in} {\it basdec} {\tt end} \\
 \\
 {\it basexp}
 & ::=    & {\tt bas} {\it basdec} {\tt end} \\
@@ -408,12 +407,34 @@ Concurrent ML, a library for message-passing concurrency
 Annotations are a mechanism that allows a library author to control
 options that affect the elaboration of SML source files.
 Conceptually, a basis file is elaborated in a default annotation
-environment (just as it is elaborated in an empty basis).  The {\tt
-ann "{\it anns}" in {\it basdec} end} declaration merges the
-annotations {\it anns} with the ``current'' annotation environment for
-the elaboration of {\it basdec}.  To allow for future expansion, {\it
-anns} is lexed as a single SML string constant; individual annotations
-within {\it anns} should be separated by a comma ({\tt,}).
+environment (just as it is elaborated in an empty basis).  The 
+{\tt ann "{\it ann}" in {\it basdec} end} declaration merges the
+annotation {\it ann} with the ``current'' annotation environment for
+the elaboration of {\it basdec}.  To allow for future expansion, 
+{\tt "{\it ann}"} is lexed as a single SML string constant.  To
+conveniently specify multiple annotations, the following derived form
+is provided:
+
+\begin{latexonly}
+\begin{center}
+\begin{tabular}{lcl}
+\multicolumn{3}{l}{\it basdec} \\
+{\tt ann} {\tt"}{\it ann}{\tt"} ({\tt"}{\it ann}{\tt"})+ {\tt in} {\it basdec} {\tt end} 
+& $\Rightarrow$ &
+{\tt ann} {\tt"}{\it ann}{\tt"} {\tt in} {\tt ann} ({\tt"}{\it ann}{\tt"})+ {\tt in} {\it basdec} {\tt end} {\tt end}
+\end{tabular}
+\end{center}
+\end{latexonly}
+\begin{htmlonly}
+\begin{center}
+\begin{tabular}{lcl}
+\multicolumn{3}{l}{\it basdec} \\
+{\tt ann} {\tt"}{\it ann}{\tt"} ({\tt"}{\it ann}{\tt"})+ {\tt in} {\it basdec} {\tt end} 
+& {\tt ==>} &
+{\tt ann} {\tt"}{\it ann}{\tt"} {\tt in} {\tt ann} ({\tt"}{\it ann}{\tt"})+ {\tt in} {\it basdec} {\tt end} {\tt end}
+\end{tabular}
+\end{center}
+\end{htmlonly}
 
 In the explanation below, for annotations that take a boolean argument
 {\tt \trueFalse}, the first value listed is the default annotation.
@@ -482,9 +503,9 @@ some libraries.  Hence, a library author may choose to deliver a
 library as follows:
 \begin{verbatim}
 ann 
-  "sequenceUnit false, \
-  \warnMatch true, \
-  \warnUnused true, forceUsed"
+  "sequenceUnit false"
+  "warnMatch true"
+  "warnUnused true" "forceUsed"
 in
   local
     file1.sml

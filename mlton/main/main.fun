@@ -211,11 +211,12 @@ fun makeOptions {usage} =
        (Normal, "default-ann", " <ann>", "set annotation default for mlb files",
 	SpaceString 
 	(fn s =>
-	 Control.Elaborate.fold
-	 (s, (), fn (ss, ()) => 
-	  if Control.Elaborate.setDef ss
-	     then ()
-	     else usage (concat ["invalid -default-ann flag: ", s])))),
+	 let val ss = Control.Elaborate.parse s
+	 in
+	    if Control.Elaborate.setDef ss
+	       then ()
+	       else usage (concat ["invalid -default-ann flag: ", s])
+	 end)),
        (Expert, "detect-overflow", " {true|false}",
 	"overflow checking on integer arithmetic",
 	Bool (fn b => setConst ("detect-overflow",
@@ -234,11 +235,12 @@ fun makeOptions {usage} =
        (Normal, "disable-ann", " <ann>", "disable annotation in mlb files",
 	SpaceString 
 	(fn s =>
-	 Control.Elaborate.fold
-	 (s, (), fn (ss, ()) => 
-	  if List.length ss = 1 andalso Control.Elaborate.setAble (false, hd ss)
-	     then ()
-	     else usage (concat ["invalid -disable-ann flag: ", s])))),
+	 let val ss = Control.Elaborate.parse s
+	 in 
+	    if List.length ss = 1 andalso Control.Elaborate.setAble (false, hd ss)
+	       then ()
+	       else usage (concat ["invalid -disable-ann flag: ", s])
+	 end)),
        (Expert, "drop-pass", " <pass>", "omit optimization pass",
 	SpaceString
 	(fn s => (case Regexp.fromString s of
@@ -252,11 +254,12 @@ fun makeOptions {usage} =
        (Expert, "enable-ann", " <ann>", "globally enable annotation",
 	SpaceString 
 	(fn s =>
-	 Control.Elaborate.fold
-	 (s, (), fn (ss, ()) =>
-	  if List.length ss = 1 andalso Control.Elaborate.setAble (true, hd ss)
-	     then ()
-	     else usage (concat ["invalid -enable-ann flag: ", s])))),
+	 let val ss = Control.Elaborate.parse s
+	 in 
+	    if List.length ss = 1 andalso Control.Elaborate.setAble (true, hd ss)
+	       then ()
+	       else usage (concat ["invalid -enable-ann flag: ", s])
+	 end)),
        (Expert, "error-threshhold", " 20", "error threshhold",
 	intRef errorThreshhold),
        (Expert, "exn-history", " {false|true}", "enable Exn.history",

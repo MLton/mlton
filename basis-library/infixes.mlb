@@ -1,8 +1,8 @@
 ann  
-   "deadCode true, \
-   \sequenceUnit true, \
-   \warnMatch true, \
-   \warnUnused true, forceUsed"
+   "deadCode true"
+   "sequenceUnit true"
+   "warnMatch true"
+   "warnUnused true" "forceUsed"
 in
    libs/basis-2002/top-level/infixes.sml
 end

@@ -15,28 +15,22 @@ local
    open Control.Elaborate
 in
    val withDef = withDef
-   fun withAnns (anns, reg, f) =
+   val withAnn = fn (ann, reg, f) =>
       let
-	 val restore = 
-	    fold
-	    (anns, fn () => (), fn (ann, restore) =>
-	     let
-		fun warn () =
-		   if !Control.warnAnn
-		      then let open Layout
-			   in
-			      Control.warning
-			      (reg,
-			       seq [str "unrecognized annotation: ",
-				    (seq o separate) (List.map (ann, str), " ")],
-			       empty)
-			   end
-		      else ()
-	     in
-		case withAnn ann of
-		   SOME restore' => restore o restore'
-		 | NONE => (warn (); restore)
-	     end)
+	 fun warn () =
+	    if !Control.warnAnn
+	       then let open Layout
+		    in
+		       Control.warning
+		       (reg,
+			seq [str "unrecognized annotation: ", str ann],
+			empty)
+		    end
+	       else ()
+	 val restore =
+	    case withAnn (parse ann) of
+	       SOME restore' => restore'
+	     | NONE => (warn (); fn () => ())
       in
 	 DynamicWind.wind (f, restore)
       end
@@ -206,12 +200,12 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 			 end
 		    else ()
 		 ; Env.openBasis (E, primBasis))
-	   | Basdec.Ann (anns, reg, basdec) =>
+	   | Basdec.Ann (ann, reg, basdec) =>
 		let
 		   val old = forceUsed ()
 		in
-		   withAnns 
-		   (anns, reg, fn () => 
+		   withAnn 
+		   (ann, reg, fn () => 
 		    if forceUsed () <> old
 		       then Env.forceUsedLocal (E, fn () => elabBasdec basdec)
 		       else elabBasdec basdec)
