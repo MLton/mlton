@@ -154,6 +154,10 @@ structure Native =
 			      default = true,
 			      toString = Bool.toString}
 
+      val cutoff = control {name = "native cutoff",
+			    default = 100,
+			    toString = Int.toString}
+
       val liveTransfer = control {name = "native live transfer",
 				  default = true,
 				  toString = Bool.toString}

@@ -88,6 +88,9 @@ signature CONTROL =
 	    (* whether or not to use copy propagation in native codegen *)
 	    val copyProp: bool ref
 	       
+	    (* live transfer cutoff distance *)
+	    val cutoff: int ref 
+
 	    (* whether or not to use live transfer in native codegen *)
 	    val liveTransfer: bool ref 
 
