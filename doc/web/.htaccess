@@ -1,0 +1,9 @@
+# Indexes is necessary for the benchmark directory to be shown.
+Options FollowSymLinks Indexes
+
+# The user guide used to be in the HTML directory.
+RedirectMatch permanent /HTML* http://www.mlton.org/user-guide/index.html
+
+#ErrorDocument 401 
+#ErrorDocument 403
+ErrorDocument 404 /not-found.html
