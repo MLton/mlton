@@ -28,9 +28,30 @@ fun zoneFunction f =
    let
       val {args, mayInline, name, raises, returns, start, ...} = Function.dest f
       datatype z = datatype Exp.t
-      val {get = labelInfo: Label.t -> {isCut: bool ref}, ...} =
+      val {get = labelInfo: Label.t -> {isInLoop: bool ref,
+					isCut: bool ref}, ...} =
 	 Property.get (Label.plist,
-		       Property.initFun (fn _ => {isCut = ref false}))
+		       Property.initFun (fn _ => {isCut = ref false,
+						  isInLoop = ref false}))
+      (* Mark nodes that are in loops so that we can avoid inserting tuple
+       * constructions there.
+       *)
+      val {graph, nodeBlock, ...} = Function.controlFlow f
+      val () =
+	 List.foreach
+	 (Graph.stronglyConnectedComponents graph, fn ns =>
+	  let
+	     fun doit () =
+		List.foreach
+		(ns, fn n =>
+		 #isInLoop (labelInfo (Block.label (nodeBlock n))) := true)
+	  in
+	     case ns of
+		[n] => if Node.hasEdge {from = n, to = n}
+			  then doit ()
+		       else ()
+	      | _ => doit ()
+	  end)
       val dominatorTree = Function.dominatorTree f
       (* Decide which labels to cut at. *)
       val cutDepth = !Control.zoneCutDepth
@@ -41,8 +62,19 @@ fun zoneFunction f =
 		  then
 		     let
 			val Block.T {label, ...} = b
-			val {isCut, ...} = labelInfo label
-			val () = isCut := true
+			val {isCut, isInLoop, ...} = labelInfo label
+			val () =
+			   if !isInLoop
+			      then
+				 Control.diagnostic
+				 (fn () =>
+				  let
+				     open Layout
+				  in
+				     seq [str "skipping cut at ",
+					  Label.layout label]
+				  end)
+			   else isCut := true
 		     in
 			cutDepth
 		     end
@@ -212,8 +244,15 @@ fun zoneFunction f =
 
 fun maybeZoneFunction (f, ac) =
    let
-      val {args, blocks, mayInline, name, raises, returns, start} =
-	 Function.dest f
+      val {blocks, name, ...} = Function.dest f
+      val () =
+	 Control.diagnostic
+	 (fn () =>
+	  let
+	     open Layout
+	  in
+	     seq [Func.layout name, str " has ", str " blocks."]
+	  end)
    in
       if Vector.length blocks <= !Control.maxFunctionSize
 	 then f :: ac
