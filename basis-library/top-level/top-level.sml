@@ -148,7 +148,9 @@ datatype ref = datatype ref
 
 signature MLTON_CONT = MLTON_CONT
 signature MLTON_GC = MLTON_GC
+signature MLTON_INT_INF = MLTON_INT_INF
 signature MLTON_ITIMER = MLTON_ITIMER
+signature MLTON_PROFILE = MLTON_PROFILE
 signature MLTON_PTRACE = MLTON_PTRACE
 signature MLTON_SIGNAL = MLTON_SIGNAL
 signature MLTON_SOCKET = MLTON_SOCKET
