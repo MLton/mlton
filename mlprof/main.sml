@@ -521,13 +521,13 @@ val replaceLine =
 			  anys,
 			  string "\n"],
 		     afterColor)]
-       val dfa = compileNFA nodeLine
+       val c = compileNFA nodeLine
        val _ = if true
 	          then ()
-	       else Compiled.layoutDotToFile (dfa, "/tmp/dfa.dot")
+	       else Compiled.layoutDotToFile (c, "/tmp/z.dot")
     in
        fn (l, color) =>
-       case Compiled.matchAll (dfa, l) of
+       case Compiled.matchAll (c, l) of
 	  NONE => l
 	| SOME m =>
 	     let
@@ -636,34 +636,20 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 			       else if ticks >= thresh2
 				       then Orange2
 				    else Yellow3)
-		     val replaceLine = replaceLine ()
 		  in
-		     if File.doesExist dotFile
-			then
-			   let
-			      val (tmp, out) =
-				 File.temp {prefix = "/tmp/file", suffix = ""}
-			      val _ =
-				 Out.withClose
-				 (out, fn _ =>
-				  File.withIn
-				  (dotFile, fn ins =>
-				   let
-				      fun loop () =
-					 case In.inputLine ins of
-					    "" => ()
-					  | l =>
-					       (Out.output
-						(out, replaceLine (l, color))
-						; loop ())
-				   in
-				      loop ()
-				   end))
-			      val _ = File.move {from = tmp, to = dotFile}
-			   in
-			      ()
-			   end
-		     else ()
+		     if not (File.doesExist dotFile)
+			then ()
+		     else
+			let
+			   val replaceLine = replaceLine ()
+			   val lines = File.lines dotFile
+			in
+			   File.withOut
+			   (dotFile, fn out =>
+			    List.foreach
+			    (lines, fn l =>
+			     Out.output (out, replaceLine (l, color))))
+			end
 		  end
 	 in T a
 	 end
