@@ -1261,8 +1261,7 @@ static void createCardMapAndCrossMap (GC_state s) {
  * is unable.  If a reasonable size to space is already there, then heapCreate
  * leaves it.
  */
-static bool heapCreate (GC_state s, GC_heap h, 
-				W32 desiredSize, W32 minSize) {
+static bool heapCreate (GC_state s, GC_heap h, W32 desiredSize, W32 minSize) {
 	W32 backoff;
 
 	if (DEBUG)
@@ -1272,7 +1271,7 @@ static bool heapCreate (GC_state s, GC_heap h,
 	assert (heapIsInit (h));
 	if (desiredSize < minSize)
 		desiredSize = minSize;
-	desiredSize = align (desiredSize, s->pageSize);
+ 	desiredSize = align (desiredSize, s->pageSize);
 	assert (0 == h->size and NULL == h->start);
 	backoff = (desiredSize - minSize) / 20;
 	if (0 == backoff)
@@ -2102,7 +2101,7 @@ unmark:
 	}
 	assert (FALSE);
 done:
-	s->bytesLive = front - gap - s->heap.start;
+	s->oldGenSize = front - gap - s->heap.start;
 	if (DEBUG_MARK_COMPACT)
 		fprintf (stderr, "bytesLive = %u\n", s->bytesLive);
 	return;
@@ -2126,6 +2125,10 @@ static void markCompact (GC_state s) {
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Major mark-compact GC done.\n");
 }
+
+/* ---------------------------------------------------------------- */
+/*                          translateHeap                           */
+/* ---------------------------------------------------------------- */
 
 static void translatePointer (GC_state s, pointer *p) {
 	if (s->translateUp)
@@ -2160,6 +2163,40 @@ static void translateHeap (GC_state s, pointer from, pointer to, uint size) {
 }
 
 /* ---------------------------------------------------------------- */
+/*                            heapRemap                             */
+/* ---------------------------------------------------------------- */
+
+#include <linux/mman.h>
+static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
+	W32 backoff;
+	W32 size;
+
+	assert (desired >= h->size);
+	desired = align (desired, s->pageSize);
+	backoff = (desired - minSize) / 20;
+	if (0 == backoff)
+		backoff = 1; /* enough to terminate the loop below */
+	backoff = align (backoff, s->pageSize);
+	for (size = desired; size >= minSize; size -= backoff) {
+		pointer new;
+
+		new = mremap (h->start, h->size, size, MREMAP_MAYMOVE);
+		unless ((void*)-1 == new) {
+			if (DEBUG_RESIZING)
+				fprintf (stderr, "Remapping heap at 0x%08x of size %s to heap at 0x%08x of size %s.\n",
+					(uint)h->start,
+					uintToCommaString (h->size),
+					(uint)new,
+					uintToCommaString (size));
+			h->start = new;
+			h->size = size;
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/* ---------------------------------------------------------------- */
 /*                             heapGrow                             */
 /* ---------------------------------------------------------------- */
 
@@ -2179,6 +2216,8 @@ static void growHeap (GC_state s, W32 desired, W32 minSize) {
 	old = s->heap.start;
 	size = s->oldGenSize;
 	assert (size <= h->size);
+	if (heapRemap (s, h, desired, minSize))
+		goto done;
 	heapShrink (s, h, size);
 	heapInit (&h2);
 	/* Allocate a space of the desired size. */
@@ -2227,8 +2266,33 @@ copy:
 				uintToCommaString (minSize));
 		}
 	}
-	translateHeap (s, old, s->heap.start, s->oldGenSize);
-	setCardMapForMutator (s);
+done:
+	unless (old == s->heap.start) {
+		translateHeap (s, old, s->heap.start, s->oldGenSize);
+		setCardMapForMutator (s);
+	}
+}
+
+
+/* ---------------------------------------------------------------- */
+/*                     resizeCardMapAndCrossMap                     */
+/* ---------------------------------------------------------------- */
+
+static void resizeCardMapAndCrossMap (GC_state s) {
+	if (s->mutatorMarksCards 
+		and s->cardMapSize != 
+			align (divCardSize (s, s->heap.size), s->pageSize)) {
+		pointer oldCrossMap;
+		uint oldCrossMapSize;
+
+		smunmap (s->cardMap, s->cardMapSize);
+		oldCrossMap = s->crossMap;
+		oldCrossMapSize = s->crossMapSize;
+		createCardMapAndCrossMap (s);
+		copy (oldCrossMap, s->crossMap,
+			min (s->crossMapSize, oldCrossMapSize));
+		smunmap (oldCrossMap, oldCrossMapSize);
+	}
 }
 
 /* ---------------------------------------------------------------- */
@@ -2252,21 +2316,7 @@ static void resizeHeap (GC_state s, W64 need) {
 		heapRelease (s, &s->heap2);
 		growHeap (s, desired, need);
 	}
-	/* Resize card map and cross map. */
-	if (s->mutatorMarksCards 
-		and s->cardMapSize != 
-			align (divCardSize (s, s->heap.size), s->pageSize)) {
-		pointer oldCrossMap;
-		uint oldCrossMapSize;
-
-		smunmap (s->cardMap, s->cardMapSize);
-		oldCrossMap = s->crossMap;
-		oldCrossMapSize = s->crossMapSize;
-		createCardMapAndCrossMap (s);
-		copy (oldCrossMap, s->crossMap,
-			min (s->crossMapSize, oldCrossMapSize));
-		smunmap (oldCrossMap, oldCrossMapSize);
-	}
+	resizeCardMapAndCrossMap (s);
 	assert (s->heap.size >= need);
 }
 
