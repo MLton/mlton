@@ -98,7 +98,14 @@ functor ImperativeIO
 		    structure StreamIO =
 		      struct
 			open StreamIO
-			fun makeCloseIn _ = raise Fail "<makeCloseIn>"
+			structure Close =
+			   struct
+			      type t = unit
+
+			      fun close _ = raise Fail "<Close.close>"
+			      fun equalsInstream _ = raise Fail "<Close.equalsInstream"
+			      fun make _ = raise Fail "<Close.make>"
+			   end
 			fun instreamUniq _ = raise Fail "<instreamUniq>"
 			fun input1' _ = raise (Fail "<input1'>")
 			fun equalsIn _ = raise (Fail "<equalsIn>")

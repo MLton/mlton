@@ -36,9 +36,16 @@ signature STREAM_IO_EXTRA =
    sig
       include STREAM_IO
 
+      structure Close:
+	 sig
+	    type t
+
+	    val close: t -> unit
+	    val equalsInstream: t * instream -> bool
+	    val make: instream -> t
+	 end
       val input1': instream -> elem option * instream
       val instreamReader: instream -> reader
-      val makeCloseIn: instream -> unit -> unit
       val mkInstream': {reader: reader,
 			closed: bool,
 			buffer_contents: vector option} -> instream
@@ -52,7 +59,6 @@ signature STREAM_IO_EXTRA =
       val openVector: vector -> instream
       val inputLine: instream -> (vector * instream) option
       val outputSlice: outstream * (vector * int * int option) -> unit
-      val instreamUniq: instream -> unit ref
    end
 
 signature STREAM_IO_EXTRA_FILE =
