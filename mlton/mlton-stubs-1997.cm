@@ -1,5 +1,5 @@
 Group is
-/home/sweeks/mlton/src/lib/mlton-stubs/1997-to-2002.sml
+../lib/mlton-stubs/1997-to-2002.sml
 ../lib/mlyacc/base.sig
 ../lib/mlyacc/lrtable.sml
 ../lib/mlyacc/stream.sml

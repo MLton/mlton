@@ -36,7 +36,7 @@ $(NAME)_cm: $(NAME)-stubs_cm
 $(NAME)-stubs-1997_cm: $(NAME)-stubs_cm
 	(								\
 		echo 'Group is' &&					\
-		echo '$(SRC)/lib/mlton-stubs/1997-to-2002.sml' &&	\
+		echo '../lib/mlton-stubs/1997-to-2002.sml' &&		\
 		grep -v Group $(NAME)-stubs.cm;				\
 	) >$(NAME)-stubs-1997.cm
 
