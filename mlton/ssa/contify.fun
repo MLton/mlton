@@ -137,21 +137,13 @@ structure ContFuncGraph =
 			  getFuncData: Func.t -> FuncData.t}
       = let
 	  val G = Graph.new ()
-
 	  fun addEdge edge
 	    = ignore (Graph.addEdge (G, edge))
-
-	  fun addEdge' edge
-	    = if Node.hasEdge edge
-		then ()
-		else addEdge edge
-
 	  val {get = getNodeInfo : unit Node.t -> t, 
 	       set = setNodeInfo, ...}
 	    = Property.getSetOnce
 	      (Node.plist,
 	       Property.initRaise ("nodeInfo", Node.layout))
-
 	  fun getFuncNode f
 	    = let
 		val node = FuncData.node' (getFuncData f)
@@ -195,22 +187,19 @@ structure ContFuncGraph =
 	in
 	  {G = G, 
 	   addEdge = addEdge, 
-	   addEdge' = addEdge',
 	   getNodeInfo = getNodeInfo, 
 	   getContNode = getContNode, 
 	   getFuncNode = getFuncNode,
 	   reset = reset}
 	end
-
     fun newFuncGraph {getFuncData: Func.t -> FuncData.t}
       = let
-	  val {G, addEdge, addEdge', getNodeInfo, getFuncNode, reset, ...}
+	  val {G, addEdge, getNodeInfo, getFuncNode, reset, ...}
 	    = newContFuncGraph {getContData = fn _ => Error.bug "newFuncGraph",
 				getFuncData = getFuncData}
 	in
 	  {G = G,
 	   addEdge = addEdge,
-	   addEdge' = addEdge',
 	   getNodeInfo = fn n => case getNodeInfo n
 				   of FuncNode f => f
 				    | ContNode _ => Error.bug "newFuncGraph",
