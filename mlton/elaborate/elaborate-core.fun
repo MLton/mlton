@@ -2254,7 +2254,7 @@ fun elaborateDec (d, {env = E, nest}) =
 			 (ty, {con = Type.con,
 			       expandOpaque = true,
 			       record = Type.record,
-			       replaceSynonyms = true,
+			       replaceSynonyms = false,
 			       var = Type.var})
 		      val expandedTy = expandTy ty
 		      (* We use expandedTy to get the underlying primitive right
@@ -2356,11 +2356,11 @@ fun elaborateDec (d, {env = E, nest}) =
 					if Tycon.equals (c, Tycon.bool)
 					   then ConstType.Bool
 					else if Tycon.isIntX c
-						then ConstType.Word
+					   then ConstType.Word
 					else if Tycon.isRealX c
-						then ConstType.Real
+					   then ConstType.Real
 					else if Tycon.isWordX c
-						then ConstType.Word
+					   then ConstType.Word
 					else if Tycon.equals (c, Tycon.vector)
 					   andalso 1 = Vector.length ts
 					   andalso
@@ -2368,11 +2368,9 @@ fun elaborateDec (d, {env = E, nest}) =
 						  (Vector.sub (ts, 0))) of
 					       NONE => false
 					     | SOME (c, _) => 
-						  Tycon.equals
-						  (c, Tycon.word WordSize.byte))
-						then ConstType.String
-					     else
-						bug ()
+						  Tycon.isCharX c)
+					   then ConstType.String
+					else bug ()
 				  val finish =
 				     fn () => ! Const.lookup ({default = default,
 							       name = name}, ct)
