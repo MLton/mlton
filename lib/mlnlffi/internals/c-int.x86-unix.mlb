@@ -12,13 +12,11 @@ local
 
   ../zstring.sig
   zstring.sml
-
   tag.sml
 in
   structure Tag
 
   structure MLRep
-
   signature C
   structure C
   signature C_INT

@@ -18,8 +18,8 @@ structure ZString : ZSTRING = struct
 	fun set' (p, w) = Set.uchar' (Ptr.|*! p, w)
 	fun nxt' p = Ptr.|+! S.uchar (p, 1)
     in
-        type 'c zstring = ((uchar, naf, 'c) obj, naf) ptr
-	type 'c zstring' = ((uchar, naf, 'c) obj, naf) ptr'
+        type 'c zstring = (uchar, 'c) obj ptr
+	type 'c zstring' = (uchar, 'c) obj ptr'
 
 	fun length' p = let
 	    fun loop (n, p) = if get' p = 0w0 then n else loop (n + 1, nxt' p)
