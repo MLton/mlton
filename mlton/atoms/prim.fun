@@ -224,6 +224,28 @@ structure Name =
 	  | Array_array0 => true
 	  | _ => false
 
+      val impCall
+	= fn FFI _ => true
+           | IntInf_toString => true
+	   | MLton_size => true
+	   | String_equal => true
+	   | IntInf_compare => true
+	   | IntInf_equal => true
+	   | IntInf_add => true
+	   | IntInf_sub => true
+	   | IntInf_mul => true
+	   | IntInf_quot => true
+	   | IntInf_rem => true
+           | IntInf_neg => true
+	   | Real_Math_cosh => true
+           | Real_Math_sinh => true
+	   | Real_Math_tanh => true
+	   | Real_Math_pow => true
+	   | Real_copysign => true
+           | Real_frexp => true
+	   | Real_modf => true
+           | _ => false
+
       datatype z = datatype Kind.t
 	       
       (* The values of these strings are important since they are referred to
@@ -440,6 +462,7 @@ val isFunctional = Trace.trace ("isFunctional", layout, Bool.layout) isFunctiona
 val mayOverflow = Name.mayOverflow o name
 val mayRaise = Name.mayRaise o name
 val isArrayAllocation = Name.isArrayAllocation o name
+val impCall = Name.impCall o name
 
 val entersRuntime = Name.entersRuntime o name
 val entersRuntime =

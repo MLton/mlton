@@ -243,6 +243,10 @@ signature PRIM =
 			 deref: 'a -> 'a,
 			 devector: 'a -> 'a} -> 'a vector
       val ffi: string * Scheme.t -> t
+      (* impCall p = true iff p is implemented in the codegen as a call to a C function
+       * examples: FFI, MLton_size, String_equal, IntInf_*, 
+       *)
+      val impCall: t -> bool
       val intInfEqual: t
       val intPlus: t
       (*
