@@ -167,8 +167,8 @@ prefix = $(PREFIX)
 TBIN = $(DESTDIR)$(prefix)/bin
 ULIB = lib/mlton
 TLIB = $(DESTDIR)$(prefix)/$(ULIB)
-TMAN = $(DESTDIR)$(prefix)/share/man/man1
-TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
+TMAN = $(DESTDIR)$(prefix)/man/man1
+TDOC = $(DESTDIR)$(prefix)/doc/mlton
 MANVERS = $(shell date '+%B %d, %Y')
 
 .PHONY: install
@@ -193,5 +193,5 @@ install:
 		sed "s/\(.*\)VERSION\(.*\)/\1$(MANVERS)\2/" <$(SRC)/man/$$f.1	\
 			>$(TMAN)/$$f.1;						\
 	done
-	find $(DESTDIR) -name CVS -type d | xargs --no-run-if-empty rm -rf
-	find $(DESTDIR) -name .cvsignore -type f | xargs --no-run-if-empty rm -rf
+	find $(TDOC) -name CVS -type d | xargs --no-run-if-empty rm -rf
+	find $(TDOC) -name .cvsignore -type f | xargs --no-run-if-empty rm -rf
