@@ -1,10 +1,10 @@
 signature STREAM_IO_EXTRA_ARG = 
    sig
+      structure Array: MONO_ARRAY
+      structure ArraySlice: MONO_ARRAY_SLICE
       structure PrimIO: PRIM_IO
       structure Vector: MONO_VECTOR
       structure VectorSlice: MONO_VECTOR_SLICE
-      structure Array: MONO_ARRAY
-      structure ArraySlice: MONO_ARRAY_SLICE
       sharing type PrimIO.elem 
 	 = Vector.elem = VectorSlice.elem
 	 = Array.elem = ArraySlice.elem 
@@ -19,10 +19,9 @@ signature STREAM_IO_EXTRA_ARG =
       sharing type PrimIO.array_slice 
 	 = ArraySlice.slice
 
-      val someElem: PrimIO.elem
-
       val line: {isLine: PrimIO.elem -> bool,
 		 lineElem: PrimIO.elem} option
+      val someElem: PrimIO.elem
       val xlatePos : {toInt : PrimIO.pos -> Position.int,
 		      fromInt : Position.int -> PrimIO.pos} option
    end
@@ -805,11 +804,11 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG) :>
 
 signature STREAM_IO_ARG = 
    sig 
+      structure Array: MONO_ARRAY
+      structure ArraySlice: MONO_ARRAY_SLICE
       structure PrimIO: PRIM_IO  
       structure Vector: MONO_VECTOR
       structure VectorSlice: MONO_VECTOR_SLICE
-      structure Array: MONO_ARRAY
-      structure ArraySlice: MONO_ARRAY_SLICE
       sharing type PrimIO.elem = Vector.elem = VectorSlice.elem = Array.elem
 	 = ArraySlice.elem 
       sharing type PrimIO.vector = Vector.vector = VectorSlice.vector
@@ -823,11 +822,12 @@ signature STREAM_IO_ARG =
    end
 
 functor StreamIO (S: STREAM_IO_ARG) :>
-	STREAM_IO where type elem = S.PrimIO.elem
-	          where type vector = S.PrimIO.vector
-		  where type reader = S.PrimIO.reader
-		  where type writer = S.PrimIO.writer
-		  where type pos = S.PrimIO.pos =
+   STREAM_IO where type elem = S.PrimIO.elem
+             where type pos = S.PrimIO.pos
+	     where type reader = S.PrimIO.reader
+	     where type vector = S.PrimIO.vector
+	     where type writer = S.PrimIO.writer
+   =
    StreamIOExtra (open S
 		  val line = NONE
 		  val xlatePos = NONE)
