@@ -9,6 +9,8 @@ structure String: STRING_EXTRA =
    struct
       open String0
 
+      val toLower = translate (str o Char.toLower)
+
       local
 	 fun make f = f (op = : char * char -> bool)
       in

@@ -24,8 +24,6 @@ substructures do change from release to release of {\mlton}.
 \begin{verbatim}
 structure MLton:
    sig
-      type pointer
-
       val eq: 'a * 'a -> bool
       val isMLton: bool
       val safe: bool
@@ -40,6 +38,7 @@ structure MLton:
       structure IntInf: MLTON_INT_INF
       structure Itimer: MLTON_ITIMER
       structure Platform: MLTON_PLATFORM
+      structure Pointer: MLTON_POINTER
       structure ProcEnv: MLTON_PROC_ENV
       structure Process: MLTON_PROCESS
       structure Profile: MLTON_PROFILE
@@ -63,10 +62,6 @@ structure MLton:
 
 \newcommand{\entry}[1]{\item[\tt #1]\hspace{1in}\\}
 \begin{description}
-
-\entry{type pointer}
-the type of C pointers ({\tt void*}).  This is useful with the FFI
-(see \secref{ffi}).
 
 \entry{eq (x, y)}
 returns true if {\tt x} and {\tt y} are equal as pointers.  For simple types
@@ -96,8 +91,8 @@ When compiled {\tt -safe false}, {\tt sub} will reduce to
 \entry{size x}
 return the amount of heap space (in bytes) taken by the value of {\tt
 x}, including all objects reachable from {\tt x} by following
-pointers.  It takes time proportional to the size.  For an example,
-see {\tt examples/size.sml}.
+pointers.  It takes time proportional to the size of {\tt x}.  For an
+example, see {\tt examples/size.sml}.
 
 \end{description}
 
@@ -174,6 +169,7 @@ continuation.
 signature MLTON_EXN =
    sig
       val history: exn -> string list
+      val topLevelHandler: exn -> unit
    end
 \end{verbatim}
 
@@ -184,6 +180,11 @@ returns the file positions that have raised the exception {\tt e}, in reverse
 chronological order.   A {\tt handle} expression that implicitly reraises counts
 as a raise.  {\tt history} will return {\tt []} unless the program is compiled
 with {\tt -exn-history true}.
+
+\entry{topLevelHandler e}
+behave as if the top level handler received the exception {\tt e},
+that is, print out the unhandled exception message for {\tt e} and
+exit.
 
 \end{description}
 
@@ -207,6 +208,7 @@ signature MLTON_FINALIZABLE =
       val addFinalizer: 'a t * ('a -> unit) -> unit
       val finalizeBefore: 'a t * 'b t -> unit
       val new: 'a -> 'a t
+      val touch: 'a t -> unit
       val withValue: 'a t * ('a -> 'b) -> 'b
    end
 \end{verbatim}
@@ -216,7 +218,7 @@ signature MLTON_FINALIZABLE =
 \entry{addFinalizer (v, f)}
 adds {\tt f} as a finalizer to {\tt v}.  This means that sometime
 after the last call to {\tt withValue} on {\tt v} completes and {\tt
-v} becomes unreachable, {\tt f x} will run.
+v} becomes unreachable, {\tt f v} will run.
 
 \entry{finalizeBefore (v1, v2)}
 ensures that {\tt v1} will be finalized before {\tt v2}.  A cycle of
@@ -226,8 +228,13 @@ finalized.
 
 \entry{new x}
 creates a new finalizable value, {\tt v}, with value {\tt x}.  The
-finalizers of {\tt v} will run after the last call to {\tt withValue}
-on {\tt v}.
+finalizers of {\tt v} will run sometime after the last call to {\tt
+withValue} on {\tt v} when the gc determines that {\tt v} is
+unreachable.
+
+\entry{touch v}
+Ensures that {\tt v}'s finalizers will run sometime after the call to
+{\tt touch}.
 
 \entry{withValue (v, f)}
 returns the result of applying {\tt f} to the value of {\tt v} and
@@ -275,22 +282,21 @@ resizes the heap to the desired size.
 \subsubsection{{\tt MLton.IntInf}}
 
 {\mlton} represents an arbitrary precision integer either as an
-unboxed 32 bit word with the bottom bit of 1 and 31 bits representing
-a small integer in $[-2^{30}, 2^{30})$, or as a vector of words where
-the first word indicates the sign and the rest are the limbs of gmp
-big integer.
+unboxed 32 bit word with the bottom bit set to 1 and the top 31 bits
+representing a small integer in $[-2^{30}, 2^{30})$, or as a vector of
+words where the first word indicates the sign and the rest are the
+limbs of {\gmp} big integer.
 \begin{verbatim}
 signature MLTON_INT_INF =
    sig
-      include INT_INF
-
-      datatype rep =
-          Big of word vector
-        | Small of int
+      type int
 
       val areSmall: int * int -> bool
       val gcd: int * int -> int 
       val isSmall: int -> bool
+      datatype rep =
+          Big of word vector
+        | Small of Int.int
       val rep: int -> rep
       val size: int -> Int.int
    end
@@ -298,23 +304,27 @@ signature MLTON_INT_INF =
 
 \begin{description}
 
-\entry{datatype rep}
-the underlying representation of an IntInf.
+\entry{type int}
+the type of IntInfs.
 
 \entry{areSmall (a, b)}
 returns true iff both {\tt a} and {\tt b} are small.
 
 \entry{gcd (a, b)}
-using the gmp's fast gcd implementation.
+using the {\gmp}'s fast gcd implementation.
 
 \entry{isSmall a}
 returns true iff {\tt a} is small.
+
+\entry{datatype rep}
+the underlying representation of an IntInf.
 
 \entry{rep i}
 return the underlying representation of i.
 
 \entry{size i}
-return the number of words taken by {\tt i}.
+return the number of heap words taken by {\tt i}.  Returns {\tt 0} if
+{\tt i} is small.
 
 \end{description}
 
@@ -348,11 +358,11 @@ security risks.
 {\tt mkstemps} is like {\tt mkstemp}, except it has both a prefix and suffix.
 
 \entry{newIn (fd, name)} create a new instream from file descriptor
-{\tt fd}, with {\tt name} used in {\tt Io} exceptions if later
+{\tt fd}, with {\tt name} used in any {\tt Io} exceptions later
 raised.
 
 \entry{newOut (fd, name)} create a new outstream from file descriptor
-{\tt  fd}, with {\tt name} used in {\tt Io} exceptions if later
+{\tt  fd}, with {\tt name} used in any {\tt Io} exceptions later
 raised.
 
 \entry{outFd out} return the file descriptor corresponding to
@@ -369,8 +379,7 @@ signature MLTON_ITIMER =
        | Real
        | Virtual
 
-      val set: t * {interval: Time.time,
-                    value: Time.time} -> unit
+      val set: t * {interval: Time.time, value: Time.time} -> unit
       val signal: t -> Posix.Signal.signal
    end
 \end{verbatim}
@@ -393,8 +402,8 @@ signature MLTON_PLATFORM =
          sig
             datatype t = Sparc | X86
 
-            val host: t
             val fromString: string -> t option
+            val host: t
             val toString: t -> string
          end
          
@@ -402,8 +411,8 @@ signature MLTON_PLATFORM =
          sig
             datatype t = Cygwin | FreeBSD | Linux | NetBSD | Solaris
 
-            val host: t
             val fromString: string -> t option
+            val host: t
             val toString: t -> string
          end
    end
@@ -414,26 +423,96 @@ signature MLTON_PLATFORM =
 \entry{datatype Arch.t}
 the architectures to which {\mlton} can compile.
 
+\entry{Arch.fromString a}
+convert from string to architecture.  Case insensitive.
+
 \entry{Arch.host}
 the architecture for which the program is compiled.
 
-\entry{Arch.fromString a}
-convert from lower case string to architecture.
-
 \entry{Arch.toString}
-lower case string for architecture.
+string for architecture.
 
 \entry{datatype OS.t}
 the operating systems to which {\mlton} can compile.
 
+\entry{OS.fromString}
+convert from string to operating system.  Case insensitive.
+
 \entry{OS.host}
 the operating system for which the program is compiled.
 
-\entry{OS.fromString}
-convert from lower case string to operating system.
-
 \entry{OS.toString}
-lower case string for operating system.
+string for operating system.
+
+\end{description}
+%
+\subsubsection{\tt MLton.Pointer}
+
+\begin{verbatim}
+signature MLTON_POINTER =
+   sig
+      eqtype t
+
+      val add: t * word -> t
+      val diff: t * t -> word
+      val getInt8: t * int -> Int8.int
+      val getInt16: t * int -> Int16.int
+      val getInt32: t * int -> Int32.int
+      val getInt64: t * int -> Int64.int
+      val getPointer: t * int -> t
+      val getReal32: t * int -> Real32.real
+      val getReal64: t * int -> Real64.real
+      val getWord8: t * int -> Word8.word
+      val getWord16: t * int -> Word16.word
+      val getWord32: t * int -> Word32.word
+      val getWord64: t * int -> Word64.word
+      val null: t
+      val setInt8: t * int * Int8.int -> unit
+      val setInt16: t * int * Int16.int -> unit
+      val setInt32: t * int * Int32.int -> unit
+      val setInt64: t * int * Int64.int -> unit
+      val setPointer: t * int * t -> unit
+      val setReal32: t * int * Real32.real -> unit
+      val setReal64: t * int * Real64.real -> unit
+      val setWord8: t * int * Word8.word -> unit
+      val setWord16: t * int * Word16.word -> unit
+      val setWord32: t * int * Word32.word -> unit
+      val setWord64: t * int * Word64.word -> unit
+      val sub: t * word -> t
+   end
+\end{verbatim}
+
+\begin{description}
+\entry{eqtype t}
+The type of pointers, i.e. machine addresses.
+
+\entry{add (p, w)}
+returns the pointer {\tt w} bytes after than {\tt p}.  Does not check
+for overflow.
+
+\entry{diff (p1, p2)}
+returns the number of bytes {\tt w} such that {\tt add (p2, w) = p1}.
+Does not check for overflow.
+
+\entry{get\mbox{\it X} (p, i)}
+returns the object stored at address {\tt p}, offset by {\tt i}.  For
+example, {\tt getWord32 (p, 7)} returns the 32-bit word stored 28
+bytes beyond {\tt p}.
+
+\entry{isNull p}
+returns {\tt true} if {\tt p} is the null pointer.
+
+\entry{null}
+the null pointer, i.e. 0.
+
+\entry{set\mbox{\it X} (p, i, v)}
+assigns the object stored at address {\tt p} offset by {\tt i}.  For
+example, {\tt setWord32 (p, 7, w)} stores {\tt w} 28 bytes beyond {\tt
+p}.
+
+\entry{sub (p, w)}
+returns the pointer {\tt w} bytes before {\tt p}.  Does not check for
+overflow.
 
 \end{description}
 %
@@ -464,13 +543,14 @@ signature MLTON_PROCESS =
    end
 \end{verbatim}
 
-The {\tt spawn} functions provide an alternative to the {\tt fork}/{\tt exec}
-idiom that is typically used on Linux to create a new process.  On Linux, the
-{\tt spawn} functions are simple wrappers around {\tt fork}/{\tt exec}.
-However, on Cygwin, the {\tt spawn} functions are primitive and are both faster
-and more reliable than {\tt fork}/{\tt exec}.  All {\tt spawn} functions return
-the process id of the spawned process.  They differ in how the executable is
-found and the environment that it uses.
+The {\tt spawn} functions provide an alternative to the {\tt
+fork}/{\tt exec} idiom that is typically used to create a new process.
+On most platforms, the {\tt spawn} functions are simple wrappers
+around {\tt fork}/{\tt exec}.  However, on Cygwin, the {\tt spawn}
+functions are primitive and are both faster and more reliable than
+{\tt fork}/{\tt exec}.  All {\tt spawn} functions return the process
+id of the spawned process.  They differ in how the executable is found
+and the environment that it uses.
 
 \begin{description}
 \entry{spawn \{path, args\}}
@@ -599,8 +679,8 @@ signature MLTON_RLIMIT =
 
       type t
                
-      val cpuTime: t             (* CPU     CPU time in seconds *)
       val coreFileSize: t        (* CORE    max core file size *)
+      val cpuTime: t             (* CPU     CPU time in seconds *)
       val dataSize: t            (* DATA    max data size *)
       val fileSize: t            (* FSIZE   Maximum filesize *)
       val lockedInMemorySize: t  (* MEMLOCK max locked address space *)
@@ -669,13 +749,22 @@ a critical section (see \secref{thread}).
 \begin{verbatim}
 signature MLTON_SIGNAL =
    sig
-      include POSIX_SIGNAL
-
       type t
-      sharing type t = signal
+      type signal = t
 
       val prof: t
       val vtalrm: t
+
+      structure Handler:
+         sig
+            type t
+
+            val default: t
+            val handler: (unit Thread.t -> unit Thread.t) -> t
+            val ignore: t
+            val isDefault: t -> bool
+            val isIgnore: t -> bool
+         end
 
       structure Mask:
          sig
@@ -688,17 +777,6 @@ signature MLTON_SIGNAL =
             val set: t -> unit
             val some: signal list -> t
             val unblock: t -> unit
-         end
-
-      structure Handler:
-         sig
-            type t
-
-            val default: t
-            val handler: (unit Thread.t -> unit Thread.t) -> t
-            val ignore: t
-            val isDefault: t -> bool
-            val isIgnore: t -> bool
          end
 
       val getHandler: t -> Handler.t
@@ -723,6 +801,18 @@ signature MLTON_SIGNAL =
 \entry{vtalrm}
 {\tt SIGVTALRM}, the signal for virtual timers.
 
+\entry{type Handler.t} the type of signal handlers.
+
+\entry{Handler.default} handles the signal with the default action.
+
+\entry{Handler.handler f} handles the signal with {\tt f}.
+
+\entry{Handler.ignore} ignores the signal.
+
+\entry{Handler.isDefault} returns true if the handler is the default handler.
+
+\entry{Handler.isIgnore} returns true if the handler is the ignore handler.
+
 \entry{type Mask.t} the type of signal masks.
 
 \entry{Mask.all} a mask of all signals.
@@ -739,18 +829,6 @@ signature MLTON_SIGNAL =
 
 \entry{Mask.unblock m} unblock all signals in {\tt m}.
 
-\entry{type Handler.t} the type of signal handlers.
-
-\entry{Handler.default} handles the signal with the default action.
-
-\entry{Handler.handler f} handles the signal with {\tt f}.
-
-\entry{Handler.ignore} ignores the signal.
-
-\entry{Handler.isDefault} returns true if the handler is the default handler.
-
-\entry{Handler.isIgnore} returns true if the handler is the ignore handler.
-
 \entry{getHandler s} return the current handler for signal {\tt s}.
 
 \entry{handleDefault s} set the handler for signal {\tt s} to default.
@@ -759,12 +837,13 @@ signature MLTON_SIGNAL =
 interrupted thread.
 
 \entry{handleWith' (s, f)}
-set the handler for signal {\tt s} to be the function {\tt f}.  When run, {\tt
-f} will be passed the thread that was interrupted by signal {\tt s}, and should
-return the thread that will resume execution.  It is an error for {\tt f} to
-raise an exception.  It is an error to {\tt Thread.switch'} to an interrupted
-thread with a thunk that raises an exception (either directly, or via {\tt
-Thread.prepend}).  This is to avoid the possibility of aynchronous exceptions.
+set the handler for signal {\tt s} to be the function {\tt f}.  When
+run, {\tt f} will be passed the thread that was interrupted by signal
+{\tt s}, and should return the thread that will resume execution.  It
+is an error for {\tt f} to raise an exception.  It is an error to {\tt
+Thread.switch'} to an interrupted thread with a thunk that raises an
+exception (either directly, or via {\tt Thread.prepend}).  This is to
+avoid the possibility of aynchronous exceptions.
 
 \entry{ignore s} set the handler for signal {\tt s} to ignore the signal.
 
@@ -1002,6 +1081,13 @@ by the equations $b_0 = b$ and $(v_i, b_{i+1}) = f (i, b_i)$.
 \end{description}
 
 \subsubsec{\tt MLton.Weak}{weak}
+A weak pointer is a pointer to an object that is nulled if the
+object becomes unreachable due to garbage collection.  The weak
+pointer does not itself cause the object it points to be retained by
+the garbage collector -- only other strong pointers can do that.
+For objects that are not allocated in the heap, like integers, a weak
+pointer will always be nulled.  So, if {\tt w: int Weak.t} then
+{\tt Weak.get w = NONE}.
 \begin{verbatim}
 signature MLTON_WEAK =
    sig
@@ -1011,14 +1097,6 @@ signature MLTON_WEAK =
       val new: 'a -> 'a t
    end
 \end{verbatim}
-
-A weak pointer is a pointer to an object that is nulled if the
-object becomes unreachable due to garbage collection.  The weak
-pointer does not itself cause the object it points to be retained by
-the garbage collector -- only other strong pointers can do that.
-For objects that are not allocated in the heap, like integers, a weak
-pointer will always be nulled.  So, if {\tt w: int t} then
-{\tt get w = NONE}.
 
 \begin{description}
 \entry{type 'a t}
@@ -1066,7 +1144,7 @@ signature MLTON_WORLD =
 
 \begin{description}
 \entry{datatype status}
-used to specify whether a world is original or a restarted (a clone).
+used to specify whether a world is original or restarted (a clone).
 
 \entry{load f}
 load the saved computation from file {\tt f}.
@@ -1129,9 +1207,9 @@ signature SML_OF_NJ =
       val exnHistory: exn -> string list
       val exportFn: string * (string * string list -> OS.Process.status) -> unit
       val exportML: string -> bool
-      val getCmdName: unit -> string
-      val getArgs: unit -> string list
       val getAllArgs: unit -> string list
+      val getArgs: unit -> string list
+      val getCmdName: unit -> string
    end
 \end{verbatim}
 
@@ -1140,13 +1218,13 @@ signature SML_OF_NJ =
 \entry{structure Cont} implements continuations.
 
 \entry{SysInfo.getHostArch ()}
-returns {\tt "X86"}.
+returns the string for the architecture.
 
 \entry{SysInfo.getOSKind}
 returns {\tt UNIX}.
 
 \entry{SysInfo.getOSName ()}
-returns {\tt "Cygwin"} or {\tt "Linux"}.
+returns the string for the host.
 
 \entry{Internals.GC.messages b}
 the same as {\tt MLton.GC.messages b}.

@@ -719,6 +719,7 @@ structure Primitive =
 	    open Pointer
 
 	    val null: t = 0w0
+
 	    fun isNull p = p = null
 
 	    val getInt8 = _prim "Pointer_getInt8": t * int -> Int8.int;

@@ -9,9 +9,14 @@ structure MLtonPlatform: MLTON_PLATFORM =
 	 struct
 	    open Arch
 
-	    val all = [(Sparc, "sparc"), (X86, "x86")]
+	    val all = [(Sparc, "Sparc"), (X86, "X86")]
 
-	    fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
+	    fun fromString s =
+	       let
+		  val s = String.toLower s
+	       in
+		  omap (peek (all, fn (_, s') => s = String.toLower s'), #1)
+	       end
 
 	    fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
 	 end
@@ -20,13 +25,18 @@ structure MLtonPlatform: MLTON_PLATFORM =
 	 struct
 	    open OS
 
-	    val all = [(Cygwin, "cygwin"),
-		       (FreeBSD, "freebsd"),
-		       (Linux, "linux"),
-		       (NetBSD, "netbsd"),
-		       (Solaris, "solaris")]
+	    val all = [(Cygwin, "Cygwin"),
+		       (FreeBSD, "FreeBSD"),
+		       (Linux, "Linux"),
+		       (NetBSD, "NetBSD"),
+		       (Solaris, "Solaris")]
 	       
-	    fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
+	    fun fromString s =
+	       let
+		  val s = String.toLower s
+	       in
+		  omap (peek (all, fn (_, s') => s = String.toLower s'), #1)
+	       end
 
 	    fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
 	 end

@@ -26,7 +26,7 @@ signature SML_OF_NJ =
       val exnHistory: exn -> string list
       val exportFn: string * (string * string list -> OS.Process.status) -> unit
       val exportML: string -> bool
-      val getCmdName: unit -> string
-      val getArgs: unit -> string list
       val getAllArgs: unit -> string list
+      val getArgs: unit -> string list
+      val getCmdName: unit -> string
    end

@@ -2,7 +2,7 @@ type word = Word.word
    
 signature MLTON_INT_INF =
    sig
-      include INT_INF
+      type int
 
        val areSmall: int * int -> bool
        val gcd: int * int -> int 

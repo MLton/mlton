@@ -43,7 +43,7 @@ structure OS_Process: OS_PROCESS_EXTRA =
 			 in
 			    (s, old)
 			 end)
-	       [Signal.int, Signal.quit]
+	       [Posix.Signal.int, Posix.Signal.quit]
 	 in
 	    DynamicWind.wind (fn () => wait pid,
 			      fn () => List.app Signal.setHandler old)

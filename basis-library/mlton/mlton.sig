@@ -35,7 +35,7 @@ signature MLTON =
       structure ProcEnv: MLTON_PROC_ENV
       structure Process: MLTON_PROCESS
       structure Profile: MLTON_PROFILE
-      structure Ptrace: MLTON_PTRACE
+(*      structure Ptrace: MLTON_PTRACE *)
       structure Random: MLTON_RANDOM
       structure Rlimit: MLTON_RLIMIT
       structure Rusage: MLTON_RUSAGE

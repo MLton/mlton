@@ -36,9 +36,10 @@ only fix is to make sure that enough memory is available.
 \subsection{Compiling with {\smlnj}}
 
 To compile with {\smlnj}, run {\tt make nj-mlton} from within the root
-directory of the sources.  First, the Makefile calls {\tt mllex} and
-{\tt mlyacc} to build the lexer and parser.  Then, it calls {\smlnj}
-with the appropriate {\tt sources.cm} file.  Building with {\smlnj}
-takes some time (5-10 minutes on a 1.6GHz machine).  Unless you are
-doing compiler development and need rapid recompilation, we recommend
-compiling with {\mlton}.
+directory of the sources.  You must use the SML/NJ version 110.44,
+which is what {\mlton} is developed with.  First, the Makefile calls
+{\tt mllex} and {\tt mlyacc} to build the lexer and parser.  Then, it
+calls {\smlnj} with the appropriate {\tt sources.cm} file.  Building
+with {\smlnj} takes some time (5-10 minutes on a 1.6GHz machine).
+Unless you are doing compiler development and need rapid
+recompilation, we recommend compiling with {\mlton}.

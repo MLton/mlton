@@ -1,12 +1,21 @@
 signature MLTON_SIGNAL =
    sig
-      include POSIX_SIGNAL
-
       type t
-      sharing type t = signal
+      type signal = t
 
       val prof: t
       val vtalrm: t
+
+      structure Handler:
+	 sig
+	    type t
+
+	    val default: t
+	    val handler: (unit MLtonThread.t -> unit MLtonThread.t) -> t
+	    val ignore: t
+	    val isDefault: t -> bool
+	    val isIgnore: t -> bool
+	 end
 
       structure Mask:
 	 sig
@@ -19,17 +28,6 @@ signature MLTON_SIGNAL =
 	    val set: t -> unit
 	    val some: signal list -> t
 	    val unblock: t -> unit
-	 end
-
-      structure Handler:
-	 sig
-	    type t
-
-	    val default: t
-	    val handler: (unit MLtonThread.t -> unit MLtonThread.t) -> t
-	    val ignore: t
-	    val isDefault: t -> bool
-	    val isIgnore: t -> bool
 	 end
 
       val getHandler: t -> Handler.t

@@ -21,10 +21,9 @@ To build a GCC cross-compiler toolset on the host, you can use the
 script {\tt bin/build-cross-gcc}, available in the {\mlton} sources,
 as a template.  The value of the {\tt target} variable in that script
 is important, since that is what you will pass to {\mlton}'s {\tt
--target} flag.
-
-Once you have the toolset built, you should be able to test it by
-cross compiling a simple hello world program on your host machine.
+-target} flag.  Once you have the toolset built, you should be able to
+test it by cross compiling a simple hello world program on your host
+machine.
 \begin{verbatim}
 gcc -b i386-pc-cygwin -o hello-world hello-world.c
 \end{verbatim}
@@ -42,11 +41,11 @@ Making runtime.
 Building print-constants executable.
 Running print-constants on blade.
 \end{verbatim}
-Running {\tt add-cross} installs the cross-compiled runtime and
-creates a cross-compiled executable, {\tt print-constants}, which
-prints out all of the constants that {\mlton} needs in order to
-implement the basis library.  Then, it runs {\tt print-constants} on
-the target machine ({\tt blade} in this case), and saves the output.
+Running {\tt add-cross} uses {\tt ssh} to compile the runtime on the
+target machine and to create an {\tt print-constants}, which prints
+out all of the constants that {\mlton} needs in order to implement the
+basis library.  The script runs {\tt print-constants} on the target
+machine ({\tt blade} in this case), and saves the output.
 
 Once you have done all this, you should be able to cross compile SML
 applications.  For example,
@@ -55,3 +54,10 @@ mlton -target i386-pc-cygwin hello-world.sml
 \end{verbatim}
 will create {\tt hello-world}, which you should be able to run from a
 Cygwin shell on your Windows machine.
+
+\subsection{Cross compiling alternatives}
+Building and maintaining cross compiling {\tt gcc}'s is complex.  You
+may find it simpler to use {\tt mlton -keep g} to generate the files
+on the host, then copy the files to the target, and then use {\tt gcc}
+or {\tt mlton} on the target to compile the files.
+

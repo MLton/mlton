@@ -63,7 +63,7 @@ structure IntInf: INT_INF_EXTRA =
 	 Vector.length (Prim.toVector arg) -? 1
       fun size (arg: bigInt): smallInt =
 	 if isSmall arg
-	    then 1
+	    then 0
 	 else bigSize arg
 
       (*

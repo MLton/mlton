@@ -5,7 +5,6 @@ signature MLTON_ITIMER =
        | Real
        | Virtual
 
-      val set: t * {interval: Time.time,
-		    value: Time.time} -> unit
+      val set: t * {interval: Time.time, value: Time.time} -> unit
       val signal: t -> Posix.Signal.signal
    end

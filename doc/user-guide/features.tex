@@ -22,11 +22,11 @@ a bug.
 
 \feature{complete basis library}
 {\mlton} contains a complete implementation of the required parts of
-the basis library specification.  See \secref{basis-library} for
-details.
+the Standard ML basis library specification.  See
+\secref{basis-library} for details.
 
 \feature{excellent running times}
-{\mlton}-generated executables have excellent running times.
+{\mlton} generates executables with excellent running times.
 For a comparison with other SML compilers, see
 \link{\makeurl{performance.html}}.
 For a comparison of many compilers, including {\mlton}, see
@@ -72,7 +72,7 @@ The distributed version of {\mlton} was compiled by {\mlton}.
 \feature{fast {\tt IntInf} based on GNU multiprecision library}
 The {\mlton} implementation of arbitrary precision arithmetic (the
 {\tt IntInf} structure) uses the
-\htmladdnormallink{GNU multiprecision library (gmp)}
+\htmladdnormallink{GNU multiprecision library ({\gmp})}
 		  {http://www.gnu.org/software/gmp/gmp.html}.
 Hence, for {\tt IntInf} intensive programs, {\mlton} can be an order
 of magnitude or more faster than {\poly} or {\smlnj}.
@@ -97,12 +97,6 @@ overview and \secref{mlton} for details.
 
 \feature{finalization}
 {\mlton} supports finalizable values of arbitrary type.
-
-\feature{heap save and restore}
-{\mlton} has a facility for saving the entire state of a computation
-to a file and restarting it later.  This facility can be used for
-staging and for checkpointing computations.  It can even be used from
-within signal handlers, allowing interrupt driven checkpointing.
 
 \feature{interval timers}
 {\mlton} supports the functionality of the C {\tt setitimer} function.
@@ -143,6 +137,12 @@ ways to go.
 {\mlton} suports weak pointers, which allow the garbage collector to
 reclaim objects that it would otherwise be forced to keep.  Weak
 pointers are also used to provide finalization.
+
+\feature{world save and restore}
+{\mlton} has a facility for saving the entire state of a computation
+to a file and restarting it later.  This facility can be used for
+staging and for checkpointing computations.  It can even be used from
+within signal handlers, allowing interrupt driven checkpointing.
 
 \end{description}
 \end{description}

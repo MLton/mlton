@@ -1,6 +1,6 @@
 signature MLTON_POINTER =
    sig
-      type t
+      eqtype t
 
       val add: t * word -> t
       val diff: t * t -> word
@@ -15,7 +15,6 @@ signature MLTON_POINTER =
       val getWord16: t * int -> Word16.word
       val getWord32: t * int -> Word32.word
       val getWord64: t * int -> Word64.word
-      val isNull: t -> bool
       val null: t
       val setInt8: t * int * Int8.int -> unit
       val setInt16: t * int * Int16.int -> unit

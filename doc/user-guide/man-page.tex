@@ -28,8 +28,7 @@ intermediate files are saved and to stop the compilation process
 early, at some intermediate pass, in which case compilation can be
 resumed by passing the resulting files to {\mlton}.  {\mlton} uses the
 input file suffix to determine the type of input program.  The
-possibilities are {\tt .cm}, {\tt .sml}, {\tt .c}, {\tt .S} and {\tt
-.o}.
+possibilities are {\tt .cm}, {\tt .sml}, {\tt .c}, and {\tt .o}.
 
 With no arguments, {\mlton} prints the version number and exits.  For
 a usage message, run {\mlton} with an invalid switch, e.g. {\tt mlton
@@ -73,7 +72,7 @@ performed at each exception construction, raise, and handle.
 
 \option{-export-header \falseTrue}
 This flag is useful for programs that use {\export} expressions (see
-\secref{export}).  It causes {\mlton} to output to standard output a C
+\secref{export}).  It causes {\mlton} to print to standard output a C
 header file with prototypes for all of the functions exported from
 SML.
 
@@ -86,8 +85,8 @@ performance cost.  This has no effect with {\tt -native false}.
 Set the inlining threshold used in the optimizer.  The default is 320.
 
 \option{-keep \choiceThree{g}{o}{sml}}
-Save the intermediate file(s) corresponding to the given arg.  If
-no {\tt -keep} argument is given, then only the final file(s) is saved.\\
+Save intermediate files.  If no {\tt -keep} argument is given, then
+only the output file is saved.\\
 \begin{tabular}{l|l}
 {\tt g} & generated {\tt .S} and {\tt .c} files passed to gcc and the assembler\\
 {\tt o} & object files\\
@@ -102,10 +101,6 @@ the same time, e.g. {\tt -link-opt '-Lpath -lfoo'}.  If you wish to
 pash an option to the linker, you must use {\tt gcc}'s {\tt -Wl,}
 syntax, e.g., {\tt -link-opt '-Wl,--export-dynamic'}.
 
-\option{-may-load-world \trueFalse}
-Controls whether or not the generated executable supports the {\tt
-load-world} runtime system option.
-
 \option{-native \trueFalse}
 Controls whether or not to use native code generation, as opposed to
 generating C and using {\tt gcc}.  With native code generation,
@@ -113,8 +108,8 @@ generating C and using {\tt gcc}.  With native code generation,
 
 \option{-output {\it file}}
 Specify the name of the final output file. The default name is the
-input file name with its suffix removed and an appropriate suffix
-added.
+input file name with its suffix removed and an appropriate, possibly
+empty, suffix added.
 
 \option{-profile \choiceThree{no}{alloc}{time}}
 Produce an executable that will gather allocation or time profiling
@@ -140,16 +135,12 @@ does not conform to the basis library specification, and may cause
 programs to seg fault.
 
 \option{-show-basis \falseTrue}
-If true, the compiler shows the basis library and exits.
+If true, the compiler displays the basis library and exits.
 
 \option{-show-basis-used \falseTrue}
 If true, then the compiler prints out the types, values, signatures,
 structures, and functors from the basis library that the input program
 uses, and then exits.
-
-\option{-static \falseTrue}
-If true, then produce a statically linked executable.  This option
-only affects linking.
 
 \option{-stop \choiceFour{f}{g}{o}{sml}}
 Secify pass to stop at.\\
@@ -169,6 +160,9 @@ Generate an executable that runs on the specified platform.  The default
 is {\tt self}, which means to compile for the machine that {\mlton} is
 running on.  To use any other target, you must first install a
 cross-compiler.  See \secref{cross-compiling}.
+
+\option{-type-error \choiceTwo{concise}{full}}
+Whether to display concise or more verbose error messages.
 
 \option{-verbose \choiceFour{0}{1}{2}{3}}
 How verbose to be about what passes are running.  The default is 0.\\
@@ -203,6 +197,8 @@ arguments, as in:
 \begin{verbatim}
 hello-world @MLton gc-summary -- @MLton fixed-heap 10k -- a b c
 \end{verbatim}
+
+Here are the allowed options.
 
 \begin{description}
 \option{fixed-heap \mbox{\rm n[}km\mbox{\rm ]}}

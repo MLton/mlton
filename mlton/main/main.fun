@@ -334,9 +334,6 @@ fun makeOptions {usage} =
        (Expert, "stack-cont", " {false|true}",
 	"force continuation formals to stack",
 	boolRef stackCont),
-       (Normal, "static", " {false|true}",
-	"produce a statically linked executable",
-	boolRef static),
        (Normal, "stop", " {f|g|o|sml|tc}", "where to stop",
 	SpaceString
 	(fn s =>
@@ -635,7 +632,6 @@ fun commandLine (args: string list): unit =
 				     Cross s => ["-b", s]
 				   | Self => []),
 				 if !debug then gccDebug else [],
-				 if !static then ["-static"] else [],
 				 inputs,
 				 linkOpts]))
 			      ()

@@ -10,7 +10,7 @@ be and compile times are longer.  Also, the quality of code generated
 of {\tt gcc} is important.  By default, {\mlton} calls {\tt gcc -O1}.
 You can change this by calling {\mlton} with {\tt -cc-opt -O2}.  We
 have seen this speed up some programs by as much as 30\%, especially
-those involving floating point, however it can also more than double
+those involving floating point; however, it can also more than double
 compile times.
 
 \item
@@ -26,12 +26,12 @@ Here are the known problems building {\mlton} on Sparc/Solaris.
 
 \item You must install the {\tt binutils}, {\tt gcc}, and {\tt make}
 packages.  You can find out how to get these at
-\htmladdnormallink{Sunfreeware.com}{http://www.sunfreeware.com}.
+\htmladdnormallink{sunfreeware.com}{http://www.sunfreeware.com}.
 
 \item Making the documentation requires that you install {\tt latex}
 and {\tt dvips}, which are available in the {\tt tetex} package.  It
-also requires {\tt latex2html}, which we haven't yet tracked down a
-package for yet.
+also requires {\tt hevea}, for which we haven't yet tracked down a
+package.
 
 \item Bootstrapping is so slow as to be impractical (many hours on a
 500MhZ UltraSparc).  For this reason, we strongly recommend building

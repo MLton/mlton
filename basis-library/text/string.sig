@@ -49,4 +49,5 @@ signature STRING_EXTRA =
       val new: int * char -> string
       val nullTerm: string -> string
       val tabulate: int * (int -> char) -> string
+      val toLower: string -> string
    end

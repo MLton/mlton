@@ -2,17 +2,17 @@
 %
 \subsection{Installation}
 %
-{\mlton} runs on {\intel} machines with either Cygwin/Windows, Linux,
-FreeBSD, or NetBSD and on {\sparc} machines with Solaris.  {\mlton} is
-distributed in both source and binary form -- the format for the
-binary package depends on the platform.  The binary package is
-designed to be installed in the root directory.  If you do not install
-{\mlton} in the root directory, you must set the {\tt lib} variable in
-{\tt \prefix/bin/mlton} to the directory that contains the libraries
-({\tt /\prefix/lib/mlton} by default).
+{\mlton} runs on a variety of platforms and is distributed in both
+source and binary form -- the format for the package depends on the
+platform.  The binary package is designed to be installed in the root
+directory.  It may install in {\tt /usr} or {\tt /usr/local},
+depending on the platform.  If you do not install {\mlton} in the root
+directory, you must set the {\tt lib} variable in {\tt
+\prefix/bin/mlton} to the directory that contains the libraries ({\tt
+/\prefix/lib/mlton} by default).
 
 {\mlton} requires that you have the
-\htmladdnormallink{GNU multiprecision library (gmp)}
+\htmladdnormallink{GNU multiprecision library ({\gmp})}
 		  {http://www.gnu.org/software/gmp/gmp.html}
 installed on your machine.  {\mlton} must be able to find both the
 {\tt gmp.h} include file and the {\tt libgmp.a} or {\tt libgmp.so}
@@ -20,9 +20,9 @@ library. If you see the error message {\tt gmp.h: No such file or
 directory}, you should copy {\tt gmp.h} to {\tt
 usr/lib/mlton/self/include}.  If you see the error message {\tt
 /usr/bin/ld: cannot find -lgmp}, you 
-should add a {\tt -lib-search} argument in the {\tt usr/bin/mlton}
+should add a {\tt -link-opt -L} argument in the {\tt usr/bin/mlton}
 script so that the linker can find {\tt libgmp}, for example, {\tt
--lib-search /\prefix/lib}.
+-link-opt -L/\prefix/lib}.
 
 Installation of {\mlton} creates the following files and directories.
 
@@ -71,6 +71,6 @@ Now create an executable, {\tt hello-world}, with the following command.
 mlton hello-world.sml
 \end{verbatim}
 You can now run {\tt hello-world} to verify that it works.  There are
-more small examples in {\tt \prefix/share/doc/mlton/examples}.  In
+more small examples in\\ {\tt \prefix/share/doc/mlton/examples}.  In
 particular, there are examples that demonstrate callcc, heap save and
 restore, object size primitive, threads, profiling, and the C FFI.

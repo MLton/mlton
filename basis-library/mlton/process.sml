@@ -1,4 +1,4 @@
-structure MLtonProcess: MLTON_PROCESS =
+structure MLtonProcess =
    struct
       structure Prim = Primitive.MLton.Process
       structure Error = PosixError

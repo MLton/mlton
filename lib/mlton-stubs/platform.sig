@@ -4,8 +4,8 @@ signature MLTON_PLATFORM =
 	 sig
 	    datatype t = Sparc | X86
 
-	    val host: t
 	    val fromString: string -> t option
+	    val host: t
 	    val toString: t -> string
 	 end
 	 
@@ -13,8 +13,8 @@ signature MLTON_PLATFORM =
 	 sig
 	    datatype t = Cygwin | FreeBSD | Linux | NetBSD | Solaris
 
-	    val host: t
 	    val fromString: string -> t option
+	    val host: t
 	    val toString: t -> string
 	 end
    end

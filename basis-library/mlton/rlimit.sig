@@ -8,8 +8,8 @@ signature MLTON_RLIMIT =
 
       type t
 	       
-      val cpuTime: t             (* CPU     CPU time in seconds *)
       val coreFileSize: t        (* CORE    max core file size *)
+      val cpuTime: t             (* CPU     CPU time in seconds *)
       val dataSize: t            (* DATA    max data size *)
       val fileSize: t            (* FSIZE   Maximum filesize *)
       val lockedInMemorySize: t  (* MEMLOCK max locked address space *)

@@ -1,5 +1,12 @@
 Here are the changes since version 20030716.
 
+* 2004-01-05
+  - Removed option -may-load-world.  You can now use -runtime
+    no-load-world instead.
+  - Removed option -static.  You can now use -link-opt -static
+    instead.
+  - Changed MLton.IntInf.size to return 0 instead of 1 on small ints.
+
 * 2003-12-28
   - Fixed horrible bug in MLton.Random.alphaNumString that caused it
     to return 0 for all characters beyond position 11.

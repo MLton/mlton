@@ -1,11 +1,11 @@
 \sec{Basis library}{basis-library}{Basis_library.html}
 %
 This section describes {\mlton}'s implementation of the Standard ML
-Basis Library, which by default {\mlton} makes available to user
+Basis Library that by default {\mlton} makes available to user
 programs.  The latest version of the Basis Library specification is at
-\link{http://www.standardml.org/Basis/}.  Please see
-\link{http://www.standardml.org/Basis/history.html} for a reverse
-chronological list of changes to the specification.  Since the
+\link{http://www.standardml.org/Basis/}.  For a reverse chronological
+list of changes to the specification, see
+\link{http://www.standardml.org/Basis/history.html}.  Since the
 specification does change, we place a snapshot at
 \link{\makeurl{basis/}} at the time of each {\mlton} public release.
 You can also obtain a complete and current list of what's available by
@@ -26,7 +26,7 @@ structures, as seen below.
 \tt datatype 'a option = NONE | SOME of 'a\\
 \tt datatype order = LESS | EQUAL | GREATER\\
 \tt type real\\
-\tt eqtype 'a ref\\
+\tt datatype 'a ref = ref of 'a\\
 \tt eqtype string\\
 \tt type substring\\
 \tt eqtype unit\\
@@ -51,9 +51,9 @@ structures, as seen below.
 \subsection{Top level values}
 
 {\mlton} does not implement the optional top level value
-\verb+use: string -> unit+, which conflicts with whole
-program compilation because it allows new code to be loaded
-dynamically.
+\verb+use: string -> unit+, which conflicts with whole-program
+compilation because it allows new code to be loaded dynamically.
+{\mlton} implements all other top level values.
 
 {\tt !},
 {\tt *},
@@ -68,7 +68,6 @@ dynamically.
 {\tt >},
 {\tt >=},
 {\tt @},
-{\tt o},
 {\tt \char94},
 {\tt \char126}.
 {\tt abs},
@@ -93,6 +92,7 @@ dynamically.
 {\tt map},
 {\tt mod},
 {\tt not},
+{\tt o},
 {\tt null},
 {\tt ord},
 {\tt print},
@@ -346,14 +346,14 @@ The following structures equivalences hold.\\
 \end{tabular}
 
 The {\tt Real}, {\tt Real32}, and {\tt Real64} modules are implemented
-using the {\tt C} math library and so the SML functions will often
-reflect the behavior of the underlying library function.  We have made
-some effort to unify the differences between the math libraries on
-different platforms, and in particular to handle exceptional cases
-according to the basis library specification.  However, there will be
-differences due to different numerical algorithms and cases we may
-have missed.  Please submit a bug report if you encounter an error in
-the handling of an exceptional case.
+using the {\tt C} math library, so the SML functions will reflect the
+behavior of the underlying library function.  We have made some effort
+to unify the differences between the math libraries on different
+platforms, and in particular to handle exceptional cases according to
+the basis library specification.  However, there will be differences
+due to different numerical algorithms and cases we may have missed.
+Please submit a bug report if you encounter an error in the handling
+of an exceptional case.
 
 On x86, real arithmetic is implemented internally using 80 bits of
 precision.  Using higher precision for intermediate results in
