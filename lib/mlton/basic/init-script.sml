@@ -28,10 +28,9 @@ fun wrap (th: unit -> unit): unit =
    ((th () handle e => (fail (); raise e))
     ; succeed ())
 
-fun startStop {name, action, thunk, usage} =
+fun startStop {name, action, log, thunk, usage} =
    let
       val me = Pid.current ()
-      val log = "/var/log"/name
       fun getProc () =
 	 List.peek (Process.ps (), fn {name = n, pid, ...} =>
 		    n = name andalso not (Pid.equals (me, pid)))
