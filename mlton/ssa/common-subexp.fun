@@ -313,13 +313,16 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 	     val {args, blocks, mayRaise, name, returns, start} = Function.dest f
 	     val _ =
 		Vector.foreach
-		(blocks, fn Block.T {label, args, transfer, ...} =>
+		(blocks, fn Block.T {label, args, ...} =>
 		 (setLabelInfo (label, {args = args,
 					success = ref NONE,
 					failure = ref NONE,
-					inDeg = ref 0})
-		  ; Transfer.foreachLabel (transfer, fn label' => 
-					   Int.inc (#inDeg (labelInfo label')))))
+					inDeg = ref 0})))
+	     val _ =
+		Vector.foreach
+		(blocks, fn Block.T {transfer, ...} =>
+		 Transfer.foreachLabel (transfer, fn label' => 
+					Int.inc (#inDeg (labelInfo label'))))
 	     val blocks = doitTree (Function.dominatorTree f)
 	     val f = Function.new {args = args,
 				   blocks = blocks,
