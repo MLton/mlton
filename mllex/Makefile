@@ -12,13 +12,20 @@ $(NAME): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	strip $(NAME)
 	size $(NAME)
 
+$(NAME).sml: $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
+	mlton -stop sml $(NAME).cm
+
 .PHONY:	$(NAME)_cm
-$(NAME)_cm:
+$(NAME)_cm: $(NAME)-stubs_cm
+	grep -v mlton-stubs $(NAME)-stubs.cm >$(NAME).cm
+
+.PHONY:	$(NAME)-stubs_cm
+$(NAME)-stubs_cm: 
 	(								\
-		echo 'Group is' &&					\
+		echo 'Group is'&&					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' &&	\
 		echo 'call-main.sml';					\
-	) >$(NAME).cm
+	) >$(NAME)-stubs.cm
 
 .PHONY: clean
 clean:

@@ -27,6 +27,13 @@ all:
 clean:
 	bin/clean
 
+.PHONY: cm
+cm:
+	cd $(COMP) && $(MAKE) mlton_cm
+	cd $(LEX) && $(MAKE) mllex_cm
+	cd $(PROF) && $(MAKE) mlprof_cm
+	cd $(YACC) && $(MAKE) mlyacc_cm
+
 .PHONY: compiler
 compiler:
 	cd $(COMP) && $(MAKE)
