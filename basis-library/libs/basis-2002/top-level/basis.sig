@@ -552,6 +552,8 @@ signature BASIS_2002 =
    where type 'a Array.array = 'a Array.array
 *)
    where type 'a ArraySlice.slice = 'a ArraySlice.slice
+   where type BinIO.instream = BinIO.instream
+   where type BinIO.outstream = BinIO.outstream
    where type BinPrimIO.reader = BinPrimIO.reader
    where type BinPrimIO.writer = BinPrimIO.writer
    where type Char.char = Char.char
