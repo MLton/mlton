@@ -2160,8 +2160,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	      datatype z = datatype S.Type.dest
 	   in
 	      case S.Type.dest t of
-		 Array t => array {mutable = true, ty = t}
-	       | Datatype tycon =>
+		 Datatype tycon =>
 		    let
 		       val r = tyconRep tycon
 		       fun compute () = TyconRep.rep (#1 (Value.get r))
@@ -2227,7 +2226,19 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	       | Thread =>
 		    constant (Rep.T {rep = Rep.Pointer {endsIn00 = true},
 				     ty = Type.thread})
-	       | Vector t => array {mutable = false, ty = t}
+	       | Vector p =>
+		    let
+		       val ts = Prod.dest p
+		    in
+		       if 1 = Vector.length ts
+			  then
+			     let
+				val {elt, isMutable} = Vector.sub (ts, 0)
+			     in
+				array {mutable = isMutable, ty = elt}
+			     end
+		       else Error.bug "representation can't handle flat vectors"
+		    end
 	       | Weak t =>
 		    let
 		       val pt = PointerTycon.new ()

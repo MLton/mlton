@@ -64,14 +64,13 @@ structure Type =
 	       plist: PropertyList.t,
 	       tree: tree}
       and tree =
-	 Array of t
-	| Datatype of Tycon.t
+	 Datatype of Tycon.t
 	| IntInf
 	| Object of {args: prod,
 		     con: Con.t option}
 	| Real of RealSize.t
 	| Thread
-	| Vector of t
+	| Vector of prod
 	| Weak of t
 	| Word of WordSize.t
       withtype prod = t Prod.t
@@ -92,15 +91,14 @@ structure Type =
 
       local
 	 val same: tree * tree -> bool =
-	    fn (Array t1, Array t2) => equals (t1, t2)
-	     | (Datatype t1, Datatype t2) => Tycon.equals (t1, t2)
+	    fn (Datatype t1, Datatype t2) => Tycon.equals (t1, t2)
 	     | (IntInf, IntInf) => true
 	     | (Object {args = a1, con = c1}, Object {args = a2, con = c2}) =>
 		  Option.equals (c1, c2, Con.equals)
 		  andalso Prod.equals (a1, a2, equals)
 	     | (Real s1, Real s2) => RealSize.equals (s1, s2)
 	     | (Thread, Thread) => true
-	     | (Vector t1, Vector t2) => equals (t1, t2)
+	     | (Vector p1, Vector p2) => Prod.equals (p1, p2, equals)
 	     | (Weak t1, Weak t2) => equals (t1, t2)
 	     | (Word s1, Word s2) => WordSize.equals (s1, s2)
 	     | _ => false
@@ -125,8 +123,6 @@ structure Type =
 	       fn t => lookup (Word.xorb (w, hash t), f t)
 	    end
       in
-	 val array = make Array
-	 val vector = make Vector
 	 val weak = make Weak
       end
 
@@ -152,7 +148,36 @@ structure Type =
 
       val word8 = word WordSize.byte
 
-      val word8Vector = vector word8
+      local
+	 val generator: Word.t = 0wx5555
+	 val tuple = newHash ()
+	 val vector = newHash ()
+	 fun hashProd (p, base) =
+	    Vector.fold (Prod.dest p, base, fn ({elt, ...}, w) =>
+			 Word.xorb (w * generator, hash elt))
+      in
+	 fun vector p = lookup (hashProd (p, tuple), Vector p)
+	 fun object {args, con}: t =
+	    let
+	       val base =
+		  case con of
+		     NONE => tuple
+		   | SOME c => Con.hash c
+	       val hash = hashProd (args, base)
+	    in
+	       lookup (hash, Object {args = args, con = con})
+	    end
+      end
+
+      local
+	 fun make isMutable t =
+	    vector (Prod.make (Vector.new1 {elt = t, isMutable = isMutable}))
+      in
+	 val array = make true
+	 val vector1 = make false
+      end
+	 
+      val word8Vector = vector1 word8
 
       val string = word8Vector
 
@@ -167,24 +192,6 @@ structure Type =
 	     | Word8Vector _ => word8Vector
 	 end
 
-      local
-	 val generator: Word.t = 0wx5555
-	 val tuple = newHash ()
-      in
-	 fun object {args, con}: t =
-	    let
-	       val base =
-		  case con of
-		     NONE => tuple
-		   | SOME c => Con.hash c
-	       val hash =
-		  Vector.fold (Prod.dest args, base, fn ({elt, ...}, w) =>
-			       Word.xorb (w * generator, hash elt))
-	    in
-	       lookup (hash, Object {args = args, con = con})
-	    end
-      end
-   
       fun conApp (con, args) = object {args = args, con = SOME con}
 	 
       fun tuple ts = object {args = ts, con = NONE}
@@ -210,8 +217,7 @@ structure Type =
 	     Property.initRec
 	     (fn (t, layout) =>
 	      case dest t of
-		 Array t => seq [layout t, str " array"]
-	       | Datatype t => Tycon.layout t
+		 Datatype t => Tycon.layout t
 	       | IntInf => str "IntInf.int"
 	       | Object {args, con} =>
 		    if isUnit t
@@ -222,7 +228,7 @@ structure Type =
 			 | SOME c => Con.layout c)
 	       | Real s => str (concat ["real", RealSize.toString s])
 	       | Thread => str "thread"
-	       | Vector t => seq [layout t, str " vector"]
+	       | Vector p => seq [Prod.layout (p, layout), str " vector"]
 	       | Weak t => seq [layout t, str " weak"]
 	       | Word s => str (concat ["word", WordSize.toString s])))
       end
@@ -267,7 +273,7 @@ structure Type =
 	    fun real3 s = done ([real s, real s, real s], real s)
 	    val pointer = defaultWord
 	    val word8Array = array word8
-	    val wordVector = vector defaultWord
+	    val wordVector = vector1 defaultWord
 	    fun wordShift s = done ([word s, defaultWord], word s)
 	 in
 	    case Prim.name prim of
@@ -275,7 +281,7 @@ structure Type =
 	     | Array_array0Const => oneTarg (fn targ => ([], array targ))
 	     | Array_length => oneTarg (fn t => ([array t], defaultWord))
 	     | Array_sub => oneTarg (fn t => ([array t, defaultWord], t))
-	     | Array_toVector => oneTarg (fn t => ([array t], vector t))
+	     | Array_toVector => oneTarg (fn t => ([array t], vector1 t))
 	     | Array_update =>
 		  oneTarg (fn t => ([array t, defaultWord, t], unit))
 	     | FFI f => done (Vector.toList (CFunction.args f),
@@ -300,7 +306,7 @@ structure Type =
 	     | IntInf_sub => intInfBinary ()
 	     | IntInf_toString =>
 		  done ([intInf, defaultWord, defaultWord], string)
-	     | IntInf_toVector => done ([intInf], vector defaultWord)
+	     | IntInf_toVector => done ([intInf], vector1 defaultWord)
 	     | IntInf_toWord => done ([intInf], defaultWord)
 	     | IntInf_xorb => intInfBinary ()
 	     | MLton_bogus => oneTarg (fn t => ([], t))
@@ -356,8 +362,8 @@ structure Type =
 	     | Thread_copyCurrent => done ([], unit)
 	     | Thread_returnToC => done ([], unit)
 	     | Thread_switchTo => done ([thread], unit)
-	     | Vector_length => oneTarg (fn t => ([vector t], defaultWord))
-	     | Vector_sub => oneTarg (fn t => ([vector t, defaultWord], t))
+	     | Vector_length => oneTarg (fn t => ([vector1 t], defaultWord))
+	     | Vector_sub => oneTarg (fn t => ([vector1 t, defaultWord], t))
 	     | Weak_canGet => oneTarg (fn t => ([weak t], bool))
 	     | Weak_get => oneTarg (fn t => ([weak t], t))
 	     | Weak_new => oneTarg (fn t => ([t], weak t))

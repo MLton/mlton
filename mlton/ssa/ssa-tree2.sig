@@ -36,14 +36,13 @@ signature SSA_TREE2 =
 	    type t
 	       
 	    datatype dest =
-	       Array of t
-	     | Datatype of Tycon.t
+	       Datatype of Tycon.t
 	     | IntInf
 	     | Object of {args: t Prod.t,
 			  con: Con.t option}
 	     | Real of RealSize.t
 	     | Thread
-	     | Vector of t
+	     | Vector of t Prod.t
 	     | Weak of t
 	     | Word of WordSize.t
 
@@ -67,7 +66,8 @@ signature SSA_TREE2 =
 	    val reff: t -> t
 	    val thread: t
 	    val tuple: t Prod.t -> t
-	    val vector: t -> t
+	    val vector: t Prod.t -> t
+	    val vector1: t -> t
 	    val weak: t -> t
 	    val word: WordSize.t -> t
 	    val unit: t
