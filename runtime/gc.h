@@ -267,7 +267,7 @@ typedef struct GC_state {
 	/* ------------------------------------------------- */
 	/*                     loadWorld                     */
 	/* ------------------------------------------------- */
- 	int translateDirection;	/* used by translateHeap */
+ 	bool translateUp;	/* used by translateHeap */
 	uint translateDiff;	/* used by translateHeap */
 	uint magic;	/* The magic number required for a valid world file. */
 

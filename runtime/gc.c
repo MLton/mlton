@@ -1416,7 +1416,7 @@ int sizes[25600];
 /* ------------------------------------------------- */
 
 static void translatePointer(GC_state s, pointer *p) {
-	if (1 == s->translateDirection)
+	if (s->translateUp)
 		*p += s->translateDiff;
 	else
 		*p -= s->translateDiff;
@@ -1433,10 +1433,10 @@ void GC_translateHeap (GC_state s, pointer from, pointer to, uint size) {
 		return;
 	else if (to > from) {
 		s->translateDiff = to - from;
-		s->translateDirection = 1;
+		s->translateUp = TRUE;
 	} else {
 		s->translateDiff = from - to;
-		s->translateDirection = -1;
+		s->translateUp = FALSE;
 	}
 	/* Translate globals and heap. */
 	GC_foreachGlobal (s, translatePointer);
