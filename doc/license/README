@@ -11,5 +11,7 @@ SML/NJ		NJ-LICENSE		lexer, parser, precedence parser,
 ML Kit		MLKit-LICENSE		basis library: Real, Path, Time, Date
 		(GPL)
 
-gmp		doc/gmp-LICENSE		IntInf
+gdtoa		gdtoa-LICENSE		Real.{fmt,toDecimal,toString}
+
+gmp		gmp-LICENSE		IntInf
 		(LGPL)

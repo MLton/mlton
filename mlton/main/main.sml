@@ -456,11 +456,12 @@ fun commandLine (args: string list): unit =
 	    "-mcpu=ultrasparc",
 	    (* Emit exit code inline at every function exit. *)
 	    "-mno-epilogue"]
-      val sparcLinkLibs = ["dl", "m", "nsl", "socket"]
+      val sparcLinkLibs = ["dl", "nsl", "socket"]
       val (cFlags, defaultLibs) =
 	 case !hostArch of
 	    X86 => (x86CFlags, x86LinkLibs)
 	  | Sparc => (sparcCFlags, sparcLinkLibs)
+      val defaultLibs = ["gdtoa", "m"]
       val ccOpts =
 	 List.fold
 	 (!ccOpts, cFlags, fn (ccOpt, ac) => 

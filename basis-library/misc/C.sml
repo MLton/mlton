@@ -48,7 +48,7 @@ structure C: C =
 
 	    fun toString cs = toStringOfLength (cs, length cs)
 
-	    fun extractToChar (s: cs, c: char): string =
+	    fun extractToChar (s: t, c: char): string =
 	       toStringOfLength (s, makeLength (sub, fn c' => c = c') s)
 	 end
       

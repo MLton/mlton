@@ -10,35 +10,30 @@ signature C =
       (* C char* *)
       structure CS :
 	 sig
-	    type cs
-
-	    val update: cs * int * char -> unit
-	       
-	    (* string must be null terminated *)
-	    val length: cs -> int
-
-	    (* string must be null terminated *)
-	    val toString: cs -> string
+	    type t
 
 	    (* string must be terminated by char *)
-	    val extractToChar: cs * char -> string
-
+	    val extractToChar: t * char -> string
+	    (* string must be null terminated *)
+	    val length: t -> int
+	    val sub: t * int -> char
+	    val toCharArrayOfLength: t * int -> char array
+	    (* string must be null terminated *)
+	    val toString: t -> string
 	    (* extract first n characters of string *)
-	    val toStringOfLength: cs * int -> string
-	    val toCharArrayOfLength: cs * int -> char array
-	    val toWord8ArrayOfLength: cs * int -> word8 array
+	    val toStringOfLength: t * int -> string
+	    val toWord8ArrayOfLength: t * int -> word8 array
+	    val update: t * int * char -> unit
 	 end
 
       (* NULL terminated char** *)
-      structure CSS :
+      structure CSS:
 	 sig
-	    type css
-
-	    val toList: css -> string list
-
-	    (* extract first n strings from array *)
-	    val toArrayOfLength: css * int -> string array
+	    type t
 
 	    val fromList: string list -> string array
+	    (* extract first n strings from array *)
+	    val toArrayOfLength: t * int -> string array 	    
+	    val toList: t -> string list
 	 end
    end

@@ -9,10 +9,45 @@
 
 structure Real64: REAL =
    struct
-      structure Real = Primitive.Real
-      open Real IEEEReal
+      structure Prim = Primitive.Real
+      local
+	 open IEEEReal
+      in
+	 datatype z = datatype float_class
+	 datatype z = datatype rounding_mode
+      end
       infix 4 == != ?=
       type real = real
+
+      local
+	 open Prim
+      in
+	 val *+ = *+
+	 val *- = *-
+	 val abs = abs
+	 val copySign = copySign
+	 val fromInt = fromInt
+	 val isFinite = isFinite
+	 val isNan = isNan
+	 val isNormal = isNormal
+	 val maxFinite = maxFinite
+	 val minNormalPos = minNormalPos
+	 val minPos = minPos
+	 val nextAfter = nextAfter
+	 val op * = op *
+	 val op + = op +
+	 val op - = op -
+	 val op / = op /
+	 val op / = op /
+	 val op < = op <
+	 val op <= = op <=
+	 val op == = op ==
+	 val op > = op >
+	 val op >= = op >=
+	 val op ?= = op ?=
+	 val signBit = signBit
+	 val ~ = ~
+      end
  
       val radix: int = 2
 
@@ -25,7 +60,7 @@ structure Real64: REAL =
 	 
       structure Math =
 	 struct
-	    open Math
+	    open Prim.Math
 
 	    structure MLton = Primitive.MLton
 	    structure Platform = MLton.Platform
@@ -67,25 +102,25 @@ structure Real64: REAL =
 	      else if x < 0.0 then ~1
 		   else 0
 
-      fun sameSign (x, y) = signBit x = signBit y
+      fun sameSign (x, y) = Prim.signBit x = Prim.signBit y
 
       fun compare (x, y) =
-	 if x<y then General.LESS
-	 else if x>y then General.GREATER
-	      else if x == y then General.EQUAL 
-		   else raise Unordered
+	 if x < y then General.LESS
+	 else if x > y then General.GREATER
+         else if x == y then General.EQUAL 
+         else raise IEEEReal.Unordered
 
       fun compareReal (x, y) = 
-	 if x < y then LESS
-	 else if x > y then GREATER
-	      else if x == y then EQUAL 
-		   else UNORDERED
+	 if x < y then IEEEReal.LESS
+	 else if x > y then IEEEReal.GREATER
+	      else if x == y then IEEEReal.EQUAL 
+		   else IEEEReal.UNORDERED
 
       fun unordered (x, y) = isNan x orelse isNan y
 
       (* See runtime/basis/Real.c for the integers returned by class. *)
       fun class x =
-	 case Real.class x of
+	 case Prim.class x of
 	    0 => NAN (* QUIET *)
 	  | 1 => NAN (* SIGNALLING *)
 	  | 2 => INF
@@ -102,20 +137,20 @@ structure Real64: REAL =
 		       then {exp = 0, man = 0.0}
 		    else
 		       let
-			  val man = frexp (x, r)
+			  val man = Prim.frexp (x, r)
 		       in
 			  {man = man * 2.0, exp = Int.- (!r, 1)}
 		       end
 	 end
 
-      fun fromManExp {man, exp} = ldexp (man, exp)
+      fun fromManExp {man, exp} = Prim.ldexp (man, exp)
 
       local
 	 val int = ref 0.0
       in
 	 fun split x =
 	    let
-	       val frac = modf (x, int)
+	       val frac = Prim.modf (x, int)
 	    in
 	       {frac = frac,
 		whole = ! int}
@@ -133,10 +168,10 @@ structure Real64: REAL =
 
       fun withRoundingMode (m, th) =
 	 let
-	    val m' = getRoundingMode ()
-	    val _ = setRoundingMode m
+	    val m' = IEEEReal.getRoundingMode ()
+	    val _ = IEEEReal.setRoundingMode m
 	    val res = th ()
-	    val _ = setRoundingMode m'
+	    val _ = IEEEReal.setRoundingMode m'
 	 in
 	    res
 	 end
@@ -147,7 +182,7 @@ structure Real64: REAL =
       fun toInt mode x =
 	 let
 	    fun doit () = withRoundingMode (mode, fn () =>
-					    Real.toInt (Real.round x))
+					    Prim.toInt (Prim.round x))
 	 in
 	    case class x of
 	       NAN => raise Domain
@@ -195,40 +230,191 @@ structure Real64: REAL =
 	    case class x of
 	       NAN => x
 	     | INF => x
-	     | _ => withRoundingMode (mode, fn () => Real.round x)
+	     | _ => withRoundingMode (mode, fn () => Prim.round x)
       in
 	 val realFloor = round TO_NEGINF
 	 val realCeil = round TO_POSINF
 	 val realTrunc = round TO_ZERO
       end
 
+      (* fromDecimal, scan, fromString: decimal -> binary conversions *)
+      exception Bad
+      fun fromDecimal ({class, digits, exp, sign}: IEEEReal.decimal_approx) =
+	 let
+	    fun doit () =
+	       let
+		  val exp =
+		     if Int.< (exp, 0)
+			then concat ["-", Int.toString (Int.~ exp)]
+		     else Int.toString exp
+		  val x =
+		     concat ["0.",
+			     implode (List.map
+				      (fn d =>
+				       if Int.< (d, 0) orelse Int.> (d, 9)
+					  then raise Bad
+				       else Char.chr (Int.+ (d, Char.ord #"0")))
+				      digits),
+			     "E", exp, "\000"]
+		  val x = Prim.strtod x
+	       in
+		  if sign
+		     then ~ x
+		  else x
+	       end
+	 in
+	    SOME (case class of
+		     INF => if sign then negInf else posInf
+		   | NAN => nan
+		   | NORMAL => doit ()
+		   | SUBNORMAL => doit ()
+		   | ZERO => 0.0)
+	    handle Bad => NONE
+	 end
+
+      fun scan reader state =
+	 case IEEEReal.scan reader state of
+	    NONE => NONE
+	  | SOME (da, state) => SOME (valOf (fromDecimal da), state)
+
+      val fromString = StringCvt.scanString scan
+
+      (* toDecimal, fmt, toString: binary -> decimal conversions. *)
+      datatype mode = Fix | Gen | Sci
+      local
+	 val decpt: int ref = ref 0
+      in
+	 fun gdtoa (x: real, mode: mode, ndig: int) =
+	    let
+	       val mode =
+		  case mode of
+		     Fix => 3
+		   | Gen => 0
+		   | Sci => 2
+	       val cs = Prim.gdtoa (x, mode, ndig, decpt)
+	    in
+	       (cs, !decpt)
+	    end
+      end
+   
+      fun toDecimal (x: real): IEEEReal.decimal_approx =
+	 case class x of
+	    NAN => {class = NAN,
+		    digits = [],
+		    exp = 0,
+		    sign = false}
+	  | INF => {class = INF,
+		    digits = [],
+		    exp = 0,
+		    sign = x < 0.0}
+	  | ZERO => {class = ZERO,
+		     digits = [],
+		     exp = 0,
+		     sign = false}
+	  | c => 
+	       let
+		  val (cs, decpt) = gdtoa (x, Gen, 0)
+		  fun loop (i, ac) =
+		     if Int.< (i, 0)
+			then ac
+		     else loop (Int.- (i, 1),
+				(Int.- (Char.ord (C.CS.sub (cs, i)),
+					Char.ord #"0"))
+				:: ac)
+		  val digits = loop (Int.- (C.CS.length cs, 1), [])
+		  val exp = decpt
+	       in
+		  {class = NORMAL,
+		   digits = digits,
+		   exp = exp,
+		   sign = x < 0.0}
+	       end
+
       datatype realfmt = datatype StringCvt.realfmt
 
+      fun add1 n = Int.+ (n, 1)
+	 
       local
-	 fun makeBuffer n = Primitive.Array.array n
-	 (* Large enough for most cases *)
-	 val normalSize: int = 500
-	 val buffer = makeBuffer normalSize
-	 val sciExtra: int = 10
-	 val fixExtra: int = 400
-	 val genExtra: int = 10
+	 fun fix (sign: string, cs: C.CS.t, decpt: int, ndig: int): string =
+	    let
+	       val length = C.CS.length cs
+	    in
+	       if Int.< (decpt, 0)
+		  then
+		     concat [sign,
+			     "0.",
+			     String.new (Int.~ decpt, #"0"),
+			     C.CS.toString cs,
+			     String.new (Int.+ (Int.- (ndig, length),
+						decpt),
+					 #"0")]
+	       else
+		  let 
+		     val whole =
+			if decpt = 0
+			   then "0"
+			else
+			   String.tabulate (decpt, fn i =>
+					    if Int.< (i, length)
+					       then C.CS.sub (cs, i)
+					    else #"0")
+		  in
+		     if 0 = ndig
+			then concat [sign, whole]
+		     else
+			let
+			   val frac =
+			      String.tabulate
+			      (ndig, fn i =>
+			       let
+				  val j = Int.+ (i, decpt)
+			       in
+				  if Int.< (j, length)
+				     then C.CS.sub (cs, j)
+				  else #"0"
+			       end)
+			in
+			   concat [sign, whole, ".", frac]
+			end
+		  end
+	    end
+	 fun sci (sign: string, cs: C.CS.t, decpt: int, ndig: int): string =
+	    let
+	       val length = C.CS.length cs
+	       val whole = String.tabulate (1, fn _ => C.CS.sub (cs, 0))
+	       val frac =
+		  if 0 = ndig
+		     then ""
+		  else concat [".",
+			       String.tabulate
+			       (ndig, fn i =>
+				let
+				   val j = Int.+ (i, 1)
+				in
+				   if Int.< (j, length)
+				      then C.CS.sub (cs, j)
+				   else #"0"
+				end)]
+	       val exp = Int.- (decpt, 1)
+	       val exp =
+		  let
+		     val (exp, sign) =
+			if Int.< (exp, 0)
+			   then (Int.~ exp, "~")
+			else (exp, "")
+		  in
+		     concat [sign, Int.toString exp]
+		  end
+	    in
+	       concat [sign, whole, frac, "E", exp]
+	    end
+			
       in
 	 fun fmt spec =
 	    let
-	       val (formatString, bufSize) =
+	       val doit =
 		  case spec of
-		     SCI opt =>
-			let
-			   val n =
-			      case opt of
-				 NONE => 6
-			       | SOME n =>
-				    if Primitive.safe andalso Int.< (n, 0)
-				       then raise Size
-				    else n
-			in (concat ["%.", Int.toString n, "e"],
-			    Int.+ (n, sciExtra))
-			end
+		     EXACT => IEEEReal.toString o toDecimal
 		   | FIX opt =>
 			let
 			   val n =
@@ -238,8 +424,14 @@ structure Real64: REAL =
 				    if Primitive.safe andalso Int.< (n, 0)
 				       then raise Size
 				    else n
-			in (concat ["%.", Int.toString n, "f"],
-			    Int.+ (n, fixExtra))
+			in
+			   fn x =>
+			   let
+			      val sign = if x < 0.0 then "~" else ""
+			      val (cs, decpt) = gdtoa (x, Fix, n)
+			   in
+			      fix (sign, cs, decpt, n)
+			   end
 			end
 		   | GEN opt =>
 			let
@@ -250,141 +442,50 @@ structure Real64: REAL =
 				    if Primitive.safe andalso Int.< (n, 1)
 				       then raise Size
 				    else n
-			in (concat ["%.", Int.toString n, "g"],
-			    Int.+ (n, genExtra))
+			in
+			   fn x =>
+			   let
+			      val sign = if x < 0.0 then "~" else ""
+			      val (cs, decpt) = gdtoa (x, Sci, n)
+			      val length = C.CS.length cs
+			   in
+			      if Int.<= (decpt, ~4)
+				 orelse Int.> (decpt, Int.+ (5, length))
+				 then sci (sign, cs, decpt, Int.- (length, 1))
+			      else fix (sign, cs, decpt,
+					if Int.< (length, decpt)
+					   then 0
+					else Int.- (length, decpt))
+			   end
 			end
-		   | EXACT => raise Fail "Real.fmt EXACT unimplemented"
-	    in fn x =>
+		   | SCI opt =>
+			let
+			   val n =
+			      case opt of
+				 NONE => 6
+			       | SOME n =>
+				    if Primitive.safe andalso Int.< (n, 0)
+				       then raise Size
+				    else n
+			in
+			   fn x =>
+			   let
+			      val sign = if x < 0.0 then "~" else ""
+			      val (cs, decpt) = gdtoa (x, Sci, add1 n)
+			   in
+			      sci (sign, cs, decpt, n)
+			   end
+			end
+	    in
+	       fn x =>
 	       case class x of
 		  NAN => "nan"
 		| INF => if x > 0.0 then "inf" else "~inf"
-		| ZERO => "0.0"
-		| _ => 
-		     let
-			val buffer =
-			   if Int.> (bufSize, normalSize)
-			      then makeBuffer bufSize
-			   else buffer
-			val len =
-			   Primitive.Stdio.sprintf
-			   (buffer, String.nullTerm formatString, x)
-			val res = 
-			   String.translate
-			   (fn #"-" => "~" | c => str c)
-			   (Array.extract (buffer, 0, SOME len))
-		     in res
-		     end
+		| _ => doit x
 	    end
       end
    
       val toString = fmt (StringCvt.GEN NONE)
-
-      (* Copied from MLKitV3 basislib/real.sml *)
-      val real = fromInt
-      fun scan getc source = 
-	 let fun decval c = Int.- (Char.ord c, 48)
-	    fun pow10 0 = 1.0
-	      | pow10 n = 
-		if Int.mod (n, 2) = 0 then 
-		   let val x = pow10 (Int.div (n, 2)) in x * x end
-		else 10.0 * pow10 (Int.- (n, 1))
-	    fun pointsym src = 
-	       case getc src of
-		  NONE           => (false, src)
-		| SOME (c, rest) => if c = #"." then (true, rest)
-				    else (false, src)
-	    fun esym src = 
-	       case getc src of
-		  NONE           => (false, src)
-		| SOME (c, rest) => 
-		     if c = #"e" orelse c = #"E"  then 
-			(true, rest)
-		     else (false, src)
-	    fun scandigs first next final source =
-	       let fun digs state src = 
-		  case getc src of
-		     NONE          => (SOME (final state), src)
-		   | SOME (c, rest) => 
-			if Char.isDigit c then 
-			   digs (next (state, decval c)) rest
-			else 
-			   (SOME (final state), src)
-	       in 
-		  case getc source of
-		     NONE          => (NONE, source)
-		   | SOME (c, rest) => 
-			if Char.isDigit c then digs (first (decval c)) rest
-			else (NONE, source)
-	       end
-
-	    fun ident x = x
-	    val getint  = 
-	       scandigs real (fn (res, cval) => 10.0 * res + real cval) ident
-	    val getfrac = 
-	       scandigs (fn cval => (1, real cval))    
-	       (fn ((decs, frac), cval) => (Int.+ (decs, 1), 10.0*frac+real cval))
-	       (fn (decs, frac) => frac / pow10 decs)
-	    val getexp =
-	       scandigs ident (fn (res, cval) => Int.+ (Int.* (10, res), cval)) ident
-
-	    fun sign src =
-	       case getc src of
-		  SOME (#"+", rest) => (true,  rest)
-		| SOME (#"-", rest) => (false, rest)
-		| SOME (#"~", rest) => (false, rest)
-		| _                => (true,  src )
-
-	    fun sym src =
-	       case getc src of
-		  SOME (#"i", restA) => 
-		    (case Reader.reader2 getc restA of
-		       SOME ((#"n", #"f"), restB) =>
-			 SOME (posInf, 
-			       case Reader.readerN (getc, 5) restB of
-				 SOME ([#"i", #"n", #"i", #"t", #"y"], restC) => restC
-			       | _ => restB)
-		     | _ => NONE)
-		| SOME (#"n", restA) =>
-		    (case Reader.reader2 getc restA of
-		       SOME ((#"a", #"n"), restB) =>
-			 SOME (nan, restB)
-		     | _ => NONE)
-		| _ => NONE
-
-	    val src = StringCvt.dropl Char.isSpace getc source
-	    val (manpos, src1) = sign src
-	    val (intg,   src2) = getint src1
-	    val (decpt,  src3) = pointsym src2
-	    val (frac,   src4) = getfrac src3 
-
-	    fun mkres v rest = 
-	       SOME (if manpos then v else ~v, rest)
-
-	    fun expopt manval src = 
-	       let val (esym,   src1) = esym src
-		  val (exppos, src2) = sign src1
-		  val (expv,   rest) = getexp src2 
-	       in 
-		  case (esym, expv) of
-		     (_,     NONE)     => mkres manval src
-		   | (true,  SOME exp) => 
-			if exppos then mkres (manval * pow10 exp) rest
-			else mkres (manval / pow10 exp) rest
-		   | _                 => NONE
-	       end
-	 in 
-	    case (intg,     decpt, frac) of
-	       (NONE,      true,  SOME fval) => expopt fval src4
-	     | (SOME ival, false, SOME _   ) => NONE
-	     | (SOME ival, true,  NONE     ) => mkres ival src2
-	     | (SOME ival, false, NONE     ) => expopt ival src2
-	     | (SOME ival, _    , SOME fval) => expopt (ival+fval) src4
-	     | _                             => (case sym src1 of
-						   SOME (v, rest) => mkres v rest
-						 | NONE => NONE)
-	 end
-
-      fun fromString s = StringCvt.scanString scan s
 
       local
 	 fun negateMode m =
@@ -448,7 +549,7 @@ structure Real64: REAL =
 			      conv (q, Int.+ (half, shift))
 			      + conv (IntInf.+ (r, extra), shift)
 			   end
-	       val mode = getRoundingMode ()
+	       val mode = IEEEReal.getRoundingMode ()
 	    in
 	       case IntInf.compare (i, IntInf.fromInt 0) of
 		  General.LESS => ~ (pos (IntInf.~ i, negateMode mode))
@@ -469,9 +570,9 @@ structure Real64: REAL =
 			    val {frac, whole} = split x
 			    val extra =
 			       if mode = TO_NEAREST
-				  andalso Real.== (frac, 0.5)
+				  andalso 0.5 == frac
 				  then
-				     if Real.== (0.5, realMod (whole / 2.0))
+				     if 0.5 == realMod (whole / 2.0)
 					then 1
 				     else 0
 			       else IntInf.fromInt (toInt mode frac)
@@ -504,10 +605,6 @@ structure Real64: REAL =
 		      else IntInf.~ (pos (~ x, negateMode mode))
 		   end)
       end
-
-      val toDecimal = fn _ => raise (Fail "<Real.toDecimal not implemented>")
-      val fromDecimal = fn _ => raise (Fail "<Real.fromDecimal not implemented>")
-      val nextAfter = Real.nextAfter
   end
 
 structure Real = Real64   

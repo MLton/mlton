@@ -18,7 +18,7 @@ ifeq ($(HOST_ARCH), sparc)
 ARCHFLAGS += -Wa,-xarch=v8plusa -fcall-used-g5 -fcall-used-g7 -funroll-all-loops -m32 -mv8 -mcpu=ultrasparc
 endif
 
-CC = gcc -Wall -I. -D_LARGEFILE64_SOURCE $(ARCHFLAGS) $(HOSTFLAGS)
+CC = gcc -Wall -I. -Igdtoa -D_LARGEFILE64_SOURCE $(ARCHFLAGS) $(HOSTFLAGS)
 CFLAGS = -O2
 DEBUGFLAGS = -gstabs+ -g2
 
@@ -76,8 +76,18 @@ OBJS =						\
 	basis/PackReal/update.o			\
 	basis/Ptrace/ptrace2.o			\
 	basis/Ptrace/ptrace4.o			\
-	basis/Real.o				\
-	basis/Real_const.o			\
+	basis/Real/class.o			\
+	basis/Real/const.o			\
+	basis/Real/gdtoa.o			\
+	basis/Real/isFinite.o			\
+	basis/Real/isNan.o			\
+	basis/Real/isNormal.o			\
+	basis/Real/nextAfter.o			\
+	basis/Real/qequal.o			\
+	basis/Real/real.o			\
+	basis/Real/round.o			\
+	basis/Real/signBit.o			\
+	basis/Real/strtod.o			\
 	basis/Stdio.o				\
 	basis/Thread.o				\
 	basis/Time.o				\
@@ -236,8 +246,18 @@ DEBUG_OBJS =					\
 	basis/PackReal/update-gdb.o		\
 	basis/Ptrace/ptrace2-gdb.o		\
 	basis/Ptrace/ptrace4-gdb.o		\
-	basis/Real-gdb.o			\
-	basis/Real_const-gdb.o			\
+	basis/Real/class-gdb.o			\
+	basis/Real/const-gdb.o			\
+	basis/Real/gdtoa-gdb.o			\
+	basis/Real/isFinite-gdb.o		\
+	basis/Real/isNan-gdb.o			\
+	basis/Real/isNormal-gdb.o		\
+	basis/Real/nextAfter-gdb.o		\
+	basis/Real/qequal-gdb.o			\
+	basis/Real/real-gdb.o			\
+	basis/Real/round-gdb.o			\
+	basis/Real/signBit-gdb.o		\
+	basis/Real/strtod-gdb.o			\
 	basis/Stdio-gdb.o			\
 	basis/Thread-gdb.o			\
 	basis/Time-gdb.o			\
@@ -342,7 +362,16 @@ DEBUG_OBJS =					\
 	libmlton-gdb.o				\
 	my-lib-gdb.o
 
-all: libmlton.a libmlton-gdb.a
+all:  libgdtoa.a libmlton.a libmlton-gdb.a
+
+libgdtoa.a: gdtoa/gdtoa.a
+	cp gdtoa/gdtoa.a libgdtoa.a
+
+gdtoa/gdtoa.a: gdtoa
+	$(MAKE) -C gdtoa 'CC=gcc' 'CFLAGS=-g -DINFNAN_CHECK $(HOSTFLAGS)'
+
+gdtoa:
+	zcat gdtoa.tgz | tar xf -
 
 libmlton.a: $(OBJS) 
 	$(AR) libmlton.a $(OBJS)
@@ -350,8 +379,8 @@ libmlton.a: $(OBJS)
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
 
-# gcc 3.2 is buggy when compiling Real.c with -O2
-basis/Real.o: basis/Real.c
+# gcc 3.2 is buggy when compiling class.c with -O2
+basis/Real/class.o: basis/Real/class.c
 	$(CC) $(CFLAGS) -O1 -c -o $@ $<
 
 %-gdb.o: %.c
@@ -373,3 +402,11 @@ clean:
 .PHONY: depend
 depend:
 	makedepend -f- -- $(CFLAGS) -- $(SRCS)
+
+.PHONY: gdtoa-patch
+gdtoa-patch:
+	mv gdtoa gdtoa-new
+	zcat gdtoa.tgz | tar xf -
+	(cd gdtoa && diff -c -r . ../gdtoa-new) >gdtoa-patch || exit 0
+	rm -rf gdtoa
+	mv gdtoa-new gdtoa

@@ -84,11 +84,11 @@ structure Primitive =
 	    (* char* *)
 	    structure CS =
 	       struct
-		  type cs = pointer
+		  type t = pointer
 
-		  val sub = _ffi "C_CS_sub": cs * int -> char;
+		  val sub = _ffi "C_CS_sub": t * int -> char;
 		  val update =
-		     _ffi "C_CS_update": cs * int * char -> unit; (* primitive *)
+		     _ffi "C_CS_update": t * int * char -> unit; (* primitive *)
 		  val charArrayToWord8Array =
 		     _prim "C_CS_charArrayToWord8Array":
 		     char array -> word8 array;
@@ -97,13 +97,14 @@ structure Primitive =
 	    (* char** *)
 	    structure CSS =
 	       struct
-		  type css = pointer
-		  val sub = _ffi "C_CSS_sub": css * int -> CS.cs;
+		  type t = pointer
+		     
+		  val sub = _ffi "C_CSS_sub": t * int -> CS.t;
 	       end
 	 end
 
-      type cstring = C.CS.cs
-      type cstringArray = C.CSS.css
+      type cstring = C.CS.t
+      type cstringArray = C.CSS.t
       type nullString = string
 
       structure Char =
@@ -557,6 +558,7 @@ structure Primitive =
 	    val class = _ffi "Real_class": real -> int;
 	    val copySign = _prim "Real_copysign": real * real -> real;
 	    val frexp = _prim "Real_frexp": real * int ref -> real;
+	    val gdtoa = _ffi "Real_gdtoa": real * int * int * int ref -> cstring;
 	    val fromInt = _prim "Real_fromInt": int -> real;
 	    val isFinite = _ffi "Real_isFinite": real -> bool;
 	    val isNan = _ffi "Real_isNan": real -> bool;
@@ -569,6 +571,7 @@ structure Primitive =
 	    val nextAfter = _ffi "Real_nextAfter": real * real -> real;
 	    val round = _prim "Real_round": real -> real;
 	    val signBit = _ffi "Real_signBit": real -> bool;
+	    val strtod = _ffi "Real_strtod": nullString -> real;
 	    val toInt = _prim "Real_toInt": real -> int;
 	    val ~ = _prim "Real_neg": real -> real;
 	 end

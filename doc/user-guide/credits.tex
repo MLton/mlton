@@ -102,6 +102,13 @@ are modified versions of code from the {\smlnj}.
 {\mlton} uses the {\smlnj} library implementation of splay trees.
 
 \item
+The {\mlton} basis library implementation of {\tt Real.fmt},
+{\tt Real.toDecimal}, and {\tt Real.toString} uses David Gay's
+\htmladdnormallink{gdtoa}
+		  {http://www.netlib.org/fp/}
+library.
+
+\item
 The {\mlton} basis library implementation uses modified versions of
 portions of the the {\smlnj} basis library modules {\tt Real}, {\tt
 IO}, {\tt Unix}, {\tt Process}, and {\tt Option}.
@@ -111,8 +118,7 @@ The {\mlton} basis library implementation uses modified versions of
 portions of the
 \htmladdnormallink{ML Kit Version 3}
 		  {http://www.it.edu/research/mlkit/kit3/readme.html}
-basis library modules {\tt Real}, {\tt Path}, {\tt Time}, and
-{\tt Date}.
+basis library modules {\tt Path}, {\tt Time}, and {\tt Date}.
 
 \item
 Many of the benchmarks come from the {\smlnj} benchmark suite.

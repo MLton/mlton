@@ -8,8 +8,8 @@
 structure PosixPrimitive =
    struct
       type nullString = string
-      type cstring = Primitive.C.CS.cs
-      type cstringArray = Primitive.C.CSS.css
+      type cstring = Primitive.C.CS.t
+      type cstringArray = Primitive.C.CSS.t
 
       type fd = int
       type pid = int

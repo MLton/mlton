@@ -21,9 +21,9 @@ signature IEEE_REAL =
       val getRoundingMode: unit -> rounding_mode
 	 
       type decimal_approx = {class: float_class,
-			     sign: bool,
 			     digits: int list,
-			     exp: int}
+			     exp: int,
+			     sign: bool}
 	 
       val toString: decimal_approx -> string 
       val scan: (char, 'a) StringCvt.reader 
