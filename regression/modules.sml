@@ -288,3 +288,13 @@ structure S: SIG =
       type u = int
       type v = int
    end
+
+functor F () =
+   struct
+      val A = 0
+   end
+structure S =
+   struct
+      datatype z = A
+      structure F = F ()
+   end

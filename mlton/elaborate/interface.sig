@@ -117,10 +117,14 @@ signature INTERFACE =
       val peekTycon: t * Ast.Tycon.t -> TypeStr.t option
       val plist: t -> PropertyList.t
       (* realize makes a copy, and instantiate longtycons *)
-      val realize: t * (Ast.Longtycon.t
-			* TypeStr.AdmitsEquality.t
-			* TypeStr.Kind.t
-			* {hasCons: bool} -> EnvTypeStr.t) -> t
+      val realize:
+	 t * {followStrid: 'a * Ast.Strid.t -> 'a,
+	      init: 'a,
+	      realizeTycon: ('a * Ast.Tycon.t
+			     * TypeStr.AdmitsEquality.t
+			     * TypeStr.Kind.t
+			     * {hasCons: bool} -> EnvTypeStr.t)}
+	 -> t
       val renameTycons: (unit -> unit) ref
       val sameShape: t * t -> bool
       val share: t * Ast.Longstrid.t * t * Ast.Longstrid.t * Time.t -> unit

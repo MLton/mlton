@@ -1052,13 +1052,13 @@ val share =
     Unit.layout)
    share
 
-fun copyAndRealize (I: t, getTypeFcnOpt): t =
+fun 'a copyAndRealize (I: t, {followStrid, init: 'a, realizeTycon}): t =
    let
       (* Keep track of all nodes that have forward pointers to copies, so
        * that we can gc them when done.
        *)
       val copies: copy list ref = ref []
-      fun loop (I as T s, strids: Ast.Strid.t list): t =
+      fun loop (I as T s, a: 'a): t =
 	 let
 	    val {copy, shapeId, strs, types, vals, ...} = Set.value s
 	 in
@@ -1071,28 +1071,29 @@ fun copyAndRealize (I: t, getTypeFcnOpt): t =
 			 let
 			    val typeStr = TypeStr.copy typeStr
 			    val _ =
-			       case (TypeStr.toTyconOpt typeStr,
-				     getTypeFcnOpt) of
-				  (SOME (Tycon.Flexible c), SOME f) =>
-				     let
-					val FlexibleTycon.T s = c
-					val {admitsEquality, defn, hasCons,
-					     ...} =
-					   Set.value s
-				     in
-					case Defn.dest (!defn) of
-					   Defn.Realized _ => ()
-					 | Defn.TypeStr _ => ()
-					 | Defn.Undefined =>
-					      FlexibleTycon.realize
-					      (c,
-					       f
-					       (Longtycon.long (strids, name),
-						!admitsEquality,
-						TypeStr.kind typeStr,
-						{hasCons = hasCons}))
-				     end
-				| _ => ()
+			       case realizeTycon of
+				  NONE => ()
+				| SOME f =>
+				     case TypeStr.toTyconOpt typeStr of
+					SOME (Tycon.Flexible c) =>
+					   let
+					      val FlexibleTycon.T s = c
+					      val {admitsEquality, defn, hasCons,
+						   ...} =
+						 Set.value s
+					   in
+					      case Defn.dest (!defn) of
+						 Defn.Realized _ => ()
+					       | Defn.TypeStr _ => ()
+					       | Defn.Undefined =>
+						    FlexibleTycon.realize
+						    (c,
+						     f (a, name,
+							!admitsEquality,
+							TypeStr.kind typeStr,
+							{hasCons = hasCons}))
+					   end
+				      | _ => ()
 			 in
 			    (name, typeStr)
 			 end)
@@ -1102,7 +1103,7 @@ fun copyAndRealize (I: t, getTypeFcnOpt): t =
 			 (name, (status, Scheme.copy scheme)))
 		     val strs =
 			Array.map (strs, fn (name, I) =>
-				   (name, loop (I, strids @ [name])))
+				   (name, loop (I, followStrid (a, name))))
 		     val I = T (Set.singleton {copy = ref NONE,
 					       plist = PropertyList.new (),
 					       shapeId = shapeId,
@@ -1117,23 +1118,27 @@ fun copyAndRealize (I: t, getTypeFcnOpt): t =
 		  end
 	     | SOME I => I
 	 end
-      val I = loop (I, [])
-      fun clear copies =
-	 (List.foreach (!copies, fn copy => copy := NONE)
-	  ; copies := [])
+      val I = loop (I, init)
+      fun clear copies = List.foreach (!copies, fn copy => copy := NONE)
       val _ = clear copies
       val _ = clear FlexibleTycon.copies
+      val _ = FlexibleTycon.copies := []
    in
       I
    end
 
-fun copy I = copyAndRealize (I, NONE)
-
+fun copy I = copyAndRealize (I, {init = (),
+				 followStrid = fn _ => (),
+				 realizeTycon = NONE})
+				 
 val copy = Trace.trace ("Interface.copy", layout, layout) copy
 
-fun realize (I, f) = copyAndRealize (I, SOME f)
-
-val realize =
-   Trace.trace2 ("Interface.realize", layout, Layout.ignore, layout) realize
+val info = Trace.info "Interface.realize"
+   
+fun realize (I, {init, followStrid, realizeTycon}) =
+   Trace.traceInfo' (info ,layout o #1, layout)
+   copyAndRealize (I, {init = init,
+		       followStrid = followStrid,
+		       realizeTycon = SOME realizeTycon})
 
 end

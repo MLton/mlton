@@ -1235,15 +1235,24 @@ fun dummyStructure (T {strs, types, vals, ...}, prefix: string, I: Interface.t)
    : Structure.t * (Structure.t * (Tycon.t * TypeStr.t -> unit) -> unit) =
    let
       val tycons: (Longtycon.t * Tycon.t) list ref = ref []
-      val I =
-	 Interface.realize
-	 (I, fn (c, a, k, _) =>
-	  let
-	     val c' = newTycon (concat [prefix, Longtycon.toString c], k, a)
-	     val _ = List.push (tycons, (c, c'))
+      type data = {nest: Strid.t list}
+      fun followStrid ({nest}, s) =
+	 {nest = s :: nest}
+      fun realizeTycon ({nest}, c: Ast.Tycon.t, a, k, _) =
+	 let
+	    val name =
+	       concat (List.fold (nest, [Ast.Tycon.toString c], fn (s, ss) =>
+				  Strid.toString s :: ss))
+	    val c' = newTycon (name, k, a)
+	    val _ = List.push (tycons, (Longtycon.long (rev nest, c), c'))
 	  in
 	     TypeStr.tycon (c', k)
-	  end)
+	  end
+      val I =
+	 Interface.realize
+	 (I, {followStrid = followStrid,
+	      init = {nest = []},
+	      realizeTycon = realizeTycon})
       val tycons = !tycons
       val {get, ...} =
 	 Property.get
@@ -1625,8 +1634,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	       map (types, types', strids,
 		    "type", Ast.Tycon.equals, Ast.Tycon.layout,
 		    fn _ => (),
-		    fn (name, s, s') => (handleType (s, s', strids, name)
-					 ; ()))
+		    fn (name, s, s') => (handleType (s, s', strids, name); ()))
 	 in
 	    ()
 	 end
@@ -1759,67 +1767,84 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			 types = types,
 			 vals = vals}
 	 end
+      type data = {nest: Strid.t list,
+		   str: Structure.t option}
+      fun followStrid ({nest, str}, s) =
+	 {nest = s :: nest,
+	  str = (case str of
+		    NONE => NONE
+		  | SOME S => Structure.peekStrid (S, s))}
+      fun realizeTycon ({nest, str}, c, a, k, {hasCons}) =
+	 let
+	    fun long () = Longtycon.long (rev nest, c)
+	    fun bad () =
+	       TypeStr.tycon (newTycon (Longtycon.toString (long ()), k, a), k)
+	 in
+	    case str of
+	       NONE => bad ()
+	     | SOME S =>
+		  case Structure.peekTycon (S, c) of
+		     NONE => bad ()
+		   | SOME typeStr =>
+			if not (AdmitsEquality.<=
+				(a, TypeStr.admitsEquality typeStr))
+			   then 
+			      let
+				 open Layout
+				 val _ =
+				    Control.error
+				    (region,
+				     seq [str "type ", Longtycon.layout (long ()),
+					  str " admits equality in ", str sign,
+					  str " but not in structure"],
+				     empty)
+			      in
+				 bad ()
+			      end
+			else if (hasCons andalso
+				 Option.isNone (TypeStr.toTyconOpt typeStr))
+			   then
+			      let
+				 open Layout
+				 val _ =
+				    Control.error
+				    (region,
+				     seq [str "type ", Longtycon.layout (long ()),
+					  str " is a datatype in ", str sign,
+					  str " but not in structure"],
+				     empty)
+			      in
+				 bad ()
+			      end
+			else
+			   let
+			      val k' = TypeStr.kind typeStr
+			   in
+			      if not (Kind.equals (k, k'))
+				 then
+				    let
+				       open Layout
+				       val _ =
+					  Control.error
+					  (region,
+					   seq [str "type ",
+						Longtycon.layout (long ()),
+						str " has arity ",
+						Kind.layout k',
+						str " in structure but arity ",
+						Kind.layout k,
+						str " in ", str sign],
+					   empty)
+				    in
+				       bad ()
+				    end
+			      else typeStr
+			   end
+	 end
       val I' =
-	 Interface.realize
-	 (I, fn (c, a, k, {hasCons}) =>
-	  let
-	     fun bad () =
-		TypeStr.tycon (newTycon (Longtycon.toString c, k, a), k)
-	  in
-	     case Structure.peekLongtycon (S, c) of
-		NONE => bad ()
-	      | SOME typeStr =>
-		   if not (AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr))
-		      then 
-			 let
-			    open Layout
-			    val _ =
-			       Control.error
-			       (region,
-				seq [str "type ", Longtycon.layout c,
-				     str " admits equality in ", str sign,
-				     str " but not in structure"],
-				empty)
-			 in
-			    bad ()
-			 end
-		   else if (hasCons
-			    andalso Option.isNone (TypeStr.toTyconOpt typeStr))
-		      then
-			 let
-			    open Layout
-			    val _ =
-			       Control.error
-			       (region,
-				seq [str "type ", Longtycon.layout c,
-				     str " is a datatype in ", str sign,
-				     str " but not in structure"],
-				empty)
-			 in
-			    bad ()
-			 end
-	           else
-		      let
-			 val k' = TypeStr.kind typeStr
-		      in
-			 if not (Kind.equals (k, k'))
-			    then
-			       let
-				  open Layout
-				  val _ =
-				     Control.error
-				     (region,
-				      seq [str "type ", Longtycon.layout c,
-					   str " has arity ", Kind.layout k',
-					   str " in structure but arity ",
-					   Kind.layout k, str " in ", str sign],
-				      empty)
-			       in
-				  bad ()
-			       end
-			 else typeStr
-		      end
-	  end)
+	 Interface.realize (I, {followStrid = followStrid,
+				init = {nest = [], str = SOME S},
+				realizeTycon = realizeTycon})
       val S = cut (S, I', [])
       val _ = destroy ()
    in
@@ -1908,12 +1933,18 @@ fun snapshot (E as T {currentScope, fcts, fixs, sigs, strs, types, vals, ...})
 			   ; List.push (restore, fn () => vs := cur))
 	    end
 	 val _ =
-	    foreachTopLevelSymbol (E, {fcts = doit,
-				       fixs = doit,
-				       sigs = doit,
-				       strs = doit,
-				       types = doit,
-				       vals = doit})
+	    (* Can't use foreachToplevelSymbol here, because a constructor C may
+	     * have been defined in a local scope but may not have been defined
+	     * at the snapshot point.  This will make the identifier C, which
+	     * originally would have elaborated as a variable instead elaborate
+	     * as a constructor.
+	     *)
+	    foreachDefinedSymbol (E, {fcts = doit,
+				      fixs = doit,
+				      sigs = doit,
+				      strs = doit,
+				      types = doit,
+				      vals = doit})
 	 val s1 = !currentScope
 	 val _ = currentScope := s0
 	 val res = th ()
