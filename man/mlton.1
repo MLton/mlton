@@ -1,4 +1,4 @@
-.TH mlton 1 "October 18, 2002"
+.TH mlton 1 "January 13, 2003"
 .SH NAME
 \fBmlton\fP \- whole-program compiler for the Standard ML (SML) programming
 language
@@ -51,7 +51,7 @@ arithmetic.
 .COM !syntax.
 
 .TP
-\fB-exn-history \fI{\fBtrue\fI|\fBfalse\fI}\fR
+\fB-exn-history \fI{\fBfalse\fI|\fBtrue\fI}\fR
 Enable \fBExn.history\fP.  This has a performance impact, both in memory usage
 of exceptions and in runtime, because of additional work that must be performed
 at each exception construction, raise, and handle.
@@ -83,19 +83,15 @@ The default is 320.
 .COM \fB-i\fR).
 
 .TP
-\fB-keep \fI{\fBdot\fP|\fBg\fP|\fBo\fP|\fBsml\fP|\fBssa\fP}\fR
+\fB-keep \fI{\fBg\fP|\fBo\fP|\fBsml\fP}\fR
 Save the intermediate files corresponding to the given arg.
 If no \fB-keep\fP argument is given, then only the final file is saved.
 .in +.5i
-\fBdot\fP  dot files.  Implies \fB-keep ssa\fP. Do not use with \fB-keep il\fP.
-.br
 \fBg\fP    generated \fB.S\fP and \fB.c\fP files passed to gcc.
 .br
 \fBo\fP    object file (\fI*\fB.o\fR).
 .br
 \fBsml\fP  SML file.
-.br
-\fBssa\fP  SSA file.
 .in -.5i
 
 .TP
@@ -122,12 +118,16 @@ The default name is the input file name with its suffix removed and an
 appropriate suffix added.
 
 .TP
-\fB-profile \fI{\fBno\fP|\fBspace\fP|\fBtime\fP}\fR
-Produce an executable that will gather space or time profiling information.  
-\fB-profile space\fP and \fB-profile time\fP imply \fB-keep ssa\fP.
-When such an executable is run, it will produce an \fBmlmon.out\fP file.
-The man page on \fBmlprof\fP describes how to extract information from this
-file. 
+\fB-profile \fI{\fBno\fP|\fBalloc\fP|\fBtime\fP}\fR
+Produce an executable that will gather allocation or time profiling
+information.  When such an executable is run, it will produce an
+\fBmlmon.out\fP file.  The man page on \fBmlprof\fP describes how to
+extract information from this file. 
+
+.TP
+\fB-profile-stack \fI{\fBfalse\fP|\fBtrue\fP}\fR
+If true, the profiler will count the time spent (or bytes allocated)
+while a function is on the stack.
 
 .TP
 \fB-safe \fI{\fBtrue\fP|\fBfalse\fP}\fR
@@ -136,6 +136,10 @@ controls whether the basis library performs array, string, and vector bounds
 checks, division for zero checks, and other checks.  Compiling \fB-safe false\fP
 changes the behavior of some programs, does not conform to the basis library
 specification, and may cause programs to seg fault.
+
+.TP
+\fB-show-basis \fI{\fBfalse\fP|\fBtrue\fP}\fR
+If true, the compiler shows the basis library and exits.
 
 .TP
 \fB-show-basis-used \fI{\fBfalse\fP|\fBtrue\fP}\fR
