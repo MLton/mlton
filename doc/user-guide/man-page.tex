@@ -101,6 +101,11 @@ Controls whether or not to use native code generation.  By default this is
 {\tt true}.  Older versions of {\mlton} generated {\tt C} code and used {\tt
 gcc} to produce assembly, but this functionality is being phased out.
 
+\option{-o \mbox{\rm file}}
+Specify the name of the final output file.
+The default file name is the input file with its
+suffix removed and an appropriate suffix added.
+
 \option{-p}
 Produce an executable that will gather profiling information.  The default is
 not to gather profiling information.  This option implies {\tt -keep ssa}.
@@ -110,11 +115,6 @@ See \secref{profiling} for details.
 Control whether the optimizer runs polyvariance, which is a pass that duplicates
 small, higher-order functions to improve performance.  The default is for
 polyvariance to be on.
-
-\option{-o \mbox{\rm file}}
-Specify the name of the final output file.
-The default file name is the input file with its
-suffix removed and an appropriate suffix added.
 
 \option{-safe \{true|false\}}
 This switch determines the value of the SML variable {\tt MLton.safe}, which
