@@ -5,14 +5,6 @@
 # $FreeBSD$
 #
 
-#.include <bsd.port.pre.mk>
-
-#.if ${OSVERSION} < 500000
-#BOOT_VER=      20040227
-#.else
-BOOT_VER=      20040623
-#.endif
-
 # Because MLton is written in SML, it needs an SML compiler to build.
 # It is easiest to use another (earlier) binary version of MLton as
 # the SML compiler.  So, this Makefile fetches and installs an
@@ -54,6 +46,14 @@ MAKE_ARGS=	DESTDIR='' \
 		PREFIX=${PREFIX}
 
 PORTDIR=	usr/ports/lang/mlton
+
+.include <bsd.port.pre.mk>
+
+.if ${OSVERSION} < 500000
+BOOT_VER=      20040227
+.else
+BOOT_VER=      20040623
+.endif
 
 .PHONY: post-extract
 post-extract:
@@ -100,5 +100,4 @@ pkg-plist:
 	${SED} -e 's;share/doc/mlton;%%PORTDOCS%%%%DOCSDIR%%;'	\
 		<${TMP_PLIST} >${PLIST}
 
-.include <bsd.port.mk>
-#.include <bsd.port.post.mk>
+.include <bsd.port.post.mk>
