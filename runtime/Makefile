@@ -1,4 +1,5 @@
 HOST = self
+HOSTTYPE = $(shell ../bin/hosttype)
 ifeq ($(HOST), self)
 AR = ar rc
 CONFIG_HOST =

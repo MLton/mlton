@@ -1,5 +1,5 @@
 export HOST = self
-export HOSTTYPE = linux
+export HOSTTYPE = $(shell bin/hosttype)
 ROOT = $(shell pwd)
 BUILD = $(ROOT)/build
 SRC = $(ROOT)
@@ -19,6 +19,8 @@ CP = /bin/cp -fp
 all:
 	$(MAKE) compiler
 	$(MAKE) support
+	$(MAKE) tools
+	$(MAKE) docs
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: clean
@@ -40,6 +42,10 @@ constants:
 .PHONY: dirs
 dirs:
 	mkdir -p $(BIN) $(LIB)/$(HOST)/include
+
+.PHONY: docs
+docs:
+	cd $(SRC)/doc/user-guide && $(MAKE)
 
 .PHONY: hostmap
 hostmap:
@@ -71,10 +77,12 @@ support:
 	$(MAKE) world
 	$(MAKE) runtime
 	$(MAKE) constants
+
+.PHONY: tools
+tools:
 	cd $(LEX) && $(MAKE) && $(CP) $(LEX) $(BIN)
 	cd $(YACC) && $(MAKE) && $(CP) $(YACC) $(BIN)
 	cd $(PROF) && $(MAKE) && $(CP) $(PROF) $(BIN)
-	cd $(SRC)/doc/user-guide && $(MAKE)
 
 .PHONY: world
 world: 
@@ -88,7 +96,7 @@ PREFIX =
 VERSION =
 TBIN = $(PREFIX)/usr/local/bin
 ULIB = /usr/local/lib/mlton
-TLIB = $(PREFIX)/$(ULIB)
+TLIB = $(PREFIX)$(ULIB)
 TMAN = $(PREFIX)/usr/local/man/man1
 TDOC = $(PREFIX)/usr/share/doc/mlton-$(VERSION)
 

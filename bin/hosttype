@@ -1,0 +1,14 @@
+#!/bin/sh
+
+case `uname` in 
+Linux)
+	hosttype=linux
+	;;
+CYGWIN*)
+	hosttype=cygwin
+	;;
+*)
+	hosttype=unknown
+esac
+
+echo $hosttype
