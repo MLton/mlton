@@ -109,7 +109,7 @@ signature SSA_TREE =
 	       T of {
 		     name: Func.t,
 		     args: (Var.t * Type.t) vector,
-		     start: Label.t, (* Must be nullary. *)
+		     start: Label.t, (* Must have args of same type as args. *)
 		     blocks: Block.t vector,
 		     returns: Type.t vector
 		     }
