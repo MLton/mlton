@@ -62,7 +62,7 @@ mkdir -p "$lib/$crossHost/include" ||
 
 echo 'Making runtime.' 
 (cd $src && 
-	make runtime HOST=$crossHost HOSTTYPE=$crossType LIB=$lib \
+	make HOST=$crossHost HOSTTYPE=$crossType LIB=$lib hostmap runtime \
 		>runtime-log 2>&1 &&
 	rm -f runtime-log) ||
 	die "Unable to make runtime.  See $src/runtime-log."
