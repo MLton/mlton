@@ -976,7 +976,7 @@ fun makeOptions {usage} =
 	 SpaceString (fn s => title := SOME s)),
 	(Normal, "gray", " {false|true}", "gray nodes according to stack %",
 	 boolRef gray),
-	(Normal, "keep", " <pred>", "which functions to display",
+	(Normal, "keep", " <exp>", "which functions to display",
 	 SpaceString (fn s =>
 		      keep := NodePred.fromString s
 		      handle e => usage (concat ["invalid -keep arg: ",

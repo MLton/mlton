@@ -179,7 +179,7 @@ fun makeOptions {usage} =
 	boolRef exnHistory),
        (Expert, "expert", " {false|true}", "enable expert status",
 	boolRef expert),
-       (Normal, "export-header", " <file>", "write header file for _export's",
+       (Normal, "export-header", " <file>", "write C header file for _export's",
 	SpaceString (fn s => exportHeader := SOME s)),
        (Expert, "gc-check", " {limit|first|every}", "force GCs",
 	SpaceString (fn s =>
@@ -200,7 +200,7 @@ fun makeOptions {usage} =
 	boolRef Native.IEEEFP),
        (Expert, "indentation", " <n>", "indentation level in ILs",
 	intRef indentation),
-       (Normal, "inline", " <n>", "inlining threshold", Int setInlineSize),
+       (Normal, "inline", " <n>", "set inlining threshold", Int setInlineSize),
        (Normal, "keep", " {g|o|sml}", "save intermediate files",
 	SpaceString (fn s =>
 		     case s of
@@ -405,7 +405,7 @@ fun makeOptions {usage} =
        (Normal, "warn-match", " {true|false}",
 	"nonexhaustive and redundant match warnings",
 	boolRef warnMatch),
-       (Expert, "warn-unused", " {false|true}",
+       (Normal, "warn-unused", " {false|true}",
 	"unused identifier warnings",
 	boolRef warnUnused),
        (Expert, "xml-passes", " <passes>", "xml optimization passes",
