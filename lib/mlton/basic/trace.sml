@@ -283,15 +283,17 @@ type info = {name: string, flags: flags}
 val bogusInfo = {name = "bogus", flags = {delayed = ref false,
 					  immediate = ref false,
 					  time = ref false}}
+
+val shouldTrace = Assert.debug
    
 fun info name =
-   if Assert.debug
+   if shouldTrace
       then {name = name, flags = StringMap.lookup (map, name)}
    else bogusInfo
 
 fun traceInfo ({name, flags = {immediate, delayed, time}},
 	       layoutArg, layoutAns, check) f a =
-   if not Assert.debug
+   if not shouldTrace
       then f a
    else 
       let
