@@ -37,10 +37,9 @@ OBJS =						\
 	basis/GC/setSummary.o			\
 	basis/IEEEReal.o			\
 	basis/IntInf.o				\
+	basis/Int/Word.o			\
 	basis/Int/Word8Array.o			\
 	basis/Int/Word8Vector.o			\
-	basis/Int/Word64.o			\
-	basis/Int/quot.o			\
 	basis/Itimer/set.o			\
 	basis/MLton/allocTooLarge.o		\
 	basis/MLton/bug.o			\
@@ -198,10 +197,9 @@ DEBUG_OBJS =					\
 	basis/GC/setSummary-gdb.o		\
 	basis/IEEEReal-gdb.o			\
 	basis/IntInf-gdb.o			\
+	basis/Int/Word-gdb.o			\
 	basis/Int/Word8Array-gdb.o		\
 	basis/Int/Word8Vector-gdb.o		\
-	basis/Int/Word64-gdb.o			\
-	basis/Int/quot-gdb.o			\
 	basis/Itimer/set-gdb.o			\
 	basis/MLton/allocTooLarge-gdb.o		\
 	basis/MLton/bug-gdb.o			\
