@@ -71,7 +71,7 @@ lib="$src/build/lib"
 rm -rf "$lib/$crossTarget"
 mkdir -p "$lib/$crossTarget" || die "Cannot write to $lib."
 
-tmp=/tmp/mlton-add-cross
+tmp='/tmp/mlton-add-cross'
 
 ( cd $src && make dirs )
 
@@ -85,7 +85,6 @@ ssh $machine "cd $tmp/runtime && tar cf - *.a" |
 ( cd $src &&
 	make TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
 		mlbpathmap targetmap )
-( cd $src/runtime && make clean )
 
 exe='print-constants'
 echo "Compiling and running print-constants on $machine."
@@ -97,7 +96,6 @@ $src/build/bin/mlton -build-constants true |
 			./$exe" \
 		>"$lib/$crossTarget/constants"
 
-exit 0
 ssh $machine "rm -rf $tmp"
 
 
