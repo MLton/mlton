@@ -1,4 +1,7 @@
-#!/bin/sh
+#!/bin/sh -x
+
+# This script makes binary and source RPMs and puts them in the current
+# directory.
 
 name=`basename $0`
 
@@ -20,24 +23,21 @@ while [ "$#" -gt 0 ]; do
 	esac
 done
 
-root="$HOME/mlton"
-rpms="$root/rpms"
+originalDir=`pwd`
 version=`date +%Y%m%d`
 release="1"
 package="mlton-$version-$release"
-src="$rpms/SOURCES/mlton-$version/src"
+root="/tmp/mlton-make-rpms-$version"
+src="$root/SOURCES/mlton-$version/src"
 
-cd $root
 echo 'Cleaning up'
-ss rm -rf $rpms/SOURCES/mlton-$version*		\
-	$rpms/RPMS/i386/$package.i386.rpm 	\
-	$rpms/SRPMS/$package.src.rpm
-mkdir -p $rpms
-cd $rpms
+rm -rf $root
+mkdir $root
+cd $root
 mkdir -p BUILD RPMS/i386 SOURCES SPECS SRPMS
 
 echo 'Checking out sources'
-cd $rpms/SOURCES
+cd $root/SOURCES
 mkdir mlton-$version
 cd mlton-$version
 mkdir bin lib include
@@ -62,7 +62,7 @@ cd $src/doc
 instantiate
 doInst ../mlton/control/control.sml
 sed "/^Version:/s;.*;Version: $version;" <mlton.spec >z
-sed "/^Release:/s;.*;Release: $release;" <z >$rpms/SPECS/mlton.spec
+sed "/^Release:/s;.*;Release: $release;" <z >$root/SPECS/mlton.spec
 rm -f z
 
 manvers=`date '+%B %d, %Y'`
@@ -73,28 +73,30 @@ for f in mlprof.1 mlton.1; do
 done
 
 echo 'Creating source tgz'
-cd $rpms/SOURCES
+cd $root/SOURCES
 ss chown -R root.root mlton-$version
 tar.write mlton-$version | gzip >mlton-$version.tgz
 ss rm -rf mlton-$version
 
 echo 'Building rpms'
-cd $rpms/SPECS 
-export PATH="$HOME/mlton/bin":$PATH
-time rpm --quiet -ba --clean mlton.spec
+(
+	export HOME="$root"
+	echo "%_topdir $root" >$root/.rpmmacros
+	time rpm --quiet -ba --clean $root/SPECS/mlton.spec
+)
+cp -p $root/RPMS/i386/$package.i386.rpm $root/SRPMS/$package.src.rpm $originalDir
 
 if [ $home = 'yes' ]; then
 	echo 'Building web home'
-	cd $root
-	rm -rf doc
 	echo '  Checking out docs'
+	cd $root
 	cvs -Q co -d doc mlton/doc
 	cvs -Q release doc
 	cd $root/doc
 	instantiate
 	cd web
 	make
-	cp -p $rpms/RPMS/i386/$package.i386.rpm $rpms/SRPMS/$package.src.rpm .
+	cp $originalDir/$package.i386.rpm $originalDir/$package.src.rpm .
 	find . -type d | grep CVS | xargs rm -rf
 	find . -type f | grep cvsignore | xargs rm -f
 	echo '  Building tgz'
