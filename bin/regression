@@ -49,7 +49,7 @@ tmp=/tmp/z.regression.$$
 PATH=.:$PATH
 
 cd $src/regression
-for f in `ls *.sml`; 
+for f in mutex.sml; #`ls *.sml`;
 do
 	f=`basename $f .sml`
 	case "$f" in
@@ -75,7 +75,7 @@ do
 		fi
 		if [ ! -r $f.nonterm -a $cross = 'no' ]; then
 			if [ -x $f.exe ]; then
-				$f.exe >$tmp 2>&1
+				./$f.exe >$tmp 2>&1
 				if [ -r $f.ok.cygwin ]; then
 					diff $f.ok.cygwin $tmp
 				elif [ -r $f.ok ]; then

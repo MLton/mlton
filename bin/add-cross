@@ -23,7 +23,7 @@ lib="$src/build/lib"
 # You must already have installed the GCC cross-compiler tools.  This script
 # does not do that, although you may find the script build-cross-gcc helpful.
 # crossHost here should be the same as target in build-cross-gcc.
-crossHost='i686-pc-cygwin'
+crossHost='i386-pc-cygwin'
 
 # There are two possible types for the target machine: cygwin and linux. 
 # It should be obvious which of those you want.

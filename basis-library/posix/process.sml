@@ -12,12 +12,16 @@ structure PosixProcess: POSIX_PROCESS =
 
       val wordToPid = SysWord.toInt
       val pidToWord = SysWord.fromInt
-	 
+
+      structure MLton = Primitive.MLton
       fun fork () =
-	 case Prim.fork () of
-	    ~1 => Error.error ()
-	  | 0 => NONE
-	  | n => SOME n
+	 if MLton.hostType = MLton.Cygwin
+	    then raise Fail "fork does not work correctly on Cygwin"
+	 else
+	    case Prim.fork () of
+	       ~1 => Error.error ()
+	     | 0 => NONE
+	     | n => SOME n
 
       val conv = String.nullTerm
       val convs = C.CSS.fromList
