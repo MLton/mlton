@@ -88,7 +88,7 @@ echo 'Building rpms'
 (
 	export HOME="$root"
 	echo "%_topdir $root" >$root/.rpmmacros
-	time rpm -ba --quiet --clean --buildroot $root/install
+	time rpm -ba --quiet --clean --buildroot $root/install \
 		$root/SPECS/mlton.spec
 	touch $root/RPMS/i386/$package.i386.rpm $root/SRPMS/$package.src.rpm
 )
