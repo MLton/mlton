@@ -10,6 +10,11 @@ datatype t =
 val layout =
    fn Arity n => Int.layout n
     | Nary => Layout.str "n-ary"
+
+val equals =
+   fn (Arity n, Arity n') => n = n'
+    | (Nary, Nary) => true
+    | _ => false
 	 
 end
 

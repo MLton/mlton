@@ -12,4 +12,11 @@ val toString =
 
 val layout = Layout.str o toString
 
+val or =
+   fn (Always, _) => Always
+    | (_, Always) => Always
+    | (Sometimes, _) => Sometimes
+    | (_, Sometimes) => Sometimes
+    | _ => Never
+   
 end

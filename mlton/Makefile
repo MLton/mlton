@@ -29,7 +29,7 @@ else
   FLAGS += -host $(TARGET)
 endif
 ifeq (new,$(shell PATH=$(BIN):$$PATH; mlton -verbose 1 >/dev/null 2>&1 && echo new))
-  FLAGS += -verbose 1 -output $(AOUT)
+  FLAGS += -verbose 2 -output $(AOUT)
 else
   FLAGS += -v -o $(AOUT)
 endif

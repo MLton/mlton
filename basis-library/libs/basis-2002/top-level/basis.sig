@@ -9,7 +9,7 @@ signature BASIS_2002 =
       eqtype string
       type substring 
       type exn
-      eqtype 'a array 
+      eqtype 'a array
       eqtype 'a vector
 (*
       eqtype 'a ref
@@ -269,8 +269,11 @@ signature BASIS_2002 =
       sharing type string = String.string
       sharing type substring = Substring.substring
       sharing type exn = General.exn
-      sharing type array = Array.array
-      sharing type vector = Vector.vector
+(* Can't use sharing on type array or vector, because they are rigid tycons.
+ * Don't need it anyways, since it's built into the ARRAY and VECTOR signatures.
+ *)
+(*      sharing type array = Array.array *)
+(*      sharing type vector = Vector.vector *)
       (*
       sharing type ref = General.ref
       *)
@@ -546,6 +549,7 @@ signature BASIS_2002 =
    where type OS.Process.status = OS.Process.status
    where type Position.int = Position.int
    where type Posix.Process.pid = Posix.Process.pid
+   where type Real64.real = Real64.real
    where type StringCvt.radix = StringCvt.radix
    where type StringCvt.realfmt = StringCvt.realfmt
 (*

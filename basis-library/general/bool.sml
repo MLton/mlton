@@ -35,3 +35,4 @@ structure Bool: BOOL =
 
 structure BoolGlobal: BOOL_GLOBAL = Bool
 open BoolGlobal
+

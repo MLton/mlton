@@ -12,5 +12,6 @@ signature TYCON_KIND =
 	 Arity of int
        | Nary
 
+      val equals: t * t -> bool
       val layout: t -> Layout.t
    end

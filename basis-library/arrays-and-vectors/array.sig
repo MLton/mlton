@@ -1,6 +1,6 @@
 signature ARRAY_GLOBAL =
    sig
-      type 'a array = 'a array
+      type 'a array = 'a Array.array
    end
 
 signature ARRAY =

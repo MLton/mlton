@@ -23,11 +23,11 @@ signature AST =
 
 	    type t
 	    datatype node =
-	       Var of Sigid.t
+	       Spec of spec
+	     | Var of Sigid.t
              | Where of t * {tyvars: Tyvar.t vector,
 			     longtycon: Longtycon.t,
 			     ty: Type.t} list
-	     | Spec of spec
 
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
@@ -45,16 +45,16 @@ signature AST =
 	 sig
 	    datatype t =
 	       None
-	     | Transparent of Sigexp.t
 	     | Opaque of Sigexp.t
+	     | Transparent of Sigexp.t
 	 end
 
       structure Equation:
 	 sig
 	    type t
 	    datatype node =
-	       Type of Longtycon.t list
-	     | Structure of Longstrid.t list
+	       Structure of Longstrid.t list
+	     | Type of Longtycon.t list
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
 	 end
@@ -63,23 +63,21 @@ signature AST =
 	 sig
 	    type t
 	    datatype node =
-	      Val of (Var.t * Type.t) list
-	     | Type of {tyvars: Tyvar.t vector,
-			tycon: Tycon.t} list
-	     | TypeDefs of {tyvars: Tyvar.t vector,
-			    tycon: Tycon.t,
-			    ty: Type.t} list
-	     | Eqtype of {tyvars: Tyvar.t vector,
-			  tycon: Tycon.t} list
-	     | Datatype of DatatypeRhs.t
+	       Datatype of DatatypeRhs.t
+	     | Eqtype of {tycon: Tycon.t,
+			  tyvars: Tyvar.t vector} list
+	     | Empty
 	     | Exception of (Con.t * Type.t option) list
-	     | Structure of (Strid.t * Sigexp.t) list
 	     | IncludeSigexp of Sigexp.t
 	     | IncludeSigids of Sigid.t list
-	     | Empty
 	     | Seq of t * t
-	     | Sharing of {spec: t,
-			   equations: Equation.t list}
+	     | Sharing of {equations: Equation.t list,
+			   spec: t}
+	     | Structure of (Strid.t * Sigexp.t) list
+	     | Type of {tycon: Tycon.t,
+			tyvars: Tyvar.t vector} list
+	     | TypeDefs of TypBind.t
+	     | Val of (Var.t * Type.t) list
 
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t

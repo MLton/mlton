@@ -595,6 +595,21 @@ structure Type =
 	    Con x => SOME x
 	  | _ => NONE
 
+      fun deEta (t: t, tyvars: Tyvar.t vector): Tycon.t option =
+	 case deConOpt t of
+	    SOME (c, ts) =>
+	       if Vector.length ts = Vector.length tyvars
+		  andalso Vector.foralli (ts, fn (i, t) =>
+					  case toType t of
+					     Var a =>
+						Tyvar.equals
+						(a, Vector.sub (tyvars, i))
+					   | _ => false)
+		  then SOME c
+	       else NONE
+           | _ => NONE
+
+
       fun newTy (ty: ty, eq: Equality.t): t =
 	 T (Set.singleton {equality = eq,
 			   plist = PropertyList.new (),
@@ -1103,11 +1118,12 @@ structure Type =
       
       fun 'a simpleHom {con: t * Tycon.t * 'a vector -> 'a,
 			record: t * (Field.t * 'a) vector -> 'a,
+			replaceCharWithWord8: bool,
 			var: t * Tyvar.t -> 'a} =
 	 let
 	    val con =
 	       fn (t, c, ts) =>
-	       if Tycon.equals (c, Tycon.char)
+	       if replaceCharWithWord8 andalso  Tycon.equals (c, Tycon.char)
 		  then con (word8, Tycon.word WordSize.W8, Vector.new0 ())
 	       else con (t, c, ts)
 	    val unit = con (unit, Tycon.tuple, Vector.new0 ())
@@ -1194,6 +1210,8 @@ structure Scheme =
       val ty =
 	 fn General {ty, ...} => ty
 	  | Type ty => ty
+
+      fun dest s = (bound s, ty s)
 
       fun make {canGeneralize, tyvars, ty} =
 	 if 0 = Vector.length tyvars
@@ -1525,6 +1543,7 @@ structure Type =
 	 in
 	    simpleHom {con = con,
 		       record = fn (t, fs) => tuple (t, Vector.map (fs, #2)),
+		       replaceCharWithWord8 = true,
 		       var = var}
 	 end
 
@@ -1540,6 +1559,7 @@ structure Type =
 		record = fn (t, fs) => (t,
 					SOME (Vector.map (fs, fn (f, (t, _)) =>
 							  (f, t)))),
+		replaceCharWithWord8 = true,
 		var = fn (t, _) => (t, NONE)}
 	    val res =
 	       case #2 (hom t) of
@@ -1571,5 +1591,25 @@ structure Type =
 	 deTupleOpt
 
       val deTuple = valOf o deTupleOpt
+
+      fun hom (t, {con, record, var}) =
+	 let
+	    val {hom, destroy} =
+	       simpleHom {con = fn (_, c, v) => con (c, v),
+			  record = fn (_, fs) => record (Srecord.fromVector fs),
+			  replaceCharWithWord8 = false,
+			  var = fn (_, a) => var a}
+	    val res = hom t
+	    val _ = destroy ()
+	 in
+	    res
+	 end
+
+      val unify =
+	 fn (t1: t, t2: t,
+	     f: Layout.t * Layout.t -> Region.t * Layout.t * Layout.t) =>
+	 case unify (t1, t2) of
+	    NotUnifiable z => Control.error (f z)
+	  | Unified => ()
    end
 end

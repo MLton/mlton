@@ -792,16 +792,4 @@ fun exportMLton (): unit =
       [root, file] => exportNJ (root, file)
     | _ => Error.bug "usage: exportMLton root file"
 
-val _ =
-   let
-      open Trace.Immediate
-   in
-      debug := Out Out.error
-      ; flagged ()
-(*      ; on ["admitsEquality"] *)
-(*      ; on ["elaborateDec"] *)
-(*      ; on ["extendVar"] *)
-(*      ; on ["elaborateExp"] *)
-(*      ; on ["unify", "Scheme.instantiate"] *)
-   end
 end

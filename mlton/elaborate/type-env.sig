@@ -23,8 +23,12 @@ signature TYPE_ENV =
             (* can two types be unified?  not side-effecting. *)
             val canUnify: t * t -> bool
 	    val char: t
+	    val deEta: t * Tyvar.t vector -> Tycon.t option
 	    val deRecord: t -> (Record.Field.t * t) vector
 	    val flexRecord: t SortedRecord.t -> t * (unit -> bool)
+	    val hom: t * {con: Tycon.t * 'a vector -> 'a,
+			  record: 'a SortedRecord.t -> 'a,
+			  var: Tyvar.t -> 'a} -> 'a
 	    val makeHom: {con: Tycon.t * 'a vector -> 'a,
 			  var: Tyvar.t -> 'a} -> {destroy: unit -> unit,
 						  hom: t -> 'a}
@@ -36,10 +40,8 @@ signature TYPE_ENV =
 	    val string: t
 	    val toString: t -> string
 	    (* make two types identical (recursively).  side-effecting. *)
-	    datatype unifyResult =
-	       NotUnifiable of Layout.t * Layout.t
-	     | Unified
-	    val unify: t * t -> unifyResult
+	    val unify: t * t * (Layout.t * Layout.t
+				-> Region.t * Layout.t * Layout.t) -> unit 
 	    val unresolvedInt: unit -> t
 	    val unresolvedReal: unit -> t
 	    val unresolvedWord: unit -> t
@@ -55,6 +57,8 @@ signature TYPE_ENV =
 
 	    val admitsEquality: t -> bool
 	    val apply: t * Type.t vector -> Type.t
+	    val bound: t -> Tyvar.t vector
+	    val dest: t -> Tyvar.t vector * Type.t
 	    val fromType: Type.t -> t
 	    val haveFrees: t vector -> bool vector
 	    val instantiate: t -> {args: unit -> Type.t vector,

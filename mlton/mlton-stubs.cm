@@ -168,7 +168,6 @@ atoms/type-ops.fun
 atoms/type.fun
 atoms/generic-scheme.sig
 atoms/scheme.sig
-atoms/generic-scheme.fun
 atoms/word-x.sig
 atoms/var.sig
 atoms/source-info.sig
@@ -485,9 +484,14 @@ defunctorize/defunctorize.fun
 elaborate/type-env.sig
 elaborate/type-env.fun
 elaborate/decs.sig
+elaborate/type-str.sig
+elaborate/interface.sig
 elaborate/elaborate-env.sig
 elaborate/const-type.sig
 elaborate/elaborate.sig
+elaborate/type-str.fun
+atoms/generic-scheme.fun
+elaborate/interface.fun
 elaborate/decs.fun
 elaborate/elaborate-env.fun
 elaborate/elaborate-sigexp.sig

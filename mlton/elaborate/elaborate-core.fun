@@ -42,7 +42,12 @@ in
    structure Vid = Vid
 end
 
-structure Kind = TypeStr.Kind
+local
+   open TypeStr
+in
+   structure Cons = Cons
+   structure Kind = Kind
+end
 
 local
    open TypeEnv
@@ -263,16 +268,8 @@ in
    val str = str
 end
 
-fun unify (t1: Type.t, t2: Type.t,
-	   f: Layout.t * Layout.t -> Region.t * Layout.t * Layout.t): unit =
-   let
-      datatype z = datatype Type.unifyResult
-   in
-      case Type.unify (t1, t2) of
-	 NotUnifiable z => Control.error (f z)
-       | Unified => ()
-   end
-
+val unify = Type.unify
+   
 fun unifyList (trs: (Type.t * Region.t) vector,
 	       lay: unit -> Layout.t): Type.t =
    if 0 = Vector.length trs
@@ -847,7 +844,6 @@ fun elaborateDec (d, {env = E,
       fun elabTypeOpt t = elaborateTypeOpt (t, Lookup.fromEnv E)
       fun elabTypBind (typBind: TypBind.t) =
 	 let
-	    val lookup = Lookup.fromEnv E
 	    val TypBind.T types = TypBind.node typBind
 	    val strs =
 	       List.map
@@ -867,7 +863,6 @@ fun elaborateDec (d, {env = E,
 	 (* rules 28, 29, 81, 82 *)
 	 let
 	    val region = DatBind.region datBind
-	    val lookup = Lookup.fromEnv E
 	    val DatBind.T {datatypes, withtypes} = DatBind.node datBind
 	    (* Build enough of an env so that that the withtypes and the
 	     * constructor argument types can be elaborated.
@@ -945,7 +940,7 @@ fun elaborateDec (d, {env = E,
 		    val typeStr =
 		       TypeStr.data (tycon,
 				     Kind.Arity (Vector.length tyvars),
-				     cons)
+				     Cons.T cons)
 		    val _ = Env.extendTycon (E, astTycon, typeStr)
 		 in
 		    ({cons = datatypeCons,
@@ -1024,9 +1019,10 @@ fun elaborateDec (d, {env = E,
 			  let
 			     val tyStr = Env.lookupLongtycon (E, rhs)
 			     val _ = Env.extendTycon (E, lhs, tyStr)
+			     val TypeStr.Cons.T v = TypeStr.cons tyStr
 			     val _ =
 				Vector.foreach
-				(TypeStr.cons tyStr, fn {con, name, scheme} =>
+				(v, fn {con, name, scheme} =>
 				 Env.extendCon (E, name, con, scheme))
 			  in
 			     Decs.empty

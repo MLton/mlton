@@ -31,9 +31,13 @@ elaborate-sigexp.fun
 elaborate-sigexp.sig
 elaborate.fun
 elaborate.sig
+interface.fun
+interface.sig
 precedence-parse.fun
 precedence-parse.sig
 scope.fun
 scope.sig
 type-env.fun
 type-env.sig
+type-str.fun
+type-str.sig

@@ -27,6 +27,7 @@ signature RECORD =
       val exists: 'a t * ('a -> bool) -> bool
       val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
       val foldi: 'a t * 'b * (Field.t * 'a * 'b ->'b) -> 'b
+      val forall: 'a t * ('a -> bool) -> bool
       val foreach: 'a t * ('a -> unit) -> unit
       val fromVector: (Field.t * 'a) vector -> 'a t
       val isTuple: 'a t -> bool

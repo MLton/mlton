@@ -253,7 +253,7 @@ in
 		      (E, Tycon.toAst tycon,
 		       TypeStr.data (tycon,
 				     TypeStr.Kind.Arity (Vector.length tyvars),
-				     cs))
+				     TypeStr.Cons.T cs))
 		   end)
 	       val _ =
 		  extendTycon (E, Ast.Tycon.fromString ("unit", Region.bogus),

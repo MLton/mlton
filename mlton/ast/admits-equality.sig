@@ -9,5 +9,6 @@ signature ADMITS_EQUALITY =
       datatype t = Always | Never | Sometimes
 
       val layout: t -> Layout.t
+      val or: t * t -> t
       val toString: t -> string
    end

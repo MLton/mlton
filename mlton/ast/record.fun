@@ -86,6 +86,8 @@ fun exists (r, p) =
       Tuple xs => Vector.exists (xs, p)
     | Record r => Vector.exists (r, fn (_, x) => p x)
 
+fun forall (r, p) = not (exists (r, not o p))
+
 fun foldi (r, b, f) =
    case r of
       Tuple xs => Vector.foldi (xs, b, fn (i, x, b) => f (Field.Int i, x, b))

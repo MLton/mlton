@@ -15,6 +15,7 @@ signature ELABORATE_ENV_STRUCTS =
       structure TypeEnv: TYPE_ENV
       sharing Ast.Record = CoreML.Record
       sharing Ast.SortedRecord = CoreML.SortedRecord
+      sharing Ast.Tyvar = CoreML.Tyvar
       sharing CoreML.Atoms = TypeEnv.Atoms
       sharing CoreML.Type = TypeEnv.Type
    end
@@ -30,12 +31,12 @@ signature ELABORATE_ENV =
 	 sig
 	    type t
 	 end
-      sharing type Type.t = TypeEnv.Type.t
+      sharing Type = TypeEnv.Type
       structure Scheme:
 	 sig
 	    type t
 	 end
-      sharing type Scheme.t = TypeEnv.Scheme.t
+      sharing Scheme = TypeEnv.Scheme
       (* The value of a vid.  This is used to distinguish between vids whose
        * status cannot be determined at parse time.
        *)
@@ -45,46 +46,21 @@ signature ELABORATE_ENV =
 	       Con of CoreML.Con.t
 	     | ConAsVar of CoreML.Con.t
 	     | Exn of CoreML.Con.t
-	     | Overload of (CoreML.Var.t * TypeEnv.Type.t) vector
+	     | Overload of (CoreML.Var.t * Type.t) vector
 	     | Var of CoreML.Var.t
 
 	    val layout: t -> Layout.t
 	 end
-      structure TypeStr:
-	 sig
-	    structure Kind: TYCON_KIND
-	    type t
-
-	    val abs: t -> t
-	    val apply: t * TypeEnv.Type.t vector -> TypeEnv.Type.t
-	    val cons: t -> {con: CoreML.Con.t,
-			    name: Ast.Con.t,
-			    scheme: Scheme.t} vector
-	    val data:
-	       CoreML.Tycon.t * Kind.t
-	       * {con: CoreML.Con.t,
-		  name: Ast.Con.t,
-		  scheme: Scheme.t} vector -> t
-	    val def: Scheme.t * Kind.t -> t
-	    val kind: t -> Kind.t
-	    val tycon: CoreML.Tycon.t * Kind.t -> t
-	 end
-      structure Interface:
-	 sig
-	    type t
-	 end
-      structure InterfaceMaker:
-	 sig
-	    type t
-
-	    val addVar: t * Ast.Var.t -> unit
-	    val addExcon: t * Ast.Con.t -> unit
-	    val addTycon: t * Ast.Tycon.t * Ast.Con.t vector -> unit
-	    val addStrid: t * Ast.Strid.t * Interface.t -> unit
-	    val includeInterface: t * Interface.t -> unit
-	    val lookupLongtycon: t * Ast.Longtycon.t -> Ast.Con.t vector
-	    val makeInterface: t * (unit -> 'a) -> 'a * Interface.t
-	 end
+      structure TypeStr: TYPE_STR
+      sharing TypeStr.Con = CoreML.Con
+      sharing TypeStr.Name = Ast.Con
+      sharing TypeStr.Scheme = Scheme
+      sharing TypeStr.Tycon = CoreML.Tycon
+      sharing TypeStr.Type = Type
+      sharing TypeStr.Tyvar = Ast.Tyvar
+      structure Interface: INTERFACE
+      sharing Interface.Ast = Ast
+      sharing Interface.EnvTypeStr = TypeStr
       structure Structure:
 	 sig
 	    type t
@@ -123,7 +99,7 @@ signature ELABORATE_ENV =
       val extendTycon: t * Ast.Tycon.t * TypeStr.t -> unit
       val extendVar: t * Ast.Var.t * CoreML.Var.t * Scheme.t -> unit
       val extendOverload:
-	 t * Ast.Var.t * (CoreML.Var.t * TypeEnv.Type.t) vector * Scheme.t
+	 t * Ast.Var.t * (CoreML.Var.t * Type.t) vector * Scheme.t
 	 -> unit
       val functorClosure:
 	 t * Interface.t * (Structure.t * string list -> Decs.t * Structure.t)
@@ -141,7 +117,6 @@ signature ELABORATE_ENV =
       val lookupLongvar: t * Ast.Longvar.t -> CoreML.Var.t * Scheme.t
       val lookupLongvid: t * Ast.Longvid.t -> Vid.t * Scheme.t
       val lookupSigid: t * Ast.Sigid.t -> Interface.t
-      val makeInterfaceMaker: t -> InterfaceMaker.t
       val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
       (* openStructure (E, S) opens S in the environment E. *) 
       val openStructure: t * Structure.t -> unit

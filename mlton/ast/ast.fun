@@ -63,18 +63,18 @@ and sigConst =
   | Transparent of sigexp
   | Opaque of sigexp
 and specNode =
-   Empty
-  | Seq of spec * spec
-  | Structure of (Strid.t * sigexp) list
-  | Type of typedescs
-  | TypeDefs of typedefs
+   Datatype of DatatypeRhs.t
+  | Empty
   | Eqtype of typedescs
-  | Val of (Var.t * Type.t) list
-  | Datatype of DatatypeRhs.t
   | Exception of (Con.t * Type.t option) list
   | IncludeSigexp of sigexp
   | IncludeSigids of Sigid.t list
+  | Seq of spec * spec
   | Sharing of {spec: spec, equations: Equation.t list}
+  | Structure of (Strid.t * sigexp) list
+  | Type of typedescs
+  | TypeDefs of TypBind.t
+  | Val of (Var.t * Type.t) list
 withtype spec = specNode Wrap.t
 and sigexp = sigexpNode Wrap.t
 
@@ -83,11 +83,15 @@ fun layoutTypedescs (prefix, typedescs) =
 	       seq [prefix,
 		    Type.layoutApp (Tycon.layout tycon, tyvars, Tyvar.layout)])
 
-fun layoutTypedefs (prefix, typedescs) =
-   layoutAnds (prefix, typedescs, fn (prefix, {tyvars, tycon, ty}) =>
-	       seq [prefix,
-		    Type.layoutApp (Tycon.layout tycon, tyvars, Tyvar.layout),
-		    str " = ", Type.layout ty])
+fun layoutTypedefs (prefix, typBind) =
+   let
+      val TypBind.T l = TypBind.node typBind
+   in
+      layoutAnds (prefix, l, fn (prefix, {def, tycon, tyvars}) =>
+		  seq [prefix,
+		       Type.layoutApp (Tycon.layout tycon, tyvars, Tyvar.layout),
+		       str " = ", Type.layout def])
+   end
 
 fun layoutSigexp (e: sigexp): Layout.t =
    case node e of
@@ -195,18 +199,19 @@ structure Spec =
 (*---------------------------------------------------*)
 
 datatype strdecNode =
-   Structure of {name: Strid.t,
-		 def: strexp,
-		 constraint: SigConst.t} list
+   Core of Dec.t
   | Local of strdec * strdec
   | Seq of strdec list
-  | Core of Dec.t
+  | Structure of {name: Strid.t,
+		 def: strexp,
+		 constraint: SigConst.t} list
+
 and strexpNode =
-   Var of Longstrid.t
-  | Struct of strdec
+   App of Fctid.t * strexp
   | Constrained of strexp * SigConst.t
-  | App of Fctid.t * strexp
   | Let of strdec * strexp
+  | Struct of strdec
+  | Var of Longstrid.t
 withtype strexp = strexpNode Wrap.t
 and strdec = strdecNode Wrap.t
 
@@ -227,14 +232,13 @@ and layoutStrdecs ds = layouts (ds, layoutStrdec)
    
 and layoutStrexp exp =
    case node exp of
-      Var s => Longstrid.layout s
+      App (f, e) => seq [Fctid.layout f, str " ", paren (layoutStrexp e)]
+    | Constrained (e, c) => mayAlign [layoutStrexp e, SigConst.layout c]
+    | Let (dec, strexp) => Pretty.lett (layoutStrdec dec, layoutStrexp strexp)
     | Struct d => align [str "struct",
 			 indent (layoutStrdec d, 3),
 			 str "end"]
-    | Constrained (e, c) => mayAlign [layoutStrexp e, SigConst.layout c]
-    | App (f, e) =>
-	 seq [Fctid.layout f, str "(", layoutStrexp e, str ")"]
-    | Let (dec, strexp) => Pretty.lett (layoutStrdec dec, layoutStrexp strexp)
+    | Var s => Longstrid.layout s
 	 
 structure Strexp =
    struct

@@ -151,10 +151,6 @@ type wherespec = {tyvars: Tyvar.t vector,
 type typdesc =  {tyvars: Tyvar.t vector,
 		 tycon: Tycon.t}
 
-type typdef =  {tyvars: Tyvar.t vector,
-		tycon: Tycon.t,
-		ty: Type.t}
-
 type valdesc = Var.t * Type.t
 
 type exndesc = Con.t * Type.t option
@@ -369,8 +365,6 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | tynode of Type.node
        | typBind of TypBind.t
        | typBind' of TypBind.node
-       | typdef of typdef
-       | typdefs of typdef list
        | typdesc of typdesc
        | typdescs of typdesc list
        | tyvar of Tyvar.t
@@ -587,7 +581,7 @@ spec : specnode (Spec.makeRegion' (specnode, specnodeleft, specnoderight))
 
 specnode : VAL valdescs		(Spec.Val valdescs)
          | TYPE typdescs	(Spec.Type typdescs)
-         | TYPE typdefs   	(Spec.TypeDefs typdefs)
+         | TYPE typBind   	(Spec.TypeDefs typBind)
          | EQTYPE typdescs	(Spec.Eqtype typdescs)
          | DATATYPE datatypeRhsNoWithtype (Spec.Datatype datatypeRhsNoWithtype)
          | EXCEPTION exndescs	(Spec.Exception exndescs)
@@ -620,13 +614,6 @@ strdescs' :                             (([], defaultPos, []))
 
 strdescs'' : strdescs'                 (strdescs')
            | AND wherespec strdescs''  (cons1 (wherespec, strdescs''))
-
-typdefs : typdef ([typdef])
-        | typdef AND typdefs (typdef :: typdefs)
-
-typdef : tyvars tycon EQUALOP ty ({tyvars = tyvars,
-				   tycon = tycon,
-				   ty = ty})
 
 typdescs : typdesc               ([typdesc])
          | typdesc AND typdescs  (typdesc :: typdescs)
