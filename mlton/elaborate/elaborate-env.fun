@@ -2591,10 +2591,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		 | SOME typeStr =>
 		      if AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr)
 			 andalso Kind.equals (k, TypeStr.kind typeStr)
-			 (*andalso not (hasCons andalso
-				      (case TypeStr.node typeStr of
-					  TypeStr.Datatype _ => false
-					| _ => true)) *)
+			 andalso (not hasCons
+				  orelse (Option.isSome
+					  (TypeStr.toTyconOpt typeStr)))
 			 then typeStr
 		      else bad ()
 	     val () = FlexibleTycon.realize (flex, typeStr)
