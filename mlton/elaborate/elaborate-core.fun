@@ -1096,19 +1096,6 @@ fun elaborateDec (d, {env = E,
 			     val _ = Env.extendTycon (E, lhs, tyStr)
 			     val TypeStr.Cons.T v = TypeStr.cons tyStr
 			     val _ =
-				if 0 = Vector.length v
-				   then
-				      let
-					 open Layout
-				      in
-					 Control.error
-					 (Longtycon.region rhs,
-					  seq [str "attempt to replicate non datatype: ",
-					       Longtycon.layout rhs],
-					  empty)
-				      end
-				else ()
-			     val _ =
 				Vector.foreach
 				(v, fn {con, name, scheme} =>
 				 Env.extendCon (E, name, con, scheme))

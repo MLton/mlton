@@ -34,6 +34,13 @@ val 'a x =
       ()
    end
 
+(* This example verifies that datatype replication is allowed, even when the
+ * right-hand side isn't a datatype.
+ *)
+type 'a t = 'a * 'a
+datatype u = datatype t
+val _: int u = (13, 14);
+
 (* The following examples demonstrate acceptable forms of type variable scoping.
  *)
 fun f (x: 'a) =
