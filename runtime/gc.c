@@ -1958,21 +1958,70 @@ static void minorGC (GC_state s) {
  *   probe.  The second hash must be relatively prime to the table size, which
  *   we ensure by making it odd and keeping the table size as a power of 2.
  */
-static GC_ObjectHashTable newTable () {
+
+static GC_ObjectHashTable newTable (GC_state s) {
+	uint maxElementsSize;
+	pointer regionStart;
+	pointer regionEnd;
 	GC_ObjectHashTable t;
 
-	NEW (t);
-	t->elementsSize = 1024; /* Must be power of two. */
-	t->log2ElementsSize = 10;
-	t->numElements = 0;
-	ARRAY (t->elements, t->elementsSize);
 	if (DEBUG_SHARE)
+		GC_display (s, stderr);
+	NEW (t);
+	// Try to use space in the heap for the elements.
+	if (not (heapIsInit (&s->heap2))) {
+		if (DEBUG_SHARE)
+			fprintf (stderr, "using heap2\n");
+		// We have all of heap2 available.  Use it.
+		regionStart = s->heap2.start;
+		regionEnd = s->heap2.start + s->heap2.size;
+	} else if (s->amInGC or not s->canMinor) {
+		if (DEBUG_SHARE)
+			fprintf (stderr, "using end of heap\n");
+		regionStart = s->frontier;
+		regionEnd = s->limitPlusSlop;
+	} else {
+		if (DEBUG_SHARE)
+			fprintf (stderr, "using minor space\n");
+		// Use the space available for a minor GC.
+		assert (s->canMinor);
+		regionStart = s->heap.start + s->oldGenSize;
+		regionEnd = s->nursery;
+	}
+	maxElementsSize = (regionEnd - regionStart) / sizeof (*(t->elements));
+	if (DEBUG_SHARE)
+		fprintf (stderr, "maxElementsSize = %u\n", maxElementsSize);
+	t->elementsSize = 1024;    // some small power of two
+	t->log2ElementsSize = 10;  // and its log base 2
+	if (maxElementsSize < t->elementsSize) {
+		if (DEBUG_SHARE)
+			fprintf (stderr, "too small -- using malloc\n");
+		t->elementsIsInHeap = FALSE;
+		ARRAY (t->elements, t->elementsSize);
+	} else {
+		t->elementsIsInHeap = TRUE;
+		t->elements = (typeof(t->elements))regionStart;
+		// Find the largest power of two that fits.
+		for (; t->elementsSize <= maxElementsSize; 
+			t->elementsSize <<= 1, t->log2ElementsSize++)
+			; // nothing
+		t->elementsSize >>= 1;
+		t->log2ElementsSize--;
+		assert (t->elementsSize <= maxElementsSize);
+	}
+	t->numElements = 0;
+	if (DEBUG_SHARE) {
+		fprintf (stderr, "elementsIsInHeap = %s\n", 
+				boolToString (t->elementsIsInHeap));
+		fprintf (stderr, "elementsSize = %u\n", t->elementsSize);
 		fprintf (stderr, "0x%08x = newTable ()\n", (uint)t);
+	}
 	return t;
 }
 
 static void destroyTable (GC_ObjectHashTable t) {
-	free (t->elements);
+	unless (t->elementsIsInHeap)
+		free (t->elements);
 	free (t);
 }
 
@@ -2055,6 +2104,9 @@ static void maybeGrowTable (GC_state s, GC_ObjectHashTable t) {
 	int i;
 	int s0;
 
+	if (DEBUG_SHARE)
+		fprintf (stderr, "maybeGrowTable  t->numElements = %u  t->elementsSize = %u\n",
+				t->numElements, t->elementsSize);
 	if (t->numElements * 2 <= t->elementsSize)
 		return;
 	s0 = t->elementsSize;
@@ -2069,7 +2121,10 @@ static void maybeGrowTable (GC_state s, GC_ObjectHashTable t) {
 		unless (NULL == e0->object)
 			tableInsert (s, t, e0->hash, e0->object, FALSE, 0, 0);
 	}
-	free (elements0);
+	if (t->elementsIsInHeap)
+		t->elementsIsInHeap = FALSE;
+	else
+		free (elements0);
 	if (DEBUG_SHARE)
 		fprintf (stderr, "done growing table\n");
 }
@@ -2427,7 +2482,7 @@ void GC_share (GC_state s, Pointer object) {
 		fprintf (stderr, "GC_share 0x%08x\n", (uint)object);
 	// Don't hash cons during the first round of marking.
 	mark (s, object, MARK_MODE, FALSE);
-	s->objectHashTable = newTable ();
+	s->objectHashTable = newTable (s);
 	// Hash cons during the second round of marking.
 	mark (s, object, UNMARK_MODE, TRUE);
 	destroyTable (s->objectHashTable);
@@ -2683,7 +2738,7 @@ static void markCompact (GC_state s) {
 		startTiming (&ru_start);
 	s->numMarkCompactGCs++;
 	if (s->hashConsDuringGC)
-		s->objectHashTable = newTable ();
+		s->objectHashTable = newTable (s);
 	foreachGlobal (s, s->hashConsDuringGC 
 				? markGlobalTrue 
 				: markGlobalFalse);

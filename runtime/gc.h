@@ -166,6 +166,7 @@ typedef struct GC_ObjectHashElement {
 
 typedef struct GC_ObjectHashTable {
 	struct GC_ObjectHashElement *elements;
+	Bool elementsIsInHeap;
 	int elementsSize;
 	int log2ElementsSize;
 	int numElements;
