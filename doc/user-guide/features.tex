@@ -4,21 +4,25 @@
 %
 \begin{description}
 \feature{whole-program optimization}
-Because {\mlton} compiles the whole program at once, it can perform optimization
-across module boundaries.  As a consequence, {\mlton} can reduce or eliminate
-the run-time penalty that arises with separate compilation of SML features such
-as functors, modules, polymorphism, and higher-order functions.  {\mlton} takes
-advantage of having the entire program to perform transformations such as:
-defunctorization, monomorphisation, higher-order control-flow analysis,
-inlining, unboxing, argument flattening, redundant-argument removal, constant
-folding, and representation selection.  Whole-program compilation is an integral
-part of the design of {\mlton} and is not likely to change.
+Because {\mlton} compiles the whole program at once, it can perform
+optimization across module boundaries.  As a consequence, {\mlton}
+often reduces or eliminates the run-time penalty that arises with
+separate compilation of SML features such as functors, modules,
+polymorphism, and higher-order functions.  {\mlton} takes advantage of
+having the entire program to perform transformations such as:
+defunctorization, monomorphisation, higher-order control-flow
+analysis, inlining, unboxing, argument flattening, redundant-argument
+removal, constant folding, and representation selection.
+Whole-program compilation is an integral part of the design of
+{\mlton} and is not likely to change.
 
 \feature{supports the full SML 97 language}
 {\mlton} compiles the Standard ML language as given in The Definition
 of Standard ML (Revised)\cite{MTHM97}.  If there is a program that is
-valid according to The Definition that is rejected by {\mlton}, it is
-a bug.  For a list of known bugs, see \secref{bugs}.
+valid according to The Definition that is rejected by {\mlton}, or a
+program that is invalid according to the Definition that is accepted
+by {\mlton}, it is a bug.  For a list of known bugs, see
+\secref{bugs}.
 
 \feature{complete basis library}
 {\mlton} implements the latest Standard ML basis library
@@ -31,12 +35,13 @@ modules, as well as many of the optional modules.  See
 For a comparison with other SML compilers, see
 \link{\makeurl{performance.html}}.
 
-\feature{native integers and words}
+\feature{native integers, reals, and words}
 In {\mlton}, integers and words are 32 bits and arithmetic does not have
-any overhead due to tagging.
+any overhead due to tagging.  Also, reals are stored unboxed, avoiding
+any overhead due to boxing.
 
 \feature{unboxed native arrays}
-In {\mlton}, an array (or vector) of integers, words, or reals uses
+In {\mlton}, an array (or vector) of integers, reals, or words uses
 the natural C-like representation.  This is fast and supports easy
 exchange of data with C.  Monomorphic arrays (and vectors) use the
 same C-like representations as their polymorphic counterparts.
@@ -47,7 +52,7 @@ twos-complement 32 bit integer.
 
 \feature{support for large files}
 In {\mlton}, file positions and sizes are 64-bit integers, so files
-can be as large as is supported by the platform.
+can be as large as is supported by the underlying platform.
 
 \feature{several garbage collection strategies}
 The {\mlton} runtime system uses copying, mark-compact, and generational
@@ -67,13 +72,9 @@ dead-code elimination, which often leads to smaller executables than
 with other SML compilers.
 
 \feature{compiles large programs}
-{\mlton} is sufficiently robust that it can compile large programs,
-including itself (over 100K lines) and the
-\htmladdnormallink
-  {ML Kit Version 3}
-  {http://www.itu.dk/research/mlkit/kit3/readme.html}
-(75K lines).
-The distributed version of {\mlton} was compiled by {\mlton}.
+{\mlton} is sufficiently efficient and robust that it can compile
+large programs, including itself (over 100K lines).  The distributed
+version of {\mlton} was compiled by {\mlton}.
 
 \feature{fast {\tt IntInf} based on GNU multiprecision library}
 The {\mlton} implementation of arbitrary precision arithmetic (the
@@ -127,8 +128,8 @@ with threads to implement preemptive multitasking.
 
 \feature{size primitive}
 {\mlton} includes a primitive that returns the size (in bytes) of any
-object.  This can be quite useful in understanding the space behavior
-of a program.
+object.  This can be useful in understanding the space behavior of a
+program.
 
 \feature{system logging}
 {\mlton} has a complete interface to the C {\tt syslog} function.
@@ -136,7 +137,7 @@ of a program.
 \feature{threads}
 {\mlton} has support for its own threads, upon which either preemptive
 or non-preemptive multitasking can be implemented.  At some point in
-the future, {\mlton} will support CML.
+the future, {\mlton} will support Concurrent ML (CML).
 
 \feature{weak pointers}
 {\mlton} suports weak pointers, which allow the garbage collector to

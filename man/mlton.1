@@ -3,22 +3,22 @@
 \fBmlton\fP \- whole-program compiler for the Standard ML (SML) programming
 language
 .SH SYNOPSIS
-\fBmlton\fP \fI[option ...] file\fB.\fP{\fBcm\fP|\fBsml\fP|\fBc\fP|\fBo\fP} 
+\fBmlton\fP \fI[option ...] file\fB.\fP{\fBc\fP|\fBcm\fP|\fBsml\fP|\fBo\fP} 
 [file\fB.\fP{\fBc\fP|\fBS\fP|\fBo\fP} ...]\fR
 .SH DESCRIPTION
 .PP
 \fBMLton\fP is run from the command line with a collection of options
 followed by a file name and a list of files to compile, assemble, and
 link with.  The simplest case is to run \fBmlton foo.sml\fP, which
-will produce an executable \fBfoo\fP.  Since \fBMLton\fP has no notion
-of separate compilation, the program must be the entire program you
-wish to compile.  However, the program may refer to signatures and
+will produce an executable \fBfoo\fP.  Since \fBMLton\fP does not
+support separate compilation, the program must be the entire program
+you wish to compile.  However, the program may refer to signatures and
 structures defined in the SML basis library.
 
 For developing large programs spanning many files, \fBMLton\fP supports
 a limited subset of SML/NJ Compilation Manager (CM) files.  For example,
 \fBmlton foo.cm\fP will compile the complete SML program consisting of
-the concatenatation of all the SML files referred to (either directly
+the concatenation of all the SML files referred to (either directly
 or indirectly) by \fBfoo.cm\fP.
 
 \fBMLton\fP's options allow you to control the name of the output
@@ -28,7 +28,7 @@ which intermediate files are saved and to stop the compilation process
 early, at some intermediate pass, in which case compilation can be
 resumed by passing the resulting files to \fBMLton\fP.  \fBMLton\fP
 uses the input file suffix to determine the type of input program.
-The possibilities are \fB.cm\fR, \fB.sml\fR, \fB.c\fR, and \fB.o\fR.
+The possibilities are \fB.c\fP, \fB.cm\fR, \fB.o\fR, and \fB.sml\fR.
 
 With no arguments, \fBMLton\fP prints the version number and exits.
 For a usage message, run \fBMLton\fP with an invalid switch, e.g.,
@@ -47,12 +47,11 @@ On x86, the default is \fB4\fP and on Sparc the default is
 
 .TP
 \fB-cc-opt \fIoption\fP\fP
-Pass the option to gcc when compiling C code.
+Pass the option to \fBgcc\fP when compiling C code.
 
 .TP
 \fB-detect-overflow \fI{\fBtrue\fI|\fBfalse\fI}\fR
-This flag controls whether or not overflow checking is performed on integer
-arithmetic.
+Perform overflow checking on integer arithmetic.
 
 .TP
 \fB-exn-history \fI{\fBfalse\fI|\fBtrue\fI}\fR
@@ -63,14 +62,14 @@ exception construction, raise, and handle.
 
 .TP
 \fB-export-header \fIfile\fR
-Causes \fBMLton\fP to create \fIfile\fP with with C prototypes for all
-of the functions exported from SML to C.  This flag is useful
-for programs that use \fB_export\fP expressions.
+Write to \fIfile\fP C prototypes for all of the functions exported
+from SML to C.  This flag is useful for programs that use
+\fB_export\fP expressions.
 
 .TP
 \fB-ieee-fp \fI{\fBfalse\fP|\fBtrue\fP}\fR
-Control whether or not the code generator is pedantic about following
-the IEEE floating point standard.  By default, it is not, because of the
+Cause the code generator to be pedantic about following the IEEE
+floating point standard.  By default, it is not, because of the
 performance cost.  This has no effect with \fB-native false\fP.
 
 .TP
@@ -83,11 +82,11 @@ approximate measure of code size of a procedure.  The default is 320.
 Save intermediate files.  If no \fB-keep\fP argument is given, then
 only the output file is saved.
 .in +.5i
-\fBg\fP    generated \fB.S\fP and \fB.c\fP files passed to gcc.
+\fBg\fP    generated \fB.S\fP and \fB.c\fP files passed to gcc
 .br
-\fBo\fP    object file (\fI*\fB.o\fR).
+\fBo\fP    object (\fB.o\fR) files
 .br
-\fBsml\fP  SML file.
+\fBsml\fP  SML file
 .in -.5i
 
 .TP
@@ -96,15 +95,14 @@ Pass the option to \fBgcc\fP when linking.  You can use this to
 specify library search paths, e.g. \fB-link-opt -Lpath\fP, and
 libraries to link with, e.g. \fB-link-opt -lfoo\fP, or even both at
 the same time, e.g. \fB-link-opt '-Lpath -lfoo'\fP.  If you wish to
-pash an option to the linker, you must use \fBgcc\fP's \fB-Wl,\fP
+pass an option to the linker, you must use \fBgcc\fP's \fB-Wl,\fP
 syntax, e.g., \fB-link-opt '-Wl,--export-dynamic'\fP.
 
 .TP
 \fB-native \fI{\fBtrue\fP|\fBfalse\fP}\fP
-Controls whether or not to use native code generation as opposed to
-generating C and using \fBgcc\fP.  With native code generation,
-\fBMLton\fP typically compiles more quickly and generates better
-code.
+Generate native code or generate C and use \fBgcc\fP.  With \fB-native
+true\fP, \fBMLton\fP typically compiles more quickly and generates
+better code.
 
 .TP
 \fB-output \fIfile\fR
@@ -126,11 +124,11 @@ while a function is on the stack.
 
 .TP
 \fB-runtime \fIarg\fP\fP
-Pass argument to the runtime via \fB@MLton\fP.  The argument will be
-processed before other \fB@MLton\fP command line switches.  Multiple
-uses of \fB-runtime\fP are allowed, and will pass all the arguments in
-order.  If the same runtime switch occurs more than once, then the
-last setting will dominate, except for \fBno-load-world\fP.
+Pass argument to the runtime system via \fB@MLton\fP.  The argument
+will be processed before other \fB@MLton\fP command line switches.
+Multiple uses of \fB-runtime\fP are allowed, and will pass all the
+arguments in order.  If the same runtime switch occurs more than once,
+then the last setting will dominate, except for \fBno-load-world\fP.
 
 .TP
 \fB-safe \fI{\fBtrue\fP|\fBfalse\fP}\fR
@@ -149,18 +147,20 @@ To silence spurious errors, you can use \fBignore e1\fP.
 
 .TP
 \fB-show-basis \fIfile\fR
-Causes \fBMLton\fP to pretty print to \fIfile\fP the basis defined by
-the input program.  When used with no input, \fBMLton\fP pretty prints
-the entire basis library.
+Pretty print to \fIfile\fP the basis defined by the input program.
+When used with no input program, pretty print the entire basis
+library.
 
 .TP
 \fB-show-basis-used \fIfile\fR
-Causes \fBMLton\fP to pretty print to \fIfile\fP the portion of the
-basis library that the input program uses.
+Pretty print to \fIfile\fP the portion of the basis library that the
+input program uses.
 
 .TP
 \fB-show-def-use \fIfile\fR
-Causes \fBMLton\fP to output def-use information to \fIfile\fP.
+Output def-use information to \fIfile\fP.  Each identifier that is
+defined appears on a line, follwed on subequent lines by the position
+of each use.
 
 .TP
 \fB-stop \fI{\fBf\fP|\fBg\fP|\fBo\fP|\fBsml\fP|\fBtc\fP}\fR
@@ -203,11 +203,11 @@ Be verbose about what passes are running.  The default is 0.
 
 .TP
 \fB-warn-match \fI{\fBtrue\fP|\fBfalse\fP}\fR
-Whether or not to display nonexhaustive and redundant match warnings.
+Report nonexhaustive and redundant matches.
 
 .TP
 \fB-warn-unused \fI{\fBfalse\fP|\fBtrue\fP}\fR
-Whether or not to report unused identifiers.
+Report unused identifiers.
 
 .SH Runtime system options
 To control the runtime system, executables produced by \fBMLton\fP take
@@ -233,9 +233,9 @@ Print a summary of garbage collection statistics upon program
 termination.
 .TP
 \fBload-world \fIworld\fR
-Restart the computation with the file \fIworld\fP.
-The \fIworld\fP file must have been created by a call to
-\fBMLton.World.save\fP by the same executable.
+Restart the computation with the file \fIworld\fP, which must have
+been created by a call to \fBMLton.World.save\fP by the same
+executable.
 .TP
 \fBmax-heap \fIn[\fBkm\fI]\fR
 Run the computation with an automatically resized heap that is never larger
@@ -246,7 +246,7 @@ option.
 \fB-no-load-world\fP
 Disable \fBload-world\fP.  This can be used as an argument to the
 compiler via \fB-runtime no-load-world\fP to create executables that
-will not load a world.  This may be useful for ensuring that set-uid
+will not load a world.  This may be useful to ensure that set-uid
 executables do not load some strange world.
 .TP
 \fBram-slop \fIx\fR

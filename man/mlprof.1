@@ -15,7 +15,8 @@ functions are listed along with the percentage of this total that they
 used, in decreasing order.  If the program was compiled with
 \fB-profile-stack true\fP, \fBmlprof\fP will display the time spent or
 bytes allocated while the function was on the stack and in GC in
-addition to the time or bytes that the function is responsible for.
+addition to the time or bytes that the function is directly
+responsible for.
 
 With multiple \fBmlmon.out\fP files, \fBmlprof\fP will sum the
 profiling information.
@@ -33,8 +34,8 @@ Set the call-graph title.
 Gray call-graph nodes according to stack %.  This only makes sense if
 the executable was compiled \fB-profile-stack true\fP.
 .TP
-\fB-keep \fI{\fBexp\fP}\fP
-Only show functions specified by \fBexp\fP.  For details on the
+\fB-keep \fIexp\fP
+Only show functions specified by \fIexp\fP.  For details on the
 allowed expressions, see the \fBMLton User Guide\fP.  Multiple
 \fB-keep\fP expressions are not allowed.
 .TP
@@ -53,12 +54,12 @@ Treat duplicates of functions whose name matches \fIregexp\fP as
 different functions.
 .TP
 \fB-thresh \fIx\fP
-An abbreviation for \fB-keep '(thresh x)'\fP, which only print
+An abbreviation for \fB-keep '(thresh x)'\fP, which only prints
 information about functions whose percentage is greater than or equal
 to \fBx\fP, where 0 <= \fBx\fP <= 100.0. 
 .TP
 \fB-tolerant \fI{\fBfalse\fP|\fBtrue\fP}\fP
-Print a warning about broken mlmon files, but do not exit.
+Print a warning about broken \fBmlmon.out\fP files, but do not exit.
 .SH "SEE ALSO"
 .BR mlton (1)
 and the \fBMLton User Guide\fP.

@@ -31,7 +31,7 @@ vector expressions and patterns like the following:
 val v = #[1,2,3]
 val #[x,y,z] = v
 \end{verbatim}
-
+%
 \item 
 {\smlnj} extends the syntax of the language to allow {\em or patterns}
 like the following:
@@ -39,7 +39,7 @@ like the following:
 datatype foo = Foo of int | Bar of int
 val (Foo x | Bar x) = Foo 13
 \end{verbatim}
-
+%
 \item
 {\smlnj} allows higher-order functors, that is, functors can be
 components of structures and can be passed as functor arguments and
@@ -58,7 +58,7 @@ functor F(structure A : S) : S =
   end
 functor G = F
 \end{verbatim} 
-
+%
 \item
 {\smlnj} extends the syntax of the language to allow functor and
 signature definitions to occur within the scope of {\tt local} and {\tt
@@ -89,7 +89,7 @@ signature S =
       and type u = v
    end
 \end{verbatim}
-
+%
 \item
 {\smlnj} does not expand the {\tt withtype} derived form as described by
 the Definition.  According to page 55 of the Definition, the type
@@ -119,7 +119,7 @@ datatype a =
     A of int
   | B of int
 \end{verbatim}
-
+%
 \item
 {\smlnj} allows {\tt withtype} specifications in signatures.
 
@@ -159,4 +159,19 @@ signature SIG =
   end
 \end{verbatim}
 
+\end{itemize}
+
+\subsection{Deviations of {\smlnj} from the Basis Library Specification}
+%
+This section lists some deviations of {\smlnj} from the Basis Library
+Specification. 
+\begin{itemize}
+\item
+{\smlnj} exposes the equality of the {\tt vector} type in structures
+such as {\tt Word8Vector} that abstractly match {\tt MONO\_VECTOR},
+which says {\tt type vector}, not {\tt eqtype vector}.  So, for
+example, {\smlnj} accepts the following program.
+\begin{verbatim}
+fun f (v: Word8Vector.vector) = v = v
+\end{verbatim}
 \end{itemize}

@@ -66,21 +66,21 @@ structure MLton:
 \begin{description}
 
 \entry{eq (x, y)}
-returns true if {\tt x} and {\tt y} are equal as pointers.  For simple types
-like {\tt char}, {\tt int}, and {\tt word}, this is the same as equals.  For
-arrays, datatypes, strings, tuples, and vectors, this is a simple pointer
-equality.  The semantics is a bit murky.
+returns true if {\tt x} and {\tt y} are equal as pointers.  For simple
+types like {\tt char}, {\tt int}, and {\tt word}, this is the same as
+equals.  For arrays, datatypes, strings, tuples, and vectors, this is
+a simple pointer equality.  The semantics is a bit murky.
 
 \entry{isMLton}
 is always true in a {\mlton} basis library, and is always false in a stub
 library.
 
 \entry{safe}
-a compile time constant that reflects the value of the {\tt -safe} switch.  It
-make it easy to include assertions and checks in code that you would like
-removed when running at full speed. The simplification passes of the compiler
-will remove any uses of {\tt safe} at compile time.  For example, array
-subscripting might be implemented as:
+a compile time constant that reflects the value of the {\tt -safe}
+switch.  It make it easy to include assertions and checks in code that
+you would like removed when running at full speed.  {\mlton}'s
+optimizer will remove any uses of {\tt safe} at compile time.  For
+example, array subscripting might be implemented as:
 \begin{verbatim}
 fun sub (a, i) =
    if MLton.safe andalso (i < 0 orelse i >= length a)
@@ -146,8 +146,9 @@ signature MLTON_CONT =
 the type of continuations that expect a value of type {\tt 'a}.
 
 \entry{callcc f}
-apply {\tt f} to the current continuation.  At present, {\tt
-callcc} takes time proportional to the current stack size.
+apply {\tt f} to the current continuation.  Because this copies the
+entire stack, {\tt callcc} takes time proportional to the current
+stack size.
 
 \entry{prepend (k, f)}
 compose a function {\tt f} with a continuation {\tt k} to create a
@@ -155,8 +156,9 @@ continuation that first does {\tt f} and then does {\tt k}.  This
 is a constant time operation.
 
 \entry{throw (k, v)}
-throw value {\tt v} to continuation {\tt k}.  At present, {\tt throw}
-takes time proportional to the size of {\tt k}.
+throw value {\tt v} to continuation {\tt k}.  Because this copies the
+entire stack of {\tt k}, {\tt throw} takes time proportional to the
+size of this stack.
 
 \entry{throw' (k, th)}
 a generalization of throw that evaluates {\tt th ()} in the context
@@ -220,7 +222,8 @@ signature MLTON_FINALIZABLE =
 \entry{addFinalizer (v, f)}
 adds {\tt f} as a finalizer to {\tt v}.  This means that sometime
 after the last call to {\tt withValue} on {\tt v} completes and {\tt
-v} becomes unreachable, {\tt f v} will run.
+v} becomes unreachable, {\tt f} will be caleed with the value of {\tt
+v}.
 
 \entry{finalizeBefore (v1, v2)}
 ensures that {\tt v1} will be finalized before {\tt v2}.  A cycle of
@@ -231,8 +234,8 @@ finalized.
 \entry{new x}
 creates a new finalizable value, {\tt v}, with value {\tt x}.  The
 finalizers of {\tt v} will run sometime after the last call to {\tt
-withValue} on {\tt v} when the gc determines that {\tt v} is
-unreachable.
+withValue} on {\tt v} when the garbage collector determines that {\tt
+v} is unreachable.
 
 \entry{touch v}
 Ensures that {\tt v}'s finalizers will not run before the call to
@@ -285,9 +288,9 @@ resizes a packed heap to the size desired by the runtime.
 
 {\mlton} represents an arbitrary precision integer either as an
 unboxed 32 bit word with the bottom bit set to 1 and the top 31 bits
-representing a small integer in $[-2^{30}, 2^{30})$, or as a vector of
-words where the first word indicates the sign and the rest are the
-limbs of {\gmp} big integer.
+representing a small integer in $[-2^{30}, 2^{30})$, or as a pointer
+to a vector of words where the first word indicates the sign and the
+rest are the limbs of {\gmp} big integer.
 \begin{verbatim}
 signature MLTON_INT_INF =
    sig
@@ -297,7 +300,7 @@ signature MLTON_INT_INF =
       val gcd: t * t -> t
       val isSmall: t -> bool
       datatype rep =
-	 Big of word vector
+         Big of word vector
        | Small of int
       val rep: t -> rep
       val size: t -> int
@@ -313,7 +316,7 @@ the same as type {\tt IntInf.int}.
 returns true iff both {\tt a} and {\tt b} are small.
 
 \entry{gcd (a, b)}
-using the {\gmp}'s fast gcd implementation.
+use the {\gmp}'s fast gcd implementation.
 
 \entry{isSmall a}
 returns true iff {\tt a} is small.
@@ -353,8 +356,7 @@ signature MLTON_IO =
 
 \entry{mkstemp s}
 like the C {\tt mkstemp} function, generate and open a tempory file with prefix
-{\tt s}.  This should be used instead of {\tt OS.FileSys.tmpName}, which has
-security risks.
+{\tt s}.
 
 \entry{mkstemps \{prefix, suffix\}}
 {\tt mkstemps} is like {\tt mkstemp}, except it has both a prefix and suffix.
@@ -569,11 +571,10 @@ Like {\tt Posix.Process.execp}.
 \subsubsec{{\tt MLton.Profile}}{profile-structure}
 
 This structure provides profiling control from within the program.
-For more on profiling, see \secref{profiling} and {\tt
-examples/profiling}.  In order to most efficiently execute non-profiled
-programs, when compiling {\tt -profile no} (the default), type {\tt
-Data.t} is equivalent to {\tt unit} and all of the operations in {\tt
-MLton.Profile} are no-ops.
+For more on profiling, see \secref{profiling}.  In order to most
+efficiently execute non-profiled programs, when compiling {\tt
+-profile no} (the default), type {\tt Data.t} is equivalent to {\tt
+unit ref}.
 
 \begin{verbatim}
 signature MLTON_PROFILE =
@@ -622,7 +623,7 @@ allocating a new {\tt unit ref}.
 writes the accumulated ticks in the unit of profiling data {\tt x} to
 file {\tt f}.  It is an error to write a previously freed unit of
 profiling data.  When compiling {\tt -profile no}, {\tt write (x, f)}
-is a no-op.  Note: a program compiled with {\tt -profile time} or {\tt
+is a no-op.  A program compiled with {\tt -profile time} or {\tt
 -profile alloc} will always write the current unit of profiling data
 at program exit to a file named {\tt mlmon.out}.
 
@@ -661,8 +662,8 @@ return the next pseudrandom number.
 \entry{seed ()}
 return a random word from {\tt /dev/random}.  Useful as an arg to {\tt
 srand}.  If {\tt /dev/random} can not be read from, {\tt seed ()}
-returns {\tt NONE}.  {\tt seed ()} may block until enough random bits
-are available.
+returns {\tt NONE}.  A call to {\tt seed} may block until enough
+random bits are available.
 
 \entry{srand w}
 set the seed used by {\tt rand} to {\tt w}.
@@ -670,8 +671,8 @@ set the seed used by {\tt rand} to {\tt w}.
 \entry{useed ()}
 return a random word from {\tt /dev/urandom}.  Useful as an arg to
 {\tt srand}.  If {\tt /dev/urandom} can not be read from, {\tt useed
-()} returns {\tt NONE}.  {\tt useed ()} will never block -- it will
-instead return lower quality random bits.
+()} returns {\tt NONE}.  A call to {\tt useed} will never block -- it
+will instead return lower quality random bits.
 
 \end{description}
 %
@@ -752,10 +753,10 @@ handler is invoked, it receives as an argument the thread that was
 interrupted by the signal.  The signal handler returns the thread that
 it would like to resume execution (this is often the thread that it
 was passed).  It is an error for a signal handler to raise an
-unhandled exception.  It is an error for to {\tt Thread.switch'} to an
+unhandled exception.  To avoid the possibility of aynchronous
+exceptions, it is an error for to {\tt Thread.switch'} to an
 interrupted thread with a thunk that raises an exception (either
-directly, or via {\tt Thread.prepend}).  This is to avoid the
-possibility of aynchronous exceptions.  All signals are automatically
+directly, or via {\tt Thread.prepend}). All signals are automatically
 blocked for the duration of a handler.  Signal handlers will never run
 during a critical section (see \secref{thread}).
 
@@ -774,7 +775,7 @@ signature MLTON_SIGNAL =
             val ignore: t
             val isDefault: t -> bool
             val isIgnore: t -> bool
-	    val simple: (unit -> unit) -> t
+            val simple: (unit -> unit) -> t
          end
 
       structure Mask:
@@ -823,7 +824,7 @@ returns true if the handler is the default handler.
 returns true if the handler is the ignore handler.
 
 \entry{Handler.simple f}
-returns a handler that executes {\tt f ()} and does not change
+returns a handler that executes {\tt f ()} and does not switch
 threads.
 
 \entry{type Mask.t}
@@ -860,7 +861,8 @@ sets the handler for signal {\tt s} to {\tt h}.
 
 \entry{suspend m}
 temporarily sets the signal mask to {\tt m} and suspends until an
-unmasked signal is received and handled, and then resets the mask.
+unmasked signal is received and handled, at which point suspend resets
+the mask and returns.
 
 \entry{vtalrm}
 {\tt SIGVTALRM}, the signal for virtual timers.
@@ -1124,7 +1126,7 @@ returns a weak pointer to {\tt x}.
 signature MLTON_WORD =
    sig
       type t
-	 
+         
       val rol: t * word -> t
       val ror: t * word -> t
    end
@@ -1208,13 +1210,6 @@ signature SML_OF_NJ =
             val getOSKind: unit -> os_kind
             val getOSName: unit -> string
          end
-      structure Internals:
-         sig
-            structure GC:
-               sig
-                  val messages: bool -> unit
-               end             
-         end
 
       val exnHistory: exn -> string list
       val exportFn: string * (string * string list -> OS.Process.status) -> unit
@@ -1237,9 +1232,6 @@ returns {\tt UNIX}.
 
 \entry{SysInfo.getOSName ()}
 returns the string for the host.
-
-\entry{Internals.GC.messages b}
-the same as {\tt MLton.GC.messages b}.
 
 \entry{exnHistory}
 the same as {\tt MLton.Exn.history}.

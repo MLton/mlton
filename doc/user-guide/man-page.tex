@@ -8,15 +8,15 @@ mlton [option ...] file.{c|cm|o|sml} [file.{c|o|s|S} ...]
 \end{verbatim}
 The simplest case is to run {\tt mlton foo.sml}, where {\tt foo.sml}
 contains a valid SML program, in which case {\mlton} compiles the
-program to produce an executable {\tt foo}.  Since {\mlton} has
-no notion of separate compilation, the program must be the entire
+program to produce an executable {\tt foo}.  Since {\mlton} does not
+support separate compilation, the program must be the entire
 program you wish to compile.  However, the program may refer to
 signatures and structures defined in the SML basis library.
 
 For developing large programs spanning many files, {\mlton} supports a
 limited subset of SML/NJ Compilation Manager (CM) files.  For example,
 {\tt mlton foo.cm} will compile the complete SML program consisting of
-the concatenatation of all the SML files referred to (either directly
+the concatenation of all the SML files referred to (either directly
 or indirectly) by {\tt foo.cm}.  See \secref{cm} for details.
 %
 \subsec{Compile-time options}{compile-time-options}
@@ -28,7 +28,7 @@ intermediate files are saved and to stop the compilation process
 early, at some intermediate pass, in which case compilation can be
 resumed by passing the resulting files to {\mlton}.  {\mlton} uses the
 input file suffix to determine the type of input program.  The
-possibilities are {\tt .cm}, {\tt .sml}, {\tt .c}, and {\tt .o}.
+possibilities are {\tt .c}, {\tt .cm}, {\tt .o}, and {\tt .sml}.
 
 With no arguments, {\mlton} prints the version number and exits.  For
 a usage message, run {\mlton} with an invalid switch, e.g. {\tt mlton
@@ -57,11 +57,10 @@ On {\intel}, the default is {\tt 4} and on {\sparc} the default is
 {\tt 8}.
 
 \option{-cc-opt {\it option}}
-Pass the option to gcc when compiling C code.
+Pass the option to {\tt gcc} when compiling C code.
 
 \option{-detect-overflow \trueFalse}
-This flag controls whether or not overflow checking is performed on integer
-arithmetic, in particular on {\tt Int.\{+,-,*,\~{},div,quot\}}.
+Perform overflow checking on integer arithmetic.
 
 \option{-exn-history \falseTrue}
 Enable {\tt Exn.history}.  See \secref{exn} for details.  There is a
@@ -70,13 +69,13 @@ exceptions and in run time, because of additional work that must be
 performed at each exception construction, raise, and handle.
 
 \option{-export-header {\it file}}
-Causes {\mlton} to create {\it file} with C prototypes for all of the
-functions exported from SML to C.  This flag is useful for programs
-that use {\export} expressions (see \secref{export}).
+Write to {\it file} C prototypes for all of the functions exported
+from SML to C.  This flag is useful for programs that use {\export}
+expressions (see \secref{export}).
 
 \option{-ieee-fp \falseTrue}
-Control whether or not the native code generator is pedantic about following
-the IEEE floating point standard.  By default, it is not, because of the
+Cause the native code generator to be pedantic about following the
+IEEE floating point standard.  By default, it is not, because of the
 performance cost.  This has no effect with {\tt -native false}.
 
 \option{-inline {\it n}}
@@ -88,7 +87,7 @@ Save intermediate files.  If no {\tt -keep} argument is given, then
 only the output file is saved.\\
 \begin{tabular}{l|l}
 {\tt g} & generated {\tt .S} and {\tt .c} files passed to gcc and the assembler\\
-{\tt o} & object files\\
+{\tt o} & object ({\tt .o}) files\\
 {\tt sml} & SML file\\
 \end{tabular}
 
@@ -101,9 +100,9 @@ pash an option to the linker, you must use {\tt gcc}'s {\tt -Wl,}
 syntax, e.g., {\tt -link-opt '-Wl,--export-dynamic'}.
 
 \option{-native \trueFalse}
-Controls whether or not to use native code generation, as opposed to
-generating C and using {\tt gcc}.  With native code generation,
-{\mlton} typically compiles more quickly and generates better code.
+Generate native code , as opposed to generating C and using {\tt gcc}.
+With {\tt -native true}, {\mlton} typically compiles more quickly and
+generates better code.
 
 \option{-output {\it file}}
 Specify the name of the final output file. The default name is the
@@ -120,11 +119,11 @@ If true, the profiler will count the time spent (or bytes allocated)
 while a function is on the stack.
 
 \option{-runtime {\it arg}}
-Pass argument to the runtime via {\tt @MLton}.  The argument will be
-processed before other {\tt @MLton} command line switches.  Multiple
-uses of {\tt -runtime} are allowed, and will pass all the arguments in
-order.  If the same runtime switch occurs more than once, then the
-last setting will take effect.
+Pass argument to the runtime system via {\tt @MLton}.  The argument
+will be processed before other {\tt @MLton} command line switches.
+Multiple uses of {\tt -runtime} are allowed, and will pass all the
+arguments in order.  If the same runtime switch occurs more than once,
+then the last setting will take effect.
 
 \option{-safe \trueFalse}
 This switch determines the value of the SML variable {\tt MLton.safe},
@@ -141,18 +140,18 @@ detecting curried applications that are mistakenly not fully applied.
 To silence spurious errors, you can use {\tt ignore e1}.
 
 \option{-show-basis {\it file}}
-Causes {\mlton} to pretty print to {\it file} the basis defined by the
-input program.  When used with no input, {\mlton} pretty prints the
-entire basis library.
+Pretty print to {\it file} the basis defined by the input program.
+When used with no input file, {\mlton} pretty prints the entire basis
+library.
 
 \option{-show-basis-used {\it file}}
-Causes {\mlton} to pretty print to {\it file} the portion of the basis
-library that the input program uses.
+pretty print to {\it file} the portion of the basis library that the
+input program uses.
 
 \option{-show-def-use {\it file}}
-Causes {\mlton} to output def-use information to {\it file}.  Each
-identifier that is defined appears on a line, follwed on subequent
-lines by the position of each use.
+Output def-use information to {\it file}.  Each identifier that is
+defined appears on a line, follwed on subequent lines by the position
+of each use.
 
 \option{-stop \choiceFour{f}{g}{o}{sml}}
 Secify pass to stop at.\\
@@ -183,10 +182,10 @@ How verbose to be about what passes are running.  The default is 0.\\
 \end{tabular}\\
 
 \option{-warn-match \trueFalse}
-Whether or not to display nonexhaustive and redundant match warnings.
+Report nonexhaustive and redundant matches.
 
 \option{-warn-unused \falseTrue}
-Whether or not to report unused identifiers.
+Report unused identifiers.
 
 \end{description}
 
@@ -229,10 +228,9 @@ Print a summary of garbage collection statistics upon program
 termination.
 
 \option{load-world \mbox{\rm world}}
-Restart the computation with the file specified by world.
-The world file must have been created by a call to
-{\tt MLton.World.save} by the same executable.  See \secref{world}
-for details.
+Restart the computation with the file specified by world, which must
+have been created by a call to {\tt MLton.World.save} by the same
+executable.  See \secref{world} for details.
 
 \option{max-heap \mbox{\rm n[}km\mbox{\rm ]}}
 Run the computation with an automatically resized heap that is never
@@ -242,7 +240,7 @@ larger than n.  The meaning of [{\tt km}] is the same as with the
 \option{no-load-world}
 Disable {\tt load-world}.  This can be used as an argument to the
 compiler via {\tt -runtime no-load-world} to create executables that
-will not load a world.  This may be useful for ensuring that set-uid
+will not load a world.  This may be useful to ensure that set-uid
 executables do not load some strange world.
 
 \option{ram-slop {\mbox{\rm x}}}

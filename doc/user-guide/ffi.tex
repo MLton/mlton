@@ -77,19 +77,19 @@ val e = _export "foo": real * char -> int;
 val _ = e (fn (x, c) => 13 + Real.floor x + Char.ord c)
 \end{verbatim}
 
-{\mlton}'s {\tt -export-header true} option generates a C header file
-with prototypes for all of the functions exported from SML.  Include
-this header file in your C files to type check calls to functions
-exported from SML.  This header file includes {\tt typedef}s for the
-types that can be passed between SML and C, as described in the next
-section.  An example in the {\tt examples/ffi} directory demonstrates
-the use of {\export} expressions and generating the header file.
-Running {\tt make export} will produce an executable, {\tt export},
-that should output {\tt success} when run.
+{\mlton}'s {\tt -export-header} option generates a C header file with
+prototypes for all of the functions exported from SML.  Include this
+header file in your C files to type check calls to functions exported
+from SML.  This header file includes {\tt typedef}s for the types that
+can be passed between SML and C, as described in the next section.  An
+example in the {\tt examples/ffi} directory demonstrates the use of
+{\export} expressions and generating the header file.  Running {\tt
+make export} will produce an executable, {\tt export}, that should
+output {\tt success} when run.
 
 \begin{verbatim}
 % make export
-mlton -export-header true export.sml >export.h
+mlton -export-header export.h -stop tc export.sml
 gcc -c ffi-export.c
 mlton export.sml ffi-export.o
 % ./export
@@ -121,9 +121,9 @@ same as their polymorphic counterpart, these are also allowed.
 Unfortunately, passing tuples or datatypes is not allowed because that
 would interfere with representation optimizations.
 
-The C header file that {\tt -export-header true} generates includes
-{\tt typedef}s for the C types corresponding to the SML types.  Here
-is the mapping between SML types and C types.
+The C header file that {\tt -export-header} generates includes {\tt
+typedef}s for the C types corresponding to the SML types.  Here is the
+mapping between SML types and C types.
 
 
 \begin{center}

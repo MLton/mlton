@@ -6,8 +6,10 @@ programming language. MLton has the following features.
      o Sparc: Solaris
    + Generates standalone executables with excellent running times
    + Supports the full SML 97 language
-   + Has a complete basis library
-   + Untagged native integers and reals, and unboxed native arrays
+   + A complete basis library
+   + Untagged native integers and words
+   + Unboxed reals
+   + Unboxed arrays
    + Fast C FFI for calling from SML to C and from C to SML
    + Source-level profiling of both time and allocation
    + Multiple garbage collection strategies

@@ -1,7 +1,7 @@
 \sec{Basis library}{basis-library}{Basis_library.html}
 %
 This section describes {\mlton}'s implementation of the Standard ML
-Basis Library that by default {\mlton} makes available to user
+Basis Library, which by default {\mlton} makes available to user
 programs.  The latest version of the Basis Library specification is at
 \link{http://www.standardml.org/Basis/}.  For a reverse chronological
 list of changes to the specification, see
@@ -9,7 +9,7 @@ list of changes to the specification, see
 specification does change, we place a snapshot at
 \link{\makeurl{basis/}} at the time of each {\mlton} public release.
 You can also obtain a complete and current list of what's available by
-calling {\tt mlton -show-basis true}.
+using {\tt mlton -show-basis}.
 
 In summary, {\mlton} implements all of the required portions of the
 Basis Library.  {\mlton} also implements many of the optional
@@ -53,7 +53,7 @@ structures, as seen below.
 {\mlton} does not implement the optional top level value
 \verb+use: string -> unit+, which conflicts with whole-program
 compilation because it allows new code to be loaded dynamically.
-{\mlton} implements all other top level values.
+{\mlton} implements all other top level values:
 
 {\tt !},
 {\tt *},
@@ -92,8 +92,8 @@ compilation because it allows new code to be loaded dynamically.
 {\tt map},
 {\tt mod},
 {\tt not},
-{\tt o},
 {\tt null},
+{\tt o},
 {\tt ord},
 {\tt print},
 {\tt real},
@@ -244,12 +244,12 @@ compilation because it allows new code to be loaded dynamically.
 \fullmodule{LargeRealArraySlice}{MONO\_ARRAY\_SLICE}
 \fullmodule{LargeRealVector}{MONO\_VECTOR}
 \fullmodule{LargeRealVectorSlice}{MONO\_VECTOR\_SLICE}
+\fullmodule{LargeWord}{WORD}
 \fullmodule{LargeWordArray}{MONO\_ARRAY}
 \fullmodule{LargeWordArray2}{MONO\_ARRAY2}
 \fullmodule{LargeWordArraySlice}{MONO\_ARRAY\_SLICE}
 \fullmodule{LargeWordVector}{MONO\_VECTOR}
 \fullmodule{LargeWordVectorSlice}{MONO\_VECTOR\_SLICE}
-\fullmodule{LargeWord}{WORD}
 \fullmodule{List}{LIST}
 \fullmodule{ListPair}{LIST\_PAIR}
 \fullmodule{Math}{MATH}
@@ -257,10 +257,6 @@ compilation because it allows new code to be loaded dynamically.
 \fullmodule{NetProtDB}{NET\_PROT\_DB}
 \fullmodule{NetServDB}{NET\_SERV\_DB}
 \fullmodule{OS}{OS}
-\hspace*{0.5in}
-\parbox{6in}{Use of {\tt OS.FileSys.tmpName} causes a link-time
-             warning due to a security risk.  You should use {\tt
-             MLton.TextIO.mkstemp} instead.}\\
 \fullmodule{Option}{OPTION}
 \fullmodule{PackReal32Big}{PACK\_REAL}
 \fullmodule{PackReal32Little}{PACK\_REAL}
@@ -337,14 +333,14 @@ compilation because it allows new code to be loaded dynamically.
 
 % extra space for HeVeA
 
-The following structures equivalences hold.\\
+The following types are equivalent.\\
 \begin{tabular}{l}
-\tt Int = Int32\\
-\tt Int64 = FixedInt = Position\\
-\tt IntInf = LargeInt\\
-\tt Real = Real64 = LargeReal\\
-\tt Word = Word32 = SysWord\\
-\tt Word64 = LargeWord
+\tt Int.int = Int32.int\\
+\tt Int64.int = FixedInt.int = Position.int\\
+\tt IntInf.int = LargeInt.int\\
+\tt Real.real = Real64.real = LargeReal.real\\
+\tt Word.word = Word32.word = SysWord.word\\
+\tt Word64.word = LargeWord.word
 \end{tabular}
 
 The {\tt Real}, {\tt Real32}, and {\tt Real64} modules are implemented

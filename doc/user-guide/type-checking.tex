@@ -52,7 +52,6 @@ error message would look like
 expects: _ * [int]
 but got: _ * [real]
 \end{verbatim}
-
 As another aid to spotting differences, {\mlton} places brackets {\tt
 []} around the parts of the types that don't match.  A common
 situation is when a function receives a different number of arguments
@@ -96,7 +95,7 @@ foo.basis} with the following contents.
 val f: int -> int
 \end{verbatim}
 If you only want to see the basis and do not wish to compile the
-program, you could call {\mlton} with {\tt -stop tc}.
+program, you can call {\mlton} with {\tt -stop tc}.
 
 When {\mlton} is called with {\tt -show-basis} and no input file and,
 it pretty prints the entire basis library.  This can be helpful in
@@ -192,14 +191,17 @@ structure S: SIG =
       type t = int
       val x = 13
    end
+structure S2:> SIG = S
 \end{verbatim}
 is displayed as
 \begin{verbatim}
+structure S: SIG
+	     where type t = int
+structure S2: SIG
+	      where type t = S2.t
 signature SIG = 
    sig
       type t = ?.t
       val x: ?.t
    end
-structure S: SIG
-             where type t = int
 \end{verbatim}
