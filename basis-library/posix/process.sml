@@ -151,10 +151,10 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
       fun wait () = waitpid (W_ANY_CHILD, [])
 
       fun exit (w: Word8.word): 'a  =
-	 ((* A call to AtExit.clean is done before calling exit in
-	   * system/process.sml, if necessary
-	   *)
-	  Prim.exit (Word8.toInt w)
+	 (* Posix.Process.exit does not call atExit cleaners, as per the basis
+	  * library spec.
+	  *)
+	 (Prim.exit (Word8.toInt w)
 	  ; raise Fail "Posix.Process.exit")
 
       datatype killpid_arg  =

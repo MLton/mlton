@@ -18,8 +18,8 @@ structure OS_Process: OS_PROCESS_EXTRA =
       structure Signal = MLtonSignal
       type status = PreOS.Process.status
 
-      val success: status = 0
       val failure: status = 1
+      val success: status = 0
 
       fun isSuccess st = st = success
 
@@ -27,20 +27,21 @@ structure OS_Process: OS_PROCESS_EXTRA =
 	 case #2 (waitpid (W_CHILD pid, [])) of
 	    W_EXITED => success
 	  | W_EXITSTATUS w => Word8.toInt w
-	  | W_SIGNALED s => failure (* ?? *)
-	  | W_STOPPED s => failure (* this shouldn't happen *)
+	  | W_SIGNALED _ => failure
+	  | W_STOPPED _ => failure
 	       
       fun system cmd =
 	 let
 	    val pid =
-	       MLtonProcess.spawn {path = "/bin/sh",
-				   args = ["sh", "-c", cmd]}
+	       MLtonProcess.spawn {args = ["sh", "-c", cmd],
+				   path = "/bin/sh"}
 	    val old =
 	       List.map (fn s => 
 			 let
 			    val old = Signal.getHandler s
 			    val _ = Signal.ignore s
-			 in (s, old)
+			 in
+			    (s, old)
 			 end)
 	       [Signal.int, Signal.quit]
 	 in
@@ -48,15 +49,15 @@ structure OS_Process: OS_PROCESS_EXTRA =
 			      fn () => List.app Signal.setHandler old)
 	 end
 
-      fun atExit f = Cleaner.addNew (Cleaner.atExit, f)
- 
+      val atExit = MLtonProcess.atExit
+	 
       val exit = MLtonProcess.exit
 
       fun terminate x = Posix.Process.exit (Word8.fromInt x)
 
       val getEnv = Posix.ProcEnv.getenv
 
-      fun sleep t = if Time.<=(t, Time.zeroTime)
+      fun sleep t = if Time.<= (t, Time.zeroTime)
 		       then ()
 		    else (Posix.Process.sleep t; ())
    end

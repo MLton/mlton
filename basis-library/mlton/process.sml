@@ -30,12 +30,25 @@ structure MLtonProcess: MLTON_PROCESS =
 	       NONE => Posix.Process.execp (file, args)
 	     | SOME pid => pid
 
-      fun exit sts =
-	 if 0 <= sts andalso sts < 256
-	    then (let open Cleaner in clean atExit end
-		  ; Primitive.halt sts
-                  ; raise Fail "exit")
-	 else raise Fail (concat ["exit must have 0 <= status < 256: saw ",
-				  Int.toString sts])
+      val exiting = ref false
+
+      exception Exit
+      
+      fun exit (status: int): 'a =
+	 if !exiting
+	    then raise Exit
+	 else
+	    (exiting := true
+	     ; if 0 <= status andalso status < 256
+		  then (let open Cleaner in clean atExit end
+			; Posix.Process.exit (Word8.fromInt status)
+			; raise Fail "exit")
+	       else raise Fail (concat ["exit must have 0 <= status < 256: saw ",
+					Int.toString status]))
+
+      fun atExit f =
+	 if !exiting
+	    then ()
+	 else Cleaner.addNew (Cleaner.atExit, f)
    end
 

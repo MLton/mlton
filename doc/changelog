@@ -2,7 +2,13 @@ Here are the changes since version 20030312.
 
 At this point, the only missing basis library function is "use".
 
-* 2004-07-02
+* 2003-07-03
+  - Making OS.Process.{atExit,exit} conform to the basis library spec
+    in that exceptions raised during cleaners are caught and ignored.
+    Also, calls to exit from cleaners cause the rest of cleaners to
+    run.
+
+* 2003-07-02
   - Fixed bug with negative IntInf constants that could cause compile
     time error message:
     "x86Translate.translateChunk ... strange Offset: base: ..."
