@@ -1,4 +1,4 @@
-structure Random: MLTON_RANDOM =
+structure MLtonRandom: MLTON_RANDOM =
    struct
       (* Linux specific.  Uses /dev/random and /dev/urandom to get a
        * random word.

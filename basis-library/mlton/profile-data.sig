@@ -1,4 +1,4 @@
-signature PROFILE_DATA =
+signature MLTON_PROFILE_DATA =
    sig
       type t
 

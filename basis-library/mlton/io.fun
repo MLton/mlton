@@ -7,7 +7,7 @@ fun mkstemps {prefix, suffix}: string * outstream =
    let
       fun loop () =
 	 let
-	    val name = concat [prefix, Random.alphaNumString 6, suffix]
+	    val name = concat [prefix, MLtonRandom.alphaNumString 6, suffix]
 	    open Posix.FileSys
 	 in
 	    (name,

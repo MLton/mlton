@@ -89,12 +89,4 @@
 #define Ptrace_SETFPREGS PTRACE_SETFPREGS
 #define Ptrace_SYSCALL PTRACE_SYSCALL
 
-/* ------------------------------------------------- */
-/*                      Socket                       */
-/* ------------------------------------------------- */
-
-#define Socket_shutdownRead SHUT_RD
-#define Socket_shutdownWrite SHUT_WR
-#define Socket_shutdownReadWrite SHUT_RDWR
-
 #endif /* #ifndef _BASIS_CONSTANTS_H_ */

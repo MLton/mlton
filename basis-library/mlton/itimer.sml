@@ -1,4 +1,4 @@
-structure Itimer =
+structure MLtonItimer =
    struct
       structure Prim = Primitive.Itimer
 	 

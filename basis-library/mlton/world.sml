@@ -1,4 +1,4 @@
-structure World: MLTON_WORLD =
+structure MLtonWorld: MLTON_WORLD =
    struct
       structure Prim = Primitive.World
 	 
@@ -35,13 +35,13 @@ structure World: MLTON_WORLD =
 		  ; Clone)
 	 end
 
-      fun saveThread (file: string, t: unit Thread.t): unit =
+      fun saveThread (file: string, t: unit MLtonThread.t): unit =
 	 case save' file of
-	    Clone => Thread.switch (fn _ => (t, ()))
+	    Clone => MLtonThread.switch (fn _ => (t, ()))
 	  | Original => ()
 	 
       fun save (file: string): status =
-	 if Thread.amInSignalHandler ()
+	 if MLtonThread.amInSignalHandler ()
 	    then raise Fail "cannot call MLton.World.save within signal handler"
 	 else save' file
 

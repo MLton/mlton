@@ -26,7 +26,7 @@ signature MLTON_SIGNAL =
 	    type t
 
 	    val default: t
-	    val handler: (unit Thread.t -> unit Thread.t) -> t
+	    val handler: (unit MLtonThread.t -> unit MLtonThread.t) -> t
 	    val ignore: t
 	    val isDefault: t -> bool
 	    val isIgnore: t -> bool
@@ -41,7 +41,7 @@ signature MLTON_SIGNAL =
        * Thread.prepend).  This is to avoid the possibility of
        * aynchronous exceptions.
        *)
-      val handleWith': t * (unit Thread.t -> unit Thread.t) -> unit
+      val handleWith': t * (unit MLtonThread.t -> unit MLtonThread.t) -> unit
       val handleWith: t * (unit -> unit) -> unit
       val ignore: t -> unit
       val setHandler: t * Handler.t -> unit

@@ -1,7 +1,7 @@
-structure ProfileAlloc: MLTON_PROFILE =
+structure MLtonProfileAlloc: MLTON_PROFILE =
 struct
    
-structure P = Profile (open Primitive.MLton.ProfileAlloc)
+structure P = MLtonProfile (open Primitive.MLton.ProfileAlloc)
 open P
 
 val _ =

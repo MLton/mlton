@@ -136,10 +136,8 @@ signature BASIS_2002 =
       structure BoolVectorSlice : MONO_VECTOR_SLICE
       structure CharArray2 : MONO_ARRAY2
       structure FixedInt : INTEGER
-(*
       structure GenericSock : GENERIC_SOCK
       structure INetSock : INET_SOCK
-*)
       structure IntArray : MONO_ARRAY
       structure IntArray2 : MONO_ARRAY2
       structure IntArraySlice : MONO_ARRAY_SLICE
@@ -177,13 +175,9 @@ signature BASIS_2002 =
       structure Real64 : REAL
       structure Real64Vector : MONO_VECTOR
       structure Real64VectorSlice : MONO_VECTOR_SLICE
-(*
       structure Socket : SOCKET
-*)
       structure SysWord : WORD
-(*
       structure UnixSock : UNIX_SOCK
-*)
       structure Unix : UNIX
 (*
       structure WideCharArray : MONO_ARRAY

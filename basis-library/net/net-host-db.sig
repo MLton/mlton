@@ -15,3 +15,13 @@ signature NET_HOST_DB =
       val fromString: string -> in_addr option
       val toString: in_addr -> string
    end
+
+signature NET_HOST_DB_EXTRA =
+   sig
+      include NET_HOST_DB
+      type pre_in_addr
+      val new_in_addr: unit -> (pre_in_addr * (unit -> in_addr))
+      val inAddrToWord: in_addr -> word
+      val wordToInAddr: word -> in_addr
+      val any: unit -> in_addr
+   end

@@ -1,8 +1,8 @@
-structure ProfileTime: MLTON_PROFILE =
+structure MLtonProfileTime: MLTON_PROFILE =
 struct
 
 structure Prim = Primitive.MLton.ProfileTime
-structure P = Profile (open Prim)
+structure P = MLtonProfile (open Prim)
 open P
 
 val _ =
@@ -11,7 +11,7 @@ val _ =
    else
       let
 	 fun setItimer (t: Time.time): unit =
-	    Itimer.set' (Itimer.Prof, {interval = t, value = t})
+	    MLtonItimer.set' (MLtonItimer.Prof, {interval = t, value = t})
 	 fun init () =
 	    (Prim.init ()
 	     ; setCurrent (Data.malloc ())

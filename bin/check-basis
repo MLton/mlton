@@ -284,6 +284,14 @@ cat <<-EOF
         structure NetProtDB = struct end
         signature NET_SERV_DB = sig end
         structure NetServDB = struct end
+        signature SOCKET = sig end
+        structure Socket = struct end
+        signature GENERIC_SOCK = sig end
+        structure GenericSock = struct end
+        signature INET_SOCK = sig end
+        structure INetSock = struct end
+        signature UNIX_SOCK = sig end
+        structure UnixSock = struct end
 	nonfix * / mod div ^ + - := o > < >= <= = <> :: @ before
 
         open Types

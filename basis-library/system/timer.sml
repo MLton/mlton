@@ -8,7 +8,7 @@ structure Timer: TIMER =
 	 let
 	    val {gc = {utime = gcu, stime = gcs},
 		 self = {utime = selfu, stime = selfs}, ...} =
-	       MLton.Rusage.rusage ()
+	       MLtonRusage.rusage ()
 	 in
 	    {gc = Time.+ (gcu, gcs),
 	     sys = selfs,

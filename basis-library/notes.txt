@@ -350,6 +350,16 @@ General comments:
 ******************************************************************************
 ******************************************************************************
 
+Doing host/network byte order conversions on ML side.
+
+Socket.Ctl
+* Semantics of setNBIO, getNREAD, getATMARK are unclear;
+  Don't seem to be accessible via {get,set}sockopt;
+  Instead, using ioctl.
+
+******************************************************************************
+******************************************************************************
+
 Posix.FileSys:
 * Within structure S, the type mode is constrained equal to flags,
   but flags is an eqtype.

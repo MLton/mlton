@@ -24,6 +24,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       structure Flags = BitFlags
 
       val checkResult = Error.checkResult
+      val checkReturnResult = Error.checkReturnResult
 
       datatype file_desc = datatype Prim.file_desc
       type uid = Prim.uid
@@ -151,26 +152,24 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	  | O_WRONLY => o_wronly
 	  | O_RDWR => o_rdwr
 
-      val error = PosixError.error
-
       fun createf (pathname, openMode, flags, mode) =
 	 let
 	    val fd =
-	       Prim.openn (String.nullTerm pathname,
-			   Flags.flags [openModeToWord openMode, flags, O.creat],
-			   mode)
-	 in if fd = ~1
-	       then error ()
-	    else FD fd
+	       checkReturnResult
+	       (Prim.openn (String.nullTerm pathname,
+			    Flags.flags [openModeToWord openMode, flags, O.creat],
+			    mode))
+	 in FD fd
 	 end
 
       fun openf (pathname, openMode, flags) =
-	 let val fd = Prim.openn (String.nullTerm pathname,
-				  Flags.flags [openModeToWord openMode, flags],
-				  Flags.empty)
-	 in if fd = ~1
-	       then error ()
-	    else FD fd
+	 let 
+	    val fd = 
+	       checkReturnResult
+	       (Prim.openn (String.nullTerm pathname,
+			    Flags.flags [openModeToWord openMode, flags],
+			    Flags.empty))
+	 in FD fd
 	 end
 	 
       fun creat (s, m) = createf (s, O_WRONLY, O.trunc, m)

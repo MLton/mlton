@@ -1,4 +1,4 @@
-structure ProcEnv: MLTON_PROC_ENV =
+structure MLtonProcEnv: MLTON_PROC_ENV =
    struct
       fun setenv {name, value} =
 	 PosixError.checkResult

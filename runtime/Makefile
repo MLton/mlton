@@ -6,10 +6,11 @@ else
 AR = $(HOST)-ar rc
 HOSTFLAGS = -b $(HOST)
 endif
-CC =		gcc -Wall -I. -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer $(HOSTFLAGS)
+CC =		gcc -Wall -I. -mcpu=pentiumpro -falign-loops=2 -falign-jumps=2 -falign-functions=5 -fomit-frame-pointer $(HOSTFLAGS)
 # Can't use more optimization than -O1 because gcc doesn't correctly compile
 #  Real_class in basis/Real.c
-CFLAGS =	-O1
+CFLAGS = -O1
+DEBUGFLAGS = -gstabs+ -g2
 
 OBJS =						\
 	basis/Array/numElements.o		\
@@ -40,9 +41,26 @@ OBJS =						\
 	basis/MLton/spawnp.o			\
 	basis/MLton/size.o			\
 	basis/MLton/world.o			\
+	basis/Net/Net.o				\
 	basis/Net/NetHostDB.o			\
 	basis/Net/NetProtDB.o			\
 	basis/Net/NetServDB.o			\
+	basis/Net/Socket/Ctl.o			\
+	basis/Net/Socket/Socket.o		\
+	basis/Net/Socket/bind.o			\
+	basis/Net/Socket/listen.o		\
+	basis/Net/Socket/connect.o		\
+	basis/Net/Socket/accept.o		\
+	basis/Net/Socket/close.o		\
+	basis/Net/Socket/shutdown.o		\
+	basis/Net/Socket/send.o			\
+	basis/Net/Socket/sendTo.o		\
+	basis/Net/Socket/recv.o			\
+	basis/Net/Socket/recvFrom.o		\
+	basis/Net/Socket/socket.o		\
+	basis/Net/Socket/socketPair.o		\
+	basis/Net/Socket/INetSock.o		\
+	basis/Net/Socket/UnixSock.o		\
 	basis/OS/FileSys/tmpnam.o		\
 	basis/OS/IO/poll.o			\
 	basis/PackReal/subVec.o			\
@@ -51,11 +69,6 @@ OBJS =						\
 	basis/Ptrace/ptrace4.o			\
 	basis/Real.o				\
 	basis/Real_const.o			\
-	basis/Socket/Host.o			\
-	basis/Socket/accept.o			\
-	basis/Socket/connect.o			\
-	basis/Socket/listen.o			\
-	basis/Socket/shutdown.o			\
 	basis/Stdio.o				\
 	basis/Thread.o				\
 	basis/Time.o				\
@@ -190,9 +203,26 @@ DEBUG_OBJS =					\
 	basis/MLton/spawnp-gdb.o		\
 	basis/MLton/size-gdb.o			\
 	basis/MLton/world-gdb.o			\
+	basis/Net/Net-gdb.o	 		\
 	basis/Net/NetHostDB-gdb.o		\
 	basis/Net/NetProtDB-gdb.o		\
 	basis/Net/NetServDB-gdb.o		\
+	basis/Net/Socket/Ctl-gdb.o		\
+	basis/Net/Socket/Socket-gdb.o		\
+	basis/Net/Socket/bind-gdb.o		\
+	basis/Net/Socket/listen-gdb.o		\
+	basis/Net/Socket/connect-gdb.o		\
+	basis/Net/Socket/accept-gdb.o		\
+	basis/Net/Socket/close-gdb.o		\
+	basis/Net/Socket/shutdown-gdb.o		\
+	basis/Net/Socket/send-gdb.o		\
+	basis/Net/Socket/sendTo-gdb.o		\
+	basis/Net/Socket/recv-gdb.o		\
+	basis/Net/Socket/recvFrom-gdb.o		\
+	basis/Net/Socket/socket-gdb.o		\
+	basis/Net/Socket/socketPair-gdb.o	\
+	basis/Net/Socket/INetSock-gdb.o		\
+	basis/Net/Socket/UnixSock-gdb.o		\
 	basis/OS/FileSys/tmpnam-gdb.o		\
 	basis/OS/IO/poll-gdb.o			\
 	basis/PackReal/subVec-gdb.o		\
@@ -201,11 +231,6 @@ DEBUG_OBJS =					\
 	basis/Ptrace/ptrace4-gdb.o		\
 	basis/Real-gdb.o			\
 	basis/Real_const-gdb.o			\
-	basis/Socket/Host-gdb.o			\
-	basis/Socket/accept-gdb.o		\
-	basis/Socket/connect-gdb.o		\
-	basis/Socket/listen-gdb.o		\
-	basis/Socket/shutdown-gdb.o		\
 	basis/Stdio-gdb.o			\
 	basis/Thread-gdb.o			\
 	basis/Time-gdb.o			\
@@ -312,13 +337,13 @@ DEBUG_OBJS =					\
 	my-lib-gdb.o
 
 %-gdb.o: %.c
-	$(CC) -g -DASSERT=1 -c -o $@ $<
+	$(CC) $(DEBUGFLAGS) -DASSERT=1 -c -o $@ $<
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 %-gdb.o: %.S
-	$(CC) -g -c -o $@ $<
+	$(CC) $(DEBUGFLAGS) -c -o $@ $<
 
 %.o: %.S
 	$(CC) $(CFLAGS) -c -o $@ $<

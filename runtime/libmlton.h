@@ -17,6 +17,7 @@
 #include "mlton-basis.h"
 #include "mlton-posix.h"
 #include "my-lib.h"
+#include "net-constants.h"
 #include "posix-constants.h"
 
 /* initialize the machine */

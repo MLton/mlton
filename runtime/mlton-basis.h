@@ -235,20 +235,6 @@ Rlimit MLton_Rlimit_getSoft();
 Int MLton_Rlimit_set(Resource r, Rlimit hard, Rlimit soft);
 
 /* ------------------------------------------------- */
-/*                      Socket                       */
-/* ------------------------------------------------- */
-
-Word Socket_Addr_address();
-Int Socket_Addr_port();
-Cstring Socket_Host_name();
-Int Socket_Host_getByAddress(Word addr);
-Int Socket_Host_getByName(Cstring name);
-Int Socket_accept(Int sl);
-Int Socket_connect(Pointer host, Int port);
-Int Socket_listen(Pointer port, Pointer resultSocket);
-Int Socket_Shutdown(Int fd, Int how);
-
-/* ------------------------------------------------- */
 /*                       Stdio                       */
 /* ------------------------------------------------- */
 

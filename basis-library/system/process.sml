@@ -15,7 +15,7 @@ structure OS_Process: OS_PROCESS_EXTRA =
    struct
       open Posix.Process
 
-      structure Signal = MLton.Signal
+      structure Signal = MLtonSignal
       type status = PreOS.Process.status
 
       val success: status = 0
@@ -33,8 +33,8 @@ structure OS_Process: OS_PROCESS_EXTRA =
       fun system cmd =
 	 let
 	    val pid =
-	       MLton.Process.spawn {path = "/bin/sh",
-				    args = ["sh", "-c", cmd]}
+	       MLtonProcess.spawn {path = "/bin/sh",
+				   args = ["sh", "-c", cmd]}
 	    val old =
 	       List.map (fn s => 
 			 let
@@ -50,7 +50,7 @@ structure OS_Process: OS_PROCESS_EXTRA =
 
       fun atExit f = Cleaner.addNew (Cleaner.atExit, f)
  
-      val exit = MLton.Process.exit
+      val exit = MLtonProcess.exit
 
       fun terminate x = Posix.Process.exit (Word8.fromInt x)
 

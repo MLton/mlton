@@ -410,24 +410,38 @@ structure Primitive =
 		     _ffi "MLton_Process_spawnp"
 		     : nullString * nullString array -> int;
 	       end
-	    
+
 (*       val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
 (*       val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
 
 	    val size = fn x => _prim "MLton_size": 'a ref -> int; x
 	 end
 
+      structure Net =
+	 struct
+ 	    val htonl = _ffi "Net_htonl": int -> int;
+	    val ntohl = _ffi "Net_ntohl": int -> int;
+ 	    val htons = _ffi "Net_htons": int -> int;
+	    val ntohs = _ffi "Net_ntohs": int -> int;
+	 end
+
       structure NetHostDB =
 	 struct
+	    (* network byte order (MSB) *)
+	    type pre_in_addr = word8 array
+	    type in_addr = word8 vector
+	    val inAddrLen = _const "NetHostDB_inAddrLen": int;
+	    val INADDR_ANY = _const "NetHostDB_INADDR_ANY": int;
+	    type addr_family = int
 	    val entryName = _ffi "NetHostDB_Entry_name": unit -> cstring;
 	    val entryNumAliases = _ffi "NetHostDB_Entry_numAliases": unit -> int;
 	    val entryAliasesN = _ffi "NetHostDB_Entry_aliasesN": int -> cstring;
 	    val entryAddrType = _ffi "NetHostDB_Entry_addrType": unit -> int;
 	    val entryLength = _ffi "NetHostDB_Entry_length": unit -> int;
 	    val entryNumAddrs = _ffi "NetHostDB_Entry_numAddrs": unit -> int;
-	    val entryAddrsN = _ffi "NetHostDB_Entry_addrsN": int * word8 array -> unit;
-	    val getByAddress = _ffi "NetHostDB_getByAddress": word8 vector * int -> bool;
-	    val getByName = _ffi "NetHostDB_getByName": string -> bool;
+	    val entryAddrsN = _ffi "NetHostDB_Entry_addrsN": int * pre_in_addr -> unit;
+	    val getByAddress = _ffi "NetHostDB_getByAddress": in_addr * int -> bool;
+	    val getByName = _ffi "NetHostDB_getByName": nullString -> bool;
 	    val getHostName = _ffi "NetHostDB_getHostName": char array * int -> int;
 	 end
 
@@ -437,7 +451,7 @@ structure Primitive =
 	    val entryNumAliases = _ffi "NetProtDB_Entry_numAliases": unit -> int;
 	    val entryAliasesN = _ffi "NetProtDB_Entry_aliasesN": int -> cstring;
 	    val entryProtocol = _ffi "NetProtDB_Entry_protocol": unit -> int;
-	    val getByName = _ffi "NetProtDB_getByName": string -> bool;
+	    val getByName = _ffi "NetProtDB_getByName": nullString -> bool;
 	    val getByNumber = _ffi "NetProtDB_getByNumber": int -> bool;
 	 end
 
@@ -448,9 +462,9 @@ structure Primitive =
 	    val entryAliasesN = _ffi "NetServDB_Entry_aliasesN": int -> cstring;
 	    val entryPort = _ffi "NetServDB_Entry_port": unit -> int;
 	    val entryProtocol = _ffi "NetServDB_Entry_protocol": unit -> cstring;
-	    val getByName = _ffi "NetServDB_getByName": string * string -> bool;
-	    val getByNameNull = _ffi "NetServDB_getByNameNull": string -> bool;
-	    val getByPort = _ffi "NetServDB_getByPort": int * string -> bool;
+	    val getByName = _ffi "NetServDB_getByName": nullString * nullString -> bool;
+	    val getByNameNull = _ffi "NetServDB_getByNameNull": nullString -> bool;
+	    val getByPort = _ffi "NetServDB_getByPort": int * nullString -> bool;
 	    val getByPortNull = _ffi "NetServDB_getByPortNull": int -> bool;
 	 end
 
@@ -470,8 +484,7 @@ structure Primitive =
       structure PackReal =
 	 struct
 	    val subVec = _ffi "PackReal_subVec": word8 vector * int -> real;
-	    val update =
-	       _ffi "PackReal_update": word8 array * int * real -> unit;
+	    val update = _ffi "PackReal_update": word8 array * int * real -> unit;
 	 end
 
       structure Ptrace =
@@ -570,34 +583,150 @@ structure Primitive =
 
       structure Socket =
 	 struct
-	    type fd = int
-	    type socket = int
-	    type port = int
-	    type address = word
-
-	    structure Addr =
+	    type sock = int
+	    type pre_sock_addr = word8 array
+	    type sock_addr = word8 vector
+	    val sockAddrLenMax = _const "Socket_sockAddrLenMax": int;
+	    structure AF =
 	       struct
-		  val address = _ffi "Socket_Addr_address": unit -> address;
-		  val port = _ffi "Socket_Addr_port": unit -> port;
+		  type addr_family = int
+		  val UNIX = _const "Socket_AF_UNIX": addr_family;
+		  val INET = _const "Socket_AF_INET": addr_family;
+		  val INET6 = _const "Socket_AF_INET6": addr_family;
+		  val UNSPEC = _const "Socket_AF_UNSPEC": addr_family;
+	       end
+	    structure SOCK =
+	       struct
+		  type sock_type = int
+		  val STREAM = _const "Socket_SOCK_STREAM": sock_type;
+		  val DGRAM = _const "Socket_SOCK_DGRAM": sock_type;
+	       end
+	    structure CtlExtra =
+	       struct
+		  type level = int
+		  type optname = int
+		  type request = int
+		  (* host byte order (LSB) *)
+		  type read_data = word8 vector
+		  type write_data = word8 array
+
+		  val setSockOpt = 
+		     _ffi "Socket_Ctl_setSockOpt": sock * level * optname * 
+		                                   read_data * int -> 
+                                                   int;
+		  val getSockOpt = 
+		     _ffi "Socket_Ctl_getSockOpt": sock * level * optname * 
+		                                   write_data * int ref -> 
+                                                   int;
+		  val setIOCtl =
+		     _ffi "Socket_Ctl_getsetIOCtl": sock * request *
+		                                    read_data ->
+						    int;
+		  val getIOCtl =
+		     _ffi "Socket_Ctl_getsetIOCtl": sock * request *
+		                                    write_data ->
+						    int;
+	       end
+	    structure Ctl =
+	       struct
+		  open CtlExtra
+		  val SOCKET = _const "Socket_Ctl_SOL_SOCKET": level;
+		  val DEBUG = _const "Socket_Ctl_SO_DEBUG": optname;
+		  val REUSEADDR = _const "Socket_Ctl_SO_REUSEADDR": optname;
+		  val KEEPALIVE = _const "Socket_Ctl_SO_KEEPALIVE": optname;
+		  val DONTROUTE = _const "Socket_Ctl_SO_DONTROUTE": optname;
+		  val LINGER = _const "Socket_Ctl_SO_LINGER": optname;
+		  val BROADCAST = _const "Socket_Ctl_SO_BROADCAST": optname;
+		  val OOBINLINE = _const "Socket_Ctl_SO_OOBINLINE": optname;
+		  val SNDBUF = _const "Socket_Ctl_SO_SNDBUF": optname;
+		  val RCVBUF = _const "Socket_Ctl_SO_RCVBUF": optname;
+		  val TYPE = _const "Socket_Ctl_SO_TYPE": optname;
+		  val ERROR = _const "Socket_Ctl_SO_ERROR": optname;
+
+		  val getPeerName =
+		     _ffi "Socket_Ctl_getPeerName": sock * pre_sock_addr * int ref -> int;
+		  val getSockName =
+		     _ffi "Socket_Ctl_getSockName": sock * pre_sock_addr * int ref -> int;
+
+		  val NBIO = _const "Socket_Ctl_FIONBIO": request;
+		  val NREAD = _const "Socket_Ctl_FIONREAD": request;
+		  val ATMARK = _const "Socket_Ctl_SIOCATMARK": request;
 	       end
 
-	    structure Host =
+	    val familyOfAddr = _ffi "Socket_familyOfAddr": sock_addr -> AF.addr_family;
+	    val bind = _ffi "Socket_bind": sock * sock_addr * int -> int;
+	    val listen = _ffi "Socket_listen": sock * int -> int;
+	    val connect = _ffi "Socket_connect": sock * sock_addr * int -> int;
+	    val accept = _ffi "Socket_accept": sock * pre_sock_addr * int ref -> int;
+	    val close = _ffi "Socket_close": sock -> int;
+
+	    type how = int
+	    val SHUT_RD = _const "Socket_SHUT_RD": how;
+	    val SHUT_WR = _const "Socket_SHUT_WR": how;
+	    val SHUT_RDWR = _const "Socket_SHUT_RDWR": how;
+	    val shutdown = _ffi "Socket_shutdown": sock * how -> int;
+
+	    type flags = word
+	    val MSG_DONTROUTE = _const "Socket_MSG_DONTROUTE": flags;
+	    val MSG_OOB = _const "Socket_MSG_OOB": flags;
+	    val MSG_PEEK = _const "Socket_MSG_PEEK": flags;
+
+	    val send = _ffi "Socket_send": sock * word8 vector * 
+                                           int * int * word -> int;
+	    val sendTo = _ffi "Socket_sendTo": sock * word8 vector * 
+                                               int * int * word *
+                                               sock_addr * int -> int;
+	    val recv = _ffi "Socket_recv": sock * word8 array * 
+                                           int * int * word -> int;
+	    val recvFrom = _ffi "Socket_recvFrom": sock * word8 array * 
+	                                           int * int * word *
+                                                   pre_sock_addr * int ref -> int;
+
+	    structure GenericSock =
 	       struct
-		  val name = _ffi "Socket_Host_name": unit -> cstring;
-		  val getByAddress =
-		     _ffi "Socket_Host_getByAddress": address -> bool;
-		  val getByName =
-		     _ffi "Socket_Host_getByName": nullString -> bool;
+		  val socket = 
+		     _ffi "GenericSock_socket": AF.addr_family * 
+		                                SOCK.sock_type * 
+						int -> int;
+		  val socketPair = 
+		     _ffi "GenericSock_socketPair": AF.addr_family * 
+		                                    SOCK.sock_type * 
+						    int * 
+						    int ref * int ref -> int;
 	       end
 
-	    val accept = _ffi "Socket_accept": socket -> fd;
-	    val connect = _ffi "Socket_connect": string * port -> socket;
-	    val listen = _ffi "Socket_listen": port ref * socket ref -> int;
-	    type how = int;
-	    val shutdownRead = _const "Socket_shutdownRead": how;
-	    val shutdownWrite = _const "Socket_shutdownWrite": how;
-	    val shutdownReadWrite = _const "Socket_shutdownReadWrite": how;
-	    val shutdown = _ffi "Socket_shutdown": fd * how -> int;
+	    structure INetSock =
+	       struct
+		  val toAddr = _ffi "INetSock_toAddr": NetHostDB.in_addr * int * 
+                                                       pre_sock_addr * int ref -> unit;
+		  val fromAddr = _ffi "INetSock_fromAddr": sock_addr -> unit;
+		  val getInAddr = _ffi "INetSock_getInAddr": NetHostDB.pre_in_addr -> 
+                                                             unit;
+		  val getPort = _ffi "INetSock_getPort": unit -> int;
+		  structure UDP =
+		     struct
+		     end
+		  structure TCP =
+		     struct
+		        open CtlExtra
+		        val TCP = _const "Socket_INetSock_TCP_SOL_TCP": level;
+			val NODELAY = _const "Socket_INetSock_TCP_SO_NODELAY": optname;
+		     end
+	       end
+	    structure UnixSock =
+	       struct
+		  val toAddr = _ffi "UnixSock_toAddr": nullString * int *
+                                                       pre_sock_addr * int ref -> unit;
+		  val pathLen = _ffi "UnixSock_pathLen": sock_addr -> int;
+		  val fromAddr = _ffi "UnixSock_fromAddr": sock_addr * 
+                                                           char array * int -> unit;
+		  structure Strm =
+		     struct
+		     end
+		  structure DGrm =
+		     struct
+		     end
+	       end
 	 end
 
       structure Stdio =

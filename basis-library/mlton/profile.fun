@@ -1,24 +1,24 @@
-functor Profile (S:
-		 sig
-		    val isOn: bool
-		    structure Data:
-		       sig
-			  type t (* = pointer *)
+functor MLtonProfile (S:
+		      sig
+			 val isOn: bool
+			 structure Data:
+			    sig
+			       type t (* = pointer *)
 	       
-			  val dummy: t
-			  val free: t -> unit
-			  val malloc: unit -> t
-			  val reset: t -> unit
-			  val write: t * word (* fd *) -> unit
-		       end
-		    val current: unit -> Data.t
-		    val setCurrent: Data.t -> unit
-		 end): sig
-			  include MLTON_PROFILE
-			  val cleanAtExit: unit -> unit
-			  val cleanAtLoadWorld: unit -> unit
-			  val init: unit -> unit
-		       end =
+			       val dummy: t
+			       val free: t -> unit
+			       val malloc: unit -> t
+			       val reset: t -> unit
+			       val write: t * word (* fd *) -> unit
+			    end
+			 val current: unit -> Data.t
+			 val setCurrent: Data.t -> unit
+		      end): sig
+                               include MLTON_PROFILE
+                               val cleanAtExit: unit -> unit
+			       val cleanAtLoadWorld: unit -> unit
+			       val init: unit -> unit
+			    end =
 struct
 
 open S

@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure Signal: MLTON_SIGNAL =
+structure MLtonSignal: MLTON_SIGNAL =
 struct
 
 open Posix.Signal
@@ -62,7 +62,7 @@ structure Handler =
    struct
       datatype t =
 	 Default
-       | Handler of unit Thread.t -> unit Thread.t
+       | Handler of unit MLtonThread.t -> unit MLtonThread.t
        | Ignore
    end
 
@@ -139,7 +139,7 @@ structure Handler =
 	     * the topLevelHandler, which is installed in thread.sml.
 	     *)
 	    val () =
-	       Thread.setHandler
+	       MLtonThread.setHandler
 	       (fn t =>
 		Array.foldli
 		(fn (s, h, t) =>
@@ -176,6 +176,6 @@ fun setHandler (s, h) =
 fun suspend m =
    (Mask.create m
     ; Prim.suspend ()
-    ; Thread.switchToHandler ())
+    ; MLtonThread.switchToHandler ())
    
 end

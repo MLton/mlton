@@ -41,7 +41,6 @@ void NetHostDB_Entry_addrsN(Int n, Pointer addr) {
 	return;
 }
 
-
 Int NetHostDB_getByAddress(Pointer addr, Int len) {
 	hostent = gethostbyaddr(addr, len, AF_INET);
 	return (hostent != NULL and hostent->h_name != NULL);

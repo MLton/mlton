@@ -55,10 +55,8 @@ structure Basis2002:> BASIS_2002 =
       structure BoolArray2 = BoolArray2
       structure CharArray2 = CharArray2
       structure FixedInt = FixedInt
-(*
       structure GenericSock = GenericSock
       structure INetSock = INetSock
-*)
       structure IntArray = IntArray
       structure IntArraySlice = IntArraySlice
       structure IntVector = IntVector
@@ -96,13 +94,9 @@ structure Basis2002:> BASIS_2002 =
       structure Real64Vector = Real64Vector
       structure Real64VectorSlice = Real64VectorSlice
       structure Real64Array2 = Real64Array2
-(*
       structure Socket = Socket
-*)
       structure SysWord = SysWord
-(*
       structure UnixSock = UnixSock
-*)
       structure Unix = Unix
 (*
       structure WideCharArray = WideCharArray

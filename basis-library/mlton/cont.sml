@@ -1,7 +1,7 @@
-structure Cont:> MLTON_CONT =
+structure MLtonCont:> MLTON_CONT =
 struct
 
-structure Thread' = Thread
+structure Thread' = MLtonThread
 structure Thread = Primitive.Thread
 
 (* This mess with dummy is so that if callcc is ever used anywhere in the

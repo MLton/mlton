@@ -44,10 +44,8 @@ signature WORD = WORD
 (* Optional signatures *)
 signature ARRAY2 = ARRAY2 
 signature BIT_FLAGS = BIT_FLAGS 
-(*
 signature GENERIC_SOCK = GENERIC_SOCK 
 signature INET_SOCK = INET_SOCK 
-*)
 signature INT_INF = INT_INF 
 signature MONO_ARRAY2 = MONO_ARRAY2 
 signature NET_HOST_DB = NET_HOST_DB 
@@ -64,11 +62,9 @@ signature POSIX_PROCESS = POSIX_PROCESS
 signature POSIX_SIGNAL = POSIX_SIGNAL 
 signature POSIX_SYS_DB = POSIX_SYS_DB 
 signature POSIX_TTY = POSIX_TTY 
-(*
 signature SOCKET = SOCKET 
-*)
 signature UNIX = UNIX 
-(*
 signature UNIX_SOCK = UNIX_SOCK 
+(*
 signature WINDOWS = WINDOWS
 *)

@@ -27,7 +27,7 @@ structure Unix: UNIX =
     datatype exit_status = datatype Posix.Process.exit_status
     val fromStatus = Posix.Process.fromStatus
 
-    structure Mask = MLton.Signal.Mask
+    structure Mask = MLtonSignal.Mask
 
     fun ('a, 'b) protect(f: 'a -> 'b) (x: 'a): 'b =
        let val _ = Mask.block Mask.all

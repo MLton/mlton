@@ -15,10 +15,10 @@ are ignored.
 
 \subsection{The {\tt MLton} structure}
 
-The remainder of this section describes the modules {\mlton} makes available
-that are not part of the standard basis library.  As a warning, please keep in
-mind that the {\tt MLton} structure and its substructures do change from release
-to release of {\mlton}.  
+The remainder of this section describes the modules {\mlton} makes
+available that are not part of the Standard ML Basis Library.  As a
+warning, please keep in mind that the {\tt MLton} structure and its
+substructures do change from release to release of {\mlton}.
 
 \begin{verbatim}
 structure MLton:
@@ -405,7 +405,8 @@ signature MLTON_PROFILE =
 \begin{description}
 
 \entry{profile}
-a compile-time constant that is true when compiling {\tt -profile time}.
+a compile-time constant that is true when compiling {\tt -profile
+time} or {\tt -profile alloc}.
 
 \entry{type Data.t} the type of a unit of profiling data.
 
@@ -430,9 +431,9 @@ It is an error to reset a previously freed unit of profiling data.
 \entry{\tt write (x, f)}
 writes the accumulated ticks in the unit of profiling data {\tt x} to
 file {\tt f}.  It is an error to write a previously freed unit of
-profiling data.  Note: a program compiled with {\tt -profile true}
-will always write the current unit of profiling data at program exit
-to a file named {\tt mlmon.out}.
+profiling data.  Note: a program compiled with {\tt -profile time} or
+{\tt -profile alloc} will always write the current unit of profiling
+data at program exit to a file named {\tt mlmon.out}.
 
 \entry{current}
 returns the current unit of profiling data.
@@ -657,10 +658,9 @@ unmasked signal is received and handled, and then resets the mask.
 \end{description}
 
 \subsubsection{{\tt MLton.Socket}}
-This module contains a bare minimum of functionality to do TCP/IP programming.
-This module may disappear after the {\tt Socket} module of the standard basis
-library becomes available.  Or, it may remain and be implemented on top of that
-module. 
+This module contains a bare minimum of functionality to do TCP/IP
+programming.  This module is implemetned on top of the {\tt Socket}
+module of the Standard Basis Library.
 \begin{verbatim}
 signature MLTON_SOCKET =
    sig

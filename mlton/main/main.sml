@@ -471,13 +471,15 @@ fun commandLine (args: string list): unit =
 					    :: !libs),
 				  linkWithGmp]
 		  datatype debugFormat =
-		     Dwarf | Dwarf2 | Stabs
-		  val debugFormat = Stabs
+		     Dwarf | DwarfPlus | Dwarf2 | Stabs | StabsPlus
+		  val debugFormat = StabsPlus
 		  val (gccDebug, asDebug) =
 		     case debugFormat of
 			Dwarf => (["-gdwarf", "-g2"], "-Wa,--gdwarf2")
-		      | Dwarf2 => (["-gdwarf-2"], "-Wa,--gdwarf2")
-		      | Stabs => (["-g"], "-Wa,--gstabs")
+		      | DwarfPlus => (["-gdwarf+", "-g2"], "-Wa,--gdwarf2")
+		      | Dwarf2 => (["-gdwarf-2", "-g2"], "-Wa,--gdwarf2")
+		      | Stabs => (["-gstabs", "-g2"], "-Wa,--gstabs")
+		      | StabsPlus => (["-gstabs+", "-g2"], "-Wa,--gstabs")
 		  fun compileO (inputs: File.t list) =
 		     let
 			val output = maybeOut ""

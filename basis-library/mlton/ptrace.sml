@@ -1,4 +1,4 @@
-structure Ptrace: MLTON_PTRACE =
+structure MLtonPtrace: MLTON_PTRACE =
    struct
       open Primitive.Ptrace
 	 

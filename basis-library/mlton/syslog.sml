@@ -3,7 +3,7 @@
  * This will only work in MLton.
  *)
 
-structure Syslog :> MLTON_SYSLOG =
+structure MLtonSyslog :> MLTON_SYSLOG =
 struct
 
 type openflag = int

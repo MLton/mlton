@@ -1,6 +1,9 @@
+
 signature SOCKET =
   sig
-     type ('af,'sock_type) sock
+     type ('af, 'sock_type) sock
+     val sockToFD: ('af, 'sock_type) sock -> Posix.FileSys.file_desc
+     val fdToSock: Posix.FileSys.file_desc -> ('af, 'sock_type) sock
      type 'af sock_addr
      type dgram
      type 'mode stream
@@ -65,7 +68,7 @@ signature SOCKET =
      val pollDesc: ('af, 'sock_type) sock -> OS.IO.poll_desc
      type out_flags = {don't_route : bool, oob : bool}
      type in_flags = {peek : bool, oob : bool}
-     type 'a buf = {buf : 'af, i : int, sz : int option}
+     type 'a buf = {buf : 'a, i : int, sz : int option}
      val sendVec: ('af, active stream) sock * Word8Vector.vector buf -> 
 		  int
      val sendArr: ('af, active stream) sock * Word8Array.array buf -> 
@@ -108,4 +111,63 @@ signature SOCKET =
                        Word8Vector.vector * 'sock_type sock_addr
      val recvArrFrom': ('af, dgram) sock * Word8Array.array buf * in_flags -> 
                        int * 'af sock_addr
+  end
+
+signature SOCKET_EXTRA =
+  sig
+    include SOCKET
+    val sockToWord: ('af, 'sock_type) sock -> SysWord.word
+    val wordToSock: SysWord.word -> ('af, 'sock_type) sock
+(*
+    val sockToFD: ('af, 'sock_type) sock -> Posix.FileSys.file_desc
+    val fdToSock: Posix.FileSys.file_desc -> ('af, 'sock_type) sock
+*)
+    type pre_sock_addr
+    val unpackSockAddr: 'af sock_addr -> Word8Vector.vector
+    val new_sock_addr: unit -> (pre_sock_addr * int ref * (unit -> 'af sock_addr))
+
+    structure CtlExtra:
+       sig
+	  type level = int
+	  type optname = int
+	  type request = int
+
+	  val getSockOptWord : 
+	    level * optname -> 
+	    ('af, 'sock_type) sock -> word
+	  val setSockOptWord :
+	    level * optname ->
+	    ('af, 'sock_type) sock * word -> unit
+	  val getSockOptInt : 
+	    level * optname -> 
+	    ('af, 'sock_type) sock -> int
+	  val setSockOptInt :
+	    level * optname ->
+	    ('af, 'sock_type) sock * int -> unit
+	  val getSockOptBool : 
+	    level * optname -> 
+	    ('af, 'sock_type) sock -> bool
+	  val setSockOptBool :
+	    level * optname ->
+	    ('af, 'sock_type) sock * bool -> unit
+
+	  val getIOCtlWord : 
+	    request -> 
+	    ('af, 'sock_type) sock -> word
+	  val setIOCtlWord :
+	    request ->
+	    ('af, 'sock_type) sock * word -> unit
+	  val getIOCtlInt : 
+	    request -> 
+	    ('af, 'sock_type) sock -> int
+	  val setIOCtlInt :
+	    request ->
+	    ('af, 'sock_type) sock * int -> unit
+	  val getIOCtlBool : 
+	    request -> 
+	    ('af, 'sock_type) sock -> bool
+	  val setIOCtlBool :
+	    request ->
+	    ('af, 'sock_type) sock * bool -> unit
+       end
   end

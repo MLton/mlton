@@ -1,9 +1,29 @@
-structure NetHostDB: NET_HOST_DB =
+structure NetHostDB: NET_HOST_DB_EXTRA =
    struct
       structure Prim = Primitive.NetHostDB
-     
-      type in_addr = Word8Vector.vector
-      type addr_family = int (* AF_INET *)
+
+      (* network byte order (MSB) *)
+      type pre_in_addr = Prim.pre_in_addr
+      type in_addr = Prim.in_addr
+      structure PW = Pack32Big
+      fun new_in_addr () =
+	let
+	  val ia = Word8Array.array (Prim.inAddrLen, 0wx0)
+	  fun finish () = Word8Array.vector ia
+	in
+	  (ia, finish)
+	end
+      fun inAddrToWord ia =
+	Word.fromLargeWord (PW.subVec (ia, 0))
+      fun wordToInAddr w =
+	let
+	  val (ia, finish) = new_in_addr ()
+	  val _ = PW.update (ia, 0, Word.toLargeWord w)
+	in
+	  finish ()
+	end
+      fun any () = wordToInAddr (Word.fromInt Prim.INADDR_ANY)
+      type addr_family = Prim.addr_family
       datatype entry = T of {name: string,
 			     aliases: string list,
 			     addrType: addr_family,
@@ -171,9 +191,6 @@ structure NetHostDB: NET_HOST_DB =
 	  try l
 	end
 
-(*
-      val scan = fn _ => raise (Fail "NetHostDB.scan unimplemented")
-*)
       fun fromString s = StringCvt.scanString scan s
       fun toString in_addr =
 	String.concatWith "." 

@@ -3,7 +3,7 @@ type word = Word.word
 
 signature MLTON_PROFILE =
    sig
-      structure Data: PROFILE_DATA
+      structure Data: MLTON_PROFILE_DATA
 
       val current: unit -> Data.t
       val isOn: bool (* a compile-time constant *)

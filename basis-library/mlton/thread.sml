@@ -1,4 +1,4 @@
-structure Thread:> MLTON_THREAD_EXTRA =
+structure MLtonThread:> MLTON_THREAD_EXTRA =
 struct
 
 structure Prim = Primitive.Thread
@@ -50,7 +50,7 @@ local
 		(func := NONE
 		 (* Close the atomicBegin of the thread that switched to me. *)
 		 ; atomicEnd ()
-		 ; (x () handle e => Exn.topLevelHandler e)
+		 ; (x () handle e => MLtonExn.topLevelHandler e)
 		 ; die "Thread didn't exit properly.\n")))
    val switching = ref false
 in
@@ -139,7 +139,7 @@ fun setHandler (f: unit t -> unit t): unit =
 	    loop ()
 	 end
       val p =
-	 toPrimitive (new (fn () => loop () handle e => Exn.topLevelHandler e))
+	 toPrimitive (new (fn () => loop () handle e => MLtonExn.topLevelHandler e))
       val _ = signalHandler := SOME p
    in
       Prim.setHandler p

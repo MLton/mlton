@@ -1,4 +1,4 @@
-structure Rlimit =
+structure MLtonRlimit: MLTON_RLIMIT =
    struct
       open Primitive.MLton.Rlimit
 

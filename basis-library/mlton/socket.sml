@@ -1,12 +1,9 @@
-structure Socket: MLTON_SOCKET =
+structure MLtonSocket: MLTON_SOCKET =
 struct
-
-structure Prim = Primitive.Socket
-open Prim
 
 structure Port =
    struct
-      type t = port
+      type t = int
    end
 
 structure Address =
@@ -16,66 +13,94 @@ structure Address =
 
 structure Host =
    struct
-      structure Prim = Prim.Host
-	 
       type t = {name: string}
 
-      fun get (b: bool): t option =
-	 if b
-	    then SOME {name = C.CS.toString (Prim.name ())}
-	 else NONE
+      val get: NetHostDB.entry option -> t option =
+	Option.map (fn entry => {name = NetHostDB.name entry})
 
-      val getByAddress = get o Prim.getByAddress
-      val getByName = get o Prim.getByName o String.nullTerm
+      val getByAddress = get o NetHostDB.getByAddr o NetHostDB.wordToInAddr
+      val getByName = get o NetHostDB.getByName
    end
 
-type t = socket
+type passive_socket = (INetSock.inet, Socket.passive Socket.stream) Socket.sock
+type active_socket = (INetSock.inet, Socket.active Socket.stream) Socket.sock
+type t = passive_socket
    
-val listen: unit -> port * socket =
+val listen: unit -> Port.t * passive_socket =
    fn () =>
    let
-      val port = ref 0
-      val socket = ref 0
-      val _ = Posix.Error.checkResult (Prim.listen (port, socket))
-   in (!port, !socket)
+      val sl : (INetSock.inet, Socket.passive Socket.stream) Socket.sock =
+	 INetSock.TCP.socket ()
+      val _ = Socket.Ctl.setREUSEADDR (sl, true)
+      val addr : INetSock.inet Socket.sock_addr = 
+	 INetSock.any 0
+      val _ = Socket.bind (sl, addr)
+      val _ = Socket.listen (sl, 5)
+      val addr : INetSock.inet Socket.sock_addr =
+	 Socket.Ctl.getSockName sl
+      val (in_addr : NetHostDB.in_addr, 
+	   port : int) = 
+	 INetSock.fromAddr addr
+   in
+      (port, sl)
    end
 
-val listenAt: port -> socket =
+val listenAt: Port.t -> passive_socket =
    fn port =>
    let
-      val socket = ref 0
-      val _ = Posix.Error.checkResult (Prim.listen (ref port, socket))
-   in !socket
+      val sl : (INetSock.inet, Socket.passive Socket.stream) Socket.sock =
+	 INetSock.TCP.socket ()
+      val _ = Socket.Ctl.setREUSEADDR (sl, true)
+      val addr : INetSock.inet Socket.sock_addr = 
+	 INetSock.any port
+      val _ = Socket.bind (sl, addr)
+      val _ = Socket.listen (sl, 5)
+   in
+      sl
    end
 
-fun fdToIO fd =
+fun sockToIO sock =
    let
-      val _ = Posix.Error.checkResult fd
-      val fd = Posix.FileSys.wordToFD (SysWord.fromInt fd)
+      val fd = Socket.sockToFD sock
       val ins = TextIO.newIn fd
       val out = TextIO.newOut (Posix.IO.dup fd)
    in (ins, out)
    end
 
 fun accept s =
-   let val (ins, out) = fdToIO (Prim.accept s)
-   in (Prim.Addr.address (),
-       Prim.Addr.port (),
-       ins,
-       out)
+   let
+      val (sock : (INetSock.inet, Socket.active Socket.stream) Socket.sock,
+	   addr : INetSock.inet Socket.sock_addr) =
+	 Socket.accept s
+      val (in_addr : NetHostDB.in_addr, 
+	   port : int) = 
+	 INetSock.fromAddr addr
+      val (ins, out) = sockToIO sock
+   in
+      (NetHostDB.inAddrToWord in_addr, port, ins, out)
    end
 
 fun connect (host, port) =
-   fdToIO (Prim.connect (String.nullTerm host, port))
+   let
+      val hp : NetHostDB.entry = 
+         valOf (NetHostDB.getByName host)
+      val res : (INetSock.inet, Socket.active Socket.stream) Socket.sock = 
+         INetSock.TCP.socket ()
+      val addr : INetSock.inet Socket.sock_addr =
+         INetSock.toAddr (NetHostDB.addr hp, port)
+      val _ = Socket.connect (res, addr)
+      val (ins, out) = sockToIO res
+   in 
+      (ins, out)
+   end
 
-fun shutdown (PosixPrimitive.FD n, how: int): unit =
-   PosixError.checkResult (Prim.shutdown (n, how))
+fun shutdown (fd: Posix.IO.file_desc,
+	      mode: Socket.shutdown_mode): unit =
+   Socket.shutdown (Socket.fdToSock fd, mode)
 
 fun shutdownRead ins =
-   shutdown (TextIO.inFd ins, Prim.shutdownRead)
-
+   shutdown (TextIO.inFd ins, Socket.NO_RECVS)
 fun shutdownWrite out =
    (TextIO.flushOut out
-    ; shutdown (TextIO.outFd out, Prim.shutdownWrite))
-
+    ; shutdown (TextIO.outFd out, Socket.NO_SENDS))
 end

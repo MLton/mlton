@@ -32,7 +32,7 @@ structure NetServDB: NET_SERV_DB =
 			    end
 		       else List.rev aliases
 		   val aliases = fill (0, [])
-		   val port = Prim.entryPort ()
+		   val port = Net.ntohs (Prim.entryPort ())
 		   val protocol = C.CS.toString (Prim.entryProtocol ())
 		 in
 		   SOME (T {name = name,
@@ -48,8 +48,12 @@ structure NetServDB: NET_SERV_DB =
 					       String.nullTerm proto))
 	  | NONE => get (Prim.getByNameNull (String.nullTerm name))
 	fun getByPort (port, proto) = 
-	  case proto of
-	    SOME proto => get (Prim.getByPort (port, String.nullTerm proto))
-	  | NONE => get (Prim.getByPortNull port)
+	  let
+	    val port = Net.htons port
+	  in
+	    case proto of
+	      SOME proto => get (Prim.getByPort (port, String.nullTerm proto))
+	    | NONE => get (Prim.getByPortNull port)
+	  end
       end
    end

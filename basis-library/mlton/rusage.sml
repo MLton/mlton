@@ -1,4 +1,4 @@
-structure Rusage =
+structure MLtonRusage: MLTON_RUSAGE =
    struct
       open Primitive.MLton.Rusage
 

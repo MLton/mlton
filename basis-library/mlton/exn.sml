@@ -1,4 +1,4 @@
-structure Exn: MLTON_EXN =
+structure MLtonExn: MLTON_EXN =
    struct
       open Primitive.Exn
 
@@ -42,7 +42,7 @@ structure Exn: MLTON_EXN =
 		       ; (List.app
 			  (fn s => (message "\t"; message s; message "\n"))
 			  l)))
-	     ; Process.exit 1)
+	     ; MLtonProcess.exit 1)
 	    handle _ => (message "Toplevel handler raised exception.\n"
 			 ; Primitive.halt 1)
       end
