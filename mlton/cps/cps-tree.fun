@@ -1337,7 +1337,7 @@ structure Function =
 				       (edge (j, "", Dotted)
 					; (case jumpHandlers j of
 					      h :: _ =>
-						 edge (h, "", Dotted)
+						 edge (h, "", Dashed)
 					    | _ => ())
 					; [Jump.toString j, " (", f, args, ")"])
 			      end
@@ -1393,7 +1393,7 @@ structure Function =
 			       end
 			  | Fun {name, args, body, ...} =>
 			       (loop (body, jumpNode name,
-				      concat [Jump.toString name,
+				      concat [Jump.toString name, " ",
 					      Layout.toString
 					      (Layout.vector
 					       (Vector.map (args,

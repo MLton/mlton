@@ -99,6 +99,9 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 		  Bind {var, ty, exp} =>
 		     let
 			val exp = canon exp
+			fun replace x =
+			   (setReplace (var, SOME x)
+			    ; loopDecs decs)
 			fun keep () =
 			   Bind {var = var, ty = ty, exp = exp}
 			   :: loopDecs decs
@@ -125,9 +128,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 				       Bind {var = var, ty = ty, exp = exp}
 				       :: decs
 				    end
-			      else
-				 (setReplace (var, SOME var')
-				  ; loopDecs decs)
+			      else replace var'
 			   end
 		     in
 			case exp of
@@ -151,9 +152,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 					   * still might be a common subexp.
 					   *)
 					  lookup exp
-				     | SOME x =>
-					  (setReplace (var, SOME x)
-					   ; loopDecs decs)
+				     | SOME x => replace x
 				 datatype z = datatype Prim.Name.t
 			      in
 				 case Prim.name prim of
