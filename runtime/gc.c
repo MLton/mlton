@@ -3702,6 +3702,27 @@ static void profileTimeInit (GC_state s) {
 
 #endif
 
+/* profileEnd is for writing out an mlmon.out file even if the C code terminates
+ * abnormally, e.g. due to running out of memory.  It will only run if the usual
+ * SML profile atExit cleanup code did not manage to run.
+ */
+static GC_state profileEndState;
+
+static void profileEnd () {
+	int fd;
+	GC_state s;
+
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "profileEnd ()\n");
+	s = profileEndState;
+	if (s->profilingIsOn) {
+		fd = creat ("mlmon.out", 0666);
+		if (fd < 0)
+			diee ("Cannot create mlmon.out");
+		GC_profileWrite (s, s->profile, fd);
+	}
+}
+
 /* ---------------------------------------------------------------- */
 /*                          Initialization                          */
 /* ---------------------------------------------------------------- */
@@ -4195,19 +4216,6 @@ int GC_init (GC_state s, int argc, char **argv) {
 	worldFile = NULL;
 	unless (isAligned (s->pageSize, s->cardSize))
 		die ("page size must be a multiple of card size");
-	/* Initialize profiling. */
-	if (s->sourcesSize > 0) {
-		s->profilingIsOn = TRUE;
-		assert (s->frameSourcesSize == s->frameLayoutsSize);
-		if (s->sourceLabelsSize > 0) {
-			s->profileKind = PROFILE_TIME;
-			profileTimeInit (s);
-		} else {
-			s->profileKind = PROFILE_ALLOC;
-			s->profile = GC_profileNew (s);
-		}
-	} else
-		s->profilingIsOn = FALSE;
 	/* Process command-line arguments. */
 	i = 1;
 	if (argc > 1 and (0 == strcmp (argv [1], "@MLton"))) {
@@ -4323,6 +4331,24 @@ int GC_init (GC_state s, int argc, char **argv) {
 				uintToCommaString (s->totalRam), 
 				uintToCommaString (s->totalSwap),
 				uintToCommaString (s->ram));
+	/* Initialize profiling.  This must occur after processing command-line 
+         * arguments, because those may just be doing a show prof, in which 
+         * case we don't want to initialize the atExit.
+         */
+	if (s->sourcesSize > 0) {
+		s->profilingIsOn = TRUE;
+		assert (s->frameSourcesSize == s->frameLayoutsSize);
+		if (s->sourceLabelsSize > 0) {
+			s->profileKind = PROFILE_TIME;
+			profileTimeInit (s);
+		} else {
+			s->profileKind = PROFILE_ALLOC;
+			s->profile = GC_profileNew (s);
+		}
+		profileEndState = s;
+		atexit (profileEnd);
+	} else
+		s->profilingIsOn = FALSE;
 	if (s->isOriginal)
 		newWorld (s);
 	else {

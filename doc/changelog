@@ -7,6 +7,8 @@ At this point, the only missing basis library function is "use".
     time error message:
     "x86Translate.translateChunk ... strange Offset: base: ..."
   - Changed argument type of MLton.IntInf.Small from word to int.
+  - Added fix to profiling so that the mlmon.out file is written even
+    when the program terminates due to running out of memory.
 
 * 2003-06-25
   - Added {Int{8,16},Word8}{,Array,ArraySlice,Vector,VectorSlice,Array2}
