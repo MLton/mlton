@@ -148,7 +148,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 	 Vector.foreach
 	 (globals, fn Statement.T {var, exp, ...} =>
 	  case exp of
-	     Exp.Const c => setConst (valOf var, c)
+	     Exp.Const c => Option.app (var, fn x => setConst (x, c))
 	   | _ => ())
       local
 	 fun make c =
@@ -199,8 +199,11 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 		      Vector.foreach
 		      (statements, fn Statement.T {var, exp, ...} =>
 		       case exp of
-			  Exp.Const c => setConst (valOf var, c)
-			| Exp.PrimApp pa => setVarInfo (valOf var, makeVarInfo pa)
+			  Exp.Const c =>
+			     Option.app (var, fn x => setConst (x, c))
+			| Exp.PrimApp pa =>
+			     Option.app (var, fn x =>
+					 setVarInfo (x, makeVarInfo pa))
 			| _ => ())
 		   val _ = 
 		      case transfer of
@@ -309,7 +312,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 			       ; Control.diagnostic
 			         (fn () =>
 				  let open Layout
-				  in seq [Var.layout (valOf var),
+				  in seq [Option.layout Var.layout var,
 					  str " -> ",
 					  Var.layout x]
 				  end)
