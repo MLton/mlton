@@ -1,5 +1,8 @@
 Here are the changes from version 20010806 to version VERSION.
 
+* 2000-8-7
+  - MLton.Socket.shutdownWrite flushes the outstream.
+
 --------------------------------------------------------------------------------
 
 Here are the changes from version 20010706 to version 20010806.

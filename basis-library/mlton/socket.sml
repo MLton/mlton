@@ -75,6 +75,7 @@ fun shutdownRead ins =
    shutdown (TextIO.inFd ins, Prim.shutdownRead)
 
 fun shutdownWrite out =
-   shutdown (TextIO.outFd out, Prim.shutdownWrite)
+   (TextIO.flushOut out
+    ; shutdown (TextIO.outFd out, Prim.shutdownWrite))
 
 end
