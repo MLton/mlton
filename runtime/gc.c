@@ -319,9 +319,6 @@ computeSemiSize(GC_state s, W64 live, uint used, int try)
 	W64 neededLong;
 	uint needed;
 
-	if (DEBUG)
-		fprintf(stderr, "computeSemiSize  live = %llu  used = %u\n", 
-			live, used);
 	assert(not s->useFixedHeap);
 	neededLong = live * s->liveRatio;
 	if (neededLong <= (W64)s->maxSemi)
@@ -1068,8 +1065,8 @@ setMemInfo(GC_state s)
 		diee("sysinfo failed");
 	s->totalRam = sbuf.totalram;
 	s->totalSwap = sbuf.totalswap;
-	assert(s->ramSlop <= 1.0);
-	s->maxSemi = roundPage(s->ramSlop * s->totalRam / 2);
+	s->ramSlop = 0.85;
+	s->maxSemi = roundPage(s->ramSlop * (double)s->totalRam / 2);
 }
 
 void
@@ -1093,7 +1090,6 @@ GC_init(GC_state s)
 	s->minLive = 20;
 	s->numGCs = 0;
 	s->numLCs = 0;
-	s->ramSlop = 0.85;
 	s->savedThread = BOGUS_THREAD;
 	s->signalHandler = BOGUS_THREAD;
 	sigemptyset(&s->signalsHandled);
@@ -1385,19 +1381,25 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 		uint keep;
 
 		needed = (W64)s->bytesLive + bytesRequested;
-		/* Shrink new space (now fromSpace) if one of the following 
-		 * holds.
-		 * 1. The ratio of live data to semispace size is too low.
- 		 * 2. The live data fits in a semispace that is half of the
-		 *    RAM size.
-		 */
-		if (needed < (W64)s->fromSize / s->minLive)
+		/* Determine the size of new space (now fromSpace). */
+		if (needed * s->minLive < (W64)s->fromSize)
+			/* The ratio of live data to semispace size is too low,
+			 * so shrink new space.
+			 */
 			keep = roundPage(needed * s->liveRatio);
 		else if (s->fromSize > s->maxSemi
 				and needed * 2 <= (W64)s->maxSemi)
+			/* The live data fits in a semispace that is half of the
+			 * RAM size, with a factor of two to spare, so shrink
+			 * down to maxSemi.
+			 */
 			keep = s->maxSemi;
 		else
+			/* The heap is about right -- leave new space alone. */
 			keep = s->fromSize;
+		if (s->messages)
+			fprintf(stderr, "needed = %llu  keep = %u\n",
+				needed, keep);
 		if (keep < s->fromSize) {
 			if (DEBUG or s->messages) {
 				fprintf(stderr, 
@@ -1408,26 +1410,37 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			s->fromSize = keep;
 			}
 		}
-		/* Unmap old space (now toSpace) so that it will be allocated at
-                 * the next GC if one of the following holds.
-                 * 1. toSpace is smaller than fromSpace, since we won't be able 
-		 *    to use it for the next GC anyways.
-                 * 2. There is more heap than RAM (to improve memory behavior
-		 *    when swapping).
-                 * 3. We will allocate a bigger toSpace at the next GC because
-                 *    the amount of live data is large
-		 */
-		if ((s->toSize < s->fromSize)
-  		    or (s->fromSize + s->toSize > s->ramSlop * s->totalRam)
-		    or (needed > s->toSize / s->liveRatio)) {
-			if (s->messages)
-				fprintf(stderr, "Unmapping old space\n");
-			smunmap(s->toBase, s->toSize);
-			s->toBase = NULL;
-		} else {
-		        /* shrink toSpace so that s->toSize == s->fromSize */
-			smunmap(s->toBase + s->fromSize, s->toSize - s->fromSize);
-	 		s->toSize = s->fromSize;
+		/* Determine the size of old space, and possibly unmap it. */
+		if (s->toSize < s->fromSize)
+			/* toSpace is smaller than fromSpace, so we won't be
+			 * able to use it for the next GC anyways.
+			 */
+			keep = 0;
+		else if (s->fromSize > s->maxSemi)
+			/* Holding on to toSpace may cause swapping. */
+			keep = 0;
+		else if (s->fromSize == s->maxSemi)
+			/* We fit in memory, so keep spaces at s->maxSemi. */
+			keep = s->fromSize;
+	        /* s->fromSize <= s->toSize and s->fromSize < s->maxSemi */
+		else if (needed * s->maxLive > (W64)s->toSize)
+			/* toSpace is too small */
+			keep = 0;
+		else
+ 			/* toSpace is about right, so make it the same size as
+			 * fromSpace.
+			 */
+			keep = s->fromSize;
+		assert (keep <= s->toSize);
+		if (keep < s->toSize) {
+			if (DEBUG or s->messages) {
+				fprintf(stderr, 
+					"Shrinking old space at %x to %u bytes.\n",
+					(uint)s->toBase , keep);
+			assert(keep <= s->toSize);
+			smunmap(s->toBase + keep, s->toSize - keep);
+			s->toSize = keep;
+			}
 		}
 	}
 	setLimit(s);
