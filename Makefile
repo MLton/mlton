@@ -67,6 +67,7 @@ script:
 support:
 	$(MAKE) dirs
 	mv $(COMP)/$(AOUT) $(LIB)
+	cd basis-library && $(MAKE) clean
 	cp -pR basis-library $(LIB)
 	$(MAKE) script
 	$(MAKE) runtime
