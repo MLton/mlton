@@ -652,7 +652,7 @@ signature X86 =
 	  | FltAssume of {assumes: {memloc: MemLoc.t, 
 				    weight: int,
 				    sync: bool} list}
-	    (* Ensure that memloc is in the register, possibly reserverd; 
+	    (* Ensure that memloc is in the register, possibly reserved; 
 	     * used at bot of basic blocks to establish passing convention,
 	     * also used before C calls to set-up %esp.
 	     *)

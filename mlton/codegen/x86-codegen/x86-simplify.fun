@@ -1171,15 +1171,37 @@ struct
 					 size})]],
 		finish, 
 		transfer}
-	     => if case finish
-		     of (Assembly.Instruction 
-			 (Instruction.BinAL
-			  {oper = Instruction.ADC, ...}))::_ => false
-		      | (Assembly.Instruction 
-			 (Instruction.BinAL
-			  {oper = Instruction.SBB, ...}))::_ => false
-		      | _ => true
-		  then let
+	     => if (case List.fold
+		         (finish, (false, false), fn (asm, (b, b')) =>
+			  case asm
+			    of Assembly.Comment _ => (b, b')
+			     | Assembly.Instruction
+			       (Instruction.BinAL
+				{oper = Instruction.ADC, ...})
+			     => (true, if b then b' else true)
+			     | Assembly.Instruction
+			       (Instruction.BinAL
+				{oper = Instruction.SBB, ...})
+			     => (true, if b then b' else true)
+			     | Assembly.Instruction
+			       (Instruction.SETcc
+				{condition = Instruction.C, ...})
+			     => (true, if b then b' else true)
+			     | Assembly.Instruction
+			       (Instruction.SETcc
+				{condition = Instruction.NC, ...})
+			     => (true, if b then b' else true)
+			     | _ => (true, b'))
+		      of (_, true) => true
+		       | (false, _) => (case transfer
+					  of Transfer.Iff
+					     {condition = Instruction.C, ...} => true
+					   | Transfer.Iff
+					     {condition = Instruction.NC, ...} => true
+					   | _ => false)
+		       | _ => false)
+		  then NONE
+		  else let
 			 val oper
 			   = case (oper, getImmediate1 (Immediate.destruct immediate))
 			       of (Instruction.ADD, SOME false) => Instruction.INC
@@ -1206,7 +1228,6 @@ struct
 				statements = statements,
 				transfer = transfer})
 		       end
-		  else NONE
 	     | _ => Error.bug "Peephole: elimAddSub1"
  
 	val (callback,elimAddSub1_msg) 

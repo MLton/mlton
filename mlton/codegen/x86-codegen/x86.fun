@@ -584,7 +584,10 @@ struct
 	  = fn T {immediate, ...} => immediate
 
 	fun clearAll ()
+(*
 	  = (table := HashSet.new {hash = hash})
+*)
+	  = ()
       end
 
       val const = construct o Const
@@ -867,12 +870,15 @@ struct
 	     => memloc
 
 	fun clearAll ()
+(*
 	  = (HashSet.foreach
 	     (!table, 
 	      fn T {plist, ...} 
 	       => PropertyList.clear plist) ;
 	     table := HashSet.new {hash = hash} ;
 	     Counter.reset (counter, 0))
+*)
+	  = ()
       end
 
       val rec mayAliasImmIndex 
