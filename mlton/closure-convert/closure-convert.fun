@@ -196,7 +196,9 @@ fun closureConvert
 	 varInfo
       val varExpInfo = varInfo o SvarExp.var
       val isGlobal = ! o #isGlobal o varInfo
-      val isGlobal = Trace.trace ("isGlobal", Var.layout, Bool.layout) isGlobal
+      val isGlobal =
+	 Trace.trace ("ClosureConvert.isGlobal", Var.layout, Bool.layout)
+	 isGlobal
       val value = #value o varInfo
       val varExp = value o SvarExp.var
       val expValue = varExp o Sexp.result

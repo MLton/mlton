@@ -62,21 +62,15 @@ structure Handler =
 	    val ignore = checkResult o Prim.ignore
 	    val handlee = checkResult o Prim.handlee
 	    fun msg s = TextIO.output (TextIO.stdErr, s)
-
 	    val handlers =
 	       Array.tabulate (Prim.numSignals, fn s =>
 			       if Prim.isDefault s
 				  then Default
 			       else Ignore)
-
-	    fun message s =
-	       TextIO.output (TextIO.stdErr, concat [s, "\n"])
-
 	    val () =
 	       Cleaner.addNew
 	       (Cleaner.atSaveWorld, fn () =>
 		Array.modify (fn _ => Default) handlers)
-	       
 	    val () =
 	       Cleaner.addNew
 	       (Cleaner.atLoadWorld, fn () =>
@@ -86,9 +80,7 @@ structure Handler =
 		    then ()
 		 else Array.update (handlers, s, Ignore))
 		(handlers, 0, NONE))
-
 	    fun getHandler s = Array.sub (handlers, s)
-
 	    (* As far as C is concerned, there is only one signal handler.
 	     * As soon as possible after a C signal is received, this signal
 	     * handler walks over the array of all SML handlers, and invokes any
@@ -112,19 +104,21 @@ structure Handler =
 		  | _ => t)
 		t
 		(handlers, 0, NONE))
-
 	    fun setHandler (s, h) =
-	       let val old = getHandler s
+	       let
+		  val old = getHandler s
 		  val _ = Array.update (handlers, s, h)
-	       in case (old, h) of
-		  (Default, Default) => ()
-		| (Ignore, Ignore) => ()
-		| (Handler _, Handler _) => ()
-		| (_, Default) => default s
-		| (_, Ignore) => ignore s
-		| (_, Handler _) => handlee s
+	       in
+		  case (old, h) of
+		     (Default, Default) => ()
+		   | (Ignore, Ignore) => ()
+		   | (Handler _, Handler _) => ()
+		   | (_, Default) => default s
+		   | (_, Ignore) => ignore s
+		   | (_, Handler _) => handlee s
 	       end
-	 in (getHandler, setHandler)
+	 in
+	    (getHandler, setHandler)
 	 end
    end
 
