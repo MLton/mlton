@@ -4,6 +4,7 @@ signature IMPERATIVE_IO_ARG =
       structure Array: sig
                           include MONO_ARRAY
 			  val rawArray: int -> array
+			  val unsafeSub: array * int -> elem
 		       end
       structure ArraySlice: MONO_ARRAY_SLICE
       structure Vector: sig 
@@ -294,7 +295,7 @@ fun input1 (ib as In {buf, first, last, ...}) =
    in
       if f < !last
 	 then (first := f + 1
-	       ; SOME (A.sub (buf, f)))
+	       ; SOME (A.unsafeSub (buf, f)))
       else
 	 let
 	    val In {state, ...} = ib
