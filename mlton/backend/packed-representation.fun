@@ -301,13 +301,6 @@ structure Component =
 
       val isUnit = Type.isUnit o ty
 
-      fun isUseless c =
-	 let
-	    val ty = ty c
-	 in
-	    Type.isUnit ty orelse Type.isZero ty
-	 end
-	 
       val equals: t * t -> bool =
 	 fn z =>
 	 case z of
@@ -390,8 +383,9 @@ structure Unpack =
 	    val (src, ss2) = Statement.resize (src, w')
 	    val (src, ss3) = 
 	       if Bits.equals (w, w')
-		  orelse Type.isZero (Type.dropPrefix (Operand.ty src,
-						       WordSize.bits s))
+(* 		  orelse Type.isZero (Type.dropPrefix (Operand.ty src,
+ * 						       WordSize.bits s))
+ *)
 		  then (src, [])
 	       else
 		  let
@@ -990,10 +984,14 @@ structure TupleRep =
 	 end
 
       val make =
-	 Trace.trace2 ("TupleRep.make",
-		       PointerTycon.layout,
-		       Vector.layout (Rep.layout o #rep),
-		       layout)
+	 Trace.trace2
+	 ("TupleRep.make",
+	  PointerTycon.layout,
+	  Vector.layout (fn {isMutable, rep, ty} =>
+			 Layout.record [("isMutable", Bool.layout isMutable),
+					("rep", Rep.layout rep),
+					("ty", S.Type.layout ty)]),
+	  layout)
 	 make
    end
 
@@ -1646,6 +1644,7 @@ structure TyconRep =
 			       val tag =
 				  WordX.fromIntInf (getTag (),
 						    WordSize.fromBits tagBits)
+			       val isUnit = Type.isUnit (Component.ty component)
 			       val component =
 				  Component.padToWidth (component,
 							maxSmallWidth)
@@ -1661,6 +1660,7 @@ structure TyconRep =
 			    in
 			       {component = component,
 				con = con,
+				isUnit = isUnit,
 				selects = selects,
 				tag = tag,
 				ty = ty}
@@ -1669,9 +1669,10 @@ structure TyconRep =
 			val rep = Rep.T {rep = Rep.NonPointer, ty = ty}
 			val reps =
 			   Vector.map
-			   (small, fn {component, con, selects, tag, ty, ...} =>
+			   (small, fn {component, con, isUnit, selects, tag, ty,
+				       ...} =>
 			    {con = con,
-			     rep = if Component.isUseless component
+			     rep = if isUnit
 				      then ConRep.Tag {tag = tag, ty = ty}
 				   else (ConRep.ShiftAndTag
 					 {component = component,
@@ -1949,6 +1950,7 @@ structure Value:
       val constant: 'a -> 'a t
       val fixedPoint: unit -> unit
       val get: 'a t -> 'a
+      val layout: ('a -> Layout.t) -> 'a t -> Layout.t
       val new: {compute: unit -> 'a,
 		equals: 'a * 'a -> bool,
 		init: 'a} -> 'a t
@@ -2019,6 +2021,8 @@ structure Value:
       val get =
 	 fn Constant a => a
 	  | Variable (_, r) => !r
+
+      fun layout l v = l (get v)
 
       fun set (v, a) =
 	 case v of
@@ -2262,6 +2266,9 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	  (cons, fn {args, con, ...} =>
 	   Vector.foreach (args, fn {elt, ...} =>
 			   Value.affect (typeRep elt, rep))))
+      val typeRep =
+	 Trace.trace ("typeRep", S.Type.layout, Value.layout Rep.layout)
+	 typeRep
       val () = S.Program.foreachVar (program, fn (_, t) => ignore (typeRep t))
       val () = Value.fixedPoint ()
       val conRep = ! o #rep o conInfo
@@ -2317,18 +2324,20 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	   default = default,
 	   test = test,
 	   toRtype = toRtype})
+      val tupleRep = Value.get o tupleRep
+      val tupleRep =
+	 Trace.trace ("tupleRep", S.Type.layout, TupleRep.layout) tupleRep
       fun object {args, con, dst, objectTy, oper} =
 	 let
 	    val src = makeSrc (args, oper)
 	 in
 	    case con of
-	       NONE => TupleRep.tuple (Value.get (tupleRep objectTy),
-				       {dst = dst, src = src})
+	       NONE => TupleRep.tuple (tupleRep objectTy, {dst = dst, src = src})
 	     | SOME con => ConRep.conApp (conRep con, {dst = dst, src = src})
 	 end
       fun getSelects (con, objectTy) =
 	 case con of
-	    NONE => TupleRep.selects (Value.get (tupleRep objectTy))
+	    NONE => TupleRep.selects (tupleRep objectTy)
 	  | SOME con =>
 	       case conRep con of
 		  ConRep.ShiftAndTag {selects, ...} => selects

@@ -64,19 +64,14 @@ signature REP_TYPE =
       val dePointer: t -> PointerTycon.t option
       val deReal: t -> RealSize.t option
       val defaultWord: t
-      val dropPrefix: t * Bits.t -> t
-      val dropSuffix: t * Bits.t -> t
       val equals: t * t -> bool
       val exnStack: t
-      val fragment: t * {start: Bits.t, width: Bits.t} -> t
       val fromCType: CType.t -> t
       val gcState: t
       val intInf: t
-      val isBool: t -> bool
       val isCPointer: t -> bool
       val isPointer: t -> bool
       val isUnit: t -> bool
-      val isValidInit: t * {offset: Bytes.t, ty: t} vector -> bool
       val isReal: t -> bool
       val isSubtype: t * t -> bool
       val isZero: t -> bool
@@ -94,14 +89,11 @@ signature REP_TYPE =
       val orb: t * t -> t option
       val pointer: PointerTycon.t -> t
       val pointerHeader: PointerTycon.t -> t
-      val prefix: t * Bits.t -> t
       val real: RealSize.t -> t
       val resize: t * Bits.t -> t
       val rshift: t * t -> t
       val seq: t vector -> t
-      val split: t * {lo: Bits.t} -> {hi: t, lo: t}
       val string: t
-      val suffix: t * Bits.t -> t
       val sum: t vector -> t
       val thread: t
       val toCType: t -> CType.t

@@ -120,10 +120,7 @@ structure Operand =
 	     | Var {var, ty} => seq [Var.layout var, constrain ty]
 	 end
 
-      fun cast (z, t) =
-	 if Type.isSubtype (ty z, t)
-	    then z
-	 else Cast (z, t)
+      val cast = Cast
 
       val cast = Trace.trace2 ("Operand.cast", layout, Type.layout, layout) cast
 
