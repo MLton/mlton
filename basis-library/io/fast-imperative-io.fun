@@ -67,17 +67,15 @@ functor FastImperativeIOExtra
       fun input1 (In is) =
 	case !is of
 	  Buffer b => BI.input1 b
-	| Stream s => 
-	    Option.map (fn (c,s') => (is := Stream s'; c)) (SIO.input1 s)
+	| Stream s => (case SIO.input1 s of
+			 SOME (c, s') => (is := Stream s'; c)
+		       | NONE => NONE)
       (* input1 will move past a temporary end of stream *)
       fun input1 (In is) =
 	case !is of
 	  Buffer b => BI.input1 b
-	| Stream s => let val (v, s') = SIO.inputN (s, 1)
-		      in 
-			is := Stream s';
-			if V.length v = 0 then NONE else SOME (V.sub (v, 0))
-		      end
+	| Stream s => (case SIO.input1' s of
+			 (c, s') => (is := Stream s'; c))
       fun inputN (In is, n) = 
 	case !is of
 	  Buffer b => BI.inputN (b, n)
@@ -93,7 +91,7 @@ functor FastImperativeIOExtra
       fun inputLine (In is) =
 	case !is of
 	  Buffer b => BI.inputLine b
-	| Stream s => let val (v, s') = SIO.inputAll s
+	| Stream s => let val (v, s') = SIO.inputLine s
 		      in is := Stream s'; v
 		      end
       fun canInput (In is, n) = 

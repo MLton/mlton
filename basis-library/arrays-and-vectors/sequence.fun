@@ -95,18 +95,18 @@ functor Sequence (S: sig
 	    type 'a slice = {seq: 'a sequence, start: int, len: int}
 
 	    fun length (sl: 'a slice as {len, ...}) = len
+	    fun unsafeSub (sl: 'a slice as {seq, start, ...}, i) =
+	       S.sub (seq, start +? i)
 	    fun sub (sl: 'a slice as {seq, start, len}, i) =
 	       if Primitive.safe andalso Primitive.Int.geu (i, len)
 		  then raise Subscript
-	       else S.sub (seq, start +? i)
-	    fun unsafeSub (sl: 'a slice as {seq, start, ...}, i) =
-	       S.sub (seq, start +? i)
+	       else unsafeSub (sl, i)
+	    fun unsafeUpdate' update (sl: 'a slice as {seq, start, ...}, i, x) =
+	       update (seq, start +? i, x)
 	    fun update' update (sl: 'a slice as {seq, start, len}, i, x) =
 	       if Primitive.safe andalso Primitive.Int.geu (i, len)
 		  then raise Subscript
-	       else update (seq, start +? i, x)
-	    fun unsafeUpdate' update (sl: 'a slice as {seq, start, ...}, i, x) =
-	       update (seq, start +? i, x)
+	       else unsafeUpdate' update (sl, i, x)
 	    fun full (seq: 'a sequence) : 'a slice = 
 	       {seq = seq, start = 0, len = S.length seq}
 	    fun subslice (sl: 'a slice as {seq, start, len}, start', len') = 

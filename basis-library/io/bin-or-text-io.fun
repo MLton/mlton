@@ -493,7 +493,7 @@ structure Buf =
 		  end
 	    in loop vs
 	    end handle exn => raise IO.Io {name = "<unimplemented>",
-					   function = "inputN",
+					   function = "inputAll",
 					   cause = exn}
 
       fun endOfStream (b as T {eof, ...}) =
@@ -607,13 +607,16 @@ structure StreamIO =
 
       fun input (T {pos, chain as Chain.T {buf, ...}}): vector * t =
 	 let
-	    val rest = T {pos = 0, chain = Chain.next chain}
+	    val c = Chain.next chain
+	    val rest = T {pos = 0, chain = c}
 	 in
-	    if pos < Array.length buf orelse pos = 0
+	    if pos < Array.length buf
 	       then (NativeVector.fromWord8Vector
 		     (Array.extract (buf, pos, NONE)),
 		     rest)
-	    else input rest
+	    else if Chain.isEmpty c
+	            then (NativeVector.empty, rest)
+		 else input rest
 	 end
       
       fun endOfStream (T {pos, chain as Chain.T {buf, ...}}): bool =
@@ -633,9 +636,16 @@ structure StreamIO =
 		  in if need <= available
 			then (T {pos = pos +? need, chain = chain},
 			      Array.extract (buf, pos, SOME need) :: ac)
-		     else loop (T {pos = 0, chain = Chain.next chain},
-				need -? available,
-				Array.extract (buf, pos, NONE) :: ac)
+		     else let 
+			    val c = Chain.next chain
+			  in 
+			     if Chain.isEmpty c
+			        then (T {pos = 0, chain = c}, 
+				      Array.extract (buf, pos, NONE) :: ac)
+			     else loop (T {pos = 0, chain = c},
+					need -? available,
+					Array.extract (buf, pos, NONE) :: ac)
+			  end
 		  end
 	       val (s, ac) = loop (s, n, [])
 	    in (NativeVector.fromWord8Vector

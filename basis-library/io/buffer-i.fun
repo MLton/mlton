@@ -233,7 +233,7 @@ functor BufferIExtra
 				       IO.BlockingNotSupported 
 			     | SOME readArr => 
 				 let
-				   val inp = A.array (n, someElem)
+				   val inp = Primitive.Array.array n
 				   fun fill k =
 				     if k >= size
 				       then ()
@@ -259,7 +259,9 @@ functor BufferIExtra
 					    end
 				   val i = loop size
 				 in
-				   V.tabulate (i, fn k => A.sub (inp, k))
+				   if i = n
+				     then Primitive.Vector.fromArray inp
+				     else V.tabulate (i, fn k => A.sub (inp, k))
 				 end)
 	       end
 	    
@@ -456,6 +458,7 @@ functor BufferI
 	       structure StreamIO =
 		  struct
 		     open StreamIO
+		     fun input1' _ = raise (Fail "<input1'>")
 		     fun equalsIn _ = raise (Fail "<equalsIn>")
 		     fun instreamReader _ = raise (Fail "<instreamReader>")
 		     fun mkInstream' _ = raise (Fail "<mkInstream>")

@@ -8,7 +8,6 @@ structure BinIO1: BIN_IO_EXTRA =
 		      val someElem = (0wx0: Word8.word)
 		      val lineElem = (0wx0: Word8.word)
 		      fun isLine _ = false
-		      fun hasLine _ = false
 		      structure Cleaner = Cleaner
 		    end
       structure StreamIO = StreamIOExtraFile(open S)

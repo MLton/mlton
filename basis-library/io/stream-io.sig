@@ -35,6 +35,7 @@ signature STREAM_IO_EXTRA =
    sig
       include STREAM_IO
 
+      val input1': instream -> elem option * instream
       val equalsIn: instream * instream -> bool
       val instreamReader: instream -> reader
       val mkInstream': {reader: reader,

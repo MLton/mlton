@@ -56,8 +56,8 @@ BFLAGS = -mlton "mlton"
 test: $(NAME)
 	export PATH=$(PATH):$$PATH && cd tests && ../benchmark $(BFLAGS) $(BENCH)
 
-QBENCH = barnes-hut boyer checksum count-graphs DLXSimulator fft fib hamlet imp-for knuth-bendix lexgen life logic mandelbrot matrix-multiply md5.basis-1997 md5 merge mlyacc model-elimination mpuz nucleic peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tensor.basis-1997 tensor tsp tyan vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
-QBFLAGS = -mlton "mlton{-20020923,.cvs.HEAD -basis {basis-2002,basis-1997}}"
+QBENCH = wc-input wc-input1 wc-inputLine wc-inputN wc-inputS wc-input1S wc-inputLineS wc-inputNS wc-scanStream 
+QBFLAGS = -mlton "mlton{-stable,.cvs.HEAD}"
 
 .PHONY: qtest
 qtest: $(NAME)

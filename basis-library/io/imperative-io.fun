@@ -48,16 +48,16 @@ functor ImperativeIOExtra
 
       fun input (In is) = let val (v, is') = SIO.input (!is)
 			  in is := is'; v
-			  end
+			  end 
       (* input1 will never move past a temporary end of stream *)
       fun input1 (In is) = 
-	Option.map (fn (c,is') => (is := is'; c)) (SIO.input1 (!is))
+	case SIO.input1 (!is) of
+	  SOME (c,is') => (is := is'; c)
+	| NONE => NONE
       (* input1 will move past a temporary end of stream *)
-      fun input1 (In is) = let val (v, is') = SIO.inputN (!is, 1)
-			   in 
-			     is := is';
-			     if V.length v = 0 then NONE else SOME (V.sub (v, 0))
-			   end
+      fun input1 (In is) = 
+	case SIO.input1' (!is) of
+	  (c,is') => (is := is'; c)
       fun inputN (In is, n) = let val (v, is') = SIO.inputN (!is, n)
 			      in is := is'; v
 			      end
@@ -98,6 +98,7 @@ functor ImperativeIO
 		    structure StreamIO =
 		      struct
 			open StreamIO
+			fun input1' _ = raise (Fail "<input1'>")
 			fun equalsIn _ = raise (Fail "<equalsIn>")
 			fun instreamReader _ = raise (Fail "<instreamReader>")
 			fun mkInstream' _ = raise (Fail "<mkInstream>")

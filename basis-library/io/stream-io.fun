@@ -389,15 +389,16 @@ functor StreamIOExtra
 		       if pos + n < V.length inp
 			 then let
 				val inp' = V.tabulate
-				           (n, fn i => V.sub (inp, pos + i))
+				           (n, fn i => 
+					    V.sub (inp, pos + i))
 				val inps = inp'::inps
 			      in
 				finish (inps, updatePos (is, pos + n))
 			      end
 			 else let
 				val inp' = V.tabulate
-				           (V.length inp - pos, 
-					    fn i => V.sub (inp, pos + i))
+				           (V.length inp - pos, fn i => 
+					    V.sub (inp, pos + i))
 				val inps = inp'::inps
 			      in
 				loop (updateState (is, next), 
@@ -416,17 +417,26 @@ functor StreamIOExtra
 		 loop (is, [], n)
 	       end
 
-      fun input1 (is as In {pos, state, ...}) =
+      (* input1' will move past a temporary end of stream *)
+      fun input1' (is as In {pos, state, ...}) =
 	case !state of
 	  Link {inp, next} =>
-	    SOME (V.sub (inp, pos),
-		  if pos + 1 < V.length inp
-		    then updatePos (is, pos + 1)
-		    else updateState (is, next))
+	    (SOME (V.sub (inp, pos)),
+	     if pos + 1 < V.length inp
+	       then updatePos (is, pos + 1)
+	       else updateState (is, next))
+	| Eos {next} =>
+	    (NONE, updateState (is, next))
 	| End => 
 	    let val _ = extendB "input1" is 
-	    in input1 is
+	    in input1' is
 	    end
+	| _ => (NONE, is)
+
+      (* input1 will never move past a temporary end of stream *)
+      fun input1 is =
+	case input1' is of
+	  (SOME c, is') => SOME (c, is')
 	| _ => NONE
 
       fun inputAll is =
@@ -445,9 +455,17 @@ functor StreamIOExtra
       fun inputLine is = 
 	let
 	  fun findLine (v, i) =
-	    case V.findi (fn (j, c) => j >= i andalso isLine c) v of
-	      SOME (j, _) => SOME j
-	    | NONE => NONE
+	    let
+	      val n = V.length v
+	      fun loop i =
+		if i >= n
+		  then NONE
+		  else if isLine (V.sub (v, i))
+			 then SOME i
+			 else loop (i + 1)
+	    in
+	      loop i
+	    end
 	  fun finish (inps, is, trail) =
 	    let
 	      val inps = if trail
@@ -483,7 +501,9 @@ functor StreamIOExtra
 			     loop (updateState (is, next), inps)
 			   end)
 	    | Eos {next} => 
-		finish (inps, is, List.length inps > 0)
+		if List.length inps > 0
+		  then finish (inps, is, true)
+		  else (empty, updateState (is, next))
 	    | End => 
 		let val _ = extendB "inputLine" is 
 		in loop (is, inps)

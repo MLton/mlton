@@ -7,7 +7,6 @@ structure TextIO1: TEXT_IO_EXTRA =
 		      val someElem = (#"\000": Char.char)
 		      val lineElem = (#"\n": Char.char)
 		      fun isLine c = c = lineElem
-		      val hasLine = CharVector.exists isLine
 		      structure Cleaner = Cleaner
 		    end
       structure StreamIO = StreamIOExtraFile(open S)
