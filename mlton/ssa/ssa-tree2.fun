@@ -40,6 +40,11 @@ structure Prod =
 
       fun empty () = T (Vector.new0 ())
 
+      fun fold (p, b, f) =
+	 Vector.fold (dest p, b, fn ({elt, ...}, b) => f (elt, b))
+
+      fun foreach (p, f) = Vector.foreach (dest p, f o #elt)
+
       fun isEmpty p = Vector.isEmpty (dest p)
 
       fun isMutable (T v) = Vector.exists (v, #isMutable)
