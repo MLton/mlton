@@ -655,6 +655,10 @@ fun commandLine (args: string list): unit =
 				andalso not (warnMatch)
 				andalso not (keepDefUse))
       val _ =
+	 if !codegen = Bytecode andalso !profile <> ProfileNone
+	    then usage (concat ["bytecode doesn't support profiling\n"])
+	 else ()
+      val _ =
 	 case targetOS of
 	    Darwin => ()
 	  | FreeBSD => ()

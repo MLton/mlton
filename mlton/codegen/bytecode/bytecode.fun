@@ -323,7 +323,6 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 val gcState = make "GCState"
 	 val stackTop = make "StackTop"
       end
-      val backpatches: {label: Label.t, offset: int} list ref = ref []
       val code: Word8.t list ref = ref []
       val offset = ref 0
       val emitByte: Word8.t -> unit =
@@ -377,10 +376,23 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
       fun emitCallC (index: int): unit =
 	 (emitOpcode callC
 	  ; emitWord16 (Int.toIntInf index))
+      val {get = labelInfo: Label.t -> {block: Block.t,
+					emitted: bool ref,
+					occurrenceOffsets: int list ref,
+					offset: int option ref},
+	   set = setLabelInfo, ...} =
+	 Property.getSetOnce (Label.plist,
+			      Property.initRaise ("info", Label.layout))
+      val needToEmit: Label.t list ref = ref []
       val emitLabel: Label.t -> unit =
 	 fn l =>
-	 (List.push (backpatches, {label = l, offset = !offset})
-	  ; emitWord32 0)
+	 let
+	    val {emitted, occurrenceOffsets, ...} = labelInfo l
+	    val () = List.push (occurrenceOffsets, !offset)
+	    val () = if !emitted then () else List.push (needToEmit, l)
+	 in
+	    emitWord32 0
+	 end
       val emitLabel =
 	 Trace.trace ("emitLabel", Label.layout, Unit.layout) emitLabel
       fun emitLoadWord32Zero () =
@@ -463,12 +475,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
       val emitStatement =
 	 Trace.trace ("emitStatement", Statement.layout, Unit.layout)
 	 emitStatement
-      local
-	 val gotoOp = opcode "Goto"
-      in
-	 fun goto (l: Label.t): unit =
-	    (emitOpcode gotoOp; emitLabel l)
-      end
+      val gotoOp = opcode "Goto"
       val pointerSize = WordSize.pointer ()
       fun shiftStackTop (size: Bytes.t) =
 	 primApp {args = (Vector.new2
@@ -486,7 +493,67 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		src = Operand.Label label}
 	  ; shiftStackTop size)
       fun pop (size: Bytes.t) = shiftStackTop (Bytes.~ size)
-      fun emitTransfer (t: Transfer.t): unit =
+      val () =
+	 List.foreach
+	 (chunks, fn Chunk.T {blocks, ...} =>
+	  Vector.foreach
+	  (blocks, fn block =>
+	   setLabelInfo (Block.label block,
+			 {block = block,
+			  emitted = ref false,
+			  occurrenceOffsets = ref [],
+			  offset = ref NONE})))
+      fun emitBlock (Block.T {kind, label, statements, transfer, ...}): unit =
+	 let
+	    val () =
+	       Option.app
+	       (Kind.frameInfoOpt kind,
+		fn FrameInfo.T {frameLayoutsIndex} =>
+		((* This load will never be used.  We just have it there
+		  * so the disassembler doesn't get confused when it
+		  * sees the frameLayoutsIndex.
+		  *)
+		 emitOpcode (wordOpcode (Load, CType.Word32))
+		 ; emitWord32 (Int.toIntInf frameLayoutsIndex)))
+	    val () = #offset (labelInfo label) := SOME (!offset)
+	    fun popFrame () =
+	       Option.app (Kind.frameInfoOpt kind, fn fi =>
+			   pop (Program.frameSize (program, fi)))
+	    val () =
+	       case kind of
+		  Kind.CReturn {dst, func, ...} =>
+		     (case #2 (CFunction.prototype func) of
+			 NONE => popFrame ()
+		       | SOME cty => 
+			    case dst of
+			       NONE =>
+				  (* Even if there is no dst, we still need to
+				   * pop the value returned by the C function.
+				   * We write it to a bogus location in the
+				   * callee's frame before popping back to the
+				   * caller.
+				   *)
+				  (loadStoreStackOffset (Bytes.zero, cty, Store)
+				   ; popFrame ())
+			     | SOME z =>
+				  (popFrame ()
+				   ; emitStoreOperand (Live.toOperand z)))
+		| _ => popFrame ()
+	    val () =
+	       (Vector.foreach (statements, emitStatement)
+		; emitTransfer transfer)
+	 in
+	    ()
+	 end
+      and goto (l: Label.t): unit =
+	 let
+	    val {block as Block.T {kind, ...}, emitted, ...} = labelInfo l
+	 in
+	    if !emitted orelse isSome (Kind.frameInfoOpt kind)
+	       then (emitOpcode gotoOp; emitLabel l)
+	    else (emitted := true; emitBlock block)
+	 end
+      and emitTransfer (t: Transfer.t): unit =
 	 let
 	    datatype z = datatype Transfer.t
 	 in
@@ -552,74 +619,42 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
       val emitTransfer =
 	 Trace.trace ("emitTransfer", Transfer.layout, Unit.layout)
 	 emitTransfer
-      val {get = labelOffset: Label.t -> int,
-	   set = setLabelOffset, ...} =
-	 Property.getSetOnce (Label.plist,
-			      Property.initRaise ("offset", Label.layout))
-      val () =
-	 List.foreach
-	 (chunks, fn Chunk.T {blocks, ...} =>
-	  Vector.foreach
-	  (blocks, fn Block.T {kind, label, statements, transfer, ...} =>
-	   let
-	      val () =
-		 Option.app
-		 (Kind.frameInfoOpt kind,
-		  fn FrameInfo.T {frameLayoutsIndex} =>
-		  ((* This load will never be used.  We just have it there
-		    * so the disassembler doesn't get confused when it
-		    * sees the frameLayoutsIndex.
-		    *)
-		   emitOpcode (wordOpcode (Load, CType.Word32))
-		   ; emitWord32 (Int.toIntInf frameLayoutsIndex)))
-	      val () = setLabelOffset (label, !offset)
-	      fun popFrame () =
-		 Option.app (Kind.frameInfoOpt kind, fn fi =>
-			     pop (Program.frameSize (program, fi)))
-	      val () =
-		 case kind of
-		    Kind.CReturn {dst, func, ...} =>
-		       (case #2 (CFunction.prototype func) of
-			  NONE => popFrame ()
-			| SOME cty => 
-			     case dst of
-				NONE =>
-				   (* Even if there is no dst, we still need to
-				    * pop the value returned by the C function.
-				    * We write it to a bogus location in the
-				    * callee's frame before popping back to the
-				    * caller.
-				    *)
-				   (loadStoreStackOffset (Bytes.zero, cty, Store)
-				    ; popFrame ())
-			      | SOME z =>
-				   (popFrame ()
-				    ; emitStoreOperand (Live.toOperand z)))
-		  | _ => popFrame ()
-	      val () =
-		 (Vector.foreach (statements, emitStatement)
-		  ; emitTransfer transfer)
-	   in
-	      ()
-	   end))
-      val word8ArrayToString: Word8.t array -> string =
-	 fn a => String.tabulate (Array.length a, fn i =>
-				  Char.fromWord8 (Array.sub (a, i)))
+      fun loop () =
+	 case !needToEmit of
+	    [] => ()
+	  | l :: ls =>
+	       let
+		  val () = needToEmit := ls
+		  val {block, emitted, ...} = labelInfo l
+		  val () =
+		     if !emitted
+			then ()
+		     else (emitted := true; emitBlock block)
+	       in
+		  loop ()
+	       end
+      val () = List.push (needToEmit, #label main)
+      val () = loop ()
+      fun labelOffset l = valOf (! (#offset (labelInfo l)))
       val code = Array.fromListRev (!code)
       (* Backpatch all label references. *)
       val () =
 	 List.foreach
-	 (!backpatches, fn {label, offset} =>
-	  let
-	     fun loop (i, address) =
-		if 0 = address
-		   then ()
-		else (Array.update (code, i,
-				    Word8.fromInt (Int.rem (address, 0x100)))
-		      ; loop (i + 1, Int.quot (address, 0x100)))
-	  in
-	     loop (offset, labelOffset label)
-	  end)
+	 (chunks, fn Chunk.T {blocks, ...} =>
+	  Vector.foreach
+	  (blocks, fn Block.T {label, ...} =>
+	   let
+	      val {occurrenceOffsets = r, offset, ...} = labelInfo label
+	      val offset = valOf (!offset)
+	      fun loop (i, address) =
+		 if 0 = address
+		    then ()
+		 else (Array.update (code, i,
+				     Word8.fromInt (Int.rem (address, 0x100)))
+		       ; loop (i + 1, Int.quot (address, 0x100)))
+	   in
+	      List.foreach (!r, fn occ => loop (occ, offset))
+	  end))
       val {done, file = _, print} = outputC ()
       val () =
 	 CCodegen.outputDeclarations
@@ -646,6 +681,9 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	   ; declareCallC ()
 	   ; print "\n")
       val addressNamesSize = ref 0
+      val word8ArrayToString: Word8.t array -> string =
+	 fn a => String.tabulate (Array.length a, fn i =>
+				  Char.fromWord8 (Array.sub (a, i)))
       val () =
 	 (print "static struct AddressName addressNames [] = {\n"
 	  ; (List.foreach

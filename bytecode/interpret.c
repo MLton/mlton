@@ -99,57 +99,81 @@ enum {
 
 #define loadStoreArrayOffset(mode, ty)						\
 	case opcodeSymOfTy2 (ty, mode##ArrayOffset):				\
-		index = PopReg (Word32);					\
-		base = (Pointer) (PopReg (Word32));				\
+	{									\
+		ArrayOffset arrayOffset;					\
+		Scale scale;							\
 		Fetch (arrayOffset);						\
 		Fetch (scale);							\
+		if (disassemble) goto mainLoop;					\
+		Word32 index = PopReg (Word32);					\
+		Pointer base = (Pointer) (PopReg (Word32));			\
 		loadStore (mode, ty,						\
 				*(ty*)(base + (index * scale) + arrayOffset));	\
-		goto mainLoop;
+		goto mainLoop;							\
+	}
 
-#define loadStoreContents(mode, ty)			\
-	case opcodeSymOfTy2 (ty, mode##Contents):	\
-		base = (Pointer) (PopReg (Word32));	\
-		loadStore (mode, ty, C (ty, base));	\
-		goto mainLoop;
+#define loadStoreContents(mode, ty)				\
+	case opcodeSymOfTy2 (ty, mode##Contents):		\
+		if (disassemble) goto mainLoop;			\
+	{							\
+		Pointer base = (Pointer) (PopReg (Word32));	\
+	        loadStore (mode, ty, C (ty, base));		\
+		goto mainLoop;					\
+	}
 
 #define loadStoreFrontier(mode)					\
 	case opcodeSym (mode##Frontier):			\
+		if (disassemble) goto mainLoop;			\
 		loadStore (mode, Word32, (Word32)Frontier);	\
 		goto mainLoop;
 
 #define loadGCState()					\
 	case opcodeSym (loadGCState):			\
+		if (disassemble) goto mainLoop;		\
 		StoreReg (Word32, (Word32)&gcState);	\
 		goto mainLoop;
 
 #define loadStoreGlobal(mode, ty, ty2)					\
 	case opcodeSymOfTy2 (ty, mode##Global):				\
 		Fetch (globalIndex);					\
+		if (disassemble) goto mainLoop;				\
 		loadStoreGen (mode, ty, ty2, G (ty, globalIndex));	\
 		goto mainLoop;
 
-#define loadStoreOffset(mode, ty)				\
-	case opcodeSymOfTy2 (ty, mode##Offset):			\
-		base = (Pointer) (PopReg (Word32));		\
-		Fetch (offset);					\
-		loadStore (mode, ty, O (ty, base, offset));	\
-		goto mainLoop;
+#define loadStoreOffset(mode, ty)					\
+	case opcodeSymOfTy2 (ty, mode##Offset):				\
+	{								\
+		Offset offset;						\
+		Fetch (offset);						\
+		if (disassemble) goto mainLoop;				\
+		Pointer base = (Pointer) (PopReg (Word32));		\
+		maybe loadStore (mode, ty, O (ty, base, offset));	\
+		goto mainLoop;						\
+	}
 
 #define loadStoreRegister(mode, ty, ty2)			\
 	case opcodeSymOfTy2 (ty, mode##Register):		\
+	{							\
+		RegIndex regIndex;				\
 		Fetch (regIndex);				\
+		if (disassemble) goto mainLoop;			\
 		loadStoreGen (mode, ty, ty2, R (ty, regIndex));	\
-		goto mainLoop;
+		goto mainLoop;					\
+	}
 
 #define loadStoreStackOffset(mode, ty)				\
 	case opcodeSymOfTy2 (ty, mode##StackOffset):		\
+	{							\
+		StackOffset stackOffset;			\
 		Fetch (stackOffset);				\
+		if (disassemble) goto mainLoop;			\
 		loadStore (mode, ty, S (ty, stackOffset));	\
-		goto mainLoop;
+		goto mainLoop;					\
+	}
 
 #define loadStoreStackTop(mode)					\
 	case opcodeSym (mode##StackTop):			\
+		if (disassemble) goto mainLoop;			\
 		loadStore (mode, Word32, (Word32)StackTop);	\
 		goto mainLoop;
 
@@ -158,6 +182,7 @@ enum {
 	{						\
 		Word##size t0;				\
 		Fetch (t0);				\
+		if (disassemble) goto mainLoop;		\
 		loadStore (load, Word##size, t0);	\
 		goto mainLoop;				\
 	}
@@ -168,8 +193,8 @@ enum {
 
 #define binary(ty, f)				\
 	case opcodeSym (f):			\
-	{					\
 		if (disassemble) goto mainLoop;	\
+	{					\
 		ty t0 = PopReg (ty);		\
 		ty t1 = PopReg (ty);		\
 		PushReg (ty) = f (t0, t1);	\
@@ -183,8 +208,8 @@ enum {
  */
 #define binaryCheck(ty, f)					\
 	case opcodeSym (f):					\
-	{							\
 		if (disassemble) goto mainLoop;			\
+	{							\
 		ty t0 = PopReg (ty);				\
 		ty t1 = PopReg (ty);				\
 		f (PushReg (ty), t0, t1, f##Overflow);		\
@@ -198,8 +223,8 @@ enum {
 
 #define unaryCheck(ty, f)					\
 	case opcodeSym (f):					\
-	{							\
 		if (disassemble) goto mainLoop;			\
+	{							\
 		ty t0 = PopReg (ty);				\
 		f (PushReg (ty), t0, f##Overflow);		\
 		overflow = FALSE;				\
@@ -212,8 +237,8 @@ enum {
 
 #define coerce(f1, t1, f2, t2)				\
 	case coerceOp (f2, t2):				\
-	{						\
 		if (disassemble) goto mainLoop;		\
+	{						\
 		f1 t0 = PopReg (f1);			\
 		PushReg (t1) = f2##_to##t2 (t0);	\
 		goto mainLoop;				\
@@ -221,8 +246,8 @@ enum {
 
 #define compare(ty, f)				\
 	case opcodeSym (f):			\
-	{					\
 		if (disassemble) goto mainLoop;	\
+	{					\
 		ty t0 = PopReg (ty);		\
 		ty t1 = PopReg (ty);		\
 		PushReg (Word32) = f (t0, t1);	\
@@ -231,8 +256,8 @@ enum {
 
 #define shift(ty, f)				\
 	case opcodeSym (f):			\
-	{					\
 		if (disassemble) goto mainLoop;	\
+	{					\
 		ty w = PopReg (ty);		\
 		Word32 s = PopReg (Word32);	\
 		ty w2 = f (w, s);		\
@@ -242,8 +267,8 @@ enum {
 
 #define unary(ty, f)				\
 	case opcodeSym (f):			\
-	{					\
 		if (disassemble) goto mainLoop;	\
+	{					\
 		ty t0 = PopReg (ty);		\
 		PushReg (ty) = f (t0);		\
 		goto mainLoop;			\
@@ -255,28 +280,35 @@ enum {
 		goto mainLoop;			\
 	} while (0)
 
-#define Switch(size)							\
-	case OPCODE_Switch##size:					\
-		caseTest##size = PopReg (Word##size);			\
-		assertRegsEmpty ();					\
-		Fetch (numCases);					\
-		lastCase = pc + (4 + size/8) * numCases;		\
-		while (pc < lastCase) {					\
-			if (DEBUG or disassemble)			\
-				fprintf (stderr, "\n\t  ");		\
-			Fetch (caseWord##size);				\
-			if (DEBUG or disassemble)			\
-				fprintf (stderr, " =>");		\
-			Fetch (label);					\
-			if (not disassemble 				\
-				and caseTest##size == caseWord##size)	\
-				Goto (label);				\
-		}							\
-		if (DEBUG or disassemble)				\
-			fprintf (stderr, "\n\t   _ =>"); 		\
-       		/* Default case. */					\
-		Fetch (label);						\
-		Goto (label);
+#define Switch(size)						\
+	case OPCODE_Switch##size:				\
+	{							\
+		Label label;					\
+		ProgramCounter lastCase;			\
+		Word##size test = 0;				\
+		Word16 numCases;				\
+								\
+		Fetch (numCases);				\
+		lastCase = pc + (4 + size/8) * numCases;	\
+		maybe test = PopReg (Word##size);		\
+		assertRegsEmpty ();				\
+		while (pc < lastCase) {				\
+			Word##size caseWord;			\
+			if (DEBUG or disassemble)		\
+				fprintf (stderr, "\n\t  ");	\
+			Fetch (caseWord);			\
+			if (DEBUG or disassemble)		\
+				fprintf (stderr, " =>");	\
+			Fetch (label);				\
+			if (not disassemble and test == caseWord)	\
+				Goto (label);			\
+		}						\
+		if (DEBUG or disassemble)			\
+			fprintf (stderr, "\n\t   _ =>");	\
+       		/* Default case. */				\
+		Fetch (label);					\
+		Goto (label);					\
+	}
 
 typedef char *String;
 
@@ -311,35 +343,17 @@ void displayRegs () {
 
 static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
 	int addressNameIndex;
-	Pointer base;
-	Word8 caseTest8;
-	Word16 caseTest16;
-	Word32 caseTest32;
-	Word64 caseTest64;
-	Word8 caseWord8;
-	Word16 caseWord16;
-	Word32 caseWord32;
-	Word64 caseWord64;
 	CallCIndex callCIndex;
 	Pointer code;
 	Pointer frontier;
 	GlobalIndex globalIndex;
 	int i;
-	ArrayIndex index;
-	ArrayOffset arrayOffset;
-	Label label;
-	ProgramCounter lastCase;
 	String name;
-	Word16 numCases;
-	Offset offset;
 	String *offsetToLabel = NULL;
 	Opcode opc;
 	Bool overflow = FALSE;
 	ProgramCounter pc;
 	ProgramCounter pcMax;
-	RegIndex regIndex;
-	Scale scale;
-	StackOffset stackOffset;
 	StackTop stackTop;
 
 	code = b->code;
@@ -384,13 +398,19 @@ mainLoop:
 		}
 		goto mainLoop;
  	case opcodeSym (Goto):
+	{
+		Label label;
 		Fetch (label);
  		Goto (label);
+	}
 	case opcodeSym (JumpOnOverflow):
+	{
+		Label label;
 		Fetch (label);
 		if (overflow)
 			Goto (label);
 		goto mainLoop;
+	}
  	case opcodeSym (ProfileLabel):
  		die ("ProfileLabel not implemented");
  	case opcodeSym (Raise):
@@ -422,7 +442,7 @@ void MLton_Bytecode_interpret (Bytecode b, Word32 codeOffset) {
 		fprintf (stderr, "MLton_Bytecode_interpret (0x%08x, %u)\n",
 				(uint)b,
 				(uint)codeOffset);
-//		disassemble (b, codeOffset);
+		disassemble (b, codeOffset);
 		fprintf (stderr, "interpret starting\n");
 	}
 	interpret (b, codeOffset, FALSE);
