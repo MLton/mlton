@@ -16,11 +16,16 @@ rargs=""
 case "$1" in
 @MLton)
 	shift
-	while [ $# -gt 0 -a "$1" != "--" ]; do
+	while [ "$#" -gt 0 -a "$1" != "--" ]; do
 		rargs="$rargs $1"
 		shift
 	done
-	shift
+	if [ "$#" -gt 0 -a "$1" == "--" ]; then
+		shift
+	else	
+		echo '@MLton missing --'
+		exit 1
+	fi
 	;;
 esac
 
