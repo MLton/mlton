@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
@@ -400,19 +400,20 @@ fun compare (v, v', comp) =
    let
       val n = length v
       val n' = length v'
-      fun loop i =
-	 if i = n
-	    then
-	       if i = n'
-		  then EQUAL
-	       else LESS
-	 else if i = n'
-		 then GREATER
-	      else
-		 case comp (unsafeSub (v, i), unsafeSub (v', i)) of
-		    EQUAL => loop (i + 1)
-		  | r => r
-   in loop 0
+   in
+      Relation.lexico
+      (Int.compare (n, n'), fn () =>
+       let
+	  fun loop i =
+	     if i = n
+		then EQUAL
+	     else 
+		Relation.lexico
+		(comp (unsafeSub (v, i), unsafeSub (v', i)), fn () =>
+		 loop (i + 1))
+       in
+	  loop 0
+       end)
    end
 
 fun toListRev v = fold (v, [], op ::)
@@ -586,5 +587,15 @@ fun partitioni (v, f) =
    in
      {yes = yes, no = no}
    end
+
 fun partition (v, f) = partitioni (v, f o #2)
+
+fun prefix (v, n) = tabulate (n, fn i => sub (v, i))
+
+fun removeDuplicates (v, equals) =
+   keepAllMapi (v, fn (i, x) =>
+		if i > 0 andalso equals (x, sub (v, i - 1))
+		   then NONE
+		else SOME x)
+
 end

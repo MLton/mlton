@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
@@ -105,6 +105,8 @@ signature VECTOR =
       val peeki: 'a t * (int * 'a -> bool) -> (int * 'a) option
       val peekMap: 'a t * ('a -> 'b option) -> 'b option
       val peekMapi: 'a t * ('a -> 'b option) -> (int * 'b) option
+      val prefix: 'a t * int -> 'a t
+      val removeDuplicates: 'a t * ('a * 'a -> bool) -> 'a t
       val removeFirst: 'a t * ('a -> bool) -> 'a t
       val rev: 'a t -> 'a t
       val splitLast: 'a t -> 'a t * 'a
