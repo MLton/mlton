@@ -321,7 +321,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				    | ConRep.Tuple => true
 				    | _ => false)
 	    val {info = {offsets, ...}, ...} = conInfo con
-	    val variant = Var {var = variant, ty = Type.pointer}
 	 in
 	    Vector.keepAllMap (offsets, fn off =>
 			       Option.map (off, fn {offset, ty} =>
@@ -457,8 +456,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			    ((n, tail (j, conSelects (test, c))) :: cases,
 			     numLeft - 1)
 		       | _ => (cases, numLeft))
-	       in switch {test = Offset {base = Var {var = test,
-						     ty = Type.pointer},
+	       in switch {test = Offset {base = test,
 					 bytes = tagOffset,
 					 ty = Type.int},
 			  cases = Cases.Int cases,
@@ -757,42 +755,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			add (Bind {isMutable = false,
 				   oper = oper,
 				   var = valOf var})
-		     fun assign (ty, {dst, src}) =
-			let
-			   val s = Move {dst = Operand.Offset {base = dst,
-							       bytes = 0,
-							       ty = ty},
-					 src = src}
-			in
-			   if Type.isPointer ty
-			      then
-				 let
-				    val index = Var.newNoname ()
-				    val ss =
-				       (PrimApp
-					{args = (Vector.new2
-						 (Operand.CastWord dst,
-						  Operand.word
-						  Runtime.bytesPerCardLog2)),
-					 dst = SOME (index, Type.int),
-					 prim = Prim.word32Rshift})
-				       :: (Move
-					   {dst = (Operand.Offset
-						   {base = 
-						    Operand.ArrayOffset
-						    {base = Operand.Runtime GCField.CardMap,
-						     index = index,
-						     ty = Type.char},
-						    bytes = 0,
-						    ty = Type.char}),
-					    src = Operand.char #"\001"})
-				       :: s
-				       :: ss
-				 in
-				    loop (i - 1, ss, t)
-				 end
-			   else add s
-			end
 		  in
 		     case exp of
 			S.Exp.ConApp {con, args} =>
@@ -812,13 +774,10 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			      fun a i = Vector.sub (args, i)
 			      fun targ () = toType (Vector.sub (targs, 0))
 			      fun arrayOffset (ty: Type.t): Operand.t =
-				 ArrayOffset {base = varOp (a 0),
+				 ArrayOffset {base = a 0,
 					      index = a 1,
 					      ty = ty}
-			      fun sub (ty: Type.t) =
-				 move (Offset {base = arrayOffset ty,
-					       bytes = 0,
-					       ty = ty})
+			      fun sub (ty: Type.t) = move (arrayOffset ty)
 			      fun dst () =
 				 case var of
 				    SOME x =>
@@ -915,6 +874,79 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					     numPointers = 0})),
 				   dst = dst (),
 				   prim = Prim.arrayAllocate})
+
+
+		     fun updateCard (addr, prefix, assign) =
+		        let
+			   val index = Var.newNoname ()
+			   val map = Var.newNoname ()
+			   val ss = 
+			      (PrimApp
+			       {args = (Vector.new2
+					(Operand.CastWord addr,
+					 Operand.word
+					 Runtime.bytesPerCardLog2)),
+				dst = SOME (index, Type.int),
+				prim = Prim.word32Rshift})
+			      :: (Bind {isMutable = false,
+					oper = Operand.Runtime GCField.CardMap,
+					var = map})
+			      :: (Move
+				  {dst = (Operand.ArrayOffset
+					  {base = map,
+					   index = index,
+					   ty = Type.char}),
+				   src = Operand.char #"\001"})
+			      :: assign
+			      :: ss
+			in
+			  loop (i - 1, prefix ss, t)
+			end
+		     fun arrayUpdate (ty, src) =
+		        if Type.isPointer ty
+			   then let
+				   val temp = Var.newNoname ()
+				   val tempOp = Operand.Var {var = temp,
+							     ty = Type.int}
+				   val addr = Var.newNoname ()
+				   val addrOp = Operand.Var {var = addr,
+							     ty = Type.pointer}
+				   fun prefix ss =
+				      (PrimApp
+				       {args = Vector.new2
+					       (varOp (a 1),
+					        Operand.int (Type.size ty)),
+				        dst = SOME (temp, Type.int),
+				        prim = Prim.intMul})
+				      :: (PrimApp
+					  {args = Vector.new2 (varOp (a 0), tempOp),
+					   dst = SOME (addr, Type.pointer),
+					   prim = Prim.intAdd})
+				      :: ss
+				   val assign = Move {dst = Operand.Offset
+						            {base = addr,
+							     bytes = 0,
+							     ty = ty},
+						      src = src}
+				in
+				   updateCard (addrOp, prefix, assign)
+				end
+			else add (Move {dst = arrayOffset ty,
+					src = src})
+		     fun refAssign (ty, src) =
+		        let
+			   val addr = a 0
+			   val assign = Move {dst = Operand.Offset {base = addr,
+								    bytes = 0,
+								    ty = ty},
+					      src = src}
+			in
+			   if Type.isPointer ty
+			      then updateCard (varOp addr, fn ss => ss, assign)
+			   else loop (i - 1, assign::ss, t)
+			end
+
+
 			      datatype z = datatype Prim.Name.t
 			   in
 			      case Prim.name prim of
@@ -1077,10 +1109,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			       | Array_update =>
 				    (case targ () of
 					NONE => none ()
-				      | SOME t =>
-					   assign
-					   (t, {dst = arrayOffset t,
-						src = varOp (a 2)}))
+				      | SOME ty => arrayUpdate (ty, varOp (a 2)))
 			       | FFI name =>
 				    if Option.isNone (Prim.numArgs prim)
 				       then normal ()
@@ -1155,17 +1184,12 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			       | Ref_assign =>
 				    (case targ () of
 					NONE => none ()
-				      | SOME ty =>
-					   assign
-					   (ty, {dst = Var {var = a 0,
-							    ty = Type.pointer},
-						 src = varOp (a 1)}))
+				      | SOME ty => refAssign (ty, varOp (a 1)))
 			       | Ref_deref =>
 				    (case targ () of
 					NONE => none ()
 				      | SOME ty =>
-					   move (Offset {base = Var {var = a 0,
-								     ty = Type.pointer},
+					   move (Offset {base = a 0,
 							 bytes = 0,
 							 ty = ty}))
 			       | Ref_ref =>
@@ -1305,8 +1329,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					     offset) of
 			       NONE => none ()
 			     | SOME {offset, ty} =>
-				  move (Offset {base = Var {var = tuple,
-							    ty = Type.pointer},
+				  move (Offset {base = tuple,
 						bytes = offset,
 						ty = ty}))
 		      | S.Exp.SetExnStackLocal => add SetExnStackLocal

@@ -569,6 +569,7 @@ in
    in
       val intAdd = make Name.Int_add
       val intAddCheck = make Name.Int_addCheck
+      val intMul = make Name.Int_mul
       val intMulCheck = make Name.Int_mulCheck
       val intSubCheck = make Name.Int_subCheck
    end

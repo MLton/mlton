@@ -140,7 +140,7 @@ structure Operand =
     val layout = Layout.str o toString
 
     val ty =
-       fn ArrayOffset _ => Type.pointer
+       fn ArrayOffset {ty, ...} => ty
 	| CastInt _ => Type.int
 	| CastWord _ => Type.word
 	| Char _ => Type.char

@@ -57,7 +57,7 @@ signature RSSA =
 	    datatype t =
 	       ArrayHeader of {numBytesNonPointers: int,
 			       numPointers: int}
-	     | ArrayOffset of {base: t,
+	     | ArrayOffset of {base: Var.t,
 			       index: Var.t,
 			       ty: Type.t}
 	     | CastInt of t
@@ -73,7 +73,7 @@ signature RSSA =
 	     | File (* expand by codegen into string constant *)
 	     | GCState
 	     | Line (* expand by codegen into int constant *)
-	     | Offset of {base: t,
+	     | Offset of {base: Var.t,
 			  bytes: int,
 			  ty: Type.t}
 	     | Pointer of int (* the int must be nonzero mod Runtime.wordSize. *)
@@ -82,9 +82,9 @@ signature RSSA =
 		       ty: Type.t}
 
 	    val bool: bool -> t
-	    val char: char -> t
 	    val caseBytes: t * {big: t -> 'a,
 				small: word -> 'a} -> 'a
+	    val char: char -> t
 	    val int: int -> t
 	    val layout: t -> Layout.t
 	    val foreachVar: t * (Var.t -> unit) -> unit

@@ -286,6 +286,7 @@ signature PRIM =
       val intInfEqual: t
       val intAdd: t
       val intAddCheck: t
+      val intMul: t
       val intMulCheck: t
       val intSubCheck: t
       val isCommutative: t -> bool

@@ -21,7 +21,7 @@ structure Operand =
       datatype t =
 	 ArrayHeader of {numBytesNonPointers: int,
 			 numPointers: int}
-       | ArrayOffset of {base: t,
+       | ArrayOffset of {base: Var.t,
 			 index: Var.t,
 			 ty: Type.t}
        | CastInt of t
@@ -31,7 +31,7 @@ structure Operand =
        | File
        | GCState
        | Line
-       | Offset of {base: t,
+       | Offset of {base: Var.t,
 		    bytes: int,
 		    ty: Type.t}
        | Pointer of int
@@ -53,7 +53,7 @@ structure Operand =
 		       ")"]
 	  | ArrayOffset {base, index, ty} =>
 	       concat ["X", Type.name ty, 
-		       "(", toString base, ",", Var.toString index, ")"]
+		       "(", Var.toString base, ",", Var.toString index, ")"]
 	  | CastInt z => concat ["CastInt ", toString z]
 	  | CastWord z => concat ["CastWord ", toString z]
 	  | Const c => Const.toString c
@@ -63,7 +63,7 @@ structure Operand =
 	  | Line => "<Line>"
 	  | Offset {base, bytes, ty} =>
 	       concat ["O", Type.name ty,
-		       "(", toString base, ",", Int.toString bytes, ")"]
+		       "(", Var.toString base, ",", Int.toString bytes, ")"]
 	  | Pointer n => concat ["IntAsPointer (", Int.toString n, ")"]
 	  | Runtime r => GCField.toString r
 	  | Var {var, ...} => Var.toString var
@@ -80,7 +80,7 @@ structure Operand =
 
       val ty =
 	 fn ArrayHeader _ => Type.word
-	  | ArrayOffset _ => Type.pointer
+	  | ArrayOffset {ty, ...} => ty
 	  | CastInt _ => Type.int
 	  | CastWord _ => Type.word
 	  | Const c =>
@@ -115,10 +115,10 @@ structure Operand =
 
       fun 'a foldVars (z: t, a: 'a, f: Var.t * 'a -> 'a): 'a =
 	 case z of
-	    ArrayOffset {base, index, ...} => f (index, foldVars (base, a, f))
+	    ArrayOffset {base, index, ...} => f (index, f (base, a))
 	  | CastInt z => foldVars (z, a, f)
 	  | CastWord z => foldVars (z, a, f)
-	  | Offset {base, ...} => foldVars (base, a, f)
+	  | Offset {base, ...} => f (base, a)
 	  | Var {var, ...} => f (var, a)
 	  | _ => a
 
@@ -778,7 +778,7 @@ structure Program =
 			    nbnp >= 0 andalso np >= 0
 			    
 		       | ArrayOffset {base, index, ty} =>
-			    Type.equals (Operand.ty base, Type.pointer)
+			    Type.equals (varType base, Type.pointer)
 			    andalso Type.equals (varType index, Type.int)
 		       | CastInt z => Type.equals (Operand.ty z, Type.pointer)
 		       | CastWord z => Type.equals (Operand.ty z, Type.pointer)
@@ -788,7 +788,7 @@ structure Program =
 		       | GCState => true
 		       | Line => true
 		       | Offset {base, ...} =>
-			    Type.equals (Operand.ty base, Type.pointer)
+			    Type.equals (varType base, Type.pointer)
 		       | Pointer n => 0 < Int.rem (n, Runtime.wordSize)
 		       | Runtime _ => true
 		       | Var {ty, var} => Type.equals (ty, varType var)

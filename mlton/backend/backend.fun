@@ -369,7 +369,7 @@ fun toMachine (program: Ssa.Program.t) =
 	       ArrayHeader z =>
 		  M.Operand.Uint (Runtime.typeIndexToHeader (arrayTypeIndex z))
 	     | ArrayOffset {base, index, ty} =>
-		  M.Operand.ArrayOffset {base = translateOperand base,
+		  M.Operand.ArrayOffset {base = varOperand base,
 					 index = varOperand index,
 					 ty = ty}
 	     | CastInt z => M.Operand.CastInt (translateOperand z)
@@ -381,7 +381,7 @@ fun toMachine (program: Ssa.Program.t) =
 	     | GCState => M.Operand.GCState
 	     | Line => M.Operand.Line
 	     | Offset {base, bytes, ty} =>
-		  M.Operand.Offset {base = translateOperand base,
+		  M.Operand.Offset {base = varOperand base,
 				    offset = bytes,
 				    ty = ty}
 	     | Pointer n => M.Operand.Pointer n
