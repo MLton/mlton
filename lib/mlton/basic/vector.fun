@@ -16,6 +16,9 @@ fun unfold (n, a, f) = unfoldi (n, a, f o #2)
    
 fun tabulate (n, f) = unfoldi (n, (), fn (i, ()) => (f i, ()))
 
+fun fromArray a =
+   tabulate (Pervasive.Array.length a, fn i => Pervasive.Array.sub (a, i))
+
 datatype ('a, 'b) continue =
    Continue of 'a
   | Done of 'b
@@ -54,6 +57,10 @@ end
 
 fun isEmpty a = 0 = length a
 
+fun dropPrefix (v, n) = tabulate (length v - n, fn i => sub (v, i + n))
+
+fun dropSuffix (v, n) = tabulate (n, fn i => sub (v, i))
+   
 fun new (n, x) = tabulate (n, fn _ => x)
    
 fun mapi (a, f) = tabulate (length a, fn i => f (i, unsafeSub (a, i)))
@@ -238,6 +245,15 @@ fun new4 (x0, x1, x2, x3) =
 	      | 2 => x2
 	      | 3 => x3
 	      | _ => raise Fail "new4")
+
+fun new5 (x0, x1, x2, x3, x4) =
+   tabulate (5,
+	     fn 0 => x0
+	      | 1 => x1
+	      | 2 => x2
+	      | 3 => x3
+	      | 4 => x4
+	      | _ => raise Fail "new5")
 
 fun unzip (a: ('a * 'b) t) = (map (a, #1), map (a, #2))
 

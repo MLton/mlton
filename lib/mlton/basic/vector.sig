@@ -25,6 +25,8 @@ signature VECTOR =
       val concatV: 'a t t -> 'a t
       val contains: 'a t * 'a * ('a * 'a -> bool) -> bool
       val copy: 'a t -> 'a t
+      val dropPrefix: 'a t * int -> 'a t
+      val dropSuffix: 'a t * int -> 'a t
       val equals: 'a t * 'b t * ('a * 'b -> bool) -> bool
       val exists: 'a t * ('a -> bool) -> bool
       val existsi: 'a t * (int * 'a -> bool) -> bool
@@ -61,6 +63,7 @@ signature VECTOR =
       val foreachri: 'a t * (int * 'a -> unit) -> unit
       val foreach2: 'a t * 'b t * ('a * 'b -> unit) -> unit
       val foreachR: 'a t * int * int * ('a -> unit) -> unit
+      val fromArray: 'a array -> 'a t
       val fromList: 'a list -> 'a t
       val fromListMap: 'a list * ('a -> 'b) -> 'b t
       val fromListRev: 'a list -> 'a t
@@ -92,6 +95,7 @@ signature VECTOR =
       val new2: 'a * 'a -> 'a t
       val new3: 'a * 'a * 'a -> 'a t
       val new4: 'a * 'a * 'a * 'a -> 'a t
+      val new5: 'a * 'a * 'a * 'a * 'a -> 'a t
       val peek: 'a t * ('a -> bool) -> 'a option
       val peeki: 'a t * (int * 'a -> bool) -> (int * 'a) option
       val peekMap: 'a t * ('a -> 'b option) -> 'b option
