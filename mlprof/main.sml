@@ -613,7 +613,7 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 				 File.temp {prefix = "/tmp/file", suffix = ""}
 			      val _ =
 				 Out.withClose
-				 (out, fn () =>
+				 (out, fn _ =>
 				  File.withIn
 				  (dotFile, fn ins =>
 				   let
