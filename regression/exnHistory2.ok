@@ -1,4 +1,4 @@
-unhandled exception: Fail foo
+unhandled exception: foo
 with history:
 	exnHistory2.sml:1.15
 Nonzero exit status.
