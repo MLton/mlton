@@ -21,9 +21,11 @@ signature X86_GENERATE_TRANSFERS =
   sig
     include X86_GENERATE_TRANSFERS_STRUCTS
 
-    val generateTransfers : {chunk : x86.Chunk.t,
-			     optimize : int,
-			     liveInfo : x86Liveness.LiveInfo.t,
-			     jumpInfo : x86JumpInfo.t} -> x86.Assembly.t list list
+    val generateTransfers:
+       {chunk: x86.Chunk.t,
+	optimize: int,
+	liveInfo: x86Liveness.LiveInfo.t,
+	jumpInfo: x86JumpInfo.t,
+	reserveEsp: bool} -> x86.Assembly.t list list
     val generateTransfers_totals : unit -> unit
   end

@@ -127,7 +127,8 @@ fun toMachine (program: Ssa.Program.t) =
       val program = pass ("insertLimitChecks", LimitCheck.insert, program)
       val program = pass ("insertSignalChecks", SignalCheck.insert, program)
       val program = pass ("insertArrayInits", ArrayInit.insert, program)
-      val R.Program.T {functions, main} = program
+      val program as R.Program.T {functions, main} = program
+      val handlesSignals = Rssa.Program.handlesSignals program
       (* Chunk information *)
       val {get = labelChunk, set = setLabelChunk, ...} =
 	 Property.getSetOnce (Label.plist,
@@ -863,6 +864,7 @@ fun toMachine (program: Ssa.Program.t) =
        frameOffsets = frameOffsets, 
        globals = Counter.value o globalCounter,
        globalsNonRoot = Counter.value globalPointerNonRootCounter,
+       handlesSignals = handlesSignals,
        intInfs = allIntInfs (), 
        main = main,
        maxFrameSize = maxFrameSize,

@@ -64,7 +64,7 @@
 #define Float(c, f) globaldouble[c] = f;
 #define EndFloats }
 
-#define Main(ufh, fs, bl, mfs, mfi, mg, ml)				\
+#define Main(ufh, fs, bl, mfs, mfi, mg, ml, reserveEsp)			\
 extern pointer ml;							\
 int main(int argc, char **argv) {					\
 	pointer jump;  							\
@@ -92,11 +92,18 @@ int main(int argc, char **argv) {					\
 	} else {       							\
 		jump = *(pointer*)(gcState.stackTop - WORD_SIZE); 	\
 	}								\
-	__asm__ __volatile__ 						\
-        ("movl %%esp,%0;movl %1,%%eax;movl %2,%%ebp;movl %3,%%esp;jmp *%%eax" \
-	 : "=m" (c_stackP) 						\
-	 : "m" (jump), "m" (gcState.stackTop), "m" (gcState.frontier)	\
-	 : "%ebp", "%esp");						\
+	if (reserveEsp)							\
+		__asm__ __volatile__					\
+		("movl %%esp,%0;movl %1,%%eax;movl %2,%%ebp;movl %3,%%edi;jmp *%%eax" \
+		: "=m" (c_stackP)					\
+		: "m" (jump), "m" (gcState.stackTop), "m" (gcState.frontier) \
+		: "%ebp", "%edi");					\
+	else								\
+		__asm__ __volatile__ 					\
+		("movl %%esp,%0;movl %1,%%eax;movl %2,%%ebp;movl %3,%%esp;jmp *%%eax" \
+		: "=m" (c_stackP) 					\
+ 		: "m" (jump), "m" (gcState.stackTop), "m" (gcState.frontier) \
+		: "%ebp", "%esp");					\
 	return 1;							\
 }
 

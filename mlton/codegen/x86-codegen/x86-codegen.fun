@@ -117,6 +117,7 @@ struct
 			  frameOffsets,
 			  globals,
 			  globalsNonRoot,
+			  handlesSignals,
 			  intInfs,
 			  main,
 			  maxFrameSize,
@@ -126,6 +127,12 @@ struct
 	      outputC,
 	      outputS}: unit
     = let
+	 val reserveEsp =
+	    handlesSignals
+	    andalso (case !Control.hostType of
+			Control.Cygwin => true
+		      | Control.Linux => false)
+
 	val makeC = outputC
 	val makeS = outputS
 
@@ -350,7 +357,8 @@ struct
 				    C.int maxFrameSize,
 				    C.int maxFrameLayoutIndex,
 				    magic,
-				    mainLabel],
+				    mainLabel,
+				     if reserveEsp then "TRUE" else "FALSE"],
 				 print);
 		    print "\n"
 		  end;
@@ -423,7 +431,8 @@ struct
 		   {chunk = chunk,
 		    optimize = !Control.Native.optimize,
 		    liveInfo = liveInfo,
-		    jumpInfo = jumpInfo})
+		    jumpInfo = jumpInfo,
+		    reserveEsp = reserveEsp})
 		  handle exn
 		   => (Error.bug ("x86GenerateTransfers.generateTransfers::" ^
 				  (case exn

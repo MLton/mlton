@@ -27,32 +27,48 @@ struct
   val pointerSize = x86MLton.pointerSize
   val wordSize = x86MLton.wordSize
 
-  val transferRegs
-    =
-(*
-      x86.Register.eax::
-      x86.Register.al::
-*)
-      x86.Register.ebx::
-      x86.Register.bl::
-      x86.Register.ecx::
-      x86.Register.cl::
-      x86.Register.edx:: 
-      x86.Register.dl::
-      x86.Register.edi::
-      x86.Register.esi::
-(*
-      x86.Register.esp::
-      x86.Register.ebp::
-*)
-      nil
+  val normalRegs =
+     let
+	val transferRegs
+	   =
+	   (*
+	    Register.eax::
+	    Register.al::
+	    *)
+	   Register.ebx::
+	   Register.bl::
+	   Register.ecx::
+	   Register.cl::
+	   Register.edx:: 
+	   Register.dl::
+	   Register.edi::
+	   Register.esi::
+	   (*
+	    Register.esp::
+	    Register.ebp::
+	    *)
+	   nil
+     in
+	{frontierReg = Register.esp,
+	 stackTopReg = Register.ebp,
+	 transferRegs = transferRegs}
+     end
+
+  val reserveEspRegs =
+     {frontierReg = Register.edi,
+      stackTopReg = Register.ebp,
+      transferRegs = [Register.ebx,
+		      Register.bl,
+		      Register.ecx,
+		      Register.cl,
+		      Register.edx,
+		      Register.dl,
+		      Register.esi]}
 
   val transferFltRegs : Int.t = 6
 
   val indexReg = x86.Register.eax
 
-  val stackTopReg = Register.ebp
-  val frontierReg = Register.esp
   val stackTop = x86MLton.gcState_stackTopContents
   val frontier = x86MLton.gcState_frontierContents
 
@@ -73,8 +89,13 @@ struct
   fun generateTransfers {chunk as Chunk.T {data, blocks, ...},
 			 optimize: int,
 			 liveInfo : x86Liveness.LiveInfo.t,
-			 jumpInfo : x86JumpInfo.t}
+			 jumpInfo : x86JumpInfo.t,
+			 reserveEsp: bool}
     = let
+	 val {frontierReg, stackTopReg, transferRegs} =
+	    if reserveEsp
+	       then reserveEspRegs
+	    else normalRegs
 	val allClasses = !x86MLton.Classes.allClasses
 	val livenessClasses = !x86MLton.Classes.livenessClasses
 	val livenessClasses = ClassSet.add(livenessClasses, 
@@ -96,37 +117,34 @@ struct
 	    (memlocs, 
 	     fn m => not (ClassSet.contains(holdClasses, MemLoc.class m)))
 
-	fun runtimeEntry l
-	  = AppendList.cons
-	    (Assembly.directive_assume
-	     {assumes
-	      = [{register = stackTopReg,
-		  memloc = stackTop (),
-		  weight = 1024,
-		  sync = false,
-		  reserve = false},
-		 {register = frontierReg,
-		  memloc = frontier (),
-		  weight = 2048,
-		  sync = false,
-		  reserve = false}]},
-	     l)
+	val stackAssume = {register = stackTopReg,
+			   memloc = stackTop (),
+			   weight = 1024,
+			   sync = false,
+			   reserve = false}
+	val frontierAssume = {register = frontierReg,
+			      memloc = frontier (),
+			      weight = 2048,
+			      sync = false,
+			      reserve = false}
+	val cStackAssume = {register = Register.esp,
+			    memloc = x86MLton.c_stackPContents,
+			    weight = 2048, (* ??? *)
+			    sync = false,
+			    reserve = true}
 
-	fun farEntry l
-	  = AppendList.cons
-	    (Assembly.directive_assume
-	     {assumes
-	      = [{register = stackTopReg,
-		  memloc = stackTop (),
-		  weight = 1024,
-		  sync = false,
-		  reserve = false},
-		 {register = frontierReg,
-		  memloc = frontier (),
-		  weight = 2048,
-		  sync = false,
-		  reserve = false}]},
-	     l)
+	fun blockAssumes l =
+	   let
+	      val l = frontierAssume :: stackAssume :: l
+	   in
+	      Assembly.directive_assume {assumes = if reserveEsp
+						      then cStackAssume :: l
+						   else l}
+	   end
+	   
+	fun runtimeEntry l = AppendList.cons (blockAssumes [], l)
+
+	fun farEntry l = AppendList.cons (blockAssumes [], l)
 
 	fun farTransfer live setup trans
 	  = AppendList.appends
@@ -367,27 +385,16 @@ struct
 					AppendList.fromList
 					[(* near entry & 
 					  * live transfer assumptions *)
-					 (Assembly.directive_assume
-					  {assumes
-					   = ({register = stackTopReg,
-					       memloc = stackTop (),
-					       weight = 1024,
-					       sync = false,
-					       reserve = false})::
-					   ({register = frontierReg,
-					     memloc = frontier (),
-					     weight = 2048,
-					     sync = false,
-					     reserve = false})::
-					   (List.map
-					    (getLiveRegsTransfers
-					     (liveTransfers, label),
-					     fn (memloc,register,sync)
-					      => {register = register,
-						  memloc = memloc,
-						  sync = sync, 
-						  weight = 1024,
-						  reserve = false}))}),
+					 (blockAssumes
+					  (List.map
+					   (getLiveRegsTransfers
+					    (liveTransfers, label),
+					    fn (memloc,register,sync)
+					    => {register = register,
+						memloc = memloc,
+						sync = sync, 
+						weight = 1024,
+						reserve = false}))),
 					 (Assembly.directive_fltassume
 					  {assumes
 					   = (List.map
@@ -415,27 +422,16 @@ struct
 				 AppendList.fromList
 				 [(* near entry & 
 				   * live transfer assumptions *)
-				  (Assembly.directive_assume
-				   {assumes
-				    = ({register = stackTopReg,
-					memloc = stackTop (),
-					weight = 1024,
-					sync = false,
-					reserve = false})::
-				    ({register = frontierReg,
-				      memloc = frontier (),
-				      weight = 2048,
-				      sync = false,
-				      reserve = false})::
-				    (List.map
-				     (getLiveRegsTransfers
-				      (liveTransfers, label),
-				      fn (memloc,register,sync)
-				       => {register = register,
-					   memloc = memloc,
-					   sync = sync, 
-					   weight = 1024,
-					   reserve = false}))}),
+				  (blockAssumes
+				   (List.map
+				    (getLiveRegsTransfers
+				     (liveTransfers, label),
+				     fn (memloc,register,sync)
+				     => {register = register,
+					 memloc = memloc,
+					 sync = sync, 
+					 weight = 1024,
+					 reserve = false}))),
 				  (Assembly.directive_fltassume
 				   {assumes
 				    = (List.map
@@ -618,6 +614,25 @@ struct
 		      statements,
 		      transfer]
 		   end)
+	  
+	val c_stackP = x86MLton.c_stackPContentsOperand
+
+	fun cacheEsp () =
+	   if reserveEsp
+	      then AppendList.empty
+	   else
+	      AppendList.single
+	      ((* explicit cache in case there are no args *)
+	       Assembly.directive_cache 
+	       {caches = [{register = Register.esp,
+			   memloc = valOf (Operand.deMemloc c_stackP),
+			   reserve = true}]})
+
+	fun unreserveEsp () =
+	   if reserveEsp
+	      then AppendList.empty
+	   else AppendList.single (Assembly.directive_unreserve 
+				   {registers = [Register.esp]})
 
 	datatype z = datatype Transfer.t
 	fun effectDefault (gef as GEF {generate,effect,fall})
@@ -937,8 +952,6 @@ struct
 		       = let
 			   val target = Label.fromString f
 
-			   val c_stackP
-			     = x86MLton.c_stackPContentsOperand
 			   val c_stackPDerefDouble
 			     = x86MLton.c_stackPDerefDoubleOperand
 			   val applyFFTemp
@@ -982,12 +995,7 @@ struct
 				     (Size.toBytes size) + size_args))
 			 in
 			   AppendList.appends
-			   [AppendList.single
-			    ((* explicit cache in case there are no args *)
-			     Assembly.directive_cache 
-			     {caches = [{register = Register.esp,
-					 memloc = valOf (Operand.deMemloc c_stackP),
-					 reserve = true}]}),
+			   [cacheEsp (),
 			    assembly_args,
 			    AppendList.fromList
 			    [x86.Assembly.directive_force
@@ -1035,9 +1043,7 @@ struct
 				      src = Operand.immediate_const_int size_args,
 				      size = pointerSize})
 			       else AppendList.empty),
-			    AppendList.single
-			    (Assembly.directive_unreserve 
-			     {registers = [Register.esp]}),
+			    unreserveEsp (),
 			    (* flushing at far transfer *)
 			    (farTransfer MemLocSet.empty
 			     AppendList.empty
@@ -1250,12 +1256,7 @@ struct
 			       (Size.toBytes size) + size_args))
 		   in
 		     AppendList.appends
-		     [AppendList.single
-		      ((* explicit cache in case there are no args *)
-		       Assembly.directive_cache 
-		       {caches = [{register = Register.esp,
-				   memloc = valOf (Operand.deMemloc c_stackP),
-				   reserve = true}]}),
+		     [cacheEsp (),
 		      assembly_args,
 		      AppendList.fromList
 		      [(* flushing at Ccall *)
@@ -1298,9 +1299,7 @@ struct
 				src = Operand.immediate_const_int size_args,
 				size = pointerSize})
 			 else AppendList.empty),
-		      AppendList.single
-		      (Assembly.directive_unreserve 
-		       {registers = [Register.esp]}),
+		      unreserveEsp (),
 		      fall gef
 		           {label = return,
 			    live = getLive(liveInfo, return)}]

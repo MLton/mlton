@@ -495,6 +495,7 @@ structure Program =
 			 frameOffsets: int vector vector,
 			 globals: Type.t -> int,
 			 globalsNonRoot: int,
+			 handlesSignals: bool,
 			 intInfs: (Global.t * string) list,
 			 main: {chunkLabel: ChunkLabel.t,
 				label: Label.t},
@@ -502,7 +503,8 @@ structure Program =
 			 strings: (Global.t * string) list}
 
       fun layouts (p as T {chunks, frameOffsets, globals, globalsNonRoot,
-			   main = {label, ...}, maxFrameSize, ...},
+			   handlesSignals, main = {label, ...}, maxFrameSize,
+			   ...},
 		   output': Layout.t -> unit) =
 	 let
 	    open Layout
@@ -515,6 +517,7 @@ structure Program =
 					Int.layout (globals t)])
 		      Type.all),
 		     ("globalsNonRoot", Int.layout globalsNonRoot),
+		     ("handlesSignals", Bool.layout handlesSignals),
 		     ("main", Label.layout label),
 		     ("maxFrameSize", Int.layout maxFrameSize),
 		     ("frameOffsets",
@@ -523,7 +526,7 @@ structure Program =
 	 end
 	    
       fun typeCheck (T {chunks, floats, frameOffsets, globals, globalsNonRoot,
-			intInfs, main, maxFrameSize, strings}) =
+			intInfs, main, maxFrameSize, strings, ...}) =
 	 let
 	    open Layout
 	    fun globals (name, gs, ty) =

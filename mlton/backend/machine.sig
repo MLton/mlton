@@ -222,6 +222,7 @@ signature MACHINE =
 		     frameOffsets: int vector vector,
 		     globals: Type.t -> int,
 		     globalsNonRoot: int,
+		     handlesSignals: bool,
 		     intInfs: (Global.t * string) list,
 		     main: {chunkLabel: ChunkLabel.t,
 			    label: Label.t},
