@@ -75,16 +75,15 @@ signature TYPE_ENV =
 
       type t
 
-      (* close (e, t, ts) = (ts', f) close type t with respect to environment
-       * e, and ensure that no variable in ts occurs free in e.
-       * ts' are the type variables in t that do not occur in e.
-       * f is a function that returns type variables that occur in flexible
-       * record types (which aren't known until the fields are determined, after
-       * unification is complete).
-       * if f is NONE, then there are no flexible record types in t.
+      (* close (e, t, ts, r) = {bound, mayHaveTyvars, scheme}
+       * close type t with respect to environment e, including all the tyvars in
+       * ts and ensuring than no tyvar in ts occurs free in e.
+       * bound returns the vector of type variables in t that do not occur in e,
+       * which isn't known until all flexible record fields are determined, after
+       * unification is complete.
        *)
       val close:
-	 t * Type.t * Tyvar.t vector * Region.t->
+	 t * Type.t * Tyvar.t vector * Region.t ->
 	 {bound: unit -> Tyvar.t vector,
 	  mayHaveTyvars: bool,
 	  scheme: InferScheme.t}
@@ -93,6 +92,7 @@ signature TYPE_ENV =
 	 -> {bound: unit -> Tyvar.t vector,
 	     schemes: InferScheme.t vector}
       val empty: t 
+      val extendTyvars: t * Tyvar.t vector -> t
       val extendVar: t * Var.t * InferScheme.t -> t
       val extendVarRange: t * Var.t * VarRange.t -> t
       val layout: t -> Layout.t

@@ -926,6 +926,10 @@ fun extendVarRange (e, x, r) =
       T (ref (Cons (VarRange.scheme r, e)))
    end
 
+fun extendTyvars (env, ts: Tyvar.t vector) =
+   T (ref (Cons (InferScheme.Type (Type.tuple (Vector.map (ts, Type.var))),
+		 env)))
+
 fun lookupVarRange (_, x) = getVarRange x
 
 val lookupVarRange =
@@ -958,6 +962,8 @@ fun closes (e: t, tys: Type.t vector, ensure: Tyvar.t vector, region)
       val freeTyvars: Tyvar.t list ref = ref []
       val freeUnknowns: Type.t list ref = ref []
       val flexes: Type.t list ref = ref []
+      (* Add all of the ensures. *)
+      val _ = Vector.foreach (ensure, fn a => add (freeTyvars, a, Tyvar.equals))
       (* Add all of the unknown types and all of the type variables. *)
       val _ =
 	 Vector.foreach

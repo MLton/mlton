@@ -827,6 +827,10 @@ fun infer {program = p: CoreML.Program.t,
 		   val ca = processException e
 		in
 		   (cons (fn () => [Xdec.Exception ca]),
+		    (* There is no need to extend the environment with the type
+		     * of the exception argument, since all tyvars in it must
+		     * be in scope and hence already occur in the type env.
+		     *)
 		    env)
 		end
 	   | Cdec.Fun {tyvars, decs} =>
@@ -839,9 +843,10 @@ fun infer {program = p: CoreML.Program.t,
 		   val args =
 		      Promise.lazy
 		      (fn () => Vector.map (valOf (!argsRef) (), Xtype.var))
+		   val env' = Env.extendTyvars (env, tyvars)
 		   val (decs, env') =
 		      Vector.mapAndFold
-		      (decs, env, fn ({match, profile, types, var}, env) =>
+		      (decs, env', fn ({match, profile, types, var}, env) =>
 		       let
 			  val argType = newType ()
 			  val resultType = newType ()
@@ -934,7 +939,9 @@ fun infer {program = p: CoreML.Program.t,
 				   (y, Scheme.ty (Env.lookupVar (env, y)))))})
 		 end)
 	   | Cdec.Val {tyvars, pat, exp, filePos} =>
-		inferValDec (tyvars, pat, exp, filePos, inferExp (exp, env), env)
+		inferValDec (tyvars, pat, exp, filePos,
+			     inferExp (exp, Env.extendTyvars (env, tyvars)),
+			     env)
 	     ) arg
       and inferDecs (ds: Cdec.t vector, env: Env.t): decCode * Env.t =
 	 Vector.fold (ds, (emptyDec, env), fn (d, (d', env)) =>

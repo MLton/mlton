@@ -47,7 +47,8 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	  ; set (con, {tyvars = tyvars,
 		       ty = (case arg of
 				NONE => result
-			      | SOME ty => Type.arrow (ty, result))}))
+			      | SOME ty => (checkType ty
+					    ; Type.arrow (ty, result)))}))
       fun checkConExp (c: Con.t, ts: Type.t vector): Type.t =
 	 let
 	    val _ = checkTypes ts

@@ -1,5 +1,11 @@
 Here are the changes since version 20030312.
 
+* 2003-05-18
+  - Fixed two bugs in type inference that could cause the compiler to
+    raise the TypeError exception, along with a lot of XML IL.
+    The type-check.sml regression contains simple examples of what
+    failed.
+
 * 2003-05-15
   - Fixed bug in Real.class introduced on 04-28 that cause many
     regression failures with reals when using newer gccs.
