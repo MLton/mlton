@@ -231,6 +231,9 @@ fun 'a analyze
 			       (case exn of 
 				   Fail msg => msg
 				 | _ => "")])
+      val loopStatement =
+	 Trace.trace ("Analyze.loopStatement", Statement.layout, Unit.layout)
+	 loopStatement
       val _ = coerces ("main", Vector.new0 (), #args (func main))
       val _ = Vector.foreach (globals, loopStatement)
       val _ =
