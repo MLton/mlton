@@ -1,4 +1,4 @@
-mlton (20020922.1-1) unstable; urgency=low
+mlton (VERSION.1-1) unstable; urgency=low
 
   * Took over packaging and maintenance responsibilites from Barak.
   * Moved the debian packaging stuff into the MLton CVS.

@@ -111,6 +111,7 @@ tools:
 version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
+		debian/changelog					\
 		doc/user-guide/macros.tex				\
 		mlton/control/control.sml; 				\
 	do								\
