@@ -688,7 +688,7 @@ let fun continue() : Internal.result =
 
 		) end )
 
-	val {fin,trans} = Unsafe.Vector.sub(Internal.tab, s)
+	val {fin,trans} = Vector.sub(Internal.tab, s)
 	val NewAcceptingLeaves = fin::AcceptingLeaves
 	in if l = !yybl then
 	     if trans = #trans(Vector.sub(Internal.tab,0))
@@ -704,9 +704,9 @@ let fun continue() : Internal.result =
 		     yybl := String.size (!yyb);
 		     scan (s,AcceptingLeaves,l-i0,0))
 	    end
-	  else let val NewChar = Char.ord(Unsafe.CharVector.sub(!yyb,l))
+	  else let val NewChar = Char.ord(CharVector.sub(!yyb,l))
 		val NewChar = if NewChar<128 then NewChar else 128
-		val NewState = Char.ord(Unsafe.CharVector.sub(trans,NewChar))
+		val NewState = Char.ord(CharVector.sub(trans,NewChar))
 		in if NewState=0 then action(l,NewAcceptingLeaves)
 		else scan(NewState,NewAcceptingLeaves,l+1,i0)
 	end
