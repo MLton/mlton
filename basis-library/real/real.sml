@@ -399,13 +399,14 @@ structure Real: REAL =
 					  val extra =
 					     case mode of
 						TO_NEAREST =>
-						   if IntInf.log2 r =
+						   if IntInf.> (r, 0)
+						      andalso IntInf.log2 r =
 						      Int.- (shift, 1)
 						      then 1
 						   else 0
 					      | TO_NEGINF => 0
 					      | TO_POSINF =>
-						   if IntInf.>= (r, 0)
+						   if IntInf.> (r, 0)
 						      then 1
 						   else 0
 					      | TO_ZERO => 0
