@@ -22,11 +22,11 @@ done
 
 root="$HOME/mlton"
 rpms="$root/rpms"
-src="$rpms/SOURCES/$version/src"
 date='20010706'
 date=`date +%Y%m%d`
 version="mlton-$date"
 release="1"
+src="$rpms/SOURCES/$version/src"
 
 echo 'Cleaning up'
 ss rm -rf $rpms/SOURCES/$version*			\
