@@ -106,7 +106,7 @@ for f in `ls *.sml`; do
 	*)
 			echo "testing $f"
 		echo "val _ = Main.doit ()" | cat $f.sml - > $tmpf.sml
-		$mlton -o $tmpf $flags $tmpf.sml
+		$mlton -output $tmpf $flags $tmpf.sml
 		if [ $? -ne 0 ]; then
 			compFail $f
 		fi
@@ -126,7 +126,7 @@ for f in mllex mlyacc mlprof; do
     *)
 	    echo "testing $f"
 	    gmake -W $f >/dev/null
-	    $mlton $flags -o $tmpf $f.cm
+	    $mlton $flags -output $tmpf $f.cm
 	    if [ $? -ne 0 ]; then
 			compFail $f
 	    fi
