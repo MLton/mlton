@@ -35,8 +35,19 @@ signature STREAM_IO_EXTRA =
    sig
       include STREAM_IO
 
-      val inFd: instream -> Posix.IO.file_desc
-      val outFd: outstream -> Posix.IO.file_desc
+      val equalsIn: instream * instream -> bool
+      val instreamReader: instream -> reader
+
+      val equalsOut: outstream * outstream -> bool
+      val outstreamWriter: outstream -> writer
 
       val inputLine: instream -> (vector * instream)
    end
+
+signature STREAM_IO_EXTRA_FILE =
+   sig
+      include STREAM_IO_EXTRA
+
+      val inFd: instream -> Posix.IO.file_desc
+      val outFd: outstream -> Posix.IO.file_desc
+  end

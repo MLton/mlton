@@ -1,26 +1,26 @@
 structure BinIO: BIN_IO_EXTRA =
    struct
       structure StreamIO = 
-	StreamIOExtra(structure Cleaner = Cleaner
-		      structure PrimIO = BinPrimIO
-		      structure Array = Word8Array
-		      structure Vector = Word8Vector
-		      val someElem = (0wx0: Word8.word))
-      structure StreamIOExtra = StreamIO
-      structure ImperativeIO = 
-	ImperativeIOExtra(structure StreamIO = StreamIO
-			  structure Vector = Word8Vector
+	StreamIOExtraFile(structure Cleaner = Cleaner
+			  structure PrimIO = BinPrimIO
 			  structure Array = Word8Array
-			  val mkReader = Posix.IO.mkBinReader
-			  val mkWriter = Posix.IO.mkBinWriter
-			  val chunkSize = Primitive.TextIO.bufSize
-			  val openVector = BinPrimIO.openVector
-			  val fileTypeFlags = [PosixPrimitive.FileSys.O.binary])
+			  structure Vector = Word8Vector
+			  val someElem = (0wx0: Word8.word))
+      structure SIO = StreamIO
+      structure ImperativeIO = 
+	ImperativeIOExtraFile(structure StreamIO = StreamIO
+			      structure Vector = Word8Vector
+			      structure Array = Word8Array
+			      val openVector = BinPrimIO.openVector
+			      val mkReader = Posix.IO.mkBinReader
+			      val mkWriter = Posix.IO.mkBinWriter
+			      val chunkSize = Primitive.TextIO.bufSize
+			      val fileTypeFlags = [PosixPrimitive.FileSys.O.binary])
       open ImperativeIO
 	
       structure StreamIO =
 	struct
-	  open StreamIOExtra
+	  open SIO
 	end
 
    end

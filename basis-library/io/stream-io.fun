@@ -1,6 +1,5 @@
 signature STREAM_IO_EXTRA_ARG = 
    sig
-      structure Cleaner: CLEANER
       structure PrimIO: PRIM_IO_EXTRA
       structure Array: MONO_ARRAY
       structure Vector: MONO_VECTOR
@@ -54,11 +53,12 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 				   state: state ref,
 				   buffer_mode: buffer_mode ref}
 
-      val openOutstreams : outstream list ref = ref []
-
+      fun equalsOut (os1 as Out {state = state1, ...},
+		     os2 as Out {state = state2, ...}) = state1 = state2
+	
       fun outstreamSel (Out v, sel) = sel v
-      fun writerSel (PIO.WR v, sel) = sel v
       fun outstreamWriter os = outstreamSel (os, #writer)
+      fun writerSel (PIO.WR v, sel) = sel v
       fun outstreamName os = writerSel (outstreamWriter os, #name)
 
       fun flushGen (writeSeq: {buf: 'a, i: int, sz: int option} -> int,
@@ -173,10 +173,6 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	if closed (!state)
 	  then ()
 	  else (flushOut os;
-		openOutstreams := List.filter
-                                  (fn Out {state = state', ...} =>
-				   state <> state')
-				  (!openOutstreams);
 		if terminated (!state)
 		  then (writerSel (outstreamWriter os, #close)) ()
 		  else ();
@@ -216,21 +212,15 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 
       fun mkOutstream (writer, buffer_mode) =
 	let
-	  val _ = Cleaner.addNew
-	          (Cleaner.atExit, fn () =>
-		   List.app (fn os =>
-			     closeOut os) (!openOutstreams))
 	  val bufSize = writerSel (writer, #chunkSize)
-	  val os = Out {writer = writer,
-			augmented_writer = PIO.augmentWriter writer,
-			state = ref Active,
-			buffer_mode = ref (case buffer_mode of
-					     IO.NO_BUF => NO_BUF
-					   | IO.LINE_BUF => newLineBuf bufSize
-					   | IO.BLOCK_BUF => newBlockBuf bufSize)}
-	  val _ = openOutstreams := os :: (!openOutstreams)
 	in
-	  os
+	  Out {writer = writer,
+	       augmented_writer = PIO.augmentWriter writer,
+	       state = ref Active,
+	       buffer_mode = ref (case buffer_mode of
+				    IO.NO_BUF => NO_BUF
+				  | IO.LINE_BUF => newLineBuf bufSize
+				  | IO.BLOCK_BUF => newBlockBuf bufSize)}
 	end
 
       fun getWriter (os as Out {writer, state, buffer_mode, ...}) =
@@ -242,11 +232,6 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 		           NO_BUF => IO.NO_BUF
 			 | LINE_BUF _ => IO.LINE_BUF
 			 | BLOCK_BUF _ => IO.BLOCK_BUF))
-
-      fun outFd (os as Out {writer, ...}) =
-	case writerSel (writer, #ioDesc) of
-	  SOME ioDesc => valOf (Posix.FileSys.iodToFD ioDesc)
-	| NONE => liftExn (outstreamName os) "outFd" (Fail "<no ioDesc>")
 
       datatype out_pos = OutPos of {pos: pos,
 				    outstream: outstream}
@@ -286,7 +271,8 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 				 state: state ref,
 				 tail: state ref ref}
 
-      val openInstreams : instream list ref = ref []
+      fun equalsIn (is1 as In {tail = tail1, ...}, 
+		    is2 as In {tail = tail2, ...}) = tail1 = tail2
 
       fun updateState (In {reader, augmented_reader, tail, ...}, state) =
 	In {reader = reader,
@@ -295,8 +281,8 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	    state = state}
 
       fun instreamSel (In v, sel) = sel v
-      fun readerSel (PIO.RD v, sel) = sel v
       fun instreamReader is = instreamSel (is, #reader)
+      fun readerSel (PIO.RD v, sel) = sel v
       fun instreamName is = readerSel (instreamReader is, #name)
 
       val empty = V.tabulate (0, fn _ => someElem)
@@ -386,7 +372,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 						 next = next}
 				val next = ref (Active (ref link))
 				val inp' = Vector.tabulate
-				  (n, fn i => V.sub (inp, pos + i))
+				           (n, fn i => V.sub (inp, pos + i))
 				val inps = inp'::inps
 			      in
 				finish (inps, updateState (is, next))
@@ -394,7 +380,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 			 else let
 				val inp' = Vector.tabulate
 				           (V.length inp - pos, 
-					    fn i => V.sub (inp, i))
+					    fn i => V.sub (inp, pos + i))
 			      in
 				loop (updateState (is, next), 
 				      inp'::inps, n - (V.length inp - pos))
@@ -484,10 +470,6 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	case !(!tail) of
 	  Active (ref (End)) =>
 	    (!tail := Closed;
-	     openInstreams := List.filter
-	                      (fn In {state = state', ...} =>
-			       state <> state')
-			      (!openInstreams);
 	     (readerSel (instreamReader is, #close)) ())
 	| _ => ()
 	handle exn => liftExn (instreamName is) "closeIn" exn
@@ -499,21 +481,15 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 
       fun mkInstream (reader, v) =
 	let
-	  val _ = Cleaner.addNew
-	          (Cleaner.atExit, fn () =>
-		   List.app (fn is =>
-			     closeIn is) (!openInstreams))
 	  val next = ref (Active (ref End))
 	  val this = if V.length v = 0
 		       then next
 		       else ref (Active (ref (Link {inp = v, pos = 0, next = next})))
-	  val is = In {reader = reader,
-		       augmented_reader = PIO.augmentReader reader,
-		       state = this,
-		       tail = ref next}
-	  val _ = openInstreams := is :: (!openInstreams)
 	in
-	  is
+	  In {reader = reader,
+	      augmented_reader = PIO.augmentReader reader,
+	      state = this,
+	      tail = ref next}
 	end
 
       fun getReader (is as In {reader, tail, ...}) =
@@ -521,11 +497,6 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	   Active (ref End) => !tail := Truncated
 	 | _ => liftExn (instreamName is) "getReader" IO.ClosedStream;
 	 (reader, empty))
-
-      fun inFd (is as In {reader, ...}) =
-	case readerSel (reader, #ioDesc) of
-	  SOME ioDesc => valOf (Posix.FileSys.iodToFD ioDesc)
-	| NONE => liftExn (instreamName is) "inFd" (Fail "<no ioDesc>")
 
       fun filePosIn (is as In {reader, tail, ...}) =
 	case !(!tail) of
@@ -535,6 +506,115 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	     | SOME getPos => getPos ())
 	| _ => raise IO.ClosedStream
         handle exn => liftExn (instreamName is) "filePosIn" exn
+   end
+
+signature STREAM_IO_EXTRA_FILE_ARG =
+   sig
+      structure PrimIO: PRIM_IO_EXTRA
+      structure Array: MONO_ARRAY
+      structure Vector: MONO_VECTOR
+      sharing type PrimIO.elem = Array.elem = Vector.elem
+      sharing type PrimIO.vector = Array.vector = Vector.vector
+      sharing type PrimIO.array = Array.array
+      val someElem: PrimIO.elem
+
+      structure Cleaner: CLEANER
+   end
+
+functor StreamIOExtraFile(S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
+   struct
+      open S
+
+      structure PIO = PrimIO
+      structure V = Vector
+
+      structure StreamIO = StreamIOExtra(open S)
+      open StreamIO
+
+      structure SIO = StreamIO
+
+      structure PFS = Posix.FileSys
+
+      fun liftExn name function cause = raise IO.Io {name = name,
+						     function = function,
+						     cause = cause}
+
+      (*---------------*)
+      (*   outstream   *)
+      (*---------------*)
+
+      fun writerSel (PIO.WR v, sel) = sel v
+      fun outstreamName os = writerSel (outstreamWriter os, #name)
+
+      fun outFd os =
+	case writerSel (outstreamWriter os, #ioDesc) of
+	  SOME ioDesc => valOf (Posix.FileSys.iodToFD ioDesc)
+	| NONE => liftExn (outstreamName os) "outFd" (Fail "<no ioDesc>")
+
+      val openOutstreams : outstream list ref = ref []
+      val mkOutstream =
+	let	
+	  val _ = Cleaner.addNew
+	          (Cleaner.atExit, fn () =>
+		   List.app (fn os =>
+			     let
+			       val fd = outFd os
+			     in
+			       if fd = PFS.stdout orelse fd = PFS.stderr
+				 then flushOut os
+				 else closeOut os
+			     end) (!openOutstreams))
+	in
+	  fn (writer, buffer_mode) =>
+	  let
+	    val os = mkOutstream (writer, buffer_mode)
+	    val _ = openOutstreams := os :: (!openOutstreams)
+	  in
+	    os
+	  end
+	end
+      val closeOut = fn os =>
+	let
+	  val _ = openOutstreams := List.filter (fn os' => not (equalsOut (os, os'))) 
+                                                (!openOutstreams)
+	in
+	  closeOut os
+	end
+
+      (*---------------*)
+      (*   instream    *)
+      (*---------------*)
+
+      fun readerSel (PIO.RD v, sel) = sel v
+      fun instreamName is = readerSel (instreamReader is, #name)
+
+      fun inFd is =
+	case readerSel (instreamReader is, #ioDesc) of
+	  SOME ioDesc => valOf (Posix.FileSys.iodToFD ioDesc)
+	| NONE => liftExn (instreamName is) "inFd" (Fail "<no ioDesc>")
+
+      val openInstreams : instream list ref = ref []
+      val mkInstream =
+	let
+	  val _ = Cleaner.addNew
+	          (Cleaner.atExit, fn () =>
+		   List.app (fn is => closeIn is) (!openInstreams))
+	in
+	  fn (reader, v) =>
+	  let
+	    val is = mkInstream (reader, v)
+	    val _ = openInstreams := is :: (!openInstreams)
+	  in
+	    is
+	  end
+	end
+      val closeIn = fn is =>
+	let
+	  val _ = openInstreams := List.filter (fn is' => not (equalsIn (is, is'))) 
+                                               (!openInstreams)
+	in
+	  closeIn is
+	end
    end
 
 signature STREAM_IO_ARG = 
@@ -547,6 +627,4 @@ signature STREAM_IO_ARG =
       sharing type PrimIO.array = Array.array
       val someElem: PrimIO.elem
    end
-functor StreamIO(S: STREAM_IO_ARG): STREAM_IO = 
-  StreamIOExtra(open S
-		structure Cleaner = EmptyCleaner)
+functor StreamIO(S: STREAM_IO_ARG): STREAM_IO = StreamIOExtra(open S)

@@ -69,9 +69,7 @@ signature POSIX_TTY = POSIX_TTY
 (*
 signature SOCKET = SOCKET 
 *)
-(*
 signature UNIX = UNIX 
-*)
 (*
 signature UNIX_SOCK = UNIX_SOCK 
 signature WINDOWS = WINDOWS

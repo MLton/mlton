@@ -34,6 +34,18 @@ signature IMPERATIVE_IO_EXTRA =
       val equalsIn: instream * instream -> bool
       val equalsOut: outstream * outstream -> bool
 
+      val openVector: vector -> instream
+
+      val inputLine: instream -> vector
+      val scanStream: ((elem, StreamIO.instream) StringCvt.reader -> 
+		       ('a, StreamIO.instream) StringCvt.reader) -> 
+	              instream -> 'a option
+   end
+
+signature IMPERATIVE_IO_EXTRA_FILE =
+   sig
+      include IMPERATIVE_IO_EXTRA
+
       val inFd: instream -> Posix.IO.file_desc
       val outFd: outstream -> Posix.IO.file_desc
       val newIn: Posix.IO.file_desc -> instream
@@ -45,10 +57,4 @@ signature IMPERATIVE_IO_EXTRA =
       val openIn: string -> instream
       val openOut: string -> outstream
       val openAppend: string -> outstream
-      val openVector: vector -> instream
-
-      val inputLine: instream -> vector
-      val scanStream: ((elem, StreamIO.instream) StringCvt.reader -> 
-		       ('a, StreamIO.instream) StringCvt.reader) -> 
-	              instream -> 'a option
    end

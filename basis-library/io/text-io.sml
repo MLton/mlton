@@ -1,26 +1,26 @@
 structure TextIO: TEXT_IO_EXTRA =
    struct
       structure StreamIO = 
-	StreamIOExtra(structure Cleaner = Cleaner
-		      structure PrimIO = TextPrimIO
-		      structure Array = CharArray
-		      structure Vector = CharVector
-		      val someElem = (#"\000": Char.char))
-      structure StreamIOExtra = StreamIO
-      structure ImperativeIO = 
-	ImperativeIOExtra(structure StreamIO = StreamIO
-			  structure Vector = CharVector
+	StreamIOExtraFile(structure Cleaner = Cleaner
+			  structure PrimIO = TextPrimIO
 			  structure Array = CharArray
-			  val mkReader = Posix.IO.mkTextReader
-			  val mkWriter = Posix.IO.mkTextWriter
-			  val chunkSize = Primitive.TextIO.bufSize
-			  val openVector = TextPrimIO.openVector
-			  val fileTypeFlags = [PosixPrimitive.FileSys.O.text])
+			  structure Vector = CharVector
+			  val someElem = (#"\000": Char.char))
+      structure SIO = StreamIO
+      structure ImperativeIO = 
+	ImperativeIOExtraFile(structure StreamIO = StreamIO
+			      structure Vector = CharVector
+			      structure Array = CharArray
+			      val openVector = TextPrimIO.openVector
+			      val mkReader = Posix.IO.mkTextReader
+			      val mkWriter = Posix.IO.mkTextWriter
+			      val chunkSize = Primitive.TextIO.bufSize
+			      val fileTypeFlags = [PosixPrimitive.FileSys.O.text])
       open ImperativeIO
 
       structure StreamIO =
 	 struct
-	    open StreamIOExtra
+	    open SIO
 	    val outputSubstr = fn _ => raise (Fail "<unimplemented>")
 	 end
 

@@ -179,9 +179,7 @@ signature BASIS =
 (*
       structure UnixSock : UNIX_SOCK
 *)
-(*
       structure Unix : UNIX
-*)
 (*
       structure WideCharArray : MONO_ARRAY
       structure WideCharArray2 : MONO_ARRAY2
@@ -320,9 +318,7 @@ signature BASIS =
 *)
       sharing type PackReal64Little.real = Real64.real
       sharing type Posix.Error.syserror = OS.syserror
-(*
       sharing type Posix.Process.exit_status = Unix.exit_status
-*)
       sharing type Posix.FileSys.dirstream = OS.FileSys.dirstream
       sharing type Posix.FileSys.access_mode = OS.FileSys.access_mode
       sharing type RealArray.vector = RealVector.vector
@@ -347,9 +343,7 @@ signature BASIS =
       sharing type Real64Vector.elem = Real64.real
       sharing type Real64VectorSlice.vector = Real64Vector.vector
       sharing type Real64VectorSlice.elem = Real64.real
-(*
       sharing type Unix.exit_status = Posix.Process.exit_status
-*)
       sharing type Word32Array.vector = Word32Vector.vector
       sharing type Word32Array.elem = Word32.word
       sharing type Word32Array2.vector = Word32Vector.vector

@@ -3,6 +3,8 @@
  *         2. IO
  * Further modified by sweeks@acm.org on 1999-12-10.
  *         1. Put back support for Signals
+ * Further modified by fluet@cs.cornell.edu on 2002-10-15.
+ *         1. Adapted for new Basis Library specification.
  *)
 
 (* unix.sml
@@ -14,9 +16,10 @@
 structure Unix: UNIX =
   struct
 
+    structure OSP = OS_Process
     structure PP = Posix.Process
-    structure PE = Posix.ProcEnv
-    structure PF = Posix.FileSys
+    structure PPE = Posix.ProcEnv
+    structure PFS = Posix.FileSys
     structure PIO = Posix.IO
     structure SS = Substring
 
@@ -31,12 +34,19 @@ structure Unix: UNIX =
        in DynamicWind.wind(fn () => f x, fn () => Mask.unblock Mask.all)
        end
 
+    datatype 'a str = FD of PFS.file_desc | STR of 'a * ('a -> unit)
+    fun close str =
+      case str of
+	FD file_desc => PIO.close file_desc
+      | STR (str, close) => close str
+      
     datatype ('a, 'b) proc = PROC of {pid: PP.pid,
-				      ins: 'a,
-				      outs: 'b}
+				      status: OSP.status option ref,
+				      ins: 'a str ref,
+				      outs: 'b str ref}
 
     fun executeInEnv (cmd, argv, env) =
-       if not(PF.access(cmd, [PF.A_EXEC]))
+       if not(PFS.access(cmd, [PFS.A_EXEC]))
 	  then PosixError.raiseSys PosixError.noent
        else
 	  let
@@ -53,8 +63,8 @@ structure Unix: UNIX =
 		 | NONE => let
 			      val oldin = #infd p1
 			      val oldout = #outfd p2
-			      val newin = PF.stdin
-			      val newout = PF.stdout
+			      val newin = PFS.stdin
+			      val newout = PFS.stdout
 			   in
 			      PIO.close (#outfd p1);
 			      PIO.close (#infd p2);
@@ -69,8 +79,6 @@ structure Unix: UNIX =
 	     (* end case *)
 	     val _ = TextIO.flushOut TextIO.stdOut
 	     val pid = (startChild ()) handle ex => (closep(); raise ex)
-	     val ins = TextIO.newIn(#infd p2)
-	     val outs = TextIO.newOut(#outfd p1)
           in
 	     (* close the child-side fds *)
 	     PIO.close (#outfd p2);
@@ -80,28 +88,51 @@ structure Unix: UNIX =
 	     PIO.setfd (#outfd p1, PIO.FD.flags [PIO.FD.cloexec]);
 	     PROC {
 		   pid = pid,
-		   ins = ins,
-		   outs = outs
+		   status = ref NONE,
+		   ins = ref (FD (#infd p2)),
+		   outs = ref (FD (#outfd p1))
 		   }
           end
 
-    fun execute (cmd, argv) = executeInEnv (cmd, argv, PE.environ())
+    fun execute (cmd, argv) = executeInEnv (cmd, argv, PPE.environ())
 
-    fun textInstreamOf (PROC{ins, ...}) = ins
-    fun binInstreamOf (PROC{ins, ...}) = ins
-    fun textOutstreamOf (PROC{outs, ...}) = outs
-    fun binOutstreamOf (PROC{outs, ...}) = outs
-    fun streamsOf (PROC{ins, outs, ...}) = (ins, outs)
+    local
+      fun mkInstreamOf (newIn, closeIn) (PROC {ins, ...}) =
+	case !ins of
+	  FD file_desc => let val str' = newIn file_desc
+			  in ins := STR (str', closeIn); str'
+			  end
+	| STR (str, _) => str
+      fun mkOutstreamOf (newOut, closeOut) (PROC {outs, ...}) =
+	case !outs of
+	  FD file_desc => let val str' = newOut file_desc
+			  in outs := STR (str', closeOut); str'
+			  end
+	| STR (str, _) => str
+    in
+      fun textInstreamOf proc = mkInstreamOf (TextIO.newIn, TextIO.closeIn) proc
+      fun textOutstreamOf proc = mkOutstreamOf (TextIO.newOut, TextIO.closeOut) proc
+      fun binInstreamOf proc = mkInstreamOf (BinIO.newIn, BinIO.closeIn) proc
+      fun binOutstreamOf proc = mkOutstreamOf (BinIO.newOut, BinIO.closeOut) proc
+    end
+    fun streamsOf pr = (textInstreamOf pr, textOutstreamOf pr)
 
-    fun reap (PROC{pid, ins, outs}) =
-       (TextIO.closeIn ins
-	; TextIO.closeOut outs
-	; (* protect is probably too much; typically, one
-	   * would only mask SIGINT, SIGQUIT and SIGHUP
-	   *)
-	protect OS_Process.wait pid)
+    fun reap (PROC{pid, status, ins, outs}) =
+      case !status of
+	SOME status => status
+      | NONE => let
+		  val _ = close (!ins)
+		  val _ = close (!outs)
+		  (* protect is probably too much; typically, one
+		   * would only mask SIGINT, SIGQUIT and SIGHUP
+		   *)
+		  val st = protect OSP.wait pid
+		  val _ = status := SOME st
+		in
+		  st
+		end
 
     fun kill (PROC{pid, ...}, signal) = PP.kill (PP.K_PROC pid, signal)
 
-    fun exit st = OS_Process.exit (Word8.toInt st)
+    fun exit st = OSP.exit (Word8.toInt st)
   end (* structure Unix *)
