@@ -147,6 +147,7 @@ structure Tree
 structure TwoListQueue
 structure Unimplemented
 structure Unit
+structure Unsafe
 structure Uri
 structure Vector
 structure Word
