@@ -133,8 +133,6 @@ structure FlexibleTycon =
       in
 	 val admitsEquality = make #admitsEquality
 	 val defn = ! o make #defn
-	 val hasCons = make #hasCons
-	 val kind = make #kind
 	 val plist = make #plist
       end
 

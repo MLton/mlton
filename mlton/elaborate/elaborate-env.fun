@@ -670,7 +670,7 @@ structure Structure =
 		; Array.foreach (types, fn (name, flex) =>
 				 f (name, flex, NONE, {nest = nest})))
 	    fun loop (TyconMap.T {strs, types},
-		      S as T {strs = strs', types = types', ...},
+		      T {strs = strs', types = types', ...},
 		      nest: Strid.t list) =
 	       let
 		  val () =
@@ -824,7 +824,7 @@ structure Structure =
 			   val () =
 			      realize
 			      (S, Interface.flexibleTycons I,
-			       fn (name, flex, typeStr, {nest}) =>
+			       fn (name, _, typeStr, {nest}) =>
 			       case typeStr of
 				  NONE => Error.bug "missing typeStr"
 				| SOME typeStr =>
@@ -868,15 +868,6 @@ structure Structure =
 		      | SOME S => loop (S, strids, strid :: ac)
 	 in
 	    loop (S, strids, [])
-	 end
-
-      fun peekLongtycon (S, t): TypeStr.t option =
-	 let
-	    val (strids, t) = Longtycon.split t
-	 in
-	    case peekStrids (S, strids) of
-	       Found S => peekTycon (S, t)
-	     | UndefinedStructure _ => NONE
 	 end
 
       val ffi: t option ref = ref NONE
