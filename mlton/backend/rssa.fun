@@ -791,7 +791,14 @@ structure Program =
 			 andalso
 			 Runtime.isValidArrayHeader
 			 {numPointers = numPointers,
-			  numBytesNonPointers = numBytesNonPointers})
+			  numBytesNonPointers = numBytesNonPointers}
+			 andalso
+			 (case numElts of
+			     Operand.Const c =>
+				(case Const.node c of
+				    Const.Node.Int n => n > 0
+				  | _ => false)
+			   | _ => true))
 		   | Array0 {dst} =>
 			Type.equals (varType dst, Type.pointer)
 		   | Bind {oper, ...} => (checkOperand oper; true)
