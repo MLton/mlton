@@ -69,40 +69,12 @@ signature DIRECTED_GRAPH =
       val foreachDescendent: t * Node.t * (Node.t -> unit) -> unit
       val foreachEdge: t * (Node.t * Edge.t -> unit) -> unit
       val foreachNode: t * (Node.t -> unit) -> unit
-(*      exception Input *)
-(*     val input: In.t * (In.t -> 'a)* (In.t -> 'b) -> t * 'a * (Edge.t -> 'b) *)
-(*      val isCyclic: t -> bool*)
       val layoutDot:
 	 t * ({nodeName: Node.t -> string} ->
 	      {title: string,
 	       options: Dot.GraphOption.t list,
 	       edgeOptions: Edge.t -> Dot.EdgeOption.t list,
 	       nodeOptions: Node.t -> Dot.NodeOption.t list}) -> Layout.t
-(*
-      val loopForest:
-	 {headers: (* graph *) Node.t list -> (* graph *) Node.t list,
-	  graph: t,
-	  root: (* graph *) Node.t}
-	 -> {forest: t,
-	     trees: {headers: (* graph *) Node.t list,
-		     loopNodes: (* graph *) Node.t list} Tree.t list,
-	     graphToForest: (* graph *) Node.t -> (* forest *) Node.t,
-	     headers: (* graph *) Node.t list -> (* graph *) Node.t list,
-	     isHeader: (* graph *) Node.t -> bool,
-	     loopNodes: (* forest *) Node.t -> (* graph *) Node.t list,
-	     parent: (* forest *) Node.t -> (* forest *) Node.t option}
-      val loopForestSteensgaard:
-	 {graph: t,
-	  root: (* graph *) Node.t}
-	 -> {forest: t,
-	     trees: {headers: (* graph *) Node.t list,
-		     loopNodes: (* graph *) Node.t list} Tree.t list,
-	     graphToForest: (* graph *) Node.t -> (* forest *) Node.t,
-	     headers: (* graph *) Node.t list -> (* graph *) Node.t list,
-	     isHeader: (* graph *) Node.t -> bool,
-	     loopNodes: (* forest *) Node.t -> (* graph *) Node.t list,
-	     parent: (* forest *) Node.t -> (* forest *) Node.t option}
-*)
       structure LoopForest: 
 	 sig 
 	   datatype t = T of {loops: {headers: Node.t vector,
@@ -113,10 +85,6 @@ signature DIRECTED_GRAPH =
       val new: unit -> t
       val newNode: t -> Node.t
       val nodes: t -> Node.t list
-(*      val random: {numNodes: int, numEdges: int} -> t*)
-(*      val removeBackEdges: t -> unit *)
-      (* removeEdge fails if edge isn't there. *)
-(*      val removeEdge: t * Edge.t -> unit *)
       (* Strongly-connected components.
        * Each component is given as a list of nodes.
        * The components are returned topologically sorted.
@@ -124,7 +92,6 @@ signature DIRECTED_GRAPH =
       val stronglyConnectedComponents: t -> Node.t list list
       exception TopologicalSort
       val topologicalSort: t -> Node.t list
-(*      val transpose: t -> t *)
    end
 
 
