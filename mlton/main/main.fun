@@ -459,7 +459,10 @@ fun makeOptions {usage} =
 	  | Result.No s' => usage (concat ["invalid -sxml-pass arg: ", s']))),
        (Normal, "target",
 	concat [" {",
-		concat (List.separate (List.map (targetMap (), #target), "|")),
+		(case targetMap () of
+		    [] => ""
+		  | [x] => #target x
+		  | x :: _ => concat [#target x, "|..."]),
 		"}"],
 	"platform that executable will run on",
 	SpaceString (fn s =>
