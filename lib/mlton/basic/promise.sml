@@ -14,8 +14,10 @@ and 'a state =
   | Evaluated of 'a
 
 fun layout l (T r) =
-  let open Layout
-  in case !r of
+  let
+     open Layout
+  in
+     case !r of
         Unevaluated _ => str "Unevaluated"
       | Evaluating => str "Evaluating"
       | Evaluated x => seq [str "Evaluated ", l x]
