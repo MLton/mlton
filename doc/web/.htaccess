@@ -4,6 +4,8 @@ Options FollowSymLinks Indexes
 # The changelog used to be called CHANGES.
 Redirect permanent /CHANGES http://www.mlton.org/changelog
 
+Redirect permanent /MLton http://www.mlton.org/
+
 # The user guide used to be in the HTML directory.
 RedirectMatch permanent /HTML* http://www.mlton.org/user-guide/index.html
 
