@@ -4,9 +4,6 @@ MLton built by SML/NJ.  This happens because of bugs in SML/NJ.
    pack-real.sml
 	fails because SML/NJ has the wrong sign for 
 	Real.fromString "~0.0".
-   scon.sml
-	fails because SML/NJ incorrectly overflows on
-	Real64.fromString "0.00000000000e123213213123213123123";
 
 ----------------------------------------------------------------------
 
