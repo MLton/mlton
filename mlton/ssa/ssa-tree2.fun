@@ -398,6 +398,7 @@ structure Type =
 	     | MLton_halt => done ([defaultWord], unit)
 	     | MLton_handlesSignals => done ([], bool)
 	     | MLton_installSignalHandler => done ([], unit)
+	     | MLton_share => oneArg (fn x => done ([x], unit))
 	     | MLton_size => oneArg (fn x => done ([x], defaultWord))
 	     | MLton_touch => oneArg (fn x => done ([x], unit))
 	     | Pointer_getPointer =>

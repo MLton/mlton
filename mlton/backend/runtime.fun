@@ -105,9 +105,11 @@ structure GCField =
 structure RObjectType =
    struct
       datatype t =
-	 Array of {nonPointer: Bytes.t,
+	 Array of {hasIdentity: bool,
+		   nonPointer: Bytes.t,
 		   pointers: int}
-       | Normal of {nonPointer: Words.t,
+       | Normal of {hasIdentity: bool,
+		    nonPointer: Words.t,
 		    pointers: int}
        | Stack
        | Weak
@@ -118,13 +120,15 @@ structure RObjectType =
 	    open Layout
 	 in
 	    case t of
-	       Array {nonPointer = np, pointers = p} =>
+	       Array {hasIdentity, nonPointer = np, pointers = p} =>
 		  seq [str "Array ",
-		       record [("nonPointer", Bytes.layout np),
+		       record [("hasIdentity", Bool.layout hasIdentity),
+			       ("nonPointer", Bytes.layout np),
 			       ("pointers", Int.layout p)]]
-	     | Normal {nonPointer = np, pointers = p} =>
+	     | Normal {hasIdentity, nonPointer = np, pointers = p} =>
 		  seq [str "Normal ",
-		       record [("nonPointer", Words.layout np),
+		       record [("hasIdentity", Bool.layout hasIdentity),
+			       ("nonPointer", Words.layout np),
 			       ("pointers", Int.layout p)]]
 	     | Stack => str "Stack"
 	     | Weak => str "Weak"

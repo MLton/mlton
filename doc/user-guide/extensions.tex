@@ -29,6 +29,7 @@ structure MLton:
       val eq: 'a * 'a -> bool
       val isMLton: bool
       val safe: bool
+      val share: 'a -> unit
       val size: 'a -> int
 
       structure Array: MLTON_ARRAY
@@ -89,6 +90,10 @@ fun sub (a, i) =
 \end{verbatim}
 When compiled {\tt -safe false}, {\tt sub} will reduce to
 {\tt unsafeSub}.
+
+\entry{share x}
+maximizes sharing in the heap for the object graph reachable from {\tt
+x}.
 
 \entry{size x}
 return the amount of heap space (in bytes) taken by the value of {\tt

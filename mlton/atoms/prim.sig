@@ -83,6 +83,7 @@ signature PRIM =
 	     | MLton_handlesSignals (* closure conversion *)
 	     | MLton_installSignalHandler (* backend *)
 	     | MLton_serialize (* unused *)
+	     | MLton_share
 	     | MLton_size (* ssa to rssa *)
 	     | MLton_touch (* backend *)
 	     | Pointer_getPointer (* ssa to rssa *)

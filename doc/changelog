@@ -1,5 +1,9 @@
 Here are the changes since version 20040227.
 
+* 2004-08-30
+  - Added val MLton.share: 'a -> unit, which maximizes sharing in a
+    heap object.
+
 * 2004-08-27
   - Fixed bug in Real.toLargeInt.  It would incorrectly raise Option
     instead of Overflow in the case when the real was not an INF, but

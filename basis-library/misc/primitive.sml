@@ -750,6 +750,8 @@ structure Primitive =
 	    val native = _build_const "MLton_native": bool;
 (*       val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
 (*       val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
+	    val share = _prim "MLton_share": 'a -> unit;
+	    val shareAll = _import "MLton_shareAll": unit -> unit;
 	    val size = _prim "MLton_size": 'a ref -> int;
 
 	    structure Platform =

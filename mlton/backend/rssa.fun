@@ -1189,10 +1189,10 @@ structure Program =
 					     | Control.Align8 => 8))}))
 			   andalso
 			   (case tyconTy tycon of
-			       ObjectType.Normal t =>
+			       ObjectType.Normal {ty, ...} =>
 				  Bytes.equals
 				  (size, Bytes.+ (Runtime.normalHeaderSize,
-						  Type.bytes t))
+						  Type.bytes ty))
 			      | _ => false)
 			end
 		   | PrimApp {args, dst, prim} =>

@@ -97,6 +97,7 @@ typedef enum {
 typedef struct {
 	/* Keep tag first, at zero offset, since it is referenced most often. */
 	GC_ObjectTypeTag tag;
+	Bool hasIdentity;
 	ushort numNonPointers;
 	ushort numPointers;
 } GC_ObjectType;
@@ -146,6 +147,23 @@ typedef struct GC_frameLayout {
 	 */
 	GC_offsets offsets;
 } GC_frameLayout;
+
+/* ------------------------------------------------- */
+/*                   hash consing                    */
+/* ------------------------------------------------- */
+
+typedef Word32 Hash;
+
+typedef struct GC_ObjectHashElement {
+	Hash hash;
+	Pointer object;
+} *GC_ObjectHashElement;
+
+typedef struct GC_ObjectHashTable {
+	struct GC_ObjectHashElement *elements;
+	int elementsSize;
+	int numElements;
+} *GC_ObjectHashTable;
 
 /* ------------------------------------------------- */
 /*                     GC_stack                      */
@@ -405,6 +423,7 @@ typedef struct GC_state {
 	 */
 	float nurseryRatio;
 	pointer nursery;
+	GC_ObjectHashTable objectHashTable;
 	GC_ObjectType *objectTypes; /* Array of object types. */
 	uint objectTypesSize;
 	/* Arrays larger than oldGenArraySize are allocated in the old generation
@@ -444,6 +463,7 @@ typedef struct GC_state {
 	 * signal handler.
 	 */
 	sigset_t signalsPending;
+	Bool shouldHashCons;
 	struct GC_sourceLabel *sourceLabels;
 	uint sourceLabelsSize;
 	/* sourcesNames is an array of strings identifying source positions. */
@@ -653,6 +673,12 @@ void GC_saveWorld (GC_state s, int fd);
 
 /* Return a serialized version of the object rooted at root. */
 /* pointer GC_serialize(GC_state s, pointer root); */
+
+/* GC_share maximizes sharing in a single object. */
+void GC_share (GC_state s, Pointer object);
+
+/* GC_share maximizes sharing in the entire heap. */
+void GC_shareAll (GC_state s);
 
 /* Return the amount of heap space taken by the object pointed to by root. */
 uint GC_size (GC_state s, pointer root);

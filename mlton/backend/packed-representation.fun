@@ -2330,13 +2330,16 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 					    init = TupleRep.unit}
 			      val () = Vector.foreach (rs, fn r =>
 						       Value.affect (r, tr))
+			      val hasIdentity = Prod.isMutable args
 			      val () =
 				 List.push
 				 (delayedObjectTypes, fn () =>
 				  case Value.get tr of
 				     TupleRep.Indirect pr =>
-					SOME (pt, (ObjectType.Normal
-						   (PointerRep.componentsTy pr)))
+					SOME
+					(pt, (ObjectType.Normal
+					      {hasIdentity = hasIdentity,
+					       ty = PointerRep.componentsTy pr}))
 				   | _ => NONE)
 			      val () = setTupleRep (t, tr)
 			      fun compute () = TupleRep.rep (Value.get tr)
@@ -2349,6 +2352,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			   end
 		      | ObjectCon.Vector => 
 			   let
+			      val hasIdentity = Prod.isMutable args
 			      val args = Prod.dest args
 			      fun new () =
 				 let
@@ -2374,12 +2378,15 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 						    TupleRep.ty tr
 					       | TupleRep.Indirect pr =>
 						    PointerRep.componentsTy pr
-					   val ty =
+					   val elt =
 					      if Type.isUnit ty
 						 then Type.zero Bits.inByte
 					      else ty
 					in
-					   SOME (pt, ObjectType.Array ty)
+					   SOME (pt,
+						 ObjectType.Array
+						 {elt = elt,
+						  hasIdentity = hasIdentity})
 					end)
 				 in
 				    Type.pointer pt
@@ -2463,11 +2470,12 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	 Vector.fold
 	 (datatypes, [], fn ({cons, ...}, ac) =>
 	  Vector.fold
-	  (cons, ac, fn ({con, pointerTycon, ...}, ac) =>
+	  (cons, ac, fn ({args, con, pointerTycon, ...}, ac) =>
 	   case conRep con of
 	      ConRep.Tuple (TupleRep.Indirect pr) =>
 		 (pointerTycon,
-		  ObjectType.Normal (PointerRep.componentsTy pr)) :: ac
+		  ObjectType.Normal {hasIdentity = Prod.isMutable args,
+				     ty = PointerRep.componentsTy pr}) :: ac
 	    | _ => ac))
       val objectTypes = ref objectTypes
       val () =

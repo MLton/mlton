@@ -74,6 +74,7 @@ datatype 'a t =
   *)
  | MLton_bug (* ssa to rssa *)
  | MLton_deserialize (* unused *)
+ | MLton_share
  | MLton_eq (* codegen *)
  | MLton_equal (* polymorphic equality *)
  | MLton_halt (* ssa to rssa *)
@@ -250,6 +251,7 @@ fun toString (n: 'a t): string =
        | MLton_handlesSignals => "MLton_handlesSignals"
        | MLton_installSignalHandler => "MLton_installSignalHandler"
        | MLton_serialize => "MLton_serialize"
+       | MLton_share => "MLton_share"
        | MLton_size => "MLton_size"
        | MLton_touch => "MLton_touch"
        | Pointer_getPointer => "Pointer_getPointer"
@@ -385,6 +387,7 @@ val equals: 'a t * 'a t -> bool =
     | (MLton_handlesSignals, MLton_handlesSignals) => true
     | (MLton_installSignalHandler, MLton_installSignalHandler) => true
     | (MLton_serialize, MLton_serialize) => true
+    | (MLton_share, MLton_share) => true
     | (MLton_size, MLton_size) => true
     | (MLton_touch, MLton_touch) => true
     | (Pointer_getPointer, Pointer_getPointer) => true
@@ -541,6 +544,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | MLton_handlesSignals => MLton_handlesSignals
     | MLton_installSignalHandler => MLton_installSignalHandler
     | MLton_serialize => MLton_serialize
+    | MLton_share => MLton_share
     | MLton_size => MLton_size
     | MLton_touch => MLton_touch
     | Pointer_getPointer => Pointer_getPointer
@@ -746,6 +750,7 @@ val kind: 'a t -> Kind.t =
        | MLton_handlesSignals => Functional
        | MLton_installSignalHandler => SideEffect
        | MLton_serialize => DependsOnState
+       | MLton_share => SideEffect
        | MLton_size => DependsOnState
        | MLton_touch => SideEffect
        | Pointer_getPointer => DependsOnState
@@ -944,6 +949,7 @@ in
        MLton_handlesSignals,
        MLton_installSignalHandler,
        MLton_serialize,
+       MLton_share,
        MLton_size,
        MLton_touch,
        Pointer_getPointer,
@@ -1061,6 +1067,7 @@ fun ('a, 'b) extractTargs (prim: 'b t,
        | MLton_eq => one (arg 0)
        | MLton_equal => one (arg 0)
        | MLton_serialize => one (arg 0)
+       | MLton_share => one (arg 0)
        | MLton_size => one (arg 0)
        | MLton_touch => one (arg 0)
        | Pointer_getPointer => one result

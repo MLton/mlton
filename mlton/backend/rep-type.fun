@@ -337,8 +337,10 @@ structure ObjectType =
       type ty = Type.t
 	 
       datatype t =
-	 Array of Type.t
-       | Normal of Type.t
+	 Array of {elt: Type.t,
+		   hasIdentity: bool}
+       | Normal of {hasIdentity: bool,
+		    ty: Type.t}
        | Stack
        | Weak of Type.t
        | WeakGone
@@ -348,8 +350,14 @@ structure ObjectType =
 	    open Layout
 	 in
 	    case t of
-	       Array t => seq [str "Array ", Type.layout t]
-	     | Normal t => seq [str "Normal ", Type.layout t]
+	       Array {elt, hasIdentity} =>
+		  seq [str "Array ",
+		       record [("elt", Type.layout elt),
+			       ("hasIdentity", Bool.layout hasIdentity)]]
+	     | Normal {hasIdentity, ty} =>
+		  seq [str "Normal ",
+		       record [("hasIdentity", Bool.layout hasIdentity),
+			       ("ty", Type.layout ty)]]
 	     | Stack => str "Stack"
 	     | Weak t => seq [str "Weak ", Type.layout t]
 	     | WeakGone => str "WeakGone"
@@ -357,15 +365,15 @@ structure ObjectType =
 
       fun isOk (t: t): bool =
 	 case t of
-	    Array t =>
+	    Array {elt, ...} =>
 	       let
-		  val b = Type.width t
+		  val b = Type.width elt
 	       in
 		  Bits.> (b, Bits.zero)
 		  andalso Bits.isByteAligned b
 	       end
-	  | Normal t =>
-	       not (Type.isUnit t) andalso Bits.isWordAligned (Type.width t)
+	  | Normal {ty, ...} =>
+	       not (Type.isUnit ty) andalso Bits.isWordAligned (Type.width ty)
 	  | Stack => true
 	  | Weak t => Type.isPointer t
 	  | WeakGone => true
@@ -373,14 +381,16 @@ structure ObjectType =
       val stack = Stack
 
       val thread =
-	 Normal (Type.seq
-		 (Vector.new3 (Type.defaultWord,
-			       Type.defaultWord,
-			       Type.stack)))
+	 Normal {hasIdentity = true,
+		 ty = Type.seq (Vector.new3 (Type.defaultWord,
+					     Type.defaultWord,
+					     Type.stack))}
 
-      val word8Vector = Array Type.word8
+      val word8Vector = Array {hasIdentity = true,
+			       elt = Type.word8}
 
-      val wordVector = Array Type.defaultWord
+      val wordVector = Array {hasIdentity = true,
+			      elt = Type.defaultWord}
 
       (* Order in the following vector matters.  The basic pointer tycons must
        * correspond to the constants in gc.h.
@@ -403,18 +413,22 @@ structure ObjectType =
       in
 	 fun toRuntime (t: t): R.t =
 	    case t of
-	       Array t => let
-			     val (b, p) = Type.bytesAndPointers t
-			  in
-			     R.Array {nonPointer = b,
-				      pointers = p}
-			  end
-	     | Normal t => let
-			      val (b, p) = Type.bytesAndPointers t
-			   in
-			      R.Normal {nonPointer = Bytes.toWords b,
-					pointers = p}
-			   end
+	       Array {elt, hasIdentity} =>
+		  let
+		     val (b, p) = Type.bytesAndPointers elt
+		  in
+		     R.Array {hasIdentity = hasIdentity,
+			      nonPointer = b,
+			      pointers = p}
+		  end
+	     | Normal {hasIdentity, ty} =>
+		  let
+		     val (b, p) = Type.bytesAndPointers ty
+		  in
+		     R.Normal {hasIdentity = hasIdentity,
+			       nonPointer = Bytes.toWords b,
+			       pointers = p}
+		  end
 	     | Stack => R.Stack
 	     | Weak _ => R.Weak
 	     | WeakGone => R.WeakGone

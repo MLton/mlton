@@ -5,8 +5,10 @@ signature OBJECT_TYPE =
 	 
       type ty
       datatype t =
-	 Array of ty
-       | Normal of ty
+	 Array of {elt: ty,
+		   hasIdentity: bool}
+       | Normal of {hasIdentity: bool,
+		    ty: ty}
        | Stack
        | Weak of ty (* in Weak t, must have Type.isPointer t *)
        | WeakGone

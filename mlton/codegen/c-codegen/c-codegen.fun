@@ -338,20 +338,21 @@ fun outputDeclarations
 	  fn (_, ty) =>
 	  let
 	     datatype z = datatype Runtime.RObjectType.t
-	     val (tag, nonPointers, pointers) =
+	     val (tag, hasIdentity, nonPointers, pointers) =
 		case ObjectType.toRuntime ty of
-		   Array {nonPointer, pointers} =>
-		      (0, Bytes.toInt nonPointer, pointers)
-		 | Normal {nonPointer, pointers} =>
-		      (1, Words.toInt nonPointer, pointers)
+		   Array {hasIdentity, nonPointer, pointers} =>
+		      (0, hasIdentity, Bytes.toInt nonPointer, pointers)
+		 | Normal {hasIdentity, nonPointer, pointers} =>
+		      (1, hasIdentity, Words.toInt nonPointer, pointers)
 		 | Stack =>
-		      (2, 0, 0)
+		      (2, false, 0, 0)
 		 | Weak =>
-		      (3, 2, 1)
+		      (3, false, 2, 1)
 		 | WeakGone =>
-		      (3, 3, 0)
+		      (3, false, 3, 0)
 	  in
 	     concat ["{ ", C.int tag, ", ",
+		     C.bool hasIdentity, ", ",
 		     C.int nonPointers, ", ",
 		     C.int pointers, " }"]
 	  end)

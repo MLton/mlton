@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -17,6 +17,9 @@ val isMLton = true
  *       val deserialize = fn x => !(deserialize x)
  *)
 
+val share = Primitive.MLton.share
+val shareAll = Primitive.MLton.shareAll
+   
 fun size x =
    let val refOverhead = 8 (* header + indirect *)
    in Primitive.MLton.size (ref x) - refOverhead

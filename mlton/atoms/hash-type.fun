@@ -284,6 +284,7 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | MLton_halt => done ([defaultWord], unit)
        | MLton_handlesSignals => done ([], bool)
        | MLton_installSignalHandler => done ([], unit)
+       | MLton_share => oneTarg (fn t => ([t], unit))
        | MLton_size => oneTarg (fn t => ([t], defaultWord))
        | MLton_touch => oneTarg (fn t => ([t], unit))
        | Pointer_getPointer => oneTarg (fn t => ([pointer, defaultWord], t))

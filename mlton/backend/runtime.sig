@@ -52,9 +52,11 @@ signature RUNTIME =
       structure RObjectType:
 	 sig
 	    datatype t =
-	       Array of {nonPointer: Bytes.t,
+	       Array of {hasIdentity: bool,
+			 nonPointer: Bytes.t,
 			 pointers: int}
-	     | Normal of {nonPointer: Words.t,
+	     | Normal of {hasIdentity: bool,
+			  nonPointer: Words.t,
 			  pointers: int}
 	     | Stack
 	     | Weak

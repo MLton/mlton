@@ -39,6 +39,7 @@ enum {
 	DEBUG_MARK_COMPACT = FALSE,
 	DEBUG_MEM = FALSE,
 	DEBUG_RESIZING = FALSE,
+	DEBUG_SHARE = FALSE,
 	DEBUG_STACKS = FALSE,
 	DEBUG_THREADS = FALSE,
 	DEBUG_WEAK = FALSE,
@@ -72,6 +73,7 @@ typedef enum {
 				and objectTypeIndex < s->objectTypesSize);	\
 		t = &s->objectTypes [objectTypeIndex];				\
 		tag = t->tag;							\
+		hasIdentity = t->hasIdentity;					\
 		numNonPointers = t->numNonPointers;				\
 		numPointers = t->numPointers;					\
 		if (DEBUG_DETAILED)						\
@@ -717,6 +719,7 @@ static pointer arrayPointer (GC_state s,
 				pointer a, 
 				uint arrayIndex, 
 				uint pointerIndex) {
+	Bool hasIdentity;
 	word header;
 	uint numPointers;
 	uint numNonPointers;
@@ -763,6 +766,7 @@ static inline uint arrayNumBytes (GC_state s,
 static inline pointer foreachPointerInObject (GC_state s, pointer p,
 						Bool skipWeaks,
 						GC_pointerFun f) {
+	Bool hasIdentity;
 	word header;
 	uint numPointers;
 	uint numNonPointers;
@@ -1378,7 +1382,7 @@ static void createCardMapAndCrossMap (GC_state s) {
 static bool heapCreate (GC_state s, GC_heap h, W32 desiredSize, W32 minSize) {
 	W32 backoff;
 
-	if (DEBUG)
+	if (DEBUG_MEM)
 		fprintf (stderr, "heapCreate  desired size = %s  min size = %s\n",
 				uintToCommaString (desiredSize),
 				uintToCommaString (minSize));
@@ -1438,11 +1442,12 @@ static bool heapCreate (GC_state s, GC_heap h, W32 desiredSize, W32 minSize) {
 }
 
 static inline uint objectSize (GC_state s, pointer p) {
+	Bool hasIdentity;
 	uint headerBytes, objectBytes;
        	word header;
 	uint tag, numPointers, numNonPointers;
 
-	header = GC_getHeader(p);
+	header = GC_getHeader (p);
 	SPLIT_HEADER();
 	if (NORMAL_TAG == tag) { /* Fixed size object. */
 		headerBytes = GC_NORMAL_HEADER_SIZE;
@@ -1482,6 +1487,7 @@ static inline void forward (GC_state s, pointer *pp) {
 	if (DEBUG_DETAILED and FORWARDED == header)
 		fprintf (stderr, "already FORWARDED\n");
 	if (header != FORWARDED) { /* forward the object */
+		Bool hasIdentity;
 		uint headerBytes, objectBytes, size, skip;
 		uint numPointers, numNonPointers;
 
@@ -1930,6 +1936,138 @@ static void minorGC (GC_state s) {
 }
 
 /* ---------------------------------------------------------------- */
+/*                       Object hash consing                        */
+/* ---------------------------------------------------------------- */
+
+static GC_ObjectHashTable newTable () {
+	GC_ObjectHashTable t;
+
+	NEW (t);
+	t->numElements = 0;
+	t->elementsSize = 1024; /* pretty arbitrary. */
+	ARRAY (t->elements, t->elementsSize);
+	return t;
+}
+
+static void destroyTable (GC_ObjectHashTable t) {
+	free (t->elements);
+	free (t);
+}
+
+static void tableGrow (GC_ObjectHashTable t) {	
+	struct GC_ObjectHashElement *elements0;
+	int i;
+	int s0;
+
+	if (DEBUG_SHARE)
+		fprintf (stderr, "tableGrow\n");
+	s0 = t->elementsSize;
+	t->elementsSize *= 2;
+	elements0 = t->elements;
+	ARRAY (t->elements, t->elementsSize);
+	for (i = 0; i < s0; ++i) {
+		GC_ObjectHashElement e;
+		GC_ObjectHashElement e0;
+
+		e0 = &elements0[i];
+		unless (NULL == e0->object) {
+			for (e = &t->elements[e0->hash % t->elementsSize]; 
+				NULL != e->object; 
+				++e)
+			e->hash = e0->hash;
+			e->object = e0->object;
+		}
+	}
+	free (elements0);
+}
+
+static Pointer hashCons (GC_state s, Pointer object) {
+	GC_ObjectHashElement e;
+	Bool hasIdentity;
+	Word32 hash;
+	word header;
+	word *max;
+	uint numPointers;
+	uint numNonPointers;
+	word *p;
+	GC_ObjectHashTable t;
+	uint tag;
+
+	t = s->objectHashTable;
+	if (DEBUG_SHARE)
+		fprintf (stderr, "hashCons (0x%08x)\n", (uint)object);
+	header = GC_getHeader (object);
+	SPLIT_HEADER();
+	if (hasIdentity) {
+		/* Don't hash cons. */
+		if (DEBUG_SHARE)
+			fprintf (stderr, "hasIdentity\n");
+		return object;
+	}
+	/* Compute the hash. */
+	max = (word*)(object + toBytes (numPointers + numNonPointers));
+	hash = header;
+	for (p = (word*)object; p < max; ++p)
+		hash = hash * 31 + *p;
+	/* Look in the table. */
+	e = &t->elements[hash % t->elementsSize];
+look:
+	if (NULL == e->object) {
+		/* It's not in the table.  Add it. */
+		assert (NULL == e->object);
+		e->hash = hash;
+		e->object = object;
+		t->numElements++;
+		/* Maybe grow the table. */
+		if (t->numElements * 2 > t->elementsSize)
+			tableGrow (s->objectHashTable);
+		if (DEBUG_SHARE)
+			fprintf (stderr, "0x%08x = hashCons (0x%08x)\n", 
+					(uint)object, (uint)object);
+		return object;
+	}
+	if (hash == e->hash) {
+		Header header2;
+		word *p2;
+
+		if (DEBUG_SHARE)
+			fprintf (stderr, "comparing 0x%08x to 0x%08x\n",
+					(uint)object, (uint)e->object);
+		/* Compare object to e->object. */
+		unless (object == e->object) {
+			header2 = GC_getHeader (e->object);
+			unless (header == header2) {
+				++e; 
+				goto look;
+			}
+			for (p = (word*)object, p2 = (word*)e->object; 
+					p < max; 
+					++p, ++p2)
+				unless (*p == *p2) {
+					++e;
+					goto look;
+				}
+		}
+		/* object is equal to e->object. */
+		if (DEBUG_SHARE)
+			fprintf (stderr, "0x%08x = hashCons (0x%08x)\n", 
+					(uint)e->object, (uint)object);
+		return e->object;
+	}
+	assert (FALSE);
+	return NULL; /* quell gcc warning. */
+}
+
+static inline void maybeSharePointer (GC_state s, Pointer *pp) {
+	unless (s->shouldHashCons)
+		return;
+	if (DEBUG_SHARE)
+		fprintf (stderr, "maybeSharePointer  pp = 0x%08x  *pp = 0x%08x\n",
+				(uint)pp, (uint)*pp);
+	*pp = hashCons (s, *pp);	
+}
+
+/* ---------------------------------------------------------------- */
 /*                       Depth-first Marking                        */
 /* ---------------------------------------------------------------- */
 
@@ -1949,9 +2087,9 @@ static bool modeEqMark (MarkMode m, pointer p) {
 	return (MARK_MODE == m) ? isMarked (p): not isMarked (p);
 }
 
-/* mark (s, p) sets all the mark bits in the object graph pointed to by p. 
- * If the mode is MARK, it sets the bits to 1.
- * If the mode is UNMARK, it sets the bits to 0.
+/* mark (s, p, m) sets all the mark bits in the object graph pointed to by p. 
+ * If m is MARK_MODE, it sets the bits to 1.
+ * If m is UNMARK_MODE, it sets the bits to 0.
  *
  * It returns the total size in bytes of the objects marked.
  */
@@ -1959,6 +2097,7 @@ W32 mark (GC_state s, pointer root, MarkMode mode) {
 	uint arrayIndex;
 	pointer cur;  /* The current object being marked. */
 	GC_offsets frameOffsets;
+	Bool hasIdentity;
 	Header* headerp;
 	Header header;
 	uint index;
@@ -2030,6 +2169,8 @@ markInNormal:
 			fprintf (stderr, "markInNormal  index = %d\n", index);
 		if (todo == max) {
 			*headerp = header & ~COUNTER_MASK;
+			if (s->shouldHashCons)
+				cur = hashCons (s, cur);
 			goto ret;
 		}
 		next = *(pointer*)todo;
@@ -2042,8 +2183,10 @@ markNextInNormal:
 		nextHeaderp = GC_getHeaderp (next);
 		nextHeader = *nextHeaderp;
 		if ((nextHeader & MARK_MASK)
-			== (MARK_MODE == mode ? MARK_MASK : 0))
+			== (MARK_MODE == mode ? MARK_MASK : 0)) {
+			maybeSharePointer (s, (pointer*)todo);
 			goto markNextInNormal;
+		}
 		*headerp = (header & ~COUNTER_MASK) |
 				(index << COUNTER_SHIFT);
 		headerp = nextHeaderp;
@@ -2090,8 +2233,10 @@ markArrayPointer:
 			nextHeaderp = GC_getHeaderp (next);
 			nextHeader = *nextHeaderp;
 			if ((nextHeader & MARK_MASK)
-				== (MARK_MODE == mode ? MARK_MASK : 0))
+				== (MARK_MODE == mode ? MARK_MASK : 0)) {
+				maybeSharePointer (s, (pointer*)todo);
 				goto markArrayContinue;
+			}
 			/* Recur and mark next. */
 			*arrayCounterp (cur) = arrayIndex;
 			*headerp = (header & ~COUNTER_MASK) |
@@ -2157,6 +2302,7 @@ markInFrame:
 		if ((nextHeader & MARK_MASK)
 			== (MARK_MODE == mode ? MARK_MASK : 0)) {
 			index++;
+			maybeSharePointer (s, (pointer*)todo);
 			goto markInFrame;
 		}
 		((GC_stack)cur)->markIndex = index;		
@@ -2223,6 +2369,28 @@ ret:
 	assert (FALSE);
 }
 
+void GC_share (GC_state s, Pointer object) {
+	if (DEBUG_SHARE)
+		fprintf (stderr, "GC_share 0x%08x\n", (uint)object);
+	mark (s, object, MARK_MODE);
+	s->shouldHashCons = TRUE;
+	s->objectHashTable = newTable ();
+	mark (s, object, UNMARK_MODE);
+	destroyTable (s->objectHashTable);
+	s->shouldHashCons = FALSE;
+}
+
+//static inline void shareGlobal (GC_state s, pointer *pp) {
+//	mark (s, pp, MARK_MODE)
+//}
+
+void GC_shareAll (GC_state s) {
+	if (DEBUG_SHARE)
+		fprintf (stderr, "GC_shareAll\n");
+	die ("GC_shareAll unimplemented\n");
+//	foreachGlobal (s, shareGlobal);
+}
+
 /* ---------------------------------------------------------------- */
 /*                 Jonkers Mark-compact Collection                  */
 /* ---------------------------------------------------------------- */
@@ -2250,6 +2418,7 @@ static inline void threadInternal (GC_state s, pointer *pp) {
  * then clear the object pointer.
  */
 static inline void maybeClearWeak (GC_state s, pointer p) {
+	Bool hasIdentity;
 	Header header;
 	Header *headerp;
 	uint numPointers;
@@ -2762,7 +2931,7 @@ static bool heapAllocateSecondSemi (GC_state s, W32 size) {
 
 static void majorGC (GC_state s, W32 bytesRequested, bool mayResize) {
 	s->numMinorsSinceLastMajor = 0;
-        if (not FORCE_MARK_COMPACT
+        if ((not FORCE_MARK_COMPACT)
  		and s->heap.size < s->ram
 		and (not heapIsInit (&s->heap2)
 			or heapAllocateSecondSemi (s, heapDesiredSize (s, (W64)s->bytesLive + bytesRequested, 0))))
@@ -2842,11 +3011,11 @@ static void doGC (GC_state s,
 	if (needGCTime (s))
 		startTiming (&ru_start);
 	minorGC (s);
-	stackTopOk = mutatorStackInvariant(s);
+	stackTopOk = mutatorStackInvariant (s);
 	stackBytesRequested =
 		stackTopOk
 		? 0 
-		: stackBytes (s, max(2 * s->currentThread->stack->reserved, 
+		: stackBytes (s, max (2 * s->currentThread->stack->reserved, 
 					stackNeedsReserved (s, s->currentThread->stack)));
 	totalBytesRequested = 
 		(W64)oldGenBytesRequested 
@@ -3021,15 +3190,16 @@ void GC_gc (GC_state s, uint bytesRequested, bool force,
 
 pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts, 
 				W32 header) {
-	uint numPointers;
-	uint numNonPointers;
-	uint tag;
-	uint eltSize;
 	W64 arraySize64;
 	W32 arraySize;
+	uint eltSize;
 	W32 *frontier;
+	Bool hasIdentity;
 	W32 *last;
+	uint numPointers;
+	uint numNonPointers;
 	pointer res;
+	uint tag;
 
 	SPLIT_HEADER();
 	eltSize = numPointers * POINTER_SIZE + numNonPointers;
@@ -4230,6 +4400,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->pageSize = getpagesize ();
 	s->ramSlop = 0.5;
 	s->savedThread = BOGUS_THREAD;
+	s->shouldHashCons = FALSE;
 	s->signalHandler = BOGUS_THREAD;
 	s->signalIsPending = FALSE;
 	s->startTime = currentTime ();

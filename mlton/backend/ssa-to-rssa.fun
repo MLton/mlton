@@ -184,6 +184,11 @@ structure CFunction =
 	    return = unit,
 	    writesStackTop = true}
 
+      fun share t =
+	 vanilla {args = Vector.new1 t,
+		  name = "MLton_share",
+		  return = unit}
+
       fun size t =
 	 vanilla {args = Vector.new1 t,
 		  name = "MLton_size",
@@ -896,6 +901,15 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 					   (Prim.wordEqual
 					    (WordSize.fromBits (Type.width t))))
 			       | MLton_installSignalHandler => none ()
+			       | MLton_share =>
+				    (case toRtype (varType (arg 0)) of
+					NONE => none ()
+				      | SOME t =>
+					   if not (Type.isPointer t)
+					      then none ()
+					   else
+					      simpleCCall (CFunction.share
+							   (Operand.ty (a 0))))
 			       | MLton_size =>
 				    simpleCCall
 				    (CFunction.size (Operand.ty (a 0)))
