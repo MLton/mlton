@@ -144,7 +144,7 @@ structure Method =
       fun toString h =
 	 case h of
 	    Extension s => s
-	  | _ => #2 (List.lookup (map, fn (h', _) => h = h'))
+	  | _ => #2 (valOf (List.peek (map, fn (h', _) => h = h')))
 
       val layout = Layout.str o toString
    end
@@ -721,7 +721,7 @@ structure Status =
 	 fun make (ext, sel) (s: t) =
 	    case s of
 	       Extension c => ext c
-	     | _ => sel (List.lookup (all, fn {status, ...} => s = status))
+	     | _ => sel (valOf (List.peek (all, fn {status, ...} => s = status)))
       in
 	 val code = make (fn c => c, #code)
 	 val reason = make (fn _ => "Extension Status Code - No Reason",

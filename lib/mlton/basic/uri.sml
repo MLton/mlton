@@ -81,7 +81,8 @@ structure Scheme =
 
       val equals = op =
 	 
-      fun toString s = #1 (List.lookup (map, fn (_, s') => equals (s, s')))
+      fun toString s =
+	 #1 (valOf (List.peek (map, fn (_, s') => equals (s, s'))))
 
       val layout = Layout.str o toString
    end
