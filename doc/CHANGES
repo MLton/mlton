@@ -1,5 +1,8 @@
 Here are the changes from the 20010706 version to the VERSION version.
 
+* 2000-8-2
+  - Took out -keep il.
+
 * 2000-7-31
   - Performance improvements to TextIO.{input, output, output1}
 

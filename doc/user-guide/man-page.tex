@@ -71,7 +71,7 @@ Set the inlining threshold used in the CPS simplifier.  The default is 320.
 Specify an additional directory to be searched for include files (included with
 {\tt -i}).
 
-\option{-keep \{cps|g|il|o|sml\}}
+\option{-keep \{cps|dot|g|o|sml\}}
 Save the intermediate file(s) corresponding to the given arg.  If
 no {\tt -keep} argument is given, then only the final file(s) is saved.\\
 \begin{tabular}{ll}
@@ -79,7 +79,6 @@ no {\tt -keep} argument is given, then only the final file(s) is saved.\\
 {\tt dot} & dot files.  Implies {\tt -keep cps}.  Do not use with {\tt -keep
 il}.\\
 {\tt g} & generated {\tt .S} and {\tt .c} files passed to gcc and the assembler\\
-{\tt il} & all compiler intermediate files\\
 {\tt o} & object file\\
 {\tt sml} & SML file\\
 \end{tabular}
