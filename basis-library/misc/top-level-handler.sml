@@ -3,9 +3,18 @@ val _ =
       val message = Primitive.Stdio.print
       fun handler exn =
 	 (message "unhandled exception: "
-	  ; (case exn of
-		Fail s => (message "Fail "; message s)
-	      | _ => message (exnName exn))
+	  ; let
+	       fun loop e =
+		  case e of
+		     Fail s => (message "Fail "; message s)
+		   | IO.Io {cause, function, ...} => (message "IO "
+						      ; message function
+						      ; message ": "
+						      ; loop cause)
+		   | _ => message (exnName exn)
+	    in
+	       loop exn
+	    end
 	  ; message "\n"
 	  ; (case MLton.Exn.history exn of
 		[] => ()
