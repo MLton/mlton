@@ -1428,6 +1428,15 @@ fun elaborateDec (d, {env = E, nest}) =
 					  region = Apat.region p})
 				     val bodyRegion = Aexp.region body
 				     val body = elabExp (body, nest, NONE)
+				     val body =
+					if not (!Control.profileBranch)
+					   then body
+					else
+					   Cexp.enterLeave
+					   (body, fn () =>
+					    SourceInfo.function
+					    {name = "<branch>" :: nest,
+					     region = bodyRegion})
 				     val _ =
 					Option.app
 					(resultType, fn t =>
