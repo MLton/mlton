@@ -101,14 +101,8 @@ fun vanilla {name, returnTy} =
 val bug = vanilla {name = "MLton_bug",
 		   returnTy = NONE}
 
-val profileEnter = vanilla {name = "MLton_Profile_enter",
+val profileEnter = vanilla {name = "GC_profileEnter",
 			    returnTy = NONE}
-
-val profileLeave = vanilla {name = "MLton_Profile_leave",
-			    returnTy = NONE}
-
-val size = vanilla {name = "MLton_size",
-		    returnTy = SOME Type.int}
 
 val profileInc =
    T {bytesNeeded = NONE,
@@ -117,8 +111,14 @@ val profileInc =
       maySwitchThreads = false,
       modifiesFrontier = false,
       modifiesStackTop = false,
-      name = "MLton_Profile_inc",
+      name = "GC_profileInc",
       needsCurrentSource = true,
       returnTy = NONE}
+
+val profileLeave = vanilla {name = "GC_profileLeave",
+			    returnTy = NONE}
+
+val size = vanilla {name = "MLton_size",
+		    returnTy = SOME Type.int}
 
 end

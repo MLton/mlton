@@ -338,8 +338,9 @@ fun profile program =
 				   else Vector.new0 (),
 				   transfer = 
 				   Transfer.CCall
-				   {args = (Vector.new1
-					    (Operand.word (Word.fromInt index))),
+				   {args = (Vector.new2
+					    (Operand.GCState,
+					     Operand.word (Word.fromInt index))),
 				    func = func,
 				    return = SOME newLabel}})
 			   in
@@ -384,7 +385,8 @@ fun profile program =
 			       transfer = transfer})
 	       in
 		  Transfer.CCall
-		  {args = Vector.new1 (Operand.word (Word.fromInt index)),
+		  {args = Vector.new2 (Operand.GCState,
+				       Operand.word (Word.fromInt index)),
 		   func = func,
 		   return = SOME newLabel}
 	       end
@@ -430,8 +432,9 @@ fun profile program =
 				    val func = CFunction.profileInc
 				    val transfer =
 				       Transfer.CCall
-				       {args = (Vector.new1
-						(Operand.word
+				       {args = (Vector.new2
+						(Operand.GCState,
+						 Operand.word
 						 (Word.fromInt bytesAllocated))),
 					func = func,
 					return = SOME newLabel}

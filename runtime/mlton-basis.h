@@ -134,10 +134,7 @@ Pointer MLton_Profile_Data_malloc (void);
 void MLton_Profile_Data_write (Pointer data, Word fd);
 
 Pointer MLton_Profile_current (void);
-void MLton_Profile_enter (Word sourceSeqsIndex);
-/* Must set s->currentSource before calling MLton_Profile_inc. */
-void MLton_Profile_inc (Word amount);
-void MLton_Profile_leave (Word sourceSeqsIndex);
+void MLton_Profile_done ();
 void MLton_Profile_setCurrent (Pointer d);
 
 #if (defined (__CYGWIN__))

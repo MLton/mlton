@@ -2913,7 +2913,7 @@ void GC_profileInc (GC_state s, W32 amount) {
 /* s->currentSource must be set. */
 void GC_profileAllocInc (GC_state s, W32 amount) {
 	if (s->profilingIsOn and (PROFILE_ALLOC == s->profileKind))
-		MLton_Profile_inc (amount);
+		GC_profileInc (s, amount);
 }
 
 void GC_profileLeave (GC_state s, Word sourceSeqsIndex) {
@@ -3072,7 +3072,7 @@ static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
 		       	s->currentSource = SOURCE_SEQ_UNKNOWN;
 		}
 	}
-	MLton_Profile_inc (1);
+	GC_profileInc (s, 1);
 }
 
 /* To get the beginning and end of the text segment. */

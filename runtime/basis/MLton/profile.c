@@ -10,16 +10,16 @@ enum {
 
 extern struct GC_state gcState;
 
-void MLton_Profile_Data_write (Pointer p, Word fd) {
-	GC_profileWrite (&gcState, (GC_profile)p, (int)fd);
-}
-
 void MLton_Profile_Data_free (Pointer p) {
 	GC_profileFree (&gcState, (GC_profile)p);
 }
 
 Pointer MLton_Profile_Data_malloc (void) {
 	return (Pointer)GC_profileNew (&gcState);
+}
+
+void MLton_Profile_Data_write (Pointer p, Word fd) {
+	GC_profileWrite (&gcState, (GC_profile)p, (int)fd);
 }
 
 Pointer MLton_Profile_current (void) {
@@ -36,21 +36,6 @@ Pointer MLton_Profile_current (void) {
 
 void MLton_Profile_done () {
 	GC_profileDone (&gcState);
-}
-
-void MLton_Profile_enter (Word sourceSeqsIndex) {
-	GC_profileEnter (&gcState, sourceSeqsIndex);
-}
-
-/* gcState.currentSource should be set before calling MLton_Profile_inc. */
-void MLton_Profile_inc (Word amount) {
-	if (DEBUG_PROFILE)
-		fprintf (stderr, "MLton_Profile_inc\n");
-	GC_profileInc (&gcState, amount);
-}
-
-void MLton_Profile_leave (Word sourceSeqsIndex) {
-	GC_profileLeave (&gcState, sourceSeqsIndex);
 }
 
 void MLton_Profile_setCurrent (Pointer d) {
