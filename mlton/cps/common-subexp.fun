@@ -12,11 +12,14 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
    else
    let
       val _ =
-	 Ref.fluidLet
-	 (Control.aux, true, fn () =>
-	  Control.displays
-	  ("pre-cse", fn display =>
-	   Program.layouts (program, display)))
+	 if false
+	    then
+	       Ref.fluidLet
+	       (Control.aux, true, fn () =>
+		Control.displays
+		("pre-cse", fn display =>
+		 Program.layouts (program, display)))
+	 else ()
       (* Keep track of the replacements of variables. *)
       val {get = replace: Var.t -> Var.t option, set = setReplace} =
 	 Property.getSetOnce (Var.plist, Property.initConst NONE)
