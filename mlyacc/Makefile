@@ -24,7 +24,7 @@ endif
 	) >$(NAME).cm
 
 src/yacc.lex.sml: src/yacc.lex
-	rm -f src/yacc.lex && \
+	rm -f src/yacc.lex.sml && \
 		mllex src/yacc.lex && \
 		chmod -w src/yacc.lex.sml
 
