@@ -1468,9 +1468,8 @@ struct
 	    val register
 	      = case registers
 		  of [] 
-(*
 		   => raise Spill
-*)
+(*
 		   => let
 			fun listToString(ss: string list): string
 			  = "[" ^ (concat(List.separate(ss, ", "))) ^ "]"
@@ -1498,6 +1497,7 @@ struct
 			print "Raising Spill in chooseRegister\n";
 			raise Spill
 		      end
+*)
 		   | register::_ => register
 			
 	    val values = valuesRegister {register = register,
