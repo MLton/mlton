@@ -32,8 +32,9 @@ static uint	*current = NULL,
 
 #define START ((uint)&_start)
 #define END (uint)&etext
-void MLton_ProfileTime_init (void) {
-	card = END - START + 1; /* +1 for bin for unknown ticks*/
+
+Pointer MLton_ProfileTime_current () {
+	return (Pointer)current;
 }
 
 void MLton_ProfileTime_setCurrent (Pointer d) {
@@ -97,6 +98,8 @@ void MLton_ProfileTime_Data_write (Pointer d, Word fd) {
 	swriteUint (fd, gcState.magic);
 	swriteUint (fd, START);
 	swriteUint (fd, END);
+	swriteUint (fd, sizeof(*data));
+	swriteUint (fd, MLPROF_KIND_TIME);
 	unless (0 == data[card]) {
 		swriteUint (fd, 0);
 		swriteUint (fd, data[card]);
@@ -128,7 +131,7 @@ static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
 		++current[card];
 }
 
-void MLton_ProfileTime_installHandler (void) {
+void MLton_ProfileTime_init (void) {
 /*
  * Install catcher, which handles SIGPROF and updates the entry in current
  * corresponding to the program counter.
@@ -145,6 +148,8 @@ void MLton_ProfileTime_installHandler (void) {
  */
 	struct sigaction	sa;
 
+
+	card = END - START + 1; /* +1 for bin for unknown ticks*/
 	sa.sa_handler = (void (*)(int))catcher;
 	sigemptyset (&sa.sa_mask);
 	sa.sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;

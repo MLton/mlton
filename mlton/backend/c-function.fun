@@ -16,12 +16,12 @@ datatype t = T of {bytesNeeded: int option,
 		   modifiesFrontier: bool,
 		   modifiesStackTop: bool,
 		   name: string,
-		   needsArrayInit: bool,
+		   needsProfileAllocIndex: bool,
 		   returnTy: Type.t option}
    
 fun layout (T {bytesNeeded, ensuresBytesFree, mayGC, maySwitchThreads,
-	       modifiesFrontier, modifiesStackTop, name, needsArrayInit,
-	       returnTy}) =
+	       modifiesFrontier, modifiesStackTop, name,
+	       needsProfileAllocIndex, returnTy}) =
    Layout.record
    [("bytesNeeded", Option.layout Int.layout bytesNeeded),
     ("ensuresBytesFree", Bool.layout ensuresBytesFree),
@@ -30,7 +30,7 @@ fun layout (T {bytesNeeded, ensuresBytesFree, mayGC, maySwitchThreads,
     ("modifiesFrontier", Bool.layout modifiesFrontier),
     ("modifiesStackTop", Bool.layout modifiesStackTop),
     ("name", String.layout name),
-    ("needsArrayInit", Bool.layout needsArrayInit),
+    ("needsProfileAllocIndex", Bool.layout needsProfileAllocIndex),
     ("returnTy", Option.layout Type.layout returnTy)]
 
 local
@@ -43,12 +43,12 @@ in
    val modifiesFrontier = make #modifiesFrontier
    val modifiesStackTop = make #modifiesStackTop
    val name = make #name
-   val needsArrayInit = make #needsArrayInit
+   val needsProfileAllocIndex = make #needsProfileAllocIndex
    val returnTy = make #returnTy
 end
 
 fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
-	     modifiesStackTop, needsArrayInit, returnTy, ...}): bool =
+	     modifiesStackTop, returnTy, ...}): bool =
    (if maySwitchThreads
       then (case returnTy of
 	      NONE => true
@@ -62,12 +62,6 @@ fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
    (if mayGC
        then modifiesFrontier andalso modifiesStackTop
     else true)
-   andalso 
-   (if needsArrayInit
-      then (case returnTy of
-	      NONE => false
-	    | SOME t => Type.equals (t, Type.pointer))
-    else true)
 
 val isOk = Trace.trace ("CFunction.isOk", layout, Bool.layout) isOk
 
@@ -78,7 +72,7 @@ fun equals (T {bytesNeeded = b,
 	       modifiesFrontier = f,
 	       modifiesStackTop = t,
 	       name = n,
-	       needsArrayInit = nai,
+	       needsProfileAllocIndex = np,
 	       returnTy = r},
 	    T {bytesNeeded = b',
 	       ensuresBytesFree = e',
@@ -87,10 +81,10 @@ fun equals (T {bytesNeeded = b,
 	       modifiesFrontier = f',
 	       modifiesStackTop = t',
 	       name = n',
-	       needsArrayInit = nai',
+	       needsProfileAllocIndex = np',
 	       returnTy = r'}) =
    b = b' andalso e = e' andalso g = g' andalso s = s' andalso f = f'
-   andalso t = t' andalso n = n' andalso nai = nai'
+   andalso t = t' andalso n = n' andalso np = np'
    andalso Option.equals (r, r', Type.equals)
 
 val equals =
@@ -105,7 +99,7 @@ local
 	 modifiesFrontier = true,
 	 modifiesStackTop = true,
 	 name = "GC_gc",
-	 needsArrayInit = false,
+	 needsProfileAllocIndex = false,
 	 returnTy = NONE}
    val t = make true
    val f = make false
@@ -121,7 +115,7 @@ fun vanilla {name, returnTy} =
       modifiesFrontier = false,
       modifiesStackTop = false,
       name = name,
-      needsArrayInit = false,
+      needsProfileAllocIndex = false,
       returnTy = returnTy}
 
 val bug = vanilla {name = "MLton_bug",

@@ -33,8 +33,7 @@ structure Kind =
 structure Name =
    struct
       datatype t =
-	 Array_allocate
-       | Array_array
+	 Array_array
        | Array_array0
        | Array_array0Const
        | Array_length
@@ -256,7 +255,6 @@ structure Name =
        *)
       val strings =
 	 [
-	  (Array_allocate, Moveable, "Array_allocate"),
 	  (Array_array, Moveable, "Array_array"),
 	  (Array_array0, Moveable, "Array_array0"),
 	  (Array_array0Const, Moveable, "Array_array0Const"),
@@ -529,9 +527,6 @@ local
       end
    val tuple = tuple o Vector.fromList    
 in
-   val arrayAllocate =
-      new (Name.Array_allocate,
-	   make1 (fn a => tuple [int, word, word] --> array a))
    val array0 = new (Name.Array_array0, make1 (fn a => unit --> array a))
    val array = new (Name.Array_array, make1 (fn a => int --> array a))
    val assign = new (Name.Ref_assign, make1 (fn a => tuple [reff a, a] --> unit))

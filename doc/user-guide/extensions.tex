@@ -40,6 +40,7 @@ structure MLton:
       structure Itimer: MLTON_ITIMER
       structure ProcEnv: MLTON_PROC_ENV
       structure Process: MLTON_PROCESS
+      structure ProfileAlloc: MLTON_PROFILE
       structure ProfileTime: MLTON_PROFILE
       structure Random: MLTON_RANDOM
       structure Rlimit: MLTON_RLIMIT
@@ -377,12 +378,14 @@ and start a new process running that executable with the arguments {\tt args}.
 Like {\tt Posix.Process.execp}.
 \end{description}
 
-\subsubsec{{\tt MLton.ProfileTime}}{profile-time}
+\subsubsec{{\tt MLton.ProfileAlloc}, {\tt MLton.ProfileTime}}{profile-structures}
 This structure provides profiling control from within the program.
-For more on profiling as well as an example, see \secref{profiling}
-and {\tt examples/profiling}. In order to most efficiently execute
-non-profiled programs, all of the operations in {\tt MLton.Profile}
-are no-ops when compiling {\tt -profile false}.
+For more on profiling, see \secref{profiling} and {\tt
+examples/profiling}. In order to most efficiently execute
+non-profiled programs, all of the operations in {\tt
+MLton.ProfileAlloc} are no-ops except when compiling {\tt -profile
+alloc} and all the operations in {\tt MLton.ProfileTime} are no-ops
+except when compiling {\tt -profile time}.
 
 \begin{verbatim}
 signature MLTON_PROFILE =

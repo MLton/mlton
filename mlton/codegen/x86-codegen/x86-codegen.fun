@@ -64,22 +64,8 @@ struct
     struct
       val truee = "TRUE"
       val falsee = "FALSE"
-	
-      fun args(ss: string list): string
-	= concat("(" :: List.separate(ss, ", ") @ [")"])
-         
-      fun callNoSemi(f: string, xs: string list, print: string -> unit): unit 
-	= (print f
-	   ; print "("
-	   ; (case xs 
-		of [] => ()
-		 | x :: xs => (print x
-			       ; List.foreach(xs, 
-					      fn x => (print ", "; print x))))
-	   ; print ")")
 
-      fun call(f, xs, print) = (callNoSemi(f, xs, print)
-                                ; print ";\n")
+      fun bool b = if b then truee else falsee
 
       fun int(n: int): string 
 	= if n >= 0
@@ -88,23 +74,6 @@ struct
 		   then "(int)0x80000000" (* because of goofy gcc warning *)
 		   else "-" ^ String.dropPrefix(Int.toString n, 1)
       (* This overflows on Int32.minInt: Int32.toString(~ n) *)
-
-      fun char(c: char) 
-	= concat[if Char.ord c >= 0x80 then "(uchar)" else "",
-		 "'", Char.escapeC c, "'"]
-
-      fun word(w: Word.t) = "0x" ^ Word.toString w
-
-      (* The only difference between SML floats and C floats is that
-       * SML uses "~" while C uses "-".
-       *)
-      fun float s = String.translate(s, 
-				     fn #"~" => "-" | c => String.fromChar c)
-
-      fun string s 
-	= let val quote = "\""
-	  in concat[quote, String.escapeC s, quote]
-	  end
     end
 
   open x86
@@ -119,6 +88,7 @@ struct
 			  intInfs,
 			  main,
 			  maxFrameSize,
+			  profileAllocLabels,
 			  strings,
 			  ...}: Machine.Program.t,
 	      includes: string list,
@@ -135,6 +105,68 @@ struct
 	       Control.Cygwin => true
 	     | Control.FreeBSD => false
 	     | Control.Linux => false
+
+	 val numProfileAllocLabels =
+	    (* Add 1 for PROFILE_ALLOC_MISC *)
+	    1 + Vector.length profileAllocLabels
+	 val declareProfileAllocLabels =
+	    if !Control.profile <> Control.ProfileAlloc
+	       then fn _ => ()
+	    else
+		let  
+		   val profileLabels =
+		      Array.tabulate (numProfileAllocLabels, fn _ => NONE)
+		   val labelSet: {done: bool ref,
+				  hash: word,
+				  index: int,
+				  name: string} HashSet.t =
+		      HashSet.new {hash = #hash}
+		   val _ = 
+		      Vector.foreachi (profileAllocLabels, fn (i, name) =>
+				       let
+					  val hash = String.hash name
+				       in
+					  HashSet.lookupOrInsert
+					  (labelSet, hash, fn _ => false,
+					   fn () => {done = ref false,
+						     hash = hash,
+						     index = i + 1,
+						     name = name})
+					  ; ()
+				       end)
+		   fun addProfileLabel (name: string, label: Label.t) =
+		      case HashSet.peek (labelSet, String.hash name,
+					 fn {name = n, ...} => n = name) of
+			 NONE => ()
+		       | SOME {done, index, ...} =>
+			    if !done
+			       then ()
+			    else (done := true
+				  ; Array.update (profileLabels, index,
+						  SOME label))
+		   val _ = x86.setAddProfileLabel addProfileLabel
+		   fun declareLabels print =
+		      let
+			 val _ = print ".data\n\
+	                               \.p2align 4\n\
+				       \.global profileAllocLabels\n\
+				       \profileAllocLabels:\n"
+			 val _ =
+			    Array.foreach
+			    (profileLabels, fn l =>
+			     (print
+			      (concat
+			       [".long ",
+ 				case l of
+	 			   NONE => "0"
+		 		 | SOME l => Label.toString l,
+			       "\n"])))
+		      in
+			 ()
+		      end
+		in
+		   declareLabels
+		end
 
 	val makeC = outputC
 	val makeS = outputS
@@ -226,12 +258,20 @@ struct
 			  Control.Cygwin => String.dropPrefix (mainLabel, 1)
 			| Control.FreeBSD => mainLabel
 			| Control.Linux => mainLabel
+		    val (a1, a2, a3) =
+		       if !Control.profile = Control.ProfileAlloc
+			  then (C.bool true,
+				"&profileAllocLabels",
+				C.int numProfileAllocLabels)
+		       else (C.bool false, C.int 0, C.int 0)
 		 in
 		    [mainLabel,
-		     if reserveEsp then C.truee else C.falsee]
+		     if reserveEsp then C.truee else C.falsee,
+		     a1, a2, a3]
 		 end
 	      fun rest () =
-		 declareFrameLayouts()
+		 (declareFrameLayouts()
+		  ; print "extern uint profileAllocLabels;\n")
 	    in
 	      CCodegen.outputDeclarations
 	      {additionalMainArgs = additionalMainArgs,
@@ -303,9 +343,7 @@ struct
 		    reserveEsp = reserveEsp})
 		  handle exn
 		   => (Error.bug ("x86GenerateTransfers.generateTransfers::" ^
-				  (case exn
-				     of Fail s => s
-				      | _ => "?")))
+				  Layout.toString (Exn.layout exn)))
 
 	      val allocated_assembly : Assembly.t list list
 		= x86AllocateRegisters.allocateRegisters 
@@ -362,7 +400,9 @@ struct
 					print "\n"))
 		    fun loop' (chunks, size) 
 		      = case chunks
-			  of [] => done ()
+			  of [] =>
+			     (declareProfileAllocLabels print
+			      ; done ())
 			   | chunk::chunks
 			   => if (case split
 				    of NONE => false
@@ -385,7 +425,7 @@ struct
 	val outputAssembly =
 	   Control.trace (Control.Pass, "outputAssembly") outputAssembly
       in
-	outputC();
-	outputAssembly()
+	outputC()
+	; outputAssembly()
       end 
 end

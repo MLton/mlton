@@ -20,6 +20,7 @@ signature OUTSTREAM =
       val output: t * string -> unit
       val output1: t * char -> unit
       val outputc: t -> string -> unit
+      val outputl: t * string -> unit
       val outputSubstr: t * Substring.t -> unit
       val print: string -> unit
       val set: t * t -> unit

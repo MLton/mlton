@@ -105,22 +105,6 @@ structure C =
       fun bug (s: string, print) =
 	 call ("MLton_bug", [concat ["\"", String.escapeC s, "\""]], print)
 
-      local
-	 val current = ref ""
-      in
-	 fun profile (detailed: string, nonDetailed: string,
-		      print: string -> unit): unit =
-	    if !Control.profile = Control.TimeProf
-	       andalso detailed <> !current
-	       then (print "/* PROFILE: "
-		     ; print detailed
-		     ; print " & "
-		     ; print nonDetailed
-		     ; print " */\n"
-		     ; current := detailed)
-	    else ()
-      end 
-
       fun push (i, print) = call ("\tPush", [int i], print)
 
       fun move ({dst, src}, print) =
@@ -174,6 +158,7 @@ structure Operand =
 		   | Limit => "gcState.limit"
 		   | LimitPlusSlop => "gcState.limitPlusSlop"
 		   | MaxFrameSize => "gcState.maxFrameSize"
+		   | ProfileAllocIndex => "gcState.profileAllocIndex"
 		   | SignalIsPending => "gcState.signalIsPending"
 		   | StackBottom => "gcState.stackBottom"
 		   | StackLimit => "gcState.stackLimit"
@@ -195,9 +180,8 @@ fun outputDeclarations
     name: string,
     print: string -> unit,
     program = (Machine.Program.T
-	       {chunks, frameOffsets, floats, globals,
-		globalsNonRoot, intInfs, maxFrameSize, objectTypes, strings,
-		...}),
+	       {chunks, frameOffsets, floats, globals, globalsNonRoot, intInfs,
+		maxFrameSize, objectTypes, strings, ...}),
     rest: unit -> unit
     }: unit =
    let
@@ -561,15 +545,11 @@ fun output {program as Machine.Program.T {chunks,
 		end) arg
 	    and printLabelCode arg =
 	       tracePrintLabelCode
-	       (fn {block = Block.T {kind, label = l, live,
-				     profileInfo as 
-				     {ssa as {func = profileInfoFunc, 
-					      label = profileInfoLabel}, ...},
-				     statements, transfer, ...},
+	       (fn {block = Block.T {kind, label = l, live, statements,
+				     transfer, ...},
 		    layedOut, status, ...} =>
 		let
 		  val _ = layedOut := true
-		  val _ = C.profile (profileInfoFunc, profileInfoFunc, print)
 		  val _ =
 		     case !status of
 			Many =>
@@ -772,11 +752,8 @@ fun output {program as Machine.Program.T {chunks,
 			iff (concat ["IsInt (", Operand.toString test, ")"],
 			     int, pointer)
 	       end
-	    fun profChunkSwitch () =
-	       C.profile ("ChunkSwitch (magic)", overhead, print)
 	 in
-	    C.profile ("Chunk (magic)", overhead, print)
-	    ; C.callNoSemi ("Chunk", [ChunkLabel.toString chunkLabel], print)
+	    C.callNoSemi ("Chunk", [ChunkLabel.toString chunkLabel], print)
 	    ; print "\n"
 	    (* Declare registers. *)
 	    ; List.foreach (Type.all, fn ty =>
@@ -784,17 +761,14 @@ fun output {program as Machine.Program.T {chunks,
 				     fn i => C.call (concat ["D", Type.name ty],
 						     [C.int i],
 						     print)))
-	    ; profChunkSwitch ()
 	    ; print "ChunkSwitch\n"
 	    ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
 			      if Kind.isEntry kind
-				 then (profChunkSwitch ()
-				       ; print "case "
+				 then (print "case "
 				       ; print (Label.toStringIndex label)
 				       ; print ":\n"
 				       ; gotoLabel label)
 			      else ())
-	    ; C.profile ("EndChunk (magic)", overhead, print)
 	    ; print "EndChunk\n"
 	 end
       val additionalMainArgs =

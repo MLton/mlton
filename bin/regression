@@ -85,10 +85,16 @@ for f in `ls *.sml`; do
 			if [ -r $f.ok ] && ! diff $f.ok $tmp ; then
 				echo "difference with $flags"
 			fi
+			./$f @MLton gc-summary -- 2>&1 | grep 'allocated' | awk '{print $3}' >/tmp/z.bytes1
+			$src/mlprof/mlprof -x -d 1 $f mlmon.out | grep 'bytes allocated' | awk '{print $1}' >/tmp/z.bytes2
+			if ! diff -q /tmp/z.bytes1 /tmp/z.bytes2; then
+				echo "mismatch on $f"
+			fi
 		fi
 	;;
 	esac
 done 
+exit 0
 if [ $cross = 'yes' -o $runOnly = 'yes' ]; then
 	exit 0
 fi

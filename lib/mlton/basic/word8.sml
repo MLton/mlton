@@ -15,6 +15,8 @@ structure Word8 : WORD =
       val fromWord = fromLargeWord
       val toWord = toLargeWord
       val toWordX = toLargeWordX
+      val toIntInf = toLargeInt
+      val toIntInfX = toLargeIntX
 
       val layout = Layout.str o toString
 

@@ -118,10 +118,11 @@ struct cont {
 /*                       main                        */
 /* ------------------------------------------------- */
 
-#define Main(cs, mmc, mfs, mfi, mot, mg, mc, ml) 			\
+#define Main(cs, mmc, mfs, mfi, mot, mg, mc, ml)			\
 int main (int argc, char **argv) {					\
 	struct cont cont;						\
 	int l_nextFun;							\
+	gcState.profileAllocIsOn = FALSE;				\
 	gcState.cardSizeLog2 = cs;					\
 	gcState.frameLayouts = frameLayouts;				\
 	gcState.globals = globalpointer;				\

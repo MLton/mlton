@@ -65,14 +65,18 @@ int smkstemp (char *template) {
 }
 
 /* safe version of write */
-void swrite(int fd, const void *buf, size_t count) {
+void swrite (int fd, const void *buf, size_t count) {
 	if (0 == count) return;
-	unless (count == write(fd, buf, count))
-		diee("swrite failed");
+	unless (count == write (fd, buf, count))
+		diee ("swrite failed");
 }
 
-void swriteUint(int fd, uint n) {
-	swrite(fd, &n, sizeof(uint));
+void swriteUint (int fd, uint n) {
+	swrite (fd, &n, sizeof(uint));
+}
+
+void swriteUllong (int fd, ullong n) {
+	swrite (fd, &n, sizeof(ullong));
 }
 
 /* safe version of fclose */

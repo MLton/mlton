@@ -48,18 +48,6 @@ val optimization: int ref = ref 1
 val showBasis: bool ref = ref false
 val stop = ref Place.OUT
 
-val usageRef: (string -> unit) option ref = ref NONE
-
-fun usage (s: string): 'a =
-   (valOf (!usageRef) s
-    ; let open OS.Process
-      in if MLton.isMLton
-	    then exit failure
-	 else raise Fail "failure"
-      end)
-
-datatype optionStyle = Normal | Expert
-
 val libRef: Dir.t option ref = ref NONE
 fun getLib (): Dir.t =
    case !libRef of
@@ -82,11 +70,14 @@ val hostMap: unit -> {host: string, hostType: Control.hostType} list =
 	      | _ => Error.bug (concat ["strange hostType: ", hostType]))}
       | _ => Error.bug (concat ["strange host mapping: ", line])))
    
-fun options () = 
+fun makeOptions {usage} = 
    let
+      val usage = fn s => (usage s; raise Fail "unreachable")
       open Control Popt
       fun push r = String (fn s => List.push (r, s))
-   in [
+   in List.map
+      (
+       [
        (Expert, "build-constants", "",
 	"output C file that prints basis constants",
 	trueRef buildConstants),
@@ -228,14 +219,14 @@ fun options () =
 	SpaceString (fn s => output := SOME s)),
        (Expert, "O", "digit", "gcc optimization level",
 	Digit (fn d => optimization := d)),
-       (Normal, "profile", " {no|space|time}",
+       (Normal, "profile", " {no|alloc|time}",
 	"produce executable suitable for profiling",
 	SpaceString
 	(fn s =>
 	 case s of
-	    "no" => profile := NoProf
-	  | "space" => (profile := SpaceProf; keepSSA := true)
-	  | "time" => (profile := TimeProf; keepSSA := true)
+	    "no" => profile := ProfileNone
+	  | "alloc" => (profile := ProfileAlloc; keepSSA := true)
+	  | "time" => (profile := ProfileTime; keepSSA := true)
 	  | _ => usage (concat ["invalid -profile arg: ", s]))),
        (Expert, "print-at-fun-entry", " {false|true}",
 	"print debugging message at every call",
@@ -282,39 +273,24 @@ fun options () =
 			| "2" => Pass
 			| "3" =>  Detail
 			| _ => usage (concat ["invalid -v arg: ", s]))))
-      ]
+      ],
+       fn (style, name, arg, desc, opt) =>
+       {arg = arg, desc = desc, name = name, opt = opt, style = style})
    end
 
-val _ =
-   usageRef :=
-   SOME
-   (fn s =>
-    let
-       fun message s = Out.output (Out.error, s)
-       val opts =
-	  List.fold
-	  (rev (options ()), [], fn ((style, opt, arg, desc, _), rest) =>
-	   if style = Normal
-	      orelse let open Control
-		     in !verbosity <> Silent
-		     end
-	      then [concat ["    -", opt, arg, " "], desc] :: rest
-	   else rest)
-       val table =
-	  let open Justify
-	  in table {justs = [Left, Left],
-		    rows = opts}
-	  end
-    in
-       message s
-       ; (message
-	  "\nusage: mlton [option ...] file.{cm|sml|c|o} [file.{S|o} ...] [library ...]\n")
-       ; List.foreach (table, fn ss =>
-		       message (concat [String.removeTrailing
-					(concat ss, Char.isSpace),
-					"\n"]))
-    end)
+fun showExpert () = let open Control
+		    in !verbosity <> Silent
+		    end
+val mainUsage =
+   "mlton [option ...] file.{cm|sml|c|o} [file.{S|o} ...] [library ...]"
 
+val {parse, usage} =
+   Popt.makeUsage {mainUsage = mainUsage,
+		   makeOptions = makeOptions,
+		   showExpert = showExpert}
+
+val usage = fn s => (usage s; raise Fail "unreachable")
+   
 fun commandLine (args: string list): unit =
    let
       open Control
@@ -336,9 +312,7 @@ fun commandLine (args: string list): unit =
 	       end
 	  | _ => error ()
       val _ = libRef := SOME lib
-      val result =
-	 Popt.parse {switches = args,
-		     opts = List.map (options (), fn (_, a, _, _, c) => (a, c))}
+      val result = parse args
       val host = !host
       val hostString =
 	 case host of
@@ -364,13 +338,16 @@ fun commandLine (args: string list): unit =
       val _ = if not (!Native.native) andalso !Native.IEEEFP
 		 then usage "can't use -native false and -ieee-fp true"
 	      else ()
+      val _ = if not (!Native.native) andalso !profile <> ProfileNone
+		 then usage "can't profile with -native false"
+	      else ()
       val _ =
 	 if !keepDot andalso List.isEmpty (!keepPasses)
 	    then keepSSA := true
 	 else ()
       val _ =
 	 case !hostType of
-	    Cygwin => if !profile = TimeProf
+	    Cygwin => if !profile = ProfileTime
 			 then usage "-profile time not allowed on Cygwin"
 		      else ()
 	  | FreeBSD => ()

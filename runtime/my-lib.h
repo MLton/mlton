@@ -65,8 +65,9 @@ string boolToString (bool b);
 /* safe version of close, mkstemp, write */
 int smkstemp (char *template);
 void sclose (int fd);
-void swrite(int fd, const void *buf, size_t count);
-void swriteUint(int fd, uint n);
+void swrite (int fd, const void *buf, size_t count);
+void swriteUint (int fd, uint n);
+void swriteUllong (int fd, ullong n);
 
 /* safe versions of fopen, fread, fwrite */
 void sfclose (FILE *file);

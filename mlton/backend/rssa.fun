@@ -495,7 +495,7 @@ structure Block =
 				      modifiesFrontier = false,
 				      modifiesStackTop = false,
 				      name = "MLton_allocTooLarge",
-				      needsArrayInit = false,
+				      needsProfileAllocIndex = false,
 				      returnTy = NONE}
 		      val _ =
 			 newBlocks :=
@@ -631,13 +631,14 @@ structure Function =
 structure Program =
    struct
       datatype t = T of {functions: Function.t list,
-			 main: Function.t}
+			 main: Function.t,
+			 profileAllocLabels: string vector}
 
       fun clear (T {functions, main, ...}) =
 	 (List.foreach (functions, Function.clear)
 	  ; Function.clear main)
 
-      fun hasPrim (T {functions, main}, pred) =
+      fun hasPrim (T {functions, main, ...}, pred) =
 	 let
 	    fun has f = Function.hasPrim (f, pred)
 	 in
@@ -647,7 +648,7 @@ structure Program =
       fun handlesSignals p =
 	 hasPrim (p, fn p => Prim.name p = Prim.Name.MLton_installSignalHandler)
 	 
-      fun layouts (T {functions, main}, output': Layout.t -> unit): unit =
+      fun layouts (T {functions, main, ...}, output': Layout.t -> unit): unit =
 	 let
 	    open Layout
 	    val output = output'
@@ -658,7 +659,7 @@ structure Program =
 	    ; List.foreach (functions, output o Function.layout)
 	 end
 	    
-      fun checkScopes (program as T {functions, main}): unit =
+      fun checkScopes (program as T {functions, main, ...}): unit =
 	 let
 	    datatype status =
 	       Defined
@@ -752,7 +753,7 @@ structure Program =
 	 in ()
 	 end
 
-      fun typeCheck (p as T {functions, main}) =
+      fun typeCheck (p as T {functions, main, ...}) =
 	 let
 	    val _ = checkScopes p
 	    val {get = labelBlock: Label.t -> Block.t,

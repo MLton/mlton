@@ -21,7 +21,7 @@ fun insert p =
       then p
    else
       let
-	 val Program.T {functions, main} = p
+	 val Program.T {functions, main, profileAllocLabels} = p
 	 fun insert (f: Function.t): Function.t =
 	    let
 	       val {args, blocks, name, start} = Function.dest f
@@ -170,7 +170,8 @@ fun insert p =
 	    end
       in
 	 Program.T {functions = List.revMap (functions, insert),
-		    main = main}
+		    main = main,
+		    profileAllocLabels = profileAllocLabels}
       end
 
 end

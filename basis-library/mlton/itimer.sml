@@ -19,7 +19,7 @@ structure Itimer =
 	 Prim.set (toInt t, s1, u1, s2, u2)
 	    
       fun set (z as (t, _)) =
-	 if Primitive.MLton.ProfileTime.profile
+	 if Primitive.MLton.ProfileTime.isOn
 	    andalso t = Prof
 	    then let
 		    open PosixError

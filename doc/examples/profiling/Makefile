@@ -1,32 +1,30 @@
 mlton = mlton
 mlprof = mlprof
+mlton = $(HOME)/mlton/bin/mlton
+mlprof = $(HOME)/mlton/src/mlprof/mlprof
 
 .PHONY: all
-all: profile profile2
+all: profile profile2 alloc
+
+.PHONY: alloc
+alloc:
+	$(mlton) -profile alloc profiling-alloc.sml
+	./profiling-alloc
+	$(mlprof) profiling-alloc mlmon.out
 
 .PHONY: profile
-profile: profiling mlmon.out
+profile:
+	$(mlton) -profile time -keep g profiling.sml
+	./profiling
 	$(mlprof) profiling mlmon.out
 
-mlmon.out: profiling
-	./profiling
-
-profiling: profiling.sml
-	$(mlton) -profile time -keep g profiling.sml
-
 .PHONE: profile2
-profile2: profiling2 mlmon.fib.out mlmon.tak.out
+profile2:
+	$(mlton) -profile time -keep g profiling2.sml
+	./profiling2
 	$(mlprof) profiling2 mlmon.fib.out
 	$(mlprof) profiling2 mlmon.tak.out
 	$(mlprof) profiling2 mlmon.fib.out mlmon.tak.out mlmon.out
-
-mlmon.fib.out:
-	./profiling2
-mlmon.tak.out:
-	./profiling2
-
-profiling2: profiling2.sml
-	$(mlton) -profile time -keep g profiling2.sml
 
 .PHONY: clean
 clean:

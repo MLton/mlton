@@ -15,6 +15,10 @@ functor FixWord (W: WORD) =
       val toInt = toLargeInt
       val toIntX = toLargeIntX
       val fromInt = fromLargeInt
+      val toLargeInt: word -> LargeInt.int =
+	 fn _ => raise Fail "Word.toLargeInt"
+      val toLargeIntX: word -> LargeInt.int =
+	 fn _ => raise Fail "Word.toLargeIntX"
 
       (* Bug in SML/NJ -- they use lower instead of upper case. *)
       val toUpper = Pervasive.String.translate (Char.toString o Char.toUpper)

@@ -62,12 +62,14 @@ enum {
 	DEBUG_GENERATIONAL = FALSE,
 	DEBUG_MARK_COMPACT = FALSE,
 	DEBUG_MEM = FALSE,
+	DEBUG_PROFILE_ALLOC = FALSE,
 	DEBUG_RESIZING = FALSE,
 	DEBUG_SIGNALS = FALSE,
 	DEBUG_STACKS = FALSE,
 	DEBUG_THREADS = FALSE,
 	FORWARDED = 0xFFFFFFFF,
 	HEADER_SIZE = WORD_SIZE,
+	PROFILE_ALLOC_MISC = 0,
 	STACK_HEADER_SIZE = WORD_SIZE,
 };
 
@@ -629,6 +631,22 @@ static bool hasBytesFree (GC_state s, W32 oldGen, W32 nursery) {
 }
 #endif
 
+static inline void setFrontier (GC_state s, pointer p) {
+	s->frontier = p;
+}
+
+/* Pre: s->profileAllocIndex is set. */
+void GC_incProfileAlloc (GC_state s, W32 amount) {
+	if (s->profileAllocIsOn) {
+		if (DEBUG_PROFILE_ALLOC)
+			fprintf (stderr, "GC_IncProfileAlloc (%u, %u)\n",
+					s->profileAllocIndex,
+					(uint)amount);
+		s->profileAllocCounts[s->profileAllocIndex] += amount;
+	}
+}
+
+/* Pre: s->profileAllocIndex is set. */
 static pointer object (GC_state s, uint header, W32 bytesRequested,
 				bool allocInOldGen) {
 	pointer frontier;
@@ -646,6 +664,7 @@ static pointer object (GC_state s, uint header, W32 bytesRequested,
 	if (allocInOldGen) {
 		frontier = s->heap.start + s->oldGenSize;
 		s->oldGenSize += bytesRequested;
+		s->bytesAllocated += bytesRequested;
 	} else {
 		if (DEBUG_DETAILED)
 			fprintf (stderr, "frontier changed from 0x%08x to 0x%08x\n",
@@ -654,11 +673,13 @@ static pointer object (GC_state s, uint header, W32 bytesRequested,
 		frontier = s->frontier;
 		s->frontier += bytesRequested;
 	}
+	GC_incProfileAlloc (s, bytesRequested);
 	*(uint*)(frontier) = header;
 	result = frontier + HEADER_SIZE;
 	return result;
 }
 
+/* Pre: s->profileAllocIndex is set. */
 static GC_stack newStack (GC_state s, uint size, bool allocInOldGen) {
 	GC_stack stack;
 
@@ -1190,7 +1211,7 @@ static void heapShrink (GC_state s, GC_heap h, W32 keep) {
 	}
 }
 
-static void setLimit (GC_state s) {
+static inline void setLimit (GC_state s) {
 	s->limitPlusSlop = s->nursery + s->nurserySize;
 	s->limit = s->limitPlusSlop - LIMIT_SLOP;
 }
@@ -1236,7 +1257,7 @@ static void setNursery (GC_state s, W32 oldGenBytesRequested,
 		s->canMinor = FALSE;
 	}
 	s->nursery = h->start + h->size - s->nurserySize;
-	s->frontier = s->nursery;
+	setFrontier (s, s->nursery);
 	setLimit (s);
 	assert (isAligned (s->nurserySize, WORD_SIZE));
 	assert (isAligned ((uint)s->nursery, WORD_SIZE));
@@ -2395,6 +2416,7 @@ static void growStack (GC_state s) {
 		fprintf (stderr, "Growing stack to size %s.\n",
 				uintToCommaString (stackBytes (size)));
 	assert (hasBytesFree (s, stackBytes (size), 0));
+	s->profileAllocIndex = PROFILE_ALLOC_MISC;
 	stack = newStack (s, size, TRUE);
 	stackCopy (s->currentThread->stack, stack);
 	s->currentThread->stack = stack;
@@ -2596,6 +2618,7 @@ static inline W64 w64align (W64 w) {
  	return ((w + 3) & ~ 3);
 }
 
+/* Pre: s->profileAllocIndex is set. */
 pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts, 
 				W32 header) {
 	uint numPointers;
@@ -2631,6 +2654,7 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 		frontier = (W32*)(s->heap.start + s->oldGenSize);
 		last = (W32*)((pointer)frontier + arraySize);
 		s->oldGenSize += arraySize;
+		s->bytesAllocated += arraySize;
 	} else {
 		W32 require;
 
@@ -2651,6 +2675,7 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 	if (1 == numPointers)
 		for ( ; frontier < last; frontier++)
 			*frontier = BOGUS_POINTER;
+	GC_incProfileAlloc (s, arraySize);
 	if (DEBUG_ARRAY) {
 		fprintf (stderr, "GC_arrayAllocate done.  res = 0x%x  frontier = 0x%x\n",
 				(uint)res, (uint)s->frontier);
@@ -2676,6 +2701,7 @@ static inline uint initialThreadBytes (GC_state s) {
 	return threadBytes () + stackBytes (initialStackSize (s));
 }
 
+/* Pre: s->profileAllocIndex is set. */
 static GC_thread newThreadOfSize (GC_state s, uint stackSize) {
 	GC_stack stack;
 	GC_thread t;
@@ -2692,6 +2718,7 @@ static GC_thread newThreadOfSize (GC_state s, uint stackSize) {
 	return t;
 }
 
+/* Pre: s->profileAllocIndex is set. */
 static GC_thread copyThread (GC_state s, GC_thread from, uint size) {
 	GC_thread to;
 
@@ -2715,6 +2742,7 @@ static GC_thread copyThread (GC_state s, GC_thread from, uint size) {
 	return to;
 }
 
+/* Pre: s->profileAllocIndex is set. */
 void GC_copyCurrentThread (GC_state s) {
 	GC_thread t;
 	GC_thread res;
@@ -2731,6 +2759,7 @@ void GC_copyCurrentThread (GC_state s) {
 	s->savedThread = res;
 }
 
+/* Pre: s->profileAllocIndex is set. */
 pointer GC_copyThread (GC_state s, pointer thread) {
 	GC_thread res;
 	GC_thread t;
@@ -3044,6 +3073,8 @@ static void initIntInfs (GC_state s) {
 		frontier = (pointer)&bp->limbs[alen];
 	}
 	s->frontier = frontier;
+	GC_incProfileAlloc (s, frontier - s->frontier);
+	s->bytesAllocated += frontier - s->frontier;
 }
 
 static void initStrings (GC_state s) {
@@ -3083,10 +3114,12 @@ static void initStrings (GC_state s) {
 		fprintf (stderr, "frontier after string allocation is 0x%08x\n",
 				(uint)frontier);
 	s->frontier = frontier;
+	GC_incProfileAlloc (s, frontier - s->frontier);
+	s->bytesAllocated += frontier - s->frontier;
 }
 
-static void newWorld (GC_state s)
-{
+/* Pre: s->profileAllocIndex is set. */
+static void newWorld (GC_state s) {
 	int i;
 
 	assert (isAligned (sizeof (struct GC_thread), WORD_SIZE));
@@ -3096,7 +3129,7 @@ static void newWorld (GC_state s)
 	heapCreate (s, &s->heap, heapDesiredSize (s, s->bytesLive, 0),
 			s->bytesLive);
 	createCardMapAndCrossMap (s);
-	s->frontier = s->heap.start;
+	setFrontier (s, s->heap.start);
 	initIntInfs (s);
 	initStrings (s);
 	assert (s->frontier - s->heap.start <= s->bytesLive);
@@ -3198,6 +3231,18 @@ int GC_init (GC_state s, int argc, char **argv) {
 	worldFile = NULL;
 	unless (isAligned (s->pageSize, s->cardSize))
 		die ("page size must be a multiple of card size");
+	if (s->profileAllocIsOn) {
+		s->profileAllocIndex = PROFILE_ALLOC_MISC;
+		MLton_ProfileAlloc_setCurrent 
+			(MLton_ProfileAlloc_Data_malloc ());
+		if (DEBUG_PROFILE_ALLOC) {
+			fprintf (stderr, "s->profileAllocLabels = 0x%08x\n",
+					(uint)s->profileAllocLabels);
+			for (i = 0; i < s->profileAllocNumLabels; ++i)
+				fprintf (stderr, "profileAllocLabels[%d] = 0x%08x\n",
+						i, s->profileAllocLabels[i]);
+		}
+	}
 	i = 1;
 	if (argc > 1 and (0 == strcmp (argv [1], "@MLton"))) {
 		bool done;

@@ -1,4 +1,5 @@
 Group is
+../lib/mlton-stubs/real.sml
 ../lib/mlton/pervasive/pervasive.sml
 ../lib/mlton/basic/dynamic-wind.sig
 ../lib/mlton/basic/dynamic-wind.sml
@@ -164,6 +165,8 @@ Group is
 ../lib/mlton/basic/quick-sort.sml
 ../lib/mlton/basic/justify.sig
 ../lib/mlton/basic/justify.sml
+../lib/mlton/basic/merge-sort.sig
+../lib/mlton/basic/merge-sort.sml
 ../lib/mlton/basic/popt.sig
 ../lib/mlton/basic/popt.sml
 main.sml

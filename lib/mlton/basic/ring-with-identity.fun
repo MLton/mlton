@@ -13,10 +13,10 @@ open S
 structure IntInf = Pervasive.IntInf
 
 val base = {one = one, layout = layout, times = op *}
-val op ^ = Power.power base
-val ^^ = Power.powerInf base
-val power = Power.simultaneous base
-val powerInf = Power.simultaneousInf base
+val pow = Power.power base
+val powInf = Power.powerInf base
+val pows = Power.simultaneous base
+val powsInf = Power.simultaneousInf base
 
 local
    fun 'a
@@ -65,22 +65,22 @@ val two = add1 one
 
 val three = add1 two
 
-val power =
+val pows =
    Trace.traceAssert
-   ("power",
+   ("pows",
     List.layout (Layout.tuple2 (layout, Layout.str o Pervasive.Int.toString)),
     layout,
     fn l => (true, fn r => equals (r, List.fold (l, one, fn ((b, e), ac) =>
-						 ac * (b ^ e)))))
-   power
+						 ac * pow (b, e)))))
+   pows
 
-val powerInf =
+val powsInf =
    Trace.traceAssert
-   ("powerInf",
+   ("powsInf",
     List.layout (Layout.tuple2 (layout, Layout.str o Pervasive.IntInf.toString)),
     layout,
     fn l => (true, fn r => equals (r, List.fold (l, one, fn ((b, e), ac) =>
-						 ac * (^^ (b, e))))))
-   powerInf
+						 ac * powInf (b, e)))))
+   powsInf
 
 end

@@ -307,8 +307,8 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	     ("MLton_debug", Bool (!debug)),
 	     ("MLton_detectOverflow", Bool (!detectOverflow)),
 	     ("MLton_native", Bool (!Native.native)),
-	     ("MLton_profile_space", Bool (!profile = SpaceProf)),
-	     ("MLton_profile_time", Bool (!profile = TimeProf)),
+	     ("MLton_profile_alloc", Bool (!profile = ProfileAlloc)),
+	     ("MLton_profile_time", Bool (!profile = ProfileTime)),
 	     ("MLton_safe", Bool (!safe)),
 	     ("TextIO_bufSize", Int (!textIOBufSize))]
 	 end
@@ -337,6 +337,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	     limit = get "limit",
 	     limitPlusSlop = get "limitPlusSlop",
 	     maxFrameSize = get "maxFrameSize",
+	     profileAllocIndex = get "profileAllocIndex",
 	     signalIsPending = get "signalIsPending",
 	     stackBottom = get "stackBottom",
 	     stackLimit = get "stackLimit",

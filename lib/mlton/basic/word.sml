@@ -44,6 +44,9 @@ structure Word: WORD32 =
       val toWord = fn x => x
       val toWordX = fn x => x
 
+      val toIntInf = toLargeInt
+      val toIntInfX = toLargeIntX
+
       val fromWord8 = Word8.toWord
       val toWord8 = Word8.fromWord
 

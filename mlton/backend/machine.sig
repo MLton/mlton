@@ -217,7 +217,7 @@ signature MACHINE =
 	    datatype t =
 	       T of {chunks: Chunk.t list,
 		     floats: (Global.t * string) list,
-		     (* Each vector in frame Offsets is a specifies the offsets
+		     (* Each vector in frame Offsets specifies the offsets
 		      * of live pointers in a stack frame.  A vector is referred
 		      * to by index as the frameOffsetsIndex in a block kind.
 		      *)
@@ -230,6 +230,7 @@ signature MACHINE =
 			    label: Label.t},
 		     maxFrameSize: int,
 		     objectTypes: Runtime.ObjectType.t vector,
+		     profileAllocLabels: string vector,
 		     strings: (Global.t * string) list}
 
 	    val layouts: t * (Layout.t -> unit) -> unit

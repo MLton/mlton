@@ -160,11 +160,6 @@ fun setInlineSize (size: int): unit =
 	       | Leaf _ => Leaf {size = SOME size}
 	       | LeafNoLoop _ => LeafNoLoop {size = SOME size})
 
-val inlineArrayAllocation =
-   control {name = "inline array allocation",
-	    default = false,
-	    toString = Bool.toString}
-   
 val inputFile = control {name = "input file",
 			 default = "<bogus>",
 			 toString = File.toString}
@@ -315,18 +310,18 @@ val printAtFunEntry = control {name = "print at fun entry",
 
 structure Profile =
    struct
-      datatype t = NoProf | SpaceProf | TimeProf
+      datatype t = ProfileNone | ProfileAlloc | ProfileTime
 
       val toString =
-	 fn NoProf => "No"
-	  | SpaceProf => "Space"
-	  | TimeProf => "Time"
+	 fn ProfileNone => "None"
+	  | ProfileAlloc => "Alloc"
+	  | ProfileTime => "Time"
    end
 
 datatype profile = datatype Profile.t
    
 val profile = control {name = "profile",
-		       default = NoProf,
+		       default = ProfileNone,
 		       toString = Profile.toString}
 
 val safe = control {name = "safe",
