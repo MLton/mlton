@@ -275,27 +275,32 @@ functor StreamIOExtra
       (*   instream    *)
       (*---------------*)
 
-      datatype chain = End
+      datatype state = Link of {inp: V.vector, next: state ref}
 	             | Eos of {next: state ref}
-	             | Link of {inp: V.vector, pos: int, next: state ref}
-      and state = Active of chain ref 
-	        | Truncated 
-	        | Closed
-      fun active state = case state of Active _ => true | _ => false
-      fun truncated state = not (active state)
+	             | End
+	             | Truncated 
+	             | Closed
+      fun active state = 
+	case state of 
+	  Link _ => true
+	| Eos _ => true
+	| End => true 
+	| _ => false
       fun closed state = case state of Closed => true | _ => false
 
       datatype instream = In of {common: {reader: reader,
 					  augmented_reader: reader,
 					  tail: state ref ref},
+				 pos: int (* !state <> Link _ ==> pos = 0 *),
 				 state: state ref}
 
       fun equalsIn (is1 as In {common = {tail = tail1, ...}, ...}, 
 		    is2 as In {common = {tail = tail2, ...}, ...}) = 
 	tail1 = tail2
 
-      fun updateState (In {common, ...}, state) =
+      fun updateState (In {common, ...}, pos, state) =
 	In {common = common,
+	    pos = pos,
 	    state = state}
 
       fun instreamSel (In v, sel) = sel v
@@ -312,19 +317,18 @@ functor StreamIOExtra
                  (is as In {common = {augmented_reader, tail, ...}, ...}) 
 		 blocking =
 	case !(!tail) of
-	  Active (r as ref End) =>
+	  End =>
 	    let
 	      fun link inp = let
-			       val next = ref (Active (ref End))
+			       val next = ref End
 			       val this = if V.length inp = 0
 					    then Eos {next = next}
 					    else Link {inp = inp,
-						       pos = 0,
 						       next = next}
-			       val _ = r := this
+			       val _ = !tail := this
 			       val _ = tail := next
 			     in
-			       SOME (inp, updateState (is, next))
+			       SOME (inp, updateState (is, 0, next))
 			     end
 	      fun doit readVec =
 		let
@@ -354,18 +358,18 @@ functor StreamIOExtra
       fun extendB function is = valOf (extend function is true)
       fun extendNB function is = extend function is false
 
-      fun input (is as In {state, ...}) =
+      fun input (is as In {pos, state, ...}) =
 	case !state of
-	  Active (ref (Link {inp, pos, next})) => 
+	  Link {inp, next} => 
 	    let
 	      val inp = V.tabulate
 		        (V.length inp - pos, 
 			 fn i => V.sub (inp, pos + i))
 	    in
-	      (inp, updateState (is, next))
+	      (inp, updateState (is, 0, next))
 	    end
-	| Active (ref (Eos {next})) => (empty, updateState (is, next))
-	| Active (ref End) => extendB "input" is
+	| Eos {next} => (empty, updateState (is, 0, next))
+	| End => extendB "input" is
 	| Truncated => (empty, is)
 	| Closed => (empty, is)
 
@@ -377,20 +381,16 @@ functor StreamIOExtra
 		   let val inp = V.concat (List.rev inps)
 		   in (inp, is)
 		   end
-		 fun loop (is as In {state, ...}, inps, n) =
+		 fun loop (is as In {pos, state, ...}, inps, n) =
 		   case !state of
-		     Active (ref (Link {inp, pos, next})) =>
+		     Link {inp, next} =>
 		       if pos + n < V.length inp
 			 then let
-				val link = Link {inp = inp,
-						 pos = pos + n,
-						 next = next}
-				val next = ref (Active (ref link))
 				val inp' = V.tabulate
 				           (n, fn i => V.sub (inp, pos + i))
 				val inps = inp'::inps
 			      in
-				finish (inps, updateState (is, next))
+				finish (inps, updateState (is, pos + n, state))
 			      end
 			 else let
 				val inp' = V.tabulate
@@ -398,14 +398,14 @@ functor StreamIOExtra
 					    fn i => V.sub (inp, pos + i))
 				val inps = inp'::inps
 			      in
-				loop (updateState (is, next), 
+				loop (updateState (is, 0, next), 
 				      inps, n - (V.length inp - pos))
 			      end
-		   | Active (ref (Eos {next})) => 
+		   | Eos {next} => 
 		       finish (inps, if n > 0
-				       then updateState(is, next)
+				       then updateState(is, 0, next)
 				       else is)
-		   | Active (ref End) => 
+		   | End => 
 		       let val _ = extendB "inputN" is 
 		       in loop (is, inps, n)
 		       end
@@ -414,22 +414,17 @@ functor StreamIOExtra
 		 loop (is, [], n)
 	       end
 
-      fun input1 (is as In {state, ...}) =
+      fun input1 (is as In {pos, state, ...}) =
 	case !state of
-	  Active (ref (Link {inp, pos, next})) =>
+	  Link {inp, next} =>
 	    let
-	      val next = if pos + 1 < V.length inp
-			   then let
-				  val link = Link {inp = inp,
-						   pos = pos + 1,
-						   next = next}
-				in ref (Active (ref link))
-				end
-			   else next
+	      val (k, next) = if pos + 1 < V.length inp
+				then (pos + 1, state)
+				else (0, next)
 	    in
-	      SOME (V.sub (inp, pos), updateState (is, next))
+	      SOME (V.sub (inp, pos), updateState (is, k, next))
 	    end
-	| Active (ref End) => 
+	| End => 
 	    let val _ = extendB "input1" is 
 	    in input1 is
 	    end
@@ -463,27 +458,21 @@ functor StreamIOExtra
 	    in
 	      (inp, is)
 	    end
-	  fun loop (is as In {state, ...}, inps) =
+	  fun loop (is as In {pos, state, ...}, inps) =
 	    case !state of
-	      Active (ref (Link {inp, pos, next})) =>
+	      Link {inp, next} =>
 		(case findLine (inp, pos) of
 		   SOME i => let
 			       val j = i + 1
-			       val next = if j < V.length inp
-					    then let
-						   val link = Link {inp = inp,
-								    pos = j,
-								    next = next}
-						 in
-						   ref (Active (ref link))
-						 end
-					    else next
+			       val (k, next) = if j < V.length inp
+						 then (j, state)
+						 else (0, next)
 			       val inp' = V.tabulate
 				          (j - pos,
 					   fn i => V.sub (inp, pos + i))
 			       val inps = inp'::inps
 			     in
-			       finish (inps, updateState (is, next), false)
+			       finish (inps, updateState (is, k, next), false)
 			     end
 		 | NONE => let
 			     val inp' = V.tabulate
@@ -491,11 +480,11 @@ functor StreamIOExtra
 					 fn i => V.sub (inp, pos + i))
 			     val inps = inp'::inps
 			   in
-			     loop (updateState (is, next), inps)
+			     loop (updateState (is, 0, next), inps)
 			   end)
-	    | Active (ref (Eos {next})) => 
+	    | Eos {next} => 
 		finish (inps, is, List.length inps > 0)
-	    | Active (ref End) => 
+	    | End => 
 		let val _ = extendB "inputLine" is 
 		in loop (is, inps)
 		end
@@ -504,7 +493,7 @@ functor StreamIOExtra
 	  loop (is, [])
 	end
 
-      fun canInput (is as In {state, ...}, n) =
+      fun canInput (is as In {pos, state, ...}, n) =
 	if n < 0 orelse n > V.maxLen
 	  then raise Size
 	else if n = 0
@@ -530,18 +519,17 @@ functor StreamIOExtra
 		   let
 		     val inp = V.concat (List.rev inps)
 		     val next = instreamSel (is, #state)
-		     val this = Active (ref (Link {inp = inp,
-						   pos = 0,
-						   next = next}))
+		     val this = Link {inp = inp,
+				      next = next}
 		     val _ = state := this
 		   in
 		     SOME k
 		   end
 	       in 
 		 case !state of
-		   Active (ref (Link {inp, pos, next})) => 
+		   Link {inp, next} => 
 		     SOME (Int.min (V.length inp - pos, n))
-		 | Active (ref End) => 
+		 | End => 
 		     (case extendNB "canInput" is of
 			NONE => NONE
 		      | SOME (inp, is') => if V.length inp = 0
@@ -552,7 +540,7 @@ functor StreamIOExtra
 
       fun closeIn (is as In {common = {tail, ...}, state, ...}) =
 	case !(!tail) of
-	  Active (ref (End)) =>
+	  End =>
 	    (!tail := Closed;
 	     (readerSel (instreamReader is, #close)) ())
 	| _ => ()
@@ -565,24 +553,24 @@ functor StreamIOExtra
 
       fun mkInstream' {reader, closed, buffer_contents} =
 	let
-	  val next = ref (if closed then Closed else Active (ref End))
+	  val next = ref (if closed then Closed else End)
 	  val this =
 	    case buffer_contents of
 	      NONE => next
-	    | SOME v => let
+	    | SOME v => let 
 			  val chain = if V.length v = 0
 					then Eos {next = next}
 					else Link {inp = v,
-						   pos = 0,
 						   next = next}
-			  val this = ref (Active (ref chain))
-			in 
+			  val this = ref chain
+			in
 			  this
 			end
 	in
 	  In {common = {reader = reader,
 			augmented_reader = PIO.augmentReader reader,
 			tail = ref next},
+	      pos = 0,
 	      state = this}
 	end
       fun mkInstream (reader, buffer_contents) =
@@ -597,13 +585,13 @@ functor StreamIOExtra
 
       fun getReader (is as In {common = {reader, tail, ...}, ...}) =
 	(case !(!tail) of
-	   Active (ref End) => !tail := Truncated
+	   End => !tail := Truncated
 	 | _ => liftExn (instreamName is) "getReader" IO.ClosedStream;
 	 (reader, empty))
 
       fun filePosIn (is as In {common = {reader, tail, ...}, ...}) =
 	case !(!tail) of
-	  Active (ref End) =>
+	  End =>
 	    (case readerSel (reader, #getPos) of
 	       NONE => raise IO.RandomAccessNotSupported
 	     | SOME getPos => getPos ())
