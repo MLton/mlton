@@ -74,7 +74,7 @@ val passes =
      ("localFlatten3", LocalFlatten.flatten),
      ("removeUnusedX5", RemoveUnused.remove),
      ("commonSubexp", CommonSubexp.eliminate),
-     ("removeUnusedX5", RemoveUnused.remove),
+     ("removeUnusedX6", RemoveUnused.remove),
      ("commonBlock", CommonBlock.eliminate),
 (*    ("redundantTests", RedundantTests.simplify), *)
 (*    ("redundant", Redundant.redundant), *)
