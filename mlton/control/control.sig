@@ -45,6 +45,8 @@ signature CONTROL =
 
       val codegen: codegen ref
 
+      val contifyIntoMain: bool ref
+
       val deadCode: bool ref
 	 
       (* Generate an executable with debugging info. *)

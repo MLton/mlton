@@ -157,6 +157,9 @@ fun makeOptions {usage} =
 		      | "c" => codegen := CCodegen
 		      | "native" => codegen := Native
 		      | _ => usage (concat ["invalid -codegen flag: ", s]))),
+       (Expert, "contify-into-main", " {false|true}",
+	"contify functions into main",
+	boolRef contifyIntoMain),
        (Expert, "dead-code", " {true|false}",
 	"basis library dead code elimination",
 	boolRef deadCode),

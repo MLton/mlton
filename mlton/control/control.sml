@@ -79,6 +79,10 @@ val codegen = control {name = "codegen",
 		       default = Native,
 		       toString = Codegen.toString}
 
+val contifyIntoMain = control {name = "contifyIntoMain",
+			       default = false,
+			       toString = Bool.toString}
+
 val deadCode = control {name = "dead code",
 			default = true,
 			toString = Bool.toString}

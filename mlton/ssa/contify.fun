@@ -345,7 +345,25 @@ structure AnalyzeDom =
 	  val fm_node = getFuncNode fm
 	  (* {(Root, fm)} *)
 	  val _ = addEdge {from = Root, to = fm_node}
-
+	  (* { (Root, f) | fm calls f } *)
+	  val () =
+	     if !Control.contifyIntoMain
+		then ()
+	     else
+		case List.peek (functions, fn f =>
+				Func.equals (fm, Function.name f)) of
+		   NONE => Error.bug "no main function"
+		 | SOME f =>
+		      let
+			 val {blocks, ...} = Function.dest f
+		      in
+			 Vector.foreach
+			 (blocks, fn Block.T {transfer, ...} =>
+			  case transfer of
+			     Call {func, ...} =>
+				addEdge {from = Root, to = getFuncNode func}
+			   | _ => ())
+		      end
 	  val _
 	    = List.foreach
 	      (functions,
