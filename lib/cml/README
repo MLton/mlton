@@ -1,6 +1,36 @@
 
 This is an initial port of CML from SML/NJ to MLton.
 
+All of the core CML functionality is present:
+  signature CML; structure CML : CML
+  signature SYNC_VAR; structure SyncVar : SYNC_VAR
+  signature MAILBOX; structure Mailbox : MAILBOX
+  signature MULTICAST; structure Multicast : MULTICAST
+  signature SIMPLE_RPC; structure SimpleRPC : SIMPLE_RPC
+  signature RUN_CML; structure RunCML : RUN_CML
+
+The RUN_CML signature is minimal:
+  signature RUN_CML =
+     sig
+        val isRunning : unit -> bool
+        val doit : (unit -> unit) * Time.time option -> OS.Process.status
+        val shutdown : OS.Process.status -> 'a
+     end
+This does not include all of the cleanup and logging operations of the
+SML/NJ RunCML structure.  However, the implementation does include the
+CML.timeOutEvt and CML.atTimeEvt functions, and a preemptive scheduler
+that knows to sleep when there are no ready threads and some threads
+blocked on time events.
+
+NOTE: None of the Standard ML Basis Library has been made neither
+MLton.Thread nor CML safe.  Much of the IO and OS structures have
+event based equivalents, which should be implemented.  The "right" way
+to call a Basis Library fuction that is stateful is to wrap the call
+with MLton.Thread.atomically.
+
+
+Implementation notes:
+
 The implementation of CML in SML/NJ is built upon the first-class
 continuations of the SMLofNJ.Cont module:
   type 'a cont
@@ -65,7 +95,7 @@ thread model.  Although it follows the
   ... callcc (fn k => ... throw k v) ...
 model, the fact that blockFn will also attempt to do
   ... callcc (fn k' => ... next ()) ...
-the naive transformation will result in nested switch-es.
+means that the naive transformation will result in nested switch-es.
 
 We need to think a little more about what this code is trying to do.
 Essentially, each blockFn wants to capture this continuation, hold on
@@ -160,41 +190,6 @@ Some changes of note:
      than it is in the SML/NJ implemenation, and encapsulated all of
      the MLton.Thread operations in this module.
  * eliminated all of the "by hand" inlining
-
-
-All of the core CML functionality is present:
-  signature CML; structure CML : CML
-  signature CVAR; structure CVar : CVAR
-  signature MAILBOX; structure Mailbox : MAILBOX
-  signature MULTICAST; structure Multicast : MULTICAST
-  signature SIMPLE_RPC; structure SimpleRPC : SIMPLE_RPC
-A minimal RunCML : RUN_CML structure is present:
-  signature RUN_CML =
-     sig
-        val isRunning : unit -> bool
-        val doit : (unit -> unit) * Time.time option -> OS.Process.status
-        val shutdown : OS.Process.status -> 'a
-     end
-This does not include all of the cleanup and logging operations of the
-SML/NJ RunCML structure.  However, it does include the CML.timeOutEvt
-and CML.atTimeEvt functions, and a preemptive scheduler that knows to
-sleep when there are no ready threads and some threads blocked on time
-events.
-
-None of the Standard ML Basis Library has been made either
-MLton.Thread or CML safe.  Much of the IO and OS structures have event
-based equivalents, which should be implemented.
-
-For now, I've extended the CML signature with 
-  val print : string -> unit
-which executes in a critical region.  For now, this is the "right
-thing" for interfacing with the Basis Library and the underlying
-system calls.  (Using Posix.Error.SysCall, it is sufficient to execute
-Basis Library code in a critical section; things that get interrupted
-will automatically restart with signals blocked.)  It also has the
-nice property that one can write a program with open CML whose only IO
-(while executing RunCML.doit) is print, and it will compile under both
-MLton and SML/NJ.
 
 
 Some thoughts on future extensions.  The CML documentation says the
