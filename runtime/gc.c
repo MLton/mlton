@@ -2053,7 +2053,7 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
  	s->numGCs++;
  	s->bytesAllocated += s->frontier - s->base - s->bytesLive;
 	/* The actual GC. */
-	if (FALSE)
+	if (VERIFY_MARK)
 		markCompact (s);
 	s->back = s->toBase;
 	s->toLimit = s->toBase + s->toSize;
@@ -2591,6 +2591,7 @@ static inline void updateForwardPointers (GC_state s) {
 	pointer back;
 	pointer front;
 	uint gap;
+	pointer endOfLastMarked;
 	Header header;
 	Header *headerp;
 	pointer p;
@@ -2601,6 +2602,7 @@ static inline void updateForwardPointers (GC_state s) {
 		fprintf (stderr, "updateForwardPointers\n");
 	back = s->frontier;
 	front = s->base;
+	endOfLastMarked = front;
 	gap = 0;
 	totalSize = 0;
 updateObject:
@@ -2626,12 +2628,27 @@ thread:
 			if (DEBUG_MARK)
 	       			fprintf (stderr, "threading 0x%08x of size %u\n", 
 						(uint)p, size);
+			if (front - endOfLastMarked >= 4 * WORD_SIZE) {
+				/* Compress all of the unmarked into one string.
+				 */
+				if (DEBUG_MARK)
+					fprintf (stderr, "compressing from 0x%08x to 0x%08x (length = %u)\n",
+							(uint)endOfLastMarked,
+							(uint)front,
+							front - endOfLastMarked);
+				*(uint*)endOfLastMarked = 0;
+				*(uint*)(endOfLastMarked + WORD_SIZE) = 
+					front - endOfLastMarked - 3 * WORD_SIZE;
+				*(uint*)(endOfLastMarked + 2 * WORD_SIZE) =
+					GC_objectHeader (STRING_TYPE_INDEX);
+			}
 			totalSize += size;
 			front += size;
+			endOfLastMarked = front;
 			GC_foreachPointerInObject (s, threadInternal, p);
 			goto updateObject;
 		} else {
-			/* It's not marked. */
+				/* It's not marked. */
 			size = objectSize (s, p);
 			gap += size;
 			front += size;
