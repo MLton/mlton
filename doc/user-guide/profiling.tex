@@ -75,7 +75,9 @@ You may find it useful to use the {\tt -keep dot} switch when compiling {\tt
 -p}, since this saves the the CPS function call graph ({\tt .call-graph.dot})
 for the whole program.  Also, for each CPS function {\tt f}, it saves the
 intraprocedural control-flow graph ({\tt .f.cfg.dot}) and dominator tree ({\tt
-.f.dom.dot}).
+.f.dom.dot}).  In the control-flow graph solid edges indicate gotos with
+arguments, dashed edges indicate handling a raise coming from the callee, and
+dotted edges indicate a return from the callee.
 
 The profiler works by catching the {\tt SIGPROF} signal 100 times per second and
 recording where in the executable the program counter is.  Thus, if you compile
