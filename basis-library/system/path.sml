@@ -243,8 +243,9 @@ structure OS_Path : OS_PATH = struct
       | _ => false
   end
 
-  fun fromUnixPath _ = raise (Fail "<Path.fromUnixPath not implemented>")
-  fun toUnixPath _ = raise (Fail "<Path.toUnixPath not implemented>")
+  (* Since MLton only runs on Unix, there is nothing to do for these.*)
+  fun fromUnixPath s = s
+  fun toUnixPath s = s
 end (*structure Path*)
 
 

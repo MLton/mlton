@@ -1,5 +1,9 @@
 Here are the changes since version 20030312.
 
+* 2003-05-25
+  - Added OS.Path.{from,to}UnixPath, which are the identity function
+    on Unix.
+
 * 2003-05-20
   - Added type MLton.pointer, the type of C pointers, for use with the
     FFI.
