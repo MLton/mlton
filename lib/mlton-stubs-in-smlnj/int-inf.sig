@@ -45,18 +45,3 @@ signature INT_INF =
       val << : int * Word.word -> int
       val ~>> : int * Word.word -> int
    end
-
-signature INT_INF_EXTRA =
-   sig
-      include INT_INF
-
-      val areSmall: int * int -> bool
-      val bigIntConstant: Int.int -> int
-      val gcd: int * int -> int 
-      val isSmall: int -> bool
-      datatype rep =
-	 Small of Word.word
-       | Big of Word.word Vector.vector
-      val rep: int -> rep
-      val size: int -> Int.int
-   end
