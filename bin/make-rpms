@@ -22,24 +22,24 @@ done
 
 root="$HOME/mlton"
 rpms="$root/rpms"
-date=`date +%Y%m%d`
-version="mlton-$date"
+version=`date +%Y%m%d`
 release="1"
-src="$rpms/SOURCES/$version/src"
+package="mlton-$version-$release"
+src="$rpms/SOURCES/mlton-$version/src"
 
 cd $root
 echo 'Cleaning up'
-ss rm -rf $rpms/SOURCES/$version*			\
-	$rpms/RPMS/i386/$version-$release.i386.rpm 	\
-	$rpms/SRPMS/$version-$release.src.rpm
+ss rm -rf $rpms/SOURCES/mlton-$version*		\
+	$rpms/RPMS/i386/$package.i386.rpm 	\
+	$rpms/SRPMS/$package.src.rpm
 mkdir -p $rpms
 cd $rpms
 mkdir -p BUILD RPMS/i386 SOURCES SPECS SRPMS
 
 echo 'Checking out sources'
 cd $rpms/SOURCES
-mkdir $version
-cd $version
+mkdir mlton-$version
+cd mlton-$version
 mkdir bin lib include
 cvs -Q co -d src mlton
 cvs -Q release src
@@ -61,7 +61,7 @@ function instantiate() {
 cd $src/doc
 instantiate
 doInst ../mlton/control/control.sml
-sed "/^Version:/s;.*;Version: $date;" <mlton.spec >z
+sed "/^Version:/s;.*;Version: $version;" <mlton.spec >z
 sed "/^Release:/s;.*;Release: $release;" <z >$rpms/SPECS/mlton.spec
 sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <../mlton/control/control.sml >z
 mv z ../mlton/control/control.sml
@@ -75,9 +75,9 @@ done
 
 echo 'Creating source tgz'
 cd $rpms/SOURCES
-ss chown -R root.root $version
-tar.write $version | gzip >$version.tgz
-ss rm -rf $version
+ss chown -R root.root mlton-$version
+tar.write mlton-$version | gzip >mlton-$version.tgz
+ss rm -rf mlton-$version
 
 echo 'Building rpms'
 cd $rpms/SPECS 
@@ -95,15 +95,11 @@ if [ $home = 'yes' ]; then
 	instantiate
 	cd web
 	make
-	cp -p $rpms/RPMS/i386/$version-$release.i386.rpm \
-		$rpms/SRPMS/$version-$release.src.rpm .
+	cp -p $rpms/RPMS/i386/$package.i386.rpm $rpms/SRPMS/$package.src.rpm .
 	find . -type d | grep CVS | xargs rm -rf
 	find . -type f | grep cvsignore | xargs rm -f
 	echo '  Building tgz'
-	tar.write CHANGES HTML papers *.html user-guide.ps.gz \
-		$version-$release.i386.rpm $version-$release.src.rpm | 
-		gzip >$root/mlton-home.tgz
-	
+	tar.write -x Makefile -x .cvsignore | gzip >$root/mlton-home.tgz
 	echo '  ftp'\''ing'
 	remote='hirame'
 	cd $root
