@@ -1,15 +1,11 @@
 #include "mlton-basis.h"
 
-Int Int_rem(Int numerator, Int denominator) {
-	register int eax asm("ax"),
-			edx asm("dx");
-	
-	eax = numerator ;
-	
-	__asm__ __volatile__ ("cdq\n        idivl %1"
-		: 
-		: "r" (eax), "m" (denominator)
-		: "eax", "edx");
-	
-	return edx;
+/* See the comment in quot.c. */
+
+Int Int_rem (Int n, Int d) {
+#if (defined (__i386__))
+	return n % d;
+#else
+#error check that C % correctly implements Int.rem from the basis library
+#endif
 }

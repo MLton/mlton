@@ -439,7 +439,6 @@ static inline Int Int_negCheckFast(Int n) {
 	return n;
 }
 #define Int_negCheck(dst, n, l) dst = Int_negCheckFast(n)
-#define Int_quot(x, y) ((x)/(y))
 #define Int_rem(x, y) ((x)%(y))
 
 #else /* no FAST_INT */
@@ -569,7 +568,6 @@ int Int_bogus;
  * sign extension.  We use it anyway cause it always seems to work.
  */
 #define Word8_arshift(w, s) ((signed char)(w) >> (s))
-/*#define Word8_arshift Word8_arshiftAsm */
 #define Word8_div(w1, w2) ((w1) / (w2))
 #define Word8_fromInt(x) ((uchar)(x))
 #define Word8_fromLargeWord(w) ((uchar)(w))
@@ -617,7 +615,6 @@ int Int_bogus;
  * We do it because using a procedure call slows down IntInf by a factor of 2.
  */
 #define Word32_arshift(w, s) ((int)(w) >> (s))
-/*#define Word32_arshift Word32_arshiftAsm */
 #define Word32_div(w1, w2) ((w1) / (w2))
 #define Word32_fromInt(x) ((uint)(x))
 #define Word32_ge(w1, w2) ((w1) >= (w2))
