@@ -51,10 +51,10 @@ structure MD5 :> MD5 =
     fun packLittle wrds = let
       fun loop [] = []
 	| loop (w::ws) = let
-	    val b0 = Word8.fromLargeWord (w)
-	    val b1 = Word8.fromLargeWord (W32.>> (w,0w8))
-	    val b2 = Word8.fromLargeWord (W32.>> (w,0w16))
-	    val b3 = Word8.fromLargeWord (W32.>> (w,0w24))
+	    val b0 = Word8.fromLarge (W32.toLarge w)
+	    val b1 = Word8.fromLarge (W32.toLarge (W32.>> (w,0w8)))
+	    val b2 = Word8.fromLarge (W32.toLarge (W32.>> (w,0w16)))
+	    val b3 = Word8.fromLarge (W32.toLarge (W32.>> (w,0w24)))
 	  in b0::b1::b2::b3:: (loop ws)
 	  end
     in W8V.fromList (loop wrds)
@@ -136,7 +136,7 @@ structure MD5 :> MD5 =
     end
     and transform ({A,B,C,D},i,buf) = let
       val off = i div PackWord32Little.bytesPerElem
-      fun x (n)  = PackWord32Little.subVec (buf,n + off)
+      fun x (n)  = Word32.fromLarge (PackWord32Little.subVec (buf,n + off))
       val (a,b,c,d) = (A,B,C,D)
       (* fetch to avoid range checks *)
       val x_00 = x (0)  val x_01 = x (1)  val x_02 = x (2)  val x_03 = x (3)

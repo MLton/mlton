@@ -773,11 +773,11 @@ structure ALU : ALU
       fun PerformAL (opcode, s1, s2) =
 	(case opcode
 	   of SLL => 
-	        Word32.<< (s1, Word.fromLargeWord s2)
+	        Word32.<< (s1, Word.fromLarge (Word32.toLarge s2))
 	    | SRL => 
-	        Word32.>> (s1, Word.fromLargeWord s2)
+	        Word32.>> (s1, Word.fromLarge (Word32.toLarge s2))
 	    | SRA => 
-	        Word32.~>> (s1, Word.fromLargeWord s2)
+	        Word32.~>> (s1, Word.fromLarge (Word32.toLarge s2))
 	    | ADD => 
 		Word32.fromInt (Int.+ (Word32.toIntX s1,
 						 Word32.toIntX s2))
@@ -2187,19 +2187,19 @@ functor DLXSimulatorFun (structure RF : REGISTERFILE;
 	| PerformIType ((SLLI, rs1, rd, immediate), (PC, rf, mem))
 	  = (PC, RF.StoreRegister(rf, rd, 
 				  Word32.<< (RF.LoadRegister(rf, rs1),
-					     Word.fromLargeWord immediate)),
+					     Word.fromLarge (Word32.toLarge immediate))),
 	     mem)
 
 	| PerformIType ((SRLI, rs1, rd, immediate), (PC, rf, mem))
 	  = (PC, RF.StoreRegister(rf, rd, 
 				  Word32.>> (RF.LoadRegister(rf, rs1),
-					     Word.fromLargeWord immediate)),
+					     Word.fromLarge (Word32.toLarge immediate))),
 	     mem)
 
 	| PerformIType ((SRAI, rs1, rd, immediate), (PC, rf, mem))
 	  = (PC, RF.StoreRegister(rf, rd, 
 				  Word32.~>> (RF.LoadRegister(rf, rs1),
-					      Word.fromLargeWord immediate)),
+					      Word.fromLarge (Word32.toLarge immediate))),
 	     mem)
 
 	| PerformIType ((SEQI, rs1, rd, immediate), (PC, rf, mem))

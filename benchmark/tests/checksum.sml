@@ -16,7 +16,9 @@ fun fold f b (buf, first, last) =
       fun loop (i, ac) =
 	 if i > last
 	    then ac
-	 else loop (i + 1, f (PackWord32Little.subArr (buf, i), ac))
+	 else loop (i + 1,
+		    f (Word32.fromLarge (PackWord32Little.subArr (buf, i)),
+		       ac))
    in
       loop (first, b)
    end
