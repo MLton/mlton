@@ -650,21 +650,36 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
       fun translateFormals v =
 	 Vector.keepAllMap (v, fn (x, t) =>
 			    Option.map (toRtype t, fn t => (x, t)))
-      fun bogus (t: Type.t): Operand.t =
+      fun bogusWord (t: Type.t): WordX.t =
 	 let
-	    val c = Operand.Const
 	    datatype z = datatype Type.dest
 	 in
 	    case Type.dest t of
-	       Constant w => c (Const.word w)
-	     | Pointer _ =>
-		  Cast (Operand.word (WordX.one (WordSize.pointer ())), t)
-	     | Real s => c (Const.real (RealX.zero s))
-	     | Sum ts => bogus (Vector.sub (ts, 0))
-	     | Word s => c (Const.word (WordX.zero (WordSize.fromBits s)))
+	       Constant w => w
+	     | Pointer _ => WordX.one (WordSize.pointer ())
+	     | Seq ts =>
+		  if 0 = Vector.length ts
+		     then Error.bug "no bogus unit"
+		  else
+		     valOf
+		     (Vector.fold (ts, NONE, fn (t, ac) =>
+				   let
+				      val w = bogusWord t
+				   in
+				      case ac of
+					 NONE => SOME w
+				       | SOME w' =>
+					    SOME (WordX.splice {lo = w', hi = w})
+				   end))
+	     | Sum ts => bogusWord (Vector.sub (ts, 0))
+	     | Word s => WordX.zero (WordSize.fromBits s)
 	     | _ => Error.bug (concat ["no bogus value of type ",
 				       Layout.toString (Type.layout t)])
 	 end
+      fun bogus (t: Type.t): Operand.t =
+	 case Type.dest t of
+	    Type.Real s => Operand.Const (Const.real (RealX.zero s))
+	  | _ => Operand.cast (Operand.word (bogusWord t), t)
       val handlesSignals = 
 	 S.Program.hasPrim 
 	 (program, fn p => 
