@@ -537,7 +537,7 @@ fun commandLine (args: string list): unit =
 		  Compile.elaborate {input = []}
 	    else if !buildConstants
                then Compile.outputBasisConstants Out.standard
-	    else if !verbosity = Silent
+	    else if !verbosity = Silent orelse !verbosity = Top
                then printVersion Out.standard
 	    else outputHeader' (No, Out.standard))
     | Result.Yes (input :: rest) =>
