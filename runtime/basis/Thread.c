@@ -24,7 +24,7 @@ void Thread_setCallFromCHandler (Thread t) {
 	gcState.callFromCHandler = (GC_thread)t;
 }
 
-Thread Thread_setSaved (Thread t) {
+void Thread_setSaved (Thread t) {
 	gcState.savedThread = (GC_thread)t;
 }
 
