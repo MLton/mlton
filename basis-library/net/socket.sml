@@ -95,7 +95,7 @@ structure CtlExtra =
 	 if unmarshalBool (wa, l, s)
 	    then SOME (Time.fromSeconds
 		       (LargeInt.fromInt
-			(unmarshalInt (wa, l, s + boolLen))))
+			(unmarshalInt (wa, l, s + 1))))
 	 else NONE
 
       fun marshalWord (w, wa, s) =
@@ -110,12 +110,12 @@ structure CtlExtra =
       fun marshalTimeOpt (t, wa, s) =
 	 case t of
 	    NONE => (marshalBool (false, wa, s)
-		     ; marshalInt (0, wa, s + boolLen))
+		     ; marshalInt (0, wa, s + 1))
 	  | SOME t =>
 	       (marshalBool (true, wa, s)
 		; marshalWord (Word.fromLargeInt (Time.toSeconds t)
 			       handle Overflow => Error.raiseSys Error.inval,
-			       wa, s + boolLen))
+			       wa, s + 1))
 
       local
 	 fun make (optlen: int,

@@ -1,7 +1,15 @@
 Here are the changes since version 20041109.
 
+* 2005-03-19
+  - Fixed a bug that caused Socket.Ctl.{get,set}LINGER to raise
+    Subscript.  The problem was in the use of PackWord32Little.update,
+    which scales the supplied index by bytesPerElem.
+
 * 2005-03-13
   - Fixed a bug in CML mailboxes.
+
+* 2005-02-26
+  - Fixed an off-by-one error in mkstemp defined in mingw.c.
 
 * 2005-02-04
   - Fixed a bug in OS.path.toString, which did not raise InvalidArc
