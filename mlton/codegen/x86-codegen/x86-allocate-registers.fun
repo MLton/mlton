@@ -2421,10 +2421,33 @@ struct
 				 saves = (Operand.register register)::saves,
 				 force = force,
 				 registerAllocation = registerAllocation}
-			    val registerAllocation
-			      = delete {register = register,
+			    val {memloc, 
+				 registerAllocation}
+			      = if List.contains(saves, 
+						 Operand.register final_register,
+						 Operand.eq)
+			           orelse
+				   List.contains(saves,
+						 Operand.memloc memloc,
+						 Operand.eq)
+				  then {memloc 
+					= MemLoc.imm
+					  {base = Immediate.label
+					          (Label.fromString "BUG"),
+					   index = Immediate.const_int 0,
+					   scale = Scale.One,
+					   size = MemLoc.size memloc,
+					   commit = MemLoc.Commit.commit
+					            {isTemp = true,
+						     onFlush = false},
+					   class = MemLoc.Class.new "X"},
 					registerAllocation
 					= registerAllocation}
+				  else {memloc = memloc,
+					registerAllocation
+					= delete {register = register,
+						  registerAllocation
+						  = registerAllocation}}
 			  in
 			    case coincide_values
 			      of [] 
@@ -3101,6 +3124,182 @@ struct
 	      {assembly: Assembly.t list,
 	       registerAllocation: t}
 	= let
+	    val ra = registerAllocation 
+
+	    val dead_memlocs = dead
+	    val commit_memlocs = commit
+	    val remove_memlocs = remove
+
+	    val (allUses, allDefs, allKills)
+	      = let
+		  fun doit operands
+		    = List.fold
+		      (operands,
+		       [],
+		       fn (operand,memlocs)
+		        => case Operand.deMemloc operand
+			     of SOME memloc
+			      => memloc::memlocs
+			      | NONE => memlocs)
+
+		  val uses = doit uses
+		  val defs = doit defs
+		  val kills = doit kills
+
+		  fun doit' (memlocs, memlocs')
+		    = List.fold
+		      (memlocs,
+		       memlocs',
+		       fn (memloc, memlocs')
+		        => (MemLoc.utilized memloc) @ memlocs')
+		  val allUses
+		    = doit'(uses,
+		      doit'(defs,
+			    uses))
+		  val allDefs = defs
+		  val allKills = kills
+		in
+		  (allUses, allDefs, allKills)
+		end
+
+	    val allDest = List.concat
+	                  [allDefs, allKills, dead_memlocs, remove_memlocs]
+            val allKeep = List.concat
+	                  [allUses, allDefs, allKills]
+
+	    val registerAllocation
+	      = fltvalueMap
+	        {map = fn value as {fltregister,
+				    memloc,
+				    weight, 
+				    sync, 
+				    commit}
+		        => let
+			     val must_commit1
+			       = (List.exists
+				  (allUses,
+				   fn memloc' 
+				    => not (MemLoc.eq(memloc', memloc))
+				       andalso (MemLoc.mayAlias(memloc', memloc))))
+			     val must_commit2
+			       = (List.exists
+				  (MemLoc.utilized memloc,
+				   fn memloc
+				    => List.contains (allDest, memloc, MemLoc.eq)))
+			     val must_commit3
+			       = (List.contains(allKills, memloc, MemLoc.eq)
+				  andalso
+				  not (List.contains(dead_memlocs, memloc, MemLoc.eq)))
+			     val commit
+			       = if must_commit3
+				   then COMMIT 0
+				 else if must_commit2
+				   then if List.contains
+				           (allKeep, memloc, MemLoc.eq)
+					  then COMMIT 0
+					  else REMOVE 0
+				 else if must_commit1
+				   then case commit
+					  of TRYREMOVE _ => REMOVE 0
+					   | REMOVE _ => REMOVE 0
+					   | _ => COMMIT 0
+				 else commit
+			   in
+			     {fltregister = fltregister,
+			      memloc = memloc,
+			      weight = weight,
+			      sync = sync,
+			      commit = commit}
+			   end,
+		 registerAllocation = registerAllocation}
+
+	    val {assembly = assembly_commit_fltregisters,
+		 rename = rename_commit_fltregisters,
+		 registerAllocation}
+	      = commitFltRegisters {info = info,
+				    supports = [],
+				    saves = [],
+				    registerAllocation = registerAllocation}
+
+	    val registerAllocation
+	      = valueMap
+	        {map = fn value as {register,
+				    memloc,
+				    weight, 
+				    sync, 
+				    commit}
+		        => let
+			     val must_commit1
+			       = (List.exists
+				  (allUses,
+				   fn memloc' 
+				    => not (MemLoc.eq(memloc', memloc))
+				       andalso (MemLoc.mayAlias(memloc', memloc))))
+			     val must_commit2
+			       = (List.exists
+				  (MemLoc.utilized memloc,
+				   fn memloc
+				    => List.contains (allDest, memloc, MemLoc.eq)))
+			     val must_commit3
+			       = (List.contains(allKills, memloc, MemLoc.eq)
+				  andalso
+				  not (List.contains(dead_memlocs, memloc, MemLoc.eq)))
+			     val commit
+			       = if must_commit3
+				   then COMMIT 0
+				 else if must_commit2
+				   then if List.contains
+				           (allKeep, memloc, MemLoc.eq)
+					  then COMMIT 0
+					  else REMOVE 0
+				 else if must_commit1
+				   then case commit
+					  of TRYREMOVE _ => REMOVE 0
+					   | REMOVE _ => REMOVE 0
+					   | _ => COMMIT 0
+				 else commit
+			   in
+			     {register = register,
+			      memloc = memloc,
+			      weight = weight,
+			      sync = sync,
+			      commit = commit}
+			   end,
+		 registerAllocation = registerAllocation}
+
+	    val {assembly = assembly_commit_registers,
+		 registerAllocation}
+	      = commitRegisters {info = info,
+				 supports = [],
+				 saves = [],
+				 registerAllocation = registerAllocation}
+	  in
+	    {assembly = List.concat
+	                [if !Control.Native.commented > 3
+			   then (Assembly.comment "pre begin:")::
+				(toComments ra)
+			   else [],
+			 assembly_commit_fltregisters,
+			 assembly_commit_registers,
+			 if !Control.Native.commented > 3
+			   then (Assembly.comment "pre end:")::
+			        (toComments registerAllocation)
+			   else []],
+	     registerAllocation = registerAllocation}
+	  end
+
+(*
+      fun pre {uses: Operand.t list,
+	       defs: Operand.t list,
+	       kills: Operand.t list,
+	       info as {dead,
+			commit,
+			remove,
+			...}: Liveness.t,
+	       registerAllocation: t} :
+	      {assembly: Assembly.t list,
+	       registerAllocation: t}
+	= let
 	    val (allUses, allDefs, allKills)
 	      = let
 		  fun doit(operands, all)
@@ -3298,12 +3497,280 @@ struct
 			 assembly_commit_registers],
 	     registerAllocation = registerAllocation}
 	  end
+*)
 
       val (pre, pre_msg)
 	= tracer
 	  "pre"
 	  pre
 
+      fun post {uses: Operand.t list,
+		final_uses: Operand.t list,
+		defs: Operand.t list,
+		final_defs: Operand.t list,
+		info as {dead,
+			 commit,
+			 remove,
+			 ...}: Liveness.t,
+		registerAllocation: t} :
+	       {assembly: Assembly.t list,
+		registerAllocation: t}
+	= let 
+	    val ra = registerAllocation
+
+	    val (final_uses_registers,
+		 final_defs_registers,
+		 final_uses_fltregisters,
+		 final_defs_fltregisters)
+	      = let
+		  fun doit(operands, (final_registers, final_fltregisters))
+		    = List.fold
+		      (operands,
+		       (final_registers, final_fltregisters),
+		       fn (operand, (final_registers, final_fltregisters))
+		        => case (Operand.deRegister operand,
+				 Operand.deFltregister operand)
+			     of (SOME register, _) 
+			      => if List.contains(final_registers,
+						  register,
+						  Register.eq)
+				   then (final_registers,
+					 final_fltregisters)
+				   else (register::final_registers,
+					 final_fltregisters)
+			      | (_, SOME fltregister)
+			      => if List.contains(final_fltregisters,
+						  fltregister,
+						  FltRegister.eq)
+				   then (final_registers,
+					 final_fltregisters)
+				   else (final_registers,
+					 fltregister::final_fltregisters)
+			      | _ => (final_registers, final_fltregisters))
+		  val (final_uses_registers, final_uses_fltregisters)
+		    = doit(final_uses, ([], []))
+		  val (final_defs_registers, final_defs_fltregisters)
+		    = doit(final_defs, ([], []))
+		in
+		  (final_uses_registers,
+		   final_defs_registers,
+		   final_uses_fltregisters,
+		   final_defs_fltregisters)
+		end
+
+	    val dead_memlocs = dead
+	    val commit_memlocs = commit
+	    val remove_memlocs = remove
+
+	    val (allUses, allDefs)
+	      = let
+		  fun doit operands
+		    = List.fold
+		      (operands,
+		       [],
+		       fn (operand,memlocs)
+		        => case Operand.deMemloc operand
+			     of SOME memloc
+			      => memloc::memlocs
+			      | NONE => memlocs)
+
+		  val uses = doit uses
+		  val defs = doit defs
+
+		  fun doit' (memlocs, memlocs')
+		    = List.fold
+		      (memlocs,
+		       memlocs',
+		       fn (memloc, memlocs')
+		        => (MemLoc.utilized memloc) @ memlocs')
+		  val allUses
+		    = doit'(uses,
+		      doit'(defs,
+			    uses))
+		  val allDefs = defs
+		in
+		  (allUses, allDefs)
+		end
+
+	    val allDest = List.concat [dead_memlocs, remove_memlocs]
+
+	    val registerAllocation
+	      = fltvalueMap 
+	        {map = fn value as {fltregister,
+				    memloc,
+				    weight,
+				    sync,
+				    commit}
+		        => if List.contains
+		              (dead_memlocs, memloc, MemLoc.eq)
+			     then {fltregister = fltregister,
+				   memloc = memloc,
+				   sync = true,
+				   weight = weight - 500,
+				   commit = TRYREMOVE 0}
+			     else let
+				    val isSrc
+				      = List.contains
+				        (final_uses_fltregisters,
+					 fltregister,
+					 FltRegister.eq)
+
+				    val isDst
+				      = List.contains
+				        (final_defs_fltregisters,
+					 fltregister,
+					 FltRegister.eq)
+			       
+				    val isDef = isDst
+				  in
+				    {fltregister = fltregister,
+				     memloc = memloc,
+				     weight = weight - 5
+				              + (if isSrc
+						   then 5
+						   else 0)
+				              + (if isDst
+						   then 10
+						   else 0),
+				     sync = sync andalso (not isDef),
+				     commit = if !Control.Native.IEEEFP
+				                 andalso
+						 not (sync andalso (not isDef))
+						then REMOVE 0
+						else if List.exists
+						        (MemLoc.utilized memloc,
+							 fn memloc'
+							  => List.contains
+							     (allDest, 
+							      memloc', 
+							      MemLoc.eq))
+						       then REMOVE 0
+						     else if List.contains
+						             (remove_memlocs,
+							      memloc,
+							      MemLoc.eq)
+						       then TRYREMOVE 0
+						     else if List.contains
+						             (commit_memlocs,
+							      memloc,
+							      MemLoc.eq)
+						       then TRYCOMMIT 0
+						     else commit}
+				  end,
+		  registerAllocation = registerAllocation}
+
+	    val {assembly = assembly_commit_fltregisters,
+		 rename = rename_commit_fltregisters,
+		 registerAllocation}
+	      = commitFltRegisters {info = info,
+				    supports = [],
+				    saves = [],
+				    registerAllocation = registerAllocation}
+
+	    val registerAllocation
+	      = valueMap 
+	        {map = fn value as {register,
+				    memloc,
+				    weight,
+				    sync,
+				    commit}
+		        => if List.contains
+		              (dead_memlocs, memloc, MemLoc.eq)
+			     then value
+			     else let
+				    val isSrc
+				      = List.contains
+				        (final_uses_registers,
+					 register,
+					 Register.eq)
+
+				    val isDst
+				      = List.contains
+				        (final_defs_registers,
+					 register,
+					 Register.eq)
+			       
+				    val isDef = isDst
+				  in
+				    {register = register,
+				     memloc = memloc,
+				     weight = weight - 5
+				              + (if isSrc
+						   then 5
+						   else 0)
+				              + (if isDst
+						   then 10
+						   else 0),
+				     sync = sync andalso (not isDef),
+				     commit = if List.exists
+				                 (MemLoc.utilized memloc,
+						  fn memloc'
+						   => List.contains
+						      (allDest, 
+						       memloc',
+						       MemLoc.eq))
+						then REMOVE 0
+					      else if List.contains
+						      (remove_memlocs,
+						       memloc,
+						       MemLoc.eq)
+						then TRYREMOVE 0
+					      else if List.contains
+						      (commit_memlocs,
+						       memloc,
+						       MemLoc.eq)
+						then TRYCOMMIT 0
+					      else commit}
+				  end,
+		  registerAllocation = registerAllocation}
+
+	    val {assembly = assembly_commit_registers,
+		 registerAllocation}
+	      = commitRegisters {info = info,
+				 supports = [],
+				 saves = [],
+				 registerAllocation = registerAllocation}
+
+	    val registerAllocation
+	      = valueMap 
+	        {map = fn value as {register,
+				    memloc,
+				    weight,
+				    sync,
+				    commit}
+		        => if List.contains
+		              (dead_memlocs, memloc, MemLoc.eq)
+			     then {register = register,
+				   memloc = memloc,
+				   sync = true,
+				   weight = weight,
+				   commit = REMOVE 0}
+			     else value,
+		 registerAllocation = registerAllocation}
+
+	    val {assembly = assembly_dead_registers,
+		 registerAllocation}
+	      = commitRegisters {info = info,
+				 supports = [],
+				 saves = [],
+				 registerAllocation = registerAllocation}
+	  in
+	    {assembly = List.concat
+	                [if !Control.Native.commented > 3
+			   then (Assembly.comment "post begin:")::
+			        (toComments ra)
+			   else [],
+			 assembly_commit_fltregisters,
+			 assembly_commit_registers,
+			 assembly_dead_registers,
+			 if !Control.Native.commented > 3
+			   then (Assembly.comment "post end:")::
+			        (toComments registerAllocation)
+			   else []],
+	     registerAllocation = registerAllocation}
+	  end
+
+(*
       fun post {uses: Operand.t list,
 		final_uses: Operand.t list,
 		defs: Operand.t list,
@@ -3586,6 +4053,7 @@ struct
 			 assembly_dead_registers],
 	     registerAllocation = registerAllocation}
 	  end
+*)
 
       val (post, post_msg)
 	= tracer
@@ -6026,9 +6494,9 @@ struct
 		      in
 			{assembly 
 			 = List.concat [assembly_pre,
-					 assembly_src_dst,
-					 [Assembly.instruction instruction],
-					 assembly_post],
+					assembly_src_dst,
+					[Assembly.instruction instruction],
+					assembly_post],
 			 registerAllocation = registerAllocation}
 		      end
 		in
