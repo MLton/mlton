@@ -6,13 +6,13 @@ signature IMPERATIVE_IO = IMPERATIVE_IO
 signature MONO_ARRAY = MONO_ARRAY_1997
 signature MONO_VECTOR = MONO_VECTOR_1997
 signature PRIM_IO = PRIM_IO
-signature REAL = REAL
+signature REAL = REAL_1997
 signature STREAM_IO = STREAM_IO
 signature STRING = STRING_1997
 signature SUBSTRING = SUBSTRING_1997
 signature TEXT_IO = TEXT_IO
 signature TEXT_STREAM_IO = TEXT_STREAM_IO
-signature WORD = WORD
+signature WORD = WORD_1997
 
 signature ARRAY = ARRAY_1997
 signature BIN_IO = BIN_IO

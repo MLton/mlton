@@ -57,7 +57,7 @@ test: $(NAME)
 	export PATH=$(PATH):$$PATH && cd tests && ../benchmark $(BFLAGS) $(BENCH)
 
 QBENCH = wc-input wc-input1 wc-inputLine wc-inputN wc-inputS wc-input1S wc-inputLineS wc-inputNS wc-scanStream 
-QBFLAGS = -mlton "mlton{-stable,.cvs.HEAD}"
+QBFLAGS = -mlton "mlton{-stable,.cvs.HEAD -detect-overflow {false,true}}"
 
 .PHONY: qtest
 qtest: $(NAME)

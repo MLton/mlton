@@ -244,6 +244,7 @@ libs/basis-1997/arrays-and-vectors/mono-vector.sig
 libs/basis-1997/arrays-and-vectors/mono-array.sig
 libs/basis-1997/arrays-and-vectors/mono-array2.sig
 libs/basis-1997/arrays-and-vectors/mono-vector-array-array2-convert.fun
+libs/basis-1997/integer/word.sig
 libs/basis-1997/text/string.sig
 libs/basis-1997/text/substring.sig
 libs/basis-1997/text/text-convert.fun

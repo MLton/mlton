@@ -100,7 +100,7 @@ signature BASIS_1997 =
       structure IO : IO_1997
       structure LargeInt : INTEGER
       structure LargeReal : REAL_1997
-      structure LargeWord : WORD
+      structure LargeWord : WORD_1997
       structure List : LIST
       structure ListPair : LIST_PAIR
       structure Math : MATH
@@ -125,8 +125,8 @@ signature BASIS_1997 =
       structure Time : TIME
       structure Timer : TIMER_1997
       structure Vector : VECTOR_1997
-      structure Word : WORD
-      structure Word8 : WORD
+      structure Word : WORD_1997
+      structure Word8 : WORD_1997
       structure Word8Array : MONO_ARRAY_1997
       structure Word8Vector : MONO_VECTOR_1997
 
@@ -178,7 +178,7 @@ signature BASIS_1997 =
       structure Real64Vector : MONO_VECTOR_1997
       structure RealArray2 : MONO_ARRAY2_1997
       structure Real64Array2 : MONO_ARRAY2_1997
-      structure SysWord : WORD
+      structure SysWord : WORD_1997
 (*
       structure WideChar : CHAR
       structure WideCharArray : MONO_ARRAY_1997
@@ -189,7 +189,7 @@ signature BASIS_1997 =
       structure WideTextPrimIO : PRIM_IO
       structure WideTextIO : TEXT_IO
 *)
-      structure Word32 : WORD
+      structure Word32 : WORD_1997
       structure Word8Array2 : MONO_ARRAY2_1997
       structure Unix : UNIX
    end
