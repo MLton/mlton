@@ -621,6 +621,15 @@ fun commandLine (args: string list): unit =
 		       if !debug then "-lmlton-gdb" else "-lmlton"],
 		      linkWithGmp,
 		      addTargetOpts linkOpts]
+      (* With gcc 3.4, the '-b <arch>' must be the first argument. *)
+      val targetOpts =
+	 case target of
+	    Cross s =>
+	       if Cygwin = MLton.Platform.OS.host
+		  andalso String.hasSubstring (s, {substring = "mingw"})
+		  then ["-mno-cygwin"]
+	       else ["-b", s]
+	  | Self => []
       val _ =
 	 if !codegen = Native andalso not (hasNative ())
 	    then usage (concat ["can't use native codegen on ",
@@ -785,10 +794,8 @@ fun commandLine (args: string list): unit =
 			       System.system
 			       (gcc,
 				List.concat
-				[["-o", output],
-				 (case target of
-				     Cross s => ["-b", s]
-				   | Self => []),
+				[targetOpts,
+				 ["-o", output],
 				 if !debug then gccDebug else [],
 				 inputs,
 				 linkOpts]))
@@ -846,7 +853,8 @@ fun commandLine (args: string list): unit =
 					 case target of
 					    Cross s => "-b" :: s :: switches
 					  | Self => switches
-				      val switches = "-c" :: switches
+				      val switches =
+					 targetOpts @ ("-c" :: switches)
 				      val output =
 					 if stop = Place.O orelse !keepO
 					    then
