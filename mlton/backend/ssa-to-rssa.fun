@@ -219,14 +219,22 @@ structure CFunction =
 	    writesStackTop = true}
 
       fun share t =
-	 vanilla {args = Vector.new1 t,
-		  name = "MLton_share",
-		  prototype = let
-				 open CType
-			      in
-				 (Vector.new1 Pointer, NONE)
-			      end,
-		  return = unit}
+	 T {args = Vector.new1 t,
+	    bytesNeeded = NONE,
+	    convention = Cdecl,
+	    ensuresBytesFree = false,
+	    mayGC = false,
+	    maySwitchThreads = false,
+	    modifiesFrontier = true, (* actually, just readsFrontier *)
+	    prototype = let
+			   open CType
+			in
+			   (Vector.new1 Pointer, NONE)
+			end,
+	    readsStackTop = false,
+	    return = unit,
+	    target = Direct "MLton_share",
+	    writesStackTop = false}
 
       fun size t =
 	 vanilla {args = Vector.new1 t,
