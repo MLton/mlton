@@ -36,7 +36,6 @@ void MLton_callFromC () {						\
 }									\
 int main (int argc, char **argv) {					\
 	struct cont cont;						\
-	gcState.native = FALSE;						\
 	Initialize (al, cs, mg, mfs, mmc, pk, ps);			\
 	if (gcState.isOriginal) {					\
 		real_Init();						\
