@@ -11,12 +11,16 @@ root=`cd $dir/.. && pwd`
 here=`pwd`
 basis="$root/basis-library/basis.sml"
 
-function usage() {
-	echo >&2 "usage: $name [{2002|1997|...} [file.sml | file.cm]]"
+die () {
+	echo >&2 "$1"
 	exit 1
 }
 
-function rewrite() {
+usage () {
+	die "usage: $name [{2002|1997|...} [file.sml | file.cm]]"
+}
+
+rewrite () {
 	sed 's/_build_const\(.*\);/(PRIM\1)/' |
 	sed 's/_build_const/PRIM/' |
 	sed 's/_const\(.*\);/(PRIM\1)/' |
@@ -32,20 +36,28 @@ function rewrite() {
         sed 's/(\*#line 0.0 \(.*\)\*)/(*#line 0.0 "\1"*)/'
 }
 
-REWRITE_FILE=""
 function rewrite_file() {
+	f="$1"
+	if [ ! -r "$f" ]; then
+		die "error: $f is missing"
+	fi
 (
-	echo "(*#line 0.0 $REWRITE_FILE*)"
-	cat $REWRITE_FILE 
+	echo "(*#line 0.0 $f*)"
+	cat $f
 ) | rewrite
 }
 
-REWRITE_FILES=""
-function rewrite_files() {
-for f in `cat $REWRITE_FILES | grep -v "^#" | grep -v overload | grep -v Group`; do
-	echo "(*#line 0.0 $f*)"
-        cat $f
-done | rewrite
+rewrite_files () {
+	files=`cat $1 | grep -v "^#" | grep -v overload | grep -v Group`
+	for f in $files; do
+		if [ ! -r "$f" ]; then
+			die "error: $f is missing"
+		fi
+	done
+	(for f in $files; do
+		echo "(*#line 0.0 $f*)"
+	        cat $f
+	done | rewrite)
 }
 
 SML_FILE=""
@@ -79,8 +91,7 @@ fi
 LIB="basis-$LIB"
 
 rm -f $basis
-(
-cat <<-EOF
+cat >>$basis <<-EOF
 	val _ = SMLofNJ.Internals.GC.messages false
         val _ =
    	   let
@@ -316,19 +327,17 @@ cat <<-EOF
 
         open Types
 EOF
-cat <<-EOF
+cat >>$basis <<-EOF
 	local
 EOF
 cd $root/basis-library
-REWRITE_FILES="libs/build"
-rewrite_files
-cat <<-EOF
+rewrite_files >>$basis 'libs/build'
+cat >>$basis <<-EOF
 	in
 EOF
 cd $root/basis-library
-REWRITE_FILES="libs/$LIB/bind"
-rewrite_files
-cat <<-EOF
+rewrite_files >>$basis "libs/$LIB/bind"
+cat >>$basis <<-EOF
 	end
 EOF
 cd $here
@@ -336,23 +345,19 @@ case "$SML_FILE" in
 "")
 	;;
 *)
-	REWRITE_FILE=$SML_FILE
-	rewrite_file
+	rewrite_file >>$basis "$SML_FILE"
 	;;
 esac
 case "$CM_FILE" in
 "")
 	;;
 *)
-	REWRITE_FILES=$CM_FILE
-	rewrite_files
+	rewrite_files >>$basis "$CM_FILE"
 	;;
 esac
-cat <<-EOF
+cat >>$basis <<-EOF
 	(*#line 0.0 "check-basis"*)
 	val _ = case 1 of 1 => 1
 EOF
-) >$basis
-
 chmod -w $basis
 sml <$basis
