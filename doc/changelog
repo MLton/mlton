@@ -1,5 +1,10 @@
 Here are the changes since version 20030716.
 
+* 2003-09-08
+  - Fixed @MLton max-heap, which was mistakenly ignored.  Cleaned up
+    @MLton fixed-heap.  Both fixed-heap and max-heap can use copying
+    or mark-compact collection.
+
 * 2003-09-06
   - Int64 is completely there.
   - Fixed OS.FileSys.tmpName so that it creates the file, and doesn't

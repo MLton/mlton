@@ -351,7 +351,7 @@ typedef struct GC_state {
 	 */
 	uint crossMapValidSize;
 	GC_thread currentThread; /* This points to a thread in the heap. */
-	uint fixedHeapSize; 	/* Only meaningful if useFixedHeap. */
+	uint fixedHeap;	/* If 0, then no fixed heap. */
 	GC_frameLayout *frameLayouts;
 	uint frameLayoutsSize;
 	/* frameSources is an array of length frameLayoutsSize that for each
@@ -488,7 +488,6 @@ typedef struct GC_state {
 	uint totalSwap; 	/* bytes */
 	uint translateDiff;	/* used by translateHeap */
  	bool translateUp;	/* used by translateHeap */
-	bool useFixedHeap; 	/* if true, then don't resize the heap */
 	GC_weak weaks;
 } *GC_state;
 
@@ -593,7 +592,6 @@ void GC_handler (GC_state s, int signum);
  * strings and intInfs.
  *
  * Before calling GC_init, you must initialize:
- *   fixedHeapSize
  *   frameLayouts
  *   globals 
  *   intInfInits
@@ -607,7 +605,6 @@ void GC_handler (GC_state s, int signum);
  *   objectTypes
  *   saveGlobals
  *   stringInits
- *   useFixedHeap
  *
  * GC_init returns the index of the first non-runtime command-line arg.
  */

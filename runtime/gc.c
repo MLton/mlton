@@ -78,7 +78,7 @@ enum {
 	DEBUG_MARK_COMPACT = FALSE,
 	DEBUG_MEM = FALSE,
 	DEBUG_PROFILE = FALSE,
-	DEBUG_RESIZING = FALSE,
+	DEBUG_RESIZING = TRUE,
 	DEBUG_SIGNALS = FALSE,
 	DEBUG_STACKS = FALSE,
 	DEBUG_THREADS = FALSE,
@@ -224,7 +224,7 @@ static inline uint stackReserved (GC_state s, uint r) {
 
 static void sunlink (char *path) {
 	unless (0 == unlink (path))
-		diee ("unkink (%s) failed", path);
+		diee ("unlink (%s) failed", path);
 }
 
 /* ---------------------------------------------------------------- */
@@ -378,7 +378,7 @@ static void *smmap (size_t length) {
 	result = mmapAnon (NULL, length);
 	if ((void*)-1 == result) {
 		showMem ();
-		diee ("Out of memory.");
+		die ("Out of memory.");
 	}
 	return result;
 }
@@ -1339,9 +1339,7 @@ static W32 heapDesiredSize (GC_state s, W64 live, W32 currentSize) {
 		die ("Out of memory: %s bytes live.", 
 				ullongToCommaString (live));
 	ratio = (float)s->ram / (float)live;
-	if (s->useFixedHeap)
-		res = s->fixedHeapSize;
-        else if (ratio >= s->liveRatio + s->growRatio) {
+        if (ratio >= s->liveRatio + s->growRatio) {
 		/* Cheney copying fits in RAM with desired liveRatio. */
 		res = live * s->liveRatio;
 		/* If the heap is currently close in size to what we want, leave
@@ -1385,6 +1383,21 @@ static W32 heapDesiredSize (GC_state s, W64 live, W32 currentSize) {
 		 * involves paging the entire heap.  Hopefully the copy loop
 		 * in growFromSpace will make the right thing happen.
 		 */ 
+	}
+	if (s->fixedHeap > 0) {
+		if (res > s->fixedHeap / 2)
+			res = s->fixedHeap;
+		else
+			res = s->fixedHeap / 2;
+		if (res < live)
+			die ("Out of memory with fixed heap size %s.",
+				uintToCommaString (s->fixedHeap));
+	} else if (s->maxHeap > 0) {
+		if (res > s->maxHeap)
+			res = s->maxHeap;
+		if (res < live)
+			die ("Out of memory with max heap size %s.",
+				uintToCommaString (s->maxHeap));
 	}
 	if (DEBUG_RESIZING)
 		fprintf (stderr, "%s = heapDesiredSize (%s)\n",
@@ -2880,15 +2893,19 @@ static void growStack (GC_state s) {
 /*                        Garbage Collection                        */
 /* ---------------------------------------------------------------- */
 
+static bool heapAllocateSecondSemi (GC_state s, W32 size) {
+	if ((s->fixedHeap > 0 and s->heap.size + size > s->fixedHeap)
+		or (s->maxHeap > 0 and s->heap.size + size > s->maxHeap))
+		return FALSE;
+	return heapCreate (s, &s->heap2, size, s->oldGenSize);
+}
+
 static void majorGC (GC_state s, W32 bytesRequested, bool mayResize) {
 	s->numMinorsSinceLastMajor = 0;
         if (not FORCE_MARK_COMPACT
-		and not s->useFixedHeap
  		and s->heap.size < s->ram
 		and (not heapIsInit (&s->heap2)
-			or heapCreate (s, &s->heap2,
-					heapDesiredSize (s, (W64)s->bytesLive + bytesRequested, 0),
-					s->oldGenSize)))
+			or heapAllocateSecondSemi (s, heapDesiredSize (s, (W64)s->bytesLive + bytesRequested, 0))))
 		cheneyCopy (s);
 	else
 		markCompact (s);
@@ -4285,9 +4302,9 @@ static int processAtMLton (GC_state s, int argc, char **argv,
 					++i;
 					if (i == argc)
 						die ("@MLton fixed-heap missing argument.");
-					s->useFixedHeap = TRUE;
-					s->fixedHeapSize =
-						stringToBytes (argv[i++]);
+					s->fixedHeap = 
+						align (stringToBytes (argv[i++]),
+							2 * s->pageSize);
 				} else if (0 == strcmp (arg, "gc-messages")) {
 					++i;
 					s->messages = TRUE;
@@ -4324,8 +4341,8 @@ static int processAtMLton (GC_state s, int argc, char **argv,
 					++i;
 					if (i == argc) 
 						die ("@MLton max-heap missing argument.");
-					s->useFixedHeap = FALSE;
-					s->maxHeap = stringToBytes (argv[i++]);
+					s->maxHeap = align (stringToBytes (argv[i++]),
+								2 * s->pageSize);
 				} else if (0 == strcmp (arg, "mark-compact-generational-ratio")) {
 					++i;
 					if (i == argc)
@@ -4389,6 +4406,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->copyRatio = 4.0;
 	s->copyGenerationalRatio = 4.0;
 	s->currentThread = BOGUS_THREAD;
+	s->fixedHeap = 0.0;
 	s->gcSignalIsPending = FALSE;
 	s->growRatio = 8.0;
 	s->handleGCSignal = FALSE;
@@ -4421,7 +4439,6 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->signalIsPending = FALSE;
 	s->startTime = currentTime ();
 	s->summary = FALSE;
-	s->useFixedHeap = FALSE;
 	s->weaks = NULL;
 	heapInit (&s->heap);
 	heapInit (&s->heap2);
@@ -4435,9 +4452,11 @@ int GC_init (GC_state s, int argc, char **argv) {
  	readProcessor ();
 	worldFile = NULL;
 	unless (isAligned (s->pageSize, s->cardSize))
-		die ("page size must be a multiple of card size");
+		die ("Page size must be a multiple of card size.");
 	processAtMLton (s, s->atMLtonsSize, s->atMLtons, &worldFile);
 	i = processAtMLton (s, argc, argv, &worldFile);
+	if (s->fixedHeap > 0 and s->maxHeap > 0)
+		die ("Cannot use both fixed-heap and max-heap.\n");
 	unless (ratiosOk (s))
 		die ("invalid ratios");
 	setMemInfo (s);
