@@ -1,5 +1,6 @@
 mlton (MLTONVERSION-1) unstable; urgency=low
 
+  * new upstream version
   * Renaming original source package.
   * Added man page for mllex, closes: #166880.
   * Added man page for mlyacc, closes: #166882.
