@@ -2010,8 +2010,6 @@ look:
 	assert (0 <= slot and slot < t->elementsSize);
 	numProbes++;
 	e = &t->elements[slot];
-	fprintf (stderr, "e = 0x%08x  t->elements = 0x%08x\n",
-			(uint)e, (uint)t->elements);
 	if (NULL == e->object) {
 		/* It's not in the table.  Add it. */
 		unless (t->mayInsert) {
