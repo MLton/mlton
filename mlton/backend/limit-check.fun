@@ -693,7 +693,8 @@ fun insert (p as Program.T {functions, main, profileAllocLabels}) =
 	 Block.T {args = Vector.new0 (),
 		  kind = Kind.Jump,
 		  label = newStart,
-		  profileInfo = {ssa = {func = "", label = ""}},
+		  profileInfo = {ssa = {func = Func.toString name, 
+					label = Label.toString newStart}},
 		  statements = (Vector.fromListMap
 				(!extraGlobals, fn x =>
 				 Statement.Bind {isMutable = true,

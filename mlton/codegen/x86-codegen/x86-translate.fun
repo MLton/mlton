@@ -140,8 +140,7 @@ struct
 		 | Limit => gcState_limitContentsOperand ()
 		 | LimitPlusSlop => gcState_limitPlusSlopContentsOperand ()
 		 | MaxFrameSize => gcState_maxFrameSizeContentsOperand ()
-		 | ProfileAllocIndex =>
-		      gcState_profileAllocIndexContentsOperand ()
+		 | ProfileAllocIndex => gcState_profileAllocIndexContentsOperand ()
 		 | SignalIsPending => gcState_signalIsPendingContentsOperand ()
 		 | StackBottom => gcState_stackBottomContentsOperand ()
 		 | StackLimit => gcState_stackLimitContentsOperand ()
