@@ -37,7 +37,7 @@ signature BIN_IO =
       val output1: outstream * elem -> unit 
       val output: outstream * vector -> unit 
       val setOutstream: outstream * StreamIO.outstream -> unit 
-(*      val setPosOut: outstream * StreamIO.out_pos -> unit *)
+      val setPosOut: outstream * StreamIO.out_pos -> unit
    end
 
 signature BIN_IO_EXTRA =

@@ -14,8 +14,8 @@ signature BIN_STREAM_IO =
       type vector = Word8Vector.vector 
 (*       
       type reader
-      type writer
 *)
+      type writer
       
       type instream
       type outstream
@@ -31,6 +31,8 @@ signature BIN_STREAM_IO =
       val input: instream -> vector * instream 
       val inputAll: instream -> vector * instream
       val inputN: instream * int -> vector * instream 
+      val flushOut: outstream -> unit 
+      val getWriter: outstream -> writer * IO.buffer_mode 
 (*      
       val mkInstream: reader * vector -> instream  (* need to update this *)
       val getReader: instream -> reader * vector 
@@ -41,7 +43,6 @@ signature BIN_STREAM_IO =
       val setBufferMode: outstream * IO.buffer_mode -> unit 
       val getBufferMode: outstream -> IO.buffer_mode 
       val mkOutstream: writer * IO.buffer_mode -> outstream 
-      val getWriter: outstream -> writer * IO.buffer_mode 
       val getPosOut: outstream -> out_pos 
       val setPosOut: out_pos -> outstream 
 *)

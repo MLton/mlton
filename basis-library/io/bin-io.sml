@@ -31,7 +31,7 @@ structure BinIO1: BIN_IO_EXTRA =
       open FastImperativeIO
    end
 
-structure BinIO2: BIN_IO_EXTRA =
+structure BinIO2(*: BIN_IO_EXTRA*) =
    BinOrTextIO
    (val fileTypeFlags = [PosixPrimitive.FileSys.O.binary]
     structure Cleaner = Cleaner
@@ -57,4 +57,4 @@ structure BinIO2: BIN_IO_EXTRA =
     structure Primitive = Primitive
     structure String = String)
 
-structure BinIO = BinIO2
+structure BinIO = BinIO1
