@@ -18,7 +18,7 @@ build: configure-stamp build-stamp
 build-stamp:
 	dh_testdir
 	# Add here commands to compile the package.
-	$(MAKE) bootstrap
+	$(MAKE) version bootstrap
 	#/usr/bin/docbook-to-man debian/mlton.sgml > mlton.1
 	touch build-stamp
 
