@@ -916,6 +916,7 @@ fun maketable (fins:(int * (int list)) list,
 
 	 fun GetEndLeaf t = 
 	   let fun f ((tl,el)::r) = if (tl=t) then el else f r
+		 | f [] = raise Fail "GetEndLeaf"
            in f tcpairs
 	   end
 	 fun GetTrConLeaves s =
@@ -1018,6 +1019,7 @@ fun maketable (fins:(int * (int list)) list,
 		  then ()
 		  else (say ",\n"; makeTable(a',b')))
 	      end
+	  | makeTable _ = raise Fail "makeTable"
 
 	fun msg x = TextIO.output(TextIO.stdOut, x)
 
