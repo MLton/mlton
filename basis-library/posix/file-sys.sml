@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -76,11 +76,18 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 			SysCall.syscallErr
 			({clear = true, restart = false},
 			 fn () =>
-			 let val cs = Prim.readdir d
+			 let
+			    val cs = Prim.readdir d
 			 in
-			    {return = if Primitive.Pointer.isNull cs then ~1 else 0,
+			    {return = if Primitive.Pointer.isNull cs
+					 then ~1
+				      else 0,
 			     post = fn () => SOME cs,
-			     handlers = [(Error.cleared, fn () => NONE)]}
+			     handlers = [(Error.cleared, fn () => NONE),
+					 (* MinGW sets errno to ENOENT when it
+					  * returns NULL.
+					  *)
+					 (Error.noent, fn () => NONE)]}
 			 end)
 		  in
 		     case res of
