@@ -5,5 +5,4 @@ mlton.ps: mlton.1
 
 .PHONY: clean
 clean:
-	for f in `cat .cvsignore`; do rm -f $$f; done
-	rm -f *~
+	../bin/clean

@@ -1,11 +1,25 @@
 #!/bin/sh
 
+function doit () {
+	rm -rf *~ *.a *.o CM core mlmon.out
+	if [ -r .cvsignore ]; then
+		for f in `cat .cvsignore`; do rm -rf $f; done
+	fi
+	for f in `ls`; do
+		if [ -d $f ]; then
+			cd $f && doit && cd ..;
+		fi
+	done
+}
+
+doit
+
 # This script removes all the junk files created when compiling with MLton's
 # various -keep flags.
 
-/bin/rm -f *.basis *.chunks *.const *.core-ml *.cps *.dot *.flat *.flow 	\
-	*.inline *.local-flatten *.mono *.o *.once-graph *.once-vars	\
-	*.post-useless *.raise-to-jump *.redundant *.reg *.rep *.sxml	\
-	*.sxml.poly *.threshold[0-9] *.unused-args *.useless *.xml
-
-/bin/rm -f *~ core mlmon.out
+#/bin/rm -f *.basis *.chunks *.const *.core-ml *.cps *.dot *.flat *.flow 	\
+#	*.inline *.local-flatten *.mono *.o *.once-graph *.once-vars	\
+#	*.post-useless *.raise-to-jump *.redundant *.reg *.rep *.sxml	\
+#	*.sxml.poly *.threshold[0-9] *.unused-args *.useless *.xml
+#
+#/bin/rm -f *~ core mlmon.out

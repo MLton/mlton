@@ -19,18 +19,9 @@ $(NAME)_cm:
 		echo 'call-main.sml';					\
 	) >$(NAME).cm
 
-OLD = old
-.PHONY: backup
-backup:	clean
-	if [ ! -d $(OLD) ]; then mkdir $(OLD); fi
-	tar.write -x $(OLD) -x CM . >$(OLD)/`date +%Y-%m-%d`.tar
-
 .PHONY: clean
 clean:
-	find . -type f | grep '.*~$$' | xargs rm -f
-	find . -type d | grep 'CM$$' | xargs rm -rf
-	rm -rf PM *.batch.sml a.out junk run $(NAME) $(NAME).sml
-	cd tests && make clean
+	../bin/clean
 
 .PHONY: install
 install: $(NAME)
@@ -44,6 +35,7 @@ tags:
 BENCH = barnes-hut checksum count-graphs DLXSimulator fft fib hamlet knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc mpuz nucleic peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tensor tsp tyan vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
 
 BFLAGS = -mlton "mlton" -mlkit -mosml -smlnj
+BFLAGS = -mlton "mlton"
 
 .PHONY: test
 test: $(NAME)

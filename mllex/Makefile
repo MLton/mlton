@@ -21,9 +21,7 @@ $(NAME)_cm:
 
 .PHONY: clean
 clean:
-	find . -type f | grep '.*~$$' | xargs rm -f
-	find . -type d | grep 'CM$$' | xargs rm -rf
-	rm -f junk $(NAME) $(NAME).sml ml.lex ml.lex.sml
+	../bin/clean
 
 .PHONY: test
 test: $(NAME)

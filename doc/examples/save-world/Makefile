@@ -14,4 +14,4 @@ save-world: save-world.sml
 
 .PHONY: clean
 clean:
-	rm -f save-world world *~
+	../../../bin/clean

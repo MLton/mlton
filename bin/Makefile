@@ -2,4 +2,4 @@ all:
 
 .PHONY: clean
 clean:
-	rm -f *~
+	../bin/clean

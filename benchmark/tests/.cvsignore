@@ -1,0 +1,12 @@
+*.batch.sml
+*.mlton.sml
+*.ui
+*.uo
+*.x86-linux
+PM
+TEST
+a.out
+chess.ppm
+run
+z
+z.sml

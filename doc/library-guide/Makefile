@@ -26,8 +26,7 @@ main.ps: main.dvi
 
 .PHONY: clean
 clean:
-	for f in `cat .cvsignore`; do rm -f $$f; done
-	rm -f *~
+	../../bin/clean
 
 .PHONY: tags
 tags:

@@ -31,9 +31,7 @@ src/yacc.grm.sig src/yacc.grm.sml: src/yacc.grm
 
 .PHONY: clean
 clean:
-	find . -type f | grep '.*~$$' | xargs rm -f
-	find . -type d | grep 'CM$$' | xargs rm -rf
-	rm -f junk $(NAME) $(NAME).sml src/yacc.lex.sml src/yacc.grm.* ml.grm*
+	../bin/clean
 
 .PHONY: test
 test: $(NAME)

@@ -338,8 +338,7 @@ gmp:
 
 .PHONY: clean
 clean:
-	/bin/rm -rf gmp.h gmp-2.0.2 gmp-stuff
-	find . -type f | egrep '.*~|\.(o|a|s)$$' | xargs rm -f
+	../bin/clean
 
 .PHONY: depend
 depend: gmp.h

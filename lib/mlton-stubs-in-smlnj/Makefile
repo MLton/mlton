@@ -6,3 +6,7 @@ links:
 		rm -f $$f.sig && \
 		ln ../../basis-library/mlton/$$f.sig .; \
 	done
+
+.PHONY: clean
+clean:
+	../../bin/clean

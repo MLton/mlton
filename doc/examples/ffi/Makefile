@@ -7,4 +7,4 @@ ffi.o: ffi.c ffi.h
 	$(mlton) -stop o ffi.c
 
 clean:
-	rm -f main ffi.o *~
+	../../../bin/clean

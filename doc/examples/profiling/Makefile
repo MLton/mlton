@@ -15,4 +15,4 @@ profiling: profiling.sml
 
 .PHONY: clean
 clean:
-	rm -f profiling profiling.0.S profiling.c profiling.cps mlmon.out *~
+	../../../bin/clean

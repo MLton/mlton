@@ -6,6 +6,7 @@ MLTON = mlton
 NAME = mlton
 AOUT = mlton-compile
 FLAGS = @MLton fixed-heap 450m -- -v -o $(AOUT)
+FLAGS = @MLton fixed-heap 450m -- -keep-pass removeUnused5 -keep dot -v2 -o $(AOUT)
 PATH = $(BIN):$(shell echo $$PATH)
 
 all: $(AOUT)
@@ -60,10 +61,7 @@ front-end/ml.grm.sig front-end/ml.grm.sml: front-end/ml.grm
 
 .PHONY: clean
 clean:
-	find . -type f | egrep '.(*~|old|TAGS)$$' | xargs rm -f
-	find . -type d | grep 'CM$$' | xargs rm -rf
-	rm -f mlton.sml mlton-compile mlmon.out
-	rm -f front-end/ml.lex.sml front-end/ml.grm.*
+	../bin/clean
 
 #
 # The following rebuilds the heap file for the SML/NJ compiled version
