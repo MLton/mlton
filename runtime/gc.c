@@ -2078,7 +2078,7 @@ static void maybeGrowTable (GC_state s, GC_ObjectHashTable t) {
 		fprintf (stderr, "done growing table\n");
 }
 
-static Pointer hashCons (GC_state s, Pointer object) {
+static Pointer hashCons (GC_state s, Pointer object, Bool countBytesHashConsed) {
 	Bool hasIdentity;
 	Word32 hash;
 	Header header;
@@ -2114,6 +2114,8 @@ static Pointer hashCons (GC_state s, Pointer object) {
        	res = tableInsert (s, t, hash, object, TRUE, header, tag, (Pointer)max);
 	maybeGrowTable (s, t);
 done:
+	if (countBytesHashConsed and res != object)
+		s->bytesHashConsed += objectSize (s, object);
 	if (DEBUG_SHARE)
 		fprintf (stderr, "0x%08x = hashCons (0x%08x)\n", 
 				(uint)res, (uint)object);
@@ -2128,7 +2130,7 @@ static inline void maybeSharePointer (GC_state s,
 	if (DEBUG_SHARE)
 		fprintf (stderr, "maybeSharePointer  pp = 0x%08x  *pp = 0x%08x\n",
 				(uint)pp, (uint)*pp);
-	*pp = hashCons (s, *pp);	
+	*pp = hashCons (s, *pp, FALSE);	
 }
 
 /* ---------------------------------------------------------------- */
@@ -2233,8 +2235,9 @@ mark:
 		if (0 == numPointers) {
 			/* There is nothing to mark. */
 			size += GC_NORMAL_HEADER_SIZE + toBytes (numNonPointers);
+normalDone:
 			if (shouldHashCons)
-				cur = hashCons (s, cur);
+				cur = hashCons (s, cur, TRUE);
 			goto ret;
 		}
 		todo = cur + toBytes (numNonPointers);
@@ -2251,9 +2254,7 @@ markNextInNormal:
        			index++;
 			if (index == numPointers) {
 				*headerp = header & ~COUNTER_MASK;
-				if (shouldHashCons)
-					cur = hashCons (s, cur);
-				goto ret;
+				goto normalDone;
 			}
 			todo += POINTER_SIZE;
 			goto markInNormal;
@@ -2282,8 +2283,9 @@ markNextInNormal:
 			+ arrayNumBytes (s, cur, numPointers, numNonPointers);
 		if (0 == numPointers or 0 == GC_arrayNumElements (cur)) {
 			/* There is nothing to mark. */
+arrayDone:
 			if (shouldHashCons)
-				cur = hashCons (s, cur);
+				cur = hashCons (s, cur, TRUE);
 			goto ret;
 		}
 		/* Begin marking first element. */
@@ -2317,9 +2319,7 @@ markNextInArray:
 			/* Done.  Clear out the counters and return. */
 			*arrayCounterp (cur) = 0;
 			*headerp = header & ~COUNTER_MASK;
-			if (shouldHashCons)
-				cur = hashCons (s, cur);
-			goto ret;
+			goto arrayDone;
 		}
 		nextHeaderp = GC_getHeaderp (next);
 		nextHeader = *nextHeaderp;
@@ -2433,12 +2433,18 @@ ret:
 void GC_share (GC_state s, Pointer object) {
 	if (DEBUG_SHARE)
 		fprintf (stderr, "GC_share 0x%08x\n", (uint)object);
+	if (DEBUG_SHARE or s->messages)
+		s->bytesHashConsed = 0;
 	// Don't hash cons during the first round of marking.
 	mark (s, object, MARK_MODE, FALSE);
 	s->objectHashTable = newTable (s);
 	// Hash cons during the second round of marking.
 	mark (s, object, UNMARK_MODE, TRUE);
 	destroyTable (s->objectHashTable);
+	if (DEBUG_SHARE or s->messages)
+		fprintf (stderr, "%s bytes hash-consed.\n",
+				ullongToCommaString (s->bytesHashConsed));
+
 }
 
 /* ---------------------------------------------------------------- */
@@ -2691,6 +2697,7 @@ static void markCompact (GC_state s) {
 		startTiming (&ru_start);
 	s->numMarkCompactGCs++;
 	if (s->hashConsDuringGC) {
+		s->bytesHashConsed = 0;
 		s->numHashConsGCs++;
 		s->objectHashTable = newTable (s);
 	}
@@ -2707,8 +2714,12 @@ static void markCompact (GC_state s) {
 	s->lastMajor = GC_MARK_COMPACT;
 	if (detailedGCTime (s))
 		stopTiming (&ru_start, &s->ru_gcMarkCompact);
-	if (DEBUG or s->messages)
+	if (DEBUG or s->messages) {
 		fprintf (stderr, "Major mark-compact GC done.\n");
+		if (s->hashConsDuringGC)
+			fprintf (stderr, "%s bytes hash-consed.\n",
+					ullongToCommaString (s->bytesHashConsed));
+	}
 }
 
 /* ---------------------------------------------------------------- */

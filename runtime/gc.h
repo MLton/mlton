@@ -352,6 +352,7 @@ typedef struct GC_state {
 	ullong bytesAllocated;
  	ullong bytesCopied;
 	ullong bytesCopiedMinor;
+	ullong bytesHashConsed;
 	int bytesLive; /* Number of bytes live at most recent major GC. */
 	ullong bytesMarkCompacted;
 	GC_thread callFromCHandler; /* For C calls. */
