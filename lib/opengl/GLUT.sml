@@ -2013,7 +2013,7 @@ signature GLUT =
         val glutDisplayFunc: (unit -> unit) -> unit;
         val glutIdleFunc : (unit -> unit ) -> unit ;
         val glutReshapeFunc : (int * int -> unit) -> unit ;
-        (*val glutKeyboardFunc : (char * int * int -> unit) -> unit ;*)
+        val glutKeyboardFunc : (char * int * int -> unit) -> unit ;
         val glutSpecialFunc : (int * int * int -> unit ) -> unit ;
         val glutVisibilityFunc : (Word32.word -> unit ) -> unit
 
@@ -2295,8 +2295,8 @@ structure GLUT :> GLUT =
             val callGReshapeF = _import "callGlutReshapeFunc": unit -> unit;
 
             (* Keyboard function callback *)
-            (*val gKbdFA = _export "glutKeyboardFuncArgument": char * int * int -> unit;
-            val callGKbdF = _import "callGlutKeyboardFunc": unit -> unit;*)
+            val gKbdFA = _export "glutKeyboardFuncArgument": char * int * int -> unit;
+            val callGKbdF = _import "callGlutKeyboardFunc": unit -> unit;
 
             (* Special function callback *)
             val gSpecFA = _export "glutSpecialFuncArgument": int * int * int -> unit;
@@ -2344,7 +2344,7 @@ structure GLUT :> GLUT =
             fun glutDisplayFunc (display: unit -> unit) = (gDisplayFA display; callGDisplayF ())
             fun glutIdleFunc (idle: unit -> unit) = (gIdleFA idle; callGIdleF ())
             fun glutReshapeFunc (reshape: int * int -> unit) = ( gReshapeFA reshape; callGReshapeF ())
-            (*fun glutKeyboardFunc (kbd: char * int * int -> unit) = ( gKbdFA kbd; callGKbdF ())*)
+            fun glutKeyboardFunc (kbd: char * int * int -> unit) = ( gKbdFA kbd; callGKbdF ())
             fun glutSpecialFunc (kbd: int * int * int -> unit) = ( gSpecFA kbd; callGSpecF ())
             fun glutVisibilityFunc (vis: Word32.word -> unit) = ( gVisibilityFA vis; callGVisibilityF ())
 

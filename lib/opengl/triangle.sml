@@ -189,9 +189,9 @@ fun specialCallback ((c:int), (x:int), (y:int)) : unit =
 fun main () = 
     (
      initialise();
-     print ("Press F1 - Toggle culling, F2 - Toggle outline, F3 - Toggle depth,\n Arrow keys rotate\n");
+     print ("Press F1 or c - Toggle culling, F2 or o - Toggle outline, F3 or d - Toggle depth,\n Arrow keys rotate\n");
      glutReshapeFunc changeSize;
-     (*glutKeyboardFunc keyCallback;*)
+     glutKeyboardFunc keyCallback;
      glutSpecialFunc specialCallback;
      glutIdleFunc renderScene;
      glutDisplayFunc renderScene;

@@ -265,7 +265,7 @@ signature GLUT =
         val glutDisplayFunc: (unit -> unit) -> unit;
         val glutIdleFunc : (unit -> unit ) -> unit ;
         val glutReshapeFunc : (int * int -> unit) -> unit ;
-        (*val glutKeyboardFunc : (char * int * int -> unit) -> unit ;*)
+        val glutKeyboardFunc : (char * int * int -> unit) -> unit ;
         val glutSpecialFunc : (int * int * int -> unit ) -> unit ;
         val glutVisibilityFunc : (Word32.word -> unit ) -> unit
 
