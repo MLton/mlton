@@ -336,6 +336,12 @@ struct
 			       (true, n))
 		    val magic = C.word(Random.useed ())
 		    val mainLabel = Label.toString (#label main)
+		    (* Drop the leading _ with Cygwin, because gcc will add it.
+		     *)
+		    val mainLabel =
+		       case !Control.host of
+			  Control.Cygwin => String.dropPrefix (mainLabel, 1)
+			| Control.Linux => mainLabel
 		  in 
 		    C.callNoSemi("Main",
 				 [if usedFixedHeap then C.truee else C.falsee,

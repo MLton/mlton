@@ -347,15 +347,24 @@ struct
    *  call to GC_gc is about 7 lines further (push 4 more arguments,
    *  save gcState.frontier and gcState.stackTop, make call).
    * However, there are probably cases where this is different.
+   *
+   * We also have another hack because with Cygwin, Label.toString appends
+   * an _ to the beginning of each label.
    *)
-  val fileLineLabel = Label.fromString "__LINE__"
+  val fileLineLabel =
+     Promise.lazy
+     (fn () =>
+      Label.fromString (case !Control.host of
+			   Control.Cygwin => "_LINE__"
+			 | Control.Linux => "__LINE__"))
   val fileLine
     = fn () => if !Control.debug
 		 then Operand.immediate (Immediate.const_int 0)
-		 else Operand.immediate (Immediate.binexp
-					 {oper = Immediate.Addition,
-					  exp1 = Immediate.label fileLineLabel,
-					  exp2 = Immediate.const_int 7})
+		 else (Operand.immediate
+		       (Immediate.binexp
+			{oper = Immediate.Addition,
+			 exp1 = Immediate.label (fileLineLabel ()),
+			 exp2 = Immediate.const_int 7}))
 
   val gcState = Label.fromString "gcState"
 

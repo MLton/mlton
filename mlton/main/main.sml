@@ -308,6 +308,9 @@ fun commandLine (args: string list): unit =
 		   else Coalesce {limit = (case !coalesce of
 					      NONE => 4096
 					    | SOME n => n)})
+      val _ = if not (!Native.native) andalso !Native.IEEEFP
+		 then usage "can't use -native false and -ieee-fp true"
+	      else ()
       val _ =
 	 if !keepDot andalso List.isEmpty (!keepPasses)
 	    then keepSSA := true
@@ -413,7 +416,9 @@ fun commandLine (args: string list): unit =
 		     trace (Top, "Link")
 		     (fn () =>
 		      docc (inputs,
-			    maybeOut "",
+			    maybeOut (case !host of
+					 Cygwin => ".exe"
+				       | Linux => ""),
 			    List.concat [["-b", hostId],
 					 if !debug then ["-g"] else [],
 					 if !static then ["-static"] else []],

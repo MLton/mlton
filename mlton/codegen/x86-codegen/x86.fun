@@ -39,6 +39,18 @@ struct
 
   open S
 
+  structure Label =
+     struct
+	open Label
+
+	fun toString l =
+	   case !Control.host of
+	      Control.Cygwin => concat ["_", Label.toString l]
+	    | Control.Linux => Label.toString l
+
+	val layout = Layout.str o toString
+     end
+
   structure Size =
     struct
       datatype class = INT | FLT | FPI
@@ -439,6 +451,7 @@ struct
 
       datatype u
 	= Const of const
+	
         | Label of Label.t
 	| ImmedUnExp of {oper: un,
 			 exp: t}
