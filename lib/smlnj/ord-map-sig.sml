@@ -1,3 +1,7 @@
+(* Modified by sweeks@sweeks.com on 2002-05-29.
+ * Ported to MLton.
+ *)
+
 (* ord-map-sig.sml
  *
  * COPYRIGHT (c) 1996 by AT&T Research.  See COPYRIGHT file for details.
@@ -5,6 +9,8 @@
  * Abstract signature of an applicative-style finite maps (dictionaries)
  * structure over ordered monomorphic keys.
  *)
+
+type int = Int.int
 
 signature ORD_MAP =
   sig
