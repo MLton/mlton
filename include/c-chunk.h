@@ -386,7 +386,11 @@ wordOps(8)
 wordOps(16)
 wordOps(32)
 wordOps(64)
-#undef wordBinary wordCmp wordShift wordUnary
+#undef wordBinary 
+#undef wordCmp
+#undef wordOps
+#undef wordShift
+#undef wordUnary
 
 #define coerce(f, t)				\
 	static inline t f##_to##t (f x) {	\
