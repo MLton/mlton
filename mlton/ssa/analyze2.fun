@@ -14,7 +14,7 @@ datatype z = datatype Exp.t
 datatype z = datatype Transfer.t
    
 fun 'a analyze
-   {coerce, const, filter, filterWord, fromType, layout, object, primApp,
+   {coerce, const, filter, filterWord, fromType, inject, layout, object, primApp,
     program = Program.T {functions, globals, main, ...},
     select, update, useFromTypeOnBinds} =
    let
@@ -205,10 +205,24 @@ fun 'a analyze
 	    val v =
 	       case exp of
 		  Const c => const c
+		| Inject {sum, variant} =>
+		     inject {sum = sum,
+			     variant = value variant}
 		| Object {args, con} =>
-		     object {args = values args,
-			     con = con,
-			     resultType = ty}
+		     let
+			val args =
+			   case Type.dest ty of
+			      Type.Object {args = ts, ...} =>
+				 Vector.map2
+				 (args, ts, fn (x, {isMutable, ...}) =>
+				  {elt = value x,
+				   isMutable = isMutable})
+			    | _ => Error.bug "analyze saw strange object"
+		     in
+			object {args = args,
+				con = con,
+				resultType = ty}
+		     end
 		| PrimApp {prim, targs, args, ...} =>
 		     primApp {prim = prim,
 			      targs = targs,
@@ -246,6 +260,11 @@ fun 'a analyze
 			       (case exn of 
 				   Fail msg => msg
 				 | _ => "")])
+      val loopStatement =
+	 Trace.trace ("Analyze.loopStatement",
+		      Statement.layout,
+		      Unit.layout)
+	 loopStatement
       val _ = coerces ("main", Vector.new0 (), #args (func main))
       val _ = Vector.foreach (globals, loopStatement)
       val _ =

@@ -341,16 +341,25 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 					       ty = Type.conApp (con, args),
 					       tycon = tycon}))
 	  end)
-      fun isSubtype (t1: Type.t, t2: Type.t): bool =
-	 Type.equals (t1, t2)
-	 orelse (case (Type.dest t1, Type.dest t2) of
-		    (Type.Object {con, ...}, Type.Datatype tyc) =>
-		       (case con of
-			   NONE => false
-			 | SOME c => Tycon.equals (conTycon c, tyc))
-		  | _ => false)
+      fun inject {sum: Tycon.t, variant: Type.t}: Type.t =
+	 let
+	    val error = fn msg =>
+	       error (concat ["inject: ", msg],
+		      Layout.record [("sum", Tycon.layout sum),
+				     ("variant", Type.layout variant)])
+	 in
+	    case Type.dest variant of
+	       Type.Object {con, ...} =>
+		  (case con of
+		      NONE => error "inject"
+		    | SOME c =>
+			 if Tycon.equals (conTycon c, sum)
+			    then Type.datatypee sum
+			 else error "inject into wrong sum")
+	     | _ => error "inject of no object"
+	 end
       fun coerce {from: Type.t, to: Type.t}: unit =
-	 if isSubtype (from, to)
+	 if Type.equals (from, to)
 	    then ()
 	 else error ("TypeCheck.coerce",
 		     Layout.record [("from", Type.layout from),
@@ -373,7 +382,8 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	       Type.Object {args = args', con = con'} =>
 		  (if Option.equals (con, con', Con.equals)
 		      andalso (Vector.foreach2
-			       (args, args', fn (t, {elt = t', ...}) =>
+			       (args, args',
+				fn ({elt = t, isMutable = _}, {elt = t', ...}) =>
 				coerce {from = t, to = t'})
 			       ; true)
 		      then resultType
@@ -412,7 +422,6 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	    datatype z = datatype Prim.Name.t
 	    val () =
 	       if Type.checkPrimApp {args = args,
-				     isSubtype = isSubtype,
 				     prim = prim,
 				     result = resultType,
 				     targs = targs}
@@ -433,6 +442,7 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 		  filter = filter,
 		  filterWord = filterWord,
 		  fromType = fn x => x,
+		  inject = inject,
 		  layout = Type.layout,
 		  object = object,
 		  primApp = primApp,

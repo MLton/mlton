@@ -678,6 +678,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 		  in
 		     case exp of
 			S.Exp.Const c => move (Const (convertConst c))
+		      | S.Exp.Inject {variant, ...} =>
+			   if isSome (toRtype ty)
+			      then move (varOp variant)
+			   else none ()
 		      | S.Exp.Object {args, con} =>
 			   (case toRtype ty of
 			       NONE => none ()

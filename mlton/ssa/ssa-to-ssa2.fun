@@ -64,14 +64,32 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 			      end),
 	   tycon = tycon})
       fun convertPrim p = S.Prim.map (p, convertType)
-      fun convertExp (e: S.Exp.t, t: S.Type.t): S2.Exp.t * S2.Type.t =
+      fun convertStatement (S.Statement.T {exp, ty, var})
+	 : S2.Statement.t vector =
 	 let
-	    fun simple e = (e, convertType t)
+	    val ty = convertType ty
+	    fun simple (exp: S2.Exp.t): S2.Statement.t vector =
+	       Vector.new1 (S2.Statement.T {exp = exp, ty = ty, var = var})
 	 in
-	    case e of
+	    case exp of
 	       S.Exp.ConApp {args, con} =>
-		  (S2.Exp.Object {args = args, con = SOME con},
-		   conType con)
+		  let
+		     val sum =
+			case S2.Type.dest ty of
+			   S2.Type.Datatype tycon => tycon
+			 | _ => Error.bug "convertStatement saw strange ConApp"
+		     val variant = Var.newNoname ()
+		  in
+		     Vector.new2
+		     (S2.Statement.T {exp = S2.Exp.Object {args = args,
+							   con = SOME con},
+				      ty = conType con,
+				      var = SOME variant},
+		      S2.Statement.T {exp = S2.Exp.Inject {variant = variant,
+							   sum = sum},
+				      ty = ty,
+				      var = var})
+		  end
 	     | S.Exp.Const c => simple (S2.Exp.Const c)
 	     | S.Exp.PrimApp {args, prim, targs} =>
 		  simple
@@ -101,14 +119,11 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 	     | S.Exp.Tuple v => simple (S2.Exp.Object {args = v, con = NONE})
 	     | S.Exp.Var x => simple (S2.Exp.Var x)
 	 end
-      fun convertStatement (S.Statement.T {exp, ty, var}) =
-	 let
-	    val (exp, ty) = convertExp (exp, ty)
-	 in
-	    S2.Statement.T {exp = exp,
-			    ty = ty,
-			    var = var}
-	 end
+      val convertStatement =
+	 Trace.trace ("convertStatement",
+		      S.Statement.layout,
+		      Vector.layout S2.Statement.layout)
+	    convertStatement
       fun convertHandler (h: S.Handler.t): S2.Handler.t =
 	 case h of
 	    S.Handler.Caller => S2.Handler.Caller
@@ -194,11 +209,13 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 	       S2.Transfer.Runtime {args = args,
 				    prim = convertPrim prim,
 				    return = return}
+      fun convertStatements ss =
+	 Vector.concatV (Vector.map (ss, convertStatement))
       fun convertFormals xts = Vector.map (xts, fn (x, t) => (x, convertType t))
       fun convertBlock (S.Block.T {args, label, statements, transfer}) =
 	 S2.Block.T {args = convertFormals args,
 		     label = label,
-		     statements = Vector.map (statements, convertStatement),
+		     statements = convertStatements statements,
 		     transfer = convertTransfer transfer}
       val functions =
 	 List.map
@@ -219,7 +236,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 			      returns = rr returns,
 			      start = start}
 	  end)
-      val globals = Vector.map (globals, convertStatement)
+      val globals = convertStatements globals
    in
       S2.Program.T {datatypes = datatypes,
 		    functions = functions,

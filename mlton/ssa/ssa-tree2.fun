@@ -202,12 +202,12 @@ structure Type =
 	  | (Datatype _, Object _) => t
 	  | _ => t
 
-      fun checkPrimApp {args, isSubtype, prim, result, targs}: bool =
+      fun checkPrimApp {args, prim, result, targs}: bool =
 	 let
 	    datatype z = datatype Prim.Name.t
 	    fun done (args', result') =
-	       Vector.equals (args, Vector.fromList args', isSubtype)
-	       andalso isSubtype (result, result')
+	       Vector.equals (args, Vector.fromList args', equals)
+	       andalso equals (result, result')
 	    fun targ i = Vector.sub (targs, i)
 	    fun oneTarg f =
 	       1 = Vector.length targs
@@ -471,6 +471,8 @@ structure Exp =
    struct
       datatype t =
 	 Const of Const.t
+       | Inject of {sum: Tycon.t,
+		    variant: Var.t}
        | Object of {con: Con.t option,
 		    args: Var.t vector}
        | PrimApp of {prim: Type.t Prim.t,
@@ -493,6 +495,7 @@ structure Exp =
 	 in
 	    case e of
 	       Const _ => ()
+	     | Inject {variant, ...} => v variant
 	     | Object {args, ...} => vs args
 	     | PrimApp {args, ...} => vs args
 	     | Profile _ => ()
@@ -507,9 +510,10 @@ structure Exp =
 	 in
 	    case e of
 	       Const _ => e
+	     | Inject {sum, variant} => Inject {sum = sum, variant = fx variant}
+	     | Object {con, args} => Object {con = con, args = fxs args}
 	     | PrimApp {prim, targs, args} =>
 		  PrimApp {prim = prim, targs = targs, args = fxs args}
-	     | Object {con, args} => Object {con = con, args = fxs args}
 	     | Profile _ => e
 	     | Select {object, offset} =>
 		  Select {object = fx object, offset = offset}
@@ -524,6 +528,8 @@ structure Exp =
 	 in
 	    case e of
 	       Const c => Const.layout c
+	     | Inject {sum, variant} =>
+		  seq [Var.layout variant, str ": ", Tycon.layout sum]
 	     | Object {con, args} =>
 		  seq [(case con of
 			   NONE => empty
@@ -551,6 +557,7 @@ structure Exp =
       fun maySideEffect (e: t): bool =
 	 case e of
 	    Const _ => false
+	  | Inject _ => false
 	  | Object _ => false
 	  | PrimApp {prim,...} => Prim.maySideEffect prim
 	  | Profile _ => false
@@ -581,6 +588,7 @@ structure Exp =
 
       local
 	 val newHash = Random.word
+	 val inject = newHash ()
 	 val primApp = newHash ()
 	 val profile = newHash ()
 	 val select = newHash ()
@@ -591,6 +599,9 @@ structure Exp =
       in
 	 val hash: t -> Word.t =
 	    fn Const c => Const.hash c
+	     | Inject {sum, variant} =>
+		  Word.xorb (inject,
+			     Word.xorb (Tycon.hash sum, Var.hash variant))
 	     | Object {con, args, ...} =>
 		  hashVars (args,
 			    case con of
@@ -618,6 +629,8 @@ structure Exp =
 	 fun toPretty (e: t, global: Var.t -> string option): string =
 	    case e of
 	       Const c => Const.toString c
+	     | Inject {sum, variant} =>
+		  concat [Var.toString variant, ": ", Tycon.toString sum]
 	     | Object {con, args} =>
 		  concat [(case con of
 			      NONE => ""

@@ -36,7 +36,6 @@ signature SSA_TREE2 =
 	    val bool: t
 	    val conApp: Con.t * {elt: t, isMutable: bool} vector -> t
 	    val checkPrimApp: {args: t vector,
-			       isSubtype: t * t -> bool,
 			       prim: t Prim.t,
 			       result: t,
 			       targs: t vector} -> bool
@@ -64,7 +63,8 @@ signature SSA_TREE2 =
 	 sig
 	    datatype t =
 	       Const of Const.t
-(*	     | Inject of Var.t * Tycon.t *)
+	     | Inject of {sum: Tycon.t,
+			  variant: Var.t}
 	     | Object of {args: Var.t vector,
 			  con: Con.t option}
 	     | PrimApp of {args: Var.t vector,
