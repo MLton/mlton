@@ -280,6 +280,18 @@ POSIX_SIGNAL
 Discussion:
 "The name of the corresponding..." is repeated.
 
+UNIX:
+I'm not quite sure how the ('a, 'b) proc type is supposed to work in practice;
+The old Unix structure just used them as TextIO.{in,out}streams.
+My suspicion is that we're supposed to use Posix.IO.mk{Bin,Text}{Reader,Writer}
+functions and then use the type system to ensure that if we force a
+stream to be bin or text, then all other uses have to be the same.  I
+also suspect that we're only supposed to lift the file_desc up to an
+instream/outstream once; i.e., multiple textInstreamOf calls should
+continue to return the same TextIO.instream.  That would seem to
+suggest we need an 'a option ref that can be banged at the first call
+to a streamOf function, and subsequent calls just return the value
+there.
 
 Time:
 Time now include negative values?
