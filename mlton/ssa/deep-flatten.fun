@@ -412,6 +412,19 @@ structure Value =
 
       fun object {args, con} =
 	 let
+	    (* Don't flatten object components that are immutable fields.  Those
+	     * have already had a chance to be flattened by other passes.
+	     *)
+	    val _  =
+	       if (case con  of
+		      ObjectCon.Con _ => true
+		    | ObjectCon.Tuple => true
+		    | ObjectCon.Vector => false)
+		  then Vector.foreach (Prod.dest args, fn {elt, isMutable} =>
+				       if isMutable
+					  then ()
+				       else dontFlatten elt)
+	       else ()
 	    (* FIXME: This should be enabled once we have flattening in
 	     * vectors.
 	     *)
