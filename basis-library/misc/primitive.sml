@@ -290,6 +290,9 @@ structure Primitive =
       structure MLton =
 	 struct
 	    val native = _build_const "MLton_native": bool;
+(*       val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
+(*       val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
+	    val size = fn x => _prim "MLton_size": 'a ref -> int; x
 
 	    structure Platform =
 	       struct
@@ -399,12 +402,7 @@ structure Primitive =
 		     _ffi "MLton_Process_spawnp"
 		     : nullString * nullString array -> int;
 	       end
-
-(*       val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
-(*       val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
-
-	    val size = fn x => _prim "MLton_size": 'a ref -> int; x
-
+	    
 	    structure Weak =
 	       struct
 		  type 'a t = 'a weak
