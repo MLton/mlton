@@ -42,6 +42,8 @@ loop-invariant.fun
 loop-invariant.sig
 multi.fun
 multi.sig
+n-point-lattice.fun
+n-point-lattice.sig
 poly-equal.fun
 poly-equal.sig
 redundant.fun
@@ -62,6 +64,8 @@ ssa-tree.fun
 ssa-tree.sig
 ssa.fun
 ssa.sig
+three-point-lattice.fun
+three-point-lattice.sig
 two-point-lattice.fun
 two-point-lattice.sig
 type-check.fun

@@ -149,6 +149,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 	= Property.getSetOnce
 	  (Var.plist, Property.initFun (fn _ => GlobalInfo.new false))
 
+      fun localizeGlobalRefs () = let
       val _ = Vector.foreach
 	      (globals, fn Statement.T {var, exp, ...} =>
 	       Option.app (var, fn var => 
@@ -272,10 +273,13 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 		    (f::functions, List.rev globals)
 		  end)
       val globals = Vector.fromList globals
+      in (functions,globals) end
+      val localizeGlobalRefs = Control.trace (Control.Pass, "localizeGlobalRefs")
+                                             localizeGlobalRefs
+      val (functions, globals) = localizeGlobalRefs ()
 
       (* restore and shrink *)
       val restore = restoreFunction globals
-      val restore = Control.trace (Control.Detail, "restore") restore
       val shrink = shrinkFunction globals
 
       (* varInfo *)
@@ -312,8 +316,8 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 			  val vi = VarInfo.new (SOME (label, Type.deref ty))
 			  val _ = setVarInfo (var, vi)
 			in
-			  List.push (LabelInfo.reffs li, var) ;
-			  List.push (refs, var)
+			  List.push (refs, var) ;
+			  List.push (LabelInfo.reffs li, var)
 			end)
 		   fun setAssign var
 		     = (List.push (VarInfo.assigns (varInfo var), label) ;
@@ -384,11 +388,11 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 						  else List.foreach
 						       (LabelInfo.preds' li, doit'))
 				      end
-				  val _ = List.foreach 
-				          (uses, fn l =>
-					   List.foreach
-					   (LabelInfo.preds' (labelInfo l), doit'))
 				in
+				  List.foreach 
+				  (uses, fn l =>
+				   List.foreach
+				   (LabelInfo.preds' (labelInfo l), doit')) ;
 				  List.foreach
 				  (!visited, fn l =>
 				   LabelInfo.visited (labelInfo l) := false)
@@ -518,23 +522,8 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 				   blocks = blocks,
 				   returns = returns,
 				   raises = raises}
-(*
-	     val _ = Control.diagnostics
-	             (fn display =>
-		      display (Function.layout (f, fn _ => NONE)))
-*)
 	     val f = restore f
-(*
-	     val _ = Control.diagnostics
-	             (fn display =>
-		      display (Function.layout (f, fn _ => NONE)))
-*)
 	     val f = shrink f
-(*
-	     val _ = Control.diagnostics
-	             (fn display =>
-		      display (Function.layout (f, fn _ => NONE)))
-*)
 	   in
 	     f
 	   end

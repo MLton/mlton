@@ -74,35 +74,29 @@ structure LabelInfo =
 
 structure Cardinality =
   struct
-    datatype t = Zero
-               | One
-               | Many
+    structure L = ThreePointLattice(val bottom = "zero"
+				    val mid = "one"
+				    val top = "many")
+    open L
 
-    fun layout c
-      = let open Layout
-	in str (case c
-		  of Zero => "zero"
-		   | One => "one"
-		   | Many => "many")
-	end
+    val isZero = isBottom
+    val isOne = isMid
+    val makeOne = makeMid
+    val isMany = isTop
+    val makeMany = makeTop
+    val whenMany = whenTop
 
-    val equals: t * t -> bool = op =
-
-    val inc: t -> t
-      = fn Zero => One
-         | _ => Many
-
-    val isZero: t -> bool
-      = fn Zero => true
-         | _ => false
-    val isMany: t -> bool 
-      = fn Many => true
-         | _ => false
+    val inc: t -> unit
+      = fn c => if isZero c
+		  then makeOne c
+		else if isOne c
+		  then makeMany c
+		else ()
    end
 
 structure VarInfo =
   struct
-    datatype t = T of {defs: Cardinality.t ref,
+    datatype t = T of {defs: Cardinality.t,
 		       ty: Type.t ref,
 		       index: int ref,
 		       defSites: Label.t list ref,
@@ -111,7 +105,7 @@ structure VarInfo =
 
     fun layout (T {defs, index, defSites, useSites, vars, ...})
       = let open Layout
-	in record [("defs", Cardinality.layout (!defs)),
+	in record [("defs", Cardinality.layout defs),
 		   ("index", Int.layout (!index)),
 		   ("defSites", List.layout Label.layout (!defSites)),
 		   ("useSites", List.layout Label.layout (!useSites)),
@@ -122,19 +116,20 @@ structure VarInfo =
       fun make f (T r) = f r
       fun make' f = (make f, ! o (make f))
     in
-      val (defs,defs') = make' #defs
+      val defs = make #defs
       val (index,index') = make' #index
       val (defSites,defSites') = make' #defSites
       val (useSites,useSites') = make' #useSites
       val (ty,ty') = make' #ty
       val (vars, vars') = make' #vars
     end
-    fun addDef (T {defs, ...}) = defs := Cardinality.inc (!defs)
+    fun addDef (T {defs, ...}) = Cardinality.inc defs
     fun addDefSite (T {defSites, ...}, l) = List.push(defSites, l)
     fun addUseSite (T {useSites, ...}, l) = List.push(useSites, l)
-    val violates = Cardinality.isMany o defs'
+    val violates = Cardinality.isMany o defs
+    fun whenViolates (T {defs, ...}, th) = Cardinality.whenMany (defs, th)
 
-    fun new (): t = T {defs = ref Cardinality.Zero,
+    fun new (): t = T {defs = Cardinality.new (),
 		       index = ref ~1,
 		       defSites = ref [],
 		       useSites = ref [],
@@ -190,47 +185,40 @@ fun restoreFunction (globals: Statement.t vector)
 	     post = fn () => List.foreach(!post, fn th => th ())}
 	  end
 
-      val violations = ref []
+      (* check for violations in globals *)
       fun addDef (x, ty) 
 	= let
 	    val vi = varInfo x
 	  in
-	    if VarInfo.violates vi
-	      then ()
-	      else (VarInfo.ty vi := ty ;
-		    VarInfo.addDef vi ;
-		    if VarInfo.violates vi
-		      then List.push (violations, x)
-		      else ())
+	    VarInfo.ty vi := ty ;
+	    VarInfo.addDef vi ;
+	    VarInfo.whenViolates 
+	    (vi, fn () => Error.bug "Restore.restore: violation in globals")
 	  end
-
-      (* check for violations in globals *)
-      val _ = Vector.foreach
-	      (globals, fn Statement.T {var, ty, ...} =>
-	       Option.app (var, fn x => addDef (x, ty)))
-      val _ = if List.length (!violations) = 0
-		then ()
-		else Error.bug "Restore.restore: violation in globals"
+      val _
+	= Vector.foreach
+	  (globals, fn Statement.T {var, ty, ...} =>
+	   Option.app (var, fn x => addDef (x, ty)))
     in
       fn (f: Function.t) =>
       let
 	val {name, args, start, blocks, returns, raises} = Function.dest f
 
 	(* check for violations *)
-	val _ = violations := []
-	fun checkViolations () = Function.foreachVar (f, addDef)
-	val checkViolations = Control.trace (Control.Detail, "checkViolations")
-	                                    checkViolations
-	val _ = checkViolations ()
-
-	(* violation in globals *)
-	val _ = if Vector.exists
-	           (globals, fn Statement.T {var, ...} =>
-		    case var 
-		      of NONE => false
-		       | SOME x => VarInfo.violates (varInfo x))
-		  then Error.bug "Restore.restore: violation in globals"
-		  else ()
+	val violations = ref []
+	fun addDef (x, ty)
+	  = let
+	      val vi = varInfo x
+	    in
+	      if VarInfo.violates vi
+		then ()
+		else (VarInfo.ty vi := ty ;
+		      VarInfo.addDef vi ;
+		      if VarInfo.violates vi
+			then List.push (violations, x)
+			else ())
+	    end
+	val _ = Function.foreachVar (f, addDef)
 
 	(* escape early *)
 	val _ = if List.length (!violations) = 0
@@ -279,10 +267,7 @@ fun restoreFunction (globals: Statement.t vector)
 						   args = Vector.new0 ()}}
 
 	(* compute dominator tree *)
-	fun dominatorTree () = Function.dominatorTree f
-	val dominatorTree = Control.trace (Control.Detail, "dominatorTree")
-                                          dominatorTree
-	val dt = dominatorTree ()
+	val dt = Function.dominatorTree f
 	val dt' = Tree.T (entryBlock, Vector.new1 dt)
 
 	(* compute df (dominance frontier) *)
@@ -384,13 +369,10 @@ fun restoreFunction (globals: Statement.t vector)
 	    in
 	      ()
 	    end
-	fun computeDF () = doitTree dt'
-	val computeDF = Control.trace (Control.Detail, "computeDF")
-                                      computeDF
-	val _ = computeDF ()
+	val _ = doitTree dt'
 
 	(* compute liveness *)
-	fun computeLive ()
+	val _
 	  = Vector.foreach
 	    (violations, fn x =>
 	     let
@@ -421,9 +403,6 @@ fun restoreFunction (globals: Statement.t vector)
 	     in
 	       loop ()
 	     end)
-	val computeLive = Control.trace (Control.Detail, "computeLive")
-	                                computeLive
-	val _ = computeLive ()
 
 	(* insert phi-functions *)
 	(*  based on section 19.1 of Appel's "Modern Compiler Implementation in ML"
@@ -434,7 +413,7 @@ fun restoreFunction (globals: Statement.t vector)
 	 *   corrected by the errata, which computes sets of nodes that must have 
 	 *   a phi-functions for a variable.)
 	 *)
-	fun computePhi ()
+	val _
 	  = Vector.foreach
 	    (violations, fn x =>
 	     let
@@ -469,9 +448,6 @@ fun restoreFunction (globals: Statement.t vector)
 	     in
 	       loop ()
 	     end)
-	val computePhi = Control.trace (Control.Detail, "computePhi")
-                                       computePhi
-	val _ = computePhi ()
 
 	(* finalize phi args *)
 	fun visitBlock (Block.T {label, ...}) 
@@ -761,8 +737,6 @@ fun restoreFunction (globals: Statement.t vector)
 			    returns = returns,
 			    raises = raises}
 	    end
-	val rewrite = Control.trace (Control.Detail, "rewrite")
-                                    rewrite
 	val f = rewrite ()
       in
 	f

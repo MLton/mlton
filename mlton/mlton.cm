@@ -270,6 +270,10 @@ ssa/remove-unused.fun
 ssa/simplify-types.sig
 ssa/simplify-types.fun
 ssa/simplify.fun
+ssa/three-point-lattice.sig
+ssa/n-point-lattice.sig
+ssa/n-point-lattice.fun
+ssa/three-point-lattice.fun
 ssa/restore.fun
 ../lib/mlton/basic/mono-vector.fun
 ssa/shrink.fun
