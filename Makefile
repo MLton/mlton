@@ -153,7 +153,7 @@ install:
 	mkdir -p $(TDOC) $(TLIB) $(TBIN) $(TMAN)
 	(								\
 		cd $(SRC)/doc &&					\
-		$(CP) CHANGES cmcat.sml examples license README $(TDOC)/
+		$(CP) CHANGES cmcat.sml examples license README $(TDOC)/ \
 	)
 	rm -rf $(TDOC)/user-guide
 	$(CP) $(SRC)/doc/user-guide/main $(TDOC)/user-guide
