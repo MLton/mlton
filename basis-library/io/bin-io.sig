@@ -23,8 +23,7 @@ signature BIN_IO =
 	  -> ('a, StreamIO.instream) StringCvt.reader)
 	 -> instream -> 'a option *)
       val setInstream: (instream * StreamIO.instream) -> unit
-(*       val openString: string -> instream
- *       val getPosIn: instream -> StreamIO.in_pos 
+(*       val getPosIn: instream -> StreamIO.in_pos 
  *       val setPosIn: (instream * StreamIO.in_pos) -> unit 
  *)
 
