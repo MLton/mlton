@@ -86,22 +86,13 @@ functor FixWord (W: PERVASIVE_WORD): WORD =
       end
       val fromInt = W.fromLargeInt o Pervasive.Int32.toLarge
       val fromLarge = W.fromLargeWord o LargeWord.toLargeWord
-      fun fromLargeInt i =
-	 if IntInf.< (i, IntInf.fromInt 0)
-	    then raise Overflow
-	 else valOf (W.fromString (IntInf.fmt StringCvt.HEX i))
+      val fromLargeInt = W.fromLargeInt
       val fromLargeWord = fromLarge
       val toInt = Pervasive.Int32.fromLarge o W.toLargeInt
       val toIntX = Pervasive.Int32.fromLarge o W.toLargeIntX
       val toLarge = LargeWord.fromLargeWord o W.toLargeWord
-      fun toLargeInt w = valOf (IntInf.fromString (W.fmt StringCvt.DEC w))
-      val highBit = W.<< (W.fromLargeWord 0w1,
-			  Word31.fromInt (Int31.- (W.wordSize, 1)))
-      val highBitSub = IntInf.* (IntInf.fromInt 2, toLargeInt highBit)
-      fun toLargeIntX w =
-	 if W.fromLargeWord 0w0 = W.andb (w, highBit)
-	    then toLargeInt w
-	 else IntInf.- (toLargeInt w, highBitSub)
+      val toLargeInt = W.toLargeInt
+      val toLargeIntX = W.toLargeIntX
       val toLargeWord = toLarge
       val toLargeWordX = LargeWord.fromLargeWord o W.toLargeWordX
       val toLargeX = toLargeWordX
@@ -117,32 +108,7 @@ functor FixWord (W: PERVASIVE_WORD): WORD =
    end
 
 structure Word8 = FixWord (Pervasive.Word8)
-structure Word32 =
-   struct
-      local
-	 structure S = FixWord (Pervasive.Word32)
-	 open S
-	 val highBit: word = 0wx80000000
-	 val highBitInt = IntInf.* (IntInf.fromInt 2,
-				    Pervasive.IntInf.fromLarge 0x40000000)
-      in
-	 open S
-
-	 fun fromLargeInt (n: IntInf.int) =
-	    if IntInf.< (n, highBitInt)
-	       then fromInt (IntInf.toInt n)
-	    else
-	       highBit + fromInt (IntInf.toInt (IntInf.mod (n, highBitInt)))
-
-	 fun toLargeInt (w: word): IntInf.int =
-	    if w < highBit
-	       then IntInf.fromInt (toInt w)
-	    else IntInf.+ (highBitInt,
-			   IntInf.fromInt (toInt
-					   (andb (w, notb highBit))))
-
-      end
-   end
+structure Word32 = FixWord (Pervasive.Word32)
 structure Word16 = Word32
 structure Word64 = FixWord (LargeWord)
 structure Word = Word32
