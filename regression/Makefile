@@ -5,7 +5,7 @@ clean:
 	../bin/clean
 	for f in `ls`; do 			\
 		if [ -x $$f -a ! -d $$f ]; then	\
-			rm -f $f;		\
+			rm -f $$f;		\
 		fi;				\
 	done
 
