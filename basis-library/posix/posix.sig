@@ -1,43 +1,39 @@
 signature POSIX =
    sig
       structure Error: POSIX_ERROR
-      structure Signal: POSIX_SIGNAL
-      structure Process: POSIX_PROCESS
-	where type signal = Signal.signal
-      structure ProcEnv: POSIX_PROC_ENV
-	where type pid = Process.pid
       structure FileSys: POSIX_FILE_SYS
-	where type file_desc = ProcEnv.file_desc
-	where type uid = ProcEnv.uid
-	where type gid = ProcEnv.gid
       structure IO: POSIX_IO
-	where type open_mode = FileSys.open_mode
+      structure ProcEnv: POSIX_PROC_ENV
+      structure Process: POSIX_PROCESS
+      structure Signal: POSIX_SIGNAL
       structure SysDB: POSIX_SYS_DB
-	where type uid = ProcEnv.uid
-	where type gid = ProcEnv.gid
       structure TTY: POSIX_TTY
-	where type pid = Process.pid
-	where type file_desc = ProcEnv.file_desc
+
+      sharing type FileSys.file_desc = ProcEnv.file_desc = IO.file_desc
+	 = TTY.file_desc
+      sharing type ProcEnv.gid = FileSys.gid = SysDB.gid
+      sharing type FileSys.open_mode = IO.open_mode
+      sharing type Process.pid = ProcEnv.pid = IO.pid = TTY.pid
+      sharing type Process.signal = Signal.signal
+      sharing type ProcEnv.uid = FileSys.uid = SysDB.uid
    end
 
 signature POSIX_EXTRA =
    sig
       structure Error: POSIX_ERROR_EXTRA
-      structure Signal: POSIX_SIGNAL
-      structure Process: POSIX_PROCESS_EXTRA
-	where type signal = Signal.signal
-      structure ProcEnv: POSIX_PROC_ENV
-	where type pid = Process.pid
       structure FileSys: POSIX_FILE_SYS_EXTRA
-	where type file_desc = ProcEnv.file_desc
-	where type uid = ProcEnv.uid
-	where type gid = ProcEnv.gid
       structure IO: POSIX_IO
-	where type open_mode = FileSys.open_mode
+      structure ProcEnv: POSIX_PROC_ENV
+      structure Process: POSIX_PROCESS_EXTRA
+      structure Signal: POSIX_SIGNAL
       structure SysDB: POSIX_SYS_DB
-	where type uid = ProcEnv.uid
-	where type gid = ProcEnv.gid
       structure TTY: POSIX_TTY
-	where type pid = Process.pid
-	where type file_desc = ProcEnv.file_desc
+
+      sharing type FileSys.file_desc = ProcEnv.file_desc = IO.file_desc
+	 = TTY.file_desc
+      sharing type ProcEnv.gid = FileSys.gid = SysDB.gid
+      sharing type FileSys.open_mode = IO.open_mode
+      sharing type Process.pid = ProcEnv.pid = IO.pid = TTY.pid
+      sharing type Process.signal = Signal.signal
+      sharing type ProcEnv.uid = FileSys.uid = SysDB.uid
    end
