@@ -370,6 +370,7 @@ STREAM_IO.pos
   TextIO.StreamIO), pos is abstract; in others (e.g., BinIO.StreamIO)
   it is Position.int."  But, the equality of BinIO.StreamIO.pos and
   Position.int is never specified in any where constraint of BinIO.
+* How can filePosIn be implemented with completely abstract pos?
 
 Not sent to list:
 

@@ -1,5 +1,7 @@
 functor BinOrTextIO
    (
+    type reader
+    type writer
     val fileTypeFlags: Posix.FileSys.O.flags list
 
     structure Cleaner:
@@ -689,6 +691,23 @@ structure StreamIO =
 	       end
 	 in loop (s, [])
 	 end
+
+      type reader = reader
+      type writer = writer
+      fun closeOut _ = raise Fail "closeOut"
+      fun filePosIn _ = raise Fail "filePosIn"
+      fun getBufferMode _ = raise Fail "getBufferMode"
+      fun getPosOut _ = raise Fail "getPosOut"
+      fun getReader _ = raise Fail "getReader"
+      fun getWriter _ = raise Fail "getWriter"
+      fun mkInstream _ = raise Fail "mkInstream"
+      fun mkOutstream _ = raise Fail "mkOutstream"
+      fun output1 _ = raise Fail "output1"
+      fun output _ = raise Fail "output"
+      fun setBufferMode  _ = raise Fail "setBufferMode"
+      fun outputSubstr _ = raise Fail "outputSubstr"
+      fun flushOut _ = raise Fail "flushOut"
+      fun setPosOut _ = raise Fail "setPosOut"
    end
 
 datatype t' =
@@ -785,4 +804,6 @@ fun scanStream f ins =
 fun mkInstream (s: StreamIO.t): t =
    T (ref (Stream s))
 
+fun openString _ = raise Fail "openString"
+fun setPosOut _ = raise Fail "setPosOut"
 end

@@ -1,56 +1,5 @@
-structure TextIO1: TEXT_IO_EXTRA =
-   struct
-      structure S = struct
-		      structure PrimIO = TextPrimIO
-		      structure Array = CharArray
-		      structure Vector = CharVector
-		      val someElem = (#"\000": Char.char)
-		      val lineElem = (#"\n": Char.char)
-		      fun isLine c = c = lineElem
-		      structure Cleaner = Cleaner
-		    end
-      structure StreamIO = StreamIOExtraFile(open S)
-      structure SIO = StreamIO
-      structure S = struct 
-		      open S 
-		      structure StreamIO = StreamIO
-		    end
-      structure BufferI = BufferIExtraFile(open S)
-      structure BI = BufferI
-      structure S = struct
-		      open S
-		      structure BufferI = BufferI
-		      val chunkSize = Primitive.TextIO.bufSize
-		      val fileTypeFlags = [PosixPrimitive.FileSys.O.text]
-		      val mkReader = Posix.IO.mkTextReader
-		      val mkWriter = Posix.IO.mkTextWriter
-		    end
-      structure ImperativeIO = ImperativeIOExtraFile(open S)
-      structure FastImperativeIO = FastImperativeIOExtraFile(open S)
-      open FastImperativeIO
-
-      structure StreamIO =
-	 struct
-	    open SIO
-	    val outputSubstr = fn (os, ss) => 
-	      let
-		val (s, i, sz) = Substring.base ss
-	      in
-		outputSlice (os, (s, i, SOME sz))
-	      end
-	 end
-
-      val outputSubstr = fn (os, ss) => 
-	let
-	  val (s, i, sz) = Substring.base ss
-	in
-	  outputSlice (os, (s, i, SOME sz))
-	end
-      val openString = openVector
-      fun print (s: string) = (output (stdOut, s); flushOut stdOut)
-   end
-
-structure TextIO2(*: TEXT_IO_EXTRA *) =
+(*
+structure TextIO0: TEXT_IO_EXTRA =
    struct
       structure NativeVector =
 	 struct
@@ -70,7 +19,9 @@ structure TextIO2(*: TEXT_IO_EXTRA *) =
 
       local
 	 structure PreTextIO =
-	    BinOrTextIO (val fileTypeFlags = [PosixPrimitive.FileSys.O.text]
+	    BinOrTextIO (type reader = TextPrimIO.reader
+			 type writer = TextPrimIO.writer
+                         val fileTypeFlags = [PosixPrimitive.FileSys.O.text]
 			 structure Cleaner = Cleaner
 			 structure Int = Int
 			 structure NativeVector = NativeVector
@@ -162,9 +113,110 @@ structure TextIO2(*: TEXT_IO_EXTRA *) =
 			end
    end
 
-structure TextIO = TextIO1
+structure TextIO1: TEXT_IO_EXTRA =
+   struct
+      structure S = struct
+		      structure PrimIO = TextPrimIO
+		      structure Array = CharArray
+		      structure Vector = CharVector
+		      val someElem = (#"\000": Char.char)
+		      val lineElem = (#"\n": Char.char)
+		      fun isLine c = c = lineElem
+		      structure Cleaner = Cleaner
+		    end
+      structure StreamIO = StreamIOExtraFile(open S)
+      structure SIO = StreamIO
+      structure S = struct 
+		      open S 
+		      structure StreamIO = StreamIO
+		    end
+      structure BufferI = BufferIExtraFile(open S)
+      structure BI = BufferI
+      structure S = struct
+		      open S
+		      structure BufferI = BufferI
+		      val chunkSize = Primitive.TextIO.bufSize
+		      val fileTypeFlags = [PosixPrimitive.FileSys.O.text]
+		      val mkReader = Posix.IO.mkTextReader
+		      val mkWriter = Posix.IO.mkTextWriter
+		    end
+      structure ImperativeIO = ImperativeIOExtraFile(open S)
+      open ImperativeIO
+
+      structure StreamIO =
+	 struct
+	    open SIO
+	    val outputSubstr = fn (os, ss) => 
+	      let
+		val (s, i, sz) = Substring.base ss
+	      in
+		outputSlice (os, (s, i, SOME sz))
+	      end
+	 end
+
+      val outputSubstr = fn (os, ss) => 
+	let
+	  val (s, i, sz) = Substring.base ss
+	in
+	  outputSlice (os, (s, i, SOME sz))
+	end
+      val openString = openVector
+      fun print (s: string) = (output (stdOut, s); flushOut stdOut)
+   end
+*)
+
+structure TextIO2: TEXT_IO_EXTRA =
+   struct
+      structure S = struct
+		      structure PrimIO = TextPrimIO
+		      structure Array = CharArray
+		      structure Vector = CharVector
+		      val someElem = (#"\000": Char.char)
+		      val lineElem = (#"\n": Char.char)
+		      fun isLine c = c = lineElem
+		      structure Cleaner = Cleaner
+		    end
+      structure StreamIO = StreamIOExtraFile(open S)
+      structure SIO = StreamIO
+      structure S = struct 
+		      open S 
+		      structure StreamIO = StreamIO
+		    end
+      structure BufferI = BufferIExtraFile(open S)
+      structure BI = BufferI
+      structure S = struct
+		      open S
+		      structure BufferI = BufferI
+		      val chunkSize = Primitive.TextIO.bufSize
+		      val fileTypeFlags = [PosixPrimitive.FileSys.O.text]
+		      val mkReader = Posix.IO.mkTextReader
+		      val mkWriter = Posix.IO.mkTextWriter
+		    end
+      structure FastImperativeIO = FastImperativeIOExtraFile(open S)
+      open FastImperativeIO
+
+      structure StreamIO =
+	 struct
+	    open SIO
+	    val outputSubstr = fn (os, ss) => 
+	      let
+		val (s, i, sz) = Substring.base ss
+	      in
+		outputSlice (os, (s, i, SOME sz))
+	      end
+	 end
+
+      val outputSubstr = fn (os, ss) => 
+	let
+	  val (s, i, sz) = Substring.base ss
+	in
+	  outputSlice (os, (s, i, SOME sz))
+	end
+      val openString = openVector
+      fun print (s: string) = (output (stdOut, s); flushOut stdOut)
+   end
+
+structure TextIO = TextIO2
 
 structure TextIOGlobal: TEXT_IO_GLOBAL = TextIO
 open TextIOGlobal
-
-   
