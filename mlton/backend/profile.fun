@@ -471,9 +471,15 @@ fun profile program =
 	    val backward =
 	       Trace.trace
 	       ("Profile.backward",
-		fn {statements, sourceSeq, ...} =>
-		Layout.tuple [List.layout Int.layout sourceSeq,
-			      List.layout Statement.layout statements],
+		fn {leaves, statements, sourceSeq, ...} =>
+		let
+		   open Layout
+		in
+		   record [("leaves", List.layout InfoNode.layout leaves),
+			   ("sourceSeq", List.layout Int.layout sourceSeq),
+			   ("statements",
+			    List.layout Statement.layout statements)]
+		end,
 		Unit.layout)
 	       backward
 	    fun profileEnter (pushes: Push.t list,
@@ -675,7 +681,7 @@ fun profile program =
 					 shouldSplit = shouldSplit,
 					 statements = statements}
 				     datatype z = datatype ProfileExp.t
-				     val (pushes, keep, leaves) =
+				     val (pushes', keep, leaves) =
 					case ps of
 					   Enter si =>
 					      let
@@ -734,7 +740,7 @@ fun profile program =
 				      kind = kind,
 				      label = label,
 				      leaves = leaves,
-				      pushes = pushes,
+				      pushes = pushes',
 				      statements = statements}
 				  end
 			     | _ =>
