@@ -24,13 +24,13 @@
  * implements / and %.
  */
 
+#ifndef DEBUG
+#define DEBUG FALSE
+#endif
+
 #if ! (defined (__i386__) || defined (__sparc__))
 #error check that C {/,%} correctly implement {quot,rem} from the basis library
 #endif
-
-enum {
-	DEBUG = FALSE,
-};
 
 #define coerce(f, t)				\
 	t f##_to##t (f x) {			\
@@ -104,3 +104,12 @@ all (16)
 all (32)
 all (64)
 
+#undef coerce
+#undef bothCoerce
+#undef binary
+#undef bothBinary
+#undef compare
+#undef bothCompare
+#undef unary
+#undef shift
+#undef all

@@ -4,9 +4,9 @@
 #include <ieeefp.h>
 #endif
 
-enum {
-	DEBUG = FALSE,
-};
+#ifndef DEBUG
+#define DEBUG FALSE
+#endif
 
 /* All this code assumes IEEE 754/854 and little endian.
  *

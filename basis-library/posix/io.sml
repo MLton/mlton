@@ -119,7 +119,8 @@ structure PosixIO: POSIX_IO =
 			    
       fun getfl (FD fd): O.flags * open_mode =
 	 let 
-	    val n = SysCall.simpleResultRestart (fn () => Prim.fcntl2 (fd, F_GETFL))
+	    val n =
+	       SysCall.simpleResultRestart (fn () => Prim.fcntl2 (fd, F_GETFL))
 	    val w = Word.fromInt n
 	    val flags = Word.andb (w, Word.notb O_ACCMODE)
 	    val mode = Word.andb (w, O_ACCMODE)
@@ -127,7 +128,8 @@ structure PosixIO: POSIX_IO =
 	 end
       
       fun setfl (FD fd, flags: O.flags): unit  =
-	 SysCall.simpleRestart (fn () => Prim.fcntl3 (fd, F_SETFL, Word.toIntX flags))
+	 SysCall.simpleRestart
+	 (fn () => Prim.fcntl3 (fd, F_SETFL, Word.toIntX flags))
 	 
       datatype whence = SEEK_SET | SEEK_CUR | SEEK_END
 
@@ -374,14 +376,4 @@ structure PosixIO: POSIX_IO =
 	val {mkReader = mkTextReader, mkWriter = mkTextWriter} =
 	   make rwChar (TextPrimIO.RD, TextPrimIO.WR)
       end
-
-      val stub = PosixError.stubMinGW
-      val dupfd = stub dupfd
-      val fsync = stub fsync
-      val getfd = stub getfd
-      val getlk = stub getlk
-      val pipe = stub pipe
-      val setfd = stub setfd
-      val setlk = stub setlk
-      val setlkw = stub setlkw
    end

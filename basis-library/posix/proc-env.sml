@@ -141,24 +141,4 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 	     (if Primitive.Pointer.isNull cs then ~1 else 0,
 	      fn () => CS.toString cs)
 	  end)
-
-      val stub = Error.stubMinGW
-      val ctermid = stub ctermid
-      val getegid = stub getegid
-      val geteuid = stub geteuid
-      val getgid = stub getgid
-      val getgroups = stub getgroups
-      val getlogin = stub getlogin
-      val getpgrp = stub getpgrp
-      val getpid = stub getpid
-      val getppid = stub getppid
-      val getuid = stub getuid
-      val setgid = stub setgid
-      val setpgid = stub setpgid
-      val setsid = stub setsid
-      val setuid = stub setuid
-      val sysconf = stub sysconf
-      val times = stub times
-      val ttyname = stub ttyname
-      val uname = stub uname
    end

@@ -30,9 +30,16 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	  end)
 
       val fork =
-	 if let open MLton.Platform.OS in host <> Cygwin end
-	    then fork
- 	 else fn () => Error.raiseSys Error.nosys
+	 if let
+	       open MLton.Platform.OS
+	    in
+	       case host of
+		  Cygwin => true
+		| MinGW => true
+		| _ => false
+	    end
+	    then (fn () => Error.raiseSys Error.nosys)
+	 else fork
 
       val conv = NullString.nullTerm
       val convs = C.CSS.fromList

@@ -393,16 +393,4 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	    make (fn (path, s) => Prim.pathconf (NullString.nullTerm path, s))
 	 val fpathconf = make (fn (FD n, s) => Prim.fpathconf (n, s))
       end
-
-      val stub = Error.stubMinGW
-
-      val chown = stub chown
-      val fchown = stub fchown
-      val fpathconf = stub fpathconf
-      val ftruncate = stub ftruncate
-      val link = stub link
-      val mkfifo = stub mkfifo
-      val pathconf = stub pathconf
-      val readlink = stub readlink
-      val symlink = stub symlink
    end

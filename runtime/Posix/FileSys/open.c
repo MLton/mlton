@@ -1,8 +1,8 @@
 #include "platform.h"
 
-enum {
-	DEBUG = 0,
-};
+#ifndef DEBUG
+#define DEBUG FALSE
+#endif
 
 Int Posix_FileSys_open (NullString p, Word w, Mode m) {
 	Int res;

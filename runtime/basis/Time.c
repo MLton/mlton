@@ -1,8 +1,8 @@
 #include "platform.h"
 
-enum {
-	DEBUG = 0,
-};
+#ifndef DEBUG
+#define DEBUG FALSE
+#endif
 
 static struct timeval timeval;
 

@@ -1,8 +1,8 @@
 #include "platform.h"
 
-enum {
-	DEBUG_PROFILE = FALSE,
-};
+#ifndef DEBUG_PROFILE
+#define	DEBUG_PROFILE FALSE
+#endif
 
 extern struct GC_state gcState;
 

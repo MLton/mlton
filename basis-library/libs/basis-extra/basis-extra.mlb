@@ -109,6 +109,7 @@ in
 
     ../../posix/error.sig
     ../../posix/error.sml
+    ../../posix/stub-mingw.sml
     ../../posix/flags.sig
     ../../posix/flags.sml
     ../../posix/signal.sig

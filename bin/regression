@@ -125,19 +125,23 @@ for f in `ls *.sml`; do
 		;;
 		yes)
 			case $crossTarget in
+			*mingw)
+				libs='-lws2_32 -lkernel32 -lpsapi -lnetapi32'
+			;;
 			*solaris)
-				libs='-lmlton -lgmp -ldl -lnsl -lsocket -lgdtoa -lm'
+				libs='-ldl -lnsl -lsocket'
 			;;
 			*)
-				libs='-lmlton -lgmp -lgdtoa -lm'
+				libs=''
 			;;
 			esac
+			libs="-lmlton -lgmp $libs -lgdtoa -lm"
 			# Must use $f.[0-9].[cS], not $f.*.[cS], because the
 			# latter will include other files, e.g. for finalize,
 			# it will also include finalize.2.
 			gcc -o $f -w -O1				\
-				-I "$src/build/lib/include"		\
-				-L "$src/build/lib/$crossTarget"	\
+				-I "../build/lib/include"		\
+				-L "../build/lib/$crossTarget"		\
 				-L /usr/pkg/lib				\
 				-L /usr/local/lib			\
 				$f.[0-9].[cS]				\
@@ -145,9 +149,26 @@ for f in `ls *.sml`; do
 		;;
 		esac
 		if [ ! -r $f.nonterm -a $cross = 'no' -a -x $f ]; then
-			( ./$f || echo 'Nonzero exit status.' ) >$tmp 2>&1 
-			if [ -r $f.ok ] && ! diff $f.ok $tmp ; then
-				echo "difference with $flags"
+			nonZeroMsg='Nonzero exit status.'
+			case $crossTarget in
+			*mingw)
+				nonZeroMsg="$nonZeroMsg"'\r'
+			;;
+			esac
+			( ./$f || echo -e "$nonZeroMsg" ) >$tmp 2>&1 
+			if [ -r $f.ok ]; then
+				case $crossTarget in
+				*mingw)
+					compare="$f.sed.ok"
+					sed 's/$/\r/' <"$f.ok" >"$compare"
+				;;
+				*)
+					compare="$f.ok"
+				;;
+				esac
+				if ! diff $compare $tmp; then
+					echo "difference with $flags"
+				fi
 			fi
 		fi
 	;;

@@ -723,13 +723,13 @@ structure PosixPrimitive =
 		     _import "Posix_TTY_Termios_setispeed": speed -> int;
 	       end
 
-	    val getattr = _import "Posix_TTY_getattr": fd -> int;
-	    val setattr = _import "Posix_TTY_setattr": fd * TC.set_action -> int;
-	    val sendbreak = _import "Posix_TTY_sendbreak": fd * int -> int;
 	    val drain = _import "Posix_TTY_drain": fd -> int;
-	    val flush = _import "Posix_TTY_flush": fd * TC.queue_sel -> int;
 	    val flow = _import "Posix_TTY_flow": fd * TC.flow_action -> int;
+	    val flush = _import "Posix_TTY_flush": fd * TC.queue_sel -> int;
+	    val getattr = _import "Posix_TTY_getattr": fd -> int;
 	    val getpgrp = _import "Posix_TTY_getpgrp": fd -> Pid.t;
+	    val sendbreak = _import "Posix_TTY_sendbreak": fd * int -> int;
+	    val setattr = _import "Posix_TTY_setattr": fd * TC.set_action -> int;
 	    val setpgrp = _import "Posix_TTY_setpgrp": fd * Pid.t -> int;
 	 end
    end

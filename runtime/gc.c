@@ -18,12 +18,19 @@
  * function entry limit.
  */
 
+#ifndef DEBUG
+#define DEBUG FALSE
+#endif
+
+#ifndef DEBUG_PROFILE
+#define	DEBUG_PROFILE FALSE
+#endif
+
 enum {
 	BOGUS_EXN_STACK = 0xFFFFFFFF,
 	COPY_CHUNK_SIZE = 0x2000000, /* 32M */
 	CROSS_MAP_EMPTY = 255,
 	CURRENT_SOURCE_UNDEFINED = 0xFFFFFFFF,
-	DEBUG = FALSE,
 	DEBUG_ARRAY = FALSE,
 	DEBUG_CARD_MARKING = FALSE,
 	DEBUG_DETAILED = FALSE,
@@ -31,7 +38,6 @@ enum {
 	DEBUG_GENERATIONAL = FALSE,
 	DEBUG_MARK_COMPACT = FALSE,
 	DEBUG_MEM = FALSE,
-	DEBUG_PROFILE = FALSE,
 	DEBUG_RESIZING = FALSE,
 	DEBUG_STACKS = FALSE,
 	DEBUG_THREADS = FALSE,
@@ -382,7 +388,7 @@ static uint rusageTime (struct rusage *ru) {
 /* Return time as number of milliseconds. */
 static uint currentTime () {
 #if (defined(__MSVCRT__))
-	return GetTickCount();
+	return GetTickCount ();
 #else
 	struct rusage	ru;
 
@@ -2809,7 +2815,11 @@ void MLton_Rusage_ru () __attribute__ ((weak));
 void MLton_Rusage_ru ();
 #endif
 static inline bool needGCTime (GC_state s) {
+#if (defined (__MSVCRT__))
+	return FALSE;
+#else
 	return DEBUG or s->summary or s->messages or (0 != MLton_Rusage_ru);
+#endif
 }
 
 static void doGC (GC_state s, 
@@ -2913,8 +2923,11 @@ static void switchToThread (GC_state s, GC_thread t) {
  * The basis library uses it via _ffi, not _prim, and so does not treat it as a
  * runtime call -- so the invariant in enter would fail miserably.  It is OK
  * because GC_startHandler must be called from within a critical section.
+ *
+ * Don't make it inline, because it is also called in basis/Thread.c, and when
+ * compiling with COMPILE_FAST, they may appear out of order.
  */
-inline void GC_startHandler (GC_state s) {
+void GC_startHandler (GC_state s) {
 	/* Switch to the signal handler thread. */
 	if (DEBUG_SIGNALS) {
 		fprintf (stderr, "switching to signal handler\n");

@@ -63,7 +63,6 @@ signature POSIX_ERROR_EXTRA =
 
       val cleared: syserror
       val raiseSys: syserror -> 'a
-      val stubMinGW: ('a -> 'b) -> 'a -> 'b
 
       structure SysCall :
 	 sig

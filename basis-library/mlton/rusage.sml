@@ -32,6 +32,4 @@ structure MLtonRusage: MLTON_RUSAGE =
 	     self = collect (self_utime_sec, self_utime_usec,
 			     self_stime_sec, self_stime_usec)}
 	 end
-
-      val rusage = PosixError.stubMinGW rusage
    end

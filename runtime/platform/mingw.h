@@ -3,7 +3,7 @@
 #include <limits.h>
 #include <lm.h>
 #include <process.h>
-#include <psapi.h>
+//#include <psapi.h>
 #include <sys/stat.h>
 #include <sys/timeb.h>
 #include <sys/types.h>
@@ -24,9 +24,7 @@ typedef unsigned short gid_t;
 typedef unsigned short uid_t;
 
 int getpagesize (void);
-int ioctl (int d, int request, ...);
 int mkstemp (char *template);
-int socketpair (int d, int type, int protocol, int sv[2]);
 
 #define POLLIN 1
 #define POLLPRI 2
@@ -175,26 +173,6 @@ int poll (struct pollfd *ufds, unsigned int nfds, int timeout);
 #define S_ISLNK(m) FALSE
 #define S_ISSOCK(m) FALSE
 
-//static inline int chmod (const char *path, mode_t mode) {
-//	return _chmod (path, mode);
-//}
-
-//static inline int mkdir (const char *pathname, mode_t mode) {
-//	return _mkdir (pathname);
-//}
-
-//static inline int rmdir (const char *pathname) {
-//	return _rmdir (pathname);
-//}
-
-//static inline mode_t umask (mode_t mask) {
-//	return _umask (mask);
-//}
-
-//static inline int unlink (const char *pathname) {
-//	return _unlink (pathname);
-//}
-
 int chown (const char *path, uid_t owner, gid_t group);
 int fchmod (int filedes, mode_t mode);
 int fchown (int fd, uid_t owner, gid_t group);
@@ -205,7 +183,7 @@ int lstat (const char *file_name, struct stat *buf);
 int mkfifo (const char *pathname, mode_t mode);
 long pathconf (char *path, int name);
 int readlink (const char *path, char *buf, size_t bufsiz);
-int symlink(const char *oldpath, const char *newpath);
+int symlink (const char *oldpath, const char *newpath);
 
 /* ------------------------------------------------- */
 /*                     Posix.IO                      */
@@ -523,7 +501,17 @@ int tcsetpgrp (int fd, pid_t pgrpid);
 /* ------------------------------------------------- */
 
 #define MSG_DONTWAIT 0
-struct sockaddr_un {};
+#define UNIX_PATH_MAX	108
+
+typedef unsigned short	sa_family_t;
+
+struct sockaddr_un {
+	sa_family_t sun_family;
+	char sun_path[UNIX_PATH_MAX];
+};
+
+int ioctl (int d, int request, ...);
+int socketpair (int d, int type, int protocol, int sv[2]);
 
 /* ------------------------------------------------- */
 /*                      Syslog                       */

@@ -1,9 +1,9 @@
 #include "platform.h"
 #include "gdtoa/gdtoa.h"
 
-enum {
-	DEBUG = FALSE,
-};
+#ifndef DEBUG
+#define DEBUG FALSE
+#endif
 
 #if (defined (__i386__))
 #define _0 1

@@ -12,8 +12,6 @@ structure PosixSysDB: POSIX_SYS_DB =
       structure Error = PosixError
       structure SysCall = Error.SysCall
 
-      val stub = Error.stubMinGW
-
       type uid = Prim.uid
       type gid = Prim.gid
 
@@ -80,8 +78,4 @@ structure PosixSysDB: POSIX_SYS_DB =
 	 end
       
       fun getgrgid gid = Group.fromC (fn () => Prim.getgrgid gid)
-
-      val getgrgid = stub getgrgid
-      val getgrnam = stub getgrnam
-      val getpwuid = stub getpwuid
    end

@@ -168,15 +168,5 @@ structure PosixTTY: POSIX_TTY =
 	      
 	    fun setpgrp (FD fd, pid) = 
 	       SysCall.simpleRestart (fn () => Prim.setpgrp (fd, pid))
-
-	    val stub = Error.stubMinGW
-	    val drain = stub drain
-	    val flow = stub flow
-	    val flush = stub flush
-	    val getattr = stub getattr
-	    val getpgrp = stub getpgrp
-	    val sendbreak = stub sendbreak
-	    val setattr = stub setattr
-	    val setpgrp = stub setpgrp
 	 end
    end

@@ -28,11 +28,6 @@ structure UnixSock : UNIX_SOCK =
 	   CharArraySlice.vector (CharArraySlice.slice (a, 0, SOME len))
 	end 
 
-      val stub = PosixError.stubMinGW
-	 
-      val toAddr = stub toAddr
-      val fromAddr = stub fromAddr
-
       structure Strm =
 	 struct
 	    fun socket () = GenericSock.socket (unixAF, Socket.SOCK.stream)

@@ -38,7 +38,7 @@ void UnixSock_fromAddr (Char* addr, Char* path, Int pathlen) {
 	int i;
 	struct sockaddr_un *sa = (struct sockaddr_un*)addr;
 
-	assert(sa->sun_family == AF_UNIX);
+	assert (sa->sun_family == AF_UNIX);
 	for (i = 0; i < pathlen; i++) {
 		path[i] = sa->sun_path[i];
 	}

@@ -741,7 +741,8 @@ structure Primitive =
 	       
 	    val prof = _const "Itimer_prof": which;
 	    val real = _const "Itimer_real": which;
-	    val set = _import "Itimer_set": which * int * int * int * int -> unit;
+	    val set =
+	       _import "Itimer_set": which * int * int * int * int -> unit;
 	    val virtual = _const "Itimer_virtual": which;
 	 end
 
