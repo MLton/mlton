@@ -310,6 +310,10 @@ popt.sig
 popt.sml
 sexp.sig
 sexp.sml
+choice-pattern.sig
+choice-pattern.sml
+escape.sig
+escape.sml
 
 # if ( defined(SMLNJ_VERSION) )
 
@@ -321,8 +325,6 @@ bounded-order.fun
 bounded-order.sig
 char-buffer.sig
 char-buffer.sml
-choice-pattern.sig
-choice-pattern.sml
 circular-list.fun
 circular-list.sig
 console.sig
@@ -333,8 +335,6 @@ doubly-linked.fun
 doubly-linked.sig
 engine.sig
 engine.sml
-escape.sig
-escape.sml
 export.sig
 export.sml
 format.sig
