@@ -372,9 +372,6 @@ fun commandLine (args: string list): unit =
       val _ = if not (!Native.native) andalso !Native.IEEEFP
 		 then usage "can't use -native false and -ieee-fp true"
 	      else ()
-      val _ = if not (!Native.native) andalso !profile = ProfileTime
-		 then usage "can't use -profile time with -native false"
-	      else ()
       val _ =
 	 if !keepDot andalso List.isEmpty (!keepPasses)
 	    then keepSSA := true

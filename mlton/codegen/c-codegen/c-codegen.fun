@@ -253,9 +253,9 @@ fun outputDeclarations
 	       profileInfo
 	 in
 	    Vector.foreach (labels, fn {label, ...} =>
-			    print (concat ["void ",
-					   ProfileLabel.toString label,
-					   "();\n"]))
+			    C.call ("DeclareProfileLabel",
+				    [ProfileLabel.toString label],
+				    print))
 	    ; declareArray ("struct GC_sourceLabel", "sourceLabels", labels,
 			    fn (_, {label, sourceSeqsIndex}) =>
 			    concat ["{(pointer)", ProfileLabel.toString label,
@@ -480,8 +480,9 @@ fun output {program as Machine.Program.T {chunks,
 			    in 
 			       ()
 			    end
-		       | ProfileLabel _ =>
-			    Error.bug "C codegen can't do profiling"
+		       | ProfileLabel l =>
+			    C.call ("ProfileLabel", [ProfileLabel.toString l],
+				    print)
 		       | SetExnStackLocal {offset} =>
 			    C.call ("SetExnStackLocal", [C.int offset], print)
 		       | SetExnStackSlot {offset} =>
@@ -490,6 +491,7 @@ fun output {program as Machine.Program.T {chunks,
 			    C.call ("SetSlotExnStack", [C.int offset], print)
 			    ))
 	 end
+      val profiling = !Control.profile <> Control.ProfileNone
       fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, regMax, ...}) =
 	 let
 	    fun labelFrameSize (l: Label.t): int =
@@ -535,7 +537,7 @@ fun output {program as Machine.Program.T {chunks,
 			   src = operandToString (Operand.Label return)},
 			  print)
 		; C.push (size, print)
-		; if !Control.profile <> Control.ProfileNone
+		; if profiling
 		     then print "\tFlushStackTop();\n"
 		  else ())
 	    fun copyArgs (args: Operand.t vector): string list * (unit -> unit) =
@@ -611,7 +613,10 @@ fun output {program as Machine.Program.T {chunks,
 			   end 
 		      | _ => ()
 		  fun pop (fi: FrameInfo.t) =
-		     C.push (~ (Program.frameSize (program, fi)), print)
+		     (C.push (~ (Program.frameSize (program, fi)), print)
+		      ; if profiling
+			   then print "\tFlushStackTop();\n"
+			else ())
 		  val _ =
 		     case kind of
 			Kind.Cont {frameInfo, ...} => pop frameInfo
@@ -740,6 +745,8 @@ fun output {program as Machine.Program.T {chunks,
 			      else ()
 			   val _ =
 			      if modifiesStackTop
+				 andalso (Option.isNone frameInfo
+					  orelse not profiling)
 				 then print "\tFlushStackTop();\n"
 			      else ()
 			   val _ = print "\t"

@@ -3187,9 +3187,14 @@ static void profileTimeInit (GC_state s) {
 	s->textEnd = (pointer)&etext;
 	s->textStart = (pointer)&_start;
 	if (ASSERT)
-		for (i = 0; i < s->sourceLabelsSize; ++i)
-			assert (s->textStart <= s->sourceLabels[i].label
-				and s->sourceLabels[i].label < s->textEnd);
+		for (i = 0; i < s->sourceLabelsSize; ++i) {
+			pointer label;
+
+			label = s->sourceLabels[i].label;
+			assert (0 == label
+				or (s->textStart <= label 
+					and label < s->textEnd));
+		}
 	ARRAY (s->textSources, s->textEnd - s->textStart);
 	p = s->textStart;
 	sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
