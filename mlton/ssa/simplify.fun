@@ -16,7 +16,7 @@ structure ImplementHandlers = ImplementHandlers (S)
 structure IntroduceLoops = IntroduceLoops (S)
 structure LocalFlatten = LocalFlatten (S)
 (* structure LoopInvariant = LoopInvariant (S) *)
-(* structure PolyEqual = PolyEqual (S) *)
+structure PolyEqual = PolyEqual (S)
 structure Redundant = Redundant (S)
 (* structure RedundantTests = RedundantTests (S) *)
 structure RemoveUnused = RemoveUnused (S)
@@ -55,16 +55,17 @@ val passes =
      *   - after types are simplified so that many equals are turned into eqs
      *   - before inlining so that equality functions can be inlined
      *)
-(*    ("polyEqual", PolyEqual.polyEqual), *)
-     ("contify2", Contify.contify),
+     ("polyEqual", PolyEqual.polyEqual),
      ("removeUnusedX2", RemoveUnused.remove),
+     ("contify2", Contify.contify),
+     ("removeUnusedX3", RemoveUnused.remove),
 (*    ("inline", Inline.inline), *)
      ("localFlatten2", LocalFlatten.flatten),
      ("removeUnused3", RemoveUnused.remove),
      ("contify3", Contify.contify),
-     ("removeUnusedX3", RemoveUnused.remove),
-     ("introduceLoops", IntroduceLoops.introduceLoops),
      ("removeUnusedX4", RemoveUnused.remove),
+     ("introduceLoops", IntroduceLoops.introduceLoops),
+     ("removeUnusedX5", RemoveUnused.remove),
 (*    ("loopInvariant", LoopInvariant.loopInvariant), *)
      (* flatten cannot be omitted.  It ensures(?) that no spurious
       * allocations occur between allocation of an intInf return 
@@ -72,11 +73,11 @@ val passes =
       *)
 (*    ("flatten", Flatten.flatten), *)
      ("localFlatten3", LocalFlatten.flatten),
-     ("removeUnusedX5", RemoveUnused.remove),
-     ("commonSubexp", CommonSubexp.eliminate),
      ("removeUnusedX6", RemoveUnused.remove),
-     ("commonBlock", CommonBlock.eliminate),
+     ("commonSubexp", CommonSubexp.eliminate),
      ("removeUnusedX7", RemoveUnused.remove),
+     ("commonBlock", CommonBlock.eliminate),
+     ("removeUnusedX8", RemoveUnused.remove),
 (*    ("redundantTests", RedundantTests.simplify), *)
      ("redundant", Redundant.redundant),
      (* removeUnused cannot be omitted.

@@ -294,6 +294,10 @@ ssa/introduce-loops.sig
 ssa/introduce-loops.fun
 ssa/local-flatten.sig
 ssa/local-flatten.fun
+ssa/poly-equal.sig
+ssa/direct-exp.sig
+ssa/direct-exp.fun
+ssa/poly-equal.fun
 ssa/redundant.sig
 ssa/equivalence-relation.sig
 ssa/equivalence-relation.fun
