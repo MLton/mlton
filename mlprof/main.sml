@@ -36,7 +36,7 @@ structure Source =
 	 case n of
 	    NamePos {name, pos} =>
 	       if !showLine
-		  then concat [name, " ", pos]
+		  then concat [name, "  ", pos]
 	       else name
 	  | Simple s => s
 
