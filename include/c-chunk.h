@@ -14,8 +14,6 @@
 #define FALSE 0
 #endif
 
-#define WORD_SIZE 4
-
 #ifndef DEBUG_CCODEGEN
 #define DEBUG_CCODEGEN FALSE
 #endif
@@ -167,7 +165,7 @@ extern struct GC_state gcState;
 
 #define Return()								\
 	do {									\
-		l_nextFun = *(Word*)(StackTop - WORD_SIZE);			\
+		l_nextFun = *(Word*)(StackTop - sizeof(Word));			\
 		if (DEBUG_CCODEGEN)						\
 			fprintf (stderr, "%s:%d: Return()  l_nextFun = %d\n",	\
 					__FILE__, __LINE__, l_nextFun);		\
@@ -468,7 +466,7 @@ coerce (WordU8, Word64)
 #define WordS32_addCheckCX(dst, c, x, l) WordS32_addCheckXC(dst, x, c, l)
 #define WordS64_addCheckCX(dst, c, x, l) WordS64_addCheckXC(dst, x, c, l)
 
-#define WordS8_addCheck WordS8_addCheckXC
+#define WordS8_addCheck(dst, x, y, l) WordS8_addCheckXC (dst, x, y, l)
 #define WordS16_addCheck WordS16_addCheckXC
 #define WordS32_addCheck WordS32_addCheckXC
 #define WordS64_addCheck WordS64_addCheckXC

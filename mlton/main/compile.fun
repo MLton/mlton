@@ -554,7 +554,7 @@ fun compile {input: String.t, outputC, outputS}: unit =
       val _ =
 	 case !Control.codegen of
 	    Control.Bytecode =>
-	       Control.trace (Control.Top, "Byte code gen")
+	       Control.trace (Control.Top, "bytecode gen")
 	       Bytecode.output {program = machine,
 				outputC = outputC}
 	  | Control.CCodegen =>

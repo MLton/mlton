@@ -2,11 +2,10 @@
 #define ASSERT 0
 #endif
 
-/* assertion failure routine */
+/* Assertion failure routine */
 extern void asfail (char *file, int line, char *prop);
-/*
- * Assertion verifier.
- */
+
+/* Assertion verifier */
 #if ASSERT
 #define	assert(p) ((p) ? (void)0 : asfail(__FILE__, __LINE__, #p))
 #else

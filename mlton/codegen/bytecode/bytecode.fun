@@ -59,6 +59,8 @@ structure CType =
 				  CType.Pointer => m CType.Word32
 				| _ => m t))
 	 end
+
+      val toString = memo toString
    end
 
 structure LoadStore =
@@ -105,102 +107,130 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 #opcode (HashSet.lookupOrInsert
 		  (table, String.hash name,
 		   fn {name = name', ...} => name = name',
-		   fn () => Error.bug (concat ["missing opcode: ", name])))
-      val cacheFrontier = opcode "CacheFrontier"
-      val cacheStackTop = opcode "CacheStackTop"
-      val call = opcode "Call"
-      val cCall = opcode "CCall"
+		   fn () =>
+		   (print (concat ["missing opcode: ", name])
+		    ; {hash = String.hash name,
+		       opcode = 0w0,
+		       name = name})))
+      val decls = ref []
+      val callCounter = Counter.new 0
+      val callCs = ref []
+      fun callC {function: string,
+		 prototype}: string =
+	 let
+	    val (args, result) = prototype
+	    val args =
+	       Vector.toListMap
+	       (args, fn cty => concat ["PopReg (", CType.toString cty, ")"])
+	    val args = concat (List.separate (args, ", "))
+	    val call = concat [function, " (", args, ");"]
+	 in
+	    case result of
+	       NONE => call
+	     | SOME cty => concat ["PushReg (", CType.toString cty, ") = ", call]
+	 end
       local
-	 val directCalls = HashSet.new {hash = #hash}
-	 val counter = Counter.new 0
+	 val calls = HashSet.new {hash = #hash}
       in
 	 val () =
 	    (* Visit each direct C Call in the program. *)
 	    List.foreach
 	    (chunks, fn Chunk.T {blocks, ...} =>
 	     Vector.foreach
-	     (blocks, fn Block.T {transfer, ...} =>
-	      case transfer of
-		 CCall {func, ...} =>
-		    let
-		       val CFunction.T {prototype, target, ...} = func
-		       datatype z = datatype Target.t
-		    in
-		       case target of
-			  Direct name =>
-			     let
-				val hash = String.hash name
-			     in
-				ignore
-				(HashSet.lookupOrInsert
-				 (directCalls, hash,
-				  fn {name = n, ...} => n = name,
-				  fn () => {hash = hash,
-					    index = Counter.next counter,
-					    name = name}))
-			     end
-			| Indirect => ()
-		    end
-	       | _ => ()))
+	     (blocks, fn Block.T {statements, transfer, ...} =>
+	      (Vector.foreach
+	       (statements, fn s =>
+		case s of
+		   PrimApp {dst, prim, ...} =>
+		      (case Prim.name prim of
+			  Prim.Name.FFI_Symbol {name, ...} =>
+			     Option.app
+			     (dst, fn dst =>
+			      let
+				 val hash = String.hash name
+			      in
+				 ignore
+				 (HashSet.lookupOrInsert
+				  (calls, hash,
+				   fn {name = n, ...} => n = name,
+				   fn () =>
+				   let
+				      val index = Counter.next callCounter
+				      val display =
+					 concat
+					 ["PushReg (",
+					  CType.toString
+					  (Type.toCType (Operand.ty dst)),
+					  ") = ", name, ";"]
+				      val () =
+					 List.push
+					 (callCs, {display = display,
+						   index = index})
+				   in
+				      {hash = hash,
+				       index = index,
+				       name = name}
+				   end))
+			      end)
+			| _ => ())
+		 | _ => ())
+	       ; (case transfer of
+		     CCall {func, ...} =>
+			let
+			   val CFunction.T {prototype, target, ...} = func
+			   datatype z = datatype Target.t
+			in
+			   case target of
+			      Direct name =>
+				 let
+				    val hash = String.hash name
+				 in
+				    ignore
+				    (HashSet.lookupOrInsert
+				     (calls, hash,
+				      fn {name = n, ...} => n = name,
+				      fn () =>
+				      let
+					 val index = Counter.next callCounter
+					 val display =
+					    callC {function = name,
+						   prototype = prototype}
+					 val () =
+					    List.push
+					    (callCs, {display = display,
+						      index = index})
+				      in
+					 {hash = hash,
+					  index = index,
+					  name = name}
+				      end))
+				 end
+			    | Indirect => ()
+			end
+		   | _ => ()))))
 	 fun directIndex (name: string) =
 	    #index (HashSet.lookupOrInsert
-		    (directCalls, String.hash name,
+		    (calls, String.hash name,
 		     fn {name = n, ...} => n = name,
 		     fn () => Error.bug "directIndex"))
+	 val ffiSymbolIndex = directIndex
       end
-      local
-	 val c = Counter.new 0
-	 val indirectCalls = ref []
-      in
-	 fun indirectIndex (prototype): int =
-	    let
-	       val () =
-		  List.push (indirectCalls, {prototype = prototype})
-	    in
-	       Counter.next c
-	    end
-      end
+      fun indirectIndex (f: 'a CFunction.t): int =
+	 let
+	    val index = Counter.next callCounter
+	    val function = concat ["( *(", CFunction.cPointerType f, " fptr)) "]
+	    val display =
+	       concat ["fptr = PopReg (Word32);\n",
+		       callC {function = function,
+			      prototype = CFunction.prototype f}]
+	    val () =
+	       List.push (callCs, {display = display,
+				   index = index})
+	 in
+	    index
+	 end
+      val callC = opcode "CallC"
       val jumpOnOverflow = opcode "JumpOnOverflow"
-      val ffiSymbol =
-	 CType.memo (fn t => opcode (concat [CType.toString t, "_FFI_Symbol"]))
-      local
-	 val inits = ref []
-	 val ffiSymbolIndex =
-	    CType.memo
-	    (fn ty =>
-	     let
-		val all = ref []
-		val () =
-		   List.push
-		   (inits, fn print =>
-		    let
-		       val ty = CType.toString ty
-		    in
-		       print (concat [ty, " FFISymbol", ty, "[] = {\n"])
-		       ; List.foreach (rev (!all), fn s =>
-				       print (concat ["\t", s, ",\n"]))
-		       ; print "}\n"
-		    end)
-		val r = ref 0
-	     in
-		String.memoize
-		(fn s =>
-		 let
-		    val i = !r
-		    val () = Int.inc r
-		    val () = List.push (all, s)
-		 in
-		    i
-		 end)
-	     end)
-      in
-	 val ffiSymbolIndex = fn (ty, s) => ffiSymbolIndex ty s
-	 fun initializeFFISymbols print =
-	    (print "static void initialize_FFI_Symbols () {\n"
-	     ; List.foreach (!inits, fn init => init print)
-      	     ; print "}\n")
-      end
-      val primOp: 'a Prim.t -> Opcode.t = fn p => opcode (Prim.toString p)
       val profileLabel = opcode "ProfileLabel"
       val raisee = opcode "Raise"
       val return = opcode "Return"
@@ -249,6 +279,8 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 (List.push (code, w)
 	  ; Int.inc offset)
       val emitOpcode = emitByte
+      val emitPrim: 'a Prim.t -> unit =
+	 fn p => emitOpcode (opcode (Prim.toString p))
       local
 	 fun make (bits: int, {signed}): IntInf.t -> unit =
 	    let
@@ -289,8 +321,9 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	   | W16 => emitWord16
 	   | W32 => emitWord32
 	   | W64 => emitWord64) (WordX.toIntInf w)
-      val emitDirectIndex = emitWord16
-      val emitIndirectIndex = emitWord16
+      fun emitCallC (index: int): unit =
+	 (emitOpcode callC
+	  ; emitWord16 (Int.toIntInf index))
       val emitLabel: Label.t -> unit =
 	 fn l =>
 	 (List.push (backpatches, {label = l, offset = !offset})
@@ -348,23 +381,16 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	  ; emitStoreOperand dst)
       fun emitArgs args = Vector.foreach (Vector.rev args, emitLoadOperand)
       fun primApp {args, dst, prim} =
-	 (emitArgs args
-	  ; (case Prim.name prim of
-		Prim.Name.FFI_Symbol {name, ...} =>
-		   Option.app
-		   (dst, fn dst =>
-		    let
-		       val ty = Operand.ty dst
-		       val cty = Type.toCType ty
-		    in
-		       emitOpcode (ffiSymbol cty)
-		       ; emitWord16 (Int.toIntInf
-				     (ffiSymbolIndex (cty, name)))
-		       ; emitStoreOperand dst
-		    end)
-	      | _ => 
-		   (emitOpcode (primOp prim)
-		    ; Option.app (dst, emitStoreOperand))))
+	 case Prim.name prim of
+	    Prim.Name.FFI_Symbol {name, ...} =>
+	       Option.app
+	       (dst, fn dst =>
+		(emitCallC (ffiSymbolIndex name)
+		 ; emitStoreOperand dst))
+	  | _ => 
+	       (emitArgs args
+		; emitPrim prim
+		; Option.app (dst, emitStoreOperand))
       val emitStatement: Statement.t -> unit =
 	 fn s =>
 	 case s of
@@ -402,7 +428,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	    case t of
 	       Arith {args, dst, overflow, prim, success} =>
 		  (emitArgs args
-		   ; emitOpcode (primOp prim)
+		   ; emitPrim prim
 		   ; emitStoreOperand dst
 		   ; emitOpcode jumpOnOverflow
 		   ; emitLabel overflow
@@ -420,15 +446,11 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 			 in
 			    ()
 			 end)
-		     val () = emitOpcode cCall
 		     datatype z = datatype Target.t
 		     val () =
 			case target of
-			   Direct name =>
-			      emitDirectIndex (Int.toIntInf (directIndex name))
-			 | Indirect =>
-			      emitIndirectIndex
-			      (Int.toIntInf (indirectIndex prototype))
+			   Direct name => emitCallC (directIndex name)
+			 | Indirect => emitCallC (indirectIndex func)
 		  in
 		     ()
 		  end
@@ -466,7 +488,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 fn a => String.tabulate (Array.length a, fn i =>
 				  Char.fromWord8 (Array.sub (a, i)))
       val code = Array.fromListRev (!code)
-      val {done, print, ...} = outputC ()
+      val {done, file = _, print} = outputC ()
       (* Backpatch all label references. *)
       val () =
 	 List.foreach
@@ -481,20 +503,36 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	  in
 	     loop (offset, labelOffset label)
 	  end)
-      val () =
-	 (print "char *MLton_bytecode = \""
-	  ; print (String.escapeC (word8ArrayToString code))
-	  ; print "\";\n")
       val () = done ()
-      val {done, file, print} = outputC ()
-      fun rest () = initializeFFISymbols print
+      val {done, print, ...} = outputC ()
       val () =
 	 CCodegen.outputDeclarations
 	 {additionalMainArgs = [Int.toString (labelOffset (#label main))],
           includes = ["bytecode-main.h"],
 	  print = print,
 	  program = program,
-	  rest = rest}
+	  rest = fn () => ()}
+      val () = done ()
+      val {done, print, ...} = outputC ()
+      fun declareCallC () =
+	  (print "void MLton_callC (int i) {\n"
+	   ; print "switch (i) {\n"
+	   ; List.foreach (!callCs, fn {display, index} =>
+			   (print (concat ["case ", Int.toString index, ":\n\t"])
+			    ; print display
+			    ; print "\nbreak;\n"))
+	   ; print "}}\n")
+      val () =
+	  (print "#include \"bytecode.h\"\n\n"
+	   ; List.foreach (chunks, fn c =>
+			   CCodegen.declareFFI (c, {print = print}))
+	   ; print "\n"
+	   ; declareCallC ()
+	   ; print "\n")
+      val () =
+	 (print "char *MLton_bytecode = \""
+	  ; print (String.escapeC (word8ArrayToString code))
+	  ; print "\";\n")
       val () = done ()
    in
       ()

@@ -33,6 +33,7 @@ structure Target =
 	  | (Indirect, Indirect) => true
 	  | _ => false
    end
+datatype z = datatype Target.t
 
 datatype 'a t = T of {args: 'a vector,
 		      bytesNeeded: int option,
@@ -74,6 +75,7 @@ in
    fun mayGC z = make #mayGC z
    fun maySwitchThreads z = make #maySwitchThreads z
    fun modifiesFrontier z = make #modifiesFrontier z
+   fun prototype z = make #prototype z
    fun readsStackTop z = make #readsStackTop z
    fun return z = make #return z
    fun target z = make #target z
@@ -126,7 +128,55 @@ fun vanilla {args, name, prototype, return} =
       prototype = prototype,
       readsStackTop = false,
       return = return,
-      target = Target.Direct name,
+      target = Direct name,
       writesStackTop = false}
+
+fun cPrototype (T {convention, prototype = (args, return), target, ...}) =
+   let
+      val attributes =
+	 if convention <> Convention.Cdecl
+	    then concat [" __attribute__ ((",
+			 Convention.toString convention,
+			 ")) "]
+	 else " "
+      val name = 
+	 case target of
+	    Direct name => name
+	  | Indirect => Error.bug "prototype of Indirect"
+      val c = Counter.new 0
+      fun arg t =
+	 concat [CType.toString t, " x", Int.toString (Counter.next c)]
+      val return =
+	 case return of
+	    NONE => "void"
+	  | SOME t => CType.toString t
+   in
+      concat [return, attributes, name,
+	      " (",
+	      concat (List.separate (Vector.toListMap (args, arg), ", ")),
+	      ")"]
+   end
+
+fun cPointerType (T {convention, prototype = (args, return), ...}) =
+   let
+      val attributes =
+	 if convention <> Convention.Cdecl
+	    then concat [" __attribute__ ((",
+			 Convention.toString convention,
+			 ")) "]
+	 else " "
+      fun arg t = CType.toString t
+      val args = Vector.dropPrefix (args, 1)
+      val return =
+	 case return of
+	    NONE => "void"
+	  | SOME t => CType.toString t
+   in
+      concat
+      ["(", return, attributes, 
+       "(*)(", 	     
+       concat (List.separate (Vector.toListMap (args, arg), ", ")),
+       "))"]
+   end
 
 end

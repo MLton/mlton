@@ -16,6 +16,7 @@ signature C_CODEGEN =
    sig
       include C_CODEGEN_STRUCTS
 
+      val declareFFI: Machine.Chunk.t * {print: string -> unit} -> unit
       val implementsPrim: 'a Machine.Prim.t -> bool
       val output: {program: Machine.Program.t,
 		   outputC: unit -> {file: File.t,

@@ -217,6 +217,7 @@ runtime:
 	$(CP) $(RUN)/*.a $(LIB)/$(TARGET)/
 	$(CP) runtime/*.h include/*.h $(LIB)/include/
 	mkdir -p $(LIB)/include/platform
+	$(CP) bytecode/interpret.h $(LIB)/include
 	$(CP) runtime/platform/*.h $(LIB)/include/platform
 	$(MAKE) -C bytecode
 	bytecode/print-opcodes >$(LIB)/opcodes

@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor CCodegen (S: C_CODEGEN_STRUCTS): C_CODEGEN =
 struct
 
@@ -34,68 +35,6 @@ structure Kind =
 	  | Func => true
 	  | Handler _ => true
 	  | _ => false
-   end
-
-structure CFunction =
-   struct
-      open CFunction
-
-      datatype z = datatype Convention.t
-      datatype z = datatype Target.t
-	  
-      fun prototype (T {convention, prototype = (args, return), target, ...}) =
-	 let
-	    val attributes =
-	       if convention <> Convention.Cdecl
-		  then concat [" __attribute__ ((",
-			       Convention.toString convention,
-			       ")) "]
-	       else " "
-	    val name = 
-	       case target of
-		  Direct name => name
-		| Indirect => Error.bug "prototype of Indirect"
-	    val c = Counter.new 0
-	    fun arg t =
-	       concat [CType.toString t, " x", Int.toString (Counter.next c)]
-	    val return =
-	       case return of
-		  NONE => "void"
-		| SOME t => CType.toString t
-	 in
-	    concat
-	    [return, attributes, name,
-	     " (", 
-	     concat (List.separate (Vector.toListMap (args, arg), ", ")),
-	     ")"]
-	 end
-
-      fun fptrtype (T {convention, prototype = (args, return), target, ...}) =
-	 let
-	    val attributes =
-	       if convention <> Convention.Cdecl
-		  then concat [" __attribute__ ((",
-			       Convention.toString convention,
-			       ")) "]
-	       else " "
-	    val () = 
-	       case target of
-		  Direct _ => Error.bug "fptrtype of Direct"
-		| Indirect => ()
-	    val c = Counter.new 0
-	    fun arg t = CType.toString t
-	    val args = Vector.dropPrefix (args, 1)
-	    val return =
-	       case return of
-		  NONE => "void"
-		| SOME t => CType.toString t
-	 in
-	    concat
-	    ["(", return, attributes, 
-	     "(*)(", 	     
-	     concat (List.separate (Vector.toListMap (args, arg), ", ")),
-	     "))"]
-	 end
    end
 
 val traceGotoLabel = Trace.trace ("gotoLabel", Label.layout, Unit.layout) 
@@ -489,6 +428,54 @@ structure StackOffset =
 
 fun contents (ty, z) = concat ["C", C.args [Type.toC ty, z]]
 
+fun declareFFI (Chunk.T {blocks, ...}, {print: string -> unit}) =
+   let
+      val seen = String.memoize (fn _ => ref false)
+      fun doit (name: string, declare: unit -> string): unit =
+	 let
+	    val r = seen name
+	 in
+	    if !r
+	       then ()
+	    else (r := true; print (declare ()))
+	 end
+   in
+      Vector.foreach
+      (blocks, fn Block.T {statements, transfer, ...} =>
+       let
+	  val _ =
+	     Vector.foreach
+	     (statements, fn s =>
+	      case s of
+		 Statement.PrimApp {prim, ...} =>
+		    (case Prim.name prim of
+			Prim.Name.FFI_Symbol {name, ty} =>
+			   doit
+			   (name, fn () =>
+			    concat ["extern ", CType.toString (Type.toCType ty),
+				    " ", name, ";\n"])
+		      | _ => ())
+	       | _ => ())
+	  val _ =
+	     case transfer of
+		Transfer.CCall {func, ...} =>
+		   let
+		      datatype z = datatype CFunction.Target.t
+		      val CFunction.T {target, ...} = func
+		   in
+		      case target of
+			 Direct "Thread_returnToC" => ()
+		       | Direct name =>
+			    doit (name, fn () =>
+				  concat [CFunction.cPrototype func, ";\n"])
+		       | Indirect => ()
+		   end
+	      | _ => ()
+       in
+	  ()
+       end)
+   end
+
 fun output {program as Machine.Program.T {chunks,
 					  frameLayouts,
 					  main = {chunkLabel, label}, ...},
@@ -679,59 +666,9 @@ fun output {program as Machine.Program.T {chunks,
 			    ))
 	 end
       val amTimeProfiling = !Control.profile = Control.ProfileTime
-      fun outputChunk (Chunk.T {chunkLabel, blocks, regMax, ...}) =
+      fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, regMax, ...}) =
 	 let
 	    val {done, print, ...} = outputC ()
-	    fun declareFFI () =
-	       let
-		  val seen = String.memoize (fn _ => ref false)
-		  fun doit (name: string, declare: unit -> string): unit =
-		     let
-			val r = seen name
-		     in
-			if !r
-			   then ()
-			else (r := true; print (declare ()))
-		     end
-	       in
-		  Vector.foreach
-		  (blocks, fn Block.T {statements, transfer, ...} =>
-		   let
-		      val _ =
-			 Vector.foreach
-			 (statements, fn s =>
-			  case s of
-			     Statement.PrimApp {prim, ...} =>
-				(case Prim.name prim of
-				    Prim.Name.FFI_Symbol {name, ty} =>
-				       doit
-				       (name, fn () =>
-					concat
-					["extern ",
-					 CType.toString (Type.toCType ty),
-					    " ", name, ";\n"])
-				  | _ => ())
-			   | _ => ())
-		      val _ =
-			 case transfer of
-			    Transfer.CCall {func, ...} =>
-			       let
-				  datatype z = datatype CFunction.Target.t
-				  val CFunction.T {target, ...} = func
-			       in
-				  case target of
-				     Direct "Thread_returnToC" => ()
-				   | Direct name =>
-					doit (name, fn () =>
-					      concat [CFunction.prototype func,
-						      ";\n"])
-				   | Indirect => ()
-			       end
-			  | _ => ()
-		   in
-		      ()
-		   end)
-	       end
 	    fun declareChunks () =
 	       let
 		  val {get, ...} =
@@ -1036,8 +973,8 @@ fun output {program as Machine.Program.T {chunks,
 					   | _ => Error.bug "indirect ccall: empty args"
 				       val name =
 					  concat ["(*(", 
-						  CFunction.fptrtype func, " ", 
-						  fptr, "))"]
+						  CFunction.cPointerType func,
+						  " ", fptr, "))"]
 				    in
 				       C.call (name, args, print)
 				    end
@@ -1159,7 +1096,7 @@ fun output {program as Machine.Program.T {chunks,
 	    outputIncludes (["c-chunk.h"], print)
 	    ; outputOffsets ()
 	    ; declareGlobals ("extern ", print)
-	    ; declareFFI ()
+	    ; declareFFI (chunk, {print = print})
 	    ; declareChunks ()
 	    ; declareProfileLabels ()
 	    ; C.callNoSemi ("Chunk", [chunkLabelToString chunkLabel], print)

@@ -61,12 +61,15 @@ signature C_FUNCTION =
       val convention: 'a t -> Convention.t
       val ensuresBytesFree: 'a t -> bool
       val equals: 'a t * 'a t -> bool
+      val cPointerType: 'a t -> string
+      val cPrototype: 'a t -> string
       val isOk: 'a t * {isUnit: 'a -> bool} -> bool
       val layout: 'a t * ('a -> Layout.t) -> Layout.t
       val map: 'a t * ('a -> 'b) -> 'b t
       val mayGC: 'a t -> bool
       val maySwitchThreads: 'a t -> bool
       val modifiesFrontier: 'a t -> bool
+      val prototype: 'a t -> CType.t vector * CType.t option
       val readsStackTop: 'a t -> bool
       val return: 'a t -> 'a
       val target: 'a t -> Target.t
