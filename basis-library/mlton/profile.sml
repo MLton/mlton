@@ -111,35 +111,40 @@ structure Data =
 fun setItimer (t: Time.time): unit =
    Itimer.set (Itimer.Prof, {interval = t, value = t})
 
-val {current, setCurrent} =
+val _ =
    if not profile
-      then
+      then ()
+   else Profile.init ()
+
+val initData = Data.malloc ()
+
+val r = ref initData
+
+fun current () = !r
+
+fun setCurrent (d as Data.T {array, isCurrent, isFreed, ...}) =
+   if not profile
+      then ()
+   else
+      if !isFreed
+	 then raise Fail "setCurrent of freed profile data"
+      else
 	 let
-	    val d = Data.malloc ()
+	    val Data.T {isCurrent = ic, ...} = current ()
+	    val _ = ic := false
+	    val _ = isCurrent := true
+	    val _ = r := d
+	    val _ = Profile.setCurrent array
 	 in
-	    {current = fn _ => d,
-	     setCurrent = fn _ => ()}
+	    ()
 	 end
+   
+val _ =
+   if not profile
+      then ()
    else
       let
-	 val _ = Profile.init ()
-	 val d = Data.malloc ()
-	 val r = ref d
-	 fun current () = !r
-	 fun setCurrent (d as Data.T {array, isCurrent, isFreed, ...}) =
-	    if !isFreed
-	       then raise Fail "setCurrent of freed profile data"
-	    else
-	       let
-		  val Data.T {isCurrent = ic, ...} = !r
-		  val _ = ic := false
-		  val _ = isCurrent := true
-		  val _ = r := d
-		  val _ = Profile.setCurrent array
-	       in
-		  ()
-	       end
-	 val _ = setCurrent d
+	 val _ = setCurrent initData
 	 val _ = Profile.installHandler ()
 	 val _ = setItimer (Time.fromMilliseconds 10)
 	 val _ =
@@ -153,8 +158,7 @@ val {current, setCurrent} =
 		()
 	     end)
       in
-	 {current = current,
-	  setCurrent = setCurrent}
+	 ()
       end
 
 end
