@@ -78,10 +78,6 @@ struct
       val rec toX86Operand : t -> (x86.Operand.t * x86.Size.t) vector =
 	 fn ArrayOffset {base, index, offset, ty}
  	    => let
-		  val _ =
-		     if Bytes.isZero offset
-			then ()
-		     else Error.bug "toX86Operand can't handle nonzero offset"
 		  val base = toX86Operand base
 		  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/base",
 					fn () => Vector.length base = 1)
@@ -90,6 +86,7 @@ struct
 		  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/index",
 				       fn () => Vector.length index = 1)
 		  val index = getOp0 index
+
 		  val ty = Type.toCType ty
 		  val origin =
 		     case (x86.Operand.deMemloc base,
@@ -114,6 +111,14 @@ struct
 						x86.Operand.toString base,
 						" index: ",
 						x86.Operand.toString index])
+		  val origin =
+		     if Bytes.isZero offset
+			then origin
+			else x86.MemLoc.shift
+			     {origin = origin,
+			      disp = x86.Immediate.const_int (Bytes.toInt offset),
+			      scale = x86.Scale.One,
+			      size = x86.Size.BYTE}
 		  val sizes = x86.Size.fromCType ty
 	       in
 		  (#1 o Vector.mapAndFold)
