@@ -442,10 +442,15 @@ fun commandLine (args: string list): unit =
 			then printVersion ()
 		     else ()
 		  val tempFiles: File.t list ref = ref []
+		  val tmpDir =
+		     case Process.getEnv "TMPDIR" of
+			NONE => "/tmp"
+		      | SOME d => d
 		  fun temp (suf: string): File.t =
 		     let
-			val (f, out) = File.temp {prefix = "/tmp/file",
-						  suffix = suf}
+			val (f, out) =
+			   File.temp {prefix = concat [tmpDir, "/file"],
+				      suffix = suf}
 			val _ = Out.close out
 			val _ = List.push (tempFiles, f)
 		     in
