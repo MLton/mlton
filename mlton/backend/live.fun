@@ -78,7 +78,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 			     argInfo: LiveInfo.t,
 			     block: Block.t,
 			     bodyInfo: LiveInfo.t,
-			     frameInfo: (Label.t option * LiveInfo.t) list ref
+			     frameInfo: (Handler.t * LiveInfo.t) list ref
 			    },
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
@@ -134,7 +134,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	 in
 	    case List.peek
 	         (!frameInfo, fn (handler', _) =>
-		  Option.equals(handler, handler', Label.equals)) of
+		  Handler.equals (handler, handler')) of
 	       NONE => let val name = Label.toString cont
 			   val b = LiveInfo.new (name ^ "d")
 			   val _ = LiveInfo.addEdge (b, argInfo)
@@ -230,7 +230,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 			     val frameInfo = getFrameInfo (cont, handler)
 			     val _ = LiveInfo.addEdge (b, frameInfo)
 			  in
-			     Option.app
+			     Handler.foreachLabel
 			     (handler, fn h =>
 			      let
 				 val {argInfo, ...} = labelInfo h
@@ -392,7 +392,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 					List.layout Var.layout beginNoFormals),
 				       ("frame",
 					List.layout 
-					(Layout.tuple2 (Option.layout Label.layout,
+					(Layout.tuple2 (Handler.layout,
 							List.layout Var.layout)) 
 					frame)]])
 	      end)

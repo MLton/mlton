@@ -14,19 +14,19 @@ open Transfer
 
 structure Cont =
   struct
-    type t = {cont: Label.t, handler: Label.t option}
+    type t = {cont: Label.t, handler: Handler.t}
 
     fun layout {cont, handler}
       = let
 	  open Layout
 	in
-	  tuple2 (Label.layout, Option.layout Label.layout) (cont, handler)
+	  tuple2 (Label.layout, Handler.layout) (cont, handler)
 	end
     val toString = Layout.toString o layout
 
-    val equals
+    val equals: t * t -> bool
       = fn ({cont = c1, handler = h1}, {cont = c2, handler = h2})
-         => Label.equals(c1,c2) andalso Option.equals(h1,h2,Label.equals)
+         => Label.equals(c1,c2) andalso Handler.equals (h1, h2)
 
     fun plist _ = Error.bug "Cont.plist"
   end
@@ -575,14 +575,14 @@ structure Transform =
 	   * - turn returns into gotos
 	   * - turn raises into gotos
 	   *)
-	  fun combine (c: Cont.t option, r: Cont.t option)
-	    = case (c, r)
-		of (NONE, r) => r
-		 | (c, NONE) => c
-		 | (SOME {handler = h1, ...},
-		    SOME {cont = c2, handler = NONE})
-		 => SOME {cont = c2, handler = h1}
-		 | _ => r
+	  fun combine (c: Cont.t option, r: Cont.t option) =
+	     case (c, r) of
+		(NONE, r) => r
+	      | (c, NONE) => c
+	      | (SOME {handler = h1, ...},
+		 SOME {cont = c2, handler = Handler.CallerHandler}) =>
+		   SOME {cont = c2, handler = h1}
+	      | _ => r
 
 	  fun addFuncPrefixes (f: Func.t,
 			       g: Func.t,
@@ -672,7 +672,7 @@ structure Transform =
 			      | _ => transfer)
 		       | Raise xs
 		       => (case c
-			     of SOME {handler = SOME handler, ...} 
+			     of SOME {handler = Handler.Handle handler, ...} 
 			      => Goto {dst = handler, args = xs}
 			      | _ => transfer)
 		       | _ => transfer
@@ -735,7 +735,7 @@ structure Transform =
 
 fun contify (program as Program.T {functions, ...})
   = let
-      val {get = getLabelInfo : Label.t -> (Label.t option * ContData.t) list ref,
+      val {get = getLabelInfo : Label.t -> (Handler.t * ContData.t) list ref,
 	   ...}
 	= Property.get (Label.plist,
 			Property.initFun
@@ -745,10 +745,8 @@ fun contify (program as Program.T {functions, ...})
 	   => let 
 		val l = getLabelInfo cont
 	      in 
-		case List.peek
-		     (!l, 
-		      fn (handler', _) 
-		       => Option.equals(handler, handler', Label.equals))
+		case List.peek (!l, fn (handler', _) =>
+				Handler.equals (handler, handler'))
 		  of SOME (_, cd) => cd
 		   | NONE => let
 			       val cd = ContData.new ()

@@ -1,103 +1,6 @@
 (* Copyright (C) 1997-1999 NEC Research Institute.
  * Please see the file LICENSE for license information.
  *)
-functor FlatLattice (structure Point:
-		       sig
-			  type t
-
-			  val equals: t * t -> bool
-			  val layout: t -> Layout.t
-		       end):
-   sig
-      type t
-
-      val <= : t * t -> bool
-      val forcePoint: t * Point.t -> bool
-      val layout: t -> Layout.t
-      val lowerBound: t * Point.t -> bool
-      val new: unit -> t
-      val point: Point.t -> t
-      val upperBound: t * Point.t -> bool
-   end =
-   struct
-      structure Elt =
-	 struct
-	    datatype t =
-	       Bottom
-	     | Point of Point.t
-	     | Top
-
-	    local
-	       open Layout
-	    in
-	       val layout =
-		  fn Bottom => str "Bottom"
-		   | Point p => Point.layout p
-		   | Top => str "Top"
-	    end
-	 end
-      datatype z = datatype Elt.t
-	 
-      datatype t = T of {lessThan: t list ref,
-			 upperBound: Point.t option ref,
-			 value: Elt.t ref}
-
-      fun layout (T {value, ...}) = Elt.layout (!value)
-
-      fun new () = T {lessThan = ref [],
-		      upperBound = ref NONE,
-		      value = ref Bottom}
-
-      fun up (T {lessThan, upperBound, value, ...}, e: Elt.t): bool =
-	 let
-	    val e' = !value
-	    fun continue e = List.forall (!lessThan, fn z => up (z, e))
-	    fun setTop () =
-	       not (isSome (!upperBound))
-	       andalso (value := Top
-			; continue Top)
-	 in
-	    case (e, e') of
-	       (_, Bottom) => true
-	     | (Top, _) => true
-	     | (_, Top) => setTop ()
-	     | (Bottom, Point p) =>
-		  (value := Point p
-		   ; (case !upperBound of
-			 NONE => continue (Point p)
-		       | SOME p' =>
-			    Point.equals (p, p') andalso continue (Point p)))
-	     | (Point p, Point p') => Point.equals (p, p') orelse setTop ()
-	 end
-      
-      val op <= : t * t -> bool =
-	 fn (T {lessThan, value, ...}, e) =>
-	 (List.push (lessThan, e)
-	  ; up (e, !value))
-
-      fun lowerBound (e, p): bool = up (e, Point p)
-
-      fun upperBound (T {upperBound = r, value, ...}, p): bool =
-	 case !r of
-	    NONE => (r := SOME p
-		     ; (case !value of
-			   Bottom => true
-			 | Point p' => Point.equals (p, p')
-			 | Top => false))
-	  | SOME p' => Point.equals (p, p')
-
-      fun forcePoint (e, p) =
-	 lowerBound (e, p) andalso upperBound (e, p)
-
-      fun point p =
-	 let
-	    val e = new ()
-	    val _ = forcePoint (e, p)
-	 in
-	    e
-	 end
-   end
-
 functor SsaTree (S: SSA_TREE_STRUCTS): SSA_TREE = 
 struct
 
@@ -360,14 +263,49 @@ structure Statement =
 	   | _ => ac)
    end
 
+structure Handler =
+   struct
+      datatype t =
+	 CallerHandler
+       | Handle of Label.t
+       | None
+
+      fun layout h =
+	 let
+	    open Layout
+	 in
+	    case h of
+	       CallerHandler => str "CallerHandler"
+	     | Handle l => seq [str "Handle ", Label.layout l]
+	     | None => str "None"
+	 end
+
+      val equals =
+	 fn (CallerHandler, CallerHandler) => true
+	  | (Handle l, Handle l') => Label.equals (l, l')
+	  | (None, None) => true
+	  | _ => false
+
+      fun foreachLabel (h, f) =
+	 case h of
+	    Handle l => f l
+	  | _ => ()
+
+      fun map (h, f) =
+	 case h of
+	    Handle l => Handle (f l)
+	  | _ => h
+   end
+
 structure Transfer =
    struct
+
       datatype t =
 	 Bug
        | Call of {func: Func.t,
 		  args: Var.t vector,
 		  return: {cont: Label.t,
-			   handler: Label.t option} option}
+			   handler: Handler.t} option}
        | Case of {test: Var.t,
 		  cases: Label.t Cases.t,
 		  default: Label.t option}
@@ -391,7 +329,7 @@ structure Transfer =
 		  (func f
 		   ; Option.app (return, fn {cont, handler} =>
 				 (label cont
-				  ; Option.app (handler, label)))
+				  ; Handler.foreachLabel (handler, label)))
 		   ; vars args)
 	     | Case {test, cases, default, ...} =>
 		  (var test
@@ -466,9 +404,10 @@ structure Transfer =
 		      | SOME {cont, handler} =>
 			   seq [Label.layout cont, str " ", paren call,
 				case handler of
-				   NONE => empty
-				 | SOME l => seq [str " handle ",
-						  Label.layout l]]
+				   Handler.CallerHandler => empty
+				 | Handler.Handle l => seq [str "handle ",
+							    Label.layout l]
+				 | Handler.None => str "None"]
 		  end
 	     | Case arg => layoutCase arg
 	     | Goto {dst, args} =>
@@ -541,7 +480,7 @@ structure Block =
 
 structure ExnStack =
    struct
-      structure Point =
+      structure ZPoint =
 	 struct
 	    datatype t = Caller | Me
 
@@ -553,35 +492,36 @@ structure ExnStack =
 
 	    val layout = Layout.str o toString
 	 end
-      structure L = FlatLattice (structure Point = Point)
-      open L
 
+      structure L = FlatLattice (structure Point = ZPoint)
+      open L
+      structure Point = ZPoint
+	 
       val me = point Point.Me
       val caller = point Point.Caller
    end
 
-structure Handler = FlatLattice (structure Point = Label)
+structure HandlerLat = FlatLattice (structure Point = Label)
 
 structure HandlerInfo =
    struct
       datatype t = T of {block: Block.t,
 			 global: ExnStack.t,
-			 handler: Handler.t,
+			 handler: HandlerLat.t,
 			 slot: ExnStack.t,
 			 visited: bool ref}
 
       fun new (b: Block.t): t =
 	 T {block = b,
 	    global = ExnStack.new (),
-	    handler = Handler.new (),
+	    handler = HandlerLat.new (),
 	    slot = ExnStack.new (),
 	    visited = ref false}
 
-      fun beforeLay (T {global, handler, slot, ...}) =
-	 Layout.tuple [ExnStack.layout global,
-		       ExnStack.layout slot,
-		       Handler.layout handler]
-
+      fun layout (T {global, handler, slot, ...}) =
+	 Layout.record [("global", ExnStack.layout global),
+			("slot", ExnStack.layout slot),
+			("handler", HandlerLat.layout handler)]
    end
 
 structure Datatype =
@@ -679,41 +619,50 @@ structure Function =
 	       let
 		  val _ = visited := true
 		  val Block.T {label, statements, transfer, ...} = block
+		  datatype z = datatype ExnStack.t
+		  val {global, handler, slot} =
+		     Vector.fold
+		     (statements,
+		      {global = global, handler = handler, slot = slot},
+		      fn (Statement.T {exp, ...}, {global, handler, slot}) =>
+		      case exp of
+			 SetExnStackLocal => {global = ExnStack.me,
+					      handler = handler,
+					      slot = slot}
+		       | SetExnStackSlot => {global = slot,
+					     handler = handler,
+					     slot = slot}
+		       | SetSlotExnStack => {global = global,
+					     handler = handler,
+					     slot = slot}
+		       | SetHandler l => {global = global,
+					  handler = HandlerLat.point l,
+					  slot = slot}
+		       | _ => {global = global, handler = handler, slot = slot})
 		  fun fail msg =
 		     (Control.message
 		      (Control.Silent, fn () =>
 		       let open Layout
-		       in align [seq [str "block: ", Block.layout block]]
+		       in align
+			  [str "before: ", HandlerInfo.layout hi,
+			   str "block: ", Block.layout block,
+			   seq [str "after: ",
+				Layout.record
+				[("global", ExnStack.layout global),
+				 ("slot", ExnStack.layout slot),
+				 ("handler", HandlerLat.layout handler)]],
+			   Vector.layout
+			   (fn Block.T {label, ...} =>
+			    seq [Label.layout label,
+				 str " ",
+				 HandlerInfo.layout (labelInfo label)])
+			   blocks]
 		       end)
 		      ; Error.bug (concat ["handler mismatch at ", msg]))
 		  fun assert (msg, f) =
 		     if f
 			then ()
 		     else fail msg
-		  datatype z = datatype ExnStack.t
-		  val hi as {global, handler, slot} =
-		     Vector.fold
-		     (statements,
-		      {global = global, handler = handler, slot = slot},
-		      fn (Statement.T {exp, ...}, {global, handler, slot}) =>
-		      case exp of
-			 SetExnStackLocal =>
-			    {global = ExnStack.me,
-			     handler = handler,
-			     slot = slot}
-		       | SetExnStackSlot =>
-			    {global = slot,
-			     handler = handler,
-			     slot = slot}
-		       | SetSlotExnStack =>
-			    {global = global,
-			     handler = handler,
-			     slot = slot}
-		       | SetHandler l =>
-			    {global = global,
-			     handler = Handler.point l,
-			     slot = slot}
-		       | _ => {global = global, handler = handler, slot = slot})
 		   fun goto (l: Label.t): unit =
 		      let
 			 val HandlerInfo.T {global = g, handler = h,
@@ -723,7 +672,7 @@ structure Function =
 			 assert ("goto",
 				 ExnStack.<= (global, g)
 				 andalso ExnStack.<= (slot, s)
-				 andalso Handler.<= (handler, h))
+				 andalso HandlerLat.<= (handler, h))
 		      end
 		   fun tail name =
 		      assert (name,
@@ -740,13 +689,15 @@ structure Function =
 				 ; (assert
 				    ("nontail call",
 				     case h of
-					NONE => (ExnStack.forcePoint
-						 (global, ExnStack.Point.Caller))
-				      | SOME l =>
+					Handler.CallerHandler =>
+					   ExnStack.forcePoint
+					   (global, ExnStack.Point.Caller)
+				      | Handler.None => true
+				      | Handler.Handle l =>
 					   ExnStack.forcePoint
 					   (global, ExnStack.Point.Me)
 					   andalso
-					   Handler.forcePoint (handler, l)))))
+					   HandlerLat.forcePoint (handler, l)))))
 		    | Case {cases, default, ...} =>
 			 (Cases.foreach (cases, goto)
 			  ; Option.app (default, goto))
@@ -796,7 +747,8 @@ structure Function =
 			 | Call {return, ...} =>
 			      Option.app (return, fn {cont, handler} =>
 					  (edge cont
-					   ; Option.app (handler, edge)))
+					   ; (Handler.foreachLabel
+					      (handler, edge))))
 			 | Case {cases, default, ...} =>
 			      (Cases.foreach (cases, edge)
 			       ; Option.app (default, edge))
@@ -880,8 +832,9 @@ structure Function =
 				     NONE => [f, " ", args]
 				   | SOME {cont, handler} =>
 					(edge (cont, "", Dotted)
-					 ; Option.app (handler, fn h => 
-						       edge (h, "", Dashed))
+					 ; (Handler.foreachLabel
+					    (handler, fn h => 
+					     edge (h, "", Dashed)))
 					 ; [Label.toString cont,
 					    " (", f, args, ")"])
 			       end
@@ -1069,6 +1022,9 @@ structure Program =
    struct
       open Program
 
+      fun checkHandlers (T {functions, ...}) =
+	 List.foreach (functions, Function.checkHandlers)
+	 
       local
 	 structure Graph = DirectedGraph
 	 structure Node = Graph.Node
@@ -1315,8 +1271,9 @@ structure Program =
 				    {cont = jumpToLabel l,
 				     handler = 
 				     case jumpHandlers l of
-					[] => NONE
-				      | h :: _ => SOME (jumpToLabel h)}))}
+					[] => Handler.CallerHandler
+				      | h :: _ =>
+					   Handler.Handle (jumpToLabel h)}))}
 		   | Case {test, cases, default, ...} =>
 			Transfer.Case {test = test,
 				       cases = cases,

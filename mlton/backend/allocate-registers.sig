@@ -28,7 +28,7 @@ signature ALLOCATE_REGISTERS =
 		     (* Live variables at the frame corresponding to the block
 		      * only valid for continuations
 		      *)
-		     liveFrame: (Ssa.Label.t option * Machine.Operand.t list) list,
+		     liveFrame: (Ssa.Handler.t * Machine.Operand.t list) list,
 		     (* Number of bytes in frame including return address.
 		      *)
 		     size: int

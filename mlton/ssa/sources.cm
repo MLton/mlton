@@ -13,6 +13,12 @@ is
 
 analyze.fun
 analyze.sig
+contify.fun
+contify.sig
+flat-lattice.fun
+flat-lattice.sig
+remove-unused.fun
+remove-unused.sig
 shrink.fun
 shrink.sig
 simplify.fun
@@ -21,13 +27,7 @@ ssa-tree.fun
 ssa-tree.sig
 ssa.fun
 ssa.sig
+two-point-lattice.fun
+two-point-lattice.sig
 type-check.fun
 type-check.sig
-
-contify.sig
-contify.fun
-two-point-lattice.sig
-two-point-lattice.fun
-remove-unused.sig
-remove-unused.fun
-

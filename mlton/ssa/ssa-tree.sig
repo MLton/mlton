@@ -83,6 +83,19 @@ signature SSA_TREE =
       
       structure Cases: CASES sharing type Cases.con = Con.t
 
+      structure Handler:
+	 sig
+	    datatype t =
+	       CallerHandler
+	     | Handle of Label.t
+	     | None
+
+	    val equals: t * t -> bool
+	    val foreachLabel: t * (Label.t -> unit) -> unit
+	    val layout: t -> Layout.t
+	    val map: t * (Label.t -> Label.t) -> t
+	 end
+      
       structure Transfer:
 	 sig
 	    datatype t =
@@ -101,7 +114,7 @@ signature SSA_TREE =
 			 * call.
 			 *)
 			return: {cont: Label.t,
-				 handler: Label.t option} option}
+				 handler: Handler.t} option}
 	     | Case of {
 			test: Var.t,
 			cases: Label.t Cases.t,
@@ -191,6 +204,7 @@ signature SSA_TREE =
 		     main: Func.t (* Must be nullary. *)
 		    } 
 
+	    val checkHandlers: t -> unit
 	    val clear: t -> unit
 	    val fromCps: Cps.Program.t * {jumpToLabel: Cps.Jump.t -> Label.t,
 					  funcToFunc: Cps.Func.t -> Func.t} -> t

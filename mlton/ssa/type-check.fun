@@ -73,7 +73,7 @@ fun checkScopes (program as
 		; getVars args
 		; Option.app (return, fn {cont, handler} =>
 			      (getLabel cont
-			       ; Option.app (handler, getLabel))))
+			       ; Handler.foreachLabel (handler, getLabel))))
 	  | Case {test, cases, default, ...} =>
 	       (getVar test
 		; Cases.foreach' (cases, getLabel, getCon)
@@ -126,7 +126,6 @@ val checkScopes = Control.trace (Control.Pass, "checkScopes") checkScopes
 fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
    let
       val _ = checkScopes program
-(*      val _ = Vector.foreach (functions, Function.checkHandlers) *)
       val out = Out.error
       val print = Out.outputc out
       exception TypeError

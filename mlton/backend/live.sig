@@ -21,7 +21,7 @@ signature LIVE =
 			 beginNoFormals: Var.t list,
 			 (* live at frame corresponding to the block. *)
 			 (* only valid for continuations *)
-			 frame: (Label.t option * Var.t list) list,
+			 frame: (Handler.t * Var.t list) list,
 			 (* live handler slots at beginning of block. *)
 			 handlerSlots: bool * bool
 			 },

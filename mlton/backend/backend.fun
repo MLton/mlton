@@ -16,6 +16,7 @@ in
    structure Exp = Exp
    structure Func = Func
    structure Function = Function
+   structure Handler = Handler
    structure Label = Label
    structure Sprogram = Program
    structure Prim = Prim
@@ -190,15 +191,15 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	  | SOME z => z
       (* labelInfo, which is only set while processing each function. *)
       val {get = labelInfo: Label.t -> {args: (Var.t * Stype.t) vector,
-					cont: (Label.t option * Mlabel.t) list ref,
+					cont: (Handler.t * Mlabel.t) list ref,
 					handler: Mlabel.t option ref},
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("label info", Label.layout))
       val labelArgs = #args o labelInfo
-      fun labelCont (c, h) = 
-	 #2 (valOf (List.peek(!(#cont (labelInfo c)), fn (h', l') =>
-			      Option.equals(h, h', Label.equals))))
+      fun labelCont (c, h: Handler.t) = 
+	 #2 (valOf (List.peek (! (#cont (labelInfo c)), fn (h', l') =>
+			       Handler.equals (h, h'))))
       val isCont = not o List.isEmpty o ! o #cont o labelInfo
       val labelHandler = ^ o #handler o labelInfo
       val isHandler = isSome o ! o #handler o labelInfo
@@ -751,8 +752,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	    (* Create info for labels used as conts and handlers. *)
 	    fun newCont (c, h) =
 	       let val {cont, ...} = labelInfo c
-	       in case List.peek(!cont, fn (h', _) => 
-				 Option.equals(h, h', Label.equals)) of
+	       in case List.peek (!cont, fn (h', _) => Handler.equals (h, h')) of
 		     SOME _ => ()
 		   | NONE => let
 				val l = Mlabel.new (labelToLabel c)
@@ -788,8 +788,8 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		   Stransfer.Call {return, ...} =>
 		      Option.app (return, fn {cont, handler} =>
 				  (newCont (cont, handler);
-				   Option.app (handler, fn handler =>
-					       newHandler handler)))
+				   Handler.foreachLabel
+				   (handler, newHandler)))
 		 | _ => ())
 	    val {handlerOffset, labelInfo = labelRegInfo, limitCheck, ...} =
 	       allocateFunc f
@@ -1048,20 +1048,22 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	    fun genCont (c: Chunk.t,
 			 l: Mlabel.t,
 			 j: Label.t,
-			 h: Label.t option,
+			 h: Handler.t,
 			 args: (Var.t * Stype.t) vector): unit =
 	       let
 		  val Info.T {liveFrame, liveNoFormals, size, ...} =
 		     labelRegInfo j
 		  val liveFrame =
-		     #2 (valOf (List.peek(liveFrame, fn (h', liveFrame) =>
-					  Option.equals(h, h', Label.equals))))
+		     #2 (valOf (List.peek (liveFrame, fn (h', liveFrame) =>
+					   Handler.equals (h, h'))))
 		  val size =
 		     case h of
-		        SOME h => let val Info.T {size = size', ...} = labelRegInfo h
-				  in Int.max(size, size')
-				  end
-		      | NONE => size
+		        Handler.Handle h =>
+			   let val Info.T {size = size', ...} = labelRegInfo h
+			   in Int.max (size, size')
+			   end
+		      | Handler.None => size
+		      | Handler.CallerHandler => size
 		  val _ = Mprogram.newFrame (mprogram,
 					     {return = l,
 					      chunkLabel = Chunk.label c,
@@ -1166,8 +1168,10 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 				    val Info.T {size, ...} = labelRegInfo cont
 				    val (size, handler, handlerLive) =
 				       case handler of
-					  NONE => (size, NONE, [])
-					| SOME h =>
+					  Handler.CallerHandler =>
+					     (size, NONE, [])
+					| Handler.None => (size, NONE, [])
+					| Handler.Handle h =>
 					     let
 					        val Info.T {size = size', ...} =
 						   labelRegInfo h

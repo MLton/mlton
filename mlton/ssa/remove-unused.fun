@@ -334,10 +334,10 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		     => (flowVarTysVarTys(argsLabel cont, returnsFunc func);
 			 whenTerminatesFunc(func, visitLabelTh cont);
 			 case handler
-			   of SOME handler 
+			   of Handler.Handle handler 
 			    => (whenFailsFunc(func, fn () => catchLabel handler);
 				whenFailsFunc(func, visitLabelTh handler))
-			    | NONE => flowFails (func, f))
+			    | _ => flowFails (func, f))
 		     | NONE
 		     => (flowVarTysVarTys(returnsFunc f, returnsFunc func);
 			 flowTerminates(func, f);
@@ -711,53 +711,33 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	= case t
 	    of Call {func, args, return}
 	     => let
-		  fun call return
-		    = let
-			val args = Vector.keepAllMap2
-			           (args, argsFunc func,
-				    fn (x, (y, t)) => if isUsedVar y
-							then SOME x
-							else NONE)
-		      in
-			Call {func = func,
-			      args = args,
-			      return = return}
-		      end
+		   val return =
+		      case return of 
+			 NONE => NONE
+		       | SOME {cont, handler} =>
+			    let
+			       val cont =
+				  if doesTerminateFunc func
+				     then getContWrapperLabel (cont,
+							       returnsFunc func)
+				  else getBugContFunc (f, returnsFunc func)
+			       val handler =
+				  if doesFailFunc func
+				     then Handler.map (handler,
+						       getHandlerWrapperLabel)
+				  else Handler.None
+			    in SOME {cont = cont,
+				     handler = handler}
+			    end
+		   val args =
+		      Vector.keepAllMap2 (args, argsFunc func, fn (x, (y, t)) =>
+					  if isUsedVar y
+					     then SOME x
+					  else NONE)
 		in
-		  case return
-		    of SOME {cont, handler}
-		     => (case (doesTerminateFunc func, 
-			       doesFailFunc func, 
-			       handler)
-			   of (true, true, handler) 
-			    => call 
-			       (SOME {cont = getContWrapperLabel 
-				             (cont, returnsFunc func),
-				      handler = Option.map 
-				                (handler, getHandlerWrapperLabel)})
-			    | (true, false, handler) 
-			    => call
-			       (SOME {cont = getContWrapperLabel 
-				             (cont, returnsFunc func),
-				      handler = NONE})
-			    | (false, true, SOME handler)
-			    => let
-				 val handler = SOME (getHandlerWrapperLabel handler)
-			       in
-				 call
-				 (SOME {cont = getBugContFunc 
-					       (f, returnsFunc func),
-					handler = handler})
-			       end
-			    | (false, _, _)
-			    => if Vector.forall
-			          (returnsFunc f, 
-				   fn (x, t) => not (isUsedVar x))
-				 then call NONE
-				 else call (SOME {cont = getBugContFunc 
-						         (f, returnsFunc func), 
-						  handler = NONE}))
-                     | NONE => call NONE
+		   Call {func = func,
+			 args = args,
+			 return = return}
 		end
 	     | Case {test, cases = Cases.Con cases, default}
 	     => let

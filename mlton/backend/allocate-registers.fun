@@ -12,6 +12,7 @@ in
    structure Exp = Exp
    structure Func = Func
    structure Function = Function
+   structure Handler = Handler
    structure Slabel = Label
    structure Prim = Prim
    structure Program = Program
@@ -67,7 +68,7 @@ structure Info =
 	       limitCheck: Machine.LimitCheck.t,
 	       live: Operand.t list,
 	       liveNoFormals: Operand.t list,
-	       liveFrame: (Slabel.t option * Operand.t list) list,
+	       liveFrame: (Handler.t * Operand.t list) list,
 	       size: int
 	       }
 
@@ -85,9 +86,8 @@ structure Info =
 	  ("live", List.layout Operand.layout live),
 	  ("liveNoFormals", List.layout Operand.layout liveNoFormals),
 	  ("liveFrame", 
-	   List.layout 
-	   (Layout.tuple2 (Option.layout Slabel.layout,
-			   List.layout Operand.layout)) 
+	   List.layout
+	   (Layout.tuple2 (Handler.layout, List.layout Operand.layout)) 
 	   liveFrame),
 	  ("size", Int.layout size)]
    end
@@ -247,8 +247,9 @@ fun allocate {program = program as Program.T {globals, ...},
 		   case transfer of
 		      Stransfer.Call {return = SOME {cont, handler, ...}, ...} =>
 			 (forceStacks (liveBeginNoFormals cont)
-			  ; Option.app (handler, fn l =>
-					forceStacks (liveBeginNoFormals l)))
+			  ; (Handler.foreachLabel
+			     (handler, fn l =>
+			      forceStacks (liveBeginNoFormals l))))
 			 
 		    | _ => ()
 	     in
@@ -395,7 +396,7 @@ fun allocate {program = program as Program.T {globals, ...},
 					   ("liveFrame", 
 					    List.layout 
 					    (Layout.tuple2
-					     (Option.layout Slabel.layout,
+					     (Handler.layout,
 					      List.layout Operand.layout))
 					    liveFrame)])
 	                   getLiveOperands

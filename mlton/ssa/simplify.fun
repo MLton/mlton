@@ -81,34 +81,11 @@ val passes =
       * are expected in the Operand.offsets generated in the
       * backend.
       *)
-    ("removeUnused5", RemoveUnused.remove)
+     ("removeUnused5", RemoveUnused.remove)
     ]
 
 fun stats p =
    Control.message (Control.Detail, fn () => Program.layoutStats p)
-
-(*
-fun simplify p =
-   (stats p
-    ; (List.fold
-       (passes, p, fn ((name, pass), p) =>
-	if List.contains (!Control.dropPasses, name, String.equals)
-	   then p
-	else
-	   let
-	      val p =
-		 Control.passTypeCheck
-		 {name = name,
-		  suffix = "ssa",
-		  style = Control.No,
-		  thunk = fn () => pass p,
-		  display = Control.Layouts Program.layouts,
-		  typeCheck = typeCheck}
-	      val _ = stats p
-	   in
-	      p
-	   end)))
-*)
 
 fun simplify p =
    (stats p
@@ -148,6 +125,13 @@ val simplify = fn p => let
 			 val _ = typeCheck p
 			 val p' = simplify p
 			 val _ = typeCheck p'
+			 val _ =
+			    Control.pass
+			    {name = "check handlers",
+			     suffix = "",
+			     style = Control.No,
+			     thunk = fn () => Program.checkHandlers p',
+			     display = Control.NoDisplay}
 		       in
 			 p'
 		       end
