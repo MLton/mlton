@@ -450,12 +450,21 @@ fun elaborate {input: File.t list}: Xml.Program.t =
       val _ =
 	 if !Control.showBasis
 	    then
-	       Env.scopeAll
-	       (basisEnv, fn () =>
-		(parseAndElab ()
-		 ; Env.setTyconNames basisEnv
-		 ; Layout.outputl (Env.layoutCurrentScope basisEnv, Out.standard)
-		 ; raise Done))
+	       let
+		  val lay =
+		     case input of
+			[] => (Env.setTyconNames basisEnv
+			       ; Env.layout basisEnv)
+		      | _ => 
+			   Env.scopeAll
+			   (basisEnv, fn () =>
+			    (parseAndElab ()
+			     ; Env.setTyconNames basisEnv
+			     ; Env.layoutCurrentScope basisEnv))
+		  val _ = Layout.outputl (lay, Out.standard)
+	       in
+		  raise Done
+	       end
 	 else ()
       val input = parseAndElab ()
       val _ = if !Control.elaborateOnly then raise Done else ()
