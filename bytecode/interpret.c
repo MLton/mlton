@@ -145,10 +145,11 @@ enum {
 #define loadStoreOffset(mode, ty)					\
 	case opcodeSymOfTy2 (ty, mode##Offset):				\
 	{								\
+		Pointer base;						\
 		Offset offset;						\
 		Fetch (offset);						\
 		if (disassemble) goto mainLoop;				\
-		Pointer base = (Pointer) (PopReg (Word32));		\
+		base = (Pointer) (PopReg (Word32));			\
 		maybe loadStore (mode, ty, O (ty, base, offset));	\
 		goto mainLoop;						\
 	}
