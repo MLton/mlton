@@ -2,6 +2,9 @@ Here are the changes since version 20030312.
 
 At this point, the only missing basis library function is "use".
 
+* 2003-0625
+  - Fixed bug in IntInf.sign, which returned the wrong value for zero.
+
 * 2003-06-24
   - Added _export, for calling from C to SML.
 

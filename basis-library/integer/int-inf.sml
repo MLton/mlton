@@ -377,7 +377,7 @@ structure IntInf: INT_INF_EXTRA =
        *)
       fun bigSign (arg: bigInt): smallInt =
 	 if isSmall arg
-	    then Int.sign (Word.toIntX (Prim.toWord arg))
+	    then Int.sign (Word.toIntX (stripTag arg))
 	 else if bigIsNeg arg
 		 then ~1
 	      else 1
