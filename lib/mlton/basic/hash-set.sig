@@ -28,6 +28,11 @@ signature HASH_SET =
        *)
       val lookupOrInsert: 'a t * word * ('a -> bool) * (unit -> 'a) -> 'a
       val new: {hash: 'a -> word} -> 'a t
+      (* newOfSize {hash, size}
+       * creates a table that can handle size elements without resizing.
+       *)
+      val newOfSize: {hash: 'a -> word,
+		      size: int} -> 'a t
       val peek: 'a t * word * ('a -> bool) -> 'a option
       (* remove an entry.  Error if it's not there. *)
       val remove: 'a t * word * ('a -> bool) -> unit

@@ -12,15 +12,26 @@ datatype 'a t =
 	 hash: 'a -> word,
 	 mask: word ref,
 	 numItems: int ref}
+   
+fun 'a newWithBuckets {hash, numBuckets}: 'a t =
+   let
+      val mask: word = numBuckets - 0w1
+   in
+      T {buckets = ref (Array.new (Word.toInt numBuckets, [])),
+	 hash = hash,
+	 numItems = ref 0,
+	 mask = ref mask}
+   end
 
 val initialSize: int = Int.^ (2, 6)
-val initialMask: word = Word.fromInt initialSize - 0w1
 
-fun 'a new {hash}: 'a t =
-   T {buckets = ref (Array.new (initialSize, [])),
-      hash = hash,
-      numItems = ref 0,
-      mask = ref initialMask}
+fun new {hash} = newWithBuckets {hash = hash,
+				 numBuckets = Word.fromInt initialSize}
+
+fun newOfSize {hash, size} =
+   newWithBuckets
+   {hash = hash,
+    numBuckets = 0w4 * Word.roundUpToPowerOfTwo (Word.fromInt size)}
 
 fun size (T {numItems, ...}) = !numItems
 fun numBuckets (T {buckets, ...}) = Array.length (!buckets)
