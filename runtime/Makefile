@@ -45,21 +45,21 @@ OBJS =						\
 	basis/Net/NetProtDB.o			\
 	basis/Net/NetServDB.o			\
 	basis/Net/Socket/Ctl.o			\
-	basis/Net/Socket/Socket.o		\
-	basis/Net/Socket/bind.o			\
-	basis/Net/Socket/listen.o		\
-	basis/Net/Socket/connect.o		\
-	basis/Net/Socket/accept.o		\
-	basis/Net/Socket/close.o		\
-	basis/Net/Socket/shutdown.o		\
-	basis/Net/Socket/send.o			\
-	basis/Net/Socket/sendTo.o		\
-	basis/Net/Socket/recv.o			\
-	basis/Net/Socket/recvFrom.o		\
-	basis/Net/Socket/socket.o		\
-	basis/Net/Socket/socketPair.o		\
 	basis/Net/Socket/INetSock.o		\
 	basis/Net/Socket/UnixSock.o		\
+	basis/Net/Socket/accept.o		\
+	basis/Net/Socket/bind.o			\
+	basis/Net/Socket/close.o		\
+	basis/Net/Socket/connect.o		\
+	basis/Net/Socket/familyOfAddr.o		\
+	basis/Net/Socket/listen.o		\
+	basis/Net/Socket/recv.o			\
+	basis/Net/Socket/recvFrom.o		\
+	basis/Net/Socket/send.o			\
+	basis/Net/Socket/sendTo.o		\
+	basis/Net/Socket/shutdown.o		\
+	basis/Net/Socket/socket.o		\
+	basis/Net/Socket/socketPair.o		\
 	basis/OS/FileSys/tmpnam.o		\
 	basis/OS/IO/poll.o			\
 	basis/PackReal/subVec.o			\
@@ -206,21 +206,21 @@ DEBUG_OBJS =					\
 	basis/Net/NetProtDB-gdb.o		\
 	basis/Net/NetServDB-gdb.o		\
 	basis/Net/Socket/Ctl-gdb.o		\
-	basis/Net/Socket/Socket-gdb.o		\
-	basis/Net/Socket/bind-gdb.o		\
-	basis/Net/Socket/listen-gdb.o		\
-	basis/Net/Socket/connect-gdb.o		\
-	basis/Net/Socket/accept-gdb.o		\
-	basis/Net/Socket/close-gdb.o		\
-	basis/Net/Socket/shutdown-gdb.o		\
-	basis/Net/Socket/send-gdb.o		\
-	basis/Net/Socket/sendTo-gdb.o		\
-	basis/Net/Socket/recv-gdb.o		\
-	basis/Net/Socket/recvFrom-gdb.o		\
-	basis/Net/Socket/socket-gdb.o		\
-	basis/Net/Socket/socketPair-gdb.o	\
 	basis/Net/Socket/INetSock-gdb.o		\
 	basis/Net/Socket/UnixSock-gdb.o		\
+	basis/Net/Socket/accept-gdb.o		\
+	basis/Net/Socket/bind-gdb.o		\
+	basis/Net/Socket/close-gdb.o		\
+	basis/Net/Socket/connect-gdb.o		\
+	basis/Net/Socket/familyOfAddr-gdb.o	\
+	basis/Net/Socket/listen-gdb.o		\
+	basis/Net/Socket/recv-gdb.o		\
+	basis/Net/Socket/recvFrom-gdb.o		\
+	basis/Net/Socket/send-gdb.o		\
+	basis/Net/Socket/sendTo-gdb.o		\
+	basis/Net/Socket/shutdown-gdb.o		\
+	basis/Net/Socket/socket-gdb.o		\
+	basis/Net/Socket/socketPair-gdb.o	\
 	basis/OS/FileSys/tmpnam-gdb.o		\
 	basis/OS/IO/poll-gdb.o			\
 	basis/PackReal/subVec-gdb.o		\
