@@ -3528,6 +3528,8 @@ static void profileTimeInit (GC_state s) {
 	/* Sort sourceLabels by address. */
 	qsort (s->sourceLabels, s->sourceLabelsSize, sizeof (*s->sourceLabels),
 		compareProfileLabels);
+	if (0 == s->sourceLabels[s->sourceLabelsSize - 1].label)
+		die ("Max profile label is 0 -- something is wrong.");
 	if (DEBUG_PROFILE)
 		for (i = 0; i < s->sourceLabelsSize; ++i)
 			fprintf (stderr, "0x%08x  %u\n",
