@@ -50,7 +50,7 @@ test: $(NAME)
 
 QBENCH = $(BENCH)
 
-QBFLAGS = -mlton "mlton-stable -native-live-stack true" -mlton "mlton -native-live-transfer 0 -native-live-stack true" -mlton "mlton -native-live-transfer 1 -native-live-stack true" -mlton "mlton -native-live-transfer 2 -native-live-stack true" -mlton "mlton -native-live-transfer 3 -native-live-stack true" -mlton "mlton -native-live-transfer 4 -native-live-stack true" 
+QBFLAGS = -mlton "mlton-stable -native-live-stack {true}" -mlton "mlton -native-live-stack {true} -native-live-transfer {0,4,8}"
 
 .PHONY: qtest
 qtest: $(NAME)

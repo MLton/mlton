@@ -57,43 +57,150 @@ fun compileSizeRun {args, compiler, exe, doTextPlusData: bool} =
 
 fun batch bench = concat [bench, ".batch.sml"]
 
-(*   
 local
-   fun make (compiler, args) {bench} =
+  val n = Counter.new 0
+  fun make (compiler, args) =
       let val exe = "a.out"
-      in compileSizeRun {args = args @ ["-o", exe, batch bench],
-			 compiler = compiler,
-			 exe = exe,
-			 doTextPlusData = true}
+      in fn {bench} => compileSizeRun {args = args @ ["-o", exe, batch bench],
+				       compiler = compiler,
+				       exe = exe,
+				       doTextPlusData = true}
       end
 in
-   val mltonCompile = make ("mlton", [])
-   val mltonStableCompile = make ("mlton-stable", [])
-(*   val mltonTopCompile = make ("/usr/local/bin/mlton", []) *)
-   val mltonTopCompile = make ("mlton", ["-native-live-stack", "false"])
-end
-*)
+  val makeMLton
+    = fn arg => let
+		  open Regexp
 
-local
-  fun make (compiler, args) {bench} =
-      let val exe = "a.out"
-      in compileSizeRun {args = args @ ["-o", exe, batch bench],
-			 compiler = compiler,
-			 exe = exe,
-			 doTextPlusData = true}
-      end
-in
-  val makeMLton 
-    = fn compiler => let
-		       val name = compiler
-		       val (compiler,args)
-			 = case String.split(compiler, #" ")
-			     of compiler::args => (compiler, args)
-			      | _ => ("mlton", [])
-		     in
-		       {name = name,
-			test = make (compiler, args)}
-		     end
+		  val compilerSave = Save.new ()
+		  val compiler = save (star (isChar (fn #"-" => true
+		                                      | #"/" => true
+						      | c => Char.isAlphaNum c)),
+				       compilerSave)
+		  val comilerC = compileDFA compiler
+
+		  val flagSave = Save.new ()
+		  val flag = seq [oneOrMore (char #" "),
+				  save (seq [char #"-",
+					     star (isChar (fn #"-" => true
+					                    | c => Char.isAlphaNum c))],
+				   flagSave)]
+		  val flagC = compileDFA flag
+
+		  val optionSave = Save.new ()
+		  val option = save (star (isChar (fn c => Char.isAlphaNum c)),
+				     optionSave)
+		  val optionC = compileDFA option
+
+		  val optionsSave = Save.new ()
+		  val options = save (seq [char #"{",
+					   star (char #" "),
+					   option,
+					   star (seq [star (char #" "),
+						      char #",",
+						      star (char #" "),
+						      option]),
+					   star (char #" "),
+					   char #"}"],
+				      optionsSave)
+		  val optionsC = compileDFA options
+
+		  val flagAndOptionsSave = Save.new ()
+		  val flagAndOptions
+		    = save (seq [flag,
+				 or [null,
+				     seq [oneOrMore (char #" "),
+					  options]]],
+			    flagAndOptionsSave)
+		  val flagAndOptionsC = compileDFA flagAndOptions
+
+		  val flagsAndOptionsSave = Save.new ()
+		  val flagsAndOptions 
+		    = save (star flagAndOptions,
+			    flagsAndOptionsSave)
+		  val flagsAndOptionsC = compileDFA flagsAndOptions
+
+		  val compilerAndFlagsAndOptions
+		    = seq [compiler,
+			   flagsAndOptions]
+		  val compilerAndFlagsAndOptionsC 
+		    = compileDFA compilerAndFlagsAndOptions
+
+		  val (compiler, flags)
+		    = case Compiled.matchAll(compilerAndFlagsAndOptionsC,
+					     arg)
+			of NONE => ("mlton", [])
+			 | SOME m
+			 => let
+			      val {exists, lookup, peek}
+				= Match.stringFuns m
+
+			      val compiler = lookup compilerSave
+			      val flagsAndOptions = lookup flagsAndOptionsSave
+
+			      fun doit_flags (flags, flagsAndOptions)
+				= case Compiled.matchLong(flagAndOptionsC, 
+							  flagsAndOptions,
+							  0)
+				    of NONE => flags
+				     | SOME m
+				     => let
+					  val {exists, lookup, peek}
+					    = Match.stringFuns m
+
+					  val flag = lookup flagSave
+
+					  val {start, length} = Match.startLength m
+					  val flagsAndOptions
+					    = String.extract(flagsAndOptions,
+							     start + length,
+							     NONE)
+					in
+					  case peek optionsSave
+					    of NONE => doit_flags
+					               ([[flag,""]]::flags,
+							flagsAndOptions)
+					     | SOME options
+					     => let
+						  val options
+						    = String.fields
+						      (options,
+						       fn #"{" => true
+						        | #" " => true
+						        | #"," => true
+						        | #"}" => true
+						        | _ => false)
+						  val options
+						    = List.removeAll
+						      (options, String.isEmpty)
+						in
+						  doit_flags
+						  ((List.map
+						    (options,
+						     fn option => [flag, option]))
+						   ::flags,
+						   flagsAndOptions)
+						end
+					end
+			    in
+			      (compiler,
+			       doit_flags ([], flagsAndOptions))
+			    end
+		  val (compiler, flags)
+		    = (compiler, 
+		       List.cross (List.rev flags))
+		  val flags = List.map(flags, List.concat)
+		  fun map(nil, f) = nil
+		    | map(h::t, f) = (f h)::(map(t, f))
+		in
+		  map
+		  (flags,
+		   fn flags
+		    => {name = concat (compiler:: 
+				       " "::
+				       (List.separate(flags, " "))),
+			abbrv = "MLton" ^ (Int.toString (Counter.next n)),
+			test = make (compiler, flags)})
+		end
 end
 
 fun kitCompile {bench} =
@@ -225,11 +332,13 @@ type 'a data = {bench: string,
 fun main args =
    let
      val compilers: {name: string,
+		     abbrv: string,
 		     test: {bench: File.t} -> {compile: real option,
 					       run: real option,
 					       size: int option}} list ref 
        = ref []
      fun pushCompiler compiler = List.push(compilers, compiler)
+     fun pushCompilers compilers' = compilers := (List.rev compilers') @ (!compilers)
 
       (* Set the stack limit to its max, since mlkit segfaults on some benchmarks
        * otherwise.
@@ -240,6 +349,7 @@ fun main args =
 	 in
 	    set (stackSize, {hard = hard, soft = hard})
 	 end
+
       local
 	 open Popt
       in
@@ -249,18 +359,21 @@ fun main args =
 			   ("mlkit", 
 			    None (fn () => pushCompiler
 					   {name = "ML-Kit",
+					    abbrv = "ML-Kit",
 					    test = kitCompile})),
 			   ("mosml",
 			    None (fn () => pushCompiler
 				           {name = "Moscow-ML",
+					    abbrv = "Moscow-ML",
 					    test = mosmlCompile})),
 			   ("smlnj",
 			    None (fn () => pushCompiler
                                            {name = "SML/NJ",
+					    abbrv = "SML/NJ",
 					    test = njCompile})),
 			   ("mlton",
-			    SpaceString (fn compiler => pushCompiler
-                                                        (makeMLton compiler))),
+			    SpaceString (fn arg => pushCompilers
+					           (makeMLton arg))),
 			   trace]}
       end
    in case res of
@@ -278,15 +391,19 @@ fun main args =
 	    fun show {compiles, runs, sizes} =
 	       let
 		  val out = Out.standard
+		  val _ = List.foreach
+		          (compilers,
+			   fn {name, abbrv, ...}
+			    => Out.output (out, concat [abbrv, " -- ", name, "\n"]))
 		  fun show (title, data: 'a data, toString) =
 		     let
 			val _ = Out.output (out, concat [title, "\n"])
 			val compilers =
 			   List.fold
-			   (compilers, [], fn ({name = n, ...}, ac) =>
+			   (compilers, [], fn ({name = n, abbrv = n', ...}, ac) =>
 			    if List.exists (data, fn {compiler = c, ...} =>
 					    n = c)
-			       then n :: ac
+			       then (n, n') :: ac
 			    else ac)
 			val benchmarks =
 			   List.fold (benchmarks, [], fn (b, ac) =>
@@ -295,16 +412,16 @@ fun main args =
 					 then b :: ac
 				      else ac)
 			val rows =
-			   ("benchmark" :: rev compilers)
+			   ("benchmark" :: List.revMap (compilers, fn (_, n') => n'))
 			   :: (List.revMap
 			       (benchmarks, fn b =>
 				b ::
 				List.revMap
-				(compilers, fn c =>
+				(compilers, fn (n, _) =>
 				 case (List.peek
 				       (data, fn {bench = b',
 						  compiler = c', ...} =>
-					b = b' andalso c = c')) of
+					b = b' andalso n = c')) of
 				    NONE => "*"
 				  | SOME {value = v, ...} => toString v)))
 			open Justify
@@ -370,7 +487,7 @@ fun main args =
 		   val foundOne = ref false
 		   val res =
 		      List.fold
-		      (compilers, ac, fn ({name, test},
+		      (compilers, ac, fn ({name, abbrv, test},
 					  ac as {compiles: real data,
 						 runs: real data,
 						 sizes: int data}) =>
