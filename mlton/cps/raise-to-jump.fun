@@ -32,10 +32,6 @@ fun raiseToJump (program as Program.T {datatypes, globals, functions, main}) =
       val {get = keepHandler: Jump.t -> bool ref} =
 	 Property.get (Jump.plist,
 		       Property.initFun (fn _ => ref false))
-      val {get = isUsed: Var.t -> bool ref} =
-	 Property.get (Var.plist,
-		       Property.initFun (fn _ => ref false))
-      fun use x = isUsed x := true
       val funcCanRaise = #canRaise o funcInfo
       val _ =
 	 Vector.foreach
@@ -47,9 +43,8 @@ fun raiseToJump (program as Program.T {datatypes, globals, functions, main}) =
 		   val _ = loopDecs decs
 		   fun handlers () = List.fold (decs, hs, deltaHandlers)
 		in case transfer of
-		   Call {func, args, ...} =>
-		      let val _ = Vector.foreach(args, use)
-			  val canRaise' = funcCanRaise func
+		   Call {func, ...} =>
+		      let val canRaise' = funcCanRaise func
 		      in case handlers () of
 			 [] => CanRaise.<=(canRaise', canRaise)
 		       | h :: _ =>
@@ -61,14 +56,9 @@ fun raiseToJump (program as Program.T {datatypes, globals, functions, main}) =
 			    end
 		      end
 		 | Raise args =>
-		      let val _ = Vector.foreach(args, use)
-		      in case handlers () of
-			 [] => CanRaise.makeYes canRaise
-		       | _ :: _ => ()
-		      end
-		 | Case {test, ...} => use test
-		 | Jump {args, ...} => Vector.foreach(args, use)
-		 | Return args => Vector.foreach(args, use)
+		      (case handlers () of
+			  [] => CanRaise.makeYes canRaise
+			| _ :: _ => ())
 		 | _ => ()
 		end
 	     and loopDecs ds =
@@ -76,8 +66,6 @@ fun raiseToJump (program as Program.T {datatypes, globals, functions, main}) =
 		(ds,
 		 fn Fun {name, args, body, ...} =>
 		 loopExp (body, jumpHandlers name)
-		  | Bind {exp, ...} => 
-		 PrimExp.foreachVar(exp, use)
 		  | _ => ())
 	  in loopExp (body, [])
 	  end)
@@ -104,79 +92,9 @@ fun raiseToJump (program as Program.T {datatypes, globals, functions, main}) =
 		   val decs =
 		      case d of
 			 Fun {name, args, body} =>
-			    if !(keepHandler name)
-			      then let
-				     val body = loopExp (body, jumpHandlers name)
-
-				     val name' = Jump.newString "nearHandler"
-
-				     val args'
-				       = Vector.map
-				         (args,
-					  fn (x,ty) => (Var.new x, ty))
-				     val acts = Vector.map(args', #1)
-
-				     val body'
-				       = Exp.make
-				         {decs = [],
-					  transfer 
-					  = Transfer.Jump 
-					    {dst = name',
-					     args = acts}}
-				   in
-				     Fun {name = name, args = args',
-					  body = body'} ::
-				     Fun {name = name', args = args,
-					  body = body} ::
-				     decs
-				   end
-(*
-			    if !(keepHandler name) andalso
-			       Vector.exists(args, fn (x,_) => not (!(isUsed x)))
-			      then let
-				     val (args,args',acts)
-				       = Vector.fold
-				         (args,
-					  ([],[],[]),
-					  fn ((x,ty),
-					      (args,args',acts))
-					   => let
-						val x' = Var.new x
-					      in 
-						if !(isUsed x)
-						  then ((x,ty)::args,
-							(x',ty)::args',
-							x'::acts)
-						  else (args,
-							(x',ty)::args',
-							acts)
-					      end)
-				     val args = Vector.fromListRev args
-				     val args' = Vector.fromListRev args'
-				     val acts = Vector.fromListRev acts
-
-				     val body = loopExp (body, jumpHandlers name)
-
-				     val name' = Jump.newString "nearHandler"
-
-				     val body'
-				       = Exp.make
-				         {decs 
-					  = [Fun {name = name', args = args,
-						  body = body}],
-					  transfer 
-					  = Transfer.Jump 
-					    {dst = name',
-					     args = acts}}
-				   in
-				     Fun {name = name, args = args',
-					  body = body'} ::
-				     decs
-				   end
-*)
-			      else Fun {name = name, args = args,
-					body = loopExp (body, jumpHandlers name)}
-				   :: decs
+			    Fun {name = name, args = args,
+				 body = loopExp (body, jumpHandlers name)}
+			    :: decs
 		       | HandlerPop =>
 			    if !(keepHandler (hd hs))
 			       then d :: decs
@@ -212,7 +130,6 @@ fun raiseToJump (program as Program.T {datatypes, globals, functions, main}) =
 		     args = args,
 		     body = shrinkExp (loopExp (body, [])),
 		     returns = returns})
-
       val program =
 	 Program.T {datatypes = datatypes,
 		    globals = globals,
