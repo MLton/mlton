@@ -25,7 +25,7 @@ all:	main.ps main/main.html
 # -address ''	puts no author address at the bottom of each page
 
 main/main.html: $(TEX_FILES)
-	latex2html -verbosity 1 -address '' -local_icons main.tex
+	latex2html -long_titles 3 -verbosity 1 -address '' -local_icons main.tex
 	cd main && rm -f WARNINGS images.* *.pl
 	cd main && rm -f index.html && ln -s main.html index.html
 
