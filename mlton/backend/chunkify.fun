@@ -55,7 +55,15 @@ fun blockSize (Block.T {statements, transfer, ...}): int =
 		   | Word z => simple z
 	       end
 	  | _ => 1
-   in transferSize + Vector.length statements
+      val statementsSize =
+	 if !Control.profile = Control.ProfileNone
+	    then Vector.length statements
+	 else Vector.fold (statements, 0, fn (s, ac) =>
+			   case s of
+			      Statement.ProfileLabel _ => ac
+			    | _ => 1 + ac)
+   in
+      statementsSize + transferSize
    end
 
 (* Compute the list of functions that each function returns to *)
