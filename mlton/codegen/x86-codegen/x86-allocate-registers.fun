@@ -19,6 +19,10 @@ struct
 		       ClassSet.contains(trackClasses, MemLoc.class memloc)
 		     end
 
+  fun mkBorder c
+    = AppendList.single
+      (Assembly.comment (String.make(40, c)))
+
   fun partition(l, p)
     = let
 	val rec partition' 
@@ -293,7 +297,7 @@ struct
 			     else REMOVE,
 			   fn (default, NEED memloc') 
 			    => if MemLoc.eq(memloc,memloc')
-				 then CONTINUE REMOVE
+				 then RETURN NO
 				 else if MemLoc.mayAlias(memloc,memloc')
 					then CONTINUE default
 					else CONTINUE default
@@ -326,7 +330,7 @@ struct
 			     else REMOVE,
 			   fn (default, NEED memloc')
 			    => if MemLoc.eq(memloc,memloc')
-				 then CONTINUE REMOVE
+				 then RETURN NO
 				 else if MemLoc.mayAlias(memloc,memloc')
 					then RETURN COMMIT
 					else CONTINUE default
@@ -361,7 +365,7 @@ struct
 			     else REMOVE,
 			   fn (default, NEED memloc')
 			    => if MemLoc.eq(memloc,memloc')
-				 then CONTINUE REMOVE
+				 then RETURN NO
 				 else if MemLoc.mayAlias(memloc,memloc')
 					then RETURN COMMIT
 					else CONTINUE default
@@ -1410,9 +1414,9 @@ struct
 		     in
 		       (register',
 			(support_cost,
-			 hint_cost,
 			 commit_cost,
 			 future_cost,
+			 hint_cost,
 			 utilized_cost,
 			 sync_cost,
 			 weight_cost))
@@ -1422,27 +1426,27 @@ struct
 	      = List.insertionSort
 	        (registers_costs,
 		 fn ((_,(support_c1,
-			 hint_c1,
 			 commit_c1,
 			 future_c1,
+			 hint_c1,
 			 utilized_c1,
 			 sync_c1,
 			 weight_c1)),
 		     (_,(support_c2,
-			 hint_c2,
 			 commit_c2,
 			 future_c2,
+			 hint_c2,
 			 utilized_c2,
 			 sync_c2,
 			 weight_c2)))
 		  => bool_lt(support_c1,support_c2) orelse
 		     (support_c1 = support_c2 andalso
-		      (hint_c1 > hint_c2 orelse
-		       (hint_c1 = hint_c2 andalso
-			(bool_lt(commit_c1,commit_c2) orelse
-			 (commit_c1 = commit_c2 andalso
-			  (option_lt (op >) (future_c1, future_c2) orelse
-			   (future_c1 = future_c2 andalso
+		      (bool_lt(commit_c1,commit_c2) orelse
+		       (commit_c1 = commit_c2 andalso
+			(option_lt (op >) (future_c1, future_c2) orelse
+			 (future_c1 = future_c2 andalso
+			  (hint_c1 > hint_c2 orelse
+			   (hint_c1 = hint_c2 andalso
 			    (utilized_c1 < utilized_c2 orelse
 			     (utilized_c1 = utilized_c2 andalso
 			      (bool_gt(sync_c1,sync_c2) orelse
@@ -5694,7 +5698,7 @@ struct
 				 final_dst = final_dst,
 				 assembly_src_dst 
 				 = AppendList.appends 
-				   [assembly_dst, 
+				   [assembly_dst,
 				    assembly_src],
 				 registerAllocation = registerAllocation}
 			      end
@@ -10246,6 +10250,8 @@ struct
 		        | _ => false
 		   and doit'
 		     = fn ((Assembly.Comment _)::assembly, labels) 
+		        => doit' (assembly, labels)
+		        | ((Assembly.PseudoOp (PseudoOp.Local _))::assembly, labels)
 		        => doit' (assembly, labels)
 			| ((Assembly.Label l)::assembly, labels)
 		        => doit' (assembly, l::labels)

@@ -969,7 +969,7 @@ struct
 				in 
 				  replaceU replacer memloc
 				end
-			   else memloc
+			   else memloc'
 		       end
 
       val rec sizeU = fn U {size, ...} => size

@@ -2848,22 +2848,15 @@ struct
 				
 			val replacer
 			  = fn {use,def} => fn operand
-			     => if use andalso not def
-				  then case operand
-					 of Operand.MemLoc memloc
-					  => Operand.memloc 
-					     (MemLoc.replace replacer' 
-					                     memloc)
-					  | _ => operand
-				else case operand
-				       of Operand.MemLoc memloc
-				        => if MemLoc.eq(memloc,
-							memloc_dst)
-					     then operand
-					     else Operand.memloc
-					          (MemLoc.replace replacer' 
-						                  memloc)
-				        | _ => operand
+			     => case Operand.deMemloc operand
+				  of SOME memloc
+				   => if (use andalso not def)
+				         orelse
+					 (not (MemLoc.eq(memloc, memloc_dst)))
+					then Operand.memloc
+					     (MemLoc.replace replacer' memloc)
+					else operand
+				   | _ => operand
 		      in
 			(all, replacer)
 		      end
@@ -3038,6 +3031,8 @@ struct
 			          {entry, profileInfo, statements, transfer},
 			 liveInfo}
 	= let
+	    val _ = LivenessBlock.printBlock block
+
 	    val {pblock as {statements,transfer},changed}
 	      = List.foldr
 	        (statements,
@@ -4352,9 +4347,9 @@ struct
 	  = (print ("finished " ^ msg ^ "\n"))
 	fun changedLivenessBlock_msg 
 	    {block as x86Liveness.LivenessBlock.T {entry, ...}, changed, msg}
-	  = (print ("finished " ^ msg ^ "\n"))
-
+	  = if changed then (print ("finished " ^ msg ^ "\n")) else ()
 *)
+
 (*
 	fun changedChunk_msg 
             {chunk as Chunk.T {blocks, ...}, changed, msg}
