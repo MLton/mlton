@@ -199,6 +199,10 @@ local
 
 	 fun all (T {all, ...}) = all
 
+	 val startLength = #2 o Substring.base o all
+
+	 val endOf = Substring.endOf o all
+
 	 val length = Substring.length o all
 
 	 fun layout (T {all, matches}) =
@@ -1562,6 +1566,16 @@ in
 
 	       fun findLong (c, s, i) = find (c, s, i, false)
 	       fun findShort (c, s, i) = find (c, s, i, true)
+
+	       fun foreachMatchShort (c, s, f) =
+		  let
+		     fun loop i =
+			case findShort (c, s, i) of
+			   NONE => ()
+			 | SOME m => (f m; loop (Match.endOf m))
+		  in
+		     loop 0
+		  end
 	    end
 
 	 fun compileDFA r =

@@ -16,5 +16,12 @@ structure Substring: SUBSTRING =
 
       val toString = string
 	 
-      val layout = String1.layout o toString 
+      val layout = String1.layout o toString
+
+      fun endOf ss =
+	 let
+	    val (_, {start, length}) = base ss
+	 in
+	    start + length
+	 end
    end

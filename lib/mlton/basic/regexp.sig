@@ -20,6 +20,7 @@ signature REGEXP =
 	    type t
 
 	    val all: t -> Substring.t
+	    val startLength: t -> {start: int, length: int}
 	    val exists: t * Save.t -> bool
 	    val funs: t -> {exists: Save.t -> bool,
 			    lookup: Save.t -> Substring.t,
@@ -37,13 +38,14 @@ signature REGEXP =
       structure Compiled:
 	 sig
 	    type t
-	       
+
 	    (* Find the first substring of s starting at or after index i that
 	     * matches r.  Return the first character and the character just
 	     * past the end of the substring.
 	     *)
 	    val findShort: t * string * int -> Match.t option
 	    val findLong: t * string * int -> Match.t option
+	    val foreachMatchShort: t * string * (Match.t -> unit) -> unit
 	    val layout: t -> Layout.t
 	    val layoutDot: t -> Layout.t
 	    val layoutDotToFile: t * File.t -> unit
