@@ -8,7 +8,7 @@ Standards-Version: 3.5.2
 Package: mlton
 Architecture: i386
 Depends: ${shlibs:Depends}, libgmp3-dev
-Description: Whole-program optimizing compiler for Standard ML
+Description: Optimizing compiler for Standard ML
  MLton is a whole-program optimizing compiler for
  Standard ML that runs on X86 machines under
  Linux, FreeBSD and Cygwin/Windows.  MLton
