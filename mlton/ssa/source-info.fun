@@ -17,10 +17,21 @@ val toString =
     | Main => "<main>"
     | PolyEqual => "<poly-equal>"
     | Region r =>
-	 (case Region.left r of
-	     NONE => "<unknown>"
-	   | SOME (SourcePos.T {file, line, ...}) =>
-		concat [file, ":", Int.toString line])
+	 case Region.left r of
+	    NONE => "<unknown>"
+	  | SOME (SourcePos.T {file, line, ...}) =>
+	       let
+		  val s = "/basis-library/"
+		  val file = 
+		     case String.findSubstring {string = file,
+						substring = s} of
+			NONE => file
+		      | SOME i =>
+			   concat ["<basis>/",
+				   String.dropPrefix (file, i + String.size s)]
+	       in
+		  concat [file, ":", Int.toString line]
+	       end
 
 val layout = Layout.str o toString
 
