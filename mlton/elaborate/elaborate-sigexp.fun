@@ -330,19 +330,15 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
 	   | Sigexp.Where (sigexp, wheres) => (* rule 64 *)
 		let
 		   val time = Interface.Time.tick ()
-		   val I' = elaborateSigexp (sigexp, I)
-		   val _ =
-		      Interface.wheres
-		      (I',
-		       Vector.fromListMap
-		       (wheres, fn {tyvars, longtycon, ty} =>
-			(longtycon,
-			 TypeStr.def
-			 (elaborateScheme (tyvars, ty, E, I),
-			  Kind.Arity (Vector.length tyvars)))),
-		       time)
 		in
-		   I'
+		   Interface.wheres
+		   (elaborateSigexp (sigexp, I), time,
+		    Vector.fromListMap
+		    (wheres, fn {tyvars, longtycon, ty} =>
+		     (longtycon,
+		      TypeStr.def
+		      (elaborateScheme (tyvars, ty, E, I),
+		       Kind.Arity (Vector.length tyvars)))))
 		end) arg
       and elaborateSpec arg : Interface.t =
 	 Trace.traceInfo' (info',
@@ -478,6 +474,12 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
    in
       elaborateSigexp (sigexp, Interface.empty)
    end
+
+val elaborateSigexp =
+   fn (sigexp, E) =>
+   case Sigexp.node sigexp of
+      Sigexp.Var x => Env.lookupSigid (E, x)
+    | _ => elaborateSigexp (sigexp, E)
 
 val elaborateSigexp = 
    Trace.trace2 ("elaborateSigexp",

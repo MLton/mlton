@@ -79,6 +79,12 @@ signature INTERFACE =
       sharing TypeStr.Type = Type
       sharing TypeStr.Tyvar = EnvTypeStr.Tyvar = Tyvar
 
+      structure Instance:
+	 sig
+	    type t
+
+	    val equals: t * t -> bool
+	 end
       structure Time:
 	 sig
 	    type t
@@ -103,6 +109,7 @@ signature INTERFACE =
 			handleVal: {name: Ast.Vid.t,
 				    scheme: EnvTypeStr.Scheme.t,
 				    status: Status.t} -> unit} -> unit
+      val instance: t -> Instance.t
       val layout: t -> Layout.t
       val lookupLongtycon: t * Ast.Longtycon.t * (TypeStr.t -> unit) -> unit
       val peekLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
@@ -121,5 +128,5 @@ signature INTERFACE =
       val vals: {name: Ast.Vid.t,
 		 scheme: Scheme.t,
 		 status: Status.t} vector -> t
-      val wheres: t * (Ast.Longtycon.t * TypeStr.t) vector * Time.t -> unit
+      val wheres: t * Time.t * (Ast.Longtycon.t * TypeStr.t) vector -> t
    end
