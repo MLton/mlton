@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>Improvements to MLton</title>
+    <!-- Changed by: Stephen Weeks, 01-Oct-2001 -->
   </head>
 
   <body>
@@ -34,10 +35,8 @@
 	  <li> Elimination of repeated array bounds checks (common when a
 	    subscript is followed by an update.
 	  <li> Elimination of overflow checks on array index computations.
-	  <li> Common-subexpression elimination, especially of repeated
-	    selects from tuples and of repeated array subscripts.
-	  <li> Loop-invariant code motion, especially for tuple selects and
-	    array and vector lengths.
+	  <li> Common-subexpression elimination of repeated array subscripts.
+	  <li> Loop-invariant code motion, especially for tuple selects.
 	</ul>
       <li> Profiler.
 	<ul>
@@ -83,9 +82,8 @@
       <dd> A real front end.
     </ul>
     <hr>
-<!-- Created: Mon Jan 29 13:26:08 PST 2001 -->
-<!-- hhmts start -->
-Last modified: Fri Jul  6 13:34:03 PDT 2001
-<!-- hhmts end -->
+    <!-- Created: Mon Jan 29 13:26:08 PST 2001 -->
+    <!-- hhmts start -->
+    Last modified: 01-Oct-2001<!-- hhmts end -->
   </body>
 </html>

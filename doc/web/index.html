@@ -2,6 +2,7 @@
 <HTML>
   <HEAD>
     <TITLE>MLton</TITLE>
+    <!-- Changed by: Stephen Weeks, 01-Oct-2001 -->
     <META NAME="author" CONTENT="Stephen T. Weeks">
     <META NAME="description" CONTENT="
       MLton is a whole-program optimizing compiler for
@@ -46,10 +47,27 @@
     </ul>
 
     <h3>What's new?</h3>
-    Version VERSION is a bug-fix release over 20010706.  For a complete list of
-    changes and bug fixes, see the <a href = "CHANGES">CHANGES</a> file.
-    Notable changes include:
+    Version VERSION is mostly a bug-fix release over 20010806.  For a
+    complete list of changes and bug fixes, see the <a href =
+    "CHANGES">CHANGES</a> file.  Notable changes include:
     <ul>
+      <li> Added <tt>MLton.Exn.history</tt>, which is similar to
+	<tt>SMLofNJ.exnHistory</tt>
+      </li>
+      <li> Support for <tt>#line</tt> directives of the form
+	<tt>(*#line line.col "file"*)</tt>
+      </li>
+      <li> Bug fix in heap save and restore to solve problem with excessive
+	heap usage by compiler
+      </li>
+      <li> Performance improvements in native codegenerator
+      <li> Bug fixes in optimizer, register allocator
+      </li>
+    </ul>
+
+    Version 20010806 was a bug-fix release over 20010706, and
+    included the following changes.
+    <ul> 
       <li> <tt>Word.andb (w, 0xFF)</tt> now works correctly
       <li> <tt>MLton.Rusage.rusage</tt> has a patch to work around a linux
 	kernel bug
@@ -60,46 +78,7 @@
 	intraprocedural control-flow graphs, and dominator trees
     </ul>
 
-    Version 20010706 was major release over 20000906, and included the
-    following changes.
-    <ul>
-      <li> Native X86 code generator (instead of using <tt>gcc</tt>)
-      <li> Significantly improved compile times 
-      <li> Significantly improved run times for generated executables
-      <li> Many bug fixes
-      <li> Correct raising of the Overflow exception for integer arithmetic
-      <li> New modules in the <tt>MLton</tt> structure
-    </ul>
-
-    <h3>Download</h3>
-    The latest version (VERSION) is available in the following formats.
-    <ul>
-      <li> Binary RPM (3.1M)
-	<ul>
-	  <li> <a href = "mlton-VERSION-1.i386.rpm">rpm</a>
-	    for Red Hat 7.x (glibc 2.2, rpm 4.x)
-	  <li> <a href = "mlton-VERSION-1.rhat6x.i386.rpm">rpm</a>
-	    for Red Hat 6.x (glibc 2.1, rpm 3.x)
-	</ul>
-      <li> Source RPM (2.0M)
-	<ul>
-	  <li> <a href = "mlton-VERSION-1.src.rpm">rpm</a> 
-	    for Red Hat 7.x (rpm 4.x)
-	  <li> <a href = "mlton-VERSION-1.rhat6x.src.rpm">rpm</a>
-	    for Red Hat 6.x (rpm 3.x)
-	</ul>
-      <li> Gzipped tar (for non-RPM distributions)
-	<ul>
-	  <li> binary <a href = "mlton-VERSION-1.i386.tgz">tgz</a>
-	    for Red Hat 7.x (glibc 2.2)
-	  <li> binary <a href = "mlton-VERSION-1.rhat6x.i386.tgz">tgz</a>
-	    for Red Hat 6.x (glibc 2.1)
-	  <li> source <a href = "mlton-VERSION-1.src.tgz">tgz</a>
-	</ul>
-    </ul>
-
-    <a href = "OLD/">Older</a> versions and newer, 
-    <a href = "EXPERIMENTAL/">experimental</a> versions of MLton are available.
+    <h3><a href = "download.html">Download MLton</a></h3>
 
     <h3>Links</h3>
     <a href = "people.html">People</a> that have worked on MLton.
@@ -121,7 +100,6 @@
 
     <hr>
     <!-- hhmts start -->
-Last modified: Tue Aug  7 00:38:46 PDT 2001
-<!-- hhmts end -->
+Last modified: 01-Oct-2001<!-- hhmts end -->
   </body>
 </html>
