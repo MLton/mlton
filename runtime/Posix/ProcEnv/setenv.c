@@ -1,13 +1,7 @@
 #include <stdlib.h>
 #include "mlton-posix.h"
 
-#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__))
-
-Int Posix_ProcEnv_setenv (NullString s, NullString v) {
-	return setenv ((char *)s, (char *)v, 1);
-}
-
-#elif (defined (__sun__))
+#if (defined (__sun__))
 
 #include <stdio.h>  // for sprintf
 #include <strings.h>
@@ -30,6 +24,8 @@ Int Posix_ProcEnv_setenv (NullString s, NullString v) {
 
 #else
 
-#error Need to define Posix_ProcEnv_setenv for platform
+Int Posix_ProcEnv_setenv (NullString s, NullString v) {
+	return setenv ((char *)s, (char *)v, 1);
+}
 
 #endif
