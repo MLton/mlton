@@ -99,10 +99,12 @@ structure HostType =
    struct
       datatype t =
 	 Cygwin
+       | FreeBSD
        | Linux
 
       val toString =
 	 fn Cygwin => "Cygwin"
+	  | FreeBSD => "FreeBSD"
 	  | Linux => "Linux"
    end
 

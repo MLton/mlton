@@ -29,6 +29,7 @@ structure SMLofNJ: SML_OF_NJ =
 	       in
 		  case hostType of
 		     Cygwin => "Cygwin"
+		   | FreeBSD => "FreeBSD"
 		   | Linux => "Linux"
 	       end
 	 end

@@ -286,11 +286,12 @@ structure Primitive =
       structure MLton =
 	 struct
 	    datatype hostType =
-	       Cygwin | Linux
+	       Cygwin | FreeBSD | Linux
 	    val hostType: hostType =
 	       case _const "MLton_hostType": int; of
 		  0 => Cygwin
-		| 1 => Linux
+		| 1 => FreeBSD
+		| 2 => Linux
 
 	    val native = _build_const "MLton_native": bool;
 

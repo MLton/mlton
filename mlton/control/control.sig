@@ -53,6 +53,7 @@ signature CONTROL =
 
       datatype hostType =
 	 Cygwin
+       | FreeBSD
        | Linux
       val hostType: hostType ref
 

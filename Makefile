@@ -14,7 +14,8 @@ LEX = mllex
 PROF = mlprof
 YACC = mlyacc
 PATH = $(BIN):$(shell echo $$PATH)
-CP = /bin/cp -fp
+CP = /bin/cp -fpR
+
 VERSION = $(shell echo `date +%Y%m%d`)
 
 .PHONY: all
@@ -130,13 +131,12 @@ install:
 	mkdir -p $(TDOC) $(TLIB) $(TBIN) $(TMAN)
 	(								\
 		cd $(SRC)/doc &&					\
-		$(CP) -r CHANGES cmcat.sml examples			\
-			license README $(TDOC)/				\
+		$(CP) CHANGES cmcat.sml examples license README $(TDOC)/
 	)
 	rm -rf $(TDOC)/user-guide
-	cp -a $(SRC)/doc/user-guide/main $(TDOC)/user-guide
+	$(CP) $(SRC)/doc/user-guide/main $(TDOC)/user-guide
 	gzip -c $(SRC)/doc/user-guide/main.ps >$(TDOC)/user-guide.ps.gz
-	$(CP) -r $(LIB)/. $(TLIB)
+	$(CP) $(LIB)/. $(TLIB)
 	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
 			<$(SRC)/bin/mlton >$(TBIN)/mlton
 	chmod +x $(TBIN)/mlton

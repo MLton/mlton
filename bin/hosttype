@@ -7,8 +7,12 @@ Linux)
 CYGWIN*)
 	hosttype=cygwin
 	;;
+FreeBSD*)
+	hosttype=freebsd
+	;;
 *)
 	hosttype=unknown
+	;;
 esac
 
 echo $hosttype

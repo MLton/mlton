@@ -24,8 +24,10 @@
 
 #if (defined (__CYGWIN__))
 #define MLton_hostType 0
-#elif (defined (__linux__))
+#elif (defined (__FreeBSD__))
 #define MLton_hostType 1
+#elif (defined (__linux__))
+#define MLton_hostType 2
 #endif
 #define MLton_isLittleEndian TRUE
 
@@ -35,7 +37,7 @@
 
 #if (defined (__linux__))
 #include <sys/ptrace.h>
-#elif (defined (__CYGWIN__))
+#elif (defined (__CYGWIN__) || defined (__FreeBSD__))
 #define PTRACE_BOGUS 0xFFFFFFFF
 #define PTRACE_SYSCALL PTRACE_BOGUS
 #define PTRACE_SETFPREGS PTRACE_BOGUS

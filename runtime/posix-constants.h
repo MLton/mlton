@@ -5,6 +5,9 @@
 #define Posix_Error_acces EACCES
 #define Posix_Error_again EAGAIN
 #define Posix_Error_badf EBADF
+#ifndef EBADMSG
+#define EBADMSG 0
+#endif
 #define Posix_Error_badmsg EBADMSG
 #define Posix_Error_busy EBUSY
 #ifndef ECANCELED
@@ -68,7 +71,7 @@
 /* Cygwin/Windows distinguish between text and binary files, but Linux
  * does not.
  */
-#if (defined (__linux__))
+#if (defined (__linux__) || defined (__FreeBSD__))
 #define O_BINARY 0
 #define O_TEXT 0
 #endif
@@ -79,7 +82,11 @@
 #define Posix_FileSys_O_excl O_EXCL
 #define Posix_FileSys_O_noctty O_NOCTTY
 #define Posix_FileSys_O_nonblock O_NONBLOCK
+#if (defined (__CYGWIN__) || defined (__linux__))
 #define Posix_FileSys_O_sync O_SYNC
+#elif (defined (__FreeBSD__))
+#define Posix_FileSys_O_sync 0
+#endif
 #define Posix_FileSys_O_text O_TEXT
 #define Posix_FileSys_O_trunc O_TRUNC
 #define Posix_FileSys_o_rdonly O_RDONLY
@@ -213,7 +220,7 @@ enum {
 #define Posix_Signal_vtalrm SIGVTALRM
 
 #define Posix_Signal_block SIG_BLOCK
-#if (defined (__CYGWIN__))
+#if (defined (__CYGWIN__) || defined (__FreeBSD__))
 #define Posix_Signal_numSignals NSIG
 #elif (defined (__linux__))
 #define Posix_Signal_numSignals _NSIG

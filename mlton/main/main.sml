@@ -77,9 +77,9 @@ val hostMap: unit -> {host: string, hostType: Control.hostType} list =
 	    hostType =
 	    (case hostType of
 		"cygwin" => Control.Cygwin
+	      | "freebsd" => Control.FreeBSD
 	      | "linux" => Control.Linux
-	      | _ => Error.bug (concat ["strange hostType: ",
-					hostType]))}
+	      | _ => Error.bug (concat ["strange hostType: ", hostType]))}
       | _ => Error.bug (concat ["strange host mapping: ", line])))
    
 fun options () = 
@@ -445,6 +445,7 @@ fun commandLine (args: string list): unit =
 		  val linkWithGmp =
 		     case !hostType of
 			Cygwin => "-lgmp"
+		      | FreeBSD => "-lgmp"
 		      | Linux =>
 			   case (List.peekMap
 				 (File.lines "/etc/ld.so.conf", fn d =>
@@ -492,6 +493,7 @@ fun commandLine (args: string list): unit =
 				 else
 				    File.move {from = concat [output, ".exe"],
 					       to = output}
+			    | MLton.FreeBSD => ()
 			    | MLton.Linux => ()
 		     in
 			()

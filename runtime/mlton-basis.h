@@ -199,7 +199,11 @@ Int Real_signBit(Double d);
 #define MLton_Rlimit_numProcesses RLIMIT_NPROC
 #define MLton_Rlimit_residentSetSize RLIMIT_RSS
 #define MLton_Rlimit_stackSize RLIMIT_STACK
+#if (defined (__FreeBSD__))
+#define MLton_Rlimit_virtualMemorySize RLIMIT_DATA
+#elif (defined (__CYGWIN__) || defined (__linux__))
 #define MLton_Rlimit_virtualMemorySize RLIMIT_AS
+#endif
 
 #define MLton_Rlimit_infinity RLIM_INFINITY
 
