@@ -32,7 +32,7 @@ dir=`dirname $0`
 src=`cd $dir/.. && pwd`
 bin="$src/build/bin"
 mlton="$bin/mlton"
-flags='-type-check true -native false -gc-check first'
+flags='-type-check true -native true -gc-check first'
 if [ $cross = 'yes' ]; then
 	flags="$flags -host cygwin"
 fi
@@ -41,11 +41,11 @@ signal='signals.sml'
 thread='thread0.sml thread1.sml thread2.sml mutex.sml prodcons.sml same-fringe.sml timeout.sml'
 world='world1.sml world2.sml world3.sml world4.sml world5.sml world6.sml'
 tmp=/tmp/z.regression.$$
-log=$src/regression-log
 PATH=.:$PATH
 
 cd $src/regression
-for f in `ls *.sml`; do
+for f in `ls *.sml`; 
+do
 	f=`basename $f .sml`
 	case "$f" in
 	cobol|serialize|testdyn2)
@@ -69,18 +69,27 @@ for f in `ls *.sml`; do
 			fi
 		fi
 		if [ ! -r $f.nonterm -a $cross = 'no' ]; then
-			$f >$tmp 2>&1
-#			rm -f $f
-			if [ -r $f.ok ]; then
-				diff $f.ok $tmp
+			if [ -x $f.exe ]; then
+				$f.exe >$tmp 2>&1
+				if [ -r $f.ok.cygwin ]; then
+					diff $f.ok.cygwin $tmp
+				elif [ -r $f.ok ]; then
+					diff $f.ok $tmp
+				fi
+			else
+				$f >$tmp 2>&1
+				if [ -r $f.ok ]; then
+					diff $f.ok $tmp
+				fi
 			fi
 		fi
 	;;
 	esac
 done 
-if [ $cross = 'no' ]; then
-	make clean >/dev/null
+if [ $cross = 'yes' -o $runOnly = 'yes' ]; then
+	exit 0
 fi
+make clean >/dev/null
 cd $src/benchmark/tests
 for f in `ls *.sml`; do
 	f=`basename $f .sml`
