@@ -4461,6 +4461,7 @@ static int processAtMLton (GC_state s, int argc, char **argv,
 					s->threadShrinkRatio =
 						stringToFloat (argv[i++]);
 				} else if (0 == strcmp (arg, "use-mmap")) {
+					++i;
 					MLton_Platform_CygwinUseMmap = TRUE;
 				} else if (0 == strcmp (arg, "--")) {
 					++i;
