@@ -499,15 +499,15 @@ void GC_display (GC_state s, FILE *stream) {
 			s->limitPlusSlop - s->frontier);
 	fprintf (stream, "\tcanHandle = %d\n", s->canHandle);
 	fprintf (stderr, "\tcurrentThread = 0x%08x\n", (uint) s->currentThread);
+	fprintf (stream, "\tstackBottom = 0x%08x\nstackTop - stackBottom = %u\nstackLimit - stackTop = %u\n",
+			(uint)s->stackBottom,
+			s->stackTop - s->stackBottom,
+			(s->stackLimit - s->stackTop));
 	fprintf (stream, "\texnStack = %u  bytesNeeded = %u  reserved = %u  used = %u\n",
 			s->currentThread->exnStack,
 			s->currentThread->bytesNeeded,
 			s->currentThread->stack->reserved,
 			s->currentThread->stack->used);
-	fprintf (stream, "\tstackBottom = 0x%08x\nstackTop - stackBottom = %u\nstackLimit - stackTop = %u\n",
-			(uint)s->stackBottom,
-			s->stackTop - s->stackBottom,
-			(s->stackLimit - s->stackTop));
 	if (DEBUG_DETAILED) {
 		int i;
 
@@ -613,6 +613,7 @@ static inline uint getFrameIndex (GC_state s, word returnAddress) {
 static inline uint topFrameIndex (GC_state s) {
 	uint res;
 
+	assert (s->stackTop > s->stackBottom);
 	res = getFrameIndex (s, *(word*)(s->stackTop - WORD_SIZE));
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "topFrameIndex = %u\n", res);
@@ -2866,9 +2867,9 @@ static void setProfTimer (long usec) {
 	struct itimerval iv;
 
 	iv.it_interval.tv_sec = 0;
-	iv.it_interval.tv_usec = 10000;
+	iv.it_interval.tv_usec = usec;
 	iv.it_value.tv_sec = 0;
-	iv.it_value.tv_usec = 10000;
+	iv.it_value.tv_usec = usec;
 	unless (0 == setitimer (ITIMER_PROF, &iv, NULL))
 		die ("setProfTimer failed");
 }
@@ -3080,6 +3081,8 @@ static inline void newline (int fd) {
 void GC_profileWrite (GC_state s, GC_profile p, int fd) {
 	int i;
 
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "GC_profileWrite\n");
 	writeString (fd, "MLton prof\n");
 	writeString (fd, (PROFILE_ALLOC == s->profileKind) 
 				? "alloc\n" : "time\n");
