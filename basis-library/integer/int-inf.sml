@@ -241,17 +241,17 @@ structure IntInf: INT_INF_EXTRA =
 
       (*
        * bigInt rem.
-       * Sign taken from numerator, quotient is returned by bigQuot).
+       * Sign taken from numerator, quotient is returned by bigQuot.
        * Note, if size num < size den, then the answer is 0.
-	      * The only non-trivial case here is num being - den,
-	      * and small, but in that case, although den may be big, its
-	      * size is still 1.  (den cannot be 0 in this case.)
-	      * The space required for the shifted numerator limbs is <= nsize + 1.
-	      * The space required for the shifted denominator limbs is <= dsize
-	      * The space required for the quotient limbs is <= 1 + nsize - dsize.
-	      * Thus the total space for limbs is <= 2*nsize + 2 (and one extra
-	      * word for the isNeg flag).
-	      *)
+       * The only non-trivial case here is num being - den,
+       * and small, but in that case, although den may be big, its
+       * size is still 1.  (den cannot be 0 in this case.)
+       * The space required for the shifted numerator limbs is <= nsize + 1.
+       * The space required for the shifted denominator limbs is <= dsize
+       * The space required for the quotient limbs is <= 1 + nsize - dsize.
+       * Thus the total space for limbs is <= 2*nsize + 2 (and one extra
+       * word for the isNeg flag).
+       *)
       fun bigRem (num: bigInt, den: bigInt): bigInt =
 	 if Prim.areSmall (num, den)
 	    then let val numv = stripTag num
