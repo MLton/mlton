@@ -47,7 +47,7 @@ structure MLton: MLTON =
 
       structure Exn =
 	 struct
-	    val history = fn _ => raise Fail "Exn.history"
+	    val history = fn _ => []
 	 end
 
       structure GC =
