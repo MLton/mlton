@@ -1,5 +1,5 @@
 (* -*- mode: sml -*-
- * $Id: echo.sml,v 1.1 2002/12/29 01:23:00 fluet Exp $
+ * $Id: echo.sml,v 1.2 2003/02/03 19:57:38 fluet Exp $
  * http://www.bagley.org/~doug/shootout/
  * from Tom 7
  *)
@@ -53,3 +53,4 @@ fun client () =
 val _ = case Posix.Process.fork () of
     SOME pid => server ()
   | NONE => client ()
+
