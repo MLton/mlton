@@ -123,7 +123,6 @@ structure TwoListQueue
 structure Unimplemented
 structure Unit
 structure Unsafe
-structure Uri
 structure Vector
 structure Word
 structure Word32
@@ -390,7 +389,5 @@ thread.sig
 thread.sml
 two-list-queue-mutable.sml
 unimplemented.sml
-uri.sig
-uri.sml
 
 # endif
