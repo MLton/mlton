@@ -69,9 +69,9 @@ val passes =
     ("flatten", Flatten.flatten),
     ("localFlatten3", LocalFlatten.flatten),
     ("commonSubexp", CommonSubexp.eliminate),
+    ("commonBlock", CommonBlock.eliminate),
     ("redundantTests", RedundantTests.simplify),
     ("redundant", Redundant.redundant),
-    ("commonBlock", CommonBlock.eliminate),
     ("unusedArgs3", UnusedArgs.unusedArgs),
      (* removeUnused cannot be omitted.
       * The final shrink pass ensures that constant operands are
