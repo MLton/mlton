@@ -456,7 +456,7 @@ functor Sequence (S: sig
 	fun toList seq = make (Slice.toList) seq
       end
     
-      (* Depreciated *)
+      (* Deprecated *)
       fun checkSliceMax (start: int, num: int option, max: int): int =
 	 case num of
 	    NONE => if Primitive.safe andalso (start < 0 orelse start > max)
@@ -467,8 +467,8 @@ functor Sequence (S: sig
 		  andalso (start < 0 orelse num < 0 orelse start > max -? num)
 		  then raise Subscript
 	       else start +? num
-      (* Depreciated *)
+      (* Deprecated *)
       fun checkSlice (s, i, opt) = checkSliceMax (i, opt, length s)
-      (* Depreciatd *)
+      (* Deprecated *)
       fun extract args = Slice.sequence (Slice.slice args)
    end

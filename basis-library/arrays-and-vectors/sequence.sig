@@ -62,10 +62,10 @@ signature SEQUENCE =
       val toList: 'a sequence -> 'a elt list
       val unfoldi: int * 'a * (int * 'a -> 'b elt * 'a) -> 'b sequence
 
-      (* Depreciated *)
+      (* Deprecated *)
       val checkSlice: 'a sequence * int * int option -> int
-      (* Depreciated *)
+      (* Deprecated *)
       val checkSliceMax: int * int option * int -> int
-      (* Depreciated *)
+      (* Deprecated *)
       val extract: 'a sequence * int * int option -> 'a sequence
    end

@@ -52,8 +52,8 @@ signature VECTOR_EXTRA =
       val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b vector
       val vector: int * 'a -> 'a vector
 
-      (* Depreciated *)
+      (* Deprecated *)
       val checkSlice: 'a vector * int * int option -> int
-      (* Depreciated *)
+      (* Deprecated *)
       val extract: 'a vector * int * int option -> 'a vector
    end

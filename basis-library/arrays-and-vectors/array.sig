@@ -50,10 +50,10 @@ signature ARRAY_EXTRA =
       val toList: 'a array -> 'a list
       val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b array
 
-      (* Depreciated *)
+      (* Deprecated *)
       val checkSlice: 'a array * int * int option -> int
-      (* Depreciated *)
+      (* Deprecated *)
       val checkSliceMax: int * int option * int -> int
-      (* Depreciated *)
+      (* Deprecated *)
       val extract: 'a array * int * int option -> 'a vector
    end

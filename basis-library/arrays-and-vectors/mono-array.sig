@@ -27,7 +27,7 @@ signature MONO_ARRAY =
       val all: (elem -> bool) -> array -> bool
       val collate: (elem * elem -> order) -> array * array -> order
 
-      (* Depreciated *)
+      (* Deprecated *)
       val extract: array * int * int option -> vector 
    end
 

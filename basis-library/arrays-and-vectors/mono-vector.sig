@@ -43,7 +43,7 @@ signature MONO_VECTOR_EXTRA_PRE =
       val toList: vector -> elem list
       val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> vector
       val vector: int * elem -> vector
-      (* Depreciated *)
+      (* Deprecated *)
       val extract: vector * int * int option -> vector
    end
 

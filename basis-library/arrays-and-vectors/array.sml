@@ -77,7 +77,7 @@ structure Array: ARRAY_EXTRA =
       fun update (arr, i, x) = update' Primitive.Array.update (arr, i, x)
       val unsafeUpdate = Primitive.Array.update
 
-      (* Depreciated *)
+      (* Deprecated *)
       fun extract args = ArraySlice.vector (ArraySlice.slice args)
    end
 structure ArraySlice: ARRAY_SLICE_EXTRA = Array.ArraySlice
