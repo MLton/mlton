@@ -50,6 +50,8 @@ redundant-tests.fun
 redundant-tests.sig
 remove-unused.fun
 remove-unused.sig
+restore.fun
+restore.sig
 shrink.fun
 shrink.sig
 simplify.fun

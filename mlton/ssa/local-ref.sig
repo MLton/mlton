@@ -1,6 +1,6 @@
 signature LOCAL_REF_STRUCTS =
    sig
-      include SHRINK
+      include RESTORE
    end
 
 signature LOCAL_REF =

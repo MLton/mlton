@@ -3,7 +3,7 @@
  *)
 signature SIMPLIFY_STRUCTS = 
    sig
-      include SHRINK
+      include RESTORE
    end
 
 signature SIMPLIFY = 

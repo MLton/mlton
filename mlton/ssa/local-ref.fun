@@ -1,84 +1,6 @@
 
-functor Phi (structure S: T) =
-  struct
 
-    type int = Int.t
-    type word = Word.t
-
-    datatype t = T of {value: S.t ref,
-		       id: int ref,
-		       preds: t list ref}
-
-    fun layout (T {value, id, ...})
-      = let open Layout
-	in record [("value", S.layout (!value)),
-		   ("id", Int.layout (!id))]
-	end
-
-    fun value (T {value, ...}) = !value
-
-    val id = Counter.new 0
-    val all : t list ref = ref []
-
-    fun new x = let
-		  val x = T {value = ref x,
-			     id = ref (Counter.next id),
-			     preds = ref []}
-		in
-		  List.push(all, x) ;
-		  x
-		end
-		  
-    fun equals (T {id = ref idA, ...}, T {id = ref idB, ...}) = idA = idB
-
-    fun flow (a, b as T {preds = predsB, ...})
-      = if List.contains (!predsB, a, equals)
-	  then ()
-	  else List.push (predsB, a)
-
-    fun force (x as T {value = valueX, id = idX, preds = predsX, ...},
-	       continue)
-      = let
-	  val preds' = List.removeAll(!predsX, fn z => equals (z, x))
-	  val preds' = List.removeDuplicates(preds', equals)
-	  val _ = predsX := preds'
-	in
-	  case preds'
-	    of [y as T {value = ref valueY,
-			id = ref idY,
-			preds = ref predsY}]
-	     => let
-		in
-		  (valueX := valueY;
-		   idX := idY;
-		   predsX := predsY;
-		   continue ())
-		end
-	     | _ => ()
-	end
-      
-    fun fixedPoint () 
-      = (FixedPoint.fix'
-	 (fn continue =>
-	  List.foreach (!all, fn x => force (x, continue)));
-	 all := [])
-
-    fun reset () = all := []
-
-    fun filter p
-      = let
-	  val p = fn T {value = ref v, ...} => p v
-	in
-	  all := List.keepAll
-	         (!all, fn x as T {preds, ...} =>
-		  if p x
-		    then (preds := List.keepAll(!preds, p) ;
-			  true)
-		    else false)
-	end
-  end
-
-functor LocalRef (S: LOCAL_FLATTEN_STRUCTS): LOCAL_REF = 
+functor LocalRef (S: LOCAL_REF_STRUCTS): LOCAL_REF = 
 struct
 
 open S
@@ -89,8 +11,6 @@ type word = Word.t
 
 structure Graph = DirectedGraph
 structure Node = Graph.Node
-
-structure Phi = Phi (structure S = Var)
 
 structure FuncInfo =
   struct
@@ -142,17 +62,14 @@ structure VarInfo =
     datatype t = T of {reff: (Label.t * Type.t) option,
 		       assigns: Label.t list ref,
 		       derefs: Label.t list ref,
-		       isLocal: bool ref,
-		       index: int ref,
-		       vars: Var.t list ref}
+		       isLocal: bool ref}
 
-    fun layout (T {reff, assigns, derefs, isLocal, index, ...})
+    fun layout (T {reff, assigns, derefs, isLocal, ...})
       = let open Layout
 	in record [("reff", Option.layout (tuple2 (Label.layout, Type.layout)) reff),
 		   ("assigns", List.layout Label.layout (!assigns)),
 		   ("derefs", List.layout Label.layout (!derefs)),
-		   ("isLocal", Bool.layout (!isLocal)),
-		   ("index", Int.layout (!index))]
+		   ("isLocal", Bool.layout (!isLocal))]
 	end
 
     local 
@@ -163,70 +80,39 @@ structure VarInfo =
       val (assigns, assigns') = make' #assigns
       val (derefs, derefs') = make' #derefs
       val (isLocal, isLocal') = make' #isLocal
-      val (index, index') = make' #index
-      val (vars, vars') = make' #vars
     end
 
     fun new reff: t = T {reff = reff, 
 			 assigns = ref [],
 			 derefs = ref [],
-			 isLocal = ref (isSome reff),
-			 index = ref ~1,
-			 vars = ref []}
-
-    fun pushVar (T {vars, ...}, var) = List.push (vars, var)
-    fun popVar (T {vars, ...}) = ignore (List.pop vars)
-    fun peekVar (T {vars, ...}) = hd (!vars)
-    fun switchVar (T {vars, ...}, var) = (ignore (List.pop vars);
-					  List.push (vars, var))
+			 isLocal = ref (isSome reff)}
   end
 
 structure LabelInfo =
   struct
-    datatype t = T of {args: (Var.t * Type.t) vector,
-		       reffs: Var.t list ref,
+    datatype t = T of {reffs: Var.t list ref,
 		       assigns: Var.t list ref,
-		       derefs: Var.t list ref,
-		       refArgs: Var.t vector ref,
-		       pre: Phi.t vector ref,
-		       post: Phi.t vector ref,
-		       preds: Label.t list ref,
-		       isHandler: bool ref}
+		       derefs: Var.t list ref}
 
-    fun layout (T {reffs, assigns, derefs, refArgs, isHandler, ...})
+    fun layout (T {reffs, assigns, derefs, ...})
       = let open Layout
 	in record [("reffs", List.layout Var.layout (!reffs)),
 		   ("assigns", List.layout Var.layout (!assigns)),
-		   ("derefs", List.layout Var.layout (!derefs)),
-		   ("refArgs", Vector.layout Var.layout
-		                             (!refArgs)),
-		   ("isHandler", Bool.layout (!isHandler))]
+		   ("derefs", List.layout Var.layout (!derefs))]
 	end
 
     local 
       fun make f (T r) = f r
       fun make' f = (make f, ! o (make f))
     in
-      val args = make #args
       val (reffs, reffs') = make' #reffs
       val (assigns, assigns') = make' #assigns
       val (derefs, derefs') = make' #derefs
-      val (refArgs, refArgs') = make' #refArgs
-      val (pre, pre') = make' #pre
-      val (post, post') = make' #post
-      val (preds, preds') = make' #preds
-      val (isHandler, isHandler') = make' #isHandler
     end
 
-    fun new args: t = T {args = args,
-			 reffs = ref [],
-			 assigns = ref [],
-			 derefs = ref [],
-			 refArgs = ref (Vector.new0 ()),
-			 pre = ref (Vector.new0 ()),
-			 post = ref (Vector.new0 ()),
-			 preds = ref [],
-			 isHandler = ref false}
+    fun new (): t = T {reffs = ref [],
+		       assigns = ref [],
+		       derefs = ref []}
   end
 
 fun eliminate (program as Program.T {globals, datatypes, functions, main})
@@ -335,8 +221,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 	     fun cleanup (f, globals)
 	       = (Vector.foreach (globals, fn Statement.T {var, ...} =>
 				  Option.app (var, remVarInfo));
-		  Function.clear f;
-		  Phi.reset ())
+		  Function.clear f)
 
 	     val {name, args, start, blocks, returns, raises} = Function.dest f
 	     val fi = funcInfo name
@@ -349,10 +234,8 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 				       transfer = Goto {dst = start,
 							args = Vector.new0 ()}}
 
-	     (* Find all localizable refs and initialize phi flow. *)
+	     (* Find all localizable refs. *)
 	     val refs = ref []
-	     val index = ref 0
-	     val refArgs = ref (Vector.new0 ())
 
 	     fun visitStatement checkStatement
 	                        label
@@ -417,77 +300,25 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 		         | _ => false
 		   else fn _ => false
 	     val visitGlobalStatement = visitStatement checkGlobalStatement
-	     val checkFuncStatement
-	       = fn _ => true
+	     val checkFuncStatement = fn _ => true
 	     val visitFuncStatement = visitStatement checkFuncStatement
 
 	     fun visitBlock visitStatement
 	                    (Block.T {label, args, statements, transfer, ...})
 	       = let
-		   val li = LabelInfo.new args
+		   val li = LabelInfo.new ()
 		   val _ = setLabelInfo (label, li)
 		   val _ = Vector.foreach (statements, visitStatement label)
 		   val _ = Transfer.foreachVar (transfer, nonLocal)
-
-		   val oldIndex = !index
-		   val oldRefArgs = !refArgs
-
-		   val _ = LabelInfo.refArgs li := oldRefArgs
-
-		   val newRefArgs = Vector.fromList (LabelInfo.reffs' li)
-		   val _ = Vector.foreach
-		           (newRefArgs, fn var =>
-			    (VarInfo.index (varInfo var) := !index;
-			     index := !index + 1))
-		   val newIndex = !index
-		   val newRefArgs = Vector.concat [oldRefArgs, newRefArgs]
-		   val _ = refArgs := newRefArgs
-
-		   val pre 
-		     = Vector.tabulate
-		       (oldIndex, fn i => 
-			Phi.new (Vector.sub (oldRefArgs, i)))
-		   val _ = LabelInfo.pre li := pre
-		   val post 
-		     = Vector.tabulate
-                       (newIndex, fn i => 
-			if i < oldIndex
-			  then let
-				 val x = Vector.sub (oldRefArgs, i)
-			       in
-				 if List.contains 
-				    (LabelInfo.assigns' li, x, Var.equals)
-				   then Phi.new (Vector.sub (newRefArgs, i))
-				   else Vector.sub (pre, i)
-			       end
-			  else Phi.new (Vector.sub (newRefArgs, i)))
-		   val _ = LabelInfo.post li := post
 		 in
-		   fn () => (index := oldIndex;
-			     refArgs := oldRefArgs)
+		   ignore
 		 end
 	     val visitGlobalBlock = visitBlock visitGlobalStatement
 	     val visitFuncBlock = visitBlock visitFuncStatement
 
 	     val post = visitGlobalBlock dummyBlock
-	     val _ = Tree.traverse (Function.dominatorTree f, visitFuncBlock)
+	     val _ = Function.dfs (f, visitFuncBlock)
 	     val _ = post ()
-
-             (* Diagnostics *)
-	     val _ = Control.diagnostics
-	             (fn display =>
-		      let 
-			open Layout
-		      in
-			display (seq [Func.layout name,
-				      str " ",
-				      FuncInfo.layout fi]);
-			List.foreach
-			(!refs, fn var =>
-			 display (seq [Var.layout var,
-				       str " ",
-				       VarInfo.layout (varInfo var)]))
-		      end)
 
 	     val refs = List.keepAll (!refs, isLocal)
 	     (* Escape early when there are no localizable refs *)
@@ -504,109 +335,37 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 			     raise NoLocalRefs)
 		       else ()
 
-	     (* Complete phi flow. *)
-	     fun visitBlock (Block.T {label, transfer, ...})
-	       = let
-		   val li = labelInfo label
-		   val post = LabelInfo.post' li
-		 in
-		   case transfer
-		     of Call {return = Return.NonTail 
-			      {handler = Handler.Handle h, 
-			       ...}, 
-			      ...} 
-		      => LabelInfo.isHandler (labelInfo h) := true
-                      | _ => () ;
-		   Transfer.foreachLabel
-		   (transfer, fn l => 
-		    let
-		      val li = labelInfo l
-		      val pre = LabelInfo.pre' li
-		    in
-		      List.push (LabelInfo.preds li, label) ;
-		      Vector.foreachi
-		      (pre, fn (i, pre') =>
-		       let
-			 val post' = Vector.sub (post, i)
-		       in
-			 Phi.flow (post', pre')
-		       end)
-		    end)
-		 end
-	     val _ = visitBlock dummyBlock
-	     val _ = Vector.foreach (blocks, visitBlock)
-
-	     (* Simplify phi flow. *)
-	     val _ = Phi.filter isLocal
-	     (* Solve phi flow. *)
-	     val fixedPoint = Control.trace
-	                      (Control.Pass, "Phi.fixedPoint")
-                              Phi.fixedPoint
-	     val _ = fixedPoint ()
-
-	     (* Set ref args. *)
-	     fun visitBlock (Block.T {label, ...})
-	       = let
-		   val li = labelInfo label
-		   val refArgs = LabelInfo.refArgs li
-		   val pre = LabelInfo.pre' li
-		   val preds = LabelInfo.preds' li
-		   val posts = List.map (preds, LabelInfo.post' o labelInfo)
-
-		   val refArgs' 
-		     = Vector.keepAllMapi
-		       (!refArgs, fn (i, var) => 
-			if isLocal var
-			  then if List.forall
-			          (posts, fn post =>
-				   Phi.equals (Vector.sub(pre, i), 
-					       Vector.sub(post, i)))
-				 then NONE
-				 else SOME var
-			  else NONE)
-		   val _ = refArgs := refArgs'
-
-		   (* Compensate for handlers. *)
-		   val _ = if LabelInfo.isHandler' li
-			     then Vector.foreach (refArgs', nonLocal)
-			     else ()
-		 in
-		   ()
-		 end
-	     val _ = visitBlock dummyBlock
-	     val _ = Vector.foreach (blocks, visitBlock)
-
-             (* Compensate for handlers. *)
-	     fun visitBlock (Block.T {label, ...})
-	       = let
-		   val li = labelInfo label
-		   val refArgs = LabelInfo.refArgs li
-
-		   val refArgs' = Vector.keepAll (!refArgs, isLocal)
-		   val _ = refArgs := refArgs'
-		 in
-		   ()
-		 end
-	     val _ = visitBlock dummyBlock
-	     val _ = Vector.foreach (blocks, visitBlock)
-
-             (* Diagnostics *)
+	     (* Diagnostics *)
 	     val _ = Control.diagnostics
 	             (fn display =>
-		      let 
+		      let
 			open Layout
 		      in
-			Vector.foreach
-			(blocks, fn Block.T {label, ...} =>
-			 display (seq [Label.layout label,
-				       str " ",
-				       LabelInfo.layout (labelInfo label)]))
-		      end)
+			display (seq [Func.layout name,
+				      str " LocalRefs: ",
+				      List.layout Var.layout (refs)])
+		      end);
 
 	     (* Rewrite. *)
-	     val blocks = ref []
-	     fun rewriteStatement addPost 
-                                  (s: Statement.t as Statement.T {var, ty, exp})
+	     val (globals,dummyStatements)
+	       = Vector.foldr
+	         (globals, ([],[]), fn (s as Statement.T {var, ...},
+					(globals,dummyStatements)) =>
+		  if case var
+		       of NONE => false
+			| SOME x => VarInfo.isLocal' (varInfo x)
+		    then (globals,s::dummyStatements)
+		    else (s::globals,dummyStatements))
+	     val globals = Vector.fromList globals
+	     val dummyStatements = Vector.fromList dummyStatements
+	     val dummyBlock = Block.T {label = dummy,
+				       args = Vector.new0 (),
+				       statements = dummyStatements,
+				       transfer = Goto {dst = start,
+							args = Vector.new0 ()}}
+
+	     val blocks = Vector.concat [Vector.new1 dummyBlock, blocks]
+	     fun rewriteStatement (s: Statement.t as Statement.T {var, ty, exp})
 	       = let
 		   datatype z = datatype Prim.Name.t
 		 in
@@ -620,16 +379,10 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 				 val vi = varInfo rvar
 			       in
 				 if VarInfo.isLocal' vi
-				   then let
-					  val x = Var.new rvar
-					in 
-					  addPost (fn _ => VarInfo.popVar vi) ;
-					  VarInfo.pushVar (vi, x);
-					  Statement.T 
-					  {var = SOME x,
-					   ty = #2 (valOf (VarInfo.reff vi)),
-					   exp = Var var}
-					end
+				   then Statement.T
+				        {var = SOME rvar,
+					 ty = #2 (valOf (VarInfo.reff vi)),
+					 exp = Var var}
 				   else s
 			       end
 			   fun rewriteReff ()
@@ -647,7 +400,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 					  Statement.T
 					  {var = var,
 					   ty = #2 (valOf (VarInfo.reff vi)),
-					   exp = Var (VarInfo.peekVar vi)}
+					   exp = Var rvar}
 					end
 				   else s
 			       end
@@ -662,59 +415,9 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 			 end
 		      | _ => s
 		 end
-	     fun route dst
+	     fun rewriteBlock (Block.T {label, args, statements, transfer})
 	       = let
-		   val li = labelInfo dst
-		   val refArgs = LabelInfo.refArgs' li
-		 in
-		   if Vector.length refArgs = 0
-		     then dst
-		     else let
-			    val newArgs = Vector.map
-			                  (refArgs, fn var =>
-					   VarInfo.peekVar (varInfo var))
-			    val dst' = Label.new dst
-			    val args = LabelInfo.args li
-			    val args' = Vector.map (args, fn (x,ty) =>
-						    (Var.new x, ty))
-			    val args'' = Vector.concat [Vector.map(args', #1),
-							newArgs]
-			    val block = Block.T
-			                {label = dst',
-					 args = args',
-					 statements = Vector.new0 (),
-					 transfer = Goto {dst = dst,
-							  args = args''}}
-			  in
-			    List.push (blocks, block) ;
-			    dst'
-			  end
-		 end
-	     fun rewriteTransfer t = Transfer.replaceLabel (t, route)
-	     fun visitBlock' (Block.T {label, args, statements, transfer})
-	       = let
-		   val posts = ref []
-		   fun addPost f = List.push (posts, f)
 		   val li = labelInfo label
-		   val refArgs = LabelInfo.refArgs' li
-		   val args = if Vector.length refArgs = 0
-				then args
-				else let
-				       val newArgs 
-					 = Vector.map
-					   (refArgs, fn var =>
-					    let
-					      val vi = varInfo var
-					      val x = Var.new var
-					      val ty = #2 (valOf (VarInfo.reff vi))
-					    in
-					      addPost (fn _ => VarInfo.popVar vi) ;
-					      VarInfo.pushVar (vi, x) ;
-					      (x, ty)
-					    end)
-				     in
-				       Vector.concat [args, newArgs]
-				     end
 		   (* Don't need to rewrite the statements
 		    * if this block doesn't mention localizable refs.
 		    *)
@@ -724,53 +427,40 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 			  List.exists (LabelInfo.assigns' li, isLocal)
 			  orelse
 			  List.exists (LabelInfo.derefs' li, isLocal)
-			 then Vector.map (statements, rewriteStatement addPost)
+			 then Vector.map (statements, rewriteStatement)
 			 else statements
-		   val transfer = rewriteTransfer transfer
 		 in
-		   (Block.T {label = label,
-			     args = args,
-			     statements = statements,
-			     transfer = transfer},
-		    fn () => List.foreach (!posts, fn f => f ()))
+		   Block.T {label = label,
+			    args = args,
+			    statements = statements,
+			    transfer = transfer}
 		 end
-	     fun visitBlock block
-	       = let
-		   val (block, post) = visitBlock' block
-		 in
-		   List.push (blocks, block) ;
-		   post
-		 end
-
-	     local
-	       val (Block.T {label, args, statements, transfer}, post) 
-		 = visitBlock' dummyBlock
-	       val _ = List.push 
-		       (blocks, Block.T {label = label,
-					 args = args,
-					 statements = Vector.new0 (),
-					 transfer = transfer})
-	     in
-	       val globals = statements
-	       val post = post
-	     end
-	     val _ = Tree.traverse (Function.dominatorTree f, visitBlock)
-	     val _ = post ()
+	     val blocks = Vector.map (blocks, rewriteBlock)
 
 	     val f = Function.new {name = name,
 				   args = args,
 				   start = dummy,
-				   blocks = Vector.fromList (!blocks),
+				   blocks = blocks,
 				   returns = returns,
 				   raises = raises}
-
 	     val _ = cleanup (f, globals)
+	     val _ = Control.diagnostics
+	             (fn display =>
+		      display (Function.layout (f, fn _ => NONE)))
+	     val restore = Control.trace (Control.Detail, "restore")
+                                         (restoreFunction globals)
+	     val _ = Control.diagnostics
+	             (fn display =>
+		      display (Function.layout (f, fn _ => NONE)))
+	     val f = restore f
 	   in
-	     (f::functions,globals)
+	     ((f,true)::functions,globals)
 	   end
-	   handle NoLocalRefs => (f::functions,globals))
+	   handle NoLocalRefs => ((f,false)::functions,globals))
       val shrink = shrinkFunction globals
-      val functions = List.revMap (functions, shrink)
+      val functions = List.revMap 
+	              (functions, fn (f,b) => 
+		       if b then shrink f else f)
       val program = Program.T {datatypes = datatypes,
 			       globals = globals,
 			       functions = functions,

@@ -216,6 +216,7 @@ ssa/analyze.sig
 ssa/type-check.sig
 ssa/type-check.fun
 ssa/shrink.sig
+ssa/restore.sig
 ssa/simplify.sig
 ssa/ssa.sig
 ../lib/mlton/set/disjoint.sig
@@ -248,14 +249,14 @@ ssa/introduce-loops.sig
 ssa/introduce-loops.fun
 ssa/local-flatten.sig
 ssa/local-flatten.fun
-../lib/mlton/basic/fixed-point.sig
-../lib/mlton/basic/fixed-point.sml
 ssa/local-ref.sig
 ssa/local-ref.fun
 ssa/loop-invariant.sig
 ssa/loop-invariant.fun
 ssa/poly-equal.sig
 ssa/poly-equal.fun
+../lib/mlton/basic/fixed-point.sig
+../lib/mlton/basic/fixed-point.sml
 ssa/redundant.sig
 ssa/equivalence-relation.sig
 ssa/equivalence-relation.fun
@@ -267,6 +268,7 @@ ssa/remove-unused.fun
 ssa/simplify-types.sig
 ssa/simplify-types.fun
 ssa/simplify.fun
+ssa/restore.fun
 ../lib/mlton/basic/mono-vector.fun
 ssa/shrink.fun
 ssa/analyze.fun
