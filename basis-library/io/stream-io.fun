@@ -65,7 +65,7 @@ functor StreamIOExtra
 
       datatype buf = Buf of {array: A.array,
 			     size: int ref}
-      datatype buffer_mode = NO_BUF
+      datatype bufferMode = NO_BUF
                            | LINE_BUF of buf
                            | BLOCK_BUF of buf
       fun newLineBuf bufSize =
@@ -83,7 +83,7 @@ functor StreamIOExtra
       datatype outstream = Out of {writer: writer,
 				   augmented_writer: writer,
 				   state: state ref,
-				   buffer_mode: buffer_mode ref}
+				   bufferMode: bufferMode ref}
 
       fun equalsOut (os1 as Out {state = state1, ...},
 		     os2 as Out {state = state2, ...}) = state1 = state2
@@ -144,7 +144,7 @@ functor StreamIOExtra
 
       fun output (os as Out {augmented_writer,
 			     state, 
-			     buffer_mode, ...}, v) =
+			     bufferMode, ...}, v) =
 	 if terminated (!state)
 	    then liftExn (outstreamName os) "output" IO.ClosedStream
 	    else let
@@ -160,7 +160,7 @@ functor StreamIOExtra
 				   size := newSize)
 		       end
 		 in
-		    case !buffer_mode of
+		    case !bufferMode of
 		       NO_BUF => put ()
 		     | LINE_BUF buf => doit (buf, fn () => (case line of
 							       NONE => false 
@@ -188,8 +188,8 @@ functor StreamIOExtra
 	  * before modifying it, and test after you do, to make sure that it
 	  * hasn't been slowed down.
 	  *)
-	 fun output1 (os as Out {buffer_mode, ...}, c): unit =
-	    case !buffer_mode of
+	 fun output1 (os as Out {bufferMode, ...}, c): unit =
+	    case !bufferMode of
 	       BLOCK_BUF (Buf {array, size}) =>
 		  let
 		     val n = !size
@@ -245,7 +245,7 @@ functor StreamIOExtra
 
       fun outputSlice (os as Out {augmented_writer,
 				  state, 
-				  buffer_mode, ...}, v) =
+				  bufferMode, ...}, v) =
 	 if terminated (!state)
 	    then liftExn (outstreamName os) "output" IO.ClosedStream
 	    else let
@@ -261,7 +261,7 @@ functor StreamIOExtra
 				   size := newSize)
 		       end
 		 in
-		    case !buffer_mode of
+		    case !bufferMode of
 		       NO_BUF => put ()
 		     | LINE_BUF buf => doit (buf, fn () => (case line of
 							       NONE => false 
@@ -272,20 +272,20 @@ functor StreamIOExtra
 
       fun flushOut (os as Out {augmented_writer, 
 			       state, 
-			       buffer_mode, ...}) =
+			       bufferMode, ...}) =
 	if terminated (!state)
 	  then ()
-	  else case !buffer_mode of
+	  else case !bufferMode of
 	         NO_BUF => ()
 	       | LINE_BUF buf => flushBuf (augmented_writer, buf)
 	       | BLOCK_BUF buf => flushBuf (augmented_writer, buf)
 	handle exn => liftExn (outstreamName os) "flushOut" exn
 
-      fun makeTerminated (Out {buffer_mode, ...}) =
+      fun makeTerminated (Out {bufferMode, ...}) =
 	 let
 	    fun doit (Buf {array, size}) = size := A.length array
 	 in
-	    case !buffer_mode of
+	    case !bufferMode of
 	       BLOCK_BUF b => doit b
 	     | LINE_BUF b => doit b
 	     | NO_BUF => ()
@@ -302,60 +302,60 @@ functor StreamIOExtra
 		; makeTerminated os)
 	handle exn => liftExn (outstreamName os) "closeOut" exn
 
-      fun getBufferMode (os as Out {buffer_mode, ...}) =
-	case !buffer_mode of
+      fun getBufferMode (os as Out {bufferMode, ...}) =
+	case !bufferMode of
 	  NO_BUF => IO.NO_BUF
 	| LINE_BUF _ => IO.LINE_BUF
 	| BLOCK_BUF _ => IO.BLOCK_BUF
 
-      fun setBufferMode (os as Out {buffer_mode, ...}, mode) =
+      fun setBufferMode (os as Out {bufferMode, ...}, mode) =
 	case mode of
 	  IO.NO_BUF => (flushOut os;
-			buffer_mode := NO_BUF)
+			bufferMode := NO_BUF)
 	| IO.LINE_BUF => let
 			   fun doit () = 
-			     buffer_mode := 
+			     bufferMode := 
 			     newLineBuf (writerSel (outstreamWriter os, #chunkSize))
 			 in
-			   case !buffer_mode of
+			   case !bufferMode of
 			     NO_BUF => doit ()
 			   | LINE_BUF _ => ()
 			   | BLOCK_BUF _ => doit ()
 			 end
 	| IO.BLOCK_BUF => let
 			    fun doit () = 
-			      buffer_mode := 
+			      bufferMode := 
 			      newBlockBuf (writerSel (outstreamWriter os, #chunkSize))
 			  in
-			    case !buffer_mode of
+			    case !bufferMode of
 			      NO_BUF => doit ()
 			    | LINE_BUF _ => doit ()
 			    | BLOCK_BUF _ => ()
 			  end
 
-      fun mkOutstream' {writer, closed, buffer_mode} =
+      fun mkOutstream' {writer, closed, bufferMode} =
 	let
 	  val bufSize = writerSel (writer, #chunkSize)
 	in
 	  Out {writer = writer,
 	       augmented_writer = PIO.augmentWriter writer,
 	       state = ref (if closed then Closed else Active),
-	       buffer_mode = ref (case buffer_mode of
+	       bufferMode = ref (case bufferMode of
 				    IO.NO_BUF => NO_BUF
 				  | IO.LINE_BUF => newLineBuf bufSize
 				  | IO.BLOCK_BUF => newBlockBuf bufSize)}
 	end
-      fun mkOutstream (writer, buffer_mode) =
-	mkOutstream' {writer = writer, closed = false, buffer_mode = buffer_mode}
+      fun mkOutstream (writer, bufferMode) =
+	mkOutstream' {writer = writer, closed = false, bufferMode = bufferMode}
 
-      fun getWriter (os as Out {writer, state, buffer_mode, ...}) =
+      fun getWriter (os as Out {writer, state, bufferMode, ...}) =
 	if closed (!state)
 	  then liftExn (outstreamName os) "getWriter" IO.ClosedStream
 	  else (flushOut os
 		; state := Terminated
 		; makeTerminated os
 		; (writer,
-		   case !buffer_mode of
+		   case !bufferMode of
 		      NO_BUF => IO.NO_BUF
 		    | LINE_BUF _ => IO.LINE_BUF
 		    | BLOCK_BUF _ => IO.BLOCK_BUF))
@@ -730,7 +730,7 @@ functor StreamIOExtra
 	in V.length inp = 0
 	end
 
-      fun mkInstream' {reader, closed, buffer_contents} =
+      fun mkInstream' {bufferContents, closed, reader} =
 	let
 	  val next = ref (if closed then Closed else End)
 	  val base =
@@ -738,7 +738,7 @@ functor StreamIOExtra
 	      NONE => NONE
 	    | SOME getPos => SOME (getPos ())
 	  val buf = 
-	    case buffer_contents of
+	    case bufferContents of
 	      NONE => Buf {inp = empty,
 			   base = base,
 			   next = next}
@@ -758,15 +758,18 @@ functor StreamIOExtra
 	      pos = 0,
 	      buf = buf}
 	end
-      fun mkInstream (reader, buffer_contents) =
-	mkInstream' {reader = reader, closed = false, 
-		     buffer_contents = if V.length buffer_contents = 0
+     
+      fun mkInstream (reader, bufferContents) =
+	mkInstream' {bufferContents = if 0 = V.length bufferContents
 					 then NONE
-					 else SOME buffer_contents}
+					 else SOME bufferContents,
+		     closed = false, 
+		     reader = reader}
+	
       fun openVector v =
-	mkInstream' {reader = PIO.openVector v,
+	mkInstream' {bufferContents = NONE,
 		     closed = false,
-		     buffer_contents = NONE}
+		     reader = PIO.openVector v}
 
       fun getReader (is as In {common = {reader, tail, ...}, ...}) =
 	case !(!tail) of
@@ -805,8 +808,8 @@ signature STREAM_IO_ARG =
       structure VectorSlice: MONO_VECTOR_SLICE
       structure Array: MONO_ARRAY
       structure ArraySlice: MONO_ARRAY_SLICE
-      sharing type PrimIO.elem = Vector.elem = VectorSlice.elem
-	 = Array.elem = ArraySlice.elem 
+      sharing type PrimIO.elem = Vector.elem = VectorSlice.elem = Array.elem
+	 = ArraySlice.elem 
       sharing type PrimIO.vector = Vector.vector = VectorSlice.vector
 	 = Array.vector = ArraySlice.vector 
       sharing type PrimIO.vector_slice = VectorSlice.slice
@@ -824,9 +827,9 @@ functor StreamIO
 		  where type reader = S.PrimIO.reader
 		  where type writer = S.PrimIO.writer
 		  where type pos = S.PrimIO.pos =
-   StreamIOExtra(open S
-		 val line = NONE
-		 val xlatePos = NONE)
+   StreamIOExtra (open S
+		  val line = NONE
+		  val xlatePos = NONE)
 
 signature STREAM_IO_EXTRA_FILE_ARG =
    sig
@@ -871,34 +874,42 @@ functor StreamIOExtraFile
 	| NONE => liftExn (outstreamName os) "outFd" (Fail "<no ioDesc>")
 
       val openOutstreams : (outstream * {close: bool}) list ref = ref []
+
       val mkOutstream'' =
-	let	
-	  val _ = Cleaner.addNew
-	          (Cleaner.atExit, fn () =>
-		   List.app (fn (os, {close}) =>
-			     if close
-			       then closeOut os
-			       else flushOut os) (!openOutstreams))
-	in
-	  fn {writer, closed, buffer_mode, atExit} =>
-	  let
-	    val os = mkOutstream' {writer = writer,
-				   closed = closed,
-				   buffer_mode = buffer_mode}
-	    val _ = if closed
-		      then ()
-		      else openOutstreams := (os,atExit) :: (!openOutstreams)
-	  in
-	    os
-	  end
-	end
-      fun mkOutstream' {writer, closed, buffer_mode} =
-	mkOutstream'' {writer = writer, closed = closed, 
-		       buffer_mode = buffer_mode,
-		       atExit = {close = true}}
-      fun mkOutstream (writer, buffer_mode) =
-	mkOutstream' {writer = writer, closed = false,
-		      buffer_mode = buffer_mode}
+	 let	
+	    val _ = Cleaner.addNew
+	       (Cleaner.atExit, fn () =>
+		List.app (fn (os, {close}) =>
+			  if close
+			     then closeOut os
+			  else flushOut os) (!openOutstreams))
+	 in
+	    fn {bufferMode, closeAtExit, closed, writer} =>
+	    let
+	       val os = mkOutstream' {bufferMode = bufferMode,
+				      closed = closed,
+				      writer = writer}
+	       val _ =
+		  if closed
+		     then ()
+		  else openOutstreams := ((os, {close = closeAtExit})
+					  :: (!openOutstreams))
+	    in
+	       os
+	    end
+	 end
+     
+      fun mkOutstream' {bufferMode, closed, writer} =
+	 mkOutstream'' {bufferMode = bufferMode,
+			closeAtExit = true,
+			closed = closed, 
+			writer = writer}
+	
+      fun mkOutstream (writer, bufferMode) =
+	mkOutstream' {bufferMode = bufferMode,
+		      closed = false,
+		      writer = writer}
+	
       val closeOut = fn os =>
 	let
 	  val _ = openOutstreams := List.filter (fn (os', _) => 
@@ -913,6 +924,7 @@ functor StreamIOExtraFile
       (*---------------*)
 
       fun readerSel (PIO.RD v, sel) = sel v
+	 
       fun instreamName is = readerSel (instreamReader is, #name)
 
       fun inFd is =
@@ -921,17 +933,18 @@ functor StreamIOExtraFile
 	| NONE => liftExn (instreamName is) "inFd" (Fail "<no ioDesc>")
 
       val closeAtExits: Close.t list ref = ref []
+	 
       val mkInstream'' =
 	let
 	   val _ = Cleaner.addNew (Cleaner.atExit, fn () =>
 				   List.app Close.close (!closeAtExits))
 	in
-	  fn {reader, closed, buffer_contents, atExit = {close = closeAtExit}} =>
+	  fn {bufferContents, closeAtExit, closed, reader} =>
 	  let
 	    val is =
-	       mkInstream' {reader = reader,
+	       mkInstream' {bufferContents = bufferContents,
 			    closed = closed,
-			    buffer_contents = buffer_contents}
+			    reader = reader}
 	    val _ =
 	       if closed orelse not closeAtExit
 		  then ()
@@ -940,15 +953,20 @@ functor StreamIOExtraFile
 	    is
 	  end
 	end
-      fun mkInstream' {reader, closed, buffer_contents} =
-	mkInstream'' {reader = reader, closed = closed, 
-		      buffer_contents = buffer_contents,
-		      atExit = {close = true}}
-      fun mkInstream (reader, buffer_contents) =
-	mkInstream' {reader = reader, closed = false, 
-		     buffer_contents = if V.length buffer_contents = 0
-					 then NONE
-					 else SOME buffer_contents}
+     
+      fun mkInstream' {bufferContents, closed, reader} =
+	mkInstream'' {bufferContents = bufferContents,
+		      closeAtExit = true,
+		      closed = closed, 
+		      reader = reader}
+		      
+	
+      fun mkInstream (reader, bufferContents) =
+	mkInstream' {bufferContents = (if V.length bufferContents = 0 then NONE
+				       else SOME bufferContents),
+		     closed = false,
+		     reader = reader}
+	
       val closeIn = fn is =>
 	 let
 	    val _ =
