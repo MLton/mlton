@@ -754,15 +754,15 @@ struct
         | Normal of x86.Operand.t list
     end
 
-  fun applyPrim {oper: Prim.t,
-		 args: (Operand.t * Size.t) list,
+  fun applyPrim {prim: Prim.t,
+		 args: (Operand.t * Size.t) vector,
 		 dst: (Operand.t * Size.t) option,
 		 pinfo: PrimInfo.t,
 		 addData: Assembly.t list -> unit,
 		 frameLayouts: Label.t -> {size: int, frameLayoutsIndex: int} option,
 		 liveInfo: x86Liveness.LiveInfo.t} : Block.t' AppendList.t
     = let
-	val primName = Prim.toString oper
+	val primName = Prim.toString prim
 	datatype z = datatype Prim.Name.t
 
 	fun getDst ()
@@ -770,17 +770,14 @@ struct
 	      of SOME dst => dst
 	       | NONE => Error.bug "applyPrim: getDst"
 	fun getSrc1 ()
-	  = case args
-	      of [src] => src
-	       | _ => Error.bug "applyPrim: getSrc1"
+	  = Vector.sub (args, 0)
+	    handle _ => Error.bug "applyPrim: getSrc1"
 	fun getSrc2 ()
-	  = case args
-	      of [src1,src2] => (src1,src2)
-	       | _ => Error.bug "applyPrim: getSrc2"
+	  = (Vector.sub (args, 0), Vector.sub (args, 1))
+	    handle _ => Error.bug "applyPrim: getSrc2"
 	fun getSrc3 ()
-	  = case args
-	      of [src1,src2,src3] => (src1,src2,src3)
-	       | _ => Error.bug "applyPrim: getSrc3"
+	  = (Vector.sub (args, 0), Vector.sub (args, 1), Vector.sub (args, 2))
+	    handle _ => Error.bug "applyPrim: getSrc3"
 	fun getRuntimeInfo ()
 	  = case pinfo
 	      of PrimInfo.Runtime gcInfo => gcInfo
@@ -964,7 +961,7 @@ struct
 		     src = thread,
 		     size = threadsize}],
 		 transfer = NONE}],
-	       (invokeRuntime {prim = oper,
+	       (invokeRuntime {prim = prim,
 			       args = [(Operand.immediate_label gcState, pointerSize),
 				       (threadTempContentsOperand, threadsize)],
 			       info = info,
@@ -975,7 +972,7 @@ struct
 
 	fun copyCurrent () =
 	   invokeRuntime
-	   {prim = oper,
+	   {prim = prim,
 	    args = [(Operand.immediate_label gcState, pointerSize)],
 	    info = getRuntimeInfo (),
 	    addData = addData,
@@ -1662,7 +1659,7 @@ struct
       in
 	AppendList.appends
 	[comment_begin,
-	 (case Prim.name oper
+	 (case Prim.name prim
 	    of Array_length => lengthArrayVectorString ()
 	     | Byte_byteToChar => mov ()
 	     | Byte_charToByte => mov ()
@@ -1694,7 +1691,7 @@ struct
 		    transfer = NONE}]
 		end
 	     | FFI s 
-	     => (case Prim.numArgs oper
+	     => (case Prim.numArgs prim
 		   of NONE 
 		    => let
 			 val (dst,dstsize) = getDst ()
@@ -1728,7 +1725,7 @@ struct
 				  val live = getPrimInfoNormal ()
 				in 
 				  applyFF {target = Label.fromString s,
-					   args = args,
+					   args = Vector.toList args,
 					   dst = dst,
 					   live = live,
 					   liveInfo = liveInfo}
@@ -1738,7 +1735,7 @@ struct
 		  val info = getRuntimeInfo ()
 		in 
 		  invokeRuntime 
-		  {prim = oper,
+		  {prim = prim,
 		   args = [(Operand.immediate_label gcState, pointerSize),
 			   (Operand.immediate_const_int 0, wordSize),
 			   (Operand.immediate_const_int 1, wordSize),
@@ -1904,7 +1901,7 @@ struct
 	     | IntInf_toWord => mov ()
 	     | MLton_bug =>
 		  applyFF {target = Label.fromString "MLton_bug",
-			   args = args,
+			   args = Vector.toList args,
 			   dst = dst,
 			   live = getPrimInfoNormal (),
 			   liveInfo = liveInfo}
@@ -1933,7 +1930,7 @@ struct
 			size = statussize}],
 		    transfer = NONE},
 		   (invokeRuntime 
-		    {prim = oper,
+		    {prim = prim,
 		     args = [(statusTempContentsOperand, statussize)],
 		     info = info,
 		     addData = addData,
@@ -1947,7 +1944,7 @@ struct
 		  val live = getPrimInfoNormal ()
 		in 
 		  applyFF {target = Label.fromString "MLton_size",
-			   args = args,
+			   args = Vector.toList args,
 			   dst = dst,
 			   live = live,
 			   liveInfo = liveInfo}
@@ -2477,7 +2474,7 @@ struct
 		  val live = getPrimInfoNormal ()
 		in 
 		  applyFF {target = Label.fromString "String_equal",
-			   args = args,
+			   args = Vector.toList args,
 			   dst = dst,
 			   live = live,
 			   liveInfo = liveInfo}
@@ -2587,7 +2584,7 @@ struct
 			size = filesize}],
 		    transfer = NONE},
 		   (invokeRuntime 
-		    {prim = oper,
+		    {prim = prim,
 		     args = [(Operand.immediate_label gcState, pointerSize),
 			     (fileTempContentsOperand, filesize),
 			     (Operand.immediate_label saveGlobals, 
@@ -2598,9 +2595,175 @@ struct
 		     liveInfo = liveInfo}))
 		end
 	     | _ 
-	     => Error.bug ("applyPrim: strange Prim.name.t: " ^ primName)),
+	     => Error.bug ("applyPrim: strange Prim.Name.t: " ^ primName)),
 	 comment_end]
       end
+
+  fun arith {prim : Prim.t,
+	     args : (Operand.t * Size.t) vector,
+	     dst : (Operand.t * Size.t),
+	     overflow : Label.t,
+	     success : Label.t,
+	     addData : Assembly.t list -> unit,
+	     frameLayouts : Label.t
+	                    -> {size: int, frameLayoutsIndex: int} option,
+	     liveInfo : x86Liveness.LiveInfo.t} : Block.t' AppendList.t
+    = let
+	val primName = Prim.toString prim
+	datatype z = datatype Prim.Name.t
+
+	fun arg i = Vector.sub (args, i)
+	  
+	val (src1, src1size) = arg 0
+	val (dst, dstsize) = dst
+	val _ = Assert.assert
+	        ("arith: dstsize/srcsize",
+		 fn () => src1size = dstsize)
+	fun check src statement
+	  = AppendList.single
+	    (x86.Block.T'
+	     {entry = NONE,	
+	      profileInfo = x86.ProfileInfo.none,
+	      statements = [x86.Assembly.instruction_mov
+			    {dst = dst,
+			     src = src,
+			     size = src1size},
+			    statement],
+	      transfer = SOME (x86.Transfer.iff
+			       {condition = x86.Instruction.O,
+				truee = overflow,
+				falsee = success})})
+	fun binal (oper: x86.Instruction.binal)
+	  = let
+	      val (src2, src2size) = arg 1
+	      val _ = Assert.assert
+		      ("arith: binal, dstsize/src2size",
+		       fn () => src2size = dstsize)
+	      (* Reverse src1/src2 when src1 and src2 are
+	       * temporaries and the oper is commutative. 
+	       *)
+	      val (src1,src2)
+		= if (oper = x86.Instruction.ADD)
+		    then case (x86.Operand.deMemloc src1,
+			       x86.Operand.deMemloc src2)
+			   of (SOME memloc_src1, SOME memloc_src2)
+			    => if x86Liveness.track memloc_src1
+			          andalso
+				  x86Liveness.track memloc_src2
+				 then (src2,src1)
+				 else (src1,src2)
+			    | _ => (src1,src2)
+		    else (src1,src2)
+	    in
+	      check src1
+	            (x86.Assembly.instruction_binal
+		     {oper = oper,
+		      dst = dst,
+		      src = src2,
+		      size = dstsize})
+	    end
+	fun pmd (oper: x86.Instruction.md)
+	  = let
+	      val (src2, src2size) = arg 1
+	      val _ = Assert.assert
+		      ("arith: pmd, dstsize/src2size",
+		       fn () => src2size = dstsize)
+	      (* Reverse src1/src2 when src1 and src2 are
+	       * temporaries and the oper is commutative. 
+	       *)
+	      val (src1, src2)
+		= if oper = x86.Instruction.IMUL
+		    then case (x86.Operand.deMemloc src1,
+			       x86.Operand.deMemloc src2)
+			   of (SOME memloc_src1, SOME memloc_src2)
+			    => if x86Liveness.track memloc_src1
+			          andalso
+				  x86Liveness.track memloc_src2
+				 then (src2,src1)
+				 else (src1,src2)
+			    | _ => (src1,src2)
+		    else (src1,src2)
+	    in
+	      check src1
+	            (x86.Assembly.instruction_pmd
+		     {oper = oper,
+		      dst = dst,
+		      src = src2,
+		      size = dstsize})
+	    end
+	fun unal (oper: x86.Instruction.unal)
+	  = let
+	    in
+	      check src1 
+	            (x86.Assembly.instruction_unal 
+		     {oper = oper,
+		      dst = dst,
+		      size = dstsize})
+	    end
+	fun imul2_check ()
+	  = let
+	      val (src2, src2size) = arg 1
+	      val _ = Assert.assert
+		      ("arith: imul2_check, dstsizesrc2size",
+		       fn () => src2size = dstsize)
+	      (* Reverse src1/src2 when src1 and src2 are
+	       * temporaries and the oper is commutative. 
+	       *)
+	      val (src1, src2)
+		= case (x86.Operand.deMemloc src1,
+			x86.Operand.deMemloc src2)
+		    of (SOME memloc_src1, SOME memloc_src2)
+		     => if x86Liveness.track memloc_src1
+		           andalso
+			   x86Liveness.track memloc_src2
+			  then (src2,src1)
+			  else (src1,src2)
+		     | _ => (src1,src2)
+	    in
+	      check src1
+	            (x86.Assembly.instruction_imul2
+		     {dst = dst,
+		      src = src2,
+		      size = dstsize})
+	    end
+	  
+	val (comment_begin,
+	     comment_end)
+	  = if !Control.Native.commented > 0
+	      then let
+		     val comment = primName
+		   in 
+		     (AppendList.single
+		      (x86.Block.T'
+		       {entry = NONE,
+			profileInfo = x86.ProfileInfo.none,
+			statements 
+			= [x86.Assembly.comment 
+			   ("begin applyPrim: " ^ comment)],
+			transfer = NONE}),
+		      AppendList.single
+		      (x86.Block.T'
+		       {entry = NONE,
+			profileInfo = x86.ProfileInfo.none,
+			statements 
+			= [x86.Assembly.comment 
+			   ("end applyPrim: " ^ comment)],
+			transfer = NONE}))
+		   end
+	      else (AppendList.empty,AppendList.empty)
+      in
+	AppendList.appends
+	[comment_begin,
+	 (case Prim.name prim
+	    of Int_addCheck => binal x86.Instruction.ADD
+	     | Int_subCheck => binal x86.Instruction.SUB
+	     | Int_mulCheck => imul2_check ()
+	     | Int_negCheck => unal x86.Instruction.NEG
+	     | _ 
+	     => Error.bug ("arith: strange Prim.Name.t: " ^ primName)),
+	 comment_end]
+      end
+
 
   val bug_msg_label = Label.fromString "MLton_bug_msg"
   fun bug {liveInfo: x86Liveness.LiveInfo.t}

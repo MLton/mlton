@@ -43,8 +43,8 @@ signature X86_MLTON =
 	  | Normal of x86.Operand.t list
       end
 
-    val applyPrim : {oper : MachineOutput.Prim.t,
-		     args : (x86.Operand.t * x86.Size.t) list,
+    val applyPrim : {prim : MachineOutput.Prim.t,
+		     args : (x86.Operand.t * x86.Size.t) vector,
 		     dst : (x86.Operand.t * x86.Size.t) option,
 		     pinfo : PrimInfo.t,	
 		     addData : x86.Assembly.t list -> unit,
@@ -52,4 +52,14 @@ signature X86_MLTON =
                                     -> {size: int, frameLayoutsIndex: int} option,
 		     liveInfo : x86Liveness.LiveInfo.t}
                     -> x86.Block.t' AppendList.t
+    val arith : {prim : MachineOutput.Prim.t,
+		 args : (x86.Operand.t * x86.Size.t) vector,
+		 dst : (x86.Operand.t * x86.Size.t),
+		 overflow : x86.Label.t,
+		 success : x86.Label.t,
+		 addData : x86.Assembly.t list -> unit,
+		 frameLayouts : x86.Label.t
+		                -> {size: int, frameLayoutsIndex: int} option,
+		 liveInfo : x86Liveness.LiveInfo.t}
+                -> x86.Block.t' AppendList.t
   end

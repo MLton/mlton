@@ -659,7 +659,7 @@ fun generate (p as Sprogram.T {functions, ...}): Mprogram.t =
 			   in
 			      [Mstatement.assign
 			       {dst = dst,
-				oper = prim,
+				prim = prim,
 				args = Vector.map (args, vo),
 				pinfo = pinfo}]
 			   end
@@ -1526,7 +1526,7 @@ fun generate (p as Sprogram.T {functions, ...}): Mprogram.t =
 		     in
 		       ([Mstatement.assign
 			 {dst = NONE,
-			  oper = prim,
+			  prim = prim,
 			  args = Vector.map (args, vo),
 			  pinfo = pinfo}],
 			Mtransfer.nearJump {label = labelToLabel return,

@@ -121,7 +121,7 @@ signature MACHINE =
 				gcInfo: GCInfo.t
 				} -> t
 	    val assign: {dst: Operand.t option,
-			 oper: Prim.t,
+			 prim: Prim.t,
 			 pinfo: PrimInfo.t,
 			 args: Operand.t vector} -> t
 	    val layout: t -> Layout.t

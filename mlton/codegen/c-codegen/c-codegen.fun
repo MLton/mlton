@@ -157,7 +157,7 @@ structure Statement =
    struct
       open MachineOutput.Statement
 
-      fun assign ({dst, oper, pinfo, args}, print) =
+      fun assign ({dst, prim, pinfo, args}, print) =
 	 let
 	    fun printDst () =
 	       case dst of
@@ -165,21 +165,21 @@ structure Statement =
 		| SOME dst => print (concat [Operand.toString dst, " = "])
 	    fun doit () =
 	       let 
-		  val s = Prim.toString oper
+		  val s = Prim.toString prim
 		  val _ = printDst ()
-		  val args = List.map (args, Operand.toString)
+		  val args = Vector.toListMap (args, Operand.toString)
 		  val gcInfo =
 		     case pinfo of
 		        PrimInfo.Runtime gcInfo => SOME gcInfo
 		      | _ => NONE
-	       in if Prim.entersRuntime oper
+	       in if Prim.entersRuntime prim
 		     then GCInfo.output (valOf gcInfo, s, args, print)
 		  else C.call (s, args, print)
 	       end
 	    datatype z = datatype Prim.Name.t
 	 in 
-	    case Prim.name oper of
-	       FFI s => (case Prim.numArgs oper of
+	    case Prim.name prim of
+	       FFI s => (case Prim.numArgs prim of
 			    NONE => (printDst (); print (concat [s, ";\n"]))
 			  | SOME _ => doit ())
 	     | _ => doit ()

@@ -303,7 +303,7 @@ structure Statement =
 		  src: Operand.t}
        | Push of int
        | Assign of {dst: Operand.t option,
-		    oper: Prim.t,
+		    prim: Prim.t,
 		    pinfo: PrimInfo.t,
 		    args: Operand.t vector}
        | LimitCheck of LimitCheck.t
@@ -325,9 +325,9 @@ structure Statement =
 	     | Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
 	     | Push i => seq [str "Push (", Int.layout i, str ")"]
-	     | Assign {dst, oper, args, ...} =>
+	     | Assign {dst, prim, args, ...} =>
 		  seq [Option.layout Operand.layout dst, str " = ",
-		       Prim.layout oper, str " ",
+		       Prim.layout prim, str " ",
 		       Vector.layout Operand.layout args]
 	     | LimitCheck _ => str "LimitCheck"
 	     | SetExnStackLocal {offset} =>
@@ -369,11 +369,11 @@ structure Statement =
 				  {bytesPerElt = bytesPerElt,
 				   bytesAllocated = bytesAllocated,
 				   gcInfo = GCInfo.toMOut gcInfo})}
-	     | Assign {dst, oper, pinfo, args} 
+	     | Assign {dst, prim, pinfo, args} 
 	     => S.Assign {dst = Option.map (dst, Operand.toMOut),
 			  pinfo = PrimInfo.toMOut pinfo,
-			  oper = oper,
-			  args = Vector.toListMap (args, Operand.toMOut)}
+			  prim = prim,
+			  args = Vector.map (args, Operand.toMOut)}
 	     | LimitCheck lc
 	     => (case LimitCheck.toMOut lc 
 		   of NONE => S.Noop

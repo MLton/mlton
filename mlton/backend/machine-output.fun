@@ -170,9 +170,9 @@ structure Statement =
 					bytesPerElt: int,
 					bytesAllocated: int} option}
        | Assign of {dst: Operand.t option,
-		    oper: Prim.t, 
+		    prim: Prim.t, 
 		    pinfo: PrimInfo.t,
-		    args: Operand.t list}
+		    args: Operand.t vector}
        | LimitCheck of {info: GCInfo.t,
 			bytes: int,
 			stackCheck: bool}
@@ -191,12 +191,12 @@ structure Statement =
 	     | Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
 	     | Push i => seq [str "Push (", Int.layout i, str ")"]
-	     | Assign {dst, oper, args, pinfo} =>
+	     | Assign {dst, prim, args, pinfo} =>
 		  seq [case dst
 			 of NONE => empty
 			  | SOME dst => seq [Operand.layout dst, str " = "],
-		       Prim.layout oper, str " ",
-		       List.layout Operand.layout args, str " ",
+		       Prim.layout prim, str " ",
+		       Vector.layout Operand.layout args, str " ",
 		       PrimInfo.layout pinfo]
 	     | LimitCheck {info, bytes, stackCheck} => 
 		  seq [str "LimitCheck ",

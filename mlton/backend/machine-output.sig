@@ -98,9 +98,9 @@ signature MACHINE_OUTPUT =
 					      bytesPerElt: int,
 					      bytesAllocated: int} option}
 	     | Assign of {dst: Operand.t option,
-			  oper: Prim.t, 
+			  prim: Prim.t, 
 			  pinfo: PrimInfo.t,
-			  args: Operand.t list}
+			  args: Operand.t vector}
 	     | LimitCheck of {info: GCInfo.t,
 			      bytes: int,
 			      stackCheck: bool}
