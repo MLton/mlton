@@ -709,6 +709,9 @@ signature GL =
         (* For compatibility with OpenGL v1.0 *)
         val GL_LOGIC_OP : GLenum
         val GL_TEXTURE_COMPONENTS : GLenum
+        val c_glBegin : GLenum -> unit
+        val glBegin : GLenum -> unit
+
         val c_glBlendFunc : GLenum * GLenum -> unit
         val glBlendFunc : GLenum -> GLenum -> unit
 
@@ -739,8 +742,14 @@ signature GL =
         val c_glColorMaterial : GLenum * GLenum -> unit
         val glColorMaterial : GLenum -> GLenum -> unit
 
+        val c_glDisable : GLenum -> unit
+        val glDisable : GLenum -> unit
+
         val c_glEnable : GLenum -> unit
         val glEnable : GLenum -> unit
+
+        val c_glEnd : unit -> unit
+        val glEnd : unit -> unit
 
         val c_glRasterPos2i : int * int -> unit
         val glRasterPos2i : int -> int -> unit
@@ -787,11 +796,32 @@ signature GL =
         val c_glTranslatef : GLreal * GLreal * GLreal -> unit
         val glTranslatef : GLreal -> GLreal -> GLreal -> unit
 
+        val c_glPolygonMode : GLenum * GLenum -> unit
+        val glPolygonMode : GLenum -> GLenum -> unit
+
         val c_glPopMatrix : unit -> unit
         val glPopMatrix : unit -> unit
 
         val c_glRotatef: GLreal * GLreal * GLreal * GLreal -> unit
         val glRotatef: GLreal -> GLreal -> GLreal -> GLreal -> unit
+
+        val c_glRotated: GLdouble * GLdouble * GLdouble * GLdouble -> unit
+        val glRotated: GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
+
+        val c_glShadeModel : GLenum -> unit
+        val glShadeModel : GLenum -> unit
+
+        val c_glVertex2d : GLdouble * GLdouble -> unit
+        val glVertex2d : GLdouble -> GLdouble -> unit
+
+        val c_glVertex3d : GLdouble * GLdouble * GLdouble -> unit
+        val glVertex3d : GLdouble -> GLdouble -> GLdouble -> unit
+
+        val c_glVertex2f : GLreal * GLreal -> unit
+        val glVertex2f : GLreal -> GLreal -> unit
+
+        val c_glVertex3f : GLreal * GLreal * GLreal -> unit
+        val glVertex3f : GLreal -> GLreal -> GLreal -> unit
 
         val c_glViewport : int * int * int * int -> unit
         val glViewport : int -> int -> int -> int -> unit

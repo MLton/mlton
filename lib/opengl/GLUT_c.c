@@ -12,6 +12,16 @@ void callGlutReshapeFunc ()
 {
   glutReshapeFunc (glutReshapeFuncArgument);
 }
+/*
+void callGlutKeyboardFunc ()
+{
+  glutKeyboardFunc (glutKeyboardFuncArgument);
+}
+*/
+void callGlutSpecialFunc ()
+{
+  glutSpecialFunc (glutSpecialFuncArgument);
+}
 
 void callGlutIdleFunc ()
 {
