@@ -428,10 +428,7 @@ fun main args =
 	    let
 	       val compilers = List.rev (!compilers)
 	       val base = #name (hd compilers)
-	       val _ =
-		  let open Signal
-		  in ignore pipe
-		  end
+	       val _ = Signal.ignore Posix.Signal.pipe
 	       fun r2s r = Real.format (r, Real.Format.fix (SOME 2))
 	       val i2s = Int.toCommaString
 	       val p2s = i2s o Position.toInt
