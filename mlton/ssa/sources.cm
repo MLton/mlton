@@ -91,6 +91,8 @@ simplify-types.sig
 simplify-types.fun
 useless.sig
 useless.fun
+zone.sig
+zone.fun
 simplify.sig
 simplify2.sig
 simplify.fun

@@ -265,6 +265,8 @@ fun makeOptions {usage} =
 	    else usage (concat ["invalid -loop-passes arg: ", Int.toString i]))),
        (Expert, "mark-cards", " {true|false}", "mutator marks cards",
 	boolRef markCards),
+       (Expert, "max-function-size", " <n>", "max function size (blocks)",
+	intRef maxFunctionSize),
        (Normal, "native",
 	if !targetArch = Sparc then " {false}" else " {true|false}",
 	"use native code generator",

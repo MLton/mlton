@@ -30,6 +30,7 @@ open S
 (* structure RemoveUnused = RemoveUnused (S) *)
 (* structure SimplifyTypes = SimplifyTypes (S) *)
 (* structure Useless = Useless (S) *)
+structure Zone = Zone (S)
 
 (* fun inlineNonRecursive (product, small) p =
  *    Ref.fluidLet
@@ -95,6 +96,7 @@ val ssaPasses : pass list ref = ref
      * have to be modified to correctly handle mutable fields.
      *)
 (*    {name = "refFlatten", doit = RefFlatten.flatten} *)
+     {name = "zone", doit = Zone.zone}
     ]
 
 local

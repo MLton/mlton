@@ -300,6 +300,10 @@ val markCards = control {name = "mark cards",
 			 default = true,
 			 toString = Bool.toString}
 
+val maxFunctionSize = control {name = "max function size",
+			       default = 1000,
+			       toString = Int.toString}
+   
 val mayLoadWorld = control {name = "may load world",
 			    default = true,
 			    toString = Bool.toString}

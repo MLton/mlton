@@ -152,6 +152,8 @@ signature CONTROL =
       (* Should the mutator mark cards? *)
       val markCards: bool ref
 
+      val maxFunctionSize: int ref
+
       (* May the executable use @MLton load-world -- *)
       val mayLoadWorld: bool ref
 
