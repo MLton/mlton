@@ -431,6 +431,8 @@ fun selectBasisLibrary () =
 (*                      compile                      *)
 (* ------------------------------------------------- *)
 
+exception Done
+
 fun elaborate {input: File.t list}: Xml.Program.t =
    let
       fun parseElabMsg () = (lexAndParseMsg (); elaborateMsg ())
@@ -446,6 +448,7 @@ fun elaborate {input: File.t list}: Xml.Program.t =
 		  ; Process.succeed ())
 	 else ()
       val input = parseAndElab ()
+      val _ = if !Control.elaborateOnly then raise Done else ()
       val _ =
 	 if !Control.showBasis
 	    then (Env.setTyconNames basisEnv
@@ -611,6 +614,9 @@ fun compile {input: File.t list, outputC, outputS}: unit =
       ()
    end
 
-val elaborate = fn {input: File.t list} => (elaborate {input = input}; ())
+val elaborate =
+   fn {input: File.t list} =>
+   (elaborate {input = input}; ())
+   handle Done => ()
 
 end
