@@ -75,8 +75,8 @@ fun profile program =
 		       end))
 	 fun makeSources () = Vector.fromListRev (!sourceInfos)
       end
-      val mainIndex = sourceInfoIndex SourceInfo.main
       val unknownIndex = sourceInfoIndex SourceInfo.unknown
+      val mainIndex = sourceInfoIndex SourceInfo.main
       local
 	 val table: {hash: word,
 		     index: int,
