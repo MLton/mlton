@@ -11,6 +11,7 @@ val _ =
 						      ; message function
 						      ; message ": "
 						      ; loop cause)
+		   | OS.SysErr (s, _) => (message "SysErr "; message s)
 		   | _ => message (exnName e)
 	    in
 	       loop exn
