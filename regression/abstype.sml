@@ -28,26 +28,14 @@ functor K() =
 
 structure K = K()
 
-(*
-(* with opaque constraints instead of abstype *)
+(* abstype.sml *)
 
-structure S' :> sig type s val a : s end =
-  struct
-    datatype s = S
-    val a = S
-  end
+(* Checks equality inferred for abstype environments. *)
 
-signature F' = 
-  sig 
-    val b : S'.s
-  end
+abstype t = T with
+    datatype u = U of t
+    val eq = op=
+end
 
-functor F'() : F' =
-  struct
-    type s = S'.s
-    val b = S'.a
-  end
-
-structure F' = F'()
-
-*)
+fun eq1(t1, t2) = U t1 = U t2;
+fun eq2(t1, t2 : t) = eq(t1, t2);
