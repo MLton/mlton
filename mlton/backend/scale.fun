@@ -27,4 +27,10 @@ val fromInt: int -> t option =
     | 8 => SOME Eight
     | _ => NONE
 
+val toInt: t -> int =
+   fn One => 1
+    | Two => 2
+    | Four => 4
+    | Eight => 8
+
 end

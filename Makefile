@@ -222,6 +222,7 @@ runtime:
 	$(MAKE) -C bytecode
 	bytecode/print-opcodes >$(LIB)/opcodes
 	ar r $(LIB)/$(TARGET)/libmlton.a bytecode/interpret.o 
+	ar r $(LIB)/$(TARGET)/libmlton-gdb.a bytecode/interpret-gdb.o 
 	for x in $(LIB)/$(TARGET)/*.a; do $(RANLIB) $$x; done
 
 .PHONY: script

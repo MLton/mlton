@@ -16,10 +16,22 @@ regs(Word64);
 
 #undef regs
 
+struct AddressName {
+	char *name;
+	Word32 offset;
+};
+
+typedef struct Bytecode {
+	struct AddressName *addressNames;
+	Word32 addressNamesSize;
+	Pointer code;
+	Word32 codeSize;
+} *Bytecode;
+
 #define PopReg(ty) ty##Reg [ty##RegI--]
 #define PushReg(ty) ty##Reg [ty##RegI++]
 
 void MLton_callC (int i);  // provided by client
-void MLton_Bytecode_interpret (Pointer code, Word32 codeOffset);
+void MLton_Bytecode_interpret (Bytecode b, Word32 codeOffset);
 
 #endif

@@ -26,6 +26,7 @@ in
    structure Program = Program
    structure Register = Register
    structure Runtime = Runtime
+   structure Scale = Scale
    structure StackOffset = StackOffset
    structure Statement = Statement
    structure Switch = Switch
@@ -39,7 +40,7 @@ structure Target = CFunction.Target
 
 val implementsPrim = CCodegen.implementsPrim
 
-structure Opcode = Word8
+structure Opcode = IntInf
 
 structure CType =
    struct
@@ -95,7 +96,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		      (table, hash,
 		       fn {name = name', ...} => name = name',
 		       fn () => {hash = hash,
-				 opcode = Word8.fromInt i,
+				 opcode = Int.toIntInf i,
 				 name = name},
 		       fn _ => Error.bug (concat ["duplicate opcode: ", name]))
 		in
@@ -110,7 +111,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		   fn () =>
 		   (print (concat ["missing opcode: ", name])
 		    ; {hash = String.hash name,
-		       opcode = 0w0,
+		       opcode = 0,
 		       name = name})))
       val decls = ref []
       val callCounter = Counter.new 0
@@ -278,9 +279,6 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 fn w =>
 	 (List.push (code, w)
 	  ; Int.inc offset)
-      val emitOpcode = emitByte
-      val emitPrim: 'a Prim.t -> unit =
-	 fn p => emitOpcode (opcode (Prim.toString p))
       local
 	 fun make (bits: int, {signed}): IntInf.t -> unit =
 	    let
@@ -321,6 +319,9 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	   | W16 => emitWord16
 	   | W32 => emitWord32
 	   | W64 => emitWord64) (WordX.toIntInf w)
+      val emitOpcode = emitWord16
+      val emitPrim: 'a Prim.t -> unit =
+	 fn p => emitOpcode (opcode (Prim.toString p))
       fun emitCallC (index: int): unit =
 	 (emitOpcode callC
 	  ; emitWord16 (Int.toIntInf index))
@@ -339,10 +340,12 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	    datatype z = datatype Operand.t
 	 in
 	    case z of
-	       ArrayOffset {base, index, ...} =>
+	       ArrayOffset {base, index, offset, scale, ...} =>
 		  (emitLoadOperand base
 		   ; emitLoadOperand index
-		   ; emitOpcode (arrayOffset (ls, cty)))
+		   ; emitOpcode (arrayOffset (ls, cty))
+		   ; emitWord16 (Bytes.toIntInf offset)
+		   ; emitWord8 (Int.toIntInf (Scale.toInt scale)))
 	     | Cast (z, _) => emitOperand (z, ls)
 	     | Contents {oper, ...} =>
 		   (emitLoadOperand oper
@@ -353,7 +356,9 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	     | Global g =>
 		  (emitOpcode (global (ls, cty))
 		   ; emitWord16 (Int.toIntInf (Global.index g)))
-	     | Label l => emitLabel l
+	     | Label l =>
+		  (emitOpcode (wordOpcode (ls, cty))
+		   ; emitLabel l)
 	     | Line => emitWord32 0
 	     | Offset {base, offset = off, ...} =>
 		  (emitLoadOperand base
@@ -440,12 +445,8 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		     val () =
 			Option.app
 			(frameInfo, fn frameInfo =>
-			 let
-			    val size = Program.frameSize (program, frameInfo)
-			    val () = push (valOf return, size)
-			 in
-			    ()
-			 end)
+			 push (valOf return,
+			       Program.frameSize (program, frameInfo)))
 		     datatype z = datatype Target.t
 		     val () =
 			case target of
@@ -467,7 +468,9 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		   ; emitWord16 (Int.toIntInf (Vector.length cases))
 		   ; Vector.foreach (cases, fn (w, l) =>
 				     (emitWordX w; emitLabel l))
-		   ; Option.app (default, emitLabel))
+		   ; (case default of
+			 NONE => emitWord32 0 (* default is required *)
+		       | SOME l => emitLabel l))
 	 end
       val emitTransfer =
 	 Trace.trace ("emitTransfer", Transfer.layout, Unit.layout)
@@ -488,7 +491,6 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 fn a => String.tabulate (Array.length a, fn i =>
 				  Char.fromWord8 (Array.sub (a, i)))
       val code = Array.fromListRev (!code)
-      val {done, file = _, print} = outputC ()
       (* Backpatch all label references. *)
       val () =
 	 List.foreach
@@ -503,8 +505,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	  in
 	     loop (offset, labelOffset label)
 	  end)
-      val () = done ()
-      val {done, print, ...} = outputC ()
+      val {done, file = _, print} = outputC ()
       val () =
 	 CCodegen.outputDeclarations
 	 {additionalMainArgs = [Int.toString (labelOffset (#label main))],
@@ -529,10 +530,26 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	   ; print "\n"
 	   ; declareCallC ()
 	   ; print "\n")
+      val addressNamesSize = ref 0
       val () =
-	 (print "char *MLton_bytecode = \""
+	 (print "static struct AddressName addressNames [] = {\n"
+	  ; (List.foreach
+	     (chunks, fn Chunk.T {blocks, ...} =>
+	      Vector.foreach
+	      (blocks, fn Block.T {label, ...} =>
+	       (Int.inc addressNamesSize
+		; print (concat ["\t{ \"", String.escapeC (Label.toString label),
+				 "\", ", Int.toString (labelOffset label),
+				 " },\n"])))))
+	  ; print "};\n"
+	  ; print (concat
+		   ["struct Bytecode MLton_bytecode = {\n",
+		    "\taddressNames,\n",
+		    "\t", Int.toString (!addressNamesSize), ",\n"])
+	  ; print "\t\""
 	  ; print (String.escapeC (word8ArrayToString code))
-	  ; print "\";\n")
+	  ; print "\",\n"
+	  ; print (concat ["\t", Int.toString (Array.length code), "\n};\n"]))
       val () = done ()
    in
       ()

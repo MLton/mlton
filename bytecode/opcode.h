@@ -172,9 +172,11 @@ char *opcodeStrings [] = {
 
 #define opcodeGen(z) opcodeSym (z),
 
-typedef enum {
+enum {
 	opcodes ()
-} Opcode;
+};
+
+typedef Word16 Opcode;
 
 #undef coerce
 #undef coerceOp

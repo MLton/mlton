@@ -549,23 +549,26 @@ fun compile {input: String.t, outputC, outputS}: unit =
       val machine =
 	 Control.trace (Control.Top, "pre codegen")
 	 preCodegen {input = input}
-      val _ = Machine.Program.clearLabelNames machine
-      val _ = Machine.Label.printNameAlphaNumeric := true
-      val _ =
+      fun clearNames () =
+	 (Machine.Program.clearLabelNames machine
+	  ; Machine.Label.printNameAlphaNumeric := true)
+      val () =
 	 case !Control.codegen of
 	    Control.Bytecode =>
 	       Control.trace (Control.Top, "bytecode gen")
 	       Bytecode.output {program = machine,
 				outputC = outputC}
 	  | Control.CCodegen =>
-	       Control.trace (Control.Top, "C code gen")
-	       CCodegen.output {program = machine,
-				outputC = outputC}
+	       (clearNames ()
+		; (Control.trace (Control.Top, "C code gen")
+		   CCodegen.output {program = machine,
+				    outputC = outputC}))
 	  | Control.Native =>
-	       Control.trace (Control.Top, "x86 code gen")
-	       x86Codegen.output {program = machine,
-				  outputC = outputC,
-				  outputS = outputS}
+	       (clearNames ()
+		; (Control.trace (Control.Top, "x86 code gen")
+		   x86Codegen.output {program = machine,
+				      outputC = outputC,
+				      outputS = outputS}))
       val _ = Control.message (Control.Detail, PropertyList.stats)
       val _ = Control.message (Control.Detail, HashSet.stats)
    in

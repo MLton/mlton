@@ -19,5 +19,6 @@ signature SCALE =
 
       val fromInt: int -> t option
       val layout: t -> Layout.t
+      val toInt: t -> int
       val toString: t -> string
    end
