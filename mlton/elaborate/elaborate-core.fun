@@ -220,7 +220,7 @@ val {hom = typeTycon: Type.t -> Tycon.t option, ...} =
    Type.makeHom {con = fn (c, _) => SOME c,
 		 expandOpaque = Type.Never,
 		 var = fn _ => NONE}
-   
+ 
 fun resolveConst (c: Aconst.t, ty: Type.t): Const.t =
    let
       fun error m =
@@ -262,6 +262,10 @@ fun resolveConst (c: Aconst.t, ty: Type.t): Const.t =
 		     else (error (concat [Type.toString ty, " too big"])
 			   ; WordX.zero s)))
    end
+
+val resolveConst =
+   Trace.trace2 ("resolveConst", Aconst.layout, Type.layout, Const.layout)
+   resolveConst
 
 local
    open Layout
