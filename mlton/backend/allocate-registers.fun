@@ -365,21 +365,20 @@ fun allocate {argOperands: Machine.Operand.t vector,
 		      {offset = handler, ty = Type.label}
 		      :: {offset = link, ty = Type.uint}
 		      :: stackInit
-	     val stack = Stack.new stackInit
+	     val s = Stack.new stackInit
+	     val size = Runtime.labelSize + Type.wordAlign (Stack.size s)
 	     val s =
-		Vector.fold (args, stack, fn ((x, _), s) =>
+		Vector.fold (args, s, fn ((x, _), s) =>
 			     allocateVar (x, SOME label, false, s))
 	     (* Must compute live after allocateVar'ing the args, since that
 	      * sets the operands for the args.
 	      *)
 	     val live = getOperands begin
-	     fun one (var, ty, stack) =
-		allocateVar (var, SOME label, false, stack)
+	     fun one (var, ty, s) = allocateVar (var, SOME label, false, s)
 	     val s =
-		Vector.fold (statements, s, fn (s, stack) =>
-			     R.Statement.foldDef (s, stack, one))
-	     val s = R.Transfer.foldDef (transfer, stack, one)
-	     val size = Runtime.labelSize + Type.wordAlign (Stack.size stack)
+		Vector.fold (statements, s, fn (statement, s) =>
+			     R.Statement.foldDef (statement, s, one))
+	     val s = R.Transfer.foldDef (transfer, s, one)
 	     fun adjustSize _ = Error.unimplemented "adjustSize"
 	     val _ =
 		setLabelInfo (label, {live = addHS live,
