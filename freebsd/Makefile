@@ -39,6 +39,7 @@ USE_REINPLACE=	yes
 ALL_TARGET=	all
 USE_GMAKE=	yes
 MAKE_ARGS=	DESTDIR='' \
+		PATH=${WRKSRC}/build/bin:${BOOT_WRKSRC}/bin:${PATH} \
 		PREFIX=${PREFIX}
 
 PORTDIR=	usr/ports/lang/mlton
@@ -55,8 +56,9 @@ post-extract:
 
 .PHONY: build-package
 build-package:
-	export PATH=${BOOT_WRKSRC}/bin:${PATH} && ${MAKE} build
+	${MAKE} makesum build
 	${MAKE} pkg-plist
+	portlint .
 	${MAKE} deinstall
 	${MAKE} install
 	${MAKE} package
@@ -67,8 +69,6 @@ build-package:
 	${MAKE} package
 	cp ${PORTNAME}-${PORTVERSION}.tbz	\
 		${DISTDIR}/${PORTNAME}-${PORTVERSION}-1.i386-freebsd.tbz
-	${MAKE} makesum
-	portlint .
 	${TAR} -cpf - Makefile distinfo pkg-descr pkg-plist | \
 		( ${MKDIR} ${PORTDIR} && cd ${PORTDIR} && ${TAR} -xpf - )
 	shar `find ${PORTDIR}` >/tmp/mlton-${PORTVERSION}-portdir.shar
