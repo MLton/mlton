@@ -220,6 +220,12 @@ libs/basis-2002/top-level/basis.sig
 libs/basis-2002/top-level/basis.sml
 
 #
+# BasisNone
+#
+libs/basis-none/top-level/basis.sig
+libs/basis-none/top-level/basis.sml
+
+#
 # Basis1997
 #
 
@@ -270,3 +276,9 @@ libs/basis-1997/io/bin-io.sig
 libs/basis-1997/io/bin-io-convert.fun
 libs/basis-1997/top-level/basis.sig
 libs/basis-1997/top-level/basis.sml
+
+#
+# BasisNone
+#
+libs/basis-none/top-level/basis.sig
+libs/basis-none/top-level/basis.sml
