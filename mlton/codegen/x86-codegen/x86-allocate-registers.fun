@@ -7256,7 +7256,7 @@ struct
 			     size = size}
 
 			val {uses = final_uses,
-			     defs = final_defs,  
+			     defs = final_defs,
 			     ...}
 			  = Instruction.uses_defs_kills instruction
 
@@ -7292,7 +7292,15 @@ struct
 		  case memloc_dst
 		    of SOME memloc_dst
 		     => if MemLocSet.contains(remove,memloc_dst)
-			  then default'' memloc_dst
+			  then (case memloc_src
+				  of SOME memloc_src
+				   => if List.contains
+				         (memloc_src::(MemLoc.utilized memloc_src),
+					  memloc_dst,
+					  MemLoc.eq)
+					then default ()
+					else default'' memloc_dst
+				   | NONE => default'' memloc_dst)
 			  else (case value_src
 				  of SOME (value_src as {memloc = memloc_src,
 							 sync = sync_src, ...})
