@@ -588,9 +588,15 @@ fun commandLine (args: string list): unit =
 	 if !keepDot andalso List.isEmpty (!keepPasses)
 	    then keepSSA := true
 	 else ()
-      val keepDefUse = (isSome (!showDefUse) orelse !warnUnusedAnn)
+      val keepDefUse = 
+	 isSome (!showDefUse)
+	 orelse !warnUnusedAnn 
+	 orelse !warnUnusedDef
+      val warnMatch =
+	 !warnMatchAnn 
+	 orelse !warnMatchDef
       val _ = elaborateOnly := (stop = Place.TypeCheck
-				andalso not (!Control.warnMatchAnn)
+				andalso not (warnMatch)
 				andalso not (keepDefUse))
       val _ =
 	 case targetOS of

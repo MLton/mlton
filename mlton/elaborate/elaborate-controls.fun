@@ -39,30 +39,20 @@ struct
 	    val restore =
 	       (make (allowConstant, false)) o
 	       (make' (allowExport, fn () =>
-		       if !Control.allowExportAnn
-			  then !Control.allowExportDef
-			  else true)) o
+		       !Control.allowExportDef)) o
 	       (make' (allowImport, fn () =>
-		       if !Control.allowImportAnn
-			  then !Control.allowImportDef
-			  else true)) o
+		       !Control.allowImportDef)) o
 	       (make (allowOverload, false)) o
 	       (make (allowPrim, true)) o
 	       (make (allowRebindEquals, false)) o
 	       (make (deadCode, false)) o
 	       (make (forceUsed, 0)) o
 	       (make' (sequenceUnit, fn () => 
-		       if !Control.sequenceUnitAnn 
-			  then !Control.sequenceUnitDef
-			  else false)) o
+		       !Control.sequenceUnitDef)) o
 	       (make' (warnMatch, fn () => 
-		       if !Control.warnMatchAnn 
-			  then !Control.warnMatchDef
-			  else true)) o
+		       !Control.warnMatchDef)) o
 	       (make' (warnUnused, fn () => 
-		       if !Control.warnUnusedAnn 
-			  then !Control.warnUnusedDef
-			  else false)) o
+		       !Control.warnUnusedDef)) o
 	       (fn () => ())
 	 in
 	    DynamicWind.wind (f, restore)
