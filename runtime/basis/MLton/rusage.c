@@ -1,4 +1,4 @@
-#if (defined (__FreeBSD__))
+#if (defined (__FreeBSD__) || defined (__OpenBSD__))
 #include <sys/time.h>
 #endif
 #include <sys/resource.h>

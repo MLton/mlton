@@ -29,6 +29,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
 		       (FreeBSD, "FreeBSD"),
 		       (Linux, "Linux"),
 		       (NetBSD, "NetBSD"),
+		       (OpenBSD, "OpenBSD"),
 		       (Solaris, "Solaris")]
 	       
 	    fun fromString s =

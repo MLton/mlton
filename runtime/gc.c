@@ -16,7 +16,7 @@
 #include <sys/sysctl.h>
 #endif
 
-#if (defined (__NetBSD__))
+#if (defined (__NetBSD__) || defined (__OpenBSD__))
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #endif
@@ -50,11 +50,11 @@
 #include "IntInf.h"
 
 /* SUPPORTS_WEAK is true if the platform supports the weak attribute. */
-#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
+#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
 #define SUPPORTS_WEAK 1
 #elif (defined (__CYGWIN__))
 #define SUPPORTS_WEAK 0
-#elif
+#else
 #error SUPPORTS_WEAK not defined on platform
 #endif
 
@@ -157,7 +157,7 @@ static inline uint toBytes (uint n) {
 	return n << 2;
 }
 
-#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
+#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
 static inline uint min (uint x, uint y) {
 	return ((x < y) ? x : y);
 }
@@ -331,7 +331,7 @@ static void showMem () {
 	(void)system (buffer);
 }
 
-#elif (defined (__linux__) || defined (__NetBSD__))
+#elif (defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__))
 
 static void showMem () {
 	static char buffer[256];
@@ -362,7 +362,7 @@ static void *mmapAnon (void *start, size_t length) {
 				PAGE_READWRITE);
 	if (NULL == result)
 		result = (void*)-1;
-#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__))
+#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__))
 	result = mmap (start, length, PROT_READ | PROT_WRITE, 
 			MAP_PRIVATE | MAP_ANON, -1, 0);
 #elif (defined (__sun__))
@@ -397,7 +397,7 @@ static void *smmap (size_t length) {
 	return result;
 }
 
-#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
+#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
 static void smunmap (void *base, size_t length) {
 	if (DEBUG_MEM)
 		fprintf (stderr, "smunmap (0x%08x, %s)\n",
@@ -411,7 +411,7 @@ static void smunmap (void *base, size_t length) {
 }
 #endif
 
-#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
+#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
 /* A super-safe mmap.
  *  Allocates a region of memory with dead zones at the high and low ends.
  *  Any attempt to touch the dead zone (read or write) will cause a
@@ -448,7 +448,7 @@ static void release (void *base, size_t length) {
 #if (defined (__CYGWIN__))
 	if (0 == VirtualFree (base, 0, MEM_RELEASE))
 		die ("VirtualFree release failed");
-#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
+#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
 	smunmap (base, length);
 #else
 #error release not defined
@@ -462,7 +462,7 @@ static void decommit (void *base, size_t length) {
 #if (defined (__CYGWIN__))
 	if (0 == VirtualFree (base, length, MEM_DECOMMIT))
 		die ("VirtualFree decommit failed");
-#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
+#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
 	smunmap (base, length);
 #else
 #error decommit not defined	
@@ -2692,7 +2692,7 @@ static void translateHeap (GC_state s, pointer from, pointer to, uint size) {
 /*                            heapRemap                             */
 /* ---------------------------------------------------------------- */
 
-#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__NetBSD__) || defined (__sun__))
+#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
 
 static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	return FALSE;
@@ -3858,14 +3858,16 @@ static void profileTimeInit (GC_state s) {
 	setProfTimer (10000);
 }
 
-#elif (defined (__CYGWIN__))
+#elif (defined (__CYGWIN__) || defined (__OpenBSD__))
 
-/* No time profiling on Cygwin. 
- * There is a check in mlton/main/main.fun to make sure that time profiling is
- * never turned on on Cygwin.
+/* No time profiling on this platform.  There is a check in mlton/main/main.fun
+ * to make sure that time profiling is never turned on.
+ * 
+ * OpenBSD can probably do time profiling, but at the moment, we disable it to
+ * get a working implementation fast.
  */
 static void profileTimeInit (GC_state s) {
-	die ("no time profiling on Cygwin");
+	die ("no time profiling");
 }
 
 #else
@@ -3904,7 +3906,7 @@ static void initSignalStack (GC_state s) {
 
 	/* Nothing */
 
-#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
+#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
 
         static stack_t altstack;
 	size_t ss_size = align (SIGSTKSZ, s->pageSize);
@@ -3963,7 +3965,7 @@ static W32 totalRam (GC_state s) {
 	return mem;
 }
 
-#elif (defined (__NetBSD__))
+#elif (defined (__NetBSD__) || defined (__OpenBSD__))
 
 static W32 totalRam (GC_state s) {
 	uint mem;

@@ -524,6 +524,7 @@ fun commandLine (args: string list): unit =
 		   | SOME lib => [lib]
 	       end
 	  | NetBSD => ["-Wl,-R/usr/pkg/lib", "-L/usr/pkg/lib", "-lgmp"]
+	  | OpenBSD => ["-L/usr/local/lib/", "-lgmp"]
 	  | Solaris => ["-lgmp"]
       val linkOpts =
 	 List.concat [[concat ["-L", !libTargetDir],
@@ -566,7 +567,11 @@ fun commandLine (args: string list): unit =
 				andalso not (!warnMatch)
 				andalso not (!keepDefUse))
       val _ =
-	 if targetOS = Cygwin andalso !profile = ProfileTime
+	 if (case targetOS of
+		Cygwin => true
+	      | OpenBSD => true
+	      | _ => false)
+	    andalso !profile = ProfileTime
 	    then usage "can't use -profile time on Cygwin"
 	 else ()
       fun printVersion (out: Out.t): unit =

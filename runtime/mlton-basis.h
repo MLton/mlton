@@ -7,7 +7,7 @@
 #ifndef _MLTON_BASIS_H_
 #define _MLTON_BASIS_H_
 
-#if (defined (__FreeBSD__))
+#if (defined (__FreeBSD__) || defined (__OpenBSD__))
 #include <sys/time.h>
 #endif
 #include <sys/resource.h>
@@ -147,10 +147,15 @@ Int Ptrace_ptrace4 (Int request, Int pid, Word addr, Pointer data);
 /*                      Rlimit                       */
 /* ------------------------------------------------- */
 
-#if (defined (__CYGWIN__) || defined (__sun__))
 #define RLIMIT_BOGUS 0xFFFFFFFF
+
+#ifndef RLIMIT_RSS
 #define RLIMIT_RSS RLIMIT_BOGUS
+#endif
+#ifndef RLIMIT_NPROC
 #define RLIMIT_NPROC RLIMIT_BOGUS
+#endif
+#ifndef RLIMIT_MEMLOCK
 #define RLIMIT_MEMLOCK RLIMIT_BOGUS
 #endif
 
@@ -163,9 +168,9 @@ Int Ptrace_ptrace4 (Int request, Int pid, Word addr, Pointer data);
 #define MLton_Rlimit_numProcesses RLIMIT_NPROC
 #define MLton_Rlimit_residentSetSize RLIMIT_RSS
 #define MLton_Rlimit_stackSize RLIMIT_STACK
-#if (defined (__FreeBSD__) || defined (__NetBSD__))
+#if (defined (RLIMIT_DATA))
 #define MLton_Rlimit_virtualMemorySize RLIMIT_DATA
-#elif (defined (__CYGWIN__) || defined (__linux__) || defined (__sun__))
+#elif (defined (RLIMIT_AS))
 #define MLton_Rlimit_virtualMemorySize RLIMIT_AS
 #else
 #error MLton_Rlimit_virtualMemorySize not defined

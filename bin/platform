@@ -38,6 +38,9 @@ FreeBSD*)
 NetBSD*)
 	HOST_OS='netbsd'
 ;;
+OpenBSD*)
+	HOST_OS='openbsd'
+;;
 SunOS)
 	HOST_OS='solaris'
 ;;

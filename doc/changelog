@@ -1,5 +1,8 @@
 Here are the changes since version 20040227.
 
+* 2004-06-12
+  - Added support for OpenBSD.
+
 * 2004-06-10
   - Added support for FreeBSD 5.x.
 

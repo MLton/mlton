@@ -123,6 +123,7 @@ for f in `ls *.sml`; do
 				-I "$src/build/lib/include"		\
 				-L "$src/build/lib/$crossTarget"	\
 				-L /usr/pkg/lib				\
+				-L /usr/local/lib			\
 				$f.[0-9].[cS]				\
 				$libs				
 		;;

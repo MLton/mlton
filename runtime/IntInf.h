@@ -17,9 +17,9 @@
 
 #if (defined (__CYGWIN__))
 #include "gmp.h"
-#elif (defined (__FreeBSD__))
-/* On FreeBSD, the default gmp.h is installed in /usr/include, but that is
- * version 2.  We want gmp version 4, which the is installed in 
+#elif (defined (__FreeBSD__) || defined (__OpenBSD__))
+/* On FreeBSD and OpenBSD the default gmp.h is installed in /usr/include, 
+ * but that is version 2.  We want gmp version 4, which the is installed in 
  * /usr/local/include, and is ensured to exist because it is required by the
  * MLton package.
  */
