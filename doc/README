@@ -4,10 +4,12 @@ or Cygwin/Windows.  MLton has the following features.
 
    + Generates standalone executables with good runtime performance
    + SML 97 compliant, with a mostly complete basis library
-   + Fast IntInf based on the GNU multiprecision library (gmp)
+   + Untagged native integers and unboxed native arrays
    + Fast C FFI
    + Source-level profiling of both time and allocation
+   + Multiple garbage collection strategies
    + Supports large amounts of memory and large arrays
+   + Fast IntInf based on the GNU multiprecision library (gmp)
    + Libraries for continuations, interval timers, random numbers,
        resource limits, resource usage, signal handlers, system
        logging, threads, and heap save and restore
