@@ -132,7 +132,7 @@ install:
 		cd $(SRC)/doc &&					\
 		$(CP) -r CHANGES cmcat.sml examples			\
 			license README $(TDOC) &&			\
-		mv user-guide/main $(TDOC)/HTML &&			\
+		mv user-guide/main $(TDOC)/user-guide &&		\
 		gzip -c user-guide/main.ps >$(TDOC)/user-guide.ps.gz	\
 	) &&								\
 	( 								\
