@@ -21,10 +21,9 @@ signature ELABORATE =
    sig
       include ELABORATE_STRUCTS
 
-      structure Decs: DECS
       structure Env: ELABORATE_ENV
 
       val elaborateMLB:
-	 Ast.Basdec.t * {addPrim: Env.t -> Decs.t}
-	 -> Env.t * (Decs.t * bool) vector
+	 Ast.Basdec.t * {addPrim: Env.t -> CoreML.Dec.t list}
+	 -> Env.t * (CoreML.Dec.t list * bool) vector
   end

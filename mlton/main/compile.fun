@@ -91,7 +91,6 @@ local
    open Elaborate
 in
    structure Env = Env
-   structure Decs = Decs
 end
 structure LookupConstant = LookupConstant (structure Const = Const
 					   structure ConstType = ConstType
@@ -284,21 +283,21 @@ local
 	    end
       end
 
-   val primitiveDecs: CoreML.Dec.t vector =
+   val primitiveDecs: CoreML.Dec.t list =
       let
 	 open CoreML.Dec
       in
-	 Vector.concat [Vector.new1 (Datatype primitiveDatatypes),
-			Vector.fromListMap
-			(primitiveExcons, fn c =>
-			 Exception {con = c, arg = NONE})]
+	 List.concat [[Datatype primitiveDatatypes],
+		      List.map
+		      (primitiveExcons, fn c =>
+		       Exception {con = c, arg = NONE})]
       end
 
 in
 
    fun addPrim E =
       (Env.addPrim E
-       ; Decs.fromVector primitiveDecs)
+       ; primitiveDecs)
 end
 
 
@@ -306,10 +305,7 @@ end
 (*                 parseAndElaborateMLB              *)
 (* ------------------------------------------------- *)
 
-val (lexAndParseMLB, lexAndParseMLBMsg) =
-   Control.traceBatch 
-   (Control.Pass, "lex and parse")
-   MLBFrontEnd.lexAndParseString
+val lexAndParseMLB = MLBFrontEnd.lexAndParseString
 
 val lexAndParseMLB : String.t -> Ast.Basdec.t = 
    fn input =>
@@ -323,10 +319,7 @@ val lexAndParseMLB : String.t -> Ast.Basdec.t =
 fun sourceFilesMLB {input} =
    Ast.Basdec.sourceFiles (lexAndParseMLB input)
 
-val (elaborateMLB, elaborateMLBMsg) =
-   Control.traceBatch 
-   (Control.Pass, "elaborate") 
-   Elaborate.elaborateMLB
+val elaborateMLB = Elaborate.elaborateMLB
 
 val displayEnvDecs =
    Control.Layout
@@ -335,10 +328,10 @@ val displayEnvDecs =
     (fn (d, b) =>
      Layout.record
      [("deadCode", Bool.layout b),
-      ("decs", Decs.layout d)])
+      ("decs", List.layout CoreML.Dec.layout d)])
     ds)
 
-fun parseAndElaborateMLB (input: String.t): Env.t * (Decs.t * bool) vector =
+fun parseAndElaborateMLB (input: String.t): Env.t * (CoreML.Dec.t list * bool) vector =
    Control.pass
    {name = "parseAndElaborate",
     suffix = "core-ml",
@@ -357,8 +350,7 @@ fun outputBasisConstants (out: Out.t): unit =
       val _ = amBuildingConstants := true
       val (_, decs) =
 	 parseAndElaborateMLB "$(MLTON_ROOT)/basis/libs/primitive.mlb"
-      val decs = Vector.map (decs, fn (decs, _) => Decs.toList decs)
-      val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
+      val decs = Vector.concatV (Vector.map (decs, Vector.fromList o #1))
       (* Need to defunctorize so the constants are forced. *)
       val _ = Defunctorize.defunctorize (CoreML.Program.T {decs = decs})
       val _ = LookupConstant.build (!allConstants, out)
@@ -399,7 +391,6 @@ fun elaborate {input: String.t}: Xml.Program.t =
 		in
 		   ()
 		end)
-      val _ = (lexAndParseMLBMsg (); elaborateMLBMsg ())
       val _ = if !Control.elaborateOnly then raise Done else ()
 
       val decs =
@@ -408,9 +399,6 @@ fun elaborate {input: String.t}: Xml.Program.t =
 	  suffix = "core-ml",
 	  style = Control.ML,
 	  thunk = fn () => let
-			      val decs = 
-				 Vector.map (decs, fn (decs, b) => 
-					     (Decs.toList decs, b))
 			      val {prog = decs} =
 				 DeadCode.deadCode {prog = decs}
 			   in

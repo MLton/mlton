@@ -63,7 +63,7 @@ end
 
 fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
    let
-      val decs = Buffer.new {dummy = (Decs.empty, false)}
+      val decs = Buffer.new {dummy = ([], false)}
 
       val E = Env.empty ()
       fun withDef f =
@@ -84,7 +84,7 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 	  (#2 o Env.makeBasis)
 	  (E, fn () =>
 	   let val primDecs = addPrim E
-	   in Buffer.add(decs, (primDecs, false))
+	   in Buffer.add (decs, (primDecs, false))
 	   end))
 
       fun elabProg p = ElaboratePrograms.elaborateProgram (p, {env = E})
@@ -165,7 +165,7 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 		let
 		   val prog = Promise.force prog
 		in
-		   Buffer.add (decs, (elabProg prog, deadCode ()))
+		   Buffer.add (decs, (Decs.toList (elabProg prog), deadCode ()))
 		end
 	   | Basdec.MLB ({fileAbs, ...}, basdec) =>
 		let

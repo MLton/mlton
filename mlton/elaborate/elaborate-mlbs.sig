@@ -22,6 +22,6 @@ signature ELABORATE_MLBS =
       include ELABORATE_MLBS_STRUCTS
 
       val elaborateMLB:
-	 Ast.Basdec.t * {addPrim: Env.t -> Decs.t}
-	 -> Env.t * (Decs.t * bool) vector
+	 Ast.Basdec.t * {addPrim: Env.t -> CoreML.Dec.t list}
+	 -> Env.t * (CoreML.Dec.t list * bool) vector
     end
