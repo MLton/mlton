@@ -1,18 +1,19 @@
-structure F = MLton.Finalize
-
-structure Weak = MLton.Weak
+structure F = MLton.Finalizable
 
 val n = 4
-val rs = Array.tabulate (n, ref)
-fun sub i = ! (Array.sub (rs, i))
-val r = ref 13
-fun clear i = Array.update (rs, i, r)
-val () =
-   Array.appi
-   (fn (i, r) =>
-    F.finalize (r, fn () =>
-		print (concat [Int.toString i, " gone.\n"])))
-   rs
+val fs = Array.tabulate (n, fn i =>
+			 let
+			    val f = F.new i
+			    val _ = 
+			       F.addFinalizer
+			       (f, fn i =>
+				print (concat [Int.toString i, " gone.\n"]))
+			 in
+			    f
+			 end)
+fun sub i = F.withValue (Array.sub (fs, i), fn i => i)
+val f = F.new 13
+fun clear i = Array.update (fs, i, f)
 val _ = clear 3
 val _ = clear 2
 val _ = MLton.GC.collect ()
