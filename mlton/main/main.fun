@@ -267,7 +267,7 @@ fun makeOptions {usage} =
 	boolRef markCards),
        (Expert, "max-function-size", " <n>", "max function size (blocks)",
 	intRef maxFunctionSize),
-       (Normal, "native",
+       (Expert, "native",
 	if !targetArch = Sparc then " {false}" else " {true|false}",
 	"use native code generator",
 	Bool (fn b =>
