@@ -611,8 +611,6 @@ datatype t = T of {currentScope: Scope.t ref,
 		   types: (Ast.Tycon.t, TypeStr.t) NameSpace.t,
 		   vals: (Ast.Vid.t, Vid.t * Scheme.t) NameSpace.t}
 
-fun clean _ = ()
-
 fun sizeMessage (E: t): Layout.t =
    let
       val size = MLton.size

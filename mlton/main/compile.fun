@@ -353,10 +353,6 @@ in
 		       Ast.Longstrid.short
 		       (Ast.Strid.fromSymbol (Symbol.fromString "MLtonFFI",
 					      Region.bogus))))
-	  val localTopFinish = fn g =>
-	     (localTopFinish g) before ((* Env.addEquals basisEnv *)
-					Env.clean basisEnv)
-
 	  fun doit name =
 	    let
 	      fun libFile f = libsFile (String./ (name, f))
