@@ -19,7 +19,7 @@ Definition of Standard ML (Revised)\cite{MTHM97}.  If there is a
 program that is valid according to The Definition that is rejected by
 {\mlton}, it is a bug.
 
-\feature{basis library mostly complete}
+\feature{mostly complete basis library}
 {\mlton} contains a mostly complete implementation of the basis library.
 Missing are some IO modules ({\tt ImperativeIO}, {\tt StreamIO},
 {\tt PrimIO}), and a few functions in the {\tt IntInf}, {\tt Os.IO}, {\tt Real},
@@ -40,7 +40,7 @@ statically linked executables.
 \feature{small executables}
 Because of whole-program compilation, {\mlton} can use very aggressive 
 dead-code elimination, which often leads to smaller executables than
-with other compilers.
+with other SML compilers.
 
 \feature{compiles large programs}
 {\mlton} is sufficiently robust that it can compile large programs,
@@ -56,8 +56,8 @@ The {\mlton} implementation of arbitrary precision arithmetic (the
 {\tt IntInf} structure) uses the
 \htmladdnormallink{GNU multiprecision library (gmp)}
 		  {http://www.gnu.org/software/gmp/gmp.html}.
-Hence, for {\tt IntInf} intensive programs, {\mlton} is often orders
-of magnitude faster than {\smlnj}.
+Hence, for {\tt IntInf} intensive programs, {\mlton} can be an order
+of magnitude or more faster than {\poly} or {\smlnj}.
 
 \feature{fast C FFI}
 {\mlton} has a straightforward and fast FFI for calling C routines
@@ -118,7 +118,7 @@ ways to go.
 
 \feature{world save and restore}
 {\mlton} has a facility for saving the entire state of a computation
-to a file, and restarting it later.  This facility can be used for
+to a file and restarting it later.  This facility can be used for
 staging and for checkpointing computations.  It can even be used from
 within signal handlers, allowing interrupt driven checkpointing.
 

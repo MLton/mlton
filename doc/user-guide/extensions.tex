@@ -16,7 +16,9 @@ are ignored.
 \subsection{{\tt MLton}}
 
 The remainder of this section describes the modules {\mlton} makes available
-that are not part of the standard basis library.
+that are not part of the standard basis library.  As a warning, please keep in
+mind that the {\tt MLton} structure and its substructures do change from release
+to release of {\mlton}.  
 
 \begin{verbatim}
 structure MLton:
@@ -68,7 +70,7 @@ arrays, datatypes, strings, tuples, and vectors, this is a simple pointer
 equality.  The semantics is a bit murky.
 
 \entry{datatype hostType = Cygwin | Linux}
-the two possible host types that {\mlton} can generate executables for.
+the possible host types that {\mlton} can generate executables for.
 
 \entry{hostType}
 the host type that the executable was generated for.
@@ -155,7 +157,7 @@ continuation.
 
 \end{description}
 
-\subsubsection{{\tt MLton.Exn}}
+\subsubsec{{\tt MLton.Exn}}{exn}
 \begin{verbatim}
 signature MLTON_EXN =
    sig
@@ -297,7 +299,7 @@ Start a new process running the executable specified by {\tt path} with the
 arguments {\tt args}.  Like {\tt Posix.Process.exec}.
 \entry{spawne \{path, args, env\}}
 Start a new process running the executable specified by {\tt path} with the
-arguments {\tt args}.  Like {\tt Posix.Process.exece}.
+arguments {\tt args} and environment {\tt env}.  Like {\tt Posix.Process.exece}.
 \entry{spawnp \{file, args\}}
 Search the {\tt PATH} environment variable for an executable named {\tt file},
 and start a new process running that executable with the arguments {\tt args}.
@@ -306,10 +308,10 @@ Like {\tt Posix.Process.execp}.
 
 \subsubsec{{\tt MLton.Profile}}{profile}
 This structure provides profiling control from within the program.
-For more details, see \secref{profiling} and {\tt examples/profiling}.
-In order to most efficiently execute non-profiled programs, all of the
-operations in {\tt MLton.Profile} are no-ops when compiling {\tt
--profile false}.
+For more on profiling as well as an example, see \secref{profiling}
+and {\tt examples/profiling}. In order to most efficiently execute
+non-profiled programs, all of the operations in {\tt MLton.Profile}
+are no-ops when compiling {\tt -profile false}.
 
 \begin{verbatim}
 signature MLTON_PROFILE =
@@ -439,7 +441,8 @@ indicates that a resource is unlimited.
 type types of resources that can be inspected and modified.
 
 \entry{get r}
-returns the current hard and soft limits for resource {\tt r}.
+returns the current hard and soft limits for resource {\tt r}. May
+raise {\tt OS.SysErr}.
 
 \entry{set (r, \{hard, soft\})}
 sets the hard and soft limits for resource {\tt r}.  May raise {\tt OS.SysErr}.
@@ -460,8 +463,7 @@ signature MLTON_RUSAGE =
 
 \begin{description}
 \entry{type t}
-corresponds to a subset of the C {\tt struct rusage}.  We will add fields as
-necessary.
+corresponds to a subset of the C {\tt struct rusage}.
 
 \entry{rusage ()}
 corresponds to the C {\tt getrusage} function.  It returns the resource usage of
@@ -649,44 +651,47 @@ for more details.
 signature MLTON_SYSLOG =
    sig
       type openflag
-       val CONS     : openflag
-       val NDELAY   : openflag
-       val PERROR   : openflag
-       val PID      : openflag
-   
-       type facility
-       val AUTHPRIV : facility
-       val CRON     : facility
-       val DAEMON   : facility
-       val KERN     : facility
-       val LOCAL0   : facility
-       val LOCAL1   : facility
-       val LOCAL2   : facility
-       val LOCAL3   : facility
-       val LOCAL4   : facility
-       val LOCAL5   : facility
-       val LOCAL6   : facility
-       val LOCAL7   : facility
-       val LPR      : facility
-       val MAIL     : facility
-       val NEWS     : facility
-       val SYSLOG   : facility
-       val USER     : facility
-       val UUCP     : facility
-   
-       type loglevel
-       val EMERG    : loglevel
-       val ALERT    : loglevel
-       val CRIT     : loglevel
-       val ERR      : loglevel
-       val WARNING  : loglevel
-       val NOTICE   : loglevel
-       val INFO     : loglevel
-       val DEBUG    : loglevel
-   
-       val closelog: unit -> unit
-       val log: loglevel * string -> unit
-       val openlog: string * openflag list * facility -> unit
+         
+      val CONS     : openflag
+      val NDELAY   : openflag
+      val PERROR   : openflag
+      val PID      : openflag
+
+      type facility
+
+      val AUTHPRIV : facility
+      val CRON     : facility
+      val DAEMON   : facility
+      val KERN     : facility
+      val LOCAL0   : facility
+      val LOCAL1   : facility
+      val LOCAL2   : facility
+      val LOCAL3   : facility
+      val LOCAL4   : facility
+      val LOCAL5   : facility
+      val LOCAL6   : facility
+      val LOCAL7   : facility
+      val LPR      : facility
+      val MAIL     : facility
+      val NEWS     : facility
+      val SYSLOG   : facility
+      val USER     : facility
+      val UUCP     : facility
+
+      type loglevel
+
+      val EMERG    : loglevel
+      val ALERT    : loglevel
+      val CRIT     : loglevel
+      val ERR      : loglevel
+      val WARNING  : loglevel
+      val NOTICE   : loglevel
+      val INFO     : loglevel
+      val DEBUG    : loglevel
+
+      val closelog: unit -> unit
+      val log: loglevel * string -> unit
+      val openlog: string * openflag list * facility -> unit
    end
 \end{verbatim}
 
@@ -742,7 +747,7 @@ fd}.
 \subsubsec{{\tt MLton.Thread}}{thread}
 Threads are data structures that will begin computing when {\tt
 switch}ed to with a value.  {\tt MLton.Thread} does not include a
-default scheduling mechanism, and can be used to implement both
+default scheduling mechanism, but it can be used to implement both
 preemptive and non-preemptive threads.  For examples, see {\tt
 thread1.sml} and {\tt thread2.sml} in the {\tt examples} directory.
 \begin{verbatim}

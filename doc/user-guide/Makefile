@@ -16,7 +16,6 @@ TEX_FILES = \
 	main.tex		\
 	man-page.tex		\
 	nj-deviations.tex	\
-	performance.tex		\
 	profiling.tex		\
 
 all:	main.ps main/main.html
