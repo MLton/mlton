@@ -316,7 +316,7 @@ hexnum={hexDigit}+;
 			end);
 <S>\\\"		=> (addString "\""; continue ());
 <S>\\\\		=> (addString "\\"; continue ());
-<S>\\{ws}   	=> (YYBEGIN F; continue ());
+<S>\\{nrws}   	=> (YYBEGIN F; continue ());
 <S>\\{eol}      => (Source.newline (source, yypos) ; YYBEGIN F ; continue ());   
 <S>\\		=> (stringError (source, yypos, "illegal string escape")
 		    ; continue ());
