@@ -24,7 +24,7 @@ structure Target =
 
       val toString =
 	 fn Direct name => name
-	  | Indirect => "*"
+	  | Indirect => "<*>"
 
       val layout = Layout.str o toString
 

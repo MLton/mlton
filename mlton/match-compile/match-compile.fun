@@ -447,14 +447,14 @@ fun matchCompile {caseType: Type.t,
 				   Char.layout (WordX.toChar w),
 				   str String.dquote]
 			   end
-		      | _ => Error.bug "strange char"
+		      | _ => Error.bug (concat ["strange char: ", Layout.toString (Const.layout c)])
 	       else if isInt
 		  then
 		     case c of
 			Const.IntInf i => IntInf.layout i
 		      | Const.Word w =>
 			   IntInf.layout (WordX.toIntInfX w)
-		      | _ => Error.bug "strange int"
+		      | _ => Error.bug (concat ["strange int: ", Layout.toString (Const.layout c)])
 	       else Const.layout c
 	    val (cases, defaults) =
 	       Vector.foldr
