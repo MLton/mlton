@@ -4,6 +4,7 @@ type word = Word.t
 signature CASES_STRUCTS = 
    sig
       type con
+      val conEquals : con * con -> bool
    end
 
 signature CASES = 
@@ -17,6 +18,7 @@ signature CASES =
        | Word of (word * 'a) vector
        | Word8 of (Word8.t * 'a) vector
 
+      val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool
       val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
       val forall: 'a t * ('a -> bool) -> bool
       val foreach: 'a t * ('a -> unit) -> unit

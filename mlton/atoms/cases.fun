@@ -10,6 +10,21 @@ datatype 'a t =
  | Word of (word * 'a) vector
  | Word8 of (Word8.t * 'a) vector
 
+fun equals (c1: 'a t, c2: 'a t, eq: 'a * 'a -> bool): bool =
+   let
+      fun doit (l1, l2, eq') = 
+	 Vector.equals 
+	 (l1, l2, fn ((x1, a1), (x2, a2)) =>
+	  eq' (x1, x2) andalso eq (a1, a2))
+   in case (c1, c2) of
+      (Char l1, Char l2) => doit (l1, l2, Char.equals)
+    | (Con l1, Con l2) => doit (l1, l2, conEquals)
+    | (Int l1, Int l2) => doit (l1, l2, Int.equals)
+    | (Word l1, Word l2) => doit (l1, l2, Word.equals)
+    | (Word8 l1, Word8 l2) => doit (l1, l2, Word8.equals)
+    | _ => false
+   end
+
 fun fold (c: 'a t, b: 'b, f: 'a * 'b -> 'b): 'b =
    let
       fun doit l = Vector.fold (l, b, fn ((_, a), b) => f (a, b))

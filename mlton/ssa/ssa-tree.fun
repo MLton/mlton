@@ -114,7 +114,8 @@ structure Label =
       fun newNoname () = newString "L"
    end
 
-structure Cases = Cases (type con = Con.t)
+structure Cases = Cases (type con = Con.t
+			 val conEquals = Con.equals)
 
 local open Layout
 in
@@ -457,6 +458,18 @@ structure Handler =
 	  | (Handle l, Handle l') => Label.equals (l, l')
 	  | _ => false
 
+      local
+	 val newHash = Random.word
+	 val callerHandler = newHash ()
+	 val handlee = newHash ()
+	 val none = newHash ()
+      in
+	 val hash: t -> Word.t =
+	    fn CallerHandler => callerHandler
+	     | Handle l => Label.hash l
+	     | None => none
+      end
+
       fun foreachLabel (h, f) =
 	 case h of
 	    Handle l => f l
@@ -492,12 +505,31 @@ structure Return =
 
       val isNonTail = fn NonTail _ => true | _ => false
 	 
-      fun map (r, f) =
-	 case r of
-	    NonTail {cont, handler} =>
-	       NonTail {cont = f cont,
-			handler = Handler.map (handler, f)}
-	  | _ => r
+      val equals =
+	 fn (Dead, Dead) => true
+	  | (HandleOnly, HandleOnly) => true
+	  | (NonTail {cont, handler}, 
+	     NonTail {cont = cont', handler = handler'}) =>
+	       Label.equals (cont, cont') andalso 
+	       Handler.equals (handler, handler')
+	  | (Tail, Tail) => true
+	  | _ => false
+
+      local
+	 val newHash = Random.word
+	 val dead = newHash ()
+	 val handleOnly = newHash ()
+	 val nonTail = newHash ()
+	 val tail = newHash ()
+	 fun hash2 (w1: Word.t, w2: Word.t) = Word.xorb (w1, w2)
+      in
+	 val hash: t -> Word.t =
+	    fn Dead => dead
+	     | HandleOnly => handleOnly
+	     | NonTail {cont, handler} =>
+	          hash2 (Label.hash cont, Handler.hash handler)
+	     | Tail => tail
+      end
 
       fun foreachHandler (r, f) =
 	 case r of
@@ -510,6 +542,13 @@ structure Return =
 	       (f cont
 		; Handler.foreachLabel (handler, f))
 	  | _ => ()
+
+      fun map (r, f) =
+	 case r of
+	    NonTail {cont, handler} =>
+	       NonTail {cont = f cont,
+			handler = Handler.map (handler, f)}
+	  | _ => r
 
       fun compose (c: t, r: t): t =
 	 case r of
@@ -685,6 +724,83 @@ structure Transfer =
 		  seq [Label.layout return, str " ", 
 		       tuple [Prim.layoutApp (prim, args, Var.layout)]]
       end
+
+      fun varsEquals (xs, xs') = Vector.equals (xs, xs', Var.equals)
+
+      fun equals (e: t, e': t): bool =
+	 case (e, e') of
+	    (Arith {prim, args, overflow, success},
+	     Arith {prim = prim', args = args', 
+		    overflow = overflow', success = success'}) =>
+	       Prim.equals (prim, prim') andalso
+	       varsEquals (args, args') andalso
+	       Label.equals (overflow, overflow') andalso
+	       Label.equals (success, success')
+	  | (Bug, Bug) => true
+	  | (Call {func, args, return}, 
+	     Call {func = func', args = args', return = return'}) =>
+	       Func.equals (func, func') andalso
+	       varsEquals (args, args') andalso
+	       Return.equals (return, return')
+	  | (Case {test, cases, default},
+	     Case {test = test', cases = cases', default = default'}) =>
+	       Var.equals (test, test') andalso
+	       Cases.equals (cases, cases', Label.equals) andalso
+	       Option.equals (default, default', Label.equals)
+	  | (Goto {dst, args}, Goto {dst = dst', args = args'}) =>
+	       Label.equals (dst, dst') andalso
+	       varsEquals (args, args')
+	  | (Raise xs, Raise xs') => varsEquals (xs, xs')
+	  | (Return xs, Return xs') => varsEquals (xs, xs')
+	  | (Runtime {prim, args, return},
+	     Runtime {prim = prim', args = args', return = return'}) =>
+	       Prim.equals (prim, prim') andalso
+	       varsEquals (args, args') andalso
+	       Label.equals (return, return')
+	  | _ => false
+
+      local
+	 val newHash = Random.word
+	 val arith = newHash ()
+	 val bug = newHash ()
+	 val call = newHash ()
+	 val casee = newHash ()
+	 val goto = newHash ()
+	 val raisee = newHash ()
+	 val return = newHash ()
+	 val runtime = newHash ()
+	 fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
+	    Vector.fold (xs, w, fn (x, w) => Word.xorb (w, Var.hash x))
+	 fun hash2 (w1: Word.t, w2: Word.t) = Word.xorb (w1, w2)
+	 fun hash3 (w1: Word.t, w2: Word.t, w3: Word.t) 
+	   = Word.xorb (hash2 (w1, w2), w3)
+      in
+	 val hash: t -> Word.t =
+	    fn Arith {args, overflow, success, ...} =>
+	          hashVars (args, hash2 (Label.hash overflow, Label.hash success))
+	     | Bug => bug
+	     | Call {func, args, return} =>
+		  hashVars (args, hash2 (Func.hash func, Return.hash return))
+	     | Case {test, cases, default} =>
+		  hash2 (Var.hash test, 
+			 Cases.fold
+			 (cases, 
+			  Option.fold
+			  (default, 0wx55555555, 
+			   fn (l, w) => 
+			   hash2 (Label.hash l, w)),
+			  fn (l, w) => 
+			  hash2 (Label.hash l, w)))
+	     | Goto {dst, args} =>
+		  hashVars (args, Label.hash dst)
+	     | Raise xs => hashVars (xs, raisee)
+	     | Return xs => hashVars (xs, return)
+	     | Runtime {prim, args, return} =>
+		  hashVars (args, Label.hash return)
+      end
+
+      val hash = Trace.trace ("Transfer.hash", layout, Word.layout) hash
+
    end
 datatype z = datatype Transfer.t
 

@@ -59,7 +59,9 @@ structure Pat =
       val layout = Apat.layout o toAst
    end
 
-structure Cases = Cases (type con = Pat.t)
+structure Cases = Cases (type con = Pat.t
+			 val conEquals = fn _ => 
+			 Error.bug "XmlTree.Cases.conEquals")
 
 (*---------------------------------------------------*)
 (*                      VarExp                       *)

@@ -185,10 +185,12 @@ signature SSA_TREE =
 			   return: Label.t (* Must be nullary. *)
 			  }
 
+	    val equals: t * t -> bool
 	    val foreachFunc : t * (Func.t -> unit) -> unit
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	    val foreachLabelVar: t * (Label.t -> unit) * (Var.t -> unit) -> unit
 	    val foreachVar: t * (Var.t -> unit) -> unit
+	    val hash: t -> Word.t
 	    val layout: t -> Layout.t
 	    val replaceLabelVar: t * (Label.t -> Label.t) * (Var.t -> Var.t) -> t
 	    val replaceLabel: t * (Label.t -> Label.t) -> t
