@@ -13,10 +13,8 @@ signature ELABORATE_ENV_STRUCTS =
       structure Ast: AST
       structure CoreML: CORE_ML
       structure TypeEnv: TYPE_ENV
-      sharing Ast.Symbol = CoreML.Symbol
       sharing Ast.Record = CoreML.Record
       sharing Ast.SortedRecord = CoreML.SortedRecord
-      sharing Ast.Symbol = CoreML.Symbol
       sharing Ast.Tyvar = CoreML.Tyvar
       sharing CoreML.Atoms = TypeEnv.Atoms
       sharing CoreML.Type = TypeEnv.Type
@@ -29,9 +27,6 @@ signature ELABORATE_ENV =
       structure Decs: DECS
       sharing CoreML = Decs.CoreML
 
-      structure Symbol: SYMBOL
-      sharing Symbol = Ast.Symbol = CoreML.Symbol
-	 
       structure Tycon: TYCON
       sharing Tycon = TypeEnv.Tycon
       structure Type:

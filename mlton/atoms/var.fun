@@ -10,8 +10,7 @@ struct
 
 open S
 
-structure V = Id (structure Symbol = Symbol
-		  val noname = "x")
+structure V = Id (val noname = "x")
 open V
    
 end

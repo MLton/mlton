@@ -7,7 +7,6 @@
  *)
 signature CON_STRUCTS = 
    sig
-      structure Symbol: SYMBOL
    end
 
 signature CON = 

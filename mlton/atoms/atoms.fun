@@ -14,12 +14,11 @@ structure Atoms =
 
       structure SourceInfo = SourceInfo ()
       structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)
-      structure Var = Var (structure Symbol = Symbol)
+      structure Var = Var ()
       structure Tycon = Tycon (structure IntSize = IntSize
 			       structure RealSize = RealSize
-			       structure Symbol = Symbol
 			       structure WordSize = WordSize)
-      structure Con = Con (structure Symbol = Symbol)
+      structure Con = Con ()
       structure CType = CType (structure IntSize = IntSize
 			       structure RealSize = RealSize
 			       structure WordSize = WordSize)

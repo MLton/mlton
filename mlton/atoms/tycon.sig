@@ -12,7 +12,6 @@ signature TYCON_STRUCTS =
    sig
       structure IntSize: INT_SIZE
       structure RealSize: REAL_SIZE
-      structure Symbol: SYMBOL
       structure WordSize: WORD_SIZE
    end
 

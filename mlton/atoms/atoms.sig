@@ -12,7 +12,6 @@ signature ATOMS_STRUCTS =
       structure RealSize: REAL_SIZE
       structure Record: RECORD
       structure SortedRecord: RECORD
-      structure Symbol: SYMBOL
       structure Tyvar: TYVAR
       structure WordSize: WORD_SIZE
       sharing Field = Record.Field = SortedRecord.Field

@@ -7,7 +7,6 @@
  *)
 signature VAR_STRUCTS =
    sig
-      structure Symbol: SYMBOL
    end
 
 signature VAR = ID
