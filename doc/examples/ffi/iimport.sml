@@ -1,4 +1,3 @@
-
 signature DYN_LINK =
    sig
       type hndl
@@ -86,7 +85,16 @@ structure DynLink :> DYN_LINK =
 	 end
    end
 
-val hndl = DynLink.dlopen ("libm.so", DynLink.RTLD_LAZY)
+val dll =
+   let
+      open MLton.Platform.OS
+   in
+      case host of
+	 Cygwin => "cygwin1.dll"
+       | _ => "libm.so"
+   end
+
+val hndl = DynLink.dlopen (dll, DynLink.RTLD_LAZY)
 
 local
    val double_to_double =
