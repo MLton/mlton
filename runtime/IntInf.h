@@ -66,7 +66,12 @@ extern struct intInfRes_t	*IntInf_do_add(Pointer lhs,
 				*IntInf_do_rem(Pointer num,
 					     Pointer den,
 					     Pointer space,
-					     Pointer frontier);
+					     Pointer frontier),
+				*IntInf_do_gcd(pointer lhs,
+ 					     pointer rhs,
+ 					     pointer rspace,
+ 					     pointer frontier);
+
 extern Word	IntInf_smallMul(Word lhs, Word rhs, Pointer carry);
 extern int	IntInf_compare(Pointer lhs, Pointer rhs),
 		IntInf_equal(Pointer lhs, Pointer rhs);

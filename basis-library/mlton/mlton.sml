@@ -29,6 +29,7 @@ structure Array = Array
 structure Cont = Cont
 structure Exn = Exn
 structure GC = GC
+structure IntInf = IntInf
 structure Itimer = Itimer
 structure ProcEnv = ProcEnv
 structure Ptrace = Ptrace

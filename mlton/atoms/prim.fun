@@ -61,6 +61,7 @@ structure Name =
        | IntInf_fromString
        | IntInf_fromStringIsPossible
        | IntInf_fromWord
+       | IntInf_gcd
        | IntInf_isSmall
        | IntInf_mul
        | IntInf_neg
@@ -261,6 +262,7 @@ structure Name =
 	   | IntInf_compare => true
 	   | IntInf_equal => true
 	   | IntInf_add => true
+	   | IntInf_gcd => true
 	   | IntInf_sub => true
 	   | IntInf_mul => true
 	   | IntInf_quot => true
@@ -314,6 +316,7 @@ structure Name =
 	  (IntInf_fromStringIsPossible, Functional,
 	   "IntInf_fromStringIsPossible"),
 	  (IntInf_fromWord, Functional, "IntInf_fromWord"),
+	  (IntInf_gcd, Functional, "IntInf_gcd"),
 	  (IntInf_isSmall, Functional, "IntInf_isSmall"),
 	  (IntInf_mul, Functional, "IntInf_mul"),
 	  (IntInf_neg, Functional, "IntInf_neg"),

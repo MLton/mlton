@@ -50,6 +50,12 @@ signature INT_INF =
 signature INT_INF_EXTRA =
    sig
       include INT_INF
-
+	 
       val bigIntConstant: Int.int -> int
+      val gcd: int * int -> int 
+      datatype rep =
+	 Small of Word.word
+       | Big of Word.word Vector.vector
+      val rep: int -> rep
+      val size: int -> Int.int
    end

@@ -67,6 +67,7 @@ signature PRIM =
 	     | IntInf_fromArray
 	     | IntInf_fromString
 	     | IntInf_fromStringIsPossible
+	     | IntInf_gcd
 	     | IntInf_isSmall
 	     | IntInf_mul
 	     | IntInf_neg

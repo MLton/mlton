@@ -513,6 +513,11 @@ int Int_bogus;
 	frontier = intInfRes->frontier,					\
 	intInfRes->value)
 
+#define IntInf_gcd(lhs, rhs, space)	(				\
+	intInfRes = IntInf_do_gcd((lhs), (rhs), (space), frontier),	\
+	frontier = intInfRes->frontier,					\
+	intInfRes->value)
+
 /* ------------------------------------------------- */
 /*                       MLton                       */
 /* ------------------------------------------------- */

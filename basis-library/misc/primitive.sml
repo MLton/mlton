@@ -239,7 +239,6 @@ structure Primitive =
 	    type int = intInf
 
 	    val + = _prim "IntInf_add": int * int * word array -> int;
-(*	    val + = _prim "IntInf_add": int * int * Int.int -> int; *)
 	    val areSmall = _prim "IntInf_areSmall": int * int -> bool;
 	    val compare = _prim "IntInf_compare": int * int -> Int.int;
 	    val fromArray = _prim "IntInf_fromArray": word array -> int;
@@ -247,6 +246,7 @@ structure Primitive =
 	    val fromStringIsPossible =
 	       _prim "IntInf_fromStringIsPossible": string -> bool;
 	    val fromWord = _prim "IntInf_fromWord": word -> int;
+	    val gcd = _prim "IntInf_gcd": int * int * word array -> int;
 	    val isSmall = _prim "IntInf_isSmall": int -> bool;
 	    val * = _prim "IntInf_mul": int * int * word array -> int;
 (*	    val * = _prim "IntInf_mul": int * int * Int.t -> int; *)

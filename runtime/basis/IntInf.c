@@ -197,7 +197,6 @@ answer(__mpz_struct *ans, struct intInfRes_t *res)
 		GC_arrayShrink((pointer)res->value, size+1);
 }
 
-
 struct intInfRes_t	*
 IntInf_do_add(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
 {
@@ -221,7 +220,6 @@ IntInf_do_add(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
 	assert((pointer)bp <= res.frontier);
 	return (&res);
 }
-
 
 struct intInfRes_t	*
 IntInf_do_sub(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
@@ -247,7 +245,6 @@ IntInf_do_sub(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
 	return (&res);
 }
 
-
 uint
 IntInf_smallMul(uint lhs, uint rhs, pointer carry)
 {
@@ -257,7 +254,6 @@ IntInf_smallMul(uint lhs, uint rhs, pointer carry)
 	*(uint *)carry = (ullong)prod >> 32;
 	return ((uint)(ullong)prod);
 }
-
 
 struct intInfRes_t	*
 IntInf_do_mul(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
@@ -282,7 +278,6 @@ IntInf_do_mul(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
 	assert((pointer)bp <= res.frontier);
 	return (&res);
 }
-
 
 /*
  * Return an integer which compares to 0 as the two intInf args compare
@@ -574,6 +569,30 @@ IntInf_do_rem(pointer num, pointer den, pointer space, pointer frontier)
 	return (&res);
 }
 
+
+struct intInfRes_t	*
+IntInf_do_gcd(pointer lhs, pointer rhs, pointer rspace, pointer frontier)
+{
+	bignum		*bp;
+	__mpz_struct	lhsmpz,
+			rhsmpz,
+			resmpz;
+	mp_limb_t	lhsspace[2],
+			rhsspace[2];
+	static struct intInfRes_t	res;
+
+	bp = toBignum(rspace);
+	assert(frontier == (pointer)&bp->limbs[bp->card - 1]);
+	fill(lhs, &lhsmpz, lhsspace);
+	fill(rhs, &rhsmpz, rhsspace);
+	init(bp, &resmpz);
+	mpz_gcd(&resmpz, &lhsmpz, &rhsmpz);
+	assert((resmpz._mp_alloc < bp->card)
+	and (resmpz._mp_d == bp->limbs));
+	answer(&resmpz, &res);
+	assert((pointer)bp <= res.frontier);
+	return (&res);
+}
 
 /*
  * For each entry { globalIndex, mlstr} in the inits array (which is terminated

@@ -17,6 +17,10 @@ structure IntInf: INT_INF_EXTRA =
    struct
       structure Word = Word32
 	 
+      datatype rep =
+	 Small of Word.word
+       | Big of Word.word Vector.vector
+	 
       local
 	 structure Prim = Primitive.IntInf
 	 type bigInt = Prim.int
@@ -31,7 +35,7 @@ structure IntInf: INT_INF_EXTRA =
 	    val op - = op -
 	 end
 	 type smallInt = int
-
+		 
 	 (* bigIntConstant is just to make it easy to spot where the bigInt
 	  * constants are in this module.
 	  *)
@@ -136,6 +140,11 @@ structure IntInf: INT_INF_EXTRA =
 			   end
 		end
 
+ 	 fun rep x =
+ 	     if Prim.isSmall x then
+ 		 Small (stripTag x)
+ 	     else
+ 		 Big (Prim.toVector x)
 	 (*
 	  * Convert a biglInt to a smallInt, raising overflow if it
 	  * is too big.
@@ -369,6 +378,65 @@ structure IntInf: INT_INF_EXTRA =
 	 fun bigSameSign (lhs: bigInt, rhs: bigInt): bool =
 		bigSign lhs = bigSign rhs
 
+  	 (*
+ 	  * bigInt gcd.
+ 	  *)
+ 	 local
+	    open Int
+
+	    fun expensive (lhs: bigInt, rhs: bigInt): bigInt =
+	       let
+		  val tsize = max (size lhs, size rhs)
+	       in
+		  Prim.gcd (lhs, rhs, allocate tsize)
+	       end
+ 
+	    fun mod2 x = Word.toIntX (Word.andb (Word.fromInt x, 0w1))
+	    fun div2 x = Word.toIntX (Word.>> (Word.fromInt x, 0w1))
+ 
+	    fun gcdInt (a, b, acc) =
+	       case (a, b) of
+		  (0, _) => b * acc
+		| (_, 0) => a * acc
+		| (_, 1) => acc
+		| (1, _) => acc
+		| _ => 
+		     if a = b
+			then a * acc
+		     else
+			let
+			   val a_2 = div2 a
+			   val a_r2 = mod2 a
+			   val b_2 = div2 b
+			   val b_r2 = mod2 b
+			in
+			   if 0 = a_r2
+			      then
+				 if 0 = b_r2
+				    then gcdInt (a_2, b_2, acc + acc)
+				 else gcdInt (a_2, b, acc)
+			   else
+			      if 0 = b_r2
+				 then gcdInt (a, b_2, acc)
+			      else
+				 if a >= b
+				    then gcdInt (div2 (a - b), b, acc)
+				 else gcdInt (a, div2 (b - a), acc)
+			end
+		   
+ 	 in
+	    fun bigGcd (lhs: bigInt, rhs: bigInt): bigInt =
+	       if Prim.areSmall (lhs, rhs)
+		  then
+		     Prim.fromWord
+		     (addTag
+		      (Word.fromInt
+		       (gcdInt (Int.abs (Word.toIntX (stripTag lhs)),
+				Int.abs (Word.toIntX(stripTag rhs)),
+				1))))
+	       else expensive (lhs, rhs)
+ 	 end
+      
 	 (*
 	  * bigInt toString and fmt.
 	  * dpc is the maximum number of digits per `limb'.
@@ -730,39 +798,42 @@ structure IntInf: INT_INF_EXTRA =
 
       in
 	 type int = bigInt
+	 val abs = bigAbs
 	 val bigIntConstant = bigIntConstant
-	 val toLarge = fn x => x
-	 val fromLarge = fn x => x
-	 val toInt = bigToInt
-	 val fromInt = bigFromInt
-	 val precision = NONE
-	 val minInt = NONE
-	 val maxInt = NONE
-	 val ~ = bigNegate
-	 val op * = bigMul
-	 val op div = op div
-	 val op mod = op mod
+	 val compare = bigCompare
 	 val divMod = divMod
-	 val quot = bigQuot
-	 val rem = bigRem
-	 val quotRem = quotRem
+	 val fmt = bigFmt
+	 val fromInt = bigFromInt
+	 val fromLarge = fn x => x
+	 val fromString = bigFromString
+	 val gcd = bigGcd
+	 val max = bigMax
+	 val maxInt = NONE
+	 val min = bigMin
+	 val minInt = NONE
+	 val op * = bigMul
 	 val op + = bigPlus
 	 val op - = bigMinus
-	 val compare = bigCompare
-	 val op > = bigGT
-	 val op >= = bigGE
 	 val op < = bigLT
 	 val op <= = bigLE
-	 val abs = bigAbs
-	 val min = bigMin
-	 val max = bigMax
+	 val op > = bigGT
+	 val op >= = bigGE
+	 val op div = op div
+	 val op mod = op mod
 	 val pow = pow
-	 val sign = bigSign
+	 val precision = NONE
+	 val quot = bigQuot
+	 val quotRem = quotRem
+	 val rem = bigRem
+	 val rep = rep
 	 val sameSign = bigSameSign
-	 val fmt = bigFmt
-	 val toString = bigToString
-	 val fromString = bigFromString
 	 val scan = bigScan
+	 val sign = bigSign
+	 val size = size
+	 val toInt = bigToInt
+	 val toLarge = fn x => x
+	 val toString = bigToString
+	 val ~ = bigNegate
       end
    end
 

@@ -138,6 +138,7 @@ mlton/text-io.sig
 mlton/text-io.sml
 mlton/gc.sig
 mlton/gc.sml
+mlton/int-inf.sig
 mlton/word.sig
 mlton/proc-env.sig
 mlton/proc-env.sml

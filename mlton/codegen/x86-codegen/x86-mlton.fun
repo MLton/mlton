@@ -2381,10 +2381,11 @@ struct
 	     | IntInf_compare => intInf_comp "IntInf_compare"
 	     | IntInf_equal => intInf_comp "IntInf_equal"
 	     | IntInf_add => intInf_binop "IntInf_do_add"
-	     | IntInf_sub => intInf_binop "IntInf_do_sub"
+	     | IntInf_gcd => intInf_binop "IntInf_do_gcd"
 	     | IntInf_mul => intInf_binop "IntInf_do_mul"
 	     | IntInf_quot => intInf_binop "IntInf_do_quot"
 	     | IntInf_rem => intInf_binop "IntInf_do_rem"
+	     | IntInf_sub => intInf_binop "IntInf_do_sub"
 	     | IntInf_neg => intInf_unop "IntInf_do_neg"
 	     | IntInf_toString
 	     => let
@@ -2543,6 +2544,7 @@ struct
 	     | IntInf_compare => default ()
 	     | IntInf_equal => default ()
 	     | IntInf_add => intInf ()
+	     | IntInf_gcd => intInf ()
 	     | IntInf_sub => intInf ()
 	     | IntInf_mul => intInf ()
 	     | IntInf_quot => intInf ()
