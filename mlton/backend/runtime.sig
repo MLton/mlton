@@ -8,36 +8,81 @@
 type int = Int.t
 type word = Word.t
    
+signature RUNTIME_STRUCTS =
+   sig
+   end
+
 signature RUNTIME =
    sig
-      structure GCField: GC_FIELD
-	 
+      include RUNTIME_STRUCTS
+
+      structure Type: MTYPE
+      structure CFunction: C_FUNCTION
+      sharing Type = CFunction.Type
+      structure GCField:
+	 sig
+	    datatype t =
+	       Base
+	     | CanHandle
+	     | CurrentThread
+	     | FromSize
+	     | Frontier (* The place where the next object is allocated. *)
+	     | Limit (* frontier + heapSize - LIMIT_SLOP *)
+	     | LimitPlusSlop (* frontier + heapSize *)
+	     | MaxFrameSize
+	     | SignalIsPending
+	     | StackBottom
+	     | StackLimit (* Must have  StackTop <= StackLimit *)
+	     | StackTop (* Points at the next available word on the stack. *)
+
+	    val layout: t -> Layout.t
+	    val offset: t -> int (* Field offset in struct GC_state. *)
+	    val setOffsets: {base: int,
+			     canHandle: int,
+			     currentThread: int,
+			     fromSize: int,
+			     frontier: int,
+			     limit: int,
+			     limitPlusSlop: int,
+			     maxFrameSize: int,
+			     signalIsPending: int,
+			     stackBottom: int,
+			     stackLimit: int,
+			     stackTop: int} -> unit
+	    val toString: t -> string
+	    val ty: t -> Type.t
+	 end
+      structure ObjectType:
+	 sig
+	    datatype t =
+	       Array of {numBytesNonPointers: int,
+			 numPointers: int}
+	     | Normal of {numPointers: int,
+			  numWordsNonPointers: int}
+	     | Stack
+
+	    val equals: t * t -> bool
+	    val layout: t -> Layout.t
+	 end
+
       (* All sizes are in bytes, unless they explicitly say "pointers". *)
 
       val allocTooLarge: word
-      val arrayHeader: {numBytesNonPointers: int,
-			numPointers: int} -> word
       val arrayHeaderSize: int
+      val arrayLengthOffset: int
       val array0Size: int
-      val isValidObjectHeader: {numPointers: int,
-				numWordsNonPointers: int} -> bool
-      val isValidArrayHeader: {numBytesNonPointers: int,
-			       numPointers: int} -> bool
+      val headerToTypeIndex: word -> int
+      val isWordAligned: int -> bool
       val labelSize: int
       (* Same as LIMIT_SLOP from gc.c. *)
       val limitSlop: int
       val maxFrameSize: int
-      val objectHeader: {numPointers: int,
-			 numWordsNonPointers: int} -> word
-      val objectHeaderSize: int
-      (* objectSize does not include the header. *)
-      val objectSize: {numPointers: int,
+      val normalHeaderSize: int
+      (* normalSize does not include the header. *)
+      val normalSize: {numPointers: int,
 		       numWordsNonPointers: int} -> int
       val pointerSize: int
-      val splitArrayHeader: word -> {numBytesNonPointers: int,
-				     numPointers: int}
-      val splitObjectHeader: word -> {numPointers: int,
-				      numWordsNonPointers: int}
+      val typeIndexToHeader: int -> word
       val wordAlign: word -> word (* Can raise Overflow. *)
       val wordSize: int
    end

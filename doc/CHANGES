@@ -1,7 +1,17 @@
 Here are the changes from version 20020410 to version VERSION.
 
+* 2002-06 and 2002-07
+  - Added mark compact GC.
+  - Changed array layout so that arrays have three, not two header words.
+      The new word is a counter word that preceeds the array length and header.
+  - Changed all header words to be indices into an array of object descriptors.
+
 * 2002-06-27
   - Added patches from Michael Neumann to port runtime to FreeBSD 4.5.
+
+* 2002-06-05
+  - Output file and intermediate file are now saved in the current directory
+    instead of in the directory containing the input file.
 
 * 2002-05-31
   - Fixed bug in overloading of / so that the following now type checks:

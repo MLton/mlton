@@ -139,11 +139,17 @@ structure SmallIntInf =
 	 in minSmall <= i andalso i <= maxSmall
 	 end
 
-      fun toWord (i: IntInf.t): word =
-	 Word.orb (0w1, Word.<< (Word.fromInt (IntInf.toInt i), 0w1))
+      fun toWord (i: IntInf.t): word option =
+	 if isSmall i
+	    then SOME (Word.orb (0w1,
+				 Word.<< (Word.fromInt (IntInf.toInt i),
+					  0w1)))
+	 else NONE
 
       fun fromWord (w: word): IntInf.t =
-	 IntInf.fromInt (Word.toIntX (Word.~>> (w, 0w1)))
+	 (Assert.assert ("SmallIntInf.fromWord", fn () =>
+			 w < 0wx80000000)
+	  ; IntInf.fromInt (Word.toIntX (Word.~>> (w, 0w1))))
    end
   
 end

@@ -6,6 +6,7 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 type int = Int.t
+type word = Word.t
    
 signature LIMIT_CHECK_STRUCTS = 
    sig

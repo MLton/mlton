@@ -15,83 +15,10 @@ fun insertFunction (f: Function.t) =
    let
       val {args, blocks, name, start} = Function.dest f
       val extra = ref []
-      fun needsInit s =
-	 case s of
-	    Statement.PrimApp {prim, args, ...} =>
-	       (case Prim.name prim of
-		   Prim.Name.Array_allocate =>
-		      let
-			 fun error () = Error.bug "Array_allocate without header"
-			 val header = case (Vector.sub (args, 2)) of
-			                 Operand.Const c =>
-					    (case Const.node c of
-					        Const.Node.Word w => w
-					      | _ => error ())
-				       | _ => error ()
-			 val {numPointers, ...} = Runtime.splitArrayHeader header
-		      in
-			 numPointers > 0
-		      end
-		 | _ => false)
-	  | _ => false
-      fun needsSplit s =
-	 case s of
-	    Statement.PrimApp {prim, ...} =>
-	       isSome (Prim.bytesNeeded prim) andalso (Prim.impCall prim)
-	  | _ => false
-      fun needsRewrite s =
-	 (needsInit s,  needsSplit s)
-      fun needsRewrite' s = let val (b1, b2) = needsRewrite s in b1 orelse b2 end
-
-      fun insertSplit (s,
-		       profileInfo,
-		       statements, transfer) =
+      fun init {array: Var.t,
+		numElts: Operand.t,
+		profileInfo, statements, transfer}: Transfer.t =
 	 let
-	    fun error () = Error.bug "non PrimApp to insertSplit"
-	    val (prim, dst, args) = 
-	       case s of
-		  Statement.PrimApp {prim, dst, args} => (prim, dst, args)
-		| _ => error ()
-	    val continue = Label.newNoname ()
-	    val _ = 
-	       extra :=
-	       Block.T {args = case dst
-				 of SOME dst => Vector.new1 dst
-				  | NONE => Vector.new0 (),
-			kind = Kind.CReturn {prim = prim},
-			label = continue,
-			profileInfo = profileInfo,
-			statements = Vector.fromList statements,
-			transfer = transfer}
-	       :: !extra
-				  
-	 in
-	    ([],
-	     Transfer.CCall {args = args,
-			     prim = prim,
-			     return = continue,
-			     returnTy = Option.map (dst, #2)})
-	 end
-      fun insertInit (s, 
-		      profileInfo,
-		      statements, transfer) =
-	 let
-	    fun error () = Error.bug "non Array_allocate to insertInit"
-	    val (array, numElts) =
-	       case s of
-		  Statement.PrimApp {prim, dst, args, ...} =>
-		     let
-		        val _ = case Prim.name prim of
-			           Prim.Name.Array_allocate => ()
-				 | _ => error ()
-			val array = case dst of
-			               SOME (array, _) => array
-				     | _ => error ()
-			val numElts = Vector.sub(args, 0)
-		     in
-		        (array, numElts)
-		     end
-		| _ => error ()
 	    val continue = Label.newNoname ()
 	    val loop = Label.newString "initLoop"
 	    val loopi' = Label.newNoname ()
@@ -125,7 +52,7 @@ fun insertFunction (f: Function.t) =
 			kind = Kind.Jump,
 			label = continue,
 			profileInfo = profileInfo,
-			statements = Vector.fromList statements,
+			statements = statements,
 			transfer = transfer}
 	       :: Block.T {args = Vector.new1 (i, Type.int),
 			   kind = Kind.Jump,
@@ -145,34 +72,50 @@ fun insertFunction (f: Function.t) =
 			    dst = loop}}
 	       :: !extra
 	 in
-	    ([s],
-	     Transfer.Goto {args = Vector.new1 (Operand.int 0),
-			    dst = loop})
+	    Transfer.Goto {args = Vector.new1 (Operand.int 0),
+			   dst = loop}
 	 end
       val blocks =
 	 Vector.map
 	 (blocks,
 	  fn block as Block.T {args, kind, label, profileInfo, 
 			       statements, transfer} =>
-	  if not (Vector.exists (statements, needsRewrite'))
+	  if 0 = Vector.length statements
 	     then block
 	  else
-	     let
-		val (statements, transfer) =
-		   Vector.foldr
-		   (statements, ([], transfer), fn (s, (statements, transfer)) =>
-		    case needsRewrite s of
-		       (true, false) => insertInit (s, profileInfo, statements, transfer)
-		     | (false, true) => insertSplit (s, profileInfo, statements, transfer)
-		     | _ => (s :: statements, transfer))
-	     in
-		Block.T {args = args,
-			 kind = kind,
-			 label = label,
-			 profileInfo = profileInfo,
-			 statements = Vector.fromList statements,
-			 transfer = transfer}
-	     end)
+	     case Vector.sub (statements, 0) of
+		s as Statement.PrimApp {args = arrayArgs, dst, prim, ...} =>
+		   let
+		      fun doit () =
+			 let
+			    val transfer =
+			       init {array = #1 (valOf dst),
+				     numElts = Vector.sub (arrayArgs, 0),
+				     profileInfo = profileInfo,
+				     statements = (Vector.dropPrefix
+						   (statements, 1)),
+				     transfer = transfer}
+			 in
+			    Block.T {args = args,
+				     kind = kind,
+				     label = label,
+				     profileInfo = profileInfo,
+				     statements = Vector.new1 s,
+				     transfer = transfer}
+			 end
+		   in
+		      case Prim.name prim of
+			 Prim.Name.Array_allocate =>
+			    (case Vector.sub (arrayArgs, 2) of
+				Operand.ArrayHeader {numPointers, ...} =>
+				   if numPointers > 0
+				      then doit ()
+				   else block
+			      | _ =>
+				   Error.bug "ArrayInit: strange Array_allocate")
+		       | _ => block
+		   end
+	      | _ => block)
       val blocks = Vector.concat [blocks, Vector.fromList (!extra)]
    in
       Function.new {args = args,

@@ -112,10 +112,8 @@ struct
 		      => ()
 		      | Raise {...}
 		      => ()
-		      | Runtime {return, ...}
-		      => (doit'' return)
 		      | CCall {return, ...}
-		      => (doit' return)
+		      => Option.app (return, doit')
 		 end)
 
 	val lf = Graph.loopForestSteensgaard (G, {root = root})

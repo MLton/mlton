@@ -39,39 +39,55 @@ signature RSSA_STRUCTS =
 	    val foldLabel: t * 'a * (Label.t * 'a -> 'a) -> 'a
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	 end
-      structure RuntimeOperand: GC_FIELD
+      structure Runtime: RUNTIME
       structure Type: MTYPE
       sharing Label = Cases.Label
+      sharing Type = Runtime.Type
    end
 
 signature RSSA = 
    sig
       include RSSA_STRUCTS
 
+      structure CFunction: C_FUNCTION
+      sharing CFunction = Runtime.CFunction
+
       structure Operand:
 	 sig
 	    datatype t =
-	       ArrayOffset of {base: Var.t,
+	       ArrayHeader of {numBytesNonPointers: int,
+			       numPointers: int}
+	     | ArrayOffset of {base: Var.t,
 			       index: Var.t,
 			       ty: Type.t}
-	     | CastInt of Var.t
+	     | CastInt of t
+	     | CastWord of t
 	     | Const of Const.t
+	       (* EnsuresBytesFree is a pseudo-op used by GC_allocateArray, and
+		* is replaced by the limit check pass with a real operand.
+		*)
+	     | EnsuresBytesFree
+	     | File (* expand by codegen into string constant *)
+	     | GCState
+	     | Line (* expand by codegen into int constant *)
 	     | Offset of {base: Var.t,
 			  bytes: int,
 			  ty: Type.t}
 	     | Pointer of int (* the int must be nonzero mod Runtime.wordSize. *)
-	     | Runtime of RuntimeOperand.t
+	     | Runtime of Runtime.GCField.t
 	     | Var of {var: Var.t,
 		       ty: Type.t}
 
 	    val bool: bool -> t
+	    val caseBytes: t * {big: t -> 'a,
+				small: word -> 'a} -> 'a
 	    val int: int -> t
 	    val layout: t -> Layout.t
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val ty: t -> Type.t
 	    val word: word -> t
 	 end
-	       
+      
       structure Statement:
 	 sig
 	    datatype t =
@@ -105,7 +121,7 @@ signature RSSA =
 	    val foreachUse: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
 	 end
-
+      
       structure Transfer:
 	 sig
 	    datatype t =
@@ -115,17 +131,15 @@ signature RSSA =
 			 prim: Prim.t,
 			 success: Label.t, (* Must be nullary. *)
 			 ty: Type.t}
-	     | Bug  (* MLton thought control couldn't reach here. *)
 	     | CCall of {args: Operand.t vector,
-			 prim: Prim.t,
-			 return: Label.t, (* return must be of CReturn kind.
-					   * It should be nullary if the C
-					   * function returns void.  Else, should
-					   * be either nullary or unary with a
-					   * var of the appropriate type to
-					   * accept the result.
-					   *)
-			 returnTy: Type.t option}
+			 func: CFunction.t,
+			 (* return is NONE iff the CFunction doesn't return.
+			  * Else, return must be SOME l, where l is of kind
+			  * CReturn.  The return should be nullary if the C
+			  * function returns void.  Else, it should be unary with
+			  * a var of the appropriate type to accept the result.
+			  *)
+			 return: Label.t option}
 	     | Call of {args: Operand.t vector,
 			func: Func.t,
 			return: Return.t}
@@ -136,9 +150,6 @@ signature RSSA =
 	      *)
 	     | Raise of Operand.t vector
 	     | Return of Operand.t vector
-	     | Runtime of {args: Operand.t vector,
-			   prim: Prim.t,
-			   return: Label.t} (* Must be nullary, Runtime. *)
 	     | Switch of {cases: Cases.t,
 			  default: Label.t option, (* Must be nullary. *)
 			  test: Operand.t}
@@ -146,6 +157,7 @@ signature RSSA =
 			    pointer: Label.t,
 			    test: Operand.t}
 
+	    val bug: t
 	    (* foldDef (t, a, f)
 	     * If t defines a variable x, then return f (x, a), else return a.
 	     *)
@@ -165,12 +177,9 @@ signature RSSA =
 	 sig
 	    datatype t =
 	       Cont of {handler: Label.t option}
-	     | CReturn of {prim: Prim.t}
+	     | CReturn of {func: CFunction.t}
 	     | Handler
 	     | Jump
-	     | Runtime of {prim: Prim.t}
-
-	    val isOnStack: t -> bool
 	 end
 
       structure Block:
@@ -228,7 +237,6 @@ signature RSSA =
 
 	    val clear: t -> unit
 	    val handlesSignals: t -> bool
-	    val hasPrim: t * (Prim.t -> bool) -> bool
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val typeCheck: t -> unit
 	 end

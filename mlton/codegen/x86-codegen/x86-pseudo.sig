@@ -11,7 +11,7 @@ type word = Word.t
 signature X86_PSEUDO =
   sig
     structure Label : HASH_ID
-    structure Prim : PRIM
+    structure Runtime: RUNTIME
 
     val tracer : string -> ('a -> 'b) -> 
                  (('a -> 'b) * (unit -> unit))
@@ -378,31 +378,31 @@ signature X86_PSEUDO =
 				 check: bool} -> t
       end
 
-    structure Entry : 
+    structure FrameInfo:
+       sig
+	  type t
+	  val frameInfo : {size: int, 
+			   frameLayoutsIndex: int} -> t
+       end
+
+    structure Entry:
       sig
-	structure FrameInfo :
-	  sig
-	    type t
-	    val frameInfo : {size: int, 
-			     frameLayoutsIndex: int} -> t
-	  end
-
 	type t
-	val label : t -> Label.t
 
-	val jump : {label: Label.t} -> t
-	val func : {label: Label.t,
-		    live: MemLocSet.t} -> t
-	val cont : {label: Label.t,
-		    live: MemLocSet.t,
-		    frameInfo: FrameInfo.t} -> t
-	val handler : {label: Label.t,
-		       live: MemLocSet.t,
-		       offset: int} -> t
-	val runtime : {label: Label.t,
-		       frameInfo: FrameInfo.t} -> t
-	val creturn : {label: Label.t,
-		       dst: (Operand.t * Size.t) option} -> t
+	val cont: {label: Label.t,
+		   live: MemLocSet.t,
+		   frameInfo: FrameInfo.t} -> t
+	val creturn: {dst: (Operand.t * Size.t) option,
+		      frameInfo: FrameInfo.t option,
+		      func: Runtime.CFunction.t,
+		      label: Label.t} -> t
+	val func: {label: Label.t,
+		   live: MemLocSet.t} -> t
+	val handler: {label: Label.t,
+		      live: MemLocSet.t,
+		      offset: int} -> t
+	val jump: {label: Label.t} -> t
+	val label: t -> Label.t
       end
 
     structure ProfileInfo :
@@ -441,14 +441,12 @@ signature X86_PSEUDO =
 		       size: int} -> t
 	val return : {live: MemLocSet.t} -> t 
 	val raisee : {live: MemLocSet.t} -> t
-	val runtime : {prim: Prim.t,
-		       args: (Operand.t * Size.t) list,
-		       return: Label.t,
-		       size: int} -> t
-	val ccall : {target: Label.t,
-		     args: (Operand.t * Size.t) list,
-		     return: Label.t,
-		     dstsize: Size.t option} -> t		       
+	val ccall : {args: (Operand.t * Size.t) list,
+		     dstsize: Size.t option,
+		     frameInfo: FrameInfo.t option,
+		     func: Runtime.CFunction.t,
+		     return: Label.t option,
+		     target: Label.t} -> t
       end
 
     structure Block :

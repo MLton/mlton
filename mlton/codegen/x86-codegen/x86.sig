@@ -11,7 +11,7 @@ type word = Word.t
 signature X86_STRUCTS =
   sig
     structure Label : HASH_ID
-    structure Prim : PRIM
+    structure Runtime: RUNTIME
   end
 
 signature X86 =
@@ -999,17 +999,17 @@ signature X86 =
 	val instruction_fbinasp : {oper: Instruction.fbinasp} -> t
     end
 
-    structure Entry :
+    structure FrameInfo:
+       sig
+	  datatype t = T of {size: int, 
+			     frameLayoutsIndex: int}
+
+	  val frameInfo: {size: int, 
+			  frameLayoutsIndex: int} -> t
+       end
+
+    structure Entry:
       sig
-	structure FrameInfo :
-	  sig
-	    datatype t = T of {size: int, 
-			       frameLayoutsIndex: int}
-
-	    val frameInfo : {size: int, 
-			     frameLayoutsIndex: int} -> t
-	  end
-
 	datatype t
 	  = Jump of {label: Label.t}
 	  | Func of {label: Label.t,
@@ -1020,34 +1020,32 @@ signature X86 =
 	  | Handler of {label: Label.t,
 			live: MemLocSet.t,
 			offset: int}
-	  | Runtime of {label: Label.t,
-			frameInfo: FrameInfo.t}
-	  | CReturn of {label: Label.t,
-			dst: (Operand.t * Size.t) option}
+	  | CReturn of {dst: (Operand.t * Size.t) option,
+			frameInfo: FrameInfo.t option,
+			func: Runtime.CFunction.t,
+			label: Label.t}
 
+	val cont : {label: Label.t,
+		    live: MemLocSet.t,
+		    frameInfo: FrameInfo.t} -> t
+	val creturn: {dst: (Operand.t * Size.t) option,
+		      frameInfo: FrameInfo.t option,
+		      func: Runtime.CFunction.t,
+		      label: Label.t}  -> t
+	val func : {label: Label.t,
+		    live: MemLocSet.t} -> t
+	val handler : {label: Label.t,
+		       live: MemLocSet.t,
+		       offset: int} -> t
+	val isFunc : t -> bool
+	val isNear : t -> bool
+	val jump : {label: Label.t} -> t
+	val label : t -> Label.t
+	val live : t -> MemLocSet.t
 	val toString : t -> string
 	val uses_defs_kills : t -> {uses: Operand.t list, 
 				    defs: Operand.t list,
 				    kills: Operand.t list}
-	val label : t -> Label.t
-	val live : t -> MemLocSet.t
-
-	val jump : {label: Label.t} -> t
-	val func : {label: Label.t,
-		    live: MemLocSet.t} -> t
-	val isFunc : t -> bool
-	val cont : {label: Label.t,
-		    live: MemLocSet.t,
-		    frameInfo: FrameInfo.t} -> t
-	val handler : {label: Label.t,
-		       live: MemLocSet.t,
-		       offset: int} -> t
-	val runtime : {label: Label.t,
-		       frameInfo: FrameInfo.t} -> t
-	val creturn : {label: Label.t,
-		       dst: (Operand.t * Size.t) option} -> t
-
-	val isNear : t -> bool
       end
 
     structure ProfileInfo :
@@ -1119,14 +1117,12 @@ signature X86 =
 			size: int}
 	  | Return of {live: MemLocSet.t}
 	  | Raise of {live: MemLocSet.t}
-	  | Runtime of {prim: Prim.t,
-			args: (Operand.t * Size.t) list,
-			return: Label.t,
-			size: int}
-	  | CCall of {target: Label.t,
-		      args: (Operand.t * Size.t) list,
-		      return: Label.t,
-		      dstsize: Size.t option}
+	  | CCall of {args: (Operand.t * Size.t) list,
+		      dstsize: Size.t option,
+		      frameInfo: FrameInfo.t option,
+		      func: Runtime.CFunction.t,
+		      return: Label.t option,
+		      target: Label.t}
 
 	val toString : t -> string
 
@@ -1154,14 +1150,12 @@ signature X86 =
 		       size: int} -> t
 	val return : {live: MemLocSet.t} -> t 
 	val raisee : {live: MemLocSet.t} -> t
-	val runtime : {prim: Prim.t,
-		       args: (Operand.t * Size.t) list,
-		       return: Label.t,
-		       size: int} -> t
-	val ccall : {target: Label.t,
-		     args: (Operand.t * Size.t) list,
-		     return: Label.t,
-		     dstsize: Size.t option} -> t		       
+	val ccall: {args: (Operand.t * Size.t) list,
+		    dstsize: Size.t option,
+		    frameInfo: FrameInfo.t option,
+		    func: Runtime.CFunction.t,
+		    return: Label.t option,
+		    target: Label.t} -> t		       
       end
 
     structure Block :

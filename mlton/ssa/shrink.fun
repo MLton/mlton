@@ -645,7 +645,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 				 | _ => Prim.ApplyArg.Var vi)
 			  | _ => Prim.ApplyArg.Var vi)
 		  in
-		     Prim.apply (prim, Vector.toList args', VarInfo.equals)
+		     traceApply Prim.apply
+		     (prim, Vector.toList args', VarInfo.equals)
 		     handle e =>
 			Error.bug (concat ["Prim.apply raised ",
 					   Layout.toString (Exn.layout e)])

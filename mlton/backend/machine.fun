@@ -10,9 +10,15 @@ struct
 
 open S
 
+local
+   open Runtime
+in
+   structure CFunction = CFunction
+   structure GCField = GCField
+   structure Type = Type
+end
+
 structure ChunkLabel = IntUniqueId ()
-structure Type = Mtype ()
-structure RuntimeOperand = Runtime.GCField
    
 structure SmallIntInf =
    struct
@@ -70,30 +76,35 @@ structure Operand =
 			 index: t,
 			 ty: Type.t}
        | CastInt of t
+       | CastWord of t
        | Char of char
        | Contents of {oper: t,
 		      ty: Type.t}
+       | File
        | Float of string
+       | GCState
        | Global of Global.t
        | GlobalPointerNonRoot of int
        | Int of int
        | IntInf of SmallIntInf.t
        | Label of Label.t
+       | Line
        | Offset of {base: t, offset: int, ty: Type.t}
        | Pointer of int
        | Register of Register.t
-       | Runtime of RuntimeOperand.t
+       | Runtime of GCField.t
        | StackOffset of {offset: int, ty: Type.t}
        | Uint of Word.t
-
-      val isLocation =
+    
+      val rec isLocation =
 	 fn ArrayOffset _ => true
+	  | CastWord z => isLocation z
 	  | Contents _ => true
 	  | Global _ => true
 	  | GlobalPointerNonRoot _ => true
 	  | Offset _ => true
 	  | Register _ => true
-	  | Runtime _ => true
+	  | Runtime z => true
 	  | StackOffset _ => true
 	  | _ => false
 
@@ -101,46 +112,52 @@ structure Operand =
 	 fn ArrayOffset {base, index, ty} =>
 	 concat ["X", Type.name ty, 
 		 "(", toString base, ",", toString index, ")"]
-	  | CastInt oper => concat ["PointerToInt (", toString oper, ")"]
+	  | CastInt oper => concat ["(int) (", toString oper, ")"]
+	  | CastWord oper => concat ["(word) (", toString oper, ")"]
 	  | Char c => Char.escapeC c
 	  | Contents {oper, ty} =>
 	       concat ["C", Type.name ty, "(", toString oper, ")"]
+	  | File => "<FILE>"
+	  | Float s => s
+	  | GCState => "gcState"
 	  | Global g => Global.toString g
 	  | GlobalPointerNonRoot n =>
 	       concat ["globalpointerNonRoot [", Int.toString n, "]"]
 	  | Int n => Int.toString n
 	  | IntInf w => concat ["SmallIntInf (", Word.toString w, ")"]
 	  | Label l => Label.toString l
+	  | Line => "<LINE>"
 	  | Offset {base, offset, ty} =>
 	       concat ["O", Type.name ty,
 		       "(", toString base, ",", Int.toString offset, ")"]
 	  | Pointer n => concat ["IntAsPointer (", Int.toString n, ")"]
 	  | Register r => Register.toString r
-	  | Runtime r => RuntimeOperand.toString r
+	  | Runtime r => GCField.toString r
 	  | StackOffset {offset, ty} =>
 	       concat ["S", Type.name ty, "(", Int.toString offset, ")"]
-	  | Uint w => Word.toString w
-	  | Float s => s
+	  | Uint w => concat ["0x", Word.toString w]
 
     val layout = Layout.str o toString
 
     val ty =
        fn ArrayOffset {ty, ...} => ty
 	| CastInt _ => Type.int
+	| CastWord _ => Type.word
 	| Char _ => Type.char
 	| Contents {ty, ...} => ty
+	| File => Type.pointer
 	| Float _ => Type.double
+	| GCState => Type.pointer
 	| Global g => Global.ty g
 	| GlobalPointerNonRoot _ => Type.pointer
 	| Int _ => Type.int
 	| IntInf _ => Type.pointer
 	| Label _ => Type.label
+	| Line => Type.int
 	| Offset {ty, ...} => ty
 	| Pointer _ => Type.pointer
 	| Register r => Register.ty r
-	| Runtime z => (case RuntimeOperand.ty z of
-			   RuntimeOperand.Int => Type.int
-			 | RuntimeOperand.Word => Type.word)
+	| Runtime z => GCField.ty z
 	| StackOffset {ty, ...} => ty
 	| Uint _ => Type.uint
 	 
@@ -149,12 +166,16 @@ structure Operand =
 	     ArrayOffset {base = b', index = i', ...}) =>
 	        equals (b, b') andalso equals (i, i') 
 	   | (CastInt z, CastInt z') => equals (z, z')
+	   | (CastWord z, CastWord z') => equals (z, z')
 	   | (Char c, Char c') => c = c'
 	   | (Contents {oper = z, ...}, Contents {oper = z', ...}) =>
 		equals (z, z')
+	   | (File, File) => true
 	   | (Float f, Float f') => f = f'
+	   | (GCState, GCState) => true
 	   | (Int n, Int n') => n = n'
 	   | (IntInf w, IntInf w') => Word.equals (w, w')
+	   | (Line, Line) => true
 	   | (Offset {base = b, offset = i, ...},
 	      Offset {base = b', offset = i', ...}) =>
 	        equals (b, b') andalso i = i' 
@@ -193,8 +214,8 @@ structure Statement =
 		  src: Operand.t}
        | Noop
        | Object of {dst: Operand.t,
-		    numPointers: int,
-		    numWordsNonPointers: int,
+		    header: word,
+		    size: int,
 		    stores: {offset: int,
 			     value: Operand.t} vector}
        | PrimApp of {args: Operand.t vector,
@@ -211,10 +232,10 @@ structure Statement =
 	    fn Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
 	     | Noop => str "Noop"
-	     | Object {dst, numPointers, numWordsNonPointers, stores} =>
+	     | Object {dst, header, size, stores} =>
 		  seq [Operand.layout dst, str " = Object ",
-		       tuple [Int.layout numWordsNonPointers,
-			      Int.layout numPointers],
+		       record [("header", Word.layout header),
+			       ("size", Int.layout size)],
 		       str " ",
 		       Vector.layout (fn {offset, value} =>
 				      record [("offset", Int.layout offset),
@@ -257,99 +278,6 @@ structure Statement =
 
 structure Cases = MachineCases (structure Label = Label)
 
-structure Transfer =
-   struct
-      datatype t =
-	 Arith of {prim: Prim.t,
-		   args: Operand.t vector,
-		   dst: Operand.t,
-		   overflow: Label.t,
-		   success: Label.t,
-		   ty: Type.t}
-       | Bug
-       | CCall of {args: Operand.t vector,
-		   prim: Prim.t,
-		   return: Label.t,
-		   returnTy: Type.t option}
-       | Call of {label: Label.t,
-		  live: Operand.t vector,
-		  return: {return: Label.t,
-			   handler: Label.t option,
-			   size: int} option}
-       | Goto of Label.t
-       | Raise
-       | Return of {live: Operand.t vector}
-       | Runtime of {args: Operand.t vector,
-		     prim: Prim.t,
-		     return: Label.t}
-       | Switch of {test: Operand.t,
-		    cases: Cases.t,
-		    default: Label.t option}
-       | SwitchIP of {test: Operand.t,
-		      int: Label.t,
-		      pointer: Label.t}
-
-      fun layout t =
-	 let
-	    open Layout
-	 in
-	    case t of
-	       Arith {prim, args, dst, overflow, success, ...} =>
-		  seq [str "Arith ",
-		       record [("prim", Prim.layout prim),
-			       ("args", Vector.layout Operand.layout args),
-			       ("dst", Operand.layout dst),
-			       ("overflow", Label.layout overflow),
-			       ("success", Label.layout success)]]
-	     | Bug => str "Bug"
-	     | CCall {args, prim, return, returnTy} =>
-		  seq [str "CCall ",
-		       record [("args", Vector.layout Operand.layout args),
-			       ("prim", Prim.layout prim),
-			       ("return", Label.layout return),
-			       ("returnTy", Option.layout Type.layout returnTy)]]
-	     | Call {label, live, return} => 
-		  seq [str "Call ", 
-		       record [("label", Label.layout label),
-			       ("live", Vector.layout Operand.layout live),
-			       ("return", Option.layout 
-				(fn {return, handler, size} =>
-				 record [("return", Label.layout return),
-					 ("handler",
-					  Option.layout Label.layout handler),
-					 ("size", Int.layout size)])
-				return)]]
-	     | Goto l => seq [str "Goto ", Label.layout l]
-	     | Raise => str "Raise"
-	     | Return {live} => 
-		  seq [str "Return ",
-		       record [("live", Vector.layout Operand.layout live)]]
-	     | Runtime {args, prim, return} =>
-		  seq [str "Runtime ",
-		       record [("args", Vector.layout Operand.layout args),
-			       ("prim", Prim.layout prim),
-			       ("return", Label.layout return)]]
-	     | Switch {test, cases, default} =>
-		  seq [str "Switch ",
-		       tuple [Operand.layout test,
-			      Cases.layout cases,
-			      Option.layout Label.layout default]]
-	     | SwitchIP {test, int, pointer} =>
-		  seq [str "SwitchIP ", tuple [Operand.layout test,
-					       Label.layout int,
-					       Label.layout pointer]]
-	 end
-
-      fun foldOperands (t, ac, f) =
-	 case t of
-	    Arith {args, dst, ...} => Vector.fold (args, f (dst, ac), f)
-	  | CCall {args, ...} => Vector.fold (args, ac, f)
-	  | Runtime {args, ...} => Vector.fold (args, ac, f)
-	  | Switch {test, ...} => f (test, ac)
-	  | SwitchIP {test, ...} => f (test, ac)
-	  | _ => ac
-   end
-
 structure FrameInfo =
    struct
       datatype t = T of {frameOffsetsIndex: int,
@@ -367,7 +295,89 @@ structure FrameInfo =
 			("size", Int.layout size)]
 
       val bogus = T {frameOffsetsIndex = ~1, size = ~1}
+   end
 
+structure Transfer =
+   struct
+      datatype t =
+	 Arith of {args: Operand.t vector,
+		   dst: Operand.t,
+		   overflow: Label.t,
+		   prim: Prim.t,
+		   success: Label.t,
+		   ty: Type.t}
+       | CCall of {args: Operand.t vector,
+		   frameInfo: FrameInfo.t option,
+		   func: CFunction.t,
+		   return: Label.t option}
+       | Call of {label: Label.t,
+		  live: Operand.t vector,
+		  return: {return: Label.t,
+			   handler: Label.t option,
+			   size: int} option}
+       | Goto of Label.t
+       | Raise
+       | Return of {live: Operand.t vector}
+       | Switch of {cases: Cases.t,
+		    default: Label.t option,
+		    test: Operand.t}
+       | SwitchIP of {int: Label.t,
+		      pointer: Label.t,
+		      test: Operand.t}
+
+      fun layout t =
+	 let
+	    open Layout
+	 in
+	    case t of
+	       Arith {prim, args, dst, overflow, success, ...} =>
+		  seq [str "Arith ",
+		       record [("prim", Prim.layout prim),
+			       ("args", Vector.layout Operand.layout args),
+			       ("dst", Operand.layout dst),
+			       ("overflow", Label.layout overflow),
+			       ("success", Label.layout success)]]
+	     | CCall {args, frameInfo, func, return} =>
+		  seq [str "CCall ",
+		       record
+		       [("args", Vector.layout Operand.layout args),
+			("frameInfo", Option.layout FrameInfo.layout frameInfo),
+			("func", CFunction.layout func),
+			("return", Option.layout Label.layout return)]]
+	     | Call {label, live, return} => 
+		  seq [str "Call ", 
+		       record [("label", Label.layout label),
+			       ("live", Vector.layout Operand.layout live),
+			       ("return", Option.layout 
+				(fn {return, handler, size} =>
+				 record [("return", Label.layout return),
+					 ("handler",
+					  Option.layout Label.layout handler),
+					 ("size", Int.layout size)])
+				return)]]
+	     | Goto l => seq [str "Goto ", Label.layout l]
+	     | Raise => str "Raise"
+	     | Return {live} => 
+		  seq [str "Return ",
+		       record [("live", Vector.layout Operand.layout live)]]
+	     | Switch {test, cases, default} =>
+		  seq [str "Switch ",
+		       tuple [Operand.layout test,
+			      Cases.layout cases,
+			      Option.layout Label.layout default]]
+	     | SwitchIP {test, int, pointer} =>
+		  seq [str "SwitchIP ", tuple [Operand.layout test,
+					       Label.layout int,
+					       Label.layout pointer]]
+	 end
+
+      fun foldOperands (t, ac, f) =
+	 case t of
+	    Arith {args, dst, ...} => Vector.fold (args, f (dst, ac), f)
+	  | CCall {args, ...} => Vector.fold (args, ac, f)
+	  | Switch {test, ...} => f (test, ac)
+	  | SwitchIP {test, ...} => f (test, ac)
+	  | _ => ac
    end
 
 structure Kind =
@@ -376,12 +386,11 @@ structure Kind =
 	 Cont of {args: Operand.t vector,
 		  frameInfo: FrameInfo.t}
        | CReturn of {dst: Operand.t option,
-		     prim: Prim.t}
+		     frameInfo: FrameInfo.t option,
+		     func: CFunction.t}
        | Func of {args: Operand.t vector}
        | Handler of {offset: int}
        | Jump
-       | Runtime of {frameInfo: FrameInfo.t,
-		     prim: Prim.t}
 
       fun layout k =
 	 let
@@ -392,25 +401,23 @@ structure Kind =
 		  seq [str "Cont ",
 		       record [("args", Vector.layout Operand.layout args),
 			       ("frameInfo", FrameInfo.layout frameInfo)]]
-	     | CReturn {dst, prim} =>
+	     | CReturn {dst, frameInfo, func} =>
 		  seq [str "CReturn ",
-		       record [("dst", Option.layout Operand.layout dst),
-			       ("prim", Prim.layout prim)]]
+		       record
+		       [("dst", Option.layout Operand.layout dst),
+			("frameInfo", Option.layout FrameInfo.layout frameInfo),
+			("func", CFunction.layout func)]]
 	     | Func {args} =>
 		  seq [str "Func ",
 		       record [("args", Vector.layout Operand.layout args)]]
 	     | Handler {offset} =>
 		  seq [str "Handler", paren(Int.layout offset)]
 	     | Jump => str "Jump"
-	     | Runtime {frameInfo, prim} =>
-		  seq [str "Runtime ",
-		       record [("frameInfo", FrameInfo.layout frameInfo),
-			       ("prim", Prim.layout prim)]]
 	 end
 
       val frameInfoOpt =
 	 fn Cont {frameInfo, ...} => SOME frameInfo
-	  | Runtime {frameInfo, ...} => SOME frameInfo
+	  | CReturn {frameInfo, ...} => frameInfo
 	  | _ => NONE
    end
 
@@ -492,11 +499,12 @@ structure Program =
 			 main: {chunkLabel: ChunkLabel.t,
 				label: Label.t},
 			 maxFrameSize: int,
+			 objectTypes: Runtime.ObjectType.t vector,
 			 strings: (Global.t * string) list}
 
       fun layouts (p as T {chunks, frameOffsets, globals, globalsNonRoot,
 			   handlesSignals, main = {label, ...}, maxFrameSize,
-			   ...},
+			   objectTypes, ...},
 		   output': Layout.t -> unit) =
 	 let
 	    open Layout
@@ -512,14 +520,18 @@ structure Program =
 		     ("handlesSignals", Bool.layout handlesSignals),
 		     ("main", Label.layout label),
 		     ("maxFrameSize", Int.layout maxFrameSize),
+		     ("objectTypes",
+		      Vector.layout Runtime.ObjectType.layout objectTypes),
 		     ("frameOffsets",
 		      Vector.layout (Vector.layout Int.layout) frameOffsets)])
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))
 	 end
 	    
       fun typeCheck (T {chunks, floats, frameOffsets, globals, globalsNonRoot,
-			intInfs, main, maxFrameSize, strings, ...}) =
+			intInfs, main, maxFrameSize, objectTypes, strings, ...})
+	 =
 	 let
+	    val numTypeIndices = Vector.length objectTypes
 	    open Layout
 	    fun globals (name, gs, ty) =
 	       List.foreach
@@ -560,17 +572,23 @@ structure Program =
 			     | CastInt x =>
 				  (checkOperand x
 				   ; Type.equals (Operand.ty x, Type.pointer))
+			     | CastWord x =>
+				  (checkOperand x
+				   ; Type.equals (Operand.ty x, Type.pointer))
 			     | Char _ => true
 			     | Contents {oper, ...} =>
 				  (checkOperand oper
 				   ; Type.equals (Operand.ty oper, Type.pointer))
+			     | File => true
 			     | Float _ => true
+			     | GCState => true
 			     | Global _ => true
 			     | GlobalPointerNonRoot n =>
 				  0 <= n andalso n < globalsNonRoot
 			     | Int _ => true
 			     | IntInf w => 0wx1 = Word.andb (w, 0wx1)
 			     | Label l => (labelBlock l; true)
+			     | Line => true
 			     | Offset {base, ...} =>
 				  (checkOperand base
 				   ; Type.equals (Operand.ty base, Type.pointer))
@@ -579,8 +597,7 @@ structure Program =
 				  0 <= index andalso index < regMax ty
 			     | Runtime _ => true
 			     | StackOffset {offset, ty, ...} =>
-				  0 <= offset
-				  andalso offset + Type.size ty <= maxFrameSize
+				  offset + Type.size ty <= maxFrameSize
 			     | Uint _ => true
 		      in
 			 Err.check ("operand", ok, fn () => Operand.layout x)
@@ -597,6 +614,40 @@ structure Program =
 		      andalso 0 = Int.rem (size, 4)
 		   fun checkFrameInfo i =
 		      check' (i, "frame info", frameInfoOk, FrameInfo.layout)
+		   fun isValidNormal ({numPointers = np,
+				       numWordsNonPointers = nwnp},
+				      stores): bool =
+		      let
+			 val pointerStart = nwnp * Runtime.wordSize
+			 val pointerEnd = pointerStart + np * Runtime.pointerSize
+			 val initPointers = Array.new (np, false)
+		      in
+			 (* Check that every store is valid *)
+			 Vector.forall
+			 (stores, fn {offset, value} =>
+			  let
+			     val _ = checkOperand value
+			     val ty = Operand.ty value
+			  in
+			     if Type.isPointer ty
+				then
+				   pointerStart <= offset
+				   andalso offset < pointerEnd
+				   andalso Runtime.isWordAligned offset
+				   andalso (Array.update
+					    (initPointers,
+					     Int.quot (offset - pointerStart,
+						       Runtime.pointerSize),
+					     true)
+					    ; true)
+			     else
+				0 <= offset
+				andalso (offset + Type.size ty <= pointerStart)
+			  end)
+			 andalso
+			 (* Check that every pointer is initialized. *)
+			 Array.forall (initPointers, fn b => b)
+		      end
 		   fun kindOk (k: Kind.t): bool =
 		      let
 			 datatype z = datatype Kind.t
@@ -605,13 +656,12 @@ structure Program =
 			       Cont {args, frameInfo} =>
 				  (checkOperands args
 				   ; checkFrameInfo frameInfo)
-			     | CReturn {dst, ...} =>
-				  Option.app (dst, checkOperand)
+			     | CReturn {dst, frameInfo, ...} =>
+				  (Option.app (dst, checkOperand)
+				   ; Option.app (frameInfo, checkFrameInfo))
 			     | Func {args, ...} => checkOperands args
 			     | Handler _ => ()
 			     | Jump => ()
-			     | Runtime {frameInfo, ...} =>
-				  checkFrameInfo frameInfo
 		      in
 			 true
 		      end
@@ -626,14 +676,14 @@ structure Program =
 				; (Type.equals (Operand.ty dst, Operand.ty src)
 				   andalso Operand.isLocation dst))
 			  | Noop => true
-			  | Object {dst, numPointers, numWordsNonPointers,
-				    stores} =>
+			  | Object {dst, header, size, stores} =>
 			       (checkOperand dst
-				; Vector.foreach (stores, fn {offset, value} =>
-						  checkOperand value)
-				; (Runtime.isValidObjectHeader
-				   {numPointers = numPointers,
-				    numWordsNonPointers = numWordsNonPointers}))
+				; (case Vector.sub (objectTypes,
+						    Runtime.headerToTypeIndex
+						    header) of
+				      Runtime.ObjectType.Normal z =>
+					 isValidNormal (z, stores)
+				    | _ => false) handle Subscript => false)
 			  | PrimApp {args, dst, prim} =>
 			       (Option.app (dst, checkOperand)
 				; checkOperands args
@@ -647,10 +697,6 @@ structure Program =
 		      case labelKind l of
 			 Kind.Jump => true
 		       | _ => false
-		   fun labelIsRuntime (l: Label.t, p: Prim.t): bool =
-		      case labelKind l of
-			 Kind.Runtime {prim, ...} => Prim.equals (p, prim)
-		       | _ => false
 		   fun transferOk (t: Transfer.t): bool =
 		      let
 			 datatype z = datatype Transfer.t
@@ -662,22 +708,30 @@ structure Program =
 				; (Type.equals (ty, Operand.ty dst)
 				   andalso labelIsJump overflow
 				   andalso labelIsJump success))
-			  | Bug => true
-			  | CCall {args, prim = p, return, returnTy} =>
+			  | CCall {args, frameInfo, func, return} =>
 			       let
 				  val _ = checkOperands args
-				  val Block.T {kind, ...} = labelBlock return
+				  val _ = Option.app (frameInfo, checkFrameInfo)
 			       in
-				  case labelKind return of
-				     Kind.CReturn {dst, prim = p'} =>
-					Prim.equals (p, p')
-					andalso (case (dst, returnTy) of
-						    (NONE, NONE) => true
-						  | (SOME x, SOME ty) =>
-						       Type.equals
-						       (ty, Operand.ty x)
-						  | _ => false)
-				   | _ => false
+				  case return of
+				     NONE => true
+				   | SOME l =>
+					let 
+					   val Block.T {kind, ...} = labelBlock l
+					in
+					   case labelKind l of
+					      Kind.CReturn
+					      {dst, func = f, ...} => 
+						 CFunction.equals (func, f)
+						 andalso
+						 (case (dst, CFunction.returnTy f) of
+						     (NONE, NONE) => true
+						   | (SOME x, SOME ty) =>
+							Type.equals
+							(ty, Operand.ty x)
+						   | _ => false)
+					    | _ => false
+					end
 			       end
 			  | Call {label, live, return} =>
 			       (case labelKind label of
@@ -701,10 +755,6 @@ structure Program =
 			  | Goto l => labelIsJump l
 			  | Raise => true
 			  | Return {live} => (checkOperands live; true)
-			  | Runtime {args, prim, return} =>
-			       (checkOperands args
-				; (Prim.entersRuntime prim
-				   andalso labelIsRuntime (return, prim)))
 			  | Switch {cases, default, test} =>
 			       (checkOperand test
 				; (Cases.forall (cases, labelIsJump)

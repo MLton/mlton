@@ -286,12 +286,13 @@ atoms/hash-type.fun
 atoms/cases.fun
 ssa/ssa-tree.fun
 ssa/ssa.fun
-backend/gc-field.sig
-backend/runtime.sig
-backend/runtime.sml
-backend/err.sml
 backend/mtype.sig
+backend/c-function.sig
+backend/runtime.sig
 backend/mtype.fun
+backend/c-function.fun
+backend/runtime.fun
+backend/err.sml
 backend/machine-cases.sig
 backend/machine.sig
 backend/machine-cases.fun
@@ -375,9 +376,8 @@ codegen/x86-codegen/x86.sig
 codegen/x86-codegen/x86.fun
 codegen/x86-codegen/x86-pseudo.sig
 codegen/x86-codegen/x86-mlton-basic.sig
+codegen/x86-codegen/x86-mlton-basic.fun
 codegen/x86-codegen/x86-liveness.sig
-codegen/x86-codegen/x86-mlton.sig
-codegen/x86-codegen/x86-mlton.fun
 codegen/x86-codegen/x86-liveness.fun
 codegen/x86-codegen/x86-jump-info.sig
 codegen/x86-codegen/x86-jump-info.fun
@@ -385,6 +385,8 @@ codegen/x86-codegen/x86-loop-info.sig
 codegen/x86-codegen/x86-loop-info.fun
 codegen/x86-codegen/x86-entry-transfer.sig
 codegen/x86-codegen/x86-entry-transfer.fun
+codegen/x86-codegen/x86-mlton.sig
+codegen/x86-codegen/x86-mlton.fun
 codegen/x86-codegen/x86-translate.sig
 codegen/x86-codegen/x86-translate.fun
 codegen/x86-codegen/x86-simplify.sig

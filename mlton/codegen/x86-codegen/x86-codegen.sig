@@ -9,9 +9,11 @@ type int = Int.t
 type word = Word.t
 
 signature X86_CODEGEN_STRUCTS =
-  sig
-    structure Machine: MACHINE
-  end
+   sig
+      structure CCodegen: C_CODEGEN
+      structure Machine: MACHINE
+      sharing Machine = CCodegen.Machine
+   end
 
 signature X86_CODEGEN =
   sig

@@ -157,6 +157,11 @@ fun setInlineSize (size: int): unit =
 		    NonRecursive {product = size, small = small}
 	       | Leaf _ => Leaf {size = SOME size}
 	       | LeafNoLoop _ => LeafNoLoop {size = SOME size})
+
+val inlineArrayAllocation =
+   control {name = "inline array allocation",
+	    default = true,
+	    toString = Bool.toString}
    
 val inputFile = control {name = "input file",
 			 default = "<bogus>",

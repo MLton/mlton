@@ -15,11 +15,20 @@ local
    open Machine
 in
    structure Chunk = Chunk
+   structure Runtime = Runtime
 end
-
+local
+   open Runtime
+in
+   structure CFunction = CFunction
+   structure GCField = GCField
+   structure ObjectType = ObjectType
+end
+val wordSize = Runtime.wordSize
+   
 structure Rssa = Rssa (open Ssa
 		       structure Cases = Machine.Cases
-		       structure RuntimeOperand = M.RuntimeOperand
+		       structure Runtime = Runtime
 		       structure Type = Machine.Type)
 structure R = Rssa
 local
@@ -49,9 +58,7 @@ structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
 
 nonfix ^
 fun ^ r = valOf (!r)
-val wordSize: int = 4
-val labelSize = Type.size Type.label
-   
+
 structure VarOperand =
    struct
       datatype t =
@@ -117,6 +124,27 @@ val traceGenBlock =
    Trace.trace ("Backend.genBlock",
 		Label.layout o R.Block.label,
 		Unit.layout)
+
+fun eliminateDeadCode (f: R.Function.t): R.Function.t =
+   let
+      val {args, blocks, name, start} = R.Function.dest f
+      val {get, set, ...} =
+	 Property.getSetOnce (Label.plist, Property.initConst false)
+      val get = Trace.trace ("Backend.labelIsReachable",
+			     Label.layout,
+			     Bool.layout) get
+      val _ =
+	 R.Function.dfs (f, fn R.Block.T {label, ...} =>
+			 (set (label, true)
+			  ; fn () => ()))
+      val blocks =
+	 Vector.keepAll (blocks, fn R.Block.T {label, ...} => get label)
+   in
+      R.Function.new {args = args,
+		      blocks = blocks,
+		      name = name,
+		      start = start}
+   end
 
 fun toMachine (program: Ssa.Program.t) =
    let
@@ -252,9 +280,9 @@ fun toMachine (program: Ssa.Program.t) =
 		  Char n => M.Operand.Char n
 		| Int n => M.Operand.Int n
 		| IntInf i =>
-		     if Const.SmallIntInf.isSmall i
-			then M.Operand.IntInf (Const.SmallIntInf.toWord i)
-		     else globalIntInf i
+		     (case Const.SmallIntInf.toWord i of
+			 NONE => globalIntInf i
+		       | SOME w => M.Operand.IntInf w)
 		| Real f =>
 		     if !Control.Native.native
 			then globalFloat f
@@ -269,6 +297,50 @@ fun toMachine (program: Ssa.Program.t) =
 			     else Error.bug "strange word"
 		     end
 	    end
+      end
+      (* Hash table for uniqifying object types. *)
+      local
+	 val table = HashSet.new {hash = #hash}
+	 val arrayHash = Random.word ()
+	 val normalHash = Random.word ()
+	 fun hash1 (w: word, i: int): word =
+	    Word.fromInt i + Word.* (w, 0w31)
+	 fun hash (i1: int, i2: int, w: word) = hash1 (hash1 (w, i1), i2)
+	 (* Start the counter at 1 because index 0 is reserved for the stack
+	  * object type.
+	  *)
+	 val counter = Counter.new 1
+	 fun getIndex (hash: word, ty: ObjectType.t): int =
+	    #index
+	    (HashSet.lookupOrInsert
+	     (table, hash, fn r => ObjectType.equals (ty, #ty r),
+	      fn () => {hash = hash,
+			index = Counter.next counter,
+			ty = ty}))
+      in
+	 fun arrayTypeIndex (z as {numBytesNonPointers = nbnp,
+				   numPointers = np}): int =
+	    getIndex (hash (nbnp, np, arrayHash), ObjectType.Array z)
+	 fun normalTypeIndex (z as {numPointers = np,
+				    numWordsNonPointers = nwnp}): int =
+	    getIndex (hash (np, nwnp, normalHash), ObjectType.Normal z)
+	 fun objectTypes () =
+	    let
+	       val a = Array.new (Counter.value counter, ObjectType.Stack)
+	       val _ = HashSet.foreach (table, fn {index, ty, ...} =>
+					Array.update (a, index, ty))
+	    in
+	       Vector.fromArray a
+	    end
+	 (* The GC requires some hardwired type indices -- see gc.h. *)
+	 val stackTypeIndex = 0
+	 val stringTypeIndex = (* 1 *)
+	    arrayTypeIndex {numBytesNonPointers = 1, numPointers = 0}
+	 val threadTypeIndex = (* 2 *)
+	    normalTypeIndex {numPointers = 1, numWordsNonPointers = 2}
+	 val word8VectorTypeIndex = (* 1 *) stringTypeIndex
+	 val wordVectorTypeIndex = (* 3 *)
+	    arrayTypeIndex {numBytesNonPointers = 4, numPointers = 0}
       end
       fun parallelMove {chunk,
 			dsts: M.Operand.t vector,
@@ -294,12 +366,20 @@ fun toMachine (program: Ssa.Program.t) =
 	    datatype z = datatype R.Operand.t
 	 in
 	    case oper of
-	       ArrayOffset {base, index, ty} =>
+	       ArrayHeader z =>
+		  M.Operand.Uint (Runtime.typeIndexToHeader (arrayTypeIndex z))
+	     | ArrayOffset {base, index, ty} =>
 		  M.Operand.ArrayOffset {base = varOperand base,
 					 index = varOperand index,
 					 ty = ty}
-	     | CastInt x => M.Operand.CastInt (varOperand x)
+	     | CastInt z => M.Operand.CastInt (translateOperand z)
+	     | CastWord z => M.Operand.CastWord (translateOperand z)
 	     | Const c => constOperand c
+	     | EnsuresBytesFree =>
+		  Error.bug "backend translateOperand saw EnsuresBytesFree"
+	     | File => M.Operand.File
+	     | GCState => M.Operand.GCState
+	     | Line => M.Operand.Line
 	     | Offset {base, bytes, ty} =>
 		  M.Operand.Offset {base = varOperand base,
 				    offset = bytes,
@@ -311,69 +391,115 @@ fun toMachine (program: Ssa.Program.t) =
       fun translateOperands ops = Vector.map (ops, translateOperand)
       fun genStatement (s: R.Statement.t,
 			handlerLinkOffset: {handler: int,
-					    link: int} option): M.Statement.t =
+					    link: int} option)
+	 : M.Statement.t vector =
 	 let
 	    fun handlerOffset () = #handler (valOf handlerLinkOffset)
 	    fun linkOffset () = #link (valOf handlerLinkOffset)
 	    datatype z = datatype R.Statement.t
 	 in
 	    case s of
-(*
-	       Array {dst, numBytes, numBytesNonPointers, numElts, numPointers,
-		      ...} =>
-		  M.Statement.Array
-		  {dst = varOperand dst,
-		   header = (Runtime.arrayHeader
-			     {numBytesNonPointers = numBytesNonPointers,
-			      numPointers = numPointers}),
-		   numBytes = translateOperand numBytes,
-		   numElts = translateOperand numElts}
-	     | 
-*)
                Bind {isMutable, oper, var} =>
 		  if isMutable
 		     orelse (case #operand (varInfo var) of
 				VarOperand.Const _ => false
 			      | _ => true)
-		     then M.Statement.move {dst = varOperand var,
-					    src = translateOperand oper}
-		  else M.Statement.Noop
+		     then (Vector.new1
+			   (M.Statement.move {dst = varOperand var,
+					      src = translateOperand oper}))
+		  else Vector.new0 ()
 	     | Move {dst, src} =>
-		  M.Statement.move {dst = translateOperand dst,
-				    src = translateOperand src}
+		  Vector.new1
+		  (M.Statement.move {dst = translateOperand dst,
+				     src = translateOperand src})
 	     | Object {dst, numPointers, numWordsNonPointers, stores} =>
-		  M.Statement.Object
-		  {dst = varOperand dst,
-		   numPointers = numPointers,
-		   numWordsNonPointers = numWordsNonPointers,
-		   stores = Vector.map (stores, fn {offset, value} =>
-					{offset = offset,
-					 value = translateOperand value})}
+		  Vector.new1
+		  (M.Statement.Object
+		   {dst = varOperand dst,
+		    header = (Runtime.typeIndexToHeader
+			      (normalTypeIndex
+			       {numPointers = numPointers,
+				numWordsNonPointers = numWordsNonPointers})),
+		    size = (Runtime.normalHeaderSize
+			    + (Runtime.normalSize
+			       {numPointers = numPointers,
+				numWordsNonPointers = numWordsNonPointers})),
+		    stores = Vector.map (stores, fn {offset, value} =>
+					 {offset = offset,
+					  value = translateOperand value})})
 	     | PrimApp {dst, prim, args} =>
-		  (case Prim.name prim of
-		      Prim.Name.MLton_installSignalHandler =>
-			 M.Statement.Noop
-		    | _ => 
-			 M.Statement.PrimApp
-			 {args = translateOperands args,
-			  dst = Option.map (dst, varOperand o #1),
-			  prim = prim})
+		  let
+		     datatype z = datatype Prim.Name.t
+		  in
+		     case Prim.name prim of
+			Array_allocate =>
+			   let
+			      val frontier =
+				 M.Operand.Runtime GCField.Frontier
+			      fun arg i =
+				 translateOperand (Vector.sub (args, i))
+			   in Vector.new5
+			      (M.Statement.Move
+			       {dst = M.Operand.Contents {oper = frontier,
+							  ty = Type.word},
+				src = M.Operand.Uint 0w0},
+			       M.Statement.Move
+			       {dst = M.Operand.Offset {base = frontier,
+							offset = wordSize,
+							ty = Type.int},
+				src = translateOperand (Vector.sub (args, 0))},
+			       M.Statement.Move
+			       {dst = M.Operand.Offset {base = frontier,
+							offset = 2 * wordSize,
+							ty = Type.uint},
+				src = translateOperand (Vector.sub (args, 2))},
+			       M.Statement.PrimApp
+			       {args = Vector.new2 (frontier,
+						    M.Operand.Uint
+						    (Word.fromInt
+						     (3 * wordSize))),
+				dst = SOME (varOperand (#1 (valOf dst))),
+				prim = Prim.word32Add},
+			       M.Statement.PrimApp
+			       {args = Vector.new2 (frontier, arg 1),
+				dst = SOME frontier,
+				prim = Prim.word32Add})
+			   end
+		      | MLton_installSignalHandler => Vector.new0 ()
+		      | _ => 
+			   Vector.new1
+			   (M.Statement.PrimApp
+			    {args = translateOperands args,
+			     dst = Option.map (dst, varOperand o #1),
+			     prim = prim})
+		  end
 	     | SetExnStackLocal =>
-		  M.Statement.SetExnStackLocal {offset = handlerOffset ()}
+		  Vector.new1
+		  (M.Statement.SetExnStackLocal {offset = handlerOffset ()})
 	     | SetExnStackSlot =>
-		  M.Statement.SetExnStackSlot {offset = linkOffset ()}
+		  Vector.new1
+		  (M.Statement.SetExnStackSlot {offset = linkOffset ()})
 	     | SetHandler h =>
-		  M.Statement.move
-		  {dst = M.Operand.StackOffset {offset = handlerOffset (),
-						ty = Type.label},
-		   src = M.Operand.Label h}
+		  Vector.new1
+		  (M.Statement.move
+		   {dst = M.Operand.StackOffset {offset = handlerOffset (),
+						 ty = Type.label},
+		    src = M.Operand.Label h})
 	     | SetSlotExnStack =>
-		  M.Statement.SetSlotExnStack {offset = linkOffset ()}
+		  Vector.new1
+		  (M.Statement.SetSlotExnStack {offset = linkOffset ()})
 	 end
       val genStatement =
 	 Trace.trace ("Backend.genStatement",
-		      R.Statement.layout o #1, M.Statement.layout)
+		      R.Statement.layout o #1, Vector.layout M.Statement.layout)
 	 genStatement
+      val bugTransfer =
+	 M.Transfer.CCall
+	 {args = (Vector.new1
+		  (globalString "backend thought control shouldn't reach here")),
+	  frameInfo = NONE,
+	  func = CFunction.bug,
+	  return = NONE}
       val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector},
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce
@@ -384,6 +510,7 @@ fun toMachine (program: Ssa.Program.t) =
 	 setLabelInfo
       fun genFunc (f: Function.t, isMain: bool): unit =
 	 let
+	    val f = eliminateDeadCode f
 	    val {args, blocks, name, start, ...} = Function.dest f
 	    val chunk = funcChunk name
 	    fun labelArgOperands (l: R.Label.t): M.Operand.t vector =
@@ -501,19 +628,24 @@ fun toMachine (program: Ssa.Program.t) =
 					   prim = prim,
 					   success = success,
 					   ty = ty})
-		   | R.Transfer.Bug => simple M.Transfer.Bug
-		   | R.Transfer.CCall {args, prim, return, returnTy} =>
-			simple (M.Transfer.CCall {args = translateOperands args,
-						  prim = prim,
-						  return = return,
-						  returnTy = returnTy})
+		   | R.Transfer.CCall {args, func, return} =>
+			simple (M.Transfer.CCall
+				{args = translateOperands args,
+				 frameInfo = if CFunction.mayGC func
+						then SOME M.FrameInfo.bogus
+					     else NONE,
+				 func = func,
+				 return = return})
 		   | R.Transfer.Call {func, args, return} =>
 			let
 			   val (frameSize, return, handlerLive) =
 			      case return of
-				 R.Return.Dead => (0, NONE, Vector.new0 ())
-			       | R.Return.Tail => (0, NONE, Vector.new0 ())
-			       | R.Return.HandleOnly => (0, NONE, Vector.new0 ())
+				 R.Return.Dead =>
+				    (0, NONE, Vector.new0 ())
+			       | R.Return.Tail =>
+				    (0, NONE, Vector.new0 ())
+			       | R.Return.HandleOnly =>
+				    (0, NONE, Vector.new0 ())
 			       | R.Return.NonTail {cont, handler} =>
 				    let
 				       val {size, adjustSize, ...} =
@@ -585,18 +717,12 @@ fun toMachine (program: Ssa.Program.t) =
 					  dsts = dsts},
 			    M.Transfer.Return {live = dsts})
 			end
-		   | R.Transfer.Runtime {prim, args, return} => 
-			simple
-			(M.Transfer.Runtime
-			 {args = Vector.map (args, translateOperand),
-			  prim = prim,
-			  return = return})
 		   | R.Transfer.Switch {cases, default, test} =>
 			let
 			   fun doit l =
 			      simple
 			      (case (l, default) of
-				  ([], NONE) => M.Transfer.Bug
+				  ([], NONE) => bugTransfer
 				| ([(_, dst)], NONE) => M.Transfer.Goto dst
 				| ([], SOME dst) => M.Transfer.Goto dst
 				| _ =>
@@ -643,13 +769,13 @@ fun toMachine (program: Ssa.Program.t) =
 				       transfer = M.Transfer.Goto start})
 				  end
 			  else ()
-
 		  val {adjustSize, live, liveNoFormals, size, ...} =
 		     labelRegInfo label
 		  val chunk = labelChunk label
 		  val statements =
-		     Vector.map (statements, fn s =>
-				 genStatement (s, handlerLinkOffset))
+		     Vector.concatV
+		     (Vector.map (statements, fn s =>
+				  genStatement (s, handlerLinkOffset)))
 		  val (preTransfer, transfer) =
 		     genTransfer (transfer, chunk, label)
 		  fun frame () =
@@ -671,7 +797,7 @@ fun toMachine (program: Ssa.Program.t) =
 		     end
 		  val (kind, live, pre) =
 		     case kind of
-			R.Kind.Cont {handler} =>
+			R.Kind.Cont _ =>
 			   let
 			      val _ = frame ()
 			      val srcs = callReturnOperands (args, #2, size)
@@ -684,16 +810,26 @@ fun toMachine (program: Ssa.Program.t) =
 				dsts = Vector.map (args, varOperand o #1),
 				srcs = srcs})
 			   end
-		      | R.Kind.CReturn {prim} =>
+		      | R.Kind.CReturn {func as CFunction.T {mayGC, ...}} =>
 			   let
 			      val dst =
 				 if 0 < Vector.length args
 				    then SOME (varOperand
 					       (#1 (Vector.sub (args, 0))))
 				 else NONE
+			      val frameInfo =
+				 if mayGC
+				    then
+				       let
+					  val _ = frame ()
+				       in
+					  SOME M.FrameInfo.bogus
+				       end
+				 else NONE
 			   in
 			      (M.Kind.CReturn {dst = dst,
-					       prim = prim},
+					      frameInfo = frameInfo,
+					      func = func},
 			       liveNoFormals,
 			       Vector.new0 ())
 			   end
@@ -714,15 +850,6 @@ fun toMachine (program: Ssa.Program.t) =
 					(Vector.map (dsts, M.Operand.ty)))})
 			   end
 		      | R.Kind.Jump => (M.Kind.Jump, live, Vector.new0 ())
-		      | R.Kind.Runtime {prim} =>
-			   let
-			      val _ = frame ()
-			   in
-			      (M.Kind.Runtime {frameInfo = M.FrameInfo.bogus,
-					       prim = prim},
-			       liveNoFormals,
-			       Vector.new0 ())
-			   end
 		  val statements = Vector.concat [pre, statements, preTransfer]
 	       in
 		  Chunk.newBlock (chunk,
@@ -795,9 +922,22 @@ fun toMachine (program: Ssa.Program.t) =
 	       case kind of
 		  Cont {args, ...} => Cont {args = args,
 					    frameInfo = frameInfo label}
-		| Runtime {prim, ...} => Runtime {frameInfo = frameInfo label,
-						  prim = prim}
+		| CReturn {dst, frameInfo = f, func} =>
+		     CReturn {dst = dst,
+			      frameInfo = Option.map (f, fn _ =>
+						      frameInfo label),
+			      func = func}
 		| _ => kind
+	    val transfer =
+	       case transfer of
+		  M.Transfer.CCall {args, frameInfo = f, func, return} =>
+		     M.Transfer.CCall
+		     {args = args,
+		      frameInfo = Option.map (f, fn _ =>
+					      frameInfo (valOf return)),
+		      func = func,
+		      return = return}
+		| _ => transfer
 	 in
 	    M.Block.T {kind = kind,
 		       label = label,
@@ -825,8 +965,6 @@ fun toMachine (program: Ssa.Program.t) =
 	  Vector.fold
 	  (blocks, max, fn (M.Block.T {kind, statements, transfer, ...}, max) =>
 	   let
-	      fun doFrameInfo (M.FrameInfo.T {size, ...}, max) =
-		 Int.max (max, size)
 	      fun doOperand (z: M.Operand.t, max) =
 		 let
 		    datatype z = datatype M.Operand.t
@@ -842,12 +980,9 @@ fun toMachine (program: Ssa.Program.t) =
 		     | _ => max
 		 end
 	      val max =
-		 case kind of
-		    M.Kind.Cont {frameInfo, ...} =>
-		       doFrameInfo (frameInfo, max)
-		  | M.Kind.Runtime {frameInfo, ...} =>
-		       doFrameInfo (frameInfo, max)
-		  | _ => max
+		 case M.Kind.frameInfoOpt kind of
+		    NONE => max
+		  | SOME (M.FrameInfo.T {size, ...}) => Int.max (max, size)
 	      val max =
 		 Vector.fold
 		 (statements, max, fn (s, max) =>
@@ -869,6 +1004,7 @@ fun toMachine (program: Ssa.Program.t) =
        intInfs = allIntInfs (), 
        main = main,
        maxFrameSize = maxFrameSize,
+       objectTypes = objectTypes (),
        strings = allStrings ()}
    end
 

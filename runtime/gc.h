@@ -12,45 +12,6 @@
  * A two-space stop-and-copy GC.
  *
  * Has three kinds of objects: normal (fixed size), arrays, and stacks.
- *
- * Object Layout
- * -------------
- * Pointers always point at the first data word of the object.
- * All objects are preceded by a header word.
- * Array header words are preceded by a length.
- * 
- * Here are the header bits.
- *
- *               al mark 
- *         31 30 29 28   27 -- 14		13 -- 0
- * normal   1  0         # words nonpointers	# pointers
- * stack    1  1         unused			unused
- * array    0  0	 # bytes of nonpointers	# pointers	
- *
- * Length word
- *         31
- *          0
- *
- * al stands for alignment and is currently unused.  Someday it will be used 
- * for better double alignment.
- *
- * The mark bit is only used during GC_size.
- *
- * For now, arrays must be either all pointers or all nonpointers.
- *
- * There are are two things that the GC needs to do
- * 1. Locate the header given a pointer to the (first data word) object.
- * 2. Locate the header given a pointer to the beginning of the object, which
- *    is either the header or the array length.
- *
- * (1) happens for every (live) pointer during a GC, while (2) happens for every
- * live object.  Since (1) occurs more frequently than (2), the design of header
- * bits is optimized for that case.
- *
- * (1) is easy, because the header is the preceeding word.
- *
- * (2) is easy, because if the high bit is set, we are looking at the header.
- * If not, the next word is the header.
  */
 
 #include <signal.h>
@@ -62,74 +23,80 @@
 
 typedef uint word;
 typedef char* pointer;
+typedef unsigned long long W64;
+typedef unsigned long W32;
+typedef W32 Header;
+
+/*
+ * Header word bits look as follows:
+ * 31		mark bit
+ * 30 - 20	counter bits
+ * 19 - 1	type index bits
+ * 0		1
+ *
+ * The mark bit is used by the mark compact GC and GC_size to mark an object
+ * as reachable.  The counter bits are used during the mark phase in conjunction
+ * with pointer reversal to implement the mark stack.  They record the current
+ * pointer
+ *
+ * The type index is an index into an array of struct GC_ObjectType's, where 
+ * each element describes the layout of an object.  There are three kinds of
+ * objects: array, normal, and stack.
+ *
+ * Arrays are layed out as follows
+ *   counter word
+ *   length word
+ *   header word
+ *   data words ...
+ * The counter word is used during marking to help implement the mark stack.
+ * The length word is the number of elements in the array.
+ * The header word contains a type index that describes the layout of elements.
+ * For now, arrays are either all pointers or all nonpointers.
+ * 
+ * Normal objects are a header word followed by the data words, which consist
+ * of all nonpointer data followed by all pointer data.  
+ *
+ * 19 bits means that there are only 2^19 different different object layouts,
+ * which appears to be plenty, since there were < 128 different types required
+ * for a self-compile.
+ */
 
 /* Sizes are (almost) always measured in bytes. */
 enum {
-	WORD_SIZE = 4,
-	GC_OBJECT_HEADER_SIZE = WORD_SIZE,
-	GC_ARRAY_HEADER_SIZE = WORD_SIZE + GC_OBJECT_HEADER_SIZE,
-	LIMIT_SLOP = 512,
-	/* Number of bits specifying the number of nonpointers in an object. */
-	NON_POINTER_BITS = 14,
-	/* Number of bits specifying the number of pointers in an object. */
-	POINTER_BITS = 14,
-	NON_POINTERS_SHIFT = POINTER_BITS,
-	POINTER_SIZE = WORD_SIZE,
-
-	/* Here are the masks for the various parts of header words. */	
-	TAG_MASK = 		0xC0000000,
-	ALIGNMENT_BIT = 	0x20000000,
-	MARK_BIT = 		0x10000000,
-	NON_POINTER_MASK =	0x0FFFC000,
-	POINTER_MASK = 		0x00003FFF,
-
-	/* Here are the tags for the three kinds of objects. */
-	ARRAY_TAG = 		0x00000000,
-	STACK_TAG = 		0xC0000000,
-	NORMAL_TAG = 		0x80000000,
+	WORD_SIZE = 		4,
+	COUNTER_MASK =		0x7FF00000,
+	COUNTER_SHIFT =		20,
+	GC_ARRAY_HEADER_SIZE = 	3 * WORD_SIZE,
+	GC_NORMAL_HEADER_SIZE =	WORD_SIZE,
+	TYPE_INDEX_BITS =	19,
+	TYPE_INDEX_MASK =	0x000FFFFE,
+	LIMIT_SLOP = 		512,
+	MARK_MASK =		0x80000000,
+	POINTER_SIZE =		WORD_SIZE,
+	STACK_TYPE_INDEX =	0,
+	STRING_TYPE_INDEX = 	1,
+	THREAD_TYPE_INDEX =	2,
+	WORD8_VECTOR_TYPE_INDEX = STRING_TYPE_INDEX,
+	WORD_VECTOR_TYPE_INDEX = 3,
 };
 
 #define TWOPOWER(n) (1 << (n))
 
-/*
- * Build the one word header for an object, given the number of words of
- * nonpointers and the number of pointers.
- */
-static inline word GC_objectHeader(uint np, uint p) {
-	assert(np < TWOPOWER(NON_POINTER_BITS));
-	assert(p < TWOPOWER(POINTER_BITS));
-	return NORMAL_TAG | p | (np << NON_POINTERS_SHIFT);
-}
-
-/*
- * Build the one word header for an array, given the number of bytes of
- * nonpointers and the number of pointers.
- */
-static inline word GC_arrayHeader(uint np, uint p) {
-	/* Arrays are allowed one fewer non pointer bit, because the top 
-  	 * non pointer bit is used for the continuation header word.
-         */
-	assert(np < TWOPOWER(NON_POINTER_BITS - 1));
-	assert(p < TWOPOWER(POINTER_BITS));
-	return ARRAY_TAG | p | (np << NON_POINTERS_SHIFT);
-}
-
 /* ------------------------------------------------- */
-/*                   GC_isPointer                    */
+/*                    object type                    */
 /* ------------------------------------------------- */
 
-/* Returns true if p looks like a pointer, i.e. if p = 0 mod 4. */
-static inline bool GC_isPointer(pointer p) {
-	return(0 == ((word)p & 0x3));
-}
+typedef enum { 
+	ARRAY_TAG,
+	NORMAL_TAG,
+	STACK_TAG,
+} GC_ObjectTypeTag;
 
-static inline uint wordAlign(uint p) {
- 	return ((p + 3) & ~ 3);
-}
-
-static inline bool isWordAligned(uint x) {
-	return 0 == (x & 0x3);
-}
+typedef struct {
+	GC_ObjectTypeTag tag;
+	ushort numNonPointers;
+	ushort numPointers;
+} GC_ObjectType;
 
 /* ------------------------------------------------- */
 /*                  GC_frameLayout                   */
@@ -150,12 +117,24 @@ typedef struct GC_frameLayout {
 /*                     GC_stack                      */
 /* ------------------------------------------------- */
 
-/* 
- * Stacks with used == reserved are continuations.
- */
-typedef struct GC_stack {
-	uint reserved;	/* Number of bytes reserved for stack. */
-	uint used;	/* Number of bytes in use. */
+typedef struct GC_stack {	
+	/* markTop and markIndex are only used during marking.  They record the
+	 * current pointer in the stack that is being followed.  markTop points
+	 * to the top of the stack frame containing the pointer and markI is the
+	 * index in that frames frameOffsets of the pointer slot.  So, when the
+	 * GC pointer reversal gets back to the stack, it can continue with the
+	 * next pointer (either in the current frame or the next frame).
+	 */
+	pointer markTop;
+	W32 markIndex;
+	/* reserved is the number of bytes reserved for stack, i.e. its maximum
+	 * size.
+	 */
+	uint reserved;
+	/* used is the number of bytes in use by the stack.  
+         * Stacks with used == reserved are continuations.
+	 */
+	uint used;	
 	/* The next address is the bottom of the stack, and the following
          * reserved bytes hold space for the stack.
          */
@@ -185,126 +164,230 @@ typedef struct GC_thread {
 
 /* General note:
  *   stackBottom, stackLimit, and stackTop are computed from 
- *   s->currentThread->stack.  It is expected that MLton side effects these
+ *   s->currentThread->stack.  It is expected that the mutator side effects these
  *   directly rather than mucking with s->currentThread->stack.  Upon entering
  *   the runtime system, the GC will update s->currentThread->stack based on
  *   these values so that everything is consistent.
- *
- * If you change the order of the fields in this struct, then you must update
- * x86-mlton.fun with the new offsets.
  */
+
 typedef struct GC_state {
 	/* These fields are at the front because they are the most commonly
-	 * referenced.
+	 * referenced, and having them at smaller offsets may decrease code size.
          */
 	pointer frontier; 	/* base <= frontier < limit */
 	pointer limit; 		/* end of from space */
 	pointer stackTop;
 	pointer stackLimit;	/* stackBottom + stackSize - maxFrameSize */
-	GC_thread currentThread; /* This points to a thread in the heap. */
 
-	/* heap */
-	uint fromSize;		/* size (bytes) of from space */
+	pointer back;     	/* Points at next available word in toSpace. */
 	pointer base;		/* start (lowest address) of from space */
-	uint toSize; 		/* size (bytes) of to space */
-	pointer toBase;		/* start (lowest address) of to space */
-	pointer limitPlusSlop;     /* limit + LIMIT_SLOP */
-	
-	/* globals */
-	uint numGlobals;
-	pointer *globals;	/* an array of size numGlobals */
-
-	/* savedThread is only set while either
-         *   - executing a signal handler.  It is set to the thread that was
-         *     running when the signal arrived.
-         *   - calling switchToThread, in which case it is set to the thread
-	 *     that called switchToThread
-	 */
-	GC_thread savedThread;
-
-	/* Stack in current thread */
-	pointer stackBottom;	
-	uint maxFrameSize;
-	uint maxFrameIndex;     /* 0 <= frameIndex < maxFrameIndex */
-	GC_frameLayout *frameLayouts;
-	/* GC_init computes frameLayout index using native codegen style. */
-	bool native;
-	
-	/* Print out a message at the start and end of each gc. */
-	bool messages;
-
+	ullong bytesAllocated;
+ 	ullong bytesCopied;
+	int bytesLive;		/* Number of bytes copied by most recent GC. */
+	GC_thread currentThread; /* This points to a thread in the heap. */
  	/* The dfs stack is only used during the depth-first-search of an 
 	 * object.  This is used in computing the size of an object.
 	 * Top points at the next free space. 
          */
-	pointer dfsTop;
 	pointer dfsBottom;
-
+	pointer dfsTop;
+ 	uint forwardSize;
+	GC_frameLayout *frameLayouts;
+	uint fromSize; /* Size (bytes) of from space. */
+	pointer *globals; /* An array of size numGlobals. */
+	uint halfMem; /* bytes */
+	uint halfRam; /* bytes */
+	bool inSignalHandler; 	/* TRUE iff a signal handler is running. */
+	/* canHandle == 0 iff GC may switch to the signal handler
+ 	 * thread.  This is used to implement critical sections.
+	 */
+	volatile int canHandle;
+	bool isOriginal;
+	pointer limitPlusSlop; /* limit + LIMIT_SLOP */
+	uint liveThresh1;
+	uint liveThresh2;
+	uint liveThresh3;
+	uint magic; /* The magic number required for a valid world file. */
+	uint markSize;
+	uint maxBytesLive;
+	uint maxFrameIndex; /* 0 <= frameIndex < maxFrameIndex */
+	uint maxFrameSize;
+	uint maxHeap; /* if zero, then unlimited, else limit total heap */
+	uint maxHeapSizeSeen;
+	uint maxObjectTypeIndex; /* 0 <= typeIndex < maxObjectTypeIndex */
+	uint maxPause; /* max time spent in any gc in milliseconds. */
+	uint maxStackSizeSeen;
+	bool messages; /* Print out a message at the start and end of each gc. */
+	/* native is true iff the native codegen was used.
+	 * The GC needs to know this because it affects how it finds the
+	 * layout of stack frames.
+ 	 */
+	bool native;
+ 	uint numGCs; /* Total number of GCs done. */
+	uint numGlobals; /* Number of pointers in globals array. */
+ 	ullong numLCs;
+	GC_ObjectType *objectTypes; /* Array of object types. */
+	uint pageSize; /* bytes */
+	float ramSlop;
+ 	struct rusage ru_gc; /* total resource usage spent in gc */
+	/* savedThread is only set
+         *    when executing a signal handler.  It is set to the thread that
+	 *    was running when the signal arrived.
+         * or by GC_copyThread and GC_copyCurrentThread, which used it to store
+         *    their result.
+	 */
+	GC_thread savedThread;
+	/* Save globals writes out the values of all of the globals to fd. */
+	void (*saveGlobals)(int fd);
 	/* serializeStart holds the frontier at the start of the serialized
          * object during object serialization.
          */
 	pointer serializeStart;
-
-	/* only used during GC */
-	int bytesLive;		/* Number of bytes copied by most recent GC. */
-	pointer back;     	/* Points at next available word in toSpace. */
-	pointer toLimit;	/* End of tospace. */
-
-	/* Memory */
+	GC_thread signalHandler; /* The mutator signal handler thread. */
+	sigset_t signalsHandled; /* The signals handler expects to be handled. */
+	/* signalIsPending is TRUE iff a signal has been received but not
+	 * processed by the mutator signal handler.
+	 */
+	volatile bool signalIsPending;
+	/* The signals that have been recieved but not processed by the mutator
+	 * signal handler.
+	 */
+	sigset_t signalsPending;
+	pointer stackBottom; /* The bottom of the stack in the current thread. */
+ 	uint startTime; /* The time when GC_init or GC_loadWorld was called. */
+	/* If summary is TRUE, then print a summary of gc info when the program 
+	 * is done .
+	 */
+	bool summary; 
+	pointer toBase; /* The start (lowest address) of to space. */
+	pointer toLimit; /* The end of tospace. */
+	uint toSize; /* size (bytes) of to space */
 	uint totalRam; /* bytes */
 	uint totalSwap; /* bytes */
-	uint halfMem; /* bytes */
-	uint halfRam; /* bytes */
-	uint liveThresh1;
-	uint liveThresh2;
-	uint liveThresh3;
+	uint translateDiff; /* used by translateHeap */
+ 	bool translateUp; /* used by translateHeap */
 	bool useFixedHeap; /* if true, then don't resize the heap */
-	uint maxHeap;      /* if zero, then unlimited, else limit total heap */
-
-	/* ------------------------------------------------- */
-	/*                     loadWorld                     */
-	/* ------------------------------------------------- */
- 	bool translateUp;	/* used by translateHeap */
-	uint translateDiff;	/* used by translateHeap */
-	uint magic;	/* The magic number required for a valid world file. */
-
-	/* ------------------------------------------------- */
-	/*                      Signals                      */
-	/* ------------------------------------------------- */
-	volatile int canHandle;	/* == 0 iff GC can switch to the signal handler
-				 * thread.  This is used to implement critical
-				 * sections.
-				 */
-	GC_thread signalHandler;/* The signal handler thread. */
-	sigset_t signalsHandled;/* The signals handler expects to be handled. */
-	volatile bool signalIsPending;	/* TRUE iff a signal has been received but not
-				 * processed.
-				 */
-	sigset_t signalsPending;/* The signals that need to be handled. */
-	bool inSignalHandler; 	/* TRUE iff a signal handler is running. */
-
-	/* ------------------------------------------------- */
- 	/*               gc-summary statistics               */
- 	/* ------------------------------------------------- */
-	bool summary; /* print a summary of gc info when the program is done */
-	ullong bytesAllocated;
- 	ullong bytesCopied;
- 	uint numGCs; 
- 	ullong numLCs; 
- 	struct rusage ru_gc; /* total resource usage spent in gc */
-	uint maxPause;  /* max time spent in any gc in milliseconds. */
- 	uint startTime; /* the time when GC_init or GC_loadWorld is called */
-	uint maxHeapSizeSeen;
-	uint maxStackSizeSeen;
-	uint maxBytesLive;
-	float ramSlop;
-	bool isOriginal;
-	uint pageSize; /* bytes */
 } *GC_state;
 
-/* ------------------------------------------------- */
-/*                  Initialization                   */
-/* ------------------------------------------------- */
+static inline uint wordAlign(uint p) {
+ 	return ((p + 3) & ~ 3);
+}
+
+static inline bool isWordAligned(uint x) {
+	return 0 == (x & 0x3);
+}
+
+/*
+ * fixedGetrusage() works just like getrusage() except that it actually works.
+ * I.e., it does not suffer from the Linux kernel bugs associated with the user
+ * and system times.
+ */
+int fixedGetrusage(int who, struct rusage *rup);
+
+/* ---------------------------------------------------------------- */
+/*                           GC functions                           */
+/* ---------------------------------------------------------------- */
+
+/* Allocate an array with the specified header and number of elements.
+ * Also ensure that frontier + bytesNeeded < limit after the array is allocated.
+ */
+pointer GC_arrayAllocate (GC_state s, W32 bytesNeeded, W32 numElts, 
+				W32 header);
+
+/* The array size is stored before the header */
+static inline uint* GC_arrayNumElementsp (pointer a) {
+	return ((uint*)a - 2);
+}
+
+static inline int GC_arrayNumElements (pointer a) {
+	return *(GC_arrayNumElementsp (a));
+}
+
+static inline void GC_arrayShrink (pointer array, uint numElements) {
+	*GC_arrayNumElementsp (array) = numElements;
+}
+
+/* GC_copyThread (s, t) copies the thread pointed to by t and places the
+ * result in s->savedThread.
+ */
+void GC_copyThread (GC_state s, GC_thread t);
+
+/* GC_copyThread (s) copies the current thread, s->currentThread, and places 
+ * the result in s->savedThread.
+ */
+void GC_copyCurrentThread (GC_state s);
+
+/* GC_createStrings allocates a collection of strings in the heap.
+ * It assumes that there is enough space.
+ * The inits array should be NULL terminated, 
+ *    i.e.the final element should be {0, NULL, 0}.
+ */
+struct GC_stringInit {
+  uint globalIndex;
+  char *str;
+  uint size;
+};
+void GC_createStrings (GC_state s, struct GC_stringInit inits[]);
+
+/* GC_deseralize returns the deserialization of the word8vector. */
+/* pointer GC_deserialize (GC_state s, pointer word8vector); */
+
+/* GC_display (s, str) prints out the state s to stream str. */
+void GC_display (GC_state s, FILE *stream);
+
+/* GC_doGC is for use by GC related functions only.  External callers should
+ * use GC_gc.
+ */
+void GC_doGC (GC_state s, uint bytesRequested, uint stackBytesRequested);
+
+/* GC_done should be called after the program is done.
+ * munmaps heap and stack.
+ * Prints out gc statistics if s->summary is set.
+ */
+void GC_done (GC_state s);
+
+/* GC_enter is fo use by GC functions only.
+ * It is called when transitioning from the mutator to the GC.
+ */
+void GC_enter (GC_state s);
+
+/* GC_finishHandler should be called by the mutator signal handler thread when
+ * it is done handling the signal.
+ */
+void GC_finishHandler (GC_state s);
+
+/* GC_foreachPointerInObject (s, f, p) applies f to each pointer in the object
+ * pointer to by p.
+ */
+typedef void (*GC_pointerFun)(GC_state s, pointer *p);
+pointer GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p);
+
+void GC_fromSpace (GC_state s);
+
+/* GC_gc does a gc.
+ * This will also resize the stack if necessary.
+ * It will also switch to the signal handler thread if there is a pending signal.
+ */
+void GC_gc (GC_state s, uint bytesRequested, bool force,
+		string file, int line);
+
+/* GC_getHeaderp returns a pointer to the header for the object pointed to by 
+ * p. 
+ */
+static inline Header* GC_getHeaderp (pointer p) {
+	return (Header*)(p - WORD_SIZE);
+}
+
+/* GC_gerHeader returns the header for the object pointed to by p. */
+static inline Header GC_getHeader (pointer p) {
+	return *(GC_getHeaderp(p));
+}
+
+/* GC_handler is the baked-in C signal handler. 
+ * It causes the next limit check to fail by setting s->limit to zero.
+ * This, in turn, will cause the GC to run the SML signal handler.
+ */
+void GC_handler (GC_state s, int signum);
 
 /* GC_init must be called before doing any allocation.
  * It must also be called before MLTON_init, GC_createStrings, and GC_createIntInfs.
@@ -324,152 +407,60 @@ typedef struct GC_state {
  *        maxHeapSize should be set to 0 if you want it to be figured out
  *          automatically, otherwise set it to what you want.
  */
-int GC_init(GC_state s, int argc, char **argv,
+int GC_init (GC_state s, int argc, char **argv,
 			void (*loadGlobals)(FILE *file));
 
-struct GC_stringInit {
-  uint globalIndex;
-  char *str;
-  uint size;
-};
-
-/*  The inits array should be NULL terminated.
- *  I.E. the final element should be {0, NULL, 0}.
- */
-void GC_createStrings(GC_state s, struct GC_stringInit inits[]);
-
-/*
- * The function fixedGetrusage() works just like getrusage() except
- * that it actually works.  I.e., it does not suffer from the Linux
- * kernel bugs associated with the user and system times.
- */
-int fixedGetrusage(int who, struct rusage *rup);
-
-/* ------------------------------------------------- */
-/*                      GC_done                      */
-/* ------------------------------------------------- */
-
-/* GC_done should be called after the program is done.
- * munmaps heap and stack.
- * Prints out gc statistics if s->summary is set.
- */
-void GC_done (GC_state s);
-
-/* ------------------------------------------------- */
-/*                       GC_gc                       */
-/* ------------------------------------------------- */
-
-void GC_doGC (GC_state s, uint bytesRequested, uint stackBytesRequested);
-void GC_enter (GC_state s);
-void GC_leave(GC_state s);
-
-/* Do a gc.
- * This will also resize the stack if necessary.
- * It will also switch to the signal handler thread if there is a pending signal.
- */
-void GC_gc (GC_state s, uint bytesRequested, bool force,
-		string file, int line);
-
-/* ------------------------------------------------- */
-/*                      GC_size                      */
-/* ------------------------------------------------- */
-
-/* Return the amount of heap space taken by the object pointed to by root. */
-uint GC_size (GC_state s, pointer root);
-
-/* ------------------------------------------------- */
-/*                   Serialization                   */
-/* ------------------------------------------------- */
-
-/* Return a serialized version of the object rooted at root. */
-/* pointer GC_serialize(GC_state s, pointer root); */
-
-/* Return the deserialization of the word8vector pointed to by pointer */
-/* pointer GC_deserialize(GC_state s, pointer word8vector); */
-
-/* ------------------------------------------------- */
-/*                      Arrays                       */
-/* ------------------------------------------------- */
-
-/* The array size is stored before the header */
-static inline uint* GC_arrayNumElementsp(pointer a) {
-	return ((uint*)a - 2);
+/* GC_isPointer returns true if p looks like a pointer, i.e. if p = 0 mod 4. */
+static inline bool GC_isPointer (pointer p) {
+	return (0 == ((word)p & 0x3));
 }
 
-static inline int GC_arrayNumElements(pointer a) {
-	return *(GC_arrayNumElementsp(a));
-}
-
-static inline void GC_arrayShrink(pointer array, uint numElements) {
-	*GC_arrayNumElementsp(array) = numElements;
-}
-
-/* ------------------------------------------------- */
-/*                      Threads                      */
-/* ------------------------------------------------- */
-
-/* Both copyThread and copyCurrentThread place the copy in s->savedThread. */
-void GC_copyThread(GC_state s, GC_thread t);
-void GC_copyCurrentThread(GC_state s);
-void GC_threadSwitchTo(GC_state s, GC_thread t);
-
-/* ------------------------------------------------- */
-/*                      Worlds                       */
-/* ------------------------------------------------- */
-
-void GC_loadWorld(GC_state s, 
-			char *fileName,
-			void (*loadGlobals)(FILE *file));
-void GC_saveWorld(GC_state s, int fd, void (*saveGlobals)(int fd));
-
-/* ------------------------------------------------- */
-/*                    GC_handler                     */
-/* ------------------------------------------------- */
-
-/* This is the baked-in signal handler.  It causes the next limit check to fail.
- */
-void GC_handler(GC_state s, int signum);
-
-void GC_finishHandler (GC_state s);
-
-/* ------------------------------------------------- */
-/*                       Misc                        */
-/* ------------------------------------------------- */
-
-static inline bool GC_isValidFrontier(GC_state s, pointer frontier) {
+static inline bool GC_isValidFrontier (GC_state s, pointer frontier) {
 	return s->base <= frontier and frontier <= s->limit;
 }
 
-static inline bool GC_isValidSlot(GC_state s, pointer slot) {
+static inline bool GC_isValidSlot (GC_state s, pointer slot) {
 	return s->stackBottom <= slot 
 		and slot < s->stackBottom + s->currentThread->stack->reserved;
 }
 
-typedef void (*GC_pointerFun)(GC_state s, pointer *p);
+/* GC_leave is for use by GC functions only. 
+ * It is called when transition from the GC to the mutator.
+ */
+void GC_leave (GC_state s);
 
-void GC_display(GC_state s, FILE *stream);
-void GC_fromSpace(GC_state s);
-bool GC_mutatorInvariant(GC_state s);
-uint GC_objectSize(pointer p);
-void GC_setHeapParams(GC_state s, uint size);
-void GC_setStack(GC_state s);
-void GC_toSpace(GC_state s);
+void GC_loadWorld (GC_state s, 
+			char *fileName,
+			void (*loadGlobals)(FILE *file));
+
+bool GC_mutatorInvariant (GC_state s);
+
+/*
+ * Build the header for an object, given the index to its type info.
+ */
+static inline word GC_objectHeader (W32 t) {
+	assert (t < TWOPOWER (TYPE_INDEX_BITS));
+	return 1 | (t << 1);
+}
+
+/* Write out the current world to the file descriptor. */
+void GC_saveWorld (GC_state s, int fd);
+
+/* Return a serialized version of the object rooted at root. */
+/* pointer GC_serialize(GC_state s, pointer root); */
+
+void GC_setHeapParams (GC_state s, uint size);
+
+void GC_setStack (GC_state s);
+
+/* Return the amount of heap space taken by the object pointed to by root. */
+uint GC_size (GC_state s, pointer root);
+
+void GC_toSpace (GC_state s);
 
 /* Translate all pointers to the heap from within the stack and the heap for
  * a heap that has moved from s->base == old to s->base.
  */
 void GC_translateHeap(GC_state s, pointer from, pointer to, uint size);
-
-pointer GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p);
-
-/* Return a pointer to the header for the object pointed to by p. */
-static inline word* GC_getHeaderp(pointer p) {
-	return (word*)(p - WORD_SIZE);
-}
-
-/* Return the header for the object pointed to by p. */
-static inline word GC_getHeader(pointer p) {
-	return *(GC_getHeaderp(p));
-}
 
 #endif /* #ifndef _MLTON_GC_H */

@@ -43,6 +43,12 @@ struct
 
   open S
 
+   local
+      open Runtime
+   in
+      structure CFunction = CFunction
+   end
+
   structure Label =
      struct
 	open Label
@@ -3537,24 +3543,23 @@ struct
       val instruction_fbinasp = Instruction o Instruction.fbinasp
     end
 
+  structure FrameInfo =
+     struct
+	datatype t = T of {size: int, 
+			   frameLayoutsIndex: int}
+
+	fun toString (T {size, frameLayoutsIndex})
+	   = concat ["{",
+		     "size = ", Int.toString size, ", ",
+		     "frameLayoutsIndex = ", 
+		     Int.toString frameLayoutsIndex, "}"]
+	val layout = Layout.str o toString
+
+	val frameInfo = T
+     end
+
   structure Entry =
     struct
-      structure FrameInfo =
-	struct
-	  datatype t = T of {size: int, 
-			     frameLayoutsIndex: int}
-
-	  fun toString (T {size, frameLayoutsIndex})
-	    = concat ["{",
-		      "size = ", Int.toString size, ", ",
-		      "frameLayoutsIndex = ", 
-		      Int.toString frameLayoutsIndex, "}"]
-	  val layout = Layout.str o toString
-
-	  val frameInfo = T
-	end
-
-
       datatype t
 	= Jump of {label: Label.t}
         | Func of {label: Label.t,
@@ -3565,10 +3570,10 @@ struct
 	| Handler of {label: Label.t,
 		      live: MemLocSet.t,
 		      offset: int}
-	| Runtime of {label: Label.t,
-		      frameInfo: FrameInfo.t}
-	| CReturn of {label: Label.t,
-		      dst: (Operand.t * Size.t) option}
+	| CReturn of {dst: (Operand.t * Size.t) option,
+		      frameInfo: FrameInfo.t option,
+		      func: CFunction.t,
+		      label: Label.t}
 				    
       val toString
 	= fn Jump {label} => concat ["Jump::",
@@ -3609,18 +3614,19 @@ struct
 		      "] (",
 		      Int.toString offset,
 		      ")"]
-	   | Runtime {label, frameInfo} 
-	   => concat ["Runtime::",
-		      Label.toString label,
-		      " ",
-		      FrameInfo.toString frameInfo]
-	   | CReturn {label, dst} 
+	   | CReturn {dst, frameInfo, func, label} 
 	   => concat ["CReturn::",
 		      Label.toString label,
 		      " ",
 		      case dst
-			of SOME (dst,dstsize) => Operand.toString dst
-			 | NONE => ""]
+			of SOME (dst, _) => Operand.toString dst
+			 | NONE => "",
+		      " ",
+		      CFunction.name func,
+		      " ",
+		      case frameInfo of
+			 NONE => ""
+		       | SOME f => FrameInfo.toString f]
       val layout = Layout.str o toString
 
       val uses_defs_kills
@@ -3633,7 +3639,6 @@ struct
 	   | Func {label, ...} => label
 	   | Cont {label, ...} => label
 	   | Handler {label, ...} => label
-	   | Runtime {label, ...} => label
 	   | CReturn {label, ...} => label
 
       val live
@@ -3647,7 +3652,6 @@ struct
       val isFunc = fn Func _ => true | _ => false
       val cont = Cont
       val handler = Handler
-      val runtime = Runtime
       val creturn = CReturn
 
       val isNear = fn Jump _ => true
@@ -3900,14 +3904,12 @@ struct
 		      size: int}
 	| Return of {live: MemLocSet.t}
 	| Raise of {live: MemLocSet.t}
-	| Runtime of {prim: Prim.t,
-		      args: (Operand.t * Size.t) list,
-		      return: Label.t,
-		      size: int}
-	| CCall of {target: Label.t,
-		    args: (Operand.t * Size.t) list,
-		    return: Label.t,
-		    dstsize: Size.t option}
+	| CCall of {args: (Operand.t * Size.t) list,
+		    dstsize: Size.t option,
+		    frameInfo: FrameInfo.t option,
+		    func: CFunction.t,
+		    return: Label.t option,
+		    target: Label.t}
 
       val toString
 	= fn Goto {target}
@@ -3985,19 +3987,7 @@ struct
 			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "]"]
-	   | Runtime {prim, args, return, size}
-	   => concat ["RUNTIME ",
-		      Prim.toString prim,
-		      "(",
-		      (concat o List.separate)
-		      (List.map(args, fn (oper,_) => Operand.toString oper),
-		       ", "),
-		      ") <",
-		      Label.toString return,
-		      " ",
-		      Int.toString size,
-		      ">"]
-	   | CCall {target, args, return, dstsize}
+	   | CCall {args, dstsize, frameInfo, func, return, target}
 	   => concat ["CCALL ",
 		      Label.toString target,
 		      "(",
@@ -4005,17 +3995,13 @@ struct
 		      (List.map(args, fn (oper,_) => Operand.toString oper),
 		       ", "),
 		      ") <",
-		      Label.toString return,
+		      Option.toString Label.toString return,
 		      ">"]
       val layout = Layout.str o toString
 
       val uses_defs_kills
 	= fn Switch {test, cases, default}
 	   => {uses = [test], defs = [], kills = []}
-	   | Runtime {args, ...}
-	   => {uses = List.map(args, fn (oper,_) => oper),
-	       defs = [],
-	       kills = []}
 	   | CCall {args, ...}
 	   => {uses = List.map(args, fn (oper,_) => oper),
 	       defs = [],
@@ -4035,8 +4021,9 @@ struct
 	   | NonTail {return,handler,...} => return::(case handler 
 							of NONE => nil
 							 | SOME handler => [handler])
-	   | Runtime {return,...} => [return]
-	   | CCall {return,...} => [return]
+	   | CCall {return,...} => (case return of
+				       NONE => []
+				     | SOME l => [l])
 	   | _ => []
 
       val live
@@ -4051,24 +4038,17 @@ struct
 	   => Switch {test = replacer {use = true, def = false} test,
 		      cases = cases,
 		      default = default}
-	   | Runtime {prim, args, return, size}
-	   => Runtime {prim = prim,
-		       args = List.map(args,
-				       fn (oper,size) => (replacer {use = true,
-								    def = false}
-							           oper,
-							  size)),
-		       return = return,
-		       size = size}
-	   | CCall {target, args, return, dstsize}
-	   => CCall {target = target,
-		     args = List.map(args,
+	   | CCall {args, dstsize, frameInfo, func, return, target}
+	   => CCall {args = List.map(args,
 				     fn (oper,size) => (replacer {use = true,
 								  def = false}
 							         oper,
 							size)),
+		     dstsize = dstsize,
+		     frameInfo = frameInfo,
+		     func = func,
 		     return = return,
-		     dstsize = dstsize}
+		     target = target}
            | transfer => transfer
 
       val goto = Goto
@@ -4078,7 +4058,6 @@ struct
       val nontail = NonTail
       val return = Return
       val raisee = Raise
-      val runtime = Runtime
       val ccall = CCall
     end
 

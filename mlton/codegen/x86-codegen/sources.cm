@@ -7,7 +7,7 @@
  *)
 Group
 
-functor x86CodeGen
+functor x86Codegen
 
 is
 
@@ -15,11 +15,13 @@ is
 ../../atoms/sources.cm
 ../../control/sources.cm
 ../../backend/sources.cm
+../c-codegen/sources.cm
 
 x86-codegen.sig
 x86.sig
 x86.fun
 x86-pseudo.sig
+x86-mlton-basic.fun
 x86-mlton-basic.sig
 x86-liveness.sig
 x86-liveness.fun

@@ -19,8 +19,10 @@ structure CoreML = CoreML (open Atoms
 structure Xml = Xml (open Atoms)
 structure Sxml = Xml
 structure Ssa = Ssa (open Atoms)
+structure Runtime = Runtime ()
 structure Machine = Machine (structure Label = Ssa.Label
-			     structure Prim = Atoms.Prim)
+			     structure Prim = Atoms.Prim
+			     structure Runtime = Runtime)
 
 (*---------------------------------------------------*)
 (*                  Compiler Passes                  *)
@@ -43,8 +45,9 @@ structure ClosureConvert = ClosureConvert (structure Ssa = Ssa
 structure Backend = Backend (structure Ssa = Ssa
 			     structure Machine = Machine
 			     fun funcToLabel f = f)
-structure CCodeGen = CCodeGen (structure Machine = Machine)
-structure x86CodeGen = x86CodeGen (structure Machine = Machine)
+structure CCodegen = CCodegen (structure Machine = Machine)
+structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
+				   structure Machine = Machine)
 
 local open Elaborate
 in 
@@ -427,13 +430,13 @@ fun compile {input: File.t list, outputC, outputS, docc}: unit =
 	 if !Control.Native.native
 	    then
 	       Control.trace (Control.Top, "x86 code gen")
-	       x86CodeGen.output {program = machine,
+	       x86Codegen.output {program = machine,
                                   includes = !Control.includes,
 				  outputC = outputC,
 				  outputS = outputS}
 	 else
 	    Control.trace (Control.Top, "C code gen")
-	    CCodeGen.output {program = machine,
+	    CCodegen.output {program = machine,
                              includes = !Control.includes,
 			     outputC = outputC}
       val _ = Control.message (Control.Detail, PropertyList.stats)

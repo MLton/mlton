@@ -2511,11 +2511,14 @@ struct
 				             (cases,
 					      fn target => update target),
 			             default = update default}
-	         | Transfer.CCall {target, args, return, dstsize}
-	         => Transfer.CCall {target = target,
-				    args = args,
-				    return = update return,
-				    dstsize = dstsize}
+	         | Transfer.CCall {args, dstsize, frameInfo, func, return,
+				   target}
+	         => Transfer.CCall {args = args,
+				    dstsize = dstsize,
+				    frameInfo = frameInfo,
+				    func = func,
+				    return = Option.map (return, update),
+				    target = target}
 	         | transfer => transfer
 
 	    val blocks

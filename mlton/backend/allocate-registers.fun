@@ -16,6 +16,7 @@ local
    open Rssa
 in
    structure Block = Block
+   structure CFunction = CFunction
    structure Func = Func
    structure Function = Function
    structure Kind = Kind
@@ -29,6 +30,7 @@ local
 in
    structure Operand = Operand
    structure Register = Register
+   structure Runtime = Runtime
 end
 
 val traceForceStack =
@@ -350,8 +352,10 @@ fun allocate {argOperands: Machine.Operand.t vector,
 		       ; List.foreach (beginNoFormals, forceStack))
 		 | Kind.Handler =>
 		      List.foreach (beginNoFormals, forceStack)
-		 | Kind.Runtime _ =>
-		      List.foreach (beginNoFormals, forceStack)
+		 | Kind.CReturn {func = CFunction.T {mayGC, ...}} =>
+		      if mayGC
+			 then List.foreach (beginNoFormals, forceStack)
+		      else ()
 		 | _ => ()
 	     val _ =
 		Vector.foreach

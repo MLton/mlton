@@ -8,11 +8,11 @@
 Group
 
 signature MACHINE
+signature RUNTIME
 
-structure Runtime
-   
 functor Backend
 functor Machine
+functor Runtime
    
 is
 
@@ -27,12 +27,13 @@ array-init.fun
 array-init.sig
 backend.fun
 backend.sig
+c-function.fun
+c-function.sig
 chunkify.fun
 chunkify.sig
 equivalence-graph.fun
 equivalence-graph.sig
 err.sml
-gc-field.sig
 implement-handlers.fun
 implement-handlers.sig
 limit-check.fun
@@ -51,8 +52,8 @@ representation.fun
 representation.sig
 rssa.fun
 rssa.sig
+runtime.fun
 runtime.sig
-runtime.sml
 signal-check.fun
 signal-check.sig
 ssa-to-rssa.fun

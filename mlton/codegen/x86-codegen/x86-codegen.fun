@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor x86CodeGen(S: X86_CODEGEN_STRUCTS): X86_CODEGEN =
+functor x86Codegen(S: X86_CODEGEN_STRUCTS): X86_CODEGEN =
 struct
   open S
 
@@ -17,7 +17,7 @@ struct
 
   structure x86 
     = x86(structure Label = Machine.Label
-	  structure Prim = Machine.Prim)
+	  structure Runtime = Machine.Runtime)
 
   structure x86MLtonBasic
     = x86MLtonBasic(structure x86 = x86
@@ -220,32 +220,6 @@ struct
 	fun outputC ()
 	  = let
 	      val {file, print, done} = makeC ()
-
-	      fun make(name, l, pr)
-		= (print (concat["static ", name, " = {"]);
-		   List.foreachi(l,
-				 fn (i,x) => (if i > 0 then print "," else ();
-					      pr x));
-		   print "};\n");
-
-	      fun outputIncludes()
-		= (List.foreach(includes,
-				fn i => (print "#include <";
-					 print i;
-					 print ">\n"));
-		   print "\n");
-
-	      fun declareGlobals()
-	        = C.call("Globals",
-			 List.map(List.map(let 
-					     open Type
-					   in 
-					     [char, double, int, pointer, uint]
-					   end,
-					   globals) @ [globalsNonRoot],
-				  C.int),
-			 print);
-
 	      fun locals ty
 		= List.fold(chunks,
 			    0,
@@ -253,66 +227,12 @@ struct
 			     => if regMax ty > max
 				  then regMax ty
 				  else max)
-			  
-	      fun declareLocals()
-		= C.call("Locals",
-			 List.map(List.map(let 
-					     open Type
-					   in 
-					     [char, double, int, pointer, uint]
-					   end,
-					   locals),
-				  C.int),
-			 print);
-
-	      fun declareIntInfs() 
-		= (print "BeginIntInfs\n"; 
-		   List.foreach
-		   (intInfs, 
-		    fn (g, s) 
-		     => (C.callNoSemi("IntInf",
-				      [C.int(Machine.Global.index g),
-				       C.string s],
-				      print);
-			 print "\n"));
-		   print "EndIntInfs\n");
-			  
-	      fun declareStrings() 
-		= (print "BeginStrings\n";
-		   List.foreach
-		   (strings, 
-		    fn (g, s) 
-		     => (C.callNoSemi("String",
-				      [C.int(Machine.Global.index g),
-				       C.string s,
-				       C.int(String.size s)],
-				      print);
-			 print "\n"));
-		   print "EndStrings\n");
-
-	      fun declareFloats()
-		= (print "BeginFloats\n";
-		   List.foreach
-		   (floats,
-		    fn (g, f)
-		     => (C.callNoSemi("Float",
-				      [C.int(Machine.Global.index g),
-				       C.float f],
-				      print);
-			 print "\n"));
-		   print "EndFloats\n");
-
-	      fun declareFrameOffsets()
-		= Vector.foreachi
-		  (frameOffsets,
-		   fn (i,l) 
-		    => (print (concat["static ushort frameOffsets",
-				      C.int i,
-				      "[] = {\n\t"]);
-			print (C.int (Vector.length l));
-			Vector.foreach (l, fn i => (print ","; print (C.int i)));
-			print "};\n"));
-
+	      fun make(name, l, pr)
+		= (print (concat["static ", name, " = {"]);
+		   List.foreachi(l,
+				 fn (i,x) => (if i > 0 then print "," else ();
+					      pr x));
+		   print "};\n");
 	      fun declareFrameLayouts()
 		= make("GC_frameLayout frameLayouts[]",
 		       frameLayoutsData,
@@ -321,35 +241,8 @@ struct
 					 C.int size, ",", 
 					 "frameOffsets" ^ (C.int offsetIndex), 
 					 "}"]))
-
-	      fun declareMain() 
-		= let
-		    val stringSizes 
-		      = List.fold(strings, 
-				  0, 
-				  fn ((_, s), n) 
-				   => n + arrayHeaderSize
-				        + Type.align(Type.pointer,
-						     String.size s)) 
-		    val intInfSizes 
-		      = List.fold(intInfs, 
-				  0, 
-				  fn ((_, s), n) 
-				   => n + intInfOverhead
-				        + Type.align(Type.pointer,
-						     String.size s))
-		    val bytesLive = intInfSizes + stringSizes
-		    val (usedFixedHeap, fromSize)
-		      = case !Control.fixedHeap 
-			  of NONE => (false, 0)
-			   | SOME n 
-			   => (* div 2 for semispace *)
-			      (if n > 0 andalso bytesLive >= n div 2 
-				 then Out.output(Out.error,
-						 "Warning: heap size used with -h is too small to hold static data.\n")
-				 else ();
-			       (true, n))
-		    val magic = C.word(Random.useed ())
+	      val additionalMainArgs =
+		 let
 		    val mainLabel = Label.toString (#label main)
 		    (* Drop the leading _ with Cygwin, because gcc will add it.
 		     *)
@@ -357,31 +250,22 @@ struct
 		       case !Control.hostType of
 			  Control.Cygwin => String.dropPrefix (mainLabel, 1)
 			| Control.Linux => mainLabel
-		  in 
-		    C.callNoSemi("Main",
-				 [if usedFixedHeap then C.truee else C.falsee,
-				    C.int fromSize,
-				    C.int bytesLive,
-				    C.int maxFrameSize,
-				    C.int maxFrameLayoutIndex,
-				    magic,
-				    mainLabel,
-				     if reserveEsp then "TRUE" else "FALSE"],
-				 print);
-		    print "\n"
-		  end;
+		 in
+		    [mainLabel,
+		     if reserveEsp then "TRUE" else "FALSE"]
+		 end
+	      fun rest () =
+		 declareFrameLayouts()
 	    in
-	      print "#define X86CODEGEN\n\n";
-	      outputIncludes();
-	      declareGlobals();
-	      declareLocals();
-	      declareIntInfs();
-	      declareStrings();
-	      declareFloats();
-	      declareFrameOffsets();
-	      declareFrameLayouts();
-	      declareMain();
-	      done ()
+	      CCodegen.outputDeclarations
+	      {additionalMainArgs = additionalMainArgs,
+	       includes = includes,
+	       maxFrameIndex = maxFrameLayoutIndex,
+	       name = "X86",
+	       print = print,
+	       program = program,
+	       rest = rest}
+	      ; done ()
 	    end 
 
         val outputC = Control.trace (Control.Pass, "outputC") outputC

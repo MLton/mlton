@@ -8,14 +8,17 @@
 #include "gmp.h"
 #include "IntInf.h"
 
+#include <stddef.h> /* for offsetof */
 #include <string.h>
 
+/* Import the global gcState so we can get and set the frontier. */
+extern struct GC_state gcState;
 
 /*
- * Second header word for bignums and strings.
+ * Third header word for bignums and strings.
  */
-#define	BIGMAGIC	GC_arrayHeader(4, 0)
-#define	STRMAGIC	GC_arrayHeader(1, 0)
+#define	BIGMAGIC	GC_objectHeader(WORD_VECTOR_TYPE_INDEX)
+#define	STRMAGIC	GC_objectHeader(STRING_TYPE_INDEX)
 
 
 /*
@@ -23,7 +26,8 @@
  * the chars member.
  */
 typedef struct	strng {
-	uint	card,		/* number of chars */
+	uint	counter,	/* used by GC. */
+		card,		/* number of chars */
 		magic;		/* STRMAGIC */
 	char	chars[0];	/* actual chars */
 }	strng;
@@ -34,7 +38,8 @@ typedef struct	strng {
  * the isneg member.
  */
 typedef struct	bignum {
-	uint	card,		/* one more than the number of limbs */
+	uint	counter,	/* used by GC. */
+		card,		/* one more than the number of limbs */
 		magic,		/* BIGMAGIC */
 		isneg;		/* iff bignum is negative */
 	ulong	limbs[0];	/* big digits, least significant first */
@@ -52,35 +57,6 @@ isSmall(pointer arg)
 
 
 /*
- * Convert a pointer to a strng pointer.
- */
-static inline strng	*
-toString(pointer arg)
-{
-	strng	*sp;
-
-	assert(not isSmall(arg));
-	sp = (strng *)((uint)arg - 2*sizeof(uint));
-	assert(sp->magic == STRMAGIC);
-	return (sp);
-}
-
-
-/*
- * Convert frontier space to a strng pointer and intialize card and magic.
- */
-static inline strng	*
-initFrontierAsStrng(pointer frontier, uint bytes)
-{
-	strng	*sp;
-
-	sp = (strng*)frontier;
-	sp->card = (bytes - 8);
-	sp->magic = STRMAGIC;
-	return (sp);
-}
-
-/*
  * Convert a bignum intInf to a bignum pointer.
  */
 static inline bignum	*
@@ -89,25 +65,11 @@ toBignum(pointer arg)
 	bignum	*bp;
 
 	assert(not isSmall(arg));
-	bp = (bignum *)((uint)arg - 2*sizeof(uint));
+	bp = (bignum *)((uint)arg - offsetof(struct bignum, isneg));
 	assert(bp->magic == BIGMAGIC);
 	return (bp);
 }
 
-
-/*
- * Convert frontier space to a bignum pointer and intialize card and magic.
- */
-static inline bignum	*
-initFrontierAsBignum(pointer frontier, uint bytes)
-{
-	bignum	*bp;
-
-	bp = (bignum*)frontier;
-	bp->card = (bytes - 8) / 4;
-	bp->magic = BIGMAGIC;
-	return (bp);
-}
 
 /*
  * Given an intInf, a pointer to an __mpz_struct and something large enough
@@ -142,14 +104,19 @@ fill(pointer arg, __mpz_struct *res, mp_limb_t space[2])
  * Initialize an __mpz_struct to use the space provided by an ML array.
  */
 static inline void
-init(bignum *bp, __mpz_struct *mpzp)
+initRes(__mpz_struct *mpzp, uint bytes)
 {
-	assert(bp->card > 1);
-	mpzp->_mp_alloc = bp->card - 1;
-	mpzp->_mp_size = 0;
+	struct bignum *bp;
+
+	assert(bytes <= gcState.limitPlusSlop - gcState.frontier);
+	bp = (bignum*)gcState.frontier;
+	/* We have as much space for the limbs as there is to the end of the 
+         * heap.  Divide by 4 to get number of words. 
+         */
+	mpzp->_mp_alloc = (gcState.limitPlusSlop - (pointer)bp->limbs) / 4;
+	mpzp->_mp_size = 0; /* is this necessary? */
 	mpzp->_mp_d = bp->limbs;
 }
-
 
 /*
  * Count number of leading zeros.  The argument will not be zero.
@@ -171,25 +138,21 @@ leadingZeros(mp_limb_t word)
 
 
 /*
- * Given an __mpz_struct pointer which reflects the answer, and a
- * struct intInfRes_t pointer which is the actual answer, fill in the latter.
+ * Given an __mpz_struct pointer which reflects the answer, set gcState.frontier
+ * and return the answer.
  * If the answer fits in a fixnum, we return that, with the frontier
  * rolled back.
  * If the answer doesn't need all of the space allocated, we adjust
  * the array size and roll the frontier slightly back.
- * Note, this all assumes that the last thing allocated was the array
- * which is used for space by the __mpz_struct.
  */
-static void
-answer(__mpz_struct *ans, struct intInfRes_t *res)
+static pointer
+answer(__mpz_struct *ans)
 {
 	bignum			*bp;
 	int			size;
 
-	bp = (bignum *)&ans->_mp_d[-3];
+	bp = (bignum *)((pointer)ans->_mp_d - offsetof(struct bignum, limbs));
 	assert(ans->_mp_d == bp->limbs);
-	assert(ans->_mp_alloc == bp->card - 1);
-	assert(bp->magic == BIGMAGIC);
 	size = ans->_mp_size;
 	if (size < 0) {
 		bp->isneg = TRUE;
@@ -216,64 +179,54 @@ answer(__mpz_struct *ans, struct intInfRes_t *res)
 			 */
 			ans = val;
 		if (val < (uint)1<<30) {
-			ans = ans<<1 | 1;
-			res->value = (pointer)ans;
-			res->frontier = (pointer)bp;
-			return;
+			return (pointer)(ans<<1 | 1);
 		}
 	}
-	res->value = (pointer)&bp->isneg;
-	res->frontier = (pointer)&bp->limbs[size];
-	unless (size == ans->_mp_alloc)
-		GC_arrayShrink((pointer)res->value, size+1);
+	gcState.frontier = (pointer)&bp->limbs[size];
+	assert(gcState.frontier <= gcState.limitPlusSlop);
+	bp->counter = 0;
+	bp->card = size + 1; /* +1 for isNeg word */
+	bp->magic = BIGMAGIC;
+	return (pointer)&bp->isneg;
 }
 
-struct intInfRes_t	*
-IntInf_do_add(pointer lhs, pointer rhs, uint bytes, pointer frontier)
+static pointer
+binary(pointer lhs, pointer rhs, uint bytes,
+	void(*binop)(__mpz_struct *resmpz, 
+			__gmp_const __mpz_struct *lhsspace,
+			__gmp_const __mpz_struct *rhsspace))
 {
-	bignum		*bp;
 	__mpz_struct	lhsmpz,
 			rhsmpz,
 			resmpz;
 	mp_limb_t	lhsspace[2],
 			rhsspace[2];
-	static struct intInfRes_t	res;
 
-	bp = initFrontierAsBignum(frontier, bytes);
-	/* assert(frontier == (pointer)&bp->limbs[bp->card - 1]); */
+	initRes(&resmpz, bytes);
 	fill(lhs, &lhsmpz, lhsspace);
 	fill(rhs, &rhsmpz, rhsspace);
-	init(bp, &resmpz);
-	mpz_add(&resmpz, &lhsmpz, &rhsmpz);
-	assert((resmpz._mp_alloc < bp->card)
-	and (resmpz._mp_d == bp->limbs));
-	answer(&resmpz, &res);
-	assert((pointer)bp <= res.frontier);
-	return (&res);
+	binop(&resmpz, &lhsmpz, &rhsmpz);
+	return answer(&resmpz);
 }
 
-struct intInfRes_t	*
-IntInf_do_sub(pointer lhs, pointer rhs, uint bytes, pointer frontier)
+pointer IntInf_do_add(pointer lhs, pointer rhs, uint bytes)
 {
-	bignum		*bp;
-	__mpz_struct	lhsmpz,
-			rhsmpz,
-			resmpz;
-	mp_limb_t	lhsspace[2],
-			rhsspace[2];
-	static struct intInfRes_t	res;
+	return binary(lhs, rhs, bytes, &mpz_add);
+}
 
-	bp = initFrontierAsBignum(frontier, bytes);
-	/* assert(frontier == (pointer)&bp->limbs[bp->card - 1]); */
-	fill(lhs, &lhsmpz, lhsspace);
-	fill(rhs, &rhsmpz, rhsspace);
-	init(bp, &resmpz);
-	mpz_sub(&resmpz, &lhsmpz, &rhsmpz);
-	assert((resmpz._mp_alloc < bp->card)
-	and (resmpz._mp_d == bp->limbs));
-	answer(&resmpz, &res);
-	assert((pointer)bp <= res.frontier);
-	return (&res);
+pointer IntInf_do_gcd(pointer lhs, pointer rhs, uint bytes)
+{
+	return binary(lhs, rhs, bytes, &mpz_gcd);
+}
+
+pointer IntInf_do_mul(pointer lhs, pointer rhs, uint bytes)
+{
+	return binary(lhs, rhs, bytes, &mpz_mul);
+}
+
+pointer IntInf_do_sub(pointer lhs, pointer rhs, uint bytes)
+{
+	return binary(lhs, rhs, bytes, &mpz_sub);
 }
 
 uint
@@ -284,30 +237,6 @@ IntInf_smallMul(uint lhs, uint rhs, pointer carry)
 	prod = (llong)(int)lhs * (int)rhs;
 	*(uint *)carry = (ullong)prod >> 32;
 	return ((uint)(ullong)prod);
-}
-
-struct intInfRes_t	*
-IntInf_do_mul(pointer lhs, pointer rhs, uint bytes, pointer frontier)
-{
-	bignum		*bp;
-	__mpz_struct	lhsmpz,
-			rhsmpz,
-			resmpz;
-	mp_limb_t	lhsspace[2],
-			rhsspace[2];
-	static struct intInfRes_t	res;
-
-	bp = initFrontierAsBignum(frontier, bytes);
-	/* assert(frontier == (pointer)&bp->limbs[bp->card - 1]); */
-	fill(lhs, &lhsmpz, lhsspace);
-	fill(rhs, &rhsmpz, rhsspace);
-	init(bp, &resmpz);
-	mpz_mul(&resmpz, &lhsmpz, &rhsmpz);
-	assert((resmpz._mp_alloc < bp->card)
-	and (resmpz._mp_d == bp->limbs));
-	answer(&resmpz, &res);
-	assert((pointer)bp <= res.frontier);
-	return (&res);
 }
 
 /*
@@ -351,56 +280,43 @@ int IntInf_equal(pointer lhs, pointer rhs) {
  * Arg is an intInf, base is the base to use (2, 8, 10 or 16) and space is a
  * string (mutable) which is large enough.
  */
-struct intInfRes_t	*
-IntInf_do_toString(pointer arg, int base, uint bytes, pointer frontier)
+pointer
+IntInf_do_toString(pointer arg, int base, uint bytes)
 {
 	strng		*sp;
 	__mpz_struct	argmpz;
 	mp_limb_t	argspace[2];
 	char		*str;
 	uint		size;
-	static struct intInfRes_t	res;
 
 	assert(base == 2 || base == 8 || base == 10 || base == 16);
 	fill(arg, &argmpz, argspace);
-	sp = initFrontierAsStrng(frontier, bytes);
+	sp = (strng*)gcState.frontier;
 	str = mpz_get_str(sp->chars, base, &argmpz);
 	assert(str == sp->chars);
 	size = strlen(str);
-	assert(0 < size && size < sp->card);
 	if (*sp->chars == '-')
 		*sp->chars = '~';
-	GC_arrayShrink((pointer)str, size);
-	size += sizeof(pointer) - 1;
-	size -= size % sizeof(pointer);
-	/* assert(frontier >= &sp->chars[size]); */
-	res.frontier = &sp->chars[size];
-	res.value = (pointer)str;
-	return (&res);
+	sp->counter = 0;
+	sp->card = size;
+	sp->magic = STRMAGIC;
+	gcState.frontier = &sp->chars[wordAlign(size)];
+	assert(gcState.frontier <= gcState.limitPlusSlop);
+	return (pointer)str;
 }
 
-
-struct intInfRes_t	*
-IntInf_do_neg(pointer arg, uint bytes, pointer frontier)
+pointer
+IntInf_do_neg(pointer arg, uint bytes)
 {
-	bignum		*bp;
 	__mpz_struct	argmpz,
 			resmpz;
 	mp_limb_t	argspace[2];
-	static struct intInfRes_t	res;
 
-	bp = initFrontierAsBignum(frontier, bytes);
-	/* assert(frontier == (pointer)&bp->limbs[bp->card - 1]); */
+	initRes(&resmpz, bytes);
 	fill(arg, &argmpz, argspace);
-	init(bp, &resmpz);
 	mpz_neg(&resmpz, &argmpz);
-	assert((resmpz._mp_alloc < bp->card)
-	and (resmpz._mp_d == bp->limbs));
-	answer(&resmpz, &res);
-	assert((pointer)bp <= res.frontier);
-	return (&res);
+	return answer(&resmpz);
 }
-
 
 /*
  * Quotient (round towards 0, remainder is returned by IntInf_rem).
@@ -415,10 +331,9 @@ IntInf_do_neg(pointer arg, uint bytes, pointer frontier)
  * num is the numerator bignum, den is the denominator and frontier is
  * the current frontier.
  */
-struct intInfRes_t	*
-IntInf_do_quot(pointer num, pointer den, uint bytes, pointer frontier)
+pointer
+IntInf_do_quot(pointer num, pointer den, uint bytes)
 {
-	bignum		*spbp;
 	__mpz_struct	resmpz,
 			nmpz,
 			dmpz;
@@ -432,11 +347,8 @@ IntInf_do_quot(pointer num, pointer den, uint bytes, pointer frontier)
 			qsize;
 	bool		resIsNeg;
 	uint		shift;
-	static struct intInfRes_t	res;
 
-	spbp = initFrontierAsBignum(frontier, bytes);
-	/* assert(frontier == (pointer)&spbp->limbs[spbp->card - 1]); */
-	init(spbp, &resmpz);
+	initRes(&resmpz, bytes);
 	fill(num, &nmpz, nss);
 	resIsNeg = FALSE;
 	nsize = nmpz._mp_size;
@@ -455,11 +367,8 @@ IntInf_do_quot(pointer num, pointer den, uint bytes, pointer frontier)
 	or (nsize >= dsize && nmpz._mp_d[nsize - 1] != 0));
 	qsize = 1 + nsize - dsize;
 	if (dsize == 1) {
-		if (nsize == 0) {
-			res.value = (pointer)1;	/* tagged 0 */
-			res.frontier = (pointer)spbp;
-			return (&res);
-		}
+		if (nsize == 0)
+			return (pointer)1; /* tagged 0 */
 		mpn_divrem_1(resmpz._mp_d,
 			     (mp_size_t)0,
 			     nmpz._mp_d,
@@ -472,7 +381,6 @@ IntInf_do_quot(pointer num, pointer den, uint bytes, pointer frontier)
 		shift = leadingZeros(dmpz._mp_d[dsize - 1]);
 		if (shift == 0) {
 			dp = dmpz._mp_d;
-			assert(&np[nsize] <= &spbp->limbs[spbp->card - 1]);
 			memcpy((void *)np,
 			       nmpz._mp_d,
 			       nsize * sizeof(*nmpz._mp_d));
@@ -481,7 +389,6 @@ IntInf_do_quot(pointer num, pointer den, uint bytes, pointer frontier)
 			unless (carry == 0)
 				np[nsize++] = carry;
 			dp = &np[nsize];
-			assert(&dp[dsize] <= &spbp->limbs[spbp->card - 1]);
 			mpn_lshift(dp, dmpz._mp_d, dsize, shift);
 		}
 		carry = mpn_divrem(resmpz._mp_d,
@@ -495,9 +402,7 @@ IntInf_do_quot(pointer num, pointer den, uint bytes, pointer frontier)
 			resmpz._mp_d[qsize++] = carry;
 	}
 	resmpz._mp_size = resIsNeg ? - qsize : qsize;
-	answer(&resmpz, &res);
-	assert((pointer)spbp <= res.frontier);
-	return (&res);
+	return answer(&resmpz);
 }
 
 
@@ -514,10 +419,9 @@ IntInf_do_quot(pointer num, pointer den, uint bytes, pointer frontier)
  * num is the numerator bignum, den is the denominator and frontier is
  * the current frontier.
  */
-struct intInfRes_t	*
-IntInf_do_rem(pointer num, pointer den, uint bytes, pointer frontier)
+pointer
+IntInf_do_rem(pointer num, pointer den, uint bytes)
 {
-	bignum		*spbp;
 	__mpz_struct	resmpz,
 			nmpz,
 			dmpz;
@@ -529,11 +433,8 @@ IntInf_do_rem(pointer num, pointer den, uint bytes, pointer frontier)
 			dsize;
 	bool		resIsNeg;
 	uint		shift;
-	static struct intInfRes_t	res;
 
-	spbp = initFrontierAsBignum(frontier, bytes);
-	/* assert(frontier == (pointer)&spbp->limbs[spbp->card - 1]); */
-	init(spbp, &resmpz);
+	initRes(&resmpz, bytes);
 	fill(num, &nmpz, nss);
 	nsize = nmpz._mp_size;
 	resIsNeg = nsize < 0;
@@ -562,7 +463,6 @@ IntInf_do_rem(pointer num, pointer den, uint bytes, pointer frontier)
 		shift = leadingZeros(dmpz._mp_d[dsize - 1]);
 		if (shift == 0) {
 			dp = dmpz._mp_d;
-			assert(&resmpz._mp_d[nsize] <= &spbp->limbs[spbp->card - 1]);
 			memcpy((void *)resmpz._mp_d,
 			       (void *)nmpz._mp_d,
 			       nsize * sizeof(*nmpz._mp_d));
@@ -574,7 +474,6 @@ IntInf_do_rem(pointer num, pointer den, uint bytes, pointer frontier)
 			unless (carry == 0)
 				resmpz._mp_d[nsize++] = carry;
 			dp = &resmpz._mp_d[nsize];
-			assert(&dp[dsize] <= &spbp->limbs[spbp->card - 1]);
 			mpn_lshift(dp, dmpz._mp_d, dsize, shift);
 		}
 		mpn_divrem(&resmpz._mp_d[dsize],
@@ -595,35 +494,9 @@ IntInf_do_rem(pointer num, pointer den, uint bytes, pointer frontier)
 		}
 	}
 	resmpz._mp_size = resIsNeg ? - nsize : nsize;
-	answer(&resmpz, &res);
-	assert((pointer)spbp <= res.frontier);
-	return (&res);
+	return answer(&resmpz);
 }
 
-
-struct intInfRes_t	*
-IntInf_do_gcd(pointer lhs, pointer rhs, uint bytes, pointer frontier)
-{
-	bignum		*bp;
-	__mpz_struct	lhsmpz,
-			rhsmpz,
-			resmpz;
-	mp_limb_t	lhsspace[2],
-			rhsspace[2];
-	static struct intInfRes_t	res;
-
-	bp = initFrontierAsBignum(frontier, bytes);
-	/* assert(frontier == (pointer)&bp->limbs[bp->card - 1]); */
-	fill(lhs, &lhsmpz, lhsspace);
-	fill(rhs, &rhsmpz, rhsspace);
-	init(bp, &resmpz);
-	mpz_gcd(&resmpz, &lhsmpz, &rhsmpz);
-	assert((resmpz._mp_alloc < bp->card)
-	and (resmpz._mp_d == bp->limbs));
-	answer(&resmpz, &res);
-	assert((pointer)bp <= res.frontier);
-	return (&res);
-}
 
 /*
  * For each entry { globalIndex, mlstr} in the inits array (which is terminated
@@ -706,6 +579,7 @@ IntInf_init(GC_state state, struct intInfInit *inits)
 			}
 		}
 		state->globals[inits->globalIndex] = (pointer)&bp->isneg;
+		bp->counter = 0;
 		bp->card = alen + 1;
 		bp->magic = BIGMAGIC;
 		bp->isneg = neg;

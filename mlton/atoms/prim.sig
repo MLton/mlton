@@ -23,7 +23,7 @@ signature PRIM =
       structure Name:
 	 sig
 	    datatype t =
-	       Array_allocate (* implemented in backend *)
+	       Array_allocate (* created and implemented in backend *)
 	     | Array_array (* implemented in backend *)
 	     | Array_array0 (* implemented in backend *)
 	     | Array_array0Const (* implemented in constant-propagation.fun *)
@@ -67,13 +67,11 @@ signature PRIM =
 	     | Int_neg
 	     | Int_negCheck
 	     | IntInf_add
-	     | IntInf_areSmall
 	     | IntInf_compare
 	     | IntInf_equal
 	     | IntInf_fromVector
 	     | IntInf_fromWord
 	     | IntInf_gcd
-	     | IntInf_isSmall
 	     | IntInf_mul
 	     | IntInf_neg
 	     | IntInf_quot
@@ -251,19 +249,13 @@ signature PRIM =
 
       val allocTooLarge: t
       val apply: t * 'a ApplyArg.t list * ('a * 'a -> bool) -> 'a ApplyResult.t
-      val array_allocate: t
-      val array: t
       val array0: t
+      val arrayAllocate: t
+      val array: t
       val assign: t
       val bogus: t
       val bug: t
       val buildConstant: string * Scheme.t -> t
-      (* bytesNeeded p = SOME f iff p takes a (variable) argument that indicates
-       *   a minimum number of heap bytes needed to make the call.
-       * bytesNeeded implies impCall.
-       * examples: IntInf_add
-       *)
-      val bytesNeeded : t -> ('a vector -> 'a) option
       val checkApp: {
 		     prim: t,
 		     targs: 'a vector,
@@ -277,7 +269,6 @@ signature PRIM =
       val constant: string * Scheme.t -> t
       val deref: t
       val deserialize: t
-      val entersRuntime: t -> bool
       val eq: t    (* pointer equality *)
       val equal: t (* polymorphic equality *)
       val equals: t * t -> bool (* equality of names *)
@@ -289,11 +280,7 @@ signature PRIM =
 			 deref: 'a -> 'a,
 			 devector: 'a -> 'a} -> 'a vector
       val ffi: string * Scheme.t -> t
-      (* impCall p = true iff p is implemented in the codegen as a call to a C function
-       * examples: FFI, MLton_size, String_equal, IntInf_*, 
-       *)
       val gcCollect: t
-      val impCall: t -> bool
       val intInfEqual: t
       val intAdd: t
       val intAddCheck: t

@@ -30,39 +30,25 @@ signature X86_MLTON =
 		      live: x86.Label.t -> x86.Operand.t list,
 		      liveInfo: x86Liveness.LiveInfo.t}
 
-    (* bug, runtime and primitive Assembly sequences. *)
-    val creturn : {prim : Machine.Prim.t,
-		   label : x86.Label.t, 
-		   dst : (x86.Operand.t * x86.Size.t) option,
-		   transInfo : transInfo} 
-                  -> x86.Block.t' AppendList.t
-    val runtimereturn : {prim : Machine.Prim.t,
-			 label : x86.Label.t,
-			 frameInfo : x86.Entry.FrameInfo.t,
-			 transInfo : transInfo}
-                        -> x86.Block.t' AppendList.t
-    val prim : {prim : Machine.Prim.t,
+    (* arith, c call, and primitive assembly sequences. *)
+    val arith: {prim : Machine.Prim.t,
 		args : (x86.Operand.t * x86.Size.t) vector,
-		dst : (x86.Operand.t * x86.Size.t) option,
-		transInfo : transInfo}
-               -> x86.Block.t' AppendList.t
-    val arith : {prim : Machine.Prim.t,
-		 args : (x86.Operand.t * x86.Size.t) vector,
-		 dst : (x86.Operand.t * x86.Size.t),
-		 overflow : x86.Label.t,
-		 success : x86.Label.t,
-		 transInfo : transInfo}
-                -> x86.Block.t' AppendList.t
-    val bug : {transInfo: transInfo} -> x86.Block.t' AppendList.t
-    val ccall : {prim : Machine.Prim.t,
-		 args : (x86.Operand.t * x86.Size.t) vector,
-		 return : x86.Label.t,
-		 dstsize : x86.Size.t option,
-		 transInfo : transInfo}
-                -> x86.Block.t' AppendList.t
-    val runtimecall : {prim : Machine.Prim.t,
-		       args : (x86.Operand.t * x86.Size.t) vector,
-		       return : x86.Label.t,
-		       transInfo : transInfo}
-                      -> x86.Block.t' AppendList.t
+		dst : (x86.Operand.t * x86.Size.t),
+		overflow : x86.Label.t,
+		success : x86.Label.t,
+		transInfo : transInfo} -> x86.Block.t' AppendList.t
+    val ccall: {args: (x86.Operand.t * x86.Size.t) vector,
+		frameInfo: x86.FrameInfo.t option,
+		func: Machine.CFunction.t,
+		return: x86.Label.t option,
+		transInfo: transInfo} -> x86.Block.t' AppendList.t
+    val creturn: {dst: (x86.Operand.t * x86.Size.t) option,
+		  frameInfo: x86.FrameInfo.t option,
+		  func: Machine.CFunction.t,
+		  label: x86.Label.t, 
+		  transInfo: transInfo} -> x86.Block.t' AppendList.t
+    val prim: {prim : Machine.Prim.t,
+	       args : (x86.Operand.t * x86.Size.t) vector,
+	       dst : (x86.Operand.t * x86.Size.t) option,
+	       transInfo : transInfo} -> x86.Block.t' AppendList.t
   end

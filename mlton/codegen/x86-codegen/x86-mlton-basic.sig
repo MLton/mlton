@@ -13,7 +13,7 @@ signature X86_MLTON_BASIC_STRUCTS =
     structure x86 : X86_PSEUDO
     structure Machine: MACHINE
     sharing x86.Label = Machine.Label
-    sharing x86.Prim = Machine.Prim
+    sharing x86.Runtime = Machine.Runtime
   end
 
 signature X86_MLTON_BASIC =
@@ -128,6 +128,7 @@ signature X86_MLTON_BASIC =
     val gcState_frontierContents: unit -> x86.MemLoc.t
     val gcState_frontierContentsOperand: unit -> x86.Operand.t
     val gcState_frontierDerefOperand: unit -> x86.Operand.t
+    val gcState_label: x86.Label.t
     val gcState_limitContentsOperand: unit -> x86.Operand.t
     val gcState_limitPlusSlopContentsOperand: unit -> x86.Operand.t
     val gcState_maxFrameSizeContentsOperand: unit -> x86.Operand.t
@@ -141,13 +142,4 @@ signature X86_MLTON_BASIC =
     val gcState_stackTopDerefOperand: unit -> x86.Operand.t
     val gcState_stackTopMinusWordDeref: unit -> x86.MemLoc.t
     val gcState_stackTopMinusWordDerefOperand: unit -> x86.Operand.t
-
-    (*
-     * GC related constants and functions
-     *)
-    val gcState : x86.Label.t
-
-    val GC_OBJECT_HEADER_SIZE : int
-    val gcObjectHeader : {nonPointers: int, pointers: int} -> x86.Immediate.t
-    val gcArrayHeader : {nonPointers: int, pointers: int} -> x86.Immediate.t
   end

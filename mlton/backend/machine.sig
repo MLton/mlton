@@ -12,14 +12,18 @@ signature MACHINE_STRUCTS =
    sig
       structure Label: HASH_ID
       structure Prim: PRIM
+      structure Runtime: RUNTIME
    end
 
 signature MACHINE = 
    sig
       include MACHINE_STRUCTS
-	 
+
+      structure CFunction: C_FUNCTION
+      sharing CFunction = Runtime.CFunction
       structure ChunkLabel: UNIQUE_ID
       structure Type: MTYPE
+      sharing Type = Runtime.Type
 
       structure Register:
 	 sig
@@ -45,8 +49,6 @@ signature MACHINE =
 	    val ty: t -> Type.t
 	 end
 
-      structure RuntimeOperand: GC_FIELD
-
       structure Operand:
 	 sig
 	    datatype t =
@@ -54,21 +56,25 @@ signature MACHINE =
 			       index: t,
 			       ty: Type.t}
 	     | CastInt of t (* takes an IntOrPointer and makes it an int *)
+	     | CastWord of t (* takes a pointer and makes it a word *)
 	     | Char of char
 	     | Contents of {oper: t,
 			    ty: Type.t}
-	     | Float of string 
+	     | File (* expand by codegen into string constant *)
+	     | Float of string
+	     | GCState
 	     | Global of Global.t
 	     | GlobalPointerNonRoot of int
 	     | Int of int
 	     | IntInf of word
 	     | Label of Label.t
+	     | Line (* expand by codegen into int constant *)
 	     | Offset of {base: t,
 			  offset: int,
 			  ty: Type.t}
 	     | Pointer of int (* the int must be nonzero mod Runtime.wordSize. *)
 	     | Register of Register.t
-	     | Runtime of RuntimeOperand.t
+	     | Runtime of Runtime.GCField.t
 	     | StackOffset of {offset: int,
 			       ty: Type.t}
 	     | Uint of Word.t
@@ -92,8 +98,8 @@ signature MACHINE =
 	     | Noop
 	     (* Fixed-size allocation. *)
 	     | Object of {dst: Operand.t,
-			  numPointers: int,
-			  numWordsNonPointers: int,
+			  header: word,
+			  size: int,
 			  stores: {offset: int,
 				   value: Operand.t} vector}
 	     | PrimApp of {args: Operand.t vector,
@@ -113,51 +119,6 @@ signature MACHINE =
 
       structure Cases: MACHINE_CASES sharing Label = Cases.Label
 
-      structure Transfer:
-	 sig
-	    datatype t =
-	       (* In an arith transfer, dst is modified whether or not the
-		* prim succeeds.
-		*)
-	       Arith of {args: Operand.t vector,
-			 dst: Operand.t,
-			 overflow: Label.t,
-			 prim: Prim.t,
-			 success: Label.t,
-			 ty: Type.t} (* int or word *)
-	     | Bug
-	     | CCall of {args: Operand.t vector,
-			 prim: Prim.t,
-			 (* return must be CReturn with matching prim. *)
-			 return: Label.t,
-			 (* returnTy must CReturn dst. *)
-			 returnTy: Type.t option}
-	     | Call of {label: Label.t, (* label must be a Func *)
-			live: Operand.t vector,
-			return: {return: Label.t,
-				 handler: Label.t option,
-				 size: int} option}
-	     | Goto of Label.t (* label must be a Jump *)
-	     | Raise
-	     | Return of {live: Operand.t vector}
-	     | Runtime of {args: Operand.t vector,
-			   prim: Prim.t,
-			   return: Label.t} (* Must be of Runtime kind. *)
-	     | Switch of {test: Operand.t,
-			  cases: Cases.t,
-			  default: Label.t option}
-	     (* Switch to one of two labels, based on whether the operand is an
-	      * Integer or a Pointer.  Pointers are word aligned and integers
-	      * are not.
-	      *)
-	     | SwitchIP of {test: Operand.t,
-			    int: Label.t,
-			    pointer: Label.t}
-
-	    val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
-	    val layout: t -> Layout.t
-	 end
-
       structure FrameInfo:
 	 sig
 	    datatype t =
@@ -170,6 +131,49 @@ signature MACHINE =
 	    val layout: t -> Layout.t
 	    val size: t -> int
 	 end
+
+      structure Transfer:
+	 sig
+	    datatype t =
+	       (* In an arith transfer, dst is modified whether or not the
+		* prim succeeds.
+		*)
+	       Arith of {args: Operand.t vector,
+			 dst: Operand.t,
+			 overflow: Label.t,
+			 prim: Prim.t,
+			 success: Label.t,
+			 ty: Type.t} (* int or word *)
+	     | CCall of {args: Operand.t vector,
+			 frameInfo: FrameInfo.t option,
+			 func: CFunction.t,
+			 (* return is NONE iff the func doesn't return.
+			  * Else, return must be SOME l, where l is of CReturn
+			  * kind with a matching func.
+			  *)
+			 return: Label.t option}
+	     | Call of {label: Label.t, (* label must be a Func *)
+			live: Operand.t vector,
+			return: {return: Label.t,
+				 handler: Label.t option,
+				 size: int} option}
+	     | Goto of Label.t (* label must be a Jump *)
+	     | Raise
+	     | Return of {live: Operand.t vector}
+	     | Switch of {test: Operand.t,
+			  cases: Cases.t,
+			  default: Label.t option}
+	     (* Switch to one of two labels, based on whether the operand is an
+	      * Integer or a Pointer.  Pointers are word aligned and integers
+	      * are not.
+	      *)
+	     | SwitchIP of {int: Label.t,
+			    pointer: Label.t,
+			    test: Operand.t}
+
+	    val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
+	    val layout: t -> Layout.t
+	 end
       
       structure Kind:
 	 sig
@@ -177,12 +181,11 @@ signature MACHINE =
 	       Cont of {args: Operand.t vector,
 			frameInfo: FrameInfo.t}
 	     | CReturn of {dst: Operand.t option,
-			   prim: Prim.t}
+			   frameInfo: FrameInfo.t option,
+			   func: CFunction.t}
 	     | Func of {args: Operand.t vector}
 	     | Handler of {offset: int}
 	     | Jump
-	     | Runtime of {frameInfo: FrameInfo.t,
-			   prim: Prim.t}
 
 	    val frameInfoOpt: t -> FrameInfo.t option
 	 end
@@ -226,6 +229,7 @@ signature MACHINE =
 		     main: {chunkLabel: ChunkLabel.t,
 			    label: Label.t},
 		     maxFrameSize: int,
+		     objectTypes: Runtime.ObjectType.t vector,
 		     strings: (Global.t * string) list}
 
 	    val layouts: t * (Layout.t -> unit) -> unit

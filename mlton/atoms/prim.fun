@@ -61,13 +61,11 @@ structure Name =
        | FFI of string
        | GC_collect
        | IntInf_add
-       | IntInf_areSmall
        | IntInf_compare
        | IntInf_equal
        | IntInf_fromVector
        | IntInf_fromWord
        | IntInf_gcd
-       | IntInf_isSmall
        | IntInf_mul
        | IntInf_neg
        | IntInf_quot
@@ -214,8 +212,7 @@ structure Name =
       val equals: t * t -> bool = op =
 
       val isCommutative =
-	 fn IntInf_areSmall => true
-	  | IntInf_equal => true
+	 fn IntInf_equal => true
 	  | Int_add => true
 	  | Int_addCheck => true
 	  | Int_mul => true
@@ -251,51 +248,6 @@ structure Name =
 
       val mayRaise = mayOverflow
 
-      val entersRuntime =
-	 fn GC_collect => true
-	  | MLton_halt => true
-	  | Thread_copy => true
-	  | Thread_copyCurrent => true
-	  | Thread_switchTo => true
-	  | World_save => true
-	  | _ => false
-
-      val impCall
-	= fn FFI _ => true
-	   | MLton_bug => true
-	   | MLton_size => true
-	   | String_equal => true
-	   | IntInf_compare => true
-	   | IntInf_equal => true
-	   | IntInf_add => true
-	   | IntInf_gcd => true
-	   | IntInf_sub => true
-	   | IntInf_mul => true
-	   | IntInf_quot => true
-	   | IntInf_rem => true
-           | IntInf_neg => true
-           | IntInf_toString => true
-	   | Real_Math_cosh => true
-           | Real_Math_sinh => true
-	   | Real_Math_tanh => true
-	   | Real_Math_pow => true
-	   | Real_copysign => true
-           | Real_frexp => true
-	   | Real_modf => true
-           | _ => false
-
-      val bytesNeeded
-	= fn Array_allocate => SOME (fn args => Vector.sub(args, 1))
-	   | IntInf_add => SOME (fn args => Vector.sub (args, 2))
-	   | IntInf_gcd => SOME (fn args => Vector.sub (args, 2))
-	   | IntInf_mul => SOME (fn args => Vector.sub (args, 2))
-	   | IntInf_neg => SOME (fn args => Vector.sub (args, 1))
-	   | IntInf_quot => SOME (fn args => Vector.sub (args, 2))
-	   | IntInf_rem => SOME (fn args => Vector.sub (args, 2))
-	   | IntInf_sub => SOME (fn args => Vector.sub (args, 2))
-	   | IntInf_toString => SOME (fn args => Vector.sub (args, 2))
-	   | _ => NONE
-
       datatype z = datatype Kind.t
 	       
       (* The values of these strings are important since they are referred to
@@ -329,13 +281,11 @@ structure Name =
 	  (Exn_setTopLevelHandler, SideEffect, "Exn_setTopLevelHandler"),
 	  (GC_collect, SideEffect, "GC_collect"),
 	  (IntInf_add, Functional, "IntInf_add"),
-	  (IntInf_areSmall, Functional, "IntInf_areSmall"),
 	  (IntInf_compare, Functional, "IntInf_compare"),
 	  (IntInf_equal, Functional, "IntInf_equal"),
 	  (IntInf_fromVector, Functional, "IntInf_fromVector"),
 	  (IntInf_fromWord, Functional, "IntInf_fromWord"),
 	  (IntInf_gcd, Functional, "IntInf_gcd"),
-	  (IntInf_isSmall, Functional, "IntInf_isSmall"),
 	  (IntInf_mul, Functional, "IntInf_mul"),
 	  (IntInf_neg, Functional, "IntInf_neg"),
 	  (IntInf_quot, Functional, "IntInf_quot"),
@@ -522,15 +472,7 @@ val isFunctional = Trace.trace ("isFunctional", layout, Bool.layout) isFunctiona
 val isCommutative = Name.isCommutative o name
 val mayOverflow = Name.mayOverflow o name
 val mayRaise = Name.mayRaise o name
-fun impCall p = case name p
-		  of Name.FFI _ => isSome (numArgs p)
-		   | p => Name.impCall p
-fun bytesNeeded p = Name.bytesNeeded (name p)
 
-val entersRuntime = Name.entersRuntime o name
-val entersRuntime =
-   Trace.trace ("entersRuntime", layout, Bool.layout) entersRuntime
-			  
 structure Scheme =
    struct
       open Scheme
@@ -585,8 +527,9 @@ local
       end
    val tuple = tuple o Vector.fromList    
 in
-   val array_allocate =
-      new (Name.Array_allocate, make1 (fn a => tuple [int,word,word] --> array a))
+   val arrayAllocate =
+      new (Name.Array_allocate,
+	   make1 (fn a => tuple [int, word, word] --> array a))
    val array0 = new (Name.Array_array0, make1 (fn a => unit --> array a))
    val array = new (Name.Array_array, make1 (fn a => int --> array a))
    val assign = new (Name.Ref_assign, make1 (fn a => tuple [reff a, a] --> unit))
@@ -606,7 +549,6 @@ in
 
    fun new0 (name, ty) = new (name, make0 ty)
 
-   val intInfIsSmall = new0 (Name.IntInf_isSmall, intInf --> bool)
    val intNeg = new0 (Name.Int_neg, int --> int)
    val intNegCheck = new0 (Name.Int_negCheck, int --> int)
    val intInfNeg =
@@ -891,25 +833,18 @@ fun 'a apply (p, args, varEquals) =
 	   | (Int_negCheck, [Int i]) => int (~ i)
 	   | (Int_quot, [Int i1, Int i2]) => io (Int.quot, i1, i2)
 	   | (Int_rem, [Int i1, Int i2]) => io (Int.rem, i1, i2)
-	   | (IntInf_areSmall, [IntInf i1, IntInf i2]) =>
-		bool (SmallIntInf.isSmall i1 andalso SmallIntInf.isSmall i2)
 	   | (IntInf_compare, [IntInf i1, IntInf i2]) =>
 		int (case IntInf.compare (i1, i2) of
 			Relation.LESS => ~1
 		      | Relation.EQUAL => 0
 		      | Relation.GREATER => 1)
-	   | (IntInf_equal, [IntInf i1, IntInf i2]) => bool (i1 = i2)
+	   | (IntInf_equal, [IntInf i1, IntInf i2]) =>
+		bool (IntInf.equals (i1, i2))
 	   | (IntInf_fromWord, [Word w]) => intInf (SmallIntInf.fromWord w)
-(*
-	   | (IntInf_fromString, [String s]) =>
-		(case IntInf.fromString s of
+	   | (IntInf_toWord, [IntInf i]) =>
+		(case SmallIntInf.toWord i of
 		    NONE => ApplyResult.Unknown
-		  | SOME i => intInf i)
-	   | (IntInf_fromStringIsPossible, [String s]) =>
-		bool (isSome (IntInf.fromString s))
-*)
-	   | (IntInf_isSmall, [IntInf i]) => bool (SmallIntInf.isSmall i)
-	   | (IntInf_toWord, [IntInf i]) => word (SmallIntInf.toWord i)
+		  | SOME w => word w)
 	   | (MLton_eq, [c1, c2]) => eq (c1, c2)
 	   | (MLton_equal, [c1, c2]) => equal (c1, c2)
 	   | (String_equal, [String s1, String s2]) =>
@@ -1170,16 +1105,10 @@ fun 'a apply (p, args, varEquals) =
 			     else Apply (intNegCheck, [x])
 		     else Unknown
 		| _ => Unknown
-	    fun areSmall (x, i) =
-	       if Const.SmallIntInf.isSmall i
-		  then Apply (intInfIsSmall, [x])
-	       else ApplyResult.falsee
 	    datatype z = datatype ApplyArg.t
 	 in
 	    case (name, args) of
-	       (IntInf_areSmall, [Const (IntInf i), Var x]) => areSmall (x, i)
-	     | (IntInf_areSmall, [Var x, Const (IntInf i)]) => areSmall (x, i)
-	     | (IntInf_neg, [Const (IntInf i), _]) => intInf (IntInf.~ i)
+	       (IntInf_neg, [Const (IntInf i), _]) => intInf (IntInf.~ i)
 	     | (IntInf_toString, [Const (IntInf i), _, _]) =>
 		  string (IntInf.toString i)
 	     | (_, [Con {con = c, hasArg = h}, Con {con = c', hasArg = h'}]) =>
@@ -1235,7 +1164,6 @@ fun 'a apply (p, args, varEquals) =
 					| Int_quot => int 1
 					| Int_rem => int 0
 					| Int_sub => int 0
-					| IntInf_areSmall => Apply (intInfIsSmall, [x])
 					| IntInf_compare => int 0
 					| IntInf_equal => t
 					| MLton_eq => t

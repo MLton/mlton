@@ -26,6 +26,7 @@ struct
 
   structure Label = Machine.Label
   structure Prim = Machine.Prim
+  structure Runtime = Machine.Runtime
     
   structure Type =
     struct
@@ -95,13 +96,18 @@ struct
 	   => x86.Operand.immediate_const_word w
 	   | IntInf ii
 	   => x86.Operand.immediate_const_word ii
+	   | File => x86MLton.fileLine ()
 	   | Float f
-	   => Error.bug "toX86Operand: Float, unimplemented"
+	     => Error.bug "toX86Operand: Float, unimplemented"
+	   | GCState => x86.Operand.label x86MLton.gcState_label
 	   | Pointer i
 	   => x86.Operand.immediate_const_int i
 	   | Label l
 	   => x86.Operand.immediate_label l
+	   | Line => x86MLton.fileLine ()
 	   | CastInt p
+	   => toX86Operand p
+	   | CastWord p
 	   => toX86Operand p
 	   | Register l
 	   => x86.Operand.memloc (Local.toX86MemLoc l)
@@ -123,7 +129,7 @@ struct
 	      end
 	   | Runtime oper 
 	   => let
-		datatype z = datatype Machine.RuntimeOperand.t
+		datatype z = datatype Machine.Runtime.GCField.t
 		open x86MLton
 	      in
 		case oper of
@@ -236,28 +242,13 @@ struct
 
   type transInfo = x86MLton.transInfo
 
+  fun toX86FrameInfo {label,
+		      transInfo as {frameLayouts, ...} : transInfo} =
+     Option.map (frameLayouts label, x86.FrameInfo.frameInfo)
+
   structure Entry =
     struct
       structure Kind = Machine.Kind
-
-      structure FrameInfo =
-	struct
-	  fun toX86FrameInfo {label,
-			      frameInfo = Machine.FrameInfo.T {size = size', ...},
-			      transInfo as {frameLayouts, ...} : transInfo}
-	    = case frameLayouts label
-		of NONE => Error.bug "toX86FrameInfo: label"
-		 | SOME {size, frameLayoutsIndex}
-		 => let
-		      val _ = Assert.assert
-			      ("toX86FrameInfo: size",
-			       fn () => size = size')
-		    in
-		      x86.Entry.FrameInfo.frameInfo
-		      {size = size,
-		       frameLayoutsIndex = frameLayoutsIndex}
-		    end
-	end
 	 
       fun toX86Blocks {label, kind, 
 		       transInfo as {frameLayouts, live, liveInfo, ...} : transInfo}
@@ -295,11 +286,11 @@ struct
 		     statements = [],
 		     transfer = NONE})
 		 end
-	      | Kind.Cont {args, frameInfo}
+	      | Kind.Cont {args, ...}
 	      => let
-	           val frameInfo = FrameInfo.toX86FrameInfo {label = label,
-							     frameInfo = frameInfo,
-							     transInfo = transInfo}
+	           val frameInfo =
+		      valOf (toX86FrameInfo {label = label,
+					     transInfo = transInfo})
 		   val args
 		     = Vector.fold
 		       (args,
@@ -331,7 +322,7 @@ struct
 		     statements = [],
 		     transfer = NONE})
 		 end
-	      | Kind.CReturn {prim, dst}
+	      | Kind.CReturn {dst, frameInfo, func}
 	      => let
 		   fun convert x
 		     = (Operand.toX86Operand x,
@@ -339,21 +330,11 @@ struct
 		   val dst = Option.map (dst, convert)
 		 in
 		   x86MLton.creturn
-		   {prim = prim,
+		   {dst = dst,
+		    frameInfo = toX86FrameInfo {label = label,
+						transInfo = transInfo},
+		    func = func,
 		    label = label,
-		    dst = dst,
-		    transInfo = transInfo}
-		 end
-	      | Kind.Runtime {frameInfo, prim}
-	      => let
-	           val frameInfo = FrameInfo.toX86FrameInfo {label = label,
-							     frameInfo = frameInfo,
-							     transInfo = transInfo}
-		 in
-		   x86MLton.runtimereturn
-		   {prim = prim,
-		    label = label,
-		    frameInfo = frameInfo,
 		    transInfo = transInfo}
 		 end)
     end
@@ -558,7 +539,7 @@ struct
 		      transfer = NONE}),
 		    comment_end]
 		 end
-	      | Object {dst, stores, numPointers, numWordsNonPointers}
+	      | Object {dst, header, size, stores}
 	      => let
 		   val (comment_begin,
 			comment_end) = comments statement
@@ -582,11 +563,6 @@ struct
 			scale = x86.Scale.One,
 			size = x86MLton.pointerSize,
 			class = x86MLton.Classes.Heap}
-		       
-		   val gcObjectHeaderWord 
-		     = (x86.Operand.immediate o x86MLton.gcObjectHeader)
-		       {nonPointers = numWordsNonPointers,
-			pointers = numPointers}
 		       
 		   fun stores_toX86Assembly ({offset, value}, l)
 		     = let
@@ -627,13 +603,11 @@ struct
 		     {entry = NONE,
 		      profileInfo = x86.ProfileInfo.none,
 		      statements
-		      = ((* *(frontier) 
-			  *    = gcObjectHeader(numWordsNonPointers, 
-			  *                     numPointers)
-			  *)
+		      = ((* *(frontier) = header *)
 			 x86.Assembly.instruction_mov 
 			 {dst = frontierDeref,
-			  src = gcObjectHeaderWord,
+			  src = (x86.Operand.immediate
+				 (x86.Immediate.const_word header)),
 			  size = x86MLton.pointerSize})::
 		        ((* dst = frontier + objectHeaderSize *)
 			 x86.Assembly.instruction_lea
@@ -645,12 +619,8 @@ struct
 				       x86.Assembly.instruction_binal
 				       {oper = x86.Instruction.ADD,
 					dst = frontier,
-					src = x86.Operand.immediate_const_int 
-					      (objectHeaderBytes
-					       + (Runtime.objectSize
-						  {numPointers = numPointers,
-						   numWordsNonPointers =
-						   numWordsNonPointers})),
+					src = (x86.Operand.immediate_const_int
+					       size),
 					size = x86MLton.pointerSize}],
 				      stores_toX86Assembly)),
 (*
@@ -865,41 +835,25 @@ struct
 				    success = success,
 				    transInfo = transInfo})
 		 end
-	      | Bug 
-	      => AppendList.append
-	         (comments transfer,
-		  x86MLton.bug {transInfo = transInfo})
-	      | CCall {args, prim, return, returnTy}
+	      | CCall {args, frameInfo, func, return}
 	      => let
 		   fun convert x
 		     = (Operand.toX86Operand x,
 			x86MLton.toX86Size (Operand.ty x))
-		   val args = Vector.map(args, convert)
-		   val dstsize = Option.map (returnTy, x86MLton.toX86Size)
+		   val args = Vector.map (args, convert)
 		 in
 		   AppendList.append
 		   (comments transfer,	
-		    x86MLton.ccall
-		    {prim = prim,
-		     args = args,
-		     return = return,
-		     dstsize = dstsize,
-		     transInfo = transInfo})
-		 end
-	      | Runtime {args, prim, return}
-	      => let
-		   fun convert x
-		     = (Operand.toX86Operand x,
-			x86MLton.toX86Size (Operand.ty x))
-		   val args = Vector.map(args, convert)
-		 in
-		   AppendList.append
-		   (comments transfer,
-		    x86MLton.runtimecall
-		    {prim = prim,
-		     args = args,
-		     return = return,
-		     transInfo = transInfo})
+		    x86MLton.ccall {args = args,
+				    frameInfo = (case return of
+						    NONE => NONE
+						  | SOME l =>
+						       toX86FrameInfo
+						       {label = l,
+							transInfo = transInfo}),
+				    func = func,
+				    return = return,
+				    transInfo = transInfo})
 		 end
 	      | Return {live}
 	      => AppendList.append

@@ -72,6 +72,8 @@ signature CONTROL =
       val layoutInline: inline -> Layout.t
       val setInlineSize: int -> unit
 
+      val inlineArrayAllocation: bool ref
+
       (* The input file on the command line, minus path and extension *)
       val inputFile: File.t ref
 
@@ -101,7 +103,7 @@ signature CONTROL =
        | ExtBasicBlocks
 	 (* decycle using loop headers
 	  *  - use full CFG
-	  *  - use loop exits of non-allocatin loops
+	  *  - use loop exits of non-allocating loops
 	  *)
        | LoopHeaders of {fullCFG: bool,
 			 loopExits: bool}

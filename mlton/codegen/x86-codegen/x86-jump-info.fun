@@ -65,7 +65,6 @@ struct
 	       | Entry.Func {label, ...} => forceNear (jumpInfo, label)
 	       | Entry.Cont {label, ...} => forceNear (jumpInfo, label)
 	       | Entry.Handler {label, ...} => forceNear (jumpInfo, label)
-	       | Entry.Runtime {label, ...} => ()
 	       | Entry.CReturn {label, ...} => ();
 	    List.foreach
 	    (Transfer.nearTargets transfer,

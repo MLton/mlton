@@ -134,7 +134,7 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
 		    case transfer of
 		       Arith {overflow, success, ...} =>
 			  (same overflow; same success)
-		     | CCall {return, ...} => same return
+		     | CCall {return, ...} => Option.app (return, same)
 		     | Goto {dst, ...} => same dst
 		     | Switch {cases, default, ...} =>
 			  (Cases.foreach (cases, same)

@@ -55,7 +55,8 @@ fun insert p =
 		      val from = indexNode i
 		   in
 		      if (case transfer of
-			     Transfer.Runtime _ => true
+			     Transfer.CCall {func, ...} =>
+				CFunction.maySwitchThreads func
 			   | _ => false)
 			 then ()
 		      else
@@ -91,8 +92,9 @@ fun insert p =
 			     val compare =
 				Vector.new1
 				(Statement.PrimApp
-				 {args = Vector.new2 (Operand.Runtime
-						      RuntimeOperand.Limit,
+				 {args = Vector.new2 (Operand.CastInt
+						      (Operand.Runtime
+						       Runtime.GCField.Limit),
 						      Operand.int 0),
 				  dst = SOME (res, Type.bool),
 				  prim = Prim.eq})
@@ -101,6 +103,7 @@ fun insert p =
 				(Operand.Var {var = res, ty = Type.bool},
 				 {falsee = dontCollect,
 				  truee = collect})
+			     val func = CFunction.gc {maySwitchThreads = true}
 			     val _ =
 				extra :=
  				Block.T {args = args,
@@ -115,20 +118,24 @@ fun insert p =
 				     label = collect,
 				     profileInfo = profileInfo,
 				     statements = Vector.new0 (),
-				     transfer = (Transfer.Runtime
-						 {args = (Vector.new2
-							  (Operand.int 0,
-							   Operand.bool false)),
-						  prim = Prim.gcCollect,
-						  return = collectReturn})})
-				:: Block.T {args = Vector.new0 (),
-					    kind = Kind.Runtime {prim = Prim.gcCollect},
-					    label = collectReturn,
-					    profileInfo = profileInfo,
-					    statements = Vector.new0 (),
-					    transfer =
-					    Transfer.Goto {dst = dontCollect,
-							   args = Vector.new0 ()}}
+				     transfer =
+				     Transfer.CCall
+				     {args = Vector.new5 (Operand.GCState,
+							  Operand.word 0w0,
+							  Operand.bool false,
+							  Operand.File,
+							  Operand.Line),
+				      func = func,
+				      return = SOME collectReturn}})
+				:: (Block.T
+				    {args = Vector.new0 (),
+				     kind = Kind.CReturn {func = func},
+				     label = collectReturn,
+				     profileInfo = profileInfo,
+				     statements = Vector.new0 (),
+				     transfer =
+				     Transfer.Goto {dst = dontCollect,
+						    args = Vector.new0 ()}})
 				:: Block.T {args = Vector.new0 (),
 					    kind = Kind.Jump,
 					    label = dontCollect,

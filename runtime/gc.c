@@ -28,9 +28,6 @@
 #include <limits.h>
 #endif
 
-typedef unsigned long long W64;
-typedef unsigned long W32;
-
 #define METER FALSE  /* Displays distribution of object sizes at program exit. */
 
 /* The mutator should maintain the invariants
@@ -49,25 +46,60 @@ enum {
 	BOGUS_POINTER = 0x1,
 	DEBUG = FALSE,
 	DEBUG_DETAILED = FALSE,
+	DEBUG_MARK = FALSE,
+	DEBUG_MARK_SIZE = FALSE,
 	DEBUG_MEM = FALSE,
 	DEBUG_SIGNALS = FALSE,
 	FORWARDED = 0xFFFFFFFF,
 	HEADER_SIZE = WORD_SIZE,
 	STACK_HEADER_SIZE = WORD_SIZE,
+	VERIFY_MARK = TRUE,
 };
 
-#define STACK_HEADER STACK_TAG
+typedef enum {
+	MARK_MODE,
+	UNMARK_MODE,
+} MarkMode;
+
+W32 mark (GC_state s, pointer root, MarkMode mode);
+
 #define BOGUS_THREAD (GC_thread)BOGUS_POINTER
-#define STRING_HEADER GC_arrayHeader(1, 0)
-#define WORD8_VECTOR_HEADER GC_arrayHeader(1, 0)
-#define THREAD_HEADER GC_objectHeader(2, 1)
+
+#define STACK_HEADER GC_objectHeader (STACK_TYPE_INDEX)
+#define STRING_HEADER GC_objectHeader (STRING_TYPE_INDEX)
+#define THREAD_HEADER GC_objectHeader (THREAD_TYPE_INDEX)
+#define WORD8_VECTOR_HEADER GC_objectHeader (WORD8_TYPE_INDEX)
 
 #define SPLIT_HEADER()								\
 	do {									\
-		tag = header & TAG_MASK;					\
-		numNonPointers = (header & NON_POINTER_MASK) >> POINTER_BITS;	\
-		numPointers = header & POINTER_MASK;				\
+		int objectTypeIndex;						\
+		GC_ObjectType *t;						\
+										\
+		assert (1 == (header & 1));					\
+		objectTypeIndex = (header & TYPE_INDEX_MASK) >> 1;		\
+		assert (0 <= objectTypeIndex					\
+				and objectTypeIndex < s->maxObjectTypeIndex);	\
+		t = &s->objectTypes [objectTypeIndex];				\
+		tag = t->tag;							\
+		numNonPointers = t->numNonPointers;				\
+		numPointers = t->numPointers;					\
+		if (DEBUG_DETAILED)						\
+			fprintf (stderr, "SPLIT_HEADER (0x%08x)  numNonPointers = %u  numPointers = %u\n", \
+					(uint)header, numNonPointers, numPointers);	\
 	} while (0)
+
+static char* tagToString (GC_ObjectTypeTag t) {
+	switch (t) {
+	case ARRAY_TAG:
+	return "ARRAY";
+	case NORMAL_TAG:
+	return "NORMAL";
+	case STACK_TAG:
+	return "STACK";
+	default:
+	die ("bad tag %u", t);
+	}
+}
 
 static inline ulong meg (uint n) {
 	return n / (1024ul * 1024ul);
@@ -268,33 +300,22 @@ roundPage(GC_state s, size_t size)
 /*                      display                      */
 /* ------------------------------------------------- */
 
-void GC_display(GC_state s, FILE *stream) {
-	fprintf(stream, "GC state\n\tbase = %x  frontier - base = %u  limit - frontier = %u\n",
+void GC_display (GC_state s, FILE *stream) {
+	fprintf (stream, "GC state\n\tbase = 0x%x\n\tfrontier - base = %u\n\tlimit - base = %u\n\tlimit - frontier = %d\n",
 			(uint) s->base, 
 			s->frontier - s->base,
+			s->limit - s->base,
 			s->limit - s->frontier);
-	fprintf(stream, "\tcanHandle = %d\n", s->canHandle);
-	fprintf(stream, "\texnStack = %u  bytesNeeded = %u  reserved = %u  used = %u\n",
+	fprintf (stream, "\tcanHandle = %d\n", s->canHandle);
+	fprintf (stream, "\texnStack = %u  bytesNeeded = %u  reserved = %u  used = %u\n",
 			s->currentThread->exnStack,
 			s->currentThread->bytesNeeded,
 			s->currentThread->stack->reserved,
 			s->currentThread->stack->used);
-	fprintf(stream, "\tstackBottom = %x\nstackTop - stackBottom = %u\nstackLimit - stackTop = %u\n",
+	fprintf (stream, "\tstackBottom = %x\nstackTop - stackBottom = %u\nstackLimit - stackTop = %u\n",
 			(uint)s->stackBottom,
 			s->stackTop - s->stackBottom,
 			(s->stackLimit - s->stackTop));
-}
-
-/* ------------------------------------------------- */
-/*                    ensureFree                     */
-/* ------------------------------------------------- */
-
-static inline void
-ensureFree(GC_state s, uint bytesRequested)
-{
-	if (s->frontier + bytesRequested > s->limit) {
-		GC_doGC(s, bytesRequested, 0);
-	}
 }
 
 /* ------------------------------------------------- */
@@ -302,7 +323,7 @@ ensureFree(GC_state s, uint bytesRequested)
 /* ------------------------------------------------- */
 
 static inline pointer
-object(GC_state s, uint header, uint bytesRequested)
+object (GC_state s, uint header, uint bytesRequested)
 {
 	pointer result;
 
@@ -314,12 +335,75 @@ object(GC_state s, uint header, uint bytesRequested)
 	return result;
 }
 
+static inline W64 w64align (W64 w) {
+ 	return ((w + 3) & ~ 3);
+}
+
+pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts, 
+				W32 header) {
+	uint numPointers;
+	uint numNonPointers;
+	uint tag;
+	uint eltSize;
+	W64 arraySize64;
+	W32 arraySize;
+	W32 *frontier;
+	W32 *last;
+	pointer res;
+	W32 require;
+	W64 require64;
+
+	SPLIT_HEADER();
+	assert ((numPointers == 1 and numNonPointers == 0)
+			or (numPointers == 0 and numNonPointers > 0));
+	eltSize = numPointers * POINTER_SIZE + numNonPointers;
+	arraySize64 = 
+		w64align((W64)eltSize * (W64)numElts + GC_ARRAY_HEADER_SIZE);
+	require64 = arraySize64 + (W64)ensureBytesFree;
+	if (require64 >= 0x100000000llu)
+		die ("Out of memory: cannot allocate %llu bytes.\n",
+			require64);
+	require = (W32)require64;
+	arraySize = (W32)arraySize64;
+	if (DEBUG)
+		fprintf (stderr, "array with %u elts of size %u and total size %u.  ensureBytesFree = %u\n",
+			(uint)numElts, (uint)eltSize, (uint)arraySize,
+			(uint)ensureBytesFree);
+	if (require > s->limitPlusSlop - s->frontier) {
+		GC_enter (s);
+		GC_doGC (s, require, 0);
+		GC_leave (s);
+	}
+	frontier = (W32*)s->frontier;
+	last = (W32*)((pointer)frontier + arraySize);
+	*frontier++ = 0; /* counter word */
+	*frontier++ = numElts;
+	*frontier++ = header;
+	res = (pointer)frontier;
+	if (1 == numPointers)
+		for ( ; frontier < last; frontier++)
+			*frontier = 0x1;
+	s->frontier = (pointer)last;
+	/* Unfortunately, the invariant isn't quite true here, because unless we
+ 	 * did the GC, we never set s->currentThread->stack->used to reflect
+	 * what the mutator did with stackTop.
+ 	 */
+	/*	assert(GC_mutatorInvariant(s)); */
+	if (DEBUG) {
+		fprintf (stderr, "GC_arrayAllocate done.  res = 0x%x  frontier = 0x%x\n",
+				(uint)res, (uint)s->frontier);
+		GC_display (s, stderr);
+	}
+	assert (ensureBytesFree <= s->limitPlusSlop - s->frontier);
+	return res;
+}	
+
 /* ------------------------------------------------- */
 /*                  getFrameLayout                   */
 /* ------------------------------------------------- */
 
 static inline GC_frameLayout	*
-getFrameLayout(GC_state s, word returnAddress)
+getFrameLayout (GC_state s, word returnAddress)
 {
 	GC_frameLayout *layout;
 	uint index;
@@ -328,9 +412,9 @@ getFrameLayout(GC_state s, word returnAddress)
 		index = *((uint*)(returnAddress - 4));
 	else
 		index = (uint)returnAddress;
-	assert(0 <= index and index <= s->maxFrameIndex);
+	assert (0 <= index and index <= s->maxFrameIndex);
 	layout = &(s->frameLayouts[index]);
-	assert(layout->numBytes > 0);
+	assert (layout->numBytes > 0);
 	return layout;
 }
 
@@ -343,27 +427,27 @@ getFrameLayout(GC_state s, word returnAddress)
  * If you change this, make sure and change Thread_switchTo in ccodegen.h
  *   and thread_switchTo in x86-generate-transfers.sml.
  */
-static inline uint stackSlop(GC_state s) {
+static inline uint stackSlop (GC_state s) {
 	return 2 * s->maxFrameSize;
 }
 
-static inline uint initialStackSize(GC_state s) {
-	return stackSlop(s);
+static inline uint initialStackSize (GC_state s) {
+	return stackSlop (s);
 }
 
 static inline uint
-stackBytes(uint size)
+stackBytes (uint size)
 {
-	return wordAlign(HEADER_SIZE + sizeof(struct GC_stack) + size);
+	return wordAlign (HEADER_SIZE + sizeof (struct GC_stack) + size);
 }
 
 /* If you change this, make sure and change Thread_switchTo in ccodegen.h
  *   and thread_switchTo in x86-generate-transfers.sml.
  */
 static inline pointer
-stackBottom(GC_stack stack)
+stackBottom (GC_stack stack)
 {
-	return ((pointer)stack) + sizeof(struct GC_stack);
+	return ((pointer)stack) + sizeof (struct GC_stack);
 }
 
 /* Pointer to the topmost word in use on the stack. */
@@ -391,24 +475,24 @@ stackLimit(GC_state s, GC_stack stack)
  *   and thread_switchTo in x86-generate-transfers.sml.
  */
 static inline uint
-currentStackUsed(GC_state s)
+currentStackUsed (GC_state s)
 {
 	return s->stackTop - s->stackBottom;
 }
 
 static inline bool
-stackIsEmpty(GC_stack stack)
+stackIsEmpty (GC_stack stack)
 {
 	return 0 == stack->used;
 }
 
 static inline uint
-topFrameSize(GC_state s, GC_stack stack)
+topFrameSize (GC_state s, GC_stack stack)
 {
 	GC_frameLayout *layout;
 	
-	assert(not(stackIsEmpty(stack)));
-	layout = getFrameLayout(s, *(word*)(stackTop(stack) - WORD_SIZE));
+	assert (not (stackIsEmpty (stack)));
+	layout = getFrameLayout(s, *(word*)(stackTop (stack) - WORD_SIZE));
 	return layout->numBytes;
 }
 
@@ -416,41 +500,43 @@ topFrameSize(GC_state s, GC_stack stack)
  * the stackTop is less than the stackLimit.
  */
 static inline bool
-stackTopIsOk(GC_state s, GC_stack stack)
+stackTopIsOk (GC_state s, GC_stack stack)
 {
-	return stackTop(stack) 
-		       	<= stackLimit(s, stack) 
-			+ (stackIsEmpty(stack) ? 0 : topFrameSize(s, stack));
+	return stackTop (stack) 
+		       	<= stackLimit (s, stack) 
+			+ (stackIsEmpty (stack) ? 0 : topFrameSize (s, stack));
 }
 
 static inline GC_stack
-newStack(GC_state s, uint size)
+newStack (GC_state s, uint size)
 {
 	GC_stack stack;
 
-	stack = (GC_stack)object(s, STACK_HEADER, stackBytes(size));
+	stack = (GC_stack) object (s, STACK_HEADER, stackBytes (size));
 	stack->reserved = size;
 	stack->used = 0;
+	if (DEBUG_DETAILED)
+		fprintf (stderr, "0x%x = newStack (%u)\n", (uint)stack, size);
 	return stack;
 }
 
 inline void
-GC_setStack(GC_state s)
+GC_setStack (GC_state s)
 {
 	GC_stack stack;
 
 	stack = s->currentThread->stack;
-	s->stackBottom = stackBottom(stack);
-	s->stackTop = stackTop(stack);
-	s->stackLimit = stackLimit(s, stack);
+	s->stackBottom = stackBottom (stack);
+	s->stackTop = stackTop (stack);
+	s->stackLimit = stackLimit (s, stack);
 }
 
 static inline void
-stackCopy(GC_stack from, GC_stack to)
+stackCopy (GC_stack from, GC_stack to)
 {
-	assert(from->used <= to->reserved);
+	assert (from->used <= to->reserved);
 	to->used = from->used;
-	memcpy(stackBottom(to), stackBottom(from), from->used);
+	memcpy (stackBottom (to), stackBottom (from), from->used);
 }
 
 /* ------------------------------------------------- */
@@ -514,24 +600,27 @@ static W32 computeSemiSize (GC_state s, W64 live) {
 
 /* The number of bytes in an array, not including the header. */
 static inline uint
-arrayNumBytes(pointer p, 
+arrayNumBytes (pointer p, 
 		     uint numPointers,
 		     uint numNonPointers)
 {
 	uint numElements, bytesPerElement, result;
 	
-	numElements = GC_arrayNumElements(p);
-	bytesPerElement = numNonPointers + toBytes(numPointers);
-	result = wordAlign(numElements * bytesPerElement);
+	numElements = GC_arrayNumElements (p);
+	bytesPerElement = numNonPointers + toBytes (numPointers);
+	result = wordAlign (numElements * bytesPerElement);
+	/* Empty arrays have POINTER_SIZE bytes for the forwarding pointer */
+	if (0 == result) 
+		result = POINTER_SIZE;
 	
 	return result;
 }
 
 static inline void
-maybeCall(GC_pointerFun f, GC_state s, pointer *pp)
+maybeCall (GC_pointerFun f, GC_state s, pointer *pp)
 {
-	if (GC_isPointer(*pp))
-		f(s, pp);
+	if (GC_isPointer (*pp))
+		f (s, pp);
 }
 
 /* ------------------------------------------------- */
@@ -540,15 +629,15 @@ maybeCall(GC_pointerFun f, GC_state s, pointer *pp)
 
 /* Apply f to each global pointer into the heap. */
 inline void
-GC_foreachGlobal(GC_state s, GC_pointerFun f)
+GC_foreachGlobal (GC_state s, GC_pointerFun f)
 {
 	int i;
 
  	for (i = 0; i < s->numGlobals; ++i)
-		maybeCall(f, s, &s->globals[i]);
-	maybeCall(f, s, (pointer*)&s->currentThread);
-	maybeCall(f, s, (pointer*)&s->savedThread);
-	maybeCall(f, s, (pointer*)&s->signalHandler);
+		maybeCall (f, s, &s->globals [i]);
+	maybeCall (f, s, (pointer*)&s->currentThread);
+	maybeCall (f, s, (pointer*)&s->savedThread);
+	maybeCall (f, s, (pointer*)&s->signalHandler);
 }
 
 /* ------------------------------------------------- */
@@ -560,27 +649,72 @@ GC_foreachGlobal(GC_state s, GC_pointerFun f)
  * Returns pointer to the end of object, i.e. just past object.
  */
 inline pointer
-GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p)
+GC_foreachPointerInObject (GC_state s, GC_pointerFun f, pointer p)
 {
 	word header;
 	uint numPointers;
 	uint numNonPointers;
 	uint tag;
 
-	header = GC_getHeader(p);
+	header = GC_getHeader (p);
 	SPLIT_HEADER();
 	if (DEBUG_DETAILED)
-		fprintf(stderr, "foreachPointerInObject p = 0x%x  header = 0x%x  tag = 0x%x  numNonPointers = %d  numPointers = %d\n", 
-			(uint)p, header, tag, numNonPointers, numPointers);
-	if (NORMAL_TAG == tag) { /* It's a normal object. */
+		fprintf(stderr, "foreachPointerInObject p = 0x%x  header = 0x%x  tag = %s  numNonPointers = %d  numPointers = %d\n", 
+			(uint)p, header, tagToString (tag), 
+			numNonPointers, numPointers);
+	switch (tag) {
+	case ARRAY_TAG: { 
+		uint numBytes;
 		pointer max;
 
-		p += toBytes(numNonPointers);
-		max = p + toBytes(numPointers);
+		assert (ARRAY_TAG == tag);
+		assert (0 == GC_arrayNumElements (p)
+				? 0 == numPointers
+				: TRUE);
+		numBytes = arrayNumBytes (p, numPointers, numNonPointers);
+		max = p + numBytes;
+		if (numPointers == 0) {
+			/* There are no pointers, just update p. */
+			p = max;
+		} else if (numNonPointers == 0) {
+			assert (0 < GC_arrayNumElements (p));
+		  	/* It's an array with only pointers. */
+			for (; p < max; p += POINTER_SIZE)
+				maybeCall (f, s, (pointer*)p);
+		} else {
+			uint numBytesPointers;
+			
+			numBytesPointers = toBytes(numPointers);
+			/* For each array element. */
+			while (p < max) {
+				pointer max2;
+					p += numNonPointers;
+				max2 = p + numBytesPointers;
+				/* For each internal pointer. */
+				for ( ; p < max2; p += POINTER_SIZE) 
+					maybeCall(f, s, (pointer*)p);
+			}
+		}
+		assert(p == max);
+	}
+		break;
+	case NORMAL_TAG: {
+		pointer max;
+
+		p += toBytes (numNonPointers);
+		max = p + toBytes (numPointers);
 		/* Apply f to all internal pointers. */
-		for ( ; p < max; p += POINTER_SIZE)
+		for ( ; p < max; p += POINTER_SIZE) {
+			if (DEBUG_DETAILED)
+				fprintf(stderr, "p = 0x%08x  *p = 0x%08x\n",
+						(uint)p, (uint)*p);
 			maybeCall(f, s, (pointer*)p);
-	} else if (STACK_TAG == tag) {
+		}
+	}
+		break;
+	default:
+		assert (STACK_TAG == tag);
+	{
 		GC_stack stack;
 		pointer top, bottom;
 		int i;
@@ -616,44 +750,7 @@ GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p)
 		}
 		assert(top == bottom);
 		p += sizeof(struct GC_stack) + stack->reserved;
-	} else { /* It's an array. */
-		uint numBytes;
-
-		assert(ARRAY_TAG == tag);
-		numBytes = arrayNumBytes(p, numPointers, numNonPointers);
-		if (numBytes == 0)
-			/* An empty array -- skip the POINTER_SIZE bytes
-			 * for the forwarding pointer.
-			 */
-			p += POINTER_SIZE;
-		else {
-			pointer max;
-
-			max = p + numBytes;
-			if (numPointers == 0) {
-				/* There are no pointers, just update p. */
-				p = max;
-			} else if (numNonPointers == 0) {
-			  	/* It's an array with only pointers. */
-				for (; p < max; p += POINTER_SIZE)
-					maybeCall(f, s, (pointer*)p);
-			} else {
-				uint numBytesPointers;
-				
-				numBytesPointers = toBytes(numPointers);
-				/* For each array element. */
-				while (p < max) {
-					pointer max2;
-
-					p += numNonPointers;
-					max2 = p + numBytesPointers;
-					/* For each internal pointer. */
-					for ( ; p < max2; p += POINTER_SIZE) 
-						maybeCall(f, s, (pointer*)p);
-				}
-			}
-			assert(p == max);
-		}
+	}
 	}
 	return p;
 }
@@ -662,18 +759,21 @@ GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p)
 /*                      toData                       */
 /* ------------------------------------------------- */
 
-/* p should point at the beginning of an object (i.e. the header).
- * Returns a pointer to the start of the object data.
+/* If p points at the beginning of an object, then toData p returns a pointer 
+ * to the start of the object data.
  */
 static inline pointer
-toData(pointer p)
+toData (pointer p)
 {
 	word header;	
 
 	header = *(word*)p;
-	return ((0x0 == (header & 0x80000000))
-		? p + 2 * WORD_SIZE
-		: p + WORD_SIZE);
+	if (0 == header)
+		/* Looking at the counter word in an array. */
+		return p + GC_ARRAY_HEADER_SIZE;
+	else
+		/* Looking at a header word. */
+		return p + GC_NORMAL_HEADER_SIZE;
 }
 
 /* ------------------------------------------------- */
@@ -687,17 +787,23 @@ toData(pointer p)
  */
 
 static inline void
-GC_foreachPointerInRange(GC_state s, pointer front, pointer *back,
-			 GC_pointerFun f)
+GC_foreachPointerInRange (GC_state s, pointer front, pointer *back,
+				GC_pointerFun f)
 {
 	pointer b;
 
+	if (DEBUG_DETAILED)
+		fprintf (stderr, "GC_foreachPointerInRange  front = 0x%08x  *back = 0x%08x\n",
+				(uint)front, (uint)*back);
 	b = *back;
-	assert(front <= b);
+	assert (front <= b);
  	while (front < b) {
 		while (front < b) {
-			assert(isWordAligned((uint)front));
-			front = GC_foreachPointerInObject(s, f, toData(front));
+			assert (isWordAligned ((uint)front));
+	       		if (DEBUG_DETAILED)
+				fprintf (stderr, "front = 0x%08x  *back = 0x%08x\n",
+						(uint)front, (uint)*back);
+			front = GC_foreachPointerInObject(s, f, toData (front));
 		}
 		b = *back;
 	}
@@ -710,27 +816,28 @@ GC_foreachPointerInRange(GC_state s, pointer front, pointer *back,
 
 #ifndef NODEBUG
 
-static inline bool
-isInFromSpace(GC_state s, pointer p)
-{
+static inline bool GC_isInFromSpace (GC_state s, pointer p) {
  	return (s->base <= p and p < s->frontier);
 }
 
-static inline void
-assertIsInFromSpace(GC_state s, pointer *p)
+static inline void 
+assertIsInFromSpace (GC_state s, pointer *p) 
 {
-	assert(isInFromSpace(s, *p));
+#ifndef NODEBUG
+	unless (GC_isInFromSpace (s, *p))
+		die ("gc.c: assertIsInFromSpace (0x%x);\n", (uint)*p);
+#endif
 }
 
 static inline bool
-isInToSpace(GC_state s, pointer p)
+isInToSpace (GC_state s, pointer p)
 {
 	return (not(GC_isPointer(p))
 		or (s->toBase <= p and p < s->toBase + s->toSize));
 }
 
 static bool
-invariant(GC_state s)
+invariant (GC_state s)
 {
 	/* would be nice to add divisiblity by pagesize of various things */
 
@@ -818,17 +925,28 @@ initialThreadBytes(GC_state s)
 	return threadBytes() + stackBytes(initialStackSize(s));
 }
 
+static inline void
+ensureFree(GC_state s, uint bytesRequested)
+{
+	if (bytesRequested > s->limit - s->frontier) {
+		GC_doGC(s, bytesRequested, 0);
+	}
+}
+
 static inline GC_thread
-newThreadOfSize(GC_state s, uint stackSize)
+newThreadOfSize (GC_state s, uint stackSize)
 {
 	GC_stack stack;
 	GC_thread t;
 
-	ensureFree(s, stackBytes(stackSize) + threadBytes());
-	stack = newStack(s, stackSize);
-	t = (GC_thread)object(s, THREAD_HEADER, threadBytes());
+	ensureFree (s, stackBytes (stackSize) + threadBytes ());
+	stack = newStack (s, stackSize);
+	t = (GC_thread) object (s, THREAD_HEADER, threadBytes ());
 	t->exnStack = BOGUS_EXN_STACK;
 	t->stack = stack;
+	if (DEBUG_DETAILED)
+		fprintf (stderr, "0x%x = newThreadOfSize (%u)\n",
+				(uint)t, stackSize);;
 	return t;
 }
 
@@ -840,7 +958,7 @@ switchToThread(GC_state s, GC_thread t)
 }
 
 static inline void
-copyThread(GC_state s, GC_thread from, uint size)
+copyThread (GC_state s, GC_thread from, uint size)
 {
 	GC_thread to;
 
@@ -848,9 +966,9 @@ copyThread(GC_state s, GC_thread from, uint size)
 	 * Hence we need to stash from where the GC can find it.
 	 */
 	s->savedThread = from;
-	to = newThreadOfSize(s, size);
+	to = newThreadOfSize (s, size);
 	from = s->savedThread;
-	stackCopy(from->stack, to->stack);
+	stackCopy (from->stack, to->stack);
 	to->exnStack = from->exnStack;
 	s->savedThread = to;
 }
@@ -886,7 +1004,7 @@ unblockSignals(GC_state s)
  * They are a bit tricky because of the case when the runtime system is invoked
  * from within an ML signal handler.
  */
-inline void
+void
 GC_enter(GC_state s)
 {
 	/* used needs to be set because the mutator has changed s->stackTop. */
@@ -901,41 +1019,39 @@ GC_enter(GC_state s)
 	assert(invariant(s));
 }
 
-void GC_leave(GC_state s)
+void GC_leave (GC_state s)
 {
-	assert(GC_mutatorInvariant(s));
+	assert (GC_mutatorInvariant (s));
 	if (s->signalIsPending and 0 == s->canHandle)
 		s->limit = 0;
 	unless (s->inSignalHandler)
-		unblockSignals(s);
+		unblockSignals (s);
 }
 
 inline void
-GC_copyCurrentThread(GC_state s)
+GC_copyCurrentThread (GC_state s)
 {
 	GC_thread t;
 
-	GC_enter(s);
+	GC_enter (s);
 	t = s->currentThread;
-	copyThread(s, t, t->stack->used);
-	assert(s->frontier <= s->limit);
-	GC_leave(s);
+	copyThread (s, t, t->stack->used);
+	GC_leave (s);
 }
 
 static inline uint
-stackNeedsReserved(GC_state s, GC_stack stack)
+stackNeedsReserved (GC_state s, GC_stack stack)
 {
 	return stack->used + stackSlop(s) - topFrameSize(s, stack);
 }
 
 inline void
-GC_copyThread(GC_state s, GC_thread t)
+GC_copyThread (GC_state s, GC_thread t)
 {
 	GC_enter (s);
 	assert (t->stack->reserved == t->stack->used);
-	copyThread (s, t, stackNeedsReserved(s, t->stack));
-	assert(s->frontier <= s->limit);
-	GC_leave(s);
+	copyThread (s, t, stackNeedsReserved (s, t->stack));
+	GC_leave (s);
 }
 
 extern struct GC_state gcState;
@@ -1323,19 +1439,20 @@ static void newWorld(GC_state s)
 {
 	int i;
 
-	assert(isWordAligned(sizeof(struct GC_thread)));
+	assert (isWordAligned (sizeof (struct GC_thread)));
 	for (i = 0; i < s->numGlobals; ++i)
 		s->globals[i] = (pointer)BOGUS_POINTER;
-	GC_setHeapParams(s, s->bytesLive + initialThreadBytes(s));
-	assert(s->bytesLive + initialThreadBytes(s) + LIMIT_SLOP <= s->fromSize);
-	GC_fromSpace(s);
+	GC_setHeapParams (s, s->bytesLive + initialThreadBytes (s));
+	assert (s->bytesLive + initialThreadBytes (s) + LIMIT_SLOP 
+			<= s->fromSize);
+	GC_fromSpace (s);
 	s->frontier = s->base;
 	s->toSize = s->fromSize;
-	GC_toSpace(s); /* FIXME: Why does toSpace need to be allocated? */
-	switchToThread(s, newThreadOfSize(s, initialStackSize(s)));
-	assert(initialThreadBytes(s) == s->frontier - s->base);
-	assert(s->frontier + s->bytesLive <= s->limit);
-	assert(GC_mutatorInvariant(s));
+	GC_toSpace (s); /* FIXME: Why does toSpace need to be allocated? */
+	switchToThread (s, newThreadOfSize (s, initialStackSize (s)));
+	assert (initialThreadBytes (s) == s->frontier - s->base);
+	assert (s->frontier + s->bytesLive <= s->limit);
+	assert (GC_mutatorInvariant (s));
 }
 
 static void usage(string s) {
@@ -1415,7 +1532,7 @@ GC_init(GC_state s, int argc, char **argv,
  	readProcessor();
 	worldFile = NULL;
 	i = 1;
-	if (argc > 1 and (0 == strcmp(argv[1], "@MLton"))) {
+	if (argc > 1 and (0 == strcmp (argv [1], "@MLton"))) {
 		bool done;
 
 		/* process @MLton args */
@@ -1522,6 +1639,27 @@ void GC_translateHeap (GC_state s, pointer from, pointer to, uint size) {
 	GC_foreachPointerInRange (s, to, &limit, translatePointer);
 }
 
+static inline void copy (pointer src, pointer dst, uint size) {
+	uint	*to,
+		*from,
+		*limit;
+
+	if (DEBUG_DETAILED)
+		fprintf (stderr, "copy (0x%08x, 0x%08x, %u)\n",
+				(uint)src, (uint)dst, size);
+	assert (isWordAligned((uint)src));
+	assert (isWordAligned((uint)dst));
+	assert (isWordAligned(size));
+	assert (dst <= src or src + size <= dst);
+	if (src == dst)
+		return;
+	from = (uint*)src;
+	to = (uint*)dst;
+	limit = (uint*)(src + size);
+	until (from == limit)
+		*to++ = *from++;
+}
+
 /* ------------------------------------------------- */
 /*                      forward                      */
 /* ------------------------------------------------- */
@@ -1538,7 +1676,7 @@ forward(GC_state s, pointer *pp)
 
 	if (DEBUG_DETAILED)
 		fprintf(stderr, "forward  pp = 0x%x  *pp = 0x%x\n", (uint)pp, (uint)*pp);
-	assert(isInFromSpace(s, *pp));
+	assert (GC_isInFromSpace (s, *pp));
 	p = *pp;
 	header = GC_getHeader(p);
 	if (header != FORWARDED) { /* forward the object */
@@ -1548,8 +1686,14 @@ forward(GC_state s, pointer *pp)
 		/* Compute the space taken by the header and object body. */
 		SPLIT_HEADER();
 		if (NORMAL_TAG == tag) { /* Fixed size object. */
-			headerBytes = GC_OBJECT_HEADER_SIZE;
+			headerBytes = GC_NORMAL_HEADER_SIZE;
 			objectBytes = toBytes(numPointers + numNonPointers);
+			if (VERIFY_MARK)
+				s->forwardSize += headerBytes + objectBytes;
+			if (DEBUG_MARK_SIZE)
+				fprintf (stderr, "0x%08x normal of size %u\n",
+						(uint)p, 
+						headerBytes + objectBytes);
 			skip = 0;
 		} else if (STACK_TAG == tag) { /* Stack. */
 			GC_stack stack;
@@ -1557,6 +1701,12 @@ forward(GC_state s, pointer *pp)
 			headerBytes = STACK_HEADER_SIZE;
 			/* Resize stacks not being used as continuations. */
 			stack = (GC_stack)p;
+			if (VERIFY_MARK)
+				s->forwardSize += stackBytes (stack->reserved);
+			if (DEBUG_MARK_SIZE)
+				fprintf (stderr, "0x%08x stack of size %u\n",
+						(uint)p,
+						stackBytes (stack->reserved));
 			if (stack->used != stack->reserved) {
 				if (4 * stack->used <= stack->reserved)
 					stack->reserved = stack->reserved / 2;
@@ -1572,15 +1722,17 @@ forward(GC_state s, pointer *pp)
 			objectBytes = sizeof (struct GC_stack) + stack->used;
 			skip = stack->reserved - stack->used;
 		} else { /* Array. */
-			assert(ARRAY_TAG == tag);
+			assert (ARRAY_TAG == tag);
 			headerBytes = GC_ARRAY_HEADER_SIZE;
-			objectBytes = arrayNumBytes(p, numPointers,
+			objectBytes = arrayNumBytes (p, numPointers,
 								numNonPointers);
+			if (VERIFY_MARK)
+				s->forwardSize += headerBytes + objectBytes;
+			if (DEBUG_MARK_SIZE)
+				fprintf (stderr, "0x%08x array of size %u\n",
+						(uint)p,
+						headerBytes + objectBytes);
 			skip = 0;
-			/* Empty arrays have POINTER_SIZE bytes for the 
-			 * forwarding pointer.
-			 */
-			if (0 == objectBytes) objectBytes = POINTER_SIZE;
 		} 
 		size = headerBytes + objectBytes;
 		/* This check is necessary, because toSpace may be smaller
@@ -1595,23 +1747,10 @@ forward(GC_state s, pointer *pp)
 			die ("Out of memory (forward).\nDiagnostic: probably a RAM problem.");
 		}
   		/* Copy the object. */
- 		if (FALSE and processor_has_sse2 and size >= 8192) {
-			extern void bcopy_simd(void *, void const *, int);
-			bcopy_simd(p - headerBytes, s->back, size);
- 		} else {
-			uint	*to,
-				*from,
-				*limit;
-
-			to = (uint *)s->back;
-			from = (uint *)(p - headerBytes);
-			assert (isWordAligned((uint)to));
-			assert (isWordAligned((uint)from));
-			assert (isWordAligned(size));
-			limit = (uint *)((char *)from + size);
-			until (from == limit)
-				*to++ = *from++;
-		}
+		if (DEBUG_DETAILED)
+			fprintf (stderr, "copying from 0x%08x to 0x%08x\n",
+					(uint)p, (uint)s->back);
+		copy (p - headerBytes, s->back, size);
 #if METER
 		if (size < sizeof(sizes)/sizeof(sizes[0])) sizes[size]++;
 #endif
@@ -1640,6 +1779,28 @@ static inline void forwardEachPointerInRange(GC_state s, pointer front,
 		b = *back;
 	}
 	assert(front == *back);
+}
+
+static inline uint objectSize (GC_state s, pointer p)
+{
+	uint headerBytes, objectBytes;
+       	word header;
+	uint tag, numPointers, numNonPointers;
+
+	header = GC_getHeader(p);
+	SPLIT_HEADER();
+	if (NORMAL_TAG == tag) { /* Fixed size object. */
+		headerBytes = GC_NORMAL_HEADER_SIZE;
+		objectBytes = toBytes (numPointers + numNonPointers);
+	} else if (STACK_TAG == tag) { /* Stack. */
+		headerBytes = STACK_HEADER_SIZE;
+		objectBytes = sizeof(struct GC_stack) + ((GC_stack)p)->reserved;
+	} else { /* Array. */
+		assert(ARRAY_TAG == tag);
+		headerBytes = GC_ARRAY_HEADER_SIZE;
+		objectBytes = arrayNumBytes(p, numPointers, numNonPointers);
+	}
+	return headerBytes + objectBytes;
 }
 
 /* ------------------------------------------------- */
@@ -1850,6 +2011,8 @@ static void shiftFromSpace (GC_state s, uint bytesRequested) {
 	assert (bytesRequested <= s->limit - s->frontier);
 }
 
+static inline void markCompact (GC_state s);
+
 void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 	uint gcTime;
 	uint size;
@@ -1860,25 +2023,34 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 	if (DEBUG or s->messages)
 		fprintf(stderr, "Starting gc.  bytesRequested = %u\n",
 				bytesRequested);
-	fixedGetrusage(RUSAGE_SELF, &ru_start);
+	fixedGetrusage (RUSAGE_SELF, &ru_start);
 	prepareToSpace (s, bytesRequested, stackBytesRequested);
 	assert (s->toBase != (void*)NULL);
  	if (DEBUG or s->messages) {
-		fprintf(stderr, "fromSpace = %x  toSpace = %x\n",
-			(uint)s->base, (uint)s->toBase);
-	 	fprintf(stderr, "fromSpace size = %s", 
+		fprintf (stderr, "fromSpace = %x  toSpace = %x\n",
+				(uint)s->base, (uint)s->toBase);
+	 	fprintf (stderr, "fromSpace size = %s", 
 				uintToCommaString(s->fromSize));
-		fprintf(stderr, "  toSpace size = %s\n",
+		fprintf (stderr, "  toSpace size = %s\n",
 				uintToCommaString(s->toSize));
 	}
  	s->numGCs++;
  	s->bytesAllocated += s->frontier - s->base - s->bytesLive;
 	/* The actual GC. */
+	if (FALSE)
+		markCompact (s);
 	s->back = s->toBase;
 	s->toLimit = s->toBase + s->toSize;
 	front = s->back;
-	GC_foreachGlobal(s, forward);
-	forwardEachPointerInRange(s, front, &s->back);
+	if (VERIFY_MARK)
+		s->forwardSize = 0;
+	GC_foreachGlobal (s, forward);
+	forwardEachPointerInRange (s, front, &s->back);
+	if (VERIFY_MARK and s->markSize != s->forwardSize) {
+		fprintf (stderr, "markSize = %u  forwardSize = %u\n",
+				s->markSize, s->forwardSize);
+		die ("bug");
+	}
 	size = s->fromSize;
 	swapSemis (s);
 	GC_setStack(s);
@@ -1896,14 +2068,14 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 	}
 	fixedGetrusage(RUSAGE_SELF, &ru_finish);
 	rusageMinusMax(&ru_finish, &ru_start, &ru_total);
-	rusagePlusMax(&s->ru_gc, &ru_total, &s->ru_gc);
-	gcTime = rusageTime(&ru_total);
-	s->maxPause = max(s->maxPause, gcTime);
+	rusagePlusMax (&s->ru_gc, &ru_total, &s->ru_gc);
+	gcTime = rusageTime (&ru_total);
+	s->maxPause = max (s->maxPause, gcTime);
 	if (DEBUG or s->messages) {
-		fprintf(stderr, "Finished gc.\n");
-		fprintf(stderr, "time(ms): %s\n", intToCommaString(gcTime));
-		fprintf(stderr, "live(bytes): %s (%.1f%%)\n", 
-			intToCommaString(s->bytesLive),
+		fprintf (stderr, "Finished gc.\n");
+		fprintf (stderr, "time(ms): %s\n", intToCommaString (gcTime));
+		fprintf (stderr, "live(bytes): %s (%.1f%%)\n", 
+			intToCommaString (s->bytesLive),
 			100.0 * ((double) s->bytesLive) / size);
 	}
 	if (DEBUG) 
@@ -1915,22 +2087,22 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 /*                       GC_gc                       */
 /* ------------------------------------------------- */
 
-void GC_gc(GC_state s, uint bytesRequested, bool force,
+void GC_gc (GC_state s, uint bytesRequested, bool force,
 		string file, int line) {
 	uint stackBytesRequested;
 
-	GC_enter(s);
+	GC_enter (s);
 	s->currentThread->bytesNeeded = bytesRequested;
 start:
 	stackBytesRequested =
-		(stackTopIsOk(s, s->currentThread->stack))
+		(stackTopIsOk (s, s->currentThread->stack))
 		? 0 
-		: stackBytes(2 * s->currentThread->stack->reserved);
+		: stackBytes (2 * s->currentThread->stack->reserved);
 	if (DEBUG) {
 		fprintf (stderr, "%s %d: ", file, line);
-		fprintf(stderr, "bytesRequested = %u  stackBytesRequested = %u\n",
+		fprintf (stderr, "bytesRequested = %u  stackBytesRequested = %u\n",
 				bytesRequested, stackBytesRequested);
-		GC_display(s, stderr);
+		GC_display (s, stderr);
 	}
 	if (force or
 		(W64)(W32)s->frontier + (W64)bytesRequested 
@@ -1951,10 +2123,10 @@ start:
 		/* The newStack can't cause a GC, because we checked above to 
 		 * make sure there was enough space. 
 		 */
-		stack = newStack(s, size);
-		stackCopy(s->currentThread->stack, stack);
+		stack = newStack (s, size);
+		stackCopy (s->currentThread->stack, stack);
 		s->currentThread->stack = stack;
-		GC_setStack(s);
+		GC_setStack (s);
 	} else {
 		/* Switch to the signal handler thread. */
 		assert (0 == s->canHandle);
@@ -1972,13 +2144,14 @@ start:
 		 * to continue with, which will decrement s->canHandle to 0.
                  */
 		s->canHandle = 2;
-		switchToThread(s, s->signalHandler);
+		switchToThread (s, s->signalHandler);
 		bytesRequested = s->currentThread->bytesNeeded;
+		assert (0 == bytesRequested);
 		if (bytesRequested > s->limit - s->frontier)
 			goto start;
 	}
 	assert (s->currentThread->bytesNeeded <= s->limit - s->frontier);
-	/* The GC_enter and GC_leave must be outside the while loop.  If they
+	/* The GC_enter and GC_leave must be outside the start loop.  If they
          * were inside and force == TRUE, a signal handler could intervene just
          * before the GC_enter or just after the GC_leave, which would set 
          * limit to 0 and cause the while loop to go forever, performing a GC 
@@ -1991,11 +2164,11 @@ start:
 /*                 GC_createStrings                  */
 /* ------------------------------------------------- */
 
-void GC_createStrings(GC_state s, struct GC_stringInit inits[]) {
+void GC_createStrings (GC_state s, struct GC_stringInit inits[]) {
 	pointer frontier;
 	int i;
 
-	assert(invariant(s));
+	assert (invariant (s));
 	frontier = s->frontier;
 	for(i = 0; inits[i].str != NULL; ++i) {
 		uint numElements, numBytes;
@@ -2008,10 +2181,14 @@ void GC_createStrings(GC_state s, struct GC_stringInit inits[]) {
 		if (frontier + numBytes >= s->limit)
 			die("Unable to allocate string constant \"%s\".", 
 				inits[i].str);
-		*(word*)frontier = numElements;
-		*(word*)(frontier + WORD_SIZE) = STRING_HEADER;
+		*(word*)frontier = 0; /* counter word */
+		*(word*)(frontier + WORD_SIZE) = numElements;
+		*(word*)(frontier + 2 * WORD_SIZE) = STRING_HEADER;
 		s->globals[inits[i].globalIndex] = 
 			frontier + GC_ARRAY_HEADER_SIZE;
+		if (DEBUG_DETAILED)
+			fprintf (stderr, "allocated string at 0x%x\n",
+					(uint)s->globals[inits[i].globalIndex]);
 		{
 			int j;
 
@@ -2105,33 +2282,459 @@ void GC_finishHandler (GC_state s) {
 }
 
 /* ------------------------------------------------- */
-/*                   GC_objectSize                   */
+/*                       mark                        */
 /* ------------------------------------------------- */
-/* Compute the space taken by the header and object body. */
 
-inline uint
-GC_objectSize(pointer p)
-{
-	uint headerBytes, objectBytes;
-       	word header;
-	uint tag, numPointers, numNonPointers;
+static inline uint *arrayCounterp (pointer a) {
+	return ((uint*)a - 3);
+}
 
-	header = GC_getHeader(p);
+static inline uint arrayCounter (pointer a) {
+	return *(arrayCounterp (a));
+}
+
+static inline bool isMarked (pointer p) {
+	return MARK_MASK & GC_getHeader (p);
+}
+
+static bool modeEqMark (MarkMode m, pointer p) {
+	return (((MARK_MODE == m) and isMarked (p))
+		or ((UNMARK_MODE == m) and not isMarked (p)));
+}
+
+/* GC_mark (s, p) sets all the mark bits in the object graph pointed to by p. 
+ * If the mode is MARK, it sets the bits to 1.
+ * If the mode is UNMARK, it sets the bits to 0.
+ * It returns the amount marked.
+ */
+W32 mark (GC_state s, pointer root, MarkMode mode) {
+	pointer cur;  /* The current object being marked. */
+	GC_offsets frameOffsets;
+	Header* headerp;
+	Header header;
+	uint index;
+	GC_frameLayout *layout;
+	pointer max; /* The end of the pointers in an object. */
+	pointer next; /* The next object to mark. */
+	Header *nextHeaderp;
+	Header nextHeader;
+	W32 numBytes;
+	uint numNonPointers;
+	uint numPointers;
+	pointer prev; /* The previous object on the mark stack. */
+	W32 size;
+	uint tag;
+	pointer todo; /* A pointer to the pointer in cur to next. */
+	pointer top; /* The top of the next stack frame to mark. */
+
+	if (modeEqMark (mode, root))
+		/* Object has already been marked. */
+		return 0;
+	size = 0;
+	cur = root;
+	prev = NULL;
+	headerp = GC_getHeaderp (cur);
+	header = *(Header*)headerp;
+	goto mark;	
+markNext:
+	/* cur is the object that was being marked.
+	 * prev is the mark stack.
+	 * next is the unmarked object to be marked.
+	 * todo is a pointer to the pointer inside cur that points to next.
+	 * headerp points to the header of next.
+	 * header is the header of next.
+	 */
+	if (DEBUG_MARK)
+		fprintf (stderr, "markNext  cur = 0x%08x  next = 0x%08x  prev = 0x%08x  todo = 0x%08x\n",
+				(uint)cur, (uint)next, (uint)prev, (uint)todo);
+	assert (not modeEqMark (mode, next));
+	assert (header == GC_getHeader (next));
+	assert (headerp == GC_getHeaderp (next));
+	assert (*(pointer*) todo == next);
+	*(pointer*)todo = prev;
+	prev = cur;
+	cur = next;
+mark:
+	if (DEBUG_MARK)
+		fprintf (stderr, "mark  cur = 0x%08x  prev = 0x%08x  mode = %s\n",
+				(uint)cur, (uint)prev,
+				(mode == MARK_MODE) ? "mark" : "unmark");
+	/* cur is the object to mark. 
+	 * prev is the mark stack.
+	 * headerp points to the header of cur.
+	 * header is the header of cur.
+	 */
+	assert (not modeEqMark (mode, cur));
+	assert (header == GC_getHeader (cur));
+	assert (headerp == GC_getHeaderp (cur));
+	header = (MARK_MODE == mode)
+			? header | MARK_MASK
+			: header & ~MARK_MASK;
 	SPLIT_HEADER();
-	if (NORMAL_TAG == tag) { /* Fixed size object. */
-		headerBytes = GC_OBJECT_HEADER_SIZE;
-		objectBytes = toBytes(numPointers + numNonPointers);
-	} else if (STACK_TAG == tag) { /* Stack. */
-		headerBytes = STACK_HEADER_SIZE;
-		objectBytes = sizeof(struct GC_stack) + ((GC_stack)p)->reserved;
-	} else { /* Array. */
-		assert(ARRAY_TAG == tag);
-		headerBytes = GC_ARRAY_HEADER_SIZE;
-		objectBytes = arrayNumBytes(p, numPointers, numNonPointers);
-		/* Empty arrays have POINTER_SIZE bytes for the 
-		 * forwarding pointer.
+	switch (tag) {
+	case ARRAY_TAG:
+		assert (0 == GC_arrayNumElements (cur)
+				? 0 == numPointers
+				: TRUE);
+		numBytes = arrayNumBytes (cur, numPointers, numNonPointers);
+		if (DEBUG_MARK_SIZE)
+			fprintf (stderr, "0x%08x array of size %u\n",
+					(uint)cur,
+					GC_ARRAY_HEADER_SIZE + (uint)numBytes);
+		size += GC_ARRAY_HEADER_SIZE + numBytes;
+		*headerp = header;
+		if (0 == numBytes or 0 == numPointers)
+			goto ret;
+		assert (0 == numNonPointers);
+		max = cur + numBytes;
+		todo = cur;
+		index = 0;
+markInArray:
+		if (DEBUG_MARK)
+			fprintf (stderr, "markInArray index = %d\n", index);
+		if (todo == max) {
+			*arrayCounterp (cur) = 0;
+			goto ret;
+		}
+		next = *(pointer*)todo;
+		if (not GC_isPointer (next)) {
+markNextInArray:
+			todo += POINTER_SIZE;
+			index++;
+			goto markInArray;
+		}
+		nextHeaderp = GC_getHeaderp (next);
+		nextHeader = *nextHeaderp;
+		if ((nextHeader & MARK_MASK)
+			== (MARK_MODE == mode ? MARK_MASK : 0))
+			goto markNextInArray;
+		*arrayCounterp (cur) = index;
+		headerp = nextHeaderp;
+		header = nextHeader;
+		goto markNext;
+	case NORMAL_TAG:
+		todo = cur + toBytes (numNonPointers);
+		max = todo + toBytes (numPointers);
+		if (DEBUG_MARK_SIZE)
+			fprintf (stderr, "0x%08x normal of size %u\n",
+					(uint)cur,
+					GC_NORMAL_HEADER_SIZE + (max - cur));
+		size += GC_NORMAL_HEADER_SIZE + (max - cur);
+		index = 0;
+markInNormal:
+		assert (todo <= max);
+		if (DEBUG_MARK)
+			fprintf (stderr, "markInNormal  index = %d\n", index);
+		if (todo == max) {
+			*headerp = header & ~COUNTER_MASK;
+			goto ret;
+		}
+		next = *(pointer*)todo;
+		if (not GC_isPointer (next)) {
+markNextInNormal:
+			todo += POINTER_SIZE;
+			index++;
+			goto markInNormal;
+		}
+		nextHeaderp = GC_getHeaderp (next);
+		nextHeader = *nextHeaderp;
+		if ((nextHeader & MARK_MASK)
+			== (MARK_MODE == mode ? MARK_MASK : 0))
+			goto markNextInNormal;
+		*headerp = (header & ~COUNTER_MASK) |
+				(index << COUNTER_SHIFT);
+		headerp = nextHeaderp;
+		header = nextHeader;
+		goto markNext;
+	default:
+		assert (STACK_TAG == tag);
+		*headerp = header;
+		if (DEBUG_MARK_SIZE)
+			fprintf (stderr, "0x%08x stack of size %u\n",
+					(uint)cur,
+					stackBytes (((GC_stack)cur)->reserved));
+		size += stackBytes (((GC_stack)cur)->reserved);
+		top = stackTop ((GC_stack)cur);
+		assert (((GC_stack)cur)->used <= ((GC_stack)cur)->reserved);
+markInStack:
+		/* Invariant: top points just past the return address of the
+		 * frame to be marked.
 		 */
-		if (0 == objectBytes) objectBytes = POINTER_SIZE;
+		assert (stackBottom ((GC_stack)cur) <= top);
+		if (DEBUG_MARK)
+			fprintf (stderr, "markInStack  top = %d\n",
+					top - stackBottom ((GC_stack)cur));
+					
+		if (top == stackBottom ((GC_stack)(cur)))
+			goto ret;
+		index = 0;
+		layout = getFrameLayout (s, *(word*) (top - WORD_SIZE));
+		frameOffsets = layout->offsets;
+		((GC_stack)cur)->markTop = top;
+markInFrame:
+		if (index == frameOffsets [0]) {
+			top -= layout->numBytes;
+			goto markInStack;
+		}
+		todo = top - layout->numBytes + frameOffsets [index + 1];
+		next = *(pointer*)todo;
+		if (DEBUG_MARK)
+			fprintf (stderr, 
+				"    offset %u  todo 0x%08x  next = 0x%08x\n", 
+				frameOffsets [index + 1], 
+				(uint)todo, (uint)next);
+		if (not GC_isPointer (next)) {
+			index++;
+			goto markInFrame;
+		}
+		nextHeaderp = GC_getHeaderp (next);
+		nextHeader = *nextHeaderp;
+		if ((nextHeader & MARK_MASK)
+			== (MARK_MODE == mode ? MARK_MASK : 0)) {
+			index++;
+			goto markInFrame;
+		}
+		((GC_stack)cur)->markIndex = index;		
+		headerp = nextHeaderp;
+		header = nextHeader;
+		goto markNext;
 	}
-	return headerBytes + objectBytes;
+	assert (FALSE);
+ret:
+	/* Done marking cur, continue with prev.
+	 * Need to set the pointer in the prev object that pointed to cur 
+	 * to point back to prev, and restore prev.
+ 	 */
+	if (DEBUG_MARK)
+		fprintf (stderr, "return  cur = 0x%08x  prev = 0x%08x\n",
+				(uint)cur, (uint)prev);
+	assert (modeEqMark (mode, cur));
+	if (NULL == prev)
+		return size;
+	headerp = GC_getHeaderp (prev);
+	header = *headerp;
+	SPLIT_HEADER();
+	switch (tag) {
+	case ARRAY_TAG:
+		max = prev + arrayNumBytes (prev, numPointers, numNonPointers);
+		index = arrayCounter (prev);
+		todo = prev + index * POINTER_SIZE;
+		next = cur;
+		cur = prev;
+		prev = *(pointer*)todo;
+		*(pointer*)todo = next;
+		todo += POINTER_SIZE;
+		index++;
+		goto markInArray;
+	case NORMAL_TAG:
+		todo = prev + toBytes (numNonPointers);
+		max = todo + toBytes (numPointers);
+		index = (header & COUNTER_MASK) >> COUNTER_SHIFT;
+		todo += index * POINTER_SIZE;
+		next = cur;
+		cur = prev;
+		prev = *(pointer*)todo;
+		*(pointer*)todo = next;
+		todo += POINTER_SIZE;
+		index++;
+		goto markInNormal;
+	default:
+		assert (STACK_TAG == tag);
+		next = cur;
+		cur = prev;
+		index = ((GC_stack)cur)->markIndex;
+		top = ((GC_stack)cur)->markTop;
+		layout = getFrameLayout (s, *(word*) (top - WORD_SIZE));
+		frameOffsets = layout->offsets;
+		todo = top - layout->numBytes + frameOffsets [index + 1];
+		prev = *(pointer*)todo;
+		*(pointer*)todo = next;
+		index++;
+		goto markInFrame;
+	}
+	assert (FALSE);
+}
+
+static inline void markGlobal (GC_state s, pointer *pp) {
+	s->markSize += mark (s, *pp, MARK_MODE);
+}
+
+static inline void unmarkGlobal (GC_state s, pointer *pp) {
+       	mark (s, *pp, UNMARK_MODE);
+}
+
+static inline void threadInternal (GC_state s, pointer *pp) {
+	Header *headerp;
+
+	headerp = GC_getHeaderp(*pp);
+	*(Header*)pp = *headerp;
+	*headerp = (Header)pp;
+}
+
+static inline void updateForwardPointers (GC_state s) {
+	pointer back;
+	pointer front;
+	uint gap;
+	Header header;
+	Header *headerp;
+	pointer p;
+	uint size;
+	uint totalSize;
+
+	if (DEBUG_MARK)
+		fprintf (stderr, "updateForwardPointers\n");
+	back = s->frontier;
+	front = s->base;
+	gap = 0;
+	totalSize = 0;
+updateObject:
+	if (front == back)
+		goto done;
+	headerp = (Header*)front;
+	header = *headerp;
+	if (0 == header) {
+		/* We're looking at an array.  Move to the header. */
+		p = front + 3 * WORD_SIZE;
+		headerp = (Header*)(p - WORD_SIZE);
+		header = *headerp;
+	} else 
+		p = front + WORD_SIZE;
+	if (1 == (1 & header)) {
+		/* It's a header */
+		if (MARK_MASK & header) {
+			/* It is marked, but has no forward pointers. 
+			 * Thread internal pointers.
+			 */
+thread:
+			size = objectSize (s, p);
+			if (DEBUG_MARK)
+	       			fprintf (stderr, "threading 0x%08x of size %u\n", 
+						(uint)p, size);
+			totalSize += size;
+			front += size;
+			GC_foreachPointerInObject (s, threadInternal, p);
+			goto updateObject;
+		} else {
+			/* It's not marked. */
+			size = objectSize (s, p);
+			gap += size;
+			front += size;
+			goto updateObject;
+		}
+	} else {
+		pointer new;
+
+		assert (0 == (3 & header));
+		/* It's a pointer.  This object must be live.  Fix all the
+		 * forward pointers to it, store its header, then thread
+                 * its internal pointers.
+		 */
+		new = p - gap;
+		do {
+			pointer cur;
+
+			cur = (pointer)header;
+			header = *(word*)cur;
+			*(word*)cur = (word)new;
+		} while (0 == (1 & header));
+		*headerp = header;
+		goto thread;
+	}
+done:
+	s->markSize = totalSize;
+	return;
+}
+
+static inline void updateBackwardPointersAndSlide (GC_state s) {
+	pointer back;
+	pointer front;
+	uint gap;
+	Header header;
+	pointer p;
+	uint size;
+	uint totalSize;
+
+	if (DEBUG_MARK)
+		fprintf (stderr, "updateBackwardPointersAndSlide\n");
+	back = s->frontier;
+	front = s->base;
+	gap = 0;
+	totalSize = 0;
+updateObject:
+	if (front == back)
+		goto done;
+	header = *(word*)front;
+	if (0 == header) {
+		/* We're looking at an array.  Move to the header. */
+		p = front + 3 * WORD_SIZE;
+		header = *(Header*)(p - WORD_SIZE);
+	} else 
+		p = front + WORD_SIZE;
+	if (1 == (1 & header)) {
+		/* It's a header */
+		if (MARK_MASK & header) {
+			/* It is marked, but has no backward pointers to it.
+			 * Unmark it.
+			 */
+unmark:
+			*GC_getHeaderp (p) = header & ~MARK_MASK;
+			size = objectSize (s, p);
+			if (DEBUG_MARK)
+				fprintf (stderr, "unmarking 0x%08x of size %u\n", 
+						(uint)p, size);
+			/* slide */
+			unless (0 == gap)
+				if (DEBUG_MARK)
+					fprintf (stderr, "sliding 0x%08x down %u\n",
+							(uint)front, gap);
+			copy (front, front - gap, size);
+			totalSize += size;
+			front += size;
+			goto updateObject;
+		} else {
+			size = objectSize (s, p);
+			/* It's not marked. */
+			gap += size;
+			front += size;
+			goto updateObject;
+		}
+	} else {
+		pointer new;
+
+		assert (0 == (3 & header));
+		/* It's a pointer.  This object must be live.  Fix all the
+		 * forward pointers to it.  Then unmark it.
+		 */
+		new = p - gap;
+		do {
+			pointer cur;
+
+			cur = (pointer)header;
+			header = *(word*)cur;
+			*(word*)cur = (word)new;
+		} while (0 == (1 & header));
+		/* The header will be stored by umark. */
+		goto unmark;
+	}
+done:
+	return;
+}
+
+static inline void markCompact (GC_state s) {
+	GC_foreachGlobal (s, markGlobal);
+	GC_foreachGlobal (s, threadInternal);
+	updateForwardPointers (s);
+	updateBackwardPointersAndSlide (s);
+}
+
+uint GC_size (GC_state s, pointer root) {
+	uint res;
+
+	if (DEBUG_MARK)
+		fprintf (stderr, "GC_size marking\n");
+	res = mark (s, root, MARK_MODE);
+	if (DEBUG_MARK)
+		fprintf (stderr, "GC_size unmarking\n");
+	mark (s, root, UNMARK_MODE);
+	return res;
 }

@@ -22,7 +22,7 @@ signature CONST =
       structure SmallIntInf:
 	 sig
 	    val isSmall: IntInf.t -> bool
-	    val toWord: IntInf.t -> word
+	    val toWord: IntInf.t -> word option
 	    val fromWord: word -> IntInf.t
 	 end
 

@@ -7,8 +7,8 @@
  *)
 Group
 
-functor CCodeGen
-functor x86CodeGen
+functor CCodegen
+functor x86Codegen
   
 is
 

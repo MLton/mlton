@@ -10,7 +10,7 @@ static const char GC_worldTerminator = '\000';
 /*                   GC_saveWorld                    */
 /* ------------------------------------------------- */
 
-void GC_saveWorld(GC_state s, int fd, void (*saveGlobals)(int fd)) {
+void GC_saveWorld (GC_state s, int fd) {
 	char buf[80];
 
 	GC_enter(s);
@@ -27,7 +27,7 @@ void GC_saveWorld(GC_state s, int fd, void (*saveGlobals)(int fd)) {
 	swriteUint(fd, (uint)s->currentThread);
 	swriteUint(fd, (uint)s->signalHandler);
  	swrite(fd, s->base, s->frontier - s->base);
-	(*saveGlobals)(fd);
+	(*s->saveGlobals)(fd);
 	GC_leave(s);
 }
 

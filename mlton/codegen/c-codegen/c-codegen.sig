@@ -23,4 +23,12 @@ signature C_CODEGEN =
 				     print: string -> unit,
 				     done: unit -> unit}
 		   } -> unit
+      val outputDeclarations: {additionalMainArgs: string list,
+			       includes: string list,
+			       maxFrameIndex: int,
+			       name: string,
+			       print: string -> unit,
+			       program: Machine.Program.t,
+			       rest: unit -> unit
+			       } -> unit
    end

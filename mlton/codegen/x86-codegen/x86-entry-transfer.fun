@@ -39,9 +39,6 @@ struct
 	fun isHandler l = case get l
 			    of SOME (Block.T {entry = Entry.Handler _, ...}) => true
 			     | _ => false
-	fun isRuntime l = case get l
-			    of SOME (Block.T {entry = Entry.Runtime _, ...}) => true
-			     | _ => false
 	fun isCReturn l = case get l
 			    of SOME (Block.T {entry = Entry.CReturn _, ...}) => true
 			     | _ => false
@@ -67,10 +64,10 @@ struct
 			| NONE => true)
 		 | Transfer.Return {...} => true
 	         | Transfer.Raise {...} => true
-	         | Transfer.Runtime {return, ...} 
-	         => isRuntime return
-	         | Transfer.CCall {return, ...}
-	         => isCReturn return))
+	         | Transfer.CCall {return, ...} =>
+		      (case return of
+			  NONE => true
+			| SOME l => isCReturn l)))
 	before destroy ()
       end
 

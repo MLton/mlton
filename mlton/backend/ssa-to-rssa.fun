@@ -13,6 +13,126 @@ open S
 structure S = Ssa
 
 open Rssa
+local
+   open Runtime
+in
+   structure GCField = GCField
+end
+
+structure CFunction =
+   struct
+      open CFunction
+
+      local
+	 fun make name = vanilla {name = name,
+				  returnTy = SOME Type.double}
+      in
+	 val cosh = make "cosh"
+	 val sinh = make "sinh"
+	 val tanh = make "tanh"
+	 val pow = make "pow"
+	 val copysign = make "copysign"
+	 val frexp = make "frexp"
+	 val modf = make "modf"
+      end
+
+      local
+	 fun make (name, i) =
+	    T {bytesNeeded = SOME i,
+	       ensuresBytesFree = false,
+	       mayGC = false,
+	       maySwitchThreads = false,
+	       modifiesFrontier = true,
+	       modifiesStackTop = false,
+	       name = name,
+	       needsArrayInit = false,
+	       returnTy = SOME Type.pointer}
+      in
+	 val intInfAdd = make ("IntInf_do_add", 2)
+	 val intInfGcd = make ("IntInf_do_gcd", 2)
+	 val intInfMul = make ("IntInf_do_mul", 2)
+	 val intInfNeg = make ("IntInf_do_neg", 1)
+	 val intInfQuot = make ("IntInf_do_quot", 2)
+	 val intInfRem = make ("IntInf_do_rem", 2)
+	 val intInfSub = make ("IntInf_do_sub", 2)
+	 val intInfToString = make ("IntInf_do_toString", 2)
+      end
+
+      local
+	 fun make name = vanilla {name = name,
+				  returnTy = SOME Type.int}
+      in
+	 val intInfCompare = make "IntInf_compare"
+	 val intInfEqual = make "IntInf_equal"
+      end
+ 
+      val copyCurrentThread =
+	 T {bytesNeeded = NONE,
+	    ensuresBytesFree = false,
+	    mayGC = true,
+	    maySwitchThreads = false,
+	    modifiesFrontier = true,
+	    modifiesStackTop = true,
+	    name = "GC_copyCurrentThread",
+	    needsArrayInit = false,
+	    returnTy = NONE}
+
+      val copyThread =
+	 T {bytesNeeded = NONE,
+	    ensuresBytesFree = false,
+	    mayGC = true,
+	    maySwitchThreads = false,
+	    modifiesFrontier = true,
+	    modifiesStackTop = true,
+	    name = "GC_copyThread",
+	    needsArrayInit = false,
+	    returnTy = NONE}
+
+      val exit =
+	 T {bytesNeeded = NONE,
+	    ensuresBytesFree = false,
+	    mayGC = false,
+	    maySwitchThreads = false,
+	    modifiesFrontier = true,
+	    modifiesStackTop = true,
+	    name = "MLton_exit",
+	    needsArrayInit = false,
+	    returnTy = NONE}
+
+      val gcArrayAllocate =
+	 T {bytesNeeded = NONE,
+	    ensuresBytesFree = true,
+	    mayGC = true,
+	    maySwitchThreads = false,
+	    modifiesFrontier = true,
+	    modifiesStackTop = true,
+	    name = "GC_arrayAllocate",
+	    needsArrayInit = false,
+	    returnTy = SOME Type.pointer}
+
+      val threadSwitchTo =
+	 T {bytesNeeded = NONE,
+	    ensuresBytesFree = false,
+	    mayGC = true,
+	    maySwitchThreads = true,
+	    modifiesFrontier = true,
+	    modifiesStackTop = true,
+	    name = "Thread_switchTo",
+	    needsArrayInit = false,
+	    returnTy = NONE}
+
+      val worldSave =
+	 T {bytesNeeded = NONE,
+	    ensuresBytesFree = false,
+	    mayGC = true,
+	    maySwitchThreads = false,
+	    modifiesFrontier = true,
+	    modifiesStackTop = true,
+	    name = "GC_saveWorld",
+	    needsArrayInit = false,
+	    returnTy = NONE}
+   end
+
 datatype z = datatype Operand.t
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
@@ -274,9 +394,11 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				 transfer = transfer}
 	    fun switchIP (numEnum, pointer: Label.t): Transfer.t =
 	       Transfer.SwitchIP
-	       {test = varOp test,
-		int = transferToLabel (enum (CastInt test, numEnum)),
-		pointer = pointer}
+	       {int = transferToLabel (enum (CastInt (Var {var = test,
+							   ty = Type.pointer}),
+					     numEnum)),
+		pointer = pointer,
+	       test = varOp test}
 	    fun tail (l: Label.t, args: Operand.t vector): Label.t =
 	       if 0 = Vector.length args
 		  then l
@@ -378,7 +500,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	     | S.Cases.Word8 l => doit (l, Cases.Char, Word8.toChar)
 	     | S.Cases.Con cases =>
 		  (case (Vector.length cases, default) of
-		      (0, NONE) => Bug
+		      (0, NONE) => Transfer.bug
 		    | _ => 
 			 let
 			    val (tycon, tys) = S.Type.tyconArgs (varType test)
@@ -494,7 +616,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				  success = noOverflow,
 				  ty = ty}
 	       end
-	  | S.Transfer.Bug => Transfer.Bug
+	  | S.Transfer.Bug => Transfer.bug
 	  | S.Transfer.Call {func, args, return} =>
 	       let
 		  datatype z = datatype Return.t
@@ -522,11 +644,35 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	  | S.Transfer.Raise xs => Transfer.Raise (vos xs)
 	  | S.Transfer.Return xs => Transfer.Return (vos xs)
 	  | S.Transfer.Runtime {args, prim, return} =>
-	       Transfer.Runtime {args = vos args,
-				 prim = prim,
-				 return = eta (profileInfo,
-					       return,
-					       Kind.Runtime {prim = prim})}
+	       let
+		  datatype z = datatype Prim.Name.t
+	       in
+		  case Prim.name prim of
+		     MLton_halt =>
+			Transfer.CCall {args = vos args,
+					func = CFunction.exit,
+					return = NONE}
+		   | Thread_copyCurrent =>
+			let
+			   val func = CFunction.copyCurrentThread
+			   val l =
+			      newBlock {args = Vector.new0 (),
+					kind = Kind.CReturn {func = func},
+					profileInfo = profileInfo,
+					statements = Vector.new0 (),
+					transfer = Goto {args = Vector.new0 (),
+							 dst = return}}
+			in
+			   Transfer.CCall
+			   {args = (Vector.concat
+				    [Vector.new1 Operand.GCState, vos args]),
+			    func = func,
+			    return = SOME l}
+			end
+		   | _ => Error.bug (concat
+				     ["strange prim in SSA Runtime transfer ",
+				      Prim.toString prim])
+	       end
       fun translateFormals v =
 	 Vector.keepAllMap (v, fn (x, t) =>
 			    Option.map (toType t, fn t => (x, t)))
@@ -625,24 +771,11 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				 add (PrimApp {dst = dst (),
 					       prim = prim,
 					       args = varOps args})
-			      fun array0 (numElts: Operand.t) =
-				 add
-				 (PrimApp
-				  {dst = dst (),
-				   prim = Prim.array_allocate,
-				   args = Vector.new3
-				          (numElts,
-					   Operand.word 
-					   (Word.fromInt Runtime.array0Size),
-					   Operand.word 
-					   (Runtime.arrayHeader
-					    {numBytesNonPointers = 0,
-					     numPointers = 0}))})
 			      datatype z = datatype Prim.Name.t
 			      fun bumpCanHandle n =
 				 let
 				    val canHandle =
-				       Operand.Runtime RuntimeOperand.CanHandle
+				       Operand.Runtime GCField.CanHandle
 				    val res = Var.newNoname ()
 				 in
 				    [Statement.PrimApp
@@ -655,53 +788,79 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				      src = Operand.Var {var = res,
 							 ty = Type.int}}]
 				 end
-			   in
-			      if isSome (Prim.bytesNeeded prim)
-				 then
-				    let
-				    in
-				       split (Vector.new0 (), Kind.Jump,
-					      PrimApp {dst = dst (),
-						       prim = prim,
-						       args = varOps args} 
-					      :: ss,
-					      fn l =>
-					      ([], Transfer.Goto {dst = l,
-								  args = Vector.new0 ()}))
-				    end
-			      else if Prim.impCall prim
-				 then
-				    let
-				       val (formals, returnTy) =
-					    case dst () of
-					       NONE => (Vector.new0 (), NONE)
-					     | SOME (x, t) =>
-						  (Vector.new1 (x, t), SOME t)
-				    in
-				       split
-				       (formals,
-					Kind.CReturn {prim = prim},
-					ss,
-					fn l =>
-					([],
-					 Transfer.CCall {args = vos args,
-							 prim = prim,
-							 return = l,
-							 returnTy = returnTy}))
-				    end
-			      else if Prim.entersRuntime prim
-				 then
+			      fun ccallGen
+				 {args: Operand.t vector,
+				  func: CFunction.t,
+				  prefix: Transfer.t -> (Statement.t list
+							 * Transfer.t)} =
+				 let
+				    val (formals, returnTy) =
+				       case dst () of
+					  NONE => (Vector.new0 (), NONE)
+					| SOME (x, t) =>
+					     (Vector.new1 (x, t), SOME t)
+				 in
 				    split
-				    (Vector.new0 (),
-				     Kind.Runtime {prim = prim},
-				     ss,
+				    (formals, Kind.CReturn {func = func}, ss,
 				     fn l =>
-				     ([], Transfer.Runtime {args = vos args,
-							    prim = prim,
-							    return = l}))
-			      else
-				 case Prim.name prim of
-				    Array_array =>
+				     let
+					val t =
+					   Transfer.CCall {args = args,
+							   func = func,
+							   return = SOME l}
+					fun isolate () =
+					   (* Put the CCall in its own block
+					    * so that limit check insertion
+					    * can put a limit check just before
+					    * it.
+					    *)
+					   let
+					      val l =
+						 newBlock
+						 {args = Vector.new0 (),
+						  kind = Kind.Jump,
+						  profileInfo = profileInfo,
+						  statements = Vector.new0 (),
+						  transfer = t}
+					   in
+					      prefix
+					      (Transfer.Goto
+					       {args = Vector.new0 (),
+						dst = l})
+					   end
+				     in
+					case CFunction.bytesNeeded func of
+					   NONE => prefix t
+					 | SOME i =>
+					      Operand.caseBytes
+					      (Vector.sub (args, i),
+					       {big = fn _ => isolate (),
+						small = fn _ => prefix t})
+				     end)
+				 end
+			      fun ccall {args, func} =
+				  ccallGen {args = args,
+					    func = func,
+					    prefix = fn t => ([], t)}
+			      fun simpleCCall (f: CFunction.t) =
+				 ccall {args = vos args,
+					func = f}
+			      fun array0 (numElts: Operand.t) =
+				 add
+				 (PrimApp
+				  {args = (Vector.new3
+					   (numElts,
+					    Operand.word 
+					    (Word.fromInt Runtime.array0Size),
+					    Operand.ArrayHeader
+					    {numBytesNonPointers = 0,
+					     numPointers = 0})),
+				   dst = dst (),
+				   prim = Prim.arrayAllocate})
+			      datatype z = datatype Prim.Name.t
+			   in
+			      case Prim.name prim of
+				 Array_array =>
   let
      val numElts = a 0
      val numEltsOp = Operand.Var {var = numElts, ty = Type.int}
@@ -720,46 +879,55 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	   in
 	      if 0 = np andalso 0 = nbnp
 		 then array0 numEltsOp
-	      else
+	      else if not (!Control.inlineArrayAllocation)
+                 then ccall {args = (Vector.new4
+				     (Operand.GCState,
+				      Operand.EnsuresBytesFree,
+				      numEltsOp,
+				      ArrayHeader {numBytesNonPointers = nbnp,
+						   numPointers = np})),
+			     func = CFunction.gcArrayAllocate}
+              else
 		 let
-		    val (numBytes, numElts, continue) =
+		    val (shouldSplit, numBytes, numElts, continue) =
 		       case varInt numElts of
 			  SOME n =>
-			     (* Compute the number of bytes in the array now, since
-			      * the number of elements is a known constant.
+			     (* Compute the number of bytes in the array now,
+			      * since the number of elements is a known constant.
 			      *)
 			     let
 				val numBytes =
 				   Runtime.wordAlign
 				   (MLton.Word.addCheck
 				    (Word.fromInt Runtime.arrayHeaderSize,
-				     (MLton.Word.mulCheck (Word.fromInt n,
-							   Word.fromInt bytesPerElt))))
+				     (MLton.Word.mulCheck
+				      (Word.fromInt n,
+				       Word.fromInt bytesPerElt))))
 				   handle Overflow => Runtime.allocTooLarge
 			     in
-				(Operand.word numBytes,
+				(numBytes > 0w512,
+				 Operand.word numBytes,
 				 Operand.int n,
-				 fn alloc =>
-				 ([], Goto {args = Vector.new0 (),
-					    dst = alloc}))
+				 fn l => ([], Goto {dst = l,
+						    args = Vector.new0 ()}))
 			     end 
 			| NONE =>
 			     let
-				val numEltsOp =
-				   Operand.Var {var = numElts, ty = Type.int}
 				val numBytes = Var.newNoname ()
 				val numBytes' = Var.newNoname ()
 				val numBytesOp' =
 				   Operand.Var {var = numBytes', ty = Type.word}
 				val numEltsWord = Var.newNoname ()
 				val numEltsWordOp =
-				   Operand.Var {var = numEltsWord, ty = Type.word}
+				   Operand.Var {var = numEltsWord,
+						ty = Type.word}
 				val conv =
 				   PrimApp {args = Vector.new1 numEltsOp,
 					    dst = SOME (numEltsWord, Type.word),
 					    prim = Prim.word32FromInt}
 			     in
-				(Operand.Var {var = numBytes, ty = Type.word},
+				(true,
+				 Operand.Var {var = numBytes, ty = Type.word},
 				 numEltsOp,
 				 fn alloc =>
 				 if 1 = nbnp
@@ -769,22 +937,25 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				       in
 					  ([conv,
 					    PrimApp
-					    {args = (Vector.new2 (Operand.word 0w3,
-								  numEltsWordOp)),
+					    {args = (Vector.new2
+						     (Operand.word 0w3,
+						      numEltsWordOp)),
 					     dst = SOME (numEltsP3, Type.word),
 					     prim = Prim.word32Add},
 					    PrimApp
 					    {args = (Vector.new2
-						     (Operand.word (Word.notb 0w3),
-						      Operand.Var {var = numEltsP3,
-								   ty = Type.word})),
+						     (Operand.word
+						      (Word.notb 0w3),
+						      Operand.Var
+						      {var = numEltsP3,
+						       ty = Type.word})),
 					     dst = SOME (numBytes', Type.word),
 					     prim = Prim.word32Andb},
 					    PrimApp
 					    {args = (Vector.new2
 						     (Operand.word
 						      (Word.fromInt 
-						       (Runtime.arrayHeaderSize)),
+						       Runtime.arrayHeaderSize),
 						      numBytesOp')),
 					     dst = SOME (numBytes, Type.word),
 					     prim = Prim.word32Add}],
@@ -813,9 +984,10 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				    in
 				      ([conv],
 				       Transfer.Arith
-				       {args = Vector.new2 (Operand.word
-							    (Word.fromInt bytesPerElt),
-							    numEltsWordOp),
+				       {args = (Vector.new2
+						(Operand.word
+						 (Word.fromInt bytesPerElt),
+						 numEltsWordOp)),
 					dst = numBytes',
 					overflow = allocTooLarge (),
 					prim = Prim.word32MulCheck,
@@ -823,190 +995,246 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					ty = Type.word})
 				    end)
 			     end
+		    val s =
+		       PrimApp {args = (Vector.new3
+					(numElts,
+					 numBytes,
+					 Operand.ArrayHeader
+					 {numBytesNonPointers = nbnp,
+					  numPointers = np})),
+				dst = dst (),
+				prim = Prim.arrayAllocate}
 		 in
-		    split (Vector.new0 (), Kind.Jump,
-			   PrimApp {dst = dst (),
-				    prim = Prim.array_allocate,
-				    args = Vector.new3
-				           (numElts,
-					    numBytes,
-					    Operand.word
-					    (Runtime.arrayHeader
-					     {numBytesNonPointers = nbnp,
-					      numPointers = np}))}
-			   :: ss,
-			   continue)
+		    if shouldSplit
+		       then split (Vector.new0 (), Kind.Jump, s :: ss, continue)
+		    else add s
 		 end
 	   end
   end
-				  | Array_array0 => array0 (Operand.int 0)
-				  | Array_sub =>
-				       (case targ () of
-					   NONE => none ()
-					 | SOME t => sub t)
-				  | Array_update =>
-				       (case targ () of
-					   NONE => none ()
-					 | SOME t =>
-					      add (Move {dst = arrayOffset t,
-							 src = varOp (a 2)}))
-				  | MLton_bogus =>
-				       (case toType ty of
-					   NONE => none ()
-					 | SOME t =>
-					      let
-						 val c = Operand.Const
-					      in
-						 move
-						 (case Type.dest t of
-						     Type.Char =>
-							c (Const.fromChar #"\000")
-						   | Type.Double =>
-							c (Const.fromReal "0.0")
-						   | Type.Int =>
-							c (Const.fromInt 0)
-						   | Type.Pointer =>
-							Operand.Pointer 1
-						   | Type.Uint =>
-							c (Const.fromWord 0w0))
-					      end)
-				  | MLton_eq =>
-				       (case targ () of
-					   NONE => move (Operand.int 1)
-					 | SOME _ => normal ())
-				  | Ref_assign =>
-				       (case targ () of
-					   NONE => none ()
-					 | SOME ty =>
-					      add
-					      (Move {dst = Offset {base = a 0,
-								   bytes = 0,
-								   ty = ty},
-						     src = varOp (a 1)}))
-				  | Ref_deref =>
-				       (case targ () of
-					   NONE => none ()
-					 | SOME ty =>
-					      move (Offset {base = a 0,
-							    bytes = 0,
-							    ty = ty}))
-				  | Ref_ref =>
-				       let
-					  val (ys, ts) =
-					     case targ () of
-						NONE => (Vector.new0 (),
-							 Vector.new0 ())
-					      | SOME t => (Vector.new1 (a 0),
-							   Vector.new1 (SOME t))
-				       in allocate (ys, sortTypes (0, ts))
-				       end
-				  | String_sub => sub Type.char
-				  | Thread_atomicBegin =>
-				       (* assert(gcState.canHandle >= 0);
-					* gcState.canHandle++;
-					* if (gcState.signalIsPending)
-					*         setLimit(&gcState);
-					*)
-				       split
-				       (Vector.new0 (), Kind.Jump, ss, fn l =>
-					let
-					   fun doit (dst, prim, a, b) =
-					      let
-						 val tmp = Var.newNoname ()
-					      in
-						 Vector.new2
-						 (Statement.PrimApp
-						  {args = Vector.new2 (a, b),
-						   dst = SOME (tmp, Type.word),
-						   prim = prim},
-						  Statement.Move
-						  {dst = Operand.Runtime dst,
-						   src = (Operand.Var
-							  {var = tmp,
-							   ty = Type.word})})
-					      end
-					   datatype z = datatype RuntimeOperand.t
-					   val statements =
-					      Vector.concat
-					      [doit (LimitPlusSlop,
-						     Prim.word32Add,
-						     Operand.Runtime Base,
-						     Operand.Runtime FromSize),
-					       doit (Limit,
-						     Prim.word32Sub,
-						     Operand.Runtime LimitPlusSlop,
-						     Operand.word
-						     (Word.fromInt
-						      Runtime.limitSlop))]
-					   val l' =
-					      newBlock
-					      {args = Vector.new0 (),
-					       kind = Kind.Jump,
-					       profileInfo = profileInfo,
-					       statements = statements,
-					       transfer = (Transfer.Goto
-							   {args = Vector.new0 (),
-							    dst = l})}
-					in
-					   (bumpCanHandle 1,
+			       | Array_array0 => array0 (Operand.int 0)
+			       | Array_sub =>
+				    (case targ () of
+					NONE => none ()
+				      | SOME t => sub t)
+			       | Array_update =>
+				    (case targ () of
+					NONE => none ()
+				      | SOME t =>
+					   add (Move {dst = arrayOffset t,
+						      src = varOp (a 2)}))
+			       | FFI name =>
+				    if Option.isNone (Prim.numArgs prim)
+				       then normal ()
+				    else
+				       simpleCCall
+				       (CFunction.vanilla
+					{name = name,
+					 returnTy =
+					 Option.map
+					 (var, valOf o toType o varType)})
+			       | GC_collect =>
+				    ccall
+				    {args = Vector.new5 (Operand.GCState,
+							 Operand.int 0,
+							 Operand.bool true,
+							 Operand.File,
+							 Operand.Line),
+				     func = (CFunction.gc
+					     {maySwitchThreads = false})}
+			       | IntInf_add => simpleCCall CFunction.intInfAdd
+			       | IntInf_compare =>
+				    simpleCCall CFunction.intInfCompare
+			       | IntInf_equal =>
+				    simpleCCall CFunction.intInfEqual
+			       | IntInf_gcd => simpleCCall CFunction.intInfGcd
+			       | IntInf_mul => simpleCCall CFunction.intInfMul
+			       | IntInf_neg => simpleCCall CFunction.intInfNeg
+			       | IntInf_quot => simpleCCall CFunction.intInfQuot
+			       | IntInf_rem => simpleCCall CFunction.intInfRem
+			       | IntInf_sub => simpleCCall CFunction.intInfSub
+			       | IntInf_toString =>
+				    simpleCCall CFunction.intInfToString
+			       | MLton_bogus =>
+				    (case toType ty of
+					NONE => none ()
+				      | SOME t =>
+					   let
+					      val c = Operand.Const
+					   in
+					      move
+					      (case Type.dest t of
+						  Type.Char =>
+						     c (Const.fromChar #"\000")
+						| Type.Double =>
+						     c (Const.fromReal "0.0")
+						| Type.Int =>
+						     c (Const.fromInt 0)
+						| Type.Pointer =>
+						     Operand.Pointer 1
+						| Type.Uint =>
+						     c (Const.fromWord 0w0))
+					   end)
+			       | MLton_bug => simpleCCall CFunction.bug
+			       | MLton_eq =>
+				    (case targ () of
+					NONE => move (Operand.int 1)
+				      | SOME _ => normal ())
+			       | MLton_size => simpleCCall CFunction.size
+			       | Real_Math_cosh => simpleCCall CFunction.cosh
+			       | Real_Math_sinh => simpleCCall CFunction.sinh
+			       | Real_Math_tanh => simpleCCall CFunction.tanh
+			       | Real_Math_pow => simpleCCall CFunction.pow
+			       | Real_copysign => simpleCCall CFunction.copysign
+			       | Real_frexp => simpleCCall CFunction.frexp
+			       | Real_modf => simpleCCall CFunction.modf
+			       | Ref_assign =>
+				    (case targ () of
+					NONE => none ()
+				      | SOME ty =>
+					   add
+					   (Move {dst = Offset {base = a 0,
+								bytes = 0,
+								ty = ty},
+						  src = varOp (a 1)}))
+			       | Ref_deref =>
+				    (case targ () of
+					NONE => none ()
+				      | SOME ty =>
+					   move (Offset {base = a 0,
+							 bytes = 0,
+							 ty = ty}))
+			       | Ref_ref =>
+				    let
+				       val (ys, ts) =
+					  case targ () of
+					     NONE => (Vector.new0 (),
+						      Vector.new0 ())
+					   | SOME t => (Vector.new1 (a 0),
+							Vector.new1 (SOME t))
+				    in allocate (ys, sortTypes (0, ts))
+				    end
+			       | String_equal =>
+				    simpleCCall CFunction.stringEqual
+			       | String_sub => sub Type.char
+			       | Thread_atomicBegin =>
+				    (* assert(gcState.canHandle >= 0);
+				     * gcState.canHandle++;
+				     * if (gcState.signalIsPending)
+				     *         setLimit(&gcState);
+				     *)
+				    split
+				    (Vector.new0 (), Kind.Jump, ss, fn l =>
+				     let
+					fun doit (dst, prim, a, b) =
+					   let
+					      val tmp = Var.newNoname ()
+					   in
+					      Vector.new2
+					      (Statement.PrimApp
+					       {args = Vector.new2 (a, b),
+						dst = SOME (tmp, Type.word),
+						prim = prim},
+					       Statement.Move
+					       {dst = (Operand.CastWord
+						       (Operand.Runtime dst)),
+						src = (Operand.Var
+						       {var = tmp,
+							ty = Type.word})})
+					   end
+					datatype z = datatype GCField.t
+					val statements =
+					   Vector.concat
+					   [doit (LimitPlusSlop,
+						  Prim.word32Add,
+						  Operand.Runtime Base,
+						  Operand.Runtime FromSize),
+					    doit (Limit,
+						  Prim.word32Sub,
+						  Operand.Runtime LimitPlusSlop,
+						  Operand.word
+						  (Word.fromInt
+						   Runtime.limitSlop))]
+					val l' =
+					   newBlock
+					   {args = Vector.new0 (),
+					    kind = Kind.Jump,
+					    profileInfo = profileInfo,
+					    statements = statements,
+					    transfer = (Transfer.Goto
+							{args = Vector.new0 (),
+							 dst = l})}
+				     in
+					(bumpCanHandle 1,
+					 Transfer.iff
+					 (Operand.Runtime SignalIsPending,
+					  {falsee = l,
+					   truee = l'}))
+				     end)
+			       | Thread_atomicEnd =>
+				    (* gcState.canHandle--;
+				     * assert(gcState.canHandle >= 0);
+				     * if (gcState.signalIsPending
+				     *     and 0 == gcState.canHandle)
+				     *         gcState.limit = 0;
+				     *)
+				    split
+				    (Vector.new0 (), Kind.Jump, ss, fn l =>
+				     let
+					datatype z = datatype GCField.t
+					val statements =
+					   Vector.new1
+					   (Statement.Move
+					    {dst = (Operand.CastWord
+						    (Operand.Runtime Limit)),
+					     src = Operand.word 0w0})
+					val l'' =
+					   newBlock
+					   {args = Vector.new0 (),
+					    kind = Kind.Jump,
+					    profileInfo = profileInfo,
+					    statements = statements,
+					    transfer =
+					    Transfer.Goto
+					    {args = Vector.new0 (),
+					     dst = l}}
+					val l' =
+					   newBlock
+					   {args = Vector.new0 (),
+					    kind = Kind.Jump,
+					    profileInfo = profileInfo,
+					    statements = Vector.new0 (),
+					    transfer =
 					    Transfer.iff
-					    (Operand.Runtime SignalIsPending,
-					     {falsee = l,
-					      truee = l'}))
-					end)
-				  | Thread_atomicEnd =>
-				       (* gcState.canHandle--;
-					* assert(gcState.canHandle >= 0);
-					* if (gcState.signalIsPending
-					*     and 0 == gcState.canHandle)
-					*         gcState.limit = 0;
-					*)
-				       split
-				       (Vector.new0 (), Kind.Jump, ss, fn l =>
-					let
-					   datatype z = datatype RuntimeOperand.t
-					   val statements =
-					      Vector.new1
-					      (Statement.Move
-					       {dst = Operand.Runtime Limit,
-						src = Operand.word 0w0})
-					   val l'' =
-					      newBlock
-					      {args = Vector.new0 (),
-					       kind = Kind.Jump,
-					       profileInfo = profileInfo,
-					       statements = statements,
-					       transfer =
-					       Transfer.Goto
-					       {args = Vector.new0 (),
-						dst = l}}
-					   val l' =
-					      newBlock
-					      {args = Vector.new0 (),
-					       kind = Kind.Jump,
-					       profileInfo = profileInfo,
-					       statements = Vector.new0 (),
-					       transfer =
-					       Transfer.iff
-					       (Operand.Runtime CanHandle,
-						{truee = l,
-						 falsee = l''})}
-					in
-					   (bumpCanHandle ~1,
-					    Transfer.iff
-					    (Operand.Runtime SignalIsPending,
-					     {falsee = l,
-					      truee = l'}))
-					end)
-				  | Thread_canHandle =>
-				       move (Operand.Runtime
-					     RuntimeOperand.CanHandle)
-				  | Vector_fromArray => move (varOp (a 0))
-				  | Vector_sub =>
-				       (case targ () of
-					   NONE => none ()
-					 | SOME t => sub t)
-				  | _ => normal ()
+					    (Operand.Runtime CanHandle,
+					     {truee = l,
+					      falsee = l''})}
+				     in
+					(bumpCanHandle ~1,
+					 Transfer.iff
+					 (Operand.Runtime SignalIsPending,
+					  {falsee = l,
+					   truee = l'}))
+				     end)
+			       | Thread_canHandle =>
+				    move (Operand.Runtime GCField.CanHandle)
+			       | Thread_copy =>
+				    ccall {args = (Vector.concat
+						   [Vector.new1 Operand.GCState,
+						    vos args]),
+					   func = CFunction.copyThread}
+			       | Thread_switchTo =>
+				    simpleCCall CFunction.threadSwitchTo
+			       | Vector_fromArray => move (varOp (a 0))
+			       | Vector_sub =>
+				    (case targ () of
+					NONE => none ()
+				      | SOME t => sub t)
+			       | World_save =>
+				    ccall {args = (Vector.new2
+						   (Operand.GCState,
+						    Vector.sub (vos args, 0))),
+					   func = CFunction.worldSave}
+			       | _ => normal ()
 			   end
 		      | S.Exp.Select {tuple, offset} =>
 			   (case Vector.sub (#offsets (tupleInfo (varType tuple)),

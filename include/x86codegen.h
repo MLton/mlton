@@ -64,20 +64,23 @@
 #define Float(c, f) globaldouble[c] = f;
 #define EndFloats }
 
-#define Main(ufh, fs, bl, mfs, mfi, mg, ml, reserveEsp)			\
+#define Main(ufh, fs, bl, mfs, mfi, mot, mg, ml, reserveEsp)		\
 extern pointer ml;							\
 int main(int argc, char **argv) {					\
 	pointer jump;  							\
-	gcState.useFixedHeap = ufh;					\
-	gcState.fromSize = fs;						\
 	gcState.bytesLive = bl;						\
-	gcState.maxFrameSize = mfs;					\
-	gcState.magic = mg;						\
-	gcState.numGlobals = cardof(globalpointer);			\
-	gcState.globals = globalpointer;				\
-	gcState.maxFrameIndex = mfi;					\
 	gcState.frameLayouts = frameLayouts;				\
+	gcState.fromSize = fs;						\
+	gcState.globals = globalpointer;				\
+	gcState.magic = mg;						\
+	gcState.maxFrameIndex = mfi;					\
+	gcState.maxFrameSize = mfs;					\
+	gcState.maxObjectTypeIndex = mot;				\
 	gcState.native = TRUE;       					\
+	gcState.numGlobals = cardof(globalpointer);			\
+	gcState.objectTypes = objectTypes;				\
+	gcState.saveGlobals = &saveGlobals;				\
+	gcState.useFixedHeap = ufh;					\
 	MLton_init(argc, argv, &loadGlobals);				\
 	if (gcState.isOriginal) {					\
  		/* The (> 1) check is so that the C compiler can	\

@@ -17,6 +17,13 @@ functor x86LiveTransfers(S: X86_LIVE_TRANSFERS_STRUCTS) : X86_LIVE_TRANSFERS =
 struct
   open S
   open x86
+
+  local
+     open Runtime
+  in
+     structure CFunction = CFunction
+  end
+
   structure LiveSet = x86Liveness.LiveSet
   structure LiveInfo = x86Liveness.LiveInfo
   open x86JumpInfo
@@ -302,10 +309,8 @@ struct
 		      => ()
 		      | Raise {...}
 		      => ()
-		      | Runtime {return, ...}
-		      => (doit'' return)
 		      | CCall {return, ...}
-		      => (doit' return)
+		      => Option.app (return, doit')
 		 end)
 
 	val _
@@ -459,11 +464,11 @@ struct
 			       = case transfer
 				   of Tail _ => (I.PosInfinity, NONE)
 				    | NonTail _ => (I.PosInfinity, NONE)
-				    | Runtime _ => (I.PosInfinity, NONE)
 				    | Return _ => (I.PosInfinity, NONE)
 				    | Raise _ => (I.PosInfinity, NONE)
-			            | CCall _
-				    => if Size.class (MemLoc.size temp) <> Size.INT
+			            | CCall {func, ...}
+				    => if CFunction.mayGC func
+				          orelse Size.class (MemLoc.size temp) <> Size.INT
 					 then (I.PosInfinity, NONE)
 					 else default ()
 				  | _ => default ()
@@ -536,9 +541,9 @@ struct
 			    of Func {...} => (I.PosInfinity, NONE)
 			     | Cont {...} => (I.PosInfinity, NONE)
 			     | Handler {...} => (I.PosInfinity, NONE)
-			     | Runtime {...} => (I.PosInfinity, NONE)
-			     | CReturn {...}
-			     => if Size.class (MemLoc.size temp) <> Size.INT
+			     | CReturn {func, ...}
+			     => if (CFunction.mayGC func
+				    orelse Size.class (MemLoc.size temp) <> Size.INT)
 				  then (I.PosInfinity, NONE)
 				  else default ()
 			     | _ => default ()
@@ -806,10 +811,8 @@ struct
 			 => ()
 			 | Raise {...}
 			 => ()
-			 | Runtime {return, ...}
-			 => (doit'' return)
 			 | CCall {return, ...}
-			 => (doit'' return)
+			 => Option.app (return, doit'')
 		    end
 	    end
 
@@ -923,10 +926,10 @@ struct
 		       => ()
 		       | Raise {...}
 		       => ()
-		       | Runtime {return, ...}
-		       => (doit'' return)
-		       | CCall {return, ...}
-		       => (doit' return)
+		       | CCall {func, return, ...}
+		       => if CFunction.mayGC func
+			     then Option.app (return, doit'')
+			  else Option.app (return, doit')
 		  end
 	    in
 	      case !defed
