@@ -29,6 +29,7 @@ signature STRING =
       val deleteSurroundingWhitespace: t -> t
       val dquote: t (* " *)
       val dropl: t * (char -> bool) -> t
+      val dropFirst: t -> t
       val dropLast: t -> t
       val dropPrefix: t * int -> t
       val dropSuffix: t * int -> t

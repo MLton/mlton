@@ -81,9 +81,12 @@ fun suffix (s, len) =
    substring1 (s, {start = length s - len,
 		  length = len})
    
+fun dropPrefix (s,n) =
+   substring1 (s, {start=n, length = length s - n})
 fun dropSuffix (s,n) =
    substring1 (s, {start=0, length = length s - n})
 
+fun dropFirst s = dropPrefix (s, 1)
 fun dropLast s = dropSuffix (s, 1)
 
 fun dropPrefix (s, n) =

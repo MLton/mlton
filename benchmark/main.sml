@@ -108,147 +108,97 @@ local
   val n = Counter.new 0
   fun make (compiler, args) =
       let val exe = "a.out"
+	  val args = List.keepAll (args, not o String.isEmpty)
       in fn {bench} => compileSizeRun {args = args @ ["-o", exe, batch bench],
 				       compiler = compiler,
 				       exe = exe,
 				       doTextPlusData = true}
       end
 in
-  val makeMLton
-    = fn arg => let
-		  open Regexp
+  val makeMLton =
+    fn arg =>
+    let
+      fun splitLeading (s, p) =
+	case String.peeki (s, fn (i, c) => not (p c)) of
+	  NONE => (s, "")
+	| SOME (i, c) => (String.extract (s, 0, SOME i),
+			  String.extract (s, i, NONE))
+      fun dropLeadingSpace s = #2 (splitLeading (s, Char.isSpace))
 
-		  val compilerSave = Save.new ()
-		  val compiler = save (star (isChar (fn #"-" => true
-		                                      | #"/" => true
-						      | c => Char.isAlphaNum c)),
-				       compilerSave)
-		  val comilerC = compileDFA compiler
+      val arg = dropLeadingSpace arg
+      val (compiler, arg) = splitLeading (arg, not o Char.isSpace)
+      val arg = dropLeadingSpace arg
 
-		  val flagSave = Save.new ()
-		  val flag = seq [oneOrMore (char #" "),
-				  save (seq [char #"-",
-					     star (isChar (fn #"-" => true
-					                    | c => Char.isAlphaNum c))],
-					flagSave)]
-		  val flagC = compileDFA flag
+      fun doit (arg, flagss) =
+	if String.isEmpty arg
+	  then (arg, flagss)
+	  else case String.sub (arg, 0) of
+	         #"'" => let
+			   val arg = String.dropFirst arg
+			   val (flag, arg) = splitLeading (arg, fn c => c <> #"'")
+			   val arg = String.dropFirst arg
+			   val arg = dropLeadingSpace arg
+			   val flagss = List.map (flagss, fn flags => flag::flags)
+			 in
+			   doit (arg, flagss)
+			 end
+	       | #"{" => let
+			   val arg = String.dropFirst arg
+			   val arg = dropLeadingSpace arg
 
-		  val optionSave = Save.new ()
-		  val option = save (star (isChar (fn c => Char.isAlphaNum c)),
-				     optionSave)
-		  val optionC = compileDFA option
+			   fun doit' (arg, flagss') =
+			     let
+			       val (arg, flagss) = doit (arg, flagss)
+			       val flagss' = flagss @ flagss'
+			     in
+			       case String.sub (arg, 0) of
+				 #"," => let
+					   val arg = String.dropFirst arg
+					   val arg = dropLeadingSpace arg
+					 in
+					   doit' (arg, flagss')
+					 end
+			       | #"}" => let
+					   val arg = String.dropFirst arg
+					   val arg = dropLeadingSpace arg
+					 in
+					   (arg, flagss')
+					 end
+			       | _ => raise (Fail "parsing -mlton arg")
+			     end
 
-		  val optionsSave = Save.new ()
-		  val options = save (or [option,
-					  seq [char #"{",
-					       star (char #" "),
-					       option,
-					       star (seq [star (char #" "),
-							  char #",",
-							  star (char #" "),
-							  option]),
-					       star (char #" "),
-					       char #"}"]],
-				      optionsSave)
-		  val optionsC = compileDFA options
-
-		  val flagAndOptionsSave = Save.new ()
-		  val flagAndOptions
-		    = save (seq [flag,
-				 or [null,
-				     seq [oneOrMore (char #" "),
-					  options]]],
-			    flagAndOptionsSave)
-		  val flagAndOptionsC = compileDFA flagAndOptions
-
-		  val flagsAndOptionsSave = Save.new ()
-		  val flagsAndOptions 
-		    = save (star flagAndOptions,
-			    flagsAndOptionsSave)
-		  val flagsAndOptionsC = compileDFA flagsAndOptions
-
-		  val compilerAndFlagsAndOptions
-		    = seq [compiler,
-			   flagsAndOptions]
-		  val compilerAndFlagsAndOptionsC 
-		    = compileDFA compilerAndFlagsAndOptions
-
-		  val (compiler, flags)
-		    = case Compiled.matchAll(compilerAndFlagsAndOptionsC,
-					     arg)
-			of NONE => ("mlton", [])
-			 | SOME m
-			 => let
-			      val {exists, lookup, peek}
-				= Match.stringFuns m
-
-			      val compiler = lookup compilerSave
-			      val flagsAndOptions = lookup flagsAndOptionsSave
-
-			      fun doit_flags (flags, flagsAndOptions)
-				= case Compiled.matchLong(flagAndOptionsC, 
-							  flagsAndOptions,
-							  0)
-				    of NONE => flags
-				     | SOME m
-				     => let
-					  val {exists, lookup, peek}
-					    = Match.stringFuns m
-
-					  val flag = lookup flagSave
-
-					  val {start, length} = Match.startLength m
-					  val flagsAndOptions
-					    = String.extract(flagsAndOptions,
-							     start + length,
-							     NONE)
-					in
-					  case peek optionsSave
-					    of NONE => doit_flags
-					               ([[flag,""]]::flags,
-							flagsAndOptions)
-					     | SOME options
-					     => let
-						  val options
-						    = String.fields
-						      (options,
-						       fn #"{" => true
-						        | #" " => true
-						        | #"," => true
-						        | #"}" => true
-						        | _ => false)
-						  val options
-						    = List.removeAll
-						      (options, String.isEmpty)
-						in
-						  doit_flags
-						  ((List.map
-						    (options,
-						     fn option => [flag, option]))
-						   ::flags,
-						   flagsAndOptions)
-						end
-					end
-			    in
-			      (compiler,
-			       doit_flags ([], flagsAndOptions))
-			    end
-		  val (compiler, flags)
-		    = (compiler, 
-		       List.cross (List.rev flags))
-		  val flags = List.map(flags, List.concat)
-		  fun map(nil, f) = nil
-		    | map(h::t, f) = (f h)::(map(t, f))
-		in
-		  map
-		  (flags,
-		   fn flags
-		    => {name = concat (compiler:: 
-				       " "::
-				       (List.separate(flags, " "))),
-			abbrv = "MLton" ^ (Int.toString (Counter.next n)),
-			test = make (compiler, flags)})
-		end
+			   val (arg, flagss') = doit' (arg, [])
+			 in
+			   doit (arg, flagss')
+			 end
+	       | #"," => (arg, flagss)
+	       | #"}" => (arg, flagss)
+	       | _ => let
+			val (flag, arg) = splitLeading
+			                  (arg, fn #"," => false
+					         | #"}" => false
+					         | c => not (Char.isSpace c))
+			val arg = dropLeadingSpace arg
+			val flagss = if flag = "#"
+				       then List.map (flagss, fn flags => tl flags)
+				       else List.map (flagss, fn flags => flag::flags)
+		      in
+			doit (arg, flagss)
+		      end
+      val (arg, flagss) = doit (arg, [[]])
+      val flagss = List.revMap (flagss, List.rev)
+    in
+      List.map
+      (flagss,
+       fn flags => 
+       {name = concat (compiler::" "::
+		       (List.separate(List.map(flags, fn flag =>
+					       if String.contains (flag, #" ")
+						 then "'" ^ flag ^ "'"
+						 else flag), " "))),
+	abbrv = "MLton" ^ (Int.toString (Counter.next n)),
+	test = make (compiler, flags)})
+    end
 end
 
 fun kitCompile {bench} =
@@ -474,7 +424,7 @@ fun main args =
 		  let open Signal
 		  in ignore pipe
 		  end
-	       fun r2s r = Real.format (r, Real.Format.fix (SOME 1))
+	       fun r2s r = Real.format (r, Real.Format.fix (SOME 2))
 	       val i2s = Int.toCommaString
 	       val s2s = fn s => s
 	       val failures = ref []
@@ -619,8 +569,8 @@ fun main args =
 				      File.temp
 				      {prefix = "tmp", suffix = "err"}
 				   val {compile, run, size} =
-				      ignoreOutput
-				      (fn () => test {bench = bench})
+				     ignoreOutput
+				     (fn () => test {bench = bench})
 				   val _ =
 				      if name = base
 					 andalso Option.isNone run
@@ -633,8 +583,8 @@ fun main args =
 					    File.foldLines
 					    (outTmpFile, NONE, fn (s, v) =>
 					     let val s = String.removeTrailing
-						(s, fn c => 
-						 Char.equals (c, Char.newline))
+					                 (s, fn c => 
+							  Char.equals (c, Char.newline))
 					     in
 						case doit s of
 						   NONE => v
@@ -647,8 +597,8 @@ fun main args =
 					    File.foldLines
 					    (errTmpFile, NONE, fn (s, v) =>
 					     let val s = String.removeTrailing
-						(s, fn c => 
-						 Char.equals (c, Char.newline))
+						         (s, fn c => 
+							  Char.equals (c, Char.newline))
 					     in
 						case doit s of
 						   NONE => v
