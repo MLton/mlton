@@ -19,8 +19,8 @@ struct
 	        for (0, 10, fn _ =>
 	        for (0, 10, fn _ =>
 	        for (0, 10, fn _ =>
+	        for (0, 10, fn _ =>
 		for (0, 10, fn _ => 
-	        for (0, 10, fn _ => 
 		for (0, 10, fn _ => 
 		     x := !x + 1)))))))
       in
@@ -28,5 +28,5 @@ struct
 	  then raise Fail "bug"
 	  else ()
       end
-  val doit = fn () => for (0, 100, fn _ => doit ())
+  val doit = fn () => for (0, 1000, fn _ => doit ())
 end

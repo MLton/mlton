@@ -3215,7 +3215,7 @@ structure Main : BMARK =
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 200
+       in loop 1500
        end
     fun testit strm = TextIO.output(strm, concat[
 	    Int.toString (Nucleic.anticodon_length ()), "\n"

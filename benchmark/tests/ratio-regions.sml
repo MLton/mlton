@@ -1,5 +1,6 @@
 (*
- * Translated from Jeff Siskind's Scheme code by Stephen Weeks (sweeks@acm.org).
+ * Translated from Jeff Siskind's Scheme code by Stephen Weeks
+ * (sweeks@sweeks.com).
  * Here is the description from Jeff Siskind (qobi@research.nj.nec.com)
  *
  * It is an implementation of Ratio
@@ -586,8 +587,8 @@ fun rao_ratio_region(c_right, c_down, w, lg_max_v) =
 in
 
 fun doit() = 
-   let val height = 256
-      val width = 256
+   let val height = 512
+      val width = 512
       val lg_max_v = 15
       val c_right = make_matrix(height, width - 1, ~1)
       val c_down = make_matrix(height - 1, width, ~1)

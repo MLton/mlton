@@ -1,4 +1,4 @@
-(* Written by Stephen Weeks (sweeks@acm.org). *)
+(* Written by Stephen Weeks (sweeks@sweeks.com). *)
 
 structure Main =
    struct
@@ -21,14 +21,14 @@ structure Main =
 			NONE => i
 		      | SOME c => loop (if c = #"\n" then i + 1 else i)
 		  val n = loop 0
-		  val _ = print (concat [Int.toString n, " newlines\n"])
+		  val _ = if n <> 100000 then raise Fail "bug" else ()
 		  val _ = closeIn ins
 	       in n
 	       end
 	    val rec loop =
 	       fn 0 => ()
 		| n => (wc f; loop (n - 1))
-	    val _ = loop 90
+	    val _ = loop 4000
 	    val _ = OS.FileSys.remove f
 	 in ()
 	 end

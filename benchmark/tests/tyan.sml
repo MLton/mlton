@@ -1,4 +1,4 @@
-(* Modified by sweeks@acm.org 2001-10-03 to go in the MLton benchmark suite.
+(* Modified by sweeks@sweeks.com 2001-10-03 to go in the MLton benchmark suite.
  * Hardwired in the u6 list of polynomials and added a loop.
  *)
 (* tyan.sml
@@ -1011,6 +1011,6 @@ structure Main =
 		  then ()
 	       else (gb u6; loop (n - 1))
 	 in
-	    loop 20
+	    loop 80
 	 end
    end

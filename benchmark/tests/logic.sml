@@ -363,7 +363,7 @@ structure Main : BMARK =
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 10
+       in loop 40
        end
 
   end; (* Main *)

@@ -292,7 +292,7 @@ fun test np =
 fun loop_np i np = if i > 15 then () else
   (test np; loop_np (i+1) (np*2))
 
-fun doit () = loop_np 1 16
+fun doit () = loop_np 1 256
 
 fun testit outstream = doit()
 
@@ -304,7 +304,7 @@ fun testit outstream = doit()
 		     then ()
 		  else (doit();
 			loop(n-1))
-	    in loop 5
+	    in loop 1
 	    end
 
 end

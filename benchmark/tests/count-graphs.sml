@@ -522,7 +522,7 @@ fun doOne arg = (
    structure Main =
       struct
 	 fun doit() =
-	    List.app doOne ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+	    List.app doOne ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]
 
 	 val doit =
 	    fn () =>
@@ -532,6 +532,6 @@ fun doOne arg = (
 		     then ()
 		  else (doit();
 			loop(n-1))
-	    in loop 10
+	    in loop 3
 	    end
       end

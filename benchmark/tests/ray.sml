@@ -452,7 +452,7 @@ structure Main : BMARK =
 		   loop (n - 1)
 		end
        in
-	  loop 10
+	  loop 100
        end
 
     fun testit _ = ()

@@ -1,4 +1,4 @@
-(* Written by Stephen Weeks (sweeks@acm.org). *)
+(* Written by Stephen Weeks (sweeks@sweeks.com). *)
 fun merge (l1: int list, l2) =
    case (l1, l2) of
       ([], _) => l2
@@ -25,7 +25,6 @@ structure Main =
 	       if n = 0
 		  then ()
 	       else (test (); loop (n - 1))
-	 in loop 1000
+	 in loop 2000
 	 end
    end
-	    

@@ -1,4 +1,4 @@
-(* Written by Stephen Weeks (sweeks@acm.org). *)
+(* Written by Stephen Weeks (sweeks@sweeks.com). *)
 structure Array = Array2
    
 fun 'a fold (n : int, b : 'a, f : int * 'a -> 'a) =
@@ -37,11 +37,11 @@ structure Main =
    struct
       fun doit () =
 	 let
-	    val dim = 200
+	    val dim = 1000
 	    val a = Array.tabulate Array.RowMajor (dim, dim, fn (r, c) =>
 						   Real.fromInt (r + c))
 	 in
-	    if Real.== (2646700.0, Array2.sub (mult (a, a), 0, 0))
+	    if Real.== (332833500.0, Array2.sub (mult (a, a), 0, 0))
 	       then ()
 	    else raise Fail "bug"
 	 end
@@ -54,6 +54,6 @@ structure Main =
 		  then ()
 	       else (doit ();
 		     loop (n-1))
-	 in loop 10
+	 in loop 1
 	 end
    end

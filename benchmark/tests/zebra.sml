@@ -1,4 +1,4 @@
-(* Copyright Stephen Weeks (sweeks@acm.org).  1999-6-21.
+(* Copyright Stephen Weeks (sweeks@sweeks.com).  1999-6-21.
  *
  * This code solves the following "zebra" puzzle, and prints the solution.
  * There are 120^5 ~= 24 billion possibilities, so exhaustive search should
@@ -293,6 +293,6 @@ structure Main =
 		  then ()
 	       else (search ()
 		     ; loop (n - 1))
-	 in loop 500
+	 in loop 15000
 	 end
    end

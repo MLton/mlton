@@ -594,7 +594,7 @@ fun Group_precedence op1 op2 =
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 50
+       in loop 500
        end
     
     fun testit _ = ()

@@ -243,8 +243,8 @@ structure Test =
       end
     in List.app f tests
     end
-    val BLOCK_LEN = 1000
-    val BLOCK_COUNT = 100000
+    val BLOCK_LEN = 10000
+    val BLOCK_COUNT = 1000000
     fun time_test () = let
       val block = Word8Vector.tabulate (BLOCK_LEN,Word8.fromInt)
       fun loop (n,s) =

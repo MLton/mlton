@@ -926,8 +926,6 @@ structure Main =
 	        then ()
 	     else (Main.doit ();
 		   loop(n-1))
-       in loop 50
+       in loop 1500
        end
   end;
-
-val _ = Main.doit()

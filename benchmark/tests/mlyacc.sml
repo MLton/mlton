@@ -7286,7 +7286,7 @@ structure Main : BMARK =
 		then ()
 	     else (ParseGen.parseGen(s^"/DATA/ml.grm");
 		   loop(n - 1))
-       in loop 100
+       in loop 500
        end
     fun testit _ = ParseGen.parseGen(s^"/DATA/ml.grm")
   end

@@ -1,4 +1,4 @@
-(* Written by Stephen Weeks (sweeks@acm.org). *)
+(* Written by Stephen Weeks (sweeks@sweeks.com). *)
 (*
  * Random number generator based on page 302 of Numerical Recipes in C.
  *)
@@ -59,10 +59,10 @@ structure Main =
 	    fun loop (i, w) =
 	       if i = 0
 		  then
-		     if w = 0wxEAD56832
+		     if w = 0wx2373ABE5
 			then ()
 		     else raise Fail "bug"
 	       else loop (i - 1, w + word())
-	 in loop (50000000, 0w0)
+	 in loop (500000000, 0w0)
 	 end
    end

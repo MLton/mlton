@@ -1,4 +1,4 @@
-(* Written by Stephen Weeks (sweeks@acm.org). *)
+(* Written by Stephen Weeks (sweeks@sweeks.com). *)
 
 structure Main =
    struct
@@ -22,8 +22,9 @@ structure Main =
 		      fun loop (s, ns) =
 			 case reader s of
 			    NONE => (closeIn ins
-				     ; print (concat [Int.toString ns,
-						    " newlines\n"])
+				     ; if ns <> 100000
+					  then raise Fail "bug"
+				       else ()
 				     ; NONE)
 			  | SOME (c, s') =>
 			       loop (s', if c = #"\n" then ns + 1 else ns)
@@ -34,7 +35,7 @@ structure Main =
 	    val rec loop =
 	       fn 0 => ()
 		| n => (wc f; loop (n - 1))
-	    val _ = loop 90
+	    val _ = loop 3000
 	    val _ = OS.FileSys.remove f
 	 in ()
 	 end

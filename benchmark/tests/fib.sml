@@ -6,7 +6,7 @@ val rec fib =
 structure Main =
    struct
       fun doit () =
-	 if 39088169 <> fib 38
+	 if 701408733 <> fib 44
 	    then raise Fail "bug"
 	 else ()
    end

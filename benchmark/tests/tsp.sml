@@ -475,6 +475,7 @@ structure Main : sig
 
     fun testit strm = printLength (strm, doit' (!problemSz))
 
+    val _ = problemSz := 2097151
     fun doit () = doit' (!problemSz)
 
     val doit =
@@ -485,7 +486,7 @@ structure Main : sig
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 30
+       in loop 4
        end
 
   end

@@ -1,4 +1,4 @@
-(* Minor tweaks by Stephen Weeks (sweeks@acm.org) on 2001-07-17 to turn into a
+(* Minor tweaks by Stephen Weeks (sweeks@sweeks.com) on 2001-07-17 to turn into a
  * benchmark.
  * Added rand function.
  *)
@@ -2510,7 +2510,7 @@ functor DLXSimulatorFun (structure RF : REGISTERFILE;
 	| PerformJType ((TRAP, 0wx00000003 : Word32.word), (PC, rf, mem)) 
 	  = let
 	      val x = TextIO.print "Value? ";
-	      val s = TextIO.inputLine TextIO.stdIn;
+	      val s = "10" (* TextIO.inputLine TextIO.stdIn; *)
 	      val i = Int.fromString s;
 	      val input = if isSome i
 			    then valOf i
@@ -2824,9 +2824,22 @@ val _ = DLXSimulatorC1.run_prog GCD
 
 structure Main =
    struct
-      fun doit 0 = ()
-	| doit n = (DLXSimulatorC1.run_prog Simple;
-		    doit (n - 1))
+      fun doit () =
+	 (DLXSimulatorC1.run_prog Simple
+	  ; DLXSimulatorC1.run_prog Twos
+	  ; DLXSimulatorC1.run_prog Abs
+	  ; DLXSimulatorC1.run_prog Fact
+	  ; DLXSimulatorC1.run_prog GCD
+	  )
 
-      val doit = fn () => doit 500
+      val doit =
+	 fn () =>
+	 let
+	    fun loop n =
+	       if n = 0
+		  then ()
+	       else (doit();
+		     loop(n-1))
+	 in loop 50
+	 end
    end

@@ -1,5 +1,5 @@
 (*
- * Written by sweeks@acm.org on 1999-08-31.
+ * Written by sweeks@sweeks.com on 1999-08-31.
  *
  * A solution to mpuz. (Try M-x mpuz in emacs.)
  * This solution is very loosely based on an OCAML solution posted to
@@ -135,6 +135,6 @@ structure Main =
 		  then ()
 	       else (doit();
 		     loop(n-1))
-	 in loop 2
+	 in loop 20
 	 end
    end

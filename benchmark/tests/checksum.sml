@@ -1,4 +1,4 @@
-(* Author: sweeks@acm.org
+(* Author: sweeks@sweeks.com
  * This code is based on the following paper.
  * The Performance of FoxNet 2.0
  * Herb Derby

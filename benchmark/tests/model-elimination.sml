@@ -8794,5 +8794,3 @@ end;
 val doit = main
 
 end
-
-val _ = Main.doit

@@ -1318,7 +1318,7 @@ structure Main : BMARK =
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 60
+       in loop 300
        end
 
     fun testit _ = LexGen.lexGen (s^"DATA/ml.lex")

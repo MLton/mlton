@@ -2925,7 +2925,7 @@ structure Main =
 		  fun constructor size = RTensor.new([size,size],1.0)
 	       in
 		  print "Real tensors: (+, *, /, +*, *+)\n";
-		  test_operator constructor operators [100,200,300];
+		  test_operator constructor operators [100,200,300,400,500,600];
 		  print "\n\n"
 	       end
 	    
@@ -2936,10 +2936,9 @@ structure Main =
 	    fun constructor size = CTensor.new([size,size],CNumber.one)
 	 in
 	    print "Real tensors: (+, *, /, +*, *+)\n";
-	    test_operator constructor operators [100,200,300];
+	    test_operator constructor operators [100,200,300,400,500,600];
 	    print "\n\n"
 	 end
 	 in ()
 	 end
    end
-

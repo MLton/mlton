@@ -1,4 +1,4 @@
-(* Written by Stephen Weeks (sweeks@acm.org). *)
+(* Written by Stephen Weeks (sweeks@sweeks.com). *)
 structure Plist:
    sig
       type t
@@ -50,6 +50,6 @@ structure Main =
 	       if i = 0
 		  then ()
 	       else (inner (); loop (i - 1))
-	 in loop 20
+	 in loop 1000
 	 end
    end

@@ -1,6 +1,6 @@
 (*
  * 2001-2-14.
- * Stephen Weeks (sweeks@acm.org) generated this file from the hamlet SML
+ * Stephen Weeks (sweeks@sweeks.com) generated this file from the hamlet SML
  * interpreter written by Andreas Rossberg.
  * The sources are from http://www.ps.uni-sb.de/~rossberg/hamlet/hamlet.tar
  *
@@ -22895,7 +22895,7 @@ structure Main =
 		     val _ = Main.main' ["-x"]
 		  in loop (n - 1)
 		  end
-	    val _ = loop 5
+	    val _ = loop 50
 	 in ()
 	 end
    end

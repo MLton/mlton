@@ -1,4 +1,4 @@
-(* Written by Stephen Weeks (sweeks@acm.org). *)
+(* Written by Stephen Weeks (sweeks@sweeks.com). *)
 
 structure Main =
    struct
@@ -13,7 +13,7 @@ structure Main =
 
       fun doit () =
 	 let
-	    val v = tabulate (10000, fn i => i)
+	    val v = tabulate (200000, fn i => i)
 	    fun loop n =
 	       if n < 0
 		  then ()

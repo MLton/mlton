@@ -6,7 +6,7 @@ fun fib n = fib'(n,0,1)
 structure Main =
    struct
       fun doit() =
-	 if 39088169 <> fib 38
+	 if 701408733 <> fib 44
 	    then raise Fail "bug"
 	 else ()
 
@@ -18,6 +18,6 @@ structure Main =
 	      then ()
 	      else (doit();
 		    loop(n-1))
-	in loop 50000000
+	in loop 200000000
 	end
    end

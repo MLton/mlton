@@ -3688,6 +3688,6 @@ structure Main : BMARK =
 		     then ()
 		  else (doit();
 			loop(n-1))
-	    in loop 15
+	    in loop 150
 	    end
    end

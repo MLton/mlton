@@ -1,6 +1,6 @@
 (*
- * Translated by Stephen Weeks (sweeks@acm.org) 2000-10-11 from the PLClub OCaml
- * winning entry to the 2000 ICFP programming contest.
+ * Translated by Stephen Weeks (sweeks@sweeks.com) 2000-10-11 from the
+ * PLClub OCaml winning entry to the 2000 ICFP programming contest.
  *)
 
 (* raytrace.sml *)
@@ -2373,5 +2373,15 @@ structure Main =
       fun doit () =
 	 Eval.f (Program.read (TextIO.openIn "DATA/chess.gml"))
 	 handle _ => ()
-   end
 
+      val doit =
+	 fn () =>
+	 let
+	    fun loop n =
+	       if n = 0
+		  then ()
+	       else (doit();
+		     loop(n-1))
+	 in loop 10
+	 end
+   end

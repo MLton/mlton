@@ -13,7 +13,7 @@ structure Main : BMARK =
     val y_base = 1.25
     val side = 2.5
 
-    val sz = 4096
+    val sz = 32768
     val maxCount = 2048
 
     val delta = side / (real sz)
@@ -64,7 +64,7 @@ structure Main : BMARK =
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 10
+       in loop 2
        end
     fun testit outstrm = (
 	  sum_iterations := 0;

@@ -1,10 +1,10 @@
-(* Written by Stephen Weeks (sweeks@acm.org). *)
+(* Written by Stephen Weeks (sweeks@sweeks.com). *)
 
 structure Main =
    struct
       fun doit () =
 	 let
-	    val len = 1000
+	    val len = 20000
 	    val sum = len * (len - 1)
 	    val v = Vector.tabulate (len, fn i => i)
 	    fun loop n =

@@ -923,7 +923,7 @@ fun print_state ((v1,v2),(r,z),alpha,s,rho,p,q,epsilon,theta,deltat,c) = (
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 10
+       in loop 100
        end
 
 

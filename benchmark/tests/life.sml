@@ -139,7 +139,7 @@ structure Main : BMARK =
 
     fun show pr = (app (fn s => (pr s; pr "\n"))) o plot o alive
 
-    fun doit () = show (fn _ => ()) (nthgen gun 5000)
+    fun doit () = show (fn _ => ()) (nthgen gun 250000)
 
     val doit =
        fn () =>
@@ -149,7 +149,7 @@ structure Main : BMARK =
 		then ()
 	     else (doit();
 		   loop(n-1))
-       in loop 5
+       in loop 1
        end
     
     fun testit strm = show (fn c => TextIO.output (strm, c)) (nthgen gun 50)
