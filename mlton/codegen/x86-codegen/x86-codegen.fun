@@ -424,6 +424,12 @@ struct
 				    of Fail s => s
 				     | _ => "?"))
 
+(*
+	      val x86.Chunk.T {blocks, ...} = chunk
+	      val _ = List.foreach
+		      (blocks, x86.Block.printBlock)
+*)
+
 	      val unallocated_assembly : x86.Assembly.t list list
 		= (if !Control.Native.newGenTransfer
 		     then x86GenerateTransfersNew.generateTransfers

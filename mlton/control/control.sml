@@ -199,6 +199,9 @@ structure Native =
       val newGenTransfer = control {name = "native new gen transfer",
 				    default = false,
 				    toString = Bool.toString}
+      val ready = control {name = "native new gen transfer ready",
+			   default = true,
+			   toString = Bool.toString}
 
       val future = control {name = "native future",
 			    default = 64,

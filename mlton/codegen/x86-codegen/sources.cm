@@ -9,7 +9,6 @@ is
 ../../control/sources.cm
 ../../backend/sources.cm
 
-word.sml
 x86-codegen.sig
 x86.sig
 x86.fun

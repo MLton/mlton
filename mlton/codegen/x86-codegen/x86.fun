@@ -3520,6 +3520,10 @@ struct
       val handler = Handler
       val runtime = Runtime
       val creturn = CReturn
+
+      val isNear = fn Jump _ => true
+	            | CReturn _ => true
+	            | _ => false
     end
 
   structure ProfileInfo =

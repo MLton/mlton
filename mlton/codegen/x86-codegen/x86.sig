@@ -1038,6 +1038,8 @@ signature X86 =
 	val runtime : {label: Label.t,
 		       frameInfo: FrameInfo.t} -> t
 	val creturn : {label: Label.t} -> t
+
+	val isNear : t -> bool
       end
 
     structure ProfileInfo :
