@@ -16,14 +16,6 @@ structure Word: WORD32 =
 
       val equals = op =
 
-(*       val equals =
- * 	 Trace.trace2 ("Word.equals", layout, layout, Bool.layout) equals
- *)
-
-(*       val toIntX =
- * 	 Trace.trace ("Word.toIntX", layout, Layout.str o Int.toString) toIntX
- *)
-	 
       val fromChar = Word8.toWord o Byte.charToByte
       val toChar = Byte.byteToChar o Word8.fromWord
 
@@ -54,6 +46,37 @@ structure Word: WORD32 =
 
       val fromWord8 = Word8.toWord
       val toWord8 = Word8.fromWord
+
+      fun log2 (w: word): int =
+	 if w = 0w0
+	    then Error.bug "Word.log2 0"
+	 else
+	    let
+	       fun loop (n, s, ac): word =
+		  if n = 0w1
+		     then ac
+		  else
+		     let
+			val (n, ac) =
+			   if n >= << (0w1, s)
+			      then (>> (n, s), ac + s)
+			   else (n, ac)
+		     in
+			loop (n, >> (s, 0w1), ac)
+		     end
+	    in
+	       toInt (loop (w, 0w16, 0w0))
+	    end
+
+      fun roundDownToPowerOfTwo (w: word) = << (0w1, fromInt (log2 w))
+
+      fun roundUpToPowerOfTwo w =
+	 let
+	    val w' = roundDownToPowerOfTwo w
+	 in
+	    if w = w'
+	       then w
+	    else w' * 0w2
+	 end
    end
 
-structure ZWord = Word

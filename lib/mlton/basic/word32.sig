@@ -6,7 +6,6 @@
  *)
 type int = Pervasive.Int.int
 
-
 signature WORD32 =
    sig
       include WORD
@@ -16,8 +15,11 @@ signature WORD32 =
        * and f 3 should return the most significant.
        *)
       val fromWord8s: (int -> Word8.t) -> t
+      val log2: t -> int
       val toWord8: t -> Word8.t
       val rotateLeft: t * t -> t
+      val roundDownToPowerOfTwo: t -> t
+      val roundUpToPowerOfTwo: t -> t
    end
 
 functor TestWord32 (S: WORD32 where type t = Word32.word): sig end =
