@@ -889,7 +889,7 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
 		   let
 		      val e = Graph.addEdge (keepGraph, {from = from', to = to})
 		      val _ = List.push (edgeOptions e,
-					 EdgeOption.Style Dot.Dotted)
+					 EdgeOption.Style Dot.Dashed)
 		   in
 		      ()
 		   end))))
