@@ -13,6 +13,13 @@ open S
 type int = Int.t
 
 structure Set = DisjointSet
+structure Graph = DirectedGraph
+local
+   open Graph
+in
+   structure LoopForest = LoopForest
+   structure Node = Node
+end
    
 fun zoneFunction (f, ac) =
    let
@@ -23,84 +30,40 @@ fun zoneFunction (f, ac) =
 	 then f :: ac
       else
 	 let
-	    datatype count = Many | None | One of Label.t
-	    fun inc (r: count ref, l: Label.t): unit =
-	       case !r of
-		  Many => ()
-		| None => r := One l
-		| One _ => r := Many
-	    val {get = labelInfo: Label.t -> {class: {displayed: bool ref,
-						      size: int} Set.t,
-					      preds: count ref,
-					      succs: count ref},
-		 ...} =
-	       Property.get
-	       (Label.plist,
-		Property.initFun
-		(fn _ => {class = Set.singleton {displayed = ref false,
-						 size = 1},
-			  preds = ref None,
-			  succs = ref None}))
-	    (* Count predecessors and successors. *)
+	    val G = Graph.new ()
+	    type node = unit Node.t
+	    val {get = labelInfo: Label.t -> {node: node}, ...} =
+	       Property.get (Label.plist,
+			     Property.initFun (fn _ => {node = Graph.newNode G}))
+	    val labelNode = #node o labelInfo
+	    (* Build control-flow graph. *)
 	    val () =
 	       Vector.foreach
 	       (blocks, fn Block.T {label, transfer, ...} =>
 		let
-		   val {succs, ...} = labelInfo label
+		   val {node = from, ...} = labelInfo label
 		in
 		   Transfer.foreachLabel
 		   (transfer, fn l =>
-		    (inc (succs, l)
-		     ; inc (#preds (labelInfo l), label)))
+		    ignore (Graph.addEdge (G, {from = from, to = labelNode l})))
 		end)
-	    (* Put in classes. *)
-	    val () =
-	       Vector.foreach
-	       (blocks, fn Block.T {label, transfer, ...} =>
-		let
-		   val {class = c, succs, ...} = labelInfo label
-		in
-		   case !succs of
-		      One l =>
-			 let
-			    val {class = c', preds, ...} = labelInfo l
-			 in
-			    case !preds of
-			       One _ =>
-				  let
-				     val {displayed = d, size = s} = Set.value c
-				     val {size = s', ...} = Set.value c'
-				     val () = Set.union (c, c')
-				     val () =
-					Set.setValue
-					(c, {displayed = d, size = s + s'})
-				  in
-				     ()
-				  end
-			     | _ => ()
-			 end
-		    | _ => ()
-		end)
+	    fun layout f =
+	       let
+		  val {loops, notInLoop} = LoopForest.dest f
+	       in
+		  Layout.record
+		  [("notInLoop", Int.layout (Vector.length notInLoop)),
+		   ("loops", Vector.layout (layout o #child) loops)]
+	       end
+	    datatype count = Many | None | One of Label.t
 	    (* Display classes. *)
 	    val () =
 	       Control.diagnostics
 	       (fn display =>
 		(display (Func.layout name)
-		 ; (Vector.foreach
-		    (blocks, fn Block.T {label, ...} =>
-		     let
-			val {displayed, size} =
-			   Set.value (#class (labelInfo label))
-		     in
-			if size > 1 andalso !displayed
-			   then ()
-			else (displayed := true; display (Int.layout size))
-		     end))))
-	 (* Cut into zones based on size. *)
-	    (* Compute live variables at each cut node. *)
-	    (* Build a procedure for each zone, passing in the lives that
-	     * it needs.  Make the outer procedure into a trampoline.
-	     *)
+		 ; display (layout
+			    (Graph.loopForestSteensgaard
+			     (G, {root = labelNode start})))))
 	 in
 	    f :: ac
 	 end
