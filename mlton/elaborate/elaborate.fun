@@ -142,8 +142,12 @@ fun elaborateProgram (Ast.Program.T decs, E: Env.t) =
 			case FctArg.node arg of
 			   FctArg.Structure (arg, argSig) => (arg, argSig, body)
 			 | FctArg.Spec spec =>
-			      let val strid = Strid.fromString "ZZZNewStridZZZ"
-			      in (strid,
+			      let
+				 val strid =
+				    Strid.fromString ("ZZZNewStridZZZ",
+						      Region.bogus)
+			      in
+				 (strid,
 				  Sigexp.spec spec,
 				  Strexp.lett
 				  (Strdec.openn (Vector.new1

@@ -291,9 +291,9 @@ fun constrain (e, tyOpt, r) =
 local
    fun make name =
       Aexp.longvid (Ast.Longvid.long
-		    ([Strid.fromString "Primitive",
-		      Strid.fromString "Debug"],
-		     Ast.Vid.fromString name))
+		    ([Strid.fromString ("Primitive", Region.bogus),
+		      Strid.fromString ("Debug", Region.bogus)],
+		     Ast.Vid.fromString (name, Region.bogus)))
 in
    val enterDebug = make "enter"
    val leaveDebug = make "leave"
@@ -441,7 +441,8 @@ fun elaborateDec (d, E) =
 				(if !Control.printAtFunEntry
 				    then
 				       let
-					  val x = Avar.fromString "z"
+					  val x =
+					     Avar.fromString ("z", Region.bogus)
 					  val c =
 					     Aexp.const
 					     (Aconst.makeRegion

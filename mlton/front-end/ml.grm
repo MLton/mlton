@@ -230,12 +230,12 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
 
 %nonterm digit of int
        | int of int
-       | id of string
-       | idEqual of string
-       | idNoAsterisk of string
-       | longidNoAsterisk of string
-       | longid of string
-       | longidEqual of string
+       | id of string * Region.t
+       | idEqual of string * Region.t
+       | idNoAsterisk of string * Region.t
+       | longidNoAsterisk of string * Region.t
+       | longid of string * Region.t
+       | longidEqual of string * Region.t
        | const of Const.t
        | const' of Const.node
        | vid of Vid.t
@@ -531,14 +531,16 @@ strexp2 : strexp2node (Strexp.makeRegion'
 		       (strexp2node, strexp2nodeleft, strexp2noderight))
 
 strexp2node
-        : longid	             (Strexp.Var
-				      (Longstrid.fromString
-				       (longid, reg (longidleft,longidright))))
+        : longid	             (Strexp.Var (Longstrid.fromString longid))
         | STRUCT strdecs END         (Strexp.Struct strdecs)
 	| longid arg_fct
-	  (Strexp.App (Fctid.fromString
-		      (ensureNonqualified (longid, reg (longidleft, longidright))),
-		      arg_fct))
+	  (let
+	      val (longid, region) = longid
+	   in
+	      Strexp.App (Fctid.fromString (ensureNonqualified (longid, region),
+					    region),
+			  arg_fct)
+	   end)
 	| LET strdecs IN strexp END  (Strexp.Let (strdecs,strexp))
 
 arg_fct : LPAREN strexp RPAREN   (strexp)
@@ -1029,21 +1031,25 @@ const'  : INT			(Const.Int INT)
 	| STRING		(Const.String STRING)
 	| CHAR 		        (Const.Char CHAR)
 
-idNoAsterisk : LONGID (ensureNonqualified (LONGID, reg (LONGIDleft, LONGIDright)))
+idNoAsterisk : LONGID (let
+			  val region = reg (LONGIDleft, LONGIDright)
+		       in
+			  (ensureNonqualified (LONGID, region), region)
+		       end)
 
 id : idNoAsterisk  (idNoAsterisk)
-   | ASTERISK      ("*")
+   | ASTERISK      (("*", reg (ASTERISKleft, ASTERISKright)))
 
 idEqual : id      (id)
-        | EQUALOP ("=")
+        | EQUALOP (("=", reg (EQUALOPleft, EQUALOPright)))
 
-longid : LONGID    (LONGID)
-       | ASTERISK  ("*")
+longid : LONGID    ((LONGID, reg (LONGIDleft, LONGIDright)))
+       | ASTERISK  (("*", reg (ASTERISKleft, ASTERISKright)))
 
-longidNoAsterisk : LONGID (LONGID)
+longidNoAsterisk : LONGID ((LONGID, reg (LONGIDleft, LONGIDright)))
 
 longidEqual : longid   (longid)
-            | EQUALOP  ("=")
+            | EQUALOP  (("=", reg (EQUALOPleft, EQUALOPright)))
 
 vid : idEqual                  (Vid.fromString idEqual)
 vidNoEqual : id                (Vid.fromString id)
@@ -1054,7 +1060,7 @@ con : id 		       (Con.fromString id)
 tycon : idNoAsterisk 	       (Tycon.fromString idNoAsterisk)
 tyvar : TYVAR 		       (Tyvar.newString (TYVAR, {left = TYVARleft,
 							 right = TYVARright}))
-field : id  		       (Field.String id)
+field : id  		       (Field.String (#1 id))
       | int 		       (Field.Int
 				(if int <= 0
 				    then (error (reg (intleft, intright),
@@ -1069,21 +1075,12 @@ sigids : sigid         	       ([sigid])
        | sigid sigids  	       (sigid::sigids)
 fctid : id 		       (Fctid.fromString id)
 
-longtycon : longidNoAsterisk (Longtycon.fromString (longidNoAsterisk,
-						    reg (longidNoAsteriskleft,
-							 longidNoAsteriskright)))
-longvar : longidEqual      (Longvar.fromString (longidEqual,
-						reg (longidEqualleft,
-						     longidEqualright)))
-longvid : longidEqual      (Longvid.fromString (longidEqual,
-						reg (longidEqualleft,
-						     longidEqualright)))
-longvidNoEqual : longid    (Longvid.fromString (longid,
-						reg (longidleft,longidright)))
-longcon : longid           (Longcon.fromString (longid,
-						reg (longidleft,longidright)))
-longstrid : longid         (Longstrid.fromString (longid,
-						  reg (longidleft,longidright)))
+longtycon : longidNoAsterisk (Longtycon.fromString longidNoAsterisk)
+longvar : longidEqual      (Longvar.fromString longidEqual)
+longvid : longidEqual      (Longvid.fromString longidEqual)
+longvidNoEqual : longid    (Longvid.fromString longid)
+longcon : longid           (Longcon.fromString longid)
+longstrid : longid         (Longstrid.fromString longid)
 
 longstrids : longstrid             ([longstrid])
            | longstrid longstrids  (longstrid :: longstrids)

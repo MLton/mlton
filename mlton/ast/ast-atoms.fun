@@ -12,7 +12,9 @@ structure Tycon =
       structure Id = AstId (val className = "tycon")
       open Id
 
-      structure P = PrimTycons (open Id)
+      structure P =
+	 PrimTycons (open Id
+		     val fromString = fn s => fromString (s, Region.bogus))
       open P
    end
 
@@ -23,7 +25,10 @@ structure Con =
       structure Id = AstId (val className = "constructor")
       open Id
 
-      structure P = PrimCons (Id)
+      structure P =
+	 PrimCons (open Id
+		   val fromString = fn s => fromString (s, Region.bogus))
+
       open P
    end
 
@@ -35,12 +40,17 @@ structure Vid =
    struct
       structure I = AstId (val className = "variable")
       open I
-      val fromCon = fromString o Con.toString
-      val fromVar = fromString o Var.toString
-      val toCon = Con.fromString o toString
-      val toVar = Var.fromString o toString
-      val toFctid = Fctid.fromString o toString
-      val toStrid = Strid.fromString o toString
+	 
+      fun fromCon c = fromString (Con.toString c, Con.region c)
+      fun fromVar x = fromString (Var.toString x, Var.region x)
+      local
+	 fun make f v = f (toString v, region v)
+      in
+	 val toCon = make Con.fromString
+	 val toVar = make Var.fromString
+	 val toFctid = make Fctid.fromString
+	 val toStrid = make Strid.fromString
+      end
       val bind = fromCon Con.bind
       val cons = fromCon Con.cons
       val falsee = fromCon Con.falsee

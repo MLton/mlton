@@ -211,7 +211,9 @@ and primExpToAst e : Aexp.t =
     | PrimApp {prim, args, ...} =>
 	 let
 	    val p = Aexp.longvid (Ast.Longvid.short
-				  (Ast.Longvid.Id.fromString (Prim.toString prim)))
+				  (Ast.Longvid.Id.fromString
+				   (Prim.toString prim,
+				    Region.bogus)))
 	 in
 	    case Prim.numArgs prim of
 	       NONE => p

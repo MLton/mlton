@@ -1323,6 +1323,6 @@ fun makeInterfaceMaker E =
     vals = NameSpace.new let open Ast.Vid in (equals, hash) end}
    
 fun addEquals E =
-   extendVals (E, Ast.Vid.fromString "=", Vid.Prim Prim.equal)
+   extendVals (E, Ast.Vid.fromString ("=", Region.bogus), Vid.Prim Prim.equal)
  
 end

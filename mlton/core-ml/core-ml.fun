@@ -322,7 +322,8 @@ in
       case Wrap.node e of
 	 Var x => Exp.var (Var.toAst x)
        | Prim p => Exp.longvid (Ast.Longvid.short
-				(Ast.Longvid.Id.fromString (Prim.toString p)))
+				(Ast.Longvid.Id.fromString (Prim.toString p,
+							    Region.bogus)))
        | Const c => Exp.const c
        | Con c => Exp.con (Con.toAst c)
        | Record r => Exp.record (Record.map (r, expToAst))

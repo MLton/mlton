@@ -612,7 +612,7 @@ structure Dec =
 		    rvbs = Vector.new0 ()})
 
       local
-	 val it = Var.fromString "it"
+	 val it = Var.fromString ("it", Region.bogus)
       in
 	 fun fromExp (e: Exp.t): t =
 	    vall (Vector.new0 (), it, e)

@@ -170,8 +170,6 @@ structure Sigexp =
       val spec = make o Spec
       val var = make o Var
 	 
-      fun varString (s: string): t = make (Var (Sigid.fromString s))
-	 
       val layout = layoutSigexp
    end
 

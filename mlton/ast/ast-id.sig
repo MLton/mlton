@@ -22,7 +22,7 @@ signature AST_ID =
       val bogus: t
       val compare: t * t -> Relation.t
       val equals: t * t -> bool
-      val fromString: string -> t
+      val fromString: string * Region.t -> t
       val hash: t -> Word.t
       val layout: t -> Layout.t
       val toString: t -> string

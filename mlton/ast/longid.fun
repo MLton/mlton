@@ -67,9 +67,12 @@ fun layout id =
 val toString = Layout.toString o layout
 
 fun fromString (longid: string, region: Region.t): t =
-   let val (strids, id) = List.splitLast (String.split (longid, #"."))
-   in makeRegion (T {strids = List.map (strids, Strid.fromString),
-		     id = Id.fromString id},
+   let
+      val (strids, id) = List.splitLast (String.split (longid, #"."))
+   in
+      makeRegion (T {strids = List.map (strids, fn s =>
+					Strid.fromString (s, region)),
+		     id = Id.fromString (id, region)},
 		  region)
    end
 

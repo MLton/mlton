@@ -106,7 +106,7 @@ fun new (T {originalName, ...}) =
 
 val fromAst = newString o AstId.toString
 fun fromAsts l = List.map (l, fromAst)
-val toAst = AstId.fromString o toString
+fun toAst id = AstId.fromString (toString id, Region.bogus)
 fun toAsts l = List.map (l, toAst)
 
 val clear = Plist.clear o plist
@@ -215,7 +215,7 @@ fun new (T {originalName, ...}) =
 
 val fromAst = newString o AstId.toString
 fun fromAsts l = List.map (l, fromAst)
-val toAst = AstId.fromString o toString
+fun toAst id = AstId.fromString (toString id, Region.bogus)
 fun toAsts l = List.map (l, toAst)
 
 val clear = Plist.clear o plist

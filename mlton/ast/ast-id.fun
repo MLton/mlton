@@ -14,19 +14,19 @@ type node' = string
 type region = Region.t
 
 fun makeRegion (s, r) = T {string = s,
-			  hash = String.hash s,
-			  region = r}
+			   hash = String.hash s,
+			   region = r}
+
+val fromString = makeRegion
 
 fun makeRegion' (s, x, y) =
    makeRegion (s, Region.make {left = x, right = y})
 
 fun make s = makeRegion (s, Region.bogus)
 
-val fromString = make
-
 fun dest (T {string, region, ...}) = (string, region)
 
-val bogus = fromString "<bogus>"
+val bogus = makeRegion ("<bogus>", Region.bogus)
 
 fun toString (T {string, ...}) = string
 val node = toString

@@ -127,7 +127,8 @@ structure Env =
 	       List.foreach
 	       (Tycon.prims, fn tycon =>
 		extendTycon
-		(E, Ast.Tycon.fromString (Tycon.originalName tycon),
+		(E, Ast.Tycon.fromString (Tycon.originalName tycon,
+					  Region.bogus),
 		 TypeStr.tycon tycon))
 	    val _ =
 	       Vector.foreach
@@ -155,7 +156,7 @@ structure Env =
 		in extendTycon (E, Tycon.toAst tycon,
 				TypeStr.data (tycon, cs))
 		end)
-	    val _ = extendTycon (E, Ast.Tycon.fromString "unit",
+	    val _ = extendTycon (E, Ast.Tycon.fromString ("unit", Region.bogus),
 				 TypeStr.def (Scheme.make0 Type.unit))
 	    val _ = addEquals E
 	    val _ = List.foreach (primitiveExcons, fn c =>
