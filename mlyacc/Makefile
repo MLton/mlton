@@ -19,7 +19,7 @@ $(NAME).sml: $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	mlton -stop sml $(NAME).cm
 
 .PHONY:	$(NAME)_cm
-$(NAME)_cm: 
+$(NAME)_cm: src/yacc.lex.sml src/yacc.grm.sig src/yacc.grm.sml
 	(								\
 		echo 'Group is' &&					\
 		cmcat sources.cm | 					\
