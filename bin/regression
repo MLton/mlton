@@ -90,7 +90,7 @@ for f in `ls *.sml`; do
 		fi
 	;;
 	esac
-done 
+done
 if [ $cross = 'yes' -o $runOnly = 'yes' ]; then
 	exit 0
 fi
