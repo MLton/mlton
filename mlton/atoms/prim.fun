@@ -617,9 +617,18 @@ fun 'a checkApp {prim, targs, args,
    let
       val error = NONE
       val Scheme.T {tyvars, ty} = scheme prim
+      fun show s =
+	 if true
+	    then ()
+	 else TextIO.print s
    in
       if Vector.length targs <> Vector.length tyvars
-	 then error
+	 then
+	    (show (concat ["primapp error, #targs=",
+			   Int.toString (List.length targs),
+			   ", #tyvars=",
+			   Int.toString (List.length tyvars), "\n"])
+	     ; error)
       else
 	 let
 	    val env = Vector.zip (tyvars, targs)
@@ -632,7 +641,8 @@ fun 'a checkApp {prim, targs, args,
 	    case numArgs prim of
 	       NONE => if Vector.isEmpty args
 			  then SOME ty
-		       else error
+		       else (show "primapp error, no numArgs\n"
+			     ; error)
 	     | SOME n =>
 		  case dearrowOpt ty of
 		     NONE => error
@@ -787,6 +797,11 @@ fun 'a apply (p, args, varEquals) =
       fun w8w (f, w8: Word.t, w: Word.t) = word8 (f (Word8.fromWord w8, w))
       fun w8p (p, w1, w2) = bool (p (Word8.fromWord w1, Word8.fromWord w2))
       fun w8o (f, w1, w2) = word8 (f (Word8.fromWord w1, Word8.fromWord w2))
+      val eq =
+ 	 fn (Char c1, Char c2) => bool (Char.equals (c1, c2))
+ 	  | (Int i1, Int i2) => bool (Int.equals (i1, i2))
+ 	  | (Word w1, Word w2) => bool (Word.equals (w1, w2))
+ 	  | _ => NONE
       val equal =
 	 fn (Char c1, Char c2) => bool (Char.equals (c1, c2))
 	  | (Int i1, Int i2) => bool (Int.equals (i1, i2))
