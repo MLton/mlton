@@ -80,7 +80,7 @@ cd $src/regression
 if [ "$fail" = 'yes' ]; then
 	for f in `ls fail/*.sml`; do
 		echo "testing $f"
-		( $mlton $flags $extraFlags -stop tc $f >/dev/null 2>&1 &&
+		( $mlton $flags -stop tc $f >/dev/null 2>&1 &&
 			echo "compilation of $f should have failed but did not" ) ||
 			true
 	done
@@ -116,7 +116,8 @@ for f in `ls *.sml`; do
 					warnMatch false
 				in $f.sml 
 				end" >$mlb
-			$mlton $flags $extraFlags -output $f $mlb
+			cmd="$mlton $flags $extraFlags -output $f $mlb"
+			eval $cmd
 			rm $mlb
 			if [ "$?" -ne '0' ] || 
 				[ "$cross" = 'no' -a ! -x "$f" ]; then
