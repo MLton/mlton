@@ -14,19 +14,101 @@ structure ImplementExceptions = ImplementExceptions (open S)
 structure Polyvariance = Polyvariance (open S)
 (* structure Uncurry = Uncurry (open S) *)
 
-fun traces s p = (Trace.Immediate.on s; p)
+fun polyvariance (rounds, small, product) p =
+   Ref.fluidLet
+   (Control.polyvariance,
+    SOME {rounds = rounds, small = small, product = product},
+    fn () => Polyvariance.duplicate p)
 
-val passes =
+type pass = {name: string,
+	     doit: Program.t -> Program.t}
+
+val sxmlPasses : pass list ref = ref
    [
-    ("sxmlShrink1", S.shrink),
-    ("implementExceptions", ImplementExceptions.doit),
-    ("sxmlShrink2", S.shrink),
+    {name = "sxmlShrink1", doit = S.shrink},
+    {name = "implementExceptions", doit = ImplementExceptions.doit},
+    {name = "sxmlShrink2", doit = S.shrink},
 (*
-    ("uncurry", Uncurry.uncurry),
-    ("sxmlShrink3", S.shrink),
+    {name = "uncurry", doit = Uncurry.uncurry},
+    {name = "sxmlShrink3", doit = S.shrink},
 *)
-    ("polyvariance", Polyvariance.duplicate)
+    {name = "polyvariance", doit = Polyvariance.duplicate}
    ]
+
+local
+   type passGen = string -> pass option
+     
+   fun mkSimplePassGen (name,doit) =
+      let val count = Counter.new 1
+      in fn s => if s = name
+		    then SOME {name = name ^ "#" ^ 
+			       (Int.toString (Counter.next count)),
+			       doit = doit}
+		    else NONE
+      end
+
+   val polyvariancePassGen =
+      let
+	 val count = Counter.new 1
+	 fun nums s =
+	    if s = ""
+	       then SOME []
+	    else if String.sub (s, 0) = #"(" 
+	            andalso String.sub (s, String.size s - 1)= #")"
+	       then let
+		       val s = String.dropFirst (String.dropLast s)
+		    in
+		       case List.fold (String.split (s, #","), SOME [],
+				       fn (s,SOME nums) => (case Int.fromString s of
+							       SOME i => SOME (i::nums)
+							     | NONE => NONE)
+					| (_, NONE) => NONE) of
+			  SOME (l as _::_) => SOME (List.rev l)
+			| _ => NONE
+		    end
+	    else NONE
+      in
+	 fn s =>
+	 if String.isPrefix {string = s, prefix = "polyvariance"}
+	    then let
+		    fun mk (rounds, small, product) =
+		       SOME {name = concat ["polyvariance(", 
+					    Int.toString rounds, ",",
+					    Int.toString small, ",",
+					    Int.toString product, ")#",
+					    Int.toString (Counter.next count)],
+			     doit = polyvariance (rounds, small, product)}
+		    val s = String.dropPrefix (s, String.size "polyvariance")
+		 in
+		    case nums s of
+		       SOME [] => mk (2, 30, 300)
+		     | SOME [rounds, small, product] => mk (rounds, small, product)
+		     | _ => NONE
+		 end
+         else NONE
+      end
+
+   val passGens =
+      polyvariancePassGen ::
+      (List.map([("shrink", S.shrink),
+		 ("implementExceptions", ImplementExceptions.doit)], 
+		mkSimplePassGen))
+
+   fun sxmlPassesSet s =
+      DynamicWind.withEscape
+      (fn esc =>
+       (let val ss = String.split (s, #":")
+	in
+	   sxmlPasses :=
+	   List.map(ss, fn s =>
+		    case (List.peekMap (passGens, fn gen => gen s)) of
+		       NONE => esc (Result.No s)
+		     | SOME pass => pass)
+	   ; Result.Yes ss
+	end))
+in
+   val _ = Control.sxmlPassesSet := sxmlPassesSet
+end
    
 fun stats p =
    Control.message (Control.Detail, fn () => Program.layoutStats p)
@@ -34,15 +116,14 @@ fun stats p =
 fun simplify p =
    (stats p
     ; (List.fold
-       (passes, p, fn ((name, pass), p) =>
+       (!sxmlPasses, p, fn ({name, doit}, p) =>
       if List.exists (!Control.dropPasses, fn re =>
 		      Regexp.Compiled.matchesAll (re, name))
          then p
       else
          let
             val _ =
-	       let
-		  open Control
+	       let open Control
 	       in maybeSaveToFile
 		  ({name = name, suffix = "pre.sxml"},
 		   Control.No, p, Control.Layout Program.layout)
@@ -52,15 +133,13 @@ fun simplify p =
                {name = name,
                 suffix = "post.sxml",
                 style = Control.No,
-                thunk = fn () => pass p,
+                thunk = fn () => doit p,
                 display = Control.Layout Program.layout,
                 typeCheck = typeCheck}
             val _ = stats p
          in
             p
          end)))
-
-val typeCheck = S.typeCheck
 
 val simplify = fn p => let
 			 (* Always want to type check the initial and final XML
@@ -73,5 +152,4 @@ val simplify = fn p => let
 		       in
 			 p'
 		       end
-
 end

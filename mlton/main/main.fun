@@ -187,7 +187,7 @@ fun makeOptions {usage} =
 		       | "first" => First
 		       | "every" => Every
 		       | _ => usage (concat ["invalid -gc-check flag: ", s])))),
-       (Expert, "handlers", " {flow|pushpop|simple}",
+       (Expert, "handlers", " {flow|simple}",
 	"how to implement handlers",
 	SpaceString (fn s =>
 		     case s of
@@ -316,6 +316,12 @@ fun makeOptions {usage} =
 	boolRef showBasisUsed),
        (Expert, "show-types", " {false|true}", "print types in ILs",
 	boolRef showTypes),
+       (Expert, "ssa-passes", " <passes>", "ssa optimization passes",
+	SpaceString
+	(fn s =>
+	 case !Control.ssaPassesSet s of
+	    Result.Yes ss => Control.ssaPasses := ss
+	  | Result.No s' => usage (concat ["invalid -ssa-pass arg: ", s']))),
        (Expert, "stack-cont", " {false|true}",
 	"force continuation formals to stack",
 	boolRef stackCont),
@@ -332,6 +338,12 @@ fun makeOptions {usage} =
 		   | "sml" => Place.SML
 		   | "tc" => Place.TypeCheck
 		   | _ => usage (concat ["invalid -stop arg: ", s])))),
+       (Expert, "sxml-passes", " <passes>", "sxml optimization passes",
+	SpaceString
+	(fn s =>
+	 case !Control.sxmlPassesSet s of
+	    Result.Yes ss => Control.sxmlPasses := ss
+	  | Result.No s' => usage (concat ["invalid -sxml-pass arg: ", s']))),
        (Normal, "target",
 	concat [" {",
 		concat (List.separate (List.map (targetMap (), #target), "|")),
@@ -373,7 +385,13 @@ fun makeOptions {usage} =
 		      | _ => usage (concat ["invalid -variant arg: ", s])))),
        (Normal, "warn-match", " {true|false}",
 	"nonexhaustive and redundant match warnings",
-	Bool (fn b => (warnNonExhaustive := b; warnRedundant := b)))
+	Bool (fn b => (warnNonExhaustive := b; warnRedundant := b))),
+       (Expert, "xml-passes", " <passes>", "xml optimization passes",
+	SpaceString
+	(fn s =>
+	 case !Control.xmlPassesSet s of
+	    Result.Yes ss => Control.xmlPasses := ss
+	  | Result.No s' => usage (concat ["invalid -xml-pass arg: ", s'])))
        ],
        fn (style, name, arg, desc, opt) =>
        {arg = arg, desc = desc, name = name, opt = opt, style = style})

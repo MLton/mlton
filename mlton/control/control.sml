@@ -333,8 +333,8 @@ val polyvariance =
 	    (Option.layout
 	     (fn {rounds, small, product} =>
 	      Layout.record [("rounds", Int.layout rounds),
-			    ("small", Int.layout small),
-			    ("product", Int.layout product)])
+			     ("small", Int.layout small),
+			     ("product", Int.layout product)])
 	     p)}
 
 structure Profile =
@@ -383,10 +383,19 @@ val safe = control {name = "safe",
 val showBasisUsed = control {name = "show basis used",
 			     default = false,
 			     toString = Bool.toString}
-   
+
 val showTypes = control {name = "show types",
 			 default = false,
 			 toString = Bool.toString}
+
+val ssaPassesSet : (string -> string list Result.t) ref = 
+   control {name = "ssaPassesSet",
+	    default = fn _ => Error.bug ("ssaPassesSet not installed"),
+	    toString = fn _ => "<ssaPassesSet>"}
+val ssaPasses : string list ref = 
+   control {name = "ssaPasses",
+	    default = ["default"],
+	    toString = List.toString String.toString}
 
 val stackCont = control {name = "stack cont",
 			 default = false,
@@ -395,6 +404,15 @@ val stackCont = control {name = "stack cont",
 val static = control {name = "static",
 		      default = false,
 		      toString = Bool.toString}
+
+val sxmlPassesSet : (string -> string list Result.t) ref = 
+   control {name = "sxmlPassesSet",
+	    default = fn _ => Error.bug ("sxmlPassesSet not installed"),
+	    toString = fn _ => "<sxmlPassesSet>"}
+val sxmlPasses : string list ref = 
+   control {name = "sxmlPasses",
+	    default = ["default"],
+	    toString = List.toString String.toString}
 
 structure Target =
    struct
@@ -494,6 +512,15 @@ val warnNonExhaustive = control {name = "warn non-exhaustive",
 val warnRedundant = control {name = "warn redundant",
 			     default = true,
 			     toString = Bool.toString}
+
+val xmlPassesSet : (string -> string list Result.t) ref = 
+   control {name = "xmlPassesSet",
+	    default = fn _ => Error.bug ("xmlPassesSet not installed"),
+	    toString = fn _ => "<xmlPassesSet>"}
+val xmlPasses : string list ref = 
+   control {name = "xmlPasses",
+	    default = ["default"],
+	    toString = List.toString String.toString}
 
 datatype style = No | Assembly | C | Dot | ML
 

@@ -208,11 +208,19 @@ signature CONTROL =
       (* Should types be printed in ILs. *)
       val showTypes: bool ref
 
+      (* SSA Passes *)
+      val ssaPassesSet: (string -> string list Result.t) ref
+      val ssaPasses: string list ref
+
       (* Force continuation formals to stack. *)
       val stackCont: bool ref 
 
       (* Generate a statically linked executable. *)
       val static: bool ref
+
+      (* SXML Passes *)
+      val sxmlPassesSet: (string -> string list Result.t) ref
+      val sxmlPasses: string list ref
 
       datatype target =
 	 Cross of string
@@ -252,6 +260,10 @@ signature CONTROL =
       val warnNonExhaustive: bool ref
 
       val warnRedundant: bool ref
+
+      (* XML Passes *)
+      val xmlPassesSet: (string -> string list Result.t) ref
+      val xmlPasses: string list ref
 
       (*------------------------------------*)
       (*             End Flags              *)

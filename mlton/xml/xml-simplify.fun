@@ -13,13 +13,48 @@ open S
 structure SimplifyTypes = SimplifyTypes (structure Input = S
 					 structure Output = S)
 
-fun traces s p = (Trace.Immediate.on s; p)
+type pass = {name: string,
+	     doit: Program.t -> Program.t}
 
-val passes =
+val xmlPasses : pass list ref = ref
    [
-    ("xmlShrink1", S.shrink),
-    ("simplifyTypes", SimplifyTypes.simplifyTypes)
+    {name = "xmlShrink1", doit = S.shrink},
+    {name = "simplifyTypes", doit = SimplifyTypes.simplifyTypes}
    ]
+
+local
+   type passGen = string -> pass option
+     
+   fun mkSimplePassGen (name,doit) =
+      let val count = Counter.new 1
+      in fn s => if s = name
+		    then SOME {name = name ^ "#" ^ 
+			       (Int.toString (Counter.next count)),
+			       doit = doit}
+		    else NONE
+      end
+
+   val passGens =
+      (List.map([("shrink", S.shrink),
+		 ("simplifyTypes", SimplifyTypes.simplifyTypes)],
+		mkSimplePassGen))
+
+   fun xmlPassesSet s =
+      DynamicWind.withEscape
+      (fn esc =>
+       (let val ss = String.split (s, #":")
+	in
+	   xmlPasses :=
+	   List.map(ss, fn s =>
+		    case (List.peekMap (passGens, fn gen => gen s)) of
+		       NONE => esc (Result.No s)
+		     | SOME pass => pass)
+	   ; Result.Yes ss
+	end))
+in
+   val _ = Control.xmlPassesSet := xmlPassesSet
+end
+
    
 fun stats p =
    Control.message (Control.Detail, fn () => Program.layoutStats p)
@@ -27,7 +62,7 @@ fun stats p =
 fun simplify p =
    (stats p
     ; (List.fold
-       (passes, p, fn ((name, pass), p) =>
+       (!xmlPasses, p, fn ({name, doit}, p) =>
       if List.exists (!Control.dropPasses, fn re =>
 		      Regexp.Compiled.matchesAll (re, name))
          then p
@@ -44,15 +79,13 @@ fun simplify p =
                {name = name,
                 suffix = "post.xml",
                 style = Control.No,
-                thunk = fn () => pass p,
+                thunk = fn () => doit p,
                 display = Control.Layout Program.layout,
                 typeCheck = typeCheck}
             val _ = stats p
          in
             p
          end)))
-
-val typeCheck = S.typeCheck
 
 val simplify = fn p => let
 			 (* Always want to type check the initial and final XML
