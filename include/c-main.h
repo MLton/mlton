@@ -16,8 +16,8 @@ void MLton_callFromC () {						\
 		fprintf (stderr, "MLton_callFromC() starting\n");	\
 	s = &gcState;							\
 	s->savedThread = s->currentThread;				\
-	s->canHandle++;							\
-	/* Return to the C Handler thread. */				\
+	s->canHandle += 2;						\
+	/* Switch to the C Handler thread. */				\
 	GC_switchToThread (s, s->callFromCHandler);			\
 	nextFun = *(int*)(s->stackTop - WORD_SIZE);			\
 	cont.nextChunk = nextChunks[nextFun];				\

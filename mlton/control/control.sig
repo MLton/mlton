@@ -50,8 +50,10 @@ signature CONTROL =
       (* whether optimization passes should eliminate useless overflow tests *)
       val eliminateOverflow: bool ref
 
-      val exnHistory: bool ref
+      val exportHeader: bool ref
 	 
+      val exnHistory: bool ref
+
       (* *)
       datatype gcCheck =
 	 Limit

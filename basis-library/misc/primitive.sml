@@ -984,18 +984,12 @@ structure Primitive =
 	    type preThread = preThread
 	    type thread = thread
 
-	    fun atomicBegin () =
-	       if handlesSignals
-		  then _prim "Thread_atomicBegin": unit -> unit; ()
-	       else ()
+	    val atomicBegin = _prim "Thread_atomicBegin": unit -> unit;
 	    val canHandle = _prim "Thread_canHandle": unit -> int;
 	    fun atomicEnd () =
-	       if handlesSignals
-		  then
-		     if Int.<= (canHandle (), 0)
-			then raise Fail "Thread.atomicEnd with no atomicBegin"
-		     else _prim "Thread_atomicEnd": unit -> unit; ()
-	       else ()
+	       if Int.<= (canHandle (), 0)
+		  then raise Fail "Thread.atomicEnd with no atomicBegin"
+	       else _prim "Thread_atomicEnd": unit -> unit; ()
 	    val copy = _prim "Thread_copy": preThread -> thread;
 	    (* copyCurrent's result is accesible via savedPre ().
 	     * It is not possible to have the type of copyCurrent as

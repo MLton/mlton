@@ -167,6 +167,9 @@ fun makeOptions {usage} =
        (Expert, "expert", " {false|true}",
 	"enable expert status",
 	boolRef expert),
+       (Normal, "export-header", " {false|true}",
+	"output header file for _export's",
+	boolRef exportHeader),
        (Expert, "gc-check", " {limit|first|every}", "force GCs",
 	SpaceString (fn s =>
 		     gcCheck :=

@@ -22,3 +22,8 @@ void g3 () {
 	f3 ();
 	fprintf (stderr, "g3 done\n");
 }
+
+void g4 (Int i) {
+	fprintf (stderr, "g4 (%d)\n", i);
+	f4 (i);
+}

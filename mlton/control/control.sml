@@ -80,6 +80,11 @@ val eliminateOverflow =
    control {name = "eliminate overflow",
 	    default = true,
 	    toString = Bool.toString}
+
+val exportHeader =
+   control {name = "export header",
+	    default = false,
+	    toString = Bool.toString}
    
 val exnHistory = control {name = "exn history",
 			  default = false,

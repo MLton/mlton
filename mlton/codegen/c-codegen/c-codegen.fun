@@ -242,18 +242,8 @@ fun outputDeclarations
    let
       fun declareExports () =
 	 if Ffi.numExports () > 0
-	    then
-	       let
-		  val _ = Ffi.declareExports {print = print}
-		  val {print, done} = outputH ()
-		  val _ = print "#include \"types.h\"\n"
-		  val _ = Ffi.declareHeaders {print = print}
-		  val _ = done ()
-	       in
-		  ()
-	       end
-	 else
-	    ()
+	    then Ffi.declareExports {print = print}
+	 else ()
       fun declareLoadSaveGlobals () =
 	 let
 	    val _ =

@@ -31,6 +31,8 @@ void Thread_setCallFromCHandler (Thread t) {
 }
 
 void Thread_setSaved (Thread t) {
+	if (DEBUG_THREAD)
+		fprintf (stderr, "Thread_setSaved (0x%08x)\n", (uint)t);
 	gcState.savedThread = (GC_thread)t;
 }
 

@@ -52,6 +52,8 @@ local
 		 ; atomicEnd ()
 		 ; (x () handle e => MLtonExn.topLevelHandler e)
 		 ; die "Thread didn't exit properly.\n")))
+   fun newThread (f: unit -> unit) =
+      (func := SOME f; Prim.copy base)
    val switching = ref false
 in
    fun ('a, 'b) switch'NoAtomicBegin (f: 'a t -> 'b t * (unit -> 'b)): 'a =
@@ -72,8 +74,7 @@ in
 	    val primThread =
 	       case !t' before (t' := Dead; switching := false) of
 		  Dead => fail (Fail "switch to a Dead thread")
-		| New g => (func := SOME (g o x)
-			    ; Prim.copy base)
+		| New g => newThread (g o x)
 		| Paused (f, t) => (f x; t)
 	    val _ = Prim.switchTo primThread
 	    (* Close the atomicBegin of the thread that switched to me. *)
@@ -145,36 +146,43 @@ fun setHandler (f: unit t -> unit t): unit =
       Prim.setHandler p
    end
 
-val msg = Primitive.Stdio.print
-   
-val setCallFromCHandler =
+val register: int * (unit -> unit) -> unit =
    let
-      val r: (unit -> unit) ref =
-	 ref (fn () => raise Fail "no handler for C calls")
+      val exports = Array.array (Primitive.FFI.numExports, fn () =>
+				 raise Fail "undefined export\n")
+      fun loop (): unit =
+	 let
+	    val t = Prim.saved ()
+	    val _ =
+	       Prim.switchTo
+	       (toPrimitive
+		(new
+		 (fn () =>
+		  let
+		     val _ = 
+			(Array.sub (exports, Primitive.FFI.getOp ()) ())
+			handle e => (TextIO.output
+				     (TextIO.stdErr,
+				      "Call from C to SML raised exception.\n")
+				     ; MLtonExn.topLevelHandler e)
+		     val _ = Prim.setSaved t
+		     val _ = Prim.returnToC ()
+		  in
+		     ()
+		  end)))
+	 in
+	    loop ()
+	 end
+      (* For some reason that I never figured out, the first time the handler
+       * is started, it does an extra atomicEnd (three instead of two).  So, I
+       * inserted an extra atomicBegin before entering the loop.
+       *)
       val _ =
-	 Prim.setCallFromCHandler
-	 (toPrimitive
-	  (new (let
-		   fun loop (): unit =
-		      let
-			 val t = Prim.saved ()
-			 val _ =
-			    Prim.switchTo
-			    (toPrimitive
-			     (new (fn () => 
-				   (let in
-				      (!r) ()
-				      ; Prim.setSaved t
-				      ; Prim.returnToC ()
-				   end))))
-		      in
-			 loop ()
-		      end
-		in
-		   loop
-		end)))
+	 Prim.setCallFromCHandler (toPrimitive (new (fn () =>
+						     (atomicBegin ()
+						      ; loop ()))))
    in
-      fn f => r := f
+      fn (i, f) => Array.update (exports, i, f)
    end
 
 fun switchToHandler () =

@@ -32,12 +32,7 @@ signature MLTON_THREAD_EXTRA =
       include MLTON_THREAD
 
       val amInSignalHandler: unit -> bool
-      (* setCallFromCHandler f
-       * Installs f as the handler for calls from C into SML.
-       * f should start in a critical section and
-       * and should return in a critical section.
-       *)
-      val setCallFromCHandler: (unit -> unit) -> unit
+      val register: int * (unit -> unit) -> unit
       val setHandler: (unit t -> unit t) -> unit
       val switchToHandler: unit -> unit
    end

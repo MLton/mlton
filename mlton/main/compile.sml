@@ -347,9 +347,20 @@ fun preCodegen {input, docc}: Machine.Program.t =
 			     (Elaborate.Env.layoutUsed basisEnv,
 			      Out.standard)
 		       in
-			 Process.succeed ()
+			  Process.succeed ()
 		       end
 	       else parseAndElaborateFiles (input, basisEnv)
+	    val _ =
+	       if not (!Control.exportHeader)
+		  then ()
+	       else 
+		  let
+		     val _ = Ffi.declareExports {print = fn _ => ()}
+		     val _ = print "#include \"types.h\"\n"
+		     val _ = Ffi.declareHeaders {print = print}
+		  in
+		     Process.succeed ()
+		  end
 	    val user = Decs.appends [prefix, input, suffix]
 	    val _ = parseElabMsg ()
 	    val basis = Decs.toList basis
@@ -501,7 +512,8 @@ fun compile {input: File.t list, outputC, outputH, outputS, docc}: unit =
 			     outputH = outputH}
       val _ = Control.message (Control.Detail, PropertyList.stats)
       val _ = Control.message (Control.Detail, HashSet.stats)
-   in ()
+   in
+      ()
    end
    
 end

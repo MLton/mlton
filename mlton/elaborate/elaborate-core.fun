@@ -336,7 +336,8 @@ structure Ffi =
 	       
 	    val nullary =
 	       [(Bool, Ctype.bool),
-		(Char, Ctype.con (Tycon.char, Vector.new0 ()))]
+		(Char, Ctype.con (Tycon.char, Vector.new0 ())),
+		(Pointer, Ctype.pointer)]
 	       @ List.map (IntSize.all, fn s => (Int s, Ctype.int s))
 	       @ List.map (RealSize.all, fn s => (Real s, Ctype.real s))
 	       @ List.map (WordSize.all, fn s => (Word s, Ctype.word s))
