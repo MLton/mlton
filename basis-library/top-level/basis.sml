@@ -47,9 +47,7 @@ structure Basis:> BASIS =
 (*
       structure Timer = Timer
 *)
-(*
       structure Time = Time
-*)
       structure VectorSlice = VectorSlice
       structure Vector = Vector
       structure Word8Array2 = Word8Array2
@@ -100,9 +98,7 @@ structure Basis:> BASIS =
       structure PackReal64Big = PackReal64Big
 *)
       structure PackReal64Little = PackReal64Little
-(*
       structure Posix = Posix
-*)
       structure RealArray2 = RealArray2
       structure RealArray = RealArray
       structure RealArraySlice = RealArraySlice

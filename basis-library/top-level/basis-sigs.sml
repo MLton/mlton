@@ -71,7 +71,6 @@ signature NET_SERV_DB = NET_SERV_DB
 *)
 signature PACK_REAL = PACK_REAL 
 signature PACK_WORD = PACK_WORD 
-(*
 signature POSIX = POSIX 
 signature POSIX_ERROR = POSIX_ERROR 
 signature POSIX_FILE_SYS = POSIX_FILE_SYS 
@@ -81,6 +80,7 @@ signature POSIX_PROCESS = POSIX_PROCESS
 signature POSIX_SIGNAL = POSIX_SIGNAL 
 signature POSIX_SYS_DB = POSIX_SYS_DB 
 signature POSIX_TTY = POSIX_TTY 
+(*
 signature SOCKET = SOCKET 
 signature UNIX = UNIX 
 signature UNIX_SOCK = UNIX_SOCK 

@@ -121,9 +121,7 @@ signature BASIS =
 (*
       structure Timer : TIMER	
 *)
-(*
       structure Time : TIME	
-*)
       structure VectorSlice : VECTOR_SLICE	
       structure Vector : VECTOR	
       structure Word8Array2 : MONO_ARRAY2	
@@ -174,9 +172,7 @@ signature BASIS =
       structure PackReal64Big : PACK_REAL
 *)
       structure PackReal64Little : PACK_REAL
-(*
       structure Posix : POSIX
-*)
       structure RealArray2 : MONO_ARRAY2
       structure RealArray : MONO_ARRAY
       structure RealArraySlice : MONO_ARRAY_SLICE
@@ -339,6 +335,12 @@ signature BASIS =
       sharing type PackReal64Big.real = Real64.real
 *)
       sharing type PackReal64Little.real = Real64.real
+(*
+      sharing type Posix.Error.syserror = OS.syserror
+      sharing type Posix.Process.exit_status = Unix.exit_status
+      sharing type Posix.FileSys.dirstream = OS.FileSys.dirstream
+      sharing type Posix.FileSys.access_mode = OS.FileSys.access_mode
+*)
       sharing type RealArray.vector = RealVector.vector
       sharing type RealArray.elem = real
       sharing type RealArray2.vector = RealVector.vector
@@ -395,10 +397,15 @@ signature BASIS =
    where type IEEEReal.real_order = IEEEReal.real_order
    where type IEEEReal.float_class = IEEEReal.float_class
    where type IEEEReal.rounding_mode = IEEEReal.rounding_mode
+   *)
+   where type Position.int = Position.int
+   (*
    where type StringCvt.radix = StringCvt.radix
    where type StringCvt.realfmt = StringCvt.realfmt
    where type ('a, 'b) StringCvt.reader = ('a, 'b) StringCvt.reader
    *)
+   where type SysWord.word = SysWord.word
+   where type Time.time = Time.time
    where type Word.word = Word.word
    where type Word8.word = Word8.word
    where type Word8Array.array = Word8Array.array

@@ -258,3 +258,19 @@ MLton specific:
  + QUESTION: proc-env.sml
  + QUESTION: char.sml
  + check uses of {Vector,Array}Slice.slice for replacement by unsafeSlice.
+
+
+******************************************************************************
+******************************************************************************
+
+POSIX_ERROR
+"The name of a corresponding POSIX error can be derived by
+capitalizing all letters and adding the character ``E'' as a
+prefix. For example, the POSIX error associated with nodev is
+ENODEV. The only exception to this rule is the error toobig, whose
+associated POSIX error is E2BIG."
+-> It isn't clear if this is the intended semantics for errorName and
+   syserror.  It currently isn't in MLton.
+
+POSIX_SIGNAL
+"The name of the corresponding..." is repeated.

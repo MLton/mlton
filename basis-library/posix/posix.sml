@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure Posix =
+structure Posix : POSIX_EXTRA =
    struct
       structure Error = PosixError
 

@@ -5,10 +5,10 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-(*
-open Basis
-*)
 
+open Basis
+
+(*
 signature ARRAY = ARRAY
 signature ARRAY2 = ARRAY2
 signature BIN_IO = BIN_IO
@@ -434,3 +434,4 @@ signature SML_OF_NJ = SML_OF_NJ
 structure SMLofNJ: SML_OF_NJ = SMLofNJ
 
 structure Unsafe: UNSAFE = Unsafe
+*)

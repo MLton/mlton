@@ -43,22 +43,30 @@ structure PosixTTY: POSIX_TTY =
       
       structure I =
 	 struct
-	    open I PosixFlags
+	    open I 
+	    structure Flags = BitFlags(val all = 0wx255: SysWord.word)
+	    open Flags
 	 end
       
       structure O =
 	 struct
-	    open O PosixFlags
+	    open O 
+	    structure Flags = BitFlags(val all = 0wx255: SysWord.word)
+	    open Flags
 	 end
       
       structure C =
 	 struct
-	    open C PosixFlags
+	    open C 
+	    structure Flags = BitFlags(val all = 0wx255: SysWord.word)
+	    open Flags
 	 end
       
       structure L =
 	 struct
-	    open L PosixFlags
+	    open L 
+	    structure Flags = BitFlags(val all = 0wx255: SysWord.word)
+	    open Flags
 	 end
 
       type speed = Prim.speed
@@ -113,39 +121,44 @@ structure PosixTTY: POSIX_TTY =
       
       structure Termios = Prim.Termios
 	 
-      fun getattr (FD fd) =
-	 (Error.checkResult (Prim.getattr (fd))
-	  ; {iflag = Termios.iflag (),
-	     oflag = Termios.oflag (),
-	     cflag = Termios.cflag (),
-	     lflag = Termios.lflag (),
-	     cc = Cstring.toCharArrayOfLength (Termios.cc (), V.nccs),
-	     ispeed = Termios.ispeed (),
-	     ospeed = Termios.ospeed ()})
+      structure TC =
+	 struct
+	    open Prim.TC 
 
-      fun setattr (FD fd, a, {iflag, oflag, cflag, lflag, cc, ispeed, ospeed}) =
-	 (Termios.setiflag iflag
-	  ; Termios.setoflag oflag
-	  ; Termios.setcflag cflag
-	  ; Termios.setlflag lflag
-	  ; Termios.setospeed ospeed
-	  ; Termios.setispeed ispeed
-	  ; let val cs = Termios.cc () 
-	    in Util.naturalForeach
-	       (V.nccs, fn i => Cstring.update (cs, i, V.sub (cc, i)))
-	    end
-	  ; Error.checkResult (Prim.setattr (fd, a)))
+	    fun getattr (FD fd) =
+	       (Error.checkResult (Prim.getattr (fd))
+		; {iflag = Termios.iflag (),
+		   oflag = Termios.oflag (),
+		   cflag = Termios.cflag (),
+		   lflag = Termios.lflag (),
+		   cc = Cstring.toCharArrayOfLength (Termios.cc (), V.nccs),
+		   ispeed = Termios.ispeed (),
+		   ospeed = Termios.ospeed ()})
+	       
+	    fun setattr (FD fd, a, {iflag, oflag, cflag, lflag, cc, ispeed, ospeed}) =
+	       (Termios.setiflag iflag
+		; Termios.setoflag oflag
+		; Termios.setcflag cflag
+		; Termios.setlflag lflag
+		; Termios.setospeed ospeed
+		; Termios.setispeed ispeed
+		; let val cs = Termios.cc () 
+		  in Util.naturalForeach
+		     (V.nccs, fn i => Cstring.update (cs, i, V.sub (cc, i)))
+		  end
+		; Error.checkResult (Prim.setattr (fd, a)))
 
-      fun sendbreak (FD fd, n) =
-	 Error.checkResult (Prim.sendbreak (fd, n))
+	    fun sendbreak (FD fd, n) =
+	       Error.checkResult (Prim.sendbreak (fd, n))
 
-      fun drain (FD fd) = Error.checkResult (Prim.drain fd)
-	 
-      fun flush (FD fd, n) = Error.checkResult (Prim.flush (fd, n))
-	 
-      fun flow (FD fd, n) = Error.checkResult (Prim.flow (fd, n))
-	 
-      fun getpgrp (FD fd) = Error.checkReturnResult (Prim.getpgrp fd)
-	 
-      fun setpgrp (FD fd, pid) = Error.checkResult (Prim.setpgrp (fd, pid))
+	    fun drain (FD fd) = Error.checkResult (Prim.drain fd)
+	      
+	    fun flush (FD fd, n) = Error.checkResult (Prim.flush (fd, n))
+	      
+	    fun flow (FD fd, n) = Error.checkResult (Prim.flow (fd, n))
+	      
+	    fun getpgrp (FD fd) = Error.checkReturnResult (Prim.getpgrp fd)
+	      
+	    fun setpgrp (FD fd, pid) = Error.checkResult (Prim.setpgrp (fd, pid))
+	 end
    end

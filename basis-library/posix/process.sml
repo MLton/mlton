@@ -99,9 +99,13 @@ structure PosixProcess: POSIX_PROCESS =
        | W_SIGNALED of signal
        | W_STOPPED of signal 
 
+      val fromStatus = fn s => raise Fail "Posix.Process.fromStatus: <unimplemented>"
+
       structure W =
 	 struct
-	    open W PosixFlags
+	    open W 
+	    structure Flags = BitFlags(val all = 0w255: SysWord.word)
+	    open Flags
 	 end
 
       local

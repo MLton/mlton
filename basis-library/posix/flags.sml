@@ -5,18 +5,24 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure PosixFlags: POSIX_FLAGS_EXTRA =
+functor BitFlags(val all: SysWord.word): BIT_FLAGS_EXTRA =
    struct
-      type flags = word
+      type flags = SysWord.word
 	 
-      fun toWord f = f
-      fun wordTo f = f
-	 
-      val flags: flags list -> flags = List.foldl Word.orb 0w0
-	 
-      fun anySet(f, f') = Word.andb(f, f') <> 0w0
-
-      fun allSet(f, f') = Word.andb(f, f') = f
-
+      val all: flags = all
       val empty: flags = 0w0
+
+      fun toWord f = f
+      fun fromWord f = SysWord.andb(f, all)
+
+      val flags: flags list -> flags = List.foldl SysWord.orb empty
+
+      val intersect: flags list -> flags = List.foldl SysWord.andb all
+
+      fun clear(f, f') = SysWord.andb(SysWord.notb f, f')
+
+      fun allSet(f, f') = SysWord.andb(f, f') = f
+
+      fun anySet(f, f') = SysWord.andb(f, f') <> 0w0
+
    end

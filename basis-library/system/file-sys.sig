@@ -3,7 +3,7 @@ signature OS_FILE_SYS =
       type dirstream
 
       val openDir: string -> dirstream 
-      val readDir: dirstream -> string 
+      val readDir: dirstream -> string option
       val rewindDir: dirstream -> unit 
       val closeDir: dirstream -> unit 
       val chDir: string -> unit

@@ -90,18 +90,6 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       local
 	 structure Tms = Prim.Tms
 
-(*
-	 val ticksPerSecond: LargeInt.int =
-	    SysWord.toLargeInt (sysconf "CLK_TCK")
-
-	 val millisecondsPerSecond: LargeInt.int = 1000
-	    
-	 fun cvt (ticks: int): Time.time =
-	    Time.fromMilliseconds
-	    (LargeInt.div
-	     (LargeInt.fromInt ticks * millisecondsPerSecond,
-	      ticksPerSecond))
-*)
 	 val ticksPerSec = Real.fromInt (SysWord.toIntX (sysconf "CLK_TCK"))
 	 
 	 fun cvt (ticks: word) =

@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure PosixFileSys: POSIX_FILESYS_EXTRA =
+structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
    struct
       (* Patch to make Time look like it deals with Int.int
        * instead of LargeInt.int.
@@ -21,7 +21,7 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
       structure Prim = PosixPrimitive.FileSys
       open Prim
       structure Stat = Prim.Stat
-      structure Flags = PosixFlags
+      structure Flags = BitFlags(val all = 0w255: SysWord.word)
 
       val checkResult = Error.checkResult
 
@@ -66,7 +66,7 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
 		     val cs = Prim.readdir d
 		  in if Primitive.Cpointer.isNull cs
 			then if Error.getErrno () = 0
-				then ""
+				then NONE
 			     else Error.error ()
 		     else
 			let
@@ -74,7 +74,7 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
 			in
 			   if s = "." orelse s = ".."
 			      then loop ()
-			   else s
+			   else SOME s
 			end
 		  end
 	    in loop ()
@@ -319,13 +319,12 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
 	       NONE => Error.raiseSys Error.inval
 	     | SOME (n, _) => n
 
+	 (* QUESTION: is this o.k.? *)
 	 fun make prim (f, s) =
 	    let val n = prim (f, convertProperty s)
 	    in if n < 0
 		  then Error.error ()
-	       else if n = 0
-		       then NONE
-		    else SOME (SysWord.fromInt n)
+	       else SOME (SysWord.fromInt n)
 	    end
 	       
       in
