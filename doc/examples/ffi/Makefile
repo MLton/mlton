@@ -8,6 +8,7 @@ all: import import2 export iimport
 	./import2
 	./export
 	./iimport
+	./test_quot
 
 export: export.sml ffi-export.c
 	$(mlton) -export-header export.h -stop tc export.sml
@@ -28,6 +29,15 @@ iimport: iimport.sml
 		-target-link-opt linux -ldl 	\
 		-target-link-opt solaris -ldl	\
 		iimport.sml
+
+c_quot.o : c_quot.c test_quot.h
+	$(mlton) -stop o c_quot.c
+
+test_quot.h : test_quot.sml
+	$(mlton) -export-header test_quot.h -stop tc test_quot.sml
+
+test_quot : test_quot.sml c_quot.o
+	$(mlton) test_quot.sml c_quot.o
 
 clean:
 	../../../bin/clean
