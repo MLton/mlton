@@ -23,8 +23,9 @@ Redirect permanent /HTML/node59.html http://www.mlton.org/user-guide/Deviations_
 # Redirect those as well.
 Redirect permanent /user-guide/node3.html http://www.mlton.org/user-guide/Installation.html
 Redirect permanent /user-guide/node5.html http://www.mlton.org/user-guide/Features_MLton.html
-Redirect permanent /user-guide/node11.html http://www.mlton.org/user-guide/Foreign_function_interface.html
+Redirect permanent /user-guide/node10.html http://www.mlton.org/user-guide/Foreign_function_interface.html
 Redirect permanent /user-guide/node11.html http://www.mlton.org/user-guide/Type_checking_programs.html
+Redirect permanent /user-guide/node12.html http://www.mlton.org/user-guide/Example.html
 Redirect permanent /user-guide/node13.html http://www.mlton.org/user-guide/Profiling.html
 Redirect permanent /user-guide/node14.html http://www.mlton.org/user-guide/Creating_colored_control_fl.html
 Redirect permanent /user-guide/node17.html http://www.mlton.org/user-guide/Running_on_Cygwin_windows.html
