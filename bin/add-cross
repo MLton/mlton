@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -x
+
 # This script adds a new crosscompiler target for MLton.
 #
 # It takes three arguments.
@@ -70,15 +72,19 @@ lib="$src/build/lib"
 
 PATH=$src/build/bin:$PATH
 
+rm -rf "$lib/$crossHost"
+
 mkdir -p "$lib/$crossHost/include" ||
 	die "Cannot write to $lib."
 
 echo 'Making runtime.' 
-(cd $src && 
-	make HOST=$crossHost HOST_ARCH=$crossArch HOST_OS=$crossOS LIB=$lib \
-		hostmap runtime \
-		>runtime-log 2>&1 &&
-	rm -f runtime-log) ||
+cd $src/runtime
+make clean
+make gdtoa/arithchk.out HOST=$crossHost HOST_ARCH=$crossArch HOST_OS=$crossOS
+scp gdtoa/arithchk.out $machine:/tmp
+ssh $machine '/tmp/arithchk.out && rm -f /tmp/arithchk.out' >gdtoa/arith.h
+( cd $src && make HOST=$crossHost HOST_ARCH=$crossArch HOST_OS=$crossOS \
+	runtime hostmap ) ||
 	die "Unable to make runtime.  See $src/runtime-log."
 
 exe='print-constants'
@@ -90,6 +96,7 @@ echo 'Building print-constants executable.'
 ) || die "Unable to build $exe executable."
 
 echo "Running print-constants on $machine."
+cd $original
 tar cf - $exe |
 	ssh $machine "tar xf - && ./$exe && rm -f $exe" \
 	>"$lib/$crossHost/constants"

@@ -364,14 +364,20 @@ DEBUG_OBJS =					\
 
 all:  libgdtoa.a libmlton.a libmlton-gdb.a
 
-libgdtoa.a: gdtoa/gdtoa.a
-	cp gdtoa/gdtoa.a libgdtoa.a
+libgdtoa.a: gdtoa gdtoa/arith.h
+	cd gdtoa && gcc $(HOSTFLAGS) -c -DINFNAN_CHECK *.c
+	$(AR) libgdtoa.a gdtoa/*.o
 
-gdtoa/gdtoa.a: gdtoa
-	$(MAKE) -C gdtoa 'CC=gcc' 'CFLAGS=-g -DINFNAN_CHECK $(HOSTFLAGS)'
+gdtoa/arithchk.out: gdtoa
+	cd gdtoa && gcc $(HOSTFLAGS) -o arithchk.out arithchk.c
+
+gdtoa/arith.h: gdtoa/arithchk.out
+	cd gdtoa && ./arithchk.out >arith.h
 
 gdtoa:
 	zcat gdtoa.tgz | tar xf -
+
+#	patch -p0 <gdtoa-patch
 
 libmlton.a: $(OBJS) 
 	$(AR) libmlton.a $(OBJS)
@@ -405,8 +411,9 @@ depend:
 
 .PHONY: gdtoa-patch
 gdtoa-patch:
+	cd gdtoa && make clean && rm -f &~
 	mv gdtoa gdtoa-new
 	zcat gdtoa.tgz | tar xf -
-	(cd gdtoa && diff -c -r . ../gdtoa-new) >gdtoa-patch || exit 0
+	diff -P -C 2 -r gdtoa gdtoa-new >gdtoa-patch || exit 0
 	rm -rf gdtoa
 	mv gdtoa-new gdtoa
