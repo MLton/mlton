@@ -2,11 +2,9 @@ HOST = self
 HOSTTYPE = $(shell ../bin/hosttype)
 ifeq ($(HOST), self)
 AR = ar rc
-CONFIG_HOST =
 HOSTFLAGS =
 else
 AR = $(HOST)-ar rc
-CONFIG_HOST = --host=$(HOST)
 HOSTFLAGS = -b $(HOST)
 endif
 CC =		gcc -Wall -I. -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer $(HOSTFLAGS)
@@ -335,28 +333,6 @@ libmlton.a: $(OBJS)
 
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
-
-ifeq ($(HOSTTYPE), cygwin)
-basis/IntInf.o: gmp.h
-endif
-
-GMP = gmp-4.0.1
-gmp.h:
-	{ [ gmp.h -nt $(GMP).tgz ]						\
-		&& [ libgmp.a -nt $(GMP).tgz ]; } || {				\
-			rm -rf gmp.h libgmp.a gmp-stuff &&			\
-			mkdir gmp-stuff gmp-stuff/info &&			\
-			echo '!@File: dir,#Node: Top' | tr '!@#' '\037\n\t' > gmp-stuff/info/dir &&	\
-			{ [ -d $(GMP) ] ||					\
-				zcat <$(GMP).tgz | tar xf -; } &&		\
-				cd $(GMP) &&					\
-				./configure $(CONFIG_HOST) --prefix=`pwd`/../gmp-stuff &&	\
-				make CFLAGS=-O install distclean &&		\
-				cd .. &&					\
-				rm -rf $(GMP) &&				\
-				mv gmp-stuff/include/gmp.h . &&			\
-				mv gmp-stuff/lib/libgmp.a .;			\
-	}
 
 .PHONY: clean
 clean:

@@ -1,4 +1,12 @@
-Here are the changes from version 20011006 to version VERSION.
+Here are the changes from version 20020410 to version VERSION.
+
+* 2002-04-23
+  - Rewrote heap resizing code.
+  - Removed gmp from MLton sources (again :-).
+
+--------------------------------------------------------------------------------
+
+Here are the changes from version 20011006 to version 20020410.
 
 * 2002-03-28
   - Added BinIO.
