@@ -1437,6 +1437,8 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			assert(keep <= s->toSize);
 			smunmap(s->toBase + keep, s->toSize - keep);
 			s->toSize = keep;
+			if (0 == keep)
+				s->toBase = NULL;
 			}
 		}
 	}
