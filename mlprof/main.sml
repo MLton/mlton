@@ -107,7 +107,7 @@ structure AFile =
 		val sourcesLength = valOf (Int.fromString (line ()))
 		val _ =
 		   if 0 = sourcesLength
-		      then Error.bug "0 = sourcesLength"
+		      then Error.bug "doesn't appear to be compiled for profiling"
 		   else ()
 		val graph = Graph.new ()
 		val {get = nodeIndex, set = setNodeIndex, ...} =
@@ -857,7 +857,7 @@ fun commandLine args =
 		val mlmonFiles = files @ !mlmonFiles 
 		val aInfo =
 		   AFile.new {afile = afile}
-		   handle e => die (concat ["error in ", afile, ": ",
+		   handle e => die (concat ["Error in ", afile, ": ",
 					    Exn.toString e])
 		val _ =
 		   if debug
