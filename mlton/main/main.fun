@@ -590,37 +590,9 @@ fun commandLine (args: string list): unit =
 	      then opt :: ac
 	   else ac))
       val ccOpts = addTargetOpts ccOpts
-      val linkWithGmp =
-	 case targetOS of
-	    Linux =>
-	       (* This mess is necessary because the linker on linux
-		* adds a dependency to a shared library even if there are
-		* no references to it.  So, on linux, we explicitly link
-		* with libgmp.a instead of using -lgmp.
-		*)
-	       let
-		  val conf = "/etc/ld.so.conf"
-		  val dirs = if File.canRead conf then File.lines conf else []
-		  val dirs = "/lib\n" :: "/usr/lib\n" :: dirs
-	       in
-		  case (List.peekMap
-			(dirs, fn d =>
-			 let
-			    val lib =
-			       concat [String.dropSuffix (d, 1), "/libgmp.a"]
-			 in
-			    if File.canRead lib
-			       then SOME lib
-			    else NONE
-			 end)) of
-		     NONE => ["-lgmp"]
-		   | SOME lib => [lib]
-	       end
-	  | _ => []
       val linkOpts =
 	 List.concat [[concat ["-L", !libTargetDir],
 		       if !debug then "-lmlton-gdb" else "-lmlton"],
-		      linkWithGmp,
 		      addTargetOpts linkOpts]
       (* With gcc 3.4, the '-b <arch>' must be the first argument. *)
       val targetOpts =

@@ -73,6 +73,7 @@ doit "$lib" \
 	-target-link-opt cygwin '-lgmp'				\
  	-target-link-opt darwin '-lgmp'				\
 	-target-link-opt freebsd '-L/usr/local/lib/ -lgmp'	\
+	-target-link-opt linux '-lgmp'				\
 	-target-link-opt mingw 					\
 		'-lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32'	\
 	-target-link-opt netbsd					\
