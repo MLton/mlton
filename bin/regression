@@ -105,25 +105,19 @@ for f in `ls *.sml`; do
 		esac
 		case "$runOnly" in
 		no)
-			mlb="$$.mlb"
-			case "$f" in
-			ZexnHistory*)
-				# Can't use mlbs for exnHistory regressions?
-				$mlton $flags -output $f $f.sml
-			;;
-			*)
-				echo "\$(MLTON_ROOT)/basis/basis.mlb
-        	                      \$(MLTON_ROOT)/basis/mlton.mlb
-                	              \$(MLTON_ROOT)/basis/sml-nj.mlb
-                        	      ann allowExport true, 
-						allowImport true, 
-						allowOverload true,
-						warnMatch false
-        	                      in $f.sml end" >$mlb
-				$mlton $flags $extraFlags -output $f $mlb
-				rm $mlb
-			;;
-			esac
+			mlb="$f.mlb"
+			echo "\$(MLTON_ROOT)/basis/basis.mlb
+				\$(MLTON_ROOT)/basis/mlton.mlb
+				\$(MLTON_ROOT)/basis/sml-nj.mlb
+ 				ann 
+					allowExport true, 
+					allowImport true, 
+					allowOverload true,
+					warnMatch false
+				in $f.sml 
+				end" >$mlb
+			$mlton $flags $extraFlags -output $f $mlb
+			rm $mlb
 			if [ "$?" -ne '0' ] || 
 				[ "$cross" = 'no' -a ! -x "$f" ]; then
 				compFail $f
@@ -143,7 +137,7 @@ for f in `ls *.sml`; do
 				-L "$src/build/lib/$crossTarget"	\
 				-L /usr/pkg/lib				\
 				-L /usr/local/lib			\
-				$f.[0-9].[cS]				\
+				$f.*.[cS]				\
 				$libs				
 		;;
 		esac
