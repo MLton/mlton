@@ -32,7 +32,7 @@ fun main () =
 	  | s :: _ => valOf (Int.fromString s)
    in
       switch (fn cur =>
-	      (done := SOME (ready cur)
+	      (done := SOME (prepare (cur, ()))
 	       ; prepare (new loop, (numSwitches, T (new loop)))))
       ; print "ok\n"
    end
