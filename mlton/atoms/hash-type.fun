@@ -254,7 +254,6 @@ fun checkPrimApp {args, prim, result, targs}: bool =
 	    oneTarg (fn t => ([arrow (tuple (Vector.new2 (string, t)), t)],
 			      unit))
        | Exn_setInitExtra => oneTarg (fn t => ([t], unit))
-       | Exn_setTopLevelHandler => done ([arrow (exn, unit)], unit)
        | FFI f => done (Vector.toList (CFunction.args f), CFunction.return f)
        | FFI_Symbol {ty, ...} => done ([], ty)
        | GC_collect => done ([], unit)
@@ -332,6 +331,8 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Thread_copyCurrent => done ([], unit)
        | Thread_returnToC => done ([], unit)
        | Thread_switchTo => done ([thread], unit)
+       | TopLevel_setHandler => done ([arrow (exn, unit)], unit)
+       | TopLevel_setSuffix => done ([arrow (unit, unit)], unit)
        | Vector_length => oneTarg (fn t => ([vector t], defaultWord))
        | Vector_sub => oneTarg (fn t => ([vector t, defaultWord], t))
        | Weak_canGet => oneTarg (fn t => ([weak t], bool))

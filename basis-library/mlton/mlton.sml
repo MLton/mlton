@@ -68,6 +68,10 @@ structure Word8 =
       type t = word
    end
 
+val _ = 
+   (Primitive.TopLevel.setHandler MLtonExn.topLevelHandler
+    ; Primitive.TopLevel.setSuffix 
+      (fn () => MLtonProcess.exit MLtonProcess.success))
 end
 
 (* Patch OS.FileSys.tmpName to use mkstemp. *)

@@ -35,7 +35,6 @@ signature PRIM =
 	     | Exn_name (* implement exceptions *)
 	     | Exn_setExtendExtra (* implement exceptions *)
 	     | Exn_setInitExtra (* implement exceptions *)
-	     | Exn_setTopLevelHandler (* implement exceptions *)
 	     | FFI of 'a CFunction.t (* ssa to rssa *)
 	     | FFI_Symbol of {name: string,
 			      ty: 'a} (* codegen *)
@@ -136,6 +135,8 @@ signature PRIM =
 	      * on the stack.
 	      *)
 	     | Thread_switchTo (* ssa to rssa *)
+	     | TopLevel_setHandler (* implement exceptions *)
+	     | TopLevel_setSuffix (* implement suffix *)
 	     | Vector_length (* ssa to rssa *)
 	     | Vector_sub (* ssa to rssa *)
 	     | Weak_canGet (* ssa to rssa *)

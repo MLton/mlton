@@ -319,12 +319,9 @@ in
       dir := SOME d
    fun basisLibrary ()
       : {build: Decs.t,
-	 localTopFinish: ((unit -> Decs.t * Decs.t * Decs.t)
-			  -> Decs.t * Decs.t * Decs.t),
+	 localTopFinish: (unit -> Decs.t) -> Decs.t,
 	 libs: {name: string,
-		bind: Ast.Program.t,
-		prefix: Ast.Program.t,
-		suffix: Ast.Program.t} list} =
+		bind: Ast.Program.t} list} =
        let
 	  val d =
 	     case !dir of
@@ -354,13 +351,9 @@ in
 	    let
 	      fun libFile f = libsFile (String./ (name, f))
 	      val bind = withFiles (libFile "bind", lexAndParseFiles)
-	      val prefix = withFiles (libFile "prefix", lexAndParseFiles)
-	      val suffix = withFiles (libFile "suffix", lexAndParseFiles)
 	    in
 	      {name = name,
-	       bind = bind,
-	       prefix = prefix,
-	       suffix = suffix}
+	       bind = bind}
 	    end
        in
 	  {build = build,
@@ -409,18 +402,14 @@ fun selectBasisLibrary () =
    in
       case List.peek (libs, fn {name, ...} => name = lib) of
 	 NONE => Error.bug (concat ["Missing basis library: ", lib])
-       | SOME {bind, prefix, suffix, ...} =>
+       | SOME {bind, ...} =>
 	   let
-	     val (bind, prefix, suffix) = 
+	     val bind = 
 	        localTopFinish 
 		(fn () =>
-		 (elaborateProg (bind, basisEnv, lookupConstantError),
-		  elaborateProg (prefix, basisEnv, lookupConstantError),
-		  elaborateProg (suffix, basisEnv, lookupConstantError)))
+		 elaborateProg (bind, basisEnv, lookupConstantError))
 	   in
-	     {basis = Decs.append (build, bind),
-	      prefix = prefix,
-	      suffix = suffix}
+	     {basis = Decs.append (build, bind)}
 	   end
    end
 
@@ -432,7 +421,7 @@ exception Done
 
 fun elaborate {input: File.t list}: Xml.Program.t =
    let
-      val {basis, prefix, suffix, ...} = selectBasisLibrary ()
+      val {basis, ...} = selectBasisLibrary ()
       val _ =
 	 if List.isEmpty input
 	    then ()
@@ -486,7 +475,7 @@ fun elaborate {input: File.t list}: Xml.Program.t =
 		end)
       val _ = (lexAndParseMsg (); elaborateMsg ())
       val _ = if !Control.elaborateOnly then raise Done else ()
-      val user = Decs.toList (Decs.appends [prefix, input, suffix])
+      val user = Decs.toList input
       val basis = Decs.toList basis
       val basis =
 	 if !Control.deadCode
@@ -504,9 +493,10 @@ fun elaborate {input: File.t list}: Xml.Program.t =
 			Vector.fromList basis,
 			Vector.fromList user]
       val coreML = CoreML.Program.T {decs = decs}
-(*       val _ = Control.message (Control.Detail, fn () =>
- * 			       CoreML.Program.layoutStats coreML)
- *)
+(*
+      val _ = Control.message (Control.Detail, fn () =>
+ 			       CoreML.Program.layoutStats coreML)
+*)
       (* Set GC_state offsets. *)
       val _ =
 	 let

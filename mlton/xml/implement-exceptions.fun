@@ -424,7 +424,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 					 arg = Vector.sub (args, 0)})
 		      | Exn_setExtendExtra => primExp (Tuple (Vector.new0 ()))
 		      | Exn_setInitExtra => primExp (Tuple (Vector.new0 ()))
-		      | Exn_setTopLevelHandler =>
+		      | TopLevel_setHandler =>
 			   assign (topLevelHandler,
 				   Type.arrow (Type.exn, Type.unit))
 		      | _ => primExp exp
@@ -453,7 +453,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 					 (Dexp.monoVar
 					  (topLevelHandler,
 					   let open Type
-					   in reff (arrow (Type.exn, unit))
+					   in reff (arrow (exn, unit))
 					   end))),
 				 arg = Dexp.monoVar x,
 				 ty = Type.unit}}

@@ -11,6 +11,7 @@ struct
 open S
 
 structure ImplementExceptions = ImplementExceptions (open S)
+structure ImplementSuffix = ImplementSuffix (open S)
 structure Polyvariance = Polyvariance (open S)
 (* structure Uncurry = Uncurry (open S) *)
 
@@ -26,11 +27,13 @@ type pass = {name: string,
 val sxmlPasses : pass list ref = ref
    [
     {name = "sxmlShrink1", doit = S.shrink},
-    {name = "implementExceptions", doit = ImplementExceptions.doit},
+    {name = "implementSuffix", doit = ImplementSuffix.doit},
     {name = "sxmlShrink2", doit = S.shrink},
+    {name = "implementExceptions", doit = ImplementExceptions.doit},
+    {name = "sxmlShrink3", doit = S.shrink},
 (*
     {name = "uncurry", doit = Uncurry.uncurry},
-    {name = "sxmlShrink3", doit = S.shrink},
+    {name = "sxmlShrink4", doit = S.shrink},
 *)
     {name = "polyvariance", doit = Polyvariance.duplicate}
    ]

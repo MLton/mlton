@@ -44,7 +44,6 @@ datatype 'a t =
  | Exn_name (* implement exceptions *)
  | Exn_setExtendExtra (* implement exceptions *)
  | Exn_setInitExtra (* implement exceptions *)
- | Exn_setTopLevelHandler (* implement exceptions *)
  | FFI of 'a CFunction.t (* ssa to rssa *)
  | FFI_Symbol of {name: string,
 		  ty: 'a} (* codegen *)
@@ -145,6 +144,8 @@ datatype 'a t =
   * on the stack.
   *)
  | Thread_switchTo (* ssa to rssa *)
+ | TopLevel_setHandler (* implement exceptions *)
+ | TopLevel_setSuffix (* implement suffix *)
  | Vector_length (* ssa to rssa *)
  | Vector_sub (* ssa to rssa *)
  | Weak_canGet (* ssa to rssa *)
@@ -217,7 +218,6 @@ fun toString (n: 'a t): string =
        | Exn_name => "Exn_name"
        | Exn_setExtendExtra => "Exn_setExtendExtra"
        | Exn_setInitExtra => "Exn_setInitExtra"
-       | Exn_setTopLevelHandler => "Exn_setTopLevelHandler"
        | FFI f => CFunction.name f
        | FFI_Symbol {name, ...} => name
        | GC_collect => "GC_collect"
@@ -298,6 +298,8 @@ fun toString (n: 'a t): string =
        | Thread_copyCurrent => "Thread_copyCurrent"
        | Thread_returnToC => "Thread_returnToC"
        | Thread_switchTo => "Thread_switchTo"
+       | TopLevel_setHandler => "TopLevel_setHandler"
+       | TopLevel_setSuffix => "TopLevel_setSuffix"
        | Vector_length => "Vector_length"
        | Vector_sub => "Vector_sub"
        | Weak_canGet => "Weak_canGet"
@@ -351,7 +353,6 @@ val equals: 'a t * 'a t -> bool =
     | (Exn_name, Exn_name) => true
     | (Exn_setExtendExtra, Exn_setExtendExtra) => true
     | (Exn_setInitExtra, Exn_setInitExtra) => true
-    | (Exn_setTopLevelHandler, Exn_setTopLevelHandler) => true
     | (FFI f, FFI f') => CFunction.equals (f, f')
     | (FFI_Symbol {name = n, ...}, FFI_Symbol {name = n', ...}) => n = n'
     | (GC_collect, GC_collect) => true
@@ -436,6 +437,8 @@ val equals: 'a t * 'a t -> bool =
     | (Thread_copyCurrent, Thread_copyCurrent) => true
     | (Thread_returnToC, Thread_returnToC) => true
     | (Thread_switchTo, Thread_switchTo) => true
+    | (TopLevel_setHandler, TopLevel_setHandler) => true
+    | (TopLevel_setSuffix, TopLevel_setSuffix) => true
     | (Vector_length, Vector_length) => true
     | (Vector_sub, Vector_sub) => true
     | (Weak_canGet, Weak_canGet) => true
@@ -506,7 +509,6 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Exn_name => Exn_name
     | Exn_setExtendExtra => Exn_setExtendExtra
     | Exn_setInitExtra => Exn_setInitExtra
-    | Exn_setTopLevelHandler => Exn_setTopLevelHandler
     | FFI func => FFI (CFunction.map (func, f))
     | FFI_Symbol {name, ty} => FFI_Symbol {name = name, ty = f ty}
     | GC_collect => GC_collect
@@ -587,6 +589,8 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Thread_copyCurrent => Thread_copyCurrent
     | Thread_returnToC => Thread_returnToC
     | Thread_switchTo => Thread_switchTo
+    | TopLevel_setHandler => TopLevel_setHandler
+    | TopLevel_setSuffix => TopLevel_setSuffix
     | Vector_length => Vector_length
     | Vector_sub => Vector_sub
     | Weak_canGet => Weak_canGet
@@ -709,7 +713,6 @@ val kind: 'a t -> Kind.t =
        | Exn_name => Functional
        | Exn_setExtendExtra => SideEffect
        | Exn_setInitExtra => SideEffect
-       | Exn_setTopLevelHandler => SideEffect
        | FFI _ => Kind.SideEffect
        | FFI_Symbol _ => Kind.DependsOnState
        | GC_collect => SideEffect
@@ -790,6 +793,8 @@ val kind: 'a t -> Kind.t =
        | Thread_copyCurrent => SideEffect
        | Thread_returnToC => SideEffect
        | Thread_switchTo => SideEffect
+       | TopLevel_setHandler => SideEffect
+       | TopLevel_setSuffix => SideEffect
        | Vector_length => Functional
        | Vector_sub => Functional
        | Weak_canGet => DependsOnState
@@ -908,8 +913,6 @@ in
        Exn_name,
        Exn_setExtendExtra,
        Exn_setInitExtra,
-       Exn_setTopLevelHandler,
-       Exn_setTopLevelHandler,
        GC_collect,
        GC_pack,
        GC_unpack,
@@ -955,6 +958,8 @@ in
        Thread_copyCurrent,
        Thread_returnToC,
        Thread_switchTo,
+       TopLevel_setHandler,
+       TopLevel_setSuffix,
        Vector_length,
        Vector_sub,
        Weak_canGet,

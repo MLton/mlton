@@ -2,8 +2,6 @@ structure MLtonExn =
    struct
       open Primitive.Exn
 
-      structure Status = Primitive.Status
-
       type t = exn
 
       val history: t -> string list =
@@ -36,13 +34,11 @@ structure MLtonExn =
 		      (message "with history:\n"
 		       ; (List.app (fn s => message (concat ["\t", s, "\n"]))
 			  l)))
-	     ; MLtonProcess.exit Status.failure)
+	     ; MLtonProcess.exit MLtonProcess.failure)
 	    handle _ => (message "Toplevel handler raised exception.\n"
-			 ; Primitive.halt Status.failure
+			 ; Primitive.halt MLtonProcess.failure
 			 ; raise Fail "bug")
       end
-
-      val _ = Primitive.Exn.setTopLevelHandler topLevelHandler
    end
 
 structure General: GENERAL =

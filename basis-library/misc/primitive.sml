@@ -256,8 +256,6 @@ structure Primitive =
 	       setExtendExtra
 	    val setInitExtra = _prim "Exn_setInitExtra": 'a -> unit;
 	    val setInitExtra: extra -> unit = setInitExtra
-	    val setTopLevelHandler =
-	       _prim "Exn_setTopLevelHandler": (exn -> unit) -> unit;
 	 end
 
       structure FFI =
@@ -1377,6 +1375,14 @@ structure Primitive =
 	    val gettimeofday = _import "Time_gettimeofday": unit -> int;
 	    val sec = _import "Time_sec": unit -> int;
 	    val usec = _import "Time_usec": unit -> int;
+	 end
+
+      structure TopLevel =
+	 struct
+	    val setHandler =
+	       _prim "TopLevel_setHandler": (exn -> unit) -> unit;
+	    val setSuffix =
+	       _prim "TopLevel_setSuffix": (unit -> unit) -> unit;
 	 end
 
       structure Vector =
