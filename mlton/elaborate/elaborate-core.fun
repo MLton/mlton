@@ -1215,7 +1215,7 @@ fun elaborateDec (d, {env = E,
 			       lay = lay,
 			       resultType = resultType}
 			   end))
-		      val close = TypeEnv.close (tyvars, region)
+		      val {close, ...} = TypeEnv.close (tyvars, region)
 		      val {markFunc, setBound, unmarkFunc} = recursiveFun ()
 		      val fbs =
 			 Vector.map
@@ -1522,7 +1522,7 @@ fun elaborateDec (d, {env = E,
 		    ; Decs.empty)
 	      | Adec.Val {tyvars, rvbs, vbs} =>
 		   let
-		      val close = TypeEnv.close (tyvars, region)
+		      val {close, dontClose} = TypeEnv.close (tyvars, region)
 		      (* Must do all the es and rvbs before the ps because of
 		       * scoping rules.
 		       *)
@@ -1572,9 +1572,11 @@ fun elaborateDec (d, {env = E,
 						    ", "))],
 					 lay ())
 			       in
-				  fn tys => {bound = fn () => Vector.new0 (),
-					     schemes =
-					     Vector.map (tys, Scheme.fromType)}
+				  fn tys =>
+				  (dontClose ()
+				   ; {bound = fn () => Vector.new0 (),
+				      schemes =
+				      Vector.map (tys, Scheme.fromType)})
 			       end
 		      val {markFunc, setBound, unmarkFunc} = recursiveFun ()
 		      val elaboratePat = elaboratePat ()
@@ -1682,8 +1684,7 @@ fun elaborateDec (d, {env = E,
 		      val boundVars =
 			 Vector.concat
 			 [boundVars, Vector.concatV (Vector.map (vbs, #bound))]
-		      val {bound, schemes} =
-			 close (Vector.map (boundVars, #3))
+		      val {bound, schemes} = close (Vector.map (boundVars, #3))
 		      val _ = checkSchemes (Vector.zip
 					    (Vector.map (boundVars, #2),
 					     schemes))

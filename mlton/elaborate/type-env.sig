@@ -92,9 +92,9 @@ signature TYPE_ENV =
        *)
       val close:
 	 Tyvar.t vector * Region.t
-	 -> Type.t vector
-	 -> {bound: unit -> Tyvar.t vector,
-	     schemes: Scheme.t vector}
+	 -> {close: Type.t vector -> {bound: unit -> Tyvar.t vector,
+				      schemes: Scheme.t vector},
+	     dontClose: unit -> unit}
       val initAdmitsEquality: Tycon.t * Tycon.AdmitsEquality.t -> unit
       val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
       val tick: {useBeforeDef: Tycon.t -> unit} -> unit
