@@ -49,7 +49,7 @@ tmp=/tmp/z.regression.$$
 PATH=.:$PATH
 
 cd $src/regression
-for f in mutex.sml; #`ls *.sml`;
+for f in `ls *.sml`;
 do
 	f=`basename $f .sml`
 	case "$f" in
