@@ -1,5 +1,8 @@
 Here are the changes from version 20020923.
 
+* 2002-11 - 2003-01
+  - Added source-level allocation and time profiling.
+
 * 2002-12-28
   - Added NetHostDB,NetProtDB,NetServDB structures.
   - Added Socket,GenericSock,INetSock,UnixSock structures.
