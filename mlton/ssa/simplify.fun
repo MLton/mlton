@@ -152,7 +152,7 @@ val simplify = fn p => let
 			 val _ = typeCheck p'
 			 val _ =
 			    Control.trace (Control.Pass, "checkHandlers")
-			    checkHandlers p'
+			    Program.checkHandlers p'
 		       in
 			 p'
 		       end
