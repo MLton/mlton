@@ -46,8 +46,8 @@ fun cm {cmfile: File.t} =
 			 else loop (f, nesting + 1, relativize)
 		    | Bad s =>
 			 fail (concat [finalize cmfile, ": bad CM file: ", s])
-		    | DoesNotExist =>
-			 fail (concat [finalize cmfile, ": does not exist"])
+		    | CanNotRead =>
+			 fail (concat [finalize cmfile, ": can not read"])
 		    | Members members =>
 			 List.foreach
 			 (members, fn m =>

@@ -3,7 +3,7 @@ signature PARSE =
       datatype result =
 	 Alias of File.t
        | Bad of string (* error message *)
-       | DoesNotExist
+       | CanNotRead
        | Members of File.t list
       (* Pre: cmfile must not contain any path, i.e. it must be in the
        *      current directory.
