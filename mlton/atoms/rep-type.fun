@@ -928,7 +928,8 @@ fun ofGCField (f: GCField.t): t =
        | StackTop => cPointer ()
    end
 
-fun castIsOk _ = true
+fun castIsOk {from, fromInt, to, tyconTy} =
+   Bits.equals (width from, width to)
 
 fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
    let
