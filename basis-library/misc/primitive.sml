@@ -251,12 +251,17 @@ structure Primitive =
 	    type int = intInf
 
 	    val + = _prim "IntInf_add": int * int * word -> int;
+	    val andb = _prim "IntInf_andb": int * int * word -> int;
+	    val ~>> = _prim "IntInf_arshift": int * word * word -> int;
 	    val compare = _prim "IntInf_compare": int * int -> Int.int;
 	    val fromVector = _prim "IntInf_fromVector": word vector -> int;
 	    val fromWord = _prim "IntInf_fromWord": word -> int;
 	    val gcd = _prim "IntInf_gcd": int * int * word -> int;
+	    val << = _prim "IntInf_lshift": int * word * word -> int;
 	    val * = _prim "IntInf_mul": int * int * word -> int;
 	    val ~ = _prim "IntInf_neg": int * word -> int;
+	    val notb = _prim "IntInf_notb": int * word -> int;
+	    val orb = _prim "IntInf_orb": int * int * word -> int;
 	    val quot = _prim "IntInf_quot": int * int * word -> int;
 	    val rem = _prim "IntInf_rem": int * int * word -> int;
 	    val smallMul =
@@ -266,6 +271,7 @@ structure Primitive =
 	       = _prim "IntInf_toString": int * Int.int * word -> string;
 	    val toVector = _prim "IntInf_toVector": int -> word vector;
 	    val toWord = _prim "IntInf_toWord": int -> word;
+	    val xorb = _prim "IntInf_xorb": int * int * word -> int;
 	 end
 
       structure Itimer =

@@ -49,13 +49,19 @@ structure CFunction =
 	       returnTy = SOME Type.pointer}
       in
 	 val intInfAdd = make ("IntInf_do_add", 2)
+	 val intInfAndb = make ("IntInf_do_andb", 2)
+	 val intInfArshift = make ("IntInf_do_arshift", 2)
 	 val intInfGcd = make ("IntInf_do_gcd", 2)
+	 val intInfLshift = make ("IntInf_do_lshift", 2)
 	 val intInfMul = make ("IntInf_do_mul", 2)
 	 val intInfNeg = make ("IntInf_do_neg", 1)
+	 val intInfNotb = make ("IntInf_do_notb", 1)
+	 val intInfOrb = make ("IntInf_do_orb", 2)
 	 val intInfQuot = make ("IntInf_do_quot", 2)
 	 val intInfRem = make ("IntInf_do_rem", 2)
 	 val intInfSub = make ("IntInf_do_sub", 2)
 	 val intInfToString = make ("IntInf_do_toString", 2)
+	 val intInfXorb = make ("IntInf_do_xorb", 2)
       end
 
       local
@@ -1043,18 +1049,24 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				     func = (CFunction.gc
 					     {maySwitchThreads = false})}
 			       | IntInf_add => simpleCCall CFunction.intInfAdd
+			       | IntInf_andb => simpleCCall CFunction.intInfAndb
+			       | IntInf_arshift => simpleCCall CFunction.intInfArshift
 			       | IntInf_compare =>
 				    simpleCCall CFunction.intInfCompare
 			       | IntInf_equal =>
 				    simpleCCall CFunction.intInfEqual
 			       | IntInf_gcd => simpleCCall CFunction.intInfGcd
+			       | IntInf_lshift => simpleCCall CFunction.intInfLshift
 			       | IntInf_mul => simpleCCall CFunction.intInfMul
 			       | IntInf_neg => simpleCCall CFunction.intInfNeg
+			       | IntInf_notb => simpleCCall CFunction.intInfNotb
+			       | IntInf_orb => simpleCCall CFunction.intInfOrb
 			       | IntInf_quot => simpleCCall CFunction.intInfQuot
 			       | IntInf_rem => simpleCCall CFunction.intInfRem
 			       | IntInf_sub => simpleCCall CFunction.intInfSub
 			       | IntInf_toString =>
 				    simpleCCall CFunction.intInfToString
+			       | IntInf_xorb => simpleCCall CFunction.intInfXorb
 			       | MLton_bogus =>
 				    (case toType ty of
 					NONE => none ()

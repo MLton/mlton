@@ -229,17 +229,17 @@ pointer IntInf_do_sub(pointer lhs, pointer rhs, uint bytes)
 	return binary(lhs, rhs, bytes, &mpz_sub);
 }
 
-pointer IntInf_do_and(pointer lhs, pointer rhs, uint bytes)
+pointer IntInf_do_andb(pointer lhs, pointer rhs, uint bytes)
 {
 	return binary(lhs, rhs, bytes, &mpz_and);
 }
 
-pointer IntInf_do_ior(pointer lhs, pointer rhs, uint bytes)
+pointer IntInf_do_orb(pointer lhs, pointer rhs, uint bytes)
 {
 	return binary(lhs, rhs, bytes, &mpz_ior);
 }
 
-pointer IntInf_do_xor(pointer lhs, pointer rhs, uint bytes)
+pointer IntInf_do_xorb(pointer lhs, pointer rhs, uint bytes)
 {
 	return binary(lhs, rhs, bytes, &mpz_xor);
 }
@@ -264,9 +264,35 @@ pointer IntInf_do_neg(pointer arg, uint bytes)
 	return unary(arg, bytes, &mpz_neg);
 }
 
-pointer IntInf_do_com(pointer arg, uint bytes)
+pointer IntInf_do_notb(pointer arg, uint bytes)
 {
 	return unary(arg, bytes, &mpz_com);
+}
+
+static pointer
+shary(pointer arg, uint shift, uint bytes,
+      void(*shop)(__mpz_struct *resmpz, 
+		  __gmp_const __mpz_struct *argspace,
+		  ulong shift))
+{
+	__mpz_struct	argmpz,
+			resmpz;
+	mp_limb_t	argspace[2];
+
+	initRes(&resmpz, bytes);
+	fill(arg, &argmpz, argspace);
+	shop(&resmpz, &argmpz, (ulong)shift);
+	return answer(&resmpz);
+}
+
+pointer IntInf_do_arshift(pointer arg, uint shift, uint bytes)
+{
+	return shary(arg, shift, bytes, &mpz_fdiv_q_2exp);
+}
+
+pointer IntInf_do_lshift(pointer arg, uint shift, uint bytes)
+{
+	return shary(arg, shift, bytes, &mpz_mul_2exp);
 }
 
 Word

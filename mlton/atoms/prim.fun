@@ -60,20 +60,6 @@ structure Name =
        | Exn_setTopLevelHandler
        | FFI of string
        | GC_collect
-       | IntInf_add
-       | IntInf_compare
-       | IntInf_equal
-       | IntInf_fromVector
-       | IntInf_fromWord
-       | IntInf_gcd
-       | IntInf_mul
-       | IntInf_neg
-       | IntInf_quot
-       | IntInf_rem
-       | IntInf_sub
-       | IntInf_toString
-       | IntInf_toVector
-       | IntInf_toWord
        | Int_add
        | Int_addCheck
        | Int_ge
@@ -90,6 +76,26 @@ structure Name =
        | Int_rem
        | Int_sub
        | Int_subCheck
+       | IntInf_add
+       | IntInf_andb
+       | IntInf_arshift
+       | IntInf_compare
+       | IntInf_equal
+       | IntInf_fromVector
+       | IntInf_fromWord
+       | IntInf_gcd
+       | IntInf_lshift
+       | IntInf_mul
+       | IntInf_notb
+       | IntInf_neg
+       | IntInf_orb
+       | IntInf_quot
+       | IntInf_rem
+       | IntInf_sub
+       | IntInf_toString
+       | IntInf_toVector
+       | IntInf_toWord
+       | IntInf_xorb
        | MLton_bogus
        | MLton_bug
        | MLton_deserialize
@@ -207,11 +213,11 @@ structure Name =
       val equals: t * t -> bool = op =
 
       val isCommutative =
-	 fn IntInf_equal => true
-	  | Int_add => true
+	 fn Int_add => true
 	  | Int_addCheck => true
 	  | Int_mul => true
 	  | Int_mulCheck => true
+	  | IntInf_equal => true
 	  | MLton_eq => true
 	  | MLton_equal => true
 	  | Real_add => true
@@ -275,19 +281,25 @@ structure Name =
 	  (Exn_setTopLevelHandler, SideEffect, "Exn_setTopLevelHandler"),
 	  (GC_collect, SideEffect, "GC_collect"),
 	  (IntInf_add, Functional, "IntInf_add"),
+	  (IntInf_andb, Functional, "IntInf_andb"),
+	  (IntInf_arshift, Functional, "IntInf_arshift"),
 	  (IntInf_compare, Functional, "IntInf_compare"),
 	  (IntInf_equal, Functional, "IntInf_equal"),
 	  (IntInf_fromVector, Functional, "IntInf_fromVector"),
 	  (IntInf_fromWord, Functional, "IntInf_fromWord"),
 	  (IntInf_gcd, Functional, "IntInf_gcd"),
+	  (IntInf_lshift, Functional, "IntInf_lshift"),
 	  (IntInf_mul, Functional, "IntInf_mul"),
+	  (IntInf_notb, Functional, "IntInf_notb"),
 	  (IntInf_neg, Functional, "IntInf_neg"),
+	  (IntInf_orb, Functional, "IntInf_orb"),
 	  (IntInf_quot, Functional, "IntInf_quot"),
 	  (IntInf_rem, Functional, "IntInf_rem"),
 	  (IntInf_sub, Functional, "IntInf_sub"),
 	  (IntInf_toString, Functional, "IntInf_toString"),
 	  (IntInf_toVector, Functional, "IntInf_toVector"),
 	  (IntInf_toWord, Functional, "IntInf_toWord"),
+	  (IntInf_xorb, Functional, "IntInf_xorb"),
 	  (Int_add, Functional, "Int_add"),
 	  (Int_addCheck, SideEffect, "Int_addCheck"),
 	  (Int_ge, Functional, "Int_ge"),
