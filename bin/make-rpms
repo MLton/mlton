@@ -100,7 +100,8 @@ if [ $home = 'yes' ]; then
 	find . -type d | grep CVS | xargs rm -rf
 	find . -type f | grep cvsignore | xargs rm -f
 	echo '  Building tgz'
-	tar.write CHANGES HTML papers *.html user-guide.ps.gz | 
+	tar.write CHANGES HTML papers *.html user-guide.ps.gz \
+		$version-$release.i386.rpm $version-$release.src.rpm | 
 		gzip >$root/mlton-home.tgz
 	
 	echo '  ftp'\''ing'
