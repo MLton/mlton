@@ -4,31 +4,50 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
+(* Use fromLargeWord instead of fromLarge so we can compile this code
+ * with older MLtons that don't have fromLarge.
+ *)
+functor FixWord (W: PERVASIVE_WORD) =
+   struct
+      type t = W.word
+
+      local
+	 structure LargeWord = Pervasive.LargeWord
+	 structure Word = Pervasive.Word
+	 structure Word8 = Pervasive.Word8
+      in
+	 fun format (w, f) = W.fmt f w
+	 val fromChar = W.fromLargeWord o Word8.toLargeWord o Byte.charToByte
+	 val fromIntInf = W.fromLargeInt
+	 val fromLarge = W.fromLargeWord o LargeWord.toLargeWord
+	 val fromWord = W.fromLargeWord o Word.toLargeWord
+	 val layout = Layout.str o W.toString
+	 fun nthBitIsSet (w: t, n: int): bool =
+	    W.fromInt 1 = W.andb (W.fromInt 1, W.>> (w, Word.fromInt n))
+	 val toChar = Byte.byteToChar o Word8.fromLargeWord o W.toLargeWord
+	 val toIntInf = W.toLargeInt
+	 val toIntInfX = W.toLargeIntX
+	 val toLarge = LargeWord.fromLargeWord o W.toLargeWord
+	 val toLargeX = LargeWord.fromLargeWord o W.toLargeWordX
+	 val toWord = Word.fromLargeWord o W.toLargeWord
+	 val toWordX = Word.fromLargeWord o W.toLargeWordX
+      end
+   end
+
 structure Word8:
    sig
       include WORD
 
-      val vectorToString: t vector -> string
       val stringToVector: string -> t vector
+      val vectorToString: t vector -> string
    end =
    struct
       open Pervasive.Word8 MLton.Word8
+      structure Z = FixWord (Pervasive.Word8)
+      open Z
 
-      type t = word
-
-      fun format (w, f) = fmt f w
-      val equals = op =
-      val fromChar = Byte.charToByte
-      val fromIntInf = fromLargeInt
-      val fromWord = fromLargeWord
-      val layout = Layout.str o toString
-      fun nthBitIsSet (w: t, n: int): bool =
-	 0w1 = andb (0w1, >> (w, Pervasive.Word.fromInt n))
-      val toChar = Byte.byteToChar
-      val toIntInf = toLargeInt
-      val toIntInfX = toLargeIntX
-      val toWord = toLargeWord
-      val toWordX = toLargeWordX
+      val equals: t * t -> bool = op =
 
       fun vectorToString v =
 	 CharVector.tabulate (Pervasive.Vector.length v, fn i =>

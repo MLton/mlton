@@ -88,6 +88,7 @@ structure Iterate
 structure Itimer
 structure Justify
 structure LargeInt
+structure LargeWord
 structure Lines
 structure List
 structure Layout

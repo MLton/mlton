@@ -9,21 +9,11 @@ structure Word: WORD32 =
       structure Int = Pervasive.Int
       type int = Int.int
       open Pervasive.Word MLton.Word
+      structure Z = FixWord (Pervasive.Word)
+      open Z
 
-      type t = word
-  
-      val layout = Layout.str o toString
-
-      val equals = op =
-
-      fun format (w, f) = Word.fmt f w
-
-      val fromChar = Word8.toWord o Byte.charToByte
-      val toChar = Byte.byteToChar o Word8.fromWord
-
-      fun nthBitIsSet (w: t, n: int): bool =
-	 0w1 = andb (0w1, >> (w, fromInt n))
-	 
+      val equals: t * t -> bool = op =
+ 
       fun fromWord8s (f: int -> Word8.t): t =
 	 let
 	    fun w (i, shift) =

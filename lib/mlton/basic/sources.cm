@@ -64,6 +64,7 @@ structure Iterate
 structure Itimer
 structure Justify
 structure LargeInt
+structure LargeWord
 structure Layout
 structure Lines
 structure List
@@ -254,6 +255,7 @@ iterate.sml
 itimer.sml
 justify.sig
 justify.sml
+large-word.sml
 layout.sig
 layout.sml
 lines.sig
