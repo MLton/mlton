@@ -153,6 +153,9 @@ val options =
        (Expert, #1 trace, " name1,...", "trace compiler internals", #2 trace),
        (Expert, "type-check", " {false|true}", "type check ILs",
 	boolRef typeCheck),
+       (Expert, "unused-args", " {true|false}",
+	"CPS unusd args optimization",
+	boolRef Control.localFlatten),
        (Expert, "use-basis-library", " {true|false}",
 	"prefix the basis library to the program",
 	boolRef useBasisLibrary),
@@ -239,7 +242,7 @@ fun commandLine (args: string list): unit =
 	 List.push (defines,
 		    concat ["MLton_safe=", if !safe then "TRUE" else "FALSE"])
       val _ = if !debug then () else List.push (defines, "NODEBUG")
-      val _ = if !aux
+      val _ = if !aux andalso !keepDot
 		 then usage "cannot use -keep dot and -keep il"
 	      else ()
       val _ = Control.includes := !includes

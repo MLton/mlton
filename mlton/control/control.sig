@@ -66,6 +66,8 @@ signature CONTROL =
 
       val localFlatten: bool ref
 
+      val unusedArgs: bool ref
+
       structure Native:
 	 sig
 	    (* whether or not to use native codegen *)

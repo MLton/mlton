@@ -123,6 +123,10 @@ val keepMach = control {name = "keep Mach",
 val localFlatten = control {name = "localFlatten",
 			    default = true,
 			    toString = Bool.toString}
+
+val unusedArgs = control {name = "unusedArgs",
+			  default = true,
+			  toString = Bool.toString}
    
 structure Native =
    struct
