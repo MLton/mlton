@@ -55,6 +55,13 @@ signature TEXT_IO =
 signature TEXT_IO_EXTRA =
    sig
       include TEXT_IO
+
+      val equalsIn: instream * instream -> bool
+      val equalsOut: outstream * outstream -> bool
+      val inFd: instream -> Posix.IO.file_desc
+      val newIn: Posix.IO.file_desc -> instream
+      val newOut: Posix.IO.file_desc -> outstream
+      val outFd: outstream -> Posix.IO.file_desc
    end
 
 (*

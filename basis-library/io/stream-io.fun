@@ -1,6 +1,6 @@
-signature STREAM_IO_ARG = 
+signature STREAM_IO_EXTRA_ARG = 
    sig
-      structure PrimIO: PRIM_IO
+      structure PrimIO: PRIM_IO_EXTRA
       structure Array: MONO_ARRAY
       structure Vector: MONO_VECTOR
       sharing type PrimIO.elem = Array.elem = Vector.elem
@@ -9,7 +9,7 @@ signature STREAM_IO_ARG =
       val someElem: PrimIO.elem
    end
 
-functor StreamIOExtra (S: STREAM_IO_ARG) =
+functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG) =
    struct
       open S
 
@@ -229,6 +229,11 @@ functor StreamIOExtra (S: STREAM_IO_ARG) =
 		           NO_BUF => IO.NO_BUF
 			 | LINE_BUF _ => IO.LINE_BUF
 			 | BLOCK_BUF _ => IO.BLOCK_BUF))
+
+      fun outFd (os as Out {writer, ...}) =
+	case writerSel (writer, #ioDesc) of
+	  SOME ioDesc => valOf (Posix.FileSys.iodToFD ioDesc)
+	| NONE => liftExn (outstreamName os) "outFd" (Fail "<no ioDesc>")
 
       datatype out_pos = OutPos of {pos: pos,
 				    outstream: outstream}
@@ -490,6 +495,11 @@ functor StreamIOExtra (S: STREAM_IO_ARG) =
 	 | _ => liftExn (instreamName is) "getReader" IO.ClosedStream;
 	 (reader, empty))
 
+      fun inFd (is as In {reader, ...}) =
+	case readerSel (reader, #ioDesc) of
+	  SOME ioDesc => valOf (Posix.FileSys.iodToFD ioDesc)
+	| NONE => liftExn (instreamName is) "inFd" (Fail "<no ioDesc>")
+
       fun filePosIn (is as In {reader, tail, ...}) =
 	case !(!tail) of
 	  Active (ref End) =>
@@ -500,4 +510,14 @@ functor StreamIOExtra (S: STREAM_IO_ARG) =
         handle exn => liftExn (instreamName is) "filePosIn" exn
    end
 
+signature STREAM_IO_ARG = 
+   sig
+      structure PrimIO: PRIM_IO
+      structure Array: MONO_ARRAY
+      structure Vector: MONO_VECTOR
+      sharing type PrimIO.elem = Array.elem = Vector.elem
+      sharing type PrimIO.vector = Array.vector = Vector.vector
+      sharing type PrimIO.array = Array.array
+      val someElem: PrimIO.elem
+   end
 functor StreamIO(S: STREAM_IO_ARG): STREAM_IO = StreamIOExtra(S)

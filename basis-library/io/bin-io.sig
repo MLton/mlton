@@ -36,15 +36,17 @@ signature BIN_IO =
 signature BIN_IO_EXTRA =
    sig
       include BIN_IO
-(*
-      val inFd: instream -> Posix.IO.file_desc
+
+      val equalsIn: instream * instream -> bool
+      val equalsOut: outstream * outstream -> bool
       val newIn: Posix.IO.file_desc -> instream
       val newOut: Posix.IO.file_desc -> outstream
+      val inFd: instream -> Posix.IO.file_desc
       val outFd: outstream -> Posix.IO.file_desc
+
       val stdIn: instream
       val stdErr: outstream
       val stdOut: outstream
-*)
    end
 
 (*

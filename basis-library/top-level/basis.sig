@@ -179,7 +179,9 @@ signature BASIS =
 (*
       structure UnixSock : UNIX_SOCK
 *)
+(*
       structure Unix : UNIX
+*)
 (*
       structure WideCharArray : MONO_ARRAY
       structure WideCharArray2 : MONO_ARRAY2
@@ -318,7 +320,9 @@ signature BASIS =
 *)
       sharing type PackReal64Little.real = Real64.real
       sharing type Posix.Error.syserror = OS.syserror
+(*
       sharing type Posix.Process.exit_status = Unix.exit_status
+*)
       sharing type Posix.FileSys.dirstream = OS.FileSys.dirstream
       sharing type Posix.FileSys.access_mode = OS.FileSys.access_mode
       sharing type RealArray.vector = RealVector.vector
@@ -343,7 +347,9 @@ signature BASIS =
       sharing type Real64Vector.elem = Real64.real
       sharing type Real64VectorSlice.vector = Real64Vector.vector
       sharing type Real64VectorSlice.elem = Real64.real
+(*
       sharing type Unix.exit_status = Posix.Process.exit_status
+*)
       sharing type Word32Array.vector = Word32Vector.vector
       sharing type Word32Array.elem = Word32.word
       sharing type Word32Array2.vector = Word32Vector.vector
@@ -356,7 +362,7 @@ signature BASIS =
       sharing type Word32VectorSlice.vector = Word32Vector.vector
       sharing type Word32VectorSlice.elem = Word32.word
    end
-   (* Compiler built-in types *)
+   (* Top-level types *)
    where type unit = unit
    where type int = int
    where type word = word
@@ -367,25 +373,33 @@ signature BASIS =
    where type 'a vector = 'a vector
    where type 'a ref = 'a ref
    where type bool = bool
+   where type 'a option = 'a option
+   where type order = order
    where type 'a list = 'a list
+
    (* Types referenced in signatures by structure name *)
+   where type BinPrimIO.reader = BinPrimIO.reader
+   where type BinPrimIO.writer = BinPrimIO.writer
    where type Char.char = Char.char
    where type Int.int = Int.int
    where type LargeInt.int = LargeInt.int
    where type LargeReal.real = LargeReal.real
    where type LargeWord.word = LargeWord.word
-   (*
    where type IEEEReal.real_order = IEEEReal.real_order
    where type IEEEReal.float_class = IEEEReal.float_class
    where type IEEEReal.rounding_mode = IEEEReal.rounding_mode
-   *)
+   where type OS.IO.iodesc = OS.IO.iodesc
+   where type OS.Process.status = OS.Process.status
    where type Position.int = Position.int
-   (*
+   where type Posix.Process.pid = Posix.Process.pid
    where type StringCvt.radix = StringCvt.radix
    where type StringCvt.realfmt = StringCvt.realfmt
+(*
    where type ('a, 'b) StringCvt.reader = ('a, 'b) StringCvt.reader
-   *)
+*)
    where type SysWord.word = SysWord.word
+   where type TextPrimIO.reader = TextPrimIO.reader
+   where type TextPrimIO.writer = TextPrimIO.writer
    where type Time.time = Time.time
    where type Word.word = Word.word
    where type Word8.word = Word8.word

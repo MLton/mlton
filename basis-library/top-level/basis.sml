@@ -105,7 +105,9 @@ structure Basis:> BASIS =
 (*
       structure UnixSock = UnixSock
 *)
+(*
       structure Unix = Unix
+*)
 (*
       structure WideCharArray = WideCharArray
       structure WideCharArray2 = WideCharArray2

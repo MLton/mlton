@@ -1,4 +1,5 @@
 (* modified from SML/NJ sources by Stephen Weeks 1998-6-25 *)
+(* modified by Matthew Fluet 2002-10-11 *)
 
 (* os-io.sml
  *
@@ -15,15 +16,15 @@ structure OS_IO: OS_IO =
   (* an iodesc is an abstract descriptor for an OS object that
    * supports I/O (e.g., file, tty device, socket, ...).
    *)
-    type iodesc = int (* sweeks OS.IO.iodesc *)
+    datatype iodesc = datatype PreOS.IO.iodesc
 
     datatype iodesc_kind = K of string
 
   (* return a hash value for the I/O descriptor. *)
-    fun hash (fd) = Word.fromInt fd
+    fun hash (FD fd) = Word.fromInt fd
 
   (* compare two I/O descriptors *)
-    fun compare (fd1, fd2) = Int.compare(fd1, fd2)
+    fun compare (FD fd1, FD fd2) = Int.compare(fd1, fd2)
 
     structure Kind =
       struct
@@ -38,7 +39,6 @@ structure OS_IO: OS_IO =
 
   (* return the kind of I/O descriptor *)
     fun kind (fd) = let
-	  val fd = Posix.FileSys.wordToFD(SysWord.fromInt fd)
 	  val stat = Posix.FileSys.fstat fd
 	  in
 	    if      (Posix.FileSys.ST.isReg stat) then Kind.file

@@ -24,7 +24,7 @@ signature POSIX_EXTRA =
    sig
       structure Error: POSIX_ERROR_EXTRA
       structure Signal: POSIX_SIGNAL
-      structure Process: POSIX_PROCESS
+      structure Process: POSIX_PROCESS_EXTRA
 	where type signal = Signal.signal
       structure ProcEnv: POSIX_PROC_ENV
 	where type pid = Process.pid

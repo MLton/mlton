@@ -1,25 +1,30 @@
 signature IMPERATIVE_IO_EXTRA_ARG = 
    sig
-      structure StreamIO: STREAM_IO
+      structure StreamIO: STREAM_IO_EXTRA
       structure Vector: MONO_VECTOR
-      sharing type StreamIO.elem = Vector.elem
-      sharing type StreamIO.vector = Vector.vector
-      val mkReader: {fd: Posix.FS.file_desc,
+      structure Array: MONO_ARRAY
+      sharing type StreamIO.elem = Vector.elem = Array.elem
+      sharing type StreamIO.vector = Vector.vector = Array.vector
+      val mkReader: {fd: Posix.FileSys.file_desc,
 		     name: string,
 		     initBlkMode: bool} -> StreamIO.reader
-      val mkWriter: {fd: Posix.FS.file_desc,
+      val mkWriter: {fd: Posix.FileSys.file_desc,
 		     name: string,
 		     appendMode: bool,
 		     initBlkMode: bool,
 		     chunkSize: int} -> StreamIO.writer
+      val chunkSize: int
+      val openVector: Vector.vector -> StreamIO.reader
+      val fileTypeFlags: Posix.FileSys.O.flags list
    end
 
-functor ImperativeIOExtra(S: IMPERATIVE_IO_ARG): IMPERATIVE_IO_EXTRA =
+functor ImperativeIOExtra(S: IMPERATIVE_IO_EXTRA_ARG): IMPERATIVE_IO_EXTRA =
    struct
       open S
 
       structure SIO = StreamIO
       structure V = Vector
+      structure A = Array
 
       type vector = StreamIO.vector
       type elem = StreamIO.elem
@@ -29,6 +34,8 @@ functor ImperativeIOExtra(S: IMPERATIVE_IO_ARG): IMPERATIVE_IO_EXTRA =
       (*---------------*)
 
       datatype outstream = Out of SIO.outstream ref
+
+      fun equalsOut (Out os1, Out os2) = os1 = os2
 
       fun output (Out os, v) = SIO.output (!os, v)
       fun output1 (Out os, v) = SIO.output1 (!os, v)
@@ -45,6 +52,8 @@ functor ImperativeIOExtra(S: IMPERATIVE_IO_ARG): IMPERATIVE_IO_EXTRA =
       (*---------------*)
 
       datatype instream = In of SIO.instream ref
+
+      fun equalsIn (In is1, In is2) = is1 = is2
 
       fun input (In is) = let val (v, is') = SIO.input (!is)
 			  in is := is'; v
@@ -69,17 +78,99 @@ functor ImperativeIOExtra(S: IMPERATIVE_IO_ARG): IMPERATIVE_IO_EXTRA =
       fun mkInstream is = In (ref is)
       fun getInstream (In is) = !is
       fun setInstream (In is, is') = is := is'
+
+      structure PIO = Posix.IO
+      structure PFS = Posix.FileSys
+
+      val empty = V.fromList []
+
+      fun newIn (fd, name) =
+	let 
+	  val reader = mkReader {fd = fd, name = name, initBlkMode = true}
+	  val instream = SIO.mkInstream (reader, empty)
+	in
+	  mkInstream instream
+	end
+      val stdIn = newIn (PFS.stdin, "<stdin>")
+      fun openIn file =
+	let 
+	  val fd = PFS.openf (file, PIO.O_RDONLY, 
+			      PFS.O.flags fileTypeFlags)
+	in 
+	  newIn (fd, file)
+	end
+      val newIn = fn fd => newIn (fd, "<not implemented>")
+      val inFd = StreamIO.inFd o getInstream
+
+      fun newOut (fd, name, appendMode, buffer_mode) =
+	let
+	  val writer = mkWriter {fd = fd, name = name,
+				 appendMode = appendMode, 
+				 initBlkMode = true,
+				 chunkSize = chunkSize}
+	  val outstream = SIO.mkOutstream (writer, buffer_mode)
+	in
+	  mkOutstream outstream
+	end
+      val stdErr = newOut (PFS.stderr, "<stderr>", true, IO.NO_BUF)
+      val newOut = fn (fd, name, appendMode) => 
+	newOut (fd, name, appendMode,
+		if Posix.ProcEnv.isatty fd then IO.LINE_BUF else IO.BLOCK_BUF)
+      val stdOut = newOut (PFS.stdout, "<stdout>", true)
+      local
+	val readWrite =
+	  let open PFS.S
+	  in flags [irusr, iwusr, irgrp, iwgrp, iroth, iwoth]
+	  end
+      in
+	fun openOut file =
+	  let
+	    val fd = PFS.createf (file, PIO.O_WRONLY, 
+				  PFS.O.flags (PFS.O.trunc::fileTypeFlags), 
+				  readWrite)
+	  in 
+	    newOut (fd, file, false)
+	  end
+	fun openAppend file =
+	  let
+	    val fd = PFS.createf (file, PIO.O_WRONLY,
+				  PFS.O.flags (PFS.O.append::fileTypeFlags),
+				  readWrite)
+	  in
+	    newOut (fd, file, true)
+	  end
+      end
+      val newOut = fn fd => newOut (fd, "<not implemented>", false)
+      val outFd = StreamIO.outFd o getOutstream
+
+      val openVector = fn v =>
+	let
+	  val reader = openVector v
+	  val instream = SIO.mkInstream (reader, empty)
+	in
+	  mkInstream instream
+	end
    end
 
 signature IMPERATIVE_IO_ARG = 
    sig
       structure StreamIO: STREAM_IO
       structure Vector: MONO_VECTOR
-      sharing type StreamIO.elem = Vector.elem
-      sharing type StreamIO.vector = Vector.vector
+      structure Array: MONO_ARRAY
+      sharing type StreamIO.elem = Vector.elem = Array.elem
+      sharing type StreamIO.vector = Vector.vector = Array.vector
    end
 
 functor ImperativeIO(S: IMPERATIVE_IO_ARG): IMPERATIVE_IO = 
   ImperativeIOExtra(open S
+		    structure StreamIO = 
+		      struct
+			open StreamIO
+			fun inFd _ = raise (Fail "<inFd>")
+			fun outFd _ = raise (Fail "<outFd>")
+		      end
 		    fun mkReader _ = raise (Fail "<mkReader>")
-		    fun mkWriter _ = raise (Fail "<mkWriter>"))
+		    fun mkWriter _ = raise (Fail "<mkWriter>")
+		    val chunkSize = Primitive.TextIO.bufSize
+		    fun openVector _ = raise (Fail "<openVector>")
+		    val fileTypeFlags = [])

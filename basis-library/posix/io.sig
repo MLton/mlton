@@ -68,7 +68,6 @@ signature POSIX_IO =
       val setlk: file_desc * FLock.flock -> FLock.flock 
       val setlkw: file_desc * FLock.flock -> FLock.flock
 
-      (* MISSING *)
       val mkBinReader: {fd: file_desc,
 			name: string,
 			initBlkMode: bool} -> BinPrimIO.reader

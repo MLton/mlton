@@ -331,8 +331,7 @@ PrimIO and PRIM_IO
 - should synthesized operations handle and IO.Io exceptions and change
   the name field?
 
-functor arguments in PRIM_IO and STREAM_IO don't match
- (PRIM_IO uses A: MONO_ARRAY while STREAM_IO uses Array: MONO_ARRAY).
+functor arguments in PrimIO and StreamIO and ImperativeIO don't match.
 
 STREAM_IO
 - what is the difference between a terminated output stream and a closed

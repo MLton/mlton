@@ -1,12 +1,21 @@
 structure TextIO: TEXT_IO_EXTRA =
    struct
-      structure StreamIO = StreamIOExtra(structure PrimIO = TextPrimIO
-					 structure Array = CharArray
-					 structure Vector = CharVector
-					 val someElem = (#"\000": Char.char))
-      structure ImperativeIO = ImperativeIOExtra(structure StreamIO = StreamIO
-						 structure Vector = CharVector)
+      structure StreamIO = 
+	StreamIOExtra(structure PrimIO = TextPrimIO
+		      structure Array = CharArray
+		      structure Vector = CharVector
+		      val someElem = (#"\000": Char.char))
+      structure ImperativeIO = 
+	ImperativeIOExtra(structure StreamIO = StreamIO
+			  structure Vector = CharVector
+			  structure Array = CharArray
+			  val mkReader = Posix.IO.mkTextReader
+			  val mkWriter = Posix.IO.mkTextWriter
+			  val chunkSize = Primitive.TextIO.bufSize
+			  val openVector = TextPrimIO.openVector
+			  val fileTypeFlags = [PosixPrimitive.FileSys.O.text])
       open ImperativeIO
+
       structure StreamIO =
 	 struct
 	    open StreamIO
@@ -16,17 +25,8 @@ structure TextIO: TEXT_IO_EXTRA =
 
       val inputLine = fn _ => raise (Fail "<unimplemented>")
       val outputSubstr = fn _ => raise (Fail "<unimplemented>")
-      val openIn = fn _ => raise (Fail "<unimplemented>")
-      val openOut = fn _ => raise (Fail "<unimplemented>")
-      val openAppend = fn _ => raise (Fail "<unimplemented>")
-      val openString = fn _ => raise (Fail "<unimplemented>")
-      val stdIn = (mkInstream o StreamIO.mkInstream) 
-	          (TextPrimIO.nullRd (), CharVector.tabulate (0, fn _ => #"\000"))
-      val stdOut = (mkOutstream o StreamIO.mkOutstream) 
-	           (TextPrimIO.nullWr (), IO.NO_BUF)
-      val stdErr = (mkOutstream o StreamIO.mkOutstream) 
-	           (TextPrimIO.nullWr (), IO.NO_BUF)
-      val print = fn _ => raise (Fail "<unimplemented>")
+      val openString = openVector
+      fun print (s: string) = (output (stdOut, s); flushOut stdOut)
       val scanStream = fn _ => raise (Fail "<unimplemented>")
    end
 

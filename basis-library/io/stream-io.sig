@@ -34,4 +34,7 @@ signature STREAM_IO =
 signature STREAM_IO_EXTRA =
    sig
       include STREAM_IO
+
+      val inFd: instream -> Posix.IO.file_desc
+      val outFd: outstream -> Posix.IO.file_desc
    end

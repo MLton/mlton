@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure PosixProcess: POSIX_PROCESS =
+structure PosixProcess: POSIX_PROCESS_EXTRA =
    struct
       structure Prim = PosixPrimitive.Process
       open Prim

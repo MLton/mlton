@@ -15,7 +15,9 @@ structure Time: TIME_EXTRA =
       datatype time' = datatype time
 
       exception Time
+      val thousand': IntInf.int = 1000
       val thousand: int = 1000
+      val million': IntInf.int = 1000000
       val million: int = 1000000
       
       val zeroTime = T {sec = 0,
@@ -48,30 +50,24 @@ structure Time: TIME_EXTRA =
 	 T {sec = convert s, usec = 0}
 
       fun fromMilliseconds (msec: LargeInt.int): time =
-	 if Primitive.safe andalso msec < 0
-	    then raise Time
-	 else
-	    let
-	       val msec = IntInf.fromLarge msec
-	       val (sec, msec) = IntInf.divMod (msec, thousand)
-	       val (sec, msec) = (IntInf.toLarge sec, IntInf.toLarge msec)
-	    in
-	       T {sec = convert sec,
-		  usec = LargeInt.toInt msec * thousand}
-	    end
-	    
+	let
+	  val msec = IntInf.fromLarge msec
+	  val (sec, msec) = IntInf.divMod (msec, thousand')
+	  val (sec, msec) = (IntInf.toLarge sec, IntInf.toLarge msec)
+	in
+	  T {sec = convert sec,
+	     usec = (LargeInt.toInt msec) * thousand}
+	end
+ 
       fun fromMicroseconds (usec: LargeInt.int): time =
-	 if Primitive.safe andalso usec < 0
-	    then raise Time
-	 else
-	    let
-	       val usec = IntInf.fromLarge usec
-	       val (sec, usec) = IntInf.divMod (usec, million)
-	       val (sec, usec) = (IntInf.toLarge sec, IntInf.toLarge usec)
-	    in
-	       T {sec = convert sec,
-		  usec = LargeInt.toInt usec}
-	    end
+	let
+	  val usec = IntInf.fromLarge usec
+	  val (sec, usec) = IntInf.divMod (usec, million')
+	  val (sec, usec) = (IntInf.toLarge sec, IntInf.toLarge usec)
+	in
+	  T {sec = convert sec,
+	     usec = LargeInt.toInt usec}
+	end
 	 
       val add =
 	 fn (T {sec = s, usec = u}, T {sec = s', usec = u'}) =>

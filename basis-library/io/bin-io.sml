@@ -1,26 +1,20 @@
 structure BinIO: BIN_IO_EXTRA =
    struct
-      structure StreamIO = StreamIOExtra(structure PrimIO = BinPrimIO
-					 structure Array = Word8Array
-					 structure Vector = Word8Vector
-					 val someElem = (0wx0: Word8.word))
-      structure ImperativeIO = ImperativeIOExtra(structure StreamIO = StreamIO
-						 structure Vector = Word8Vector)
+      structure StreamIO = 
+	StreamIOExtra(structure PrimIO = BinPrimIO
+		      structure Array = Word8Array
+		      structure Vector = Word8Vector
+		      val someElem = (0wx0: Word8.word))
+      structure ImperativeIO = 
+	ImperativeIOExtra(structure StreamIO = StreamIO
+			  structure Vector = Word8Vector
+			  structure Array = Word8Array
+			  val mkReader = Posix.IO.mkBinReader
+			  val mkWriter = Posix.IO.mkBinWriter
+			  val chunkSize = Primitive.TextIO.bufSize
+			  val openVector = BinPrimIO.openVector
+			  val fileTypeFlags = [PosixPrimitive.FileSys.O.binary])
       open ImperativeIO
-
-      structure PIO = Posix.IO
-      structure PFS = Posix.FileSys
-      fun openIn f =
-	let 
-	  val reader = 
-	    PIO.mkBinReader 
-	    {fd = PFS.openf(name, PIO.O_RDONLY, PFS.O.flags[])}
-	in
-	  PIO.mkInstream(StreamIO.mkInstream(reader, empty))
-	end
-      fun openIn _ = raise (Fail "<unimplemented>")
-      fun openOut _ = raise (Fail "<unimplemented>")
-      fun openAppend _ = raise (Fail "<unimplemented>")
    end
 
 (*

@@ -311,6 +311,76 @@ structure PosixIO: POSIX_IO =
 	val mkBinReader = mkBinReader
 	val mkBinWriter = mkBinWriter
       end
-      fun mkTextReader _ = raise (Fail "<not implemented>")
-      fun mkTextWriter _ = raise (Fail "<not implemented>")
+      fun mkTextReader {fd, name, initBlkMode} =
+	let
+	  val BinPrimIO.RD {name, chunkSize,
+			    readVec, readArr,
+			    readVecNB, readArrNB,
+			    block, canInput, avail,
+			    getPos, setPos, endPos, verifyPos,
+			    close, ioDesc} = mkBinReader {fd = fd,
+							  name = name,
+							  initBlkMode = initBlkMode}
+	  val readVec = 
+	    case readVec of
+	      NONE => NONE
+	    | SOME readVec => 
+		SOME (fn i => 
+		      Primitive.String.fromWord8Vector (readVec i))
+	  val readVecNB = 
+	    case readVecNB of
+	      NONE => NONE
+	    | SOME readVecNB => 
+		SOME (fn i => 
+		      Option.map Primitive.String.fromWord8Vector (readVecNB i))
+	in
+	  TextPrimIO.RD {name = name,
+			 chunkSize = chunkSize,
+			 readVec = readVec,
+			 readArr = NONE,
+			 readVecNB = readVecNB,
+			 readArrNB = NONE,
+			 block = block, canInput = canInput, avail = avail,
+			 getPos = getPos, setPos = setPos,
+			 endPos = endPos, verifyPos = verifyPos,
+			 close = close, ioDesc = ioDesc}
+	end
+      fun mkTextWriter {fd, name, initBlkMode, appendMode, chunkSize} =
+	let
+	  val BinPrimIO.WR {name, chunkSize,
+			    writeVec, writeArr,
+			    writeVecNB, writeArrNB,
+			    block, canOutput,
+			    getPos, setPos, endPos, verifyPos,
+			    close, ioDesc} = mkBinWriter {fd = fd,
+							  name = name,
+							  initBlkMode = initBlkMode,
+							  appendMode = appendMode,
+							  chunkSize = chunkSize}
+	  val writeVec = 
+	    case writeVec of
+	      NONE => NONE
+	    | SOME writeVec => 
+		SOME (fn {buf, i, sz} => 
+		      writeVec {buf = Primitive.String.toWord8Vector buf,
+				i = i, sz = sz})
+	  val writeVecNB = 
+	    case writeVecNB of
+	      NONE => NONE
+	    | SOME writeVecNB =>
+		SOME (fn {buf, i, sz} => 
+		      writeVecNB {buf = Primitive.String.toWord8Vector buf,
+				  i = i, sz = sz})
+	in
+	  TextPrimIO.WR {name = name,
+			 chunkSize = chunkSize,
+			 writeVec = writeVec,
+			 writeArr = NONE,
+			 writeVecNB = writeVecNB,
+			 writeArrNB = NONE,
+			 block = block, canOutput = canOutput,
+			 getPos = getPos, setPos = setPos,
+			 endPos = endPos, verifyPos = verifyPos,
+			 close = close, ioDesc = ioDesc}
+	end
    end

@@ -30,4 +30,20 @@ signature IMPERATIVE_IO =
 signature IMPERATIVE_IO_EXTRA =
    sig
       include IMPERATIVE_IO
+
+      val equalsIn: instream * instream -> bool
+      val equalsOut: outstream * outstream -> bool
+
+      val inFd: instream -> Posix.IO.file_desc
+      val outFd: outstream -> Posix.IO.file_desc
+      val newIn: Posix.IO.file_desc -> instream
+      val newOut: Posix.IO.file_desc -> outstream
+      val stdIn: instream
+      val stdErr: outstream
+      val stdOut: outstream
+
+      val openIn: string -> instream
+      val openOut: string -> outstream
+      val openAppend: string -> outstream
+      val openVector: vector -> instream
    end

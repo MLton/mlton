@@ -16,7 +16,7 @@ structure OS_Process: OS_PROCESS_EXTRA =
       open Posix.Process
 
       structure Signal = MLton.Signal
-      type status = int
+      type status = PreOS.Process.status
 
       val success: status = 0
       val failure: status = 1

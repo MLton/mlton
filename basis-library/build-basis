@@ -82,6 +82,7 @@ misc/unique-id.fun
 misc/cleaner.sig
 misc/cleaner.sml
 
+system/pre-os.sml
 system/time.sig
 system/time.sml
 system/date.sig
@@ -93,8 +94,6 @@ io/prim-io.sig
 io/prim-io.fun
 io/bin-prim-io.sml
 io/text-prim-io.sml
-io/stream-io.sig
-io/stream-io.fun
 
 posix/error.sig
 posix/error.sml
@@ -117,6 +116,8 @@ posix/tty.sml
 posix/posix.sig
 posix/posix.sml
 
+io/stream-io.sig
+io/stream-io.fun
 io/imperative-io.sig
 io/imperative-io.fun
 io/bin-stream-io.sig
@@ -186,8 +187,6 @@ system/io.sig
 system/io.sml
 system/os.sig
 system/os.sml
-system/unix.sig
-system/unix.sml
 system/timer.sig
 system/timer.sml
 

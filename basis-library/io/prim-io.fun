@@ -1,4 +1,4 @@
-signature PRIM_IO_ARG =
+signature PRIM_IO_EXTRA_ARG =
    sig
      structure A: MONO_ARRAY
      structure V: MONO_VECTOR
@@ -9,7 +9,7 @@ signature PRIM_IO_ARG =
      val compare : (pos * pos) -> order
    end
 
-functor PrimIOExtra (S : PRIM_IO_ARG) = 
+functor PrimIOExtra (S : PRIM_IO_EXTRA_ARG) = 
    struct
       open S
 
@@ -323,4 +323,14 @@ functor PrimIOExtra (S : PRIM_IO_ARG) =
 	end
    end
 
+signature PRIM_IO_ARG =
+   sig
+     structure A: MONO_ARRAY
+     structure V: MONO_VECTOR
+     sharing type A.vector = V.vector
+     sharing type A.elem = V.elem
+     val someElem : A.elem
+     eqtype pos
+     val compare : (pos * pos) -> order
+   end
 functor PrimIO(S: PRIM_IO_ARG): PRIM_IO = PrimIOExtra(S)
