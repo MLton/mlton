@@ -17,6 +17,7 @@
  * There is special code in printing abstract values and in determining whether
  * they are global in order to avoid infinite loops.
  *)
+
 functor ConstantPropagation (S: CONSTANT_PROPAGATION_STRUCTS) : CONSTANT_PROPAGATION = 
 struct
 
@@ -143,8 +144,8 @@ structure Value =
 
       structure One =
 	 struct
-	    datatype 'a t = T of {global: Var.t option ref,
-				  extra: 'a}
+	    datatype 'a t = T of {extra: 'a,
+				  global: Var.t option ref}
 
 	    local
 	       fun make f (T r) = f r
@@ -153,19 +154,14 @@ structure Value =
 	    end
 
 	    fun layout (one: 'a t): Layout.t =
-	       Option.layout Var.layout (! (global one))
+	       Layout.record
+	       [("global", Option.layout Var.layout (! (global one)))]
 
-	    fun new (a: 'a): 'a t = T {global = ref NONE,
-				       extra = a}
+	    fun new (a: 'a): 'a t = T {extra = a,
+				       global = ref NONE}
 
-	    val traceEquals = Trace.info "One.equals"
-	       	       
-	    val equals: 'a t * 'a t -> bool =
-	       fn arg =>
-	       Trace.traceInfo' (traceEquals,
-				 Layout.tuple2 (layout, layout),
-				 Bool.layout)
-	       (fn (n, n') => global n = global n') arg
+	    val equals: 'a t * 'a t -> bool = 
+	       fn (n, n') => global n = global n'
 	 end
       
       structure Place =
@@ -262,13 +258,11 @@ structure Value =
 
       structure Set = DisjointSet
       structure Unique = UniqueId ()
-	 
+
       datatype t =
-	 T of {
-	       value: value,
+	 T of {global: global ref,
 	       ty: Type.t,
-	       global: global ref
-	       } Set.t
+	       value: value} Set.t
       and value =
 	 Array of {birth: unit Birth.t,
 		   elt: t,
@@ -282,20 +276,16 @@ structure Value =
 		     length: t}
 	| Weak of t
       and data =
-	 Data of {
-		  value: dataVal ref,
-		  coercedTo: data list ref,
-		  filters: {
-			    con: Con.t,
-			    args: t vector
-			    } list ref
-		  }
+	 Data of {coercedTo: data list ref,
+		  filters: {args: t vector,
+			    con: Con.t} list ref,
+		  value: dataVal ref}
       and dataVal =
-	 Undefined
-       | ConApp of {con: Con.t,
-		    args: t vector,
+	 ConApp of {args: t vector,
+		    con: Con.t,
 		    uniq: Unique.t}
-       | Unknown
+	| Undefined
+	| Unknown
 
       local
 	 fun make sel (T s) = sel (Set.value s)
@@ -335,7 +325,7 @@ structure Value =
       fun equals (T s, T s') = Set.equals (s, s')
 
       val equals =
-	 Trace.trace2 ("Value.equals", layout, layout, Bool.layout) equals
+ 	 Trace.trace2 ("Value.equals", layout, layout, Bool.layout) equals
 
       val globalsInfo = Trace.info "Value.globals"
       val globalInfo = Trace.info "Value.global"
@@ -376,7 +366,7 @@ structure Value =
 					   args: Var.t vector} -> Exp.t,
 				 targ: Type.t) =
 			 case !place of
-			    Place.One (One.T {global = glob, extra}) =>
+			    Place.One (One.T {global = glob, extra, ...}) =>
 			       let
 				  val init = makeInit extra
 			       in
@@ -413,7 +403,7 @@ structure Value =
 				 | _ => No)
 			  | Datatype (Data {value, ...}) =>
 			       (case !value of
-				   ConApp {con, args, ...} =>
+				   ConApp {args, con, ...} =>
 				      (case globals (args, newGlobal) of
 					  NONE => No
 					| SOME args =>
@@ -638,7 +628,6 @@ fun simplify (program: Program.t): Program.t =
 			 fn {from, to} => Layout.record [("from", layout from),
 							 ("to", layout to)],
 			 Unit.layout)
-	    
 	 fun makeDataUnknown arg: unit =
 	    traceMakeDataUnknown
 	    (fn Data {value, coercedTo, filters, ...} =>
@@ -651,12 +640,12 @@ fun simplify (program: Program.t): Program.t =
 		       (!filters, fn {con, args} =>
 			coerces {froms = conValues con,
 				 tos = args})))
-	     in case !value of
-		Unknown => ()
-	      | Undefined => doit ()
-	      | ConApp _ => doit ()
+	     in
+		case !value of
+		   ConApp _ => doit ()
+		 | Undefined => doit ()
+		 | Unknown => ()
 	     end) arg
-
 	 and sendConApp arg: unit =
 	    traceSendConApp
 	    (fn (d: data, ca as {con, args, uniq}) =>
@@ -709,7 +698,7 @@ fun simplify (program: Program.t): Program.t =
 			 ; unify (arg, a'))
 		   | (Array {birth = b, length = n, elt = x},
 			Array {birth = b', length = n', elt = x'}) =>
-			(Birth.coerce {from = b, to = b'}
+		        (Birth.coerce {from = b, to = b'}
 			 ; coerce {from = n, to = n'}
 			 ; unify (x, x'))
 	           | (Vector {length = n, elt = x},
@@ -761,9 +750,9 @@ fun simplify (program: Program.t): Program.t =
 	     ; coerceData {from = d', to = d})
 	 and coerceData {from = Data {value, coercedTo, ...}, to} =
 	    case !value of
-	       Undefined => List.push (coercedTo, to)
-	     | ConApp ca => (List.push (coercedTo, to)
+	       ConApp ca => (List.push (coercedTo, to)
 			     ; sendConApp (to, ca))
+	     | Undefined => List.push (coercedTo, to)
 	     | Unknown => makeDataUnknown to
 	 fun conApp {con: Con.t, args: t vector}: t =
 	    let
