@@ -584,9 +584,28 @@ structure NameSpace =
 (*                 Main Env Datatype                 *)
 (*---------------------------------------------------*)
 
+structure All =
+   struct
+      datatype t =
+	 Fct of (Fctid.t, FunctorClosure.t) Values.t
+       | Fix of (Ast.Vid.t, Ast.Fixity.t) Values.t
+       | Sig of (Sigid.t, Interface.t) Values.t
+       | Str of (Strid.t, Structure.t) Values.t
+       | Tyc of (Ast.Tycon.t, TypeStr.t) Values.t
+       | Val of (Ast.Vid.t, Vid.t * Scheme.t) Values.t
+
+      val fctOpt = fn Fct z => SOME z | _ => NONE
+      val fixOpt = fn Fix z => SOME z | _ => NONE
+      val sigOpt = fn Sig z => SOME z | _ => NONE
+      val strOpt = fn Str z => SOME z | _ => NONE
+      val tycOpt = fn Tyc z => SOME z | _ => NONE
+      val valOpt = fn Val z => SOME z | _ => NONE
+   end
+
 datatype t = T of {currentScope: Scope.t ref,
 		   fcts: (Fctid.t, FunctorClosure.t) NameSpace.t,
 		   fixs: (Ast.Vid.t, Ast.Fixity.t) NameSpace.t,
+		   lookup: Symbol.t -> All.t list ref,
 		   sigs: (Sigid.t, Interface.t) NameSpace.t,
 		   strs: (Strid.t, Structure.t) NameSpace.t,
 		   types: (Ast.Tycon.t, TypeStr.t) NameSpace.t,
@@ -604,59 +623,78 @@ fun sizeMessage (E: t): Layout.t =
 
 fun empty () =
    let
-      val lookup =
-	 #get (Property.get
-	       (Symbol.plist,
-		Property.initFun
-		(fn s => {fcts = Values.new (),
-			  fixs = Values.new (),
-			  sigs = Values.new (),
-			  strs = Values.new (),
-			  types = Values.new (),
-			  vals = Values.new ()})))
-      fun make (sel, toSymbol) =
-	 NameSpace.new {lookup = sel o lookup,
-			toSymbol = toSymbol}
+      val {get = lookupAll: Symbol.t -> All.t list ref, ...} = 
+	 Property.get (Symbol.plist, Property.initFun (fn _ => ref []))
+      fun ('a, 'b) make (toSymbol,
+			 extract: All.t -> ('a, 'b) Values.t option,
+			 make: ('a, 'b) Values.t -> All.t)
+	 : ('a, 'b) NameSpace.t  =
+	 let
+	    fun lookup (s: Symbol.t): ('a, 'b) Values.t =
+	       let
+		  val r = lookupAll s
+	       in
+		  case List.peekMap (!r, extract) of
+		     NONE =>
+			let
+			   val v = Values.new ()
+			   val _ = List.push (r, make v)
+			in
+			   v
+			end
+		   | SOME v => v
+	       end
+	 in
+	    NameSpace.new {lookup = lookup,
+			   toSymbol = toSymbol}
+	 end
    in
       T {currentScope = ref (Scope.new ()),
-	 fcts = make (#fcts, Fctid.toSymbol),
-	 fixs = make (#fixs, Ast.Vid.toSymbol),
-	 sigs = make (#sigs, Sigid.toSymbol),
-	 strs = make (#strs, Strid.toSymbol),
-	 types = make (#types, Ast.Tycon.toSymbol),
-	 vals = make (#vals, Ast.Vid.toSymbol)}
+	 fcts = make (Fctid.toSymbol, All.fctOpt, All.Fct),
+	 fixs = make (Ast.Vid.toSymbol, All.fixOpt, All.Fix),
+	 lookup = lookupAll,
+	 sigs = make (Sigid.toSymbol, All.sigOpt, All.Sig),
+	 strs = make (Strid.toSymbol, All.strOpt, All.Str),
+	 types = make (Ast.Tycon.toSymbol, All.tycOpt, All.Tyc),
+	 vals = make (Ast.Vid.toSymbol, All.valOpt, All.Val)}
    end
 
-fun collect (T r, f: {isUsed: bool} -> bool) =
+fun foreach (T {lookup, ...}, {fcts, fixs, sigs, strs, types, vals}) =
+   Symbol.foreach
+   (fn s =>
+    List.foreach (! (lookup s),
+		  let
+		     datatype z = datatype All.t
+		  in
+		     fn Fct vs => fcts vs
+		      | Fix vs => fixs vs
+		      | Sig vs => sigs vs
+		      | Str vs => strs vs
+		      | Tyc vs => types vs
+		      | Val vs => vals vs
+		  end))
+
+fun collect (E as T r, f: {isUsed: bool} -> bool) =
    let
       val fcts = ref []
       val sigs = ref []
       val strs = ref []
       val types = ref []
       val vals = ref []
-      val _ =
-	 Symbol.foreach
-	 (fn s =>
-	  let
-	     fun doit (ac, sel) =
-		let
-		   val NameSpace.T {lookup, ...} = sel r
-		in
-		   case Values.! (lookup s) of
-		      [] => ()
-		    | {domain, isUsed, range, ...} :: _ =>
-			 if f {isUsed = !isUsed}
+      fun doit ac vs =
+	 case Values.! vs of
+	    [] => ()
+	  | {domain, isUsed, range, ...} :: _ =>
+	       if f {isUsed = !isUsed}
 			    then List.push (ac, (domain, range))
-			 else ()
-		end
-	     val _ = doit (fcts, #fcts)
-	     val _ = doit (sigs, #sigs)
-	     val _ = doit (strs, #strs)
-	     val _ = doit (types, #types)
-	     val _ = doit (vals, #vals)
-	  in
-	     ()
-	  end)
+	       else ()
+      val _ =
+	 foreach (E, {fcts = doit fcts,
+		      fixs = fn _ => (),
+		      sigs = doit sigs,
+		      strs = doit strs,
+		      types = doit types,
+		      vals = doit vals})
       fun finish (r, toSymbol) =
 	 QuickSort.sortArray
 	 (Array.fromList (!r), fn ((d, _), (d', _)) =>
@@ -1649,33 +1687,29 @@ val cut =
 (*                  functorClosure                   *)
 (* ------------------------------------------------- *)
 
-fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals, ...})
+fun snapshot (E as T {currentScope, fcts, fixs, sigs, strs, types, vals, ...})
    : (unit -> 'a) -> 'a =
    let
       val add: (Scope.t -> unit) list ref = ref []
       (* Push onto add everything currently in scope. *)
+      fun doit (NameSpace.T {current, ...}) (v as Values.T vs) =
+	 case ! vs of
+	    [] => ()
+	  | {domain, isUsed, range, ...} :: _ =>
+	       List.push
+	       (add, fn s0 =>
+		(List.push (vs, {domain = domain,
+				 isUsed = isUsed,
+				 range = range,
+				 scope = s0})
+		 ; List.push (current, v)))
       val _ =
-	 Symbol.foreach
-	 (fn s =>
-	  let
-	     fun doit (NameSpace.T {current, lookup, ...}) =
-		let
-		   val v as Values.T vs = lookup s
-		in
-		   case ! vs of
-		      [] => ()
-		    | {domain, isUsed, range, ...} :: _ =>
-			 List.push
-			 (add, fn s0 =>
-			  (List.push (vs, {domain = domain,
-					   isUsed = isUsed,
-					   range = range,
-					   scope = s0})
-			   ; List.push (current, v)))
-		end
-	  in
-	     (doit fcts; doit fixs; doit sigs; doit strs; doit types; doit vals)
-	  end)
+	 foreach (E, {fcts = doit fcts,
+		      fixs = doit fixs,
+		      sigs = doit sigs,
+		      strs = doit strs,
+		      types = doit types,
+		      vals = doit vals})
    in
       fn th =>
       let
@@ -1694,27 +1728,25 @@ fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals, ...})
 		  ; doit strs; doit types; doit vals)
 	 val _ = List.foreach (!add, fn f => f s0)
 	 (* Clear out any symbols that weren't available in the old scope. *)
+	 fun doit (Values.T vs) =
+	    let
+	       val cur = !vs
+	    in
+	       case cur of
+		  [] => ()
+		| {scope, ...} :: _ =>
+		     if Scope.equals (s0, scope)
+			then ()
+		     else (vs := []
+			   ; List.push (restore, fn () => vs := cur))
+	    end
 	 val _ =
-	    Symbol.foreach
-	    (fn s =>
-	     let
-		fun doit (NameSpace.T {lookup, ...}) =
-		   let
-		      val Values.T vs = lookup s
-		      val cur = !vs
-		   in
-		      case cur of
-			 [] => ()
-		       | {scope, ...} :: _ =>
-			    if Scope.equals (s0, scope)
-			       then ()
-			    else (vs := []
-				  ; List.push (restore, fn () => vs := cur))
-		   end
-	     in
-		(doit fcts; doit fixs; doit sigs
-		 ; doit strs; doit types; doit vals)
-	     end)
+	    foreach (E, {fcts = doit,
+			 fixs = doit,
+			 sigs = doit,
+			 strs = doit,
+			 types = doit,
+			 vals = doit})
 	 val s1 = !currentScope
 	 val _ = currentScope := s0
 	 val res = th ()
