@@ -1,4 +1,7 @@
 #include <math.h>
+#if (defined __sparc__)
+#include <ieeefp.h>
+#endif
 #include "mlton-basis.h"
 #include "my-lib.h"
 
@@ -69,8 +72,6 @@ Int Real_class (Double d) {
 }
 
 #elif (defined __sparc__)
-
-#include <ieeefp.h>
 
 Int Real_class (Double d) {
 	fpclass_t c;

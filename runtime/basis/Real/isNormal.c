@@ -1,4 +1,7 @@
 #include <math.h>
+#if (defined __sparc__)
+#include <ieeefp.h>
+#endif
 #include "mlton-basis.h"
 #include "my-lib.h"
 
