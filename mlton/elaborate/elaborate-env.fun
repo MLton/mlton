@@ -1474,10 +1474,8 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 	    fun handleStr {name, interface = I} =
 	       case Structure.peekStrid' (S, name) of
 		  NONE =>
-		     error
-		     ("structure",
-		      Longstrid.layout	
-		      (Longstrid.long (rev strids, name)))
+		     error ("structure",
+			    Longstrid.layout (Longstrid.long (rev strids, name)))
 		| SOME {range, values, ...} =>
 		     addStr {range = cut (range, I, name :: strids),
 			     values = values}
@@ -1576,13 +1574,11 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 	       case Structure.peekVid' (S, name) of
 		  NONE =>
 		     error ("variable",
-			    Longvid.layout (Longvid.long
-					    (rev strids, name)))
+			    Longvid.layout (Longvid.long (rev strids, name)))
 		| SOME {range = (vid, s'), values, ...} =>
 		     let
 			val (tyvars, t) = Scheme.dest s
-			val {args, instance = t'} =
-			   Scheme.instantiate s'
+			val {args, instance = t'} = Scheme.instantiate s'
 			val _ =
 			   Type.unify
 			   (t, t', preError, fn (l, l') =>
@@ -1651,11 +1647,9 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 			addVal {range = (vid, s),
 				values = values}
 		     end
-	    val _ =
-	       Interface.foreach
-	       (I, {handleStr = handleStr,
-		    handleType = handleType,
-		    handleVal = handleVal})
+	    val _ = Interface.foreach (I, {handleStr = handleStr,
+					   handleType = handleType,
+					   handleVal = handleVal})
 	 in
 	    finish ()
 	 end
