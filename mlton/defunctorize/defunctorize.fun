@@ -878,4 +878,8 @@ fun defunctorize (CoreML.Program.T {decs}) =
 		     overflow = NONE}
    end
 
+val defunctorize =
+   Trace.trace ("defunctorize", CoreML.Program.layout, Xml.Program.layout)
+   defunctorize
+
 end
