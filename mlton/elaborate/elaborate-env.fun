@@ -330,7 +330,29 @@ structure Structure =
       local
 	 open Layout
       in
-	 fun layoutTypeSpec (d, _) = seq [str "type ", Ast.Tycon.layout d]
+	 fun layoutTypeSpec (c, s) =
+	    seq [str "type ",
+		 case TypeStr.kind s of
+		    Kind.Arity n =>
+		       (case n of
+			   0 => empty
+			 | 1 => str "'a "
+			 | _ =>
+			      seq
+			      [paren
+			       (str (concat
+				     (List.separate
+				      (Vector.toList
+				       (Vector.tabulate
+					(n, fn i =>
+					 concat ["'",
+						 Char.toString
+						 (Char.fromInt
+						  (Char.toInt #"a" + i))])),
+				       ", ")))),
+			       str " "])
+		  | Kind.Nary => empty,
+		 Ast.Tycon.layout c]
 	 fun layoutValSpec (d, (vid, scheme)) =
 	    let
 	       fun simple s =
