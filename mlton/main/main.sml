@@ -126,8 +126,6 @@ fun options () =
 		       | "first" => First
 		       | "every" => Every
 		       | _ => usage (concat ["invalid -gc-check flag: ", s])))),
-       (Expert, "mark-cards", " {true|false}", "mutator marks cards",
-	boolRef Control.markCards),
        (Normal, "host",
 	concat [" {",
 		concat (List.separate (List.map (hostMap (), #host), "|")),
@@ -196,6 +194,8 @@ fun options () =
 	    else usage (concat ["invalid -loop-passes arg: ", Int.toString i]))),
        (Normal, "L", "dir", "search dir for libraries",
 	push libDirs),
+       (Expert, "mark-cards", " {true|false}", "mutator marks cards",
+	boolRef Control.markCards),
        (Normal, "native", " {true|false}", "use native x86 code generator",
 	boolRef Native.native),
        (Expert, "native-commented", " n", "level of comments  (0)",
