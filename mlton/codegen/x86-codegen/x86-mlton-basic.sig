@@ -83,16 +83,7 @@ signature X86_MLTON_BASIC =
     val cReturnTempContentsOperand : x86.Size.t -> x86.Operand.t
 
     (* Static temps defined in x86codegen.h *)
-    val limitCheckTempContentsOperand : x86.Operand.t
-    val gcFirstAuxTempContentsOperand : x86.Operand.t
-    val arrayAllocateTempContents : x86.MemLoc.t
-    val arrayAllocateTempContentsOperand : x86.Operand.t
-    val arrayAllocateLoopTempContentsOperand : x86.Operand.t
-    val arrayAllocateLoopTempDerefOperand : x86.Operand.t
     val applyFFTempContentsOperand : x86.Operand.t
-    val heapCheckTempContents: x86.MemLoc.t
-    val heapCheckTempContentsOperand: x86.Operand.t
-    val overflowCheckTempContentsOperand : x86.Operand.t
     val threadTempContentsOperand : x86.Operand.t
     val fileTempContentsOperand : x86.Operand.t
     val realTemp1ContentsOperand : x86.Operand.t

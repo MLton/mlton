@@ -209,61 +209,6 @@ struct
     val cReturnTempContentsOperand = Operand.memloc o cReturnTempContents
   end
 
-  val limitCheckTemp = Label.fromString "limitCheckTemp"
-  val limitCheckTempContents 
-    = makeContents {base = Immediate.label limitCheckTemp,
-		    size = pointerSize,
-		    class = Classes.StaticTemp}
-  val limitCheckTempContentsOperand 
-    = Operand.memloc limitCheckTempContents
-  val gcFirstAuxTemp = Label.fromString "gcFirstAuxTemp"
-  val gcFirstAuxTempContents 
-    = makeContents {base = Immediate.label gcFirstAuxTemp,
-		    size = pointerSize,
-		    class = Classes.StaticTemp}
-  val gcFirstAuxTempContentsOperand 
-    = Operand.memloc gcFirstAuxTempContents
-     
-  val arrayAllocateTemp = Label.fromString "arrayAllocateTemp"
-  val arrayAllocateTempContents 
-    = makeContents {base = Immediate.label arrayAllocateTemp,
-		    size = pointerSize,
-		    class = Classes.StaticTemp}
-  val arrayAllocateTempContentsOperand 
-    = Operand.memloc arrayAllocateTempContents
-
-  val arrayAllocateLoopTemp = Label.fromString "arrayAllocateLoopTemp"
-  val arrayAllocateLoopTempContents 
-    = makeContents {base = Immediate.label arrayAllocateLoopTemp,
-		    size = pointerSize,
-		    class = Classes.StaticTemp}
-  val arrayAllocateLoopTempContentsOperand 
-    = Operand.memloc arrayAllocateLoopTempContents
-  val arrayAllocateLoopTempDeref
-    = MemLoc.simple {base = arrayAllocateLoopTempContents, 
-		     index = Immediate.const_int 0,
-		     scale = wordScale,
-		     size = pointerSize,
-		     class = Classes.Heap}
-  val arrayAllocateLoopTempDerefOperand 
-    = Operand.memloc arrayAllocateLoopTempDeref
-
-  val heapCheckTemp = Label.fromString "heapCheckTemp"
-  val heapCheckTempContents =
-     makeContents {base = Immediate.label heapCheckTemp,
-		   size = pointerSize,
-		   class = Classes.StaticTemp}
-  val heapCheckTempContentsOperand =
-     Operand.memloc heapCheckTempContents
-
-  val overflowCheckTemp = Label.fromString "overflowCheckTemp"
-  val overflowCheckTempContents 
-    = makeContents {base = Immediate.label overflowCheckTemp,
-		    size = wordSize,
-		    class = Classes.StaticTemp}
-  val overflowCheckTempContentsOperand 
-    = Operand.memloc overflowCheckTempContents
-
   val intInfTemp = Label.fromString "intInfTemp"
   val intInfTempContents 
     = makeContents {base = Immediate.label intInfTemp,
