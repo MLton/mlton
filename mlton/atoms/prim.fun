@@ -1093,34 +1093,8 @@ fun 'a apply (p, args, varEquals) =
 		   | Word32_xorb => xorb false
 		   | _ => Unknown
 	       end
-	    fun varInt (x, i, inOrder) =
-	       case name of 
-		  Int_add => add (x, i)
-		| Int_addCheck => add (x, i)
-		| Int_mul => mul (x, i, intNeg)
-		| Int_mulCheck => mul (x, i, intNegCheck)
-		| Int_quot => if inOrder
-				 then (case i of
-					  1 => Var x
-					| ~1 => Apply (intNeg, [x])
-					| _ => Unknown)
-			      else Unknown
-		| Int_rem => if inOrder andalso (i = ~1 orelse i = 1)
-				 then int 0
-			      else Unknown
-		| Int_sub =>
-		     if i = 0
-			then if inOrder
-				then Var x
-			     else Apply (intNeg, [x])
-		     else Unknown
-		| Int_subCheck =>
-		     if i = 0
-			then if inOrder
-				then Var x
-			     else Apply (intNegCheck, [x])
-		     else Unknown
-		| _ => Unknown
+	    val minInt = ~0x80000000
+	    val maxInt = 0x7FFFFFFF
 	    datatype z = datatype ApplyArg.t
 	 in
 	    case (name, args) of
@@ -1146,8 +1120,43 @@ fun 'a apply (p, args, varEquals) =
 		  else Unknown
 	     | (_, [Var x, Const (Word i)]) => varWord (x, i, true)
 	     | (_, [Const (Word i), Var x]) => varWord (x, i, false)
-	     | (_, [Var x, Const (Int i)]) => varInt (x, i, true)
-	     | (_, [Const (Int i), Var x]) => varInt (x, i, false)
+	     | (_, [Var x, Const (Int i)]) =>
+		  (case name of
+		      Int_add => add (x, i)
+		    | Int_addCheck => add (x, i)
+		    | Int_ge => if i = minInt then t else Unknown
+		    | Int_geu => if i = 0 then t else Unknown
+		    | Int_gt => if i = maxInt then f else Unknown
+		    | Int_gtu => if i = ~1 then f else Unknown
+		    | Int_le => if i = maxInt then t else Unknown
+		    | Int_lt => if i = minInt then f else Unknown
+		    | Int_mul => mul (x, i, intNeg)
+		    | Int_mulCheck => mul (x, i, intNegCheck)
+		    | Int_quot => (case i of
+				      1 => ApplyResult.Var x
+				    | ~1 => Apply (intNeg, [x])
+				    | _ => Unknown)
+		    | Int_rem => if i = ~1 orelse i = 1 then int 0 else Unknown
+		    | Int_sub => if i = 0 then ApplyResult.Var x else Unknown
+		    | Int_subCheck =>
+			 if i = 0 then ApplyResult.Var x else Unknown
+		    | _ => Unknown)
+	     | (_, [Const (Int i), Var x]) =>
+		  (case name of 
+		      Int_add => add (x, i)
+		    | Int_addCheck => add (x, i)
+		    | Int_ge => if i = maxInt then t else Unknown
+		    | Int_geu => if i = ~1 then t else Unknown
+		    | Int_gt => if i = minInt then f else Unknown
+		    | Int_gtu => if i = 0 then f else Unknown
+		    | Int_le => if i = minInt then t else Unknown
+		    | Int_lt => if i = maxInt then f else Unknown
+		    | Int_mul => mul (x, i, intNeg)
+		    | Int_mulCheck => mul (x, i, intNegCheck)
+		    | Int_sub => if i = 0 then Apply (intNeg, [x]) else Unknown
+		    | Int_subCheck =>
+			 if i = 0 then Apply (intNegCheck, [x]) else Unknown
+		    | _ => Unknown)
 	     | (_, [Const (IntInf i1), Const (IntInf i2), _]) =>
 		  (case name of
 		      IntInf_add => iio (IntInf.+, i1, i2)
