@@ -144,7 +144,7 @@ structure Operand =
 		      if w <= 0w512 (* pretty arbitrary *)
 			 then small w
 		      else big z
-		 | _ => Error.bug "strangse numBytes")
+		 | _ => Error.bug "strange numBytes")
 	  | _ => big z
    end
 
