@@ -15,10 +15,10 @@ val debug = false
 
 val sourcesIndexGC: int = 1
 
+val callGraphFile: File.t option ref = ref NONE
 val gray: bool ref = ref false
 val longName: bool ref = ref true
 val mlmonFiles: string list ref = ref []
-val outputCallGraph: bool ref = ref false
 val raw = ref false
 val showLine = ref false
 val splitReg: Regexp.t ref = ref Regexp.none
@@ -905,18 +905,17 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
 	    NONE => concat [aname, " call-stack graph"]
 	  | SOME s => s
       val _ =
-	 if !outputCallGraph
-	    then
-	       File.withOut
-	       (concat [aname, ".dot"], fn out =>
-		Layout.output
-		(Graph.layoutDot (keepGraph,
-				  fn _ => {edgeOptions = ! o edgeOptions,
-					   nodeOptions = nodeOptions,
-					   options = [],
-					   title = title}),
-		 out))
-	 else ()
+	 Option.app
+	 (!callGraphFile, fn f =>
+	  File.withOut
+	  (f, fn out =>
+	   Layout.output
+	   (Graph.layoutDot (keepGraph,
+			     fn _ => {edgeOptions = ! o edgeOptions,
+				      nodeOptions = nodeOptions,
+				      options = [],
+				      title = title}),
+	    out)))
       (* Display the table. *)
       val tableRows =
 	 QuickSort.sortVector
@@ -971,8 +970,8 @@ fun makeOptions {usage} =
       open Popt
    in
       List.map
-      ([(Normal, "call-graph", " {false|true}", "output call graph",
-	 boolRef outputCallGraph),
+      ([(Normal, "call-graph", " <file>", "write call graph to dot file",
+	 SpaceString (fn s => callGraphFile := SOME s)),
 	(Normal, "graph-title", " <string>", "set call-graph title",
 	 SpaceString (fn s => title := SOME s)),
 	(Normal, "gray", " {false|true}", "gray nodes according to stack %",

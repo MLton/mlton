@@ -1,4 +1,4 @@
-.TH mlprof 1 "July 7, 2003"
+.TH mlprof 1 "February 27, 2004"
 .SH NAME
 \fBmlprof\fP \- display profiling information for a MLton-compiled executable
 .SH SYNOPSIS
@@ -17,14 +17,14 @@ used, in decreasing order.  If the program was compiled with
 bytes allocated while the function was on the stack and in GC in
 addition to the time or bytes that the function is responsible for.
 
-\fBmlprof\fP also writes a call graph containing the table data to a
-file with the executable name and suffix \fB.dot\fP.  See the \fBMLton
-User Guide\fP for details.
-
 With multiple \fBmlmon.out\fP files, \fBmlprof\fP will sum the
 profiling information.
 
 .SH OPTIONS
+.TP
+\fB-call-graph \fIfile\fP
+Write a call graph containing the table data to a dot file.  See the
+\fBMLton User Guide\fP for details.
 .TP
 \fB-graph-title \fIstring\fP
 Set the call-graph title.
@@ -39,14 +39,18 @@ allowed expressions, see the \fBMLton User Guide\fP.  Multiple
 \fB-keep\fP expressions are not allowed.
 .TP
 \fB-mlmon \fIfile\fP
-Process the list of whitespace-separated \fBmlmon.out\fP files found in the
-specified file.
+Process the list of whitespace-separated \fBmlmon.out\fP files found
+in the specified file.
 .TP
 \fB-raw \fI{\fBfalse\fP|\fBtrue\fP}\fP
 Show the raw counts in addition to the percentages.
 .TP
 \fB-show-line \fI{\fBfalse\fP|\fBtrue\fP}\fP
 Show the file and line for each function.
+.TP
+\fB-split \fIregexp\fP
+Treat duplicates of functions whose name matches \fIregexp\fP as
+different functions.
 .TP
 \fB-thresh \fIx\fP
 An abbreviation for \fB-keep '(thresh x)'\fP, which only print
