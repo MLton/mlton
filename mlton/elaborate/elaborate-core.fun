@@ -595,7 +595,6 @@ val elaboratePat:
 			    in
 			       Cpat.make (Cpat.Var x, t)
 			    end
-
 		      in
 			 case Env.peekLongcon (E, Ast.Longvid.toLongcon name) of
 			    NONE =>
