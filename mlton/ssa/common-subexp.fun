@@ -11,16 +11,13 @@ type word = Word.t
 fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
    let
       (* Keep track of arguments and in-degree of blocks. *)
-      val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector ref,
+      val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector,
 					inDeg: int ref,
 					success: Exp.t option ref,
 					failure: Exp.t option ref},
 	   set = setLabelInfo, ...} =
-	 Property.getSetOnce (Label.plist, 
-			      Property.initFun (fn _ => {args = ref (Vector.new0 ()),
-							 success = ref NONE,
-							 failure = ref NONE,
-							 inDeg = ref 0}))
+	 Property.getSetOnce (Label.plist,
+			      Property.initRaise ("info", Label.layout))
       (* Keep track of variables used as failure variables. *)
       val {get = failureVar: Var.t -> bool, set = setFailureVar, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst false)
@@ -245,8 +242,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 			   in
 			      if !inDeg = 1
 				 then (Vector.foreach2
-				       (args,!args',
-					fn (var, (var',_)) =>
+				       (args, args', fn (var, (var', _)) =>
 					setReplace (var', SOME var))
 				       ; transfer)
 			      else transfer
@@ -257,7 +253,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 				   inDeg = succInDeg,
 				   success = succ, ...} =
 				 labelInfo success
-			      val var = #1 (Vector.sub(!succArgs, 0))
+			      val var = #1 (Vector.sub (succArgs, 0))
 			      val {args = failArgs,
 				   inDeg = failInDeg,
 				   failure = fail, ...} =
@@ -315,13 +311,15 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 	 (functions, fn f => 
 	  let
 	     val {args, blocks, mayRaise, name, returns, start} = Function.dest f
-	     val _ = Vector.foreach
-	             (blocks, fn Block.T {label, args, transfer, ...} =>
-		      (#args (labelInfo label) := args
-		       ; Transfer.foreachLabel
-		         (transfer, fn label' => 
-			  Int.inc(#inDeg (labelInfo label')))))
-
+	     val _ =
+		Vector.foreach
+		(blocks, fn Block.T {label, args, transfer, ...} =>
+		 (setLabelInfo (label, {args = args,
+					success = ref NONE,
+					failure = ref NONE,
+					inDeg = ref 0})
+		  ; Transfer.foreachLabel (transfer, fn label' => 
+					   Int.inc (#inDeg (labelInfo label')))))
 	     val blocks = doitTree (Function.dominatorTree f)
 	     val f = Function.new {args = args,
 				   blocks = blocks,
