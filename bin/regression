@@ -93,6 +93,7 @@ for f in `ls *.sml`; do
 			gcc -o $f -w -O1				\
 				-I"$src/build/lib/include"		\
 				-L"$src/build/lib/$crossTarget"		\
+				-L /usr/pkg/lib				\
 				$f.[0-9].[cS]				\
 				-lmlton -lgmp -lgdtoa -lm
 		;;
