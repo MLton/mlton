@@ -84,17 +84,17 @@ structure CType =
 				| _ => m t))
 	 end
 
-      val toStringOrig = toString
-      val toString = memo toString
-
-      val toStringNoInt =
+      val noSigned =
 	 memo (fn t =>
 	       case t of
-		  Int8 => toString Word8
-		| Int16 => toString Word16
-		| Int32 => toString Word32
-		| Int64 => toString Word64
-		| _ => toString t)
+		  Int8 => Word8
+		| Int16 => Word16
+		| Int32 => Word32
+		| Int64 =>  Word64
+		| _ => t)
+
+      val toStringOrig = toString
+      val toString = memo toString
    end
 
 structure LoadStore =
@@ -150,31 +150,72 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 let
 	    val (args, result) = prototype
 	    val c = Counter.new 0
+	    fun temp () = concat ["t", Int.toString (Counter.next c)]
+	    fun cast (cty, src) =
+	       concat ["(", cty, ")(", src, ")"]
 	    val args =
 	       Vector.map
 	       (args, fn cty =>
 		let
-		   val temp = concat ["t", Int.toString (Counter.next c)]
-		   val cty = CType.toStringNoInt cty
+		   val mty = CType.noSigned cty
+		   val (declarePop,mtemp) =
+		      let
+			 val mty = CType.toString mty
+			 val mtemp = temp ()
+		      in
+			 (concat ["\t", mty, " ", mtemp, 
+				  " = PopReg (", mty, ");\n"],
+			  mtemp)
+		      end
+		   val (declareCast, ctemp) =
+		      if mty = cty
+			 then ("", mtemp)
+			 else let
+				 val cty = CType.toString cty
+				 val ctemp = temp ()
+			      in
+				 (concat ["\t", cty, " ", ctemp, " = ",
+					  cast (cty, mtemp), ";\n"],
+				  ctemp)
+			      end
 		in
-		   {declare = concat ["\t", cty, " ",
-				      temp, " = PopReg (", cty, ");\n"],
-		    temp = temp}
+		   {declare = concat [declarePop, declareCast],
+		    temp = ctemp}
 		end)
+	    val call =
+	       concat [function,
+		       " (",
+		       (concat o List.separate) 
+		       (Vector.toListMap (args, #temp), ", "),
+		       ");\n"]
 	    val result =
 	       case result of
-		  NONE => ""
+		  NONE => concat ["\t", call]
 		| SOME cty =>
-		     concat ["PushReg (", CType.toStringNoInt cty, ") = "]
+		     let
+			val mty = CType.noSigned cty
+		     in
+			if mty = cty
+			   then concat 
+			        ["\tPushReg (", CType.toString cty, ") = ", 
+				 call]
+			   else let
+				   val cty = CType.toString cty
+				   val ctemp = temp ()
+				   val mty = CType.toString mty
+				in
+				   concat 
+				   ["\t", cty, " ", ctemp, " = ", call,
+				    "\tPushReg (", mty, ") = ", 
+				    cast (mty, ctemp), ";\n"]
+				end
+		     end
 	 in
 	    concat
 	    ["{\n",
 	     concat (Vector.toListMap (args, #declare)),
 	     "\tassertRegsEmpty ();\n",
-	     "\t", result, function,
-	     " (",
-	     concat (List.separate (Vector.toListMap (args, #temp), ", ")),
-	     ");\n",
+	     result,
 	     "\t}\n"]
 	 end
       local
@@ -509,6 +550,8 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 			  emitted = ref false,
 			  occurrenceOffsets = ref [],
 			  offset = ref NONE})))
+      val traceEmitTransfer =
+	 Trace.trace ("emitTransfer", Transfer.layout, Unit.layout)
       fun emitBlock (Block.T {kind, label, statements, transfer, ...}): unit =
 	 let
 	    val () =
@@ -538,8 +581,11 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 				   * We write it to a bogus location in the
 				   * callee's frame before popping back to the
 				   * caller.
+				   * We mediated between the signed/unsigned treatment
+				   * in the stub.
 				   *)
-				  (loadStoreStackOffset (Bytes.zero, cty, Store)
+				  (loadStoreStackOffset 
+				   (Bytes.zero, CType.noSigned cty, Store)
 				   ; popFrame ())
 			     | SOME z =>
 				  (popFrame ()
@@ -559,97 +605,96 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	       then (emitOpcode gotoOp; emitLabel l)
 	    else (emitted := true; emitBlock block)
 	 end
-      and emitTransfer (t: Transfer.t): unit =
-	 let
-	    datatype z = datatype Transfer.t
-	 in
-	    case t of
-	       Arith {args, dst, overflow, prim, success} =>
-		  (emitArgs args
-		   ; emitPrim prim
-		   ; emitStoreOperand dst
-		   ; emitOpcode jumpOnOverflow
-		   ; emitLabel overflow
-		   ; goto success)
-	     | CCall {args, frameInfo, func, return} =>
-		  let
-		     val () = emitArgs args
-		     val CFunction.T {maySwitchThreads, prototype, target, ...} =
-			func
-		     val () =
-			Option.app
-			(frameInfo, fn frameInfo =>
-			 push (valOf return,
-			       Program.frameSize (program, frameInfo)))
-		     datatype z = datatype Target.t
-		     val () =
-			case target of
-			   Direct name => emitCallC (directIndex name)
-			 | Indirect => emitCallC (indirectIndex func)
-		     val () =
-			if maySwitchThreads
-			   then emitOpcode returnOp
-			else Option.app (return, goto)
-		  in
-		     ()
-		  end
-	     | Call {label, return, ...} =>
-		  (Option.app (return, fn {return, size, ...} =>
-			       push (return, size))
-		   ; goto label)
-	     | Goto l => goto l
-	     | Raise => emitOpcode raisee
-	     | Return => emitOpcode returnOp
-	     | Switch (Switch.T {cases, default, size, test}) =>
-		  let
-		     val () = emitLoadOperand test
-		     fun bool (test: Operand.t, a: Label.t, b: Label.t) =
-			(emitOpcode branchIfZero
-			 ; emitLabel b
-			 ; goto a)
-		     fun normal () =
-			let
-			   val numCases =
-			      Vector.length cases
-			      + (if isSome default then 1 else 0)
-			      - 1
-			   val () =
-			      (emitOpcode (switch size)
-			       ; emitWord16 (Int.toIntInf numCases))
-			   fun emitCases cases =
-			      Vector.foreach (cases, fn (w, l) =>
-					      (emitWordX w; emitLabel l))
-			in
-			   case default of
-			      NONE =>
-				 (emitCases (Vector.dropSuffix (cases, 1))
-				  ; goto (#2 (Vector.last cases)))
-			    | SOME l =>
-				 (emitCases cases; goto l)
-			end
-		  in
-		     if 2 = Vector.length cases
-			andalso Option.isNone default
-			andalso WordSize.equals (size, WordSize.default)
-			then
-			   let
-			      val (c0, l0) = Vector.sub (cases, 0)
-			      val (c1, l1) = Vector.sub (cases, 1)
-			      val i0 = WordX.toIntInf c0
-			      val i1 = WordX.toIntInf c1
-			   in
-			      if i0 = 0 andalso i1 = 1
-				 then bool (test, l1, l0)
-			      else if i0 = 1 andalso i1 = 0
-				      then bool (test, l0, l1)
-				   else normal ()
-			   end
-		     else normal ()
-		  end
-	 end
-      val emitTransfer =
-	 Trace.trace ("emitTransfer", Transfer.layout, Unit.layout)
-	 emitTransfer
+      and emitTransfer arg: unit =
+	 traceEmitTransfer
+	 (fn (t: Transfer.t) => 
+	  let
+	     datatype z = datatype Transfer.t
+	  in
+	     case t of
+		Arith {args, dst, overflow, prim, success} =>
+		   (emitArgs args
+		    ; emitPrim prim
+		    ; emitStoreOperand dst
+		    ; emitOpcode jumpOnOverflow
+		    ; emitLabel overflow
+		    ; goto success)
+	      | CCall {args, frameInfo, func, return} =>
+		   let
+		      val () = emitArgs args
+		      val CFunction.T {maySwitchThreads, target, ...} =
+			 func
+		      val () =
+			 Option.app
+			 (frameInfo, fn frameInfo =>
+			  push (valOf return,
+				Program.frameSize (program, frameInfo)))
+		      datatype z = datatype Target.t
+		      val () =
+			 case target of
+			    Direct name => emitCallC (directIndex name)
+			  | Indirect => emitCallC (indirectIndex func)
+		      val () =
+			 if maySwitchThreads
+			    then emitOpcode returnOp
+			    else Option.app (return, goto)
+		   in
+		      ()
+		   end
+	      | Call {label, return, ...} =>
+		   (Option.app (return, fn {return, size, ...} =>
+				push (return, size))
+		    ; goto label)
+	      | Goto l => goto l
+	      | Raise => emitOpcode raisee
+	      | Return => emitOpcode returnOp
+	      | Switch (Switch.T {cases, default, size, test}) =>
+		   let
+		      val () = emitLoadOperand test
+		      fun bool (test: Operand.t, a: Label.t, b: Label.t) =
+			 (emitOpcode branchIfZero
+			  ; emitLabel b
+			  ; goto a)
+		      fun normal () =
+			 let
+			    val numCases =
+			       Vector.length cases
+			       + (if isSome default then 1 else 0)
+			       - 1
+			    val () =
+			       (emitOpcode (switch size)
+				; emitWord16 (Int.toIntInf numCases))
+			    fun emitCases cases =
+			       Vector.foreach (cases, fn (w, l) =>
+					       (emitWordX w; emitLabel l))
+			 in
+			    case default of
+			       NONE =>
+				  (emitCases (Vector.dropSuffix (cases, 1))
+				   ; goto (#2 (Vector.last cases)))
+			     | SOME l =>
+				  (emitCases cases; goto l)
+			 end
+		   in
+		      if 2 = Vector.length cases
+			 andalso Option.isNone default
+			 andalso WordSize.equals (size, WordSize.default)
+			 then
+			    let
+			       val (c0, l0) = Vector.sub (cases, 0)
+			       val (c1, l1) = Vector.sub (cases, 1)
+			       val i0 = WordX.toIntInf c0
+			       val i1 = WordX.toIntInf c1
+			    in
+			       if i0 = 0 andalso i1 = 1
+				  then bool (test, l1, l0)
+				  else if i0 = 1 andalso i1 = 0
+					  then bool (test, l0, l1)
+					  else normal ()
+			    end
+			 else normal ()
+		   end
+	  end) arg
       fun loop () =
 	 case !needToEmit of
 	    [] => ()
@@ -687,6 +732,8 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	      List.foreach (!r, fn occ => loop (occ, offset))
 	  end))
       val {done, file = _, print} = outputC ()
+      val print =
+	 Trace.trace ("Bytecode.print", String.layout, Unit.layout) print
       val () =
 	 CCodegen.outputDeclarations
 	 {additionalMainArgs = [Int.toString (labelOffset (#label main))],
