@@ -7,17 +7,16 @@
  *)
 
 (* Non-standard signatures *)
+signature MLTON = MLTON
 signature MLTON_ARRAY = MLTON_ARRAY
 signature MLTON_BIN_IO = MLTON_BIN_IO
 signature MLTON_CONT = MLTON_CONT
 signature MLTON_EXN = MLTON_EXN
-signature MLTON_FFI = MLTON_FFI
 signature MLTON_FINALIZABLE = MLTON_FINALIZABLE
 signature MLTON_GC = MLTON_GC
 signature MLTON_INT_INF = MLTON_INT_INF
 signature MLTON_IO = MLTON_IO
 signature MLTON_ITIMER = MLTON_ITIMER
-signature MLTON = MLTON
 signature MLTON_PLATFORM = MLTON_PLATFORM
 signature MLTON_PROC_ENV = MLTON_PROC_ENV
 signature MLTON_PROCESS = MLTON_PROCESS
@@ -37,7 +36,6 @@ signature MLTON_WORD = MLTON_WORD
 signature MLTON_WORLD = MLTON_WORLD
 signature SML_OF_NJ = SML_OF_NJ
 signature UNSAFE = UNSAFE
-signature SML90 = SML90
 
 (* Non-standard structures *)
 structure Primitive = Primitive
@@ -45,6 +43,5 @@ structure Basis1997 = Basis1997
 structure MLton = MLton
 structure SMLofNJ = SMLofNJ
 structure Unsafe = Unsafe
-structure SML90 = SML90
 
 open Basis2002
