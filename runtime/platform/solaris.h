@@ -14,7 +14,6 @@
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/sockio.h> /* For SIOCATMARK. */
-#include <sys/sysctl.h>
 #include <sys/times.h>
 #include <sys/un.h>
 #include <sys/utsname.h>
