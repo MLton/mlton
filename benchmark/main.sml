@@ -173,10 +173,15 @@ fun njCompile {bench} =
 					run = NONE,
 					size = NONE})
        val suffix =
-		 case MLton.hostType of
-		    MLton.Linux => ".x86-linux"
-		  | MLton.Sun => ".sparc-solaris"
-		  | _ => raise Fail "don't know SML/NJ suffix for host type"
+		 let
+		   datatype z = datatype MLton.Platform.arch
+		   datatype z = datatype MLton.Platform.os
+		 in
+		   case (MLton.Platform.arch, MLton.Platform.os) of
+		     (X86, Linxu) => ".x86-linux"
+		   | (Sparc, SunOS) => ".sparc-solaris"
+		   | _ => raise Fail "don't know SML/NJ suffix for host type"
+		 end
        val heap = concat [bench, suffix]
     in
        if not (File.doesExist heap)
@@ -305,17 +310,21 @@ fun main args =
        * otherwise.
        *)
        val _ =
-	  case MLton.hostType of
-	     MLton.Cygwin => ()
-	   | MLton.FreeBSD => ()
-	   | MLton.Linux => 
+	  let
+	    datatype z = datatype MLton.Platform.os
+	  in
+	    case MLton.Platform.os of
+	      Cygwin => ()
+	    | FreeBSD => ()
+	    | Linux => 
 		let
-		   open MLton.Rlimit
-		   val {hard, ...} = get stackSize
+		  open MLton.Rlimit
+		  val {hard, ...} = get stackSize
 		in
-		   set (stackSize, {hard = hard, soft = hard})
+		  set (stackSize, {hard = hard, soft = hard})
 		end
-	   | MLton.Sun => ()
+	    | SunOS => ()
+	  end
       local
 	 open Popt
       in
