@@ -133,6 +133,7 @@ struct
 	     *)
 	    case !Control.hostType of
 	       Control.Cygwin => true
+	     | Control.FreeBSD => false
 	     | Control.Linux => false
 
 	val makeC = outputC
@@ -223,6 +224,7 @@ struct
 		    val mainLabel =
 		       case !Control.hostType of
 			  Control.Cygwin => String.dropPrefix (mainLabel, 1)
+			| Control.FreeBSD => mainLabel
 			| Control.Linux => mainLabel
 		 in
 		    [mainLabel,

@@ -56,6 +56,7 @@ struct
 	fun toString l =
 	   case !Control.hostType of
 	      Control.Cygwin => concat ["_", Label.toString l]
+	    | Control.FreeBSD => Label.toString l
 	    | Control.Linux => Label.toString l
 
 	val layout = Layout.str o toString

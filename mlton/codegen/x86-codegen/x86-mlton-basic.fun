@@ -301,6 +301,7 @@ struct
      (fn () =>
       Label.fromString (case !Control.hostType of
 			   Control.Cygwin => "_LINE__"
+			 | Control.FreeBSD => "__LINE__"
 			 | Control.Linux => "__LINE__"))
   val fileLine
     = fn () => if !Control.debug
