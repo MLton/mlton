@@ -941,80 +941,79 @@ fun shareType (I: t, c: Longtycon.t, c': Longtycon.t, time) =
 
 fun sameShape (m, m') = ShapeId.equals (shapeId m, shapeId m')
 
-fun share (I as T s, reg: Region.t, I' as T s', reg', strids, time): unit = 
-   if Set.equals (s, s')
-      then ()
-   else
-      if sameShape (I, I')
-	 then
-	    let
-	       fun loop (T s, T s', strids): unit =
-		  if Set.equals (s, s')
-		     then ()
-		  else 
-		     let
-			val {elements = es, ...} = Set.value s
-			val {elements = es', ...} = Set.value s'
-			val _ = Set.union (s, s')
-			val _ =
-			   List.foreach2
-			   (es, es', fn (e, e') =>
-			    case (e, e') of
-			       (Str {interface = I, name, ...},
-				Str {interface = I', ...}) =>
-				  loop (I, I', name :: strids)
-			     | (Type {typeStr = s, name, ...},
-				Type {typeStr = s', ...}) =>
-				  let
-				     fun lay () =
-					Ast.Longtycon.layout
-					(Ast.Longtycon.long (rev strids, name))
-				  in
-				     TypeStr.share (s, (reg, lay),
-						    s', (reg', lay),
-						    time)
-				  end
-			     | _ => ())
-		     in
-			()
-		     end
-	    in
-	       loop (I, I', strids)
-	    end
-      else (* different shapes -- need to share pointwise *)
-	 let
-	    val es = elements I
-	    val es' = elements I'
-	 in
-	    List.foreach
-	    (es, fn e =>
-	     case e of
-		Str {name, interface = I} =>
-		   (case peekStridElements (es', name) of
-		       NONE => ()
-		     | SOME I' => share (I, reg, I', reg', name :: strids, time))
-	      | Type {name, typeStr = s} =>
-	           (case peekTyconElements (es',name) of
-		       NONE => ()
-		     | SOME s' =>
-			  let
-			     fun lay () =
-				Ast.Longtycon.layout
-				(Ast.Longtycon.long (rev strids, name))
-			  in
-			     TypeStr.share (s, (reg, lay), s', (reg', lay), time)
-			  end)
-	      | _ => ())
-	 end
-
-val share =
-   fn (m, s: Longstrid.t, s': Longstrid.t, time) =>
-   share (lookupLongstrid (m, s),
-	  Longstrid.region s,
-	  lookupLongstrid (m, s'),
-	  Longstrid.region s',
-	  [],
-	  time)
+fun share (I: t, ls: Longstrid.t, ls': Longstrid.t, time) =
+   let
+      fun lay (ls, strids, name) =
+	 (Longstrid.region ls,
+	  fn () =>
+	  let
+	     val (ss, s) = Longstrid.split ls
+	  in
+	     Ast.Longtycon.layout
+	     (Ast.Longtycon.long (List.concat [ss, [s], rev strids],
+				  name))
+	  end)
+      fun share (I as T s, I' as T s', strids): unit = 
+	 if Set.equals (s, s')
+	    then ()
+	 else
+	    if sameShape (I, I')
+	       then
+		  let
+		     fun loop (T s, T s', strids): unit =
+			if Set.equals (s, s')
+			   then ()
+			else 
+			   let
+			      val {elements = es, ...} = Set.value s
+			      val {elements = es', ...} = Set.value s'
+			      val _ = Set.union (s, s')
+			      val _ =
+				 List.foreach2
+				 (es, es', fn (e, e') =>
+				  case (e, e') of
+				     (Str {interface = I, name, ...},
+				      Str {interface = I', ...}) =>
+				     loop (I, I', name :: strids)
+				   | (Type {typeStr = s, name, ...},
+				      Type {typeStr = s', ...}) =>
+				        TypeStr.share
+					(s, lay (ls, strids, name),
+					 s', lay (ls', strids, name),
+					 time)
+				   | _ => ())
+			   in
+			      ()
+			   end
+		  in
+		     loop (I, I', strids)
+		  end
+	    else (* different shapes -- need to share pointwise *)
+	       let
+		  val es = elements I
+		  val es' = elements I'
+	       in
+		  List.foreach
+		  (es, fn e =>
+		   case e of
+		      Str {name, interface = I} =>
+			 (case peekStridElements (es', name) of
+			     NONE => ()
+			   | SOME I' => share (I, I', name :: strids))
+		    | Type {name, typeStr = s} =>
+			 (case peekTyconElements (es',name) of
+			     NONE => ()
+			   | SOME s' =>
+				TypeStr.share (s, lay (ls, strids, name),
+					       s', lay (ls', strids, name),
+					       time))
+		    | _ => ())
+	       end
+   in
+      share (lookupLongstrid (I, ls),
+	     lookupLongstrid (I, ls'),
+	     [])
+   end
 
 fun wheres (I as T s, v: (Longtycon.t * TypeStr.t) vector, time): unit =
    Vector.foreach
