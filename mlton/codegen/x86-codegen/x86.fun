@@ -3419,42 +3419,42 @@ struct
 
   structure ProfileInfo =
     struct
-      datatype t = T of {profileLevel: int,
-			 profileName: string} list
+      datatype t
+	= T of {zero: string,
+		one: string,
+		two: string}
 
-      val none = T []
-      fun add(T profileInfo, {profileLevel,profileName})
-	= T ({profileLevel = profileLevel,
-	      profileName = profileName}::
-	     profileInfo)
+      val none = T {zero = "", one = "", two = ""}
+      fun add(T {zero, one, two}, 
+	      {profileLevel : int, profileName})
+	= if profileLevel = 0
+	    then T {zero = profileName,
+		    one = one,
+		    two = two}
+	  else if profileLevel = 1
+	    then T {zero = zero,
+		    one = profileName,
+		    two = two}
+	  else if profileLevel = 2
+	    then T {zero = zero,
+		    one = one,
+		    two = profileName}
+	  else Error.bug "ProfileInfo: add"
 
       val profileHeader = "MLtonProfile"
       val unique = Counter.new 0
-      fun profile_assembly (T profileInfo)
+      fun profile_assembly (T {zero, one, two})
 	= if !Control.profile
 	    then let
-		   val profileInfo
-		     = List.removeDuplicates(profileInfo, op =)
-		   val profileInfo
-		     = List.insertionSort
-		       (profileInfo,
-			fn ({profileLevel = profileLevel1,...},
-			    {profileLevel = profileLevel2,...})
-			    => profileLevel1 < profileLevel2)
-		     
 		   val profileHeader 
 		     = profileHeader ^ (Int.toString (Counter.next unique))
 
 		   val profileString
-		     = List.fold
-		       (profileInfo,
-			profileHeader,
-			fn ({profileLevel,profileName},profileString)
-			 => concat [profileString,
-				    "$$",
-				    Int.toString profileLevel,
-				    ".",
-				    profileName])
+		     = concat
+		       [profileHeader,
+			"$$0.", zero,
+			"$$1.", one,
+			"$$2.", two]
 
 		   val profileBegin = profileString ^ "$$Begin"
 		   val profileBeginLabel = Label.fromString profileBegin
@@ -3464,8 +3464,17 @@ struct
 		 end
 	    else []
 
-      fun combine (T profileInfo1, T profileInfo2) 
-	= T (profileInfo1 @ profileInfo2)
+      fun combine (T {zero = zero1, 
+		      one = one1, 
+		      two = two1}, 
+		   T {zero = zero2, 
+		      one = one2, 
+		      two = two2})
+	= if zero1 = zero2
+	    then T {zero = zero1,
+		    one = one2,
+		    two = two1}
+	    else Error.bug "ProfileInfo: combine"
     end
 
   structure Transfer =
@@ -3912,8 +3921,7 @@ struct
 		  statements = statements2, 
 		  transfer = transfer2})::blocks
            => compress ((T' {entry = SOME entry1,
-			     profileInfo = ProfileInfo.combine(profileInfo1,
-							       profileInfo2),
+			     profileInfo = ProfileInfo.none,
 			     statements = statements1 @ statements2,
 			     transfer = transfer2})::blocks)
            | _ => Error.bug "Blocks.compress"

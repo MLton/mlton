@@ -214,7 +214,7 @@ struct
 	      val profileInfo
 		= ProfileInfo.add
 		  (getProfileInfo label,
-		   {profileLevel = 3,
+		   {profileLevel = 2,
 		    profileName = Label.toString label'})
 
 	      val live = getLive(liveInfo, label)
