@@ -149,6 +149,7 @@ signature SSA_TREE =
 	     | Tail
 
 	    val compose: t * t -> t
+	    val foreachHandler: t * (Label.t -> unit) -> unit
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	    val isNonTail: t -> bool
 	    val layout: t -> Layout.t

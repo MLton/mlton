@@ -393,7 +393,12 @@ structure Return =
 	       NonTail {cont = f cont,
 			handler = Handler.map (handler, f)}
 	  | _ => r
-	       
+
+      fun foreachHandler (r, f) =
+	 case r of
+	    NonTail {handler, ...} => Handler.foreachLabel (handler, f)
+	  | _ => ()
+
       fun foreachLabel (r, f) =
 	 case r of
 	    NonTail {cont, handler} =>
