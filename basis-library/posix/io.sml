@@ -45,6 +45,7 @@ structure PosixIO: POSIX_IO =
 	    
 	    fun readVec (fd, n) =
 	      let
+		 val _ = if n < 0 then raise Subscript else ()
 		val a = Primitive.Array.array n
 		val bytesRead = readArr (fd, {buf = a, i = 0, sz = SOME n})
 	      in 
