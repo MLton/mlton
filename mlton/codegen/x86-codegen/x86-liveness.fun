@@ -99,18 +99,18 @@ struct
 		liveOut: LiveSet.t,
 		dead: LiveSet.t}
 
-    fun toString {liveIn, liveOut, dead}
-      = let
-	  fun doit (name, l, toString, s)
-	    = LiveSet.fold(l, s,
-			   fn (x, s)
-			    => concat [name, toString x, "\n", s])
-	in
-	  doit("liveIn: ", liveIn, MemLoc.toString,
-	  doit("liveOut: ", liveOut, MemLoc.toString,
-	  doit("dead: ", dead, MemLoc.toString,
-	       "")))
-	end
+      fun toString {liveIn, liveOut, dead}
+	= let
+	    fun doit (name, l, toString, s)
+	      = LiveSet.fold(l, s,
+			     fn (x, s)
+			      => concat [name, toString x, "\n", s])
+	  in
+	    doit("liveIn: ", liveIn, MemLoc.toString,
+	    doit("liveOut: ", liveOut, MemLoc.toString,
+	    doit("dead: ", dead, MemLoc.toString,
+		 "")))
+	  end
 	
 
       fun eq ({liveIn = liveIn1,

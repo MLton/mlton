@@ -962,7 +962,7 @@ struct
       and replace replacer
 	= fn memloc => let
 			 val memloc' = replacer memloc
-		       in 
+		       in
 			 if eq(memloc',memloc)
 			   then let
 				  val T {memloc, ...} = memloc

@@ -6,6 +6,7 @@ struct
   open x86
   open x86JumpInfo
   open x86Liveness.LiveInfo
+  open x86Liveness.Liveness
 
   val rec ones : int -> word
     = fn 0 => 0wx0
@@ -64,18 +65,39 @@ struct
     = let
 	val allClasses = !x86MLton.Classes.allClasses
 	val livenessClasses = !x86MLton.Classes.livenessClasses
+	val livenessClasses = ClassSet.add(livenessClasses, 
+					   x86MLton.Classes.StaticNonTemp)
 	val nonlivenessClasses = ClassSet.-(allClasses, livenessClasses)
 	val holdClasses = !x86MLton.Classes.holdClasses
 	val nonholdClasses = ClassSet.-(allClasses, holdClasses)
+	val farflushClasses = ClassSet.-(nonlivenessClasses, holdClasses)
 	val nearflushClasses = ClassSet.-(nonlivenessClasses, holdClasses)
 	val runtimeClasses = !x86MLton.Classes.runtimeClasses
 	val nonruntimeClasses = ClassSet.-(allClasses, runtimeClasses)
 	val cstaticClasses = !x86MLton.Classes.cstaticClasses
+	val heapClasses = !x86MLton.Classes.heapClasses
+	val ccallflushClasses = ClassSet.+(cstaticClasses, heapClasses)
 	  
 	fun removeHoldMemLocs memlocs
 	  = List.removeAll
 	    (memlocs, 
 	     fn m => ClassSet.contains(holdClasses, MemLoc.class m))
+
+	fun runtimeEntry l
+	  = AppendList.cons
+	    (Assembly.directive_assume
+	     {assumes
+	      = [{register = stackTopReg,
+		  memloc = stackTop,
+		  weight = 1024,
+		  sync = false,
+		  reserve = false},
+		 {register = frontierReg,
+		  memloc = frontier,
+		  weight = 2048,
+		  sync = false,
+		  reserve = false}]},
+	     l)
 
 	fun farEntry l
 	  = AppendList.cons
@@ -92,14 +114,14 @@ struct
 		  sync = false,
 		  reserve = false}]},
 	     l)
-      
+
 	fun farTransfer live setup trans
 	  = AppendList.appends
 	    [AppendList.single
 	     (Assembly.directive_force
-	      {commit_memlocs = [],
+	      {commit_memlocs = removeHoldMemLocs live,
 	       commit_classes = [],
-	       remove_memlocs = removeHoldMemLocs live,
+	       remove_memlocs = [],
 	       remove_classes = [],
 	       dead_memlocs = [],
 	       dead_classes = []}),
@@ -115,27 +137,13 @@ struct
 	      (Assembly.directive_clearflt ()),
 	      (Assembly.directive_force
 	       {commit_memlocs = [],
-		commit_classes = ClassSet.toList nonholdClasses,
+		commit_classes = ClassSet.toList farflushClasses,
 		remove_memlocs = [],
 		remove_classes = [],
 		dead_memlocs = [],
 		dead_classes = []})],
-	     trans,
-	     AppendList.single
-	     (Assembly.directive_force
-	      {commit_memlocs = [],
-	       commit_classes = [],
-	       remove_memlocs = [],
-	       remove_classes = [],
-	       dead_memlocs = [],
-	       dead_classes = ClassSet.toList nonholdClasses})]
+	     trans]
 	    
-	val allClasses = !x86MLton.Classes.allClasses
-	val livenessClasses = !x86MLton.Classes.livenessClasses
-	val nonlivenessClasses = ClassSet.-(allClasses, livenessClasses)
-	val cstaticClasses = !x86MLton.Classes.cstaticClasses
-	val runtimeClasses = !x86MLton.Classes.runtimeClasses
-	  
 	val _
 	  = Assert.assert
 	    ("verifyLiveInfo",
@@ -222,9 +230,7 @@ struct
 			     nil,
 			   transfer = Transfer.goto {target = label}}
 	    in
-	      setLive(liveInfo,
-		      label',
-		      live);
+	      setLive(liveInfo, label', live);
 	      incNear(jumpInfo, label');
 	      Assert.assert("enqueCompensationBlock",
 			    fn () => getNear(jumpInfo, label') = Count 1);
@@ -404,22 +410,23 @@ struct
 				 Assembly.pseudoop_long 
 				 [Immediate.const_int frameLayoutsIndex],
 				 Assembly.label label],
-				(* entry from runtime assumptions *)
-				AppendList.snoc
-				(profile_assembly,
-				 let
-				   val stackTop 
-				     = x86MLton.gcState_stackTopContentsOperand
-				   val bytes 
-				     = x86.Operand.immediate_const_int (~ size)
-				 in
-				   (* stackTop += bytes *)
-				   x86.Assembly.instruction_binal 
-				   {oper = x86.Instruction.ADD,
-				    dst = stackTop,
-				    src = bytes, 
-				    size = x86MLton.pointerSize}
-				 end))
+				(* entry from far assumptions *)
+				(farEntry
+				 (AppendList.snoc
+				  (profile_assembly,
+				   let
+				     val stackTop 
+				       = x86MLton.gcState_stackTopContentsOperand
+				     val bytes 
+				       = x86.Operand.immediate_const_int (~ size)
+				   in
+				     (* stackTop += bytes *)
+				     x86.Assembly.instruction_binal 
+				     {oper = x86.Instruction.ADD,
+				      dst = stackTop,
+				      src = bytes, 
+				      size = x86MLton.pointerSize}
+				   end))))
 			       
 		     val pre
 		       = AppendList.appends
@@ -440,13 +447,40 @@ struct
 			    else AppendList.empty,
 			  pre]
 
+		     val (statements,live)
+		       = List.foldr
+		         (statements,
+			  ([], 
+			   #liveIn (livenessTransfer {transfer = transfer, 
+						      liveInfo = liveInfo})),
+			  fn (assembly,(statements,live))
+			   => let
+				val live as {liveIn,dead, ...}
+				  = livenessAssembly {assembly = assembly,
+						      live = live}
+			      in
+				(if MemLocSet.isEmpty dead
+				   then assembly::statements
+				   else assembly::
+				        (Assembly.directive_force
+					 {commit_memlocs = [],
+					  commit_classes =[],
+					  remove_memlocs = [],
+					  remove_classes = [],
+					  dead_memlocs = MemLocSet.toList dead,
+					  dead_classes = []})::
+					statements,
+				 liveIn)
+			      end)
+
 		     val statements = AppendList.fromList statements
 
 		     val transfer = effect gef {transfer = transfer}
 		   in
-		     AppendList.appends [pre,
-					 statements,
-					 transfer]
+		     AppendList.appends 
+		     [pre,
+		      statements,
+		      transfer]
 		   end)
 
 	datatype z = datatype Transfer.t
@@ -487,7 +521,14 @@ struct
 			 in
 			   AppendList.append
 			   (AppendList.fromList
-			    [Assembly.directive_saveregalloc
+			    [Assembly.directive_force
+			     {commit_memlocs = [],
+			      commit_classes = ClassSet.toList nearflushClasses,
+			      remove_memlocs = [],
+			      remove_classes = [],
+			      dead_memlocs = [],
+			      dead_classes = []},
+			     Assembly.directive_saveregalloc
 			     {live = stackTop::
 			             frontier::
 				     (MemLocSet.toList falsee_live),
@@ -508,7 +549,14 @@ struct
 			 in
 			   AppendList.append
 			   (AppendList.fromList
-			    [Assembly.directive_saveregalloc
+			    [Assembly.directive_force
+			     {commit_memlocs = [],
+			      commit_classes = ClassSet.toList nearflushClasses,
+			      remove_memlocs = [],
+			      remove_classes = [],
+			      dead_memlocs = [],
+			      dead_classes = []},
+			     Assembly.directive_saveregalloc
 			     {live = stackTop::
 			             frontier::
 				     (MemLocSet.toList truee_live),
@@ -536,156 +584,12 @@ struct
 		             then fall_falsee ()
 		             else fall_truee ()
 		   end
-(*
-		| Iff {condition, truee, falsee}
-	        => let
-		     val condition_neg 
-		       = Instruction.condition_negate condition
-		       
-		     val truee_live 
-		       = getLive(liveInfo, truee)
-		     val truee_liveTransfer 
-		       = getLiveRegsTransfers
-		         (liveTransfers, truee)
-		     val truee_live
-		       = List.fold
-		         (truee_liveTransfer,
-			  truee_live,
-			  fn ((memloc,_,_),truee_live)
-			   => MemLocSet.remove(truee_live,memloc))
-
-		     val falsee_live 
-		       = getLive(liveInfo, falsee)
-		     val falsee_liveTransfer 
-		       = getLiveRegsTransfers
-		         (liveTransfers, falsee)
-		     val falsee_live
-		       = List.fold
-		         (falsee_liveTransfer,
-			  falsee_live,
-			  fn ((memloc,_,_),falsee_live)
-			   => MemLocSet.remove(falsee_live,memloc))
-
-		     val common_live
-		       = MemLocSet.intersect(truee_live, falsee_live)
-		       
-		     val truee_live
-		       = MemLocSet.-(truee_live, common_live)
-		     val truee_live_length
-		       = MemLocSet.size truee_live
-		       
-		     val falsee_live
-		       = MemLocSet.-(falsee_live, common_live)
-		     val falsee_live_length
-		       = MemLocSet.size falsee_live
-		       
-		     fun fall_truee ()
-		       = (enque falsee;
-			  List.concat
-			  [(* flushing at near transfer *)
-			   (Assembly.directive_cache
-			    {caches = [{register = stackTopReg,
-					memloc = stackTop,
-					reserve = true},
-				       {register = frontierReg,
-					memloc = frontier,
-					reserve = true}]})::
-			   (Assembly.directive_clearflt ())::
-			   (Assembly.directive_commit 
-			    {memlocs = List.concat
-			               [MemLocSet.toList common_live,
-					MemLocSet.toList falsee_live],
-			     classes = ClassSet.toList nearflushClasses,
-			     remove_memlocs = [],
-			     remove_classes = [],
-			     eject_memlocs = [],
-			     eject_classes = []})::
-			   (Assembly.directive_cache
-			    {caches 
-			     = List.map
-			       (falsee_liveTransfer,
-				fn (temp,register,sync)
-				 => {register = register,
-				     memloc = temp,
-				     reserve = true})})::
-			   (Assembly.instruction_jcc
-			    {condition = condition_neg,
-			     target = Operand.label falsee})::
-			   (Assembly.directive_unreserve
-			    {registers
-			     = (stackTopReg)::
-			       (frontierReg)::
-			       (List.map
-				(falsee_liveTransfer,
-				 fn (temp,register,sync)
-				  => register))})::
-			   (fall gef 
-			         {label = truee,
-				  live = truee_live})])
-
-		     fun fall_falsee ()
-		       = (enque truee;
-			  List.concat
-			  [(* flushing at near transfer *)
-			   (Assembly.directive_cache
-			    {caches = [{register = stackTopReg,
-					memloc = stackTop,
-					reserve = true},
-				       {register = frontierReg,
-					memloc = frontier,
-					reserve = true}]})::
-			   (Assembly.directive_clearflt ())::
-			   (Assembly.directive_commit 
-			    {memlocs = List.concat 
-			               [MemLocSet.toList common_live,
-					MemLocSet.toList truee_live],
-			     classes = ClassSet.toList nearflushClasses,
-			     remove_memlocs = [],
-			     remove_classes = [],
-			     eject_memlocs = [],
-			     eject_classes = []})::
-			   (Assembly.directive_cache
-			    {caches 
-			     = List.map
-			       (truee_liveTransfer,
-				fn (temp,register,sync)
-				 => {register = register,
-				     memloc = temp,
-				     reserve = true})})::
-			   (Assembly.instruction_jcc
-			    {condition = condition,
-			     target = Operand.label truee})::
-			   (Assembly.directive_unreserve
-			    {registers
-			     = (stackTopReg)::
-			       (frontierReg)::
-			       (List.map
-				(truee_liveTransfer,
-				 fn (temp,register,sync)
-				  => register))})::
-			   (fall gef
-			         {label = falsee,
-			          live = falsee_live})])
-
-		   in 
-		     case (getNear(jumpInfo, truee),
-			   getNear(jumpInfo, falsee))
-		       of (Count 1, Count 1)
-			=> if truee_live_length <= falsee_live_length
-			     then fall_falsee ()
-			     else fall_truee ()
-			| (Count 1, _)
-		        => fall_truee ()
-		        | (_, Count 1)
-		        => fall_falsee ()
-		        | _
-		        => if truee_live_length <= falsee_live_length
-		             then fall_falsee ()
-		             else fall_truee ()
-		   end
-*)
 		| Switch {test, cases, default}
 		=> let
+		     val {dead, ...}
+		       = livenessTransfer {transfer = transfer,
+					   liveInfo = liveInfo}
+
 		     val size
 		       = case Operand.size test
 			   of SOME size => size
@@ -724,137 +628,30 @@ struct
 			  fn (i, target) => (Immediate.Int i, target),
 			  fn (w, target) => (Immediate.Word w, target))
 		   in
-		     AppendList.append
-		     (AppendList.appends cases,
-		      (fall gef
-		            {label = default,
-			     live = default_live}))
-		   end
-(*
-		| Switch {test, cases, default}
-		=> let
-		     val size 
-		       = case Operand.size test
-			   of SOME size => size
-			    | NONE => Size.LONG
-			     
-		     val default_live 
-		       = getLive(liveInfo, default)
-		     val default_liveTransfer
-		       = getLiveRegsTransfers
-		         (liveTransfers, default)
-		     val default_live
-		       = List.fold
-		         (default_liveTransfer,
-			  default_live,
-			  fn ((memloc,_,_),default_live)
-			   => MemLocSet.remove(default_live,memloc))
-
-		     val cases_cases_live_cases_liveTransfer
-		       = Transfer.Cases.map'
-		         (cases,
-			  fn (k, target) 
-			   => let
-				val target_live 
-				  = getLive(liveInfo, target)
-				val target_liveTransfer
-				  = getLiveRegsTransfers
-				    (liveTransfers, target)
-				val target_live
-				  = List.fold
-				    (target_liveTransfer,
-				     target_live,
-				     fn ((memloc,_,_),target_live)
-				      => MemLocSet.remove(target_live,memloc))
-			      in
-				((k,target),
-				 target_live,
-				 target_liveTransfer)
-			      end,
-			    fn (c, target) => (Immediate.Char c, target),
-			    fn (i, target) => (Immediate.Int i, target),
-			    fn (w, target) => (Immediate.Word w, target))
-
-		     val (cases, carry_live)
-		       = List.fold
-		         (cases_cases_live_cases_liveTransfer,
-			  ([], MemLocSet.empty),
-			  fn (((k,target), 
-			       target_live, 
-			       target_liveTransfer),
-			      (cases, 
-			       carry_live))
-			   => let
-				val target_live
-				  = MemLocSet.-(target_live,carry_live)
-				val carry_live
-				  = MemLocSet.+(carry_live,target_live)
-			      in
-				enque target;
-				(List.concat
-				 [cases,
-				  (* flushing at near transfer *)
-				  (Assembly.directive_clearflt ())::
-				  (Assembly.directive_commit 
-				   {memlocs = MemLocSet.toList target_live,
-				    classes = ClassSet.toList nearflushClasses,
-				    remove_memlocs = [],
-				    remove_classes = [],
-				    eject_memlocs = [],
-				    eject_classes = []})::
-				  (Assembly.directive_cache
-				   {caches 
-				    = List.map
-				      (target_liveTransfer,
-				       fn (temp,register,sync)
-				        => {register = register,
-					    memloc = temp,
-					    reserve = true})})::
-				  (Assembly.instruction_cmp
-				   {src1 = test,
-				    src2 = Operand.immediate_const k,
-				    size = size})::
-				  (Assembly.instruction_jcc
-				   {condition = Instruction.E,
-				    target = Operand.label target})::
-				  (Assembly.directive_unreserve
-				   {registers
-				    = (List.map
-				       (target_liveTransfer,
-					fn (temp,register,sync)
-					 => register))})::
-				  nil],
-				 carry_live)
-			      end)
-
-		     val default_live
-		       = MemLocSet.-(default_live,carry_live)
-
-		     val test = valOf (Operand.deMemloc test)
-		   in 
-		     List.concat
-		     [(Assembly.directive_cache
-		       {caches = [{register = stackTopReg,
-				   memloc = stackTop,
-				   reserve = true},
-				  {register = frontierReg,
-				   memloc = frontier,
-				   reserve = true},
-				  {memloc = test,
-				   register = Register.return 
-				              (MemLoc.size test),
-				   reserve = true}]})::
-		      cases,
-		      (Assembly.directive_unreserve
-		       {registers = (stackTopReg)::
-			            (frontierReg)::
-				    (Register.return (MemLoc.size test))::
-				    nil})::
+		     AppendList.appends
+		     [AppendList.single
+		      (Assembly.directive_force
+		       {commit_memlocs = [],
+			commit_classes = ClassSet.toList nearflushClasses,
+			remove_memlocs = [],
+			remove_classes = [],
+			dead_memlocs = [],
+			dead_classes = []}),
+		      AppendList.appends cases,
+		      if MemLocSet.isEmpty dead
+			then AppendList.empty
+			else AppendList.single
+			     (Assembly.directive_force
+			      {commit_memlocs = [],
+			       commit_classes = [],
+			       remove_memlocs = [],
+			       remove_classes = [],
+			       dead_memlocs = MemLocSet.toList dead,
+			       dead_classes = []}),
 		      (fall gef
 		            {label = default,
 			     live = default_live})]
 		   end
-*)
                 | Tail {target, live}
 		=> (* flushing at far transfer *)
 		   (farTransfer live
@@ -872,6 +669,8 @@ struct
 
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand
+		     val stackTopDeref'
+		       = x86MLton.gcState_stackTopDeref
 		     val stackTopDeref
 		       = x86MLton.gcState_stackTopDerefOperand
 		     val bytes 
@@ -901,7 +700,14 @@ struct
 			x86.Assembly.instruction_mov
 			{dst = stackTopDeref,
 			 src = Operand.immediate_label return,
-			 size = pointerSize}])
+			 size = pointerSize},
+			x86.Assembly.directive_force
+			{commit_memlocs = [stackTopDeref'],
+			 commit_classes = [],
+			 remove_memlocs = [],
+			 remove_classes = [],
+			 dead_memlocs = [],
+			 dead_classes = []}])
 		      (AppendList.single
 		       (Assembly.instruction_jmp
 			{target = Operand.label target,
@@ -953,12 +759,12 @@ struct
 		    end
 		| Runtime {target, args, live, return, size}
 		=> let
+		     val {dead, ...}
+		       = livenessTransfer {transfer = transfer,
+					   liveInfo = liveInfo}
+
 		     val _ = enque return
 
-		     val stackTop'
-		       = x86MLton.gcState_stackTopContents
-		     val frontier'
-		       = x86MLton.gcState_frontierContents
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand
 		     val bytes 
@@ -969,18 +775,7 @@ struct
 		     val liveReturn = x86Liveness.LiveInfo.getLive(liveInfo, return)
 		     val live = MemLocSet.unions [MemLocSet.fromList live,
 						  liveReturn]
-		     val {yes = livePost, no = livePre}
-		       = MemLocSet.partition
-		         (live,
-			  fn memloc 
-			   => List.exists
-			      (args,
-			       fn (operand,_)
-			        => (case Operand.deMemloc operand
-				      of SOME memloc' => MemLoc.eq(memloc, memloc')
-				       | NONE => false)))
-		     val livePre = MemLocSet.toList livePre
-		     val livePost = MemLocSet.toList livePost
+		     val live = MemLocSet.toList live
 
 		     val c_stackP
 		       = x86MLton.c_stackPContentsOperand
@@ -995,7 +790,7 @@ struct
 			  fn ((arg,size),
 			      (assembly_args,size_args)) 
 			   => (AppendList.append
-			       ((if Size.eq(size,Size.DBLE)
+			       (if Size.eq(size,Size.DBLE)
 				   then AppendList.fromList
 				        [Assembly.instruction_binal
 					 {oper = Instruction.SUB,
@@ -1022,36 +817,27 @@ struct
 					       (Assembly.instruction_ppush
 						{src = arg,
 						 base = c_stackP,
-						 size = size})),
+						 size = size}),
 				assembly_args),
 			       (Size.toBytes size) + size_args))
 		   in
 		     AppendList.appends
-		     [AppendList.fromList
-		      [(* flushing at Runtime *)
-		       Assembly.directive_force
-		       {commit_memlocs = [],
-			commit_classes = [],
-			remove_memlocs = livePre,
-			remove_classes = [],
-			dead_memlocs = [],
-			dead_classes = []},
-		       (* explicit cache in case there are no args *)
+		     [AppendList.single
+		      ((* explicit cache in case there are no args *)
 		       Assembly.directive_cache 
 		       {caches = [{register = Register.esp,
 				   memloc = valOf (Operand.deMemloc c_stackP),
-				   reserve = true}]}],
+				   reserve = true}]}),
 		      assembly_args,
-		      AppendList.single
-		      (Assembly.directive_force
+		      AppendList.fromList
+		      [x86.Assembly.directive_force
 		       {commit_memlocs = [],
 			commit_classes = [],
-			remove_memlocs = livePost,
+			remove_memlocs = [],
 			remove_classes = [],
-			dead_memlocs = [],
-			dead_classes = []}),
-		      AppendList.fromList
-		      [(* stackTop += bytes *)
+			dead_memlocs = MemLocSet.toList dead,
+			dead_classes = []},
+		       (* stackTop += bytes *)
 		       x86.Assembly.instruction_binal 
 		       {oper = x86.Instruction.ADD,
 			dst = stackTop,
@@ -1064,10 +850,10 @@ struct
 			size = pointerSize},
 		       (* flushing at Runtime *)
 		       Assembly.directive_force
-		       {commit_memlocs = [],
-			commit_classes = [],
-			remove_memlocs = [stackTop', frontier'],
-			remove_classes = ClassSet.toList runtimeClasses,
+		       {commit_memlocs = live,
+			commit_classes = ClassSet.toList runtimeClasses,
+			remove_memlocs = [],
+			remove_classes = [],
 			dead_memlocs = [],
 			dead_classes = []},
 		       Assembly.directive_ccall (),
@@ -1079,7 +865,7 @@ struct
 			commit_classes = [],
 			remove_memlocs = [],
 			remove_classes = [],
-			dead_memlocs = [stackTop', frontier'],
+			dead_memlocs = [],
 			dead_classes = ClassSet.toList runtimeClasses}],
 		      (if size_args > 0
 			 then AppendList.single
@@ -1089,16 +875,24 @@ struct
 				src = Operand.immediate_const_int size_args,
 				size = pointerSize})
 			 else AppendList.empty),
-		      AppendList.fromList
-		      [Assembly.directive_unreserve 
-		       {registers = [Register.esp]},
-		       (* jmp *(stackTop) *)
-		       x86.Assembly.instruction_jmp
-		       {target = stackTopDeref,
-			absolute = true}]]
+		      AppendList.single
+		      (Assembly.directive_unreserve 
+		       {registers = [Register.esp]}),
+		      (* flushing at far transfer *)
+		      (farTransfer []
+		       AppendList.empty
+		       (AppendList.single
+			(* jmp *(stackTop) *)
+			(x86.Assembly.instruction_jmp
+			 {target = stackTopDeref,
+			  absolute = true})))]
 		   end
 		| CCall {target, args, dst, live, return}
 		=> let
+		     val {dead, ...}
+		       = livenessTransfer {transfer = transfer,
+					   liveInfo = liveInfo}
+
 		     val c_stackP
 		       = x86MLton.c_stackPContentsOperand
 		     val c_stackPDerefDouble
@@ -1144,23 +938,23 @@ struct
 			       (Size.toBytes size) + size_args))
 		   in
 		     AppendList.appends
-		     [AppendList.fromList
-		      [(* flushing at Ccall *)
-		       Assembly.directive_force
-		       {commit_memlocs = live,
-			commit_classes = [],
-			remove_memlocs = [],
-			remove_classes = ClassSet.toList cstaticClasses,
-			dead_memlocs = [],
-			dead_classes = []},
-		       (* explicit cache in case there are no args *)
+		     [AppendList.single
+		      ((* explicit cache in case there are no args *)
 		       Assembly.directive_cache 
 		       {caches = [{register = Register.esp,
 				   memloc = valOf (Operand.deMemloc c_stackP),
-				   reserve = true}]}],
+				   reserve = true}]}),
 		      assembly_args,
 		      AppendList.fromList
-		      [Assembly.directive_ccall (),
+		      [(* flushing at Ccall *)
+		       Assembly.directive_force
+		       {commit_memlocs = live,
+			commit_classes = ClassSet.toList ccallflushClasses,
+			remove_memlocs = [],
+			remove_classes = [],
+			dead_memlocs = MemLocSet.toList dead,
+			dead_classes = []},
+		       Assembly.directive_ccall (),
 		       Assembly.instruction_call 
 		       {target = Operand.label target,
 			absolute = false},
@@ -1170,7 +964,7 @@ struct
 			remove_memlocs = [],
 			remove_classes = [],
 			dead_memlocs = [],
-			dead_classes = ClassSet.toList cstaticClasses}],
+			dead_classes = ClassSet.toList ccallflushClasses}],
 		      (case dst
 			 of NONE => AppendList.empty
 			  | SOME (dst,dstsize) 
@@ -1208,6 +1002,10 @@ struct
 	  = case transfer
 	      of Switch {test, cases, default}
 	       => let
+		    val {dead, ...}
+		      = livenessTransfer {transfer = transfer,
+					  liveInfo = liveInfo}
+
 		    fun reduce(cases,
 			       ops as {zero,
 				       even,
@@ -1348,6 +1146,7 @@ struct
 				 | NONE => Size.LONG
 			  val indexTemp' = indexTemp
 			  val indexTemp = Operand.memloc indexTemp
+			  val checkTemp' = checkTemp
 			  val checkTemp = Operand.memloc checkTemp
 			  val address = Operand.memloc address
 			in
@@ -1365,6 +1164,16 @@ struct
 				   {src = test,
 				    dst = indexTemp,
 				    size = Size.LONG}),
+			   if MemLocSet.isEmpty dead
+			     then AppendList.empty
+			     else AppendList.single
+			          (Assembly.directive_force
+				   {commit_memlocs = [],
+				    commit_classes = [],
+				    remove_memlocs = [],
+				    remove_classes = [],
+				    dead_memlocs = MemLocSet.toList dead,
+				    dead_classes = []}),
 			   if shift > 0
 			     then let
 				    val idC = Directive.Id.new ()
@@ -1394,7 +1203,14 @@ struct
 					      dst = checkTemp,
 					      size = Size.LONG}),
 				     AppendList.fromList
-				     [Assembly.directive_saveregalloc
+				     [Assembly.directive_force
+				      {commit_memlocs = [],
+				       commit_classes = ClassSet.toList nearflushClasses,
+				       remove_memlocs = [],
+				       remove_classes = [],
+				       dead_memlocs = [checkTemp'],
+				       dead_classes = []},
+				      Assembly.directive_saveregalloc
 				      {id = idC,
 				       live = stackTop::
 				              frontier::
@@ -1418,14 +1234,21 @@ struct
 				    dst = indexTemp,
 				    size = Size.LONG}),
 			  AppendList.fromList
-			  [Assembly.instruction_cmp
-			   {src1 = indexTemp,
-			    src2 = Operand.immediate_const_int rangeK,
-			    size = size},
+			  [Assembly.directive_force
+			   {commit_memlocs = [],
+			    commit_classes = ClassSet.toList nearflushClasses,
+			    remove_memlocs = [],
+			    remove_classes = [],
+			    dead_memlocs = [],
+			    dead_classes = []},
 			   Assembly.directive_cache
 			   {caches = [{register = Register.eax,
 				       memloc = indexTemp',
 				       reserve = false}]},
+			   Assembly.instruction_cmp
+			   {src1 = indexTemp,
+			    src2 = Operand.immediate_const_int rangeK,
+			    size = size},
 			   Assembly.directive_saveregalloc
 			   {id = idT,
 			    live = stackTop::
@@ -1436,7 +1259,14 @@ struct
 			    target = Operand.label defaultT},
 			   Assembly.instruction_jmp
 			   {target = address,
-			    absolute = true}],
+			    absolute = true},
+			   Assembly.directive_force
+			   {commit_memlocs = [],
+			    commit_classes = [],
+			    remove_memlocs = [],
+			    remove_classes = [],
+			    dead_memlocs = [indexTemp'],
+			    dead_classes = []}],
 			  AppendList.fromList
 			  [Assembly.pseudoop_data (),
 			   Assembly.pseudoop_p2align 2,
@@ -1582,13 +1412,6 @@ struct
 		       (liveFltRegsTransfer,
 			fn (memloc,sync) 
 			 => {memloc = memloc})})::
-		   (Assembly.directive_force
-		    {commit_memlocs = MemLocSet.toList live,
-		     commit_classes = ClassSet.toList nearflushClasses,
-		     remove_memlocs = [],
-		     remove_classes = [],
-		     dead_memlocs = [],
-		     dead_classes = []})::
 		   (Assembly.directive_cache
 		    {caches
 		     = List.map
@@ -1597,6 +1420,13 @@ struct
 			 => {register = register,
 			     memloc = temp,
 			     reserve = true})})::
+		   (Assembly.directive_force
+		    {commit_memlocs = MemLocSet.toList live,
+		     commit_classes = ClassSet.toList nearflushClasses,
+		     remove_memlocs = [],
+		     remove_classes = [],
+		     dead_memlocs = [],
+		     dead_classes = []})::
 		   (Assembly.instruction_jmp
 		    {target = Operand.label label,
 		     absolute = false})::
@@ -1640,40 +1470,45 @@ struct
 		   fn ((memloc,_),live)
 		    => MemLocSet.remove(live,memloc))
 
-	      fun default ()
-		= AppendList.fromList
-		  ((* flushing at near transfer *)
-		   (Assembly.directive_cache
-		    {caches = [{register = stackTopReg,
-				memloc = stackTop,
-				reserve = true},
-			       {register = frontierReg,
-				memloc = frontier,
-				reserve = true}]})::
-		   (Assembly.directive_fltcache
-		    {caches 
-		     = List.map
-		       (liveFltRegsTransfer,
-			fn (memloc,sync) 
-			 => {memloc = memloc})})::
-		   (Assembly.directive_force
-		    {commit_memlocs = MemLocSet.toList live,
-		     commit_classes = ClassSet.toList nearflushClasses,
-		     remove_memlocs = [],
-		     remove_classes = [],
-		     dead_memlocs = [],
-		     dead_classes = []})::
-		   (Assembly.directive_cache
-		    {caches
-		     = List.map
-		       (liveRegsTransfer,
-			fn (temp,register,sync)
-			 => {register = register,
-			     memloc = temp,
-			     reserve = true})})::
-		   (Assembly.instruction_jmp
-		    {target = Operand.label label,
-		     absolute = false})::
+	      fun default jmp
+		= AppendList.appends
+		  [AppendList.fromList
+		   [(* flushing at near transfer *)
+		    (Assembly.directive_cache
+		     {caches = [{register = stackTopReg,
+				 memloc = stackTop,
+				 reserve = true},
+				{register = frontierReg,
+				 memloc = frontier,
+				 reserve = true}]}),
+		    (Assembly.directive_fltcache
+		     {caches 
+		      = List.map
+		        (liveFltRegsTransfer,
+			 fn (memloc,sync) 
+			  => {memloc = memloc})}),
+		    (Assembly.directive_cache
+		     {caches
+		      = List.map
+		        (liveRegsTransfer,
+			 fn (temp,register,sync)
+			  => {register = register,
+			      memloc = temp,
+			      reserve = true})}),
+		    (Assembly.directive_force
+		     {commit_memlocs = MemLocSet.toList live,
+		      commit_classes = ClassSet.toList nearflushClasses,
+		      remove_memlocs = [],
+		      remove_classes = [],
+		      dead_memlocs = [],
+		      dead_classes = []})],
+		   if jmp
+		     then AppendList.single
+		          (Assembly.instruction_jmp
+			   {target = Operand.label label,
+			    absolute = false})
+		     else AppendList.empty,
+		   AppendList.single
 		   (Assembly.directive_unreserve
 		    {registers
 		     = (stackTopReg)::
@@ -1681,12 +1516,11 @@ struct
 		       (List.map
 			(liveRegsTransfer,
 			 fn (temp,register,sync)
-			  => register))})::
-		   nil)
+			  => register))})]
 	    in
 	      case getLayoutInfo label
 		of NONE 
-		 => default ()
+		 => default true
 		 | SOME (block as Block.T {entry,...})
 		 => (case getNear(jumpInfo, label)
 		       of Count 1 
@@ -1695,46 +1529,13 @@ struct
 			             falling = true,
 			             unique = true}
 		        | _ => AppendList.append
-			       (AppendList.fromList
-				[(* flushing at near transfer *)
-				 Assembly.directive_cache
-				 {caches = [{register = stackTopReg,
-					     memloc = stackTop,
-					     reserve = true},
-					    {register = frontierReg,
-					     memloc = frontier,
-					     reserve = true}]},
-				 Assembly.directive_fltcache
-				 {caches 
-				  = List.map
-				    (liveFltRegsTransfer,
-				     fn (memloc,sync) 
-				      => {memloc = memloc})},
-				 Assembly.directive_force 
-				 {commit_memlocs = MemLocSet.toList live,
-				  commit_classes = ClassSet.toList nearflushClasses,
-				  remove_memlocs = [],
-				  remove_classes = [],
-				  dead_memlocs = [],
-				  dead_classes = []},
-				 Assembly.directive_cache
-				 {caches
-				  = List.map
-				    (liveRegsTransfer,
-				     fn (temp,register,sync)
-				      => {register = register,
-					  memloc = temp,
-					  reserve = true})},
-				 Assembly.directive_unreserve
-				 {registers
-				  = (stackTopReg)::
-				    (frontierReg)::				    
-				    nil},
-				 Assembly.directive_reset ()],
-				(generate gef
-				          {label = label,
-					   falling = true,
-					   unique = false})))
+			       (default false,
+				AppendList.cons
+				(Assembly.directive_reset (),
+				 (generate gef
+				           {label = label,
+					    falling = true,
+					    unique = false}))))
 	    end
 	  
 	fun make {generate, effect, fall}

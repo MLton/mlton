@@ -59,9 +59,10 @@ signature X86_MLTON_BASIC =
 	  
 	val allClasses : x86.ClassSet.t ref
 	val livenessClasses : x86.ClassSet.t ref
-	val cstaticClasses : x86.ClassSet.t ref
-	val runtimeClasses : x86.ClassSet.t ref
 	val holdClasses : x86.ClassSet.t ref
+	val runtimeClasses : x86.ClassSet.t ref
+	val heapClasses : x86.ClassSet.t ref
+	val cstaticClasses : x86.ClassSet.t ref
       end
 
     (*

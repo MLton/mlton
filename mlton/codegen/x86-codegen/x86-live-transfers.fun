@@ -318,7 +318,6 @@ struct
 			    else Position I.PosInfinity
 		      and posF' ([],n) 
 			= let
-			    val live = Transfer.live transfer
 			    val {uses,defs,...} 
 			      = Transfer.uses_defs_kills transfer
 			    val {uses,defs} 
@@ -329,11 +328,7 @@ struct
 					     temp,
 					     MemLoc.eq)
 			      then Position (I.Finite n)
-			      else if List.contains(live,
-						    temp,
-						    MemLoc.eq)
-				     then Position I.PosInfinity
-				     else Length (I'.+(n, I'.one))
+			      else Length (I'.+(n, I'.one))
 			  end
 			| posF' ((Assembly.Comment _)::assembly,n)
 			= posF (assembly, n)
@@ -357,24 +352,39 @@ struct
 			    of Position n => n
 			     | Length n
 			     => let
-				  val n = I.Finite n
-				in 
-				  List.fold
-				  (Transfer.nearTargets transfer,
-				   I.PosInfinity,
-				   fn (label, min)
-				    => if LiveSet.contains
-				          (LiveInfo.getLive(liveInfo, label),
-					   temp)
-					 then let
-						val n'
-						  = get_distanceF'
-						    {temp = temp,
-						     label = label}
-					      in 
-						I.min(min, I.+(n, n'))
-					      end
-					 else min)
+				  val default ()
+				    = let
+					val n = I.Finite n
+				      in 
+					List.fold
+					(Transfer.nearTargets transfer,
+					 I.PosInfinity,
+					 fn (label, min)
+					  => if LiveSet.contains
+					        (LiveInfo.getLive(liveInfo, label),
+						 temp)
+					       then let
+						      val n'
+							= get_distanceF'
+							  {temp = temp,
+							   label = label}
+						    in 
+						      I.min(min, I.+(n, n'))
+						    end
+					       else min)
+				      end
+				in
+				  case transfer
+				    of Transfer.Tail _ => I.PosInfinity
+				     | Transfer.NonTail _ => I.PosInfinity
+				     | Transfer.Runtime _ => I.PosInfinity
+				     | Transfer.Return _ => I.PosInfinity
+				     | Transfer.Raise _ => I.PosInfinity
+				     | Transfer.CCall _
+				     => if Size.class (MemLoc.size memloc) <> Size.INT
+					  then I.PosInfinity
+					  else default ()
+				     | _ => default ()
 				end
 		    in
 		      temp_distanceF := SOME distance;
@@ -440,11 +450,14 @@ struct
 				   => NONE
 			      end)
 
+		     (* List.partition will reverse the lists.
+		      * So sort in increasing order.
+		      *)
 		     val live
 		       = List.insertionSort
 		         (live,
 			  fn ((_,_,n1),(_,_,n2))
-			   => I'.<(n1, n2))
+			   => I'.>(n1, n2))
 
 		     val {yes = liveRegs, no = liveFltRegs}
 		       = List.partition

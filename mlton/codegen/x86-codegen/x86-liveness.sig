@@ -39,6 +39,10 @@ signature X86_LIVENESS =
 	type t = {liveIn: LiveSet.t,
 		  liveOut: LiveSet.t,
 		  dead: LiveSet.t}
+
+	val livenessEntry : {entry : x86.Entry.t, live : LiveSet.t} -> t
+	val livenessAssembly : {assembly : x86.Assembly.t, live : LiveSet.t} -> t
+	val livenessTransfer : {transfer: x86.Transfer.t, liveInfo: LiveInfo.t} -> t
       end
 
     structure LivenessBlock:

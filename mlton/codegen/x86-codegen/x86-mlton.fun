@@ -75,6 +75,7 @@ struct
       val livenessClasses = ref x86.ClassSet.empty 
       val holdClasses = ref x86.ClassSet.empty 
       val runtimeClasses = ref x86.ClassSet.empty 
+      val heapClasses = ref x86.ClassSet.empty
       val cstaticClasses = ref x86.ClassSet.empty 
 
       fun initClasses ()
@@ -129,6 +130,12 @@ struct
 		     GCState::
 		     GCStateHold::
 		     ThreadStack::
+		     nil)
+
+	    val _ = heapClasses :=
+	            x86.ClassSet.fromList
+		    (
+		     Heap::
 		     nil)
 
 	    val _ = cstaticClasses :=
@@ -745,11 +752,6 @@ struct
   fun applyPrim {oper: Prim.t,
 		 args: (Operand.t * Size.t) list,
 		 dst: (Operand.t * Size.t) option,
-(*
-		 info: {frameSize: int,
-			live: Operand.t list,
-			return: Label.t} option,
-*)
 		 pinfo: PrimInfo.t,
 		 frameLayouts: Label.t -> {size: int, frameLayoutsIndex: int} option,
 		 liveInfo: x86Liveness.LiveInfo.t} : Block.t' AppendList.t
