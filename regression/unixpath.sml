@@ -244,12 +244,15 @@ val test11b = (splitDirFile "" seq "WRONG")
 *)
 
 val test12 = 
-    tst' "test12" (fn _ =>
-	   "b" = joinDirFile {dir = "", file = "b"}
+    tst' "test12" (fn _ => 
+	   "" = joinDirFile {dir = "", file = ""}
+	   andalso "b" = joinDirFile {dir = "", file = "b"}
+	   andalso "/" = joinDirFile {dir = "/", file = ""}
 	   andalso "/b" = joinDirFile {dir = "/", file = "b"}
 	   andalso "a/b" = joinDirFile {dir = "a", file = "b"}
 	   andalso "/a/b" = joinDirFile {dir = "/a", file = "b"}
 	   andalso "/c/a/b" = joinDirFile {dir = "/c/a", file = "b"}
+	   andalso "/c/a/b/" = joinDirFile {dir = "/c/a/b", file = ""}
 	   andalso "/c/a/b.foo.bar" = joinDirFile {dir = "/c/a", file="b.foo.bar"}
 	   andalso "/c/a/b.foo" = joinDirFile {dir = "/c/a", file = "b.foo"});
 

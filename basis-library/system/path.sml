@@ -196,11 +196,11 @@ structure OS_Path : OS_PATH = struct
      case fromString s of
 	{arcs = [a], isAbs = false, vol = ""} => SOME a
       | _ => NONE
+
+  fun isArc s = s = "" orelse isSome (toArcOpt s)
 	
   fun joinDirFile {dir, file} =
-     case toArcOpt file of
-	NONE => raise InvalidArc
-      | SOME a => concat (dir, a)
+     if isArc file then concat (dir, file) else raise InvalidArc
 
   fun splitDirFile p =
       let open List
