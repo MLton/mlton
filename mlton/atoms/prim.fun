@@ -7,8 +7,8 @@
  *)
 (*
  * If you add new primitives, you may need to modify backend/machine.fun.
- * If you add new polymorphic primitives, you should also modify
- * atoms/extract-targs.fun.
+ * If you add new polymorphic primitives, you should also modify the
+ * extractTargs function.
  *)
 functor Prim (S: PRIM_STRUCTS): PRIM = 
 struct
