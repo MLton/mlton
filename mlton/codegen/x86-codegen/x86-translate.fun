@@ -1378,30 +1378,30 @@ struct
 				      size = x86MLton.pointerSize}],
 				    stores_toX86Assembly)),
 (*
-		     = List.concat
-		       [[(* *(frontier) 
-			  *    = gcObjectHeader(numWordsNonPointers, 
-			  *                     numPointers)
-			  *)
-			 x86.Assembly.instruction_mov 
-			 {dst = frontierDeref,
-			  src = gcObjectHeaderWord,
-			  size = x86MLton.pointerSize},
-			 (* dst = frontier + objectHeaderSize *)
-			 x86.Assembly.instruction_lea
-			 {dst = dst,
-			  src = frontierPlusOHW,
-			  size = x86MLton.pointerSize}],
-			(List.foldr(stores,
-				    [],
-				    stores_toX86Assembly)),
-			[(* frontier += objectHeaderSize + size *)
-			 x86.Assembly.instruction_binal
-			 {oper = x86.Instruction.ADD,
-			  dst = frontier,
-			  src = x86.Operand.immediate_const_int 
-			        (objectHeaderSize + size),
-			  size = x86MLton.pointerSize}]],
+		      = List.concat
+		        [[(* *(frontier) 
+			   *    = gcObjectHeader(numWordsNonPointers, 
+			   *                     numPointers)
+			   *)
+			  x86.Assembly.instruction_mov 
+			  {dst = frontierDeref,
+			   src = gcObjectHeaderWord,
+			   size = x86MLton.pointerSize},
+			  (* dst = frontier + objectHeaderSize *)
+			  x86.Assembly.instruction_lea
+			  {dst = dst,
+			   src = frontierPlusOHW,
+			   size = x86MLton.pointerSize}],
+			 (List.foldr(stores,
+				     [],
+				     stores_toX86Assembly)),
+			 [(* frontier += objectHeaderSize + size *)
+			  x86.Assembly.instruction_binal
+			  {oper = x86.Instruction.ADD,
+			   dst = frontier,
+			   src = x86.Operand.immediate_const_int 
+			         (objectHeaderSize + size),
+			   size = x86MLton.pointerSize}]],
 *)
 		      transfer = NONE}),
 		    comment_end]
