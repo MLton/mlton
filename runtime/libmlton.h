@@ -18,7 +18,7 @@
 extern struct GC_state gcState;
 
 /* initialize the machine */
-bool MLton_init(int argc, 
+void MLton_init(int argc, 
 		char **argv,
 		/* Read the globals from the world file. */
 		void (*loadGlobals)(FILE *file));

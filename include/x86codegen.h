@@ -78,7 +78,8 @@ int main(int argc, char **argv) {					\
 	gcState.maxFrameIndex = mfi;					\
 	gcState.frameLayouts = frameLayouts;				\
 	gcState.native = TRUE;       					\
-	if (MLton_init(argc, argv, &loadGlobals)) {			\
+	MLton_init(argc, argv, &loadGlobals);				\
+	if (gcState.isOriginal) {					\
  		/* The (> 1) check is so that the C compiler can	\
 		 * eliminate the call if there are no IntInfs and we	\
 		 * then won't have to link in with the IntInf stuff.	\

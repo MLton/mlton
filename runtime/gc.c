@@ -1028,88 +1028,7 @@ initSignalStack(GC_state s)
 }
 
 /* ------------------------------------------------- */
-/*                  GC_initCounters                  */
-/* ------------------------------------------------- */
-
-static int processor_has_sse2=0;
-
-static void readProcessor() {
-#if 0
-	int status = system("/bin/cat /proc/cpuinfo | /bin/egrep -q '^flags.*:.* mmx .*xmm'");
-  
-	if (status==0)
-		processor_has_sse2=1;
-	else
-		processor_has_sse2=0;
-#endif
-	processor_has_sse2=0;
-}
-
-/* ------------------------------------------------- */
-/*                    getRAMsize                     */
-/* ------------------------------------------------- */
-
-/*
- * Set RAM and SWAP size.  Very Linux specific.
- * Note the total amount of RAM is multiplied by ramSlop so that we don't
- * use all of memory or start swapping.  It used to be .95, but Linux
- * 2.2 is more aggressive about swapping.
- */
-
-static inline void
-setMemInfo(GC_state s)
-{
-	struct sysinfo	sbuf;
-
-	unless (0 == sysinfo(&sbuf))
-		diee("sysinfo failed");
-	s->totalRam = sbuf.totalram;
-	s->totalSwap = sbuf.totalswap;
-	s->ramSlop = 0.85;
-	s->maxSemi = roundPage(s->ramSlop * (double)s->totalRam / 2);
-}
-
-void
-GC_init(GC_state s)
-{
-	initSignalStack(s);
-	setMemInfo(s);
-	s->bytesAllocated = 0;
-	s->bytesCopied = 0;
-	s->canHandle = 0;
-	s->currentThread = BOGUS_THREAD;
-	rusageZero(&s->ru_gc);
-	s->inSignalHandler = FALSE;
-	s->maxBytesLive = 0;
-	s->maxHeapSize = 0;
-	s->maxHeapSizeSeen = 0;
-	s->maxLive = 3;
-	s->maxPause = 0;
-	s->maxStackSizeSeen = 0;
-	s->messages = FALSE;
-	s->minLive = 20;
-	s->numGCs = 0;
-	s->numLCs = 0;
-	s->savedThread = BOGUS_THREAD;
-	s->signalHandler = BOGUS_THREAD;
-	sigemptyset(&s->signalsHandled);
-	s->signalIsPending = FALSE;
-	sigemptyset(&s->signalsPending);
-	s->startTime = currentTime();
-	s->summary = FALSE;
-	/* The next bit is for heap resizing. */
-	/* Set liveRatio (close) to the geometric mean of minLive and maxLive. */
-	{ 
-		uint i;
-		for (i = s->maxLive; i * i <= s->minLive * s->maxLive; ++i)
-			/* Nothing */ ;
-		s->liveRatio = i;
-	}
- 	readProcessor();
-}
-
-/* ------------------------------------------------- */
-/*                 GC_setHeapParams                  */
+/*                  Initialization                   */
 /* ------------------------------------------------- */
 
 /* set fromSize.
@@ -1130,11 +1049,40 @@ GC_setHeapParams(GC_state s, uint size)
 		die("Out of memory (setHeapParams).");
 }
 
-/* ------------------------------------------------- */
-/*                      GC_init                      */
-/* ------------------------------------------------- */
+static int processor_has_sse2=0;
 
-void GC_newWorld(GC_state s)
+static void readProcessor() {
+#if 0
+	int status = system("/bin/cat /proc/cpuinfo | /bin/egrep -q '^flags.*:.* mmx .*xmm'");
+  
+	if (status==0)
+		processor_has_sse2=1;
+	else
+		processor_has_sse2=0;
+#endif
+	processor_has_sse2=0;
+}
+
+/*
+ * Set RAM and SWAP size.  Very Linux specific.
+ * Note the total amount of RAM is multiplied by ramSlop so that we don't
+ * use all of memory or start swapping.  It used to be .95, but Linux
+ * 2.2 is more aggressive about swapping.
+ */
+
+static inline void
+setMemInfo(GC_state s)
+{
+	struct sysinfo	sbuf;
+
+	unless (0 == sysinfo(&sbuf))
+		diee("sysinfo failed");
+	s->totalRam = sbuf.totalram;
+	s->totalSwap = sbuf.totalswap;
+	s->maxSemi = roundPage(s->ramSlop * (double)s->totalRam / 2);
+}
+
+static void newWorld(GC_state s)
 {
 	int i;
 
@@ -1151,6 +1099,157 @@ void GC_newWorld(GC_state s)
 	assert(initialThreadBytes(s) == s->frontier - s->base);
 	assert(s->frontier + s->bytesLive <= s->limit);
 	assert(GC_mutatorInvariant(s));
+}
+
+static void usage(string s) {
+	die("Usage: %s [@MLton [fixed-heap n[{k|m}]] [gc-messages] [gc-summary] [load-world file] [max-heap n[{k|m}]] [ram-slop x] --] args", 
+		s);
+}
+
+static float stringToFloat(string s) {
+	float f;
+
+	sscanf(s, "%f", &f);
+	return f;
+}
+
+static uint stringToBytes(string s) {
+	char c;
+	uint result;
+	int i, m;
+	
+	result = 0;
+	i = 0;
+
+	while ((c = s[i++]) != '\000') {
+		switch (c) {
+		case 'm':
+			if (s[i] == '\000') 
+				result = result * 1048576;
+			else return 0;
+			break;
+		case 'k':
+			if (s[i] == '\000') 
+				result = result * 1024;
+			else return 0;
+			break;
+		default:
+			m = (int)(c - '0');
+			if (0 <= m and m <= 9)
+				result = result * 10 + m;
+			else return 0;
+		}
+	}
+	
+	return result;
+}
+
+int
+GC_init(GC_state s, int argc, char **argv,
+			void (*loadGlobals)(FILE *file)) {
+	char *worldFile;
+	int i;
+
+	initSignalStack(s);
+	s->bytesAllocated = 0;
+	s->bytesCopied = 0;
+	s->canHandle = 0;
+	s->currentThread = BOGUS_THREAD;
+	rusageZero(&s->ru_gc);
+	s->inSignalHandler = FALSE;
+	s->isOriginal = TRUE;
+	s->maxBytesLive = 0;
+	s->maxHeapSize = 0;
+	s->maxHeapSizeSeen = 0;
+	s->maxLive = 3;
+	s->maxPause = 0;
+	s->maxStackSizeSeen = 0;
+	s->messages = FALSE;
+	s->minLive = 20;
+	s->numGCs = 0;
+	s->numLCs = 0;
+	s->ramSlop = 0.85;
+	s->savedThread = BOGUS_THREAD;
+	s->signalHandler = BOGUS_THREAD;
+	sigemptyset(&s->signalsHandled);
+	s->signalIsPending = FALSE;
+	sigemptyset(&s->signalsPending);
+	s->startTime = currentTime();
+	s->summary = FALSE;
+	/* The next bit is for heap resizing. */
+	/* Set liveRatio (close) to the geometric mean of minLive and maxLive. */
+	{ 
+		uint i;
+		for (i = s->maxLive; i * i <= s->minLive * s->maxLive; ++i)
+			/* Nothing */ ;
+		s->liveRatio = i;
+	}
+ 	readProcessor();
+	worldFile = NULL;
+	i = 1;
+	if (argc > 1 and (0 == strcmp(argv[1], "@MLton"))) {
+		bool done;
+
+		/* process @MLton args */
+		i = 2;
+		done = FALSE;
+		while (!done) {
+			if (i == argc)
+				usage(argv[0]);
+			else {
+				string arg;
+
+				arg = argv[i];
+				if (0 == strcmp(arg, "fixed-heap")) {
+					++i;
+					if (i == argc)
+						usage(argv[0]);
+					s->useFixedHeap = TRUE;
+					s->fromSize =
+						stringToBytes(argv[i++]);
+				} else if (0 == strcmp(arg, "gc-messages")) {
+					++i;
+					s->messages = TRUE;
+				} else if (0 == strcmp(arg, "gc-summary")) {
+					++i;
+					s->summary = TRUE;
+				} else if (0 == strcmp(arg, "load-world")) {
+					++i;
+					s->isOriginal = FALSE;
+					if (i == argc) 
+						usage(argv[0]);
+					worldFile = argv[i++];
+				} else if (0 == strcmp(arg, "max-heap")) {
+					fprintf(stderr, "max-heap is currently disabled\n");
+					++i;
+					if (i == argc) 
+						usage(argv[0]);
+					s->useFixedHeap = FALSE;
+					s->maxHeapSize =
+						stringToBytes(argv[i++]);
+				} else if (0 == strcmp(arg, "ram-slop")) {
+					++i;
+					if (i == argc)
+						usage(argv[0]);
+					s->ramSlop =
+						stringToFloat(argv[i++]);
+				} else if (0 == strcmp(arg, "--")) {
+					++i;
+					done = TRUE;
+				} else if (i > 1)
+					usage(argv[0]);
+			        else done = TRUE;
+			}
+		}
+	}
+	setMemInfo(s);
+	
+	if (s->isOriginal)
+		newWorld(&gcState);
+	else
+		GC_loadWorld(&gcState, worldFile, loadGlobals);
+
+	return i;
 }
 
 #if METER

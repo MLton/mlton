@@ -297,6 +297,7 @@ typedef struct GC_state {
 	uint totalRam; /* bytes */
 	uint totalSwap; /* bytes */
 	uint maxSemi; /* bytes */
+	bool isOriginal;
 } *GC_state;
 
 /* ------------------------------------------------- */
@@ -321,7 +322,8 @@ typedef struct GC_state {
  *        maxHeapSize should be set to 0 if you want it to be figured out
  *          automatically, otherwise set it to what you want.
  */
-void GC_init(GC_state s);
+int GC_init(GC_state s, int argc, char **argv,
+			void (*loadGlobals)(FILE *file));
 
 struct GC_stringInit {
   uint globalIndex;
@@ -458,10 +460,8 @@ void GC_foreachPointerInRange(GC_state s, pointer front, pointer *back,
 					GC_pointerFun f);
 void GC_display(GC_state s, FILE *stream);
 void GC_fromSpace(GC_state s);
-void GC_init(GC_state s);
 bool GC_mutatorInvariant(GC_state s);
 uint GC_objectSize(pointer p);
-void GC_newWorld(GC_state s);
 void GC_setHeapParams(GC_state s, uint size);
 void GC_setStack(GC_state s);
 void GC_toSpace(GC_state s);
