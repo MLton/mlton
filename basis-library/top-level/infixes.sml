@@ -5,9 +5,9 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-infix 7  * / mod div
-infix 6 ^ + -
-infix 3 := o
-infix 4 > < >= <= = <>
+infix  7 * / mod div
+infix  6 + - ^
 infixr 5 :: @
-infix 0 before
+infix  4 = <> > >= < <=
+infix  3 := o
+infix  0 before

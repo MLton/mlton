@@ -1,6 +1,6 @@
 signature LIST_GLOBAL =
    sig
-      datatype 'a list = nil | :: of 'a * 'a list
+      datatype list = datatype list
 
       exception Empty
 

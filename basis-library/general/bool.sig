@@ -1,6 +1,6 @@
 signature BOOL_GLOBAL =
    sig
-      datatype bool = false | true
+      datatype bool = datatype bool
 
       val not: bool -> bool
    end
