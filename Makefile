@@ -63,8 +63,9 @@ constants:
 
 .PHONY: deb
 deb:
-	$(MAKE) clean clean-cvs version
-	debuild
+	$(MAKE) clean-cvs version
+	fakeroot dpkg-buildpackage -us -uc
+#	debuild
 
 .PHONY: deb-binary
 deb-binary:
