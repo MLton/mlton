@@ -385,7 +385,7 @@ fun main args =
 	    val base = #name (hd compilers)
 	    val _ =
 	       let open Signal
-	       in Handler.set (pipe, Handler.Ignore)
+	       in setHandler (pipe, Ignore)
 	       end
 	    fun r2s r = Real.format (r, Real.Format.fix (SOME 2))
 	    val i2s = Int.toCommaString
