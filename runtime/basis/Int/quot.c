@@ -41,13 +41,7 @@ enum {
 
 #define binary(size, name, op)							\
 	WordS##size WordS##size##_##name (WordS##size i, WordS##size j) {	\
-		WordS##size res = i op j;					\
-		if (DEBUG)							\
-			fprintf (stderr, WordS##size##_format			\
-					" = " WordS##size##_format " "		\
-					#op " " WordS##size##_format "\n",	\
-				        res, i, j);				\
-		return res;							\
+		return i op j;							\
 	}
 
 #define both(size)				\
