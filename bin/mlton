@@ -33,6 +33,9 @@ doit () {
 	exit 1
 }
 
+# You may need to add -L/path/to/libgmp before the "$@" so that the linker
+# can find the gmp.
+
 doit "$lib" \
 	"$gcc" -w -fomit-frame-pointer -fno-strength-reduce \
 	-mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 \

@@ -51,6 +51,23 @@ compilation.
 
 \end{description}
 
+{\mlton} requires that you have the
+\htmladdnormallink{GNU multiprecision library (gmp)}
+		  {http://www.gnu.org/software/gmp/gmp.html}
+installed on your machine.  If you do not, then when you run {\mlton},
+you will see an error message like the following.
+\begin{verbatim}
+/usr/local/lib/mlton/mlton-compile: error while loading shared libraries: \
+    libgmp.so.3: cannot load shared object file: No such file or directory
+\end{verbatim}
+Also, {\mlton} passes the {\tt -lgmp} flag to the linker, which will
+link with {\tt libgmp.so}.  If the linker cannot find {\tt libgmp.so},
+then you will see an error message like {\tt /usr/bin/ld: cannot find
+-lgmp}.  If you have the gmp installed, and you still see this error,
+then you need to add a {\tt -L} argument in the {\tt bin/mlton} script
+so that the linker can find {\tt libgmp.so}, for example, {\tt
+-L/usr/local/lib}.
+
 \subsection{Hello, World!}
 
 Once you have installed {\mlton}, create a file called {\tt
