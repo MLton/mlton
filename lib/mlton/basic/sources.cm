@@ -38,6 +38,7 @@ structure Counter
 structure Date
 structure Dir
 structure DirectedGraph
+structure DirectedSubGraph
 structure DotColor
 structure Dot
 structure DynamicWind
@@ -181,6 +182,8 @@ dir.sig
 dir.sml
 directed-graph.sig
 directed-graph.sml
+directed-sub-graph.sig
+directed-sub-graph.sml
 dot.sig
 dot.sml
 dot-color.sml
