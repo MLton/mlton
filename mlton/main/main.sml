@@ -108,7 +108,7 @@ fun makeOptions {usage} =
 	case !hostArch of
 	   Sparc => " {8|4}"
 	 | X86 => " {4|8}",
-	" object alignment",
+	"object alignment",
 	(SpaceString (fn s =>
 		      align
 		      := (case s of
