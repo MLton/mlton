@@ -1594,7 +1594,7 @@ struct
 					    size = size})::
 				          l) o
 				     (fn l
-				       => if i > 0
+				       => if i > 1
 					    then (Assembly.instruction_sral
 						  {oper = Instruction.SAR,
 						   dst = divTemp,
