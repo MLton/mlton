@@ -337,15 +337,9 @@ clean:
 depend:
 	makedepend -f- -- $(CFLAGS) -- $(SRCS)
 
+LIBMLTON = /usr/local/lib/mlton/self
 .PHONY: ensure-gmp
 ensure-gmp:
-	if [ $(HOSTTYPE) = cygwin -o $(HOSTTYPE) = freebsd ] && 		\
-		! [ -r gmp.h -a -r libgmp.a ]; then 				\
-		echo 'Must get gmp.h and libgmp.a.  See get-gmp target.'; 	\
-		exit 1; 							\
+	if [ $(HOSTTYPE) = freebsd ] && ! [ -r gmp.h -a -r libgmp.a ]; then	\
+		cp $(LIBMLTON)/libgmp.a $(LIBMLTON)/include/gmp.h ./; 		\
 	fi		
-
-LIBMLTON = /usr/local/lib/mlton/self
-.PHONY: get-gmp
-get-gmp:
-	cp $(LIBMLTON)/libgmp.a $(LIBMLTON)/include/gmp.h .
