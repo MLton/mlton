@@ -27,7 +27,7 @@ fun layout e =
 	    seq [str "error: ",
 		 case so of
 		    NONE => empty
-		  | SOME se => seq [str (OS.errorName se), str ": "],
+		  | SOME se => seq [str (OS.errorMsg se), str ": "],
 		       str s]
        | Fail s => str s
        | IO.Io {cause, function, ...} =>
