@@ -53,16 +53,14 @@ fun startStop {name, action, log, thunk, usage} =
 		       val _ = Out.close Out.standard
 		       val _ = Posix.ProcEnv.setpgid {pid = NONE, pgid = NONE}
 		       val _ =
-			  let open Signal open Handler
-			  in set (term,
-				  Handler
-				  (fn _ =>
-				   Thread.new
-				   (fn () =>
-				    (messageStr "received Signal.term -- exiting"
-				     ; Process.succeed ()))))
-			  end
-		    in thunk ()
+			  Signal.handleWith'
+			  (Signal.term, fn _ =>
+			   Thread.new
+			   (fn () =>
+			    (messageStr "received Signal.term -- exiting"
+			     ; Process.succeed ())))
+		    in
+		       thunk ()
 		    end)
 	     in ()
 	     end)
