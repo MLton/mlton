@@ -61,5 +61,8 @@ Int IEEEReal_getRoundingMode () {
 	return mode;
 }
 
+#else
+
+#error IEEEReal_{get,set}RoundingMode not defined
 
 #endif
