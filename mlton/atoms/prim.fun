@@ -620,14 +620,14 @@ fun 'a checkApp {prim, targs, args,
       fun show s =
 	 if true
 	    then ()
-	 else TextIO.print s
+	 else Out.print s
    in
       if Vector.length targs <> Vector.length tyvars
 	 then
 	    (show (concat ["primapp error, #targs=",
-			   Int.toString (List.length targs),
+			   Int.toString (Vector.length targs),
 			   ", #tyvars=",
-			   Int.toString (List.length tyvars), "\n"])
+			   Int.toString (Vector.length tyvars), "\n"])
 	     ; error)
       else
 	 let
@@ -801,7 +801,7 @@ fun 'a apply (p, args, varEquals) =
  	 fn (Char c1, Char c2) => bool (Char.equals (c1, c2))
  	  | (Int i1, Int i2) => bool (Int.equals (i1, i2))
  	  | (Word w1, Word w2) => bool (Word.equals (w1, w2))
- 	  | _ => NONE
+ 	  | _ => ApplyResult.Unknown
       val equal =
 	 fn (Char c1, Char c2) => bool (Char.equals (c1, c2))
 	  | (Int i1, Int i2) => bool (Int.equals (i1, i2))
@@ -851,7 +851,7 @@ fun 'a apply (p, args, varEquals) =
 		bool (isSome (IntInf.fromString s))
 	   | (IntInf_isSmall, [IntInf i]) => bool (SmallIntInf.isSmall i)
 	   | (IntInf_toWord, [IntInf i]) => word (SmallIntInf.toWord i)
-	   | (MLton_eq, [c1, c2]) => equal (c1, c2)
+	   | (MLton_eq, [c1, c2]) => eq (c1, c2)
 	   | (MLton_equal, [c1, c2]) => equal (c1, c2)
 	   | (String_equal, [String s1, String s2]) =>
 		bool (String.equals (s1, s2))
