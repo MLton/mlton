@@ -319,7 +319,7 @@ fun layoutBasisLibrary () =
 (*                      compile                      *)
 (* ------------------------------------------------- *)
 
-fun preCodegen {input, docc}: Machine.Program.t =
+fun preCodegen {input}: Machine.Program.t =
    let
       fun parseElabMsg () = (lexAndParseMsg (); elaborateMsg ())
       val primitiveDecs: CoreML.Dec.t vector =
@@ -495,11 +495,11 @@ fun preCodegen {input, docc}: Machine.Program.t =
       machine
    end
 
-fun compile {input: File.t list, outputC, outputS, docc}: unit =
+fun compile {input: File.t list, outputC, outputS}: unit =
    let
       val machine =
 	 Control.trace (Control.Top, "pre codegen")
-	 preCodegen {input = input, docc = docc}
+	 preCodegen {input = input}
       val _ =
 	 if !Control.Native.native
 	    then

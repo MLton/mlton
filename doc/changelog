@@ -1,6 +1,9 @@
 Here are the changes since version 20030716.
 
-* 2003-07-??
+* 2003-08-16
+  - Added -link-opt, for passing options to gcc when linking.
+
+* 2003-07-19
   - Renamed _ffi as _import.  The old _ffi will remain for a while,
     but is deprecated and should be replaced with _import.
   - Added attributes to _export and _import.  For now, the only

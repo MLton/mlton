@@ -44,8 +44,7 @@ val includeDirs: string list ref = ref []
 val keepGenerated = ref false
 val keepO = ref false
 val keepSML = ref false
-val libs: string list ref = ref []
-val libDirs: string list ref = ref []
+val linkOpts: string list ref = ref []
 val output: string option ref = ref NONE
 val optimization: int ref = ref 1
 val profileSet: bool ref = ref false
@@ -134,7 +133,18 @@ fun makeOptions {usage} =
 	intRef cardSizeLog2),
        (Expert, "cc", " <gcc>", "path to gcc executable",
 	SpaceString (fn s => gcc := s)),
-       (Normal, "cc-opt", " <opt>", "pass option to C compiler", push ccOpts),
+       (Normal, "cc-opt", " <opt>", "pass option to C compiler",
+	SpaceString (fn opt =>
+		     if opt = ""
+			then ccOpts := []
+		     else 
+			if (3 = String.size opt
+			    andalso String.isPrefix {prefix = "-O",
+						     string = opt})
+			   then optimization := (Char.toInt
+						 (String.sub (opt, 2))
+						 - Char.toInt #"0")
+			else List.push (ccOpts, opt))),
        (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
@@ -219,7 +229,7 @@ fun makeOptions {usage} =
        (Expert, "lib", " <lib>", "set MLton lib directory",
 	SpaceString (fn s => libDir := s)),
        (Normal, "lib-search", " <dir>", "search dir for libraries (like gcc -L)",
-	push libDirs),
+	SpaceString (fn s => List.push (linkOpts, concat ["-L", s]))),
        (Expert, "limit-check", " {lhle|pb|ebb|lh|lhf|lhfle}",
 	"limit check insertion algorithm",
 	SpaceString (fn s =>
@@ -239,7 +249,12 @@ fun makeOptions {usage} =
 	"compute dynamic counts of limit checks",
 	boolRef limitCheckCounts),
        (Normal, "link", " <library>", "link with library (like gcc -l)",
-	push libs),
+	SpaceString (fn s => List.push (linkOpts, concat ["-l", s]))),
+       (Normal, "link-opt", " <opt>", "pass option to linker",
+	SpaceString (fn s =>
+		     if s = ""
+			then linkOpts := []
+		     else List.push (linkOpts, s))),
        (Expert, "loop-passes", " <n>", "loop optimization passes (1)",
 	Int 
 	(fn i => 
@@ -388,7 +403,6 @@ fun commandLine (args: string list): unit =
 	  | Self => "self"
       val lib = concat [!libDir, "/", hostString]
       val _ = Control.libDir := lib
-      val libDirs = lib :: !libDirs
       val includeDirs = concat [lib, "/include"] :: !includeDirs
       (* Much of the commentary for the C flags is taken from the gcc docs. *)
       val standardCFlags =
@@ -463,20 +477,47 @@ fun commandLine (args: string list): unit =
 	 case !hostArch of
 	    X86 => (x86CFlags, x86LinkLibs)
 	  | Sparc => (sparcCFlags, sparcLinkLibs)
-      val defaultLibs = defaultLibs @ ["gdtoa", "m"]
-      val ccOpts =
-	 List.fold
-	 (!ccOpts, cFlags, fn (ccOpt, ac) => 
-	  if ccOpt = ""
-	     then ac (* reset the options *)
-	  else if (3 = String.size ccOpt
-		   andalso String.isPrefix {string = ccOpt, prefix = "-O"})
-		  then (optimization := (Char.toInt (String.sub (ccOpt, 2))
-					 - Char.toInt #"0")
-			; ac)
-	       else ccOpt :: ac)
-      val ccOpts = String.tokens (concat (List.separate (ccOpts, " ")),
-				  Char.isSpace)
+      fun prefixAll (prefix: string, l: string list): string list =
+	 List.map (l, fn s => concat [prefix, s])
+      val defaultLibs = prefixAll ("-l", defaultLibs @ ["gdtoa", "m"])
+      fun tokenize l =
+	 String.tokens (concat (List.separate (rev (!l), " ")), Char.isSpace)
+      val ccOpts = tokenize ccOpts
+      val linkWithGmp =
+	 case !hostOS of
+	    Cygwin => ["-lgmp"]
+	  | FreeBSD => ["-L/usr/local/lib/", "-lgmp"]
+	  | Linux =>
+	       (* This mess is necessary because the linker on linux
+		* adds a dependency to a shared library even if there are
+		* no references to it.  So, on linux, we explicitly link
+		* with libgmp.a instead of using -lgmp.
+		*)
+	       let
+		  val conf = "/etc/ld.so.conf"
+		  val dirs = if File.canRead conf then File.lines conf else []
+		  val dirs = "/lib\n" :: "/usr/lib\n" :: dirs
+	       in
+		  case (List.peekMap
+			(dirs, fn d =>
+			 let
+			    val lib =
+			       concat [String.dropSuffix (d, 1), "/libgmp.a"]
+			 in
+			    if File.canRead lib
+			       then SOME lib
+			    else NONE
+			 end)) of
+		     NONE => ["-lgmp"]
+		   | SOME lib => [lib]
+	       end
+	  | Sun => ["-lgmp"]
+      val linkOpts =
+	 List.concat [[concat ["-L", lib],
+		       if !debug then "-lmlton-gdb" else "-lmlton"],
+		      tokenize linkOpts,
+		      defaultLibs,
+		      linkWithGmp]
       val _ =
 	 if !Native.native andalso !hostArch = Sparc
 	    then usage "can't use -native true on Sparc"
@@ -556,7 +597,7 @@ fun commandLine (args: string list): unit =
 					     String.isSuffix {string = s,
 							      suffix = suffix})
 				orelse
-				List.exists (["-l", "-L", "-Wl,"], fn prefix =>
+				List.exists (["-l", "-L"], fn prefix =>
 					     String.isPrefix {prefix = prefix,
 							      string = s}))) of
 		  NONE => ()
@@ -593,59 +634,17 @@ fun commandLine (args: string list): unit =
 			case !output of
 			   NONE => suffix suf
 			 | SOME f => f
-		     fun list (prefix: string, l: string list): string list =
-			List.map (l, fn s => prefix ^ s)
 		     fun docc (inputs: File.t list,
 			       output: File.t,
 			       switches: string list,
-			       linkLibs: string list): unit =
+			       linkOpts: string list): unit =
 			System.system
 			(gcc, List.concat [switches,
 					   ["-o", output],
 					   inputs,
-					   linkLibs])
+					   linkOpts])
 		     val definesAndIncludes =
-			list ("-I", rev (includeDirs))
-		     (* This mess is necessary because the linker on linux
-		      * adds a dependency to a shared library even if there are
-		      * no references to it.  So, on linux, we explicitly link
-		      * with libgmp.a instead of using -lgmp.
-		      *)
-		     val linkWithGmp =
-			case !hostOS of
-			   Cygwin => ["-lgmp"]
-			 | FreeBSD => ["-L/usr/local/lib/", "-lgmp"]
-			 | Linux =>
-			      let
-				 val conf = "/etc/ld.so.conf"
-				 val dirs =
-				    if File.canRead conf
-				       then File.lines conf
-				    else []
-				 val dirs = "/lib\n" :: "/usr/lib\n" :: dirs
-			      in
-				 case (List.peekMap
-				       (dirs, fn d =>
-					let
-					   val lib =
-					      concat [String.dropSuffix (d, 1),
-						      "/libgmp.a"]
-					in
-					   if File.canRead lib
-					      then SOME lib
-					   else NONE
-					end)) of
-				    NONE => ["-lgmp"]
-				  | SOME lib => [lib]
-			      end
-			 | Sun => ["-lgmp"]
-                     val linkLibs: string list =
-			List.concat [list ("-L", rev (libDirs)),
-				     list ("-l",
-					   (if !debug then "mlton-gdb"
-					    else "mlton")
-					    :: (rev (!libs) @ defaultLibs)),
-				     linkWithGmp]
+			prefixAll ("-I", rev (includeDirs))
 		     datatype debugFormat =
 			Dwarf | DwarfPlus | Dwarf2 | Stabs | StabsPlus
 		     (* The -Wa,--gstabs says to pass the --gstabs option to the
@@ -673,7 +672,7 @@ fun commandLine (args: string list): unit =
 				       | Self => [],
 				      if !debug then gccDebug else [],
 				      if !static then ["-static"] else []],
-				     rest @ linkLibs))
+				     rest @ linkOpts))
 			      ()
 			   (* gcc on Cygwin appends .exe, which I don't want, so
 			    * move the output file to it's rightful place.
@@ -762,9 +761,6 @@ fun commandLine (args: string list): unit =
 		     end
 		  fun compileSml (files: File.t list) =
 		     let
-			val docc =
-			   fn {input, output} =>
-			   docc ([input], output, definesAndIncludes, linkLibs)
 			val outputs: File.t list ref = ref []
 			val r = ref 0
 			fun make (style: style, suf: string) () =
@@ -800,7 +796,6 @@ fun commandLine (args: string list): unit =
 			   trace (Top, "Compile SML")
 			   Compile.compile
 			   {input = files,
-			    docc = docc,
 			    outputC = make (Control.C, ".c"),
 			    outputS = make (Control.Assembly,
 					    if !debug then ".s" else ".S")}

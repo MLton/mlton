@@ -13,9 +13,7 @@ signature COMPILE =
 				      done: unit -> unit},
 		    outputS: unit -> {file: File.t,
 				      print: string -> unit,
-				      done: unit -> unit},
-		    docc: {input: File.t,
-			   output: File.t} -> unit} -> unit
+				      done: unit -> unit}} -> unit
       val forceBasisLibrary: Dir.t -> unit
       val layoutBasisLibrary: unit -> Layout.t
       (* output a C file to print out the basis constants. *)
