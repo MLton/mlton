@@ -34,7 +34,7 @@ signature TYPE_STR_STRUCTS =
 	    val layoutApp:
 	       t * (Layout.t * {isChar: bool, needsParen: bool}) vector
 	       -> Layout.t * {isChar: bool, needsParen: bool}
-	    val make: unit -> t
+	    val tuple: t
 	 end
       structure Record: RECORD
       structure Tyvar: TYVAR

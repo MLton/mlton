@@ -142,9 +142,9 @@ structure FlexibleTycon =
 			   id = TyconId.new (),
 			   typeFcn = typeFcn})
 
-      fun make () = new {hasCons = false, typeFcn = TypeFcn.Tycon}
+      fun make {hasCons} = new {hasCons = hasCons, typeFcn = TypeFcn.Tycon}
 
-      val bogus = make ()
+      val bogus = make {hasCons = false}
 
       fun toTypeFcn (T s) = #typeFcn (Set.value s)
 
@@ -220,6 +220,8 @@ structure Tycon =
       datatype t =
 	 Flexible of FlexibleTycon.t
        | Rigid of Etycon.t * Kind.t
+
+      val tuple = Rigid (Etycon.tuple, Kind.Nary)
 
       val layout =
 	 fn Flexible c => FlexibleTycon.layout c
@@ -310,19 +312,23 @@ structure Type =
 	    case t of
 	       Con (c, ts) => Tycon.layoutApp (c, Vector.map (ts, loop))
 	     | Record r =>
-		  simple
-		  (seq
-		   [str "{",
-		    mayAlign
-		    (separateRight
-		     (Vector.toListMap
-		      (QuickSort.sortVector
-		       (Record.toVector r, fn ((f, _), (f', _)) =>
-			Field.<= (f, f')),
-		       fn (f, t) =>
-		       seq [Field.layout f, str ": ", #1 (loop t)]),
-		      ",")),
-		    str "}"])
+		  (case Record.detupleOpt r of
+		      NONE =>
+			 simple
+			 (seq
+			  [str "{",
+			   mayAlign
+			   (separateRight
+			    (Vector.toListMap
+			     (QuickSort.sortVector
+			      (Record.toVector r, fn ((f, _), (f', _)) =>
+			       Field.<= (f, f')),
+			      fn (f, t) =>
+			      seq [Field.layout f, str ": ", #1 (loop t)]),
+			     ",")),
+			   str "}"])
+		    | SOME ts => Tycon.layoutApp (Tycon.tuple,
+						  Vector.map (ts, loop)))
 	     | Var a => simple (Tyvar.layout a)
       in
 	 val layout = #1 o loop
@@ -932,7 +938,7 @@ val share =
 	  [])
 
 structure TypeFcn = FlexibleTycon.TypeFcn
-   
+
 fun wheres (I as T s, v: (Longtycon.t * TypeStr.t) vector): unit =
    let
       val {wheres, ...} = Set.value s
@@ -958,12 +964,10 @@ fun wheres (I as T s, v: (Longtycon.t * TypeStr.t) vector): unit =
 	      NONE => noRedefine ()
 	    | SOME flex =>
 		 let
-		    val {admitsEquality, copy, hasCons, id, typeFcn} =
-		       FlexibleTycon.dest flex
+		    val k = TypeStr.kind s
+		    val k' = TypeStr.kind s'
 		 in
-		    if hasCons andalso (case TypeStr.node s of
-					   TypeStr.Scheme _ => true
-					 | _ => false)
+		    if not (Kind.equals (k, k'))
 		       then
 			  let
 			     open Layout
@@ -972,44 +976,87 @@ fun wheres (I as T s, v: (Longtycon.t * TypeStr.t) vector): unit =
 			     (reg,
 			      seq [str "type ",
 				   Longtycon.layout c,
-				   str " is a datatype and cannot be defined as complex type"],
+				   str " has arity ", Kind.layout k',
+				   str " and cannot be redefined to have arity ",
+				   Kind.layout k],
 			      empty)
 			  end
+		    else if (TypeStr.admitsEquality s' = AdmitsEquality.Sometimes
+			     andalso TypeStr.admitsEquality s = AdmitsEquality.Never)
+		        then
+			   let
+			      open Layout
+			   in
+			      Control.error
+			      (reg,
+			       seq [str "eqtype ",
+				    Longtycon.layout c,
+				    str " cannot be redefined as a non-equality type"],
+			       empty)
+			   end
 		    else
 		       let
-			  datatype z = datatype TypeFcn.t
+			  val {admitsEquality, copy, hasCons, id, typeFcn} =
+			     FlexibleTycon.dest flex
 		       in
-			  case typeFcn of
-			     Forced _ =>
-				Error.bug "where type on forced flexible tycon"
-			   | Fun => noRedefine ()
-			   | Tycon =>
+			  if hasCons andalso (case TypeStr.node s of
+						 TypeStr.Scheme _ => true
+					       | _ => false)
+			     then
 				let
-				   fun doWhere () =
-				      (List.push (wheres, (flex, s))
-				       ;
-				       FlexibleTycon.setValue
-				       (flex, {admitsEquality = admitsEquality,
-					       copy = copy,
-					       hasCons = hasCons,
-					       id = id,
-					       typeFcn = typeFcn}))
-				   fun doTycon c =
-				      case c of
-					 Tycon.Flexible flex' =>
-					    FlexibleTycon.shareOK (flex, flex')
-				       | Tycon.Rigid (c, _) => doWhere ()
+				   open Layout
 				in
-				   case TypeStr.node s of
-				      TypeStr.Datatype {tycon, ...} =>
-					 doTycon tycon
-				    | TypeStr.Scheme _ => doWhere ()
-				    | TypeStr.Tycon c => doTycon c
+				   Control.error
+				   (reg,
+				    seq [str "type ",
+					 Longtycon.layout c,
+					 str " is a datatype and cannot be redefined as a complex type"],
+				    empty)
 				end
+			  else
+			     let
+				datatype z = datatype TypeFcn.t
+			     in
+				case typeFcn of
+				   Forced _ =>
+				      Error.bug "where type on forced flexible tycon"
+				 | Fun => noRedefine ()
+				 | Tycon =>
+				      let
+					 fun doWhere () =
+					    (List.push (wheres, (flex, s))
+					     ;
+					     FlexibleTycon.setValue
+					     (flex, {admitsEquality = admitsEquality,
+						     copy = copy,
+						     hasCons = hasCons,
+						     id = id,
+						     typeFcn = typeFcn}))
+					 fun doTycon c =
+					    case c of
+					       Tycon.Flexible flex' =>
+						  FlexibleTycon.shareOK (flex, flex')
+					     | Tycon.Rigid (c, _) => doWhere ()
+				      in
+					 case TypeStr.node s of
+					    TypeStr.Datatype {tycon, ...} =>
+					       doTycon tycon
+					  | TypeStr.Scheme _ => doWhere ()
+					  | TypeStr.Tycon c => doTycon c
+				      end
+			     end
 		       end
 		 end)
        end)
    end
+
+val wheres =
+   Trace.trace2 ("Interface.wheres",
+		 layout,
+		 Vector.layout (Layout.tuple2 (Longtycon.layout,
+					       TypeStr.layout)),
+		 Unit.layout)
+   wheres
 
 fun copyAndRealize (I: t, getTypeFcnOpt): t =
    let

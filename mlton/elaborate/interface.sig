@@ -21,9 +21,13 @@ signature INTERFACE =
       include INTERFACE_STRUCTS
 
       structure ShapeId: UNIQUE_ID
+      structure AdmitsEquality: ADMITS_EQUALITY
       structure Tycon:
 	 sig
 	    type t
+
+	    val admitsEquality: t -> AdmitsEquality.t ref
+	    val make: {hasCons: bool} -> t
 	 end
       structure Tyvar:
 	 sig
@@ -66,6 +70,7 @@ signature INTERFACE =
 
 	    val fromEnv: EnvTypeStr.t -> t
 	 end
+      sharing TypeStr.AdmitsEquality = AdmitsEquality
       sharing TypeStr.Con = Con
       sharing TypeStr.Kind = EnvTypeStr.Kind
       sharing TypeStr.Name = EnvTypeStr.Name

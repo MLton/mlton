@@ -39,6 +39,7 @@ local
    open Interface
 in
    structure Status = Status
+   structure Tycon = Tycon
    structure TypeStr = TypeStr
 end
 
@@ -49,7 +50,6 @@ in
    structure Cons = Cons
    structure Kind = Kind
    structure Scheme = Scheme
-   structure Tycon = Tycon
    structure Type = Type
 end
 
@@ -159,7 +159,11 @@ fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E, I): Scheme.t =
 	       open Layout
 	    in
 	       Control.error (Tyvar.region (Vector.sub (tyvars', 0)),
-			      seq [str "unbound type variables: ",
+			      seq [str (concat ["unbound type variable",
+						if Vector.length unbound > 1
+						   then "s"
+						else "",
+						": "]),
 				   seq (separate
 					(Vector.toListMap (unbound,
 							   Tyvar.layout),
@@ -186,7 +190,7 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
    (Vector.fromListMap
     (typedescs, fn {tycon = name, tyvars} =>
      let
-	val tycon = Tycon.make ()
+	val tycon = Tycon.make {hasCons = false}
 	val _ =
 	   Tycon.admitsEquality tycon
 	   := (if equality
@@ -215,7 +219,7 @@ fun elaborateDatBind (datBind: DatBind.t, E, I): Interface.t =
 	 (Vector.map
 	  (datatypes, fn {cons, tycon = name, tyvars} =>
 	   let
-	      val tycon = Tycon.make ()
+	      val tycon = Tycon.make {hasCons = true}
 	   in
 	      (tycon,
 	       {name = name,
@@ -332,7 +336,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
 		       (wheres, fn {tyvars, longtycon, ty} =>
 			(longtycon,
 			 TypeStr.def
-			 (Scheme.make (elaborateType (ty, E, I)),
+			 (elaborateScheme (tyvars, ty, E, I),
 			  Kind.Arity (Vector.length tyvars)))))
 		in
 		   I'
