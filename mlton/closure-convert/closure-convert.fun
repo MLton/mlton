@@ -915,7 +915,7 @@ fun closureConvert (program as Sxml.Program.T {datatypes, body}): Cps.Program.t 
 		 {name = main,
 		  args = Vector.new0 (),
 		  returns = Vector.new1 Ctype.unit,
-		  body = Cps.shrinkExp (Vector.new0 ()) (Cexp.toExp body)})
+		  body = shrinkExp (Cexp.toExp body)})
 	  in Accum.done ac
 	  end) ()
       val datatypes = Vector.concat [datatypes, Vector.fromList (!newDatatypes)]
