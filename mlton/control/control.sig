@@ -18,6 +18,9 @@ signature CONTROL =
       (*            Begin Flags             *)
       (*------------------------------------*)
 
+      (* build identifies the machine on which this MLton was built. *)
+      val build: string
+
       val cardSizeLog2: int ref
 
       datatype chunk =
@@ -210,6 +213,9 @@ signature CONTROL =
        | Pass
        | Detail
       val verbosity: verbosity ref
+
+      (* version number *)
+      val version: string
 
       (*------------------------------------*)
       (*             End Flags              *)

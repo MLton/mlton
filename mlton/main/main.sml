@@ -380,9 +380,9 @@ fun commandLine (args: string list): unit =
 		else if !buildConstants
 			then Compile.outputBasisConstants Out.standard
 		     else usage "must supply a file"
-	   | _ => 
-		(inputFile := ""
-		 ; outputHeader' (No, Out.standard)))
+	   | Top => print (concat [version, " ", build, "\n"])
+	   | _ => (inputFile := ""
+		   ; outputHeader' (No, Out.standard)))
     | Result.Yes (input :: rest) =>
 	 let
 	    val _ = inputFile := (File.base o File.fileOf) input
