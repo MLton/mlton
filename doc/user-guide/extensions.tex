@@ -503,10 +503,16 @@ signature MLTON_SIGNAL =
             val unblock: t -> unit
          end
 
-      datatype handler =
-         Default
-       | Ignore
-       | Handler of unit Thread.t -> unit Thread.t
+      structure Handler:
+         sig
+            type t
+
+            val default: t
+            val handler: (unit Thread.t -> unit Thread.t) -> t
+            val ignore: t
+            val isDefault: t -> bool
+            val isIgnore: t -> bool
+         end
 
       val getHandler: t -> handler
       val handleDefault: t -> unit
@@ -544,7 +550,17 @@ signature MLTON_SIGNAL =
 
 \entry{Mask.unblock m} unblock all signals in {\tt m}.
 
-\entry{type handler} the type of signal handlers.
+\entry{type Handler.t} the type of signal handlers.
+
+\entry{Handler.default} handles the signal with the default action.
+
+\entry{Handler.handler f} handles the signal with {\tt f}.
+
+\entry{Handler.ignore} ignores the signal.
+
+\entry{Handler.isDefault} returns true if the handler is the default handler.
+
+\entry{Handler.isIgnore} returns true if the handler is the ignore handler.
 
 \entry{getHandler s} return the current handler for signal {\tt s}.
 

@@ -1,5 +1,9 @@
-(* Copyright (C) 1997-1999 NEC Research Institute.
- * Please see the file LICENSE for license information.
+(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-1999 NEC Research Institute.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
  *)
 structure Signal: MLTON_SIGNAL =
 struct
@@ -54,11 +58,16 @@ structure Mask =
       end
    end
 
-datatype handler =
-   Default
- | Ignore
- | Handler of unit Thread.t -> unit Thread.t
+structure Handler =
+   struct
+      datatype t =
+	 Default
+       | Handler of unit Thread.t -> unit Thread.t
+       | Ignore
+   end
 
+datatype handler = datatype Handler.t
+   
 val (get, set, handlers) =
    let
       val handlers =
@@ -100,58 +109,73 @@ fun handleDefault s =
       Default => ()
     | _ => (set (s, Default)
 	    ; checkResult (Prim.default s))
+
+structure Handler =
+   struct
+      open Handler
+
+      val default = Default
+      val ignore = Ignore
+
+      val isDefault = fn Default => true | _ => false
+      val isIgnore = fn Ignore => true | _ => false
 	 
-val handleWith' =
-   (* This let is used so that Thread.setHandler is only used if
-    * Signal.handleWith' is used.  This prevents threads from being part
-    * of every program.
-    *)
-   let
-      (* As far as C is concerned, there is only one signal handler.
-       * As soon as possible after a C signal is received, this signal
-       * handler walks over the array of all SML handlers, and invokes any
-       * one for which a C signal has been received.
-       *
-       * Any exceptions raised by a signal handler will be caught by
-       * the topLevelHandler, which is installed in thread.sml.
-       *)
-      val () =
-	 Thread.setHandler
-	 (fn t =>
-	  Array.foldli
-	  (fn (s, h, t) =>
-	   case h of
-	      Handler f =>
-		 (if Prim.isPending s
-		     then let
-			     val _ = Thread.state := Thread.InHandler
-			     val t = f t
-			     val _ = Thread.state := Thread.Normal
-			  in
-			     t
-			  end
-		  else t)
-	    | _ => t)
-	  t
-	  (handlers, 0, NONE))
-   in
-      fn (s, f) =>
-      let
-	 val old = getHandler s
-	 val _ = set (s, Handler f)
-      in
-	 case old of
-	    Handler _ => ()
-	  | _ => checkResult (Prim.handlee s)
-      end
+      val handler =
+	 (* This let is used so that Thread.setHandler is only used if
+	  * Handler.handler' is used.  This prevents threads from being part
+	  * of every program.
+	  *)
+	 let
+	    (* As far as C is concerned, there is only one signal handler.
+	     * As soon as possible after a C signal is received, this signal
+	     * handler walks over the array of all SML handlers, and invokes any
+	     * one for which a C signal has been received.
+	     *
+	     * Any exceptions raised by a signal handler will be caught by
+	     * the topLevelHandler, which is installed in thread.sml.
+	     *)
+	    val () =
+	       Thread.setHandler
+	       (fn t =>
+		Array.foldli
+		(fn (s, h, t) =>
+		 case h of
+		    Handler f =>
+		       (if Prim.isPending s
+			   then let
+				   val _ = Thread.state := Thread.InHandler
+				   val t = f t
+				   val _ = Thread.state := Thread.Normal
+				in
+				   t
+				end
+			else t)
+		  | _ => t)
+		t
+		(handlers, 0, NONE))
+	 in
+	    Handler
+	 end
    end
+
+fun handleWithSafe (s, h) =
+   let
+      val old = getHandler s
+      val _ = set (s, h)
+   in
+      case old of
+	 Handler _ => ()
+       | _ => checkResult (Prim.handlee s)
+   end
+
+fun handleWith' (s, f) = handleWithSafe (s, Handler.handler f)
 
 fun handleWith (s, f) = handleWith' (s, fn t => (f (); t))
 
 fun setHandler (s, h) =
    case h of
       Default => handleDefault s
-    | Handler f => handleWith' (s, f)
+    | Handler f => handleWithSafe (s, Handler f)
     | Ignore => ignore s
 
 fun suspend m =
