@@ -1,10 +1,12 @@
 Library
 
+signature INT_INF
 signature MLTON_CONT
 signature MLTON_GC
+signature MLTON_INT_INF
 signature MLTON_ITIMER
-signature MLTON_PTRACE
 signature MLTON_PROFILE
+signature MLTON_PTRACE
 signature MLTON_SIGNAL
 signature MLTON_SOCKET
 signature MLTON_THREAD
@@ -76,7 +78,7 @@ cont.sig
 date.sml
 exn.sig
 gc.sig
-int-inf-sig.sml
+int-inf-sig.cm
 int-inf.sml
 int.sml
 itimer.sig

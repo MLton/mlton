@@ -1,12 +1,14 @@
-structure Int =
+structure PreInt =
    struct
-      open Int32
+      open Pervasive.Int32
 
       val precision: int option = SOME 32
       val sign = fromInt o sign
 
-      local fun id x = x
-      in val toInt = id
+      local
+	 fun id x = x
+      in
+	 val toInt = id
 	 val fromInt = id
       end
 
@@ -23,9 +25,4 @@ structure Int =
  * 	    end
  * 	 end
  *)
-
-      val toLarge = IntInf.fromInt
-      val fromLarge = IntInf.toInt
    end
-
-structure Int32 = Int

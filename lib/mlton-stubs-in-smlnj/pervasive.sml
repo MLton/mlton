@@ -13,6 +13,7 @@ structure Pervasive =
       structure IEEEReal = IEEEReal
       structure Int = Int
       structure Int32 = Int32
+      structure IntInf = IntInf
       structure LargeInt = LargeInt
       structure LargeReal = LargeReal
       structure LargeWord = LargeWord

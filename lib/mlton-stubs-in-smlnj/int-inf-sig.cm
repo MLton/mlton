@@ -1,11 +1,14 @@
 Library
 
-structure Pervasive
-   
+signature INT_INF
+signature MLTON_INT_INF
+
 is
 
 #if (SMLNJ_VERSION == 110) && (SMLNJ_MINOR_VERSION >= 20)
 $/basis.cm
-$/smlnj-lib.cm
 #endif
-pervasive.sml
+import.cm
+pre-int-inf-sig.sml
+int-inf.sig
+

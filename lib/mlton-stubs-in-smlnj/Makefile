@@ -1,11 +1,13 @@
 .PHONY: links
 links:
-	for f in array cont exn gc itimer mlton proc-env ptrace random rlimit 	\
-			rusage signal socket syslog text-io thread vector	\
-			word world; do \
+	for f in array cont exn gc itimer mlton proc-env ptrace random \
+			rlimit rusage signal socket syslog text-io thread \
+			vector word world; do \
 		rm -f $$f.sig && \
 		ln ../../basis-library/mlton/$$f.sig .; \
 	done
+	(cd ../../basis-library && cat integer/int-inf.sig mlton/int-inf.sig) \
+		>int-inf.sig
 
 .PHONY: clean
 clean:
