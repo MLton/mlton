@@ -15,6 +15,7 @@ PROF = mlprof
 YACC = mlyacc
 PATH = $(BIN):$(shell echo $$PATH)
 CP = /bin/cp -fp
+VERSION = $(shell echo `date +%Y%m%d`)
 
 all:
 	$(MAKE) compiler dirs
@@ -87,13 +88,11 @@ tools:
 	cd $(YACC) && $(MAKE)
 	$(CP) $(LEX)/$(LEX) $(PROF)/$(PROF) $(YACC)/$(YACC) $(BIN)
 
-VERSION = $(shell echo `date +%Y%m%d`)
 .PHONY: version
 version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
 		doc/web/index.html 					\
-		doc/web/download.html					\
 		doc/user-guide/macros.tex				\
 		doc/CHANGES 						\
 		doc/README						\
@@ -112,7 +111,6 @@ world:
 # The PREFIX is added onto them to indicate where the Makefile actually
 # puts them.  (PREFIX is mainly used when building RPMs.)
 PREFIX =
-VERSION =
 TBIN = $(PREFIX)/usr/local/bin
 ULIB = /usr/local/lib/mlton
 TLIB = $(PREFIX)$(ULIB)
