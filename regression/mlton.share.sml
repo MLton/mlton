@@ -75,3 +75,20 @@ fun msg () =
 val () = msg ()
 val () = MLton.share a
 val () = msg ()
+
+(* sharing of vectors *)
+datatype t = A | B
+val v1 = Vector.fromList [A, B, A, B, A, B, A, B, A, B, A, B]
+val v2 = Vector.fromList [A, B, A, B, A, B, A, B, A, B, A, A]
+
+val a = Array.tabulate (4, fn i =>
+			if i mod 2 = 0
+			   then v1
+			else v2)
+
+val () = MLton.share a
+
+val () =
+   if Array.sub (a, 2) = Array.sub (a, 3)
+      then raise Fail "bug"
+   else ()
