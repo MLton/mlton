@@ -103,12 +103,8 @@ fun options () =
 			       | NONE => usage (concat ["invalid -diag flag: ", s])))),
        (Expert, "drop-pass", " pass", "omit optimization pass",
 	SpaceString (fn s => List.push (dropPasses, s))),
-(*        (Expert, "D", "define", "define compile-time constant",
- * 	String (fn s => (List.push (defines, s)
- * 			 ; if s = "INSTRUMENT"
- * 			      then instrument := true
- * 			   else ()))),
- *)
+       (Expert, "D", "define", "define a constant for gcc",
+	String (fn s => (List.push (defines, s)))),
        (Normal, "exn-history", " {false|true}",
 	"enable Exn.history",
 	boolRef Control.exnHistory),
