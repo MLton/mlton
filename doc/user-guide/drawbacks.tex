@@ -16,30 +16,20 @@ of {\mlton} for valid SML programs is well defined.
 It is strongly recommended that you type check your programs with
 another SML compiler before compiling them with {\mlton}.
 
-\drawback{large run-time memory requirement}
-{\mlton}'s runtime system uses a simple two-space stop-and-copy
-collector.  By default, the runtime system automatically resizes the
-heap and stack.  The collector works well for programs that allocate a
-lot of ephemeral data, but not so well for programs with large
-long-lived data.  Because of the collector, programs often require
-more memory than with other SML compilers.  There are compile-time and
-run-time options available to limit the heap usage of programs.  See
-\secref{manual-page} for details.
-
 \drawback{large compile-time memory requirement}
-Because {\mlton} is self-hosting, when you are compiling using
-{\mlton}, you are also running a {\mlton} generated executable.
-Because of the large run-time memory requirement (see above) and the demands of
-whole-program compilation, the compiler requires a large amount of memory while
-compiling.
+Because {\mlton} performs whole-program analysis and optimization,
+compilation requires a large amount of memory on large programs.  For
+example, compiling {\mlton} (over 100K lines) requires at least 256M
+RAM.
 
 \drawback{long compile times}
-Whole-program compilation often takes a long time.  For example, compiling
-{\mlton} (over 100K lines) on an 1.6GhZ machine takes roughly five minutes.
+Whole-program compilation can take a long time on large programs.  For
+example, compiling {\mlton} (over 100K lines) on an 1.6GhZ machine
+takes roughly four minutes.
 
 \drawback{no interactive top level}
 Because of whole-program compilation, {\mlton} does not provide an
-interactive top level.  In particular, it does not implement the {\tt use} basis
-library function.
+interactive top level.  In particular, it does not implement the {\tt
+use} basis library function.
 
 \end{description}

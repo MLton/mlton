@@ -5,7 +5,7 @@
 \feature{whole-program optimization}
 Because {\mlton} compiles the whole program at once, it can perform optimization
 across module boundaries.  As a consequence, {\mlton} can reduce or eliminate
-the runtime penalty that arises with separate compilation of SML features such
+the run-time penalty that arises with separate compilation of SML features such
 as functors, modules, polymorphism, and higher-order functions.  {\mlton} takes
 advantage of having the entire program to perform transformations such as:
 defunctorization, monomorphisation, higher-order control-flow analysis,
@@ -25,12 +25,22 @@ Missing are some IO modules ({\tt ImperativeIO}, {\tt StreamIO},
 {\tt PrimIO}), and a few functions in the {\tt IntInf}, {\tt Os.IO}, {\tt Real},
 and {\tt TextIO} structures.  See \secref{basis-library} for details.
 
-\feature{good run-time performance}
-{\mlton} generated executables have good run-time performance.
+\feature{excellent running times}
+{\mlton} generated executables have excellent running times.
 For a comparison with other SML compilers, see
 \link{\makeurl{performance.html}}.
 For a comparison of many compilers, including {\mlton}, see
 \link{http://www.bagley.org/\~{}doug/shootout/}.
+
+\feature{runtime system tries to avoid paging}
+{\mlton} generated executables use copying collection when the amount
+of live data is small and mark-compact collection when the amount of
+live data is large.  The copying collection is fast but requires a
+high ratio of memory used to live data size.  The mark-compact
+collection is slower, but performs better with a lower ratio of memory
+used to live data size.  The runtime system decides on a per-gc basis 
+between copying and mark-compact collection in an effort to avoid
+paging.
 
 \feature{standalone executables}
 {\mlton} generates standalone executables.  No additional code or
