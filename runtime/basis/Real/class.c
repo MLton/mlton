@@ -4,9 +4,9 @@
 #include <ieeefp.h>
 #endif
 
-#ifndef DEBUG
-#define DEBUG FALSE
-#endif
+enum {
+	DEBUG_REAL_CLASS = FALSE,
+};
 
 /* All this code assumes IEEE 754/854 and little endian.
  *
@@ -75,8 +75,8 @@ Int Real64_class (Real64 d) {
 		else
 			res = Real_Class_zero;
 	}
-	if (DEBUG)
-		fprintf (stderr, "%d = Real64_class (%g)\n", (int)res, d);
+	if (DEBUG_REAL_CLASS)
+		fprintf (stderr, "%d = Real64_class ()\n", (int)res);
 	return res;
 }
 
@@ -139,7 +139,7 @@ Int Real32_class (Real32 f) {
 		else
 			res = Real_Class_zero;
 	}
-	if (DEBUG)
+	if (DEBUG_REAL_CLASS)
 		fprintf (stderr, "%d = Real32_class (%g)\n", (int)res, f);
 	return res;
 }
