@@ -322,6 +322,114 @@ fun valDec (tyvars: Tyvar.t vector,
 				    tyvars = tyvars,
 				    var = x}]}
 
+structure Xexp =
+   struct
+      open Xexp
+	 
+      val list: Xexp.t vector * Xtype.t -> Xexp.t =
+	 fn (es, ty) =>
+	 let
+	    val targs = #2 (valOf (Xtype.deConOpt ty))
+	    val eltTy = Vector.sub (targs, 0)
+	    val nill: Xexp.t =
+	       Xexp.conApp {arg = NONE,
+			    con = Con.nill,
+			    targs = targs,
+			    ty = ty}
+	    val consArgTy = Xtype.tuple (Vector.new2 (eltTy, ty))
+	    val cons: Xexp.t * Xexp.t -> Xexp.t =
+	       fn (e1, e2) =>
+	       Xexp.conApp
+	       {arg = SOME (Xexp.tuple {exps = Vector.new2 (e1, e2),
+					ty = consArgTy}),
+		con = Con.cons,
+		targs = targs,
+		ty = ty}
+	 in
+	    if Vector.length es < 20
+	       then Vector.foldr (es, nill, cons)
+	    else
+	       let
+		  val revArgTy = Xtype.tuple (Vector.new2 (ty, ty))
+		  val revTy = Xtype.arrow (revArgTy, ty)
+		  val revVar = Var.newString "rev"
+		  fun rev (e1, e2) =
+		     Xexp.app
+		     {func = Xexp.monoVar (revVar, revTy),
+		      arg = Xexp.tuple {exps = Vector.new2 (e1, e2),
+					ty = revArgTy},
+		      ty = ty}
+		  fun detuple2 (tuple: Xexp.t,
+				f: XvarExp.t * XvarExp.t -> Xexp.t): Xexp.t =
+		     Xexp.detuple {body = fn xs => let
+						      fun x i = #1 (Vector.sub (xs, i))
+						   in
+						      f (x 0, x 1)
+						   end,
+						tuple = tuple}
+		  val revArg = Var.newNoname ()
+		  val revLambda =
+		     Xlambda.make
+		     {arg = revArg,
+		      argType = revArgTy,
+		      body =
+		      Xexp.toExp
+		      (detuple2
+		       (Xexp.monoVar (revArg, revArgTy), fn (l, ac) =>
+			let
+			   val ac = Xexp.varExp (ac, ty)
+			   val consArg = Var.newNoname ()
+			in
+			   Xexp.casee
+			   {cases =
+			    Xcases.Con
+			    (Vector.new2
+			     ((Xpat.T {arg = NONE,
+				       con = Con.nill,
+				       targs = targs},
+			       ac),
+			      (Xpat.T {arg = SOME (consArg, consArgTy),
+				       con = Con.cons,
+				       targs = targs},
+			       detuple2
+			       (Xexp.monoVar (consArg, consArgTy),
+				fn (x, l) =>
+				rev (Xexp.varExp (l, ty),
+				     cons (Xexp.varExp (x, eltTy),
+					   ac)))))),
+			    default = NONE,
+			    test = Xexp.varExp (l, ty),
+			    ty = ty}
+			end))}
+		  val revDec =
+		     Xdec.Fun
+		     {decs = Vector.new1 {lambda = revLambda,
+					  ty = revTy,
+					  var = revVar},
+		      tyvars = Vector.new0 ()}
+		  val l = Var.newNoname ()
+		  val (l, body) =
+		     Vector.foldr
+		     (es, (l, Xexp.lett {decs = [revDec],
+					 body = rev (Xexp.monoVar (l, ty),
+						     nill)}),
+		      fn (e, (l, body)) =>
+		      let
+			 val l' = Var.newNoname ()
+		      in
+			 (l',
+			  Xexp.let1 {body = body,
+				     exp = cons (e, Xexp.monoVar (l', ty)),
+				     var = l})
+		      end)
+	       in
+		  Xexp.let1 {body = body,
+			     exp = nill,
+			     var = l}
+	       end
+	 end
+   end
+
 fun defunctorize (CoreML.Program.T {decs}) =
    let
       val {get = conExtraArgs: Con.t -> Xtype.t vector option,
@@ -782,27 +890,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 				   ty = ty}
 		| Lambda l => Xexp.lambda (loopLambda l)
 		| Let (ds, e) => loopDecs (ds, loopExp e)
-		| List es =>
-		     let
-			val targs = #2 (valOf (Xtype.deConOpt ty))
-			val eltTy = Vector.sub (targs, 0)
-		     in
-			Vector.foldr
-			(es,
-			 Xexp.conApp {arg = NONE,
-				      con = Con.nill,
-				      targs = targs,
-				      ty = ty},
-			 fn (e, l) =>
-			 Xexp.conApp
-			 {arg = (SOME
-				 (Xexp.tuple
-				  {exps = Vector.new2 (#1 (loopExp e), l),
-				   ty = Xtype.tuple (Vector.new2 (eltTy, ty))})),
-			  con = Con.cons,
-			  targs = targs,
-			  ty = ty})
-		     end
+		| List es => Xexp.list (Vector.map (es, #1 o loopExp), ty)
 		| PrimApp {args, prim, targs} =>
 		     let
 			val args = Vector.map (args, #1 o loopExp)
