@@ -51,8 +51,10 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	 type dirstream = dirstream
 	    
 	 fun opendir s =
-	    let val d = Prim.opendir (String.nullTerm s)
-	    in if Primitive.Pointer.isNull d
+	    let
+	       val d = Prim.opendir (String.nullTerm s)
+	    in
+	       if Primitive.Pointer.isNull d
 		  then Error.error ()
 	       else DS (ref (SOME d))
 	    end
