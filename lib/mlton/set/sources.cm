@@ -2,22 +2,26 @@ Library
 
 signature SET
 
-(*structure DisjointCollection*)
 structure DisjointSet
+functor HashedUniqueSet
 functor OrderedUniqueSet
 functor UnorderedSet
-(*functor DisjointMax
-functor DisjointCollection
-  *) 
+
+(* 
+structure DisjointCollection
+functor DisjointMax
+functor DisjointCollection 
+*) 
+
 is
 
 ../basic/sources.cm
 set.sig
-unordered.fun
-ordered-unique-set.sig
-ordered-unique-set.fun
 disjoint.sig
 disjoint.fun
+hashed-unique-set.fun
+ordered-unique-set.fun
+unordered.fun
 
 (*
 disjoint-collection.sig

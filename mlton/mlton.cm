@@ -341,6 +341,7 @@ codegen/c-codegen/c-codegen.fun
 codegen/x86-codegen/word.sml
 codegen/x86-codegen/x86-codegen.sig
 ../lib/mlton/set/ordered-unique-set.fun
+../lib/mlton/set/hashed-unique-set.fun
 codegen/x86-codegen/x86.sig
 codegen/x86-codegen/x86.fun
 codegen/x86-codegen/x86-pseudo.sig

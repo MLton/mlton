@@ -148,6 +148,7 @@ functor Cache
 functor Control
 functor Env
 functor EuclideanRing
+functor HashedUniqueSet
 functor IntUniqueId
 functor MakeMonoEnv
 functor MonoArray
