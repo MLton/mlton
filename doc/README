@@ -1,6 +1,6 @@
-We are pleased to announce a new release of MLton, the whole-program
-optimizing compiler for Standard ML.  MLton runs on X86 machines with
-Linux or Cygwin/Windows.  MLton has the following features.
+MLton is a whole-program optimizing compiler for the Standard ML
+programming language.  MLton runs on X86 machines with Linux, FreeBSD,
+or Cygwin/Windows.  MLton has the following features.
 
    + Generates standalone executables with good runtime performance
    + SML 97 compliant, with a mostly complete basis library
