@@ -11,7 +11,8 @@ structure String: STRING =
       open String1
 
       fun keepAll (s: t, f: char -> bool): t =
-	 implode (rev (fold (s, [], fn (c, ac) => if f c then c :: ac else ac)))
+	 implode (List.rev
+		  (fold (s, [], fn (c, ac) => if f c then c :: ac else ac)))
 	 
       fun memoizeList (init: string -> 'a, l: (t * 'a) list): t -> 'a =
 	 let
@@ -38,10 +39,10 @@ structure String: STRING =
 	    open Int
 	    val lineStarts =
 	       Array.fromList
-	       (rev (foldi (s, [0], fn (i, c, is) =>
-			    if c = #"\n"
-			       then (i + 1) :: is
-			    else is)))
+	       (List.rev (foldi (s, [0], fn (i, c, is) =>
+				 if c = #"\n"
+				    then (i + 1) :: is
+				 else is)))
 	    fun find (pos: int) =
 	       let
 		  val line =

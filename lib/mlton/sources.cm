@@ -53,6 +53,7 @@ structure Char
 structure CharArray
 structure CharBuffer
 structure CharVector
+structure ChoicePattern
 structure ClearablePromise
 structure CommandLine
 structure Computation

@@ -30,6 +30,7 @@ structure Char
 structure CharArray
 structure CharBuffer
 structure CharVector
+structure ChoicePattern
 structure ClearablePromise
 structure CommandLine
 structure Computation
@@ -167,6 +168,8 @@ char-buffer.sml
 char.sig
 char.sml
 char0.sml
+choice-pattern.sig
+choice-pattern.sml
 circular-list.fun
 circular-list.sig
 clearable-promise.sig

@@ -71,6 +71,7 @@ signature PROCESS =
       val spawnp: {file: string, args: string list} -> Pid.t
       val su: string -> unit (* string is userid *)
       val succeed: unit -> 'a
+      val system: string -> unit
       val time: (unit -> unit) -> {system: Time.t, user: Time.t}
       (* try (f, m) tries f with exponentially backed off times, stopping after
        * a minute of trying, in which case is fails with m.

@@ -37,8 +37,8 @@ structure Place =
 
 val buildConstants: bool ref = ref false
 val coalesce: int option ref = ref NONE
-val gcc: string ref = ref "gcc"
-val gccSwitches : string list ref = ref []
+val gcc: string ref = ref "<unset>"
+val gccSwitches : string ref = ref ""
 val includeDirs: string list ref = ref []
 val keepGenerated = ref false
 val keepO = ref false
@@ -80,14 +80,8 @@ fun makeOptions {usage} =
        (Expert, "card-size-log2", " n",
 	"log (base 2) of card size used by GC",
 	intRef cardSizeLog2),
-       (Expert, "cc", " gcc", "gcc command line",
-	SpaceString (fn s =>
-		     case String.tokens (s, Char.isSpace) of
-			x :: xs => (gcc := x
-				    ; (case xs of
-					  [] => ()
-					| _ => gccSwitches := xs))
-		      | _ => usage "-cc must specify gcc")),
+       (Expert, "cc", " gcc", "path to gcc executable",
+	SpaceString (fn s => (gcc := s; gccSwitches := ""))),
        (Expert, "coalesce", " n", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
        (Expert, "ccopt", " opt", "pass option to C compiler",
@@ -97,7 +91,7 @@ fun makeOptions {usage} =
 			then (optimization
 			      := Char.toInt (String.sub (s, 2))
 			         - Char.toInt #"0")
-		     else List.push (gccSwitches, s))),
+		     else gccSwitches := concat [!gccSwitches, " ", s])),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
 	boolRef debug),
        (Normal, "detect-overflow", " {true|false}",
@@ -569,7 +563,7 @@ fun commandLine (args: string list): unit =
 			    [concat ["-O", Int.toString (!optimization)]],
 			    if !Native.native
 			       then []
-			    else !gccSwitches]
+			    else String.tokens (!gccSwitches, Char.isSpace)]
 			val switches =
 			   case host of
 			      Cross s => "-b" :: s :: switches

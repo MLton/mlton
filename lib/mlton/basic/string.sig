@@ -52,6 +52,7 @@ signature STRING =
       val fromCString: t -> t option
       val fromChar: char -> t
       val fromCharArray: CharArray.array -> t
+      val fromListRev: char list -> t
       val fromString: t -> t option
       val hash: t -> Word.t
       val implode: char list -> t
@@ -76,6 +77,7 @@ signature STRING =
       val posToLineCol: t -> int -> {line: int, col: int}
       val prefix: t * int -> t
       val removeTrailing: t * (char -> bool) -> t
+      val rev: t -> t
       val rparen: t (* ) *)
       val size: t -> int
       (* splits the string into substrings broken at char,

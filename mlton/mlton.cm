@@ -32,8 +32,6 @@ Group is
 ../lib/mlton/basic/substring.sml
 ../lib/mlton/basic/outstream.sig
 ../lib/mlton/basic/outstream.sml
-../lib/mlton/basic/exn.sig
-../lib/mlton/basic/exn.sml
 ../lib/mlton/basic/promise.sig
 ../lib/mlton/basic/promise.sml
 ../lib/mlton/basic/instream0.sml
@@ -62,6 +60,8 @@ Group is
 ../lib/mlton/basic/pid.sml
 ../lib/mlton/basic/date.sig
 ../lib/mlton/basic/date.sml
+../lib/mlton/basic/exn.sig
+../lib/mlton/basic/exn.sml
 ../lib/mlton/basic/t.sig
 ../lib/mlton/basic/unit.sig
 ../lib/mlton/basic/unit.sml
@@ -129,10 +129,6 @@ Group is
 ../lib/mlton/basic/result.sml
 ../lib/mlton/basic/dir.sig
 ../lib/mlton/basic/dir.sml
-../lib/mlton/basic/justify.sig
-../lib/mlton/basic/justify.sml
-../lib/mlton/basic/popt.sig
-../lib/mlton/basic/popt.sml
 ../lib/mlton/basic/file-desc.sig
 ../lib/mlton/basic/file-desc.sml
 ../lib/mlton/basic/function.sig
@@ -140,6 +136,10 @@ Group is
 ../lib/mlton/basic/signal.sml
 ../lib/mlton/basic/process.sig
 ../lib/mlton/basic/process.sml
+../lib/mlton/basic/justify.sig
+../lib/mlton/basic/justify.sml
+../lib/mlton/basic/popt.sig
+../lib/mlton/basic/popt.sml
 ../lib/mlton/basic/control.sig
 ../lib/mlton/basic/control.fun
 control/source-pos.sig

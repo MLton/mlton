@@ -47,6 +47,7 @@ cm:
 	$(MAKE) -C $(LEX) mllex_cm
 	$(MAKE) -C $(PROF) mlprof_cm
 	$(MAKE) -C $(YACC) mlyacc_cm
+	$(MAKE) -C benchmark benchmark_cm
 
 .PHONY: compiler
 compiler:

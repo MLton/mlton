@@ -12,6 +12,10 @@ type int = Int.t
 
 val fail = Process.fail
 
+fun usage msg =
+   Process.usage {usage = "[-mlkit] [-mosml] [-smlnj] bench1 bench2 ...",
+		  msg = msg}
+
 val doHtml = ref false
 val doOnce = ref false
 val runArgs : string list ref = ref []
@@ -47,11 +51,19 @@ fun ignoreOutput f =
        fn () => close nullFd)
    end
 
-fun timeIt (com, args) =
-   Process.time (fn () =>
-		 Process.wait
-		 (Process.spawnp {file = com, args = com :: args}))
+datatype command =
+   Explicit of {args: string list,
+		com: string}
+  | Shell of string
 
+fun timeIt ca =
+   Process.time
+   (fn () =>
+    case ca of
+       Explicit {args, com} =>
+	  Process.wait (Process.spawnp {file = com, args = com :: args})
+     | Shell s => Process.system s)
+   
 local
    val trialTime = Time.seconds (IntInf.fromInt 60)
 in
@@ -59,7 +71,7 @@ in
       let 
 	 fun doit ac =
 	    let
-	       val {user, system} = timeIt (com, args)
+	       val {user, system} = timeIt (Explicit {args = args, com = com})
 	       val op + = Time.+
 	    in ac + user + system
 	    end
@@ -73,13 +85,13 @@ in
 	 else loop (0, Time.zero)
       end
 end
-
-fun compileSizeRun {args, compiler, exe, doTextPlusData: bool} =
+   
+fun compileSizeRun {command, exe, doTextPlusData: bool} =
    Escape.new
    (fn e =>
     let
        val exe = "./" ^ exe
-       val {system, user} = timeIt (compiler, args)
+       val {system, user} = timeIt command
 	  handle _ => Escape.escape (e, {compile = NONE,
 					 run = NONE,
 					 size = NONE})
@@ -105,113 +117,37 @@ fun compileSizeRun {args, compiler, exe, doTextPlusData: bool} =
 fun batch bench = concat [bench, ".batch.sml"]
 
 local
-  val n = Counter.new 0
-  fun make (compiler, args) =
-      let val exe = "a.out"
-	  val args = List.keepAll (args, not o String.isEmpty)
-      in fn {bench} => compileSizeRun {args = args @ ["-o", exe, batch bench],
-				       compiler = compiler,
-				       exe = exe,
-				       doTextPlusData = true}
-      end
+   val n = Counter.new 0
+   val exe = "a.out"
 in
-  val makeMLton =
-    fn arg =>
-    let
-      fun splitLeading (s, p) =
-	case String.peeki (s, fn (i, c) => not (p c)) of
-	  NONE => (s, "")
-	| SOME (i, c) => (String.extract (s, 0, SOME i),
-			  String.extract (s, i, NONE))
-      fun dropLeadingSpace s = #2 (splitLeading (s, Char.isSpace))
-
-      val arg = dropLeadingSpace arg
-      val (compiler, arg) = splitLeading (arg, not o Char.isSpace)
-      val arg = dropLeadingSpace arg
-
-      fun doit (arg, flagss) =
-	if String.isEmpty arg
-	  then (arg, flagss)
-	  else case String.sub (arg, 0) of
-	         #"'" => let
-			   val arg = String.dropFirst arg
-			   val (flag, arg) = splitLeading (arg, fn c => c <> #"'")
-			   val arg = String.dropFirst arg
-			   val arg = dropLeadingSpace arg
-			   val flagss = List.map (flagss, fn flags => flag::flags)
-			 in
-			   doit (arg, flagss)
-			 end
-	       | #"{" => let
-			   val arg = String.dropFirst arg
-			   val arg = dropLeadingSpace arg
-
-			   fun doit' (arg, flagss') =
-			     let
-			       val (arg, flagss) = doit (arg, flagss)
-			       val flagss' = flagss @ flagss'
-			     in
-			       case String.sub (arg, 0) of
-				 #"," => let
-					   val arg = String.dropFirst arg
-					   val arg = dropLeadingSpace arg
-					 in
-					   doit' (arg, flagss')
-					 end
-			       | #"}" => let
-					   val arg = String.dropFirst arg
-					   val arg = dropLeadingSpace arg
-					 in
-					   (arg, flagss')
-					 end
-			       | _ => raise (Fail "parsing -mlton arg")
-			     end
-
-			   val (arg, flagss') = doit' (arg, [])
-			 in
-			   doit (arg, flagss')
-			 end
-	       | #"," => (arg, flagss)
-	       | #"}" => (arg, flagss)
-	       | _ => let
-			val (flag, arg) = splitLeading
-			                  (arg, fn #"," => false
-					         | #"}" => false
-					         | c => not (Char.isSpace c))
-			val arg = dropLeadingSpace arg
-			val flagss = if flag = "#"
-				       then List.map (flagss, fn flags => tl flags)
-				       else List.map (flagss, fn flags => flag::flags)
-		      in
-			doit (arg, flagss)
-		      end
-      val (arg, flagss) = doit (arg, [[]])
-      val flagss = List.revMap (flagss, List.rev)
-    in
-      List.map
-      (flagss,
-       fn flags => 
-       {name = concat (compiler::" "::
-		       (List.separate(List.map(flags, fn flag =>
-					       if String.contains (flag, #" ")
-						 then "'" ^ flag ^ "'"
-						 else flag), " "))),
-	abbrv = "MLton" ^ (Int.toString (Counter.next n)),
-	test = make (compiler, flags)})
-    end
+   fun makeMLton commandPattern =
+      case ChoicePattern.expand commandPattern of
+	 Result.No m => usage m
+       | Result.Yes coms => 
+	    List.map
+	    (coms, fn com =>
+	     {name = com,
+	      abbrv = "MLton" ^ (Int.toString (Counter.next n)),
+	      test = (fn {bench} =>
+		      compileSizeRun
+		      {command = Shell (concat [com, " -o ", exe, " ", batch bench]),
+		       exe = exe,
+		       doTextPlusData = true})})
 end
 
 fun kitCompile {bench} =
-   compileSizeRun {args = [batch bench],
-		   compiler = "mlkit",
+   compileSizeRun {command = Explicit {args = [batch bench],
+				       com = "mlkit"},
 		   exe = "run",
 		   doTextPlusData = true}
    
 fun mosmlCompile {bench} =
-   compileSizeRun {args = ["-orthodox", "-standalone", "-toplevel", batch bench],
-		   compiler = "mosmlc",
-		   exe = "a.out",
-		   doTextPlusData = false}
+   compileSizeRun
+   {command = Explicit {args = ["-orthodox", "-standalone", "-toplevel",
+				batch bench],
+			com = "mosmlc"},
+    exe = "a.out",
+    doTextPlusData = false}
 
 fun njCompile {bench} =
    Escape.new
@@ -231,7 +167,8 @@ fun njCompile {bench} =
 		["in val _ = SMLofNJ.exportFn (\"", bench,
 		 "\", fn _ =>\n (Main.doit () ; OS.Process.success))\nend\n"]
 		 ))),
-           fn input => withInput (input, fn () => timeIt (sml, [])))
+           fn input => withInput (input, fn () => timeIt (Explicit {args = [],
+								    com = sml})))
          handle _ => Escape.escape (e, {compile = NONE,
 					run = NONE,
 					size = NONE})
@@ -276,7 +213,11 @@ fun polyCompile {bench} =
 		concat ["use \"", bench, ".sml\" handle _ => PolyML.quit ();\n",
 			"if PolyML.commit() then () else (Main.doit(); ());\n",
 			"PolyML.quit();\n"]),
-	       fn input => withInput (input, fn () => timeIt ("poly", [dbase])))
+	       fn input =>
+	       withInput
+	       (input, fn () =>
+		timeIt (Explicit {args = [dbase],
+				  com = "poly"})))
 	   val after = File.size dbase
 	in
 	   if original = after
@@ -300,14 +241,9 @@ fun polyCompile {bench} =
 	end)
     end)
 
-fun usage msg =
-   Process.usage {usage = "[-mlkit] [-mosml] [-smlnj] bench1 bench2 ...",
-		  msg = msg}
-
 type 'a data = {bench: string,
 		compiler: string,
 		value: 'a} list
-
 
 fun main args =
    let

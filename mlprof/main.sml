@@ -19,7 +19,7 @@ val static = ref false (* include static C functions *)
 val thresh: int ref = ref 0
 
 val die = Process.fail
-
+   
 structure Regexp =
 struct
   open Regexp

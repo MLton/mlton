@@ -14,6 +14,17 @@ in
    val messageStr = messageStr
 end
 
+fun system s =
+   let
+      val status = OS.Process.system s
+   in
+      if status = OS.Process.success
+	 then ()
+      else if status = OS.Process.failure
+	      then raise Fail (concat ["command failed: ", s])
+	   else raise Fail "strange return"
+   end
+
 structure Command =
    struct
       type t = In.t * Out.t -> unit

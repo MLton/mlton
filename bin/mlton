@@ -39,14 +39,15 @@ doit () {
 # can find the gmp.
 
 doit "$lib" \
-	-cc "$gcc -w 
-		-falign-functions=5
+	-cc "$gcc" \
+	-ccopt '-falign-functions=5
 		-falign-jumps=2 
 		-fno-strength-reduce
 		-fomit-frame-pointer
 		-fschedule-insns 
 		-fschedule-insns2
 		-malign-loops=2
-		-mcpu=pentiumpro" \
+		-mcpu=pentiumpro
+		-w' \
 	-lm \
 	"$@"
