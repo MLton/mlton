@@ -410,6 +410,7 @@ intAllBinary (sub, -)
 	intBinaryCompare(name,op,16)		\
 	intBinaryCompare(name,op,32)
 //	intBinaryCompare(name,op,64)
+intAllBinaryCompare (equal, ==)
 intAllBinaryCompare (ge, >=)
 intAllBinaryCompare (gt, >)
 intAllBinaryCompare (le, <=)
@@ -579,6 +580,7 @@ static inline void Real64_store (Real64 *dp, Real64 d) {
 	wordBinary (size, orb, |)						\
 	wordBinary (size, sub, -)						\
 	wordBinary (size, xorb, ^)						\
+	wordCmp (size, equal, ==)						\
 	wordCmp (size, ge, >=)							\
 	wordCmp (size, gt, >)							\
 	wordCmp (size, le, <=)							\

@@ -117,15 +117,13 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 	    datatype z = datatype Prim.Name.t
 	 in
 	    case Prim.name prim of
-	       Char_ge => doit' LE
-	     | Char_gt => doit' LT
-	     | Char_le => doit LE
-	     | Char_lt => doit LT
+	       Int_equal _ => doit EQ
 	     | Int_ge _ => doit' LE
 	     | Int_gt _ => doit' LT
 	     | Int_le _ => doit LE
 	     | Int_lt _ => doit LT
 	     | MLton_eq => doit EQ
+	     | Word_equal _ => doit EQ
 	     | Word_ge _ => doit' LE
 	     | Word_gt _ => doit' LT
 	     | Word_le _ => doit LE

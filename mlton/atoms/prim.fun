@@ -77,6 +77,7 @@ structure Name =
        | GC_unpack (* ssa to rssa *)
        | Int_add of IntSize.t (* codegen *)
        | Int_addCheck of IntSize.t (* codegen *)
+       | Int_equal of IntSize.t (* ssa to rssa / codegen *)
        | Int_ge of IntSize.t (* codegen *)
        | Int_gt of IntSize.t (* codegen *)
        | Int_le of IntSize.t (* codegen *)
@@ -190,6 +191,7 @@ structure Name =
        | Word_andb of WordSize.t (* codegen *)
        | Word_arshift of WordSize.t (* codegen *)
        | Word_div of WordSize.t (* codegen *)
+       | Word_equal of WordSize.t (* codegen *)
        | Word_ge of WordSize.t (* codegen *)
        | Word_gt of WordSize.t (* codegen *)
        | Word_le of WordSize.t (* codegen *)
@@ -224,6 +226,7 @@ structure Name =
       val isCommutative =
 	 fn Int_add _ => true
 	  | Int_addCheck _ => true
+	  | Int_equal _ => true
 	  | Int_mul _ => true
 	  | Int_mulCheck _ => true
 	  | IntInf_equal => true
@@ -235,6 +238,7 @@ structure Name =
 	  | Word_add _ => true
 	  | Word_addCheck _ => true
 	  | Word_andb _ => true
+	  | Word_equal _ => true
 	  | Word_mul _ => true
 	  | Word_mulCheck _ => true
 	  | Word_orb _ => true
@@ -260,6 +264,7 @@ structure Name =
 	 List.map
 	 ([(Int_add, Functional, "add"),
 	   (Int_addCheck, SideEffect, "addCheck"),
+	   (Int_equal, Functional, "equal"),
 	   (Int_ge, Functional, "ge"),
 	   (Int_gt, Functional, "gt"),
 	   (Int_le, Functional, "le"),
@@ -314,6 +319,7 @@ structure Name =
 	   (Word_andb, Functional, "andb"),
 	   (Word_arshift, Functional, "arshift"),
 	   (Word_div, Functional, "div"),
+	   (Word_equal, Functional, "equal"),
 	   (Word_ge, Functional, "ge"),
 	   (Word_gt, Functional, "gt"),
 	   (Word_le, Functional, "le"),
@@ -583,6 +589,7 @@ in
 
    fun new0 (name, ty) = new (name, make0 ty)
 
+   fun intEqual s = new0 (Name.Int_equal s, tuple [int s, int s] --> bool)
    fun intNeg s = new0 (Name.Int_neg s, int s --> int s)
    fun intNegCheck s = new0 (Name.Int_negCheck s, int s --> int s)
    val intInfNeg =
@@ -591,6 +598,7 @@ in
       new0 (Name.IntInf_notb, tuple [intInf, word W32] --> intInf)
    val intInfEqual = new0 (Name.IntInf_equal, tuple [intInf, intInf] --> bool)
 
+   fun wordEqual s = new0 (Name.Word_equal s, tuple [word s, word s] --> bool)
    fun wordNotb (s: WordSize.t) = new0 (Name.Word_notb s, word s --> word s)
    fun wordNeg (s: WordSize.t) = new0 (Name.Word_neg s, word s --> word s)
 
@@ -894,10 +902,11 @@ fun 'a apply (p, args, varEquals) =
 	 (case (name p, cs) of
 	     (Int_add _, [Int i1, Int i2]) => io (IntX.+, i1, i2)
 	   | (Int_addCheck _, [Int i1, Int i2]) => io (IntX.+, i1, i2)
-	   | (Int_ge s, [Int i1, Int i2]) => pred (IntX.>=, i1, i2)
-	   | (Int_gt s, [Int i1, Int i2]) => pred (IntX.>, i1, i2)
-	   | (Int_le s, [Int i1, Int i2]) => pred (IntX.<=, i1, i2)
-	   | (Int_lt s, [Int i1, Int i2]) => pred (IntX.<, i1, i2)
+           | (Int_equal _, [Int i1, Int i2]) => bool (IntX.equals (i1, i2))
+	   | (Int_ge s, [Int i1, Int i2]) => bool (IntX.>= (i1, i2))
+	   | (Int_gt s, [Int i1, Int i2]) => bool (IntX.> (i1, i2))
+	   | (Int_le s, [Int i1, Int i2]) => bool (IntX.<= (i1, i2))
+	   | (Int_lt s, [Int i1, Int i2]) => bool (IntX.< (i1, i2))
 	   | (Int_mul _, [Int i1, Int i2]) => io (IntX.*, i1, i2)
 	   | (Int_mulCheck _, [Int i1, Int i2]) => io (IntX.*, i1, i2)
 	   | (Int_neg _, [Int i]) => int (IntX.~ i)
@@ -931,6 +940,7 @@ fun 'a apply (p, args, varEquals) =
 	   | (Word_andb _, [Word w1, Word w2]) => word (WordX.andb (w1, w2))
 	   | (Word_arshift _, [Word w1, Word w2]) => word (WordX.~>> (w1, w2))
 	   | (Word_div _, [Word w1, Word w2]) => word (WordX.div (w1, w2))
+           | (Word_equal _, [Word w1, Word w2]) => bool (WordX.equals (w1, w2))
 	   | (Word_ge _, [Word w1, Word w2]) => bool (WordX.>= (w1, w2))
 	   | (Word_gt _, [Word w1, Word w2]) => bool (WordX.> (w1, w2))
 	   | (Word_le _, [Word w1, Word w2]) => bool (WordX.<= (w1, w2))
@@ -1259,7 +1269,8 @@ fun 'a apply (p, args, varEquals) =
 			     datatype z = datatype ApplyResult.t
 			  in
 			     case name of
-				Int_ge _ => t
+                                Int_equal _ => t
+			      | Int_ge _ => t
 			      | Int_gt _ => f
 			      | Int_le _ => t
 			      | Int_lt _ => f
@@ -1279,6 +1290,7 @@ fun 'a apply (p, args, varEquals) =
 			      | Real_qequal _ => t
 			      | Word_andb _ => Var x
 			      | Word_div s => word (WordX.one s)
+                              | Word_equal _ => t
 			      | Word_ge _ => t
 			      | Word_gt _ => f
 			      | Word_le _ => t
@@ -1322,6 +1334,7 @@ fun layoutApp (p: t, args: 'a vector, layoutArg: 'a -> Layout.t): Layout.t =
        | Int_addCheck _ => two "+"
        | Int_sub _ => two "-?"
        | Int_subCheck _ => two "-"
+       | Int_equal _ => two "="
        | Int_lt _ => two "<"
        | Int_le _ => two "<="
        | Int_gt _ => two ">"
@@ -1359,6 +1372,7 @@ fun layoutApp (p: t, args: 'a vector, layoutArg: 'a -> Layout.t): Layout.t =
        | Word_addCheck _ => two "+c"
        | Word_andb _ => two "&"
        | Word_arshift _ => two "~>>"
+       | Word_equal _ => two "="
        | Word_ge _ => two ">="
        | Word_gt _ => two ">"
        | Word_le _ => two "<="

@@ -28,6 +28,7 @@ binary(rem, %)
 					i op j, i, j);			\
 		return i op j;						\
 	}
+compare(equal, ==)
 compare(ge, >=)
 compare(gt, >)
 compare(le, <=)

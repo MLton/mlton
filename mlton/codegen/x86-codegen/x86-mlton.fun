@@ -601,6 +601,12 @@ struct
 		  | I16 => binal Instruction.ADD
 		  | I32 => binal Instruction.ADD
 		  | I64 => Error.bug "FIXME")
+	     | Int_equal s => 	
+		(case s of
+		    I8 => cmp Instruction.E
+		  | I16 => cmp Instruction.E
+		  | I32 => cmp Instruction.E
+		  | I64 => Error.bug "FIXME")
 	     | Int_ge s => 	
 		(case s of
 		    I8 => cmp Instruction.GE
@@ -1321,6 +1327,7 @@ struct
 	     | Word_andb _ => binal Instruction.AND
 	     | Word_arshift _ => sral Instruction.SAR
 	     | Word_div _ => pmd Instruction.DIV
+	     | Word_equal _ => cmp Instruction.E
 	     | Word_ge _ => cmp Instruction.AE
 	     | Word_gt _ => cmp Instruction.A
 	     | Word_le _ => cmp Instruction.BE

@@ -19,7 +19,7 @@ type word = Word.t
  * For each datatype tycon and vector type, it builds an equality function and
  * translates calls to = into calls to that function.
  *
- * Also generates calls to primitives stringEqual and intInfEqual.
+ * Also generates calls to primitives intEqual, intInfEqual, and wordEqual.
  *
  * For tuples, it does the equality test inline.  I.E. it does not create
  * a separate equality function for each tuple type.
@@ -292,7 +292,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		  else Dexp.call {func = equalFunc tycon,
 				  args = Vector.new2 (dx1, dx2),
 				  ty = Type.bool}
-	     | Type.Int _ => eq ()
+	     | Type.Int s => prim (Prim.intEqual s, Vector.new0 ())
 	     | Type.IntInf => if hasConstArg ()
 				 then eq ()
 			      else prim (Prim.intInfEqual, Vector.new0 ())
@@ -322,7 +322,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		  Dexp.call {func = vectorEqualFunc ty,
 			     args = Vector.new2 (dx1, dx2),
 			     ty = Type.bool}
-	     | Type.Word _ => eq ()
+	     | Type.Word s => prim (Prim.wordEqual s, Vector.new0 ())
 	     | _ => Error.bug "equal of strange type"
 	 end
       fun loopBind (Statement.T {var, ty, exp}) =
