@@ -190,6 +190,7 @@ signature SSA_TREE =
 	    val foreachLabelVar: t * (Label.t -> unit) * (Var.t -> unit) -> unit
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
+	    val replaceLabelVar: t * (Label.t -> Label.t) * (Var.t -> Var.t) -> t
 	    val replaceLabel: t * (Label.t -> Label.t) -> t
 	    val replaceVar: t * (Var.t -> Var.t) -> t
 	 end
