@@ -87,7 +87,8 @@ clean:
 	for d in basis-library benchmark bin include lib man mllex mlprof \
 			mlton mlyacc regression runtime; do 		\
 		cd $$d && $(MAKE) clean && cd ..;			\
-	done
+	done \
+	cd $(SRC)/doc/user-guide && $(MAKE) && cd ..\..
 
 # The TBIN and TLIB are where the files are going to be after installing.
 # The PREFIX is added onto them to indicate where the Makefile actually
