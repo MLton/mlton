@@ -443,55 +443,48 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
        * object allocation.
        *)
       datatype varInfo =
-	 NonTuple
-	| Tuple of {components: Var.t vector,
-		    flat: Flat.t ref}
+	 NonObject
+	| Object of {components: Var.t vector,
+		     flat: Flat.t ref}
       val {get = varInfo: Var.t -> varInfo ref, ...} =
-	 Property.get (Var.plist, Property.initFun (fn _ => ref NonTuple))
+	 Property.get (Var.plist, Property.initFun (fn _ => ref NonObject))
       fun use x =
 	 case ! (varInfo x) of
-	    Tuple {flat, ...} => flat := Flat.NotFlat
+	    Object {flat, ...} => flat := Flat.NotFlat
 	  | _ => ()
       fun uses xs = Vector.foreach (xs, use)
       fun loopStatement (Statement.T {exp, ty, var}) =
-	 let
-	    datatype z = datatype Exp.t
-	 in
-	    case exp of
-	       Object {args, con, ...} =>
-		  (case var of
-		      NONE => uses args
-		    | SOME var =>
-			 case Value.deObject (varValue var) of
-			    NONE => uses args
-			  | SOME object =>
-			       let
-				  val () =
-				     case con of
-					NONE =>
-					   varInfo var
-					   := Tuple {components = args,
-						     flat = ref Flat.Unknown}
-				      | _ => ()
-			       in
-				  Vector.foreachi
-				  (args, fn (offset, x) =>
-				   case ! (varInfo x) of
-				      NonTuple => ()
-				    | Tuple {components, flat} => 
-					 let
-					    datatype z = datatype Flat.t
-					 in
-					    case !flat of
-					       Unknown =>
-						  flat :=
-						  Offset {object = object,
-							  offset = offset}
-					     | _ => flat := NotFlat
-					 end)
-			       end)
-	     | _ => Exp.foreachVar (exp, use)
-	 end
+	 case exp of
+	    Exp.Object {args, ...} =>
+	       (case var of
+		   NONE => uses args
+		 | SOME var =>
+		      case Value.deObject (varValue var) of
+			 NONE => uses args
+		       | SOME object =>
+			    let
+			       val () =
+				  varInfo var
+				  := Object {components = args,
+					     flat = ref Flat.Unknown}
+			    in
+			       Vector.foreachi
+			       (args, fn (offset, x) =>
+				case ! (varInfo x) of
+				   NonObject => ()
+				 | Object {components, flat} => 
+				      let
+					 datatype z = datatype Flat.t
+				      in
+					 case !flat of
+					    Unknown =>
+					       flat :=
+					       Offset {object = object,
+						       offset = offset}
+					  | _ => flat := NotFlat
+				      end)
+			    end)
+	  | _ => Exp.foreachVar (exp, use)
       fun loopStatements ss = Vector.foreach (ss, loopStatement)
       fun loopTransfer t = Transfer.foreachVar (t, use)
       val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector},
@@ -512,50 +505,75 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	       ; loopStatements statements
 	       ; loopTransfer transfer))
 	  end)
-      (* Walk over the whole program and try to flatten each ref. *)
-      fun loopStatement (Statement.T {exp, var, ...}) =
-	 case exp of
-	    Object {args, con = NONE} =>
-	       Option.app
-	       (var, fn var =>
-		case varValue var of
-		   Value.Ground _ => ()
-		 | Value.Object {flat, ...} =>
-		      let
-			 datatype z = datatype Flat.t
-			 val flat'Ref as ref flat' =
-			    case ! (varInfo var) of
-			       NonTuple => Error.bug "tuple with NonTuple"
-			     | Tuple {flat, ...} => flat
-			 fun notFlat () =
-			    (Set.setValue (flat, NotFlat)
-			     ; flat'Ref := NotFlat)
-		      in
-			 case flat' of
-			    Offset {object = obj, offset = i} =>
-			       (case Set.value flat of
-				   NotFlat => notFlat ()
-				 | Offset {object = obj', offset = i'} =>
-				      if i = i'
-					 andalso Object.equals (obj, obj')
-					 then ()
-				      else notFlat ()
-				 | Unknown => Set.setValue (flat, flat'))
-			  | _ => notFlat ()
-		      end
-		 | _ => Error.bug "Object with strange value")
-	  | _ => ()
-      val () = Vector.foreach (globals, loopStatement)
+      fun foreachObject (f): unit =
+	 let
+	    fun loopStatement (Statement.T {exp, var, ...}) =
+	       case exp of
+		  Exp.Object {args, ...} =>
+		     Option.app
+		     (var, fn var =>
+		      case varValue var of
+			 Value.Ground _ => ()
+		       | Value.Object obj => f (var, args, obj)
+		       | _ => Error.bug "Object with strange value")
+		| _ => ()
+	    val () = Vector.foreach (globals, loopStatement)
+	    val () =
+	       List.foreach
+	       (functions, fn f =>
+		let
+		   val {blocks, ...} = Function.dest f
+		in
+		   Vector.foreach
+		   (blocks, fn Block.T {statements, ...} =>
+		    Vector.foreach (statements, loopStatement))
+		end)
+	 in
+	    ()
+	 end
+      (* Try to flatten each ref. *)
       val () =
-	 List.foreach
-	 (functions, fn f =>
+	 foreachObject
+	 (fn (var, _, obj as {flat, ...}) =>
 	  let
-	     val {blocks, ...} = Function.dest f
+	     datatype z = datatype Flat.t
+	     val flat'Ref as ref flat' =
+		case ! (varInfo var) of
+		   NonObject => Error.bug "Object with NonObject"
+		 | Object {flat, ...} => flat
+	     fun notFlat () =
+		(Set.setValue (flat, NotFlat)
+		 ; flat'Ref := NotFlat)
 	  in
-	     Vector.foreach
-	     (blocks, fn Block.T {statements, ...} =>
-	      Vector.foreach (statements, loopStatement))
+	     case flat' of
+		Offset {object = obj, offset = i} =>
+		   (case Set.value flat of
+		       NotFlat => notFlat ()
+		     | Offset {object = obj', offset = i'} =>
+			  if i = i' andalso Object.equals (obj, obj')
+			     then ()
+			  else notFlat ()
+		     | Unknown => Set.setValue (flat, flat'))
+	      | _ => notFlat ()
 	  end)
+      (* Disallow flattening into object components that aren't explicitly
+       * constructed.
+       *)
+      val () =
+	 foreachObject
+	 (fn (_, args, obj) =>
+	  Vector.foreach
+	  (args, fn arg =>
+	   case ! (varInfo arg) of
+	      NonObject =>
+		 let
+		    val v = varValue arg
+		 in
+		    if isSome (Value.deFlat {inner = v, outer = obj})
+		       then Value.dontFlatten v
+		    else ()
+		 end
+	    | Object _ => ()))
       val () =
 	 Control.diagnostics
 	 (fn display =>
@@ -573,9 +591,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		 let
 		    val vi =
 		       case ! (varInfo x) of
-			  NonTuple => str "NonTuple"
-			| Tuple {flat, ...} =>
-			     seq [str "Tuple ", Flat.layout (!flat)]
+			  NonObject => str "NonObject"
+			| Object {flat, ...} =>
+			     seq [str "Object ", Flat.layout (!flat)]
 		 in
 		    display
 		    (seq [Var.layout x, str " ",
@@ -689,8 +707,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		NONE => x :: ac
 	      | SOME obj =>
 		   (case ! (varInfo x) of
-		       NonTuple => flattenValues (x, obj, ac)
-		     | Tuple {components, ...} =>
+		       NonObject => flattenValues (x, obj, ac)
+		     | Object {components, ...} =>
 			  flattenArgs (components, obj, ac))
 	  end)
       val flattenArgs =
@@ -713,7 +731,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	    fun none () = Vector.new0 ()
 	 in
 	    case exp of
-	       Object {args, con} =>
+	       Exp.Object {args, con} =>
 		  (case var of
 		      NONE => none ()
 		    | SOME var =>
@@ -732,7 +750,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 				      in
 					 Vector.concat
 					 [Vector.fromList extra,
-					  make (Object {args = args, con = con})]
+					  make (Exp.Object
+						{args = args, con = con})]
 				      end))
 	      | PrimApp {args, prim, targs} =>
 		   let
