@@ -1209,7 +1209,7 @@ structure INumberArray =
 
 structure RNumberArray =
     struct
-	open RealArray
+	open Real64Array
 	val sub = Unsafe.Real64Array.sub
 	val update = Unsafe.Real64Array.update
 	fun map f a = tabulate(length a, fn x => (f (sub(a,x))))
@@ -1726,7 +1726,7 @@ structure INumberArray =
     end
 structure RNumberArray =
     struct
-	open RealArray
+	open Real64Array
 	val sub = Unsafe.Real64Array.sub
 	val update = Unsafe.Real64Array.update
 	fun map f a = tabulate(length a, fn x => (f (sub(a,x))))
