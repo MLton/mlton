@@ -55,6 +55,7 @@ function tar.write {
 
 echo 'Cleaning up'
 src="$topdir/SOURCES/mlton-$version"
+mkdir -p $topdir
 cd $topdir
 mkdir -p BUILD RPMS/i386 SOURCES SPECS SRPMS
 cd $topdir/SOURCES
