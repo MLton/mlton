@@ -117,6 +117,11 @@ fun insertFunction (f: Function.t,
 		   val collect = Label.newNoname ()
 		   val collectReturn = Label.newNoname ()
 		   val dontCollect = Label.newNoname ()
+		   val force =
+		      case !Control.gcCheck of
+			 Control.First => Error.unimplemented "-gc-check first"
+		       | Control.Limit => Operand.int 0
+		       | Control.Every => Operand.int 1
 		   val _ = 
 		      newBlocks :=
 		      Block.T {args = Vector.new0 (),
@@ -125,8 +130,7 @@ fun insertFunction (f: Function.t,
 			       profileInfo = profileInfo,
 			       statements = Vector.new0 (),
 			       transfer = (Transfer.Runtime
-					   {args = Vector.new2 (amount,
-								Operand.int 0),
+					   {args = Vector.new2 (amount, force),
 					    prim = Prim.gcCollect,
 					    return = collectReturn})}
 		      :: Block.T {args = Vector.new0 (),
@@ -144,6 +148,11 @@ fun insertFunction (f: Function.t,
 				  statements = statements,
 				  transfer = transfer}
 		      :: !newBlocks
+		   val dontCollect =
+		      case !Control.gcCheck of
+			 Control.First => Error.unimplemented "-gc-check first"
+		       | Control.Limit => dontCollect
+		       | Control.Every => collect
 		in
 		   {collect = collect,
 		    dontCollect = dontCollect}
