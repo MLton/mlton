@@ -9,7 +9,7 @@ functor Sequence (S: sig
 			type 'a sequence 
 			type 'a elt
 			(* fromArray should be constant time. *)
-			val fromArray: 'a elt Array.array -> 'a sequence 
+			val fromArray: 'a elt array -> 'a sequence 
 			val isMutable: bool
 			val length: 'a sequence -> int
 			val sub: 'a sequence * int -> 'a elt
