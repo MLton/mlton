@@ -26,7 +26,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       end
 
       local
-	 val a: word array = Array.array (Prim.numgroups, 0w0)
+	 val a: word array = Primitive.Array.array Prim.numgroups
       in
 	 fun getgroups () =
 	    let val n = Prim.getgroups a

@@ -294,7 +294,7 @@ structure Buf =
 			   closed = ref false,
 			   first = ref 0,
 			   last = ref 0,
-			   buf = Array.array (bufSize, 0w0)}
+			   buf = Primitive.Array.array bufSize}
 	    in openIns := b :: !openIns
 	       ; b
 	    end
@@ -419,7 +419,7 @@ structure Buf =
 			before first := bytesToRead +? !first)
 	       else
 		  let
-		     val dst = Array.array (bytesToRead, 0w0)
+		     val dst = Primitive.Array.array bytesToRead
 		     val _ =
 			(Array.copy {src = buf, si = !first,
 				     len = SOME size, dst = dst, di = 0}
@@ -506,7 +506,7 @@ structure StreamIO =
 	    fun isEmpty (T {buf, ...}) = 0 = Array.length buf
 
 	    val empty as T {next, ...} =
-	       T {buf = Array.array (0, 0w0),
+	       T {buf = Primitive.Array.array 0,
 		  closed = ref true, (* doesn't matter *)
 		  fd = FS.stdin, (* doesn't matter *)
 		  next = ref NONE}
@@ -536,8 +536,9 @@ structure StreamIO =
 			then empty
 		     else
 			let
-			   val buf = Array.array (bufSize, 0w0)
-			   val n = PIO.readArr (fd, {buf = buf, i = 0, sz = NONE})
+			   val buf = Primitive.Array.array bufSize
+			   val n =
+			      PIO.readArr (fd, {buf = buf, i = 0, sz = NONE})
 			   val buf =
 			      if n < bufSize
 				 then Array.tabulate (n, fn i =>

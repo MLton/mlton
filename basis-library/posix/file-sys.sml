@@ -90,7 +90,7 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
 
       local
 	 val size: int ref = ref 1
-	 fun make () = Array.array (!size, #"\000")
+	 fun make () = Primitive.Array.array (!size)
 	 val buffer = ref (make ())
 	    
 	 fun extractToChar (a, c) =

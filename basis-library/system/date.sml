@@ -300,7 +300,7 @@ structure Date :> DATE =
 	  let
 	     val _ = setTmBuf (dateToTmoz d)
 	     val bufLen = 50 (* more than enough for a single format char *)
-	     val buf = Array.array (bufLen, #"\000")
+	     val buf = Primitive.Array.array bufLen
 	     fun strftime fmtChar =
 		let
 		   val len = Prim.strfTime (buf, bufLen,

@@ -229,7 +229,7 @@ structure Real: REAL =
       datatype realfmt = datatype StringCvt.realfmt
 
       local
-	 fun makeBuffer n = Array.array (n, #"\000")
+	 fun makeBuffer n = Primitive.Array.array n
 	 (* Large enough for most cases *)
 	 val normalSize: int = 500
 	 val buffer = makeBuffer normalSize

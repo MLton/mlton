@@ -18,21 +18,21 @@ structure PosixTTY: POSIX_TTY =
 
 	    val default = #"\000"
 
-	    fun new() = Array.array(nccs, default)
+	    fun new () = Array.array (nccs, default)
 
-	    fun updates(a, l) = List.app (fn (i, c) => Array.update(a, i, c)) l
+	    fun updates (a, l) = List.app (fn (i, c) => Array.update (a, i, c)) l
 
-	    fun cc l = let val a = new()
-		       in updates(a, l);
-			  a
+	    fun cc l = let val a = new ()
+		       in updates (a, l)
+			  ; a
 		       end
 
-	    fun update(a, l) =
-	       let val a' = new()
-	       in Array.copy{src = a, si = 0, len = NONE,
-			     dst = a', di = 0};
-		  updates(a', l);
-		  a'
+	    fun update (a, l) =
+	       let val a' = new ()
+	       in Array.copy {src = a, si = 0, len = NONE,
+			     dst = a', di = 0}
+		  ; updates (a', l)
+		  ; a'
 	       end
 
 	    val sub = Array.sub
@@ -85,7 +85,7 @@ structure PosixTTY: POSIX_TTY =
       structure CF =
 	 struct
 	    val getospeed: termios -> speed = #ospeed
-	    fun setospeed({iflag, oflag, cflag, lflag, cc, ispeed, ...}: termios,
+	    fun setospeed ({iflag, oflag, cflag, lflag, cc, ispeed, ...}: termios,
 			  ospeed: speed): termios =
 	       {iflag = iflag,
 		oflag = oflag,
@@ -97,7 +97,7 @@ structure PosixTTY: POSIX_TTY =
 		
 	    val getispeed: termios -> speed = #ispeed
 	       
-	    fun setispeed({iflag, oflag, cflag, lflag, cc, ospeed, ...}: termios,
+	    fun setispeed ({iflag, oflag, cflag, lflag, cc, ospeed, ...}: termios,
 			  ispeed: speed): termios =
 	       {iflag = iflag,
 		oflag = oflag,
@@ -110,39 +110,39 @@ structure PosixTTY: POSIX_TTY =
       
       structure Termios = Prim.Termios
 	 
-      fun getattr(FD fd) =
-	 (Error.checkResult(Prim.getattr(fd))
-	  ; {iflag = Termios.iflag(),
-	     oflag = Termios.oflag(),
-	     cflag = Termios.cflag(),
-	     lflag = Termios.lflag(),
-	     cc = Cstring.toCharArrayOfLength(Termios.cc(), V.nccs),
-	     ispeed = Termios.ispeed(),
-	     ospeed = Termios.ospeed()})
+      fun getattr (FD fd) =
+	 (Error.checkResult (Prim.getattr (fd))
+	  ; {iflag = Termios.iflag (),
+	     oflag = Termios.oflag (),
+	     cflag = Termios.cflag (),
+	     lflag = Termios.lflag (),
+	     cc = Cstring.toCharArrayOfLength (Termios.cc (), V.nccs),
+	     ispeed = Termios.ispeed (),
+	     ospeed = Termios.ospeed ()})
 
-      fun setattr(FD fd, a, {iflag, oflag, cflag, lflag, cc, ispeed, ospeed}) =
+      fun setattr (FD fd, a, {iflag, oflag, cflag, lflag, cc, ispeed, ospeed}) =
 	 (Termios.setiflag iflag
 	  ; Termios.setoflag oflag
 	  ; Termios.setcflag cflag
 	  ; Termios.setlflag lflag
 	  ; Termios.setospeed ospeed
 	  ; Termios.setispeed ispeed
-	  ; let val cs = Termios.cc() 
+	  ; let val cs = Termios.cc () 
 	    in Util.naturalForeach
-	       (V.nccs, fn i => Cstring.update(cs, i, V.sub(cc, i)))
+	       (V.nccs, fn i => Cstring.update (cs, i, V.sub (cc, i)))
 	    end
-	  ; Error.checkResult(Prim.setattr(fd, a)))
+	  ; Error.checkResult (Prim.setattr (fd, a)))
 
-      fun sendbreak(FD fd, n) =
-	 Error.checkResult(Prim.sendbreak(fd, n))
+      fun sendbreak (FD fd, n) =
+	 Error.checkResult (Prim.sendbreak (fd, n))
 
-      fun drain(FD fd) = Error.checkResult(Prim.drain fd)
+      fun drain (FD fd) = Error.checkResult (Prim.drain fd)
 	 
-      fun flush(FD fd, n) = Error.checkResult(Prim.flush(fd, n))
+      fun flush (FD fd, n) = Error.checkResult (Prim.flush (fd, n))
 	 
-      fun flow(FD fd, n) = Error.checkResult(Prim.flow(fd, n))
+      fun flow (FD fd, n) = Error.checkResult (Prim.flow (fd, n))
 	 
-      fun getpgrp(FD fd) = Error.checkReturnResult(Prim.getpgrp fd)
+      fun getpgrp (FD fd) = Error.checkReturnResult (Prim.getpgrp fd)
 	 
-      fun setpgrp(FD fd, pid) = Error.checkResult(Prim.setpgrp(fd, pid))
+      fun setpgrp (FD fd, pid) = Error.checkResult (Prim.setpgrp (fd, pid))
    end
