@@ -3,6 +3,8 @@
 # This script runs the regression tests in src/regression.
 # It also compiles the tests in benchmark/tests
 
+set -e
+
 name=`basename $0`
 
 usage () {

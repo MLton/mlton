@@ -9,7 +9,9 @@
 # I got cygwin and w32api by installing cygwin in a Windows machine (using
 # Cygwin's setup.exe program) and then getting the bzip'ed tar files out of
 # their Cygwin packages dir.
-#
+
+set -e
+
 # You may need to change the version numbers below.
 # You also might want to change the installation prefix.
 

@@ -8,6 +8,8 @@
 # cross compiling.  You must place the output of running the executable in
 # $libDir/$crossHost/constants.
 
+set -e
+
 original=`pwd`
 dir=`dirname $0`
 src=`cd $dir/.. && pwd`
@@ -70,8 +72,8 @@ echo 'Making runtime.'
 exe='print-constants'
 echo 'Building print-constants executable.'
 (
-	mlton -build-constants >$exe.c &&
-	mlton -o $original/$exe.exe -host $crossHost $exe.c &&
+	mlton -build-constants >$exe.c
+	mlton -o $original/$exe.exe -host $crossHost $exe.c
 	rm -f $exe.c
 ) || die "Unable to build $exe executable."
 

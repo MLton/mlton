@@ -3,6 +3,8 @@
 # This script checks MLton's basis library implementation for type errors using
 # SML/NJ.
 
+set -e 
+
 name=`basename $0`
 
 usage () {

@@ -2,6 +2,8 @@
 
 # This script calls MLton.
 
+set -e
+
 lib='lib unset'
 gcc='gcc'
 mlton="$lib/mlton-compile"
