@@ -61,12 +61,18 @@ structure Prod =
 	 open Layout
       in
 	 fun layout (p, layout) =
-	    paren (seq (separate (Vector.toListMap
-				  (dest p, fn {elt, isMutable} =>
-				   if isMutable
-				      then seq [layout elt, str " ref"]
-				   else layout elt),
-				  " * ")))
+	    paren
+	    (#1 (Tycon.layoutApp
+		 (Tycon.tuple,
+		  Vector.map (dest p, fn {elt, isMutable} =>
+			      let
+				 val lay =
+				    if isMutable
+				       then seq [layout elt, str " ref"]
+				    else layout elt
+			      in
+				 (lay, {isChar = false, needsParen = false})
+			      end))))
       end
 
       val map: 'a t * ('a -> 'b) -> 'b t =
@@ -244,7 +250,11 @@ structure Type =
 		    else
 		       (case con of
 			   NONE => Prod.layout (args, layout)
-			 | SOME c => Con.layout c)
+			 | SOME c =>
+			      if false
+				 then seq [Con.layout c,
+					   str " ", Prod.layout (args, layout)]
+			      else Con.layout c)
 	       | Real s => str (concat ["real", RealSize.toString s])
 	       | Thread => str "thread"
 	       | Vector p => seq [Prod.layout (p, layout), str " vector"]
