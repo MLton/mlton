@@ -11,7 +11,6 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 
-#if (defined (__linux__))
 #define NetHostDB_inAddrLen sizeof(struct in_addr)
 #define NetHostDB_INADDR_ANY INADDR_ANY
 #define max(x,y) (((x) > (y)) ? (x) : (y))
@@ -46,8 +45,7 @@
 #define Socket_MSG_DONTROUTE MSG_DONTROUTE
 #define Socket_MSG_OOB MSG_OOB
 #define Socket_MSG_PEEK MSG_PEEK
-#define Socket_INetSock_TCP_SOL_TCP SOL_TCP
+#define Socket_INetSock_TCP_SOL_TCP IPPROTO_TCP
 #define Socket_INetSock_TCP_SO_NODELAY TCP_NODELAY
-#endif
 
 #endif /* #ifndef _NET_CONSTANTS_H_ */
