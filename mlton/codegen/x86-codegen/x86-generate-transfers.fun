@@ -1398,8 +1398,7 @@ struct
 				      {id = idC,
 				       live = stackTop::
 				              frontier::
-					      (MemLocSet.toList 
-					       default_live)},
+					      (MemLocSet.toList default_live)},
 				      Assembly.instruction_jcc
 				      {condition = Instruction.NZ,
 				       target = Operand.label defaultC},

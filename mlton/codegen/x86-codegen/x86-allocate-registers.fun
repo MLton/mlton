@@ -69,17 +69,20 @@ struct
 
   structure Liveness =
     struct
-      datatype future = USE of MemLoc.t
+      datatype future = NEED of MemLoc.t
+	              | USE of MemLoc.t
 	              | DEF of MemLoc.t
 	              | USEDEF of MemLoc.t
 
       val future_toString
-	= fn USE memloc => concat ["USE ", MemLoc.toString memloc]
+	= fn NEED memloc => concat ["NEED ", MemLoc.toString memloc]
+	   | USE memloc => concat ["USE ", MemLoc.toString memloc]
 	   | DEF memloc => concat ["DEF ", MemLoc.toString memloc]
 	   | USEDEF memloc => concat ["USEDEF ", MemLoc.toString memloc]
 
       val future_eq
-	= fn (USE memloc1, USE memloc2) => MemLoc.eq(memloc1,memloc2)
+	= fn (NEED memloc1, NEED memloc2) => MemLoc.eq(memloc1,memloc2)
+	   | (USE memloc1, USE memloc2) => MemLoc.eq(memloc1,memloc2)
 	   | (USEDEF memloc1, USEDEF memloc2) => MemLoc.eq(memloc1,memloc2)
 	   | (DEF memloc1, DEF memloc2) => MemLoc.eq(memloc1,memloc2)
 	   | _ => false
@@ -142,7 +145,7 @@ struct
 	    doit("hint: ", hint, hint_toString, [])))))
 	  end
 
-      datatype commit = NO | COMMIT | REMOVE
+      datatype commit = NO | COMMIT | REMOVE | DEAD
       datatype scan = CONTINUE of commit | RETURN of commit
       fun scan(future, default, f)
 	= case future
@@ -156,15 +159,16 @@ struct
 	= fn (set, p)
 	   => MemLocSet.fold
 	      (set,
-	       (MemLocSet.empty,MemLocSet.empty,MemLocSet.empty),
-	       fn (memloc, (no, commit, remove))
+	       (MemLocSet.empty,MemLocSet.empty,MemLocSet.empty,MemLocSet.empty),
+	       fn (memloc, (no, commit, remove, dead))
 	        => let
 		     val add = fn set => MemLocSet.add(set, memloc)
 		   in
 		     case p memloc
-		       of NO => (add no, commit, remove)
-			| COMMIT => (no, add commit, remove)
-			| REMOVE => (no, commit, add remove)
+		       of NO => (add no, commit, remove, dead)
+			| COMMIT => (no, add commit, remove, dead)
+			| REMOVE => (no, commit, add remove, dead)
+			| DEAD => (no, commit, remove, add dead)
 		   end)
 
       fun liveness {uses: MemLocSet.t,
@@ -201,7 +205,21 @@ struct
 	      = MemLocSet.-(allDefs, current_usedef)
 
 	    local
-	      fun doit (USE memloc)
+	      fun doit (NEED memloc)
+		= if not (MemLocSet.contains
+			  (allDefs, memloc))
+		     andalso
+		     List.exists
+		     (memloc::(MemLoc.utilized memloc),
+		      fn memloc'
+		       => MemLocSet.exists
+		          (allDefs,
+			   fn memloc''
+			    => MemLoc.mayAlias(memloc',
+					       memloc'')))
+		    then NONE
+		    else SOME (NEED memloc)
+		| doit (USE memloc)
 		= if not (MemLocSet.contains
 			  (allDefs, memloc))
 		     andalso
@@ -265,13 +283,21 @@ struct
 	      val future = List.keepAllMap(future, doit)
 	    end
 
-	    val (no_use,commit_use,remove_use)
+	    val (no_use,commit_use,remove_use,dead_use)
 	      = split(current_use,
 		      fn memloc
 		       => scan
 		          (future,
-			   REMOVE,
-			   fn (default, USE memloc') 
+			   if track memloc
+			     then DEAD
+			     else REMOVE,
+			   fn (default, NEED memloc') 
+			    => if MemLoc.eq(memloc,memloc')
+				 then CONTINUE REMOVE
+				 else if MemLoc.mayAlias(memloc,memloc')
+					then CONTINUE default
+					else CONTINUE default
+			    | (default, USE memloc')
 			    => if MemLoc.eq(memloc,memloc')
 				 then RETURN NO
 				 else if MemLoc.mayAlias(memloc,memloc')
@@ -285,18 +311,26 @@ struct
 					else CONTINUE default
 			    | (default, DEF memloc')
 			    => if MemLoc.eq(memloc,memloc')
-				 then RETURN REMOVE
+				 then RETURN default
 				 else if MemLoc.mayAlias(memloc,memloc')
-					then RETURN REMOVE
+					then RETURN default
 					else CONTINUE default))
 
-	    val (no_usedef,commit_usedef,remove_usedef)
+	    val (no_usedef,commit_usedef,remove_usedef,dead_usedef)
 	      = split(current_usedef,
 		      fn memloc
 		       => scan
 		          (future,
-			   REMOVE,
-			   fn (default, USE memloc')
+			   if track memloc
+			     then DEAD
+			     else REMOVE,
+			   fn (default, NEED memloc')
+			    => if MemLoc.eq(memloc,memloc')
+				 then CONTINUE REMOVE
+				 else if MemLoc.mayAlias(memloc,memloc')
+					then RETURN COMMIT
+					else CONTINUE default
+			    | (default, USE memloc')
 			    => if MemLoc.eq(memloc,memloc')
 				 then if track memloc
 					then RETURN NO
@@ -312,18 +346,26 @@ struct
 					else CONTINUE default
 			    | (default, DEF memloc')
 			    => if MemLoc.eq(memloc,memloc')
-				 then RETURN NO
+				 then RETURN default
 				 else if MemLoc.mayAlias(memloc,memloc')
 					then RETURN REMOVE
 					else CONTINUE default))
 
-	    val (no_def,commit_def,remove_def)
+	    val (no_def,commit_def,remove_def,dead_def)
 	      = split(current_def,
 		      fn memloc
 		       => scan
 		          (future,
-			   REMOVE,
-			   fn (default, USE memloc')
+			   if track memloc
+			     then DEAD
+			     else REMOVE,
+			   fn (default, NEED memloc')
+			    => if MemLoc.eq(memloc,memloc')
+				 then CONTINUE REMOVE
+				 else if MemLoc.mayAlias(memloc,memloc')
+					then RETURN COMMIT
+					else CONTINUE default
+			    | (default, USE memloc')
 			    => if MemLoc.eq(memloc,memloc')
 				 then if track memloc
 					then RETURN NO
@@ -339,23 +381,30 @@ struct
 					else CONTINUE default
 			    | (default, DEF memloc')
 			    => if MemLoc.eq(memloc,memloc')
-				 then RETURN NO
+				 then RETURN default
 				 else if MemLoc.mayAlias(memloc,memloc')
 					then RETURN REMOVE
 					else CONTINUE default))
 
 	    val no = MemLocSet.unions [no_use,no_usedef,no_def]
 	    val commit = MemLocSet.unions [commit_use,commit_usedef,commit_def]
-	    val {yes = _, no = commit} = MemLocSet.partition(commit, track)
 	    val remove = MemLocSet.unions [remove_use,remove_usedef,remove_def]
-	    val {yes = dead, no = remove} = MemLocSet.partition(remove, track)
+	    val dead = MemLocSet.unions [dead_use,dead_usedef,dead_def]
 
 	    val future
 	      = let
 		  val future
 		    = List.removeAll
 		      (future,
-		       fn USE memloc => MemLocSet.contains(current_use,
+		       fn NEED memloc => MemLocSet.contains(current_use,
+							    memloc)
+		                         orelse
+					 MemLocSet.contains(current_usedef,
+							    memloc)
+					 orelse
+					 MemLocSet.contains(current_def,
+							    memloc)
+			| USE memloc => MemLocSet.contains(current_use,
 							   memloc)
 		        | USEDEF memloc => MemLocSet.contains(current_usedef,
 							      memloc)
@@ -382,7 +431,8 @@ struct
 		       | (future,0) 
 		       => List.keepAll
 		          (future,
-			   track o (fn USE memloc => memloc
+			   track o (fn NEED memloc => memloc
+				     | USE memloc => memloc
 			             | USEDEF memloc => memloc
 				     | DEF memloc => memloc))
 		       | (h::future,n) => h::(cut(future,n-1))
@@ -404,18 +454,37 @@ struct
 			    hint: hint list} : t
 	= let
 	    val cstaticClasses = !x86MLton.Classes.cstaticClasses
-	    val {uses,defs,...} = Assembly.uses_defs_kills assembly
+	    val {uses,defs,...} 
+	      = case assembly
+		  of Assembly.Directive (Directive.Commit {...})
+		   => {uses = [], defs = [], kills = []}
+		   | Assembly.Directive (Directive.SaveRegAlloc {...})
+		   => {uses = [], defs = [], kills = []}
+		   | _ => Assembly.uses_defs_kills assembly
 	    val future
 	      = case assembly
 		  of Assembly.Directive Directive.Reset 
 		   => []
-		   | Assembly.Directive (Directive.Commit {classes, 
+		   | Assembly.Directive (Directive.Commit {memlocs,
+							   classes, 
+							   remove_memlocs,
 							   remove_classes,
 							   eject_classes,
 							   ...})
-		   => List.keepAllMap
+		   => List.map(memlocs @ remove_memlocs, fn memloc => NEED memloc) @
+                      List.keepAllMap
 		      (future,
-		       fn USE memloc
+		       fn NEED memloc
+		        => if List.contains(eject_classes,
+					    MemLoc.class memloc,
+					    MemLoc.Class.eq)
+			     then NONE
+			     else if List.contains(classes @ remove_classes,
+						   MemLoc.class memloc,
+						   MemLoc.Class.eq)
+				    then SOME (USE memloc)
+				    else SOME (USE memloc)
+		        | USE memloc
 		        => if List.contains(eject_classes,
 					    MemLoc.class memloc,
 					    MemLoc.Class.eq)
@@ -448,7 +517,14 @@ struct
 		   | Assembly.Directive Directive.CCall
 		   => List.keepAllMap
 		      (future,
-		       fn USE memloc 
+		       fn NEED memloc 
+		        => (case Size.class (MemLoc.size memloc)
+			      of Size.INT => if ClassSet.contains(cstaticClasses,
+								  MemLoc.class memloc)
+					       then NONE
+					       else SOME (USE memloc)
+			       | _ => SOME (USE memloc))
+		        | USE memloc 
 		        => (case Size.class (MemLoc.size memloc)
 			      of Size.INT => if ClassSet.contains(cstaticClasses,
 								  MemLoc.class memloc)
@@ -472,7 +548,11 @@ struct
 		   | Assembly.Directive Directive.ClearFlt
 		   => List.keepAllMap
 		      (future,
-		       fn USE memloc 
+		       fn NEED memloc 
+		        => (case Size.class (MemLoc.size memloc)
+			      of Size.INT => SOME (USE memloc)
+			       | _ => SOME (USE memloc))
+		        | USE memloc 
 		        => (case Size.class (MemLoc.size memloc)
 			      of Size.INT => SOME (USE memloc)
 			       | _ => SOME (USE memloc))
@@ -484,6 +564,8 @@ struct
 			=> (case Size.class (MemLoc.size memloc)
 			      of Size.INT => SOME (DEF memloc)
 			       | _ => NONE))
+                   | Assembly.Directive (Directive.SaveRegAlloc {live, ...})
+		   => List.map(live, fn memloc => NEED memloc) @ future
 		   | _ => future
 
 	    local 

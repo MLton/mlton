@@ -3238,6 +3238,24 @@ struct
 		finish, 
 		transfer}
 	     => let
+		  val label = let
+				val (entry,_) = entry
+			      in 
+				Entry.label entry
+			      end
+		  val {dsts, ...} = Instruction.srcs_dsts instruction
+		  val _ = print (Label.toString label)
+		  val _ = print ": "
+		  val _ = Option.app
+		          (dsts,
+			   fn dsts 
+			    => List.foreach
+			       (dsts,
+				fn operand 
+				 => (print (Operand.toString operand);
+				     print " ")))
+		  val _ = print "\n"
+
 		  val {statements, live}
 		    = LivenessBlock.reLivenessStatements
 		      {statements = List.rev start,

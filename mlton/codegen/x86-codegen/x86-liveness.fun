@@ -420,7 +420,6 @@ struct
 			   then ()
 			   else (LiveInfo.setLive(liveInfo, label, live);
 				 List.foreach(!pred, add_todo);
-(*
 				 print "completeLiveInfo:";
 				 print pass;
 				 print ": ";
@@ -432,7 +431,7 @@ struct
 				   then print "old < new"
 				 else print "?";
 				 print "\n";
-				 if !Control.Native.commented > 0
+				 if true
 				   then (print "old: ";
 					 LiveSet.foreach
 					 (live',
@@ -448,7 +447,6 @@ struct
 					       print " "));
 					 print "\n")
 				   else ();
-*)
 				 changed := true);
 			 doit ()
 		       end)
