@@ -46,21 +46,24 @@ cvs -Q release src
 find src -type d | grep CVS | xargs rm -rf
 find src -type f | grep cvsignore | xargs rm -f
 
-echo 'Instantiating version numbers'
+function instantiate() {
+	echo 'Instantiating version numbers'
+	for f in web/index.html \
+			user-guide/macros.tex \
+	 		ANNOUNCE \
+	 		CHANGES \
+ 			README \
+	 		../mlton/control/control.sml; do
+		sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <$f >z
+		mv z $f
+	done
+}
 cd $src/doc
+instantiate
 sed "/^Version:/s;.*;Version: $date;" <mlton.spec >z
 sed "/^Release:/s;.*;Release: $release;" <z >$rpms/SPECS/mlton.spec
-rm -f z
-cd $src
-for f in doc/web/index.html \
-		doc/user-guide/macros.tex \
- 		doc/ANNOUNCE \
- 		doc/CHANGES \
- 		doc/README \
- 		mlton/control/control.sml; do
-	sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <$f >z
-	mv z $f
-done
+sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <../mlton/control/control.sml >z
+mv z ../mlton/control/control.sml
 
 manvers=`date '+%B %d, %Y'`
 cd $src/man
@@ -87,7 +90,8 @@ if [ $home = 'yes' ]; then
 	echo '  Checking out docs'
 	cvs -Q co -d doc mlton/doc
 	cvs -Q release doc
-	cd $root/doc/web
+	cd $root/doc
+	instantiate
 	make
 	cp -p $rpms/RPMS/i386/$version-$release.i386.rpm \
 		$rpms/SRPMS/$version-$release.src.rpm .
