@@ -1082,7 +1082,6 @@ static inline void unblockSignals (GC_state s) {
 void enter (GC_state s) {
 	if (DEBUG)
 		fprintf (stderr, "enter\n");
-	s->amInGC = TRUE;
 	/* used needs to be set because the mutator has changed s->stackTop. */
 	s->currentThread->stack->used = currentStackUsed (s);
 	if (DEBUG) 
@@ -1105,7 +1104,6 @@ void leave (GC_state s) {
 		s->limit = 0;
 	unless (s->inSignalHandler)
 		unblockSignals (s);
-	s->amInGC = FALSE;
 	if (DEBUG)
 		fprintf (stderr, "leave ok\n");
 }
@@ -2843,9 +2841,12 @@ static void showProf (GC_state s) {
 }
 
 void GC_profileFree (GC_state s, GC_profile p) {
-	free (p->count);
+	free (p->countTop);
 	if (s->profileStack) {
+		free (p->countStack);
+		free (p->countStackGC);
 		free (p->lastTotal);
+		free (p->lastTotalGC);
 		free (p->stackCount);
 	}
 	free (p);
@@ -2854,11 +2855,15 @@ void GC_profileFree (GC_state s, GC_profile p) {
 GC_profile GC_profileNew (GC_state s) {
 	GC_profile p;
 
-	NEW(p);
+	NEW (p);
 	p->total = 0;
-	ARRAY (p->count, s->sourcesSize);
+	p->totalGC = 0;
+	ARRAY (p->countTop, s->sourcesSize);
 	if (s->profileStack) {
+		ARRAY (p->countStack, s->sourcesSize);
+		ARRAY (p->countStackGC, s->sourcesSize);
 		ARRAY (p->lastTotal, s->sourcesSize);
+		ARRAY (p->lastTotalGC, s->sourcesSize);
 		ARRAY (p->stackCount, s->sourcesSize);
 	}
 	if (DEBUG_PROFILE)
@@ -2868,7 +2873,6 @@ GC_profile GC_profileNew (GC_state s) {
 
 static void writeString (int fd, string s) {
 	swrite (fd, s, strlen(s));
-	swrite (fd, "\n", 1);
 }
 
 static void writeUllong (int fd, ullong u) {
@@ -2885,16 +2889,34 @@ static void writeWord (int fd, word w) {
 	writeString (fd, buf);
 }
 
+static inline void newline (int fd) {
+	writeString (fd, "\n");
+}
+
 void GC_profileWrite (GC_state s, GC_profile p, int fd) {
 	int i;
 
-	writeString (fd, "MLton prof");
-	writeString (fd, (PROFILE_ALLOC == s->profileKind) ? "alloc" : "time");
-	writeString (fd, s->profileStack ? "cumulative" : "current");
+	writeString (fd, "MLton prof\n");
+	writeString (fd, (PROFILE_ALLOC == s->profileKind) 
+				? "alloc\n" : "time\n");
+	writeString (fd, s->profileStack 
+				? "stack\n" : "current\n");
 	writeWord (fd, s->magic);
-	writeUllong (fd, p->total + p->count[SOURCES_INDEX_GC]);
-	for (i = 0; i < s->sourcesSize; ++i)
-		writeUllong (fd, p->count[i]);
+	newline (fd);
+	writeUllong (fd, p->total);
+	writeString (fd, " ");
+	writeUllong (fd, p->totalGC);
+	newline (fd);
+	for (i = 0; i < s->sourcesSize; ++i) {
+		writeUllong (fd, p->countTop[i]);
+		if (s->profileStack) {
+			writeString (fd, " ");
+			writeUllong (fd, p->countStack[i]);
+			writeString (fd, " ");
+			writeUllong (fd, p->countStackGC[i]);
+		}
+		newline (fd);
+	}
 }
 
 #if (defined (__linux__) || defined (__FreeBSD__))
@@ -2923,10 +2945,13 @@ static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "pc = 0x%08x\n", (uint)pc);
 	if (CURRENT_SOURCE_UNDEFINED == s->currentSource) {
-		if (s->textStart <= pc and pc < s->textEnd)
+		if (s->textStart <= pc and pc < s->textEnd) {
 			s->currentSource = s->textSources [pc - s->textStart];
-		else
+		} else {
+			if (DEBUG_PROFILE)
+				fprintf (stderr, "pc out of bounds\n");
 		       	s->currentSource = SOURCE_SEQ_UNKNOWN;
+		}
 	}
 	MLton_Profile_inc (1);
 }
@@ -3445,7 +3470,6 @@ int GC_init (GC_state s, int argc, char **argv) {
 	char *worldFile;
 	int i;
 
-	s->amInGC = TRUE;
 	s->bytesAllocated = 0;
 	s->bytesCopied = 0;
 	s->bytesCopiedMinor = 0;
@@ -3454,6 +3478,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->cardSize = 0x1 << s->cardSizeLog2;
 	s->copyRatio = 4.0;
 	s->copyGenerationalRatio = 4.0;
+	s->currentSource = SOURCE_SEQ_GC;
 	s->currentThread = BOGUS_THREAD;
 	s->growRatio = 8.0;
 	s->inSignalHandler = FALSE;
@@ -3630,7 +3655,6 @@ int GC_init (GC_state s, int argc, char **argv) {
 		if (s->profilingIsOn and s->profileStack)
 			GC_foreachStackFrame (s, enterFrame);
 	}
-	s->amInGC = FALSE;
 	assert (mutatorInvariant (s));
 	return i;
 }

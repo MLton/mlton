@@ -75,6 +75,7 @@ enum {
 	POINTER_SIZE =		WORD_SIZE,
 	SOURCES_INDEX_UNKNOWN = 0,
 	SOURCES_INDEX_GC =	1,
+	SOURCE_SEQ_GC = 	1,
 	SOURCE_SEQ_UNKNOWN = 	0,
 	STACK_TYPE_INDEX =	0,
 	STRING_TYPE_INDEX = 	1,
@@ -207,15 +208,27 @@ typedef struct GC_sourceLabel {
 } *GC_profileLabel;
 
 /* GC_profile is used for both time and allocation profiling.
+ * In the comments below, "ticks" mean clock ticks with time profiling and
+ * bytes allocated with allocation profiling.
  */
 typedef struct GC_profile {
-	/* count is an array of length sourcesSize that counts for each function
-         * the number of bytes that have been allocated or the number of clock
-	 * ticks that have occurred while the function was on top of the stack.
-	 * If profileStack, then it is the number while the function was 
-	 * anywhere on the stack. 
+	/* countTop is an array of length sourcesSize that counts for each 
+	 * function the number of ticks that occurred while the function was on
+	 * top of the stack.
 	 */
-	ullong *count;
+	ullong *countTop;
+	/* countStack is an array of length sourcesSize that counts for each
+	 * function the ticks while the function was anywhere on the stack 
+	 * (only once, no matter how many times on the stack).  countStack is 
+	 * only used if profileStack.
+	 */
+	ullong *countStack;
+	/* countStackGC is an array of length sourcesSize that counts for each
+	 * function the ticks in GC while the function was anywhere on the stack
+	 * (only once, no matter how many times on the stack).  countStackGC is
+	 * only used if profileStack.
+	 */
+	ullong *countStackGC;
 	/* lastTotal is an array of length sourcesSize that for each function, 
 	 * f, stores the value of total when the oldest occurrence of f on the
          * stack was pushed, i.e., the most recent time that stackCount[f] was 
@@ -224,12 +237,17 @@ typedef struct GC_profile {
 	 * lastTotal is only used if profileStack.
 	 */
 	ullong *lastTotal;
+	/* lastTotalGC is like lastTotal, but for totalGC. */
+	ullong *lastTotalGC;
 	/* stackCount is an array of length sourcesSize that counts the number 
 	 * of times each function is on the stack.  It is only used if 
 	 * profileStack.
 	 */
  	uint *stackCount;
+	/* The total number of mutator ticks. */
 	ullong total;
+	/* The total number of GC ticks. */
+	ullong totalGC;
 } *GC_profile;
 
 /* ------------------------------------------------- */
@@ -272,7 +290,6 @@ typedef struct GC_state {
 	pointer stackTop;
 	pointer stackLimit;	/* stackBottom + stackSize - maxFrameSize */
 
-	bool amInGC;
 	pointer back;     	/* Points at next available word in toSpace. */
 	ullong bytesAllocated;
  	ullong bytesCopied;

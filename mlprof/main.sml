@@ -11,6 +11,8 @@ struct
 type int = Int.t
 type word = Word.t
 
+val sourcesIndexGC: int = 1
+
 structure GraphShow =
    struct
       datatype t = Above
@@ -81,21 +83,54 @@ structure Kind =
 
 structure Style =
    struct
-      datatype t = Cumulative | Current
+      datatype t = Current | Stack
 
       val toString =
-	 fn Cumulative => "Cumulative"
-	  | Current => "Current"
+	 fn Current => "Current"
+	  | Stack => "Stack"
 
       val layout = Layout.str o toString
    end
 
+structure Counts =
+   struct
+      datatype t =
+	 Current of IntInf.t vector
+       | Stack of {current: IntInf.t,
+		   stack: IntInf.t,
+		   stackGC: IntInf.t} vector
+
+      val layout =
+	 fn Current v => Vector.layout IntInf.layout v
+	  | Stack v =>
+	       Vector.layout
+	       (fn {current, stack, stackGC} =>
+		Layout.record [("current", IntInf.layout current),
+			       ("stack", IntInf.layout stack),
+			       ("stackGC", IntInf.layout stackGC)])
+	       v
+
+      fun merge (c: t, c': t): t =
+	 case (c, c') of
+	    (Current v, Current v') =>
+	       Current (Vector.map2 (v, v', IntInf.+))
+	  | (Stack v, Stack v') =>
+	       Stack (Vector.map2
+		      (v, v', fn ({current = c, stack = s, stackGC = g},
+				  {current = c', stack = s', stackGC = g'}) =>
+		       {current = IntInf.+ (c, c'),
+			stack = IntInf.+ (s, s'),
+			stackGC = IntInf.+ (g, g')}))
+	  | _ => die "cannot merge -profile-stack false with -profile-stack true"
+   end
+
 structure ProfFile =
    struct
-      datatype t = T of {counts: IntInf.t vector,
+      datatype t = T of {counts: Counts.t,
 			 kind: Kind.t,
 			 magic: word,
-			 total: IntInf.t}
+			 total: IntInf.t,
+			 totalGC: IntInf.t}
 
       local
 	 fun make f (T r) = f r
@@ -103,11 +138,12 @@ structure ProfFile =
 	 val kind = make #kind
       end
 
-      fun layout (T {counts, kind, magic, total}) =
+      fun layout (T {counts, kind, magic, total, totalGC}) =
 	 Layout.record [("kind", Kind.layout kind),
 			("magic", Word.layout magic),
 			("total", IntInf.layout total),
-			("counts", Vector.layout IntInf.layout counts)]
+			("totalGC", IntInf.layout totalGC),
+			("counts", Counts.layout counts)]
 
       fun new {mlmonfile: File.t}: t =
 	 File.withIn
@@ -125,36 +161,58 @@ structure ProfFile =
 		 | _ => die "invalid profile kind"
 	     val style =
 		case In.inputLine ins of
-		   "cumulative\n" => Style.Cumulative
-		 | "current\n" => Style.Current
+		   "current\n" => Style.Current
+		 | "stack\n" => Style.Stack
 		 | _ => die "invalid profile style"
 	     fun line () = String.dropSuffix (In.inputLine ins, 1)
 	     val magic = valOf (Word.fromString (line ()))
-	     val total = valOf (IntInf.fromString (line ()))
-	     fun loop ac =
-		case In.inputLine ins of
-		   "" => Vector.fromListRev ac
-		 | s => loop (valOf (IntInf.fromString s) :: ac)
-	     val counts = loop []
+	     val s2i = valOf o IntInf.fromString
+	     val (total, totalGC) =
+		case String.tokens (line (), Char.isSpace) of
+		   [total, totalGC] => (s2i total, s2i totalGC)
+		 | _ => die "invalid totals"
+	     fun getCounts (fromLine: string -> 'a): 'a vector =
+		let
+		   fun loop ac =
+		      case In.inputLine ins of
+			 "" => Vector.fromListRev ac
+		       | s => loop (fromLine s :: ac)
+		in
+		   loop []
+		end
+	     val counts =
+		case style of
+		   Style.Current => Counts.Current (getCounts s2i)
+		 | Style.Stack =>
+		      Counts.Stack
+		      (getCounts (fn s =>
+				  case String.tokens (s, Char.isSpace) of
+				     [c, s, sGC] =>
+					{current = s2i c,
+					 stack = s2i s,
+					 stackGC = s2i sGC}
+				   | _ => die (concat ["strange line: ", s])))
 	  in
 	     T {counts = counts,
 		kind = kind,
 		magic = magic,
-		total = total}
+		total = total,
+		totalGC = totalGC}
 	  end)
 
       val new =
 	 Trace.trace ("ProfFile.new", File.layout o #mlmonfile, layout) new
 
-      fun merge (T {counts = c, kind = k, magic = m, total = t},
-		 T {counts = c', magic = m', total = t', ...}): t =
+      fun merge (T {counts = c, kind = k, magic = m, total = t, totalGC = g},
+		 T {counts = c', magic = m', total = t', totalGC = g', ...}): t =
 	 if m <> m'
 	    then die "incompatible mlmon files"
 	 else
-	    T {counts = Vector.map2 (c, c', IntInf.+),
+	    T {counts = Counts.merge (c, c'),
 	       kind = k,
 	       magic = m,
-	       total = IntInf.+ (t, t')}
+	       total = IntInf.+ (t, t'),
+	       totalGC = IntInf.+ (g, g')}
    end
 
 structure Graph = DirectedGraph
@@ -165,62 +223,95 @@ in
 end
 
 fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
-	     ProfFile.T {counts, kind, total, ...}): unit =
+	     ProfFile.T {counts, kind, total, totalGC, ...}): unit =
    let
       val {get = nodeOptions: Node.t -> Dot.NodeOption.t list ref, ...} =
 	 Property.get (Node.plist, Property.initFun (fn _ => ref []))
       val graph = Graph.new ()
       val ticksPerSecond = 100.0
       val thresh = Real.fromInt (!thresh)
-      val totalReal = Real.fromIntInf total
-      val counts =
+      val totalReal = Real.fromIntInf (IntInf.+ (total, totalGC))
+      fun per (ticks: IntInf.t): real * string list =
+	 let
+	    val rticks = Real.fromIntInf ticks
+	    val per = 100.0 * rticks / totalReal
+	    val row =
+	       (concat [Real.format (per, Real.Format.fix (SOME 1)),
+			"%"])
+	       :: (if !raw
+		      then
+			 [concat
+			  (case kind of
+			      Kind.Alloc =>
+				 ["(", IntInf.toCommaString ticks, ")"]
+			    | Kind.Time =>
+				 ["(",
+				  Real.format
+				  (rticks / ticksPerSecond,
+				   Real.Format.fix (SOME 2)),
+				  "s)"])]
+		   else [])
+	 in
+	    (per, row)
+	 end
+      val profileStack =
+	 case counts of
+	    Counts.Current _ => false
+	  | Counts.Stack _ => true
+      fun doit (v, f) =
 	 Vector.mapi
-	 (counts, fn (i, ticks) =>
+	 (v, fn (i, x) =>
 	  let
-	     val rticks = Real.fromIntInf ticks
-	     val per = 100.0 * rticks / totalReal
-	     val aboveThresh = per >= thresh
+	     val {per, row} = f x
+	     val showInTable =
+		(per > 0.0 andalso per >= thresh)
+		orelse (not profileStack andalso i = sourcesIndexGC)
 	     val name = Vector.sub (sources, i)
-	     val row =
-		(concat [Real.format (per, Real.Format.fix (SOME 2)),
-			 "%"])
-		:: (if !raw
-		       then
-			  [concat
-			   (case kind of
-			       Kind.Alloc =>
-				  ["(", IntInf.toCommaString ticks, ")"]
-			     | Kind.Time =>
-				  ["(",
-				   Real.format
-				   (rticks / ticksPerSecond,
-				    Real.Format.fix (SOME 2)),
-				   "s)"])]
-		    else [])
 	     val node =
-		if (case !graphShow of
-		       GraphShow.Above => aboveThresh)
-		   andalso (not (name = "<unknown>")
-			    orelse IntInf.> (ticks, IntInf.zero))
+		if (not profileStack orelse i <> sourcesIndexGC)
+		   andalso (case !graphShow of
+			       GraphShow.Above => per >= thresh)
+		   andalso per > 0.0
 		   then
 		      let
 			 val node = Graph.newNode graph
+			 val no = nodeOptions node
 			 val _ = 
 			    List.push
-			    (nodeOptions node,
+			    (no,
 			     Dot.NodeOption.Label
 			     [(name, Dot.Center),
 			      (concat (List.separate (row, " ")), Dot.Center)])
+			 val _ =
+			    List.push (no, Dot.NodeOption.Shape Dot.Box)
 		      in
 			 SOME node
 		      end
 		else NONE
 	  in
-	     {aboveThresh = aboveThresh,
-	      node = node,
+	     {node = node,
+	      per = per,
 	      row = name :: row,
-	      ticks = ticks}
+	      showInTable = showInTable}
 	  end)
+      val counts =
+	 case counts of
+	    Counts.Current v =>
+	       doit (v, fn i =>
+		     let
+			val (per, row) = per i
+		     in
+			{per = per, row = row}
+		     end)
+	  | Counts.Stack v =>
+	       doit (v, fn {current, stack, stackGC} =>
+		     let
+			val (_, cr) = per current
+			val (sp, sr) = per stack
+			val (_, gr) = per stackGC
+		     in
+			{per = sp, row = List.concat [cr, sr, gr]}
+		     end)
       val _ =
 	 Vector.mapi
 	 (counts,
@@ -249,28 +340,48 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 				     options = [],
 				     title = "call-stack graph"}),
 	   out))
-      val counts = Vector.keepAll (counts, #aboveThresh)
-      val counts =
+      val tableRows =
 	 QuickSort.sortVector
-	 (counts, fn ({ticks = t1, ...}, {ticks = t2, ...}) =>
-	  IntInf.>= (t1, t2))
+	 (Vector.keepAll (counts, #showInTable),
+	  fn ({per = p, ...}, {per = p', ...}) => p >= p')
       val _ = 
 	 print
 	 (concat
 	  (case kind of
-	      Kind.Alloc => [IntInf.toCommaString total, " bytes allocated\n"]
-	    | Kind.Time => 
-		 [Real.format (totalReal / ticksPerSecond, 
-			       Real.Format.fix (SOME 2)),
-		  " seconds of CPU time\n"]))
+	      Kind.Alloc =>
+		 [IntInf.toCommaString total, " bytes allocated (",
+		  IntInf.toCommaString totalGC, " bytes by GC)\n"]
+	    | Kind.Time =>
+		 let
+		    fun t2s i = 
+		       Real.format (Real.fromIntInf i / ticksPerSecond, 
+				    Real.Format.fix (SOME 2))
+		 in
+		    [t2s total, " seconds of CPU time (",
+		     t2s totalGC, " seconds GC)\n"]
+		 end))
+      val columnHeads =
+	 "function"
+	 :: let
+	       val pers =
+		  if profileStack
+		     then ["cur", "stack", "GC"]
+		  else ["cur"]
+	    in
+	       if !raw
+		  then List.concatMap (pers, fn p => [p, "raw"])
+	       else pers
+	    end
+      val cols =
+	 (if profileStack then 3 else 1) * (if !raw then 2 else 1)
       val _ =
 	 let
 	    open Justify
 	 in
 	    outputTable
-	    (table {justs = Left :: List.duplicate (if !raw then 2 else 1,
-					            fn () => Right),
-		    rows = Vector.toListMap (counts, #row)},
+	    (table {columnHeads = SOME columnHeads,
+		    justs = Left :: List.duplicate (cols, fn () => Right),
+		    rows = Vector.toListMap (tableRows, #row)},
 	     Out.standard)
 	 end
    in

@@ -26,7 +26,9 @@ structure InfoNode =
       fun equals (n: t, n': t): bool = index n = index n'
 
       fun call {from = T {successors, ...}, to as T {info, ...}} =
-	 if SourceInfo.equals (info, SourceInfo.unknown)
+	 if SourceInfo.equals (info, SourceInfo.gc)
+	    orelse SourceInfo.equals (info, SourceInfo.main)
+	    orelse SourceInfo.equals (info, SourceInfo.unknown)
 	    orelse List.exists (!successors, fn n => equals (n, to))
 	    then ()
 	 else List.push (successors, to)
@@ -153,8 +155,10 @@ fun profile program =
 	    end
 	 fun makeSourceSeqs () = Vector.fromListRev (!sourceSeqs)
       end
-      (* Ensure that SourceInfo unknown is index 0. *)
+      (* Ensure that [SourceInfo.unknown] is index 0. *)
       val unknownSourceSeq = sourceSeqIndex' [sourceInfoIndex SourceInfo.unknown]
+      (* Ensure that [SourceInfo.gc] is index 1. *)
+      val gcSourceSeq = sourceSeqIndex' [sourceInfoIndex SourceInfo.gc]
       (* Treat the empty source sequence as unknown. *)
       val sourceSeqIndex =
 	 fn [] => unknownSourceSeq
@@ -558,11 +562,13 @@ fun profile program =
 				 if needsCurrentSource func
 				    then
 				       let
+					  val name = CFunction.name func
 					  val si =
-					     SourceInfo.fromString
-					     (concat ["<",
-						      CFunction.name func,
-						      ">"])
+					     if name = "GC_gc"
+						then SourceInfo.gc
+					     else
+						SourceInfo.fromString
+						(concat ["<", name, ">"])
 					  val set =
 					     setCurrentSource
 					     (sourceSeqIndex
