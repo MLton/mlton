@@ -646,7 +646,7 @@ fun remove (Program.T {datatypes, globals, functions, main})
 
       (* Analysis is done,  Now build the resulting program. *)
       val datatypes
-	= Vector.keepAllMap
+	= Vector.map
 	  (datatypes, fn Datatype.T {tycon, cons} =>
 	   let
 	     val r: Exp.t option ref = ref NONE
@@ -690,10 +690,17 @@ fun remove (Program.T {datatypes, globals, functions, main})
 		  end)
 	     val num = Vector.length cons
 	     val _ = TyconInfo.numCons' (tyconInfo tycon) := num
+	     (* If there are no constructors used, we still need to keep around
+	      * the type, which may appear in places.  Do so with a single
+	      * bogus nullary constructor.
+	      *)
+	     val cons =
+		if 0 = num
+		   then Vector.new1 {args = Vector.new0 (),
+				     con = Con.newNoname ()}
+		else cons
 	   in
-	     if num = 0
-	       then NONE
-	       else SOME (Datatype.T {tycon = tycon, cons = cons})
+	      Datatype.T {tycon = tycon, cons = cons}
 	   end)
 
       fun getWrapperLabel (l: Label.t,
