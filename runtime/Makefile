@@ -302,7 +302,7 @@ DEBUG_OBJS =					\
 %.o: %.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: gmp libmlton.a libmlton-gdb.a
+all: libmlton.a libmlton-gdb.a
 
 libmlton.a: $(OBJS) 
 	$(AR) libmlton.a $(OBJS)
@@ -310,31 +310,11 @@ libmlton.a: $(OBJS)
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
 
-gmp.h: gmp
-
-.PHONY: gmp
-gmp:
-	{ [ gmp.h -nt gmp-2.0.2.tgz ]						\
-		&& [ libgmp.a -nt gmp-2.0.2.tgz ]; } || {			\
-			rm -rf gmp.h libgmp.a gmp-stuff &&			\
-			mkdir gmp-stuff gmp-stuff/info &&			\
-			echo '!@File: dir,#Node: Top' | tr '!@#' '\037\n\t' > gmp-stuff/info/dir &&	\
-			{ [ -d gmp-2.0.2 ] ||					\
-				zcat <gmp-2.0.2.tgz | tar xf -; } &&		\
-				cd gmp-2.0.2 &&					\
-				./configure --prefix=`pwd`/../gmp-stuff &&	\
-				make CFLAGS=-O install distclean &&		\
-				cd .. &&					\
-				rm -rf gmp-2.0.2 &&				\
-				mv gmp-stuff/include/gmp.h . &&			\
-				mv gmp-stuff/lib/libgmp.a .;			\
-	}
-
 .PHONY: clean
 clean:
 	../bin/clean
 
 .PHONY: depend
-depend: gmp.h
+depend:
 	makedepend -f- -- $(CFLAGS) -- $(SRCS)
 

@@ -6,8 +6,7 @@ SRC = $(ROOT)/src
 COMP = $(SRC)/mlton
 RUN = $(SRC)/runtime
 MLTON = $(BIN)/mlton
-RUNTIME = $(LIB)/libmlton.a $(LIB)/libmlton-gdb.a $(LIB)/libgmp.a \
-	$(INC)/mlton.h
+RUNTIME = $(LIB)/libmlton.a $(LIB)/libmlton-gdb.a $(INC)/mlton.h
 AOUT = mlton-compile
 LEX = mllex
 PROF = mlprof
@@ -59,10 +58,7 @@ $(LIB)/libmlton.a: $(RUN)/libmlton.a
 $(LIB)/libmlton-gdb.a: $(RUN)/libmlton-gdb.a
 	$(CP) $(RUN)/libmlton-gdb.a $(LIB)
 
-$(LIB)/libgmp.a: $(RUN)/libgmp.a
-	$(CP) $(RUN)/libgmp.a $(LIB)
-
-$(RUN)/libmlton.a $(RUN)/libmlton-gdb.a $(RUN)/libgmp.a:
+$(RUN)/libmlton.a $(RUN)/libmlton-gdb.a:
 	@echo 'Compiling MLton runtime system'
 	cd runtime && $(MAKE)
 

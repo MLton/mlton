@@ -2,6 +2,7 @@ Here are the changes from version 20011006 to version VERSION.
 
 * 2002-02-03
   - Added MLton.IntInf.gcd.
+  - Removed gmp from MLton sources.  We now link with /usr/lib/gmp.a.
 
 * 2002-01-26
   - Added -show-basis-used, which prints out the parts of the basis library 
