@@ -64,6 +64,13 @@ structure Real = Real64
 
 (* datatype ref = datatype ref *)
 
+structure String =
+   struct
+      type string = char vector
+   end
+
+type string = String.string
+
 type preThread = preThread
 type thread = thread
 
@@ -88,7 +95,7 @@ structure LargeWord = Word64
 
 type 'a vector = 'a vector
 type 'a weak = 'a weak
-type string = char vector
+
 type nullString = string
 
 type int = Int.int
