@@ -2720,6 +2720,8 @@ static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 					uintToCommaString (size));
 			h->start = new;
 			h->size = size;
+			if (h->size > s->maxHeapSizeSeen)
+				s->maxHeapSizeSeen = h->size;
 			assert (minSize <= h->size and h->size <= desired);
 			return TRUE;
 		}
