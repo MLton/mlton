@@ -310,7 +310,7 @@ fun makeOptions {usage} =
 	intRef textIOBufSize),
        (Expert, "type-check", " {false|true}", "type check ILs",
 	boolRef typeCheck),
-       (Normal, "v", "{|0|1|2|3}", "version number or verbosity",
+       (Normal, "v", "{|0|1|2|3}", "verbosity (also version number)"
 	String
 	(fn s =>
 	 verbosity := (case s of
