@@ -2155,28 +2155,28 @@ fun elaborateDec (d, {env = E,
 			    then ()
 			 else
 			    Vector.foreachi
-			    (es', fn (i, e) =>
+			    (es', fn (i, e') =>
 			     if i = last
 				then ()
 			     else
 				let
-				   fun error _ =
+				   fun error (l, _) =
 				      let
 					 val e = Vector.sub (es, i)
 					 open Layout
 				      in
-					 Control.warning
+					 Control.error
 					 (Aexp.region e,
 					  str "sequence expression not of type unit",
-					  seq [str "in: ",
-					       approximate (Aexp.layout e)])
+					  align [seq [str "type: ", l],
+						 seq [str "in: ",
+						      approximate (Aexp.layout e)]])
 				      end
 				in
-				   Type.unify (Cexp.ty e, Type.unit,
+				   Type.unify (Cexp.ty e', Type.unit,
 					       {error = error,
 						preError = preError})
 				end)
-
 		   in
 		      Cexp.make (Cexp.Seq es', Cexp.ty (Vector.sub (es', last)))
 		   end
