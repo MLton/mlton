@@ -28,6 +28,8 @@ signature MLTON_SIGNAL =
 	    val default: t
 	    val handler: (unit Thread.t -> unit Thread.t) -> t
 	    val ignore: t
+	    val isDefault: t -> bool
+	    val isIgnore: t -> bool
 	 end
 
       val getHandler: t -> Handler.t
