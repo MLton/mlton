@@ -19,13 +19,15 @@ signature REAL =
 
       type t
       exception Input
-      val * : t * t -> t
       val + : t * t -> t
+      val - : t * t -> t
+      val * : t * t -> t
       val / : t * t -> t
       val < : t * t -> bool
       val <= : t * t -> bool
       val > : t * t -> bool
       val >= : t * t -> bool
+      val abs: t -> t
       val acos: t -> t
       val add1: t -> t
       val asin: t -> t
