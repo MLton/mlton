@@ -187,6 +187,27 @@ structure Spine:
 val {get = tyvarTime: Tyvar.t -> Time.t ref, ...} =
    Property.get (Tyvar.plist, Property.initFun (fn _ => ref (Time.now ())))
 
+local
+   type z = Layout.t * {isChar: bool, needsParen: bool}
+   open Layout
+in
+   fun simple (l: Layout.t): z =
+      (l, {isChar = false, needsParen = false})
+   val dontCare: z = simple (str "_")
+   fun layoutRecord (ds: (Field.t * z) list) =
+      simple (seq [str "{",
+		   mayAlign
+		   (separateRight
+		    (List.map
+		     (QuickSort.sortList (ds, fn ((f, _), (f', _)) =>
+					  Field.<= (f, f')),
+		      fn (f, (l, _)) => seq [Field.layout f, str ": ", l]),
+		     ",")),
+		   str ", ...}"])
+   fun layoutTuple (zs: z vector): z =
+      Tycon.layoutApp (Tycon.tuple, zs)
+end
+
 structure Type =
    struct
       (* Tuples of length <> 1 are always represented as records.
@@ -327,69 +348,36 @@ structure Type =
 
       fun layoutPretty (t: t): Layout.t =
 	 let
-	    open Layout
-	    fun recordType (l: (Layout.t * (bool * Layout.t)) list)
-	       : bool * Layout.t =
-	       (false,
-		seq [str "{",
-		     mayAlign (separateRight
-			       (List.map (l, fn (f, (_, t)) =>
-					  seq [f, str ": ", t]),
-				",")),
-		     str "}"])
-	    fun maybeParen (b, t) = if b then paren t else t
-	    fun con (_, c, ts) =
-	       let
-		  val c' = str (Tycon.originalName c)
-		  fun t n = maybeParen (Vector.sub (ts, n))
-	       in
-		  case Vector.length ts of
-		     0 => (false, c')
-		   | 1 => (false, seq [t 0, str " ", c'])
-		   | _ => 
-			if Tycon.equals (c, Tycon.arrow)
-			   then (true, mayAlign [t 0, seq [str "-> ", t 1]])
-			else (true, seq [Vector.layout #2 ts,
-					 str " ", c'])
-	       end
-	    fun int _ = (false, str "int")
+	    val str = Layout.str
+	    fun maybeParen (b, t) = if b then Layout.paren t else t
+	    fun con (_, c, ts) = Tycon.layoutApp (c, ts)
+	    fun int _ = simple (str "int")
 	    fun flexRecord (_, {fields, spine, time}) =
-	       recordType
+	       layoutRecord
 	       (List.fold
 		(fields,
 		 Spine.foldOverNew (spine, fields, [], fn (f, ac) =>
-				    (Field.layout f, (false, str "unit"))
+				    (f, simple (str "unit"))
 				    :: ac),
-		 fn ((f, t), ac) => (Field.layout f, t) :: ac))
+		 fn ((f, t), ac) => (f, t) :: ac))
 	    fun genFlexRecord (_, {extra, fields, spine}) =
-	       recordType
+	       layoutRecord
 	       (List.fold
 		(fields,
 		 List.revMap (extra (), fn {field, tyvar} =>
-			      (Field.layout field, (false, Tyvar.layout tyvar))),
-		 fn ((f, t), ac) =>
-		 (Field.layout f, t) :: ac))
-	    fun real _ = (false, str "real")
+			      (field, simple (Tyvar.layout tyvar))),
+		 fn ((f, t), ac) => (f, t) :: ac))
+	    fun real _ = simple (str "real")
 	    fun record (_, r) =
-	       (false,
-		Srecord.layout
-		{record = r,
-		 separator = ": ",
-		 extra = "",
-		 layoutTuple = (fn ts =>
-				if 0 = Vector.length ts
-				   then str "unit"
-				else
-				   paren (seq (separate (Vector.toListMap
-							 (ts, maybeParen),
-							 " * ")))),
-		 layoutElt = #2})
-	    fun recursive _ = (false, str "<recur>")
-	    fun unknown (_, u) = (false, str "???")
-	    fun var (_, a) = (false, Tyvar.layout a)
-	    fun word _ = (false, str "word")
+	       case Srecord.detupleOpt r of
+		  NONE => layoutRecord (Vector.toList (Srecord.toVector r))
+		| SOME ts => Tycon.layoutApp (Tycon.tuple, ts)
+	    fun recursive _ = simple (str "<recur>")
+	    fun unknown (_, u) = simple (str "???")
+	    fun var (_, a) = simple (Tyvar.layout a)
+	    fun word _ = simple (str "word")
 	 in
-	    #2 (hom (t, {con = con,
+	    #1 (hom (t, {con = con,
 			 flexRecord = flexRecord,
 			 genFlexRecord = genFlexRecord,
 			 int = int,
@@ -454,48 +442,33 @@ structure Ops = TypeOps (structure IntSize = IntSize
 			 structure WordSize = WordSize
 			 open Type)
 
-local
-   open Layout
-in
-   val unusual =
-      [(Tycon.arrow, "(_ -> _)")]
-   fun layoutTycon (c: Tycon.t, arity: int): Layout.t =
-      case List.peek (unusual, fn (c', _) => Tycon.equals (c, c')) of
-	 NONE => if arity = 0
-		    then Tycon.layout c
-		 else seq [str "_ ", Tycon.layout c]
-       | SOME (_, s) => str s
-   val dontCare = str "_"
-   fun layoutRecord (ds: (Field.t * Layout.t) list) =
-      seq [str "{",
-	   seq (separate
-		(List.map
-		 (QuickSort.sortList (ds, fn ((f, _), (f', _)) =>
-				      Field.<= (f, f')),
-		  fn (f, l) => seq [Field.layout f, str " = ", l]),
-		 ", ")),
-	   str ", ...}"]
-   fun layoutTuple (ls: Layout.t vector) =
-      paren (seq (separate (Vector.toList ls, " * ")))
-   fun layoutTopLevel t =
-      let
-	 datatype z = datatype Type.ty
-      in
-	 case t of
-	    Con (c, ts) => layoutTycon (c, Vector.length ts)
-	  | FlexRecord _ => str "{_}"
-	  | GenFlexRecord _ => str "{_}"
-	  | Int => str "int"
-	  | Real => str "real"
-	  | Record r =>
-	       (case Srecord.detupleOpt r of
-		   NONE => str "{_}"
-		 | SOME ts => layoutTuple (Vector.map (ts, fn _ => dontCare)))
-	  | Unknown _ => Error.bug "layoutTopLevel Unknown"
-	  | Var a => Tyvar.layout a
-	  | Word => str "word"
-      end
-end
+fun layoutTopLevel (t: Type.ty) =
+   let
+      val str = Layout.str
+      datatype z = datatype Type.ty
+   in
+      case t of
+	 Con (c, ts) =>
+	    Tycon.layoutApp
+	    (c, Vector.map (ts, fn t =>
+			    if (case Type.toType t of
+				   Con (c, _) => Tycon.equals (c, Tycon.char)
+				 | _ => false)
+			       then (str "_", {isChar = true,
+					       needsParen = false})
+			    else dontCare))
+       | FlexRecord _ => simple (str "{_}")
+       | GenFlexRecord _ => simple (str "{_}")
+       | Int => simple (str "int")
+       | Real => simple (str "real")
+       | Record r =>
+	    (case Srecord.detupleOpt r of
+		NONE => simple (str "{_}")
+	      | SOME ts => layoutTuple (Vector.map (ts, fn _ => dontCare)))
+       | Unknown _ => Error.bug "layoutTopLevel Unknown"
+       | Var a => simple (Tyvar.layout a)
+       | Word => simple (str "word")
+   end
    
 structure Type =
    struct
@@ -583,10 +556,15 @@ structure Type =
 	    ()
 	 end
 
+      structure Lay =
+	 struct
+	    type t = Layout.t * {isChar: bool, needsParen: bool}
+	 end
+      
       structure UnifyResult =
 	 struct
 	    datatype t =
-	       NotUnifiable of Layout.t * Layout.t
+	       NotUnifiable of Lay.t * Lay.t
 	     | Unified
 
 	    val layout =
@@ -598,11 +576,11 @@ structure Type =
 	       end
 	 end
 
-      datatype unifyResult = datatype UnifyResult.t
-	 
+      datatype z = datatype UnifyResult.t
+
       val traceUnify = Trace.trace2 ("unify", layout, layout, UnifyResult.layout)
 
-      fun unify (t, t'): unifyResult =
+      fun unify (t, t'): UnifyResult.t =
 	 let
 	    fun unify arg =
 	       traceUnify
@@ -611,7 +589,7 @@ structure Type =
 		   then Unified
 		else
 		   let
-		      fun notUnifiable (l, l') =
+		      fun notUnifiable (l: Lay.t, l': Lay.t) =
 			 (NotUnifiable (l, l'),
 			  Unknown (Unknown.new {canGeneralize = true,
 						equality = true}))
@@ -669,7 +647,7 @@ structure Type =
 			 notUnifiable (layoutTopLevel t, layoutTopLevel t')
 		      fun conAnd (c, ts, t, t') =
 			 let
-			    fun lay () = layoutTycon (c, Vector.length ts)
+			    fun lay () = layoutTopLevel (Con (c, ts))
 			 in
 			    case t of
 			       Con (c', ts') =>
@@ -679,13 +657,14 @@ structure Type =
 					   then
 					      let
 						 fun lay ts =
-						    Layout.seq
-						    [Layout.str
-						     (concat ["<",
-							      Int.toString
-							      (Vector.length ts),
-							      " args> "]),
-						     Tycon.layout c]
+						    simple
+						    (Layout.seq
+						     [Layout.str
+						      (concat ["<",
+							       Int.toString
+							       (Vector.length ts),
+							       " args> "]),
+						      Tycon.layout c])
 					      in
 						 notUnifiable (lay ts, lay ts')
 					      end
@@ -711,22 +690,7 @@ structure Type =
 							  | NotUnifiable (l, l') =>
 							       (l, l')))
 						    fun lay ls =
-						       let
-							  open Layout
-						       in
-							  if Tycon.equals (c, Tycon.arrow)
-							     then
-								paren
-								(seq [Vector.sub (ls, 0),
-								      str " -> ",
-								      Vector.sub (ls, 1)])
-							  else
-							     seq
-							     [tuple
-							      (Vector.toList ls),
-							      str " ",
-							      Tycon.layout c]
-						       end
+						       Tycon.layoutApp (c, ls)
 						 in
 						    notUnifiable (lay ls,
 								  lay ls')
@@ -899,6 +863,29 @@ structure Type =
 	    unify (t, t')
 	 end
 
+      structure UnifyResult' =
+	 struct
+	    datatype t =
+	       NotUnifiable of Layout.t * Layout.t
+	     | Unified
+
+	    val layout =
+	       let
+		  open Layout
+	       in
+		  fn NotUnifiable _ => str "NotUnifiable"
+		   | Unified => str "Unified"
+	       end
+	 end
+
+      datatype unifyResult = datatype UnifyResult'.t
+
+      val unify =
+	 fn (t, t') =>
+	 case unify (t, t') of
+	    UnifyResult.NotUnifiable ((l, _), (l', _)) => NotUnifiable (l, l')
+	  | UnifyResult.Unified => Unified
+
       val word8 = word WordSize.W8
 	 
       fun 'a simpleHom {con: t * Tycon.t * 'a vector -> 'a,
@@ -958,7 +945,7 @@ structure Type =
 	 end
    end
 
-structure InferScheme =
+structure Scheme =
    struct
       datatype t =
 	 General of {bound: unit -> Tyvar.t vector,
@@ -1172,7 +1159,7 @@ structure InferScheme =
 
 fun close (ensure: Tyvar.t vector, region)
    : Type.t vector -> {bound: unit -> Tyvar.t vector,
-		       schemes: InferScheme.t vector} =
+		       schemes: Scheme.t vector} =
    let
       val genTime = Time.tick ()
       val _ = Vector.foreach (ensure, fn a => (tyvarTime a; ()))
@@ -1271,11 +1258,11 @@ fun close (ensure: Tyvar.t vector, region)
 	 val schemes =
 	    Vector.map
 	    (tys, fn ty =>
-	     InferScheme.General {bound = bound,
-				  canGeneralize = true,
-				  flexes = flexes,
-				  tyvars = Vector.fromList tyvars,
-				  ty = ty})
+	     Scheme.General {bound = bound,
+			     canGeneralize = true,
+			     flexes = flexes,
+			     tyvars = Vector.fromList tyvars,
+			     ty = ty})
       in
 	 {bound = bound,
 	  schemes = schemes}

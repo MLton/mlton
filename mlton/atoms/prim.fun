@@ -45,12 +45,6 @@ structure Name =
        | Array_toVector (* backend *)
        | Array_update (* backend *)
        | C_CS_charArrayToWord8Array (* type inference *)
-       | Char_chr (* type inference *)
-       | Char_ge (* type inference *)
-       | Char_gt (* type inference *)
-       | Char_le (* type inference *)
-       | Char_lt (* type inference *)
-       | Char_ord (* type inference *)
        | Char_toWord8 (* type inference *)
        | Cpointer_isNull (* codegen *)
        | Exn_extra (* implement exceptions *)
@@ -341,12 +335,6 @@ structure Name =
 	  (Array_update, SideEffect, "Array_update"),
 	  (C_CS_charArrayToWord8Array, DependsOnState,
 	   "C_CS_charArrayToWord8Array"),
-	  (Char_chr, Functional, "Char_chr"),
-	  (Char_ge, Functional, "Char_ge"),
-	  (Char_gt, Functional, "Char_gt"),
-	  (Char_le, Functional, "Char_le"),
-	  (Char_lt, Functional, "Char_lt"),
-	  (Char_ord, Functional, "Char_ord"),
 	  (Char_toWord8, Functional, "Char_toWord8"),
 	  (Cpointer_isNull, Functional, "Cpointer_isNull"),
 	  (Exn_extra, Functional, "Exn_extra"),
@@ -1183,13 +1171,7 @@ fun layoutApp (p: t, args: 'a vector, layoutArg: 'a -> Layout.t): Layout.t =
       datatype z = datatype Name.t
    in
       case name p of
-	 Char_lt => two "<"
-       | Char_le => two "<="
-       | Char_gt => two ">"
-       | Char_ge => two ">="
-       | Char_chr => one "chr"
-       | Char_ord => one "ord"
-       | Int_mul _ => two "*?"
+	 Int_mul _ => two "*?"
        | Int_mulCheck _ => two "*"
        | Int_add _ => two "+?"
        | Int_addCheck _ => two "+"

@@ -174,12 +174,12 @@ structure Primitive =
 
       structure Char =
 	 struct
-	    val op < = _prim "Char_lt": char * char -> bool;
-	    val op <= = _prim "Char_le": char * char -> bool;
-	    val op > = _prim "Char_gt": char * char -> bool;
-	    val op >= = _prim "Char_ge": char * char -> bool;
-	    val chr = _prim "Char_chr": int -> char;
-	    val ord = _prim "Char_ord": char -> int;
+	    val op < = _prim "Word8_lt": char * char -> bool;
+	    val op <= = _prim "Word8_le": char * char -> bool;
+	    val op > = _prim "Word8_gt": char * char -> bool;
+	    val op >= = _prim "Word8_ge": char * char -> bool;
+	    val chr = _prim "Int32_toWord8": int -> char;
+	    val ord = _prim "Word8_toInt32": char -> int;
 	    val toWord8 = _prim "Char_toWord8": char -> Word8.word;
 	 end
 

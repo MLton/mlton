@@ -155,7 +155,7 @@ fun parseAndElaborateFiles (fs: File.t list, E: Env.t, lookupConstant): Decs.t =
 
 local
    structure Con = TypeEnv.Con
-   structure Scheme = TypeEnv.InferScheme
+   structure Scheme = TypeEnv.Scheme
    structure Tycon = TypeEnv.Tycon
    structure Type = TypeEnv.Type
    structure Tyvar = TypeEnv.Tyvar
@@ -212,7 +212,7 @@ in
 	 open Env 
 
 	 structure Type = TypeEnv.Type
-	 structure Scheme = TypeEnv.InferScheme
+	 structure Scheme = TypeEnv.Scheme
 
 	 fun addPrim (E: t): unit =
 	    let

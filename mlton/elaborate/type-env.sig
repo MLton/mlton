@@ -47,7 +47,7 @@ signature TYPE_ENV =
       sharing type Type.realSize = RealSize.t
       sharing type Type.wordSize = WordSize.t
       sharing type Type.tycon = Tycon.t
-      structure InferScheme:
+      structure Scheme:
 	 sig
 	    type t
 
@@ -75,7 +75,7 @@ signature TYPE_ENV =
 	 Tyvar.t vector * Region.t
 	 -> Type.t vector
 	 -> {bound: unit -> Tyvar.t vector,
-	     schemes: InferScheme.t vector}
+	     schemes: Scheme.t vector}
       val closeTop: Region.t -> unit
    end
 

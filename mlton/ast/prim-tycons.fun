@@ -113,20 +113,47 @@ in
    val isWordX = is [word8, word16, word32, word64]
 end
 
-fun layoutApp (c, ts) =
+fun layoutApp (c: t,
+	       args: (Layout.t * {isChar: bool, needsParen: bool}) vector) =
    let
-      val tuple' = tuple
-      open Layout
+      local
+	 open Layout
+      in
+	 val mayAlign = mayAlign
+	 val seq = seq
+	 val str = str
+      end
+      fun maybe (l, {isChar, needsParen}) =
+	 if needsParen
+	    then Layout.paren l
+	 else l
+      fun normal () =
+	 let
+	    val ({isChar}, lay) =
+	       case Vector.length args of
+		  0 => ({isChar = equals (c, char)}, layout c)
+		| 1 => ({isChar = false},
+			seq [maybe (Vector.sub (args, 0)), str " ", layout c])
+		| _ => ({isChar = false},
+			seq [Layout.tuple (Vector.toListMap (args, maybe)),
+			     str " ", layout c])
+	 in
+	    (lay, {isChar = isChar, needsParen = false})
+	 end
    in
       if equals (c, arrow)
-	 then seq [Vector.sub (ts, 0), str " -> ", Vector.sub (ts, 1)]
-      else if equals (c, tuple')
-	      then tuple (Vector.toList ts)
-	   else
-	      case Vector.length ts of
-		 0 => layout c
-	       | 1 => seq [Vector.sub (ts, 0), str " ", layout c]
-	       | _ => seq [tuple (Vector.toList ts), str " ", layout c]
+	 then (mayAlign [maybe (Vector.sub (args, 0)),
+			 seq [str "-> ", maybe (Vector.sub (args, 1))]],
+	       {isChar = false, needsParen = true})
+      else if equals (c, tuple)
+         then (mayAlign (Layout.separateLeft (Vector.toListMap (args, maybe),
+					      " * ")),
+	       {isChar = false, needsParen = true})
+      else if equals (c, vector)
+         then if #isChar (#2 (Vector.sub (args, 0)))
+		 then (str "string", {isChar = false, needsParen = false})
+	      else normal ()
+      else normal ()
    end
 
 end

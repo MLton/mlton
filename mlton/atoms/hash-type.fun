@@ -86,25 +86,21 @@ structure Type =
 	 in res
 	 end
 
+      fun equals (t, t'): bool = PropertyList.equals (plist t, plist t')
+		      
+      fun isChar t =
+	 case deConOpt t of
+	    NONE => false
+	  | SOME (c, _) => Tycon.equals (c, Tycon.char)
+	 
       fun layout (ty: t): Layout.t =
-	 hom {con = Tycon.layoutApp,
-	      ty = ty,
-	      var = Tyvar.layout}
+	 #1 (hom {con = Tycon.layoutApp,
+		  ty = ty,
+		  var = fn a => (Tyvar.layout a, {isChar = false,
+						  needsParen = false})})
 
       val toString = Layout.toString o layout
 	 
-      (* 	let open Layout
-       * n
-       *   case tree of
-       *      Var a => Tyvar.layout a
-       *    | Con (c, ts) => seq [Tycon.layout c, tuple (List.map (ts, layout))]
-       * nd 
-       *)
-      fun equals (t, t'): bool = PropertyList.equals (plist t, plist t')
-
-      val equals =
-	 Trace.trace2 ("Type.equals", layout, layout, Bool.layout) equals 
-
       local
 	 val same: tree * tree -> bool =
 	    fn (Var a, Var a') => Tyvar.equals (a, a')

@@ -47,7 +47,7 @@ structure Kind = TypeStr.Kind
 local
    open TypeEnv
 in
-   structure Scheme = InferScheme
+   structure Scheme = Scheme
    structure Type = Type
 end
 
@@ -1485,7 +1485,7 @@ fun elaborateDec (d, {env = E,
 			 unify (Cexp.ty e1, Type.arrow (argType, resultType),
 				fn (l, _) =>
 				(region,
-				 str "attempt to apply non-function",
+				 str "function not of arrow type",
 				 seq [str "function: ", l]))
 		      val _ =
 			 unify

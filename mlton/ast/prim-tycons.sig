@@ -42,7 +42,9 @@ signature PRIM_TYCONS =
       val isIntX: tycon -> bool
       val isRealX: tycon -> bool
       val isWordX: tycon -> bool
-      val layoutApp: tycon * Layout.t vector -> Layout.t
+      val layoutApp:
+	 tycon * (Layout.t * {isChar: bool, needsParen: bool}) vector
+	 -> Layout.t * {isChar: bool, needsParen: bool}
       val list: tycon
       val pointer: tycon
       val preThread: tycon

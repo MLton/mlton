@@ -37,7 +37,7 @@ end
 local
    open TypeEnv
 in
-   structure Scheme = InferScheme
+   structure Scheme = Scheme
    structure Type = Type
 end
 
@@ -47,7 +47,8 @@ structure Scheme =
    struct
       open Scheme
 	 
-      val bogus = fromType (Type.var (Tyvar.newNoname {equality = false}))
+      fun bogus () = fromType (Type.new {canGeneralize = true,
+					 equality = true})
    end
 
 structure TypeScheme = Scheme
@@ -76,9 +77,9 @@ structure TypeStr =
 	 val node = make #node
       end
 
-      val bogus =
+      fun bogus () =
 	 T {kind = Kind.Arity 0,
-	    node = Scheme Scheme.bogus}
+	    node = Scheme (Scheme.bogus ())}
 
       fun abs t =
 	 case node t of
@@ -518,7 +519,7 @@ structure Structure =
 							 in seq [str "type ",
 								 str " is a datatype in signature but not in structure"]
 							 end, Layout.empty)
-							; TypeStr.bogus))
+							; TypeStr.bogus ()))
 					   | Interface.TypeStr.Tycon =>
 						let
 						   datatype z = datatype TypeStr.t
@@ -1004,24 +1005,31 @@ val peekLongcon =
 
 local
    fun make (peek: t * 'a -> 'b option,
-	     bogus: 'b,
+	     bogus: unit -> 'b,
 	     unbound: 'a -> unit) (E: t, x: 'a): 'b =
       case peek (E, x) of
 	 SOME y => y
-       | NONE => (unbound x; bogus)
+       | NONE => (unbound x; bogus ())
 in
-   val lookupFctid = make (peekFctid, FunctorClosure.bogus, Ast.Fctid.unbound)
+   val lookupFctid =
+      make (peekFctid, fn _ => FunctorClosure.bogus, Ast.Fctid.unbound)
    val lookupLongcon =
-      make (peekLongcon, (Con.bogus, Scheme.bogus), Ast.Longcon.unbound)
+      make (peekLongcon,
+	    fn () => (Con.bogus, Scheme.bogus ()),
+	    Ast.Longcon.unbound)
    val lookupLongstrid =
-      make (peekLongstrid, Structure.bogus, Ast.Longstrid.unbound)
+      make (peekLongstrid, fn _ => Structure.bogus, Ast.Longstrid.unbound)
    val lookupLongtycon =
       make (peekLongtycon, TypeStr.bogus, Ast.Longtycon.unbound)
    val lookupLongvid =
-      make (peekLongvid, (Vid.bogus, Scheme.bogus), Ast.Longvid.unbound)
+      make (peekLongvid,
+	    fn () => (Vid.bogus, Scheme.bogus ()),
+	    Ast.Longvid.unbound)
    val lookupLongvar =
-      make (peekLongvar, (Var.bogus, Scheme.bogus), Ast.Longvar.unbound)
-   val lookupSigid = make (peekSigid, Interface.bogus, Ast.Sigid.unbound)
+      make (peekLongvar,
+	    fn () => (Var.bogus, Scheme.bogus ()),
+	    Ast.Longvar.unbound)
+   val lookupSigid = make (peekSigid, fn _ => Interface.bogus, Ast.Sigid.unbound)
 end
 
 (* ------------------------------------------------- *)

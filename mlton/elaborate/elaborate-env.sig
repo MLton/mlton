@@ -31,11 +31,11 @@ signature ELABORATE_ENV =
 	    type t
 	 end
       sharing type Type.t = TypeEnv.Type.t
-      structure TypeScheme:
+      structure Scheme:
 	 sig
 	    type t
 	 end
-      sharing type TypeScheme.t = TypeEnv.InferScheme.t
+      sharing type Scheme.t = TypeEnv.Scheme.t
       (* The value of a vid.  This is used to distinguish between vids whose
        * status cannot be determined at parse time.
        *)
@@ -59,13 +59,13 @@ signature ELABORATE_ENV =
 	    val apply: t * TypeEnv.Type.t vector -> TypeEnv.Type.t
 	    val cons: t -> {con: CoreML.Con.t,
 			    name: Ast.Con.t,
-			    scheme: TypeScheme.t} vector
+			    scheme: Scheme.t} vector
 	    val data:
 	       CoreML.Tycon.t * Kind.t
 	       * {con: CoreML.Con.t,
 		  name: Ast.Con.t,
-		  scheme: TypeScheme.t} vector -> t
-	    val def: TypeScheme.t * Kind.t -> t
+		  scheme: Scheme.t} vector -> t
+	    val def: Scheme.t * Kind.t -> t
 	    val kind: t -> Kind.t
 	    val tycon: CoreML.Tycon.t * Kind.t -> t
 	 end
@@ -114,16 +114,16 @@ signature ELABORATE_ENV =
       (* Remove unnecessary entries. *)
       val clean: t -> unit
       val empty: unit -> t
-      val extendCon: t * Ast.Con.t * CoreML.Con.t * TypeScheme.t -> unit
-      val extendExn: t * Ast.Con.t * CoreML.Con.t * TypeScheme.t -> unit
+      val extendCon: t * Ast.Con.t * CoreML.Con.t * Scheme.t -> unit
+      val extendExn: t * Ast.Con.t * CoreML.Con.t * Scheme.t -> unit
       val extendFctid: t * Ast.Fctid.t * FunctorClosure.t -> unit
       val extendFix: t * Ast.Vid.t * Ast.Fixity.t -> unit
       val extendSigid: t * Ast.Sigid.t * Interface.t -> unit
       val extendStrid: t * Ast.Strid.t * Structure.t -> unit
       val extendTycon: t * Ast.Tycon.t * TypeStr.t -> unit
-      val extendVar: t * Ast.Var.t * CoreML.Var.t * TypeScheme.t -> unit
+      val extendVar: t * Ast.Var.t * CoreML.Var.t * Scheme.t -> unit
       val extendOverload:
-	 t * Ast.Var.t * (CoreML.Var.t * TypeEnv.Type.t) vector * TypeScheme.t
+	 t * Ast.Var.t * (CoreML.Var.t * TypeEnv.Type.t) vector * Scheme.t
 	 -> unit
       val functorClosure:
 	 t * Interface.t * (Structure.t * string list -> Decs.t * Structure.t)
@@ -135,18 +135,18 @@ signature ELABORATE_ENV =
       val localModule: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val localTop: t * (unit -> 'a) -> ('a * ((unit -> 'b) -> 'b))
       val lookupFctid: t * Ast.Fctid.t -> FunctorClosure.t
-      val lookupLongcon: t * Ast.Longcon.t -> CoreML.Con.t * TypeScheme.t
+      val lookupLongcon: t * Ast.Longcon.t -> CoreML.Con.t * Scheme.t
       val lookupLongstrid: t * Ast.Longstrid.t -> Structure.t
       val lookupLongtycon: t * Ast.Longtycon.t -> TypeStr.t
-      val lookupLongvar: t * Ast.Longvar.t -> CoreML.Var.t * TypeScheme.t
-      val lookupLongvid: t * Ast.Longvid.t -> Vid.t * TypeScheme.t
+      val lookupLongvar: t * Ast.Longvar.t -> CoreML.Var.t * Scheme.t
+      val lookupLongvid: t * Ast.Longvid.t -> Vid.t * Scheme.t
       val lookupSigid: t * Ast.Sigid.t -> Interface.t
       val makeInterfaceMaker: t -> InterfaceMaker.t
       val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
       (* openStructure (E, S) opens S in the environment E. *) 
       val openStructure: t * Structure.t -> unit
       val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option
-      val peekLongcon: t * Ast.Longcon.t -> (CoreML.Con.t * TypeScheme.t) option
+      val peekLongcon: t * Ast.Longcon.t -> (CoreML.Con.t * Scheme.t) option
       val peekLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
       (* scope f evaluates f () in a new scope so that extensions that occur
        * during f () are forgotten afterwards.

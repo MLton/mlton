@@ -665,14 +665,6 @@ fun defunctorize (CoreML.Program.T {decs}) =
 		     in
 			case Prim.name prim of
 			   C_CS_charArrayToWord8Array => id ()
-			 | Char_chr =>
-			      app (Prim.intToWord (IntSize.default, W8))
-			 | Char_ge => app (Prim.wordGe W8)
-			 | Char_gt => app (Prim.wordGt W8)
-			 | Char_le => app (Prim.wordLe W8)
-			 | Char_lt => app (Prim.wordLt W8)
-			 | Char_ord =>
-			      app (Prim.wordToInt (W8, IntSize.default))
 			 | Char_toWord8 => id ()
 			 | String_toWord8Vector => id ()
 			 | Word8_toChar => id ()
