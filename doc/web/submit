@@ -1,0 +1,28 @@
+#!/bin/sh
+
+mail -s 'MLton survey' sweeks@sweeks.com
+
+cat<<EOF
+Content-Type: text/html
+
+<html>
+  <head>
+    <title>Thank you</title>
+  </head>
+  <body bgcolor = "white" text = "black">
+    <center>
+    <a href = "/download.html">download</a>
+    | <a href = "/index.html">home</a>
+    | <a href = "/papers/index.html">papers</a>
+    | <a href = "/performance.html">performance</a>
+    | <a href = "/projects.html">projects</a>
+    | <a href = "/team.html">team</a>
+    | <a href = "/user-guide/index.html">user guide</a>
+    | <a href = "/users.html">users</a>
+    </center>
+    <hr>
+
+    Thank you for submitting a survey.
+</html>
+EOF
+
