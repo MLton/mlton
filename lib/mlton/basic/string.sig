@@ -43,6 +43,7 @@ signature STRING =
        *)
       val extract: t * int * int option -> t
       val fields: t * (char -> bool) -> t list
+      val findSubstring: {string: t, substring: t} -> int option
       val fold: t * 'a * (char * 'a -> 'a) -> 'a
       val foldi: t * 'a * (int * char * 'a -> 'a) -> 'a
       val foreach: t * (char -> unit) -> unit

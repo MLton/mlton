@@ -112,22 +112,31 @@ fun isSuffix {string, suffix} =
    in n' <= n andalso loop (n - n', 0)
    end
 
-fun isSubstring {string, substring} =
-   let val n = length substring
+fun findSubstring {string, substring} =
+   let
+      val n = length substring
       val maxIndex = length string - n
-      fun loop i =
-	 i <= maxIndex
-	 andalso (let
-		     fun loop (i, j) =
-			j >= n
-			orelse (Char.equals (sub (string, i),
-					     sub (substring, j))
-				andalso loop (i + 1, j + 1))
-		  in loop (i, 0)
-		  end
-		     orelse loop (i + 1))
-   in loop 0
+      fun loopString i =
+	 if i > maxIndex
+	    then NONE
+	 else
+	    let
+	       val start = i
+	       fun loopSubstring (i, j) =
+		  if j = n
+		     then SOME start
+		  else
+		     if Char.equals (sub (string, i), sub (substring, j))
+			then loopSubstring (i + 1, j + 1)
+		     else loopString (i + 1)
+	    in
+	       loopSubstring (i, 0)
+	    end
+   in
+      loopString 0
    end
+
+val isSubstring = isSome o findSubstring
 
 fun baseName (x, y) =
    if isSuffix {string = x, suffix = y}
