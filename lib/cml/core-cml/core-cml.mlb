@@ -5,6 +5,7 @@ ann
 in
 local
   $(MLTON_ROOT)/basis/basis.mlb
+  $(MLTON_ROOT)/basis/mlton.mlb
   ../util/util.mlb
   rep-types.sml
   running.sml

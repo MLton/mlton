@@ -1,7 +1,7 @@
 local
   $(MLTON_ROOT)/basis/basis.mlb
   ../cml.mlb
-  print.sml
+  print.mlb
 in
   primes-multicast.sml 
   run-main.sml
