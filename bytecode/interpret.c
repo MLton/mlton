@@ -126,7 +126,7 @@ enum {
 #define loadStoreFrontier(mode)					\
 	case opcodeSym (mode##Frontier):			\
 		if (disassemble) goto mainLoop;			\
-		loadStore (mode, Word32, (Word32)Frontier);	\
+		loadStoreGen (mode, Pointer, Word32, Frontier);	\
 		goto mainLoop;
 
 #define loadGCState()					\
@@ -137,10 +137,13 @@ enum {
 
 #define loadStoreGlobal(mode, ty, ty2)					\
 	case opcodeSymOfTy2 (ty, mode##Global):				\
+	{								\
+		GlobalIndex globalIndex;				\
 		Fetch (globalIndex);					\
 		if (disassemble) goto mainLoop;				\
 		loadStoreGen (mode, ty, ty2, G (ty, globalIndex));	\
-		goto mainLoop;
+		goto mainLoop;						\
+	}
 
 #define loadStoreOffset(mode, ty)					\
 	case opcodeSymOfTy2 (ty, mode##Offset):				\
@@ -177,7 +180,7 @@ enum {
 #define loadStoreStackTop(mode)					\
 	case opcodeSym (mode##StackTop):			\
 		if (disassemble) goto mainLoop;			\
-		loadStore (mode, Word32, (Word32)StackTop);	\
+		loadStoreGen (mode, Pointer, Word32, StackTop);	\
 		goto mainLoop;
 
 #define loadWord(size)					\
@@ -349,7 +352,6 @@ static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
 	CallCIndex callCIndex;
 	Pointer code;
 	Pointer frontier;
-	GlobalIndex globalIndex;
 	int i;
 	String name;
 	String *offsetToLabel = NULL;
