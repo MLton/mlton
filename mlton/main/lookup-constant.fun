@@ -98,10 +98,12 @@ fun build (constants, out) =
    in
       List.foreach
       (List.concat
-       [["#include <stddef.h>", (* for offsetof *)
-	 "#include <stdio.h>",
+       [["#define _ISOC99_SOURCE",
+	 "#define _POSIX_SOURCE",
+	 "",
 	 "#include \"platform.h\"",
 	 "struct GC_state gcState;",
+	 "",
 	 "int main (int argc, char **argv) {"],
 	List.revMap
 	(constants, fn {name, value, ty} =>

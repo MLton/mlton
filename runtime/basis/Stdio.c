@@ -1,3 +1,5 @@
+#define _ISOC99_SOURCE
+
 #include "platform.h"
 
 void Stdio_print (Pointer s) {

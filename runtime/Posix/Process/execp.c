@@ -1,3 +1,7 @@
+#define _ISOC99_SOURCE
+#define _BSD_SOURCE
+#define _POSIX_SOURCE
+
 #include "platform.h"
 
 Int Posix_Process_execp (NullString f, Pointer a) {
@@ -8,7 +12,7 @@ Int Posix_Process_execp (NullString f, Pointer a) {
 	int 		result;
 
 	file = (char *) f;
-	args = (typeof(args)) a;
+	args = (char **) a;
 	n = GC_arrayNumElements (a) - 1;
 	saved = args[n];
 	args[n] = (char *) NULL;

@@ -10,18 +10,18 @@
 #ifndef _MLTON_TYPES_H_
 #define _MLTON_TYPES_H_
 
-typedef char Int8;
-typedef short Int16;
-typedef long Int32;
-typedef long long Int64;
+typedef int8_t Int8;
+typedef int16_t Int16;
+typedef int32_t Int32;
+typedef int64_t Int64;
 typedef char *Pointer;
 typedef Pointer pointer;
 typedef float Real32;
 typedef double Real64;
-typedef unsigned char Word8;
-typedef unsigned short Word16;
-typedef unsigned long Word32;
-typedef unsigned long long Word64;
+typedef uint8_t Word8;
+typedef uint16_t Word16;
+typedef uint32_t Word32;
+typedef uint64_t Word64;
 
 typedef Int8 WordS8;
 typedef Int16 WordS16;
@@ -33,6 +33,7 @@ typedef Word16 WordU16;
 typedef Word32 WordU32;
 typedef Word64 WordU64;
 
+/* !!! this stuff is all wrong: */
 typedef Int32 Int;
 typedef Real64 Real;
 typedef Word8 Char;

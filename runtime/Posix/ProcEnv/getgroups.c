@@ -1,3 +1,7 @@
+#define _ISOC99_SOURCE
+#define _BSD_SOURCE
+#define _POSIX_SOURCE
+
 #include "platform.h"
 
 /* It's easier to let the basis library deal with an array of known-size

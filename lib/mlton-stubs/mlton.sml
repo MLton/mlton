@@ -169,21 +169,25 @@ structure MLton: MLTON =
 	 
 	    structure Arch =
 	       struct
-		  datatype t = PowerPC | Sparc | X86
+                  datatype t = Alpha | AMD64 | ARM | HPPA | IA64 | m68k |
+                               MIPS | PowerPC | S390 | Sparc | X86
 
 		  val host: t = X86
 
-		  val all = [(PowerPC, "powerpc"),
-			     (Sparc, "sparc"),
-			     (X86, "x86")]
+                  val all = [(Alpha, "Alpha"),
+                             (AMD64, "AMD64"),
+                             (ARM, "ARM"),
+                             (HPPA, "HPPA"),
+                             (IA64, "IA64"),
+                             (m68k, "m68k"),
+                             (MIPS, "MIPS"),
+                             (PowerPC, "PowerPC"), 
+                             (S390, "S390"),
+                             (Sparc, "Sparc"), 
+                             (X86, "X86")]
 
 		  fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
 
-		  val isBigEndian =
-		     fn PowerPC => true
-		      | Sparc => true
-		      | X86 => false
-			   
 		  fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
 	       end
 

@@ -1,3 +1,5 @@
+#define _ISOC99_SOURCE
+
 #include "platform.h"
 
 Real32 Real32_modf(Real32 x, Real32 *exp) {

@@ -317,6 +317,7 @@ signature CONTROL =
       datatype arch = datatype MLton.Platform.Arch.t
       val targetArch: arch ref
 
+      val setTargetBigEndian: bool -> unit
       val targetIsBigEndian: unit -> bool
 
       datatype os = datatype MLton.Platform.OS.t

@@ -1,3 +1,5 @@
+#define _ISOC99_SOURCE
+
 #include "platform.h"
 
 #ifndef DEBUG_PROFILE

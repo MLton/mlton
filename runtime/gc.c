@@ -1,3 +1,7 @@
+#define _ISOC99_SOURCE
+/* needed to get mremap: */
+#define _GNU_SOURCE
+
 /* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
@@ -1867,7 +1871,7 @@ static GC_ObjectHashTable newTable (GC_state s) {
 	pointer regionEnd;
 	GC_ObjectHashTable t;
 
-	NEW (t);
+	NEW (GC_ObjectHashTable, t);
 	// Try to use space in the heap for the elements.
 	if (not (heapIsInit (&s->heap2))) {
 		if (DEBUG_SHARE)
@@ -1897,10 +1901,10 @@ static GC_ObjectHashTable newTable (GC_state s) {
 		if (DEBUG_SHARE)
 			fprintf (stderr, "too small -- using malloc\n");
 		t->elementsIsInHeap = FALSE;
-		ARRAY (t->elements, t->elementsSize);
+		ARRAY (struct GC_ObjectHashElement *, t->elements, t->elementsSize);
 	} else {
 		t->elementsIsInHeap = TRUE;
-		t->elements = (typeof(t->elements))regionStart;
+		t->elements = (struct GC_ObjectHashElement*)regionStart;
 		// Find the largest power of two that fits.
 		for (; t->elementsSize <= maxElementsSize; 
 			t->elementsSize <<= 1, t->log2ElementsSize++)
@@ -2025,7 +2029,7 @@ static void maybeGrowTable (GC_state s, GC_ObjectHashTable t) {
 	if (DEBUG_SHARE)
 		fprintf (stderr, "trying to grow table to size %d\n", newSize);
 	// Try to alocate the new table.
-	ARRAY_UNSAFE (t->elements, newSize);
+	ARRAY_UNSAFE (struct GC_ObjectHashElement *, t->elements, newSize);
 	if (NULL == t->elements) {
 		t->mayInsert = FALSE;
 		t->elements = oldElements;
@@ -3762,13 +3766,13 @@ GC_profile GC_profileNew (GC_state s) {
 	GC_profile p;
 	uint size;
 
-	NEW (p);
+	NEW (GC_profile, p);
 	p->total = 0;
 	p->totalGC = 0;
 	size = s->sourcesSize + s->sourceNamesSize;
-	ARRAY (p->countTop, size);
+	ARRAY (ullong*, p->countTop, size);
 	if (s->profileStack)
-		ARRAY (p->stack, size);
+		ARRAY (struct GC_profileStack *, p->stack, size);
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "0x%08x = GC_profileNew ()\n", (uint)p);
 	return p;
@@ -3977,7 +3981,7 @@ static void profileTimeInit (GC_state s) {
 				or (s->textStart <= label 
 					and label < s->textEnd));
 		}
-	ARRAY (s->textSources, s->textEnd - s->textStart);
+	ARRAY (uint*, s->textSources, s->textEnd - s->textStart);
 	p = s->textStart;
 	sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
 	for (i = 0; i < s->sourceLabelsSize; ++i) {
@@ -4001,7 +4005,6 @@ static void profileTimeInit (GC_state s) {
 	 * to occur right after the sigaltstack() call.
 	 */
 	catcherState = s;
-	sa.sa_handler = (void (*)(int))catcher;
 	sigemptyset (&sa.sa_mask);
 #if (defined (__Darwin__) ||\
 	defined (__FreeBSD__) ||\
@@ -4009,8 +4012,10 @@ static void profileTimeInit (GC_state s) {
 	defined (__OpenBSD__) ||\
 	defined (__sun__))
 	sa.sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
+	sa.sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
 #elif (defined (__NetBSD__))
 	sa.sa_flags = SA_ONSTACK | SA_RESTART;
+	sa.sa_handler = (void (*)(int))catcher;
 #else
 #error sa_flags not set
 #endif
@@ -4315,7 +4320,7 @@ static void loadWorld (GC_state s, char *fileName) {
 	FILE *file;
 	uint magic;
 	pointer oldGen;
-	char c;
+	int c;
 	
 	if (DEBUG_WORLD)
 		fprintf (stderr, "loadWorld (%s)\n", fileName);

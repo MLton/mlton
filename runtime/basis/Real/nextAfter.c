@@ -1,3 +1,5 @@
+#define _ISOC99_SOURCE
+
 #include "platform.h"
 
 /* nextafter is a macro, so we must have a C wrapper to work correctly. */

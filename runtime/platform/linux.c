@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include "platform.h"
 
 #include "getText.c"

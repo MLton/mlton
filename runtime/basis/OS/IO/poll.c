@@ -1,3 +1,5 @@
+#define _ISOC99_SOURCE
+
 #include "platform.h"
 
 Int OS_IO_poll (Fd *fds, Word *eventss, Int n, Int timeout, Word *reventss) {

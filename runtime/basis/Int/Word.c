@@ -1,3 +1,5 @@
+#define _ISOC99_SOURCE
+
 #include "platform.h"
 
 /*
@@ -28,9 +30,11 @@
 #define DEBUG FALSE
 #endif
 
+/* Uhm, why wouldn't they?
 #if ! (defined (__i386__) || defined (__ppc__) || defined (__sparc__))
 #error check that C {/,%} correctly implement {quot,rem} from the basis library
 #endif
+*/
 
 #define coerce(f, t)				\
 	t f##_to##t (f x) {			\

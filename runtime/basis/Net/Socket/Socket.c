@@ -1,3 +1,6 @@
+#define _ISOC99_SOURCE
+#define _BSD_SOURCE
+
 #include "platform.h"
 
 Int Socket_accept (Int s, Char *addr, Int *addrlen) {

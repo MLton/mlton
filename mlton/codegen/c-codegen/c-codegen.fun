@@ -188,9 +188,10 @@ fun creturn (t: Type.t): string =
    concat ["CReturn", CType.name (Type.toCType t)]
 
 fun outputIncludes (includes, print) =
-   (List.foreach (includes, fn i => (print "#include <";
-				     print i;
-				     print ">\n"))
+   (print "#define _ISOC99_SOURCE\n"
+    ; List.foreach (includes, fn i => (print "#include <";
+				       print i;
+				       print ">\n"))
     ; print "\n")
 
 fun declareProfileLabel (l, print) =

@@ -26,6 +26,11 @@
 #include <unistd.h>
 #include <utime.h>
 
+/* C99-specific headers */
+#include <fenv.h>
+#include <stdint.h>
+#include <inttypes.h>
+
 #include "assert.h"
 
 #if (defined (__APPLE_CC__))
@@ -132,9 +137,9 @@ void *getTextEnd ();
 #define	NULL	0			/* invalid pointer */
 #endif
 
-#define NEW(x)		x = (typeof(x))(smalloc (sizeof(*x)))
-#define ARRAY(a, s)	a = (typeof(a))(scalloc (s, sizeof(*a)))
-#define ARRAY_UNSAFE(a, s)	a = (typeof(a))(calloc (s, sizeof(*a)))
+#define NEW(t, x)		x = (t)(smalloc (sizeof(*x)))
+#define ARRAY(t, a, s)	a = (t)(scalloc (s, sizeof(*a)))
+#define ARRAY_UNSAFE(t, a, s)	a = (t)(calloc (s, sizeof(*a)))
 
 #define string char*
 
@@ -163,6 +168,9 @@ enum {
 /* ---------------------------------------------------------------- */
 /*                        Utility libraries                         */
 /* ---------------------------------------------------------------- */
+
+extern bool	isBigEndian(void);
+#define MLton_Platform_Arch_bigendian isBigEndian()
 
 /* issue error message and exit */
 extern void	die (char *fmt, ...)
@@ -364,8 +372,24 @@ Word MLton_size (Pointer p);
 /*           MLton.Platform           */
 /* ---------------------------------- */
 
-#if (defined (__ppc__))
+#if (defined (__alpha__))
+#define MLton_Platform_Arch_host "alpha"
+#elif (defined (__x86_64__))
+#define MLton_Platform_Arch_host "amd64"
+#elif (defined (__arm__))
+#define MLton_Platform_Arch_host "arm"
+#elif (defined (__hppa__))
+#define MLton_Platform_Arch_host "hppa"
+#elif (defined (__ia64__))
+#define MLton_Platform_Arch_host "ia64"
+#elif (defined (__m68k__))
+#define MLton_Platform_Arch_host "m68k"
+#elif (defined (__mips__))
+#define MLton_Platform_Arch_host "mips"
+#elif (defined (__ppc__))
 #define MLton_Platform_Arch_host "powerpc"
+#elif (defined (__s390__))
+#define MLton_Platform_Arch_host "s390"
 #elif (defined (__sparc__))
 #define MLton_Platform_Arch_host "sparc"
 #elif (defined (__i386__))

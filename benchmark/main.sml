@@ -141,9 +141,8 @@ val benchCount =
 	     open MLton.Platform.Arch
 	  in
 	     case host of
-		PowerPC => x86
-	      | Sparc => sparc
-	      | X86 => x86
+	        Sparc => sparc
+	      | _ => x86
 	  end)
 
 fun compileSizeRun {command, exe, doTextPlusData: bool} =

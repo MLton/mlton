@@ -733,7 +733,15 @@ val targetArch = control {name = "target arch",
 			  default = X86,
 			  toString = MLton.Platform.Arch.toString}
 
-fun targetIsBigEndian () = MLton.Platform.Arch.isBigEndian (!targetArch)
+local
+   val r: bool option ref = ref NONE
+in
+   fun setTargetBigEndian b = r := SOME b
+   fun targetIsBigEndian () =
+      case !r of
+	 NONE => Error.bug "targetIsBigEndian not set"
+       | SOME b => b
+end
 
 datatype os = datatype MLton.Platform.OS.t
 
@@ -820,7 +828,7 @@ fun preSuf style =
       val (p, s) =
 	 case style of
 	    No => ("", "")
-	  | Assembly => ("# ", "")
+	  | Assembly => ("/* ", " */")
 	  | C => ("/* ", " */")
 	  | Dot => ("// ", "")
 	  | ML => ("(* ", " *)")

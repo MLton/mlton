@@ -1,3 +1,6 @@
+#define _ISOC99_SOURCE
+#define _BSD_SOURCE
+
 #include "platform.h"
 
 #define UNIX_PATH_MAX 108

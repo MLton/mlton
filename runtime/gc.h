@@ -13,8 +13,8 @@
  */
 
 typedef uint word;
-typedef unsigned long long W64;
-typedef unsigned long W32;
+typedef Word64 W64;
+typedef Word32 W32;
 typedef W32 Header;
 
 /*

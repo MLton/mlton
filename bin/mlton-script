@@ -62,12 +62,11 @@ doit "$lib" \
 		-malign-jumps=2
 		-malign-loops=2
 		-mcpu=pentiumpro'				\
-	-target-cc-opt sparc 					\
+	-target-cc-opt sparc '-mv8 -m32'			\
+	-target-cc-opt solaris 					\
 		'-Wa,-xarch=v8plusa
 		-fcall-used-g5
 		-fcall-used-g7
-		-m32
-		-mv8
 		-mcpu=ultrasparc'				\
 	-target-link-opt cygwin '-lgmp'				\
  	-target-link-opt darwin '-lgmp'				\

@@ -18,14 +18,17 @@
 #include <sys/wait.h>
 #include <syslog.h>
 #include <termios.h>
-#include <ucontext.h>
 #include <values.h>
 
 #define HAS_MREMAP TRUE
 #define HAS_PTRACE TRUE
 #define HAS_SIGALTSTACK TRUE
 #define HAS_SPAWN FALSE
+#ifdef __i386__
 #define HAS_TIME_PROFILING TRUE
+#else
+#define HAS_TIME_PROFILING FALSE
+#endif
 #define HAS_WEAK 1
 #define USE_MMAP TRUE
 

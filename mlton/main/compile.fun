@@ -438,6 +438,17 @@ fun elaborate {input: String.t}: Xml.Program.t =
 	     stackTop = get "stackTop"
 	     }
 	 end
+      (* Setup endianness *)
+      val _ =
+	 let
+	    fun get (name:string): bool =
+	        case lookupConstant ({default = NONE, name = name},
+				     ConstType.Bool) of
+		   Const.Word w => 1 = WordX.toInt w
+		 | _ => Error.bug "endian unknown"
+	 in
+	    Control.setTargetBigEndian (get "MLton_Platform_Arch_bigendian")
+	 end
       val xml =
 	 Control.passTypeCheck
 	 {name = "defunctorize",

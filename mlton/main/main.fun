@@ -95,9 +95,9 @@ fun setTargetType (target: string, usage): unit =
 	    targetArch := arch
 	    ; targetOS := os
 	    ; (case arch of
-		  PowerPC => codegen := CCodegen
-		| Sparc => (align := Align8; codegen := CCodegen)
-		| _ => ())
+		  Sparc => (align := Align8; codegen := CCodegen)
+		| X86 => codegen := Native
+		| _ => codegen := CCodegen)
 	 end
 
 fun warnDeprecated (flag, use) =
@@ -114,9 +114,8 @@ fun hasNative () =
       datatype z = datatype Control.arch
    in
       case !Control.targetArch of
-	 PowerPC => false
-       | Sparc => false
-       | X86 => true
+         X86 => true
+       | _ => false
    end
 
 fun makeOptions {usage} = 
@@ -131,9 +130,8 @@ fun makeOptions {usage} =
        [
        (Normal, "align",
 	case !targetArch of
-	   PowerPC => " {4|8}"
-	 | Sparc => " {8|4}"
-	 | X86 => " {4|8}",
+	   Sparc => " {8|4}"
+	 | _ => " {4|8}",
 	"object alignment",
 	(SpaceString (fn s =>
 		      align
@@ -797,7 +795,8 @@ fun commandLine (args: string list): unit =
 			       System.system
 			       (gcc,
 				List.concat
-				[targetOpts,
+				[targetOpts, 
+				 ["-std=c99"],
 				 ["-o", output],
 				 if !debug then gccDebug else [],
 				 inputs,
@@ -853,7 +852,7 @@ fun commandLine (args: string list): unit =
 					    then debugSwitches @ switches
 					 else switches
 				      val switches =
-					 targetOpts @ ("-c" :: switches)
+					 targetOpts @ ("-std=c99" :: "-c" :: switches)
 				      val output =
 					 if stop = Place.O orelse !keepO
 					    then

@@ -1,3 +1,6 @@
+#define _ISOC99_SOURCE
+#define _BSD_SOURCE
+
 #include "platform.h"
 
 void INetSock_toAddr (Pointer in_addr, Int port, Char* addr, Int *addrlen) {

@@ -1,3 +1,6 @@
+#define _ISOC99_SOURCE
+
+#include <stdint.h>
 #include "interpret.h"
 #include "platform.h"
 #include "c-chunk.h"	// c-chunk.h must come before opcode.h because it
@@ -65,16 +68,16 @@ quotRem2 (rem)
 
 //----------------------------------------------------------------------
 
-#define Fetch(z)								\
+#define Fetch(t, z)								\
 	do {									\
-		z = *(typeof(z)*)pc;						\
+		z = *(t*)pc;							\
 		if (DEBUG or disassemble) {					\
  			if (#z == "label")					\
 				fprintf (stderr, " %s", offsetToLabel[z]);	\
 			else if (#z != "opc")					\
 				fprintf (stderr, " %d", (int)z);		\
 		}								\
- 		pc += sizeof (typeof(z));					\
+ 		pc += sizeof (t);					\
 	} while (0)
 
 enum {
@@ -105,8 +108,8 @@ enum {
 		Pointer base;							\
 		Word32 index;							\
 		Scale scale;							\
-		Fetch (arrayOffset);						\
-		Fetch (scale);							\
+		Fetch (ArrayOffset, arrayOffset);				\
+		Fetch (Scale, scale);						\
 		if (disassemble) goto mainLoop;					\
 		index = PopReg (Word32);					\
 		base = (Pointer) (PopReg (Word32));				\
@@ -140,7 +143,7 @@ enum {
 	case opcodeSymOfTy2 (ty, mode##Global):				\
 	{								\
 		GlobalIndex globalIndex;				\
-		Fetch (globalIndex);					\
+		Fetch (GlobalIndex, globalIndex);			\
 		if (disassemble) goto mainLoop;				\
 		loadStoreGen (mode, ty, ty2, G (ty, globalIndex));	\
 		goto mainLoop;						\
@@ -150,7 +153,7 @@ enum {
 	case opcodeSym (mode##GPNR):						\
 	{									\
 		GlobalIndex globalIndex;					\
-		Fetch (globalIndex);						\
+		Fetch (GlobalIndex, globalIndex);				\
 		if (disassemble) goto mainLoop;					\
 		loadStoreGen (mode, Pointer, Word32, GPNR (globalIndex));	\
 		goto mainLoop;							\
@@ -161,7 +164,7 @@ enum {
 	{								\
 		Pointer base;						\
 		Offset offset;						\
-		Fetch (offset);						\
+		Fetch (Offset, offset);					\
 		if (disassemble) goto mainLoop;				\
 		base = (Pointer) (PopReg (Word32));			\
 		maybe loadStore (mode, ty, O (ty, base, offset));	\
@@ -172,7 +175,7 @@ enum {
 	case opcodeSymOfTy2 (ty, mode##Register):		\
 	{							\
 		RegIndex regIndex;				\
-		Fetch (regIndex);				\
+		Fetch (RegIndex, regIndex);			\
 		if (disassemble) goto mainLoop;			\
 		loadStoreGen (mode, ty, ty2, R (ty, regIndex));	\
 		goto mainLoop;					\
@@ -182,7 +185,7 @@ enum {
 	case opcodeSymOfTy2 (ty, mode##StackOffset):		\
 	{							\
 		StackOffset stackOffset;			\
-		Fetch (stackOffset);				\
+		Fetch (StackOffset, stackOffset);		\
 		if (disassemble) goto mainLoop;			\
 		loadStore (mode, ty, S (ty, stackOffset));	\
 		goto mainLoop;					\
@@ -198,7 +201,7 @@ enum {
 	case opcodeSymOfTy (Word, size, loadWord):	\
 	{						\
 		Word##size t0;				\
-		Fetch (t0);				\
+		Fetch (Word##size, t0);			\
 		if (disassemble) goto mainLoop;		\
 		loadStore (load, Word##size, t0);	\
 		goto mainLoop;				\
@@ -305,7 +308,7 @@ enum {
 		Word##size test = 0;					\
 		Word16 numCases;					\
 									\
-		Fetch (numCases);					\
+		Fetch (Word16, numCases);				\
 		lastCase = pc + (4 + size/8) * numCases;		\
 		maybe test = PopReg (Word##size);			\
 		assertRegsEmpty ();					\
@@ -313,10 +316,10 @@ enum {
 			Word##size caseWord;				\
 			if (DEBUG or disassemble)			\
 				fprintf (stderr, "\n\t  ");		\
-			Fetch (caseWord);				\
+			Fetch (Word##size, caseWord);			\
 			if (DEBUG or disassemble)			\
 				fprintf (stderr, " =>");		\
-			Fetch (label);					\
+			Fetch (Label, label);				\
 			if (not disassemble and test == caseWord)	\
 				Goto (label);				\
 		}							\
@@ -370,7 +373,7 @@ static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
 	code = b->code;
 	pcMax = b->code + b->codeSize;
 	if (DEBUG or disassemble) {
-		ARRAY (offsetToLabel, b->codeSize);
+		ARRAY (String*, offsetToLabel, b->codeSize);
 		for (i = 0; i < b->nameOffsetsSize; ++i)
 			offsetToLabel [b->nameOffsets[i].codeOffset] =
 				b->addressNames + b->nameOffsets[i].nameOffset;
@@ -393,7 +396,7 @@ mainLoop:
 		fprintf (stderr, "\n\t");
 	}
 	assert (code <= pc and pc < pcMax);
-	Fetch (opc);
+	Fetch (Opcode, opc);
 	assert (opc < cardof (opcodeStrings));
 	if (DEBUG or disassemble)
 		fprintf (stderr, "%s", opcodeStrings[opc]);
@@ -403,14 +406,14 @@ mainLoop:
 	{
 		Label label;
 
-		Fetch (label);
+		Fetch (Label, label);
 		if (disassemble) goto mainLoop;
 		if (0 == PopReg (Word32))
 			Goto (label);
 		goto mainLoop;
 	}
  	case opcodeSym (CallC):
- 		Fetch (callCIndex);
+ 		Fetch (CallCIndex, callCIndex);
 		unless (disassemble) {
 			Flush ();
  			MLton_callC (callCIndex);
@@ -420,7 +423,7 @@ mainLoop:
  	case opcodeSym (Goto):
 	{
 		Label label;
-		Fetch (label);
+		Fetch (Label, label);
  		Goto (label);
 	}
 	loadStoreGPNR(load);
@@ -428,7 +431,7 @@ mainLoop:
 	case opcodeSym (JumpOnOverflow):
 	{
 		Label label;
-		Fetch (label);
+		Fetch (Label, label);
 		if (overflow)
 			Goto (label);
 		goto mainLoop;

@@ -58,14 +58,46 @@ esac
 arch=`uname -m`
 
 case "$arch" in
-i?86)
-	HOST_ARCH=x86
+alpha*)
+# not certain about this one; no alpha access
+	HOST_ARCH=alpha
+;;
+x86_64*)
+	HOST_ARCH=amd64
+;;
+arm*)
+	HOST_ARCH=arm
+;;
+parisc*)
+	HOST_ARCH=hppa
+;;
+ia64*)
+	HOST_ARCH=ia64
+;;
+m68k*)
+	HOST_ARCH=m68k
+;;
+mips*)
+# big-endian and little-endian detect via headers
+	HOST_ARCH=mips
+;;
+ppc*)
+	HOST_ARCH=powerpc
 ;;
 Power*)
 	HOST_ARCH=powerpc
 ;;
+s390*)
+	HOST_ARCH=s390
+;;
+sparc*)
+	HOST_ARCH=sparc
+;;
 sun*)
 	HOST_ARCH=sparc
+;;
+i?86)
+	HOST_ARCH=x86
 ;;
 *)
 	die "Unknown arch $arch."

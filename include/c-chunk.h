@@ -2,6 +2,8 @@
 #define _C_CHUNK_H_
 
 #include <stdio.h>
+#include <stdint.h>
+
 #include "assert.h"
 #include "c-common.h"
 #include "types.h"

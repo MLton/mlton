@@ -1,3 +1,6 @@
+#define _ISOC99_SOURCE
+#define _BSD_SOURCE
+
 /* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -196,4 +199,17 @@ string ullongToCommaString (ullong n) {
  		}
  	}
  	return buf + i + 1;
+}
+
+bool isBigEndian(void) {
+	union {
+		Word16 x;
+	        Word8 y;
+	} z;
+	
+	z.x = 0xABCDU;
+	if (z.y == 0xAB) return TRUE; /* big endian */
+	if (z.y == 0xCD) return FALSE; /* little endian */
+	die ("Could not detect endian --- neither big nor little!\n");
+	return 0;
 }

@@ -1,3 +1,5 @@
+#define _ISOC99_SOURCE
+
 #include "platform.h"
 
 Real32 gdtoa_strtof (char *s, char **endptr);

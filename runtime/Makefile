@@ -23,7 +23,10 @@ FLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
 endif
 endif
 ifeq ($(TARGET_ARCH), sparc)
-FLAGS += -Wa,-xarch=v8plusa -fcall-used-g5 -fcall-used-g7 -funroll-all-loops -m32 -mv8 -mcpu=ultrasparc
+FLAGS += -mv8 -m32
+endif
+ifeq ($(TARGET_OS), solaris)
+FLAGS += -Wa,-xarch=v8plusa -fcall-used-g5 -fcall-used-g7 -funroll-all-loops -mcpu=ultrasparc
 endif
 
 ifeq ($(TARGET), self)
@@ -35,7 +38,7 @@ RANLIB = $(TARGET)-ranlib
 FLAGS += -b $(TARGET)
 endif
 
-CC = gcc
+CC = gcc -std=c99
 CFLAGS = -O2 -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=64 $(FLAGS)
 DEBUGFLAGS = $(CFLAGS) -gstabs+ -g2
 

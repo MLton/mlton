@@ -9,7 +9,18 @@ structure MLtonPlatform: MLTON_PLATFORM =
 	 struct
 	    open Arch
 
-	    val all = [(PowerPC, "PowerPC"), (Sparc, "Sparc"), (X86, "X86")]
+	    val all = [
+	        (Alpha, "Alpha"),
+	        (AMD64, "AMD64"),
+	        (ARM, "ARM"),
+	        (HPPA, "HPPA"),
+	        (IA64, "IA64"),
+	        (m68k, "m68k"),
+	        (MIPS, "MIPS"),
+	        (PowerPC, "PowerPC"), 
+	        (S390, "S390"),
+	        (Sparc, "Sparc"), 
+	        (X86, "X86")]
 
 	    fun fromString s =
 	       let
@@ -17,11 +28,6 @@ structure MLtonPlatform: MLTON_PLATFORM =
 	       in
 		  omap (peek (all, fn (_, s') => s = String.toLower s'), #1)
 	       end
-
-	    val isBigEndian =
-	       fn PowerPC => true
-		| Sparc => true
-		| X86 => false
 
 	    fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
 	 end

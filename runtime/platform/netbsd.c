@@ -1,3 +1,5 @@
+#define _XOPEN_SOURCE 600
+
 #include "platform.h"
 
 #include "getrusage.c"

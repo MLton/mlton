@@ -903,20 +903,26 @@ structure Primitive =
 	       struct
 		  structure Arch =
 		     struct
-			datatype t = PowerPC | Sparc | X86
-
+                        datatype t = Alpha | AMD64 | ARM | HPPA | IA64 | m68k |
+                                     MIPS | PowerPC | S390 | Sparc | X86
+                        
 			val host: t =
 			   case _const "MLton_Platform_Arch_host": string; of
-			      "powerpc" => PowerPC
+			      "alpha" => Alpha
+			    | "amd64" => AMD64
+			    | "arm" => ARM
+			    | "hppa" => HPPA
+			    | "ia64" => IA64
+			    | "m68k" => m68k
+                            | "mips" => MIPS
+                            | "powerpc" => PowerPC
+                            | "s390" => S390
 			    | "sparc" => Sparc
 			    | "x86" => X86
 			    | _ => raise Fail "strange MLton_Platform_Arch_host"
 
 			val hostIsBigEndian =
-			   case host of
-			      PowerPC => true
-			    | Sparc => true
-			    | X86 => false
+			   _const "MLton_Platform_Arch_bigendian": bool;
 		     end
 
 		  structure OS =

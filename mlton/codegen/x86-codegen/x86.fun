@@ -3587,7 +3587,7 @@ struct
 	= let
 	    open Layout
 	  in
-	    fn Comment s => seq [str "# ",  str s]
+	    fn Comment s => seq [str "/* ",  str s, str " */"]
 	     | Directive d => seq [str "# directive: ", Directive.layout d]
 	     | PseudoOp p => seq [PseudoOp.layout p]
 	     | Label l => seq [Label.layout l, str ":"]
