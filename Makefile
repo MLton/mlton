@@ -16,7 +16,7 @@ HOST=self
 HOSTTYPE=linux
 
 all:
-	mkdir -p $(BIN) $(LIB)
+	$(MAKE) dirs
 	cd $(COMP) && $(MAKE)
 	mv $(COMP)/$(AOUT) $(LIB)
 	$(MAKE) world
@@ -28,11 +28,14 @@ all:
 	cd $(SRC)/doc/user-guide && $(MAKE)
 	@echo 'Build of MLton succeeded.'
 
+.PHONY: dirs
+dirs:
+	mkdir -p $(BUILD) $(BIN) $(LIB) $(LIB)/$(HOST) $(LIB)/$(HOST)/include
+
 HOSTMAP=$(LIB)/hostmap
 .PHONY: runtime
 runtime:
 	@echo 'Making runtime system.'
-	mkdir -p $(LIB)/$(HOST)/include
 	@echo 'Compiling MLton runtime system for $(HOST).'
 	cd runtime && $(MAKE) HOST=$(HOST)
 	$(CP) $(RUN)/*.a $(LIB)/$(HOST)
@@ -60,7 +63,7 @@ constants:
 	@echo 'Creating constants file.'
 	$(BIN)/mlton -build-constants >tmp.c
 	$(BIN)/mlton -o tmp tmp.c
-	tmp >$(LIB)/$(HOST)/constants
+	./tmp >$(LIB)/$(HOST)/constants
 	rm -f tmp tmp.c
 
 .PHONY: clean
