@@ -276,11 +276,14 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
       in
 	 fun typeCardinality t =
 	    case dest t of
-	       Ref t => (case typeCardinality t of
-			    Zero => Zero
-			  | _ => Many)
+	       Ref t => pointerCardinality t
+	     | Weak t => pointerCardinality t
 	     | Tuple ts => tupleCardinality ts
 	     | Datatype tycon => tyconCardinality tycon
+	     | _ => Many
+	 and pointerCardinality (t: Type.t) =
+	    case typeCardinality t of
+	       Zero => Zero
 	     | _ => Many
 	 and tupleCardinality (ts: Type.t vector) =
 	    DynamicWind.withEscape
@@ -406,6 +409,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 		| Array t => loop t
 		| Vector t => loop t
 		| Ref t => loop t
+		| Weak t => loop t
 		| Datatype tyc' =>
 		     (case tyconReplacement tyc' of
 			 NONE => Tycon.equals (tyc, tyc')
@@ -445,6 +449,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 	    | Array t => array (simplifyType t)
 	    | Vector t => vector (simplifyType t)
 	    | Ref t => reff (simplifyType t)
+	    | Weak t => weak (simplifyType t)
 	    | Datatype tycon => 
 		 (case tyconReplacement tycon of
 		     SOME t =>
