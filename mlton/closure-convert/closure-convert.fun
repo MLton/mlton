@@ -682,7 +682,7 @@ fun closureConvert
 	    handle Yes ts => SOME ts
 	 end
       val shrinkFunction = Ssa.shrinkFunction (Vector.new0 ())
-      fun addFunc (ac, {args, body, name, returns}) =
+      fun addFunc (ac, {args, body, isMain, name, returns}) =
 	 let
 	    val (start, blocks) =
 	       Dexp.linearize (body, Ssa.Handler.Caller)
@@ -694,6 +694,10 @@ fun closureConvert
 			      raises = raises,
 			      returns = SOME returns,
 			      start = start})
+	    val f =
+	       if isMain
+		  then Function.profile (f, SourceInfo.main)
+	       else f
 	 in
 	    Accum.addFunc (ac, f)
 	 end
@@ -1011,6 +1015,7 @@ fun closureConvert
 	      in
 		 addFunc (ac, {args = args,
 			       body = body,
+			       isMain = false,
 			       name = name,
 			       returns = returns})
 	      end))
@@ -1026,6 +1031,7 @@ fun closureConvert
 	     val (body, ac) = convertExp (body, Accum.empty)
 	     val ac = addFunc (ac, {args = Vector.new0 (),
 				    body = body,
+				    isMain = true,
 				    name = main,
 				    returns = Vector.new1 Type.unit})
 	  in Accum.done ac
