@@ -126,7 +126,8 @@ structure FlexibleTycon =
 			 creationTime: Time.t,
 			 defn: exn ref,
 			 hasCons: bool,
-			 id: TyconId.t} Set.t
+			 id: TyconId.t,
+			 plist: PropertyList.t} Set.t
       withtype copy = t option ref
 
       fun dest (T s) = Set.value s
@@ -135,6 +136,7 @@ structure FlexibleTycon =
 	 fun make f = f o dest
       in
 	 val defn = ! o make #defn
+	 val plist = make #plist
       end
 
       fun admitsEquality t = #admitsEquality (dest t)
@@ -162,7 +164,8 @@ structure FlexibleTycon =
 			   creationTime = Time.current (),
 			   defn = ref defn,
 			   hasCons = hasCons,
-			   id = TyconId.new ()})
+			   id = TyconId.new (),
+			   plist = PropertyList.new ()})
    end
 
 structure Tycon =
@@ -564,7 +567,8 @@ structure FlexibleTycon =
 
       fun share (T s, T s') =
 	 let
-	    val {admitsEquality = a, creationTime = t, hasCons = h, id, ...} =
+	    val {admitsEquality = a, creationTime = t, hasCons = h, id, plist,
+		 ...} =
 	       Set.value s
 	    val {admitsEquality = a', creationTime = t', hasCons = h', ...} =
 	       Set.value s'
@@ -576,7 +580,8 @@ structure FlexibleTycon =
 		    creationTime = Time.min (t, t'),
 		    defn = ref Defn.undefined,
 		    hasCons = h orelse h',
-		    id = id})
+		    id = id,
+		    plist = plist})
 	 in
 	    ()
 	 end
@@ -823,6 +828,18 @@ structure TypeStr =
 
 structure UniqueId = IntUniqueId ()
 
+structure TyconMap =
+   struct
+      datatype 'a t = T of {strs: (Strid.t * 'a t) array,
+			    types: (Ast.Tycon.t * 'a) array}
+
+      fun empty (): 'a t = T {strs = Array.new0 (),
+			      types = Array.new0 ()}
+
+      fun isEmpty (T {strs, types}) =
+	 0 = Array.length strs andalso 0 = Array.length types
+   end
+
 (*---------------------------------------------------*)
 (*                   Main Datatype                   *)
 (*---------------------------------------------------*)
@@ -832,11 +849,24 @@ structure UniqueId = IntUniqueId ()
 datatype t = T of {copy: copy,
 		   plist: PropertyList.t,
 		   shape: Shape.t,
-		   strs: (Ast.Strid.t * t) array,
+		   strs: (Strid.t * t) array,
 		   types: (Ast.Tycon.t * TypeStr.t) array,
 		   uniqueId: UniqueId.t,
 		   vals: (Ast.Vid.t * (Status.t * Scheme.t)) array} Set.t
 withtype copy = t option ref
+
+fun dest (T s) = Set.value s
+   
+local
+   fun make f = f o dest
+in
+   val plist = make #plist
+   val shape = make #shape
+   val strs = make #strs
+   val types = make #types
+   val uniqueId = make #uniqueId
+   val vals = make #vals
+end
 
 fun new {strs, types, vals} =
    T (Set.singleton {copy = ref NONE,
@@ -850,17 +880,6 @@ fun new {strs, types, vals} =
 val empty = new {strs = Array.new0 (),
 		 types = Array.new0 (),
 		 vals = Array.new0 ()}
-
-local
-   fun make f (T s) = f (Set.value s)
-in
-   val plist = make #plist
-   val shape = make #shape
-   val strs = make #strs
-   val types = make #types
-   val uniqueId = make #uniqueId
-   val vals = make #vals
-end
 
 local
    open Layout
@@ -899,7 +918,7 @@ fun equals (T s, T s') = Set.equals (s, s')
 val equals =
    Trace.trace2 ("Interface.equals", layout, layout, Bool.layout) equals
 
-fun peekStrid (T s, strid: Ast.Strid.t): t option =
+fun peekStrid (T s, strid: Strid.t): t option =
    let
       val {strs, ...} = Set.value s
    in
@@ -913,7 +932,7 @@ datatype 'a peekResult =
    Found of 'a
   | UndefinedStructure of Strid.t list
 
-fun peekStrids (I: t, strids: Ast.Strid.t list): t peekResult =
+fun peekStrids (I: t, strids: Strid.t list): t peekResult =
    let
       fun loop (I, strids, ac) =
 	 case strids of
@@ -1064,6 +1083,79 @@ val share =
     Layout.tuple [layout I, layout I', Time.layout t],
     Unit.layout)
    share
+
+fun tyconMap (I: t): FlexibleTycon.t TyconMap.t =
+   let
+      val {destroy = destroy1,
+	   get = tyconShortest: (FlexibleTycon.t
+				 -> {flex: FlexibleTycon.t option ref,
+				     length: int} ref), ...} =
+	 Property.destGet (FlexibleTycon.plist,
+			   Property.initFun (fn c => ref {flex = ref NONE,
+							  length = Int.maxInt}))
+      val {destroy = destroy2,
+	   get = interfaceShortest: t -> int ref, ...} =
+	 Property.destGet (plist, Property.initFun (fn _ => ref Int.maxInt))
+      fun loop (I: t, length: int): FlexibleTycon.t option ref TyconMap.t =
+	 let
+	    val r = interfaceShortest I
+	 in
+	    if length >= !r
+	       then TyconMap.empty ()
+	    else
+	       let
+		  val _ = r := length
+		  val {strs, types, ...} = dest I
+		  val types =
+		     Array.map
+		     (types, fn (tycon, typeStr) =>
+		      (tycon,
+		       case TypeStr.toTyconOpt typeStr of
+			  SOME (Tycon.Flexible c) =>
+			     let
+				val r = tyconShortest c
+			     in
+				if length >= #length (!r)
+				   then ref NONE
+				else 
+				   let
+				      val _ = #flex (!r) := NONE
+				      val flex = ref (SOME c)
+				      val _ = r := {flex = flex,
+						    length = length}
+				   in
+				      flex
+				   end
+			     end
+			| _ => ref NONE))
+		  val strs =
+		     Array.map (strs, fn (s, I) => (s, loop (I, 1 + length)))
+	       in
+		  TyconMap.T {strs = strs, types = types}
+	       end
+	 end
+      val tm = loop (I, 0)
+      val _ = (destroy1 (); destroy2 ())
+      fun collapse (tm: FlexibleTycon.t option ref TyconMap.t)
+	 : FlexibleTycon.t TyconMap.t =
+	 let
+	    val TyconMap.T {strs, types} = tm
+	    val types = Array.keepAllMap (types, fn (c, r) =>
+					  Option.map (!r, fn f => (c, f)))
+	    val strs = Array.keepAllMap (strs, fn (s, m) =>
+					 let
+					    val m = collapse m
+					 in
+					    if TyconMap.isEmpty m
+					       then NONE
+					    else SOME (s, m)
+					 end)
+	 in
+	    TyconMap.T {strs = strs, types = types}
+	 end
+   in
+      collapse tm
+   end
 
 fun 'a copyAndRealize (I: t, {followStrid, init: 'a, realizeTycon}): t =
    let
