@@ -6,7 +6,7 @@ struct
 
 open S
 
-   structure Type =
+structure Type =
    struct
       local structure T = HashType (S)
       in open  T
@@ -18,20 +18,21 @@ open S
 	  | _ => Error.bug "FirstOrderType.tyconArgs"
 	       
       datatype dest =
-	 Char
+	 Array of t
+	| Char
+	| Datatype of Tycon.t
 	| Int
 	| IntInf
 	| Pointer
+	| PreThread
+	| Real
+	| Ref of t
+	| String 
+	| Thread
+	| Tuple of t vector
+	| Vector of t
 	| Word
 	| Word8
-	| Real
-	| Thread
-	| String 
-	| Array of t
-	| Vector of t
-	| Ref of t
-	| Datatype of Tycon.t
-	| Tuple of t vector
 
       local
 	 val {get, set, ...} =
@@ -53,6 +54,7 @@ open S
 	     (Tycon.int, nullary Int),
 	     (Tycon.intInf, nullary IntInf),
 	     (Tycon.pointer, nullary Pointer),
+	     (Tycon.preThread, nullary PreThread),
 	     (Tycon.real, nullary Real),
 	     (Tycon.string, nullary String),
 	     (Tycon.thread, nullary Thread),
@@ -77,24 +79,25 @@ open S
       in
 	 fun layout t =
 	    case dest t of
-	       Char => str "char"
+	       Array t => seq [layout t, str " array"]
+	     | Char => str "char"
+	     | Datatype t => Tycon.layout t
 	     | Int => str "int"
 	     | IntInf => str "IntInf.int"
 	     | Pointer => str "pointer"
-	     | Word => str "word"
-	     | Word8 => str "word8"
+	     | PreThread => str "preThread"
 	     | Real => str "real"
+	     | Ref t => seq [layout t, str " ref"]
 	     | String => str "string"
 	     | Thread => str "thread"
-	     | Array t => seq [layout t, str " array"]
-	     | Vector t => seq [layout t, str " vector"]
-	     | Ref t => seq [layout t, str " ref"]
-	     | Datatype t => Tycon.layout t
 	     | Tuple ts =>
 		  if Vector.isEmpty ts
 		     then str "unit"
 		  else paren (seq (separate (Vector.toListMap (ts, layout),
 					     " * ")))
+	     | Vector t => seq [layout t, str " vector"]
+	     | Word => str "word"
+	     | Word8 => str "word8"
       end
    end
 

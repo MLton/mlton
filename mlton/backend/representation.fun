@@ -110,6 +110,7 @@ fun compute (Ssa.Program.T {datatypes, ...}) =
 	  | Int => Mtype.int
 	  | IntInf => Mtype.pointer
 	  | Pointer => Mtype.uint
+	  | PreThread => Mtype.pointer
 	  | Real => Mtype.double
 	  | Ref _ => Mtype.pointer
 	  | String => Mtype.pointer

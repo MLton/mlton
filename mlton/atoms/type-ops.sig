@@ -48,7 +48,8 @@ signature TYPE_OPS =
       val intInf: t
       val isTuple: t -> bool
       val list: t -> t
-      val nth: t * int -> t 
+      val nth: t * int -> t
+      val preThread: t
       val real: t
       val reff: t -> t
       val result: t -> t (* result = #2 o dearrow *)

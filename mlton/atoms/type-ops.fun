@@ -16,6 +16,7 @@ in
    val exn = nullary Tycon.exn
    val int = nullary Tycon.int
    val intInf = nullary Tycon.intInf
+   val preThread = nullary Tycon.preThread
    val real = nullary Tycon.real
    val string = nullary Tycon.string
    val thread = nullary Tycon.thread

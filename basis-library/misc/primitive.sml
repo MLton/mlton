@@ -21,6 +21,7 @@ type pointer = pointer (* C integer, not SML heap pointer *)
 type real = real
 datatype ref = datatype ref
 type string = string
+type preThread = preThread
 type thread = thread
 type word = word
 type word8 = word8
@@ -486,19 +487,28 @@ structure Primitive =
 	    val sub = _prim "String_sub": string * int -> char;
 	 end
 
+      structure PreThread =
+	 struct
+
+	 end	    
+
       structure Thread =
 	 struct
+	    type preThread = preThread
 	    type thread = thread
+
 	    val atomicBegin = _ffi "Thread_atomicBegin": unit -> unit;
 	    val atomicEnd = _ffi "Thread_atomicEnd": unit -> unit;
-	    val clearSaved = _ffi "Thread_clearSaved": unit -> unit;
-	    (* copy stores the copy in saved. *)
-	    val copy = _prim "Thread_copy": thread -> unit;
-	    (* copyCurrent stores the copy in saved. *)
+	    (* copy stores a thread that should be gotten using saved (). *)
+	    val copy = _prim "Thread_copy": preThread -> unit;
+	    (* copyCurrent stores a preThread that should be gotten using
+	     * savedPre ().
+	     *)
 	    val copyCurrent = _prim "Thread_copyCurrent": unit -> unit;
 	    val current = _prim "Thread_current": unit -> thread;
 	    val finishHandler = _prim "Thread_finishHandler": thread -> unit;
 	    val saved = _ffi "Thread_saved": unit -> thread;
+	    val savedPre = _ffi "Thread_saved": unit -> preThread;
 	    val setHandler = _ffi "Thread_setHandler": thread -> unit;
 	    val switchTo = _prim "Thread_switchTo": thread -> unit;
 	 end      

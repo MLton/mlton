@@ -18,20 +18,21 @@ signature SSA_TREE =
 	    include HASH_TYPE
 	       
 	    datatype dest =
-	       Char
+	       Array of t
+	     | Char
+	     | Datatype of Tycon.t
 	     | Int
 	     | IntInf
 	     | Pointer
-	     | Word
-	     | Word8
+	     | PreThread
 	     | Real
+	     | Ref of t
 	     | String
 	     | Thread
-	     | Array of t
-	     | Ref of t
-	     | Datatype of Tycon.t
 	     | Tuple of t vector
 	     | Vector of t
+	     | Word
+	     | Word8
 
 	    val dest: t -> dest
 	    val tyconArgs: t -> Tycon.t * t vector

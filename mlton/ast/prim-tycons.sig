@@ -21,6 +21,7 @@ signature PRIM_TYCONS =
       val intInf: tycon
       val list: tycon
       val pointer: tycon
+      val preThread: tycon
       val real: tycon
       val reff: tycon
       val string: tycon

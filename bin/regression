@@ -34,7 +34,7 @@ PATH=.:$PATH
 
 (
 	cd $src/regression
-	for f in `ls *.sml`
+	for f in $cont $signal $thread #`ls *.sml`
 	do
 		f=`basename $f .sml`
 		case "$f" in
