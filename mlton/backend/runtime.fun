@@ -163,7 +163,7 @@ fun wordAlignWord (w: word): word =
    let
       open Word
    in
-      andb (MLton.Word.addCheck (w, 0w3), notb 0w3)
+      andb (Word.addCheck (w, 0w3), notb 0w3)
    end
 
 fun wordAlignInt (i: int): int =

@@ -389,7 +389,7 @@ fun insertFunction (f: Function.t,
 			 (case c of
 			     Const.Word w =>
 				heapCheckNonZero
-				(MLton.Word.addCheck
+				(Word.addCheck
 				 (Word.fromLarge (WordX.toLargeWord w),
 				  extraBytes)
 				 handle Overflow => Runtime.allocTooLarge)
