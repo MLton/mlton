@@ -186,7 +186,7 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 	 in ()
 	 end
       fun filterGround to (t: Type.t): unit = coerce {from = t, to = to}
-      fun primApp {prim, targs, args, resultType} =
+      fun primApp {prim, targs, args, resultType, resultVar} =
 	 case Prim.checkApp {prim = prim,
 			     targs = targs,
 			     args = args,

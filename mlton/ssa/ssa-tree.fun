@@ -1355,6 +1355,20 @@ structure Program =
 	  ; Vector.foreach (globals, Statement.clear)
 	  ; List.foreach (functions, Function.clear))
 
+      fun foreachVar (T {globals, functions, ...}, f) =
+	 (Vector.foreach (globals, fn Statement.T {var, ty, ...} =>
+			  f (valOf var, ty))
+	  ; List.foreach (functions, fn func =>
+			  let val {args, blocks, ...} = Function.dest func
+			  in (Vector.foreach (args, f)
+			      ; Vector.foreach
+			        (blocks, fn Block.T {args, statements, ...} =>
+				 (Vector.foreach (args, f)
+				  ; Vector.foreach 
+				    (statements, fn Statement.T {var, ty, ...} => 
+				     Option.app (var, fn var => f (var, ty))))))
+			  end))
+
       fun hasPrim (T {globals, functions, ...},  f) =
 	 DynamicWind.withEscape
 	 (fn escape =>

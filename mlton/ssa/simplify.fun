@@ -8,7 +8,7 @@ open S
 
 structure CommonBlock = CommonBlock (S)
 structure CommonSubexp = CommonSubexp (S)
-(* structure ConstantPropagation = ConstantPropagation (S) *)
+structure ConstantPropagation = ConstantPropagation (S)
 structure Contify = Contify (S)
 structure Flatten = Flatten (S)
 structure ImplementHandlers = ImplementHandlers (S)
@@ -28,73 +28,78 @@ fun leafInline p =
    (Control.inline, Control.Leaf {size = SOME 20 (* arbitrary *)}, fn () =>
     Inline.inline p)
 
+fun removeX p = (* RemoveUnused.remove *) p
+
 fun traces s p = (Trace.Immediate.on s; p)
 
 val passes =
    [
-     ("removeUnused1", RemoveUnused.remove),
-     ("leafInline", leafInline),
-     ("removeUnusedX1", RemoveUnused.remove),
+    ("removeUnused1", RemoveUnused.remove),
+    ("leafInline", leafInline),
+    ("removeUnusedX1", removeX),
     (* contify should be run before constant propagation because of the once
      * pass that only looks at main -- hence want as much in main as possible.
      *)
-     ("contify1", Contify.contify),
-     ("removeUnusedX2", RemoveUnused.remove),
-     ("localFlatten1", LocalFlatten.flatten),
+    ("contify1", Contify.contify),
+    ("removeUnusedX2", removeX),
+    ("localFlatten1", LocalFlatten.flatten),
+    ("removeUnusedX3", removeX),
     (* constantPropagation cannot be omitted. It implements Array_array0. *)
-(*    ("constantPropagation", ConstantPropagation.simplify), *)
+    ("constantPropagation", ConstantPropagation.simplify),
+    ("removeUnusedX4", removeX),
     (*
      * useless should run after constantPropagation because constantPropagation
      * makes slots of tuples that are constant useless.
      *)
 (*    ("useless", Useless.useless), *)
-     ("removeUnused2", RemoveUnused.remove),
+    ("removeUnused2", RemoveUnused.remove),
 (*    ("simplifyTypes", SimplifyTypes.simplify), *)
+    ("removeUnusedX5", removeX),
     (* polyEqual cannot be omitted.  It implements MLton_equal.
      * polyEqual should run
      *   - after types are simplified so that many equals are turned into eqs
      *   - before inlining so that equality functions can be inlined
      *)
-     ("polyEqual", PolyEqual.polyEqual),
-     ("removeUnusedX3", RemoveUnused.remove),
-     ("contify2", Contify.contify),
-     ("removeUnusedX4", RemoveUnused.remove),
-     ("inline", Inline.inline),
-     ("removeUnusedX5", RemoveUnused.remove),
-     ("localFlatten2", LocalFlatten.flatten),
-     ("removeUnused3", RemoveUnused.remove),
-     ("contify3", Contify.contify),
-     ("removeUnusedX6", RemoveUnused.remove),
-     ("introduceLoops", IntroduceLoops.introduceLoops),
-     ("removeUnusedX7", RemoveUnused.remove),
-     ("loopInvariant", LoopInvariant.loopInvariant),
-     ("removeUnusedX8", RemoveUnused.remove),
-     (* flatten cannot be omitted.  It ensures(?) that no spurious
-      * allocations occur between allocation of an intInf return 
-      * and the call to the primitive.
-      *)
-     ("flatten", Flatten.flatten),
-     ("removeUnusedX9", RemoveUnused.remove),
-     ("localFlatten3", LocalFlatten.flatten),
-     ("removeUnusedX10", RemoveUnused.remove),
-     ("commonSubexp", CommonSubexp.eliminate),
-     ("removeUnusedX11", RemoveUnused.remove),
-     ("commonBlock", CommonBlock.eliminate),
-     ("removeUnusedX12", RemoveUnused.remove),
-     ("redundantTests", RedundantTests.simplify),
-     ("removeUnusedX13", RemoveUnused.remove),
-     ("redundant", Redundant.redundant),
-     (* removeUnused cannot be omitted.
-      * The final shrink pass ensures that constant operands are
-      * not used in dead switch branches in a type-unsafe way.
-      * This ensures that constants are not used where pointers
-      * are expected in the Operand.offsets generated in the
-      * backend.
-      *)
-     ("removeUnused4", RemoveUnused.remove),
-     ("implementHandlers", ImplementHandlers.doit)
+    ("polyEqual", PolyEqual.polyEqual),
+    ("removeUnusedX6", removeX),
+    ("contify2", Contify.contify),
+    ("removeUnusedX7", removeX),
+    ("inline", Inline.inline),
+    ("removeUnusedX8", removeX),
+    ("localFlatten2", LocalFlatten.flatten),
+    ("removeUnused3", RemoveUnused.remove),
+    ("contify3", Contify.contify),
+    ("removeUnusedX9", removeX),
+    ("introduceLoops", IntroduceLoops.introduceLoops),
+    ("removeUnusedX10", removeX),
+    ("loopInvariant", LoopInvariant.loopInvariant),
+    ("removeUnusedX11", removeX),
+    (* flatten cannot be omitted.  It ensures(?) that no spurious
+     * allocations occur between allocation of an intInf return 
+     * and the call to the primitive.
+     *)
+    ("flatten", Flatten.flatten),
+    ("removeUnusedX12", removeX),
+    ("localFlatten3", LocalFlatten.flatten),
+    ("removeUnusedX13", removeX),
+    ("commonSubexp", CommonSubexp.eliminate),
+    ("removeUnusedX14", removeX),
+    ("commonBlock", CommonBlock.eliminate),
+    ("removeUnusedX15", removeX),
+    ("redundantTests", RedundantTests.simplify),
+    ("removeUnusedX16", removeX),
+    ("redundant", Redundant.redundant),
+    (* removeUnused cannot be omitted.
+     * The final shrink pass ensures that constant operands are
+     * not used in dead switch branches in a type-unsafe way.
+     * This ensures that constants are not used where pointers
+     * are expected in the Operand.offsets generated in the
+     * backend.
+     *)
+    ("removeUnused4", RemoveUnused.remove),
+    ("implementHandlers", ImplementHandlers.doit)
     ]
-
+   
 fun stats p =
    Control.message (Control.Detail, fn () => Program.layoutStats p)
 
@@ -131,6 +136,10 @@ fun simplify p =
       else
          let
 	    val name = name^"SSA"
+(*
+	    val _ = List.push(Control.keepPasses, name)
+	    val _ = List.push(Control.keepDiagnostics, name)
+*)
             val _ =
 	       let
 		  open Control

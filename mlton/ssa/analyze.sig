@@ -2,6 +2,7 @@
  * Please see the file LICENSE for license information.
  *)
 type int = Int.t
+type word = Word.t
    
 signature ANALYZE_STRUCTS = 
    sig
@@ -18,11 +19,11 @@ signature ANALYZE =
 		   from: 'a,
 		   to: 'a
 		  } -> unit,
-	  const: Const.t -> 'a,
 	  conApp: {
 		   con: Con.t,
 		   args: 'a vector
 		   } -> 'a,
+	  const: Const.t -> 'a,
 	  copy: 'a -> 'a,
 	  filter: 'a * Con.t * 'a vector -> unit,
 	  filterChar: 'a -> unit,
@@ -35,7 +36,8 @@ signature ANALYZE =
 		    prim: Prim.t,
 		    targs: Type.t vector,
 		    args: 'a vector,
-		    resultType: Type.t
+		    resultType: Type.t,
+		    resultVar: Var.t option
 		    } -> 'a,
 	  program: Program.t,
 	  select: {

@@ -223,6 +223,7 @@ signature SSA_TREE =
 	    val clear: t -> unit
 	    val fromCps: Cps.Program.t * {jumpToLabel: Cps.Jump.t -> Label.t,
 					  funcToFunc: Cps.Func.t -> Func.t} -> t
+	    val foreachVar: t * (Var.t * Type.t -> unit) -> unit
 	    val hasPrim: t * (Prim.t -> bool) -> bool
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val layoutStats: t -> Layout.t

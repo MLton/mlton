@@ -63,12 +63,17 @@ fun 'a analyze
 	  | Call {func = f, args, return} =>
 	       let
 		  val {args = formals, returns} = func f
-		  val shouldReturns =
-		     case return of
-			NONE => shouldReturns
-		      | SOME {cont, ...} => labelArgs cont
-	       in coerces (values args, formals)
-		  ; coerces (returns, shouldReturns)
+	       in
+		  coerces (values args, formals)
+		; case return of
+		     SOME {cont, handler} =>
+		        (coerces (returns, labelArgs cont)
+			 ; Handler.foreachLabel 
+			   (handler, fn h =>
+			    let val v = Vector.sub (labelArgs h, 0)
+			    in coerce {from = getExnVal v, to = v}
+			    end))
+		   | _ => coerces (returns, shouldReturns)
 	       end
 	  | Case {test, cases, default, ...} =>
 	       let val test = value test
@@ -99,19 +104,20 @@ fun 'a analyze
 		; coerce {from = primApp {prim = prim,
 					  targs = Vector.new0 (),
 					  args = values args,
-					  resultType = Type.int},
+					  resultType = Type.int,
+					  resultVar = NONE},
 			  to = Vector.sub (labelArgs success, 0)})
 	  | Raise x => let val v = value x
 		       in coerce {from = v, to = getExnVal v}
 		       end
 	  | Return xs => coerces (values xs, shouldReturns))
-	   handle exn => 
-	      Error.bug (concat ["loopTransfer:", 
-				 Layout.toString (Transfer.layout t),
-				 ": ",
-				 (case exn of 
-				     Fail msg => msg
-				   | _ => "")])
+	handle exn => 
+	   Error.bug (concat ["loopTransfer:", 
+			      Layout.toString (Transfer.layout t),
+			      ": ",
+			      (case exn of 
+				  Fail msg => msg
+				| _ => "")])
       val loopTransfer =
 	 Trace.trace2
 	 ("Analyze.loopTransfer",
@@ -124,22 +130,33 @@ fun 'a analyze
 		| Const c => const c
 		| HandlerPop _ => unit
 		| HandlerPush _ => unit
-		| PrimApp {prim, targs, args, ...} =>
-		     primApp {prim = prim,
-			      targs = targs,
-			      args = values args,
-			      resultType = ty}
-		| Select {tuple, offset} =>
-		     select {tuple = value tuple,
-			     offset = offset,
-			     resultType = ty}
-		| SetHandler h =>
+(*
 		     let
 			val v = Vector.sub (labelArgs h, 0)
 			val _ = coerce {from = getExnVal v, to = v}
 		     in
 			unit
 		     end
+*)
+		| PrimApp {prim, targs, args, ...} =>
+		     primApp {prim = prim,
+			      targs = targs,
+			      args = values args,
+			      resultType = ty,
+			      resultVar = var}
+		| Select {tuple, offset} =>
+		     select {tuple = value tuple,
+			     offset = offset,
+			     resultType = ty}
+		| SetHandler h => unit
+(*
+		     let
+			val v = Vector.sub (labelArgs h, 0)
+			val _ = coerce {from = getExnVal v, to = v}
+		     in
+			unit
+		     end
+*)
 		| SetExnStackLocal => unit
 		| SetExnStackSlot => unit
 		| SetSlotExnStack => unit

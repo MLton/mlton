@@ -17,6 +17,8 @@ common-block.sig
 common-block.fun
 common-subexp.fun
 common-subexp.sig
+constant-propagation.fun
+constant-propagation.sig
 contify.fun
 contify.sig
 direct-exp.fun
@@ -27,6 +29,8 @@ flatten.fun
 flatten.sig
 flat-lattice.fun
 flat-lattice.sig
+global.fun
+global.sig
 implement-handlers.fun
 implement-handlers.sig
 inline.fun
@@ -37,6 +41,8 @@ local-flatten.fun
 local-flatten.sig
 loop-invariant.fun
 loop-invariant.sig
+once.fun
+once.sig
 poly-equal.fun
 poly-equal.sig
 redundant.fun
