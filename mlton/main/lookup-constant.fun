@@ -26,7 +26,7 @@ val buildConstants: (string * (unit -> string)) list =
    in
       [("Exn_keepHistory", fn () => bool (!exnHistory)),
        ("MLton_detectOverflow", fn () => bool (!detectOverflow)),
-       ("MLton_native", fn () => bool (!Native.native)),
+       ("MLton_native", fn () => bool (!codegen = Native)),
        ("MLton_profile_isOn", fn () => bool (!profile <> ProfileNone)),
        ("MLton_safe", fn () => bool (!safe)),
        ("MLton_FFI_numExports", fn () => int (Ffi.numExports ())),

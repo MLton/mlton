@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include "gc.h"
 #include "c-chunk.h"
+#include "interpret.h"
 
 enum {
 	DEBUG = TRUE,
@@ -129,32 +130,41 @@ words(64);
 	move (Word32)				\
 	move (Word64)
 
-#define opcodes()				\
-	moves ()				\
-	coercePrims ()				\
-	realPrims (32)				\
-	realPrims (64)				\
-	wordPrims (8)				\
-	wordPrims (16)				\
-	wordPrims (32)				\
-	wordPrims (64)				\
-	/* Arith */				\
-	opcodeGen (CacheFrontier)		\
-	opcodeGen (CacheStackTop)		\
-	opcodeGen (Call)			\
-	opcodeGen (CCall)			\
-	opcodeGen (FlushFrontier)		\
-	opcodeGen (FlushStackTop)		\
-	opcodeGen (Goto)			\
-	opcodeGen (Object)			\
-	opcodeGen (ProfileLabel)		\
-	opcodeGen (Raise)			\
-	opcodeGen (Return)			\
-	opcodeGen (Switch8)			\
-	opcodeGen (Switch16)			\
-	opcodeGen (Switch32)			\
-	opcodeGen (Switch64)			\
-        opcodeGen (Thread_returnToC)
+#define opcodes()								\
+	moves ()								\
+	coercePrims ()								\
+	realPrims (32)								\
+	realPrims (64)								\
+	wordPrims (8)								\
+	wordPrims (16)								\
+	wordPrims (32)								\
+	wordPrims (64)								\
+	opcodeGen (CacheFrontier)						\
+	opcodeGen (CacheStackTop)						\
+	opcodeGen (Call)							\
+	opcodeGen (CCall)							\
+	opcodeGen (FlushFrontier)						\
+	opcodeGen (FlushStackTop)						\
+	opcodeGen (Goto)							\
+	opcodeGen (Object)							\
+	opcodeGen (ProfileLabel)						\
+	opcodeGen (Raise)							\
+	opcodeGen (Return)							\
+	opcodeGen (Switch8)							\
+	opcodeGen (Switch16)							\
+	opcodeGen (Switch32)							\
+	opcodeGen (Switch64)							\
+        opcodeGen (Thread_returnToC)						\
+	opcodeGen (ArrayOffset)							\
+	opcodeGen (Contents)							\
+	opcodeGen (Frontier)							\
+	opcodeGen (GCState)							\
+	opcodeGen (Global)							\
+	opcodeGen (Offset)							\
+	opcodeGen (Register)							\
+	opcodeGen (StackOffset)							\
+	opcodeGen (StackTop)							\
+	opcodeGen (Word)
 
 #define opcodeName(ty, size, name) opcodeGen (ty##size##_##name)
 
@@ -165,7 +175,7 @@ words(64);
 #define ternary(ty, size, name)  opcodeName (ty, size, name)
 #define unary(ty, size, name)  opcodeName (ty, size, name)
 
-#define coerceOp(f, t)  opcodeGen (f##_to_##t)
+#define coerceOp(f, t)  opcodeGen (f##_to##t)
 
 #define coerce(f, t) coerceOp (f, t)
 
@@ -187,6 +197,8 @@ typedef enum {
 	opcodes ()
 } Opcode;
 
+typedef Opcode OperandCode;
+
 #undef coerce
 #undef coerceOp
 #undef binary
@@ -196,21 +208,6 @@ typedef enum {
 #undef shift
 #undef ternary
 #undef unary
-
-// Operand codes.
-typedef enum {
-	OPERAND_ArrayOffset,
-	OPERAND_Contents,
-	OPERAND_Frontier,
-	OPERAND_GCState,
-	OPERAND_Global,
-	OPERAND_Offset,
-	OPERAND_Real,
-	OPERAND_Register,
-	OPERAND_StackOffset,
-	OPERAND_StackTop,
-	OPERAND_Word,
-} OperandCode;
 
 #define regZ(ty, i) ty##_##i
 
@@ -225,22 +222,22 @@ typedef enum {
 #define LoadSimple(ty, x)			\
 	Fetch (Word8, operandCode);		\
 	switch (operandCode) {			\
-	case OPERAND_Frontier:			\
+	case OPCODE_Frontier:			\
 		x = (typeof(x))Frontier;	\
 	break;					\
-	case OPERAND_Global:			\
+	case OPCODE_Global:			\
 		Fetch (Word16, globalIndex);	\
 		x = G (ty, globalIndex);	\
 	break;					\
-	case OPERAND_Register:			\
+	case OPCODE_Register:			\
 		Fetch (Word16, regIndex);	\
 		x = ty##Reg[regIndex];		\
 	break;					\
-	case OPERAND_StackOffset:		\
+	case OPCODE_StackOffset:		\
 		Fetch (Word16, stackOffset);	\
 		x = S (ty, stackOffset);	\
 	break;					\
-	case OPERAND_Word:			\
+	case OPCODE_Word:			\
 		Fetch (ty, x);			\
 	break;					\
 	}
@@ -248,42 +245,39 @@ typedef enum {
 #define LoadZ(ty, i)						\
 	Fetch (Word8, operandCode);				\
 	switch (operandCode) {					\
-	case OPERAND_ArrayOffset:				\
+	case OPCODE_ArrayOffset:				\
 		LoadSimple (Pointer, base);			\
 		LoadSimple (Word32, arrayIndex);		\
 		regZ (ty, i) = X (ty, base, arrayIndex);	\
 	break;							\
-	case OPERAND_Contents:					\
+	case OPCODE_Contents:					\
 		LoadSimple (Pointer, base);			\
 		regZ (ty, i) = C (ty, base);			\
 	break;							\
-	case OPERAND_Frontier:					\
+	case OPCODE_Frontier:					\
 		regZ (ty, i) = (ty)(Word32)Frontier;		\
 	break;							\
-	case OPERAND_Global:					\
+	case OPCODE_Global:					\
 		Fetch (Word16, globalIndex);			\
 		regZ (ty, i) = G (ty, globalIndex);		\
 	break;							\
-	case OPERAND_Offset:					\
+	case OPCODE_Offset:					\
 		LoadSimple (Pointer, base);			\
 		Fetch (Word16, offset);				\
-		regZ (ty, i) = O (ty, base, offset);		\
+		regZ (ty, i) = O (ty, base, (WordS16)offset);	\
 	break;							\
-	case OPERAND_Real:					\
-		Fetch (ty, regZ (ty, i));			\
-	break;							\
-	case OPERAND_Register:					\
+	case OPCODE_Register:					\
 		Fetch (Word16, regIndex);			\
 		regZ (ty, i) = ty##Reg[regIndex];		\
 	break;							\
-	case OPERAND_StackOffset:				\
+	case OPCODE_StackOffset:				\
 		Fetch (Word16, stackOffset);			\
 		regZ (ty, i) = S (ty, stackOffset);		\
 	break;							\
-	case OPERAND_StackTop:					\
+	case OPCODE_StackTop:					\
 		regZ (ty, i) = (ty)(Word32)StackTop;		\
 	break;							\
-	case OPERAND_Word:					\
+	case OPCODE_Word:					\
 		Fetch (ty, regZ (ty, i));			\
 	break;							\
 	}
@@ -293,36 +287,36 @@ typedef enum {
 #define StoreZ(ty, x)						\
 	Fetch (Word8, operandCode);				\
 	switch (operandCode) {					\
-	case OPERAND_ArrayOffset:				\
+	case OPCODE_ArrayOffset:				\
 		LoadSimple (Pointer, base);			\
 		LoadSimple (Word32, arrayIndex);		\
 		X (ty, base, arrayIndex) = x;			\
 	break;							\
-	case OPERAND_Contents:					\
+	case OPCODE_Contents:					\
 		LoadSimple (Pointer, base);			\
 		C (ty, base) = x;				\
 	break;							\
-	case OPERAND_Frontier:					\
+	case OPCODE_Frontier:					\
 		Frontier = (Pointer)(Word32)x;			\
 	break;							\
-	case OPERAND_Global:					\
+	case OPCODE_Global:					\
 		Fetch (Word16, globalIndex);			\
 		G (ty, globalIndex) = x;			\
 	break;							\
-	case OPERAND_Offset:					\
+	case OPCODE_Offset:					\
 		LoadSimple (Pointer, base);			\
 		Fetch (Word16, offset);				\
-		O (ty, base, offset) = x;			\
+		O (ty, base, (WordS16)offset) = x;		\
 	break;							\
-	case OPERAND_Register:					\
+	case OPCODE_Register:					\
 		Fetch (Word16, regIndex);			\
 		ty##Reg[regIndex] = x;				\
 	break;							\
-	case OPERAND_StackOffset:				\
+	case OPCODE_StackOffset:				\
 		Fetch (Word16, stackOffset);			\
 		S (ty, stackOffset) = x;			\
 	break;							\
-	case OPERAND_StackTop:					\
+	case OPCODE_StackTop:					\
 		StackTop = (Pointer)(Word32)x;			\
 	break;							\
 	}
@@ -333,7 +327,7 @@ typedef enum {
 
 #define opcode(ty, size, name) OPCODE_##ty##size##_##name
 
-#define coerceOp(f, t) OPCODE_##f##_to_##t
+#define coerceOp(f, t) OPCODE_##f##_to##t
 
 #define binary(ty, size, name)							\
 	case opcode (ty, size, name):						\
@@ -436,7 +430,7 @@ struct GC_state gcState;
 		/* Default case. */				\
 		GOTO();
 
-void interpret (Pointer code, Word32 codeOffset) {
+void MLton_Bytecode_interpret (Pointer code, Word32 codeOffset) {
 	Word32 arrayIndex;
 	Pointer base;
 	Word8 caseTest8;
@@ -458,6 +452,7 @@ void interpret (Pointer code, Word32 codeOffset) {
 	OperandCode operandCode;
 	Pointer pc;
 	Word16 regIndex;
+	Word32 returnAddress;
 	Word16 stackOffset;
 	Pointer stackTop;
 	realRegs (32);
@@ -491,7 +486,9 @@ mainLoop:
 		goto mainLoop;
 	case OPCODE_Call:
 		Fetch (Word16, frameSize);
+		Fetch (Word32, returnAddress);
 		stackTop += frameSize;
+		S(Word32, -4) = returnAddress;
 		GOTO ();
 	case OPCODE_CCall:
 		Fetch (Word16, cFunc);
@@ -525,8 +522,9 @@ mainLoop:
 	goto mainLoop;
 }
 
-int main () {
-	fprintf (stderr, "There are %d opcodes.\n", 
-			1 + OPCODE_Thread_returnToC);
-	return 0;
+void MLton_Bytecode_printOpcodes () {
+	int i;
+
+	for (i = 0; i < cardof (opcodeStrings); ++i)
+		fprintf (stdout, "%s\n", opcodeStrings[i]);
 }

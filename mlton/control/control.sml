@@ -60,6 +60,25 @@ val chunk = control {name = "chunk",
 		     default = Coalesce {limit = 4096},
 		     toString = Chunk.toString}
 
+structure Codegen =
+   struct
+      datatype t =
+	 Bytecode
+       | CCodegen
+       | Native
+
+      val toString: t -> string =
+	 fn Bytecode => "Bytecode"
+	  | CCodegen => "C"
+	  | Native => "Native"
+   end
+
+datatype codegen = datatype Codegen.t
+   
+val codegen = control {name = "codegen",
+		       default = Native,
+		       toString = Codegen.toString}
+
 val deadCode = control {name = "dead code",
 			default = true,
 			toString = Bool.toString}
@@ -278,10 +297,6 @@ val mayLoadWorld = control {name = "may load world",
 
 structure Native =
    struct
-      val native = control {name = "native",
-			    default = true,
-			    toString = Bool.toString}
-
       val commented = control {name = "native commented",
 			       default = 0,
 			       toString = Int.toString}

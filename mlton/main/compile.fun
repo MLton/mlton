@@ -104,6 +104,8 @@ structure Backend = Backend (structure Ssa = Ssa2
 			     fun funcToLabel f = f)
 structure CCodegen = CCodegen (structure Ffi = Ffi
 			       structure Machine = Machine)
+structure Bytecode = Bytecode (structure CCodegen = CCodegen
+			       structure Machine = Machine)
 structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
 				   structure Machine = Machine)
 
@@ -593,9 +595,10 @@ fun preCodegen {input}: Machine.Program.t =
 	    else ()
 	 end
       val codegenImplementsPrim =
-	 if !Control.Native.native
-	    then x86Codegen.implementsPrim
-	 else CCodegen.implementsPrim
+	 case !Control.codegen of
+	    Control.Bytecode => Bytecode.implementsPrim
+	  | Control.CCodegen => CCodegen.implementsPrim
+	  | Control.Native => x86Codegen.implementsPrim
       val machine =
 	 Control.pass
 	 {name = "backend",
@@ -635,16 +638,20 @@ fun compile {input: File.t list, outputC, outputS}: unit =
       val _ = Machine.Program.clearLabelNames machine
       val _ = Machine.Label.printNameAlphaNumeric := true
       val _ =
-	 if !Control.Native.native
-	    then
+	 case !Control.codegen of
+	    Control.Bytecode =>
+	       Control.trace (Control.Top, "Byte code gen")
+	       Bytecode.output {program = machine,
+				outputC = outputC}
+	  | Control.CCodegen =>
+	       Control.trace (Control.Top, "C code gen")
+	       CCodegen.output {program = machine,
+				outputC = outputC}
+	  | Control.Native =>
 	       Control.trace (Control.Top, "x86 code gen")
 	       x86Codegen.output {program = machine,
 				  outputC = outputC,
 				  outputS = outputS}
-	 else
-	    Control.trace (Control.Top, "C code gen")
-	    CCodegen.output {program = machine,
-			     outputC = outputC}
       val _ = Control.message (Control.Detail, PropertyList.stats)
       val _ = Control.message (Control.Detail, HashSet.stats)
    in

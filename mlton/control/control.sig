@@ -38,6 +38,13 @@ signature CONTROL =
 
       val chunk: chunk ref
 
+      datatype codegen =
+	 Bytecode
+       | CCodegen
+       | Native
+
+      val codegen: codegen ref
+
       val deadCode: bool ref
 	 
       (* Generate an executable with debugging info. *)
@@ -146,9 +153,6 @@ signature CONTROL =
 
       structure Native:
 	 sig
-	    (* whether or not to use native codegen *)
-	    val native: bool ref
-
 	    (* whether or not to use comments in native codegen *)
 	    val commented: int ref
 

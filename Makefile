@@ -175,6 +175,9 @@ runtime:
 	$(MAKE) -C runtime
 	$(CP) $(RUN)/*.a $(LIB)/$(TARGET)/
 	$(CP) runtime/*.h include/*.h $(LIB)/include/
+	$(MAKE) -C bytecode
+	bytecode/print-opcodes >$(LIB)/opcodes
+	ar r $(LIB)/$(TARGET)/libmlton.a bytecode/interpret.o 
 
 .PHONY: script
 script:

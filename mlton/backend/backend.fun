@@ -258,7 +258,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 		*    This will be created by the call to makeProfileInfo at the
 		*    end of the backend.
 		*)
-	       if not (!Control.Native.native)
+	       if !Control.codegen = Control.CCodegen
 		  orelse !Control.profile <> Control.ProfileNone
 		  then new ()
 	       else
@@ -380,9 +380,9 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 			    M.Operand.Word (WordX.fromIntInf
 					    (Word.toIntInf w, WordSize.default)))
 		| Real r =>
-		     if !Control.Native.native
-			then globalReal r
-		     else M.Operand.Real r
+		     if !Control.codegen = Control.CCodegen
+			then M.Operand.Real r
+		     else globalReal r
 		| Word w => M.Operand.Word w
 		| Word8Vector v => globalString (Word8.vectorToString v)
 	    end

@@ -7,10 +7,12 @@
  *)
 Group
 
+functor Bytecode
 functor CCodegen
 functor x86Codegen
   
 is
 
 c-codegen/sources.cm
+bytecode/sources.cm
 x86-codegen/sources.cm

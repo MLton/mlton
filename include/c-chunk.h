@@ -18,10 +18,10 @@ extern struct GC_state gcState;
 
 #define GCState ((Pointer)&gcState)
 #define ExnStack *(Word*)(GCState + ExnStackOffset)
-#define FrontierMem *(Word*)(GCState + FrontierOffset)
+#define FrontierMem *(Pointer*)(GCState + FrontierOffset)
 #define Frontier frontier
-#define StackBottom *(Word*)(GCState + StackBottomOffset)
-#define StackTopMem *(Word*)(GCState + StackTopOffset)
+#define StackBottom *(Pointer*)(GCState + StackBottomOffset)
+#define StackTopMem *(Pointer*)(GCState + StackTopOffset)
 #define StackTop stackTop
 
 /* ------------------------------------------------- */

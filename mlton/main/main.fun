@@ -94,11 +94,13 @@ fun setTargetType (target: string, usage): unit =
 	    targetArch := arch
 	    ; targetOS := os
 	    ; (case arch of
-		  Sparc =>
-		     (align := Align8
-		      ; Native.native := false)
+		  Sparc => (align := Align8; codegen := CCodegen)
 		| _ => ())
 	 end
+
+fun warnDeprecated flag =
+   Out.output (Out.error,
+	       concat ["Warning: -", flag, " is deprecated\n"])
    
 fun makeOptions {usage} = 
    let
@@ -126,8 +128,7 @@ fun makeOptions {usage} =
 	"select basis library to prefix to the program",
 	SpaceString (fn s =>
 		     let
-			val _ = Out.output (Out.error,
-					    "Warning: -basis is deprecated\n")
+			val () = warnDeprecated "basis"
 			val s' = concat ["basis-", s]
 		     in
 			if List.contains (basisLibs, s', String.equals)
@@ -147,6 +148,15 @@ fun makeOptions {usage} =
 		     List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
+       (Normal, "codegen",
+	if !targetArch = Sparc then " {c}" else " {native|bytecode|c}",
+	"which code generator to use",
+	SpaceString (fn s =>
+		     case s of
+			"bytecode" => codegen := Bytecode
+		      | "c" => codegen := CCodegen
+		      | "native" => codegen := Native
+		      | _ => usage (concat ["invalid -codegen flag: ", s]))),
        (Expert, "dead-code", " {true|false}",
 	"basis library dead code elimination",
 	boolRef deadCode),
@@ -252,7 +262,9 @@ fun makeOptions {usage} =
        (Normal, "native",
 	if !targetArch = Sparc then " {false}" else " {true|false}",
 	"use native code generator",
-	boolRef Native.native),
+	Bool (fn b =>
+	      (warnDeprecated "native"
+	       ; Control.codegen := (if b then Native else CCodegen)))),
        (Expert, "native-commented", " <n>", "level of comments  (0)",
 	intRef Native.commented),
        (Expert, "native-copy-prop", " {true|false}", 
@@ -514,20 +526,22 @@ fun commandLine (args: string list): unit =
 		      linkWithGmp,
 		      linkOpts]
       val _ =
-	 if !Native.native andalso targetArch = Sparc
-	    then usage "can't use -native true on Sparc"
+	 if !Control.codegen = Native andalso targetArch = Sparc
+	    then usage "can't use native codegen on Sparc"
 	 else ()
       val _ =
-	 chunk := (if !Native.native
-		      then
-			 if isSome (!coalesce)
-			    then usage "can't use -coalesce and -native true"
-			 else ChunkPerFunc
-		   else Coalesce {limit = (case !coalesce of
-					      NONE => 4096
-					    | SOME n => n)})
-      val _ = if not (!Native.native) andalso !Native.IEEEFP
-		 then usage "can't use -native false and -ieee-fp true"
+	 chunk :=
+	 (case !Control.codegen of
+	     Bytecode => OneChunk
+	   | CCodegen => Coalesce {limit = (case !coalesce of
+					       NONE => 4096
+					     | SOME n => n)}
+	   | Native =>
+		if isSome (!coalesce)
+		   then usage "can't use -coalesce and -native true"
+		else ChunkPerFunc)
+      val _ = if not (!Control.codegen = Native) andalso !Native.IEEEFP
+		 then usage "must use native codegen with -ieee-fp true"
 	      else ()
       val _ =
 	 if !keepDot andalso List.isEmpty (!keepPasses)

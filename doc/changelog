@@ -1,5 +1,10 @@
 Here are the changes since version 20040227.
 
+* 2004-05-28
+  - Deprecated the -native flag.  Instead, use the new flag
+    -codegen {native|bytecode|C}.  This is in anticipation of adding a
+    bytecode compiler.
+
 * 2004-05-26
   - Fixed a front-end bug that could cause cascading error to print a
     very large and unreadable internal bug message of the form
