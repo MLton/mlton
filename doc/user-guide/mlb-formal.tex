@@ -430,7 +430,7 @@ in the Core and Modules semantics.
 \noindent
 \textit{Comments}:
 \begin{itemize}
-\item[(\ref{eqn:mlb:SS:bstrbind})] Note that $\mit{fstrbind} \subset
+\item[(\ref{eqn:mlb:SS:bstrbind})] Note that $\mit{bstrbind} \subset
 \mit{strbind}$.  Hence, this rule can be derived from the
 Definition's $\mit{B} \vdash \mit{strbind} \Rightarrow \mit{SE}$.
 \end{itemize}
@@ -446,7 +446,7 @@ Definition's $\mit{B} \vdash \mit{strbind} \Rightarrow \mit{SE}$.
 \label{eqn:mlb:SS:bsigbind}
 \judge{
 \begin{stackCC}
-\mit{B}(\mit{strid}_2) = \Sigma \quad \Sigma = (\mit{T})\mit{E} \quad
+\mit{B}(\mit{sigid}_2) = \Sigma \quad \Sigma = (\mit{T})\mit{E} \quad
 \mit{T} \cap (\mit{T}~\mrm{of}~\mit{B}) = \emptyset \\
 \mit{T} = \mrm{tynames}~\mit{E} \setminus (\mit{T}~\mrm{of}~\mit{B}) \quad
 \langle\mit{B} \vdash \mit{bsigbind} \longrightarrow \mit{G}\rangle
@@ -461,7 +461,7 @@ Definition's $\mit{B} \vdash \mit{strbind} \Rightarrow \mit{SE}$.
 \noindent
 \textit{Comments}:
 \begin{itemize}
-\item[(\ref{eqn:mlb:SS:bsigbind})] Note that $\mit{fsigbind} \subset
+\item[(\ref{eqn:mlb:SS:bsigbind})] Note that $\mit{bsigbind} \subset
 \mit{sigbind}$.  Hence, this rule can be derived from the
 Definition's $\mit{B} \vdash \mit{sigbind} \Rightarrow \mit{G}$.  As such, the
 following comment from the Definition applies:
@@ -700,7 +700,7 @@ $\mit{basbind}$.
 \noindent
 \textit{Comments}:
 \begin{itemize}
-\item[(\ref{eqn:mlb:DS:bstrbind})] Note that $\mit{fstrbind} \subset
+\item[(\ref{eqn:mlb:DS:bstrbind})] Note that $\mit{bstrbind} \subset
 \mit{strbind}$.  Hence, this rule can be derived from the
 Definition's $\mit{B} \vdash \mit{strbind} \Rightarrow \mit{SE} / p$, noting that
 the derivation may neither cause a side-effect nor generate an
@@ -717,7 +717,7 @@ exception packet.
 \begin{equation}
 \label{eqn:mlb:DS:bsigbind}
 \judge{
-\mit{IB}(\mit{strid}_2) = I \quad 
+\mit{IB}(\mit{sigid}_2) = I \quad 
 \langle\mit{IB} \vdash \mit{bsigbind} \longrightarrow \mit{G}\rangle
 }{
 \mit{IB} \vdash \mit{sigid}_1 ~\mtt{=}~ \mit{sigid}_2 ~\langle\mtt{and}~\mit{bsigbind}\rangle \longrightarrow 
@@ -729,7 +729,7 @@ exception packet.
 \noindent
 \textit{Comments}:
 \begin{itemize}
-\item[(\ref{eqn:mlb:DS:bsigbind})] Note that $\mit{fsigbind} \subset
+\item[(\ref{eqn:mlb:DS:bsigbind})] Note that $\mit{bsigbind} \subset
 \mit{sigbind}$.  Hence, this rule can be derived from the
 Definition's $\mit{IB} \vdash \mit{sigbind} \Rightarrow \mit{G}$, noting that
 the derivation may neither cause a side-effect nor generate an
