@@ -234,8 +234,8 @@ ssa/common-subexp.fun
 ../lib/mlton/basic/unique-id.sig
 ../lib/mlton/basic/unique-id.fun
 ssa/constant-propagation.sig
-ssa/once.sig
-ssa/once.fun
+ssa/multi.sig
+ssa/multi.fun
 ssa/global.sig
 ssa/global.fun
 ssa/constant-propagation.fun

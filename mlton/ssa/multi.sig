@@ -4,21 +4,6 @@
 
 type int = Int.t
 
-signature ONCE_STRUCTS = 
-   sig
-      include SSA_TREE
-   end
-
-signature ONCE = 
-   sig
-      include ONCE_STRUCTS
-
-      (* Returns true for variables that are guaranteed to be bound no
-       * more than once during the entire program.
-       *)
-      val once: Program.t -> Var.t -> bool
-   end
-
 signature MULTI_STRUCTS = 
    sig
       include SSA_TREE

@@ -40,8 +40,8 @@ local-ref.sig
 local-ref.fun
 loop-invariant.fun
 loop-invariant.sig
-once.fun
-once.sig
+multi.fun
+multi.sig
 poly-equal.fun
 poly-equal.sig
 redundant.fun

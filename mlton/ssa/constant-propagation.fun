@@ -18,7 +18,7 @@ struct
 
 open S
 
-structure Once = Once (S)
+structure Multi = Multi (S)
 structure Global = Global (S)
 
 structure Type =
@@ -486,7 +486,8 @@ val traceMakeDataUnknown =
 fun simplify (program as Program.T {datatypes, globals, functions, main})
    : Program.t =
    let
-      val once = Once.once program
+      val {varIsMultiDefed, ...} = Multi.multi program
+      val once = not o varIsMultiDefed
       val {get = conInfo: Con.t -> {result: Type.t,
 				    types: Type.t vector,
 				    values: Value.t vector},
