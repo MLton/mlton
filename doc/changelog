@@ -1,5 +1,9 @@
 Here are the changes from version 20020923.
 
+* 2002-11-22
+  - Fixed bug that caused time profiling to fail (with a segfault) when resuming
+    a saved world. 
+
 * 2002-11-07
   - Fixed bug in MLton.eq that could arise when using eq on functions.
 

@@ -1,18 +1,8 @@
 structure ProfileTime: MLTON_PROFILE =
 struct
 
-fun setItimer (t: Time.time): unit =
-   Itimer.set' (Itimer.Prof, {interval = t, value = t})
-
-(* It is important that clean () happend before the data is freed, because
- * otherwise the signal will keep arriving and the catcher (see profile-time.c)
- * will get a segfault trying to update a nonexistent array.
- *)
-fun clean () = setItimer Time.zeroTime
-
 structure Prim = Primitive.MLton.ProfileTime
-structure P = Profile (open Prim
-		       val clean = clean)
+structure P = Profile (open Prim)
 open P
 
 val _ =
@@ -20,11 +10,37 @@ val _ =
       then ()
    else
       let
-	 val _ = Prim.init ()
-	 val _ = setCurrent (Data.malloc ())
-	 val _ = setItimer (Time.fromMilliseconds 10)
+	 fun setItimer (t: Time.time): unit =
+	    Itimer.set' (Itimer.Prof, {interval = t, value = t})
+	 fun init () =
+	    (Prim.init ()
+	     ; setCurrent (Data.malloc ())
+	     ; setItimer (Time.fromMilliseconds 10))
+	 val _ =
+	    (* It is important to zero the itimer before the cleanAtExit,
+	     * which frees the data.  Otherwise, the signal will keep arriving
+	     * and the catcher (see profile-time.c) will get a segfault trying
+	     * to update a nonexistent array.
+	     *)
+	    Cleaner.addNew
+	    (Cleaner.atExit, fn () =>
+	     (setItimer Time.zeroTime
+	      ; P.cleanAtExit ()))
+	 val _ =
+	    (* It is important to cleanAtLoadWorld (which resets the profile
+	     * infrastructure, before creating new profiling data and setting
+	     * the timer.
+	     *)
+	    Cleaner.addNew
+	    (Cleaner.atLoadWorld, fn () =>
+	     let
+		val _ = P.cleanAtLoadWorld ()
+		val _ = init ()
+	     in
+		()
+	     end)
       in
-	 ()
+	 init ()
       end
 
 end

@@ -1,6 +1,5 @@
 functor Profile (S:
 		 sig
-		    val clean: unit -> unit
 		    val isOn: bool
 		    structure Data:
 		       sig
@@ -14,7 +13,11 @@ functor Profile (S:
 		       end
 		    val current: unit -> Data.t
 		    val setCurrent: Data.t -> unit
-		 end): MLTON_PROFILE =
+		 end): sig
+			  include MLTON_PROFILE
+			  val cleanAtExit: unit -> unit
+			  val cleanAtLoadWorld: unit -> unit
+		       end =
 struct
 
 open S
@@ -102,9 +105,7 @@ structure Data =
 	       end
    end
 
-val r = ref (Data.make (if isOn
-			   then current ()
-			else S.Data.dummy))
+val r: Data.t ref = ref (Data.make S.Data.dummy)
 
 fun current () = !r
 
@@ -125,19 +126,26 @@ fun setCurrent (d as Data.T {array, isCurrent, isFreed, ...}) =
 	    ()
 	 end
 
-val _ =
-   if not isOn
-      then ()
-   else 
-      Cleaner.addNew
-      (Cleaner.atExit, fn () =>
-       let
-	  val _ = clean ()
-	  val _ = Data.write (current (), "mlmon.out")
-	  val _ = List.app (S.Data.free o Data.array) (!Data.all)
-       in
-	  ()
-       end)
+fun init () = setCurrent (Data.make (S.current ()))
+
+val _ = if isOn then init () else ()
+
+fun cleanAtExit () =
+   let
+      val _ = Data.write (current (), "mlmon.out")
+      val _ = List.app (S.Data.free o Data.array) (!Data.all)
+   in
+      ()
+   end
+
+fun cleanAtLoadWorld () =
+   let
+      (* In a new world, all of the old profiling data is invalid. *)
+      val _ = Data.all := []
+      val _ = init ()
+   in
+      ()
+   end
 
 end
 

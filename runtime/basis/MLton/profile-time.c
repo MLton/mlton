@@ -18,6 +18,10 @@
 #endif
 #define	MAGIC	"MLton prof\n"
 
+enum {
+	DEBUG_PROFILE = FALSE,
+};
+
 extern struct GC_state gcState;
 
 extern void	_start(void),
@@ -50,21 +54,29 @@ Pointer MLton_ProfileTime_Data_malloc (void) {
 	 * malloc()/free() for the array of bins.
 	 */
 	uint *data;
-
+	
 	assert(card != 0);
 	data = (uint *)malloc (card * sizeof(*data));
 	if (data == NULL)
 		die ("Out of memory");
 	MLton_ProfileTime_Data_reset ((Pointer)data);
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "0x%08x = MLton_ProfileTimeData_malloc ()\n",
+				(uint)data);
 	return (Pointer)data;
 }
 
 void MLton_ProfileTime_Data_free (Pointer d) {
 	uint *data;
 
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "MLton_ProfileTime_Data_free (0x%08x)\n",
+				(uint)d);
 	data = (uint*)d;
 	assert ((card != 0) and (data != NULL));
 	free (data);
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "free ok\n");
 }
 
 void MLton_ProfileTime_Data_reset (Pointer d) {
@@ -100,16 +112,19 @@ void MLton_ProfileTime_Data_write (Pointer d, Word fd) {
 	swriteUint (fd, END);
 	swriteUint (fd, sizeof(*data));
 	swriteUint (fd, MLPROF_KIND_TIME);
+	if (DEBUG_PROFILE) fprintf (stderr, "writing unknown\n");
 	unless (0 == data[card]) {
 		swriteUint (fd, 0);
 		swriteUint (fd, data[card]);
 	}
+	if (DEBUG_PROFILE) fprintf (stderr, "writing data\n");
 	for (i = 0; i < card - 1; ++i) {
 		unless (0 == data[i]) {
 			swriteUint (fd, START + i);
 			swriteUint (fd, data[i]); 
 		}
 	}
+	if (DEBUG_PROFILE) fprintf (stderr, "done\n");
 }
 
 /*
