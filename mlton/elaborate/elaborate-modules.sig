@@ -8,7 +8,6 @@
 signature ELABORATE_MODULES_STRUCTS = 
    sig
       structure Ast: AST
-      structure ConstType: CONST_TYPE
       structure CoreML: CORE_ML
       structure Decs: DECS
       structure Env: ELABORATE_ENV
@@ -22,7 +21,5 @@ signature ELABORATE_MODULES =
    sig
       include ELABORATE_MODULES_STRUCTS
 
-      val elaborateTopdec:
-	 Ast.Topdec.t * {env: Env.t} -> Decs.t
-      val lookupConstant: (string * ConstType.t -> CoreML.Const.t) ref
+      val elaborateTopdec: Ast.Topdec.t * {env: Env.t} -> Decs.t
    end

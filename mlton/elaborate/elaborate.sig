@@ -21,11 +21,10 @@ signature ELABORATE =
    sig
       include ELABORATE_STRUCTS
 
-      structure ConstType: CONST_TYPE
       structure Decs: DECS
       structure Env: ELABORATE_ENV
 
       val elaborateMLB:
-	 Ast.Basdec.t * {addPrim: Env.t -> Decs.t} -> Env.t * (Decs.t * bool) vector
-      val lookupConstant: (string * ConstType.t -> CoreML.Const.t) ref
+	 Ast.Basdec.t * {addPrim: Env.t -> Decs.t}
+	 -> Env.t * (Decs.t * bool) vector
   end

@@ -272,6 +272,7 @@ structure PrimKind =
 
       datatype t =
 	 BuildConst
+       | CommandLineConst of {value: Const.t}
        | Const
        | Export of Attribute.t list
        | Import of Attribute.t list

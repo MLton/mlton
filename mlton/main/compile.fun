@@ -44,6 +44,7 @@ local
    open Atoms
 in
    structure Const = Const
+   structure ConstType = Const.ConstType
    structure Ffi = Ffi
    structure WordX = WordX
 end
@@ -89,7 +90,6 @@ structure Elaborate = Elaborate (structure Ast = Ast
 local
    open Elaborate
 in
-   structure ConstType = ConstType
    structure Env = Env
    structure Decs = Decs
 end
@@ -117,6 +117,9 @@ structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
 (*                 Lookup Constant                   *)
 (* ------------------------------------------------- *)
 
+val commandLineConstants: {name: string, value: string} list ref = ref []
+fun setCommandLineConstant c = List.push (commandLineConstants, c)
+   
 val allConstants: (string * ConstType.t) list ref = ref []
 val amBuildingConstants: bool ref = ref false
    
@@ -127,16 +130,26 @@ val lookupConstant =
 	 Promise.lazy
 	 (fn () =>
 	  if !amBuildingConstants
-	     then fn ct => (List.push (allConstants, ct)
-			    ; zero)
+	     then (fn ({name, default, ...}, t) =>
+		   let
+		      (* Don't keep constants that already have a default value.
+		       * These are defined by _command_line_const and set by
+		       * -const, and shouldn't be looked up.
+		       *)
+		      val () =
+			 if isSome default
+			    then ()
+			 else List.push (allConstants, (name, t))
+		   in
+		      zero
+		   end)
 	  else
 	     File.withIn
 	     (concat [!Control.libTargetDir, "/constants"], fn ins =>
-	      LookupConstant.load ins))
+	      LookupConstant.load (ins, !commandLineConstants)))
    in
       fn z => f () z
    end
-
 
 (* ------------------------------------------------- *)   
 (*                   Primitive Env                   *)
@@ -318,10 +331,9 @@ fun parseAndElaborateMLB (input: String.t): Env.t * (Decs.t * bool) vector =
    {name = "parseAndElaborate",
     suffix = "core-ml",
     style = Control.ML,
-    thunk = fn () => 
-    Ref.fluidLet
-    (Elaborate.lookupConstant, lookupConstant, fn () =>
-     elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})),
+    thunk = (fn () =>
+	     (Const.lookup := lookupConstant
+	      ; elaborateMLB (lexAndParseMLB input, {addPrim = addPrim}))),
     display = displayEnvDecs}
    
 (* ------------------------------------------------- *)
@@ -336,9 +348,7 @@ fun outputBasisConstants (out: Out.t): unit =
       val decs = Vector.map (decs, fn (decs, _) => Decs.toList decs)
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
       (* Need to defunctorize so the constants are forced. *)
-      val _ =
-	 Defunctorize.defunctorize
-	 (CoreML.Program.T {decs = decs})
+      val _ = Defunctorize.defunctorize (CoreML.Program.T {decs = decs})
       val _ = LookupConstant.build (!allConstants, out)
    in
       ()
@@ -404,8 +414,9 @@ fun elaborate {input: String.t}: Xml.Program.t =
       (* Set GC_state offsets. *)
       val _ =
 	 let
-	    fun get (s: string): Bytes.t =
-	       case lookupConstant (s, ConstType.Word) of
+	    fun get (name: string): Bytes.t =
+	       case lookupConstant ({default = NONE, name = name},
+				    ConstType.Word) of
 		  Const.Word w => Bytes.fromInt (WordX.toInt w)
 		| _ => Error.bug "GC_state offset must be an int"
 	 in

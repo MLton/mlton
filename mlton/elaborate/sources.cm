@@ -7,7 +7,6 @@
  *)
 Group
 
-signature CONST_TYPE
 signature ELABORATE
 functor Elaborate
 functor TypeEnv
@@ -20,7 +19,6 @@ is
 ../core-ml/sources.cm
 ../../lib/mlton/sources.cm
 
-const-type.sig
 decs.sig
 decs.fun
 type-env.sig

@@ -232,7 +232,8 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
     | RBRACKET | REC | RPAREN | SEMICOLON | SHARING | SIG | SIGNATURE | STRUCT
     | STRUCTURE | THEN | TYPE | VAL | WHERE | WHILE | WILD | WITH | WITHTYPE
       (* Extensions *)
-    | BASIS_DONE | BUILD_CONST | CONST | EXPORT | FFI | IMPORT | PRIM
+    | BASIS_DONE | BUILD_CONST | COMMAND_LINE_CONST | CONST | EXPORT | FFI
+    | IMPORT | PRIM
 
 %nonterm
          aexp of Exp.node
@@ -255,6 +256,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | constr of Con.t * Type.t option
        | constraint of Type.t option
        | constrs of (Con.t * Type.t option) list
+       | constOrBool of Const.t
        | datBind of DatBind.t
        | datBindNoWithtype of DatBind.t
        | datatypeRhs of DatatypeRhs.t
@@ -1011,12 +1013,16 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 					     exp_psright)))
         | BUILD_CONST STRING COLON ty SEMICOLON
 	  (Exp.Prim {kind = PrimKind.BuildConst, name = STRING, ty = ty})
+	| COMMAND_LINE_CONST STRING COLON ty EQUALOP constOrBool SEMICOLON
+	  (Exp.Prim {kind = PrimKind.CommandLineConst {value = constOrBool},
+		     name = STRING,
+		     ty = ty})
         | CONST STRING COLON ty SEMICOLON
 	  (Exp.Prim {kind = PrimKind.Const, name = STRING, ty = ty})
         | FFI STRING COLON ty SEMICOLON
 	  (Control.warning
 	   (reg (FFIleft, SEMICOLONright),
-	    Layout.str "_ffi is deprecated.  Please use _import.",
+	    Layout.str "_ffi is deprecated.  Use _import.",
 	    Layout.empty)
 	   ; Exp.Prim {kind = PrimKind.Import [], name = STRING, ty = ty})
 	| EXPORT STRING attributes COLON ty SEMICOLON
@@ -1030,7 +1036,9 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
         | PRIM STRING COLON ty SEMICOLON
 	  (Exp.Prim {kind = PrimKind.Prim, name = STRING, ty = ty})
 
-attributes :               ([])
+attributes
+   :
+     ([])
    | id attributes
      (let
 	 val id = Symbol.toString (#1 id)
@@ -1158,6 +1166,18 @@ ty0_pc	: ty COMMA ty		([ty1, ty2])
 (*                       Atoms                       *)
 (*---------------------------------------------------*)
 
+constOrBool
+   : const (const)
+   | id (let
+	    fun ok b = Const.makeRegion (Const.Bool b, reg (idleft, idright))
+	 in	       
+	    case Symbol.toString (#1 id) of
+	       "false" => ok false
+	     | "true" => ok true
+	     | s => (error (#2 id, concat ["unknown boolean constant: ", s])
+		     ; ok false)
+	 end)
+	  
 const	: const'                (Const.makeRegion
 				 (const', reg (const'left, const'right)))
 

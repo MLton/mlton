@@ -155,12 +155,13 @@ datatype 'a option = NONE | SOME of 'a
 
 structure Primitive =
    struct
-      val detectOverflow = _build_const "MLton_detectOverflow": bool;
+      val detectOverflow =
+	 _command_line_const "MLton.detectOverflow": bool = true;
       val eq = _prim "MLton_eq": 'a * 'a -> bool;
 (*      val errno = _import "MLton_errno": unit -> int; *)
       val installSignalHandler =
 	 _prim "MLton_installSignalHandler": unit -> unit;
-      val safe = _build_const "MLton_safe": bool;
+      val safe = _command_line_const "MLton.safe": bool = true;
       val touch = _prim "MLton_touch": 'a -> unit;
       val usesCallcc: bool ref = ref false;
 
@@ -250,7 +251,8 @@ structure Primitive =
 	    val extra = _prim "Exn_extra": exn -> 'a;
 	    val extra: exn -> extra = extra
 	    val name = _prim "Exn_name": exn -> string;
-	    val keepHistory = _build_const "Exn_keepHistory": bool;
+	    val keepHistory =
+	       _command_line_const "Exn.keepHistory": bool = false;
 	    val setExtendExtra =
 	       _prim "Exn_setExtendExtra": (string * 'a -> 'a) -> unit;
 	    val setExtendExtra: (string * extra -> extra) -> unit =
@@ -1384,7 +1386,7 @@ structure Primitive =
 
       structure TextIO =
 	 struct
-	    val bufSize = _build_const "TextIO_bufSize": int;
+	    val bufSize = _command_line_const "TextIO.bufSize": int = 4096;
 	 end
       
       structure Thread =

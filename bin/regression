@@ -97,7 +97,7 @@ for f in `ls *.sml`; do
 		echo "testing $f"
 		case "$f" in
 		exnHistory*)
-			extraFlags="-exn-history true"
+			extraFlags="-const 'Exn.keepHistory true'"
 		;;
 		*)
 			extraFlags=""

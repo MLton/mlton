@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor LookupConstant (S: LOOKUP_CONSTANT_STRUCTS): LOOKUP_CONSTANT = 
 struct
 
@@ -24,13 +25,9 @@ val buildConstants: (string * (unit -> string)) list =
       val int = Int.toString
       open Control
    in
-      [("Exn_keepHistory", fn () => bool (!exnHistory)),
-       ("MLton_detectOverflow", fn () => bool (!detectOverflow)),
-       ("MLton_native", fn () => bool (!codegen = Native)),
+      [("MLton_native", fn () => bool (!codegen = Native)),
        ("MLton_profile_isOn", fn () => bool (!profile <> ProfileNone)),
-       ("MLton_safe", fn () => bool (!safe)),
-       ("MLton_FFI_numExports", fn () => int (Ffi.numExports ())),
-       ("TextIO_bufSize", fn () => int (!textIOBufSize))]
+       ("MLton_FFI_numExports", fn () => int (Ffi.numExports ()))]
    end
 
 datatype z = datatype ConstType.t
@@ -117,7 +114,8 @@ fun build (constants, out) =
        fn l => (Out.output (out, l); Out.newline out))
    end
 
-fun load (ins: In.t): string * ConstType.t -> Const.t =
+fun load (ins: In.t, commandLineConstants)
+   : {default: string option, name: string} * ConstType.t -> Const.t =
    let
       val table: {hash: word, name: string, value: string} HashSet.t =
 	 HashSet.new {hash = #hash}
@@ -132,38 +130,64 @@ fun load (ins: In.t): string * ConstType.t -> Const.t =
 	 in
 	    ()
 	 end
-      val _ =
+      val () =
 	 List.foreach (buildConstants, fn (name, f) =>
 		       add {name = name, value = f ()})
+      val () =
+	 List.foreach
+	 (commandLineConstants, fn {name, value} =>
+	  let
+	     val () =
+		if name = "Exn.keepHistory"
+		   then (case Bool.fromString value of
+			    NONE => Error.bug "bad value for Exn.history"
+			  | SOME b => Control.exnHistory := b)
+		else ()
+	  in
+	     add {name = name, value = value}
+	  end)
       val _ = 
 	 In.foreachLine
 	 (ins, fn l =>
 	  case String.tokens (l, Char.isSpace) of
 	     [name, "=", value] => add {name = name, value = value}
 	   | _ => Error.bug (concat ["strange constants line: ", l]))
-      fun lookupConstant (name: string, ty: ConstType.t): Const.t =
+      fun lookupConstant ({default, name}, ty: ConstType.t): Const.t =
 	 let
  	    val {value, ...} =
- 	       HashSet.lookupOrInsert
- 	       (table, String.hash name,
- 		fn {name = name', ...} => name = name',
- 		fn () => Error.bug (concat ["constant not found: ", name]))
+	       let
+		  val hash = String.hash name
+	       in
+		  HashSet.lookupOrInsert
+		  (table, hash,
+		   fn {name = name', ...} => name = name',
+		   fn () =>
+		   case default of
+		      NONE => Error.bug (concat ["constant not found: ", name])
+		    | SOME value =>
+			 {hash = hash,
+			  name = name,
+			  value = value})
+	       end
+	    fun error (t: string) =
+	       Error.bug (concat ["constant ", name, " expects a ", t,
+				  " but got ", value, "."])
 	 in
 	    case ty of
 	       Bool =>
 		  (case Bool.fromString value of
-		      NONE => Error.bug "strange Bool constant"
+		      NONE => error "bool"
 		    | SOME b =>
 			 Const.Word (WordX.fromIntInf
 				     (if b then 1 else 0, WordSize.default)))
 	     | Real =>
 		  (case RealX.make (value, RealSize.default) of
-		      NONE => Error.bug "strange Real constant"
+		      NONE => error "real"
 		    | SOME r => Const.Real r)
 	     | String => Const.string (unescape value)
 	     | Word =>
 		  (case IntInf.fromString value of
-		      NONE => Error.bug "strange Word constant"
+		      NONE => error "int"
 		    | SOME i =>
 			 Const.Word (WordX.fromIntInf (i, WordSize.default)))
 	 end

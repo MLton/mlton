@@ -58,6 +58,21 @@ Generate native code , as opposed to generating C and using {\tt gcc}.
 With {\tt -codegen native}, {\mlton} typically compiles more quickly and
 generates better code.
 
+\option{-const '{\it name} {\it value}'}
+Set the value of a compile-time constant.  Here is a list of available
+constants, their default values, and what they control.
+
+\vspace{0em} % this is here to make hevea generate a blank line
+\begin{description}
+
+\option{Exn.keepHistory \falseTrue}
+Enable {\tt Exn.history}.  See \secref{exn} for details.  There is a
+performance cost to setting this to {\tt true}, both in memory usage
+of exceptions and in run time, because of additional work that must be
+performed at each exception construction, raise, and handle.
+
+\end{description}
+
 \option{-default-ann {\it anns}}
 Specify the default annotation values for {\tt mlb} files.  For
 example, {\tt -default-ann 'warnUnused true'} causes unused variable
@@ -71,12 +86,6 @@ Ignore the specified annotations in every ML basis file.  You can
 supply multiple annotations separated by commas.  For example, to see
 {\em all} match and unused warnings, use {\tt -disable-ann 'warnMatch,
 warnUnused, forceUsed' -default-ann 'warnUnused true'}.
-
-\option{-exn-history \falseTrue}
-Enable {\tt Exn.history}.  See \secref{exn} for details.  There is a
-performance cost to {\tt -exn-history true}, both in memory usage of
-exceptions and in run time, because of additional work that must be
-performed at each exception construction, raise, and handle.
 
 \option{-export-header {\it file}}
 Write to {\it file} C prototypes for all of the functions exported

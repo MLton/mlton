@@ -11,11 +11,9 @@ struct
 open S
 
 structure ElaborateModules = ElaborateModules (structure Ast = Ast
-					       structure ConstType = ConstType
 					       structure CoreML = CoreML
 					       structure Decs = Decs
 					       structure Env = Env)
-val lookupConstant = ElaborateModules.lookupConstant
 
 fun elaborateProgram (program, {env = E: Env.t}) =
    let

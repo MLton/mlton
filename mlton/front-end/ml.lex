@@ -129,10 +129,12 @@ hexnum={hexDigit}+;
 <INITIAL>{eol}	=> (Source.newline (source, yypos); continue ());
 <INITIAL>"_basis_done" =>
    (tok (Tokens.BASIS_DONE, source, yypos, yypos + size yytext));
-<INITIAL>"_const" =>
-   (tok (Tokens.CONST, source, yypos, yypos + size yytext));
 <INITIAL>"_build_const" =>
    (tok (Tokens.BUILD_CONST, source, yypos, yypos + size yytext));
+<INITIAL>"_command_line_const" =>
+   (tok (Tokens.COMMAND_LINE_CONST, source, yypos, yypos + size yytext));
+<INITIAL>"_const" =>
+   (tok (Tokens.CONST, source, yypos, yypos + size yytext));
 <INITIAL>"_export" =>
    (tok (Tokens.EXPORT, source, yypos, yypos + size yytext));
 <INITIAL>"_ffi" =>

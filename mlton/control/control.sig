@@ -52,9 +52,6 @@ signature CONTROL =
 
       val defines: string list ref
 
-      (* whether the arithmetic primitives detect overflow *)
-      val detectOverflow: bool ref
-
       (* List of pass names to keep diagnostic info on. *)
       val diagPasses: Regexp.Compiled.t list ref
 
@@ -256,9 +253,6 @@ signature CONTROL =
 
       val reserveEsp: bool option ref
 
-      (* Array bounds checking. *)
-      val safe: bool ref
-
       (* Show the basis library. *)
       val showBasis: File.t option ref
 	 
@@ -297,8 +291,6 @@ signature CONTROL =
       datatype os = datatype MLton.Platform.OS.t
       val targetOS: os ref
 
-      val textIOBufSize: int ref
-	 
       (* Type check ILs. *)
       val typeCheck: bool ref
 

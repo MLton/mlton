@@ -43,11 +43,9 @@ structure ElaborateSigexp = ElaborateSigexp (structure Ast = Ast
 					     structure Env = Env)
 
 structure ElaborateCore = ElaborateCore (structure Ast = Ast
-					 structure ConstType = ConstType
 					 structure CoreML = CoreML
 					 structure Decs = Decs
 					 structure Env = Env)
-val lookupConstant = ElaborateCore.lookupConstant
 
 val elabStrdecInfo = Trace.info "elabStrdec"
 val elabTopdecInfo = Trace.info "elabTopdec"

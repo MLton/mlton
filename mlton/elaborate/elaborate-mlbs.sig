@@ -8,7 +8,6 @@
 signature ELABORATE_MLBS_STRUCTS = 
    sig
       structure Ast: AST
-      structure ConstType: CONST_TYPE
       structure CoreML: CORE_ML
       structure Decs: DECS
       structure Env: ELABORATE_ENV
@@ -23,6 +22,6 @@ signature ELABORATE_MLBS =
       include ELABORATE_MLBS_STRUCTS
 
       val elaborateMLB:
-	 Ast.Basdec.t * {addPrim: Env.t -> Decs.t} -> Env.t * (Decs.t * bool) vector
-      val lookupConstant: (string * ConstType.t -> CoreML.Const.t) ref
+	 Ast.Basdec.t * {addPrim: Env.t -> Decs.t}
+	 -> Env.t * (Decs.t * bool) vector
     end

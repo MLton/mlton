@@ -5,21 +5,11 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor Elaborate (S: ELABORATE_STRUCTS): ELABORATE= 
+
+functor Elaborate (S: ELABORATE_STRUCTS): ELABORATE = 
 struct
 
 open S
-
-structure ConstType =
-   struct
-      datatype t = Bool | Real | String | Word
-
-      val toString =
-	 fn Bool => "Bool"
-	  | Real => "Real"
-	  | String => "String"
-	  | Word => "Word"
-   end
 
 structure Env = ElaborateEnv (structure Ast = Ast
 			      structure CoreML = CoreML
@@ -32,7 +22,6 @@ in
 end
 
 structure ElaborateMLBs = ElaborateMLBs (structure Ast = Ast
-					 structure ConstType = ConstType
 					 structure CoreML = CoreML
 					 structure Decs = Decs
 					 structure Env = Env)

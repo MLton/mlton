@@ -8,7 +8,6 @@
 signature ELABORATE_PROGRAMS_STRUCTS = 
    sig
       structure Ast: AST
-      structure ConstType: CONST_TYPE
       structure CoreML: CORE_ML
       structure Decs: DECS
       structure Env: ELABORATE_ENV
@@ -22,7 +21,5 @@ signature ELABORATE_PROGRAMS =
    sig
       include ELABORATE_PROGRAMS_STRUCTS
 
-      val elaborateProgram:
-	 Ast.Program.t * {env: Env.t} -> Decs.t
-      val lookupConstant: (string * ConstType.t -> CoreML.Const.t) ref
+      val elaborateProgram: Ast.Program.t * {env: Env.t} -> Decs.t
    end

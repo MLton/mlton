@@ -17,6 +17,8 @@ signature CONST =
    sig
       include CONST_STRUCTS
 
+      structure ConstType: CONST_TYPE
+
       structure SmallIntInf:
 	 sig
 	    val fromWord: word -> IntInf.t
@@ -34,6 +36,11 @@ signature CONST =
       val intInf: IntInf.t -> t
       val hash: t -> word
       val layout: t -> Layout.t
+      (* lookup is for constants defined by _const, _build_const, and
+       * _command_line_const.  It is set in main/compile.fun.
+       *)
+      val lookup: ({default: string option,
+		    name: string} * ConstType.t -> t) ref
       val real: RealX.t -> t
       val string: string -> t
       val toString: t -> string

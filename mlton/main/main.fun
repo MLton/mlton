@@ -86,7 +86,7 @@ val targetMap: unit -> {arch: MLton.Platform.Arch.t,
 
 fun setTargetType (target: string, usage): unit =
    case List.peek (targetMap (), fn {target = t, ...} => t = target) of
-      NONE => usage (concat ["invalid target ", target])
+      NONE => usage (concat ["invalid target: ", target])
     | SOME {arch, os, ...} =>
 	 let
 	    datatype z = datatype MLton.Platform.Arch.t
@@ -103,7 +103,11 @@ fun warnDeprecated (flag, use) =
    Out.output (Out.error,
 	       concat ["Warning: -", flag, " is deprecated.  ",
 		       "Use ", use, ".\n"])
-   
+
+fun setConst (flag: string, name: string, value: string) =
+   (warnDeprecated (flag, concat ["-const '", name, " <value>'"])
+    ; Compile.setCommandLineConstant {name = name, value = value})
+
 fun makeOptions {usage} = 
    let
       val usage = fn s => (usage s; raise Fail "unreachable")
@@ -169,6 +173,13 @@ fun makeOptions {usage} =
 		      | "c" => codegen := CCodegen
 		      | "native" => codegen := Native
 		      | _ => usage (concat ["invalid -codegen flag: ", s]))),
+       (Normal, "const", " '<name> <value>'", "set compile-time constant",
+	SpaceString (fn s =>
+		     case String.tokens (s, Char.isSpace) of
+			[name, value] =>
+			   Compile.setCommandLineConstant {name = name,
+							   value = value}
+		      | _ => usage (concat ["invalid -const flag: ", s]))),
        (Expert, "contify-into-main", " {false|true}",
 	"contify functions into main",
 	boolRef contifyIntoMain),
@@ -190,7 +201,9 @@ fun makeOptions {usage} =
 	     else usage (concat ["invalid -default-ann flag: ", s])))),
        (Expert, "detect-overflow", " {true|false}",
 	"overflow checking on integer arithmetic",
-	boolRef detectOverflow),
+	Bool (fn b => setConst ("detect-overflow",
+				"MLton.detectOverflow",
+				Bool.toString b))),
        (Expert, "diag-pass", " <pass>", "keep diagnostic info for pass",
 	SpaceString 
 	(fn s =>
@@ -231,8 +244,9 @@ fun makeOptions {usage} =
 	     else usage (concat ["invalid -enable-ann flag: ", s])))),
        (Expert, "error-threshhold", " 20", "error threshhold",
 	intRef errorThreshhold),
-       (Normal, "exn-history", " {false|true}", "enable Exn.history",
-	boolRef exnHistory),
+       (Expert, "exn-history", " {false|true}", "enable Exn.history",
+	Bool (fn b => setConst ("exn-history", "Exn.keepHistory",
+				Bool.toString b))),
        (Expert, "expert", " {false|true}", "enable expert status",
 	boolRef expert),
        (Normal, "export-header", " <file>", "write C header file for _export's",
@@ -392,7 +406,7 @@ fun makeOptions {usage} =
        (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
 	push runtimeArgs),
        (Expert, "safe", " {true|false}", "bounds checking and other checks",
-	boolRef safe),
+	Bool (fn b => setConst ("safe", "MLton.safe", Bool.toString b))),
        (Expert, "sequence-unit", " {false|true}",
 	"in (e1; e2), require e1: unit",
 	Bool (fn b =>
@@ -448,7 +462,9 @@ fun makeOptions {usage} =
 	  List.push (linkOpts, {opt = opt, pred = OptPred.Target target})))),
        (Expert, #1 trace, " name1,...", "trace compiler internals", #2 trace),
        (Expert, "text-io-buf-size", " <n>", "TextIO buffer size",
-	intRef textIOBufSize),
+	Int (fn i => setConst ("text-io-buf-size",
+			       "TextIO.bufSize",
+			       Int.toString i))),
        (Expert, "type-check", " {false|true}", "type check ILs",
 	boolRef typeCheck),
        (Expert, "type-error", " {concise|full}", "type error verbosity",

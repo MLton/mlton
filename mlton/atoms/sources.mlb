@@ -24,6 +24,7 @@ local
     label.sig
     c-function.sig
     c-function.fun
+    const-type.sig
     const.sig
     const.fun
     prim.sig
@@ -58,6 +59,7 @@ in
     signature C_TYPE
     signature CON
     signature CONST
+    signature CONST_TYPE
     signature FFI
     signature GENERIC_SCHEME
     signature ID

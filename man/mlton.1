@@ -61,6 +61,19 @@ native\fP, \fBMLton\fP typically compiles more quickly and generates
 better code.
 
 .TP
+\fB-const '\fIname value\fP'\fR
+Set the value of a compile-time constant.  Here is a list of available
+constants, their default values, and what they control.
+
+\fBExn.keepHistory \fI{\fBfalse\fP|\fBtrue\fP}\fR
+.in +.5i
+Enable \fBExn.history\fP.  There is a performance cost to setting this
+to \fBtrue\fP, both in memory usage of exceptions and in run time,
+because of additional work that must be performed at each exception
+construction, raise, and handle.
+.in -.5i
+
+.TP
 \fB-default-ann \fIanns\fR
 Specify the default annotation values for \fBmlb\fP files.  For
 example, \fB-default-ann 'warnUnused true'\fP 
@@ -76,13 +89,6 @@ supply multiple annotations separated by commas.  For example, to see
 \fIall\fP match and unused warnings, use 
 \fB-disable-ann 'warnMatch, warnUnused, forceUsed' -default-ann
 'warnUnused true'\fP.
-
-.TP
-\fB-exn-history \fI{\fBfalse\fI|\fBtrue\fI}\fR
-Enable \fBExn.history\fP.  There is a performance cost to
-\fB-exn-history true\fP, both in memory usage of exceptions and in
-run time, because of additional work that must be performed at
-each exception construction, raise, and handle. 
 
 .TP
 \fB-export-header \fIfile\fR

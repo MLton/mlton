@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor ElaborateMLBs (S: ELABORATE_MLBS_STRUCTS): ELABORATE_MLBS = 
 struct
 
@@ -60,16 +61,13 @@ in
 end
 
 structure ElaboratePrograms = ElaboratePrograms (structure Ast = Ast
-						 structure ConstType = ConstType
 						 structure CoreML = CoreML
 						 structure Decs = Decs
 						 structure Env = Env)
-val lookupConstant = ElaboratePrograms.lookupConstant
 
 local
    open ElaboratePrograms
 in
-   structure ConstType = ConstType
    structure Decs = Decs
    structure Env = Env
 end

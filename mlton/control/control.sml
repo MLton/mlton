@@ -91,10 +91,6 @@ val defines = control {name = "defines",
 		       default = [],
 		       toString = List.toString String.toString}
 
-val detectOverflow = control {name = "detect overflow",
-			      default = true,
-			      toString = Bool.toString}
-
 val diagPasses = 
    control {name = "diag passes",
 	    default = [],
@@ -600,10 +596,6 @@ val reserveEsp = control {name = "reserve esp",
 			  default = NONE,
 			  toString = Option.toString Bool.toString}
 
-val safe = control {name = "safe",
-		    default = true,
-		    toString = Bool.toString}
-
 val showBasis = control {name = "show basis",
 			 default = NONE,
 			 toString = Option.toString File.toString}
@@ -683,10 +675,6 @@ datatype os = datatype MLton.Platform.OS.t
 val targetOS = control {name = "target OS",
 			default = Linux,
 			toString = MLton.Platform.OS.toString}
-
-val textIOBufSize = control {name = "TextIO buffer size",
-			     default = 4096,
-			     toString = Int.toString}
 
 val typeCheck = control {name = "type check",
 			 default = false,

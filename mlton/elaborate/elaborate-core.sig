@@ -5,12 +5,12 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 type int = Int.t
 
 signature ELABORATE_CORE_STRUCTS = 
    sig
       structure Ast: AST
-      structure ConstType: CONST_TYPE
       structure CoreML: CORE_ML
       structure Decs: DECS
       structure Env: ELABORATE_ENV
@@ -25,9 +25,6 @@ signature ELABORATE_CORE =
       include ELABORATE_CORE_STRUCTS
 
       (* Elaborate dec in env, returning Core ML decs. *)
-      val elaborateDec:
-	 Ast.Dec.t * {env: Env.t, nest: string list}
-	 -> Decs.t
-      val lookupConstant: (string * ConstType.t -> CoreML.Const.t) ref
+      val elaborateDec: Ast.Dec.t * {env: Env.t, nest: string list} -> Decs.t
       val reportUndeterminedTypes: unit -> unit
    end

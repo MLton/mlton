@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor ElaborateCore (S: ELABORATE_CORE_STRUCTS): ELABORATE_CORE = 
 struct
 
@@ -22,8 +23,6 @@ in
    val sequenceUnit = fn () => current sequenceUnit
    val warnMatch = fn () => current warnMatch
 end
-val lookupConstant : (string * ConstType.t -> CoreML.Const.t) ref = 
-   ref (fn _ => Error.bug "lookupConstant not set")
 
 local
    open Ast
@@ -81,6 +80,7 @@ in
    structure Convention	 = CFunction.Convention	
    structure Con = Con
    structure Const = Const
+   structure ConstType = Const.ConstType
    structure Cdec = Dec
    structure Cexp = Exp
    structure Ffi = Ffi
@@ -2102,7 +2102,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		   in
 		      Cexp.orElse (ce, ce')
 		   end
-	      | Aexp.Prim {kind, name, ty} =>
+	      | Aexp.Prim {kind, name, ty} => 
 		   let
 		      val ty = elabType ty
 		      val expandedTy =
@@ -2185,7 +2185,7 @@ fun elaborateDec (d, {env = E, nest}) =
 							   mayInline = true}),
 					     ty)
 			       end
-		      fun lookConst (name: string) =
+		      fun lookConst {default: string option, name: string} =
 			 let
 			    fun bug () =
 			       let
@@ -2225,9 +2225,8 @@ fun elaborateDec (d, {env = E, nest}) =
 					     else
 						bug ()
 				  val finish =
-				     let val lookupConstant = !lookupConstant
-				     in fn () => lookupConstant (name, ct)
-				     end
+				     fn () => ! Const.lookup ({default = default,
+							       name = name}, ct)
 			       in
 				  Cexp.make (Cexp.Const finish, ty)
 			       end
@@ -2238,10 +2237,27 @@ fun elaborateDec (d, {env = E, nest}) =
 		      case kind of
 			 BuildConst =>
 			    (check (ElabControl.allowConstant, "_build_const")
-			     ; lookConst name)
+			     ; lookConst {default = NONE, name = name})
+		       | CommandLineConst {value} =>
+			    let
+			       val () =
+				  check (ElabControl.allowConstant,
+					 "_command_line_const")
+			       val value =
+				  elabConst
+				  (value,
+				   fn (resolve, _) =>
+				   case resolve () of
+				      Const.Word w =>
+					 IntInf.toString (WordX.toIntInf w)
+				    | c => Const.toString c,
+				   {false = "false", true = "true"})
+			    in
+			       lookConst {default = SOME value, name = name}
+			    end
 		       | Const => 
 			    (check (ElabControl.allowConstant, "_const")
-			     ; lookConst name)
+			     ; lookConst {default = NONE, name = name})
 		       | Export attributes =>
 			    (check (ElabControl.allowExport, "_export")
 			     ; let

@@ -12,7 +12,6 @@ local
     ../control/sources.mlb
     ../core-ml/sources.mlb
 
-    const-type.sig
     decs.sig
     decs.fun
     type-env.sig
