@@ -4,7 +4,6 @@ structure Pervasive
 
 is
 
-../../mlton-stubs-in-smlnj/sources.cm
 ../../mlton-stubs/sources.cm
 
 pervasive.sml
