@@ -10,6 +10,8 @@ structure FileDesc: FILE_DESC =
 
       type t = file_desc
 
+      val layout = Word.layout o fdToWord
+	 
       fun move {from, to} =
 	 if from <> to
 	    then (dup2 {old = from, new = to}
