@@ -132,9 +132,11 @@ structure IntInf: INT_INF_EXTRA =
        * Convert a smallInt to a bigInt.
        *)
       fun bigFromInt (arg: smallInt): bigInt =
-	 let val argv = Word.fromInt arg
+	 let
+	    val argv = Word.fromInt arg
 	    val ans = addTag argv
-	 in if sameSign (argv, ans)
+	 in
+	    if sameSign (argv, ans)
 	       then Prim.fromWord ans
 	    else let val space = Primitive.Array.array 2
 		     val (isneg, abs) = if arg < 0
