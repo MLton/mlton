@@ -7,8 +7,10 @@ open Prim
 
 val atomicBegin = MLtonThread.atomicBegin
 val atomicEnd = MLtonThread.atomicEnd
+
+val msg = Primitive.Stdio.print
    
-val register =
+val register: int * (unit -> unit) -> unit =
    let
       val exports = Array.array (Prim.numExports, fn () =>
 				 raise Fail "undefined export\n")
