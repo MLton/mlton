@@ -54,7 +54,9 @@ signature REAL =
       val ln: t -> t
       val log2: t -> t
       val log: t * t -> t
+      val max: t * t -> t
       val maxFinite: t
+      val min: t * t -> t
       val negOne: t
       val one: t
       val pi: t
