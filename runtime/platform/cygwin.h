@@ -21,8 +21,6 @@
 #include <sys/cygwin.h>
 #include <io.h>
 
-#include "gmp.h"
-
 #define MLton_Platform_OS_host "cygwin"
 
 #define HAS_PTRACE FALSE

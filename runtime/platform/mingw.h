@@ -11,8 +11,6 @@
 #include <ws2tcpip.h>
 #undef max
 
-#include "gmp.h"
-
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK FALSE

@@ -46,14 +46,22 @@ doit () {
 # about -m.  Someday, when we think we won't run into older gcc's,
 # these should be changed to -f.
 
+# You may need to add a line with -cc-opt 'I/path/to/gmp.h' so the
+# C compiler can find gmp.h
 # You may need to add a line with -link-opt '-L/path/to/libgmp' so
-# that the linker can find the gmp.
+# that the linker can find libgmp.
 
 doit "$lib" \
 	-cc "$gcc"						\
 	-cc-opt "-I$lib/include"				\
 	-cc-opt '-O1'						\
 	-cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'	\
+	-target-cc-opt solaris 					\
+		'-Wa,-xarch=v8plusa
+		-fcall-used-g5
+		-fcall-used-g7
+		-mcpu=ultrasparc'				\
+	-target-cc-opt sparc '-mv8 -m32'			\
 	-target-cc-opt x86					\
 		'-fno-strength-reduce
 		-fschedule-insns
@@ -62,12 +70,6 @@ doit "$lib" \
 		-malign-jumps=2
 		-malign-loops=2
 		-mcpu=pentiumpro'				\
-	-target-cc-opt sparc '-mv8 -m32'			\
-	-target-cc-opt solaris 					\
-		'-Wa,-xarch=v8plusa
-		-fcall-used-g5
-		-fcall-used-g7
-		-mcpu=ultrasparc'				\
 	-target-link-opt cygwin '-lgmp'				\
  	-target-link-opt darwin '-lgmp'				\
 	-target-link-opt freebsd '-L/usr/local/lib/ -lgmp'	\

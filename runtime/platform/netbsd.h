@@ -18,13 +18,6 @@
 #include <syslog.h>
 #include <termios.h>
 
-/* On NetBSD, we want gmp to be installed into the pkg tree (which represents
- * the FreeBSD ports tree). For now we use the same method as in the FreeBSD
- * case, but we note that this should be changed so the makefile provides the
- * correct -I flags to the compiler
- */
-#include "/usr/pkg/include/gmp.h"
-
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE

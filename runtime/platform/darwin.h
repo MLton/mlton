@@ -20,11 +20,6 @@
 #include <termios.h>
 #include <ucontext.h>
 
-/* As far as I can tell, gmp does not come with Mac OS X, so the user will
- * install it himself in /usr/local.
- */
-#include "/usr/local/include/gmp.h"
-
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
