@@ -4500,21 +4500,19 @@ struct
       end
 
       local
-	val isInstructionSETcc_dstTemp : statement_type -> bool
+	val isInstructionSETcc : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.SETcc 
 				      {dst = Operand.MemLoc memloc,...}),
 		{...}) 
-	     => x86Liveness.track memloc
+	     => true
 	     | _ => false
 
-	val isInstructionTEST_eqSrcs_srcsTemp_srcsDead : statement_type -> bool
+	val isInstructionTEST_eqSrcs : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.TEST 
 				      {src1 = Operand.MemLoc memloc1,
 				       src2 = Operand.MemLoc memloc2,...}),
 		{dead,...})
-	     => MemLoc.eq(memloc1, memloc2) andalso
-	        x86Liveness.track memloc1 andalso
-		LiveSet.contains(dead, memloc1)
+	     => MemLoc.eq(memloc1, memloc2) 
 	     | _ => false
 
 	val isIff_conditionZorNZ : transfer_type -> bool
@@ -4528,9 +4526,9 @@ struct
 
 	val template : template
 	  = {start = EmptyOrNonEmpty,
-	     statements = [One isInstructionSETcc_dstTemp,
+	     statements = [One isInstructionSETcc,
 			   All isComment,
-			   One isInstructionTEST_eqSrcs_srcsTemp_srcsDead,
+			   One isInstructionTEST_eqSrcs,
 			   All isComment],
 	     finish = Empty,
 	     transfer = isIff_conditionZorNZ}
@@ -4540,7 +4538,8 @@ struct
 		profileInfo,
 		start, 
 		statements as
-		[[(Assembly.Instruction (Instruction.SETcc
+		[[(statement as 
+		   Assembly.Instruction (Instruction.SETcc
 					 {condition = condition1,
 					  dst 
 					  = dst1 as Operand.MemLoc memloc1,
@@ -4553,7 +4552,7 @@ struct
 					  src2 
 					  = src22 as Operand.MemLoc memloc22,
 					  size = size2}),
-		   {...})],
+		   {dead, ...})],
 		 comments2],
 		finish as [],
 		transfer as
@@ -4582,6 +4581,11 @@ struct
 			   = List.concat
 			     [List.map(comments1, #1),
 			      List.map(comments2, #1)]
+			 val statements 
+			   = if x86Liveness.track memloc1 andalso
+			        LiveSet.contains(dead, memloc1)
+			       then statements
+			       else statement::statements
 
 			 val {statements, live}
 			   = LivenessBlock.toLivenessStatements
