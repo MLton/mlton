@@ -18,7 +18,6 @@ PATH = $(BIN):$(shell echo $$PATH)
 CP = /bin/cp -fpR
 
 VERSION = $(shell date +%Y%m%d)
-DATE = $(shell date -R)
 RELEASE = 1
 
 .PHONY: all
@@ -149,12 +148,10 @@ version:
 		mlton/control/control.sml; 				\
 	do								\
 		sed "s/\(.*\)VERSION\(.*\)/\1$(VERSION)\2/" <$$f >z &&	\
-		sed "s/\(.*\)DATE\(.*\)/\1$(DATE)\2/" <z >$$f &&	\
-		rm -f z;						\
+		mv z $$f;						\
 	done
 	sed <$(SPEC) >z "/^Release:/s;.*;Release: $(RELEASE);"
 	mv z $(SPEC)
-
 
 .PHONY: world
 world: 
