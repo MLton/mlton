@@ -51,14 +51,15 @@ structure Name =
        | Array_toVector (* backend *)
        | Array_update (* backend *)
        | BuildConstant of string (* type inference *)
-       | C_CS_charArrayToWord8Array (* type inference *)
-       | Char_chr (* type inference *)
-       | Char_ge (* type inference *)
-       | Char_gt (* type inference *)
-       | Char_le (* type inference *)
-       | Char_lt (* type inference *)
-       | Char_ord (* type inference *)
-       | Char_toWord8 (* type inference *)
+       | Byte_byteToChar (* ssa to rssa *)
+       | Byte_charToByte (* ssa to rssa *)
+       | C_CS_charArrayToWord8Array (* ssa to rssa *)
+       | Char_lt (* codegen *)
+       | Char_le (* codegen *)
+       | Char_gt (* codegen *)
+       | Char_ge (* codegen *)
+       | Char_chr (* codegen *)
+       | Char_ord (* codegen *)
        | Constant of string (* type inference *)
        | Cpointer_isNull (* codegen *)
        | Exn_extra (* implement exceptions *)
@@ -69,9 +70,9 @@ structure Name =
        | Exn_setTopLevelHandler (* implement exceptions *)
        | FFI of CFunction.t (* ssa to rssa *)
        | FFI_Symbol of {name: string,
-			ty: CType.t} (* codegen *)
-       | FFI_getPointer (* ssa to rssa *)
-       | FFI_setPointer (* ssa to rssa *)
+			ty: CType.t}
+       | FFI_getPointer
+       | FFI_setPointer
        | GC_collect (* ssa to rssa *)
        | GC_pack (* ssa to rssa *)
        | GC_unpack (* ssa to rssa *)
@@ -167,7 +168,7 @@ structure Name =
        | Ref_assign (* backend *)
        | Ref_deref (* backend *)
        | Ref_ref (* backend *)
-       | String_toWord8Vector (* type inference *)
+       | String_toWord8Vector (* ssa to rssa *)
        | Thread_atomicBegin (* backend *)
        | Thread_atomicEnd (* backend *)
        | Thread_canHandle (* backend *)
@@ -211,11 +212,10 @@ structure Name =
        | Word_toWordX of WordSize.t * WordSize.t (* codegen *)
        | Word_xorb of WordSize.t (* codegen *)
        | WordVector_toIntInf (* ssa to rssa *)
-       | Word8_toChar (* type inference *)
-       | Word8Array_subWord (* ssa to rssa *)
-       | Word8Array_updateWord (* ssa to rssa *)
-       | Word8Vector_subWord (* ssa to rssa *)
-       | Word8Vector_toString (* type inference *)
+       | Word8Array_subWord (* codegen *)
+       | Word8Array_updateWord (* codegen *)
+       | Word8Vector_subWord (* codegen *)
+       | Word8Vector_toString (* ssa to rssa *)
        | World_save (* ssa to rssa *)
 
       val equals: t * t -> bool = op =
@@ -341,6 +341,8 @@ structure Name =
 	  (Array_sub, DependsOnState, "Array_sub"),
 	  (Array_toVector, DependsOnState, "Array_toVector"),
 	  (Array_update, SideEffect, "Array_update"),
+	  (Byte_byteToChar, Functional, "Byte_byteToChar"),
+	  (Byte_charToByte, Functional, "Byte_charToByte"),
 	  (C_CS_charArrayToWord8Array, DependsOnState,
 	   "C_CS_charArrayToWord8Array"),
 	  (Char_chr, Functional, "Char_chr"),
@@ -349,7 +351,6 @@ structure Name =
 	  (Char_le, Functional, "Char_le"),
 	  (Char_lt, Functional, "Char_lt"),
 	  (Char_ord, Functional, "Char_ord"),
-	  (Char_toWord8, Functional, "Char_toWord8"),
 	  (Cpointer_isNull, Functional, "Cpointer_isNull"),
 	  (Exn_extra, Functional, "Exn_extra"),
 	  (Exn_name, Functional, "Exn_name"),
@@ -410,7 +411,6 @@ structure Name =
 	  (Weak_new, Moveable, "Weak_new"),
 	  (Word_toIntInf, Functional, "Word_toIntInf"),
 	  (WordVector_toIntInf, Functional, "WordVector_toIntInf"),
-	  (Word8_toChar, Functional, "Word8_toChar"),
 	  (Word8Array_subWord, DependsOnState, "Word8Array_subWord"),
 	  (Word8Array_updateWord, SideEffect, "Word8Array_updateWord"),
 	  (Word8Vector_subWord, Functional, "Word8Vector_subWord"),
