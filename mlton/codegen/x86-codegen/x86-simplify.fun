@@ -363,9 +363,9 @@ struct
 		(case (Operand.deMemloc src,
 		       Operand.deMemloc dst)
 		   of (SOME src, SOME dst)
-		    => not (MemLoc.mayAlias(src, dst))
-		       andalso
-		       not (List.contains(MemLoc.utilized src, dst, MemLoc.eq))
+		    => not (List.exists
+			    (src::(MemLoc.utilized src),
+			     fn memloc => MemLoc.mayAlias(memloc, dst)))
 	            | _ => true)
 	     | Assembly.Instruction (Instruction.pMD
 				     {oper, src, dst, ...})
@@ -376,9 +376,9 @@ struct
 		(case (Operand.deMemloc src,
 		       Operand.deMemloc dst)
 		   of (SOME src, SOME dst)
-		    => not (MemLoc.mayAlias(src, dst))
-		       andalso
-		       not (List.contains(MemLoc.utilized src, dst, MemLoc.eq))
+		    => not (List.exists
+			    (src::(MemLoc.utilized src),
+			     fn memloc => MemLoc.mayAlias(memloc, dst)))
 	            | _ => true)
 	     | _ => false
 
@@ -3238,23 +3238,6 @@ struct
 		finish, 
 		transfer}
 	     => let
-		  val label = let
-				val (entry,_) = entry
-			      in 
-				Entry.label entry
-			      end
-		  val {dsts, ...} = Instruction.srcs_dsts instruction
-		  val _ = print (Label.toString label)
-		  val _ = print ": "
-		  val _ = Option.app
-		          (dsts,
-			   fn dsts 
-			    => List.foreach
-			       (dsts,
-				fn operand => (print (Operand.toString operand);
-					       print " ")))
-		  val _ = print "\n"
-
 		  val {statements, live}
 		    = LivenessBlock.reLivenessStatements
 		      {statements = List.rev start,
