@@ -660,7 +660,9 @@ structure Primitive =
 	    val op > = _prim "Int64_gt": int * int -> bool;
 	    val op >= = _prim "Int64_ge": int * int -> bool;
 	    val << = _prim "Int64_lshift": int * Word.word -> int;
+	    val _ = << (* quell unused warning *)
 	    val ~>> = _prim "Int64_arshift": int * Word.word -> int;
+	    val _ = ~>> (* quell unused warning *)
 	    val quot = _prim "Int64_quot": int * int -> int;
 	    val rem = _prim "Int64_rem": int * int -> int;
 	    val ~? = _prim "Int64_neg": int -> int; 
