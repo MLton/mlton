@@ -1622,6 +1622,10 @@ in
 
 	       val matchesAll = isSome o matchAll
 
+	       fun matchPrefix (r, s) = matchShort (r, s, 0)
+
+	       val matchesPrefix = isSome o matchPrefix
+
 	       fun find (c: t, s: string, startPos, short: bool) =
 		  let
 		     val n = String.size s

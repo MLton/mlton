@@ -67,6 +67,7 @@ signature REGEXP =
 	    val matchLong: t * string * int -> Match.t option
 	    val matchShort: t * string * int -> Match.t option
 	    val matchesAll: t * string -> bool
+	    val matchesPrefix: t * string -> bool
 	 end
 
       type t
