@@ -445,7 +445,8 @@ int main(int argc, char **argv) {					\
 #define Int_mul(n1, n2) ((n1) * (n2))
 #define Int_sub(n1, n2) ((n1) - (n2))
 
-#ifdef FAST_OVERFLOW
+#ifdef FAST_INT
+
 static void MLton_overflow() {
 	die("Internal overflow detected. Halt.");
 }
@@ -486,8 +487,11 @@ static inline Int Int_negCheckFast(Int n) {
 	return n;
 }
 #define Int_negCheck(dst, n, l) dst = Int_negCheckFast(n)
+#define Int_quot(x, y) ((x)/(y))
+#define Int_rem(x, y) ((x)%(y))
 
-#else /* FAST_OVERFLOW */
+#else /* FAST_INT */
+
 int Int_bogus;
 #define check(dst, n1, n2, l, f);						\
 	do {									\
@@ -513,7 +517,7 @@ int Int_bogus;
 		dst = Int_negOverflow(n, &overflow);	\
 		if (overflow) goto l;			\
 	} while (0)
-#endif /* FAST_OVERFLOW */
+#endif /* FAST_INT */
 #define Int_lt(n1, n2) ((n1) < (n2))
 #define Int_le(n1, n2) ((n1) <= (n2))
 #define Int_gt(n1, n2) ((n1) > (n2))
@@ -521,8 +525,6 @@ int Int_bogus;
 #define Int_geu(x, y) ((uint)(x) >= (uint)(y))
 #define Int_gtu(x, y) ((uint)(x) > (uint)(y))
 #define Int_neg(n) (-(n))
-#define Int_quot(x, y) ((x)/(y))
-#define Int_rem(x, y) ((x)%(y))
 
 /* ------------------------------------------------- */
 /*                      IntInf                       */
