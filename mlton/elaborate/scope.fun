@@ -5,17 +5,6 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-(*
- * renameDec walks down the tree renaming all explicitly bound tyvars, and on the
- * way back up, tries to bind implicitly scoped tyvars at each possible point.
- *
- * removeDec walks down and binds a tyvar as soon as it sees it, removing all
- * lower binding occurrences of the tyvar. 
- * 
- * removeDec also renames all lower free occurrences of the tyvar to be the
- * "same" as the binding occurrence (so that they can share info).
- *)
-
 functor Scope (S: SCOPE_STRUCTS): SCOPE =
 struct
 
@@ -56,6 +45,10 @@ fun ('down, 'up)
 		bind': 'down * Tyvar.t vector -> ('down
 						  * ('up -> (Tyvar.t vector
 							     * 'up))),
+		bindDatatype: ('down * Tyvar.t vector * Region.t
+			       -> ('down
+				   * Tyvar.t vector
+				   * ('up -> 'up))),
 		combineUp: 'up * 'up -> 'up,
 		initDown: 'down,
 		initUp: 'up,
@@ -136,7 +129,8 @@ fun ('down, 'up)
 	       loops
 	       (datatypes, fn {cons, tycon, tyvars} =>
 		let
-		   val (d, tyvars, up) = bind (d, tyvars)
+		   val (d, tyvars, up) =
+		      bindDatatype (d, tyvars, DatBind.region db)
 		   val (cons, u) =
 		      loops (cons, fn (con, arg) =>
 			     let
@@ -443,13 +437,48 @@ fun ('down, 'up)
    in
       loopDec (d, initDown)
    end
-    
+
 fun scope (dec: Dec.t): Dec.t =
    let
+      (* Walks down the tree renaming all explicitly bound tyvars, and on the way
+       * back up, try to bind implicitly scoped tyvars at each possible point.
+       *)
       fun bind (env, tyvars) =
 	 let
 	    val (env, tyvars) = Env.rename (env, tyvars)
 	    fun finish u = Tyvars.- (u, Tyvars.fromList (Vector.toList tyvars))
+	 in
+	    (env, tyvars, finish)
+	 end
+      fun bindDatatype (_, tyvars, region) =
+	 let
+	    val (env, tyvars) = Env.rename (Env.empty, tyvars)
+	    fun finish u =
+	       let
+		  val free =
+		     Tyvars.toList
+		     (Tyvars.- (u, Tyvars.fromList (Vector.toList tyvars)))
+		  val _ =
+		     if 0 = List.length free
+			then ()
+		     else
+			let
+			   open Layout
+			in
+			   Control.error
+			   (region,
+			    seq [str (concat ["free type variable",
+					      if List.length free > 1
+						 then "s"
+					      else "",
+						 " in datatype declaration: "]),
+				 seq (separate (List.map (free, Tyvar.layout),
+						", "))],
+			    empty)
+			end
+	       in
+		  Tyvars.empty
+	       end
 	 in
 	    (env, tyvars, finish)
 	 end
@@ -476,14 +505,21 @@ fun scope (dec: Dec.t): Dec.t =
       val (dec, unguarded) =
 	 processDec (dec, {bind = bind,
 			   bind' = bind',
+			   bindDatatype = bindDatatype,
 			   combineUp = Tyvars.+,
 			   initDown = Env.empty,
 			   initUp = Tyvars.empty,
 			   tyvar = tyvar})
+      val _ = Control.checkForErrors "elaborate"
    in
       if Tyvars.isEmpty unguarded
 	 then
 	    let
+	       (* Walks down and bind a tyvar as soon as you sees it, removing
+		* all lower binding occurrences of the tyvar.  Also, renames all
+		* lower free occurrences of the tyvar to be the same as the
+		* binding occurrence (so that they can share info).
+		*)
 	       fun bind (env, tyvars) =
 		  let
 		     val (env, tyvars) = Env.rename (env, tyvars)
@@ -502,10 +538,12 @@ fun scope (dec: Dec.t): Dec.t =
 		  in
 		     (env, fn () => (tyvars, ()))
 		  end
-	       fun tyvar (a, env) =  (Env.lookup (env, a), ())
+	       fun bindDatatype (env, tyvars, _) = bind (env, tyvars)
+	       fun tyvar (a, env) = (Env.lookup (env, a), ())
 	       val (dec, ()) =
 		  processDec (dec, {bind = bind,
 				    bind' = bind',
+				    bindDatatype = bindDatatype,
 				    combineUp = fn ((), ()) => (),
 				    initDown = Env.empty,
 				    initUp = (),
@@ -521,11 +559,10 @@ fun scope (dec: Dec.t): Dec.t =
 		let
 		   open Layout
 		in
-		   Control.error
-		   (Tyvar.region a,
-		    seq [str "undefined type variable: ",
-			 Tyvar.layout a],
-		    empty)
+		   Control.error (Tyvar.region a,
+				  seq [str "undefined type variable: ",
+				       Tyvar.layout a],
+				  empty)
 		end)
 	 in
 	    dec
