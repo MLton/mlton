@@ -106,7 +106,7 @@ signature AST_ATOMS =
 	    type t
 	    datatype node = T of {def: Type.t,
 				  tycon: Tycon.t,
-				  tyvars: Tyvar.t vector} list
+				  tyvars: Tyvar.t vector} vector
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
 

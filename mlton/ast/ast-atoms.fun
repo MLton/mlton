@@ -240,23 +240,26 @@ structure TypBind =
       datatype node =
 	 T of {tycon: Tycon.t,
 	       def: Type.t,
-	       tyvars: Tyvar.t vector} list
+	       tyvars: Tyvar.t vector} vector
       open Wrap
       type t = node Wrap.t
       type node' = node
       type obj = t
 
       fun layout t =
-	 let val T l = node t
-	 in layoutAndsBind
-	    ("type", "=", l, fn {tycon, def, tyvars} =>
+	 let
+	    val T ds = node t
+	 in
+	    layoutAndsBind
+	    ("type", "=", Vector.toList ds, fn {tycon, def, tyvars} =>
 	     (OneLine,
 	      Type.layoutApp (Tycon.layout tycon,
 			      tyvars,
 			      Tyvar.layout),
 	      Type.layout def))
 	 end
-      val empty = makeRegion (T [], Region.bogus)
+      
+      val empty = makeRegion (T (Vector.new0 ()), Region.bogus)
    end
 
 (*---------------------------------------------------*)
@@ -277,8 +280,10 @@ structure DatBind =
       type obj = t
 	 
       fun layout (prefix, d) =
-	 let val T {datatypes, withtypes} = node d
-	 in align
+	 let
+	    val T {datatypes, withtypes} = node d
+	 in
+	    align
 	    [layoutAndsBind
 	     (prefix, "=", Vector.toList datatypes, fn {tyvars, tycon, cons} =>
 	      (OneLine,
@@ -288,8 +293,10 @@ structure DatBind =
 						   Type.layoutOption to]),
 			   "| "))),
 	     case TypBind.node withtypes of
-		TypBind.T [] => empty
-	      | _ => seq [str "with", TypBind.layout withtypes]]
+		TypBind.T v =>
+		   if 0 = Vector.length v
+		      then empty
+		   else seq [str "with", TypBind.layout withtypes]]
 	 end
    end
 

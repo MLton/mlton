@@ -359,14 +359,20 @@ val elaboratePat:
 			   Control.error (Avar.region x,
 					  seq [str "variable ",
 					       Avar.layout x,
-					       str " occurs more than once"],
+					       str " occurs more than once in pattern"],
 					  seq [str "pattern: ",
 					       approximate (Apat.layout p)])
 			end
 		  else ()
 	       val _ =
-		  let
-		     fun err p =
+		  case (List.peekMap
+			(!others, fn (p, v) =>
+			 if Vector.exists (v, fn (x', _, _) =>
+					   Avar.equals (x, x'))
+			    then SOME p
+			 else NONE)) of
+		     NONE => ()
+		   | SOME p' => 
 			let
 			   open Layout
 			in
@@ -375,17 +381,12 @@ val elaboratePat:
 			    seq [str "variable ",
 				 Avar.layout x,
 				 str " occurs in multiple patterns"],
-			    seq [str "pattern: ",
-				 approximate (Apat.layout p)])
+			    align [seq [str "pattern: ",
+					approximate (Apat.layout p)],
+				   seq [str "pattern: ",
+					approximate (Apat.layout p')]])
+
 			end
-		     val main = Promise.lazy (fn () => err p)
-		  in
-		     List.foreach
-		     (!others, fn (p, v) =>
-		      if Vector.exists (v, fn (x', _, _) => Avar.equals (x, x'))
-			 then (main (); err p)
-		      else ())
-		  end
 	       val _ = List.push (xts, (x, x', t))
 	       val _ = extendVar (E, x, x', Scheme.fromType t, region)
 	    in
@@ -929,14 +930,14 @@ fun elaborateDec (d, {env = E,
 	 let
 	    val TypBind.T types = TypBind.node typBind
 	    val strs =
-	       List.map
+	       Vector.map
 	       (types, fn {def, tyvars, ...} =>
 		TypeStr.def (Scheme.make {canGeneralize = true,
 					  ty = elabType def,
 					  tyvars = tyvars},
 			     Kind.Arity (Vector.length tyvars)))
 	 in
-	    List.foreach2
+	    Vector.foreach2
 	    (types, strs, fn ({tycon, ...}, str) =>
 	     Env.extendTycon (E, tycon, str))
 	 end

@@ -107,7 +107,7 @@ fun ('down, 'up)
 	 let
 	    val TypBind.T tbs = TypBind.node tb
 	    val (tbs, u) =
-	       loops (Vector.fromList tbs, fn {def, tycon, tyvars} =>
+	       loops (tbs, fn {def, tycon, tyvars} =>
 		      let
 			 val (d, tyvars, finish) = bind (d, tyvars)
 			 val (def, u) = loopTy (def, d)
@@ -118,8 +118,7 @@ fun ('down, 'up)
 			  finish u)
 		      end)
 	 in
-	    (TypBind.makeRegion (TypBind.T (Vector.toList tbs),
-				 TypBind.region tb),
+	    (TypBind.makeRegion (TypBind.T tbs, TypBind.region tb),
 	     u)
 	 end
       fun loopDatBind (db: DatBind.t, d: 'down): DatBind.t * 'up =

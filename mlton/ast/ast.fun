@@ -85,9 +85,9 @@ fun layoutTypedescs (prefix, typedescs) =
 
 fun layoutTypedefs (prefix, typBind) =
    let
-      val TypBind.T l = TypBind.node typBind
+      val TypBind.T ds = TypBind.node typBind
    in
-      layoutAnds (prefix, l, fn (prefix, {def, tycon, tyvars}) =>
+      layoutAnds (prefix, Vector.toList ds, fn (prefix, {def, tycon, tyvars}) =>
 		  seq [prefix,
 		       Type.layoutApp (Tycon.layout tycon, tyvars, Tyvar.layout),
 		       str " = ", Type.layout def])

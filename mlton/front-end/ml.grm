@@ -14,22 +14,37 @@ open Ast
 structure Field = Record.Field
 structure Srecord = SortedRecord
 
-fun reportDuplicateFields (v, name: string, left, right) =
+fun reportDuplicates (v: 'a vector,
+		      name: string,
+		      equals: 'a * 'a -> bool,
+		      layout: 'a -> Layout.t,
+		      region: 'a -> Region.t) =
    Vector.foreachi
-   (v, fn (i, (f, _)) =>
-    if Vector.existsi (v, fn (i', (f', _)) =>
-		       i > i' andalso Field.equals (f, f'))
-       then
-	  let
-	     open Layout
-	  in
-	     Control.error
-	     (reg (left, right),
-	      seq [str (concat ["duplicate label in ", name, ": "]),
-		   Field.layout f],
-	      empty)
-	  end
-    else ())
+   (v, fn (i, a) =>
+    let
+       fun loop i' =
+	  if i = i'
+	     then ()
+	  else if equals (a, Vector.sub (v, i'))
+		  then 
+		     let
+			open Layout
+		     in
+			Control.error
+			(region a,
+			 seq [str (concat ["duplicate ", name, ": "]), layout a],
+			 empty)
+		     end
+	       else loop (i' + 1)
+    in
+       loop 0
+    end)
+
+fun reportDuplicateFields (v, name: string, left, right) =
+   reportDuplicates (v, concat ["label in ", name],
+		     fn ((f, _), (f', _)) => Field.equals (f, f'),
+		     Field.layout o #1,
+		     fn _ => reg (left, right))
 
 structure Type =
    struct
@@ -381,7 +396,12 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | tycon of Tycon.t
        | tynode of Type.node
        | typBind of TypBind.t
-       | typBind' of TypBind.node
+       | typBind' of {def: Type.t,
+		      tycon: Tycon.t,
+		      tyvars: Tyvar.t vector} list
+       | typBind'' of {def: Type.t,
+		       tycon: Tycon.t,
+		       tyvars: Tyvar.t vector} list
        | typdesc of typdesc
        | typdescs of typdesc list
        | tyvar of Tyvar.t
@@ -758,17 +778,26 @@ clause	: apats constraint EQUALOP exp  ({pats = Vector.fromList apats,
 					  resultType = constraint,
 					  body = exp})
 
-typBind : tyvars tycon EQUALOP ty typBind'
-                        (let val TypBind.T rest = typBind'
-			 in TypBind.makeRegion'
-			    (TypBind.T ({tyvars = tyvars,
-					 tycon = tycon,
-					 def = ty} :: rest),
-			     tyvarsleft, typBind'right)
-			 end)
+typBind : typBind'
+          (let
+	      val typBind = Vector.fromList typBind'
+	      val _ =
+		 reportDuplicates
+		 (typBind, "type definition",
+		  fn ({tycon = t, ...}, {tycon = t', ...}) =>
+		  Ast.Tycon.equals (t, t'),
+		  Ast.Tycon.layout o #tycon,
+		  Ast.Tycon.region o #tycon)
+	   in
+	      TypBind.makeRegion'
+	      (TypBind.T typBind, typBind'left, typBind'right)
+	   end)
 
-typBind' :              (TypBind.T [])
-         | AND typBind  (TypBind.node typBind)
+typBind' : tyvars tycon EQUALOP ty typBind''
+           ({def = ty, tycon = tycon, tyvars = tyvars} :: typBind'')
+
+typBind'' :               ([])
+          | AND typBind'  (typBind')
 
 
 tyvars	: tyvarseq (tyvarseq)
@@ -778,22 +807,9 @@ tyvarseq: tyvar			  (Vector.new1 tyvar)
 	| LPAREN tyvar_pc RPAREN
 	  (let
 	      val v = Vector.fromList tyvar_pc
-	      val _ =
-		 Vector.foreachi
-		 (v, fn (i, a) =>
-		  if Vector.existsi (v, fn (i', a') =>
-				     i < i' andalso Tyvar.sameName (a, a'))
-		     then
-			let
-			   open Layout
-			in
-			   Control.error
-			   (Tyvar.region a,
-			    seq [str "duplicate type variable: ",
-				 Tyvar.layout a],
-			    empty)
-			end
-		  else ())
+	      val _ = reportDuplicates (v, "type variable",
+					Tyvar.sameName, Tyvar.layout,
+					Tyvar.region)
 	   in
 	      v
 	   end)

@@ -452,7 +452,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
 		   val TypBind.T ds = TypBind.node typBind
 		in
 		   #2
-		   (List.fold
+		   (Vector.fold
 		    (ds, (I, Interface.empty),
 		     fn ({def, tycon, tyvars}, (I, I')) =>
 		     let
