@@ -86,8 +86,7 @@ functor Real (R: PRE_REAL): REAL =
 	       else (acos, asin, ln, log10)
 	 end
 
-
-         (* See runtime/basis/Real.c for the integers returned by class. *)
+      (* See runtime/basis/Real.c for the integers returned by class. *)
       fun class x =
 	 case Prim.class x of
 	    0 => NAN
@@ -396,8 +395,10 @@ functor Real (R: PRE_REAL): REAL =
 			end
 		  end
 	    end
-	 fun sci (sign: string, cs: C.CS.t, decpt: int, ndig: int): string =
+	 fun sci (x: real, ndig: int): string =
 	    let
+	       val sign = if x < zero then "~" else ""
+	       val (cs, decpt) = gdtoa (x, Sci, add1 ndig)
 	       val length = C.CS.length cs
 	       val whole = String.tabulate (1, fn _ => C.CS.sub (cs, 0))
 	       val frac =
@@ -426,7 +427,50 @@ functor Real (R: PRE_REAL): REAL =
 	    in
 	       concat [sign, whole, frac, "E", exp]
 	    end
-			
+	 fun gen (x: real, n: int): string =
+	    case class x of
+	       INF => if x > zero then "inf" else "~inf"
+	     | NAN => "nan"
+	     | _ => 
+		  let
+		     val (prefix, x) =
+			if x < zero
+			   then ("~", ~ x)
+			else ("", x)
+		     val ss = Substring.full (sci (x, Int.- (n, 1)))
+		     fun isE c = c = #"E"
+		     fun isZero c = c = #"0"
+		     val expS =
+			Substring.string (Substring.taker (not o isE) ss)
+		     val exp = valOf (Int.fromString expS)
+		     val man =
+			String.translate
+			(fn #"." => "" | c => str c)
+			(Substring.string (Substring.dropr isZero
+					   (Substring.takel (not o isE) ss)))
+		     val manSize = String.size man
+		     fun zeros i = CharVector.tabulate (i, fn _ => #"0")
+		     fun dotAt i =
+			concat [String.substring (man, 0, i),
+				".", String.extract (man, i, NONE)]
+		     fun sci () = concat [prefix,
+					  if manSize = 1 then man else dotAt 1,
+					  "E", expS]
+		     val op - = Int.-
+		     val op + = Int.+
+		     val ~ = Int.~
+		     val op >= = Int.>=
+		  in
+		     if exp >= (if manSize = 1 then 3 else manSize + 3)
+			then sci ()
+		     else if exp >= manSize - 1
+			then concat [prefix, man, zeros (exp - (manSize - 1))]
+		     else if exp >= 0
+			then concat [prefix, dotAt (exp + 1)]
+		     else if exp >= (if manSize = 1 then ~2 else ~3)
+			then concat [prefix, "0.", zeros (~exp - 1), man]
+		     else sci ()
+		  end
       in
 	 fun fmt spec =
 	    let
@@ -461,20 +505,7 @@ functor Real (R: PRE_REAL): REAL =
 				       then raise Size
 				    else n
 			in
-			   fn x =>
-			   let
-			      val sign = if x < zero then "~" else ""
-			      val (cs, decpt) = gdtoa (x, Sci, n)
-			      val length = C.CS.length cs
-			   in
-			      if Int.<= (decpt, ~4)
-				 orelse Int.> (decpt, Int.+ (5, length))
-				 then sci (sign, cs, decpt, Int.- (length, 1))
-			      else fix (sign, cs, decpt,
-					if Int.< (length, decpt)
-					   then 0
-					else Int.- (length, decpt))
-			   end
+			   fn x => gen (x, n)
 			end
 		   | SCI opt =>
 			let
@@ -486,13 +517,7 @@ functor Real (R: PRE_REAL): REAL =
 				       then raise Size
 				    else n
 			in
-			   fn x =>
-			   let
-			      val sign = if x < zero then "~" else ""
-			      val (cs, decpt) = gdtoa (x, Sci, add1 n)
-			   in
-			      sci (sign, cs, decpt, n)
-			   end
+			   fn x => sci (x, n)
 			end
 	    in
 	       fn x =>
