@@ -76,7 +76,7 @@ in
    val mltonCompile  = make ("mlton", [])
    val mltonStableCompile  = make ("mlton-stable", [])
    val mltonTopCompile = make ("/usr/local/bin/mlton", [])
-(*   val mltonTopCompile = make ("mlton", ["-local-flatten", "false"]) *)
+(*   val mltonTopCompile = make ("mlton", ["-unused-args", "false"]) *)
 end
 
 fun kitCompile {bench} =

@@ -50,8 +50,8 @@ test: $(NAME)
 
 QBENCH = $(BENCH)
 
-QBFLAGS =
+QBFLAGS = -mltonTop -mltonStable
 
 .PHONY: qtest
 qtest: $(NAME)
-	export PATH=$(PATH):$$PATH && cd tests && ../benchmark $(QBFLAGS) $(QBENCH)
+	export PATH=$(PATH):$$PATH && cd tests && ../benchmark $(QBFLAGS) $(QBENCH) && make clean
