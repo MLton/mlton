@@ -134,7 +134,7 @@ fun makeOptions {usage} =
 	intRef cardSizeLog2),
        (Expert, "cc", " <gcc>", "path to gcc executable",
 	SpaceString (fn s => gcc := s)),
-       (Expert, "cc-opt", " <opt>", "pass option to C compiler", push ccOpts),
+       (Normal, "cc-opt", " <opt>", "pass option to C compiler", push ccOpts),
        (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
        (Expert, "debug", " {false|true}", "produce executable with debug info",

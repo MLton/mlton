@@ -44,7 +44,7 @@ integer arithmetic.
 .TP
 \fB-align \fI{\fB4\fP|\fB8\fP}\fP
 Aligns object sizes and doubles in memory by the specified alignment.
-On x86's, the default is \fB4\fP and on Sparc's the default is
+On x86, the default is \fB4\fP and on Sparc the default is
 \fB8\fP.
 
 .TP
@@ -54,6 +54,11 @@ and \fB2002-strict\fP implement the 2002 Basis Library
 specification; \fB2002-strict\fP removes MLton extensions.  \fB1997\fP
 implements the 1997 version of the Basis Library specification.
 \fBnone\fP removes all Basis Library functionality.
+
+.TP
+\fB-cc-opt \fIoption\fP\fP
+Pass the option to gcc for compiling C code.  This is only useful when
+compiling \fB-native false\fP.
 
 .TP
 \fB-detect-overflow \fI{\fBtrue\fI|\fBfalse\fI}\fR

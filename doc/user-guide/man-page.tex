@@ -48,9 +48,9 @@ is performed on integer arithmetic.
 \newcommand{\falseTrue}{\choiceTwo{false}{true}}
 \newcommand{\trueFalse}{\choiceTwo{true}{false}}
 
-\option{-basis \choiceTwo{4}{8}}
+\option{-align \choiceTwo{4}{8}}
 Aligns object sizes and doubles in memory by the specified alignment.
-On x86's, the default is {\tt 4} and on Sparc's the default is {\tt
+On x86, the default is {\tt 4} and on Sparc the default is {\tt
 8}.
 
 \option{-basis \choices 2002\choice 2002-strict\choice 1997\choice none\choicesEnd}
@@ -60,6 +60,10 @@ specification; {\tt 2002-strict} removes all extensions described in
 \secref{mlton}.  {\tt 1997} implements the 1997 version of the Basis
 Library specification; see \secref{basis1997} for more information.
 {\tt none} removes all Basis Library functionality.
+
+\option{-cc-opt {\it option}}
+Pass the option to gcc for compiling C code.  This is only useful when
+compiling {\tt -native false}.
 
 \option{-detect-overflow \trueFalse}
 This flag controls whether or not overflow checking is performed on integer
