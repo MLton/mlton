@@ -43,7 +43,9 @@ fun 'a newProperty () =
 		  fun update () =
 		     ((numLinks := n + !numLinks
 		       handle Overflow => Error.bug "property list numLinks overflow")
-		      ; maxLength := Int.max (!maxLength, n))
+		      ; if n > !maxLength
+			   then maxLength := n
+			else ())
 	       in case l of
 		  [] => (update (); NONE)
 		| e :: l =>
