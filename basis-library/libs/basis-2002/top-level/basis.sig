@@ -141,6 +141,7 @@ signature BASIS_2002 =
       structure Int16ArraySlice : MONO_ARRAY_SLICE
       structure Int16Vector : MONO_VECTOR
       structure Int16VectorSlice : MONO_VECTOR_SLICE
+      structure Int31 : INTEGER
       structure Int32 : INTEGER
       structure Int32Array : MONO_ARRAY
       structure Int32Array2 : MONO_ARRAY2
@@ -589,10 +590,6 @@ signature BASIS_2002 =
    where type BinPrimIO.reader = BinPrimIO.reader
    where type BinPrimIO.writer = BinPrimIO.writer
    where type FixedInt.int = FixedInt.int
-   where type Int8.int = Int8.int
-   where type Int16.int = Int16.int
-   where type Int64.int = Int64.int
-   where type IntInf.int = IntInf.int
    where type IO.buffer_mode = IO.buffer_mode
    where type LargeInt.int = LargeInt.int
    where type LargeReal.real = LargeReal.real
@@ -607,7 +604,6 @@ signature BASIS_2002 =
    where type Position.int = Position.int
    where type Posix.IO.file_desc = Posix.IO.file_desc
    where type Posix.Signal.signal = Posix.Signal.signal
-   where type Real32.real = Real32.real
    where type Socket.dgram = Socket.dgram
    where type ('a, 'b) Socket.sock = ('a, 'b) Socket.sock
    where type 'a Socket.sock_addr = 'a Socket.sock_addr
@@ -628,12 +624,20 @@ signature BASIS_2002 =
    where type 'a Vector.vector = 'a Vector.vector
 *)
    where type 'a VectorSlice.slice = 'a VectorSlice.slice
-   where type Word8.word = Word8.word
-   where type Word16.word = Word16.word
-   where type Word64.word = Word64.word
    where type Word8Array.array = Word8Array.array
    where type Word8ArraySlice.slice = Word8ArraySlice.slice
    where type Word8ArraySlice.vector_slice = Word8ArraySlice.vector_slice
    where type Word8Vector.vector = Word8Vector.vector
+
+   (* Types that must be exposed because constants denote them. *)
+   where type Int8.int = Int8.int
+   where type Int16.int = Int16.int
+   where type Int31.int = Int31.int
+   where type Int64.int = Int64.int
+   where type IntInf.int = IntInf.int
+   where type Real32.real = Real32.real
+   where type Word8.word = Word8.word
+   where type Word16.word = Word16.word
+   where type Word64.word = Word64.word
 
    where type 'a MLton.Thread.t = 'a MLton.Thread.t

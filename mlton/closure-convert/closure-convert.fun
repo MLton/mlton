@@ -596,7 +596,9 @@ fun closureConvert
       val convertVarExp = convertVar o SvarExp.var
       val handlesSignals =
 	 Sexp.hasPrim (body, fn p =>
-		       Prim.name p = Prim.Name.MLton_installSignalHandler)
+		       case Prim.name p of
+			  Prim.Name.MLton_installSignalHandler => true
+			| _ => false)
       (*------------------------------------*)      	       
       (*               apply                *)
       (*------------------------------------*)

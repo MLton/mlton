@@ -32,7 +32,6 @@ struct
      structure WordX = WordX
   end
 
-  datatype z = datatype IntSize.t
   datatype z = datatype RealSize.t
   datatype z = datatype WordSize.t
   
@@ -169,8 +168,9 @@ struct
 	  | Int i =>
 	       let
 		  val i'' = fn () => x86.Operand.immediate_const_int (IntX.toInt i)
+		  datatype z = datatype IntSize.prim
 	       in
-		  case IntX.size i of
+		  case IntSize.prim (IntX.size i) of
 		     I8 => Vector.new1 (i'' (), x86.Size.BYTE)
 		   | I16 => Vector.new1 (i'' (), x86.Size.WORD)
 		   | I32 => Vector.new1 (i'' (), x86.Size.LONG)
@@ -864,7 +864,9 @@ struct
 			  end
 		     | Int {cases, default, size, test} =>
 			  (Assert.assert("x86Translate.Transfer.toX86Blocks: Switch/Int", 
-					 fn () => size <> IntSize.I64)
+					 fn () =>
+					 not (IntSize.equals
+					      (size, IntSize.I 64)))
 			   ; simple ({cases = (Vector.map
 					       (cases, fn (i, l) =>
 						(IntX.toInt i, l))),

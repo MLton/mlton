@@ -151,31 +151,25 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 	 val (falseVar, f) = make Con.falsee
       end
       local
-	 fun make s =
-	    let
-	       val one = Var.newNoname ()
-	       val oneS = 
-		  Statement.T {exp = Exp.Const (Const.int (IntX.one s)),
-			       ty = Type.int s,
-			       var = SOME one}
-	    in
-	       (one,oneS)
-	    end
-	 datatype z = datatype IntX.IntSize.t
-	 val (one8, oneS8) = make I8
-	 val (one16, oneS16) = make I16
-	 val (one32, oneS32) = make I32
-	 val (one64, oneS64) = make I64
+	 val statements = ref []
       in
-	 fun one s =
-	   case s of
-	     I8 => one8
-	   | I16 => one16
-	   | I32 => one32
-	   | I64 => one64
-	 val oneSs = Vector.new4 (oneS8, oneS16, oneS32, oneS64)
+	 val one =
+	    IntSize.memoize
+	    (fn s =>
+	     let
+		val one = Var.newNoname ()
+		val () =
+		   List.push
+		   (statements,
+		    Statement.T {exp = Exp.Const (Const.int (IntX.one s)),
+				 ty = Type.int s,
+				 var = SOME one})
+	     in
+		one
+	     end)
+	 val ones = Vector.fromList (!statements)
       end
-      val globals = Vector.concat [Vector.new2 (t, f), oneSs, globals]
+      val globals = Vector.concat [Vector.new2 (t, f), ones, globals]
       val shrink = shrinkFunction globals
       val numSimplified = ref 0
       fun simplifyFunction f =

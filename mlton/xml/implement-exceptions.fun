@@ -54,7 +54,8 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 	    let
 	       val sumTycon = Tycon.newNoname ()
 	       val sumType = Type.con (sumTycon, Vector.new0 ())
-	       fun find (name: Prim.Name.t): Var.t * Type.t * PrimExp.t =
+	       fun find (nameString: string, isName: Prim.Name.t -> bool)
+		  : Var.t * Type.t * PrimExp.t =
 		  let
 		     val var =
 			DynamicWind.withEscape
@@ -65,14 +66,13 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 			       (body, fn (_, _, e) =>
 				case e of
 				   PrimApp {args, prim, ...} =>
-				      if Prim.name prim = name 
+				      if isName (Prim.name prim)
 					 then escape (VarExp.var
 						      (Vector.sub (args, 0)))
 				      else ()
 				 | _ => ())
 			 in
-			    Error.bug
-			    (concat ["can't find ", Prim.Name.toString name])
+			    Error.bug (concat ["can't find it", nameString])
 			 end)
 		     val (ty, exp) =
 			DynamicWind.withEscape
@@ -90,10 +90,12 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 		     (var, ty, exp)
 		  end
 	       val (initExtraVar, initExtraType, initExtraExp) =
-		  find Prim.Name.Exn_setInitExtra
+		  find ("Exn_setInitExtra",
+			fn Prim.Name.Exn_setInitExtra => true | _ => false)
 	       val extraType = initExtraType
 	       val (extendExtraVar, extendExtraType, extendExtraExp) =
-		  find Prim.Name.Exn_setExtendExtra
+		  find ("Exn_setExtendExtra",
+			fn Prim.Name.Exn_setExtendExtra => true | _ => false)
 	       local
 		  open Type
 	       in

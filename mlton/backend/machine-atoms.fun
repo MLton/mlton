@@ -9,7 +9,6 @@ functor MachineAtoms (S: MACHINE_ATOMS_STRUCTS): MACHINE_ATOMS =
 struct
 
 open S
-datatype z = datatype IntSize.t
 datatype z = datatype WordSize.t
 
 structure ProfileLabel = ProfileLabel ()

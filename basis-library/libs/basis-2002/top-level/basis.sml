@@ -62,6 +62,7 @@ structure Basis2002:> BASIS_2002 =
       structure Int16ArraySlice = Int16ArraySlice
       structure Int16Vector = Int16Vector
       structure Int16VectorSlice = Int16VectorSlice
+      structure Int31 = Int31
       structure Int32 = Int32
       structure Int32Array = Int32Array
       structure Int32Array2 = Int32Array2

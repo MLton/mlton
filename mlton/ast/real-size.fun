@@ -6,7 +6,7 @@ open S
 datatype t = R32 | R64
 
 val all = [R32, R64]
-   
+
 val default = R64
 
 val equals: t * t -> bool = op =
@@ -28,5 +28,9 @@ val toString =
 val bytes: t -> int =
    fn R32 => 4
     | R64 => 8
-	 
+
+val bits: t -> int =
+   fn R32 => 32
+    | R64 => 64
+
 end

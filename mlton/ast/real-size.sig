@@ -12,6 +12,7 @@ signature REAL_SIZE =
       datatype t = R32 | R64
 
       val all: t list
+      val bits: t -> int
       val bytes: t -> int
       val default: t
       val equals: t * t -> bool

@@ -107,6 +107,7 @@ _overload 2 ~ :   ('a -> 'a) (* num -> num *)
 as  Int.~
 and Int8.~
 and Int16.~
+and Int31.~
 and Int32.~
 and Int64.~
 and IntInf.~
@@ -129,6 +130,7 @@ _overload 2 + :   ('a * 'a -> 'a) (* num * num -> num *)
 as  Int.+
 and Int8.+
 and Int16.+
+and Int31.+
 and Int32.+
 and Int64.+
 and IntInf.+
@@ -151,6 +153,7 @@ _overload 2 - :   ('a * 'a -> 'a) (* num * num -> num *)
 as  Int.-
 and Int8.-
 and Int16.-
+and Int31.-
 and Int32.-
 and Int64.-
 and IntInf.-
@@ -173,6 +176,7 @@ _overload 2 * :   ('a * 'a -> 'a) (* num * num -> num *)
 as  Int.*
 and Int8.*
 and Int16.*
+and Int31.*
 and Int32.*
 and Int64.*
 and IntInf.*
@@ -201,6 +205,7 @@ _overload 3 div:   ('a * 'a -> 'a) (* wordint * wordint -> wordint *)
 as  Int.div
 and Int8.div
 and Int16.div
+and Int31.div
 and Int32.div
 and Int64.div
 and IntInf.div
@@ -219,6 +224,7 @@ _overload 3 mod:   ('a * 'a -> 'a) (* wordint * wordint -> wordint *)
 as  Int.mod
 and Int8.mod
 and Int16.mod
+and Int31.mod
 and Int32.mod
 and Int64.mod
 and IntInf.mod
@@ -237,6 +243,7 @@ _overload 3 abs:   ('a -> 'a) (* realint * realint -> realint *)
 as  Int.abs
 and Int8.abs
 and Int16.abs
+and Int31.abs
 and Int32.abs
 and Int64.abs
 and IntInf.abs
@@ -252,6 +259,7 @@ _overload 1 < :   ('a * 'a -> bool) (* numtext * numtext -> bool *)
 as  Int.<
 and Int8.<
 and Int16.<
+and Int31.<
 and Int32.<
 and Int64.<
 and IntInf.<
@@ -276,6 +284,7 @@ _overload 1 <= :   ('a * 'a -> bool) (* numtext * numtext -> bool *)
 as  Int.<=
 and Int8.<=
 and Int16.<=
+and Int31.<=
 and Int32.<=
 and Int64.<=
 and IntInf.<=
@@ -300,6 +309,7 @@ _overload 1 > :   ('a * 'a -> bool) (* numtext * numtext -> bool *)
 as  Int.>
 and Int8.>
 and Int16.>
+and Int31.>
 and Int32.>
 and Int64.>
 and IntInf.>
@@ -324,6 +334,7 @@ _overload 1 >= :   ('a * 'a -> bool) (* numtext * numtext -> bool *)
 as  Int.>=
 and Int8.>=
 and Int16.>=
+and Int31.>=
 and Int32.>=
 and Int64.>=
 and IntInf.>=

@@ -15,8 +15,9 @@ struct
      open Machine
   in
      structure CFunction = CFunction
+     structure IntSize = IntSize
      structure Prim = Prim
-     datatype z = datatype IntSize.t
+     datatype z = datatype IntSize.prim
      datatype z = datatype RealSize.t
      datatype z = datatype WordSize.t
   end
@@ -605,49 +606,49 @@ struct
 		     transfer = NONE}]
 		end
              | Int_add s => 
-		(case s of
+		(case IntSize.prim s of
 		    I8 => binal Instruction.ADD
 		  | I16 => binal Instruction.ADD
 		  | I32 => binal Instruction.ADD
 		  | I64 => binal64 (Instruction.ADD, Instruction.ADC))
 	     | Int_equal s => 	
-		(case s of
+		(case IntSize.prim s of
 		    I8 => cmp Instruction.E
 		  | I16 => cmp Instruction.E
 		  | I32 => cmp Instruction.E
 		  | I64 => Error.bug "FIXME")
 	     | Int_ge s => 	
-		(case s of
+		(case IntSize.prim s of
 		    I8 => cmp Instruction.GE
 		  | I16 => cmp Instruction.GE
 		  | I32 => cmp Instruction.GE
 		  | I64 => Error.bug "FIXME")
 	     | Int_gt s => 
-		(case s of
+		(case IntSize.prim s of
 		    I8 => cmp Instruction.G
 		  | I16 => cmp Instruction.G
 		  | I32 => cmp Instruction.G
 		  | I64 => Error.bug "FIXME")
 	     | Int_le s => 
-		(case s of
+		(case IntSize.prim s of
 		    I8 => cmp Instruction.LE
 		  | I16 => cmp Instruction.LE
 		  | I32 => cmp Instruction.LE
 		  | I64 => Error.bug "FIXME")
 	     | Int_lt s =>
-		(case s of
+		(case IntSize.prim s of
 		    I8 => cmp Instruction.L
 		  | I16 => cmp Instruction.L
 		  | I32 => cmp Instruction.L
 		  | I64 => Error.bug "FIXME")
 	     | Int_mul s =>
-		(case s of
+		(case IntSize.prim s of
 		    I8 => pmd Instruction.IMUL
 		  | I16 => imul2 () 
 		  | I32 => imul2 ()
 		  | I64 => Error.bug "FIXME")
 	     | Int_neg s => 
-		(case s of
+		(case IntSize.prim s of
 		    I8 => unal Instruction.NEG 
 		  | I16 => unal Instruction.NEG 
 		  | I32 => unal Instruction.NEG 
@@ -658,25 +659,25 @@ struct
 							 src = Operand.immediate_const_int 0,
 							 size = dstsize}]))
 	     | Int_quot s => 
-		(case s of
+		(case IntSize.prim s of
 		    I8 => pmd Instruction.IDIV
 		  | I16 => pmd Instruction.IDIV
 		  | I32 => pmd Instruction.IDIV
 		  | I64 => Error.bug "FIXME")
 	     | Int_rem s => 
-		(case s of
+		(case IntSize.prim s of
 		    I8 => pmd Instruction.IMOD
 		  | I16 => pmd Instruction.IMOD
 		  | I32 => pmd Instruction.IMOD
 		  | I64 => Error.bug "FIXME")
 	     | Int_sub s => 
-		(case s of
+		(case IntSize.prim s of
 		    I8 => binal Instruction.SUB
 		  | I16 => binal Instruction.SUB
 		  | I32 => binal Instruction.SUB
 		  | I64 => binal64 (Instruction.SUB, Instruction.SBB))
 	     | Int_toInt (s, s') =>
-		(case (s, s') of
+		(case (IntSize.prim s, IntSize.prim s') of
 		    (I64, I64) => Error.bug "FIXME"
 		  | (I64, I32) => Error.bug "FIXME"
 		  | (I64, I16) => Error.bug "FIXME"
@@ -736,7 +737,7 @@ struct
 			transfer = NONE}]
 		    end 
 		in
-		   case (s, s') of
+		   case (IntSize.prim s, s') of
 		      (I64, R64) => Error.bug "FIXME"
 		    | (I64, R32) => Error.bug "FIXME"
 		    | (I32, R64) => default ()
@@ -747,7 +748,7 @@ struct
 		    | (I8, R32) => default' ()
 		end
 	     | Int_toWord (s, s') =>
-		(case (s, s') of
+		(case (IntSize.prim s, s') of
 		    (I64, W64) => Error.bug "FIXME"
 		  | (I64, W32) => Error.bug "FIXME"
 		  | (I64, W16) => Error.bug "FIXME"
@@ -1245,7 +1246,7 @@ struct
 			transfer = NONE}]
 		    end 
 		in
-		   case (s, s') of
+		   case (s, IntSize.prim s') of
 		      (R64, I64) => Error.bug "FIXME"
 		    | (R64, I32) => default ()
 		    | (R64, I16) => default ()
@@ -1455,7 +1456,7 @@ struct
 		  | W32 => binal Instruction.SUB
 		  | W64 => binal64 (Instruction.SUB, Instruction.SBB))
 	     | Word_toInt (s, s') =>
-		(case (s, s') of
+		(case (s, IntSize.prim s') of
 		   (W64, I64) => Error.bug "FIXME"
 		 | (W64, I32) => Error.bug "FIXME"
 		 | (W64, I16) => Error.bug "FIXME"
@@ -1473,7 +1474,7 @@ struct
 		 | (W8, I16) => movx Instruction.MOVZX
 		 | (W8, I8) => mov ())
 	     | Word_toIntX (s, s') =>
-		(case (s, s') of
+		(case (s, IntSize.prim s') of
 		   (W64, I64) => Error.bug "FIXME"
 		 | (W64, I32) => Error.bug "FIXME"
 		 | (W64, I16) => Error.bug "FIXME"
@@ -1883,25 +1884,25 @@ struct
 	[comment_begin,
 	 (case Prim.name prim of
 	     Int_addCheck s => 
-	       (case s of
+	       (case IntSize.prim s of
 		  I8 => binal (x86.Instruction.ADD, x86.Instruction.O)
 		| I16 => binal (x86.Instruction.ADD, x86.Instruction.O)
 		| I32 => binal (x86.Instruction.ADD, x86.Instruction.O)
 		| I64 => binal64 (x86.Instruction.ADD, x86.Instruction.ADC, x86.Instruction.O))
 	   | Int_subCheck s => 
-	       (case s of
+	       (case IntSize.prim s of
 		  I8 => binal (x86.Instruction.SUB, x86.Instruction.O)
 		| I16 => binal (x86.Instruction.SUB, x86.Instruction.O)
 		| I32 => binal (x86.Instruction.SUB, x86.Instruction.O)
 		| I64 => binal64 (x86.Instruction.SUB, x86.Instruction.SBB, x86.Instruction.O))
 	   | Int_mulCheck s => 	
-	       (case s of
+	       (case IntSize.prim s of
 		  I8 => pmd (x86.Instruction.IMUL, x86.Instruction.O)
 		| I16 => imul2 x86.Instruction.O
 		| I32 => imul2 x86.Instruction.O
 		| I64 => Error.bug "FIXME")
 	   | Int_negCheck s => 
-	       (case s of
+	       (case IntSize.prim s of
 		  I8 => unal (x86.Instruction.NEG, x86.Instruction.O)
 		| I16 => unal (x86.Instruction.NEG, x86.Instruction.O)
 		| I32 => unal (x86.Instruction.NEG, x86.Instruction.O)

@@ -107,15 +107,20 @@ fun globalize {program = Program.T {datatypes, body, ...},
 				      * because polymorphic equality isn't implemented
 				      * there. 
 				      *)
-				     andalso Prim.name prim <> Prim.Name.MLton_equal)
+				     andalso
+				     (case Prim.name prim of
+					 Prim.Name.MLton_equal => false
+				       | _ => true))
 				    orelse
 				    (once andalso
 				     (case Prim.name prim of
 					 Prim.Name.Ref_ref => typeIsSmall ty
 				       | _ => false)))
 				val once =
-				   once andalso
-				   Prim.name prim <> Prim.Name.Thread_copyCurrent
+				    once andalso
+				    (case Prim.name prim of
+					Prim.Name.Thread_copyCurrent => false
+				      | _ => true)
 			     in
 				(global, once)
 			     end

@@ -30,15 +30,19 @@ val max: t -> LargeWord.t =
 
 val allOnes = max
 
+val bits: t -> int =
+   fn W8 => 8
+    | W16 => 16
+    | W32 => 32
+    | W64 => 64
+
 val bytes: t -> int = 
    fn W8 => 1
     | W16 => 2
     | W32 => 4
     | W64 => 8
 
-fun size s = 8 * bytes s
-
-fun toString w = Int.toString (size w)
+val toString = Int.toString o bits
 
 val memoize: (t -> 'a) -> t -> 'a =
    fn f =>
@@ -54,6 +58,6 @@ val memoize: (t -> 'a) -> t -> 'a =
        | W64 => a64
    end
    
-val cardinality = memoize (fn s => IntInf.pow (2, size s))
+val cardinality = memoize (fn s => IntInf.pow (2, bits s))
 
 end

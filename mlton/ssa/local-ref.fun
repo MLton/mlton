@@ -156,7 +156,9 @@ fun eliminate (program: Program.t): Program.t
 	       Option.app (var, fn var => 
 			   case exp
 			     of PrimApp {prim, ...}
-			      => if Prim.name prim = Prim.Name.Ref_ref
+			      => if (case Prim.name prim of
+					Prim.Name.Ref_ref => true
+				      | _ => false)
 				   then setGlobalInfo(var, GlobalInfo.new true)
 				   else ()
 			      | _ => ()))
@@ -178,7 +180,9 @@ fun eliminate (program: Program.t): Program.t
 	       in
 		 case exp
 		   of PrimApp {prim, args, ...}
-		    => if Prim.name prim = Prim.Name.Ref_ref
+		    => if (case Prim.name prim of
+			      Prim.Name.Ref_ref => true
+			    | _ => false)
 			 then ignore
 			      (FuncLattice.<=
 			       (GlobalInfo.funcUses 

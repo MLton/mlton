@@ -23,7 +23,6 @@ in
    structure GCField = GCField
 end
 
-datatype z = datatype IntSize.t
 datatype z = datatype WordSize.t
 
 structure CFunction =
@@ -33,8 +32,8 @@ structure CFunction =
       local
 	 open CType
       in
-	 val Int32 = Int I32
-	 val Int64 = Int I64
+	 val Int32 = Int (IntSize.I 32)
+	 val Int64 = Int (IntSize.I 64)
 	 val Word32 = Word W32
 	 val Word64 = Word W64
       end
@@ -917,10 +916,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				       Option.map (toRtype (varType x), fn t =>
 						   (x, t))
 				  | NONE => NONE
-			      fun normal () =
+			      fun primApp prim =
 				 add (PrimApp {dst = dst (),
 					       prim = prim,
 					       args = varOps args})
+			      fun normal () = primApp prim
 			      datatype z = datatype Prim.Name.t
 			      fun bumpCanHandle n =
 				 let
@@ -1113,6 +1113,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			      then updateCard (addr, fn ss => ss, assign)
 			   else loop (i - 1, assign::ss, t)
 			end
+		     fun int (s, f) =
+			if IntSize.equals (s, IntSize.I 64)
+			   andalso !Control.Native.native 
+			   then simpleCCall f
+			else normal ()
 			      datatype z = datatype Prim.Name.t
 			   in
 			      case Prim.name prim of
@@ -1171,57 +1176,45 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    ccall {args = Vector.new1 Operand.GCState,
 					   func = CFunction.unpack}
 			       | Int_equal s =>
-				    if s = IntSize.I64 andalso !Control.Native.native 
-				       then simpleCCall CFunction.int64Equal
-				       else normal ()
-			       | Int_ge s =>
-				    if s = IntSize.I64 andalso !Control.Native.native
-				       then simpleCCall (CFunction.intGe s)
-				    else normal ()
-			       | Int_gt s =>
-				    if s = IntSize.I64 andalso !Control.Native.native
-				       then simpleCCall (CFunction.intGt s)
-				    else normal ()
-			       | Int_le s =>
-				    if s = IntSize.I64 andalso !Control.Native.native
-				       then simpleCCall (CFunction.intLe s)
-				    else normal ()
-			       | Int_lt s =>
-				    if s = IntSize.I64 andalso !Control.Native.native
-				       then simpleCCall (CFunction.intLt s)
-				    else normal ()
-			       | Int_mul s =>
-				    if s = IntSize.I64 andalso !Control.Native.native
-				       then simpleCCall (CFunction.intMul s)
-				    else normal ()
-			       | Int_quot s =>
-				    if s = IntSize.I64
-				       orelse not (!Control.Native.native)
-				       then simpleCCall (CFunction.intQuot s)
-				    else normal ()
-			       | Int_rem s =>
-				    if s = IntSize.I64
-				       orelse not (!Control.Native.native)
-				       then simpleCCall (CFunction.intRem s)
-				    else normal ()
+				    (case IntSize.bits s of
+					31 => primApp (Prim.intEqual
+						       (IntSize.I 32))
+				      | 64 =>
+					   if !Control.Native.native
+					      then
+						 simpleCCall CFunction.int64Equal
+					   else normal ()
+				      | _ => normal ())
+			       | Int_ge s => int (s, CFunction.intGe s)
+			       | Int_gt s => int (s, CFunction.intGt s)
+			       | Int_le s => int (s, CFunction.intLe s)
+			       | Int_lt s => int (s, CFunction.intLt s)
+			       | Int_mul s => int (s, CFunction.intMul s)
+			       | Int_quot s => int (s, CFunction.intQuot s)
+			       | Int_rem s => int (s, CFunction.intRem s)
 			       | Int_toInt (s1, s2) =>
 				    let
-				       datatype z = datatype IntSize.t
+				       fun call () =
+					  if !Control.Native.native
+					     then
+						simpleCCall
+						(CFunction.intToInt (s1, s2))
+					  else normal ()
+				       val id = cast
 				    in
-				       if (case (s1, s2) of
-					      (I32, I64) => true
-					    | (I64, I32) => true
-					    | _ => false)
-					  andalso !Control.Native.native
-					  then simpleCCall (CFunction.intToInt (s1, s2))
-				       else normal ()
+				       case (IntSize.bits s1, IntSize.bits s2) of
+					  (32, 64) => call ()
+					| (64, 32) => call ()
+					| (31, 32) => id ()
+					| (32, 31) => id ()
+					| _ => normal ()
 				    end
 			       | Int_toWord (s1, s2) =>
 				    let
-				       datatype z = datatype IntSize.t
+				       datatype z = datatype IntSize.prim
 				       datatype z = datatype WordSize.t
 				    in
-				       if (case (s1, s2) of
+				       if (case (IntSize.prim s1, s2) of
 					      (I64, W32) => true
 					    | _ => false)
 					  andalso !Control.Native.native
@@ -1431,10 +1424,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    else normal ()
 			       | Word_toInt (s1, s2) =>
 				    let
-				       datatype z = datatype IntSize.t
+				       datatype z = datatype IntSize.prim
 				       datatype z = datatype WordSize.t
 				    in
-				       if (case (s1, s2) of
+				       if (case (s1, IntSize.prim s2) of
 					      (W32, I64) => true
 					    | _ => false)
 					  andalso !Control.Native.native

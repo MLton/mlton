@@ -5,6 +5,8 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+type int = Int.t
+   
 signature PRIM_TYCONS_STRUCTS =
    sig
       structure AdmitsEquality: ADMITS_EQUALITY
@@ -39,7 +41,7 @@ signature PRIM_TYCONS =
       val defaultWord: tycon
       val exn: tycon
       val int: IntSize.t -> tycon
-      val ints: (tycon * IntSize.t) list
+      val ints: (tycon * IntSize.t) vector
       val intInf: tycon
       val isIntX: tycon -> bool
       val isRealX: tycon -> bool
@@ -52,12 +54,12 @@ signature PRIM_TYCONS =
       val preThread: tycon
       val prims: (tycon * Kind.t * AdmitsEquality.t) list
       val real: RealSize.t -> tycon
-      val reals: (tycon * RealSize.t) list
+      val reals: (tycon * RealSize.t) vector
       val reff: tycon
       val thread: tycon
       val tuple: tycon
       val vector: tycon
       val weak: tycon
       val word: WordSize.t -> tycon
-      val words: (tycon * WordSize.t) list
+      val words: (tycon * WordSize.t) vector
    end

@@ -70,7 +70,7 @@ fun rol (w, w') =
    let
       val {size = s, word = w} = dest w
       val {word = w', ...} = dest w'
-      val n = Word.fromInt (WordSize.size s)
+      val n = Word.fromInt (WordSize.bits s)
       val w' = Word.mod (w', n)
    in
       make (Word.orb (Word.>> (w, Word.toWord (Word.- (n, w'))),
@@ -82,7 +82,7 @@ fun ror (w, w') =
    let
       val {size = s, word = w} = dest w
       val {word = w', ...} = dest w'
-      val n = Word.fromInt (WordSize.size s)
+      val n = Word.fromInt (WordSize.bits s)
       val w' = Word.mod (w', n)
    in
       make (Word.orb (Word.>> (w, Word.toWord w'),
@@ -147,7 +147,7 @@ val toString = Word.toString o word
 
 local
    fun wrap (f: Word.t * PWord.t -> Word.t) (w: t, w': t): t =
-      if Word.> (word w', Word.fromInt (WordSize.size (size w)))
+      if Word.> (word w', Word.fromInt (WordSize.bits (size w)))
 	 then zero (size w)
       else make (f (word w, Word.toWord (word w')),
 		 size w)

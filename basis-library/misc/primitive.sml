@@ -16,53 +16,61 @@ structure Array =
    struct
       type 'a array = 'a array
    end
+
 type 'a array = 'a Array.array
+
 structure Bool =
    struct
       datatype bool = datatype bool
    end
-(* datatype bool = datatype Bool.bool *)
+
 structure Char =
    struct
       type char = char
    end
+
 type char = Char.char
+
 type exn = exn
+
 structure Int8 =
    struct
       type int = int8
    end
+
 structure Int16 =
    struct
       type int = int16
    end
+
 structure Int32 =
    struct
       type int = int32
    end
+
 structure Int = Int32
+
 structure Int64 =
    struct
       type int = int64
    end
+
 structure IntInf =
    struct
       type int = intInf
    end
 
-(* datatype list = datatype list *)
-
 structure Real32 =
    struct
       type real = real32
    end
+
 structure Real64 =
    struct
       type real = real64
    end
-structure Real = Real64
 
-(* datatype ref = datatype ref *)
+structure Real = Real64
 
 structure String =
    struct
@@ -377,6 +385,14 @@ structure Primitive =
 	    val fromInt = _prim "Int32_toInt16": Int.int -> int;
 	    val toInt = _prim "Int16_toInt32": int -> Int.int;
 	 end
+      structure Int31 =
+	 struct
+	    type int = int31
+
+	    val fromBigUnsafe = _prim "Int32_toInt31": Int32.int -> int;
+	    val precision' = 31
+	    val toBig = _prim "Int31_toInt32": int -> Int32.int;
+	 end
       structure Int32 =
 	 struct
 	    type int = Int32.int
@@ -413,6 +429,9 @@ structure Primitive =
 	       else ~?
 	    val fromInt : int -> int = fn x => x
 	    val toInt : int -> int = fn x => x
+
+(*	    val fromInt31 = _prim "Int31_toInt32": Int31.int -> int; *)
+(* 	    val toInt31 = _prim "Int32_toInt31": int -> Int31.int; *)
 	 end
 
       structure Int = Int32

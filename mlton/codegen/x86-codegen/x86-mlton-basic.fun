@@ -315,7 +315,6 @@ struct
        WordSize.memoize
        (fn s => Label.fromString (concat ["localWord", WordSize.toString s]))
     datatype z = datatype CType.t
-    datatype z = datatype IntSize.t
   in
     fun local_base ty =
        case ty of
@@ -336,7 +335,6 @@ struct
      val globalW_base =
 	make ("Word", WordSize.memoize, WordSize.toString)
     datatype z = datatype CType.t
-    datatype z = datatype IntSize.t
   in
      fun global_base ty =
 	case ty of

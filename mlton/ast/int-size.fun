@@ -3,47 +3,64 @@ struct
 
 open S
 
-datatype t = I8 | I16 | I32 | I64
+datatype t = T of {precision: int}
+
+fun bits (T {precision = p, ...}) = p
 
 val equals: t * t -> bool = op =
 
-val all = [I8, I16, I32, I64]
+val sizes: int list = [8, 16, 31, 32, 64]
 
-val default = I32
+fun isValidSize i = List.exists (sizes, fn i' => i = i')
 
-val bytes: t -> int =
-   fn I8 => 1
-    | I16 => 2
-    | I32 => 4
-    | I64 => 8
+fun make i = T {precision = i}
+
+val allVector = Vector.tabulate (65, fn i =>
+				  if isValidSize i
+				     then SOME (make i)
+				  else NONE)
+				
+fun I i =
+   case Vector.sub (allVector, i) handle Subscript => NONE of
+      NONE => Error.bug (concat ["strange int size: ", Int.toString i])
+    | SOME s => s
    
-fun size s = 8 * bytes s
+val all = List.map (sizes, I)
 
-val toString = Int.toString o size
+val prims = [I 8, I 16, I 32, I 64]
 
-val layout = Layout.str o toString
-   
+val default = I 32
+ 
 val memoize: (t -> 'a) -> t -> 'a =
    fn f =>
    let
-      val a8 = f I8
-      val a16 = f I16
-      val a32 = f I32
-      val a64 = f I64
+      val v = Vector.map (allVector, fn opt => Option.map (opt, f))
    in
-      fn I8 => a8
-       | I16 => a16
-       | I32 => a32
-       | I64 => a64
+      fn T {precision = i, ...} => valOf (Vector.sub (v, i))
    end
 
-val cardinality = memoize (fn s => IntInf.pow (2, size s))
+val bytes: t -> int =
+   memoize
+   (fn T {precision, ...} =>
+    if precision <= 8
+       then 1
+    else if precision <= 16
+	    then 2
+	 else if precision <= 32
+		 then 4
+	      else 8)
+
+val toString = Int.toString o bits
+
+val layout = Layout.str o toString
+
+val cardinality = memoize (fn s => IntInf.pow (2, bits s))
 
 val range =
    memoize
    (fn s =>
     let
-       val pow = IntInf.pow (2, size s - 1)
+       val pow = IntInf.pow (2, bits s - 1)
     in
        (~ pow, pow - 1)
     end)
@@ -58,5 +75,17 @@ fun isInRange (s, i) =
 val min = #1 o range
 
 val max = #2 o range
+
+datatype prim = I8 | I16 | I32 | I64
+
+val primOpt = memoize (fn T {precision = i, ...} =>
+		       List.peekMap ([(8, I8), (16, I16), (32, I32), (64, I64)],
+				     fn (i', p) =>
+				     if i = i' then SOME p else NONE))
+
+fun prim s =
+   case primOpt s of
+      NONE => Error.bug "IntSize.prim"
+    | SOME p => p
 
 end

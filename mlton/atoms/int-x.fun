@@ -3,8 +3,6 @@ struct
 
 open S
 
-datatype z = datatype IntSize.t
-
 datatype t = T of {int: IntInf.t,
 		   size: IntSize.t}
    

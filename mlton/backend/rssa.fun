@@ -648,7 +648,9 @@ structure Program =
 
       fun handlesSignals p =
 	 hasPrim (p, fn p =>
-		  Prim.name p = Prim.Name.MLton_installSignalHandler)
+		  case Prim.name p of
+		     Prim.Name.MLton_installSignalHandler => true
+		   | _ => false)
 	 
       fun layouts (T {functions, main, objectTypes, ...},
 		   output': Layout.t -> unit): unit =

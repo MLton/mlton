@@ -9,7 +9,6 @@ functor SsaTree (S: SSA_TREE_STRUCTS): SSA_TREE =
 struct
 
 open S
-datatype z = datatype IntSize.t
 datatype z = datatype RealSize.t
 datatype z = datatype WordSize.t
 
@@ -54,19 +53,16 @@ structure Type =
 
 	 val tycons =
 	    [(Tycon.array, unary Array)]
-	    @ List.map (Tycon.ints, fn (t, s) =>
-			(t, nullary (Int s)))
+	    @ Vector.toListMap (Tycon.ints, fn (t, s) => (t, nullary (Int s)))
 	    @ [(Tycon.intInf, nullary IntInf),
 	       (Tycon.preThread, nullary PreThread)]
-	    @ List.map (Tycon.reals, fn (t, s) =>
-			(t, nullary (Real s)))
+	    @ Vector.toListMap (Tycon.reals, fn (t, s) => (t, nullary (Real s)))
 	    @ [(Tycon.reff, unary Ref),
 	       (Tycon.thread, nullary Thread),
 	       (Tycon.tuple, Tuple),
 	       (Tycon.vector, unary Vector),
 	       (Tycon.weak, unary Weak)]
-	    @ List.map (Tycon.words, fn (t, s) =>
-			(t, nullary (Word s)))
+	    @ Vector.toListMap (Tycon.words, fn (t, s) => (t, nullary (Word s)))
       in
 	 val _ = List.foreach (tycons, fn (tycon, f) => set (tycon, SOME f))
 
@@ -614,12 +610,15 @@ structure Transfer =
 		     return: Label.t} (* Must be nullary. *)
 
       fun iff (test: Var.t, {truee, falsee}) =
-	 Case
-	 {cases = Cases.Int (I32,
-			     Vector.new2 ((IntX.zero I32, falsee),
-					  (IntX.one I32, truee))),
-	  default = NONE,
-	  test = test}
+	 let
+	    val s = IntSize.I 32
+	 in
+	    Case
+	    {cases = Cases.Int (s, Vector.new2 ((IntX.zero s, falsee),
+						(IntX.one s, truee))),
+	     default = NONE,
+	     test = test}
+	 end
 	 
       fun foreachFuncLabelVar (t, func, label: Label.t -> unit, var) =
 	 let

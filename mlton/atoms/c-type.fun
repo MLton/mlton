@@ -3,7 +3,6 @@ struct
 
 open S
 
-datatype z = datatype IntSize.t
 datatype z = datatype WordSize.t
 
 datatype t =
@@ -12,7 +11,7 @@ datatype t =
  | Real of RealSize.t
  | Word of WordSize.t
 
-val bool = Int I32
+val bool = Int (IntSize.I 32)
 val char = Word W8
 val defaultInt = Int IntSize.default
 val defaultReal = Real RealSize.default
@@ -20,7 +19,7 @@ val defaultWord = Word WordSize.default
 val pointer = Pointer
 
 val all =
-   List.map (IntSize.all, Int)
+   List.map (IntSize.prims, Int)
    @ [Pointer]
    @ List.map (RealSize.all, Real)
    @ List.map (WordSize.all, Word)

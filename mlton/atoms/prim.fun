@@ -15,7 +15,6 @@ struct
 
 open S
 
-datatype z = datatype IntSize.t
 datatype z = datatype RealSize.t
 datatype z = datatype WordSize.t	       
 
@@ -740,7 +739,7 @@ fun 'a apply (p, args, varEquals) =
 		  s: WordSize.t) =
 	 let
 	    val x = f (WordX.toIntInf w, WordX.toIntInf w')
-	    val x' = x mod (Int.toIntInf (WordSize.size s))
+	    val x' = x mod (Int.toIntInf (WordSize.bits s))
 	 in
 	    if x = x'
 	       then word (WordX.fromLargeInt (x, s))
@@ -908,7 +907,7 @@ fun 'a apply (p, args, varEquals) =
 				 (WordX.mod
 				  (w,
 				   WordX.make
-				   (LargeWord.fromInt (WordSize.size s), s)))
+				   (LargeWord.fromInt (WordSize.bits s), s)))
 				 then Var x
 			      else Unknown
 			   end
@@ -922,7 +921,7 @@ fun 'a apply (p, args, varEquals) =
 				then Var x
 			     else if (WordX.>=
 				      (w, WordX.make (LargeWord.fromInt
-						      (WordSize.size s),
+						      (WordSize.bits s),
 						      WordSize.default)))
 				     then zero s
 				  else Unknown

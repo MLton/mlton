@@ -74,6 +74,7 @@ real/pack-real.sml
 real/real32.sml
 real/real64.sml
 integer/patch.sml
+integer/embed.sml
 
 top-level/arithmetic.sml
 

@@ -10,7 +10,6 @@ struct
 
 open S
 
-datatype z = datatype IntSize.t
 datatype z = datatype RealSize.t
 datatype z = datatype WordSize.t
 
@@ -21,98 +20,84 @@ val arrow = fromString "->"
 val bool = fromString "bool"
 val char = fromString "char"
 val exn = fromString "exn"
-val int8 = fromString "int8"
-val int16 = fromString "int16"
-val int32 = fromString "int32"
-val int64 = fromString "int64"
 val intInf = fromString "intInf"
 val list = fromString "list"
 val pointer = fromString "pointer"
 val preThread = fromString "preThread"
-val real32 = fromString "real32"
-val real64 = fromString "real64"
 val reff = fromString "ref"
 val thread = fromString "thread"
 val tuple = fromString "*"
 val vector = fromString "vector"
 val weak = fromString "weak"
-val word8 = fromString "word8"
-val word16 = fromString "word16"
-val word32 = fromString "word32"
-val word64 = fromString "word64"
-
-val ints =
-   [(int8, I8),
-    (int16, I16),
-    (int32, I32),
-    (int64, I64)]
-
-val reals =
-   [(real32, R32),
-    (real64, R64)]
-
-val words =
-   [(word8, W8),
-    (word16, W16),
-    (word32, W32),
-    (word64, W64)]
 
 datatype z = datatype Kind.t
 datatype z = datatype AdmitsEquality.t
-   
+
+local
+   fun 'a make (prefix: string,
+		all: 'a list,
+		bits: 'a -> int,
+		default: 'a,
+		equalsA: 'a * 'a -> bool,
+		memo: ('a -> t) -> ('a -> t),
+		admitsEquality: AdmitsEquality.t) =
+      let
+	 val all =
+	    Vector.fromListMap
+	    (all, fn s =>
+	     (fromString (concat [prefix, Int.toString (bits s)]), s))
+	 val fromSize =
+	    memo
+	    (fn s =>
+	     case Vector.peek (all, fn (_, s') => equalsA (s, s')) of
+		NONE => Error.bug "missing size"
+	      | SOME (tycon, _) => tycon)
+	 fun is t = Vector.exists (all, fn (t', _) => equals (t, t'))
+	 val prims =
+	    Vector.toListMap (all, fn (tycon, _) =>
+			      (tycon, Arity 0, admitsEquality))
+      in
+	 (fromSize default, fromSize, all, is, prims)
+      end
+in
+   val (defaultInt, int, ints, isIntX, primInts) =
+      let
+	 open IntSize
+      in
+	 make ("int", all, bits, default, equals, memoize, Always)
+      end
+   val (defaultReal, real, reals, isRealX, primReals) =
+      let
+	 open RealSize
+      in
+	 make ("real", all, bits, default, equals, memoize, Never)
+      end
+   val (defaultWord, word, words, isWordX, primWords) =
+      let
+	 open WordSize
+      in
+	 make ("word", all, bits, default, equals, memoize, Always)
+      end
+end
+
+val isIntX = fn c => equals (c, intInf) orelse isIntX c
+
 val prims =
    [(array, Arity 1, Always),
     (arrow, Arity 2, Never),
     (bool, Arity 0, Always),
     (char, Arity 0, Always),
     (exn, Arity 0, Never),
-    (int8, Arity 0, Always),
-    (int16, Arity 0, Always),
-    (int32, Arity 0, Always),
-    (int64, Arity 0, Always),
     (intInf, Arity 0, Always),
     (list, Arity 1, Sometimes),
     (pointer, Arity 0, Always),
     (preThread, Arity 0, Never),
-    (real32, Arity 0, Never),
-    (real64, Arity 0, Never),
     (reff, Arity 1, Always),
     (thread, Arity 0, Never),
     (tuple, Nary, Sometimes),
     (vector, Arity 1, Sometimes),
-    (weak, Arity 1, Never),
-    (word8, Arity 0, Always),
-    (word16, Arity 0, Always),
-    (word32, Arity 0, Always),
-    (word64, Arity 0, Always)]
-   
-val int =
-   fn I8 => int8
-    | I16 => int16
-    | I32 => int32
-    | I64 => int64
-
-val real =
-   fn R32 => real32
-    | R64 => real64
-	
-val word =
-   fn W8 => word8
-    | W16 => word16
-    | W32 => word32
-    | W64 => word64
-	 
-val defaultInt = int IntSize.default
-val defaultReal = real RealSize.default
-val defaultWord = word WordSize.default
-   
-local
-   fun is l t = List.exists (l, fn t' => equals (t, t'))
-in
-   val isIntX = is [int8, int16, int32, int64, intInf]
-   val isRealX = is [real32, real64]
-   val isWordX = is [word8, word16, word32, word64]
-end
+    (weak, Arity 1, Never)]
+   @ primInts @ primReals @ primWords
 
 fun layoutApp (c: t,
 	       args: (Layout.t * {isChar: bool, needsParen: bool}) vector) =

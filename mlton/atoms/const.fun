@@ -21,7 +21,6 @@ in
    structure WordSize = WordSize
 end
 
-datatype z = datatype IntSize.t
 datatype z = datatype WordSize.t
 
 structure SmallIntInf =

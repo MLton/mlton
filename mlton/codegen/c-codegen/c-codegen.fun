@@ -42,7 +42,6 @@ in
    structure WordX = WordX
 end
 
-datatype z = datatype IntSize.t
 datatype z = datatype RealSize.t
 datatype z = datatype WordSize.t
 
@@ -85,8 +84,9 @@ structure IntX =
 	       else if IntX.isMin i
 		       then min
 		    else neg ()
+	    datatype z = datatype IntSize.prim
 	 in
-	    case size i of
+	    case IntSize.prim (size i) of
 	       I8 => simple "8"
 	     | I16 => simple "16"
 	     | I32 => tricky ("0x80000000")
@@ -411,7 +411,7 @@ structure Type =
 	    case t of
 	       EnumPointers {pointers, ...} =>
 		  if 0 = Vector.length pointers
-		     then int I32
+		     then int (IntSize.I 32)
 		  else pointer
 	     | ExnStack => word W32
 	     | Int s => int s

@@ -143,7 +143,7 @@ local
 					   Vector.fromList infos))))))
 in
    val directCases = 
-      make (List.remove (IntSize.all, fn s => IntSize.I64 = s),
+      make (List.remove (IntSize.all, fn s => IntSize.equals (s, IntSize.I 64)),
 	    IntSize.cardinality, Type.int, Cases.int,
 	    fn Const.Int i => i
 	     | _ => Error.bug "caseInt type error")

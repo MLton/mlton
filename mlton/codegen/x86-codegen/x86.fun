@@ -141,12 +141,14 @@ struct
 	 fun fromCType t =
 	    case t of
 	       Int s =>
-		  let datatype z = datatype IntSize.t
-		  in case s of
-		       I8 => Vector.new1 BYTE
-		     | I16 => Vector.new1 WORD
-		     | I32 => Vector.new1 LONG
-		     | I64 => Vector.new2 (LONG, LONG)
+		  let
+		     datatype z = datatype IntSize.prim
+		  in
+		     case IntSize.prim s of
+			I8 => Vector.new1 BYTE
+		      | I16 => Vector.new1 WORD
+		      | I32 => Vector.new1 LONG
+		      | I64 => Vector.new2 (LONG, LONG)
 		  end
 	     | Pointer => Vector.new1 LONG
 	     | Real s => 
@@ -698,12 +700,14 @@ struct
 	 fun fromCType t =
 	    case t of
 	       Int s =>
-		  let datatype z = datatype IntSize.t
-		  in case s of
-		       I8 => One
-		     | I16 => Two
-		     | I32 => Four
-		     | I64 => Eight
+		  let
+		     datatype z = datatype IntSize.prim
+		  in
+		     case IntSize.prim s of
+			I8 => One
+		      | I16 => Two
+		      | I32 => Four
+		      | I64 => Eight
 		  end
 	     | Pointer => Four
 	     | Real s => 
@@ -1438,8 +1442,10 @@ struct
       in
 	 fun cReturnTemps ty =
 	    case ty of
-	       Int s => let datatype z = datatype IntSize.t
-			in case s of
+	       Int s => let
+			   datatype z = datatype IntSize.prim
+			in
+			   case IntSize.prim s of
 			     I8 => [{src = register Register.al,
 				     dst = cReturnTempContent (0, BYTE)}]
 			   | I16 => [{src = register Register.ax,

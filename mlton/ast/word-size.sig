@@ -13,6 +13,7 @@ signature WORD_SIZE =
 
       val all: t list
       val allOnes: t -> LargeWord.t
+      val bits: t -> int
       val bytes: t -> int
       val cardinality: t -> IntInf.t
       val default: t
@@ -20,6 +21,5 @@ signature WORD_SIZE =
       val max: t -> LargeWord.t
       val memoize: (t -> 'a) -> t -> 'a
       val pointer: unit -> t
-      val size: t -> int
       val toString: t -> string
    end

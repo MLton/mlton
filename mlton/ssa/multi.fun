@@ -134,7 +134,10 @@ structure VarInfo =
 fun multi (p as Program.T {functions, main, ...})
   = let
       val usesThreadsOrConts 
-	= Program.hasPrim (p, fn p => Prim.name p = Prim.Name.Thread_switchTo)
+	= Program.hasPrim (p, fn p =>
+			   case Prim.name p of
+			      Prim.Name.Thread_switchTo => true
+			    | _ => false)
 
       (* funcNode *)
       val {get = funcNode: Func.t -> unit Node.t,
@@ -213,7 +216,9 @@ fun multi (p as Program.T {functions, main, ...})
 		      | Runtime {prim, ...}
 		      => if usesThreadsOrConts
 			    andalso
-			    Prim.name prim = Prim.Name.Thread_copyCurrent
+			    (case Prim.name prim of
+				Prim.Name.Thread_copyCurrent => true
+			      | _ => false)
 			   then (ThreadCopyCurrent.force
 				 (LabelInfo.threadCopyCurrent li) ;
 				 ThreadCopyCurrent.force
