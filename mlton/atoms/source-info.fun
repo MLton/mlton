@@ -119,7 +119,7 @@ val isBasis =
    Trace.trace ("SourceInfo.isBasis", layout, Bool.layout) isBasis
 
 val gc = fromC "gc"
-val gcArrayAllocate = fromC "GC_arrayAllocate>"
+val gcArrayAllocate = fromC "GC_arrayAllocate"
 val main = fromC "main"
 val polyEqual = fromC "poly-equal"
 val unknown = fromC "unknown"
