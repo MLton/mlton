@@ -3156,14 +3156,11 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 			or not (mutatorStackInvariant(s))) {
 			/* This GC will grow the stack, if necessary. */
 			doGC (s, 0, s->currentThread->bytesNeeded, FALSE, TRUE);
-			leave(s);
 		} 
 		/* END: ensureMutatorInvariant */
-		else {
-			/* BEGIN: leave(s); */
-			atomicEnd (s);
-			/* END: leave(s); */
-		}
+       		/* BEGIN: leave(s); */
+	       	atomicEnd (s);
+		/* END: leave(s); */
 	}
 	assert (mutatorFrontierInvariant(s));
 	assert (mutatorStackInvariant(s));
