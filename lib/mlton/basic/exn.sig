@@ -17,4 +17,11 @@ signature EXN =
       val name: t -> string
       val layout: t -> Layout.t
       val toString: t -> string
+      (* try (t, k, h) evaluates t (), and if it yields value v, evaluates k v.
+       * If t () raises exception e, then h e is evaluated.
+       * This is not the same as "k (t ()) handle e => h e", because it doesn't
+       * evaluate k v in the context of the handler.  See "Exceptional Syntax"
+       * by Benton and Kennedy. 
+       *)
+      val try: (unit -> 'a) * ('a -> 'b) * (exn -> 'b) -> 'b
    end
