@@ -1451,7 +1451,8 @@ structure Function =
 				   [Var.toString var, 
 				    if !Control.showTypes
 				      then concat [": ",
-						   Layout.toString (Type.layout ty)]
+						   Layout.toString
+						   (Type.layout ty)]
 				      else "",
 				    " = ",
 				    PrimExp.toPretty (exp, global)],
@@ -1469,13 +1470,13 @@ structure Function =
 			concat [name, " ",
 				Layout.toString
 				(Layout.vector
-				 (Vector.map (formals, 
-					      fn (var, ty)
-					       => if !Control.showTypes
-						    then Layout.seq [Var.layout var,
-								     Layout.str ": ",
-								     Type.layout ty]
-						    else Var.layout var))),
+				 (Vector.map
+				  (formals, fn (var, ty) =>
+				   if !Control.showTypes
+				      then Layout.seq [Var.layout var,
+						       Layout.str ": ",
+						       Type.layout ty]
+				   else Var.layout var))),
 				" ",
 				Layout.toString
 				(List.layout Jump.layout handlers)]

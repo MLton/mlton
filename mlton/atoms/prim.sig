@@ -216,6 +216,7 @@ signature PRIM =
 
 	    val layout: ('a -> Layout.t) -> 'a t -> Layout.t
 	 end where type prim = t
+
       val apply: t * 'a ApplyArg.t list * ('a * 'a -> bool) -> 'a ApplyResult.t
       val array: t
       val assign: t
@@ -260,6 +261,7 @@ signature PRIM =
        *)
       val isFunctional: t -> bool
       val layout: t -> Layout.t
+      val layoutApp: t * 'a vector * ('a -> Layout.t) -> Layout.t
       (* Int_addCheck, Int_mulCheck, Int_subCheck *)
       val mayOverflow: t -> bool
       val mayRaise: t -> bool

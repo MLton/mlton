@@ -15,6 +15,8 @@ structure CoreML = CoreML (open Atoms
 structure Xml = Xml (open Atoms)
 structure Sxml = Xml
 structure Cps = Cps (open Atoms)
+structure Ssa = Ssa (open Atoms
+		     structure Cps = Cps)
 structure MachineOutput = MachineOutput (structure Label = Cps.Func
 					 structure Prim = Atoms.Prim)
 structure Machine = Machine (structure MachineOutput = MachineOutput)

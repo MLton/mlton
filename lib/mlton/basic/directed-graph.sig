@@ -60,8 +60,8 @@ signature DIRECTED_GRAPH =
 	 {graph: t,
 	  root: Node.t}
 	 ->
-	 (* The immediate dominator of each node.
-	  * The root's immediate dominator is itself.
+	 (* idom n = the immediate dominator n.
+	  * idom root = root.
 	  *)
 	 {idom: Node.t -> Node.t}
       val dominatorTree:

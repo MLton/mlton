@@ -1,7 +1,17 @@
-Group is
+Group
+
+(*functor Ssa *)
+   
+is
 
 ../atoms/sources.cm
 ../control/sources.cm
+../cps/sources.cm
 ../../lib/mlton/sources.cm
 
+analyze.sig
+analyze.fun
 ssa-tree.sig
+ssa-tree.fun
+type-check.sig
+type-check.fun

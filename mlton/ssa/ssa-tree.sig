@@ -1,9 +1,15 @@
+(* Copyright (C) 1997-1999 NEC Research Institute.
+ * Please see the file LICENSE for license information.
+ *)
 type int = Int.t
 type word = Word.t
    
 signature SSA_TREE_STRUCTS = 
    sig
       include ATOMS
+
+      structure Cps: CPS
+      sharing Atoms = Cps.Atoms
    end
 
 signature SSA_TREE = 
@@ -59,6 +65,8 @@ signature SSA_TREE =
 	     | SetHandler of Label.t
 	     | Tuple of Var.t vector
 	     | Var of Var.t
+
+	    val layout: t -> Layout.t
 	 end
 
       structure Statement:
@@ -66,6 +74,12 @@ signature SSA_TREE =
 	    datatype t = T of {var: Var.t option, (* NONE iff ty = unit. *)
 			       ty: Type.t,
 			       exp: Exp.t}
+
+	    val lastHandler: t vector * Label.t option -> Label.t option
+	    val layout: t -> Layout.t
+	    val restoreExnStack: t
+	    val saveExnStack: t
+	    val setHandler: Label.t -> t
 	 end
       
       structure Cases: CASES sharing type Cases.con = Con.t
@@ -77,7 +91,7 @@ signature SSA_TREE =
 	     | Call of {
 			func: Func.t,
 			args: Var.t vector,
-			cont: Label.t option (* NONE means tail-call *)
+			return: Label.t option (* NONE means tail-call *)
 		       }
 	     | Case of {
 			test: Var.t,
@@ -90,6 +104,8 @@ signature SSA_TREE =
 			}
 	     | Raise of Var.t vector
 	     | Return of Var.t vector
+
+	    val layout: t -> Layout.t
 	 end
 
       structure Block:
@@ -101,6 +117,22 @@ signature SSA_TREE =
 		     statements: Statement.t vector,
 		     transfer: Transfer.t
 		     }
+
+	    val layout: t -> Layout.t
+	 end
+
+      structure Datatype:
+	 sig
+	    datatype t =
+	       T of {
+		     tycon: Tycon.t,
+		     cons: {
+			    con: Con.t,
+			    args: Type.t vector
+			    } vector
+		     }
+
+	    val layout: t -> Layout.t
 	 end
 
       structure Function:
@@ -113,22 +145,25 @@ signature SSA_TREE =
 		     blocks: Block.t vector,
 		     returns: Type.t vector
 		     }
+
+	    val controlFlowGraph:
+	       t -> {graph: DirectedGraph.t,
+		     root: DirectedGraph.Node.t,
+		     labelNode: Label.t -> DirectedGraph.Node.t}
 	 end
       
       structure Program:
 	 sig
 	    datatype t =
 	       T of {
-		     datatypes: {
-				 tycon: Tycon.t,
-				 cons: {
-					con: Con.t,
-					args: Type.t vector
-				       } vector
-				} vector,
+		     datatypes: Datatype.t vector,
 		     globals: Statement.t vector,
 		     functions: Function.t vector,
 		     main: Func.t (* Must be nullary. *)
 		    } 
+
+	    val fromCps: Cps.Program.t * {jumpToLabel: Cps.Jump.t -> Label.t,
+					  funcToFunc: Cps.Func.t -> Func.t} -> t
+	    val inferHandlers: t -> Label.t -> Label.t option
 	 end
    end
