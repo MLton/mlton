@@ -265,7 +265,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
       val jumpOnOverflow = opcode "JumpOnOverflow"
       val profileLabel = opcode "ProfileLabel"
       val raisee = opcode "Raise"
-      val return = opcode "Return"
+      val returnOp = opcode "Return"
       datatype z = datatype WordSize.prim
       val switch: WordSize.t -> Opcode.t =
 	 let
@@ -485,7 +485,8 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	     | CCall {args, frameInfo, func, return} =>
 		  let
 		     val () = emitArgs args
-		     val CFunction.T {prototype, target, ...} = func
+		     val CFunction.T {maySwitchThreads, prototype, target, ...} =
+			func
 		     val () =
 			Option.app
 			(frameInfo, fn frameInfo =>
@@ -496,6 +497,10 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 			case target of
 			   Direct name => emitCallC (directIndex name)
 			 | Indirect => emitCallC (indirectIndex func)
+		     val () =
+			if maySwitchThreads
+			   then emitOpcode returnOp
+			else Option.app (return, goto)
 		  in
 		     ()
 		  end
@@ -505,7 +510,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		   ; goto label)
 	     | Goto l => goto l
 	     | Raise => emitOpcode raisee
-	     | Return => emitOpcode return
+	     | Return => emitOpcode returnOp
 	     | Switch (Switch.T {cases, default, size, test}) =>
 		  let
 		     val numCases =
@@ -540,31 +545,47 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 (chunks, fn Chunk.T {blocks, ...} =>
 	  Vector.foreach
 	  (blocks, fn Block.T {kind, label, statements, transfer, ...} =>
-	   (Option.app (Kind.frameInfoOpt kind,
-			fn FrameInfo.T {frameLayoutsIndex} =>
-			((* This load will never be used.  We just have it there
-			  * so the disassembler doesn't get confused when it
-			  * sees the frameLayoutsIndex.
-			  *)
-			 emitOpcode (wordOpcode (Load, CType.Word32))
-			 ; emitWord32 (Int.toIntInf frameLayoutsIndex)))
-	    ; setLabelOffset (label, !offset)
-	    ; Option.app (Kind.frameInfoOpt kind, fn fi =>
-			  pop (Program.frameSize (program, fi)))
-	    ; (case kind of
-		  Kind.CReturn {dst, func, ...} =>
-		     Option.app
-		     (#2 (CFunction.prototype func), fn cty =>
-		      case dst of
-			 NONE =>
-			    (* Even if there is no dst, we still need to pop the
-			     * value returned by the C function.
-			     *)
-			    loadStoreStackOffset (Bytes.zero, cty, Store)
-		       | SOME z => emitStoreOperand (Live.toOperand z))
-		| _ => ())
-	    ; Vector.foreach (statements, emitStatement)
-	    ; emitTransfer transfer)))
+	   let
+	      val () =
+		 Option.app
+		 (Kind.frameInfoOpt kind,
+		  fn FrameInfo.T {frameLayoutsIndex} =>
+		  ((* This load will never be used.  We just have it there
+		    * so the disassembler doesn't get confused when it
+		    * sees the frameLayoutsIndex.
+		    *)
+		   emitOpcode (wordOpcode (Load, CType.Word32))
+		   ; emitWord32 (Int.toIntInf frameLayoutsIndex)))
+	      val () = setLabelOffset (label, !offset)
+	      fun popFrame () =
+		 Option.app (Kind.frameInfoOpt kind, fn fi =>
+			     pop (Program.frameSize (program, fi)))
+	      val () =
+		 case kind of
+		    Kind.CReturn {dst, func, ...} =>
+		       (case #2 (CFunction.prototype func) of
+			  NONE => popFrame ()
+			| SOME cty => 
+			     case dst of
+				NONE =>
+				   (* Even if there is no dst, we still need to
+				    * pop the value returned by the C function.
+				    * We write it to a bogus location in the
+				    * callee's frame before popping back to the
+				    * caller.
+				    *)
+				   (loadStoreStackOffset (Bytes.zero, cty, Store)
+				    ; popFrame ())
+			      | SOME z =>
+				   (popFrame ()
+				    ; emitStoreOperand (Live.toOperand z)))
+		  | _ => popFrame ()
+	      val () =
+		 (Vector.foreach (statements, emitStatement)
+		  ; emitTransfer transfer)
+	   in
+	      ()
+	   end))
       val word8ArrayToString: Word8.t array -> string =
 	 fn a => String.tabulate (Array.length a, fn i =>
 				  Char.fromWord8 (Array.sub (a, i)))

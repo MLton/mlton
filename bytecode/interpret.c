@@ -192,11 +192,10 @@ enum {
 		Temp (ty, 1) = PopReg (ty);					\
 		f (PushReg (ty), Temp (ty, 0), Temp (ty, 1), f##Overflow);	\
 		overflow = FALSE;						\
-		goto f##Continue;						\
+		goto mainLoop;							\
 	f##Overflow:								\
 		overflow = TRUE;						\
-	f##Continue:								\
-	goto mainLoop;
+		goto mainLoop;
 
 #define unaryCheck(ty, f)					\
 	case opcodeSym (f):					\
@@ -204,11 +203,11 @@ enum {
 		Temp (ty, 0) = PopReg (ty);			\
 		f (PushReg (ty), Temp (ty, 0), f##Overflow);	\
 		overflow = FALSE;				\
-		goto f##Continue;				\
+		goto mainLoop;					\
 	f##Overflow:						\
+ 		PushReg (ty) = 0;				\
 		overflow = TRUE;				\
-	f##Continue:						\
-	goto mainLoop;
+		goto mainLoop;
 
 #define coerce(f1, t1, f2, t2)					\
 	case coerceOp (f2, t2):					\
@@ -229,12 +228,18 @@ enum {
 				(uint)Temp (ty, 1));			\
 	goto mainLoop;
 
-#define shift(ty, f)						\
-	case opcodeSym (f):					\
-		if (disassemble) goto mainLoop;			\
-		Temp (ty, 0) = PopReg (ty);			\
-		Temp (Word32, 1) = PopReg (Word32);		\
-		PushReg (ty) = f (Temp (ty, 0), Temp (ty, 1));	\
+#define shift(ty, f)							\
+	case opcodeSym (f):						\
+		if (disassemble) goto mainLoop;				\
+	{								\
+		ty w = PopReg (ty);					\
+		Word32 s = PopReg (Word32);				\
+		ty w2 = f (w, s);					\
+		PushReg (ty) = w2;					\
+		if (DEBUG)						\
+			fprintf (stderr, "\n%u = " #f " (%u, %u)",	\
+					(uint)w2, (uint)w, (uint)s);	\
+	}								\
 	goto mainLoop;
 
 #define ternary(ty, f)								\
@@ -368,14 +373,15 @@ static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
 		Cache ();
 	}
 mainLoop:
-	if (DEBUG) {
+	if (FALSE) {
 		displayRegs ();
+		maybe fprintf (stderr, "\nSP(4) = 0x%08x",
+				*(Word32*)(stackTop + 4));
 	}
 	if (DEBUG or disassemble) {
 		if (pc == pcMax)
 			goto done;
-		offset = pc - b->code;
-		name = offsetToLabel [offset];
+		name = offsetToLabel [pc - b->code];
 		unless (NULL == name)
 			fprintf (stderr, "\n%s:", name);
 		fprintf (stderr, "\n\t");
@@ -394,9 +400,8 @@ mainLoop:
  			MLton_callC (callCIndex);
 			Cache ();
 		}
-		goto doReturn;
+		goto mainLoop;
  	case opcodeSym (Goto):
-		assertRegsEmpty ();
 		Fetch (label);
  		Goto (label);
 	case opcodeSym (JumpOnOverflow):
@@ -407,8 +412,7 @@ mainLoop:
  	case opcodeSym (ProfileLabel):
  		die ("ProfileLabel not implemented");
  	case opcodeSym (Raise):
-		unless (disassemble)
-			stackTop = gcState.stackBottom + gcState.exnStack;
+		maybe stackTop = gcState.stackBottom + gcState.exnStack;
 		goto doReturn;
  	case opcodeSym (Return):
 doReturn:
