@@ -62,7 +62,7 @@ structure System: SYSTEM =
 	       end
 	 in
 	    Process.wait (MLton.Process.spawnp {file = com, args = com :: args})
-	    handle _ => Error.bug (concat ["call to system failed: ", s])
-	       (* OS.Process.success = OS.Process.system s *)
+	    handle e => Error.bug (concat ["call to system failed with ",
+					   Exn.toString e, ":\n", s])
 	 end
    end
