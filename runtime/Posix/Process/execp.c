@@ -12,7 +12,7 @@ Int Posix_Process_execp (NullString f, Pointer a) {
 	n = GC_arrayNumElements (a) - 1;
 	saved = args[n];
 	args[n] = (char *) NULL;
-	result = execvp (file, (const char* const*) args);
+	result = EXECVP (file, args);
 	/* execp failed */
 	args[n] = saved;
 	return result;

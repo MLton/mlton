@@ -44,6 +44,14 @@
 #include "platform/solaris.h"
 #endif
 
+#ifndef EXECVP
+#define EXECVP execvp
+#endif
+
+#ifndef EXECVE
+#define EXECVE execve
+#endif
+
 #ifndef HAS_MREMAP
 #error HAS_MREMAP not defined
 #endif

@@ -19,7 +19,7 @@ Int Posix_Process_exece (NullString p, Pointer a, Pointer e) {
 	esaved = env[en];
 	args[an] = (char *) NULL;
 	env[en] = (char *) NULL;
-	result = execve (path, (const char* const*)args, (const char* const*)env);
+	result = EXECVE (path, args, env);
 	/* exece failed */
 	args[an] = asaved;
 	env[en] = esaved;

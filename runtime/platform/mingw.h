@@ -290,6 +290,9 @@ int uname (struct utsname *buf);
 /*                   Posix.Process                   */
 /* ------------------------------------------------- */
 
+#define EXECVE(path, args, env) 	\
+	execve (path, (const char* const*)args, (const char* const*)env)
+#define EXECVP(file, args)  execvp (file, (const char* const*) args)
 #define SPAWN_MODE _P_NOWAIT
 
 /* A status looks like:
