@@ -997,11 +997,12 @@ structure NameSpace =
 	    u
 	 end
 
-      fun peek (ns as T {toSymbol, ...}, a, {markUse: bool}) =
+      fun ('a, 'b) peek (ns as T {toSymbol, ...}, a: 'a, {markUse: 'b -> bool})
+	 : 'b option =
 	 case Values.! (values (ns, a)) of
 	    [] => NONE
 	  | {range, uses, ...} :: _ => 
-	       (if markUse then Uses.add (uses, a) else ()
+	       (if markUse range then Uses.add (uses, a) else ()
 		; SOME range)
 
       fun collect (T {current, toSymbol, ...}: ('a, 'b) t)
@@ -1596,7 +1597,7 @@ fun newCons (T {vals, ...}, v) =
 (* ------------------------------------------------- *)
 
 local
-   fun make sel (T r, a) = NameSpace.peek (sel r, a, {markUse = true})
+   fun make sel (T r, a) = NameSpace.peek (sel r, a, {markUse = fn _ => true})
 in
    val peekFctid = make #fcts
    val peekFix = make #fixs
@@ -1611,7 +1612,8 @@ in
 end
 
 fun peekCon (T {vals, ...}, c: Ast.Con.t): (Con.t * Scheme.t) option =
-   case NameSpace.peek (vals, Ast.Vid.fromCon c, {markUse = false}) of
+   case NameSpace.peek (vals, Ast.Vid.fromCon c,
+			{markUse = fn (vid, _) => isSome (Vid.deCon vid)}) of
       NONE => NONE
     | SOME (vid, s) => Option.map (Vid.deCon vid, fn c => (c, s))
 
@@ -1682,11 +1684,6 @@ in
    val peekLongcon = make (Ast.Longcon.split, peekCon, Structure.peekCon)
 end
 
-val peekLongcon =
-   Trace.trace2 ("peekLongcon", Layout.ignore, Ast.Longcon.layout,
-		 PeekResult.layout (Layout.tuple2
-				    (CoreML.Con.layout, TypeScheme.layout)))
-   peekLongcon
 (* ------------------------------------------------- *)
 (*                      lookup                       *)
 (* ------------------------------------------------- *)
@@ -2967,7 +2964,8 @@ structure InterfaceEnv =
       val lookupSigid = fn (T {env, ...}, x) => lookupSigid (env, x)
 
       local
-	 fun make sel (T r, a) = NameSpace.peek (sel r, a, {markUse = true})
+	 fun make sel (T r, a) =
+	    NameSpace.peek (sel r, a, {markUse = fn _ => true})
       in
 	 val peekStrid = make #strs
 	 val peekTycon = make #types
