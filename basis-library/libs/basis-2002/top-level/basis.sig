@@ -144,24 +144,24 @@ signature BASIS_2002 =
       structure IntVectorSlice : MONO_VECTOR_SLICE
       structure IntArray2 : MONO_ARRAY2
       structure Int8 : INTEGER
-      structure Int16 : INTEGER
-      structure Int32 : INTEGER
-      structure Int64 : INTEGER
       structure Int8Array : MONO_ARRAY
       structure Int8ArraySlice : MONO_ARRAY_SLICE
       structure Int8Vector : MONO_VECTOR
       structure Int8VectorSlice : MONO_VECTOR_SLICE
       structure Int8Array2 : MONO_ARRAY2
+      structure Int16 : INTEGER
       structure Int16Array : MONO_ARRAY
       structure Int16ArraySlice : MONO_ARRAY_SLICE
       structure Int16Vector : MONO_VECTOR
       structure Int16VectorSlice : MONO_VECTOR_SLICE
       structure Int16Array2 : MONO_ARRAY2
+      structure Int32 : INTEGER
       structure Int32Array : MONO_ARRAY
       structure Int32ArraySlice : MONO_ARRAY_SLICE
       structure Int32Vector : MONO_VECTOR
       structure Int32VectorSlice : MONO_VECTOR_SLICE
       structure Int32Array2 : MONO_ARRAY2
+      structure Int64 : INTEGER
       structure Int64Array : MONO_ARRAY
       structure Int64ArraySlice : MONO_ARRAY_SLICE
       structure Int64Vector : MONO_VECTOR
@@ -187,7 +187,7 @@ signature BASIS_2002 =
       structure RealVector : MONO_VECTOR
       structure RealVectorSlice : MONO_VECTOR_SLICE
       structure RealArray2 : MONO_ARRAY2
-(*      structure Real32 : REAL *)
+      (* structure Real32 : REAL *)
       structure Real32Array : MONO_ARRAY
       structure Real32ArraySlice : MONO_ARRAY_SLICE
       structure Real32Vector : MONO_VECTOR
@@ -360,6 +360,17 @@ signature BASIS_2002 =
       sharing type Int32VectorSlice.vector = Int32Vector.vector
       sharing type Int32Array2.elem = Int32.int
       sharing type Int32Array2.vector = Int32Vector.vector
+      sharing type Int64Array.elem = Int64.int
+      sharing type Int64Array.vector = Int64Vector.vector
+      sharing type Int64ArraySlice.elem = Int64.int
+      sharing type Int64ArraySlice.array = Int64Array.array
+      sharing type Int64ArraySlice.vector = Int64Vector.vector
+      sharing type Int64ArraySlice.vector_slice = Int64VectorSlice.slice
+      sharing type Int64Vector.elem = Int64.int
+      sharing type Int64VectorSlice.elem = Int64.int
+      sharing type Int64VectorSlice.vector = Int64Vector.vector
+      sharing type Int64Array2.elem = Int64.int
+      sharing type Int64Array2.vector = Int64Vector.vector
 (*
       sharing type PackRealBig.real = real
 *)
@@ -383,6 +394,17 @@ signature BASIS_2002 =
       sharing type RealVectorSlice.vector = RealVector.vector
       sharing type RealArray2.elem = real
       sharing type RealArray2.vector = RealVector.vector
+      (* sharing type Real32Array.elem = Real32.real *)
+      sharing type Real32Array.vector = Real32Vector.vector
+      (* sharing type Real32ArraySlice.elem = Real32.real *)
+      sharing type Real32ArraySlice.array = Real32Array.array
+      sharing type Real32ArraySlice.vector = Real32Vector.vector
+      sharing type Real32ArraySlice.vector_slice = Real32VectorSlice.slice
+      (* sharing type Real32Vector.elem = Real32.real *)
+      (* sharing type Real32VectorSlice.elem = Real32.real *)
+      sharing type Real32VectorSlice.vector = Real32Vector.vector
+      (* sharing type Real32Array2.elem = Real32.real *)
+      sharing type Real32Array2.vector = Real32Vector.vector
       sharing type Real64Array.elem = Real64.real
       sharing type Real64Array.vector = Real64Vector.vector
       sharing type Real64ArraySlice.elem = Real64.real
