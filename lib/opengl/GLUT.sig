@@ -250,6 +250,9 @@ signature GLUT =
         val GLUT_GAME_MODE_PIXEL_DEPTH : GL.GLenum
         val GLUT_GAME_MODE_REFRESH_RATE : GL.GLenum
         val GLUT_GAME_MODE_DISPLAY_CHANGED : GL.GLenum
+
+	val glutGetModifiers : unit -> GL.GLenum;
+
         val glutCreateMenu : (int -> unit) -> int
         val glutDestroyMenu : int -> unit
         val glutGetMenu : unit -> int
@@ -276,6 +279,8 @@ signature GLUT =
         val glutInitWindowPosition : int -> int -> unit
         val glutInitWindowSize : int -> int -> unit
         val glutCreateWindow: string -> int;
+	val glutCreateSubWindow: int -> int -> int -> int -> int -> int;
+	val glutDestroyWindow: int -> unit;
         val glutMainLoop: unit -> unit;
         val glutBitmapCharacter : glutfont -> char -> unit
         val glutPostRedisplay : unit -> unit

@@ -1,5 +1,7 @@
 mlton = mlton
-MLTONFLAGS = -verbose 1
+MLTON_DEFAULT_FLAGS = -default-ann 'allowImport true' -default-ann 'allowExport true'
+# MLTON_FLAGS = -verbose 1  
+MLTON_FLAGS =
 
 HOST_OS = $(shell ../../bin/host-os)
 
@@ -16,7 +18,7 @@ endif
 GL_OBJS  = GL_c.o GLUT_c.o
 
 %_h.h: %.cm %.sig %.sml
-	$(mlton) -export-header $@ -stop tc $<
+	$(mlton) $(MLTON_DEFAULT_FLAGS) -export-header $@ -stop tc $<
 
 %.o: %.c
 
@@ -24,7 +26,7 @@ GL_OBJS  = GL_c.o GLUT_c.o
 	gcc -c $<
 
 %: %.cm $(mlton -stop f %.cm) $(GL_OBJS)
-	$(mlton) $(MLTON_FLAGS) $(GL_LINK_OPTS) $< $(GL_OBJS)
+	$(mlton) $(MLTON_FLAGS) $(MLTON_DEFAULT_FLAGS) $(GL_LINK_OPTS) $< $(GL_OBJS)
 
 .PHONY: all
 all: test
@@ -34,4 +36,4 @@ clean:
 	../../bin/clean
 
 .PHONY: test
-test: shortest hello solar atom triangle spin_cube blender molehill bits points
+test: shortest hello solar atom triangle spin_cube blender molehill bits points menus
