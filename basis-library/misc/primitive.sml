@@ -915,7 +915,7 @@ structure Primitive =
 
 			   val forkIsEnabled =
 			      case host of
-				 Cygwin => not cygwinUseMmap
+				 Cygwin => cygwinUseMmap
 			       | MinGW => false
 			       | _ => true
 			end
