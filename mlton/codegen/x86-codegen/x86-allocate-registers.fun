@@ -2800,7 +2800,8 @@ struct
 					     = AppendList.single
 					       (Assembly.instruction_mov
 						{src = Operand.register register,
-						 dst = Operand.register final_register,
+						 dst = Operand.register 
+						       final_register,
 						 size = size}),
 					     registerAllocation 
 					     = registerAllocation}
@@ -2920,15 +2921,16 @@ struct
 					    if move
 					      then let
 						     val registerAllocation
-						       = update {value
-								 = {register
-								    = final_register,
-								    memloc = memloc,
-								    weight = weight,
-								    sync = sync,
-								    commit = commit},
-								 registerAllocation
-								 = registerAllocation}
+						       = update 
+						         {value
+							  = {register
+							     = final_register,
+							     memloc = memloc,
+							     weight = weight,
+							     sync = sync,
+							     commit = commit},
+							  registerAllocation
+							  = registerAllocation}
 						   in
 						     {register = final_register,
 						      assembly 
@@ -2946,15 +2948,16 @@ struct
 						   end
 					      else let
 						     val registerAllocation
-						       = update {value
-								 = {register
-								    = final_register,
-								    memloc = memloc,
-								    weight = weight,
-								    sync = true,
-								    commit = commit},
-								 registerAllocation
-								 = registerAllocation}
+						       = update 
+						         {value
+							  = {register
+							     = final_register,
+							     memloc = memloc,
+							     weight = weight,
+							     sync = true,
+							     commit = commit},
+							  registerAllocation
+							  = registerAllocation}
 						   in
 						     {register = final_register,
 						      assembly 
@@ -3033,151 +3036,158 @@ struct
 		  end
 	       | NONE 
 	       => if move
-		    then let
-(*
-			   val {register = register', 
-				assembly = assembly_register,
-				registerAllocation}
-			     = freeRegister {info = info,
-					     memloc = SOME memloc,
-					     size = size,
-					     supports = (Operand.memloc memloc)::
-							supports,
-					     saves = saves,
-					     force = [],
-					     registerAllocation 
-					     = registerAllocation}
+		    then case MemLoc.size memloc
+			   of Size.BYTE
+			    => let
+				 val {register = register', 
+				      assembly = assembly_register,
+				      registerAllocation}
+				   = freeRegister 
+				     {info = info,
+				      memloc = SOME memloc,
+				      size = size,
+				      supports = (Operand.memloc memloc)::
+				                 supports,
+				      saves = saves,
+				      force = [],
+				      registerAllocation 
+				      = registerAllocation}
 
-			   val {address, 
-				assembly = assembly_address,
-				registerAllocation}
-			     = toAddressMemLoc {memloc = memloc,
-						info = info,
-						size = size,
-						supports = supports,
-						saves = (Operand.register register')::
-							saves,
-						registerAllocation 
-						= registerAllocation}
+				 val {address, 
+				      assembly = assembly_address,
+				      registerAllocation}
+				   = toAddressMemLoc 
+				     {memloc = memloc,
+				      info = info,
+				      size = size,
+				      supports = supports,
+				      saves = (Operand.register register')::
+				              saves,
+				      registerAllocation = registerAllocation}
 
 
-			   val registerAllocation
-			     = remove {memloc = memloc,
-				       registerAllocation = registerAllocation}
+				 val registerAllocation
+				   = remove 
+				     {memloc = memloc,
+				      registerAllocation = registerAllocation}
+				   
+				 val registerAllocation
+				   = update 
+				     {value = {register = register',
+					       memloc = memloc,
+					       weight = 1024,
+					       sync = true,
+					       commit = NO},
+				      registerAllocation = registerAllocation}
+				   
+				 val {register,
+				      assembly = assembly_force,
+				      registerAllocation}
+				   = toRegisterMemLoc
+				     {memloc = memloc,
+				      info = info,
+				      size = size,
+				      move = move,
+				      supports = supports,
+				      saves = saves,
+				      force = force,
+				      registerAllocation = registerAllocation}
+				     
+			       in
+				 {register = register,
+				  assembly 
+				  = AppendList.appends
+				    [assembly_register,
+				     assembly_address,
+				     AppendList.single
+				     (Assembly.instruction_mov
+				      {dst = Operand.register register',
+				       src = Operand.address address,
+				       size = size}),
+				     assembly_force],
+				  registerAllocation = registerAllocation}
+			       end
+			    | _ 
+                            => let
+				 val {address, 
+				      assembly = assembly_address,
+				      registerAllocation}
+				   = toAddressMemLoc 
+				     {memloc = memloc,
+				      info = info,
+				      size = size,
+				      supports = supports,
+				      saves = saves,
+				      registerAllocation = registerAllocation}
 
-			   val registerAllocation
-			     = update {value = {register = register',
-						memloc = memloc,
-						weight = 1024,
-						sync = true,
-						commit = NO},
-				       registerAllocation = registerAllocation}
+				 val saves'
+				   = case address
+				       of Address.T {base = SOME base',
+						     index = SOME index',
+						     ...}
+					=> (Operand.register base')::
+					   (Operand.register index')::saves
+					| Address.T {base = SOME base',
+						     ...}
+				        => (Operand.register base')::saves
+				        | Address.T {index = SOME index',
+						     ...}
+				        => (Operand.register index')::saves
+				        | _ => saves
 
-			   val {register,
-				assembly = assembly_force,
-				registerAllocation}
-			     = toRegisterMemLoc
-			       {memloc = memloc,
-				info = info,
-				size = size,
-				move = move,
-				supports = supports,
-				saves = saves,
-				force = force,
-				registerAllocation = registerAllocation}
+				 val {register = register', 
+				      assembly = assembly_register,
+				      registerAllocation}
+				   = freeRegister 
+				     {info = info,
+				      memloc = SOME memloc,
+				      size = size,
+				      supports = supports,
+				      saves = saves',
+				      force = [],
+				      registerAllocation = registerAllocation}
+
+				 val registerAllocation
+				   = remove 
+				     {memloc = memloc,
+				      registerAllocation = registerAllocation}
+
+				 val registerAllocation
+				   = update 
+				     {value = {register = register',
+					       memloc = memloc,
+					       weight = 1024,
+					       sync = true,
+					       commit = NO},
+				      registerAllocation = registerAllocation}
+
+				 val {register,
+				      assembly = assembly_force,
+				      registerAllocation}
+				   = toRegisterMemLoc
+				     {memloc = memloc,
+				      info = info,
+				      size = size,
+				      move = move,
+				      supports = supports,
+				      saves = saves,
+				      force = force,
+				      registerAllocation = registerAllocation}
 				
-			 in
-			   {register = register,
-			    assembly 
-			    = AppendList.appends
-			      [assembly_register,
-			       assembly_address,
-			       AppendList.single
-			       (Assembly.instruction_mov
-				{dst = Operand.register register',
-				 src = Operand.address address,
-				 size = size}),
-			       assembly_force],
-			    registerAllocation = registerAllocation}
-			 end
-*)
-			   val {address, 
-				assembly = assembly_address,
-				registerAllocation}
-			     = toAddressMemLoc {memloc = memloc,
-						info = info,
-						size = size,
-						supports = supports,
-						saves = saves,
-						registerAllocation 
-						= registerAllocation}
-
-			   val saves'
-			     = case address
-				 of Address.T {base = SOME base',
-					       index = SOME index',
-					       ...}
-				  => (Operand.register base')::
-				     (Operand.register index')::saves
-				  | Address.T {base = SOME base',
-					       ...}
-				  => (Operand.register base')::saves
-				  | Address.T {index = SOME index',
-					       ...}
-				  => (Operand.register index')::saves
-				  | _ => saves
-
-			   val {register = register', 
-				assembly = assembly_register,
-				registerAllocation}
-			     = freeRegister {info = info,
-					     memloc = SOME memloc,
-					     size = size,
-					     supports = supports,
-					     saves = saves',
-					     force = [],
-					     registerAllocation 
-					     = registerAllocation}
-
-			   val registerAllocation
-			     = remove {memloc = memloc,
-				       registerAllocation = registerAllocation}
-
-			   val registerAllocation
-			     = update {value = {register = register',
-						memloc = memloc,
-						weight = 1024,
-						sync = true,
-						commit = NO},
-				       registerAllocation = registerAllocation}
-
-			   val {register,
-				assembly = assembly_force,
-				registerAllocation}
-			     = toRegisterMemLoc
-			       {memloc = memloc,
-				info = info,
-				size = size,
-				move = move,
-				supports = supports,
-				saves = saves,
-				force = force,
-				registerAllocation = registerAllocation}
-				
-			 in
-			   {register = register,
-			    assembly 
-			    = AppendList.appends 
-			      [assembly_address,
-			       assembly_register,
-			       AppendList.single
-			       (Assembly.instruction_mov
-				{dst = Operand.register register',
-				 src = Operand.address address,
-				 size = size}),
-			       assembly_force],
-			    registerAllocation = registerAllocation}
-			 end
+			       in
+				 {register = register,
+				  assembly 
+				  = AppendList.appends 
+				    [assembly_address,
+				     assembly_register,
+				     AppendList.single
+				     (Assembly.instruction_mov
+				      {dst = Operand.register register',
+				       src = Operand.address address,
+				       size = size}),
+				     assembly_force],
+				  registerAllocation = registerAllocation}
+			       end
 		    else let
 			   val {register, 
 				assembly = assembly_register,
