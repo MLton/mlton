@@ -139,33 +139,34 @@ freebsd:
 	cd $(BSDSRC)/freebsd && $(MAKE) build-package
 #	rm -rf $(BSDSRC)
 
+.PHONY: libraries-no-check
+libraries-no-check:
+	$(CP) $(SRC)/lib/mlyacc $(LIB)/sml/mlyacc-lib
+	$(CP) $(SRC)/lib/cml $(LIB)/sml/cml
+
 .PHONY: libraries
 libraries:
-	$(CP) $(SRC)/lib/mlyacc $(LIB)/sml/mlyacc-lib
-	@echo 'Type checking mlyacc-lib library.'
-	$(MLTON) -disable-ann deadCode \
-		-stop tc \
-		'$$(MLTON_ROOT)/mlyacc-lib/mlyacc-lib.mlb' \
-		>/dev/null
-	$(CP) $(SRC)/lib/cml $(LIB)/sml/cml
-	@echo 'Type checking cml library.'
-	$(MLTON) -disable-ann deadCode \
-		-stop tc \
-		'$$(MLTON_ROOT)/cml/cml.mlb' \
-		>/dev/null
+	$(MAKE) libraries-no-check
+	for f in cml mlyacc-lib; do				\
+		echo "Type checking $$f library.";		\
+		$(MLTON) -disable-ann deadCode 			\
+			-stop tc 				\
+			"$$(MLTON_ROOT)/$$f/$$f.mlb" 		\
+			>/dev/null;				\
+	done
 
 .PHONY: nj-mlton
 nj-mlton:
 	$(MAKE) dirs runtime 
 	$(MAKE) -C $(COMP) nj-mlton
-	$(MAKE) script basis mlbpathmap targetmap constants libraries
+	$(MAKE) script basis mlbpathmap targetmap constants libraries-no-check
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual:
 	$(MAKE) dirs runtime
 	$(MAKE) -C $(COMP) nj-mlton-dual
-	$(MAKE) script basis mlbpathmap targetmap constants libraries
+	$(MAKE) script basis mlbpathmap targetmap constants libraries-no-check
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: mlbpathmap
