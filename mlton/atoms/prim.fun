@@ -1155,8 +1155,8 @@ fun 'a apply (p, args, varEquals) =
 		  if name = MLton_equal orelse name = MLton_eq
 		     then if Con.equals (c, c')
 			     then if h
-				     then bool true
-				  else Unknown
+				     then Unknown
+				  else bool true
 			  else bool false
 		  else Unknown
 	     | (_, [Var x, Const (Word i)]) => varWord (x, i, true)
