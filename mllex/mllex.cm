@@ -101,8 +101,6 @@ Group is
 ../lib/mlton/basic/function.sig
 ../lib/mlton/basic/function.sml
 ../lib/mlton/basic/signal.sml
-../lib/mlton/basic/int-inf.sig
-../lib/mlton/basic/int-inf.sml
 ../lib/mlton/basic/dir.sig
 ../lib/mlton/basic/dir.sml
 ../lib/mlton/basic/process.sig

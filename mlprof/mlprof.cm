@@ -120,8 +120,6 @@ Group is
 ../lib/mlton/basic/regexp.sml
 ../lib/mlton/basic/result.sig
 ../lib/mlton/basic/result.sml
-../lib/mlton/basic/int-inf.sig
-../lib/mlton/basic/int-inf.sml
 ../lib/mlton/basic/file-desc.sig
 ../lib/mlton/basic/file-desc.sml
 ../lib/mlton/basic/function.sig
@@ -141,5 +139,7 @@ Group is
 ../lib/mlton/basic/justify.sml
 ../lib/mlton/basic/popt.sig
 ../lib/mlton/basic/popt.sml
+../lib/mlton/basic/int-inf.sig
+../lib/mlton/basic/int-inf.sml
 main.sml
 call-main.sml
