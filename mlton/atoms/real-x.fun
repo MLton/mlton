@@ -14,7 +14,9 @@ end
 
 fun make (r, s) = T {real = r, size = s}
 
-fun equals (T {real = r, ...}, T {real = r', ...}) = r = r'
+fun equals (T {real = r, size = s, ...}, 
+	    T {real = r', size = s',  ...}) = 
+   r = r' andalso s = s'
 
 fun toString (T {real = r, ...}) = r
 
