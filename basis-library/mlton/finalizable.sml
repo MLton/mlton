@@ -82,6 +82,6 @@ fun new v =
    end
 
 fun finalizeBefore (T {afters, ...}, f) =
-   afters := (fn () => withValue (f, fn _ => ())) :: !afters
+   List.push (afters, fn () => withValue (f, fn _ => ()))
 
 end
