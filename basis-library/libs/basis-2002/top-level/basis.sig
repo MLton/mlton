@@ -337,6 +337,8 @@ signature BASIS_2002 =
       sharing type Text.Substring.substring = Substring.substring
       sharing type Text.CharVector.vector = CharVector.vector
       sharing type Text.CharArray.array = CharArray.array
+      sharing type Text.CharArraySlice.slice = CharArraySlice.slice
+      sharing type Text.CharVectorSlice.slice = CharVectorSlice.slice
 (* redundant *)
 (*      sharing type TextIO.elem = char  *)
 (*      sharing type TextIO.vector = string *)
@@ -539,6 +541,17 @@ signature BASIS_2002 =
       sharing type Word32VectorSlice.vector = Word32Vector.vector
       sharing type Word32Array2.elem = Word32.word
       sharing type Word32Array2.vector = Word32Vector.vector
+      sharing type Word64Array.elem = Word64.word
+      sharing type Word64Array.vector = Word64Vector.vector
+      sharing type Word64ArraySlice.elem = Word64.word
+      sharing type Word64ArraySlice.array = Word64Array.array
+      sharing type Word64ArraySlice.vector = Word64Vector.vector
+      sharing type Word64ArraySlice.vector_slice = Word64VectorSlice.slice
+      sharing type Word64Vector.elem = Word64.word
+      sharing type Word64VectorSlice.elem = Word64.word
+      sharing type Word64VectorSlice.vector = Word64Vector.vector
+      sharing type Word64Array2.elem = Word64.word
+      sharing type Word64Array2.vector = Word64Vector.vector
    end
    (* bool is already defined as bool and so cannot be shared.
     * So, we where these to get the needed sharing.
