@@ -72,47 +72,103 @@ functor BufferIExtra
 	| Open {eos = false} =>
 	    if !first < !last
 	      then SOME true
-	      else if blocking
-		     then case readerSel (augmented_reader, #readArr) of
-		            NONE => liftExn (inbufferName ib) 
-			                    function 
-					    IO.BlockingNotSupported
-			  | SOME readArr =>
-			      let
-				val i = readArr {buf = buf, i = 0, sz = NONE}
-				        handle exn =>
-					liftExn (inbufferName ib) function exn
-			      in
-				if i = 0
-				  then (state := Open {eos = true};
-					SOME false)
-				  else (first := 0;
-					last := i;
-					SOME true)
-			      end
-		     else case readerSel (augmented_reader, #readArrNB) of
-		            NONE => liftExn (inbufferName ib) 
-		                            function 
-				            IO.NonblockingNotSupported
-			  | SOME readArrNB =>
-			      let
-				val i = readArrNB {buf = buf, i = 0, sz = NONE}
-			                handle exn =>
-					liftExn (inbufferName ib) function exn
-			      in
-				case i of
-				  NONE => NONE
-				| SOME i =>
-				    if i = 0
-				      then (state := Open {eos = true};
-					    SOME false)
-				      else (first := 0;
-					    last := i;
-					    SOME true)
-			      end
+	      else let
+		     fun doit readArr =
+		       let
+			 val i = readArr {buf = buf, i = 0, sz = NONE}
+			         handle exn =>
+				 liftExn (inbufferName ib) function exn
+		       in
+			 case i of
+			   NONE => NONE
+			 | SOME i =>
+			     if i = 0
+			       then (state := Open {eos = true};
+				     SOME false)
+			       else (first := 0;
+				     last := i;
+				     SOME true)
+		       end
+		   in
+		     if blocking
+		       then case readerSel (augmented_reader, #readArr) of
+			      NONE => liftExn (inbufferName ib) 
+				              function 
+					      IO.BlockingNotSupported
+			    | SOME readArr => doit (SOME o readArr)
+		       else case readerSel (augmented_reader, #readArrNB) of
+			      NONE => liftExn (inbufferName ib) 
+				              function 
+					      IO.NonblockingNotSupported
+			    | SOME readArrNB => doit readArrNB
+		   end
 
       fun updateB function ib = valOf (update function ib true)
       fun updateNB function ib = update function ib false
+
+      fun fill function (ib as In {augmented_reader, state,
+				   first, last, buf, ...}) blocking =
+	case !state of
+	  Closed => SOME false
+	| Open {eos = true} => SOME false
+	| Open {eos = false} =>
+	    let
+	      val size = A.length buf
+	      val f = !first
+	      val l = !last
+	      val read = l - f
+	      fun copy i = 
+		if i >= read 
+		  then ()
+		  else A.update (buf, i, A.sub (buf, f + i))
+	      val _ = if f > 0
+			then (copy 0;
+			      first := 0)
+			else ()
+	      fun doit readArr =
+		let
+		  fun loop read =
+		    let
+		      val i = readArr {buf = buf, i = read, sz = NONE}
+			      handle exn =>
+			      liftExn (inbufferName ib) function exn
+		    in
+		      case i of
+			NONE => (last := read;
+				 SOME (read > 0))
+		      | SOME 0 => (last := read;
+				   if read > 0
+				     then SOME true
+				     else (state := Open {eos = true};
+					   SOME false))
+		      | SOME i => let
+				    val read = read + i
+				  in
+				    if read >= size
+				      then (last := read;
+					    SOME true)
+				      else loop read
+				  end
+		    end
+		in
+		  loop read
+		end
+	    in
+	      if blocking
+		then case readerSel (augmented_reader, #readArr) of
+		       NONE => liftExn (inbufferName ib) 
+			               function 
+				       IO.BlockingNotSupported
+		     | SOME readArr => doit (SOME o readArr)
+		else case readerSel (augmented_reader, #readArrNB) of
+		       NONE => liftExn (inbufferName ib) 
+			               function 
+				       IO.NonblockingNotSupported
+		     | SOME readArrNB => doit readArrNB
+	    end
+
+      fun fillB function ib = valOf (fill function ib true)
+      fun fillNB function ib = fill function ib false
 
       fun input (ib as In {augmented_reader, state, 
 			   first, last, buf, ...}) =
@@ -277,33 +333,17 @@ functor BufferIExtra
 	  loop []
 	end
 
-      (* Not entirely correct; spec requires:
-       *
-       * Implementations of canInput should attempt to return as large
-       * a k as possible. For example, if the buffer contains 10
-       * characters and the user calls canInput (f, 15), canInput
-       * should call readVecNB 5 to see if an additional 5 characters
-       * are available.
-       *)
       fun canInput (ib as In {state, first, last, buf, ...}, n) =
 	if n < 0 orelse n > V.maxLen
 	  then raise Size
 	  else case !state of
-	    Closed => NONE
-	  | Open {eos = true} => NONE
-	  | Open {eos = false} => 
-	      let
-		val f = !first
-		val l = !last
-	      in
-		if f < l
-		  then SOME (Int.min (n, l - f))
-		  else case updateNB "canInput" ib of
-		         NONE => NONE
-		       | SOME true => SOME (Int.min (n, !last))
-		       | SOME false => SOME 0
-	      end
-
+	    Open {eos = false} => 
+	      (case fillNB "canInput" ib of
+		 NONE => NONE
+	       | SOME true => SOME (Int.min (n, !last))
+	       | SOME false => SOME 0)
+	  | _ => SOME 0
+		 
       fun lookahead (ib as In {state, first, last, buf, ...}) =
 	case !state of
 	  Closed => NONE

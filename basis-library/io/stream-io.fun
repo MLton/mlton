@@ -322,36 +322,28 @@ functor StreamIOExtra
 			     in
 			       SOME (inp, updateState (is, next))
 			     end
-	      fun readAndLink i =
-		if blocking 
-		  then case readerSel (augmented_reader, #readVec) of
-		         NONE => liftExn (instreamName is) 
-			                 function 
-					 IO.BlockingNotSupported
-		       | SOME readVec => 
-			   let
-			     val inp = readVec i
-			               handle exn =>
-				       liftExn (instreamName is) function exn
-			   in
-			     link inp
-			   end
-		  else case readerSel (augmented_reader, #readVecNB) of
-		         NONE => liftExn (instreamName is) 
-			                 function 
-					 IO.NonblockingNotSupported
-		       | SOME readVecNB =>
-			   let
-			     val inp = readVecNB i
-			               handle exn =>
-				       liftExn (instreamName is) function exn
-			   in
-			     case inp of
-			       NONE => NONE
-			     | SOME inp => link inp
-			   end
+	      fun doit readVec =
+		let
+		  val inp = readVec (readerSel (instreamReader is, #chunkSize))
+		            handle exn =>
+			    liftExn (instreamName is) function exn
+		in
+		  case inp of
+		    NONE => NONE
+		  | SOME inp => link inp
+		end
 	    in
-	      readAndLink (readerSel (instreamReader is, #chunkSize))
+	      if blocking 
+		then case readerSel (augmented_reader, #readVec) of
+		       NONE => liftExn (instreamName is) 
+			               function 
+				       IO.BlockingNotSupported
+		     | SOME readVec => doit (SOME o readVec)
+		else case readerSel (augmented_reader, #readVecNB) of
+		       NONE => liftExn (instreamName is) 
+			               function 
+				       IO.NonblockingNotSupported
+		     | SOME readVecNB => doit readVecNB
 	    end
 	| _ => liftExn (instreamName is) function Match
 
@@ -499,6 +491,8 @@ functor StreamIOExtra
       fun canInput (is as In {state, ...}, n) =
 	if n < 0 orelse n > V.maxLen
 	  then raise Size
+	else if n = 0
+	  then SOME 0
 	  else let
 		 fun start (is, inp) = add (is, [], inp, 0)
 		 and add (is, inps, inp, k) =
