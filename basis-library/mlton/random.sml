@@ -1,7 +1,7 @@
 structure MLtonRandom: MLTON_RANDOM =
    struct
       (* Uses /dev/random and /dev/urandom to get a random word.
-       * If they can't be read from, return 0w13.
+       * If they can't be read from, return NONE.
        *)
       local
 	 fun make (file, name) =
