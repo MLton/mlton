@@ -1944,12 +1944,51 @@ static void minorGC (GC_state s) {
 /*                       Object hash consing                        */
 /* ---------------------------------------------------------------- */
 
+/* Hashing based on Introduction to Algorithms by Cormen Leiserson, and Rivest.
+ * Section numbers in parens.
+ * Open addressing (12.4), meaning that we stick the entries directly in the 
+ *   table and probe until we find what we want.
+ * Multiplication method (12.3.2), meaning that we take the table size as a power
+ *   of two (2^p) and compute the hash by multiplying by a magic number, chosen
+ *   by Knuth, and taking the high-order p bits of the low order 32 bits.
+ * Double hashing (12.4), meaning that we use two hash functions, the first to
+ *   decide where to start looking and a second to decide at what offset to
+ *   probe.  The second hash must be relatively prime to the table size, which
+ *   we ensure by making it odd and keeping the table size as a power of 2.
+ * This all relies on the table size being a power of 2.
+ * k is key to be hashed.
+ * table is of size 2^p.
+ */
+static inline W32 hash1 (W32 k, W32 p) {
+	static Bool init = FALSE;
+	W32 res;
+	static W64 z; // magic multiplier
+
+	if (! init) {
+		init = TRUE;
+		z = (W64) (floor (((sqrt (5.0) - 1.0) / 2.0)
+					* (double)0x100000000llu));
+	}
+	res = (W32)(z * (W64)k) >> (32 - p);
+	return res;
+}
+
+static inline W32 hash2 (W32 k, W32 p) {
+	W32 res;
+
+	res = hash1 (k, p);
+	if (1 == res % 2);
+		res--;
+	return res;
+}
+
 static GC_ObjectHashTable newTable () {
 	GC_ObjectHashTable t;
 
 	NEW (t);
+	t->elementsSize = 1024; /* Must be power of two. */
+	t->log2ElementsSize = 10;
 	t->numElements = 0;
-	t->elementsSize = 1024; /* pretty arbitrary. */
 	ARRAY (t->elements, t->elementsSize);
 	return t;
 }
@@ -1959,110 +1998,119 @@ static void destroyTable (GC_ObjectHashTable t) {
 	free (t);
 }
 
-static void tableGrow (GC_ObjectHashTable t) {	
+static inline Pointer tableInsert 
+	(GC_ObjectHashTable t, W32 hash, Pointer object, 
+		Bool mightBeThere, Header header, Pointer max) {
+	GC_ObjectHashElement e;
+	Header header2;
+	W32 i;
+	static int maxNumProbes = 0;
+	int numProbes;
+	W32 probe;
+	word *p;
+	word *p2;
+
+	i = hash1 (hash, t->log2ElementsSize);
+	probe = hash2 (hash, t->log2ElementsSize);
+	numProbes = 0;
+look:
+	assert (0 < i and i < t->elementsSize);
+	numProbes++;
+	e = &t->elements[i];
+	if (NULL == e->object) {
+		/* It's not in the table.  Add it. */
+		e->hash = hash;
+		e->object = object;
+		t->numElements++;
+		if (numProbes > maxNumProbes) {
+			maxNumProbes = numProbes;
+			fprintf (stderr, "numProbes = %d\n", numProbes);
+		}
+		return object;
+	}
+	unless (hash == e->hash) {
+lookNext:
+		i = (i + probe) % t->elementsSize;
+		goto look;
+	}
+	unless (mightBeThere)
+		goto lookNext;
+	if (DEBUG_SHARE)
+		fprintf (stderr, "comparing 0x%08x to 0x%08x\n",
+				(uint)object, (uint)e->object);
+	/* Compare object to e->object. */
+	unless (object == e->object) {
+		header2 = GC_getHeader (e->object);
+		unless (header == header2)
+			goto lookNext;
+		for (p = (word*)object, p2 = (word*)e->object; 
+				p < (word*)max; 
+				++p, ++p2)
+			unless (*p == *p2)
+				goto lookNext;
+	}
+	/* object is equal to e->object. */
+	return e->object;
+}
+
+static void maybeGrowTable (GC_ObjectHashTable t) {	
+	GC_ObjectHashElement e0;
 	struct GC_ObjectHashElement *elements0;
 	int i;
 	int s0;
 
-	if (DEBUG_SHARE)
-		fprintf (stderr, "tableGrow\n");
+	if (t->numElements * 2 <= t->elementsSize)
+		return;
 	s0 = t->elementsSize;
 	t->elementsSize *= 2;
+	t->log2ElementsSize++;
+	if (TRUE or DEBUG_SHARE)
+		fprintf (stderr, "tableGrow  new size = %d\n", t->elementsSize);
 	elements0 = t->elements;
 	ARRAY (t->elements, t->elementsSize);
 	for (i = 0; i < s0; ++i) {
-		GC_ObjectHashElement e;
-		GC_ObjectHashElement e0;
-
 		e0 = &elements0[i];
-		unless (NULL == e0->object) {
-			for (e = &t->elements[e0->hash % t->elementsSize]; 
-				NULL != e->object; 
-				++e)
-			e->hash = e0->hash;
-			e->object = e0->object;
-		}
+		tableInsert (t, e0->hash, e0->object, FALSE, 0, 0);
 	}
 	free (elements0);
 }
 
+
 static Pointer hashCons (GC_state s, Pointer object) {
-	GC_ObjectHashElement e;
 	Bool hasIdentity;
 	Word32 hash;
-	int i;
-	word header;
+	Header header;
 	word *max;
-	uint numPointers;
 	uint numNonPointers;
+	uint numPointers;
 	word *p;
+	Pointer res;
 	GC_ObjectHashTable t;
 	uint tag;
 
-	t = s->objectHashTable;
 	if (DEBUG_SHARE)
 		fprintf (stderr, "hashCons (0x%08x)\n", (uint)object);
+	t = s->objectHashTable;
 	header = GC_getHeader (object);
 	SPLIT_HEADER();
 	if (hasIdentity) {
 		/* Don't hash cons. */
-		if (DEBUG_SHARE)
-			fprintf (stderr, "hasIdentity\n");
-		return object;
+		res = object;
+		goto done;
 	}
 	/* Compute the hash. */
 	max = (word*)(object + toBytes (numPointers + numNonPointers));
 	hash = header;
 	for (p = (word*)object; p < max; ++p)
 		hash = hash * 31 + *p;
-	i = hash;
-	/* Look in the table. */
-look:
-	i %= t->elementsSize;
-	e = &t->elements[i];
-	if (NULL == e->object) {
-		/* It's not in the table.  Add it. */
-		assert (NULL == e->object);
-		e->hash = hash;
-		e->object = object;
-		t->numElements++;
-		/* Maybe grow the table. */
-		if (t->numElements * 2 > t->elementsSize)
-			tableGrow (s->objectHashTable);
-		if (DEBUG_SHARE)
-			fprintf (stderr, "0x%08x = hashCons (0x%08x)\n", 
-					(uint)object, (uint)object);
-		return object;
-	}
-	if (hash == e->hash) {
-		Header header2;
-		word *p2;
-
-		if (DEBUG_SHARE)
-			fprintf (stderr, "comparing 0x%08x to 0x%08x\n",
-					(uint)object, (uint)e->object);
-		/* Compare object to e->object. */
-		unless (object == e->object) {
-			header2 = GC_getHeader (e->object);
-			unless (header == header2) {
-lookNext:
-				i++;
-				goto look;
-			}
-			for (p = (word*)object, p2 = (word*)e->object; 
-					p < max; 
-					++p, ++p2)
-				unless (*p == *p2)
-					goto lookNext;
-		}
-		/* object is equal to e->object. */
-		if (DEBUG_SHARE)
-			fprintf (stderr, "0x%08x = hashCons (0x%08x)\n", 
-					(uint)e->object, (uint)object);
-		return e->object;
-	}
-	assert (FALSE);
-	return NULL; /* quell gcc warning. */
+	/* Insert into table. */
+       	res = tableInsert (t, hash, object, TRUE, header, (Pointer)max);
+	maybeGrowTable (t);
+done:
+	if (DEBUG_SHARE)
+		fprintf (stderr, "0x%08x = hashCons (0x%08x)\n", 
+				(uint)res, (uint)object);
+	return res;
 }
 
 static inline void maybeSharePointer (GC_state s, Pointer *pp) {
@@ -2385,17 +2433,6 @@ void GC_share (GC_state s, Pointer object) {
 	s->shouldHashCons = FALSE;
 }
 
-//static inline void shareGlobal (GC_state s, pointer *pp) {
-//	mark (s, pp, MARK_MODE)
-//}
-
-void GC_shareAll (GC_state s) {
-	if (DEBUG_SHARE)
-		fprintf (stderr, "GC_shareAll\n");
-	die ("GC_shareAll unimplemented\n");
-//	foreachGlobal (s, shareGlobal);
-}
-
 /* ---------------------------------------------------------------- */
 /*                 Jonkers Mark-compact Collection                  */
 /* ---------------------------------------------------------------- */
@@ -2639,9 +2676,17 @@ static void markCompact (GC_state s) {
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Major mark-compact GC.\n");
 	if (detailedGCTime (s))
-		startTiming (&ru_start);		
+		startTiming (&ru_start);
 	s->numMarkCompactGCs++;
+	if (s->hashConsDuringGC) {
+		s->shouldHashCons = TRUE;
+		s->objectHashTable = newTable ();
+	}
 	foreachGlobal (s, markGlobal);
+	if (s->hashConsDuringGC) {
+		destroyTable (s->objectHashTable);
+		s->shouldHashCons = FALSE;
+	}
 	foreachGlobal (s, threadInternal);
 	updateForwardPointers (s);
 	updateBackwardPointersAndSlide (s);
@@ -2938,6 +2983,7 @@ static bool heapAllocateSecondSemi (GC_state s, W32 size) {
 static void majorGC (GC_state s, W32 bytesRequested, bool mayResize) {
 	s->numMinorsSinceLastMajor = 0;
         if ((not FORCE_MARK_COMPACT)
+		and not s->hashConsDuringGC // only markCompact can hash cons
  		and s->heap.size < s->ram
 		and (not heapIsInit (&s->heap2)
 			or heapAllocateSecondSemi (s, heapDesiredSize (s, (W64)s->bytesLive + bytesRequested, 0))))
@@ -4386,6 +4432,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->gcSignalIsPending = FALSE;
 	s->growRatio = 8.0;
 	s->handleGCSignal = FALSE;
+	s->hashConsDuringGC = FALSE;
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
 	s->lastMajor = GC_COPYING;

@@ -2,6 +2,10 @@
 
 extern struct GC_state gcState;
 
+void GC_setHashConsDuringGC (Int b) {
+	gcState.hashConsDuringGC = b;
+}
+
 void GC_setMessages (Int b) {
 	gcState.messages = b;
 }

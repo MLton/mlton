@@ -18,8 +18,19 @@ val isMLton = true
  *)
 
 val share = Primitive.MLton.share
-val shareAll = Primitive.MLton.shareAll
-   
+
+structure GC = MLtonGC
+
+fun shareAll () =
+   let
+      val set = GC.setHashConsDuringGC
+      val () = set true
+      val () = GC.collect ()
+      val () = set false
+   in
+      ()
+   end
+ 
 fun size x =
    let val refOverhead = 8 (* header + indirect *)
    in Primitive.MLton.size (ref x) - refOverhead
@@ -36,7 +47,6 @@ structure BinIO = MLtonIO (BinIO)
 structure Cont = MLtonCont
 structure Exn = MLtonExn
 structure Finalizable = MLtonFinalizable
-structure GC = MLtonGC
 structure IntInf =
    struct
       open IntInf

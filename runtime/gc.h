@@ -167,6 +167,7 @@ typedef struct GC_ObjectHashElement {
 typedef struct GC_ObjectHashTable {
 	struct GC_ObjectHashElement *elements;
 	int elementsSize;
+	int log2ElementsSize;
 	int numElements;
 } *GC_ObjectHashTable;
 
@@ -379,6 +380,7 @@ typedef struct GC_state {
 	uint globalsSize;
 	float growRatio;
 	bool handleGCSignal;
+	Bool hashConsDuringGC;
 	struct GC_heap heap;
 	struct GC_heap heap2;	/* Used for major copying collection. */
 	bool inSignalHandler; 	/* TRUE iff a signal handler is running. */
