@@ -8,10 +8,6 @@ open S Layout
 structure Field = Record.Field
 structure Wrap = Region.Wrap
 
-val isInfix': (Vid.t -> bool) ref = ref (fn _ => false)
-
-fun isInfix id = !isInfix' id
-
 structure Fixity =
    struct
       datatype t =
@@ -50,20 +46,7 @@ fun layoutApp (func: 'a,
 	      arg: 'b,
 	      getPair: 'b -> ('b * 'b) option,
 	      layoutArg: 'b -> Layout.t) =
-   let fun nonfixx () = mayAlign [layoutFunc func, layoutArg arg]
-   in case getLongvid func of
-      SOME x =>
-	 if Longvid.isLong x orelse not (isInfix (Longvid.toId x))
-	    then nonfixx ()
-	 else (case getPair arg of
-		  SOME (e1, e2) => mayAlign [layoutArg e1,
-				       seq [Longvid.layout x,
-					   str " ",
-					   layoutArg e2]]
-		| NONE => seq [str "op ", Longvid.layout x,
-			      str " ", layoutArg arg])
-    | _ => nonfixx ()
-   end
+   mayAlign [layoutFunc func, layoutArg arg]
 	 
 fun layoutConstraint (t, ty) =
    mayAlign [seq [t, str ":"], Type.layout ty]
@@ -82,16 +65,12 @@ fun layoutLet (d, e) = nest ("let ", d, e)
 fun layoutLocal (d, d') = nest ("local ", d, d')
 
 fun layoutLongvid x =
-   seq [if not (Longvid.isLong x) andalso isInfix (Longvid.toId x)
-(*	  orelse Longvid.toString x = "=" *)
-	  then str "op "
-       else empty,
-       str (let val s = Longvid.toString x
-	   in if s = "*" then " * "
-	      else if String.isSuffix {string = s, suffix = "*"}
-		      then s ^ " "
-		   else s
-	   end)]
+   str (let val s = Longvid.toString x
+	in if s = "*" then " * "
+	   else if String.isSuffix {string = s, suffix = "*"}
+		   then s ^ " "
+		else s
+	end)
 
 (*---------------------------------------------------*)
 (*                     Patterns                      *)
@@ -199,18 +178,8 @@ structure Pat =
 		   str "}"]
 	  | List ps => Layout.list (List.map (ps, layoutT))
 	  | FlatApp ps => delimit (layoutFlatApp ps)
-	  | App (c, p) =>
-	       delimit
-	       (layoutApp (c, SOME o Longvid.fromLongcon, Longcon.layout,
-			   p,
-			   fn p => (case node p of
-				       Tuple ps =>
-					  if 2 = Vector.length ps
-					     then SOME (Vector.sub (ps, 0),
-							Vector.sub (ps, 1))
-					  else NONE
-				     | _ => NONE),
-			   layoutF))
+	  | App (c, p) => delimit (mayAlign [Longcon.layout c,
+					     layoutF p])
 	  | Constraint (p, t) => delimit (layoutConstraint (layoutF p, t))
 	  | Layered {fixop, var, constraint, pat} =>
 	       delimit
@@ -333,24 +302,7 @@ fun layoutExp (e, isDelimited) =
     | Fn rs => delimit (seq [str "fn ", layoutRules rs])
     | FlatApp es => seq (separate (Vector.toListMap (es, layoutExpF), " "))
     | App (function, argument) =>
-	 delimit
-	 (layoutApp (function,
-		    fn e => (case node e of
-				Var {name, ...} => SOME name
-			      | _ => NONE),
-		    layoutExpF,
-		    argument,
-		    fn e => (case node e of
-				Record r =>
-				   (case Record.detupleOpt r of
-				       SOME v =>
-					  if 2 = Vector.length v
-					     then SOME (Vector.sub (v, 0),
-							Vector.sub (v, 1))
-					  else NONE
-				     | _ => NONE)
-			      | _ => NONE),
-		    layoutExpF))
+	 delimit (mayAlign [layoutExpF function, layoutExpF argument])
     | Case (expr, rules) =>
 	 delimit (align [seq [str "case ", layoutExpT expr,
 				str " of"],
@@ -661,7 +613,5 @@ structure Dec =
    
       val layout = layoutDec
    end
-
-val isInfix = isInfix'
    
 end

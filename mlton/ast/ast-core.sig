@@ -10,9 +10,6 @@ signature AST_CORE =
    sig
       include AST_CORE_STRUCTS
       
-      (* controls layout of applications of Vid's *)
-      val isInfix: (Vid.t -> bool) ref
-      
       structure Fixity:
 	 sig
 	    datatype t =

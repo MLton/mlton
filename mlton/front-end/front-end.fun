@@ -14,33 +14,31 @@ structure Parse = JoinWithArg (structure ParserData = LrVals.ParserData
 			       structure LrParser = LrParser)
    
 fun lexAndParse (f: File.t) =
-   Ref.fluidLet
-   (Ast.isInfix, fn _ => false, fn () =>
-    File.withIn
-    (f, fn ins =>
-     let
-	val source = Source.new f
-	val stream =
-	   Parse.makeLexer (fn n => In.inputN (ins, n))
-	   {source = source}
-	val lookahead = 0
-	val result =
-	   (#1 (Parse.parse (lookahead, stream, fn (s, left, right) =>
-			     Control.errorStr (Region.make {left = left,
-							    right = right},
-					       s),
-			     ())))
-	   handle _ =>
-	      let
-		 val i = Source.lineStart source
-		 val _ = 
-		    Control.errorStr (Region.make {left = i, right = i},
-				      "parse error")
-	      in
-		 Ast.Program.T []
-	      end
-     in result
-     end))
+   File.withIn
+   (f, fn ins =>
+    let
+       val source = Source.new f
+       val stream =
+	  Parse.makeLexer (fn n => In.inputN (ins, n))
+	  {source = source}
+       val lookahead = 0
+       val result =
+	  (#1 (Parse.parse (lookahead, stream, fn (s, left, right) =>
+			    Control.errorStr (Region.make {left = left,
+							   right = right},
+					      s),
+			    ())))
+	  handle _ =>
+	     let
+		val i = Source.lineStart source
+		val _ = 
+		   Control.errorStr (Region.make {left = i, right = i},
+				     "parse error")
+	     in
+		Ast.Program.T []
+	     end
+    in result
+    end)
 
 val lexAndParse =
     Trace.trace ("lexAndParse", Layout.ignore, Ast.Program.layout)
