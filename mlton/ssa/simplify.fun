@@ -118,14 +118,13 @@ fun simplify p =
          then p
       else
          let
-            val p =
-               Control.passTypeCheck
-               {name = name,
-                suffix = "pre.ssa",
-                style = Control.No,
-                thunk = fn () => p,
-                display = Control.Layouts Program.layouts,
-                typeCheck = typeCheck}
+            val _ =
+	       let
+		  open Control
+	       in maybeSaveToFile
+		  ({name = name, suffix = "pre.ssa"},
+		   Control.No, p, Control.Layouts Program.layouts)
+	       end
             val p =
                Control.passTypeCheck
                {name = name,

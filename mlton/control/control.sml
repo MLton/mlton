@@ -499,57 +499,70 @@ fun diagnostics f =
 
 fun diagnostic f = diagnostics (fn disp => disp (f ()))
 
-fun displays (suffix: string, thunk: (Layout.t -> unit) -> 'a): 'a =
-   trace (Pass, "display")
-   File.withOut (concat [!inputFile, ".", suffix], fn out =>
-		 thunk (fn l => (Layout.outputl (l, out))))
-   
-fun saveToFile ({suffix: string}, lay: Layout.t): unit =
-   displays (suffix, fn disp => disp lay)
+fun saveToFile ({suffix: string},
+		style,
+		a: 'a,
+		d: 'a display): unit =
+   let
+      fun doit f =
+	 trace (Pass, "display")
+	 Ref.fluidLet
+	 (inputFile, concat [!inputFile, ".", suffix], fn () =>
+	  File.withOut (!inputFile, fn out =>
+			f (fn l => (Layout.outputl (l, out)))))
+   in
+      case d of
+	 NoDisplay => ()
+       | Layout layout =>
+	    doit (fn output =>
+		  (outputHeader (style, output)
+		   ; output (layout a)))
+       | Layouts layout =>
+	    doit (fn output =>
+		  (outputHeader (style, output)
+		   ; layout (a, output)))
+   end
+
+fun maybeSaveToFile ({name: string, suffix: string},
+		     style: style,
+		     a: 'a,
+		     d: 'a display): unit =
+   if not (List.contains (!keepPasses, name, String.equals))
+      then ()
+   else saveToFile ({suffix = concat [name, ".", suffix]}, style, a, d)
 
 fun pass {name: string,
 	  suffix: string,
 	  style: style,
 	  display = disp,
 	  thunk: unit -> 'a}: 'a =
-   Ref.fluidLet
-   (inputFile, concat [!inputFile, ".", name], fn () =>
-    let
-       val result =
-	  if not (List.contains (!keepDiagnostics, name, String.equals))
-	     then trace (Pass, name) thunk ()
-	  else
-	     displays
-	     ("diagnostic", fn disp =>
-	      let
-		 val _ = diagnosticWriter := SOME disp
-		 val result = trace (Pass, name) thunk ()
-		 val _ = diagnosticWriter := NONE
-	      in
-		 result
-	      end)
-       val verb = Detail
-       val _ = message (verb, fn () => sizeMessage (suffix, result))
-       val _ = message (verb, PropertyList.stats)
-       val _ = message (verb, HashSet.stats)
-       val _ = checkForErrors name
-       val _ =
-	  if not (List.contains (!keepPasses, name, String.equals))
-	     then ()
-	  else
-	     case disp of
-		NoDisplay => ()
-	      | Layout layout =>
-		   displays (suffix, fn output =>
-			     (outputHeader (style, output)
-			      ; output (layout result)))
-	      | Layouts layout =>
-		   displays (suffix, fn output =>
-			     (outputHeader (style, output)
-			      ; layout (result, output)))
-    in
-       result
-    end)
+   let
+      val result =
+	 if not (List.contains (!keepDiagnostics, name, String.equals))
+	    then trace (Pass, name) thunk ()
+	 else
+	    let
+	       val result = ref NONE
+	       val _ = 
+		  saveToFile
+		  ({suffix = concat [name, ".diagnostic"]}, No, (),
+		   Layouts (fn ((), disp) =>
+			    (diagnosticWriter := SOME disp
+			     ; result := SOME (trace (Pass, name) thunk ())
+			     ; diagnosticWriter := NONE)))
+	    in
+	       valOf (!result)
+	    end
+      val verb = Detail
+      val _ = message (verb, fn () => sizeMessage (suffix, result))
+      val _ = message (verb, PropertyList.stats)
+      val _ = message (verb, HashSet.stats)
+      val _ = checkForErrors name
+      val _ = maybeSaveToFile ({name = name, suffix = suffix},
+			       style, result, disp)
+   in
+      result
+   end
 
 fun passTypeCheck {name: string,
 		   suffix: string,

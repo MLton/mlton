@@ -188,7 +188,10 @@ signature CONTROL =
 
       val diagnostic: (unit -> Layout.t) -> unit
       val diagnostics: ((Layout.t -> unit) -> unit) -> unit
-      val saveToFile: {suffix: string} * Layout.t -> unit
+      val maybeSaveToFile:
+	 {name: string, suffix: string} * style * 'a * 'a display -> unit
+      val saveToFile:
+	 {suffix: string} * style * 'a * 'a display -> unit
       val outputHeader: style * (Layout.t -> unit) -> unit
       val outputHeader': style * Out.t -> unit
 

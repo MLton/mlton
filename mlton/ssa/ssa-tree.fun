@@ -1037,8 +1037,13 @@ structure Function =
 		      val {graph, tree} = layoutDot (f, global)
 		      val name = Func.toString name
 		      fun doit (s, g) =
-			 Control.saveToFile
-			 ({suffix = concat [name, ".", s, ".dot"]}, g)
+			 let
+			    open Control
+			 in
+			    saveToFile
+			    ({suffix = concat [name, ".", s, ".dot"]},
+			     No, (), Layout (fn () => g))
+			 end
 		      val _ = doit ("cfg", graph)
 		      val _ = doit ("dom", tree ())
 		   in
@@ -1184,9 +1189,15 @@ structure Program =
 	    ; output (seq [str "\n\nMain: ", Func.layout main])
 	    ; if not (!Control.keepDot)
 		 then ()
-	      else (Control.saveToFile
+	      else
+		 let
+		    open Control
+		 in
+		    saveToFile
 		    ({suffix = "call-graph.dot"},
-		     layoutCallGraph (p, !Control.inputFile)))
+		     No, (), Layout (fn () =>
+				     layoutCallGraph (p, !Control.inputFile)))
+		 end
 	 end
 
       fun layoutStats (T {datatypes, globals, functions, ...}) =
