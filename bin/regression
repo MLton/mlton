@@ -111,12 +111,20 @@ for f in `ls *.sml`; do
 			fi
 		;;
 		yes)
+			case $crossTarget in
+			*solaris)
+				libs='-lmlton -lgmp -ldl -lnsl -lsocket -lgdtoa -lm'
+			;;
+			*)
+				libs='-lmlton -lgmp -lgdtoa -lm'
+			;;
+			esac
 			gcc -o $f -w -O1				\
 				-I "$src/build/lib/include"		\
 				-L "$src/build/lib/$crossTarget"	\
 				-L /usr/pkg/lib				\
 				$f.[0-9].[cS]				\
-				-lmlton -lgmp -lgdtoa -lm
+				$libs				
 		;;
 		esac
 		if [ ! -r $f.nonterm -a $cross = 'no' -a -x $f ]; then
