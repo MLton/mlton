@@ -533,33 +533,151 @@ fun restoreFunction (globals: Statement.t vector)
 			   ty = ty,
 			   exp = exp}
 	    end
-	fun route dst
-	  = let
-	      val li = labelInfo dst
-	      val phiArgs = LabelInfo.phiArgs' li
-	    in
-	      if Vector.length phiArgs = 0
-		then dst
-		else let
-		       val newArgs = Vector.map
-			             (phiArgs, valOf o VarInfo.peekVar o varInfo)
-		       val dst' = Label.new dst
-		       val args = LabelInfo.args' li
-		       val args' = Vector.map (args, fn (x,ty) =>
-					       (Var.new x, ty))
-		       val args'' = Vector.concat [Vector.map(args', #1),
-						   newArgs]
-		       val block = Block.T
-			           {label = dst',
-				    args = args',
-				    statements = Vector.new0 (),
-				    transfer = Goto {dst = dst,
-						     args = args''}}
+	local
+	  type t = {dst: Label.t,
+		    phiArgs: Var.t vector,
+		    route: Label.t,
+		    hash: Word.t}
+	  val routeTable : t HashSet.t = HashSet.new {hash = #hash}
+	in
+	  fun route dst
+	    = let
+		val li = labelInfo dst
+		val phiArgs = LabelInfo.phiArgs' li
+	      in
+		if Vector.length phiArgs = 0
+		  then dst
+		  else let
+			 val phiArgs = Vector.map
+		                        (phiArgs, valOf o VarInfo.peekVar o varInfo)
+			 val hash = Vector.fold
+			            (phiArgs, Label.hash dst, fn (x, h) =>
+				     Word.xorb(Var.hash x, h))
+			 val {route, ...} 
+			   = HashSet.lookupOrInsert
+			     (routeTable, hash, 
+			      fn {dst = dst', phiArgs = phiArgs', ... } =>
+			      Label.equals (dst, dst') 
+			      andalso
+			      Vector.equals (phiArgs, phiArgs', Var.equals),
+			      fn () =>
+			      let
+				val route = Label.new dst
+				val args = Vector.map 
+				           (LabelInfo.args' li, fn (x,ty) =>
+					    (Var.new x, ty))
+				val args' = Vector.concat 
+				            [Vector.map(args, #1),
+					     phiArgs]
+				val block = Block.T
+				            {label = route,
+					     args = args,
+					     statements = Vector.new0 (),
+					     transfer = Goto {dst = dst,
+							      args = args'}}
+				val _ = List.push (blocks, block)
+			      in
+				{dst = dst,
+				 phiArgs = phiArgs,
+				 route = route,
+				 hash = hash}
+			      end)
+		       in
+			 route
+		       end
+	      end
+	end
+	local
+	  type t = {handlerWrap: Label.t, handlerRoute: Label.t}
+	  val handlerWrapTable: t HashSet.t 
+	    = HashSet.new {hash = fn {handlerRoute, ...} =>
+			   Label.hash handlerRoute}
+	  type t = {contWrap: Label.t, contRoute: Label.t, handlerWrap: Label.t}
+	  val contWrapTable: t HashSet.t 
+	    = HashSet.new {hash = fn {contRoute, handlerWrap, ...} =>
+			   Word.xorb(Label.hash contRoute, Label.hash handlerWrap)}
+	in
+	  fun rewriteNonTailHandle {func, args, cont, handler}
+	    = let
+		val handlerRoute = route handler
+		val {handlerWrap, ...}
+		  = HashSet.lookupOrInsert
+		    (handlerWrapTable, Label.hash handlerRoute,
+		     fn {handlerRoute = handlerRoute', ...} =>
+		     Label.equals (handlerRoute, handlerRoute'),
+		     fn () =>
+		     let
+		       val handlerWrap = Label.new handler
+		       val args = Vector.map
+			          (LabelInfo.args' (labelInfo handler), 
+				   fn (x,ty) => (Var.new x, ty))
+		       val handlerWrapBlock
+			 = Block.T
+			   {label = handlerWrap,
+			    args = args,
+			    statements = Vector.new1
+			                 (Statement.T
+					  {var = NONE,
+					   ty = Type.unit,
+					   exp = HandlerPop handlerWrap}),
+			    transfer = Goto {dst = handlerRoute,
+					     args = Vector.map(args, #1)}}
+		       val _ = List.push (blocks, handlerWrapBlock)
 		     in
-		       List.push (blocks, block) ;
-		       dst'
-		     end
-	    end
+		       {handlerWrap = handlerWrap,
+			handlerRoute = handlerRoute}
+		     end)
+		val contRoute = route cont
+		val {contWrap, ...}
+		  = HashSet.lookupOrInsert
+		    (contWrapTable, 
+		     Word.xorb(Label.hash contRoute, Label.hash handlerWrap),
+		     fn {contRoute = contRoute', handlerWrap = handlerWrap', ...} =>
+		     Label.equals (contRoute, contRoute') andalso
+		     Label.equals (handlerWrap, handlerWrap),
+		     fn () =>
+		     let
+		       val contWrap = Label.new cont
+		       val args = Vector.map
+			          (LabelInfo.args' (labelInfo cont),
+				   fn (x,ty) => (Var.new x, ty))
+		       val contWrapBlock
+			 = Block.T
+			   {label = contWrap,
+			    args = args,
+			    statements = Vector.new1
+			                 (Statement.T
+					  {var = NONE,
+					   ty = Type.unit,
+					   exp = HandlerPop handlerWrap}),
+			    transfer = Goto {dst = contRoute,
+					     args = Vector.map(args, #1)}}
+		       val _ = List.push (blocks, contWrapBlock)
+		     in
+		       {contWrap = contWrap,
+			contRoute = contRoute,
+			handlerWrap = handlerWrap}
+		     end)
+		val callWrap = Label.newNoname ()
+		val callWrapBlock 
+		  = Block.T
+		    {label = callWrap,
+		     args = Vector.new0 (),
+		     statements = Vector.new1
+		                  (Statement.T
+				   {var = NONE,
+				    ty = Type.unit,
+				    exp = HandlerPush handlerWrap}),
+		     transfer = Call {func = func,
+				      args = args,
+				      return = Return.NonTail
+				               {cont = contWrap,
+						handler = Handler.Handle handlerWrap}}}
+		val _ = List.push (blocks, callWrapBlock)
+	      in
+		Goto {dst = callWrap, args = Vector.new0 ()}
+	      end
+	end
 	fun rewriteTransfer (t: Transfer.t) 
 	  = let
 	      fun default () = Transfer.replaceLabel (t, route)
@@ -570,74 +688,10 @@ fun restoreFunction (globals: Statement.t vector)
 						  handler = Handler.Handle handler}}
 		 => if Vector.length (LabelInfo.phiArgs' (labelInfo handler)) = 0
 		      then default ()
-		      else let
-			     val call' = Label.newNoname ()
-			     val cont' = Label.new cont
-			     val handler' = Label.new handler
-
-			     val pushHandler'
-			       = Vector.new1
-			         (Statement.T
-				  {var = NONE,
-				   ty = Type.unit,
-				   exp = HandlerPush handler'})
-			     val popHandler'
-			       = Vector.new1
-			         (Statement.T
-				  {var = NONE,
-				   ty = Type.unit,
-				   exp = HandlerPop handler'})
-
-			     val callBlock
-			       = Block.T
-			         {label = call',
-				  args = Vector.new0 (),
-				  statements = pushHandler',
-				  transfer = Call 
-				             {func = func,
-					      args = args,
-					      return = Return.NonTail 
-					               {cont = cont',
-							handler = Handler.Handle 
-							          handler'}}}
-
-			     local
-			       val li = labelInfo cont
-			       val args = LabelInfo.args' li
-			       val args = Vector.map
-				          (args, fn (x,ty) =>
-					   (Var.new x, ty))
-			     in
-			       val contBlock
-				 = Block.T
-			           {label = cont',
-				    args = args,
-				    statements = popHandler',
-				    transfer = Goto {dst = route cont,
-						     args = Vector.map(args, #1)}}
-			     end
-
-			     local 
-			       val li = labelInfo handler
-			       val args = LabelInfo.args' li
-			       val args = Vector.map
-				          (args, fn (x,ty) =>
-					   (Var.new x, ty))
-			     in
-			       val handlerBlock
-				 = Block.T
-			           {label = handler',
-				    args = args,
-				    statements = popHandler',
-				    transfer = Goto {dst = route handler,
-						     args = Vector.map(args, #1)}}
-			     end
-			   in
-			     List.push (blocks, callBlock) ;
-			     List.push (blocks, contBlock) ;
-			     List.push (blocks, handlerBlock) ;
-			     Goto {dst = call', args = Vector.new0 ()}
-			   end
+		      else rewriteNonTailHandle {func = func,
+						 args = args,
+						 cont = cont,
+						 handler = handler}
 	         | _ => default ()
 	    end
 	fun visitBlock' (Block.T {label, args, statements, transfer})
