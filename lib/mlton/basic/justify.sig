@@ -18,4 +18,5 @@ signature JUSTIFY =
       val table: {columnHeads: string list option,
 		  justs: t list,
 		  rows: string list list} -> string list list
+      val tableOfColumns: (t * string list) list -> string list list
    end

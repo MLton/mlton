@@ -79,6 +79,21 @@ val table =
 		List.layout (List.layout String.layout))
    table
 
+fun tableOfColumns (columns: (t * string list) list) =
+   let
+      val justs = List.map (columns, #1)
+      val columns = List.map (columns, #2)
+      fun loop (columns: string list list, ac: string list list) =
+	 if List.isEmpty (hd columns)
+	    then rev ac
+	 else loop (List.map (columns, tl), List.map (columns, hd) :: ac)
+      val rows = loop (columns, [])
+   in
+      table {columnHeads = NONE,
+	     justs = justs,
+	     rows = rows}
+   end
+
 fun outputTable (t, out) =
    let
       val print = Out.outputc out
