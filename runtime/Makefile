@@ -23,7 +23,6 @@ DEBUGFLAGS = -gstabs+ -g2
 
 OBJS =						\
 	basis/Array/numElements.o		\
-	basis/C.o				\
 	basis/CommandLine.o			\
 	basis/Date.o				\
 	basis/Debug.o				\
@@ -189,7 +188,6 @@ OBJS =						\
 
 DEBUG_OBJS =					\
 	basis/Array/numElements-gdb.o		\
-	basis/C-gdb.o				\
 	basis/CommandLine-gdb.o			\
 	basis/Date-gdb.o			\
 	basis/Debug-gdb.o			\

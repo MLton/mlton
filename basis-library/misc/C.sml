@@ -38,6 +38,12 @@ structure C: C =
 	 struct
 	    open Prim.CS
 
+	    fun sub (cs, i) =
+	       Primitive.Word8.toChar (Primitive.Pointer.getWord8 (cs, i))
+
+	    fun update (cs, i, c) =
+	       Primitive.Pointer.setWord8 (cs, i, Primitive.Char.toWord8 c)
+
 	    fun toCharArrayOfLength (cs, n) = toArrayOfLength (cs, sub, n)
 
 	    fun toStringOfLength cs =
@@ -54,6 +60,8 @@ structure C: C =
       structure CSS =
 	 struct
 	    open Prim.CSS
+
+	    fun sub (css, i) = Primitive.Pointer.getPointer (css, i)
 
 	    val length = makeLength (sub, Primitive.Pointer.isNull)
 

@@ -185,8 +185,8 @@ structure Primitive =
 	       struct
 		  type t = Pointer.t
 
-		  val sub = _import "C_CS_sub": t * int -> char;
-		  val update = _import "C_CS_update": t * int * char -> unit;
+(*		  val sub = _import "C_CS_sub": t * int -> char; *)
+(*		  val update = _import "C_CS_update": t * int * char -> unit; *)
 	       end
 	    
 	    (* char** *)
@@ -194,7 +194,7 @@ structure Primitive =
 	       struct
 		  type t = Pointer.t
 		     
-		  val sub = _import "C_CSS_sub": t * int -> CS.t;
+(*		  val sub = _import "C_CSS_sub": t * int -> CS.t; *)
 	       end
 	 end
 

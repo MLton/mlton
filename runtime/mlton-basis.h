@@ -22,14 +22,6 @@ typedef Word NullString;
 Int Array_numElements (Pointer p);
 
 /* ------------------------------------------------- */
-/*                         C                         */
-/* ------------------------------------------------- */
-
-Char C_CS_sub (Cstring s, Int i);
-void C_CS_update (Cstring s, Int i, Char c);
-Cstring C_CSS_sub (CstringArray a, Int i);
-
-/* ------------------------------------------------- */
 /*                    CommandLine                    */
 /* ------------------------------------------------- */
 
