@@ -267,7 +267,7 @@ structure Counts =
 	    (Current {master = m, split = s},
 	     Current {master = m', split = s'}) =>
 	       let
-		  fun merge (v, v') = Vector.map2 (v, v', IntInf.+)
+		  fun merge (v, v') = Vector.map2 (v, v', op +)
 	       in
 		  Current {master = merge (m, m'),
 			   split = merge (s, s')}
@@ -280,9 +280,9 @@ structure Counts =
 		     Vector.map2
 		     (v, v', fn ({current = c, stack = s, stackGC = g},
 				 {current = c', stack = s', stackGC = g'}) =>
-		      {current = IntInf.+ (c, c'),
-		       stack = IntInf.+ (s, s'),
-		       stackGC = IntInf.+ (g, g')})
+		      {current = c + c',
+		       stack = s + s',
+		       stackGC = g + g'})
 	       in
 		  Stack {master = merge (m, m'),
 			 split = merge (s, s')}
@@ -304,8 +304,8 @@ structure ProfFile =
 	 T {counts = Counts.Empty,
 	    kind = Kind.Empty,
 	    magic = magic,
-	    total = IntInf.zero,
-	    totalGC = IntInf.zero}
+	    total = 0,
+	    totalGC = 0}
 
       local
 	 fun make f (T r) = f r
@@ -398,8 +398,8 @@ structure ProfFile =
 	    T {counts = Counts.merge (c, c'),
 	       kind = Kind.merge (k, k'),
 	       magic = m,
-	       total = IntInf.+ (t, t'),
-	       totalGC = IntInf.+ (g, g')}
+	       total = t + t',
+	       totalGC = g + g'}
    end
 
 structure Atomic =
@@ -654,7 +654,7 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
 	    Counts.Current _ => false
 	  | Counts.Empty => false
 	  | Counts.Stack _ => true
-      val totalReal = Real.fromIntInf (IntInf.+ (total, totalGC))
+      val totalReal = Real.fromIntInf (total + totalGC)
       val per: IntInf.t -> real =
 	 if Real.equals (0.0, totalReal)
 	    then fn _ => 0.0
@@ -721,10 +721,9 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
 			   then row stack @ row stackGC
 			else [])
 		  val pc = per current
+		  val isNonZero = current > 0 orelse stack > 0 orelse stackGC > 0
 		  val tableInfo = 
-		     if IntInf.> (current, IntInf.fromInt 0)
-			orelse IntInf.> (stack, IntInf.fromInt 0)
-			orelse IntInf.> (stackGC, IntInf.fromInt 0)
+		     if isNonZero
 			then SOME {per = pc,
 				   row = Source.toStringMaybeLine source :: row}
 		     else NONE
@@ -732,7 +731,7 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
 		     [Dot.NodeOption.Shape Dot.Box,
 		      Dot.NodeOption.Label
 		      (Source.toDotLabel source
-		       @ (if IntInf.> (current, IntInf.zero)
+		       @ (if isNonZero
 			     then [(concat (List.separate (row, " ")),
 				    Dot.Center)]
 			  else [])),
@@ -759,14 +758,14 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
 	 case counts of
 	    Counts.Current ms =>
 	       doit (ms, fn z => {current = z,
-				  stack = IntInf.zero,
-				  stackGC = IntInf.zero})
+				  stack = 0,
+				  stackGC = 0})
 	  | Counts.Empty =>
 	       doit ({master = Vector.new (Vector.length master, ()),
 		      split = Vector.new (Vector.length split, ())},
-		     fn () => {current = IntInf.zero,
-			       stack = IntInf.zero,
-			       stackGC = IntInf.zero})
+		     fn () => {current = 0,
+			       stack = 0,
+			       stackGC = 0})
 	  | Counts.Stack ms =>
 	       doit (ms, fn z => z)
       val keep = !keep
@@ -837,7 +836,6 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
 		    ; ())
 	      | _ => ()
 	  end)
-      val _ = Graph.removeDuplicateEdges keepGraph
       val {get = edgeOptions: keep Edge.t -> EdgeOption.t list ref, ...} =
 	 Property.get (Edge.plist, Property.initFun (fn _ => ref []))
       (* Add a dashed edge from A to B if there is path from A to B of length
@@ -901,6 +899,7 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
 		   in
 		      ()
 		   end))))
+      val _ = Graph.removeDuplicateEdges keepGraph
       val title =
 	 case !title of
 	    NONE => concat [aname, " call-stack graph"]
