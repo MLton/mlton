@@ -300,10 +300,13 @@ int main(int argc, char **argv) {					\
 #define IntAsPointer(n) ((pointer)(n))
 #define PointerToInt(p) ((int)(p))
 
-#define Object(x, np, p)					\
-	do {							\
-		*(word*)frontier = GC_objectHeader(np, p);	\
-		x = frontier + GC_OBJECT_HEADER_SIZE;		\
+#define Object(x, np, p)						\
+	do {								\
+		*(word*)frontier = GC_objectHeader(np, p);		\
+		x = frontier + GC_OBJECT_HEADER_SIZE;			\
+		if (FALSE)						\
+			fprintf(stderr, "%d  0x%x = Object(%d, %d)\n",	\
+				__LINE__, x, np, p);			\
 	} while (0)
 
 #define Assign(ty, o, v)						\
