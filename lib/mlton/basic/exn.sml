@@ -23,12 +23,7 @@ fun layout e =
       open Layout
    in
       case e of
-	 OS.SysErr (s, so) =>
-	    seq [str "error: ",
-		 case so of
-		    NONE => empty
-		  | SOME se => seq [str (OS.errorMsg se), str ": "],
-		       str s]
+	 OS.SysErr (s, _) => str s
        | Fail s => str s
        | IO.Io {cause, function, name, ...} =>
 	    seq [str (concat [function, " ", name, ": "]), layout cause]
