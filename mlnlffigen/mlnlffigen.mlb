@@ -1,0 +1,5 @@
+local
+  sources.mlb
+in
+  call-main.sml
+end

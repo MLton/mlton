@@ -1,0 +1,7 @@
+This is a (heavily) modified version of the ml-nlffigen directory that
+comes with SML/NJ version 110.52.  The sources have been modified to
+generate MLNLFFI Library clients that are compatible with MLton's
+native FFI.  At the current time, functions with struct/union
+arguments are not supported.
+
+mfluet@acm.org 2005-02-12
