@@ -9,6 +9,8 @@ val layout = Layout.str o toString
 
 val equals: t * t -> bool = op =
 
+val fromString = fn s => s
+
 val hash = String.hash
 
 val gc = "<gc>"

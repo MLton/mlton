@@ -62,6 +62,7 @@ enum {
 	BOGUS_EXN_STACK = 0xFFFFFFFF,
 	BOGUS_POINTER = 0x1,
 	COPY_CHUNK_SIZE = 0x800000,
+	CURRENT_SOURCE_UNDEFINED = 0xFFFFFFFF,
 	DEBUG = FALSE,
 	DEBUG_ARRAY = FALSE,
 	DEBUG_CARD_MARKING = FALSE,
@@ -2921,10 +2922,12 @@ static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
 #endif
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "pc = 0x%08x\n", (uint)pc);
-	if (s->textStart <= pc and pc < s->textEnd)
-		s->currentSource = s->textSources [pc - s->textStart];
-	else
-		s->currentSource = SOURCE_SEQ_UNKNOWN;
+	if (CURRENT_SOURCE_UNDEFINED == s->currentSource) {
+		if (s->textStart <= pc and pc < s->textEnd)
+			s->currentSource = s->textSources [pc - s->textStart];
+		else
+		       	s->currentSource = SOURCE_SEQ_UNKNOWN;
+	}
 	MLton_Profile_inc (1);
 }
 
@@ -2966,6 +2969,7 @@ static void profileTimeInit (GC_state s) {
 	uint sourceSeqsIndex;
 
 	s->profile = GC_profileNew (s);
+	s->currentSource = CURRENT_SOURCE_UNDEFINED;
 	/* Sort sourceLabels by address. */
 	qsort (s->sourceLabels, s->sourceLabelsSize, sizeof(*s->sourceLabels),
 		compareProfileLabels);
