@@ -30,6 +30,27 @@ The general form of an \verb+_ffi+ declaration is:
 
 The semicolon is not optional.  Here is a grammar for the types that
 are currently allowed.
+\begin{latexonly}
+\begin{center}
+\begin{tabular}{l}
+\production{\mbox{ty}}
+	   {u $\alt$ t\ \mbox{\tt *}\ \ldots\ \mbox{\tt *}\ t\ \mbox{\tt ->}\ u}
+\production{u}
+	   {\mbox{\tt bool} $\alt$ \mbox{\tt char} $\alt$ \mbox{\tt int} $\alt$ \mbox{\tt real} $\alt$ \mbox{\tt string} $\alt$ \mbox{\tt unit} $\alt$ \mbox{\tt word} $\alt$ \mbox{\tt word8}}
+\production{t}
+	   {u $\alt$ u\ \mbox{\tt array} $\alt$ u\ \mbox{\tt ref}
+             $\alt$ u\ \mbox{\tt vector}}
+\quad $\alt$ \mbox{\tt CharArray.array} $\alt$ \mbox{\tt CharVector.vector} \\
+\quad $\alt$ \mbox{\tt IntArray.array} $\alt$ \mbox{\tt IntVector.vector} \\
+\quad $\alt$ \mbox{\tt Int32Array.array} $\alt$ \mbox{\tt Int32Vector.vector} \\
+\quad $\alt$ \mbox{\tt RealArray.array} $\alt$ \mbox{\tt RealVector.vector} \\
+\quad $\alt$ \mbox{\tt Real64Array.array} $\alt$ \mbox{\tt Real64Vector.vector} \\
+\quad $\alt$ \mbox{\tt Word8Array.array} $\alt$ \mbox{\tt Word8Vector.vector} \\
+\quad $\alt$ \mbox{\tt Word32Array.array} $\alt$ \mbox{\tt Word32Vector.vector} \\
+\end{tabular}
+\end{center}
+\end{latexonly}
+\begin{htmlonly}
 \begin{center}
 \begin{tabular}{l}
 \production{\mbox{ty}}
@@ -48,6 +69,7 @@ are currently allowed.
 \quad \alt \mbox{\tt Word32Array.array} \alt \mbox{\tt Word32Vector.vector} \\
 \end{tabular}
 \end{center}
+\end{htmlonly}
 
 Here is the mapping between SML types and C types.
 \begin{center}
