@@ -11,7 +11,7 @@ type int = Int.t
 (* A chunkifier that puts each function in its own chunk. *)
 fun chunkPerFunc (Program.T {functions, ...}) =
    Vector.toListMap
-   (functions, fn {name, body, ...} =>
+   (functions, fn Function.T {name, body, ...} =>
     let val jumps = ref []
     in Exp.foreachDec (body,
 		       fn Fun {name, ...}=> List.push (jumps, name)
@@ -27,12 +27,12 @@ fun oneChunk (Program.T {functions, main, ...}) =
       val funcs = ref []
       val jumps = ref []
       val _ =
-	 Vector.foreach (functions, fn {name, body, ...} =>
-			(List.push (funcs, name)
-			 ; (Exp.foreachDec
-			    (body,
-			     fn Fun {name, ...} => List.push (jumps, name)
-			      | _ => ()))))
+	 Vector.foreach (functions, fn Function.T {name, body, ...} =>
+			 (List.push (funcs, name)
+			  ; (Exp.foreachDec
+			     (body,
+			      fn Fun {name, ...} => List.push (jumps, name)
+			       | _ => ()))))
    in
       [{funcs = !funcs, jumps = !jumps}]
    end
@@ -80,7 +80,7 @@ fun returnsTo (Program.T {functions, ...}) =
 	 end
       val _ =
 	 Vector.foreach
-	 (functions, fn {name, body, ...} =>
+	 (functions, fn Function.T {name, body, ...} =>
 	  Exp.foreachTransfer
 	  (body,
 	   fn Call {func, cont, ...} => (case cont of
@@ -137,13 +137,13 @@ fun coalesce (program as Program.T {functions, ...}, jumpHandlers, limit) =
 		| _ => ())
 	 end
       val _ =
-	 Vector.foreach (functions, fn {name, body, ...} =>
-			loopExp (body, newClass (name, body, setFuncClass), []))
+	 Vector.foreach (functions, fn Function.T {name, body, ...} =>
+			 loopExp (body, newClass (name, body, setFuncClass), []))
       val {returnsTo, destroy = destroyReturnsTo} = returnsTo program
       (* Add edges, and then coalesce the graph. *)
       val _ =
 	 Vector.foreach
-	 (functions, fn {name, body, ...} =>
+	 (functions, fn Function.T {name, body, ...} =>
 	  let
 	     val returnsTo = List.revMap (returnsTo name, jumpClass)
 	     fun loopExp (e: Exp.t, class: Class.t): unit =
@@ -190,7 +190,7 @@ fun coalesce (program as Program.T {functions, ...}, jumpHandlers, limit) =
 	       List.push (sel (classChunk (get l)), l)
 	    val _ =
 	       Vector.foreach
-	       (functions, fn {name, body, ...} =>
+	       (functions, fn Function.T {name, body, ...} =>
 		let
 		   val _ = new (name, funcClass, #funcs)
 		   val _ =

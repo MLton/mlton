@@ -62,7 +62,8 @@ fun limitCheck (program as Program.T {functions, ...}) =
 		      ; Option.app (default, jump))
 		| _ => ())
 	 end
-      val _ = Vector.foreach (functions, loopExp o #body)
+      val _ = Vector.foreach (functions, fn Function.T {body, ...} =>
+			      loopExp body)
    in
       {destroy = destroy,
        limitCheck = ! o #limitCheck o jumpInfo}

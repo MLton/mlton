@@ -83,7 +83,7 @@ local
 	 val {get = shouldInline, set = setShouldInline} =
 	    Property.getSetOnce (Func.plist, Property.initConst false)
       in
-	 Vector.foreach (functions, fn {name, body, ...} =>
+	 Vector.foreach (functions, fn Function.T {name, body, ...} =>
 			if dontInlineBody (body, a)
 			   then ()
 			else setShouldInline (name, true))
@@ -151,7 +151,7 @@ fun nonRecursive (program as Program.T {functions, ...}, {size: int option}) =
       (* initialize the info for each func *)
       val _ = 
 	 Vector.foreach
-	 (functions, fn {name, body, ...} =>
+	 (functions, fn Function.T {name, body, ...} =>
 	  let val n = Graph.newNode graph
 	  in setNodeFunc (n, name)
 	     ; setFuncInfo (name, {node = n,
@@ -162,7 +162,7 @@ fun nonRecursive (program as Program.T {functions, ...}, {size: int option}) =
       (* Update call counts. *)
       val _ =
 	 Vector.foreach
-	 (functions, fn {name, body, ...} =>
+	 (functions, fn Function.T {name, body, ...} =>
 	  Exp.foreachTransfer
 	  (body,
 	   fn Call {func, ...} =>
@@ -181,7 +181,7 @@ fun nonRecursive (program as Program.T {functions, ...}, {size: int option}) =
        *)
       val _ = 
 	 Vector.foreach
-	 (functions, fn {name, body, ...} =>
+	 (functions, fn Function.T {name, body, ...} =>
 	  let val {node = caller, shouldInline = si, ...} = funcInfo name
 	  in Exp.foreachTransfer
 	     (body,
@@ -211,7 +211,7 @@ fun nonRecursive (program as Program.T {functions, ...}, {size: int option}) =
 	 ("inline", fn layout =>
 	  let open Layout
 	  in Vector.foreach
-	     (functions, fn {name, body, ...} =>
+	     (functions, fn Function.T {name, body, ...} =>
 	      let val {shouldInline, numCalls, ...} = funcInfo name
 	      in layout (seq [Func.layout name, str " ",
 			      Int.layout (expSize body), str " ",
@@ -284,7 +284,7 @@ fun product (program as Program.T {functions, ...},
       val graph = Graph.new ()
       val _ = 
 	 Vector.foreach
-	 (functions, fn {name, body, ...} =>
+	 (functions, fn Function.T {name, body, ...} =>
 	  let val n = Graph.newNode graph
 	  in setNodeFunc (n, name)
 	     ; setFuncInfo (name, {body = body,
@@ -297,7 +297,7 @@ fun product (program as Program.T {functions, ...},
       (* Set numCalls and doesCallSelf. *)
       val _ = 
 	 Vector.foreach
-	 (functions, fn {name, body, ...} =>
+	 (functions, fn Function.T {name, body, ...} =>
 	  let val {body, node = caller, doesCallSelf, ...} = funcInfo name
 	  in Exp.foreachTransfer
 	     (body,
@@ -320,7 +320,7 @@ fun product (program as Program.T {functions, ...},
        *)
       val _ =
 	 Vector.foreach
-	 (functions, fn {name, body, ...} =>
+	 (functions, fn Function.T {name, body, ...} =>
 	  let val info as {node = caller, doesCallSelf, ...} = funcInfo name
 	  in if mayInline info
 		then
@@ -352,7 +352,7 @@ fun product (program as Program.T {functions, ...},
 	 ("inline", fn layout =>
 	  let open Layout
 	  in Vector.foreach
-	     (functions, fn {name, body, ...} =>
+	     (functions, fn Function.T {name, body, ...} =>
 	      let val {numCalls, shouldInline, size, ...} = funcInfo name
 	      in layout (seq [Func.layout name, str " ",
 			      Int.layout (!numCalls), str " ",
@@ -378,7 +378,7 @@ fun inline (p as Program.T {datatypes, globals, functions, main}) =
 	   set = setFunInfo} =
 	 Property.getSetOnce (Func.plist,
 			      Property.initRaise ("Inline.info", Func.layout))
-      val _ = Vector.foreach (functions, fn {name, args, body, ...} =>
+      val _ = Vector.foreach (functions, fn Function.T {name, args, body, ...} =>
 			     setFunInfo (name, {args = Vector.map (args, #1),
 						body = body}))
       fun inlineExp (exp: Exp.t, outerCont: Jump.t option): Exp.t =
@@ -428,12 +428,12 @@ fun inline (p as Program.T {datatypes, globals, functions, main}) =
       val shrinkExp = shrinkExp globals
       val functions =
 	 Vector.keepAllMap
-	 (functions, fn {name, args, body, returns} =>
+	 (functions, fn Function.T {name, args, body, returns} =>
 	  if not (Func.equals (name, main))
 	     andalso shouldInline name
 	     then NONE
-	  else SOME {name = name, args = args, returns = returns,
-		     body = shrinkExp (inlineExp (body, NONE))})
+	  else SOME (Function.T {name = name, args = args, returns = returns,
+				 body = shrinkExp (inlineExp (body, NONE))}))
       val program =
 	 Program.T {datatypes = datatypes,
 		    globals = globals,

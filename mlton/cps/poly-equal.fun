@@ -97,7 +97,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		   {isEnum = Vector.forall (cons, fn {args, ...} =>
 					    Vector.isEmpty args),
 		    cons = cons}))
-      val newFunctions = ref []
+      val newFunctions: Function.t list ref = ref []
       val {get = getEqualFunc, set = setEqualFunc} =
 	 Property.getSet (Tycon.plist, Property.initConst NONE)
       val {get = getVectorEqualFunc, set = setVectorEqualFunc,
@@ -150,6 +150,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 					      ty = Type.bool}}
 		       end)}
 	       in List.push (newFunctions,
+			     Function.T
 			     {name = name,
 			      args = Vector.new2 ((arg1, ty), (arg2, ty)),
 			      body = toExp body,
@@ -173,6 +174,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		  val _ =
 		     List.push
 		     (newFunctions,
+		      Function.T
 		      {name = name, 
 		       args = Vector.new2 (v1, v2),
 		       returns = returns,
@@ -201,6 +203,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		  val _ = 
 		     List.push
 		     (newFunctions,
+		      Function.T
 		      {name = loop,
 		       args = Vector.new4 (i, len, v1, v2),
 		       returns = returns,
@@ -336,16 +339,16 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		end))
 	 end
       val functions =
-	 Vector.map (functions, fn {name, args, body, returns} =>
-		    {name = name,
-		     args = args,
-		     returns = returns,
-		     body = loopExp body})
+	 Vector.map (functions, fn Function.T {name, args, body, returns} =>
+		     Function.T {name = name,
+				 args = args,
+				 returns = returns,
+				 body = loopExp body})
       val program =
 	 Program.T {datatypes = datatypes,
 		    globals = globals,
 		    functions = Vector.concat [Vector.fromList (!newFunctions),
-					      functions],
+					       functions],
 		    main = main}
       val _ = destroyType ()
       val _ = Program.clear program

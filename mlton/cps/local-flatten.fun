@@ -79,7 +79,7 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
       val shrinkExp = shrinkExp globals
       val functions =
 	 Vector.map
-	 (functions, fn {name, args, body, returns} =>
+	 (functions, fn Function.T {name, args, body, returns} =>
 	  let
 	     fun loop (e: Exp.t) =
 		let
@@ -264,10 +264,10 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 	     val body = shrinkExp (loop body)
 	     val _ = Exp.clear body
 	  in
-	     {name = name,
-	      args = args,
-	      body = body,
-	      returns = returns}
+	     Function.T {name = name,
+			 args = args,
+			 body = body,
+			 returns = returns}
 	  end)
       val program' = 
 	 Program.T {datatypes = datatypes,

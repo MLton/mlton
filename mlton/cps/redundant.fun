@@ -109,7 +109,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 	    (* initialize all varInfo and funcInfo *)
 	    val _ =
 	       Vector.foreach
-	       (functions, fn {name, args, returns, ...} =>
+	       (functions, fn Function.T {name, args, returns, ...} =>
 		setFuncInfo (name, {
 				    arg = makeFormalsRel args,
 				    return = Eqrel.fromTypes returns
@@ -117,7 +117,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 	    (* Add the calls to all the funcInfos *)
 	    val _ =
 	       Vector.foreach
-	       (functions, fn {name, body,...} =>
+	       (functions, fn Function.T {name, body,...} =>
 		let val {return, ...} = funcInfo name
 		   val handleDec =
 		      fn Fun {name, args, ...} =>
@@ -158,7 +158,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 	 Control.displays
 	 ("redundant", fn display =>
 	  Vector.foreach
-	  (functions, fn {name, ...} =>
+	  (functions, fn Function.T {name, ...} =>
 	   display
 	   (let val {arg, return} = funcInfo name
 		open Layout
@@ -223,15 +223,16 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 			      Property.initRaise ("reds", Func.layout))
       val functions =
 	 Vector.map
-	 (functions, fn {name, args, body, returns} =>
+	 (functions, fn Function.T {name, args, body, returns} =>
 	  let
 	     val {arg, return} = funcInfo name
 	     val return = makeReds (returns, return)
 	     val (arg, args) = redundantFormals (arg, args)
-	  in setFuncReds (name, {args = arg, returns = return})
-	     ; {name = name, body = body,
-		args = args,
-		returns = keepUseful (return, returns)}
+	     val _ = setFuncReds (name, {args = arg, returns = return})
+	  in
+	     Function.T {name = name, body = body,
+			 args = args,
+			 returns = keepUseful (return, returns)}
 	  end)
       val {get = jumpReds : Jump.t -> red vector, set = setJumpReds} =
 	 Property.getSetOnce (Jump.plist,
@@ -243,7 +244,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
       fun loopVars xs = Vector.map (xs, loopVar)
       val functions =
 	 Vector.map
-	 (functions, fn {name, args, body, returns} =>
+	 (functions, fn Function.T {name, args, body, returns} =>
 	  let
 	     val {returns = returnReds, ...} = funcReds name
 	     fun loopTransfer t =
@@ -281,10 +282,10 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 			 ; Fun {name = name, args = args, body = loopExp body}
 		      end
 		 | _ => d
-	  in {name = name,
-	      args = args,
-	      returns = returns,
-	      body = loopExp body}
+	  in Function.T {name = name,
+			 args = args,
+			 returns = returns,
+			 body = loopExp body}
 	  end)
       val p = Program.T {datatypes = datatypes,
 			 globals = globals,

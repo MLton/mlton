@@ -93,8 +93,8 @@ fun once (program as Program.T {globals, functions, main, ...}) =
 	     | Raise _ => handler ()
 	     | _ => ()
 	 end
-      val {body, ...} =
-	 case Vector.peek (functions, fn {name, ...} =>
+      val Function.T {body, ...} =
+	 case Vector.peek (functions, fn Function.T {name, ...} =>
 			   Func.equals (name, main)) of
 	    NONE => Error.bug "no main"
 	  | SOME r => r

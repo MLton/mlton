@@ -273,7 +273,7 @@ structure InitReachCallersCallees =
 	  val _ 
 	    = Vector.foreach
 	      (functions, 
-	       fn {name = f, body = f_body, ...}
+	       fn Function.T {name = f, body = f_body, ...}
 	        => let
 		     val callees = FuncData.callees' (getFuncData f)
 		     val f_node = getFuncNode f
@@ -365,7 +365,7 @@ structure AnalyzeDom =
 	  val _
 	    = Vector.foreach
 	      (functions,
-	       fn {name = f, body = f_body, ...}
+	       fn Function.T {name = f, body = f_body, ...}
 	        => let
 		     val f_reach = FuncData.reach (getFuncData f)
 		     val f_node = getFuncNode f
@@ -433,7 +433,7 @@ structure AnalyzeDom =
           val _
 	    = Vector.foreach
 	      (functions,
-	       fn {name, ...}
+	       fn Function.T {name, ...}
 	        => let
 		     val FuncData.T {A, reach, node, ...} =
 			getFuncData name
@@ -513,7 +513,7 @@ structure Transform =
 	  val _ 
 	    = Vector.foreach
 	      (functions,
-	       fn {name = f, ...}
+	       fn Function.T {name = f, ...}
 	        => let
 		     val FuncData.T {A, contify, ...} 
 		       = getFuncData f
@@ -849,7 +849,7 @@ structure Transform =
 	  val _ 
 	    = Vector.foreach
 	      (functions,
-	       fn {name = f, args = f_args, body = f_body, ...} 
+	       fn Function.T {name = f, args = f_args, body = f_body, ...} 
 	        => let
 		     val FuncData.T {contify, replace, ...} = getFuncData f
 		     val _ 
@@ -953,8 +953,8 @@ structure Transform =
 	      (Vector.foldr
 	       (functions, 
 		[], 
-	        fn ({name = f, args = f_args, 
-		     body = f_body, returns = f_returns}, 
+	        fn (Function.T {name = f, args = f_args, 
+				body = f_body, returns = f_returns}, 
 		    functions)
 	         => let
 		      val FuncData.T {A, replace, prefixes, ...} 
@@ -971,10 +971,11 @@ structure Transform =
 						     walkExp (f, f_body, NONE))
 				     val f_body = shrinkExp f_body
 				   in
-				     {name = f,
-				      args = f_args,
-				      body = f_body,
-				      returns = f_returns} :: functions
+				      Function.T {name = f,
+						  args = f_args,
+						  body = f_body,
+						  returns = f_returns}
+				      :: functions
 				   end
 			 | _ => functions
 		    end))

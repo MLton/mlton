@@ -14,7 +14,7 @@ fun introduceLoops (Program.T {datatypes, globals, functions, main}) =
    let
       val functions =
 	 Vector.map
-	 (functions, fn {name, args, body, returns} =>
+	 (functions, fn Function.T {name, args, body, returns} =>
 	  let
 	     val callsItself = ref false
 	     exception NonTail
@@ -66,10 +66,10 @@ fun introduceLoops (Program.T {datatypes, globals, functions, main}) =
 		       end
 		 else noChange)
 		handle NonTail => noChange
-	  in {name = name,
-	      args = args,
-	      body = body,
-	      returns = returns}
+	  in Function.T {name = name,
+			 args = args,
+			 body = body,
+			 returns = returns}
 	  end)
    in
       Program.T {datatypes = datatypes,

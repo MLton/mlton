@@ -932,10 +932,10 @@ fun simplifyProgram simplifyExp
       val shrinkExp = shrinkExp globals
       val functions =
 	 Vector.map
-	 (functions, fn {name, args, body, returns} =>
-	  {name = name, args = args,
-	   body = shrinkExp (simplifyExp body),
-	   returns = returns})
+	 (functions, fn Function.T {name, args, body, returns} =>
+	  Function.T {name = name, args = args,
+		      body = shrinkExp (simplifyExp body),
+		      returns = returns})
    in Program.T {datatypes = datatypes,
 		 globals = globals,
 		 functions = functions,

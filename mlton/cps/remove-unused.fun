@@ -60,7 +60,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 	 Property.getSetOnce
 	 (Func.plist, Property.initRaise ("RemoveUnused.info", Func.layout))
       val _ =
-	 Vector.foreach (functions, fn {name, body, ...} =>
+	 Vector.foreach (functions, fn Function.T {name, body, ...} =>
 			 setFuncInfo (name, {body = body, visited = ref false}))
       val {get = jumpInfo: Jump.t -> {body: Exp.t,
 				      visited: bool ref},
@@ -340,11 +340,12 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 	   | _ => NONE)
       val functions =
 	 Vector.keepAllMap
-	 (functions, fn {name, args, body, returns} =>
+	 (functions, fn Function.T {name, args, body, returns} =>
 	  let val {visited, ...} = funcInfo name
 	  in if !visited
-		then SOME {name = name, args = args, returns = returns,
-			   body = simplifyExp body} 
+		then SOME (Function.T {name = name, args = args,
+				       returns = returns,
+				       body = simplifyExp body})
 	     else NONE
 	  end)
       val p =

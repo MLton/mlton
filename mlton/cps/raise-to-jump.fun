@@ -35,7 +35,7 @@ fun raiseToJump (program as Program.T {datatypes, globals, functions, main}) =
       val funcCanRaise = #canRaise o funcInfo
       val _ =
 	 Vector.foreach
-	 (functions, fn {name, body, ...} =>
+	 (functions, fn Function.T {name, body, ...} =>
 	  let
 	     val {canRaise, ...} = funcInfo name
 	     fun loopExp (e: Exp.t, hs: Jump.t list): unit =
@@ -76,7 +76,7 @@ fun raiseToJump (program as Program.T {datatypes, globals, functions, main}) =
 	  let open Layout
 	  in display (str "Input program:\n")
 	     ; Program.layouts (program, display)
-	     ; Vector.foreach (functions, fn {name, ...} =>
+	     ; Vector.foreach (functions, fn Function.T {name, ...} =>
 			      display (seq
 				       [Func.layout name,
 					str " ",
@@ -125,11 +125,11 @@ fun raiseToJump (program as Program.T {datatypes, globals, functions, main}) =
 	  | _ => d
       val shrinkExp = shrinkExp globals
       val functions =
-	 Vector.map (functions, fn {name, args, body, returns} =>
-		    {name = name,
-		     args = args,
-		     body = shrinkExp (loopExp (body, [])),
-		     returns = returns})
+	 Vector.map (functions, fn Function.T {name, args, body, returns} =>
+		     Function.T {name = name,
+				 args = args,
+				 body = shrinkExp (loopExp (body, [])),
+				 returns = returns})
       val program =
 	 Program.T {datatypes = datatypes,
 		    globals = globals,

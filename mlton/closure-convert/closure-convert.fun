@@ -57,10 +57,7 @@ structure Accum =
       structure AL = AppendList
 
       datatype t = T of {globals: {var: Var.t, ty: Ctype.t, exp: Cexp.t} AL.t,
-			 functions: {name: Func.t,
-				     args: (Var.t * Ctype.t) vector,
-				     body: Cps.Exp.t,
-				     returns: Ctype.t vector} list}
+			 functions: Cps.Function.t list}
 
       val empty = T {globals = AL.empty, functions = []}
 
@@ -889,17 +886,19 @@ fun closureConvert (program as Sxml.Program.T {datatypes, body}): Cps.Program.t 
 		 val decs = recursives (recs, recs', env)
 		 val (body, ac) = convertExp (body, ac)
 	      in Accum.addFunc
-		 (ac, {name = name, 
-		       args = args,
-		       returns = returns,
-		       body =
-		       Cps.shrinkExp (Vector.new0 ())
-		       (Cexp.toExp
-			(Cexp.lett
-			 {decs = decs,
-			  body = Cexp.detupleBind {tuple = Cexp.var env,
-						   components = components,
-						   body = body}}))})
+		 (ac,
+		  Cps.Function.T
+		  {name = name, 
+		   args = args,
+		   returns = returns,
+		   body =
+		   Cps.shrinkExp (Vector.new0 ())
+		   (Cexp.toExp
+		    (Cexp.lett
+		     {decs = decs,
+		      body = Cexp.detupleBind {tuple = Cexp.var env,
+					       components = components,
+					       body = body}}))})
 	      end))
 	 end
       (*------------------------------------*)
@@ -914,6 +913,7 @@ fun closureConvert (program as Sxml.Program.T {datatypes, body}): Cps.Program.t 
 	     val ac =
 		Accum.addFunc
 		(ac,
+		 Cps.Function.T
 		 {name = main,
 		  args = Vector.new0 (),
 		  returns = Vector.new1 Ctype.unit,

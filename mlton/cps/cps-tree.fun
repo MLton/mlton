@@ -1274,19 +1274,85 @@ structure Handlers:
 
 open Dec PrimExp Transfer
 
+fun deltaHandlers (d, hs) =
+   case d of
+      HandlerPush h => h :: hs
+    | HandlerPop => (case hs of
+			_ :: hs => hs
+		      | _ => Error.bug "deltaHandlers")
+    | _ => hs
+
 structure Function =
    struct
-      type t = {name: Func.t,
-		args: (Var.t * Type.t) vector,
-		body: Exp.t,
-		returns: Type.t vector}
+      datatype t = T of {name: Func.t,
+			 args: (Var.t * Type.t) vector,
+			 body: Exp.t,
+			 returns: Type.t vector}
 
+			    
       local
 	 structure Graph = DirectedGraph
 	 structure Node = Graph.Node
 	 structure Edge = Graph.Edge
       in
-	 fun layoutDot ({name, args, body, returns}: t, jumpHandlers, global) =
+	 fun controlFlowGraph (T {name, args, body, returns},
+			       jumpHandlers) =
+	    let
+    	       open Graph.LayoutDot
+	       val g = Graph.new ()
+	       fun newNode () = Graph.newNode g
+	       val {get = jumpNode} =
+		  Property.get
+		  (Jump.plist, Property.initFun (fn _ => newNode ()))
+	       fun loop (e: Exp.t, from: Node.t, handlers) =
+		  let
+		     val {decs, transfer} = Exp.dest e
+		     fun edge (j: Jump.t): unit =
+			(Graph.addEdge (g, {from = from, to = jumpNode j})
+			 ; ())
+		     val _ =
+			List.foreach
+			(decs, fn d =>
+			 case d of 
+			    Bind {exp, ...} =>
+			       (case exp of
+				   PrimApp {info, ...} =>
+				      PrimInfo.foreachJump (info, edge)
+				 | _ => ())
+			  | Fun {name, body, ...} =>
+			       loop (body, jumpNode name, jumpHandlers name)
+			  | HandlerPop => ()
+			  | HandlerPush _ => ())
+		     val _ =
+			case transfer of
+			   Bug => ()
+			 | Call {cont, ...} =>
+			      Option.app (cont, fn j =>
+					  (edge j
+					   ; (case jumpHandlers j of
+						 h :: _ => edge h
+					       | _ => ())))
+			 | Case {cases, default, ...} =>
+			      (Cases.foreach (cases, edge)
+			       ; Option.app (default, edge))
+			 | Jump {dst, ...} => edge dst
+			 | Raise _ =>
+			      (case List.fold (decs, handlers, deltaHandlers) of
+				  j :: _ => edge j
+				| _ => ())
+			 | Return _ => ()
+		  in
+		     ()
+		  end
+	       val root = newNode ()
+	       val _ = loop (body, root, [])
+	    in
+	       {graph = g,
+		root = root,
+		jumpNode = jumpNode}
+	    end
+
+	 fun layoutDot (T {name, args, body, returns}, jumpHandlers, global) =
 	    let
 	       open Graph.LayoutDot
 	       val g = Graph.new ()
@@ -1428,7 +1494,7 @@ structure Function =
 	    end
       end
    
-      fun layout (func as {name, args, body, returns},
+      fun layout (func as T {name, args, body, returns},
 		  jumpHandlers, global: Var.t -> string option) =
 	 let
 	    val _ =
@@ -1493,7 +1559,7 @@ fun inferHandlers (Program.T {functions, ...}) =
       val setJump = traceSetJump setJump
       val _ =
 	 Vector.foreach
-	 (functions, fn {body, ...} =>
+	 (functions, fn Function.T {body, ...} =>
 	  let
 	     fun loop (e: Exp.t, hs: Handlers.t): unit =
 		let
@@ -1562,14 +1628,6 @@ fun inferHandlers (Program.T {functions, ...}) =
    end
 
 val inferHandlers = Control.trace (Control.Pass, "inferHandlers") inferHandlers
-   
-fun deltaHandlers (d, hs) =
-   case d of
-      HandlerPush h => h :: hs
-    | HandlerPop => (case hs of
-			_ :: hs => hs
-		      | _ => Error.bug "deltaHandlers")
-    | _ => hs
 
 structure Program =
    struct
@@ -1603,7 +1661,7 @@ structure Program =
 		  Property.getSetOnce (Edge.plist, Property.initConst [])
 	       val _ =
 		  Vector.foreach
-		  (functions, fn {name, body, ...} =>
+		  (functions, fn Function.T {name, body, ...} =>
 		   let
 		      val from = funcNode name
 		      val {get, destroy} =
@@ -1647,9 +1705,9 @@ structure Program =
 
       fun foreachVar (T {globals, functions, ...}, f) =
 	 (Vector.foreach (globals, fn {var, ty, ...} => f (var, ty))
-	  ; Vector.foreach (functions, fn {args, body, ...} =>
-			   (Vector.foreach (args, f)
-			    ; Exp.foreachVar (body, f))))
+	  ; Vector.foreach (functions, fn Function.T {args, body, ...} =>
+			    (Vector.foreach (args, f)
+			     ; Exp.foreachVar (body, f))))
 	 
       fun layouts (p as T {datatypes, globals, functions, main},
 		   output': Layout.t -> unit) =
@@ -1717,7 +1775,7 @@ structure Program =
 	    val functionSizes = ref 0
 	    val _ =
 	       Vector.foreach
-	       (functions, fn {body, ...} =>
+	       (functions, fn Function.T {body, ...} =>
 		Exp.foreach'
 		(body,
 		 {handleDec = let open Dec
@@ -1748,13 +1806,14 @@ structure Program =
 	   *)
 	  (* Type.clear () *)
 	  Vector.foreach (datatypes, fn {tycon, cons} =>
-			 (Tycon.clear tycon
-			  ; Vector.foreach (cons, Con.clear o #con)))
+			  (Tycon.clear tycon
+			   ; Vector.foreach (cons, Con.clear o #con)))
 	  ; Vector.foreach (globals, Bind.clear)
-	  ; Vector.foreach (functions, fn {name, args, body, returns} =>
-			    (Func.clear name
-			     ; Vector.foreach (args, Var.clear o #1)
-			     ; Exp.clear body)))
+	  ; (Vector.foreach
+	     (functions, fn Function.T {name, args, body, returns} =>
+	      (Func.clear name
+	       ; Vector.foreach (args, Var.clear o #1)
+	       ; Exp.clear body))))
 
       fun hasPrim (T {globals, functions, ...},  f) =
 	 DynamicWind.withEscape
@@ -1767,8 +1826,8 @@ structure Program =
 		else ()
 		 | _ => ()
 	     val _ = Vector.foreach (globals, loopBind)
-	     val _ = Vector.foreach (functions, fn {body, ...} =>
-				    Exp.foreachBind (body, loopBind))
+	     val _ = Vector.foreach (functions, fn Function.T {body, ...} =>
+				     Exp.foreachBind (body, loopBind))
 	  in
 	     false
 	  end)

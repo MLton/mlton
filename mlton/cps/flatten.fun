@@ -115,7 +115,7 @@ fun flatten (Program.T {datatypes, globals, functions, main}) =
 	 funcInfo
       val _ =
 	 Vector.foreach
-	 (functions, fn {name, args, returns, ...} =>
+	 (functions, fn Function.T {name, args, returns, ...} =>
 	  setFuncInfo (name, {args = Rep.fromFormals args,
 			      returns = Rep.fromTypes returns}))
       val {get = varTuple, set = setVarTuple} =
@@ -164,13 +164,13 @@ fun flatten (Program.T {datatypes, globals, functions, main}) =
 		| Jump {dst, args} => coerces (args, jumpArgs dst)
 		| _ => ())
 	 end
-      val _ = Vector.foreach (functions, fn {name, body, ...} =>
+      val _ = Vector.foreach (functions, fn Function.T {name, body, ...} =>
 			      loopExp (body, #returns (funcInfo name)))
       val _ =
 	 Control.displays
 	 ("flat", fn display =>
 	  Vector.foreach
-	  (functions, fn {name, ...} =>
+	  (functions, fn Function.T {name, ...} =>
 	   let val {args, returns} = funcInfo name
 	      open Layout
 	   in display (seq [Func.layout name,
@@ -381,13 +381,13 @@ fun flatten (Program.T {datatypes, globals, functions, main}) =
       val shrinkExp = shrinkExp globals
       val functions =
 	 Vector.map
-	 (functions, fn {name, args, body, returns} =>
+	 (functions, fn Function.T {name, args, body, returns} =>
 	  let val {args = argReps, returns = returnReps} = funcInfo name
 	     val (args, body) = loopArgsBody (args, argReps, body, returnReps)
-	  in {name = name,
-	      args = args,
-	      body = shrinkExp body,
-	      returns = flattenTypes (returns, returnReps)}
+	  in Function.T {name = name,
+			 args = args,
+			 body = shrinkExp body,
+			 returns = flattenTypes (returns, returnReps)}
 	  end)
       val program =
 	 Program.T {datatypes = datatypes,

@@ -102,8 +102,9 @@ fun checkScopes (program as
 	 Vector.foreach (datatypes, fn {tycon, cons} =>
 			 Vector.foreach (cons, bindCon o #con))
       val _ = Vector.foreach (globals, loopBind)
-      val _ = Vector.foreach (functions, bindFunc o #name)
-      val _ = Vector.foreach (functions, fn {args, body, ...} =>
+      val _ = Vector.foreach (functions, fn Function.T {name, ...} =>
+			      bindFunc name)
+      val _ = Vector.foreach (functions, fn Function.T {args, body, ...} =>
 			      loopFunc (args, body))
       val _ = getFunc main
       val _ = Program.clear program

@@ -833,9 +833,9 @@ fun simplify (program as Program.T {datatypes, globals, functions, main})
 		      decs = decs}
 	 end) arg
       val functions =
-	 Vector.map (functions, fn {name, args, body, returns} =>
-		     {name = name, args = args, returns = returns,
-		      body = loopExp body})
+	 Vector.map (functions, fn Function.T {name, args, body, returns} =>
+		     Function.T {name = name, args = args, returns = returns,
+				 body = loopExp body})
       val globals = Vector.keepAllMap (globals, loopBind)
       val globals = Vector.concat [Vector.fromList (all ()), globals]
       val program =

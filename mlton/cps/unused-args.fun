@@ -234,12 +234,12 @@ fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
       val functions 
 	= Vector.map 
 	  (functions, 
-	   fn {name, args, body, returns}
-	    => {name = name,
-		args = args,
-		body = (analyzeExp body ; 
-			shrinkExp (loopExp body)),
-		returns = returns})
+	   fn Function.T {name, args, body, returns}
+	    => Function.T {name = name,
+			   args = args,
+			   body = (analyzeExp body ; 
+				   shrinkExp (loopExp body)),
+			   returns = returns})
 
       val program'
 	= Program.T {datatypes = datatypes,

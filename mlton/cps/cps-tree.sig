@@ -295,6 +295,23 @@ signature CPS_TREE =
 	    val var: Var.t * Type.t -> t
 	 end
 
+      structure Function:
+	 sig
+	    datatype t =
+	       T of {
+		     name: Func.t,
+		     args: (Var.t * Type.t) vector,
+		     body: Exp.t,
+		     returns: Type.t vector
+		     }
+
+	    val controlFlowGraph:
+	       t * (Jump.t -> Jump.t list)
+	       -> {graph: DirectedGraph.t,
+		   root: DirectedGraph.Node.t,
+		   jumpNode: Jump.t -> DirectedGraph.Node.t}
+	 end
+      
       structure Program:
 	 sig
 	    datatype t =
@@ -311,12 +328,7 @@ signature CPS_TREE =
 			       ty: Type.t,
 			       exp: PrimExp.t
 			      } vector,
-		     functions: {
-				 name: Func.t,
-				 args: (Var.t * Type.t) vector,
-				 body: Exp.t,
-				 returns: Type.t vector
-				} vector,
+		     functions: Function.t vector,
 		     main: Func.t (* must be nullary *)
 		    } 
 

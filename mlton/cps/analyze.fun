@@ -37,7 +37,7 @@ fun 'a analyze
 		    end)
       val _ =
 	 Vector.foreach
-	 (functions, fn {name, args, returns, ...} =>
+	 (functions, fn Function.T {name, args, returns, ...} =>
 	  setFunc (name, {args = loopArgs args,
 			  returns = Vector.map (returns, fromType)}))
       val exnVals: 'a vector option ref = ref NONE
@@ -157,7 +157,7 @@ fun 'a analyze
 	  )
       val _ = coerces (Vector.new0 (), #args (func main))
       val _ = Vector.foreach (globals, loopBind)
-      val _ = Vector.foreach (functions, fn {name, body, ...} =>
+      val _ = Vector.foreach (functions, fn Function.T {name, body, ...} =>
 			      loopExp (body, #returns (func name)))
    in {
        value = value,

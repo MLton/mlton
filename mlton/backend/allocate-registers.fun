@@ -11,6 +11,7 @@ in
    structure Dec = Dec
    structure Exp = Exp
    structure Func = Func
+   structure Function = Function
    structure Jump = Jump
    structure Prim = Prim
    structure PrimExp = PrimExp
@@ -394,7 +395,7 @@ fun allocate {program = program as Program.T {globals, functions, ...},
 		else ()
 	   | _ => ())
       val _ =
-	 Vector.foreach (functions, fn {name, args, body, ...} =>
+	 Vector.foreach (functions, fn Function.T {name, args, body, ...} =>
 			 allocateFunc (name, args, body))
       val _ =
 	 Control.displays
@@ -419,7 +420,7 @@ fun allocate {program = program as Program.T {globals, functions, ...},
 	     val _ = Vector.foreach (globals, loopBind)
 	     val _ =
 		Vector.foreach
-		(functions, fn {name, args, body, ...} =>
+		(functions, fn Function.T {name, args, body, ...} =>
 		 let val {handlerOffset, ...} = funcInfo name
 		 in display (seq [str "function ", Func.layout name,
 				  str " handlerOffset ",

@@ -192,7 +192,8 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 	       List.foreach ([Con.truee, Con.falsee], fn c =>
 			     setConRep (c, ConRep.Useful))
 	    val _ = Vector.foreach (globals, handleBind)
-	    val _ = Vector.foreach (functions, fn {body, ...} => consUseful body)
+	    val _ = Vector.foreach (functions, fn Function.T {body, ...} =>
+				    consUseful body)
 	 in ()
 	 end
       (* Remove useless constructors from datatypes.
@@ -705,11 +706,11 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 	 shrinkExp
       val functions =
 	 Vector.map
-	 (functions, fn {name, args, body, returns} =>
-	  {name = name,
-	   args = simplifyFormals args,
-	   body = shrinkExp (simplifyExp body),
-	   returns = keepSimplifyTypes returns})
+	 (functions, fn Function.T {name, args, body, returns} =>
+	  Function.T {name = name,
+		      args = simplifyFormals args,
+		      body = shrinkExp (simplifyExp body),
+		      returns = keepSimplifyTypes returns})
       val program =
 	 Program.T {datatypes = datatypes,
 		    globals = globals,

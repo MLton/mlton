@@ -529,7 +529,7 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 			       | SOME vs => vs)
       val _ =
 	 Vector.foreach
-	 (functions, fn {body, ...} =>
+	 (functions, fn Function.T {body, ...} =>
 	  Exp.foreach'
 	  (body,
 	   {handleTransfer = fn _ => (),
@@ -862,14 +862,14 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
        *)
       val functions =
 	 Vector.map
-	 (functions, fn {name, args, body, ...} =>
+	 (functions, fn Function.T {name, args, body, ...} =>
 	  let
 	     val {args = argvs, returns = returnvs} = func name
 	  in
-	     {name = name,
-	      args = keepUsefulArgs args,
-	      body = shrinkExp (loopExp (body, returnvs)),
-	      returns = Value.newTypes returnvs}
+	     Function.T {name = name,
+			 args = keepUsefulArgs args,
+			 body = shrinkExp (loopExp (body, returnvs)),
+			 returns = Value.newTypes returnvs}
 	  end)
       val globals = Vector.concat [Vector.fromList (!bogusGlobals),
 				   globals]
