@@ -72,7 +72,7 @@ post-install:
 		${PREFIX}/bin/${f}		\
 		${PREFIX}/man/man1/${f}.1.gz
 .endfor
-        ${CHOWN} -R ${SHAREOWN}:${SHAREGRP} ${PREFIX}/lib/mlton ${DOCSDIR}
+	${CHOWN} -R ${SHAREOWN}:${SHAREGRP} ${PREFIX}/lib/mlton ${DOCSDIR}
 
 # Stuff below this line is for maintainer use only.
 
@@ -102,7 +102,7 @@ pkg-plist:
 	cd ${WRKSRC} && ${GMAKE} install
 	cd ${WRKSRC}/install/usr && \
 		${FIND} -d * \! -type d | ${GREP} -v man/man | \
-		${SORT} >${PLIST}
+		sort >${PLIST}  # do not use ${SORT}
 	cd ${WRKSRC}/install/usr && \
 		${FIND} -d * -type d | ${GREP} mlton | \
 			${SED} -e 's/^/@dirrm /' >>${PLIST}

@@ -136,8 +136,8 @@ freebsd:
 	( cd $(SRC) && tar -cpf - . ) | ( cd $(BSDSRC) && tar -xpf - )
 	cd /tmp && tar -cpf - mlton-$(VERSION) | \
 		 $(GZIP) >/usr/ports/distfiles/mlton-$(VERSION)-1.freebsd.src.tgz
-	cd $(BSDSRC)/freebsd && $(MAKE) build-package
-#	rm -rf $(BSDSRC)
+			     # vvvv do not change make to $(MAKE)
+	cd $(BSDSRC)/freebsd && make build-package  
 
 .PHONY: libraries-no-check
 libraries-no-check:
