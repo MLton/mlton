@@ -379,7 +379,7 @@ fun main args =
 	       val i2s = Int.toCommaString
 	       val s2s = fn s => s
 	       val failures = ref []
-	       fun show {compiles, runs, sizes, errs, outs} =
+	       fun show ({compiles, runs, sizes, errs, outs}, {showAll}) =
 		  let
 		     val out = Out.standard
 		     val _ =
@@ -402,16 +402,20 @@ fun main args =
 			      List.fold
 			      (compilers, [],
 			       fn ({name = n, abbrv = n', ...}, ac) =>
-			       if List.exists (data, fn {compiler = c, ...} =>
-					       n = c)
+			       if showAll
+				  orelse (List.exists
+					  (data, fn {compiler = c, ...} =>
+					   n = c))
 				  then (n, n') :: ac
 			       else ac)
 			   val benchmarks =
-			      List.fold (benchmarks, [], fn (b, ac) =>
-					 if List.exists (data, fn {bench, ...} =>
-							 bench = b)
-					    then b :: ac
-					 else ac)
+			      List.fold
+			      (benchmarks, [], fn (b, ac) =>
+			       if showAll
+				  orelse List.exists (data, fn {bench, ...} =>
+						      bench = b)
+				  then b :: ac
+			       else ac)
 			   val rows =
 			      ("benchmark"
 			       :: List.revMap (compilers, fn (_, n') => n'))
@@ -437,28 +441,34 @@ fun main args =
 			   fun p ss =
 			      (Out.output (out, concat ss)
 			       ; Out.newline out)
-			   fun prow (b :: ns, c) =
-			      (p ["<tr>"]
-			       ; p ["<t", c, " align = left>", b, "</t", c, ">"]
-			       ; (List.foreach
-				  (ns, fn n =>
-				   p ["<t", c, " align = right>", n,
-				      "</t", c, ">"]))
-			       ; p ["</tr>"])
+			   fun prow (ns, c) =
+			      case ns of
+				 [] => raise Fail "bug"
+			       | b :: ns =>
+				    (p ["<tr>"]
+				     ; p ["<t", c, " align = left>", b,
+					  "</t", c, ">"]
+				     ; (List.foreach
+					(ns, fn n =>
+					 p ["<t", c, " align = right>", n,
+					    "</t", c, ">"]))
+				     ; p ["</tr>"])
 			   val _ =
 			      if !doHtml
 				 then
 				    (prow (hd rows, "h")
 				     ; (List.foreach
-					(tl rows, fn b :: r =>
-					 let
-					    val b = 
-					       concat
-					       ["<a href = \"benchmarks/", b,
-						".sml\">", b, "</a>"]
-					 in
-					    prow (b :: r, "d")
-					 end)))
+					(tl rows,
+					 fn [] => raise Fail "bug"
+					  | b :: r =>
+					       let
+						  val b = 
+						     concat
+						     ["<a href = \"benchmarks/",
+						      b, ".sml\">", b, "</a>"]
+					       in
+						      prow (b :: r, "d")
+					       end)))
 			      else ()
 			in
 			   ()
@@ -572,9 +582,10 @@ fun main args =
 				       sizes = add (size, sizes),
 				       outs = add (out, outs),
 				       errs = add (err, errs)}
-				in show ac
-				   ; Out.flush Out.standard
-				   ; ac
+				   val _ = show (ac, {showAll = false})
+				   val _ = Out.flush Out.standard
+				in
+				   ac
 				end
 			  else ac)
 		      val _ =
@@ -584,6 +595,7 @@ fun main args =
 		   in
 		      res
 		   end)
+	       val _ = show (data, {showAll = true})
 	       val totalFailures = !totalFailures
 	       val _ =
 		  if List.isEmpty totalFailures
