@@ -35,31 +35,36 @@ structure Place =
       fun compare (p, p') = Int.compare (toInt p, toInt p')
    end
 
+structure OptPred =
+   struct
+      datatype t =
+	 Target of string
+       | Yes 
+   end
+
 val buildConstants: bool ref = ref false
-val ccOpts: string list ref = ref []
+val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val coalesce: int option ref = ref NONE
 val expert: bool ref = ref false
 val gcc: string ref = ref "<unset>"
 val keepGenerated = ref false
 val keepO = ref false
 val keepSML = ref false
-val linkOpts: string list ref = ref []
+val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val output: string option ref = ref NONE
 val profileSet: bool ref = ref false
 val showBasis: bool ref = ref false
 val stop = ref Place.OUT
-val targetCCOpts: {opt: string, target: string} list ref = ref []
-val targetLinkOpts: {opt: string, target: string} list ref = ref []
 
-val hostMap: unit -> {arch: MLton.Platform.Arch.t,
-		      host: string,
-		      os: MLton.Platform.OS.t} list =
+val targetMap: unit -> {arch: MLton.Platform.Arch.t,
+			os: MLton.Platform.OS.t,
+			target: string} list =
    Promise.lazy
    (fn () =>
     List.map
-    (File.lines (concat [!Control.libDir, "/hostmap"]), fn line =>
+    (File.lines (concat [!Control.libDir, "/target-map"]), fn line =>
      case String.tokens (line, Char.isSpace) of
-	[host, arch, os] =>
+	[target, arch, os] =>
 	   let
 	      val arch =
 		 case MLton.Platform.Arch.fromString arch of
@@ -70,20 +75,20 @@ val hostMap: unit -> {arch: MLton.Platform.Arch.t,
 		    NONE => Error.bug (concat ["strange os: ", os])
 		  | SOME os => os
 	   in
-	      {arch = arch, host = host, os = os}
+	      {arch = arch, os = os, target = target}
 	   end
-      | _ => Error.bug (concat ["strange host mapping: ", line])))
+      | _ => Error.bug (concat ["strange target mapping: ", line])))
 
-fun setHostType (hostString: string, usage): unit =
-   case List.peek (hostMap (), fn {host = h, ...} => h = hostString) of
-      NONE => usage (concat ["invalid host ", hostString])
+fun setTargetType (target: string, usage): unit =
+   case List.peek (targetMap (), fn {target = t, ...} => t = target) of
+      NONE => usage (concat ["invalid target ", target])
     | SOME {arch, os, ...} =>
 	 let
 	    datatype z = datatype MLton.Platform.Arch.t
 	    open Control
 	 in
-	    hostArch := arch
-	    ; hostOS := os
+	    targetArch := arch
+	    ; targetOS := os
 	    ; (case arch of
 		  Sparc =>
 		     (align := Align8
@@ -102,7 +107,7 @@ fun makeOptions {usage} =
       (
        [
        (Normal, "align",
-	case !hostArch of
+	case !targetArch of
 	   Sparc => " {8|4}"
 	 | X86 => " {4|8}",
 	"object alignment",
@@ -132,7 +137,8 @@ fun makeOptions {usage} =
        (Expert, "cc", " <gcc>", "path to gcc executable",
 	SpaceString (fn s => gcc := s)),
        (Normal, "cc-opt", " <opt>", "pass option to C compiler",
-	push ccOpts),
+	SpaceString (fn s =>
+		     List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
@@ -183,14 +189,6 @@ fun makeOptions {usage} =
 			"flow" => handlers := Flow
 		      | "simple" => handlers := Simple
 		      | _ => usage (concat ["invalid -handlers flag: ", s]))),
-       (Normal, "host",
-	concat [" {",
-		concat (List.separate (List.map (hostMap (), #host), "|")),
-		"}"],
-	"host type that executable will run on",
-	SpaceString (fn s =>
-		     (setHostType (s, usage)
-		      ; host := (if s = "self" then Self else Cross s)))),
        (Normal, "ieee-fp", " {false|true}", "use strict IEEE floating-point",
 	boolRef Native.IEEEFP),
        (Expert, "indentation", " <n>", "indentation level in ILs",
@@ -214,8 +212,6 @@ fun makeOptions {usage} =
 				    in List.push (keepPasses, re)
 				    end
 		   | NONE => usage (concat ["invalid -keep-pass flag: ", s])))),
-       (Expert, "lib", " <lib>", "set MLton lib directory",
-	SpaceString (fn s => libDir := s)),
        (Expert, "limit-check", " {lhle|pb|ebb|lh|lhf|lhfle}",
 	"limit check insertion algorithm",
 	SpaceString (fn s =>
@@ -235,7 +231,8 @@ fun makeOptions {usage} =
 	"compute dynamic counts of limit checks",
 	boolRef limitCheckCounts),
        (Normal, "link-opt", " <opt>", "pass option to linker",
-	push linkOpts),
+	SpaceString (fn s =>
+		     List.push (linkOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "loop-passes", " <n>", "loop optimization passes (1)",
 	Int 
 	(fn i => 
@@ -248,9 +245,7 @@ fun makeOptions {usage} =
 	"may @MLton load-world be used",
 	boolRef mayLoadWorld),
        (Normal, "native",
-	if !hostArch = MLton.Platform.Arch.Sparc
-	   then " {false}"
-	else " {true|false}",
+	if !targetArch = Sparc then " {false}" else " {true|false}",
 	"use native code generator",
 	boolRef Native.native),
        (Expert, "native-commented", " <n>", "level of comments  (0)",
@@ -332,15 +327,23 @@ fun makeOptions {usage} =
 		   | "o" => Place.O
 		   | "sml" => Place.SML
 		   | _ => usage (concat ["invalid -stop arg: ", s])))),
-       (Expert, "target-cc-opt", " target <opt>", "target-dependent CC option",
+       (Normal, "target",
+	concat [" {",
+		concat (List.separate (List.map (targetMap (), #target), "|")),
+		"}"],
+	"platform that executable will run on",
+	SpaceString (fn s =>
+		     (setTargetType (s, usage)
+		      ; target := (if s = "self" then Self else Cross s)))),
+       (Expert, "target-cc-opt", " <target> <opt>", "target-dependent CC option",
 	(SpaceString2
 	 (fn (target, opt) =>
-	  List.push (targetCCOpts, {opt = opt, target = target})))),
-       (Expert, "target-link-opt", " target <opt>",
+	  List.push (ccOpts, {opt = opt, pred = OptPred.Target target})))),
+       (Expert, "target-link-opt", " <target> <opt>",
 	"target-dependent link option",
 	(SpaceString2
 	 (fn (target, opt) =>
-	  List.push (targetLinkOpts, {opt = opt, target = target})))),
+	  List.push (linkOpts, {opt = opt, pred = OptPred.Target target})))),
        (Expert, #1 trace, " name1,...", "trace compiler internals", #2 trace),
        (Expert, "text-io-buf-size", " <n>", "TextIO buffer size",
 	intRef textIOBufSize),
@@ -385,36 +388,35 @@ fun commandLine (args: string list): unit =
 	 case args of
 	    lib :: args => (libDir := lib; args)
 	  | _ => Error.bug "incorrect args from shell script"
-      val _ = setHostType ("self", usage)
+      val _ = setTargetType ("self", usage)
       val result = parse args
       val gcc = !gcc
-      val host = !host
-      val hostString =
-	 case host of
+      val target = !target
+      val targetStr =
+	 case target of
 	    Cross s => s
 	  | Self => "self"
-      val lib = concat [!libDir, "/", hostString]
-      val _ = Control.libDir := lib
-      val hostArch = !hostArch
-      val archStr = MLton.Platform.Arch.toString hostArch
-      val hostOS = !hostOS
-      val OSStr = MLton.Platform.OS.toString hostOS
+      val _ = libTargetDir := concat [!libDir, "/", targetStr]
+      val targetArch = !targetArch
+      val archStr = MLton.Platform.Arch.toString targetArch
+      val targetOS = !targetOS
+      val OSStr = MLton.Platform.OS.toString targetOS
       fun tokenize l =
 	 String.tokens (concat (List.separate (l, " ")), Char.isSpace)
-      fun addTargetOpts (opts, targetOpts) =
+      fun addTargetOpts opts =
 	 tokenize
-	 (List.append
-	  (List.fold
-	   (!targetOpts, [], fn ({opt, target}, ac) =>
-	    if target = archStr orelse target = OSStr
-	       then opt :: ac
-	    else ac),
-	   rev (!opts)))
-      val ccOpts = addTargetOpts (ccOpts, targetCCOpts)
-      val linkOpts = addTargetOpts (linkOpts, targetLinkOpts)
+	 (List.fold
+	  (!opts, [], fn ({opt, pred}, ac) =>
+	   if (case pred of
+		  OptPred.Target s => s = archStr orelse s = OSStr
+		| OptPred.Yes => true)
+	      then opt :: ac
+	   else ac))
+      val ccOpts = addTargetOpts ccOpts
+      val linkOpts = addTargetOpts linkOpts
       datatype z = datatype MLton.Platform.OS.t
       val linkWithGmp =
-	 case hostOS of
+	 case targetOS of
 	    Cygwin => ["-lgmp"]
 	  | FreeBSD => ["-L/usr/local/lib/", "-lgmp"]
 	  | Linux =>
@@ -444,12 +446,12 @@ fun commandLine (args: string list): unit =
 	  | NetBSD => ["-Wl,-R/usr/pkg/lib", "-L/usr/pkg/lib", "-lgmp"]
 	  | Sun => ["-lgmp"]
       val linkOpts =
-	 List.concat [[concat ["-L", lib],
+	 List.concat [[concat ["-L", !libTargetDir],
 		       if !debug then "-lmlton-gdb" else "-lmlton"],
-		      linkOpts,
-		      linkWithGmp]
+		      linkWithGmp,
+		      linkOpts]
       val _ =
-	 if !Native.native andalso hostArch = MLton.Platform.Arch.Sparc
+	 if !Native.native andalso targetArch = Sparc
 	    then usage "can't use -native true on Sparc"
 	 else ()
       val _ =
@@ -469,7 +471,7 @@ fun commandLine (args: string list): unit =
 	    then keepSSA := true
 	 else ()
       val _ =
-	 if hostOS = MLton.Platform.OS.Cygwin andalso !profile = ProfileTime
+	 if targetOS = Cygwin andalso !profile = ProfileTime
 	    then usage "can't use -profile time on Cygwin"
 	 else ()
       fun printVersion (out: Out.t): unit =
@@ -555,11 +557,6 @@ fun commandLine (args: string list): unit =
 			case !output of
 			   NONE => suffix suf
 			 | SOME f => f
-		     fun docc (inputs: File.t list,
-			       output: File.t,
-			       switches: string list): unit =
-			System.system
-			(gcc, List.concat [switches, ["-o", output], inputs])
 		     datatype debugFormat =
 			Dwarf | DwarfPlus | Dwarf2 | Stabs | StabsPlus
 		     (* The -Wa,--gstabs says to pass the --gstabs option to the
@@ -584,7 +581,7 @@ fun commandLine (args: string list): unit =
 			       (gcc,
 				List.concat
 				[["-o", output],
-				 (case host of
+				 (case target of
 				     Cross s => ["-b", s]
 				   | Self => []),
 				 if !debug then gccDebug else [],
@@ -594,12 +591,12 @@ fun commandLine (args: string list): unit =
 			      ()
 			   (* gcc on Cygwin appends .exe, which I don't want, so
 			    * move the output file to it's rightful place.
-			    * Notice that we do not use hostOS here, since we
+			    * Notice that we do not use targetOS here, since we
 			    * care about the platform we're running on, not the
 			    * platform we're generating for.
 			    *)
 			   val _ =
-			      if let open MLton.Platform.OS in host = Cygwin end
+			      if MLton.Platform.OS.host = Cygwin
 				 then
 				    if String.contains (output, #".")
 				       then ()
@@ -640,7 +637,7 @@ fun commandLine (args: string list): unit =
 					    then debugSwitches @ switches
 					 else switches
 				      val switches =
-					 case host of
+					 case target of
 					    Cross s => "-b" :: s :: switches
 					  | Self => switches
 				      val switches = "-c" :: switches
@@ -660,7 +657,12 @@ fun commandLine (args: string list): unit =
 							   (Counter.next c),
 							   ".o"])
 					 else temp ".o"
-				      val _ = docc ([input], output, switches)
+				      val _ =
+					 System.system
+					 (gcc,
+					  List.concat [switches,
+						       ["-o", output, input]])
+
 				   in
 				      output :: ac
 				   end

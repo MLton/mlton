@@ -371,7 +371,7 @@ struct
   val fileLineLabel =
      Promise.lazy
      (fn () =>
-      Label.fromString (if !Control.hostOS = MLton.Platform.OS.Cygwin
+      Label.fromString (if let open Control in !targetOS = Cygwin end
 			   then "_LINE__"
 			else "__LINE__"))
 					 

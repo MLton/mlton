@@ -128,31 +128,6 @@ val handlers = control {name = "handlers",
 			default = Flow,
 			toString = Handlers.toString}
 
-structure Host =
-   struct
-      datatype t =
-	 Cross of string
-       | Self
-
-      val toString =
-	 fn Cross s => s
-	  | Self => "self"
-   end
-
-datatype host = datatype Host.t
-   
-val host = control {name = "host",
-		    default = Self,
-		    toString = Host.toString}
-
-val hostArch = control {name = "host arch",
-			default = MLton.Platform.Arch.X86,
-			toString = MLton.Platform.Arch.toString}
-
-val hostOS = control {name = "host OS",
-		      default = MLton.Platform.OS.Linux,
-		      toString = MLton.Platform.OS.toString}
-
 val indentation = control {name = "indentation",
 			   default = 3,
 			   toString = Int.toString}
@@ -238,6 +213,10 @@ val keepPasses = control {name = "keep passes",
 val libDir = control {name = "lib dir",
 		      default = "<libDir unset>",
 		      toString = fn s => s}
+
+val libTargetDir = control {name = "lib dir",
+			    default = "<libTargetDir unset>",
+			    toString = fn s => s} 
    
 structure LimitCheck =
    struct
@@ -411,6 +390,35 @@ val stackCont = control {name = "stack cont",
 val static = control {name = "static",
 		      default = false,
 		      toString = Bool.toString}
+
+structure Target =
+   struct
+      datatype t =
+	 Cross of string
+       | Self
+
+      val toString =
+	 fn Cross s => s
+	  | Self => "self"
+   end
+
+datatype target = datatype Target.t
+   
+val target = control {name = "target",
+		      default = Self,
+		      toString = Target.toString}
+
+datatype arch = datatype MLton.Platform.Arch.t
+
+val targetArch = control {name = "target arch",
+			  default = X86,
+			  toString = MLton.Platform.Arch.toString}
+
+datatype os = datatype MLton.Platform.OS.t
+
+val targetOS = control {name = "target OS",
+			default = Linux,
+			toString = MLton.Platform.OS.toString}
 
 val textIOBufSize = control {name = "TextIO buffer size",
 			     default = 4096,

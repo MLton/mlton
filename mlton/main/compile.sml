@@ -403,7 +403,7 @@ fun preCodegen {input}: Machine.Program.t =
 	  | SOME (_, v) => v
       val lookupConstant =
 	 File.withIn
-	 (concat [!Control.libDir, "/constants"], fn ins =>
+	 (concat [!Control.libTargetDir, "/constants"], fn ins =>
 	  LookupConstant.load (buildDecs (), ins))
       (* Set GC_state offsets. *)
       val _ =

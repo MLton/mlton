@@ -6,10 +6,10 @@ set -x
 #
 # It takes three arguments.
 #
-# 1. <crossHost>, will be used via the -b flag passed to the GCC
+# 1. <crossTarget>, will be used via the -b flag passed to the GCC
 # cross-compiler tools.  You must already have installed the GCC
 # cross-compiler tools.  This script does not do that, although you
-# may find the script build-cross-gcc helpful.  <crossHost> here
+# may find the script build-cross-gcc helpful.  <crossTarget> here
 # should be the same as target in build-cross-gcc.  Examples are
 # i386-pc-cygwin and sparc-sun-solaris.
 #
@@ -41,12 +41,12 @@ die () {
 }
 
 usage () {
-	die "usage: $name <crossHost> <crossArch> <crossOS> <machine>"
+	die "usage: $name <crossTarget> <crossArch> <crossOS> <machine>"
 }
 
 case "$#" in
 4)
-	crossHost="$1"
+	crossTarget="$1"
 	crossArch="$2"
 	crossOS="$3"
 	machine="$4"
@@ -72,26 +72,26 @@ lib="$src/build/lib"
 
 PATH=$src/build/bin:$PATH
 
-rm -rf "$lib/$crossHost"
+rm -rf "$lib/$crossTarget"
 
-mkdir -p "$lib/$crossHost/include" ||
+mkdir -p "$lib/$crossTarget/include" ||
 	die "Cannot write to $lib."
 
 echo 'Making runtime.' 
 cd $src/runtime
 make clean
-make gdtoa/arithchk.out HOST=$crossHost HOST_ARCH=$crossArch HOST_OS=$crossOS
+make gdtoa/arithchk.out TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS
 scp gdtoa/arithchk.out $machine:/tmp
 ssh $machine '/tmp/arithchk.out && rm -f /tmp/arithchk.out' >gdtoa/arith.h
-( cd $src && make HOST=$crossHost HOST_ARCH=$crossArch HOST_OS=$crossOS \
-	runtime hostmap ) ||
+( cd $src && make TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
+	runtime targetmap ) ||
 	die "Unable to make runtime.  See $src/runtime-log."
 
 exe='print-constants'
 echo 'Building print-constants executable.'
 (
 	mlton -build-constants true >$exe.c
-	mlton -output $original/$exe -host $crossHost $exe.c
+	mlton -output $original/$exe -target $crossTarget $exe.c
 	rm -f $exe.c
 ) || die "Unable to build $exe executable."
 
@@ -99,6 +99,6 @@ echo "Running print-constants on $machine."
 cd $original
 tar cf - $exe |
 	ssh $machine "tar xf - && ./$exe && rm -f $exe" \
-	>"$lib/$crossHost/constants"
+	>"$lib/$crossTarget/constants"
 
 rm -f $original/$exe

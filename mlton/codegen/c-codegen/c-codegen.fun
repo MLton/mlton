@@ -562,8 +562,11 @@ fun output {program as Machine.Program.T {chunks,
 	    else concat [s, " /* ", Label.toString l, " */"]
 	 end
       val handleMisalignedReals =
-	 !Control.align = Control.Align4
-	 andalso !Control.hostArch = MLton.Platform.Arch.Sparc
+	 let
+	    open Control
+	 in
+	    !align = Align4 andalso !targetArch = Sparc
+	 end
       fun addr z = concat ["&(", z, ")"]
       fun realFetch z = concat ["Real64_fetch(", addr z, ")"]
       fun realMove {dst, src} =

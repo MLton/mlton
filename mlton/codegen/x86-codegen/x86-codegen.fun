@@ -92,7 +92,7 @@ struct
 	     * that don't handle signals, since signals get used under the hood
 	     * in Cygwin.
 	     *)
-	    !Control.hostOS = MLton.Platform.OS.Cygwin
+	    let open Control in !targetOS = Cygwin end
 
 	val makeC = outputC
 	val makeS = outputS
@@ -153,7 +153,7 @@ struct
 		    (* Drop the leading _ with Cygwin, because gcc will add it.
 		     *)
 		    val mainLabel =
-		       if !Control.hostOS = MLton.Platform.OS.Cygwin
+		       if let open Control in !targetOS = Cygwin end
 			  then String.dropPrefix (mainLabel, 1)
 		       else mainLabel
 		 in

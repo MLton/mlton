@@ -1,24 +1,23 @@
-HOST = self
-HOST_ARCH = $(shell ../bin/host-arch)
+TARGET = self
+TARGET_ARCH = $(shell ../bin/host-arch)
 
-ifeq ($(HOST), self)
+FLAGS = -fomit-frame-pointer
+
+ifeq ($(TARGET_ARCH), x86)
+FLAGS += -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5
+endif
+ifeq ($(TARGET_ARCH), sparc)
+FLAGS += -Wa,-xarch=v8plusa -fcall-used-g5 -fcall-used-g7 -funroll-all-loops -m32 -mv8 -mcpu=ultrasparc
+endif
+
+ifeq ($(TARGET), self)
 AR = ar rc
-HOSTFLAGS =
 else
-AR = $(HOST)-ar rc
-HOSTFLAGS = -b $(HOST)
+AR = $(TARGET)-ar rc
+FLAGS += -b $(TARGET)
 endif
 
-ARCHFLAGS = -fomit-frame-pointer
-
-ifeq ($(HOST_ARCH), x86)
-ARCHFLAGS += -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5
-endif
-ifeq ($(HOST_ARCH), sparc)
-ARCHFLAGS += -Wa,-xarch=v8plusa -fcall-used-g5 -fcall-used-g7 -funroll-all-loops -m32 -mv8 -mcpu=ultrasparc
-endif
-
-CC = gcc -Wall -I. -Igdtoa -D_LARGEFILE64_SOURCE $(ARCHFLAGS) $(HOSTFLAGS)
+CC = gcc -Wall -I. -Igdtoa -D_LARGEFILE64_SOURCE $(FLAGS)
 CFLAGS = -O2
 DEBUGFLAGS = -gstabs+ -g2
 

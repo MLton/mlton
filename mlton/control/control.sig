@@ -64,15 +64,6 @@ signature CONTROL =
       datatype handlers = Flow | Simple
       val handlers: handlers ref
 
-      datatype host =
-	 Cross of string
-       | Self
-      val host: host ref
-
-      val hostArch: MLton.Platform.Arch.t ref
-
-      val hostOS: MLton.Platform.OS.t ref
-
       (* Indentation used in laying out ILs. *)
       val indentation: int ref
 	 
@@ -109,8 +100,11 @@ signature CONTROL =
       (* List of pass names to save the result of. *)
       val keepPasses: Regexp.Compiled.t list ref
 
-      (* Host dependent lib directory. *)
+      (* lib/mlton directory *)
       val libDir: Dir.t ref
+
+      (* lib/mlton/target directory *)
+      val libTargetDir: Dir.t ref
 
       datatype limitCheck =
 	 (* per block *)
@@ -217,6 +211,17 @@ signature CONTROL =
 
       (* Generate a statically linked executable. *)
       val static: bool ref
+
+      datatype target =
+	 Cross of string
+       | Self
+      val target: target ref
+
+      datatype arch = datatype MLton.Platform.Arch.t
+      val targetArch: arch ref
+
+      datatype os = datatype MLton.Platform.OS.t
+      val targetOS: os ref
 
       val textIOBufSize: int ref
 	 

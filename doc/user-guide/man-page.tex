@@ -85,12 +85,6 @@ This flag is useful for programs that use {\export} expressions (see
 header file with prototypes for all of the functions exported from
 SML.
 
-\option{-host \choiceTwo{self}{\ldots}}
-Generate an executable that runs on the specified host.  The default is {\tt
-self}, which means to compile for the machine that {\mlton} is running on.  To
-use any other host, you must first install a cross-compiler.  See
-\secref{cross-compiling}.
-
 \option{-ieee-fp \falseTrue}
 Control whether or not the native code generator is pedantic about following
 the IEEE floating point standard.  By default, it is not, because of the
@@ -170,6 +164,12 @@ Secify pass to stop at.\\
 If you compile {\tt -stop g} or {\tt -stop o}, you can resume
 compilation by running {\tt mlton} on the generated {\tt .c} and {\tt
 .S} or {\tt .o} files. 
+
+\option{-target \choiceTwo{self}{\ldots}}
+Generate an executable that runs on the specified platform.  The default
+is {\tt self}, which means to compile for the machine that {\mlton} is
+running on.  To use any other target, you must first install a
+cross-compiler.  See \secref{cross-compiling}.
 
 \option{-verbose \choiceFour{0}{1}{2}{3}}
 How verbose to be about what passes are running.  The default is 0.\\

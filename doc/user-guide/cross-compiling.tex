@@ -1,6 +1,6 @@
 \sec{Cross compiling}{cross-compiling}
 
-You can use the {\mlton}'s {\tt -host} flag to cross compile
+You can use the {\mlton}'s {\tt -target} flag to cross compile
 applications.  By default, {\mlton} is only able to compile for the
 machine it is running on.  In order to use {\mlton} as a cross
 compiler, you need to do two things.  To make the terminology clear,
@@ -21,7 +21,7 @@ To build a GCC cross-compiler toolset on the host, you can use the
 script {\tt bin/build-cross-gcc}, available in the {\mlton} sources,
 as a template.  The value of the {\tt target} variable in that script
 is important, since that is what you will pass to {\mlton}'s {\tt
--host} flag.
+-target} flag.
 
 Once you have the toolset built, you should be able to test it by
 cross compiling a simple hello world program on your host machine.
@@ -51,7 +51,7 @@ the target machine ({\tt blade} in this case), and saves the output.
 Once you have done all this, you should be able to cross compile SML
 applications.  For example,
 \begin{verbatim}
-mlton -host i386-pc-cygwin hello-world.sml
+mlton -target i386-pc-cygwin hello-world.sml
 \end{verbatim}
 will create {\tt hello-world}, which you should be able to run from a
 Cygwin shell on your Windows machine.

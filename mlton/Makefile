@@ -3,8 +3,7 @@ BUILD = $(SRC)/build
 BIN = $(BUILD)/bin
 LIB = $(BUILD)/lib
 MLTON = mlton
-HOST = self
-FLAGS = @MLton $(RUNTIME_ARGS) gc-summary -- -host $(HOST)
+TARGET = self
 NAME = mlton
 AOUT = mlton-compile
 PATH = $(BIN):$(shell echo $$PATH)
@@ -27,10 +26,16 @@ endif
 endif
 endif
 
-ifeq (old,$(shell PATH=$(BIN):$$PATH; $(MLTON) -v >/dev/null 2>&1 && echo old))
-  EXTRA_FLAGS = -v -o $(AOUT)
+FLAGS = @MLton $(RUNTIME_ARGS) gc-summary --
+ifeq (new,$(shell PATH=$(BIN):$$PATH; $(MLTON) -target self >/dev/null 2>&1 && echo new))
+  FLAGS += -target $(TARGET)
 else
-  EXTRA_FLAGS = -verbose 1 -output $(AOUT)
+  FLAGS += -host $(TARGET)
+endif
+ifeq (new,$(shell PATH=$(BIN):$$PATH; $(MLTON) -verbose 1 >/dev/null 2>&1 && echo new))
+  FLAGS += -verbose 1 -output $(AOUT)
+else
+  FLAGS += -v -o $(AOUT)
 endif
 
 .PHONY: all
@@ -38,7 +43,7 @@ all: $(AOUT)
 
 $(AOUT): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	@echo 'Compiling mlton (takes a while)'
-	$(MLTON) $(FLAGS) $(EXTRA_FLAGS) $(CM)
+	$(MLTON) $(FLAGS) $(CM)
 	size $(AOUT)
 
 .PHONY:	$(NAME)_cm

@@ -62,7 +62,7 @@ struct
 	open Label
 
 	fun toString l =
-	   if !Control.hostOS =  MLton.Platform.OS.Cygwin
+	   if let open Control in !targetOS = Cygwin end
 	      then concat ["_", Label.toString l]
 	   else Label.toString l
 

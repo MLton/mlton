@@ -3,8 +3,8 @@ BUILD = $(SRC)/build
 BIN = $(BUILD)/bin
 LIB = $(BUILD)/lib
 MLTON = mlton
-HOST = self
-FLAGS = -host $(HOST)
+TARGET = self
+FLAGS = -target $(TARGET)
 NAME = benchmark
 PATH = $(BIN):$(shell echo $$PATH)
 

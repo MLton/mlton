@@ -77,13 +77,6 @@ It causes \fBMLton\fP to output to standard output a C header file
 with prototypes for all of the functions exported from SML.
 
 .TP
-\fB-host \fI{\fBself\fP|\fI...}\fR
-Generate an executable that runs on the specified host.  The default
-is \fBself\fP, which means to compile for the machine that \fBMLton\fP
-is running on.  To use any other host, you must first install a cross
-compiler.  See the \fBMLton User Guide\fP for details.
-
-.TP
 \fB-ieee-fp \fI{\fBfalse\fP|\fBtrue\fP}\fR
 Control whether or not the code generator is pedantic about following
 the IEEE floating point standard.  By default, it is not, because of the
@@ -183,6 +176,14 @@ Specify pass to stop at.
 If you compile \fB-stop g\fP or \fB-stop o\fP, you can resume
 compilation by running \fBMLton\fP on the generated \fB.c\fP and \fB.S\fP
 or \fB.o\fP files.
+
+.TP
+\fB-target \fI{\fBself\fP|\fI...}\fR
+Generate an executable that runs on the specified platform.  The
+default is \fBself\fP, which means to compile for the machine that
+\fBMLton\fP is running on.  To use any other target, you must first
+install a cross compiler.  See the \fBMLton User Guide\fP for
+details.
 
 .TP
 \fB-verbose\fP \fI{\fB0\fP|\fB1\fP|\fB2\fP|\fB3\fP}\fP

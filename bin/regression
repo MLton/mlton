@@ -23,7 +23,7 @@ while [ "$#" -gt 0 ]; do
 		if [ "$#" = 0 ]; then
 			usage
 		fi
-		crossHost="$1"
+		crossTarget="$1"
 		shift
 		;;
 	-run-only)
@@ -42,7 +42,7 @@ src=`cd $dir/.. && pwd`
 bin="$src/build/bin"
 mlton="$bin/mlton"
 if [ $cross = 'yes' ]; then
-	flags="$flags -host $crossHost"
+	flags="$flags -target $crossTarget"
 fi
 cont='callcc.sml callcc2.sml callcc3.sml'
 intInf='conv.sml conv2.sml harmonic.sml int-inf.*.sml real.fromLargeInt.sml real.toLargeInt slow.sml slower.sml smith-normal-form.sml'

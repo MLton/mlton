@@ -1,6 +1,6 @@
-export HOST = self
-export HOST_ARCH = $(shell bin/host-arch)
-export HOST_OS = $(shell bin/host-os)
+export TARGET = self
+export TARGET_ARCH = $(shell bin/host-arch)
+export TARGET_OS = $(shell bin/host-os)
 ROOT = $(shell pwd)
 BUILD = $(ROOT)/build
 SRC = $(ROOT)
@@ -10,7 +10,7 @@ COMP = $(SRC)/mlton
 RUN = $(SRC)/runtime
 MLTON = $(BIN)/mlton
 AOUT = mlton-compile
-HOSTMAP = $(LIB)/hostmap
+TARGETMAP = $(LIB)/target-map
 SPEC = $(SRC)/doc/mlton.spec
 LEX = mllex
 PROF = mlprof
@@ -32,7 +32,7 @@ all:
 ifeq (other, $(shell if [ ! -x $(BIN)/mlton ]; then echo other; fi))
 	rm -f $(COMP)/$(AOUT)
 endif
-	$(MAKE) script runtime hostmap constants compiler world tools docs
+	$(MAKE) script runtime targetmap constants compiler world tools docs
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: bootstrap-nj
@@ -66,7 +66,7 @@ constants:
 	@echo 'Creating constants file.'
 	$(BIN)/mlton -build-constants true >tmp.c
 	$(BIN)/mlton -output tmp tmp.c
-	./tmp >$(LIB)/$(HOST)/constants
+	./tmp >$(LIB)/$(TARGET)/constants
 	rm -f tmp tmp.c
 
 DEBSRC = mlton-$(VERSION).orig
@@ -106,7 +106,7 @@ deb-spell:
 
 .PHONY: dirs
 dirs:
-	mkdir -p $(BIN) $(LIB)/$(HOST) $(LIB)/include
+	mkdir -p $(BIN) $(LIB)/$(TARGET) $(LIB)/include
 
 .PHONY: docs
 docs:
@@ -127,26 +127,26 @@ freebsd:
 
 #	rm -rf $(BSDSRC)
 
-.PHONY: hostmap
-hostmap:
-	touch $(HOSTMAP)
-	( sed '/$(HOST)/d' <$(HOSTMAP); 			\
-		echo '$(HOST) $(HOST_ARCH) $(HOST_OS)' ) 	\
-		>>$(HOSTMAP).tmp
-	mv $(HOSTMAP).tmp $(HOSTMAP)
+.PHONY: targetmap
+targetmap:
+	touch $(TARGETMAP)
+	( sed '/$(TARGET)/d' <$(TARGETMAP); 			\
+		echo '$(TARGET) $(TARGET_ARCH) $(TARGET_OS)' ) 	\
+		>>$(TARGETMAP).tmp
+	mv $(TARGETMAP).tmp $(TARGETMAP)
 
 .PHONY: nj-mlton
 nj-mlton:
 	$(MAKE) dirs
 	$(MAKE) -C $(COMP) nj-mlton
-	$(MAKE) script runtime hostmap constants
+	$(MAKE) script runtime targetmap constants
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual:
 	$(MAKE) dirs	
 	$(MAKE) -C $(COMP) nj-mlton-dual
-	$(MAKE) script runtime hostmap constants
+	$(MAKE) script runtime targetmap constants
 	@echo 'Build of MLton succeeded.'
 
 TOPDIR = 'TOPDIR-unset'
@@ -167,9 +167,9 @@ rpms:
 
 .PHONY: runtime
 runtime:
-	@echo 'Compiling MLton runtime system for $(HOST).'
+	@echo 'Compiling MLton runtime system for $(TARGET).'
 	$(MAKE) -C runtime
-	$(CP) $(RUN)/*.a $(LIB)/$(HOST)/
+	$(CP) $(RUN)/*.a $(LIB)/$(TARGET)/
 	$(CP) runtime/*.h include/*.h $(LIB)/include/
 
 .PHONY: script
@@ -211,7 +211,7 @@ world:
 # puts them.
 DESTDIR = $(CURDIR)/install
 PREFIX = /usr
-ifeq ($(HOST_OS), sunos)
+ifeq ($(TARGET_OS), sunos)
 PREFIX = /usr/local
 endif
 prefix = $(PREFIX)
@@ -221,13 +221,13 @@ ULIB = lib/mlton
 TLIB = $(DESTDIR)$(prefix)/$(ULIB)
 TMAN = $(DESTDIR)$(prefix)$(MAN_PREFIX_EXTRA)/man/man1
 TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
-ifeq ($(HOST_OS), sunos)
+ifeq ($(TARGET_OS), sunos)
 TDOC = $(DESTDIR)$(prefix)/doc/mlton
 endif
 TEXM = $(TDOC)/examples
 
 GZIP_MAN = true
-ifeq ($(HOST_OS), sunos)
+ifeq ($(TARGET_OS), sunos)
 GZIP_MAN = false
 endif
 
