@@ -307,6 +307,12 @@ fun makeOptions {usage} =
 	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
        (Normal, "profile-stack", " {false|true}", "profile the stack",
 	boolRef profileStack),
+       (Expert, "reserve-esp", " {false|true}", "reserve %ESP on x86",
+	SpaceString
+	(fn s =>
+	 case Bool.fromString s of
+	    NONE => usage (concat ["invalid -reserve-esp arg: ", s])
+	  | SOME b => reserveEsp := SOME b)),
        (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
 	push runtimeArgs),
        (Normal, "safe", " {true|false}", "bounds checking and other checks",

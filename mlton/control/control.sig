@@ -199,6 +199,8 @@ signature CONTROL =
 
       val profileStack: bool ref
 
+      val reserveEsp: bool option ref
+
       (* Array bounds checking. *)
       val safe: bool ref
 

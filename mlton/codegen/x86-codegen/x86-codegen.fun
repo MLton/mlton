@@ -82,7 +82,8 @@ struct
 
   open x86
   structure Type = Machine.Type
-  fun output {program as Machine.Program.T {chunks, frameLayouts, main, ...},
+  fun output {program as Machine.Program.T {chunks, frameLayouts, handlesSignals,
+					    main, ...},
 	      outputC,
 	      outputS}: unit
     = let
@@ -92,7 +93,11 @@ struct
 	     * that don't handle signals, since signals get used under the hood
 	     * in Cygwin.
 	     *)
-	    let open Control in !targetOS = Cygwin end
+	    case !Control.reserveEsp of
+	       NONE =>
+		  handlesSignals
+		  andalso let open Control in !targetOS = Cygwin end
+	     | SOME b => b
 
 	val makeC = outputC
 	val makeS = outputS
