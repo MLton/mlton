@@ -1,6 +1,8 @@
 Here are the changes from version 20011006 to version VERSION.
 
 * 2002-02-04
+  - Improvements to runtime so that it fails to get space, it attempts to get 
+    less space instead of failing.  Based on PolySpace's modifications.
   - Added MLton.eq.
 
 * 2002-02-03
