@@ -107,8 +107,12 @@ io/io.sig
 io/io.sml
 io/stream-io.sig
 io/text-stream-io.sig
+io/bin-stream-io.sig
+io/bin-or-text-io.fun
 io/text-io.sig
 io/text-io.sml
+io/bin-io.sig
+io/bin-io.sml
 
 system/command-line.sig
 system/command-line.sml

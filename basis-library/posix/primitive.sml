@@ -163,6 +163,8 @@ structure PosixPrimitive =
 		  val nonblock = _const "Posix_FileSys_O_nonblock": flags;
 		  val sync = _const "Posix_FileSys_O_sync": flags;
 		  val trunc = _const "Posix_FileSys_O_trunc": flags;
+                  val text = _const "Posix_FileSys_O_text": flags;
+                  val binary = _const "Posix_FileSys_O_binary": flags;
 	       end
 
 	    val o_rdonly = _const "Posix_FileSys_o_rdonly": word;

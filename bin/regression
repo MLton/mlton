@@ -57,7 +57,7 @@ do
 		echo "skipping $f"
 	;;
 	*)
-			echo "testing $f"
+		echo "testing $f"
 		case "$f" in
 		exnHistory*)
 			extraFlags="-exn-history true"

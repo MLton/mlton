@@ -17,16 +17,9 @@ PATH = $(BIN):$(shell echo $$PATH)
 CP = /bin/cp -fp
 
 all:
-	$(MAKE) compiler
-	$(MAKE) dirs
+	$(MAKE) compiler dirs
 	mv $(COMP)/$(AOUT) $(LIB)
-	$(MAKE) script
-	$(MAKE) world
-	$(MAKE) runtime
-	$(MAKE) hostmap
-	$(MAKE) constants
-	$(MAKE) tools
-	$(MAKE) docs
+	$(MAKE) script world runtime hostmap constants docs
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: clean

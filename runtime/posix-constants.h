@@ -64,12 +64,23 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+/* Cygwin/Windows distinguish between text and binary files, but Linux
+ * does not.
+ */
+#if (defined (__linux__))
+#define O_BINARY 0
+#define O_TEXT 0
+#endif
+
 #define Posix_FileSys_O_append O_APPEND
+#define Posix_FileSys_O_binary O_BINARY
 #define Posix_FileSys_O_creat O_CREAT
 #define Posix_FileSys_O_excl O_EXCL
 #define Posix_FileSys_O_noctty O_NOCTTY
 #define Posix_FileSys_O_nonblock O_NONBLOCK
 #define Posix_FileSys_O_sync O_SYNC
+#define Posix_FileSys_O_text O_TEXT
 #define Posix_FileSys_O_trunc O_TRUNC
 #define Posix_FileSys_o_rdonly O_RDONLY
 #define Posix_FileSys_o_wronly O_WRONLY

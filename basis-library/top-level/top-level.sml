@@ -3,6 +3,8 @@
  *)
 signature ARRAY = ARRAY
 signature ARRAY2 = ARRAY2
+signature BIN_IO = BIN_IO
+signature BIN_STREAM_IO = BIN_STREAM_IO
 signature BOOL = BOOL
 signature BYTE = BYTE
 signature CHAR = CHAR
@@ -54,6 +56,7 @@ signature WORD = WORD
    
 structure Array: ARRAY = Array
 structure Array2: ARRAY2 = Array2
+structure BinIO:> BIN_IO = BinIO
 structure Bool: BOOL = Bool
 structure BoolArray: MONO_ARRAY = BoolArray
 structure BoolArray2: MONO_ARRAY2 = BoolArray2
