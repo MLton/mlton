@@ -12,11 +12,13 @@ signature PRIM_IO_ARG =
 functor PrimIO (S : PRIM_IO_ARG): PRIM_IO = 
    struct
       open S
+
       type array = A.array
       type vector = V.vector
       type elem = A.elem
       type pos = pos
       val compare = compare
+
       datatype reader = RD of {name: string,
 			       chunkSize: int,
 			       readVec: (int -> vector) option,
@@ -59,6 +61,9 @@ functor PrimIO (S : PRIM_IO_ARG): PRIM_IO =
 			       close: unit -> unit,
 			       ioDesc: OS.IO.iodesc option}
 
+      fun liftExn name function cause = raise IO.Io {name = name,
+						     function = function,
+						     cause = cause}
       fun openVector v =
 	let
 	  val name = "openVector"
@@ -67,9 +72,7 @@ functor PrimIO (S : PRIM_IO_ARG): PRIM_IO =
 	  val pos = ref 0
 	  val eofPos = V.length v
 	  fun check f = if !closed
-			  then raise IO.Io {name = name,
-					    function = f,
-					    cause = IO.ClosedStream}
+			  then liftExn name f IO.ClosedStream
 			  else ()
 	  fun const f c = fn _ => (check f; c)
 	  fun function f g = fn x => (check f; g x)
@@ -97,7 +100,7 @@ functor PrimIO (S : PRIM_IO_ARG): PRIM_IO =
 	    end
 	in
 	  RD {name = name,
-	      chunkSize = 1,
+	      chunkSize = 32,
 	      readVec = SOME (readVec "readVec"),
 	      readArr = SOME (readArr "readArr"),
 	      readVecNB = SOME (SOME o (readVec "readVecNB")),
@@ -117,9 +120,7 @@ functor PrimIO (S : PRIM_IO_ARG): PRIM_IO =
 	  val name = "nullRd"
 	  val closed = ref false
 	  fun check f = if !closed
-			  then raise IO.Io {name = name,
-					    function = f,
-					    cause = IO.ClosedStream}
+			  then liftExn name f IO.ClosedStream
 			  else ()
 	  fun const f c = fn _ => (check f; c)
 	  fun function f g = fn x => (check f; g x)
@@ -146,20 +147,16 @@ functor PrimIO (S : PRIM_IO_ARG): PRIM_IO =
 	  val name = "nullWr"
 	  val closed = ref false
 	  fun check f = if !closed
-			  then raise IO.Io {name = name,
-					    function = f,
-					    cause = IO.ClosedStream}
+			  then liftExn name f IO.ClosedStream
 			  else ()
 	  fun const f c = fn _ => (check f; c)
 	  fun function f g = fn x => (check f; g x)
-	  fun sizeA {buf, i, sz} =
-	    case (A.length buf, sz) of
+	  fun sizeS length {buf, i, sz} =
+	    case (length buf, sz) of
 	      (len, NONE) => len - i
 	    | (len, SOME sz) => Int.min (len - i, sz)
-	  fun sizeV {buf, i, sz} =
-	    case (V.length buf, sz) of
-	      (len, NONE) => len - i
-	    | (len, SOME sz) => Int.min (len - i, sz)
+	  val sizeA = sizeS A.length
+	  val sizeV = sizeS V.length
 	in
 	  WR {name = name,
 	      chunkSize = 1,
@@ -177,10 +174,10 @@ functor PrimIO (S : PRIM_IO_ARG): PRIM_IO =
 	      ioDesc = NONE}
 	end
 
-      fun doBlock (f, block) x = (block (); SOME (f x))
+      fun doBlock (f, block) x = (block (); valOf (f x))
       fun doCanInput (f, canInput) x = if canInput ()
-					 then valOf (f x)
-					 else ()
+					 then SOME (f x)
+					 else NONE
 
       fun augmentReader (RD {name, chunkSize,
 			     readVec, readArr, readVecNB, readArrNB,
@@ -266,7 +263,8 @@ functor PrimIO (S : PRIM_IO_ARG): PRIM_IO =
 	      readVec = readVec, readArr = readArr, 
 	      readVecNB = readVecNB, readArrNB = readArrNB,
 	      block = block, canInput = canInput, avail = avail,
-	      getPos = getPos, setPos = setPos, endPos = endPos, verifyPos = verifyPos,
+	      getPos = getPos, setPos = setPos, 
+	      endPos = endPos, verifyPos = verifyPos,
 	      close = close, ioDesc = ioDesc}
 	end
 
@@ -319,7 +317,8 @@ functor PrimIO (S : PRIM_IO_ARG): PRIM_IO =
 	      writeVec = writeVec, writeArr = writeArr, 
 	      writeVecNB = writeVecNB, writeArrNB = writeArrNB,
 	      block = block, canOutput = canOutput,
-	      getPos = getPos, setPos = setPos, endPos = endPos, verifyPos = verifyPos,
+	      getPos = getPos, setPos = setPos, 
+	      endPos = endPos, verifyPos = verifyPos,
 	      close = close, ioDesc = ioDesc}
 	end
    end

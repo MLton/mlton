@@ -1,10 +1,10 @@
 signature STREAM_IO_ARG = 
    sig
      structure PrimIO: PRIM_IO
-     structure Vector: MONO_VECTOR
      structure Array: MONO_ARRAY
-     sharing type PrimIO.elem = Vector.elem = Array.elem
-     sharing type PrimIO.vector = Vector.vector = Array.vector
+     structure Vector: MONO_VECTOR
+     sharing type PrimIO.elem = Array.elem = Vector.elem
+     sharing type PrimIO.vector = Array.vector = Vector.vector
      sharing type PrimIO.array = Array.array
      val someElem: PrimIO.elem
    end
@@ -13,53 +13,47 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
    struct
       open S
 
+      structure A = Array
+      structure V = Vector
+
       type elem = PrimIO.elem
       type vector = PrimIO.vector
       type reader = PrimIO.reader
       type writer = PrimIO.writer
       type pos = PrimIO.pos
 
+      fun liftExn name function cause = raise IO.Io {name = name,
+						     function = function,
+						     cause = cause}
+
       (*---------------*)
       (*   outstream   *)
       (*---------------*)
 
       datatype buf = Buf of {size: int ref,
-			     array: Array.array}
+			     array: A.array}
       datatype buffer_mode = NO_BUF
                            | LINE_BUF of buf
                            | BLOCK_BUF of buf
       fun newLineBuf bufSize =
-	LINE_BUF {size = ref 0, 
-		  array = Array.array (bufSize, someElem)}
+	LINE_BUF (Buf {size = ref 0, 
+		       array = A.array (bufSize, someElem)})
       fun newBlockBuf bufSize =
-	BLOCK_BUF {size = ref 0, 
-		   array = Array.array (bufSize, someElem)}
+	BLOCK_BUF (Buf {size = ref 0, 
+			array = A.array (bufSize, someElem)})
 
       datatype state = Active | Terminated | Closed
-      fun active state =
-	case state of
-	  Active => true
-	| _ => false
+      fun active state = case state of Active => true | _ => false
       fun terminated state = not (active state)
-      fun closed state =
-	case state of 
-	  Closed => true
-	| _ => false
+      fun closed state = case state of Closed => true | _ => false
 
       datatype outstream = Out of {writer: writer,
 				   augmented_writer: writer,
 				   state: state ref,
 				   buffer_mode: buffer_mode ref}
 
-      fun outstreamSel (os, sel) =
-	let Out v = os
-	in sel v
-	end
-      fun writerSel (writer, sel) =
-	let PrimIO.WR wr = writer
-	in sel wr
-	end
-
+      fun outstreamSel (Out v, sel) = sel v
+      fun writerSel (PrimIO.WR v, sel) = sel v
       fun outstreamWriter os = outstreamSel (os, #writer)
       fun outstreamName os = writerSel (outstreamWriter os, #name)
 
@@ -95,7 +89,7 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 	end
 
       fun flushBuf (writer, Buf {size, array}) =
-	let size' = !size 
+	let val size' = !size 
 	in 
 	  size := 0;
 	  flushArr (writer, {buf = array, i = 0, sz = size'})
@@ -105,20 +99,18 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 			     state, 
 			     buffer_mode, ...}, v) =
 	if terminated (!state)
-	  then raise IO.Io {name = outstreamName os,
-			    function = "output",
-			    cause = IO.ClosedStream}
+	  then liftExn (outstreamName os) "output" IO.ClosedStream
 	  else let
 		 fun put () = flushVec (augmented_writer, 
-					{buf = v, i = 0, sz = Vector.length v})
+					{buf = v, i = 0, sz = V.length v})
 		 fun doit (buf as Buf {size, array}, maybe) =
 		   let
 		     val curSize = !size
-		     val newSize = curSize + Vector.length v
+		     val newSize = curSize + V.length v
 		   in
-		     if newSize >= Array.length array orelse maybe ()
+		     if newSize >= A.length array orelse maybe ()
 		       then (flushBuf (augmented_writer, buf); put ())
-		       else (Array.copyVec {src = v, dst = array, di = curSize};
+		       else (A.copyVec {src = v, dst = array, di = curSize};
 			     size := newSize)
 		   end
 	       in
@@ -127,44 +119,39 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 		 | LINE_BUF buf => doit (buf, fn () => true)
 		 | BLOCK_BUF buf => doit (buf, fn () => false)
 	       end
-	handle exn => raise IO.Io {name = outstreamName os,
-				   function = "output",
-				   cause = exn}
+	handle exn => liftExn (outstreamName os) "output" exn
 
       local
-	val buf1 = Array.array (1, someElem)
+	val buf1 = A.array (1, someElem)
       in
 	fun output1 (os as Out {augmented_writer, 
 				state,
 				buffer_mode, ...}, c) =
 	  if terminated (!state)
-	    then raise IO.Io {name = outstreamName os,
-			      function = "output",
-			      cause = IO.ClosedStream}
+	    then liftExn (outstreamName os) "output" IO.ClosedStream
 	    else let
 		   fun doit (buf as Buf {size, array}, maybe) =
 		     let
-		       val _ = if 1 + !size >= Array.length array
+		       val _ = if 1 + !size >= A.length array
 				 then flushBuf (augmented_writer, buf)
 				 else ()
-		       val _ = Array.update (array, !size, c)
+		       val _ = A.update (array, !size, c)
 		       val _ = size := !size + 1
 		       val _ = if maybe
 				 then flushBuf (augmented_writer, buf)
-				 else ()				   
+				 else () 
 		     in
-		       case !buffer_mode of
-			 NO_BUF => (Array.update (buf1, 0, c);
-				    flushArr (augmented_writer,
-					      {buf = buf1, i = 0, sz = 1}))
-	               | LINE_BUF buf => doit (buf, false)
-		       | BLOCK_BUF buf => doit (buf, false)
+		       ()
 		     end
-		   
+		 in
+		   case !buffer_mode of
+		     NO_BUF => (A.update (buf1, 0, c);
+				flushArr (augmented_writer,
+					  {buf = buf1, i = 0, sz = 1}))
+		   | LINE_BUF buf => doit (buf, false)
+		   | BLOCK_BUF buf => doit (buf, false)
 		 end
-	  handle exn => raise IO.Io {name = outstreamName os,
-				     function = "output1",
-				     cause = exn}
+	  handle exn => liftExn (outstreamName os) "output1" exn
       end
 
       fun flushOut (os as Out {augmented_writer, 
@@ -176,24 +163,20 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 	         NO_BUF => ()
 	       | LINE_BUF buf => flushBuf (augmented_writer, buf)
 	       | BLOCK_BUF buf => flushBuf (augmented_writer, buf)
-	handle exn => raise IO.Io {name = outstreamName os,
-				   function = "flushOut",
-				   cause = exn}
+	handle exn => liftExn (outstreamName os) "flushOut" exn
 
       fun closeOut (os as Out {state, ...}) =
 	if closed (!state)
 	  then ()
-	  else (flushOut ();
+	  else (flushOut os;
 		if terminated (!state)
 		  then (writerSel (outstreamWriter os, #close)) ()
 		  else ();
 		state := Closed)
-	handle exn => IO.Io {name = oustreamName os,
-			     function = "closeOut",
-			     exn = exn}
+	handle exn => liftExn (outstreamName os) "closeOut" exn
 
       fun getBufferMode (os as Out {buffer_mode, ...}) =
-	case buffer_mode of
+	case !buffer_mode of
 	  NO_BUF => IO.NO_BUF
 	| LINE_BUF _ => IO.LINE_BUF
 	| BLOCK_BUF _ => IO.BLOCK_BUF
@@ -209,8 +192,8 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 			 in
 			   case !buffer_mode of
 			     NO_BUF => doit ()
-			   | LINE_BUF => ()
-			   | BLOCK_BUF => (flushOut os; doit ())
+			   | LINE_BUF _ => ()
+			   | BLOCK_BUF _ => (flushOut os; doit ())
 			 end
 	| IO.BLOCK_BUF => let
 			    fun doit () = 
@@ -219,8 +202,8 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 			  in
 			    case !buffer_mode of
 			      NO_BUF => doit ()
-			    | LINE_BUF => (flushOut os; doit ())
-			    | BLOCK_BUF => ()
+			    | LINE_BUF _ => (flushOut os; doit ())
+			    | BLOCK_BUF _ => ()
 			  end
 
       fun mkOutstream (writer, buffer_mode) =
@@ -230,218 +213,288 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 	  Out {writer = writer,
 	       augmented_writer = PrimIO.augmentWriter writer,
 	       state = ref Active,
-	       buffer_mode = case buffer_mode of
-	                       IO.NO_BUF => NO_BUF
-			     | IO.LINE_BUF => newLineBuf bufSize
-			     | IO.BLOCK_BUF => newBlockBuf bufSize}
+	       buffer_mode = ref (case buffer_mode of
+				    IO.NO_BUF => NO_BUF
+				  | IO.LINE_BUF => newLineBuf bufSize
+				  | IO.BLOCK_BUF => newBlockBuf bufSize)}
 	end
 
-      fun getWriter (os as Out {state, buffer_mode, ...}) =
+      fun getWriter (os as Out {writer, state, buffer_mode, ...}) =
 	if closed (!state)
-	  then raise IO.Io {name = oustreamName os,
-			    function = "getWriter",
-			    cause = IO.ClosedStream}
+	  then liftExn (outstreamName os) "getWriter" IO.ClosedStream
 	  else (flushOut os;
 		state := Terminated;
-		(writer, case buffer_mode of
+		(writer, case !buffer_mode of
 		           NO_BUF => IO.NO_BUF
-			 | LINE_BUF => IO.LINE_BUF
+			 | LINE_BUF _ => IO.LINE_BUF
 			 | BLOCK_BUF _ => IO.BLOCK_BUF))
 
-      datatype pos_out = PosOut of {pos: pos,
+      datatype out_pos = OutPos of {pos: pos,
 				    outstream: outstream}
 
       fun getPosOut (os as Out {...}) =
 	(flushOut os;
 	 case writerSel (outstreamSel (os, #writer), #getPos) of
-	   NONE => raise IO.Io {name = outstreamName os,
-				function = "getPosOut",
-				cause = IO.RandomAccessNotSupported}
-	 | SOME getPos => PosOut {pos = getPos (),
+	   NONE => liftExn (outstreamName os) "getPosOut" IO.RandomAccessNotSupported
+	 | SOME getPos => OutPos {pos = getPos (),
 				  outstream = os})
 
-      fun setPosOut (PosOut {pos, outstream = os}) =
+      fun setPosOut (OutPos {pos, outstream = os}) =
 	(flushOut os;
 	 case writerSel (outstreamSel (os, #writer), #setPos) of
-	   NONE => raise IO.Io {name = outstreamName os,
-				function = "setPosOut",
-				cause = IO.RandomAccessNotSupported}
+	   NONE => liftExn (outstreamName os) "setPosOut" IO.RandomAccessNotSupported
 	 | SOME setPos => setPos pos;
 	 os)
 
-      fun filePosOut (PosOut {pos, ...}) = pos
+      fun filePosOut (OutPos {pos, ...}) = pos
 
       (*---------------*)
       (*   instream    *)
       (*---------------*)
 
-      datatype buffer_mode = NO_BUF
-	                   | BUF of {array: Array.array,
-				     first: int ref,
-				     last: int ref}
-      fun newBufferMode bufSize =
-	if bufSize = 1
-	  then NO_BUF
-	  else BUF {array = Array.array (bufSize, someElem),
-		    first = ref 0,
-		    last = ref 0}
-
-      datatype chain = End of {buffer_mode: buffer_mode}
-	             | Link of {inp: Vector.vector, next: state ref}
+      datatype chain = End
+	             | Eos of {next: state ref}
+	             | Link of {inp: V.vector, pos: int, next: state ref}
       and state = Active of chain ref 
 	        | Truncated 
 	        | Closed
-      fun active state =
-	case state of
-	  Active => true
-	| _ => false
+      fun active state = case state of Active _ => true | _ => false
       fun truncated state = not (active state)
-      fun closed state =
-	case state of 
-	  Closed => true
-	| _ => false
+      fun closed state = case state of Closed => true | _ => false
 
       datatype instream = In of {reader: reader,
 				 augmented_reader: reader,
-				 state: state ref}
+				 state: state ref,
+				 tail: state ref ref}
 
-      fun instreamSel (os, sel) =
-	let In v = is
-	in sel v
-	end
+      fun updateState (In {reader, augmented_reader, tail, ...}, state) =
+	In {reader = reader,
+	    augmented_reader = augmented_reader,
+	    tail = tail,
+	    state = state}
 
-      fun readerSel (reader, sel) =
-	let PrimIO.RD rd = reader
-	in sel rd
-	end
+      fun instreamSel (In v, sel) = sel v
+      fun readerSel (PrimIO.RD v, sel) = sel v
+      fun instreamReader is = instreamSel (is, #reader)
+      fun instreamName is = readerSel (instreamReader is, #name)
 
-      fun instreamName is =
-	readerSel (instreamSel (is, #reader), #name)
+      val empty = V.fromList []
 
-      val empty = Vector.fromList []
+      fun extend function (is as In {augmented_reader, tail, ...}) blocking =
+	case !(!tail) of
+	  Active (r as ref End) =>
+	    let
+	      fun link inp = let
+			       val next = ref (Active (ref End))
+			       val this = if V.length inp = 0
+					    then Eos {next = next}
+					    else Link {inp = inp,
+						       pos = 0,
+						       next = next}
+			       val _ = r := this
+			       val _ = tail := next
+			     in
+			       SOME (inp, updateState (is, next))
+			     end
+	      fun readAndLink i =
+		if blocking 
+		  then case readerSel (augmented_reader, #readVec) of
+		         NONE => liftExn (instreamName is) 
+			                 function 
+					 IO.BlockingNotSupported
+		       | SOME readVec => 
+			   let
+			     val inp = readVec i
+			               handle exn =>
+				       liftExn (instreamName is) function exn
+			   in
+			     link inp
+			   end
+		  else case readerSel (augmented_reader, #readVecNB) of
+		         NONE => liftExn (instreamName is) 
+			                 function 
+					 IO.NonblockingNotSupported
+		       | SOME readVecNB =>
+			   let
+			     val inp = readVecNB i
+			               handle exn =>
+				       liftExn (instreamName is) function exn
+			   in
+			     case inp of
+			       NONE => NONE
+			     | SOME inp => link inp
+			   end
+	    in
+	      readAndLink (readerSel (instreamReader is, #chunkSize))
+	    end
+	| _ => liftExn (instreamName is) function Match
+
+      fun extendB function is = valOf (extend function is true)
+      fun extendNB function is = extend function is false
 
       fun input (is as In {augmented_reader, state, ...}) =
 	case !state of
-	  Active (ref (Link {inp, next})) => (inp, In state)
-	| Active (r as ref (c as End {buffer_mode})) => 
-	    (case buffer_mode of
-	       NO_BUF => 
-		 (case readerSel (augmented_reader, #readVec) of
-		    NONE => raise IO.Io {name = instreamName is,
-					 function = "input",
-					 exn = IO.NonblockingNotSupported}
-		  | SOME readVec => let
-				      val inp = readVec 1
-				      val _ = r := Link {inp = inp, next = ref c}
-				    in
-				      inp
-				    end)
-	     | BUF {array, first, last} =>
-		 if !first < !last
-		   then let
-			  val inp = Vector.tabulate
-			            (!last - !first, 
-				     fn i => Array.sub (array, !first + i))
-			  val _ = first := !last
-			  val _ = r := Link {inp = inp, next = ref c}
-			in
-			  inp
-			end
-		   else (case readerSel (augmented_reader, #readArr) of
-			   NONE => raise IO.Io {name = instreamName is,
-						function = "input",
-						exn = IO.NonblockingNotSupported}
-			 | SOME readArr => let
-					     val k = readArr {buf = array,
-							      i = 0,
-							      sz = NONE}
-					     val _ = first := 0
-					     val _ = last := k
-					   in
-					     input is
-					   end
-			in
-			end 
+	  Active (ref (Link {inp, pos, next})) => 
+	    let
+	      val inp = V.tabulate
+		        (V.length inp - pos, 
+			 fn i => V.sub (inp, pos + i))
+	    in
+	      (inp, updateState (is, next))
+	    end
+	| Active (ref (Eos {next})) => (empty, updateState (is, next))
+	| Active (ref End) => extendB "input" is
 	| Truncated => (empty, is)
 	| Closed => (empty, is)
-	handle exn => raise IO.Io {name = instreamName is,
-				   function = "input",
-				   exn = exn}
 
-      fun input1 (is as In {pos, chain, ...}) =
+      fun inputN (is, n) = 
+	if n < 0 orelse n > V.maxLen 
+	  then raise Size
+	  else let
+		 fun finish (inps, is) =
+		   let val inp = Vector.concat (List.rev inps)
+		   in (inp, is)
+		   end
+		 fun loop (is as In {state, ...}, inps, n) =
+		   case !state of
+		     Active (ref (Link {inp, pos, next})) =>
+		       if pos + n < V.length inp
+			 then let
+				val link = Link {inp = inp,
+						 pos = pos + n,
+						 next = next}
+				val next = ref (Active (ref link))
+				val inp' = Vector.tabulate
+				  (n, fn i => V.sub (inp, pos + i))
+				val inps = inp'::inps
+			      in
+				finish (inps, updateState (is, next))
+			      end
+			 else let
+				val inp' = Vector.tabulate
+				           (V.length inp - pos, 
+					    fn i => V.sub (inp, i))
+			      in
+				loop (updateState (is, next), 
+				      inp'::inps, n - (V.length inp - pos))
+			      end
+		   | Active (ref (Eos {next})) => 
+		       finish (inps, if n > 0
+				       then updateState(is, next)
+				       else is)
+		   | Active (ref End) => 
+		       let val _ = extendB "canInput" is 
+		       in loop (is, inps, n)
+		       end
+		   | _ => finish (inps, is)
+	       in
+		 loop (is, [], n)
+	       end
+
+      fun input1 is =
 	let
+	  val (inp, is') = inputN (is, 1)
 	in
+	  if V.length inp = 0
+	    then NONE
+	    else SOME (V.sub (inp, 0), is')
 	end
 
-      fun inputN (is as In {...}, n) =
+      fun inputAll is =
 	let
+	  fun loop (is, ac) =
+	    let val (inp, is') = input is
+	    in
+	      if V.length inp = 0
+		then (V.concat (List.rev ac), is')
+		else loop (is', inp::ac)
+	    end
 	in
+	  loop (is, [])
 	end
 
-      fun inputAll (is as In {...}) =
-	let
-	in
-	end
+      fun canInput (is as In {state, ...}, n) =
+	if n < 0 orelse n > V.maxLen
+	  then raise Size
+	  else let
+		 fun start (is, inp) = add (is, [], inp, 0)
+		 and add (is, inps, inp, k) =
+		   let 
+		     val l = V.length inp
+		     val inps = inp::inps
+		   in
+		     if k + l > n
+		       then finish (is, inps, n)
+		       else loop (is, inps, k + l)
+		   end
+		 and loop (is, inps, k) =
+		   case extendNB "canInput" is of
+		     NONE => finish (is, inps, k)
+		   | SOME (inp, is') => if V.length inp = 0
+					  then finish (is, inps, k)
+					  else add (is', inps, inp, k)
+		 and finish (is, inps, k) =
+		   let
+		     val inp = V.concat (List.rev inps)
+		     val next = instreamSel (is, #state)
+		     val this = Active (ref (Link {inp = inp,
+						   pos = 0,
+						   next = next}))
+		     val _ = state := this
+		   in
+		     SOME k
+		   end
+	       in 
+		 case !state of
+		   Active (ref (Link {inp, pos, next})) => 
+		     SOME (Int.min (V.length inp - pos, n))
+		 | Active (ref End) => 
+		     (case extendNB "canInput" is of
+			NONE => NONE
+		      | SOME (inp, is') => if V.length inp = 0
+					     then SOME 0
+					     else start (is', inp))
+		 | _ => SOME 0
+	       end
 
-      fun canInput (is as In {...}) =
-	let
-	in
-	end
+      fun closeIn (is as In {tail, ...}) =
+	case !(!tail) of
+	  Active (ref (End)) =>
+	    (!tail := Closed;
+	     (readerSel (instreamReader is, #close)) ())
+	| _ => ()
+	handle exn => liftExn (instreamName is) "closeIn" exn
 
-      fun closeIn (is as In {state, ...}) =
-	let
-	  fun truncate state =
-	    case !state of
-	      Active (ref (End {...})) => 
-		(state := Closed;
-		 (readerSel (instreamReader is, #close)) ())
-	    | Active (ref (Link {next, ...})) => truncate next
-	    | _ => ()
-	in
-	  truncate state
-	end
-	handle exn => IO.Io {name = instreamName is,
-			     function = "closeIn",
-			     exn = exn}
-
-      fun endOfStream (is as In {...}) =
-	let
-	in
+      fun endOfStream is =
+	let val (inp, _) = input is
+	in V.length inp = 0
 	end
 
       fun mkInstream (reader, v) =
-	In {reader = reader,
-	    augmented_reader = PrimIO.augmentReader reader,
-	    state = let
-		      val buffer_mode = newBufferMode (readerSel (reader, #chunkSize)),
-		      val next = ref (End {buffer_mode = buffer_mode})
-		      val state = ref (Chain {imp = v, next = next})
-		    in 
-		      state
-		    end}
-
-      fun getReader (is as In {reader, state, ...}) =
 	let
-	  fun truncate state =
-	    case !state of
-	      Active (ref (End {buffer_mode})) => 
-		let
-		  val buffer = case buffer_mode of
-		                 NO_BUF => empty
-			       | BUF {array, first, last} =>
-				   Vector.tabulate
-				   (last - first,
-				    fn i => Array.sub (array, first + i))
-		in 
-		  (state := Truncated; buffer)
-		end
-	    | Active (ref (Link {inp, next})) => truncate next
-	    | _ => raise IO.Io {name = instreamName is,
-				function = "getReader",
-				cause = IO.ClosedStream}
+	  val next = ref (Active (ref End))
+	  val this = if V.length v = 0
+		       then next
+		       else ref (Active (ref (Link {inp = v, pos = 0, next = next})))
 	in
-	  (reader, truncate state)
+	  In {reader = reader,
+	      augmented_reader = PrimIO.augmentReader reader,
+	      state = this,
+	      tail = ref next}
 	end
 
-      fun filePosIn (is as In {...}) =
+      fun getReader (is as In {reader, tail, ...}) =
+	(case !(!tail) of
+	   Active (ref End) => !tail := Truncated
+	 | _ => liftExn (instreamName is) "getReader" IO.ClosedStream;
+	 (reader, empty))
+
+      fun filePosIn (is as In {reader, tail, ...}) =
+	case !(!tail) of
+	  Active (ref End) =>
+	    (case readerSel (reader, #getPos) of
+	       NONE => raise IO.RandomAccessNotSupported
+	     | SOME getPos => getPos ())
+	| _ => raise IO.ClosedStream
+        handle exn => liftExn (instreamName is) "filePosIn" exn
    end

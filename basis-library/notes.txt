@@ -327,7 +327,7 @@ PrimIO and PRIM_IO
   operations on the reader (besides close and getPos) raise
   IO.ClosedStream."
   "closes the writer and frees operating system resources. Further
-  operations (other than close) raise IO.ClosedStream.
+  operations (other than close) raise IO.ClosedStream."
 - should synthesized operations handle and IO.Io exceptions and change
   the name field?
 
@@ -340,3 +340,6 @@ STREAM_IO
    is to apply getWriter.  Some operations say what to do when the stream
    is terminated or closed, but many are unspecified when the other condition
    holds.
+- SML/NJ and PolyML have different interpretations of the vector returned
+   by getReader.  If SML/NJ is right, what should be done about multiple EOS
+   in the unconsumed portion of the stream?

@@ -118,6 +118,7 @@ io/io.sml
 io/prim-io.sig
 io/prim-io.fun
 io/stream-io.sig
+io/stream-io.fun
 io/text-stream-io.sig
 io/bin-stream-io.sig
 io/bin-or-text-io.fun
