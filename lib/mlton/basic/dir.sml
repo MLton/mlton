@@ -45,8 +45,12 @@ fun fold (d: t, a: 'a, f: string * 'a -> 'a): 'a =
       val stream = FS.openDir d
       fun loop a =
 	 case FS.readDir stream of
+            "" => a
+	  | s => loop (f (s, a))
+(*
 	    NONE => a
 	  | SOME s => loop (f (s, a))
+*)
    in DynamicWind.wind (fn () => loop a, fn () => FS.closeDir stream)
    end
 
