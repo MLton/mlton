@@ -63,8 +63,8 @@ functor StreamIOExtra
       (*   outstream   *)
       (*---------------*)
 
-      datatype buf = Buf of {size: int ref,
-			     array: A.array}
+      datatype buf = Buf of {array: A.array,
+			     size: int ref}
       datatype buffer_mode = NO_BUF
                            | LINE_BUF of buf
                            | BLOCK_BUF of buf
@@ -132,13 +132,15 @@ functor StreamIOExtra
 	     | SOME writeArr => flushGen (writeArr, AS.base, AS.slice, x)
       end
 
-      fun flushBuf (writer, Buf {size, array}) =
+      fun flushBuf' (writer, size, array) =
 	 let
 	    val size' = !size 
 	 in 
 	    size := 0
 	    ; flushArr (writer, AS.slice (array, 0, SOME size'))
 	 end
+
+      fun flushBuf (writer, Buf {size, array}) = flushBuf' (writer, size, array)
 
       fun output (os as Out {augmented_writer,
 			     state, 
@@ -166,41 +168,79 @@ functor StreamIOExtra
 		     | BLOCK_BUF buf => doit (buf, fn () => false)
 		 end
 	         handle exn => liftExn (outstreamName os) "output" exn
-				   
+
+      fun ensureActive (os as Out {state, ...}) =
+	 if active (!state)
+	    then ()
+	 else liftExn (outstreamName os) "output" IO.ClosedStream
+
       local
 	 val buf1 = A.array (1, someElem)
+	 fun flush (os, size, array) =
+	    let
+	       val Out {augmented_writer, ...} = os
+	    in
+	       flushBuf' (augmented_writer, size, array)
+	       handle exn => liftExn (outstreamName os) "output1" exn
+	    end
       in
-	 fun output1 (os as Out {augmented_writer, 
-				 state,
-				 buffer_mode, ...}, c) =
-	    if terminated (!state)
-	       then liftExn (outstreamName os) "output" IO.ClosedStream
-	       else let
-		       fun doit (buf as Buf {size, array}, maybe) =
-			  let
-			     val _ = if 1 + !size >= A.length array
-					then flushBuf (augmented_writer, buf)
-					else ()
-			     val _ = A.update (array, !size, c)
-			     val _ = size := !size + 1
-			     val _ = if maybe
-					then flushBuf (augmented_writer, buf)
-					else () 
-			  in
-			     ()
-			  end
-		    in
-		       case !buffer_mode of
-			  NO_BUF => (A.update (buf1, 0, c);
-				     flushArr (augmented_writer,
-					       AS.slice (buf1, 0, SOME 1)))
-			| LINE_BUF buf => doit (buf, 
-						case line of
-						   NONE => false
-						 | SOME {isLine, ...} => isLine c)
-			| BLOCK_BUF buf => doit (buf, false)
-		    end
-		    handle exn => liftExn (outstreamName os) "output1" exn
+	 (* output1 is implemented very carefully to make it fast.  Think hard
+	  * before modifying it, and test after you do, to make sure that it
+	  * hasn't been slowed down.
+	  *)
+	 fun output1 (os as Out {buffer_mode, ...}, c): unit =
+	    case !buffer_mode of
+	       BLOCK_BUF (Buf {array, size}) =>
+		  let
+		     val n = !size
+		  in
+		     (* Use the bounds check for the update to make sure there
+		      * is space to put the character in the array.
+		      *)
+		     (A.update (array, n, c)
+		      ; size := 1 + n)
+		     handle Subscript =>
+			let
+			   val _ = ensureActive os
+			   val _ = flush (os, size, array)
+			   val _ = A.update (array, 0, c)
+			   val _ = size := 1
+			in
+			   ()
+			end
+		  end
+	     | LINE_BUF (Buf {array, size}) =>
+		  let
+		     val n = !size
+		     val _ = 
+			(* Use the bounds check for the update to make sure there
+			 * is space to put the character in the array.
+			 *)
+			(A.update (array, n, c)
+			 ; size := 1 + n)
+			handle Subscript =>
+			   let
+			      val _ = ensureActive os
+			      val _ = flush (os, size, array)
+			      val _ = A.update (array, 0, c)
+			      val _ = size := 1
+			   in
+			      ()
+			   end
+		  in
+		     case line of
+			NONE => ()
+		      | SOME {isLine, ...} =>
+			   if isLine c then flush (os, size, array) else ()
+		  end
+	     | NO_BUF =>
+		  let
+		     val _ = ensureActive os
+		     val _ = A.update (buf1, 0, c)
+		     val Out {augmented_writer, ...} = os
+		  in
+		     flushArr (augmented_writer, AS.slice (buf1, 0, SOME 1))
+		  end
       end
 
       fun outputSlice (os as Out {augmented_writer,
@@ -241,6 +281,16 @@ functor StreamIOExtra
 	       | BLOCK_BUF buf => flushBuf (augmented_writer, buf)
 	handle exn => liftExn (outstreamName os) "flushOut" exn
 
+      fun makeTerminated (Out {buffer_mode, ...}) =
+	 let
+	    fun doit (Buf {array, size}) = size := A.length array
+	 in
+	    case !buffer_mode of
+	       BLOCK_BUF b => doit b
+	     | LINE_BUF b => doit b
+	     | NO_BUF => ()
+	 end
+      
       fun closeOut (os as Out {state, ...}) =
 	if closed (!state)
 	  then ()
@@ -248,7 +298,8 @@ functor StreamIOExtra
 		if terminated (!state)
 		  then ()
 		  else (writerSel (outstreamWriter os, #close)) ();
-		state := Closed)
+		state := Closed
+		; makeTerminated os)
 	handle exn => liftExn (outstreamName os) "closeOut" exn
 
       fun getBufferMode (os as Out {buffer_mode, ...}) =
@@ -300,12 +351,14 @@ functor StreamIOExtra
       fun getWriter (os as Out {writer, state, buffer_mode, ...}) =
 	if closed (!state)
 	  then liftExn (outstreamName os) "getWriter" IO.ClosedStream
-	  else (flushOut os;
-		state := Terminated;
-		(writer, case !buffer_mode of
-		           NO_BUF => IO.NO_BUF
-			 | LINE_BUF _ => IO.LINE_BUF
-			 | BLOCK_BUF _ => IO.BLOCK_BUF))
+	  else (flushOut os
+		; state := Terminated
+		; makeTerminated os
+		; (writer,
+		   case !buffer_mode of
+		      NO_BUF => IO.NO_BUF
+		    | LINE_BUF _ => IO.LINE_BUF
+		    | BLOCK_BUF _ => IO.BLOCK_BUF))
 
       datatype out_pos = OutPos of {pos: pos,
 				    outstream: outstream}
