@@ -68,13 +68,13 @@ array2.sml
 bin-io.sml
 char.sml
 date.sml
-int-inf-sig.cm
 int-inf.sml
 int.sml
 list.sml
 open-int32.sml
 os.sml
 other.sml
+posix.sml
 real.sml
 string-cvt.sml
 string.sml

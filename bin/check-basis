@@ -93,6 +93,7 @@ LIB="basis-$LIB"
 rm -f $basis
 cat >>$basis <<-EOF
 	val _ = SMLofNJ.Internals.GC.messages false
+        val _ = #set CM.Control.verbose false
         val _ =
    	   let
 	      open Control
@@ -116,8 +117,8 @@ cat >>$basis <<-EOF
           type int8 = Int32.int
           type int16 = Int32.int
           type int32 = Int32.int
-          type int64 = Int32.int
-          type intInf = int32
+          type int64 = IntInf.int
+          type intInf = IntInf.int
           type int = int32
           datatype list = datatype list
           datatype pointer = T

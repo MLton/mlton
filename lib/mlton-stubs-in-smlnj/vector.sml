@@ -6,19 +6,12 @@ functor Vector
 	  val tabulate: Int31.int * (Int31.int -> 'a elem) -> 'a vector 
 	  val length: 'a vector -> Int31.int 
 	  val sub: ('a vector * Int31.int) -> 'a elem
-	  val extract: ('a vector * Int31.int * Int31.int option) -> 'a vector 
-	  val mapi:
-	     ((Int31.int * 'a elem) -> 'b elem)
-	     -> ('a vector * Int31.int * Int31.int option) -> 'b vector 
-	  val appi:
-	     ((Int31.int * 'a elem) -> unit)
-	     -> ('a vector * Int31.int * Int31.int option) -> unit 
-	  val foldli :
-	     ((Int31.int * 'a elem * 'b) -> 'b)
-	     -> 'b -> ('a vector * Int31.int * Int31.int option) -> 'b 
-	  val foldri :
-	     ((Int31.int * 'a elem * 'b) -> 'b)
-	     -> 'b -> ('a vector * Int31.int * Int31.int option) -> 'b 
+	  val mapi: ((Int31.int * 'a elem) -> 'b elem) -> 'a vector -> 'b vector 
+	  val appi: ((Int31.int * 'a elem) -> unit) -> 'a vector -> unit 
+	  val foldli:
+	     ((Int31.int * 'a elem * 'b) -> 'b) -> 'b -> 'a vector -> 'b 
+	  val foldri:
+	     ((Int31.int * 'a elem * 'b) -> 'b) -> 'b -> 'a vector -> 'b 
        end) =
    struct
       open V OpenInt32
@@ -28,15 +21,15 @@ functor Vector
       fun length (v: 'a vector) = fromInt (V.length v)
       fun sub (v, i) = V.sub (v, toInt i)
       fun convertSlice (v: 'a vector, i, io) = (v, toInt i, toIntOpt io)
-      fun extract z = V.extract (convertSlice z)
       local
-	 fun make f g s = f (fn (i, e) => g (fromInt i, e)) (convertSlice s)
-      in val mapi = fn z => make mapi z
+	 fun make f g v = f (fn (i, e) => g (fromInt i, e)) v
+      in
+	 val mapi = fn z => make mapi z
 	 val appi = fn z => make appi z
       end
       local
-	 fun make fold f a s =
-	    fold (fn (i, e, a) => f (fromInt i, e, a)) a (convertSlice s)
+	 fun make fold f a v =
+	    fold (fn (i, e, a) => f (fromInt i, e, a)) a v
       in
 	 val foldli = fn z => make foldli z
 	 val foldri = fn z => make foldri z
@@ -57,7 +50,6 @@ functor MonoVector (V: MONO_VECTOR) =
 			     type 'a elem = elem
 			     (* These rebindings are because of an SML/NJ bug. *)
 			     val appi = appi
-			     val extract = extract
 			     val length = length
 			     val mapi = mapi
 			     val sub = sub

@@ -11,32 +11,16 @@ functor Array
        val length: 'a array -> int 
        val sub: 'a array * int -> 'a elem
        val update: 'a array * int * 'a elem -> unit 
-       val extract: 'a array * int * int option -> 'a vector 
-       val copy: {src: 'a array,
-		  si: int,
-		  len: int option,
-		  dst: 'a array,
-		  di: int} -> unit 
-       val copyVec: {src: 'a vector,
-		     si: int,
-		     len: int option,
-		     dst: 'a array,
-		     di: int} -> unit 
-       val appi: (int * 'a elem -> unit) -> 'a array * int * int option -> unit 
+       val copy: {src: 'a array, dst: 'a array, di: int} -> unit 
+       val copyVec: {src: 'a vector, dst: 'a array, di: int} -> unit 
+       val appi: (int * 'a elem -> unit) -> 'a array -> unit 
        val app: ('a elem -> unit) -> 'a array -> unit 
-       val foldli:
-	  (int * 'a elem * 'b -> 'b)
-	  -> 'b -> 'a array * int * int option -> 'b
-       val foldri:
-	  (int * 'a elem * 'b -> 'b)
-	  -> 'b -> 'a array * int * int option -> 'b
+       val foldli: (int * 'a elem * 'b -> 'b) -> 'b -> 'a array -> 'b
+       val foldri: (int * 'a elem * 'b -> 'b) -> 'b -> 'a array -> 'b
        val foldl: ('a elem * 'b -> 'b) -> 'b -> 'a array -> 'b 
        val foldr: ('a elem * 'b -> 'b) -> 'b -> 'a array -> 'b 
-       val modifyi:
-	  (int * 'a elem -> 'a elem)
-	  -> 'a array * int * int option -> unit 
-       val modify:
-	  ('a elem -> 'a elem) -> 'a array -> unit 
+       val modifyi: (int * 'a elem -> 'a elem) -> 'a array -> unit 
+       val modify: ('a elem -> 'a elem) -> 'a array -> unit 
     end) =
    struct
       open Array OpenInt32
@@ -48,26 +32,22 @@ functor Array
       fun update (a, i, x) = Array.update (a, toInt i, x)
       fun sub (a, i: Int.int) = Array.sub (a, toInt i)
       fun convertSlice (a, i, io) = (a, toInt i, toIntOpt io)
-      fun extract s = Array.extract (convertSlice s)
       local
-	 fun doit (f, {src, si, len, dst, di}) =
-	    {src = src, si = toInt si, len = toIntOpt len,
-	     dst = dst, di = toInt di}
+	 fun doit (f, {src, dst, di}) =
+	    f {di = toInt di, dst = dst, src = src}
       in
 	 fun copy (f, a) = doit (Array.copy, a)
 	 fun copyVec (f, a) = doit (Array.copyVec, a)
       end
-      fun appi f slice =
-	 Array.appi (fn (i, x) => f (fromInt i, x)) (convertSlice slice)
+      fun appi f a = Array.appi (fn (i, x) => f (fromInt i, x)) a
       local
-	 fun make fold f b s =
-	    fold (fn (i, a, b) => f (fromInt i, a, b)) b (convertSlice s)
+	 fun make fold f b a =
+	    fold (fn (i, a, b) => f (fromInt i, a, b)) b a
       in
 	 fun foldli z = make Array.foldli z
 	 fun foldri z = make Array.foldri z
       end
-      fun modifyi f s =
-	 Array.modifyi (fn (i, x) => f (fromInt i, x)) (convertSlice s)
+      fun modifyi f a = Array.modifyi (fn (i, x) => f (fromInt i, x)) a
    end
 
 structure Array =
@@ -91,7 +71,6 @@ functor MonoArray (A: MONO_ARRAY) =
 			   val array = array
 			   val copy = copy
 			   val copyVec = copyVec
-			   val extract = extract
 			   val fromList = fromList
 			   val length = length
 			   val modify = modify
