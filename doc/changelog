@@ -1,6 +1,16 @@
 Here are the changes since version 20030312.
 
-At this point, the only missing basis library function is "use".
+Summary:
+  + Added support for Sparc/SunOS using the C code generator.
+  + Completed the basis library implementation.  At this point, the
+    only missing basis library function is "use".
+  + Added _export, which allows one to call SML functions from C.
+  + Added weak pointers (via MLton.Weak) and finalization (via
+    MLton.Finalizable).
+  + Added new integer modules: Int8, Int16.
+  + Improved profiling, allowing splitting to be determined in mlprof.
+  + Fixed conversions between reals and their decimal representations
+    to be correct using the gdtoa library.
 
 * 2003-07-07
   - Profiling improvements
