@@ -19,11 +19,6 @@ struct
 end
 ;
 
-structure B : sig end =
-struct
-    val a = ref nil
-end
-;
 val x = ref nil
 val _ = 1 :: !x
 ;
@@ -37,13 +32,6 @@ val _ =
       ()
    end
 ;
-val x = ref []
-;
-val _ = let val x = ref [] in () end
-;
-(* 1.sml *)
-val id = (fn x => x) (fn x => x)
-;
 (* 2.sml *)
 val id = (fn x => x) (fn x => x)
 val _ = id 13
@@ -53,7 +41,7 @@ struct
     val id = (fn x => x) (fn x => x)
     val _ = id 13
 end
-
+;
 (* 4.sml *)
 val id = (fn x => x) (fn x => x)
 datatype t = T
@@ -65,10 +53,6 @@ local
 in
    val _ = id 13
 end
-;
-(* 6.sml *)
-val id = (fn x => x) (fn x => x)
-val id = ()
 ;
 (* 7.sml *)
 val id = (fn x => x) (fn x => x)

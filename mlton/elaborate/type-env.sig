@@ -93,7 +93,6 @@ signature TYPE_ENV =
 	 -> Type.t vector
 	 -> {bound: unit -> Tyvar.t vector,
 	     schemes: Scheme.t vector}
-      val closeTop: unit -> unit
       val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
       val tyconAdmitsEquality: Tycon.t -> Tycon.AdmitsEquality.t ref
    end

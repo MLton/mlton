@@ -1414,39 +1414,29 @@ structure Scheme =
 	    Type.unknown {canGeneralize = canGeneralize,
 			  equality = Equality.truee})))
 
-      val reportFrees = false
       fun haveFrees (v: t vector, newTycon): bool vector =
 	 let
-	    exception Yes
-	    val unknown =
-	       if reportFrees
-		  then fn _ => raise Yes
-	       else (fn (t, _) =>
-		     (Type.unify (t, Type.con (newTycon (), Vector.new0 ()),
-				  fn () => Error.bug "haveFrees unify")
-		      ; ()))
+	    fun con (_, _, bs) = Vector.exists (bs, fn b => b)
+	    fun no _ = false
 	    val {destroy, hom} =
-	       Type.makeHom {con = fn _ => (),
-			     expandOpaque = false,
-			     flexRecord = fn _ => (),
-			     genFlexRecord = fn _ => (),
-			     int = fn _ => (),
-			     real = fn _ => (),
-			     record = fn _ => (),
-			     recursive = fn _ => (),
-			     unknown = unknown,
-			     var = fn _ => (),
-			     word = fn _ => ()}
+	       Type.makeHom
+	       {con = con,
+		expandOpaque = false,
+		flexRecord = fn (_, {fields, ...}) => List.exists (fields, #2),
+		genFlexRecord = (fn (_, {fields, ...}) =>
+				 List.exists (fields, #2)),
+		int = no,
+		real = no,
+		record = fn (_, r) => Srecord.exists (r, fn b => b),
+		recursive = no,
+		unknown = fn _ => true,
+		var = no,
+		word = no}
 	    val res =
 	       Vector.map (v, fn s =>
-			   let
-			      val _ =
-				 case s of
-				    General {ty, ...} => hom ty
-				  | Type ty => hom ty
-			   in
-			      false
-			   end handle Yes => true)
+			   case s of
+			      General {ty, ...} => hom ty
+			    | Type ty => hom ty)
 	    val _ = destroy ()
 	 in
 	    res
@@ -1572,25 +1562,6 @@ fun close (ensure: Tyvar.t vector, region)
 	 {bound = bound,
 	  schemes = schemes}
       end
-   end
-
-fun closeTop (): unit =
-   let
-      val _ =
-	 List.foreach
-	 (!Type.freeUnknowns, fn t =>
-	  case Type.toType t of
-	     Type.Unknown _ => (Type.unify (t, Type.unit, fn () => ())
-				; ())
-	   | _ => ())
-      val _ = Type.freeUnknowns := []
-      val _ = List.foreach (!Type.freeFlexes, fn t =>
-			    case Type.toType t of
- 			       Type.FlexRecord _ => Error.bug "free flex\n"
-			     | _ => ())
-      val _ = Type.freeFlexes := []
-   in
-      ()
    end
 
 structure Type =

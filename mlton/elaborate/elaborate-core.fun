@@ -1075,11 +1075,12 @@ fun elaborateDec (d, {env = E,
 			if b
 			   then
 			      let
+				 val _ = preError ()
 				 open Layout
 			      in
-				 Control.error
+				 Control.warning
 				 (region,
-				  seq [str "unable to infer type for ",
+				  seq [str "unable to determine type of variable within declaration: ",
 				       Var.layout x],
 				  align [seq [str "type: ", Scheme.layoutPretty s],
 					 lay ()])
@@ -2227,7 +2228,6 @@ fun elaborateDec (d, {env = E,
 
 fun reportUndeterminedTypes () =
    (List.foreach (rev (!freeTyvarChecks), fn p => p ())
-    ; freeTyvarChecks := []
-    ; TypeEnv.closeTop ())
+    ; freeTyvarChecks := [])
 
 end
