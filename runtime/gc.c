@@ -222,123 +222,6 @@ static void sunlink (char *path) {
 /*                    Virtual Memory Management                     */
 /* ---------------------------------------------------------------- */
 
-static void *mmapAnon (void *start, size_t length) {
-	void *result;
-
-#if (defined (__CYGWIN__))	
-	result = VirtualAlloc ((LPVOID)start, length, MEM_COMMIT, 
-				PAGE_READWRITE);
-	if (NULL == result)
-		result = (void*)-1;
-#elif (defined (__linux__) || defined (__FreeBSD__))
-	result = mmap (start, length, PROT_READ | PROT_WRITE, 
-			MAP_PRIVATE | MAP_ANON, -1, 0);
-#elif (defined (__sun__))
-/* On Solaris 5.7, MAP_ANON causes EINVAL and mmap requires a file descriptor. */
-        {
-		static int fd = -1;
-
-		if (-1 == fd)
-			fd = open ("/dev/zero", O_RDONLY);
-		result = mmap (start, length, PROT_READ | PROT_WRITE, 
-				MAP_PRIVATE, fd, 0);
-	}
-#else
-#error smmap not defined
-#endif	
-	if (DEBUG_MEM)
-		fprintf (stderr, "0x%08x = mmapAnon (0x%08x, %s)\n",
-					(uint)result,
-					(uint)start, 
-					uintToCommaString (length));
-	return result;
-}
-
-static void *smmap (size_t length) {
-	void *result;
-
-	result = mmapAnon (NULL, length);
-	if ((void*)-1 == result)
-		diee ("Out of memory.");
-	return result;
-}
-
-static void smunmap (void *base, size_t length) {
-	if (FALSE)
-		fprintf (stderr, "smunmap 0x%08x of length %s\n",
-				(uint)base,
-				uintToCommaString (length));
-	assert (base != NULL);
-	if (0 == length)
-		return;
-	if (0 != munmap (base, length))
-		diee("munmap failed");
-}
-
-#if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
-/* A super-safe mmap.
- *  Allocates a region of memory with dead zones at the high and low ends.
- *  Any attempt to touch the dead zone (read or write) will cause a
- *   segmentation fault.
- */
-static void *ssmmap (size_t length, size_t dead_low, size_t dead_high) {
-	void *base,*low,*result,*high;
-
-	base = smmap (length + dead_low + dead_high);
-	low = base;
-	if (mprotect (low, dead_low, PROT_NONE))
-		diee ("mprotect failed");
-	result = low + dead_low;
-	high = result + length;
-	if (mprotect (high, dead_high, PROT_NONE))
-		diee ("mprotect failed");
-	return result;
-}
-
-#elif (defined (__CYGWIN__))
-
-/* Nothing needed. */
-
-#else
-
-#error ssmmap not defined on platform
-
-#endif
-
-static void release (void *base, size_t length) {
-	if (DEBUG_MEM)
-		fprintf (stderr, "release (0x%08x, %s)\n",
-				(uint)base, uintToCommaString (length));
-#if (defined (__CYGWIN__))
-	if (DEBUG_MEM)
-		fprintf (stderr, "VirtualFree (0x%x, 0, MEM_RELEASE)\n", 
-				(uint)base);
-	if (0 == VirtualFree (base, 0, MEM_RELEASE))
-		die ("VirtualFree release failed");
-#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
-	smunmap (base, length);
-#else
-#error release not defined
-#endif
-}
-
-static void decommit (void *base, size_t length) {
-	if (DEBUG_MEM)
-		fprintf (stderr, "decommit (0x%08x, %s)\n",
-				(uint)base, uintToCommaString (length));
-#if (defined (__CYGWIN__))
-	if (DEBUG_MEM)
-		fprintf (stderr, "VirtualFree (0x%x, %u, MEM_DECOMMIT)\n", 
-				(uint)base, (uint)length);
-	if (0 == VirtualFree (base, length, MEM_DECOMMIT))
-		die ("VirtualFree decommit failed");
-#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
-	smunmap (base, length);
-#else
-#error decommit not defined	
-#endif
-}
-
 #if (defined (__CYGWIN__))
 
 static void showMaps () {
@@ -447,6 +330,119 @@ static void showMem () {
 #error showMem not defined on platform
 
 #endif
+
+static void *mmapAnon (void *start, size_t length) {
+	void *result;
+
+#if (defined (__CYGWIN__))	
+	result = VirtualAlloc ((LPVOID)start, length, MEM_COMMIT, 
+				PAGE_READWRITE);
+	if (NULL == result)
+		result = (void*)-1;
+#elif (defined (__linux__) || defined (__FreeBSD__))
+	result = mmap (start, length, PROT_READ | PROT_WRITE, 
+			MAP_PRIVATE | MAP_ANON, -1, 0);
+#elif (defined (__sun__))
+/* On Solaris 5.7, MAP_ANON causes EINVAL and mmap requires a file descriptor. */
+        {
+		static int fd = -1;
+
+		if (-1 == fd)
+			fd = open ("/dev/zero", O_RDONLY);
+		result = mmap (start, length, PROT_READ | PROT_WRITE, 
+				MAP_PRIVATE, fd, 0);
+	}
+#else
+#error smmap not defined
+#endif	
+	if (DEBUG_MEM)
+		fprintf (stderr, "0x%08x = mmapAnon (0x%08x, %s)\n",
+					(uint)result,
+					(uint)start, 
+					uintToCommaString (length));
+	return result;
+}
+
+static void *smmap (size_t length) {
+	void *result;
+
+	result = mmapAnon (NULL, length);
+	if ((void*)-1 == result) {
+		showMem ();
+		diee ("Out of memory.");
+	}
+	return result;
+}
+
+static void smunmap (void *base, size_t length) {
+	if (DEBUG_MEM)
+		fprintf (stderr, "smunmap 0x%08x of length %s\n",
+				(uint)base,
+				uintToCommaString (length));
+	assert (base != NULL);
+	if (0 == length)
+		return;
+	if (0 != munmap (base, length))
+		diee ("munmap failed");
+}
+
+#if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
+/* A super-safe mmap.
+ *  Allocates a region of memory with dead zones at the high and low ends.
+ *  Any attempt to touch the dead zone (read or write) will cause a
+ *   segmentation fault.
+ */
+static void *ssmmap (size_t length, size_t dead_low, size_t dead_high) {
+	void *base,*low,*result,*high;
+
+	base = smmap (length + dead_low + dead_high);
+	low = base;
+	if (mprotect (low, dead_low, PROT_NONE))
+		diee ("mprotect failed");
+	result = low + dead_low;
+	high = result + length;
+	if (mprotect (high, dead_high, PROT_NONE))
+		diee ("mprotect failed");
+	return result;
+}
+
+#elif (defined (__CYGWIN__))
+
+/* Nothing needed. */
+
+#else
+
+#error ssmmap not defined on platform
+
+#endif
+
+static void release (void *base, size_t length) {
+	if (DEBUG_MEM)
+		fprintf (stderr, "release (0x%08x, %s)\n",
+				(uint)base, uintToCommaString (length));
+#if (defined (__CYGWIN__))
+	if (0 == VirtualFree (base, 0, MEM_RELEASE))
+		die ("VirtualFree release failed");
+#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
+	smunmap (base, length);
+#else
+#error release not defined
+#endif
+}
+
+static void decommit (void *base, size_t length) {
+	if (DEBUG_MEM)
+		fprintf (stderr, "decommit (0x%08x, %s)\n",
+				(uint)base, uintToCommaString (length));
+#if (defined (__CYGWIN__))
+	if (0 == VirtualFree (base, length, MEM_DECOMMIT))
+		die ("VirtualFree decommit failed");
+#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
+	smunmap (base, length);
+#else
+#error decommit not defined	
+#endif
+}
 
 static inline void copy (pointer src, pointer dst, uint size) {
 	uint	*to,
