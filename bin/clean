@@ -4,8 +4,8 @@
 # various -keep flags.
 
 /bin/rm -f *.basis *.chunks *.const *.core-ml *.cps *.flat *.flow 	\
-	*.inline *.mono *.o *.once-graph *.once-vars *.post-useless 	\
-	*.raise-to-jump *.redundant *.reg *.rep *.sxml *.sxml.poly	\
-	*.threshold[0-9] *.useless *.xml
+	*.inline *.local-flatten *.mono *.o *.once-graph *.once-vars	\
+	*.post-useless *.raise-to-jump *.redundant *.reg *.rep *.sxml	\
+	*.sxml.poly *.threshold[0-9] *.useless *.xml
 
 /bin/rm -f *~ core mlmon.out
