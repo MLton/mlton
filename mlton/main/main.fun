@@ -215,6 +215,9 @@ fun makeOptions {usage} =
        (Expert, "indentation", " <n>", "indentation level in ILs",
 	intRef indentation),
        (Normal, "inline", " <n>", "set inlining threshold", Int setInlineSize),
+       (Expert, "inline-into-main", " {true|false}",
+	"inline functions into main",
+	boolRef inlineIntoMain),
        (Normal, "keep", " {g|o|sml}", "save intermediate files",
 	SpaceString (fn s =>
 		     case s of

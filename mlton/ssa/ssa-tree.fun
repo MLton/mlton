@@ -1713,6 +1713,12 @@ structure Program =
 	  (foreachPrim (p, fn prim => if f prim then escape true else ())
 	   ; false))
 
+      fun mainFunction (T {functions, main, ...}) =
+	 case List.peek (functions, fn f =>
+			 Func.equals (main, Function.name f)) of
+	    NONE => Error.bug "no main function"
+	  | SOME f => f
+
       fun profile (T {datatypes, functions, globals, main}) =
 	 let
 	    val functions =

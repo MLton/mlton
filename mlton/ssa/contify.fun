@@ -330,7 +330,7 @@ structure AnalyzeDom =
      *                forall c in Cont. (ContData.node o getContData) c = NONE
      *                forall f in Func. (FuncData.node o getFuncData) f = NONE
      *)
-    fun analyzeDom {program = Program.T {functions, main = fm, ...},
+    fun analyzeDom {program as Program.T {functions, main = fm, ...},
 		    getContData: Cont.t -> ContData.t,
 		    getFuncData: Func.t -> FuncData.t} : unit
       = let
@@ -350,20 +350,17 @@ structure AnalyzeDom =
 	     if !Control.contifyIntoMain
 		then ()
 	     else
-		case List.peek (functions, fn f =>
-				Func.equals (fm, Function.name f)) of
-		   NONE => Error.bug "no main function"
-		 | SOME f =>
-		      let
-			 val {blocks, ...} = Function.dest f
-		      in
-			 Vector.foreach
-			 (blocks, fn Block.T {transfer, ...} =>
-			  case transfer of
-			     Call {func, ...} =>
-				addEdge {from = Root, to = getFuncNode func}
-			   | _ => ())
-		      end
+		let
+		   val {blocks, ...} =
+		      Function.dest (Program.mainFunction program)
+		in
+		   Vector.foreach
+		   (blocks, fn Block.T {transfer, ...} =>
+		    case transfer of
+		       Call {func, ...} =>
+			  addEdge {from = Root, to = getFuncNode func}
+		     | _ => ())
+		end
 	  val _
 	    = List.foreach
 	      (functions,

@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor Inline (S: INLINE_STRUCTS): INLINE = 
 struct
 
@@ -294,19 +295,30 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 	  | Leaf r => leaf (program, r)
 	  | LeafNoLoop r => leafNoLoop (program, r)
 	 end
-      val {get = funcInfo: Func.t -> Function.t,
+      val {get = funcInfo: Func.t -> {function: Function.t,
+				      isCalledByMain: bool ref},
 	   set = setFuncInfo, ...} =
 	 Property.getSetOnce
 	 (Func.plist, Property.initRaise ("Inline.funcInfo", Func.layout))
-      val _ = List.foreach (functions, fn f => setFuncInfo (Function.name f, f))
-
+      val () = List.foreach (functions, fn f =>
+			     setFuncInfo (Function.name f,
+					  {function = f,
+					   isCalledByMain = ref false}))
+      val () =
+	 Vector.foreach (#blocks (Function.dest (Program.mainFunction program)),
+			 fn Block.T {transfer, ...} =>
+			 case transfer of
+			    Transfer.Call {func, ...} =>
+			       #isCalledByMain (funcInfo func) := true
+			  | _ => ())
       fun doit (blocks: Block.t vector,
 		return: Return.t) : Block.t vector =
 	 let
 	    val newBlocks = ref []
 	    val blocks =
 	       Vector.map
-	       (blocks, fn block as Block.T {label, args, statements, transfer} =>
+	       (blocks,
+		fn block as Block.T {label, args, statements, transfer} =>
 		let
 		   fun new transfer =
 		      Block.T {label = label,
@@ -325,7 +337,7 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 				 local
 				    val {name, args, start, blocks, ...} =
 				       (Function.dest o Function.alphaRename) 
-				       (funcInfo func)
+				       (#function (funcInfo func))
 				    val blocks = doit (blocks, return)
 				    val _ = List.push (newBlocks, blocks)
 				    val name =
@@ -368,28 +380,38 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 	 in
 	    Vector.concat (blocks::(!newBlocks))
 	 end
-
-      val shrink = shrinkFunction globals 
+      val shrink = shrinkFunction globals
+      val inlineIntoMain = !Control.inlineIntoMain
       val functions =
 	 List.fold
 	 (functions, [], fn (f, ac) =>
 	  let
 	     val {args, blocks, name, raises, returns, start} = Function.dest f
+	     fun keep () =
+		let
+		   val blocks = doit (blocks, Return.Tail)
+		in
+		   shrink (Function.new {args = args,
+					 blocks = blocks,
+					 name = name,
+					 raises = raises,
+					 returns = returns,
+					 start = start})
+		   :: ac
+		end
 	  in
 	     if Func.equals (name, main)
-	        orelse not (shouldInline name)
-		then let
-		        val blocks = doit (blocks, Return.Tail)
-		     in
-			shrink (Function.new {args = args,
-					      blocks = blocks,
-					      name = name,
-					      raises = raises,
-					      returns = returns,
-					      start = start})
-			:: ac
-		     end
-	      else ac
+		then if inlineIntoMain
+			then keep ()
+		     else f :: ac
+	     else
+		if shouldInline name
+		   then
+		      if inlineIntoMain
+			 orelse not (! (#isCalledByMain (funcInfo name)))
+			 then ac
+		      else keep ()
+		else keep ()
 	  end)
       val program =
 	 Program.T {datatypes = datatypes,
