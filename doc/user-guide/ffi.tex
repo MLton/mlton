@@ -67,7 +67,7 @@ _import * : MLton.Pointer.t -> real * char -> int;
 \end{verbatim}
 This expression denotes a function of type {\tt MLton.Pointer.t -> real
 * char -> int} whose behavior is implemented by calling the C function
-at the address denoted by the {\tt MLton.Pointer.t} argument
+at the address denoted by the {\tt MLton.Pointer.t} argument.
 
 The general form of an indirect \verb+_import+ expresion is:
 \begin{center}
@@ -85,9 +85,9 @@ indirect {\import} expressions.  The example demonstrates how to call
 functions from a dynamic library.
 
 \begin{verbatim}
-% make dimport
-mlton -default-ann 'allowExport true, allowImport true' -link-opt '-ldl' dimport.sml
-% dimport
+% make iimport
+mlton -default-ann 'allowExport true, allowImport true' -link-opt '-ldl' iimport.sml
+% iimport
     Math.cos(2.0) = ~0.416146836547
 libm.so::cos(2.0) = ~0.416146836547
 \end{verbatim}
