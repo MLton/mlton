@@ -1414,8 +1414,8 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 		  NONE =>
 		     error ("structure",
 			    Longstrid.layout (Longstrid.long (rev strids, name)))
-		| SOME {domain, range, ...} =>
-		     addStr {domain = domain,
+		| SOME {range, ...} =>
+		     addStr {domain = name,
 			     range = cut (range, I, name :: strids)}
 	    fun handleType {name: Ast.Tycon.t,
 			    typeStr: TypeStr.t} =
@@ -1594,7 +1594,10 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
       val S = cut (S, I', [])
       val _ = destroy ()
       val S =
-	 if not opaque
+	 (* We avoid doing the opaque match if numErrors > 0 because it can lead
+	  * to internal errors that might be confusing to the user.
+	  *)
+	 if not opaque orelse !Control.numErrors > 0
 	    then S
 	 else
 	    let
