@@ -13,8 +13,10 @@ signature X86 =
   sig
     include X86_STRUCTS
 
-    val tracer : string -> ('a -> 'b) -> (('a -> 'b) * (unit -> unit))
-    val tracerTop : string -> ('a -> 'b) -> (('a -> 'b) * (unit -> unit))
+    val tracer : string -> ('a -> 'b) -> 
+                 (('a -> 'b) * (unit -> unit))
+    val tracerTop : string -> ('a -> 'b) -> 
+                    (('a -> 'b) * (unit -> unit))
 
     structure Size :
       sig

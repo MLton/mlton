@@ -8,8 +8,10 @@ signature X86_PSEUDO =
   sig
     structure Label : HASH_ID
 
-    val tracer : string -> ('a -> 'b) -> (('a -> 'b) * (unit -> unit))
-    val tracerTop : string -> ('a -> 'b) -> (('a -> 'b) * (unit -> unit))
+    val tracer : string -> ('a -> 'b) -> 
+                 (('a -> 'b) * (unit -> unit))
+    val tracerTop : string -> ('a -> 'b) -> 
+                    (('a -> 'b) * (unit -> unit))
 
     structure Size :
       sig

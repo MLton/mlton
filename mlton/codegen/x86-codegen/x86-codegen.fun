@@ -144,6 +144,70 @@ struct
 				 of NONE => l'
 			          | SOME _ => label::l'))
 
+	local
+	  val shift = let
+			val w = Word.fromInt (maxFrameSize div 4)
+			fun loop i
+			  = if i = Word.wordSize
+			       orelse
+			       Word.nthBitIsSet(w, i)
+			      then Word.wordSize - i
+			      else loop (i + 1)
+			val shift = loop 0
+		      in 
+			Word.fromInt (maxFrameSize div 4)
+		      end
+(*
+	  val hash' = fn {size, offsetIndex} 
+	               => Word.andb(Word.<<(Word.fromInt (offsetIndex), shift),
+				    Word.fromInt (size div 4))
+*)
+	  val hash' = fn {size, offsetIndex} => Word.fromInt (offsetIndex)
+	  val hash = fn {size, offsetIndex, frameLayoutsIndex}
+	              => hash' {size = size, offsetIndex = offsetIndex}
+
+	  val table = HashSet.new {hash = hash}
+	  val frameLayoutsData' = ref []
+	  val maxFrameLayoutIndex' = ref 0
+	in
+	  val _
+	    = List.foreach
+	      (return_labels,
+	       fn label
+	        => let
+		     val info as {size, offsetIndex} = valOf (frameLayouts label)
+		     val {frameLayoutsIndex, ...}
+		       = HashSet.lookupOrInsert
+		         (table,
+			  hash' info,
+			  fn {size = size', offsetIndex = offsetIndex', ...}
+			   => size = size' andalso offsetIndex = offsetIndex',
+			  fn ()
+			   => let
+				val _ = List.push(frameLayoutsData', info)
+				val frameLayoutsIndex = !maxFrameLayoutIndex'
+				val _ = Int.inc maxFrameLayoutIndex'
+			      in
+				{size = size,
+				 offsetIndex = offsetIndex,
+				 frameLayoutsIndex = frameLayoutsIndex}
+			      end)
+		   in
+		     setFrameLayoutIndex
+		     (label,
+		      SOME {size = size,
+			    frameLayoutsIndex = frameLayoutsIndex})
+		   end)
+	  val frameLayoutsData = List.rev (!frameLayoutsData')
+	  val maxFrameLayoutIndex = !maxFrameLayoutIndex'
+	  val _ = Control.message
+	          (Control.Detail, 
+		   fn () => Layout.align [Layout.seq [Layout.str "size/offset table: ",
+						      HashSet.stats' table],
+					  HashSet.stats ()])
+	end
+
+(*
 	val (frameLayoutsData,maxFrameLayoutIndex)
 	  = List.fold
 	    (return_labels,
@@ -171,6 +235,7 @@ struct
 				  maxFrameLayoutIndex + 1))
 		 end)
 	val frameLayoutsData = List.rev frameLayoutsData
+*)
 
 	(* C specific *)
 	fun outputC ()
@@ -351,7 +416,8 @@ struct
 	val liveInfo = x86Liveness.LiveInfo.newLiveInfo ()
 	val jumpInfo = x86JumpInfo.newJumpInfo ()
 
-	fun outputChunk (chunk as MachineOutput.Chunk.T {chunkLabel, ...},
+	fun outputChunk (chunk as MachineOutput.Chunk.T {chunkLabel, 
+							 entries, ...},
 			 print)
 	  = let
 	      val isMain 
@@ -421,8 +487,16 @@ struct
 
 	      val validated_assembly = allocated_assembly
 
+	      val _ = Control.message
+		      (Control.Detail,
+		       fn () => Label.layout (hd entries))
+	      val _ = List.foreach(entries, Label.clear)
 	      val _ = x86.Immediate.clearAll ()
 	      val _ = x86.MemLoc.clearAll ()
+	      val _ = Control.message
+		      (Control.Detail, HashSet.stats)
+	      val _ = Control.message
+		      (Control.Detail, PropertyList.stats)
 	    in
 	      List.fold
 	      (validated_assembly,

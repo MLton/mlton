@@ -5,14 +5,14 @@ functor x86(S: X86_STRUCTS): X86 =
 struct
 
     val tracer
-    = Control.traceBatch 
+    = fn s => Control.traceBatch (Control.Detail, s)
 (*
     = fn s => fn f => (Control.trace (Control.Detail, s) f, fn () => ())
 *)
     val tracerTop
-    = Control.traceBatch 
+    = fn s => Control.traceBatch (Control.Pass, s)
 (*
-    = fn s => fn f => (Control.trace (Control.Detail, s) f, fn () => ())
+    = fn s => fn f => (Control.trace (Control.Pass, s) f, fn () => ())
 *)
 
   (* compensate for differences between 
@@ -554,7 +554,7 @@ struct
       end
 
       local
-	val table: t HashSet.t = HashSet.new {hash = hash}
+	val table: t HashSet.t ref = ref (HashSet.new {hash = hash})
       in
 	val construct
 	  = fn immediate
@@ -562,7 +562,7 @@ struct
 		  val hash = hashU immediate
 		in
 		  HashSet.lookupOrInsert
-		  (table,
+		  (!table,
 		   hash,
 		   fn T {immediate = immediate', ...}
 		    => eqU(immediate', immediate),
@@ -576,13 +576,26 @@ struct
 	  = fn T {immediate, ...} => immediate
 
 	fun clearAll ()
-	  = HashSet.foreach
-            (table,
-	     fn T {immediate, plist, ...}
-	      => (PropertyList.clear plist;
-		  case immediate
-		    of Label l => Label.clear l
-		     | _ => ()))
+	  = (Control.message
+	     (Control.Detail,
+	      fn () => Layout.seq [Layout.str "immediate table: ",
+				   HashSet.stats' (!table)]);
+	     table := HashSet.new {hash = hash})
+
+(*
+	fun clearAll ()
+	  = (Control.message
+	     (Control.Detail,
+	      fn () => Layout.seq [Layout.str "immediate table size: ",
+				   Int.layout (HashSet.size table)]);
+	     HashSet.foreach
+	     (table,
+	      fn T {immediate, plist, ...}
+	       => (PropertyList.clear plist;
+		   case immediate
+		     of Label l => Label.clear l
+		      | _ => ())))
+*)
       end
 
       val const = construct o Const
@@ -814,7 +827,7 @@ struct
 
       local
 	val counter = Counter.new 0
-	val table: t HashSet.t = HashSet.new {hash = hash}
+	val table: t HashSet.t ref = ref (HashSet.new {hash = hash})
       in
 	val construct 
 	  = fn memloc
@@ -822,7 +835,7 @@ struct
 		  val hash = hashU memloc
 		in 
 		  HashSet.lookupOrInsert
-		  (table,
+		  (!table,
 		   hash,
 		   fn T {memloc = memloc', ...} => eqU(memloc', memloc),
 		   fn () => T {memloc = memloc,
@@ -837,9 +850,21 @@ struct
 	     => memloc
 
 	fun clearAll ()
-	  = HashSet.foreach
-            (table,
-	     fn T {plist, ...} => PropertyList.clear plist)
+	  = (Control.message
+	     (Control.Detail,
+	      fn () => Layout.seq [Layout.str "memloc table size: ",
+				   HashSet.stats' (!table)]);
+	     table := HashSet.new {hash = hash})
+(*
+	fun clearAll ()
+	  = (Control.message
+	     (Control.Detail,
+	      fn () => Layout.seq [Layout.str "memloc table size: ",
+				   Int.layout (HashSet.size table)]);
+	     HashSet.foreach
+	     (table,
+	      fn T {plist, ...} => PropertyList.clear plist))
+*)
       end
 
       val rec mayAliasU
@@ -919,29 +944,6 @@ struct
 	   => Class.mayAlias(class1, class2) andalso
 	      mayAliasU(memloc1, memloc2)
 
-(*
-      val rec compareU'
-	= fn (Imm i1, Imm i2) => Immediate.compare(i1, i2)
-	   | (Imm i1, Mem m2) => LESS
-	   | (Mem m1, Mem m2) => compare(m1, m2)
-	   | _ => GREATER
-      and compareU
-	= fn (U {base = base1, index = index1,
-		 scale = scale1, size = size1,
-		 class = class1},
-	      U {base = base2, index = index2,
-		 scale = scale2, size = size2,
-		 class = class2})
-	   => lexical [fn () => Class.compare(class1, class2),
-		       fn () => compareU'(base1, base2),
-		       fn () => compareU'(index1, index2),
-		       fn () => Scale.compare(scale1, scale2),
-		       fn () => Size.compare(size1, size2)]
-      and compare
-	= fn (T {memloc = memloc1, ...},
-	      T {memloc = memloc2, ...})
-	   => compareU(memloc1, memloc2)
-*)
       val compare
 	= fn (T {counter = counter1, ...},
 	      T {counter = counter2, ...})
@@ -953,25 +955,29 @@ struct
 	= fn Imm i => Imm i
 	   | Mem m => Mem (replace replacer m)
       and replaceU replacer
-	= fn U {base, index, scale, size, class}
-	   => construct (U {base = replaceU' replacer base,
-			    index = replaceU' replacer index,
-			    scale = scale,
-			    size = size,
-			    class = class})
+	= fn memloc as T {memloc = U {base, index, scale, size, class}, ...}
+	   => let
+		val base' = replaceU' replacer base
+		val index' = replaceU' replacer index
+	      in 
+		if eqU'(base, base') andalso eqU'(index, index')
+		  then memloc
+		  else construct (U {base = base',
+				     index = index',
+				     scale = scale,
+				     size = size,
+				     class = class})
+	      end
       and replace replacer
-	= fn memloc => let
-			 val memloc' = replacer memloc
-		       in
-			 if eq(memloc',memloc)
-			   then let
-				  val T {memloc, ...} = memloc
-				in 
-				  replaceU replacer memloc
-				end
-			   else memloc'
-		       end
-
+	= fn memloc 
+	   => let
+		val memloc' = replacer memloc
+	      in
+		if eq(memloc',memloc)
+		  then replaceU replacer memloc
+		  else memloc'
+	      end
+	    
       val rec sizeU = fn U {size, ...} => size
       and size = fn T {memloc, ...} => sizeU memloc
       val rec classU = fn U {class, ...} => class
