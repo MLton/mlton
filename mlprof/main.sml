@@ -820,7 +820,7 @@ fun makeOptions {usage} =
 	(Expert, "long-name", " {true|false}",
 	 " show long names of functions",
 	 boolRef longName),
-	(Normal, "mlmon", " <file>", "proces mlmon files listed in <file>",
+	(Normal, "mlmon", " <file>", "process mlmon files listed in <file>",
 	 SpaceString (fn s =>
 		      mlmonFiles :=
 		      List.concat [String.tokens (File.contents s, Char.isSpace),
