@@ -16,8 +16,15 @@ void MLton_printStringEscaped(FILE *f, unsigned char *s) {
 }
 
 static void usage(string s) {
-	die("Usage: %s [@MLton [load-world file] [fixed-heap n[{k|m}]] [max-heap n[{k|m}]] [gc-messages] [gc-summary] --] args", 
+	die("Usage: %s [@MLton [fixed-heap n[{k|m}]] [gc-messages] [gc-summary] [load-world file] [max-heap n[{k|m}]] [ram-slop x] --] args", 
 		s);
+}
+
+static float stringToFloat(string s) {
+	float f;
+
+	sscanf(s, "%f", &f);
+	return f;
 }
 
 static uint stringToBytes(string s) {
@@ -68,6 +75,7 @@ bool MLton_init(int argc,
 	Real_posInf = HUGE_VAL;
 	worldFile = NULL;
 	gcState.messages = FALSE;
+	gcState.ramSlop = 0.85;
 	gcState.summary = FALSE;
 	isOriginal = TRUE;
 	gcState.maxHeapSize = 0;
@@ -111,6 +119,12 @@ bool MLton_init(int argc,
 					if (i == argc) 
 						usage(argv[0]);
 					worldFile = argv[i++];
+				} else if (0 == strcmp(arg, "ram-slop")) {
+					++i;
+					if (i == argc)
+						usage(argv[0]);
+					gcState.ramSlop =
+						stringToFloat(argv[i++]);
 				} else if (0 == strcmp(arg, "--")) {
 					++i;
 					done = TRUE;

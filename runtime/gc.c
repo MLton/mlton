@@ -1078,20 +1078,19 @@ GC_initCounters(GC_state s)
 
 /*
  * Get RAM size.  Very Linux specific.
- * Note the total amount of RAM is multiplied by RAMSLOP so that we don't
+ * Note the total amount of RAM is multiplied by ramSlop so that we don't
  * use all of memory or start swapping.  It used to be .95, but Linux
  * 2.2 is more aggressive about swapping.
  */
-#define	RAMSLOP	.85
 
 static inline uint
-getRAMsize(void)
+getRAMsize(GC_state s)
 {
 	struct sysinfo	sbuf;
 
 	unless (sysinfo(&sbuf) == 0)
 		diee("sysinfo failed");
-	return (roundPage(sbuf.totalram * RAMSLOP));
+	return (roundPage(s->ramSlop * (float)sbuf.totalram));
 }
 
 /* ------------------------------------------------- */
@@ -1107,11 +1106,11 @@ GC_setHeapParams(GC_state s, uint size)
 {
 	if (s->useFixedHeap) {
 		if (0 == s->fromSize)
-			s->fromSize = getRAMsize();
+			s->fromSize = getRAMsize(s);
 	        s->fromSize = roundPage(s->fromSize / 2);
 	} else {
 		if (0 == s->maxHeapSize) 
-			s->maxHeapSize = getRAMsize();
+			s->maxHeapSize = getRAMsize(s);
 		s->maxHeapSize = roundPage(s->maxHeapSize / 2);
 		s->fromSize = computeHeapSize(s, size, s->liveRatio);
 	}

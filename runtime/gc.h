@@ -235,6 +235,7 @@ typedef struct GC_state {
 	sigset_t signalsPending;/* The signals that need to be handled. */
 	bool inSignalHandler; 	/* TRUE iff a signal handler is running. */
 
+	float ramSlop;
 	/* ------------------------------------------------- */
  	/*               gc-summary statistics               */
  	/* ------------------------------------------------- */
