@@ -241,10 +241,6 @@ struct
 	= (
 	   x86Liveness.LiveInfo.setLiveOperands
 	   (liveInfo, label, live label);
-(*
-	   x86Liveness.LiveInfo.setLiveOperands
-	   (liveInfo, label, []);
-*)
 	   case kind
 	     of Kind.Jump
 	      => let
@@ -363,21 +359,49 @@ struct
 		  of NONE => Error.bug "limitCheck: frameSize"
 		   | SOME {size, ...} => size
 
-	    val (computeBytes,frontierCheck,bytes,stackCheck)
+	    val checkForce = Label.newString "checkForce"
+	    val checkStack = Label.newString "checkStack"
+	    val checkFrontier = Label.newString "checkFrontier"
+	    val doGC = Label.newString "doGC"
+
+	    val noStackCheck
+	      = ([], SOME (x86.Transfer.goto {target = checkFrontier}))
+	    val doStackCheck
+	      = ([x86.Assembly.instruction_cmp
+		  {src1 = stackTop,
+		   src2 = stackLimit,
+		   size = x86MLton.pointerSize}],			   
+		 SOME (x86.Transfer.iff 
+		       {condition = x86.Instruction.A,
+			truee = doGC,
+			falsee = checkFrontier}))
+	    val noFrontierCheck
+	      = ([], SOME (x86.Transfer.goto {target = success}))
+	    fun doFrontierCheck statements
+	      = (statements,
+		 SOME (x86.Transfer.iff 
+		       {condition = x86.Instruction.BE,
+			truee = success,
+			falsee = doGC}))
+
+	    val (computeBytes,stackCheck,frontierCheck,bytes)
 	      = case kind
-		  of Array {numElts, bytesPerElt as 0, extraBytes as 0, stackToo}
+		  of Array {numElts, bytesPerElt as 0, 
+			    extraBytes as 0, stackToo}
 		   => let
 			val bytes = 0
 		      in
 			([],
+			 if stackToo then doStackCheck else noStackCheck,
+			 doFrontierCheck
 			 [x86.Assembly.instruction_cmp
 			  {src1 = frontier,
 			   src2 = limit,
 			   size = x86MLton.pointerSize}],
-			 x86.Operand.immediate_const_int bytes,
-			 stackToo)
+			 x86.Operand.immediate_const_int bytes)
 		      end
-		   | Array {numElts, bytesPerElt as 0, extraBytes, stackToo}
+		   | Array {numElts, bytesPerElt as 0, 
+			    extraBytes, stackToo}
 		   => let
 			val bytes = extraBytes
 			val frontier_offset
@@ -388,7 +412,9 @@ struct
 			     size = x86MLton.pointerSize,
 			     class = x86MLton.Classes.Heap}
 		      in
-			([],
+			([], 
+			 if stackToo then doStackCheck else noStackCheck,
+			 doFrontierCheck
 			 [x86.Assembly.instruction_lea
 			  {dst = limitCheckTemp,
 			   src = frontier_offset,
@@ -397,8 +423,7 @@ struct
 			  {src1 = limitCheckTemp,
 			   src2 = limit,
 			   size = x86MLton.pointerSize}],
-			 x86.Operand.immediate_const_int bytes,
-			 stackToo)
+			 x86.Operand.immediate_const_int bytes)
 		      end
 		   | Array {numElts as Operand.Int 0, 
 			    bytesPerElt, 
@@ -408,12 +433,13 @@ struct
 			val bytes = 0
 		      in
 			([],
+			 if stackToo then doStackCheck else noStackCheck,
+			 doFrontierCheck
 			 [x86.Assembly.instruction_cmp
 			  {src1 = frontier,
 			   src2 = limit,
 			   size = x86MLton.pointerSize}],
-			 x86.Operand.immediate_const_int bytes,
-			 stackToo)
+			 x86.Operand.immediate_const_int bytes)
 		      end
 		   | Array {numElts as Operand.Int 0, 
 			    bytesPerElt, 
@@ -430,6 +456,8 @@ struct
 			     class = x86MLton.Classes.Heap}
 		      in
 			([],
+			 if stackToo then doStackCheck else noStackCheck,
+			 doFrontierCheck
 			 [x86.Assembly.instruction_lea
 			  {dst = limitCheckTemp,
 			   src = frontier_offset,
@@ -438,8 +466,7 @@ struct
 			  {src1 = limitCheckTemp,
 			   src2 = limit,
 			   size = x86MLton.pointerSize}],
-			 x86.Operand.immediate_const_int bytes,
-			 stackToo)
+			 x86.Operand.immediate_const_int bytes)
 		      end
 		   | Array {numElts as Operand.Int numElts', 
 			    bytesPerElt, 
@@ -456,6 +483,8 @@ struct
 			     class = x86MLton.Classes.Heap}
 		      in
 			([],
+			 if stackToo then doStackCheck else noStackCheck,
+			 doFrontierCheck
 			 [x86.Assembly.instruction_lea
 			  {dst = limitCheckTemp,
 			   src = frontier_offset,
@@ -464,8 +493,7 @@ struct
 			  {src1 = limitCheckTemp,
 			   src2 = limit,
 			   size = x86MLton.pointerSize}],
-			 x86.Operand.immediate_const_int bytes,
-			 stackToo)
+			 x86.Operand.immediate_const_int bytes)
 		      end
 		   | Array {numElts, bytesPerElt, extraBytes, stackToo}
 		   => let
@@ -505,8 +533,11 @@ struct
 			    else [x86.Assembly.instruction_binal
 				  {oper = x86.Instruction.ADD,
 				   dst = arrayAllocateTemp,
-				   src = x86.Operand.immediate_const_int extraBytes,
+				   src = x86.Operand.immediate_const_int 
+				         extraBytes,
 				   size = x86MLton.wordSize}]],
+			 if stackToo then doStackCheck else noStackCheck,
+			 doFrontierCheck
 			 [x86.Assembly.instruction_lea
 			  {dst = limitCheckTemp,
 			   src = frontier_offset,
@@ -515,19 +546,19 @@ struct
 			  {src1 = limitCheckTemp,
 			   src2 = limit,
 			   size = x86MLton.pointerSize}],
-			 arrayAllocateTemp,
-			 stackToo)
+			 arrayAllocateTemp)
 		      end
 		   | Heap {bytes as 0, stackToo}
 		   => let
 		      in
 			([],
+			 if stackToo then doStackCheck else noStackCheck,
+			 doFrontierCheck
 			 [x86.Assembly.instruction_cmp
 			  {src1 = frontier,
 			   src2 = limit,
 			   size = x86MLton.pointerSize}],
-			 x86.Operand.immediate_const_int bytes,
-			 stackToo)
+			 x86.Operand.immediate_const_int bytes)
 		      end
 		   | Heap {bytes, stackToo}
 		   => let
@@ -540,6 +571,8 @@ struct
 			     class = x86MLton.Classes.Heap}
 		      in
 			([],
+			 if stackToo then doStackCheck else noStackCheck,
+			 doFrontierCheck
 			 [x86.Assembly.instruction_lea
 			  {dst = limitCheckTemp,
 			   src = frontier_offset,
@@ -548,31 +581,35 @@ struct
 			  {src1 = limitCheckTemp,
 			   src2 = limit,
 			   size = x86MLton.pointerSize}],
-			 x86.Operand.immediate_const_int bytes,
-			 stackToo)
+			 x86.Operand.immediate_const_int bytes)
 		      end
 		   | Signal
 		   => ([],
+		       noStackCheck,
+		       doFrontierCheck
 		       [x86.Assembly.instruction_cmp
 			{src1 = frontier,
 			 src2 = limit,
 			 size = x86MLton.pointerSize}],
-		       x86.Operand.immediate_const_int 0,
-		       false)
+		       x86.Operand.immediate_const_int 0)
 		   | Stack
 		   => ([],
-		       [x86.Assembly.instruction_cmp
-			{src1 = frontier,
-			 src2 = limit,
-			 size = x86MLton.pointerSize}],
-		       x86.Operand.immediate_const_int 0,
-		       true)
+		       doStackCheck,
+		       noFrontierCheck,
+		       x86.Operand.immediate_const_int 0)
 
 	    val liveDoGC = bytes::live
-
-	    val checkForce = Label.newString "checkForce"
 	    val _ = x86Liveness.LiveInfo.setLiveOperands(liveInfo,
 							 checkForce,
+							 liveDoGC)
+	    val _ = x86Liveness.LiveInfo.setLiveOperands(liveInfo,
+							 checkStack, 
+							 liveDoGC)
+	    val _ = x86Liveness.LiveInfo.setLiveOperands(liveInfo,
+							 checkFrontier, 
+							 liveDoGC)
+	    val _ = x86Liveness.LiveInfo.setLiveOperands(liveInfo, 
+							 doGC, 
 							 liveDoGC)
 
 	    val gcFirstAux = x86MLton.gcFirstAuxTempContentsOperand
@@ -596,16 +633,6 @@ struct
 			       class = x86MLton.Classes.StaticNonTemp})
 		      end
 		   | Control.Every => NONE
-	    val checkStack = Label.newString "checkStack"
-	    val _ = x86Liveness.LiveInfo.setLiveOperands(liveInfo,
-							 checkStack, 
-							 liveDoGC)
-	    val checkFrontier = Label.newString "checkFrontier"
-	    val _ = x86Liveness.LiveInfo.setLiveOperands(liveInfo,
-							 checkFrontier, 
-							 liveDoGC)
-	    val doGC = Label.newString "doGC"
-	    val _ = x86Liveness.LiveInfo.setLiveOperands(liveInfo, doGC, liveDoGC)
 	  in
 	    AppendList.fromList
 	    [x86.Block.T'
@@ -650,17 +677,7 @@ struct
 	     end,
              (* if (stackTop > stackLimit) goto doGC *)
 	     let
-	       val (statements, transfer)
-		 = if stackCheck
-		     then ([x86.Assembly.instruction_cmp
-			    {src1 = stackTop,
-			     src2 = stackLimit,
-			     size = x86MLton.pointerSize}],			   
-			   SOME (x86.Transfer.iff 
-				 {condition = x86.Instruction.A,
-				  truee = doGC,
-				  falsee = checkFrontier}))
-		     else ([], SOME (x86.Transfer.goto {target = checkFrontier}))
+	       val (statements, transfer) = stackCheck
 	     in
 	       x86.Block.T'
 	       {entry = SOME (x86.Entry.jump {label = checkStack}),
@@ -669,14 +686,15 @@ struct
 		transfer = transfer}
 	     end,
 	     (* if (frontier + bytes <= limit) goto success *)
-	     x86.Block.T'
-	     {entry = SOME (x86.Entry.jump {label = checkFrontier}),
-	      profileInfo = x86.ProfileInfo.none,
-	      statements = frontierCheck,
-	      transfer = SOME (x86.Transfer.iff 
-			       {condition = x86.Instruction.BE,
-				truee = success,
-				falsee = doGC})},
+	     let 
+	       val (statements, transfer) = frontierCheck
+	     in
+	       x86.Block.T'
+	       {entry = SOME (x86.Entry.jump {label = checkFrontier}),
+		profileInfo = x86.ProfileInfo.none,
+		statements = statements,
+		transfer = transfer}
+	     end,
 	     (* doGC: *)
 	     x86.Block.T'
 	     {entry = SOME (x86.Entry.jump {label = doGC}),
