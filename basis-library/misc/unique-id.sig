@@ -7,7 +7,8 @@
  *)
 signature UNIQUE_ID =
    sig
-      type id
-      val new: unit -> id
-      val equals: id * id -> bool
+      type t
+	 
+      val new: unit -> t
+      val equals: t * t -> bool
    end

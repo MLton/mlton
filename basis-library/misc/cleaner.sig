@@ -11,11 +11,11 @@ signature CLEANER =
 
       type t
 
-      val add: t * UniqueId.id * (unit -> unit) -> unit
+      val add: t * UniqueId.t * (unit -> unit) -> unit
       val addNew: t * (unit -> unit) -> unit
       val atExit: t
       val atLoadWorld: t
       val clean: t -> unit
       val new: unit -> t
-      val remove: t * UniqueId.id -> unit
+      val remove: t * UniqueId.t -> unit
    end

@@ -5,11 +5,11 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor UniqueId() :> UNIQUE_ID =
+functor UniqueId () :> UNIQUE_ID =
    struct
-      type id = unit ref
+      type t = unit ref
 
-      fun new(): id = ref()
+      fun new (): t = ref ()
 
       val equals = op =
    end
