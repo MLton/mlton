@@ -146,6 +146,7 @@ val lexAndParseString =
 		  loop (String.explode fileOrig, [], [])
 	       end
 	    val fileAbs = OS.Path.mkAbsolute {path = fileExp, relativeTo = cwd}
+	    val fileAbs = OS.Path.mkCanonical fileAbs
 	    val relativize =
 	       if OS.Path.isAbsolute fileExp
 		  then NONE
