@@ -97,10 +97,10 @@ structure Vid =
        | Var of Var.t
 
       val statusPretty =
-	 fn Con _ => "a constructor"
-	  | Exn _ => "an exception"
-	  | Overload _ => "an overload"
-	  | Var _ => "a variable"
+	 fn Con _ => "constructor"
+	  | Exn _ => "exception"
+	  | Overload _ => "overload"
+	  | Var _ => "variable"
 
       val statusString =
 	 fn Con _ => "con"
@@ -199,9 +199,9 @@ structure Status =
       open Status
 
       val pretty: t -> string =
-	 fn Con => "a constructor"
-	  | Exn => "an exception"
-	  | Var => "a variable"
+	 fn Con => "constructor"
+	  | Exn => "exception"
+	  | Var => "variable"
    end
 
 structure Info =
