@@ -240,6 +240,7 @@ structure Header =
        | Referer of string
        | RetryAfter of string
        | Server of string
+       | SetCookie of string
        | Trailer of string
        | TransferEncoding of string
        | Upgrade of string
@@ -284,6 +285,7 @@ structure Header =
 	  | Referer s => concat ["Referer: ", s]
 	  | RetryAfter s => concat ["Retry-After: ", s]
 	  | Server s => concat ["Server: ", s]
+	  | SetCookie s => concat ["Set-Cookie: ", s]
 	  | Trailer s => concat ["Trailer: ", s]
 	  | TransferEncoding s => concat ["Transfer-Encoding: ", s]
 	  | Upgrade s => concat ["Upgrade: ", s]
@@ -353,6 +355,7 @@ structure Header =
 	   ("referer", SOME o Referer),
 	   ("retry-after", SOME o RetryAfter),
 	   ("server", SOME o Server),
+	   ("set-cookie", SOME o Server),
 	   ("trailer", SOME o Trailer),
 	   ("transfer-encoding", SOME o TransferEncoding),
 	   ("upgrade", SOME o Upgrade),

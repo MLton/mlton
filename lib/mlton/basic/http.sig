@@ -82,6 +82,7 @@ signature HTTP =
 	     | Referer of string
 	     | RetryAfter of string
 	     | Server of string
+	     | SetCookie of string
 	     | Trailer of string
 	     | TransferEncoding of string
 	     | Upgrade of string
