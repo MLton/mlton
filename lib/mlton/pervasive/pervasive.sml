@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+signature PERVASIVE_WORD = WORD
 structure Pervasive =
    struct
       structure Array = Array
@@ -28,14 +29,9 @@ structure Pervasive =
       structure Math = Math
       structure Option = Option
       structure OS = OS
-      structure Pack32Big = Pack32Big
-      structure Pack32Little = Pack32Little
       structure Position = Position
       structure Posix = Posix
       structure Real = Real
-(*
-      structure SML90 = SML90
-*)
       structure SMLofNJ = SMLofNJ
       structure String = String
       structure StringCvt = StringCvt
