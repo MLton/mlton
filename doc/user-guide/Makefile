@@ -17,8 +17,10 @@ TEX_FILES = \
 	macros.tex		\
 	main.tex		\
 	man-page.tex		\
+	mingw.tex		\
 	mlb.tex			\
 	mlb-formal.tex		\
+	netbsd.tex		\
 	nj-deviations.tex	\
 	openbsd.tex		\
 	platform.tex		\
