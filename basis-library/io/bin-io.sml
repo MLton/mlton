@@ -1,11 +1,14 @@
 structure BinIO: BIN_IO_EXTRA =
    struct
       structure StreamIO = 
-	StreamIOExtraFile(structure Cleaner = Cleaner
-			  structure PrimIO = BinPrimIO
+	StreamIOExtraFile(structure PrimIO = BinPrimIO
 			  structure Array = Word8Array
 			  structure Vector = Word8Vector
-			  val someElem = (0wx0: Word8.word))
+			  val someElem = (0wx0: Word8.word)
+			  val lineElem = (0wx0: Word8.word)
+			  fun isLine _ = false
+			  fun hasLine _ = false
+			  structure Cleaner = Cleaner)
       structure SIO = StreamIO
       structure ImperativeIO = 
 	ImperativeIOExtraFile(structure StreamIO = StreamIO

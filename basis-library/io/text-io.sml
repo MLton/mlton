@@ -1,11 +1,14 @@
 structure TextIO: TEXT_IO_EXTRA =
    struct
       structure StreamIO = 
-	StreamIOExtraFile(structure Cleaner = Cleaner
-			  structure PrimIO = TextPrimIO
+	StreamIOExtraFile(structure PrimIO = TextPrimIO
 			  structure Array = CharArray
 			  structure Vector = CharVector
-			  val someElem = (#"\000": Char.char))
+			  val someElem = (#"\000": Char.char)
+			  val lineElem = #"\n"
+			  fun isLine c = c = lineElem
+			  val hasLine = CharVector.exists isLine
+			  structure Cleaner = Cleaner)
       structure SIO = StreamIO
       structure ImperativeIO = 
 	ImperativeIOExtraFile(structure StreamIO = StreamIO
@@ -21,10 +24,20 @@ structure TextIO: TEXT_IO_EXTRA =
       structure StreamIO =
 	 struct
 	    open SIO
-	    val outputSubstr = fn _ => raise (Fail "<unimplemented>")
+	    val outputSubstr = fn (os, ss) => 
+	      let
+		val (s, i, sz) = Substring.base ss
+	      in
+		outputSlice (os, (s, i, SOME sz))
+	      end
 	 end
 
-      val outputSubstr = fn _ => raise (Fail "<unimplemented>")
+      val outputSubstr = fn (os, ss) => 
+	let
+	  val (s, i, sz) = Substring.base ss
+	in
+	  outputSlice (os, (s, i, SOME sz))
+	end
       val openString = openVector
       fun print (s: string) = (output (stdOut, s); flushOut stdOut)
    end

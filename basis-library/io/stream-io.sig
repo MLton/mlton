@@ -42,6 +42,7 @@ signature STREAM_IO_EXTRA =
       val outstreamWriter: outstream -> writer
 
       val inputLine: instream -> (vector * instream)
+      val outputSlice: outstream * (vector * int * int option) -> unit
    end
 
 signature STREAM_IO_EXTRA_FILE =

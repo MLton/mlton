@@ -40,6 +40,7 @@ signature IMPERATIVE_IO_EXTRA =
       val scanStream: ((elem, StreamIO.instream) StringCvt.reader -> 
 		       ('a, StreamIO.instream) StringCvt.reader) -> 
 	              instream -> 'a option
+      val outputSlice: outstream * (vector * int * int option) -> unit
    end
 
 signature IMPERATIVE_IO_EXTRA_FILE =

@@ -29,6 +29,7 @@ functor ImperativeIOExtra(S: IMPERATIVE_IO_EXTRA_ARG): IMPERATIVE_IO_EXTRA =
 
       fun output (Out os, v) = SIO.output (!os, v)
       fun output1 (Out os, v) = SIO.output1 (!os, v)
+      fun outputSlice (Out os, (v, i, sz)) = SIO.outputSlice (!os, (v, i, sz))
       fun flushOut (Out os) = SIO.flushOut (!os)
       fun closeOut (Out os) = SIO.closeOut (!os)
       fun mkOutstream os = Out (ref os)
@@ -219,5 +220,6 @@ functor ImperativeIO(S: IMPERATIVE_IO_ARG): IMPERATIVE_IO =
 			fun equalsOut _ = raise (Fail "<equalsOut>")
 			fun outstreamWriter _ = raise (Fail "<outstreamWriter>")
 			fun inputLine _ = raise (Fail "<inputLine>")
+			fun outputSlice _ = raise (Fail "<outputSlice>")
 		      end
 		    fun openVector _ = raise (Fail "<openVector>"))

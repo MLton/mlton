@@ -7,6 +7,10 @@ signature STREAM_IO_EXTRA_ARG =
       sharing type PrimIO.vector = Array.vector = Vector.vector
       sharing type PrimIO.array = Array.array
       val someElem: PrimIO.elem
+
+      val lineElem : Vector.elem
+      val isLine : Vector.elem -> bool 
+      val hasLine : Vector.vector -> bool
    end
 
 functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
@@ -120,7 +124,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	       in
 		 case !buffer_mode of
 		   NO_BUF => put ()
-		 | LINE_BUF buf => doit (buf, fn () => true)
+		 | LINE_BUF buf => doit (buf, fn () => hasLine v)
 		 | BLOCK_BUF buf => doit (buf, fn () => false)
 	       end
 	handle exn => liftExn (outstreamName os) "output" exn
@@ -152,11 +156,22 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 		     NO_BUF => (A.update (buf1, 0, c);
 				flushArr (augmented_writer,
 					  {buf = buf1, i = 0, sz = 1}))
-		   | LINE_BUF buf => doit (buf, false)
+		   | LINE_BUF buf => doit (buf, isLine c)
 		   | BLOCK_BUF buf => doit (buf, false)
 		 end
 	  handle exn => liftExn (outstreamName os) "output1" exn
       end
+
+      fun outputSlice (os, (v, i, sz)) =
+	let
+	  val l = case sz of
+	            SOME sz => sz
+		  | NONE => V.length v - i
+	  val v' = V.tabulate(l, fn j => V.sub(v, i + j))
+	in
+	  output (os, v')
+	end
+        handle exn => liftExn (outstreamName os) "outputSlice" exn
 
       fun flushOut (os as Out {augmented_writer, 
 			       state, 
@@ -286,6 +301,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
       fun instreamName is = readerSel (instreamReader is, #name)
 
       val empty = V.tabulate (0, fn _ => someElem)
+      val line = V.tabulate (1, fn _ => lineElem)
 
       fun extend function (is as In {augmented_reader, tail, ...}) blocking =
 	case !(!tail) of
@@ -359,7 +375,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	  then raise Size
 	  else let
 		 fun finish (inps, is) =
-		   let val inp = Vector.concat (List.rev inps)
+		   let val inp = V.concat (List.rev inps)
 		   in (inp, is)
 		   end
 		 fun loop (is as In {state, ...}, inps, n) =
@@ -371,19 +387,20 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 						 pos = pos + n,
 						 next = next}
 				val next = ref (Active (ref link))
-				val inp' = Vector.tabulate
+				val inp' = V.tabulate
 				           (n, fn i => V.sub (inp, pos + i))
 				val inps = inp'::inps
 			      in
 				finish (inps, updateState (is, next))
 			      end
 			 else let
-				val inp' = Vector.tabulate
+				val inp' = V.tabulate
 				           (V.length inp - pos, 
 					    fn i => V.sub (inp, pos + i))
+				val inps = inp'::inps
 			      in
 				loop (updateState (is, next), 
-				      inp'::inps, n - (V.length inp - pos))
+				      inps, n - (V.length inp - pos))
 			      end
 		   | Active (ref (Eos {next})) => 
 		       finish (inps, if n > 0
@@ -420,7 +437,61 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	  loop (is, [])
 	end
 
-      fun inputLine is = raise (Fail "<not implemented>")
+      fun inputLine is = 
+	let
+	  fun findLine (v, i) =
+	    case V.findi (fn (j, c) => j >= i andalso isLine c) v of
+	      SOME (j, _) => SOME j
+	    | NONE => NONE
+	  fun finish (inps, is, trail) =
+	    let
+	      val inps = if trail
+			   then line::inps
+			   else inps
+	      val inp = V.concat (List.rev inps)
+	    in
+	      (inp, is)
+	    end
+	  fun loop (is as In {state, ...}, inps) =
+	    case !state of
+	      Active (ref (Link {inp, pos, next})) =>
+		(case findLine (inp, pos) of
+		   SOME i => let
+			       val j = i + 1
+			       val next = if j < V.length inp
+					    then let
+						   val link = Link {inp = inp,
+								    pos = j,
+								    next = next}
+						 in
+						   ref (Active (ref link))
+						 end
+					    else next
+			       val inp' = V.tabulate
+				          (j - pos,
+					   fn i => V.sub (inp, pos + i))
+			       val inps = inp'::inps
+			     in
+			       finish (inps, updateState (is, next), false)
+			     end
+		 | NONE => let
+			     val inp' = V.tabulate
+			                (V.length inp - pos,
+					 fn i => V.sub (inp, pos + i))
+			     val inps = inp'::inps
+			   in
+			     loop (updateState (is, next), inps)
+			   end)
+	    | Active (ref (Eos {next})) => 
+		finish (inps, is, List.length inps > 0)
+	    | Active (ref End) => 
+		let val _ = extendB "inputLine" is 
+		in loop (is, inps)
+		end
+	    | _ => finish (inps, is, true)
+	in
+	  loop (is, [])
+	end
 
       fun canInput (is as In {state, ...}, n) =
 	if n < 0 orelse n > V.maxLen
@@ -517,6 +588,10 @@ signature STREAM_IO_EXTRA_FILE_ARG =
       sharing type PrimIO.vector = Array.vector = Vector.vector
       sharing type PrimIO.array = Array.array
       val someElem: PrimIO.elem
+
+      val lineElem : Vector.elem
+      val isLine : Vector.elem -> bool
+      val hasLine : Vector.vector -> bool
 
       structure Cleaner: CLEANER
    end
@@ -627,4 +702,8 @@ signature STREAM_IO_ARG =
       sharing type PrimIO.array = Array.array
       val someElem: PrimIO.elem
    end
-functor StreamIO(S: STREAM_IO_ARG): STREAM_IO = StreamIOExtra(open S)
+functor StreamIO(S: STREAM_IO_ARG): STREAM_IO = 
+  StreamIOExtra(open S
+		val lineElem = someElem
+		fun isLine _ = raise (Fail "<isLine>")
+		fun hasLine _ = raise (Fail "<hasLine>"))
