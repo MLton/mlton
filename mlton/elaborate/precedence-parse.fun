@@ -131,7 +131,17 @@ fun parsePat (ps, E) =
 			       Region.append (Pat.region p1,
 					      Pat.region p2))
 	  | _ =>
-	       Error.bug "PrecedenceParse: parsePat: apply got non-constructor"
+	       let
+		  open Layout
+		  val _ =
+		     Control.error
+		  (Pat.region p1,
+		   seq [str "non-constructor applied to argument in pattern: ",
+			Pat.layout p1],
+		   empty)
+	       in
+		  Pat.wild
+	       end
    in
       parse {name = "pattern",
 	     region = Pat.region,
