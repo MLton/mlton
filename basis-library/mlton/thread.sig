@@ -1,9 +1,16 @@
+(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
+ *)
 signature MLTON_THREAD =
    sig
       type 'a t
 
       val atomicBegin: unit -> unit
       val atomicEnd: unit -> unit
+      val atomically: (unit -> 'a) -> 'a
       (* new f creates a new thread that will apply f to whatever is thrown
        * to the thread.  f must terminate by throwing to another thread or
        * exiting the process.

@@ -1,3 +1,9 @@
+(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
+ *)
 structure MLtonThread:> MLTON_THREAD_EXTRA =
 struct
 
@@ -9,6 +15,9 @@ in
    val atomicBegin = atomicBegin
    val atomicEnd = atomicEnd
 end
+
+fun atomically f =
+   (atomicBegin (); DynamicWind.wind (f, atomicEnd))
 
 datatype 'a thread =
    Dead
