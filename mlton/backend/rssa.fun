@@ -95,11 +95,11 @@ structure Operand =
 		   | String _ => Type.pointer
 		   | Word _ =>
 			let
-			   val t = Const.tycon c
+			   val ty = Const.ty c
 			in
-			   if Tycon.equals (t, Tycon.word)
+			   if Const.Type.equals (ty, Const.Type.word)
 			      then Type.uint
-			   else if Tycon.equals (t, Tycon.word8)
+			   else if Const.Type.equals (ty, Const.Type.word8)
 				   then Type.char
 				else Error.bug "strange word"
 			end

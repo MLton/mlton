@@ -200,7 +200,75 @@ pointer IntInf_do_sub (pointer lhs, pointer rhs, uint bytes) {
 	return binary (lhs, rhs, bytes, &mpz_sub);
 }
 
-Word IntInf_smallMul (Word lhs, Word rhs, pointer carry) {
+pointer IntInf_do_andb(pointer lhs, pointer rhs, uint bytes)
+{
+	return binary(lhs, rhs, bytes, &mpz_and);
+}
+
+pointer IntInf_do_orb(pointer lhs, pointer rhs, uint bytes)
+{
+	return binary(lhs, rhs, bytes, &mpz_ior);
+}
+
+pointer IntInf_do_xorb(pointer lhs, pointer rhs, uint bytes)
+{
+	return binary(lhs, rhs, bytes, &mpz_xor);
+}
+
+static pointer
+unary(pointer arg, uint bytes,
+      void(*unop)(__mpz_struct *resmpz, 
+		  __gmp_const __mpz_struct *argspace))
+{
+	__mpz_struct	argmpz,
+			resmpz;
+	mp_limb_t	argspace[2];
+
+	initRes(&resmpz, bytes);
+	fill(arg, &argmpz, argspace);
+	unop(&resmpz, &argmpz);
+	return answer(&resmpz);
+}
+
+pointer IntInf_do_neg(pointer arg, uint bytes)
+{
+	return unary(arg, bytes, &mpz_neg);
+}
+
+pointer IntInf_do_notb(pointer arg, uint bytes)
+{
+	return unary(arg, bytes, &mpz_com);
+}
+
+static pointer
+shary(pointer arg, uint shift, uint bytes,
+      void(*shop)(__mpz_struct *resmpz, 
+		  __gmp_const __mpz_struct *argspace,
+		  ulong shift))
+{
+	__mpz_struct	argmpz,
+			resmpz;
+	mp_limb_t	argspace[2];
+
+	initRes(&resmpz, bytes);
+	fill(arg, &argmpz, argspace);
+	shop(&resmpz, &argmpz, (ulong)shift);
+	return answer(&resmpz);
+}
+
+pointer IntInf_do_arshift(pointer arg, uint shift, uint bytes)
+{
+	return shary(arg, shift, bytes, &mpz_fdiv_q_2exp);
+}
+
+pointer IntInf_do_lshift(pointer arg, uint shift, uint bytes)
+{
+	return shary(arg, shift, bytes, &mpz_mul_2exp);
+}
+
+Word
+IntInf_smallMul(Word lhs, Word rhs, pointer carry)
+{
 	llong	prod;
 
 	prod = (llong)(int)lhs * (int)rhs;
@@ -246,6 +314,8 @@ pointer IntInf_do_toString (pointer arg, int base, uint bytes) {
 	mp_limb_t	argspace[2];
 	char		*str;
 	uint		size;
+	int		i;
+	char		c;
 
 	assert (base == 2 || base == 8 || base == 10 || base == 16);
 	fill (arg, &argmpz, argspace);
@@ -255,22 +325,17 @@ pointer IntInf_do_toString (pointer arg, int base, uint bytes) {
 	size = strlen(str);
 	if (*sp->chars == '-')
 		*sp->chars = '~';
+        if (base > 0)
+		for (i = 0; i < size; i++) {
+			c = sp->chars[i];
+			if (('a' <= c) && (c <= 'z'))
+				sp->chars[i] = c + ('A' - 'a');
+		}
 	sp->counter = 0;
 	sp->card = size;
 	sp->magic = STRMAGIC;
 	setFrontier (&sp->chars[wordAlign(size)]);
 	return (pointer)str;
-}
-
-pointer IntInf_do_neg (pointer arg, uint bytes) {
-	__mpz_struct	argmpz,
-			resmpz;
-	mp_limb_t	argspace[2];
-
-	initRes (&resmpz, bytes);
-	fill (arg, &argmpz, argspace);
-	mpz_neg (&resmpz, &argmpz);
-	return answer (&resmpz);
 }
 
 /*

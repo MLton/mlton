@@ -1,4 +1,5 @@
 Group is
+../lib/mlton-stubs/int-inf.sml
 ../lib/mlton-stubs/real.sml
 ../lib/mlton/pervasive/pervasive.sml
 ../lib/mlton/basic/error.sig

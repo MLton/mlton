@@ -25,8 +25,9 @@ $(NAME)_cm: $(NAME)-stubs_cm
 .PHONY:	$(NAME)-stubs_cm
 $(NAME)-stubs_cm: 
 	(								\
-		echo 'Group is'&&					\
-		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' &&	\
+		echo 'Group is' &&					\
+		cmcat sources.cm | grep -v 'basis-stubs' | 		\
+			grep -v 'mlton-stubs-in-smlnj' &&		\
 		echo 'call-main.sml';					\
 	) >$(NAME)-stubs.cm
 

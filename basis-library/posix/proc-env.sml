@@ -29,21 +29,21 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 	 val setuid = Error.checkResult o setuid
       end
 
+      fun id x = x
+      val uidToWord = id 
+      val wordToUid = id
+      val gidToWord = id
+      val wordToGid = id
+
       local
 	 val a: word array = Primitive.Array.array Prim.numgroups
       in
 	 fun getgroups () =
 	    let val n = Prim.getgroups a
 	    in Error.checkResult n
-	       ; Array.prefixToList (a, n)
+	       ; ArraySlice.toList (ArraySlice.slice (a, 0, SOME n))
 	    end
       end
-
-      fun id x = x
-      val uidToWord = id 
-      val wordToUid = id
-      val gidToWord = id
-      val wordToGid = id
 
       fun getlogin () =
 	 let val cs = Prim.getlogin ()
@@ -86,18 +86,6 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       local
 	 structure Tms = Prim.Tms
 
-(*
-	 val ticksPerSecond: LargeInt.int =
-	    SysWord.toLargeInt (sysconf "CLK_TCK")
-
-	 val millisecondsPerSecond: LargeInt.int = 1000
-	    
-	 fun cvt (ticks: int): Time.time =
-	    Time.fromMilliseconds
-	    (LargeInt.div
-	     (LargeInt.fromInt ticks * millisecondsPerSecond,
-	      ticksPerSecond))
-*)
 	 val ticksPerSec = Real.fromInt (SysWord.toIntX (sysconf "CLK_TCK"))
 	 
 	 fun cvt (ticks: word) =

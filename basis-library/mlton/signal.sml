@@ -86,7 +86,7 @@ val (get, set, handlers) =
       val _ =
 	 Cleaner.addNew
 	 (Cleaner.atLoadWorld, fn () =>
-	  Array.modifyi (defaultOrIgnore o #1) (handlers, 0, NONE))
+	  Array.modifyi (defaultOrIgnore o #1) handlers)
    in
       (fn s => Array.sub (handlers, s),
        fn (s, h) => if Primitive.MLton.ProfileTime.isOn andalso s = prof
@@ -147,7 +147,7 @@ structure Handler =
 		    Handler f => if Prim.isPending s then f t else t
 		  | _ => t)
 		t
-		(handlers, 0, NONE))
+		handlers)
 	 in
 	    Handler
 	 end

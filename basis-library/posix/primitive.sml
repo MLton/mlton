@@ -122,6 +122,171 @@ structure PosixPrimitive =
 		]
 	 end
       
+      structure Signal =
+	 struct
+	    type signal = signal
+      	    type how = int
+
+	    val abrt = _const "Posix_Signal_abrt": signal;
+	    val alrm = _const "Posix_Signal_alrm": signal;
+	    val bus = _const "Posix_Signal_bus": signal;
+	    val chld = _const "Posix_Signal_chld": signal;
+	    val cont = _const "Posix_Signal_cont": signal;
+	    val fpe = _const "Posix_Signal_fpe": signal;
+	    val hup = _const "Posix_Signal_hup": signal;
+	    val ill = _const "Posix_Signal_ill": signal;
+	    val int = _const "Posix_Signal_int": signal;
+	    val kill = _const "Posix_Signal_kill": signal;
+	    val pipe = _const "Posix_Signal_pipe": signal;
+	    val prof = _const "Posix_Signal_prof": signal;
+	    val quit = _const "Posix_Signal_quit": signal;
+	    val segv = _const "Posix_Signal_segv": signal;
+	    val stop = _const "Posix_Signal_stop": signal;
+	    val term = _const "Posix_Signal_term": signal;
+	    val tstp = _const "Posix_Signal_tstp": signal;
+	    val ttin = _const "Posix_Signal_ttin": signal;
+	    val ttou = _const "Posix_Signal_ttou": signal;
+	    val usr1 = _const "Posix_Signal_usr1": signal;
+	    val usr2 = _const "Posix_Signal_usr2": signal;
+	    val vtalrm = _const "Posix_Signal_vtalrm": signal;
+	       
+	    val block = _const "Posix_Signal_block": how;
+	    val default = _ffi "Posix_Signal_default": signal -> int;
+	    val handlee = _ffi "Posix_Signal_handle": signal -> int;
+	    val ignore = _ffi "Posix_Signal_ignore": signal -> int;
+	    val isDefault = _ffi "Posix_Signal_isDefault": signal * bool ref -> int;
+	    val isPending = _ffi "Posix_Signal_isPending": signal -> bool;
+	    val numSignals = _const "Posix_Signal_numSignals": int;
+	    val setmask = _const "Posix_Signal_setmask": how;
+	    val sigaddset = _ffi "Posix_Signal_sigaddset": signal -> int;
+	    val sigdelset = _ffi "Posix_Signal_sigdelset": signal -> int;
+	    val sigemptyset = _ffi "Posix_Signal_sigemptyset": unit -> int;
+	    val sigfillset = _ffi "Posix_Signal_sigfillset": unit -> int;
+	    val sigprocmask = _ffi "Posix_Signal_sigprocmask": how -> int;
+	    val suspend = _ffi "Posix_Signal_suspend": unit -> int;
+	    val unblock = _const "Posix_Signal_unblock": how;
+	 end
+      
+      structure Process =
+	 struct
+	    val wnohang = _const "Posix_Process_wnohang": word;
+	    structure W =
+	       struct
+		  type flags = word
+		  val untraced = _const "Posix_Process_W_untraced": flags;
+	       end
+	    
+	    type pid = pid
+	    type status = int
+
+	    val alarm = _ffi "Posix_Process_alarm": int -> int;
+	    val exece =
+	       _ffi "Posix_Process_exece"
+	       : nullString * nullString array * nullString array -> int;
+	    val execp =
+	       _ffi "Posix_Process_execp": nullString * nullString array -> int;
+	    val exit = _ffi "Posix_Process_exit": int -> unit;
+	    val exitStatus = _ffi "Posix_Process_exitStatus": status -> int;
+	    val fork = _ffi "Posix_Process_fork": unit -> pid;
+	    val ifExited = _ffi "Posix_Process_ifExited": status -> bool;
+	    val ifSignaled = _ffi "Posix_Process_ifSignaled": status -> bool;
+	    val ifStopped = _ffi "Posix_Process_ifStopped": status -> bool;
+	    val kill = _ffi "Posix_Process_kill": pid * signal -> int;
+	    val pause = _ffi "Posix_Process_pause": unit -> int;
+	    val sleep = _ffi "Posix_Process_sleep": int -> int;
+	    val stopSig = _ffi "Posix_Process_stopSig": status -> signal;
+	    val termSig = _ffi "Posix_Process_termSig": status -> signal;
+	    val waitpid =
+	       _ffi "Posix_Process_waitpid": pid * status ref * int -> pid;
+	 end
+
+      structure ProcEnv =
+	 struct
+	    val numgroups = _const "Posix_ProcEnv_numgroups": int;
+	    val sysconfNames =
+	       [
+		(* Required *)
+		(_const "Posix_ProcEnv_ARG_MAX": int;, "ARG_MAX"),
+		(_const "Posix_ProcEnv_CHILD_MAX": int;, "CHILD_MAX"),
+		(_const "Posix_ProcEnv_CLK_TCK": int;, "CLK_TCK"),
+		(_const "Posix_ProcEnv_NGROUPS_MAX": int;, "NGROUPS_MAX"),
+		(_const "Posix_ProcEnv_OPEN_MAX": int;, "OPEN_MAX"),
+		(_const "Posix_ProcEnv_STREAM_MAX": int;, "STREAM_MAX"),
+		(_const "Posix_ProcEnv_TZNAME_MAX": int;, "TZNAME_MAX"),
+		(_const "Posix_ProcEnv_JOB_CONTROL": int;, "JOB_CONTROL"),
+		(_const "Posix_ProcEnv_SAVED_IDS": int;, "SAVED_IDS"),
+		(_const "Posix_ProcEnv_VERSION": int;, "VERSION"),
+		(* Optional *)
+		(_const "Posix_ProcEnv_BC_BASE_MAX": int;, "BC_BASE_MAX"),
+		(_const "Posix_ProcEnv_BC_DIM_MAX": int;, "BC_DIM_MAX"),
+		(_const "Posix_ProcEnv_BC_SCALE_MAX": int;, "BC_SCALE_MAX"),
+		(_const "Posix_ProcEnv_BC_STRING_MAX": int;, "BC_STRING_MAX"),
+		(_const "Posix_ProcEnv_COLL_WEIGHTS_MAX": int;, "COLL_WEIGHTS_MAX"),
+		(_const "Posix_ProcEnv_EXPR_NEST_MAX": int;, "EXPR_NEST_MAX"),
+		(_const "Posix_ProcEnv_LINE_MAX": int;, "LINE_MAX"),
+		(_const "Posix_ProcEnv_RE_DUP_MAX": int;, "RE_DUP_MAX"),
+		(_const "Posix_ProcEnv_2_VERSION": int;, "2_VERSION"),
+		(_const "Posix_ProcEnv_2_FORT_DEV": int;, "2_FORT_DEV"),
+		(_const "Posix_ProcEnv_2_FORT_RUN": int;, "2_FORT_RUN"),
+		(_const "Posix_ProcEnv_2_SW_DEV": int;, "2_SW_DEV")
+		]
+	       
+	    type pid = pid
+	    type gid = gid
+	    type uid = uid
+	    datatype file_desc = datatype file_desc
+
+	    val getegid = _ffi "Posix_ProcEnv_getegid": unit -> gid;
+	    val geteuid = _ffi "Posix_ProcEnv_geteuid": unit -> uid;
+	    val getgid = _ffi "Posix_ProcEnv_getgid": unit -> gid;
+	    val getgroups = _ffi "Posix_ProcEnv_getgroups": gid array -> int;
+	    val getlogin = _ffi "Posix_ProcEnv_getlogin": unit -> cstring;
+	    val getpgrp = _ffi "Posix_ProcEnv_getpgrp": unit -> pid;
+	    val getpid = _ffi "Posix_ProcEnv_getpid": unit -> pid;
+	    val getppid = _ffi "Posix_ProcEnv_getppid": unit -> pid;
+	    val getuid = _ffi "Posix_ProcEnv_getuid": unit -> uid;
+	    val setenv = _ffi "Posix_ProcEnv_setenv": nullString * nullString -> int;
+	    val setgid = _ffi "Posix_ProcEnv_setgid": gid -> int;
+	    val setpgid = _ffi "Posix_ProcEnv_setpgid": pid * pid -> int;
+	    val setsid = _ffi "Posix_ProcEnv_setsid": unit -> pid;
+	    val setuid = _ffi "Posix_ProcEnv_setuid": uid -> int;
+
+	    structure Uname =
+	       struct
+		  type uname = pointer
+
+		  val uname = _ffi "Posix_ProcEnv_Uname_uname": unit -> int;
+		  val sysname =
+		     _ffi "Posix_ProcEnv_Uname_sysname": unit -> cstring;
+		  val nodename =
+		     _ffi "Posix_ProcEnv_Uname_nodename": unit -> cstring;
+		  val release =
+		     _ffi "Posix_ProcEnv_Uname_release": unit -> cstring;
+		  val version =
+		     _ffi "Posix_ProcEnv_Uname_version": unit -> cstring;
+		  val machine =
+		     _ffi "Posix_ProcEnv_Uname_machine": unit -> cstring;
+	       end
+
+	    type clock_t = word
+	       
+	    structure Tms =
+	       struct
+		  val utime = _ffi "Posix_ProcEnv_Tms_utime": unit -> clock_t;
+		  val stime = _ffi "Posix_ProcEnv_Tms_stime": unit -> clock_t;
+		  val cutime = _ffi "Posix_ProcEnv_Tms_cutime": unit -> clock_t;
+		  val cstime = _ffi "Posix_ProcEnv_Tms_cstime": unit -> clock_t;
+	       end
+
+	    val ctermid = _ffi "Posix_ProcEnv_ctermid" : unit -> cstring;
+	    val environ = _ffi "Posix_ProcEnv_environ" : cstringArray;
+	    val getenv = _ffi "Posix_ProcEnv_getenv" : nullString -> cstring;
+	    val isatty = _ffi "Posix_ProcEnv_isatty" : fd -> bool;
+	    val sysconf = _ffi "Posix_ProcEnv_sysconf" : int -> int;
+	    val times = _ffi "Posix_ProcEnv_times" : unit -> clock_t;
+	    val ttyname = _ffi "Posix_ProcEnv_ttyname" : fd -> cstring;
+	 end 
+      
       structure FileSys =
 	 struct
 	    datatype file_desc = datatype file_desc
@@ -181,16 +346,19 @@ structure PosixPrimitive =
 
 	    val properties =
 	       [
+		(_const "Posix_FileSys_CHOWN_RESTRICTED": int;,
+		 "CHOWN_RESTRICTED"),
 		(_const "Posix_FileSys_LINK_MAX": int;, "LINK_MAX"),
 		(_const "Posix_FileSys_MAX_CANON": int;, "MAX_CANON"),
 		(_const "Posix_FileSys_MAX_INPUT": int;, "MAX_INPUT"),
 		(_const "Posix_FileSys_NAME_MAX": int;, "NAME_MAX"),
+		(_const "Posix_FileSys_NO_TRUNC": int;, "NO_TRUNC"),
 		(_const "Posix_FileSys_PATH_MAX": int;, "PATH_MAX"),
 		(_const "Posix_FileSys_PIPE_BUF": int;, "PIPE_BUF"),
-		(_const "Posix_FileSys_CHOWN_RESTRICTED": int;,
-		 "CHOWN_RESTRICTED"),
-		(_const "Posix_FileSys_NO_TRUNC": int;, "NO_TRUNC"),
-		(_const "Posix_FileSys_VDISABLE": int;, "VDISABLE")
+		(_const "Posix_FileSys_VDISABLE": int;, "VDISABLE"),
+		(_const "Posix_FileSys_ASYNC_IO": int;, "ASYNC_IO"), 
+		(_const "Posix_FileSys_SYNC_IO": int;, "SYNC_IO"), 
+		(_const "Posix_FileSys_PRIO_IO": int;, "PRIO_IO")
 		]
 
 	    structure Dirstream =
@@ -350,177 +518,16 @@ structure PosixPrimitive =
 	    val fsync = _ffi "Posix_IO_fsync": fd -> int;
 	    val lseek = _ffi "Posix_IO_lseek": fd * int * int -> int;
 	    val pipe = _ffi "Posix_IO_pipe": fd array -> int;
-	    val read = _ffi "Posix_IO_read":
+	    val readChar = _ffi "Posix_IO_read":
+	       fd * char array * int * size -> ssize;
+	    val writeChar = _ffi "Posix_IO_write":
+	       fd * char vector * int * size -> ssize;
+	    val readWord8 = _ffi "Posix_IO_read":
 	       fd * word8 array * int * size -> ssize;
-	    val write = _ffi "Posix_IO_write":
+	    val writeWord8 = _ffi "Posix_IO_write":
 	       fd * word8 vector * int * size -> ssize;
 	 end	       
 
-      structure ProcEnv =
-	 struct
-	    val numgroups = _const "Posix_ProcEnv_numgroups": int;
-	    val sysconfNames =
-	       [
-		(_const "Posix_ProcEnv_ARG_MAX": int;, "ARG_MAX"),
-		(_const "Posix_ProcEnv_CHILD_MAX": int;, "CHILD_MAX"),
-		(_const "Posix_ProcEnv_CLK_TCK": int;, "CLK_TCK"),
-		(_const "Posix_ProcEnv_STREAM_MAX": int;, "STREAM_MAX"),
-		(_const "Posix_ProcEnv_TZNAME_MAX": int;, "TZNAME_MAX"),
-		(_const "Posix_ProcEnv_OPEN_MAX": int;, "OPEN_MAX"),
-		(_const "Posix_ProcEnv_JOB_CONTROL": int;, "JOB_CONTROL"),
-		(_const "Posix_ProcEnv_SAVED_IDS": int;, "SAVED_IDS"),
-		(_const "Posix_ProcEnv_VERSION": int;, "VERSION"),
-		(_const "Posix_ProcEnv_BC_BASE_MAX": int;, "BC_BASE_MAX"),
-		(_const "Posix_ProcEnv_BC_DIM_MAX": int;, "BC_DIM_MAX"),
-		(_const "Posix_ProcEnv_BC_SCALE_MAX": int;, "BC_SCALE_MAX"),
-		(_const "Posix_ProcEnv_BC_STRING_MAX": int;, "BC_STRING_MAX"),
-		(_const "Posix_ProcEnv_COLL_WEIGHTS_MAX": int;,
-		 "COLL_WEIGHTS_MAX"),
-		(_const "Posix_ProcEnv_EXPR_NEST_MAX": int;, "EXPR_NEST_MAX"),
-		(_const "Posix_ProcEnv_LINE_MAX": int;, "LINE_MAX"),
-		(_const "Posix_ProcEnv_RE_DUP_MAX": int;, "RE_DUP_MAX"),
-		(_const "Posix_ProcEnv_2_VERSION": int;, "2_VERSION"),
-		(_const "Posix_ProcEnv_2_FORT_DEV": int;, "2_FORT_DEV"),
-		(_const "Posix_ProcEnv_2_FORT_RUN": int;, "2_FORT_RUN"),
-		(_const "Posix_ProcEnv_2_SW_DEV": int;, "2_SW_DEV")
-		]
-	       
-	    type pid = pid
-	    type gid = gid
-	    type uid = uid
-	    datatype file_desc = datatype file_desc
-
-	    val getegid = _ffi "Posix_ProcEnv_getegid": unit -> gid;
-	    val geteuid = _ffi "Posix_ProcEnv_geteuid": unit -> uid;
-	    val getgid = _ffi "Posix_ProcEnv_getgid": unit -> gid;
-	    val getgroups = _ffi "Posix_ProcEnv_getgroups": gid array -> int;
-	    val getlogin = _ffi "Posix_ProcEnv_getlogin": unit -> cstring;
-	    val getpgrp = _ffi "Posix_ProcEnv_getpgrp": unit -> pid;
-	    val getpid = _ffi "Posix_ProcEnv_getpid": unit -> pid;
-	    val getppid = _ffi "Posix_ProcEnv_getppid": unit -> pid;
-	    val getuid = _ffi "Posix_ProcEnv_getuid": unit -> uid;
-	    val setenv =
-	       _ffi "Posix_ProcEnv_setenv": nullString * nullString -> int;
-	    val setgid = _ffi "Posix_ProcEnv_setgid": gid -> int;
-	    val setpgid = _ffi "Posix_ProcEnv_setpgid": pid * pid -> int;
-	    val setsid = _ffi "Posix_ProcEnv_setsid": unit -> pid;
-	    val setuid = _ffi "Posix_ProcEnv_setuid": uid -> int;
-
-	    structure Uname =
-	       struct
-		  type uname = pointer
-
-		  val uname = _ffi "Posix_ProcEnv_Uname_uname": unit -> int;
-		  val sysname =
-		     _ffi "Posix_ProcEnv_Uname_sysname": unit -> cstring;
-		  val nodename =
-		     _ffi "Posix_ProcEnv_Uname_nodename": unit -> cstring;
-		  val release =
-		     _ffi "Posix_ProcEnv_Uname_release": unit -> cstring;
-		  val version =
-		     _ffi "Posix_ProcEnv_Uname_version": unit -> cstring;
-		  val machine =
-		     _ffi "Posix_ProcEnv_Uname_machine": unit -> cstring;
-	       end
-
-	    type clock_t = word
-	       
-	    structure Tms =
-	       struct
-		  val utime = _ffi "Posix_ProcEnv_Tms_utime": unit -> clock_t;
-		  val stime = _ffi "Posix_ProcEnv_Tms_stime": unit -> clock_t;
-		  val cutime = _ffi "Posix_ProcEnv_Tms_cutime": unit -> clock_t;
-		  val cstime = _ffi "Posix_ProcEnv_Tms_cstime": unit -> clock_t;
-	       end
-
-	    val ctermid = _ffi "Posix_ProcEnv_ctermid" : unit -> cstring;
-	    val environ = _ffi "Posix_ProcEnv_environ" : cstringArray;
-	    val getenv = _ffi "Posix_ProcEnv_getenv" : nullString -> cstring;
-	    val isatty = _ffi "Posix_ProcEnv_isatty" : fd -> bool;
-	    val sysconf = _ffi "Posix_ProcEnv_sysconf" : int -> int;
-	    val times = _ffi "Posix_ProcEnv_times" : unit -> clock_t;
-	    val ttyname = _ffi "Posix_ProcEnv_ttyname" : fd -> cstring;
-	 end 
-
-      structure Process =
-	 struct
-	    val wnohang = _const "Posix_Process_wnohang": word;
-	    structure W =
-	       struct
-		  type flags = word
-		  val untraced = _const "Posix_Process_W_untraced": flags;
-	       end
-	    
-	    type pid = pid
-	    type status = int
-
-	    val alarm = _ffi "Posix_Process_alarm": int -> int;
-	    val exece =
-	       _ffi "Posix_Process_exece"
-	       : nullString * nullString array * nullString array -> int;
-	    val execp =
-	       _ffi "Posix_Process_execp": nullString * nullString array -> int;
-	    val exit = _ffi "Posix_Process_exit": int -> unit;
-	    val exitStatus = _ffi "Posix_Process_exitStatus": status -> int;
-	    val fork = _ffi "Posix_Process_fork": unit -> pid;
-	    val ifExited = _ffi "Posix_Process_ifExited": status -> bool;
-	    val ifSignaled = _ffi "Posix_Process_ifSignaled": status -> bool;
-	    val ifStopped = _ffi "Posix_Process_ifStopped": status -> bool;
-	    val kill = _ffi "Posix_Process_kill": pid * signal -> int;
-	    val pause = _ffi "Posix_Process_pause": unit -> int;
-	    val sleep = _ffi "Posix_Process_sleep": int -> int;
-	    val stopSig = _ffi "Posix_Process_stopSig": status -> signal;
-	    val termSig = _ffi "Posix_Process_termSig": status -> signal;
-	    val waitpid =
-	       _ffi "Posix_Process_waitpid": pid * status ref * int -> pid;
-	 end
-      
-      structure Signal =
-	 struct
-	    type signal = signal
-      	    type how = int
-
-	    val abrt = _const "Posix_Signal_abrt": signal;
-	    val alrm = _const "Posix_Signal_alrm": signal;
-	    val bus = _const "Posix_Signal_bus": signal;
-	    val chld = _const "Posix_Signal_chld": signal;
-	    val cont = _const "Posix_Signal_cont": signal;
-	    val fpe = _const "Posix_Signal_fpe": signal;
-	    val hup = _const "Posix_Signal_hup": signal;
-	    val ill = _const "Posix_Signal_ill": signal;
-	    val int = _const "Posix_Signal_int": signal;
-	    val kill = _const "Posix_Signal_kill": signal;
-	    val pipe = _const "Posix_Signal_pipe": signal;
-	    val prof = _const "Posix_Signal_prof": signal;
-	    val quit = _const "Posix_Signal_quit": signal;
-	    val segv = _const "Posix_Signal_segv": signal;
-	    val stop = _const "Posix_Signal_stop": signal;
-	    val term = _const "Posix_Signal_term": signal;
-	    val tstp = _const "Posix_Signal_tstp": signal;
-	    val ttin = _const "Posix_Signal_ttin": signal;
-	    val ttou = _const "Posix_Signal_ttou": signal;
-	    val usr1 = _const "Posix_Signal_usr1": signal;
-	    val usr2 = _const "Posix_Signal_usr2": signal;
-	    val vtalrm = _const "Posix_Signal_vtalrm": signal;
-	       
-	    val block = _const "Posix_Signal_block": how;
-	    val default = _ffi "Posix_Signal_default": signal -> int;
-	    val handlee = _ffi "Posix_Signal_handle": signal -> int;
-	    val ignore = _ffi "Posix_Signal_ignore": signal -> int;
-	    val isDefault =
-	       _ffi "Posix_Signal_isDefault": signal * bool ref -> int;
-	    val isPending = _ffi "Posix_Signal_isPending": signal -> bool;
-	    val numSignals = _const "Posix_Signal_numSignals": int;
-	    val setmask = _const "Posix_Signal_setmask": how;
-	    val sigaddset = _ffi "Posix_Signal_sigaddset": signal -> int;
-	    val sigdelset = _ffi "Posix_Signal_sigdelset": signal -> int;
-	    val sigemptyset = _ffi "Posix_Signal_sigemptyset": unit -> int;
-	    val sigfillset = _ffi "Posix_Signal_sigfillset": unit -> int;
-	    val sigprocmask = _ffi "Posix_Signal_sigprocmask": how -> int;
-	    val suspend = _ffi "Posix_Signal_suspend": unit -> unit;
-	    val unblock = _const "Posix_Signal_unblock": how;
-	 end
-      
       structure SysDB =
 	 struct
 	    type gid = gid

@@ -13,11 +13,30 @@ signature CONST_STRUCTS =
       structure Ast: AST
       structure Tycon: TYCON
       sharing Tycon.AstId = Ast.Tycon
+      sharing Tycon.AstId = Ast.Tycon
    end
 
 signature CONST = 
    sig
       include CONST_STRUCTS
+
+      structure Type:
+	 sig
+	    type t
+	    val make: Tycon.t * Tycon.t vector -> t
+	    val equals: t * t -> bool
+	    val layout: t -> Layout.t
+	    val toString: t -> string
+	    val toType: t * (Tycon.t * 'a vector -> 'a) -> 'a
+	    val bool: t
+	    val char: t
+	    val int: t
+	    val intInf: t
+	    val real: t
+	    val string: t
+	    val word: t
+	    val word8: t
+	 end
 
       structure SmallIntInf:
 	 sig
@@ -51,10 +70,10 @@ signature CONST =
       val fromWord8: Word8.t -> t
       val hash: t -> word
       val layout: t -> Layout.t
-      val make: Node.t * Tycon.t -> t
+      val make: Node.t * Type.t -> t
       val node: t -> Node.t
       val toAstExp: t -> Ast.Exp.t
       val toAstPat: t -> Ast.Pat.t
       val toString: t -> string
-      val tycon: t -> Tycon.t
+      val ty: t -> Type.t
    end

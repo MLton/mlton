@@ -7,66 +7,60 @@ signature MONO_VECTOR =
       val tabulate: int * (int -> elem) -> vector 
       val length: vector -> int 
       val sub: vector * int -> elem 
-      val extract: vector * int * int option -> vector 
+      val update: vector * int * elem -> vector
       val concat: vector list -> vector 
-      val mapi: (int * elem -> elem) -> vector * int * int option -> vector 
-      val map: (elem -> elem) -> vector -> vector 
-      val appi: (int * elem -> unit) -> vector * int * int option -> unit 
+      val appi: (int * elem -> unit) -> vector -> unit 
       val app: (elem -> unit) -> vector -> unit 
-      val foldli:
-	 (int * elem * 'a -> 'a) -> 'a -> vector * int * int option -> 'a 
-      val foldri:
-	 (int * elem * 'a -> 'a) -> 'a -> vector * int * int option -> 'a 
+      val mapi: (int * elem -> elem) -> vector -> vector 
+      val map: (elem -> elem) -> vector -> vector 
+      val foldli: (int * elem * 'a -> 'a) -> 'a -> vector -> 'a 
+      val foldri: (int * elem * 'a -> 'a) -> 'a -> vector -> 'a 
       val foldl: (elem * 'a -> 'a) -> 'a -> vector -> 'a 
       val foldr: (elem * 'a -> 'a) -> 'a -> vector -> 'a 
+      val findi: (int * elem -> bool) -> vector -> (int * elem) option
+      val exists: (elem -> bool) -> vector -> bool
+      val all: (elem -> bool) -> vector -> bool
+      val collate: (elem * elem -> order) -> vector * vector -> order
    end
 
-(* The only difference between CONCRETE_MONO_VECTOR and MONO_VECTOR is that
- * the former specifies the type of vector.  I couldn't figure out a way to do
- * this in SML using sharing/with, so I had to duplicate the signature.
- *)
-signature CONCRETE_MONO_VECTOR =
+signature MONO_VECTOR_EXTRA_PRE = 
    sig
-      type elem
-      type vector = elem Vector.vector
-      val maxLen: int 
-      val fromList: elem list -> vector 
-      val tabulate: int * (int -> elem) -> vector 
-      val length: vector -> int 
-      val sub: vector * int -> elem 
-      val extract: vector * int * int option -> vector 
-      val concat: vector list -> vector 
-      val mapi: (int * elem -> elem) -> vector * int * int option -> vector 
-      val map: (elem -> elem) -> vector -> vector 
-      val appi: (int * elem -> unit) -> vector * int * int option -> unit 
-      val app: (elem -> unit) -> vector -> unit 
-      val foldli:
-	 (int * elem * 'a -> 'a) -> 'a -> vector * int * int option -> 'a 
-      val foldri:
-	 (int * elem * 'a -> 'a) -> 'a -> vector * int * int option -> 'a 
-      val foldl: (elem * 'a -> 'a) -> 'a -> vector -> 'a 
-      val foldr: (elem * 'a -> 'a) -> 'a -> vector -> 'a 
+      include MONO_VECTOR
+
+      val unsafeSub: vector * int -> elem
+
+      (* Used to implement Substring/String functions *)
+      val append: vector * vector -> vector
+      val concatWith: vector -> vector list -> vector
+      val isPrefix: (elem * elem -> bool) -> vector -> vector -> bool
+      val isSubvector: (elem * elem -> bool) -> vector -> vector -> bool
+      val isSuffix: (elem * elem -> bool) -> vector -> vector -> bool
+      val translate: (elem -> vector) -> vector -> vector
+      val tokens: (elem -> bool) -> vector -> vector list
+      val fields: (elem -> bool) -> vector -> vector list
+
+      val duplicate: vector -> vector
+      val fromArray: elem array -> vector
+      val toList: vector -> elem list
+      val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> vector
+      val vector: int * elem -> vector
+
+      (* Deprecated *)
+      val extract: vector * int * int option -> vector
    end
 
-signature EQTYPE_MONO_VECTOR =
+signature MONO_VECTOR_EXTRA =
    sig
-      type elem
-      type vector = elem Vector.vector
-      val maxLen: int 
-      val fromList: elem list -> vector 
-      val tabulate: int * (int -> elem) -> vector 
-      val length: vector -> int 
-      val sub: vector * int -> elem 
-      val extract: vector * int * int option -> vector 
-      val concat: vector list -> vector 
-      val mapi: (int * elem -> elem) -> vector * int * int option -> vector 
-      val map: (elem -> elem) -> vector -> vector 
-      val appi: (int * elem -> unit) -> vector * int * int option -> unit 
-      val app: (elem -> unit) -> vector -> unit 
-      val foldli:
-	 (int * elem * 'a -> 'a) -> 'a -> vector * int * int option -> 'a 
-      val foldri:
-	 (int * elem * 'a -> 'a) -> 'a -> vector * int * int option -> 'a 
-      val foldl: (elem * 'a -> 'a) -> 'a -> vector -> 'a 
-      val foldr: (elem * 'a -> 'a) -> 'a -> vector -> 'a 
+      include MONO_VECTOR_EXTRA_PRE
+      structure MonoVectorSlice: MONO_VECTOR_SLICE_EXTRA 
+	where type elem = elem
+	  and type vector = vector
+   end
+
+signature EQTYPE_MONO_VECTOR_EXTRA =
+   sig
+      include MONO_VECTOR_EXTRA_PRE
+      structure MonoVectorSlice: EQTYPE_MONO_VECTOR_SLICE_EXTRA 
+	where type elem = elem
+	  and type vector = vector
    end

@@ -170,7 +170,7 @@ fun stringToIntInf (str: string): IntInf.t =
 
 fun makeXconst (c: Aconst.t, ty: Type.t): Xconst.t =
    let
-      val tycon = Xtype.detycon (Type.toXml (ty, Aconst.region c))
+      val ty = Xconst.Type.make (Xtype.deconConst (Type.toXml (ty, Aconst.region c)))
       datatype z = datatype Xconst.Node.t
       fun error m =
 	 Control.error (Aconst.region c,
@@ -181,7 +181,7 @@ fun makeXconst (c: Aconst.t, ty: Type.t): Xconst.t =
       (case Aconst.node c of
 	  Aconst.Char c => Char c
 	| Aconst.Int s =>
-	     if Tycon.equals (tycon, Tycon.intInf)
+	     if Xconst.Type.equals (ty, Xconst.Type.intInf)
 		then
 		   IntInf (stringToIntInf s)
 		   handle _ => (error "invalid IntInf";
@@ -198,10 +198,10 @@ fun makeXconst (c: Aconst.t, ty: Type.t): Xconst.t =
 		    case StringCvt.scanString (Pervasive.Int32.scan radix) s of
 		       NONE => (error "invalid int constant"; ~1)
 		     | SOME n =>
-			  if Tycon.equals (tycon, Tycon.int)
+			  if Xconst.Type.equals (ty, Xconst.Type.int)
 			     then n
 			  else (error (concat ["int can't be of type ",
-					       Tycon.toString tycon])
+					       Xconst.Type.toString ty])
 				; ~1)
 		 end
 		    handle Overflow =>
@@ -209,15 +209,15 @@ fun makeXconst (c: Aconst.t, ty: Type.t): Xconst.t =
 	| Aconst.Real r => Real r
 	| Aconst.String s => String s
 	| Aconst.Word w =>
-	     Word (if Tycon.equals (tycon, Tycon.word)
+	     Word (if Xconst.Type.equals (ty, Xconst.Type.word)
 		     then w
-		  else if Tycon.equals (tycon, Tycon.word8)
+		  else if Xconst.Type.equals (ty, Xconst.Type.word8)
 			  then if w = Word.andb (w, 0wxFF)
 				  then w
 			       else (error "word8 too big"; 0w0)
-		       else (error ("strange word " ^ Tycon.toString tycon)
+		       else (error ("strange word " ^ (Xconst.Type.toString ty))
 			     ; 0w0)),
-       tycon)
+       ty)
    end
 
 fun 'a sortByField (v: (Field.t * 'a) vector): 'a vector =

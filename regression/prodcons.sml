@@ -1,13 +1,6 @@
 (* Translated from prodcons.ocaml. *)
 
 functor Z (S: sig
-		 structure Primitive:
-		    sig
-		       structure Stdio:
-			  sig
-			     val print: string -> unit
-			  end
-		    end
 		 structure MLton:
 		    sig
 		       structure Itimer:
@@ -54,7 +47,7 @@ fun for (start, stop, f) =
       loop start
    end
 
-fun print s = () (* Primitive.Stdio.print s *)
+fun print s = ()
 
 structure Queue:
    sig
@@ -277,7 +270,6 @@ fun main (name, args) =
 
 end
 
-structure Z = Z (structure MLton = MLton
-		 structure Primitive = Primitive)
+structure Z = Z (structure MLton = MLton)
 
 val _ = Z.main ( "prodcons", ["100000"] )

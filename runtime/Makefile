@@ -41,6 +41,7 @@ OBJS =						\
 	basis/MLton/size.o			\
 	basis/MLton/world.o			\
 	basis/OS/FileSys/tmpnam.o		\
+	basis/OS/IO/poll.o			\
 	basis/PackReal/subVec.o			\
 	basis/PackReal/update.o			\
 	basis/Ptrace/ptrace2.o			\
@@ -53,7 +54,6 @@ OBJS =						\
 	basis/Socket/listen.o			\
 	basis/Socket/shutdown.o			\
 	basis/Stdio.o				\
-	basis/String/equal.o			\
 	basis/Thread.o				\
 	basis/Time.o				\
 	basis/Word32/addOverflow.o		\
@@ -188,6 +188,7 @@ DEBUG_OBJS =					\
 	basis/MLton/size-gdb.o			\
 	basis/MLton/world-gdb.o			\
 	basis/OS/FileSys/tmpnam-gdb.o		\
+	basis/OS/IO/poll-gdb.o			\
 	basis/PackReal/subVec-gdb.o		\
 	basis/PackReal/update-gdb.o		\
 	basis/Ptrace/ptrace2-gdb.o		\
@@ -200,7 +201,6 @@ DEBUG_OBJS =					\
 	basis/Socket/listen-gdb.o		\
 	basis/Socket/shutdown-gdb.o		\
 	basis/Stdio-gdb.o			\
-	basis/String/equal-gdb.o		\
 	basis/Thread-gdb.o			\
 	basis/Time-gdb.o			\
 	basis/Word32/addOverflow-gdb.o		\

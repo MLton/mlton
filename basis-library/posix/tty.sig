@@ -26,7 +26,7 @@ signature POSIX_TTY =
 
       structure I:
 	 sig
-	    include POSIX_FLAGS
+	    include BIT_FLAGS
 	    val brkint: flags 
 	    val icrnl: flags 
 	    val ignbrk: flags 
@@ -42,13 +42,13 @@ signature POSIX_TTY =
 
       structure O:
 	 sig
-	    include POSIX_FLAGS
+	    include BIT_FLAGS
 	    val opost: flags 
 	 end
 
       structure C:
 	 sig
-	    include POSIX_FLAGS
+	    include BIT_FLAGS
 	    val clocal: flags 
 	    val cread: flags 
 	    val cs5: flags 
@@ -64,7 +64,7 @@ signature POSIX_TTY =
 
       structure L:
 	 sig
-	    include POSIX_FLAGS
+	    include BIT_FLAGS
 	    val echo: flags 
 	    val echoe: flags 
 	    val echok: flags 
@@ -150,16 +150,16 @@ signature POSIX_TTY =
 	    val iflush: queue_sel 
 	    val oflush: queue_sel 
 	    val ioflush: queue_sel 
-	 end
 
-      val getattr: file_desc -> termios
-      val setattr: file_desc * TC.set_action * termios -> unit
-	 
-      val sendbreak: file_desc * int -> unit
-      val drain: file_desc -> unit
-      val flush: file_desc * TC.queue_sel -> unit
-      val flow: file_desc * TC.flow_action -> unit
-       
-      val getpgrp: file_desc -> pid 
-      val setpgrp: file_desc * pid -> unit
+	    val getattr: file_desc -> termios
+	    val setattr: file_desc * set_action * termios -> unit
+
+	    val sendbreak: file_desc * int -> unit
+	    val drain: file_desc -> unit
+	    val flush: file_desc * queue_sel -> unit
+	    val flow: file_desc * flow_action -> unit
+
+	    val getpgrp: file_desc -> pid 
+	    val setpgrp: file_desc * pid -> unit
+	 end
    end

@@ -176,3 +176,4 @@ structure Int = Int32
 structure IntGlobal: INTEGER_GLOBAL = Int
 open IntGlobal
 structure Position = Int
+structure FixedInt = Int

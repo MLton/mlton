@@ -1303,10 +1303,7 @@ struct
 		end
 	     | Real_neg => funa Instruction.FCHS
 	     | Real_round => funa Instruction.FRNDINT
-	     | String_fromCharVector => mov ()
 	     | String_fromWord8Vector => mov ()
-	     | String_size => lengthArrayVectorString ()
-	     | String_toCharVector => mov ()
 	     | String_toWord8Vector => mov ()
 	     | Vector_length => lengthArrayVectorString ()
 	     | Word8_toInt => movx Instruction.MOVZX

@@ -28,6 +28,20 @@ local
     open Array 
     infix 9 sub
     val array0 : int array = fromList []
+    fun extract (arr, s, l) = ArraySlice.vector (ArraySlice.slice (arr, s, l))
+    val copy = fn {src, si, len, dst, di} =>
+      ArraySlice.copy {src = ArraySlice.slice (src, si, len),
+		       dst = dst, di = di}
+    fun foldli f b (arr, s, l) = 
+      ArraySlice.foldli (fn (i,x,y) => f (i+s,x,y)) b (ArraySlice.slice (arr, s, l))
+    fun foldri f b (arr, s, l) = 
+      ArraySlice.foldri (fn (i,x,y) => f (i+s,x,y)) b (ArraySlice.slice (arr, s, l))
+    fun appi f (arr, s, l) = 
+      ArraySlice.appi (fn (i,x) => f (i+s,x)) (ArraySlice.slice (arr, s, l))
+    fun modifyi f (arr, s, l) = 
+      ArraySlice.modifyi (fn (i,x) => f (i+s,x)) (ArraySlice.slice (arr, s, l))
+    fun findi f (arr, s, l) = 
+      ArraySlice.findi (fn (i,x) => f (i+s,x)) (ArraySlice.slice (arr, s, l))
 in
 
 val a = fromList [1,11,21,31,41,51,61];
@@ -197,7 +211,6 @@ val test12b =
 	   andalso foldr cons [1,2] inp = [7,9,13,1,2]
 	   andalso (foldr (fn (x, _) => setv x) () inp; !v = 7));
 
-(*
 val test12c =
     tst' "test12c" (fn _ =>
 	           find (fn _ => true) array0 = NONE
@@ -205,7 +218,7 @@ val test12c =
 	   andalso find (fn x => x=7) inp = SOME 7
 	   andalso find (fn x => x=9) inp = SOME 9
 	   andalso (setv 0; find (fn x => (addv x; x=9)) inp; !v = 7+9));
-*)
+
 val test12d = 
     tst' "test12d" (fn _ =>
            (setv 117; app setv array0; !v = 117)
@@ -227,6 +240,7 @@ val test13a =
 	   andalso foldri consi [] (array0, 0, NONE) = []
 	   andalso foldli consi [] (inp, 0, NONE) = [(2,13),(1,9),(0,7)]
 	   andalso foldri consi [] (inp, 0, NONE) = [(0,7),(1,9),(2,13)])
+
 val test13b =
     tst' "test13b" (fn _ =>
 	           foldli consi [] (array0, 0, SOME 0) = []
@@ -269,7 +283,7 @@ val test13m = tst0 "test13m" ((foldri consi [] (inp, 0, SOME 4) seq "WRONG")
            handle Subscript => "OK" | _ => "WRONG");
 val test13n = tst0 "test13n" ((foldri consi [] (inp, 2, SOME ~1) seq "WRONG")
            handle Subscript => "OK" | _ => "WRONG");
-(*
+
 val test14a =
     tst' "test14a" (fn _ =>
 	   findi (fn _ => true) (array0, 0, NONE) = NONE
@@ -296,7 +310,7 @@ val test14g = (findi (fn _ => true) (inp, 0, SOME 4) seq "WRONG")
            handle Subscript => "OK" | _ => "WRONG";
 val test14h = (findi (fn _ => true) (inp, 2, SOME ~1) seq "WRONG")
            handle Subscript => "OK" | _ => "WRONG";
-*)
+
 val test15a = 
     tst' "test15a" (fn _ =>
            (setvi (0,117); appi setvi (array0, 0, NONE); !v = 117)

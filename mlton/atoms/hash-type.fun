@@ -177,7 +177,7 @@ end
 
 fun optionToAst z = Option.map (z, toAst)
 
-fun ofConst c = con (Const.tycon c, Vector.new0 ())
+fun ofConst c = Const.Type.toType (Const.ty c, con)
 
 fun isUnit t =
    case dest t of

@@ -39,6 +39,7 @@ structure Type =
 	  | _ => true
    end
 
+structure Sconst = Const
 open Exp Transfer
 
 structure Value =
@@ -391,7 +392,10 @@ structure Value =
       fun tuple vs =
 	 new (Tuple vs, Type.tuple (Vector.map (vs, ty)))
 
-      fun const c = new (Const (Const.const c), Type.ofConst c)
+      fun const' (c, ty) = new (Const c, ty)
+      fun const c = let val c' = Const.const c
+		    in new (Const c', Type.ofConst c)
+		    end
 
       val zero = const (S.Const.fromInt 0)
 
@@ -404,6 +408,28 @@ structure Value =
 	 fun make (err, sel) v =
 	    case value v of
 	       Vector fs => sel fs
+	     | Const (Const.T {const = ref (Const.Const c), coercedTo}) =>
+		  let
+		     val s = case Sconst.node c of
+		                Sconst.Node.String s => s
+			      | _ => Error.bug err 
+		     val n = String.length s
+		     val x = if n = 0
+			        then const' (Const.unknown(), Type.char)
+			     else let
+				     val c = String.sub (s, 0)
+				  in
+				     if String.forall (s, fn c' => c = c')
+				        then (const o Sconst.make)
+					     (Sconst.Node.Char c, 
+					      Sconst.Type.char)
+				     else const' (Const.unknown(), Type.char)
+				  end
+		     val n = (const o Sconst.make)
+		             (Sconst.Node.Int n, Sconst.Type.int)
+		  in
+		     sel {length = n, elt = x}
+		  end
 	     | _ => Error.bug err
       in val devector = make ("devector", #elt)
 	 val vectorLength = make ("vectorLength", #length)
@@ -470,8 +496,8 @@ structure Value =
 		    | Type.Vector t => Vector {length = loop Type.int,
 					       elt = loop t}
 		    | Type.Tuple ts => Tuple (Vector.map (ts, loop))
-		    | _ => Const (const ()),
-			 t)
+		    | _ => Const (const ()), 
+		   t)
 	    in loop
 	    end
       in
@@ -603,25 +629,55 @@ fun simplify (program: Program.t): Program.t =
 	     if equals (from, to)
 		then ()
 	     else
-		case (value from, value to) of
-		   (Const from, Const to) => Const.coerce {from = from, to = to}
-		 | (Datatype from, Datatype to) =>
-		      coerceData {from = from, to = to}
-		 | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
-		      (Birth.coerce {from = birth, to = b'}
-		       ; unify (arg, a'))
-	         | (Array {birth = b, length = n, elt = x},
-		    Array {birth = b', length = n', elt = x'}) =>
-		      (Birth.coerce {from = b, to = b'}
-		       ; coerce {from = n, to = n'}
-		       ; unify (x, x'))
-	         | (Vector {length = n, elt = x},
-		    Vector {length = n', elt = x'}) =>
-		      (coerce {from = n, to = n'}
-		       ; coerce {from = x, to = x'})
-		 | (Tuple vs, Tuple vs') => coerces {froms = vs, tos = vs'}
-		 | _ => Error.bug "strange coerce") arg
-
+	        let 
+		   fun error () = 
+		      Error.bug ("strange coerce:" ^
+				 " from: " ^ (Layout.toString (Value.layout from)) ^
+				 " to: " ^ (Layout.toString (Value.layout to)))
+		in
+		  case (value from, value to) of
+		     (Const from, Const to) => Const.coerce {from = from, to = to}
+		   | (Datatype from, Datatype to) =>
+		        coerceData {from = from, to = to}
+		   | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
+			(Birth.coerce {from = birth, to = b'}
+			 ; unify (arg, a'))
+		   | (Array {birth = b, length = n, elt = x},
+			Array {birth = b', length = n', elt = x'}) =>
+			(Birth.coerce {from = b, to = b'}
+			 ; coerce {from = n, to = n'}
+			 ; unify (x, x'))
+	           | (Vector {length = n, elt = x},
+		      Vector {length = n', elt = x'}) =>
+			(coerce {from = n, to = n'}
+			 ; coerce {from = x, to = x'})
+		   | (Tuple vs, Tuple vs') => coerces {froms = vs, tos = vs'}
+		   | (Const (Const.T {const = ref (Const.Const c), coercedTo}),
+		      Vector {length, elt}) =>
+			let
+			   val s = case Sconst.node c of
+			              Sconst.Node.String s => s
+				    | _ => error ()
+			   val n = String.length s
+			   val x = if n = 0
+			              then const' (Const.unknown(), Type.char)
+				   else let
+					   val c = String.sub (s, 0)
+					in
+					   if String.forall (s, fn c' => c = c')
+					      then (const o Sconst.make)
+						   (Sconst.Node.Char c, 
+						    Sconst.Type.char)
+					   else const' (Const.unknown(), Type.char)
+					end
+			   val n = (const o Sconst.make)
+			           (Sconst.Node.Int n, Sconst.Type.int)
+			in
+			   coerce {from = x, to = elt}
+			   ; coerce {from = n, to = length}
+			end
+		   | (_, _) => error ()
+		end) arg
 	 and unify (T s: t, T s': t): unit =
 	    if Set.equals (s, s')
 	       then ()

@@ -123,8 +123,4 @@ val bug = vanilla {name = "MLton_bug",
 
 val size = vanilla {name = "MLton_size",
 		    returnTy = SOME Type.int}
-
-val stringEqual = vanilla {name = "String_equal",
-			   returnTy = SOME Type.bool}
-
 end

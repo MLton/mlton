@@ -35,6 +35,6 @@ signature DATE =
       val toString: date -> string 
       val fmt: string -> date -> string 
       val fromString: string -> date option 
-      val scan: (char, 'a) StringCvt.reader -> 'a -> (date * 'a) option
+      val scan: (char, 'a) StringCvt.reader -> (date, 'a) StringCvt.reader
       val compare: date * date -> order
    end

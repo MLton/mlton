@@ -33,10 +33,12 @@ $(NAME)_cm: $(NAME)-stubs_cm
 .PHONY:	$(NAME)-stubs_cm
 $(NAME)-stubs_cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	(								\
-		echo 'Group is'&&					\
-		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' |	\
+		echo 'Group is' &&					\
+		cmcat sources.cm | grep -v 'basis-stubs' | 		\
+			grep -v 'mlton-stubs-in-smlnj' |		\
 			grep mlyacc &&					\
-		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' |	\
+		cmcat sources.cm | grep -v 'basis-stubs' | 		\
+			grep -v 'mlton-stubs-in-smlnj' |		\
 			grep -v mlyacc &&				\
 		echo 'call-main.sml';					\
 	) >$(NAME)-stubs.cm

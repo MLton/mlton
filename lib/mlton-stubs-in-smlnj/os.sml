@@ -1,6 +1,6 @@
 structure OS =
    struct
-      open OS
+      open Pervasive.OS
 
       structure FileSys =
 	 struct

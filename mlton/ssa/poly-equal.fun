@@ -284,8 +284,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 			     args = Vector.new2 (dx1, dx2),
 			     ty = Type.bool}
 	    fun eq () = prim (Prim.eq, Vector.new1 ty)
-	    fun hasConstArg () =
-	       #isConst (varInfo x1) orelse #isConst (varInfo x2)
+	    fun hasConstArg () = #isConst (varInfo x1) orelse #isConst (varInfo x2)
 	 in
 	    case Type.dest ty of
 	       Type.Array _ => eq ()
@@ -301,7 +300,6 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 				 then eq ()
 			      else prim (Prim.intInfEqual, Vector.new0 ())
 	     | Type.Ref _ => eq ()
-	     | Type.String => prim (Prim.stringEqual, Vector.new0 ())
 	     | Type.Tuple tys =>
 		  let
 		     val max = Vector.length tys - 1

@@ -28,5 +28,25 @@ fun clean cs = app (fn (_, c) => c ()) (!cs)
    
 val atExit = new ()
 val atLoadWorld = new ()
-   
+
+end
+
+structure EmptyCleaner: CLEANER =
+struct
+
+structure UniqueId = UniqueId()
+structure Id = UniqueId
+
+type t = unit
+
+fun new (): t = ()
+
+fun add _ = ()
+fun addNew _ = ()
+fun remove _ = ()
+fun clean _ = ()
+
+val atExit = new ()
+val atLoadWorld = new ()
+
 end

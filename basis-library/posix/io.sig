@@ -23,14 +23,14 @@ signature POSIX_IO =
 
       structure FD:
 	 sig
-	    include POSIX_FLAGS
+	    include BIT_FLAGS
 
             val cloexec: flags 
 	 end
       
       structure O:
 	 sig
-	    include POSIX_FLAGS
+	    include BIT_FLAGS
 
             val append: flags 
 	    val nonblock: flags 
@@ -47,21 +47,16 @@ signature POSIX_IO =
       val lseek: file_desc * Position.int * whence -> Position.int 
       val fsync: file_desc -> unit
 	 
-      datatype lock_type =
-	 F_RDLCK
-       | F_WRLCK
-       | F_UNLCK
+      datatype lock_type = F_RDLCK | F_WRLCK | F_UNLCK
 	 
       structure FLock:
 	 sig
 	    type flock
-	    val flock: {
-			ltype: lock_type,
+	    val flock: {ltype: lock_type,
 			whence: whence,
 			start: Position.int,
 			len: Position.int,
-			pid: pid option
-			} -> flock 
+			pid: pid option} -> flock 
 	    val ltype: flock -> lock_type 
 	    val whence: flock -> whence 
 	    val start: flock -> Position.int 
@@ -72,4 +67,21 @@ signature POSIX_IO =
       val getlk: file_desc * FLock.flock -> FLock.flock 
       val setlk: file_desc * FLock.flock -> FLock.flock 
       val setlkw: file_desc * FLock.flock -> FLock.flock
+
+      val mkBinReader: {fd: file_desc,
+			name: string,
+			initBlkMode: bool} -> BinPrimIO.reader
+      val mkTextReader: {fd: file_desc,
+			 name: string,
+			 initBlkMode: bool} -> TextPrimIO.reader
+      val mkBinWriter: {fd: file_desc,
+			name: string,
+			appendMode: bool,
+			initBlkMode: bool,
+			chunkSize: int} -> BinPrimIO.writer
+      val mkTextWriter: {fd: file_desc,
+			 name: string,
+			 appendMode: bool,
+			 initBlkMode: bool,
+			 chunkSize: int} -> TextPrimIO.writer
    end

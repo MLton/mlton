@@ -28,7 +28,6 @@ signature PRIM_TYCONS =
       val preThread: tycon
       val real: tycon
       val reff: tycon
-      val string: tycon
       val thread: tycon
       val tuple: tycon
       val vector: tycon

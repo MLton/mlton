@@ -5,42 +5,30 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure String0 =
+
+structure CharVector = EqtypeMonoVector(type elem = char)
+structure CharVectorSlice = CharVector.MonoVectorSlice
+structure String0 = 
    struct
-      val fromArray =
-	 Primitive.String.fromCharVector o Primitive.Vector.fromArray
-
-      structure S = Sequence (type 'a sequence = string
-			      type 'a elt = char
-			      val fromArray = fromArray
-			      val isMutable = false
-			      open Primitive.String
-			      val length = size)
-      open S
-
-      open Primitive.Int
-	 
-      type string = string
-      type array = string
-
-      val maxSize = maxLen
-
-      val size = length
-
-      fun substring (s, i, j) = extract (s, i, SOME j)
-
-      fun copy s = tabulate (length s, fn i => sub (s, i))
-	 
-      fun map f s =
-	 fromArray (Array.tabulate (size s, fn i => f (sub (s, i))))
-
-      fun s ^ s' = concat [s, s']
-
-      fun implode cs =
-	 let val a = Primitive.Array.array (List.length cs)
-	 in List.foldl (fn (c, i) => (Array.update (a, i, c) ; i +? 1)) 0 cs ;
-	    fromArray a
+      open CharVector
+      type char = elem
+      type string = vector
+      structure Substring0 =
+	 struct
+	    open CharVectorSlice
+	    type char = elem
+	    type string = vector
+	    type substring = slice
 	 end
-
+      val maxSize = maxLen
+      val size = length
+      fun extract (s, start, len) = 
+	 CharVectorSlice.vector (CharVectorSlice.slice (s, start, len))
+      fun substring (s, start, len) = extract (s, start, SOME len)
+      val op ^ = append
+      val new = vector
       fun str c = new (1, c)
+      val implode = fromList
+      val explode = toList
    end
+structure Substring0 = String0.Substring0

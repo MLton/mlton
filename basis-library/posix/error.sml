@@ -12,8 +12,8 @@ structure PosixError: POSIX_ERROR_EXTRA =
 	 
       exception SysErr of string * syserror option
 
-      val toWord = Word.fromInt
-      val fromWord = Word.toInt
+      val toWord = SysWord.fromInt
+      val fromWord = SysWord.toInt
 
       fun errorName n =
 	 case List.find (fn (m, _) => n = m) errorNames of
@@ -33,22 +33,7 @@ structure PosixError: POSIX_ERROR_EXTRA =
 	 end
 
       fun raiseSys n = raise SysErr (errorMsg n, SOME n)
-
-      fun restart (f: 'a -> int) (a: 'a): int =
-	 let
-	    fun loop () =
-	       case f a of
-		  ~1 => let val errno = getErrno ()
-			in if errno = intr
-			      then loop ()
-			   else raiseSys errno
-			end
-		| n => n
-	 in loop ()
-	 end
-      
       fun error () = raiseSys (getErrno ())
-
       fun checkReturnResult (n: int) = if n = ~1 then error () else n
       fun checkResult n = (checkReturnResult n; ())
    end

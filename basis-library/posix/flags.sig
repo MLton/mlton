@@ -1,16 +1,19 @@
-signature POSIX_FLAGS =
+signature BIT_FLAGS =
    sig
       eqtype flags
 
       val toWord: flags -> SysWord.word 
-      val wordTo: SysWord.word -> flags 
+      val fromWord: SysWord.word -> flags 
+      val all: flags
       val flags: flags list -> flags 
+      val intersect: flags list -> flags
+      val clear: flags * flags -> flags
       val allSet: flags * flags -> bool 
       val anySet: flags * flags -> bool
    end
 
-signature POSIX_FLAGS_EXTRA =
+signature BIT_FLAGS_EXTRA =
    sig
-      include POSIX_FLAGS
+      include BIT_FLAGS
       val empty: flags
    end

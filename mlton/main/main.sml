@@ -75,6 +75,13 @@ fun makeOptions {usage} =
    in List.map
       (
        [
+       (Normal, "basis", " {basis-2002|...}",
+	"select basis library to prefix to the program",
+	SpaceString (fn s => 
+		     basisLibrary :=
+		     (if List.contains (Control.basisLibs, s, String.equals)
+			then s
+			else usage (concat ["invalid -basis flag: ", s])))),
        (Expert, "build-constants", "",
 	"output C file that prints basis constants",
 	trueRef buildConstants),
@@ -273,9 +280,6 @@ fun makeOptions {usage} =
 	intRef textIOBufSize),
        (Expert, "type-check", " {false|true}", "type check ILs",
 	boolRef typeCheck),
-       (Expert, "use-basis-library", " {true|false}",
-	"prefix the basis library to the program",
-	boolRef useBasisLibrary),
        (Normal, "v", "[0123]", "how verbose to be about compiler passes",
 	String
 	(fn s =>
@@ -357,8 +361,8 @@ fun commandLine (args: string list): unit =
 		   then Layout.outputl (Compile.layoutBasisLibrary (),
 					Out.standard)
 		else if !buildConstants
-			then Compile.outputBasisConstants Out.standard
-		     else usage "must supply a file"
+		   then Compile.outputBasisConstants Out.standard
+	        else usage "must supply a file"
 	   | Top => printVersion ()
 	   | _ => (inputFile := ""
 		   ; outputHeader' (No, Out.standard)))

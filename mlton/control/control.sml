@@ -11,6 +11,11 @@ struct
 structure C = Control ()
 open C
 
+val basisLibs = ["basis-2002", "basis-2002-strict", "basis-1997", "none"]
+val basisLibrary = control {name = "basis library",
+			    default = "basis-2002",
+			    toString = fn s => s}
+
 val cardSizeLog2 = control {name = "log2 (card size)",
 			    default = 8,
 			    toString = Int.toString}

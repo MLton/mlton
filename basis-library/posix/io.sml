@@ -33,36 +33,48 @@ structure PosixIO: POSIX_IO =
 
       fun close (FD fd) = checkResult (Prim.close fd)
 
-      fun readArr (FD fd, {buf, i, sz}): int =
-	 let
-	    val max = Array.checkSlice (buf, i, sz)
-	 in
-	    checkReturnResult (Prim.read (fd, buf, i, max -? i))
-	 end
-
-      fun readVec (fd, n): Word8Vector.vector =
-	 let
-	    val a = Primitive.Array.array n
-	    val bytesRead = readArr (fd, {buf = a, i = 0, sz = SOME n})
-	 in
-	    if n = bytesRead
-	       then Vector.fromArray a
-	    else Array.extract (a, 0, SOME bytesRead)
-	 end
-	 
-      fun writeVec (FD fd, {buf, i, sz}) =
-	 let
-	    val max = Vector.checkSlice (buf, i, sz)
-	 in
-	    checkReturnResult (Prim.write (fd, buf, i, max -? i))
-	 end
-
-      fun writeArr (fd, {buf, i, sz}) =
-	 writeVec (fd, {buf = Vector.fromArray buf, i = i, sz = sz})
+      local
+	fun make {read, write} =
+	  let
+	    fun readArr (FD fd, {buf, i, sz}): int =
+	      let
+		val max = Array.checkSlice (buf, i, sz)
+	      in
+		checkReturnResult (read (fd, buf, i, max -? i))
+	      end
+	    
+	       fun readVec (fd, n) =
+		 let
+		   val a = Primitive.Array.array n
+		   val bytesRead = readArr (fd, {buf = a, i = 0, sz = SOME n})
+		 in 
+		   if n = bytesRead
+		     then Vector.fromArray a
+		     else Array.extract (a, 0, SOME bytesRead)
+		  end
+		
+	       fun writeVec (FD fd, {buf, i, sz}) =
+		 let
+		   val max = Vector.checkSlice (buf, i, sz)
+		 in
+		   checkReturnResult (write (fd, buf, i, max -? i))
+		 end
+	       
+	       fun writeArr (fd, {buf, i, sz}) =
+		  writeVec (fd, {buf = Vector.fromArray buf, i = i, sz = sz})
+	  in
+	    {readArr = readArr, readVec = readVec,
+	     writeVec = writeVec, writeArr = writeArr}
+	  end
+      in
+	val rwChar = make {read = readChar, write = writeChar}
+	val rwWord8 = make {read = readWord8, write = writeWord8}
+      end
+      val {readArr, readVec, writeVec, writeArr} = rwWord8
 		      
       structure FD =
 	 struct
-	    open FD PosixFlags
+	    open FD BitFlags
 	 end
 
       structure O = PosixFileSys.O
@@ -168,5 +180,162 @@ structure PosixIO: POSIX_IO =
 	 val getlk = make (F_GETLK, true)
 	 val setlk = make (F_SETLK, false)
 	 val setlkw = make (F_SETLKW, false)
+      end
+
+      (* Adapted from SML/NJ sources. *)
+      (* posix-bin-prim-io.sml
+       *
+       * COPYRIGHT (c) 1995 AT&T Bell Laboratories.
+       *
+       * This implements the UNIX version of the OS specific binary primitive
+       * IO structure.  The Text IO version is implemented by a trivial translation
+       * of these operations (see posix-text-prim-io.sml).
+       *
+       *)
+      local
+	val pos0 = Position.fromInt 0
+	fun isReg fd = FS.ST.isReg(FS.fstat fd)
+	fun posFns (closed, fd) = 
+	  if (isReg fd)
+	    then let
+		   val pos = ref pos0
+		   fun getPos () = !pos
+		   fun setPos p = (if !closed 
+				     then raise IO.ClosedStream 
+				     else ();
+				   pos := lseek(fd,p,SEEK_SET))
+		   fun endPos () = (if !closed 
+				      then raise IO.ClosedStream 
+				      else ();
+				    FS.ST.size(FS.fstat fd))
+		   fun verifyPos () = let
+					val curPos = lseek(fd, pos0, SEEK_CUR)
+				      in
+					pos := curPos; curPos
+				      end
+		 in
+		   verifyPos ();
+		   {pos = pos,
+		    getPos = SOME getPos,
+		    setPos = SOME setPos,
+		    endPos = SOME endPos,
+		    verifyPos = SOME verifyPos}
+		 end
+	    else {pos = ref pos0,
+		  getPos = NONE, 
+		  setPos = NONE, 
+		  endPos = NONE, 
+		  verifyPos = NONE}
+
+	fun make {readArr, readVec, writeVec, writeArr} (RD, WR) =
+	  let
+	    fun mkReader {fd, name, initBlkMode} =
+	      let
+		val closed = ref false
+		val {pos, getPos, setPos, endPos, verifyPos} = posFns (closed, fd)
+		val blocking = ref initBlkMode
+		fun blockingOn () = 
+		  (setfl(fd, O.flags[]); blocking := true)
+		fun blockingOff () = 
+		  (setfl(fd, O.nonblock); blocking := false)
+		fun ensureOpen () = 
+		  if !closed then raise IO.ClosedStream else ()
+		fun incPos k = pos := Position.+ (!pos, Position.fromInt k)
+		val readVec = fn n => 
+		  let val v = readVec (fd, n)
+		  in incPos (Vector.length v); v
+		  end
+		val readArr = fn x => 
+		  let val k = readArr (fd, x)
+		  in incPos k; k
+		  end
+		fun blockWrap f x =
+		  (ensureOpen ();
+		   if !blocking then () else blockingOn ();
+		   f x)
+		fun noBlockWrap f x =
+		  (ensureOpen ();
+		   if !blocking then blockingOff () else ();
+		   (SOME (f x)
+		    handle (e as PosixError.SysErr (_, SOME cause)) =>
+		    if cause = PosixError.again then NONE else raise e))
+		val close = 
+		  fn () => if !closed then () else (closed := true; close fd)
+		val avail = 
+		  if isReg fd
+		    then fn () => if !closed 
+				    then SOME 0
+				    else SOME(Position.-(FS.ST.size(FS.fstat fd), !pos))
+		    else fn () => if !closed then SOME 0 else NONE
+	      in
+		RD {name = name,
+		    chunkSize = Primitive.TextIO.bufSize,
+		    readVec = SOME (blockWrap readVec),
+		    readArr = SOME (blockWrap readArr),
+		    readVecNB = SOME (noBlockWrap readVec),
+		    readArrNB = SOME (noBlockWrap readArr),
+		    block = NONE,
+		    canInput = NONE,
+		    avail = avail,
+		    getPos = getPos,
+		    setPos = setPos,
+		    endPos = endPos,
+		    verifyPos = verifyPos,
+		    close = close,
+		    ioDesc = SOME (FS.fdToIOD fd)}
+	      end
+	    fun mkWriter {fd, name, initBlkMode, appendMode, chunkSize} =
+	      let
+		val closed = ref false
+		val {pos, getPos, setPos, endPos, verifyPos} = posFns (closed, fd)
+		fun incPos k = (pos := Position.+ (!pos, Position.fromInt k); k)
+		val blocking = ref initBlkMode
+		val appendFlgs = O.flags(if appendMode then [O.append] else [])
+		fun updateStatus () = 
+		  let
+		    val flgs = if !blocking
+				 then appendFlgs
+				 else O.flags [O.nonblock, appendFlgs]
+		  in
+		    setfl(fd, flgs)
+		  end
+		fun ensureOpen () = 
+		  if !closed then raise IO.ClosedStream else ()
+		fun ensureBlock x = 
+		  if !blocking then () else (blocking := x; updateStatus ())
+		fun putV x = incPos(writeVec x)
+		fun putA x = incPos(writeArr x)
+		fun write (put, block) arg = 
+		  (ensureOpen (); ensureBlock block; put (fd, arg))
+		fun handleBlock writer arg = 
+		  SOME(writer arg)
+		  handle (e as PosixError.SysErr (_, SOME cause)) =>
+		    if cause = PosixError.again then NONE else raise e
+		val close = 
+		  fn () => if !closed then () else (closed := true; close fd)
+	      in
+		WR {name = name,
+		    chunkSize = chunkSize,
+		    writeVec = SOME (write (putV, true)),
+		    writeArr = SOME (write (putA, true)),
+		    writeVecNB = SOME (handleBlock (write (putV, false))),
+		    writeArrNB = SOME (handleBlock (write (putA, false))),
+		    block = NONE,
+		    canOutput = NONE,
+		    getPos = getPos,
+		    setPos = setPos,
+		    endPos = endPos,
+		    verifyPos = verifyPos,
+		    close = close,
+		    ioDesc = SOME (FS.fdToIOD fd)}
+	      end
+	  in
+	    {mkReader = mkReader, mkWriter = mkWriter}
+	  end
+      in
+	val {mkReader = mkBinReader, mkWriter = mkBinWriter} =
+	  make rwWord8 (BinPrimIO.RD, BinPrimIO.WR)
+	val {mkReader = mkTextReader, mkWriter = mkTextWriter} =
+	  make rwChar (TextPrimIO.RD, TextPrimIO.WR)
       end
    end

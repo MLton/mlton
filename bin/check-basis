@@ -7,42 +7,12 @@ set -e
 
 name=`basename $0`
 
-usage () {
-	echo >&2 "usage: $name"
+function usage() {
+	echo >&2 "usage: $name lib [file.sml | file.cm]"
 	exit 1
 }
 
-case "$#" in
-0)
-	;;
-*)
-	usage
-	;;
-esac
-
-dir=`dirname $0`
-root=`cd $dir/.. && pwd`
-basis="$root/basis-library/basis.sml"
-
-cd $root/basis-library
-rm -f $basis
-(
-cat <<-EOF
-	val _ = SMLofNJ.Internals.GC.messages false;
-	fun PRIM x = raise Fail "_prim"
-	datatype pointer = T
-        datatype preThread = T
-	datatype thread = T
-	type word8 = Word8.word
-	type word = Word32.word
-	type int = Int32.int
-	type intInf = int
-	nonfix * / mod div ^ + - := o > < >= <= = <> :: @ before
-EOF
-for f in `(cat build-basis; cat bind-basis) | grep -v overload`; do
-	echo "(*#line 1.0 \"$f\"*)"
-	cat $f
-done |
+function rewrite() {
 	sed 's/_build_const\(.*\);/(PRIM\1)/' |
 	sed 's/_build_const/PRIM/' |
 	sed 's/_const\(.*\);/(PRIM\1)/' |
@@ -51,8 +21,296 @@ done |
 	sed 's/_prim/PRIM/' |
 	sed 's/_ffi\(.*\);/(PRIM\1)/' |
 	sed 's/_ffi/PRIM/' |
-	sed 's/fun bigIntConstant x = x/fun bigIntConstant(x:smallInt):bigInt = raise Fail "bigIntConstant"/'
+	sed 's/fun bigIntConstant x = x/fun bigIntConstant(x:smallInt):bigInt = raise Fail "bigIntConstant"/' |
+	sed 's/#"\([^"\]*\(\\.[^"\]*\)*\)"/#ZZZ\1ZZZ/g' |
+	sed 's/\([^\]\)"\([^"\]*\(\\.[^"\]*\)*\)"/\1(STRING_CONST "\2")/g' |
+	sed 's/#ZZZ\(\(.\)\|\(..\)\|\([^Z][^Z][^Z].*\)\)ZZZ/#"\1"/g' |
+        sed 's/(\*#line 0.0 \(.*\)\*)/(*#line 0.0 "\1"*)/'
+}
+
+REWRITE_FILE=""
+function rewrite_file() {
+(
+	echo "(*#line 0.0 $REWRITE_FILE*)"
+	cat $REWRITE_FILE 
+) | rewrite
+}
+
+REWRITE_FILES=""
+function rewrite_files() {
+for f in `cat $REWRITE_FILES | grep -v "^#" | grep -v overload | grep -v Group`; do
+	echo "(*#line 0.0 $f*)"
+        cat $f
+done | rewrite
+}
+
+SML_FILE=""
+CM_FILE=""
+LIB=""
+case "$#" in
+0)
+	usage
+	;;
+1)
+	LIB=$1
+	;;
+2)
+	LIB=$1
+	if [ "$2" == "`basename $2 .sml`.sml" -a -r "$2" ]; then
+		SML_FILE=$2
+	elif [ "$2" == "`basename $2 .cm`.cm" -a -r "$2" ]; then
+		CM_FILE=$2
+	else usage
+        fi
+        ;;
+*)
+	usage
+	;;
+esac
+
+dir=`dirname $0`
+root=`cd $dir/.. && pwd`
+here=`pwd`
+basis="$root/basis-library/basis.sml"
+
+rm -f $basis
+(
 cat <<-EOF
+	val _ = SMLofNJ.Internals.GC.messages false;
+	fun PRIM (x:char vector) = raise Fail "_prim"
+	fun STRING_CONST (x:string) : char vector = raise Fail "<string constant>"
+        structure Types = struct
+          type 'a array = 'a array
+          datatype bool = datatype bool
+          type char = char
+          type exn = exn
+          type int = Int32.int
+          type intInf = int
+          datatype list = datatype list
+          datatype pointer = T
+          type real = real
+          datatype ref = datatype ref
+          datatype preThread = T
+          datatype thread = T
+          type word = Word32.word
+          type word8 = Word8.word
+          type 'a vector = 'a vector
+          
+          datatype 'a option = T
+        end
+        signature GENERAL = sig end
+        structure General = struct end
+        signature OPTION = sig end
+        structure Option = struct end
+        signature BOOL = sig end
+        structure Bool = struct end
+        signature SML90 = sig end
+        structure SML90 = struct end
+        signature CHAR = sig end
+        structure Char = struct end
+        structure WideChar = struct end
+        signature STRING = sig end
+        structure String = struct end
+        structure WideString = struct end
+        signature SUBSTRING = sig end
+        structure Substring = struct end
+        structure WideSubstring = struct end
+        signature STRING_CVT = sig end
+        structure StringCvt = struct end
+        signature BYTE = sig end
+        structure Byte = struct end
+        signature INTEGER = sig end
+        structure Int = struct end
+        structure Int8 = struct end
+        structure Int16 = struct end
+        structure Int32 = struct end
+        structure Int64 = struct end
+        structure FixedInt = struct end
+        structure LargeInt = struct end
+        structure Position = struct end
+        signature INT_INF = sig end
+        structure IntInf = struct end
+        signature WORD = sig end
+        structure Word = struct end
+        structure Word8 = struct end
+        structure Word16 = struct end
+        structure Word32 = struct end
+        structure Word64 = struct end
+        structure LargeWord = struct end
+        structure SysWord = struct end
+        signature PACK_WORD = sig end
+        structure Pack8Big = struct end
+        structure Pack8Little = struct end
+        structure Pack16Big = struct end
+        structure Pack16Little = struct end
+        structure Pack32Big = struct end
+        structure Pack32Little = struct end
+        structure Pack64Big = struct end
+        structure Pack64Little = struct end
+        signature REAL = sig end
+        structure Real = struct end
+        structure Real32 = struct end
+        structure Real64 = struct end
+        structure Real128 = struct end
+        structure LargeReal = struct end
+        signature MATH = sig end
+        structure Math = struct end
+        signature IEEE_REAL = sig end
+        structure IEEEReal = struct end
+        signature PACK_REAL = sig end
+        structure PackRealBig = struct end
+        structure PackRealLittle = struct end
+        structure PackReal32Big = struct end
+        structure PackReal32Little = struct end
+        structure PackReal64Big = struct end
+        structure PackReal64Little = struct end
+        structure PackReal128Big = struct end
+        structure PackReal128Little = struct end
+        signature LIST = sig end
+        structure List = struct end
+        signature LIST_PAIR = sig end
+        structure ListPair = struct end
+        signature VECTOR = sig end
+        structure Vector = struct end
+        signature MONO_VECTOR = sig end
+        structure CharVector = struct end
+        structure WideCharVector = struct end
+        structure BoolVector = struct end
+        structure IntVector = struct end
+        structure RealVector = struct end
+        structure WordVector = struct end
+        structure Int8Vector = struct end
+        structure Int16Vector = struct end
+        structure Int32Vector = struct end
+        structure Int64Vector = struct end
+        structure Real32Vector = struct end
+        structure Real64Vector = struct end
+        structure Real128Vector = struct end
+        structure Word8Vector = struct end
+        structure Word16Vector = struct end
+        structure Word32Vector = struct end
+        structure Word64Vector = struct end
+        signature ARRAY = sig end
+        structure Array = struct end
+        signature MONO_ARRAY = sig end
+        structure CharArray = struct end
+        structure WideCharArray = struct end
+        structure BoolArray = struct end
+        structure IntArray = struct end
+        structure RealArray = struct end
+        structure WordArray = struct end
+        structure Int8Array = struct end
+        structure Int16Array = struct end
+        structure Int32Array = struct end
+        structure Int64Array = struct end
+        structure Real32Array = struct end
+        structure Real64Array = struct end
+        structure Real128Array = struct end
+        structure Word8Array = struct end
+        structure Word16Array = struct end
+        structure Word32Array = struct end
+        structure Word64Array = struct end
+        signature ARRAY2 = sig end
+        structure Array2 = struct end
+        signature MONO_ARRAY2 = sig end
+        structure CharArray2 = struct end
+        structure WideCharArray2 = struct end
+        structure BoolArray2 = struct end
+        structure IntArray2 = struct end
+        structure RealArray2 = struct end
+        structure WordArray2 = struct end
+        structure Int8Array2 = struct end
+        structure Int16Array2 = struct end
+        structure Int32Array2 = struct end
+        structure Int64Array2 = struct end
+        structure Real32Array2 = struct end
+        structure Real64Array2 = struct end
+        structure Real128Array2 = struct end
+        structure Word8Array2 = struct end
+        structure Word16Array2 = struct end
+        structure Word32Array2 = struct end
+        structure Word64Array2 = struct end
+        signature IO = sig end
+        structure IO = struct end
+        signature TEXT_IO = sig end
+        structure TextIO = struct end
+        signature TEXT_STREAM_IO = sig end
+        signature BIN_IO = sig end
+        structure BinIO = struct end
+        signature IMPERATIVE_IO = sig end
+        functor ImperativeIO () = struct end
+        signature STREAM_IO = sig end
+        functor StreamIO () = struct end
+        signature PRIM_IO = sig end
+        structure BinPrimIO = struct end
+        structure TextPrimIO = struct end
+        structure WideTextPrimIO = struct end
+        functor PrimIO () = struct end
+        signature OS = sig end
+        structure OS = struct end
+        signature OS_FILE_SYS = sig end
+        signature OS_IO = sig end
+        signature OS_PATH = sig end
+        signature OS_PROCESS = sig end
+        signature COMMAND_LINE = sig end
+        structure CommandLine = struct end
+        signature UNIX = sig end
+        structure Unix = struct end
+        signature DATE = sig end
+        structure Date = struct end
+        signature TIME = sig end
+        structure Time = struct end
+        signature TIMER = sig end
+        structure Timer = struct end
+        signature POSIX = sig end
+        structure Posix = struct end
+        signature POSIX_ERROR = sig end
+        signature POSIX_FILE_SYS = sig end
+        signature POSIX_FLAGS = sig end
+        signature POSIX_IO = sig end
+        signature POSIX_PROC_ENV = sig end
+        signature POSIX_PROCESS = sig end
+        signature POSIX_SIGNAL = sig end
+        signature POSIX_SYS_DB = sig end
+        signature POSIX_TTY = sig end
+	nonfix * / mod div ^ + - := o > < >= <= = <> :: @ before
+
+        open Types
+EOF
+cat <<-EOF
+	local
+EOF
+cd $root/basis-library
+REWRITE_FILES="libs/build"
+rewrite_files
+cat <<-EOF
+	in
+EOF
+cd $root/basis-library
+REWRITE_FILES="libs/$LIB/bind"
+rewrite_files
+cat <<-EOF
+	end
+EOF
+cd $here
+case "$SML_FILE" in
+"")
+	;;
+*)
+	REWRITE_FILE=$SML_FILE
+	rewrite_file
+	;;
+esac
+case "$CM_FILE" in
+"")
+	;;
+*)
+	REWRITE_FILES=$CM_FILE
+	rewrite_files
+	;;
+esac
+cat <<-EOF
+	(*#line 0.0 "check-basis"*)
 	val _ = () ()
 EOF
 ) >$basis

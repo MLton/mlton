@@ -31,7 +31,6 @@ signature SSA_TREE =
 	     | PreThread
 	     | Real
 	     | Ref of t
-	     | String
 	     | Thread
 	     | Tuple of t vector
 	     | Vector of t

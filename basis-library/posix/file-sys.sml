@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure PosixFileSys: POSIX_FILESYS_EXTRA =
+structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
    struct
       (* Patch to make Time look like it deals with Int.int
        * instead of LargeInt.int.
@@ -21,7 +21,7 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
       structure Prim = PosixPrimitive.FileSys
       open Prim
       structure Stat = Prim.Stat
-      structure Flags = PosixFlags
+      structure Flags = BitFlags
 
       val checkResult = Error.checkResult
 
@@ -66,12 +66,16 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
 		     val cs = Prim.readdir d
 		  in if Primitive.Cpointer.isNull cs
 			then if Error.getErrno () = 0
-				then ""
+				then NONE
 			     else Error.error ()
-		     else (case C.CS.toString cs of
-			      "." => loop ()
-			    | ".." => loop ()
-			    | s => s)
+		     else
+			let
+			   val s = C.CS.toString cs
+			in
+			   if s = "." orelse s = ".."
+			      then loop ()
+			   else SOME s
+			end
 		  end
 	    in loop ()
 	    end
@@ -117,7 +121,7 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
 	       then (size := 2 * !size
 		     ; buffer := make ()
 		     ; getcwd ())
-	    else Primitive.String.fromCharVector (extract (!buffer))
+	    else extract (!buffer)
       end
 	 
       val stdin = FD 0
@@ -153,8 +157,8 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
 	 let
 	    val fd =
 	       Prim.openn (String.nullTerm pathname,
-			  Flags.flags [openModeToWord openMode, flags, O.creat],
-			  mode)
+			   Flags.flags [openModeToWord openMode, flags, O.creat],
+			   mode)
 	 in if fd = ~1
 	       then error ()
 	    else FD fd
@@ -162,8 +166,8 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
 
       fun openf (pathname, openMode, flags) =
 	 let val fd = Prim.openn (String.nullTerm pathname,
-				 Flags.flags [openModeToWord openMode, flags],
-				 Flags.empty)
+				  Flags.flags [openModeToWord openMode, flags],
+				  Flags.empty)
 	 in if fd = ~1
 	       then error ()
 	    else FD fd
@@ -293,7 +297,7 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
 	 structure U = Prim.Utimbuf
       in
 	 fun utime (f: string, opt: {actime: Time.time,
-				    modtime: Time.time} option): unit =
+				     modtime: Time.time} option): unit =
 	    let
 	       val (a, m) =
 		  case opt of
@@ -315,13 +319,12 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
 	       NONE => Error.raiseSys Error.inval
 	     | SOME (n, _) => n
 
+	 (* QUESTION: is this o.k.? *)
 	 fun make prim (f, s) =
 	    let val n = prim (f, convertProperty s)
 	    in if n < 0
 		  then Error.error ()
-	       else if n = 0
-		       then NONE
-		    else SOME (SysWord.fromInt n)
+	       else SOME (SysWord.fromInt n)
 	    end
 	       
       in

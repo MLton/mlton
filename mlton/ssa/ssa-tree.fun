@@ -22,7 +22,7 @@ structure Type =
 	  | _ => Error.bug "FirstOrderType.tyconArgs"
 	       
       datatype dest =
-	 Array of t
+	  Array of t
 	| Char
 	| Datatype of Tycon.t
 	| Int
@@ -31,7 +31,6 @@ structure Type =
 	| PreThread
 	| Real
 	| Ref of t
-	| String 
 	| Thread
 	| Tuple of t vector
 	| Vector of t
@@ -60,7 +59,6 @@ structure Type =
 	     (Tycon.pointer, nullary Pointer),
 	     (Tycon.preThread, nullary PreThread),
 	     (Tycon.real, nullary Real),
-	     (Tycon.string, nullary String),
 	     (Tycon.thread, nullary Thread),
 	     (Tycon.word8, nullary Word8),
 	     (Tycon.word, nullary Word),
@@ -97,7 +95,6 @@ structure Type =
 	       | PreThread => str "preThread"
 	       | Real => str "real"
 	       | Ref t => seq [layout t, str " ref"]
-	       | String => str "string"
 	       | Thread => str "thread"
 	       | Tuple ts =>
 		    if Vector.isEmpty ts

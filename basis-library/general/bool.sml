@@ -11,10 +11,6 @@ structure Bool: BOOL =
 
       val not = not
 
-      val toString =
-	 fn true => "true"
-	  | false => "false"
-
       fun scan reader state =
 	 case reader state of
 	    NONE => NONE
@@ -31,6 +27,10 @@ structure Bool: BOOL =
 		| _ => NONE
 	       
       val fromString = StringCvt.scanString scan
+
+      val toString =
+	 fn true => "true"
+	  | false => "false"
    end
 
 structure BoolGlobal: BOOL_GLOBAL = Bool

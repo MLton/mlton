@@ -1,5 +1,6 @@
 structure Pervasive =
    struct
+      open Basis2002
       structure Array = Array
       structure Array2 = Array2
       structure Bool = Bool

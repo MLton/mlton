@@ -40,6 +40,7 @@ test11j    	OK
 test11k    	OK
 test12a    	OK
 test12b    	OK
+test12c    	OK
 test12d    	OK
 test12e    	OK
 test13a    	OK
@@ -56,6 +57,8 @@ test13k    	OK
 test13l    	OK
 test13m    	OK
 test13n    	OK
+test14a    	OK
+test14b    	OK
 test15a    	OK
 test15b    	OK
 test15c    	OK

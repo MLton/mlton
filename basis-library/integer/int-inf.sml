@@ -43,15 +43,9 @@ structure IntInf: INT_INF_EXTRA =
       val one = bigIntConstant 1
       val negOne = bigIntConstant ~1
 	 
-      (*
-       * Return the number of `limbs' in a bignum bigInt.
-       *)
-      fun bigSize (arg: bigInt): smallInt =
-	 Vector.length (Prim.toVector arg) -? 1
-
       (* Check if an IntInf.int is small (i.e., a fixnum). *)
       fun isSmall (i: bigInt): bool =
-	 0w0 <> Word.andb (0w1, Prim.toWord i)
+	 0w0 <> Word.andb (Prim.toWord i, 0w1)
 
       (* Check if two IntInf.int's are both small (i.e., fixnums).
        * This is a gross hack, but uses only one test.
@@ -65,6 +59,8 @@ structure IntInf: INT_INF_EXTRA =
        * where x is size arg.  If arg is small, then it is in
        * [ - 2^30, 2^30 ).
        *)
+      fun bigSize (arg: bigInt): smallInt =
+	 Vector.length (Prim.toVector arg) -? 1
       fun size (arg: bigInt): smallInt =
 	 if isSmall arg
 	    then 1
@@ -845,6 +841,66 @@ structure IntInf: INT_INF_EXTRA =
 			    Word.log2 (Vector.sub (v, Int.- (Vector.length v, 1))))
 		| Small w => Word.log2 w
       end
+
+      (* 
+       * bigInt bit operations.
+       *)
+      local fun make (wordOp, bigIntOp): bigInt * bigInt -> bigInt =
+	 let fun expensive (lhs: bigInt, rhs: bigInt): bigInt =
+	    let val tsize = Int.max (size lhs, size rhs)
+	    in bigIntOp (lhs, rhs, reserve tsize)
+	    end
+	 in fn (lhs: bigInt, rhs: bigInt) =>
+	    if areSmall (lhs, rhs)
+	       then let val ansv = wordOp (stripTag lhs, stripTag rhs)
+			val ans = addTag ansv
+		    in Prim.fromWord ans
+		    end
+	    else expensive (lhs, rhs)
+	 end
+      in
+	val bigAndb = make (Word.andb, Prim.andb)
+	val bigOrb = make (Word.orb, Prim.orb)
+	val bigXorb = make (Word.xorb, Prim.xorb)
+      end
+
+      local fun expensive (arg: bigInt): bigInt =
+	 let val tsize = size arg
+	 in Prim.notb (arg, reserve tsize)
+	 end
+      in fun bigNotb (arg: bigInt): bigInt =
+	 if isSmall arg
+	    then let val ansv = Word.notb (stripTag arg)
+	             val ans = addTag ansv
+		 in Prim.fromWord ans
+		 end
+	 else expensive arg
+      end
+
+      local
+	 val bitsPerLimb : Word.word = 0w32
+	 fun shiftSize shift = Word.toIntX (Word.div (shift, bitsPerLimb))
+      in
+      local fun expensive (arg: bigInt, shift: word): bigInt =
+	 let val tsize = Int.max (1, (size arg) -? (shiftSize shift))
+	 in Prim.~>> (arg, shift, reserve tsize)
+	 end
+      in fun bigArshift (arg: bigInt, shift: word): bigInt =
+	 if shift = 0wx0
+	    then arg
+	 else expensive (arg, shift)
+      end
+
+      local fun expensive (arg: bigInt, shift: word): bigInt =
+	 let val tsize = (size arg) +? (shiftSize shift) +? 1
+	 in Prim.<< (arg, shift, reserve tsize)
+	 end
+      in fun bigLshift (arg: bigInt, shift: word): bigInt =
+	 if shift = 0wx0
+	    then arg
+	 else expensive (arg, shift)
+      end
+      end
    
       type int = bigInt
       val abs = bigAbs
@@ -883,6 +939,12 @@ structure IntInf: INT_INF_EXTRA =
       val toLarge = fn x => x
       val toString = bigToString
       val ~ = bigNegate
+      val andb = bigAndb
+      val notb = bigNotb
+      val orb = bigOrb
+      val xorb = bigXorb
+      val ~>> = bigArshift
+      val << = bigLshift
    end
 
 structure LargeInt = IntInf

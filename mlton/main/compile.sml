@@ -62,16 +62,26 @@ end
 val (lexAndParse, lexAndParseMsg) =
    Control.traceBatch (Control.Pass, "lex and parse") FrontEnd.lexAndParse
 
-val (elaborate, elaborateMsg) =
-   Control.traceBatch (Control.Pass, "elaborate") Elaborate.elaborateProgram
-
-fun parseAndElaborateFile (f: File.t, E): Decs.t =
+fun lexAndParseFile (f: File.t): Ast.Program.t =
    let
       val ast = lexAndParse f
       val _ = Control.checkForErrors "parse"
-      val res = elaborate (ast, E)
+   in ast
+   end
+
+fun lexAndParseFiles (fs: File.t list): Ast.Program.t =
+   List.fold
+   (fs, Ast.Program.empty, fn (f, ast) =>
+    Ast.Program.append (ast, lexAndParseFile f))
+
+val (elaborate, elaborateMsg) =
+   Control.traceBatch (Control.Pass, "elaborate") Elaborate.elaborateProgram
+
+fun elaborateProg (ast: Ast.Program.t, E: Env.t): Decs.t =
+   let
+      val decs = elaborate (ast, E)
       val _ = Control.checkForErrors "elaborate"
-   in res
+   in decs
    end
 
 val displayDecs =
@@ -85,7 +95,8 @@ fun parseAndElaborateFiles (fs: File.t list, E: Env.t): Decs.t =
     suffix = "core-ml",
     style = Control.ML,
     thunk = fn () => List.fold (fs, Decs.empty, fn (f, ds) =>
-				Decs.append (ds, parseAndElaborateFile (f, E))),
+				Decs.append 
+				(ds, elaborateProg (lexAndParseFile f, E))),
     display = displayDecs}
 
 (* ------------------------------------------------- *)   
@@ -147,13 +158,6 @@ structure Env =
 		       let
 			  val resultType =
 			     Type.con (tycon, Vector.map (tyvars, Type.var))
-		       (* 		    val scheme =
-			* 		       Scheme.T
-			* 		       {tyvars = tyvars,
-			* 			ty = (case arg of
-			* 				 NONE => resultType
-			* 			       | SOME t => Type.arrow (t, resultType))}
-			*)
 		       in {name = Con.toAst con,
 			   con = con}
 		       end)
@@ -183,7 +187,12 @@ local
 in
    fun setBasisLibraryDir (d: Dir.t): unit =
       dir := SOME d
-   val basisLibrary =
+   val basisLibrary : unit -> {build: Decs.t,
+			       localTopFinish: (unit -> Decs.t) -> Decs.t,
+			       libs: {name: string,
+				      bind: Ast.Program.t,
+				      prefix: Ast.Program.t,
+				      suffix: Ast.Program.t} list} =
       Promise.lazy
       (fn () =>
        let
@@ -192,27 +201,44 @@ in
 		NONE => Error.bug "basis library dir not set"
 	      | SOME d => d
 	  fun basisFile f = String./ (d, f)
-	  fun files (f, E) =
-	     parseAndElaborateFiles
-	     (rev (File.foldLines (basisFile f, [], fn (s, ac) =>
-				   if s <> "\n" andalso #"#" <> String.sub (s, 0)
-				      then basisFile (String.dropLast s) :: ac
-				   else ac)),
-	      basisEnv)
-	  val (d1, (d2, d3)) =
+	  fun libsFile f = basisFile (String./ ("libs", f))
+	  fun withFiles (f, g) =
+	     let
+	        val fs = File.foldLines
+		         (f, [], fn (s, ac) =>
+			  if s <> "\n" andalso #"#" <> String.sub (s, 0)
+			     then basisFile (String.dropLast s) :: ac
+			  else ac)
+	     in
+	        g (List.rev fs)
+	     end
+
+	  val (build, localTopFinish) =
 	     Env.localTop
 	     (basisEnv,
 	      fn () => (Env.addPrim basisEnv
-			; files ("build-basis", basisEnv)),
-	      fn () =>
-	      (files ("bind-basis", basisEnv),
-	       (* Suffix is concatenated onto the end of the program for cleanup. *)
-	       parseAndElaborateFiles ([basisFile "misc/suffix.sml"], basisEnv)))
-	  val _ = Env.addEquals basisEnv
-	  val _ = Env.clean basisEnv
+			; withFiles (libsFile "build", 
+				     fn fs => parseAndElaborateFiles (fs, basisEnv))))
+	  val localTopFinish = fn g =>
+	     (localTopFinish g) before (Env.addEquals basisEnv
+					; Env.clean basisEnv)
+
+	  fun doit name =
+	    let
+	      fun libFile f = libsFile (String./ (name, f))
+	      val bind = withFiles (libFile "bind", lexAndParseFiles)
+	      val prefix = withFiles (libFile "prefix", lexAndParseFiles)
+	      val suffix = withFiles (libFile "suffix", lexAndParseFiles)
+	    in
+	      {name = name,
+	       bind = bind,
+	       prefix = prefix,
+	       suffix = suffix}
+	    end
        in
-	  {prefix = Decs.append (d1, d2),
-	   suffix = d3}
+	  {build = build,
+	   localTopFinish = localTopFinish,
+	   libs = List.map (Control.basisLibs, doit)}
        end)
 end
 
@@ -221,17 +247,37 @@ fun forceBasisLibrary d =
     ; basisLibrary ()
     ; ())
    
-fun basisDecs () =
+fun buildDecs () =
    let
-      val {prefix, ...} = basisLibrary ()
+      val {build, ...} = basisLibrary ()
    in
-      Decs.toVector prefix
+      Decs.toVector build
    end
    
 fun outputBasisConstants (out: Out.t): unit =
-   LookupConstant.build (basisDecs (), out)
+   LookupConstant.build (buildDecs (), out)
 
-fun layoutBasisLibrary () = Env.layoutPretty basisEnv
+fun selectBasisLibrary () =
+   let
+     val {build, localTopFinish, libs} = basisLibrary ()
+     val lib = !Control.basisLibrary
+   in
+      case List.peek (libs, fn {name, ...} => name = lib) of
+	 NONE => Error.bug ("Missing basis library: " ^ lib)
+       | SOME {bind, prefix, suffix, ...} =>
+	   let
+	     val bind = localTopFinish (fn () => elaborateProg (bind, basisEnv))
+	   in
+	     {basis = Decs.append (build, bind),
+	      prefix = prefix,
+	      suffix = suffix}
+	   end
+   end
+
+fun layoutBasisLibrary () = 
+   let val _ = selectBasisLibrary ()
+   in Env.layoutPretty basisEnv
+   end
 
 (* ------------------------------------------------- *)
 (*                      compile                      *)
@@ -251,50 +297,41 @@ fun preCodegen {input, docc}: Machine.Program.t =
 			    make (Exception {con = c, arg = NONE}))]
 	 end
       val decs =
-	 if !Control.useBasisLibrary
-	    then
-	       let
-		  val {prefix, suffix} = basisLibrary ()
-		  val basis = Decs.toList prefix
-		  val decs =
-		     if !Control.showBasisUsed
-			then
-			   let
-			      val decs = 
-				 Elaborate.Env.scopeAll
-				 (basisEnv, fn () =>
-				  parseAndElaborateFiles (input, basisEnv))
-			      val _ =
-				 Layout.outputl
-				 (Elaborate.Env.layoutUsed basisEnv,
-				  Out.standard)
-			   in
-			      Process.succeed ()
-			   end
-		     else
-			parseAndElaborateFiles (input, basisEnv)
-		  val user = Decs.toList (Decs.append (decs, suffix))
-		  val _ = parseElabMsg ()
-		  val basis =
-		     Control.pass
-		     {name = "dead",
-		      suffix = "basis",
-		      style = Control.ML,
-		      thunk = fn () => DeadCode.deadCode {basis = basis,
-							  user = user},
-		      display = Control.Layout (List.layout CoreML.Dec.layout)}
-	       in Vector.concat [primitiveDecs,
-				 Vector.fromList basis,
-				 Vector.fromList user]
-	       end
-	 else
-	    let
-	       val E = Env.empty ()
-	       val _ = Env.addPrim E
-	       val decs = parseAndElaborateFiles (input, E)
-	       val _ = parseElabMsg ()
-	    in Vector.concat [primitiveDecs, Decs.toVector decs]
-	    end
+	 let 
+	    val {basis, prefix, suffix, ...} = selectBasisLibrary ()
+	    val prefix = elaborateProg (prefix, basisEnv)
+	    val input =
+	       if !Control.showBasisUsed
+		  then let
+			  val input =
+			     Elaborate.Env.scopeAll
+			     (basisEnv, fn () =>
+			      parseAndElaborateFiles (input, basisEnv))
+			  val _ =
+			     Layout.outputl
+			     (Elaborate.Env.layoutUsed basisEnv,
+			      Out.standard)
+		       in
+			 Process.succeed ()
+		       end
+	       else parseAndElaborateFiles (input, basisEnv)
+	    val suffix = elaborateProg (suffix, basisEnv)
+	    val user = Decs.appends [prefix, input, suffix]
+	    val _ = parseElabMsg ()
+	    val basis = Decs.toList basis
+	    val user = Decs.toList user
+	    val basis = 
+	       Control.pass
+	       {name = "deadCode",
+		suffix = "basis",
+		style = Control.ML,
+		thunk = fn () => DeadCode.deadCode {basis = basis,
+						    user = user},
+		display = Control.Layout (List.layout CoreML.Dec.layout)}
+	 in Vector.concat [primitiveDecs,
+			   Vector.fromList basis,
+			   Vector.fromList user]
+	 end
       val coreML = CoreML.Program.T {decs = decs}
       val _ = Control.message (Control.Detail, fn () =>
 			       CoreML.Program.layoutStats coreML)
@@ -318,7 +355,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
       val lookupConstant =
 	 File.withIn
 	 (concat [!Control.libDir, "/constants"], fn ins =>
-	  LookupConstant.load (basisDecs (), ins))
+	  LookupConstant.load (buildDecs (), ins))
       (* Set GC_state offsets. *)
       val _ =
 	 let

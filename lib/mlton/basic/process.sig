@@ -100,6 +100,7 @@ signature PROCESS =
 		       pid: Pid.t,
 		       ppid: Pid.t,
 		       state: State.t} list
+
    end
 
 functor TestProcess (S: PROCESS): sig end =
@@ -110,5 +111,5 @@ val _ = print "TestProcess\n"
 open S
 
 val _ = ps ()
-   
+
 end

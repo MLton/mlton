@@ -29,3 +29,5 @@ fun fromBytes v = subVec (v, 0)
 fun subArr (a, i) = subVec (Primitive.Vector.fromArray a, i)
    
 end
+
+structure PackRealLittle = PackReal64Little

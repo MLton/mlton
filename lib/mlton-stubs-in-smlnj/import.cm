@@ -8,4 +8,5 @@ is
 $/basis.cm
 $/smlnj-lib.cm
 #endif
+../basis-stubs/sources.cm
 pervasive.sml

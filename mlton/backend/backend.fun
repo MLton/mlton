@@ -292,10 +292,10 @@ fun toMachine (program: Ssa.Program.t) =
 		     else M.Operand.Float f
 		| String s => globalString s
 		| Word w =>
-		     let val t = Const.tycon c
-		     in if Tycon.equals (t, Tycon.word)
+		     let val ty = Const.ty c
+		     in if Const.Type.equals (ty, Const.Type.word)
 			   then M.Operand.Uint w
-			else if Tycon.equals (t, Tycon.word8)
+			else if Const.Type.equals (ty, Const.Type.word8)
 				then M.Operand.Char (Char.chr (Word.toInt w))
 			     else Error.bug "strange word"
 		     end

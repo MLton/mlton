@@ -22,7 +22,6 @@ in
    val intInf = nullary Tycon.intInf
    val preThread = nullary Tycon.preThread
    val real = nullary Tycon.real
-   val string = nullary Tycon.string
    val thread = nullary Tycon.thread
    val word = nullary Tycon.word
    val word8 = nullary Tycon.word8
@@ -39,6 +38,8 @@ in
    val list = unary Tycon.list
    val reff = unary Tycon.reff
 end
+
+val string = vector char
 
 local
    fun binary tycon (t1, t2) = con (tycon, Vector.new2 (t1, t2))
@@ -94,6 +95,22 @@ fun detycon t =
    case deconOpt t of
       SOME (c, _) => c
     | NONE => Error.bug "detycon"
+
+fun deconConstOpt t =
+   case deconOpt t of
+      SOME (c, ts) => SOME (c, Vector.map (ts, fn t =>
+					   case deconOpt t of
+					      SOME (c, _) => c
+					    | NONE => Error.bug "deconConstOpt"))
+    | NONE => NONE
+fun deconConst t =
+   case deconOpt t of
+      SOME (c, ts) => (c, Vector.map (ts, fn t =>
+				      case deconOpt t of
+					 SOME (c, _) => c
+				       | NONE => Error.bug "deconConst"))
+    | NONE => Error.bug "deconConst"
+
 
 fun dearrowOpt t =
    case deconOpt t of

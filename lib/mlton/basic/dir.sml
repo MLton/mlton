@@ -45,10 +45,8 @@ fun fold (d: t, a: 'a, f: string * 'a -> 'a): 'a =
       val stream = FS.openDir d
       fun loop a =
 	 case FS.readDir stream of
-	    "" => a
-	  | "." => raise Fail "read saw ."
-	  | ".." => raise Fail "read saw .."
-	  | s => loop (f (s, a))
+	    NONE => a
+	  | SOME s => loop (f (s, a))
    in DynamicWind.wind (fn () => loop a, fn () => FS.closeDir stream)
    end
 
@@ -91,5 +89,4 @@ fun inTemp thunk =
       DynamicWind.wind (fn () => inDir (d, fn _ => thunk ()),
 			fn () => removeR d)
    end
-
 end

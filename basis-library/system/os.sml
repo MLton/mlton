@@ -7,10 +7,9 @@
  *)
 structure OS: OS =
    struct
-      open PosixError
-
       structure FileSys = OS_FileSys
       structure Path = OS_Path
       structure Process = OS_Process
       structure IO = OS_IO
+      open PosixError
    end

@@ -1,4 +1,6 @@
 (* modified from SML/NJ sources by Stephen Weeks 1998-6-25 *)
+(* modified by Matthew Fluet 2002-10-11 *)
+(* modified by Matthew Fluet 2002-11-21 *)
 
 (* os-io.sml
  *
@@ -15,15 +17,15 @@ structure OS_IO: OS_IO =
   (* an iodesc is an abstract descriptor for an OS object that
    * supports I/O (e.g., file, tty device, socket, ...).
    *)
-    type iodesc = int (* sweeks OS.IO.iodesc *)
+    datatype iodesc = datatype PreOS.IO.iodesc
 
     datatype iodesc_kind = K of string
 
   (* return a hash value for the I/O descriptor. *)
-    fun hash (fd) = Word.fromInt fd
+    fun hash (FD fd) = Word.fromInt fd
 
   (* compare two I/O descriptors *)
-    fun compare (fd1, fd2) = Int.compare(fd1, fd2)
+    fun compare (FD fd1, FD fd2) = Int.compare(fd1, fd2)
 
     structure Kind =
       struct
@@ -38,7 +40,6 @@ structure OS_IO: OS_IO =
 
   (* return the kind of I/O descriptor *)
     fun kind (fd) = let
-	  val fd = Posix.FileSys.wordToFD(SysWord.fromInt fd)
 	  val stat = Posix.FileSys.fstat fd
 	  in
 	    if      (Posix.FileSys.ST.isReg stat) then Kind.file
@@ -50,7 +51,7 @@ structure OS_IO: OS_IO =
 	    else if (Posix.FileSys.ST.isSock stat) then Kind.socket
 	    else K "UNKNOWN"
 	  end
-(*
+
     type poll_flags = {rd: bool, wr: bool, pri: bool}
     datatype poll_desc = PollDesc of (iodesc * poll_flags)
     datatype poll_info = PollInfo of (iodesc * poll_flags)
@@ -78,30 +79,45 @@ structure OS_IO: OS_IO =
 
   (* polling function *)
     local
-      val poll': ((int * word) list * (Int32.int * int) option) -> (int * word) list =
-	    CInterface.c_function "POSIX-OS" "poll"
+      structure Prim = Primitive.OS.IO
       fun join (false, _, w) = w
         | join (true, b, w) = Word.orb(w, b)
       fun test (w, b) = (Word.andb(w, b) <> 0w0)
-      val rdBit = 0w1 and wrBit = 0w2 and priBit = 0w4
-      fun fromPollDesc (PollDesc(fd, {rd, wr, pri})) =
+      val rdBit : Word.word = 0w1 
+      and wrBit : Word.word = 0w2 
+      and priBit : Word.word = 0w4
+      fun fromPollDesc (PollDesc(FD fd, {rd, wr, pri})) =
 	    ( fd,
-	      join (rd, rdBit, join (wr, wrBit, join (pri, priBit, 0w0)))
+	      join (rd, rdBit, 
+	      join (wr, wrBit, 
+              join (pri, priBit, 0w0)))
 	    )
-      fun toPollInfo (fd, w) = PollInfo(fd, {
-	      rd = test(w, rdBit), wr = test(w, wrBit), pri = test(w, priBit)
+      fun toPollInfo (fd, w) = PollInfo(FD fd, {
+	      rd = test(w, rdBit), 
+	      wr = test(w, wrBit), 
+              pri = test(w, priBit)
 	    })
     in
     fun poll (pds, timeOut) = let
-	  val timeOut =
+	  val (fds, eventss) = ListPair.unzip (List.map fromPollDesc pds)
+	  val fds = Vector.fromList fds
+	  val n = Vector.length fds
+	  val eventss = Vector.fromList eventss
+          val timeOut =
 	     case timeOut of
-		(* sweeks *)
-		SOME(Time.T{sec, usec}) => SOME(sec, Int.fromLarge usec)
-		  | NONE => NONE
-		(* end case *))
-	  val info = poll' (List.map fromPollDesc pds, timeOut)
+	        SOME t => Int.fromLarge (Time.toMilliseconds t)
+	      | NONE => ~1
+	  val reventss = Array.array (n, 0w0)
+	  val _ = Posix.Error.checkResult 
+                  (Prim.poll (fds, eventss, n, timeOut, reventss))
 	  in
-	    List.map toPollInfo info
+	    Array.foldri
+	    (fn (i, w, l) => 
+	     if w <> 0w0
+	       then (toPollInfo (Vector.sub (fds, i), w))::l
+	       else l)
+	    []
+	    reventss
 	  end
     end (* local *)
 
@@ -109,8 +125,7 @@ structure OS_IO: OS_IO =
     fun isIn (PollInfo(_, flgs)) = #rd flgs
     fun isOut (PollInfo(_, flgs)) = #wr flgs
     fun isPri (PollInfo(_, flgs)) = #pri flgs
-    fun infoToPollDesc  (PollInfo arg) = PollDesc arg
-*)
+    fun infoToPollDesc (PollInfo arg) = PollDesc arg
   end (* OS_IO *)
 
 

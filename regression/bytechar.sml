@@ -3,7 +3,7 @@
 infix 1 seq
 fun e1 seq e2 = e2;
 fun check b = if b then "OK" else "WRONG";
-fun check' f = (if f () then "OK" else "WRONG") handle _ => "EXN";
+fun check' f = (if f () then "OK" else "WRONG") (* handle _ => "EXN" *);
 
 fun range (from, to) p = 
     let open Int 
@@ -31,6 +31,7 @@ val _ = print "\nFile bytechar.sml: Testing structures Byte and Char...\n"
 local 
 
 in 
+
 val test1 = tstrange "test1" (0,255) (fn i => 
     (Word8.toInt o Byte.charToByte o Byte.byteToChar o Word8.fromInt) i = i);
 
@@ -370,7 +371,8 @@ val test42 =
 	     ("\\x0000000A2", "\162"),
 	     ("\\x0000000Ag", "\010"),
 	     ("\\x00000000000000000000000000000000000000000000000000000000000000011+",
-	      "\017")]
+	      "\017")
+	     ]
     in 
 	tst' "test42" (fn _ => List.all checkFromCStringSucc argResList)
     end;
@@ -393,7 +395,3 @@ val test43 =
 		"\\xG"])
     end;
 end
-
-
-
-

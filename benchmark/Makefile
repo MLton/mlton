@@ -2,7 +2,7 @@ SRC = $(shell cd .. && pwd)
 BUILD = $(SRC)/build
 BIN = $(BUILD)/bin
 LIB = $(BUILD)/lib
-MLTON = mlton
+MLTON = $(BIN)/mlton
 HOST = self
 FLAGS = -host $(HOST)
 NAME = benchmark
@@ -27,7 +27,8 @@ $(NAME)_cm: $(NAME)-stubs_cm
 $(NAME)-stubs_cm: 
 	(								\
 		echo 'Group is'&&					\
-		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' &&	\
+		cmcat sources.cm | grep -v 'basis-stubs' | 		\
+			grep -v 'mlton-stubs-in-smlnj' &&		\
 		echo 'call-main.sml';					\
 	) >$(NAME)-stubs.cm
 
@@ -55,8 +56,7 @@ BFLAGS = -html -mlton "/usr/bin/mlton" -mlkit -mosml -poly -smlnj
 test: $(NAME)
 	export PATH=$(PATH):$$PATH && cd tests && ../benchmark $(BFLAGS) $(BENCH)
 
-QBENCH = $(BENCH)
-
+QBENCH = $(BFLAGS)
 QBFLAGS = -mlton "mlton"
 
 .PHONY: qtest

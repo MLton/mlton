@@ -6,6 +6,7 @@
 
 structure OS_Path : OS_PATH = struct
   exception Path
+  exception InvalidArc
 
   (* It would make sense to use substrings for internal versions of
    * fromString and toString, and to allocate new strings only when
@@ -50,15 +51,22 @@ structure OS_Path : OS_PATH = struct
   fun isRelative p = not (isAbsolute p);
 
   fun fromString p =
-      case splitabsvolrest p of
-	  (false, v,   "") => {isAbs=false, vol = v, arcs = []}
-	| (isAbs, v, rest) => {isAbs=isAbs, vol = v,
-			       arcs = String.fields isslash rest};
+     let
+	val (isAbs, v, rest) = splitabsvolrest p
+     in
+	if not isAbs andalso rest = ""
+	   then {isAbs = false, vol = v, arcs = []}
+	else {arcs = String.fields isslash rest,
+	      isAbs = isAbs,
+	      vol = v}
+     end
 
   fun isRoot p =
-      case splitabsvolrest p of
-	  (true, _, "") => true
-	| _             => false;
+     let
+	val (isAbs, _, rest) = splitabsvolrest p
+     in
+	isAbs andalso rest = ""
+     end
 
   fun getVolume p = #2 (splitabsvolrest p);
   fun validVolume{isAbs, vol} = validVol vol;
@@ -67,16 +75,22 @@ structure OS_Path : OS_PATH = struct
       let fun h []        res = res
 	    | h (a :: ar) res = h ar (a :: slash :: res)
       in
-	  if validVolume{isAbs=isAbs, vol=vol} then
-	      case (isAbs, arcs) of
-		  (false, []         ) => vol
-		| (false, "" :: _    ) => raise Path
-		| (false, a1 :: arest) =>
-		      String.concat (vol :: List.rev (h arest [a1]))
-
-		| (true,  []         ) => vol ^ volslash
-		| (true, a1 :: arest ) =>
-		      String.concat (List.rev (h arest [a1, volslash, vol]))
+	  if validVolume {isAbs = isAbs, vol = vol}
+	     then
+		if isAbs
+		   then
+		      (case arcs of
+			  [] => vol ^ volslash
+			| a1 :: arest =>
+			     String.concat
+			     (List.rev (h arest [a1, volslash, vol])))
+		else
+		   case arcs of
+		      [] => vol
+		    | a1 :: arest =>
+			 if a1 = ""
+			    then raise Path
+			 else String.concat (vol :: List.rev (h arest [a1]))
 	  else
 	      raise Path
       end;
@@ -89,11 +103,18 @@ structure OS_Path : OS_PATH = struct
       in
 	  if isAbsolute p2 then raise Path
 	  else
-	      case splitabsvolrest p1 of
-		  (false, "",   "") => p2
-		| (false, v,  path) => v ^ stripslash path ^ slash ^ p2
-		| (true,  v,  ""  ) => v ^ volslash ^ p2
-		| (true,  v,  path) => v ^ volslash ^ stripslash path ^ slash ^ p2
+	     let
+		val (isAbs, v, path) = splitabsvolrest p1
+	     in
+		if isAbs
+		    then if path = ""
+			    then v ^ volslash ^ p2
+			 else String.concat [v, volslash, stripslash path,
+					     slash, p2]
+		else if v = "" andalso path = ""
+			then p2
+		     else String.concat [v, stripslash path, slash, p2]
+	     end
       end
 
   fun getParent p =
@@ -101,12 +122,16 @@ structure OS_Path : OS_PATH = struct
 	  val {isAbs, vol, arcs} = fromString p
 	  fun getpar xs =
 	      rev (case rev xs of
-		       []              => [parentArc]
-		     | [""]            => if isAbs then [] else [parentArc]
-		     | ""   :: revrest => parentArc :: revrest
-		     | "."  :: revrest => parentArc :: revrest
-		     | ".." :: revrest => parentArc :: parentArc :: revrest
-		     | last :: revrest => revrest)
+		       [] => [parentArc]
+		     | last :: revrest =>
+			  if last = ""
+			     andalso (case revrest of [] => true | _ => false)
+			     then if isAbs then [] else [parentArc]
+			  else if last = "" orelse last = "."
+			     then parentArc :: revrest
+			  else if last = ".."
+		             then parentArc :: parentArc :: revrest
+			  else revrest)
       in
 	  case getpar arcs of
 	      []   =>
@@ -117,16 +142,26 @@ structure OS_Path : OS_PATH = struct
 
   fun mkCanonical p =
       let val {isAbs, vol, arcs} = fromString p
-	  fun backup []          = if isAbs then [] else [parentArc]
-	    | backup (".."::res) = parentArc :: parentArc :: res
-	    | backup ( _ :: res) = res
+	  fun backup l =
+	     case l of
+		[] => if isAbs then [] else [parentArc]
+	      | first :: res =>
+		   if first = ".."
+		      then parentArc :: parentArc :: res
+		   else res
 	  fun reduce arcs =
-	      let fun h []         []  = if isAbs then [""] else [currentArc]
-		    | h []         res = res
-		    | h (""::ar)   res = h ar res
-		    | h ("."::ar)  res = h ar res
-		    | h (".."::ar) res = h ar (backup res)
-		    | h (a1::ar)   res = h ar (a1 :: res)
+	      let
+		 fun h l res =
+		    case l of
+		       [] => (case res of
+				 [] => if isAbs then [""] else [currentArc]
+			       | _ => res)
+		     | a1 :: ar =>
+			  if a1 = "" orelse a1 = "."
+			     then h ar res
+			  else if a1 = ".."
+			     then h ar (backup res)
+		          else h ar (a1 :: res)
 	      in h arcs [] end
       in
 	  toString {isAbs=isAbs, vol=vol, arcs=List.rev (reduce arcs)}
@@ -176,9 +211,13 @@ structure OS_Path : OS_PATH = struct
   fun dir s  = #dir (splitDirFile s);
   fun file s = #file(splitDirFile s);
 
-  fun joinBaseExt {base, ext = NONE}    = base
-    | joinBaseExt {base, ext = SOME ""} = base
-    | joinBaseExt {base, ext = SOME ex} = base ^ "." ^ ex;
+  fun joinBaseExt {base, ext} =
+     case ext of
+	NONE => base
+      | SOME ex =>
+	   if ex = ""
+	      then base
+	   else String.concat [base, ".", ex]
 
   fun splitBaseExt s =
       let val {dir, file} = splitDirFile s
@@ -200,9 +239,12 @@ structure OS_Path : OS_PATH = struct
 
   fun isRoot path =
      case fromString path of
-	{isAbs = true, arcs= [""], ...} => true
+	{isAbs = true, arcs= [a], ...} => a = ""
       | _ => false
   end
+
+  fun fromUnixPath _ = raise (Fail "<Path.fromUnixPath not implemented>")
+  fun toUnixPath _ = raise (Fail "<Path.toUnixPath not implemented>")
 end (*structure Path*)
 
 

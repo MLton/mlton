@@ -88,5 +88,4 @@ fun startStop {name, action, log, thunk, usage} =
     | "stop" => stop ()
     | _ => usage "must start|status|stop"
    end
-
 end

@@ -1,0 +1,449 @@
+
+John and SML implementers,
+
+Here are a loose collection of notes I've taken while starting to
+update the MLton implementation of the SML Basis Library to the latest
+version.  They span quite a range: errata and typos, signature
+constraint concerns, and some design questions.  Thus far, I've looked
+at the structures that had been grouped under the headings General,
+Text, Integer, Reals, Lists, and Arrays and Vectors (i.e., excluding
+IO, System, and Posix) in the "old" web specification.
+
+A few high level comments:
+
+* As an organizational principal, I liked the grouping of modules into
+  larger collections used in the "old" web specification better than
+  the long alphabetical list.
+* I'm quite happy to see opaque signature matches for most structures.
+  In particular, I think it will help avoid porting problems between
+  implementations that provide different INTEGER structures, especially
+  when LargeInt = Int in one implementation and LargeInt = IntInf in 
+  another.
+
+Required and optional components, Top-level:
+
+* A number of structures have an opaque signature match in
+  overview.html, but not in the corresponding structure specific page:
+  General, Bool, Option, List, ListPair, IntInf, 
+  Array, ArraySlice, Vector, VectorSlice.
+* Word8Array2 is listed as required in overview.html,
+  but its signature, MONO_ARRAY2, is not required.
+  Furthermore, Word8Array2 is marked optional in mono-array2.html.
+  I don't quite see a rationale for Word8Array2 being required.
+* With the addition of  val ~ : word -> word  to the WORD signature,
+  presumably ~ should be overloaded at num, rather than at intreal.
+
+Reals:
+
+* In pack-float.html, the where type clauses are incorrect:
+  structure PackRealBig :> PACK_REAL  
+    where type PackRealBig.real = Real.real
+  should be
+  structure PackRealBig :> PACK_REAL  
+    where type real = Real.real
+* Likewise, in most places, references to basic types are unqualifed,
+  so perhaps the where clause should read
+  where type real = real
+  for the PackRealBig and PackRealLittle structures.
+
+Arrays and Vectors:
+
+* In vector-slice.html, the description of subslice references |arr|
+  when it should reference |sl|.
+* In {[mono-]array[-slice],[mono-]vector[-slice]}.html, the
+  description of findi references appi when it should reference findi.
+* In mono-array-slice.html, structure CharArraySlice has the clause
+  where type array = CharVector.vector
+  which should be
+  where type array = CharArray.array.
+* In mono-{vector[-slice],array[-slice],array2}.html, there are
+  Word<N> structures but no Word structures.
+* In mono-vector.html, structure CharVector has the clause
+  where type elem = Char.char
+  while the other monomorphic vectors of basic types reference
+  the unqualified type; i.e. structure BoolVector has the clause
+  where type elem = bool.
+* There are no "See also"'s into MONO_VECTOR_SLICE or MONO_ARRAY_SLICE
+  from MONO_VECTOR or MONO_ARRAY.
+* A long discussion about types defined in
+  [MONO_]{ARRAY,VECTOR}[_SLICE] signatures; deferred to a separate
+  email. 
+
+Really nit-picky:
+
+* Ordering of comparison functions (>, >=, etc.) and unary negation
+  are different within INTEGER and WORD.
+* Ordering of functions in CHAR seems awkward.
+* Ordering of full, slice, subslice different in ARRAY_SLICE and
+  VECTOR_SLICE. 
+* Ordering of foldi/fold and modifi/modify different in ARRAY2 and
+  MONO_ARRAY2. 
+
+Top-level and opaque signatures:
+
+* I think it would be useful to see the entire top-level of required
+  structures written out with their respective typing constraints.
+  For example, in the description of the Math structure, the spec
+  reads: "The top-level structure Math provides these functions for
+  the default real type Real.real."  Because the top-level Math
+  structure has an opaque signature match (in overview.html), then the
+  sentence above implies that there ought to be the constraint 
+  where type real = real (or Real.real).  
+  Granted, none of the other structures in overview.html have where
+  clauses, and most type constraints are documented in the structure
+  specific pages, but the constraint on the top-level Math.real
+  slipped my mind when I first looked at it.
+
+******************************************************************************
+******************************************************************************
+
+Array and Vector design:
+
+* The ARRAY signature includes type 'a vector.
+  Presumably, type 'a Array.vector = type 'a Vector.vector, but no
+  constraint makes this explicit.
+* MONO_ARRAY_SLICE includes type vector and type vector_slice, 
+  while the ARRAY_SLICE signature explicitly references 
+  'a VectorSlice.slice and 'a Vector.vector.
+* VECTOR_SLICE doesn't include 'a vector, but has
+  val mapi : (int * 'a -> 'b) -> 'a slice -> 'b vector
+  val map  : ('a -> 'b) -> 'a slice -> 'b vector;
+  On the other hand, full, slice, base, vector, and concat
+  reference 'a Vector.vector.
+
+For consistency, I'd prefer to see
+signature VECTOR = 
+  sig  type 'a vector  ... end
+signature VECTOR_SLICE = 
+  sig  type 'a vector  type 'a slice  ... end 
+signature ARRAY = 
+  sig  type 'a vector  type 'a array  ... end
+signature ARRAY_SLICE = 
+  sig  type 'a vector  type 'a vector_slice
+       tyep 'a array  type 'a slice  ... end
+signature MONO_VECTOR = 
+  sig  type elem  type vector  ... end
+signature MONO_VECTOR_SLICE = 
+  sig  type elem  type vector  type slice ... end
+signature MONO_ARRAY =
+  sig  type elem  type vector  type array  ... end
+signature MONO_ARRAY_SLICE =
+  sig  type elem  type vector  type vector_slice
+       type array  type slice  ... end
+
+structure Vector :> VECTOR
+structure VectorSlice :> VECTOR_SLICE 
+                         where type 'a vector = 'a Vector.vector
+structure Array :> ARRAY 
+                   where type 'a vector = 'a Vector.vector
+structure ArraySlice :> ARRAY_SLICE 
+                        where type 'a vector = 'a Vector
+                        where type 'a vector_slice = 'a VectorSlice.slice
+                        where type 'a array = 'a Array.array
+structure BoolVector :> MONO_VECTOR 
+                        where type elem = bool
+structure BoolVectorSlice :> MONO_VECTOR_SLICE 
+                             where type elem = bool
+                             where type vector = BoolVector.vector
+structure BoolArray :> MONO_ARRAY 
+                       where type elem = bool
+                       where type vector = BoolVector.vector
+structure BoolArraySlice :> MONO_ARRAY_SLICE 
+                            where type elem = bool
+                            where type vector = BoolVector.vector
+                            where type vector_slice = BoolVectorSlice.slice
+                            where type array = BoolArray.array
+
+While semantically, this shouldn't be any different than the
+specification, it could effect type-error messages.  For example, if I
+have the structure Foo:
+
+structure Foo = struct
+   open BoolArraySlice
+
+   val copyVec0 {src: vector_slice, 
+                 dst: array} = copyVec {src = src, dst = dst, di = 0}   
+end
+
+which I decide to generalize to polymorphic array slices, then just
+changing BoolArraySlice to ArraySlice will lead to different
+type-error messages: either "ubound type constructor: vector_slice"
+(under the specification) or "type constructor vector_slice given 0
+arguments, wants 0" (under the signatures given above); and an arity
+error for array in either case.  It's not much of an argument, but I
+need to replace vector_slice with 'a VectorSlice.slice under the
+specification, while I only need to add 'a under the sigs above.
+
+
+Array2:
+* Why not have an ARRAY2_REGION analagous to ARRAY_SLICE?
+  Likewise, how about VECTOR2 and VECTOR2_REGION?
+  I think the decision to separate Arrays and Vectors from
+  their corresponding slices is a nice design choice, and I'd be in
+  favor of extending it to multi-dimentional ones.
+* Should ARRAY2 have findi/find, exists, all?  collate?
+
+******************************************************************************
+******************************************************************************
+
+Following up my previous post, here is another loose collection of
+notes I've taken while updating the MLton implementation of the SML
+Basis Library.  This includes the structures that had been grouped
+under the headings System, Posix, and IO in the "old" web
+specification.
+
+Required and optional components:
+* The optional functors PrimIO, StreamIO, and ImperativeIO are not
+  listed among the optional components in overview.html.
+
+Lists:
+* The discussion for the ListPair structure says:
+  "Note that a function requiring equal length arguments may determine
+  this lazily, i.e. , it may act as though the lists have equal length
+  and invoke the user-supplied function argument, but raise the
+  exception when it arrives at the end of one list before the end of the
+  other."
+  Such an implementation choice seems to go against the spirit that
+  programs run under conforming implementations of the Basis Library
+  should behave the same.
+
+Posix:
+* In posix.html, last sentence in Discussion: "onsult" instead of
+  "consult"
+PosixSignal:
+* In posix-signal.html, in Discussion: "The name of the coressponding
+  ..." sentence is repeated.
+PosixError:
+* In the discussion of POSIX_ERROR:
+  "The name of a corresponding POSIX error can be derived by
+  capitalizing all letters and adding the character ``E'' as a
+  prefix. For example, the POSIX error associated with nodev is
+  ENODEV. The only exception to this rule is the error toobig, whose
+  associated POSIX error is E2BIG."
+  It isn't clear if this is the intended semantics for errorName and
+  syserror.
+
+Time:
+* The type time now includes "negative values moving to the past."
+  In the absence of negative values, the text for the the
+  to{Seconds,Milliseconds,Microseconds} functions to drop fractions of
+  the time unit was unambigous.  With negative values, I would
+  interpret this as rounding towards zero.  Is this correct?  Would it
+  be clearer to describe the rounding as such?
+* The + and - functions are required to raise Overflow, although most
+  other "result not representable as a time value" error raises Time.
+* The - function is written prefix instead of infix in the
+  description.
+* The scan and fromString functions do not specify how to treat a
+  value with greater precision than the internal representation;
+  should it have rounding or truncation semantics?  Also, the
+  functions are required to raise Overflow for an unrepresentable
+  time value.
+
+IO:
+* The nice introduction to IO that appears at
+  http://cm.bell-labs.com/cm/cs/what/smlnj/doc/basis/pages/io-explain.html
+  doesn't seem to be included with the new pages.
+* The functor arguments in PrimIO, StreamIO, and ImperativIO functors
+  don't match; some use structure A: MONO_ARRAY and others use
+  structure Array: MONO_ARRAY.
+
+PrimIO() and PRIM_IO
+* The PRIM_IO signature requires pos to be an eqtype, but the PrimIO
+  functor argument only requires pos to be a type.
+* readArr[NB], write{Vec,Arr}[NB] take "slices" (records of type {buf:
+  {vector,array}, i: int, sz: int option}) but no description of the
+  appropriate action to take when the slices are invalid.  Presumably,
+  they should raise Subscript.
+* There are a number of "contradictory" statments:
+  "Readers and writers should not, in general, raise the IO.Io
+  exception. It is assumed that the higher levels will appropriately
+  handle these exceptions."
+  "A reader is required to raise IO.Io if any of its functions, except
+  close or getPos, is invoked after a call to close. A writer is
+  required to raise IO.Io if any of its functions, except close, is
+  invoked after a call to close."
+  "closes the reader and frees operating system resources. Further
+  operations on the reader (besides close and getPos) raise
+  IO.ClosedStream."
+  "closes the writer and frees operating system resources. Further
+  operations (other than close) raise IO.ClosedStream."
+* The augment_reader and augment_writer functions may introduce new
+  functions.  Should the synthesized operations handle IO.Io
+  exceptions and change the function field?  Maybe this falls under
+  the "intentionally unspecified" clause.
+
+StreamIO() and STREAM_IO:
+* What is the difference between a terminated output stream and a
+  closed output stream?  Some operations say what to do when the
+  stream is terminated or closed, but many are unspecified when the
+  other condition holds.  I resolved this by looking at the IO
+  introduction mentioned above, where it discusses stream states.
+  But, closeOut is still confusing: "flushes f's buffers, marks the
+  stream closed, and closes the underlying writer. This operation has
+  no effect if f is already closed. If f is terminated, it should
+  close the underlying writer."  Shouldn't closeOut always execute the
+  underlying writer's close function?  The only way to terminate an
+  outstream is to getOutstream, but I would really expect
+  TextIO.closeOut to "really" close the underlying
+  file/outstream/writer.
+* The IO structure has dropped the TerminatedStream exception, but
+  there seem to be sufficient cases when a stream should raise an
+  exception when it is terminated.
+* The semantics of the vector returned by getReader are unclear.  At
+  the very least, the source code for SML/NJ and PolyML have very
+  different interpretations, and I've chosen yet another.  I think
+  part of the problem is that the word "[un]consumed" only appears in
+  the description of this function, so it's unclear what corresponds
+  to consumed input.
+* I suspect the example under endOfStream is wrong:
+  
+  In these cases the StreamIO.instream will also have multiple EOF's;
+  that is, it can be that
+
+  val true = endOfStream(f)
+  val ("",f') = input f
+  val true = endOfStream(f')
+  val ("xyz",f'') = input f
+
+  The fact that input f can return two different values would seem to
+  violate the principal argument for functional streams!  Looking at
+  the aforementioned IO introduction in the "old" pages, I see the
+  more reasonable example:
+
+  Consequently, the following is not guaranteed to be true:
+
+  let val z = TextIO.StreamIO.endOfStream f
+      val (a,f') = TextIO.StreamIO.input f
+      val x = TextIO.StreamIO.endOfStream f'
+  in x=z   (* not necessarily true! *)
+  end
+
+  whereas the following is guaranteed to be true:
+
+  let val z = TextIO.StreamIO.endOfStream f
+      val (a,f') = TextIO.StreamIO.input f
+      val x = TextIO.StreamIO.endOfStream f (* note, no prime! *)
+  in x=z   (* guaranteed true! *)
+  end
+* David Matthews's post on Aug. 2 raised questions about canInput
+  which are unresolved.
+
+General comments:
+* Various operations in IO take "slices", but aren't expressed in
+  terms of {Vector,Array}Slice structures.  One difficulty with this
+  is that the slice types are not in scope within the IO signatures.  
+  
+  I would really advocate making the VectorSlice structure a
+  substructure of the Vector structure (and likewise for arrays).
+  Even if this isn't done for the polymorphic vector/array structures,
+  it would be extremely beneficial for the monomorphic structures,
+  where in the {Prim,Stream,Imperative}IO functors, it is impossible
+  to access the corresponding monomorphic vector/array slice
+  structures.  I found myself using Vector.tabulate when I really
+  wanted ArraySlice.vector.
+
+  The "old" MONO_ARRAY signature included structure Vector:
+  MONO_VECTOR which gave access to the corresponding monomorphic
+  vectors.
+
+******************************************************************************
+******************************************************************************
+
+Posix.FileSys:
+* Within structure S, the type mode is constrained equal to flags,
+  but flags is an eqtype.
+
+STREAM_IO.pos
+* "This is the type of positions in the underlying readers and
+  writers. In some instantiations of this signature (e.g.,
+  TextIO.StreamIO), pos is abstract; in others (e.g., BinIO.StreamIO)
+  it is Position.int."  But, the equality of BinIO.StreamIO.pos and
+  Position.int is never specified in any where constraint of BinIO.
+
+Not sent to list:
+
+* (In general, probably a good idea to look at the entire top-level
+  structure/signature matches and choose a consistent usage of base
+  types.  For example, Int:>INTEGER would seem to hide the top-level
+  int; unless Int is opened afterwards.  But, then what about all the
+  other structures that reference int?  Is top-level int = Int.int or
+  is Int.int = top-level int.)
+--> I think I'm biased from looking at the MLton implementation,
+becuase I'm finding it hard to think about how to really express all
+of the sharing constraints in a way that will be acceptable.  This
+might be the wrong way to look at things: the listing of structures
+and signatures with clauses doesn't correspond to a build order, it
+corresponds to the way the environment should look to the program.
+
+Sequences and Slices:
+Why not existsi, alli?
+
+Vector:
+Why no vector: int * 'a -> 'a vector?
+
+
+Resolved:
+ 
+If one defines VECTOR_SLICE by including a type 'a vector and replace
+'a Vector.vector with the local 'a vector, but then binds
+structure Vector: VECTOR
+structure VectorSlice: VECTOR_SLICE where type 'a vector = 'a Vector.vector
+at the top-level, does one violate the basis spec?
+Rationale: it's easiset to implement Vector and VectorSlice simultaneously, say 
+with VectorSlice as a substructure of Vector (in fact, with all of the Vector operations
+being dispatched to the corresponding VectorSlice ops with full slices),
+so Vector isn't in scope for the VECTOR_SLICE.
+*** No, it's not o.k., because opening VectorSlice will introduce a binding
+    for 'a vector; but, if we're lucky, John will accept the proposal.
+
+IEEEReal:
+toString prepends a #"~" even when the class is NAN?
+*** I guess this is o.k.; there is an explicit sign field.
+
+PACK_WORD:
+structure Pack<N>Big :> PACK_WORD  (* OPTIONAL *)
+structure Pack<N>Little :> PACK_WORD  (* OPTIONAL *)
+but PACK_WORD has
+val subVec  : Word8Vector.vector * int -> LargeWord.word
+i.e., reference to LargeWord.word.
+Should it be
+PACK_WORD
+type word
+val subVec  : Word8Vector.vector * int -> word
+with
+structure Pack<N>Big :> PACK_WORD with word = Word<N>.word  (* OPTIONAL *)
+Should there be PackBig and PackLittle with word = Word.word?
+Should there be PackLargeBig with word = LargeWord.word?
+There aren't many structures that refine on LargeXYZ; most refine on XYZ<N>.
+*** O.k., we always unpack into a LargeWord, which we could then
+    Word<N>.fromLargeWord back to the size.  I guess this is o.k.; It
+    lets an implementation give more Pack<N>Big structures than there
+    are Word<N> structures.
+
+MLton specific:
+ + why are Int32_gtu and Int32_geu primitive?
+   Why not just Word.fromInt and use Word comparisons?
+ + Real:>REAL doesn't match basis because it may peform
+    arithmetic at extended precision.  Should this be mentioned
+    in the user guide?
+ + QUESTION: proc-env.sml
+ + QUESTION: char.sml
+ + check uses of {Vector,Array}Slice.slice for replacement by unsafeSlice.
+
+
+******************************************************************************
+******************************************************************************
+
+UNIX:
+I'm not quite sure how the ('a, 'b) proc type is supposed to work in practice;
+The old Unix structure just used them as TextIO.{in,out}streams.
+My suspicion is that we're supposed to use Posix.IO.mk{Bin,Text}{Reader,Writer}
+functions and then use the type system to ensure that if we force a
+stream to be bin or text, then all other uses have to be the same.  I
+also suspect that we're only supposed to lift the file_desc up to an
+instream/outstream once; i.e., multiple textInstreamOf calls should
+continue to return the same TextIO.instream.  That would seem to
+suggest we need an 'a option ref that can be banged at the first call
+to a streamOf function, and subsequent calls just return the value
+there.

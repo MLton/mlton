@@ -22,9 +22,11 @@ signature POSIX_PROCESS =
        | W_SIGNALED of signal
        | W_STOPPED of signal 
 
+      val fromStatus: OS.Process.status -> exit_status
+
       structure W :
 	 sig
-	    include POSIX_FLAGS
+	    include BIT_FLAGS
             val untraced: flags 
 	 end
 
@@ -42,4 +44,10 @@ signature POSIX_PROCESS =
       val alarm: Time.time -> Time.time 
       val pause: unit -> unit 
       val sleep: Time.time -> Time.time 
+   end
+
+signature POSIX_PROCESS_EXTRA = 
+   sig
+      include POSIX_PROCESS
+      type status
    end

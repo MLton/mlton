@@ -51,36 +51,42 @@ signature PRIM =
 	     | GC_collect
 	     | GC_pack
 	     | GC_unpack
-	     | Int_mul
-	     | Int_mulCheck
-	     | Int_add
-	     | Int_addCheck
-	     | Int_sub
-	     | Int_subCheck
-	     | Int_lt
-	     | Int_le
-	     | Int_gt
-	     | Int_ge
-	     | Int_geu
-	     | Int_gtu
-	     | Int_quot
-	     | Int_rem
-	     | Int_neg
-	     | Int_negCheck
+             | Int_add
+             | Int_addCheck
+             | Int_ge
+             | Int_geu
+             | Int_gt
+             | Int_gtu
+             | Int_le
+             | Int_lt
+             | Int_mul
+             | Int_mulCheck
+             | Int_neg
+             | Int_negCheck
+             | Int_quot
+             | Int_rem
+             | Int_sub
+             | Int_subCheck
 	     | IntInf_add
+	     | IntInf_andb
+	     | IntInf_arshift
 	     | IntInf_compare
 	     | IntInf_equal
 	     | IntInf_fromVector
 	     | IntInf_fromWord
 	     | IntInf_gcd
+	     | IntInf_lshift
 	     | IntInf_mul
+	     | IntInf_notb
 	     | IntInf_neg
+	     | IntInf_orb
 	     | IntInf_quot
 	     | IntInf_rem
 	     | IntInf_sub
 	     | IntInf_toString
 	     | IntInf_toVector
 	     | IntInf_toWord
+	     | IntInf_xorb
 	     | MLton_bogus (* of type unit -> 'a.
 			    * implemented in backend.
 			    * Makes a bogus value of any type.
@@ -145,12 +151,7 @@ signature PRIM =
 	     | Ref_assign (* implemented in backend *)
 	     | Ref_deref (* implemented in backend *)
 	     | Ref_ref (* implemented in backend *)
-	     | String_equal
-	     | String_fromCharVector
 	     | String_fromWord8Vector
-	     | String_size
-	     | String_sub (* implemented in backend *)
-	     | String_toCharVector
 	     | String_toWord8Vector
 	     | Thread_atomicBegin (* implemented in backend *)
 	     | Thread_atomicEnd (* implemented in backend *)
@@ -312,7 +313,6 @@ signature PRIM =
       val reff: t
       val scheme: t -> Scheme.t
       val serialize: t
-      val stringEqual: t
       val toString: t -> string
       val vectorLength: t
       val vectorSub: t

@@ -117,6 +117,8 @@ datatype outstream' =
 	   bufStyle: bufStyle}
 type outstream = outstream' ref
 
+fun equalsOut (os1, os2) = os1 = os2
+
 fun outFd (ref (Out {fd, ...})) = fd
 
 val mkOutstream = ref
@@ -240,8 +242,7 @@ fun output (out as ref (Out {fd, closed, bufStyle, ...}), s): unit =
 	       if newSize >= Array.length array orelse maybe ()
 		  then (flush (fd, b); put ())
 	       else
-		  (Array.copyVec {src = v, si = 0, len = NONE,
-				  dst = array, di = curSize}
+		  (Array.copyVec {src = v, dst = array, di = curSize}
 		   ; size := newSize)
 	    end
       in
@@ -435,8 +436,9 @@ structure Buf =
 		  let
 		     val dst = Primitive.Array.array bytesToRead
 		     val _ =
-			(Array.copy {src = buf, si = !first,
-				     len = SOME size, dst = dst, di = 0}
+			(ArraySlice.copy 
+			 {src = ArraySlice.slice (buf, !first, SOME size),
+			  dst = dst, di = 0}
 			 ; first := !last)
 		     fun loop (bytesRead: int): int =
 			if bytesRead = bytesToRead
@@ -651,7 +653,7 @@ structure StreamIO =
 		 else NONE
 	 end
       
-      fun inputAll' (s: t): vector * t =
+      fun inputAll (s: t): vector * t =
 	 let
 	    fun loop (s, ac) =
 	       let val (v, s) = input s
@@ -661,8 +663,6 @@ structure StreamIO =
 	       end
 	 in loop (s, [])
 	 end
-
-      val inputAll = #1 o inputAll'
    end
 
 datatype t' =
@@ -670,6 +670,8 @@ datatype t' =
   | Stream of StreamIO.t
 datatype t = T of t' ref
 type instream = t
+
+fun equalsIn (T is1, T is2) = is1 = is2
 
 fun inFd (T r) =
    case !r of
@@ -729,7 +731,7 @@ fun canInput (T r, i) =
 fun inputAll (T r) =
    case !r of
       Buf b => Buf.inputAll b
-    | Stream s => let val (res, s) = StreamIO.inputAll' s
+    | Stream s => let val (res, s) = StreamIO.inputAll s
 		  in r := Stream s; res
 		  end
 

@@ -126,7 +126,6 @@ fun compute (Ssa.Program.T {datatypes, ...}) =
 	     | PreThread => SOME Mtype.pointer
 	     | Real => SOME Mtype.double
 	     | Ref _ => SOME Mtype.pointer
-	     | String => SOME Mtype.pointer
 	     | Thread => SOME Mtype.pointer
 	     | Tuple ts => if Vector.isEmpty ts
 			      then NONE
@@ -189,7 +188,6 @@ fun compute (Ssa.Program.T {datatypes, ...}) =
 					   TyconRep.IndirectTag _ => true
 					 | _ => false)
 				  | Ref _ => true
-				  | String => true
 				  | Tuple _ => true
 				  | Vector _ => true
 				  | _ => false

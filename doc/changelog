@@ -1,5 +1,10 @@
 Here are the changes from version 20020923.
 
+* 2002-11-23
+  - Added support for the latest Basis Library specification.
+  - Added option -basis to choose Basis Library version.  Currently available
+    basis libraries are basis-2002, basis-2002-strict, basis-1997, and none.
+	
 * 2002-11-22
   - Fixed bug that caused time profiling to fail (with a segfault) when resuming
     a saved world. 

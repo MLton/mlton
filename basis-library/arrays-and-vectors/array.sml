@@ -11,57 +11,76 @@ structure Array: ARRAY_EXTRA =
 			      type 'a elt = 'a
 			      val fromArray = fn a => a
 			      val isMutable = true
-			      open Primitive.Array)
+			      val length = Primitive.Array.length
+			      val sub = Primitive.Array.sub)
       open A
       open Primitive.Int
 
-      local open Primitive.Array
-      in val unsafeSub = sub
-	 val unsafeUpdate = update
-      end
-
       type 'a array = 'a array
-      type 'a vector = 'a vector
+      type 'a vector = 'a Vector.vector
+      type 'a vector_slice = 'a Vector.VectorSlice.slice
+
+      structure ArraySlice =
+	 struct
+	    open Slice
+	    type 'a array = 'a array
+	    type 'a vector = 'a Vector.vector
+	    type 'a vector_slice = 'a Vector.VectorSlice.slice
+	    fun update (arr, i, x) = 
+	       update' Primitive.Array.update (arr, i, x)
+	    fun unsafeUpdate (arr, i, x) = 
+	       unsafeUpdate' Primitive.Array.update (arr, i, x)
+	    fun vector sl = create Vector.tabulate (fn x => x) sl
+	    fun modifyi f sl = 
+	       appi (fn (i, x) => unsafeUpdate (sl, i, f (i, unsafeSub (sl, i)))) sl
+	    fun modify f sl = modifyi (f o #2) sl
+	    local
+	       fun make (length, sub) {src, dst, di} =
+		  modifyi (fn (i, _) => sub (src, i)) 
+		          (slice (dst, di, SOME (length src)))
+	    in
+	       fun copy (arg as {src, dst, di}) =
+		  let val (src', si', len') = base src
+		  in
+		    if src' = dst andalso si' < di andalso si' +? len' >= di
+		       then let val sl = slice (dst, di, SOME (length src))
+			    in 
+			       foldri (fn (i, _, _) => 
+				       unsafeUpdate (sl, i, unsafeSub (src, i)))
+			       () sl
+			    end
+		    else make (length, unsafeSub) arg
+		  end
+
+	       fun copyVec arg =
+		  make (Vector.VectorSlice.length, Vector.VectorSlice.unsafeSub) arg
+	    end
+
+	    val array = sequence
+	 end
 
       val array = new
 
-      (* can't use o because of value restriction *)
-      val extract = fn arg => Primitive.Vector.fromArray (extract arg)
-
-      fun modifyi f (slice as (a, _, _)) =
-	 appi (fn (i, x) => unsafeUpdate (a, i, f (i, x))) slice
-
-      fun modify f a = modifyi (f o #2) (wholeSlice a)
-
       local
-	 fun make (checkSlice, sub) {src, si, len, dst, di} =
-	    let
-	       val sm = checkSlice (src, si, len)
-	       val diff = si -? di
-	    in modifyi
-	       (fn (i, _) => sub (src, i +? diff))
-	       (dst, di, SOME (sm -? si))
-	    end
+	fun make f arr = f (ArraySlice.full arr)
       in
-	 fun copy (arg as {src, si, len, dst, di}) =
-	    if src = dst andalso si < di
-	       then
-		  (* Must go right-to-left *)
-		  let
-		     val sm = checkSlice (src, si, len)
-		     val dm = checkSlice (dst, di, SOME (sm -? si))
-		     fun loop i =
-			if i < si then ()
-			else (unsafeUpdate (dst, di +? i, unsafeSub (src, i))
-			      ; loop (i -? 1))
-		  in loop (sm -? 1)
-		  end
-	    else make (checkSlice, unsafeSub) arg
-	       
-	 fun copyVec arg =
-	    make (Vector.checkSlice, Primitive.Vector.sub) arg
+	fun vector arr = make (ArraySlice.vector) arr
+	fun modifyi f = make (ArraySlice.modifyi f)
+	fun modify f = make (ArraySlice.modify f)
+	fun copy {src, dst, di} = ArraySlice.copy {src = ArraySlice.full src,
+						   dst = dst, di = di}
+	fun copyVec {src, dst, di} = ArraySlice.copyVec {src = VectorSlice.full src,
+							 dst = dst, di = di}
       end
+
+      val unsafeSub = Primitive.Array.sub
+      fun update (arr, i, x) = update' Primitive.Array.update (arr, i, x)
+      val unsafeUpdate = Primitive.Array.update
+
+      (* Deprecated *)
+      fun extract args = ArraySlice.vector (ArraySlice.slice args)
    end
+structure ArraySlice: ARRAY_SLICE_EXTRA = Array.ArraySlice
 
 structure ArrayGlobal: ARRAY_GLOBAL = Array
 open ArrayGlobal

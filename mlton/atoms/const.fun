@@ -14,6 +14,32 @@ local open Ast
 in structure Aconst = Const
 end
 
+structure Type =
+   struct
+      type t = Tycon.t * Tycon.t vector
+      fun equals ((tc1,tcs1), (tc2,tcs2)) =
+	 Tycon.equals (tc1, tc2)
+	 andalso
+	 Vector.equals (tcs1, tcs2, Tycon.equals)
+      fun toType ((tc,tcs), con) =
+	 con (tc, Vector.map (tcs, fn tc => con (tc, Vector.new0())))
+      val layout = Ast.Type.layout o (fn t => 
+				      toType (t, fn (t, ts) => 
+					      Ast.Type.con (Tycon.toAst t, ts)))
+      val toString = Layout.toString o layout
+      fun make (tc, tcs) : t = (tc, tcs)
+      fun unary (tc, tc') = make (tc, Vector.new1 tc')
+      fun nullary tc = make (tc, Vector.new0())
+      val bool = nullary Tycon.bool
+      val char = nullary Tycon.char
+      val int = nullary Tycon.defaultInt
+      val intInf = nullary Tycon.intInf
+      val real = nullary Tycon.real
+      val word = nullary Tycon.word
+      val word8 = nullary Tycon.word8
+      val string = unary (Tycon.vector, Tycon.char)
+   end
+
 structure Node =
    struct
       datatype t =
@@ -40,19 +66,19 @@ structure Node =
 
 datatype z = datatype Node.t
 datatype t = T of {node: Node.t,
-		   tycon: Tycon.t}
+		   ty: Type.t}
 
 local
    fun make sel (T r) = sel r
 in
    val node = make #node
-   val tycon = make #tycon
+   val ty = make #ty
 end
 
 val layout = Node.layout o node
 val toString = Layout.toString o layout
    
-fun make (n, t) = T {node = n, tycon = t}
+fun make (n, t) = T {node = n, ty = t}
 
 local
    val char = Random.word ()
@@ -74,12 +100,13 @@ fun 'a toAst (make: Ast.Const.t -> 'a, constrain: 'a * Ast.Type.t -> 'a) c =
       val make = fn n => make (Ast.Const.makeRegion (n, Region.bogus))
       fun maybeConstrain (defaultTycon, aconst) =
 	 let
-	    val t = tycon c
+	    val ty = ty c
+	    val con : Tycon.t * Ast.Type.t vector -> Ast.Type.t =
+	       fn (t, ts) => Ast.Type.con (Tycon.toAst t, ts)
 	 in
-	    if Tycon.equals (t, defaultTycon)
+	    if Type.equals (ty, Type.nullary defaultTycon)
 	       then make aconst
-	    else constrain (make aconst, Ast.Type.con (Tycon.toAst t,
-						       Vector.new0 ()))
+	    else constrain (make aconst, Type.toType (ty, con))
 	 end
       fun int s = maybeConstrain (Tycon.defaultInt, Aconst.Int s)
    in
@@ -96,7 +123,7 @@ val toAstExp = toAst (Ast.Exp.const, Ast.Exp.constraint)
 val toAstPat = toAst (Ast.Pat.const, Ast.Pat.constraint)
 
 fun equals (c, c') =
-   Tycon.equals (tycon c, tycon c')
+   Type.equals (ty c, ty c')
    andalso
    case (node c, node c') of
       (Char c, Char c') => c = c'
@@ -109,19 +136,17 @@ fun equals (c, c') =
 
 val equals = Trace.trace2 ("Const.equals", layout, layout, Bool.layout) equals
 
-fun fromChar c = T {node = Char c, tycon = Tycon.char}
-   
-fun fromInt n = T {node = Int n, tycon = Tycon.defaultInt}
-
-fun fromIntInf i = T {node = IntInf i, tycon = Tycon.intInf}
-
-fun fromString s = T {node = String s, tycon = Tycon.string}
-
-fun fromReal s = T {node = Real s, tycon = Tycon.real}
-
-fun fromWord w = T {node = Word w, tycon = Tycon.word}
-   
-fun fromWord8 w = T {node = Word (Word.fromWord8 w), tycon = Tycon.word8}
+local
+   fun make c t x = T {node = c x, ty = t}
+in
+   val fromChar = make Char Type.char
+   val fromInt = make Int Type.int
+   val fromIntInf = make IntInf Type.intInf
+   val fromReal = make Real Type.real
+   val fromString = make String Type.string
+   val fromWord = make Word Type.word
+   val fromWord8 = make (fn w => Word (Word.fromWord8 w)) Type.word8
+end
 
 structure SmallIntInf =
    struct

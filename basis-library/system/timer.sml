@@ -15,9 +15,9 @@ structure Timer: TIMER =
 	     usr = selfu}
 	 end
 
-      fun checkCPUTimer ({gc, sys, usr}: cpu_timer) =
+      fun checkCPUTimer ({gc, sys, usr, ...}: cpu_timer) =
 	 let
-	    val {gc = g, sys = s, usr = u} = startCPUTimer ()
+	    val {gc = g, sys = s, usr = u, ...} = startCPUTimer ()
 	    val op - = Time.-
 	 in
 	    {gc = g - gc,
@@ -26,22 +26,26 @@ structure Timer: TIMER =
 	 end
 
       val totalCPUTimer =
-	 let
-	    val t = startCPUTimer ()
+	 let val t = startCPUTimer ()
 	 in fn () => checkCPUTimer t
 	 end
 
+      val checkGCTime = fn t => let val {gc, ...} = checkCPUTimer t
+				in gc
+				end
+      val checkCPUTimer = fn t => let val {usr, sys, ...} = checkCPUTimer t
+				  in {usr = usr, sys = sys}
+				  end
+
       type real_timer = Time.time
 
-      fun startRealTimer (): real_timer = Posix.ProcEnv.time ()
+      fun startRealTimer (): real_timer = Time.now ()
 
       fun checkRealTimer (t: real_timer): Time.time =
-	 Time.- (Posix.ProcEnv.time (), t)
+	 Time.- (startRealTimer (), t)
 	 
       val totalRealTimer =
-	 let
-	    val t = startRealTimer ()
-	 in
-	    fn () => checkRealTimer t
+	 let val t = startRealTimer ()
+	 in fn () => checkRealTimer t
 	 end
    end

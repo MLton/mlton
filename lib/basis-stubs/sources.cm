@@ -1,0 +1,13 @@
+Library
+
+structure Basis2002
+
+is
+
+#if (SMLNJ_VERSION == 110) && (SMLNJ_MINOR_VERSION >= 20)
+$/basis.cm
+$/smlnj-lib.cm
+#endif
+
+basis-2002.sml
+os.sml

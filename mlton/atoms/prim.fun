@@ -61,20 +61,6 @@ structure Name =
        | GC_collect
        | GC_pack
        | GC_unpack
-       | IntInf_add
-       | IntInf_compare
-       | IntInf_equal
-       | IntInf_fromVector
-       | IntInf_fromWord
-       | IntInf_gcd
-       | IntInf_mul
-       | IntInf_neg
-       | IntInf_quot
-       | IntInf_rem
-       | IntInf_sub
-       | IntInf_toString
-       | IntInf_toVector
-       | IntInf_toWord
        | Int_add
        | Int_addCheck
        | Int_ge
@@ -91,6 +77,26 @@ structure Name =
        | Int_rem
        | Int_sub
        | Int_subCheck
+       | IntInf_add
+       | IntInf_andb
+       | IntInf_arshift
+       | IntInf_compare
+       | IntInf_equal
+       | IntInf_fromVector
+       | IntInf_fromWord
+       | IntInf_gcd
+       | IntInf_lshift
+       | IntInf_mul
+       | IntInf_notb
+       | IntInf_neg
+       | IntInf_orb
+       | IntInf_quot
+       | IntInf_rem
+       | IntInf_sub
+       | IntInf_toString
+       | IntInf_toVector
+       | IntInf_toWord
+       | IntInf_xorb
        | MLton_bogus
        | MLton_bug
        | MLton_deserialize
@@ -140,12 +146,7 @@ structure Name =
        | Ref_assign
        | Ref_deref
        | Ref_ref
-       | String_equal
-       | String_fromCharVector
        | String_fromWord8Vector
-       | String_size
-       | String_sub
-       | String_toCharVector
        | String_toWord8Vector
        | Thread_atomicBegin
        | Thread_atomicEnd
@@ -212,17 +213,16 @@ structure Name =
       val equals: t * t -> bool = op =
 
       val isCommutative =
-	 fn IntInf_equal => true
-	  | Int_add => true
+	 fn Int_add => true
 	  | Int_addCheck => true
 	  | Int_mul => true
 	  | Int_mulCheck => true
+	  | IntInf_equal => true
 	  | MLton_eq => true
 	  | MLton_equal => true
 	  | Real_add => true
 	  | Real_mul => true
 	  | Real_qequal => true
-	  | String_equal => true
 	  | Word32_add => true
 	  | Word32_addCheck => true
 	  | Word32_andb => true
@@ -282,19 +282,25 @@ structure Name =
 	  (GC_pack, SideEffect, "GC_pack"),
 	  (GC_unpack, SideEffect, "GC_unpack"),
 	  (IntInf_add, Functional, "IntInf_add"),
+	  (IntInf_andb, Functional, "IntInf_andb"),
+	  (IntInf_arshift, Functional, "IntInf_arshift"),
 	  (IntInf_compare, Functional, "IntInf_compare"),
 	  (IntInf_equal, Functional, "IntInf_equal"),
 	  (IntInf_fromVector, Functional, "IntInf_fromVector"),
 	  (IntInf_fromWord, Functional, "IntInf_fromWord"),
 	  (IntInf_gcd, Functional, "IntInf_gcd"),
+	  (IntInf_lshift, Functional, "IntInf_lshift"),
 	  (IntInf_mul, Functional, "IntInf_mul"),
+	  (IntInf_notb, Functional, "IntInf_notb"),
 	  (IntInf_neg, Functional, "IntInf_neg"),
+	  (IntInf_orb, Functional, "IntInf_orb"),
 	  (IntInf_quot, Functional, "IntInf_quot"),
 	  (IntInf_rem, Functional, "IntInf_rem"),
 	  (IntInf_sub, Functional, "IntInf_sub"),
 	  (IntInf_toString, Functional, "IntInf_toString"),
 	  (IntInf_toVector, Functional, "IntInf_toVector"),
 	  (IntInf_toWord, Functional, "IntInf_toWord"),
+	  (IntInf_xorb, Functional, "IntInf_xorb"),
 	  (Int_add, Functional, "Int_add"),
 	  (Int_addCheck, SideEffect, "Int_addCheck"),
 	  (Int_ge, Functional, "Int_ge"),
@@ -361,12 +367,7 @@ structure Name =
 	  (Ref_assign, SideEffect, "Ref_assign"),
 	  (Ref_deref, DependsOnState, "Ref_deref"),
 	  (Ref_ref, Moveable, "Ref_ref"),
-	  (String_equal, Functional, "String_equal"),
-	  (String_fromCharVector, Functional, "String_fromCharVector"),
 	  (String_fromWord8Vector, Functional, "String_fromWord8Vector"),
-	  (String_size, Functional, "String_size"),
-	  (String_sub, Functional, "String_sub"),
-	  (String_toCharVector, Functional, "String_toCharVector"),
 	  (String_toWord8Vector, Functional, "String_toWord8Vector"),
 	  (Thread_atomicBegin, SideEffect, "Thread_atomicBegin"),
 	  (Thread_atomicEnd, SideEffect, "Thread_atomicEnd"),
@@ -551,7 +552,6 @@ in
    val intInfNeg =
       new0 (Name.IntInf_neg, tuple [intInf, word] --> intInf)
    val intInfEqual = new0 (Name.IntInf_equal, tuple [intInf, intInf] --> bool)
-   val stringEqual = new0 (Name.String_equal, tuple [string, string] --> bool)
    val word8Neg = new0 (Name.Word8_neg, word8 --> word8)
    val word8Notb = new0 (Name.Word8_notb, word8 --> word8)
    val word32Notb = new0 (Name.Word32_notb, word --> word)
@@ -849,10 +849,6 @@ fun 'a apply (p, args, varEquals) =
 		  | SOME w => word w)
 	   | (MLton_eq, [c1, c2]) => eq (c1, c2)
 	   | (MLton_equal, [c1, c2]) => equal (c1, c2)
-	   | (String_equal, [String s1, String s2]) =>
-		bool (String.equals (s1, s2))
-	   | (String_size, [String s]) => int (String.size s)
-	   | (String_sub, [String s, Int i]) => char (String.sub (s, i))
 	   | (Word8_mul, [Word w1, Word w2]) => w8o (Word8.*, w1, w2)
 	   | (Word8_add, [Word w1, Word w2]) => w8o (Word8.+, w1, w2)
 	   | (Word8_sub, [Word w1, Word w2]) => w8o (Word8.-, w1, w2)
@@ -1186,7 +1182,6 @@ fun 'a apply (p, args, varEquals) =
 					| Real_gt => f
 					| Real_ge => t
 					| Real_qequal => t
-					| String_equal => t
 					| Word8_andb => Var x
 					| Word8_div => word8 0w1
 					| Word8_ge => t
@@ -1280,8 +1275,6 @@ fun layoutApp (p: t, args: 'a vector, layoutArg: 'a -> Layout.t): Layout.t =
        | Ref_assign => two ":="
        | Ref_deref => one "!"
        | Ref_ref => one "ref"
-       | String_equal => two "="
-       | String_size => one "size"
        | Vector_length => one "length"
        | Word32_add => two "+"
        | Word32_addCheck => two "+c"

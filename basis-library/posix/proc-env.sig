@@ -1,38 +1,38 @@
 signature POSIX_PROC_ENV =
    sig
-      eqtype file_desc
-      eqtype gid
       eqtype pid
       eqtype uid
+      eqtype gid
+      eqtype file_desc
 
-      val ctermid: unit -> string
-      val environ: unit -> string list 
-      val getegid: unit -> gid 
-      val getenv: string -> string option 
-      val geteuid: unit -> uid 
-      val getgid: unit -> gid 
+      val uidToWord: uid -> SysWord.word
+      val wordToUid: SysWord.word -> uid
+      val gidToWord: gid -> SysWord.word
+      val wordToGid: SysWord.word -> gid
+      val getpid : unit -> pid
+      val getppid: unit -> pid
+      val getuid : unit -> uid
+      val geteuid: unit -> uid
+      val getgid : unit -> gid
+      val getegid: unit -> gid
+      val setuid: uid -> unit
+      val setgid: gid -> unit
       val getgroups: unit -> gid list
       val getlogin: unit -> string
-      val getpgrp: unit -> pid 
-      val getpid: unit -> pid 
-      val getppid: unit -> pid 
-      val getuid: unit -> uid 
-      val gidToWord: gid -> SysWord.word 
-      val isatty: file_desc -> bool 
-      val setgid: gid -> unit
-      val setpgid: {pid: pid option, pgid: pid option} -> unit
+      val getpgrp: unit -> pid
       val setsid: unit -> pid
-      val setuid: uid -> unit
-      val sysconf: string -> SysWord.word
+      val setpgid: {pid: pid option, pgid: pid option} -> unit
+      val uname: unit -> (string * string) list
       val time: unit -> Time.time
       val times: unit -> {elapsed: Time.time,
 			  utime: Time.time,
 			  stime: Time.time,
 			  cutime: Time.time,
 			  cstime: Time.time}
+      val getenv: string -> string option
+      val environ: unit -> string list
+      val ctermid: unit -> string
       val ttyname: file_desc -> string
-      val uidToWord: uid -> SysWord.word 
-      val uname: unit -> (string * string) list
-      val wordToGid: SysWord.word -> gid 
-      val wordToUid: SysWord.word -> uid 
+      val isatty: file_desc -> bool
+      val sysconf: string -> SysWord.word
    end
