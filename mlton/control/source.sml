@@ -19,9 +19,9 @@ in
 end
 
 fun getPos (T {file, lineNum, lineStart, ...}, n) =
-   SourcePos.T {column = n - !lineStart,
-		file = !file,
-		line = !lineNum}
+   SourcePos.make {column = n - !lineStart,
+		   file = !file,
+		   line = !lineNum}
 		
 fun lineStart (s as T {lineStart, ...}) = getPos (s, !lineStart)
 

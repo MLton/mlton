@@ -4,47 +4,30 @@ struct
 structure Pos =
    struct
       datatype t =
-	 Known of {file: string,
-		   isBasis: bool,
-		   line: int}
+	 Known of SourcePos.t
        | Unknown
 
       fun equals (p, p') =
 	 case (p, p') of
-	    (Known {file = f, line = l, ...},
-	     Known {file = f', line = l', ...}) =>
-	       f = f' andalso l = l'
-	   | (Unknown, Unknown) => true
-	   | _ => false
+	    (Known p, Known p') => SourcePos.equals (p, p')
+	  | (Unknown, Unknown) => true
+	  | _ => false
 
       fun toString p =
 	 case p of
-	    Known {file, line, ...} =>
-	       concat [file, ": ", Int.toString line]
+	    Known p =>
+	       concat [SourcePos.file p, ": ",
+		       Int.toString (SourcePos.line p)]
 	  | Unknown => "<unknown>"
 
       fun fromRegion r =
 	 case Region.left r of
 	    NONE => Unknown
-	  | SOME (SourcePos.T {file, line, ...}) =>
-	       let
-		  val s = "/basis-library/"
-		  val (file, isBasis) = 
-		     case String.findSubstring {string = file, substring = s} of
-			NONE => (file, false)
-		      | SOME i =>
-			   (concat ["<basis>/",
-				    String.dropPrefix (file, i + String.size s)],
-			    true)
-	       in
-		  Known {file = file,
-			 isBasis = isBasis,
-			 line = line}
-	       end
+	  | SOME p => Known p
 
       fun isBasis p =
 	 case p of
-	    Known {isBasis, ...} => isBasis
+	    Known p => SourcePos.isBasis p
 	  | Unknown => false
    end
 

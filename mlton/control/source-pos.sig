@@ -14,13 +14,19 @@ signature SOURCE_POS_STRUCTS =
 signature SOURCE_POS = 
    sig
       include SOURCE_POS_STRUCTS
-      
-      datatype t = T of {column: int,
-			 file: File.t,
-			 line: int}
+
+      type t
 
       val bogus: t
+      val column: t -> int
+      val equals: t * t -> bool
       val file: t -> File.t
+      val isBasis: t -> bool
+      val line: t -> int
+      val make: {column: int,
+		 file: File.t,
+		 line: int} -> t
+      val posToString: t -> string
       val toString: t -> string
    end
 

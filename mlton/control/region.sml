@@ -32,13 +32,8 @@ val extendRight =
 val toString =
    fn Bogus => "Bogus"
     | T {left, right} =>
-	 let
-	    fun posToString (SourcePos.T {line, column, ...}) =
-	       concat [Int.toString line, ".", Int.toString column]
-	 in
-	    concat [SourcePos.file left, ":",
-		    posToString left, "-", posToString right]
-	 end
+	 concat [SourcePos.file left, ":",
+		 SourcePos.posToString left, "-", SourcePos.posToString right]
 
 val layout = Layout.str o toString
 
