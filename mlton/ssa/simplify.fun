@@ -261,9 +261,14 @@ val simplify = fn p => let
 			  * to catch bugs.
 			  *)
 			 val _ = typeCheck p
-			 val p' = simplify p
-			 val _ = typeCheck p'
+			 val p = simplify p
+			 val p =
+			    if !Control.profile <> Control.ProfileNone
+			       andalso !Control.profileIL = Control.ProfileSSA
+			       then Program.profile p
+			    else p
+			 val _ = typeCheck p
 		       in
-			 p'
+			 p
 		       end
 end

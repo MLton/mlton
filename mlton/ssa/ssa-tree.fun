@@ -1853,6 +1853,50 @@ structure Program =
 	 in
 	    ()
 	 end
+
+      fun profile (T {datatypes, functions, globals, main}) =
+	 let
+	    val functions =
+	       List.map
+	       (functions, fn f =>
+		let
+		   val {args, blocks, name, raises, returns, start} =
+		      Function.dest f
+		   val blocks =
+		      Vector.map
+		      (blocks, fn Block.T {args, label, statements, transfer} =>
+		       let
+			  val si =
+			     SourceInfo.function
+			     {name = [Label.toString label],
+			      region = Region.bogus}
+			  fun prof f = Vector.new1 (Statement.profile (f si))
+			  val statements =
+			     Vector.concat
+			     [prof ProfileExp.Enter,
+			      statements,
+			      prof ProfileExp.Leave]
+		       in
+			  Block.T {args = args,
+				   label = label,
+				   statements = statements,
+				   transfer = transfer}
+		       end)
+		in
+		   Function.new {args = args,
+				 blocks = blocks,
+				 name = name,
+				 raises = raises,
+				 returns = returns,
+				 start = start}
+		end)
+	 in
+	    T {datatypes = datatypes,
+	       functions = functions,
+	       globals = globals,
+	       main = main}
+	 end
+	 
    end
 
 end

@@ -304,6 +304,7 @@ fun makeOptions {usage} =
 	(fn s =>
 	 case s of
 	    "source" => profileIL := ProfileSource
+	  | "ssa" => profileIL := ProfileSSA
 	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
        (Normal, "profile-stack", " {false|true}", "profile the stack",
 	boolRef profileStack),

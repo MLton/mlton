@@ -277,5 +277,6 @@ signature SSA_TREE =
 	    val hasPrim: t * (Prim.t -> bool) -> bool
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val layoutStats: t -> Layout.t
+	    val profile: t -> t
 	 end
    end
