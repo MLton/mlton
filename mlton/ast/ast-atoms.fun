@@ -475,6 +475,33 @@ structure ModIdBind =
 	     | Sig bds => doit ("signature", Sigid.layout, bds)
 	     | Str bds => doit ("structure", Strid.layout, bds)
 	 end
+
+      fun checkSyntax d =
+	 let
+	    fun doit (bds : {lhs: 'a, rhs: 'a} Vector.t, 
+		      {equalsId, layoutId, regionId, name}) =
+	       reportDuplicates
+	       (bds, {equals = (fn ({lhs = id, ...}, {lhs = id', ...}) =>
+				equalsId (id, id')),
+		      layout = layoutId o #lhs,
+		      name = concat [name, " definition"],
+		      region = regionId o #lhs,
+		      term = fn () => layout d})
+	 in
+	    case node d of
+	       Fct bds => doit (bds, {equalsId = Fctid.equals, 
+				      layoutId = Fctid.layout,
+				      regionId = Fctid.region, 
+				      name = "functor"})
+	     | Sig bds => doit (bds, {equalsId = Sigid.equals, 
+				      layoutId = Sigid.layout,
+				      regionId = Sigid.region, 
+				      name = "signature"})
+	     | Str bds => doit (bds, {equalsId = Strid.equals, 
+				      layoutId = Strid.layout,
+				      regionId = Strid.region, 
+				      name = "structure"})
+	 end
    end
 
 end

@@ -31,6 +31,7 @@ signature AST_MLBS =
 	    val lett: basdec * t -> t
 	    val var: Basid.t -> t
 
+	    val checkSyntax: t -> unit
 	    val layout: t -> Layout.t
 	 end
 
@@ -63,6 +64,7 @@ signature AST_MLBS =
 	    val prim: t
 	    val ann: (string list * Region.t) list * t -> t
 
+	    val checkSyntax: t -> unit
 	    val layout: t -> Layout.t
 	 end
       sharing type Basdec.t = Basexp.basdec

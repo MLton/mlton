@@ -13,32 +13,6 @@ fun error (reg, msg) = Control.error (reg, Layout.str msg, Layout.empty)
 
 open Ast
 
-fun reportDuplicates (v: 'a vector,
-		      name: string,
-		      equals: 'a * 'a -> bool,
-		      layout: 'a -> Layout.t,
-		      region: 'a -> Region.t) =
-   Vector.foreachi
-   (v, fn (i, a) =>
-    let
-       fun loop i' =
-	  if i = i'
-	     then ()
-	  else if equals (a, Vector.sub (v, i'))
-		  then 
-		     let
-			open Layout
-		     in
-			Control.error
-			(region a,
-			 seq [str (concat ["duplicate ", name, ": "]), layout a],
-			 empty)
-		     end
-	       else loop (i' + 1)
-    in
-       loop 0
-    end)
-
 type fctbinds = {lhs: Fctid.t, rhs: Fctid.t} list
 type sigbinds = {lhs: Sigid.t, rhs: Sigid.t} list
 type strbinds = {lhs: Strid.t, rhs: Strid.t} list
@@ -119,54 +93,26 @@ basdec : basdecnode (Basdec.makeRegion'
 
 basdecnode
    : FUNCTOR fctbinds
-     (let
+     (let 
          val fctbinds = Vector.fromList fctbinds
-         val _ =
-            reportDuplicates
-            (fctbinds,
-             "functor definition",
-             fn ({lhs = n, ...}, {lhs = n', ...}) => Fctid.equals (n, n'),
-             Fctid.layout o #lhs,
-             Fctid.region o #lhs)
-      in
+      in 
          Basdec.Defs (ModIdBind.makeRegion' (ModIdBind.Fct fctbinds, FUNCTORleft, fctbindsright))
       end)
    | SIGNATURE sigbinds
      (let
          val sigbinds = Vector.fromList sigbinds
-         val _ =
-            reportDuplicates
-            (sigbinds,
-             "signature definition",
-             fn ({lhs = n, ...}, {lhs = n', ...}) => Sigid.equals (n, n'),
-             Sigid.layout o #lhs,
-             Sigid.region o #lhs)
       in
          Basdec.Defs (ModIdBind.makeRegion' (ModIdBind.Sig sigbinds, SIGNATUREleft, sigbindsright))
       end)
    | STRUCTURE strbinds
      (let
          val strbinds = Vector.fromList strbinds
-         val _ =
-            reportDuplicates
-            (strbinds,
-             "structure definition",
-             fn ({lhs = n, ...}, {lhs = n', ...}) => Strid.equals (n, n'),
-             Strid.layout o #lhs,
-             Strid.region o #lhs)
       in
          Basdec.Defs (ModIdBind.makeRegion' (ModIdBind.Str strbinds, STRUCTUREleft, strbindsright))
       end)
    | BASIS basbinds
      (let
          val basbinds = Vector.fromList basbinds
-         val _ =
-            reportDuplicates
-            (basbinds,
-             "basis definition",
-             fn ({name = n, ...}, {name = n', ...}) => Basid.equals (n, n'),
-             Basid.layout o #name,
-             Basid.region o #name)
       in
          Basdec.Basis basbinds
       end)

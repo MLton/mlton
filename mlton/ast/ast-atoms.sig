@@ -165,6 +165,8 @@ signature AST_ATOMS =
 	     | Str of {lhs: Strid.t, rhs: Strid.t} vector
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
+
+	    val checkSyntax: t -> unit
 	    val layout: t -> Layout.t
 	 end
 

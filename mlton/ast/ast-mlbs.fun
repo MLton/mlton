@@ -72,6 +72,34 @@ and layoutBasdec dec =
 		indent (layoutBasdec dec, 3), str "end"]
 and layoutBasdecs decs = layouts (decs, layoutBasdec)
 
+fun checkSyntaxBasexp (e: basexp): unit =
+   case node e of
+      Bas dec => checkSyntaxBasdec dec
+    | Var basid => ()
+    | Let (dec, exp) => (checkSyntaxBasdec dec
+			 ; checkSyntaxBasexp exp)
+and checkSyntaxBasdec (d: basdec): unit =
+   case node d of
+      Defs def => ModIdBind.checkSyntax def
+    | Basis basbnds =>
+	 reportDuplicates
+	 (basbnds, {equals = (fn ({name = id, ...}, {name = id', ...}) =>
+			      Basid.equals (id, id')),
+		    layout = Basid.layout o #name,
+		    name = "basis definition",
+		    region = Basid.region o #name,
+		    term = fn () => layoutBasdec d})
+    | Local (dec1, dec2) => 
+	 (checkSyntaxBasdec dec1
+	  ; checkSyntaxBasdec dec2)
+    | Seq decs => List.foreach (decs, checkSyntaxBasdec)
+    | Open bs => ()
+    | Prog (f,_) => ()
+    | MLB (f,_,_) => ()
+    | Prim => ()
+    | Ann (anns, dec) => checkSyntaxBasdec dec
+
+
 structure Basexp =
    struct
       open Wrap
@@ -85,6 +113,7 @@ structure Basexp =
       val bas = make o Bas
       val lett = make o Let
       val var = make o Var
+      val checkSyntax = checkSyntaxBasexp
       val layout = layoutBasexp
    end
 
@@ -107,6 +136,7 @@ structure Basdec =
       val prim = make Prim
       val prog = make o Prog
       val mlb = make o MLB
+      val checkSyntax = checkSyntaxBasdec
       val layout = layoutBasdec
    end
 end

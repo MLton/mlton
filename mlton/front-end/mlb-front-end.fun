@@ -239,6 +239,7 @@ fun mkLexAndParse {parseSource, parseImport} =
 					 (fid, basdec)
 				      end)
 				  val basdec = Promise.force basdec
+				  val () = Ast.Basdec.checkSyntax basdec
 			       in
 				  Ast.Basdec.MLB (fileAbs, SOME fid, basdec)
 			       end
