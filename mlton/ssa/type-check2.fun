@@ -98,7 +98,10 @@ fun checkScopes (program as
 		        val numCons = 
 			   case Type.dest (getVar' test) of
 			      Type.Datatype t => getTycon' t
-			    | _ => Error.bug "case test is not a datatype"
+			    | _ => Error.bug (concat
+					      ["case test ",
+					       Var.toString test,
+					       " is not a datatype"])
 			val cons = Array.array (numCons, false)
 			val _ =
 			   Vector.foreach
