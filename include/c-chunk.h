@@ -617,6 +617,10 @@ wordOps(64)
 	static inline t f##_to##t (f x) {	\
 		return (t)x;			\
 	}
+coerce (Int8, Int32)
+coerce (Int32, Int8)
+coerce (Int16, Int32)
+coerce (Int32, Int16)
 coerce (Int32, Real64)
 coerce (Int32, Word8)
 coerce (Int32, Word32)

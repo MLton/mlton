@@ -12,6 +12,15 @@ struct
 
 open I
 
+val detectOverflow = Primitive.detectOverflow
+
+fun fromInt (i: Int.int): int =
+   if not detectOverflow
+      orelse (Primitive.Int.<= (toInt minInt', i)
+	      andalso Primitive.Int.<= (i, toInt maxInt'))
+      then I.fromInt i
+   else raise Overflow
+
 val precision: Int.int option = SOME precision'
 
 val maxInt: int option = SOME maxInt'
@@ -20,8 +29,6 @@ val minInt: int option = SOME minInt'
 (* These are overriden in patch.sml after int-inf.sml has been defined. *)
 val toLarge: int -> LargeInt.int = fn _ => raise Fail "toLarge"
 val fromLarge: LargeInt.int -> int = fn _ => raise Fail "fromLarge"
-
-val detectOverflow = Primitive.detectOverflow
 
 val zero: int = fromInt 0
 val one: int = fromInt 1
