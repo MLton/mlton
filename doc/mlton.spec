@@ -21,10 +21,10 @@ make
 %install
 cd src
 rm -rf $RPM_BUILD_ROOT
-make PREFIX=$RPM_BUILD_ROOT install
+make PREFIX=$RPM_BUILD_ROOT VERSION=%{version} install
 
 %files
-%attr(-, root, root)	%doc	doc/*
+%attr(-, root, root)		/usr/share/doc/mlton-%{version}
 %attr(-, root, root)		/usr/local/bin/mllex
 %attr(-, root, root)		/usr/local/bin/mlprof
 %attr(-, root, root)		/usr/local/bin/mlton

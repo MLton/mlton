@@ -15,6 +15,7 @@ YACC = mlyacc
 PATH = $(BIN):$(shell echo $$PATH)
 
 all:	$(MLTON) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC)
+	cd doc && $(MAKE)
 	chmod a-w $(INC)/*
 	@echo 'Build of MLton succeeded'
 
@@ -82,7 +83,7 @@ $(LIB)/world.mlton: $(LIB)/$(AOUT) \
 
 .PHONY: clean
 clean:
-	$(ROOT)/src/bin/clean
+	bin/clean
 	for d in basis-library benchmark bin include lib man mllex mlprof \
 			mlton mlyacc regression runtime; do 		\
 		cd $$d && $(MAKE) clean && cd ..;			\
@@ -92,20 +93,28 @@ clean:
 # The PREFIX is added onto them to indicate where the Makefile actually
 # puts them.  (PREFIX is mainly used when building RPMs.)
 PREFIX =
+VERSION =
 TBIN = $(PREFIX)/usr/local/bin
 ULIB = /usr/local/lib/mlton
 TLIB = $(PREFIX)/$(ULIB)
 TMAN = $(PREFIX)/usr/local/man/man1
+TDOC = $(PREFIX)/usr/share/doc/mlton-$(VERSION)
 
 .PHONY: install
 install:
-	mkdir -p $(TBIN) $(TLIB)/lib $(TLIB)/include $(TMAN) &&		\
+	mkdir -p $(TDOC) $(TBIN) $(TLIB)/lib $(TLIB)/include $(TMAN) &&	\
+	(
+		cd $(DOC)
+		cp -p CHANGES cmcat.sml README $(TDOC)
+		
+		gzip -c main.ps >$(TDOC)/user-guide.ps.gz
+	)
 	(								\
 		cd $(LIB) &&						\
 		cp -p *.a prof.o $(AOUT) world.mlton $(TLIB)/lib	\
 	) &&								\
 	(								\
-		cd $(ROOT)/include &&					\
+		cd $(INC) &&						\
 		cp -p *.h $(TLIB)/include &&				\
 		chmod u+w $(TLIB)/include/*				\
 	) &&								\
