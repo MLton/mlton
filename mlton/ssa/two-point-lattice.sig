@@ -5,7 +5,7 @@ signature TWO_POINT_LATTICE_STRUCTS =
    sig
       (* pretty print names *)
       val bottom: string
-      val top:string
+      val top: string
    end
 
 signature TWO_POINT_LATTICE = 
