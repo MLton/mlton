@@ -6,7 +6,7 @@
 name=`basename $0`
 
 function usage() {
-	echo >&2 "usage: $name [file.sml | file.cm]"
+	echo >&2 "usage: $name lib [file.sml | file.cm]"
 	exit 1
 }
 
@@ -44,14 +44,20 @@ done | rewrite
 
 SML_FILE=""
 CM_FILE=""
+LIB=""
 case "$#" in
 0)
+	usage
 	;;
 1)
-	if [ "$1" == "`basename $1 .sml`.sml" -a -r "$1" ]; then
-		SML_FILE=$1
-	elif [ "$1" == "`basename $1 .cm`.cm" -a -r "$1" ]; then
-		CM_FILE=$1
+	LIB=$1
+	;;
+2)
+	LIB=$1
+	if [ "$2" == "`basename $2 .sml`.sml" -a -r "$2" ]; then
+		SML_FILE=$2
+	elif [ "$2" == "`basename $2 .cm`.cm" -a -r "$2" ]; then
+		CM_FILE=$2
 	else usage
         fi
         ;;
@@ -273,13 +279,13 @@ cat <<-EOF
 	local
 EOF
 cd $root/basis-library
-REWRITE_FILES="build-basis"
+REWRITE_FILES="libs/build"
 rewrite_files
 cat <<-EOF
 	in
 EOF
 cd $root/basis-library
-REWRITE_FILES="bind-basis"
+REWRITE_FILES="libs/$LIB/bind"
 rewrite_files
 cat <<-EOF
 	end

@@ -11,6 +11,11 @@ struct
 structure C = Control ()
 open C
 
+val basisLibs = ["basis-2002", "none"]
+val basisLibrary = control {name = "basis library",
+			    default = "basis-2002",
+			    toString = fn s => s}
+
 structure Chunk =
    struct
       datatype t =

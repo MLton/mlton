@@ -1,4 +1,4 @@
-signature BASIS =
+signature BASIS_2002 =
    sig
       (* Top-level types *)
       eqtype unit

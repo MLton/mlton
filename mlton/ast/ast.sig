@@ -171,6 +171,8 @@ signature AST =
 	 sig
 	    datatype t = T of Topdec.t list
 
+	    val append: t * t -> t
+	    val empty: t
 	    val size: t -> int
 	    val layout: t -> Layout.t
 	 end

@@ -1047,8 +1047,7 @@ local
 	 end
       end
 in
-   fun localTop (T {currentScope, fcts, fixs, sigs, strs, types, vals, ...},
-		 f1, f2) =
+   fun localTop (T {currentScope, fcts, fixs, sigs, strs, types, vals, ...}, f) =
       let
 	 val s0 = !currentScope
 	 val fcts = doit (fcts, s0)
@@ -1058,18 +1057,23 @@ in
 	 val types = doit (types, s0)
 	 val vals = doit (vals, s0)
 	 val _ = currentScope := Scope.new ()
-	 val a1 = f1 ()
+	 val a = f ()
 	 val fcts = fcts ()
 	 val fixs = fixs ()
 	 val sigs = sigs ()
 	 val strs = strs ()
 	 val types = types ()
 	 val vals = vals ()
-	 val _ = currentScope := Scope.new ()
-	 val a2 = f2 ()
-	 val _ = (fcts (); fixs (); sigs (); strs (); types (); vals ())
-	 val _ = currentScope := s0
-      in (a1, a2)
+	 fun finish g =
+	    let
+	       val _ = currentScope := Scope.new ()
+	       val b = g ()
+	       val _ = (fcts (); fixs (); sigs (); strs (); types (); vals ())
+	       val _ = currentScope := s0
+	    in
+	       b
+	    end
+      in (a, finish)
       end
 
    fun localModule (T {currentScope, fixs, strs, types, vals, ...},

@@ -342,6 +342,10 @@ structure Program =
    struct
       datatype t = T of Topdec.t list
 
+      val empty = T []
+
+      fun append (T ds1, T ds2) = T (ds1 @ ds2)
+
       fun layout (T ds) = Layout.align (List.map (ds, Topdec.layout))
 
       fun size (T ds): int =

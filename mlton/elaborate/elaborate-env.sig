@@ -109,7 +109,7 @@ signature ELABORATE_ENV =
       val layoutUsed: t -> Layout.t
       val localCore: t * (unit -> 'a) * (unit -> 'b) -> 'a * 'b
       val localModule: t * (unit -> 'a) * (unit -> 'b) -> 'a * 'b
-      val localTop: t * (unit -> 'a) * (unit -> 'b) -> 'a * 'b
+      val localTop: t * (unit -> 'a) -> ('a * ((unit -> 'b) -> 'b))
       val lookupFctid: t * Ast.Fctid.t -> FunctorClosure.t
       val lookupLongcon: t * Ast.Longcon.t -> CoreML.Con.t
       val lookupLongstrid: t * Ast.Longstrid.t -> Structure.t

@@ -1,4 +1,4 @@
-structure Basis:> BASIS = 
+structure Basis2002:> BASIS_2002 = 
    struct
       (* Required structures *)
       structure Array = Array

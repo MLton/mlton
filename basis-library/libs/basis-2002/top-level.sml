@@ -6,4 +6,4 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
-open Basis
+open Basis2002
