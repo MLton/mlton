@@ -13,8 +13,8 @@
 PORTNAME=	mlton
 PORTVERSION=	MLTONVERSION
 CATEGORIES=	lang
-MASTER_SITES=	http://www.mlton.org/download/	\
-		http://www.mlton.org/experimental/
+MASTER_SITES=	http://mlton.org/download/	\
+		http://mlton.org/experimental/
 DISTFILES=	${BOOT_DIST} ${SRC_DIST}
 EXTRACT_ONLY=	${SRC_DIST}
 
@@ -49,14 +49,11 @@ PORTDIR=	usr/ports/lang/mlton
 
 .include <bsd.port.pre.mk>
 
-.if ${OSVERSION} < 500000
 BOOT_EXTRACT=	--gzip
 BOOT_SUF=	tgz
-BOOT_VER=	20040227
-.else
-BOOT_EXTRACT=	--bzip
-BOOT_SUF=	tbz
-BOOT_VER=	20040623
+BOOT_VER=	20040429
+.if ${OSVERSION} >= 500000
+LIB_DEPENDS+=	c.4:${PORTSDIR}/misc/compat4x
 .endif
 
 post-extract:
@@ -70,12 +67,12 @@ post-install:
 .for f in mllex mlprof mlton mlyacc
 	${CHOWN} ${SHAREOWN}:${SHAREGRP}	\
 		${PREFIX}/bin/${f}		\
-		${PREFIX}/man/man1/${f}.1.gz
+		${MAN1PREFIX}/${f}.1.gz
 .endfor
-	${CHOWN} -R ${SHAREOWN}:${SHAREGRP} ${PREFIX}/lib/mlton ${DOCSDIR}
 
 # Stuff below this line is for maintainer use only.
 
+.if defined(MAINTAINER_MODE)
 .PHONY: build-package
 build-package:
 	${MAKE} makesum build
@@ -111,5 +108,7 @@ pkg-plist:
 	${SED} -e 's;share/doc/mlton;%%PORTDOCS%%%%DOCSDIR%%;'	\
 		<${TMP_PLIST} >${PLIST}
 	${RM} ${TMP_PLIST}
+
+.endif # MAINTAINER_MODE
 
 .include <bsd.port.post.mk>
