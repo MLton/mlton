@@ -321,29 +321,29 @@ structure Spine:
 
       fun layout (T s) =
 	 let
-	    val {fields, more} = Set.value s
+	    val {fields, more} = Set.! s
 	 in
 	    Layout.record [("fields", List.layout Field.layout (!fields)),
 			   ("more", Bool.layout (!more))]
 	 end
 
-      fun canAddFields (T s) = ! (#more (Set.value s))
-      fun fields (T s) = ! (#fields (Set.value s))
+      fun canAddFields (T s) = ! (#more (Set.! s))
+      fun fields (T s) = ! (#fields (Set.! s))
 
       fun ensureFieldValue ({fields, more}, f) =
 	 List.contains (!fields, f, Field.equals)
 	 orelse (!more andalso (List.push (fields, f); true))
 
-      fun ensureField (T s, f) = ensureFieldValue (Set.value s, f)
+      fun ensureField (T s, f) = ensureFieldValue (Set.! s, f)
 
-      fun noMoreFields (T s) = #more (Set.value s) := false
+      fun noMoreFields (T s) = #more (Set.! s) := false
 
       fun unify (T s, T s') =
 	 let
-	    val {fields = fs, more = m} = Set.value s
-	    val {more = m', ...} = Set.value s'
+	    val {fields = fs, more = m} = Set.! s
+	    val {more = m', ...} = Set.! s'
 	    val _ = Set.union (s, s')
-	    val _ = Set.setValue (s, {fields = fs, more = ref (!m andalso !m')})
+	    val _ = Set.:= (s, {fields = fs, more = ref (!m andalso !m')})
 	 in
 	    ()
 	 end
@@ -427,7 +427,7 @@ structure Type =
       val newCloses: t list ref = ref []
 
       local
-	 fun make f (T s) = f (Set.value s)
+	 fun make f (T s) = f (Set.! s)
       in
 	 val equality = make #equality
 	 val plist: t -> PropertyList.t = make #plist
@@ -807,7 +807,7 @@ structure Type =
 	 let
 	    fun loop (T s): unit =
 	       let
-		  val {time, ty, ...} = Set.value s
+		  val {time, ty, ...} = Set.! s
 	       in
 		  if Time.<= (!time, bound)
 		     then ()
@@ -916,9 +916,9 @@ structure Type =
 						      else (l, l')))
 		      fun genFlexError () =
 			 Error.bug "GenFlexRecord seen in unify"
-		      val {equality = e, time, ty = t, plist} = Set.value s
+		      val {equality = e, time, ty = t, plist} = Set.! s
 		      val {equality = e', time = time', ty = t', ...} =
-			 Set.value s'
+			 Set.! s'
 		      fun not () =
 			 (preError ()
 			  ; notUnifiableBracket (layoutPretty outer,
@@ -1128,11 +1128,10 @@ structure Type =
 						    then ()
 						 else time := !time'
 					      val _ =
-						 Set.setValue
-						 (s, {equality = e,
-						      plist = plist,
-						      time = time,
-						      ty = t})
+						 Set.:= (s, {equality = e,
+							     plist = plist,
+							     time = time,
+							     ty = t})
 					   in
 					      ()
 					   end
@@ -1568,7 +1567,7 @@ fun close (ensure: Tyvar.t vector) =
 	       List.fold
 	       (!Type.newCloses, savedCloses, fn (t as Type.T s, ac) =>
 		let
-		   val {equality, plist, time, ty, ...} = Set.value s
+		   val {equality, plist, time, ty, ...} = Set.! s
 		   val _ =
 		      if true then () else
 		      let
@@ -1602,7 +1601,7 @@ fun close (ensure: Tyvar.t vector) =
 					  spine = spine}
 			       val _ = List.push (flexes, gfr)
 			       val _ = 
-				  Set.setValue
+				  Set.:=
 				  (s, {equality = equality,
 				       plist = plist,
 				       time = time,
@@ -1629,10 +1628,10 @@ fun close (ensure: Tyvar.t vector) =
 				  val a = Tyvar.newNoname {equality = b}
 				  val _ = List.push (tyvars, a)
 				  val _ =
-				     Set.setValue (s, {equality = equality,
-						       plist = PropertyList.new (),
-						       time = time,
-						       ty = Type.Var a})
+				     Set.:= (s, {equality = equality,
+						 plist = PropertyList.new (),
+						 time = time,
+						 ty = Type.Var a})
 			       in
 				  ac
 			       end

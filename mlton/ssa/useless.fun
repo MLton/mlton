@@ -86,7 +86,7 @@ structure Value =
       withtype slot = t * Exists.t
 
       local
-	 fun make sel (T s) = sel (Set.value s)
+	 fun make sel (T s) = sel (Set.! s)
       in
 	 val value = make #value
 	 val ty = make #ty
@@ -97,7 +97,7 @@ structure Value =
       in
 	 fun layout (T s) =
 	    let
-	       val {value, ...} = Set.value s
+	       val {value, ...} = Set.! s
 	    in
 	       case value of
 		  Array {elt, length, ...} =>
@@ -124,8 +124,8 @@ structure Value =
 	    then ()
 	 else
 	    let
-	       val {value = v, ...} = Set.value s
-	       val {value = v', ...} = Set.value s'
+	       val {value = v, ...} = Set.! s
+	       val {value = v', ...} = Set.! s'
 	       val _ = Set.union (s, s')
 	    in
 	       case (v, v') of
@@ -337,7 +337,7 @@ structure Value =
       and isUseful (v: t): bool = #2 (getNew v)
       and getNew (T s): Type.t * bool =
 	 let
-	    val {value, ty, new, ...} = Set.value s
+	    val {value, ty, new, ...} = Set.! s
 	 in
 	    case !new of
 	       SOME z => z

@@ -59,7 +59,7 @@ structure Value =
 		  finalType: Type.t option ref}
 
       fun new v = T (Set.singleton {value = v})
-      fun value (T s) = #value (Set.value s)
+      fun value (T s) = #value (Set.! s)
 
       local
 	 open Layout
@@ -173,8 +173,8 @@ structure Value =
       val rec unify: t * t -> unit =
 	 fn (T s, T s') =>
 	 let
-	    val {value = v, ...} = Set.value s
-	    val {value = v', ...} = Set.value s'
+	    val {value = v, ...} = Set.! s
+	    val {value = v', ...} = Set.! s'
 	    val () = Set.union (s, s')
 	 in
 	    case (v, v') of

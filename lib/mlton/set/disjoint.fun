@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor DisjointSet ():> DISJOINT_SET =
 struct
 
@@ -57,9 +58,9 @@ fun root s = if isRoot s then s
 	       
 val representative = root
 
-fun value s = rootValue (root s)
+fun ! s = rootValue (root s)
    
-fun setValue (s, v) = setRootValue (root s, v)
+fun s := v = setRootValue (root s, v)
 
 val equals = fn (s1, s2) => equal (root s1, root s2)
 
@@ -77,10 +78,10 @@ fun union (s, s') =
 
 fun canUnion (s, s', f) =
    equals (s, s')
-   orelse (case f (value s, value s') of
+   orelse (case f (! s, ! s') of
 	      NONE => false
 	    | SOME v => (union (s, s')
-			 ; setValue (s, v)
+			 ; s := v
 			 ; true))
 
 end

@@ -17,7 +17,7 @@ structure Set = DisjointSet
 type value = int * (unit -> unit) AppendList.t ref List.t
 datatype t = T of value Set.t
 
-fun value (T s) = Set.value s
+fun value (T s) = Set.! s
 
 fun toString e =
    case value e of
@@ -49,10 +49,10 @@ fun isN (s, n') =
 		else n = n'
 
 fun up (T s) =
-   case Set.value s of
+   case Set.! s of
       (n, hss) => if n = N
 	             then ()
-		  else (Set.setValue (s, (n + 1, tl hss)) ;
+		  else (Set.:= (s, (n + 1, tl hss)) ;
 			AppendList.foreach (!(hd hss), fn h => h ()))
 
 fun makeN (s, n') =
@@ -81,8 +81,8 @@ fun == (T s, T s') =
       then ()
    else
       let 
-	 val e = Set.value s
-	 val e' = Set.value s'
+	 val e = Set.! s
+	 val e' = Set.! s'
 	 val _ = Set.union (s, s')
       in
 	 case (e, e') of
@@ -109,7 +109,7 @@ fun == (T s, T s') =
 		     (hss, hss', fn (hs, hs') =>
 		      ref (AppendList.append (!hs, !hs')))
 	       in
-		  Set.setValue (s, (n'', hss''))
+		  Set.:= (s, (n'', hss''))
 	       end
       end
 

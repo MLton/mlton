@@ -111,7 +111,7 @@ structure FlexibleTycon =
 			 plist: PropertyList.t} Set.t
       withtype copy = t option ref
 
-      fun fields (T s) = Set.value s
+      fun fields (T s) = Set.! s
 
       local
 	 fun make f = f o fields
@@ -123,7 +123,7 @@ structure FlexibleTycon =
 
       fun dest (T s) =
 	 let
-	    val {admitsEquality, hasCons, kind, ...} = Set.value s
+	    val {admitsEquality, hasCons, kind, ...} = Set.! s
 	 in
 	    {admitsEquality = !admitsEquality,
 	     hasCons = hasCons,
@@ -135,7 +135,7 @@ structure FlexibleTycon =
       fun layout (T s) =
 	 let
 	    open Layout
-	    val {admitsEquality, creationTime, hasCons, id, ...} = Set.value s
+	    val {admitsEquality, creationTime, hasCons, id, ...} = Set.! s
 	 in
 	    record [("admitsEquality", AdmitsEquality.layout (!admitsEquality)),
 		    ("creationTime", Time.layout creationTime),
@@ -459,7 +459,7 @@ and copyDefn (d: Defn.t): Defn.t =
 and copyFlexibleTycon (FlexibleTycon.T s): FlexibleTycon.t =
    let
       open FlexibleTycon
-      val {admitsEquality = a, copy, defn, hasCons, kind, ...} = Set.value s
+      val {admitsEquality = a, copy, defn, hasCons, kind, ...} = Set.! s
    in
       case !copy of
 	 NONE => 
@@ -513,7 +513,7 @@ structure AdmitsEquality =
 
 fun flexibleTyconAdmitsEquality (FlexibleTycon.T s): AdmitsEquality.t =
    let
-      val {admitsEquality, defn, ...} = Set.value s
+      val {admitsEquality, defn, ...} = Set.! s
       datatype z = datatype Defn.dest
    in
       case Defn.dest (!defn) of
@@ -562,7 +562,7 @@ structure FlexibleTycon =
 
       fun realize (T s, typeStr) =
 	 let
-	    val {defn, ...} = Set.value s
+	    val {defn, ...} = Set.! s
 	 in
 	    case Defn.dest (!defn) of
 	       Defn.Undefined => defn := Defn.realized typeStr
@@ -573,12 +573,12 @@ structure FlexibleTycon =
 	 let
 	    val {admitsEquality = a, creationTime = t, hasCons = h, id, kind,
 		 plist, ...} =
-	       Set.value s
+	       Set.! s
 	    val {admitsEquality = a', creationTime = t', hasCons = h', ...} =
-	       Set.value s'
+	       Set.! s'
 	    val _ = Set.union (s, s')
 	    val _ = 
-	       Set.setValue
+	       Set.:=
 	       (s, {admitsEquality = ref (AdmitsEquality.or (!a, !a')),
 		    copy = ref NONE,
 		    creationTime = Time.min (t, t'),
@@ -831,7 +831,7 @@ datatype t = T of {copy: copy,
 		   vals: (Ast.Vid.t * (Status.t * Scheme.t)) array} Set.t
 withtype copy = t option ref
 
-fun dest (T s) = Set.value s
+fun dest (T s) = Set.! s
    
 local
    fun make f = f o dest
@@ -865,7 +865,7 @@ local
 in
    fun layout (T s) =
       let
-	 val {strs, types, uniqueId = u, vals, ...} = Set.value s
+	 val {strs, types, uniqueId = u, vals, ...} = Set.! s
       in
 	 record [("uniqueId", UniqueId.layout u),
 		 ("strs",
@@ -893,7 +893,7 @@ fun sameShape (I, I') =
 
 fun peekStrid (T s, strid: Strid.t): t option =
    let
-      val {strs, ...} = Set.value s
+      val {strs, ...} = Set.! s
    in
       Array.peekMap (strs, fn (strid', I) =>
 		     if Strid.equals (strid, strid')
@@ -920,7 +920,7 @@ fun peekStrids (I: t, strids: Strid.t list): t peekResult =
 
 fun peekTycon (T s, tycon: Ast.Tycon.t): TypeStr.t option =
    let
-      val {types, ...} = Set.value s
+      val {types, ...} = Set.! s
    in
       Array.peekMap (types, fn (name, typeStr) =>
 		     if Ast.Tycon.equals (tycon, name)
@@ -983,7 +983,7 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
 		     let
 			val _ = r := true
 			val T s = I
-			val {strs, types, ...} = Set.value s
+			val {strs, types, ...} = Set.! s
 			val _ =
 			   Array.foreach
 			   (strs, fn (strid, I) =>
@@ -1015,8 +1015,8 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
 	       let
 		  fun loop (T s, T s', strids): unit =
 		     let
-			val {isClosed, strs, types, ...} = Set.value s
-			val {strs = strs', types = types', ...} = Set.value s'
+			val {isClosed, strs, types, ...} = Set.! s
+			val {strs = strs', types = types', ...} = Set.! s'
 			val _ =
 			   (* Can't always union here.  I and I' may have
 			    * exactly the same shape, but may have free
@@ -1054,8 +1054,8 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
 	    let
 	       val T s = I
 	       val T s' = I'
-	       val {strs, types, ...} = Set.value s
-	       val {strs = strs', types = types', ...} = Set.value s'
+	       val {strs, types, ...} = Set.! s
+	       val {strs = strs', types = types', ...} = Set.! s'
 	       fun walk2 (a, a', compareNames, f) =
 		  let
 		     val n = Array.length a
@@ -1122,7 +1122,7 @@ fun copy (I: t): t =
       val copies: copy list ref = ref []
       fun loop (I as T s): t =
 	 let
-	    val r as {copy, ...} = Set.value s
+	    val r as {copy, ...} = Set.! s
 	 in
 	    case !copy of
 	       NONE =>
@@ -1196,7 +1196,7 @@ fun flexibleTycons (I: t): FlexibleTycon.t TyconMap.t =
 		       case TypeStr.toTyconOpt typeStr of
 			  SOME (Tycon.Flexible (c as FlexibleTycon.T s)) =>
 			     let
-				val {defn, ...} = Set.value s
+				val {defn, ...} = Set.! s
 			     in
 				case Defn.dest (!defn) of
 				   Defn.Undefined =>
@@ -1250,7 +1250,7 @@ fun flexibleTycons (I: t): FlexibleTycon.t TyconMap.t =
 val flexibleTycons =
    fn I as T s =>
    let
-      val {flexible, ...} = Set.value s
+      val {flexible, ...} = Set.! s
    in
       case !flexible of
 	 NONE =>
@@ -1270,7 +1270,7 @@ val flexibleTycons =
 
 fun dest (T s) =
    let
-      val {strs, types, vals, ...} = Set.value s
+      val {strs, types, vals, ...} = Set.! s
    in
       {strs = strs,
        types = types,

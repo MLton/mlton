@@ -19,13 +19,13 @@ structure Class =
 			 size: int ref} Set.t
 
       local
-	 fun make sel (T s) = sel (Set.value s)
+	 fun make sel (T s) = sel (Set.! s)
       in
 	 val plist = make #plist
 	 val size = make (! o #size)
       end
 
-      fun setSize (T s, n) = #size (Set.value s) := n
+      fun setSize (T s, n) = #size (Set.! s) := n
 
       fun new (size: int): t =
 	 T (Set.singleton {plist = Plist.new (),
@@ -36,8 +36,8 @@ structure Class =
 	    then ()
 	 else
 	    let
-	       val {size = ref n, ...} = Set.value s
-	       val {size = ref n', ...} = Set.value s'
+	       val {size = ref n, ...} = Set.! s
+	       val {size = ref n', ...} = Set.! s'
 	    in
 	       Set.union (s, s')
 	       ; setSize (c, n + n')

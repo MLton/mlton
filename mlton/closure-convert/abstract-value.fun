@@ -58,7 +58,7 @@ structure LambdaNode:
 				  handlers: (Lambda.t -> unit) list ref,
 				  coercedTo: t list ref} Dset.t
 
-      fun toSet (LambdaNode d) = !(#me (Dset.value d))
+      fun toSet (LambdaNode d) = !(#me (Dset.! d))
 
       val layout = Lambdas.layout o toSet
 
@@ -77,13 +77,13 @@ structure LambdaNode:
 	 List.foreach (hs, fn h => handles (h, s))
 
       fun addHandler (LambdaNode d, h: Lambda.t -> unit) =
-	 let val {me, handlers, ...} = Dset.value d
+	 let val {me, handlers, ...} = Dset.! d
 	 in List.push (handlers, h)
 	    ; handles (h, !me)
 	 end
 
       fun send (LambdaNode d, s): unit =
-	 let val {me, coercedTo, handlers, ...} = Dset.value d
+	 let val {me, coercedTo, handlers, ...} = Dset.! d
 	    val diff = Lambdas.- (s, !me)
 	 in if Lambdas.isEmpty diff
 	       then ()
@@ -102,7 +102,7 @@ structure LambdaNode:
 	 if equals (from, to)
 	    then ()
 	 else let
-		 val {me, coercedTo, ...} = Dset.value d
+		 val {me, coercedTo, ...} = Dset.! d
 	      in
 		 if List.exists (!coercedTo, fn ls => equals (ls, to))
 		    then ()
@@ -122,13 +122,13 @@ structure LambdaNode:
 	 else
 	    let
 	       val {me = ref m, coercedTo = ref c, handlers = ref h, ...} =
-		  Dset.value d
+		  Dset.! d
 	       val {me = ref m', coercedTo = ref c', handlers = ref h', ...} =
-		  Dset.value d'
+		  Dset.! d'
 	       val diff = Lambdas.- (m, m')
 	       val diff' = Lambdas.- (m', m)
 	    in Dset.union (d, d')
-	       ; (Dset.setValue
+	       ; (Dset.:=
 		  (d, {me = ref (if Lambdas.isEmpty diff
 				   then m'
 				else Lambdas.+ (m', diff)),
@@ -179,7 +179,7 @@ fun new (tree: tree, ty: Type.t): t =
 		   ty = ty}
 
 local
-   fun make sel : t -> 'a = sel o Dset.value
+   fun make sel : t -> 'a = sel o Dset.!
 in
    val ssaType = make #ssaType
    val tree = make #tree

@@ -18,7 +18,7 @@ and value =
    Bottom of (unit -> unit) List.t ref  (* If I become Top, then run these. *)
   | Top
 
-fun value (T s) = Set.value s
+fun value (T s) = Set.! s
 
 fun toString e =
    case value e of
@@ -49,9 +49,9 @@ fun isBottom s =
 fun runHandlers hs = List.foreach (!hs, fn h => h ())
 
 fun makeTop (T s) =
-   case Set.value s of
+   case Set.! s of
       Top => ()
-    | Bottom hs => (Set.setValue (s, Top); runHandlers hs)
+    | Bottom hs => (Set.:= (s, Top); runHandlers hs)
 
 fun from <= to =
    if equals (from, to)
@@ -66,16 +66,16 @@ fun == (T s, T s') =
    if Set.equals (s, s')
       then ()
    else
-      let val e = Set.value s
-	 val e' = Set.value s'
+      let val e = Set.! s
+	 val e' = Set.! s'
 	 val _ = Set.union (s, s')
       in
 	 case (e, e') of
 	    (Top, Top) => ()
-	  | (Bottom hs, Top) => (Set.setValue (s, e'); runHandlers hs)
-	  | (Top, Bottom hs) => (Set.setValue (s, e); runHandlers hs)
+	  | (Bottom hs, Top) => (Set.:= (s, e'); runHandlers hs)
+	  | (Top, Bottom hs) => (Set.:= (s, e); runHandlers hs)
 	  | (Bottom hs, Bottom hs') =>
-	       Set.setValue (s, Bottom (ref (List.append (!hs, !hs'))))
+	       Set.:= (s, Bottom (ref (List.append (!hs, !hs'))))
       end
 
 end

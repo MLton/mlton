@@ -288,7 +288,7 @@ structure Value =
 	| Unknown
 
       local
-	 fun make sel (T s) = sel (Set.value s)
+	 fun make sel (T s) = sel (Set.! s)
       in
 	 val value = make #value
 	 val ty = make #ty
@@ -351,7 +351,7 @@ structure Value =
 			  Option.layout (Var.layout o #1),
 			  Trace.assertTrue)
 	 (fn (v as T s, newGlobal) =>
-	  let val {global = r, ty, value} = Set.value s
+	  let val {global = r, ty, value} = Set.! s
 	  in case !r of
 	        No => NONE
 	      | Yes g => SOME (g, ty)
@@ -493,7 +493,7 @@ structure Value =
 
       fun vectorFromArray (T s: t): t =
 	 let
-	    val {value, ty, ...} = Set.value s
+	    val {value, ty, ...} = Set.! s
 	 in case value of
 	    Array {elt, length, ...} =>
 	       new (Vector {elt = elt, length = length}, ty)
@@ -723,8 +723,8 @@ fun simplify (program: Program.t): Program.t =
 	       then ()
 	    else
 	       let 
-		  val {value, ...} = Set.value s
-		  val {value = value', ...} = Set.value s'
+		  val {value, ...} = Set.! s
+		  val {value = value', ...} = Set.! s'
 	       in Set.union (s, s')
 		  ; case (value, value') of
 		       (Const c, Const c') => Const.unify (c, c')
