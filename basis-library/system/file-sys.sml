@@ -45,7 +45,9 @@ structure OS_FileSys: OS_FILE_SYS =
 	 let
 	    val oldCWD = getDir()
 	    fun mkPath pathFromRoot =
-	       P.toString{isAbs=true, vol="", arcs=List.rev pathFromRoot}
+	       P.toString {arcs = List.rev pathFromRoot,
+			   isAbs = true,
+			   vol = ""}
 	    fun walkPath (n, pathFromRoot, arcs) =
 	       if n = 0
 		  then raise PosixError.SysErr ("too many links", NONE)
@@ -57,13 +59,13 @@ structure OS_FileSys: OS_FILE_SYS =
 			   then walkPath (n, pathFromRoot, al)
 			else if arc = ".."
 				then
-				   (case pathFromRoot of
-				       [] => walkPath (n, [], al)
-				     | _ :: r =>
-					  (chDir ".."; walkPath (n, r, al)))
+				   case pathFromRoot of
+				      [] => walkPath (n, [], al)
+				    | _ :: r =>
+					 (chDir ".."; walkPath (n, r, al))
 		        else
 			   if isLink arc
-			      then expandLink (n, pathFromRoot, arc, [])
+			      then expandLink (n, pathFromRoot, arc, al)
 			   else
 			      case al of
 				 [] => mkPath (arc :: pathFromRoot)
@@ -71,17 +73,18 @@ structure OS_FileSys: OS_FILE_SYS =
 				    (chDir arc
 				     ; walkPath (n, arc :: pathFromRoot, al))
 	    and expandLink (n, pathFromRoot, link, rest) =
-	       (
-		case (P.fromString(readLink link))
-		   of {isAbs=false, arcs, ...} =>
-		      walkPath (n-1, pathFromRoot, List.@(arcs, rest))
-		 | {isAbs=true, arcs, ...} =>
-		      gotoRoot (n-1, List.@(arcs, rest))
-	    (* end case *))
-	    and gotoRoot (n, arcs) = (chDir "/"
-				      ; walkPath (n, [], arcs))
+	       let
+		  val {isAbs, arcs, ...} = P.fromString (readLink link)
+		  val arcs = List.@ (arcs, rest)
+	       in 
+		  if isAbs
+		     then gotoRoot (n-1, arcs)
+		  else walkPath (n-1, pathFromRoot, arcs)
+	       end
+	    and gotoRoot (n, arcs) =
+	       (chDir "/"; walkPath (n, [], arcs))
 	    fun computeFullPath arcs =
-	       (gotoRoot(maxLinks, arcs) before chDir oldCWD)
+	       (gotoRoot (maxLinks, arcs) before chDir oldCWD)
 	       handle ex => (chDir oldCWD; raise ex)
 	 in
 	    case (P.fromString p)
@@ -92,7 +95,6 @@ structure OS_FileSys: OS_FILE_SYS =
 		     computeFullPath (List.@(arcs', arcs))
 		  end
 	     | {isAbs=true, arcs, ...} => computeFullPath arcs
-	 (* end case *)
 	 end
 
       fun realPath p =

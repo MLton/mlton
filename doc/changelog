@@ -2,6 +2,8 @@ Here are the changes since version 20030716.
 
 * 2003-09-09
   - Replaced Pack32{Big,Little} with PackWord32{Big,Little}.
+  - Fixed bug in OS.FileSys.fullPath, which mistakenly stopped as soon
+    as it hit a symbolic link.
 
 * 2003-09-08
   - Fixed @MLton max-heap, which was mistakenly ignored.  Cleaned up
