@@ -3521,11 +3521,18 @@ struct
 		   info as {liveOut,...})]],
 		finish, 
 		transfer}
-	     => if List.fold
-	           (finish, false, fn (asm, b) => b orelse isComment asm)
-		   andalso
-		   (case #1 transfer
-		      of Transfer.Iff _ => true
+	     => if (case List.fold
+		         (finish, (false, false), fn ((asm, _), (b, b')) =>
+			  case asm
+			    of Assembly.Comment _ => (b, b')
+			     | Assembly.Instruction
+			       (Instruction.SETcc {...}) 
+			     => (true, if b then b' else true)
+			     | _ => (true, b'))
+		      of (_, true) => true
+		       | (false, _) => (case #1 transfer
+					  of Transfer.Iff _ => true
+					   | _ => false)
 		       | _ => false)
 		  then NONE
 		  else let
