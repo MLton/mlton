@@ -1,7 +1,5 @@
 mlton = mlton
 mlprof = mlprof
-mlton = $(HOME)/mlton/bin/mlton
-mlprof = $(HOME)/mlton/src/mlprof/mlprof
 
 .PHONY: all
 all: profile-time profile-stack profile-multiple profile-alloc
@@ -19,7 +17,7 @@ profile-alloc:
 
 .PHONE: profile-multiple
 profile-multiple:
-	$(mlton) -profile time fib-tak.sml
+	$(mlton) -profile time -profile-stack true fib-tak.sml
 	./fib-tak
 	$(mlprof) fib-tak mlmon.fib.out
 	$(mlprof) fib-tak mlmon.tak.out
