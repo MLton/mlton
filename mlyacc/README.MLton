@@ -1,0 +1,4 @@
+This is a modified version of the ml-yacc directory that comes with SML/NJ
+110.9.1.  I made a few changes so that the sources are compilable with MLton.
+
+sweeks@acm.org  2000-8-23

@@ -1,0 +1,180 @@
+Library
+
+(* from sml-nj-lib *)
+functor SplayMapFn
+(* end from sml-nj-lib *)
+   
+(* from mlyacc-lib *)
+signature LR_TABLE
+signature TOKEN
+signature LR_PARSER
+signature LEXER
+signature ARG_LEXER
+signature PARSER_DATA
+signature PARSER
+signature ARG_PARSER
+functor Join
+functor JoinWithArg
+structure LrTable
+structure Stream
+structure LrParser
+(* end from ml-yacc-lib *)
+
+signature ARRAY
+signature ENV
+signature ERROR
+signature EUCLIDEAN_RING
+signature INTEGER
+signature INT_INF
+signature LIST
+(*signature MONO_CONTAINER *)
+signature MONO_ENV
+signature OPTION
+signature ORDER
+signature ORDERED_RING
+signature POLY_CACHE
+signature PROMISE
+signature REAL
+signature RING
+signature RING_WITH_IDENTITY
+signature SET
+signature STRING
+signature SUM
+signature T
+signature UNIQUE_ID
+
+structure AppendList
+structure Array
+structure Array2
+structure Assert
+structure BinarySearch
+structure Bool
+structure Char
+structure CharArray
+structure CharBuffer
+structure CharVector
+structure Computation
+structure Console
+structure Counter
+structure Date
+structure Dir
+structure DirectedGraph
+structure DisjointSet
+structure DynamicWind
+structure Engine
+structure Error
+structure Escape
+structure Exn
+structure Export
+structure File
+structure FixedPoint
+structure Function
+structure HashSet
+structure Html
+structure Http
+structure In
+structure InitScript
+structure Int
+structure IntInf
+structure Iterate
+structure Itimer
+structure Justify
+structure LargeInt
+structure Lines
+structure List
+structure Layout
+structure List
+structure MergeSort
+structure MLton
+structure Net
+structure Option
+structure Out
+structure Parse
+structure Pervasive
+structure Pid
+structure Pointer
+structure PolyCache
+structure Popt
+structure Port
+structure Postscript
+structure Power
+structure Process
+structure Promise
+structure Property
+structure PropertyList
+structure Queue
+structure QuickSort
+structure Random
+structure RDB
+structure Reader
+structure Real
+(*structure RealArray*)
+(*structure Real64Array*)
+structure RealVector
+structure Ref
+structure Regexp
+structure Relation
+structure ResizableArray
+structure Result
+structure Signal
+structure Stream
+structure String
+structure StringCvt
+structure Substring
+structure SysWord
+structure Thread
+structure Time
+structure Trace
+structure TwoListQueue
+structure Unimplemented
+structure Unit
+structure Unsafe
+structure Uri
+structure Vector
+structure Word
+structure Word8
+structure Word8Array
+structure Word8Vector
+
+functor AlphaBeta
+functor BinaryHeap
+functor Cache
+functor Control
+functor Env
+functor EuclideanRing
+functor IntUniqueId
+functor MakeMonoEnv
+functor MonoArray
+functor MonoList
+functor MonoEnv
+functor MonoList
+functor MonoOption
+functor MonoVector
+functor MoveToFrontEnv
+functor OrderedField
+functor OrderedUniqueSet
+functor Pair
+functor PolyEnv
+functor Ring
+functor RingWithIdentity
+functor SplayMonoEnv
+functor Sum
+functor UniqueId
+functor UniqueSet
+functor UnorderedSet
+   
+is
+
+(* These must be first, since the SML/NJ code expects to be in the Standard
+ * Basis.
+ *)
+../mlyacc/sources.cm
+../smlnj/sources.cm
+
+basic/sources.cm
+directed-graph/sources.cm
+heap/sources.cm
+set/sources.cm
+env/sources.cm
+
+mlton.cm

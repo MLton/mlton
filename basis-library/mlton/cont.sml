@@ -1,0 +1,60 @@
+structure Cont:> MLTON_CONT =
+struct
+
+structure State = Thread
+structure Thread = Primitive.Thread
+
+(* This mess with dummy is so that if callcc is ever used anywhere in the
+ * program, then Primitive.usesCallcc is set to true during basis library
+ * evaluation.  This relies on the dead code elimination algorithm
+ * (core-ml/dead-code.fun), which will keep dummy around only if callcc is used.
+ *)
+val dummy =
+   (Primitive.usesCallcc := true
+    ; fn () => ())
+
+type 'a t = (unit -> 'a) -> unit
+
+fun callcc(f: 'a t -> 'a): 'a =
+   (dummy()
+    ; (case !State.state of
+	  State.InHandler _ =>
+	     die "callcc can not be used in a signal handler\n"
+	| State.Normal => 
+	     let
+		datatype 'a state =
+		   Original of 'a t -> 'a
+		 | Copy of unit -> 'a
+		 | Clear
+		val r: 'a state ref = ref(Original f)
+		val _ = Thread.atomicBegin() (* Match 1 *)
+		val _ = Thread.copyShrink(Thread.current())
+	     in case (!r before r := Clear) of
+		Clear => raise Fail "callcc saw Clear"
+	      | Copy v => (Thread.atomicEnd() (* Match 2 *)
+			   ; v())
+	      | Original f =>
+		   let val t = Thread.saved()
+		   in Thread.atomicEnd() (* Match 1 *)
+		      ; f(fn v =>
+			  let val _ = Thread.atomicBegin() (* Match 2 *)
+			     val _ = r := Copy v
+			     val _ = Thread.copy t
+			     val new = Thread.saved()
+			     (* The following Thread.atomicBegin() 
+			      * is matched by Thread.switchTo.
+			      *)
+			     val _ = Thread.atomicBegin()
+			  in Thread.switchToCont new
+			  end)
+		   end
+	     end))
+
+fun ('a, 'b) throw'(k: 'a t, v: unit -> 'a): 'b =
+   (k v; raise Fail "throw bug")
+   
+fun ('a, 'b) throw(k: 'a t, v: 'a): 'b = throw'(k, fn () => v)
+
+fun prepend (k, f) v = throw'(k, f o v)
+
+end

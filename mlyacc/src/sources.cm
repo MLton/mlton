@@ -1,0 +1,33 @@
+Group
+
+structure ParseGen
+   
+is
+
+../../lib/mlton-stubs-in-smlnj/sources.cm
+../../lib/mlyacc/sources.cm
+
+utils.sig
+utils.sml
+sigs.sml
+hdr.sml
+yacc.grm.sig
+yacc.grm.sml
+yacc.lex.sml
+parse.sml
+grammar.sml
+core.sml
+coreutils.sml
+graph.sml
+look.sml
+lalr.sml
+mklrtable.sml
+mkprstruct.sml
+shrink.sml
+verbose.sml
+absyn.sig
+absyn.sml
+yacc.sml
+link.sml
+(* export-yacc.sml *)
+

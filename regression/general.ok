@@ -1,0 +1,36 @@
+
+File general.sml: Testing structure General...
+
+Should be `E1 or E2':
+  E1
+  E1
+Should be `Bind':
+  Bind
+  Bind
+Should be `Match':
+  Match
+  Match
+Should be `Subscript':
+  Subscript
+  Subscript
+Should be `Size':
+  Size
+  Size
+Should be `Div':
+  Div
+  Div
+Should be `Chr':
+  Chr
+  Chr
+Should be `Fail':
+  Fail
+  Fail
+Should be `Option':
+  Option
+  Option
+Should be `Empty':
+  Empty
+  Empty
+Should be `Io':
+  Io
+  Io

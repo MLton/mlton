@@ -1,0 +1,15 @@
+This is a sample parser for first-order logic.   The grammar
+was contributed by Frank Pfenning.
+
+To construct the parser, first use ML-Yacc on the file "fol.grm" to construct
+the files "fol.grm.sig" and "fol.grm.sml".  This can be done by loading
+ML-Yacc and typing ``ParseGen.parseGen "fol.grm"''.  Then construct the
+lexer by using ML_Lex on the file fol.lex (``LexGen.lexGen "fol.lex"'').
+
+Finally, load the background file "base.sml".  Then use "load.sml" to
+load all the files.  The end result is a structure Parser with four
+functions.   The function parse_prog will parse a program in a string.
+Then function parse_query will parse a query in a string.  The function
+parse_file will parse a program in a file.  The function top_parse will
+parse a query from the standard input.
+

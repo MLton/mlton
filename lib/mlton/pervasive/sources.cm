@@ -1,0 +1,46 @@
+Group
+
+structure Array
+structure Array2
+structure Char
+structure CharArray
+structure CharVector
+structure Date
+structure Int
+structure Int32
+structure IntInf
+structure LargeInt
+structure List
+structure MLton
+structure OS
+structure Pervasive
+structure Real
+structure RealVector
+structure String
+structure StringCvt
+structure Substring
+structure SysWord
+structure Time
+structure Unsafe
+structure Vector
+structure Word
+structure Word8
+structure Word32
+structure Word8Array
+structure Word8Vector
+
+signature MLTON_CONT
+signature MLTON_GC
+signature MLTON_ITIMER
+signature MLTON_PTRACE
+signature MLTON_SIGNAL
+signature MLTON_SOCKET
+signature MLTON_THREAD
+signature MLTON_TEXT_IO
+signature MLTON_WORLD
+
+is
+
+../../mlton-stubs-in-smlnj/sources.cm
+
+pervasive.sml

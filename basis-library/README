@@ -1,0 +1,55 @@
+This directory contains the MLton implementation of the Basis Library.
+The files are grouped in directories in the same way that the
+corresponding modules are grouped in the basis library documentation.
+All other implementation files are in the misc/ directory.
+
+The basis is constructed in two steps.  First, all of the files in
+build-basis are concatenated together and evaluated to produce an
+environment E.  Then, all of the files in bind-basis are concatenated
+and evaluated in the environment E to produce a new environment E',
+which is the top-level environment.
+
+Another way to view it is that every program is prefixed by the
+following program.
+
+local
+  <concatenate files in build-basis>
+in
+  <concatenate files in bind-basis>
+end
+
+This is not strictly accurate because some of the files are not
+Standard ML (see below) and because Standard ML does not allow local
+functor or signature declarations.
+
+Other than bind-basis and build-basis, there are several special files:
+
+misc/primitive.sml
+posix/primitve.sml
+  These are not Standard ML. They describe all of the primitives and
+  C routines used in the basis. 
+  
+top-level/overloads.sml
+  Not Standard ML.
+  Uses the notation _overload <var> : <ty> as <var> (and <var>)*
+
+
+Dead Code Elimination
+----------------------------------------
+In order to compile small programs rapidly, a pass of dead code
+elimination (core-ml/dead-code.{sig,fun}) is run in order to eliminate
+as much of the basis library as possible.  The dead code elimination
+algorithm used is not safe in general, and only works because the
+basis library implementation has special properties:
+  * it terminates
+  * it performs no I/O
+  * it doesn't side-effect top-level variables
+The dead code elimination simply includes the minimal set of
+declarations from the basis so that their are no free variables in the
+user program (or basis).  Hence, if you do something like the
+following in the basis, it will break.
+
+val r = ref 13
+val _ = r := 14
+
+The dead code elimination will remove the "val _ = ..." binding.

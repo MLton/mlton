@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# This script calls MLton.
+
+root='/usr/local/lib/mlton'
+include="$root/include"
+lib="$root/lib"
+gcc='gcc'
+mlton="$lib/mlton-compile"
+world="$lib/world.mlton"
+nj='sml'
+njHeap="$lib/mlton.x86-linux"
+
+rargs=""
+case "$1" in
+@MLton)
+	shift
+	while [ $# -gt 0 -a "$1" != "--" ]; do
+		rargs="$rargs $1"
+		shift
+	done
+	shift
+	;;
+esac
+
+# If $mlton is executable and $world exists and is not older than
+# $njHeap (which exists), then use MLton, otherwise use SML/NJ.
+doit () {
+	if [ -x "$mlton" -a -s "$world" -a ! "$njHeap" -nt "$world" ]; then
+		exec "$mlton" @MLton load-world "$world" $rargs -- "$@"
+	elif [ -s "$njHeap" ]; then
+		exec "$nj" @SMLload="$njHeap" "$@"
+	fi
+	echo 'Unable to run MLton.  Check that root is set properly.' >&2
+	exit 1
+}
+
+doit "$root" "$gcc" -w -fomit-frame-pointer -fno-strength-reduce -m486	\
+	-malign-loops=2 -malign-jumps=2 -malign-functions=2 END		\
+	-I"$include" -include mlton.h -L"$lib" -lgmp -lm "$@"

@@ -1,0 +1,47 @@
+(* load file for parser-generator part of ML-Yacc *)
+
+(* first load the library *)
+app use [
+    "../lib/base.sig",
+    "../lib/join.sml",
+    "../lib/lrtable.sml",
+    "../lib/stream.sml",
+    "../lib/parser2.sml"	(* used by ML-Yacc's own parser *)
+  ];
+
+(* load signatures and parser for ML-Yacc *)
+app use [
+    "utils.sig",
+    "sigs.sml",
+    "hdr.sml",
+    "yacc.grm.sig",
+    "yacc.grm.sml",
+    "yacc.lex.sml",
+    "parse.sml"
+  ];
+
+(* load lr table generator: *)
+
+app use [
+    "utils.sml",
+    "sigs.sml",
+    "grammar.sml",
+    "core.sml",
+    "coreutils.sml",
+    "graph.sml",
+    "look.sml",
+    "lalr.sml",
+    "mklrtable.sml",
+    "mkprstruct.sml",
+    "shrink.sml",
+    "verbose.sml"
+  ];
+
+(* rest of ML-Yacc: *)
+app use [
+    "absyn.sig",
+    "absyn.sml",
+    "yacc.sml",
+    "link.sml"
+  ];
+

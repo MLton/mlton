@@ -1,0 +1,6 @@
+The size of a char is 0 bytes.
+The size of an int list of length 4 is 48 bytes.
+The size of a string of length 10 is 20 bytes.
+The size of an int array of length 10 is 48 bytes.
+The size of a double array of length 10 is 88 bytes.
+The size of a useless function is 0 bytes.

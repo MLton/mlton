@@ -1,0 +1,82 @@
+%%
+%header (functor FolLrValsFun (structure Token : TOKEN
+			       structure Absyn : ABSYN ) : Fol_LRVALS)
+
+%term
+    EOF | DOT | COMMA | SEMICOLON
+  | LPAREN | RPAREN
+  | BACKARROW | DOUBLEARROW
+  | ARROW | BAR
+  | TRUE | FORALL | EXISTS
+  | PARSEPROG | PARSEQUERY
+  | LCID of string | UCID of string | INT of string
+
+(* gform: goal formula
+   dform: definite clause *)
+
+%nonterm 
+    start of Absyn.absyn
+  | clause | query | gform | dform
+  | atom | termlist | term  | varbd | id
+
+%start start
+%eop EOF DOT
+%pos int
+%verbose
+%pure
+
+%right FORALL EXISTS
+%left BACKARROW
+%right SEMICOLON
+%right COMMA
+%right DOUBLEARROW
+%right ARROW
+%left BAR
+
+%name Fol
+
+%prefer DOT
+%%
+
+start : PARSEPROG clause (Absyn.null)
+      | PARSEQUERY query (Absyn.null)
+
+clause : dform 			()
+       |			()
+
+query : gform			()
+      |				()
+
+gform : TRUE			()
+      | gform COMMA gform	()      (* and *)
+      | gform SEMICOLON gform   ()      (* disjunction *)
+      | gform BACKARROW dform   ()      (* implication: dform implies gform *)
+      | gform ARROW gform BAR gform ()  (* if-then-else *)
+      | FORALL varbd gform	()	(* universal quantification *)
+      | EXISTS varbd gform	()      (* existential quantification *)
+      | atom			()	(* atomic formula *)
+      | LPAREN gform RPAREN     ()      
+
+dform : TRUE		        ()
+      | dform COMMA dform	()      (* and *)
+      | dform BACKARROW gform   ()	(* gform implies dform *)
+      | FORALL varbd dform	()
+      | atom			()
+      | LPAREN dform RPAREN	()
+
+atom : LCID			()
+     | LCID LPAREN termlist RPAREN  ()
+
+termlist : term		()
+	 | term COMMA termlist  ()
+
+term : id		()
+     | INT		()
+     | LCID LPAREN termlist RPAREN ()
+
+varbd : LCID DOT	()
+      | UCID DOT	()
+
+id : LCID		()
+   | UCID		()
+

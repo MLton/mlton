@@ -1,0 +1,2 @@
+append(nil,K,K).
+append(cons(X,L),K,cons(X,M)) :- append(L,K,M).

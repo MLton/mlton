@@ -1,0 +1,21 @@
+This is a sample interactive calculator built using ML-Yacc and ML-Lex.
+
+To compile this example, type
+
+	- CM.make();
+
+in this directory.
+
+The end result of loading these files is a structure Calc containing a
+function named parse.  The calculator can be invoked by applying that
+function to a value of type unit.  The calculator reads from the
+standard input.  There is no attempt to fix input errors since this
+is an interactive parser.
+
+The calculator reads a sequence of expressions from the standard input
+and prints the value of each expression after reading the expression.
+Expressions must be separated by semicolons.  An expression is not
+evaluated until the semicolon is encountered.  The calculator
+terminates when an end-of-file is encountered.
+
+

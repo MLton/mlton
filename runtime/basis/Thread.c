@@ -1,0 +1,21 @@
+#include "gc.h"
+#include "mlton-basis.h"
+#include "my-lib.h"
+
+extern struct GC_state gcState;
+
+Thread Thread_current() {
+	return (Thread)gcState.currentThread;
+}
+
+Thread Thread_saved() {
+	Thread t;
+
+	t = (Thread)gcState.savedThread;
+	gcState.savedThread = (GC_thread)0x1;
+	return t;
+}
+
+void Thread_setHandler(Thread t) {
+ 	gcState.signalHandler = (GC_thread)t;
+}

@@ -1,0 +1,18 @@
+Group
+
+functor Dijkstra
+   
+is
+
+../basic/sources.cm
+../heap/sources.cm
+../set/sources.cm
+weight.sig
+shortest-path-check.sig
+shortest-path-check.fun
+shortest-path.sig
+dijkstra.fun
+
+# if ( defined(SMLNJ_VERSION) )
+test.sml
+# endif

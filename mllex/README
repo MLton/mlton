@@ -1,0 +1,19 @@
+  Lexical analyzer generator for Standard ML.
+        Version 1.6, October 1994
+
+Copyright (c) 1989-92 by Andrew W. Appel, James S. Mattson, David R. Tarditi
+
+This software comes with ABSOLUTELY NO WARRANTY.
+This software is subject only to the PRINCETON STANDARD ML SOFTWARE LIBRARY
+COPYRIGHT NOTICE, LICENSE AND DISCLAIMER, (in the file "COPYRIGHT",
+distributed with this software). You may copy and distribute this software;
+see the COPYRIGHT NOTICE for details and restrictions.
+
+Files of interest:
+
+lexgen.doc		- User's manual for ML-Lex
+lexgen.sml		- ML version of Lex
+export-lex.sml          - to be loaded by Standard ML of New Jersey users
+                          after loading lexgen.sml to create a stand-alone
+                          version of ML-Lex that takes the specification
+                          file name as a command line argument.

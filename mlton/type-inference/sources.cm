@@ -1,0 +1,26 @@
+Group
+
+functor Infer
+   
+is
+
+../atoms/sources.cm
+../control/sources.cm
+../core-ml/sources.cm
+../../lib/mlton/sources.cm
+../xml/sources.cm
+
+infer-type.sig
+infer-scheme.sig
+type-env.sig
+infer-type.fun
+infer-scheme.fun
+type-env.fun
+scope.sig
+scope.fun
+nested-pat.sig
+nested-pat.fun
+match-compile.sig
+match-compile.fun
+infer.sig
+infer.fun

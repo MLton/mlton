@@ -1,0 +1,20 @@
+Group
+
+functor ClosureConvert
+   
+is
+
+../atoms/sources.cm
+../control/sources.cm
+../cps/sources.cm
+../../lib/mlton/sources.cm
+../xml/sources.cm
+
+lambda-free.sig
+lambda-free.fun
+globalize.sig
+globalize.fun
+abstract-value.sig
+abstract-value.fun
+closure-convert.sig
+closure-convert.fun

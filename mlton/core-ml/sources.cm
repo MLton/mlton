@@ -1,0 +1,20 @@
+Group
+
+signature CORE_ML
+signature LOOKUP_CONSTANT
+functor CoreML
+functor DeadCode
+functor LookupConstant
+
+is
+
+../atoms/sources.cm
+../control/sources.cm
+../../lib/mlton/sources.cm
+
+core-ml.sig
+lookup-constant.sig
+lookup-constant.fun
+dead-code.sig
+dead-code.fun
+core-ml.fun

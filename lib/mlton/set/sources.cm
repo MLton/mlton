@@ -1,0 +1,34 @@
+Group
+
+signature SET
+
+(*structure DisjointCollection*)
+structure DisjointSet
+functor OrderedUniqueSet
+functor UnorderedSet
+(*functor DisjointMax
+functor DisjointCollection
+  *) 
+is
+
+../basic/sources.cm
+set.sig
+unordered.fun
+ordered-unique-set.sig
+ordered-unique-set.fun
+disjoint.sig
+disjoint.fun
+
+(*
+disjoint-collection.sig
+disjoint-collection.fun
+disjoint-max.sig
+disjoint-max.fun
+poly-set.sig
+poly-unordered.fun
+universe.sig
+unordered-universe.fun
+type.sig
+type.fun
+universe-type-check.fun
+*)

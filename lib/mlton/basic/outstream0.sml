@@ -1,0 +1,48 @@
+structure Outstream0 =
+struct
+
+structure TextIO = Pervasive.TextIO
+open TextIO
+
+(*val output = fn (out, s) => (output(out, s); flushOut out) *)
+   
+type t = outstream
+   
+val standard = stdOut
+val error = stdErr
+val close = closeOut
+fun outputc stream string = output(stream, string)
+val flush = flushOut
+
+fun newline s = output(s, "\n")
+   
+fun print s = output(standard, s)
+   
+fun outputNothing _ = ()
+
+fun set(o1: t, o2:t): unit =
+   TextIO.setOutstream(o1, TextIO.getOutstream o2)
+   
+fun fluidLet(s1, s2, thunk) =
+   let val old = TextIO.getOutstream s1
+   in set(s1, s2)
+      ; DynamicWind.wind(thunk, fn () => TextIO.setOutstream(s1, old))
+   end
+
+fun withClose(out: t, f: t -> 'a): 'a =
+   DynamicWind.wind(fn () => f out, fn () => close out)
+
+local
+   fun withh(f, p, openn) =
+      withClose(openn f handle IO.Io _ => Error.bug("cannot open " ^ f), p)
+in
+   fun withOut(f, p) = withh(f, p, openOut)
+   fun withAppend(f, p) = withh(f, p, openAppend)
+end
+
+fun 'a withNull(f: t -> 'a): 'a = withOut("/dev/null", f)
+   
+fun ignore (out: t, f: unit -> 'a): 'a =
+   withNull (fn out' => fluidLet (out, out', f))
+
+end

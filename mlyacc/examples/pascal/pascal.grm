@@ -1,0 +1,243 @@
+%%
+
+%name Pascal
+%term
+	YAND	|	YARRAY	|	YBEGIN	|	YCASE |
+	YCONST	|	YDIV	|	YDO	|	YDOTDOT |
+	YTO	|	YELSE	|	YEND	|	YFILE |
+	YFOR	|	YFORWARD |	YPROCEDURE |	YGOTO |
+	YID	|	YIF	|	YIN	|	YINT |
+	YLABEL	|	YMOD	|	YNOT	|	YNUMB  |
+	YOF	|	YOR	|	YPACKED	|	YNIL |
+	YFUNCTION |	YPROG	|	YRECORD	|	YREPEAT |
+	YSET	|	YSTRING	|	YTHEN	|	YDOWNTO |
+	YTYPE	|	YUNTIL	|	YVAR	|	YWHILE |
+	YWITH	|	YBINT	|	YOCT	|	YHEX |
+	YCASELAB |	YILLCH	|	YEXTERN	 |
+ YDOT | YLPAR  | YRPAR | YSEMI  | YCOMMA  | YCOLON |  YCARET |  YLBRA | 
+ YRBRA | YTILDE |
+ YLESS | YEQUAL | YGREATER 
+| YPLUS	| YMINUS | YBAR
+| UNARYSIGN 
+| YSTAR	| YSLASH | YAMP
+|  EOF
+
+%eop EOF
+%pos int
+%pure
+
+%nonassoc YLESS	YEQUAL	YGREATER	YIN
+%left	YPLUS	YMINUS	YOR	YBAR
+%left	UNARYSIGN
+%left	YSTAR	YSLASH	YDIV	YMOD	YAND	YAMP
+%left	YNOT
+
+%nonterm goal | prog_hedr | block | decls | decl | labels | label_decl | 
+const_decl | type_decl | var_decl | proc_decl | pheadres | phead | 
+porf | params | param | ftype | param_list | const | number | const_list | 
+type' | simple_type | struct_type | simple_type_list | field_list | 
+fixed_part | field | variant_part | variant_list | variant | stat_list | 
+stat_lsth | cstat_list | cstat | stat | assign | expr | element_list | 
+element | variable | qual_var | wexpr | octhex | expr_list | wexpr_list | 
+relop | addop | divop | negop | var_list | id_list | const_id | type_id | 
+var_id | array_id | ptr_id | record_id | field_id | func_id
+| begin
+
+%keyword
+	YAND		YARRAY		YBEGIN		YCASE 
+	YCONST		YDIV		YDO		
+	YTO		YELSE		YEND		YFILE 
+	YFOR		YFORWARD 	YPROCEDURE 	YGOTO 
+	YIF		YIN		
+	YLABEL		YMOD		YNOT		
+	YOF		YOR		YPACKED		YNIL 
+	YFUNCTION 	YPROG		YRECORD		YREPEAT
+	YSET		YSTRING		YTHEN		YDOWNTO 
+	YTYPE		YUNTIL		YVAR		YWHILE 
+	YWITH		YOCT		YHEX 
+	YEXTERN	 	YAMP 
+
+%prefer YID YSEMI YCOMMA  YLBRA
+
+%subst YCOMMA for YSEMI | YSEMI for YCOMMA
+
+%%
+begin: goal ()
+goal:	prog_hedr decls block YDOT	    ()
+|	decls	    ()
+prog_hedr:	YPROG YID YLPAR id_list YRPAR YSEMI     ()
+|	YPROG YID YSEMI    ()
+block:	YBEGIN stat_list YEND    ()
+decls:	decls decl    ()
+|	    ()
+decl:	labels    ()
+|	const_decl    ()
+|	type_decl    ()
+|	var_decl    ()
+|	proc_decl    ()
+labels:	YLABEL label_decl YSEMI    ()
+label_decl:	YINT    ()
+|	label_decl YCOMMA YINT    ()
+const_decl:	YCONST YID YEQUAL const YSEMI    ()
+|	const_decl YID YEQUAL const YSEMI    ()
+|	YCONST YID YEQUAL YID YSEMI    ()
+|	const_decl YID YEQUAL YID YSEMI    ()
+type_decl:	YTYPE YID YEQUAL type' YSEMI    ()
+|	type_decl YID YEQUAL type' YSEMI    ()
+var_decl:	YVAR id_list YCOLON type' YSEMI    ()
+|	var_decl id_list YCOLON type' YSEMI    ()
+proc_decl:	phead YFORWARD YSEMI    ()
+|	phead YEXTERN YSEMI    ()
+|	pheadres decls block YSEMI    ()
+pheadres:	phead    ()
+phead:	porf YID params ftype YSEMI    ()
+porf:	YPROCEDURE    ()
+|	YFUNCTION    ()
+params:	YLPAR param_list YRPAR    ()
+|	    ()
+param:	id_list YCOLON type'    ()
+|	YVAR id_list YCOLON type'    ()
+|	YFUNCTION id_list params ftype    ()
+|	YPROCEDURE id_list params ftype    ()
+ftype:	YCOLON type'    ()
+|	    ()
+param_list:	param    ()
+|	param_list YSEMI param    ()
+const:	YSTRING    ()
+|	number    ()
+|	YPLUS number    ()
+|	YMINUS number    ()
+|	YPLUS YID    ()
+|	YMINUS YID    ()
+number:	YINT    ()
+|	YBINT    ()
+|	YNUMB    ()
+const_list:	const    ()
+|	const_list YCOMMA const    ()
+|	YID    ()
+|	const_list YCOMMA YID    ()
+type':	simple_type    ()
+|	YCARET YID    ()
+|	struct_type    ()
+|	YPACKED struct_type    ()
+simple_type:	type_id    ()
+|	YLPAR id_list YRPAR    ()
+|	const YDOTDOT const    ()
+|	YID YDOTDOT const    ()
+|	const YDOTDOT YID    ()
+|	YID YDOTDOT YID    ()
+struct_type:	YARRAY YLBRA simple_type_list YRBRA YOF type'    ()
+|	YFILE YOF type'    ()
+|	YSET YOF simple_type    ()
+|	YRECORD field_list YEND    ()
+simple_type_list:	simple_type    ()
+|	simple_type_list YCOMMA simple_type    ()
+field_list:	fixed_part variant_part    ()
+fixed_part:	field    ()
+|	fixed_part YSEMI field    ()
+field:	    ()
+|	id_list YCOLON type'    ()
+variant_part:	    ()
+|	YCASE type_id YOF variant_list    ()
+|	YCASE YID YCOLON type_id YOF variant_list    ()
+variant_list:	variant    ()
+|	variant_list YSEMI variant    ()
+variant:	    ()
+|	const_list YCOLON YLPAR field_list YRPAR    ()
+stat_list:	stat    ()
+|	stat_lsth stat    ()
+stat_lsth:	stat_list YSEMI    ()
+cstat_list:	cstat    ()
+|	cstat_list YSEMI cstat    ()
+cstat:	const_list YCOLON stat    ()
+|	YCASELAB stat    ()
+|	    ()
+stat:	    ()
+|	YINT YCOLON stat    ()
+|	YID    ()
+|	YID YLPAR wexpr_list YRPAR ()
+|	assign ()
+|	YBEGIN stat_list YEND    ()
+|	YCASE expr YOF cstat_list YEND    ()
+|	YWITH var_list YDO stat    ()
+|	YWHILE expr YDO stat    ()
+|	YREPEAT stat_list YUNTIL expr    ()
+|	YFOR assign YTO expr YDO stat    ()
+|	YFOR assign YDOWNTO expr YDO stat    ()
+|	YGOTO YINT    ()
+|	YIF expr YTHEN stat    ()
+|	YIF expr YTHEN stat YELSE stat    ()
+assign:	variable YCOLON YEQUAL expr    ()
+|	YID YCOLON YEQUAL expr    ()
+expr:	expr relop expr			%prec YLESS    ()
+|	YPLUS expr			%prec UNARYSIGN    ()
+|	YMINUS expr			%prec UNARYSIGN    ()
+|	expr addop expr			%prec YPLUS    ()
+|	expr divop expr			%prec YSTAR    ()
+|	YNIL    ()
+|	YSTRING    ()
+|	YINT    ()
+|	YBINT    ()
+|	YNUMB    ()
+|	variable    ()
+|	YID ()
+|	YID YLPAR wexpr_list YRPAR    ()
+|	YLPAR expr YRPAR    ()
+|	negop expr			%prec YNOT    ()
+|	YLBRA element_list YRBRA    ()
+|	YLBRA YRBRA    ()
+element_list:	element    ()
+|	element_list YCOMMA element    ()
+element:	expr    ()
+|	expr YDOTDOT expr    ()
+variable:	qual_var    ()
+qual_var:	YID YLBRA expr_list YRBRA    ()
+|	qual_var YLBRA expr_list YRBRA    ()
+|	YID YDOT field_id    ()
+|	qual_var YDOT field_id    ()
+|	YID YCARET    ()
+|	qual_var YCARET    ()
+wexpr:	expr    ()
+|	expr YCOLON expr    ()
+|	expr YCOLON expr YCOLON expr    ()
+|	expr octhex    ()
+|	expr YCOLON expr octhex    ()
+octhex:	YOCT    ()
+|	YHEX    ()
+expr_list:	expr    ()
+|	expr_list YCOMMA expr    ()
+wexpr_list:	wexpr    ()
+|	wexpr_list YCOMMA wexpr    ()
+relop:	YEQUAL	()
+|	YLESS	()
+|	YGREATER	()
+|	YLESS YGREATER	()
+|	YLESS YEQUAL	()
+|	YGREATER YEQUAL	()
+|	YIN	()
+addop:	YPLUS	()
+|	YMINUS	()
+|	YOR	()
+|	YBAR	()
+divop:	YSTAR	()
+|	YSLASH	()
+|	YDIV	()
+|	YMOD	()
+|	YAND	()
+|	YAMP	()
+negop:	YNOT    ()
+|	YTILDE    ()
+var_list:	variable    ()
+|	var_list YCOMMA variable    ()
+|	YID    ()
+|	var_list YCOMMA YID    ()
+id_list:	YID    ()
+|	id_list YCOMMA YID    ()
+const_id:	YID    ()
+type_id:	YID    ()
+var_id:	YID    ()
+array_id:	YID    ()
+ptr_id:	YID    ()
+record_id:	YID    ()
+field_id:	YID    ()
+func_id:	YID    ()

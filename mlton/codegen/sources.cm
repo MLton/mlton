@@ -1,0 +1,9 @@
+Group
+
+functor CCodeGen
+functor x86CodeGen
+  
+is
+
+c-codegen/sources.cm
+x86-codegen/sources.cm

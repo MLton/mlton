@@ -1,0 +1,83 @@
+This is minimal documentation for the lexer driver produced by ml-lex.
+
+Main data structures:
+
+   The transition table is stored in tab.  Tab is an array of records, indexed
+by state number.  The first field of the record, fin, is a list of final leaves
+assocated with it.  The second field of the record, trans, is a transition
+table for the state indexed by character number.  It gives the next state
+for a given input character.
+
+   The usual initial start state is state #1.  State 0 is a dead state, which
+has transitions only to itself.
+
+   The field yyfin has type yyfinstate list.  yyfinstate consists of the
+following three constructors:
+
+	* N of int - indicates normal end leaf.
+	* D of int - dummy end leaf - for indicating when an end state for
+	  a trailing context regular expression has been reached.  These are
+	  stored and propagated backwards when action is executed.
+	* T of int - indicates an actual end leaf for a trailing context reg.
+	  expression, which should be executed only if D i was encountered
+	  after this end leaf while scanning forward.  The dummy end leaf is
+	  removed from the backward propagating list after this node is
+	  encountered.
+
+    
+     The function scan inside the function lex operates as a transition
+function, scanning the input until it is no longer possible to take any
+more transitions.  It accumulates a list of the accepting leaf list 
+associated with each accepting state passed through.
+
+       Scan operates as follows:
+
+	 Input: * s - current state
+		* AcceptingLeaves - list of accepting leave lists.  Each state
+		  has a list of accepting leaves associated with it.  This list
+		  may be nil if the state is not a final state.
+		* l - position of the next character in the buffer b to read
+		* i0 - starting position in the buffer.
+
+	Output: If no match is found, it raises the exception LexError. 
+		Otherwise, it returns a value of type lexresult.
+
+	It operates as a transtion function:
+	     It (1) adds the list of accepting leaves for the current state to
+	            the list of accepting leave lists
+		(2) tries to make a transition on the current input character
+		    to the next state.  If it can't make a transition, it 
+		    executes the action function.
+			(a) - if it is past the end of the buffer, it 
+				(1) checks if it as at end eof.  If it is then:
+				 	It checks to see if it has made any
+					transitions since it was first called -
+					(l>i0 when this is true.)  If it hasn't
+					this implies that scan was called at
+					the end of file.  It thus executes
+					eof function declared by the user.
+				        Otherwise it must execute action w/
+					the current accepting state list.
+				(2) otherwise it reads a block of up to 1024
+				    characters, and appends this block to the
+				    useful suffix of characters left in the
+				    buffer (those character which have been
+				    scanned in this call to lex()).  The buffer
+				    operation should be altered if one intends
+				    to process reg. expressions whose lexemes'
+				    length will be >> 1024.  For most normal
+				    applications, the buffer update operation
+				    will be fine.
+
+			  	    This buffer update operation requires
+				    O(n^2/1024) char. copies for lexemes > 1024
+				    characters in length, and O(n) char. copies 
+				    for lexemes <= 1024 characters in length.
+				    It can be made O(n) using linked list
+				    buffers & a Byte.array of size n (not the
+				     ^operator!) for concatenating the buffers
+				    to return a value for yytext when a lexeme
+				    is longer than the typical buffer length.
+
+			(3) If the transition is to a dead state (0 is used
+			    for the dead state), action is executed instead.

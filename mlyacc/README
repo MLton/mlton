@@ -1,0 +1,19 @@
+Copyright (c) 1989, 1990, 1991 Andrew W. Appel and David R. Tarditi Jr.
+
+This directory contains ML-Yacc, an LALR parser generator for Standard ML.
+ML-Yacc is distributed subject to the terms of the accompanying ML-Yacc
+copyright notice, license, and disclaimer in the file COPYRIGHT.
+
+Files of interest (those marked with a * must be built by the person
+installing ML-Yacc):
+
+	README		- this file
+	INSTALL		- installation instructions.
+	COPYRIGHT	- this software is distributed subject to the
+		          terms of this file.
+	lib		- common source code used by both ML-Yacc and applications
+			  that use ML-Yacc.
+	src		- source code for the parser-generator part of ML-Yacc.
+	doc		- documentation for ML-Yacc.  Please read this before
+			  using ML-Yacc
+	examples	- sample parsers built with ML-Yacc

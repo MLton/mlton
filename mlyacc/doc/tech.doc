@@ -1,0 +1,252 @@
+A Hacker's guide ML-Yacc itself
+
+The program for computing the LALR(1) table can be divided into 3 separate
+parts.  The first part computes the LR(0) graph.  The second part attaches
+lookahead to the LR(0) graph to get the LALR(1) graph.  The third part
+computes the parse tables from the LALR(1) graph.
+
+Look at the file sigs.sml to see how the modules are layed out.
+The file graph.sml contains the Graph functor, which produces a structure
+containing a function mkGraph.  mkGraph takes a grammar and returns a 
+some useful values and functions, including the LR(0) graph.  It renumbers
+the rules to an internal form to make the LR(0) graph generation more
+efficient.  The LR(0) graph includes only core items in its set of items.
+
+The file look.sml takes some of theses values and produces functions
+which tell whether a nonterm is nullable and the first set of a symbol
+list.
+
+The functor mkLalr creates a structure with a function that takes an LR(0)
+graph and some other values (notably the first and nullable) functions
+produced by Look and creates a stripped down version of an LR(0) graph with
+lookaheads attached.  Nullable items (which usually aren't core items) are
+added and all other items without dots at the end (i.e. non-reduction items)
+are removed.
+
+The functor MkTable produces a function with takes the LR(0) graph 
+produced by the function in mkGraph and the LR(0) graph with lookaheads
+produced by Lalr and creates an LALR(1) table from these graphs.
+
+
+-----------------------------------------------------------------------
+An overview of the algorithms used in LR(0) graph generation and
+LALR(1) lookahead creation.
+
+LR(0) graph
+-----------
+
+The LR(0) graph consists of sets of items.  Each set of items will be
+called a core set.  The basic algorithm is:
+
+	let fun add_gotos(graph,f,nil,r) = (graph,r)
+	      | add_gotos(graph,f,(a,symbol)::b,r)
+			let newgraph = graph + edge from f to a labelled
+			    with symbol
+			in if a exists in graph then
+				add_gotos(newgraph,f,b,r)
+			   else add_gotos(newgraph,f,b,a::r)
+			end
+	     fun f(graph,nil) = graph
+	       | f(graph,a::b) = f(add_gotos(graph,a,gotos of closure a,b))
+	in f(empty-graph,[initial core set])
+	end
+
+For each core, we compute the new cores which result from doing a shift
+or goto, and then add these new cores with the symbol used in the shift
+or goto to the graph.  We continue doing this until there are no more cores
+to adds to the graph.
+
+We have to take the closure of a core to include those items which are 
+derived from nonterminals with a dot before them.  If item A -> 'a .B 'c
+is in a core, the all productions derived by B must also be in the core.
+
+We want to be able to do the following operations efficently:
+	(1) check if a core is in the graph already
+	(2) compute the closure of a core
+	(3) compute the cores resulting from goto/shift operations.
+
+(1) This can be done efficiently if a complete order exists for the cores. This
+can be done by imposing an ordering on items, giving each item a unique
+integer and using the place in an item.  This can be  used to order a
+set of items.
+
+(2) Much of the computation for the closure can be done ahead of time.
+The set of nonterminals to add for a given a nonterminal can be pre-computed
+using a transitive closure algorithm (the transitive closure is sparse
+in practice).  One can then compute the closure for a core in the following
+manner.  First, compute the set of nonterminals with . in front of them.
+This can be done in (m ln m) time.   Next, use the results from the
+transitive closure to compute the complete set of nonterminals that
+should be used.  Finally, for each nonterminal, merge its set of
+productions (sort all rules by the nonterminals from which they
+are derived before numbering them, then all we have to do is just
+prepend the rules while scanning the list in reverse order).
+
+(3) To do this, just scan the core closure, sorting rules by their
+symbols into lists.  Then reverse all the lists, and we have the
+new core sets.
+
+Lookahead representation
+------------------------
+
+The previous part throws away the result of the closure operations.
+It is used only to compute new cores for use in the goto operation.
+These intermediate results should be saved because they will be useful
+here.
+
+Lookaheads are attached to an item when
+
+	(1) an item is the result of a shift/goto.  The item
+	    must have the same lookahead as the item from which it
+	    is derived.
+	(2) an item is added as the result of a closure.  Note that
+	    in fact all productions derived from a given nonterminal
+	    are added here.  This can be used (perhaps) to our
+	    advantage, as we can represent a closure using just the
+	    nonterminal.
+
+    	    This can be divided into two cases:
+
+		(a) A -> 'a .B 'c , where 'c derives epsilon,
+		(b) A -> 'a .B 'c , where 'c does not derive epsilon
+
+	    In (a), lookahead(items derived from B) includes first('c)
+	    and lookahead(A -> 'a .B 'c)
+	
+	    In (b), lookahead(items derived from B) includes only first('c).
+
+	    This is an example of back propagation. 
+	
+	Note that an item is either the result of a closure or the
+	result of a shift/goto.  It is never the result of both (that
+	would be a contradiction).
+
+	The following representation will be used:
+	
+	  goto/shift items:
+		an ordered list of item * lookahead ref *
+				          lookahead ref for the resulting
+					  shift/goto item in another core.
+
+   	  closure items:
+		for each nonterminal:
+		   (1) lookahead ref
+		   (2) a list of item * lookahead ref for the
+					resulting shift/goto item in another
+				        core.
+
+Lookahead algorithms
+--------------------
+
+After computing the LR(0) graph, lookaheads must be attached to the items in
+the graph.  An item i may receive lookaheads in two ways.  If item i
+was the result of a shift or goto from some item j, then lookahead(i) includes
+lookahead(j).  If item i is a production of some nonterminal B, and there
+exists some item j of the form A -> x .B y, then item i will be added through
+closure(j).  This implies that lookahead(i) includes first(y).  If y => 
+epsilon, then lookahead(i) includes lookahead(j).
+
+Lookahead must be recorded for completion items, which are items of the
+form A -> x., non-closure items of the form A -> y . B z, where z is
+not nullable, and closure items of the form A -> epsilon.  (comment:
+items of the form A -> .x can appear in the start state as non-closure items.
+A must be the start symbol, which should not appear in the right hand side
+of any rule.  This implies that lookaheads will never be propagated to
+such items)
+
+We chose to omit closure items that do not have the form A -> epsilon.
+It is possible to add lookaheads to closure items, but we have not
+done so because it would greatly slow down the addition of lookaheads.
+
+Instead we precompute the nonterminals whose productions are
+added through the closure operation, the lookaheads for these
+nonterminals, and whether the lookahead for these nonterminals
+should include first(y) and lookahead(j) for some item j of the
+form  A -> x .B y.  This information depends only on the particular
+nonterminal whose closure is being taken.
+
+Some notation is necessary to describe what is happening here.  Let
+=c=> denote items added in one closure step that are derived from some
+nonterminal B in a production A -> x .B y.  Let =c+=> denote items
+added in one or more =c=> steps.
+
+Consider the following productions
+
+		B -> S ;
+		S -> E
+		E -> F * E
+		F -> num
+
+in a kernal with the item
+
+		B -> .S
+
+The following derivations are possible:
+
+B -> .S   =c=>   S -> .E	=c+=>   S -> .E, E -> .F * E, F -> .num
+
+The nonterminals that are added through the closure operation
+are the nonterminals for some item j = A -> .B x such that j =c+=> .C y.
+Lookahead(C) includes first(y).  If y =*=> epsilon then
+lookahead (C) includes first (x).  If x=*=> epsilon and y =*=> epsilon
+then lookahead(C) includes first(j).
+
+The following algorithm computes the information for each nonterminal:
+
+	(1) nonterminals  such that c =c+=> .C y and y =*=> epsilon
+
+	Let s = the set of nonterminals added through closure = B
+	
+	repeat
+		for all B which are elements of s,
+			if B -> .C z and z =*=> epsilon then
+			add B to s.
+	until s does not change.
+
+	(2) nonterminals added through closure and their lookaheads
+
+	Let s = the set of nonterminals added through closure = B
+	where A -> x . B y
+
+	repeat
+		for all B which are elements of s,
+			if B -> .C z then add C to s, and
+		        add first(z) to lookahead(C)
+	until nothing changes.
+
+	Now, for each nonterminal A in s, find the set of nonterminals
+	such that A =c+=> .B z, and z =*=> epsilon (i.e. use the results
+	from 1).  Add the lookahead for nonterminal A to the lookahead
+	for each nonterminal in this set.
+
+These algorithms can be restated as either breadth-first or depth-first search
+algorithms.   The loop invariant of the algorithms is that whenever a 
+nonterminal is added to the set being calculated, all the productions
+for the nonterminal are checked.  
+
+This algorithm computes the lookahead for each item:
+
+  for each state,
+	for each item of the form A -> u .B v in the state, where u may be
+	nullable,
+	   let	first_v = first(v)
+		l-ref  = ref for A -> u .B v
+		s = the set of nonterminals added through the closure of B.
+
+		for each element X of s,
+
+		  let r = the rules produced by an element X of s
+		      l = the lookahead ref cells for each rule, i.e.
+			  all items of A -> x. or A -> x .B y, where
+			  y =*=> epsilon, and x is not epsilon
+
+		      add the lookahead we have computed for X to the 
+		      elements of l
+
+		      if B =c+=> X z, where z is nullable, add first(y) to
+		      the l.  If y =*=> epsilon, save l with the ref for
+		      A -> x .B y in a list.
+
+ Now take the list of (lookahead ref, list of lookahead refs) and propagate
+ each lookahead ref cell's contents to the elements of the list of lookahead
+ ref cells associated with it.  Iterate until no lookahead set changes.

@@ -1,0 +1,13 @@
+
+File date.sml: Testing structure Date...
+This is the epoch (UTC):         Thu Jan  1 00:00:00 1970
+The UTC millenium (UTC time):    Sat Jan  1 00:00:00 2000
+The UTC millenium minus 5 sec:   Fri Dec 31 23:59:55 1999
+test1    	OK
+test2    	OK
+test3    	OK
+test4    	OK
+test5    	OK
+test6    	OK
+test7    	OK
+test8    	OK

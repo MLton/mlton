@@ -1,0 +1,216 @@
+.TH mlton 1 "July 6, 2001"
+.SH NAME
+\fBmlton\fP \- whole-program compiler for the Standard ML (SML) programming
+language
+.SH SYNOPSIS
+\fBmlton\fP \fI[option ...] file\fB.\fP{\fBcm\fP|\fBsml\fP|\fBc\fP|\fBo\fP} 
+[file\fB.\fP{\fBS\fP|\fBo\fP} ...] [library ...]\fR
+.SH DESCRIPTION
+.PP
+\fBMLton\fP requires the entire SML program before it can start
+compilation so that it can perform various optimizations.
+Thus typical use is simply
+.br
+.EX
+\fBmlton \fIxxx\fB.sml\fR
+.EE
+.br
+which will produce the executable \fIxxx\fP.
+The file \fIxxx\fB.sml\fR must consist of a sequence of toplevel declarations.
+These may refer to signatures and structures defined in the SML basis
+library. 
+
+\fBMLton\fP's options allow you to control the name of the output file, the
+verbosity of compile-time messages, and whether or not certain optimizations are
+performed.  They also allow you to specify which intermediate files are saved
+and to stop the compilation process early, at some intermediate pass, which case
+compilation can be resumed by passing the resulting files to \fBMLton\fP.
+\fBMLton\fP uses the input file suffix to determine the type of input program.
+The possibilities are \fB.cm\fR, \fB.sml\fR, \fB.c\fR, \fB.S\fR, and \fB.o\fR.
+
+For compatibility with Standard ML of New Jersey, \fBMLton\fP also supports a
+limited subset of Compilation Manager (CM) files.  From \fBMLton\fP's point of
+view, a CM file \fBfoo.cm\fR defines a list of SML source files.  The call 
+\fBmlton foo.cm\fR is equivalent to compiling an SML program consisting of the
+concatenation of these files.  As always with \fBMLton\fP, the concatenation
+must be the whole program you wish to compile.  See the \fBMLton\fP user guide
+for details.
+
+.SH Compile-time options
+.TP
+\fB-detect-overflow \fI{\fBtrue\fI|\fBfalse\fI}\fR
+This flag controls whether or not overflow checking is performed on integer
+arithmetic.
+
+.TP
+\fB-D\fIdefine\fR
+Define a compile-time constant accessible via \fBMLton\fR's \fB_prim\fR
+syntax.
+
+.TP
+\fB-h\fI heapSize[\fBkm\fP]\fR
+The resulting executable will use a fixed size heap of heapSize size.
+A value of 0 means that the heap size should be almost as large as the amount
+of RAM in the machine.
+A trailing \fBk\fP means that heapSize is in units of 1024 bytes.
+A trailing \fBm\fP means that heapSize is in units of 1,048,576 bytes.
+If neither appears, then heapSize is in bytes.
+If no \fB-h\fP is used then the executable will use an automatically
+resized heap.
+(Note, no matter if a \fB-h\fP appears or not, the resulting executable
+can be told to use a different heap size on its command line.
+See Runtime system options.)
+.br
+This option only makes sense when the input file suffix is \fB.sml\fP.
+
+.TP
+\fB-ieee-fp \fI{\fBfalse\fP|\fBtrue\fP}\fR
+Control whether or not the code generator is pedantic about following
+the IEEE floating point standard.  By default, it is not, because of the
+performance cost.
+
+.TP
+\fB-include \fIfile.h\fR
+Specify an additional \fB.h\fP file to be included for defining compile-time
+constants.  The file will be included with \fB#include <file.h>\fP.
+
+.TP
+\fB-inline \fIn\fR
+Set the inlining threshold used in the CPS simplifier.
+The default is 320.
+
+.TP
+\fB-I\fIdir\fR
+Specify an additional directory to be searched for include files (included with
+\fB-i\fR).
+
+.TP
+\fB-keep \fI{\fBcps\fP|\fBg\fP|\fBil\fP|\fBo\fP|\fBsml\fP}\fR
+Save the intermediate files corresponding to the given arg.
+If no \fB-keep\fP argument is given, then only the final file is saved.
+.in +.5i
+\fBcps\fP  CPS file.
+.br
+\fBg\fP    generated \fB.S\fP and \fB.c\fP files passed to gcc.
+.br
+\fBil\fP   all compiler intermediate files.
+.br
+\fBo\fP    object file (\fI*\fB.o\fR).
+.br
+\fBsml\fP  SML file.
+.in -.5i
+
+.TP
+\fB-l\fIlib\fR
+Specify an additional library to link with.
+This switch is passed unchanged to the linker.
+
+.TP
+\fB-L\fIdir\fR
+Specify an additional directory to be searched for libraries.
+This switch is passed unchanged to the linker.
+
+.TP
+\fB-native \fI{\fBtrue\fP|\fBfalse\fP}\fP
+Controls whether or not to use native code generation.  By default this is
+\fBtrue\fP.  Older versions of \fBMLton\fP generated C code and used 
+\fBgcc\fP to produce assembly, but this functionality is being phased out.
+
+.TP
+\fB-polyvariance \fI{\fBtrue\fP|\fBfalse\fP}\fR
+Control whether the optimizer runs polyvariance, which is a pass that duplicates
+small, higher-order functions to improve performance.  The default is for
+polyvariance to be on.
+
+.TP
+\fB-o\fI file\fR
+Specify the name of the final output file.
+The default name is the input file name with its suffix removed and an
+appropriate suffix added.
+
+.TP
+\fB-p\fP
+Produce an executable that will gather profiling information.  
+When such an executable is run, it will produce a \fBmlmon.out\fP file.
+The man page on \fBmlprof\fP describes how to extract information from this
+file.
+The default is not to gather profiling information.  This option implies
+\fB-keep cps\fP.
+
+.TP
+\fB-safe \fI{\fBtrue\fP|\fBfalse\fP}\fR
+This switch determines the value of the SML variable \fBMLton.safe\fP, which
+controls whether the basis library performs array, string, and vector bounds
+checks, division for zero checks, and other checks.  By default,
+\fBMLton.safe\fP is \fBtrue\fP.  Compiling \fB-safe false\fP changes the
+behavior of some programs, does not conform to the basis library specification,
+and may cause programs to seg fault.
+
+.TP
+\fB-static\fP
+Produce a statically linked executable.  This switch is passed unchanged to 
+the linker.
+
+.TP
+\fB-stop \fI{\fBf\fP|\fBg\fP|\fBo\fP|\fBsml\fP}\fR
+Specify pass to stop at.
+.in +.5i
+\fBf\fP    List of files on stdout.
+.br
+\fBg\fP    generated \fB.S\fP and \fB.c\fP files.
+.br
+\fBsml\fP  SML file.
+.br
+\fBo\fP    Object file (\fI*\fB.o\fR).
+.in -.5i
+
+.TP
+\fB-v\fI[\fB0123\fI]\fR
+Be verbose about what passes are running.  The default is 0.
+.in +.5i
+\fB0\fP  silent.
+.br
+\fB1\fP  calls to compiler, assembler, and linker.
+.br
+\fB2\fP  1 + intermediate compiler passes.
+.br
+\fB3\fP  2 + some data structure sizes.
+.in -.5i
+With no other arguments, \fBmlton -v\fP prints out the version number and the
+default settings of all options and exits.
+
+.SH Runtime system options
+To control the runtime system, executables produced by \fBMLton\fP take
+several optional command line arguments before their usual arguments.
+To use these options, the first argument to the executable must be
+\fB@MLton\fP.  The optional arguments then follow, must be terminated
+by \fB--\fP, and are followed by any arguments to the program.
+The optional arguments are \fInot\fP made available to the SML
+program via \fBCommandLine.arguments\fP.
+.TP
+\fBfixed-heap \fIn[\fBkm\fI]\fR
+Use a fixed size heap of n bytes.
+A trailing \fBk\fP means that n is in units of 1024 bytes.
+A trailing \fBm\fP means that n is in units of 1,048,576 bytes.
+If neither appears, then nn is in bytes.
+A value of \fB0\fP means to use almost all the RAM present on the machine.
+.TP
+\fBgc-messages\fP
+Print a message at the start and end of every garbage collection.
+.TP
+\fBgc-summary\fP
+Print a summary of garbage collection statistics upon program termination.
+.TP
+\fBload-world \fIworld\fR
+Restart the computation with the file \fIworld\fP.
+The \fIworld\fP file must have been created by a call to
+\fBMLton.World.save\fP by the same executable.
+.TP
+\fBmax-heap \fIn[\fBkm\fI]\fR
+Run the computation with an automatically resized heap that is never larger
+than \fIn\fP.
+The meaning of \fI[\fBkm\fI]\fR is the same as with the \fBfixed-heap\fP
+option.
+.SH "SEE ALSO"
+.BR mlprof (1)
+and the \fBMLton\fP user guide.

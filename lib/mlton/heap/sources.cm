@@ -1,0 +1,16 @@
+Group
+
+functor BinaryHeap
+functor EagerBinomialHeap
+functor FibonacciHeap
+functor LazyBinomialHeap
+
+is
+
+../basic/sources.cm
+heap.sig
+forest.sig
+forest.fun
+binomial.fun
+binary.fun
+fibonacci.fun

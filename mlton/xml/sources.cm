@@ -1,0 +1,39 @@
+Group
+
+signature SXML
+signature XML
+signature XML_TYPE
+
+(*functor CallCount *)
+functor ImplementExceptions
+functor Monomorphise
+functor Polyvariance
+functor Xml
+
+is
+
+../atoms/sources.cm
+../control/sources.cm
+../../lib/mlton/sources.cm
+
+xml-type.sig
+xml-tree.sig
+xml-tree.fun
+xml.sig
+type-check.sig
+type-check.fun
+simplify-types.sig
+simplify-types.fun
+scc-funs.sig
+scc-funs.fun
+simplify.sig
+simplify.fun
+xml.fun
+sxml.sig
+polyvariance.sig
+polyvariance.fun
+sxml-exns.sig
+monomorphise.sig
+monomorphise.fun
+implement-exceptions.sig
+implement-exceptions.fun

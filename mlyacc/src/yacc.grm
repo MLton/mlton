@@ -1,0 +1,231 @@
+(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
+
+(* parser for the ML parser generator *)
+
+open Hdr
+%%
+
+%name Mlyacc
+%eop EOF
+%noshift EOF
+%right ARROW
+%left  ASTERISK
+%pos int
+
+%term	ARROW | ASTERISK | BLOCK | BAR | CHANGE | COLON | 
+	COMMA | DELIMITER | EOF | FOR |
+	HEADER of string | ID of string*int | IDDOT of string |
+	PERCENT_HEADER | INT of string | KEYWORD | LBRACE | LPAREN |
+	NAME | NODEFAULT | NONTERM | NOSHIFT | OF |
+	PERCENT_EOP | PERCENT_PURE | PERCENT_POS | PERCENT_ARG |
+	PERCENT_TOKEN_SIG_INFO |
+	PREC of Header.prec | PREC_TAG | PREFER |
+	PROG of string | RBRACE | RPAREN | SUBST | START |
+	TERM | TYVAR of string | VERBOSE | VALUE |
+	UNKNOWN of string | BOGUS_VALUE
+
+%nonterm
+	BEGIN of string * Hdr.declData * (Hdr.rule list) |
+	CONSTR_LIST of (Hdr.symbol * Hdr.ty option) list |
+	ID_LIST of Hdr.symbol list |
+ 	LABEL of string |
+ 	MPC_DECL of Hdr.declData |
+	MPC_DECLS of Hdr.declData |
+	QUAL_ID of string |
+	RECORD_LIST of string |
+	RHS_LIST of {rhs:Hdr.symbol list,code:string,
+		     prec:Hdr.symbol option} list |
+	G_RULE of Hdr.rule list |
+	G_RULE_LIST of Hdr.rule list |
+	G_RULE_PREC of Hdr.symbol option |
+	SUBST_DECL of (Hdr.symbol list * Hdr.symbol list) list |
+	SUBST_DEC of (Hdr.symbol list * Hdr.symbol list) |
+	CHANGE_DECL of (Hdr.symbol list * Hdr.symbol list) list |
+	CHANGE_DEC of (Hdr.symbol list * Hdr.symbol list) |
+ 	TY of string
+%header (
+functor MlyaccLrValsFun(structure Hdr : HEADER
+		          where type prec = Header.prec
+			structure Token : TOKEN)
+)
+%arg (inputSource) : Hdr.inputSource
+%%
+
+BEGIN : HEADER MPC_DECLS DELIMITER G_RULE_LIST
+	(HEADER,MPC_DECLS,rev G_RULE_LIST)
+
+MPC_DECLS : MPC_DECLS MPC_DECL
+	      (join_decls(MPC_DECLS,MPC_DECL,inputSource,MPC_DECLleft))
+
+MPC_DECLS:  (DECL {prec=nil,nonterm=NONE,term=NONE,eop=nil,control=nil,
+		   keyword=nil,change=nil,
+		   value=nil})
+
+MPC_DECL: TERM CONSTR_LIST
+	    (DECL { prec=nil,nonterm=NONE,
+	       term = SOME CONSTR_LIST, eop =nil,control=nil,
+		change=nil,keyword=nil,
+		value=nil})
+
+	| NONTERM CONSTR_LIST
+	    (DECL { prec=nil,control=nil,nonterm= SOME CONSTR_LIST,
+	       term = NONE, eop=nil,change=nil,keyword=nil,
+	       value=nil})
+
+	| PREC ID_LIST
+	    (DECL {prec= [(PREC,ID_LIST)],control=nil,
+	      nonterm=NONE,term=NONE,eop=nil,change=nil,
+	      keyword=nil,value=nil})
+
+	| START ID
+	     (DECL {prec=nil,control=[START_SYM (symbolMake ID)],nonterm=NONE,
+	       term = NONE, eop = nil,change=nil,keyword=nil,
+	       value=nil})
+
+	| PERCENT_EOP ID_LIST
+	     (DECL {prec=nil,control=nil,nonterm=NONE,term=NONE,
+		eop=ID_LIST, change=nil,keyword=nil,
+	 	value=nil})
+
+	| KEYWORD ID_LIST
+	     (DECL {prec=nil,control=nil,nonterm=NONE,term=NONE,eop=nil,
+		change=nil,keyword=ID_LIST,
+	 	value=nil})
+
+	| PREFER ID_LIST
+	     (DECL {prec=nil,control=nil,nonterm=NONE,term=NONE,eop=nil,
+		    change=map (fn i=>([],[i])) ID_LIST,keyword=nil,
+		    value=nil})
+
+        | CHANGE CHANGE_DECL
+	     (DECL {prec=nil,control=nil,nonterm=NONE,term=NONE,eop=nil,
+		change=CHANGE_DECL,keyword=nil,
+		value=nil})
+	| SUBST SUBST_DECL
+	     (DECL {prec=nil,control=nil,nonterm=NONE,term=NONE,eop=nil,
+		change=SUBST_DECL,keyword=nil,
+		value=nil})
+	| NOSHIFT ID_LIST
+	     (DECL {prec=nil,control=[NSHIFT ID_LIST],nonterm=NONE,term=NONE,
+	            eop=nil,change=nil,keyword=nil,
+		    value=nil})
+	| PERCENT_HEADER PROG
+	     (DECL {prec=nil,control=[FUNCTOR PROG],nonterm=NONE,term=NONE,
+	            eop=nil,change=nil,keyword=nil,
+		    value=nil})
+	| PERCENT_TOKEN_SIG_INFO PROG
+	     (DECL {prec=nil,control=[TOKEN_SIG_INFO PROG],
+                    nonterm=NONE,term=NONE,
+	            eop=nil,change=nil,keyword=nil,
+		    value=nil})
+	| NAME ID
+	     (DECL {prec=nil,control=[PARSER_NAME (symbolMake ID)],
+	            nonterm=NONE,term=NONE,
+		    eop=nil,change=nil,keyword=nil, value=nil})
+
+	| PERCENT_ARG PROG COLON TY
+	     (DECL {prec=nil,control=[PARSE_ARG(PROG,TY)],nonterm=NONE,
+	            term=NONE,eop=nil,change=nil,keyword=nil,
+		     value=nil})
+
+	| VERBOSE
+	     (DECL {prec=nil,control=[Hdr.VERBOSE],
+	        nonterm=NONE,term=NONE,eop=nil,
+	        change=nil,keyword=nil,
+		value=nil})
+	| NODEFAULT
+	     (DECL {prec=nil,control=[Hdr.NODEFAULT],
+	        nonterm=NONE,term=NONE,eop=nil,
+	        change=nil,keyword=nil,
+		value=nil})
+	| PERCENT_PURE
+	     (DECL {prec=nil,control=[Hdr.PURE],
+	        nonterm=NONE,term=NONE,eop=nil,
+	        change=nil,keyword=nil,
+		value=nil})
+	| PERCENT_POS TY
+	     (DECL {prec=nil,control=[Hdr.POS TY],
+	        nonterm=NONE,term=NONE,eop=nil,
+	        change=nil,keyword=nil,
+		value=nil})
+	| VALUE ID PROG
+	     (DECL {prec=nil,control=nil,
+	        nonterm=NONE,term=NONE,eop=nil,
+	        change=nil,keyword=nil,
+		value=[(symbolMake ID,PROG)]})
+
+CHANGE_DECL : CHANGE_DEC BAR CHANGE_DECL
+	            (CHANGE_DEC :: CHANGE_DECL)
+            | CHANGE_DEC
+		    ([CHANGE_DEC])
+
+CHANGE_DEC  : ID_LIST ARROW ID_LIST
+	          (ID_LIST1, ID_LIST2)
+
+SUBST_DECL : SUBST_DEC BAR SUBST_DECL
+	      (SUBST_DEC :: SUBST_DECL)
+           | SUBST_DEC
+	      ([SUBST_DEC])
+
+SUBST_DEC:   ID FOR ID
+	      ([symbolMake ID2],[symbolMake ID1])
+
+CONSTR_LIST : CONSTR_LIST BAR ID OF TY
+	     ((symbolMake ID,SOME (tyMake TY))::CONSTR_LIST)
+
+	| CONSTR_LIST BAR ID
+	     ((symbolMake ID,NONE)::CONSTR_LIST)
+
+	| ID OF TY ([(symbolMake ID,SOME (tyMake TY))])
+
+	| ID ([(symbolMake ID,NONE)])
+
+G_RULE : ID COLON RHS_LIST
+	(map (fn {rhs,code,prec} =>
+    	          Hdr.RULE {lhs=symbolMake ID,rhs=rhs,
+			       code=code,prec=prec})
+	 RHS_LIST)
+
+G_RULE_LIST:  G_RULE_LIST G_RULE (G_RULE@G_RULE_LIST)
+	|   G_RULE	 (G_RULE)
+
+ID_LIST : ID ID_LIST (symbolMake ID :: ID_LIST)
+	| 	 (nil)
+
+RHS_LIST : ID_LIST G_RULE_PREC PROG
+	    ([{rhs=ID_LIST,code=PROG,prec=G_RULE_PREC}])
+
+	| RHS_LIST BAR ID_LIST G_RULE_PREC PROG
+	    ({rhs=ID_LIST,code=PROG,prec=G_RULE_PREC}::RHS_LIST)
+
+TY : TYVAR
+ 	(TYVAR)
+   | LBRACE RECORD_LIST RBRACE
+	("{ "^RECORD_LIST^" } ")
+   | LBRACE RBRACE
+	("{}")
+   | PROG
+	(" ( "^PROG^" ) ")
+   | TY QUAL_ID
+	(TY^" "^QUAL_ID)
+   | QUAL_ID
+	(QUAL_ID)
+   | TY ASTERISK TY
+	(TY1^"*"^TY2)
+   | TY ARROW TY
+	(TY1 ^ " -> " ^ TY2)
+
+RECORD_LIST : RECORD_LIST COMMA LABEL COLON TY
+		(RECORD_LIST^","^LABEL^":"^TY)
+	   | LABEL COLON TY
+		(LABEL^":"^TY)
+
+QUAL_ID : ID	((fn (a,_) => a) ID)
+       | IDDOT QUAL_ID (IDDOT^QUAL_ID)
+	 
+LABEL : ID  ((fn (a,_) => a) ID)
+      | INT (INT)
+
+G_RULE_PREC : PREC_TAG ID (SOME (symbolMake ID))
+
+G_RULE_PREC : (NONE)

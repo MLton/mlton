@@ -1,0 +1,40 @@
+Group
+
+signature MACHINE_OUTPUT
+signature MTYPE
+
+functor Backend
+functor Machine
+functor MachineOutput 
+  
+is
+
+../../lib/mlton/sources.cm
+../atoms/sources.cm
+../control/sources.cm
+../cps/sources.cm
+
+mtype.sig
+mtype.fun
+machine-cases.sig
+machine-cases.fun
+machine-output.sig
+machine-output.fun
+machine.sig
+machine.fun
+representation.sig
+representation.fun
+parallel-move.sig
+parallel-move.fun
+equivalence-graph.sig
+equivalence-graph.fun
+chunkify.sig
+chunkify.fun
+backend.sig
+live.sig
+live.fun
+limit-check.sig
+limit-check.fun
+allocate-registers.sig
+allocate-registers.fun
+backend.fun

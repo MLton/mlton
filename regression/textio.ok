@@ -1,0 +1,33 @@
+Testing TextIO...
+test1    	OK
+test2    	OK
+test3    	OK
+test4    	OK
+test5    	OK
+test6    	OK
+Two lines of output follow:
+1234  <--- this should read 1234
+12345 <--- this should read 12345
+test7a    	OK
+test7b    	OK
+test7c    	OK
+test8a    	OK
+test8b    	OK
+test8c    	OK
+test8d    	OK
+test8e    	OK
+test8f    	OK
+test9a    	OK
+test9b    	OK
+test9c    	OK
+test9d    	OK
+test9e    	OK
+test10    	OK
+test11    	OK
+test12a    	OK
+test12b    	OK
+test12c    	OK
+test12d    	OK
+Two lines of output follow:
+abcde <--- this should read abcde
+abcde <--- this should read abcde

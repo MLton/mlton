@@ -1,0 +1,27 @@
+This directory contains test programs for the ML Kit. Many of the test
+cases for the SML Basis Library have been borrowed from the Moscow ML
+distribution.
+
+The test is invoked with the `kittester' program located (after the
+Kit is installed) in the kit/bin directory. (The sources for
+`kittester' are available in the directory kit/src/Tools/Tester.)
+
+The directory must contain this file `README' and three symbolic
+links:
+
+	testlink -> README
+	testcycl -> testcycl
+	testbadl -> exists.not
+
+Moreover, it must contain a file `hardlinkA' and a hard link
+`hardlinkB' to `hardlinkA' (or vice versa). The directory must not
+contain a file or directory named `exists.not'.
+
+To run all the tests, invoke `kittester' as follows (from this
+directory):
+
+        > ../bin/kittester all.tst 
+
+See the file `all.tst' to learn how to add programs to the test.
+
+- ME 1998-10-21

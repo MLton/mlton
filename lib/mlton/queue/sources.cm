@@ -1,0 +1,26 @@
+Library
+
+structure SinglyLinkedQueue
+
+is
+
+../base/sources.cm
+
+ephemeral.sig
+unbounded-ephemeral.sig
+singly-linked.fun
+bounded-ephemeral.sig
+circular.fun
+
+basic-persistent.sig
+list.fun
+two-list.fun
+append-reverse.sig
+lazy-append-reverse.fun
+incremental-append-reverse.fun
+explicit-append-reverse.fun
+early.fun
+incremental.fun
+persistent.sig
+persistent.fun
+

@@ -1,0 +1,2 @@
+Test files for the error-correcting parser.  Files beginning with c
+are correct.  Those beginning with t have simple syntax errors.

@@ -1,0 +1,43 @@
+
+Testing structure Word8Array
+
+Now I will try with a 119-array.    	ok
+Now I will try with a 13-array.    	ok
+Now I will try with a 130-array.    	ok
+Now I will try with a 10000-array.    	ok
+Now I will try with a 0-array.    	ok
+Now I will try with a 1-array.    	ok
+Now I will try with a 158-array.    	ok
+Now I will try with a 316-array.    	ok
+Now I will try with a 159-array.    	ok
+Now I will try with a 3161-array.    	ok
+Now I will try with a 15161-array.    	ok
+
+Testing structure Array
+
+Now I will try with a 119-array.    	ok
+Now I will try with a 13-array.    	ok
+Now I will try with a 130-array.    	ok
+Now I will try with a 10000-array.    	ok
+Now I will try with a 0-array.    	ok
+Now I will try with a 1-array.    	ok
+Now I will try with a 158-array.    	ok
+Now I will try with a 316-array.    	ok
+Now I will try with a 159-array.    	ok
+Now I will try with a 3161-array.    	ok
+Now I will try with a 15161-array.    	ok
+
+Testing structure CharArray
+
+Now I will try with a 119-array.    	ok
+Now I will try with a 13-array.    	ok
+Now I will try with a 130-array.    	ok
+Now I will try with a 10000-array.    	ok
+Now I will try with a 0-array.    	ok
+Now I will try with a 1-array.    	ok
+Now I will try with a 758-array.    	ok
+Now I will try with a 1516-array.    	ok
+Now I will try with a 759-array.    	ok
+Now I will try with a 15161-array.    	ok
+
+check done

@@ -1,0 +1,80 @@
+Methods of implementing sets (not in terms of the underlying
+representation, but in terms of the public signature).
+
+Polymorphic Elements
+--------------------------------------------------
+ pass operations on 'a as arguments when needed
+  (e.g. equality when testing for membership)
+This is bad, because it requires me to construct my own recursive
+descent functions.  Good because it checks types at compile
+time.  Cumbersome, because I must keep passing the helper functions
+everywhere.
+
+What happens if I want a dynamically varying order type of sets?
+This can't possibly work.
+
+Special case
+--------------------
+Use polymorhpism with equality types - this only works if the built
+in equality function is what you want.  Furthermore, it does nothing
+when you need functions other than equality (e.g. order relations)
+
+Monomorphic Elements
+--------------------------------------------------
+ Use monomorphism and encode the type of the set in the ML type.
+This requires a new functor application for each new type of set.
+Certainly doesn't work if the order type of the set isn't decided
+until run time.
+This can get very cumbersome.  Good because it checks types at
+compile time.  Also, it "automatically" constructs the proper
+recursive descent functions when the functors are applied.
+Bad because I can't even express the types of some functions
+(e.g. map) without having two different types (structures) around.
+This would
+be better if I could get it to automatically infer the appropriate
+functor applications based on type inference of the code that uses 
+sets.  Not quite, not only do I want it to infer the appropriate
+functor applications, I want it to *share* the results of functor
+applications corresponding to objects of the same type.
+
+Monomorphic Elements in a Universal Datatype
+--------------------------------------------------
+Bad because it doesn't check types at compile time.  However, one can
+build a layer on top that checks the types at run time.
+This requires a single functor application (if it works at all).
+This requires the user to build a union type for all objects that
+might be members of sets.  Furthermore, it doesn't even work if I want
+to include sets as parts of some of my base datatypes.  That is, the
+set and base datatypes can't be mutually recursive.  Maybe this isn't
+a problem.  Can I think of an example where I want this??
+
+This gets very cumbersome, because the programmer must constantly
+inject to and project from the universal datatype.
+Furthermore, it reduces modularity, because all of the objects that
+will ever appear in sets must be collected together in one place to
+define the universal datatype.
+
+I bet you pay a pretty good performance hit both in terms of time and
+space with this approach, because of all of the explicit unions that
+are constructed.  --- Wait a second!  Could you get away without
+constructing these unions in Scheme?  How would be sure that you could
+differentiate among elements?   Do you need to be able to
+differentiate in correct programs, or only to aid in debugging?
+When do you ever put things in a union and not know what they are???
+It seems to me that this happens whenever you have polymorphic
+functions that aren't parametric, e.g. print.
+
+Object Oriented
+--------------------------------------------------
+Monomorphic elements that include the appropriate operations.
+I don't like this because each element carries its own equality
+function, but I know I want only a single equality function for the
+whole type, and I can't enforce (or even express) that they are the
+same.
+
+
+Other Considerations
+--------------------------------------------------
+Performance implications?
+How would each of these options work in scheme?
+What other options are there in scheme?

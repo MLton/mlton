@@ -1,0 +1,51 @@
+#!/bin/sh
+
+# This script checks MLton's basis library implementation for type errors using
+# SML/NJ.
+
+name=`basename $0`
+
+function usage() {
+	echo >&2 "usage: $name"
+	exit 1
+}
+
+case "$#" in
+0)
+	;;
+*)
+	usage
+	;;
+esac
+
+dir=`dirname $0`
+root=`cd $dir/../.. && pwd`
+basis="$root/src/basis-library/basis.sml"
+
+cd $root/src/basis-library
+rm -f $basis
+(
+cat <<-EOF
+	val _ = SMLofNJ.Internals.GC.messages false;
+	fun PRIM x = raise Fail "_prim"
+	datatype pointer = T
+	datatype thread = T
+	type word8 = Word8.word
+	type word = Word32.word
+	type int = Int32.int
+	type intInf = int
+	nonfix * / mod div ^ + - := o > < >= <= = <> :: @ before
+EOF
+(cat build-basis; cat bind-basis) | egrep -v overload | xargs cat |
+	sed 's/_prim\(.*\);/(PRIM\1)/' |
+	sed 's/_prim/PRIM/' |
+	sed 's/_ffi\(.*\);/(PRIM\1)/' |
+	sed 's/_ffi/PRIM/' |
+	sed 's/fun bigIntConstant x = x/fun bigIntConstant(x:smallInt):bigInt = raise Fail "bigIntConstant"/'
+cat <<-EOF
+	val _ = () ()
+EOF
+) >$basis
+
+chmod -w $basis
+sml <$basis
