@@ -140,6 +140,8 @@ struct
 	val nonlivenessClasses = ClassSet.-(allClasses, livenessClasses)
 	val holdClasses = !x86MLton.Classes.holdClasses
 	val nonholdClasses = ClassSet.-(allClasses, holdClasses)
+	val volatileClasses = !x86MLton.Classes.volatileClasses
+	val nonvolatileClasses = ClassSet.-(allClasses, volatileClasses)
 	val farflushClasses = ClassSet.-(nonlivenessClasses, holdClasses)
 	val nearflushClasses = ClassSet.-(nonlivenessClasses, holdClasses)
 	val runtimeClasses = !x86MLton.Classes.runtimeClasses
@@ -233,6 +235,19 @@ struct
 		dead_memlocs = MemLocSet.empty,
 		dead_classes = ClassSet.empty})],
 	     trans]
+
+	val profileStackTopCommit' = 
+	  x86.Assembly.directive_force
+	  {commit_memlocs = MemLocSet.singleton (stackTop ()),
+	   commit_classes = ClassSet.empty,
+	   remove_memlocs = MemLocSet.empty,
+	   remove_classes = ClassSet.empty,
+	   dead_memlocs = MemLocSet.empty,
+	   dead_classes = ClassSet.empty}
+	val profileStackTopCommit =
+	  if !Control.profile <> Control.ProfileNone
+	    then AppendList.single profileStackTopCommit'
+	    else AppendList.empty
 	    
 	val _
 	  = Assert.assert
@@ -526,19 +541,20 @@ struct
 					  val finish
 					    = AppendList.appends
 					      [profile_assembly,
-					       let
+					       let	
 						 val stackTop 
 						   = x86MLton.gcState_stackTopContentsOperand ()
 						 val bytes 
 						   = x86.Operand.immediate_const_int (~ size)
 					       in
-						 (* stackTop += bytes *)
-						 AppendList.single
-						 (x86.Assembly.instruction_binal 
+						 AppendList.cons
+						 ((* stackTop += bytes *)
+						  x86.Assembly.instruction_binal 
 						  {oper = x86.Instruction.ADD,
 						   dst = stackTop,
 						   src = bytes, 
-						   size = pointerSize})
+						   size = pointerSize},
+						 profileStackTopCommit)
 					       end,
 					       (* assignTo dst *)
 					       getReturn ()]
@@ -601,7 +617,7 @@ struct
 				 Assembly.label label],
 				(* entry from far assumptions *)
 				(farEntry
-				 (AppendList.snoc
+				 (AppendList.append
 				  (profile_assembly,
 				   let
 				     val stackTop 
@@ -609,12 +625,14 @@ struct
 				     val bytes 
 				       = x86.Operand.immediate_const_int (~ size)
 				   in
-				     (* stackTop += bytes *)
-				     x86.Assembly.instruction_binal 
-				     {oper = x86.Instruction.ADD,
-				      dst = stackTop,
-				      src = bytes, 
-				      size = pointerSize}
+				     AppendList.cons
+				     ((* stackTop += bytes *)
+				      x86.Assembly.instruction_binal 
+				      {oper = x86.Instruction.ADD,
+				       dst = stackTop,
+				       src = bytes, 
+				       size = pointerSize},
+				      profileStackTopCommit)
 				   end))))
 			    | Handler {label,
 				       offset, 
@@ -626,7 +644,7 @@ struct
 				 Assembly.label label],
 				(* entry from far assumptions *)
 				(farEntry
-				 (AppendList.snoc
+				 (AppendList.append
 				  (profile_assembly,
 				   let
 				     val stackTop 
@@ -634,12 +652,14 @@ struct
 				     val bytes 
 				       = x86.Operand.immediate_const_int (~ offset)
 				   in
-				     (* stackTop += bytes *)
-				     x86.Assembly.instruction_binal 
-				     {oper = x86.Instruction.ADD,
-				      dst = stackTop,
-				      src = bytes, 
-				      size = pointerSize}
+				     AppendList.cons
+				     ((* stackTop += bytes *)
+				      x86.Assembly.instruction_binal 
+				      {oper = x86.Instruction.ADD,
+				       dst = stackTop,
+				       src = bytes, 
+				       size = pointerSize},
+				      profileStackTopCommit)
 				   end))))
 		     val pre
 		       = AppendList.appends
@@ -902,6 +922,12 @@ struct
 			       of SOME handler => enque handler
 				| NONE => ()
 
+		     val stackTopTemp
+		       = x86MLton.stackTopTempContentsOperand ()
+		     val stackTopTempMinusWordDeref'
+		       = x86MLton.stackTopTempMinusWordDeref ()
+		     val stackTopTempMinusWordDeref
+		       = x86MLton.stackTopTempMinusWordDerefOperand ()
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand ()
 		     val stackTopMinusWordDeref'
@@ -923,25 +949,55 @@ struct
 		   in
 		     (* flushing at far transfer *)
 		     (farTransfer live
-		      (AppendList.fromList
-		       [(* stackTop += bytes *)
-			x86.Assembly.instruction_binal 
-			{oper = x86.Instruction.ADD,
-			 dst = stackTop,
-			 src = bytes, 
-			 size = pointerSize},
-			(* *(stackTop - WORD_SIZE) = return *)
-			x86.Assembly.instruction_mov
-			{dst = stackTopMinusWordDeref,
-			 src = Operand.immediate_label return,
-			 size = pointerSize},
-			x86.Assembly.directive_force
-			{commit_memlocs = MemLocSet.singleton stackTopMinusWordDeref',
-			 commit_classes = ClassSet.empty,
-			 remove_memlocs = MemLocSet.empty,
-			 remove_classes = ClassSet.empty,
-			 dead_memlocs = MemLocSet.empty,
-			 dead_classes = ClassSet.empty}])
+		      (if !Control.profile <> Control.ProfileNone
+			 then (AppendList.fromList
+			       [(* stackTopTemp = stackTop + bytes *)
+				x86.Assembly.instruction_mov
+				{dst = stackTopTemp,
+				 src = stackTop,
+				 size = pointerSize},
+				x86.Assembly.instruction_binal
+				{oper = x86.Instruction.ADD,
+				 dst = stackTopTemp,
+				 src = bytes,
+				 size = pointerSize},
+				(* *(stackTopTemp - WORD_SIZE) = return *)
+				x86.Assembly.instruction_mov
+				{dst = stackTopTempMinusWordDeref,
+				 src = Operand.immediate_label return,
+				 size = pointerSize},
+				x86.Assembly.directive_force
+				{commit_memlocs = MemLocSet.singleton stackTopTempMinusWordDeref',
+				 commit_classes = ClassSet.empty,
+				 remove_memlocs = MemLocSet.empty,
+				 remove_classes = ClassSet.empty,
+				 dead_memlocs = MemLocSet.empty,
+				 dead_classes = ClassSet.empty},
+				(* stackTop = stackTopTemp *)
+				x86.Assembly.instruction_mov
+				{dst = stackTop,
+				 src = stackTopTemp,
+				 size = pointerSize},
+				profileStackTopCommit'])
+			 else (AppendList.fromList
+			       [(* stackTop += bytes *)
+				x86.Assembly.instruction_binal 
+				{oper = x86.Instruction.ADD,
+				 dst = stackTop,
+				 src = bytes, 
+				 size = pointerSize},
+				(* *(stackTop - WORD_SIZE) = return *)
+				x86.Assembly.instruction_mov
+				{dst = stackTopMinusWordDeref,
+				 src = Operand.immediate_label return,
+				 size = pointerSize},
+				x86.Assembly.directive_force
+				{commit_memlocs = MemLocSet.singleton stackTopMinusWordDeref',
+				 commit_classes = ClassSet.empty,
+				 remove_memlocs = MemLocSet.empty,
+				 remove_classes = ClassSet.empty,
+				 dead_memlocs = MemLocSet.empty,
+				 dead_classes = ClassSet.empty}]))
 		      (AppendList.single
 		       (Assembly.instruction_jmp
 			{target = Operand.label target,
@@ -965,6 +1021,8 @@ struct
 		=> let
 		     val exnStack 
 		       = x86MLton.gcState_currentThread_exnStackContentsOperand ()
+		     val stackTopTemp
+		       = x86MLton.stackTopTempContentsOperand ()
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand ()
 		     val stackTopDeref
@@ -974,17 +1032,35 @@ struct
 		    in
 		      (* flushing at far transfer *)
 		      (farTransfer live
-		       (AppendList.fromList
-			[(* stackTop = stackBottom + exnStack *)
-			 x86.Assembly.instruction_mov
-			 {dst = stackTop,
-			  src = stackBottom,
-			  size = pointerSize},
-			 x86.Assembly.instruction_binal
-			 {oper = x86.Instruction.ADD,
-			  dst = stackTop,
-			  src = exnStack,
-			  size = pointerSize}])
+		       (if !Control.profile <> Control.ProfileNone
+			  then (AppendList.fromList
+				[(* stackTopTemp = stackBottom + exnStack *)
+				 x86.Assembly.instruction_mov
+				 {dst = stackTopTemp,
+				  src = stackBottom,
+				  size = pointerSize},
+				 x86.Assembly.instruction_binal
+				 {oper = x86.Instruction.ADD,
+				  dst = stackTopTemp,
+				  src = exnStack,
+				  size = pointerSize},
+				 (* stackTop = stackTopTemp *)
+				 x86.Assembly.instruction_mov
+				 {dst = stackTop,
+				  src = stackTopTemp,
+				  size = pointerSize},
+				 profileStackTopCommit'])
+			  else (AppendList.fromList
+				[(* stackTop = stackBottom + exnStack *)
+				 x86.Assembly.instruction_mov
+				 {dst = stackTop,
+				  src = stackBottom,
+				  size = pointerSize},
+				 x86.Assembly.instruction_binal
+				 {oper = x86.Instruction.ADD,
+				  dst = stackTop,
+				  src = exnStack,
+				  size = pointerSize}]))
 		       (AppendList.single
 			(* jmp *(stackTop) *)
 			(x86.Assembly.instruction_jmp
@@ -1051,6 +1127,12 @@ struct
 				  val return = valOf return
 				  val _ = enque return
 				    
+				  val stackTopTemp
+				    = x86MLton.stackTopTempContentsOperand ()
+				  val stackTopTempMinusWordDeref'
+				    = x86MLton.stackTopTempMinusWordDeref ()
+				  val stackTopTempMinusWordDeref
+				    = x86MLton.stackTopTempMinusWordDerefOperand ()
 				  val stackTop 
 				    = x86MLton.gcState_stackTopContentsOperand ()
 				  val stackTopMinusWordDeref'
@@ -1073,26 +1155,55 @@ struct
 				     | NONE => live)
 				in
 				  (runtimeTransfer (LiveSet.toMemLocSet live)
-				   (AppendList.fromList
-				    [(* stackTop += bytes *)
-				     x86.Assembly.instruction_binal 
-				     {oper = x86.Instruction.ADD,
-				      dst = stackTop,
-				      src = bytes, 
-				      size = pointerSize},
-				     (* *(stackTop - WORD_SIZE) = return *)
-				     x86.Assembly.instruction_mov
-				     {dst = stackTopMinusWordDeref,
-				      src = Operand.immediate_label return,
-				      size = pointerSize},
-				     x86.Assembly.directive_force
-				     {commit_memlocs = MemLocSet.singleton 
-				                       stackTopMinusWordDeref',
-				      commit_classes = ClassSet.empty,
-				      remove_memlocs = MemLocSet.empty,
-				      remove_classes = ClassSet.empty,
-				      dead_memlocs = MemLocSet.empty,
-				      dead_classes = ClassSet.empty}])
+				   (if !Control.profile <> Control.ProfileNone
+				      then (AppendList.fromList
+					    [(* stackTopTemp = stackTop + bytes *)
+					     x86.Assembly.instruction_mov
+					     {dst = stackTopTemp,
+					      src = stackTop,
+					      size = pointerSize},
+					     x86.Assembly.instruction_binal
+					     {oper = x86.Instruction.ADD,
+					      dst = stackTopTemp,
+					      src = bytes,
+					      size = pointerSize},
+					     (* *(stackTopTemp - WORD_SIZE) = return *)
+					     x86.Assembly.instruction_mov
+					     {dst = stackTopTempMinusWordDeref,
+					      src = Operand.immediate_label return,
+					      size = pointerSize},
+					     x86.Assembly.directive_force
+					     {commit_memlocs = MemLocSet.singleton stackTopTempMinusWordDeref',
+					      commit_classes = ClassSet.empty,
+					      remove_memlocs = MemLocSet.empty,
+					      remove_classes = ClassSet.empty,
+					      dead_memlocs = MemLocSet.empty,
+					      dead_classes = ClassSet.empty},
+					     (* stackTop = stackTopTemp *)
+					     x86.Assembly.instruction_mov
+					     {dst = stackTop,
+					      src = stackTopTemp,
+					      size = pointerSize},
+					     profileStackTopCommit'])
+				      else (AppendList.fromList
+					    [(* stackTop += bytes *)
+					     x86.Assembly.instruction_binal 
+					     {oper = x86.Instruction.ADD,
+					      dst = stackTop,
+					      src = bytes, 
+					      size = pointerSize},
+					     (* *(stackTop - WORD_SIZE) = return *)
+					     x86.Assembly.instruction_mov
+					     {dst = stackTopMinusWordDeref,
+					      src = Operand.immediate_label return,
+					      size = pointerSize},
+					     x86.Assembly.directive_force
+					     {commit_memlocs = MemLocSet.singleton stackTopMinusWordDeref',
+					      commit_classes = ClassSet.empty,
+					      remove_memlocs = MemLocSet.empty,
+					      remove_classes = ClassSet.empty,
+					      dead_memlocs = MemLocSet.empty,
+					      dead_classes = ClassSet.empty}]))
 				   (AppendList.single
 				    (Assembly.directive_force
 				     {commit_memlocs = LiveSet.toMemLocSet live,

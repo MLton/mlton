@@ -9,6 +9,7 @@
 	word checkTemp;							\
 	word divTemp;							\
 	struct GC_state gcState;					\
+	word stackTopTemp;						\
 	word c_stackP;							\
 	char cReturnTempB;						\
 	word cReturnTempL;						\

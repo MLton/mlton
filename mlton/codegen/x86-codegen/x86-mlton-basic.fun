@@ -72,6 +72,7 @@ struct
 
 	val GCState = new "GCState"
 	val GCStateHold = new "GCStateHold"
+	val GCStateVolatile = new "GCStateVolatile"
 	  
 	val ThreadStack = new "ThreadStack"
       end
@@ -79,6 +80,7 @@ struct
       val allClasses = ref x86.ClassSet.empty 
       val livenessClasses = ref x86.ClassSet.empty 
       val holdClasses = ref x86.ClassSet.empty 
+      val volatileClasses = ref x86.ClassSet.empty
       val runtimeClasses = ref x86.ClassSet.empty 
       val heapClasses = ref x86.ClassSet.empty
       val cstaticClasses = ref x86.ClassSet.empty 
@@ -100,6 +102,7 @@ struct
 		     StaticNonTemp::
 		     GCState::
 		     GCStateHold::
+		     GCStateVolatile::
 		     ThreadStack::
 		     nil)
 
@@ -123,6 +126,15 @@ struct
 	            x86.ClassSet.fromList
 		    (
 		     GCStateHold::
+(*
+		     GCStateVolatile::
+*)
+		     nil)
+
+	    val _ = volatileClasses :=
+	            x86.ClassSet.fromList
+		    (
+		     GCStateVolatile::
 		     nil)
 
 	    val _ = runtimeClasses :=
@@ -133,6 +145,7 @@ struct
 		     Globals::
 		     GCState::
 		     GCStateHold::
+		     GCStateVolatile::
 		     ThreadStack::
 		     nil)
 
@@ -375,6 +388,21 @@ struct
      make (Field.StackTop, pointerSize, Classes.GCStateHold)
 
   local
+    val stackTopTemp = 
+      Immediate.label (Label.fromString "stackTopTemp")
+    val stackTopTempContents = 
+      makeContents {base = stackTopTemp,
+		    size = wordSize,
+		    class = Classes.StaticTemp} 
+    val stackTopTempContentsOperand = 
+      Operand.memloc (stackTopTempContents)
+  in
+    val stackTopTemp = fn () => stackTopTemp
+    val stackTopTempContents = fn () => stackTopTempContents
+    val stackTopTempContentsOperand = fn () => stackTopTempContentsOperand
+  end
+
+  local
      fun make (contents, class) () =
 	Operand.memloc (MemLoc.simple {base = contents (),
 				       index = Immediate.const_int 0,
@@ -386,8 +414,9 @@ struct
 	make (gcState_frontierContents, Classes.Heap)
      val gcState_stackTopDerefOperand =
 	make (gcState_stackTopContents, Classes.Stack)
+     val stackTopTempDerefOperand =
+	make (stackTopTempContents, Classes.Stack)
   end
-				       
 
   fun gcState_stackTopMinusWordDeref () =
      MemLoc.simple {base = gcState_stackTopContents (), 
@@ -397,6 +426,15 @@ struct
 		    class = Classes.Stack}
   fun gcState_stackTopMinusWordDerefOperand () =
      Operand.memloc (gcState_stackTopMinusWordDeref ())
+
+  fun stackTopTempMinusWordDeref () =
+     MemLoc.simple {base = stackTopTempContents (), 
+		    index = Immediate.const_int ~1,
+		    scale = wordScale,
+		    size = pointerSize,
+		    class = Classes.Stack}
+  fun stackTopTempMinusWordDerefOperand () =
+     Operand.memloc (stackTopTempMinusWordDeref ())
 
   fun gcState_currentThread_exnStackContents () =
      MemLoc.simple {base = gcState_currentThreadContents (),

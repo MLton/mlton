@@ -58,12 +58,14 @@ signature X86_MLTON_BASIC =
 	  
 	val GCState : x86.MemLoc.Class.t
 	val GCStateHold : x86.MemLoc.Class.t
+	val GCStateVolatile : x86.MemLoc.Class.t
 	  
 	val ThreadStack : x86.MemLoc.Class.t
 	  
 	val allClasses : x86.ClassSet.t ref
 	val livenessClasses : x86.ClassSet.t ref
 	val holdClasses : x86.ClassSet.t ref
+	val volatileClasses : x86.ClassSet.t ref
 	val runtimeClasses : x86.ClassSet.t ref
 	val heapClasses : x86.ClassSet.t ref
 	val cstaticClasses : x86.ClassSet.t ref
@@ -123,4 +125,11 @@ signature X86_MLTON_BASIC =
     val gcState_stackTopDerefOperand: unit -> x86.Operand.t
     val gcState_stackTopMinusWordDeref: unit -> x86.MemLoc.t
     val gcState_stackTopMinusWordDerefOperand: unit -> x86.Operand.t
+
+    val stackTopTemp: unit -> x86.Immediate.t
+    val stackTopTempContents: unit -> x86.MemLoc.t
+    val stackTopTempContentsOperand: unit -> x86.Operand.t
+    val stackTopTempDerefOperand: unit -> x86.Operand.t
+    val stackTopTempMinusWordDeref: unit -> x86.MemLoc.t
+    val stackTopTempMinusWordDerefOperand: unit -> x86.Operand.t
   end

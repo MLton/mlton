@@ -23,6 +23,12 @@ struct
 		     in
 		       ClassSet.contains(trackClasses, MemLoc.class memloc)
 		     end
+  fun volatile memloc = let
+			  val volatileClasses 
+			    = !x86MLton.Classes.volatileClasses
+		     in
+		       ClassSet.contains(volatileClasses, MemLoc.class memloc)
+		     end
 
   fun mkBorder c
     = AppendList.single
@@ -336,11 +342,16 @@ struct
 		  then REMOVE
 		  else commit
 
+	    val default = case sawNothing future
+			    of REMOVE => REMOVE
+			     | DEAD => DEAD
+			     | commit => check commit
 	  in
-	    case sawNothing future
-	      of REMOVE => REMOVE
-	       | DEAD => DEAD
-	       | commit => check commit
+	    if volatile memloc
+	      then case default
+		     of REMOVE => REMOVE
+		      | _ => COMMIT
+	      else default
 	  end
 
       val split
@@ -749,6 +760,40 @@ struct
       type t = {entries: value list,
 		reserved: Register.t list,
 		fltstack: fltvalue list}
+
+      fun unique (registerAllocation as {entries, reserved, fltstack}: t)
+	= let
+	    fun check_entries (entries: value list, res) =
+	      case entries of
+		[] => res
+	      | (value as {register, memloc, ...})::entries =>
+		  check_entries
+		  (entries,
+		   List.foldr
+		   (entries, res, 
+		    fn ({register = register',
+			 memloc = memloc', ...}, res) =>
+		    res 
+		    andalso (not (Register.coincide (register, register')))
+		    andalso (not (MemLoc.eq (memloc, memloc')))))
+	    fun check_fltstack (fltstack: fltvalue list, res) =
+	      case fltstack of
+		[] => res
+	      | (value as {fltregister, memloc, ...})::fltstack =>
+		  check_fltstack
+		  (fltstack,
+		   List.foldr
+		   (fltstack, res, 
+		    fn ({fltregister = fltregister',
+			 memloc = memloc', ...}, res) =>
+		    res 
+		    andalso (not (FltRegister.eq (fltregister, fltregister')))
+		    andalso (not (MemLoc.eq (memloc, memloc')))))
+	  in
+	    check_entries(entries, true)
+	    andalso
+	    check_fltstack(fltstack, true)
+	  end
 
       fun toString (registerAllocation as {entries, reserved, fltstack}: t) 
 	= let
@@ -3798,6 +3843,9 @@ struct
 	       registerAllocation: t}
 	= let
 	    val ra = registerAllocation 
+	    val _ = Assert.assert
+	            ("pre: " ^ (toString ra),
+		     fn () => unique ra)
 
 	    val dead_memlocs = dead
 	    val commit_memlocs = commit
@@ -4001,6 +4049,9 @@ struct
 		registerAllocation: t}
 	= let 
 	    val ra = registerAllocation
+	    val _ = Assert.assert
+	            ("post: " ^ (toString ra),
+		     fn () => unique ra)
 
 	    val (final_uses_registers,
 		 final_defs_registers,
@@ -8766,8 +8817,8 @@ struct
                      | _ => default ()
 		end
              | pFLDC {oper, dst, size}
-             (* Pseudo floating-point load constant.
-	      *)
+	       (* Pseudo floating-point load constant.
+	        *)
              => let
 		  val {uses,defs,kills} 
 		    = Instruction.uses_defs_kills instruction
@@ -8824,8 +8875,8 @@ struct
 		   registerAllocation = registerAllocation}
 		end
 	     | pFMOVFI {src, dst, srcsize, dstsize}
-	     (* Pseudo floating-point from integer.
-	      *)
+	       (* Pseudo floating-point from integer.
+		*)
 	     => let
 		  val {uses,defs,kills} 
 		    = Instruction.uses_defs_kills instruction
@@ -8901,8 +8952,8 @@ struct
 		   registerAllocation = registerAllocation}
 		end
 	     | pFMOVTI {src, dst, srcsize, dstsize}
-	     (* Pseudo floating-point to integer.
-	      *)
+	       (* Pseudo floating-point to integer.
+		*)
 	     => let
 		  val {uses,defs,kills} 
 		    = Instruction.uses_defs_kills instruction
