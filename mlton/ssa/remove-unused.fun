@@ -173,8 +173,9 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 			    sideEffects: SideEffects.t,
 			    terminates: Terminates.t,
 			    fails: Fails.t,
-			    bug: Label.t option ref,
-			    bugConts: (Type.t vector * Label.t) list ref,
+			    bugLabel: Label.t option ref,
+			    bugWrappers: (Type.t vector * Label.t) list ref,
+			    retLabel: Label.t option ref,
 			    wrappers: Block.t list ref},
 	   set = setFuncInfo, ...}
 	= Property.getSetOnce
@@ -217,10 +218,11 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 
 	val argsFunc = #args o funcInfo
 	val returnsFunc = #returns o funcInfo
-
-	val (bugFunc, bugFunc') = make #bug
-	val (bugContsFunc, bugContsFunc') = make #bugConts
 	val (wrappersFunc, wrappersFunc') = make #wrappers
+
+	val (bugLabel, bugLabel') = make #bugLabel
+	val (bugWrappers, bugWrappers') = make #bugWrappers
+	val (retLabel, retLabel') = make #retLabel
       end
 
       val {get = labelInfo: Label.t -> 
@@ -376,7 +378,8 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 				       (cons,
 					fn {con, ...}
 					 => if Vector.exists
-					       (cases, fn (c, _) => Con.equals(c, con))
+					       (cases, 
+						fn (c, _) => Con.equals(c, con))
 					      then ()
 					      else whenConedCon(con, visitLabelTh l))
 			       end
@@ -443,8 +446,9 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 					sideEffects = SideEffects.new (),
 					terminates = Terminates.new (),
 					fails = Fails.new (),
-					bug = ref NONE,
-					bugConts = ref [],
+					bugLabel = ref NONE,
+					bugWrappers = ref [],
+					retLabel = ref NONE,
 					wrappers = ref []});
 		     whenUsedFunc(name, visitLabelTh start);
 		     Vector.foreach
@@ -534,60 +538,6 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		   else SOME (Datatype.T {tycon = tycon, cons = cons})
 	       end)
 
-      fun getBugFunc f
-	= case bugFunc' f
-	    of SOME l => l
-	     | NONE
-	     => let
-		  val l = Label.newNoname ()
-		  val block = Block.T {label = l,
-				       args = Vector.new0 (),
-				       statements = Vector.new0 (),
-				       transfer = Bug}
-		  val _ = bugFunc f := SOME l
-		  val _ = List.push(wrappersFunc f, block)
-		in
-		  l
-		end
-
-      fun getBugContFunc (f, args)
-	= let
-	    val tys = Vector.keepAllMap
-	              (args, fn (x, ty) => if isUsedVar x
-					     then SOME ty
-					     else NONE)
-	  in
-	    case List.peek
-	         (bugContsFunc' f,
-		  fn (tys', l')
-		   => Vector.length tys' = Vector.length tys
-		      andalso
-		      Vector.forall2
-		      (tys', tys,
-		       fn (ty', ty) => Type.equals(ty', ty)))
-	      of SOME (_, l') => l'
-	       | NONE
-	       => let
-		    val l' = Label.newNoname ()
-		    val args' = Vector.keepAllMap
-		                (args,
-				 fn (x, ty) 
-				  => if isUsedVar x
-				       then SOME (Var.newNoname (), ty)
-				       else NONE)
-		    val (_, tys') = Vector.unzip args'
-		    val args'' = Vector.new0 ()
-		    val block = Block.T {label = l',
-					 args = args',
-					 statements = Vector.new0 (),
-					 transfer = Goto {dst = getBugFunc f,
-							  args = Vector.new0 ()}}
-		    val _ = List.push(bugContsFunc f, (tys', l'))
-		    val _ = List.push(wrappersFunc f, block)
-		  in
-		    l'
-		  end
-	  end
       fun getWrapperLabel (l, args)
 	= if Vector.forall2
 	     (args, argsLabel l,
@@ -640,21 +590,102 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 			   l'
 			 end
 		 end
+      val getContWrapperLabel = getWrapperLabel
+      val getConWrapperLabel = getWrapperLabel
+
       fun getOriginalWrapperLabel l
-	= getWrapperLabel (l, 
-			   Vector.map(argsLabel l, 
-				      fn (_, t) => let 
+	= getWrapperLabel 
+	  (l, Vector.map(argsLabel l, fn (_, t) => let 
 						     val x = Var.newNoname ()
 						   in
 						     useVar x;
 						     (x, t)
 						   end))
-      val getContWrapperLabel = getWrapperLabel
-      val getConWrapperLabel = getWrapperLabel
       val getHandlerWrapperLabel = getOriginalWrapperLabel
       val getPrimFailureWrapperLabel = getOriginalWrapperLabel
       val getPrimSuccessWrapperLabel = getOriginalWrapperLabel
 
+      fun getBugFunc f
+	= case bugLabel' f
+	    of SOME l => l
+	     | NONE
+	     => let
+		  val l = Label.newNoname ()
+		  val block = Block.T {label = l,
+				       args = Vector.new0 (),
+				       statements = Vector.new0 (),
+				       transfer = Bug}
+		  val _ = bugLabel f := SOME l
+		  val _ = List.push(wrappersFunc f, block)
+		in
+		  l
+		end
+      fun getBugContFunc (f, args)
+	= let
+	    val tys = Vector.keepAllMap
+	              (args, fn (x, ty) => if isUsedVar x
+					     then SOME ty
+					     else NONE)
+	  in
+	    case List.peek
+	         (bugWrappers' f,
+		  fn (tys', l')
+		   => Vector.length tys' = Vector.length tys
+		      andalso
+		      Vector.forall2
+		      (tys', tys,
+		       fn (ty', ty) => Type.equals(ty', ty)))
+	      of SOME (_, l') => l'
+	       | NONE
+	       => let
+		    val l' = Label.newNoname ()
+		    val args' = Vector.keepAllMap
+		                (args,
+				 fn (x, ty) 
+				  => if isUsedVar x
+				       then SOME (Var.newNoname (), ty)
+				       else NONE)
+		    val (_, tys') = Vector.unzip args'
+		    val args'' = Vector.new0 ()
+		    val block = Block.T {label = l',
+					 args = args',
+					 statements = Vector.new0 (),
+					 transfer = Goto {dst = getBugFunc f,
+							  args = Vector.new0 ()}}
+		    val _ = List.push(bugWrappers f, (tys', l'))
+		    val _ = List.push(wrappersFunc f, block)
+		  in
+		    l'
+		  end
+	  end
+
+      fun getRetFunc f
+	= case retLabel' f
+	    of SOME l => l
+	     | NONE
+	     => let
+		  val l = Label.newNoname ()
+		  val args = Vector.keepAllMap
+		             (returnsFunc f,
+			      fn (x,ty) => if isUsedVar x
+					     then SOME (x,ty)
+					     else NONE)
+		  val xs = Vector.map(args, fn (x,ty) => x)
+		  val block = Block.T {label = l,
+				       args = args,
+				       statements = Vector.new0 (),
+				       transfer = Return xs}
+		  val _ = retLabel f := SOME l
+		  val _ = List.push(wrappersFunc f, block)
+		  val _ = setLabelInfo(l, {used = Used.new (),
+					   catches = Catches.new (),
+					   func = f,
+					   args = returnsFunc f,
+					   wrappers = ref []})
+		in
+		  l
+		end
+      fun getRetContFunc (f, args) = getWrapperLabel (getRetFunc f, args)
 
       fun simplifyExp (e: Exp.t): Exp.t
 	= case e
@@ -678,32 +709,34 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 			     s: Statement.t 
 			     as Statement.T {var, ty, exp}): Statement.t option =
 	 let
-	    fun maybe (l, e) =
+	    fun maybe (l, th) =
 	       if doesCatchLabel l
-		  then SOME (Statement.T {var = var, ty = ty, exp = e})
+		  then SOME (Statement.T {var = var, ty = ty, exp = th ()})
 	       else NONE
 	 in     
-	    case exp of
-	       HandlerPop l => maybe (l, HandlerPop (getHandlerWrapperLabel l))
-	     | HandlerPush l => maybe (l, HandlerPush (getHandlerWrapperLabel l))
-	     | _ => let
-		      fun doit' var
-			= SOME (Statement.T {var = var,
-					     ty = ty,
-					     exp = simplifyExp exp})
-		      fun doit var'
-			= if Exp.maySideEffect exp
-			    then doit' var
-			    else if isSome var'
-				   then doit' var'
-				   else NONE
+	    case exp 
+	      of HandlerPop l 
+	       => maybe (l, fn () => HandlerPop (getHandlerWrapperLabel l))
+	       | HandlerPush l 
+	       => maybe (l, fn () => HandlerPush (getHandlerWrapperLabel l))
+	       | _ => let
+			fun doit' var
+			  = SOME (Statement.T {var = var,
+					       ty = ty,
+					       exp = simplifyExp exp})
+			fun doit var'
+			  = if Exp.maySideEffect exp
+			      then doit' var
+			      else if isSome var'
+				     then doit' var'
+				     else NONE
 		    in
 		      case var
 			of SOME var => if isUsedVar var
 					 then doit (SOME var)
 					 else doit NONE
 			 | NONE => doit NONE
-		    end
+		      end
 	 end
       fun simplifyStatements (f: Func.t, 
 			      ss: Statement.t Vector.t): Statement.t Vector.t
@@ -715,7 +748,19 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	     => let
 		   val return =
 		      case return of 
-			 NONE => NONE
+			 NONE => 
+			    if Vector.forall2
+			       (returnsFunc f, returnsFunc func,
+				fn ((x,_), (y,_)) => isUsedVar x = isUsedVar y)
+			       then NONE
+			    else SOME {cont = if doesTerminateFunc func
+						 then getRetContFunc 
+						      (f, returnsFunc func)
+					      else getBugContFunc 
+						   (f, returnsFunc func),
+				       handler = if doesFailFunc func
+						    then Handler.CallerHandler
+						 else Handler.None}
 		       | SOME {cont, handler} =>
 			    let
 			       val cont =
@@ -809,6 +854,8 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 				  str ": ",
 				  record
 				  [("isUsedLabel", Bool.layout (isUsedLabel label)),
+				   ("doesCatchLabel",
+				    Bool.layout (doesCatchLabel label)),
 				   ("argsLabel",
 				    Vector.layout
 				    (Bool.layout o isUsedVar o #1)
