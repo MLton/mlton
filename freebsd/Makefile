@@ -55,7 +55,6 @@ BOOT_VER=      20040227
 BOOT_VER=      20040623
 .endif
 
-.PHONY: post-extract
 post-extract:
 	@${MKDIR} ${BOOT_WRKSRC}
 	@${TAR} xf ${DISTDIR}/${BOOT_DIST} --bzip -C ${BOOT_WRKSRC}
