@@ -365,6 +365,7 @@ static void showMem () {
 
 static void *mmapAnon (void *start, size_t length) {
 	static int fd = -1;
+	int flags;
 	void *result;
 
 #if USE_VIRTUAL_ALLOC
@@ -373,15 +374,16 @@ static void *mmapAnon (void *start, size_t length) {
 	if (NULL == result)
 		result = (void*)-1;
 #elif USE_MMAP
+	flags = MAP_PRIVATE | MAP_ANON;
 #if (defined (__sun__))
 	/* On Solaris 5.7, MAP_ANON causes EINVAL and mmap requires a file 
 	 * descriptor. 
 	 */ 
+	flags &= ^MAP_ANON;
 	if (-1 == fd)
 		fd = open ("/dev/zero", O_RDONLY);
 #endif
-	result = mmap (start, length, PROT_READ | PROT_WRITE, 
-			MAP_PRIVATE, fd, 0);
+	result = mmap (start, length, PROT_READ | PROT_WRITE, flags, fd, 0);
 #endif	
 	if (DEBUG_MEM)
 		fprintf (stderr, "0x%08x = mmapAnon (0x%08x, %s)\n",
