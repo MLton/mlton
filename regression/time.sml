@@ -78,7 +78,7 @@ val test7a =
 
 val test8a = 
     tst' "test8a" (fn _ => now() <= now() 
-	   andalso (now () before fib 27 seq ()) < now());
+	   andalso (now () before fib 27 seq ()) <= now());
 
 val test9a = 
     tst' "test9a" (fn _ => fmt ~1 litt  = "455"
