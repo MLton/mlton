@@ -615,6 +615,9 @@ structure Chunk =
 
       fun layouts (c as T {blocks, ...}, output : Layout.t -> unit) =
 	 Vector.foreach (blocks, fn block => Block.layouts (block, output))
+
+      fun clear (T {blocks, ...}) =
+	 Vector.foreach (blocks, Block.clear)
    end
 
 structure ProfileInfo =
@@ -625,6 +628,9 @@ structure ProfileInfo =
 			sourceSeqsIndex: int} vector,
 	       sourceSeqs: int vector vector,
 	       sources: SourceInfo.t vector}
+
+      fun clear (T {labels, ...}) =
+	 Vector.foreach (labels, ProfileLabel.clear o #label)
    end
 
 structure Program =
@@ -642,6 +648,10 @@ structure Program =
 			 profileInfo: ProfileInfo.t,
 			 reals: (Global.t * string) list,
 			 strings: (Global.t * string) list}
+
+      fun clear (T {chunks, profileInfo, ...}) =
+	 (List.foreach (chunks, Chunk.clear)
+	  ; ProfileInfo.clear profileInfo)
 
       fun frameSize (T {frameLayouts, ...},
 		     FrameInfo.T {frameLayoutsIndex, ...}) =
@@ -699,7 +709,8 @@ structure Program =
 	       doesDefine
 	 end
       
-      fun typeCheck (T {chunks, frameLayouts, frameOffsets, intInfs, main,
+      fun typeCheck (program as
+		     T {chunks, frameLayouts, frameOffsets, intInfs, main,
 			maxFrameSize, objectTypes,
 			profileInfo = ProfileInfo.T {frameSources,
 						     labels = profileLabels,
@@ -715,6 +726,15 @@ structure Program =
 		("profileLabes",
 		 fn () => 0 <= i andalso i < maxProfileLabel,
 		 fn () => Int.layout i))
+	    local
+	       val {get, set, ...} =
+		  Property.getSetOnce
+		  (ProfileLabel.plist, Property.initConst false)
+	       val _ = Vector.foreach (profileLabels, fn {label, ...} =>
+				       set (label, true))
+	    in
+	       val profileLabelIsDefined = get
+	    end
 	    val _ =
 	       let
 		  val maxFrameSourceSeq = Vector.length sourceSeqs
@@ -985,12 +1005,9 @@ structure Program =
 			end
 		   | ProfileLabel l =>
 			if !Control.profile = Control.ProfileTime
-			   then
-			      if Vector.exists
-				 (profileLabels, fn {label, ...} =>
-				  ProfileLabel.equals (l, label))
-				 then SOME alloc
-			      else NONE
+			   then if profileLabelIsDefined l
+				   then SOME alloc
+				else NONE
 			else SOME alloc
 		   | SetExnStackLocal {offset} =>
 			(checkOperand
@@ -1270,6 +1287,7 @@ structure Program =
 		   (blocks, fn b =>
 		    check' (b, "block", blockOk, Block.layout))
 		end)
+	    val _ = clear program
 	 in
 	    ()
 	 end handle Err.E e => (Layout.outputl (Err.layout e, Out.error)

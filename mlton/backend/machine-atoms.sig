@@ -116,9 +116,11 @@ signature MACHINE_ATOMS =
 	 sig
 	    type t
 
+	    val clear: t -> unit
 	    val equals: t * t -> bool
 	    val layout: t -> Layout.t
 	    val new: unit -> t
+	    val plist: t -> PropertyList.t
 	    val toString: t -> string
 	 end
 
