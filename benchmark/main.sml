@@ -488,7 +488,7 @@ fun main args =
 					     bench = b) of
 				NONE => ~1.0
 			      | SOME {value = v, ...} => value / v} :: ac)
-		     val _ = show ("run time ratio", runs, r2s)
+		     val _ = show ("run time ratio", ratios, r2s)
 		     val _ = show ("size", sizes, i2s)
 		     val _ = show ("compile time", compiles, r2s)
 		     val _ = show ("run time", runs, r2s)
