@@ -10,7 +10,7 @@
  * are "used" at exit.  
  * This is "optimized" for restoration of functions with small numbers of violating
  * variables -- use bool vectors to represent sets of violating variables.
- * Also, we use a Promize.t to suspend part of the dominance frontier computation.
+ * Also, we use a Promise.t to suspend part of the dominance frontier computation.
  *
  * Requirements: no violation in globals; this is checked.
  *)
@@ -286,10 +286,8 @@ fun restoreFunction (globals: Statement.t vector)
 		      (transfer, fn l => 
 		       List.push (LabelInfo.preds (labelInfo l), label))
 
-
 	      val defs = Array.new (numViolations, false)
 	      val uses = Array.new (numViolations, false)
-	      val live = Array.new (numViolations, false)
 	      fun addDef x
 		= let 
 		    val vi = varInfo x
@@ -325,7 +323,7 @@ fun restoreFunction (globals: Statement.t vector)
 	      val _ = Vector.foreach (args, addDef o #1)
 	      val _ = LabelInfo.defs li := Array.toVector defs
 	      val _ = LabelInfo.uses li := Array.toVector uses
-	      val _ = LabelInfo.live li := live
+	      val _ = LabelInfo.live li := Array.new (numViolations, false)
 
 	      val _ = Int.inc dtindex
 	      val dtindexMin = !dtindex
@@ -386,12 +384,15 @@ fun restoreFunction (globals: Statement.t vector)
 
 	       fun doit (l,li)
 		 = let
+		     val uses = LabelInfo.uses' li
 		     val defs = LabelInfo.defs' li
 		     val live = LabelInfo.live' li
 		   in
-		     if Vector.sub(defs, index)
+		     if Array.sub (live, index)
 		        orelse
-			Array.sub (live, index)
+			(Vector.sub(defs, index)
+			 andalso
+			 not (Vector.sub (uses, index)))
 		       then ()
 		       else (Array.update(live, index, true) ;
 			     List.foreach (LabelInfo.preds' li, enque))
