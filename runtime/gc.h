@@ -205,8 +205,6 @@ typedef struct GC_thread {
  */
 
 typedef struct GC_heap {
-	pointer oldGen;
-	uint oldGenSize;
 	uint size;
 	pointer start;		/* start of memory area */
 } *GC_heap;
@@ -307,6 +305,7 @@ typedef struct GC_state {
 	 * instead of the nursery, if possible.
 	 */
 	W32 oldGenArraySize; 
+	uint oldGenSize;
 	uint pageSize; /* bytes */
 	W32 ram;		/* ramSlop * totalRam */
 	float ramSlop;
