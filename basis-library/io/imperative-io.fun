@@ -245,7 +245,7 @@ functor ImperativeIOExtraFile
 	  newIn {fd = fd, 
 		 name = file}
 	end
-        handle exn => liftExn file "newIn" exn
+        handle exn => liftExn file "openIn" exn
       val newIn = fn (fd, name) => newIn {fd = fd, name = name}
       val inFd = SIO.inFd o getInstream
    end

@@ -274,7 +274,7 @@ functor FastImperativeIOExtraFile
 	  newIn {fd = fd, 
 		 name = file}
 	end
-        handle exn => liftExn file "newIn" exn
+        handle exn => liftExn file "openIn" exn
       val newIn = fn (fd, name) => newIn {fd = fd, name = name}
       fun inFd is = withIn (is, BI.inFd, SIO.inFd)
    end
