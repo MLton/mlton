@@ -139,7 +139,7 @@ install:
 	$(CP) -r $(LIB)/. $(TLIB)
 	(								\
 		cd $(BIN) &&						\
-		sed "/^lib=/s;\".*\";'$(prefix)/$(ULIB)';" 		\
+		sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 		\
 			<mlton >$(TBIN)/mlton &&			\
 		chmod +x $(TBIN)/mlton &&				\
 		$(CP) $(LEX) $(PROF) $(YACC) $(TBIN)/			\
