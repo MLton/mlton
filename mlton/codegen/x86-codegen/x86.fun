@@ -2909,14 +2909,28 @@ struct
 
       val uses_defs_kills
 	= fn Assume {assumes}
-           => {uses = [], defs = [], kills = []}
+	   => List.fold
+	      (assumes,
+	       {uses = [], defs = [], kills = []},
+	       fn ({register, memloc, ...},
+		   {uses, defs, kills})
+	        => {uses = (Operand.memloc memloc)::uses,
+		    defs = (Operand.register register)::defs, 
+		    kills = []})
 	   | FltAssume {assumes}
-           => {uses = [], defs = [], kills = []}
+	   => List.fold
+	      (assumes,
+	       {uses = [], defs = [], kills = []},
+	       fn ({memloc, ...},
+		   {uses, defs, kills})
+	        => {uses = (Operand.memloc memloc)::uses,
+		    defs = defs, 
+		    kills = []})
 	   | Cache {caches}
 	   => List.fold
 	      (caches,
 	       {uses = [], defs = [], kills = []},
-	       fn ({register, memloc, reserve},
+	       fn ({register, memloc, ...},
 		   {uses, defs, kills})
 	        => {uses = (Operand.memloc memloc)::uses,
 		    defs = (Operand.register register)::defs, 
@@ -2925,7 +2939,7 @@ struct
 	   => List.fold
 	      (caches,
 	       {uses = [], defs = [], kills = []},
-	       fn ({memloc},
+	       fn ({memloc, ...},
 		   {uses, defs, kills})
 	        => {uses = (Operand.memloc memloc)::uses,
 		    defs = defs, 
