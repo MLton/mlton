@@ -12,7 +12,7 @@
  * variables -- use bool vectors to represent sets of violating variables.
  * Also, we use a Promize.t to suspend part of the dominance frontier computation.
  *
- * Requirements: no violation in globals
+ * Requirements: no violation in globals; this is checked.
  *)
 
 functor Restore (S: RESTORE_STRUCTS): RESTORE =
