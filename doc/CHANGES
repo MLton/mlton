@@ -1,5 +1,9 @@
 Here are the changes from version 20010806 to version VERSION.
 
+* 2001-10-01
+  - Fixed register allocation bug with fucom instruction.  Was
+    allowing fucomp when the first source was not removable.
+
 * 2001-9-22
   - Bug fixes found from Ramsey's lrtl in contify.fun and unused-args.fun, both
     of which caused compile-time exceptions to be raised.
