@@ -44,7 +44,7 @@ basis library implementation has special properties:
   * it terminates
   * it performs no I/O
 The dead code elimination includes the minimal set of
-declarations from the basis so that their are no free variables in the
+declarations from the basis so that there are no free variables in the
 user program (or basis).  It has a special hack to include all
 bindings of the form 
 	
