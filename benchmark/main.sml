@@ -477,13 +477,23 @@ fun main args =
 	       fun r2s r = Real.format (r, Real.Format.fix (SOME 1))
 	       val i2s = Int.toCommaString
 	       val s2s = fn s => s
+	       val failures = ref []
 	       fun show {compiles, runs, sizes, errs, outs} =
 		  let
 		     val out = Out.standard
-		     val _ = List.foreach
-			(compilers,
-			 fn {name, abbrv, ...}
-			 => Out.output (out, concat [abbrv, " -- ", name, "\n"]))
+		     val _ =
+			List.foreach
+			(compilers, fn {name, abbrv, ...} =>
+			 Out.output (out, concat [abbrv, " -- ", name, "\n"]))
+		     val _ =
+			case !failures of
+			   [] => ()
+			 | fs =>
+			    Out.output
+			    (out,
+			     concat ["WARNING: ", base, " failed on: ",
+				     concat (List.separate (fs, ", ")),
+				     "\n"])
 		     fun show (title, data: 'a data, toString) =
 			let
 			   val _ = Out.output (out, concat [title, "\n"])
@@ -611,6 +621,11 @@ fun main args =
 				   val {compile, run, size} =
 				      ignoreOutput
 				      (fn () => test {bench = bench})
+				   val _ =
+				      if name = base
+					 andalso Option.isNone run
+					 then List.push (failures, bench)
+				      else ()
 				   val out = 
 				      case !outData of 
 					 NONE => NONE
