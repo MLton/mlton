@@ -678,9 +678,11 @@ int Int_bogus;
 		gcState.stackLimit =						\
 			gcState.stackBottom + t->stack->reserved		\
 			- 2 * gcState.maxFrameSize;				\
-		gcState.canHandle--; /* atomicEnd */				\
+		/* Thread_atomicEnd () */					\
+		gcState.canHandle--;						\
 		if (gcState.signalIsPending && 0 == gcState.canHandle)		\
 			gcState.limit = 0;					\
+		/* Thread_atomicEnd () */					\
 		Return();							\
 		ret:								\
 		stackTop -= (frameSize);					\
