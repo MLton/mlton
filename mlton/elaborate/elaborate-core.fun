@@ -1544,7 +1544,13 @@ fun elaborateDec (d, {env = E,
 				     else
 					Control.error
 					(expRegion,
-					 seq [str "can't bind type variables: ",
+					 seq [str
+					      (concat
+					       ["can't bind type variable",
+						if Vector.length tyvars > 1
+						   then "s"
+						else "",
+						": "]),
 					      seq (Layout.separateRight
 						   (Vector.toListMap (tyvars, Tyvar.layout),
 						    ", "))],
