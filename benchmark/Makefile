@@ -11,7 +11,8 @@ $(NAME): $(shell $(MLTON) -stop f $(NAME).cm)
 	strip $(NAME)
 	size $(NAME)
 
-$(NAME).cm:
+.PHONY: $(NAME)_cm
+$(NAME)_cm:
 	(								\
 		echo 'Group is' &&					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' &&	\
