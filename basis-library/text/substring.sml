@@ -11,184 +11,102 @@ structure Substring: SUBSTRING =
 
       open Substring0
 
-(*
-      datatype t = T of {str: string,
-			 start: int,
-			 size: int}
-      type substring = t
-
-      fun base (T {str, start, size}) = (str, start, size)
-	 
-      val string = String.substring o base
-
-      fun extract (slice as (str, start, _)): t =
-	 let val max = String0.checkSlice slice
-	 in T {str = str,
-	       start = start,
-	       size = max -? start}
-	 end
-      
+      val size = length
+      val extract = slice
       fun substring (s, i, j) = extract (s, i, SOME j)
-
-      fun all s = substring (s, 0, String.size s)
-
-      fun isEmpty (T {size, ...}) = size = 0
-
-      fun getc (T {str, start, size}) =
-	 if size = 0
-	    then NONE
-	 else SOME (String.sub (str, start),
-		    T {str = str,
-		       start = start +? 1,
-		       size = size -? 1})
-
-      fun first ss =
-	 case getc ss of
-	    NONE => NONE
-	  | SOME (c, _) => SOME c
+      val all = full
+      val string = copy
+      val getc = getItem
+      fun first ss = Option.map #1 (getItem ss)
 
       fun triml k =
 	 if Primitive.safe andalso k < 0
 	    then raise Subscript
 	 else
-	    (fn T {str, start, size} =>
-	     if k > size
-		then T {str = str, start = start +? size, size = 0}
-	     else T {str = str, start = start +? k, size = size -? k})
-
+	    (fn ss =>
+	     let 
+	        val (s, start, len) = base ss
+	     in
+	        if k > len
+		   then unsafeSubstring (s, start +? len, 0)
+		else unsafeSubstring (s, start +? k, len -? k)
+	     end)
       fun trimr k =
 	 if Primitive.safe andalso k < 0
 	    then raise Subscript
 	 else
-	    (fn T {str, start, size} =>
-	     T {str = str,
-	       start = start,
-	       size = if k > size then 0 else size -? k})
+	    (fn ss =>
+	     let 
+	        val (s, start, len) = base ss
+	     in
+	        unsafeSubstring (s, start, if k > len then 0 else len -? k)
+	     end)
 
-      fun slice (T {str, start, size}, i, opt) =
-	 case opt of
-	    SOME m =>
-	       if Primitive.safe andalso 0 <= i
-		  andalso 0 <= m
-		  andalso i <= size -? m
-		  then T {str = str, start = start +? i, size = m}
-	       else raise Subscript
-	  | NONE =>
-	       if Primitive.safe andalso 0 <= i andalso i <= size
-		  then T {str = str, start = start +? i, size = size -? i}
-	       else raise Subscript
-		
-      fun sub (T {str, start, size}, i) =
-	 if Primitive.safe andalso Int.geu (i, size)
-	    then raise Subscript
-	 else String.sub (str, start +? i)
+      val slice = subslice
 
-      fun size (T {size, ...}) = size
+      fun concatWith sep sss =
+	 (case sss of
+	     [] => ""
+	   | [s] => string s
+	   | ss::sss => 
+	        List.foldl (fn (ss,res) => String0.concat [res, sep, string ss]) 
+		           (string ss) sss)
 
-      fun concat substrings =
-	 let
-	    val size = List.foldl (fn (ss, n) => n +? size ss) 0 substrings
-	    val dst = Primitive.Array.array size
-	 in
-	    List.foldl (fn (T {str, start, size}, n) =>
-			let
-			   fun loop i =
-			      if i >= size then ()
-			      else (Array.update (dst, n +? i,
-						  String.sub (str, start +? i))
-				    ; loop (i + 1))
-			in loop 0;
-			   n +? size
-			end)
-	    0 substrings
-	    ; String.fromArray dst
+      fun explode s = foldr (op ::) [] s
+
+      val isPrefix = fn s => fn s' => isPrefix (op =) s s'
+      val isSubstring = fn s => fn s' => isSubsequence (op =) s s'
+      val isSuffix = fn s => fn s' => isSuffix (op =) s s'
+
+      fun compare (ss1,ss2) = collate Char.compare (ss1,ss2)
+
+      fun split (ss, i) =
+	 let val (s, start, len) = base ss
+	 in 
+	    (unsafeSubstring (s, start, i -? start),
+	     unsafeSubstring (s, i, len -? (i -? start)))
 	 end
-
-      val explode = String.explode o string
-
-      fun explode (T {str, start, size}) =
+      fun splitl f ss =
 	 let
-	    fun loop (i, l) =
-	       if i < start
-		  then l
-	       else loop (i -? 1, String.sub (str, i) :: l)
-	 in
-	    loop (start +? size -? 1, [])
-	 end
-
-      fun isPrefix str' (T {str, start, size}) =
-	 let
-	    val size' = String.size str'
-	    fun loop (i, i') =
-	       i' >= size'
-	       orelse (String.sub (str, i) = String.sub (str', i')
-		       andalso loop (i +? 1, i' + 1))
-	 in
-	    size' <= size andalso loop (start, 0)
-	 end
-
-      fun collate comp (T {str, start, size},
-			T {str=str', start=start', size=size'}) =
-	 let
-	    val max = start +? size
-	    val max' = start' +? size'
-	    fun loop (i, i') =
-	       if i >= max
-		  then if i' = max'
-			  then EQUAL
-		       else LESS
-	       else if i' >= max'
-		       then GREATER
-		    else (case comp (String.sub (str, i),
-				     String.sub (str', i')) of
-			     EQUAL => loop (i + 1, i' + 1)
-			   | r => r)
-	 in loop (start, start')
-	 end
-
-      val compare = collate Char.compare
-
-      fun split (T {str, start, size}, i) =
-	 (T {str = str, start = start, size = i -? start},
-	  T {str = str, start = i, size = size -? (i -? start)})
-
-      fun splitl f (ss as T {str, start, size}) =
-	 let
-	    val stop = start +? size
+	    val (s, start, len) = base ss
+	    val stop = start +? len
 	    fun loop i =
 	       if i >= stop
 		  then i
-	       else if f (String.sub (str, i))
-		       then loop (i + 1)
+	       else if f (String0.unsafeSub (s, i))
+		       then loop (i +? 1)
 		    else i
 	 in split (ss, loop start)
 	 end
-
-      fun splitr f (ss as T {str, start, size}) =
+      fun splitr f ss =
 	 let
+	    val (s, start, len) = base ss
 	    fun loop i =
 	       if i < start
 		  then start
-	       else if f (String.sub (str, i))
+	       else if f (String0.unsafeSub (s, i))
 		       then loop (i -? 1)
 		    else i +? 1
-	 in split (ss, loop (start +? size -? 1))
+	 in split (ss, loop (start +? len -? 1))
 	 end
-   
-      fun splitAt (T {str, start, size}, i) =
-	 if Primitive.safe andalso Int.gtu (i, size)
-	    then raise Subscript
-	 else (T {str = str, start = start, size = i},
-	       T {str = str, start = start +? i, size = size -? i})
+      fun splitAt (ss, i) =
+	 let val (s, start, len) = base ss
+	 in
+	    if Primitive.safe andalso Int.gtu (i, len)
+	       then raise Subscript
+	    else (unsafeSubstring (s, start, i),
+		  unsafeSubstring (s, start +? i, len -? i))
+	 end
 
-      fun takel p s = #1 (splitl p s)
       fun dropl p s = #2 (splitl p s)
-      fun taker p s = #2 (splitr p s)
       fun dropr p s = #1 (splitr p s)
-	     
-      fun position s' (ss as T {str=s, start, size}) =
+      fun takel p s = #1 (splitl p s)
+      fun taker p s = #2 (splitr p s)
+
+      fun position s' ss =
 	 let
-	    val size' = String.size s'
+	    val (s, start, size) = base ss
+            val size' = String0.size s'
 	    val max = start +? size -? size' +? 1
 	    (* loop returns the index of the front of suffix. *)
 	    fun loop i =
@@ -198,20 +116,59 @@ structure Substring: SUBSTRING =
 		       fun loop' j =
 			  if j >= size'
 			     then i
-			  else if String.sub (s, i +? j) = String.sub (s', j)
-				  then loop' (j + 1)
-			       else loop (i + 1)
+			  else if String0.unsafeSub (s, i +? j) = 
+			          String0.unsafeSub (s', j)
+				  then loop' (j +? 1)
+			       else loop (i +? 1)
 		    in loop' 0
 		    end
 	 in split (ss, loop start)
 	 end
 
-      fun span (T {str = s, start = i, size = n},
-	       T {str = s', start = i', size = n'}) =
-	 if s = s' andalso i' +? n' >= i
-	    then T {str = s, start = i, size = i' +? n' -? i}
-	 else raise Span
+      fun span (ss, ss') =
+	 let
+	    val (s, i, n) = base ss
+	    val (s', i', n') = base ss'
+	 in
+	    if Primitive.safe andalso (s <> s' orelse i' + n' < i)
+	       then raise Span
+	    else substring(s, i, (i'+n')-i)
+	 end
 
+      fun translate f ss =
+	 String0.concat (List.rev (foldl (fn (c, l) => f c :: l) [] ss))
+
+      local
+	 fun make finish p ss =
+	    let
+	       val (str, start, size) = base ss
+	       val max = start +? size
+	       fun loop (i, start, sss) =
+		  if i >= max
+		     then List.rev (finish (str, start, i, sss))
+		  else
+		     if p (String0.unsafeSub (str, i))
+			then loop (i +? 1, i +? 1, finish (str, start, i, sss))
+		     else loop (i +? 1, start, sss)
+	    in loop (start, start, []) 
+	    end
+      in
+	 fun tokens p ss =
+	    make (fn (str, start, stop, sss) =>
+		  if start = stop
+		     then sss
+		  else
+		     (unsafeSubstring (str, start, stop -? start))
+		     :: sss)
+	         p ss
+	 fun fields p ss = 
+	    make (fn (str, start, stop, sss) =>
+		  (unsafeSubstring (str, start, stop -? start))
+		  :: sss)
+	         p ss
+      end
+
+(*
       type cs = int
 	 
       fun reader (T {str, start, size}): (char, cs) Reader.reader =
@@ -225,45 +182,6 @@ structure Substring: SUBSTRING =
 	 case f (reader ss) 0 of
 	    NONE => NONE
 	  | SOME (a, _) => SOME a
-
-      local
-	 fun make finish p (T {str, start, size}) =
-	    let
-	       val max = start +? size
-	       fun loop (i, start, sss) =
-		  if i >= max
-		     then rev (finish (str, start, i, sss))
-		  else
-		     if p (String.sub (str, i))
-			then loop (i + 1, i + 1, finish (str, start, i, sss))
-		     else loop (i + 1, start, sss)
-	    in loop (start, start, []) 
-	    end
-      in
-	 val tokens = make (fn (str, start, stop, sss) =>
-			   if start = stop
-			      then sss
-			   else
-			      T {str = str, start = start, size = stop -? start}
-			      :: sss)
-	 val fields = make (fn (str, start, stop, sss) =>
-			   T {str = str, start = start, size = stop -? start}
-			   :: sss)
-      end
-
-      local
-	 fun make naturalFold f b (T {str, size, start}) =
-	    naturalFold (size, b, fn (i, b) => 
-			 f (String.sub (str, start +? i), b))
-      in
-	 fun foldl f = make Util.naturalFold f
-	 fun foldr f = make Util.naturalFoldDown f
-      end
-
-      fun app f ss = foldl (f o #1) () ss
-
-      fun translate f ss =
-	 String.concat (rev (foldl (fn (c, l) => f c :: l) [] ss))
 *)
    end
 

@@ -9,76 +9,19 @@ structure String: STRING_EXTRA =
    struct
       open String0
 
-      structure Char = Char
-
       fun explode s =
 	 let
 	    fun loop (i, l) =
 	       if i < 0 then l
-	       else loop (i - 1, sub (s, i) :: l)
-	 in loop (size s - 1, [])
+	       else loop (i -? 1, sub (s, i) :: l)
+	 in loop (size s -? 1, [])
 	 end
 
       fun translate f s = concat (List.map f (explode s))
 
-      fun isSubstring s s' =
-	 let
-	    val n = size s
-	    val n' = size s'
-	 in
-	    if n <= n'
-	       then let
-		       val n'' = n' - n
-		       fun loop (i, j) =
-			  if i > n''
-			     then false
-			  else if j >= n
-			     then true
-			  else if sub (s, j) = sub (s', i + j)
-			     then loop (i, j + 1)
-			  else loop (i + 1, 0)
-		    in
-		       loop (0, 0)
-		    end
-	    else false
-	 end
-      fun isPrefix s s' =
-	 let
-	    val n = size s
-	    val n' = size s'
-	 in
-	    if n <= n'
-	       then let
-		       fun loop (j) =
-			  if j >= n
-			     then true
-			  else if sub (s, j) = sub (s', j)
-			     then loop (j + 1)
-			  else false
-		    in
-		       loop (0)
-		    end
-	    else false
-	 end
-      fun isSuffix s s' =
-	 let
-	    val n = size s
-	    val n' = size s'
-	 in
-	    if n <= n'
-	       then let
-		       val n'' = n' - n
-		       fun loop (j) =
-			  if j >= n
-			     then true
-			  else if sub (s, j) = sub (s', n'' + j)
-			     then loop (j + 1)
-			  else false
-		    in
-		       loop (0)
-		    end
-	    else false
-	 end
+      val isPrefix = fn s => fn s' => isPrefix (op =) s s'
+      val isSubstring = fn s => fn s' => isSubsequence (op =) s s'
+      val isSuffix = fn s => fn s' => isSuffix (op =) s s'
 
       local
 	 fun make (tokens,name) p s =
@@ -89,24 +32,6 @@ structure String: STRING_EXTRA =
 	 val tokens = make (Reader.tokens, "tokens")
 	 val fields = make (Reader.fields, "fields")
       end
-
-(*   
-      fun collate comp (s, s') =
-	 let val n = size s
-	    val n' = size s'
-	    fun loop i =
-	       if i >= n
-		  then if i >= n'
-			  then EQUAL
-		       else LESS
-	       else if i >= n'
-		       then GREATER
-		    else (case comp (sub (s, i), sub (s', i)) of
-			     EQUAL => loop (i + 1)
-			   | r => r)
-	 in loop 0
-	 end
-*)
 
       val compare = collate Char.compare
 

@@ -69,6 +69,12 @@ Description of findi references appi when it should reference findi.
 MONO_ARRAY:
 CharArray has where type elem = char, not Char.char.
 
+MONO_ARRAY_SLICE:
+CharArraySlice has clause
+where type array = CharVector.vector
+which should be
+where type array = CharArray.array
+
 (In general, probably a good idea to look at the entire top-level
 structure/signature matches and choose a consistent usage of base
 types.  For example, Int:>INTEGER would seem to hide the top-level

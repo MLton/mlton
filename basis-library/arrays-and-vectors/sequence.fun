@@ -217,15 +217,14 @@ functor Sequence (S: sig
 			    | ans => ans)
 	       in loop (min1, min2)
 	       end
-	    fun toList (sl: 'a slice) = foldr (fn (a,l) => a::l) [] sl
-	    fun copy sl = map (fn x => x) sl
+	    fun copy (sl as {seq, start, len}) =
+	       if isMutable orelse (start <> 0 orelse len <> S.length seq)
+		  then map (fn x => x) sl
+	       else seq
 	    fun concat (sls: 'a slice list): 'a sequence =
 	       case sls of
 		  [] => fromArray (array 0)
-		| [sl as {seq, start, len}] => 
-		     if isMutable orelse (start <> 0 orelse len <> S.length seq)
-		        then copy sl
-		     else seq
+		| [sl] => copy sl
 		| sl::sls' =>
 		     let
 		        val n = List.foldl (fn (sl, s) => s + length sl) 0 sls
@@ -243,6 +242,72 @@ functor Sequence (S: sig
 				 in loop ac
 				 end)
 		     end
+	    fun toList (sl: 'a slice) = foldr (fn (a,l) => a::l) [] sl
+	    fun isSubsequence (eq: 'a elt * 'a elt -> bool)
+	                      (seq: 'a sequence)
+			      (sl: 'a slice) =
+	       let
+		  val n = S.length seq
+		  val n' = length sl
+	       in
+		  if n <= n'
+		     then let
+			     val n'' = n' - n
+			     fun loop (i, j) =
+			        if i > n''
+				   then false
+				else if j >= n
+				   then true
+				else if eq (S.sub (seq, j), unsafeSub (sl, i +? j))
+				   then loop (i, j +? 1)
+				else loop (i +? 1, 0)
+			  in
+			     loop (0, 0)
+			  end
+		  else false
+	       end
+	    fun isPrefix (eq: 'a elt * 'a elt -> bool)
+	                 (seq: 'a sequence)
+			 (sl: 'a slice) =
+	       let
+		  val n = S.length seq
+		  val n' = length sl
+	       in
+		  if n <= n'
+		     then let
+			     fun loop (j) =
+			        if j >= n
+				   then true
+				else if eq (S.sub (seq, j), unsafeSub (sl, j))
+				   then loop (j +? 1)
+				else false
+			  in
+			     loop (0)
+			  end
+		  else false
+	       end
+	    fun isSuffix (eq: 'a elt * 'a elt -> bool)
+	                 (seq: 'a sequence)
+			 (sl: 'a slice) =
+	       let
+		  val n = S.length seq
+		  val n' = length sl
+	       in
+		  if n <= n'
+		     then let
+			     val n'' = n' - n
+			     fun loop (j) =
+			        if j >= n
+				   then true
+				else if eq (S.sub (seq, j), unsafeSub (sl, n'' +? j))
+				   then loop (j +? 1)
+				else false
+			  in
+			     loop (0)
+			  end
+		  else false
+	       end
+
 	 end
 
       local
@@ -265,7 +330,6 @@ functor Sequence (S: sig
 	fun map' tabulate f = make (Slice.map' tabulate f)
 	fun mapi f = make (Slice.mapi f)
 	fun map f = make (Slice.map f)
-	fun copy seq = make (Slice.copy) seq
 	fun findi p = make (Slice.findi p)
 	fun find p = make (Slice.find p)
 	fun existsi p = make (Slice.existsi p)
@@ -273,8 +337,12 @@ functor Sequence (S: sig
 	fun alli p = make (Slice.alli p)
 	fun all p = make (Slice.all p)
 	fun collate cmp = make2 (Slice.collate cmp)
-	fun toList seq = make (Slice.toList) seq
+	fun copy seq = make (Slice.copy) seq
 	fun concat seqs = Slice.concat (List.map Slice.full seqs)
+	fun toList seq = make (Slice.toList) seq
+	fun isSubsequence eq seq = make (Slice.isSubsequence eq seq)
+	fun isPrefix eq seq = make (Slice.isPrefix eq seq)
+	fun isSuffix eq seq = make (Slice.isSuffix eq seq)
       end
     
       (* Depreciated *)

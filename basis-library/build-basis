@@ -33,12 +33,12 @@ integer/integer.sig
 integer/int32.sml
 text/char.sig
 text/char.sml
+text/substring.sig
+text/substring.sml
 text/string.sig
 text/string.sml
 misc/C.sig
 misc/C.sml
-text/substring.sig
-text/substring.sml
 integer/word.sig
 integer/word.fun
 integer/word32.sml
@@ -68,6 +68,8 @@ integer/pack-word.sig
 integer/pack32.sml
 text/byte.sig
 text/byte.sml
+text/text.sig
+text/text.sml
 real/pack-real.sig
 real/pack-real.sml
 

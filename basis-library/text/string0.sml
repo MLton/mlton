@@ -29,11 +29,13 @@ structure String0 =
 	    open Slice
 	    type char = char
 	    type string = string
+	    type substring = elem slice
 	    type elem = char
 	    type vector = string
-	    type substring = elem slice
+	    type slice = elem slice
+	    val unsafeExtract = unsafeSlice
+	    fun unsafeSubstring (s, i, j) = unsafeExtract (s, i, SOME j)
 	 end
-
 
       val maxSize = maxLen
 

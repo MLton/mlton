@@ -31,9 +31,10 @@ structure CharVector =
       structure MonoVectorSlice =
 	 struct
 	    open Substring0
-	    type elem = elem
-	    type vector = vector
+	    type elem = char
+	    type vector = string
 	    type slice = substring
+	    fun vector sl = copy sl
 	 end
    end
 structure CharVectorSlice = CharVector.MonoVectorSlice

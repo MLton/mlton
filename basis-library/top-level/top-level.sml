@@ -116,10 +116,11 @@ structure CharArray: MONO_ARRAY where type vector = CharVector.vector
                                 where type elem = Char.char = CharArray
 structure CharArraySlice: MONO_ARRAY_SLICE where type vector = CharVector.vector
                                            where type vector_slice = CharVectorSlice.slice
-                                           where type array = CharVector.vector
+                                           where type array = CharArray.array
                                            where type elem = Char.char = CharArraySlice
 structure CharArray2: MONO_ARRAY2 where type vector = CharVector.vector
                                   where type elem = Char.char = CharArray2
+structure Text: TEXT = Text
 (* Basis:
 structure Char:> CHAR
 structure String:> STRING where type string = CharVector.vector
@@ -140,6 +141,7 @@ structure CharArraySlice:> MONO_ARRAY_SLICE where type vector = CharVector.vecto
                                             where type elem = char
 structure CharArray2:> MONO_ARRAY2 where type vector = CharVector.vector
                                    where type elem = char
+structure Text:> TEXT = Text
 *)
 structure CommandLine: COMMAND_LINE = CommandLine
 structure Date: DATE = Date

@@ -20,8 +20,7 @@ signature STRING_CVT =
       val skipWS: (char, 'a) reader -> 'a -> 'a
 
       type cs
-      val scanString :
-	 ((char, cs) reader -> ('a, cs) reader) -> string -> 'a option
+      val scanString : ((char, cs) reader -> ('a, cs) reader) -> string -> 'a option
    end
 
 signature STRING_CVT_EXTRA =
