@@ -289,22 +289,22 @@ limbs of {\gmp} big integer.
 \begin{verbatim}
 signature MLTON_INT_INF =
    sig
-      type int
+      type t
 
-      val areSmall: int * int -> bool
-      val gcd: int * int -> int 
-      val isSmall: int -> bool
+      val areSmall: t * t -> bool
+      val gcd: t * t -> t
+      val isSmall: t -> bool
       datatype rep =
-          Big of word vector
-        | Small of Int.int
-      val rep: int -> rep
-      val size: int -> Int.int
+	 Big of word vector
+       | Small of int
+      val rep: t -> rep
+      val size: t -> int
    end
 \end{verbatim}
 
 \begin{description}
 
-\entry{type int}
+\entry{type t}
 the same as type {\tt IntInf.int}.
 
 \entry{areSmall (a, b)}

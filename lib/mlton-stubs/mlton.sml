@@ -124,6 +124,8 @@ structure MLton: MLTON =
       structure IntInf =
 	 struct
 	    open IntInf
+	       
+	    type t = IntInf.int
 
 	    datatype rep =
 	       Big of Word.word Vector.vector

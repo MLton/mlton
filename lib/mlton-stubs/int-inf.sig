@@ -1,15 +1,16 @@
+type int = Int.int
 type word = Word.word
    
 signature MLTON_INT_INF =
    sig
-      type int
+      type t
 
-       val areSmall: int * int -> bool
-       val gcd: int * int -> int 
-       val isSmall: int -> bool
-       datatype rep =
-	  Big of word vector
-	| Small of Int.int
-       val rep: int -> rep
-       val size: int -> Int.int
+      val areSmall: t * t -> bool
+      val gcd: t * t -> t
+      val isSmall: t -> bool
+      datatype rep =
+	 Big of word vector
+       | Small of int
+      val rep: t -> rep
+      val size: t -> int
    end

@@ -52,7 +52,11 @@ structure Cont = MLtonCont
 structure Exn = MLtonExn
 structure Finalizable = MLtonFinalizable
 structure GC = MLtonGC
-structure IntInf = IntInf
+structure IntInf =
+   struct
+      open IntInf
+      type t = int
+   end
 structure Itimer = MLtonItimer
 structure Platform = MLtonPlatform
 structure Pointer = MLtonPointer

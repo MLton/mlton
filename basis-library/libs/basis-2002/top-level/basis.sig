@@ -260,7 +260,7 @@ signature BASIS_2002 =
       structure SMLofNJ: SML_OF_NJ
       structure Unsafe: UNSAFE
 
-      sharing type MLton.IntInf.int = IntInf.int
+      sharing type MLton.IntInf.t = IntInf.int
       sharing type MLton.Signal.t = Posix.Signal.signal
 	 
       (* ************************************************** *)
