@@ -174,6 +174,7 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 	       end
 	    fun stripTrailingZeros ds =
 	       rev (#2 (stripLeadingZeros (rev ds)))
+	    exception Inf of 'a
 	    fun done (whole: int list,
 		      frac: int list,
 		      {digits: int list, negate: bool},
@@ -186,7 +187,7 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 			val e = List.foldl (fn (d, n) => n * 10 + d) 0 digits
 		     in
 			if negate then Int.~ e else e
-		     end
+		     end handle Overflow => raise Inf state
 		  val da =
 		     case il of
 			[] =>
@@ -265,7 +266,13 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 				     | _ => no ()
 			   end
 		     else NONE
-	    val normal' = fn z => normal' z handle Overflow => NONE
+	    val normal' =
+	       fn z => normal' z
+	       handle Inf state => SOME ({class = INF,
+					  digits = [],
+					  exp = 0,
+					  sign = false},
+					 state)
 	    fun normal state =
 	       case reader state of
 		  NONE => NONE
@@ -273,7 +280,7 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 	    fun negate state =
 	       case normal state of
 		  NONE => NONE
-		| SOME ({class, digits, exp, sign}, state) =>
+		| SOME ({class, digits, exp, ...}, state) =>
 		     SOME ({class = class,
 			    digits = digits,
 			    exp = exp,
