@@ -101,8 +101,6 @@ src/link.sml
 ../lib/mlton/basic/char.sml
 ../lib/mlton/basic/vector.sig
 ../lib/mlton/basic/array.sig
-../lib/mlton/basic/thread.sig
-../lib/mlton/basic/thread.sml
 ../lib/mlton/basic/vector.fun
 ../lib/mlton/basic/ordered-field.sig
 ../lib/mlton/basic/field.sig
