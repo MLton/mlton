@@ -8,6 +8,26 @@ open S
 
 structure ChunkLabel = IntUniqueId ()
 structure Type = Mtype ()
+   
+structure RuntimeOperand =
+   struct
+      datatype t =
+	 Frontier
+       | Limit
+       | LimitPlusSlop
+       | StackLimit
+       | StackTop
+
+      (* These strings are carefully chosen to be what the C codegen wants. *)
+      val toString =
+	 fn Frontier => "frontier"
+	  | Limit => "gcState.limit"
+	  | LimitPlusSlop => "gcState.limitPlusSlop"
+	  | StackLimit => "gcState.stackLimit"
+	  | StackTop => "stackTop"
+
+      val layout = Layout.str o toString
+   end
 
 structure SmallIntInf =
    struct
@@ -77,6 +97,7 @@ structure Operand =
        | Offset of {base: t, offset: int, ty: Type.t}
        | Pointer of int
        | Register of Register.t
+       | Runtime of RuntimeOperand.t
        | StackOffset of {offset: int, ty: Type.t}
        | Uint of Word.t
 
@@ -109,6 +130,7 @@ structure Operand =
 		       "(", toString base, ",", Int.toString offset, ")"]
 	  | Pointer n => concat ["IntAsPointer (", Int.toString n, ")"]
 	  | Register r => Register.toString r
+	  | Runtime r => RuntimeOperand.toString r
 	  | StackOffset {offset, ty} =>
 	       concat ["S", Type.name ty, "(", Int.toString offset, ")"]
 	  | Uint w => Word.toString w
@@ -130,6 +152,7 @@ structure Operand =
 	| Offset {ty, ...} => ty
 	| Pointer _ => Type.pointer
 	| Register r => Register.ty r
+	| Runtime _ => Type.word
 	| StackOffset {ty, ...} => ty
 	| Uint _ => Type.uint
 	 
@@ -179,9 +202,9 @@ structure Statement =
    struct
       datatype t =
 	 Array of {dst: Operand.t,
-		   numElts: Operand.t,
-		   numPointers: int,
-		   numBytesNonPointers: int}
+		   header: word,
+		   numBytes: Operand.t,
+		   numElts: Operand.t}
        | Move of {dst: Operand.t,
 		  src: Operand.t}
        | Noop
@@ -201,12 +224,12 @@ structure Statement =
 	 let
 	    open Layout
 	 in
-	    fn Array {dst, numBytesNonPointers, numElts, numPointers} =>
+	    fn Array {dst, header, numBytes, numElts} =>
 	    seq [Operand.layout dst,
 		 str " = Array",
-		 record [("numBytesNonPointers", Int.layout numBytesNonPointers),
-			 ("numElts", Operand.layout numElts),
-			 ("numPointers", Int.layout numPointers)]]
+		 record [("header", Word.layout header),
+			 ("numBytes", Operand.layout numBytes),
+			 ("numElts", Operand.layout numElts)]]
 	     | Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
 	     | Noop => str "Noop"
@@ -237,7 +260,8 @@ structure Statement =
 
       fun foldOperands (s, ac, f) =
 	 case s of
-	    Array {dst, numElts, ...} => f (dst, f (numElts, ac))
+	    Array {dst, numBytes, numElts, ...} =>
+	       f (dst, f (numBytes, f (numElts, ac)))
 	  | Move {dst, src} => f (dst, f (src, ac))
 	  | Object {dst, stores, ...} =>
 	       Vector.fold
@@ -248,38 +272,6 @@ structure Statement =
    end
 
 structure Cases = MachineCases (structure Label = Label)
-   
-structure LimitCheck =
-   struct
-      datatype t =
-	 Array of {bytesPerElt: int,
-		   extraBytes: int, (* for subsequent allocation *)
-		   numElts: Operand.t,
-		   stackToo: bool}
-       | Heap of {bytes: int,
-		  stackToo: bool}
-       | Signal
-       | Stack
-
-      fun layout (l: t): Layout.t =
-	 let
-	    open Layout
-	 in
-	    case l of
-	       Array {bytesPerElt, extraBytes, numElts, stackToo} =>
-		  seq [str "Array ",
-		       record [("bytesPerElt", Int.layout bytesPerElt),
-			       ("extraBytes", Int.layout extraBytes),
-			       ("numElts", Operand.layout numElts),
-			       ("stackToo", Bool.layout stackToo)]]
-	     | Heap {bytes, stackToo} =>
-		  seq [str "Heap ",
-		       record [("bytes", Int.layout bytes),
-			       ("stackToo", Bool.layout stackToo)]]
-	     | Signal => str "Signal"
-	     | Stack => str "Stack"
-	 end
-   end
 
 structure Transfer =
    struct
@@ -288,7 +280,8 @@ structure Transfer =
 		   args: Operand.t vector,
 		   dst: Operand.t,
 		   overflow: Label.t,
-		   success: Label.t}
+		   success: Label.t,
+		   ty: Type.t}
        | Bug
        | CCall of {args: Operand.t vector,
 		   prim: Prim.t,
@@ -300,9 +293,6 @@ structure Transfer =
 			   handler: Label.t option,
 			   size: int} option}
        | Goto of Label.t
-       | LimitCheck of {failure: Label.t,
-			kind: LimitCheck.t,
-			success: Label.t}
        | Raise
        | Return of {live: Operand.t vector}
        | Runtime of {args: Operand.t vector,
@@ -320,7 +310,7 @@ structure Transfer =
 	    open Layout
 	 in
 	    case t of
-	       Arith {prim, args, dst, overflow, success} =>
+	       Arith {prim, args, dst, overflow, success, ...} =>
 		  seq [str "Arith ",
 		       record [("prim", Prim.layout prim),
 			       ("args", Vector.layout Operand.layout args),
@@ -346,11 +336,6 @@ structure Transfer =
 					 ("size", Int.layout size)])
 				return)]]
 	     | Goto l => seq [str "Goto ", Label.layout l]
-	     | LimitCheck {failure, kind, success} =>
-		  seq [str "LimitCheck ",
-		       record [("failure", Label.layout failure),
-			       ("kind", LimitCheck.layout kind),
-			       ("success", Label.layout success)]]
 	     | Raise => str "Raise"
 	     | Return {live} => 
 		  seq [str "Return ",
@@ -605,6 +590,7 @@ structure Program =
 			     | Pointer n => 0 < Int.rem (n, Runtime.wordSize)
 			     | Register (Register.T {index, ty}) =>
 				  0 <= index andalso index < regMax ty
+			     | Runtime _ => true
 			     | StackOffset {offset, ty, ...} =>
 				  0 <= offset
 				  andalso offset + Type.size ty <= maxFrameSize
@@ -647,17 +633,15 @@ structure Program =
 			 datatype z = datatype Statement.t
 		      in
 			 case s of
-			    Array {dst, numElts, numPointers,
-				   numBytesNonPointers} =>
+			    Array {dst, header, numBytes, numElts} =>
 			       (checkOperand dst
+				; checkOperand numBytes
 				; checkOperand numElts
 				; (Type.equals (Operand.ty dst, Type.pointer)
+				   andalso Type.equals (Operand.ty numBytes,
+							Type.word)
 				   andalso Type.equals (Operand.ty numElts,
-							Type.int)
-				   andalso (Runtime.isValidArrayHeader
-					    {numPointers = numPointers,
-					     numBytesNonPointers =
-					     numBytesNonPointers})))
+							Type.int)))
 			  | Move {dst, src} =>
 			       (checkOperand dst
 				; checkOperand src
@@ -694,10 +678,10 @@ structure Program =
 			 datatype z = datatype Transfer.t
 		      in
 			 case t of
-			    Arith {args, dst, overflow, prim, success} =>
+			    Arith {args, dst, overflow, prim, success, ty} =>
 			       (checkOperands args
 				; checkOperand dst
-				; (Type.equals (Type.int, Operand.ty dst)
+				; (Type.equals (ty, Operand.ty dst)
 				   andalso labelIsJump overflow
 				   andalso labelIsJump success))
 			  | Bug => true
@@ -737,24 +721,6 @@ structure Program =
 						 size = FrameInfo.size frameInfo
 					    | _ => false))
 			  | Goto l => labelIsJump l
-			  | LimitCheck {failure, kind, success} =>
-			       labelIsRuntime (failure, Prim.gcCollect)
-			       andalso labelIsJump success
-			       andalso
-			       let
-				  datatype z = datatype LimitCheck.t
-			       in
-				  case kind of
-				     Array {bytesPerElt, extraBytes,
-					    numElts, ...} =>
-				     (checkOperand numElts
-				      ; (Type.equals (Type.int,
-						      Operand.ty numElts)
-					 andalso bytesPerElt > 0
-					 andalso extraBytes >= 0))
-					  | Heap {bytes, ...} => bytes >= 0
-					  | _ => true
-			       end
 			  | Raise => true
 			  | Return {live} => (checkOperands live; true)
 			  | Runtime {args, prim, return} =>

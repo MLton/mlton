@@ -248,6 +248,14 @@ struct
   val arrayAllocateLoopTempDerefOperand 
     = Operand.memloc arrayAllocateLoopTempDeref
 
+  val heapCheckTemp = Label.fromString "heapCheckTemp"
+  val heapCheckTempContents =
+     makeContents {base = Immediate.label heapCheckTemp,
+		   size = pointerSize,
+		   class = Classes.StaticTemp}
+  val heapCheckTempContentsOperand =
+     Operand.memloc heapCheckTempContents
+
   val overflowCheckTemp = Label.fromString "overflowCheckTemp"
   val overflowCheckTempContents 
     = makeContents {base = Immediate.label overflowCheckTemp,
@@ -529,10 +537,21 @@ struct
   val gcState_baseContentsOperand
     = Operand.memloc gcState_baseContents
 
+  val gcState_limitPlusSlop
+     = Immediate.binexp {oper = Immediate.Addition,
+			 exp1 = Immediate.label gcState,
+			 exp2 = Immediate.const_int 24}
+  val gcState_limitPlusSlopContents
+     = makeContents {base = gcState_limitPlusSlop,
+		     size = pointerSize,
+		     class = Classes.GCState}
+  val gcState_limitPlusSlopContentsOperand
+     = Operand.memloc gcState_limitPlusSlopContents
+
   val gcState_stackBottom 
     = Immediate.binexp {oper = Immediate.Addition,
 			exp1 = Immediate.label gcState,
-			exp2 = Immediate.const_int 48}
+			exp2 = Immediate.const_int 52}
   val gcState_stackBottomContents 
     = makeContents {base = gcState_stackBottom,
 		    size = pointerSize,
@@ -543,7 +562,7 @@ struct
   val gcState_maxFrameSize
     = Immediate.binexp {oper = Immediate.Addition,
 			exp1 = Immediate.label gcState,
-			exp2 = Immediate.const_int 52}
+			exp2 = Immediate.const_int 56}
   val gcState_maxFrameSizeContents 
     = makeContents {base = gcState_maxFrameSize,
 		    size = pointerSize,
@@ -554,7 +573,7 @@ struct
   val gcState_canHandle
     = Immediate.binexp {oper = Immediate.Addition,
 			exp1 = Immediate.label gcState,
-			exp2 = Immediate.const_int 128}
+			exp2 = Immediate.const_int 132}
   val gcState_canHandleContents
     = makeContents {base = gcState_canHandle,
 		    size = wordSize,
@@ -565,7 +584,7 @@ struct
   val gcState_signalIsPending
     = Immediate.binexp {oper = Immediate.Addition,
 			exp1 = Immediate.label gcState,
-			exp2 = Immediate.const_int 264}
+			exp2 = Immediate.const_int 268}
   val gcState_signalIsPendingContents
     = makeContents {base = gcState_signalIsPending,
 		    size = wordSize,
@@ -576,7 +595,7 @@ struct
   val gcState_numLCsLow
     = Immediate.binexp {oper = Immediate.Addition,
 			exp1 = Immediate.label gcState,
-			exp2 = Immediate.const_int 424}
+			exp2 = Immediate.const_int 428}
   val gcState_numLCsLowContents
     = makeContents {base = gcState_numLCsLow,
 		    size = wordSize,
@@ -586,7 +605,7 @@ struct
   val gcState_numLCsHigh
     = Immediate.binexp {oper = Immediate.Addition,
 			exp1 = Immediate.label gcState,
-			exp2 = Immediate.const_int 428}
+			exp2 = Immediate.const_int 432}
   val gcState_numLCsHighContents
     = makeContents {base = gcState_numLCsHigh,
 		    size = wordSize,
@@ -626,25 +645,15 @@ struct
   open x86MLtonBasic
   open x86
 
-  val wordAlign : int -> int
-    = fn p => let
-		val wp = Word.fromInt p
-		val wp' 
-		  = Word.<<(Word.+(Word.>>(Word.-(wp, 
-						  0wx1), 
-					   0wx2),
-				   0wx1),
-			    0wx2)
-		val p' = Word.toInt wp'
-	      in
-		p'
-	      end
-	      handle exn
-	       => Error.bug ("x86MLton.wordAlign::" ^
-			     (case exn
-				of Fail s => s
-				 | Overflow => "Overflow"
-				 | _ => "?"))
+  val wordAlign : int -> int =
+     fn p =>
+     (Word.toInt (Runtime.wordAlign (Word.fromInt p))
+      handle exn
+      => Error.bug ("x86MLton.wordAlign::" ^
+		    (case exn
+			of Fail s => s
+		      | Overflow => "Overflow"
+		      | _ => "?")))
 
   type transInfo = {addData : x86.Assembly.t list -> unit,
 		    frameLayouts: x86.Label.t ->
@@ -2732,7 +2741,7 @@ struct
 	val _ = Assert.assert
 	        ("arith: dstsize/srcsize",
 		 fn () => src1size = dstsize)
-	fun check src statement
+	fun check (src, statement, condition)
 	  = AppendList.single
 	    (x86.Block.T'
 	     {entry = NONE,	
@@ -2743,10 +2752,10 @@ struct
 			     size = src1size},
 			    statement],
 	      transfer = SOME (x86.Transfer.iff
-			       {condition = x86.Instruction.O,
+			       {condition = condition,
 				truee = overflow,
 				falsee = success})})
-	fun binal (oper: x86.Instruction.binal)
+	fun binal (oper: x86.Instruction.binal, condition)
 	  = let
 	      val (src2, src2size) = arg 1
 	      val _ = Assert.assert
@@ -2768,52 +2777,55 @@ struct
 			    | _ => (src1,src2)
 		    else (src1,src2)
 	    in
-	      check src1
-	            (x86.Assembly.instruction_binal
+	      check (src1,
+		     x86.Assembly.instruction_binal
 		     {oper = oper,
 		      dst = dst,
 		      src = src2,
-		      size = dstsize})
+		      size = dstsize},
+		     condition)
 	    end
-	fun pmd (oper: x86.Instruction.md)
+ 	fun pmd (oper: x86.Instruction.md, condition)
+  	  = let
+ 	      val (src2, src2size) = arg 1
+ 	      val _ = Assert.assert
+ 		      ("arith: pmd, dstsize/src2size",
+ 		       fn () => src2size = dstsize)
+ 	      (* Reverse src1/src2 when src1 and src2 are
+ 	       * temporaries and the oper is commutative. 
+ 	       *)
+ 	      val (src1, src2)
+ 		= if oper = x86.Instruction.MUL
+ 		    then case (x86.Operand.deMemloc src1,
+ 			       x86.Operand.deMemloc src2)
+ 			   of (SOME memloc_src1, SOME memloc_src2)
+ 			    => if x86Liveness.track memloc_src1
+ 			          andalso
+ 				  x86Liveness.track memloc_src2
+ 				 then (src2,src1)
+ 				 else (src1,src2)
+ 			    | _ => (src1,src2)
+ 		    else (src1,src2)
+ 	    in
+ 	      check (src1,
+		     x86.Assembly.instruction_pmd
+ 		     {oper = oper,
+ 		      dst = dst,
+ 		      src = src2,
+ 		      size = dstsize},
+		     condition)
+ 	    end
+	fun unal (oper: x86.Instruction.unal, condition)
 	  = let
-	      val (src2, src2size) = arg 1
-	      val _ = Assert.assert
-		      ("arith: pmd, dstsize/src2size",
-		       fn () => src2size = dstsize)
-	      (* Reverse src1/src2 when src1 and src2 are
-	       * temporaries and the oper is commutative. 
-	       *)
-	      val (src1, src2)
-		= if oper = x86.Instruction.IMUL
-		    then case (x86.Operand.deMemloc src1,
-			       x86.Operand.deMemloc src2)
-			   of (SOME memloc_src1, SOME memloc_src2)
-			    => if x86Liveness.track memloc_src1
-			          andalso
-				  x86Liveness.track memloc_src2
-				 then (src2,src1)
-				 else (src1,src2)
-			    | _ => (src1,src2)
-		    else (src1,src2)
 	    in
-	      check src1
-	            (x86.Assembly.instruction_pmd
+	      check (src1,
+		     x86.Assembly.instruction_unal 
 		     {oper = oper,
 		      dst = dst,
-		      src = src2,
-		      size = dstsize})
+		      size = dstsize},
+		     condition)
 	    end
-	fun unal (oper: x86.Instruction.unal)
-	  = let
-	    in
-	      check src1 
-	            (x86.Assembly.instruction_unal 
-		     {oper = oper,
-		      dst = dst,
-		      size = dstsize})
-	    end
-	fun imul2_check ()
+	fun imul2_check condition
 	  = let
 	      val (src2, src2size) = arg 1
 	      val _ = Assert.assert
@@ -2833,11 +2845,12 @@ struct
 			  else (src1,src2)
 		     | _ => (src1,src2)
 	    in
-	      check src1
-	            (x86.Assembly.instruction_imul2
+	      check (src1,
+		     x86.Assembly.instruction_imul2
 		     {dst = dst,
 		      src = src2,
-		      size = dstsize})
+		      size = dstsize},
+		     condition)
 	    end
 	  
 	val (comment_begin,
@@ -2867,12 +2880,14 @@ struct
       in
 	AppendList.appends
 	[comment_begin,
-	 (case Prim.name prim
-	    of Int_addCheck => binal x86.Instruction.ADD
-	     | Int_subCheck => binal x86.Instruction.SUB
-	     | Int_mulCheck => imul2_check ()
-	     | Int_negCheck => unal x86.Instruction.NEG
-	     | _ => Error.bug ("arith: strange Prim.Name.t: " ^ primName))]
+	 (case Prim.name prim of
+	     Int_addCheck => binal (x86.Instruction.ADD, x86.Instruction.O)
+	   | Int_subCheck => binal (x86.Instruction.SUB, x86.Instruction.O)
+	   | Int_mulCheck => imul2_check x86.Instruction.O
+	   | Int_negCheck => unal (x86.Instruction.NEG, x86.Instruction.O)
+	   | Word32_addCheck => binal (x86.Instruction.ADD, x86.Instruction.C)
+	   | Word32_mulCheck => pmd (x86.Instruction.MUL, x86.Instruction.C)
+	   | _ => Error.bug ("arith: strange Prim.Name.t: " ^ primName))]
       end
 
   val bug_msg_label = Label.fromString "MLton_bug_msg"

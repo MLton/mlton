@@ -132,7 +132,6 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
 			  (same overflow; same success)
 		     | CCall {return, ...} => same return
 		     | Goto {dst, ...} => same dst
-		     | LimitCheck {success, ...} => same success
 		     | Switch {cases, default, ...} =>
 			  (Cases.foreach (cases, same)
 			   ; Option.app (default, same))

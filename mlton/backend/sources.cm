@@ -45,6 +45,7 @@ rssa.fun
 rssa.sig
 runtime.sig
 runtime.sml
+runtime-operand.sig
 signal-check.fun
 signal-check.sig
 ssa-to-rssa.fun

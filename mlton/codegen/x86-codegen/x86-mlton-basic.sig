@@ -90,6 +90,8 @@ signature X86_MLTON_BASIC =
     val arrayAllocateLoopTempContentsOperand : x86.Operand.t
     val arrayAllocateLoopTempDerefOperand : x86.Operand.t
     val applyFFTempContentsOperand : x86.Operand.t
+    val heapCheckTempContents: x86.MemLoc.t
+    val heapCheckTempContentsOperand: x86.Operand.t
     val overflowCheckTempContentsOperand : x86.Operand.t
     val threadTempContentsOperand : x86.Operand.t
     val fileTempContentsOperand : x86.Operand.t
@@ -121,6 +123,8 @@ signature X86_MLTON_BASIC =
     val gcState_baseContentsOperand : x86.Operand.t
     val gcState_limitContents : x86.MemLoc.t
     val gcState_limitContentsOperand : x86.Operand.t
+    val gcState_limitPlusSlopContents : x86.MemLoc.t
+    val gcState_limitPlusSlopContentsOperand : x86.Operand.t
     val gcState_frontier : x86.Immediate.t
     val gcState_frontierContents : x86.MemLoc.t
     val gcState_frontierContentsOperand : x86.Operand.t

@@ -17,10 +17,10 @@ in
    structure Global = Global
    structure Kind = Kind
    structure Label = Label
-   structure LimitCheck = LimitCheck
    structure Operand = Operand
    structure Prim = Prim
    structure Register = Register
+   structure RuntimeOperand = RuntimeOperand
    structure Statement = Statement
    structure Transfer = Transfer
    structure Type = Type
@@ -148,6 +148,7 @@ structure Operand =
 	       concat ["O", Type.name ty, C.args [toString base, C.int offset]]
           | Pointer n => concat ["IntAsPointer", C.args [C.int n]]
           | Register r => Register.toString r
+	  | Runtime r => RuntimeOperand.toString r
           | StackOffset {offset, ty} =>
 	       concat ["S", Type.name ty, "(", C.int offset, ")"]
           | Uint w => C.word w
@@ -165,26 +166,16 @@ structure Statement =
 	  | _ =>
 	       (print "\t"
 		; (case s of
-		      Array {dst, numElts, numPointers, numBytesNonPointers} =>
-			 let
-			    val dst = Operand.toString dst
-			    val numElts = Operand.toString numElts
-			 in 
-			    if numPointers = 0
-			       then C.call ("ArrayNoPointers",
-					    [dst, numElts,
-					     C.int numBytesNonPointers],
-					    print)
-			    else if numBytesNonPointers = 0
-				    then C.call ("ArrayPointers",
-						 [dst, numElts,
-						  C.int numPointers],
-						 print)
-				 else Error.unimplemented "tricky arrays"
-			 end
+		      Array {dst, header, numBytes, numElts} =>
+			 C.call ("Array",
+				 [Operand.toString dst,
+				  C.word header,
+				  Operand.toString numBytes,
+				  Operand.toString numElts],
+				 print)
 		    | Move {dst, src} =>
 			 print (concat [Operand.toString dst, " = ",
-				      Operand.toString src, ";\n"])
+					Operand.toString src, ";\n"])
 		    | Noop => ()
 		    | Object {dst, numPointers, numWordsNonPointers, stores} =>
 		         (C.call ("Object", [Operand.toString dst,
@@ -424,7 +415,6 @@ fun output {program = Machine.Program.T {chunks,
 		     | CCall _ => ()
 		     | Call {label, ...} => jump label
 		     | Goto dst => jump dst
-		     | LimitCheck {success, ...} => jump success
 		     | Raise => ()
 		     | Return _ => ()
 		     | Runtime _ => ()
@@ -516,7 +506,7 @@ fun output {program = Machine.Program.T {chunks,
 		  datatype z = datatype Transfer.t
 	       in
 		  case t of
-		     Arith {prim, args, dst, overflow, success} =>
+		     Arith {prim, args, dst, overflow, success, ...} =>
 			let
 			   val prim =
 			      let
@@ -527,6 +517,8 @@ fun output {program = Machine.Program.T {chunks,
 				  | Int_mulCheck => "\tInt_mulCheck"
 				  | Int_negCheck => "\tInt_negCheck"
 				  | Int_subCheck => "\tInt_subCheck"
+				  | Word32_addCheck => "\tWord32_addCheck"
+				  | Word32_mulCheck => "\tWord32_mulCheck"  
 				  | _ => Error.bug "strange overflow prim"
 			      end
 			   val _ = force overflow
@@ -587,34 +579,6 @@ fun output {program = Machine.Program.T {chunks,
 				      print)
 			end
 		   | Goto dst => gotoLabel dst
-		   | LimitCheck {failure, kind, success, ...} =>
-			let
-			   datatype z = datatype LimitCheck.t
-			   val (bytes, stack) =
-			      case kind of
-				 Array {numElts, bytesPerElt, extraBytes, stackToo} =>
-				    (concat [Operand.toString numElts, 
-					     " * ", C.int bytesPerElt, 
-					     " + ", 
-					     C.int extraBytes],
-				     stackToo)
-			       | Heap {bytes, stackToo} =>
-				    (C.int bytes, stackToo)
-			       | Signal => ("0", false)
-			       | Stack => ("0", true)
-			   val stack =
-			      if stack
-				 then "StackOverflowCheck"
-			      else "FALSE"
-			in
-			   C.call ("\tLimitCheck",
-				   [C.int (labelFrameSize failure),
-				    Label.toStringIndex failure,
-				    bytes,
-				    stack],
-				   print)
-			   ; gotoLabel success
-			end
 		   | Raise => C.call ("\tRaise", [], print)
 		   | Return _ => C.call ("\tReturn", [], print)
 		   | Runtime {args, prim, return, ...} =>

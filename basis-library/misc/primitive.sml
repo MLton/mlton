@@ -54,7 +54,8 @@ structure Primitive =
 
       structure Array =
 	 struct
-	    val array0 = fn () => _prim "Array_array0": unit -> 'a array; ()
+	    val array0Const =
+	       fn () => _prim "Array_array0Const": unit -> 'a array; ()
 	    val length = fn x => _prim "Array_length": 'a array -> int; x
 	    (* There is no maximum length on arrays, so maxLen = maxInt. *)
 	    val maxLen: int = 0x7FFFFFFF
@@ -180,7 +181,7 @@ structure Primitive =
 
       structure GC =
 	 struct
-	    val collect = _prim "GC_collect": unit -> unit;
+	    val collect = _prim "GC_collect": word * bool -> unit;
 	    val setMessages = _ffi "GC_setMessages": bool -> unit;
 	    val setSummary = _ffi "GC_setSummary": bool -> unit;
 	 end
@@ -228,11 +229,13 @@ structure Primitive =
       structure Array =
 	 struct
 	    open Array
-	       
+
       	    fun array n =
 	       if safe andalso Int.< (n, 0)
 		  then raise Size
-	       else _prim "Array_array": int -> 'a array; n
+	       else if eq (n, 0)
+		       then _prim "Array_array0": unit -> 'a array; ()
+		    else _prim "Array_array": int -> 'a array; n
 	 end
 
       structure IntInf =
@@ -612,6 +615,7 @@ structure Primitive =
 	    type word = word32
 
 	    val + = _prim "Word32_add": word * word -> word;
+	    val addCheck = _prim "Word32_addCheck": word * word -> word;
 	    val andb = _prim "Word32_andb": word * word -> word;
 	    val ~>> = _prim "Word32_arshift": word * word -> word;
 	    val div = _prim "Word32_div": word * word -> word;
@@ -623,6 +627,7 @@ structure Primitive =
 	    val < = _prim "Word32_lt" : word * word -> bool;
 	    val mod = _prim "Word32_mod": word * word -> word;
 	    val * = _prim "Word32_mul": word * word -> word;
+	    val mulCheck = _prim "Word32_mulCheck": word * word -> word;
 	    val ~ = _prim "Word32_neg": word -> word;
 	    val notb = _prim "Word32_notb": word -> word;
 	    val orb = _prim "Word32_orb": word * word -> word;

@@ -74,32 +74,29 @@ fun checkScopes (program as
 	    ()
 	 end
       val loopTransfer =
-	 fn Arith {args, overflow, success, ...} =>
-	       (getVars args; getLabel overflow; getLabel success)
+	 fn Arith {args, ...} => getVars args
 	  | Bug => ()
-	  | Call {func, args, return} =>
-	       (getFunc func
-		; getVars args
-		; Return.foreachLabel (return, getLabel))
+	  | Call {func, args, ...} => (getFunc func; getVars args)
+
 	  | Case {test, cases, default, ...} =>
 	       let
-		  fun doit (cases, equals, toWord) =
+		  fun doit (cases: ('a * 'b) vector,
+			    equals: 'a * 'a -> bool,
+			    toWord: 'a -> word): unit =
 		     let
 		        val table = HashSet.new {hash = toWord}
+			val _ =
+			   Vector.foreach
+			   (cases, fn (x, _) =>
+			    (HashSet.insertIfNew
+			     (table, toWord x, fn y => equals (x, y),
+			      fn () => x, 
+			      fn _ => Error.bug "redundant branch in case")
+			     ; ()))
 		     in
-		        Vector.foreach
-			(cases, fn (x, l) =>
-			 let
-			    val _ = HashSet.insertIfNew
-			            (table, toWord x, fn y => equals (x, y),
-				     fn () => x, 
-				     fn y => Error.bug "redundant branch in case")
-			 in
-			    getLabel l
-			 end)
-			; case default of 
-			     SOME l => getLabel l
-			   | NONE => Error.bug "case has no default"
+			if isSome default
+			   then ()
+			else Error.bug "case has no default"
 		     end
 		  fun doitCon cases =
 		     let
@@ -108,41 +105,38 @@ fun checkScopes (program as
 			      Type.Datatype t => getTycon' t
 			    | _ => Error.bug "case test is not a datatype"
 			val cons = Array.array (numCons, false)
+			val _ =
+			   Vector.foreach
+			   (cases, fn (con, l) =>
+			    let
+			       val i = getCon' con
+			    in
+			       if Array.sub (cons, i)
+				  then Error.bug "redundant branch in case"
+			       else Array.update (cons, i, true)
+			    end)
 		     in
-		        Vector.foreach
-			(cases, fn (con, l) =>
-			 let
-			    val i = getCon' con
-			    val _ = if Array.sub (cons, i)
-			               then Error.bug "redundant branch in case"
-				    else Array.update (cons, i, true)
-			 in
-			    getLabel l
-			 end)
-			; if Array.forall (cons, fn b => b)
-			     then case default of
-			             NONE => ()
-				   | SOME l => 
-				        Error.bug "exhaustive case has default"
-			  else case default of
-			          NONE => 
-				     Error.bug "non-exhaustive case has no default"
-				| SOME l => getLabel l
+			case (Array.forall (cons, fn b => b), isSome default) of
+			   (true, true) =>
+			      Error.bug "exhaustive case has default"
+			 | (false, false) =>
+			      Error.bug "non-exhaustive case has no default"
+			 | _ => ()
 		     end
+		  val _ = getVar test
 	       in
-		 getVar test
-		 ; case cases of
-		      Cases.Char cases => doit (cases, Char.equals, Word.fromChar)
-		    | Cases.Con cases => doitCon cases 
-		    | Cases.Int cases => doit (cases, Int.equals, Word.fromInt)
-		    | Cases.Word cases => doit (cases, Word.equals, Word.fromWord)
-		    | Cases.Word8 cases => doit (cases, Word8.equals, Word.fromWord8)
+		  case cases of
+		     Cases.Char cases => doit (cases, Char.equals, Word.fromChar)
+		   | Cases.Con cases => doitCon cases 
+		   | Cases.Int cases => doit (cases, Int.equals, Word.fromInt)
+		   | Cases.Word cases => doit (cases, Word.equals, Word.fromWord)
+		   | Cases.Word8 cases =>
+			doit (cases, Word8.equals, Word.fromWord8)
 	       end
-	  | Goto {dst, args} => (getLabel dst; getVars args)
+	  | Goto {args, ...} => getVars args
 	  | Raise xs => getVars xs
 	  | Return xs => getVars xs
-	  | Runtime {args, return, ...} => 
-	       (getVars args; getLabel return)
+	  | Runtime {args, ...} => getVars args
       fun loopFunc (f: Function.t) =
 	 let
 	    val {name, args, start, blocks, returns, ...} = Function.dest f
@@ -165,6 +159,10 @@ fun checkScopes (program as
 	       end
 	    val _ = Vector.foreach (args, bindVar)
 	    val _ = Vector.foreach (blocks, bindLabel o Block.label)
+	    val _ =
+	       Vector.foreach
+	       (blocks, fn Block.T {transfer, ...} =>
+		Transfer.foreachLabel (transfer, getLabel))
 	    val _ = loop (Function.dominatorTree f)
 	    val _ = Vector.foreach (blocks, unbindLabel o Block.label)
 	    val _ = Vector.foreach (args, unbindVar o #1)

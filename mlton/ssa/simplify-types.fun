@@ -565,11 +565,12 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 	 simplifyExp
       fun simplifyTransfer (t : Transfer.t): Statement.t vector * Transfer.t =
 	 case t of
-	    Arith {prim, args, overflow, success} =>
+	    Arith {prim, args, overflow, success, ty} =>
 	       (Vector.new0 (), Arith {prim = prim,
 				       args = Vector.map (args, simplifyVar),
 				       overflow = overflow,
-				       success = success})
+				       success = success,
+				       ty = ty})
 	  | Bug => (Vector.new0 (), t)
 	  | Call {func, args, return} =>
 	       (Vector.new0 (),

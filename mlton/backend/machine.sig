@@ -41,6 +41,8 @@ signature MACHINE =
 	    val ty: t -> Type.t
 	 end
 
+      structure RuntimeOperand: RUNTIME_OPERAND
+
       structure Operand:
 	 sig
 	    datatype t =
@@ -62,6 +64,7 @@ signature MACHINE =
 			  ty: Type.t}
 	     | Pointer of int (* the int must be nonzero mod Runtime.wordSize. *)
 	     | Register of Register.t
+	     | Runtime of RuntimeOperand.t
 	     | StackOffset of {offset: int,
 			       ty: Type.t}
 	     | Uint of Word.t
@@ -78,9 +81,9 @@ signature MACHINE =
 	    datatype t =
 	       (* Variable-sized allocation. *)
 	       Array of {dst: Operand.t,
-			 numBytesNonPointers: int,
-			 numElts: Operand.t,
-			 numPointers: int}
+			 header: word,
+			 numBytes: Operand.t,
+			 numElts: Operand.t}
 	     (* When registers or offsets appear in operands, there is an
 	      * implicit contents of.
 	      * When they appear as locations, there is not.
@@ -111,19 +114,6 @@ signature MACHINE =
 
       structure Cases: MACHINE_CASES sharing Label = Cases.Label
 
-      structure LimitCheck:
-	 sig
-	    datatype t =
-	       Array of {bytesPerElt: int, (* > 0 *)
-			 extraBytes: int, (* >= 0.  for subsequent allocation. *)
-			 numElts: Operand.t, (* of type int, but not an immediate *)
-			 stackToo: bool}
-	     | Heap of {bytes: int,
-			stackToo: bool}
-	     | Signal
-	     | Stack
-	 end
-   
       structure Transfer:
 	 sig
 	    datatype t =
@@ -134,7 +124,8 @@ signature MACHINE =
 			 dst: Operand.t,
 			 overflow: Label.t,
 			 prim: Prim.t,
-			 success: Label.t}
+			 success: Label.t,
+			 ty: Type.t} (* int or word *)
 	     | Bug
 	     | CCall of {args: Operand.t vector,
 			 prim: Prim.t,
@@ -148,11 +139,6 @@ signature MACHINE =
 				 handler: Label.t option,
 				 size: int} option}
 	     | Goto of Label.t (* label must be a Jump *)
-	     | LimitCheck of {(* failure must be Runtime. *)
-			      failure: Label.t, 
-			      kind: LimitCheck.t,
-			      (* success must be Jump. *)
-			      success: Label.t} 
 	     | Raise
 	     | Return of {live: Operand.t vector}
 	     | Runtime of {args: Operand.t vector,

@@ -463,6 +463,7 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 		     Array_array =>
 			coerce {from = arg 0, to = arrayLength result}
 		   | Array_array0 => ()
+		   | Array_array0Const => ()
 		   | Array_length => return (arrayLength (arg 0))
 		   | Array_sub => sub ()
 		   | Array_update => update ()
@@ -819,9 +820,9 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 			raises: Value.t vector option)
 	 : Block.t list * Transfer.t =
 	 case t of
-	    Arith {prim, args, overflow, success} =>
+	    Arith {prim, args, overflow, success, ty} =>
 	       let
-		  val v = Value.fromType Type.int
+		  val v = Value.fromType ty
 		  val _ = Value.Useful.makeUseful (Value.deground v)
 		  val res = Vector.new1 v
 		  val sargs = label success
@@ -837,7 +838,8 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 			   Arith {prim = prim,
 				  args = args,
 				  overflow = overflow,
-				  success = l})
+				  success = l,
+				  ty = ty})
 		       end
 	       end
 	  | Bug => ([], Bug)

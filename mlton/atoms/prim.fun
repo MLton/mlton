@@ -31,6 +31,7 @@ structure Name =
       datatype t =
 	 Array_array
        | Array_array0
+       | Array_array0Const
        | Array_length
        | Array_sub
        | Array_update
@@ -150,6 +151,7 @@ structure Name =
        | Vector_length
        | Vector_sub
        | Word32_add
+       | Word32_addCheck
        | Word32_andb
        | Word32_arshift
        | Word32_div
@@ -161,6 +163,7 @@ structure Name =
        | Word32_lt
        | Word32_mod
        | Word32_mul
+       | Word32_mulCheck
        | Word32_neg
        | Word32_notb
        | Word32_orb
@@ -216,8 +219,10 @@ structure Name =
 	  | Real_qequal => true
 	  | String_equal => true
 	  | Word32_add => true
+	  | Word32_addCheck => true
 	  | Word32_andb => true
 	  | Word32_mul => true
+	  | Word32_mulCheck => true
 	  | Word32_orb => true
 	  | Word32_xorb => true
 	  | Word8_add => true
@@ -232,6 +237,8 @@ structure Name =
 	  | Int_mulCheck => true
 	  | Int_negCheck => true
 	  | Int_subCheck => true
+	  | Word32_addCheck => true
+	  | Word32_mulCheck => true
 	  | _ => false
 
       val mayRaise = mayOverflow
@@ -245,13 +252,6 @@ structure Name =
 	  | Thread_switchTo => true
 	  | World_save => true
 	  | _ => false
-
-      val isArrayAllocation = 
-	 fn Array_array => true
-	  | Array_array0 => true
-	  | _ => false
-	       
-      val mayAllocate = isArrayAllocation
 
       val impCall
 	= fn FFI _ => true
@@ -286,6 +286,7 @@ structure Name =
 	 [
 	  (Array_array, Moveable, "Array_array"),
 	  (Array_array0, Moveable, "Array_array0"),
+	  (Array_array0Const, Moveable, "Array_array0Const"),
 	  (Array_length, Functional, "Array_length"),
 	  (Array_sub, DependsOnState, "Array_sub"),
 	  (Array_update, SideEffect, "Array_update"),
@@ -405,6 +406,7 @@ structure Name =
 	  (Vector_length, Functional, "Vector_length"),
 	  (Vector_sub, Functional, "Vector_sub"),
 	  (Word32_add, Functional, "Word32_add"),
+	  (Word32_addCheck, SideEffect, "Word32_addCheck"),
 	  (Word32_andb, Functional, "Word32_andb"),
 	  (Word32_arshift, Functional, "Word32_arshift"),
 	  (Word32_div, Functional, "Word32_div"),
@@ -416,6 +418,7 @@ structure Name =
 	  (Word32_lt, Functional, "Word32_lt"),
 	  (Word32_mod, Functional, "Word32_mod"),
 	  (Word32_mul, Functional, "Word32_mul"),
+	  (Word32_mulCheck, SideEffect, "Word32_mulCheck"),
 	  (Word32_neg, Functional, "Word32_neg"),
 	  (Word32_notb, Functional, "Word32_notb"),
 	  (Word32_orb, Functional, "Word32_orb"),
@@ -494,10 +497,8 @@ end
 val isFunctional = Trace.trace ("isFunctional", layout, Bool.layout) isFunctional
 
 val isCommutative = Name.isCommutative o name
-val mayAllocate = Name.mayAllocate o name
 val mayOverflow = Name.mayOverflow o name
 val mayRaise = Name.mayRaise o name
-val isArrayAllocation = Name.isArrayAllocation o name
 fun impCall p = case name p
 		  of Name.FFI _ => isSome (numArgs p)
 		   | p => Name.impCall p
@@ -552,6 +553,7 @@ local
       end
    val tuple = tuple o Vector.fromList    
 in
+   val array0 = new (Name.Array_array0, make1 (fn a => unit --> array a))
    val array = new (Name.Array_array, make1 (fn a => int --> array a))
    val assign = new (Name.Ref_assign, make1 (fn a => tuple [reff a, a] --> unit))
    val bogus = new (Name.MLton_bogus, make1 (fn a => a))
@@ -561,7 +563,7 @@ in
       new (Name.MLton_deserialize, make1 (fn a => vector word8 --> a))
    val eq = new (Name.MLton_eq, makeEqual1 (fn a => tuple [a, a] --> bool))
    val equal = new (Name.MLton_equal, makeEqual1 (fn a => tuple [a, a] --> bool))
-   val gcCollect = new (Name.GC_collect, make0 (unit --> unit))
+   val gcCollect = new (Name.GC_collect, make0 (tuple [word, bool] --> unit))
    val reff = new (Name.Ref_ref, make1 (fn a => a --> reff a))
    val serialize = new (Name.MLton_serialize, make1 (fn a => a --> vector word8))
    val vectorLength = new (Name.Vector_length, make1 (fn a => vector a --> int))
@@ -590,12 +592,32 @@ in
       val intMulCheck = make Name.Int_mulCheck
       val intSubCheck = make Name.Int_subCheck
    end
-      
-   fun newNullary (name: string) = new0 (Name.FFI name, unit --> unit)
 
+   local
+      fun make n = new0 (n, tuple [word, word] --> word)
+   in
+      val word32Add = make Name.Word32_add
+      val word32AddCheck = make Name.Word32_addCheck
+      val word32Andb = make Name.Word32_andb
+      val word32MulCheck = make Name.Word32_mulCheck
+      val word32Sub = make Name.Word32_sub
+   end
+
+   local
+      fun make n = new0 (n, tuple [word, word] --> bool)
+   in
+      val word32Gt = make Name.Word32_gt
+   end
+
+   val word32FromInt = new0 (Name.Word32_fromInt, int --> word)
+   val word32ToIntX = new0 (Name.Word32_toIntX, word --> int)
+      
    fun ffi (name: string, s: Scheme.t) =
       new (Name.FFI name, s)
 
+   fun newNullary (name: string) = new0 (Name.FFI name, unit --> unit)
+
+   val allocTooLarge = newNullary "MLton_allocTooLarge"
 end
    
 val new: string * Scheme.t -> t =
@@ -680,6 +702,7 @@ fun 'a extractTargs {prim, args, result,
       case name prim of
 	 Array_array => one (dearray result)
        | Array_array0 => one (dearray result)
+       | Array_array0Const => one (dearray result)
        | Array_sub => one result
        | Array_update => one (arg 2)
        | Array_length => one (dearray (arg 0))
@@ -1043,6 +1066,7 @@ fun 'a apply (p, args, varEquals) =
 		  case name of
 		     Word8_add => add ()
 		   | Word32_add => add ()
+		   | Word32_addCheck => add ()
 		   | Word8_andb => andb true
 		   | Word32_andb => andb false
 		   | Word8_arshift => arshift true
@@ -1063,6 +1087,7 @@ fun 'a apply (p, args, varEquals) =
 		   | Word32_mod => mod false
 		   | Word8_mul => mul true
 		   | Word32_mul => mul false
+		   | Word32_mulCheck => mul false
 		   | Word8_orb => orb true
 		   | Word32_orb => orb false
 		   | Word8_rol => ro true
@@ -1279,6 +1304,7 @@ fun layoutApp (p: t, args: 'a vector, layoutArg: 'a -> Layout.t): Layout.t =
        | String_size => one "size"
        | Vector_length => one "length"
        | Word32_add => two "+"
+       | Word32_addCheck => two "+c"
        | Word32_andb => two "&"
        | Word32_arshift => two "~>>"
        | Word32_ge => two ">="
@@ -1287,11 +1313,13 @@ fun layoutApp (p: t, args: 'a vector, layoutArg: 'a -> Layout.t): Layout.t =
        | Word32_lshift => two "<<"
        | Word32_lt => two "<"
        | Word32_mul => two "*"
+       | Word32_mulCheck => two "*c"
        | Word32_neg => one "-"
        | Word32_orb => two "|"
        | Word32_rol => two "rol"
        | Word32_ror => two "ror"
        | Word32_rshift => two ">>"
+       | Word32_sub => two "-"
        | Word32_xorb => two "^"
        | Word8_add => two "+"
        | Word8_andb => two "&"

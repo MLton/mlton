@@ -32,6 +32,7 @@ signature RSSA_STRUCTS =
 	    val foldLabel: t * 'a * (Label.t * 'a -> 'a) -> 'a
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	 end
+      structure RuntimeOperand: RUNTIME_OPERAND
       structure Type: MTYPE
       sharing Label = Cases.Label
    end
@@ -52,6 +53,7 @@ signature RSSA =
 			  bytes: int,
 			  ty: Type.t}
 	     | Pointer of int (* the int must be nonzero mod Runtime.wordSize. *)
+	     | Runtime of RuntimeOperand.t
 	     | Var of {var: Var.t,
 		       ty: Type.t}
 
@@ -59,15 +61,21 @@ signature RSSA =
 	    val layout: t -> Layout.t
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val ty: t -> Type.t
+	    val word: word -> t
 	 end
 	       
       structure Statement:
 	 sig
 	    datatype t =
 	       Array of {dst: Var.t,
+			 (* The number of bytes taken by the array, not
+			  * including headers.
+			  *)
+			 numBytes: Operand.t,
 			 numBytesNonPointers: int,
-			 numElts: Var.t,
+			 numElts: Operand.t,
 			 numPointers: int}
+	     | Array0 of {dst: Var.t}
 	     | Move of {dst: Operand.t, (* If the dst is var, then it is the
 					 * SSA defining occurrence.
 					 *)
@@ -98,29 +106,15 @@ signature RSSA =
 	    val layout: t -> Layout.t
 	 end
 
-      structure LimitCheck:
-	 sig
-	    datatype t =
-	       Array of {bytesPerElt: int, (* > 0 *)
-			 extraBytes: int, (* for subsequent allocation *)
-			 numElts: Var.t,
-			 stackToo: bool}
-	     | Heap of {bytes: int,
-			stackToo: bool}
-	     | Signal
-	     | Stack
-
-	    val foreachVar: t * (Var.t -> unit) -> unit
-	 end
-      
       structure Transfer:
 	 sig
 	    datatype t =
-	       Arith of {args: Var.t vector,
+	       Arith of {args: Operand.t vector,
 			 dst: Var.t,
 			 overflow: Label.t, (* Must be nullary. *)
 			 prim: Prim.t,
-			 success: Label.t} (* Must be nullary. *)
+			 success: Label.t, (* Must be nullary. *)
+			 ty: Type.t}
 	     | Bug  (* MLton thought control couldn't reach here. *)
 	     | CCall of {args: Operand.t vector,
 			 prim: Prim.t,
@@ -137,9 +131,6 @@ signature RSSA =
 			return: Return.t}
 	     | Goto of {args: Operand.t vector,
 			dst: Label.t}
-	     | LimitCheck of {failure: Label.t, (* Must be nullary, Runtime. *)
-			      kind: LimitCheck.t,
-			      success: Label.t} (* Must be nullary, Normal. *)
 	     (* Raise implicitly raises to the caller.  
 	      * I.E. the local handler stack must be empty.
 	      *)
@@ -191,6 +182,7 @@ signature RSSA =
 		     statements: Statement.t vector,
 		     transfer: Transfer.t}
 
+	    val allocTooLarge: t list ref -> (unit -> unit) * (unit -> Label.t)
 	    val args: t -> (Var.t * Type.t) vector
 	    val clear: t -> unit
 	    val kind: t -> Kind.t
@@ -236,5 +228,6 @@ signature RSSA =
 	    val hasPrim: t * (Prim.t -> bool) -> bool
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val typeCheck: t -> unit
+	    val usesSignals: t -> bool
 	 end
    end

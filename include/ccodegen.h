@@ -1,22 +1,6 @@
 #ifndef _CCODEGEN_H_
 #define _CCODEGEN_H_
 
-#ifndef GC_FIRST_CHECK
-#define GC_FIRST_CHECK FALSE
-#endif
-#ifndef GC_EVERY_CHECK
-#define GC_EVERY_CHECK FALSE
-#endif
-
-#if	GC_FIRST_CHECK
-#define declareFirst	static bool	gc_first = TRUE
-#define	clearFirst	gc_first = FALSE
-#else
-#define	declareFirst
-#define	clearFirst
-#define	gc_first	FALSE
-#endif
-
 #define Globals(c, d, i, p, u, nr)						\
 	/* gcState can't be static because stuff in mlton-lib.c refers to it */	\
 	struct GC_state gcState;						\
@@ -305,9 +289,10 @@ int main(int argc, char **argv) {					\
 		Return();				\
 	} while (0)
 
-#define GC_collect(frameSize, ret)						\
+#define GC_collect(frameSize, ret, amount, force)				\
 	do {									\
-		InvokeRuntime(GC_gc(&gcState, 0, TRUE, __FILE__, __LINE__),	\
+		InvokeRuntime(GC_gc(&gcState, amount, force, 			\
+					__FILE__, __LINE__),			\
 				frameSize, ret);				\
 	} while (0)
 
@@ -337,36 +322,6 @@ int main(int argc, char **argv) {					\
 		frontier += (bytes);				\
 	} while (0)
 
-#define LimitCheck(frameSize, ret, b, other)					\
-	do {									\
-		declareFirst;							\
-										\
-		if (FALSE)							\
-			fprintf(stderr,						\
-				"%d  LimitCheck  frontier - base = %d\n",	\
-				__LINE__,					\
-				frontier - gcState.base);			\
-		if (LIMIT_CHECK_COUNTS)						\
-			gcState.numLCs++;					\
-		if (GC_EVERY_CHECK						\
-		or (GC_FIRST_CHECK and gc_first)				\
-		or frontier + (b) > gcState.limit				\
-		or (other)) {							\
-			uint bytes = b;						\
-										\
-			InvokeRuntime						\
-			(GC_gc(&gcState, bytes,					\
-				GC_EVERY_CHECK or				\
-				(GC_FIRST_CHECK and gc_first),			\
-				__FILE__, __LINE__),				\
-			frameSize, ret);					\
-			clearFirst;						\
-		}								\
-		assert(StackBottom <= stackTop);				\
-	} while (0)
-
-#define StackOverflowCheck (stackTop > gcState.stackLimit)
-
 /* ------------------------------------------------- */
 /*                      Arrays                       */
 /* ------------------------------------------------- */
@@ -381,35 +336,18 @@ int main(int argc, char **argv) {					\
 #define XP(b, i) ArrayOffset(pointer, b, i)
 #define XU(b, i) ArrayOffset(uint, b, i)
 
-/* The extra POINTER_SIZE added to frontier is so space is allocated for the
- * forwarding pointer in zero length arrays.
- */
-#define ArrayNoPointers(dst, numElts, bytesPerElt)				\
-	do {									\
-		assert(numElts >= 0);						\
-		assert(bytesPerElt >= 0);					\
-		*(word*)frontier = (numElts);					\
-		*(word*)(frontier + WORD_SIZE) =				\
-			GC_arrayHeader((bytesPerElt), 0);			\
-		(dst) = frontier + 2 * WORD_SIZE;				\
-		frontier = (dst) + ((0 == numElts || 0 == bytesPerElt)		\
-				? POINTER_SIZE					\
-				: wordAlign((numElts) * (bytesPerElt)));	\
-	} while (0)
-
-#define ArrayPointers(dst, numElts, numPointers)				\
-	do {									\
-		assert(numElts >= 0);						\
-		assert(numPointers > 0);					\
-		*(word*)frontier = (numElts);					\
-		*(word*)(frontier + WORD_SIZE) =				\
-			GC_arrayHeader(0, (numPointers));			\
-		(dst) = frontier + 2 * WORD_SIZE;				\
-/*		fprintf(stderr, "%d  %x = ArrayPointers(%d, %d)\n", __LINE__,*/	\
-/*				(dst), (numElts), (numPointers));	     */	\
-		frontier = (dst) + ((0 == (numElts)) 				\
-			? POINTER_SIZE						\
-			: (numElts) * (numPointers) * POINTER_SIZE);		\
+#define Array(dst, header, numBytes, numElts)			\
+	do {							\
+		assert(numBytes > 0);				\
+		assert(isWordAligned(numBytes));		\
+		*(word*)frontier = (numElts);			\
+		*(word*)(frontier + WORD_SIZE) = (header);	\
+		(dst) = frontier + 2 * WORD_SIZE;		\
+		if (FALSE)					\
+			fprintf(stderr, "%d  %x = Array(%d)\n",	\
+				__LINE__, (uint)dst, numElts);	\
+		frontier = (dst) + (numBytes);			\
+		assert(frontier <= gcState.limit + LIMIT_SLOP); \
 	} while (0)
 
 /* ------------------------------------------------- */
@@ -477,6 +415,20 @@ static inline Int Int_subCheckFast(Int n1, Int n2) {
 	return n1;
 }
 
+static inline Word Word32_addCheckFast(Word n1, Word n2) {
+ 	__asm__ __volatile__ ("addl %1, %0\n\tjc MLton_overflow"
+			      : "+r" (n1) : "g" (n2) : "cc");
+
+	return n1;
+}
+
+static inline Word Word32_mulCheckFast(Word n1, Word n2) {
+ 	__asm__ __volatile__ ("imull %1, %0\n\tjc MLton_overflow"
+			      : "+r" (n1) : "g" (n2) : "cc");
+
+	return n1;
+}
+
 #define check(dst,n1,n2,l,f) dst = f(n1, n2)
 
 #define Int_addCheck(dst, n1, n2, l)			\
@@ -485,6 +437,10 @@ static inline Int Int_subCheckFast(Int n1, Int n2) {
 	check(dst, n1, n2, l, Int_mulCheckFast)
 #define Int_subCheck(dst, n1, n2, l)			\
 	check(dst, n1, n2, l, Int_subCheckFast)
+#define Word32_addCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Word32_addCheckFast)
+#define Word32_mulCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Word32_mulCheckFast)
 
 static inline Int Int_negCheckFast(Int n) {
 	__asm__ __volatile__ ("negl %1\n\tjo MLton_overflow"
@@ -495,7 +451,7 @@ static inline Int Int_negCheckFast(Int n) {
 #define Int_quot(x, y) ((x)/(y))
 #define Int_rem(x, y) ((x)%(y))
 
-#else /* FAST_INT */
+#else /* no FAST_INT */
 
 int Int_bogus;
 #define check(dst, n1, n2, l, f);						\
@@ -516,6 +472,10 @@ int Int_bogus;
 	check(dst, n1, n2, l, Int_mulOverflow)
 #define Int_subCheck(dst, n1, n2, l)			\
 	check(dst, n1, n2, l, Int_subOverflow)
+#define Word32_addCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Word32_addOverflow)
+#define Word32_mulCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Word32_mulOverflow)
 #define Int_negCheck(dst, n, l)				\
 	do {						\
 		int overflow;				\

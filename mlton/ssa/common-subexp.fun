@@ -216,7 +216,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 		  val transfer = Transfer.replaceVar (transfer, canonVar)
 		  val transfer =
 		     case transfer of 
-		        Arith {prim, args, overflow, success} =>
+		        Arith {prim, args, overflow, success, ty} =>
                            let
 			      val {args = succArgs,
 				   inDeg = succInDeg,

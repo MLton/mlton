@@ -15,6 +15,7 @@ end
 
 structure Rssa = Rssa (open Ssa
 		       structure Cases = Machine.Cases
+		       structure RuntimeOperand = M.RuntimeOperand
 		       structure Type = Machine.Type)
 structure R = Rssa
 local
@@ -299,6 +300,7 @@ fun toMachine (program: Ssa.Program.t) =
 				    offset = bytes,
 				    ty = ty}
 	     | Pointer n => M.Operand.Pointer n
+	     | Runtime r => M.Operand.Runtime r
 	     | Var {var, ...} => varOperand var
 	 end
       fun translateOperands ops = Vector.map (ops, translateOperand)
@@ -311,11 +313,21 @@ fun toMachine (program: Ssa.Program.t) =
 	    datatype z = datatype R.Statement.t
 	 in
 	    case s of
-	       Array {dst, numBytesNonPointers, numElts, numPointers} =>
-		  M.Statement.Array {dst = varOperand dst,
-				     numBytesNonPointers = numBytesNonPointers,
-				     numElts = varOperand numElts,
-				     numPointers = numPointers}
+	       Array {dst, numBytes, numBytesNonPointers, numElts, numPointers} =>
+		  M.Statement.Array
+		  {dst = varOperand dst,
+		   header = (Runtime.arrayHeader
+			     {numBytesNonPointers = numBytesNonPointers,
+			      numPointers = numPointers}),
+		   numBytes = translateOperand numBytes,
+		   numElts = translateOperand numElts}
+	     | Array0 {dst} =>
+		  M.Statement.Array
+		  {dst = varOperand dst,
+		   header = Runtime.arrayHeader {numBytesNonPointers = 0,
+						 numPointers = 0},
+		   numBytes = M.Operand.Uint (Word.fromInt Runtime.wordSize),
+		   numElts = M.Operand.Int 0}
 	     | Move {dst, src} =>
 		  if (case dst of
 			 R.Operand.Var {var, ...} =>
@@ -470,13 +482,14 @@ fun toMachine (program: Ssa.Program.t) =
 		  fun simple t = (Vector.new0 (), t)
 	       in
 		  case t of
-		     R.Transfer.Arith {args, dst, overflow, prim, success} =>
+		     R.Transfer.Arith {args, dst, overflow, prim, success, ty} =>
 			simple
-			(M.Transfer.Arith {args = varOperands args,
+			(M.Transfer.Arith {args = translateOperands args,
 					   dst = varOperand dst,
 					   overflow = overflow,
 					   prim = prim,
-					   success = success})
+					   success = success,
+					   ty = ty})
 		   | R.Transfer.Bug => simple M.Transfer.Bug
 		   | R.Transfer.CCall {args, prim, return, returnTy} =>
 			simple (M.Transfer.CCall {args = translateOperands args,
@@ -546,30 +559,6 @@ fun toMachine (program: Ssa.Program.t) =
 				       dsts = labelArgOperands dst,
 				       chunk = labelChunk dst},
 			 M.Transfer.Goto dst)
-		   | R.Transfer.LimitCheck {failure, kind, success} =>
-			let
-			   datatype z = datatype R.LimitCheck.t
-			   val kind =
-			      case kind of
-				 Array {bytesPerElt, extraBytes, numElts,
-					stackToo} =>
-				    M.LimitCheck.Array
-				    {bytesPerElt = bytesPerElt,
-				     extraBytes = extraBytes,
-				     numElts = varOperand numElts,
-				     stackToo = stackToo}
-			       | Heap z => M.LimitCheck.Heap z
-			       | Signal => M.LimitCheck.Signal
-			       | Stack => M.LimitCheck.Stack
-			   (* It doesn't matter whether we use live or
-			    * liveNoFormals, since the return is nullary.
-			    *)
-			in
-			   simple
-			   (M.Transfer.LimitCheck {failure = failure,
-						   kind = kind,
-						   success = success})
-			end
 		   | R.Transfer.Raise srcs =>
 			(M.Statement.moves
 			 {dsts = raiseOperands (Vector.map
