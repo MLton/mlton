@@ -18,6 +18,10 @@ signature OUTSTREAM =
       val print: string -> unit
       val set: t * t -> unit
       val standard: t
-      val withClose: t * (unit -> 'a) -> 'a
+      (* withClose (out, f) runs (f out) and ensures that out is closed after
+       * f completes.  It is a bit redundant to pass out to f (instead of ()),
+       * but it makes some code easier to write, and can be ignored if you want.
+       *)
+      val withClose: t * (t -> 'a) -> 'a
       val withNull: (t -> 'a) -> 'a
    end

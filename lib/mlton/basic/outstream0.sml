@@ -29,15 +29,15 @@ fun fluidLet (s1, s2, thunk) =
       ; DynamicWind.wind (thunk, fn () => TextIO.setOutstream (s1, old))
    end
 
-fun withClose (out: t, f: unit -> 'a): 'a =
-   DynamicWind.wind (f, fn () => close out)
+fun withClose (out: t, f: t -> 'a): 'a =
+   DynamicWind.wind (fn () => f out, fn () => close out)
 
 local
    fun 'a withh (f, p: t -> 'a, openn): 'a =
       let
 	 val out = openn f handle IO.Io _ => Error.bug ("cannot open " ^ f)
       in
-	 withClose (out, fn () => p out)
+	 withClose (out, p)
       end
 in
    fun 'a withOut (f, p: t -> 'a): 'a = withh (f, p, openOut)
