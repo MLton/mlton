@@ -33,7 +33,7 @@ structure Random: MLTON_RANDOM =
 	       (length, fn i =>
 		let
 		   val _ =
-		      if 0 = Int.quot (i, 6) (* n^6 = 62^6 = 965,660,736 *)
+		      if 0 = Int.rem (i, 6) (* n^6 = 62^6 = 965,660,736 *)
 			 then r := rand ()
 		      else ()
 		   val w = !r
