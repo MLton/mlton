@@ -1325,11 +1325,9 @@ void leave (GC_state s) {
 	 * for functions that don't ensureBytesFree.
 	 */
 	assert (mutatorInvariant (s, FALSE, TRUE));
-	unless (s->inSignalHandler) {
-		if (s->canHandle == 1 and s->signalIsPending)
-			s->limit = 0;
-	}
 	s->canHandle--;
+	if (s->canHandle == 0 and s->signalIsPending)
+		s->limit = 0;
 	if (DEBUG)
 		fprintf (stderr, "leave ok\n");
 }
@@ -3145,11 +3143,9 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 		/* END: ensureMutatorInvariant */
 		else {
 		/* BEGIN: leave(s); */
-		unless (s->inSignalHandler) {
-			if (s->canHandle == 1 and s->signalIsPending)
-				s->limit = 0;
-		}
 		s->canHandle--;
+		if (s->canHandle == 0 and s->signalIsPending)
+			s->limit = 0;
 		/* END: leave(s); */
 		}
 	}
