@@ -69,9 +69,12 @@ structure PosixError: POSIX_ERROR_EXTRA =
 			   f () handle exn => (Thread.atomicEnd (); raise exn)
 		     in
 			if return = ~1
-			   then let val e = getErrno ()
-				in Thread.atomicEnd () ; err {errno = e, handlers = handlers}
-				end
+			   then
+			      (* Must getErrno () in the critical section. *)
+			      let val e = getErrno ()
+			      in Thread.atomicEnd ()
+				 ; err {errno = e, handlers = handlers}
+			      end
 			   else DynamicWind.wind (post, Thread.atomicEnd)
 		     end
 		  fun err {default: unit -> 'a, 
@@ -80,10 +83,12 @@ structure PosixError: POSIX_ERROR_EXTRA =
 		     case List.find (fn (e',_) => errno = e') handlers of
 			SOME (_, handler) => handler ()
 		      | NONE => default ()
-		  fun errBlocked {errno: syserror, handlers: (syserror * (unit -> 'a)) list}: 'a =
+		  fun errBlocked {errno: syserror,
+				  handlers: (syserror * (unit -> 'a)) list}: 'a =
 		     err {default = fn () => raiseSys errno, 
 			  errno = errno, handlers = handlers}
-		  fun errUnblocked {errno: syserror, handlers: (syserror * (unit -> 'a)) list}: 'a =
+		  fun errUnblocked {errno: syserror,
+				    handlers: (syserror * (unit -> 'a)) list}: 'a =
 		     err {default = fn () =>
 			  if restart andalso errno = intr andalso !restartFlag
 			     then if Thread.canHandle () = 0
