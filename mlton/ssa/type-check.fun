@@ -61,8 +61,6 @@ fun checkScopes (program as
 		  ConApp {con, args, ...} => (getCon con
 					      ; Vector.foreach (args, getVar))
 		| Const _ => ()
-		| HandlerPop l => getLabel l
-		| HandlerPush l => getLabel l
 		| PrimApp {args, ...} => Vector.foreach (args, getVar)
 		| Profile _ => ()
 		| Select {tuple, ...} => getVar tuple
@@ -307,151 +305,6 @@ structure Function =
 	 end
    end
 
-fun checkHandlers (program as Program.T {functions, ...}): unit =
-   let
-      fun checkFunction (f: Function.t): unit =
-	 let
-	    val {blocks, name, start, ...} = Function.dest f
-	    val {get = labelIndex: Label.t -> int, rem = remLabelIndex,
-		 set = setLabelIndex} =
-		  Property.getSetOnce
-		  (Label.plist, Property.initRaise ("index", Label.layout))
-	    val _ =
-	       Vector.foreachi
-	       (blocks, fn (i, Block.T {label, ...}) =>
-		setLabelIndex (label, i))
-	    val numBlocks = Vector.length blocks
-	    val handlerStack = Array.array (numBlocks, NONE)
-	    val visited = Array.array (numBlocks, false)
-	    (* Do a dfs from the start, figuring out the handler stack at
-	     * each label.
-	     *)
-	    fun visit (l: Label.t, hs: Label.t list): unit =
-	       let
-		  val i = labelIndex l
-		  val Block.T {statements, transfer, ...} =
-		     Vector.sub (blocks, i)
-	       in
-		  if Array.sub (visited, i)
-		     then ()
-		  else
-		     let
-			val _ = Array.update (visited, i, true)
-			fun bug msg =
-			   (Layout.outputl
-			    (Vector.layout
-			     (fn Block.T {label, ...} =>
-			      let open Layout
-			      in seq [Label.layout label,
-				      str " ",
-				      Option.layout (List.layout Label.layout)
-				      (Array.sub (handlerStack,
-						  labelIndex label))]
-			      end)
-			     blocks,
-			     Out.error)
-			    ; (Error.bug
-			       (concat
-				["checkHandlers bug found in ", Label.toString l,
-				 ": ", msg])))
-			val _ =
-			   case Array.sub (handlerStack, i) of
-			      NONE => Array.update (handlerStack, i, SOME hs)
-			    | SOME hs' =>
-				 if List.equals (hs, hs', Label.equals)
-				    then ()
-				 else bug "handler stack mismatch"
-			val hs =
-			   Vector.fold
-			   (statements, hs, fn (s, hs) =>
-			    let
-			       val Statement.T {var, ty, exp, ...} = s
-			    in
-			       case Statement.exp s of
-				  HandlerPop _ =>
-				     (case hs of
-					 [] => bug "pop of empty handler stack"
-				       | _ :: hs => hs)
-				| HandlerPush h => h :: hs
-				| _ => hs
-			    end)
-			fun empty s =
-			   if List.isEmpty hs
-			      then ()
-			   else bug (concat ["nonempty stack ", s])
-			fun top l =
-			   case hs of
-			      l' :: _ =>
-				 if Label.equals (l, l')
-				    then ()
-				 else bug "wrong handler on top"
-			    | _ => bug "empty stack"
-			fun goto l = visit (l, hs)
-			val _ =
-			   case transfer of
-			      Arith {overflow, success, ...} =>
-				 (goto overflow; goto success)
-			    | Bug => ()
-			    | Call {func, return, ...} =>
-				 (case return of
-				     Return.Dead => ()
-				   | Return.NonTail {cont, handler} =>
-					(goto cont
-					 ; (case handler of
-					       Handler.Caller =>
-						  empty "Handler.Caller"
-					     | Handler.Dead => ()
-					     | Handler.Handle l =>
-						  (top l
-						   ; goto l)))
-				   | Return.Tail => ())
-			    | Case {cases, default, ...} =>
-				 (Option.app (default, goto)
-				  ; Cases.foreach (cases, goto))
-			    | Goto {dst, ...} => goto dst
-			    | Raise _ => empty "raise"
-			    | Return _ => empty "return"
-			    | Runtime {return, ...} => goto return
-		     in
-			()
-		     end
-	       end
-	    val _ = visit (start, [])
-	    val _ = Vector.foreach (blocks, remLabelIndex o Block.label)
-	 in
-	    ()
-	 end
-      val _ = List.foreach (functions, checkFunction)
-   in
-      ()
-   end
-
-val checkHandlers =
-   fn p =>
-   if !Control.handlers = Control.PushPop
-      then checkHandlers p
-   else let
-	   val Program.T {functions, ...} = p
-	in
-	   List.foreach (functions, fn f =>
-			 let
-			    val {blocks, ...} = Function.dest f
-			 in
-			    Vector.foreach
-			    (blocks, fn Block.T {statements, ...} =>
-			     Vector.foreach
-			     (statements, fn Statement.T {exp, ...} =>
-			      if (case exp of
-				     Exp.HandlerPop _ => true
-				   | Exp.HandlerPush _ => true
-				   | _ => false)
-				 then Error.bug "superfluous HandlerPush/Pop"
-			      else ()))
-			 end)
-	end
-
-val checkHandlers = Control.trace (Control.Pass, "checkHandlers") checkHandlers
-
 fun checkProf (Program.T {functions, ...}): unit =
    List.foreach (functions, fn f => Function.checkProf f)
 
@@ -460,7 +313,6 @@ val checkProf = Control.trace (Control.Pass, "checkProf") checkProf
 fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
    let
       val _ = checkScopes program
-      val _ = checkHandlers program
       val _ =
 	 if !Control.profile <> Control.ProfileNone
 	    then checkProf program

@@ -56,7 +56,7 @@ signature CONTROL =
        | Every
       val gcCheck: gcCheck ref
 
-      datatype handlers = Flow | PushPop | Simple
+      datatype handlers = Flow | Simple
       val handlers: handlers ref
 
       datatype host =

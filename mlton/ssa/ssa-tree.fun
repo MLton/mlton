@@ -152,8 +152,6 @@ structure Exp =
 	 ConApp of {con: Con.t,
 		    args: Var.t vector}
        | Const of Const.t
-       | HandlerPop of Label.t
-       | HandlerPush of Label.t
        | PrimApp of {prim: Prim.t,
 		     targs: Type.t vector,
 		     args: Var.t vector}
@@ -165,15 +163,13 @@ structure Exp =
 
       val unit = Tuple (Vector.new0 ())
 	 
-      fun foreachLabelVar (e, j, v) =
+      fun foreachVar (e, v) =
 	 let
 	    fun vs xs = Vector.foreach (xs, v)
 	 in
 	    case e of
 	       ConApp {args, ...} => vs args
 	     | Const _ => ()
-	     | HandlerPop l => j l
-	     | HandlerPush l => j l
 	     | PrimApp {args, ...} => vs args
 	     | Profile _ => ()
 	     | Select {tuple, ...} => v tuple
@@ -181,18 +177,13 @@ structure Exp =
 	     | Var x => v x
 	 end
 
-      fun foreachLabel (e, j) = foreachLabelVar (e, j, fn _ => ())
-      fun foreachVar (e, v) = foreachLabelVar (e, fn _ => (), v)
-
-      fun replaceLabelVar (e, fl, fx) =
+      fun replaceVar (e, fx) =
 	 let
 	    fun fxs xs = Vector.map (xs, fx)
 	 in
 	    case e of
 	       ConApp {con, args} => ConApp {con = con, args = fxs args}
 	     | Const _ => e
-	     | HandlerPop l => HandlerPop (fl l)
-	     | HandlerPush l => HandlerPush (fl l)
 	     | PrimApp {prim, targs, args} =>
 		  PrimApp {prim = prim, targs = targs, args = fxs args}
 	     | Profile _ => e
@@ -202,9 +193,6 @@ structure Exp =
 	     | Var x => Var (fx x)
 	 end
 
-      fun replaceVar (e, f) = replaceLabelVar (e, fn l => l, f)
-      fun replaceLabel (e, f) = replaceLabelVar (e, f, fn x => x)
-
       fun layout e =
 	 let
 	    open Layout
@@ -213,8 +201,6 @@ structure Exp =
 	       ConApp {con, args} =>
 		  seq [Con.layout con, str " ", layoutTuple args]
 	     | Const c => Const.layout c
-	     | HandlerPop l => seq [str "HandlerPop ", Label.layout l]
-	     | HandlerPush l => seq [str "HandlerPush ", Label.layout l]
 	     | PrimApp {prim, targs, args} =>
 		  seq [Prim.layout prim,
 		       if !Control.showTypes
@@ -236,8 +222,6 @@ structure Exp =
       val isFunctional =
 	 fn ConApp _ => true
 	  | Const _ => true
-	  | HandlerPop _ => false
-	  | HandlerPush _ => false
 	  | PrimApp {prim, ...} => Prim.isFunctional prim
 	  | Profile _ =>
 	       Error.bug "doesn't make sense to ask isFunctional Profile"
@@ -249,8 +233,6 @@ structure Exp =
 	 case e of
 	    ConApp _ => false
 	  | Const _ => false
-	  | HandlerPop _ => true
-	  | HandlerPush _ => true
 	  | PrimApp {prim,...} => Prim.maySideEffect prim
 	  | Profile _ => false
 	  | Select _ => false
@@ -264,8 +246,6 @@ structure Exp =
 	    (ConApp {con, args}, ConApp {con = con', args = args'}) =>
 	       Con.equals (con, con') andalso varsEquals (args, args')
 	  | (Const c, Const c') => Const.equals (c, c')
-	  | (HandlerPop l, HandlerPop l') => Label.equals (l, l')
-	  | (HandlerPush l, HandlerPush l') => Label.equals (l, l')
 	  | (PrimApp {prim, args, ...},
 	     PrimApp {prim = prim', args = args', ...}) =>
 	       Prim.equals (prim, prim') andalso varsEquals (args, args')
@@ -279,8 +259,6 @@ structure Exp =
       local
 	 val newHash = Random.word
 	 val conApp = newHash ()
-	 val handlerPop = newHash ()
-	 val handlerPush = newHash ()
 	 val primApp = newHash ()
 	 val profile = newHash ()
 	 val select = newHash ()
@@ -291,8 +269,6 @@ structure Exp =
 	 val hash: t -> Word.t =
 	    fn ConApp {con, args, ...} => hashVars (args, Con.hash con)
 	     | Const c => Const.hash c
-	     | HandlerPop l => Word.xorb (handlerPop, Label.hash l)
-	     | HandlerPush l => Word.xorb (handlerPush, Label.hash l)
 	     | PrimApp {args, ...} => hashVars (args, primApp)
 	     | Profile p => Word.xorb (profile, ProfileExp.hash p)
 	     | Select {tuple, offset} =>
@@ -310,8 +286,6 @@ structure Exp =
 	    ConApp {con, args} =>
 	       concat [Con.toString con, " ", Var.prettys (args, global)]
 	  | Const c => Const.toString c
-	  | HandlerPop l => concat ["HandlerPop ", Label.toString l]
-	  | HandlerPush l => concat ["HandlerPush ", Label.toString l]
 	  | PrimApp {prim, args, ...} =>
 	       Layout.toString
 	       (Prim.layoutApp (prim, args, fn x =>
@@ -374,18 +348,6 @@ structure Statement =
 	       exp = f x}
       in
 	 val profile = make Exp.Profile
-      end
-
-      local
-	 fun make f x =
-	    T {var = NONE,
-	       ty = Type.unit,
-	       exp = if !Control.handlers = Control.PushPop
-			then f x
-		     else Exp.unit}
-      in
-	 val handlerPop = make Exp.HandlerPop
-	 val handlerPush = make Exp.HandlerPush
       end
 
       fun clear s = Option.app (var s, Var.clear)
@@ -1362,8 +1324,8 @@ structure Function =
 				       Statement.T 
 				       {var = Option.map (var, lookupVar),
 					ty = ty,
-					exp = Exp.replaceLabelVar
-					      (exp, lookupLabel, lookupVar)}),
+					exp = Exp.replaceVar
+					      (exp, lookupVar)}),
 			 transfer = Transfer.replaceLabelVar
 			            (transfer, lookupLabel, lookupVar)})
 	    val start = lookupLabel start
@@ -1439,19 +1401,17 @@ structure Function =
 			    let
 			       val xs = Vector.map (ts, fn _ => Var.newNoname ())
 			       val l = Label.newNoname ()
-			       val pop = Statement.handlerPop l
-			       val push = Statement.handlerPush l
 			       val _ =
 				  List.push
 				  (extraBlocks,
 				   Block.T
 				   {args = Vector.zip (xs, ts),
 				    label = l,
-				    statements = Vector.new2 (pop, leave ()),
+				    statements = Vector.new1 (leave ()),
 				    transfer = Transfer.Raise xs})
 			    in
-			       (Vector.concat [statements, Vector.new1 push],
-				prefix (cont, Vector.new1 pop),
+			       (statements,
+				prefix (cont, Vector.new0 ()),
 				Handler.Handle l)
 			    end
 		   fun addLeave () =

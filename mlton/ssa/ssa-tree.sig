@@ -90,13 +90,6 @@ signature SSA_TREE =
 	       ConApp of {con: Con.t,
 			  args: Var.t vector}
 	     | Const of Const.t
-	     (* HandlerPush and HandlerPop are used throughout the simplification
-	      * pipeline, but are replaced with SetExnStackLocal and friends
-	      * at the very end of the pipeline, so that the backend never
-	      * sees HandlerPush and Pop.
-	      *)
-	     | HandlerPop of Label.t (* the label is redundant, but useful *)
-	     | HandlerPush of Label.t
 	     | PrimApp of {prim: Prim.t,
 			   targs: Type.t vector,
 			   args: Var.t vector}
@@ -126,8 +119,6 @@ signature SSA_TREE =
 	    val clear: t -> unit (* clear the var *)
 	    val equals: t * t -> bool
 	    val exp: t -> Exp.t
-	    val handlerPop: Label.t -> t
-	    val handlerPush: Label.t -> t
 	    val layout: t -> Layout.t
 	    val prettifyGlobals: t vector -> (Var.t -> string option)
 	    val profile: ProfileExp.t -> t

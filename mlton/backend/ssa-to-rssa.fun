@@ -745,10 +745,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			     | ConRep.Tuple rep =>
 				  allocate (args, rep))
 		      | S.Exp.Const c => move (Operand.Const c)
-		      | S.Exp.HandlerPop l =>
-			   add (Statement.HandlerPop (labelHandler l))
-		      | S.Exp.HandlerPush l =>
-			   add (Statement.HandlerPush (labelHandler l))
 		      | S.Exp.PrimApp {prim, targs, args, ...} =>
 			   let
 			      fun a i = Vector.sub (args, i)

@@ -771,9 +771,7 @@ fun useless (program: Program.t): Program.t =
 	       then yes ty
 	    else
 	       case exp of
-		  HandlerPush _ => yes ty
-		| HandlerPop _ => yes ty
-		| PrimApp {prim, args, ...} =>
+		  PrimApp {prim, args, ...} =>
 		     if Prim.maySideEffect prim
 			andalso let
 				   fun arg i = Vector.sub (args, i)

@@ -1162,39 +1162,6 @@ fun shrinkFunction (globals: Statement.t vector) =
 						    args = uses args})
 		     end
 		| Const c => construct (Value.Const c, fn () => exp)
-		| HandlerPush l =>
-		     (* You must do the forceBlock l in HandlerPop, not in
-		      * HandlerPush, because it must occur after where the
-		      * nontail call containing the handler was, because the
-		      * SSA dominance condition requires all variables used
-		      * in the handler to dominate the call, and hence the
-		      * HandlerPop.
-		      *)
-		     (fn ss =>
-		      case Array.sub (states, labelIndex' l) of
-			 State.Visited m =>
-			    if 0 = Array.sub (numHandlerUses,
-					      LabelMeaning.blockIndex m)
-			       then ss
-			    else Statement.handlerPush (meaningLabel m) :: ss
-		       | _ => ss)
-		| HandlerPop l =>
-		     (fn ss =>
-		      case Array.sub (states, labelIndex' l) of
-			 State.Visited m =>
-			    let
-			       val i = LabelMeaning.blockIndex m
-			    in
-			       if 0 = Array.sub (numHandlerUses, i)
-				  then ss
-			       else
-				  ((* Ensure that this label isn't deleted*)
-				   Array.inc (inDegree, i)
-				   ; Array.inc (numHandlerUses, i)
-				   ; forceMeaningBlock (indexMeaning i)
-				   ; Statement.handlerPop (meaningLabel m) :: ss)
-			    end
-		       | _ => ss)
 		| PrimApp {prim, targs, args} =>
 		     let
 			val args = varInfos args
@@ -1384,38 +1351,14 @@ fun eliminateDeadBlocksFunction f =
       val _ = Function.dfs (f, fn Block.T {label, ...} =>
 			    (setLive (label, true)
 			     ; fn () => ()))
-      fun statementIsLive (Statement.T {exp, ...}) =
-	 case exp of
-	    HandlerPop l => isLive l
-	  | HandlerPush l => isLive l
-	  | _ => true
       val f =
 	 if Vector.forall (blocks, isLive o Block.label)
 	    then f
 	 else
 	    let 
 	       val blocks =
-		  Vector.keepAllMap
-		  (blocks,
-		   fn block as Block.T {args, label, statements,
-					transfer} =>
-		   if isLive label
-		      then
-			 SOME
-			 (if Vector.forall (statements, statementIsLive)
-			     then block
-			  else
-			     let
-			        val statements =
-				   Vector.keepAll
-				   (statements, statementIsLive)
-			     in
-			        Block.T {args = args,
-					 label = label,
-					 statements = statements,
-					 transfer = transfer}
-			     end)
-		   else NONE)
+		  Vector.keepAll
+		  (blocks, isLive o Block.label)
 	    in
 	       Function.new {args = args,
 			     blocks = blocks,

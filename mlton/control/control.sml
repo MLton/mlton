@@ -91,11 +91,10 @@ val gcCheck = control {name = "gc check",
 
 structure Handlers =
    struct
-      datatype t = Flow | PushPop | Simple
+      datatype t = Flow | Simple
 
       val toString =
 	 fn Flow => "Flow"
-	  | PushPop => "PushPop"
 	  | Simple => "Simple"
    end
 

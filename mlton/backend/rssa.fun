@@ -157,8 +157,6 @@ structure Statement =
 	 Bind of {isMutable: bool,
 		  oper: Operand.t,
 		  var: Var.t}
-       | HandlerPop of Label.t (* the label is redundant, but useful *)
-       | HandlerPush of Label.t
        | Move of {dst: Operand.t,
 		  src: Operand.t}
        | Object of {dst: Var.t,
@@ -190,8 +188,6 @@ structure Statement =
 	    case s of
 	       Bind {oper, var, ...} =>
 		  def (var, Operand.ty oper, useOperand (oper, a))
-	     | HandlerPop _ => a
-	     | HandlerPush _ => a
 	     | Move {dst, src} => useOperand (src, useOperand (dst, a))
 	     | Object {dst, stores, ty, ...} =>
 		  Vector.fold (stores, def (dst, ty, a),
@@ -235,8 +231,6 @@ structure Statement =
 	    fn Bind {oper, var, ...} =>
 		  seq [Var.layout var, constrain (Operand.ty oper),
 		       str " = ", Operand.layout oper]
-	     | HandlerPop l => seq [str "HandlerPop ", Label.layout l]
-	     | HandlerPush l => seq [str "HandlerPush ", Label.layout l]
 	     | Move {dst, src} =>
 		  mayAlign [Operand.layout dst,
 			    seq [str " = ", Operand.layout src]]
@@ -1120,8 +1114,6 @@ structure Program =
 	       in
 		  case s of
 		     Bind {oper, ...} => (checkOperand oper; true)
-		   | HandlerPop _ => true
-		   | HandlerPush _ => true
 		   | Move {dst, src} =>
 			(checkOperand dst
 			 ; checkOperand src

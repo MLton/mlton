@@ -80,8 +80,6 @@ signature RSSA =
 	       Bind of {isMutable: bool,
 			oper: Operand.t,
 			var: Var.t}
-	     | HandlerPop of Label.t (* the label is redundant, but useful *)
-	     | HandlerPush of Label.t
 	     | Move of {dst: Operand.t,
 			src: Operand.t}
 	     | Object of {dst: Var.t,

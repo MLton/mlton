@@ -197,8 +197,6 @@ fun 'a analyze
 	       case exp of
 		  ConApp {con, args} => conApp {con = con, args = values args}
 		| Const c => const c
-		| HandlerPop _ => unit
-		| HandlerPush _ => unit
 		| PrimApp {prim, targs, args, ...} =>
 		     primApp {prim = prim,
 			      targs = targs,

@@ -143,7 +143,6 @@ fun makeOptions {usage} =
 	SpaceString (fn s =>
 		     case s of
 			"flow" => handlers := Flow
-		      | "pushpop" => handlers := PushPop
 		      | "simple" => handlers := Simple
 		      | _ => usage (concat ["invalid -handlers flag: ", s]))),
        (Normal, "host",

@@ -41,16 +41,6 @@ structure Deconed =
     val whenDeconed = addHandler
   end
 
-structure Catches =
-  struct
-    structure L = TwoPointLattice (val bottom = "does not catch"
-				   val top = "catches")
-    open L
-    val catch = makeTop
-    val doesCatch = isTop
-    val whenCatches = addHandler
-  end
-
 structure SideEffects =
   struct
     structure L = TwoPointLattice (val bottom = "does not side effect"
@@ -268,19 +258,16 @@ structure FuncInfo =
 structure LabelInfo =
   struct
     datatype t = T of {args: (VarInfo.t * Type.t) vector,
-		       catches: Catches.t,
 		       func: FuncInfo.t,
 		       used: Used.t,
 		       wrappers: (Type.t vector * Label.t) list ref}
 
-    fun layout (T {args, catches, used, ...}) 
+    fun layout (T {args, used, ...}) 
       = Layout.record [("args", Vector.layout (VarInfo.layout o #1) args),
-		       ("catches", Catches.layout catches),
 		       ("used", Used.layout used)]
 				  
     fun new {args: (VarInfo.t * Type.t) vector, func: FuncInfo.t}: t 
       = T {args = args,
-	   catches = Catches.new (),
 	   func = func,
 	   used = Used.new (),
 	   wrappers = ref []}
@@ -290,16 +277,11 @@ structure LabelInfo =
       fun make' f = (make f, ! o (make f))
     in
       val args = make #args
-      val catches = make #catches
       val func = make #func
       val used = make #used
       val (wrappers', wrappers) = make' #wrappers
     end
 
-    val catch = Catches.catch o catches
-    val doesCatch = Catches.doesCatch o catches
-    fun whenCatches (li, th) = Catches.whenCatches (catches li, th)
-      
     val use = Used.use o used
     val isUsed = Used.isUsed o used
     fun whenUsed (li, th) = Used.whenUsed (used li, th)
@@ -488,8 +470,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		     | Caller 
 		     => (case (FuncInfo.raises fi, FuncInfo.raises fi')
 			   of (SOME xts, SOME xts')
-			    => (* force equality on raises *)
-			       unifyVarInfoTysVarInfoTys (xts, xts')
+			    => flowVarInfoTysVarInfoTys (xts, xts')
 			    | _ => ();
 			 FuncInfo.flowRaises (fi', fi))
 		     | Some l
@@ -498,10 +479,8 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 			in
 			  Option.app
 			  (FuncInfo.raises fi', fn xts =>
-			   (* force equality on raises *)
-			   unifyVarInfoTysVarInfoTys
+			   flowVarInfoTysVarInfoTys
 			   (LabelInfo.args li, xts));
-			  FuncInfo.whenRaises (fi', fn () => LabelInfo.catch li);
 			  FuncInfo.whenRaises (fi', visitLabelInfoTh li)
 			end;
 		  visitFuncInfo fi'
@@ -794,8 +773,6 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
       val getConWrapperLabel = getWrapperLabel
       val getContWrapperLabel = getWrapperLabel
       val getHandlerWrapperLabel = getWrapperLabel
-      fun getHandlerWrapperLabel' l
-	= getWrapperLabel (l, LabelInfo.args (labelInfo l))
       fun getOriginalWrapperLabel l 
 	= getWrapperLabel 
 	  (l, Vector.map (LabelInfo.args (labelInfo l), fn (_, t) =>
@@ -907,37 +884,26 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	              simplifyExp
       fun simplifyStatement (s as Statement.T {var, ty, exp},
 			     f: FuncInfo.t): Statement.t option 
-	= let
-	    fun maybe (l, th) 
-	      = if LabelInfo.doesCatch (labelInfo l)
-		  then SOME (Statement.T {var = var, ty = ty, exp = th ()})
-		  else NONE
-	  in     
-	    case exp 
-	      of HandlerPop l 
-	       => maybe (l, fn () => HandlerPop (getHandlerWrapperLabel' l))
-	       | HandlerPush l 
-	       => maybe (l, fn () => HandlerPush (getHandlerWrapperLabel' l))
-	       | Profile _ => SOME s
-	       | _ => let
-			fun doit' var
-			  = SOME (Statement.T {var = var,
-					       ty = ty,
-					       exp = simplifyExp exp})
-			fun doit var'
-			  = if Exp.maySideEffect exp
-			      then doit' var
-			      else if isSome var'
-				     then doit' var'
-				     else NONE
-		      in
-			case var
-			  of SOME var => if isUsedVar var
-					   then doit (SOME var)
-					   else doit NONE
-			   | NONE => doit NONE
-		      end
-	  end
+	= case exp 
+	    of Profile _ => SOME s
+	     | _ => let
+		      fun doit' var
+			= SOME (Statement.T {var = var,
+					     ty = ty,
+					     exp = simplifyExp exp})
+		      fun doit var'
+			= if Exp.maySideEffect exp
+			    then doit' var
+			    else if isSome var'
+				   then doit' var'
+				   else NONE
+		    in
+		      case var
+			of SOME var => if isUsedVar var
+					 then doit (SOME var)
+					 else doit NONE
+			 | NONE => doit NONE
+		    end
       fun simplifyStatements (ss: Statement.t Vector.t,
 			      fi: FuncInfo.t) : Statement.t Vector.t
 	= Vector.keepAllMap (ss, fn s => simplifyStatement (s, fi))

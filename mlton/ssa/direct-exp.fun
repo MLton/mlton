@@ -307,7 +307,7 @@ structure Cont:
 				    exp = e} :: statements,
 	  transfer = transfer}
 
-      val sendVar =
+      val sendVatr =
 	 Trace.trace3 ("Cont.sendVar", layout, Type.layout, Var.layout,
 		       Res.layout)
 	 sendVar
@@ -505,8 +505,7 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 	       let
 		  val k = Cont.goto (reify (k, ty))
 		  val hl = Label.newNoname ()
-		  val {statements, transfer} =
-		     Res.prefix (loop (handler, h, k), Statement.handlerPop hl)
+		  val {statements, transfer} = loop (handler, h, k)
 		  val _ =
 		     List.push (blocks,
 				Block.T {label = hl,
@@ -514,9 +513,7 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 					 statements = Vector.fromList statements,
 					 transfer = transfer})
 	       in
-		  Res.prefix (loop (try, Handler.Handle hl,
-				    Cont.prefix (k, Statement.handlerPop hl)),
-			      Statement.handlerPush hl)
+		  loop (try, Handler.Handle hl, k)
 	       end
 	  | Let {decs, body} =>
 	       let
