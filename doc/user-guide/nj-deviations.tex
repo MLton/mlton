@@ -51,6 +51,23 @@ signature definitions to occur within the scope of {\tt local} and {\tt
 structure} declarations.
 
 \item
+{\smlnj} extends the syntax of the language to allow abbreviated
+functor definitions, as in the following:
+\begin{verbatim}
+signature S =
+  sig
+    type t
+    val x : t
+  end
+functor F(structure A : S) : S = 
+  struct
+    type t = A.t * A.t
+    val x = (A.x, A.x)
+  end
+functor G = F
+\end{verbatim} 
+
+\item
 {\smlnj} allows sharing constraints between type abbreviations in
 signatures, as in the following:
 \begin{verbatim}
