@@ -15,5 +15,5 @@ signature SHRINK =
 
       val shrinkFunction: Statement.t vector -> Function.t -> Function.t
 (*      val shrinkFunctionNoDelete: Function.t -> Function.t *)
-(*      val shrink: Program.t -> Program.t *)
+      val shrink: Program.t -> Program.t
    end

@@ -13,6 +13,7 @@ structure Contify = Contify (S)
 structure Flatten = Flatten (S)
 structure Inline = Inline (S)
 structure IntroduceLoops = IntroduceLoops (S)
+structure KnownCase = KnownCase (S)
 structure LocalFlatten = LocalFlatten (S)
 structure LocalRef = LocalRef (S)
 structure LoopInvariant = LoopInvariant (S)
@@ -72,6 +73,7 @@ val passes =
     ("commonBlock", CommonBlock.eliminate),
     ("redundantTests", RedundantTests.simplify),
     ("redundant", Redundant.redundant),
+    ("knownCase", KnownCase.simplify),
     ("removeUnused4", RemoveUnused.remove)
     ]
    

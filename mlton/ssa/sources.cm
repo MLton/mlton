@@ -34,6 +34,8 @@ inline.fun
 inline.sig
 introduce-loops.fun
 introduce-loops.sig
+known-case.fun
+known-case.sig
 local-flatten.fun
 local-flatten.sig
 local-ref.sig

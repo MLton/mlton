@@ -43,9 +43,9 @@ BFLAGS = -mlton "/usr/local/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
 test: $(NAME)
 	export PATH=$(PATH):$$PATH && cd tests && ../benchmark $(BFLAGS) $(BENCH)
 
-QBENCH = $(QBENCH)
+QBENCH = $(BENCH)
 
-QBFLAGS = -mlton "mlton"
+QBFLAGS = -mlton "mlton -drop-pass knownCase" -mlton "mlton"
 
 .PHONY: qtest
 qtest: $(NAME)

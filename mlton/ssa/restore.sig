@@ -14,5 +14,5 @@ signature RESTORE =
       include RESTORE_STRUCTS
 
       val restoreFunction: Statement.t vector -> Function.t -> Function.t
-(*      val restoreProgram: Program.t -> Program.t *)
+      val restore: Program.t -> Program.t
    end
