@@ -39,7 +39,7 @@ log=$src/regression/log
 		;;
 		*)
  			echo "testing $f"
-			$mlton $f.sml
+			$mlton -type-check true $f.sml
 			if [ $? -eq 0 ]; then
 				$f >$tmp 2>&1
 				if [ -r $f.ok ]; then
