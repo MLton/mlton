@@ -352,7 +352,7 @@ structure Regexp =
 			* some of their examples use them.
 			*)
 		  ],
-			    optional (seq [char #"?", query])]
+	      optional (seq [char #"?", query])]
       val absoluteUrl = seq [scheme, char #":", or [hierPart, opaquePart]]
       val url = seq [optional (or [absoluteUrl, relativeUrl]),
 		     optional (seq [char #"#", fragment])]
