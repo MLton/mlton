@@ -93,7 +93,9 @@ Top-level and opaque signatures:
   clauses, and most type constraints are documented in the structure
   specific pages, but the constraint on the top-level Math.real
   slipped my mind when I first looked at it.
- 
+
+******************************************************************************
+******************************************************************************
 
 Array and Vector design:
 
@@ -181,6 +183,172 @@ Array2:
   favor of extending it to multi-dimentional ones.
 * Should ARRAY2 have findi/find, exists, all?  collate?
 
+******************************************************************************
+******************************************************************************
+
+Following up my previous post, here is another loose collection of
+notes I've taken while updating the MLton implementation of the SML
+Basis Library.  This includes the structures that had been grouped
+under the headings System, Posix, and IO in the "old" web
+specification.
+
+Required and optional components:
+* The optional functors PrimIO, StreamIO, and ImperativeIO are not
+  listed among the optional components in overview.html.
+
+Lists:
+* The discussion for the ListPair structure says:
+  "Note that a function requiring equal length arguments may determine
+  this lazily, i.e. , it may act as though the lists have equal length
+  and invoke the user-supplied function argument, but raise the
+  exception when it arrives at the end of one list before the end of the
+  other."
+  Such an implementation choice seems to go against the spirit that
+  programs run under conforming implementations of the Basis Library
+  should behave the same.
+
+Posix:
+* In posix.html, last sentence in Discussion: "onsult" instead of
+  "consult"
+PosixSignal:
+* In posix-signal.html, in Discussion: "The name of the coressponding
+  ..." sentence is repeated.
+PosixError:
+* In the discussion of POSIX_ERROR:
+  "The name of a corresponding POSIX error can be derived by
+  capitalizing all letters and adding the character ``E'' as a
+  prefix. For example, the POSIX error associated with nodev is
+  ENODEV. The only exception to this rule is the error toobig, whose
+  associated POSIX error is E2BIG."
+  It isn't clear if this is the intended semantics for errorName and
+  syserror.
+
+Time:
+* The type time now includes "negative values moving to the past."
+  In the absence of negative values, the text for the the
+  to{Seconds,Milliseconds,Microseconds} functions to drop fractions of
+  the time unit was unambigous.  With negative values, I would
+  interpret this as rounding towards zero.  Is this correct?  Would it
+  be clearer to describe the rounding as such?
+* The + and - functions are required to raise Overflow, although most
+  other "result not representable as a time value" error raises Time.
+* The - function is written prefix instead of infix in the
+  description.
+* The scan and fromString functions do not specify how to treat a
+  value with greater precision than the internal representation;
+  should it have rounding or truncation semantics?  Also, the
+  functions are required to raise Overflow for an unrepresentable
+  time value.
+
+IO:
+* The nice introduction to IO that appears at
+  http://cm.bell-labs.com/cm/cs/what/smlnj/doc/basis/pages/io-explain.html
+  doesn't seem to be included with the new pages.
+* The functor arguments in PrimIO, StreamIO, and ImperativIO functors
+  don't match; some use structure A: MONO_ARRAY and others use
+  structure Array: MONO_ARRAY.
+
+PrimIO() and PRIM_IO
+* The PRIM_IO signature requires pos to be an eqtype, but the PrimIO
+  functor argument only requires pos to be a type.
+* readArr[NB], write{Vec,Arr}[NB] take "slices" (records of type {buf:
+  {vector,array}, i: int, sz: int option}) but no description of the
+  appropriate action to take when the slices are invalid.  Presumably,
+  they should raise Subscript.
+* There are a number of "contradictory" statments:
+  "Readers and writers should not, in general, raise the IO.Io
+  exception. It is assumed that the higher levels will appropriately
+  handle these exceptions."
+  "A reader is required to raise IO.Io if any of its functions, except
+  close or getPos, is invoked after a call to close. A writer is
+  required to raise IO.Io if any of its functions, except close, is
+  invoked after a call to close."
+  "closes the reader and frees operating system resources. Further
+  operations on the reader (besides close and getPos) raise
+  IO.ClosedStream."
+  "closes the writer and frees operating system resources. Further
+  operations (other than close) raise IO.ClosedStream."
+* The augment_reader and augment_writer functions may introduce new
+  functions.  Should the synthesized operations handle IO.Io
+  exceptions and change the function field?  Maybe this falls under
+  the "intentionally unspecified" clause.
+
+StreamIO() and STREAM_IO:
+* What is the difference between a terminated output stream and a
+  closed output stream?  Some operations say what to do when the
+  stream is terminated or closed, but many are unspecified when the
+  other condition holds.  I resolved this by looking at the IO
+  introduction mentioned above, where it discusses stream states.
+  But, closeOut is still confusing: "flushes f's buffers, marks the
+  stream closed, and closes the underlying writer. This operation has
+  no effect if f is already closed. If f is terminated, it should
+  close the underlying writer."  Shouldn't closeOut always execute the
+  underlying writer's close function?  The only way to terminate an
+  outstream is to getOutstream, but I would really expect
+  TextIO.closeOut to "really" close the underlying
+  file/outstream/writer.
+* The IO structure has dropped the TerminatedStream exception, but
+  there seem to be sufficient cases when a stream should raise an
+  exception when it is terminated.
+* The semantics of the vector returned by getReader are unclear.  At
+  the very least, the source code for SML/NJ and PolyML have very
+  different interpretations, and I've chosen yet another.  I think
+  part of the problem is that the word "[un]consumed" only appears in
+  the description of this function, so it's unclear what corresponds
+  to consumed input.
+* I suspect the example under endOfStream is wrong:
+  
+  In these cases the StreamIO.instream will also have multiple EOF's;
+  that is, it can be that
+
+  val true = endOfStream(f)
+  val ("",f') = input f
+  val true = endOfStream(f')
+  val ("xyz",f'') = input f
+
+  The fact that input f can return two different values would seem to
+  violate the principal argument for functional streams!  Looking at
+  the aforementioned IO introduction in the "old" pages, I see the
+  more reasonable example:
+
+  Consequently, the following is not guaranteed to be true:
+
+  let val z = TextIO.StreamIO.endOfStream f
+      val (a,f') = TextIO.StreamIO.input f
+      val x = TextIO.StreamIO.endOfStream f'
+  in x=z   (* not necessarily true! *)
+  end
+
+  whereas the following is guaranteed to be true:
+
+  let val z = TextIO.StreamIO.endOfStream f
+      val (a,f') = TextIO.StreamIO.input f
+      val x = TextIO.StreamIO.endOfStream f (* note, no prime! *)
+  in x=z   (* guaranteed true! *)
+  end
+* David Matthews's post on Aug. 2 raised questions about canInput
+  which are unresolved.
+
+General comments:
+* Various operations in IO take "slices", but aren't expressed in
+  terms of {Vector,Array}Slice structures.  One difficulty with this
+  is that the slice types are not in scope within the IO signatures.  
+  
+  I would really advocate making the VectorSlice structure a
+  substructure of the Vector structure (and likewise for arrays).
+  Even if this isn't done for the polymorphic vector/array structures,
+  it would be extremely beneficial for the monomorphic structures,
+  where in the {Prim,Stream,Imperative}IO functors, it is impossible
+  to access the corresponding monomorphic vector/array slice
+  structures.  I found myself using Vector.tabulate when I really
+  wanted ArraySlice.vector.
+
+  The "old" MONO_ARRAY signature included structure Vector:
+  MONO_VECTOR which gave access to the corresponding monomorphic
+  vectors.
+
+******************************************************************************
+******************************************************************************
 
 Not sent to list:
 
@@ -197,18 +365,11 @@ might be the wrong way to look at things: the listing of structures
 and signatures with clauses doesn't correspond to a build order, it
 corresponds to the way the environment should look to the program.
 
-SLICES:
+Sequences and Slices:
 Why not existsi, alli?
 
 Vector:
 Why no vector: int * 'a -> 'a vector?
-
-ListPair discussion:
-"Note that a function requiring equal length arguments may determine
-this lazily, i.e. , it may act as though the lists have equal length
-and invoke the user-supplied function argument, but raise the
-exception when it arrives at the end of one list before the end of the
-other."
 
 
 Resolved:
@@ -263,23 +424,6 @@ MLton specific:
 ******************************************************************************
 ******************************************************************************
 
-Posix structure:
-- last sentence in Discussion: "onsult" instead of "consult"
-
-POSIX_ERROR
-Discusion:
-"The name of a corresponding POSIX error can be derived by
-capitalizing all letters and adding the character ``E'' as a
-prefix. For example, the POSIX error associated with nodev is
-ENODEV. The only exception to this rule is the error toobig, whose
-associated POSIX error is E2BIG."
--> It isn't clear if this is the intended semantics for errorName and
-   syserror.  It currently isn't in MLton.
-
-POSIX_SIGNAL
-Discussion:
-"The name of the corresponding..." is repeated.
-
 UNIX:
 I'm not quite sure how the ('a, 'b) proc type is supposed to work in practice;
 The old Unix structure just used them as TextIO.{in,out}streams.
@@ -292,53 +436,3 @@ continue to return the same TextIO.instream.  That would seem to
 suggest we need an 'a option ref that can be banged at the first call
 to a streamOf function, and subsequent calls just return the value
 there.
-
-Time:
-Time now include negative values?
- -> what is the semantics of toSeconds for negative values, 
-    still, just drop fractional part?
-+, - raise Overflow when result not representable; why not raise Time?
-- is written prefix instead of infix in description.
-fromString : rounding or truncation semantics?
-
-PrimIO and PRIM_IO
-- PRIM_IO requires pos to be an eqtype, but the PrimIO functor argument only 
-   requires pos to be a type.
-- readArr {buf, i, sz}
-   * what should happen when k elements read and i + k >= Array.length buf
-- reader & writer operations should be expressed in terms of {Array,Vector}Slice.slice;
-  semantics aren't clear when not a valid slice
-- ArraySlice and VectorSlice should be sub-structures of Array and Vector.
-  Particularly, MONO_ARRAY and MONO_VECTOR should have MONO_ARRAY_SLICE and 
-  MONO_VECTOR_SLICE substructures.
-  The "obvious" way of turning a readArr into a readVec requires extracting
-  the read elements from the buffer, which is concisely expressed with
-  ArraySlice.vector o ArraySlice.slice.  But, these functions aren't available
-  from the MONO_ARRAY structure argument to the PRIM_IO functor.
-- contradictory statements:
-  "Readers and writers should not, in general, raise the IO.Io
-  exception. It is assumed that the higher levels will appropriately
-  handle these exceptions."
-  "A reader is required to raise IO.Io if any of its functions, except
-  close or getPos, is invoked after a call to close. A writer is
-  required to raise IO.Io if any of its functions, except close, is
-  invoked after a call to close."
-  "closes the reader and frees operating system resources. Further
-  operations on the reader (besides close and getPos) raise
-  IO.ClosedStream."
-  "closes the writer and frees operating system resources. Further
-  operations (other than close) raise IO.ClosedStream."
-- should synthesized operations handle and IO.Io exceptions and change
-  the name field?
-
-functor arguments in PrimIO and StreamIO and ImperativeIO don't match.
-
-STREAM_IO
-- what is the difference between a terminated output stream and a closed
-   output stream?  It seems as though the only way to terminate a stream
-   is to apply getWriter.  Some operations say what to do when the stream
-   is terminated or closed, but many are unspecified when the other condition
-   holds.
-- SML/NJ and PolyML have different interpretations of the vector returned
-   by getReader.  If SML/NJ is right, what should be done about multiple EOS
-   in the unconsumed portion of the stream?

@@ -21,6 +21,7 @@ signature IMPERATIVE_IO_EXTRA_ARG =
 functor ImperativeIOExtra(S: IMPERATIVE_IO_EXTRA_ARG): IMPERATIVE_IO_EXTRA =
    struct
       open S
+      structure StreamIOExtra = StreamIO
 
       structure SIO = StreamIO
       structure V = Vector
@@ -66,6 +67,9 @@ functor ImperativeIOExtra(S: IMPERATIVE_IO_EXTRA_ARG): IMPERATIVE_IO_EXTRA =
       fun inputAll (In is) = let val (v, is') = SIO.inputAll (!is)
 			     in is := is'; v
 			     end
+      fun inputLine (In is) = let val (v, is') = SIO.inputLine (!is)
+			      in is := is'; v
+			      end
       fun canInput (In is, n) = SIO.canInput (!is, n)
       fun lookahead (In is) = let val (v, _) = SIO.input (!is)
 			      in
@@ -150,6 +154,11 @@ functor ImperativeIOExtra(S: IMPERATIVE_IO_EXTRA_ARG): IMPERATIVE_IO_EXTRA =
 	in
 	  mkInstream instream
 	end
+
+      fun scanStream f is =
+	case f StreamIO.input1 (getInstream is) of
+	  NONE => NONE
+	| SOME (v, is') => (setInstream (is, is'); SOME v)
    end
 
 signature IMPERATIVE_IO_ARG = 
@@ -168,6 +177,7 @@ functor ImperativeIO(S: IMPERATIVE_IO_ARG): IMPERATIVE_IO =
 			open StreamIO
 			fun inFd _ = raise (Fail "<inFd>")
 			fun outFd _ = raise (Fail "<outFd>")
+			fun inputLine _ = raise (Fail "<inputLine>")
 		      end
 		    fun mkReader _ = raise (Fail "<mkReader>")
 		    fun mkWriter _ = raise (Fail "<mkWriter>")

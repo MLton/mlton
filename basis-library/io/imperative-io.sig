@@ -31,6 +31,16 @@ signature IMPERATIVE_IO_EXTRA =
    sig
       include IMPERATIVE_IO
 
+      structure StreamIOExtra: STREAM_IO_EXTRA
+      where type elem = StreamIO.elem
+      where type vector = StreamIO.vector
+      where type instream = StreamIO.instream
+      where type outstream = StreamIO.outstream
+      where type out_pos = StreamIO.out_pos
+      where type reader = StreamIO.reader
+      where type writer = StreamIO.writer
+      where type pos = StreamIO.pos
+
       val equalsIn: instream * instream -> bool
       val equalsOut: outstream * outstream -> bool
 
@@ -46,4 +56,9 @@ signature IMPERATIVE_IO_EXTRA =
       val openOut: string -> outstream
       val openAppend: string -> outstream
       val openVector: vector -> instream
+
+      val inputLine: instream -> vector
+      val scanStream: ((elem, StreamIO.instream) StringCvt.reader -> 
+		       ('a, StreamIO.instream) StringCvt.reader) -> 
+	              instream -> 'a option
    end

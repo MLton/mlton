@@ -9,7 +9,7 @@ signature STREAM_IO_EXTRA_ARG =
       val someElem: PrimIO.elem
    end
 
-functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG) =
+functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
    struct
       open S
 
@@ -418,6 +418,8 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG) =
 	in
 	  loop (is, [])
 	end
+
+      fun inputLine is = raise (Fail "<not implemented>")
 
       fun canInput (is as In {state, ...}, n) =
 	if n < 0 orelse n > V.maxLen

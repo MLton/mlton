@@ -9,7 +9,7 @@ signature PRIM_IO_EXTRA_ARG =
      val compare : (pos * pos) -> order
    end
 
-functor PrimIOExtra (S : PRIM_IO_EXTRA_ARG) = 
+functor PrimIOExtra (S : PRIM_IO_EXTRA_ARG): PRIM_IO_EXTRA = 
    struct
       open S
 

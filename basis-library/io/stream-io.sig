@@ -37,4 +37,6 @@ signature STREAM_IO_EXTRA =
 
       val inFd: instream -> Posix.IO.file_desc
       val outFd: outstream -> Posix.IO.file_desc
+
+      val inputLine: instream -> (vector * instream)
    end

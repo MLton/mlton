@@ -18,16 +18,13 @@ structure TextIO: TEXT_IO_EXTRA =
 
       structure StreamIO =
 	 struct
-	    open StreamIO
-	    val inputLine = fn _ => raise (Fail "<unimplemented>")
+	    open StreamIOExtra
 	    val outputSubstr = fn _ => raise (Fail "<unimplemented>")
 	 end
 
-      val inputLine = fn _ => raise (Fail "<unimplemented>")
       val outputSubstr = fn _ => raise (Fail "<unimplemented>")
       val openString = openVector
       fun print (s: string) = (output (stdOut, s); flushOut stdOut)
-      val scanStream = fn _ => raise (Fail "<unimplemented>")
    end
 
 structure TextIOGlobal: TEXT_IO_GLOBAL = TextIO
