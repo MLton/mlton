@@ -952,7 +952,7 @@ fun layout' (E: t, f, showUsed): Layout.t =
       val sigs =
 	 doit (sigs, fn (sigid, I) =>
 	       let
-		  val (S, _) = dummyStructure (E, I, {prefix = "",
+		  val (S, _) = dummyStructure (E, I, {prefix = "?.",
 						      tyconNewString = false})
 	       in
 		  align [seq [str "signature ", Sigid.layout sigid, str " = "],
@@ -1805,8 +1805,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			  align [seq [str "variable: ",
 				      Longvid.layout	
 				      (Longvid.long (rev strids, name))],
-				 seq [str "structure: ", l'],
-				 seq [str "signature: ", l]])
+				 seq [str "structure: ", l],
+				 seq [str "signature: ", l']])
 		      end
 		   val _ = Type.unify (strType, sigType,
 				       {error = error,
