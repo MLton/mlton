@@ -58,7 +58,7 @@ fun maybeConstrain (e, tyo) =
 fun layoutLongvid x =
    str (let val s = Longvid.toString x
 	in if s = "*" then " * "
-	   else if String.isSuffix {string = s, suffix = "*"}
+	   else if String.hasSuffix (s, {suffix = "*"})
 		   then s ^ " "
 		else s
 	end)

@@ -539,10 +539,10 @@ struct
 	  val queue = ref (Queue.empty ())
 	in
 	  fun enque x = queue := Queue.enque(!queue, x)
-	  fun deque () = case Queue.deque(!queue)
-			   of NONE => NONE
-			    | SOME(x, queue') => (queue := queue';
-						  SOME x)
+	  fun deque () =
+	     case Queue.deque (!queue) of
+		NONE => NONE
+	      | SOME (queue', x) => (queue := queue'; SOME x)
 	end
 
 	fun doit {label, hints}

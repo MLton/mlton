@@ -38,7 +38,7 @@ fun make {column, file, line} =
 val basisString = "/basis/"
 
 fun getBasis (T {file, ...}) =
-   String.findSubstring {string = file, substring = basisString}
+   String.findSubstring (file, {substring = basisString})
 
 fun isBasis p = isSome (getBasis p)
 

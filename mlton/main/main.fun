@@ -694,7 +694,7 @@ fun commandLine (args: string list): unit =
 		  val rec loop =
 		     fn [] => usage (concat ["invalid file suffix on ", input])
 		      | (suf, start, hasNum) :: sufs =>
-			   if String.isSuffix {string = input, suffix = suf}
+			   if String.hasSuffix (input, {suffix = suf})
 			      then (start,
 				    let
 				       val f = File.base input
@@ -716,7 +716,7 @@ fun commandLine (args: string list): unit =
 	       List.foreach
 	       (rest, fn f =>
 		if List.exists ([".c", ".o", ".s", ".S"], fn suffix =>
-				String.isSuffix {string = f, suffix = suffix})
+				String.hasSuffix (f, {suffix = suffix}))
 		   then File.withIn (f, fn _ => ())
 		else usage (concat ["invalid file suffix: ", f]))
 	    val csoFiles = rest

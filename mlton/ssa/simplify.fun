@@ -125,7 +125,7 @@ local
 	    else NONE
       in
 	 fn s =>
-	 if String.isPrefix {string = s, prefix = "inlineNonRecursive"}
+	 if String.hasPrefix (s, {prefix = "inlineNonRecursive"})
 	    then let
 		    fun mk (product, small) =
 		       SOME {name = concat ["inlineNonRecursive(", 
@@ -140,7 +140,7 @@ local
 		     | SOME [product, small] => mk (product, small)
 		     | _ => NONE
 		 end
-	 else if String.isPrefix {string = s, prefix = "inlineLeafNoLoop"}
+	 else if String.hasPrefix (s, {prefix = "inlineLeafNoLoop"})
 	    then let
 		    fun mk size =
 		       SOME {name = concat ["inlineLeafNoLoop(", 
@@ -154,7 +154,7 @@ local
 		     | SOME [size] => mk size
 		     | _ => NONE
 		 end
-	 else if String.isPrefix {string = s, prefix = "inlineLeaf"}
+	 else if String.hasPrefix (s, {prefix = "inlineLeaf"})
 	    then let
 		    fun mk size =
 		       SOME {name = concat ["inlineLeaf(", 

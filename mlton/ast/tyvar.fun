@@ -41,10 +41,10 @@ fun sameName (a, a') = String.equals (name a, name a')
    
 fun newRegion ({name, equality}, region) =
    makeRegion ({name = name,
-	       equality = equality,
-	       hash = Random.word (),
-	       plist = PropertyList.new ()},
-	      region)
+		equality = equality,
+		hash = Random.word (),
+		plist = PropertyList.new ()},
+	       region)
 
 fun new f = newRegion (f, Region.bogus)
 

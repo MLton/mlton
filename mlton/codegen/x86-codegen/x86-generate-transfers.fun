@@ -370,7 +370,7 @@ struct
 	  fun deque () = (case (!stack)
 			    of [] => (case Queue.deque(!queue)
 					of NONE => NONE
-					 | SOME(x, queue') => (queue := queue';
+					 | SOME(queue', x) => (queue := queue';
 							       SOME x))
 			     | x::stack' => (stack := stack';
 					     SOME x))

@@ -72,7 +72,7 @@ local
 	    else NONE
       in
 	 fn s =>
-	 if String.isPrefix {string = s, prefix = "polyvariance"}
+	 if String.hasPrefix (s, {prefix = "polyvariance"})
 	    then let
 		    fun mk (rounds, small, product) =
 		       SOME {name = concat ["polyvariance(", 
