@@ -21,5 +21,9 @@ signature FLAT_LATTICE =
       val lowerBound: t * Point.t -> bool
       val new: unit -> t
       val point: Point.t -> t
+      val isBottom: t -> bool
+      val isPoint: t -> bool
+      val isPointEq: t * Point.t -> bool
+      val isTop: t -> bool
       val upperBound: t * Point.t -> bool
    end

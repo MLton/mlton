@@ -31,6 +31,19 @@ fun new () = T {lessThan = ref [],
 		upperBound = ref NONE,
 		value = ref Bottom}
 
+val isBottom =
+   fn (T {value = ref Bottom, ...}) => true
+    | _ => false
+val isPoint =
+   fn (T {value = ref (Point _), ...}) => true
+    | _ => false
+val isPointEq = 
+   fn (T {value = ref (Point p), ...}, p') => Point.equals (p, p')
+    | _ => false
+val isTop =
+   fn (T {value = ref Top, ...}) => true
+    | _ => false
+
 fun up (T {lessThan, upperBound, value, ...}, e: Elt.t): bool =
    let
       fun continue e = List.forall (!lessThan, fn z => up (z, e))
