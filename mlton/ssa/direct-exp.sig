@@ -1,3 +1,5 @@
+type int = Int.t
+type word = Word.t
 
 signature DIRECT_EXP_STRUCTS =
   sig
@@ -28,8 +30,8 @@ signature DIRECT_EXP =
 		 default: t option,
 		 ty: Type.t} -> t
      val conApp: {con: Con.t, 
-		  args: t vector, ty: 
-		  Type.t} -> t
+		  args: t vector,
+		  ty: Type.t} -> t
      val const: Const.t -> t
      val eq: t * t * Type.t -> t
      val falsee: t
