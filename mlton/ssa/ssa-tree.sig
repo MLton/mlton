@@ -210,7 +210,11 @@ signature SSA_TREE =
 			    name: Func.t,
 			    returns: Type.t vector option,
 			    start: Label.t}
-	    val dfsTree: t -> Block.t Tree.t
+	    (* dfs (f, v) visits the blocks in depth-first order, applying v b
+	     * for block b to yield v', then visiting b's descendents,
+	     * then applying v' ().
+	     *)
+	    val dfs: t * (Block.t -> unit -> unit) -> unit
 	    val dominatorTree: t -> Block.t Tree.t
 	    val foreachVar: t * (Var.t * Type.t -> unit) -> unit
 	    (* inferHandlers uses the HandlerPush and HandlerPop statements

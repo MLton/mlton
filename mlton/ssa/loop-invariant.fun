@@ -45,39 +45,38 @@ fun loopInvariant (program as Program.T {globals, datatypes, functions, main}) =
 						       (x, ref true)),
 			       newLabel = ref NONE}))
 
-	    fun loop (Tree.T (Block.T {label, transfer, ...},
-			      children)) =
+	    fun visit (Block.T {label, transfer, ...}): unit -> unit =
 	       let
 		  val {visited, ...} = labelInfo label
+		  val _ = visited := true
+		  val _ =
+		     case transfer of
+			Goto {dst, args} =>
+			   let
+			      val {callsSelf, visited, invariant, ...} = labelInfo dst
+			   in
+			      if !visited
+				 then (callsSelf := true
+				       ; Vector.foreach2
+				       (args, invariant, fn (x, (y, b)) =>
+					if !b andalso not (Var.equals (x, y))
+					   then b := false
+					else ()))
+			      else ()
+			   end
+		      | _ => ()
 	       in
-		  visited := true
-		  ; case transfer of
-		       Goto {dst, args} =>
-			  let
-			     val {callsSelf, visited, invariant, ...} = labelInfo dst
-			  in
-			     if !visited
-			        then (callsSelf := true
-				      ; Vector.foreach2
-				        (args, invariant, fn (x, (y, b)) =>
-					 if !b andalso not (Var.equals (x, y))
-					    then b := false
-					 else ()))
-			     else ()
-			  end
-		     | _ => ()
-		  ; Vector.foreach (children, loop)
-		  ; visited := false
+		  fn () => visited := false
 	       end
-	    val _ = loop (Function.dfsTree f)
-
-	    fun remove (xs: 'a vector, invariant: ('b * bool ref) vector): 'a vector =
+	    val _ = Function.dfs (f, visit)
+	    fun remove (xs: 'a vector, invariant: ('b * bool ref) vector)
+	       : 'a vector =
 	       Vector.keepAllMap2 (xs, invariant, fn (x, (_, b)) =>
 				   if !b then NONE else SOME x)
 
 	    val newBlocks = ref []
-	    fun loop (Tree.T (Block.T {label, args, statements, transfer},
-			      children)) =
+	    fun visit (Block.T {label, args, statements, transfer})
+	       : unit -> unit =
 	       let
 		  val {callsSelf, invariant, newLabel, ...} = labelInfo label
 		  val _ =
@@ -92,9 +91,10 @@ fun loopInvariant (program as Program.T {globals, datatypes, functions, main}) =
 			      val {invariant, newLabel, ...} = labelInfo dst
 			   in
 			      case !newLabel of
-				 SOME dst' => Goto {dst = dst',
-						    args = remove (args, invariant)}
-			       | NONE => transfer
+				 NONE => transfer
+			       | SOME dst' =>
+				    Goto {dst = dst',
+					  args = remove (args, invariant)}
 			   end
 		      | _ => transfer
 		  val (args, statements, transfer) =
@@ -142,12 +142,10 @@ fun loopInvariant (program as Program.T {globals, datatypes, functions, main}) =
 				    args = args,
 				    statements = statements,
 				    transfer = transfer})
-		  val _ = Vector.foreach (children, loop)
-		  val _ = newLabel := NONE
 	       in
-		  ()
+		  fn () => newLabel := NONE
 	       end
-	    val _ = loop (Function.dfsTree f)
+	    val _ = Function.dfs (f, visit)
 	    val blocks = Vector.fromList (!newBlocks)
 	    val f = Function.new {name = name,
 				  args = args,

@@ -5,7 +5,7 @@ SRC = $(ROOT)/src
 MLTON = mlton
 NAME = mlton
 AOUT = mlton-compile
-FLAGS = @MLton gc-summary max-heap 475m -- -v3 -o $(AOUT)
+FLAGS = @MLton gc-summary max-heap 475m -- -v2 -o $(AOUT)
 PATH = $(BIN):$(shell echo $$PATH)
 
 all: $(AOUT)

@@ -107,8 +107,8 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 				fn NONE => ()
 				 | SOME (i, _) => ArgInfo.nonSelect i)
 
-	     fun loop (Tree.T (Block.T {label, args, statements, transfer},
-			       children)): unit =
+	     fun visit (Block.T {label, args, statements, transfer})
+		: unit -> unit =
 	        let
 		   val _ = 
 		      Vector.foreach
@@ -145,10 +145,9 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 		       | Raise xs => forces xs
 		       | Return xs => forces xs
 		in
-		   Vector.foreach (children, loop)
+		   fn () => ()
 		end
-	     val _ = loop (Function.dfsTree f)
-
+	     val _ = Function.dfs (f, visit)
 	     val _ = 
 	        Control.diagnostics
 		(fn display =>

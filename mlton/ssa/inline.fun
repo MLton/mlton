@@ -137,16 +137,16 @@ local
 	 DynamicWind.withEscape
 	 (fn escape =>
 	  let
-	     fun loop (Tree.T (Block.T {label, transfer, ...}, children)) =
-	        (set (label, true)
-		 ; case transfer of
-		      Goto {dst, ...} => if get dst then escape true else ()
-		    | _ => ()
-		 ; Vector.foreach (children, loop)
-		 ; set (label, false))
+	     val _ =
+		Function.dfs
+		(f, fn (Block.T {label, transfer, ...}) =>
+		 (set (label, true)
+		  ; (case transfer of
+			Goto {dst, ...} => if get dst then escape true else ()
+		      | _ => ())
+		  ; fn () => set (label, false)))
 	  in
-	     loop (Function.dfsTree f)
-	     ; false
+	     false
 	  end)
 	 before (destroy ())
       end

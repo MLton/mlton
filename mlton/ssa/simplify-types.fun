@@ -687,15 +687,16 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
       fun simplifyFunction f =
 	 let val {name, args, start, returns, mayRaise, ...} = Function.dest f
 	     val args = simplifyFormals args
-	     val blocks = 
-	        Tree.foldPre 
-		(Function.dfsTree f, [], fn (block, blocks) =>
-		 (simplifyBlock block)::blocks)
+	     val blocks = ref []
+	     val _ =
+		Function.dfs (f, fn block =>
+			      (List.push (blocks, simplifyBlock block)
+			       ; fn () => ()))
 	     val returns = Option.map (returns, keepSimplifyTypes)
 	 in Function.new {name = name,
 			  args = args,
 			  start = start,
-			  blocks = Vector.fromList blocks,
+			  blocks = Vector.fromList (!blocks),
 			  returns = returns,
 			  mayRaise = mayRaise}
 	 end

@@ -757,6 +757,40 @@ structure Function =
 	 val dominatorTree = make #dominatorTree
       end
 
+      fun dfs (f, v) =
+	 let
+	    val {blocks, name, start, ...} = dest f
+	    val numBlocks = Vector.length blocks
+	    val {get = labelIndex, set = setLabelIndex, rem, ...} =
+	       Property.getSetOnce (Label.plist,
+				    Property.initRaise ("index", Label.layout))
+	    val _ = Vector.foreachi (blocks, fn (i, Block.T {label, ...}) =>
+				     setLabelIndex (label, i))
+	    val visited = Array.array (numBlocks, false)
+	    fun visit (l: Label.t): unit =
+	       let
+		  val i = labelIndex l
+	       in
+		  if Array.sub (visited, i)
+		     then ()
+		  else
+		     let
+			val _ = Array.update (visited, i, true)
+			val b as Block.T {transfer, ...} =
+			   Vector.sub (blocks, i)
+			val v' = v b
+			val _ = Transfer.foreachLabel (transfer, visit)
+			val _ = v' ()
+		     in
+			()
+		     end
+	       end
+	    val _ = visit start
+	    val _ = Vector.foreach (blocks, rem o Block.label)
+	 in
+	    ()
+	 end
+      
       fun inferHandlers (f: t): Label.t list option array =
 	 let
 	    val {blocks, name, start, ...} = dest f
