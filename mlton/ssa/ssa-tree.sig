@@ -73,6 +73,7 @@ signature SSA_TREE =
 	     | Thread
 	     | Tuple of t vector
 	     | Vector of t
+	     | Weak of t
 	     | Word
 	     | Word8
 

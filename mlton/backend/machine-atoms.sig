@@ -105,6 +105,8 @@ signature MACHINE_ATOMS =
 	       Array of MemChunk.t
 	     | Normal of MemChunk.t
 	     | Stack
+	     | Weak of Type.t (* in Weak t, must have Type.isPointer t *)
+	     | WeakGone
 
 	    val basic: (PointerTycon.t * t) vector
 	    val isOk: t -> bool
@@ -113,6 +115,7 @@ signature MACHINE_ATOMS =
 	    val string: t
 	    val thread: t
 	    val toRuntime: t -> Runtime.ObjectType.t
+	    val weak: Type.t -> t
 	    val wordVector: t
 	 end
 

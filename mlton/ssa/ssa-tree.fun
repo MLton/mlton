@@ -34,6 +34,7 @@ structure Type =
 	| Thread
 	| Tuple of t vector
 	| Vector of t
+	| Weak of t
 	| Word
 	| Word8
 
@@ -52,19 +53,20 @@ structure Type =
 	    else Error.bug "bogus application of unary tycon"
 
 	 val tycons =
-	    [(Tycon.tuple, Tuple),
+	    [(Tycon.array, unary Array),
 	     (Tycon.char, nullary Char),
 	     (Tycon.int, nullary Int),
 	     (Tycon.intInf, nullary IntInf),
 	     (Tycon.pointer, nullary Pointer),
 	     (Tycon.preThread, nullary PreThread),
 	     (Tycon.real, nullary Real),
+	     (Tycon.reff, unary Ref),
 	     (Tycon.thread, nullary Thread),
-	     (Tycon.word8, nullary Word8),
-	     (Tycon.word, nullary Word),
-	     (Tycon.array, unary Array),
+	     (Tycon.tuple, Tuple),
 	     (Tycon.vector, unary Vector),
-	     (Tycon.reff, unary Ref)]
+	     (Tycon.weak, unary Weak),
+	     (Tycon.word, nullary Word),
+	     (Tycon.word8, nullary Word8)]
       in
 	 val _ = List.foreach (tycons, fn (tycon, f) => set (tycon, SOME f))
 
@@ -102,6 +104,7 @@ structure Type =
 		    else paren (seq (separate (Vector.toListMap (ts, layout),
 					       " * ")))
 	       | Vector t => seq [layout t, str " vector"]
+	       | Weak t => seq [layout t, str " weak"]
 	       | Word => str "word"
 	       | Word8 => str "word8"))
       end

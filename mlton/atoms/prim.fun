@@ -157,6 +157,9 @@ structure Name =
        | Vector_fromArray
        | Vector_length
        | Vector_sub
+       | Weak_canGet
+       | Weak_get
+       | Weak_new
        | Word32_add
        | Word32_addCheck
        | Word32_andb
@@ -378,6 +381,9 @@ structure Name =
 	  (Vector_fromArray, DependsOnState, "Vector_fromArray"),
 	  (Vector_length, Functional, "Vector_length"),
 	  (Vector_sub, Functional, "Vector_sub"),
+	  (Weak_canGet, DependsOnState, "Weak_canGet"),
+	  (Weak_get, DependsOnState, "Weak_get"),
+	  (Weak_new, Moveable, "Weak_new"),
 	  (Word32_add, Functional, "Word32_add"),
 	  (Word32_addCheck, SideEffect, "Word32_addCheck"),
 	  (Word32_andb, Functional, "Word32_andb"),
@@ -671,7 +677,9 @@ fun returnsBool p =
 fun 'a extractTargs {prim, args, result,
 		     dearray,
 		     dearrow: 'a -> 'a * 'a,
-		     deref, devector} =
+		     deref,
+		     devector,
+		     deweak} =
    let
       val one = Vector.new1
       fun arg i = Vector.sub (args, i)
@@ -698,6 +706,9 @@ fun 'a extractTargs {prim, args, result,
        | Vector_fromArray => one (dearray (arg 0))
        | Vector_length => one (devector (arg 0))
        | Vector_sub => one result
+       | Weak_canGet => one (deweak (arg 0))
+       | Weak_get => one result
+       | Weak_new => one (arg 0)
        | _ => Vector.new0 ()
    end
 

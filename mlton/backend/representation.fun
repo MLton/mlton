@@ -541,6 +541,22 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				      mutable = false,
 				      tys = S.Type.detuple t})
 	       | Vector t => SOME (array {mutable = false, ty = t})
+	       | Weak t =>
+		    (case toRtype t of
+			NONE => NONE
+		      | SOME t =>
+			   if R.Type.isPointer t
+			      then
+				 let
+				     val pt = PointerTycon.new ()
+				     val _ =
+					List.push
+					(objectTypes,
+					 (pt, R.ObjectType.weak t))
+				  in
+				     SOME (R.Type.pointer pt)
+				  end
+			   else NONE)
 	       | Word => SOME R.Type.word
 	       | Word8 => SOME R.Type.char
 	   end))

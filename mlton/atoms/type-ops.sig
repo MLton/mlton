@@ -49,6 +49,8 @@ signature TYPE_OPS =
       val detupleOpt: t -> t vector option
       val detycon: t -> tycon
       val devector: t -> t
+      val deweak: t -> t
+      val deweakOpt: t -> t option
       val exn: t
       val int: t
       val intInf: t
@@ -65,6 +67,7 @@ signature TYPE_OPS =
       val unit: t
       val unitRef: t
       val vector: t -> t
+      val weak: t -> t
       val word8: t
       val word: t
    end

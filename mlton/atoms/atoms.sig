@@ -26,7 +26,6 @@ signature ATOMS' =
       structure Tycon: TYCON
       structure Tycons: SET
       structure Tyvar: TYVAR
-      structure UnaryTycon: UNARY_TYCON
       structure Var: VAR
       structure Vars: SET
       structure TyvarEnv:
@@ -54,7 +53,6 @@ signature ATOMS' =
       sharing SourceInfo = ProfileExp.SourceInfo
       sharing Tycon = Const.Tycon
       sharing Tycon = Scheme.Tycon
-      sharing Tycon = UnaryTycon.Tycon
       sharing Tyvar = Ast.Tyvar
       sharing type Con.t = Cons.Element.t
       sharing type Tycon.t = Tycons.Element.t

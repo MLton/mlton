@@ -29,6 +29,7 @@ type word = word
 type word8 = word8
 type word32 = word
 type 'a vector = 'a vector
+type 'a weak = 'a weak
 type string = char vector
 type nullString = string
 
@@ -403,6 +404,15 @@ structure Primitive =
 (*       val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
 
 	    val size = fn x => _prim "MLton_size": 'a ref -> int; x
+
+	    structure Weak =
+	       struct
+		  type 'a t = 'a weak
+		     
+		  val canGet = fn x => _prim "Weak_canGet": 'a t -> bool; x
+		  val get = fn x => _prim "Weak_get": 'a t -> 'a; x
+		  val new = fn x => _prim "Weak_new" : 'a -> 'a t; x
+	       end
 	 end
 
       structure Net =

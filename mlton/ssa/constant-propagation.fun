@@ -211,16 +211,17 @@ structure Value =
 	       global: global ref
 	       } Set.t
       and value =
-	 Const of Const.t
-       | Datatype of data
-       | Vector of {length: t,
-		    elt: t}
-       | Ref of {birth: {init: t} Birth.t,
-		 arg: t}
-       | Array of {birth: unit Birth.t,
-		   length: t,
-		   elt: t}
-       | Tuple of t vector
+	 Array of {birth: unit Birth.t,
+		   elt: t,
+		   length: t}
+	| Const of Const.t
+	| Datatype of data
+	| Ref of {arg: t,
+		  birth: {init: t} Birth.t}
+	| Tuple of t vector
+	| Vector of {elt: t,
+		     length: t}
+	| Weak of t
       and data =
 	 Data of {
 		  value: dataVal ref,
@@ -252,18 +253,19 @@ structure Value =
       in
 	 fun layout v =
 	    case value v of
-	       Const c => Const.layout c
-	     | Datatype d => layoutData d
-	     | Ref {birth, arg, ...} =>
-		  seq [str "ref", tuple [Birth.layout birth, layout arg]]
-	     | Array {birth, length, elt, ...} =>
+	       Array {birth, elt, length, ...} =>
 		  seq [str "array", tuple [Birth.layout birth,
 					   layout length,
 					   layout elt]]
-	     | Vector {length, elt, ...} => seq [str "vector",
-						 tuple [layout length,
-							layout elt]]
+	     | Const c => Const.layout c
+	     | Datatype d => layoutData d
+	     | Ref {arg, birth, ...} =>
+		  seq [str "ref ", tuple [layout arg, Birth.layout birth]]
 	     | Tuple vs => Vector.layout layout vs
+	     | Vector {elt, length, ...} => seq [str "vector ",
+						 tuple [layout elt,
+							layout length]]
+	     | Weak v => seq [str "weak ", layout v]
 	 and layoutData (Data {value, ...}) =
 	    case !value of
 	       Undefined => str "undefined datatype"
@@ -286,7 +288,8 @@ structure Value =
 	 Trace.traceInfo
 	 (globalsInfo,
 	  (Vector.layout layout) o #1,
-	  Option.layout (Vector.layout (Layout.tuple2 (Var.layout, Type.layout))),
+	  Option.layout (Vector.layout
+			 (Layout.tuple2 (Var.layout, Type.layout))),
 	  Trace.assertTrue)
 	 (fn (vs: t vector, newGlobal) =>
 	  DynamicWind.withEscape
@@ -341,7 +344,14 @@ structure Value =
 			  | _ => No
 		      val g =
 			 case value of
-			    Const (Const.T {const, ...}) =>
+			    Array {birth, length, ...} =>
+			       unary (birth, fn _ => length,
+				      fn {args, targs} =>
+				      Exp.PrimApp {args = args,
+						   prim = Prim.array,
+						   targs = targs},
+				      Type.dearray ty)
+			  | Const (Const.T {const, ...}) =>
 			       (case !const of
 				   Const.Const c => yes (Exp.Const c)
 				 | _ => No)
@@ -362,20 +372,16 @@ structure Value =
 						   prim = Prim.reff,
 						   targs = targs},
 				      Type.deref ty)
-			  | Array {birth, length, ...} =>
-			       unary (birth, fn _ => length,
-				      fn {args, targs} =>
-				      Exp.PrimApp {args = args,
-						   prim = Prim.array,
-						   targs = targs},
-				      Type.dearray ty)
-			  | Vector _ => No
 			  | Tuple vs =>
 			       (case globals (vs, newGlobal) of
 				   NONE => No
 				 | SOME xts =>
 				      yes (Exp.Tuple (Vector.map (xts, #1))))
-		   in r := g; global (v, newGlobal)
+			  | Vector _ => No
+			  | Weak _ => No
+		      val _ = r := g
+		   in
+		      global (v, newGlobal)
 		   end
 	  end) arg
 	 
@@ -383,7 +389,6 @@ structure Value =
 	 T (Set.singleton {value = v,
 			   ty = ty,
 			   global = ref NotComputed})
-
 
       fun tuple vs =
 	 new (Tuple vs, Type.tuple (Vector.map (vs, ty)))
@@ -455,9 +460,15 @@ structure Value =
 	    case value v of
 	       Ref fs => sel fs
 	     | _ => Error.bug err
-      in val deref = make ("deref", #arg)
+      in
+	 val deref = make ("deref", #arg)
 	 val refBirth = make ("refBirth", #birth)
       end
+
+      fun deweak v =
+	 case value v of
+	    Weak v => v
+	  | _ => Error.bug "deweak"
 
       structure Data =
 	 struct
@@ -483,15 +494,16 @@ structure Value =
 	       fun loop (t: Type.t): t =
 		  new
 		  (case Type.dest t of
-		      Type.Datatype _ => Datatype (data ())
-		    | Type.Ref t => Ref {birth = refBirth (),
-					 arg = loop t}
-		    | Type.Array t => Array {birth = arrayBirth (),
-					     length = loop Type.int,
-					     elt = loop t}
-		    | Type.Vector t => Vector {length = loop Type.int,
-					       elt = loop t}
+		      Type.Array t => Array {birth = arrayBirth (),
+					     elt = loop t,
+					     length = loop Type.int}
+		    | Type.Datatype _ => Datatype (data ())
+		    | Type.Ref t => Ref {arg = loop t,
+					 birth = refBirth ()}
 		    | Type.Tuple ts => Tuple (Vector.map (ts, loop))
+		    | Type.Vector t => Vector {elt = loop t,
+					       length = loop Type.int}
+		    | Type.Weak t => Weak (loop t)
 		    | _ => Const (const ()), 
 		   t)
 	    in loop
@@ -648,6 +660,7 @@ fun simplify (program: Program.t): Program.t =
 			(coerce {from = n, to = n'}
 			 ; coerce {from = x, to = x'})
 		   | (Tuple vs, Tuple vs') => coerces {froms = vs, tos = vs'}
+		   | (Weak v, Weak v') => unify (v, v')
 		   | (Const (Const.T {const = ref (Const.Const c), coercedTo}),
 		      Vector {length, elt}) =>
 			let
@@ -698,6 +711,7 @@ fun simplify (program: Program.t): Program.t =
 		          (unify (n, n')
 			   ; unify (x, x'))
 		     | (Tuple vs, Tuple vs') => Vector.foreach2 (vs, vs', unify)
+		     | (Weak v, Weak v') => unify (v, v')
 		     | _ => Error.bug "strange unify"
 	       end
 	 and unifyData (d, d') =
@@ -723,22 +737,24 @@ fun simplify (program: Program.t): Program.t =
 	    end
 	 fun makeUnknown (v: t): unit =
 	    case value v of
-	       Const c => Const.makeUnknown c
+	       Array {length, elt, ...} => (makeUnknown length
+					    ; makeUnknown elt)
+	     | Const c => Const.makeUnknown c
 	     | Datatype d => makeDataUnknown d
 	     | Ref {arg, ...} => makeUnknown arg
-	     | Array {length, elt, ...} => (makeUnknown length
-					    ; makeUnknown elt)
+	     | Tuple vs => Vector.foreach (vs, makeUnknown)
 	     | Vector {length, elt} => (makeUnknown length
 					; makeUnknown elt)
-	     | Tuple vs => Vector.foreach (vs, makeUnknown)
+	     | Weak v => makeUnknown v
 	 fun sideEffect (v: t): unit =
 	    case value v of
-	       Const _ => ()
+	       Array {elt, ...} => makeUnknown elt
+	     | Const _ => ()
 	     | Datatype _ => ()
 	     | Ref {arg, ...} => makeUnknown arg
-	     | Array {elt, ...} => makeUnknown elt
 	     | Vector {elt, ...} => makeUnknown elt
 	     | Tuple vs => Vector.foreach (vs, sideEffect)
+	     | Weak v => makeUnknown v
 	 fun primApp {prim,
 		      targs,
 		      args: Value.t vector,
@@ -780,13 +796,23 @@ fun simplify (program: Program.t): Program.t =
 		     let
 			val v = arg 0
 			val r = fromType resultType
-		     in coerce {from = v, to = deref r}
-			; Birth.coerce {from = bear {init = v}, to = refBirth r}
-			; r
+			val _ = coerce {from = v, to = deref r}
+			val _ = Birth.coerce {from = bear {init = v},
+					      to = refBirth r}
+		     in
+			r
 		     end
 		| Vector_fromArray => vectorFromArray (arg 0)
 		| Vector_length => vectorLength (arg 0)
 		| Vector_sub => devector (arg 0)
+		| Weak_get => deweak (arg 0)
+		| Weak_new =>
+		     let
+			val w = fromType resultType
+			val _ = coerce {from = arg 0, to = deweak w}
+		     in
+			w
+		     end
 		| _ => (if Prim.maySideEffect prim
 			   then Vector.foreach (args, sideEffect)
 			else ()

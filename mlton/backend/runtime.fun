@@ -111,6 +111,8 @@ structure ObjectType =
        | Normal of {numPointers: int,
 		    numWordsNonPointers: int}
        | Stack
+       | Weak
+       | WeakGone
 
       val equals: t * t -> bool = op =
 
@@ -128,6 +130,8 @@ structure ObjectType =
 		       record [("numPointers", Int.layout np),
 			       ("numWordsNonPointers", Int.layout nwnp)]]
 	     | Stack => str "Stack"
+	     | Weak => str "Weak"
+	     | WeakGone => str "WeakGone"
 	 end
    end
 

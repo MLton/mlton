@@ -140,6 +140,24 @@ structure CFunction =
 	    name = "Thread_switchTo",
 	    returnTy = NONE}
 
+      val weakCanGet =
+	 vanilla {name = "GC_weakCanGet",
+		  returnTy = SOME Type.bool}
+	 
+      val weakGet =
+	 vanilla {name = "GC_weakGet",
+		  returnTy = SOME Type.pointer}
+		  
+      val weakNew =
+	 make {bytesNeeded = NONE,
+	       ensuresBytesFree = false,
+	       mayGC = true,
+	       maySwitchThreads = false,
+	       modifiesFrontier = true,
+	       modifiesStackTop = true,
+	       name = "GC_weakNew",
+	       returnTy = SOME Type.pointer}
+
       val worldSave =
 	 make {bytesNeeded = NONE,
 	       ensuresBytesFree = false,
@@ -783,6 +801,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				 move (Operand.cast (varOp (a 0),
 						     valOf (toRtype ty)))
 			      fun targ () = toRtype (Vector.sub (targs, 0))
+			      fun ifTargIsPointer (yes, no) =
+				 case targ () of
+				    NONE => no ()
+				  | SOME t =>
+				       if Type.isPointer t
+					  then yes ()
+				       else no ()
 			      fun arrayOffset (ty: Type.t): Operand.t =
 				 ArrayOffset {base = varOp (a 0),
 					      index = varOp (a 1),
@@ -1217,6 +1242,32 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    (case targ () of
 					NONE => none ()
 				      | SOME t => sub t)
+			       | Weak_canGet =>
+				    ifTargIsPointer
+				    (fn () => simpleCCall CFunction.weakCanGet,
+				     fn () => move (Operand.bool false))
+			       | Weak_get =>
+				    ifTargIsPointer
+				    (fn () => simpleCCall CFunction.weakGet,
+				     none)
+			       | Weak_new =>
+				    ifTargIsPointer
+				    (fn () =>
+				     let
+					val header =
+					   Operand.PointerTycon
+					   (valOf
+					    (Type.dePointer
+					     (valOf (toRtype ty))))
+				     in
+					ccall {args = (Vector.concat
+						       [Vector.new2
+							(Operand.GCState,
+							 header),
+							vos args]),
+					       func = CFunction.weakNew}
+				     end,
+				     none)
 			       | Word32_toIntX => cast ()
 			       | Word32_fromInt => cast ()
 			       | World_save =>

@@ -66,6 +66,7 @@ structure Syslog = MLtonSyslog
 structure TextIO = MLtonIO (TextIO)
 structure Thread = MLtonThread
 structure Vector = Vector
+structure Weak = MLtonWeak
 structure World = MLtonWorld
 structure Word = Primitive.Word32
 structure Word8 = Primitive.Word8

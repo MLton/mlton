@@ -69,21 +69,21 @@ structure Value =
 	 end
       
       datatype t =
-	 T of {
+	 T of {new: (Type.t * bool) option ref,
 	       ty: Type.t,
-	       new: (Type.t * bool) option ref,
-	       value: value
-	       } Set.t
+	       value: value} Set.t
       and value =
-	 Array of {useful: Useful.t,
+	 Array of {elt: slot,
 		   length: t,
-		   elt: slot}
-       | Ground of Useful.t
-       | Ref of {useful: Useful.t,
-		 arg: slot}
-       | Tuple of slot vector
-       | Vector of {length: t,
-		    elt: slot}
+		   useful: Useful.t}
+	| Ground of Useful.t
+	| Ref of {arg: slot,
+		  useful: Useful.t}
+	| Tuple of slot vector
+	| Vector of {elt: slot,
+		     length: t}
+	| Weak of {arg: slot,
+		   useful: Useful.t}
       withtype slot = t * Exists.t
 
       local
@@ -97,18 +97,24 @@ structure Value =
 	 open Layout
       in
 	 fun layout (T s) =
-	    let val {value, ...} = Set.value s
-	    in case value of
-	       Ground g => seq [str "ground ", Useful.layout g]
-	     | Tuple vs => Vector.layout layoutSlot vs
-	     | Ref {arg, useful, ...} =>
-		  seq [str "ref ",
-		       record [("useful", Useful.layout useful),
-			       ("slot", layoutSlot arg)]]
-	     | Vector {elt, length} =>
-		  seq [str "vector", tuple [layout length, layoutSlot elt]]
-	     | Array {elt, length, ...} =>
-		  seq [str "array", tuple [layout length, layoutSlot elt]]
+	    let
+	       val {value, ...} = Set.value s
+	    in
+	       case value of
+		  Array {elt, length, ...} =>
+		     seq [str "array", tuple [layout length, layoutSlot elt]]
+		| Ground g => seq [str "ground ", Useful.layout g]
+		| Ref {arg, useful, ...} =>
+		     seq [str "ref ",
+			  record [("useful", Useful.layout useful),
+				  ("slot", layoutSlot arg)]]
+		| Tuple vs => Vector.layout layoutSlot vs
+		| Vector {elt, length} =>
+		     seq [str "vector", tuple [layout length, layoutSlot elt]]
+		| Weak {arg, useful} =>
+		     seq [str "weak ", 
+			  record [("useful", Useful.layout useful),
+				  ("slot", layoutSlot arg)]]
 	    end
 	 and layoutSlot (v, e) =
 	    tuple [Exists.layout e, layout v]
@@ -117,24 +123,29 @@ structure Value =
       fun unify (T s, T s') =
 	 if Set.equals (s, s')
 	    then ()
-	 else let val {value = v, ...} = Set.value s
-		  val {value = v', ...} = Set.value s'
-	      in Set.union (s, s')
-		 ; (case (v, v') of
-		       (Ground g, Ground g') => Useful.== (g, g')
-		     | (Tuple vs, Tuple vs') =>
-			  Vector.foreach2 (vs, vs', unifySlot)
-		     | (Ref {useful = u, arg = a},
-			Ref {useful = u', arg = a'}) =>
-			  (Useful.== (u, u'); unifySlot (a, a'))
-			| (Array {length = n, elt = e, ...},
-			   Array {length = n', elt = e', ...}) =>
-			  (unify (n, n'); unifySlot (e, e'))
-			| (Vector {length = n, elt = e},
-			   Vector {length = n', elt = e'}) =>
-			  (unify (n, n'); unifySlot (e, e'))
-			 | _ => Error.bug "strange unify")
-	      end
+	 else
+	    let
+	       val {value = v, ...} = Set.value s
+	       val {value = v', ...} = Set.value s'
+	       val _ = Set.union (s, s')
+	    in
+	       case (v, v') of
+		  (Array {length = n, elt = e, ...},
+		   Array {length = n', elt = e', ...}) =>
+		     (unify (n, n'); unifySlot (e, e'))
+		| (Ground g, Ground g') => Useful.== (g, g')
+		| (Ref {useful = u, arg = a},
+		   Ref {useful = u', arg = a'}) =>
+		     (Useful.== (u, u'); unifySlot (a, a'))
+		| (Tuple vs, Tuple vs') =>
+		     Vector.foreach2 (vs, vs', unifySlot)
+		| (Vector {length = n, elt = e},
+		   Vector {length = n', elt = e'}) =>
+		     (unify (n, n'); unifySlot (e, e'))
+		| (Weak {useful = u, arg = a}, Weak {useful = u', arg = a'}) =>
+		     (Useful.== (u, u'); unifySlot (a, a'))
+		| _ => Error.bug "strange unify"
+	    end
       and unifySlot ((v, e), (v', e')) = (unify (v, v'); Exists.== (e, e'))
 	 
       fun coerce {from = from as T sfrom, to = to as T sto}: unit =
@@ -145,16 +156,19 @@ structure Value =
 	       fun coerceSlot ((v, e), (v', e')) =
 		  (coerce {from = v, to = v'}
 		   ; Exists.== (e, e'))
-	    in case (value from, value to) of
-	       (Ground to, Ground from) => Useful.<= (from, to)
-	     | (Tuple vs, Tuple vs') =>
-		  Vector.foreach2 (vs, vs', coerceSlot)
-	     | (Ref _, Ref _) => unify (from, to)
-	     | (Array _, Array _) => unify (from, to)
-	     | (Vector {length = n, elt = e}, Vector {length = n', elt = e'}) =>
-		  (coerce {from = n, to = n'}
-		   ; coerceSlot (e, e'))
-	     | _ => Error.bug "strange coerce"
+	    in
+	       case (value from, value to) of
+		  (Array _, Array _) => unify (from, to)
+		| (Ground to, Ground from) => Useful.<= (from, to)
+		| (Ref _, Ref _) => unify (from, to)
+		| (Tuple vs, Tuple vs') =>
+		     Vector.foreach2 (vs, vs', coerceSlot)
+		| (Vector {length = n, elt = e},
+		   Vector {length = n', elt = e'}) =>
+		     (coerce {from = n, to = n'}
+		      ; coerceSlot (e, e'))
+		| (Weak _, Weak _) => unify (from, to)
+		| _ => Error.bug "strange coerce"
 	    end
 
       val coerce =
@@ -174,14 +188,16 @@ structure Value =
 	 let
 	    fun loop (v: t): unit =
 	       case value v of
-		  Ground u => f u
-		| Vector {length, elt} => (loop length; slot elt)
-		| Array {length, elt, useful} =>
+		  Array {length, elt, useful} =>
 		     (f useful; loop length; slot elt)
-		| Ref {useful, arg} => (f useful; slot arg)
+		| Ground u => f u
 		| Tuple vs => Vector.foreach (vs, slot)
+		| Ref {arg, useful} => (f useful; slot arg)
+		| Vector {length, elt} => (loop length; slot elt)
+		| Weak {arg, useful} => (f useful; slot arg)
 	    and slot (v, _) = loop v
-	 in loop v
+	 in
+	    loop v
 	 end
       
       (* Coerce every ground value in v to u. *)
@@ -204,11 +220,12 @@ structure Value =
 
       fun someUseful (v: t): Useful.t option =
 	 case value v of
-	    Ground u => SOME u
-	  | Array {useful = u, ...} => SOME u
+	    Array {useful = u, ...} => SOME u
+	  | Ground u => SOME u
 	  | Ref {useful = u, ...} => SOME u
 	  | Tuple slots => Vector.peekMap (slots, someUseful o #1)
 	  | Vector {length, ...} => SOME (deground length)
+	  | Weak {useful = u, ...} => SOME u
 
       fun allOrNothing (v: t): Useful.t option =
 	 case someUseful v of
@@ -233,9 +250,7 @@ structure Value =
 		  val loop = fn t => loop (t, es)
 		  val value =
 		     case Type.dest t of
-			Type.Ref t => Ref {useful = useful (),
-					   arg = slot t}
-		      | Type.Array t =>
+			Type.Array t =>
 			   let val elt as (_, e) = slot t
 			       val length = loop Type.int
 			   in Exists.addHandler
@@ -244,15 +259,21 @@ structure Value =
 				       length = length,
 				       elt = elt}
 			   end
+		      | Type.Ref t => Ref {arg = slot t,
+					   useful = useful ()}
+		      | Type.Tuple ts => Tuple (Vector.map (ts, slot))
 		      | Type.Vector t => Vector {length = loop Type.int,
 						 elt = slot t}
-		      | Type.Tuple ts => Tuple (Vector.map (ts, slot))
+		      | Type.Weak t => Weak {arg = slot t,
+					     useful = useful ()}
 		      | _ => Ground (useful ())
-	       in T (Set.singleton {ty = t,
+	       in
+		  T (Set.singleton {ty = t,
 				    new = ref NONE,
 				    value = value})
 	       end
-	 in loop (t, [])
+	 in
+	    loop (t, [])
 	 end
 
       val const = fromType o Type.ofConst
@@ -264,24 +285,30 @@ structure Value =
 	  | _ => Error.bug "detuple"
       fun detuple v = Vector.map (detupleSlots v, #1)
       fun tuple (vs: t vector): t =
-	 let val t = Type.tuple (Vector.map (vs, ty))
-	     val v = fromType t
-	 in Vector.foreach2 (vs, detuple v, fn (v, v') =>
-			     coerce {from = v, to = v'})
-	    ; v
+	 let
+	    val t = Type.tuple (Vector.map (vs, ty))
+	    val v = fromType t
+	    val _ =
+	       Vector.foreach2 (vs, detuple v, fn (v, v') =>
+				coerce {from = v, to = v'})
+	 in
+	    v
 	 end
       val unit = tuple (Vector.new0 ())
       fun select {tuple, offset, resultType} =
-	 let val v = fromType resultType
-	 in coerce {from = Vector.sub (detuple tuple, offset), to = v}
-	    ; v
+	 let
+	    val v = fromType resultType
+	    val _ = coerce {from = Vector.sub (detuple tuple, offset), to = v}
+	 in
+	    v
 	 end
       local
 	 fun make (err, sel) v =
 	    case value v of
 	       Vector fs => sel fs
 	     | _ => Error.bug err
-      in val devector = make ("devector", #1 o #elt)
+      in
+	 val devector = make ("devector", #1 o #elt)
 	 val vectorLength = make ("vectorLength", #length)
       end
       local
@@ -289,7 +316,8 @@ structure Value =
 	    case value v of
 	       Array fs => sel fs
 	     | _ => Error.bug err
-      in val dearray: t -> t = make ("dearray", #1 o #elt)
+      in
+	 val dearray: t -> t = make ("dearray", #1 o #elt)
 	 val arrayLength = make ("arrayLength", #length)
 	 val arrayUseful = make ("arrayUseful", #useful)
       end
@@ -299,49 +327,62 @@ structure Value =
 	    Ref {arg, ...} => #1 arg
 	  | _ => Error.bug "deref"
 
+      fun deweak (v: t): t =
+	 case value v of
+	    Weak {arg, ...} => #1 arg
+	  | _ => Error.bug "deweak"
+
       fun newType (v: t): Type.t = #1 (getNew v)
       and isUseful (v: t): bool = #2 (getNew v)
       and getNew (T s): Type.t * bool =
-	 let val {value, ty, new, ...} = Set.value s
-	 in case !new of
-	    SOME z => z
-	  | NONE =>
-	       let 
-		  fun slot (arg: t, e: Exists.t) =
-		     let val (t, b) = getNew arg
-		     in (if Exists.doesExist e then t else Type.unit, b)
-		     end
-		  fun wrap ((t, b), f) = (f t, b)
-		  fun or ((t, b), b') = (t, b orelse b')
-		  fun maybe (u: Useful.t, s: slot, make: Type.t -> Type.t) =
-		     wrap (or (slot s, Useful.isUseful u), make)
-		  val z =
-		     case value of
-			Ground u => (ty, Useful.isUseful u)
-		      | Ref {useful, arg, ...} => maybe (useful, arg, Type.reff)
-		      | Array {useful, elt, length, ...} =>
-			   or (wrap (slot elt, Type.array),
-			       Useful.isUseful useful orelse isUseful length)
-		      | Vector {elt, length, ...} =>
-			   or (wrap (slot elt, Type.vector), isUseful length)
-		      | Tuple vs =>
-			   let
-			      val (v, b) =
-				 Vector.mapAndFold
-				 (vs, false, fn ((v, e), useful) =>
-				  let
-				     val (t, u) = getNew v
-				     val t =
-					if Exists.doesExist e
-					   then SOME t
-					else NONE
-				  in (t, u orelse useful)
-				  end)
-			      val v = Vector.keepAllMap (v, fn t => t)
-			   in (Type.tuple v, b)
-			   end
-	       in new := SOME z; z
-	       end
+	 let
+	    val {value, ty, new, ...} = Set.value s
+	 in
+	    case !new of
+	       SOME z => z
+	     | NONE =>
+		  let 
+		     fun slot (arg: t, e: Exists.t) =
+			let val (t, b) = getNew arg
+			in (if Exists.doesExist e then t else Type.unit, b)
+			end
+		     fun wrap ((t, b), f) = (f t, b)
+		     fun or ((t, b), b') = (t, b orelse b')
+		     fun maybe (u: Useful.t, s: slot, make: Type.t -> Type.t) =
+			wrap (or (slot s, Useful.isUseful u), make)
+		     val z =
+			case value of
+			   Array {useful, elt, length, ...} =>
+			      or (wrap (slot elt, Type.array),
+				  Useful.isUseful useful orelse isUseful length)
+			 | Ground u => (ty, Useful.isUseful u)
+			 | Ref {arg, useful, ...} =>
+			      maybe (useful, arg, Type.reff)
+			 | Tuple vs =>
+			      let
+				 val (v, b) =
+				    Vector.mapAndFold
+				    (vs, false, fn ((v, e), useful) =>
+				     let
+					val (t, u) = getNew v
+					val t =
+					   if Exists.doesExist e
+					      then SOME t
+					   else NONE
+				     in (t, u orelse useful)
+				     end)
+				 val v = Vector.keepAllMap (v, fn t => t)
+			      in
+				 (Type.tuple v, b)
+			      end
+			 | Vector {elt, length, ...} =>
+			      or (wrap (slot elt, Type.vector), isUseful length)
+			 | Weak {arg, useful} =>
+			      maybe (useful, arg, Type.weak)
+		     val _ = new := SOME z
+		  in
+		     z
+		  end
 	 end
 
       val getNew =
@@ -420,29 +461,33 @@ fun useless (program: Program.t): Program.t =
 	  * components of its args that a primitive will look at.
 	  *)
 	 fun deepMakeUseful v =
-	    let val slot = deepMakeUseful o #1
-	    in case value v of
-	       Ground u =>
-		  (Useful.makeUseful u
-		   (* Make all constructor args of this tycon useful *)
-		   ; (case Type.dest (ty v) of
-			 Type.Datatype tycon =>
-			    let val {useful, cons} = tyconInfo tycon
-			    in if !useful
-				  then ()
-			       else (useful := true
-				     ; Vector.foreach (cons, fn con =>
-						       Vector.foreach
-						       (#args (conInfo con),
-							deepMakeUseful)))
-			    end
-		       | _ => ()))
-	     | Tuple vs => Vector.foreach (vs, slot)
-	     | Ref {useful, arg} => (Useful.makeUseful useful; slot arg)
-	     | Vector {length, elt} => (deepMakeUseful length; slot elt)
-	     | Array {useful, length, elt} => (Useful.makeUseful useful
-					       ; deepMakeUseful length
-					       ; slot elt)
+	    let
+	       val slot = deepMakeUseful o #1
+	    in
+	       case value v of
+		  Array {useful, length, elt} =>
+		     (Useful.makeUseful useful
+		      ; deepMakeUseful length
+		      ; slot elt)
+		| Ground u =>
+		     (Useful.makeUseful u
+		      (* Make all constructor args of this tycon useful *)
+		      ; (case Type.dest (ty v) of
+			    Type.Datatype tycon =>
+			       let val {useful, cons} = tyconInfo tycon
+			       in if !useful
+				     then ()
+				  else (useful := true
+					; Vector.foreach (cons, fn con =>
+							  Vector.foreach
+							  (#args (conInfo con),
+							   deepMakeUseful)))
+			       end
+			  | _ => ()))
+		| Ref {arg, useful} => (Useful.makeUseful useful; slot arg)
+		| Tuple vs => Vector.foreach (vs, slot)
+		| Vector {length, elt} => (deepMakeUseful length; slot elt)
+		| Weak {arg, useful} => (Useful.makeUseful useful; slot arg)
 	    end
 
 	 type value = t
@@ -485,6 +530,8 @@ fun useless (program: Program.t): Program.t =
 		   | Vector_length => return (vectorLength (arg 0))
 		   | Vector_sub => (arg 1 dependsOn result
 				    ; return (devector (arg 0)))
+		   | Weak_get => return (deweak (arg 0))
+		   | Weak_new => coerce {from = arg 0, to = deweak result}
 		   | Word8Array_subWord => sub ()
 		   | Word8Array_updateWord => update ()
 		   | _ =>
@@ -719,7 +766,8 @@ fun useless (program: Program.t): Program.t =
 					      dearray = Type.dearray,
 					      dearrow = Type.dearrow,
 					      deref = Type.deref,
-					      devector = Type.devector}}
+					      devector = Type.devector,
+					      deweak = Type.deweak}}
 	       end
 	  | Select {tuple, offset} =>
 	       let

@@ -398,6 +398,14 @@ structure MLton: MLTON =
 	       end
 	 end
 
+      structure Weak =
+	 struct
+	    type 'a t = 'a
+
+	    val get = SOME
+	    fun new x = x
+	 end
+
       structure World =
 	 struct
 	    datatype status = Original | Clone

@@ -226,6 +226,10 @@ fun outputDeclarations
 		      (1, numWordsNonPointers, numPointers)
 		 | Stack =>
 		      (2, 0, 0)
+		 | Weak =>
+		      (3, 1, 1)
+		 | WeakGone =>
+		      (3, 2, 0)
 	  in
 	     concat ["{ ", Int.toString tag, ", ",
 		     Int.toString nonPointers, ", ",

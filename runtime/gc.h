@@ -78,11 +78,15 @@ enum {
 	SOURCES_INDEX_GC =	1,
 	SOURCE_SEQ_GC = 	1,
 	SOURCE_SEQ_UNKNOWN = 	0,
+	/* The type indices here must agree with those in
+	 * backend/machine-atoms.fun.
+	 */
 	STACK_TYPE_INDEX =	0,
 	STRING_TYPE_INDEX = 	1,
 	THREAD_TYPE_INDEX =	2,
+	WEAK_GONE_TYPE_INDEX = 	3,
 	WORD8_VECTOR_TYPE_INDEX = STRING_TYPE_INDEX,
-	WORD_VECTOR_TYPE_INDEX = 3,
+	WORD_VECTOR_TYPE_INDEX = 4,
 };
 
 #define BOGUS_THREAD (GC_thread)BOGUS_POINTER
@@ -97,6 +101,7 @@ typedef enum {
 	ARRAY_TAG,
 	NORMAL_TAG,
 	STACK_TAG,
+	WEAK_TAG,
 } GC_ObjectTypeTag;
 
 typedef struct {
@@ -199,6 +204,15 @@ typedef struct GC_thread {
 } *GC_thread;
 
 /* ------------------------------------------------- */
+/*                      GC_weak                      */
+/* ------------------------------------------------- */
+
+typedef struct GC_weak {
+	struct GC_weak *link;
+	pointer object;
+} *GC_weak;
+
+/* ------------------------------------------------- */
 /*                     Profiling                     */
 /* ------------------------------------------------- */
 
@@ -296,6 +310,7 @@ typedef struct GC_state {
 	pointer stackLimit;	/* stackBottom + stackSize - maxFrameSize */
 
 	bool amInGC;
+	bool amInMinorGC;
 	pointer back;     	/* Points at next available word in toSpace. */
 	ullong bytesAllocated;
  	ullong bytesCopied;
@@ -455,6 +470,7 @@ typedef struct GC_state {
 	uint translateDiff;	/* used by translateHeap */
  	bool translateUp;	/* used by translateHeap */
 	bool useFixedHeap; 	/* if true, then don't resize the heap */
+	GC_weak weaks;
 } *GC_state;
 
 static inline uint wordAlign(uint p) {
@@ -634,5 +650,9 @@ word *GC_stackFrameIndices (GC_state s);
 void GC_startHandler (GC_state s);
 
 void GC_switchToThread (GC_state s, GC_thread t);
+
+bool GC_weakCanGet (pointer p);
+pointer GC_weakGet (pointer p);
+pointer GC_weakNew (GC_state s, W32 header, pointer p);
 
 #endif /* #ifndef _MLTON_GC_H */

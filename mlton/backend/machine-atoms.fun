@@ -41,11 +41,12 @@ structure PointerTycon =
 
       (* These basic pointer tycons are hardwired into the runtime and are
        * prefixed to every user program.  See gc.h for the definitions of
-       * {STACK,STRING,THREAD,WORD_VECTOR}_TYPE_INDEX.
+       * {STACK,STRING,THREAD,WEAK_GONE,WORD_VECTOR}_TYPE_INDEX.
        *)
       val stack = new ()
       val string = new ()
       val thread = new ()
+      val weakGone = new ()
       val wordVector = new ()
    end
 
@@ -209,6 +210,7 @@ structure Type =
 	 datatype t = datatype ty
 
 	 val equals = equalsTy
+	 val isOk = isOkTy
 	 val layout = layoutTy
 	 val size = size
       end
@@ -340,6 +342,8 @@ structure ObjectType =
 	 Array of MemChunk.t
        | Normal of MemChunk.t
        | Stack
+       | Weak of Type.t
+       | WeakGone
 
       fun layout (t: t) =
 	 let
@@ -349,16 +353,20 @@ structure ObjectType =
 	       Array mc => seq [str "Array ", MemChunk.layout mc]
 	     | Normal mc => seq [str "Normal ", MemChunk.layout mc]
 	     | Stack => str "Stack"
+	     | Weak t => seq [str "Weak ", Type.layout t]
+	     | WeakGone => str "WeakGone"
 	 end
 
       val wordSize = Runtime.wordSize
 	 
       val stack = Stack
+
       val string =
 	 Array (MemChunk.T {components = Vector.new1 {mutable = false,
 						      offset = 0,
 						      ty = Type.char},
 			    size = 1})
+
       val thread =
 	 let
 	    val components =
@@ -375,6 +383,9 @@ structure ObjectType =
 	    Normal (MemChunk.T {components = components,
 				size = 3 * wordSize})
 	 end
+
+      val weak = Weak
+	 
       val wordVector =
 	 Array (MemChunk.T {components = Vector.new1 {mutable = false,
 						      offset = 0,
@@ -385,6 +396,8 @@ structure ObjectType =
 	 fn Array mc => MemChunk.isOk mc
 	  | Normal mc => MemChunk.isOk mc
 	  | Stack => true
+	  | Weak t => Type.isPointer t andalso Type.isOk t
+	  | WeakGone => true
 
       local
 	 structure R = Runtime.ObjectType
@@ -405,6 +418,8 @@ structure ObjectType =
 				       numPointers = p}
 			  end
 	     | Stack => R.Stack
+	     | Weak _ => R.Weak
+	     | WeakGone => R.WeakGone
       end
 
       val basic =
@@ -412,6 +427,7 @@ structure ObjectType =
 	 [(PointerTycon.stack, stack),
 	  (PointerTycon.string, string),
 	  (PointerTycon.thread, thread),
+	  (PointerTycon.weakGone, WeakGone),
 	  (PointerTycon.wordVector, wordVector)]
    end
 

@@ -44,6 +44,7 @@ signature MLTON =
       structure TextIO: MLTON_TEXT_IO
       structure Thread: MLTON_THREAD
       structure Vector: MLTON_VECTOR
+      structure Weak: MLTON_WEAK
       structure Word:
 	 sig
 	    include MLTON_WORD

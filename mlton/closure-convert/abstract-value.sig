@@ -43,6 +43,7 @@ signature ABSTRACT_VALUE =
        | Tuple of t vector
        | Type of Sxml.Type.t (* type doesn't contain any arrows *)
        | Vector of t
+       | Weak of t
 
       val addHandler: t * (Lambda.t -> unit) -> unit
       val coerce: {from: t, to: t} -> unit
@@ -52,6 +53,7 @@ signature ABSTRACT_VALUE =
       val dest: t -> dest
       (* Destroy info associated with Sxml.Type used to keep track of arrows. *)
       val destroy: unit -> unit
+      val deweak: t -> t
       val equals: t * t -> bool
       val fromType: Sxml.Type.t -> t
       val isEmpty: t -> bool (* no possible values correspond to me *) 

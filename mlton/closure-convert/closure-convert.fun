@@ -426,13 +426,14 @@ fun closureConvert
 		  let
 		     val t = 
 			case Value.dest v of
-			   Value.Type t => convertType t
+			   Value.Array v => Type.array (valueType v)
+			 | Value.Lambdas ls => #ty (lambdasInfo ls)
 			 | Value.Ref v => Type.reff (valueType v)
-			 | Value.Array v => Type.array (valueType v)
-			 | Value.Vector v => Type.vector (valueType v)
+			 | Value.Type t => convertType t
 			 | Value.Tuple vs =>
 			      Type.tuple (Vector.map (vs, valueType))
-			 | Value.Lambdas ls => #ty (lambdasInfo ls)
+			 | Value.Vector v => Type.vector (valueType v)
+			 | Value.Weak v => Type.weak (valueType v)
 		  in r := SOME t; t
 		  end
 	 end) arg
@@ -954,6 +955,15 @@ fun closureConvert
 					      v1 (coerce (convertVarInfo y,
 							  VarInfo.value y, v)))
 				  end
+			     | Weak_new =>
+				  let
+				     val y = varExpInfo (arg 0)
+				     val v = Value.deweak v
+				  in
+				     primApp (v1 (valueType v),
+					      v1 (coerce (convertVarInfo y,
+							  VarInfo.value y, v)))
+				  end
 			     | _ =>
 				  let
 				     val args = Vector.map (args, varExpInfo)
@@ -966,7 +976,8 @@ fun closureConvert
 				       dearray = Type.dearray,
 				       dearrow = Type.dearrow,
 				       deref = Type.deref,
-				       devector = Type.devector},
+				       devector = Type.devector,
+				       deweak = Type.deweak},
 				      Vector.map (args, convertVarInfo))
 				  end)
 			end

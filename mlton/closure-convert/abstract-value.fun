@@ -142,11 +142,26 @@ structure LambdaNode:
  *)
    end
 
+structure UnaryTycon =
+   struct
+      datatype t = Array | Ref | Vector | Weak
+   
+      val toString =
+	 fn Array => "Array"
+	  | Ref => "Ref"
+	  | Vector => "Vector"
+	  | Weak => "Weak"
+	 
+      val equals: t * t -> bool = op =
+   
+      val layout = Layout.str o toString
+   end
+
 datatype tree =
-   Type of Type.t
- | Unify of UnaryTycon.t * t
+   Lambdas of LambdaNode.t
  | Tuple of t vector
- | Lambdas of LambdaNode.t
+ | Type of Type.t
+ | Unify of UnaryTycon.t * t
 
 withtype t = {tree: tree,
 	      ty: Type.t,
@@ -265,6 +280,12 @@ fun deref v =
     | Unify (_, v) => v
     | _ => Error.bug "Value.deref"
 
+fun deweak v =
+   case tree v of
+      Type t => fromType (Type.deweak t)
+    | Unify (_, v) => v
+    | _ => Error.bug "Value.deweak"
+
 fun dearray v =
    case tree v of
       Type t => fromType (Type.dearray t)
@@ -323,21 +344,23 @@ val coerce = Trace.trace ("Value.coerce",
 structure Dest =
    struct
       datatype dest =
-	 Type of Type.t
-       | Ref of t
-       | Array of t
-       | Vector of t
-       | Tuple of t vector
+	 Array of t
        | Lambdas of Lambdas.t
+       | Ref of t
+       | Tuple of t vector
+       | Type of Type.t
+       | Vector of t
+       | Weak of t
    end
 
 fun dest v =
    case tree v of
       Type t => Dest.Type t
     | Unify (mt, v) => (case mt of
-			  UnaryTycon.Ref => Dest.Ref v
-			| UnaryTycon.Array => Dest.Array v
-			| UnaryTycon.Vector => Dest.Vector v)
+			   UnaryTycon.Array => Dest.Array v
+			 | UnaryTycon.Ref => Dest.Ref v
+			 | UnaryTycon.Vector => Dest.Vector v
+			 | UnaryTycon.Weak => Dest.Weak v)
     | Tuple vs => Dest.Tuple vs
     | Lambdas l => Dest.Lambdas (LambdaNode.toSet l)
 
@@ -411,12 +434,15 @@ fun primApply {prim: Prim.t, args: t vector, resultTy: Type.t}: t =
 			| Type _ => result ()
 			| _ => typeError ())
        | Ref_ref =>
-	    let val r = result ()
-	    in (case dest r of
-		   Ref x => coerce {from = oneArg (), to = x} (* unify (oneArg (), x) *)
-		 | Type _ => ()
-		 | _ => typeError ())
-	       ; r
+	    let
+	       val r = result ()
+	       val _ = 
+		  case dest r of
+		     Ref x => coerce {from = oneArg (), to = x} (* unify (oneArg (), x) *)
+		   | Type _ => ()
+		   | _ => typeError ()
+	    in
+	       r
 	    end
        | Vector_fromArray =>
 	    let val r = result ()
@@ -435,6 +461,22 @@ fun primApply {prim: Prim.t, args: t vector, resultTy: Type.t}: t =
 		Vector x => x
 	      | Type _ => result ()
 	      | _ => typeError ())
+       | Weak_get =>
+	    (case dest (oneArg ()) of
+		Weak v => v
+	      | Type _ => result ()
+	      | _ => typeError ())
+       | Weak_new =>
+	    let
+	       val r = result ()
+	       val _ =
+		  case dest r of
+		     Ref x => coerce {from = oneArg (), to = x}
+		   | Type _ => ()
+		   | _ => typeError ()
+	    in
+	       r
+	    end
        | _ => result ()
    end
 

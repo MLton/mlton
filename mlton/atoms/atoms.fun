@@ -16,7 +16,6 @@ structure Atoms =
       structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)
       structure Var = Var (structure AstId = Ast.Var)
       structure Tycon = Tycon (structure AstId = Ast.Tycon)
-      structure UnaryTycon = UnaryTycon (structure Tycon = Tycon)
       structure Type =
 	 Type (structure Ast = Ast
 	      structure Record = Ast.SortedRecord

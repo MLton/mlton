@@ -60,6 +60,8 @@ signature RUNTIME =
 	     | Normal of {numPointers: int,
 			  numWordsNonPointers: int}
 	     | Stack
+	     | Weak
+	     | WeakGone
 	 end
 
       (* All sizes are in bytes, unless they explicitly say "pointers". *)

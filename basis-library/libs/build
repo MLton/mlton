@@ -215,6 +215,8 @@ mlton/socket.sml
 mlton/syslog.sig
 mlton/syslog.sml
 mlton/vector.sig
+mlton/weak.sig
+mlton/weak.sml
 mlton/word.sig
 mlton/world.sig
 mlton/world.sml

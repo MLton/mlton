@@ -78,6 +78,7 @@ enum {
 	DEBUG_SIGNALS = FALSE,
 	DEBUG_STACKS = FALSE,
 	DEBUG_THREADS = FALSE,
+	DEBUG_WEAK = FALSE,
 	FORWARDED = 0xFFFFFFFF,
 	HEADER_SIZE = WORD_SIZE,
 	PROFILE_ALLOC_MISC = 0,
@@ -92,6 +93,7 @@ typedef enum {
 #define STACK_HEADER GC_objectHeader (STACK_TYPE_INDEX)
 #define STRING_HEADER GC_objectHeader (STRING_TYPE_INDEX)
 #define THREAD_HEADER GC_objectHeader (THREAD_TYPE_INDEX)
+#define WEAK_GONE_HEADER GC_objectHeader (WEAK_GONE_TYPE_INDEX)
 #define WORD8_VECTOR_HEADER GC_objectHeader (WORD8_TYPE_INDEX)
 
 #define SPLIT_HEADER()								\
@@ -120,6 +122,8 @@ static char* tagToString (GC_ObjectTypeTag t) {
 	return "NORMAL";
 	case STACK_TAG:
 	return "STACK";
+	case WEAK_TAG:
+	return "WEAK";
 	default:
 	die ("bad tag %u", t);
 	}
@@ -698,6 +702,7 @@ static inline void setFrontier (GC_state s, pointer p) {
 	s->frontier = p;
 }
 
+/* bytesRequested includes the header. */
 static pointer object (GC_state s, uint header, W32 bytesRequested,
 				bool allocInOldGen) {
 	pointer frontier;
@@ -819,13 +824,16 @@ static inline uint arrayNumBytes (pointer p,
 /* ---------------------------------------------------------------- */
 /*                      foreachPointerInObject                      */
 /* ---------------------------------------------------------------- */
-/* foreachPointerInObject (s, f, p) applies f to each pointer in the object
+/* foreachPointerInObject (s, p,f, ws) applies f to each pointer in the object
  * pointer to by p.
  * Returns pointer to the end of object, i.e. just past object.
+ *
+ * If ws, then the object pointer in weak objects is skipped.
  */
 
-static inline pointer foreachPointerInObject (GC_state s, GC_pointerFun f,
-						pointer p) {
+static inline pointer foreachPointerInObject (GC_state s, pointer p,
+						Bool skipWeaks,
+						GC_pointerFun f) {
 	word header;
 	uint numPointers;
 	uint numNonPointers;
@@ -849,6 +857,10 @@ static inline pointer foreachPointerInObject (GC_state s, GC_pointerFun f,
 						(uint)p, *(uint*)p);
 			maybeCall (f, s, (pointer*)p);
 		}
+	} else if (WEAK_TAG == tag) {
+		if (not skipWeaks and 1 == numPointers)
+			maybeCall (f, s, (pointer*)&(((GC_weak)p)->object));
+		p += 2 * WORD_SIZE;
 	} else if (ARRAY_TAG == tag) {
 		uint numBytes;
 		pointer max;
@@ -881,8 +893,8 @@ static inline pointer foreachPointerInObject (GC_state s, GC_pointerFun f,
 					maybeCall(f, s, (pointer*)p);
 			}
 		}
-		assert(p == max);
-	} else {
+		assert (p == max);
+	} else { /* stack */
 		GC_stack stack;
 		pointer top, bottom;
 		int i;
@@ -950,18 +962,21 @@ static inline pointer toData (pointer p) {
 /*                      foreachPointerInRange                       */
 /* ---------------------------------------------------------------- */
 
-/* foreachPointerInRange (s, front, back, f)
+/* foreachPointerInRange (s, front, back, ws, f)
  * Apply f to each pointer between front and *back, which should be a 
  * contiguous sequence of objects, where front points at the beginning of
  * the first object and *back points just past the end of the last object.
  * f may increase *back (for example, this is done by forward).
- * foreachPointerInRange returns apointer to the end of the last object it
+ * foreachPointerInRange returns a pointer to the end of the last object it
  * visits.
+ *
+ * If ws, then the object pointer in weak objects is skipped.
  */
 
 static inline pointer foreachPointerInRange (GC_state s, 
 						pointer front, 
 						pointer *back,
+						Bool skipWeaks,
 						GC_pointerFun f) {
 	pointer b;
 
@@ -976,7 +991,8 @@ static inline pointer foreachPointerInRange (GC_state s,
 	       		if (DEBUG_DETAILED)
 				fprintf (stderr, "front = 0x%08x  *back = 0x%08x\n",
 						(uint)front, *(uint*)back);
-			front = foreachPointerInObject (s, f, toData (front));
+			front = foreachPointerInObject 
+					(s, toData (front), skipWeaks, f);
 		}
 		b = *back;
 	}
@@ -995,14 +1011,14 @@ static bool ratiosOk (GC_state s) {
 			and s->copyRatio <= s->liveRatio;
 }
 
+static inline bool isInNursery (GC_state s, pointer p) {
+	return s->nursery <= p and p < s->frontier;
+}
+
 #if ASSERT
 
 static inline bool isInOldGen (GC_state s, pointer p) {
 	return s->heap.start <= p and p < s->heap.start + s->oldGenSize;
-}
-
-static inline bool isInNursery (GC_state s, pointer p) {
-	return s->nursery <= p and p < s->frontier;
 }
 
 static inline bool isInFromSpace (GC_state s, pointer p) {
@@ -1087,10 +1103,12 @@ static bool invariant (GC_state s) {
 	back = s->heap.start + s->oldGenSize;
 	if (DEBUG_DETAILED)
 		fprintf (stderr, "Checking old generation.\n");
-	foreachPointerInRange (s, s->heap.start, &back, assertIsInFromSpace);
+	foreachPointerInRange (s, s->heap.start, &back, FALSE,
+				assertIsInFromSpace);
 	if (DEBUG_DETAILED)
 		fprintf (stderr, "Checking nursery.\n");
-	foreachPointerInRange (s, s->nursery, &s->frontier, assertIsInFromSpace);
+	foreachPointerInRange (s, s->nursery, &s->frontier, FALSE,
+				assertIsInFromSpace);
 	/* Current thread. */
 	stack = s->currentThread->stack;
 	assert (isAligned (stack->reserved, WORD_SIZE));
@@ -1453,8 +1471,7 @@ static inline void setCrossMap (GC_state s, pointer p) {
 	}
 }
 
-static inline uint objectSize (GC_state s, pointer p)
-{
+static inline uint objectSize (GC_state s, pointer p) {
 	uint headerBytes, objectBytes;
        	word header;
 	uint tag, numPointers, numNonPointers;
@@ -1464,13 +1481,16 @@ static inline uint objectSize (GC_state s, pointer p)
 	if (NORMAL_TAG == tag) { /* Fixed size object. */
 		headerBytes = GC_NORMAL_HEADER_SIZE;
 		objectBytes = toBytes (numPointers + numNonPointers);
-	} else if (STACK_TAG == tag) { /* Stack. */
-		headerBytes = STACK_HEADER_SIZE;
-		objectBytes = sizeof(struct GC_stack) + ((GC_stack)p)->reserved;
-	} else { /* Array. */
-		assert(ARRAY_TAG == tag);
+	} else if (ARRAY_TAG == tag) {
 		headerBytes = GC_ARRAY_HEADER_SIZE;
 		objectBytes = arrayNumBytes (p, numPointers, numNonPointers);
+	} else if (WEAK_TAG == tag) {
+		headerBytes = GC_NORMAL_HEADER_SIZE;
+		objectBytes = 2 * WORD_SIZE;
+	} else { /* Stack. */
+		assert (STACK_TAG == tag);
+		headerBytes = STACK_HEADER_SIZE;
+		objectBytes = sizeof(struct GC_stack) + ((GC_stack)p)->reserved;
 	}
 	return headerBytes + objectBytes;
 }
@@ -1493,10 +1513,10 @@ static inline void forward (GC_state s, pointer *pp) {
 	word tag;
 
 	if (DEBUG_DETAILED)
-		fprintf(stderr, "forward  pp = 0x%x  *pp = 0x%x\n", (uint)pp, *(uint*)pp);
+		fprintf (stderr, "forward  pp = 0x%x  *pp = 0x%x\n", (uint)pp, *(uint*)pp);
 	assert (isInFromSpace (s, *pp));
 	p = *pp;
-	header = GC_getHeader(p);
+	header = GC_getHeader (p);
 	if (header != FORWARDED) { /* forward the object */
 		uint headerBytes, objectBytes, size, skip;
 		uint numPointers, numNonPointers;
@@ -1511,6 +1531,10 @@ static inline void forward (GC_state s, pointer *pp) {
 			headerBytes = GC_ARRAY_HEADER_SIZE;
 			objectBytes = arrayNumBytes (p, numPointers,
 								numNonPointers);
+			skip = 0;
+		} else if (WEAK_TAG == tag) {
+			headerBytes = GC_NORMAL_HEADER_SIZE;
+			objectBytes = 2 * WORD_SIZE;
 			skip = 0;
 		} else { /* Stack. */
 			GC_stack stack;
@@ -1547,6 +1571,25 @@ static inline void forward (GC_state s, pointer *pp) {
 			fprintf (stderr, "copying from 0x%08x to 0x%08x of size %u\n",
 					(uint)p, (uint)s->back, size);
 		copy (p - headerBytes, s->back, size);
+		if (WEAK_TAG == tag and 1 == numPointers) {
+			GC_weak w;
+
+			w = (GC_weak)(s->back + GC_NORMAL_HEADER_SIZE);
+			if (DEBUG_WEAK)
+				fprintf (stderr, "forwarding weak 0x%08x ",
+						(uint)w);
+			if (GC_isPointer (w->object)
+				and (not s->amInMinorGC
+					or isInNursery (s, w->object))) {
+				if (DEBUG_WEAK)
+					fprintf (stderr, "linking\n");
+				w->link = s->weaks;
+				s->weaks = w;
+			} else {
+				if (DEBUG_WEAK)
+					fprintf (stderr, "not linking\n");
+			}
+		}
 #if METER
 		if (size < sizeof(sizes)/sizeof(sizes[0])) sizes[size]++;
 #endif
@@ -1560,6 +1603,28 @@ static inline void forward (GC_state s, pointer *pp) {
 	}
 	*pp = *(pointer*)p;
 	assert (isInToSpace (s, *pp));
+}
+
+static void updateWeaks (GC_state s) {
+	GC_weak w;
+
+	for (w = s->weaks; w != NULL; w = w->link) {
+		assert ((pointer)BOGUS_POINTER != w->object);
+
+		if (DEBUG_WEAK)
+			fprintf (stderr, "updateWeaks  w = 0x%08x  ", (uint)w);
+		if (FORWARDED == GC_getHeader ((pointer)w->object)) {
+			if (DEBUG_WEAK)
+				fprintf (stderr, "forwarded\n");
+			w->object = *(pointer*)w->object;
+		} else {
+			if (DEBUG_WEAK)
+				fprintf (stderr, "cleared\n");
+			*(GC_getHeaderp((pointer)w)) = WEAK_GONE_HEADER;
+			w->object = (pointer)BOGUS_POINTER;
+		}
+	}
+	s->weaks = NULL;
 }
 
 static void swapSemis (GC_state s) {
@@ -1599,7 +1664,8 @@ static void cheneyCopy (GC_state s) {
 	clearCrossMap (s);
 	s->back = s->heap2.start;
 	foreachGlobal (s, forward);
-	foreachPointerInRange (s, s->heap2.start, &s->back, forward);
+	foreachPointerInRange (s, s->heap2.start, &s->back, TRUE, forward);
+	updateWeaks (s);
 	s->oldGenSize = s->back - s->heap2.start;
 	s->bytesCopied += s->oldGenSize;
 	if (DEBUG)
@@ -1686,8 +1752,15 @@ skipObjects:
 			cardEnd = oldGenEnd;
 		assert (objectStart < cardEnd);
 		orig = objectStart;
+		/* If we ever add Weak.set, then there could be intergenerational
+		 * weak pointers, in which case we would need to link the weak
+		 * objects into s->weaks.  But for now, since there is no 
+		 * Weak.set, the foreachPointerInRange will do the right thing
+		 * on weaks, since the weak pointer will never be into the 
+		 * nursery.
+		 */
 		objectStart = 
-			foreachPointerInRange (s, objectStart, &cardEnd,
+			foreachPointerInRange (s, objectStart, &cardEnd, FALSE,
 						forwardIfInNursery);
 		s->minorBytesScanned += objectStart - orig;
 		if (objectStart == oldGenEnd)
@@ -1730,6 +1803,7 @@ static void minorGC (GC_state s) {
 		if (DEBUG_GENERATIONAL or s->messages)
 			fprintf (stderr, "Minor GC.\n");
 		startTiming (&ru_start);
+		s->amInMinorGC = TRUE;
 		s->toSpace = s->heap.start + s->oldGenSize;
 		s->toLimit = s->toSpace + s->nurserySize;
 		assert (invariant (s));
@@ -1742,11 +1816,13 @@ static void minorGC (GC_state s) {
 		 */
 		foreachGlobal (s, forwardIfInNursery);
 		forwardInterGenerationalPointers (s);
-		foreachPointerInRange (s, s->toSpace, &s->back,
+		foreachPointerInRange (s, s->toSpace, &s->back, TRUE,
 					forwardIfInNursery);
+		updateWeaks (s);
 		bytesCopied = s->back - s->toSpace;
 		s->bytesCopiedMinor += bytesCopied;
 		s->oldGenSize += bytesCopied;
+		s->amInMinorGC = FALSE;
 		stopTiming (&ru_start, &s->ru_gcMinor);
 		if (DEBUG_GENERATIONAL or s->messages)
 			fprintf (stderr, "Minor GC done.  %s bytes copied.\n",
@@ -1874,6 +1950,10 @@ markNextInNormal:
 		headerp = nextHeaderp;
 		header = nextHeader;
 		goto markNext;
+	} else if (WEAK_TAG == tag) {
+		/* Store the marked header and don't follow any pointers. */
+		*headerp = header;
+		goto ret;
 	} else if (ARRAY_TAG == tag) {
 		numBytes = arrayNumBytes (cur, numPointers, numNonPointers);
 		size += GC_ARRAY_HEADER_SIZE + numBytes;
@@ -1971,6 +2051,10 @@ ret:
 	headerp = GC_getHeaderp (prev);
 	header = *headerp;
 	SPLIT_HEADER();
+	/* It's impossible to get a WEAK_TAG here, since we would never follow
+	 * the weak object pointer.
+	 */
+	assert (WEAK_TAG != tag);
 	if (NORMAL_TAG == tag) {
 		todo = prev + toBytes (numNonPointers);
 		max = todo + toBytes (numPointers);
@@ -2034,6 +2118,38 @@ static inline void threadInternal (GC_state s, pointer *pp) {
 	*headerp = (Header)pp;
 }
 
+/* If p is weak, the object pointer was valid, and points to an unmarked object,
+ * then clear the object pointer.
+ */
+static inline void maybeClearWeak (GC_state s, pointer p) {
+	Header header;
+	Header *headerp;
+	uint numPointers;
+	uint numNonPointers;
+	uint tag;
+
+	headerp = GC_getHeaderp (p);
+	header = *headerp;
+	SPLIT_HEADER();
+	if (WEAK_TAG == tag and 1 == numPointers) { 
+		Header h2;
+
+		if (DEBUG_WEAK)
+			fprintf (stderr, "maybeClearWeak (0x%08x)  header = 0x%08x\n",
+					(uint)p, (uint)header);
+		h2 = GC_getHeader (((GC_weak)p)->object);
+		/* If it's unmarked not threaded, clear the weak pointer. */
+		if (1 == ((MARK_MASK | 1) & h2)) {
+			((GC_weak)p)->object = (pointer)BOGUS_POINTER;
+			header = WEAK_GONE_HEADER | MARK_MASK;
+			if (DEBUG_WEAK)
+				fprintf (stderr, "cleared.  new header = 0x%08x\n",
+						(uint)header);
+			*headerp = header;
+		}
+	}
+}
+
 static void updateForwardPointers (GC_state s) {
 	pointer back;
 	pointer front;
@@ -2072,6 +2188,7 @@ updateObject:
 			 * Thread internal pointers.
 			 */
 thread:
+			maybeClearWeak (s, p);
 			size = objectSize (s, p);
 			if (DEBUG_MARK_COMPACT)
 	       			fprintf (stderr, "threading 0x%08x of size %u\n", 
@@ -2100,7 +2217,7 @@ thread:
 			}
 			front += size;
 			endOfLastMarked = front;
-			foreachPointerInObject (s, threadInternal, p);
+			foreachPointerInObject (s, p, FALSE, threadInternal);
 			goto updateObject;
 		} else {
 			/* It's not marked. */
@@ -2193,7 +2310,7 @@ unmark:
 		pointer new;
 
 		/* It's a pointer.  This object must be live.  Fix all the
-		 * forward pointers to it.  Then unmark it.
+		 * backward pointers to it.  Then unmark it.
 		 */
 		new = p - gap;
 		do {
@@ -2267,7 +2384,7 @@ static void translateHeap (GC_state s, pointer from, pointer to, uint size) {
 	/* Translate globals and heap. */
 	foreachGlobal (s, translatePointer);
 	limit = to + size;
-	foreachPointerInRange (s, to, &limit, translatePointer);
+	foreachPointerInRange (s, to, &limit, FALSE, translatePointer);
 }
 
 /* ---------------------------------------------------------------- */
@@ -3699,6 +3816,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	int i;
 
 	s->amInGC = TRUE;
+	s->amInMinorGC = FALSE;
 	s->bytesAllocated = 0;
 	s->bytesCopied = 0;
 	s->bytesCopiedMinor = 0;
@@ -3739,6 +3857,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->startTime = currentTime ();
 	s->summary = FALSE;
 	s->useFixedHeap = FALSE;
+	s->weaks = NULL;
 	heapInit (&s->heap);
 	heapInit (&s->heap2);
 	sigemptyset (&s->signalsHandled);
@@ -4084,4 +4203,53 @@ void GC_unpack (GC_state s) {
 		fprintf (stderr, "Unpacked heap to size %s.\n",
 				uintToCommaString (s->heap.size));
 	leave (s);
+}
+
+/* ------------------------------------------------- */
+/*                     GC_weak*                      */
+/* ------------------------------------------------- */
+
+/* A weak object is a header followed by two words.
+ *
+ * The object type indexed by the header determines whether the weak is valid
+ * or not.  If the type has numPointers == 1, then the weak pointer is valid.  
+ * Otherwise, the type has numPointers == 0 and the weak pointer is not valid.
+ *
+ * The first word is used to chain the live weaks together during a copying gc
+ * and is otherwise unused.
+ *
+ * The second word is the weak pointer.
+ */ 
+
+Bool GC_weakCanGet (pointer p) {
+	Bool res;
+
+	res = WEAK_GONE_HEADER != GC_getHeader (p);
+	if (DEBUG_WEAK)
+		fprintf (stderr, "%s = GC_weakCanGet (0x%08x)\n",
+				boolToString (res), (uint)p);
+	return res;
+}
+
+pointer GC_weakGet (pointer p) {
+	pointer res;
+
+	res = ((GC_weak)p)->object;
+	if (DEBUG_WEAK)
+		fprintf (stderr, "0x%08x = GC_weakGet (0x%08x)\n",
+				(uint)res, (uint)p);
+	return res;
+}
+
+pointer GC_weakNew (GC_state s, W32 header, pointer p) {
+	pointer res;
+
+	res = object (s, header,
+			HEADER_SIZE + WORD_SIZE + WORD_SIZE,
+			FALSE);
+	((GC_weak)res)->object = p;
+	if (DEBUG_WEAK)
+		fprintf (stderr, "0x%08x = GC_weakNew (0x%08x, 0x%08x)\n",
+				(uint)res, (uint)header, (uint)p);
+	return res;
 }

@@ -166,6 +166,9 @@ signature PRIM =
 	     | Vector_fromArray (* implemented in backend *)
 	     | Vector_length
 	     | Vector_sub (* implemented in backend *)
+	     | Weak_canGet (* implemented in SsaToRssa *)
+	     | Weak_get (* implemented in SsaToRssa *)
+	     | Weak_new (* implemented in SsaToRssa *)
 	     | Word32_add
 	     | Word32_addCheck
 	     | Word32_andb
@@ -277,7 +280,8 @@ signature PRIM =
 			 dearray: 'a -> 'a,
 			 dearrow: 'a -> 'a * 'a,
 			 deref: 'a -> 'a,
-			 devector: 'a -> 'a} -> 'a vector
+			 devector: 'a -> 'a,
+			 deweak: 'a -> 'a} -> 'a vector
       val ffi: string * Scheme.t -> t
       val gcCollect: t
       val intInfEqual: t

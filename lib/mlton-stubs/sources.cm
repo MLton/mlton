@@ -90,5 +90,6 @@ text-io.sig
 thread.sig
 thread.sml
 vector.sig
+weak.sig
 word.sig
 world.sig

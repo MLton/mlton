@@ -27,12 +27,13 @@ functor PrimTycons (S: PRIM_TYCONS_STRUCTS)
       val thread = fromString "thread"
       val tuple = fromString "*"
       val vector = fromString "vector"
+      val weak = fromString "weak"
       val word = fromString "word"
       val word8 = fromString "word8"
 
       val prims =
 	 [array, arrow, bool, char, exn, int, intInf, list, pointer,
-	  preThread, real, reff, thread, tuple, vector, word, word8]
+	  preThread, real, reff, thread, tuple, vector, weak, word, word8]
 
       val defaultInt = int
       val defaultWord = word

@@ -70,8 +70,6 @@ type-ops.fun
 type-ops.sig
 type.fun
 type.sig
-unary-tycon.fun
-unary-tycon.sig
 use-name.fun
 var.fun
 var.sig

@@ -49,6 +49,7 @@ structure MLton:
       structure TextIO: MLTON_TEXT_IO
       structure Thread: MLTON_THREAD
       structure Vector: MLTON_VECTOR
+      structure Weak: MLTON_WEAK
       structure Word: MLTON_WORD where type word = Word.word
       structure Word8: MLTON_WORD where type word = Word8.word
       structure World: MLTON_WORLD
@@ -877,6 +878,38 @@ signature MLTON_VECTOR =
 construct a vector $v$ of a length {\tt n}, whose elements $v_i$ are determined
 by the equations $b_0 = b$ and $(v_i, b_{i+1}) = f (i, b_i)$.
 
+\end{description}
+
+\subsubsection{\tt MLton.Weak}
+\begin{verbatim}
+signature MLTON_WEAK =
+   sig
+      type 'a t
+
+      val get: 'a t -> 'a option
+      val new: 'a -> 'a t
+   end
+\end{verbatim}
+
+A weak pointer is a pointer to an object that is nulled if the
+object becomes unreachable due to garbage collection.  The weak
+pointer does not itself cause the object it points to be retained by
+the garbage collector -- only other strong pointers can do that.
+For objects that are not allocated in the heap, like integers, a weak
+pointer will always be nulled.  So, if {\tt w: int t} then
+{\tt get w = NONE}.
+
+\begin{description}
+\entry{type 'a t}
+the type of weak pointers to objects of type 'a
+
+\entry{get w}
+returns {\tt NONE} if the object pointed to by {\tt w} no longer
+exist.  Otherwise, returns {\tt SOME} of the object pointed to by {\tt
+w}.
+
+\entry{new x}
+returns a weak pointer to {\tt x}.
 \end{description}
 
 \subsubsection{\tt MLton.Word, MLton.Word8}

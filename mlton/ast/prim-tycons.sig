@@ -31,6 +31,7 @@ signature PRIM_TYCONS =
       val thread: tycon
       val tuple: tycon
       val vector: tycon
+      val weak: tycon
       val word: tycon
       val word8: tycon
 

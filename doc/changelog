@@ -1,4 +1,7 @@
-Here are the changes since version 20030312
+Here are the changes since version 20030312.
+
+* 2003-04-18
+  - Added MLton.Weak, which supports weak pointers.
 
 * 2003-04-10
   - Replaced the basis library's MLton.hostType with

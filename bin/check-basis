@@ -110,6 +110,7 @@ cat <<-EOF
           datatype ref = datatype ref
           datatype preThread = T
           datatype thread = T
+	  datatype 'a weak = T of 'a
           type word = Word32.word
           type word8 = Word8.word
           type 'a vector = 'a vector

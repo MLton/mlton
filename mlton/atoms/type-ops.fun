@@ -34,9 +34,10 @@ local
    fun unary tycon t = con (tycon, Vector.new1 t)
 in
    val array = unary Tycon.array
-   val vector = unary Tycon.vector
    val list = unary Tycon.list
    val reff = unary Tycon.reff
+   val vector = unary Tycon.vector
+   val weak = unary Tycon.weak
 end
 
 val string = vector char
@@ -58,6 +59,7 @@ fun deUnaryOpt tycon t =
 
 val dearrayOpt = deUnaryOpt Tycon.array
 val derefOpt = deUnaryOpt Tycon.reff
+val deweakOpt = deUnaryOpt Tycon.weak
 
 fun deUnary tycon t =
    case deUnaryOpt tycon t of
@@ -65,8 +67,9 @@ fun deUnary tycon t =
     | NONE => Error.bug "deUnary"
 
 val dearray = deUnary Tycon.array
-val devector = deUnary Tycon.vector
 val deref = deUnary Tycon.reff
+val devector = deUnary Tycon.vector
+val deweak = deUnary Tycon.weak
    
 fun tuple ts =
    if 1 = Vector.length ts

@@ -194,8 +194,6 @@ atoms/id.fun
 atoms/var.fun
 atoms/use-name.fun
 atoms/tycon.sig
-atoms/unary-tycon.sig
-atoms/unary-tycon.fun
 atoms/type-ops.sig
 atoms/type.sig
 atoms/type-ops.fun

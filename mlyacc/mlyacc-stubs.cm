@@ -46,6 +46,7 @@ src/link.sml
 ../lib/mlton-stubs/random.sml
 ../lib/mlton-stubs/world.sig
 ../lib/mlton-stubs/word.sig
+../lib/mlton-stubs/weak.sig
 ../lib/mlton-stubs/vector.sig
 ../lib/mlton-stubs/thread.sig
 ../lib/mlton-stubs/io.sig
