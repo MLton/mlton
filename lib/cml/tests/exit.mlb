@@ -1,5 +1,5 @@
 local
-  $(SML_LIB)/basis/basis.mlb
+  $(MLTON_ROOT)/basis/basis.mlb
   ../cml.mlb
   print.sml
 in

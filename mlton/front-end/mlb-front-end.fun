@@ -82,6 +82,25 @@ fun mkLexAndParse () =
       val psi : (OS.FileSys.file_id * Ast.Basdec.t) HashSet.t =
 	 HashSet.new {hash = OS.FileSys.hash o #1}
 
+      local
+	 fun make (file : File.t) =
+	    if File.canRead file
+	       then List.map
+		    (File.lines file, fn line =>
+		     case String.tokens (line, Char.isSpace) of
+			[var, path] => {var = var, path = path}
+		      | _ => Error.bug (concat ["strange mlb path mapping: ", 
+						file, ":: ", line]))
+	       else []
+      in
+	 val pathMap =
+	    (List.rev o List.concat)
+	    [make (concat [!Control.libDir, "/mlb-path-map"]),
+	     case OS.Process.getEnv "HOME" of
+		NONE => []
+	      | SOME path => make (concat [path, "/.mlton/mlb-path-map"])]
+      end
+
       fun regularize {fileOrig, cwd, relativize} =
 	 let
 	    val fileExp = 
@@ -99,9 +118,11 @@ fun mkLexAndParse () =
 				  | c::s => loopVar (s, c::acc)
 			      val (s, var) = loopVar (s, [])
 			   in
-			      case OS.Process.getEnv var of
+			      case List.peek (pathMap, fn {var = var', ...} => 
+					      var = var') of
 				 NONE => loop (s, [], accs)
-			       | SOME p => loop ((String.explode p) @ s, [], accs)
+			       | SOME {path, ...} => 
+				    loop ((String.explode path) @ s, [], accs)
 			   end
 		      | c::s => loop (s, c::acc, accs)
 	       in

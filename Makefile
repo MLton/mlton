@@ -10,6 +10,7 @@ COMP = $(SRC)/mlton
 RUN = $(SRC)/runtime
 MLTON = $(BIN)/mlton
 AOUT = mlton-compile
+MLBPATHMAP = $(LIB)/mlb-path-map
 TARGETMAP = $(LIB)/target-map
 SPEC = $(SRC)/doc/mlton.spec
 LEX = mllex
@@ -36,7 +37,7 @@ all-no-docs:
 ifeq (other, $(shell if [ ! -x $(BIN)/mlton ]; then echo other; fi))
 	rm -f $(COMP)/$(AOUT)
 endif
-	$(MAKE) script targetmap constants compiler world tools
+	$(MAKE) script mlbpathmap targetmap constants compiler world tools
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: basis
@@ -138,27 +139,26 @@ freebsd:
 
 #	rm -rf $(BSDSRC)
 
-.PHONY: targetmap
-targetmap:
-	touch $(TARGETMAP)
-	( sed '/$(TARGET)/d' <$(TARGETMAP); 			\
-		echo '$(TARGET) $(TARGET_ARCH) $(TARGET_OS)' ) 	\
-		>>$(TARGETMAP).tmp
-	mv $(TARGETMAP).tmp $(TARGETMAP)
-
 .PHONY: nj-mlton
 nj-mlton:
 	$(MAKE) dirs runtime 
 	$(MAKE) -C $(COMP) nj-mlton
-	$(MAKE) script basis targetmap constants
+	$(MAKE) script basis mlbpathmap targetmap constants
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual:
 	$(MAKE) dirs runtime
 	$(MAKE) -C $(COMP) nj-mlton-dual
-	$(MAKE) script basis targetmap constants
+	$(MAKE) script basis mlbpathmap targetmap constants
 	@echo 'Build of MLton succeeded.'
+
+.PHONY: mlbpathmap
+mlbpathmap:
+	touch $(MLBPATHMAP)
+	( echo 'MLTON_ROOT $(LIB)/sml' ) 	\
+		>>$(MLBPATHMAP).tmp
+	mv $(MLBPATHMAP).tmp $(MLBPATHMAP)
 
 .PHONY: profiled
 profiled:
@@ -210,6 +210,14 @@ script:
 	sed "/^lib=/s;'.*';\"\`dirname \$$0\`/../lib\";" <bin/mlton >$(MLTON)
 	chmod a+x $(MLTON)
 	$(CP) $(SRC)/bin/platform $(LIB)
+
+.PHONY: targetmap
+targetmap:
+	touch $(TARGETMAP)
+	( sed '/$(TARGET)/d' <$(TARGETMAP); 			\
+		echo '$(TARGET) $(TARGET_ARCH) $(TARGET_OS)' ) 	\
+		>>$(TARGETMAP).tmp
+	mv $(TARGETMAP).tmp $(TARGETMAP)
 
 .PHONY: tools
 tools:
@@ -281,6 +289,7 @@ install: install-docs install-no-docs
 install-no-docs:
 	mkdir -p $(TLIB) $(TBIN) $(TMAN)
 	$(CP) $(LIB)/. $(TLIB)/
+	( echo 'MLTON_ROOT $(TLIB)/sml' ) >$(TLIB)/mlb-path-map
 	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
 			<$(SRC)/bin/mlton >$(TBIN)/mlton
 	chmod +x $(TBIN)/mlton

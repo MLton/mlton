@@ -105,7 +105,7 @@ for f in `ls *.sml`; do
 		case "$runOnly" in
 		no)
 			mlb="/tmp/$$.mlb"
-			echo "\$(SML_LIB)/basis/basis.mlb
+			echo "\$(MLTON_ROOT)/basis/basis.mlb
                               ann allowExport true, allowImport true, allowOverload true
                               in $src/regression/$f.sml end" >$mlb
 			$mlton $flags $extraFlags -output $f $mlb

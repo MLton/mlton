@@ -5,7 +5,7 @@ ann
   forceUsed
 in
 local
-  $(SML_LIB)/basis/basis.mlb
+  $(MLTON_ROOT)/basis/basis.mlb
   critical.sig
   critical.sml
   assert.sig

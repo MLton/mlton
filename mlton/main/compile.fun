@@ -343,7 +343,7 @@ fun outputBasisConstants (out: Out.t): unit =
    let
       val _ = amBuildingConstants := true
       val (_, decs) =
-	 parseAndElaborateMLB (File "$(SML_LIB)/basis/libs/primitive.mlb")
+	 parseAndElaborateMLB (File "$(MLTON_ROOT)/basis/libs/primitive.mlb")
       val decs = Vector.map (decs, fn (decs, _) => Decs.toList decs)
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
       (* Need to defunctorize so the constants are forced. *)
@@ -578,7 +578,7 @@ local
       let
 	 val basis =
 	    String.concat
-	    ["$(SML_LIB)/basis/",!Control.basisLibrary,".mlb\n"]
+	    ["$(MLTON_ROOT)/basis/",!Control.basisLibrary,".mlb\n"]
 	 val s =
 	    if List.length input = 0
 	       then basis
