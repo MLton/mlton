@@ -32,6 +32,10 @@ Int Posix_ProcEnv_setgid (Gid g) {
 	return setgid (g);
 }
 
+Int Posix_ProcEnv_setpgid (Pid p, Gid g) {
+	return setpgid (p, g);
+}
+
 Pid Posix_ProcEnv_setsid () {
 	return setsid ();
 }
