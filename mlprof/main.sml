@@ -36,7 +36,6 @@ struct
 			star (isChar (fn #"_" => true
 				       | #"'" => true
 				       | c => Char.isAlphaNum c))]
-		     
 end
 
 structure StringMap:
@@ -365,7 +364,7 @@ struct
     * address, with count always greater than 0.
     *)
   datatype t = T of {buckets: {addr: word,
-			       count: int} list,
+			       count: IntInf.t} list,
 		     etext: word,
 		     magic: word,
 		     start: word}
@@ -375,7 +374,7 @@ struct
 	open Layout
       in 
 	List.layout
-	(fn {addr, count} => seq [Word.layout addr, str " ", Int.layout count])
+	(fn {addr, count} => seq [Word.layout addr, str " ", IntInf.layout count])
 	buckets
       end
 
@@ -423,22 +422,26 @@ struct
 				   " does not appear to be a mlmon.out file"])
 		else ()
 	     val getAddr = getWord
+	     val magic = getWord ()
+	     val start = getAddr ()
+	     val etext = getAddr ()
 	     fun loop ac =
 		if In.endOf ins
 		   then rev ac
 		else let
 			val addr = getAddr ()
-			val count = Word.toInt (getWord ())
 			val _ =
-			   if count > 0
-			      then ()
-			   else die "zero count"
+			   if addr < start orelse addr >= etext
+			      then die "bad addr"
+			   else ()
+			val count = IntInf.fromInt (Word.toInt (getWord ()))
+			val _ =
+			   if count = IntInf.fromInt 0
+			      then die "zero count"
+			   else ()
 		     in
 			loop ({addr = addr, count = count} :: ac)
 		     end
-	     val magic = getWord ()
-	     val start = getAddr ()
-	     val etext = getAddr ()
 	     val buckets = loop []
 	   in 
 	     T {buckets = buckets,
@@ -465,7 +468,9 @@ struct
 		     of LESS => loop (bs, buckets', 
 				      {addr = addr, count = count}::ac)
 		   | EQUAL => loop (bs, bs', 
-				    {addr = addr, count = count + count'}::ac)
+				    {addr = addr,
+				     count = IntInf.+ (count, count')}
+				    :: ac)
 		   | GREATER => loop (buckets, bs', 
 				      {addr = addr', count = count'}::ac))
 	in
@@ -484,7 +489,7 @@ end
 fun attribute (AFile.T {data, etext = e, start = s}, 
 	       ProfFile.T {buckets, etext = e', start = s', ...}) : 
     {profileInfo: {name: string} ProfileInfo.t,
-     ticks: int} list
+     ticks: IntInf.t} list
   = let
        val _ =
 	  if e <> e' orelse s <> s'
@@ -493,35 +498,36 @@ fun attribute (AFile.T {data, etext = e, start = s},
       fun loop (profileInfoCurrent, ticks, l, buckets)
 	= let
 	    fun done (ticks, rest)
-	      = if ticks <> 0
-		  then {profileInfo = profileInfoCurrent,
-			ticks = ticks}::rest
-		  else rest
+	      = if IntInf.equals (IntInf.fromInt 0, ticks)
+		   then rest
+		else {profileInfo = profileInfoCurrent,
+		      ticks = ticks} :: rest
 	  in
 	    case (l, buckets)
 	      of (_, []) => done (ticks, [])
-	       | ([], _) => done (List.fold (buckets,
-					    ticks, 
-					    fn ({count, ...}, ticks) 
-					     => count + ticks),
+	       | ([], _) => done (List.fold (buckets, ticks, 
+					     fn ({count, ...}, ticks) =>
+					     IntInf.+ (count, ticks)),
 				  [])
 	       | ({addr = profileAddr, profileInfo}::l', 
 		  {addr = bucketAddr, count}::buckets')
 	       => if profileAddr <= bucketAddr
-		    then done (ticks, loop (profileInfo, 0, l', buckets))
-		    else loop (profileInfoCurrent, ticks + count, l, buckets')
+		    then done (ticks,
+			       loop (profileInfo, IntInf.fromInt 0, l', buckets))
+		    else loop (profileInfoCurrent,
+			       IntInf.+ (ticks, count), l, buckets')
 	  end
     in
       loop (ProfileInfo.T ([{data = {name = "<unknown>"},
 			     minor = ProfileInfo.T []}]),
-	    0, data, buckets)
+	    IntInf.fromInt 0, data, buckets)
     end
 
 fun coalesce (counts: {profileInfo: {name: string} ProfileInfo.t,
-		       ticks: int} list) :
-             {name: string, ticks: int} ProfileInfo.t
-  = let
-      datatype t = T of {ticks': int ref, map': t StringMap.t ref}
+		       ticks: IntInf.t} list)
+   : {name: string, ticks: IntInf.t} ProfileInfo.t =
+   let
+      datatype t = T of {ticks': IntInf.t ref, map': t StringMap.t ref}
       val map = StringMap.new ()
       val _ 
 	= List.foreach
@@ -537,10 +543,10 @@ fun coalesce (counts: {profileInfo: {name: string} ProfileInfo.t,
 			      = StringMap.lookupOrInsert
 			        (map, 
 				 name, 
-				 fn () => T {ticks' = ref 0,
+				 fn () => T {ticks' = ref (IntInf.fromInt 0),
 					     map' = ref (StringMap.new ())})
 			  in
-			    ticks' := !ticks' + ticks;
+			    ticks' := IntInf.+ (!ticks', ticks);
 			    doit (minor, !map')
 			  end)
 	       in
@@ -596,14 +602,14 @@ val replaceLine =
 	     end
     end)
 
-fun display (counts: {name: string, ticks: int} ProfileInfo.t,
+fun display (counts: {name: string, ticks: IntInf.t} ProfileInfo.t,
 	     baseName: string,
 	     depth: int) =
    let
       val ticksPerSecond = 100.0
       val thresh = Real.fromInt (!thresh)
       datatype t = T of {name: string,
-			 ticks: int,
+			 ticks: IntInf.t,
 			 row: string list,
 			 minor: t} array
       fun doit (info as ProfileInfo.T profileInfo,
@@ -614,9 +620,10 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 	 let
 	    val total =
 	       List.fold
-	       (profileInfo, 0,
-		fn ({data = {ticks, ...}, ...}, total) => total + ticks)
-	    val total = Real.fromInt total
+	       (profileInfo, IntInf.fromInt 0,
+		fn ({data = {ticks, ...}, ...}, total) =>
+		IntInf.+ (total, ticks))
+	    val total = Real.fromIntInf total
 	    val _ =
 	       if n = 0
 		  then print (concat ([Real.format (total / ticksPerSecond, 
@@ -628,7 +635,7 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 	       List.fold
 	       (profileInfo, [], fn ({data = {name, ticks}, minor}, ac) =>
 		let
-		   val rticks = Real.fromInt ticks
+		   val rticks = Real.fromIntInf ticks
 		   fun per total = 100.0 * rticks / total
 		in
 		   if per total < thresh
@@ -670,15 +677,17 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 	    val a = Array.fromList profileInfo
 	    val _ =
 	       QuickSort.sort
-	       (a, fn ({ticks = t1, ...}, {ticks = t2, ...}) => t1 >= t2)
+	       (a, fn ({ticks = t1, ...}, {ticks = t2, ...}) =>
+		IntInf.>= (t1, t2))
 	    (* Colorize. *)
 	    val _ =
 	       if n > 1 orelse not(!color) orelse 0 = Array.length a
 		  then ()
 	       else
 		  let
-		     val ticks = Int.toReal (#ticks (Array.sub (a, 0)))
-		     fun thresh r = Real.floor (ticks * r)
+		     val ticks: real =
+			Real.fromIntInf (#ticks (Array.sub (a, 0)))
+		     fun thresh r = Real.toIntInf (Real.* (ticks, r))
 		     val thresh1 = thresh (2.0 / 3.0)
 		     val thresh2 = thresh (1.0 / 3.0)
 		     datatype z = datatype DotColor.t
@@ -688,9 +697,9 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 					  String.equals (l, name)) of
 			    NONE => Black
 			  | SOME {ticks, ...} =>
-			       if ticks >= thresh1
+			       if IntInf.>= (ticks, thresh1)
 				  then Red1
-			       else if ticks >= thresh2
+			       else if IntInf.>= (ticks, thresh2)
 				       then Orange2
 				    else Yellow3)
 		  in
@@ -713,9 +722,11 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
       fun toList (T a, ac) =
 	 Array.foldr (a, ac, fn ({row, minor, ...}, ac) =>
 		      row :: toList (minor, ac))
-      val rows = toList (doit (counts, 0, concat [baseName, ".call-graph.dot"],
+      val rows = toList (doit (counts, 0,
+			       concat [baseName, ".call-graph.dot"],
 			       List.duplicate (depth, fn () => ""),
-			       []), [])
+			       []),
+			 [])
       val _ =
 	 let
 	    open Justify
