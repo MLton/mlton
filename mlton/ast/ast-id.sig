@@ -27,6 +27,7 @@ signature AST_ID =
       val equals: t * t -> bool
       val fromSymbol: Symbol.t * Region.t -> t
       val hash: t -> Word.t
+      val isSymbolic: t -> bool
       val layout: t -> Layout.t
       val toString: t -> string
       val toSymbol: t -> Symbol.t

@@ -700,6 +700,7 @@ structure Structure =
 		  let
 		     fun simple s =
 			seq [str s, str " ", Ast.Vid.layout d,
+			     if Ast.Vid.isSymbolic d then str " " else empty,
 			     str ": ", Scheme.layoutPretty scheme]
 		     datatype z = datatype Vid.t
 		  in

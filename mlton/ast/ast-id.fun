@@ -39,6 +39,15 @@ fun dest (T {name, region, ...}) = (name, region)
 
 val bogus = makeRegion (Symbol.bogus, Region.bogus)
 
+fun isAlphaNumeric id =
+   let
+      val c = String.sub (Symbol.toString (name id), 0)
+   in
+      Char.isAlphaNum c orelse c = #"'"
+   end
+
+val isSymbolic = not o isAlphaNumeric
+
 val toString = Symbol.toString o name
 
 val layout = String.layout o toString
