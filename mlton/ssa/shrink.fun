@@ -6,4 +6,8 @@ struct
 
 open S
 
+fun shrinkFunction _ f = f
+
+fun shrink p = p
+   
 end

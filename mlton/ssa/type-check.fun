@@ -159,10 +159,9 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 	  | SOME ts => Vector.sub (ts, offset)
       val {get = conInfo: Con.t -> {args: Type.t vector,
 				    result: Type.t},
-	   set = setConInfo, destroy = destroyCon} =
-	 Property.destGetSetOnce
-	 (Con.plist,
-	  Property.initRaise ("TypeCheck.info", Con.layout))
+	   set = setConInfo, ...} =
+	 Property.getSetOnce
+	 (Con.plist, Property.initRaise ("TypeCheck.info", Con.layout))
       val _ =
 	 Vector.foreach
 	 (datatypes, fn Datatype.T {tycon, cons} =>
@@ -230,7 +229,6 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 	 handle e => error (concat ["analyze raised exception ",
 				    Layout.toString (Exn.layout e)])
       val _ = Program.clear program
-      val _ = destroyCon ()
    in
       ()
    end

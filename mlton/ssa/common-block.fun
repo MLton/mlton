@@ -6,7 +6,7 @@ open Exp Transfer
 
 fun eliminate (program as Program.T {globals, datatypes, functions, main})
   = let
-(*    val shrink = shrinkBlocks globals *)
+       val shrink = shrinkFunction globals
 
       local 
 	fun make transfer = let
@@ -142,11 +142,11 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 		     end)
 	    val blocks = Vector.fromList ((!newBlocks) @ blocks)
 	  in
-	    Function.new {name = name,
-			  start = start,
-			  args = args,
-			  blocks = (* shrinkBlocks *) blocks,
-			  returns = returns}
+	     shrink (Function.new {name = name,
+				   start = start,
+				   args = args,
+				   blocks = blocks,
+				   returns = returns})
 	  end
 
       val program 

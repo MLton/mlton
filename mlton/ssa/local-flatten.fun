@@ -73,7 +73,7 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 	   set = setLabelArgs, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("args", Label.layout))
-(*      val shrinkBlocks = shrinkBlocks globals *)
+      val shrink = shrinkFunction globals
       val functions =
 	 List.map
 	 (functions, fn f =>
@@ -274,12 +274,11 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 			     statements = statements,
 			     transfer = transfer}
 		 end)
-(*	     val blocks = shrinkBlocks blocks *)
-	     val f = Function.new {name = name,
-				   args = args,
-				   start = start,
-				   blocks = blocks,
-				   returns = returns}
+	     val f = shrink (Function.new {name = name,
+					   args = args,
+					   start = start,
+					   blocks = blocks,
+					   returns = returns})
 	     val _ = Function.clear f
 	  in
 	     f

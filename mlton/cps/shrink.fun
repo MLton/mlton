@@ -927,10 +927,7 @@ fun shrinkExp globals =
 
 val shrinkExpNoDelete = fn e => shrinkExp (Vector.new0 ()) (e, false)
 
-val traceShrinkExp =
-   Trace.trace ("Cps.shrinkExp",
-		Exp.layout,
-		Exp.layout)
+val traceShrinkExp = Trace.trace ("Cps.shrinkExp", Exp.layout, Exp.layout)
 
 val shrinkExp = fn globals => let val shrinkExp = shrinkExp globals
 			      in traceShrinkExp (fn e => shrinkExp (e, true))

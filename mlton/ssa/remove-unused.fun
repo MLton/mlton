@@ -884,9 +884,8 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 
 
       val globals = simplifyStatements (main, globals)
-(*
-      val shrinkBlock = shrinkBlock globals
-*)
+
+      val shrink = shrinkFunction globals
 
       fun simplifyFunction (f: Function.t): Function.t option
 	= let
@@ -916,31 +915,31 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 				    (returnsFunc name))]])
 			 end)
 	  in
-	    if isUsedFunc name
-	      then let
-		     val args = Vector.keepAllMap
-		                (args,
-				 fn (x, t) => if isUsedVar x
-						then SOME (x, t)
-						else NONE)
+	    if not (isUsedFunc name)
+	       then NONE
+	    else
+	       let
+		  val args = Vector.keepAllMap
+		     (args,
+		      fn (x, t) => if isUsedVar x
+				      then SOME (x, t)
+				   else NONE)
 
-		     val blocks = simplifyBlocks blocks
-		     val wrappers = Vector.fromList (!wrappers)
-		     val blocks = Vector.concat [wrappers, blocks]
-		     val blocks = (* shrinkBlocks *) blocks
-		     val returns = Vector.keepAllMap
-		                   (returns,
-				    fn (x, t) => if isUsedVar x
-						   then SOME t
-						   else NONE)
-		   in
-		     SOME (Function.new {args = args,
-					 blocks = blocks,
-					 name = name,
-					 returns = returns,
-					 start = start})
-		   end
-	      else NONE
+		  val blocks = simplifyBlocks blocks
+		  val wrappers = Vector.fromList (!wrappers)
+		  val blocks = Vector.concat [wrappers, blocks]
+		  val returns = Vector.keepAllMap
+		     (returns,
+		      fn (x, t) => if isUsedVar x
+				      then SOME t
+				   else NONE)
+	       in
+		  SOME (shrink (Function.new {args = args,
+					      blocks = blocks,
+					      name = name,
+					      returns = returns,
+					      start = start}))
+	       end
 	  end
       fun simplifyFunctions (fs: Function.t List.t): Function.t List.t
 	= List.keepAllMap (fs, simplifyFunction)
