@@ -209,7 +209,7 @@ string ullongToCommaString(ullong n) {
 /*               Safe mmap and munmap                */
 /* ------------------------------------------------- */
 
-void *smmap(size_t length) {
+void *smmap (size_t length) {
 	void *result;
 
 #if (defined (__CYGWIN__))	
@@ -217,10 +217,10 @@ void *smmap(size_t length) {
 	if (NULL == result)
 		die("VirtualAlloc failed");
 #elif (defined (__linux__) || defined (__FreeBSD__))
-	result = mmap(NULL, length, PROT_READ | PROT_WRITE, 
+	result = mmap (NULL, length, PROT_READ | PROT_WRITE, 
 			MAP_PRIVATE | MAP_ANON, -1, 0);
 	if (result == (void*)-1) 
-		diee("Out of swap space.");
+		diee ("Out of swap space.");
 #endif	
 	return result;
 }
