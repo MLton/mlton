@@ -43,6 +43,7 @@ mkdir bin lib include
 cvs -Q co -d src mlton
 cvs -Q release src
 find src -type d | grep CVS | xargs rm -rf
+find src -type f | grep cvsignore | xargs rm -f
 
 echo 'Instantiating version numbers'
 cd $src/doc
@@ -89,7 +90,8 @@ if [ $home = 'yes' ]; then
 	make
 	cp -p $rpms/RPMS/i386/$version-$release.i386.rpm \
 		$rpms/SRPMS/$version-$release.src.rpm .
-	find . -type d | egrep (CVS|cvsignore) | xargs rm -rf
+	find . -type d | grep CVS | xargs rm -rf
+	find . -type f | grep cvsignore | xargs rm -f
 	echo '  Building tgz'
 	tar.write -x Makefile . | gzip >$root/mlton-home.tgz
 	
