@@ -522,7 +522,9 @@ val replaceLine =
 			  string "\n"],
 		     afterColor)]
        val dfa = compileNFA nodeLine
-       val _ = Compiled.layoutDotToFile (dfa, "/tmp/dfa.dot")
+       val _ = if true
+	          then ()
+	       else Compiled.layoutDotToFile (dfa, "/tmp/dfa.dot")
     in
        fn (l, color) =>
        case Compiled.matchAll (dfa, l) of
