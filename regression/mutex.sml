@@ -3,13 +3,13 @@ functor Z (S: sig
 		    sig
 		       structure Itimer:
 			  sig
-			     datatype which =
+			     datatype t =
 				Prof
 			      | Real
 			      | Virtual
 
-			     val set: which * {value: Time.time,
-					       interval: Time.time} -> unit
+			     val set: t * {value: Time.time,
+					   interval: Time.time} -> unit
 			  end
 		       structure Thread:
 			  sig
