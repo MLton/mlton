@@ -107,7 +107,8 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
 		 | SOME (c, state'') =>
 		     if Char.isDigit c
 		       then StringCvt.wdigits StringCvt.OCT reader state'
-		       else SOME (0wx0, state'))
+		       else SOME (0wx0, state')
+		 | NONE => raise Fail "NetHostDB.scan failure")
 	    | _ => StringCvt.wdigits StringCvt.DEC reader state
 	  fun loop (n, state, acc) =
 	    if n <= 0
