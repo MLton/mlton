@@ -104,6 +104,7 @@ signature REGEXP =
       val string: string -> t (* case matters *)
       val stringIgnoreCase: string -> t (* case doesn't matter *)
       val toString: t -> string
+      val zeroOrMore: t -> t  (* same as star *)
    end
 
 
