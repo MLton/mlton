@@ -273,7 +273,26 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 		   Exp.make {decs = decs,
 			     transfer = transfer}
 		end
-	     val body = shrinkExp (loop body)
+	     val body = loop body
+	     val _ =
+		Control.diagnostic
+		(fn () =>
+		 let
+		    open Layout
+		 in
+		    align [str "before",
+			   Exp.layout body]
+		 end)
+	     val body = shrinkExp body
+	     val _ =
+		Control.diagnostic
+		(fn () =>
+		 let
+		    open Layout
+		 in
+		    align [str "after",
+			   Exp.layout body]
+		 end)
 	     val _ = Exp.clear body
 	  in
 	     Function.T {name = name,

@@ -186,6 +186,12 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
       val numSimplified = ref 0
       fun simplifyFunction (f as Function.T {name, args, body, returns}) =
 	  let
+	     val _ =
+		Control.diagnostic
+		(fn () => 
+		 let open Layout
+		 in seq [str "processing ", Func.layout name]
+		 end)
 	     val {graph, root, jumpNode} =
 		Function.controlFlowGraph (f, jumpHandlers)
 	     val {idom} = DirectedGraph.dominators {graph = graph,

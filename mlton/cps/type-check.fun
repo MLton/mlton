@@ -221,8 +221,4 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
       ()
    end
 
-val typeCheck =
-   Trace.trace ("Cps.typeCheck", Program.layout, Layout.ignore)
-   typeCheck
-
 end

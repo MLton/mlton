@@ -335,7 +335,6 @@ signature CPS_TREE =
 	    val clear: t -> unit
 	    val foreachVar: t * (Var.t * Type.t -> unit) -> unit
 	    val hasPrim: t * (Prim.t -> bool) -> bool
-	    val layout: t -> Layout.t
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val layoutStats: t -> Layout.t
 	 end

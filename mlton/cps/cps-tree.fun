@@ -1471,31 +1471,37 @@ structure Function =
 	       val graphLayout =
 		  Graph.LayoutDot.layout
 		  {graph = graph,
-		   title = Func.toString name,
+		   title = concat [Func.toString name, " control-flow graph"],
 		   options = [GraphOption.Rank (Min, [root])],
 		   edgeOptions = edgeOptions,
 		   nodeOptions =
 		   fn n => let val l = ! (nodeOptions n)
 			   in NodeOption.Shape Box :: l
 			   end}
-	       val {tree, graphToTree} =
-		  Graph.dominatorTree {graph = graph, root = root}
-	       val _ =
-		  Exp.foreachDec
-		  (body, fn d =>
-		   case d of
-		      Fun {name, ...} =>
-			 label (graphToTree (jumpNode name), Jump.toString name)
-		    | _ => ())
-	       val _ = label (graphToTree root, Func.toString name)
-	       val treeLayout =
-		  Graph.LayoutDot.layout
-		  {graph = tree,
-		   title = concat [Func.toString name, " dominator tree"],
-		   options = [],
-		   edgeOptions = fn _ => [],
-		   nodeOptions = ! o nodeOptions}
-	       val _ = destroy ()
+	       fun treeLayout () =
+		  let
+		     val {tree, graphToTree} =
+			Graph.dominatorTree {graph = graph, root = root}
+		     val _ =
+			Exp.foreachDec
+			(body, fn d =>
+			 case d of
+			    Fun {name, ...} =>
+			       label (graphToTree (jumpNode name),
+				      Jump.toString name)
+			  | _ => ())
+		     val _ = label (graphToTree root, Func.toString name)
+		     val treeLayout =
+			Graph.LayoutDot.layout
+			{graph = tree,
+			 title = concat [Func.toString name, " dominator tree"],
+			 options = [],
+			 edgeOptions = fn _ => [],
+			 nodeOptions = ! o nodeOptions}
+		     val _ = destroy ()
+		  in
+		     treeLayout
+		  end
 	    in
 	       {graph = graphLayout,
 		tree = treeLayout}
@@ -1505,23 +1511,6 @@ structure Function =
       fun layout (func as T {name, args, body, returns},
 		  jumpHandlers, global: Var.t -> string option) =
 	 let
-	    val _ =
-	       if !Control.keepDot
-		  then
-		     let
-			val {graph, tree} =
-			   layoutDot (func, jumpHandlers, global)
-			fun doit (s, g) =
-			   File.withOut
-			   (concat [!Control.inputFile, ".", Func.toString name,
-				    ".", s, ".dot"],
-			    fn out => Layout.outputl (g, out))
-			val _ = doit ("cfg", graph)
-			val _ = doit ("dom", tree)
-		     in
-			()
-		     end
-	       else ()
 	    open Layout
 	 in align [seq [str "fun ",
 			Func.layout name,
@@ -1542,7 +1531,28 @@ structure Function =
 	 end
       
       fun layouts (fs, jumpHandlers, global, output: Layout.t -> unit): unit =
-	 Vector.foreach (fs, fn f => output (layout (f, jumpHandlers, global)))
+	 Vector.foreach
+	 (fs, fn f as T {name, ...} =>
+	  let
+	     val _ = output (layout (f, jumpHandlers, global))
+	     val _ =
+		if not (!Control.keepDot)
+		   then ()
+		else
+		   let
+		      val {graph, tree} = layoutDot (f, jumpHandlers, global)
+		      val name = Func.toString name
+		      fun doit (s, g) =
+			 Control.saveToFile
+			 ({suffix = concat [name, ".", s, ".dot"]}, g)
+		      val _ = doit ("cfg", graph)
+		      val _ = doit ("dom", tree ())
+		   in
+		      ()
+		   end
+	  in
+	     ()
+	  end)
    end
 
 structure Program =
@@ -1755,27 +1765,10 @@ structure Program =
 	    ; Function.layouts (functions, jumpHandlers, global, output)
 	    ; output (seq [str "\n\nMain: ", Func.layout main])
 	    ; if not (!Control.keepDot)
-	       then ()
-	      else
-		 File.withOut
-		 (concat [!Control.inputFile, ".dot"],
-		  fn out =>
-		  Layout.outputl (layoutCallGraph (p, !Control.inputFile),
-				  out))
-	 end
-
-      fun layout (p as T {datatypes, globals, functions, main}) =
-	 let
-	    val jumpHandlers = inferHandlers p
-	    open Layout
-	 in align [Datatype.layout datatypes,
-		   str "Globals:",
-		   align (Vector.toListMap (globals, Bind.layout)),
-		   str "Functions:",
-		   align (Vector.toListMap
-			  (functions, fn f =>
-			   Function.layout (f, jumpHandlers, fn _ => NONE))),
-		   seq [str "Main: ", Func.layout main]]
+		 then ()
+	      else (Control.saveToFile
+		    ({suffix = "call-graph.dot"},
+		     layoutCallGraph (p, !Control.inputFile)))
 	 end
 
       fun layoutStats (T {datatypes, globals, functions, ...}) =

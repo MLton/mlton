@@ -23,26 +23,11 @@ structure SimplifyTypes = SimplifyTypes (S)
 structure UnusedArgs = UnusedArgs (S)
 structure Useless = Useless (S)
 
-fun stats p =
-   Control.message (Control.Detail, fn () => Program.layoutStats p)
-
 fun leafInline p =
    Ref.fluidLet
    (Control.inline, Control.Leaf {size = SOME 20 (* arbitrary *)}, fn () =>
     Inline.inline p)
 			   
-(*
- * useless should run after constant propagation because const prop makes
- *  slots of tuples that are constant useless
- *
- * contify should be run before constant propagation because of the once pass
- *  that only looks at main -- hence want as much in main as possible.
- *
- * poly equal should run
- *   - after types are simplified so that many equals are turned into eqs
- *   - before inlining so that equality functions can be inlined
- *)
-
 fun traces s p = (Trace.Immediate.on s; p)
 
 val passes =
@@ -50,15 +35,26 @@ val passes =
     ("removeUnused1", RemoveUnused.remove),
     ("leafInline", leafInline),
     ("raiseToJump1", RaiseToJump.raiseToJump),
+    (* contify should be run before constant propagation because of the once
+     * pass that only looks at main -- hence want as much in main as possible.
+     *)
     ("contify1", Contify.contify),
     ("localFlatten1", LocalFlatten.flatten),
     (* constantPropagation cannot be omitted. It implements Array_array0. *)
     ("constantPropagation", ConstantPropagation.simplify),
+    (*
+     * useless should run after constantPropagation because constantPropagation
+     * makes slots of tuples that are constant useless.
+     *)
     ("useless", Useless.useless),
     ("removeUnused2", RemoveUnused.remove),
     ("unusedArgs1", UnusedArgs.unusedArgs),
     ("simplifyTypes", SimplifyTypes.simplify),
-    (* polyEqual cannot be omitted.  It implements MLton_equal. *)
+    (* polyEqual cannot be omitted.  It implements MLton_equal.
+     * polyEqual should run
+     *   - after types are simplified so that many equals are turned into eqs
+     *   - before inlining so that equality functions can be inlined
+     *)
     ("polyEqual", PolyEqual.polyEqual),
     ("contify2", Contify.contify),
     ("inline", Inline.inline),
@@ -71,6 +67,7 @@ val passes =
     ("loopInvariant", LoopInvariant.loopInvariant),
     ("flatten", Flatten.flatten),
     ("localFlatten3", LocalFlatten.flatten),
+    ("commonSubexp", CommonSubexp.eliminate),
     ("redundantTests", RedundantTests.simplify),
     ("redundant", Redundant.redundant),
     ("unusedArgs3", UnusedArgs.unusedArgs),
@@ -83,7 +80,10 @@ val passes =
       *)
     ("removeUnused4", RemoveUnused.remove)
     ]
-   
+
+fun stats p =
+   Control.message (Control.Detail, fn () => Program.layoutStats p)
+
 fun simplify p =
    (stats p
     ; (List.fold
