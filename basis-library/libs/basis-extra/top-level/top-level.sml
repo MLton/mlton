@@ -6,5 +6,3 @@ in
   structure SMLofNJ = SMLofNJ
   structure Unsafe = Unsafe
 end
-
-_basis_done MLtonFFI

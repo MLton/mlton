@@ -98,7 +98,7 @@ signature ELABORATE_ENV =
 	    type t
 	       
 	    (* ffi represents MLtonFFI, which is built by the basis library and
-	     * set via the special _set_ffi topdec.
+	     * set via the special _basis_done topdec.
 	     *)
 	    val ffi: t option ref
 	    val forceUsed: t -> unit

@@ -64,31 +64,49 @@ signature CONTROL =
 
       structure Elaborate :
 	 sig
-	    type 'a t
+	    type ('args, 'st) t
 
-	    val allowConstant: bool t
-	    val allowExport: bool t
-	    val allowImport: bool t
-	    val allowOverload: bool t
-	    val allowPrim: bool t
-	    val allowRebindEquals: bool t
-	    val deadCode: bool t
-	    val forceUsed: int t
+	    val allowConstant: (bool,bool) t
+	    val allowExport: (bool,bool) t
+	    val allowImport: (bool,bool) t
+	    val allowOverload: (bool,bool) t
+	    val allowPrim: (bool,bool) t
+	    val allowRebindEquals: (bool,bool) t
+	    val deadCode: (bool,bool) t
+	    val forceUsed: (unit,bool) t
+	    val ffiStr: (string,string option) t
 	    (* in (e1; e2), require e1: unit. *)
-	    val sequenceUnit: bool t
-	    val warnMatch: bool t
-	    val warnUnused: bool t
+	    val sequenceUnit: (bool,bool) t
+	    val warnMatch: (bool,bool) t
+	    val warnUnused: (bool,bool) t
 
-	    val current: 'a t -> 'a
-	    val default: 'a t -> 'a ref
-	    val enabled: 'a t -> bool ref
-	    val name: 'a t -> string
-	    val setAble: bool * string -> bool
-	    val setDef: string list -> bool
-	    val withAnn: string list -> (unit -> unit) option
+	    val current: ('args, 'st) t -> 'st
+	    val default: ('args, 'st) t -> 'st
+	    val setDefault: ('args, 'st) t * 'st -> unit
+	    val enabled: ('args, 'st) t -> bool
+	    val setEnabled: ('args, 'st) t * bool -> bool
+	    val expert: ('args, 'st) t -> bool
+	    val name: ('args, 'st) t -> string
+
+	    structure Id :
+	       sig
+		  type t
+	       end
+	    val equalsId: ('args, 'st) t * Id.t -> bool
+	    val parseId: string -> Id.t option
+
+	    structure Args :
+	       sig
+		  type t
+		  val processAnn: t -> (unit -> unit)
+	       end
+	    val args: ('args, 'st) t * Args.t -> 'args option
+	    val parseIdAndArgs: string -> (Id.t * Args.t) option
+
+	    val processDefault: string -> bool
+	    val processEnabled: string * bool -> bool
+
 	    val withDef: (unit -> 'a) -> 'a
-
-	    val parse: string -> string list
 	 end
 
       (* stop after elaboration.  So, no need for the elaborator to generate

@@ -14,11 +14,6 @@ open S
 local
    open Control.Elaborate
 in
-   val allowConstant = fn () => current allowConstant
-   val allowExport = fn () => current allowExport
-   val allowImport = fn () => current allowImport
-   val allowPrim = fn () => current allowPrim
-   val allowOverload = fn () => current allowOverload
    val allowRebindEquals = fn () => current allowRebindEquals
    val sequenceUnit = fn () => current sequenceUnit
    val warnMatch = fn () => current warnMatch
@@ -1064,7 +1059,7 @@ val {get = tyconRegion: Tycon.t -> Region.t, set = setTyconRegion, ...} =
 
 structure ElabControl = Control.Elaborate
    
-fun check (c: bool ElabControl.t, keyword: string, region) =
+fun check (c: (bool,bool) ElabControl.t, keyword: string, region) =
    if ElabControl.current c
       then ()
    else
@@ -1072,8 +1067,10 @@ fun check (c: bool ElabControl.t, keyword: string, region) =
 	 open Layout
       in
 	 Control.error (region,
-			str (concat [keyword, " disallowed, compile with -default-ann '",
-				     ElabControl.name c, " true'"]),
+			str (concat (if ElabControl.expert c
+					then [keyword, " disallowed"]
+					else [keyword, "disallowed, compile with -default-ann '", 
+					      ElabControl.name c, " true'"])),
 			empty)
       end
 

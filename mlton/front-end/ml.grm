@@ -232,7 +232,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
     | RBRACKET | REC | RPAREN | SEMICOLON | SHARING | SIG | SIGNATURE | STRUCT
     | STRUCTURE | THEN | TYPE | VAL | WHERE | WHILE | WILD | WITH | WITHTYPE
       (* Extensions *)
-    | BASIS_DONE | BUILD_CONST | COMMAND_LINE_CONST | CONST | EXPORT | FFI
+    | BUILD_CONST | COMMAND_LINE_CONST | CONST | EXPORT | FFI
     | IMPORT | PRIM
 
 %nonterm
@@ -483,7 +483,6 @@ topdecnode
       end)
    | FUNCTOR funbinds
      (Topdec.Functor (Vector.fromList funbinds))
-   | BASIS_DONE longid (Topdec.BasisDone {ffi = Longstrid.fromSymbols longid})
 
 (*---------------------------------------------------*)
 (*                    Structures                     *)

@@ -201,7 +201,9 @@ in
     ../../mlton/itimer.sig
     ../../mlton/itimer.sml
     ../../mlton/ffi.sig
-    ../../mlton/ffi.sml
+    ann "ffiStr MLtonFFI" in
+      ../../mlton/ffi.sml
+    end
     ../../mlton/gc.sig
     ../../mlton/gc.sml
     ../../mlton/int-inf.sig
@@ -222,7 +224,9 @@ in
     ../../mlton/socket.sig
     ../../mlton/socket.sml
     ../../mlton/syslog.sig
-    ann "allowImport true" in ../../mlton/syslog.sml end
+    ann "allowImport true" in 
+      ../../mlton/syslog.sml 
+    end
     ../../mlton/vector.sig
     ../../mlton/weak.sig
     ../../mlton/weak.sml
@@ -249,11 +253,6 @@ in
     structure BasisExtra 
     top-level/basis-sigs.sml
     top-level/basis-funs.sml
-    ann
-      (* for _basis_done *)
-      "allowPrim true"
-    in
-      top-level/top-level.sml 
-    end
+    top-level/top-level.sml 
   end
 end

@@ -14,37 +14,32 @@ open S
 local
    open Control.Elaborate
 in
-   val withDef = withDef
-   val withAnn = fn (ann, reg, f) =>
-      let
-	 fun warn () =
-	    if !Control.warnAnn
-	       then let open Layout
-		    in
-		       Control.warning
-		       (reg,
-			seq [str "unrecognized annotation: ", str ann],
-			empty)
-		    end
-	       else ()
-	 val restore =
-	    case withAnn (parse ann) of
-	       SOME restore' => restore'
-	     | NONE => (warn (); fn () => ())
-      in
-	 DynamicWind.wind (f, restore)
-      end
-
-   val allowPrim = fn () => current allowPrim
    val deadCode = fn () => current deadCode
-   val forceUsed = fn () => current forceUsed
 end
+
+structure ElabControl = Control.Elaborate
+   
+fun check (c: (bool,bool) ElabControl.t, keyword: string, region) =
+   if ElabControl.current c
+      then ()
+   else
+      let
+	 open Layout
+      in
+	 Control.error (region,
+			str (concat (if ElabControl.expert c
+					then [keyword, " disallowed"]
+					else [keyword, "disallowed, compile with -default-ann '", 
+					      ElabControl.name c, " true'"])),
+			empty)
+      end
 
 local
    open Ast
 in
    structure Basexp = Basexp
    structure Basdec = Basdec
+   structure Longstrid = Longstrid
    structure ModIdBind = ModIdBind
 end
 
@@ -71,11 +66,12 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
       val decs = Buffer.new {dummy = (Decs.empty, false)}
 
       val E = Env.empty ()
-      val withDef = fn f =>
-	 withDef (fn () =>
-		  if forceUsed () = 1
-		     then Env.forceUsedLocal (E, f)
-		     else f ())
+      fun withDef f =
+	 ElabControl.withDef 
+	 (fn () =>
+	  if ElabControl.default ElabControl.forceUsed
+	     then Env.forceUsedLocal (E, f)
+	     else f ())
 
       val emptySnapshot : (unit -> Env.Basis.t) -> Env.Basis.t = 
 	 Env.snapshot E
@@ -194,21 +190,51 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 		   Env.openBasis (E, B)
 		end
 	   | Basdec.Prim => 
-		(if not (allowPrim ())
-		    then let open Layout
-			 in Control.error (Basdec.region basdec, str "_prim disallowed", empty)
-			 end
-		    else ()
+		(check (ElabControl.allowPrim, "_prim", Basdec.region basdec)
 		 ; Env.openBasis (E, primBasis))
 	   | Basdec.Ann (ann, reg, basdec) =>
 		let
-		   val old = forceUsed ()
+		   open ElabControl
+		   fun warn () =
+		      if !Control.warnAnn
+			 then let open Layout
+			      in
+				 Control.warning
+				 (reg, seq [str "unrecognized annotation: ", str ann],
+				  empty)
+			      end
+			 else ()
 		in
-		   withAnn 
-		   (ann, reg, fn () => 
-		    if forceUsed () <> old
-		       then Env.forceUsedLocal (E, fn () => elabBasdec basdec)
-		       else elabBasdec basdec)
+		   case parseIdAndArgs ann of
+		      NONE => (warn ()
+			       ; elabBasdec basdec)
+		    | SOME (id, args) =>
+			 let
+			    val restore = Args.processAnn args
+			 in
+			    DynamicWind.wind
+			    (fn () =>
+			     if equalsId (forceUsed, id) andalso enabled forceUsed
+				then Env.forceUsedLocal (E, fn () => elabBasdec basdec)
+			     else if equalsId (ffiStr, id)
+				then let
+					val ffi = valOf (current ffiStr)
+					val ffi = 
+					   Longstrid.fromSymbols 
+					   (List.map (String.split (ffi, #"."), 
+						      Longstrid.Symbol.fromString), 
+					    reg)
+				     in
+					elabBasdec basdec
+					before
+					Option.app
+					(Env.lookupLongstrid (E, ffi), 
+					 fn S => (Env.Structure.ffi := SOME S
+						  ; Env.Structure.forceUsed S))
+				     end
+			     else elabBasdec basdec, 
+			     restore)
+			 end
 		end) basdec
       val _ = withDef (fn () => elabBasdec mlb)
    in

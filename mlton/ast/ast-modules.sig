@@ -147,8 +147,7 @@ signature AST_MODULES =
 	 sig
 	    type t
 	    datatype node =
-	       BasisDone of {ffi: Longstrid.t}
-	     | Functor of {arg: FctArg.t,
+	       Functor of {arg: FctArg.t,
 			   body: Strexp.t,
 			   name: Fctid.t,
 			   result: SigConst.t} vector

@@ -456,8 +456,7 @@ structure Topdec =
    struct
       open Wrap
       datatype node =
-	 BasisDone of {ffi: Longstrid.t}
-       | Functor of {arg: FctArg.t,
+	 Functor of {arg: FctArg.t,
 		     body: Strexp.t,
 		     name: Fctid.t,
 		     result: SigConst.t} vector
@@ -469,8 +468,7 @@ structure Topdec =
 	 
       fun layout d =
 	 case node d of
-	    BasisDone {ffi} => seq [str "_basis_done ", Longstrid.layout ffi]
-	  | Functor fctbs =>
+	    Functor fctbs =>
 	       layoutAndsBind ("functor", "=", fctbs,
 			       fn {name, arg, result, body} =>
 			       (Split 0,
@@ -497,8 +495,7 @@ structure Topdec =
 
       fun checkSyntax (d: t): unit =
 	 case node d of
-	    BasisDone _ => ()
-	  | Functor v =>
+	    Functor v =>
 	       (Vector.foreach
 		(v, fn {arg, body, result, ...} =>
 		 (FctArg.checkSyntax arg

@@ -227,22 +227,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
 			   Decs.layout)
 	 (fn (d: Topdec.t) =>
 	  case Topdec.node d of
-	     Topdec.BasisDone {ffi} =>
-		(if not (allowPrim ())
-		    then let open Layout
-			 in Control.error (Topdec.region d, str "_basis_done disallowed", empty)
-			 end
-		    else ()
-		 ; let
-		      val _ =
-			 Option.app
-			 (Env.lookupLongstrid (E, ffi), fn S =>
-			  (Env.Structure.ffi := SOME S
-			   ; Env.Structure.forceUsed S))
-		   in
-		      Decs.empty
-		   end)
-	   | Topdec.Signature sigbinds =>
+	     Topdec.Signature sigbinds =>
 		let
 		   val sigbinds =
 		      Vector.map

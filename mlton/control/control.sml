@@ -117,40 +117,125 @@ val dropPasses =
 
 structure Elaborate =
    struct
-      datatype 'a t = T of {cur: 'a ref,
-			    def: 'a ref,
-			    enabled: bool ref,
-			    name: string}
+      structure Id =
+	 struct
+	    datatype t = T of {enabled: bool ref,
+			       expert: bool,
+			       name: string}
+	    fun equals (T {enabled = enabled1, ...}, 
+			T {enabled = enabled2, ...}) = 
+	       enabled1 = enabled2
 
+	    val enabled = fn (T {enabled, ...}) => !enabled
+	    val setEnabled = fn (T {enabled, expert, ...}, b) =>
+	       if expert
+		  then false
+		  else (enabled := b; true)
+	    val expert = fn (T {expert, ...}) => expert
+	    val name = fn (T {name, ...}) => name
+	 end
+      structure Args =
+	 struct
+	    datatype t = T of {fillArgs: unit -> (unit -> unit),
+			       processAnn: unit -> (unit -> unit),
+			       processDef: unit -> bool}
+	    local
+	       fun make sel (T r) = sel r
+	    in
+	       fun fillArgs args = (make #fillArgs args) ()
+	       fun processAnn args = (make #processAnn args) ()
+	       fun processDef args = (make #processDef args) ()
+	    end
+	 end
+      datatype ('args, 'st) t = T of {args: 'args option ref,
+				      cur: 'st ref,
+				      def: 'st ref,
+				      id: Id.t}
+      val args = fn (T {args = argsRef, ...}, args) =>
+	 let val emptyArgs = Args.fillArgs args
+	 in (!argsRef) before (emptyArgs ())
+	 end
       fun current (T {cur, ...}) = !cur
-      fun default (T {def, ...}) = def
-      fun enabled (T {enabled, ...}) = enabled
-      fun name (T {name, ...}) = name
+      fun default (T {def, ...}) = !def
+      fun setDefault (T {def, ...}, def') = def := def'
+      fun id (T {id, ...}) = id
+      fun enabled ctrl = Id.enabled (id ctrl)
+      fun setEnabled (ctrl, b) = Id.setEnabled (id ctrl, b)
+      fun expert ctrl = Id.expert (id ctrl)
+      fun name ctrl = Id.name (id ctrl)
+      fun equalsId (ctrl, id') = Id.equals (id ctrl, id')
 
-      local
-	 fun make ({name: string, 
-		    default: 'a, 
-		    toString: 'a -> string,
+      local 
+	 fun make ({default: 'st,
 		    expert: bool,
-		    options: string list -> 'b option,
-		    newCur: 'a * 'b -> 'a,
-		    newDef: 'a * 'b -> 'a},
-		   {withDef: unit -> (unit -> unit),
-		    withAnn: string list -> (unit -> unit) option,
-		    setDef: string list -> bool,
-		    setAble: bool * string -> bool}) =
+		    toString: 'st -> string,
+		    name: string,
+		    newCur: 'st * 'args -> 'st,
+		    newDef: 'st * 'args -> 'st,
+		    parseArgs: string list -> 'args option},
+		   {parseId: string -> Id.t option,
+		    parseIdAndArgs: string -> (Id.t * Args.t) option,
+		    withDef: unit -> (unit -> unit)}) =
 	    let
-	       val ctrl as T {cur, def, enabled, ...} =
-		  T {cur = ref default,
-		     def = control {name = concat ["elaborate ",name,
+	       val ctrl as T {args = argsRef, cur, def, 
+			      id as Id.T {enabled, ...}, ...} =
+		  T {args = ref NONE,
+		     cur = ref default,
+		     def = control {name = concat ["elaborate ", name,
 						   " (default)"],
 				    default = default,
 				    toString = toString},
-		     enabled = control {name = concat ["elaborate ",name,
-						       " (enabled)"],
-					default = true,
-					toString = Bool.toString},
-		     name = name}
+		     id = Id.T {enabled = control {name = concat ["elaborate ", name,
+								  " (enabled)"],
+						   default = true,
+						   toString = Bool.toString},
+				expert = expert,
+				name = name}}
+	       val parseId = fn name' =>
+		  if String.equals (name', name) 
+		     then SOME id 
+		     else parseId name'
+	       val parseIdAndArgs = fn s =>
+		  case String.tokens (s, Char.isSpace) of
+		     name'::args' =>
+			if String.equals (name', name)
+			   then 
+			      case parseArgs args' of
+				 SOME v => 
+				    let
+				       fun fillArgs () =
+					  (argsRef := SOME v
+					   ; fn () => argsRef := NONE)
+				       fun processAnn () =
+					  if !enabled
+					     then let
+						     val old = !cur
+						     val new = newCur (old, v)
+						  in
+						     cur := new
+						     ; fn () => cur := old
+						  end
+					     else fn () => ()
+				       fun processDef () =
+					  if expert
+					     then false
+					     else let
+						     val old = !def
+						     val new = newDef (old, v)
+						  in
+						     def := new
+						     ; true
+						  end
+				       val args =
+					  Args.T {fillArgs = fillArgs,
+						  processAnn = processAnn,
+						  processDef = processDef}
+				    in
+				       SOME (id, args)
+				    end
+			       | NONE => NONE
+			   else parseIdAndArgs s
+		   | _ => NONE
 	       val withDef : unit -> (unit -> unit) =
 		  fn () =>
 		  let
@@ -161,82 +246,32 @@ structure Elaborate =
 		     ; fn () => (cur := old
 				 ; restore ())
 		  end
-	       val withAnn : string list -> (unit -> unit) option = 
-		  fn ss' =>
-		  case ss' of
-		     s::ss => 
-			if String.equals(s, name)
-			   then 
-			      case options ss of
-				 SOME v => 
-				    if !enabled
-				       then let
-					       val old = !cur
-					       val new = newCur (old, v)
-					    in
-					       cur := new
-					       ; SOME (fn () => cur := old)
-					    end
-				       else SOME (fn () => ())
-			       | NONE => NONE
-			   else withAnn ss'
-		   | _ => NONE
-	       val setDef : string list -> bool =
-		  if expert
-		     then setDef
-		  else
-		  fn ss' =>
-		  case ss' of
-		     s::ss => if String.equals(s, name)
-				 then 
-				    case options ss of
-				       SOME v => 
-					  let
-					     val old = !def
-					     val new = newDef (old, v)
-					  in
-					     def := new
-					     ; true
-					  end
-				     | NONE => false
-				 else setDef ss'
-		   | _ => false
-	       val setAble : bool * string -> bool =
-		  if expert
-		     then setAble
-		  else
-		  fn (b, s) =>
-		  if String.equals(s, name)
-		     then (enabled := b; true)
-		     else setAble (b, s)
 	    in
-	       (ctrl,
-		{withDef = withDef,
-		 withAnn = withAnn,
-		 setDef = setDef,
-		 setAble = setAble})
+	       (ctrl, 
+		{parseId = parseId,
+		 parseIdAndArgs = parseIdAndArgs,
+		 withDef = withDef})
 	    end
 
-	 fun makeBool ({name: string,
-			default: bool,
-			expert: bool}, ac) =
-	    make ({name = name,
-		   default = default, 
-		   toString = Bool.toString,
+	 fun makeBool ({default: bool,
+			expert: bool,
+			name: string}, ac) =
+	    make ({default = default,
 		   expert = expert,
-		   options = fn ss => 
-		             case ss of 
-				[s] => Bool.fromString s 
-			      | _ => NONE,
+		   toString = Bool.toString,
+		   name = name,
 		   newCur = fn (_,b) => b,
-		   newDef = fn (_,b) => b},
+		   newDef = fn (_,b) => b,
+		   parseArgs = fn args' =>
+		               case args' of
+				  [arg'] => Bool.fromString arg'
+				| _ => NONE}, 
 		  ac)
       in
 	 val ac =
-	    {withDef = fn () => (fn () => ()),
-	     withAnn = fn _ => NONE,
-	     setDef = fn _ => false,
-	     setAble = fn _ => false}
+	    {parseId = fn _ => NONE,
+	     parseIdAndArgs = fn _ => NONE,
+	     withDef = fn () => (fn () => ())}
 	 val (allowConstant, ac) =
 	    makeBool ({name = "allowConstant", default = false, expert = true}, ac)
 	 val (allowExport, ac) =
@@ -252,33 +287,51 @@ structure Elaborate =
 	 val (deadCode, ac) =
 	    makeBool ({name = "deadCode", default = false, expert = false}, ac)
 	 val (forceUsed, ac) =
-	    make ({name = "forceUsed",
-		   default = 0, 
-		   toString = Int.toString,
+	    make ({default = false,
 		   expert = false,
-		   options = fn ss => 
-		   case ss of 
-		      [] => SOME ()
-		    | _ => NONE,
-		   newCur = fn (i,()) => i + 1,
-		   newDef = fn (_,()) => 1}, ac)
+		   toString = Bool.toString,
+		   name = "forceUsed",
+		   newCur = fn (b,()) => b,
+		   newDef = fn (_,()) => true,
+		   parseArgs = fn args' =>
+		               case args' of
+				  [] => SOME ()
+				| _ => NONE},
+		  ac)
+	 val (ffiStr, ac) =
+	    make ({default = NONE,
+		   expert = true,
+		   toString = Option.toString String.toString,
+		   name = "ffiStr",
+		   newCur = fn (_,s) => SOME s,
+		   newDef = fn _ => NONE,
+		   parseArgs = fn args' =>
+		               case args' of
+				  [s] => SOME s
+				| _ => NONE},
+		  ac)
 	 val (sequenceUnit, ac) =
 	    makeBool ({name = "sequenceUnit", default = false, expert = false}, ac)
 	 val (warnMatch, ac) =
 	    makeBool ({name = "warnMatch", default = true, expert = false}, ac)
-	 val (warnUnused, {setAble, setDef, withAnn, withDef}) =
+	 val (warnUnused, {parseId, parseIdAndArgs, withDef}) =
 	    makeBool ({name = "warnUnused", default = false, expert = false}, ac)
       end
+
+      val processDefault = fn s =>
+	 case parseIdAndArgs s of
+	    SOME (_, args) => Args.processDef args
+	  | NONE => false
+      val processEnabled = fn (s, b) =>
+	 case parseId s of
+	    SOME id => Id.setEnabled (id, b)
+	  | NONE => false
 
       val withDef : (unit -> 'a) -> 'a = fn f =>
 	 let val restore = withDef ()
 	 in DynamicWind.wind (f, restore)
 	 end
-      val withAnn = withAnn
-      val setDef = setDef
-      val setAble = setAble
 
-      fun parse s = String.tokens (s, Char.isSpace)
    end
 
 val elaborateOnly =

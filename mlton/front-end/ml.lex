@@ -127,8 +127,6 @@ hexnum={hexDigit}+;
 %%
 <INITIAL>{ws}	=> (continue ());
 <INITIAL>{eol}	=> (Source.newline (source, yypos); continue ());
-<INITIAL>"_basis_done" =>
-   (tok (Tokens.BASIS_DONE, source, yypos, yypos + size yytext));
 <INITIAL>"_build_const" =>
    (tok (Tokens.BUILD_CONST, source, yypos, yypos + size yytext));
 <INITIAL>"_command_line_const" =>
