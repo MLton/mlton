@@ -58,19 +58,19 @@ in
    fun ('a, 'b) switch' (f: 'a t -> 'b t * (unit -> 'b)): 'a =
       (Prim.atomicBegin ()  (* matched by Prim.switchTo *)
        ; if !switching
-	    then raise Fail "nested Thread.switch"
+	    then (Prim.atomicEnd ()
+		  ; raise Fail "nested Thread.switch")
 	 else
 	    let
+	       val _ = switching := true
 	       val r: (unit -> 'a) option ref = ref NONE
 	       val t: 'a thread ref =
 		  ref (Paused (fn x => r := SOME x, Prim.current ()))
-	       val _ = switching := true
 	       fun fail e = (t := Dead
 			     ; switching := false
 			     ; Prim.atomicEnd ()
 			     ; raise e)
-	       val (T t': 'b t, x: unit -> 'b) =
-		  f (T t) handle e => fail e
+	       val (T t': 'b t, x: unit -> 'b) = f (T t) handle e => fail e
 	       val primThread =
 		  case !t' before t' := Dead of
 		     Dead => fail (Fail "switch to a Dead thread")
@@ -81,9 +81,10 @@ in
 		   | Paused (f, t) => (f x; t)
 	       val _ = switching := false
 	       val _ = Prim.switchTo primThread
-	    in case !r of
-	       NONE => die "Throw didn't set r.\n"
-	     | SOME v => (r := NONE; v ())
+	    in
+	       case !r of
+		  NONE => die "Throw didn't set r.\n"
+		| SOME v => (r := NONE; v ())
 	    end)
 end
 
@@ -91,10 +92,6 @@ fun switch f =
    switch' (fn t => let val (t, x) = f t
 		    in (t, fn () => x)
 		    end)
-
-(* fun prepend (t: 'a t, f: 'b -> 'a): 'b t =
- *    switch' (fn cur => (t, fn () => f (switch (fn t => (cur, t)))))
- *)
 
 fun toPrimitive (t as T r : unit t): Prim.thread =
    case !r of
