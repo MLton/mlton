@@ -447,7 +447,12 @@ and copyDefn (d: Defn.t): Defn.t =
       open Defn
    in
       case dest d of
-	 Realized _ => Error.bug "copyDefn Realized"
+	 Realized _ =>
+	    (* This will never happen in a type-correct program, but it may
+	     * in a type-incorrect one.  So, we return d to avoid terminating
+	     * MLton.
+	     *)
+	    d
        | TypeStr s => Defn.typeStr (copyTypeStr s)
        | Undefined => Defn.undefined
    end
