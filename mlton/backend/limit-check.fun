@@ -170,7 +170,8 @@ fun insertFunction (f: Function.t,
 					  Operand.EnsuresBytesFree =>
 					     Operand.word
 					     (WordX.make
-					      (ensureBytesFree (valOf return),
+					      (Word.toLarge
+					       (ensureBytesFree (valOf return)),
 					       WordSize.default))
 					| _ => z)),
 			      func = func,
@@ -367,7 +368,7 @@ fun insertFunction (f: Function.t,
 				       insert (Operand.word
 					       (WordX.zero WordSize.default)))
 		else heapCheck (true,
-				Operand.word (WordX.make (bytes,
+				Operand.word (WordX.make (Word.toLarge bytes,
 							  WordSize.default)))
 	     fun smallAllocation _ =
 		let
@@ -388,7 +389,9 @@ fun insertFunction (f: Function.t,
 			 (case c of
 			     Const.Word w =>
 				heapCheckNonZero
-				(MLton.Word.addCheck (WordX.toWord w, extraBytes)
+				(MLton.Word.addCheck
+				 (Word.fromLarge (WordX.toLargeWord w),
+				  extraBytes)
 				 handle Overflow => Runtime.allocTooLarge)
 			   | _ => Error.bug "strange primitive bytes needed")
 		    | _ =>
@@ -400,8 +403,9 @@ fun insertFunction (f: Function.t,
 			     Vector.new0 (),
 			     Transfer.Arith
 			     {args = Vector.new2 (Operand.word
-						  (WordX.make (extraBytes,
-							       WordSize.default)),
+						  (WordX.make
+						   (Word.toLarge extraBytes,
+						    WordSize.default)),
 						  bytesNeeded),
 			      dst = bytes,
 			      overflow = allocTooLarge (),

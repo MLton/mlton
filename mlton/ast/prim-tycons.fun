@@ -39,6 +39,7 @@ val weak = fromString "weak"
 val word8 = fromString "word8"
 val word16 = fromString "word16"
 val word32 = fromString "word32"
+val word64 = fromString "word64"
 
 val ints =
    [(int8, I8),
@@ -53,7 +54,8 @@ val reals =
 val words =
    [(word8, W8),
     (word16, W16),
-    (word32, W32)]
+    (word32, W32),
+    (word64, W64)]
    
 val prims =
    [array, arrow, bool, char, exn,
@@ -61,7 +63,7 @@ val prims =
     list, pointer, preThread,
     real32, real64,
     reff, thread, tuple, vector, weak,
-    word8, word16, word32]
+    word8, word16, word32, word64]
    
 val int =
    fn I8 => int8
@@ -77,6 +79,7 @@ val word =
    fn W8 => word8
     | W16 => word16
     | W32 => word32
+    | W64 => word64
 	 
 val defaultInt = int IntSize.default
 val defaultReal = real RealSize.default

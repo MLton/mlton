@@ -139,7 +139,7 @@ structure Operand =
 		      (* 512 is pretty arbitrary *)
 		      if WordX.<= (w, WordX.fromLargeInt (IntInf.fromInt 512,
 							  WordX.size w))
-			 then small (WordX.toWord w)
+			 then small (LargeWord.toWord (WordX.toLargeWord w))
 		      else big z
 		 | _ => Error.bug "strange numBytes")
 	  | _ => big z

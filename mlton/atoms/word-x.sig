@@ -34,7 +34,7 @@ signature WORD_X =
       val isMax: t -> bool
       val isZero: t -> bool
       val layout: t -> Layout.t
-      val make: word * WordSize.t -> t
+      val make: LargeWord.t * WordSize.t -> t
       val max: WordSize.t -> t
       val mod: t * t -> t
       val notb: t -> t
@@ -48,8 +48,8 @@ signature WORD_X =
       val toChar: t -> char
       val toIntInf: t -> IntInf.t
       val toIntInfX: t -> IntInf.t
+      val toLargeWord: t -> LargeWord.t
       val toString: t -> string
-      val toWord: t -> word
       val xorb: t * t -> t
       val zero: WordSize.t -> t
    end

@@ -146,6 +146,7 @@ control/source-pos.sml
 control/region.sig
 control/region.sml
 ../lib/mlton/set/set.sig
+../lib/mlton/basic/large-word.sml
 ast/word-size.sig
 ast/wrapped.sig
 ast/tyvar.sig

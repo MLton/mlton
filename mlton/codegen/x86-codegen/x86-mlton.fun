@@ -740,15 +740,19 @@ struct
 		end
 	     | Int_toWord (s, s') =>
 		(case (s, s') of
-		    (I64, W32) => Error.bug "FIXME"
+		    (I64, W64) => Error.bug "FIXME"
+		  | (I64, W32) => Error.bug "FIXME"
 		  | (I64, W16) => Error.bug "FIXME"
 		  | (I64, W8) => Error.bug "FIXME"
+		  | (I32, W64) => Error.bug "FIXME"
 		  | (I32, W32) => mov ()
 		  | (I32, W16) => xvom ()
 		  | (I32, W8) => xvom ()
+		  | (I16, W64) => Error.bug "FIXME"
 		  | (I16, W32) => movx Instruction.MOVSX
 		  | (I16, W16) => mov ()
 		  | (I16, W8) => xvom ()
+		  | (I8, W64) => Error.bug "FIXME"
 		  | (I8, W32) => movx Instruction.MOVSX
 		  | (I8, W16) => movx Instruction.MOVSX
 		  | (I8, W8) => mov ())
@@ -1344,7 +1348,8 @@ struct
 		  (case s of
 		      W8 => pmd Instruction.MUL
 		    | W16 => imul2 ()
-		    | W32 => imul2 ())
+		    | W32 => imul2 ()
+		    | W64 => Error.bug "FIXME")
 	     | Word_neg _ => unal Instruction.NEG
 	     | Word_notb _ => unal Instruction.NOT
 	     | Word_orb _ => binal Instruction.OR
@@ -1366,7 +1371,8 @@ struct
 		 | _ => Error.bug (Prim.toString prim))
 	     | Word_toIntX (s, s') =>
 		(case (s, s') of
-		   (W32, I32) => mov ()
+		   (W64, _) => Error.bug "FIXME"
+		 | (W32, I32) => mov ()
 		 | (W32, I16) => xvom ()
 		 | (W32, I8) => xvom ()
 		 | (W16, I32) => movx Instruction.MOVSX
@@ -1378,7 +1384,9 @@ struct
 		 | _ => Error.bug (Prim.toString prim))
 	     | Word_toWord (s, s') =>
 	        (case (s, s') of
-		   (W32, W32) => mov ()
+		   (W64, _) => Error.bug "FIXME"
+		 | (_, W64) => Error.bug "FIXME"
+		 | (W32, W32) => mov ()
 		 | (W32, W16) => xvom ()
 		 | (W32, W8) => xvom ()
 		 | (W16, W32) => movx Instruction.MOVZX
@@ -1389,7 +1397,9 @@ struct
 		 | (W8, W8) => mov ())
 	     | Word_toWordX (s, s') =>
 		(case (s, s') of
-		   (W32, W32) => mov ()
+		    (W64, _) => Error.bug "FIXME"
+		  | (_, W64) => Error.bug "FIXME"
+		  | (W32, W32) => mov ()
 		 | (W32, W16) => xvom ()
 		 | (W32, W8) => xvom ()
 		 | (W16, W32) => movx Instruction.MOVSX
@@ -1667,7 +1677,8 @@ struct
 	       (case s of
 		  W8 => pmd (x86.Instruction.MUL, x86.Instruction.C)
 		| W16 => pmd (x86.Instruction.MUL, x86.Instruction.C)
-		| W32 => pmd (x86.Instruction.MUL, x86.Instruction.C))
+		| W32 => pmd (x86.Instruction.MUL, x86.Instruction.C)
+		| W64 => Error.bug "FIXME")
 	   | _ => Error.bug ("arith: strange Prim.Name.t: " ^ primName))]
       end
 

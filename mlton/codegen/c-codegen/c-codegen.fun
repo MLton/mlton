@@ -129,6 +129,7 @@ structure WordX =
 	       W8 => simple "8"
 	     | W16 => simple "16"
 	     | W32 => concat ["0x", toString w]
+	     | W64 => simple "64"
 	 end
    end
    

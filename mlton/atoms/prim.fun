@@ -931,7 +931,8 @@ fun 'a apply (p, args, varEquals) =
 	   | (IntInf_toWord, [IntInf i]) =>
 		(case SmallIntInf.toWord i of
 		    NONE => ApplyResult.Unknown
-		  | SOME w => word (WordX.make (w, WordSize.default)))
+		  | SOME w => word (WordX.make (LargeWord.fromWord w,
+						WordSize.default)))
 	   | (MLton_eq, [c1, c2]) => eq (c1, c2)
 	   | (MLton_equal, [c1, c2]) => equal (c1, c2)
 	   | (Word_add _, [Word w1, Word w2]) => word (WordX.+ (w1, w2))
@@ -959,7 +960,8 @@ fun 'a apply (p, args, varEquals) =
 	   | (Word_toInt (_, s), [Word w]) =>
 		int (IntX.make (WordX.toIntInf w, s))
 	   | (Word_toIntInf, [Word w]) =>
-		intInf (SmallIntInf.fromWord (WordX.toWord w))
+		intInf (SmallIntInf.fromWord
+			(LargeWord.toWord (WordX.toLargeWord w)))
 	   | (Word_toIntX (_, s), [Word w]) =>
 		int (IntX.make (WordX.toIntInfX w, s))
 	   | (Word_toWord (_, s), [Word w]) => word (WordX.resize (w, s))
@@ -1050,7 +1052,7 @@ fun 'a apply (p, args, varEquals) =
 				 (WordX.mod
 				  (w,
 				   WordX.make
-				   (Word.fromInt (WordSize.size s), s)))
+				   (LargeWord.fromInt (WordSize.size s), s)))
 				 then Var x
 			      else Unknown
 			   end
@@ -1063,7 +1065,7 @@ fun 'a apply (p, args, varEquals) =
 			then if WordX.isZero w
 				then Var x
 			     else if (WordX.>=
-				      (w, WordX.make (Word.fromInt
+				      (w, WordX.make (LargeWord.fromInt
 						      (WordSize.size s),
 						      WordSize.default)))
 				     then zero s
@@ -1223,8 +1225,12 @@ fun 'a apply (p, args, varEquals) =
 		    | _ => Unknown)
 	     | (_, [Const (IntInf i1), Const (Word w2), _]) =>
 		  (case name of
-		      IntInf_arshift => intInf (IntInf.~>> (i1, WordX.toWord w2))
-		    | IntInf_lshift => intInf (IntInf.<< (i1, WordX.toWord w2))
+		      IntInf_arshift =>
+			 intInf (IntInf.~>>
+				 (i1, LargeWord.toWord (WordX.toLargeWord w2)))
+		    | IntInf_lshift =>
+			 intInf (IntInf.<<
+				 (i1, LargeWord.toWord (WordX.toLargeWord w2)))
 		    | _ => Unknown)
 	     | (_, [Const (IntInf i1), _]) =>
 		  (case name of

@@ -189,8 +189,7 @@ fun makeXconst (c: Aconst.t, ty: Type.t): Xconst.t =
    in
       case Aconst.node c of
 	 Aconst.Char c =>
-	    Xconst.Word (WordX.make (Word8.toWord (Word8.fromChar c),
-				     WordSize.W8))
+	    Xconst.Word (WordX.make (LargeWord.fromChar c, WordSize.W8))
        | Aconst.Int i =>
 	    if Xtype.equals (ty, Xtype.intInf)
 	       then Xconst.IntInf i
@@ -208,7 +207,7 @@ fun makeXconst (c: Aconst.t, ty: Type.t): Xconst.t =
        | Aconst.Word w =>
 	    choose (WordSize.all, Xtype.word, "word", fn s =>
 		    Xconst.Word
-		    (if IntInf.<= (w, Word.toIntInf (WordSize.max s))
+		    (if IntInf.<= (w, LargeWord.toIntInf (WordSize.max s))
 			then WordX.fromLargeInt (w, s)
 		     else (error (concat [Xtype.toString ty, " too big"])
 			   ; WordX.zero s)))

@@ -96,7 +96,7 @@ in
 	 Int i => String.hash (IntX.toString i)
        | IntInf i => String.hash (IntInf.toString i)
        | Real r => RealX.hash r
-       | Word w => WordX.toWord w
+       | Word w => LargeWord.toWord (WordX.toLargeWord w)
        | Word8Vector v => String.hash (Word8.vectorToString v)
 end
    

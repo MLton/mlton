@@ -512,7 +512,8 @@ fun profile program =
 						(Operand.GCState,
 						 Operand.word
 						 (WordX.make
-						  (Word.fromInt bytesAllocated,
+						  (LargeWord.fromInt
+						   bytesAllocated,
 						   WordSize.default)))),
 					func = func,
 					return = SOME newLabel}

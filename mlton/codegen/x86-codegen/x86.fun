@@ -161,6 +161,7 @@ struct
 		       W8 => Vector.new1 BYTE
 		     | W16 => Vector.new1 WORD 
 		     | W32 => Vector.new1 LONG
+		     | W64 => Vector.new2 (LONG, LONG)
 		  end
       end
 
@@ -739,6 +740,7 @@ struct
 		       W8 => One
 		     | W16 => Two
 		     | W32 => Four
+		     | W64 => Eight
 		  end
       end
 
@@ -1497,6 +1499,10 @@ struct
 				       dst = cReturnTempContent (0, WORD)}]
 			    | W32 => [{src = register Register.eax,
 				       dst = cReturnTempContent (0, LONG)}]
+			    | W64 => [{src = register Register.eax,
+				       dst = cReturnTempContent (0, LONG)},
+				      {src = register Register.edx,
+				       dst = cReturnTempContent (4, LONG)}]
 			 end
       end
     end

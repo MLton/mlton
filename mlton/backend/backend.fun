@@ -450,7 +450,8 @@ fun toMachine (program: Ssa.Program.t) =
 				    ty = ty}
 	     | PointerTycon pt =>
 		  M.Operand.Word
-		  (WordX.make (Runtime.typeIndexToHeader (PointerTycon.index pt),
+		  (WordX.make (Word.toLarge (Runtime.typeIndexToHeader
+					     (PointerTycon.index pt)),
 			       WordSize.default))
 	     | Runtime f =>
 		  runtimeOp (f, R.Operand.ty oper)

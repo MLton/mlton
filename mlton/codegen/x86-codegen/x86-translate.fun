@@ -354,13 +354,26 @@ struct
 	       end
 	  | Word w =>
 	       let
-		  val w' = WordX.toWord w
-		  val w'' = x86.Operand.immediate_const_word w'
+		  fun single size =
+		     Vector.new1
+		     (x86.Operand.immediate_const_word
+		      (Word.fromLarge (WordX.toLargeWord w)),
+		      size)
 	       in
 		  case WordX.size w of
-		     W8 => Vector.new1 (w'', x86.Size.BYTE)
-		   | W16 => Vector.new1 (w'', x86.Size.WORD)
-		   | W32 => Vector.new1 (w'', x86.Size.LONG)
+		     W8 => single x86.Size.BYTE
+		   | W16 => single x86.Size.WORD
+		   | W32 => single x86.Size.LONG
+		   | W64 =>
+			let
+			   val w = WordX.toLargeWord w
+			   val lo = Word.fromLarge w
+			   val hi = Word.fromLarge (LargeWord.>> (w, 0w32))
+			in
+			   Vector.new2
+			   ((x86.Operand.immediate_const_word lo, x86.Size.LONG),
+			    (x86.Operand.immediate_const_word hi, x86.Size.LONG))
+			end
 	       end
 	       
       val toX86Operand =
@@ -902,7 +915,9 @@ struct
 		     | Word {cases, default, size, test} =>
 			  simple ({cases = (Vector.map
 					    (cases, fn (w, l) =>
-					     (WordX.toWord w, l))),
+					     (Word.fromLarge
+					      (WordX.toLargeWord w),
+					      l))),
 				   default = default,
 				   test = test},
 				  doSwitchWord)

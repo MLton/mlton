@@ -1022,7 +1022,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					(Operand.Cast (addr, Type.defaultWord),
 					 Operand.word
 					 (WordX.make
-					  (Word.fromInt
+					  (LargeWord.fromInt
 					   (!Control.cardSizeLog2),
 					   WordSize.default)))),
 				dst = SOME (index, Type.defaultInt),
@@ -1068,7 +1068,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 							      Type.defaultWord),
 					        Operand.word
 						(WordX.make
-						 (Word.fromInt (Type.size ty),
+						 (LargeWord.fromInt
+						  (Type.size ty),
 						  WordSize.default))),
 				        dst = SOME (temp, Type.defaultWord),
 				        prim = Prim.wordMul WordSize.default})
@@ -1254,7 +1255,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 						 Operand.Runtime LimitPlusSlop,
 						 Operand.word
 						 (WordX.make
-						  (Word.fromInt
+						  (LargeWord.fromInt
 						   Runtime.limitSlop,
 						   WordSize.default)))
 					val l' =
