@@ -1,5 +1,8 @@
 Here are the changes from version 20020410 to version VERSION.
 
+* 2002-04-26
+  - Added back max-heap runtime option.
+
 * 2002-04-25
   - Fixed load/save world so that they use binary mode.  This should fix the
     "sread failed" problem that Byron Hale saw on Cygwin that caused mlton to

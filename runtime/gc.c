@@ -480,6 +480,8 @@ static W32 computeSemiSize (GC_state s, W64 live) {
 		res = live * LIVE_RATIO_MIN;
 	else
 		res = s->totalRam + s->totalSwap;
+	if (s->maxHeap > 0 and res > s->maxHeap / 2)
+		res = s->maxHeap / 2;
 	return roundPage (s, res);
 }
 
@@ -1319,7 +1321,7 @@ GC_init(GC_state s, int argc, char **argv,
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
 	s->maxBytesLive = 0;
-	s->maxHeapSize = 0;
+	s->maxHeap = 0;
 	s->maxHeapSizeSeen = 0;
 	s->maxPause = 0;
 	s->maxStackSizeSeen = 0;
@@ -1370,13 +1372,11 @@ GC_init(GC_state s, int argc, char **argv,
 						usage(argv[0]);
 					worldFile = argv[i++];
 				} else if (0 == strcmp(arg, "max-heap")) {
-					usage("max-heap is currently disabled\n");
 					++i;
 					if (i == argc) 
 						usage(argv[0]);
 					s->useFixedHeap = FALSE;
-					s->maxHeapSize =
-						stringToBytes(argv[i++]);
+					s->maxHeap = stringToBytes(argv[i++]);
 				} else if (0 == strcmp(arg, "ram-slop")) {
 					++i;
 					if (i == argc)

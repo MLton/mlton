@@ -230,11 +230,6 @@ typedef struct GC_state {
 	/* GC_init computes frameLayout index using native codegen style. */
 	bool native;
 	
-	bool useFixedHeap; /* if true, then don't resize the heap */
-	uint maxHeapSize;  /* if zero, then unlimited,
-			    * else fromSize + toSize < maxHeapSize
-			    */
-
 	/* Print out a message at the start and end of each gc. */
 	bool messages;
 
@@ -263,6 +258,8 @@ typedef struct GC_state {
 	uint liveThresh1;
 	uint liveThresh2;
 	uint liveThresh3;
+	bool useFixedHeap; /* if true, then don't resize the heap */
+	uint maxHeap;      /* if zero, then unlimited, else limit total heap */
 
 	/* ------------------------------------------------- */
 	/*                     loadWorld                     */
