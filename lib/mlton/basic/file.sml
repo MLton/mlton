@@ -23,15 +23,9 @@ fun isNewer (f1, f2) = Time.>= (modTime f1, modTime f2)
 
 fun withh (file, p, openn, close) =
    let
-      val stream =
-	 (openn file) handle IO.Io _ => Error.bug (concat ["cannot open ", file])
-   in DynamicWind.wind (fn () => p stream,
-			fn () =>
-			close stream
-			handle e =>
-			   Error.bug (concat ["cannot close ", file,
-					      " due to ",
-					      Layout.toString (Exn.layout e)]))
+      val stream = openn file
+   in
+      DynamicWind.wind (fn () => p stream, fn () => close stream)
    end 
 
 fun withOut (f, p) = withh (f, p, Out.openOut, Out.close)
@@ -55,8 +49,7 @@ end
 fun remove f =
    if doesExist f
       then (FS.remove f
-	    handle e => Error.bug (concat ["cannot remove ", f,
-					   " due to ",
+	    handle e => Error.bug (concat ["remove ", f, ": ",
 					   Layout.toString (Exn.layout e)]))
    else ()
 
