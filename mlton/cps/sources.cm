@@ -50,6 +50,8 @@ equivalence-relation.fun
 redundant.fun
 remove-unused.sig
 remove-unused.fun
+unused-args.sig
+unused-args.fun
 simplify.fun
 shrink.fun
 cps.sig
