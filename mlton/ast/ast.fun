@@ -154,11 +154,11 @@ structure Sigexp =
       type node' = node
       type obj = t
 	 
-      fun wheree (sigexp: t, wherespecs): t =
+      fun wheree (sigexp: t, wherespecs, region): t =
 	 case wherespecs of
 	    [] => sigexp
 	  | _ => makeRegion (Where (sigexp, wherespecs),
-			     region sigexp)
+			     region)
 
       fun make n = makeRegion (n, Region.bogus)
 	 

@@ -214,8 +214,8 @@ fun ensureNonqualified (ss: Symbol.t list, r: Region.t): Symbol.t * Region.t =
 fun cons1 (x, (l, r, y)) = (x :: l, r, y)
 
 fun augment (id, sigexp, (wherespecs, right, binds)) =
-   (id, Sigexp.makeRegion (Sigexp.Where (sigexp, wherespecs),
-			   Region.extendRight (Sigexp.region sigexp, right)))
+   (id, Sigexp.wheree (sigexp, wherespecs,
+		       Region.extendRight (Sigexp.region sigexp, right)))
    :: binds
 
 fun 'a augment1 ((strexp: Strexp.t,
@@ -226,8 +226,8 @@ fun 'a augment1 ((strexp: Strexp.t,
 		  z: 'a)): Strexp.t * 'a =
    (Strexp.makeRegion
     (Strexp.Constrained
-     (strexp, makesigconst (Sigexp.makeRegion
-			    (Sigexp.Where (sigexp, wherespecs),
+     (strexp, makesigconst (Sigexp.wheree
+			    (sigexp, wherespecs,
 			     Region.extendRight (Sigexp.region sigexp, right)))),
      Region.extendRight (Strexp.region strexp, right)),
     z)
@@ -574,19 +574,25 @@ strexp : strexpnode (Strexp.makeRegion' (strexpnode,
 					strexpnodeleft, strexpnoderight))
 
 strexpnode
-       : strexp1             (let val (strexp,sigconst,sigexp) = strexp1
-			      in Strexp.Constrained (strexp, sigconst sigexp)
-			      end)
-       | strexp1 wherespecs  (let val (strexp,sigconst,sigexp) = strexp1
-			      in Strexp.Constrained
-				 (strexp,
-				  sigconst (Sigexp.makeRegion
-					    (Sigexp.Where (sigexp, wherespecs),
-					     Region.extendRight
-					     (Sigexp.region sigexp,
-					      wherespecsright))))
-			      end)
-       | strexp2node             (strexp2node)
+  : strexp1
+    (let
+	val (strexp, sigconst, sigexp) = strexp1
+     in
+	Strexp.Constrained (strexp, sigconst sigexp)
+     end)
+  | strexp1 wherespecs
+    (let
+	val (strexp,sigconst,sigexp) = strexp1
+     in
+	Strexp.Constrained
+	(strexp,
+	 sigconst (Sigexp.wheree
+		   (sigexp, wherespecs,
+		    Region.extendRight (Sigexp.region sigexp,
+					wherespecsright))))
+     end)
+  | strexp2node
+    (strexp2node)
     
 strexp1 : strexp COLON sigexp'    ((strexp,SigConst.Transparent,sigexp'))
         | strexp COLONGT sigexp'  ((strexp,SigConst.Opaque,sigexp'))
@@ -610,10 +616,11 @@ arg_fct : LPAREN strexp RPAREN   (strexp)
 (*                    Signatures                     *)
 (*---------------------------------------------------*)
 
-sigexp : sigexp'             (sigexp')
-       | sigexp' wherespecs  (Sigexp.makeRegion'
-			      (Sigexp.Where (sigexp', wherespecs),
-			       sigexp'left, wherespecsright))
+sigexp
+  : sigexp'
+    (sigexp')
+  | sigexp' wherespecs
+    (Sigexp.wheree (sigexp', wherespecs, reg (sigexp'left, wherespecsright)))
 
 wherespecs : WHERE wherespec             ([wherespec])
            | WHERE wherespec wherespecs  (wherespec::wherespecs)

@@ -32,7 +32,7 @@ signature AST =
             val var: Sigid.t -> t
 	    val wheree: t * {tyvars: Tyvar.t vector,
 			     longtycon: Longtycon.t,
-			     ty: Type.t} list -> t
+			     ty: Type.t} list * Region.t -> t
 	    val spec: spec -> t
 
 	    val layout: t -> Layout.t
