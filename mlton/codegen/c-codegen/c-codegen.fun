@@ -278,7 +278,7 @@ structure Transfer =
 		; maybePrintLabel b)
 	 in
 	    case t of
-	       Bug => (print "\t"; C.bug ("cps machine", print))
+	       Bug => (print "\t"; C.bug ("machine", print))
 	     | FarJump {chunkLabel, label, return, ...} =>
 		  (case return
 		     of SOME {return, handler, size}
@@ -325,7 +325,8 @@ structure Transfer =
 			     :: (Vector.toListMap (args, Operand.toString)
 				 @ [Label.toString failure]),
 			     print)
-		     ; gotoLabel success
+		     ; gotoLabel success 
+		     ; maybePrintLabel failure
 		  end
 	     | Raise => C.call ("\tRaise", [], print)
 	     | Return {...} => C.call ("\tReturn", [], print)
@@ -381,6 +382,7 @@ structure Chunk =
 	 let
 	    datatype status = None | One | Many
 	    val {get = labelInfo: Label.t -> {block: Block.t,
+					      entry: bool ref,
 					      status: status ref,
 					      layedOut: bool ref},
 		 set = setLabelInfo,
@@ -400,9 +402,14 @@ structure Chunk =
 	       (List.foreach
 		(blocks, fn b as Block.T {label, ...} =>
 		 setLabelInfo (label, {block = b, 
+				       entry = ref false,
 				       status = ref None,
 				       layedOut = ref false}))
-		; List.foreach (entries, jump)
+		; List.foreach (entries, fn l =>
+				let val {entry, ...} = labelInfo l
+				in entry := true
+				   ; jump l
+				end)
 		; (List.foreach
 		   (blocks, fn Block.T {statements, transfer, ...} =>
 		    let
@@ -426,7 +433,7 @@ structure Chunk =
 	    val tracePrintLabelCode =
 	       Trace.trace
 	       ("printLabelCode",
-		fn {block, layedOut, status: status ref} =>
+		fn {block, layedOut, status: status ref, ...} =>
 		Layout.record [("block", Label.layout (Block.label block)),
 			       ("layedOut", Bool.layout (!layedOut))],
 		Unit.layout)
@@ -450,7 +457,7 @@ structure Chunk =
 				     live, profileInfo = {func = profileInfoFunc, 
 							  label = profileInfoLabel},
 				     statements, transfer, ...},
-				layedOut, status} =>
+				layedOut, status, ...} =>
 	       let
 		  val _ = layedOut := true
 		  val _ = C.profile (profileInfoFunc, profileInfoFunc, print)
@@ -462,6 +469,7 @@ structure Chunk =
 			      ; print ":\n"
 			   end 
 		      | _ => ()
+
 		  val _ =
 		     print (let open Layout
 			   in toString
@@ -518,8 +526,10 @@ structure Chunk =
 			   Unit.layout)
 			  (fn Block.T {label, ...} =>
 			   let
-			      val info as {layedOut, ...} = labelInfo label
+			      val info as {entry, layedOut, ...} = labelInfo label
 			   in if !layedOut
+			         orelse 
+				 not (!entry)
 				 then ()
 			      else printLabelCode info
 			   end))
