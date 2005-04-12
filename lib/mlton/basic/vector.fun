@@ -598,4 +598,6 @@ fun removeDuplicates (v, equals) =
 		   then NONE
 		else SOME x)
 
+fun randomElement v = sub (v, Random.natLessThan (length v))
+
 end

@@ -106,6 +106,7 @@ signature VECTOR =
       val peekMap: 'a t * ('a -> 'b option) -> 'b option
       val peekMapi: 'a t * ('a -> 'b option) -> (int * 'b) option
       val prefix: 'a t * int -> 'a t
+      val randomElement: 'a t -> 'a
       val removeDuplicates: 'a t * ('a * 'a -> bool) -> 'a t
       val removeFirst: 'a t * ('a -> bool) -> 'a t
       val rev: 'a t -> 'a t
