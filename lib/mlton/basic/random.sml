@@ -84,7 +84,7 @@ end
 
 fun natLessThan (n: int): int =
    if n <= 0
-      then Error.bug "Random.int"
+      then Error.bug "Random.natLessThan"
    else Word.toInt (wordLessThan (Word.fromInt n))
 
 fun charFrom (s: string): char =
