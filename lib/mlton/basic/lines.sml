@@ -46,7 +46,7 @@ fun dropLast (ins, out, {start: int, last: int}): unit =
 		| SOME l =>
 		     let
 			val q = Queue.enque (q, l)
-			val (l', q) = valOf (Queue.deque q)
+			val (q, l') = valOf (Queue.deque q)
 			val _ = Out.output (out, l')
 		    in
 		       loop q
