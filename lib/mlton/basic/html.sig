@@ -21,9 +21,9 @@ signature HTML =
 	     | CellPadding of int
 	     | CellSpacing of int
 
-	    val a: Uri.t * t -> t
+	    val a: Url.t * t -> t
 	    val br: t
-	    val img: {src: Uri.t} -> t
+	    val img: {src: Url.t} -> t
 	    val layout: t -> Layout.t
 	    val pre: t -> t
 	    val seq: t list -> t
@@ -35,7 +35,7 @@ signature HTML =
 	 sig
 	    datatype t =
 	       Redirect of {seconds: int,
-			    uri: Uri.t}
+			    uri: Url.t}
 	     | Title of string
 	 end
 
