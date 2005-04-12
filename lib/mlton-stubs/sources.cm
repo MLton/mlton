@@ -20,6 +20,7 @@ structure General
 structure IEEEReal
 structure Int
 structure Int32
+structure Int64
 structure IntInf
 structure IO
 structure LargeInt
