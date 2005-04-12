@@ -82,17 +82,17 @@ local
     ring-with-identity.fun
     integer.fun
     int.sml
-    vector.sig
-    vector.fun
-    vector.sml
-    random.sig
     real.sig
     field.sig
     field.fun
     ordered-field.sig
     ordered-field.fun
     real.sml
+    random.sig
     random.sml
+    vector.sig
+    vector.fun
+    vector.sml
     array.sig
     array.fun
     array.sml
