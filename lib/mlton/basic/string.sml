@@ -5,10 +5,12 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 type word = Word.t
-   
+
 structure String: STRING =
    struct
       open String1
+
+      fun existsi (s, f) = Int.exists (0, size s, fn i => f (i, sub (s, i)))
 
       fun keepAll (s: t, f: char -> bool): t =
 	 implode (List.rev

@@ -39,6 +39,7 @@ signature STRING =
       val equals: t * t -> bool
       val escapeC: t -> t
       val escapeSML: t -> t
+      val existsi: t * (int * char -> bool) -> bool
       val explode: t -> char list
       (* extract (s, i, SOME j)
        * returns the substring of s of length j starting at i.

@@ -7,8 +7,8 @@
 structure String0 =
 struct
 
-structure Int = Pervasive.Int
-type int = Int.int
+structure PInt = Pervasive.Int
+type int = PInt.int
 structure PS = Pervasive.String   
 local
    open PS
@@ -164,7 +164,7 @@ fun dropTrailing (s, c) =
    let
       val n = size s
       fun loop i =
-	 if Int.< (i, 0) orelse c <> sub (s, i)
+	 if PInt.< (i, 0) orelse c <> sub (s, i)
 	    then i
 	 else loop (i - 1)
    in dropSuffix (s, n - 1 - loop (n - 1))
