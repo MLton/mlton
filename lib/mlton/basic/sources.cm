@@ -389,5 +389,7 @@ thread.sig
 thread.sml
 two-list-queue-mutable.sml
 unimplemented.sml
+url.sig
+url.sml
 
 # endif
