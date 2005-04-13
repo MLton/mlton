@@ -1039,10 +1039,19 @@ structure TupleRep =
 			   Type.seq (Vector.map (components, Rep.ty o #rep))
 			fun setSelects (padToPrim: bool): unit =
 			   let
-			      val wordTy =
+			      val paddedComponentTy =
 				 if padToPrim
 				    then Type.padToPrim componentTy
 				 else Type.padToWidth (componentTy, Bits.inWord)
+			      fun getByteOffset (shift: Bytes.t): Bytes.t =
+				 Bytes.+
+				 (Words.toBytes offset,
+				  if not (Control.targetIsBigEndian ())
+				     then shift
+				  else
+				     Bytes.fromInt
+				     (Bytes.toInt (Type.bytes paddedComponentTy)
+				      - 1 - Bytes.toInt shift))
 			   in
 			      ignore
 			      (Vector.fold
@@ -1053,30 +1062,19 @@ structure TupleRep =
 				   val unpack = Unpack.T {shift = shift,
 							  ty = repTy}
 				   val iu =
-				      if padToPrim
-					 then (Select.Indirect
-					       {offset = Bytes.zero,
-						ty = Type.padToPrim repTy})
-				      else if (Bits.isByteAligned shift
-					       andalso (Bits.equals
-							(Type.width repTy,
-							 Bits.inByte)))
+				      if (Bits.isByteAligned shift
+					  andalso (Bits.equals
+						   (Type.width repTy,
+						    Bits.inByte)))
 					 then
-					    let
-					       val offset =
-						  Rssa.byteOffset
-						  {offset =
-						   Bytes.+ (Words.toBytes offset,
-							    Bits.toBytes shift),
-						   ty = repTy}
-					    in
-					       Select.Indirect {offset = offset,
-								ty = repTy}
-					    end
+					    Select.Indirect
+					    {offset = (getByteOffset
+						       (Bits.toBytes shift)),
+					     ty = repTy}
 				      else (Select.IndirectUnpack
 					    {offset = offset,
 					     rest = unpack,
-					     ty = wordTy})
+					     ty = paddedComponentTy})
 				   val () =
 				      Array.update (selects, index,
 						    (Select.Unpack unpack, iu))

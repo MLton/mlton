@@ -33,26 +33,6 @@ fun constrain (ty: Type.t): Layout.t =
       else empty
    end
 
-fun byteOffset {offset: Bytes.t, ty: Type.t}: Bytes.t =
-   if not (Control.targetIsBigEndian ())
-      then offset
-   else
-      let
-	 val b = Type.bytes ty
-      in
-	 if Bytes.equals (b, Bytes.fromInt 1)
-	    then
-	       let
-		  val start = Bytes.toInt offset
-		  val r = Int.rem (start, Bytes.toInt Bytes.inWord)
-	       in
-		  Bytes.fromInt (start - r + (Bytes.toInt Bytes.inWord - 1 - r))
-	       end
-	 else if Bytes.equals (b, Bytes.fromInt 2)
-		 then Error.bug "can't handle two-byte offset"
-	      else offset
-      end 
-
 structure Operand =
    struct
       datatype t =

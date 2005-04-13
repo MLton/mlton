@@ -1,5 +1,11 @@
 Here are the changes since version 20041109.
 
+* 2005-04-13
+  - Fixed a bug in the representation of flat arrays/vectors that
+    caused incorrect behavior when the element size was 2 or 4 bytes 
+    and there were multiple components to the element (e.g. (char *
+    char) vector).
+
 * 2005-04-01
   - Fixed a bug in GC_arrayAllocate that could cause a segfault.
 

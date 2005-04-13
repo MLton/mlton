@@ -36,8 +36,6 @@ signature RSSA =
       structure Switch: SWITCH
       sharing Atoms = Switch
 
-      val byteOffset: {offset: Bytes.t, ty: Type.t} -> Bytes.t
-	 
       structure Operand:
 	 sig
 	    datatype t =
