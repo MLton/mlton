@@ -2912,24 +2912,24 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 				     orelse 0 < Vector.length (strArgs ())
 				     then addDec (Exp.Var (fn () => x, strArgs))
 				  else vid
-				   | (Vid.Con _, Status.Con) => vid
-				   | (Vid.Exn _, Status.Exn) => vid
-				   | _ =>
-					let
-					   open Layout
-					   val _ =
-					      Control.error
-					      (region,
-					       seq [str (concat
-							 [Vid.statusPretty vid,
-							  " in structure but ",
-							  Status.pretty status, " in ",
-							  sign, ": "]),
-						    layout (strids, Ast.Vid.layout name)],
-					       Layout.empty)
-					in
-					   vid
-					end
+			     | (Vid.Con _, Status.Con) => vid
+			     | (Vid.Exn _, Status.Exn) => vid
+			     | _ =>
+				  let
+				     open Layout
+				     val _ =
+					Control.error
+					(region,
+					 seq [str (concat
+						   [Vid.statusPretty vid,
+						    " in structure but ",
+						    Status.pretty status, " in ",
+						    sign, ": "]),
+					      layout (strids, Ast.Vid.layout name)],
+					 Layout.empty)
+				  in
+				     vid
+				  end
 		      in
 			 (vid, SOME sigScheme)
 		      end
