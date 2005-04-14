@@ -1,5 +1,9 @@
 Here are the changes since version 20041109.
 
+* 2005-04-14
+  - Fixed a front-end bug that could cause an internal bug message of the
+    form "missing flexInst".
+
 * 2005-04-13
   - Fixed a bug in the representation of flat arrays/vectors that
     caused incorrect behavior when the element size was 2 or 4 bytes 
@@ -39,7 +43,7 @@ Here are the changes since version 20041109.
   - Fixed x86 codegen bug which failed to account for the possibility that
     a 64-bit move could interfere with itself (as simulated by 32-bit
     moves).
-	
+
 * 2004-12-22
   - Fixed Real32.fmt StringCvt.EXACT, which had been producing too
     many digits of precision because it was converting to a

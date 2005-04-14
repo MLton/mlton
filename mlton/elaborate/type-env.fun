@@ -1484,12 +1484,13 @@ structure Scheme =
 		     (List.fold
 		      (flexes, Vector.toList types,
 		       fn ({fields, spine, ...}, ac) =>
+		       DynamicWind.withEscape (fn escape =>
 		       let
 			  val flex =
 			     case List.peek (flexInsts,
 					     fn {spine = spine', ...} =>
 					     Spine.equals (spine, spine')) of
-				NONE => Error.bug "missing flexInst"
+				NONE => escape ac (* Error.bug "missing flexInst" *)
 			      | SOME {flex, ...} => flex
 			  fun peekFields (fields, f) =
 			     Option.map
@@ -1518,7 +1519,7 @@ structure Scheme =
 			   (case peek f of
 			       NONE => Type.unit
 			     | SOME t => t) :: ac)
-		       end))
+		       end)))
 	       in
 		  {args = args,
 		   instance = ty}
