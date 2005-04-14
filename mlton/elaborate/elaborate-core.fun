@@ -347,7 +347,7 @@ fun unifyList (trs: (Type.t * Region.t) vector,
 	 Type.list t
       end
 
-val info = Trace.info "elaboratePat"
+val elabPatInfo = Trace.info "elaboratePat"
 
 structure Var =
    struct
@@ -449,7 +449,7 @@ val elaboratePat:
 	       (bindToType (x, t), t)
 	    end
 	 fun loop arg: Cpat.t =
-	    Trace.traceInfo' (info, Apat.layout, Cpat.layout)
+	    Trace.traceInfo' (elabPatInfo, Apat.layout, Cpat.layout)
 	    (fn p: Apat.t =>
 	     let
 		val region = Apat.region p
@@ -682,7 +682,7 @@ structure Nest =
       val layout = List.layout String.layout
    end
 
-val info = Trace.info "elaborateDec"
+val elabDecInfo = Trace.info "elaborateDec"
 val elabExpInfo = Trace.info "elaborateExp"
 
 structure Type =
@@ -1330,9 +1330,9 @@ fun elaborateDec (d, {env = E, nest}) =
 	 end
       fun elabDec arg : Decs.t =
 	 Trace.traceInfo
-	 (info,
+	 (elabDecInfo,
 	  Layout.tuple3 (Ast.Dec.layout, Nest.layout, Bool.layout),
-	  Layout.ignore, Trace.assertTrue)
+	  Decs.layout, Trace.assertTrue)
 	 (fn (d, nest, isTop) =>
 	  let
 	     val region = Adec.region d
@@ -1533,7 +1533,7 @@ fun elaborateDec (d, {env = E, nest}) =
 					   approximate
 					   (seq
 					    (separate
-					     (Vector.toListMap
+ 					     (Vector.toListMap
 					      (clauses, fn {lay, ...} => lay ()),
 					      " | ")))]
 				   end
@@ -2037,7 +2037,7 @@ fun elaborateDec (d, {env = E, nest}) =
 	 Trace.traceInfo
 	 (elabExpInfo,
 	  Layout.tuple3 (Aexp.layout, Nest.layout, Layout.ignore),
-	  Layout.ignore,
+	  Cexp.layout,
 	  Trace.assertTrue)
 	 (fn (e: Aexp.t, nest, maybeName) =>
 	  let

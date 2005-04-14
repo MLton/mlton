@@ -102,6 +102,7 @@ signature ELABORATE_ENV =
 	     *)
 	    val ffi: t option ref
 	    val forceUsed: t -> unit
+	    val layout: t -> Layout.t
 	 end
       structure FunctorClosure:
 	 sig

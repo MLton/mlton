@@ -48,6 +48,7 @@ structure ElaborateCore = ElaborateCore (structure Ast = Ast
 					 structure Env = Env)
 
 val elabStrdecInfo = Trace.info "elabStrdec"
+val elabStrexpInfo = Trace.info "elabStrexp"
 val elabTopdecInfo = Trace.info "elabTopdec"
 
 fun elaborateTopdec (topdec, {env = E: Env.t}) =
@@ -93,7 +94,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
 	 Trace.traceInfo' (elabStrdecInfo,
 			   Layout.tuple2 (Strdec.layout,
 					  List.layout String.layout),
-			   Layout.ignore)
+			   Decs.layout)
 	 (fn (d: Strdec.t, nest: string list) =>
 	  let
 	     val d = Strdec.coalesce d
@@ -134,64 +135,69 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
 		       Decs.appendsV (Vector.map (strbinds, #decs))
 		    end
 	  end) arg
-      and elabStrexp (e: Strexp.t, nest: string list)
-	 : Decs.t * Structure.t option =
-	 let
-	    val elabStrexp = fn e => elabStrexp (e, nest)
-	 in
-	    case Strexp.node e of
-	       Strexp.App (fctid, strexp) => (* rules 54, 154 *)
-		  let
-		     val (decs, S) = elabStrexp strexp
-		  in
-		     case S of
-			NONE => (decs, NONE)
-		      | SOME S =>
-			   case Env.lookupFctid (E, fctid) of
-			      NONE => (decs, NONE)
-			    | SOME fct  =>
-				 let
-				    val (S, decs') =
-				       Env.cut
-				       (E, S,
-					FunctorClosure.argInterface fct,
-					{isFunctor = true,
-					 opaque = false,
-					 prefix = ""},
-					Strexp.region strexp)
-				    val (decs'', S) =
-				       FunctorClosure.apply
-				       (fct, S, [Fctid.toString fctid])
-			   in
-			      (Decs.appends [decs, decs', decs''], S)
-			   end
-		  end
-	     | Strexp.Constrained (e, c) => (* rules 52, 53 *)
-		  let
-		     val (decs, S) = elabStrexp e
-		     val (decs', S) = elabSigexpConstraint (c, S, nest)
-		  in
-		     (Decs.append (decs, decs'), S)
-		  end
-	     | Strexp.Let (d, e) => (* rule 55 *)
-		  Env.scope
-		  (E, fn () =>
+      and elabStrexp (arg: Strexp.t * string list): Decs.t * Structure.t option =
+	 Trace.traceInfo' (elabStrexpInfo,
+			   Layout.tuple2 (Strexp.layout,
+					  List.layout String.layout),
+			   Layout.tuple2 (Decs.layout,
+					  Option.layout Structure.layout))
+	 (fn (e: Strexp.t, nest: string list) =>
+	  let
+	     val elabStrexp = fn e => elabStrexp (e, nest)
+	  in
+	     case Strexp.node e of
+		Strexp.App (fctid, strexp) => (* rules 54, 154 *)
 		   let
-		      val decs = elabStrdec (d, nest)
-		      val (decs', S) = elabStrexp e
+		      val (decs, S) = elabStrexp strexp
+		   in
+		      case S of
+			 NONE => (decs, NONE)
+		       | SOME S =>
+			    case Env.lookupFctid (E, fctid) of
+			       NONE => (decs, NONE)
+			     | SOME fct  =>
+				  let
+				     val (S, decs') =
+					Env.cut
+					(E, S,
+					 FunctorClosure.argInterface fct,
+					 {isFunctor = true,
+					  opaque = false,
+					  prefix = ""},
+					 Strexp.region strexp)
+				     val (decs'', S) =
+					FunctorClosure.apply
+					(fct, S, [Fctid.toString fctid])
+				  in
+				     (Decs.appends [decs, decs', decs''], S)
+				  end
+		   end
+	      | Strexp.Constrained (e, c) => (* rules 52, 53 *)
+		   let
+		      val (decs, S) = elabStrexp e
+		      val (decs', S) = elabSigexpConstraint (c, S, nest)
 		   in
 		      (Decs.append (decs, decs'), S)
-		   end)
-	     | Strexp.Struct d => (* rule 50 *)
-		  let
-		     val (decs, S) =
-			Env.makeStructure (E, fn () => elabStrdec (d, nest))
-		  in
-		     (decs, SOME S)
-		  end
-	     | Strexp.Var p => (* rule 51 *)
-		  (Decs.empty, Env.lookupLongstrid (E, p))
-	 end
+		   end
+	      | Strexp.Let (d, e) => (* rule 55 *)
+		   Env.scope
+		   (E, fn () =>
+		    let
+		       val decs = elabStrdec (d, nest)
+		       val (decs', S) = elabStrexp e
+		    in
+		       (Decs.append (decs, decs'), S)
+		    end)
+	      | Strexp.Struct d => (* rule 50 *)
+		   let
+		      val (decs, S) =
+			 Env.makeStructure (E, fn () => elabStrdec (d, nest))
+		   in
+		      (decs, SOME S)
+		   end
+	      | Strexp.Var p => (* rule 51 *)
+		   (Decs.empty, Env.lookupLongstrid (E, p))
+	  end) arg
       fun elabFunctor {arg, result, body}: FunctorClosure.t option =
 	 let
 	    val body = Strexp.constrained (body, result)
