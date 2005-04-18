@@ -103,7 +103,7 @@ structure Accum =
 	     val {blocks, ...} =
 		Function.dest
 		(Ssa.shrinkFunction
-		 (Vector.new0 ())
+		 {globals = Vector.new0 ()}
 		 (Function.new {args = Vector.new0 (),
 				blocks = Vector.fromList blocks,
 				mayInline = false, (* doesn't matter *)
@@ -679,7 +679,7 @@ fun closureConvert
 	     ; NONE)
 	    handle Yes ts => SOME ts
 	 end
-      val shrinkFunction = Ssa.shrinkFunction (Vector.new0 ())
+      val shrinkFunction = Ssa.shrinkFunction {globals = Vector.new0 ()}
       fun addFunc (ac, {args, body, isMain, mayInline, name, returns}) =
 	 let
 	    val (start, blocks) =
