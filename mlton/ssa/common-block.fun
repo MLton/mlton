@@ -13,7 +13,7 @@ open Exp Transfer
 
 fun eliminate (Program.T {globals, datatypes, functions, main}) = 
    let
-      val shrink = shrinkFunction globals
+      val shrink = shrinkFunction {globals = globals}
 	 
       local 
 	 fun make transfer = let

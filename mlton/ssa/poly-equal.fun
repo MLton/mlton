@@ -73,7 +73,7 @@ structure Dexp =
 
 fun polyEqual (Program.T {datatypes, globals, functions, main}) =
    let
-      val shrink = shrinkFunction globals
+      val shrink = shrinkFunction {globals = globals}
       val {get = tyconInfo: Tycon.t -> {isEnum: bool,
 					cons: {con: Con.t,
 					       args: Type.t vector} vector},

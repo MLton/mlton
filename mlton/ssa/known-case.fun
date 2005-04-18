@@ -280,8 +280,8 @@ structure LabelInfo =
 fun simplify (Program.T {globals, datatypes, functions, main})
   = let
       (* restore and shrink *)
-      val restore = restoreFunction globals
-      val shrink = shrinkFunction globals
+      val restore = restoreFunction {globals = globals}
+      val shrink = shrinkFunction {globals = globals}
 
       (* tyconInfo and conInfo *)
       val {get = tyconInfo: Tycon.t -> TyconInfo.t,

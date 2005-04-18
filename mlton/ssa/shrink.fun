@@ -163,7 +163,7 @@ structure State =
 
 val traceApplyInfo = Trace.info "Prim.apply"
 
-fun shrinkFunction (globals: Statement.t vector) =
+fun shrinkFunction {globals: Statement.t vector} =
    let
       fun use (VarInfo.T {isUsed, var, ...}): Var.t =
 	 (isUsed := true
@@ -1283,53 +1283,12 @@ val shrinkFunction =
 
 fun shrink (Program.T {datatypes, globals, functions, main})
   = let
-      val s = shrinkFunction globals
+      val s = shrinkFunction {globals = globals}
     in
       Program.T {datatypes = datatypes,
 		 globals = globals,
 		 functions = List.revMap (functions, s),
 		 main = main}
     end
-
-fun eliminateDeadBlocksFunction f =
-   let
-      val {args, blocks, mayInline, name, raises, returns, start} =
-	 Function.dest f
-      val {get = isLive, set = setLive, rem} =
-	 Property.getSetOnce (Label.plist, Property.initConst false)
-      val _ = Function.dfs (f, fn Block.T {label, ...} =>
-			    (setLive (label, true)
-			     ; fn () => ()))
-      val f =
-	 if Vector.forall (blocks, isLive o Block.label)
-	    then f
-	 else
-	    let 
-	       val blocks =
-		  Vector.keepAll
-		  (blocks, isLive o Block.label)
-	    in
-	       Function.new {args = args,
-			     blocks = blocks,
-			     mayInline = mayInline,
-			     name = name,
-			     raises = raises,
-			     returns = returns,
-			     start = start}
-	    end
-       val _ = Vector.foreach (blocks, rem o Block.label)
-   in
-     f
-   end
-
-fun eliminateDeadBlocks (Program.T {datatypes, globals, functions, main}) =
-   let
-      val functions = List.revMap (functions, eliminateDeadBlocksFunction)
-   in
-      Program.T {datatypes = datatypes,
-		 globals = globals,
-		 functions = functions,
-		 main = main}
-   end
 
 end

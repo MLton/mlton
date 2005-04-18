@@ -152,7 +152,7 @@ structure VarInfo =
 				     | h::_ => SOME h
   end
 
-fun restoreFunction (globals: Statement.t vector)
+fun restoreFunction {globals: Statement.t vector}
   = let
       exception NoViolations
 
@@ -666,7 +666,7 @@ val restoreFunction
 
 fun restore (Program.T {datatypes, globals, functions, main})
   = let
-      val r = restoreFunction globals
+      val r = restoreFunction {globals = globals}
     in
       Program.T {datatypes = datatypes,
 		 globals = globals,

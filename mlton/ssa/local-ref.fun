@@ -247,8 +247,8 @@ fun eliminate (program: Program.t): Program.t =
 				 ; NONE))
 		end)
       (* restore and shrink *)
-      val restore = restoreFunction globals
-      val shrink = shrinkFunction globals
+      val restore = restoreFunction {globals = globals}
+      val shrink = shrinkFunction {globals = globals}
       (* varInfo *)
       val {get = varInfo: Var.t -> VarInfo.t,
 	   set = setVarInfo, ...} 

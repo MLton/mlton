@@ -152,7 +152,7 @@ structure VarInfo =
 				     | h::_ => SOME h
   end
 
-fun restoreFunction (globals: Statement.t vector)
+fun restoreFunction {globals: Statement.t vector}
   = let
       exception NoViolations
 
@@ -646,7 +646,7 @@ fun restoreFunction (globals: Statement.t vector)
     end
 
 val traceRestoreFunction
-  = Trace.trace ("Restore.restoreFunction",
+  = Trace.trace ("Restore2.restoreFunction",
 		 Func.layout o Function.name,
 		 Func.layout o Function.name)
 

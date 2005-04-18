@@ -324,7 +324,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
 	 in
 	    Vector.fromList (!blocks)
 	 end
-      val shrink = shrinkFunction globals
+      val shrink = shrinkFunction {globals = globals}
       val functions =
 	 List.revMap
 	 (functions, fn f => 

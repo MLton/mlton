@@ -25,7 +25,7 @@ open Exp Transfer
 
 fun loopInvariant (Program.T {globals, datatypes, functions, main}) =
    let
-      val shrink = shrinkFunction globals
+      val shrink = shrinkFunction {globals = globals}
 
       fun simplifyFunction f =
 	 let

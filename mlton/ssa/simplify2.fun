@@ -204,6 +204,8 @@ local
 (* 		 ("simplifyTypes", SimplifyTypes.simplify), *)
 (* 		 ("useless", Useless.useless), *)
 		 ("zone", Zone.zone),
+		 ("eliminateDeadBlocks",S.eliminateDeadBlocks),
+		 ("reverseFunctions",S.reverseFunctions),
  		 ("shrink", S.shrink)],
 		mkSimplePassGen))
 

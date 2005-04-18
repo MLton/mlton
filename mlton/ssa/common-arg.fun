@@ -181,7 +181,7 @@ fun eliminate (Program.T {datatypes, globals, functions, main}) =
 		  else ()))
 	   end))
       (* Transform *)
-      val shrink = shrinkFunction globals
+      val shrink = shrinkFunction {globals = globals}
       val functions =
 	 List.revMap
 	 (functions, fn f =>

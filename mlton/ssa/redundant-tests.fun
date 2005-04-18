@@ -170,7 +170,7 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 	 val ones = Vector.fromList (!statements)
       end
       val globals = Vector.concat [Vector.new2 (t, f), ones, globals]
-      val shrink = shrinkFunction globals
+      val shrink = shrinkFunction {globals = globals}
       val numSimplified = ref 0
       fun simplifyFunction f =
 	  let

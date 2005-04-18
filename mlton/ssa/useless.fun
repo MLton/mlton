@@ -1031,7 +1031,7 @@ fun useless (program: Program.t): Program.t =
 				    ty = Type.unit,
 				    exp = Exp.unit}),
 	  Vector.keepAllMap (globals, doitStatement)]
-      val shrink = shrinkFunction globals
+      val shrink = shrinkFunction {globals = globals}
       val functions = List.map (functions, shrink o doitFunction)
       val globals = Vector.concat [Vector.fromList (!bogusGlobals),
 				   globals]

@@ -382,7 +382,7 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 	 in
 	    Vector.concat (blocks::(!newBlocks))
 	 end
-      val shrink = shrinkFunction globals
+      val shrink = shrinkFunction {globals = globals}
       val inlineIntoMain = !Control.inlineIntoMain
       val functions =
 	 List.fold

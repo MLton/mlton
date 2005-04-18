@@ -568,7 +568,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 				      (inDegree, LabelMeaning.blockIndex m))),
 	     ("meaning", LabelMeaning.layout m)]
 	 val traceDeleteLabelMeaning =
-	    Trace.trace ("Shrink.deleteLabelMeaning",
+	    Trace.trace ("Shrink2.deleteLabelMeaning",
 			 layoutLabelMeaning, Unit.layout)
 	 fun deleteLabel l = deleteLabelMeaning (labelMeaning l)
 	 and deleteLabelMeaning arg: unit =

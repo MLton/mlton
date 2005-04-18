@@ -8,15 +8,13 @@
 
 signature SHRINK2_STRUCTS = 
    sig
-      include TYPE_CHECK2
+      include PREPASSES2
    end
 
 signature SHRINK2 = 
    sig
       include SHRINK2_STRUCTS
 
-      val eliminateDeadBlocksFunction: Function.t -> Function.t
-      val eliminateDeadBlocks: Program.t -> Program.t
       val shrinkFunction:
 	 {globals: Statement.t vector} -> Function.t -> Function.t
       val shrink: Program.t -> Program.t

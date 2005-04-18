@@ -190,6 +190,10 @@ local
 		 ("removeUnused", RemoveUnused.remove),
 		 ("simplifyTypes", SimplifyTypes.simplify),
 		 ("useless", Useless.useless),
+		 ("breakCriticalEdges",fn p => 
+		  S.breakCriticalEdges (p, {codeMotion = true})),
+		 ("eliminateDeadBlocks",S.eliminateDeadBlocks),
+		 ("reverseFunctions",S.reverseFunctions),
 		 ("shrink", S.shrink)], 
 		mkSimplePassGen))
 

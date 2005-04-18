@@ -674,7 +674,7 @@ structure Transform =
 			 transfer = transfer}
 	      end) arg
 
-	  val shrink = shrinkFunction globals
+	  val shrink = shrinkFunction {globals = globals}
 
 	  val functions
 	    = List.fold

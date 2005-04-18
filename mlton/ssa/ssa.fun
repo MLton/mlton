@@ -6,4 +6,5 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 functor Ssa (S: SSA_STRUCTS): SSA = 
-   Simplify (Restore (Shrink (TypeCheck (Analyze (DirectExp (SsaTree (S)))))))
+   Simplify (Restore (Shrink (PrePasses (
+   TypeCheck (Analyze (DirectExp (SsaTree (S))))))))

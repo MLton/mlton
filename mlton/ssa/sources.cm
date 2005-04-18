@@ -39,6 +39,10 @@ type-check.sig
 type-check2.sig
 type-check.fun
 type-check2.fun
+prepasses.sig
+prepasses2.sig
+prepasses.fun
+prepasses2.fun
 shrink.sig
 shrink2.sig
 shrink.fun

@@ -718,7 +718,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 			        Bugg => Error.bug "global bind can't fail"
 			      | Delete => NONE
 			      | Keep b => SOME b)]
-      val shrink = shrinkFunction globals
+      val shrink = shrinkFunction {globals = globals}
       val functions = List.revMap (functions, shrink o simplifyFunction)
       val program =
 	 Program.T {datatypes = datatypes,

@@ -80,7 +80,7 @@ fun flatten (Program.T {globals, datatypes, functions, main}) =
 	   set = setLabelArgs, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("args", Label.layout))
-      val shrink = shrinkFunction globals
+      val shrink = shrinkFunction {globals = globals}
       val functions =
 	 List.revMap
 	 (functions, fn f =>

@@ -7,15 +7,14 @@
  *)
 signature SHRINK_STRUCTS = 
    sig
-      include TYPE_CHECK
+      include PREPASSES
    end
 
 signature SHRINK = 
    sig
       include SHRINK_STRUCTS
 
-      val eliminateDeadBlocksFunction: Function.t -> Function.t
-      val eliminateDeadBlocks: Program.t -> Program.t
-      val shrinkFunction: Statement.t vector -> Function.t -> Function.t
+      val shrinkFunction: 
+	 {globals: Statement.t vector} -> Function.t -> Function.t
       val shrink: Program.t -> Program.t
    end

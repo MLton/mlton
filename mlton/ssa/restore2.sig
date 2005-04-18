@@ -14,6 +14,7 @@ signature RESTORE2 =
    sig
       include RESTORE2_STRUCTS
 
-      val restoreFunction: Statement.t vector -> Function.t -> Function.t
+      val restoreFunction: 
+	 {globals: Statement.t vector} -> Function.t -> Function.t
       val restore: Program.t -> Program.t
    end

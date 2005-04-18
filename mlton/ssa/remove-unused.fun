@@ -1088,7 +1088,7 @@ fun remove (Program.T {datatypes, globals, functions, main})
       fun simplifyBlocks (bs: Block.t Vector.t): Block.t Vector.t
 	= Vector.keepAllMap (bs, simplifyBlock)
       val globals = simplifyStatements globals
-      val shrink = shrinkFunction globals
+      val shrink = shrinkFunction {globals = globals}
       fun simplifyFunction (f: Function.t): Function.t option
 	= let
 	    val {args, blocks, mayInline, name, start, ...} = Function.dest f
