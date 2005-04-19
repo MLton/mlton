@@ -39,9 +39,9 @@ structure Value =
        | Complex of computed Equatable.t
       and computed =
 	 ObjectC of object
-	| WeakC of {arg: t,
-		    finalType: Type.t option ref,
-		    originalType: Type.t}
+       | WeakC of {arg: t,
+		   finalType: Type.t option ref,
+		   originalType: Type.t}
       and object =
 	 Obj of {args: t Prod.t,
 		 con: ObjectCon.t,
@@ -52,18 +52,18 @@ structure Value =
 		 originalType: Type.t}
       and flat =
 	 NotFlat
-	| Offset of {object: object,
-		     offset: int}
-	| Unknown
+       | Offset of {object: object,
+		    offset: int}
+       | Unknown
 
       fun delay (f: unit -> computed): t = Complex (Equatable.delay f)
 
       datatype value =
 	 Ground of Type.t
-	| Object of object
-	| Weak of {arg: t,
-		   finalType: Type.t option ref,
-		   originalType: Type.t}
+       | Object of object
+       | Weak of {arg: t,
+		  finalType: Type.t option ref,
+		  originalType: Type.t}
 
       val value: t -> value =
 	 fn GroundV t => Ground t
@@ -199,7 +199,7 @@ structure Value =
 			    originalType = originalType})
 
       val tuple =
-	 Trace.trace ("Value.tuple", fn (p, _) => Prod.layout (p, layout),
+	 Trace.trace ("RefFlatten.Value.tuple", fn (p, _) => Prod.layout (p, layout),
 		      layout)
 	 tuple
 
@@ -213,7 +213,8 @@ structure Value =
 	       Equatable.equate
 	       (e, e', fn (c, c') =>
 		case (c, c') of
-		   (ObjectC (Obj {args = a, flat = f, ...}), ObjectC (Obj {args = a', flat = f', ...})) =>
+		   (ObjectC (Obj {args = a, flat = f, ...}), 
+		    ObjectC (Obj {args = a', flat = f', ...})) =>
 		      let
 			 val () = unifyProd (a, a')
 			 val () =
@@ -241,7 +242,7 @@ structure Value =
       fun coerce {from, to} = unify (from, to)
 
       val coerce =
-	 Trace.trace ("Value.coerce",
+	 Trace.trace ("RefFlatten.Value.coerce",
 		      fn {from, to} =>
 		      Layout.record [("from", layout from),
 				     ("to", layout to)],
@@ -296,7 +297,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       val {get = conValue: Con.t -> Value.t option ref, ...} =
 	 Property.get (Con.plist, Property.initFun (fn _ => ref NONE))
       val conValue =
-	 Trace.trace ("conValue",
+	 Trace.trace ("RefFlatten.conValue",
 		      Con.layout, Ref.layout (Option.layout Value.layout))
 	 conValue
       datatype 'a make =
@@ -375,7 +376,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	     Const v => v
 	   | Make f => f ()
       val typeValue =
-	 Trace.trace ("typeValue", Type.layout, Value.layout) typeValue
+	 Trace.trace ("RefFlatten.typeValue", Type.layout, Value.layout) typeValue
       val coerce = Value.coerce
       fun inject {sum, variant = _} = typeValue (Type.datatypee sum)
       fun object {args, con, resultType} =
@@ -625,7 +626,31 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       (* Try to flatten each ref. *)
       val () =
 	 foreachObject
-	 (fn (var, args, obj as Obj {flat, ...}) =>
+	 (fn (var, _, obj as Obj {flat, ...}) =>
+	  let
+	     datatype z = datatype Flat.t
+	     fun notFlat () = flat := NotFlat
+	     val () =
+		case ! (varInfo var) of
+		   Flattenable {useStatus, ...} =>
+		      (case !useStatus of
+			  InTuple {object = obj', offset = i', ...} =>
+			     (case ! flat of
+				 NotFlat => ()
+			       | Offset {object = obj'', offset = i''} =>
+				    if i' = i'' andalso Object.equals (obj', obj'')
+				       then ()
+				       else notFlat ()
+			       | Unknown => flat := Offset {object = obj',
+							    offset = i'})
+			| Unused => notFlat ())
+		 | Unflattenable => notFlat ()
+	  in
+	     ()
+	  end)
+      val () =
+	 foreachObject
+	 (fn (_, args, obj as Obj {flat, ...}) =>
 	  let
 	     datatype z = datatype Flat.t
 	     (* Check that all arguments that are represented by flattening them
@@ -641,22 +666,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			  Flattenable _ => ()
 			| Unflattenable =>
 			     flat := NotFlat)
-	     fun notFlat () = flat := NotFlat
 	  in
-	     case ! (varInfo var) of
-		Flattenable {useStatus, ...} =>
-		   (case !useStatus of
-		       InTuple {object = obj, offset = i, ...} =>
-			  (case ! flat of
-			      NotFlat => ()
-			    | Offset {object = obj', offset = i'} =>
-				 if i = i' andalso Object.equals (obj, obj')
-				    then ()
-				 else notFlat ()
-			    | Unknown => flat := Offset {object = obj,
-							 offset = i})
-		     | Unused => notFlat ())
-	      | Unflattenable => notFlat ()
+	     ()
 	  end)
       (*
        * The following code disables flattening of some refs to ensure
@@ -793,7 +804,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	  end)
       (* Conversion from values to types. *)
       datatype z = datatype Finish.t
-      val traceValueType = Trace.trace ("valueType", Value.layout, Type.layout)
+      val traceValueType = Trace.trace ("RefFlatten.valueType", Value.layout, Type.layout)
       fun valueType arg: Type.t =
 	 traceValueType
 	 (fn (v: Value.t) =>
@@ -892,7 +903,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		     | Unflattenable => flattenValues (x, obj, ac))
 	  end)
       val flattenArgs =
-	 Trace.trace3 ("flattenArgs",
+	 Trace.trace3 ("RefFlatten.flattenArgs",
 		       Vector.layout Var.layout,
 		       Object.layout,
 		       List.layout Var.layout,
@@ -982,7 +993,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			     end)
 		 | Base.VectorSub _ => Vector.new1 s)
       val transformStatement =
-	 Trace.trace ("transformStatement",
+	 Trace.trace ("RefFlatten.transformStatement",
 		      Statement.layout,
 		      Vector.layout Statement.layout)
 	 transformStatement
