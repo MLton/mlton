@@ -110,6 +110,8 @@ structure CCodegen = CCodegen (structure Ffi = Ffi
 			       structure Machine = Machine)
 structure Bytecode = Bytecode (structure CCodegen = CCodegen
 			       structure Machine = Machine)
+structure CmmCodegen = CmmCodegen (structure CCodegen = CCodegen
+				   structure Machine = Machine)
 structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
 				   structure Machine = Machine)
 
@@ -550,6 +552,7 @@ fun preCodegen {input}: Machine.Program.t =
 	 case !Control.codegen of
 	    Control.Bytecode => Bytecode.implementsPrim
 	  | Control.CCodegen => CCodegen.implementsPrim
+	  | Control.CmmCodegen => CmmCodegen.implementsPrim
 	  | Control.Native => x86Codegen.implementsPrim
       val machine =
 	 Control.pass
@@ -582,7 +585,7 @@ fun preCodegen {input}: Machine.Program.t =
       machine
    end
  
-fun compile {input: String.t, outputC, outputS}: unit =
+fun compile {input: String.t, outputC, outputCmm, outputS}: unit =
    let
       val machine =
 	 Control.trace (Control.Top, "pre codegen")
@@ -601,6 +604,12 @@ fun compile {input: String.t, outputC, outputS}: unit =
 		; (Control.trace (Control.Top, "C code gen")
 		   CCodegen.output {program = machine,
 				    outputC = outputC}))
+	  | Control.CmmCodegen =>
+	       (clearNames ()
+		; (Control.trace (Control.Top, "C-- code gen")
+		   CmmCodegen.output {program = machine,
+				      outputC = outputC,
+				      outputCmm = outputCmm}))
 	  | Control.Native =>
 	       (clearNames ()
 		; (Control.trace (Control.Top, "x86 code gen")
@@ -613,9 +622,10 @@ fun compile {input: String.t, outputC, outputS}: unit =
       ()
    end handle Done => ()
 
-fun compileMLB {input: File.t, outputC, outputS}: unit =
+fun compileMLB {input: File.t, outputC, outputCmm, outputS}: unit =
    compile {input = input,
 	    outputC = outputC,
+	    outputCmm = outputCmm,
 	    outputS = outputS}
 
 val elaborateMLB =
@@ -641,9 +651,10 @@ local
 			      "end\n"]
       end
 in
-   fun compileSML {input: File.t list, outputC, outputS}: unit =
+   fun compileSML {input: File.t list, outputC, outputCmm, outputS}: unit =
       compile {input = genMLB {input = input},
 	       outputC = outputC,
+	       outputCmm = outputCmm,
 	       outputS = outputS}
    val elaborateSML =
       fn {input: File.t list} =>

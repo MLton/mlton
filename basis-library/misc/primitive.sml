@@ -65,7 +65,7 @@ structure Int64 =
       type t = int64
       type int = t
    end
-structure Position = Int64
+structure Position = Int32
 structure IntInf =
    struct
       type t = intInf
@@ -893,13 +893,14 @@ structure Primitive =
 	 struct
 	    structure Codegen =
 	       struct
-		  datatype t = Bytecode | C | Native
+		  datatype t = Bytecode | C | Cmm | Native
 
 		  val codegen =
 		     case _build_const "MLton_codegen": int; of
 			0 => Bytecode
 		      | 1 => C
-		      | 2 => Native
+		      | 2 => Cmm
+		      | 3 => Native
 		      | _ => raise Fail "MLton_codegen"
 
 		  val isBytecode = codegen = Bytecode

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -6,14 +6,13 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 local
-    c-codegen/sources.mlb
-    cmm-codegen/sources.mlb
-    bytecode/sources.mlb
-    x86-codegen/sources.mlb
-in
-    functor Bytecode
-    functor CCodegen
-    functor CmmCodegen
-    functor x86Codegen
-end
+    ../../../lib/mlton/sources.mlb
+    ../../backend/sources.mlb
+    ../../control/sources.mlb
+    ../c-codegen/sources.mlb
 
+    cmm-codegen.sig
+    cmm-codegen.fun
+in
+    functor CmmCodegen
+end

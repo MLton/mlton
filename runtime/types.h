@@ -44,7 +44,7 @@ typedef Int32 Int;
 typedef Real64 Real;
 typedef Word8 Char;
 typedef Word32 Word;
-typedef Int64 Position;
+typedef Int32 Position;
 
 typedef Int Bool;
 typedef Word Cpointer;

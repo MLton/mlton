@@ -39,7 +39,7 @@ FLAGS += -b $(TARGET)
 endif
 
 CC = gcc -std=c99
-CFLAGS = -O2 -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=64 $(FLAGS)
+CFLAGS = -O2 -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=32 $(FLAGS)
 DEBUGFLAGS = $(CFLAGS) -gstabs+ -g2
 
 CFILES = 							\

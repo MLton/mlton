@@ -49,6 +49,7 @@ structure OptPred =
 
 val buildConstants: bool ref = ref false
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
+val cmmcOpts: string list ref = ref []
 val coalesce: int option ref = ref NONE
 val expert: bool ref = ref false
 val gcc: string ref = ref "<unset>"
@@ -58,6 +59,7 @@ val keepSML = ref false
 val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val output: string option ref = ref NONE
 val profileSet: bool ref = ref false
+val qcmm: string ref = ref "<unset>"
 val runtimeArgs: string list ref = ref ["@MLton"]
 val stop = ref Place.OUT
 
@@ -172,6 +174,20 @@ fun makeOptions {usage} =
        (Normal, "cc-opt", " <opt>", "pass option to C compiler",
 	SpaceString (fn s =>
 		     List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "cmm-debug", " {false|true}", "debug C-- codegen",
+	boolRef Cmm.debug),
+       (Expert, "cmm-non-tail", " {cutTo|cutToNR|return}", 
+	"how to implement non-tail transfers",
+	SpaceString (fn s =>
+		     case s of
+		        "cutTo" => Cmm.nonTail := Cmm.CutTo {neverReturns = false}
+		      | "cutToNR" => Cmm.nonTail := Cmm.CutTo {neverReturns = true}
+		      | "return" => Cmm.nonTail := Cmm.Return
+		      | _ => usage (concat ["invalid -cmm-non-tail flag: ", s]))),
+       (Expert, "cmmc", " <qc-->", "path to qc-- executable",
+	SpaceString (fn s => qcmm := s)),
+       (Normal, "cmmc-opt", " <opt>", "pass option to C-- compiler",
+	SpaceString (fn s => List.push (cmmcOpts, s))),
        (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
        (Normal, "codegen",
@@ -181,6 +197,7 @@ fun makeOptions {usage} =
 		     case s of
 			"bytecode" => codegen := Bytecode
 		      | "c" => codegen := CCodegen
+		      | "cmm" => codegen := CmmCodegen
 		      | "native" => codegen := Native
 		      | _ => usage (concat ["invalid -codegen flag: ", s]))),
        (Normal, "const", " '<name> <value>'", "set compile-time constant",
@@ -559,6 +576,7 @@ fun commandLine (args: string list): unit =
 	 {name = "CallStack.keep",
 	  value = Bool.toString (!Control.profile = Control.ProfileCallStack)}
       val gcc = !gcc
+      val qcmm = !qcmm
       val stop = !stop
       val target = !target
       val targetStr =
@@ -592,9 +610,11 @@ fun commandLine (args: string list): unit =
 	      then opt :: ac
 	   else ac))
       val ccOpts = addTargetOpts ccOpts
+      val cmmcOpts = !cmmcOpts
       val linkOpts =
 	 List.concat [[concat ["-L", !libTargetDir],
-		       if !debug then "-lmlton-gdb" else "-lmlton"],
+		       if !debug then "-lmlton-gdb" else "-lmlton"] @
+		      (if !codegen = CmmCodegen then ["-lqc--"] else []),
 		      addTargetOpts linkOpts]
       (* With gcc 3.4, the '-b <arch>' must be the first argument. *)
       val targetOpts =
@@ -617,9 +637,13 @@ fun commandLine (args: string list): unit =
 	   | CCodegen => Coalesce {limit = (case !coalesce of
 					       NONE => 4096
 					     | SOME n => n)}
+	   | CmmCodegen =>
+		if isSome (!coalesce)
+		   then usage "can't use -coalesce and -codegen cmm"
+		else ChunkPerFunc
 	   | Native =>
 		if isSome (!coalesce)
-		   then usage "can't use -coalesce and -native true"
+		   then usage "can't use -coalesce and -codegen native"
 		else ChunkPerFunc)
       val _ = if not (!Control.codegen = Native) andalso !Native.IEEEFP
 		 then usage "must use native codegen with -ieee-fp true"
@@ -699,7 +723,7 @@ fun commandLine (args: string list): unit =
 	    val _ =
 	       List.foreach
 	       (rest, fn f =>
-		if List.exists ([".c", ".o", ".s", ".S"], fn suffix =>
+		if List.exists ([".c", ".cmm", ".o", ".s", ".S"], fn suffix =>
 				String.hasSuffix (f, {suffix = suffix}))
 		   then File.withIn (f, fn _ => ())
 		else usage (concat ["invalid file suffix: ", f]))
@@ -760,6 +784,7 @@ fun commandLine (args: string list): unit =
 			 | Dwarf2 => (["-gdwarf-2", "-g2"], "-Wa,--gdwarf2")
 			 | Stabs => (["-gstabs", "-g2"], "-Wa,--gstabs")
 			 | StabsPlus => (["-gstabs+", "-g2"], "-Wa,--gstabs")
+		     val qcmmDebug = []
 		     fun compileO (inputs: File.t list): unit =
 			let
 			   val output = maybeOut ""
@@ -773,7 +798,10 @@ fun commandLine (args: string list): unit =
 				 ["-std=c99"],
 				 ["-o", output],
 				 if !debug then gccDebug else [],
-				 inputs,
+				 if !codegen = CmmCodegen
+				    then inputs @
+				         [concat [!Control.libTargetDir, "/pcmap.ld"]]
+				    else inputs,
 				 linkOpts]))
 			      ()
 			   (* gcc on Cygwin appends .exe, which I don't want, so
@@ -796,6 +824,107 @@ fun commandLine (args: string list): unit =
 			in
 			   ()
 			end
+		  fun compileC (c: Counter.t, input: File.t): File.t =
+		     let
+			val (debugSwitches, switches) =
+			   (gccDebug @ ["-DASSERT=1"], ccOpts)
+			val switches =
+			   if !debug
+			      then debugSwitches @ switches
+			      else switches
+			val switches =
+			   targetOpts @ ("-std=c99" :: "-c" :: switches)
+			val output =
+			   if stop = Place.O orelse !keepO
+			      then
+				 if !keepGenerated 
+				    orelse start = Place.Generated
+				    then
+				       concat [File.base input,
+					       ".o"]
+				    else 
+				       suffix
+				       (concat [".",
+						Int.toString
+						(Counter.next c),
+						".o"])
+			      else temp ".o"
+			val _ =
+			   System.system
+			   (gcc,
+			    List.concat [switches,
+					 ["-o", output, input]])
+		     in
+			output
+		     end
+		  local val qcmmGlobals = ref true in
+		  fun compileCmm (c: Counter.t, input: File.t): File.t =
+		     let
+			val switches = cmmcOpts
+			val switches =
+			   if !qcmmGlobals
+			      then (qcmmGlobals := false
+				    ; "-globals" :: switches)
+			      else switches
+			val switches =
+			   "-c" :: switches
+			val output =
+			   if stop = Place.O orelse !keepO
+			      then
+				 if !keepGenerated 
+				    orelse start = Place.Generated
+				    then
+				       concat [File.base input,
+					       ".o"]
+				    else 
+				       suffix
+				       (concat [".",
+						Int.toString
+						(Counter.next c),
+						".o"])
+			      else temp ".o"
+			val _ =
+			   System.system
+			   (qcmm,
+			    List.concat [switches,
+					 ["-o", output, input]])
+		     in
+			output
+		     end
+		  end
+		  fun compileS (c: Counter.t, input: File.t): File.t =
+		     let
+			val (debugSwitches, switches) =
+			   ([asDebug], [])
+			val switches =
+			   if !debug
+			      then debugSwitches @ switches
+			      else switches
+			val switches =
+			   targetOpts @ ("-std=c99" :: "-c" :: switches)
+			val output =
+			   if stop = Place.O orelse !keepO
+			      then
+				 if !keepGenerated 
+				    orelse start = Place.Generated
+				    then
+				       concat [File.base input,
+					       ".o"]
+				    else 
+				       suffix
+				       (concat [".",
+						Int.toString
+						(Counter.next c),
+						".o"])
+			      else temp ".o"
+			val _ =
+			   System.system
+			   (gcc,
+			    List.concat [switches,
+					 ["-o", output, input]])
+		     in
+			output
+		     end
 		  fun compileCSO (inputs: File.t list): unit =
 		     if List.forall (inputs, fn f =>
 				     SOME "o" = File.extension f)
@@ -804,7 +933,7 @@ fun commandLine (args: string list): unit =
 		     let
 			val c = Counter.new 0
 			val oFiles =
-			   trace (Top, "Compile C and Assemble")
+			   trace (Top, "Compile and Assemble")
 			   (fn () =>
 			    List.fold
 			    (inputs, [], fn (input, ac) =>
@@ -813,45 +942,17 @@ fun commandLine (args: string list): unit =
 			     in
 				if SOME "o" = extension
 				   then input :: ac
-				else
-				   let
-				      val (debugSwitches, switches) =
-					 if SOME "c" = extension
-					    then
-					       (gccDebug @ ["-DASSERT=1"],
-						ccOpts)
-					 else ([asDebug], [])
-				      val switches =
-					 if !debug
-					    then debugSwitches @ switches
-					 else switches
-				      val switches =
-					 targetOpts @ ("-std=c99" :: "-c" :: switches)
-				      val output =
-					 if stop = Place.O orelse !keepO
-					    then
-					       if !keepGenerated 
-						  orelse start = Place.Generated
-						  then
-						     concat [String.dropSuffix
-							     (input, 1),
-							     "o"]
-					       else 
-						  suffix
-						  (concat [".",
-							   Int.toString
-							   (Counter.next c),
-							   ".o"])
-					 else temp ".o"
-				      val _ =
-					 System.system
-					 (gcc,
-					  List.concat [switches,
-						       ["-o", output, input]])
-
-				   in
-				      output :: ac
-				   end
+				else if SOME "c" = extension
+				   then (compileC (c, input)) :: ac
+				else if SOME "cmm" = extension
+				   then (compileCmm (c, input)) :: ac
+				else if SOME "s" = extension 
+				        orelse SOME "S" = extension
+				   then (compileS (c, input)) :: ac
+				else Error.bug 
+				     (concat
+				      ["invalid extension: ",
+				       Option.toString (fn s => s) extension])
 			     end))
 			   ()
 		     in
@@ -902,6 +1003,7 @@ fun commandLine (args: string list): unit =
 				 Compile.compileSML
 				 {input = files,
 				  outputC = make (Control.C, ".c"),
+				  outputCmm = make (Control.C, ".cmm"),
 				  outputS = make (Control.Assembly,
 						  if !debug then ".s" else ".S")}
 		     in
@@ -994,6 +1096,7 @@ fun commandLine (args: string list): unit =
 				 Compile.compileMLB
 				 {input = file,
 				  outputC = make (Control.C, ".c"),
+				  outputCmm = make (Control.C, ".cmm"),
 				  outputS = make (Control.Assembly,
 						  if !debug then ".s" else ".S")}
 		     in

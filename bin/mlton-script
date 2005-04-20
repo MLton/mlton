@@ -6,6 +6,7 @@ set -e
 
 lib='lib unset'
 gcc='gcc'
+qcmm='qc--.opt'
 mlton="$lib/mlton-compile"
 world="$lib/world.mlton"
 nj='sml'
@@ -88,4 +89,5 @@ doit "$lib" \
 	-target-link-opt openbsd '-L/usr/local/lib/ -lgmp'	\
 	-target-link-opt solaris '-lgmp -lnsl -lsocket'		\
 	-link-opt '-lgdtoa -lm'					\
+	-cmmc "$qcmm"						\
 	"$@"

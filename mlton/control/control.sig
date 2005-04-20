@@ -38,9 +38,20 @@ signature CONTROL =
 
       val chunk: chunk ref
 
+      structure Cmm :
+	 sig
+	    val debug : bool ref
+
+	    datatype nonTail =
+	       CutTo of {neverReturns: bool} | Return
+
+	    val nonTail : nonTail ref
+	 end
+
       datatype codegen =
 	 Bytecode
        | CCodegen
+       | CmmCodegen
        | Native
 
       val codegen: codegen ref

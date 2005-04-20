@@ -40,6 +40,30 @@ val basisLibrary = control {name = "basis library",
 val cardSizeLog2 = control {name = "log2 (card size)",
 			    default = 8,
 			    toString = Int.toString}
+
+structure Cmm =
+   struct
+      val debug = control {name = "cmm debug",
+			   default = false,
+			   toString = Bool.toString}
+
+      structure NonTail =
+	 struct
+	    datatype t =
+	       CutTo of {neverReturns: bool} | Return
+	    val toString =
+	       fn CutTo {neverReturns} => 
+  	             concat ["cut to {neverReturns = ", 
+			     Bool.toString neverReturns,
+			     "}"]
+	        | Return => "return"
+	 end
+      datatype nonTail = datatype NonTail.t
+ 
+      val nonTail = control {name = "cmm non-tail",
+			     default = Return,
+			     toString = NonTail.toString}
+   end
    
 structure Chunk =
    struct
@@ -65,11 +89,13 @@ structure Codegen =
       datatype t =
 	 Bytecode
        | CCodegen
+       | CmmCodegen
        | Native
 
       val toString: t -> string =
 	 fn Bytecode => "Bytecode"
 	  | CCodegen => "C"
+	  | CmmCodegen => "C--"
 	  | Native => "Native"
    end
 

@@ -45,7 +45,7 @@ test: $(NAME)
 	cd tests && ../benchmark $(BFLAGS) $(BENCH)
 
 QBENCH = $(BENCH)
-QBFLAGS = -mlton "mlton{-stable,.cvs.HEAD -detect-overflow {false,true}}"
+QBFLAGS = -mlton "mlton -codegen {native,c,cmm {,-cmmc-opt 'Backend.x86.improve=Optimize.improve'}}"
 
 .PHONY: qtest
 qtest: $(NAME)
