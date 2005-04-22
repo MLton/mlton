@@ -119,7 +119,9 @@ runtime.c: $(CFILES)
 # are class.c and gdtoa.c.  But there may be others.  So, we compile
 # with -fno-strict-aliasing to prevent gcc from taking advantage of
 # this aspect of the C spec.
-basis/Real/%.o: basis/Real/%.c
+basis/Real/%-gdb.o: basis/Real/%.c gdtoa/arith.h
+	$(CC) $(DEBUGFLAGS) -O1 -DASSERT=1 -c -o $@ $<
+basis/Real/%.o: basis/Real/%.c gdtoa/arith.h
 	$(CC) $(CFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
