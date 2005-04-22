@@ -63,6 +63,7 @@ doit "$lib" \
 	-cc-opt "-I$lib/include"				\
 	-cc-opt '-O1'						\
 	-cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'	\
+	-target-cc-opt darwin '-I/sw/include'			\
 	-target-cc-opt solaris 					\
 		'-Wa,-xarch=v8plusa
 		-fcall-used-g5
@@ -78,7 +79,7 @@ doit "$lib" \
 		-malign-loops=2
 		-mcpu=pentiumpro'				\
 	-target-link-opt cygwin '-lgmp'				\
- 	-target-link-opt darwin '-lgmp'				\
+ 	-target-link-opt darwin '-L/sw/lib -lgmp'		\
 	-target-link-opt freebsd '-L/usr/local/lib/ -lgmp'	\
 	-target-link-opt linux '-lgmp'				\
 	-target-link-opt mingw 					\
