@@ -43,8 +43,8 @@
  * the FreeBSD ports tree). For now we use the same method as in the FreeBSD
  * case, but we note that this should be changed so the makefile provides the
  * correct -I flags to the compiler.
- * As far as I can tell, gmp does not come with Mac OS X, so the user will
- * install it himself.
+ * On MacOS X, many users will use fink to install gmp, in which case gmp.h
+ * will be installed in /sw/include.
  */
 #include "gmp.h"
 
