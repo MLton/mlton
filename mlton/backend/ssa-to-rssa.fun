@@ -269,6 +269,8 @@ structure Name =
 				      (WordSize.fromBits (Type.width t1), sg)),
 				     SOME (Type.toCType t2)),
 			return = t2}
+	    fun amAllocationProfiling () =
+	       Control.ProfileAlloc = !Control.profile
 	    fun intInfBinary () =
 	       CFunction.T {args = Vector.new3 (Type.intInf, Type.intInf,
 						Type.defaultWord),
@@ -284,7 +286,7 @@ structure Name =
 					   (Vector.new3 (Pointer, Pointer, Word32),
 					    SOME Pointer)
 					end,
-			    readsStackTop = false,
+			    readsStackTop = amAllocationProfiling (),
 			    return = Type.intInf,
 			    target = Direct name,
 			    writesStackTop = false}
@@ -304,7 +306,7 @@ structure Name =
 					   (Vector.new3 (Pointer, Word32, Word32),
 					    SOME Pointer)
 					end,
-			    readsStackTop = false,
+			    readsStackTop = amAllocationProfiling (),
 			    return = Type.intInf,
 			    target = Direct name,
 			    writesStackTop = false}
@@ -324,7 +326,7 @@ structure Name =
 					   (Vector.new3 (Pointer, Word32, Word32),
 					    SOME Pointer)
 					end,
-			    readsStackTop = false,
+			    readsStackTop = amAllocationProfiling (),
 			    return = Type.string,
 			    target = Direct name,
 			    writesStackTop = false}
@@ -342,7 +344,7 @@ structure Name =
 					   (Vector.new2 (Pointer, Word32),
 					    SOME Pointer)
 					end,
-			    readsStackTop = false,
+			    readsStackTop = amAllocationProfiling (),
 			    return = Type.intInf,
 			    target = Direct name,
 			    writesStackTop = false}
