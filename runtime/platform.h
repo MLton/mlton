@@ -316,19 +316,14 @@ void GC_setSummary (Int b);
 /* ------------------------------------------------- */
 
 #define FE_NOSUPPORT -1
-#ifndef FE_TONEAREST
-#define FE_TONEAREST FE_NOSUPPORT
-#endif
-#ifndef FE_DOWNWARD
-#define FE_DOWNWARD FE_NOSUPPORT
-#endif
-#ifndef FE_UPWARD
-#define FE_UPWARD FE_NOSUPPORT
-#endif
-#ifndef FE_TOWARDZERO
-#define FE_TOWARDZERO FE_NOSUPPORT
-#endif
-
+/* Can't handle undefined rounding modes with code like the following.
+ *  #ifndef FE_TONEAREST
+ *  #define FE_TONEAREST FE_NOSUPPORT
+ *  #endif
+ * On some platforms, FE_* are defined via an enum, not the preprocessor,
+ * and hence don't show up as #defined.  In that case, the above code 
+ * overwrites them.
+ */
 void IEEEReal_setRoundingMode (Int mode);
 Int IEEEReal_getRoundingMode ();
 
