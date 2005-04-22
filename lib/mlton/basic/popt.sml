@@ -35,7 +35,8 @@ fun intRef (r: int ref): t = Int (fn n => r := n)
 fun stringRef (r: string ref): t = String (fn s => r := s)
 
 val trace = ("trace", SpaceString (fn s =>
-				   let open Trace.Immediate
+				   let
+				      open Trace.Immediate
 				      val _ = debug := Out Out.error
 				   in case s of
 				      "*" => always ()
