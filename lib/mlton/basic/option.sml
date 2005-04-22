@@ -16,15 +16,22 @@ fun fold (opt, b, f) =
       NONE => b
     | SOME x => f (x, b)
 
+fun exists (z, f) =
+   case z of
+      NONE => false
+    | SOME x => f x
+
 fun forall (z, f) =
    case z of
       NONE => true
     | SOME x => f x
 	 
-fun app (opt, f) =
+fun foreach (opt, f) =
    case opt of
       NONE => ()
     | SOME x => f x
+
+val app = foreach
 
 fun map (opt, f) =
    case opt of
