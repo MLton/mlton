@@ -443,12 +443,12 @@ coerce (WordU8, Word64)
 	do {						\
 		WordS##size x = xW;			\
 		WordS##size c = cW;			\
+		dst = x + c;				\
 		if (c >= 0) {				\
 			if (x > WordS##size##_max - c)	\
 				goto l;			\
 		} else if (x < WordS##size##_min - c)	\
 				goto l;			\
-		dst = x + c;				\
 	} while (0)
 #define WordS8_addCheckXC(dst, x, c, l) WordS_addCheckXC(8, dst, x, c, l)
 #define WordS16_addCheckXC(dst, x, c, l) WordS_addCheckXC(16, dst, x, c, l)
@@ -468,9 +468,9 @@ coerce (WordU8, Word64)
 #define WordS_negCheck(size, dst, nW, l)	\
 	do {					\
 		WordS##size n = nW;		\
+		dst = -n;			\
 		if (n == WordS##size##_min)	\
 			goto l;			\
-		dst = -n;			\
 	} while (0)
 
 #define Word8_negCheck(dst, n, l) WordS_negCheck(8, dst, n, l)
@@ -482,12 +482,12 @@ coerce (WordU8, Word64)
 	do {						\
 		WordS##size c = cW;			\
 		WordS##size x = xW;			\
+		dst = c - x;				\
  		if (c >= 0) {				\
 			if (x < c - WordS##size##_max)	\
 				goto l;			\
 		} else if (x > c - WordS##size##_min)	\
 			goto l;				\
-		dst = c - x;				\
 	} while (0)
 #define WordS8_subCheckCX(dst, c, x, l) WordS_subCheckCX(8, dst, c, x, l)
 #define WordS16_subCheckCX(dst, c, x, l) WordS_subCheckCX(16, dst, c, x, l)
@@ -515,20 +515,20 @@ coerce (WordU8, Word64)
 #define WordS32_subCheck WordS32_subCheckXC
 #define WordS64_subCheck WordS64_subCheckXC
 
-#define Word_addCheckXC(size, dst, x, c, l)	\
+#define WordU_addCheckXC(size, dst, x, c, l)	\
 	do {					\
+		dst = x + c;			\
 		if (x > Word##size##_max - c)	\
 			goto l;			\
-		dst = x + c;			\
 	} while (0)
-#define WordU8_addCheckXC(dst, x, c, l) Word_addCheckXC(8, dst, x, c, l)
-#define WordU16_addCheckXC(dst, x, c, l) Word_addCheckXC(16, dst, x, c, l)
-#define WordU32_addCheckXC(dst, x, c, l) Word_addCheckXC(32, dst, x, c, l)
-#define WordU64_addCheckXC(dst, x, c, l) Word_addCheckXC(64, dst, x, c, l)
-#define WordU8_addCheckCX(dst, c, x, l) Word_addCheckXC(8, dst, x, c, l)
-#define WordU16_addCheckCX(dst, c, x, l) Word_addCheckXC(16, dst, x, c, l)
-#define WordU32_addCheckCX(dst, c, x, l) Word_addCheckXC(32, dst, x, c, l)
-#define WordU64_addCheckCX(dst, c, x, l) Word_addCheckXC(64, dst, x, c, l)
+#define WordU8_addCheckXC(dst, x, c, l) WordU_addCheckXC(8, dst, x, c, l)
+#define WordU16_addCheckXC(dst, x, c, l) WordU_addCheckXC(16, dst, x, c, l)
+#define WordU32_addCheckXC(dst, x, c, l) WordU_addCheckXC(32, dst, x, c, l)
+#define WordU64_addCheckXC(dst, x, c, l) WordU_addCheckXC(64, dst, x, c, l)
+#define WordU8_addCheckCX(dst, c, x, l) WordU_addCheckXC(8, dst, x, c, l)
+#define WordU16_addCheckCX(dst, c, x, l) WordU_addCheckXC(16, dst, x, c, l)
+#define WordU32_addCheckCX(dst, c, x, l) WordU_addCheckXC(32, dst, x, c, l)
+#define WordU64_addCheckCX(dst, c, x, l) WordU_addCheckXC(64, dst, x, c, l)
 
 #define WordU8_addCheck WordU8_addCheckXC
 #define WordU16_addCheck WordU16_addCheckXC

@@ -247,7 +247,3 @@ structure Int64 =
 	 val toWord = P.toWord
       end
    end
-      
-
-      
-

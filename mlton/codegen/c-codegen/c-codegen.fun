@@ -134,6 +134,12 @@ structure Operand =
 fun implementsPrim (p: 'a Prim.t): bool =
    let
       datatype z = datatype Prim.Name.t
+      fun w32168 s =
+	 case WordSize.prim s of
+	    W8 => true
+	  | W16 => true
+	  | W32 => true
+	  | W64 => false
    in
       case Prim.name p of
 	 FFI_Symbol _ => true
@@ -164,12 +170,15 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_toWord _ => true
        | Thread_returnToC => true
        | Word_add _ => true
+       | Word_addCheck _ => true
        | Word_andb _ => true
        | Word_equal _ => true
        | Word_lshift _ => true
        | Word_lt _ => true
        | Word_mul _ => true
+       | Word_mulCheck (s, _) => w32168 s
        | Word_neg _ => true
+       | Word_negCheck _ => true
        | Word_notb _ => true
        | Word_orb _ => true
        | Word_quot (_, {signed}) => not signed
@@ -178,6 +187,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_ror _ => true
        | Word_rshift _ => true
        | Word_sub _ => true
+       | Word_subCheck _ => true
        | Word_toReal _ => true
        | Word_toWord _ => true
        | Word_xorb _ => true

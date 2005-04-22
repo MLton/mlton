@@ -801,6 +801,13 @@ structure Primitive =
 	    val minInt' : int = ~0x8000000000000000
 
 	    val *? = _prim "WordS64_mul": int * int -> int;
+	    val * = fn _ => raise Fail "Int64.* unimplemented"
+(*
+	    val * =
+	       if detectOverflow
+		  then _prim "WordS64_mulCheck": int * int -> int;
+	       else *?
+*)
 	    val +? = _prim "Word64_add": int * int -> int;
 	    val + =
 	       if detectOverflow
@@ -827,7 +834,6 @@ structure Primitive =
 	    val fromWord = _prim "WordU32_toWord64": word -> int;
 	    val toInt = _prim "WordU64_toWord32": int -> Int.int;
 	    val toWord = _prim "WordU64_toWord32": int -> word;
-	    val * = fn _ => raise Fail "Int64.* unimplemented"
 	 end
       structure Int64 =
 	 struct

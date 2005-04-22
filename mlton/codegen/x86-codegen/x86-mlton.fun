@@ -90,6 +90,7 @@ struct
 	 | Word_mul (s, _) => w32168 s
 	 | Word_mulCheck (s, _) => w32168 s
 	 | Word_neg _ => true
+	 | Word_negCheck _ => true
 	 | Word_notb _ => true
 	 | Word_orb _ => true
 	 | Word_quot (s, _) => w32168 s
@@ -98,6 +99,7 @@ struct
 	 | Word_ror s => w32168 s
 	 | Word_rshift (s, _) => w32168 s
 	 | Word_sub _ => true
+	 | Word_subCheck _ => true
 	 | Word_toReal (s1, s2, {signed}) =>
 	      signed
 	      andalso (case (WordSize.prim s1, s2) of

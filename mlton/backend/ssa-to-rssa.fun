@@ -375,7 +375,34 @@ structure Name =
 				       end,
 			   return = Type.bool}
 	       end
-	    fun wordBinary (s, sg) =
+	    local
+	       fun make n (s, sg) =
+		  let
+		     val t = word s
+		     val ct = CType.word (s, sg)
+		  in
+		     vanilla {args = Vector.new (n, t),
+			      name = name,
+			      prototype = (Vector.new (n, ct), SOME ct),
+			      return = t}
+		  end
+	       fun makeOverflows n (s, sg) =
+		  let
+		     val t = word s
+		     val ct = CType.word (s, sg)
+		  in
+		     vanilla {args = Vector.new (n, t),
+			      name = name ^ "Overflows",
+			      prototype = (Vector.new (n, ct), SOME CType.bool),
+			      return = Type.bool}
+		  end
+	    in
+	       val wordBinary = make 2
+	       val wordBinaryOverflows = makeOverflows 2
+	       val wordUnary = make 1
+	       val wordUnaryOverflows = makeOverflows 1
+	    end
+	    fun wordCompare (s, sg) =
 	       let
 		  val t = word s
 	       in
@@ -384,39 +411,23 @@ structure Name =
 			   prototype = let
 					  val t = CType.word (s, sg)
 				       in
-					  (Vector.new2 (t, t), SOME t)
+					  (Vector.new2 (t, t), SOME CType.bool)
+				       end,
+			   return = Type.bool}
+	       end
+	    fun wordShift (s, sg) =
+	       let
+		  val t = word s
+	       in
+		  vanilla {args = Vector.new2 (t, Type.defaultWord),
+			   name = name,
+			   prototype = let
+					  val t = CType.word (s, sg)
+				       in
+					  (Vector.new2 (t, CType.Word32), SOME t)
 				       end,
 			   return = t}
 	       end
-	    fun wordCompare (s, sg) =
-	       vanilla {args = Vector.new2 (word s, word s),
-			name = name,
-			prototype = let
-				       val t = CType.word (s, sg)
-				    in
-				       (Vector.new2 (t, t), SOME CType.bool)
-				    end,
-			return = Type.bool}
-	    fun wordShift (s, sg) =
-	       vanilla {args = Vector.new2 (word s, Type.defaultWord),
-			name = name,
-			prototype = let
-				       open CType
-				    in
-				       (Vector.new2 (word (s, sg), Word32),
-					SOME bool)
-				    end,
-			return = word s}
-	    fun wordUnary s =
-	       vanilla {args = Vector.new1 (word s),
-			name = name,
-			prototype = let
-				       open CType
-				       val t = word (s, {signed = false})
-				    in
-				       (Vector.new1 t, SOME t)
-				    end,
-			return = word s}
 	 in
 	    case n of
 	       IntInf_add => intInfBinary ()
@@ -491,13 +502,16 @@ structure Name =
 	     | Real_sub s => realBinary s
 	     | Thread_returnToC => CFunction.returnToC
 	     | Word_add s => wordBinary (s, {signed = false})
+	     | Word_addCheck (s, sg) => wordBinaryOverflows (s, sg)
 	     | Word_andb s => wordBinary (s, {signed = false})
 	     | Word_equal s => wordCompare (s, {signed = false})
 	     | Word_lshift s => wordShift (s, {signed = false})
 	     | Word_lt z => wordCompare z
 	     | Word_mul z => wordBinary z
-	     | Word_neg s => wordUnary s
-	     | Word_notb s => wordUnary s
+	     | Word_mulCheck (s, sg) => wordBinaryOverflows (s, sg)
+	     | Word_neg s => wordUnary (s, {signed = true})
+	     | Word_negCheck s => wordUnaryOverflows (s, {signed = true})
+	     | Word_notb s => wordUnary (s, {signed = false})
 	     | Word_orb s => wordBinary (s, {signed = false})
 	     | Word_quot z => wordBinary z
 	     | Word_rem z => wordBinary z
@@ -505,6 +519,7 @@ structure Name =
 	     | Word_ror s => wordShift (s, {signed = false})
 	     | Word_rshift z => wordShift z
 	     | Word_sub s => wordBinary (s, {signed = false})
+	     | Word_subCheck (s, sg) => wordBinaryOverflows (s, sg)
 	     | Word_toReal (s1, s2, sg) =>
 		  coerce (Type.word (WordSize.bits s1), Type.real s2, sg)
 	     | Word_toWord (s1, s2, sg) =>
@@ -568,7 +583,7 @@ fun convertConst (c: Const.t): Const.t =
    end
 
 fun convert (program as S.Program.T {functions, globals, main, ...},
-	     {codegenImplementsPrim}): Rssa.Program.t =
+	     {codegenImplementsPrim: Rssa.Type.t Rssa.Prim.t -> bool}): Rssa.Program.t =
    let
       val {diagnostic, genCase, object, objectTypes, select, toRtype, update} =
 	 PackedRepresentation.compute program
@@ -714,17 +729,32 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 	 Vector.keepAllMap (xs, fn x =>
 			    Option.map (toRtype (varType x), fn _ =>
 					varOp x))
+      fun bogus (t: Type.t): Operand.t =
+	 case Type.deReal t of
+	    NONE => Operand.cast (Operand.word (Type.bogusWord t), t)
+	  | SOME s => Operand.Const (Const.real (RealX.zero s))
+      val handlesSignals = 
+	 S.Program.hasPrim 
+	 (program, fn p => 
+	  case Prim.name p of
+	     Prim.Name.MLton_installSignalHandler => true
+	   | _ => false)
+      fun translateFormals v =
+	 Vector.keepAllMap (v, fn (x, t) =>
+			    Option.map (toRtype t, fn t => (x, t)))
       fun translatePrim p =
 	 Prim.map (p, fn t =>
 		   case toRtype t of
 		      NONE => Type.unit
 		    | SOME t => t)
-      fun translateTransfer (t: S.Transfer.t): Statement.t list * Transfer.t =
+      fun translateTransfer (t: S.Transfer.t): (Statement.t list * 
+						Transfer.t) =
 	 case t of
 	    S.Transfer.Arith {args, overflow, prim, success, ty} =>
 	       let
+		  val prim = translatePrim prim
 		  val ty = valOf (toRtype ty)
-		  val temp = Var.newNoname ()
+		  val res = Var.newNoname ()
 		  val noOverflow =
 		     newBlock
 		     {args = Vector.new0 (),
@@ -733,14 +763,95 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 		      transfer = (Transfer.Goto
 				  {dst = success,
 				   args = (Vector.new1
-					   (Var {var = temp, ty = ty}))})}
+					   (Var {var = res, ty = ty}))})}
 	       in
-		  ([], Transfer.Arith {dst = temp,
-				       args = vos args,
-				       overflow = overflow,
-				       prim = translatePrim prim,
-				       success = noOverflow,
-				       ty = ty})
+		  if codegenImplementsPrim prim
+		     then ([], 
+			   Transfer.Arith {dst = res,
+					   args = vos args,
+					   overflow = overflow,
+					   prim = prim,
+					   success = noOverflow,
+					   ty = ty})
+		     else 
+			let
+			   datatype z = datatype Prim.Name.t
+                           fun doOperCheckCF (operCheck) =
+			      let
+				 val operCheckCF =
+				    case Name.cFunction operCheck of
+				       NONE =>
+					  Error.bug
+					  (concat ["unimplemented prim:",
+						   Name.toString operCheck])
+				     | SOME operCheckCF => operCheckCF
+				 val afterOperCheck =
+				    let
+				       val checkRes = Var.newNoname ()
+				    in
+				       newBlock
+				       {args = Vector.new1 (checkRes, Type.bool),
+					kind = Kind.CReturn {func = operCheckCF},
+					statements = Vector.new0 (),
+					transfer = (Transfer.ifBool
+						    (Var {var = checkRes,
+							  ty = Type.bool}, 
+						     {falsee = noOverflow, 
+						      truee = overflow}))}
+				    end
+			      in
+				 Transfer.CCall
+				 {args = vos args,
+				  func = operCheckCF,
+				  return = SOME afterOperCheck}
+			      end
+			   fun doOperCF (oper, operCheck) =
+			      let
+				 val operCF =
+				    case Name.cFunction oper of
+				       NONE =>
+					  Error.bug
+					  (concat ["unimplemented prim:",
+						   Name.toString oper])
+				     | SOME operCF => operCF
+				 val afterOper =
+				    newBlock
+				    {args = Vector.new1 (res, ty),
+				     kind = Kind.CReturn {func = operCF},
+				     statements = Vector.new0 (),
+				     transfer = doOperCheckCF operCheck}
+			      in
+				 Transfer.CCall
+				 {args = vos args,
+				  func = operCF,
+				  return = SOME afterOper}
+			      end
+			   fun doPrim prim =
+			      [Statement.PrimApp
+			       {dst = SOME (res, ty),
+				prim = prim,
+				args = vos args}]
+			   fun doit (prim, operCheck) =
+			      if codegenImplementsPrim prim
+				 then (doPrim prim, doOperCheckCF operCheck)
+			      else ([], doOperCF (Prim.name prim, operCheck))
+			in
+			   case Prim.name prim of
+			      Word_addCheck (s, sg) => 
+				 doit (Prim.wordAdd s, 
+				       Word_addCheck (s, sg))
+			    | Word_mulCheck (s, sg) => 
+				 doit (Prim.wordMul (s, sg),
+				       Word_mulCheck (s, sg))
+			    | Word_negCheck s => 
+				 doit (Prim.wordNeg s, 
+				       Word_negCheck s)
+			    | Word_subCheck (s, sg) => 
+				 doit (Prim.wordSub s, 
+				       Word_subCheck (s, sg))
+			    | _ => Error.bug (concat ["strange overflow prim:",
+						      Name.toString (Prim.name prim)])
+			end
 	       end
 	  | S.Transfer.Bug => ([], Transfer.bug)
 	  | S.Transfer.Call {func, args, return} =>
@@ -803,25 +914,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				     ["strange prim in SSA Runtime transfer ",
 				      Prim.toString prim])
 	       end
-      val translateTransfer =
-	 Trace.trace ("SsaToRssa.translateTransfer",
-		      S.Transfer.layout,
-		      Layout.tuple2 (List.layout Statement.layout,
-				     Transfer.layout))
-	 translateTransfer
-      fun translateFormals v =
-	 Vector.keepAllMap (v, fn (x, t) =>
-			    Option.map (toRtype t, fn t => (x, t)))
-      fun bogus (t: Type.t): Operand.t =
-	 case Type.deReal t of
-	    NONE => Operand.cast (Operand.word (Type.bogusWord t), t)
-	  | SOME s => Operand.Const (Const.real (RealX.zero s))
-      val handlesSignals = 
-	 S.Program.hasPrim 
-	 (program, fn p => 
-	  case Prim.name p of
-	     Prim.Name.MLton_installSignalHandler => true
-	   | _ => false)
       fun translateStatementsTransfer (statements, ss, transfer) =
 	 let
 	    fun loop (i, ss, t): Statement.t vector * Transfer.t =
