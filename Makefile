@@ -6,6 +6,7 @@ BUILD = $(ROOT)/build
 SRC = $(ROOT)
 BIN = $(BUILD)/bin
 LIB = $(BUILD)/lib
+INC = $(LIB)/include
 COMP = $(SRC)/mlton
 RUN = $(SRC)/runtime
 MLTON = $(BIN)/mlton
@@ -128,7 +129,7 @@ deb-spell:
 
 .PHONY: dirs
 dirs:
-	mkdir -p $(BIN) $(LIB)/$(TARGET) $(LIB)/include
+	mkdir -p $(BIN) $(LIB)/$(TARGET) $(INC)
 
 .PHONY: docs
 docs: dirs
@@ -233,10 +234,12 @@ runtime:
 	@echo 'Compiling MLton runtime system for $(TARGET).'
 	$(MAKE) -C runtime
 	$(CP) $(RUN)/*.a $(LIB)/$(TARGET)/
-	$(CP) runtime/*.h include/*.h $(LIB)/include/
-	mkdir -p $(LIB)/include/platform
-	$(CP) bytecode/interpret.h $(LIB)/include
-	$(CP) runtime/platform/*.h $(LIB)/include/platform
+	chmod -R a+w $(INC)
+	$(CP) runtime/*.h include/*.h $(INC)/
+	mkdir -p $(INC)/platform
+	$(CP) bytecode/interpret.h $(INC)
+	$(CP) runtime/platform/*.h $(INC)/platform
+	chmod -R a-w $(INC)
 	$(MAKE) -C bytecode
 	bytecode/print-opcodes >$(LIB)/opcodes
 	ar r $(LIB)/$(TARGET)/libmlton.a bytecode/interpret.o 
