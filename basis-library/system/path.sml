@@ -66,9 +66,6 @@ val slash = if isWindows then "\\" else "/"
 fun isslash c = c = #"/" orelse (isWindows andalso c = #"\\")
 fun iscolon c = c = #":"
       
-(* characters disallowed in paths *)
-fun isbad c = c = #"\000" orelse (isWindows andalso iscolon c)
-      
 (* Under cygwin, the special volume "/" denotes the cygwin pseudo-root
  *)
 fun isVolumeName v =
@@ -124,18 +121,12 @@ fun fromString s =
 val getVolume = #vol o fromString
 val isAbsolute = #isAbs o fromString
 val isRelative = not o isAbsolute
-  
-(* MLton previously rejected "foo/bar" as an arc.
- * Reading the standard shows that this is NOT a problem.
- * What is more of a problem would be having a null in a filename!
- * Under windows, a ":" may also not be in a filename.
- * 
- * See toString: "provided no exception is raised and none of the strings
- * in arcs contains an embedded arc separator character" -- this means
- * that containing an embedded arc separator character does NOT raise an
- * exception.
- *)
-fun isArc s = List.length (String.fields isbad s) = 1
+
+fun isArc s =
+   s = ""
+   orelse (case fromString s of
+	      {arcs = [_], isAbs = false, vol = ""} => true
+	    | _ => false)
   
 fun toString {arcs, isAbs, vol} =
    if not (validVolume {isAbs = isAbs, vol = vol})
