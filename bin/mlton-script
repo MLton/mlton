@@ -80,8 +80,7 @@ doit "$lib" \
 		-fschedule-insns2
 		-malign-functions=5
 		-malign-jumps=2
-		-malign-loops=2
-		-mcpu=pentiumpro'				\
+		-malign-loops=2'				\
 	-target-link-opt cygwin '-lgmp'				\
 	-target-link-opt darwin "$darwinLinkOpts -lgmp"		\
 	-target-link-opt freebsd '-L/usr/local/lib/ -lgmp'	\
