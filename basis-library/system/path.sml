@@ -210,7 +210,7 @@ structure OS_Path : OS_PATH = struct
         
           fun canonName a = 
              if isWindows
-             then String.translate (Char.toString o Char.toLower) a
+             then String.translate (str o Char.toLower) a
              else a
           
           val driveTop = case arcs of "" :: _ => true | _ => false
@@ -325,7 +325,7 @@ structure OS_Path : OS_PATH = struct
   fun fromUnixPath s = 
      if not isWindows then s else
      if not (isArc s) then raise InvalidArc else
-     String.translate (fn c => if c = #"/" then slash else Char.toString c) s
+     String.translate (fn c => if c = #"/" then slash else str c) s
      
   fun toUnixPath s = 
      if not isWindows then s else
