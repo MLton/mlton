@@ -307,9 +307,29 @@ end
 (*                 parseAndElaborateMLB              *)
 (* ------------------------------------------------- *)
 
-val lexAndParseMLB = MLBFrontEnd.lexAndParseString
+fun quoteFile s = concat ["\"", String.escapeSML s, "\""]
 
-val lexAndParseMLB : String.t -> Ast.Basdec.t = 
+structure MLBString:>
+   sig
+      type t
+
+      val fromFile: File.t -> t
+      val fromString: string -> t
+      val lexAndParseMLB: t -> Ast.Basdec.t
+   end =
+   struct
+      type t = string
+
+      val fromFile = quoteFile
+
+      val fromString = fn s => s
+	 
+      val lexAndParseMLB = MLBFrontEnd.lexAndParseString
+   end
+
+val lexAndParseMLB = MLBString.lexAndParseMLB
+
+val lexAndParseMLB: MLBString.t -> Ast.Basdec.t = 
    fn input =>
    let
       val ast = lexAndParseMLB input
@@ -319,7 +339,7 @@ val lexAndParseMLB : String.t -> Ast.Basdec.t =
    end
 
 fun sourceFilesMLB {input} =
-   Ast.Basdec.sourceFiles (lexAndParseMLB input)
+   Ast.Basdec.sourceFiles (lexAndParseMLB (MLBString.fromFile input))
 
 val elaborateMLB = Elaborate.elaborateMLB
 
@@ -333,7 +353,8 @@ val displayEnvDecs =
       ("decs", List.layout CoreML.Dec.layout d)])
     ds)
 
-fun parseAndElaborateMLB (input: String.t): Env.t * (CoreML.Dec.t list * bool) vector =
+fun parseAndElaborateMLB (input: MLBString.t)
+   : Env.t * (CoreML.Dec.t list * bool) vector =
    Control.pass
    {name = "parseAndElaborate",
     suffix = "core-ml",
@@ -351,7 +372,7 @@ fun outputBasisConstants (out: Out.t): unit =
    let
       val _ = amBuildingConstants := true
       val (_, decs) =
-	 parseAndElaborateMLB "$(SML_LIB)/basis/libs/primitive.mlb"
+	 parseAndElaborateMLB (MLBString.fromFile "$(SML_LIB)/basis/libs/primitive.mlb")
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList o #1))
       (* Need to defunctorize so the constants are forced. *)
       val _ = Defunctorize.defunctorize (CoreML.Program.T {decs = decs})
@@ -366,7 +387,7 @@ fun outputBasisConstants (out: Out.t): unit =
 
 exception Done
 
-fun elaborate {input: String.t}: Xml.Program.t =
+fun elaborate {input: MLBString.t}: Xml.Program.t =
    let
       val (E, decs) = parseAndElaborateMLB input
       val _ =
@@ -394,7 +415,6 @@ fun elaborate {input: String.t}: Xml.Program.t =
 		   ()
 		end)
       val _ = if !Control.elaborateOnly then raise Done else ()
-
       val decs =
 	 Control.pass
 	 {name = "deadCode",
@@ -461,7 +481,7 @@ fun elaborate {input: String.t}: Xml.Program.t =
       xml
    end
       
-fun preCodegen {input}: Machine.Program.t =
+fun preCodegen {input: MLBString.t}: Machine.Program.t =
    let
       val xml = elaborate {input = input}
       val _ = Control.message (Control.Detail, fn () =>
@@ -582,7 +602,7 @@ fun preCodegen {input}: Machine.Program.t =
       machine
    end
  
-fun compile {input: String.t, outputC, outputS}: unit =
+fun compile {input: MLBString.t, outputC, outputS}: unit =
    let
       val machine =
 	 Control.trace (Control.Top, "pre codegen")
@@ -614,31 +634,37 @@ fun compile {input: String.t, outputC, outputS}: unit =
    end handle Done => ()
 
 fun compileMLB {input: File.t, outputC, outputS}: unit =
-   compile {input = input,
+   compile {input = MLBString.fromFile input,
 	    outputC = outputC,
 	    outputS = outputS}
 
 val elaborateMLB =
    fn {input: File.t} =>
-   (ignore (elaborate {input = input}))
+   (ignore (elaborate {input = MLBString.fromFile input}))
    handle Done => ()
 
 local
-   fun genMLB {input: File.t list}: string =
+   fun genMLB {input: File.t list}: MLBString.t =
       let
 	 val basis =
 	    String.concat
 	    (List.map ([!Control.basisLibrary, "mlton", "sml-nj", "unsafe"],
 		       fn s => concat ["$(SML_LIB)/basis/", s, ".mlb\n"]))
       in
-	 case input of
-	    [] => basis
-	  | _ => 
-	       String.concat ["local\n",
-			      basis,
-			      "in\n",
-			      String.concat (List.separate (input, "\n")), "\n",
-			      "end\n"]
+	 MLBString.fromString
+	 (case input of
+	     [] => basis
+	   | _ =>
+		let
+		   val input = List.map (input, quoteFile)
+		in
+		   String.concat
+		   ["local\n",
+		    basis,
+		    "in\n",
+		    String.concat (List.separate (input, "\n")), "\n",
+		    "end\n"]
+		end)
       end
 in
    fun compileSML {input: File.t list, outputC, outputS}: unit =
