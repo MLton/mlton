@@ -82,6 +82,11 @@ structure OS_Path : OS_PATH = struct
          relative = "" orelse
           (isVolumeName root) andalso (isVolumeName relative) andalso
            Char.toUpper (root sub 0) = Char.toUpper (relative sub 0)
+       
+      fun canonName a = 
+         if isWindows
+         then String.translate (str o Char.toLower) a
+         else a
   in
   
   val parentArc  = ".."
@@ -92,25 +97,6 @@ structure OS_Path : OS_PATH = struct
    * The big problem with windows paths is "\foo""
    * - It's not absolute, since chdir("A:\") may switch from "C:", thus
    *   changing the meaning of "\foo".
-   * - However, it's different from (and 'more absolute' than) "foo"
-   *
-   * Somehow, we need to distinguish "\foo" and "foo" without using isAbs
-   * like is done for Unix paths. Trying to keep the leading "\" in the
-   * arc leads to a mess of interactions later, so I don't do this.
-   * It seems to make the most sense to just allow a leading "" for
-   * non-absolute paths under windows. This has implications only in
-   * the implementation of mkCanonical, concat, and isRoot.
-   * 
-   * I propose for Windows:
-   * "E:foo"  => { isAbs=false, vol="E:", arcs=["foo"]  }
-   * "E:\foo" => { isAbs=true,  vol="E:", arcs=["foo"]  }
-   * "\foo"   => { isAbs=false, vol="",   arcs=["", "foo"] }
-   * "foo"    => { isAbs=false, vol="",   arcs=["foo"]  }
-   * "/foo"   => { isAbs=true,  vol="/",  arcs=["foo"]  } (cygwin volumeHack)
-   *
-   * For UNIX:
-   * "foo"    => { isAbs=false, vol="",   arcs=["foo"]  }
-   * "/foo"   => { isAbs=true,  vol="",   arcs=["foo"]  }
    *)
   fun validVolume {isAbs, vol} = 
      if isWindows 
@@ -130,10 +116,7 @@ structure OS_Path : OS_PATH = struct
         val (isAbs, arcs) =
            case (String.fields isslash rest) of
                 "" :: [] => (false, [])
-              | "" :: r => 
-                 if isWindows andalso vol = "" 
-                 then (false, "" :: r)
-                 else (true, r)
+              | "" :: r => (true, r)
               | r => (false, r)
      in
         {isAbs=isAbs, vol=vol, arcs=arcs}
@@ -158,8 +141,7 @@ structure OS_Path : OS_PATH = struct
   fun toString {arcs, isAbs, vol} =
      if not (validVolume {isAbs = isAbs, vol = vol})
 	then raise Path
-     else if not isWindows andalso not isAbs andalso 
-             case arcs of ("" :: _) => true | _ => false
+     else if not isAbs andalso case arcs of ("" :: _) => true | _ => false
         then raise Path
      else if List.exists (not o isArc) arcs
 	then raise InvalidArc
@@ -168,24 +150,18 @@ structure OS_Path : OS_PATH = struct
         (if isAbs andalso (not volumeHack orelse vol <> "/") then slash else "") ^ 
         String.concatWith slash arcs
 
-  (* The standard doesn't address:
-   *    concat("E:foo", "\foo") --> I say, raise Path
-   *)
   fun concat (p1, p2) =
      let
         fun cutEmptyTail l = 
            List.rev (case List.rev l of ("" :: r) => r | l => l)
-        fun concatArcs (a1, []) = a1
+        fun concatArcs ([], []) = []
+          | concatArcs (a1, []) = cutEmptyTail a1 @ [""]
           | concatArcs (a1, a2) = cutEmptyTail a1 @ a2
-        fun illegalJoin (_ :: _, "" :: _) = true
-          | illegalJoin _ = false
      in
         case (fromString p1, fromString p2) of
              (_, {isAbs=true, ...}) => raise Path
            | ({isAbs, vol=v1, arcs=a1}, {vol=v2, arcs=a2, ...}) =>
               if not (volumeMatch (v1, v2))
-                 then raise Path
-              else if isWindows andalso illegalJoin (a1, a2)
                  then raise Path
               else toString { isAbs=isAbs, vol=v1, arcs=concatArcs (a1, a2) }
      end
@@ -198,7 +174,6 @@ structure OS_Path : OS_PATH = struct
             | "." :: r => parentArc :: r
             | ".." :: r => parentArc :: parentArc :: r
             | _ :: [] => if isAbs then [""] else [currentArc]
-            | _ :: "" :: [] => ["", ""] (* \ *)
             | "" :: r => parentArc :: r
 	    | _ :: r => r)
       in
@@ -207,19 +182,9 @@ structure OS_Path : OS_PATH = struct
 
   fun mkCanonical p =
       let val {isAbs, vol, arcs} = fromString p
-        
-          fun canonName a = 
-             if isWindows
-             then String.translate (str o Char.toLower) a
-             else a
-          
-          val driveTop = case arcs of "" :: _ => true | _ => false
-          val isRoot = isAbs orelse driveTop
-          val bump = if driveTop andalso not isAbs then [""] else []
-        
 	  fun backup l =
 	     case l of
-		[] => if isRoot then [] else [parentArc]
+		[] => if isAbs then [] else [parentArc]
 	      | first :: res =>
 		   if first = ".."
 		      then parentArc :: parentArc :: res
@@ -230,8 +195,8 @@ structure OS_Path : OS_PATH = struct
 		 fun h l res =
 		    case l of
 		       [] => (case res of
-				 [] => if isRoot then bump @ [""] else [currentArc]
-			       | _ => res @ bump)
+				 [] => if isAbs then [""] else [currentArc]
+			       | _ => res )
 		     | a1 :: ar =>
 			  if a1 = "" orelse a1 = "."
 			     then h ar res
@@ -246,11 +211,8 @@ structure OS_Path : OS_PATH = struct
   fun parentize []      = []
     | parentize (_::ar) = parentArc :: parentize ar
 
-  fun hackRoot {vol, arcs=""::r, ...} = {isAbs=true, vol=vol, arcs=r}
-    | hackRoot x = x
-  
   fun mkRelative {path = p1, relativeTo = p2} =
-      case (hackRoot (fromString p1), hackRoot (fromString (mkCanonical p2))) of
+      case (fromString p1, fromString (mkCanonical p2)) of
 	  (_ ,                {isAbs=false,...}) => raise Path
 	| ({isAbs=false,...}, _                ) => p1
 	| ({vol=vol1, arcs=arcs1,...}, {vol=vol2, arcs=arcs2, ...}) =>
@@ -258,7 +220,7 @@ structure OS_Path : OS_PATH = struct
 		    | h a1 [] = a1
 		    | h [] a2 = parentize a2
 		    | h (a1 as (a11::a1r)) (a2 as (a21::a2r)) =
-		      if a11=a21 then h a1r a2r
+		      if canonName a11 = a21 then h a1r a2r
 		      else parentize a2 @ (if arcs1 = [""] then [] else a1)
 	      in
 		  if not (volumeMatch (vol2, vol1)) then raise Path
@@ -319,7 +281,6 @@ structure OS_Path : OS_PATH = struct
   fun isRoot path =
      case fromString path of
 	{isAbs = true,  arcs=[""],  ...} => true
-      | {isAbs = false, arcs=["", ""], ...} => isWindows
       | _ => false
   
   fun fromUnixPath s = 
