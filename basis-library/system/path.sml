@@ -299,7 +299,7 @@ fun isRoot path =
   
 fun fromUnixPath s = 
    if not isWindows then s
-   else if not (isArc s) then raise InvalidArc
+   else if Char.contains s (slash sub 0) then raise InvalidArc
    else String.translate (fn c => if c = #"/" then slash else str c) s
      
 fun toUnixPath s = 
