@@ -325,11 +325,16 @@ int setenv (const char *name, const char *value, int overwrite) {
 	/* We could use _putenv, but then we'd need a temporary buffer for
 	 * use to concat name=value. 
          */
-	if (overwrite or not (getenv (name)))
-		unless (SetEnvironmentVariable (name, value)) {
-			errno = ENOMEM; /* this happens often in Windows.. */
-			return -1;
-		}
+        if (not overwrite and getenv (name)) {
+        	errno = EEXIST;
+        	return -1; /* previous mingw setenv was buggy and returned 0 */
+	}
+	
+	if (SetEnvironmentVariable (name, value)) {
+		errno = ENOMEM; /* this happens often in Windows.. */
+		return -1;
+	}
+	
 	return 0;
 }
 
