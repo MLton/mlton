@@ -38,7 +38,7 @@ RANLIB = $(TARGET)-ranlib
 FLAGS += -b $(TARGET)
 endif
 
-CC = gcc -std=c99
+CC = gcc -std=gnu99
 CFLAGS = -O2 -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=64 $(FLAGS)
 DEBUGFLAGS = $(CFLAGS) -gstabs+ -g2
 

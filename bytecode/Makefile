@@ -1,6 +1,6 @@
 all: interpret.o interpret-gdb.o print-opcodes
 
-CC = gcc -std=c99
+CC = gcc -std=gnu99
 CFLAGS = -fomit-frame-pointer -I../runtime -I../include -Wall
 
 interpret.o: interpret.c interpret.h opcode.h

@@ -770,7 +770,7 @@ fun commandLine (args: string list): unit =
 			       (gcc,
 				List.concat
 				[targetOpts, 
-				 ["-std=c99"],
+				 ["-std=gnu99"],
 				 ["-o", output],
 				 if !debug then gccDebug else [],
 				 inputs,
@@ -826,7 +826,7 @@ fun commandLine (args: string list): unit =
 					    then debugSwitches @ switches
 					 else switches
 				      val switches =
-					 targetOpts @ ("-std=c99" :: "-c" :: switches)
+					 targetOpts @ ("-std=gnu99" :: "-c" :: switches)
 				      val output =
 					 if stop = Place.O orelse !keepO
 					    then
