@@ -983,7 +983,7 @@ fun commandLine (args: string list): unit =
 			   case stop of
 			      Place.Files =>
 				 Vector.foreach
-				 (Compile.sourceFilesMLB {input = file}, fn f => 
+				 (Compile.sourceFilesMLB {input = file}, fn f =>
 				  print (concat [f, "\n"]))
 			    | Place.SML => saveSML (maybeOut ".sml")
 			    | Place.TypeCheck =>
