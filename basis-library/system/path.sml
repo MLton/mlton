@@ -53,10 +53,10 @@ val volumeHack =
       host = Cygwin
    end
 
-(* the path seperator used in canonical paths *)
+(* the path separator used in canonical paths *)
 val slash = if isWindows then "\\" else "/"
       
-(* newer windows commands treat both / and \ as path seperators
+(* newer windows commands treat both / and \ as path separators
  * try echo sdfsdf > foo/bar under windows command.com -- it works
  * 
  * Sadly this means that toString o fromString is not the identity
