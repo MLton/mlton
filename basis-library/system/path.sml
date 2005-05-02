@@ -155,8 +155,7 @@ fun concat (p1, p2) =
 	       case (a1, a2) of
 		  ([], []) => []
 		| _ =>
-		     (case List.rev a1 of "" :: r => List.rev r | _ => a1)
-			 @ (if List.null a2 then [""] else a2)
+		     (case List.rev a1 of "" :: r => List.rev r | _ => a1) @ a2
 	 in   
 	    toString {arcs = arcs, isAbs = isAbs, vol = v1}
 	 end
@@ -246,9 +245,14 @@ fun mkAbsolute {path = p1, relativeTo = p2} =
    else mkCanonical (concat (p2, p1))
 
 fun isCanonical p = mkCanonical p = p
+
+fun endsInSlash s = slash sub 0 = String.sub (s, size s - 1)
 	
 fun joinDirFile {dir, file} =
-   if isArc file then concat (dir, file) else raise InvalidArc
+   if not (isArc file) then raise InvalidArc
+   else if 0 = size dir then file
+   else if endsInSlash dir then String.concat [dir, file]
+   else String.concat [dir, slash, file]
 
 fun splitDirFile p =
    let
