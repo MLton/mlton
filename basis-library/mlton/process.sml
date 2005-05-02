@@ -180,12 +180,14 @@ structure MLtonProcess =
 	 val getStdout = fn z => make #stdout z
       end
       
-      fun ('a, 'b) protect (f: 'a -> 'b) (x: 'a): 'b =
-	 let
-	    val () = Mask.block Mask.all
-	 in
-	    DynamicWind.wind (fn () => f x, fn () => Mask.unblock Mask.all)
-	 end
+      fun ('a, 'b) protect (f: 'a -> 'b, x: 'a): 'b =
+	 if useWindowsProcess then f x
+	 else
+	    let
+	       val () = Mask.block Mask.all
+	    in
+	       DynamicWind.wind (fn () => f x, fn () => Mask.unblock Mask.all)
+	    end
 
       fun reap (T {pid, status, stderr, stdin, stdout}) =
 	 case !status of
@@ -196,8 +198,7 @@ structure MLtonProcess =
 		   * would only mask SIGINT, SIGQUIT and SIGHUP
 		   *)
 		  val (_, st) =
-		     (if useWindowsProcess then (fn f => f) else protect)
-	             Process.waitpid (Process.W_CHILD pid, [])
+		     protect (Process.waitpid, (Process.W_CHILD pid, []))
 		  val () = status := SOME st
 	       in
 		  st
@@ -221,7 +222,7 @@ structure MLtonProcess =
 	 | SOME _ => ()
 
       fun launchWithFork (path, args, env, stdin, stdout, stderr) =
-	 case protect Process.fork () of
+	 case protect (Process.fork, ()) of
 	    NONE => (* child *)
 	       let 
 		  val base =
