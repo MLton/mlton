@@ -15,8 +15,6 @@ structure OS_Process: OS_PROCESS_EXTRA =
    struct
       open Posix.Process
 
-      structure Signal = MLtonSignal
-	 
       structure Status =
 	 struct
 	    open Primitive.Status
@@ -40,28 +38,9 @@ structure OS_Process: OS_PROCESS_EXTRA =
       val success = Status.success
       fun isSuccess st = st = success
 	 
-      fun wait (pid: Pid.t): Status.t =
-	 Status.fromPosix (#2 (waitpid (W_CHILD pid, [])))
-	       
       fun system cmd =
-	 let
-	    val pid =
-	       MLtonProcess.spawn {args = ["sh", "-c", cmd],
-				   path = "/bin/sh"}
-	    val old =
-	       List.map (fn s => 
-			 let
-			    open Signal
-			    val old = getHandler s
-			    val _ = setHandler (s, Handler.ignore)
-			 in
-			    (s, old)
-			 end)
-	       [Posix.Signal.int, Posix.Signal.quit]
-	 in
-	    DynamicWind.wind (fn () => wait pid,
-			      fn () => List.app Signal.setHandler old)
-	 end
+	 PosixPrimitive.Process.system (NullString.fromString
+					(concat [cmd, "\000"]))
 
       val atExit = MLtonProcess.atExit
 	 

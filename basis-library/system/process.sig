@@ -24,6 +24,4 @@ signature OS_PROCESS_EXTRA =
 	    val fromInt: int -> t
 	    val fromPosix: Posix.Process.exit_status -> t
 	 end
-
-      val wait: Posix.Process.pid -> status
    end

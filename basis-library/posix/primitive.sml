@@ -197,10 +197,14 @@ structure PosixPrimitive =
 	    val pause = _import "Posix_Process_pause": unit -> int;
 	    val sleep = _import "Posix_Process_sleep": int -> int;
 	    val stopSig = _import "Posix_Process_stopSig": Status.t -> Signal.t;
+	    val system =
+	       _import "Posix_Process_system": NullString.t -> Status.t;
 	    val termSig = _import "Posix_Process_termSig": Status.t -> Signal.t;
 	    val waitpid =
 	       _import "Posix_Process_waitpid"
 	       : Pid.t * Status.t ref * int -> Pid.t;
+            val cwait =
+               _import "MLton_Process_cwait": Pid.t * Status.t ref -> Pid.t;
 	 end
 
       structure ProcEnv =

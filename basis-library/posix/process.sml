@@ -92,6 +92,9 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	 val status: Status.t ref = ref (Status.fromInt 0)
 	 fun wait (wa, status, flags) =
 	    let
+	       val useCwait = 
+	          Primitive.MLton.Platform.OS.useWindowsProcess
+	          andalso case wa of W_CHILD _ => true | _ => false
 	       val p =
 		  case wa of
 		     W_ANY_CHILD => ~1
@@ -103,8 +106,11 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	       SysCall.syscallRestart
 	       (fn () =>
 		let
-		   val pid = Prim.waitpid (Pid.fromInt p, status,
-					   SysWord.toInt flags)
+		   val pid = 
+		      if useCwait 
+			 then Prim.cwait (Pid.fromInt p, status)
+		      else Prim.waitpid (Pid.fromInt p, status,
+					 SysWord.toInt flags)
 		in
 		   (Pid.toInt pid, fn () => pid)
 		end)

@@ -985,8 +985,6 @@ structure Primitive =
 
 	    structure Process =
 	       struct
-                  val cwait =
-                     _import "MLton_Process_cwait": Pid.t * int ref -> Pid.t;
 		  val spawne =
 		     _import "MLton_Process_spawne"
 		     : (NullString.t * NullString.t array * NullString.t array

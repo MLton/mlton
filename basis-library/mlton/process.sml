@@ -187,22 +187,6 @@ structure MLtonProcess =
 	    DynamicWind.wind (fn () => f x, fn () => Mask.unblock Mask.all)
 	 end
 
-      fun cwait pid =
-	 let
-	    val status: int ref = ref 0
-	    val pid =
-	       SysCall.syscall
-	       (fn () =>
-		let 
-		   val p = Prim.cwait (pid, status)
-		   val p' = Pid.toInt p
-		in
-		   (p', fn () => p)
-		end)
-	 in
-	    (pid, Process.fromStatus (Exit.Status.fromInt (!status)))
-	 end
-
       fun reap (T {pid, status, stderr, stdin, stdout}) =
 	 case !status of
 	    NONE => 
@@ -212,9 +196,8 @@ structure MLtonProcess =
 		   * would only mask SIGINT, SIGQUIT and SIGHUP
 		   *)
 		  val (_, st) =
-		     if useWindowsProcess
-			then cwait pid
-		     else protect Process.waitpid (Process.W_CHILD pid, [])
+		     (if useWindowsProcess then (fn f => f) else protect)
+	             Process.waitpid (Process.W_CHILD pid, [])
 		  val () = status := SOME st
 	       in
 		  st

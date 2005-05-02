@@ -720,7 +720,7 @@ fun commandLine (args: string list): unit =
 			let
 			   val (tmpVar, default) =
 			      case MLton.Platform.OS.host of
-				 MinGW => ("TEMP", "C:/WINNT/TEMP")
+				 MinGW => ("TEMP", "C:/WINDOWS/TEMP")
 			       | _ => ("TMPDIR", "/tmp")
 			in
 			   case Process.getEnv tmpVar of
