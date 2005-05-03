@@ -27,7 +27,7 @@ structure MLtonProcess =
       type chain = unit
       type any = unit
       
-      val useWindowsProcess = MLton.Platform.OS.useWindowsProcess
+      val useWindowsProcess = not MLton.Platform.OS.forkIsEnabled
 
       val readWrite =
         let

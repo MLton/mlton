@@ -977,8 +977,6 @@ structure Primitive =
 				 Cygwin => cygwinUseMmap
 			       | MinGW => false
 			       | _ => true
-
-			   val useWindowsProcess = not forkIsEnabled
 			end
 		     end
 	       end

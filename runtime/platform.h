@@ -448,8 +448,6 @@ void MLton_Profile_setCurrent (Pointer d);
 /*           MLton.Process            */
 /* ---------------------------------- */
 
-Pid MLton_Process_create (NullString cmds, NullString args, NullString envs,
-				Fd in, Fd out, Fd err);
 Pid MLton_Process_cwait (Pid p, Pointer s);
 Int MLton_Process_spawne (NullString p, Pointer a, Pointer e);
 Int MLton_Process_spawnp (NullString p, Pointer a);
