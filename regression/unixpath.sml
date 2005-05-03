@@ -244,17 +244,19 @@ val test11b = (splitDirFile "" seq "WRONG")
 *)
 
 val test12 = 
-    tst' "test12" (fn _ => 
-	   "" = joinDirFile {dir = "", file = ""}
-	   andalso "b" = joinDirFile {dir = "", file = "b"}
-	   andalso "/" = joinDirFile {dir = "/", file = ""}
-	   andalso "/b" = joinDirFile {dir = "/", file = "b"}
-	   andalso "a/b" = joinDirFile {dir = "a", file = "b"}
-	   andalso "/a/b" = joinDirFile {dir = "/a", file = "b"}
-	   andalso "/c/a/b" = joinDirFile {dir = "/c/a", file = "b"}
-	   andalso "/c/a/b/" = joinDirFile {dir = "/c/a/b", file = ""}
-	   andalso "/c/a/b.foo.bar" = joinDirFile {dir = "/c/a", file="b.foo.bar"}
-	   andalso "/c/a/b.foo" = joinDirFile {dir = "/c/a", file = "b.foo"});
+    tst' "test12" (fn _ =>
+		   List.all (fn (res, dir, file) =>
+			     res = joinDirFile {dir = dir, file = file})
+		   [("", "", ""),
+		    ("b", "", "b"),
+		    ("/", "/", ""),
+		    ("/b", "/", "b"),
+		    ("a/b", "a", "b"),
+		    ("/a/b", "/a", "b"),
+		    ("/c/a/b", "/c/a", "b"),
+		    ("/c/a/b/", "/c/a/b", ""),
+		    ("/c/a/b.foo.bar", "/c/a","b.foo.bar"),
+		    ("/c/a/b.foo", "/c/a", "b.foo")])
 
 val test13 = 
     tst' "test13" (fn _ => 
