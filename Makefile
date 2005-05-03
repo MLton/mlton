@@ -240,6 +240,8 @@ runtime:
 	$(CP) bytecode/interpret.h $(INC)
 	$(CP) runtime/platform/*.h $(INC)/platform
 	chmod -R a-w $(INC)
+	chmod a+w $(INC)/platform
+	chmod a+w $(INC)
 	$(MAKE) -C bytecode
 	bytecode/print-opcodes >$(LIB)/opcodes
 	ar r $(LIB)/$(TARGET)/libmlton.a bytecode/interpret.o 
