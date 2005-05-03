@@ -28,7 +28,7 @@
 #else
 #define HAS_TIME_PROFILING FALSE
 #endif
-#define HAS_WEAK 1
+#define HAS_WEAK TRUE
 
 #define MLton_Platform_OS_host "linux"
 

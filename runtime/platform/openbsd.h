@@ -23,6 +23,6 @@
 #define HAS_SIGALTSTACK TRUE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
-#define HAS_WEAK 1
+#define HAS_WEAK TRUE
 
 #define MLton_Platform_OS_host "openbsd"
