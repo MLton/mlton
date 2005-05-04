@@ -204,7 +204,14 @@ structure PosixPrimitive =
 	       _import "Posix_Process_waitpid"
 	       : Pid.t * Status.t ref * int -> Pid.t;
             val cwait =
-	       if Primitive.MLton.Platform.OS.useWindowsProcess
+	       if let
+		     open Primitive.MLton.Platform.OS
+		  in
+		     case host of
+			Cygwin => true
+		      | MinGW => true
+		      | _ => false
+		  end
 		  then _import "MLton_Process_cwait": Pid.t * Status.t ref -> Pid.t;
 	       else fn _ => raise Fail "cwait not defined"
 	 end
