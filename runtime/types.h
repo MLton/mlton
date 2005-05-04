@@ -13,7 +13,9 @@
 /* We need these because in header files for exported SML functions, types.h is
  * included without platform.h.
  */
+#ifndef _ISOC99_SOURCE
 #define _ISOC99_SOURCE
+#endif
 #include <stdint.h>
 
 typedef int8_t Int8;
