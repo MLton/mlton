@@ -247,13 +247,13 @@ in
 	 App {arg, func} => seq [VarExp.layout func, str " ", VarExp.layout arg]
        | Case {test, cases, default} =>
 	    align [seq [str "case ", VarExp.layout test, str " of"],
+		   Cases.layout (cases, layoutExp),
 		   indent
 		   (align
 		    [case default of
 			NONE => empty
 		      | SOME (e, _) => seq [str "_ => ", layoutExp e]],
-		    2),
-		   Cases.layout (cases, layoutExp)]
+		    2)]
        | ConApp {arg, con, targs, ...} =>
 	    seq [Con.layout con,
 		 layoutTargs targs,
