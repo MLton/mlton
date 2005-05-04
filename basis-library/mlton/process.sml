@@ -312,10 +312,8 @@ structure MLtonProcess =
 		  stdout = ref cstdout}
             end
 
-      val useSpawn = not Primitive.MLton.Platform.OS.forkIsEnabled
-
       fun spawne {path, args, env} =
-	 if useSpawn
+	 if useWindowsProcess
 	    then
 	       let
 		  val path = NullString.nullTerm path
@@ -339,7 +337,7 @@ structure MLtonProcess =
 		 path = path}
 
       fun spawnp {args, file} =
-	 if useSpawn
+	 if useWindowsProcess
 	    then
 	       let
 		  val file = NullString.nullTerm file
