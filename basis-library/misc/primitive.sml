@@ -982,12 +982,36 @@ structure Primitive =
 	    structure Process =
 	       struct
 		  val spawne =
-		     _import "MLton_Process_spawne"
-		     : (NullString.t * NullString.t array * NullString.t array
-			-> Pid.t);
+		     if let
+			   open Platform.OS
+			in
+			   case host of
+			      Cygwin => true
+			    | MinGW => true
+			    | _ => false
+			end
+			then
+			   _import "MLton_Process_spawne"
+			   : (NullString.t 
+			      * NullString.t array
+			      * NullString.t array
+			      -> Pid.t);
+			else fn _ => raise Fail "spawne not defined"
 		  val spawnp =
-		     _import "MLton_Process_spawnp"
-		     : NullString.t * NullString.t array -> Pid.t;
+		     if let
+			   open Platform.OS
+			in
+			   case host of
+			      Cygwin => true
+			    | MinGW => true
+			    | _ => false
+			end
+			then
+			   _import "MLton_Process_spawnp"
+			   : (NullString.t 
+			      * NullString.t array
+			      -> Pid.t);
+			else fn _ => raise Fail "spawnp not defined"
 	       end
 	    
 	    structure Profile =
