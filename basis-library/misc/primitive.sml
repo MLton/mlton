@@ -968,16 +968,14 @@ structure Primitive =
 			    | "solaris" => Solaris
 			    | _ => raise Fail "strange MLton_Platform_OS_host"
 
-			local
-			   val cygwinUseMmap =
-			      _import "MLton_Platform_CygwinUseMmap": bool;
-			in
-			   val forkIsEnabled =
-			      case host of
-				 Cygwin => cygwinUseMmap
-			       | MinGW => false
-			       | _ => true
-			end
+			val forkIsEnabled =
+			   case host of
+			      Cygwin =>
+				 _import "MLton_Platform_CygwinUseMmap": bool;
+			    | MinGW => false
+			    | _ => true
+
+			val useWindowsProcess = not forkIsEnabled
 		     end
 	       end
 

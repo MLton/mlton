@@ -90,21 +90,11 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 
       local
 	 val status: Status.t ref = ref (Status.fromInt 0)
-	 val useCwait = not Primitive.MLton.Platform.OS.forkIsEnabled
-	 val primwait =
-	    if useCwait
-	       then 
-		  fn (pid, status, flags, useCwait) => 
-		  if useCwait 
-		     then Prim.cwait (pid, status)
-		     else Prim.waitpid (pid, status, flags)
-	       else 
-		  fn (pid, status, flags, _) =>
-		  Prim.waitpid (pid, status, flags)
 	 fun wait (wa, status, flags) =
 	    let
 	       val useCwait = 
-	          case wa of W_CHILD _ => true | _ => false
+	          Primitive.MLton.Platform.OS.useWindowsProcess
+	          andalso case wa of W_CHILD _ => true | _ => false
 	       val p =
 		  case wa of
 		     W_ANY_CHILD => ~1
@@ -117,9 +107,10 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	       (fn () =>
 		let
 		   val pid = 
-		      primwait (Pid.fromInt p, status, 
-				SysWord.toInt flags,
-				useCwait)
+		      if useCwait 
+			 then Prim.cwait (Pid.fromInt p, status)
+		      else Prim.waitpid (Pid.fromInt p, status,
+					 SysWord.toInt flags)
 		in
 		   (Pid.toInt pid, fn () => pid)
 		end)
