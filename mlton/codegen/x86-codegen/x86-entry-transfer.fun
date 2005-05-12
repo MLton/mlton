@@ -52,7 +52,7 @@ struct
 			 => isJump truee andalso isJump falsee
 			 | Transfer.Switch {cases, default, ...}
 			 => isJump default andalso
-			    Transfer.Cases.forall(cases, isJump)
+			    Transfer.Cases.forall(cases, isJump o #2)
 			 | Transfer.Tail {target, ...}
 			 => isFunc target
 			 | Transfer.NonTail {target, return, handler, ...}

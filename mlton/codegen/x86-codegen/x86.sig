@@ -1108,43 +1108,19 @@ signature X86 =
       sig
 	structure Cases :
 	  sig
-	    datatype 'a t
-	      = Char of (char * 'a) list
-	      | Int of (int * 'a) list
-	      | Word of (word * 'a) list
+	    datatype 'a t = Word of (word * 'a) list
 
-	    val char : (char * 'a) list -> 'a t
-	    val int : (int * 'a) list -> 'a t
 	    val word : (word * 'a) list -> 'a t
 
 	    val isEmpty : 'a t -> bool
 	    val isSingle : 'a t -> bool
-	    val extract : 'a t * ('a -> 'b) -> 'b
-	    val extract' : 'a t * ('b -> 'c) *
-	                          (char * 'a -> 'b) *
-				  (int * 'a -> 'b) *
-				  (word * 'a -> 'b) -> 'c
+	    val extract : 'a t * (word * 'a -> 'b) -> 'b
 	    val count : 'a t * ('a -> bool) -> int
-	    val keepAll : 'a t * ('a -> bool) -> 'a t
-	    val keepAll' : 'a t * ('b -> bool) *
-                                  (char * 'a -> 'b) *
-                                  (int * 'a -> 'b) *
-                                  (word * 'a -> 'b) -> 'a t
-	    val forall : 'a t * ('a -> bool) -> bool
-	    val forall' : 'a t * ('b -> bool) *
-	                         (char * 'a -> 'b) *
-				 (int * 'a -> 'b) *
-				 (word * 'a -> 'b) -> bool
-	    val foreach : 'a t * ('a -> unit) -> unit
-	    val foreach' : 'a t * ('b -> unit) *
-	                          (char * 'a -> 'b) *
-				  (int * 'a -> 'b) *
-				  (word * 'a -> 'b) -> unit
-	    val map : 'a t * ('a -> 'b) -> 'b t
-	    val map' : 'a t * ('b -> 'c) *
-	                      (char * 'a -> 'b) *
-	                      (int * 'a -> 'b) *
-	                      (word * 'a -> 'b) -> 'c list
+	    val keepAll : 'a t * (word * 'a -> bool) -> 'a t
+	    val forall : 'a t * (word * 'a -> bool) -> bool
+	    val foreach : 'a t * (word * 'a -> unit) -> unit
+	    val map : 'a t * (word * 'a -> 'b) -> 'b t
+	    val mapToList : 'a t * (word * 'a -> 'b) -> 'b list
 	  end
 
 	datatype t

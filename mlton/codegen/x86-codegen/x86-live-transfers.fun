@@ -279,7 +279,7 @@ struct
 			  doit falsee)
 		      | Switch {cases, default, ...}
 		      => (doit default;
-			  Transfer.Cases.foreach(cases, doit))
+			  Transfer.Cases.foreach(cases, doit o #2))
 		      | Tail {...}
 		      => ()
 		      | NonTail {return, handler, ...}
@@ -874,7 +874,7 @@ struct
 			     doit' falsee)
 			 | Switch {cases, default, ...}
 			 => (doit' default;
-			     Transfer.Cases.foreach(cases, doit'))
+			     Transfer.Cases.foreach(cases, doit' o #2))
 			 | Tail {...}
 			 => ()
 			 | NonTail {return, handler, ...}
@@ -990,7 +990,7 @@ struct
 		       => (doit' truee;
 			   doit' falsee)
 		       | Switch {cases, default, ...}
-		       => (Transfer.Cases.foreach(cases, doit');
+		       => (Transfer.Cases.foreach(cases, doit' o #2);
 			   doit' default)
 		       | Tail {...}
 		       => ()

@@ -3848,49 +3848,27 @@ struct
     struct
       structure Cases =
 	struct
-	  datatype 'a t
-	    = Char of (char * 'a) list
-	    | Int of (int * 'a) list
-	    | Word of (word * 'a) list
+	  datatype 'a t = Word of (word * 'a) list
 
-	  val char = Char
-	  val int = Int
 	  val word = Word
 
 	  fun isEmpty cases
 	    = case cases
-	       of Char [] => true
-		| Int [] => true
-		| Word [] => true
-		| _ => false 
+	       of Word [] => true
+	        | _ => false
 
 	  fun isSingle cases
 	    = case cases
-		of Char [_] => true
-		 | Int [_] => true
-		 | Word [_] => true
+		of Word [_] => true
 		 | _ => false
 
 	  fun extract(cases,f)
 	    = let
-		fun doit [(_,target)] = f target
+		fun doit [(k,target)] = f (k, target)
 		  | doit _ = Error.bug "Transfer.Cases.extract"
 	      in
 		case cases
-		  of Char cases => doit cases
-		   | Int cases => doit cases
-		   | Word cases => doit cases
-	      end
-
-	  fun extract'(cases,f,cf',if',wf')
-	    = let
-		fun doit ([(k,target)],f') = (f o f') (k, target)
-		  | doit _ = Error.bug "Transfer.Cases.extract"
-	      in
-		case cases
-		  of Char cases => doit(cases,cf')
-		   | Int cases => doit(cases,if')
-		   | Word cases => doit(cases,wf')
+		  of Word cases => doit cases
 	      end
 
 	  fun count(cases, p)
@@ -3905,89 +3883,47 @@ struct
 					       end
 	      in
 		case cases
-		  of Char cases => doit cases
-		   | Int cases => doit cases
-		   | Word cases => doit cases
+		  of Word cases => doit cases
 	      end
 
 	  fun keepAll(cases, p)
 	    = let
-		fun doit l = List.keepAll(l, fn (_,target) => p target)
+		fun doit l = List.keepAll(l, fn (k,target) => p (k,target))
 	      in
 		case cases
-		  of Char cases => Char(doit cases)
-		   | Int cases => Int(doit cases)
-		   | Word cases => Word(doit cases)
-	      end
-
-	  fun keepAll'(cases, p, cp', ip', wp')
-	    = let
-		fun doit (l, p') = List.keepAll(l, p o p')
-	      in
-		case cases
-		  of Char cases => Char(doit(cases,cp'))
-		   | Int cases => Int(doit(cases,ip'))
-		   | Word cases => Word(doit(cases,wp'))
+		  of Word cases => Word(doit cases)
 	      end
 
 	  fun forall(cases, f)
 	    = let
-		fun doit l = List.forall(l, fn (_, target) => f target)
+		fun doit l = List.forall(l, fn (k, target) => f (k, target))
 	      in
 		case cases
-		  of Char cases => doit cases
-		   | Int cases => doit cases
-		   | Word cases => doit cases
-	      end
-
-	  fun forall'(cases, f, cf', if', wf')
-	    = let
-		fun doit(l,f') = List.forall(l, f o f')
-	      in
-		case cases
-		  of Char cases => doit(cases, cf')
-		   | Int cases => doit(cases, if')
-		   | Word cases => doit(cases, wf')
+		  of Word cases => doit cases
 	      end
 
 	  fun foreach(cases, f)
 	    = let
-		fun doit l = List.foreach(l, fn (_, target) => f target)
+		fun doit l = List.foreach(l, fn (k, target) => f (k, target))
 	      in
 		case cases
-		  of Char cases => doit cases
-		   | Int cases => doit cases
-		   | Word cases => doit cases
-	      end
-
-	  fun foreach'(cases, f, cf', if', wf')
-	    = let
-		fun doit(l,f') = List.foreach(l, f o f')
-	      in
-		case cases
-		  of Char cases => doit(cases, cf')
-		   | Int cases => doit(cases, if')
-		   | Word cases => doit(cases, wf')
+		  of Word cases => doit cases
 	      end
 
 	  fun map(cases, f)
 	    = let
-		fun doit l = List.map(l, fn (k,target) => (k, f target))
+		fun doit l = List.map(l, fn (k,target) => (k, f (k, target)))
 	      in
 		case cases
-		  of Char cases => Char(doit cases)
-		   | Int cases => Int(doit cases)
-		   | Word cases => Word(doit cases)
+		  of Word cases => Word(doit cases)
 	      end
 
-	  fun map'(cases, f, cf', if', wf')
+	  fun mapToList(cases, f)
 	    = let
-		fun doit(l,f') = List.map(l, f o f')
+		fun doit l = List.map(l, fn (k,target) => f (k, target))
 	      in
 		case cases
-		  of Char cases => doit(cases, cf')
-		   | Int cases => doit(cases, if')
-		   | Word cases => doit(cases, wf')
+		  of Word cases => doit cases
 	      end
 	end
 
@@ -4027,16 +3963,13 @@ struct
 	   | Switch {test, cases, default}
 	   => (concat["SWITCH ",
 		      Operand.toString test]) ^
-	      (concat o Cases.map')
+	      (concat o Cases.mapToList)
 	      (cases,
-	       fn (s, target) => concat[" (",
-					s,
+	       fn (w, target) => concat[" (",
+					Word.toString w,
 					" -> GOTO ",
 					Label.toString target,
-					")"],
-	       fn (c, target) => (Char.escapeC c, target),
-	       fn (i, target) => (Int.toString i, target),
-	       fn (w, target) => (Word.toString w, target)) ^
+					")"]) ^
 	      (concat[" GOTO ",
 		      Label.toString default])
 	   | Tail {target, live} 
@@ -4120,11 +4053,8 @@ struct
 	= fn Goto {target} => [target]
 	   | Iff {truee,falsee,...} => [truee,falsee]
 	   | Switch {cases,default,...} 
-	   => default::(Cases.map'
+	   => default::(Cases.mapToList
 			(cases,
-			 fn target => target,
-			 fn (_,target) => target,
-			 fn (_,target) => target,
 			 fn (_,target) => target))
 	   | NonTail {return,handler,...} => return::(case handler 
 							of NONE => nil

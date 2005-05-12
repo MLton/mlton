@@ -1758,18 +1758,11 @@ struct
 		      val statements = statements'
 		      val test = valOf (Immediate.eval immediate)
 		      val cases
-			= Transfer.Cases.keepAll'
+			= Transfer.Cases.keepAll
 			  (cases,
-			   fn k => k = test,
-			   fn (c,target) 
-			    => (x86JumpInfo.decNear(jumpInfo, target);
-				(Word.fromInt o Char.ord) c),
-			   fn (i,target) 
-			    => (x86JumpInfo.decNear(jumpInfo, target);
-				Word.fromInt i),
 			   fn (w,target) 
 			    => (x86JumpInfo.decNear(jumpInfo, target);
-				w))
+				w = test))
 
 		      val transfer
 			= if Transfer.Cases.isEmpty cases
@@ -1781,8 +1774,7 @@ struct
 
 				   val target
 				     = Transfer.Cases.extract
-				       (cases, 
-					fn target => target)
+				       (cases, #2)
 				   val _ = x86JumpInfo.incNear
 				           (jumpInfo, target)
 				 in
@@ -1836,11 +1828,11 @@ struct
 		      val cases
 			= Transfer.Cases.keepAll
 			  (cases,
-			   fn target => if Label.equals(target, default)
-					  then (x86JumpInfo.decNear
-						(jumpInfo, target);
-						false)
-					  else true)
+			   fn (_,target) => if Label.equals(target, default)
+					       then (x86JumpInfo.decNear
+						     (jumpInfo, target);
+						     false)
+					       else true)
 
 		      val (statements, transfer)
 			= if Transfer.Cases.isEmpty cases
@@ -1849,15 +1841,10 @@ struct
 			  else if Transfer.Cases.isSingle cases
 			    then let
 				   val (k,target)
-				     = Transfer.Cases.extract'
+				     = Transfer.Cases.extract
 				       (cases,
-					fn (k,target) => (k,target),
-					fn (c,target) 
-					 => (Immediate.const_char c, target),
-					fn (i,target)
-					 => (Immediate.const_int i, target),
-					fn (w,target)
-					 => (Immediate.const_word w, target))
+					fn (w,target) =>
+					(Immediate.const_word w, target))
 				   val size
 				     = case Operand.size test
 					 of SOME size => size
@@ -1962,8 +1949,7 @@ struct
 	         | Transfer.Switch {test, cases, default}
 	         => Transfer.Switch {test = test,
 				     cases = Transfer.Cases.map
-				             (cases,
-					      fn target => update target),
+				             (cases, update o #2),
 			             default = update default}
 	         | transfer => transfer
 

@@ -203,11 +203,6 @@ struct
 		  {chunk = chunk,
 		   frameInfoToX86 = frameInfoToX86,
 		   liveInfo = liveInfo}
-		  handle exn
-		   => Error.bug ("x86Translate.translateChunk::" ^ 
-				 (case exn
-				    of Fail s => s
-				     | _ => "?"))
 		  
 	      val chunk : x86.Chunk.t
 		= x86Simplify.simplify 
@@ -221,11 +216,6 @@ struct
 		   delProfileLabel = delProfileLabel,
 		   liveInfo = liveInfo,
 		   jumpInfo = jumpInfo}
-		  handle exn
-		   => Error.bug ("x86Simplify.simplify::" ^
-				 (case exn
-				    of Fail s => s
-				     | _ => "?"))
 
 	      val unallocated_assembly : x86.Assembly.t list list
 		= (x86GenerateTransfers.generateTransfers
@@ -235,9 +225,6 @@ struct
 		    liveInfo = liveInfo,
 		    jumpInfo = jumpInfo,
 		    reserveEsp = reserveEsp})
-		  handle exn
-		   => (Error.bug ("x86GenerateTransfers.generateTransfers::" ^
-				  Layout.toString (Exn.layout exn)))
 
 	      val allocated_assembly : Assembly.t list list
 		= x86AllocateRegisters.allocateRegisters 
@@ -246,28 +233,13 @@ struct
 		    * on the main function (initGlobals)
 		    *)
 		   liveness = not isMain}
-		  handle exn
-		   => Error.bug ("x86AllocateRegister.allocateRegisters::" ^
-				 (case exn
-				    of Fail s => s
-				     | _ => "?"))
 
 	      val _ =
-(*
 		 Assert.assert
 		 ("x86CodeGen.output: invalid",
 		  fn () => 
-*)
-		  (ignore (x86Validate.validate 
-			   {assembly = allocated_assembly}))
-		  handle exn => 
-		     Error.warning ("x86Validate.validate::" ^ 
-				    (case exn of 
-					Fail s => s
-				      | _ => "?"))
-(*
-		 )
-*)
+		  x86Validate.validate 
+		  {assembly = allocated_assembly})
 
 	      val validated_assembly = allocated_assembly
 

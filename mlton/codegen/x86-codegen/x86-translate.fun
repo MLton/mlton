@@ -290,11 +290,6 @@ struct
 			    (x86.Operand.immediate_const_word hi, x86.Size.LONG))
 			end
 	       end
-	       
-      val toX86Operand =
-	 fn operand =>
-	 toX86Operand operand
-	 handle exn => Error.reraise (exn, "x86Translate.Operand.toX86Operand")
     end
 
   type transInfo = x86MLton.transInfo
@@ -482,9 +477,6 @@ struct
 		   AppendList.single
 		   (x86.Block.mkProfileBlock'
 		    {profileLabel = l}))
-	  handle exn
-	   => Error.reraise (exn, concat ["x86Translate.Statement.toX86Blocks::",
-					  Layout.toString (layout statement)])
     end
 
   structure Transfer =
@@ -721,8 +713,6 @@ struct
 				    statements = [],
 				    transfer = SOME transfer}))
 		 end)
-	  handle exn
-	   => Error.reraise (exn, "x86Translate.Transfer.toX86Blocks")
     end
 
   structure Block =
@@ -779,8 +769,6 @@ struct
 	  in
 	    blocks
 	  end
-	  handle exn
-	   => Error.reraise (exn, "x86Translate.Block.toX86Blocks")
     end
 
   structure Chunk =
@@ -823,8 +811,6 @@ struct
 	  in
 	    x86.Chunk.T {data = data, blocks = x86Blocks}
 	  end
-	  handle exn
-	   => Error.reraise (exn, "x86Translate.Chunk.toX86Chunk")
     end
 
   fun translateChunk {chunk: x86MLton.Machine.Chunk.t,

@@ -445,8 +445,6 @@ signature X86_PSEUDO =
 	  sig
 	    type 'a t
 	      
-	    val char : (char * 'a) list -> 'a t
-	    val int : (int * 'a) list -> 'a t
 	    val word : (word * 'a) list -> 'a t
 	  end
 

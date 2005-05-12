@@ -321,8 +321,6 @@ struct
 	     liveInfo = liveInfo,
 	     jumpInfo = jumpInfo,
 	     loopInfo = loopInfo}
-	    handle exn
-	     => Error.reraise (exn, "x86LiveTransfers.computeLiveTransfers")
 
 	val getLiveRegsTransfers
 	  = #1 o x86LiveTransfers.getLiveTransfers
@@ -855,7 +853,7 @@ struct
 		       = getLive(liveInfo, default)
 
 		     val cases
-		       = Transfer.Cases.map'
+		       = Transfer.Cases.mapToList
 		         (cases,
 			  fn (k, target)
 			   => let
@@ -869,7 +867,7 @@ struct
 				AppendList.fromList
 				[Assembly.instruction_cmp
 				 {src1 = test,
-				  src2 = Operand.immediate_const k,
+				  src2 = Operand.immediate_const_word k,
 				  size = size},
 				 Assembly.directive_saveregalloc
 				 {live = MemLocSet.add
@@ -881,10 +879,7 @@ struct
 				 Assembly.instruction_jcc
 				 {condition = Instruction.E,
 				  target = Operand.label target'}]
-			      end,
-			  fn (c, target) => (Immediate.Char c, target),
-			  fn (i, target) => (Immediate.Int i, target),
-			  fn (w, target) => (Immediate.Word w, target))
+			      end)
 		   in
 		     AppendList.appends
 		     [AppendList.single
@@ -1388,7 +1383,7 @@ struct
 			 minFn: 'a * 'a -> 'a,
 			 max: 'a,
 			 maxFn: 'a * 'a -> 'a,
-			 range: 'a * 'a -> int}
+			 range: 'a * 'a -> word}
 
 		    val Liveness.T {dead, ...}
 		      = livenessTransfer {transfer = transfer,
@@ -1631,7 +1626,7 @@ struct
 				       reserve = false}]},
 			   Assembly.instruction_cmp
 			   {src1 = indexTemp,
-			    src2 = Operand.immediate_const_int rangeK,
+			    src2 = Operand.immediate_const_word rangeK,
 			    size = Size.LONG},
 			   Assembly.directive_saveregalloc
 			   {id = idT,
@@ -1641,7 +1636,7 @@ struct
 				     stackTop ()),
 				    frontier ())},
 			   Assembly.instruction_jcc
-			   {condition = Instruction.AE,
+			   {condition = Instruction.A,
 			    target = Operand.label defaultT},
 			   Assembly.instruction_jmp
 			   {target = address,
@@ -1674,18 +1669,12 @@ struct
 			    = reduce(cases, ops)
 			    
 			  val rangeK 
-			    = SOME (range(minK,maxK))
-			      handle Overflow
-			       => NONE
+			    = range(minK,maxK)
 			in
 			  if length >= 8 
 			     andalso
-			     (isSome rangeK
-			      andalso
-			      valOf rangeK <= 2 * length)
+			     Word.div(rangeK,0wx2) <= Word.fromInt length
 			    then let
-				   val rangeK = valOf rangeK
-
 				   val cases 
 				     = List.insertionSort
 				       (cases, 
@@ -1704,40 +1693,7 @@ struct
 			end
 		  in
 		    case cases
-		      of Transfer.Cases.Char cases
-		       => doit
-			  (cases,
-			   {zero = #"\000",
-			    even = fn c => (Char.ord c) mod 2 = 0,
-			    incFn = Char.succ,
-			    decFn = Char.pred,
-			    halfFn = fn c => Char.chr((Char.ord c) div 2),
-			    ltFn = Char.<,
-			    gtFn = Char.>,
-			    min = Char.minChar,
-			    minFn = Char.min,
-			    max = Char.maxChar,
-			    maxFn = Char.max,
-			    range = fn (min,max) => ((Char.ord max) - 
-						     (Char.ord min)) + 1},
-			   Immediate.const_char)
-		       | Transfer.Cases.Int cases
-		       => doit
-			  (cases,
-			   {zero = 0,
-			    even = fn i => i mod 2 = 0,
-			    incFn = fn i => i + 1,
-			    decFn = fn i => i - 1,
-			    halfFn = fn i => i div 2,
-			    ltFn = Int.<,
-			    gtFn = Int.>,
-			    min = Int.minInt,
-			    minFn = Int.min,
-			    max = Int.maxInt,
-			    maxFn = Int.max,
-			    range = fn (min,max) => max - min + 1},
-			   Immediate.const_int)
-		       | Transfer.Cases.Word cases
+		      of Transfer.Cases.Word cases
 		       => doit
 			  (cases,
 			   {zero = 0wx0,
@@ -1751,9 +1707,7 @@ struct
 			    minFn = Word.min,
 			    max = 0wxFFFFFFFF,
 			    maxFn = Word.max,
-			    range = fn (min,max) => ((Word.toInt max) -
-						     (Word.toInt min) + 
-						     1)},
+			    range = fn (min,max) => max - min},
 			   Immediate.const_word)
 		  end
 	       | _ => effectDefault gef 
