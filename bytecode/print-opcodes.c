@@ -1,7 +1,5 @@
-#define _ISOC99_SOURCE
-
-#include <stdio.h>
 #include "platform.h"
+#include <stdio.h>
 #include "opcode.h"
 
 int main () {

@@ -23,11 +23,7 @@
 #define HAS_REMAP TRUE
 #define HAS_SIGALTSTACK TRUE
 #define HAS_SPAWN FALSE
-#ifdef __i386__
 #define HAS_TIME_PROFILING TRUE
-#else
-#define HAS_TIME_PROFILING FALSE
-#endif
 #define HAS_WEAK TRUE
 
 #define MLton_Platform_OS_host "linux"

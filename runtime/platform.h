@@ -418,7 +418,7 @@ Word MLton_size (Pointer p);
 #define MLton_Platform_Arch_host "m68k"
 #elif (defined (__mips__))
 #define MLton_Platform_Arch_host "mips"
-#elif (defined (__ppc__))
+#elif (defined (__ppc__)) || (defined (__powerpc__))
 #define MLton_Platform_Arch_host "powerpc"
 #elif (defined (__s390__))
 #define MLton_Platform_Arch_host "s390"
