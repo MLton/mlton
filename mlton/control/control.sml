@@ -945,6 +945,13 @@ fun trace (verb, name: string) (f: 'a -> 'b) (a: 'a): 'b =
 	     before messageStr (verb, concat [name, " finished in ", done ()]))
 	    handle e =>
 	       (messageStr (verb, concat [name, " raised in ", done ()])
+		; (case Exn.history e of
+		      [] => ()
+		    | history =>
+			 (messageStr (verb, concat [name, " raised with history: "])
+			  ; (List.foreach
+			     (history, fn s =>
+			      messageStr (verb, concat ["\t", s])))))
 		; raise e)
 	 end
    else
@@ -986,9 +993,16 @@ val ('a, 'b) traceAdd: (traceAccum * string) -> ('a -> 'b) -> 'a -> 'b =
 	  in
 	    (f a
 	     before done ())
-	    handle e => (messageStr (verb,
-				     concat [name, " raised"])
-			 ; raise e)
+	    handle e => 
+	       (messageStr (verb, concat [name, " raised"])
+		; (case Exn.history e of
+		      [] => ()
+		    | history =>
+			 (messageStr (verb, concat [name, " raised with history: "])
+			  ; (List.foreach
+			     (history, fn s =>
+			      messageStr (verb, concat ["\t", s])))))
+		; raise e)
 	  end
      else f a
 
