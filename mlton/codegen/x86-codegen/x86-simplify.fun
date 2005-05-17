@@ -1648,11 +1648,7 @@ struct
       in
 	val peepholeBlock_pre
 	  = fn block => (peepholeBlock {optimizations = optimizations_pre,
-				       block = block}
-			 handle exn
-			  => (print "\n\n***** raising in peepholeBlock_pre\n";
-			      Block.printBlock block;
-			      raise exn))
+				       block = block})
 	val (peepholeBlock_pre, peepholeBlock_pre_msg)
 	  = tracer
 	    "peepholeBlock_pre"
@@ -1666,11 +1662,7 @@ struct
 
 	val peepholeBlock_post
 	  = fn block => (peepholeBlock {optimizations = optimizations_post,
-				       block = block}
-			 handle exn
-			 => (print "\n\n***** raising in peepholeBlock_post\n";
-			     Block.printBlock block;
-			     raise exn))
+				       block = block})
 	val (peepholeBlock_post, peepholeBlock_post_msg)
 	  = tracer
 	    "peepholeBlock_post"
@@ -2530,11 +2522,7 @@ struct
 	  end
 
       val moveHoist
-	= fn {block} => (moveHoist {block = block}
-			 handle exn
-			 => (print "\n\n***** raising in moveHoist\n";
-			     LivenessBlock.printBlock block;
-			     raise exn))
+	= fn {block} => (moveHoist {block = block})
 
       val (moveHoist: 
 	   {block: LivenessBlock.t} -> 
@@ -2861,11 +2849,7 @@ struct
 
       val copyPropagate
 	= fn {block, liveInfo}
-	   => (copyPropagate {block = block, liveInfo = liveInfo}
-	       handle exn
-	        => (print "\n\n***** raising in copyPropagate\n";
-		    LivenessBlock.printBlock block;
-		    raise exn))
+	   => (copyPropagate {block = block, liveInfo = liveInfo})
 
       val (copyPropagate : 
 	   {block: LivenessBlock.t, 
@@ -4137,11 +4121,7 @@ struct
       in
 	val peepholeLivenessBlock
 	  = fn block => (peepholeBlock {optimizations = optimizations,
-					block = block}
-	                 handle exn
-			  => (print "\n\n***** raising in peepholeLivenessBlock\n";
-			      LivenessBlock.printBlock block;
-			      raise exn))
+					block = block})
 
 	val (peepholeLivenessBlock, peepholeLivenessBlock_msg)
 	  = tracer
@@ -4156,11 +4136,7 @@ struct
 
 	val peepholeLivenessBlock_minor
 	  = fn block => (peepholeBlock {optimizations = optimizations_minor,
-					block = block}
-	                 handle exn
-			  => (print "\n\n***** raising in peepholeLivenessBlock_minor\n";
-			      LivenessBlock.printBlock block;
-			      raise exn))
+					block = block})
 
 	val (peepholeLivenessBlock_minor, peepholeLivenessBlock_minor_msg)
 	  = tracer

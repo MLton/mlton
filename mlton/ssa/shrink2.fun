@@ -1330,10 +1330,9 @@ val shrinkFunction =
    let
       val s = shrinkFunction g
    in
-      fn f => (traceShrinkFunction s (eliminateUselessProfile f)
-	       handle e => (Error.bug (concat ["shrinker raised ",
-					       Layout.toString (Exn.layout e)])
-			    ; raise e))
+      fn f => (traceShrinkFunction s (eliminateUselessProfile f))
+              handle e => (Error.bug (concat ["shrinker raised ",
+					      Layout.toString (Exn.layout e)]))
    end
 
 fun shrink (Program.T {datatypes, globals, functions, main}) =

@@ -657,11 +657,9 @@ val restoreFunction
     let
       val r = restoreFunction g
     in
-      fn f =>
-      (traceRestoreFunction r f
-       handle e => (Error.bug (concat ["restore raised ",
-				       Layout.toString (Exn.layout e)])
-		    ; raise e))
+      fn f => (traceRestoreFunction r f)
+              handle e => (Error.bug (concat ["restore raised ",
+					      Layout.toString (Exn.layout e)]))
    end
 
 fun restore (Program.T {datatypes, globals, functions, main})
