@@ -6,7 +6,7 @@ Build-Depends: hevea, mlton (>= 20020410.1), libgmp3-dev (>= 4.0.1), tetex-bin, 
 Standards-Version: 3.6.1
 
 Package: mlton
-Architecture: i386, powerpc, hppa, sparc
+Architecture: hppa i386 powerpc sparc
 Depends: ${shlibs:Depends}, gcc, libgmp3-dev (>= 4.0.1)
 Description: Optimizing compiler for Standard ML
  MLton (www.mlton.org) is a whole-program

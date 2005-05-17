@@ -7,7 +7,7 @@
  * the code that declares the label is dead and hence eliminate the declaration.
  */
 #define DeclareProfileLabel(l)			\
-	void l() __attribute__ ((weak))
+	extern char l __attribute__ ((weak))
 
 #define BeginIntInfs static struct GC_intInfInit intInfInits[] = {
 #define IntInf(g, n) { g, n },

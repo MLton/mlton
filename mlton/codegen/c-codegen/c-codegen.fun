@@ -393,7 +393,7 @@ fun outputDeclarations
 		; (declareArray
 		   ("struct GC_sourceLabel", "sourceLabels", labels,
 		    fn (_, {label, sourceSeqsIndex}) =>
-		    concat ["{(pointer)", ProfileLabel.toString label, ", ",
+		    concat ["{(pointer)&", ProfileLabel.toString label, ", ",
 			    C.int sourceSeqsIndex, "}"]))
 		; declareArray ("string", "sourceNames", names, C.string o #2)
 		; declareArray ("struct GC_source", "sources", sources,

@@ -13,57 +13,41 @@
 #define EIP	14
 #endif
 
-/* The locations of the EIP equivalent register found in kaffe */
-#if (defined (__alpha__))
-static void catcher (int sig, siginfo_t *sip, struct sigcontext* scp) {
-	GC_handleSigProf ((pointer) scp->sc_pc);
-}
-#elif (defined (__x86_64__))
+/* potentially correct for other archs:
+ *  alpha: ucp->m_context.sc_pc
+ *  arm: ucp->m_context.ctx.arm_pc
+ *  ia64: ucp->m_context.sc_ip & ~0x3UL
+ *  mips: ucp->m_context.sc_pc
+ *  s390: ucp->m_context.sregs->regs.psw.addr
+ */
+static void catcher (int sig, siginfo_t* sip, void* mystery) {
+#if (defined (__x86_64__))
 #define REG_INDEX(NAME) (offsetof(struct sigcontext, NAME) / sizeof(greg_t))
 #ifndef REG_RIP
 #define REG_RIP REG_INDEX(rip) /* seems to be 16 */
 #endif
-static void catcher (int sig, siginfo_t *sip, ucontext_t* ucp) {
+	ucontext_t* ucp = (ucontext_t*)mystery;
 	GC_handleSigProf ((pointer) ucp->uc_mcontext.gregs[REG_RIP]);
-}
-#elif (defined (__arm__))
-static void catcher (int sig, int arm1, int arm2, int arm3, struct sigcontext ctx) {
-	GC_handleSigProf ((pointer) ctx.arm_pc);
-}
 #elif (defined (__hppa__))
-static void catcher (int sig, siginfo_t *sip, ucontext_t* ucp) {
-	GC_handleSigProf ((pointer) ucp->uc_mcontext.sc_iaoq[0]);
-}
-#elif (defined (__ia64__))
-static void catcher (int sig, siginfo_t *sip, struct sigcontext* scp) {
-	GC_handleSigProf ((pointer) scp->sc_ip & ~0x3ULL);
-}
-#elif (defined (__m68k__))
-#error Eek - how to get EIP without assembler on m68k?	
-#elif (defined (__mips__))
-static void catcher (int sig, int dummy, struct sigcontext* scp) {
-	GC_handleSigProf ((pointer) scp->sc_pc);
-}
+	ucontext_t* ucp = (ucontext_t*)mystery;
+	GC_handleSigProf ((pointer) (ucp->uc_mcontext.sc_iaoq[0] & ~0x3UL));
 #elif (defined (__ppc__)) || (defined (__powerpc__))
-static void catcher (int sig, struct sigcontext* scp) {
-	GC_handleSigProf ((pointer) scp->regs->nip);
-}
-#elif (defined (__s390__))
-static void catcher (int sig, struct sigcontext sc) {
-	GC_handleSigProf ((pointer) sc.sregs->regs.psw.addr);
-}
+	ucontext_t* ucp = (ucontext_t*)mystery;
+	GC_handleSigProf ((pointer) ucp->uc_mcontext.regs->nip);
 #elif (defined (__sparc__))
-static void catcher (int sig, struct sigcontext* scp) {
+	struct sigcontext* scp = (struct sigcontext*)mystery;
+#if __WORDSIZE == 64
+	GC_handleSigProf ((pointer) scp->sigc_regs.tpc);
+#else
 	GC_handleSigProf ((pointer) scp->si_regs.pc);
-//64bit	GC_handleSigProf ((pointer) scp->sigc_regs.tpc);
-}
+#endif
 #elif (defined (__i386__))
-static void catcher (int sig, struct sigcontext* scp, ucontext_t* ucp) {
+	ucontext_t* ucp = (ucontext_t*)mystery;
 	GC_handleSigProf ((pointer) ucp->uc_mcontext.gregs[EIP]);
-}
 #else
 #error Profiling handler is missing for this architecture
 #endif
+}
 
 void setSigProfHandler (struct sigaction *sa) {
 	sa->sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
