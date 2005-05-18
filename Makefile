@@ -234,14 +234,10 @@ runtime:
 	@echo 'Compiling MLton runtime system for $(TARGET).'
 	$(MAKE) -C runtime
 	$(CP) $(RUN)/*.a $(LIB)/$(TARGET)/
-	chmod -R a+w $(INC)
 	$(CP) runtime/*.h include/*.h $(INC)/
 	mkdir -p $(INC)/platform
 	$(CP) bytecode/interpret.h $(INC)
 	$(CP) runtime/platform/*.h $(INC)/platform
-	chmod -R a-w $(INC)
-	chmod a+w $(INC)/platform
-	chmod a+w $(INC)
 	$(MAKE) -C bytecode
 	bytecode/print-opcodes >$(LIB)/opcodes
 	ar r $(LIB)/$(TARGET)/libmlton.a bytecode/interpret.o 
