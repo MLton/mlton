@@ -1,5 +1,8 @@
 Here are the changes since version 20041109.
 
+* 2005-05-19
+  - Improved exception history for Overflow exceptions.
+
 * 2005-04-20
   - Fixed a bug in pass to flatten refs into containing data structure.
 

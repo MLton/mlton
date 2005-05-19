@@ -171,8 +171,12 @@ structure Pid :> sig
    
 exception Fail of string
 exception Match = Match
-exception Overflow = Overflow
+exception PrimitiveOverflow = Overflow
+exception Overflow
 exception Size
+
+val wrapOverflow: ('a -> 'b) -> ('a -> 'b) =
+   fn f => fn a => f a handle PrimitiveOverflow => raise Overflow
 
 datatype 'a option = NONE | SOME of 'a
 
@@ -482,17 +486,17 @@ structure Primitive =
 	    val *? = _prim "WordS8_mul": int * int -> int;
 	    val * =
 	       if detectOverflow
-		  then _prim "WordS8_mulCheck": int * int -> int;
+		  then wrapOverflow (_prim "WordS8_mulCheck": int * int -> int;)
 	       else *?
 	    val +? = _prim "Word8_add": int * int -> int;
 	    val + =
 	       if detectOverflow
-		  then _prim "WordS8_addCheck": int * int -> int;
+		  then wrapOverflow (_prim "WordS8_addCheck": int * int -> int;)
 	       else +?
 	    val -? = _prim "Word8_sub": int * int -> int;
 	    val - =
 	       if detectOverflow
-		  then _prim "WordS8_subCheck": int * int -> int;
+		  then wrapOverflow (_prim "WordS8_subCheck": int * int -> int;)
 	       else -?
 	    val op < = _prim "WordS8_lt": int * int -> bool;
 	    val quot = _prim "WordS8_quot": int * int -> int;
@@ -503,7 +507,7 @@ structure Primitive =
 	    val ~? = _prim "Word8_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
-		  then _prim "Word8_negCheck": int -> int;
+		  then wrapOverflow (_prim "Word8_negCheck": int -> int;)
 	       else ~?
 	    val andb = _prim "Word8_andb": int * int -> int;
 	    val fromInt = _prim "WordS32_toWord8": Int.int -> int;
@@ -586,17 +590,20 @@ structure Primitive =
 	    val *? = _prim "WordS16_mul": int * int -> int;
 	    val * =
 	       if detectOverflow
-		  then _prim "WordS16_mulCheck": int * int -> int;
+		  then (wrapOverflow
+			(_prim "WordS16_mulCheck": int * int -> int;))
 	       else *?
 	    val +? = _prim "Word16_add": int * int -> int;
 	    val + =
 	       if detectOverflow
-		  then _prim "WordS16_addCheck": int * int -> int;
+		  then (wrapOverflow
+			(_prim "WordS16_addCheck": int * int -> int;))
 	       else +?
 	    val -? = _prim "Word16_sub": int * int -> int;
 	    val - =
 	       if detectOverflow
-		  then _prim "WordS16_subCheck": int * int -> int;
+		  then (wrapOverflow
+			(_prim "WordS16_subCheck": int * int -> int;))
 	       else -?
 	    val op < = _prim "WordS16_lt": int * int -> bool;
 	    val quot = _prim "WordS16_quot": int * int -> int;
@@ -607,7 +614,7 @@ structure Primitive =
 	    val ~? = _prim "Word16_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
-		  then _prim "Word16_negCheck": int -> int;
+		  then wrapOverflow (_prim "Word16_negCheck": int -> int;)
 	       else ~?
 	    val andb = _prim "Word16_andb": int * int -> int;
 	    val fromInt = _prim "WordS32_toWord16": Int.int -> int;
@@ -754,17 +761,20 @@ structure Primitive =
 	    val *? = _prim "WordS32_mul": int * int -> int;
 	    val * =
 	       if detectOverflow
-		  then _prim "WordS32_mulCheck": int * int -> int;
+		  then (wrapOverflow
+			(_prim "WordS32_mulCheck": int * int -> int;))
 	       else *?
 	    val +? = _prim "Word32_add": int * int -> int;
 	    val + =
 	       if detectOverflow
-		  then _prim "WordS32_addCheck": int * int -> int;
+		  then (wrapOverflow
+			(_prim "WordS32_addCheck": int * int -> int;))
 	       else +?
 	    val -? = _prim "Word32_sub": int * int -> int;
 	    val - =
 	       if detectOverflow
-		  then _prim "WordS32_subCheck": int * int -> int;
+		  then (wrapOverflow
+			(_prim "WordS32_subCheck": int * int -> int;))
 	       else -?
 	    val op < = _prim "WordS32_lt": int * int -> bool;
 	    val quot = _prim "WordS32_quot": int * int -> int;
@@ -775,7 +785,7 @@ structure Primitive =
 	    val ~? = _prim "Word32_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
-		  then _prim "Word32_negCheck": int -> int;
+		  then wrapOverflow (_prim "Word32_negCheck": int -> int;)
 	       else ~?
 	    val andb = _prim "Word32_andb": int * int -> int;
 	    val fromInt : int -> int = fn x => x
@@ -811,12 +821,14 @@ structure Primitive =
 	    val +? = _prim "Word64_add": int * int -> int;
 	    val + =
 	       if detectOverflow
-		  then _prim "WordS64_addCheck": int * int -> int;
+		  then (wrapOverflow
+			(_prim "WordS64_addCheck": int * int -> int;))
 	       else +?
 	    val -? = _prim "Word64_sub": int * int -> int;
 	    val - =
 	       if detectOverflow
-		  then _prim "WordS64_subCheck": int * int -> int;
+		  then (wrapOverflow
+			(_prim "WordS64_subCheck": int * int -> int;))
 	       else -?
 	    val op < = _prim "WordS64_lt": int * int -> bool;
 	    val << = _prim "Word64_lshift": int * Word.word -> int;
@@ -827,7 +839,7 @@ structure Primitive =
 	    val ~? = _prim "Word64_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
-		  then _prim "Word64_negCheck": int -> int;
+		  then wrapOverflow (_prim "Word64_negCheck": int -> int;)
 	       else ~?
 	    val andb = _prim "Word64_andb": int * int -> int;
 	    val fromInt = _prim "WordS32_toWord64": Int.int -> int;
@@ -2198,12 +2210,12 @@ local
    val _ =
       TopLevel.setHandler 
       (fn exn => 
-       (Stdio.print ("unhandled exception: ")
+       (Stdio.print "unhandled exception: "
 	; case exn of
 	     Fail msg => (Stdio.print "Fail "
 			  ; Stdio.print msg)
 	   | _ => Stdio.print (Exn.name exn)
-	; Stdio.print ("\n")
+	; Stdio.print "\n"
 	; bug (NullString.fromString 
 	       "unhandled exception in Basis Library\000")))
 in
