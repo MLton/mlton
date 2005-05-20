@@ -97,3 +97,9 @@ source file."
 			mlton-output-buffer)
     (switch-to-buffer buffer)
     (mlton-next-error)))
+
+(defun mlton-parse-errors-this-buffer ()
+  (interactive)
+  (mlton-parse-errors (file-name-directory mlton-main-file)
+		      (current-buffer)))
+  
