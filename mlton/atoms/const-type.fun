@@ -9,6 +9,8 @@
 functor ConstType (S: CONST_TYPE_STRUCTS): CONST_TYPE =
 struct
 
+open S
+
 datatype t = Bool | Real | String | Word
 
 val toString =

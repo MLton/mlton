@@ -459,7 +459,7 @@ fun matchCompile {caseType: Type.t,
 	    val (cases, defaults) =
 	       Vector.foldr
 	       (rules, ([], []),
-		fn (rule as Rule.T {pats, rest}, (cases, defaults)) =>
+		fn (rule as Rule.T {pats, ...}, (cases, defaults)) =>
 		let
 		   val rule = Rule.dropNth (rule, i)
 		in

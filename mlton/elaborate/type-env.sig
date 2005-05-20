@@ -107,5 +107,3 @@ signature TYPE_ENV =
       val tyconAdmitsEquality: Tycon.t -> Tycon.AdmitsEquality.t ref
       val tyconRegion: Tycon.t -> Region.t option ref
    end
-
-signature INFER_TYPE_ENV = TYPE_ENV

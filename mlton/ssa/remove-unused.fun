@@ -11,6 +11,8 @@ struct
 open S
 open Exp Transfer
 
+type int = Int.t
+
 structure Used =
   struct
     structure L = TwoPointLattice (val bottom = "unused"

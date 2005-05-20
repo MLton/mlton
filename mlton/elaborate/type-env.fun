@@ -1330,14 +1330,6 @@ structure Type =
 		  in
 		     con (t, c, ts)
 		  end
-	    fun default (t, tycon) =
-	       fn t' =>
-	       let
-		  val _ = unify (t, t',
-				 {preError = fn _ => Error.bug "default unify"})
-	       in
-		  con (t, tycon, Vector.new0 ())
-	       end
 	    fun overload (t', ov) =
 	       let
 		  val t = Overload.defaultType ov

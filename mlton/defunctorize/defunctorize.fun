@@ -46,13 +46,6 @@ in
    structure XvarExp = VarExp
 end
 
-structure Region =
-   struct
-      open Region
-
-      fun toFilePos r = Option.map (left r, SourcePos.toString)
-   end
-
 structure NestedPat = NestedPat (open Xml)
 
 structure MatchCompile =

@@ -58,16 +58,13 @@ in
     signature CHAR_SIZE
     signature FIELD
     signature INT_SIZE
-    signature LONGID
     signature PRIM_CONS
     signature PRIM_TYCONS
     signature REAL_SIZE
     signature RECORD
-    signature SYMBOL
     signature TYCON_KIND
     signature TYVAR
     signature WORD_SIZE
-    signature WRAPPED
 
     functor AdmitsEquality
     functor Ast

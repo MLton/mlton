@@ -181,7 +181,7 @@ val lexAndParseString =
 	  (fn () =>
 	   Control.checkFile
 	   (fileUse, fail, fn () => FrontEnd.lexAndParseFile fileUse)))
-      and lexAndParseMLB {cwd: Dir.t, relativize: Dir.t option,
+      and lexAndParseMLB {relativize: Dir.t option,
 			  seen: (File.t * File.t * Region.t) list,
 			  fileAbs: File.t, fileUse: File.t,
 			  fail: String.t -> Ast.Basdec.t, reg: Region.t} =
@@ -251,8 +251,7 @@ val lexAndParseString =
 	       NONE => err ()
 	     | SOME s =>
 		  if List.contains (mlbExts, s, String.equals)
-		     then lexAndParseMLB {cwd = cwd,
-					  relativize = relativize,
+		     then lexAndParseMLB {relativize = relativize,
 					  seen = seen,
 					  fileAbs = fileAbs,
 					  fileUse = fileUse,

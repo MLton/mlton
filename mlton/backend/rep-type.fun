@@ -148,7 +148,6 @@ structure Type =
 		   | _ => Error.bug (concat ["CType.fromBits: ",
 					     Bits.toString b])
 	    end
-	 fun w i = word (Bits.fromInt i)
       in
 	 val rec toCType: t -> CType.t =
 	    fn t =>

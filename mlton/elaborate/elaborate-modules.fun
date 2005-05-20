@@ -11,12 +11,6 @@ struct
 open S
 
 local
-   open Control.Elaborate
-in
-   val allowPrim = fn () => current allowPrim
-end
-
-local
    open Ast
 in
    structure FctArg = FctArg

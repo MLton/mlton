@@ -17,15 +17,3 @@ signature LOCAL_FLATTEN =
       (* Intraprocedural flattening. *)
       val flatten: Program.t -> Program.t
    end
-
-
-functor TestLocalFlatten (S: LOCAL_FLATTEN): sig end = 
-struct
-
-val _ = print "TestLocalFlatten\n"
-
-open S
-
-val _ = Assert.assert ("LocalFlatten", fn () => true)
-
-end

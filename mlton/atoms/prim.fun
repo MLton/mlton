@@ -1138,7 +1138,6 @@ fun ('a, 'b) apply (p: 'a t,
       val intInfConst = intInf o IntInf.fromInt
       fun word (w: WordX.t): ('a, 'b) ApplyResult.t =
 	 ApplyResult.Const (Const.word w)
-      val t = ApplyResult.truee
       val f = ApplyResult.falsee
       fun iio (f, c1, c2) = intInf (f (c1, c2))
       fun wordS (f: WordX.t * WordX.t * {signed: bool} -> WordX.t,

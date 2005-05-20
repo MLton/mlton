@@ -43,7 +43,6 @@ local
 in
     signature SXML
     signature XML
-    signature XML_TYPE
 
     functor Monomorphise
     functor Xml

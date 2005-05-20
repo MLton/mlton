@@ -1361,19 +1361,19 @@ struct
 
       val mayAlias
 	= fn (Register r1,    Register r2)    => Register.eq(r1, r2)
-	   | (Register r1,    _)              => false
+	   | (Register _,     _)              => false
 	   | (FltRegister f1, FltRegister f2) => FltRegister.eq(f1, f2)
-	   | (FltRegister f1, _)              => false
+	   | (FltRegister _,  _)              => false
 	   | (Immediate i1,   Immediate i2)   => Immediate.eq(i1, i2)
-           | (Immediate i1,   _)              => false
+           | (Immediate _,    _)              => false
 	   | (Label l1,       Label l2)       => Label.equals(l1, l2)
-	   | (Label l1,       _)              => false
-	   | (Address a1,     Address a2)     => true
-	   | (Address a1,     MemLoc m2)      => true
-           | (Address a1,     _)              => false
+	   | (Label _,        _)              => false
+	   | (Address _,      Address _)      => true
+	   | (Address _,      MemLoc _)       => true
+           | (Address _,      _)              => false
 	   | (MemLoc m1,      MemLoc m2)      => MemLoc.mayAlias(m1, m2)
-	   | (MemLoc m1,      Address a2)     => true
-	   | (MemLoc m1,      _)              => false
+	   | (MemLoc _,       Address _)      => true
+	   | (MemLoc _,       _)              => false
 
       val register = Register
       val deRegister

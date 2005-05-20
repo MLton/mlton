@@ -142,7 +142,6 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		  (table, String.hash name,
 		   fn {name = name', ...} => name = name',
 		   fn () => Error.bug (concat ["missing opcode: ", name, "\n"])))
-      val decls = ref []
       val callCounter = Counter.new 0
       val callCs = ref []
       fun callC {function: string,
@@ -234,7 +233,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		      (case Prim.name prim of
 			  Prim.Name.FFI_Symbol {name, ...} =>
 			     Option.app
-			     (dst, fn dst =>
+			     (dst, fn _ =>
 			      let
 				 val hash = String.hash name
 			      in
@@ -343,7 +342,6 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	     | W32 => s32
 	     | W64 => s64
 	 end
-      val thread_returnToC = opcode "Thread_returnToC"
       local
 	 fun make (name, distinguishPointers: bool)
 	    (ls: LoadStore.t, cty: CType.t): Opcode.t =
@@ -654,7 +652,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	      | Switch (Switch.T {cases, default, size, test}) =>
 		   let
 		      val () = emitLoadOperand test
-		      fun bool (test: Operand.t, a: Label.t, b: Label.t) =
+		      fun bool (a: Label.t, b: Label.t) =
 			 (emitOpcode branchIfZero
 			  ; emitLabel b
 			  ; goto a)
@@ -690,9 +688,9 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 			       val i1 = WordX.toIntInf c1
 			    in
 			       if i0 = 0 andalso i1 = 1
-				  then bool (test, l1, l0)
+				  then bool (l1, l0)
 				  else if i0 = 1 andalso i1 = 0
-					  then bool (test, l0, l1)
+					  then bool (l0, l1)
 					  else normal ()
 			    end
 			 else normal ()
@@ -761,7 +759,6 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	   ; print "\n"
 	   ; declareCallC ()
 	   ; print "\n")
-      val addressNamesSize = ref 0
       val word8ArrayToString: Word8.t array -> string =
 	 fn a => String.tabulate (Array.length a, fn i =>
 				  Char.fromWord8 (Array.sub (a, i)))

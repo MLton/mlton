@@ -15,7 +15,6 @@ datatype t = T of {column: int,
 local
    fun f g (T r) = g r
 in
-   val column = f #column
    val line = f #line
 end
 
@@ -29,6 +28,7 @@ fun compare (T {column = c, file = f, line = l},
     | r => r
 
 fun equals (T r, T r') = r = r'
+val _ = equals
 
 fun make {column, file, line} =
    T {column = column,

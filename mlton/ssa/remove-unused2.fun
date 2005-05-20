@@ -124,7 +124,6 @@ structure ConInfo =
       val isDeconed = Deconed.isDeconed o deconed
 	 
       val use = Used.use o used
-      val isUsed = Used.isUsed o used
       fun whenUsed (vi, th) = Used.whenUsed (used vi, th)
 
       fun new {args: Type.t Prod.t}: t =
@@ -157,10 +156,6 @@ structure TyconInfo =
 	 T {cons = cons,
 	    numCons = ref ~1,
 	    used = Used.new ()}
-
-      val use = Used.use o used
-      val isUsed = Used.isUsed o used
-      fun whenUsed (vi, th) = Used.whenUsed (used vi, th)
    end
 
 structure TypeInfo = 
@@ -174,7 +169,7 @@ structure TypeInfo =
 	 fun make' f = (make f, ! o (make f))
       in
 	 val (deconed', _) = make' #deconed
-	 val (simplify', simplify) = make' #simplify
+	 val (simplify', _) = make' #simplify
 	 val (used', _) = make' #used
       end
    
@@ -301,7 +296,7 @@ structure LabelInfo =
    end
 
 
-fun remove (program as Program.T {datatypes, globals, functions, main}) = 
+fun remove (Program.T {datatypes, globals, functions, main}) = 
    let
       val {get = conInfo: Con.t -> ConInfo.t, 
 	   set = setConInfo, ...} =
@@ -353,7 +348,6 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
       val isUsedTycon = Used.isUsed o usedTycon
       val usedCon = ConInfo.used o conInfo
       val useCon = Used.use o usedCon
-      val isUsedCon = Used.isUsed o usedCon
       val whenUsedCon = fn (con, th) => ConInfo.whenUsed (conInfo con, th)
 
       fun visitTycon (tycon: Tycon.t) = useTycon tycon
@@ -1014,7 +1008,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 
       val () =
 	 Vector.foreach
-	 (datatypes, fn Datatype.T {tycon, cons} =>
+	 (datatypes, fn Datatype.T {cons, ...} =>
 	  let
 	     val dummy : ({con: Con.t, args: Type.t Prod.t} * Exp.t) option ref = ref NONE
 	  in

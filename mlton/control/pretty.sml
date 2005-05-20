@@ -54,11 +54,6 @@ fun primApp {args, prim, targs} =
 
 fun raisee exn = seq [str "raise ", exn]
 
-fun var {targs, var} =
-   if !Control.showTypes
-      then seq [var, tuple (Vector.toList targs)]
-   else var
-      
 fun seq es = mayAlign (separateLeft (Vector.toList es, ";"))
 
 end

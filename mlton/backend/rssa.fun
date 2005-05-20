@@ -898,7 +898,7 @@ structure Program =
 				    (prim, Vector.toList applyArgs,
 				     fn ({var = x, ...}, {var = y, ...}) =>
 				     Var.equals (x, y))) of
-				 Apply (p, args) =>
+				 Apply (prim, args) =>
 				    let
 				       val args =
 					  Vector.fromListMap (args, Operand.Var)
@@ -922,7 +922,7 @@ structure Program =
 	    fun loopFormals args = Vector.foreach (args, dontReplace)
 	    fun loopFunction (f: Function.t): Function.t =
 	       let
-		  val {args, blocks, name, raises, returns, start} =
+		  val {args, name, raises, returns, start, ...} =
 		     Function.dest f
 		  val () = loopFormals args
 		  val blocks = ref []

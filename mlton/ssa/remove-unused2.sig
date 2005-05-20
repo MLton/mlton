@@ -18,13 +18,3 @@ signature REMOVE_UNUSED2 =
       
       val remove: Program.t -> Program.t
    end
-
-
-functor TestRemoveUnused2(S: REMOVE_UNUSED2) = 
-struct
-
-open S
-
-val _ = Assert.assert("RemoveUnused", fn () => true)
-
-end

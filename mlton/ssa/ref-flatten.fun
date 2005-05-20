@@ -107,8 +107,6 @@ structure Value =
 structure Flat =
    struct
       datatype t = datatype Value.flat
-
-      val layout = Value.layoutFlat
    end
 
 structure Object =
@@ -626,7 +624,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       (* Try to flatten each ref. *)
       val () =
 	 foreachObject
-	 (fn (var, _, obj as Obj {flat, ...}) =>
+	 (fn (var, _, Obj {flat, ...}) =>
 	  let
 	     datatype z = datatype Flat.t
 	     fun notFlat () = flat := NotFlat
@@ -650,7 +648,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	  end)
       val () =
 	 foreachObject
-	 (fn (_, args, obj as Obj {flat, ...}) =>
+	 (fn (_, args, obj) =>
 	  let
 	     datatype z = datatype Flat.t
 	     (* Check that all arguments that are represented by flattening them
@@ -727,7 +725,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 List.foreach
 	 (functions, fn f =>
 	  let
-	     val {args, blocks, ...} = Function.dest f
+	     val {blocks, ...} = Function.dest f
 	  in
 	     Vector.foreach
 	     (blocks, fn Block.T {statements, transfer, ...} =>

@@ -97,10 +97,6 @@ val deepFlattenUnify =
 	    default = false,
 	    toString = Bool.toString}
 
-val defines = control {name = "defines",
-		       default = [],
-		       toString = List.toString String.toString}
-
 val diagPasses = 
    control {name = "diag passes",
 	    default = [],
@@ -142,7 +138,6 @@ structure Elaborate =
 	    local
 	       fun make sel (T r) = sel r
 	    in
-	       fun fillArgs args = (make #fillArgs args) ()
 	       fun processAnn args = (make #processAnn args) ()
 	       fun processDef args = (make #processDef args) ()
 	    end
@@ -151,10 +146,6 @@ structure Elaborate =
 				      cur: 'st ref,
 				      def: 'st ref,
 				      id: Id.t}
-      val args = fn (T {args = argsRef, ...}, args) =>
-	 let val emptyArgs = Args.fillArgs args
-	 in (!argsRef) before (emptyArgs ())
-	 end
       fun current (T {cur, ...}) = !cur
       fun default (T {def, ...}) = !def
       fun setDefault (T {def, ...}, def') = def := def'
@@ -444,8 +435,6 @@ structure Inline =
 
 datatype inline = datatype Inline.t
 
-val layoutInline = Inline.layout
-
 val inline = control {name = "inline",
 		      default = NonRecursive {product = 320,
 					      small = 60},
@@ -466,14 +455,6 @@ val inputFile = control {name = "input file",
 			 default = "<bogus>",
 			 toString = File.toString}
 
-val instrument = control {name = "instrument",
-			  default = false,
-			  toString = Bool.toString}
-
-val instrumentSxml = control {name = "instrument Sxml",
-			      default = false,
-			      toString = Bool.toString}
-	     
 val keepMachine = control {name = "keep Machine",
 			   default = false,
 			   toString = Bool.toString}
@@ -554,10 +535,6 @@ val maxFunctionSize = control {name = "max function size",
 			       default = 10000,
 			       toString = Int.toString}
    
-val mayLoadWorld = control {name = "may load world",
-			    default = true,
-			    toString = Bool.toString}
-
 structure Native =
    struct
       val commented = control {name = "native commented",
@@ -591,10 +568,6 @@ structure Native =
       val liveTransfer = control {name = "native live transfer",
 				  default = 8,
 				  toString = Int.toString}
-
-      val future = control {name = "native future",
-			    default = 64,
-			    toString = Int.toString}
 
       val shuffle = control {name = "native shuffle",
 			     default = true,
@@ -725,10 +698,6 @@ val stackCont = control {name = "stack cont",
 			 default = false,
 			 toString = Bool.toString}
 
-val static = control {name = "static",
-		      default = false,
-		      toString = Bool.toString}
-
 val sxmlPassesSet : (string -> string list Result.t) ref = 
    control {name = "sxmlPassesSet",
 	    default = fn _ => Error.bug ("sxmlPassesSet not installed"),
@@ -796,10 +765,6 @@ val typeError = control {name = "type error",
 			 default = Concise,
 			 toString = TypeError.toString}
    
-val useBasisLibrary = control {name = "use basis library",
-			       default = true,
-			       toString = Bool.toString}
-
 structure Verbosity =
    struct
       datatype t =
@@ -1205,23 +1170,6 @@ fun passTypeCheck {name: string,
 	 else ()
    in
       result
-   end
-
-fun passSimplify {name, suffix, style, thunk, display, typeCheck, simplify} =
-   let
-      val result =
-	 passTypeCheck {name = name,
-			suffix = suffix,
-			style = style,
-			thunk = thunk,
-			display = display,
-			typeCheck = typeCheck}
-   in passTypeCheck {name = name ^ "Simplify",
-		     suffix = suffix,
-		     style = style,
-		     thunk = fn () => simplify result,
-		     display = display,
-		     typeCheck = typeCheck}
    end
 
 end

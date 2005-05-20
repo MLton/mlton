@@ -18,7 +18,6 @@ signature SOURCE_POS =
       type t
 
       val bogus: t
-      val column: t -> int
       val compare: t * t -> Relation.t
       val equals: t * t -> bool
       val file: t -> File.t
@@ -30,15 +29,3 @@ signature SOURCE_POS =
       val posToString: t -> string
       val toString: t -> string
    end
-
-
-functor TestSourcePos (S: SOURCE_POS): sig end = 
-struct
-
-val _ = print "TestSourcePos\n"
-
-open S
-
-val _ = Assert.assert ("SourcePos", fn () => true)
-
-end

@@ -14,8 +14,6 @@ datatype t = C1 | C2 | C4
 
 val all = [C1, C2, C4]
 
-val stub = fn _ => raise Fail "CharSize"
-
 fun bits s =
    Bits.fromInt
    (case s of

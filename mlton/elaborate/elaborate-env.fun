@@ -435,7 +435,6 @@ structure Interface =
    struct
       structure Econs = Cons
       structure Escheme = Scheme
-      structure Etycon = Tycon
       structure Etype = Type
       structure EtypeStr = TypeStr
       open Interface

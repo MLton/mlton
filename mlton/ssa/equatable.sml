@@ -8,8 +8,6 @@
 structure Equatable: EQUATABLE =
 struct
 
-type int = Int.t
-   
 structure Set = DisjointSet
 
 datatype 'a delay =

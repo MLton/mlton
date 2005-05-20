@@ -26,7 +26,6 @@ local
 	       val equals: t * t -> bool
 	       val fromInt: int -> t
 	       val fromIntInf: IntInf.t -> t
-	       val fromWord: word -> t
 	       val inByte: t
 	       val inPointer: t
 	       val inWord: t
@@ -108,8 +107,6 @@ local
 	    struct
 	       open IntInf
 
-	       val fromWord = Word.toIntInf
-		  
 	       val inByte: t = 8
 		  
 	       val inWord: t = 32
@@ -133,9 +130,13 @@ local
 		  else Error.bug "Bits.toWords"
 	    end
 
+	 type bytes = IntInf.t
+
 	 structure Bytes =
 	    struct
 	       open IntInf
+
+	       type t = bytes
 
 	       val fromWord = Word.toIntInf
 
@@ -161,18 +162,18 @@ local
 	       fun wordAlign b = align (b, {alignment = inWord})
 	    end
 
-	 type bytes = Bytes.t
-
+	 type words = IntInf.t
+	    
 	 structure Words =
 	    struct
 	       open IntInf
+
+	       type t = words
 
 	       val inPointer = Bytes.toWords Bytes.inPointer
 		  
 	       fun toBytes w = w * Bytes.inWord
 	    end
-
-	 type words = Words.t
       end
    open All
 in

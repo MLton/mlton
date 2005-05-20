@@ -39,33 +39,6 @@ val buildConstants: (string * (unit -> string)) list =
 
 datatype z = datatype ConstType.t
 
-fun escape s =
-   String.translate (s, fn c =>
-		     let
-			val i = Char.ord c
-			fun dig j =
-			   Char.chr
-			   (Char.ord #"0" + Int.rem (Int.quot (i, j), 10))
-		     in
-			implode [dig 100, dig 10, dig 1]
-		     end)
-
-fun unescape s =
-   let
-      fun sub i = Char.toInt (String.sub (s, i)) - Char.toInt #"0"
-      fun loop (i, ac) =
-	 if i < 0
-	    then ac
-	 else
-	    loop (i - 3,
-		  Char.fromInt ((sub (i - 2) * 10 + sub (i - 1)) * 10 + sub i)
-		  :: ac)
-   in
-      implode (loop (String.size s - 1, []))
-   end
-
-val unescape = Trace.trace ("unescape", String.layout, String.layout) unescape
-
 val gcFields =
    [
     "canHandle",

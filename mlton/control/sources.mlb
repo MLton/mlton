@@ -22,8 +22,6 @@ local
     pretty.sig
     pretty.sml
 in
-    signature REGION
-
     structure Bits
     structure Bytes
     structure Control

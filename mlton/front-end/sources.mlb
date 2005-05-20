@@ -15,15 +15,22 @@ local
     *)
    $(SML_LIB)/basis/unsafe.mlb
    
-   ml.grm.sig
-   ml.grm.sml
-   ml.lex.sml
+   ann "warnUnused false"
+   in
+     ml.grm.sig
+     ml.grm.sml 
+     ml.lex.sml
+   end
    front-end.sig
    front-end.fun
 
-   mlb.grm.sig
-   mlb.grm.sml
-   mlb.lex.sml
+   ann
+     "warnUnused false"
+   in
+     mlb.grm.sig
+     mlb.grm.sml
+     mlb.lex.sml
+   end
    mlb-front-end.sig
    mlb-front-end.fun
 in

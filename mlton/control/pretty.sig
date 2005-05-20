@@ -19,6 +19,4 @@ signature PRETTY =
 		    targs: t vector} -> t
       val raisee: t -> t
       val seq: t vector -> t
-      val var: {targs: t vector,
-		var: t} -> t
    end

@@ -9,8 +9,6 @@ type int = Int.t
    
 signature CONTROL =
    sig
-      val instrumentSxml: bool ref
-	 
       (* set all flags to their default values *)
       val defaults: unit -> unit
 
@@ -54,8 +52,6 @@ signature CONTROL =
 	 
       val deepFlattenUnify: bool ref
 	 
-      val defines: string list ref
-
       (* List of pass names to keep diagnostic info on. *)
       val diagPasses: Regexp.Compiled.t list ref
 
@@ -100,7 +96,6 @@ signature CONTROL =
 		  type t
 		  val processAnn: t -> (unit -> unit)
 	       end
-	    val args: ('args, 'st) t * Args.t -> 'args option
 	    val parseIdAndArgs: string -> (Id.t * Args.t) option
 
 	    val processDefault: string -> bool
@@ -141,16 +136,12 @@ signature CONTROL =
        | Leaf of {size: int option}
        | LeafNoLoop of {size: int option}
       val inline: inline ref
-      val layoutInline: inline -> Layout.t
       val setInlineSize: int -> unit
 
       val inlineIntoMain: bool ref
 
       (* The input file on the command line, minus path and extension *)
       val inputFile: File.t ref
-
-      (* call count instrumentation *)
-      val instrument: bool ref
 
       (* Keep dot files for whatever SSA files are produced. *)
       val keepDot: bool ref
@@ -206,9 +197,6 @@ signature CONTROL =
 
       val maxFunctionSize: int ref
 
-      (* May the executable use @MLton load-world -- *)
-      val mayLoadWorld: bool ref
-
       structure Native:
 	 sig
 	    (* whether or not to use comments in native codegen *)
@@ -234,9 +222,6 @@ signature CONTROL =
 
 	    (* whether or not to use live transfer in native codegen *)
 	    val liveTransfer: int ref 
-
-	    (* size of future list for register allocation *)
-	    val future: int ref
 
 	    (* whether or not to shuffle registers around C-calls *)
 	    val shuffle: bool ref
@@ -304,9 +289,6 @@ signature CONTROL =
       (* Force continuation formals to stack. *)
       val stackCont: bool ref 
 
-      (* Generate a statically linked executable. *)
-      val static: bool ref
-
       (* SXML Passes *)
       val sxmlPassesSet: (string -> string list Result.t) ref
       val sxmlPasses: string list ref
@@ -331,9 +313,6 @@ signature CONTROL =
       datatype typeError = Concise | Full
       val typeError: typeError ref
 	 
-      (* Should the basis library be prefixed onto the program. *)
-      val useBasisLibrary: bool ref
-
       datatype verbosity =
 	 Silent
        | Top
@@ -416,12 +395,4 @@ signature CONTROL =
 			  thunk: unit -> 'a,
 			  display: 'a display,
 			  typeCheck: 'a -> unit} -> 'a
-	 
-      val passSimplify: {name: string,
-			 suffix: string,
-			 style: style,
-			 thunk: unit -> 'a,
-			 display: 'a display,
-			 simplify: 'a -> 'a,
-			 typeCheck: 'a -> unit} -> 'a
    end

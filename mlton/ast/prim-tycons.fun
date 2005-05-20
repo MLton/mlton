@@ -58,7 +58,7 @@ local
 	 (fromSize default, fromSize, all, is, prims)
       end
 in
-   val (defaultChar, char, chars, isCharX, primChars) =
+   val (defaultChar, char, _, isCharX, primChars) =
       let
 	 open CharSize
       in

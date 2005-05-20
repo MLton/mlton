@@ -16,12 +16,3 @@ signature CONTIFY =
       
       val contify: Program.t -> Program.t
    end
-
-functor TestContify(S: CONTIFY) =
-struct
-
-open S
-
-val _ = Assert.assert("Contify", fn () => true)
-
-end

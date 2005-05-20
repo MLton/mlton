@@ -234,7 +234,6 @@ fun 'a elabConst (c: Aconst.t,
 	 case List.peek (all, fn s => Tycon.equals (tycon, sizeTycon s)) of
 	    NONE => Const.string "<bogus>"
 	  | SOME s => make s
-      fun now (c: Const.t, ty: Type.t): 'a = make (fn () => c, ty)
       fun delay (ty: unit -> Type.t, resolve: Type.t -> Const.t): 'a =
 	 let
 	    val ty = ty ()
@@ -971,22 +970,18 @@ fun fetchSymbol {attributes: Attribute.t list,
 fun symbol {name: string,
 	    ty: Type.t,
 	    region: Region.t}: Type.t Prim.t =
-   let
-      fun error l = Control.error (region, l, Layout.empty)
-   in
-      case Type.toCType ty of
-	 SOME {ctype = CType.Pointer, ...} =>
-	    Prim.ffiSymbol {name = name}
-       | _ =>
-	    let
-	       val () =
-		  Control.error (region,
-				 str "invalid type for import",
-				 Type.layoutPretty ty)
-	    in
-	       Prim.bogus
-	    end
-   end
+   case Type.toCType ty of
+      SOME {ctype = CType.Pointer, ...} =>
+	 Prim.ffiSymbol {name = name}
+    | _ =>
+	 let
+	    val () =
+	       Control.error (region,
+			      str "invalid type for import",
+			      Type.layoutPretty ty)
+	 in
+	    Prim.bogus
+	 end
 
 fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
    let

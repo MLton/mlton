@@ -38,7 +38,6 @@ local
     elaborate.fun
 in
     signature CONST_TYPE
-    signature ELABORATE
     functor Elaborate
     functor TypeEnv
 end

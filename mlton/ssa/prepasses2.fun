@@ -60,7 +60,7 @@ val eliminateDeadBlocks = DeadBlocks.eliminate
 structure Reverse =
 struct
 
-fun reverseFunctions (program as Program.T {globals, datatypes, functions, main}) =
+fun reverseFunctions (Program.T {globals, datatypes, functions, main}) =
    let
       val program =
 	 Program.T {datatypes = datatypes,

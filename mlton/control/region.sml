@@ -44,8 +44,6 @@ val append =
     | (r, Bogus) => r
     | (T {left, ...}, T {right, ...}) => T {left = left, right = right}
 
-fun list (xs, reg) = List.fold (xs, Bogus, fn (x, r) => append (reg x, r))
-
 fun compare (r, r') =
    case (left r, left r') of
       (NONE, NONE) => EQUAL
