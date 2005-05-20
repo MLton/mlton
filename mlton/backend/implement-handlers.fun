@@ -208,73 +208,10 @@ fun flow (f: Function.t): Function.t =
 		    start = newStart}
    end
 
-fun simple (f: Function.t): Function.t =
-   if not (Function.hasHandler f)
-      then f
-   else
-   let
-      val {args, blocks, name, raises, returns, start} =
-	 Function.dest f
-      val blocks =
-	 Vector.map
-	 (blocks,
-	  fn Block.T {args, kind, label, statements, transfer} =>
-	  let
-	     val post =
-		case transfer of
-		   Call {return, ...} =>
-		      (case return of
-			  Return.Dead => Vector.new0 ()
-			| Return.NonTail {handler, ...} =>
-			     (case handler of
-				 Handler.Caller =>
-				    Vector.new1 SetExnStackSlot
-			       | Handler.Dead => Vector.new0 ()
-			       | Handler.Handle l =>
-				    Vector.new2 (SetHandler l,
-						 SetExnStackLocal))
-			| Return.Tail =>
-			     Vector.new1 SetExnStackSlot)
-		 | Raise _ => Vector.new1 SetExnStackSlot
-		 | Return _ => Vector.new1 SetExnStackSlot
-		 | _ => Vector.new0 ()
-	     val statements = Vector.concat [statements, post]
-	  in
-	     Block.T {args = args,
-		      kind = kind,
-		      label = label,
-		      statements = statements,
-		      transfer = transfer}
-	  end)
-      val newStart = Label.newNoname ()
-      val startBlock =
-	 Block.T {args = Vector.new0 (),
-		  kind = Kind.Jump,
-		  label = newStart,
-		  statements = Vector.new1 SetSlotExnStack,
-		  transfer = Goto {args = Vector.new0 (),
-				   dst = start}}
-      val blocks = Vector.concat [blocks, Vector.new1 startBlock]
-   in
-      Function.new {args = args,
-		    blocks = blocks,
-		    name = name,
-		    raises = raises,
-		    returns = returns,
-		    start = newStart}
-   end
-
 fun doit (Program.T {functions, handlesSignals, main, objectTypes}) =
-   let
-      val implementFunction =
-	 case !Control.handlers of
-	    Control.Flow => flow
-	  | Control.Simple => simple
-   in
-      Program.T {functions = List.revMap (functions, implementFunction),
-		 handlesSignals = handlesSignals,
-		 main = implementFunction main,
-		 objectTypes = objectTypes}
-   end
+   Program.T {functions = List.revMap (functions, flow),
+	      handlesSignals = handlesSignals,
+	      main = flow main,
+	      objectTypes = objectTypes}
 
 end

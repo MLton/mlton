@@ -70,12 +70,9 @@ fun equate (T s, T s', combine) =
 			       whenComputed = ref (AppendList.append (!w, !w'))})
       end
 
-fun whenComputed (e as T s, f): unit =
-   (if !Control.deepFlattenDelay
-      then (case Set.! s of
-	       Computed a => f a
-	     | Uncomputed {whenComputed = w, ...} =>
-		  AppendList.push (w, f))
-   else f (value e))
+fun whenComputed (T s, f): unit =
+   case Set.! s of
+      Computed a => f a
+    | Uncomputed {whenComputed = w, ...} => AppendList.push (w, f)
 
 end

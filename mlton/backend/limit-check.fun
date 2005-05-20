@@ -66,6 +66,26 @@ struct
 open S
 open Rssa
 
+structure LimitCheck =
+   struct
+      datatype t = 
+	 PerBlock
+       | ExtBasicBlocks
+       | LoopHeaders of {fullCFG: bool,
+			 loopExits: bool}
+   end
+
+structure Control =
+   struct
+      open Control
+
+      datatype limitCheck = datatype LimitCheck.t
+
+      val limitCheck =
+	 ref (LoopHeaders {fullCFG = false,
+			   loopExits = true})
+   end
+   
 datatype z = datatype Transfer.t
    
 structure CFunction =

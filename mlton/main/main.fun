@@ -105,10 +105,6 @@ fun warnDeprecated (flag, use) =
 	       concat ["Warning: -", flag, " is deprecated.  ",
 		       "Use ", use, ".\n"])
 
-fun setConst (flag: string, name: string, value: string) =
-   (warnDeprecated (flag, concat ["-const '", name, " <value>'"])
-    ; Compile.setCommandLineConstant {name = name, value = value})
-
 fun hasNative () =
    let
       datatype z = datatype Control.arch
@@ -140,16 +136,6 @@ fun makeOptions {usage} =
 			   | "8" => Align8
 			   | _ => usage (concat ["invalid -align flag: ",
 						 s]))))),
-       (Expert, "allow-export", " {false|true}",
-	"allow _export expression in program",
-	Bool (fn b =>
-	      (warnDeprecated ("allow-export", "-default-ann")
-	       ; Control.Elaborate.setDefault(Control.Elaborate.allowExport, b)))),
-       (Expert, "allow-import", " {false|true}",
-	"allow _import expression in program",
-	Bool (fn b =>
-	      (warnDeprecated ("allow-import", "-default-ann")
-	       ; Control.Elaborate.setDefault(Control.Elaborate.allowImport, b)))),
        (Expert, "basis", " {2002|1997|...}",
 	"select Basis Library revision to prefix to the program",
 	SpaceString (fn s =>
@@ -164,9 +150,6 @@ fun makeOptions {usage} =
        (Expert, "build-constants", " {false|true}",
 	"output C file that prints basis constants",
 	boolRef buildConstants),
-       (Expert, "card-size-log2", " <n>",
-	"log (base 2) of card size used by GC",
-	intRef cardSizeLog2),
        (Expert, "cc", " <gcc>", "path to gcc executable",
 	SpaceString (fn s => gcc := s)),
        (Normal, "cc-opt", " <opt>", "pass option to C compiler",
@@ -193,31 +176,14 @@ fun makeOptions {usage} =
        (Expert, "contify-into-main", " {false|true}",
 	"contify functions into main",
 	boolRef contifyIntoMain),
-       (Expert, "dead-code", " {true|false}",
-	"annotated dead code elimination",
-	Bool (fn b =>
-	      (warnDeprecated ("dead-code", "-default-ann")
-	       ; ignore (Control.Elaborate.setEnabled 
-			 (Control.Elaborate.deadCode, b))))),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
 	boolRef debug),
-       (Expert, "deep-flatten-delay", " {true|false}",
-	"delay coercions during deepFlatten",
-	boolRef deepFlattenDelay),
-       (Expert, "deep-flatten-unify", " {false|true}",
-	"unify (instead of coerce) during deepFlatten",
-	boolRef deepFlattenUnify),
        (Normal, "default-ann", " <ann>", "set annotation default for mlb files",
 	SpaceString 
 	(fn s =>
 	 if Control.Elaborate.processDefault s
 	    then ()
 	    else usage (concat ["invalid -default-ann flag: ", s]))),
-       (Expert, "detect-overflow", " {true|false}",
-	"overflow checking on integer arithmetic",
-	Bool (fn b => setConst ("detect-overflow",
-				"MLton.detectOverflow",
-				Bool.toString b))),
        (Expert, "diag-pass", " <pass>", "keep diagnostic info for pass",
 	SpaceString 
 	(fn s =>
@@ -241,9 +207,6 @@ fun makeOptions {usage} =
 				    in List.push (dropPasses, re)
 				    end
 		   | NONE => usage (concat ["invalid -drop-pass flag: ", s])))),
-       (Expert, "eliminate-overflow", " {true|false}",
-	"eliminate useless overflow tests",
-	boolRef eliminateOverflow),
        (Expert, "enable-ann", " <ann>", "globally enable annotation",
 	SpaceString 
 	(fn s =>
@@ -264,13 +227,6 @@ fun makeOptions {usage} =
 		       | "first" => First
 		       | "every" => Every
 		       | _ => usage (concat ["invalid -gc-check flag: ", s])))),
-       (Expert, "handlers", " {flow|simple}",
-	"how to implement handlers",
-	SpaceString (fn s =>
-		     case s of
-			"flow" => handlers := Flow
-		      | "simple" => handlers := Simple
-		      | _ => usage (concat ["invalid -handlers flag: ", s]))),
        (Normal, "ieee-fp", " {false|true}", "use strict IEEE floating-point",
 	boolRef Native.IEEEFP),
        (Expert, "indentation", " <n>", "indentation level in ILs",
@@ -298,24 +254,6 @@ fun makeOptions {usage} =
 				    in List.push (keepPasses, re)
 				    end
 		   | NONE => usage (concat ["invalid -keep-pass flag: ", s])))),
-       (Expert, "limit-check", " {lhle|pb|ebb|lh|lhf|lhfle}",
-	"limit check insertion algorithm",
-	SpaceString (fn s =>
-		     case s of
-		        "pb" => limitCheck := PerBlock
-		      | "ebb" => limitCheck := ExtBasicBlocks
-		      | "lh" => limitCheck := LoopHeaders {fullCFG = false,
-							   loopExits = false}
-		      | "lhf" => limitCheck := LoopHeaders {fullCFG = true,
-							    loopExits = false}
-		      | "lhle" => limitCheck := LoopHeaders {fullCFG = false,
-							     loopExits = true}
-		      | "lhfle" => limitCheck := LoopHeaders {fullCFG = true,
-							      loopExits = true}
-		      | _ => usage (concat ["invalid -limit-check flag: ", s]))),
-       (Expert, "limit-check-counts", " {false|true}",
-	"compute dynamic counts of limit checks",
-	boolRef limitCheckCounts),
        (Normal, "link-opt", " <opt>", "pass option to linker",
 	SpaceString (fn s =>
 		     List.push (linkOpts, {opt = s, pred = OptPred.Yes}))),
@@ -329,11 +267,6 @@ fun makeOptions {usage} =
 	boolRef markCards),
        (Expert, "max-function-size", " <n>", "max function size (blocks)",
 	intRef maxFunctionSize),
-       (Expert, "native", if hasNative () then " {true|false}" else " {false}",
-	"use native code generator",
-	Bool (fn b =>
-	      (warnDeprecated ("native", "-codegen")
-	       ; Control.codegen := (if b then Native else CCodegen)))),
        (Expert, "native-commented", " <n>", "level of comments  (0)",
 	intRef Native.commented),
        (Expert, "native-copy-prop", " {true|false}", 
@@ -358,8 +291,6 @@ fun makeOptions {usage} =
        (Expert, "native-shuffle", " {true|false}",
 	"shuffle registers at C-calls",
 	Bool (fn b => Native.shuffle := b)),
-       (Expert, "new-return", " {false|true}", "non-tail call return convention",
-	boolRef newReturn),
        (Normal, "output", " <file>", "name of output file",
 	SpaceString (fn s => output := SOME s)),
        (Expert, "polyvariance", " {true|false}", "use polyvariance",
@@ -405,21 +336,8 @@ fun makeOptions {usage} =
 	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
        (Normal, "profile-stack", " {false|true}", "profile the stack",
 	boolRef profileStack),
-       (Expert, "reserve-esp", " {false|true}", "reserve %ESP on x86",
-	SpaceString
-	(fn s =>
-	 case Bool.fromString s of
-	    NONE => usage (concat ["invalid -reserve-esp arg: ", s])
-	  | SOME b => reserveEsp := SOME b)),
        (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
 	push runtimeArgs),
-       (Expert, "safe", " {true|false}", "bounds checking and other checks",
-	Bool (fn b => setConst ("safe", "MLton.safe", Bool.toString b))),
-       (Expert, "sequence-unit", " {false|true}",
-	"in (e1; e2), require e1: unit",
-	Bool (fn b =>
-	      (warnDeprecated ("sequence-unit", "-default-ann")
-	       ; Control.Elaborate.setDefault(Control.Elaborate.sequenceUnit, b)))),
        (Normal, "show-basis", " <file>", "write out the final basis environment",
 	SpaceString (fn s => showBasis := SOME s)),
        (Normal, "show-def-use", " <file>", "write def-use information",
@@ -438,9 +356,6 @@ fun makeOptions {usage} =
 	 case !Control.ssa2PassesSet s of
 	    Result.Yes ss => Control.ssa2Passes := ss
 	  | Result.No s' => usage (concat ["invalid -ssa2-pass arg: ", s']))),
-       (Expert, "stack-cont", " {false|true}",
-	"force continuation formals to stack",
-	boolRef stackCont),
        (Normal, "stop", " {f|g|o|sml|tc}", "where to stop",
 	SpaceString
 	(fn s =>
@@ -478,20 +393,8 @@ fun makeOptions {usage} =
 	 (fn (target, opt) =>
 	  List.push (linkOpts, {opt = opt, pred = OptPred.Target target})))),
        (Expert, #1 trace, " name1,...", "trace compiler internals", #2 trace),
-       (Expert, "text-io-buf-size", " <n>", "TextIO buffer size",
-	Int (fn i => setConst ("text-io-buf-size",
-			       "TextIO.bufSize",
-			       Int.toString i))),
        (Expert, "type-check", " {false|true}", "type check ILs",
 	boolRef typeCheck),
-       (Expert, "type-error", " {concise|full}", "type error verbosity",
-	SpaceString
-	(fn s =>
-	 typeError := (case s of
-			  "concise" => Concise
-			| "full" => Full
-			| _ => usage (concat
-				      ["invalid -type-error arg: ", s])))),
        (Normal, "verbose", " {0|1|2|3}", "how verbose to be",
 	SpaceString
 	(fn s =>
@@ -504,16 +407,6 @@ fun makeOptions {usage} =
        (Expert, "warn-ann", " {true|false}",
 	"unrecognized annotation warnings",
 	boolRef warnAnn),
-       (Expert, "warn-match", " {true|false}",
-	"nonexhaustive and redundant match warnings",
-	Bool (fn b =>
-	      (warnDeprecated ("warn-match", "-default-ann")
-	       ; Control.Elaborate.setDefault(Control.Elaborate.warnMatch, b)))),
-       (Expert, "warn-unused", " {false|true}",
-	"unused identifier warnings",
-	Bool (fn b =>
-	      (warnDeprecated ("warn-unused", "-default-ann")
-	       ; Control.Elaborate.setDefault(Control.Elaborate.warnUnused, b)))),
        (Expert, "xml-passes", " <passes>", "xml optimization passes",
 	SpaceString
 	(fn s =>

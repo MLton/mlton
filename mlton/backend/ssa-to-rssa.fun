@@ -552,6 +552,8 @@ structure Type =
 	  | SOME s => s
    end
 
+val cardSizeLog2 = 8 (* must agree with CARD_SIZE_LOG2 in gc.c *)
+
 fun updateCard (addr: Operand.t): Statement.t list =
    let
       val index = Var.newNoname ()
@@ -560,9 +562,7 @@ fun updateCard (addr: Operand.t): Statement.t list =
       [PrimApp {args = (Vector.new2
 			(addr,
 			 Operand.word
-			 (WordX.fromIntInf (IntInf.fromInt
-					    (!Control.cardSizeLog2),
-					    WordSize.default)))),
+			 (WordX.fromIntInf (cardSizeLog2, WordSize.default)))),
 		dst = SOME (index, indexTy),
 		prim = Prim.wordRshift (WordSize.default,
 					{signed = false})},

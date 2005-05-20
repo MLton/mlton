@@ -27,6 +27,7 @@
 
 enum {
 	BOGUS_EXN_STACK = 0xFFFFFFFF,
+	CARD_SIZE_LOG2 = 8, /* must agree w/ cardSizeLog2 in ssa-to-rssa.fun */
 	COPY_CHUNK_SIZE = 0x2000000, /* 32M */
 	CROSS_MAP_EMPTY = 255,
 	CURRENT_SOURCE_UNDEFINED = 0xFFFFFFFF,
@@ -362,11 +363,11 @@ void GC_display (GC_state s, FILE *stream) {
 }
 
 static inline uint cardNumToSize (GC_state s, uint n) {
-	return n << s->cardSizeLog2;
+	return n << CARD_SIZE_LOG2;
 }
 
 static inline uint divCardSize (GC_state s, uint n) {
-	return n >> s->cardSizeLog2;
+	return n >> CARD_SIZE_LOG2;
 }
 
 static inline pointer cardMapAddr (GC_state s, pointer p) {
@@ -4448,7 +4449,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->bytesMarkCompacted = 0;
 	s->callFromCHandler = BOGUS_THREAD;
 	s->canHandle = 0;
-	s->cardSize = 0x1 << s->cardSizeLog2;
+	s->cardSize = 0x1 << CARD_SIZE_LOG2;
 	s->copyRatio = 4.0;
 	s->copyGenerationalRatio = 4.0;
 	s->currentThread = BOGUS_THREAD;

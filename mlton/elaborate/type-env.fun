@@ -897,15 +897,8 @@ structure Type =
       fun unify (t, t', {preError}): UnifyResult.t =
 	 let
 	    val {destroy, lay = layoutPretty} = makeLayoutPretty ()
-	    val dontCare' =
-	       case !Control.typeError of
-		  Control.Concise => (fn _ => dontCare)
-		| Control.Full => layoutPretty
-	    val layoutRecord =
-	       fn z => layoutRecord (z,
-				     case !Control.typeError of
-					Control.Concise => true
-				      | Control.Full => false)
+	    val dontCare' = fn _ => dontCare
+	    val layoutRecord = fn z => layoutRecord (z, true)
 	    fun unify arg =
 	       traceUnify
 	       (fn (outer as T s, outer' as T s') =>
@@ -1204,11 +1197,7 @@ structure Type =
 				     ((f, false, l) :: ac,
 				      (f, false, l') :: ac',
 				      both)
-				| Unified =>
-				     (ac, ac',
-				      case !Control.typeError of
-					 Control.Concise => []
-				       | Control.Full => (f, t) :: both))
+				| Unified => (ac, ac', []))
 		  val (ac, ac', both) =
 		     subset (fields, fields', ensureField', ac, ac', [], false)
 		  val (ac', ac, both) =

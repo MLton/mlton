@@ -625,11 +625,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       val typeValue =
 	 Trace.trace ("DeepFlatten.typeValue", Type.layout, Value.layout)
 	 typeValue
-      val (coerce, coerceProd) =
-	 if !Control.deepFlattenUnify
-	    then (fn {from, to} => Value.unify (from, to),
-		  fn {from, to} => Value.unifyProd (from, to))
-	 else (Value.coerce, Value.coerceProd)
+      val (coerce, coerceProd) = (Value.coerce, Value.coerceProd)
       fun inject {sum, variant = _} = typeValue (Type.datatypee sum)
       fun object {args, con, resultType} =
 	 let

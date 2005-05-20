@@ -157,4 +157,5 @@ nj-whole: $(SOURCES)
 
 .PHONY: warn
 warn:
-	mlton -stop tc -default-ann 'warnUnused true' $(FILE)
+	mlton -stop tc -default-ann 'warnUnused true' $(FILE) \
+		>/tmp/z.warn 2>&1

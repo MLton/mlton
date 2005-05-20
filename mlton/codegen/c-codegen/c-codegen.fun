@@ -362,7 +362,6 @@ fun outputDeclarations
 	 in 
 	    C.callNoSemi ("Main",
 			  [C.int align,
-			   C.int (!Control.cardSizeLog2),
 			   magic,
 			   C.bytes maxFrameSize,
 			   C.bool (!Control.markCards),

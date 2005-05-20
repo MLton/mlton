@@ -22,12 +22,11 @@
 
 Pointer gcStateAddress;
 
-#define Initialize(al, cs, mg, mfs, mmc, pk, ps)			\
+#define Initialize(al, mg, mfs, mmc, pk, ps)				\
 	gcStateAddress = &gcState;					\
 	gcState.alignment = al;						\
 	gcState.atMLtons = atMLtons;					\
 	gcState.atMLtonsSize = cardof(atMLtons);		       	\
-	gcState.cardSizeLog2 = cs;					\
 	gcState.frameLayouts = frameLayouts;				\
 	gcState.frameLayoutsSize = cardof(frameLayouts); 		\
 	gcState.frameSources = frameSources;				\

@@ -27,8 +27,6 @@ signature CONTROL =
       (* build identifies the machine on which this MLton was built. *)
       val build: string
 
-      val cardSizeLog2: int ref
-
       datatype chunk =
 	 OneChunk
        | ChunkPerFunc
@@ -48,17 +46,13 @@ signature CONTROL =
       (* Generate an executable with debugging info. *)
       val debug: bool ref
 
-      val deepFlattenDelay: bool ref
-	 
-      val deepFlattenUnify: bool ref
-	 
       (* List of pass names to keep diagnostic info on. *)
       val diagPasses: Regexp.Compiled.t list ref
 
       (* List of optimization passes to skip. *)
       val dropPasses: Regexp.Compiled.t list ref
 
-      structure Elaborate :
+      structure Elaborate:
 	 sig
 	    type ('args, 'st) t
 
@@ -78,9 +72,7 @@ signature CONTROL =
 
 	    val current: ('args, 'st) t -> 'st
 	    val default: ('args, 'st) t -> 'st
-	    val setDefault: ('args, 'st) t * 'st -> unit
 	    val enabled: ('args, 'st) t -> bool
-	    val setEnabled: ('args, 'st) t * bool -> bool
 	    val expert: ('args, 'st) t -> bool
 	    val name: ('args, 'st) t -> string
 
@@ -110,9 +102,6 @@ signature CONTROL =
        *)
       val elaborateOnly: bool ref
 
-      (* whether optimization passes should eliminate useless overflow tests *)
-      val eliminateOverflow: bool ref
-
       val exportHeader: File.t option ref
 	 
       val exnHistory: bool ref
@@ -123,9 +112,6 @@ signature CONTROL =
        | First
        | Every
       val gcCheck: gcCheck ref
-
-      datatype handlers = Flow | Simple
-      val handlers: handlers ref
 
       (* Indentation used in laying out ILs. *)
       val indentation: int ref
@@ -171,24 +157,6 @@ signature CONTROL =
       (* lib/mlton/target directory *)
       val libTargetDir: Dir.t ref
 
-      datatype limitCheck =
-	 (* per block *)
-	 PerBlock
-         (* decycle using extended basic blocks 
-	  *)
-       | ExtBasicBlocks
-	 (* decycle using loop headers
-	  *  - use full CFG
-	  *  - use loop exits of non-allocating loops
-	  *)
-       | LoopHeaders of {fullCFG: bool,
-			 loopExits: bool}
-
-      val limitCheck: limitCheck ref
-
-      (* Whether or not dynamic counts of limit checks are computed. *)
-      val limitCheckCounts: bool ref
-
       (* Number of times to loop through optimization passes. *)
       val loopPasses: int ref
 	 
@@ -233,10 +201,6 @@ signature CONTROL =
 	    val split: int option ref
 	 end
 
-      (* Whether or not to use the new non-tail call return convention.
-       *)
-      val newReturn: bool ref
-
       (* Only duplicate big functions when
        * (size - small) * (number of occurrences - 1) <= product
        *)
@@ -269,8 +233,6 @@ signature CONTROL =
 
       val profileStack: bool ref
 
-      val reserveEsp: bool option ref
-
       (* Show the basis library. *)
       val showBasis: File.t option ref
 	 
@@ -285,9 +247,6 @@ signature CONTROL =
       val ssaPasses: string list ref
       val ssa2PassesSet: (string -> string list Result.t) ref
       val ssa2Passes: string list ref
-
-      (* Force continuation formals to stack. *)
-      val stackCont: bool ref 
 
       (* SXML Passes *)
       val sxmlPassesSet: (string -> string list Result.t) ref
@@ -310,9 +269,6 @@ signature CONTROL =
       (* Type check ILs. *)
       val typeCheck: bool ref
 
-      datatype typeError = Concise | Full
-      val typeError: typeError ref
-	 
       datatype verbosity =
 	 Silent
        | Top

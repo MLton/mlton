@@ -37,10 +37,6 @@ val basisLibrary = control {name = "basis library",
 			    default = "basis-2002",
 			    toString = fn s => s}
 
-val cardSizeLog2 = control {name = "log2 (card size)",
-			    default = 8,
-			    toString = Int.toString}
-   
 structure Chunk =
    struct
       datatype t =
@@ -86,16 +82,6 @@ val contifyIntoMain = control {name = "contifyIntoMain",
 val debug = control {name = "debug",
 		     default = false,
 		     toString = Bool.toString}
-
-val deepFlattenDelay =
-   control {name = "deepFlattenDelay",
-	    default = true,
-	    toString = Bool.toString}
-
-val deepFlattenUnify =
-   control {name = "deepFlattenUnify",
-	    default = false,
-	    toString = Bool.toString}
 
 val diagPasses = 
    control {name = "diag passes",
@@ -148,10 +134,8 @@ structure Elaborate =
 				      id: Id.t}
       fun current (T {cur, ...}) = !cur
       fun default (T {def, ...}) = !def
-      fun setDefault (T {def, ...}, def') = def := def'
       fun id (T {id, ...}) = id
       fun enabled ctrl = Id.enabled (id ctrl)
-      fun setEnabled (ctrl, b) = Id.setEnabled (id ctrl, b)
       fun expert ctrl = Id.expert (id ctrl)
       fun name ctrl = Id.name (id ctrl)
       fun equalsId (ctrl, id') = Id.equals (id ctrl, id')
@@ -355,11 +339,6 @@ val elaborateOnly =
 	    default = false,
 	    toString = Bool.toString}
 
-val eliminateOverflow =
-   control {name = "eliminate overflow",
-	    default = true,
-	    toString = Bool.toString}
-
 val exportHeader =
    control {name = "export header",
 	    default = NONE,
@@ -391,21 +370,6 @@ datatype gcCheck = datatype GcCheck.t
 val gcCheck = control {name = "gc check",
 		       default = Limit,
 		       toString = GcCheck.toString}
-
-structure Handlers =
-   struct
-      datatype t = Flow | Simple
-
-      val toString =
-	 fn Flow => "Flow"
-	  | Simple => "Simple"
-   end
-
-datatype handlers = datatype Handlers.t
-
-val handlers = control {name = "handlers",
-			default = Flow,
-			toString = Handlers.toString}
 
 val indentation = control {name = "indentation",
 			   default = 3,
@@ -493,36 +457,6 @@ val libTargetDir = control {name = "lib target dir",
 			    default = "<libTargetDir unset>",
 			    toString = fn s => s} 
    
-structure LimitCheck =
-   struct
-      datatype t = 
-	 PerBlock
-       | ExtBasicBlocks
-       | LoopHeaders of {fullCFG: bool,
-			 loopExits: bool}
-
-      val toString =
-	 fn PerBlock => "per block"
-	  | ExtBasicBlocks => "extended basic blocks"
-	  | LoopHeaders {fullCFG, loopExits} =>
-	       concat ["loop headers (fullCFG = ",
-		       Bool.toString fullCFG,
-		       ", loopExits = ",
-		       Bool.toString loopExits,
-		       ")"]
-   end
-
-datatype limitCheck = datatype LimitCheck.t
-
-val limitCheck = control {name = "limit check",
-			  default = LoopHeaders {fullCFG = false,
-						 loopExits = true},
-			  toString = LimitCheck.toString}
-
-val limitCheckCounts = control {name = "limit check counts",
-				default = false,
-				toString = Bool.toString}
-
 val loopPasses = control {name = "loop passes",
 			  default = 1,
 			  toString = Int.toString}
@@ -581,10 +515,6 @@ structure Native =
 			   default = SOME 20000,
 			   toString = Option.toString Int.toString}
    end
-
-val newReturn = control {name = "new return",
-			 default = false,
-			 toString = Bool.toString}
 
 val polyvariance =
    control {name = "polyvariance",
@@ -661,10 +591,6 @@ val profileStack = control {name = "profile stack",
 			    default = false,
 			    toString = Bool.toString}
 
-val reserveEsp = control {name = "reserve esp",
-			  default = NONE,
-			  toString = Option.toString Bool.toString}
-
 val showBasis = control {name = "show basis",
 			 default = NONE,
 			 toString = Option.toString File.toString}
@@ -693,10 +619,6 @@ val ssa2Passes : string list ref =
    control {name = "ssa2Passes",
 	    default = ["default"],
 	    toString = List.toString String.toString}
-
-val stackCont = control {name = "stack cont",
-			 default = false,
-			 toString = Bool.toString}
 
 val sxmlPassesSet : (string -> string list Result.t) ref = 
    control {name = "sxmlPassesSet",
@@ -749,21 +671,6 @@ val targetOS = control {name = "target OS",
 val typeCheck = control {name = "type check",
 			 default = false,
 			 toString = Bool.toString}
-
-structure TypeError =
-   struct
-      datatype t = Concise | Full
-
-      val toString =
-	 fn Concise => "concise"
-	  | Full => "full"
-   end
-
-datatype typeError = datatype TypeError.t
-
-val typeError = control {name = "type error",
-			 default = Concise,
-			 toString = TypeError.toString}
    
 structure Verbosity =
    struct

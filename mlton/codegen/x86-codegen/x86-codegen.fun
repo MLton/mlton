@@ -83,11 +83,7 @@ struct
 	     * that don't handle signals, since signals get used under the hood
 	     * in Cygwin.
 	     *)
-	    case !Control.reserveEsp of
-	       NONE =>
-		  handlesSignals
-		  andalso let open Control in !targetOS = Cygwin end
-	     | SOME b => b
+	    handlesSignals andalso let open Control in !targetOS = Cygwin end
 
 	val makeC = outputC
 	val makeS = outputS

@@ -8,7 +8,7 @@ static Word32 returnAddressToFrameIndex (Word32 w) {
 	return w;
 }
 
-#define Main(al, cs, mg, mfs, mmc, pk, ps, mc, ml)			\
+#define Main(al, mg, mfs, mmc, pk, ps, mc, ml)				\
 /* Globals */								\
 int nextFun;								\
 bool returnToC;								\
@@ -36,7 +36,7 @@ void MLton_callFromC () {						\
 }									\
 int main (int argc, char **argv) {					\
 	struct cont cont;						\
-	Initialize (al, cs, mg, mfs, mmc, pk, ps);			\
+	Initialize (al, mg, mfs, mmc, pk, ps);				\
 	if (gcState.isOriginal) {					\
 		real_Init();						\
 		PrepFarJump(mc, ml);					\

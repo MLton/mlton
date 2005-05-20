@@ -470,13 +470,10 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 			   | _ => noChange
 		       end
 		    val (statements, transfer) =
-		       if !Control.eliminateOverflow
-			  then
-			     case transfer of
-				Arith {args, prim, success, ...} =>
-				   arith (args, prim, success)
-			      | _ => noChange
-		       else noChange
+		       case transfer of
+			  Arith {args, prim, success, ...} =>
+			     arith (args, prim, success)
+			| _ => noChange
 		 in
 		   Block.T {label = label,
 			    args = args,
