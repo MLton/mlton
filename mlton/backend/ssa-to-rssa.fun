@@ -552,7 +552,7 @@ structure Type =
 	  | SOME s => s
    end
 
-val cardSizeLog2 = 8 (* must agree with CARD_SIZE_LOG2 in gc.c *)
+val cardSizeLog2 : IntInf.t = 8 (* must agree with CARD_SIZE_LOG2 in gc.c *)
 
 fun updateCard (addr: Operand.t): Statement.t list =
    let
