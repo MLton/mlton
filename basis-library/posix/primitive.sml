@@ -511,7 +511,7 @@ structure PosixPrimitive =
 	    structure FLock =
 	       struct
 		  val fcntl = _import "Posix_IO_FLock_fcntl": fd * int -> int;
-		  val typ = _import "Posix_IO_FLock_typ": unit -> int;
+		  val typ = _import "Posix_IO_FLock_type": unit -> int;
 		  val whence = _import "Posix_IO_FLock_whence": unit -> int;
 		  val start =
 		     _import "Posix_IO_FLock_start": unit -> Position.int;
