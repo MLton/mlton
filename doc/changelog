@@ -3,6 +3,9 @@ Here are the changes since version 20041109.
 * 2005-05-22
   - Fixed bug in Posix.IO.{getlk,setlk,setlkw} that caused a link-time
     error: undefined reference to Posix_IO_FLock_typ.
+  - Improved exception history so that the first entry in the history
+    is the source position of the raise, and the rest is the call
+    stack.
 
 * 2005-05-19
   - Improved exception history for Overflow exceptions.

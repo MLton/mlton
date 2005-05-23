@@ -22,6 +22,7 @@ in
    structure Prim = Prim
    structure RealSize = RealSize
    structure Record = Record
+   structure SourceInfo = SourceInfo
    structure Ctype = Type
    structure WordSize = WordSize
    structure WordX = WordX
@@ -97,6 +98,9 @@ structure Xexp =
       end
    end
 
+fun enterLeave (e: Xexp.t, t, si): Xexp.t =
+   Xexp.fromExp (Xml.Exp.enterLeave (Xexp.toExp e, t, si), t)
+
 val warnings: (unit -> unit) list ref = ref []
    
 fun casee {caseType: Xtype.t,
@@ -121,10 +125,21 @@ fun casee {caseType: Xtype.t,
       fun raiseExn f =
 	 let
 	    val e = Var.newNoname ()
+	    val exp = Xexp.raisee (f e, {extend = true}, caseType)
+	    val exp = 
+	       if let
+		     open Control
+		  in
+		     !profile <> ProfileNone andalso !profileIL = ProfileSource
+		  end
+		  then enterLeave (exp, caseType,
+				   SourceInfo.function {name = ["raise"],
+							region = region})
+	       else exp
 	 in
 	    Vector.concat
 	    [cases,
-	     Vector.new1 {exp = Xexp.raisee (f e, {extend = true}, caseType),
+	     Vector.new1 {exp = exp,
 			  isDefault = true,
 			  lay = NONE,
 			  numUses = ref 0,
@@ -684,7 +699,6 @@ fun defunctorize (CoreML.Program.T {decs}) =
 		      let
 			 fun patDec (p: NestedPat.t,
 				     e: Xexp.t,
-				     r: Region.t,
 				     body: Xexp.t,
 				     bodyType: Xtype.t,
 				     mayWarn: bool) =
@@ -697,7 +711,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 				   lay = lay,
 				   mayWarn = warnMatch andalso mayWarn,
 				   noMatch = Cexp.RaiseBind,
-				   region = r,
+				   region = patRegion,
 				   test = (e, NestedPat.ty p),
 				   tyconCons = tyconCons}
 			 val isExpansive = Cexp.isExpansive exp
@@ -753,7 +767,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 					    Xexp.lett {body = body, decs = decs})
 					end
 			       in
-				  patDec (pat, exp, patRegion, e, bodyType, true)
+				  patDec (pat, exp, e, bodyType, true)
 			       end
 			 else
 			    case NestedPat.node pat of
@@ -789,7 +803,6 @@ fun defunctorize (CoreML.Program.T {decs}) =
 						     Xexp.var {targs = targs,
 							       ty = xt,
 							       var = x},
-						     patRegion,
 						     Xexp.monoVar (y', yt),
 						     yt,
 						     false),
@@ -831,7 +844,6 @@ fun defunctorize (CoreML.Program.T {decs}) =
 						   {targs = targs,
 						    ty = NestedPat.ty pat,
 						    var = x},
-						   patRegion,
 						   e,
 						   bodyType,
 						   true)
@@ -942,8 +954,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 		     let
 			val (e, t) = loopExp e
 		     in
-			Xexp.fromExp (Xml.Exp.enterLeave (Xexp.toExp e, t, si),
-				      t)
+			enterLeave (e, t, si)
 		     end
 		| Handle {catch = (x, t), handler, try} =>
 		     Xexp.handlee {catch = (x, loopTy t),

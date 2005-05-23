@@ -2516,7 +2516,11 @@ fun elaborateDec (d, {env = E, nest}) =
 			   seq [str "exp type: ", l1]))
 		      val resultType = Type.new ()
 		   in
-		      Cexp.make (Cexp.Raise exn, resultType)
+		      Cexp.enterLeave
+		      (Cexp.make (Cexp.Raise exn, resultType),
+		       profileBody,
+		       fn () => SourceInfo.function {name = "raise" :: nest,
+						     region = region})
 		   end
 	      | Aexp.Record r =>
 		   let
