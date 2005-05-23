@@ -48,6 +48,7 @@ structure OptPred =
    end
 
 val buildConstants: bool ref = ref false
+val asOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val coalesce: int option ref = ref NONE
 val expert: bool ref = ref false
@@ -97,6 +98,7 @@ fun setTargetType (target: string, usage): unit =
 	    ; (case arch of
 		  Sparc => (align := Align8; codegen := CCodegen)
 		| X86 => codegen := Native
+		| AMD64 => codegen := Native
 		| _ => codegen := CCodegen)
 	 end
 
@@ -110,7 +112,8 @@ fun hasNative () =
       datatype z = datatype Control.arch
    in
       case !Control.targetArch of
-         X86 => true
+	 AMD64 => true
+       | X86 => true
        | _ => false
    end
 
@@ -383,6 +386,10 @@ fun makeOptions {usage} =
 	SpaceString (fn s =>
 		     (setTargetType (s, usage)
 		      ; target := (if s = "self" then Self else Cross s)))),
+       (Expert, "target-as-opt", "<target> <opt>", "target-dependent assembler option",
+	(SpaceString2
+	 (fn (target, opt) =>
+	  List.push (asOpts, {opt = opt, pred = OptPred.Target target})))),
        (Expert, "target-cc-opt", " <target> <opt>", "target-dependent CC option",
 	(SpaceString2
 	 (fn (target, opt) =>
@@ -484,6 +491,7 @@ fun commandLine (args: string list): unit =
 		| OptPred.Yes => true)
 	      then opt :: ac
 	   else ac))
+      val asOpts = addTargetOpts asOpts
       val ccOpts = addTargetOpts ccOpts
       val linkOpts =
 	 List.concat [[concat ["-L", !libTargetDir],
@@ -713,7 +721,7 @@ fun commandLine (args: string list): unit =
 					    then
 					       (gccDebug @ ["-DASSERT=1"],
 						ccOpts)
-					 else ([asDebug], [])
+					 else ([asDebug], asOpts)
 				      val switches =
 					 if !debug
 					    then debugSwitches @ switches

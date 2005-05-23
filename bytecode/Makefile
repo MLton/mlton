@@ -1,7 +1,13 @@
+TARGET_ARCH = $(shell ../bin/host-arch)
+
 all: interpret.o interpret-gdb.o print-opcodes
 
 CC = gcc -std=gnu99
 CFLAGS = -fomit-frame-pointer -I../runtime -I../include -Wall
+
+ifeq ($(TARGET_ARCH), amd64)
+CFLAGS += -mtune=opteron -m32 
+endif 
 
 interpret.o: interpret.c interpret.h opcode.h
 	$(CC) $(CFLAGS) -c -O2 interpret.c

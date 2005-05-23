@@ -20,6 +20,10 @@ else
 FLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
 endif
 
+ifeq ($(TARGET_ARCH), amd64)
+FLAGS += -mtune=opteron -m32
+endif
+
 ifeq ($(TARGET_ARCH), sparc)
 FLAGS += -mv8 -m32
 endif
