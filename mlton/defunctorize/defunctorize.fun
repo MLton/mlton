@@ -131,7 +131,9 @@ fun casee {caseType: Xtype.t,
 		  let
 		     open Control
 		  in
-		     !profile <> ProfileNone andalso !profileIL = ProfileSource
+		     !profile <> ProfileNone 
+		     andalso !profileIL = ProfileSource
+		     andalso !profileRaise
 		  end
 		  then enterLeave (exp, caseType,
 				   SourceInfo.function {name = ["raise"],

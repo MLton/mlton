@@ -587,6 +587,10 @@ val profileIL = control {name = "profile IL",
 			 default = ProfileSource,
 			 toString = ProfileIL.toString}
 
+val profileRaise = control {name = "profile raise",
+			    default = false,
+			    toString = Bool.toString}
+
 val profileStack = control {name = "profile stack",
 			    default = false,
 			    toString = Bool.toString}

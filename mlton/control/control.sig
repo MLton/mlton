@@ -226,10 +226,12 @@ signature CONTROL =
 
       val profileBasis: bool ref
 
+      val profileBranch: bool ref
+
       datatype profileIL = ProfileSSA | ProfileSSA2 | ProfileSource
       val profileIL: profileIL ref
 
-      val profileBranch: bool ref
+      val profileRaise: bool ref
 
       val profileStack: bool ref
 

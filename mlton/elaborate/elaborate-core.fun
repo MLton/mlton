@@ -1639,7 +1639,9 @@ fun elaborateDec (d, {env = E, nest}) =
 				     val body = elabExp (body, nest, NONE)
 				     val body =
 					Cexp.enterLeave
-					(body, !Control.profileBranch,
+					(body, 
+					 profileBody 
+					 andalso !Control.profileBranch,
 					 fn () =>
 					 SourceInfo.function
 					 {name = "<branch>" :: nest,
@@ -2140,7 +2142,8 @@ fun elaborateDec (d, {env = E, nest}) =
 				      Cexp.RaiseMatch)
 		      val body =
 			 Cexp.enterLeave
-			 (body, profileBody,
+			 (body, 
+			  profileBody,
 			  fn () => SourceInfo.function {name = nest,
 							region = region})
 		   in
@@ -2518,7 +2521,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		   in
 		      Cexp.enterLeave
 		      (Cexp.make (Cexp.Raise exn, resultType),
-		       profileBody,
+		       profileBody andalso !Control.profileRaise,
 		       fn () => SourceInfo.function {name = "raise" :: nest,
 						     region = region})
 		   end
@@ -2709,7 +2712,9 @@ fun elaborateDec (d, {env = E, nest}) =
 				seq [str "in: ", lay ()]]))
 		    val e =
 		       Cexp.enterLeave
-		       (e, !Control.profileBranch, fn () =>
+		       (e, 
+			profileBody andalso !Control.profileBranch, 
+			fn () =>
 			SourceInfo.function {name = "<branch>" :: nest,
 					     region = Aexp.region exp})
 		 in

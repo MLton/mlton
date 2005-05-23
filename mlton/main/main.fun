@@ -337,6 +337,9 @@ fun makeOptions {usage} =
 	  | "ssa" => profileIL := ProfileSSA
 	  | "ssa2" => profileIL := ProfileSSA2
 	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
+       (Expert, "profile-raise", " {false|true}",
+	"profile raises in addition to functions",
+	boolRef profileRaise),
        (Normal, "profile-stack", " {false|true}", "profile the stack",
 	boolRef profileStack),
        (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
@@ -452,7 +455,8 @@ fun commandLine (args: string list): unit =
 		  then (case !profile of
 			   ProfileNone => profile := ProfileCallStack
 			 | ProfileCallStack => ()
-			 | _ => usage "can't use -profile with Exn.keepHistory")
+			 | _ => usage "can't use -profile with Exn.keepHistory"
+			; profileRaise := true)
 	       else ()
       val () =
 	 Compile.setCommandLineConstant
