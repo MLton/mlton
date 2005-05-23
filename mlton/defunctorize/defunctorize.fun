@@ -122,12 +122,13 @@ fun casee {caseType: Xtype.t,
 			       lay = lay,
 			       numUses = ref 0,
 			       pat = pat})
-      fun raiseExn f =
+      fun raiseExn (f, mayWrap) =
 	 let
 	    val e = Var.newNoname ()
 	    val exp = Xexp.raisee (f e, {extend = true}, caseType)
 	    val exp = 
-	       if let
+	       if mayWrap andalso
+		  let
 		     open Control
 		  in
 		     !profile <> ProfileNone andalso !profileIL = ProfileSource
@@ -151,9 +152,10 @@ fun casee {caseType: Xtype.t,
 	 in
 	    case noMatch of
 	       Impossible => cases
-	     | RaiseAgain => raiseExn (fn e => Xexp.monoVar (e, Xtype.exn))
-	     | RaiseBind => raiseExn (fn _ => Xexp.bind)
-	     | RaiseMatch => raiseExn (fn _ => Xexp.match)
+	     | RaiseAgain =>
+		  raiseExn (fn e => Xexp.monoVar (e, Xtype.exn), false)
+	     | RaiseBind => raiseExn (fn _ => Xexp.bind, true)
+	     | RaiseMatch => raiseExn (fn _ => Xexp.match, true)
 	 end
       val examples = ref (fn () => Vector.new0 ())
       fun matchCompile () =		     		     
