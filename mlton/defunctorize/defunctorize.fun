@@ -117,7 +117,7 @@ fun casee {caseType: Xtype.t,
 	   tyconCons}: Xexp.t =
    let
       val cases = Vector.map (cases, fn {exp, lay, pat} =>
-			      {exp = exp,
+			      {exp = fn () => exp,
 			       isDefault = false,
 			       lay = lay,
 			       numUses = ref 0,
@@ -126,7 +126,8 @@ fun casee {caseType: Xtype.t,
 	 let
 	    val e = Var.newNoname ()
 	    val exp = Xexp.raisee (f e, {extend = true}, caseType)
-	    val exp = 
+	    val exp =
+	       fn () =>
 	       if mayWrap andalso
 		  let
 		     open Control
@@ -162,10 +163,11 @@ fun casee {caseType: Xtype.t,
       val examples = ref (fn () => Vector.new0 ())
       fun matchCompile () =		     		     
 	 let
-	    val (cases, decs) =
-	       Vector.mapAndFold
-	       (cases, [],
-		fn ({exp = e, numUses, pat = p, ...}, decs) =>
+	    val testVar = Var.newNoname ()
+	    val decs = ref []
+	    val cases =
+	       Vector.map
+	       (cases, fn {exp = e, numUses, pat = p, ...} =>
 		let
 		   val args = Vector.fromList (NestedPat.varsAndTypes p)
 		   val (vars, tys) = Vector.unzip args
@@ -173,7 +175,7 @@ fun casee {caseType: Xtype.t,
 		   val arg = Var.newNoname ()
 		   val argType = Xtype.tuple tys
 		   val funcType = Xtype.arrow (argType, caseType)
-		   val dec =
+		   fun dec () =
 		      Xdec.MonoVal
 		      {var = func,
 		       ty = funcType,
@@ -186,10 +188,11 @@ fun casee {caseType: Xtype.t,
 				 (Xexp.detupleBind
 				  {tuple = Xexp.monoVar (arg, argType),
 				   components = vars,
-				   body = e})),
+				   body = e ()})),
 			 mayInline = true})}
 		   fun finish rename =
-		      (Int.inc numUses
+		      (if 0 = !numUses then List.push (decs, dec ()) else ()
+		       ; Int.inc numUses
 		       ; (Xexp.app
 			  {func = Xexp.monoVar (func, funcType),
 			   arg =
@@ -199,9 +202,8 @@ fun casee {caseType: Xtype.t,
 				       ty = argType},
 			   ty = caseType}))
 		in
-		   ((p, finish), dec :: decs)
+		   (p, finish)
 		end)
-	    val testVar = Var.newNoname ()
 	    val (body, es) =
 	       MatchCompile.matchCompile {caseType = caseType,
 					  cases = cases,
@@ -210,12 +212,14 @@ fun casee {caseType: Xtype.t,
 					  test = testVar,
 					  testType = testType,
 					  tyconCons = tyconCons}
-	    val _ = examples := es
+	    (* Must convert to a normal expression to force everything. *)
+	    val body = Xexp.toExp body
+	    val () = examples := es
 	 in
 	    Xexp.let1 {var = testVar,
 		       exp = test,
-		       body = Xexp.lett {decs = decs,
-					 body = body}}
+		       body = Xexp.lett {decs = !decs,
+					 body = Xexp.fromExp (body, caseType)}}
 	 end
       datatype z = datatype NestedPat.node
       fun lett (x, e) = Xexp.let1 {var = x, exp = test, body = e}
@@ -229,8 +233,8 @@ fun casee {caseType: Xtype.t,
 	       fun use () = Int.inc numUses 
 	    in
 	       case NestedPat.node p of
-		  Wild => (use (); wild e)
-		| Var x => (use (); lett (x, e))
+		  Wild => (use (); wild (e ()))
+		| Var x => (use (); lett (x, e ()))
 		| Tuple ps =>
 		     if Vector.forall (ps, NestedPat.isVar)
 			then
@@ -260,7 +264,7 @@ fun casee {caseType: Xtype.t,
 			   in
 			      Xexp.let1 {var = t, exp = test,
 					 body = Xexp.lett {decs = decs,
-							   body = e}}
+							   body = e ()}}
 			   end
 		     else matchCompile ()
                 | _ => matchCompile ()
