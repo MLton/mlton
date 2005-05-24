@@ -1862,10 +1862,7 @@ fun elaborateDec (d, {env = E, nest}) =
 					      str " = ", Aexp.layout exp])]
 				end
 			  in
-			     {exp = elabExp (exp, nest,
-					     SOME (case Apat.getName pat of
-						      NONE => "anon"
-						    | SOME s => s)),
+			     {exp = elabExp (exp, nest, Apat.getName pat),
 			      expRegion = Aexp.region exp,
 			      lay = lay,
 			      pat = pat,
@@ -1884,7 +1881,7 @@ fun elaborateDec (d, {env = E, nest}) =
 					      preError)
 			     val (nest, var, ty) =
 				if 0 = Vector.length bound
-				   then ("anon" :: nest,
+				   then ("rec" :: nest,
 					 Var.newNoname (),
 					 Type.new ())
 				else
@@ -2135,7 +2132,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		   let
 		      val nest =
 			 case maybeName of
-			    NONE => "anon" :: nest
+			    NONE => "fn" :: nest
 			  | SOME s => s :: nest
 		      val {arg, argType, body} =
 			 elabMatchFn (m, preError, nest, "function", lay,
