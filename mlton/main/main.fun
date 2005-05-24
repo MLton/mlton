@@ -926,7 +926,7 @@ fun commandLine (args: string list): unit =
 		  val doit 
 		    = trace (Top, "MLton")
 		      (fn () => 
-		       DynamicWind.wind
+		       Exn.finally
 		       (compile, fn () =>
 			List.foreach (!tempFiles, File.remove)))
 	       in

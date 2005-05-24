@@ -1712,7 +1712,7 @@ structure Program =
 	 end
 
       fun hasPrim (p, f) =
-	 DynamicWind.withEscape
+	 Exn.withEscape
 	 (fn escape =>
 	  (foreachPrim (p, fn prim => if f prim then escape true else ())
 	   ; false))

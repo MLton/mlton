@@ -40,7 +40,7 @@ local
 		mkSimplePassGen))
 
    fun xmlPassesSet s =
-      DynamicWind.withEscape
+      Exn.withEscape
       (fn esc =>
        (let val ss = String.split (s, #":")
 	in

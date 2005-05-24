@@ -8,16 +8,7 @@
 structure Exn:> EXN =
 struct
 
-type t = exn
-
-val history = MLton.Exn.history
-   
-val name = General.exnName
-
-exception Bind = Bind
-exception Match = Match
-exception Overflow = Overflow
-exception Subscript = Subscript
+open Exn0
    
 fun layout e =
    let
@@ -32,18 +23,5 @@ fun layout e =
    end
 
 val toString = Layout.toString o layout
-
-local
-   (* would like to make the declaration of z in a let inside the try function,
-    * with 'a as a free type variable.  But SML/NJ doesn't allow it.
-    *)
-   datatype 'a z = Ok of 'a | Raise of exn
-in
-   val try: (unit -> 'a) * ('a -> 'b) * (exn -> 'b) -> 'b =
-      fn (t, k, h) =>
-      case Ok (t ()) handle e => Raise e of
-	 Ok x => k x
-       | Raise e => h e
-end
 
 end

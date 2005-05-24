@@ -1110,7 +1110,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 			sideEffect = false,
 			value = SOME v}
 	       fun tuple (xs: VarInfo.t vector) =
-		  case (DynamicWind.withEscape
+		  case (Exn.withEscape
 			(fn escape =>
 			 let
 			    fun no () = escape NONE

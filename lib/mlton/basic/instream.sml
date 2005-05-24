@@ -28,7 +28,7 @@ val inputLine =
    Trace.trace ("In.inputLine", layout, Option.layout String.layout) inputLine
 
 fun 'a withClose (ins: t, f: t -> 'a): 'a =
-   DynamicWind.wind (fn () => f ins, fn () => close ins)
+   Exn.finally (fn () => f ins, fn () => close ins)
 
 fun 'a withIn (f: string, g: t -> 'a): 'a =
    withClose (openIn f handle IO.Io _ =>

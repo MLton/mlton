@@ -210,7 +210,7 @@ local
 		mkSimplePassGen))
 
    fun ssa2PassesSet s =
-      DynamicWind.withEscape
+      Exn.withEscape
       (fn esc =>
        (let val ss = String.split (s, #":")
 	in 

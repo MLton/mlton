@@ -68,7 +68,6 @@ structure DirectedSubGraph
 structure DisjointSet
 structure DotColor
 structure Dot
-structure DynamicWind
 structure Engine
 structure Error
 structure Escape

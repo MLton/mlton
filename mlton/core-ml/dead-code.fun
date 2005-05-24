@@ -17,7 +17,7 @@ fun deadCode {prog} =
       val {get = varIsUsed, set = setVarIsUsed, destroy, ...} =
 	 Property.destGetSet (Var.plist, Property.initConst false)
       fun patVarIsUsed (p: Pat.t): bool =
-	 DynamicWind.withEscape
+	 Exn.withEscape
 	 (fn escape =>
 	  (Pat.foreachVar (p, fn x => if varIsUsed x
 					 then escape true

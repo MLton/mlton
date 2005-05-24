@@ -1153,7 +1153,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 		     let
 			val xs = varInfos xs
 		     in
-                        case DynamicWind.withEscape
+                        case Exn.withEscape
 			     (fn escape =>
 			      Vector.foldri
 			      (xs, NONE,

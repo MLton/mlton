@@ -466,7 +466,7 @@ structure Exp =
 		  handleVarExp = ignore}
 
       fun hasPrim (e, f) =
-	 DynamicWind.withEscape
+	 Exn.withEscape
 	 (fn escape =>
 	  (foreachPrimExp (e, fn (_, _, e) =>
 			   case e of

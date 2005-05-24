@@ -38,7 +38,7 @@ structure Size =
       fun statementSize (size, max) (doExp, doTransfer) =
 	 fn Statement.T {exp, ...} => expSize (size, max) (doExp, doTransfer) exp
       fun statementsSize (size, max) (doExp, doTransfer) statements =
-	 DynamicWind.withEscape
+	 Exn.withEscape
 	 (fn escape =>
 	  Vector.fold
 	  (statements, (size, false), fn (statement, (size, check)) =>
@@ -67,7 +67,7 @@ structure Size =
 	    (size, true) => (size, true)
 	  | (size, false) => transferSize (size, max) (doExp, doTransfer) transfer
       fun blocksSize (size, max) (doExp, doTransfer) blocks =
-	 DynamicWind.withEscape
+	 Exn.withEscape
 	 (fn escape =>
 	  Vector.fold
 	  (blocks, (size, false), fn (block, (size, check)) =>
@@ -111,7 +111,7 @@ local
 	 ; shouldInline
       end
    fun containsCall (f: Function.t): bool =
-      DynamicWind.withEscape
+      Exn.withEscape
       (fn escape =>
        (Vector.foreach
 	(Function.blocks f, fn Block.T {transfer, ...} =>
@@ -124,7 +124,7 @@ local
 	 val {get, set, destroy} =
 	    Property.destGetSet (Label.plist, Property.initConst false)
       in
-	 DynamicWind.withEscape
+	 Exn.withEscape
 	 (fn escape =>
 	  let
 	     val _ =

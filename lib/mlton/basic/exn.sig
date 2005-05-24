@@ -12,7 +12,8 @@ signature EXN =
       exception Match
       exception Overflow
       exception Subscript
-      
+
+      val finally: (unit -> 'a) * (unit -> unit) -> 'a
       val history: t -> string list
       val name: t -> string
       val layout: t -> Layout.t
@@ -23,5 +24,6 @@ signature EXN =
        * evaluate k v in the context of the handler.  See "Exceptional Syntax"
        * by Benton and Kennedy. 
        *)
-      val try: (unit -> 'a) * ('a -> 'b) * (exn -> 'b) -> 'b
+      val try: (unit -> 'a) * ('a -> 'b) * (t -> 'b) -> 'b
+      val withEscape: (('a -> 'b) -> 'a) -> 'a
    end

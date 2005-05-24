@@ -274,7 +274,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 	       Zero => Zero
 	     | _ => Many
 	 and tupleCardinality (ts: Type.t vector) =
-	    DynamicWind.withEscape
+	    Exn.withEscape
 	    (fn escape =>
 	     (Vector.foreach (ts, fn t =>
 			     let val c = typeCardinality t
@@ -305,7 +305,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 			   val {cons, cardinality, dependents, isOnWorklist,
 				...} = tyconInfo tycon
 			   val c =
-			      DynamicWind.withEscape
+			      Exn.withEscape
 			      (fn escape =>
 			       let datatype z = datatype Cardinality.t
 			       in Vector.fold

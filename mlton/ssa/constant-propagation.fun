@@ -338,7 +338,7 @@ structure Value =
 			 (Layout.tuple2 (Var.layout, Type.layout))),
 	  Trace.assertTrue)
 	 (fn (vs: t vector, newGlobal) =>
-	  DynamicWind.withEscape
+	  Exn.withEscape
 	  (fn escape =>
 	   SOME (Vector.map
 		 (vs, fn v =>

@@ -116,7 +116,7 @@ fun 'a fold (start: t, stop: t, a: 'a, f: int * 'a -> 'a): 'a =
    end
 
 fun forall (start: t, stop: t, f: int -> bool): bool =
-   DynamicWind.withEscape
+   Exn.withEscape
    (fn escape => (fold (start, stop, (), fn (i, ()) =>
 		       if f i then () else escape false)
 		  ; true))

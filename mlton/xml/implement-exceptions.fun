@@ -59,7 +59,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 		  : Var.t * Type.t * PrimExp.t =
 		  let
 		     val var =
-			DynamicWind.withEscape
+			Exn.withEscape
 			(fn escape =>
 			 let
 			    val _ =
@@ -76,7 +76,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 			    Error.bug (concat ["can't find it", nameString])
 			 end)
 		     val (ty, exp) =
-			DynamicWind.withEscape
+			Exn.withEscape
 			(fn escape =>
 			 let
 			    val _ = Exp.foreachPrimExp (body, fn (x, t, e) =>

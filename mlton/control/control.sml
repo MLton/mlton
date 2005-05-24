@@ -323,14 +323,23 @@ structure Elaborate =
 	  | NONE => false
 
       val withDef : (unit -> 'a) -> 'a = fn f =>
-	 let val restore = withDef ()
-	 in DynamicWind.wind (f, restore)
+	 let
+	    val restore = withDef ()
+	 in
+	    Exn.finally (f, restore)
 	 end
+      
       val snapshot : unit -> (unit -> 'a) -> 'a = fn () =>
-	 let val withSaved = snapshot () in fn f =>
-	 let val restore = withSaved ()
-	 in DynamicWind.wind (f, restore)
-	 end end
+	 let
+	    val withSaved = snapshot ()
+	 in
+	    fn f =>
+	    let
+	       val restore = withSaved ()
+	    in
+	       Exn.finally (f, restore)
+	    end
+	 end
 
    end
 

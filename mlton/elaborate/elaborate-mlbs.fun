@@ -213,7 +213,7 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 			 let
 			    val restore = Args.processAnn args
 			 in
-			    DynamicWind.wind
+			    Exn.finally
 			    (fn () =>
 			     if equalsId (forceUsed, id) andalso enabled forceUsed
 				then Env.forceUsedLocal (E, fn () => elabBasdec basdec)

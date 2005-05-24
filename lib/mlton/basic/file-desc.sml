@@ -23,7 +23,7 @@ structure FileDesc: FILE_DESC =
 	    val copy = dup d1
 	    val _ = dup2 {old = d2, new = d1}
 	 in
-	    DynamicWind.wind (f, fn () => move {from = copy, to = d1})
+	    Exn.finally (f, fn () => move {from = copy, to = d1})
 	 end
    end
    

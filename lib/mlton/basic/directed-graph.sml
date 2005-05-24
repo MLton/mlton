@@ -336,7 +336,7 @@ fun validDominators (graph,
    (* Check for each edge v --> w that idom w dominates v.
     * FIXME: It should first check that idom describes a tree rooted at root.
     *)
-   DynamicWind.withEscape
+   Exn.withEscape
    (fn escape =>
     let
        fun dominates (a: Node.t, b: Node.t): bool =

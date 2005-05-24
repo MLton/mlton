@@ -9,10 +9,9 @@ local
     $(SML_LIB)/basis/sml-nj.mlb
     $(SML_LIB)/basis/unsafe.mlb
     ../pervasive/sources.mlb
-    dynamic-wind.sig
-    dynamic-wind.sml
     error.sig
     error.sml
+    exn0.sml
     outstream0.sml
     layout.sig
     relation0.sml
@@ -214,7 +213,6 @@ in
     structure DirectedGraph
     structure Dot
     structure DotColor
-    structure DynamicWind
     structure Error
     structure Escape
     structure Exn

@@ -48,7 +48,6 @@ in
     structure DisjointSet
     structure DotColor
     structure Dot
-    structure DynamicWind
     structure Error
     structure Escape
     structure Exn

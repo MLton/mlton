@@ -25,7 +25,7 @@ fun withh (file, p, openn, close) =
    let
       val stream = openn file
    in
-      DynamicWind.wind (fn () => p stream, fn () => close stream)
+      Exn.finally (fn () => p stream, fn () => close stream)
    end 
 
 fun withOut (f, p) = withh (f, p, Out.openOut, Out.close)
@@ -100,18 +100,18 @@ fun withTemp f =
    let
       val name = tempName {prefix = "/tmp/file", suffix = ""}
    in
-      DynamicWind.wind (fn () => f name, fn () => remove name)
+      Exn.finally (fn () => f name, fn () => remove name)
    end
    
 fun withTempOut' (z, f, g) =
    let
       val (name, out) = temp z
    in
-      DynamicWind.wind (fn () =>
-			(DynamicWind.wind (fn () => f out,
-					   fn () => Out.close out)
-			 ; g name),
-			fn () => remove name)
+      Exn.finally (fn () =>
+		   (Exn.finally (fn () => f out,
+				 fn () => Out.close out)
+		    ; g name),
+		   fn () => remove name)
    end
 
 fun withTempOut (f, g) =

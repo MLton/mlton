@@ -22,9 +22,11 @@ fun swap (r, r') = let val v = !r
 fun getAndSet sel = (! o sel, fn (x, v) => sel x := v)
 
 fun ('a, 'b) fluidLet (r: 'a t, x: 'a, th: unit -> 'b): 'b =
-   let val old = !r
-   in r := x
-      ; DynamicWind.wind (th, fn () => r := old)
+   let
+      val old = !r
+      val () = r := x
+   in
+      Exn.finally (th, fn () => r := old)
    end
 
 fun getSet layout = 

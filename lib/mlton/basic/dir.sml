@@ -35,9 +35,9 @@ val doesExist = File.doesExist
 fun inDir (d, th) =
    let
       val cur = current ()
+      val () = cd d
    in
-      cd d
-      ; DynamicWind.wind (th, fn () => cd cur)
+      Exn.finally (th, fn () => cd cur)
    end
 
 fun fold (d: t, a: 'a, f: string * 'a -> 'a): 'a =
@@ -45,13 +45,10 @@ fun fold (d: t, a: 'a, f: string * 'a -> 'a): 'a =
       val stream = FS.openDir d
       fun loop a =
 	 case FS.readDir stream of
-(*
-            "" => a
-	  | s => loop (f (s, a))
-*)
 	    NONE => a
 	  | SOME s => loop (f (s, a))
-   in DynamicWind.wind (fn () => loop a, fn () => FS.closeDir stream)
+   in
+      Exn.finally (fn () => loop a, fn () => FS.closeDir stream)
    end
 
 fun ls d =
@@ -90,7 +87,7 @@ fun inTemp thunk =
       val d = concat ["/tmp/dir", Random.alphaNumString 6]
       val _ = make d
    in
-      DynamicWind.wind (fn () => inDir (d, fn _ => thunk ()),
-			fn () => removeR d)
+      Exn.finally (fn () => inDir (d, fn _ => thunk ()),
+		   fn () => removeR d)
    end
 end

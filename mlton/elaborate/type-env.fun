@@ -593,7 +593,7 @@ structure Type =
 	 let
 	    val {hom, destroy} = makeHom z
 	 in
-	    DynamicWind.wind (fn () => hom ty, destroy)
+	    Exn.finally (fn () => hom ty, destroy)
 	 end
 
       fun makeLayoutPretty (): {destroy: unit -> unit,
@@ -1465,7 +1465,7 @@ structure Scheme =
 		     (List.fold
 		      (flexes, Vector.toList types,
 		       fn ({fields, spine, ...}, ac) =>
-		       DynamicWind.withEscape (fn escape =>
+		       Exn.withEscape (fn escape =>
 		       let
 			  val flex =
 			     case List.peek (flexInsts,

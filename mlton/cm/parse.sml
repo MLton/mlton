@@ -25,7 +25,7 @@ datatype result =
    
 (* The main read function for CM entities. *)
 fun parse {cmfile: string} =
-   DynamicWind.withEscape
+   Exn.withEscape
    (fn escape =>
     let
        fun bad m = (escape (Bad m); raise Fail "impossible")

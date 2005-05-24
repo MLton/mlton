@@ -44,7 +44,6 @@ structure DirectedGraph
 structure DirectedSubGraph
 structure Dot
 structure DotColor
-structure DynamicWind
 structure Engine
 structure Error
 structure Escape
@@ -157,10 +156,9 @@ is
 #endif
 
 ../pervasive/sources.cm
-dynamic-wind.sig
-dynamic-wind.sml
 error.sig
 error.sml
+exn0.sml
 outstream0.sml
 layout.sig
 relation0.sml

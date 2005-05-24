@@ -456,7 +456,7 @@ structure Interface =
 	     | Rigid (c, k) => SOME (EtypeStr.tycon (c, k))
 	 end
       and typeToEnv (t: Type.t): Etype.t option =
-	 DynamicWind.withEscape
+	 Exn.withEscape
 	 (fn escape =>
 	  SOME
 	  (Type.hom (t, {con = fn (c, ts) => (case tyconToEnv c of
@@ -466,7 +466,7 @@ structure Interface =
 			 record = Etype.record,
 			 var = Etype.var})))
       and schemeToEnv (Scheme.T {ty, tyvars}): Escheme.t option =
-	 DynamicWind.withEscape
+	 Exn.withEscape
 	 (fn escape =>
 	  SOME (Escheme.make {canGeneralize = true,
 			      ty = (case typeToEnv ty of
@@ -474,7 +474,7 @@ structure Interface =
 				     | SOME ty => ty),
 			      tyvars = tyvars}))
       and consToEnv (Cons.T v): Econs.t option =
-	 DynamicWind.withEscape
+	 Exn.withEscape
 	 (fn escape =>
 	  SOME (Econs.T (Vector.map (v, fn {name, scheme} =>
 				     {con = Con.newNoname (),
