@@ -235,7 +235,9 @@ in
 			  test = layoutExp test}
        | Con (c, _) => Con.layout c
        | Const f => Const.layout (f ())
-       | EnterLeave (e, _) => layoutExp e
+       | EnterLeave (e, si) =>
+	    seq [str "EnterLeave ",
+		 tuple [layoutExp e, SourceInfo.layout si]]
        | Handle {catch, handler, try} =>
 	    Pretty.handlee {catch = Var.layout (#1 catch),
 			    handler = layoutExp handler,
