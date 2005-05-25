@@ -77,6 +77,19 @@ structure Real: REAL =
       datatype z = datatype IEEEReal.float_class
       datatype z = datatype IEEEReal.rounding_mode
 
+      local
+	 structure P = Pervasive.IEEEReal
+      in
+	 val class =
+	    fn r =>
+	    case Pervasive.Real.class r of
+	       P.NAN _ => NAN
+	     | P.INF => INF
+	     | P.ZERO => ZERO
+	     | P.NORMAL => NORMAL
+	     | P.SUBNORMAL => SUBNORMAL
+      end
+
       fun fmt f =
 	 Pervasive.Real.fmt
 	 (let
@@ -107,7 +120,7 @@ structure Real: REAL =
 	 fn mode => fn x =>
 	 case class x of
 	    INF => raise Overflow
-	  | NAN _ => raise Domain
+	  | NAN => raise Domain
 	  | ZERO => 0
 	  | _ =>
 	       let

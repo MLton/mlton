@@ -2,7 +2,6 @@ structure Bool = Bool
 structure Byte = Byte
 structure CommandLine = CommandLine
 structure General = General
-structure IEEEReal = IEEEReal
 structure IO = IO
 structure LargeReal = LargeReal
 structure ListPair = ListPair

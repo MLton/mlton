@@ -36,6 +36,16 @@ signature REAL =
       val atan: t -> t
       val ceiling: t -> int
       val choose: t * t -> t
+      structure Class:
+	 sig
+	     datatype t =
+		INF
+	      | NAN
+	      | NORMAL
+	      | SUBNORMAL
+	      | ZERO
+	 end
+      val class: t -> Class.t
       val compare: t * t -> Relation.t
       val cos: t -> t
       val dec: t ref -> unit
@@ -62,8 +72,13 @@ signature REAL =
       val pi: t
       val pow: t * t -> t
       val prod: t list -> t
+      val realCeil: t -> t
+      val realFloor: t -> t
       val realMod: t -> t
       val realPower: t * t -> t
+      val realRound: t -> t
+      val realTrunc: t -> t
+      val rem: t * t -> t
       val round: t -> int
       val signBit: t -> bool
       val sin: t -> t

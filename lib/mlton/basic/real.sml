@@ -80,6 +80,11 @@ fun realPower(m, n) = exp(n * ln m)
 
 val ceiling = ceil
 
+structure Class =
+   struct
+      datatype t = datatype IEEEReal.float_class
+   end
+
 end
 
 structure Real64 = Real (open Real64
