@@ -9,6 +9,8 @@ local
     ../../lib/mlton/sources.mlb
 
     bits.sml
+    control-flags.sig
+    control-flags.sml
     source-pos.sig
     source-pos.sml
     region.sig

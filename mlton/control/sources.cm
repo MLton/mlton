@@ -23,6 +23,8 @@ is
 
 ../../lib/mlton/sources.cm
 
+control-flags.sig
+control-flags.sml
 bits.sml
 source-pos.sig
 source-pos.sml

@@ -35,19 +35,24 @@ fun make {column, file, line} =
       file = file,
       line = line}
 
-val basisString = "/basis/"
-
-fun getBasis (T {file, ...}) =
-   String.findSubstring (file, {substring = basisString})
-
-fun isBasis p = isSome (getBasis p)
+fun getLib (T {file, ...}) =
+   let 
+      val libDir = concat [!ControlFlags.libDir, "/sml"]
+   in 
+      if String.hasPrefix (file, {prefix = libDir})
+	 then SOME (String.size libDir)
+	 else NONE
+   end
 
 fun file (p as T {file, ...}) =
-   case getBasis p of
+   case getLib p of
       NONE => file
     | SOME i =>
-	 concat ["<basis>/",
-		 String.dropPrefix (file, i + String.size basisString)]
+	 String.substituteFirst
+	 (String.substituteFirst
+	  (String.dropPrefix (file, i), 
+	   {substring = "/", replacement = "<"}),
+	  {substring = "/", replacement = ">/"})
 
 val bogus = T {column = ~1,
 	       file = "<bogus>",

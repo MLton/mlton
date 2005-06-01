@@ -13,13 +13,13 @@ signature SOURCE_INFO =
       val all: unit -> t list
       val anonymous: Region.t -> t
       val equals: t * t -> bool
+      val file: t -> File.t option
       val gc: t
       val gcArrayAllocate: t
       val hash: t -> word
       val fromC: string -> t
       val function: {name: string list,
 		     region: Region.t} -> t
-      val isBasis: t -> bool
       val isC: t -> bool
       val layout: t -> Layout.t
       val main: t

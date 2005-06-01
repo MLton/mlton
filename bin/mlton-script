@@ -99,4 +99,5 @@ doit "$lib" \
 	-target-link-opt openbsd '-L/usr/local/lib/ -lgmp'	\
 	-target-link-opt solaris '-lgmp -lnsl -lsocket'		\
 	-link-opt '-lgdtoa -lm'					\
+	-profile-exclude '<basis>'				\
 	"$@"

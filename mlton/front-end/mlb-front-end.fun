@@ -104,8 +104,7 @@ val lexAndParseString =
 		NONE => []
 	      | SOME path => make (concat [path, "/.mlton/mlb-path-map"]),
 	     [{var = "LIB_MLTON_DIR", 
-	       path = OS.Path.mkAbsolute {path = !Control.libDir,
-					  relativeTo = cwd}}]]
+	       path = !Control.libDir}]]
 	 fun peekPathMap var' =
 	    case List.peek (pathMap, fn {var,...} =>
 			    var = var') of

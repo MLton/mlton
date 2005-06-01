@@ -21,7 +21,6 @@ signature SOURCE_POS =
       val compare: t * t -> Relation.t
       val equals: t * t -> bool
       val file: t -> File.t
-      val isBasis: t -> bool
       val line: t -> int
       val make: {column: int,
 		 file: File.t,

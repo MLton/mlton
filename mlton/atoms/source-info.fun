@@ -23,10 +23,10 @@ structure Pos =
 	    NONE => Unknown
 	  | SOME p => Known p
 
-      fun isBasis p =
+      fun file p =
 	 case p of
-	    Known p => SourcePos.isBasis p
-	  | Unknown => false
+	    Known p => SOME (SourcePos.file p)
+	  | Unknown => NONE
    end
 
 datatype info =
@@ -92,7 +92,7 @@ fun function {name, region} =
 
 fun toString' (si, sep) =
    case info si of
-      Anonymous p => Pos.toString p
+      Anonymous pos => Pos.toString pos
     | C s => concat ["<", s, ">"]
     | Function {name, pos} =>
 	 concat [concat (List.separate (List.rev name, ".")),
@@ -107,15 +107,12 @@ val equals: t * t -> bool =
 
 val equals =
    Trace.trace2 ("SourceInfo.equals", layout, layout, Bool.layout) equals
-   
-fun isBasis (s: t): bool =
-   case info s of
-      Anonymous p => Pos.isBasis p
-    | C _ => false
-    | Function {pos, ...} => Pos.isBasis pos
 
-val isBasis =
-   Trace.trace ("SourceInfo.isBasis", layout, Bool.layout) isBasis
+fun file (s: t): File.t option =
+   case info s of
+      Anonymous pos => Pos.file pos
+    | C _ => NONE
+    | Function {pos, ...} => Pos.file pos
 
 fun isC (s: t): bool =
    case info s of

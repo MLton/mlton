@@ -323,12 +323,33 @@ fun makeOptions {usage} =
 			    | "time" => ProfileTime
 			    | _ => usage (concat
 					  ["invalid -profile arg: ", s]))))),
-       (Expert, "profile-basis", " {false|true}",
-	"profile the basis implementation",
-	boolRef profileBasis),
        (Normal, "profile-branch", " {false|true}",
 	"profile branches in addition to functions",
 	boolRef profileBranch),
+       (Expert, "profile-c", " <regexp>", 
+	"include C-calls in files matching <regexp> in profile",
+	SpaceString
+	(fn s =>
+	 (case Regexp.fromString s of
+	     SOME (re,_) => let
+			       open Regexp
+			       val re = seq [anys, re, anys]
+			       val re = compileDFA re
+			    in List.push (profileC, re)
+			    end
+	   | NONE => usage (concat ["invalid -profile-c flag: ", s])))),
+       (Expert, "profile-exclude", " <regexp>", 
+	"exclude files matching <regexp> from profile",
+	SpaceString
+	(fn s =>
+	 (case Regexp.fromString s of
+	     SOME (re,_) => let
+			       open Regexp
+			       val re = seq [anys, re, anys]
+			       val re = compileDFA re
+			    in List.push (profileInclExcl, (re, false))
+			    end
+	   | NONE => usage (concat ["invalid -profile-exclude flag: ", s])))),
        (Expert, "profile-il", " {source}", "where to insert profile exps",
 	SpaceString
 	(fn s =>
@@ -337,6 +358,18 @@ fun makeOptions {usage} =
 	  | "ssa" => profileIL := ProfileSSA
 	  | "ssa2" => profileIL := ProfileSSA2
 	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
+       (Expert, "profile-include", " <regexp>", 
+	"include files matching <regexp> from profile",
+	SpaceString
+	(fn s =>
+	 (case Regexp.fromString s of
+	     SOME (re,_) => let
+			       open Regexp
+			       val re = seq [anys, re, anys]
+			       val re = compileDFA re
+			    in List.push (profileInclExcl, (re, true))
+			    end
+	   | NONE => usage (concat ["invalid -profile-include flag: ", s])))),
        (Expert, "profile-raise", " {false|true}",
 	"profile raises in addition to functions",
 	boolRef profileRaise),
@@ -446,7 +479,7 @@ fun commandLine (args: string list): unit =
       val args =
 	 case args of
 	    lib :: args =>
-	       (libDir := lib
+	       (libDir := OS.Path.mkCanonical lib
 		; args)
 	  | _ => Error.bug "incorrect args from shell script"
       val _ = setTargetType ("self", usage)

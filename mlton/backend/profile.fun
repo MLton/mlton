@@ -179,10 +179,44 @@ fun profile program =
       (* gc must be 1 which == SOURCES_INDEX_GC from gc.h *)
       val gcInfoNode = sourceInfoNode SourceInfo.gc
       val mainInfoNode = sourceInfoNode SourceInfo.main
+      fun wantedSource (si: SourceInfo.t): bool =
+	 if SourceInfo.isC si
+	    then List.length (!Control.profileC) > 0
+	    else (case SourceInfo.file si of
+		     NONE => true
+		   | SOME file =>
+			List.foldr
+			(!Control.profileInclExcl, true, 
+			 fn ((re, keep), b) =>
+			 if Regexp.Compiled.matchesAll (re, file)
+			    then keep
+			    else b))
+      val wantedSource =
+	 Trace.trace ("Profile.wantedSource", SourceInfo.layout, Bool.layout)
+	 wantedSource
+      fun wantedCSource (si: SourceInfo.t): bool =
+	 wantedSource si
+	 andalso
+	 if SourceInfo.isC si
+	    then false
+	    else (case SourceInfo.file si of
+		     NONE => false
+		   | SOME file => 
+			List.foldr
+			(!Control.profileC, false,
+			 fn (re, b) =>
+			 if Regexp.Compiled.matchesAll (re, file)
+			    then true
+			    else b))
+      val wantedCSource =
+	 Trace.trace ("Profile.wantedCSource", SourceInfo.layout, Bool.layout)
+	 wantedCSource
       fun keepSource (si: SourceInfo.t): bool =
-	 !Control.profileBasis
-	 orelse profile <> ProfileCount
-	 orelse not (SourceInfo.isBasis si orelse SourceInfo.isC si)
+	 profile <> ProfileCount
+	 orelse wantedSource si
+      val keepSource =
+	 Trace.trace ("Profile.keepSource", SourceInfo.layout, Bool.layout)
+	 keepSource
       (* With -profile count, we want to get zero counts for all functions,
        * whether or not they made it into the final executable.
        *)
@@ -190,7 +224,7 @@ fun profile program =
 	 case profile of
 	    ProfileCount =>
 	       List.foreach (SourceInfo.all (), fn si =>
-			     if keepSource si
+			     if wantedSource si
 				then ignore (sourceInfoNode si)
 			     else ())
 	  | _ => ()
@@ -202,10 +236,10 @@ fun profile program =
 	    if equals (si, unknown)
 	       then unknownInfoNode
 	    else if equals (si, gc)
-		    then gcInfoNode
-		 else if equals (si, main)
-			 then mainInfoNode
-		      else sourceInfoNode si
+	       then gcInfoNode
+	    else if equals (si, main)
+	       then mainInfoNode
+	    else sourceInfoNode si
 	 end
       val sourceInfoNode =
 	 Trace.trace ("sourceInfoNode", SourceInfo.layout, InfoNode.layout)
@@ -329,20 +363,26 @@ fun profile program =
 				    ; yes ())
 			   else no ()
 		      | SOME (node' as InfoNode.T {info = si', ...}) =>
-			   if keepSource si andalso
+			   (* 
+			    * si  : callee
+			    * si' : caller
+			    *)
+			   if keepSource si
+			      andalso
 			      let
 				 open SourceInfo
 			      in
-				 (!Control.profileBasis)
-				 orelse (equals (si', unknown))
+				 equals (si', unknown)
 				 orelse
-				 (not
-				  (equals (si, gcArrayAllocate)
-				   orelse isBasis si
-				   orelse (isC si
-					   andalso (isBasis si'
-						    orelse equals (si', main)))))
-			      end
+				 (wantedSource si
+				  andalso
+				  not (equals (si, gcArrayAllocate))
+				  andalso
+				  (not (isC si)
+				   orelse
+				   (wantedCSource si'
+				    andalso not (equals (si', main)))))
+			      end 
 			      then (InfoNode.call {from = node', to = node ()}
 				    ; yes ())
 			   else no ()
