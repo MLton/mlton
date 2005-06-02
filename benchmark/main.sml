@@ -30,7 +30,7 @@ fun withInput (file, f: unit -> 'a): 'a =
 	    openf (file, O_RDONLY, O.flags [])
 	 end
    in
-      DynamicWind.wind
+      Exn.finally
       (fn () => FileDesc.fluidLet (FileDesc.stdin, inFd, f),
        fn () => FileDesc.close inFd)
    end
@@ -45,7 +45,7 @@ fun ignoreOutput f =
 	 end
       open FileDesc
    in
-      DynamicWind.wind
+      Exn.finally
       (fn () => fluidLet (stderr, nullFd, fn () =>
 			  fluidLet (stdout, nullFd, f)),
        fn () => close nullFd)
