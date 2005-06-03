@@ -223,7 +223,8 @@ signature CONTROL_FLAGS =
        | ProfileAlloc
        | ProfileCallStack
        | ProfileCount
-       | ProfileMark
+       | ProfileDrop
+       | ProfileLabel
        | ProfileTime
       val profile: profile ref
 

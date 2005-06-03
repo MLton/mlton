@@ -357,7 +357,8 @@ fun outputDeclarations
 		| Control.ProfileAlloc => "PROFILE_ALLOC"
 		| Control.ProfileCallStack => "PROFILE_NONE"
 		| Control.ProfileCount => "PROFILE_COUNT"
-		| Control.ProfileMark => "PROFILE_NONE"
+		| Control.ProfileDrop => "PROFILE_NONE"
+		| Control.ProfileLabel => "PROFILE_NONE"
 		| Control.ProfileTime => "PROFILE_TIME"
 	 in 
 	    C.callNoSemi ("Main",

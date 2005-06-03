@@ -319,7 +319,8 @@ fun makeOptions {usage} =
 			    | "alloc" => ProfileAlloc
 			    | "call" => ProfileCallStack
 			    | "count" => ProfileCount
-			    | "mark" => ProfileMark
+			    | "drop" => ProfileDrop
+			    | "label" => ProfileLabel
 			    | "time" => ProfileTime
 			    | _ => usage (concat
 					  ["invalid -profile arg: ", s]))))),

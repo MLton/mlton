@@ -32,7 +32,8 @@ val buildConstants: (string * (unit -> string)) list =
        ("MLton_profile_isOn", fn () => bool (case !profile of
 						ProfileNone => false
 					      | ProfileCallStack => false
-					      | ProfileMark => false
+					      | ProfileDrop => false
+					      | ProfileLabel => false
 					      | _ => true)),
        ("MLton_FFI_numExports", fn () => int (Ffi.numExports ()))]
    end

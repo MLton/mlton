@@ -140,6 +140,8 @@ fun profile program =
       datatype z = datatype Control.profile
       val profile = !Control.profile
       val profileStack: bool = !Control.profileStack
+      val needProfileLabels: bool =
+	 profile = ProfileTime orelse profile = ProfileLabel
       val frameProfileIndices: (Label.t * int) list ref = ref []
       val infoNodes: InfoNode.t list ref = ref []
       val nameCounter = Counter.new 0
@@ -147,7 +149,7 @@ fun profile program =
       local
 	 val sourceCounter = Counter.new 0
 	 val sep =
-	    if profile = ProfileCallStack orelse profile = ProfileMark
+	    if profile = ProfileCallStack
 	       then " "
 	    else "\t"
 	 val {get = nameIndex, ...} =
@@ -445,8 +447,7 @@ fun profile program =
 		       | Profile ps =>
 			    let
 			       val (npl, ss) =
-				  if profile = ProfileTime 
-				     orelse profile = ProfileMark
+				  if needProfileLabels
 				     then
 					if npl
 					   andalso not (List.isEmpty sourceSeq)
@@ -472,7 +473,7 @@ fun profile program =
 			    end
 		       | _ => (leaves, true, sourceSeq, s :: ss))
 		  val statements =
-		     if (profile = ProfileTime orelse profile = ProfileMark)
+		     if needProfileLabels
 			andalso npl
 			then profileLabel sourceSeq :: statements
 		     else statements
@@ -489,8 +490,7 @@ fun profile program =
 				 addFrameProfileIndex
 				 (newLabel, sourceSeqIndex sourceSeq)
 			      val statements =
-				 if profile = ProfileTime 
-				    orelse profile = ProfileMark
+				 if needProfileLabels
 				    then (Vector.new1
 					  (profileLabelIndex
 					   (sourceSeqIndex sourceSeq)))
@@ -547,7 +547,7 @@ fun profile program =
 		  val index = sourceSeqIndex (Push.toSources pushes)
 		  val _ = addFrameProfileIndex (newLabel, index)
 		  val statements =
-		     if profile = ProfileTime orelse profile = ProfileMark
+		     if needProfileLabels
 			then Vector.new1 (profileLabelIndex index)
 		     else Vector.new0 ()
 		  val _ =
@@ -652,7 +652,7 @@ fun profile program =
 				 val _ =
 				    addFrameProfilePushes (newLabel, pushes)
 				 val func = CFunction.profileInc
-				 val bytesAllocated =
+				 val amount =
 				    case profile of
 				       ProfileAlloc => Bytes.toInt bytesAllocated
 				     | ProfileCount => 1
@@ -663,7 +663,7 @@ fun profile program =
 					     (Operand.GCState,
 					      Operand.word
 					      (WordX.fromIntInf
-					       (IntInf.fromInt bytesAllocated,
+					       (IntInf.fromInt amount,
 						WordSize.default)))),
 				     func = func,
 				     return = SOME newLabel}

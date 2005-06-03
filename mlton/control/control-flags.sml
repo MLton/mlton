@@ -557,7 +557,8 @@ structure Profile =
        | ProfileAlloc
        | ProfileCallStack
        | ProfileCount
-       | ProfileMark
+       | ProfileDrop
+       | ProfileLabel
        | ProfileTime
 
       val toString =
@@ -565,7 +566,8 @@ structure Profile =
 	  | ProfileAlloc => "Alloc"
 	  | ProfileCallStack => "CallStack"
 	  | ProfileCount => "Count"
-	  | ProfileMark => "Mark"
+	  | ProfileDrop => "Drop"
+	  | ProfileLabel => "Label"
 	  | ProfileTime => "Time"
    end
 
