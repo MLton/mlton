@@ -110,7 +110,7 @@ struct
    fun unions ss = List.fold (ss, empty, union)
    fun equals (v1, v2) = Vector.equals (v1, v2, Bin.equals)
    fun isSubsetEq (v1, v2)
-     = DynamicWind.withEscape
+     = Exn.withEscape
        (fn escape =>
 	Vector.fold2
 	(v1, v2, true, fn (b1, b2, a) =>
@@ -122,7 +122,7 @@ struct
    fun isSuperset (s1, s2) = isSubset (s2, s1)
 
    fun areDisjoint (v1, v2)
-     = DynamicWind.withEscape
+     = Exn.withEscape
        (fn escape =>
 	Vector.fold2
 	(v1, v2, true, fn (b1, b2, a) =>
@@ -145,7 +145,7 @@ struct
 	end)
    fun foreach (s, f) = fold (s, (), fn (x, ()) => f x)
    fun peekGen (s, no, f)
-     = DynamicWind.withEscape
+     = Exn.withEscape
        (fn escape =>
 	(foreach (s, fn x => 
 		  case f x 
