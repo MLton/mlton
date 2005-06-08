@@ -9,9 +9,19 @@
 functor Shrink2 (S: SHRINK2_STRUCTS): SHRINK2 = 
 struct
 
+type int = Int.t
+
 open S
 
-type int = Int.t
+structure Statement =
+   struct
+      open Statement
+
+      fun isProfile (s: t): bool =
+	 case s of
+	    Profile _ => true
+	  | _ => false
+   end
 
 structure Array =
    struct
@@ -337,9 +347,9 @@ fun shrinkFunction {globals: Statement.t vector} =
 			   let
 			      val s = Vector.sub (statements, i)
 			   in
-			      case s of
-				 Profile _ => loop (i + 1, s :: ac)
-			       | _ => normal ()
+			      if Statement.isProfile s
+				 then loop (i + 1, s :: ac)
+		              else normal ()
 			   end
 		  in
 		     loop (0, [])
@@ -1265,16 +1275,6 @@ fun shrinkFunction {globals: Statement.t vector} =
       in
 	 f
       end
-   end
-
-structure Statement =
-   struct
-      open Statement
-
-      fun isProfile (s: t): bool =
-	 case s of
-	    Profile _ => true
-	  | _ => false
    end
 
 fun eliminateUselessProfile (f: Function.t): Function.t =

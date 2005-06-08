@@ -8,9 +8,25 @@
 functor Shrink (S: SHRINK_STRUCTS): SHRINK = 
 struct
 
+type int = Int.t
+
 open S
 
-type int = Int.t
+structure Exp =
+   struct
+      open Exp
+
+      val isProfile =
+	 fn Profile _ => true
+	  | _ => false
+   end
+
+structure Statement =
+   struct
+      open Statement
+
+      fun isProfile (T {exp, ...}) = Exp.isProfile exp
+   end
 
 structure Array =
    struct
@@ -320,9 +336,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 			      val Statement.T {exp, ty, ...} =
 				 Vector.sub (statements, i)
 			   in
-			      if (case exp of
-				     Exp.Profile _ => true
-				   | _ => false)
+			      if Exp.isProfile exp
 				 then loop (i + 1,
 					    Statement.T {exp = exp,
 							 ty = ty,
@@ -1203,22 +1217,6 @@ fun shrinkFunction {globals: Statement.t vector} =
       in
 	 f
       end
-   end
-
-structure Exp =
-   struct
-      open Exp
-
-      val isProfile =
-	 fn Profile _ => true
-	  | _ => false
-   end
-
-structure Statement =
-   struct
-      open Statement
-
-      fun isProfile (T {exp, ...}) = Exp.isProfile exp
    end
 
 fun eliminateUselessProfile (f: Function.t): Function.t =
