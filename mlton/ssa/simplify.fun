@@ -178,6 +178,7 @@ local
 		 ("commonSubexp", CommonSubexp.eliminate),
 		 ("constantPropagation", ConstantPropagation.simplify),
 		 ("contify", Contify.contify),
+                 ("dropProfile", S.dropProfile),
 		 ("flatten", Flatten.flatten),
 		 ("introduceLoops", IntroduceLoops.introduceLoops),
 		 ("knownCase", KnownCase.simplify),

@@ -190,6 +190,7 @@ local
 (* 		 ("constantPropagation", ConstantPropagation.simplify), *)
 (* 		 ("contify", Contify.contify), *)
                  ("deepFlatten", DeepFlatten.flatten),
+		 ("dropProfile", S.dropProfile),
 (* 		 ("flatten", Flatten.flatten), *)
 (* 		 ("introduceLoops", IntroduceLoops.introduceLoops), *)
 (* 		 ("knownCase", KnownCase.simplify), *)

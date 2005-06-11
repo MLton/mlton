@@ -44,35 +44,64 @@ fun eliminateFunction f =
    end
 
 fun eliminate (Program.T {datatypes, globals, functions, main}) =
-   let
-      val functions = List.revMap (functions, eliminateFunction)
-   in
-      Program.T {datatypes = datatypes,
-		 globals = globals,
-		 functions = functions,
-		 main = main}
-   end
+   Program.T {datatypes = datatypes,
+	      globals = globals,
+	      functions = List.revMap (functions, eliminateFunction),
+	      main = main}
 end
 
 val eliminateDeadBlocksFunction = DeadBlocks.eliminateFunction
 val eliminateDeadBlocks = DeadBlocks.eliminate
 
+
 structure Reverse =
 struct
 
 fun reverseFunctions (Program.T {globals, datatypes, functions, main}) =
-   let
-      val program =
-	 Program.T {datatypes = datatypes,
-		    globals = globals,
-		    functions = List.rev functions,
-		    main = main}
-   in
-      program
-   end
-
+   Program.T {datatypes = datatypes,
+	      globals = globals,
+	      functions = List.rev functions,
+	      main = main}
 end
 
 val reverseFunctions = Reverse.reverseFunctions
+
+
+structure DropProfile =
+struct
+
+fun dropFunction f =
+   let
+      val {args, blocks, mayInline, name, raises, returns, start} =
+	 Function.dest f
+      val blocks =
+	 Vector.map
+	 (blocks, fn Block.T {args, label, statements, transfer} =>
+	  Block.T {args = args,
+		   label = label,
+		   statements = Vector.keepAll
+		                (statements, 
+				 fn Statement.Profile _ => false
+				  | _ => true),
+		   transfer = transfer})
+   in
+      Function.new {args = args,
+		    blocks = blocks,
+		    mayInline = mayInline,
+		    name = name,
+		    raises = raises,
+		    returns = returns,
+		    start = start}
+   end
+
+fun drop (Program.T {datatypes, globals, functions, main}) =
+   (Control.profile := Control.ProfileNone
+    ; Program.T {datatypes = datatypes,
+		 globals = globals,
+		 functions = List.revMap (functions, dropFunction),
+		 main = main})
+end
+
+val dropProfile = DropProfile.drop
 
 end
