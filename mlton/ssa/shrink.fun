@@ -124,9 +124,11 @@ structure LabelMeaning =
       and aux =
 	 Block
        | Bug
-       | Case of {cases: Cases.t,
+       | Case of {canMove: Statement.t list,
+		  cases: Cases.t,
 		  default: Label.t option}
-       | Goto of {dst: t,
+       | Goto of {canMove: Statement.t list,
+		  dst: t,
 		  args: Positions.t}
        | Raise of {args: Positions.t,
 		   canMove: Statement.t list}
@@ -150,7 +152,7 @@ structure LabelMeaning =
 		    Block => str "Block "
 		  | Bug => str "Bug"
 		  | Case _ => str "Case"
-		  | Goto {dst, args} =>
+		  | Goto {dst, args, ...} =>
 		       seq [str "Goto ",
 			    tuple [layout dst, Positions.layout args]]
 		  | Raise {args, ...} =>
@@ -319,9 +321,14 @@ fun shrinkFunction {globals: Statement.t vector} =
 				  blockIndex = i,
 				  label = Block.label (Vector.sub (blocks, i))}
 	       fun normal () = doit LabelMeaning.Block
+	       fun canMove () =
+		  Vector.toListMap
+		  (statements, fn Statement.T {exp, ty, ...} =>
+		   Statement.T {exp = exp, ty = ty, var = NONE})
 	       fun rr (xs: Var.t vector, make) =
 		  let
 		     val _ = incVars xs
+(*
 		     val n = Vector.length statements
 		     fun loop (i, ac) =
 			if i = n
@@ -346,6 +353,15 @@ fun shrinkFunction {globals: Statement.t vector} =
 		  in
 		     loop (0, [])
 		  end
+*)
+		  in
+		     if Vector.forall (statements, Statement.isProfile)
+			andalso (0 = Vector.length xs
+				 orelse 0 < Vector.length args)
+			then doit (make {args = extract xs,
+					 canMove = canMove ()})
+		     else normal ()
+		  end
 	    in
 	       case transfer of
 		  Arith {args, overflow, success, ...} =>
@@ -354,7 +370,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 		      ; incLabel success
 		      ; normal ())
 		| Bug =>
-		     if 0 = Vector.length statements
+		     if Vector.forall (statements, Statement.isProfile)
 			andalso (case returns of
 				    NONE => true
 				  | SOME ts =>
@@ -380,13 +396,14 @@ fun shrinkFunction {globals: Statement.t vector} =
 			val _ = Cases.foreach (cases, incLabel)
 			val _ = Option.app (default, incLabel)
 		     in
-			if 0 = Vector.length statements
+			if Vector.forall (statements, Statement.isProfile)
 			   andalso not (Array.sub (isHeader, i))
 			   andalso 1 = Vector.length args
 			   andalso 1 = numVarOccurrences test
 			   andalso Var.equals (test, #1 (Vector.sub (args, 0)))
 			   then
-			      doit (LabelMeaning.Case {cases = cases,
+			      doit (LabelMeaning.Case {canMove = canMove (),
+						       cases = cases,
 						       default = default})
 			else
 			   normal ()
@@ -396,12 +413,14 @@ fun shrinkFunction {globals: Statement.t vector} =
 			val _ = incVars actuals
 			val m = labelMeaning dst
 		     in
-			if 0 <> Vector.length statements
+			if Vector.exists (statements, not o Statement.isProfile)
 			   orelse Array.sub (isHeader, i)
 			   then (incLabelMeaning m
 				 ; normal ())
 			else
-			   if Vector.equals (args, actuals, fn ((x, _), x') =>
+			   if 0 = Vector.length statements
+			      andalso
+                              Vector.equals (args, actuals, fn ((x, _), x') =>
 					     Var.equals (x, x')
 					     andalso 1 = numVarOccurrences x)
 			      then m (* It's an eta. *)
@@ -434,22 +453,28 @@ fun shrinkFunction {globals: Statement.t vector} =
 					      Free x => Free x
 					    | Formal i => Vector.sub (ps, i)
 					end)
+				    val canMove' = canMove ()
 				    val a =
 				       case LabelMeaning.aux m of
-					  Block => Goto {dst = m,
-							 args = ps}
+					  Block =>
+					     Goto {canMove = canMove',
+						   dst = m,
+						   args = ps}
 					| Bug => Bug
-					| Case _ => Goto {dst = m,
-							  args = ps}
-					| Goto {dst, args} =>
-					     Goto {dst = dst,
+					| Case _ => 
+					     Goto {canMove = canMove',
+						   dst = m,
+						   args = ps}
+					| Goto {canMove, dst, args} =>
+					     Goto {canMove = canMove' @ canMove,
+						   dst = dst,
 						   args = extract args}
 					| Raise {args, canMove} =>
 					     Raise {args = extract args,
-						    canMove = canMove}
+						    canMove = canMove' @ canMove}
 					| Return {args, canMove} =>
 					     Return {args = extract args,
-						     canMove = canMove}
+						     canMove = canMove' @ canMove}
 				 in
 				    doit a
 				 end
@@ -605,7 +630,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 				 ()
 			      end
 			 | Bug => ()
-			 | Case {cases, default} =>
+			 | Case {cases, default, ...} =>
 			      (Cases.foreach (cases, deleteLabel)
 			       ; Option.app (default, deleteLabel))
 			 | Goto {dst, ...} => deleteLabelMeaning dst
@@ -659,13 +684,15 @@ fun shrinkFunction {globals: Statement.t vector} =
 	    Trace.trace ("Shrink.forceMeaningBlock",
 			layoutLabelMeaning, Unit.layout)
 	 val traceSimplifyBlock =
-	    Trace.trace ("Shrink.simplifyBlock",
-			 layoutLabel o Block.label,
-			 Layout.tuple2 (List.layout Statement.layout,
-					Transfer.layout))
+	    Trace.trace2 ("Shrink.simplifyBlock",
+			  List.layout Statement.layout,
+			  layoutLabel o Block.label,
+			  Layout.tuple2 (List.layout Statement.layout,
+					 Transfer.layout))
 	 val traceGotoMeaning =
-	    Trace.trace2
+	    Trace.trace3
 	    ("Shrink.gotoMeaning",
+	     List.layout Statement.layout,
 	     layoutLabelMeaning,
 	     Vector.layout VarInfo.layout,
 	     Layout.tuple2 (List.layout Statement.layout, Transfer.layout))
@@ -709,11 +736,14 @@ fun shrinkFunction {globals: Statement.t vector} =
 			 datatype z = datatype LabelMeaning.aux
 		      in
 			 case aux of
-			    Block => simplifyBlock block
+			    Block => simplifyBlock ([], block)
 			  | Bug => ([], Transfer.Bug)
-			  | Case _ => simplifyBlock block
-			  | Goto {dst, args} =>
-			       gotoMeaning (dst, Vector.map (args, extract))
+			  | Case _ => simplifyBlock ([], block)
+			  | Goto {canMove, dst, args} =>
+			       gotoMeaning
+			       (canMove,
+				dst,
+				Vector.map (args, extract))
 			  | Raise z => rr (z, Transfer.Raise)
 			  | Return z => rr (z, Transfer.Return)
 		      end
@@ -729,14 +759,20 @@ fun shrinkFunction {globals: Statement.t vector} =
 		end) arg
 	 and simplifyBlock arg : Statement.t list * Transfer.t =
 	    traceSimplifyBlock
-	    (fn (Block.T {statements, transfer, ...}) =>
+	    (fn (canMoveIn, Block.T {statements, transfer, ...}) =>
 	    let
-	       val fs = Vector.map (statements, evalStatement)
+	       val f = evalStatements statements
 	       val (ss, transfer) = simplifyTransfer transfer
-	       val statements = Vector.foldr (fs, ss, fn (f, ss) => f ss)
 	    in
-	       (statements, transfer)
+	       (canMoveIn @ (f ss), transfer)
 	    end) arg
+	 and evalStatements (ss: Statement.t vector)
+	    : Statement.t list -> Statement.t list =
+	    let
+	       val fs = Vector.map (ss, evalStatement)
+	    in
+	       fn ss => Vector.foldr (fs, ss, fn (f, ss) => f ss)
+	    end
 	 and simplifyTransfer arg : Statement.t list * Transfer.t =
 	    traceSimplifyTransfer
 	    (fn (t: Transfer.t) =>
@@ -882,7 +918,8 @@ fun shrinkFunction {globals: Statement.t vector} =
 				default = Option.map (default, simplifyLabel)})
 		   in
 		      simplifyCase
-		      {cantSimplify = cantSimplify,
+		      {canMove = [],
+		       cantSimplify = cantSimplify,
 		       cases = cases,
 		       default = default,
 		       gone = fn () => (Cases.foreach (cases, deleteLabel)
@@ -897,7 +934,8 @@ fun shrinkFunction {globals: Statement.t vector} =
 				 args = simplifyVars args, 
 				 return = simplifyLabel return})
 		   ) arg
-	 and simplifyCase {cantSimplify, cases, default, gone, test: VarInfo.t}
+	 and simplifyCase {canMove, cantSimplify, 
+			   cases, default, gone, test: VarInfo.t}
 	    : Statement.t list * Transfer.t =
 	    let
 	       (* tryToEliminate makes sure that the destination meaning
@@ -915,13 +953,13 @@ fun shrinkFunction {globals: Statement.t vector} =
 			   val _ = addLabelIndex i
 			   val _ = gone ()
 			in
-			   gotoMeaning (m, Vector.new0 ())
+			   gotoMeaning (canMove, m, Vector.new0 ())
 			end
 		  end
 	    in
 	       if Cases.isEmpty cases
 		  then (case default of
-			   NONE => ([], Bug)
+			   NONE => (canMove, Bug)
 			 | SOME l => tryToEliminate (labelMeaning l))
 	       else
 		  let
@@ -948,7 +986,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 				       val _ = addLabelMeaning m
 				       val _ = gone ()
 				    in
-				       gotoMeaning (m, args)
+				       gotoMeaning (canMove, m, args)
 				    end
 				 fun loop k =
 				    if k = n
@@ -995,10 +1033,11 @@ fun shrinkFunction {globals: Statement.t vector} =
 	    end
 	 and goto (dst: Label.t, args: VarInfo.t vector)
 	    : Statement.t list * Transfer.t =
-	    gotoMeaning (labelMeaning dst, args)
+	    gotoMeaning ([], labelMeaning dst, args)
 	 and gotoMeaning arg : Statement.t list * Transfer.t =
 	    traceGotoMeaning
-	    (fn (m as LabelMeaning.T {aux, blockIndex = i, ...},
+	    (fn (canMoveIn,
+		 m as LabelMeaning.T {aux, blockIndex = i, ...},
 		 args: VarInfo.t vector) =>
 	     let
 		val n = Array.sub (inDegree, i)
@@ -1014,13 +1053,13 @@ fun shrinkFunction {globals: Statement.t vector} =
 			       (Block.args b, args, fn ((x, _), vi) =>
 				setVarInfo (x, vi))
 			 in
-			    simplifyBlock b
+			    simplifyBlock (canMoveIn, b)
 			 end
 		   else
 		      let
 			 val _ = forceMeaningBlock m
 		      in
-			 ([],
+			 (canMoveIn,
 			  Goto {dst = Block.label (Vector.sub (blocks, i)),
 				args = uses args})
 		      end
@@ -1029,19 +1068,21 @@ fun shrinkFunction {globals: Statement.t vector} =
 		      Position.Formal n => Vector.sub (args, n)
 		    | Position.Free x => varInfo x
 		fun rr ({args, canMove}, make) =
-		   (canMove, make (Vector.map (args, use o extract)))
+		   (canMoveIn @ canMove, 
+		    make (Vector.map (args, use o extract)))
 		datatype z = datatype LabelMeaning.aux
 	     in
 		case aux of
 		   Block => normal ()
-		 | Bug => ([], Transfer.Bug)
-		 | Case {cases, default} =>
-		      simplifyCase {cantSimplify = normal,
+		 | Bug => ((*canMoveIn*)[], Transfer.Bug)
+		 | Case {canMove, cases, default} =>
+		      simplifyCase {canMove = canMoveIn @ canMove,
+				    cantSimplify = normal,
 				    cases = cases,
 				    default = default,
 				    gone = fn () => deleteLabelMeaning m,
 				    test = Vector.sub (args, 0)}
-		 | Goto {dst, args} =>
+		 | Goto {canMove, dst, args} =>
 		      if Array.sub (isHeader, i)
 			 orelse Array.sub (isBlock, i)
 			 then normal ()
@@ -1054,7 +1095,9 @@ fun shrinkFunction {globals: Statement.t vector} =
 				  then addLabelMeaning dst
 			       else ()
 			 in
-			    gotoMeaning (dst, Vector.map (args, extract))
+			    gotoMeaning (canMoveIn @ canMove, 
+					 dst, 
+					 Vector.map (args, extract))
 			 end
 		 | Raise z => rr (z, Transfer.Raise)
 		 | Return z => rr (z, Transfer.Return)
