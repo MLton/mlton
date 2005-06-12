@@ -229,6 +229,7 @@ signature RSSA =
 
 	    val clear: t -> unit
 	    val checkHandlers: t -> unit
+	    val dropProfile: t -> t
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val shrink: t -> t
 	    val typeCheck: t -> unit

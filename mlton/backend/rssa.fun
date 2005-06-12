@@ -715,6 +715,30 @@ structure Function =
 				     nodeValue = #block o nodeInfo})
 	 end
 
+      fun dropProfile (f: t): t =
+	 let
+	    val {args, blocks, name, raises, returns, start} = dest f
+	    val blocks =
+	       Vector.map
+	       (blocks, fn Block.T {args, kind, label, statements, transfer} =>
+		Block.T {args = args,
+			 kind = kind,
+			 label = label,
+			 statements = Vector.keepAll
+			              (statements,
+				       fn Statement.Profile _ => false
+				        | Statement.ProfileLabel _ => false
+					| _ => true),
+			 transfer = transfer})
+	 in
+	    new {args = args,
+		 blocks = blocks,
+		 name = name,
+		 raises = raises,
+		 returns = returns,
+		 start = start}
+	 end
+
       fun shrink (f: t): t =
 	 let
 	    val {args, blocks, name, raises, returns, start} = dest f
@@ -834,8 +858,15 @@ structure Program =
 	    ; output (str "\nMain:")
 	    ; Function.layouts (main, output)
 	    ; output (str "\nFunctions:")
-	    ; List.foreach (functions, fn f => Function.layouts (f, output))
+<           ; List.foreach (functions, fn f => Function.layouts (f, output))
 	 end
+
+      fun dropProfile (T {functions, handlesSignals, main, objectTypes}) =
+	 (Control.profile := Control.ProfileNone
+	  ; T {functions = List.map (functions, Function.dropProfile),
+	       handlesSignals = handlesSignals,
+	       main = Function.dropProfile main,
+	       objectTypes = objectTypes})
 
       fun copyProp (T {functions, handlesSignals, main, objectTypes, ...}): t =
 	 let

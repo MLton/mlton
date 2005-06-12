@@ -150,14 +150,21 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 				suffix = "rssa",
 				thunk = fn () => doit program,
 				typeCheck = R.Program.typeCheck}
+      fun maybePass (name, doit, program) =
+	 if List.exists (!Control.dropPasses, fn re =>
+			 Regexp.Compiled.matchesAll (re, name))
+	    then program
+	 else pass (name, doit, program)
       val program = pass ("ToRssa", SsaToRssa.convert, (program, codegen))
       fun rssaSimplify program = 
 	 let
-	    val program = pass ("rssaShrink1", Rssa.Program.shrink, program)
+	    val program = 
+	       maybePass ("rssaShrink1", Rssa.Program.shrink, program)
 	    val program = pass ("insertLimitChecks", LimitCheck.insert, program)
 	    val program = pass ("insertSignalChecks", SignalCheck.insert, program)
 	    val program = pass ("implementHandlers", ImplementHandlers.doit, program)
-	    val program = pass ("rssaShrink2", Rssa.Program.shrink, program)
+	    val program = 
+	       maybePass ("rssaShrink2", Rssa.Program.shrink, program)
 	    val () = R.Program.checkHandlers program
 	    val (program, makeProfileInfo) =
 	       Control.passTypeCheck
