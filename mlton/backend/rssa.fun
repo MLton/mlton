@@ -858,7 +858,7 @@ structure Program =
 	    ; output (str "\nMain:")
 	    ; Function.layouts (main, output)
 	    ; output (str "\nFunctions:")
-<           ; List.foreach (functions, fn f => Function.layouts (f, output))
+            ; List.foreach (functions, fn f => Function.layouts (f, output))
 	 end
 
       fun dropProfile (T {functions, handlesSignals, main, objectTypes}) =
