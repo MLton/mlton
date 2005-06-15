@@ -100,7 +100,8 @@ source file."
 
 (defun mlton-parse-errors-this-buffer ()
   (interactive)
-  (kill-buffer mlton-output-buffer)
+  (if (get-buffer mlton-output-buffer)
+      (kill-buffer mlton-output-buffer))
   (rename-buffer mlton-output-buffer)
   (mlton-parse-errors (file-name-directory mlton-main-file)
 		      (current-buffer)))
