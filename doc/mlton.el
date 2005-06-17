@@ -70,6 +70,11 @@ source file."
 (defvar sml-filename-regexp
    "\\(\\([-a-zA-Z0-9/.]\\)+\\)\\(\\.\\)\\(\\(cm\\)\\|\\(fun\\)\\|\\(grm\\)\\|\\(lex\\)\\|\\(mlb\\)\\|\\(sig\\)\\|\\(sml\\)\\|\\(ML\\)\\)")
 
+(defmacro save-buffer-excursion (&rest exps)
+  (` (let ((old-buffer (current-buffer)))
+       (,@ exps)
+       (set-buffer old-buffer))))
+
 (defun sml-save-buffers ()
   (save-buffer-excursion
    (let ((l (buffer-list)))
