@@ -226,7 +226,7 @@ fun casee {caseType: Xtype.t,
       fun wild e = lett (Var.newNoname (), e)
       val exp =
 	 if Vector.isEmpty cases
-	    then Error.bug "case with no patterns"
+	    then Error.bug "Defunctorize.casee: case with no patterns"
 	 else
 	    let
 	       val {exp = e, pat = p, numUses, ...} = Vector.sub (cases, 0)
@@ -260,7 +260,7 @@ fun casee {caseType: Xtype.t,
 						 {tuple = tuple,
 						  offset = i})}
 					 :: decs)
-				   | _ => Error.bug "infer flat tuple")
+				   | _ => Error.bug "Defunctorize.casee: infer flat tuple")
 			   in
 			      Xexp.let1 {var = t, exp = test,
 					 body = Xexp.lett {decs = decs,
@@ -308,7 +308,7 @@ fun casee {caseType: Xtype.t,
 			    align (Vector.toListMap
 				   (redundant, fn {lay, ...} =>
 				    case lay of
-				       NONE => Error.bug "redundant match with no lay"
+				       NONE => Error.bug "Defunctorize.casee: redundant match with no lay"
 				     | SOME l => l ()))],
 		       lay ()])
 		  end
@@ -501,7 +501,9 @@ fun defunctorize (CoreML.Program.T {decs}) =
 	 Property.getSetOnce (Tycon.plist,
 			      Property.initRaise ("tyconCons", Tycon.layout))
       val setConTycon =
-	 Trace.trace2 ("setConTycon", Con.layout, Tycon.layout, Unit.layout)
+	 Trace.trace2 
+	 ("Defunctorize.setConTycon", 
+	  Con.layout, Tycon.layout, Unit.layout)
 	 setConTycon
       val datatypes = ref []
       (* Process all the datatypes. *)
@@ -955,7 +957,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 				     if WordX.isZero w
 					then Xexp.falsee ()
 				     else Xexp.truee ()
-				| _ => Error.bug "strange boolean constant")
+				| _ => Error.bug "Defunctorize.loopExp: Const:strange boolean constant")
 			else Xexp.const c
 		     end
 		| EnterLeave (e, si) =>
@@ -1049,7 +1051,9 @@ fun defunctorize (CoreML.Program.T {decs}) =
    end
 
 val defunctorize =
-   Trace.trace ("defunctorize", CoreML.Program.layout, Xml.Program.layout)
+   Trace.trace 
+   ("Defunctorize.defunctorize", 
+    CoreML.Program.layout, Xml.Program.layout)
    defunctorize
 
 end

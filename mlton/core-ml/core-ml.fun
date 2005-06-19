@@ -358,7 +358,7 @@ structure Exp =
 
       fun casee (z as {rules, ...}) =
 	 if 0 = Vector.length rules
-	    then Error.bug "CoreML.casee"
+	    then Error.bug "CoreML.Exp.casee"
 	 else make (Case z, ty (#exp (Vector.sub (rules, 0))))
 
       fun iff (test, thenCase, elseCase): t =

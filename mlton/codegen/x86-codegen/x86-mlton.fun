@@ -127,7 +127,9 @@ struct
      end
 
   val implementsPrim: Machine.Type.t Prim.t -> bool =
-     Trace.trace ("implementsPrim", Prim.layout, Bool.layout) implementsPrim
+     Trace.trace 
+     ("x86MLton.implementsPrim", Prim.layout, Bool.layout) 
+     implementsPrim
 
   fun prim {prim : RepType.t Prim.t,
 	    args : (Operand.t * Size.t) vector,
@@ -139,23 +141,23 @@ struct
 
 	fun getDst1 ()
 	  = Vector.sub (dsts, 0)
-	    handle _ => Error.bug "applyPrim: getDst1"
+	    handle _ => Error.bug "x86MLton.prim: getDst1"
 	fun getDst2 ()
 	  = (Vector.sub (dsts, 0), Vector.sub (dsts, 1))
-	    handle _ => Error.bug "applyPrim: getDst2"
+	    handle _ => Error.bug "x86MLton.prim: getDst2"
 	fun getSrc1 ()
 	  = Vector.sub (args, 0)
-	    handle _ => Error.bug "applyPrim: getSrc1"
+	    handle _ => Error.bug "x86MLton.prim: getSrc1"
 	fun getSrc2 ()
 	  = (Vector.sub (args, 0), Vector.sub (args, 1))
-	    handle _ => Error.bug "applyPrim: getSrc2"
+	    handle _ => Error.bug "x86MLton.prim: getSrc2"
 	fun getSrc3 ()
 	  = (Vector.sub (args, 0), Vector.sub (args, 1), Vector.sub (args, 2))
-	    handle _ => Error.bug "applyPrim: getSrc3"
+	    handle _ => Error.bug "x86MLton.prim: getSrc3"
 	fun getSrc4 ()
 	  = (Vector.sub (args, 0), Vector.sub (args, 1), 
 	     Vector.sub (args, 2), Vector.sub (args, 3))
-	    handle _ => Error.bug "applyPrim: getSrc4"
+	    handle _ => Error.bug "x86MLton.prim: getSrc4"
 
 	fun mov ()
 	  = let
@@ -163,7 +165,7 @@ struct
 	      val (src,srcsize) = getSrc1 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: mov, dstsize/srcsize",
+		  ("x86MLton.prim: mov, dstsize/srcsize",
 		   fn () => srcsize = dstsize)
 	    in
 	      AppendList.fromList
@@ -183,7 +185,7 @@ struct
 	      val (src,srcsize) = getSrc1 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: movx, dstsize/srcsize",
+		  ("x86MLton.prim: movx, dstsize/srcsize",
 		   fn () => Size.lt(srcsize,dstsize))
 	    in
 	      AppendList.fromList
@@ -205,7 +207,7 @@ struct
 	      val (src,srcsize) = getSrc1 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: xvom, dstsize/srcsize",
+		  ("x86MLton.prim: xvom, dstsize/srcsize",
 		   fn () => Size.lt(dstsize,srcsize))
 	    in
 	      AppendList.fromList
@@ -227,7 +229,7 @@ struct
 	      val (dst,dstsize) = getDst1 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: binal, dstsize/src1size/src2size",
+		  ("x86MLton.prim: binal, dstsize/src1size/src2size",
 		   fn () => src1size = dstsize andalso
 		            src2size = dstsize)
 
@@ -280,7 +282,7 @@ struct
 		   (dst2,dst2size)) = getDst2 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: binal64, dst1size/dst2size/src1size/src2size/src3size/src4size",
+		  ("x86MLton.prim: binal64, dst1size/dst2size/src1size/src2size/src3size/src4size",
 		   fn () => src1size = dst1size andalso
 		            src3size = dst1size andalso
 			    src2size = dst2size andalso
@@ -337,7 +339,7 @@ struct
 	      val (dst,dstsize) = getDst1 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: pmd, dstsize/src1size/src2size",
+		  ("x86MLton.prim: pmd, dstsize/src1size/src2size",
 		   fn () => src1size = dstsize andalso
 		            src2size = dstsize)
 
@@ -381,7 +383,7 @@ struct
 	      val (dst,dstsize) = getDst1 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: pmd, dstsize/src1size/src2size",
+		  ("x86MLton.prim: imul2, dstsize/src1size/src2size",
 		   fn () => src1size = dstsize andalso
 		            src2size = dstsize)
 
@@ -419,7 +421,7 @@ struct
 	      val (dst,dstsize) = getDst1 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: unal, dstsize/srcsize",
+		  ("x86MLton.prim: unal, dstsize/srcsize",
 		   fn () => srcsize = dstsize)
 	    in
 	      AppendList.fromList
@@ -443,7 +445,7 @@ struct
 	      val ((dst1,dst1size),(dst2,dst2size)) = getDst2 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: unal, dst1size/dst2size/src1size/src2size",
+		  ("x86MLton.prim: unal64, dst1size/dst2size/src1size/src2size",
 		   fn () => src1size = dst1size andalso
                             src2size = dst2size andalso
                             dst1size = dst2size)
@@ -488,11 +490,11 @@ struct
 		   (src2,src2size)) = getSrc2 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: sral, dstsize/src1size",
+		  ("x86MLton.prim: sral, dstsize/src1size",
 		   fn () => src1size = dstsize)
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: sral, src2size",
+		  ("x86MLton.prim: sral, src2size",
 		   fn () => src2size = wordSize)
 	    in
 	      AppendList.fromList
@@ -518,7 +520,7 @@ struct
 		   (src2,src2size)) = getSrc2 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: cmp, src1size/src2size",
+		  ("x86MLton.prim: cmp, src1size/src2size",
 		   fn () => src1size = src2size)
 	    in
 	      (* Can't have an immediate in src1 position,
@@ -564,7 +566,7 @@ struct
 		   (src2,src2size)) = getSrc2 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: fbina, dstsize/src1size/src2size",
+		  ("x86MLton.prim: fbina, dstsize/src1size/src2size",
 		   fn () => src1size = dstsize andalso
 		            src2size = dstsize)
 
@@ -604,7 +606,7 @@ struct
 		   (src3,src3size)) = getSrc3 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: fbina_fmul, dstsize/src1size/src2size/src3size",
+		  ("x86MLton.prim: fbina_fmul, dstsize/src1size/src2size/src3size",
 		   fn () => src1size = dstsize andalso
 		            src2size = dstsize andalso
 			    src3size = dstsize)
@@ -636,7 +638,7 @@ struct
 	      val (src,srcsize) = getSrc1 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: funa, dstsize/srcsize",
+		  ("x86MLton.prim: funa, dstsize/srcsize",
 		   fn () => srcsize = dstsize)
 	    in
 	      AppendList.fromList
@@ -660,7 +662,7 @@ struct
 	      val (src,srcsize) = getSrc1 ()
 	      val _ 
 		= Assert.assert
-		  ("applyPrim: logarithm, dstsize/srcsize",
+		  ("x86MLton.prim: flogarithm, dstsize/srcsize",
 		   fn () => srcsize = dstsize)
 	    in	
 	      AppendList.fromList
@@ -715,14 +717,14 @@ struct
 		 W8 => cmp f
 	       | W16 => cmp f
 	       | W32 => cmp f
-	       | W64 => Error.bug "FIXME"
+	       | W64 => Error.bug "x86MLton.prim: compare, W64"
 	   end
 	fun shift (size, i) =
 	   case WordSize.prim size of
 	      W8 => sral i
 	    | W16 => sral i
 	    | W32 => sral i
-	    | W64 => Error.bug "FIXME"
+	    | W64 => Error.bug "x86MLton.prim: shift, W64"
       in
 	AppendList.appends
 	[comment_begin,
@@ -747,7 +749,7 @@ struct
 		  val (src,srcsize) = getSrc1 ()
 		  val _
 		    = Assert.assert
-		      ("applyPrim: Real_Math_acos, dstsize/srcsize",
+		      ("x86MLton.prim: Real_Math_acos, dstsize/srcsize",
 		       fn () => srcsize = dstsize)
 		  val realTemp1ContentsOperand = realTemp1ContentsOperand srcsize
 		  val realTemp2ContentsOperand = realTemp2ContentsOperand srcsize
@@ -800,7 +802,7 @@ struct
 		  val (src,srcsize) = getSrc1 ()
 		  val _
 		    = Assert.assert
-		      ("applyPrim: Real_Math_asin, dstsize/srcsize",
+		      ("x86MLton.prim: Real_Math_asin, dstsize/srcsize",
 		       fn () => srcsize = dstsize)
 		  val realTemp1ContentsOperand = realTemp1ContentsOperand srcsize
 		  val realTemp2ContentsOperand = realTemp2ContentsOperand srcsize
@@ -848,7 +850,7 @@ struct
 		  val (src,srcsize) = getSrc1 ()
 		  val _
 		    = Assert.assert
-		      ("applyPrim: Real_Math_atan, dstsize/srcsize",
+		      ("x86MLton.prim: Real_Math_atan, dstsize/srcsize",
 		       fn () => srcsize = dstsize)
 		  val realTemp1ContentsOperand = realTemp1ContentsOperand srcsize
 		in
@@ -878,7 +880,7 @@ struct
 		       (src2,src2size))= getSrc2 ()
 		  val _
 		    = Assert.assert
-		      ("applyPrim: Real_Math_atan2, dstsize/src1size/src2size",
+		      ("x86MLton.prim: Real_Math_atan2, dstsize/src1size/src2size",
 		       fn () => src1size = dstsize andalso
 		                src2size = dstsize)
 		in
@@ -904,7 +906,7 @@ struct
 		  val (src,srcsize) = getSrc1 ()
 		  val _
 		    = Assert.assert
-		      ("applyPrim: Real_Math_exp, dstsize/srcsize",
+		      ("x86MLton.prim: Real_Math_exp, dstsize/srcsize",
 		       fn () => srcsize = dstsize)
 		  val realTemp1ContentsOperand = realTemp1ContentsOperand srcsize
 		  val realTemp2ContentsOperand = realTemp2ContentsOperand srcsize
@@ -965,7 +967,7 @@ struct
 		  val (src,srcsize) = getSrc1 ()
 		  val _
 		    = Assert.assert
-		      ("applyPrim: Real_Math_tan, dstsize/srcsize",
+		      ("x86MLton.prim: Real_Math_tan, dstsize/srcsize",
 		       fn () => srcsize = dstsize)
 		in
 		  AppendList.fromList
@@ -994,7 +996,7 @@ struct
 		       (src2,src2size))= getSrc2 ()
 		  val _
 		    = Assert.assert
-		      ("applyPrim: Real_lt, src1size/src2size",
+		      ("x86MLton.prim: Real_lt, src1size/src2size",
 		       fn () => src1size = src2size)
 		in
 		  AppendList.fromList
@@ -1025,7 +1027,7 @@ struct
 		       (src2,src2size))= getSrc2 ()
 		  val _
 		    = Assert.assert
-		      ("applyPrim: Real_le, src1size/src2size",
+		      ("x86MLton.prim: Real_le, src1size/src2size",
 		       fn () => src1size = src2size)
 		in
 		  AppendList.fromList
@@ -1056,7 +1058,7 @@ struct
 		       (src2,src2size))= getSrc2 ()
 		  val _
 		    = Assert.assert
-		      ("applyPrim: Real_equal, src1size/src2size",
+		      ("x86MLton.prim: Real_equal, src1size/src2size",
 		       fn () => src1size = src2size)
 		in
 		  AppendList.fromList
@@ -1092,7 +1094,7 @@ struct
 		       (src2,src2size))= getSrc2 ()
 		  val _
 		    = Assert.assert
-		      ("applyPrim: Real_qequal, src1size/src2size",
+		      ("x86MLton.prim: Real_qequal, src1size/src2size",
 		       fn () => src1size = src2size)
 		in
 		  AppendList.fromList
@@ -1203,11 +1205,11 @@ struct
 		    end 
 		in
 		   case (s, WordSize.prim s') of
-		      (R64, W64) => Error.bug "FIXME"
+		      (R64, W64) => Error.bug "x86MLton.prim: Real_toWord, W64"
 		    | (R64, W32) => default ()
 		    | (R64, W16) => default ()
 		    | (R64, W8) => default' ()
-		    | (R32, W64) => Error.bug "FIXME"
+		    | (R32, W64) => Error.bug "x86MLton.prim: Real_toWord, W64"
 		    | (R32, W32) => default ()
 		    | (R32, W16) => default ()
 		    | (R32, W8) => default' ()
@@ -1219,11 +1221,11 @@ struct
 		       (src2,src2size)) = getSrc2 ()
 		  val _
 		    = Assert.assert
-		      ("applyPrim: Real_ldexp, dstsize/src1size",
+		      ("x86MLton.prim: Real_ldexp, dstsize/src1size",
 		       fn () => src1size = dstsize)
 		  val _
 		    = Assert.assert
-		      ("applyPrim: Real_qequal, src2size",
+		      ("x86MLton.prim: Real_ldexp, src2size",
 		       fn () => src2size = Size.LONG)
 		  val realTemp1ContentsOperand = realTemp1ContentsOperand src1size
 		in
@@ -1266,7 +1268,7 @@ struct
 			       else Instruction.MUL)
 		  | W16 => imul2 ()
 		  | W32 => imul2 ()
-		  | W64 => Error.bug "FIXME")
+		  | W64 => Error.bug "x86MLton.prim: Word_mul, W64")
 	     | Word_neg s => 
 		(case WordSize.prim s of
 		    W8 => unal Instruction.NEG
@@ -1349,7 +1351,7 @@ struct
 		    | (W16, R32) => default ()
 		    | (W8, R64) => default' ()
 		    | (W8, R32) => default' ()
-		    | _ => Error.bug "FIXME"
+		    | _ => Error.bug "x86MLton.prim: Word_toReal, W64"
 		end
 	     | Word_toWord (s, s', {signed}) =>
 		  let
@@ -1365,7 +1367,7 @@ struct
 			  else xvom ()
 		  end
 	     | Word_xorb s => bitop (s, Instruction.XOR)
-	     | _ => Error.bug ("prim: strange Prim.Name.t: " ^ primName)),
+	     | _ => Error.bug ("x86MLton.prim: strange Prim.Name.t: " ^ primName)),
 	 comment_end]
       end
 
@@ -1455,20 +1457,20 @@ struct
 
 	fun getDst1 ()
 	  = Vector.sub (dsts, 0)
-	    handle _ => Error.bug "arith: getDst1"
+	    handle _ => Error.bug "x86MLton.arith: getDst1"
 	fun getDst2 ()
 	  = (Vector.sub (dsts, 0), Vector.sub (dsts, 1))
-	    handle _ => Error.bug "arith: getDst2"
+	    handle _ => Error.bug "x86MLton.arith: getDst2"
 	fun getSrc1 ()
 	  = Vector.sub (args, 0)
-	    handle _ => Error.bug "arith: getSrc1"
+	    handle _ => Error.bug "x86MLton.arith: getSrc1"
 	fun getSrc2 ()
 	  = (Vector.sub (args, 0), Vector.sub (args, 1))
-	    handle _ => Error.bug "arith: getSrc2"
+	    handle _ => Error.bug "x86MLton.arith: getSrc2"
 	fun getSrc4 ()
 	  = (Vector.sub (args, 0), Vector.sub (args, 1), 
 	     Vector.sub (args, 2), Vector.sub (args, 3))
-	    handle _ => Error.bug "arith: getSrc4"
+	    handle _ => Error.bug "x86MLton.arith: getSrc4"
 
 	fun check (statements, condition)
 	  = AppendList.single
@@ -1484,7 +1486,7 @@ struct
 	      val (dst, dstsize) = getDst1 ()
 	      val ((src1, src1size), (src2, src2size)) = getSrc2 ()
 	      val _ = Assert.assert
-		      ("arith: binal, dstsize/src1size/src2size",
+		      ("x86MLton.arith: binal, dstsize/src1size/src2size",
 		       fn () => src1size = dstsize andalso src2size = dstsize)
 	      (* Reverse src1/src2 when src1 and src2 are
 	       * temporaries and the oper is commutative. 
@@ -1521,7 +1523,7 @@ struct
 	      val ((src1, src1size), (src2, src2size),
 		   (src3, src3size), (src4, src4size)) = getSrc4 ()
 	      val _ = Assert.assert
-		      ("arith: binal64, dst1size/dst2size/src1size/src2size/src3size/src4size",
+		      ("x86MLton.arith: binal64, dst1size/dst2size/src1size/src2size/src3size/src4size",
 		       fn () => src1size = dst1size andalso src3size = dst1size andalso
                                 src2size = dst2size andalso src4size = dst2size andalso
                                 dst1size = dst2size)
@@ -1569,7 +1571,7 @@ struct
 	      val (dst, dstsize) = getDst1 ()
 	      val ((src1, src1size), (src2, src2size)) = getSrc2 ()
 	      val _ = Assert.assert
-		      ("arith: pmd, dstsize/src1size/src2size",
+		      ("x86MLton.arith: pmd, dstsize/src1size/src2size",
 		       fn () => src1size = dstsize andalso src2size = dstsize)
  	      (* Reverse src1/src2 when src1 and src2 are
  	       * temporaries and the oper is commutative. 
@@ -1603,7 +1605,7 @@ struct
 	      val (dst, dstsize) = getDst1 ()
 	      val (src1, src1size) = getSrc1 ()
 	      val _ = Assert.assert
-		      ("arith: unal, dstsize/src1size",
+		      ("x86MLton.arith: unal, dstsize/src1size",
 		       fn () => src1size = dstsize)
 	    in
 	      check ([Assembly.instruction_mov
@@ -1622,7 +1624,7 @@ struct
 	      val ((dst1, dst1size), (dst2, dst2size)) = getDst2 ()
 	      val ((src1, src1size), (src2, src2size)) = getSrc2 ()
 	      val _ = Assert.assert
-		      ("arith: neg64, dst1size/dst2size/src1size/src2size",
+		      ("x86MLton.arith: neg64, dst1size/dst2size/src1size/src2size",
 		       fn () => src1size = dst1size andalso
 		                src2size = dst2size andalso
 				dst1size = dst2size)
@@ -1689,7 +1691,7 @@ struct
 	      val (dst, dstsize) = getDst1 ()
 	      val ((src1, src1size), (src2, src2size)) = getSrc2 ()
 	      val _ = Assert.assert
-		      ("arith: imul2, dstsize/src1size/src2size",
+		      ("x86MLton.arith: imul2, dstsize/src1size/src2size",
 		       fn () => src1size = dstsize andalso src2size = dstsize)
 	      (* Reverse src1/src2 when src1 and src2 are
 	       * temporaries and the oper is commutative. 
@@ -1762,13 +1764,13 @@ struct
 			     W8 => pmd (x86.Instruction.IMUL, x86.Instruction.O)
 			   | W16 => imul2 x86.Instruction.O
 			   | W32 => imul2 x86.Instruction.O
-			   | W64 => Error.bug "FIXME")
+			   | W64 => Error.bug "x86MLton.arith: Word_mulCheck, W64")
 		   else
 		      (case WordSize.prim s of
 			  W8 => pmd (x86.Instruction.MUL, x86.Instruction.C)
 			| W16 => pmd (x86.Instruction.MUL, x86.Instruction.C)
 			| W32 => pmd (x86.Instruction.MUL, x86.Instruction.C)
-			| W64 => Error.bug "FIXME")
+			| W64 => Error.bug "x86MLton.arith: Word_mulCheck, W64")
 		end
 	   | Word_negCheck s => 
 	       (case WordSize.prim s of
@@ -1787,7 +1789,7 @@ struct
 		    | W32 => binal (x86.Instruction.SUB, flag)
 		    | W64 => binal64 (x86.Instruction.SUB, x86.Instruction.SBB, flag)
 		end
-	   | _ => Error.bug ("arith: strange Prim.Name.t: " ^ primName))]
+	   | _ => Error.bug ("x86MLton.arith: strange Prim.Name.t: " ^ primName))]
       end
 
 end

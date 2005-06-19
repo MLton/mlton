@@ -163,7 +163,7 @@ structure DotColor =
       fun gray i =
 	 if 0 <= i andalso i < Vector.length grays
 	    then Vector.sub (grays, i)
-	 else Error.bug "invalid gray index"
+	 else Error.bug "Dot.gray"
 
       fun realToString x = Real.format (x, Real.Format.fix (SOME 2))
 	 

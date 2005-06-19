@@ -140,11 +140,11 @@ fun flatten (Program.T {datatypes, globals, functions, main}) =
 		case transfer of
 		   Return xs =>
 		      (case returns of
-			  NONE => Error.bug "return mismatch"
+			  NONE => Error.bug "Flatten.flatten: return mismatch"
 			| SOME rs => coerces (xs, rs))
 		 | Raise xs =>
 		      (case raises of
-			  NONE => Error.bug "raise mismatch"
+			  NONE => Error.bug "Flatten.flatten: raise mismatch"
 			| SOME rs => coerces (xs, rs))
 		 | Call {func, args, return} =>
 		      let
@@ -225,12 +225,10 @@ fun flatten (Program.T {datatypes, globals, functions, main}) =
 				    SOME ys => Vector.fold (ys, xs, op ::)
 				  | _ => (Error.bug 
 					  (concat
-					   ["tuple unavailable: ",
+					   ["Flatten.flattens: tuple unavailable: ",
 					    (Var.toString x), " ",
 					    (Layout.toString
 					     (Vector.layout Var.layout xsX))])))
-(*				  | _ => []) *)
-(*			          | _ => Error.bug "tuple unavailable") *)
 			else x :: xs))
       fun doitStatement (stmt as Statement.T {var, ty, exp}) =
 	 case exp of

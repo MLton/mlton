@@ -114,7 +114,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 	 Property.getSetOnce
 	 (Con.plist, Property.initRaise ("SimplifyTypes.conInfo", Con.layout))
       val conInfo =
-	 Trace.trace ("conInfo",
+	 Trace.trace ("SimplifyTypes.conInfo",
 		      Con.layout,
 		      fn {rep, args} =>
 		      Layout.record [("rep", ConRep.layout (!rep)),
@@ -125,10 +125,12 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
       fun setConRep (con, r) = #rep (conInfo con) := r
       val conIsUseful = ConRep.isUseful o conRep
       val conIsUseful =
-	 Trace.trace ("conIsUseful", Con.layout, Bool.layout) conIsUseful
+	 Trace.trace 
+	 ("SimplifyTypes.conIsUseful", Con.layout, Bool.layout) 
+	 conIsUseful
       val setConRep =
 	 Trace.trace2 
-	 ("setConRep", Con.layout, ConRep.layout, Unit.layout)
+	 ("SimplifyTypes.setConRep", Con.layout, ConRep.layout, Unit.layout)
 	 setConRep
       (* Initialize conInfo *)
       val _ =
@@ -313,7 +315,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 				   case conCardinality c of
 				      Many => escape Many
 				    | One => (case ac of
-						 Many => Error.bug "Many"
+						 Many => Error.bug "SimplifyTypes.simplify: Many"
 					       | One => escape Many
 					       | Zero => One)
 				    | Zero => ac)
@@ -451,7 +453,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 	    | _ => t
 	   end))
       val simplifyType =
- 	 Trace.trace ("simplifyType", Type.layout, Type.layout)
+ 	 Trace.trace ("SimplifyTypes.simplifyType", Type.layout, Type.layout)
  	 simplifyType
       fun simplifyTypes ts = Vector.map (ts, simplifyType)
       val keepSimplifyTypes = makeKeepSimplifyTypes simplifyType
@@ -523,7 +525,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 			       then ConApp {con = Con.truee,
 					    args = Vector.new0 ()}
 			    else normal ()
-		      else Error.bug "strange eq/equal PrimApp"
+		      else Error.bug "SimplifyTypes.simplifyExp: strange eq/equal PrimApp"
 		   open Prim.Name
 		in case Prim.name prim of
 		   MLton_eq => equal ()
@@ -549,7 +551,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 					 if typeIsUseful t
 					    then offset + 1
 					 else offset),
-		      fn _ => Error.bug "newOffset")
+		      fn _ => Error.bug "SimplifyTypes.simplifyExp: Select:newOffset")
 	       end
 	  | Tuple xs => Keep (tuple xs)
 	  | _ => Keep e
@@ -715,7 +717,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 				    exp = Exp.unit}),
 	  Vector.keepAllMap (globals, fn s =>
 			     case simplifyStatement s of
-			        Bugg => Error.bug "global bind can't fail"
+			        Bugg => Error.bug "SimplifyTypes.globals: bind can't fail"
 			      | Delete => NONE
 			      | Keep b => SOME b)]
       val shrink = shrinkFunction {globals = globals}

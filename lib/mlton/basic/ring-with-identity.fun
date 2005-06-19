@@ -67,7 +67,7 @@ val three = add1 two
 
 val pows =
    Trace.traceAssert
-   ("pows",
+   ("RingWithIdentity.pows",
     List.layout (Layout.tuple2 (layout, Layout.str o Pervasive.Int.toString)),
     layout,
     fn l => (true, fn r => equals (r, List.fold (l, one, fn ((b, e), ac) =>
@@ -76,7 +76,7 @@ val pows =
 
 val powsInf =
    Trace.traceAssert
-   ("powsInf",
+   ("RingWithIdentity.powsInf",
     List.layout (Layout.tuple2 (layout, Layout.str o Pervasive.IntInf.toString)),
     layout,
     fn l => (true, fn r => equals (r, List.fold (l, one, fn ((b, e), ac) =>

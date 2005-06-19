@@ -286,7 +286,7 @@ fun dfsTrees (g, roots: Node.t list, nodeValue: Node.t -> 'a): 'a Tree.t list =
 fun dfsTree (g, {root, nodeValue}) =
    case dfsTrees (g, [root], nodeValue) of
       [t] => t
-    | _ => Error.bug "dfsTree"
+    | _ => Error.bug "DirectedGraph.dfsTree"
 
 fun display {graph, layoutNode, display} =
    dfs (graph,
@@ -746,7 +746,7 @@ fun stronglyConnectedComponents (g: t): Node.t list list =
 		     let
 			fun popTo (stack, ac) =
 			   case stack of
-			      [] => Error.bug "not on stack"
+			      [] => Error.bug "DirectedGraph.stronglyConnectedComponents.finishNode.popTo"
 			    | n' :: stack =>
 				 let
 				    val _ = #isOnStack (nodeInfo n') := false

@@ -67,6 +67,6 @@ functor TestChar (S: CHAR): sig end =
       open S
       val _ =
 	 Assert.assert
-	 ("Char", fn () =>
+	 ("TestChar", fn () =>
 	  "\\000" = escapeC #"\000")
    end

@@ -60,14 +60,16 @@ structure Register =
       fun index (r as T {index, ...}) =
 	 case !index of
 	    NONE =>
-	       Error.bug (concat ["register ", toString r, " missing index"])
+	       Error.bug (concat ["Machine.Register: register ", 
+				  toString r, " missing index"])
 	  | SOME i => i
 
       fun setIndex (r as T {index, ...}, i) =
 	 case !index of
 	    NONE => index := SOME i
 	  | SOME _ =>
-	       Error.bug (concat ["register ", toString r, " index already set"])
+	       Error.bug (concat ["Machine.Register: register ", 
+				  toString r, " index already set"])
 
       fun new (ty, i) = T {index = ref i,
 			   ty = ty}
@@ -79,7 +81,7 @@ structure Register =
 	 andalso CType.equals (Type.toCType (ty r), Type.toCType (ty r'))
 
       val equals =
-	 Trace.trace2 ("Register.equals", layout, layout, Bool.layout) equals
+	 Trace.trace2 ("Machine.Register.equals", layout, layout, Bool.layout) equals
 
       val isSubtype: t * t -> bool =
 	 fn (T {index = i, ty = t}, T {index = i', ty = t'}) =>
@@ -372,7 +374,7 @@ structure Statement =
 	 else Move arg
 
       val move =
-	 Trace.trace ("Statement.move",
+	 Trace.trace ("Machine.Statement.move",
 		      fn {dst, src} =>
 		      Layout.record [("dst", Operand.layout dst),
 				     ("src", Operand.layout src)],
@@ -775,7 +777,7 @@ structure ProfileInfo =
 			       sourceSeqs = sourceSeqs,
 			       sources = sources}
 		in
-		  Assert.assert ("newProfileInfo", fn () => isOK pi);
+		  Assert.assert ("Machine.getProfileInfo", fn () => isOK pi);
 		  pi
 		end
 	  in
@@ -870,8 +872,9 @@ structure Program =
 	       end
 
 	    val doesDefine =
-	       Trace.trace2 ("Alloc.doesDefine", layout, Live.layout,
-			     Bool.layout)
+	       Trace.trace2 
+	       ("Machine.Program.Alloc.doesDefine", 
+		layout, Live.layout, Bool.layout)
 	       doesDefine
 	 end
 
@@ -903,13 +906,15 @@ structure Program =
 		  NONE =>
 		     if !Control.profile = Control.ProfileNone
 			then fn _ => false
-		     else Error.bug "profileInfo = NONE"
+		     else Error.bug 
+			  "Machine.Program.typeCheck.profileLabelIsOk: profileInfo = NONE"
 		| SOME (ProfileInfo.T {frameSources,
 				       labels = profileLabels, ...}) =>
 		     if !Control.profile = Control.ProfileNone
 			orelse (Vector.length frameSources
 				<> Vector.length frameLayouts)
-			then Error.bug "profileInfo = SOME"
+			then Error.bug 
+			     "Machine.Program.typeCheck.profileLabelIsOk: profileInfo = SOME"
 		     else
 			let
 			   val {get = profileLabelCount, ...} =
@@ -924,7 +929,8 @@ structure Program =
 			       in
 				  if 0 = !r
 				     then r := 1
-				  else Error.bug "duplicate profile label"
+				  else Error.bug 
+                                       "Machine.Program.typeCheck.profileLabelIsOk: duplicate profile label"
 			       end)
 			in
 			   fn l =>
@@ -999,7 +1005,7 @@ structure Program =
 		       val r = get label
 		    in
 		       if !r
-			  then Error.bug "duplicate label"
+			  then Error.bug "Machine.Program.typeCheck: duplicate label"
 		       else r := true
 		    end))
 	    end
@@ -1442,7 +1448,7 @@ structure Program =
 	       end
 	    val transferOk =
 	       Trace.trace
-	       ("transferOk",
+	       ("Machine.Program.typeCheck.transferOk",
 		fn (t, _, _, a) =>
 		Layout.tuple [Transfer.layout t, Alloc.layout a],
 		Bool.layout)
@@ -1502,7 +1508,7 @@ structure Program =
 	 in
 	    ()
 	 end handle Err.E e => (Layout.outputl (Err.layout e, Out.error)
-				; Error.bug "Machine type error")
+				; Error.bug "Machine.typeCheck")
 
       fun clearLabelNames (T {chunks, ...}): unit =
 	 List.foreach

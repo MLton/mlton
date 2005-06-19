@@ -371,7 +371,7 @@ structure Strdec =
 
       val fromExp = core o Dec.fromExp
 
-      val trace = Trace.trace ("coalesce", layout, layout)
+      val trace = Trace.trace ("AstModules.Strdec.coalesce", layout, layout)
       fun coalesce (d: t): t =
 	 trace
 	 (fn d =>

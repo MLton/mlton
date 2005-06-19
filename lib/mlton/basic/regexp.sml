@@ -53,7 +53,7 @@ local
 		     else concat ["[", chars, "]"])
 	 end
       val edgeLabel =
-	 Trace.trace ("edgeLabel", List.layout Char.layout, String.layout)
+	 Trace.trace ("Regexp.edgeLabel", List.layout Char.layout, String.layout)
 	 edgeLabel
    end
 
@@ -76,7 +76,7 @@ local
 
 	 fun index (T {index, ...}) = !index
 
-	 val index = Trace.trace ("Save.index", layout, Int.layout) index
+	 val index = Trace.trace ("Regexp.Save.index", layout, Int.layout) index
       end
    
    structure Regexp =
@@ -438,7 +438,7 @@ local
 			 case (Vector.sub (v, i), Vector.sub (v', i)) of
 			    (NONE, a) => a
 			  | (a, NONE) => a
-			  | _ => Error.bug "regexp.sml: union"))
+			  | _ => Error.bug "Regexp.NFA.fromRegexp.union"))
 		  fun singleton (i: int): t =
 		     T (Vector.tabulate (numPos, fn j =>
 					 if i = j
@@ -953,7 +953,8 @@ local
 		      | SOME {state, ...} => state
 		  end
 	       val statesToState =
-		  Trace.trace ("statesToState", Array.layout NFA.State.layout,
+		  Trace.trace ("Regexp.DFA.fromNFA.statesToState", 
+			       Array.layout NFA.State.layout,
 			       State.layout)
 		  statesToState
 	       local
@@ -1148,7 +1149,7 @@ local
 	    end
 
 	 val match =
-	    Trace.trace ("DFA.match",
+	    Trace.trace ("Regexp.DFA.match",
 			 fn {string, startPos, ...} =>
 			 Layout.tuple [String.layout string,
 				       Int.layout startPos],
@@ -1548,7 +1549,7 @@ in
 
 	       val match =
 		  Trace.trace
-		  ("Regexp.match",
+		  ("Regexp.Compiled.match",
 		   fn {compiled, short, startPos, string} =>
 		   Layout.record
 		   [("short", Bool.layout short),
@@ -1886,7 +1887,7 @@ in
 				    (isNotChar
 				     (fn c =>
 				      cp c orelse String.contains (s, c)))
-			       | _ => Error.bug "Regexp.fromString can't handle collating elements in negated bracket expressions")
+			       | _ => Error.bug "Regexp.fromString: can't handle collating elements in negated bracket expressions")
 		       else finish' (List.fold
 				     (ces, or [isChar cp,
 					       oneOf s],

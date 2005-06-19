@@ -150,6 +150,7 @@ signature LIST =
 	     map: 'a t * ('a -> 'a) -> 'a t,
 	     layout: 'a t -> Layout.t}
 (*      val splitAtMost: 'a t * int -> ('a t * 'a t) option *)
+      val splitAt: 'a t * int -> 'a t * 'a t
       val splitLast: 'a t -> 'a t * 'a
       val splitPrefix: 'a t * ('a -> bool) -> 'a t * 'a t
 (*      val suffixes: 'a t -> 'a t t *)
@@ -179,7 +180,7 @@ open S
    
 val _ =
    Assert.assert
-   ("List", fn () =>
+   ("TestList", fn () =>
     SOME true = peekMap ([1, 2, 3], fn x => if x = 2 then SOME true else NONE)
     andalso ([2], [3]) = removeCommonPrefix ([1, 2], [1, 3], op =)
     andalso [2, 4, 6] = keepAll ([1, 2, 3, 4, 5, 6], fn x => 0 = x mod 2))

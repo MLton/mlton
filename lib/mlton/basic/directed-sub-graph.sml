@@ -35,17 +35,17 @@ structure Edge =
 	 val to = make #to
       end
       val from = fn (T {nodeP, edgeP, ...}, e) => 
-	 (Assert.assert("Edge.from", fn () => edgeP e)
-	  ; Assert.assert("Edge.from", fn () => nodeP (from e))
+	 (Assert.assert("DirectedSubGraph.Edge.from", fn () => edgeP e)
+	  ; Assert.assert("DirectedSubGraph.Edge.from", fn () => nodeP (from e))
 	  ; from e)
       val to = fn (T {nodeP, edgeP, ...}, e) => 
-	 (Assert.assert("Edge.to", fn () => edgeP e)
-	  ; Assert.assert("Edge.to", fn () => nodeP (to e))
+	 (Assert.assert("DirectedSubGraph.Edge.to", fn () => edgeP e)
+	  ; Assert.assert("DirectedSubGraph.Edge.to", fn () => nodeP (to e))
 	  ; to e)
 
       fun new (T {nodeP, edgeP, ...}, {from, to}) =
-	 (Assert.assert("Edge.new", fn () => nodeP from)
-	  ; Assert.assert("Edge.new", fn () => nodeP to)
+	 (Assert.assert("DirectedSubGraph.Edge.new", fn () => nodeP from)
+	  ; Assert.assert("DirectedSubGraph.Edge.new", fn () => nodeP to)
 	  ; Edge {from = from,
 		  to = to,
 		  plist = PropertyList.new ()})
@@ -69,16 +69,16 @@ structure Node =
 	 val successors = ! o successors'
       end
       val foreachSuccessor = fn (T {nodeP, edgeP, ...}, n, f) =>
-	 (Assert.assert("foreachSuccessor", fn () => nodeP n)
+	 (Assert.assert("DirectedSubGraph.Node.foreachSuccessor", fn () => nodeP n)
 	  ; List.foreach(successors n, fn e => if edgeP e then f e else ()))
       val forallSuccessors = fn (T {nodeP, edgeP, ...}, n, f) =>
-	 (Assert.assert("forallSuccessors", fn () => nodeP n)
+	 (Assert.assert("DirectedSubGraph.Node.forallSuccessors", fn () => nodeP n)
 	  ; List.forall(successors n, fn e => if edgeP e then f e else true))
       val existsSuccessor = fn (T {nodeP, edgeP, ...}, n, f) =>
-	 (Assert.assert("existsSuccessor", fn () => nodeP n)
+	 (Assert.assert("DirectedSubGraph.Node.existsSuccessor", fn () => nodeP n)
 	  ; List.exists(successors n, fn e => if edgeP e then f e else false))
       val successors = fn (T {nodeP, edgeP, ...}, n) =>
-	 (Assert.assert("successors", fn () => nodeP n)
+	 (Assert.assert("DirectedSubGraph.Node.successors", fn () => nodeP n)
 	  ; List.keepAll(successors n, fn e => edgeP e))
 
 
@@ -180,7 +180,7 @@ fun subGraph (g as T {nodes, nodeP, edgeP, ...},
       val edgeP = fn e => if edgeP e then edgeP' e else false
       val _ =
 	 Assert.assert
-	 ("subGraph", fn () => 
+	 ("DirectedSubGraph.subGraph", fn () => 
 	  List.forall(!nodes, fn n => 
 		      if nodeP n
 			 then Node.forallSuccessors(g, n, fn e =>
@@ -204,7 +204,7 @@ fun newNode (g as T {nodes, ...}) =
    end
 
 fun addEdge (g as T {nodeP, ...}, e as {from, to}) =
-   let val _ = Assert.assert("addEdge", fn () => nodeP from andalso nodeP to)
+   let val _ = Assert.assert("DirectedSubGraph.addEdge", fn () => nodeP from andalso nodeP to)
        val e = Edge.new (g, e)
    in
       List.push (Node.successors' from, e)
@@ -254,7 +254,7 @@ fun dfsNodes (g as T {nodeP, ...}, ns,
       val {get = hasBeenVisited, set = setVisited, destroy, ...} =
 	 Property.destGetSet (Node.plist, Property.initConst false)
       fun visit n =
-	 (Assert.assert("dfsNodes", fn () => nodeP n)
+	 (Assert.assert("DirectedSubGraph.dfsNodes", fn () => nodeP n)
 	  ; startNode n
 	  ; setVisited (n, true)
 	  ; Node.foreachSuccessor (g, n, fn e =>
@@ -265,7 +265,7 @@ fun dfsNodes (g as T {nodeP, ...}, ns,
 				   end)
 	  ; finishNode n)
    in List.foreach (ns, fn n =>
-		    (Assert.assert("dfsNodes", fn () => nodeP n)
+		    (Assert.assert("DirectedSubGraph.dfsNodes", fn () => nodeP n)
 		     ; if hasBeenVisited n
 			  then ()
 		       else (startTree n; visit n; finishTree n)))
@@ -640,7 +640,7 @@ fun dominators (graph, {root}) =
       val _ =
 	 if !dfnCounter = numNodes
 	    then ()
-	 else Error.bug "dominators: graph is not connected"
+	 else Error.bug "DirectedSubGraph.dominators: graph is not connected"
       (* compress ancestor path to node v to the node whose label has the
        * maximal (minimal?) semidominator number. 
        *)
@@ -746,7 +746,7 @@ fun dominators (graph, {root}) =
 	     else idom' w := idom (idom w)
 	  end)
       val _ = idom' root := root
-      val _ = Assert.assert ("dominators", fn () =>
+      val _ = Assert.assert ("DirectedSubGraph.dominators", fn () =>
 			     validDominators (graph, {root = root,
 						      idom = idom}))
    in {idom = idom}

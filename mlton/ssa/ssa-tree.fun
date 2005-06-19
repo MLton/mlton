@@ -21,7 +21,7 @@ structure Type =
       fun tyconArgs t =
 	 case Dest.dest t of
 	    Dest.Con x => x
-	  | _ => Error.bug "FirstOrderType.tyconArgs"
+	  | _ => Error.bug "SsaTree.Type.tyconArgs"
 	       
       datatype dest =
 	  Array of t
@@ -42,12 +42,12 @@ structure Type =
 	 fun nullary c v =
 	    if Vector.isEmpty v
 	       then c
-	    else Error.bug "bogus application of nullary tycon"
+	    else Error.bug "SsaTree.Type.nullary: bogus application of nullary tycon"
 
 	 fun unary make v =
 	    if 1 = Vector.length v
 	       then make (Vector.sub (v, 0))
-	    else Error.bug "bogus application of unary tycon"
+	    else Error.bug "SsaTree.Type.unary: bogus application of unary tycon"
 
 	 val tycons =
 	    [(Tycon.array, unary Array)]
@@ -68,7 +68,7 @@ structure Type =
 		  (case get tycon of
 		      NONE => Datatype tycon
 		    | SOME f => f ts)
-	     | _ => Error.bug "dest"
+	     | _ => Error.bug "SsaTree.Type.dest"
       end
 
       local
@@ -123,7 +123,7 @@ structure Cases =
 		  then let val (_, a) = Vector.sub (v, 0)
 		       in a
 		       end
-	       else Error.bug "Cases.hd"
+	       else Error.bug "SsaTree.Cases.hd"
 	 in
 	    case c of
 	       Con cs => doit cs
@@ -312,7 +312,7 @@ structure Exp =
 	     | Var x => Var.hash x
       end
 
-      val hash = Trace.trace ("Exp.hash", layout, Word.layout) hash
+      val hash = Trace.trace ("SsaTree.Exp.hash", layout, Word.layout) hash
 
       val toString = Layout.toString o layout
 
@@ -776,7 +776,7 @@ structure Transfer =
 	     | Runtime {args, return, ...} => hashVars (args, Label.hash return)
       end
 
-      val hash = Trace.trace ("Transfer.hash", layout, Word.layout) hash
+      val hash = Trace.trace ("SsaTree.Transfer.hash", layout, Word.layout) hash
 
    end
 datatype z = datatype Transfer.t
@@ -1000,24 +1000,12 @@ structure Function =
 		  Promise.lazy
 		  (fn () =>
 		   Graph.dfsTree (g, {root = root,
-				      nodeValue = #block o nodeInfo})
-		   handle exn => Error.bug (concat ["dfsTree: ",
-						    Func.toString name,
-						    ":",
-						    case exn
-						      of Fail s => s
-						       | _ => "???"]))
+				      nodeValue = #block o nodeInfo}))
 	       val dominatorTree =
 		  Promise.lazy
 		  (fn () =>
 		   Graph.dominatorTree (g, {root = root,
-					    nodeValue = #block o nodeInfo})
-		   handle exn => Error.bug (concat ["dominatorTree: ",
-						    Func.toString name,
-						    ":",
-						    case exn
-						       of Fail s => s
-						     | _ => "???"]))
+					    nodeValue = #block o nodeInfo}))
 	    in
 	       {dfsTree = dfsTree,
 		dominatorTree = dominatorTree,
@@ -1266,9 +1254,9 @@ structure Function =
 			    Dot, (), Layout (fn () => g))
 			end
 		     val _ = doit ("cfg", graph)
-			handle _ => Error.warning "couldn't layout cfg"
+			handle _ => Error.warning "SsaTree.layouts: couldn't layout cfg"
 		     val _ = doit ("dom", tree ())
-			handle _ => Error.warning "couldn't layout dom"
+			handle _ => Error.warning "SsaTree.layouts: couldn't layout dom"
 		  in
 		     ()
 		  end
@@ -1476,7 +1464,7 @@ structure Function =
 	 end
 
       val profile =
-	 Trace.trace2 ("Ssa.Function.profile", layout, SourceInfo.layout, layout)
+	 Trace.trace2 ("SsaTree.Function.profile", layout, SourceInfo.layout, layout)
 	 profile
    end
 
@@ -1618,7 +1606,7 @@ structure Program =
 	    val mainInfo =
 	       case List.peek (functions, fn f =>
 			       Func.equals (main, Function.name f)) of
-		  NONE => Error.bug "no main"
+		  NONE => Error.bug "SsaTree.Program.layoutStats: no main"
 		| SOME f =>
 		     let
 			val numVars = ref 0
@@ -1635,7 +1623,7 @@ structure Program =
 	    fun inc _ = Int.inc numTypes
 	    val {hom = countType, destroy} =
 	       Type.makeHom
-	       {var = fn _ => Error.bug "ssa-tree saw var",
+	       {var = fn _ => Error.bug "SsaTree.Program.layoutStats: saw var",
 		con = inc}
 	    val numStatements = ref (Vector.length globals)
 	    val numBlocks = ref 0
@@ -1720,7 +1708,7 @@ structure Program =
       fun mainFunction (T {functions, main, ...}) =
 	 case List.peek (functions, fn f =>
 			 Func.equals (main, Function.name f)) of
-	    NONE => Error.bug "no main function"
+	    NONE => Error.bug "SsaTree.Program.mainFunction: no main function"
 	  | SOME f => f
 
       fun profile (T {datatypes, functions, globals, main}) =

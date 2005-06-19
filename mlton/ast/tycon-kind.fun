@@ -16,7 +16,7 @@ val equals =
     | (Nary, Nary) => true
     | _ => false
 
-val equals = Trace.trace2 ("Kind.equals", layout, layout, Bool.layout) equals
+val equals = Trace.trace2 ("TyconKind.equals", layout, layout, Bool.layout) equals
 	 
 end
 

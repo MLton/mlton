@@ -60,8 +60,16 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	   set = setVar, ...} =
 	 Property.getSet (Var.plist,
 			  Property.initRaise ("var scheme", Var.layout))
-      (* val getVar = Trace.trace ("getVar", Var.layout, Layout.ignore) getVar *)
-      (* val setVar = Trace.trace2 ("setVar", Var.layout, Layout.ignore, Layout.ignore) setVar *)
+(*
+      val getVar = 
+	 Trace.trace 
+	 ("Xml.TypeCheck.getVar", Var.layout, Layout.ignore) 
+	 getVar
+      val setVar = 
+	 Trace.trace2 
+	 ("Xml.TypeCheck.setVar", Var.layout, Layout.ignore, Layout.ignore) 
+	 setVar
+*)
       fun checkVarExp (VarExp.T {var, targs}): Type.t =
 	 let
 	    val _ = checkTypes targs
@@ -100,10 +108,10 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	       | _ => Type.error ("constructor pattern mismatch", Pat.layout p)
 	 end
       val traceCheckExp =
- 	 Trace.trace ("Xml.checkExp", Exp.layout, Type.layout)
+ 	 Trace.trace ("Xml.TypeCheck.checkExp", Exp.layout, Type.layout)
       val traceCheckPrimExp = 
  	 Trace.trace2
- 	 ("Xml.checkPrimExp", PrimExp.layout, Type.layout, Type.layout)
+ 	 ("Xml.TypeCheck.checkPrimExp", PrimExp.layout, Type.layout, Type.layout)
       local
 	 val exnType = ref NONE
       in
@@ -162,7 +170,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		     val default = Option.map (default, checkExp o #1)
 		     fun equalss v =
 			if Vector.isEmpty v
-			   then Error.bug "equalss"
+			   then Error.bug "Xml.TypeCheck.equalss"
 			else
 			   let
 			      val t = Vector.sub (v, 0)
@@ -298,7 +306,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
       val _ =
 	 if Type.equals (checkExp body, Type.unit)
 	    then ()
-	 else Error.bug "program must be of type unit"
+	 else Error.bug "Xml.TypeCheck.typeCheck: program must be of type unit"
       val _ =
 	 case overflow of
 	    NONE => true
@@ -314,7 +322,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
    end
 
 val typeCheck = 
-   Trace.trace ("Xml.typeCheck", Program.layout, Unit.layout) typeCheck
+   Trace.trace ("Xml.TypeCheck.typeCheck", Program.layout, Unit.layout) typeCheck
 
 val typeCheck = Control.trace (Control.Pass, "typeCheck") typeCheck
 

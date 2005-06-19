@@ -22,7 +22,7 @@ type t = node Region.Wrap.t
 type node' = node
 type obj = t
 
-val equals = fn _ => Error.unimplemented "Ast.Const.equals"
+val equals = fn _ => Error.unimplemented "AstConst.equals"
 
 fun ordToString (c: IntInf.t): string =
       let

@@ -173,44 +173,44 @@ fun bitIsSet (w, i: int) =
    1 = IntInf.rem (IntInf.~>> (value w, Word.fromInt i), 2)
 
 local
-   val make: (IntInf.t * IntInf.t -> IntInf.t) -> t * t -> t =
-      fn f => fn (w, w') =>
+   val make: ((IntInf.t * IntInf.t -> IntInf.t) * string) -> t * t -> t =
+      fn (f,name) => fn (w, w') =>
       if WordSize.equals (size w, size w')
 	 then make (f (value w, value w'), size w)
-      else raise Fail "WordX binary"
+      else Error.bug (concat ["WordX.", name])
 in
-   val add = make IntInf.+
-   val sub = make IntInf.-
-   val andb = make IntInf.andb
-   val orb = make IntInf.orb
-   val xorb = make IntInf.xorb
+   val add = make (IntInf.+, "add")
+   val sub = make (IntInf.-, "sub")
+   val andb = make (IntInf.andb, "andb")
+   val orb = make (IntInf.orb, "orb")
+   val xorb = make (IntInf.xorb, "xorb")
 end
 
 fun neg w = make (~ (toIntInfX w), size w)
 
 local
-   val make: (IntInf.t * IntInf.t -> IntInf.t) -> t * t * {signed: bool}-> t =
-      fn f => fn (w, w', s) =>
+   val make: ((IntInf.t * IntInf.t -> IntInf.t) * string) -> t * t * {signed: bool}-> t =
+      fn (f,name) => fn (w, w', s) =>
       if WordSize.equals (size w, size w')
 	 then make (f (toIntInfSg (w, s), toIntInfSg (w', s)), size w)
-      else raise Fail "WordX binary"
+      else Error.bug (concat ["WordX.", name])
 in
-   val mul = make IntInf.*
-   val quot = make IntInf.quot
-   val rem = make IntInf.rem
+   val mul = make (IntInf.*, "mul")
+   val quot = make (IntInf.quot, "quot")
+   val rem = make (IntInf.rem, "rem")
 end
 
 local
-   val make: (IntInf.t * IntInf.t -> 'a) -> t * t * {signed: bool} -> 'a =
-      fn f => fn (w, w', sg) =>
+   val make: ((IntInf.t * IntInf.t -> 'a) * string) -> t * t * {signed: bool} -> 'a =
+      fn (f,name) => fn (w, w', sg) =>
       if WordSize.equals (size w, size w')
 	 then f (toIntInfSg (w, sg), toIntInfSg (w', sg))
-      else Error.bug "WordX compare"
+      else Error.bug (concat ["WordX.", name])
 in
-   val lt = make IntInf.<
-   val le = make IntInf.<=
-   val gt = make IntInf.>
-   val ge = make IntInf.>=
+   val lt = make (IntInf.<, "lt")
+   val le = make (IntInf.<=, "le")
+   val gt = make (IntInf.>, "gt")
+   val ge = make (IntInf.>=, "ge")
 end
 
 fun layoutSg {signed} = Layout.record [("signed", Bool.layout signed)]

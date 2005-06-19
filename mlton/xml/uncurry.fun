@@ -293,7 +293,7 @@ fun uncurry(program as Program.T{datatypes, body, overflow}) =
 	    val varF = VarExp.var(f)
 	    val {args,result} = getType(varF)
 	    val var = (case curriedRep(varF) of
-			 NONE => Error.bug("in uncurryApp")
+			 NONE => Error.bug "Uncurry: uncurryApp"
 		       | SOME {unCurriedFun,curriedFun} =>
 			   let val T{var,lambda} = unCurriedFun
 			   in var
@@ -311,11 +311,11 @@ fun uncurry(program as Program.T{datatypes, body, overflow}) =
 	  in (appDec::[argDec],newR,newArg')
 	  end
       in case decs of
-	[] => Error.bug("in uncurryApp")
+	[] => Error.bug "Uncurry: uncurryApp"
       | d::r => (case d of
 		   MonoVal {var, ty, exp = App {func,arg}} =>
 		     (case curriedRep(VarExp.var(func)) of
-			NONE => Error.bug("in uncurryApp")
+			NONE => Error.bug "Uncurry: uncurryApp"
 		      | SOME _ => let 
 				    val arity = getArity(VarExp.var(func))
 				    fun loop(args,arity,d,f) =
@@ -348,7 +348,7 @@ fun uncurry(program as Program.T{datatypes, body, overflow}) =
 					  (newDecs,r,newR)
 					end
 				  end)
-		 | _ => Error.bug("in uncurryApp"))
+		 | _ => Error.bug "Uncurry: uncurryApp")
       end
     
     fun singleUse(var,decs) =

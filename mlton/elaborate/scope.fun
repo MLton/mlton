@@ -553,6 +553,6 @@ fun scope (dec: Dec.t): Dec.t =
 	 end
    end
 
-val scope = Trace.trace ("scope", Dec.layout, Dec.layout) scope
+val scope = Trace.trace ("Scope.scope", Dec.layout, Dec.layout) scope
 
 end

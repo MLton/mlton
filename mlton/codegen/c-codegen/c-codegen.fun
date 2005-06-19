@@ -37,7 +37,7 @@ structure Kind =
 	  | _ => false
    end
 
-val traceGotoLabel = Trace.trace ("gotoLabel", Label.layout, Unit.layout) 
+val traceGotoLabel = Trace.trace ("CCodegen.gotoLabel", Label.layout, Unit.layout) 
 
 structure RealX =
    struct
@@ -794,7 +794,7 @@ fun output {program as Machine.Program.T {chunks,
 		     fn () => ())
 	    val tracePrintLabelCode =
 	       Trace.trace
-	       ("printLabelCode",
+	       ("CCodegen.printLabelCode",
 		fn {block, layedOut, ...} =>
 		Layout.record [("block", Label.layout (Block.label block)),
 			       ("layedOut", Bool.layout (!layedOut))],
@@ -930,7 +930,7 @@ fun output {program as Machine.Program.T {chunks,
 					       else if const1 ()
 						       then "XC"
 						    else ""]
-				  | _ => Error.bug "strange overflow prim"
+				  | _ => Error.bug "CCodegen.outputTransfer: Arith"
 			      end
 			   val _ = force overflow
 			in
@@ -987,7 +987,7 @@ fun output {program as Machine.Program.T {chunks,
 				       val (fptr,args) =
 					  case args of
 					     (fptr::args) => (fptr, args)
-					   | _ => Error.bug "indirect ccall: empty args"
+					   | _ => Error.bug "CCodegen.outputTransfer: CCall,Indirect"
 				       val name =
 					  concat ["(*(", 
 						  CFunction.cPointerType func,
@@ -1056,7 +1056,7 @@ fun output {program as Machine.Program.T {chunks,
 			      in
 				 case (Vector.length cases, default) of
 				    (0, NONE) =>
-				       Error.bug "switch: empty cases"
+				       Error.bug "CCodegen.outputTransfers: Switch"
 				  | (0, SOME l) => gotoLabel l
 				  | (1, NONE) =>
 				       gotoLabel (#2 (Vector.sub (cases, 0)))

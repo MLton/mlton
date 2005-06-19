@@ -19,14 +19,14 @@ open Dec PrimExp
 type int = Int.t
    
 val traceShrinkExp =
-   Trace.trace ("Xml.shrinkExp", Exp.layout, Exp.layout)
+   Trace.trace ("Xml.Shrink.shrinkExp", Exp.layout, Exp.layout)
 
 val traceShrinkLambda =
-   Trace.trace ("Xml.shrinkLambda", Lambda.layout, Lambda.layout)
+   Trace.trace ("Xml.Shrink.shrinkLambda", Lambda.layout, Lambda.layout)
    
 fun inc (r: int ref, n) =
    let val n = !r + n
-   in Assert.assert ("inc", fn () => n >= 0)
+   in Assert.assert ("Xml.Shrink.inc", fn () => n >= 0)
       ; r := n
    end
 
@@ -75,11 +75,11 @@ structure VarInfo =
 	  | Poly _ => ()
 
       val inc =
-	 Trace.trace2 ("VarInfo.inc", layout, Int.layout, Unit.layout) inc
+	 Trace.trace2 ("Xml.Shrink.VarInfo.inc", layout, Int.layout, Unit.layout) inc
 
       fun delete i = inc (i, ~1)
 
-      val delete = Trace.trace ("VarInfo.delete", layout, Unit.layout) delete
+      val delete = Trace.trace ("Xml.Shrink.VarInfo.delete", layout, Unit.layout) delete
 	 
       fun deletes is = Vector.foreach (is, delete)
 
@@ -154,13 +154,13 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
       fun monoVarInfo x =
 	 case varInfo x of
 	    InternalVarInfo.VarInfo (VarInfo.Mono i) => i
-	  | _ => Error.bug "monoVarInfo"
+	  | _ => Error.bug "Xml.Shrink.monoVarInfo"
       fun varExpInfo (x as VarExp.T {var, ...}): VarInfo.t =
 	 case varInfo var of
 	    InternalVarInfo.Self => VarInfo.Poly x
 	  | InternalVarInfo.VarInfo i => i
       val varExpInfo =
-	 Trace.trace ("varExpInfo", VarExp.layout, VarInfo.layout) varExpInfo
+	 Trace.trace ("Xml.Shrink.varExpInfo", VarExp.layout, VarInfo.layout) varExpInfo
       fun varExpInfos xs = Vector.map (xs, varExpInfo)
       fun replaceInfo (x: Var.t,
 		       {numOccurrences = r, ...}: MonoVarInfo.t,
@@ -168,7 +168,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 	 (VarInfo.inc (i, !r)
 	  ; setVarInfo (x, InternalVarInfo.VarInfo i))
       val replaceInfo =
-	 Trace.trace ("replaceInfo",
+	 Trace.trace ("Xml.Shrink.replaceInfo",
 		      fn (x, _, i) => Layout.tuple [Var.layout x,
 						    VarInfo.layout i],
 		      Unit.layout)
@@ -198,7 +198,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 	 VarInfo.inc (varExpInfo x, ~1)
       fun deleteExp (e: Exp.t): unit = Exp.foreachVarExp (e, deleteVarExp)
       val deleteExp =
-	 Trace.trace ("deleteExp", Exp.layout, Unit.layout) deleteExp
+	 Trace.trace ("Xml.Shrink.deleteExp", Exp.layout, Unit.layout) deleteExp
       fun deleteLambda l = deleteExp (Lambda.body l)
       (*---------------------------------------------------*)
       (*                    shrinkExp                    *)
@@ -260,7 +260,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 					      then (deleteLambda lambda
 						    ; false)
 					   else (value := NONE; true)
-				      | _ => Error.bug "should be a lambda"
+				      | _ => Error.bug "Xml.Shrink.shrinkDecs: should be a lambda"
 				  end)
 			   in
 			      if Vector.isEmpty decs'
@@ -362,7 +362,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 			   fun done () =
 			      case default of
 				 SOME (e, _) => expression e
-			       | NONE => Error.bug "shrinkPrimExp: Case"
+			       | NONE => Error.bug "Xml.Shrink.shrinkMonoVal: Case, match"
 			in Vector.fold' (cases, 0, (), step, done)
 			end
 		     fun normal test =
@@ -405,9 +405,9 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 				  (case (cases, c) of
 				      (Cases.Word (_, l), Const.Word w) =>
 					 match (l, fn w' => WordX.equals (w, w'))
-				    | _ => Error.bug "strange case")
+				    | _ => Error.bug "Xml.Shrink.shrinkMonoVal: Case, strange case")
 			     | (_, NONE) => normal varExp
-			     | _ => Error.bug "shrinkMonoVal"
+			     | _ => Error.bug "Xml.Shrink.shrinkMonoVal: Case, default"
 		  end
 	     | ConApp {con, targs, arg} =>
 		  if Con.equals (con, Con.overflow)
@@ -465,7 +465,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 			       (inc (numOccurrences, ~1)
 				; replaceInfo (var, info, Vector.sub (vs, offset))
 				; NONE)
-			  | _ => Error.bug "shrinkMonoVal: Select")
+			  | _ => Error.bug "Xml.Shrink.shrinkMonoVal: Select")
 		  end
 	     | Tuple xs =>
 		  let val xs = varExpInfos xs
@@ -495,7 +495,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 	 (overflow, fn x =>
 	  case varInfo x of
 	     InternalVarInfo.VarInfo i => VarInfo.inc (i, 1)
-	   | _ => Error.bug "strange overflow var")
+	   | _ => Error.bug "Xml.Shrink.shrinkOnce: strange overflow var")
       val body = shrinkExp body
       (* Must lookup the overflow variable again because it may have been set
        * during shrinking.
@@ -505,7 +505,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 	 (overflow, fn x =>
 	  case varInfo x of
 	     InternalVarInfo.VarInfo i => VarExp.var (VarInfo.varExp i)
-	   | _ => Error.bug "strange overflow var")
+	   | _ => Error.bug "Xml.Shrink.shrinkOnce: strange overflow var")
       val _ = Exp.clear body
       val _ = Vector.foreach (datatypes, fn {cons, ...} =>
 			      Vector.foreach (cons, Con.clear o #con))
@@ -516,7 +516,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
    end
 
 val shrinkOnce =
-   Trace.trace ("Xml.shrinkOnce", Program.layout, Program.layout) shrinkOnce
+   Trace.trace ("Xml.Shrink.shrinkOnce", Program.layout, Program.layout) shrinkOnce
 
 val shrink = shrinkOnce o shrinkOnce
 
@@ -525,6 +525,6 @@ structure SccFuns = SccFuns (open S)
 val shrink = shrink o SccFuns.sccFuns
 
 val shrink =
-   Trace.trace ("Xml.shrink", Program.layout, Program.layout) shrink
+   Trace.trace ("Xml.Shrink.shrink", Program.layout, Program.layout) shrink
 
 end

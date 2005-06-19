@@ -201,6 +201,7 @@ functor RealComparisons (type t
 structure Primitive =
    struct
       val bug = _import "MLton_bug" : NullString.t -> unit;
+      val debug = _command_line_const "MLton.debug": bool = false;
       val detectOverflow =
 	 _command_line_const "MLton.detectOverflow": bool = true;
       val eq = _prim "MLton_eq": 'a * 'a -> bool;

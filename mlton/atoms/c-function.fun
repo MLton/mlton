@@ -145,7 +145,7 @@ fun cPrototype (T {convention, prototype = (args, return), target, ...}) =
       val name = 
 	 case target of
 	    Direct name => name
-	  | Indirect => Error.bug "prototype of Indirect"
+	  | Indirect => Error.bug "CFunction.cPrototype: Indirect"
       val c = Counter.new 0
       fun arg t =
 	 concat [CType.toString t, " x", Int.toString (Counter.next c)]

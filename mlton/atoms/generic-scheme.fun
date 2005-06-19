@@ -25,7 +25,7 @@ end
 
 fun fromType t = T {tyvars = Vector.new0 (), ty = t}
 
-val equals = fn _ => Error.unimplemented "Scheme.equals"
+val equals = fn _ => Error.unimplemented "GenericScheme.equals"
 
 fun layout (T {tyvars, ty}) =
    let open Layout

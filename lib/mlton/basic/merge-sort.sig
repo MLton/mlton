@@ -29,7 +29,7 @@ open S
 
 val _ =
    Assert.assert
-   ("MergeSort", fn () =>
+   ("TestMergeSort", fn () =>
     let
        fun check (l: int list): bool =
 	  List.insertionSort (l, op <=) = toList (sort (fromList l, op <=))

@@ -300,7 +300,7 @@ structure Cont:
 	  transfer = transfer}
 
       val sendVar =
-	 Trace.trace3 ("Cont.sendVar", layout, Type.layout, Var.layout,
+	 Trace.trace3 ("DirectExp2.Cont.sendVar", layout, Type.layout, Var.layout,
 		       Res.layout)
 	 sendVar
 
@@ -311,7 +311,7 @@ structure Cont:
 	  | _ => sendBindExp (toBind (k, ty), ty, e)
 
       val sendExp =
-	 Trace.trace3 ("Cont.sendExp", layout, Type.layout, Exp.layout,
+	 Trace.trace3 ("DirectExp2.Cont.sendExp", layout, Type.layout, Exp.layout,
 		       Res.layout)
 	 sendExp
 
@@ -327,7 +327,7 @@ structure Cont:
 	 end
 
       val toBlock =
-	 Trace.trace2 ("Cont.toBlock", layout, Type.layout, Block.layout)
+	 Trace.trace2 ("DirectExp2.Cont.toBlock", layout, Type.layout, Block.layout)
 	 toBlock
    end
 
@@ -348,7 +348,7 @@ fun selects (tuple: Var.t, ty: Type.t, components: Var.t vector)
 fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
    let
       val traceLinearizeLoop =
-	 Trace.trace3 ("Linearize.loop", layout, Handler.layout, Cont.layout,
+	 Trace.trace3 ("DirectExp.linearize'.loop", layout, Handler.layout, Cont.layout,
 		       Res.layout)
       val blocks: Block.t list ref = ref []
       fun newBlock (args: (Var.t * Type.t) vector,
@@ -528,7 +528,7 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 		       transfer =
 		       (case h of
 			   Handler.Caller => Transfer.Raise (Vector.new1 x)
-			 | Handler.Dead => Error.bug "raise to dead handler"
+			 | Handler.Dead => Error.bug "DirectExp2.linearize'.loop:  Raise:to dead handler"
 			 | Handler.Handle l =>
 			      Transfer.Goto {args = Vector.new1 x,
 					     dst = l})})
@@ -552,7 +552,7 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 			       then (Vector.new0 (), Vector.new0 ())
 			    else
 			       Error.bug
-			       (concat ["prim with multiple return values: ",
+			       (concat ["DirectExp2.linearlize'.loop: Runtime:with multiple return values: ",
 					Prim.toString prim])
 		in
 		   {statements = [],
@@ -592,7 +592,7 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 fun linearize (e: t, h) = linearize' (e, h, Cont.return)
 
 val linearize =
-   Trace.trace2 ("Linearize.linearize", layout, Handler.layout,
+   Trace.trace2 ("DirectExp2.linearize", layout, Handler.layout,
 		Layout.tuple2 (Label.layout,
 			       List.layout (Label.layout o Block.label)))
    linearize

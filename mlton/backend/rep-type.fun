@@ -145,7 +145,7 @@ structure Type =
 		   | 16 => Word16
 		   | 32 => Word32
 		   | 64 => Word64
-		   | _ => Error.bug (concat ["CType.fromBits: ",
+		   | _ => Error.bug (concat ["RepType.Type.CType.fromBits: ",
 					     Bits.toString b])
 	    end
       in
@@ -177,14 +177,14 @@ structure Type =
 
       val isUnit: t -> bool = fn t => Bits.equals (Bits.zero, width t)
 
-      val isUnit = Trace.trace ("RepType.isUnit", layout, Bool.layout) isUnit
+      val isUnit = Trace.trace ("RepType.Type.isUnit", layout, Bool.layout) isUnit
 	 
       val isReal: t -> bool = isSome o deReal
  
       val rec isSubtype: t * t -> bool =
 	 fn (t, t') =>
 	 if not (sameWidth (t, t'))
-	    then Error.bug "RepType.isSubtype"
+	    then Error.bug "RepType.Type.isSubtype"
 	 else
 	    (equals (t, t')
 	     orelse
@@ -197,7 +197,7 @@ structure Type =
 	      | _ => false)
 
       val isSubtype =
-	 Trace.trace2 ("RepType.isSubtype", layout, layout, Bool.layout)
+	 Trace.trace2 ("RepType.Type.isSubtype", layout, layout, Bool.layout)
 	 isSubtype
 
       val junk: Bits.t -> t = word
@@ -261,12 +261,12 @@ structure Type =
 		     end
 	    end
 
-      val seq = Trace.trace ("RepType.seq", Vector.layout layout, layout) seq
+      val seq = Trace.trace ("RepType.Type.seq", Vector.layout layout, layout) seq
 
       val sum: t vector -> t =
 	 fn ts =>
 	 if 0 = Vector.length ts
-	    then Error.bug "empty sum"
+	    then Error.bug "RepType.Type.sum: empty"
 	 else
 	    let
 	       val pts =
@@ -285,7 +285,7 @@ structure Type =
 		     width = Bits.inPointer}
 	    end
 
-      val sum = Trace.trace ("RepType.sum", Vector.layout layout, layout) sum
+      val sum = Trace.trace ("RepType.Type.sum", Vector.layout layout, layout) sum
 
       val intInf: t =
 	 sum (Vector.new2

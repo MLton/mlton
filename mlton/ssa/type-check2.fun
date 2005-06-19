@@ -33,12 +33,12 @@ fun checkScopes (program as
 	    fun bind (x, v) =
 	       case get x of
 		  Undefined => set (x, InScope v)
-		| _ => Error.bug (concat ["duplicate definition of ",
+		| _ => Error.bug (concat ["Ssa2.TypeCheck2.checkScopes: duplicate definition of ",
 					  Layout.toString (layout x)])
 	    fun reference x =
 	       case get x of
 		  InScope v => v
-		| _ => Error.bug (concat ["reference to ",
+		| _ => Error.bug (concat ["Ssa2.TypeCheck2.checkScopes: reference to ",
 					  Layout.toString (layout x),
 					  " not in scope"])
 
@@ -85,14 +85,14 @@ fun checkScopes (program as
 				  HashSet.insertIfNew
 				  (table, toWord x, fn y => equals (x, y),
 				   fn () => x, 
-				   fn _ => Error.bug "redundant branch in case")
+				   fn _ => Error.bug "Ssa2.TypeCheck2.loopTransfer: redundant branch in case")
 			    in
 			       ()
 			    end)
 		     in
 			if isSome default
 			   then ()
-			else Error.bug "case has no default"
+			else Error.bug "Ssa2.TypeCheck2.loopTransfer: case has no default"
 		     end
 		  fun doitCon cases =
 		     let
@@ -100,7 +100,7 @@ fun checkScopes (program as
 			   case Type.dest (getVar' test) of
 			      Type.Datatype t => getTycon' t
 			    | _ => Error.bug (concat
-					      ["case test ",
+					      ["Ssa2.TypeCheck2.loopTransfer: case test ",
 					       Var.toString test,
 					       " is not a datatype"])
 			val cons = Array.array (numCons, false)
@@ -111,15 +111,15 @@ fun checkScopes (program as
 			       val i = getCon' con
 			    in
 			       if Array.sub (cons, i)
-				  then Error.bug "redundant branch in case"
+				  then Error.bug "Ssa2.TypeCheck2.loopTransfer: redundant branch in case"
 			       else Array.update (cons, i, true)
 			    end)
 		     in
 			case (Array.forall (cons, fn b => b), isSome default) of
 			   (true, true) =>
-			      Error.bug "exhaustive case has default"
+			      Error.bug "Ssa2.TypeCheck2.loopTransfer: exhaustive case has default"
 			 | (false, false) =>
-			      Error.bug "non-exhaustive case has no default"
+			      Error.bug "Ssa2.TypeCheck2.loopTransfer: non-exhaustive case has no default"
 			 | _ => ()
 		     end
 		  val _ = getVar test
@@ -218,7 +218,7 @@ structure Function =
 			    end)
 		     in
 			Error.bug
-			(concat ["checkProf bug found in ", Label.toString l,
+			(concat ["Ssa2.TypeCheck2.checkProf: bug found in ", Label.toString l,
 				 ": ", msg])
 		     end
 		  val _ =
@@ -361,11 +361,11 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
       fun coerce {from: Type.t, to: Type.t}: unit =
 	 if Type.equals (from, to)
 	    then ()
-	 else error ("TypeCheck.coerce",
+	 else error ("SSa2.TypeCheck2.coerce",
 		     Layout.record [("from", Type.layout from),
 				    ("to", Type.layout to)])
       val coerce =
-	 Trace.trace ("TypeCheck.coerce",
+	 Trace.trace ("Ssa2.TypeCheck2.coerce",
 		      fn {from, to} => let open Layout
 				       in record [("from", Type.layout from),
 						  ("to", Type.layout to)]

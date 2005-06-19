@@ -125,7 +125,7 @@ structure Apat =
 	  | _ => NONE
 
       val getName =
-	 Trace.trace ("Apat.getName", layout, Option.layout String.layout)
+	 Trace.trace ("ElaborateCore.Apat.getName", layout, Option.layout String.layout)
 	 getName
    end
 
@@ -202,7 +202,9 @@ val {hom = typeTycon: Type.t -> Tycon.t option, ...} =
 		 var = fn _ => NONE}
 
 val typeTycon =
-   Trace.trace ("typeTycon", Type.layout, Option.layout Tycon.layout) typeTycon
+   Trace.trace 
+   ("ElaborateCore.typeTycon", Type.layout, Option.layout Tycon.layout) 
+   typeTycon
 
 fun 'a elabConst (c: Aconst.t,
 		  make: (unit -> Const.t) * Type.t -> 'a,
@@ -346,7 +348,7 @@ fun unifyList (trs: (Type.t * Region.t) vector,
 	 Type.list t
       end
 
-val elabPatInfo = Trace.info "elaboratePat"
+val elabPatInfo = Trace.info "ElaborateCore.elabPat"
 
 structure Var =
    struct
@@ -681,8 +683,8 @@ structure Nest =
       val layout = List.layout String.layout
    end
 
-val elabDecInfo = Trace.info "elaborateDec"
-val elabExpInfo = Trace.info "elaborateExp"
+val elabDecInfo = Trace.info "ElaborateCore.elabDec"
+val elabExpInfo = Trace.info "ElaborateCore.elabExp"
 
 structure Type =
    struct
@@ -1079,7 +1081,7 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 
 val export =
    Trace.trace
-   ("export",
+   ("ElaborateCore.export",
     fn {name, ...} => String.layout name,
     Aexp.layout)
    export
@@ -1172,7 +1174,7 @@ fun elaborateDec (d, {env = E, nest}) =
 	       Promise.lazy
 	       (fn () =>
 		case !boundRef of
-		   NONE => Error.bug "boundRef not set"
+		   NONE => Error.bug "ElaborateCore.elaborateDec: boundRef not set"
 		 | SOME f => Vector.map (f (), Type.var))
 	    fun markFunc func = recursiveTargs func := SOME targs
 	    fun unmarkFunc func = recursiveTargs func := NONE
@@ -1277,7 +1279,7 @@ fun elaborateDec (d, {env = E, nest}) =
 			     datatype z = datatype AdmitsEquality.t
 			  in
 			     case !r of
-				Always => Error.bug "datatype Always"
+				Always => Error.bug "ElaborateCore.elaborateDec.elabDatBind: Always"
 			      | Never => ()
 			      | Sometimes =>
 				   if Vector.forall
@@ -1517,7 +1519,7 @@ fun elaborateDec (d, {env = E, nest}) =
 			 Vector.map
 			 (fbs, fn clauses =>
 			  if Vector.isEmpty clauses
-			     then Error.bug "no clauses in fundec"
+			     then Error.bug "ElaborateCore.elabDec: Fun:no clauses"
 			  else
 			     let
 				fun lay () =
@@ -2348,7 +2350,7 @@ fun elaborateDec (d, {env = E, nest}) =
 					   Type.layout expandedTy],
 				      empty)
 			       in
-				  Error.bug "lookConst bug"
+				  Error.bug "ElaborateCore.elabExp.lookConst"
 			       end
 			 in
 			    case Type.deConOpt expandedTy of
@@ -2612,7 +2614,7 @@ fun elaborateDec (d, {env = E, nest}) =
 						| SOME (y, t) =>  
 						     (unify (instance,
 							     valOf t, fn _ =>
-							     Error.bug "overload unify")
+							     Error.bug "ElaborateCore.elabExp: Var:overload unify")
 						      ; y))
 					   val _ = 
 					      List.push (overloads, (p, ignore o resolve))

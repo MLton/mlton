@@ -325,7 +325,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 			     args = Vector.new2 (dx1, dx2),
 			     ty = Type.bool}
 	     | Type.Word s => prim (Prim.wordEqual s, Vector.new0 ())
-	     | _ => Error.bug "equal of strange type"
+	     | _ => Error.bug "PolyEqual.equal: strange type"
 	 end
       fun loopBind (Statement.T {exp, var, ...}) =
 	 let

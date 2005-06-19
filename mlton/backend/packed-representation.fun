@@ -72,17 +72,20 @@ structure Type =
 			     check (32, fn () =>
 				    if b = 64
 				       then t
-				    else Error.bug (concat ["Type.padToPrim ",
-							    Int.toString b]))))
+				    else Error.bug 
+				         (concat ["PackedRepresentation.Type.padToPrim ",
+						  Int.toString b]))))
 	 end
 
       fun padToWidth (t: t, b: Bits.t): t =
 	 if Bits.< (b, width t)
-	    then Error.bug "Type.padToWidth"
+	    then Error.bug "PackedRepresentation.Type.padToWidth"
 	 else seq (Vector.new2 (t, zero (Bits.- (b, width t))))
 
       val padToWidth =
-	 Trace.trace2 ("Type.padToWidth", layout, Bits.layout, layout) padToWidth
+	 Trace.trace2 
+	 ("PackedRepresentation.Type.padToWidth", layout, Bits.layout, layout) 
+	 padToWidth
    end
 
 structure Rep =
@@ -116,7 +119,9 @@ structure Rep =
       fun equals (r, r') = Type.equals (ty r, ty r')
 
       val equals =
-	 Trace.trace2 ("Rep.equals", layout, layout, Bool.layout) equals
+	 Trace.trace2 
+	 ("PackedRepresentation.Rep.equals", layout, layout, Bool.layout) 
+	 equals
 
       fun nonPointer ty = T {rep = NonPointer,
 			     ty = ty}
@@ -146,7 +151,7 @@ structure Rep =
 	       NonPointer =>
 		  T {rep = NonPointer,
 		     ty = Type.padToWidth (ty, width)}
-	     | Pointer _ => Error.bug "Rep.padToWidth"
+	     | Pointer _ => Error.bug "PackedRepresentation.Rep.padToWidth"
    end
 
 structure Statement =
@@ -218,7 +223,7 @@ structure WordRep =
 			     Rep.width rep)
 	    then T {components = components,
 		    rep = rep}
-	 else Error.bug "WordRep.make"
+	 else Error.bug "PackedRepresentation.WordRep.make"
 
       fun padToWidth (T {components, rep}, b: Bits.t): t =
 	 make {components = components,
@@ -266,7 +271,9 @@ structure WordRep =
 	 end
 
       val tuple =
-	 Trace.trace ("WordRep.tuple", layout o #1, List.layout Statement.layout)
+	 Trace.trace 
+	 ("PackedRepresentation.WordRep.tuple", 
+	  layout o #1, List.layout Statement.layout)
 	 tuple
    end
 
@@ -343,10 +350,11 @@ structure Component =
 	  | Word wr => WordRep.tuple (wr, {dst = dst, src = src})
 
       val tuple =
-	 Trace.trace2 ("Component.tuple",
-		       layout,
-		       fn {dst = (dst, _), ...} => Var.layout dst,
-		       List.layout Statement.layout)
+	 Trace.trace2 
+	 ("PackedRepresentation.Component.tuple",
+	  layout, 
+	  fn {dst = (dst, _), ...} => Var.layout dst, 
+	  List.layout Statement.layout)
 	 tuple
    end
 
@@ -414,11 +422,13 @@ structure Unpack =
 	 end
 
       val select =
-	 Trace.trace2 ("Unpack.select", layout,
-		       fn {dst = (dst, _), src} =>
-		       Layout.record [("dst", Var.layout dst),
-				      ("src", Operand.layout src)],
-		       List.layout Statement.layout)
+	 Trace.trace2 
+	 ("PackedRepresentation.Unpack.select", 
+	  layout,
+	  fn {dst = (dst, _), src} => 
+	  Layout.record [("dst", Var.layout dst),
+			 ("src", Operand.layout src)],
+	  List.layout Statement.layout)
 	 select
 
       fun update (T {shift, ty},
@@ -447,7 +457,7 @@ structure Unpack =
 
       val update =
 	 Trace.trace2
-	 ("Unpack.update",
+	 ("PackedRepresentation.Unpack.update",
 	  layout,
 	  fn {chunk, component} =>
 	  Layout.record [("chunk", Operand.layout chunk),
@@ -475,7 +485,7 @@ structure Base =
 	       let
 		  val eltWidth =
 		     case eltWidth of
-			NONE => Error.bug "Base.toOperand missing eltWidth"
+			NONE => Error.bug "PackedRepresentation.Base.toOperand: eltWidth"
 		      | SOME w => w
 	       in
 		  case Scale.fromInt (Bytes.toInt eltWidth) of
@@ -558,7 +568,7 @@ structure Select =
 	    None => None
 	  | Direct {ty} => Unpack (Unpack.T {shift = b, ty = ty})
 	  | Unpack u => Unpack (Unpack.lshift (u, b))
-	  | _ => Error.bug "Select.lshift"
+	  | _ => Error.bug "PackedRepresentation.Select.lshift"
 
       fun select (s: t, {base: Operand.t Base.t,
 			 dst: Var.t * Type.t,
@@ -602,7 +612,9 @@ structure Select =
 	 end
 
       val select =
-	 Trace.trace ("Select.select", layout o #1, List.layout Statement.layout)
+	 Trace.trace 
+	 ("PackedRepresentation.Select.select", 
+	  layout o #1, List.layout Statement.layout)
 	 select
 
       fun update (s: t, {base: Operand.t Base.t,
@@ -632,10 +644,12 @@ structure Select =
 	       in
 		  ss @ ss' @ [Move {dst = chunk, src = newChunk}]
 	       end
-	  | _ => Error.bug "Select.update of non indirect"
+	  | _ => Error.bug "PackedRepresentation.Select.update: non-indirect"
 
       val update =
-	 Trace.trace ("Select.update", layout o #1, List.layout Statement.layout)
+	 Trace.trace 
+	 ("PackedRepresentation.Select.update", 
+	  layout o #1, List.layout Statement.layout)
 	 update
    end
 
@@ -791,7 +805,7 @@ structure PointerRep =
 	    open Layout
 	 in
 	    Trace.trace
-	    ("PointerRep.make",
+	    ("PackedRepresentation.PointerRep.make",
 	     fn {components, isVector, selects, tycon} =>
 	     record
 	     [("components",
@@ -821,7 +835,7 @@ structure PointerRep =
 			 IndirectUnpack {offset = Words.zero,
 					 rest = u,
 					 ty = Component.ty component}
-		    | _ => Error.bug "PointerRep.box cannot lift selects"
+		    | _ => Error.bug "PackedRepresentation.PointerRep.box: cannot lift selects"
 		end)
 	 in
 	    make {components = Vector.new1 {component = component,
@@ -861,8 +875,9 @@ structure PointerRep =
 	 end
 
       val tuple =
-	 Trace.trace2 ("PointerRep.tuple", layout, Var.layout o #dst,
-		       List.layout Statement.layout)
+	 Trace.trace2 
+	 ("PackedRepresentation.PointerRep.tuple", 
+	  layout, Var.layout o #dst, List.layout Statement.layout)
 	 tuple
    end
 
@@ -919,10 +934,9 @@ structure TupleRep =
 	       PointerRep.tuple (pr, {dst = #1 dst, src = src})
  
       val tuple =
-	 Trace.trace2 ("TupleRep.tuple",
-		       layout,
-		       Var.layout o #1 o #dst,
-		       List.layout Statement.layout)
+	 Trace.trace2 
+	 ("PackedRepresentation.TupleRep.tuple",
+	  layout, Var.layout o #1 o #dst, List.layout Statement.layout)
 	 tuple
 
       (* TupleRep.make decides how to layout a sequence of types in an object,
@@ -1141,7 +1155,7 @@ structure TupleRep =
 
       val make =
 	 Trace.trace3
-	 ("TupleRep.make",
+	 ("PackedRepresentation.TupleRep.make",
 	  PointerTycon.layout,
 	  Vector.layout (fn {isMutable, rep, ty} =>
 			 Layout.record [("isMutable", Bool.layout isMutable),
@@ -1153,25 +1167,6 @@ structure TupleRep =
 
 	  layout)
 	 make
-   end
-
-structure List =
-   struct
-      open List
-
-      val splitAt: 'a t * int -> 'a t * 'a t =
-	 fn (l, i) =>
-	 let
-	    fun loop (i, ac, l) =
-	       if i = 0
-		  then (rev ac, l)
-	       else
-		  case l of
-		     [] => Error.bug "List.splitAt"
-		   | x :: l => loop (i - 1, x :: ac, l)
-	 in
-	    loop (i, [], l)
-	 end
    end
 
 fun tagShift (tagBits: Bits.t): Operand.t =
@@ -1273,7 +1268,9 @@ structure ConRep =
 	  | Tuple tr => TupleRep.tuple (tr, {dst = dst, src = src})
 
       val conApp =
-	 Trace.trace ("ConRep.conApp", layout o #1, List.layout Statement.layout)
+	 Trace.trace 
+	 ("PackedRepresentation.ConRep.conApp", 
+	  layout o #1, List.layout Statement.layout)
 	 conApp
    end
 
@@ -1525,7 +1522,7 @@ structure Small =
 
       val genCase =
 	 Trace.trace
-	 ("Small.genCase",
+	 ("PackedRepresentation.Small.genCase",
 	  fn (s, {test, ...}) =>
 	  Layout.tuple [layout s,
 			Layout.record [("test", Operand.layout test)]],
@@ -1623,7 +1620,7 @@ structure TyconRep =
 
 	 val numTagsAvailable =
 	    Trace.trace
-	    ("numTagsAvailable",
+	    ("PackedRepresentation.TyconRep.numTagsAvailable",
 	     fn {tagBits, withPointer} =>
 	     Layout.record [("tagBits", Int.layout tagBits),
 			    ("withPointer", Bool.layout withPointer)],
@@ -1637,16 +1634,17 @@ structure TyconRep =
 	    in
 	       case (BinarySearch.smallest
 		     (a, fn numTags => numVariants <= numTags)) of
-		  NONE => Error.bug "tagBitsNeeded"
+		  NONE => Error.bug "PackedRepresentation.TyconRep.tagBitsNeeded"
 		| SOME i => Bits.fromInt i
 	    end
 	 
 	 val tagBitsNeeded =
-	    Trace.trace ("tagBitsNeeded",
-			 fn {numVariants, withPointer} =>
-			 Layout.record [("numVariants", Int.layout numVariants),
-					("withPointer", Bool.layout withPointer)],
-			 Bits.layout)
+	    Trace.trace 
+	    ("PackedRepresentation.TyconRep.tagBitsNeeded",
+	     fn {numVariants, withPointer} =>
+	     Layout.record [("numVariants", Int.layout numVariants),
+			    ("withPointer", Bool.layout withPointer)],
+	     Bits.layout)
 	    tagBitsNeeded
       end
 
@@ -1713,7 +1711,7 @@ structure TyconRep =
 				     case tr of
 					TupleRep.Direct z => z
 				      | TupleRep.Indirect _ =>
-					   Error.bug "small Indirect"
+					   Error.bug "PackedRepresentation.TyconRep.make: small Indirect"
 				  val () = Int.inc numSmall
 				  val () =
 				     Array.update
@@ -1978,7 +1976,7 @@ structure TyconRep =
 
       val make =
 	 Trace.trace
-	 ("TyconRep.make",
+	 ("PackedRepresentation.TyconRep.make",
 	  Vector.layout
 	  (fn {args, con, ...} =>
 	   Layout.record [("args", Vector.layout (Rep.layout o #rep) args),
@@ -2010,7 +2008,7 @@ structure TyconRep =
 				  Vector.sub (cases, 0)
 			    in
 			       if not (Con.equals (c, con))
-				  then Error.bug "genCase One"
+				  then Error.bug "PackedRepresentation.genCase: One"
 			       else
 				  ([],
 				   Goto {args = (if dstHasArg
@@ -2020,7 +2018,7 @@ structure TyconRep =
 			    end
 		       | (0, SOME l) =>
 			    ([], Goto {dst = l, args = Vector.new0 ()})
-		       | _ => Error.bug "prim datatype with more than one case")
+		       | _ => Error.bug "PackedRepresentation.genCase: One,prim datatype with more than one case")
 		| Pointers ps =>
 		     Pointers.genCase (ps, {cases = cases,
 					    conRep = conRep,
@@ -2112,14 +2110,14 @@ structure TyconRep =
 					       smallDefault = default,
 					       test = test})
 		     end
-		| Unit => Error.bug "TyconRep.genCase Unit"
+		| Unit => Error.bug "PackedRepresentation.TyconRep.genCase: Unit"
 	 in
 	    (statements, transfer, Block.getExtra ())
 	 end
 
       val genCase =
 	 Trace.trace
-	 ("TyconRep.genCase",
+	 ("PackedRepresentation.TyconRep.genCase",
 	  fn (r, {cases, default, ...}) =>
 	  Layout.tuple [layout r,
 			Layout.record
@@ -2219,7 +2217,7 @@ structure Value:
       val affect =
 	 fn (Variable (d, _), Variable (d', _)) => Dep.affect (d, d')
 	  | (Constant _, _) => ()
-	  | (_, Constant _) => Error.bug "cannot affect constant"
+	  | (_, Constant _) => Error.bug "PackedRepresentation.Value.affect: Constant"
 
       val fixedPoint = Dep.fixedPoint
    end
@@ -2237,7 +2235,9 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	 Property.getSetOnce (S.Type.plist,
 			      Property.initRaise ("tupleRep", S.Type.layout))
       val setTupleRep =
-	 Trace.trace ("setTupleRep", S.Type.layout o #1, Layout.ignore)
+	 Trace.trace 
+	 ("PackedRepresentation.setTupleRep", 
+	  S.Type.layout o #1, Layout.ignore)
 	 setTupleRep
       fun vectorRep (t: S.Type.t): TupleRep.t = Value.get (tupleRep t)
       fun setVectorRep (t: S.Type.t, tr: TupleRep.t): unit =
@@ -2245,14 +2245,15 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				    equals = TupleRep.equals,
 				    init = tr})
       val setVectorRep =
-	 Trace.trace2 ("setVectorRep",
-		       S.Type.layout, TupleRep.layout, Unit.layout)
+	 Trace.trace2 
+	 ("PackedRepresentation.setVectorRep",
+	  S.Type.layout, TupleRep.layout, Unit.layout)
 	 setVectorRep
       val {get = tyconRep: Tycon.t -> tyconRepAndCons, set = setTyconRep, ...} =
 	 Property.getSetOnce (Tycon.plist,
 			      Property.initRaise ("tyconRep", Tycon.layout))
       (* Initialize the datatypes. *)
-      val typeRepRef = ref (fn _ => raise Fail "typeRepRef not set")
+      val typeRepRef = ref (fn _ => Error.bug "PackedRepresentation.typeRep")
       fun typeRep t = !typeRepRef t
       val datatypes =
 	 Vector.map
@@ -2517,7 +2518,9 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	   Vector.foreach (Prod.dest args, fn {elt, ...} =>
 			   Value.affect (typeRep elt, rep))))
       val typeRep =
-	 Trace.trace ("typeRep", S.Type.layout, Value.layout Rep.layout)
+	 Trace.trace 
+	 ("PackedRepresentation.typeRep", 
+	  S.Type.layout, Value.layout Rep.layout)
 	 typeRep
       val () = S.Program.foreachVar (program, fn (_, t) => ignore (typeRep t))
       val () = Value.fixedPoint ()
@@ -2575,7 +2578,10 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			    test = test})
       val tupleRep = Value.get o tupleRep
       val tupleRep =
-	 Trace.trace ("tupleRep", S.Type.layout, TupleRep.layout) tupleRep
+	 Trace.trace 
+	 ("PackedRepresentation.tupleRep", 
+	  S.Type.layout, TupleRep.layout) 
+	 tupleRep
       fun object {args, con, dst, objectTy, oper} =
 	 let
 	    val src = makeSrc (args, oper)
@@ -2593,14 +2599,14 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		  (case conRep con of
 		      ConRep.ShiftAndTag {selects, ...} => (selects, NONE)
 		    | ConRep.Tuple tr => (TupleRep.selects tr, NONE)
-		    | _ => Error.bug "can't get con selects")
+		    | _ => Error.bug "PackedRepresentation.getSelects: Con,non-select")
 	     | Tuple => (TupleRep.selects (tupleRep objectTy), NONE)
 	     | Vector =>
 		  case vectorRep objectTy of
 		     tr as TupleRep.Indirect pr =>
 			(TupleRep.selects tr,
 			 SOME (Type.bytes (PointerRep.componentsTy pr)))
-		   | _ => Error.bug "Vector not Indirect"
+		   | _ => Error.bug "PackedRepresentation.getSelects: Vector,non-Indirect"
 	 end
       fun select {base, baseTy, dst, offset} =
 	 case S.Type.dest baseTy of
@@ -2614,7 +2620,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			dst = dst,
 			offset = offset})
 	       end
-	  | _ => Error.bug "select of non object"
+	  | _ => Error.bug "PackedRepresentation.select: non-object"
       fun update {base, baseTy, offset, value} =
 	 case S.Type.dest baseTy of
 	    S.Type.Object {con, ...} =>
@@ -2626,7 +2632,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				       offset = offset,
 				       value = value})
 	       end
-	  | _ => Error.bug "update of non object"
+	  | _ => Error.bug "PackedRepresentation.update: non-object"
    in
       {diagnostic = diagnostic,
        genCase = genCase,

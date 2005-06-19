@@ -113,7 +113,7 @@ structure Accum =
 				start = start}))
 	  in
 	     if 1 <> Vector.length blocks
-		then Error.bug "shrinker didn't completely simplify"
+		then Error.bug "ClosureConvert.Accum.done: shrinker didn't completely simplify"
 	     else
 		let
 		   val ss = Block.statements (Vector.sub (blocks, 0))
@@ -122,8 +122,8 @@ structure Accum =
 			 Ssa.Exp.Tuple v =>
 			    if Vector.equals (vars, v, Var.equals)
 			       then ()
-			    else Error.bug "shrinker didn't simplify right"
-		       | _ => Error.bug "shrinker didn't produce tuple"
+			    else Error.bug "ClosureConvert.Accum.done: shrinker didn't simplify right"
+		       | _ => Error.bug "ClosureConvert.Accum.done: shrinker didn't produce tuple"
 		in
 		   Vector.tabulate (Vector.length ss - 1, fn i =>
 				    Vector.sub (ss, i))
@@ -136,7 +136,7 @@ structure Accum =
  *)
 
 val convertPrimExpInfo = Trace.info "ClosureConvert.convertPrimExp"
-val valueTypeInfo = Trace.info "valueType"
+val valueTypeInfo = Trace.info "ClosureConvert.valueType"
 
 structure LambdaFree = LambdaFree (Sxml)
 
@@ -183,7 +183,7 @@ structure VarInfo =
 
 val traceLoopBind =
    Trace.trace
-   ("ClosureConvert.analyzeBind",
+   ("ClosureConvert.loopBind",
     fn {exp, ty = _: Stype.t, var} =>
     Layout.record [("var", Var.layout var),
 		   ("exp", SprimExp.layout exp)],
@@ -199,12 +199,14 @@ fun closureConvert
 	 Property.getSetOnce
 	 (Var.plist, Property.initRaise ("closure convert info", Var.layout))
       val varInfo =
-	 Trace.trace ("ClosureConvert.varInfo", Var.layout, Layout.ignore)
+	 Trace.trace 
+	 ("ClosureConvert.varInfo", Var.layout, Layout.ignore)
 	 varInfo
       val varExpInfo = varInfo o SvarExp.var
       val isGlobal = ! o #isGlobal o varInfo
       val isGlobal =
-	 Trace.trace ("ClosureConvert.isGlobal", Var.layout, Bool.layout)
+	 Trace.trace 
+	 ("ClosureConvert.isGlobal", Var.layout, Bool.layout)
 	 isGlobal
       val value = #value o varInfo
       val varExp = value o SvarExp.var
@@ -242,8 +244,9 @@ fun closureConvert
 			       value = v})
 	    fun newVar (x, v) = newVar' (x, v, NONE)
 	    val newVar =
-	       Trace.trace2 ("ClosureConvert.newVar",
-			     Var.layout, Layout.ignore, Unit.layout)
+	       Trace.trace2 
+	       ("ClosureConvert.newVar",
+		Var.layout, Layout.ignore, Unit.layout)
 	       newVar
 	    fun varExps xs = Vector.map (xs, varExp)
 	    fun loopExp (e: Exp.t): Value.t =
@@ -267,7 +270,7 @@ fun closureConvert
 			     Value.unify (value var,
 					  loopLambda (lambda, var)))))
 		   | MonoVal b => loopBind b
-		   | _ => Error.bug "closure convert saw bogus Dec"
+		   | _ => Error.bug "ClosureConvert.loopDec: strange dec"
 	       end
 	    and loopBind arg =
 	       traceLoopBind
@@ -306,7 +309,7 @@ fun closureConvert
 			      case (arg,      conArg con) of
 				 (NONE,        NONE)       => ()
 			       | (SOME (x, _), SOME v)     => newVar (x, v)
-			       | _ => Error.bug "constructor mismatch"
+			       | _ => Error.bug "ClosureConvert.loopBind: Case"
 			   val _ = Cases.foreach' (cases, branch, handlePat)
 			   val _ = Option.app (default, branch o #1)
 			in ()
@@ -316,7 +319,7 @@ fun closureConvert
 			    (NONE,   NONE)       => ()
 			  | (SOME x, SOME v)     =>
 			       Value.coerce {from = varExp x, to = v}
-			  | _ => Error.bug "constructor mismatch"
+			  | _ => Error.bug "ClosureConvert.loopBind: ConApp"
 			 ; new' ())
 		   | Const _ => new' ()
 		   | Handle {try, catch = (x, t), handler} =>
@@ -480,7 +483,7 @@ fun closureConvert
       fun valueLambdasInfo v =
  	 case Value.dest v of
 	    Value.Lambdas l => lambdasInfo l
-	  | _ => Error.bug "valueLambdasInfo of non-lambda"
+	  | _ => Error.bug "ClosureConvert.valueLambdasInfo: non-lambda"
       val varLambdasInfo = valueLambdasInfo o value
       val emptyTypes = Vector.new0 ()
       val datatypes =
@@ -502,7 +505,7 @@ fun closureConvert
 	      in replacement := x'; x'
 	      end
       fun newVar x = newVarInfo (x, varInfo x)
-      val newVar = Trace.trace ("newVar", Var.layout, Var.layout) newVar
+      val newVar = Trace.trace ("ClosureConvert.newVar", Var.layout, Var.layout) newVar
       fun newScope (xs: Var.t vector, f: Var.t vector -> 'a): 'a =
 	 let
 	    val old = Vector.map (xs, ! o #replacement o varInfo)
@@ -516,11 +519,12 @@ fun closureConvert
       (*               coerce               *)
       (*------------------------------------*)
       val traceCoerce =
-	 Trace.trace3 ("coerce", Dexp.layout, Value.layout, Value.layout,
-		       Dexp.layout)
+	 Trace.trace3 
+	 ("ClosureConvert.coerce", 
+	  Dexp.layout, Value.layout, Value.layout, Dexp.layout)
       (*       val traceCoerceTuple =
        * 	 let val layoutValues = List.layout (", ", Value.layout)
-       * 	 in Trace.trace3 ("coerceTuple", Dexp.layout,
+       * 	 in Trace.trace3 ("ClosureConvert.coerceTuple", Dexp.layout,
        * 			 layoutValues, layoutValues, Dexp.layout)
        * 	 end
        *)
@@ -572,7 +576,7 @@ fun closureConvert
 			       end))}
 		      in exp
 		      end
-	      | _ => Error.bug "impossible coercion") arg
+	      | _ => Error.bug "ClosureConvert.coerce") arg
       and coerceTuple arg =
 	 (*	 traceCoerceTuple *)
 	 (fn (e: Dexp.t,
@@ -651,7 +655,7 @@ fun closureConvert
 	  in
 	     case Vector.peek (cons, fn {lambda = l', ...} =>
 			       Slambda.equals (l, l')) of
-		NONE => Error.bug "lambda must exist in its own set"
+		NONE => Error.bug "ClosureConvert.recursives: lambda must exist in its own set"
 	      | SOME {con, ...} =>
 		   {var = new,
 		    ty = ty,
@@ -660,7 +664,7 @@ fun closureConvert
 		   :: ac
 	  end)
       val recursives =
-	 Trace.trace ("recursives",
+	 Trace.trace ("ClosureConvert.recursives",
 		      fn (a, b, _) =>
 		      Layout.tuple [Vector.layout Var.layout a,
 				    Vector.layout Var.layout b],
@@ -754,7 +758,7 @@ fun closureConvert
 							 lambdaInfo lambda,
 							 ac)))
 			 end
-		 | _ => Error.bug "closure convert saw strange dec")
+		 | _ => Error.bug "ClosureConvert.convertExp: strange dec")
 	 in (Dexp.lett {decs = List.fold (decs, [], fn ({var, exp, ...}, ac) =>
 					  {var = var, exp = exp} :: ac),
 			body = convertVarExp result},
@@ -812,7 +816,7 @@ fun closureConvert
 					(NONE, NONE) => Vector.new0 ()
 				      | (SOME v, SOME (arg, _)) =>
 					   Vector.new1 (newVar arg, valueType v)
-				      | _ => Error.bug "constructor mismatch"
+				      | _ => Error.bug "ClosureConvert.convertPrimExp: Case,constructor mismatch"
 			       in
 				  fn body => {args = args,
 					      body = body,
@@ -842,7 +846,7 @@ fun closureConvert
 					then Vector.new1 arg
 				     else Vector.new1 (coerce (arg, argVal, conArg))
 				  end
-			     | _ => Error.bug "constructor mismatch")})
+			     | _ => Error.bug "ClosureConvert.convertPrimExp: ConApp,constructor mismatch")})
 	     | SprimExp.Const c => simple (Dexp.const c)
 	     | SprimExp.Handle {try, catch = (catch, _), handler} =>
 		  let
@@ -862,7 +866,7 @@ fun closureConvert
 		     val {cons, ...} = valueLambdasInfo v
 		  in case Vector.peek (cons, fn {lambda = l', ...} =>
 				       Slambda.equals (l, l')) of
-		     NONE => Error.bug "lambda must exist in its own set"
+		     NONE => Error.bug "ClosureConvert.convertPrimExp: Lambda,lambda must exist in its own set"
 		   | SOME {con, ...} =>
 			(Dexp.conApp {con = con, ty = ty,
 				      args = Vector.new1 (lambdaInfoTuple info)},

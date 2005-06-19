@@ -48,7 +48,7 @@ local
 	    memo
 	    (fn s =>
 	     case Vector.peek (all, fn (_, s') => equalsA (s, s')) of
-		NONE => Error.bug "missing size"
+		NONE => Error.bug "PrimTycons.make"
 	      | SOME (tycon, _) => tycon)
 	 fun is t = Vector.exists (all, fn (t', _) => equals (t, t'))
 	 val prims =

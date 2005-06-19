@@ -131,17 +131,21 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		       fn () => {hash = hash,
 				 opcode = Int.toIntInf i,
 				 name = name},
-		       fn _ => Error.bug (concat ["duplicate opcode: ", name]))
+		       fn _ => Error.bug 
+		               (concat ["Bytecode.output: duplicate opcode: ", 
+					name]))
 		in
 		   i + 1
 		end
-	   | _ => Error.bug "strange opcode file"))
+	   | _ => Error.bug "Bytecode.output: strange opcode file"))
       val opcode: string -> Opcode.t =
 	 fn name =>
 	 #opcode (HashSet.lookupOrInsert
 		  (table, String.hash name,
 		   fn {name = name', ...} => name = name',
-		   fn () => Error.bug (concat ["missing opcode: ", name, "\n"])))
+		   fn () => Error.bug 
+                            (concat ["Bytecode.output: missing opcode: ", 
+				     name])))
       val callCounter = Counter.new 0
       val callCs = ref []
       fun callC {function: string,
@@ -303,7 +307,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	    #index (HashSet.lookupOrInsert
 		    (calls, String.hash name,
 		     fn {name = n, ...} => n = name,
-		     fn () => Error.bug "directIndex"))
+		     fn () => Error.bug "Bytecode.output.directIndex"))
 	 val ffiSymbolIndex = directIndex
       end
       fun indirectIndex (f: 'a CFunction.t): int =
@@ -383,8 +387,10 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	       fn i =>
 	       if not (WordSize.isInRange (WordSize.fromBits bits, i,
 					   {signed = signed}))
-		  then Error.bug (concat ["emitWord", Bits.toString bits,
-					  " failed on ", IntInf.toString i])
+		  then Error.bug (concat ["Bytecode.output: emitWord", 
+					  Bits.toString bits,
+					  " failed on ", 
+					  IntInf.toString i])
 	       else
 		  let
 		     fun loop (j, i) =
@@ -440,7 +446,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	    emitWord32 0
 	 end
       val emitLabel =
-	 Trace.trace ("emitLabel", Label.layout, Unit.layout) emitLabel
+	 Trace.trace ("Bytecode.emitLabel", Label.layout, Unit.layout) emitLabel
       fun emitLoadWord32Zero () =
 	 (emitOpcode (wordOpcode (Load, CType.Word32))
 	  ; emitWord32 0)
@@ -481,7 +487,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		  (emitLoadOperand base
 		   ; emitOpcode (offsetOp (ls, cty))
 		   ; emitWordS16 (Bytes.toIntInf off))
-	     | Real _ => Error.bug "shouldn't see Real operands in bytecode"
+	     | Real _ => Error.bug "Bytecode.emitOperand: Real"
 	     | Register r =>
 		  (emitOpcode (register (ls, cty))
 		   ; emitWord16 (Int.toIntInf (Register.index r)))
@@ -491,11 +497,11 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	     | Word w =>
 		  case ls of
 		     Load => (emitOpcode (wordOpcode (ls, cty)); emitWordX w)
-		   | Store => Error.bug "can't store to word constant"
+		   | Store => Error.bug "Bytecode.emitOperand: Word, Store"
 	 end
       val emitOperand =
 	 Trace.trace2
-	 ("emitOperand", Operand.layout, LoadStore.layout, Unit.layout)
+	 ("Bytecode.emitOperand", Operand.layout, LoadStore.layout, Unit.layout)
 	 emitOperand
       fun emitStoreOperand z = emitOperand (z, Store)
       fun move {dst, src} =
@@ -521,7 +527,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	  | PrimApp z => primApp z
 	  | ProfileLabel _ => emitOpcode profileLabel
       val emitStatement =
-	 Trace.trace ("emitStatement", Statement.layout, Unit.layout)
+	 Trace.trace ("Bytecode.emitStatement", Statement.layout, Unit.layout)
 	 emitStatement
       val gotoOp = opcode "Goto"
       val pointerSize = WordSize.pointer ()
@@ -552,7 +558,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 			  occurrenceOffsets = ref [],
 			  offset = ref NONE})))
       val traceEmitTransfer =
-	 Trace.trace ("emitTransfer", Transfer.layout, Unit.layout)
+	 Trace.trace ("Bytecode.emitTransfer", Transfer.layout, Unit.layout)
       fun emitBlock (Block.T {kind, label, statements, transfer, ...}): unit =
 	 let
 	    val () =

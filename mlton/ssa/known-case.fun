@@ -263,7 +263,7 @@ structure LabelInfo =
 	end
     val activate : t * ((unit -> unit) -> unit) -> unit
       = Trace.trace
-        ("KnownCase.activate",
+        ("KnownCase.LabelInfo.activate",
 	 fn (T {activations, block = Block.T {label, ...}, ...}, _) =>
 	 let open Layout
 	 in
@@ -615,7 +615,7 @@ fun simplify (Program.T {globals, datatypes, functions, main})
 		   val tyconValue as conValues
 		     = case VarInfo.tyconValue testvi
 			 of SOME tyconValue => tyconValue
-			  | _ => Error.bug "KnownCase.rewriteCase:tyconValue"
+			  | _ => Error.bug "KnownCase.rewriteCase: tyconValue"
 		    val cons = TyconValue.cons tyconValue
 		    val numCons = Vector.length cons
 		      
@@ -654,7 +654,7 @@ fun simplify (Program.T {globals, datatypes, functions, main})
 			end
 		    val rewriteDefault
 		      = Trace.trace
-		        ("KnownCase.rewriteDefault",
+		        ("KnownCase.rewriteCase.rewriteDefault",
 			 Layout.ignore, Layout.ignore)
 			rewriteDefault
 
@@ -719,7 +719,7 @@ fun doOneNone con
     end
 val doOneNone
   = Trace.trace
-    ("KnownCase.doOneNone",
+    ("KnownCase.rewriteCase.doOneNone",
      Layout.ignore, Layout.ignore)
     doOneNone
 
@@ -838,7 +838,7 @@ fun doMany ()
     end
 val doMany
   = Trace.trace
-    ("KnownCase.doMany",
+    ("KnownCase.rewriteCase.doMany",
      Layout.ignore, Layout.ignore)
     doMany
 
@@ -908,7 +908,7 @@ val doMany
 		   val testvi = varInfo test
 		   val tyconValue as conValues
 		     = case VarInfo.tyconValue testvi
-			 of NONE => Error.bug "KnownCase.activateTransfer:tyconValue"
+			 of NONE => Error.bug "KnownCase.activateCase: tyconValue"
 			  | SOME tyconValue => tyconValue
 		   val cons = TyconValue.cons tyconValue
 		   val numCons = Vector.length cons

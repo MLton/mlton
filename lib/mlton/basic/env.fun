@@ -53,7 +53,7 @@ fun lookup (env, d) = case peek (env, d) of
    SOME r => r
  | NONE => (Layout.output (Domain.layout d, Out.error) ;
 	    Out.newline Out.error ;
-	    Error.bug "lookup")
+	    Error.bug "Env.lookup")
 
 fun restrict (env, ds) = new (ds, fn d => lookup (env, d))
 
@@ -61,7 +61,7 @@ fun multiExtend (env, ds, rs) =
    case (ds, rs) of
       ([], []) => env
     | (d :: ds, r :: rs) => multiExtend (extend (env, d, r), ds, rs)
-    | _ => Error.bug "multiExtend"
+    | _ => Error.bug "Env.multiExtend"
 
 fun foreach (e, f) = List.foreach (toList e, f o #2)
 fun foreachi (e, f) = List.foreach (toList e, f)

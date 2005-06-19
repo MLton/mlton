@@ -659,7 +659,7 @@ struct
 					 => NONE
 					 | _
 					 => Error.bug 
-					    "computeLiveTransfers::get_distance")
+					    "x86LiveTransfers.computeLiveTransfers.live: get_distanceF")
 			    else List.keepAllMap
 			         (live,
 				  fn memloc
@@ -696,7 +696,7 @@ struct
 					      else NONE
 					 | _
 					 => Error.bug 
-					    "computeLiveTransfers::get_distance")
+					    "x86LiveTransfers.computeLiveTransfers.live: get_distanceB")
 
 		      (* List.partition will reverse the lists.
 		       * So sort in increasing order.

@@ -189,7 +189,7 @@ fun makeUsage {mainUsage, makeOptions, showExpert} =
 	     ; let open OS.Process
 	       in if MLton.isMLton
 		     then exit failure
-		  else raise Fail "error"
+		  else Error.bug "Popt.makeUsage"
 	       end
 	  end)
       val parse =

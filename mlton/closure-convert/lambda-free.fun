@@ -134,7 +134,7 @@ fun lambdaFree {program = Program.T {body, ...},
       val _ =
 	 if Vector.isEmpty frees
 	    then ()
-	 else Error.bug ("program has free variables: " ^
+	 else Error.bug ("LambdaFree.lambdaFree: program has free variables: " ^
 			 (Layout.toString (Vector.layout Var.layout frees)))
    in
       ()

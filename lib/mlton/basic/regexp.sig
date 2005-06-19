@@ -119,7 +119,7 @@ val compile = if true then compileNFA else compileDFA
 
 val _ =
    Assert.assert
-   ("Regexp.save", fn () =>
+   ("TestRegexp.save", fn () =>
     let
        val s = Save.new ()
     in
@@ -140,7 +140,7 @@ val _ =
 
 val _ =
    Assert.assert
-   ("Regexp.doesMatchAll", fn () =>
+   ("TestRegexp.doesMatchAll", fn () =>
     List.forall ([(any, "a"),
 		  (anys, "abc")], 
 		 fn (r, s) => matchesAll (compile r, s)))
@@ -251,7 +251,7 @@ end
 
 val _ =
    Assert.assert
-   ("Regexp.match", fn () =>
+   ("Test.Regexp.match", fn () =>
     List.forall (tests,
 		 fn (r, s: string, i1, i2) =>
 		 let

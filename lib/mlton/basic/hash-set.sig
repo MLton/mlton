@@ -54,6 +54,6 @@ struct
 
 open S
 
-val _ = Assert.assert("HashSet", fn () => true)
+val _ = Assert.assert("TestHashSet", fn () => true)
 
 end

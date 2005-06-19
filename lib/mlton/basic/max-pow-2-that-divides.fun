@@ -60,7 +60,7 @@ functor MaxPow2ThatDivides (type t
 	       end
 	 in
 	    if i <= zero
-	       then raise Fail "maxPow2ThatDivides"
+	       then Error.bug "MaxPow2ThatDivides.maxPow2ThatDivides: i <= 0"
 	    else up (0w1, one)
 	 end
    end

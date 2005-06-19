@@ -845,7 +845,7 @@ struct
 			    registerAllocation = registerAllocation}
 	    of [] => NONE
 	     | [value] => SOME value
-	     | _ => Error.bug "valueRegister"
+	     | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.valueRegister"
 
       fun valuesRegister {register = Register.T {reg, ...}, 
 			  registerAllocation = {entries, 
@@ -889,7 +889,7 @@ struct
 	   reserved = reserved,
 	   fltstack = let
 			val rec fltupdate'
-			  = fn [] => Error.bug "fltupdate"
+			  = fn [] => Error.bug "x86AllocateRegisters.RegisterAllocation.fltupdate"
 			     | (value' as {fltregister = fltregister', ...})::l
 			     => if FltRegister.eq(fltregister, fltregister')
 				  then value::l
@@ -933,7 +933,7 @@ struct
 						     weight = weight,
 						     sync = sync,
 						     commit = commit}))
-			    | _ => Error.bug "fltpush"}}
+			    | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.fltpush"}}
 
       fun fltpop {registerAllocation = {entries, reserved, fltstack}: t}
 	= {fltrename = FltRegister.pop,
@@ -941,7 +941,7 @@ struct
 	   = {entries = entries,
 	      reserved = reserved,
 	      fltstack = case fltstack
-			   of [] => Error.bug "fltpop"
+			   of [] => Error.bug "x86AllocateRegisters.RegisterAllocation.fltpop"
 			    | _::fltstack
 			    => List.map(fltstack,
 					fn {fltregister = FltRegister.T i,
@@ -960,7 +960,7 @@ struct
 		   registerAllocation = {entries, reserved, fltstack}: t}
 	= let
 	    val rec split
-	      = fn (_ : fltvalue list, []) => Error.bug "fltxch': split"
+	      = fn (_ : fltvalue list, []) => Error.bug "x86AllocateRegisters.RegisterAllocation.fltxch'.split"
 	         | (fltstack_pre,value::fltstack_post)
 	         => if FltRegister.eq(fltregister, #fltregister value)
 		      then (List.rev fltstack_pre, value, fltstack_post)
@@ -986,7 +986,7 @@ struct
 	     = {entries = entries,
 		reserved = reserved,
 		fltstack = case fltstack_pre
-			     of [] => Error.bug "fltxch'"
+			     of [] => Error.bug "x86AllocateRegisters.RegisterAllocation.fltxch'"
 			      | ({fltregister,
 				  memloc,
 				  weight,
@@ -1022,7 +1022,7 @@ struct
 			    registerAllocation = registerAllocation}
 	    of [] => NONE
 	     | [value] => SOME value
-	     | _ => Error.bug "allocated"
+	     | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.allocated"
 
       fun fltallocated {memloc,
 			registerAllocation: t}
@@ -1031,7 +1031,7 @@ struct
 			       registerAllocation = registerAllocation}
 	    of [] => NONE
 	     | [value] => SOME value
-	     | _ => Error.bug "fltallocated"
+	     | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.fltallocated"
 
       fun remove {memloc,
 		  registerAllocation: t}
@@ -1193,11 +1193,7 @@ struct
 		      = reissue {assembly = assembly,
 				 registerAllocation = registerAllocation}
 		        handle Spill
-			 => (print (concat ["handling respill in ",
-					    msg,
-					    "\n"]);
-			     print (toString registerAllocation);
-			     Error.bug (concat [msg, ":reSpill"]))
+			 => (Error.bug (concat [msg, ":reSpill"]))
 		    val _ = Int.dec depth
 		  in
 		    return
@@ -1724,7 +1720,7 @@ struct
 		     val values = List.map(values_costs_sorted, #1)
 		   in
 		     case values
-		       of [] => Error.bug "freeFltRegister"
+		       of [] => Error.bug "x86AllocateRegisters.RegisterAllocation.freeFltRegister"
 			| {fltregister,
 			   memloc,
 			   weight,
@@ -1985,7 +1981,7 @@ struct
 				 | (TRYREMOVE 0, false) => doRemoveFalse ()
 				 | (TRYREMOVE 0, true) => doRemoveTrue ()
 				 | _ 
-				 => Error.bug "commitRegisters"
+				 => Error.bug "x86AllocateRegisters.RegisterAllocation.commitRegisters"
 			    end))
 	    val _ = Int.dec depth
 	  in
@@ -2119,7 +2115,7 @@ struct
 					{dst = Operand.Address address,
 					 size = size,
 					 pop = false})
-				    | _ => Error.bug "commitFltRegisters"],
+				    | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.commitFltRegisters"],
 			      fltrename 
 			      = fltrename_xch o fltrename,
 			      registerAllocation  = registerAllocation}
@@ -2208,7 +2204,7 @@ struct
 					{dst = Operand.Address address,
 					 size = size,
 					 pop = true})
-				    | _ => Error.bug "commitFltRegisters"],
+				    | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.commitFltRegisters"],
 			      fltrename 
 			      = fltrename_pop o fltrename_xch o fltrename,
 			      registerAllocation  = registerAllocation}
@@ -2270,7 +2266,7 @@ struct
 				             FltRegister.top,
 				       size = Size.DBLE,
 				       pop = true})
-				  | _ => Error.bug "commitFltRegisters"],
+				  | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.commitFltRegisters"],
 			      fltrename = fltrename_pop o fltrename_xch o fltrename,
 			      registerAllocation  = registerAllocation}
 			   end
@@ -2305,7 +2301,7 @@ struct
 					       FltRegister.top)
 			       then doRemoveTrue ()
 			       else doNothing ()
-			  | _ => Error.bug "commitFltRegisters"
+			  | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.commitFltRegisters"
 		     end)
 
 	    val _ = Int.dec depth
@@ -2411,7 +2407,7 @@ struct
 	    val spills
 	      = case groups
 		  of g1::g2::g3::g4::_ => List.concat [g1,g2,g3,g4]
-		   | _ => Error.bug "spillRegisters"
+		   | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.spillRegisters"
 
 	    (* totally order the spills by utilization
 	     *)
@@ -2493,7 +2489,6 @@ struct
 		 supports = [],
 		 saves = [],
 		 registerAllocation = registerAllocation}
-	        handle Spill => Error.bug "spillRegisters::reSpill:commitRegisters1"
 
 	    (* unspill; as we pull values in, we update the memloc to what it 
 	     * looks under the pending unspills, and then replace any occurences 
@@ -2584,7 +2579,6 @@ struct
 		 supports = [],
 		 saves = [],
 		 registerAllocation = registerAllocation}
-	        handle Spill => Error.bug "spillRegisters::reSpill:commitRegisters2"
 	    val _ = spill := spillStart
 
 	    (* restore the saved operands to their previous locations.
@@ -2627,7 +2621,6 @@ struct
 						       assembly_reserve],
 			registerAllocation = registerAllocation}
 		     end)
-	        handle Spill => Error.bug "spillRegisters::reSpill:restore"
 	    val {assembly = assembly_unreserve',
 		 registerAllocation}
 	      = List.fold
@@ -2678,7 +2671,6 @@ struct
 					    assembly_reserve],
 	     registerAllocation = registerAllocation}
 	  end
-	  handle Spill => Error.bug "spillRegisters::reSpill"
 
       and toRegisterMemLoc {memloc: MemLoc.t, 
 			    info: Liveness.t,
@@ -3392,7 +3384,7 @@ struct
 				      {src = Operand.address address,
 				       size = size})
 				  | _ 
-				  => Error.bug "toFltRegisterMemLoc, size"
+				  => Error.bug "x86AllocateRegisters.RegisterAllocation.toFltRegisterMemLoc: size"
 			 in
 			   {fltregister = FltRegister.top,
 			    assembly = AppendList.appends
@@ -3403,7 +3395,7 @@ struct
 			    registerAllocation = registerAllocation}
 			 end
 		      | (SOME _, false)
-		      => Error.bug "toFltRegisterMemLoc: (top, move)")) 
+		      => Error.bug "x86AllocateRegisters.RegisterAllocation.toFltRegisterMemLoc: (top, move)"))
 	      before (Int.dec depth))
 	  handle Spill 
 	   => spillAndReissue 
@@ -3512,7 +3504,7 @@ struct
 				    => (Operand.memloc memBase)::
 				       (Operand.register register_base)::
 				       saves
-				    | _ => Error.bug "toAddressMemLoc",
+				    | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.toAddressMemLoc",
 			       force = Register.indexRegisters,
 			       registerAllocation = registerAllocation}
 			in
@@ -3754,13 +3746,6 @@ struct
 	       registerAllocation: t}
 	= let
 	    val ra = registerAllocation 
-	    val _ =
-	       if true
-		  then ()
-	       else
-		  Assert.assert
-		  ("pre: " ^ (toString ra),
-		   fn () => unique ra)
 
 	    val dead_memlocs = dead
 	    val remove_memlocs = remove
@@ -3975,13 +3960,6 @@ struct
 		registerAllocation: t}
 	= let 
 	    val ra = registerAllocation
-	    val _ =
-	       if true
-		  then ()
-	       else
-		  Assert.assert
-		  ("post: " ^ (toString ra),
-		   fn () => unique ra)
 
 	    val (final_uses_registers,
 		 final_defs_registers,
@@ -4326,7 +4304,7 @@ struct
 				       size = size}),
 			  registerAllocation = registerAllocation}
 		       end 
-	       else Error.bug "allocateOperand: operand:Immediate"
+	       else Error.bug "x86AllocateRegisters.RegisterAllocation.allocateOperand: operand:Immediate"
 	     | Operand.Label l
 	     => if label
 		  then {operand = operand,
@@ -4355,7 +4333,7 @@ struct
 			  assembly = assembly,
 			  registerAllocation = registerAllocation}
 		       end
-		else Error.bug "allocateOperand: operand:Label"
+		else Error.bug "x86AllocateRegisters.RegisterAllocation.allocateOperand: operand:Label"
 	     | Operand.MemLoc m
 	     => let
 		  fun toRegisterMemLoc' ()
@@ -4452,9 +4430,9 @@ struct
 		     then toRegisterMemLoc' ()
 		  else if address
 		     then toAddressMemLocRemove' ()
-		  else Error.bug "allocateOperand: operand:MemLoc"
+		  else Error.bug "x86AllocateRegisters.RegisterAllocation.allocateOperand: operand:MemLoc"
 		end
-	     | _ => Error.bug "allocateOperand: operand"
+	     | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.allocateOperand: operand"
 
       val (allocateOperand, allocateOperand_msg)
 	= tracer
@@ -4615,8 +4593,8 @@ struct
 			  fltrename = fltrename_commit,
 			  registerAllocation = registerAllocation}
 		       end
-		else Error.bug "allocateFltOperand: operand:MemLoc"
-	     | _ => Error.bug "allocateFltOperand: operand"
+		else Error.bug "x86AllocateRegisters.RegisterAllocation.allocateFltOperand: operand:MemLoc"
+	     | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.allocateFltOperand: operand"
 
       val (allocateFltOperand, allocateFltOperand_msg)
 	= tracer
@@ -4923,13 +4901,13 @@ struct
 		     val fltregister_one
 		       = case operand_allocate_one
 			   of Operand.FltRegister f => f
-			    | _ => Error.bug "allocateFltStackOperand"
+			    | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.allocateFltStackOperand: one"
 		     val fltregister_one = fltrename_allocate_top fltregister_one
 
 		     val fltregister_top
 		       = case operand_allocate_top
 			   of Operand.FltRegister f => f
-			    | _ => Error.bug "allocateFltStackOperand"
+			    | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.allocateFltStackOperand: top"
 
 		     val {assembly,
 			  fltrename,
@@ -5673,7 +5651,7 @@ struct
 						  sync = sync, 
 						  commit = toCommit commit}
 					    else value
-				       | _ => Error.bug "commit",
+				       | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.force",
 			  registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_fltregisters,
@@ -5727,7 +5705,7 @@ struct
 					      sync = sync, 
 					      commit = toCommit commit}
 					else value
-				   | _ => Error.bug "commit",
+				   | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.force",
 			  registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_registers,
@@ -5956,7 +5934,7 @@ struct
 					 sync = false,
 					 commit = NO},
 				registerAllocation = registerAllocation})
-		 | _ => Error.bug "return")
+		 | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.return")
 
 	    val (final_defs, defs) =
 	       List.fold
@@ -6412,7 +6390,7 @@ struct
 			     assembly_dst],
 			  registerAllocation = registerAllocation}
 		       end
-		    | _ => Error.bug "allocateSrcDst"
+		    | _ => Error.bug "x86AllocateRegisters.Instruction.allocateSrcDst"
 
       (* 
        * Require src1/src2 operands as follows:
@@ -6911,7 +6889,7 @@ struct
 			| Size.LONG
 			=> (Register.T {reg = Register.EDX, part = Register.E},
 			    Register.T {reg = Register.EAX, part = Register.E})
-			| _ => Error.bug "allocateRegisters: pMD, size"
+			| _ => Error.bug "x86AllocateRegisters.Instruction.allocateRegisters: pMD, size"
 
 		  val {assembly = assembly_clear,
 		       registerAllocation,
@@ -7048,7 +7026,7 @@ struct
 				   in
 				     registerAllocation
 				   end
-				| _ => Error.bug "allocateRegisters: pMD, lo"
+				| _ => Error.bug "x86AllocateRegisters.Instruction.allocateRegisters: pMD, lo"
 			else registerAllocation
 
 		  val instruction
@@ -7621,7 +7599,7 @@ struct
 			    in
 			      Operand.register register
 			    end
-			 | _ => Error.bug "allocateRegisters: SETcc, temp_reg"
+			 | _ => Error.bug "x86AllocateRegisters.Instruction.allocateRegisters: SETcc, temp_reg"
 
 		  val {uses = final_uses,
 		       defs = final_defs,  
@@ -8698,7 +8676,7 @@ struct
 			of Operand.Register r 
 			 => Register.lowPartOf (r, dstsize)
 			 | _ 
-			 => Error.bug "allocateRegisters: XVOM, temp_reg"
+			 => Error.bug "x86AllocateRegisters.Instruction.allocateRegisters: XVOM, temp_reg"
 
 		  val instruction
 		     = Instruction.MOV
@@ -9753,7 +9731,7 @@ struct
 						       = registerAllocation}
 					    | _
 				            => Error.bug 
-					       "allocateRegisters: pFBinA, final_src"
+					       "x86AllocateRegisters.Instruction.allocateRegisters: pFBinA, final_src"
 
 				     val final_src 
 				       = (RA.fltrenameLift fltrename_dst) final_src
@@ -9873,7 +9851,7 @@ struct
 				       = case Operand.deFltregister final_src
 					   of SOME fltregister => fltregister
 					    | NONE 
-					    => Error.bug "allocateRegisters: pFBinA, final_src"
+					    => Error.bug "x86AllocateRegisters.Instruction.allocateRegisters: pFBinA, final_src"
 
 				     val registerAllocation
 				       = RA.fltupdate
@@ -10587,7 +10565,7 @@ struct
 		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
-	     | _ => Error.bug "allocateRegisters: unimplemented"
+	     | _ => Error.bug "x86AllocateRegisters.Instruction.allocateRegisters: unimplemented"
 
       val (allocateRegisters, allocateRegisters_msg)
 	= tracer
@@ -10707,20 +10685,6 @@ struct
 			    {directive = d,
 			     info = info,
 			     registerAllocation = registerAllocation}
-			    handle Fail msg
-			    => (print (toString (Directive d));
-				print "\n";
-				print (RegisterAllocation.toString 
-				       registerAllocation);
-				print "\n";
-				Error.bug msg)
-			    | RegisterAllocation.Spill
-			    => (print (toString (Directive d));
-				print "\n";
-				print (RegisterAllocation.toString 
-				       registerAllocation);
-				print "\n";
-				Error.bug "Spill")
 
 			val assembly''
 			  = AppendList.appends
@@ -10764,20 +10728,6 @@ struct
 			    {instruction = i,
 			     info = info,
 			     registerAllocation = registerAllocation}
-			    handle Fail msg
-			    => (print (toString (Instruction i));
-				print "\n";
-				print (RegisterAllocation.toString 
-				       registerAllocation);
-				print "\n";
-				Error.bug msg)
-			    | RegisterAllocation.Spill
-			    => (print (toString (Instruction i));
-				print "\n";
-				print (RegisterAllocation.toString 
-				       registerAllocation);
-				print "\n";
-				Error.bug "Spill")
 
 			val assembly''
 			  = AppendList.appends
@@ -10854,14 +10804,6 @@ struct
 		       {assembly = assembly,
 			registerAllocation
 			= RegisterAllocation.empty ()}
-		       handle Fail msg
-		       => (List.foreach(assembly,
-					fn (asm,info)
-					 => (print (Assembly.toString asm);
-					     print "\n";
-					     print (Liveness.toString info);
-					     print "\n"));
-			   Error.bug msg)
 
 		   val rec doit 
 		     = fn (Assembly.Comment _)::assembly 

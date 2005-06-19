@@ -183,7 +183,7 @@ nj-mlton-dual:
 .PHONY: nj-mlton-quad
 nj-mlton-quad:
 	$(MAKE) dirs runtime
-	$(MAKE) -C $(COMP) nj-mlton-dual
+	$(MAKE) -C $(COMP) nj-mlton-quad
 	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
 	@echo 'Build of MLton succeeded.'
 
@@ -195,13 +195,29 @@ mlbpathmap:
 		>>$(MLBPATHMAP).tmp
 	mv $(MLBPATHMAP).tmp $(MLBPATHMAP)
 
+.PHONY: traced
+traced:
+	$(MAKE) -C $(COMP) AOUT=$(AOUT).trace COMPILE_ARGS="-const 'Exn.keepHistory true' -const 'MLton.debug true' -drop-pass 'deepFlatten'"
+	$(CP) $(COMP)/$(AOUT).trace $(LIB)/
+	$(LIB)/$(AOUT).trace @MLton -- $(LIB)/world.trace
+	sed 's/mlton-compile/mlton-compile.trace/' < $(MLTON) | sed 's/world.mlton/world.trace.mlton/' > $(MLTON).trace
+	chmod a+x $(MLTON).trace
+
+.PHONY: debugged
+debugged:
+	$(MAKE) -C $(COMP) AOUT=$(AOUT).debug COMPILE_ARGS="-debug true -const 'Exn.keepHistory true' -const 'MLton.debug true' -drop-pass 'deepFlatten'"
+	$(CP) $(COMP)/$(AOUT).debug $(LIB)/
+	$(LIB)/$(AOUT).debug @MLton -- $(LIB)/world.debug
+	sed 's/mlton-compile/mlton-compile.debug/' < $(MLTON) | sed 's/world.mlton/world.debug.mlton/' > $(MLTON).debug
+	chmod a+x $(MLTON).debug
+
 .PHONY: profiled
 profiled:
-	$(MAKE) -C $(COMP) AOUT=$(AOUT).alloc COMPILE_ARGS='-profile alloc'
+	$(MAKE) -C $(COMP) AOUT=$(AOUT).alloc COMPILE_ARGS="-profile alloc"
 	$(CP) $(COMP)/$(AOUT).alloc $(LIB)/
-	$(MAKE) -C $(COMP) AOUT=$(AOUT).count COMPILE_ARGS='-profile count'
+	$(MAKE) -C $(COMP) AOUT=$(AOUT).count COMPILE_ARGS="-profile count"
 	$(CP) $(COMP)/$(AOUT).count $(LIB)/
-	$(MAKE) -C $(COMP) AOUT=$(AOUT).time COMPILE_ARGS='-profile time'
+	$(MAKE) -C $(COMP) AOUT=$(AOUT).time COMPILE_ARGS="-profile time"
 	$(CP) $(COMP)/$(AOUT).time $(LIB)/
 	$(LIB)/$(AOUT).alloc @MLton -- $(LIB)/world.alloc
 	$(LIB)/$(AOUT).count @MLton -- $(LIB)/world.count

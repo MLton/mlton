@@ -80,7 +80,7 @@ structure InfoNode =
 	 else List.push (successors, to)
 
       val call =
-	 Trace.trace ("InfoNode.call",
+	 Trace.trace ("Profile.InfoNode.call",
 		      fn {from, to} =>
 		      Layout.record [("from", layout from),
 				     ("to", layout to)],
@@ -244,7 +244,7 @@ fun profile program =
 	    else sourceInfoNode si
 	 end
       val sourceInfoNode =
-	 Trace.trace ("sourceInfoNode", SourceInfo.layout, InfoNode.layout)
+	 Trace.trace ("Profile.sourceInfoNode", SourceInfo.layout, InfoNode.layout)
 	 sourceInfoNode
       local
 	 val table: {hash: word,
@@ -459,11 +459,13 @@ fun profile program =
 				  case ps of
 				     Enter _ =>
 					(case sourceSeq of
-					    [] => Error.bug "unmatched Enter"
+					    [] => Error.bug 
+					          "Profile.backward: unmatched Enter"
 					  | _ :: sis => (leaves, sis))
 				   | Leave _ =>
 					(case leaves of
-					    [] => Error.bug "missing Leave"
+					    [] => Error.bug 
+					          "Profile.backward: missing Leave"
 					  | infoNode :: leaves =>
 					       (leaves,
 						InfoNode.sourcesIndex infoNode
@@ -656,7 +658,7 @@ fun profile program =
 				    case profile of
 				       ProfileAlloc => Bytes.toInt bytesAllocated
 				     | ProfileCount => 1
-				     | _ => Error.bug "imposible"
+				     | _ => Error.bug "Profile.maybeSplit: amount"
 				 val transfer =
 				    Transfer.CCall
 				    {args = (Vector.new2
@@ -751,8 +753,8 @@ fun profile program =
 					      end
 					 | Leave si =>
 					      (case pushes of
-						  [] =>
-						     Error.bug "unmatched Leave"
+						  [] => Error.bug 
+						        "Profile.goto: unmatched Leave"
 						| p :: pushes =>
 						     let
 							val (keep, si', leaves) =
@@ -771,7 +773,8 @@ fun profile program =
 							   then (pushes,
 								 keep,
 								 leaves)
-							else Error.bug "mismatched Leave"
+							else Error.bug 
+							     "Profile.goto: mismatched Leave"
 						     end)
 				     val shouldSplit =
 					profile = ProfileCount

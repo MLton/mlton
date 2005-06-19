@@ -21,7 +21,7 @@ struct
 	= if not (List.contains(registers (size register),
 				register,
 				eq))
-	    then Error.bug "validate: Register"
+	    then Error.bug "x86Validate.Register.validate"
 	    else true
 
       fun validate_base {register}
@@ -30,7 +30,7 @@ struct
 		  List.contains(baseRegisters,
 				register,
 				eq))
-	    then Error.bug "validate: Register, base"
+	    then Error.bug "x86Validate.Register.validate_base"
 	    else true
 
       fun validate_index {register}
@@ -39,7 +39,7 @@ struct
 		  List.contains(indexRegisters,
 				register,
 				eq))
-	    then Error.bug "validate: Register, index"
+	    then Error.bug "x86Validate.Register.validate_index"
 	    else true
     end
 
@@ -49,7 +49,7 @@ struct
 
       fun validate {fltregister = FltRegister.T i}
 	= if 0 > i orelse i > 7
-	    then Error.bug "validate: FltRegister"
+	    then Error.bug "x86Validate.FltRegister.validate"
 	    else true
     end
 
@@ -63,20 +63,20 @@ struct
 	              of NONE => ()
 		       | SOME r => if Register.validate_base {register = r}
 				     then ()
-				     else Error.bug "validate: Address, base"
+				     else Error.bug "x86Validate.Address.validate: base"
 
 	    val _ = case index
 	              of NONE => ()
 		       | SOME r => if Register.validate_index {register = r}
 				     then ()
-				     else Error.bug "validate: Address, index"
+				     else Error.bug "x86Validate.Address.validate: index"
 	  in
 	    case address
 	      of Address.T {disp = NONE, base = NONE, 
 			    index = NONE, scale = NONE}
-	       => Error.bug "validate: Address"
+	       => Error.bug "x86Validate.Address.validate"
 	       | Address.T {index = NONE, scale = SOME _, ...}
-	       => Error.bug "validate: Address, scale"
+	       => Error.bug "x86Validate.Address.validate: scale"
 	       | _ => true
 	  end
     end
@@ -92,7 +92,7 @@ struct
 	     | Immediate _ => true
 	     | Label _ => true
 	     | Address a => Address.validate {address = a}
-	     | MemLoc _ => Error.bug "validate: Operand, MemLoc"
+	     | MemLoc _ => Error.bug "x86Validate.Operand.validate: MemLoc"
     end
 
   structure Instruction =
@@ -118,37 +118,37 @@ struct
 	     => let
 		  val _ = if Size.class size = Size.INT
 			    then ()
-			    else Error.bug "validate: BinAL, size"
+			    else Error.bug "x86Validate.Instruction.validate: BinAL, size"
 		  val _ = case Operand.size src
 			    of NONE => ()
 			     | SOME srcsize 
 			     => if srcsize = size
 				  then ()
-				  else Error.bug "validate: BinAL, srcsize"
+				  else Error.bug "x86Validate.Instruction.validate: BinAL, srcsize"
  		  val _ = case Operand.size dst
 			    of NONE => ()
 			     | SOME dstsize 
 			     => if dstsize = size
 				  then ()
-				  else Error.bug "validate: BinAL, dstsize"
+				  else Error.bug "x86Validate.Instruction.validate: BinAL, dstsize"
 		in
 		  case (src,dst)
 		    of (Operand.MemLoc _, _)
-		     => Error.bug "validate: BinAL, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: BinAL, src:MemLoc"
 		     | (_, Operand.MemLoc _)
-		     => Error.bug "validate: BinAL, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: BinAL, dst:MemLoc"
 		     | (Operand.FltRegister _, _)
-		     => Error.bug "validate: BinAL, src:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: BinAL, src:FltRegister"
 		     | (Operand.Label _, _)
-		     => Error.bug "validate: BinAL, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: BinAL, src:Label"
 		     | (_, Operand.FltRegister _)
-		     => Error.bug "validate: BinAL, dst:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: BinAL, dst:FltRegister"
 		     | (_, Operand.Immediate _)
-		     => Error.bug "validate: BinAL, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: BinAL, dst:Immediate"
 		     | (_, Operand.Label _)
-                     => Error.bug "validate: BinAL, dst:Label"
+                     => Error.bug "x86Validate.Instruction.validate: BinAL, dst:Label"
 		     | (Operand.Address _, Operand.Address _)
-		     => Error.bug "validate: BinAL, src,dst:Address"
+		     => Error.bug "x86Validate.Instruction.validate: BinAL, src,dst:Address"
 		     | _ => (Operand.validate {operand = src}) andalso
                             (Operand.validate {operand = dst})
 		end
@@ -165,23 +165,23 @@ struct
              => let
 		  val _ = if Size.class size = Size.INT
 			    then ()
-			    else Error.bug "validate: BinMD, size"
+			    else Error.bug "x86Validate.Instruction.validate: BinMD, size"
 		  val _ = case Operand.size src
 			    of NONE => ()
 			     | SOME srcsize 
 			     => if srcsize = size
 				  then ()
-				  else Error.bug "validate: MD, srcsize"
+				  else Error.bug "x86Validate.Instruction.validate: MD, srcsize"
 		in
 		  case src
 		    of Operand.MemLoc _
-		     => Error.bug "validate: MD, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: MD, src:MemLoc"
 		     | Operand.FltRegister _
-		     => Error.bug "validate: MD, src:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: MD, src:FltRegister"
 		     | Operand.Immediate _
-		     => Error.bug "validate: MD, src:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: MD, src:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: MD, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: MD, src:Label"
 		     | _ => (Operand.validate {operand = src})
 		end
 	     | IMUL2 {src, dst, size}
@@ -201,37 +201,37 @@ struct
 		  val _ = case size
 			    of Size.WORD => ()
 			     | Size.LONG => ()
-			     | _ => Error.bug "validate: IMUL2, size"
+			     | _ => Error.bug "x86Validate.Instruction.validate: IMUL2, size"
 		  val _ = case Operand.size src
 			    of NONE => ()
 			     | SOME srcsize 
 			     => if srcsize = size
 				  then ()
-				  else Error.bug "validate: IMUL2, srcsize"
+				  else Error.bug "x86Validate.Instruction.validate: IMUL2, srcsize"
  		  val _ = case Operand.size dst
 			    of NONE => ()
 			     | SOME dstsize 
 			     => if dstsize = size
 				  then ()
-				  else Error.bug "validate: IMUL2, dstsize"
+				  else Error.bug "x86Validate.Instruction.validate: IMUL2, dstsize"
 		in
 		  case (src,dst)
 		    of (Operand.MemLoc _, _)
-		     => Error.bug "validate: IMUL2, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: IMUL2, src:MemLoc"
 		     | (_, Operand.MemLoc _)
-		     => Error.bug "validate: IMUL2, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: IMUL2, dst:MemLoc"
 		     | (Operand.FltRegister _, _)
-		     => Error.bug "validate: IMUL2, src:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: IMUL2, src:FltRegister"
 		     | (Operand.Label _, _)
-		     => Error.bug "validate: IMUL2, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: IMUL2, src:Label"
 		     | (_, Operand.FltRegister _)
-		     => Error.bug "validate: IMUL2, dst:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: IMUL2, dst:FltRegister"
 		     | (_, Operand.Immediate _)
-		     => Error.bug "validate: IMUL2, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: IMUL2, dst:Immediate"
 		     | (_, Operand.Label _)
-                     => Error.bug "validate: IMUL2, dst:Label"
+                     => Error.bug "x86Validate.Instruction.validate: IMUL2, dst:Label"
 		     | (Operand.Address _, _)
-		     => Error.bug "validate: IMUL2, src:Address"
+		     => Error.bug "x86Validate.Instruction.validate: IMUL2, src:Address"
 		     | _ => (Operand.validate {operand = src}) andalso
                             (Operand.validate {operand = dst})
 		end
@@ -248,23 +248,23 @@ struct
              => let
 		  val _ = if Size.class size = Size.INT
 			    then ()
-			    else Error.bug "validate: UnAL, size"
+			    else Error.bug "x86Validate.Instruction.validate: UnAL, size"
  		  val _ = case Operand.size dst
 			    of NONE => ()
 			     | SOME dstsize 
 			     => if dstsize = size
 				  then ()
-				  else Error.bug "validate: UnAL, dstsize"
+				  else Error.bug "x86Validate.Instruction.validate: UnAL, dstsize"
 		in
 		  case dst
 		    of Operand.MemLoc _
-		     => Error.bug "validate: UnAL, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: UnAL, dst:MemLoc"
 		     | Operand.FltRegister _
-		     => Error.bug "validate: UnAL, dst:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: UnAL, dst:FltRegister"
 		     | Operand.Immediate _
-		     => Error.bug "validate: UnAL, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: UnAL, dst:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: UnAL, dst:Label"
+		     => Error.bug "x86Validate.Instruction.validate: UnAL, dst:Label"
 		     | _ => (Operand.validate {operand = dst})
 		end
 	     | SRAL {count, dst, size, ...}
@@ -287,40 +287,40 @@ struct
              => let	
 		  val _ = if Size.class size = Size.INT
 			    then ()
-			    else Error.bug "validate: SRAL, size"
+			    else Error.bug "x86Validate.Instruction.validate: SRAL, size"
  		  val _ = case Operand.size dst
 			    of NONE => ()
 			     | SOME dstsize 
 			     => if dstsize = size
 				  then ()
-				  else Error.bug "validate: SRAL, dstsize"
+				  else Error.bug "x86Validate.Instruction.validate: SRAL, dstsize"
 
 		  val _ = case count
 			    of Operand.MemLoc _
-			     => Error.bug "validate: SRAL, count:MemLoc"
+			     => Error.bug "x86Validate.Instruction.validate: SRAL, count:MemLoc"
 			     | Operand.FltRegister _
-			     => Error.bug "validate: SRAL, count:FltRegister"
+			     => Error.bug "x86Validate.Instruction.validate: SRAL, count:FltRegister"
 			     | Operand.Label _
-			     => Error.bug "validate: SRAL, count:Label"
+			     => Error.bug "x86Validate.Instruction.validate: SRAL, count:Label"
 			     | Operand.Address _
-			     => Error.bug "validate: SRAL, count:Address"
+			     => Error.bug "x86Validate.Instruction.validate: SRAL, count:Address"
 			     | Operand.Register (Register.T {reg, part})
 			     => if reg <> Register.ECX orelse
 			           part <> Register.L
 				  then Error.bug 
-				       "validate: SRAL, count:Register"
+				       "x86Validate.Instruction.validate: SRAL, count:Register"
 				  else ()
 			     | _ => ()
 		in
 		  case dst
 		    of Operand.MemLoc _
-		     => Error.bug "validate: SRAL, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: SRAL, dst:MemLoc"
 		     | Operand.FltRegister _
-		     => Error.bug "validate: SRAL, dst:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: SRAL, dst:FltRegister"
 		     | Operand.Immediate _
-		     => Error.bug "validate: SRAL, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: SRAL, dst:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: SRAL, dst:Label"
+		     => Error.bug "x86Validate.Instruction.validate: SRAL, dst:Label"
 		     | _ => Operand.validate {operand = dst}
 		end
              | CMP {src1, src2, size}
@@ -339,37 +339,37 @@ struct
              => let
 		  val _ = if Size.class size = Size.INT
 			    then ()
-			    else Error.bug "validate: CMP, size"
+			    else Error.bug "x86Validate.Instruction.validate: CMP, size"
 		  val _ = case Operand.size src1
 			    of NONE => ()
 			     | SOME src1size 
 			     => if src1size = size
 				  then ()
-				  else Error.bug "validate: CMP, src1size"
+				  else Error.bug "x86Validate.Instruction.validate: CMP, src1size"
  		  val _ = case Operand.size src2
 			    of NONE => ()
 			     | SOME src2size 
 			     => if src2size = size
 				  then ()
-				  else Error.bug "validate: CMP, src2size"
+				  else Error.bug "x86Validate.Instruction.validate: CMP, src2size"
 		in
 		  case (src1,src2)
 		    of (Operand.MemLoc _, _)
-		     => Error.bug "validate: CMP, src1:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: CMP, src1:MemLoc"
 		     | (_, Operand.MemLoc _)
-		     => Error.bug "validate: CMP, src2:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: CMP, src2:MemLoc"
 		     | (Operand.FltRegister _, _)
-		     => Error.bug "validate: CMP, src1: FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: CMP, src1: FltRegister"
 		     | (Operand.Immediate _, _)
-		     => Error.bug "validate: CMP, src1:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: CMP, src1:Immediate"
 		     | (Operand.Label _, _)
-		     => Error.bug "validate: CMP, src1:Label"
+		     => Error.bug "x86Validate.Instruction.validate: CMP, src1:Label"
 		     | (_, Operand.FltRegister _)
-		     => Error.bug "validate: CMP, src2: FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: CMP, src2: FltRegister"
 		     | (_, Operand.Label _)
-		     => Error.bug "validate: CMP, src2:Label"
+		     => Error.bug "x86Validate.Instruction.validate: CMP, src2:Label"
 		     | (Operand.Address _, Operand.Address _)
-                     => Error.bug "validate: CMP, src1,src2:Address"
+                     => Error.bug "x86Validate.Instruction.validate: CMP, src1,src2:Address"
 		     | _ => (Operand.validate {operand = src1}) andalso
                             (Operand.validate {operand = src2})
 		end
@@ -389,37 +389,37 @@ struct
              => let
 		  val _ = if Size.class size = Size.INT
 			    then ()
-			    else Error.bug "validate: TEST, size"
+			    else Error.bug "x86Validate.Instruction.validate: TEST, size"
 		  val _ = case Operand.size src1
 			    of NONE => ()
 			     | SOME src1size 
 			     => if src1size = size
 				  then ()
-				  else Error.bug "validate: TEST, src1size"
+				  else Error.bug "x86Validate.Instruction.validate: TEST, src1size"
  		  val _ = case Operand.size src2
 			    of NONE => ()
 			     | SOME src2size 
 			     => if src2size = size
 				  then ()
-				  else Error.bug "validate: TEST, src2size"
+				  else Error.bug "x86Validate.Instruction.validate: TEST, src2size"
 		in
 		  case (src1,src2)
 		    of (Operand.MemLoc _, _)
-		     => Error.bug "validate: TEST, src1:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: TEST, src1:MemLoc"
 		     | (_, Operand.MemLoc _)
-		     => Error.bug "validate: TEST, src2:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: TEST, src2:MemLoc"
 		     | (Operand.FltRegister _, _)
-		     => Error.bug "validate: TEST, src1: FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: TEST, src1: FltRegister"
 		     | (Operand.Immediate _, _)
-		     => Error.bug "validate: TEST, src1:Immediate"	
+		     => Error.bug "x86Validate.Instruction.validate: TEST, src1:Immediate"	
 		     | (Operand.Label _, _)
-		     => Error.bug "validate: TEST, src1:Label"
+		     => Error.bug "x86Validate.Instruction.validate: TEST, src1:Label"
 		     | (_, Operand.FltRegister _)
-		     => Error.bug "validate: TEST, src2: FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: TEST, src2: FltRegister"
 		     | (_, Operand.Label _)
-		     => Error.bug "validate: TEST, src2:Label"
+		     => Error.bug "x86Validate.Instruction.validate: TEST, src2:Label"
 		     | (Operand.Address _, Operand.Address _)
-                     => Error.bug "validate: TEST, src1,src2:Address"
+                     => Error.bug "x86Validate.Instruction.validate: TEST, src1,src2:Address"
 		     | _ => (Operand.validate {operand = src1}) andalso
                             (Operand.validate {operand = src2})
 		end
@@ -437,23 +437,23 @@ struct
 	     => let
 		  val _ = case size
 			    of Size.BYTE => ()
-			     | _ => Error.bug "validate: SETcc, size"
+			     | _ => Error.bug "x86Validate.Instruction.validate: SETcc, size"
 		  val _ = case Operand.size dst
 			    of NONE => ()
 			     | SOME dstsize 
 			     => if dstsize = size
 				  then ()
-				  else Error.bug "validate: SETcc, dstsize"
+				  else Error.bug "x86Validate.Instruction.validate: SETcc, dstsize"
 		in
 		  case dst
 		    of Operand.MemLoc _
-		     => Error.bug "validate: SETcc, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: SETcc, dst:MemLoc"
 		     | Operand.FltRegister _
-		     => Error.bug "validate: SETcc, dst:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: SETcc, dst:FltRegister"
 		     | Operand.Immediate _
-		     => Error.bug "validate: SETcc, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: SETcc, dst:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: SETcc, dst:Label"
+		     => Error.bug "x86Validate.Instruction.validate: SETcc, dst:Label"
 		     | _ => (Operand.validate {operand = dst})
 		end
              | JMP {target, ...}
@@ -468,9 +468,9 @@ struct
 		in
 		  case target
 		    of Operand.MemLoc _
-		     => Error.bug "validate: JMP, target:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: JMP, target:MemLoc"
 		     | Operand.FltRegister _
-		     => Error.bug "validate: JMP, target:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: JMP, target:FltRegister"
 		     | _ => (Operand.validate {operand = target})
 		end
 	     | Jcc {target, ...}
@@ -485,13 +485,13 @@ struct
 		in
 		  case target
 		    of Operand.MemLoc _
-		     => Error.bug "validate: Jcc, target:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: Jcc, target:MemLoc"
 		     | Operand.Register _
-		     => Error.bug "validate: Jcc, target:Register"
+		     => Error.bug "x86Validate.Instruction.validate: Jcc, target:Register"
 		     | Operand.FltRegister _
-		     => Error.bug "validate: Jcc, target:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: Jcc, target:FltRegister"
 		     | Operand.Address _
-		     => Error.bug "validate: Jcc, target:Address"
+		     => Error.bug "x86Validate.Instruction.validate: Jcc, target:Address"
 		     | _ => (Operand.validate {operand = target})
 		end
              | CALL {target, ...}
@@ -506,9 +506,9 @@ struct
 		in
 		  case target
 		    of Operand.MemLoc _
-		     => Error.bug "validate: CALL, target:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: CALL, target:MemLoc"
 		     | Operand.FltRegister _
-		     => Error.bug "validate: CALL, target:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: CALL, target:FltRegister"
 		     | _ => (Operand.validate {operand = target})
 		end
              | RET {src}
@@ -523,15 +523,15 @@ struct
 		in
 		  case src
 		    of SOME (Operand.MemLoc _)
-		     => Error.bug "validate: RET, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: RET, src:MemLoc"
 		     | SOME (Operand.Register _)
-		     => Error.bug "validate: RET, src:Register"
+		     => Error.bug "x86Validate.Instruction.validate: RET, src:Register"
 		     | SOME (Operand.FltRegister _)
-		     => Error.bug "validate: RET, src:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: RET, src:FltRegister"
 		     | SOME (Operand.Label _)
-		     => Error.bug "validate: RET, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: RET, src:Label"
 		     | SOME (Operand.Address _)
-		     => Error.bug "validate: RET, src:Address"
+		     => Error.bug "x86Validate.Instruction.validate: RET, src:Address"
 		     | SOME operand => (Operand.validate {operand = operand})
 		     | NONE => true
 		end
@@ -551,37 +551,37 @@ struct
 	     => let
 		  val _ = if Size.class size = Size.INT
 			    then ()
-			    else Error.bug "validate: MOV, size"
+			    else Error.bug "x86Validate.Instruction.validate: MOV, size"
 		  val _ = case Operand.size src
 			    of NONE => ()
 			     | SOME srcsize
 			     => if srcsize = size
 				  then ()
-				  else Error.bug "validate: MOV, srcsize"
+				  else Error.bug "x86Validate.Instruction.validate: MOV, srcsize"
  		  val _ = case Operand.size dst
 			    of NONE => ()
 			     | SOME dstsize 
 			     => if dstsize = size
 				  then ()
-				  else Error.bug "validate: MOV, dstsize"
+				  else Error.bug "x86Validate.Instruction.validate: MOV, dstsize"
 		in
 		  case (src,dst)
 		    of (Operand.MemLoc _, _)
-		     => Error.bug "validate: MOV, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: MOV, src:MemLoc"
 		     | (_, Operand.MemLoc _)
-		     => Error.bug "validate: MOV, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: MOV, dst:MemLoc"
 		     | (Operand.FltRegister _, _)
-		     => Error.bug "validate: MOV, src:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: MOV, src:FltRegister"
 		     | (Operand.Label _, _)
-		     => Error.bug "validate: MOV, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: MOV, src:Label"
 		     | (_, Operand.FltRegister _)
-		     => Error.bug "validate: MOV, dst:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: MOV, dst:FltRegister"
 		     | (_, Operand.Immediate _)
-		     => Error.bug "validate: MOV, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: MOV, dst:Immediate"
 		     | (_, Operand.Label _)
-                     => Error.bug "validate: MOV, dst:Label"
+                     => Error.bug "x86Validate.Instruction.validate: MOV, dst:Label"
 		     | (Operand.Address _, Operand.Address _)
-		     => Error.bug "validate: MOV, src,dst:Address"
+		     => Error.bug "x86Validate.Instruction.validate: MOV, src,dst:Address"
 		     | _ => (Operand.validate {operand = src}) andalso
                             (Operand.validate {operand = dst})
 		end
@@ -602,39 +602,39 @@ struct
 		  val _ = case size
 			    of Size.WORD => ()
 			     | Size.LONG => ()
-			     | _ => Error.bug "validate: CMOVcc, size"
+			     | _ => Error.bug "x86Validate.Instruction.validate: CMOVcc, size"
 		  val _ = case Operand.size src
 			    of NONE => ()
 			     | SOME srcsize 
 			     => if srcsize = size
 				  then ()
-				  else Error.bug "validate: CMOVcc, srcsize"
+				  else Error.bug "x86Validate.Instruction.validate: CMOVcc, srcsize"
  		  val _ = case Operand.size dst
 			    of NONE => ()
 			     | SOME dstsize 
 			     => if dstsize = size
 				  then ()
-				  else Error.bug "validate: CMOVcc, dstsize"
+				  else Error.bug "x86Validate.Instruction.validate: CMOVcc, dstsize"
 		in
 		  case (src,dst)
 		    of (Operand.MemLoc _, _)
-		     => Error.bug "validate: CMOVcc, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: CMOVcc, src:MemLoc"
 		     | (_, Operand.MemLoc _)
-		     => Error.bug "validate: CMOVcc, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: CMOVcc, dst:MemLoc"
 		     | (Operand.FltRegister _, _)
-		     => Error.bug "validate: CMOVcc, src:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: CMOVcc, src:FltRegister"
 		     | (Operand.Immediate _, _)
-		     => Error.bug "validate: CMOVcc, src:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: CMOVcc, src:Immediate"
 		     | (Operand.Label _, _)
-		     => Error.bug "validate: CMOVcc, src:Label"	
+		     => Error.bug "x86Validate.Instruction.validate: CMOVcc, src:Label"	
 		     | (_, Operand.FltRegister _)
-		     => Error.bug "validate: CMOVcc, dst:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: CMOVcc, dst:FltRegister"
 		     | (_, Operand.Immediate _)
-		     => Error.bug "validate: CMOVcc, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: CMOVcc, dst:Immediate"
 		     | (_, Operand.Label _)
-                     => Error.bug "validate: CMOVcc, dst:Label"
+                     => Error.bug "x86Validate.Instruction.validate: CMOVcc, dst:Label"
 		     | (_, Operand.Address _)
-		     => Error.bug "validate: CMOVcc, dst:Address"
+		     => Error.bug "x86Validate.Instruction.validate: CMOVcc, dst:Address"
 		     | _ => (Operand.validate {operand = src}) andalso
                             (Operand.validate {operand = dst})
 		end
@@ -654,39 +654,39 @@ struct
 	     => let
 		  val _ = if Size.class size = Size.INT
 			    then ()
-			    else Error.bug "validate: XCHG, size"
+			    else Error.bug "x86Validate.Instruction.validate: XCHG, size"
 		  val _ = case Operand.size src
 			    of NONE => ()
 			     | SOME srcsize 
 			     => if srcsize = size
 				  then ()
-				  else Error.bug "validate: XCHG, srcsize"
+				  else Error.bug "x86Validate.Instruction.validate: XCHG, srcsize"
  		  val _ = case Operand.size dst
 			    of NONE => ()
 			     | SOME dstsize 
 			     => if dstsize = size
 				  then ()
-				  else Error.bug "validate: XCHG, dstsize"
+				  else Error.bug "x86Validate.Instruction.validate: XCHG, dstsize"
 		in
 		  case (src,dst)
 		    of (Operand.MemLoc _, _)
-		     => Error.bug "validate: XCHG, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: XCHG, src:MemLoc"
 		     | (_, Operand.MemLoc _)
-		     => Error.bug "validate: XCHG, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: XCHG, dst:MemLoc"
 		     | (Operand.FltRegister _, _)
-		     => Error.bug "validate: XCHG, src:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: XCHG, src:FltRegister"
 		     | (Operand.Immediate _, _)
-		     => Error.bug "validate: XCHG, src:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: XCHG, src:Immediate"
 		     | (Operand.Label _, _)
-		     => Error.bug "validate: XCHG, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: XCHG, src:Label"
 		     | (_, Operand.FltRegister _)
-		     => Error.bug "validate: XCHG, dst:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: XCHG, dst:FltRegister"
 		     | (_, Operand.Immediate _)
-		     => Error.bug "validate: XCHG, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: XCHG, dst:Immediate"
 		     | (_, Operand.Label _)
-                     => Error.bug "validate: XCHG, dst:Label"
+                     => Error.bug "x86Validate.Instruction.validate: XCHG, dst:Label"
 		     | (Operand.Address _, Operand.Address _)
-		     => Error.bug "validate: XCHG, src,dst:Address"
+		     => Error.bug "x86Validate.Instruction.validate: XCHG, src,dst:Address"
 		     | _ => (Operand.validate {operand = src}) andalso
                             (Operand.validate {operand = dst})
 		end
@@ -705,21 +705,21 @@ struct
 		  val _ = case size
 			    of Size.WORD => ()
 			     | Size.LONG => ()
-			     | _ => Error.bug "validate: PUSH, size"
+			     | _ => Error.bug "x86Validate.Instruction.validate: PUSH, size"
  		  val _ = case Operand.size src
 			    of NONE => ()
 			     | SOME srcsize 
 			     => if srcsize = size
 				  then ()
-				  else Error.bug "validate: PUSH, srcsize"
+				  else Error.bug "x86Validate.Instruction.validate: PUSH, srcsize"
 		in
 		  case src
 		    of Operand.MemLoc _
-		     => Error.bug "validate: PUSH, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: PUSH, src:MemLoc"
 		     | Operand.FltRegister _
-		     => Error.bug "validate: PUSH, src:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: PUSH, src:FltRegister"
 		     | Operand.Label _
-		     => Error.bug "validate: PUSH, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: PUSH, src:Label"
 		     | _ => (Operand.validate {operand = src}) 
 		end
              | POP {dst, size}
@@ -741,23 +741,23 @@ struct
 		  val _ = case size
 			    of Size.WORD => ()
 			     | Size.LONG => ()
-			     | _ => Error.bug "validate: POP, size"
+			     | _ => Error.bug "x86Validate.Instruction.validate: POP, size"
  		  val _ = case Operand.size dst
 			    of NONE => ()
 			     | SOME dstsize 
 			     => if dstsize = size
 				  then ()
-				  else Error.bug "validate: POP, dstsize"
+				  else Error.bug "x86Validate.Instruction.validate: POP, dstsize"
 		in
 		  case dst
 		    of Operand.MemLoc _
-		     => Error.bug "validate: POP, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: POP, dst:MemLoc"
 		     | Operand.FltRegister _
-		     => Error.bug "validate: POP, src:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: POP, src:FltRegister"
 		     | Operand.Immediate _
-		     => Error.bug "validate: POP, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: POP, dst:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: POP, dst:Label"
+		     => Error.bug "x86Validate.Instruction.validate: POP, dst:Label"
 		     | _ => (Operand.validate {operand = dst}) 
 		end
              | CX {size}
@@ -767,7 +767,7 @@ struct
 	     => let
 		  val _ = if Size.class size = Size.INT
 			    then ()
-			    else Error.bug "validate: CX, srcsize"
+			    else Error.bug "x86Validate.Instruction.validate: CX, srcsize"
 		in
 		  true
 		end
@@ -787,46 +787,46 @@ struct
 	     => let
 		  val _ = if Size.class srcsize = Size.INT
 			    then ()
-			    else Error.bug "validate: MOVX, srcsize"
+			    else Error.bug "x86Validate.Instruction.validate: MOVX, srcsize"
 		  val _ = if Size.class dstsize = Size.INT
 			    then ()
-			    else Error.bug "validate: MOVX, dstsize"
+			    else Error.bug "x86Validate.Instruction.validate: MOVX, dstsize"
 		  val _ = case Operand.size src
 			    of NONE => ()
 			     | SOME srcsize' 
 			     => if srcsize' = srcsize
 				  then ()
-				  else Error.bug "validate: MOVX, srcsize"
+				  else Error.bug "x86Validate.Instruction.validate: MOVX, srcsize"
  		  val _ = case Operand.size dst
 			    of NONE => ()
 			     | SOME dstsize' 
 			     => if dstsize' = dstsize
 				  then ()
-				  else Error.bug "validate: MOVX, dstsize"
+				  else Error.bug "x86Validate.Instruction.validate: MOVX, dstsize"
 		  val _ = if Size.lt(srcsize,dstsize)
 			    then ()
 			    else Error.bug 
-			         "validate: MOVX, srcsize >= dstsize"
+			         "x86Validate.Instruction.validate: MOVX, srcsize >= dstsize"
 		in
 		  case (src,dst)
 		    of (Operand.MemLoc _, _)
-		     => Error.bug "validate: MOVX, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: MOVX, src:MemLoc"
 		     | (_, Operand.MemLoc _)
-		     => Error.bug "validate: MOVX, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: MOVX, dst:MemLoc"
 		     | (Operand.FltRegister _, _)
-		     => Error.bug "validate: MOVX, src:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: MOVX, src:FltRegister"
 		     | (Operand.Immediate _, _)
-		     => Error.bug "validate: MOVX, src:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: MOVX, src:Immediate"
 		     | (Operand.Label _, _)
-		     => Error.bug "validate: MOVX, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: MOVX, src:Label"
 		     | (_, Operand.FltRegister _)
-		     => Error.bug "validate: MOVX, dst:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: MOVX, dst:FltRegister"
 		     | (_, Operand.Immediate _)
-		     => Error.bug "validate: MOVX, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: MOVX, dst:Immediate"
 		     | (_, Operand.Label _)
-                     => Error.bug "validate: MOVX, dst:Label"
+                     => Error.bug "x86Validate.Instruction.validate: MOVX, dst:Label"
 		     | (_, Operand.Address _)
-		     => Error.bug "validate: MOVX, dst:Address"
+		     => Error.bug "x86Validate.Instruction.validate: MOVX, dst:Address"
 		     | _ => (Operand.validate {operand = src}) andalso
                             (Operand.validate {operand = dst})
 		end
@@ -847,29 +847,29 @@ struct
 		  val _ = case size
 			    of Size.WORD => ()
 			     | Size.LONG => ()
-			     | _ => Error.bug "validate: LEA, size"
+			     | _ => Error.bug "x86Validate.Instruction.validate: LEA, size"
 		in
 		  case (src,dst)
 		    of (Operand.MemLoc _, _)
-		     => Error.bug "validate: LEA, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: LEA, src:MemLoc"
 		     | (_, Operand.MemLoc _)
-		     => Error.bug "validate: LEA, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: LEA, dst:MemLoc"
 		     | (Operand.Register _, _)
-		     => Error.bug "validate: LEA, src:Register"
+		     => Error.bug "x86Validate.Instruction.validate: LEA, src:Register"
 		     | (Operand.FltRegister _, _)
-		     => Error.bug "validate: LEA, src:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: LEA, src:FltRegister"
 		     | (Operand.Immediate _, _)
-		     => Error.bug "validate: LEA, src:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: LEA, src:Immediate"
 		     | (Operand.Label _, _)
-		     => Error.bug "validate: LEA, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: LEA, src:Label"
 		     | (_, Operand.FltRegister _)
-		     => Error.bug "validate: LEA, dst:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: LEA, dst:FltRegister"
 		     | (_, Operand.Immediate _)
-		     => Error.bug "validate: LEA, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: LEA, dst:Immediate"
 		     | (_, Operand.Label _)
-                     => Error.bug "validate: LEA, dst:Label"
+                     => Error.bug "x86Validate.Instruction.validate: LEA, dst:Label"
 		     | (_, Operand.Address _)
-		     => Error.bug "validate: LEA, dst:Address"
+		     => Error.bug "x86Validate.Instruction.validate: LEA, dst:Address"
 		     | _ => (Operand.validate {operand = src}) andalso
                             (Operand.validate {operand = dst})
 		end
@@ -886,17 +886,17 @@ struct
 	     => let
 		  val _ = if Size.class size = Size.FLT
 			    then ()
-			    else Error.bug "validate: FLD, size"
+			    else Error.bug "x86Validate.Instruction.validate: FLD, size"
 		in
 		  case src
 		    of Operand.MemLoc _
-		     => Error.bug "validate: FLD, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: FLD, src:MemLoc"
 		     | Operand.Register _
-		     => Error.bug "validate: FLD, src:Register"
+		     => Error.bug "x86Validate.Instruction.validate: FLD, src:Register"
 		     | Operand.Immediate _
-		     => Error.bug "validate: FLD, src:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: FLD, src:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: FLD, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: FLD, src:Label"
 		     | _ => Operand.validate {operand = src}
 		end
              | FST {dst, size, pop}
@@ -918,19 +918,19 @@ struct
 					   of Size.SNGL => ()
 					    | Size.DBLE => ()
 					    | _
-					    => Error.bug "validate: FST, size"
+					    => Error.bug "x86Validate.Instruction.validate: FST, size"
 				    else ())
-			    else Error.bug "validate: FST, size"
+			    else Error.bug "x86Validate.Instruction.validate: FST, size"
 		in
 		  case dst
 		    of Operand.MemLoc _
-		     => Error.bug "validate: FST, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: FST, dst:MemLoc"
 		     | Operand.Register _
-		     => Error.bug "validate: FST, dst:Register"
+		     => Error.bug "x86Validate.Instruction.validate: FST, dst:Register"
 		     | Operand.Immediate _
-		     => Error.bug "validate: FST, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: FST, dst:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: FST, dst:Label"
+		     => Error.bug "x86Validate.Instruction.validate: FST, dst:Label"
 		     | _ => Operand.validate {operand = dst}
 		end
              | FILD {src, size}
@@ -946,19 +946,19 @@ struct
 	     => let
 		  val _ = if Size.class size = Size.FPI
 			    then ()
-			    else Error.bug "validate: FILD, size"
+			    else Error.bug "x86Validate.Instruction.validate: FILD, size"
 		in
 		  case src
 		    of Operand.MemLoc _
-		     => Error.bug "validate: FILD, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: FILD, src:MemLoc"
 		     | Operand.Register _
-		     => Error.bug "validate: FILD, src:Register"
+		     => Error.bug "x86Validate.Instruction.validate: FILD, src:Register"
 		     | Operand.FltRegister _
-		     => Error.bug "validate: FILD, src:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: FILD, src:FltRegister"
 		     | Operand.Immediate _
-		     => Error.bug "validate: FILD, src:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: FILD, src:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: FILD, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: FILD, src:Label"
 		     | _ => Operand.validate {operand = src}
 		end
              | FIST {dst, size, ...}
@@ -974,19 +974,19 @@ struct
 	     => let
 		  val _ = if Size.class size = Size.FPI
 			    then ()
-			    else Error.bug "validate: FIST, size"
+			    else Error.bug "x86Validate.Instruction.validate: FIST, size"
 		in
 		  case dst
 		    of Operand.MemLoc _
-		     => Error.bug "validate: FIST, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: FIST, src:MemLoc"
 		     | Operand.Register _
-		     => Error.bug "validate: FIST, src:Register"
+		     => Error.bug "x86Validate.Instruction.validate: FIST, src:Register"
 		     | Operand.FltRegister _
-		     => Error.bug "validate: FIST, src:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: FIST, src:FltRegister"
 		     | Operand.Immediate _
-		     => Error.bug "validate: FIST, src:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: FIST, src:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: FIST, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: FIST, src:Label"
 		     | _ => Operand.validate {operand = dst}
 		end
              | FXCH {src}
@@ -1001,13 +1001,13 @@ struct
 		in
 		  case src
 		    of Operand.MemLoc _
-		     => Error.bug "validate: FXCH, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: FXCH, dst:MemLoc"
 		     | Operand.Register _
-		     => Error.bug "validate: FXCH, dst:Register"
+		     => Error.bug "x86Validate.Instruction.validate: FXCH, dst:Register"
 		     | Operand.Immediate _
-		     => Error.bug "validate: FXCH, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: FXCH, dst:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: FXCH, dst:Label"
+		     => Error.bug "x86Validate.Instruction.validate: FXCH, dst:Label"
 		     | _ => Operand.validate {operand = src}
 		end
              | FLDC {...}
@@ -1026,15 +1026,15 @@ struct
 		in
 		  case src
 		    of Operand.MemLoc _
-		     => Error.bug "validate: FLDCW, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: FLDCW, src:MemLoc"
 		     | Operand.Register _ 
-		     => Error.bug "validate: FLDCW, src:Register"
+		     => Error.bug "x86Validate.Instruction.validate: FLDCW, src:Register"
 		     | Operand.FltRegister _ 
-		     => Error.bug "validate: FLDCW, src:Register"
+		     => Error.bug "x86Validate.Instruction.validate: FLDCW, src:Register"
 		     | Operand.Immediate _
-		     => Error.bug "validate: FLDCW, src:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: FLDCW, src:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: FLDCW, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: FLDCW, src:Label"
 		     | _ => Operand.validate {operand = src}
 		end
 	     | FSTCW {dst, ...}
@@ -1049,15 +1049,15 @@ struct
 		in
 		  case dst
 		    of Operand.MemLoc _
-		     => Error.bug "validate: FSTCW, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: FSTCW, dst:MemLoc"
 		     | Operand.Register _ 
-		     => Error.bug "validate: FSTCW, dst:Register"
+		     => Error.bug "x86Validate.Instruction.validate: FSTCW, dst:Register"
 		     | Operand.FltRegister _ 
-		     => Error.bug "validate: FSTCW, dst:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: FSTCW, dst:FltRegister"
 		     | Operand.Immediate _
-		     => Error.bug "validate: FSTCW, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: FSTCW, dst:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: FSTCW, dst:Label"
+		     => Error.bug "x86Validate.Instruction.validate: FSTCW, dst:Label"
 		     | _ => Operand.validate {operand = dst}
 		end
 	     | FSTSW {dst, ...}
@@ -1073,18 +1073,18 @@ struct
 		in
 		  case dst
 		    of Operand.MemLoc _
-		     => Error.bug "validate: FSTSW, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: FSTSW, dst:MemLoc"
 		     | Operand.Register (Register.T {reg = Register.EAX,
 						     part = Register.X})
 		     => Operand.validate {operand = dst}
 		     | Operand.Register _ 
-		     => Error.bug "validate: FSTSW, dst:Register"
+		     => Error.bug "x86Validate.Instruction.validate: FSTSW, dst:Register"
 		     | Operand.FltRegister _ 
-		     => Error.bug "validate: FSTSW, dst:FltRegister"
+		     => Error.bug "x86Validate.Instruction.validate: FSTSW, dst:FltRegister"
 		     | Operand.Immediate _
-		     => Error.bug "validate: FSTSW, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: FSTSW, dst:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: FSTSW, dst:Label"
+		     => Error.bug "x86Validate.Instruction.validate: FSTSW, dst:Label"
 		     | _ => Operand.validate {operand = dst}
 		end
 	     | FCOM {src, size, pop, pop'}
@@ -1107,26 +1107,26 @@ struct
 					   | Size.DBLE => ()
 					   | _
 					   => Error.bug 
-					      "validate: FCOM, size")
+					      "x86Validate.Instruction.validate: FCOM, size")
 				    | _ => ()
-			    else Error.bug "validate: FCOM, size"
+			    else Error.bug "x86Validate.Instruction.validate: FCOM, size"
 		in
 		  case src
 		    of Operand.MemLoc _
-		     => Error.bug "validate: FCOM, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: FCOM, src:MemLoc"
 		     | Operand.Register _
-		     => Error.bug "validate: FCOM, src:Register"
+		     => Error.bug "x86Validate.Instruction.validate: FCOM, src:Register"
 		     | Operand.Immediate _
-		     => Error.bug "validate: FCOM, src:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: FCOM, src:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: FCOM, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: FCOM, src:Label"
 		     | _ 
 		     => if pop andalso pop'
 			   andalso
 			   not 
 			   (Operand.eq(src,
 				       Operand.fltregister FltRegister.one))
-			  then Error.bug "validate: FCOM, pop, pop'"
+			  then Error.bug "x86Validate.Instruction.validate: FCOM, pop, pop'"
 			  else Operand.validate {operand = src}
 		end
 	     | FUCOM {src, pop, pop'}
@@ -1142,22 +1142,22 @@ struct
 		in
 		  case src
 		    of Operand.MemLoc _
-		     => Error.bug "validate: FUCOM, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: FUCOM, src:MemLoc"
 		     | Operand.Register _
-		     => Error.bug "validate: FUCOM, src:Register"
+		     => Error.bug "x86Validate.Instruction.validate: FUCOM, src:Register"
 		     | Operand.Immediate _
-		     => Error.bug "validate: FUCOM, src:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: FUCOM, src:Immediate"
 		     | Operand.Label _
-		     => Error.bug "validate: FUCOM, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: FUCOM, src:Label"
 		     | Operand.Address _
-		     => Error.bug "validate: FUCOM, src:Address"
+		     => Error.bug "x86Validate.Instruction.validate: FUCOM, src:Address"
 		     | _ 
 		     => if pop andalso pop'
 			   andalso
 			   not 
 			   (Operand.eq(src,
 				       Operand.fltregister FltRegister.one))
-			  then Error.bug "validate: FUCOM, pop, pop'"
+			  then Error.bug "x86Validate.Instruction.validate: FUCOM, pop, pop'"
 			  else Operand.validate {operand = src}
 		end
 	     | FBinA {src, dst, size, pop, ...}
@@ -1189,42 +1189,42 @@ struct
 					   | Size.DBLE => ()
 					   | _
 					   => Error.bug 
-					      "validate: FBinA, size")
+					      "x86Validate.Instruction.validate: FBinA, size")
 				    | _ => ()
-			    else Error.bug "validate: FBinA, size"
+			    else Error.bug "x86Validate.Instruction.validate: FBinA, size"
 		in
 		  case (src,dst)
 		    of (Operand.MemLoc _, _)
-		     => Error.bug "validate: FBinA, src:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: FBinA, src:MemLoc"
 		     | (_, Operand.MemLoc _)
-		     => Error.bug "validate: FBinA, dst:MemLoc"
+		     => Error.bug "x86Validate.Instruction.validate: FBinA, dst:MemLoc"
 		     | (Operand.Register _, _)
-		     => Error.bug "validate: FBinA, src:Register"
+		     => Error.bug "x86Validate.Instruction.validate: FBinA, src:Register"
 		     | (Operand.Immediate _, _)
-		     => Error.bug "validate: FBinA, src:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: FBinA, src:Immediate"
 		     | (Operand.Label _, _)
-		     => Error.bug "validate: FBinA, src:Label"
+		     => Error.bug "x86Validate.Instruction.validate: FBinA, src:Label"
 		     | (_, Operand.Register _)
-		     => Error.bug "validate: FBinA, dst:Register"
+		     => Error.bug "x86Validate.Instruction.validate: FBinA, dst:Register"
 		     | (_, Operand.Immediate _)
-		     => Error.bug "validate: FBinA, dst:Immediate"
+		     => Error.bug "x86Validate.Instruction.validate: FBinA, dst:Immediate"
 		     | (_, Operand.Label _)
-                     => Error.bug "validate: FBinA, dst:Label"
+                     => Error.bug "x86Validate.Instruction.validate: FBinA, dst:Label"
 		     | (_, Operand.Address _)
-		     => Error.bug "validate: FBinA, dst:Address"
+		     => Error.bug "x86Validate.Instruction.validate: FBinA, dst:Address"
 		     | (Operand.Address _, _)
 		     => if Operand.eq(dst, 
 				      Operand.fltregister FltRegister.top)
 			  then (Operand.validate {operand = src}) andalso
                                (Operand.validate {operand = dst})
-			  else Error.bug "validate: FBinA, src:Address"
+			  else Error.bug "x86Validate.Instruction.validate: FBinA, src:Address"
 		     | _
 		     => if pop 
 			   andalso
 			   not 
 			   (Operand.eq(src,
 				       Operand.fltregister FltRegister.top))
-			  then Error.bug "validate: FBinA, pop"
+			  then Error.bug "x86Validate.Instruction.validate: FBinA, pop"
 			  else (Operand.validate {operand = src}) andalso
 			       (Operand.validate {operand = dst})
 		end
@@ -1244,7 +1244,7 @@ struct
 	       (* Floating-point binary arithmetic stack pop instructions.
 		*)
 	     => true
-             | _ => Error.bug (concat ["validate: instruction :: ",
+             | _ => Error.bug (concat ["x86Validate.Instruction.validate: instruction :: ",
 				       toString instruction])
     end
 
@@ -1258,7 +1258,7 @@ struct
 		    fn (Comment _, b)
 		     => b
 		     | (Directive _, _)
-		     => Error.bug "validate: Directive"
+		     => Error.bug "x86Validate.Assembly.validate: Directive"
 		     | (PseudoOp _, b)
 		     => b
 		     | (Label _, b)
@@ -1281,7 +1281,7 @@ struct
 				fn assembly
 				 => (print (Assembly.toString assembly);
 				     print "\n"));
-			       Error.bug msg))
+			       false))
 	 then true
 	 else Error.bug "x86Validate.validate")       
 

@@ -25,7 +25,7 @@ val {equals, ...} = Relation.compare compare
 fun fromBits (b: Bits.t): t =
    if Bits.>= (b, Bits.zero)
       then T b
-   else Error.bug (concat ["strange word size: ", Bits.toString b])
+   else Error.bug (concat ["WordSize.fromBits: strange word size: ", Bits.toString b])
 
 fun isValidSize (i: int) =
    (1 <= i andalso i <= 32) orelse i = 64

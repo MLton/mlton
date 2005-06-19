@@ -24,7 +24,7 @@ val growFactor: int = 2
 structure Int =
    struct
       open Int
-      val max = Trace.trace2 ("max", layout, layout, layout) max
+      val max = Trace.trace2 ("CharBuffer.Int.max", layout, layout, layout) max
    end
 
 fun ensureFree (T {length, chars, ...}, amount: int): unit =
@@ -54,6 +54,6 @@ fun toString (T {length, chars, ...}): string =
 val layout = Layout.str o toString
 
 val addChar =
-   Trace.trace2 ("addChar", layout, Char.layout, Unit.layout) addChar
+   Trace.trace2 ("CharBuffer.addChar", layout, Char.layout, Unit.layout) addChar
 
 end

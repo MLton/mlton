@@ -384,7 +384,7 @@ fun allocate {argOperands,
 	 end
       val allocateVar =
 	 Trace.trace2
-	 ("Allocate.allocateVar", Var.layout, Allocation.layout, Unit.layout)
+	 ("AllocateRegisters.allocateVar", Var.layout, Allocation.layout, Unit.layout)
 	 allocateVar
       (* Create the initial stack and set the stack slots for the formals. *)
       val stack =
@@ -396,7 +396,7 @@ fun allocate {argOperands,
 	      Operand.StackOffset (StackOffset.T {offset, ...}) =>
 		 (valOf (#operand (varInfo x)) := SOME z
 		  ; StackOffset.T {offset = offset, ty = t} :: ac)
-	    | _ => Error.bug "strange argOperand"))
+	    | _ => Error.bug "AllocateRegisters.allocate: strange argOperand"))
       (* Allocate slots for the link and handler, if necessary. *)
       val handlerLinkOffset =
 	 if !hasHandler
@@ -413,16 +413,17 @@ fun allocate {argOperands,
       fun getOperands (xs: Var.t vector): Operand.t vector =
 	 Vector.map (xs, fn x => valOf (! (valOf (#operand (varInfo x)))))
       val getOperands =
-	 Trace.trace ("Allocate.getOperands",
-		      Vector.layout Var.layout,
-		      Vector.layout Operand.layout)
+	 Trace.trace 
+	 ("AllocateRegisters.getOperands",
+	  Vector.layout Var.layout, Vector.layout Operand.layout)
 	 getOperands
       val {get = labelInfo: R.Label.t -> Info.t, set = setLabelInfo, ...} =
 	 Property.getSetOnce (R.Label.plist,
 			      Property.initRaise ("labelInfo", R.Label.layout))
       val setLabelInfo =
 	 Trace.trace2
-	 ("Allocate.setLabelInfo", R.Label.layout, Info.layout, Unit.layout)
+	 ("AllocateRegisters.setLabelInfo", 
+	  R.Label.layout, Info.layout, Unit.layout)
 	 setLabelInfo
       (* Do a DFS of the control-flow graph. *)
       val () =
@@ -475,7 +476,7 @@ fun allocate {argOperands,
 		case kind of
 		   Kind.Handler =>
 		      (case handlerLinkOffset of
-			  NONE => Error.bug "Handler with no handler offset"
+			  NONE => Error.bug "AllocateRegisters.allocate: Handler with no handler offset"
 			| SOME {handler, ...} =>
 			     Bytes.+ (Runtime.labelSize, handler))
 		 | _ =>
@@ -493,7 +494,8 @@ fun allocate {argOperands,
 	     val _ =
 		if Bytes.isWordAligned size
 		   then ()
-		else Error.bug (concat ["bad size ",
+		else Error.bug (concat ["AllocateRegisters.allocate: ",
+					"bad size ",
 					Bytes.toString size,
 					" in ", Label.toString label])
 	     val _ = Vector.foreach (args, fn (x, _) => allocateVar (x, a))
@@ -550,7 +552,7 @@ fun allocate {argOperands,
 
 val allocate = 
    Trace.trace
-   ("Allocate.allocate",
+   ("AllocateRegisters.allocate",
     fn {function, ...} => Func.layout (Function.name function),
     Layout.ignore)
    allocate

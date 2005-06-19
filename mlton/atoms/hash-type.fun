@@ -76,7 +76,7 @@ structure Type =
 	 end
 
       fun makeMonoHom {con} =
-	 makeHom {var = fn _ => Error.bug "makeMonoHom saw type variable",
+	 makeHom {var = fn _ => Error.bug "HashType.Type.makeMonoHom: type variable",
 		  con = con}
 
       fun equals (t, t'): bool = PropertyList.equals (plist t, plist t')
@@ -97,7 +97,7 @@ structure Type =
 		  andalso Vector.equals (ts, ts', equals)
 	     | _ => false
 	 val same =
-	    Trace.trace2 ("Type.same", layoutTree, layoutTree, Bool.layout)
+	    Trace.trace2 ("HashType.Type.same", layoutTree, layoutTree, Bool.layout)
 	    same
 	 val table: t HashSet.t = HashSet.new {hash = hash}
       in
@@ -125,7 +125,7 @@ structure Type =
 	    lookup (Vector.fold (ts, Tycon.hash c, fn (t, w) =>
 				 Word.xorb (w * generator, hash t)),
 		    Con (c, ts))
-	 val con = Trace.trace2 ("Type.con",
+	 val con = Trace.trace2 ("HashType.Type.con",
 				 Tycon.layout,
 				 Vector.layout layout,
 				 layout) con
@@ -167,7 +167,7 @@ fun substitute (ty, v) =
 	   con = con}
 
 (* val substitute =
- *    Trace.trace2 ("substitute", layout,
+ *    Trace.trace2 ("HashType.substitute", layout,
  * 		List.layout (Layout.tuple2 (Tyvar.layout, Type.layout)),
  * 		layout) substitute		
  *)
@@ -179,7 +179,7 @@ fun substitute (ty, v) =
  * 	       | loop (t' :: ts) = if equals (t, t') then loop ts else NONE
  * 	 in loop ts
  * 	 end
- *     | [] => Error.bug "equals"
+ *     | [] => Error.bug "HashType.equals"
  *)
 
 local
@@ -197,7 +197,7 @@ end
 fun tycon t =
    case dest t of
       Con (c, _) => c
-    | _ => Error.bug "Type.tycon saw type variable"
+    | _ => Error.bug "HashType.tycon: type variable"
 
 fun containsTycon (ty, tycon) =
    hom {ty = ty,
@@ -363,7 +363,7 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Word_toWord (s, s', _) => done ([word s], word s')
        | Word_xorb s => wordBinary s
        | World_save => done ([defaultWord], unit)
-       | _ => Error.bug (concat ["Type.checkPrimApp got strange prim: ",
+       | _ => Error.bug (concat ["HashType.checkPrimApp: strange prim: ",
 				 Prim.toString prim])
    end
 

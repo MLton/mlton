@@ -633,7 +633,7 @@ val showTypes = control {name = "show types",
 
 val ssaPassesSet : (string -> string list Result.t) ref = 
    control {name = "ssaPassesSet",
-	    default = fn _ => Error.bug ("ssaPassesSet not installed"),
+	    default = fn _ => Error.bug ("ControlFlags.ssaPassesSet: not installed"),
 	    toString = fn _ => "<ssaPassesSet>"}
 val ssaPasses : string list ref = 
    control {name = "ssaPasses",
@@ -641,7 +641,7 @@ val ssaPasses : string list ref =
 	    toString = List.toString String.toString}
 val ssa2PassesSet : (string -> string list Result.t) ref = 
    control {name = "ssa2PassesSet",
-	    default = fn _ => Error.bug ("ssa2PassesSet not installed"),
+	    default = fn _ => Error.bug ("ControlFlags.ssa2PassesSet: not installed"),
 	    toString = fn _ => "<ssa2PassesSet>"}
 val ssa2Passes : string list ref = 
    control {name = "ssa2Passes",
@@ -650,7 +650,7 @@ val ssa2Passes : string list ref =
 
 val sxmlPassesSet : (string -> string list Result.t) ref = 
    control {name = "sxmlPassesSet",
-	    default = fn _ => Error.bug ("sxmlPassesSet not installed"),
+	    default = fn _ => Error.bug ("ControlFlags.sxmlPassesSet: not installed"),
 	    toString = fn _ => "<sxmlPassesSet>"}
 val sxmlPasses : string list ref = 
    control {name = "sxmlPasses",
@@ -686,7 +686,7 @@ in
    fun setTargetBigEndian b = r := SOME b
    fun targetIsBigEndian () =
       case !r of
-	 NONE => Error.bug "targetIsBigEndian not set"
+	 NONE => Error.bug "ControlFlags.targetIsBigEndian: not set"
        | SOME b => b
 end
 
@@ -729,7 +729,7 @@ val warnAnn = control {name = "warn unrecognized annotation",
 
 val xmlPassesSet: (string -> string list Result.t) ref = 
    control {name = "xmlPassesSet",
-	    default = fn _ => Error.bug ("xmlPassesSet not installed"),
+	    default = fn _ => Error.bug ("ControlFlags.xmlPassesSet: not installed"),
 	    toString = fn _ => "<xmlPassesSet>"}
 val xmlPasses: string list ref = 
    control {name = "xmlPasses",

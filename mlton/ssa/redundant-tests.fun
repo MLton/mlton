@@ -247,9 +247,9 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 						       then (l', l)
 						    else (l, l')
 						 end
-					    | _ => Error.bug "redundant expected two branches"
+					    | _ => Error.bug "RedundantTests.simplifyFunction: expected two branches"
 					end
-				   | _ => Error.bug "redundant expected con"
+				   | _ => Error.bug "RedundantTests.simplifyFunction: expected con"
 			    in
 			       case varInfo test of
 				  Fact f =>
@@ -401,7 +401,7 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 						  Const.Word w =>
 						     WordX.lt
 						     (w, WordX.max (s, sg), sg)
-						| _ => Error.bug "strange fact")
+						| _ => Error.bug "RedundantTests.add1: strange fact")
 					 | _ => false)
 				then simplify (Prim.wordAdd s, x, s)
 			     else noChange
@@ -420,7 +420,7 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 						  Const.Word w =>
 						     WordX.gt
 						     (w, WordX.min (s, sg), sg)
-						| _ => Error.bug "strange fact")
+						| _ => Error.bug "RedundantTests.sub1: strange fact")
 					 | _ => false)
 				then simplify (Prim.wordSub s, x, s)
 			     else noChange
@@ -432,7 +432,7 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 				   else if signed andalso WordX.isNegOne i
 					   then sub1 (x, s, sg)
 					else noChange
-			      | _ => Error.bug "add of strange const"
+			      | _ => Error.bug "RedundantTests.add: strange const"
 			  datatype z = datatype Prim.Name.t
 		       in
 			  case Prim.name prim of
@@ -464,7 +464,7 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 						      then add1 (x1, s, sg)
 						   else noChange
 					   | _ =>
-						Error.bug "sub of strage const")
+						Error.bug "RedundantTests.sub: strage const")
 				    | _ => noChange
 				end
 			   | _ => noChange

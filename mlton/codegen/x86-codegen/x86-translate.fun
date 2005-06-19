@@ -70,7 +70,6 @@ struct
 
       fun get (f: ('a * 'b) -> 'c) (i: int) (v: ('a * 'b) vector) =
 	 f (Vector.sub (v, i))
-	 handle _ => Error.bug (concat ["toX86Operand: get"])
       fun getOp0 v =
 	 get #1 0 v
 
@@ -110,8 +109,8 @@ struct
 			    scale = scale,
 			    size = x86.Size.BYTE,
 			    class = x86MLton.Classes.Heap}
-		      | _ => Error.bug (concat ["toX86Operand: strange Offset:",
-						" base: ",
+		      | _ => Error.bug (concat ["x86Translate.Operand.toX86Operand: ",
+						"strange Offset: base: ",
 						x86.Operand.toString base,
 						" index: ",
 						x86.Operand.toString index])
@@ -151,8 +150,8 @@ struct
 			    size = x86.Size.BYTE,
 			    class = x86MLton.Classes.Heap}
 		      | _ => Error.bug (concat
-					["toX86Operand: strange Contents",
-					 " base: ",
+					["x86Translate.Operand.toX86Operand: ",
+					 "strange Contents: base: ",
 					 x86.Operand.toString base])	
 		  val sizes = x86.Size.fromCType ty
 	       in
@@ -192,7 +191,7 @@ struct
 		  val offset = Bytes.toInt offset
 		 val ty = Type.toCType ty
 		 val base = toX86Operand base
-		 val _ = Assert.assert("x86Translate.Operand.toX86Operand: Contents/base",
+		 val _ = Assert.assert("x86Translate.Operand.toX86Operand: Offset/base",
 				       fn () => Vector.length base = 1)
 		 val base = getOp0 base
 		 val origin =
@@ -204,8 +203,8 @@ struct
 			scale = x86.Scale.One,
 			size = x86.Size.BYTE,
 			class = x86MLton.Classes.Heap}
-		   | _ => Error.bug (concat ["toX86Operand: strange Offset:",
-					     " base: ",
+		   | _ => Error.bug (concat ["x86Translate.Operand.toX86Operand: ",
+					     "strange Offset: base: ",
 					     x86.Operand.toString base])
 		  val sizes = x86.Size.fromCType ty
 	       in
@@ -217,7 +216,7 @@ struct
 		      scale = x86.Scale.One,
 		      size = size}, size), offset + x86.Size.toBytes size))
 	       end
-	  | Real _ => Error.bug "toX86Operand: Real unimplemented"
+	  | Real _ => Error.bug "x86Translate.Operand.toX86Operand: Real unimplemented"
 	  | Register r =>
 	       let
 		  val ty = Machine.Type.toCType (Register.ty r)
@@ -451,7 +450,7 @@ struct
 					    {dst = dst,
 					     src = src,
 					     size = srcsize}
-			  | _ => Error.bug "toX86Blocks: Move"),
+			  | _ => Error.bug "x86Translate.Statement.toX86Blocks: Move"),
 		      transfer = NONE}),
 		    comment_end]
 		 end 
@@ -567,7 +566,7 @@ struct
       fun doSwitchWord (test, cases, default)
 	= (case (cases, default)
 	     of ([],            NONE)
-	      => Error.bug "toX86Blocks: doSwitchWord"
+	      => Error.bug "x86Translate.Transfer.doSwitchWord"
 	      | ([(_,l)],       NONE) => goto l
 	      | ([],            SOME l) => goto l
 	      | ([(0wx0,f),(0wx1,t)], NONE) => iff(test,t,f)
@@ -639,7 +638,7 @@ struct
 			    {live 
 			     = Vector.fold
 			       ((case returns of
-				    NONE => Error.bug "strange Return"
+				    NONE => Error.bug "x86Translate.Transfer.toX86Blocsk: Return"
 				  | SOME zs => zs),
 				x86.MemLocSet.empty,
 				fn (operand, live) =>

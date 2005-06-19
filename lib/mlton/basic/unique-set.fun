@@ -16,7 +16,8 @@ struct
 
 open S
 
-val _ = Assert.assert ("UniqueSet", fn () => cacheSize >= 1 andalso bits >= 1)
+val _ = Assert.assert ("UniqueSet: cacheSize, bits", fn () => 
+		       cacheSize >= 1 andalso bits >= 1)
 
 type elements = Element.t list
    

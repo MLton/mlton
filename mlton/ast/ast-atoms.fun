@@ -252,7 +252,7 @@ structure Type =
 				    [layout (Vector.sub (tys, 0)),
 				     seq [str "-> ",
 					  layout (Vector.sub (tys, 1))]])
-		       else Error.bug "non-binary -> tyc"
+		       else Error.bug "AstAtoms.Type.layout: non-binary -> tyc"
 	       else layoutApp (Longtycon.layout c, tys, layout)
 	  | Record r => Record.layout {record = r,
 				       separator = ":", extra = "",

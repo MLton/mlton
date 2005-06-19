@@ -20,8 +20,8 @@ fun system s =
       if status = OS.Process.success
 	 then ()
       else if status = OS.Process.failure
-	      then raise Fail (concat ["command failed: ", s])
-	   else raise Fail "strange return"
+	      then Error.bug (concat ["Process.system: command failed: ", s])
+	   else Error.bug (concat ["Process.system: strange return: ", s])
    end
 
 structure Command =
@@ -68,7 +68,7 @@ val succeed = Trace.trace ("Process.succeed", Unit.layout, Unit.layout) succeed
 (* This song and dance is so that succeed can have the right type, unit -> 'a,
  * instead of unit -> unit.
  *)
-val succeed: unit -> 'a = fn () => (succeed (); raise Fail "can't get here")
+val succeed: unit -> 'a = fn () => (succeed (); Error.bug "Process.succeed")
 
 fun fork (c: unit -> unit): Pid.t =
    case Posix.Process.fork () of
@@ -123,7 +123,7 @@ fun forkInOut (c: In.t * Out.t -> unit): Pid.t * In.t * Out.t =
 fun wait (p: Pid.t): unit =
    let val (p', s) = Posix.Process.waitpid (Posix.Process.W_CHILD p, [])
    in if p <> p'
-	 then raise Fail (concat ["wait expected pid ",
+	 then Error.bug (concat ["Process.wait: expected pid ",
 				  Pid.toString p,
 				  " but got pid ",
 				  Pid.toString p'])
@@ -149,7 +149,7 @@ structure Posix =
 	    open Process
 
 	    val wait =
-	       Trace.trace ("Posix.Process.wait", Unit.layout,
+	       Trace.trace ("Process.Posix.Process.wait", Unit.layout,
 			   Layout.tuple2 (Pid.layout, PosixStatus.layout))
 	       wait
 	 end
@@ -165,10 +165,10 @@ fun waits (pids: Pid.t list): unit =
 	       case status of
 		  Posix.Process.W_EXITED =>
 		     List.keepAll (pids, fn p => p <> pid)
-		| _ => raise Fail (concat ["child ",
-					   Pid.toString pid,
-					   " failed with ",
-					   PosixStatus.toString status])
+		| _ => Error.bug (concat ["Process.waits: child ",
+					  Pid.toString pid,
+					  " failed with ",
+					  PosixStatus.toString status])
 	 in waits pids
 	 end
 
@@ -262,7 +262,7 @@ in
       in setgid (Passwd.gid p)
 	 ; setuid (Passwd.uid p)
       end
-   val su = Trace.trace ("su", String.layout, Unit.layout) su
+   val su = Trace.trace ("Process.su", String.layout, Unit.layout) su
    fun userName () = Passwd.name (getpwuid (getuid ()))
 end
 
@@ -370,7 +370,7 @@ fun ps () =
 
 val ps =
    Trace.trace
-   ("ps", Unit.layout,
+   ("Process.ps", Unit.layout,
     List.layout (fn {name, pid, state, ...} =>
 		 Layout.record [("pid", Pid.layout pid),
 				("name", String.layout name),

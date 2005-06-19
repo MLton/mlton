@@ -244,18 +244,18 @@ struct
 	    
 	val _
 	  = Assert.assert
-	    ("verifyLiveInfo",
+	    ("x86GenerateTransfers.verifyLiveInfo",
 	     fn () => x86Liveness.LiveInfo.verifyLiveInfo {chunk = chunk,
 							   liveInfo = liveInfo})
 	val _
 	  = Assert.assert
-	    ("verifyJumpInfo", 
+	    ("x86GenerateTransfers.verifyJumpInfo", 
 	     fn () => x86JumpInfo.verifyJumpInfo {chunk = chunk,
 						  jumpInfo = jumpInfo})
 
 	val _
 	  = Assert.assert
-	    ("verifyEntryTransfer", 
+	    ("x86GenerateTransfers.verifyEntryTransfer", 
 	     fn () => x86EntryTransfer.verifyEntryTransfer {chunk = chunk})
 
 	local
@@ -397,7 +397,7 @@ struct
 	      setLive(liveInfo, label', live);
 	      setProfileLabel(label', profileLabel');
 	      incNear(jumpInfo, label');
-	      Assert.assert("pushCompensationBlock",
+	      Assert.assert("x86GenerateTransfers.pushCompensationBlock",
 			    fn () => getNear(jumpInfo, label') = Count 1);
 	      x86LiveTransfers.setLiveTransfersEmpty(liveTransfers, label');
 	      setLayoutInfo(label', SOME block);
@@ -522,7 +522,7 @@ struct
 						       {dst = dst,
 							src = Operand.memloc src,
 							size = dstsize})::stmts
-						 | _ => Error.bug "CReturn")
+						 | _ => Error.bug "x86GenerateTransfers.generateAll: CReturn")
 					    end
 			       in
 				 case frameInfo of
@@ -1092,7 +1092,7 @@ struct
 				 val (fptrArg, args) =
 				    case args of
 				       fptrArg::args => (fptrArg, args)
-				     | _ => Error.bug "CCall"
+				     | _ => Error.bug "x86GenerateTransfers.generateAll: CCall"
 			      in
 				 (AppendList.single
 				  (Assembly.instruction_mov

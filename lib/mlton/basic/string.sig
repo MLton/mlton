@@ -114,7 +114,7 @@ open S
 
 val _ =
    Assert.assert
-   ("String", fn () =>
+   ("TestString", fn () =>
     dropl("abc", fn c => c = #"a") = "bc"
     andalso "\\000" = escapeC "\000"
     andalso "abc" = removeTrailing ("abc  ", Char.isSpace)

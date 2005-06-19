@@ -79,6 +79,6 @@ fun equals (c, c') =
 val equals = Trace.trace2 ("Const.equals", layout, layout, Bool.layout) equals
 
 val lookup: ({default: string option, name: string} * ConstType.t -> t) ref =
-   ref (fn _ => Error.bug "Const.lookup not set")
+   ref (fn _ => Error.bug "Const.lookup: not set")
 
 end

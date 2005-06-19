@@ -25,7 +25,7 @@ val inject = Inject
    
 val project =
    fn Inject x => x
-    | _ => Error.bug "project"
+    | _ => Error.bug "BoundedOrder.project"
     
 val compare =
    fn (Min, Min) => R.EQUAL

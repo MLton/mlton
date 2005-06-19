@@ -509,7 +509,8 @@ structure Interface =
 					in
 					   Error.bug
 					   (toString
-					    (seq [str "datatype ",
+					    (seq [str "ElaborateEnv.Interface.typeStrToEnv",
+						  str "datatype ",
 						  TypeStr.layout s,
 						  str " realized with scheme ",
 						  EtypeStr.layout typeStr]))
@@ -592,7 +593,7 @@ structure Interface =
 	       end
 
 	    val fromEnv =
-	       Trace.trace ("Interface.TypeStr.fromEnv", EtypeStr.layout, layout)
+	       Trace.trace ("ElaborateEnv.Interface.TypeStr.fromEnv", EtypeStr.layout, layout)
 	       fromEnv
 	 end
    end
@@ -625,7 +626,10 @@ structure Time:>
 
       fun next () = Counter.next c
 
-      val next = Trace.trace ("Time.next", Unit.layout, layout) next
+      val next = 
+	 Trace.trace 
+	 ("ElaborateEnv.Time.next", Unit.layout, layout) 
+	 next
    end
 
 structure Info =
@@ -987,7 +991,7 @@ structure Structure =
 				   (S, Interface.flexibleTycons I,
 				    fn (name, _, typeStr, {nest}) =>
 				    case typeStr of
-				       NONE => Error.bug "missing typeStr"
+				       NONE => Error.bug "ElaborateEnv.Structure.layoutAbbrev: missing typeStr"
 				     | SOME typeStr =>
 					  List.push
 					  (wheres,
@@ -1058,7 +1062,7 @@ structure FunctorClosure =
       fun apply (T {apply, ...}, S, nest) = apply (S, nest)
 
       val apply =
-	 Trace.trace3 ("FunctorClosure.apply",
+	 Trace.trace3 ("ElaborateEnv.FunctorClosure.apply",
 		       layout,
 		       Structure.layout,
 		       List.layout String.layout,
@@ -1538,14 +1542,14 @@ fun dummyStructure (I: Interface.t, {prefix: string})
       fun instantiate (S, f) =
 	 Structure.realize (S, flexible, fn (_, c, so, _) =>
 			    case so of
-			       NONE => Error.bug "instantiate"
+			       NONE => Error.bug "ElaborateEnv.dummyStructure.instantiate"
 			     | SOME s => f (c, s))
    in
       (S, instantiate)
    end
 
 val dummyStructure =
-   Trace.trace ("dummyStructure",
+   Trace.trace ("ElaborateEnv.dummyStructure",
 		Interface.layout o #1,
 		Structure.layoutPretty o #1)
    dummyStructure
@@ -1987,7 +1991,7 @@ val extend:
 	       case uses of
 		  New => newUses ()
 		| Old u => u
-		| Rebind => Error.bug "rebind new"
+		| Rebind => Error.bug "ElaborateEnv.extend.rebind.new"
 	 in
 	    {domain = domain,
 	     range = range,
@@ -2081,7 +2085,7 @@ fun extendVar (E, x, x', s, ir) =
 
 val extendVar =
    Trace.trace
-   ("extendVar",
+   ("ElaborateEnv.extendVar",
     fn (_, x, x', s, _) =>
     Layout.tuple [Ast.Var.layout x, Var.layout x', Scheme.layoutPretty s],
     Unit.layout)
@@ -2451,7 +2455,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
        * instantiated and then re-generalized will be at a new time, so we can
        * check if something should not be generalized.
        *)
-      val () = TypeEnv.tick {useBeforeDef = fn _ => Error.bug "cut tick"}
+      val () = 
+	 TypeEnv.tick {useBeforeDef = fn _ => 
+		       Error.bug "ElaborateEnv.transparentCut: cut tick"}
       val sign =
 	 if isFunctor
 	    then "argument signature"
@@ -2500,7 +2506,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	 end
       val equalSchemes =
 	 Trace.trace
-	 ("equalSchemes",
+	 ("ElaborateEnv.transparentCut.equalSchemes",
 	  fn (s, s', _, _, _, _) => Layout.tuple [Scheme.layout s,
 						  Scheme.layout s'],
 	  Unit.layout)
@@ -2634,7 +2640,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 				 Vector.tabulate
 				 (n, fn _ =>
 				  Tyvar.newNoname {equality = false})
-			    | _ => Error.bug "Nary tycon"
+			    | _ => Error.bug "ElaborateEnv.transparentCut.handleType: Nary tycon"
 		     in
 			Scheme.make
 			{canGeneralize = true,
@@ -2739,7 +2745,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	       (strs, strsS, Strid.equals,
 		fn (strid, tm, opt) =>
 		case opt of
-		   NONE => Error.bug "checkMatch str"
+		   NONE => Error.bug "ElaborateEnv.transparentCut.checkMatch: str"
 		 | SOME (i, S) => 
 		      checkMatch (tm, S, #2 (Array.sub (strsI, i)),
 				  strid :: strids))
@@ -2748,7 +2754,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	       (types, typesS, Ast.Tycon.equals,
 		fn (name, _, opt) =>
 		case opt of
-		   NONE => Error.bug "checkMatch type"
+		   NONE => Error.bug "ElaborateEnv.transparentCut.checkMatch: type"
 		 | SOME (i, typeStr) =>
 		      ignore (handleType
 			      (typeStr, #2 (Array.sub (typesI, i)),
@@ -2757,7 +2763,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	    ()
 	 end
       val checkMatch =
-	 Trace.trace4 ("checkMatch",
+	 Trace.trace4 ("ElaborateEnv.transparentCut.checkMatch",
 		       TyconMap.layout FlexibleTycon.layout,
 		       Structure.layout,
 		       Interface.layout,
@@ -2996,7 +3002,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
    end
 
 val cut =
-   Trace.trace ("cut",
+   Trace.trace ("ElaborateEnv.cut",
 		fn (_, S, I, _, _) =>
 		Layout.tuple [Structure.layoutPretty S, Interface.layout I],
 		Structure.layoutPretty o #1)
@@ -3098,13 +3104,15 @@ fun functorClosure
        *)
       val firstTycon =
 	 case !allTycons of
-	    [] => Error.bug "no front of allTycons"
+	    [] => Error.bug "ElaborateEnv.functorClosure: firstTycons"
 	  | c :: _ => c
       (* Need to tick here so that any tycons created in the dummy structure
        * for the functor formal have a new time, and will therefore report an
        * error if they occur before the functor declaration.
        *)
-      val _ = TypeEnv.tick {useBeforeDef = fn _ => Error.bug "functor tick"}
+      val _ = 
+	 TypeEnv.tick {useBeforeDef = fn _ => 
+		       Error.bug "ElaborateEnv.functorClosure: tick"}
       val (formal, instantiate) = dummyStructure (argInt, {prefix = prefix})
       val _ = insideFunctor := true
       (* Keep track of all tycons created during the instantiation of the
@@ -3122,7 +3130,7 @@ fun functorClosure
       val _ = allTycons := let
 			      fun loop cs =
 				 case cs of
-				    [] => Error.bug "allTycons missing front"
+				    [] => Error.bug "ElaborateEnv.functorClosure: missing firstTycon"
 				  | c :: cs =>
 				       if Tycon.equals (c, firstTycon)
 					  then cs
@@ -3210,7 +3218,7 @@ fun functorClosure
 				       (case TypeStr.node s of
 					   Datatype {tycon, ...} => tycon
 					 | Scheme _ =>
-					      Error.bug "bad datatype"
+					      Error.bug "ElaborateEnv.functorClosure.apply: bad datatype"
 					 | Tycon c => c)
 			   in
 			      TypeStr.data (tycon, k, replaceCons cons)

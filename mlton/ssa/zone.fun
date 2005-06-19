@@ -203,7 +203,7 @@ fun zoneFunction f =
 			      Vector.map
 			      (components, fn x =>
 			       case varInfo x of
-				  Global => Error.bug "global component"
+				  Global => Error.bug "Zone.zoneFunction: global component"
 				| Local {ty, uses, ...} =>
 				     (ignore (List.pop uses)
 				      ; {elt = ty,

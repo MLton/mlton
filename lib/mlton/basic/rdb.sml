@@ -38,10 +38,11 @@ structure Domain =
 	 let
 	    exception E of 'a
 	    val contains = fn E _ => true | _ => false
-	    val toString = fn E x => toString x | _ => Error.bug "toString"
+	    val toString = fn E x => toString x 
+	                    | _ => Error.bug "RDB.Domain.new.toString"
 	    val compare =
 	       fn (E x, E y) => compare (x, y)
-		| _ => Error.bug "Value.<="
+		| _ => Error.bug "RDB.Domain.new.compare"
 	    val d = T {compare = compare,
 		      contains = contains,
 		      just = just,
@@ -114,7 +115,7 @@ structure Heading =
 
       fun info (T l, a) =
 	 case List.peeki (l, fn (_, (a', _)) => Attribute.equals (a, a')) of
-	    NONE => Error.bug "info"
+	    NONE => Error.bug "RDB.Heading.info"
 	  | SOME (i, (_, d)) => (i, d)
 
       val position = #1 o info
@@ -128,11 +129,11 @@ fun add (T {heading = Heading.T attrs, body, ...}, r) =
    (body,
     List.fold (rev attrs, [], fn ((a, d), ac) =>
 	      case List.peek (r, fn (a', _) => Attribute.equals (a, a')) of
-		 NONE => Error.bug "addRecord"
+		 NONE => Error.bug "RDB.add"
 	       | SOME (_, v) =>
 		    if Domain.contains (d, v)
 		       then v :: ac
-		    else Error.bug "addRecord"))
+		    else Error.bug "RDB.add"))
    
 fun cardinality (T {body, ...}) = List.length (!body)
 

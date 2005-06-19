@@ -69,7 +69,7 @@ structure VarTree =
 		  Flat => Prod.fold (children, a, loop)
 		| NotFlat {var, ...} =>
 		     case var of
-			NONE => Error.bug "foldRoots"
+			NONE => Error.bug "DeepFlatten.VarTree.foldRoots"
 		      | SOME x => f (x, a)
 	 in
 	    loop (t, a)
@@ -160,7 +160,7 @@ fun flatten {base: Var.t Base.t option,
 				froms = fs,
 				offset = offset,
 				tos = Tree.children to}
-	    else Error.bug "cannot flatten from Flat to NotFlat"
+	    else Error.bug "DeepFlatten.flatten: cannot flatten from Flat to NotFlat"
        | VarTree.NotFlat {ty, var} =>
 	    let
 	       val (var, ss) =
@@ -169,7 +169,7 @@ fun flatten {base: Var.t Base.t option,
 			let
 			   val base =
 			      case base of
-				 NONE => Error.bug "flatten missing base"
+				 NONE => Error.bug "DeepFlatten.flatten: flatten missing base"
 			       | SOME base => base
 			   val result = Var.newNoname ()
 			in
@@ -211,7 +211,7 @@ and flattensAt {base: Var.t Base.t option,
 	  let
 	     val () =
 		if isMutable
-		   then Error.bug "flattensAt mutable"
+		   then Error.bug "DeepFlatten.flattensAt: mutable"
 		else ()
 	     val ({offset}, t, ss') =
 		flatten {base = base,
@@ -340,7 +340,7 @@ structure Value =
 		end
 	   | (Weak {arg = a, ...}, Weak {arg = a', ...}) =>
 		unify (a, a')
-	   | _ => Error.bug "strange unify") arg
+	   | _ => Error.bug "DeepFlatten.unify: strange") arg
       and unifyProd =
 	 fn (p, p') =>
 	 Vector.foreach2
@@ -390,7 +390,7 @@ structure Value =
 			   | NotFlat => unify (from, to)
 		    end)
 	   | (Weak _, Weak _) => unify (from, to)
-	   | _ => Error.bug "strange coerce") arg
+	   | _ => Error.bug "DeepFlatten.coerce: strange") arg
       and coerceProd =
 	 fn {from = p, to = p'} =>
 	 Vector.foreach2
@@ -648,7 +648,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			 in
 			    v
 			 end
-		    | _ => Error.bug "strangs con value")
+		    | _ => Error.bug "DeepFlatten.object: strange con value")
 	 end
       val object =
 	 Trace.trace
@@ -682,7 +682,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			      (Prod.dest a, Prod.dest a',
 			       fn ({elt = v, ...}, {elt = v', ...}) =>
 			       Value.unify (v, v'))
-			 | _ => Error.bug "Array_toVector"
+			 | _ => Error.bug "DeepFlatten.primApp: Array_toVector"
 		  in
 		     res
 		  end
@@ -700,9 +700,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		      Value.Ground t =>
 			 typeValue (case Type.dest t of
 				       Type.Weak t => t
-				     | _ => Error.bug "deWeak")
+				     | _ => Error.bug "DeepFlatten.primApp: deWeak")
 		    | Value.Weak {arg, ...} => arg
-		    | _ => Error.bug "Value.deWeak")
+		    | _ => Error.bug "DeepFlatten.primApp: Value.deWeak")
 	     | Weak_new =>
 		  (case makeTypeValue resultType of
 		      Const v => v
@@ -718,9 +718,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		  (case Type.dest t of
 		      Type.Object {args, ...} =>
 			 typeValue (Prod.elt (args, offset))
-		    | _ => Error.bug "select Ground")
+		    | _ => Error.bug "DeepFlatten.select: Ground")
 	     | Object e => Object.select (Equatable.value e, offset)
-	     | _ => Error.bug "select"
+	     | _ => Error.bug "DeepFlatten.select:"
 	 end
       fun update {base, offset, value} =
 	 coerce {from = value,
@@ -789,7 +789,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			| SOME v => 
 			     case Type.dest (Value.finalType v) of
 				Type.Object {args, ...} => args
-			      | _ => Error.bug "strange con"
+			      | _ => Error.bug "DeepFlatten.datatypes: strange con"
 		 in
 		    {args = args, con = con}
 		 end)
@@ -819,7 +819,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		     end)
       fun replaceVar (x: Var.t): Var.t =
 	 let
-	    fun bug () = Error.bug (concat ["replaceVar ", Var.toString x])
+	    fun bug () = Error.bug (concat ["DeepFlatten.replaceVar ", Var.toString x])
 	    val Tree.T (info, _) = varTree x
 	 in
 	    case info of

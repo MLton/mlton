@@ -37,7 +37,7 @@ fun backwardChars (T {string, pos},n) =
       else T {string = string, pos = pos}
    end
 fun backwardChar m = backwardChars (m, 1)
-val backwardChar = Trace.trace ("backwardChar", layout, layout) backwardChar
+val backwardChar = Trace.trace ("Mark.backwardChar", layout, layout) backwardChar
 
 exception ForwardChars
 fun forwardChars (T {string, pos},n) =
@@ -46,7 +46,7 @@ fun forwardChars (T {string, pos},n) =
       else T {string = string, pos = pos}
    end
 fun forwardChar m = forwardChars (m, 1)
-val forwardChar = Trace.trace ("forwardChar", layout, layout) forwardChar
+val forwardChar = Trace.trace ("Mark.forwardChar", layout, layout) forwardChar
 
 fun charAt (T {string, pos}) = String.sub (string, pos)
    
@@ -106,7 +106,7 @@ fun lookingAtString (T {string, pos}, string') =
    in loop (pos, 0)
    end
 val lookingAtString =
-   Trace.trace2 ("lookingAtString", layout, String.layout, Bool.layout)
+   Trace.trace2 ("Mark.lookingAtString", layout, String.layout, Bool.layout)
    lookingAtString
 
 exception Search
@@ -150,7 +150,7 @@ val int = num (Int.fromString, Int)
 exception Real
 val real = num (Real.fromString, Real)
 
-val real = Trace.trace ("real", layout, Layout.tuple2 (layout, Real.layout)) real
+val real = Trace.trace ("Mark.real", layout, Layout.tuple2 (layout, Real.layout)) real
 
 val op < = fn (m, m') => pos m < pos m'
 

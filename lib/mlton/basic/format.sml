@@ -24,7 +24,7 @@ val lit: string -> ('a, 'a) t = fn s => fn (k, ss) => k (s :: ss)
 val eol: ('a, 'a) t = fn z => lit "\n" z
 
 (* val concat =
- *    Trace.trace ("concat", List.layout String.layout, String.layout) concat
+ *    Trace.trace ("Format.concat", List.layout String.layout, String.layout) concat
  *)
    
 val format: (string, 'a) t -> 'a = fn f => f (concat o rev, [])

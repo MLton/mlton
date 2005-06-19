@@ -66,7 +66,7 @@ local
 in
    fun wordLessThan (w: word): word =
       if w = 0w0
-	 then Error.bug "Random.word"
+	 then Error.bug "Random.wordLessThan"
       else
 	 let
 	    val () =

@@ -132,7 +132,7 @@ structure Transfer =
 					    then Small (Bytes.fromIntInf w)
 					 else Big z
 				      end
-				 | _ => Error.bug "strange numBytes")
+				 | _ => Error.bug "LimitCheck.Transfer.bytesAllocated: strange numBytes")
 			  | _ => Big z
 		      end)
 	  | _ => Small Bytes.zero
@@ -442,7 +442,7 @@ fun insertFunction (f: Function.t,
 				  (Word.fromIntInf (WordX.toIntInf w),
 				   Bytes.toWord extraBytes))
 				 handle Overflow => Runtime.allocTooLarge)
-			   | _ => Error.bug "strange primitive bytes needed")
+			   | _ => Error.bug "LimitCheck.bigAllocation: strange primitive bytes needed")
 		    | _ =>
 			 let
 			    val bytes = Var.newNoname ()
@@ -499,7 +499,7 @@ structure Node = Graph.Node
 structure Edge = Graph.Edge
 structure Forest = Graph.LoopForest
 
-val traceMaxPath = Trace.trace ("maxPath", Int.layout, Bytes.layout)
+val traceMaxPath = Trace.trace ("LimitCheck.maxPath", Int.layout, Bytes.layout)
 
 fun isolateBigTransfers (f: Function.t): Function.t =
    let

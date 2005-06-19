@@ -87,7 +87,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 		     val sum =
 			case S2.Type.dest ty of
 			   S2.Type.Datatype tycon => tycon
-			 | _ => Error.bug "convertStatement saw strange ConApp"
+			 | _ => Error.bug "SsaToSsa2.convertStatement: strange ConApp"
 		     val variant = Var.newNoname ()
 		  in
 		     Vector.new2
@@ -147,7 +147,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 	     | S.Exp.Var x => simple (S2.Exp.Var x)
 	 end
       val convertStatement =
-	 Trace.trace ("convertStatement",
+	 Trace.trace ("SsaToSsa2.convertStatement",
 		      S.Statement.layout,
 		      Vector.layout S2.Statement.layout)
 	    convertStatement
@@ -210,7 +210,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 			     in
 				(c, l')
 			     end
-		     | _ => Error.bug "strange object type"
+		     | _ => Error.bug "SsaToSsa2.convertCases: strange object type"
 		 end))
 	  | S.Cases.Word v => S2.Cases.Word v
       fun convertTransfer (t: S.Transfer.t): S2.Transfer.t =

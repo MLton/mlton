@@ -919,7 +919,7 @@ fun remove (Program.T {datatypes, globals, functions, main})
 		  val cont 
 		    = if FuncInfo.mayReturn fi'
 			then case cont 
-			       of None => Error.bug "cont:None"
+			       of None => Error.bug "RemoveUnused.simplifyTransfer: cont:None"
 				| Caller
 				=> if (case (FuncInfo.returns fi,
 					     FuncInfo.returns fi')
@@ -927,7 +927,7 @@ fun remove (Program.T {datatypes, globals, functions, main})
 					  => Vector.forall2
 					     (xts, yts, fn ((x, _), (y, _)) =>
 					      VarInfo.isUsed x = VarInfo.isUsed y)
-					  | _ => Error.bug "cont:Caller")
+					  | _ => Error.bug "RemoveUnused.simplifyTransfer: cont:Caller")
 				     then Caller
 				     else Some (getReturnContFunc
 						(fi, valOf (FuncInfo.returns fi')))
@@ -939,7 +939,7 @@ fun remove (Program.T {datatypes, globals, functions, main})
 		  val handler
 		    = if FuncInfo.mayRaise fi'
 			then case handler
-			       of None => Error.bug "handler:None"
+			       of None => Error.bug "RemoveUnused.simplifyTransfer: handler:None"
 				| Caller
 				=> if (case (FuncInfo.raises fi,
 					     FuncInfo.raises fi')
@@ -947,7 +947,7 @@ fun remove (Program.T {datatypes, globals, functions, main})
 					  => Vector.forall2
 					     (xts, yts, fn ((x, _), (y, _)) =>
 					      VarInfo.isUsed x = VarInfo.isUsed y)
-					  | _ => Error.bug "handler:Caller")
+					  | _ => Error.bug "RemoveUnused.simplifyTransfer: handler:Caller")
 				     then Caller
 				     else Some (getRaiseHandlerFunc
 						(fi, valOf (FuncInfo.raises fi')))

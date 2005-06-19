@@ -115,7 +115,7 @@ structure Operand =
 	    then z
 	 else Cast (z, t)
 
-      val cast = Trace.trace2 ("Operand.cast", layout, Type.layout, layout) cast
+      val cast = Trace.trace2 ("Rssa.Operand.cast", layout, Type.layout, layout) cast
 
       val rec isLocation =
 	 fn ArrayOffset _ => true
@@ -872,7 +872,7 @@ structure Program =
 	 let
 	    val tracePrimApply =
 	       Trace.trace3
-	       ("Rssa.primApply",
+	       ("Rssa.copyProp.primApply",
 		Prim.layout,
 		List.layout (ApplyArg.layout (Var.layout o #var)),
 		Layout.ignore,
@@ -1055,7 +1055,7 @@ structure Program =
 	 end
 
       val traceGoto =
-	 Trace.trace ("checkHandlers.goto", Label.layout, Unit.layout)
+	 Trace.trace ("Rssa.checkHandlers.goto", Label.layout, Unit.layout)
 	 
       fun checkHandlers (T {functions, ...}) =
 	 let
@@ -1137,7 +1137,7 @@ structure Program =
 					  HandlerInfo.layout (labelInfo label)])
 				    blocks]
 				end)
-			       ; Error.bug (concat ["handler mismatch at ", msg]))
+			       ; Error.bug (concat ["Rssa.checkHandlers: handler mismatch at ", msg]))
 			   fun assert (msg, f) =
 			      if f
 				 then ()
@@ -1247,14 +1247,14 @@ structure Program =
 			Global => ()
 		      | Undefined =>
 			   set (x, if isGlobal then Global else InScope)
-		      | _ => Error.bug ("duplicate definition of "
+		      | _ => Error.bug ("Rssa.checkScopes: duplicate definition of "
 					^ (Layout.toString (layout x)))
 		  fun reference x =
 		     case get x of
 			Global => ()
 		      | InScope => ()
 		      | _ => Error.bug (concat
-					["reference to ",
+					["Rssa.checkScopes: reference to ",
 					 Layout.toString (layout x),
 					 " not in scope"])
 		  fun unbind x =
@@ -1354,7 +1354,7 @@ structure Program =
 	       Property.getSetOnce (Var.plist,
 				    Property.initRaise ("type", Var.layout))
 	    val setVarType =
-	       Trace.trace2 ("setVarType", Var.layout, Type.layout,
+	       Trace.trace2 ("Rssa.setVarType", Var.layout, Type.layout,
 			     Unit.layout)
 	       setVarType
 	    fun checkOperand (x: Operand.t): unit =
@@ -1393,7 +1393,7 @@ structure Program =
 		   Err.check ("operand", ok, fn () => Operand.layout x)
 		end
 	    val checkOperand =
-	       Trace.trace ("checkOperand", Operand.layout, Unit.layout)
+	       Trace.trace ("Rssa.checkOperand", Operand.layout, Unit.layout)
 	       checkOperand
 	    fun checkOperands v = Vector.foreach (v, checkOperand)
 	    fun check' (x, name, isOk, layout) =
@@ -1683,7 +1683,7 @@ structure Program =
 	 in
 	    ()
 	 end handle Err.E e => (Layout.outputl (Err.layout e, Out.error)
-				; Error.bug "Rssa type error")
+				; Error.bug "Rssa.typeCheck")
    end
 
 end

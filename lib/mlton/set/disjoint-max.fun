@@ -25,15 +25,15 @@ and info =
 	     child: t option ref}
     
 fun parent (T{info = ref (Parent p), ...}) = p
-  | parent _ = Error.bug "parent"
+  | parent _ = Error.bug "DisjointMax.parent"
 fun setParent(T{info, ...}, p) = info := Parent p
 fun labelRef (T{label, ...}) = label
 val (label, setLabel) = Ref.getAndSet labelRef
 fun sizeRef (T{info = ref(Root{size, ...}), ...}) = size
-  | sizeRef _ = Error.bug "sizeRef"
+  | sizeRef _ = Error.bug "DisjointMax.sizeRef"
 val (size, setSize) = Ref.getAndSet sizeRef
 fun childRef (T{info = ref(Root{child, ...}), ...}) = child
-  | childRef _ = Error.bug "childRef"
+  | childRef _ = Error.bug "DisjointMax.childRef"
 val (childOption, setChildOption) = Ref.getAndSet childRef
 val child = Option.projector childOption
 fun setChild(r, c) = setChildOption(r, SOME c)
@@ -52,7 +52,7 @@ fun singleton l = T{label = ref l,
 		    info = ref (Root{size = ref 0, child = ref NONE})}
 
 fun update(r, l) =
-   if not(isRoot r) then Error.error "update"
+   if not(isRoot r) then Error.error "DisjointMax.update"
    else if O.<=(l, label r) then ()
    else let
 	   fun link r =
@@ -78,7 +78,7 @@ fun update(r, l) =
 	end
 	   
 fun link(r, r') =
-   if not (isRoot r andalso isRoot r') then Error.error "link"
+   if not (isRoot r andalso isRoot r') then Error.error "DisjointMax.link"
    else let val s = size r
 	    val s' = size r'
 	    fun move NONE = ()

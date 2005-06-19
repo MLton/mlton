@@ -1002,7 +1002,7 @@ in
        (HashSet.lookupOrInsert
 	(table, String.hash name,
 	 fn {string, ...} => name = string,
-	 fn () => Error.bug (concat ["unknown primitive: ", name]))))
+	 fn () => Error.bug (concat ["Prim.fromString: unknown primitive: ", name]))))
 end
 
 fun ('a, 'b) extractTargs (prim: 'b t,
@@ -1050,7 +1050,7 @@ fun ('a, 'b) extractTargs (prim: 'b t,
 
 val extractTargs =
    fn z =>
-   Trace.trace ("extractTargs", layout o #1, Layout.ignore) extractTargs z
+   Trace.trace ("Prim.extractTargs", layout o #1, Layout.ignore) extractTargs z
 
 structure SmallIntInf = Const.SmallIntInf
 
@@ -1405,7 +1405,7 @@ fun ('a, 'b) apply (p: 'a t,
 			 | 8 => StringCvt.OCT 
 			 | 10 => StringCvt.DEC
 			 | 16 => StringCvt.HEX
-			 | _ => Error.bug "strange base for IntInf_toString"
+			 | _ => Error.bug "Prim.apply: strange base for IntInf_toString"
 		  in
 		     ApplyResult.Const (Const.string (IntInf.format (i, base)))
 		  end

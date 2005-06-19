@@ -42,7 +42,7 @@ fun globalize {program = Program.T {datatypes, body, ...},
 			      orelse Tycon.equals (c, Tycon.reff))
 			     then Vector.forall (ts, typeIsSmall)
 			  else true
-	     | _ => Error.bug "typeIsSmall saw type variable"
+	     | _ => Error.bug "Globalize.typeIsSmall: type variable"
 	 end
       val typeIsSmall =
 	 Trace.trace ("Globalize.typeIsSmall", Type.layout, Bool.layout)
@@ -145,7 +145,7 @@ fun globalize {program = Program.T {datatypes, body, ...},
 		     end
 		     ; Vector.foreach (decs, loopLambda o #lambda)
 		     ; once)
-	    | _ => Error.bug "globalize saw strange dec") arg
+	    | _ => Error.bug "Globalize.loopDec: strange dec") arg
       and loopLambda (l: Lambda.t): unit =
 	 ignore (loopExp (Lambda.body l, false))
       val _ = loopExp (body, true)

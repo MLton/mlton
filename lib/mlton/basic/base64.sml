@@ -45,7 +45,7 @@ structure Base64: BASE64 =
 				  then (d + 1, n + 2)
 			       else (d + 1, n + 1)
 	    val sub = fn i => if i >= n then 0w0 else sub i
-	    val _ = Assert.assert("Base64.encode", fn () => n' mod 3 = 0)
+	    val _ = Assert.assert("Base64.encodeGen", fn () => n' mod 3 = 0)
 	    val numChars: int = 4 * d
 	    val chars = CharArray.array(numChars, #"\000")
 	    fun updateChar(j, c) = CharArray.update(chars, j, c)
@@ -92,7 +92,7 @@ structure Base64: BASE64 =
 	 let
 	    val n = String.size string
 	    val (d, m) = Int.divMod(n, 4)
-	    val _ = Assert.assert("Base64.decode", fn () => m = 0)
+	    val _ = Assert.assert("Base64.decodeGen", fn () => m = 0)
 	    fun sub i = String.sub(string, i)
 	    val numPads =
 	       if pad = sub(n - 1)
@@ -116,7 +116,7 @@ structure Base64: BASE64 =
 			      case charToWord8 c of
 				 NONE =>
 				    Error.bug (concat
-					       ["Base64.decode: strange char ",
+					       ["Base64.decodeGen: strange char ",
 						Char.escapeSML c])
 			       | SOME w => w
 			end

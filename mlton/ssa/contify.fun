@@ -195,14 +195,14 @@ structure ContFuncGraph =
     fun newFuncGraph {getFuncData: Func.t -> FuncData.t}
       = let
 	  val {G, addEdge, getNodeInfo, getFuncNode, reset, ...}
-	    = newContFuncGraph {getContData = fn _ => Error.bug "newFuncGraph",
+	    = newContFuncGraph {getContData = fn _ => Error.bug "Contify.ContFuncGraph.newFuncGraph",
 				getFuncData = getFuncData}
 	in
 	  {G = G,
 	   addEdge = addEdge,
 	   getNodeInfo = fn n => case getNodeInfo n
 				   of FuncNode f => f
-				    | ContNode _ => Error.bug "newFuncGraph",
+				    | ContNode _ => Error.bug "Contify.ContFuncGraph.newFuncGraph",
 	   getFuncNode = getFuncNode,
 	   reset = reset}
 	end
@@ -428,7 +428,7 @@ structure AnalyzeDom =
 		      then node
 		   else ancestor parent
 	      | Graph.Root => node
-	      | Graph.Unreachable => Error.bug "unreachable"
+	      | Graph.Unreachable => Error.bug "Contify.AnalyzeDom.ancestor: unreachable"
 
           val _
 	    = List.foreach
@@ -445,7 +445,7 @@ structure AnalyzeDom =
 		     if (case idom f_node of
 			    Graph.Idom n => Node.equals (n, Root)
 			  | Graph.Root => true
-			  | Graph.Unreachable => Error.bug "unreachable")
+			  | Graph.Unreachable => Error.bug "Contify.AnalyzeDom.idom: unreachable")
 		       then if f_reach
 			      then f_ADom := Unknown
 			      else f_ADom := Uncalled
@@ -553,13 +553,13 @@ structure Transform =
 		   end)
 
 	  val traceAddFuncs =
-	     Trace.trace3 ("addFuncs",
+	     Trace.trace3 ("Contify.Transform.addFuncs",
 			   Func.layout,
 			   List.layout Func.layout,
 			   Return.layout,
 			   Unit.layout)
 	  val traceTransBlock =
-	     Trace.trace3 ("transBlock",
+	     Trace.trace3 ("Contify.Transform.transBlock",
 			   Func.layout,
 			   Label.layout o Block.label,
 			   Return.layout,

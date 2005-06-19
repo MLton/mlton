@@ -38,7 +38,7 @@ fun env + env' =
 
 fun plus es = List.fold(es, empty, fn (e, accum) => accum + e)
 
-val plus = Trace.trace("plus", List.layout layout, layout) plus
+val plus = Trace.trace("BasicEnvToEnv.plus", List.layout layout, layout) plus
 
 fun remove(env, d) =
    fromList(List.remove(toList env, fn (d', _) => Domain.equals(d, d')))
@@ -47,7 +47,7 @@ fun lookup(env, d) = case peek(env, d) of
    SOME r => r
  | NONE => (Layout.output(Domain.layout d, Out.error) ;
 	    Out.newline Out.error ;
-	    Error.bug "lookup")
+	    Error.bug "BasicEnvToEnv.lookup")
 
 fun restrict(env, ds) = new(ds, fn d => lookup(env, d))
 
@@ -55,7 +55,7 @@ fun multiExtend(env, ds, rs) =
    case (ds, rs) of
       ([], []) => env
     | (d :: ds, r :: rs) => multiExtend(extend(env, d, r), ds, rs)
-    | _ => Error.bug "multiExtend"
+    | _ => Error.bug "BasicEnvToEnv.multiExtend"
 
 fun fold(e, b, f) = List.fold(toList e, b, fn ((_, r), b) => f(r, b))
 fun foldi(e, b, f) = List.fold(toList e, b, fn ((d, r), b) => f(d, r, b))

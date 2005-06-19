@@ -130,7 +130,7 @@ open S
 
 val _ =
    Assert.assert
-   ("Vector", fn () =>
+   ("TestVector", fn () =>
     let
        fun check ls =
 	  List.concat ls = toList (concat (List.map (ls, fromList)))

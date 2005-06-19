@@ -21,7 +21,7 @@ fun sort (a: 'a array, op <= : 'a * 'a -> bool): unit =
 		if true
 		   then ()
 		else
-		   Assert.assert ("insertionSort1", fn () =>
+		   Assert.assert ("InsertionSort.sort: 1", fn () =>
 				  Array.isSortedRange (a, 0, i, op <=))
 	     val t = x i
 	     fun sift (j: int) =
@@ -29,7 +29,7 @@ fun sort (a: 'a array, op <= : 'a * 'a -> bool): unit =
 		    then ()
 		 else
 		    Assert.assert
-		    ("insertionSort2", fn () =>
+		    ("InsertionSort.sort: 2", fn () =>
 		     Array.isSortedRange (a, 0, j, op <=)
 		     andalso Array.isSortedRange (a, j + 1, i + 1, op <=)
 		     andalso Int.forall (j + 1, i + 1, fn k => t <= x k))
@@ -49,7 +49,7 @@ fun sort (a: 'a array, op <= : 'a * 'a -> bool): unit =
 	  in ()
 	  end)
       val _ =
-	 Assert.assert ("insertionSort3", fn () => isSorted (a, op <=))
+	 Assert.assert ("InsertionSort.sort: 3", fn () => isSorted (a, op <=))
    in
       ()
    end

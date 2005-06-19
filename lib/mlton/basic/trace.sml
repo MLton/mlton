@@ -218,7 +218,7 @@ structure Immediate =
 		     case !debug of
 			Terminal => (Out.openOut "/dev/tty", Out.close)
 		      | Out out => (out, Out.flush)
-		      | _ => raise Fail "message"
+		      | _ => Error.bug "Trace.message"
 		  open Layout
 	       in output (seq [if !inChild
 				then seq [Pid.layout (Pid.current ()), str ": "]

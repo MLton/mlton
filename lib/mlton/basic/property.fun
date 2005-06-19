@@ -71,7 +71,7 @@ fun ('sym, 'val) destructable (plist, init) =
    end
 
 fun setToSetOnce set (s, v) =
-   set (s, fn _ => v, fn _ => Error.bug "setOnce: set used twice")
+   set (s, fn _ => v, fn _ => Error.bug "Property.setOnce: set used twice")
 
 fun destGetSetOnce z =
    let val {destroy, get, set} = destructable z

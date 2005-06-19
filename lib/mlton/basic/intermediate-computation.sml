@@ -249,7 +249,7 @@ fun call(T{calls, after},name, layoutArg) =
    
 fun return(T{calls, after}, result, time) =
    case !calls of
-      [] => Error.bug "return without a call"
+      [] => Error.bug "IntermediateComputation.return: without a call"
     | {name, layoutArg, prev} :: cs =>
 	 (calls := cs
 	  ; after := {name = name, layoutArg = layoutArg,

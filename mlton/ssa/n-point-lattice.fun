@@ -33,7 +33,7 @@ fun equals (T s, T s') = Set.equals (s, s')
 fun whenN (s, n', h') =
    case value s of
       (n, hss) => if n' < 0 orelse n' > N
-		     then Error.bug "NPointLattice:whenN"
+		     then Error.bug "NPointLattice.whenN"
 		  else if n >= n'
 		     then h' ()
 		  else let
@@ -45,7 +45,7 @@ fun whenN (s, n', h') =
 fun isN (s, n') =
    case value s of
       (n, _) => if n' < 0 orelse n' > N
-	           then Error.bug "NPointLattice:isN"
+	           then Error.bug "NPointLattice.isN"
 		else n = n'
 
 fun up (T s) =
@@ -58,7 +58,7 @@ fun up (T s) =
 fun makeN (s, n') =
    case value s of
       (n, _) => if n' < 0 orelse n' > N
-	           then Error.bug "NPointLattice:makeN"
+	           then Error.bug "NPointLattice.makeN"
 		else if n >= n'
 		   then ()
 		else (up s ; makeN (s, n'))
@@ -98,7 +98,7 @@ fun == (T s, T s') =
 			     (AppendList.foreach
 			      (!hs, fn h => h ()) ;
 			      drop (hss, n - 1))
-			   | ([], _) => Error.bug "NPointLattice:=="
+			   | ([], _) => Error.bug "NPointLattice.=="
 		    in
 		      drop (hss, n'' - n)
 		    end

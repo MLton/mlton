@@ -81,7 +81,7 @@ structure VarInfo =
 						 var = x}
 
       fun setValue (T {value, ...}, v) =
-	 (Assert.assert ("VarInfo.setValue", fn () => Option.isNone (!value))
+	 (Assert.assert ("Ssa.Shrink.VarInfo.setValue", fn () => Option.isNone (!value))
 	  ; value := SOME v)
 
 
@@ -179,7 +179,7 @@ structure State =
 	 end
    end
 
-val traceApplyInfo = Trace.info "Prim.apply"
+val traceApplyInfo = Trace.info "Ssa.Shrink.Prim.apply"
 
 fun shrinkFunction {globals: Statement.t vector} =
    let
@@ -193,13 +193,13 @@ fun shrinkFunction {globals: Statement.t vector} =
 			  Property.initFun (fn x => VarInfo.new (x, NONE)))
 (*	 Property.getSet (Var.plist, Property.initFun VarInfo.new) *)
       val setVarInfo =
-	 Trace.trace2 ("Shrink.setVarInfo",
+	 Trace.trace2 ("Ssa.Shrink.setVarInfo",
 		       Var.layout, VarInfo.layout, Unit.layout)
 	 setVarInfo
       fun varInfos xs = Vector.map (xs, varInfo)
       fun simplifyVar (x: Var.t) = use (varInfo x)
       val simplifyVar =
-	 Trace.trace ("Shrink.simplifyVar", Var.layout, Var.layout) simplifyVar
+	 Trace.trace ("Ssa.Shrink.simplifyVar", Var.layout, Var.layout) simplifyVar
       fun simplifyVars xs = Vector.map (xs, simplifyVar)
       fun incVarInfo (x: VarInfo.t): unit =
 	 Int.inc (VarInfo.numOccurrences x)
@@ -491,13 +491,13 @@ fun shrinkFunction {globals: Statement.t vector} =
 	 fun indexMeaning i =
 	    case Array.sub (states, i) of
 	       State.Visited m => m
-	     | _ => Error.bug "indexMeaning not computed"
+	     | _ => Error.bug "Ssa.Shrink.indexMeaning: not computed"
 	 val indexMeaning =
-	    Trace.trace ("Shrink.indexMeaning", Int.layout, LabelMeaning.layout)
+	    Trace.trace ("Ssa.Shrink.indexMeaning", Int.layout, LabelMeaning.layout)
 	    indexMeaning
 	 val labelMeaning = indexMeaning o labelIndex
 	 val labelMeaning =
-	    Trace.trace ("Shrink.labelMeaning",
+	    Trace.trace ("Ssa.Shrink.labelMeaning",
 			 Label.layout, LabelMeaning.layout)
 	    labelMeaning
 	 fun meaningLabel m =
@@ -528,7 +528,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 		Out.error)
 	 val _ =
 	    Assert.assert
-	    ("Shrink.labelMeanings", fn () =>
+	    ("Ssa.Shrink.labelMeanings", fn () =>
 	     let
 		val inDegree' = Array.array (numBlocks, 0)
 		fun bumpIndex i = Array.inc (inDegree', i)
@@ -585,7 +585,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 	 (* Functions for maintaining inDegree. *)
 	 val addLabelIndex =
 	    fn i =>
-	    (Assert.assert ("addLabelIndex", fn () =>
+	    (Assert.assert ("Ssa.Shrink.addLabelIndex", fn () =>
 			    Array.sub (inDegree, i) > 0)
 	     ; addLabelIndex i)
 	 val addLabelMeaning = addLabelIndex o LabelMeaning.blockIndex
@@ -595,7 +595,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 				      (inDegree, LabelMeaning.blockIndex m))),
 	     ("meaning", LabelMeaning.layout m)]
 	 val traceDeleteLabelMeaning =
-	    Trace.trace ("Shrink.deleteLabelMeaning",
+	    Trace.trace ("SSa.Shrink.deleteLabelMeaning",
 			 layoutLabelMeaning, Unit.layout)
 	 fun deleteLabel l = deleteLabelMeaning (labelMeaning l)
 	 and deleteLabelMeaning arg: unit =
@@ -605,7 +605,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 	       val i = LabelMeaning.blockIndex m
 	       val n = Array.sub (inDegree, i) - 1
 	       val _ = Array.update (inDegree, i, n)
-	       val _ = Assert.assert ("deleteLabelMeaning", fn () => n >= 0)
+	       val _ = Assert.assert ("Ssa.Shrink.deleteLabelMeaning", fn () => n >= 0)
 	    in
 	       if n = 0 (* andalso not (Array.sub (isBlock, i)) *)
 		  then
@@ -675,34 +675,31 @@ fun shrinkFunction {globals: Statement.t vector} =
 		      Prim.ApplyResult.layout (Var.layout o VarInfo.var))
 		     Prim.apply
 		     (prim, Vector.toList args', VarInfo.equals)
-		     handle e =>
-			Error.bug (concat ["Prim.apply raised ",
-					   Layout.toString (Exn.layout e)])
 		  end
 	 (* Another DFS, this time accumulating the new blocks. *)
       	 val traceForceMeaningBlock =
-	    Trace.trace ("Shrink.forceMeaningBlock",
+	    Trace.trace ("Ssa.Shrink.forceMeaningBlock",
 			layoutLabelMeaning, Unit.layout)
 	 val traceSimplifyBlock =
-	    Trace.trace2 ("Shrink.simplifyBlock",
+	    Trace.trace2 ("Ssa.Shrink.simplifyBlock",
 			  List.layout Statement.layout,
 			  layoutLabel o Block.label,
 			  Layout.tuple2 (List.layout Statement.layout,
 					 Transfer.layout))
 	 val traceGotoMeaning =
 	    Trace.trace3
-	    ("Shrink.gotoMeaning",
+	    ("Ssa.Shrink.gotoMeaning",
 	     List.layout Statement.layout,
 	     layoutLabelMeaning,
 	     Vector.layout VarInfo.layout,
 	     Layout.tuple2 (List.layout Statement.layout, Transfer.layout))
 	 val traceEvalStatement =
 	    Trace.trace
-	    ("Shrink.evalStatement",
+	    ("Ssa.Shrink.evalStatement",
 	     Statement.layout,
 	     Layout.ignore: (Statement.t list -> Statement.t list) -> Layout.t)
 	 val traceSimplifyTransfer =
-	    Trace.trace ("Shrink.simplifyTransfer",
+	    Trace.trace ("Ssa.Shrink.simplifyTransfer",
 			 Transfer.layout,
 			 Layout.tuple2 (List.layout Statement.layout,
 					Transfer.layout))
@@ -1014,20 +1011,12 @@ fun shrinkFunction {globals: Statement.t vector} =
 						  fn w' => WordX.equals (w, w'),
 						  Vector.new0 ())
 				   | _ =>
-					Error.bug "strange constant for cases")
+					Error.bug "Ssa.Shrink.simplifyCases: strange constant")
 			    | (SOME (Value.Con {con, args}), Cases.Con cases) =>
 				 findCase (cases,
 					   fn c => Con.equals (con, c),
 					   args)
 			    | _ => cantSimplify ()
-(*
-			    | (NONE, _) => cantSimplify ()
-			    | (_, _) =>
-				 Error.bug
-				 (concat
-				  ["strange bind for case test: ",
-				   Layout.toString (VarInfo.layout test)])
-*)
 			end
 		  end
 	    end
@@ -1041,7 +1030,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 		 args: VarInfo.t vector) =>
 	     let
 		val n = Array.sub (inDegree, i)
-		val _ = Assert.assert ("goto", fn () => n >= 1)
+		val _ = Assert.assert ("Ssa.Shrink.gotoMeaning", fn () => n >= 1)
 		fun normal () =
 		   if n = 1
 		      then
@@ -1199,12 +1188,6 @@ fun shrinkFunction {globals: Statement.t vector} =
 						       offset = offset},
 					 fn () => Select {tuple = use tuple,
 							  offset = offset})
-(*
-			 | _ => Error.bug
-				(concat
-				  ["select of non-tuple: ",
-				   Layout.toString (VarInfo.layout tuple)])
-*)
 		     end
 		| Tuple xs =>
 		     let
@@ -1285,7 +1268,7 @@ fun eliminateUselessProfile (f: Function.t): Function.t =
 				:: rest =>
 				   if SourceInfo.equals (si, si')
 				      then rest
-				   else Error.bug "mismatched Leave\n"
+				   else Error.bug "Ssa.Shrink.eliminateUselessProfile: mismatched Leave"
 			      | _ => s :: stack)
 		       | _ => s :: stack)
 		  val statements = Vector.fromListRev stack
@@ -1309,16 +1292,14 @@ fun eliminateUselessProfile (f: Function.t): Function.t =
       end
 
 val traceShrinkFunction =
-   Trace.trace ("Shrink.shrinkFunction", Function.layout, Function.layout)
+   Trace.trace ("Ssa.Shrink.shrinkFunction", Function.layout, Function.layout)
 
 val shrinkFunction =
    fn g =>
    let
       val s = shrinkFunction g
    in
-      fn f => (traceShrinkFunction s (eliminateUselessProfile f))
-              handle e => (Error.bug (concat ["shrinker raised ",
-					      Layout.toString (Exn.layout e)]))
+      fn f => traceShrinkFunction s (eliminateUselessProfile f)
    end
 
 fun shrink (Program.T {datatypes, globals, functions, main})

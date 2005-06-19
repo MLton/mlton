@@ -27,7 +27,7 @@ open S
 
 val _ =
    Assert.assert
-   ("format", fn () => 
+   ("TestFormat", fn () => 
     "abc" = format (lit "abc")
     andalso "abc" = format string "abc"
     andalso "abc" = format (lit "a" o lit "b" o lit "c")

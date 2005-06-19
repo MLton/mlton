@@ -86,7 +86,7 @@ structure Scheme =
 	  ("telnet", Telnet)]
 	 
       val fromString =
-	 String.memoizeList (fn _ => Error.bug "Scheme.fromString", map)
+	 String.memoizeList (fn _ => Error.bug "Url.Scheme.fromString", map)
 
       val equals = op =
 	 
@@ -119,7 +119,7 @@ structure Authority =
 	 andalso Option.equals (p, p', Port.equals)
 
       val equals =
-	 Trace.trace2 ("Authority.equals", layout, layout, Bool.layout) equals
+	 Trace.trace2 ("Url.Authority.equals", layout, layout, Bool.layout) equals
    end
 
 (* The numbers in comments are rule numbers from Section 5.2 of RFC 2396. *)
@@ -195,14 +195,14 @@ fun addQuery (u: t, q) =
    case u of
       T {authority, fragment, path, query, scheme}=>
 	 if isSome query
-	    then Error.bug "addQuery"
+	    then Error.bug "Url.addQuery"
 	 else
 	    T {authority = authority,
 	       fragment = fragment,
 	       path = path,
 	       query = SOME q,
 	       scheme = scheme}
-    | _ => Error.bug "addQuery"
+    | _ => Error.bug "Url.addQuery"
    
 fun host (u: t): string =
    case u of
@@ -370,7 +370,7 @@ structure Regexp =
 	 
       fun getAbsPath (m: Match.t): Path.t =
 	 case Match.peek (m, pathSegments') of
-	    NONE => Error.bug "getAbsPath"
+	    NONE => Error.bug "Url.Regexp.getAbsPath"
 	  | SOME ss =>
 	       let
 		  val s = Substring.toString ss

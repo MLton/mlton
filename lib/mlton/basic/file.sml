@@ -49,7 +49,7 @@ end
 fun remove f =
    if doesExist f
       then (FS.remove f
-	    handle e => Error.bug (concat ["remove ", f, ": ",
+	    handle e => Error.bug (concat ["File.remove: ", f, ": ",
 					   Layout.toString (Exn.layout e)]))
    else ()
 

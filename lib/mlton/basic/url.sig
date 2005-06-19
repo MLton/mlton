@@ -108,7 +108,7 @@ open S
 
 val _ =
    Assert.assert
-   ("Url.resolve", fn () =>
+   ("TestUrl.resolve", fn () =>
     (* Examples from RFC 2396, Appendix C. *)
     let
        val base = valOf (fromString "http://a/b/c/d;p?q")
@@ -138,7 +138,7 @@ val _ =
 				   relative = valOf (fromString rel)})
        val checkResolve =
 	  Trace.trace2
-	  ("Url.checkResolve", String.layout, String.layout, Bool.layout)
+	  ("TestUrl.checkResolve", String.layout, String.layout, Bool.layout)
 	  checkResolve
     in List.forall ([("g:h", "g:h"), ("//g", "http://g")],
 		    checkResolve)
@@ -155,7 +155,7 @@ val _ =
 
 val _ =
    Assert.assert
-   ("Url", fn () =>
+   ("TestUrl", fn () =>
     fromString "mailto:sweeks@sweeks.com" = SOME (MailTo "sweeks@sweeks.com")
     andalso isSome
 	    (fromString "http://sports.latimes.com/RealMedia/ads/adstream_lx.ads/sports.latimes.com/stats/oth/oth/oth/columnists.html/21801/Top/NextCardGW002/u40_card_dreamer_V3.gif/63306138643531333339663061393230")

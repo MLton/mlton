@@ -22,7 +22,7 @@ open S
 
 val _ =
    Assert.assert
-   ("Base64", fn () =>
+   ("TestBase64", fn () =>
     List.forall(["a", "aa", "aaa", "aaaa", "aaaaa", "aaaaaa", "aaaaaaa",
 		 "a", "ab", "abc", "abcd", "abcde", "abcdef", "abcdefg",
 		 "bb:new.site"],

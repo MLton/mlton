@@ -31,7 +31,7 @@ structure Value :
       fun value(T{value, ...}) = value
 	 
       fun elt(T{elt=ref(SOME d), ...}) = d
-	| elt _ = Error.error "Value.elt"
+	| elt _ = Error.error "DisjointCollection.Value.elt"
 
       fun set v = D.value(elt v)
 

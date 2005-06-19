@@ -68,7 +68,7 @@ structure Time:>
       local
 	 val current: t ref =
 	    ref (T {clock = 0,
-		    useBeforeDef = fn _ => Error.bug "useBeforeDef clock 0"})
+		    useBeforeDef = fn _ => Error.bug "TypeEnv.Time: useBeforeDef clock 0"})
       in
 	 fun now () = !current
 	 fun tick {useBeforeDef} =
@@ -76,7 +76,7 @@ structure Time:>
 			  useBeforeDef = useBeforeDef}
       end
 
-      val tick = Trace.trace ("Time.tick", Layout.ignore, Unit.layout) tick
+      val tick = Trace.trace ("TypeEnv.Time.tick", Layout.ignore, Unit.layout) tick
    end
 
 val tick = Time.tick
@@ -247,7 +247,7 @@ structure Equality:>
 	       fun lay e =
 		  Lay.simple
 		  (Layout.str (case toBoolOpt e of
-				  NONE => Error.bug "Equality.unify"
+				  NONE => Error.bug "TypeEnv.Equality.unify"
 				| SOME b =>
 				     if b
 					then "[<equality>]"
@@ -365,7 +365,7 @@ val {get = tyvarTime: Tyvar.t -> Time.t ref, ...} =
    Property.get (Tyvar.plist, Property.initFun (fn _ => ref (Time.now ())))
 
 val tyvarTime =
-   Trace.trace ("tyvarTime", Tyvar.layout, Ref.layout Time.layout) tyvarTime
+   Trace.trace ("TypeEnv.tyvarTime", Tyvar.layout, Ref.layout Time.layout) tyvarTime
 
 local
    type z = Layout.t * {isChar: bool, needsParen: bool}
@@ -518,16 +518,17 @@ structure Type =
 	  | SOME b => b
 
       val admitsEquality =
-	 Trace.trace ("admitsEquality", layout, Bool.layout) admitsEquality
+	 Trace.trace 
+	 ("TypeEnv.Type.admitsEquality", layout, Bool.layout) 
+	 admitsEquality
 
       val {get = opaqueTyconExpansion: Tycon.t -> (t vector -> t) option,
 	   set = setOpaqueTyconExpansion, ...} =
 	 Property.getSet (Tycon.plist, Property.initConst NONE)
 
       val opaqueTyconExpansion =
-	 Trace.trace ("opaqueTyconExpansion",
-		      Tycon.layout,
-		      Layout.ignore)
+	 Trace.trace 
+	 ("TypeEnv.Type.opaqueTyconExpansion", Tycon.layout, Layout.ignore)
 	 opaqueTyconExpansion
 
       fun makeHom {con, expandOpaque, flexRecord, genFlexRecord, overload,
@@ -545,7 +546,7 @@ structure Type =
 		    val r = status t
 		 in
 		    case !r of
-		       Seen => Error.bug "impossible"
+		       Seen => Error.bug "TypeEnv.Type.makeHom: impossible"
 		     | Processing => recursive t
 		     | Unseen =>
 			  let
@@ -800,7 +801,8 @@ structure Type =
       fun unresolvedString () = vector (unresolvedChar ())
    
       val traceCanUnify =
-	 Trace.trace2 ("canUnify", layout, layout, Bool.layout)
+	 Trace.trace2 
+	 ("TypeEnv.Type.canUnify", layout, layout, Bool.layout)
 
       fun canUnify arg = 
 	 traceCanUnify
@@ -888,11 +890,15 @@ structure Type =
 	 end
 
       val minTime =
-	 Trace.trace2 ("minTime", layout, Time.layout, Unit.layout) minTime
+	 Trace.trace2 
+	 ("TypeEnv.Type.minTime", layout, Time.layout, Unit.layout) 
+	 minTime
 
       datatype z = datatype UnifyResult.t
 
-      val traceUnify = Trace.trace2 ("unify", layout, layout, UnifyResult.layout)
+      val traceUnify = 
+	 Trace.trace2 
+	 ("TypeEnv.Type.unify", layout, layout, UnifyResult.layout)
 
       fun unify (t, t', {preError}): UnifyResult.t =
 	 let
@@ -941,7 +947,7 @@ structure Type =
 							 then (l', l)
 						      else (l, l')))
 		      fun genFlexError () =
-			 Error.bug "GenFlexRecord seen in unify"
+			 Error.bug "TypeEnv.Type.unify: GenFlexRecord"
 		      val {equality = e, time, ty = t, plist} = Set.! s
 		      val {equality = e', time = time', ty = t', ...} =
 			 Set.! s'
@@ -1048,7 +1054,8 @@ structure Type =
 				     genFlexRecord = genFlexRecord,
 				     overload = no,
 				     record = record,
-				     recursive = fn _ => Error.bug "oneUnknown recursive",
+				     recursive = fn _ => 
+				     Error.bug "TypeEnv.Type.unify.oneUnknown: recursive",
 				     unknown = unknown,
 				     var = no})
 			 in
@@ -1300,12 +1307,12 @@ structure Type =
 			  (field, var (Type.var tyvar, tyvar)) :: ac))
 	    fun flexRecord (t, {fields, spine}) =
 	       if Spine.canAddFields spine
-		  then Error.bug "Type.hom flexRecord"
+		  then Error.bug "TypeEnv.Type.simpleHom: flexRecord"
 	       else unsorted (t,
 			      Spine.foldOverNew
 			      (spine, fields, fields, fn (f, ac) =>
 			       (f, unit) :: ac))
-	    fun recursive _ = Error.bug "Type.hom recursive"
+	    fun recursive _ = Error.bug "TypeEnv.Type.simpleHom.recursive"
 	    val con =
 	       if not replaceSynonyms
 		  then con
@@ -1323,7 +1330,8 @@ structure Type =
 	       let
 		  val t = Overload.defaultType ov
 		  val _ = unify (t, t',
-				 {preError = fn _ => Error.bug "default unify"})
+				 {preError = fn _ => 
+				  Error.bug "TypeEnv.Type.simpleHom.overload"})
 	       in
 		  con (t, Overload.defaultTycon ov, Vector.new0 ())
 	       end
@@ -1368,7 +1376,7 @@ structure Scheme =
 	  | Type _ => Vector.new0 ()
 
       val bound =
-	 Trace.trace ("Scheme.bound", layout, Vector.layout Tyvar.layout)
+	 Trace.trace ("TypeEnv.Scheme.bound", layout, Vector.layout Tyvar.layout)
 	 bound
 
       val ty =
@@ -1493,7 +1501,7 @@ structure Scheme =
 					   Type.var o #tyvar)
 				     | SOME t => SOME t)
 			      | Record r => (fn f => Srecord.peek (r, f))
-			      | _ => Error.bug "strange flexInst"
+			      | _ => Error.bug "TypeEnv.instantiate': General:strange flexInst"
 		       in
 			  Spine.foldOverNew
 			  (spine, fields, ac, fn (f, ac) =>
@@ -1518,7 +1526,7 @@ structure Scheme =
 				   else Equality.unknown ()})
 
       val instantiate =
-	 Trace.trace ("Scheme.instantiate", layout, Type.layout o #instance)
+	 Trace.trace ("TypeEnv.Scheme.instantiate", layout, Type.layout o #instance)
 	 instantiate
 
       fun admitsEquality s =
@@ -1576,7 +1584,7 @@ fun close (ensure: Tyvar.t vector, ubd) =
       val () = Type.newCloses := []
    in
       Trace.trace
-      ("close",
+      ("TypeEnv.close",
        let
 	  open Layout
        in
@@ -1693,7 +1701,7 @@ fun close (ensure: Tyvar.t vector, ubd) =
 		 (spine, fields, ac, fn (f, ac) =>
 		  case List.peek (extra, fn {field, ...} =>
 				  Field.equals (f, field)) of
-		     NONE => Error.bug "GenFlex missing field"
+		     NONE => Error.bug "TypeEnv.close.bound: GenFlex missing field"
 		   | SOME {tyvar, ...} => tyvar :: ac)
 	      end))
 	 val schemes =
@@ -1750,7 +1758,7 @@ structure Type =
 		var = fn (t, _) => (t, NONE)}
 	    val res =
 	       case #2 (hom t) of
-		  NONE => Error.bug "Type.deRecord"
+		  NONE => Error.bug "TypeEnv.Type.deRecord"
 		| SOME fs => fs
 	    val _ = destroy ()
 	 in
@@ -1774,7 +1782,7 @@ structure Type =
 	 end
 
       val deTupleOpt =
-	 Trace.trace ("Type.deTupleOpt", layout,
+	 Trace.trace ("TypeEnv.Type.deTupleOpt", layout,
 		      Option.layout (Vector.layout layout))
 	 deTupleOpt
 

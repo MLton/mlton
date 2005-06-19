@@ -205,7 +205,7 @@ struct
 				transfer = transfer})
 		       end
 		  else NONE
-	     | _ => Error.bug "Peephole: elimBinALMDDouble"
+	     | _ => Error.bug "x86Simplify.PeepholeBlock: elimBinALMDDouble"
 
 	val (callback,elimBinALMDDouble_msg) 
 	  = make_callback_msg "elimBinALMDDouble"
@@ -376,7 +376,7 @@ struct
 				transfer = transfer})
 		       end
 		  else NONE
-	     | _ => Error.bug "Peephole: elimFltBinADouble"
+	     | _ => Error.bug "x86Simplify.PeepholeBlock: elimFltBinADouble"
 
 	val (callback,elimFltBinADouble_msg) 
 	  = make_callback_msg "elimFltBinADouble"
@@ -594,7 +594,7 @@ struct
 			     end
 			  | _ => NONE
 		  else NONE
-	     | _ => Error.bug "Peephole: commuteBinALMD"
+	     | _ => Error.bug "x86Simplify.PeepholeBlock: commuteBinALMD"
 
 	val (callback,commuteBinALMD_msg) 
 	  = make_callback_msg "commuteBinALMD"
@@ -683,7 +683,7 @@ struct
 				| (Instruction.ADD, SOME true ) => Instruction.DEC
 				| (Instruction.SUB, SOME false) => Instruction.DEC
 				| (Instruction.SUB, SOME true ) => Instruction.INC
-				| _ => Error.bug "elimAddSub1"
+				| _ => Error.bug "x86Simplify.PeeholeBlock: elimAddSub1:oper"
 
 			 val statements
 			   = (Assembly.instruction_unal
@@ -703,7 +703,7 @@ struct
 				statements = statements,
 				transfer = transfer})
 		       end
-	     | _ => Error.bug "Peephole: elimAddSub1"
+	     | _ => Error.bug "x86Simplify.PeeholeBlock: elimAddSub1"
  
 	val (callback,elimAddSub1_msg) 
 	  = make_callback_msg "elimAddSub1"
@@ -794,7 +794,7 @@ struct
 					  truee,
 					  falsee}}
 	     => (case getImmediateLog2 (Immediate.destruct immediate)
-		   of NONE => Error.bug "Peephole: elimMDPow2"
+		   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
 		    | SOME (0,false)
 		    => let
 			 val transfer
@@ -803,7 +803,7 @@ struct
 				=> Transfer.Goto {target = falsee}
 				| Instruction.NO 
 				=> Transfer.Goto {target = truee}
-				| _ => Error.bug "Peephole: elimMDPow2"
+				| _ => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:transfer"
 				 
 			 val statements
 			   = List.fold(start,
@@ -875,7 +875,7 @@ struct
 		finish, 
 		transfer}
 	     => (case getImmediateLog2 (Immediate.destruct immediate)
-		   of NONE => Error.bug "Peephole: elimMDPow2"
+		   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
 		    | SOME (0,false) 
 		    => SOME (Block.T
 			     {entry = entry,
@@ -975,7 +975,7 @@ struct
 		finish, 
 		transfer}
 	     => (case getImmediateLog2 (Immediate.destruct immediate)
-		   of NONE => Error.bug "Peephole: elimMDPow2"
+		   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
 		    | SOME (0,false) 
 		    => SOME (Block.T
 			     {entry = entry,
@@ -1022,7 +1022,7 @@ struct
 		finish, 
 		transfer}
 	     => (case getImmediateLog2 (Immediate.destruct immediate)
-		   of NONE => Error.bug "Peephole: elimMDPow2"
+		   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
 		    | SOME (0,false) 
 		    => SOME (Block.T
 			     {entry = entry,
@@ -1133,7 +1133,7 @@ struct
 		finish, 
 		transfer}
 	     => (case getImmediateLog2 (Immediate.destruct immediate)
-		   of NONE => Error.bug "Peephole: elimMDPow2"
+		   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
 		    | SOME (0,false) 
 		    => SOME (Block.T
 			     {entry = entry,
@@ -1180,7 +1180,7 @@ struct
 					  truee,
 					  falsee}}
 	     => (case getImmediateLog2 (Immediate.destruct immediate)
-		   of NONE => Error.bug "Peephole: elimMDPow2"
+		   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
 		    | SOME (0,false)
 		    => let
 			 val transfer
@@ -1189,7 +1189,7 @@ struct
 				=> Transfer.Goto {target = falsee}
 				| Instruction.NO 
 				=> Transfer.Goto {target = truee}
-				| _ => Error.bug "Peephole: elimMDPow2"
+				| _ => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:transfer"
 				 
 			 val statements
 			   = List.fold(start,
@@ -1260,7 +1260,7 @@ struct
 		finish, 
 		transfer}
 	     => (case getImmediateLog2 (Immediate.destruct immediate)
-		   of NONE => Error.bug "Peephole: elimMDPow2"
+		   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
 		    | SOME (0,false) 
 		    => SOME (Block.T
 			     {entry = entry,
@@ -1347,7 +1347,7 @@ struct
 				       transfer = transfer})
 			      end
 			 else NONE)
- 	     | _ => Error.bug "Peephole: elimMDPow2"
+ 	     | _ => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2"
 
 	val (callback,elimMDPow2_msg) 
 	  = make_callback_msg "elimMDPow2"
@@ -1431,7 +1431,7 @@ struct
 			 end
 		    else NONE
 		end
-	     | _ => Error.bug "elimCMPTEST"
+	     | _ => Error.bug "x86Simplify.PeeholeBlock: elimCMPTEST"
 
 	val (callback,elimCMPTEST_msg) 
 	  = make_callback_msg "elimCMPTEST"
@@ -1484,7 +1484,7 @@ struct
 		    = case condition
 			of Instruction.E => Instruction.Z
 			 | Instruction.NE => Instruction.NZ
-			 | _ => Error.bug "Peephole: elimCMP0"
+			 | _ => Error.bug "x86Simplify.PeeholeBlock: elimCMP0:condition"
 
 		  val src
 		    = case (Operand.deImmediate src1, 
@@ -1495,7 +1495,7 @@ struct
 			 => if Immediate.zero immediate1
 			      then src2
 			      else src1
-			 | _ => Error.bug "Peephole: elimCMP0"
+			 | _ => Error.bug "x86Simplify.PeeholeBlock: elimCMP0:src"
 
 		  val statements 
 		    = List.fold(start, 
@@ -1516,7 +1516,7 @@ struct
 				 statements = statements,
 				 transfer = transfer})
 		end
-	     | _ => Error.bug "elimCMP0"
+	     | _ => Error.bug "x86Simplify.PeeholeBlock: elimCMP0"
 
 	val (callback,elimCMP0_msg) 
 	  = make_callback_msg "elimCMP0"
@@ -1584,7 +1584,7 @@ struct
 			of Instruction.BinAL {dst, ...} => dst
 			 | Instruction.UnAL {dst, ...} => dst
 			 | Instruction.SRAL {dst, ...} => dst
-			 | _ => Error.bug "elimALTEST"
+			 | _ => Error.bug "x86Simplify.PeeholeBlock: elimALTEST:dst"
 		in
 		  if Operand.eq(dst,src1)
 		    then let
@@ -1602,7 +1602,7 @@ struct
 			 end
 		    else NONE
 		end
-	     | _ => Error.bug "elimALTEST"
+	     | _ => Error.bug "x86Simplify.PeeholeBlock: elimALTEST"
 
 	val (callback,elimALTEST_msg) 
 	  = make_callback_msg "elimALTEST"
@@ -1713,7 +1713,7 @@ struct
 				     statements = statements,
 				     transfer = transfer})
 		    end
-	         | _ => Error.bug "elimIff"
+	         | _ => Error.bug "x86Simplify.PeeholeBlock: elimIff"
 	  in
 	    {template = template,
 	     rewriter = rewriter,
@@ -1772,14 +1772,14 @@ struct
 				 in
 				   Transfer.goto {target = target}
 				 end
-			  else Error.bug "elimSwitchTest"
+			  else Error.bug "x86Simplify.PeeholeBlock: elimSwitchTest:transfer"
 		    in
 		      SOME (Block.T {entry = entry,
 				     profileLabel = profileLabel,
 				     statements = statements,
 				     transfer = transfer})
 		    end
-	         | _ => Error.bug "elimSwitchTest"
+	         | _ => Error.bug "x86Simplify.PeeholeBlock: elimSwitchTest"
 	  in
 	    {template = template,
 	     rewriter = rewriter,
@@ -1862,7 +1862,7 @@ struct
 				     statements = statements,
 				     transfer = transfer})
 		    end
-	         | _ => Error.bug "elimSwitchCases"
+	         | _ => Error.bug "x86Simplify.PeeholeBlock: elimSwitchCases"
 	  in
 	    {template = template,
 	     rewriter = rewriter,
@@ -2751,7 +2751,7 @@ struct
 			  changed = !changed > 0}
 		  end
 	  end
-	| copyPropagate' _ = Error.bug "copyPropagate'"
+	| copyPropagate' _ = Error.bug "x86Simplify.PeeholeBlock: copyPropagate'"
 
 
       fun copyPropagate {block = LivenessBlock.T 
@@ -2991,7 +2991,7 @@ struct
 				statements = statements,
 				transfer = transfer})
 		       end
-             | _ => Error.bug "Peephole: elimDeadDsts"
+             | _ => Error.bug "x86Simplify.PeeholeBlock: elimDeadDsts"
 
 	val (callback,elimDeadDsts_msg)
 	  = make_callback_msg "elimDeadDsts"
@@ -3155,7 +3155,7 @@ struct
 				 => not (MemLoc.mayAlias(memloc_dst2,memloc')))
 			    | (Operand.Immediate _, _) => true
 			    | _ => false)
-		     | _ => Error.bug "Peephole: elimALCopy")
+		     | _ => Error.bug "x86Simplify.PeeholeBlock: elimALCopy")
 		  then let
 			 val statements
 			   = List.map
@@ -3191,7 +3191,7 @@ struct
 				transfer = transfer})		 
 		       end
 		  else NONE
-             | _ => Error.bug "Peephole: elimALCopy"
+             | _ => Error.bug "x86Simplify.PeeholeBlock: elimALCopy"
 
 	val (callback,elimALCopy_msg)
 	  = make_callback_msg "elimALCopy"
@@ -3257,7 +3257,7 @@ struct
 				  statements = statements,
 				  transfer = transfer})
 			end
-	     | _ => Error.bug "Peephole: elimSelfMove"
+	     | _ => Error.bug "x86Simplify.PeeholeBlock: elimSelfMove"
 
 	val (callback,elimSelfMove_msg)
 	  = make_callback_msg "elimSelfMove"
@@ -3557,7 +3557,7 @@ struct
 				transfer = transfer})		 
 		       end
 		  else NONE
-             | _ => Error.bug "Peephole: commuteBinALMD"
+             | _ => Error.bug "x86Simplify.PeeholeBlock: commuteBinALMD"
 
 	val (callback,commuteBinALMD_msg)
 	  = make_callback_msg "commuteBinALMD"
@@ -3709,7 +3709,7 @@ struct
 				 => not (MemLoc.mayAlias(memloc_dst2,memloc')))
 			    | (Operand.Immediate _, _) => true
 			    | _ => false)
-		     | _ => Error.bug "Peephole: elimFltACopy")
+		     | _ => Error.bug "x86Simplify.PeeholeBlock: elimFltACopy")
 		  then let
 			 val statements
 			   = List.map
@@ -3745,7 +3745,7 @@ struct
 				transfer = transfer})		 
 		       end
 		  else NONE
-             | _ => Error.bug "Peephole: elimFltACopy"
+             | _ => Error.bug "x86Simplify.PeeholeBlock: elimFltACopy"
 
 	val (callback,elimFltACopy_msg)
 	  = make_callback_msg "elimFltACopy"
@@ -3795,7 +3795,7 @@ struct
 			 statements = statements,
 			 transfer = transfer})
 		end
-	     | _ => Error.bug "Peephole: elimFltSelfMove"
+	     | _ => Error.bug "x86Simplify.PeeholeBlock: elimFltSelfMove"
  
 	val (callback,elimFltSelfMove_msg)
 	  = make_callback_msg "elimFltSelfMove"
@@ -3913,7 +3913,7 @@ struct
 				transfer = transfer})		 
 		       end
 		  else NONE
-             | _ => Error.bug "Peephole: commuteFltBinA"
+             | _ => Error.bug "x86Simplify.PeeholeBlock: commuteFltBinA"
 
 	val (callback,commuteFltBinA_msg)
 	  = make_callback_msg "commuteFltBinA"
@@ -3989,7 +3989,7 @@ struct
 			       of Instruction.Z 
 				=> Instruction.condition_negate condition1
 			        | Instruction.NZ => condition1
-			        | _ => Error.bug "Peephole: conditionalJump"
+			        | _ => Error.bug "x86Simplify.PeeholeBlock: conditionalJump:condition"
 
 			 val transfer 
 			   = (Transfer.iff {condition = condition,
@@ -4024,7 +4024,7 @@ struct
 			 val live
 			   = case statements
 			       of (_, Liveness.T {liveIn,...})::_ => liveIn
-				| _ => Error.bug "Peephole: conditionalJump"
+				| _ => Error.bug "x86Simplify.PeeholeBlock: conditionalJump:live"
 
 			 val {entry, ...}
 			   = LivenessBlock.reLivenessEntry
@@ -4038,7 +4038,7 @@ struct
 				transfer = transfer})
 		       end
 		  else NONE
-	     | _ => Error.bug "Peephole: conditionalJump"
+	     | _ => Error.bug "x86Simplify.PeeholeBlock: conditionalJump"
 
 	val (callback,conditionalJump_msg)
 	  = make_callback_msg "conditionalJump"
@@ -4241,16 +4241,10 @@ struct
 	fun checkLivenessBlock
 	    {block, block', msg}
 	  = Assert.assert
-	    ("verifyLivenessBlock: " ^ msg,
+	    ("x86Simplify.checkLivenessBlock: " ^ msg,
 	     fn () => if x86Liveness.LivenessBlock.verifyLivenessBlock
 	                 {block = block,
 			  liveInfo = liveInfo}
-			 handle exn
-			  => Error.bug 
-			     ("x86Liveness.LivenessBlock.verifyLivenessBlock::" ^
-			      (case exn
-				 of Fail s => s
-				  | _ => "?"))
 			then true
 			else (print ("pre: " ^ msg);
 			      x86Liveness.LivenessBlock.printBlock block;
@@ -4278,12 +4272,6 @@ struct
 	        {chunk = chunk,
 		 liveInfo = liveInfo,
 		 pass = "pre"}
-		handle exn
-		 => Error.bug 
-		    ("x86Liveness.LiveInfo.completeLiveInfo (pre)::" ^
-		     (case exn
-			of Fail s => s
-			 | _ => "?"))
 
 	val _ = changedChunk_msg 
 	        {chunk = chunk,
@@ -4296,24 +4284,12 @@ struct
 	val _ = x86JumpInfo.completeJumpInfo 
 	        {chunk = chunk,
 		 jumpInfo = jumpInfo}
-		handle exn
-		 => Error.bug 
-		    ("x86JumpInfo.completeJumpInfo::" ^
-		     (case exn
-			of Fail s => s
-			 | _ => "?"))
 
 	val _
 	  = Assert.assert
-	    ("verifyEntryTransfer",
+	    ("x86Simplify.verifyEntryTransfer",
 	     fn () => x86EntryTransfer.verifyEntryTransfer
-	              {chunk = chunk}
-		      handle exn
-		       => Error.bug 
-		          ("x86JumpInfo.verifyEntryTransfer::" ^
-			   (case exn
-			      of Fail s => s
-			       | _ => "?")))
+	              {chunk = chunk})
 
 	(*********************************************************************)
 	(* optimizer                                                         *)
@@ -4331,37 +4307,19 @@ struct
 		 = ElimGoto.elimGoto {chunk = chunk,
 				      delProfileLabel = delProfileLabel,
 				      jumpInfo = jumpInfo}
-		   handle exn
-		    => Error.bug 
-		       ("ElimGoto.elimGoto::" ^
-			(case exn
-			   of Fail s => s
-			    | _ => "?"))
 
 	       val _
 		 = Assert.assert
-		   ("verifyJumpInfo",
+		   ("x86Simplify.verifyJumpInfo",
 		    fn () => x86JumpInfo.verifyJumpInfo 
 		             {chunk = chunk',
-			      jumpInfo = jumpInfo}
-		             handle exn
-			      => Error.bug 
-			         ("x86JumpInfo.verifyJumpInfo::" ^
-				  (case exn
-				     of Fail s => s
-				      | _ => "?")))
+			      jumpInfo = jumpInfo})
 
 	       val _
 		 = Assert.assert
-		   ("verifyEntryTransfer",
+		   ("x86Simplify.verifyEntryTransfer",
 		    fn () => x86EntryTransfer.verifyEntryTransfer
-		             {chunk = chunk'}
-			     handle exn
-			      => Error.bug 
-			         ("x86JumpInfo.verifyEntryTransfer::" ^
-				  (case exn
-				     of Fail s => s
-				      | _ => "?")))
+		             {chunk = chunk'})
 
 	       val _ = changedChunk_msg 
 		       {chunk = chunk,
@@ -4391,12 +4349,6 @@ struct
 			  val {block = block',
 			       changed = changed'}
 			    = PeepholeBlock.peepholeBlock_pre block
-			      handle exn
-			       => Error.bug 
-			          ("PeepholeBlock.peepholeBlock_pre::" ^
-				   (case exn
-				      of Fail s => s
-				       | _ => "?"))
 
 			  val _ = changedBlock_msg 
 			          {block = block',
@@ -4412,12 +4364,6 @@ struct
 			    = x86Liveness.LivenessBlock.toLivenessBlock 
 			      {block = block,
 			       liveInfo = liveInfo}
-			      handle exn
-			       => Error.bug 
-			          ("x86Liveness.LivenessBlock.toLivenessBlock::" ^
-				   (case exn
-				      of Fail s => s
-				       | _ => "?"))
 
 			  val block = block'
 			  val _ = changedLivenessBlock_msg 
@@ -4433,12 +4379,6 @@ struct
 			    = if !Control.Native.moveHoist
 				then MoveHoistLivenessBlock.moveHoist
 				     {block = block}
-				     handle exn
-				      => Error.bug 
-				         ("MoveHoistLivenessBlock.moveHoist::" ^
-					  (case exn
-					     of Fail s => s
-					      | _ => "?"))
 				else {block = block,
 				      changed = false}
 
@@ -4459,14 +4399,7 @@ struct
 			  (***************************************************)
 			  val {block = block',
 			       changed = changed'}
-			    = PeepholeLivenessBlock.peepholeLivenessBlock
-			      block
-			      handle exn
-			       => Error.bug 
-			          ("PeepholeLivenessBlock.peepholeLivenessBlock::" ^
-				   (case exn
-				      of Fail s => s
-				       | _ => "?"))
+			    = PeepholeLivenessBlock.peepholeLivenessBlock block
 
 			  val _ = checkLivenessBlock 
                                   {block = block,
@@ -4489,12 +4422,6 @@ struct
 				then CopyPropagateLivenessBlock.copyPropagate
 				     {block = block,
 				      liveInfo = liveInfo}
-				     handle exn
-				      => Error.bug 
-				         ("CopyPropagateLivenessBlock.copyPropagate::" ^ 
-					  (case exn
-					     of Fail s => s
-					      | _ => "?"))
 				else {block = block,
 				      changed = false}
 
@@ -4515,14 +4442,7 @@ struct
 			  (***************************************************)
 			  val {block = block',
 			       changed = changed'}
-			    = PeepholeLivenessBlock.peepholeLivenessBlock_minor
-			      block
-			      handle exn
-			       => Error.bug 
-			          ("PeepholeLivenessBlock.peepholeLivenessBlock_minor::" ^ 
-				   (case exn
-				      of Fail s => s
-				       | _ => "?"))
+			    = PeepholeLivenessBlock.peepholeLivenessBlock_minor block
 
 			  val _ = checkLivenessBlock 
                                   {block = block,
@@ -4541,12 +4461,6 @@ struct
 			  (***************************************************)
 			  val block'
 			    = x86Liveness.LivenessBlock.toBlock {block = block}
-			      handle exn
-			       => Error.bug 
-			          ("x86Liveness.LivenessBlock.toBlock::" ^ 
-				   (case exn
-				      of Fail s => s
-				       | _ => "?"))
 
 			  val _ = changedBlock_msg 
 			          {block = block',
@@ -4560,12 +4474,6 @@ struct
 			  val {block = block',
 			       changed = changed'}
 			    = PeepholeBlock.peepholeBlock_post block
-			      handle exn
-			       => Error.bug 
-			          ("PeepholeBlock.peepholeBlock_post::" ^ 
-				   (case exn
-				      of Fail s => s
-				       | _ => "?"))
 
 			  val _ = changedBlock_msg 
 			          {block = block',
@@ -4594,12 +4502,6 @@ struct
 		   {chunk = chunk,
 		    liveInfo = liveInfo,
 		    pass = "post"}
-		   handle exn
-		    => Error.bug 
-		       ("x86Liveness.LiveInfo.completeLiveInfo (post)::" ^ 
-			(case exn
-			   of Fail s => s
-			    | _ => "?"))
 
 	       val _ = changedChunk_msg 
 		       {chunk = chunk,

@@ -391,7 +391,7 @@ structure Header =
 	 end
 
       val fromString =
-	 Trace.trace ("Header.fromString",
+	 Trace.trace ("Http.Header.fromString",
 		      String.layout,
 		      Result.layout (List.layout layout))
 	 fromString
@@ -461,7 +461,7 @@ structure Request =
 	 end
 
       val requestLine =
-	 Trace.trace ("requestLine",
+	 Trace.trace ("Http.Request.requestLine",
 		      String.layout,
 		      Option.layout (fn {method, url, version} =>
 				     Layout.record
@@ -487,7 +487,7 @@ structure Request =
 			 headers = hs})
 
       val input =
-	 Trace.trace ("Request.input", In.layout, Result.layout layout) input
+	 Trace.trace ("Http.Request.input", In.layout, Result.layout layout) input
    end
 
 structure Rope =
@@ -691,7 +691,7 @@ fun fetch {head: bool,
 	    val () = Out.close out
 	 in ins
 	 end
-	      | _ => Error.bug (concat ["can't fetch Url: ", Url.toString url])
+	      | _ => Error.bug (concat ["Htt.fetch: ", Url.toString url])
    end
 
 val fetch =

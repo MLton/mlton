@@ -49,7 +49,7 @@ fun last s = sub (s, length s - 1)
 
 fun append (x, y) = x ^ y
 
-fun toChar s = if length s = 1 then sub (s, 0) else Error.bug "toChar"
+fun toChar s = if length s = 1 then sub (s, 0) else Error.bug "String0.toChar"
 
 val fromChar = str
 
@@ -141,7 +141,7 @@ val hasSubstring = isSome o findSubstring
 fun baseName (x, y) =
    if hasSuffix (x, {suffix = y})
       then dropSuffix (x, size y)
-   else Error.bug "baseName"
+   else Error.bug "String0.baseName"
 
 fun fold (s, b, f) =
    let

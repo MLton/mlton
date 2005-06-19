@@ -12,7 +12,7 @@ open Instream0
 structure String = ZString
 
 val input =
-   Trace.trace ("In.input", layout, String.layout) input
+   Trace.trace ("Instream.input", layout, String.layout) input
 	       
 fun outputAll (ins: t, out: Out.t): unit =
    let
@@ -25,14 +25,14 @@ fun outputAll (ins: t, out: Out.t): unit =
    end
 
 val inputLine =
-   Trace.trace ("In.inputLine", layout, Option.layout String.layout) inputLine
+   Trace.trace ("Instream.inputLine", layout, Option.layout String.layout) inputLine
 
 fun 'a withClose (ins: t, f: t -> 'a): 'a =
    Exn.finally (fn () => f ins, fn () => close ins)
 
 fun 'a withIn (f: string, g: t -> 'a): 'a =
    withClose (openIn f handle IO.Io _ =>
-	      Error.bug (concat ["cannot open ", f]), g)
+	      Error.bug (concat ["Instream.withIn: cannot open ", f]), g)
 
 fun withNull f = withIn ("/dev/zero", f)
 

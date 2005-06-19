@@ -28,7 +28,7 @@ structure MutableQueue:
 			      val l = rev l
                            in
 			      case l of
-				 [] => raise Fail "deque"
+				 [] => raise Fail "MutableQueue.deque"
 			       | x :: l => (front := l; SOME x)
                            end)
           | x :: l => (front := l; SOME x) 

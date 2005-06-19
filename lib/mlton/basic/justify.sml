@@ -68,7 +68,7 @@ fun table {columnHeads: string list option,
    end
 
 val table =
-   Trace.trace ("table",
+   Trace.trace ("Justify.table",
 		fn {columnHeads, justs, rows} =>
 		Layout.record [("columnHeads",
 				Option.layout (List.layout String.layout)

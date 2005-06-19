@@ -33,7 +33,7 @@ fun peek(T l, d) =
 
 fun lookup ed = case peek ed of
    SOME r => r
- | NONE => Error.error "lookup"
+ | NONE => Error.error "Env.lookup"
 			 
 fun dom(T l) = L.map(l, #1)
 
@@ -49,7 +49,7 @@ fun foreach(T ps, f) = L.foreach(ps, f)
    
 fun multiExtend(env, [], []) = env
   | multiExtend(env, d :: ds, r :: rs) = multiExtend(extend(env, d, r), ds, rs)
-  | multiExtend _ = Error.error "multiExtend"
+  | multiExtend _ = Error.error "Env.multiExtend"
 
 fun merge(e as T p, e' as T p', f) =
    let val leftAndBoth = L.map(p, fn (d, r) =>

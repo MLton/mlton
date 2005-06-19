@@ -56,11 +56,11 @@ fun grow {buckets, mask}
 	    => if b
 		 then case l
 			of h::t => (h, (t, b))
-			 | _ => Error.bug "HashedUniqueSet::grow"
+			 | _ => Error.bug "HashedUniqueSet.grow"
 		 else if i = n
 			then case List.rev l
 			       of h::t => (h, (t, true))
-				| _ => Error.bug "HashedUniqueSet::grow"
+				| _ => Error.bug "HashedUniqueSet.grow"
 			else let
 			       val {yes, no}
 				 = Set.partition
@@ -275,14 +275,14 @@ fun partition (s, p)
 	   List.rev yes,
 	   fn (_, l) => case l
 			  of h::t => (h, t)
-			   | _ => Error.bug "HashedUniqueSet::partition")
+			   | _ => Error.bug "HashedUniqueSet.partition.yes")
       val no
 	= Vector.unfoldi
 	  (n,
 	   List.rev no,
 	   fn (_, l) => case l
 			  of h::t => (h, t)
-			   | _ => Error.bug "HashedUniqueSet::partition")
+			   | _ => Error.bug "HashedUniqueSet.partition.no")
     in
       {yes = T' {buckets = yes, mask = mask},
        no = T' {buckets = no, mask = mask}}
@@ -313,8 +313,8 @@ fun size s = subsetSize(s, fn _ => true)
 
 fun layout s = List.layout Element.layout (toList s)
 
-fun power s = Error.bug "HashedUniqueSet::power"
-fun subsets (s, n) = Error.bug "HashedUniqueSet: subsets"
+fun power s = Error.bug "HashedUniqueSet.power"
+fun subsets (s, n) = Error.bug "HashedUniqueSet.subsets"
 
 fun isEmpty s = size s = 0
 fun isSubsetEq (s1, s2) = size (difference (s1, s2)) = 0

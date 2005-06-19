@@ -215,7 +215,7 @@ structure Type =
 
       fun deArrow t =
 	 case deArrowOpt t of
-	    NONE => Error.bug "Type.deArrow"
+	    NONE => Error.bug "Interface.Type.deArrow"
 	  | SOME z => z
 
       fun deEta (t: t, tyvars: Tyvar.t vector): Tycon.t option =
@@ -279,7 +279,7 @@ structure Type =
 	 let
 	    fun var a =
 	       case Vector.peek (sub, fn (a', _) => Tyvar.equals (a, a')) of
-		  NONE => Error.bug "substitute"
+		  NONE => Error.bug "Interface.Type.substitute"
 		| SOME (_, t) => t
 	 in
 	    hom (t, {con = Con,
@@ -417,7 +417,7 @@ structure Defn =
       fun dest (d: t): dest =
 	 case d of
 	    U u => u
-	  | _ => Error.bug "Defn.dest"
+	  | _ => Error.bug "Interface.Defn.dest"
    end
 
 (* expandTy expands all type definitions in ty *)
@@ -426,7 +426,7 @@ local
       case c of
 	 Tycon.Flexible f =>
 	    (case Defn.dest (FlexibleTycon.defn f) of
-		Defn.Realized _ => Error.bug "expandTy saw Realized"
+		Defn.Realized _ => Error.bug "Interface.expandTy: Realized"
 	      | Defn.TypeStr s => expandTy (TypeStr.apply (s, ts))
 	      | Defn.Undefined => Type.Con (c, ts))
        | Tycon.Rigid _ => Type.Con (c, ts)
@@ -517,7 +517,7 @@ fun flexibleTyconAdmitsEquality (FlexibleTycon.T s): AdmitsEquality.t =
       datatype z = datatype Defn.dest
    in
       case Defn.dest (!defn) of
-	 Realized _ => Error.bug "flexibleTyconAdmitsEquality Realized"
+	 Realized _ => Error.bug "Interface.flexibleTyconAdmitsEquality: Realized"
        | TypeStr s => typeStrAdmitsEquality s
        | Undefined => !admitsEquality
    end
@@ -566,7 +566,7 @@ structure FlexibleTycon =
 	 in
 	    case Defn.dest (!defn) of
 	       Defn.Undefined => defn := Defn.realized typeStr
-	     | _ => Error.bug "FlexibleTycon.realize"
+	     | _ => Error.bug "Interface.FlexibleTycon.realize"
 	 end
 
       fun share (T s, T s') =
@@ -601,7 +601,7 @@ structure FlexibleTycon =
 	 case Defn.dest (defn f) of
 	    Defn.Realized s => ETypeStr s
 	  | Defn.TypeStr s => TypeStr s
-	  | _ => Error.bug "FlexiblTycon.realization"
+	  | _ => Error.bug "Interface.FlexibleTycon.realization"
    end
 
 structure Tycon =
@@ -662,7 +662,8 @@ structure TypeStr =
 			val {creationTime, defn, ...} = FlexibleTycon.fields c
 		     in
 			case Defn.dest (!defn) of
-			   Defn.Realized _ => Error.bug "getFlex of realized"
+			   Defn.Realized _ => 
+			      Error.bug "Interface.TypeStr.loopTycon: Realized"
 			 | Defn.TypeStr s => loop s
 			 | Defn.Undefined =>
 			      if Time.< (creationTime, time)
@@ -706,7 +707,7 @@ structure TypeStr =
 
       val share =
 	 Trace.trace
-	 ("TypeStr.share",
+	 ("Interface.TypeStr.share",
 	  fn ((s, _, _), (s', _, _), t) =>
 	  Layout.tuple [layout s, layout s', Time.layout t],
 	  Unit.layout)
@@ -772,7 +773,7 @@ structure TypeStr =
 	       end
 
       val wheree =
-	 Trace.trace ("TypeStr.wheree",
+	 Trace.trace ("Interface.TypeStr.wheree",
 		      fn (s, _, _, t, s') => Layout.tuple [layout s,
 							   Time.layout t,
 							   layout s'],

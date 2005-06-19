@@ -51,18 +51,18 @@ structure A' =
       fun subSafe (a, i) =
 	 case Array.sub (getArray a, i) of
 	    SOME x => x
-	  | NONE => Error.bug "subSafe"
+	  | NONE => Error.bug "ResizableArray.subSafe"
 		 
       fun sub (a, i) =
 	 if i < length a then subSafe (a, i)
-	 else Error.bug "sub"
+	 else Error.bug "ResizableArray.sub"
 	    
       fun updateSafe (a, i, x) =
 	 Array.update (getArray a, i, SOME x)
    
       fun update (a, i, x) =
 	 if i < length a then updateSafe (a, i, x)
-	 else Error.bug "update"
+	 else Error.bug "ResizableArray.update"
 
       fun fromList l =
 	 let val a = Array.fromList (List.map (l, SOME))
@@ -106,7 +106,7 @@ fun addToEnd (a, x) =
        
 fun deleteLast a =
    if length a = 0
-      then Error.bug "deleteLast"
+      then Error.bug "ResizableArray.deleteLast"
    else let val x = subSafe (a, maxIndex a)
 	in (if length a = minLength a then shrink a else ()
 	    ; decLength a

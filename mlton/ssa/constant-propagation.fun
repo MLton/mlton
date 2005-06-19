@@ -76,7 +76,10 @@ structure Value =
 	    fun equals (T {const = r, ...}, T {const = r', ...}) = r = r'
 
 	    val equals =
-	       Trace.trace2 ("Const.equals", layout, layout, Bool.layout) equals
+	       Trace.trace2 
+	       ("ConstantPropagation.Value.Const.equals", 
+		layout, layout, Bool.layout) 
+	       equals
 
 	    val const = new o Const
 
@@ -92,7 +95,10 @@ structure Value =
 			; coercedTo := [])
 
 	    val makeUnknown =
-	       Trace.trace ("Const.makeUnknown", layout, Unit.layout) makeUnknown
+	       Trace.trace 
+	       ("ConstantPropagation.Value.Const.makeUnknown", 
+		layout, Unit.layout) 
+	       makeUnknown
 
 	    fun send (c: t, c': const): unit =
 	       let
@@ -111,7 +117,10 @@ structure Value =
 	       end
 
 	    val send =
-	       Trace.trace2 ("Const.send", layout, layoutConst, Unit.layout) send
+	       Trace.trace2 
+	       ("ConstantPropagation.Value.Const.send", 
+		layout, layoutConst, Unit.layout) 
+	       send
 
 	    fun coerce {from = from as T {const, coercedTo}, to: t}: unit =
 	       if equals (from, to)
@@ -128,7 +137,7 @@ structure Value =
 
 	    val coerce =
 	       Trace.trace
-	       ("Const.coerce",
+	       ("ConstantPropagation.Value.Const.coerce",
 		fn {from, to} => Layout.record [("from", layout from),
 						("to", layout to)],
 		Unit.layout)
@@ -139,7 +148,10 @@ structure Value =
 		; coerce {from = c', to = c})
 
 	    val unify =
-	       Trace.trace2 ("Const.unify", layout, layout, Unit.layout) unify
+	       Trace.trace2 
+	       ("ConstantPropagation.Value.Const.unify", 
+		layout, layout, Unit.layout) 
+	       unify
 	 end
 
       structure One =
@@ -195,7 +207,9 @@ structure Value =
 	    fun unknown (): 'a t = new Place.Unknown
 	    fun here (a: 'a): 'a t = new (Place.One (One.new a))
 
-	    val traceMakeUnknown = Trace.info "Birth.makeUnknown"
+	    val traceMakeUnknown = 
+	       Trace.info 
+	       "ConstantPropagation.Value.Birth.makeUnknown"
 	       
 	    fun makeUnknown arg =
 	       Trace.traceInfo'
@@ -207,7 +221,9 @@ structure Value =
 			 ; List.foreach (!coercedTo, makeUnknown)
 			 ; coercedTo := [])) arg
 
-	    val traceSend = Trace.info "Birth.send"
+	    val traceSend = 
+	       Trace.info 
+	       "ConstantPropagation.Value.Birth.send"
 	       
 	    fun send arg =
 	       Trace.traceInfo'
@@ -226,7 +242,9 @@ structure Value =
 		   loop b
 		end) arg
 	
-	    val traceCoerce = Trace.info "Birth.coerce"
+	    val traceCoerce = 
+	       Trace.info 
+	       "ConstantPropagation.Value.Birth.coerce"
 	    fun coerce arg =
 	       Trace.traceInfo'
 	       (traceCoerce,
@@ -246,7 +264,9 @@ structure Value =
 		       | Place.Undefined => push ()
 		   end) arg
 
-	    val traceUnify = Trace.info "Birth.unify"
+	    val traceUnify = 
+	       Trace.info 
+	       "ConstantPropagation.Value.Birth.unify"
 	       
 	    fun unify arg =
 	       Trace.traceInfo'
@@ -325,10 +345,13 @@ structure Value =
       fun equals (T s, T s') = Set.equals (s, s')
 
       val equals =
- 	 Trace.trace2 ("Value.equals", layout, layout, Bool.layout) equals
+ 	 Trace.trace2 
+	 ("ConstantPropagation.Value.equals", 
+	  layout, layout, Bool.layout) 
+	 equals
 
-      val globalsInfo = Trace.info "Value.globals"
-      val globalInfo = Trace.info "Value.global"
+      val globalsInfo = Trace.info "ConstantPropagation.Value.globals"
+      val globalInfo = Trace.info "ConstantPropagation.Value.global"
 
       fun globals arg: (Var.t * Type.t) vector option =
 	 Trace.traceInfo
@@ -480,8 +503,8 @@ structure Value =
 		  sel (constToEltLength (c, err))
 	     | _ => Error.bug err
       in
-	 val devector = make ("devector", #elt)
-	 val vectorLength = make ("vectorLength", #length)
+	 val devector = make ("ConstantPropagation.Value.devector", #elt)
+	 val vectorLength = make ("ConstantPropagation.Value.vectorLength", #length)
       end
 
       local
@@ -489,9 +512,9 @@ structure Value =
 	    case value v of
 	       Array fs => sel fs
 	     | _ => Error.bug err
-      in val dearray = make ("dearray", #elt)
-	 val arrayLength = make ("arrayLength", #length)
-	 val arrayBirth = make ("arrayBirth", #birth)
+      in val dearray = make ("ConstantPropagation.Value.dearray", #elt)
+	 val arrayLength = make ("ConstantPropagation.Value.arrayLength", #length)
+	 val arrayBirth = make ("ConstantPropagation.Value.arrayBirth", #birth)
       end
 
       fun vectorFromArray (T s: t): t =
@@ -500,7 +523,7 @@ structure Value =
 	 in case value of
 	    Array {elt, length, ...} =>
 	       new (Vector {elt = elt, length = length}, ty)
-	  | _ => Error.bug "Value.vectorFromArray"
+	  | _ => Error.bug "ConstantPropagation.Value.vectorFromArray"
 	 end
 
       local
@@ -509,14 +532,14 @@ structure Value =
 	       Ref fs => sel fs
 	     | _ => Error.bug err
       in
-	 val deref = make ("deref", #arg)
-	 val refBirth = make ("refBirth", #birth)
+	 val deref = make ("ConstantPropagation.Value.deref", #arg)
+	 val refBirth = make ("ConstantPropagation.Value.refBirth", #birth)
       end
 
       fun deweak v =
 	 case value v of
 	    Weak v => v
-	  | _ => Error.bug "deweak"
+	  | _ => Error.bug "ConstantPropagation.Value.deweak"
 
       structure Data =
 	 struct
@@ -573,14 +596,14 @@ structure Value =
       fun select {tuple, offset, resultType = _} =
 	 case value tuple of
 	    Tuple vs => Vector.sub (vs, offset)
-	  | _ => Error.bug "select of non-tuple" 
+	  | _ => Error.bug "ConstantPropagation.Value.select: non-tuple" 
 
       fun unit () = tuple (Vector.new0 ())
    end
 
 val traceSendConApp =
    Trace.trace2
-   ("sendConApp", Value.Data.layout,
+   ("ConstantPropagation.sendConApp", Value.Data.layout,
     fn {con, args, uniq} =>
     Layout.record [("con", Con.layout con),
 		   ("args", Vector.layout Value.layout args),
@@ -588,10 +611,14 @@ val traceSendConApp =
     Unit.layout)
 
 val traceSendConAppLoop =
-   Trace.trace ("sendConAppLoop", Value.Data.layout, Unit.layout)
+   Trace.trace 
+   ("ConstantPropagation.sendConAppLoop", 
+    Value.Data.layout, Unit.layout)
 
 val traceMakeDataUnknown =
-   Trace.trace ("makeDataUnknown", Value.Data.layout, Unit.layout)
+   Trace.trace 
+   ("ConstantPropagation.makeDataUnknown", 
+    Value.Data.layout, Unit.layout)
 
 (* ------------------------------------------------- *)
 (*                     simplify                      *)
@@ -627,7 +654,7 @@ fun simplify (program: Program.t): Program.t =
 	 open Value
       in
  	 val traceCoerce =
- 	    Trace.trace ("Value.coerce",
+ 	    Trace.trace ("ConstantPropagation.Value.coerce",
 			 fn {from, to} => Layout.record [("from", layout from),
 							 ("to", layout to)],
 			 Unit.layout)
@@ -687,7 +714,7 @@ fun simplify (program: Program.t): Program.t =
 	        let 
 		   fun error () = 
 		      Error.bug
-		      (concat ["strange coerce: from: ",
+		      (concat ["ConstantPropagation.Value.coerce: strange: from: ",
 			       Layout.toString (Value.layout from),
 			       " to: ", Layout.toString (Value.layout to)])
 		in
@@ -746,7 +773,7 @@ fun simplify (program: Program.t): Program.t =
 			   ; unify (x, x'))
 		     | (Tuple vs, Tuple vs') => Vector.foreach2 (vs, vs', unify)
 		     | (Weak v, Weak v') => unify (v, v')
-		     | _ => Error.bug "strange unify"
+		     | _ => Error.bug "ConstantPropagation.Value.unify: strange"
 	       end
 	 and unifyData (d, d') =
 	    (coerceData {from = d, to = d'}
@@ -802,7 +829,7 @@ fun simplify (program: Program.t): Program.t =
 					  Type.isSmall resultType
 					  then Birth.here z
 				       else Birth.unknown ()
-		   | _ => Error.bug "bear"
+		   | _ => Error.bug "ConstantPropagation.Value.primApp.bear"
 	       fun update (a, v) =
 		  (coerce {from = v, to = dearray a}
 		   ; unit ())
@@ -871,7 +898,7 @@ fun simplify (program: Program.t): Program.t =
 			      then coerces {froms = args', tos = args}
 			   else ())
 		  end
-	     | _ => Error.bug "conSelect of non-datatype"
+	     | _ => Error.bug "ConstantPropagation.Value.filter: non-datatype"
       end
       fun filterIgnore _ = ()
       val {value, ...} =

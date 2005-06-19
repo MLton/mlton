@@ -99,7 +99,7 @@ fun stringOfLength(r, i: Int.t) s =
    in loop(i, s, [])
    end
 
-val info = Trace.info "readFromString"
+val info = Trace.info "Reader.readFromString"
 
 fun readFromString(rm, s) =
    let val n: Int.t = String.size s

@@ -15,11 +15,11 @@ datatype t =
 
 val outX =
    fn X x => x
-    | _ => Error.bug "outX"
+    | _ => Error.bug "Sum.outX"
 
 val outY =
    fn Y y => y
-    | _ => Error.bug "outY"
+    | _ => Error.bug "Sum.outY"
 
 val map =
    fn (X x, f, _) => f x

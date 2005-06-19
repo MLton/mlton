@@ -109,7 +109,7 @@ struct
 	= fn 1 => BYTE
 	   | 2 => WORD
 	   | 4 => LONG
-	   | _ => Error.bug "Size.fromBytes"
+	   | _ => Error.bug "x86.Size.fromBytes"
       val toBytes : t -> int
 	= fn BYTE => 1
 	   | WORD => 2
@@ -156,7 +156,7 @@ struct
 	   | FPIS => FPIS
 	   | FPIL => FPIL
 	   | FPIQ => FPIQ
-	   | _ => Error.bug "Size.toFPI"
+	   | _ => Error.bug "x86.Size.toFPI"
 	
       val eq = fn (s1, s2) => s1 = s2
       val lt = fn (s1, s2) => (toBytes s1) < (toBytes s2)
@@ -205,14 +205,6 @@ struct
 
       fun eq(T r1, T r2) = r1 = r2
 
-(*
-      fun return size
-	= T {reg = EAX, part = case size
-				 of Size.BYTE => L
-				  | Size.WORD => X
-				  | Size.LONG => E
-				  | _ => Error.bug "Register.return"}
-*)
       val eax = T {reg = EAX, part = E}
       val ebx = T {reg = EBX, part = E}
       val ecx = T {reg = ECX, part = E}
@@ -291,7 +283,7 @@ struct
 	= fn Size.BYTE => byteRegisters
 	   | Size.WORD => wordRegisters
 	   | Size.LONG => longRegisters
-	   | _ => Error.bug "Register.registers"
+	   | _ => Error.bug "x86.Register.registers"
 
       val baseRegisters = longRegisters
       val indexRegisters = [T {reg = EAX, part = E},
@@ -333,7 +325,7 @@ struct
 				       T {reg = ECX, part = E},
 				       T {reg = EDX, part = E}]
 	   | (Size.LONG,Size.WORD) => longRegisters
-	   | _ => Error.bug "withLowPart: fullsize,lowsize"
+	   | _ => Error.bug "x86.Register.withLowPart: fullsize,lowsize"
 
       val lowPartOf (* (register,lowsize) *)
 	= fn (T {reg,       part = L},Size.BYTE) => T {reg = reg, part = L}
@@ -344,7 +336,7 @@ struct
 	   | (T {reg = EDX, ...},     Size.BYTE) => T {reg = EDX, part = L}
 	   | (T {reg,       part = X},Size.WORD) => T {reg = reg, part = X}
 	   | (T {reg,       ...},     Size.WORD) => T {reg = reg, part = X}
-	   | _ => Error.bug "lowPartOf: register,lowsize"
+	   | _ => Error.bug "x86.Register.lowPartOf: register,lowsize"
 
       val fullPartOf (* (register,fullsize) *)
 	= fn (T {reg, part = L},Size.BYTE) => T {reg = reg, part = L}
@@ -354,7 +346,7 @@ struct
 	   | (T {reg, part = L},Size.LONG) => T {reg = reg, part = E}
 	   | (T {reg, part = X},Size.LONG) => T {reg = reg, part = E}
 	   | (T {reg, part = E},Size.LONG) => T {reg = reg, part = L}
-	   | _ => Error.bug "fullPartOf: register,fullsize"
+	   | _ => Error.bug "x86.Register.fullPartOf: register,fullsize"
     end
 
   structure FltRegister =
@@ -665,7 +657,7 @@ struct
 	   | 2 => Two
 	   | 4 => Four
 	   | 8 => Eight
-	   | _ => Error.bug "Scale.fromBytes"
+	   | _ => Error.bug "x86.Scale.fromBytes"
       local
 	 datatype z = datatype CType.t
       in
@@ -2105,7 +2097,7 @@ struct
 		   of Size.BYTE => str "cbtw"
 		    | Size.WORD => str "cwtd"
 		    | Size.LONG => str "cltd"
-		    | _ => Error.bug "unsupported conversion")
+		    | _ => Error.bug "x86.Instruction.layout: CX,unsupported conversion")
 	     | MOVX {oper, src, srcsize, dst, dstsize}
 	     => bin (movx_layout oper, 
 		     seq [Size.layout srcsize, 
@@ -2285,7 +2277,7 @@ struct
 		       | Size.LONG
 		       => (Register.T {reg = Register.EDX, part = Register.E},
 			   Register.T {reg = Register.EAX, part = Register.E})
-		       | _ => Error.bug "Instruction.uses_defs: MD, size"
+		       | _ => Error.bug "x86.Instruction.uses_defs: MD, size"
 	      in 
 		if oper = IMUL orelse oper = MUL
 		  then {uses = [src, Operand.register lo],
@@ -2313,7 +2305,7 @@ struct
 			       | Size.LONG
 		               => Register.T {reg = Register.ECX, 
 					      part = Register.E}
-		               | _ => Error.bug "Instruction.uses_defs: SRAL, size"
+		               | _ => Error.bug "x86.Instruction.uses_defs: SRAL, size"
 		     in
 		       {uses = [count, dst, Operand.register reg], 
 			defs = [dst], 
@@ -2399,7 +2391,7 @@ struct
 		       | Size.LONG
 		       => (Register.T {reg = Register.EDX, part = Register.E},
 			   Register.T {reg = Register.EAX, part = Register.E})
-		       | _ => Error.bug "Instruction.uses_defs: CX, size"
+		       | _ => Error.bug "x86.Instruction.uses_defs: CX, size"
 	      in
 		{uses = [Operand.register lo],
 		 defs = [Operand.register hi, Operand.register lo], 
@@ -2527,7 +2519,7 @@ struct
 		       | Size.LONG
 		       => (Register.T {reg = Register.EDX, part = Register.E},
 			   Register.T {reg = Register.EAX, part = Register.E})
-		       | _ => Error.bug "Instruction.hints: MD, size"
+		       | _ => Error.bug "x86.Instruction.hints: MD, size"
 
 		val temp = MemLoc.temp {size = size}
 	      in 
@@ -2549,7 +2541,7 @@ struct
 		       | Size.LONG
 		       => (Register.T {reg = Register.EDX, part = Register.E},
 			   Register.T {reg = Register.EAX, part = Register.E})
-		       | _ => Error.bug "Instruction.hints: MD, size"
+		       | _ => Error.bug "x86.Instruction.hints: MD, size"
 			
 		val temp = MemLoc.temp {size = size}
 	      in 
@@ -2573,7 +2565,7 @@ struct
 			       | Size.LONG
 		               => Register.T {reg = Register.ECX, 
 					      part = Register.E}
-		               | _ => Error.bug "Instruction.hints: SRAL, size"
+		               | _ => Error.bug "x86.Instruction.hints: SRAL, size"
 		     in
 		       [(memloc, reg)]
 		     end
@@ -2620,7 +2612,7 @@ struct
 		       | Size.LONG
 		       => (Register.T {reg = Register.EDX, part = Register.E},
 			   Register.T {reg = Register.EAX, part = Register.E})
-		       | _ => Error.bug "Instruction.srcs_dsts: MD, size"
+		       | _ => Error.bug "x86.Instruction.srcs_dsts: MD, size"
 	      in 
 		if oper = IMUL orelse oper = MUL
 		  then {srcs = SOME [src, 
@@ -2651,7 +2643,7 @@ struct
 			       | Size.LONG
 		               => Register.T {reg = Register.ECX, 
 					      part = Register.E}
-		               | _ => Error.bug "Instruction.srcs_dsts: SRAL, size"
+		               | _ => Error.bug "x86.Instruction.srcs_dsts: SRAL, size"
 		     in
 		       {srcs = SOME [count, dst, Operand.register reg], 
 			dsts = SOME [dst]} 
@@ -2702,7 +2694,7 @@ struct
 		       | Size.LONG
 		       => (Register.T {reg = Register.EDX, part = Register.E},
 			   Register.T {reg = Register.EAX, part = Register.E})
-		       | _ => Error.bug "Instruction.srcs_dsts: CX, size"
+		       | _ => Error.bug "x86.Instruction.srcs_dsts: CX, size"
 	      in
 		{srcs = SOME [Operand.register lo],
 		 dsts = SOME [Operand.register hi, Operand.register lo]}
@@ -3376,11 +3368,11 @@ struct
 			 => {register = case replacer {use = false, def = true}
 			                     (Operand.register register)
 					  of Operand.Register register => register
-					   | _ => Error.bug "Directive.replace",
+					   | _ => Error.bug "x86.Directive.replace: Cache, register",
 			     memloc = case replacer {use = true, def = false}
 			                   (Operand.memloc memloc)
 					of Operand.MemLoc memloc => memloc
-					 | _ => Error.bug "Directive.replace",
+					 | _ => Error.bug "x86.Directive.replace: Cache, memloc",
 			     reserve = reserve})}
 	   | FltCache {caches}
            => FltCache {caches
@@ -3390,7 +3382,7 @@ struct
 			    => {memloc = case replacer {use = true, def = false}
 				              (Operand.memloc memloc)
 					   of Operand.MemLoc memloc => memloc
-					    | _ => Error.bug "Directive.replace"})}
+					    | _ => Error.bug "x86.Directive.replace: FltCache, memloc"})}
 	   | Reset => Reset
 	   | Force {commit_memlocs, commit_classes, 
 		    remove_memlocs, remove_classes,
@@ -3402,7 +3394,7 @@ struct
 				                {use = true, def = false}
 						(Operand.memloc memloc)
 					     of Operand.MemLoc memloc => memloc
-					      | _ => Error.bug "Directive.replace"),
+					      | _ => Error.bug "x86.Directive.replace: Force, commit_memlocs"),
 		     commit_classes = commit_classes,
 		     remove_memlocs = MemLocSet.map
 		                      (remove_memlocs,
@@ -3411,7 +3403,7 @@ struct
 				                {use = true, def = false}
 						(Operand.memloc memloc)
 					     of Operand.MemLoc memloc => memloc
-					      | _ => Error.bug "Directive.replace"),
+					      | _ => Error.bug "x86.Directive.replace: Force, remove_memlocs"),
 		     remove_classes = remove_classes,
 		     dead_memlocs = MemLocSet.map
 		                    (dead_memlocs,
@@ -3420,7 +3412,7 @@ struct
 				              {use = false, def = false}
 					      (Operand.memloc memloc)
 					   of Operand.MemLoc memloc => memloc
-				            | _ => Error.bug "Directive.replace"),
+				            | _ => Error.bug "x86.Directive.replace: Force, dead_memlocs"),
 		     dead_classes = dead_classes}
 	   | CCall => CCall
            | Return {returns}
@@ -3431,7 +3423,7 @@ struct
 				  case replacer {use = true, def = false}
 				       (Operand.memloc dst)
 				    of Operand.MemLoc memloc => memloc
-				     | _ => Error.bug "Directive.replace"})}
+				     | _ => Error.bug "x86.Directive.replace: Return, returns"})}
 	   | Reserve {registers} => Reserve {registers = registers}
 	   | Unreserve {registers} => Unreserve {registers = registers}
 	   | ClearFlt => ClearFlt
@@ -3547,14 +3539,14 @@ struct
 			 (replacer {use = true, def = false} 
 			           (Operand.label label))
 		      of SOME label => label
-		       | NONE => Error.bug "PseudoOp.replace: replacerLabel"
+		       | NONE => Error.bug "x86.PseudoOp.replace.replacerLabel"
 	    val replacerImmediate
 	      = fn immediate
 		 => case Operand.deImmediate
 			 (replacer {use = true, def = false} 
 			           (Operand.immediate immediate))
 			     of SOME immediate => immediate
-			      | NONE => Error.bug "PseudoOp.replace: replacerImmediate"
+			      | NONE => Error.bug "x86.PseudoOp.replace.replacerImmediate"
 	  in
 	    fn Data => Data
 	     | Text => Text
@@ -3633,7 +3625,7 @@ struct
 				    (replacer {use = false, def = true}
 				              (Operand.label l))
 				 of SOME l => l
-				  | NONE => Error.bug "Assembly.replace")
+				  | NONE => Error.bug "x86.Assembly.replace, Label")
 	   | Instruction i => Instruction (Instruction.replace replacer i)
 
       val comment = Comment
@@ -3865,7 +3857,7 @@ struct
 	  fun extract(cases,f)
 	    = let
 		fun doit [(k,target)] = f (k, target)
-		  | doit _ = Error.bug "Transfer.Cases.extract"
+		  | doit _ = Error.bug "x86.Transfer.Cases.extract"
 	      in
 		case cases
 		  of Word cases => doit cases
@@ -4178,7 +4170,7 @@ struct
 	     SOME _ => b' :: ac
 	   | NONE =>
 		case ac of
-		   [] => Error.bug "compress' with dangling transfer"
+		   [] => Error.bug "x86.Block.compress': dangling transfer"
 		 | b2' :: ac =>
 		      let
 			 val T' {entry = entry2,
@@ -4188,7 +4180,7 @@ struct
 		      in
 			 case entry2 of
 			    SOME _ =>
-			       Error.bug "compress' with mismatched transfer"
+			       Error.bug "x86.Block.compress': mismatched transfer"
 			  | NONE =>
 			       let
 				  val (pl, ss) =
@@ -4219,7 +4211,7 @@ struct
 		   profileLabel = profileLabel,
 		   statements = statements,
 		   transfer = t}
-	   | _ => Error.bug "compress")
+	   | _ => Error.bug "x86.Block.compress")
     end
 
   structure Chunk =

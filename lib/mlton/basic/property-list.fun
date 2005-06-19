@@ -42,7 +42,7 @@ fun 'a newProperty () =
 	       let
 		  fun update () =
 		     ((numLinks := n + !numLinks
-		       handle Overflow => Error.bug "property list numLinks overflow")
+		       handle Overflow => Error.bug "PropertyList: numLinks overflow")
 		      ; if n > !maxLength
 			   then maxLength := n
 			else ())
@@ -55,7 +55,7 @@ fun 'a newProperty () =
 	       end
 	    val _ =
 	       numPeeks := 1 + !numPeeks
-	       handle Overflow => Error.bug "propery list numPeeks overflow"
+	       handle Overflow => Error.bug "PropertyList: numPeeks overflow"
 	 in
 	    loop (!hs, 0)
 	 end

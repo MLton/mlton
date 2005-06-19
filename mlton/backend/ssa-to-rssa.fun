@@ -529,7 +529,7 @@ structure Name =
 			  Type.word (WordSize.bits s2),
 			  sg)
 	     | Word_xorb s => wordBinary (s, {signed = false})
-	     | _ => raise Fail "cFunctionRaise"
+	     | _ => Error.bug "SsaToRssa.Name.cFunctionRaise"
 	 end
 
       fun cFunction n = SOME (cFunctionRaise n) handle _ => NONE
@@ -548,7 +548,7 @@ structure Type =
 	 
       fun scale (ty: t): Scale.t =
 	 case Scale.fromInt (Bytes.toInt (bytes ty)) of
-	    NONE => Error.bug "Type.scale"
+	    NONE => Error.bug "SsaToRssa.Type.scale"
 	  | SOME s => s
    end
 
@@ -661,7 +661,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 			     in
 				(ss, t)
 			     end
-			| _ => Error.bug "strange type in case"))
+			| _ => Error.bug "SsaToRssa.translateCase: strange type"))
 	  | S.Cases.Word (s, cs) =>
 	       ([],
 		Switch
@@ -784,7 +784,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				    case Name.cFunction operCheck of
 				       NONE =>
 					  Error.bug
-					  (concat ["unimplemented prim:",
+					  (concat ["SsaToRssa.translateTransfer: ",
+						   "unimplemented arith:",
 						   Name.toString operCheck])
 				     | SOME operCheckCF => operCheckCF
 				 val afterOperCheck =
@@ -813,7 +814,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				    case Name.cFunction oper of
 				       NONE =>
 					  Error.bug
-					  (concat ["unimplemented prim:",
+					  (concat ["SsaToRssa.translateTransfer: ",
+						   "unimplemented arith:",
 						   Name.toString oper])
 				     | SOME operCF => operCF
 				 val afterOper =
@@ -851,7 +853,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 			    | Word_subCheck (s, sg) => 
 				 doit (Prim.wordSub s, 
 				       Word_subCheck (s, sg))
-			    | _ => Error.bug (concat ["strange overflow prim:",
+			    | _ => Error.bug (concat ["SsaToRssa.translateTransfer: ",
+						      "strange arith:",
 						      Name.toString (Prim.name prim)])
 			end
 	       end
@@ -913,7 +916,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 			     return = SOME l})
 			end
 		   | _ => Error.bug (concat
-				     ["strange prim in SSA Runtime transfer ",
+				     ["SsaToRssa.translateTransfer: ",
+				      "strange Runtime prim: ",
 				      Prim.toString prim])
 	       end
       fun translateStatementsTransfer (statements, ss, transfer) =
@@ -1006,7 +1010,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 					      if Type.isPointer t
 						 then yes t
 					      else no ())
-				  | _ => Error.bug "ifIsWeakPointer"
+				  | _ => Error.bug "SsaToRssa.ifIsWeakPointer"
 			      fun arrayOrVectorLength () =
 				 move (Offset
 				       {base = a 0,
@@ -1072,7 +1076,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				    val result = valOf (toRtype ty)
 				    val pt =
 				       case Type.dePointer result of
-					  NONE => Error.bug "strange array"
+					  NONE => Error.bug "SsaToRssa.array"
 					| SOME pt => PointerTycon pt
 				    val args =
 				       Vector.new4 (GCState,
@@ -1112,7 +1116,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 			      then primApp p
 			   else (case Name.cFunction n of
 				    NONE =>
-				       Error.bug (concat ["unimplemented prim:",
+				       Error.bug (concat ["SsaToRssa.codegenOrC: ",
+							  "unimplemented prim:",
 							  Name.toString n])
 				  | SOME f => simpleCCall f)
 			end
@@ -1127,7 +1132,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				       val vecTy = valOf (toRtype ty)
 				       val pt =
 					  case Type.dePointer vecTy of
-					     NONE => Error.bug "strange Array_toVector"
+					     NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_toVector"
 					   | SOME pt => pt
 				    in
 				       loop
@@ -1331,7 +1336,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 					val header =
 					   PointerTycon
 					   (case Type.dePointer result of
-					       NONE => Error.bug "Weak_new"
+					       NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Weak_new"
 					     | SOME pt => pt)
 					val func =
 					   CFunction.weakNew {arg = t,

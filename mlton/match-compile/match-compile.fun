@@ -97,7 +97,7 @@ structure Facts =
 			       (case fact x of
 				   Fact.Con {arg = SOME x, ...} =>
 				      loop (p, x, env)
-				 | _ => Error.bug "wrong fact"))
+				 | _ => Error.bug "MatchCompile.Facts.bind: Con:wrong fact"))
 		   | Const _ => env
 		   | Layered (y, p) => loop (p, x, Env.extend (env, y, x))
 		   | Tuple ps =>
@@ -106,7 +106,7 @@ structure Facts =
 			else (case fact x of
 				 Fact.Tuple xs =>
 				    Vector.fold2 (ps, xs, env, loop)
-			       | _ => Error.bug "wrong fact")
+			       | _ => Error.bug "MatchCompile.Facts.bind: Tuple:wrong fact")
 		   | Var y => Env.extend (env, y, x)
 		   | Wild => env
 	       end
@@ -117,7 +117,7 @@ structure Facts =
 	 end
 
       val bind =
-	 Trace.trace3 ("Facts.bind",
+	 Trace.trace3 ("MatchCompile.Facts.bind",
 		       layout, Var.layout, NestedPat.layout, Env.layout)
 	 bind
 
@@ -148,8 +148,9 @@ structure Facts =
 	 end
 
       val example =
-	 Trace.trace3 ("Facts.example", layout, Examples.layout, Var.layout,
-		       fn l => l)
+	 Trace.trace3 
+	 ("MatchCompile.Facts.example", 
+	  layout, Examples.layout, Var.layout, fn l => l)
 	 example
    end
    
@@ -290,7 +291,7 @@ fun unhandledConst (cs: Const.t vector): Const.t =
 	       fun extract c =
 		  case c of
 		     IntInf i => i
-		   | _ => Error.bug "expected IntInf"
+		   | _ => Error.bug "MatchCompile.unhandledConst: expected IntInf"
 	    in
 	       search {<= = op <=,
 		       equals = op =,
@@ -300,14 +301,14 @@ fun unhandledConst (cs: Const.t vector): Const.t =
 		       next = fn i => i + 1,
 		       prev = fn i => i - 1}
 	    end
-       | Real _ => Error.bug "match on real is not allowed"
+       | Real _ => Error.bug "MatchCompile.unhandledConst: match on real is not allowed"
        | Word w =>
 	    let
 	       val s = WordX.size w
 	       fun extract c =
 		  case c of
 		     Word w => WordX.toIntInf w
-		   | _ => Error.bug "expected Word"
+		   | _ => Error.bug "MatchCompile.unhandledConst: expected Word"
 	    in
 	       search {<= = op <=,
 		       equals = op =,
@@ -324,7 +325,7 @@ fun unhandledConst (cs: Const.t vector): Const.t =
 		  (cs, ~1, fn (c, max) =>
 		   case c of
 		      WordVector v => Int.max (max, WordXVector.length v)
-		    | _ => Error.bug "expected Word8Vector")
+		    | _ => Error.bug "MatchCompile.unhandledConst: expected Word8Vector")
 	       val elementSize = WordXVector.elementSize v
 	       val w = WordX.fromIntInf (IntInf.fromInt (Char.ord #"a"),
 					 elementSize)
@@ -389,7 +390,7 @@ fun matchCompile {caseType: Type.t,
 	 traceMatch
 	 (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t, es) =>
 	 if 0 = Vector.length rules
-	    then Error.bug "match with no rules"
+	    then Error.bug "MatchCompile.match: no rules"
 	 else if Rule.allWild (Vector.sub (rules, 0))
 	    then (* The first rule matches. *)
 	       let
@@ -419,7 +420,7 @@ fun matchCompile {caseType: Type.t,
 			 | Con {con, ...} =>
 			      sum (vars, rules, facts, es, i, test, conTycon con)
 			 | Tuple _ => tuple (vars, rules, facts, es, i, test)
-			 | Wild => Error.bug "matches Wild"
+			 | Wild => Error.bug "MatchCompile.match: Wild"
 		     end
 	    end) arg
       and const arg =
@@ -447,14 +448,18 @@ fun matchCompile {caseType: Type.t,
 				   Char.layout (WordX.toChar w),
 				   str String.dquote]
 			   end
-		      | _ => Error.bug (concat ["strange char: ", Layout.toString (Const.layout c)])
+		      | _ => Error.bug (concat ["MatchCompile.const.layoutConst: ",
+						"strange char: ", 
+						Layout.toString (Const.layout c)])
 	       else if isInt
 		  then
 		     case c of
 			Const.IntInf i => IntInf.layout i
 		      | Const.Word w =>
 			   IntInf.layout (WordX.toIntInfX w)
-		      | _ => Error.bug (concat ["strange int: ", Layout.toString (Const.layout c)])
+		      | _ => Error.bug (concat ["MatchCompile.const.layoutConst: ",
+						"strange int: ", 
+						Layout.toString (Const.layout c)])
 	       else Const.layout c
 	    val (cases, defaults) =
 	       Vector.foldr
@@ -483,7 +488,7 @@ fun matchCompile {caseType: Type.t,
 			 (List.map (cases, fn {const, rules} =>
 				    {const = const, rules = rule :: rules}),
 			  rule :: defaults)
-		    | _ => Error.bug "expected Const pat"
+		    | _ => Error.bug "MatchCompile.const: expected Const pat"
 		end)
 	    val cases = Vector.fromListMap (cases, fn {const, rules} =>
 					    {const = const,
@@ -522,7 +527,7 @@ fun matchCompile {caseType: Type.t,
 			    val w = 
 			       case const of
 				  Const.Word w => w
-				| _ => Error.bug "caseWord type error"
+				| _ => Error.bug "MatchCompile.const: caseWord type error"
 			 in
 			    (w, finish (rules, layoutConst const))
 			 end)
@@ -588,7 +593,7 @@ fun matchCompile {caseType: Type.t,
 		      (List.map (cases, fn {rest, rules} =>
 				 {rest = rest, rules = rule :: rules}),
 		       rule :: defaults)
-		 | _ => Error.bug "expected Con pat")
+		 | _ => Error.bug "MatchCompile.sum: expected Con pat")
 	    val cases =
 	       Vector.fromListMap
 	       (cases, fn {rest = {arg, con, targs, vars}, rules} =>
@@ -606,7 +611,7 @@ fun matchCompile {caseType: Type.t,
 				    Pat.Con {arg, ...} => Option.map (arg, #1)
 				  | Pat.Wild =>
 				       Option.map (arg, fn _ => Pat.Wild)
-				  | _ => Error.bug "decon got strange pattern")
+				  | _ => Error.bug "MatchCompile.sum: decon got strange pattern")
 		       in
 			  Rule.T {pats = pats, rest = rest}
 		       end)
@@ -668,7 +673,7 @@ fun matchCompile {caseType: Type.t,
 		     then normal ()
 		  else 
 		     case arg of
-			NONE => Error.bug "ref missing arg"
+			NONE => Error.bug "MatchCompile.sum: ref missing arg"
 		      | SOME (var, _) => 
 			   Exp.lett {body = rhs,
 				     exp = Exp.deref test,
@@ -704,7 +709,7 @@ fun matchCompile {caseType: Type.t,
 				       Pat.Tuple ps => ps
 				     | Pat.Wild =>
 					  Vector.tabulate (n, fn _ => Pat.Wild)
-				     | _ => Error.bug "Rule.detuple")))
+				     | _ => Error.bug "MatchCompile.tuple: detuple")))
 		      in
 			 Rule.T {pats = pats, rest = rest}
 		      end)
@@ -734,7 +739,7 @@ fun matchCompile {caseType: Type.t,
 
 val matchCompile =
    Trace.trace
-   ("matchCompile",
+   ("MatchCompile.matchCompile",
     fn {caseType, cases, test, testType, ...} =>
     Layout.record [("caseType", Type.layout caseType),
 		   ("cases", Vector.layout (NestedPat.layout o #1) cases),

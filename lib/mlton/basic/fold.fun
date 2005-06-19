@@ -21,7 +21,7 @@ fun foreach (l, f: 'a elt -> unit) = fold (l, (), f o #1)
 
 fun last l =
    case fold (l, NONE, SOME o #1) of
-      NONE => Error.bug "last"
+      NONE => Error.bug "Fold.last"
     | SOME x => x
    
 fun length l = fold (l, 0: int, fn (_, n) => n + 1)

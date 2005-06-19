@@ -17,7 +17,7 @@ open S
  *)
 
 val lexAndParseProgOrMLBRef: (File.t * Region.t -> Ast.Basdec.node) ref =
-   ref (fn _ => Error.bug "lexAndParseProgOrMLB")
+   ref (fn _ => Error.bug "MLBFrontEnd.lexAndParseProgOrMLB")
 
 val lexAndParseProgOrMLB = fn f => !lexAndParseProgOrMLBRef f
 
@@ -130,7 +130,7 @@ val lexAndParseString =
 			      val accs = (String.fromListRev acc)::accs
 			      fun loopVar (s, acc) =
 				 case s of
-				    [] => Error.bug "regularize"
+				    [] => Error.bug "MLBFrontEnd.lexAndParseString.regularize"
 				  | (#")")::s => (s, String.fromListRev acc)
 				  | c::s => loopVar (s, c::acc)
 			      val (s, var) = loopVar (s, [])
@@ -160,7 +160,7 @@ val lexAndParseString =
 	     relativize = relativize}
 	 end
       val regularize =
-	 Trace.trace ("MLBFrontEnd.regularize", 
+	 Trace.trace ("MLBFrontEnd.lexAndParseString.regularize", 
 		      fn {fileOrig, cwd, relativize} =>
 		      Layout.record
 		      [("fileOrig", File.layout fileOrig),

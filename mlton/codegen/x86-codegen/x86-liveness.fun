@@ -144,45 +144,6 @@ struct
 	  LiveSet.equals(liveOut1, liveOut2) andalso
 	  LiveSet.equals(dead1, dead2)	      
 
-(*
-      fun invariant (T {liveIn : LiveSet.t,
-			liveOut : LiveSet.t,
-			dead : LiveSet.t})
-	= let
-	    val rec check 
-	      = fn [] => true
-	         | m::l => List.forall
-	                   (l, 
-			    fn m' 
-			     => if not(MemLoc.mayAlias(m,m'))
-				  then true
-				  else (print 
-					(concat 
-					 ["\nmayAlias:\n",
-					  MemLoc.toString m,
-					  "\n",
-					  MemLoc.toString m',
-					  "\n"]);
-					false))
-                           andalso
-			   check l
-
-	    fun doit s
-	      = let
-		  val _
-		    = Assert.assert
-		      ("invariant - mayAlias",
-		       fn () => check (LiveSet.toList s))
-		in
-		  s
-		end
-	  in
-	    {liveIn = doit liveIn,
-	     liveOut = doit liveOut,
-	     dead = doit dead}
-	  end
-*)
-
       fun liveness ({uses : LiveSet.t,
 		     defs : LiveSet.t,
 		     live : LiveSet.t}) : t
@@ -195,9 +156,9 @@ struct
 	    (* dead = (liveIn \/ defs) - liveOut *)
 	    val dead = LiveSet.-(LiveSet.+(liveIn, defs), liveOut)
 	  in
-	    (* invariant *) T {liveIn = liveIn,
-			       liveOut = liveOut,
-			       dead = dead}
+	    T {liveIn = liveIn,
+	       liveOut = liveOut,
+	       dead = dead}
 	  end
 
       fun livenessEntry {entry : Entry.t,

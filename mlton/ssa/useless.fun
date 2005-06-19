@@ -143,7 +143,7 @@ structure Value =
 		     (unify (n, n'); unifySlot (e, e'))
 		| (Weak {useful = u, arg = a}, Weak {useful = u', arg = a'}) =>
 		     (Useful.== (u, u'); unifySlot (a, a'))
-		| _ => Error.bug "strange unify"
+		| _ => Error.bug "Useless.Value.unify: strange"
 	    end
       and unifySlot ((v, e), (v', e')) = (unify (v, v'); Exists.== (e, e'))
 	 
@@ -167,11 +167,11 @@ structure Value =
 		     (coerce {from = n, to = n'}
 		      ; coerceSlot (e, e'))
 		| (Weak _, Weak _) => unify (from, to)
-		| _ => Error.bug "strange coerce"
+		| _ => Error.bug "Useles.Value.coerce: strange"
 	    end
 
       val coerce =
-	 Trace.trace ("Useless.coerce",
+	 Trace.trace ("Useless.Value.coerce",
 		      fn {from, to} => let open Layout
 				       in record [("from", layout from),
 						  ("to", layout to)]
@@ -210,7 +210,7 @@ structure Value =
       fun deground (v: t): Useful.t =
 	 case value v of
 	    Ground g => g
-	  | _ => Error.bug "deground"
+	  | _ => Error.bug "Useless.deground"
 
       fun someUseful (v: t): Useful.t option =
 	 case value v of
@@ -285,7 +285,7 @@ structure Value =
       fun detupleSlots (v: t): slot vector =
 	 case value v of
 	    Tuple ss => ss
-	  | _ => Error.bug "detuple"
+	  | _ => Error.bug "Useless.detupleSlots"
       fun detuple v = Vector.map (detupleSlots v, #1)
       fun tuple (vs: t vector): t =
 	 let
@@ -310,8 +310,8 @@ structure Value =
 	       Vector fs => sel fs
 	     | _ => Error.bug err
       in
-	 val devector = make ("devector", #1 o #elt)
-	 val vectorLength = make ("vectorLength", #length)
+	 val devector = make ("Useless.devector", #1 o #elt)
+	 val vectorLength = make ("Useless.vectorLength", #length)
       end
       local
 	 fun make (err, sel) v =
@@ -319,19 +319,19 @@ structure Value =
 	       Array fs => sel fs
 	     | _ => Error.bug err
       in
-	 val dearray: t -> t = make ("dearray", #1 o #elt)
-	 val arrayLength = make ("arrayLength", #length)
+	 val dearray: t -> t = make ("Useless.dearray", #1 o #elt)
+	 val arrayLength = make ("Useless.arrayLength", #length)
       end
 
       fun deref (r: t): t =
 	 case value r of
 	    Ref {arg, ...} => #1 arg
-	  | _ => Error.bug "deref"
+	  | _ => Error.bug "Useless.deref"
 
       fun deweak (v: t): t =
 	 case value v of
 	    Weak {arg, ...} => #1 arg
-	  | _ => Error.bug "deweak"
+	  | _ => Error.bug "Useless.deweak"
 
       fun newType (v: t): Type.t = #1 (getNew v)
       and isUseful (v: t): bool = #2 (getNew v)
@@ -383,12 +383,12 @@ structure Value =
 	 end
 
       val getNew =
-	 Trace.trace ("getNew", layout, Layout.tuple2 (Type.layout, Bool.layout))
+	 Trace.trace ("Useless.getNew", layout, Layout.tuple2 (Type.layout, Bool.layout))
 	 getNew
 
-      val isUseful = Trace.trace ("isUseful", layout, Bool.layout) isUseful
+      val isUseful = Trace.trace ("Useless.isUseful", layout, Bool.layout) isUseful
 
-      val newType = Trace.trace ("newType", layout, Type.layout) newType
+      val newType = Trace.trace ("Useless.newType", layout, Type.layout) newType
 	 
       fun newTypes (vs: t vector): Type.t vector =
 	 Vector.keepAllMap (vs, fn v =>
@@ -442,11 +442,11 @@ fun useless (program: Program.t): Program.t =
 	       Ground g =>
 		  (Useful.makeUseful g
 		   ; coerces {from = conArgs con, to = to})
-	     | _ => Error.bug "filter of non ground"
+	     | _ => Error.bug "Useless.filter: non ground"
 	 fun filterGround (v: Value.t): unit =
 	    case value v of
 	       Ground g => Useful.makeUseful g
-	     | _ => Error.bug "filterInt of non ground"
+	     | _ => Error.bug "Useless.filterGround: non ground"
 	 val filter =
 	    Trace.trace3 ("Useless.filter",
 			  Value.layout,
@@ -517,7 +517,7 @@ fun useless (program: Program.t): Program.t =
 			    (Array {length = l, elt = e, ...},
 			     Vector {length = l', elt = e', ...}) =>
 			       (unify (l, l'); unifySlot (e, e'))
-			   | _ => Error.bug "strange Array_toVector")
+			   | _ => Error.bug "Useless.primApp: Array_toVector")
 		   | Array_update => update ()
 		   | MLton_equal => Vector.foreach (args, deepMakeUseful)
 		   | Ref_assign => coerce {from = arg 1, to = deref (arg 0)}
@@ -592,7 +592,7 @@ fun useless (program: Program.t): Program.t =
 			     (NONE, NONE) => ()
 			   | (NONE, SOME _) => ()
 			   | (SOME _, NONE) =>
-				Error.bug "raise mismatch at Caller"
+				Error.bug "Useless.useless: raise mismatch at Caller"
 			   | (SOME vs, SOME vs') =>
 				Vector.foreach2 (vs', vs, coerce)
 		    in
@@ -691,7 +691,7 @@ fun useless (program: Program.t): Program.t =
 	     else NONE
 	  end)
       val keepUsefulArgs =
-	 Trace.trace ("keepUsefulArgs",
+	 Trace.trace ("Useless.keepUsefulArgs",
 		      Vector.layout (Layout.tuple2 (Var.layout, Type.layout)),
 		      Vector.layout (Layout.tuple2 (Var.layout, Type.layout)))
 	 keepUsefulArgs
@@ -882,7 +882,7 @@ fun useless (program: Program.t): Program.t =
 		      | Return.Tail =>
 			   (case (returns, freturns) of
 			       (NONE, NONE) => ([], Return.Tail)
-			     | (NONE, SOME _) => Error.bug "return mismatch"
+			     | (NONE, SOME _) => Error.bug "Useless.doitTransfer: return mismatch"
 			     | (SOME _, NONE) => ([], Return.Tail)
 			     | (SOME returns, SOME freturns) =>
 				  if agrees (freturns, returns)

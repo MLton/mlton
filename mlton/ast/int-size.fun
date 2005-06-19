@@ -42,7 +42,7 @@ val allVector = Vector.tabulate (65, fn i =>
 
 fun I (b: Bits.t): t =
    case Vector.sub (allVector, Bits.toInt b) handle Subscript => NONE of
-      NONE => Error.bug (concat ["strange int size: ", Bits.toString b])
+      NONE => Error.bug (concat ["IntSize.I: strange int size: ", Bits.toString b])
     | SOME s => s
 
 val all = List.map (sizes, I)

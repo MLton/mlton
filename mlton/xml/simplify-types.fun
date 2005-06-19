@@ -149,7 +149,9 @@ fun simplifyTypes (I.Program.T {body, datatypes, overflow}) =
 		 (fn () => (tyvarIsUsed a := true; O.Type.var a)))}
       val fixType = fn t => fixType t ()
       val fixType =
-	 Trace.trace ("fixType", I.Type.layout, O.Type.layout) fixType
+	 Trace.trace 
+	 ("SimplifyTypes.fixType", I.Type.layout, O.Type.layout) 
+	 fixType
       val tyvarIsUsed = ! o tyvarIsUsed
       val datatypes =
 	 Vector.map (datatypes, fn {cons, tycon, tyvars} =>
@@ -174,7 +176,9 @@ fun simplifyTypes (I.Program.T {body, datatypes, overflow}) =
 			var = var}
 	 end
       val fixVarExp =
-	 Trace.trace ("fixVarExp", I.VarExp.layout, O.VarExp.layout) fixVarExp
+	 Trace.trace 
+	 ("SimplifyTypes.fixVarExp", I.VarExp.layout, O.VarExp.layout) 
+	 fixVarExp
       fun fixConTargs (con: Con.t, targs: I.Type.t vector): O.Type.t vector =
 	 let
 	    val targs =

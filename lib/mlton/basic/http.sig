@@ -213,7 +213,7 @@ open S
    
 val _ = 
    Assert.assert
-   ("Http", fn () =>
+   ("TestHttp", fn () =>
     Regexp.Compiled.matchesAll (Request.regexp (),
 				"CONNECT trading.etrade.com:443 HTTP/1.0\r\n")
     andalso

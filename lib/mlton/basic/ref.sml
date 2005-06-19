@@ -33,7 +33,7 @@ fun getSet layout =
    let val r = ref NONE
       fun get () =
 	 case !r of
-	    NONE => Error.bug "not available"
+	    NONE => Error.bug "Ref.getSet.get: not available"
 	  | SOME v => v
       fun set v = r := SOME v
       fun clear () = r := NONE

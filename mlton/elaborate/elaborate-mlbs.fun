@@ -93,8 +93,8 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
       val psi : (File.t * Env.Basis.t Promise.t) HashSet.t =
 	 HashSet.new {hash = String.hash o #1}
 
-      val elabBasexpInfo = Trace.info "elabBasexp"
-      val elabBasdecInfo = Trace.info "elabBasdec"
+      val elabBasexpInfo = Trace.info "ElaborateMLBs.elabBasexp"
+      val elabBasdecInfo = Trace.info "ElaborateMLBs.elabBasdec"
 
       fun elabBasexp (basexp: Basexp.t) : Env.Basis.t option =
 	 Trace.traceInfo' (elabBasexpInfo,

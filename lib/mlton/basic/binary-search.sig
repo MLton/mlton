@@ -32,7 +32,7 @@ open S
    
 val _ =
    Assert.assert
-   ("BinarySearch", fn () =>
+   ("TestBinarySearch", fn () =>
     let
        val n = 17
        val a = Array.fromList (Pervasive.List.tabulate (n, fn i => i))

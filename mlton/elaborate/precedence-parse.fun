@@ -99,7 +99,7 @@ fun 'a parse {apply: 'a * 'a -> 'a,
 			       r),
 			 (e4, f)))
 	   | (p as NONf _, (e', Fixval.Infix (_, rbp))) => INf (rbp, e', p)
-	   | _ => Error.bug "Precedence.parse"
+	   | _ => Error.bug "PrecedenceParse.parse.parse"
       (* clean up the stack *)
       fun finish stack =
 	 case stack of
@@ -110,13 +110,13 @@ fun 'a parse {apply: 'a * 'a -> 'a,
 	  | INf (_, e1, NONf (e2, p)) =>
 	       (error (region e1, concat [name, " ends with infix identifier"])
 		; finish (NONf (apply (e2, e1), p)))
-	  | NILf => Error.bug "Corelang.finish NILf"
-	  | _ => Error.bug "Corelang.finish"
+	  | NILf => Error.bug "PrecedenceParse.parse.finish: NILf"
+	  | _ => Error.bug "PrecedenceParse.parse.finish"
       fun getfix x = (x, fixval x)
    in
       if Vector.isEmpty items
 	 then
-	    Error.bug "parse"
+	    Error.bug "PrecedenceParse.parse"
       else
 	 let
 	    val item = Vector.sub (items, 0)
@@ -158,7 +158,7 @@ fun parsePat (ps, E, lay) =
    end
 
 val parsePat =
-   Trace.trace ("parsePat",
+   Trace.trace ("PrecedenceParse.parsePat",
 		fn (ps, _, _) => Vector.layout Pat.layout ps,
 		Ast.Pat.layout)
    parsePat
@@ -174,7 +174,7 @@ fun parseExp (es, E, lay) =
 	  tuple = Exp.tuple}
 
 val parseExp =
-   Trace.trace ("parseExp",
+   Trace.trace ("PrecedenceParse.parseExp",
 		fn (es, _, _) => Vector.layout Exp.layout es,
 		Ast.Exp.layout)
    parseExp
@@ -225,7 +225,7 @@ fun parseClause (pats: Pat.t vector, E: Env.t, region, lay) =
 			else continue ()
 		   | _ => continue ()
 	       end
-	  | _ => Error.bug "empty clause"
+	  | _ => Error.bug "PrecedenceParse.parseClause: empty"
    in
       case pats of
 	 [a, b, c] => (case Fixval.makePat (b, E) of

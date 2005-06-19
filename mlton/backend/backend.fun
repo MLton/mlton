@@ -477,7 +477,7 @@ let
 	     | Cast (z, t) => M.Operand.Cast (translateOperand z, t)
 	     | Const c => constOperand c
 	     | EnsuresBytesFree =>
-		  Error.bug "backend translateOperand saw EnsuresBytesFree"
+		  Error.bug "Backend.translateOperand: EnsuresBytesFree"
 	     | File => M.Operand.File
 	     | GCState => M.Operand.GCState
 	     | Line => M.Operand.Line
@@ -581,7 +581,7 @@ let
 						 ty = Type.exnStack},
 		    src = exnStackOp})
 	     | _ => Error.bug (concat
-			       ["backend saw strange statement: ",
+			       ["Backend.genStatement: strange statement: ",
 				R.Statement.toString s])
 	 end
       val genStatement =
@@ -931,7 +931,7 @@ let
 				  | 1 => SOME (operandLive
 					       (varOperand
 						(#1 (Vector.sub (args, 0)))))
-				  | _ => Error.bug "strange CReturn"
+				  | _ => Error.bug "Backend.genBlock: CReturn"
 			   in
 			      (M.Kind.CReturn {dst = dst,
 					       frameInfo = frameInfo label,
@@ -969,7 +969,8 @@ let
 					| _ => NONE)) of
 			      NONE =>
 				 Error.bug
-				 (concat ["missing ProfileLabel in ",
+				 (concat ["Backend.genBlock: ",
+					  "missing ProfileLabel in ",
 					  Label.toString label])
 			    | SOME s =>
 				 (Vector.new1 s,

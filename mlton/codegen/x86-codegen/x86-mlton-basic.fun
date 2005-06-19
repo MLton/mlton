@@ -234,7 +234,7 @@ struct
     = case floatSize of
         Size.DBLE => realTemp1ContentsOperandD
       | Size.SNGL => realTemp1ContentsOperandS
-      | _ => Error.bug "realTemp1ContentsOperand: floatSize"
+      | _ => Error.bug "x86MLtonBasic.realTemp1ContentsOperand: floatSize"
 
   val realTemp2D = Label.fromString "realTemp2D"
   val realTemp2ContentsD
@@ -254,7 +254,7 @@ struct
     = case floatSize of
         Size.DBLE => realTemp2ContentsOperandD
       | Size.SNGL => realTemp2ContentsOperandS
-      | _ => Error.bug "realTemp2ContentsOperand: floatSize"
+      | _ => Error.bug "x86MLtonBasic.realTemp2ContentsOperand: floatSize"
 
   val realTemp3D = Label.fromString "realTemp3D"
   val realTemp3ContentsD
@@ -274,7 +274,7 @@ struct
     = case floatSize of
         Size.DBLE => realTemp3ContentsOperandD
       | Size.SNGL => realTemp3ContentsOperandS
-      | _ => Error.bug "realTemp3ContentsOperand: floatSize"
+      | _ => Error.bug "x86MLtonBasic.realTemp3ContentsOperand: floatSize"
 
   val fpswTemp = Label.fromString "fpswTemp"
   val fpswTempContents 
@@ -332,7 +332,7 @@ struct
         Size.BYTE => wordTemp1ContentsOperandB
       | Size.WORD => wordTemp1ContentsOperandW
       | Size.LONG => wordTemp1ContentsOperandL
-      | _ => Error.bug "wordTemp1ContentsOperand: wordSize"
+      | _ => Error.bug "x86MLtonBasic.wordTemp1ContentsOperand: wordSize"
 
   val wordTemp2B = Label.fromString "wordTemp2B"
   val wordTemp2ContentsB
@@ -360,7 +360,7 @@ struct
         Size.BYTE => wordTemp2ContentsOperandB
       | Size.WORD => wordTemp2ContentsOperandW
       | Size.LONG => wordTemp2ContentsOperandL
-      | _ => Error.bug "wordTemp2ContentsOperand: wordSize"
+      | _ => Error.bug "x86MLtonBasic.wordTemp2ContentsOperand: wordSize"
 
 
   local

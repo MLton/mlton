@@ -482,7 +482,9 @@ structure Exp =
 	    !n
 	 end
 
-      (*      val size = Trace.trace ("size", Layout.ignore, Int.layout) size *)
+(*
+      val size = Trace.trace ("XmlTree.Exp.size", Layout.ignore, Int.layout) size
+*)
 
       fun clear (e: t): unit =
 	 let open PrimExp

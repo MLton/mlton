@@ -200,7 +200,7 @@ fun restoreFunction {globals: Statement.t vector}
 	    VarInfo.ty vi := ty ;
 	    VarInfo.addDef vi ;
 	    VarInfo.whenViolates 
-	    (vi, fn () => Error.bug "Restore.restore: violation in globals")
+	    (vi, fn () => Error.bug "Restore2.restore: violation in globals")
 	  end
       val _
 	= Vector.foreach
@@ -655,9 +655,7 @@ val restoreFunction
     let
       val r = restoreFunction g
     in
-      fn f => (traceRestoreFunction r f)
-              handle e => (Error.bug (concat ["restore raised ",
-					      Layout.toString (Exn.layout e)]))
+      fn f => traceRestoreFunction r f
    end
 
 fun restore (Program.T {datatypes, globals, functions, main})

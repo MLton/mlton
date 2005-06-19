@@ -45,7 +45,7 @@ structure Word: WORD32 =
 
       fun log2 (w: t): t =
 	 if w = 0w0
-	    then Error.bug "Word.log2 0"
+	    then Error.bug "Word.log2: 0"
 	 else
 	    let
 	       fun loop (n, s, ac): word =

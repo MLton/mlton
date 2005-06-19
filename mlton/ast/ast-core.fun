@@ -403,7 +403,7 @@ fun expNodeName e =
     | While _ => "While"
 
 val traceLayoutExp =
-   Trace.traceInfo' (Trace.info "layoutExp",
+   Trace.traceInfo' (Trace.info "AstCore.layoutExp",
 		     fn (e, _: bool) => Layout.str (expNodeName e),
 		     Layout.ignore: Layout.t -> Layout.t)
    

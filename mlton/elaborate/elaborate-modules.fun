@@ -41,9 +41,9 @@ structure ElaborateCore = ElaborateCore (structure Ast = Ast
 					 structure Decs = Decs
 					 structure Env = Env)
 
-val elabStrdecInfo = Trace.info "elabStrdec"
-val elabStrexpInfo = Trace.info "elabStrexp"
-val elabTopdecInfo = Trace.info "elabTopdec"
+val elabStrdecInfo = Trace.info "ElaborateModules.elabStrdec"
+val elabStrexpInfo = Trace.info "ElaborateModules.elabStrexp"
+val elabTopdecInfo = Trace.info "ElaborateModules.elabTopdec"
 
 fun elaborateTopdec (topdec, {env = E: Env.t}) =
    let

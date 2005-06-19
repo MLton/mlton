@@ -237,7 +237,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 					       finish = finish,
 					       transfer = transfer}}
 	      end
-	    | findMatch' _ = Error.bug "findMatch'"
+	    | findMatch' _ = Error.bug "Peephole.peepholeBlock'.findMatch'"
 
 	  fun findMatch (match_state: match_state) : match_state
 	    = case match_state
@@ -304,13 +304,13 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 			    peepholeBlock'' {match_state = match_state,
 					     changed = changed}))
 	         | Done {block} => {block = block, changed = changed}
-		 | _ => Error.bug "Peephole: peepholeBlock''"
+		 | _ => Error.bug "Peephole.peepholeBlock''"
 	in
 	  case optimizations
 	    of [] => (case match_state
 			of Start {block = block} => {block = block,
 						     changed = false}
-			 | _ => Error.bug "Peephole: peepholeBlock'")
+			 | _ => Error.bug "Peephole.peepholeBlock'")
 	     | _ => peepholeBlock'' {match_state = match_state,
 				     changed = false}
 	end

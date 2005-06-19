@@ -206,7 +206,7 @@ structure Value =
 	 case z of
 	    (GroundV t, GroundV t') =>
 	       if Type.equals (t, t') then ()
-	       else Error.bug "unify of unequal Grounds"
+	       else Error.bug "RefFlatten.Value.unify: unequal Grounds"
 	  | (Complex e, Complex e') =>
 	       Equatable.equate
 	       (e, e', fn (c, c') =>
@@ -220,17 +220,17 @@ structure Value =
 			       (_, NotFlat) => f := NotFlat
 			     | (NotFlat, _) => f' := NotFlat
 			     | (Offset _, _) =>
-				  Error.bug "unify saw Offset"
+				  Error.bug "RefFlatten.Value.unify: Offset"
 			     | (_, Offset _) =>
-				  Error.bug "unify saw Offset"
+				  Error.bug "RefFlatten.Value.unify: Offset"
 			     | _ => ()
 		      in
 			 c
 		      end
 		 | (WeakC {arg = a, ...}, WeakC {arg = a', ...}) =>
 		      (unify (a, a'); c)
-		 | _ => Error.bug "strange unify")
-	  | _ => Error.bug "unify Complex with Ground"
+		 | _ => Error.bug "RefFlatten.Value.unify: strange Complex")
+	  | _ => Error.bug "RefFlatten.Value.unify: Complex with Ground"
       and unifyProd =
 	 fn (p, p') =>
 	 Vector.foreach2
@@ -401,7 +401,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			 in
 			    v
 			 end
-		    | _ => Error.bug "strange con value")
+		    | _ => Error.bug "RefFlatten.object: strange con value")
 	 end
       val object =
 	 Trace.trace
@@ -417,9 +417,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	    Value.Ground t =>
 	       typeValue (case Type.dest t of
 			     Type.Weak t => t
-			   | _ => Error.bug "deWeak")
+			   | _ => Error.bug "RefFlatten.deWeak")
 	  | Value.Weak {arg, ...} => arg
-	  | _ => Error.bug "deWeak"
+	  | _ => Error.bug "RefFlatten.deWeak"
       fun primApp {args, prim, resultVar = _, resultType} =
 	 let
 	    fun weak v =
@@ -450,7 +450,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			      (Prod.dest a, Prod.dest a',
 			       fn ({elt = v, ...}, {elt = v', ...}) =>
 			       Value.unify (v, v'))
-			 | _ => Error.bug "Array_toVector"
+			 | _ => Error.bug "RefFlatten.primApp: Array_toVector"
 		  in
 		     res
 		  end
@@ -475,9 +475,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		  (case Type.dest t of
 		      Type.Object {args, ...} =>
 			 typeValue (Prod.elt (args, offset))
-		    | _ => Error.bug "select Ground")
+		    | _ => Error.bug "RefFlatten.select: Ground")
 	     | Object ob => Object.select (ob, offset)
-	     | _ => Error.bug "select"
+	     | _ => Error.bug "RefFlatten.select"
 	 end
       fun update {base, offset, value} =
 	 coerce {from = value,
@@ -605,7 +605,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		      case Value.value (varValue var) of
 			 Value.Ground _ => ()
 		       | Value.Object obj => f (var, args, obj)
-		       | _ => Error.bug "Object with strange value")
+		       | _ => Error.bug "RefFlatten.foreachObject: Object with strange value")
 		| _ => ()
 	    val () = Vector.foreach (globals, loopStatement)
 	    val () =
@@ -1017,7 +1017,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			| SOME v => 
 			     case Type.dest (valueType v) of
 				Type.Object {args, ...} => args
-			      | _ => Error.bug "strange con"
+			      | _ => Error.bug "RefFlatten.datatypes: strange con"
 		 in
 		    {args = args, con = con}
 		 end)

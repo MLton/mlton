@@ -24,7 +24,7 @@ fun 'a analyze
 	 if Vector.length from = Vector.length to
 	    then Vector.foreach2 (from, to, fn (from, to) =>
 				  coerce {from = from, to = to})
-	 else Error.bug (concat ["coerces length mismatch: ", msg])
+	 else Error.bug (concat ["Analyze.coerces length mismatch: ", msg])
       val {get = value: Var.t -> 'a, set = setValue, ...} =
 	 Property.getSetOnce
 	 (Var.plist,
@@ -79,14 +79,14 @@ fun 'a analyze
 			(NONE, NONE) => ()
 		      | (NONE, SOME _) => ()
 		      | (SOME _, NONE) => 
-			   Error.bug "raise mismatch"
+			   Error.bug "Analyze.loopTransfer: raise mismatch"
 		      | (SOME vs, SOME vs') => coerces ("noHandler", vs, vs')
 		  datatype z = datatype Return.t
 	       in
 		  case return of
 		     Dead =>
 			if isSome returns orelse isSome raises
-			   then Error.bug "return mismatch at Dead"
+			   then Error.bug "Analyze.loopTransfer: return mismatch at Dead"
 			else ()
 		   | NonTail {cont, handler} => 
 		        (Option.app (returns, fn vs =>
@@ -95,7 +95,7 @@ fun 'a analyze
 			       Handler.Caller => noHandler ()
 			     | Handler.Dead =>
 				  if isSome raises
-				     then Error.bug "raise mismatch at nontail"
+				     then Error.bug "Analyze.loopTransfer: raise mismatch at NonTail"
 				  else ()
 			     | Handler.Handle h =>
 				  let
@@ -116,7 +116,7 @@ fun 'a analyze
 				 (NONE, NONE) => ()
 			       | (NONE, SOME _) => ()
 			       | (SOME _, NONE) =>
-				    Error.bug "return mismatch at Tail"
+				    Error.bug "Analyze.loopTransfer: return mismatch at Tail"
 			       | (SOME vs, SOME vs') =>
 				    coerces ("tail", vs, vs')
 			in
@@ -129,7 +129,8 @@ fun 'a analyze
 		  fun ensureNullary j =
 		     if 0 = Vector.length (labelValues j)
 			then ()
-		     else Error.bug (concat [Label.toString j,
+		     else Error.bug (concat ["Analyze.loopTransfer: Case:",
+					     Label.toString j,
 					     " must be nullary"])
 		  fun doit (s, cs, filter) =
 		     (filter (test, s)
@@ -147,11 +148,11 @@ fun 'a analyze
 	  | Goto {dst, args} => coerces ("goto", values args, labelValues dst)
 	  | Raise xs =>
 	       (case shouldRaises of
-		   NONE => raise Fail "raise mismatch at raise"
+		   NONE => Error.bug "Analyze.loopTransfer: raise mismatch at Raise"
 		 | SOME vs => coerces ("raise", values xs, vs))
 	  | Return xs =>
 	       (case shouldReturns of
-		   NONE => raise Fail "return mismatch at return"
+		   NONE => Error.bug "Analyze.loopTransfer: return mismatch at Return"
 		 | SOME vs => coerces ("return", values xs, vs))
 	  | Runtime {prim, args, return} =>
 	       let
@@ -174,13 +175,6 @@ fun 'a analyze
 	       in 
 		  ()
 	       end)
-	handle exn => 
-	   Error.bug (concat ["loopTransfer: ", 
-			      Layout.toString (Transfer.layout t),
-			      ": ",
-			      (case exn of 
-				  Fail msg => msg
-				| _ => "")])
       val loopTransfer =
 	 Trace.trace3
 	 ("Analyze.loopTransfer",
@@ -208,7 +202,7 @@ fun 'a analyze
 			     resultType = ty}
 		| Tuple xs =>
 		     if 1 = Vector.length xs
-			then Error.bug "unary tuple"
+			then Error.bug "Analyze.loopStatement: unary tuple"
 		     else tuple (values xs)
 		| Var x => value x
 	 in
@@ -224,13 +218,6 @@ fun 'a analyze
 		     end
 	     else setValue (var, v))
 	 end
-         handle exn =>
-	    Error.bug (concat ["loopStatement: ",
-			       Layout.toString (Statement.layout s),
-			       ": ",
-			       (case exn of 
-				   Fail msg => msg
-				 | _ => "")])
       val loopStatement =
 	 Trace.trace ("Analyze.loopStatement", Statement.layout, Unit.layout)
 	 loopStatement
@@ -266,12 +253,6 @@ fun 'a analyze
 		      end
 		end
 	     val _ = visit start
-	             handle exn => 
-		        Error.bug (concat [Func.toString name,
-					   ": ",
-					   (case exn of 
-					       Fail msg => msg
-					     | _ => "")])
 	  in
 	     ()
 	  end)

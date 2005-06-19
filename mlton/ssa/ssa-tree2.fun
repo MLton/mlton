@@ -477,7 +477,7 @@ structure Type =
 	     | Word_toWord (s, s', _) => done ([word s], word s')
 	     | Word_xorb s => wordBinary s
 	     | World_save => done ([defaultWord], unit)
-	     | _ => Error.bug (concat ["Type.checkPrimApp got strange prim: ",
+	     | _ => Error.bug (concat ["SsaTree2.Type.checkPrimApp got strange prim: ",
 				       Prim.toString prim])
 	 end
    end
@@ -508,7 +508,7 @@ structure Cases =
 		  then let val (_, a) = Vector.sub (v, 0)
 		       in a
 		       end
-	       else Error.bug "Cases.hd"
+	       else Error.bug "SsaTree2.Cases.hd"
 	 in
 	    case c of
 	       Con cs => doit cs
@@ -762,7 +762,7 @@ structure Exp =
 	     | Var x => Var.hash x
       end
 
-      val hash = Trace.trace ("Exp.hash", layout, Word.layout) hash
+      val hash = Trace.trace ("SsaTree2.Exp.hash", layout, Word.layout) hash
    end
 datatype z = datatype Exp.t
 
@@ -1240,7 +1240,7 @@ structure Transfer =
 	     | Runtime {args, return, ...} => hashVars (args, Label.hash return)
       end
 
-      val hash = Trace.trace ("Transfer.hash", layout, Word.layout) hash
+      val hash = Trace.trace ("SsaTree2.Transfer.hash", layout, Word.layout) hash
 
    end
 datatype z = datatype Transfer.t
@@ -1458,24 +1458,12 @@ structure Function =
 		  Promise.lazy
 		  (fn () =>
 		   Graph.dfsTree (g, {root = root,
-				      nodeValue = #block o nodeInfo})
-		   handle exn => Error.bug (concat ["dfsTree: ",
-						    Func.toString name,
-						    ":",
-						    case exn
-						      of Fail s => s
-						       | _ => "???"]))
+				      nodeValue = #block o nodeInfo}))
 	       val dominatorTree =
 		  Promise.lazy
 		  (fn () =>
 		   Graph.dominatorTree (g, {root = root,
-					    nodeValue = #block o nodeInfo})
-		   handle exn => Error.bug (concat ["dominatorTree: ",
-						    Func.toString name,
-						    ":",
-						    case exn
-						       of Fail s => s
-						     | _ => "???"]))
+					    nodeValue = #block o nodeInfo}))
 	    in
 	       {dfsTree = dfsTree,
 		dominatorTree = dominatorTree,
@@ -1729,9 +1717,9 @@ structure Function =
 			    Dot, (), Layout (fn () => g))
 			end
 		     val _ = doit ("cfg", graph)
-			handle _ => Error.warning "couldn't layout cfg"
+			handle _ => Error.warning "SsaTree2.layouts: couldn't layout cfg"
 		     val _ = doit ("dom", tree ())
-			handle _ => Error.warning "couldn't layout dom"
+			handle _ => Error.warning "SsaTree2.layouts: couldn't layout dom"
 		  in
 		     ()
 		  end
@@ -1929,7 +1917,7 @@ structure Function =
 	 end
 
       val profile =
-	 Trace.trace2 ("Ssa.Function.profile", layout, SourceInfo.layout, layout)
+	 Trace.trace2 ("SsaTree2.Function.profile", layout, SourceInfo.layout, layout)
 	 profile
    end
 

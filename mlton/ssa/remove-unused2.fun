@@ -531,8 +531,8 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 					      ()
 					   end
 				      | Tuple => ()
-				      | Vector => Error.bug "Select:non-Con|Tuple")
-			       | _ => Error.bug "Select:non-Object"
+				      | Vector => Error.bug "RemoveUnused2.visitExp: Select:non-Con|Tuple")
+			       | _ => Error.bug "RemovUnused2.visitExp: Select:non-Object"
 			in
 			   ()
 			end
@@ -583,8 +583,8 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 				      (Option.app (fi, FuncInfo.sideEffect)
 				       ; visitVar base
 				       ; visitVar value)
-				 | Vector => Error.bug "Update:non-Con|Tuple")
-			  | _ => Error.bug "Update:non-Object")
+				 | Vector => Error.bug "RemoveUnused2.visitStatement: Update:non-Con|Tuple")
+			  | _ => Error.bug "RemoveUnused2.visitStatement: Update:non-Object")
 		   | VectorSub {index, vector} =>
 			(Option.app(fi, FuncInfo.sideEffect)
 			 ; visitVar index
@@ -707,7 +707,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 				   val tycon = 
 				      case Type.dest (tyVar test) of
 					 Type.Datatype tycon => tycon
-				       | _ => Error.bug "Case:non-Datatype"
+				       | _ => Error.bug "RemoveUnused2.visitTransfer: Case:non-Datatype"
 				   val cons = TyconInfo.cons (tyconInfo tycon)
 				in
 				   case default of 
@@ -1186,15 +1186,15 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 						   offset = offset}
 					end
 				   | Tuple => e
-				   | Vector => Error.bug "Update:non-Con|Tuple")
-			    | _ => Error.bug "Select:non-Object"
+				   | Vector => Error.bug "RemoveUnused2.simplifyExp: Update:non-Con|Tuple")
+			    | _ => Error.bug "RemoveUnused2.simplifyExp:Select:non-Object"
 			end
 		   | _ => e
 	       end
 	  | _ => e
       val simplifyExp =
 	 Trace.trace 
-	 ("RemoveUnused.simplifyExp", 
+	 ("RemoveUnused2.simplifyExp", 
 	  Exp.layout, Exp.layout)
 	 simplifyExp
       fun simplifyStatement (s : Statement.t) : Statement.t option =
@@ -1261,8 +1261,8 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 					   else NONE
 					end
 				   | Tuple => SOME s
-				   | Vector => Error.bug "Update:non-Con|Tuple")
-			    | _ => Error.bug "Select:non-Object"
+				   | Vector => Error.bug "RemoveUnused2.simplifyStatement: Update:non-Con|Tuple")
+			    | _ => Error.bug "RemoveUnused2.simplifyStatement: Select:non-Object"
 			end
 		   | _ => SOME s
 	       end
@@ -1296,7 +1296,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 		  val cont = 
 		     if FuncInfo.mayReturn fi'
 			then case cont of 
-			        None => Error.bug "cont:None"
+			        None => Error.bug "RemoveUnused2.simplifyTransfer: cont:None"
 			      | Caller =>
 				   if (case (FuncInfo.returns fi,
 					     FuncInfo.returns fi') of
@@ -1304,7 +1304,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 					     Vector.forall2
 					     (xts, yts, fn ((x, _), (y, _)) =>
 					      VarInfo.isUsed x = VarInfo.isUsed y)
-					| _ => Error.bug "cont:Caller")
+					| _ => Error.bug "RemoveUnused2.simplifyTransfer: cont:Caller")
 				      then Caller
 				      else Some (getReturnContFunc
 						 (fi, valOf (FuncInfo.returns fi')))
@@ -1315,7 +1315,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 		  val handler =
 		     if FuncInfo.mayRaise fi'
 			then case handler of
-			        None => Error.bug "handler:None"
+			        None => Error.bug "RemoveUnused2.simplifyTransfer: handler:None"
 			      | Caller =>
 				   if (case (FuncInfo.raises fi,
 					     FuncInfo.raises fi') of
@@ -1323,7 +1323,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 					     Vector.forall2
 					     (xts, yts, fn ((x, _), (y, _)) =>
 					      VarInfo.isUsed x = VarInfo.isUsed y)
-					| _ => Error.bug "handler:Caller")
+					| _ => Error.bug "RemoveUnused2.simplifyTransfer: handler:Caller")
 				      then Caller
 				      else Some (getRaiseHandlerFunc
 						 (fi, valOf (FuncInfo.raises fi')))
@@ -1397,7 +1397,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 					  val tycon = 
 					     case Type.dest (tyVar test) of
 						Type.Datatype tycon => tycon
-					      | _ => Error.bug "Case:non-Datatype"
+					      | _ => Error.bug "RemoveUnused2.simplifyTransfer: Case:non-Datatype"
 					  val numCons = TyconInfo.numCons (tyconInfo tycon)
 				       in 
 					  if Vector.length cases = numCons
@@ -1434,7 +1434,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 			return = getRuntimeWrapperLabel return}
       val simplifyTransfer =
 	 Trace.trace 
-	 ("RemoveUnused.simplifyTransfer",
+	 ("RemoveUnused2.simplifyTransfer",
 	  Layout.tuple2 (Transfer.layout, FuncInfo.layout), Transfer.layout)
 	 simplifyTransfer
       fun simplifyBlock (Block.T {label, args, statements, transfer}): Block.t option =

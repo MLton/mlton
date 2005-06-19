@@ -19,28 +19,28 @@ fun singleton v = T (ref (Root {value = v, rank = 0}))
 
 val rank =
    fn T (ref (Root {rank, ...})) => rank
-    | _ => Error.bug "rank"
+    | _ => Error.bug "DisjointSet.rank"
 
 val setRank =
    fn (T (r as ref (Root {value, ...})), rank) =>
         r := Root {value = value, rank = rank}
-    | _ => Error.bug "setRootValue"
+    | _ => Error.bug "DisjointSet.setRootValue"
 
 fun incrementRank r = setRank (r, rank r + 1)
    
 val parent =
    fn T (ref (Parent p)) => p
-    | _ => Error.bug "parent"    
+    | _ => Error.bug "DisjointSet.parent"    
 
 fun setParent (T r, p) = r := Parent p
 
 val rootValue =
    fn T (ref (Root {value, ...})) => value
-    | _ => Error.bug "rootValue"
+    | _ => Error.bug "DisjointSet.rootValue"
 
 val setRootValue =
    fn (T (r as ref (Root {rank, ...})), v) => r := Root {value = v, rank = rank}
-    | _ => Error.bug "setRootValue"
+    | _ => Error.bug "DisjointSet.setRootValue"
     
 fun equal (T r, T r') = r = r'
    

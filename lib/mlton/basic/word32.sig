@@ -32,7 +32,7 @@ open S
 
 val _ =
    Assert.assert
-   ("Word", fn () =>
+   ("TestWord32", fn () =>
     List.forall
     ([(4, 0wxabcdabcd, 0wxbcdabcda),
       (8, 0wxabcdabcd, 0wxcdabcdab),

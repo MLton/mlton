@@ -32,7 +32,7 @@ open S
    
 val _ = 
    Assert.assert
-   ("LinkedList", fn () =>
+   ("TestLinkedList", fn () =>
     List.forall ([[],
 		  [1],
 		  [1, 2],

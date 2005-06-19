@@ -29,7 +29,7 @@ fun make (r: string, s: RealSize.t): t option =
    let
       fun doit (fromString, isFinite, con): t option =
 	 case fromString r of
-	    NONE => Error.bug "unexpected real constant"
+	    NONE => Error.bug "RealX.make: unexpected real constant"
 	  | SOME r =>
 	       if isFinite r
 		  then SOME (con r)

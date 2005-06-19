@@ -11,7 +11,7 @@ open S
 
 val traceAlphaBeta =
    Trace.trace3
-   ("alphaBeta", State.layout, Value.layout, Value.layout, Value.layout)
+   ("AlphaBeta.alphaBeta", State.layout, Value.layout, Value.layout, Value.layout)
 
 fun messenger () =
    let
@@ -128,7 +128,7 @@ structure Interval =
 	 let val lower = Value.max (lower i, lower i')
 	    val upper = Value.min (upper i, upper i')
 	 in if Value.> (lower, upper)
-	       then Error.bug "intersect returned empty intersection"
+	       then Error.bug "AlphaBeta.Interval.intersect: empty intersection"
 	    else T {lower = lower, upper = upper}
 	 end
 (*      val intersect = Trace.trace2 ("intersect", layout, layout, layout) intersect *)

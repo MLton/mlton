@@ -44,7 +44,7 @@ open S
 
 val _ =
    Assert.assert
-   ("HashTable", fn () => 
+   ("TestHashTable", fn () => 
     let val t = new Int.equals
        val n = 10
        val hash = Word.fromInt

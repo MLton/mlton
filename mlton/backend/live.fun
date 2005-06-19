@@ -66,10 +66,13 @@ structure LiveInfo =
 	 else List.push (preds, b)
 
       val addEdge =
-	 Trace.trace2 ("Live.addEdge", layout, layout, Unit.layout) addEdge
+	 Trace.trace2 
+	 ("Live.LiveInfo.addEdge", layout, layout, Unit.layout) 
+	 addEdge
    end
 
-val traceConsider = Trace.trace ("Live.consider", LiveInfo.layout, Bool.layout)
+val traceConsider = 
+   Trace.trace ("Live.consider", LiveInfo.layout, Bool.layout)
 
 fun live (function, {shouldConsider: Var.t -> bool}) =
    let

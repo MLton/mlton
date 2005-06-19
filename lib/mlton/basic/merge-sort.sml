@@ -27,7 +27,7 @@ structure MergeSortList: MERGE_SORT =
     (* This is a variant of mergesort that runs in O (n log n) time. *)
     fun make (op <= : 'a * 'a -> bool) =
        let
-	  fun assert f = Assert.assert ("sort", f)
+	  fun assert f = Assert.assert ("MergeSort.assert", f)
 	  fun isSorted l =
 	     case l of
 		[] => true
@@ -88,7 +88,7 @@ structure MergeSortVector: MERGE_SORT =
 	  fun isSorted v = Vector.isSorted (v, op <=)
 	  fun merge (v, v') =
 	     let
-		val _ = Assert.assert ("MergeSortVector pre", fn () =>
+		val _ = Assert.assert ("MergeSortVector.merge: pre", fn () =>
 				       isSorted (v, op <=)
 				       andalso isSorted (v', op <=))
 		val n = length v
@@ -126,7 +126,7 @@ structure MergeSortVector: MERGE_SORT =
 			      end
 		   end
 		val v = tabulate (n + n', fn _ => next ())
-		val _ = Assert.assert ("Vector.merge post", fn () =>
+		val _ = Assert.assert ("MergeSortVector.merge: post", fn () =>
 				       isSorted (v, op <=))
 	     in
 		v
@@ -157,7 +157,7 @@ structure MergeSortVector: MERGE_SORT =
 		      in merge (get (m', 0), get (m, 1), op <=)
 		      end
 		val v = loop v
-		val _ = Assert.assert ("Vector.sort", fn () =>
+		val _ = Assert.assert ("MergeSortVector.sort", fn () =>
 				       isSorted (v, op <=))
 	     in
 		v

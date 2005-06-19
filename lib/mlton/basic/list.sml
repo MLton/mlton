@@ -33,7 +33,7 @@ fun dropPrefix (l: 'a t, n: int): 'a t =
       then l
    else
       case l of
-	 [] => Error.bug "dropPrefix"
+	 [] => Error.bug "List.dropPrefix"
        | _ :: l => dropPrefix (l, n - 1)
 	 
 fun dropSuffix (l, n: int) = rev (dropPrefix (rev l, n))
@@ -210,7 +210,7 @@ fun compare (l, l', comp) =
 fun allButLast l =
    case rev l of
       _ :: l => rev l
-    | _ => Error.bug "allButLast"
+    | _ => Error.bug "List.allButLast"
 
 fun zip (l1, l2) = foldr2 (l1, l2, [], fn (x1, x2, l) => (x1, x2) :: l)
 
@@ -284,7 +284,7 @@ fun union (l, l', equals) =
 
 fun pop r =
    case !r of
-      [] => Error.bug "pop"
+      [] => Error.bug "List.pop"
     | x :: l => (r := l; x)
    
 fun push (r, x) = r := x :: !r
@@ -301,7 +301,7 @@ fun remFst (l, f, notFound) =
    in loop (l, [])
    end
 
-fun removeFirst (l, f) = remFst (l, f, fn () => Error.bug "removeFirst")
+fun removeFirst (l, f) = remFst (l, f, fn () => Error.bug "List.removeFirst")
 
 fun remove (l, f) = remFst (l, f, fn () => l)
 
@@ -311,7 +311,7 @@ fun nthTail (l, n: int) =
 	 if i <= 0
 	    then l
 	 else (case l of
-		  [] => Error.bug "nthTail"
+		  [] => Error.bug "List.nthTail"
 		| _ :: l => loop (l, i - 1))
    in loop (l, n)
    end
@@ -322,7 +322,7 @@ fun firstN (l, n: int) =
 	 if i <= 0
 	    then rev ac
 	 else (case l of
-		  [] => Error.bug "firstN"
+		  [] => Error.bug "List.firstN"
 		| x :: l => loop (l, i - 1, x :: ac))
    in loop (l, n, [])
    end
@@ -398,8 +398,8 @@ fun 'a ordered {<= : 'a * 'a -> bool} =
 	    x :: _ => x
 	  | _ => Error.bug name
 
-      fun min l = getFirst (l, smallest, "min")
-      fun max l = getFirst (l, largest, "max")
+      fun min l = getFirst (l, smallest, "List.ordered.min")
+      fun max l = getFirst (l, largest, "List.ordered.max")
 
    in {insert = insert,
        insertionSort = insertionSort,
@@ -416,7 +416,7 @@ fun insertionSort (l, le) = #insertionSort (ordered {<= = le}) l
 
 fun splitLast l =
    case rev l of
-      [] => Error.bug "splitLast"
+      [] => Error.bug "List.splitLast"
     | x :: l => (rev l, x)
 
 fun power l =
@@ -508,7 +508,7 @@ fun subsets (s, n) =
 		     else subs (xs, size - 1, n - 1,
 				cons (x, elts),
 				subs (xs, size - 1, n, elts , accum))
-		| _ => Error.bug "subsets")
+		| _ => Error.bug "List.subsets")
    in subs (s, length s, n, [], [])
    end
 
@@ -573,6 +573,20 @@ fun insert (xs, x, op <=) = #insert (ordered {<= = op <=}) (xs, x)
 
 fun toString xToString l =
    Layout.toString (layout (Layout.str o xToString) l)
+
+val splitAt: 'a t * int -> 'a t * 'a t =
+   fn (l, i) =>
+   let
+      fun loop (i, ac, l) =
+	 if i = 0
+	    then (rev ac, l)
+	    else
+	       case l of
+		  [] => Error.bug "List.splitAt"
+		| x :: l => loop (i - 1, x :: ac, l)
+   in
+      loop (i, [], l)
+   end
 
 fun splitPrefix (l, p) =
    let

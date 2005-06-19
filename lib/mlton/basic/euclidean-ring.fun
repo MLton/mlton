@@ -14,7 +14,7 @@ structure IntInf = Pervasive.IntInf
    
 val divMod =
    Trace.traceAssert
-   ("divMod",
+   ("EuclideanRing.divMod",
     Layout.tuple2(layout, layout),
     Layout.tuple2(layout, layout),
     fn (p, q) => (not(equals(q, zero)),
@@ -30,7 +30,7 @@ fun p mod q = #2(divMod(p, q))
 fun divides(d: t, x: t): bool = equals(x mod d, zero)
 
 val divides =
-   Trace.trace("divides", Layout.tuple2(layout, layout), Bool.layout) divides
+   Trace.trace("EuclideanRing.divides", Layout.tuple2(layout, layout), Bool.layout) divides
 
 (* Taken from page 812 of CLR. *)
 fun extendedEuclidTerm(a: t, b: t, done: t * t -> bool, trace): t * t * t =
@@ -47,7 +47,7 @@ fun extendedEuclidTerm(a: t, b: t, done: t * t -> bool, trace): t * t * t =
 
 fun makeTraceExtendedEuclid f =
    Trace.traceAssert
-   ("extendedEuclid",
+   ("EuclideanRing.extendedEuclid",
     Layout.tuple2(layout, layout),
     Layout.tuple3(layout, layout, layout),
     fn (a, b) => (not(isZero a) andalso not(isZero b),
@@ -69,7 +69,7 @@ in
       let
 	 val rec loop =
 	    fn (r as {m11, m12, m21, m22, u, v, nEven}) =>
-	    (Assert.assert("extendedEuclid", fn () =>
+	    (Assert.assert("EuclideanRing.extendedEuclid", fn () =>
 			   equals(u0, m11 * u + m12 * v)
 			   andalso equals(u1, m21 * u + m22 * v)
 			   andalso equals(if nEven then one else negOne,
@@ -160,7 +160,7 @@ fun factor(n: t): factors =
 
 val factor =
    Trace.traceAssert
-   ("factor", layout, List.layout (Layout.tuple2(layout, Int.layout)),
+   ("EuclideanRing.factor", layout, List.layout (Layout.tuple2(layout, Int.layout)),
     fn n => (not(isZero n), fn factors =>
 	     equals(n, List.fold(factors, one, fn ((p, k), prod) =>
 				 prod * pow (p, k)))))

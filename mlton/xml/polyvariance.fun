@@ -28,9 +28,13 @@ structure Type =
 	    NONE => false
 	  | SOME (t1, t2) => containsArrow t1 orelse isHigherOrder t2
 
-   (*       val isHigherOrder =
-    * 	 Trace.trace ("isHigherOrder", layout, Bool.layout) isHigherOrder
-    *)
+(*
+      val isHigherOrder =
+ 	 Trace.trace 
+	 ("Polyvariance.isHigherOrder", layout, Bool.layout) 
+	 isHigherOrder
+*)
+
    end
 
 fun lambdaSize (Program.T {body, ...}): Lambda.t -> int =
@@ -144,7 +148,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
 					 | Handle {try, handler, ...} =>
 					      (loopExp try; loopExp handler)
 					 | Lambda _ =>
-					      Error.bug "unexpected Lambda"
+					      Error.bug "Polyvariance.loopExp.loopDecs: unexpected Lambda"
 					 | PrimApp {args, ...} => loopVars args
 					 | Profile _ => ()
 					 | Raise {exn, ...} => loopVar exn
@@ -183,7 +187,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
 					fn ({info = {numOccurrences, ...}, ...},
 					    n) => n + !numOccurrences)
 				 in if isOK (if Vector.isEmpty lambdas
-						then Error.bug "empty lambdas"
+						then Error.bug "Polyvariance.loopExp.loopDecs: empty lambdas"
 					     else
 						#var (Vector.sub (lambdas, 0)),
 					     size, numOccurrences)
@@ -200,7 +204,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
 					loopExp (body, numDuplicates))
 				 end
 			   end
-		      | _ => Error.bug "strange dec"
+		      | _ => Error.bug "Polyvariance.loopExp.loopDecs: strange dec"
 	 in loopDecs decs
 	 end
       val _ = loopExp (body, 1)
@@ -344,7 +348,7 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 						catch = bindVarType catch,
 						handler = loopExp handler}
 				   | Lambda _ =>
-					Error.bug "unexpected Lambda"
+					Error.bug "Polyvariance.loopDecs: unexpected Lambda"
 				   | PrimApp {prim, targs, args} =>
 					PrimApp {prim = prim,
 						 targs = targs,
@@ -408,13 +412,13 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 				     decs = decs} :: ds,
 			 result = result}
 		     end
-		| _ => Error.bug "polyvariance saw bogus dec"
+		| _ => Error.bug "Polyvariance.loopDecs: saw bogus dec"
       val body = loopExp body
       val overflow =
 	 Option.map (overflow, fn x =>
 		     case varInfo x of
 			Replace y => y
-		      | _ => Error.bug "duplicating Overflow?")
+		      | _ => Error.bug "Polyvariance.duplicate: duplicating Overflow?")
       val program =
 	 Program.T {datatypes = datatypes,
 		    body = body,

@@ -107,7 +107,7 @@ fun least (start: t, stop: t, f: int -> bool): int option =
 
 fun 'a fold (start: t, stop: t, a: 'a, f: int * 'a -> 'a): 'a =
    let
-      val _ = Assert.assert ("fold", fn () => start <= stop + one)
+      val _ = Assert.assert ("Integer.fold", fn () => start <= stop + one)
       fun loop (i: t, a: 'a): 'a =
 	 if i >= stop
 	    then a
@@ -125,7 +125,7 @@ fun exists (start, stop, f) = not (forall (start, stop, not o f))
 
 fun 'a foldDown (start: t, stop: t, a: 'a, f: int * 'a -> 'a): 'a =
    let
-      val _ = Assert.assert ("foldDown", fn () => start <= stop + one)
+      val _ = Assert.assert ("Integer.foldDown", fn () => start <= stop + one)
       fun loop (i: t, a: 'a) =
 	 if i < start
 	    then a

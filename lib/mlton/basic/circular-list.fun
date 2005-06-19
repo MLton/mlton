@@ -43,7 +43,7 @@ fun deleteSafe(p, d) =
 
 fun delete(l, d) =
    if Elt.isLinked d then deleteSafe(l, d)
-   else Error.bug "delete"
+   else Error.bug "CircularList.delete"
 
 fun foreach(p, f) =
    if Pointer.isNull p then ()

@@ -39,7 +39,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 	 if not (!Control.exnHistory)
 	    then {dropVar = fn _ => false,
 		  extendExtraType = Type.unit,
-		  extra = fn _ => Error.bug "no extra",
+		  extra = fn _ => Error.bug "ImplementExceptions: no extra",
 		  extraDatatypes = Vector.new0 (),
 		  extract = fn (exn, _, f) => f (Dexp.monoVar (exn, Type.exn)),
 		  extractSum = fn e => e,
@@ -73,7 +73,9 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 				      else ()
 				 | _ => ())
 			 in
-			    Error.bug (concat ["can't find it", nameString])
+			    Error.bug 
+			    (concat ["ImplmentExceptions: can't find var for", 
+				     nameString])
 			 end)
 		     val (ty, exp) =
 			Exn.withEscape
@@ -85,7 +87,8 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 							else ())
 			 in
 			    Error.bug
-			    (concat ["can't find ", Var.toString var])
+			    (concat ["ImplementExceptions: can't find ", 
+				     Var.toString var])
 			 end)
 		  in
 		     (var, ty, exp)
@@ -216,10 +219,16 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 				      make: VarExp.t option -> Dexp.t} option,
 	   set = setExconInfo, destroy} =
 	 Property.destGetSetOnce (Con.plist, Property.initConst NONE)
-      val setExconInfo = Trace.trace2 ("setExconInfo", Con.layout,
-				       Layout.ignore, Unit.layout) setExconInfo
+      val setExconInfo = 
+	 Trace.trace2 
+	 ("ImplementExceptions.setExconInfo", 
+	  Con.layout, Layout.ignore, Unit.layout) 
+	 setExconInfo
       val exconInfo =
-	 Trace.trace ("exconInfo", Con.layout, Layout.ignore) exconInfo
+	 Trace.trace 
+	 ("ImplementExceptions.exconInfo", 
+	  Con.layout, Layout.ignore) 
+	 exconInfo
       fun isExcon c =
 	 case exconInfo c of
 	    NONE => false
@@ -274,7 +283,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 			   in (Type.unitRef,
 			       Dexp.vall {var = exn, exp = conApp uniq},
 			       fn NONE => monoVar (exn, Type.exn)
-				| _ => Error.bug "nullary excon applied to arg")
+				| _ => Error.bug "ImplementExceptions: nullary excon applied to arg")
 			   end
 		      | SOME t =>
 			   let
@@ -287,13 +296,13 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 								  varExp (x, t)),
 					      ty = tupleType})
 				| _ =>
-				     Error.bug "unary excon not applied to arg")
+				     Error.bug "ImplmentExceptions: unary excon not applied to arg")
 			   end
 	       in setExconInfo (con, SOME {refVar = r, make = make})
 		  ; List.push (exnValCons, {con = con, arg = arg})
 		  ; vall {var = r, exp = reff (unit ())} @ decs
 	       end
-	  | _ => Error.bug "implement exceptions saw unexpected dec") arg
+	  | _ => Error.bug "ImplementExceptions: saw unexpected dec") arg
       and loopMonoVal {var, ty, exp} : Dec.t list =
 	 if dropVar var
 	    then []
@@ -339,7 +348,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 				       val (body, region) =
 					  case default of
 					     NONE =>
-						Error.bug "no default for exception case"
+						Error.bug "ImplementExceptions: no default for exception case"
 					   | SOME (e, r) =>
 						(fromExp (loop e, ty), r)
 				       val decs =

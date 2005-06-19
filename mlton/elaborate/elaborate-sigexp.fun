@@ -110,7 +110,7 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
    end
 
 val elaborateType =
-   Trace.trace ("elaborateType", Atype.layout o #1, Type.layout o #2)
+   Trace.trace ("ElaborateSigexp.elaborateType", Atype.layout o #1, Type.layout o #2)
    elaborateType
 
 fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E): Scheme.t =
@@ -218,7 +218,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
 		   datatype z = datatype AdmitsEquality.t
 		in
 		   case !r of
-		      Always => Error.bug "datatype Always"
+		      Always => Error.bug "ElaborateSigexp.elaborateDatBind: Always"
 		    | Never => ()
 		    | Sometimes =>
 			 if Vector.forall
@@ -262,12 +262,12 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
    end
 
 val traceElaborateSigexp =
-   Trace.trace2 ("elaborateSigexp",
+   Trace.trace2 ("ElaborateSigexp.elaborateSigexp",
 		 Sigexp.layout,
 		 fn {isTop} => Layout.record [("isTop", Bool.layout isTop)],
 		 Option.layout Interface.layout)
    
-val info' = Trace.info "elaborateSpec"
+val info' = Trace.info "ElaborateSigexp.elaborateSpec"
  
 (* rule 65 *)
 fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t option =
@@ -466,7 +466,7 @@ val elaborateSigexp =
     | _ => elaborateSigexp (sigexp, {env = E})
 
 val elaborateSigexp = 
-   Trace.trace2 ("elaborateSigexp",
+   Trace.trace2 ("ElaborateSigexp.elaborateSigexp",
 		 Sigexp.layout,
 		 Layout.ignore,
 		 Layout.ignore)

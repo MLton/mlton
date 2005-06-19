@@ -128,7 +128,8 @@ fun load (ins: In.t, commandLineConstants)
 	 (ins, fn l =>
 	  case String.tokens (l, Char.isSpace) of
 	     [name, "=", value] => add {name = name, value = value}
-	   | _ => Error.bug (concat ["strange constants line: ", l]))
+	   | _ => Error.bug 
+		  (concat ["LookupConstants.load: strange constants line: ", l]))
       fun lookupConstant ({default, name}, ty: ConstType.t): Const.t =
 	 let
  	    val {value, ...} =
@@ -140,14 +141,18 @@ fun load (ins: In.t, commandLineConstants)
 		   fn {name = name', ...} => name = name',
 		   fn () =>
 		   case default of
-		      NONE => Error.bug (concat ["constant not found: ", name])
+		      NONE => Error.bug 
+			      (concat ["LookupConstants.load.lookupConstant: ",
+				       "constant not found: ", 
+				       name])
 		    | SOME value =>
 			 {hash = hash,
 			  name = name,
 			  value = value})
 	       end
 	    fun error (t: string) =
-	       Error.bug (concat ["constant ", name, " expects a ", t,
+	       Error.bug (concat ["LookupConstants.load.lookupConstant: ",
+				  "constant ", name, " expects a ", t,
 				  " but got ", value, "."])
 	 in
 	    case ty of

@@ -92,9 +92,13 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 	   set = setVar, ...} =
 	 Property.getSet (Var.plist, Property.initRaise ("var", Var.layout))
       val setVar =
-	 Trace.trace2 ("setVar", Var.layout, Layout.ignore, Unit.layout) setVar
+	 Trace.trace2 
+	 ("Monomorphise.setVar", Var.layout, Layout.ignore, Unit.layout) 
+	 setVar
       val getVar =
-	 Trace.trace ("getVar", Var.layout, Layout.ignore) getVar
+	 Trace.trace 
+	 ("Monomorphise.getVar", Var.layout, Layout.ignore) 
+	 getVar
       val {get = getCon: Con.t -> (Stype.t vector -> Con.t),
 	   set = setCon, destroy = destroyCon} =
 	 Property.destGetSet (Con.plist, Property.initRaise ("mono", Con.layout))
@@ -109,9 +113,12 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 	 Property.getSet (Tyvar.plist,
 			  Property.initRaise ("tyvar", Tyvar.layout))
       val getTyvar =
-	 Trace.trace ("getTyvar", Tyvar.layout, Stype.layout) getTyvar
+	 Trace.trace 
+	 ("Monomorphise.getTyvar", Tyvar.layout, Stype.layout) 
+	 getTyvar
       val setTyvar =
-	 Trace.trace2 ("setTyvar", Tyvar.layout, Stype.layout, Unit.layout)
+	 Trace.trace2 
+	 ("Monomorphise.setTyvar", Tyvar.layout, Stype.layout, Unit.layout)
 	 setTyvar
       fun setTyvars (tyvs, tys) = Vector.foreach2 (tyvs, tys, setTyvar)
       fun monoType (t: Xtype.t): Stype.t =
@@ -119,7 +126,9 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 		    var = getTyvar,
 		    con = fn (c, ts) => getTycon c ts}
       val monoType =
-	 Trace.trace ("monoType", Xtype.layout, Stype.layout) monoType
+	 Trace.trace 
+	 ("Monomorphise.monoType", Xtype.layout, Stype.layout) 
+	 monoType
       fun monoTypeOpt (to: Xtype.t option): Stype.t option =
 	 case to of
 	    NONE => NONE
@@ -127,8 +136,9 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
       fun monoTypes ts = Vector.map (ts, monoType)
       fun monoCon (c: Con.t, ts: Xtype.t vector): Con.t = getCon c (monoTypes ts)
       val monoCon =
-	 Trace.trace2 ("monoCon", Con.layout, Vector.layout Xtype.layout,
-		       Con.layout)
+	 Trace.trace2 
+	 ("Monomorphise.monoCon", 
+	  Con.layout, Vector.layout Xtype.layout, Con.layout)
 	 monoCon
       (* It is necessary to create new variables for monomorphic variables
        * because they still may have type variables in their type.
@@ -140,14 +150,16 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 	    fun inst ts =
 	       if 0 = Vector.length ts
 		  then ve
-	       else Error.bug "monomorphise: expected monomorphic instance"
+	       else Error.bug "Monomorphise.renameMono: expected monomorphic instance"
 	    val _ = setVar (x, inst)
 	 in
 	    (x', monoType t)
 	 end
       val renameMono =
-      	 Trace.trace2 ("renameMono", Var.layout, Xtype.layout,
-		       Layout.tuple2 (Var.layout, Stype.layout)) renameMono
+      	 Trace.trace2 
+	 ("Monomorphise.renameMono", 
+	  Var.layout, Xtype.layout, Layout.tuple2 (Var.layout, Stype.layout)) 
+	 renameMono
       fun monoPat (Xpat.T {con, targs, arg}): Spat.t =
 	 let
 	    val con = monoCon (con, targs)
@@ -157,12 +169,17 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 			      NONE => NONE
 			    | SOME x => SOME (renameMono x))}
 	 end
-      val monoPat = Trace.trace ("monoPat", Xpat.layout, Spat.layout) monoPat
+      val monoPat = 
+	 Trace.trace 
+	 ("Monomorphise.monoPat", Xpat.layout, Spat.layout) 
+	 monoPat
       val traceMonoExp =
-	 Trace.trace ("monoExp", Xexp.layout, Sexp.layout)
+	 Trace.trace 
+	 ("Monomorphise.monoExp", Xexp.layout, Sexp.layout)
       val traceMonoDec =
-	 Trace.trace ("monoDec", Xdec.layout,
-		      fn (_: unit -> Sdec.t list) => Layout.empty)
+	 Trace.trace 
+	 ("Monomorphise.monoDec", 
+	  Xdec.layout, fn (_: unit -> Sdec.t list) => Layout.empty)
       (*------------------------------------*)
       (*             datatypes              *)
       (*------------------------------------*)
@@ -256,7 +273,9 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
       fun monoVarExp (XvarExp.T {var, targs}) =
 	 getVar var (monoTypes targs)
       val monoVarExp =
-       	 Trace.trace ("monoVarExp", XvarExp.layout, SvarExp.layout) monoVarExp
+       	 Trace.trace 
+	 ("Monomorphise.monoVarExp", XvarExp.layout, SvarExp.layout) 
+	 monoVarExp
       fun monoVarExps xs = Vector.map (xs, monoVarExp)
       fun monoExp (arg: Xexp.t): Sexp.t =
 	 traceMonoExp

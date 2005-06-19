@@ -57,7 +57,7 @@ structure Program =
 	 end
 
       val coalesce =
-	 Trace.trace ("Ast.Program.coalesce", layout, layout) coalesce
+	 Trace.trace ("AstPrograms.Program.coalesce", layout, layout) coalesce
 
       fun size (T dss): int =
 	 let

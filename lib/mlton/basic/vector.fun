@@ -127,7 +127,7 @@ fun foldr2 (a, a', b, f) =
    in
       if n = n'
 	 then loop (n - 1, b)
-      else raise Fail "Vector.foldr2"
+      else Error.bug "Vector.foldr2"
    end
    
 fun foldi2From (a, a', start, b, f) =
@@ -141,7 +141,7 @@ fun foldi2From (a, a', start, b, f) =
    in
       if n = n' andalso 0 <= start andalso start <= n 
 	 then loop (start, b)
-      else Error.bug "Vector.fold2"
+      else Error.bug "Vector.foldi2From"
    end
 
 fun foldi2 (a, a', b, f) = foldi2From (a, a', 0, b, f)
@@ -167,7 +167,7 @@ fun fold3From (a, a', a'', start, b, f) =
    in
       if n = n' andalso n = n'' andalso 0 <= start andalso start <= n
 	 then loop (start, b)
-      else Error.bug "Vector.fold3"
+      else Error.bug "Vector.fold3From"
    end
 
 fun fold3 (a, a', a'', b, f) = fold3From (a, a', a'', 0, b, f)
@@ -277,14 +277,14 @@ fun new0 () = tabulate (0, fn _ => Error.bug "Vector.new0")
 
 fun new1 x = tabulate (1, fn _ => x)
 
-fun new2 (x0, x1) = tabulate (2, fn 0 => x0 | 1 => x1 | _ => raise Fail "new2")
+fun new2 (x0, x1) = tabulate (2, fn 0 => x0 | 1 => x1 | _ => Error.bug "Vector.new2")
 
 fun new3 (x0, x1, x2) =
    tabulate (3,
 	     fn 0 => x0
 	      | 1 => x1
 	      | 2 => x2
-	      | _ => raise Fail "new3")
+	      | _ => Error.bug "Vector.new3")
 
 fun new4 (x0, x1, x2, x3) =
    tabulate (4,
@@ -292,7 +292,7 @@ fun new4 (x0, x1, x2, x3) =
 	      | 1 => x1
 	      | 2 => x2
 	      | 3 => x3
-	      | _ => raise Fail "new4")
+	      | _ => Error.bug "Vector.new4")
 
 fun new5 (x0, x1, x2, x3, x4) =
    tabulate (5,
@@ -301,7 +301,7 @@ fun new5 (x0, x1, x2, x3, x4) =
 	      | 2 => x2
 	      | 3 => x3
 	      | 4 => x4
-	      | _ => raise Fail "new5")
+	      | _ => Error.bug "Vector.new5")
 
 fun unzip (a: ('a * 'b) t) = (map (a, #1), map (a, #2))
 
@@ -335,7 +335,7 @@ fun map2i (v, v', f) =
    in
       if n = length v'
 	 then tabulate (n, fn i => f (i, unsafeSub (v, i), unsafeSub (v', i)))
-      else Error.bug "Vector.map2"
+      else Error.bug "Vector.map2i"
    end
 
 fun map2 (v, v', f) = map2i (v, v', fn (_, x, x') => f (x, x'))
@@ -461,7 +461,7 @@ fun 'a concat (vs: 'a t list): 'a t =
 			     then (sub (v, i), (i + 1, v, vs))
 			  else
 			     case vs of
-				[] => Error.bug "concat"
+				[] => Error.bug "Vector.concat"
 			      | v :: vs => loop (0, v, vs)
 		    in loop
 		    end)
@@ -490,7 +490,7 @@ fun splitLast v =
       val n = length v
    in
       if n <= 0
-	 then Error.bug "splitLast"
+	 then Error.bug "Vector.splitLast"
       else (tabulate (n - 1, fn i => unsafeSub (v, i)),
 	    unsafeSub (v, n - 1))
    end
@@ -500,7 +500,7 @@ fun isSortedRange (v: 'a t,
 		   stop: int,
 		   le : 'a * 'a -> bool): bool =
    (Assert.assert
-    ("isSortedRange", fn () =>
+    ("Vector.isSortedRange", fn () =>
      0 <= start andalso start <= stop andalso stop <= length v)
     ; start = stop
       orelse
@@ -528,7 +528,7 @@ fun indices (a: bool t): int t =
    keepAllMapi (a, fn (i, b) => if b then SOME i else NONE)
 
 val indices =
-   Trace.trace ("indices", layout Bool.layout, layout Int.layout)
+   Trace.trace ("Vector.indices", layout Bool.layout, layout Int.layout)
    indices
 
 fun isSubsequence (va, vb, f) =

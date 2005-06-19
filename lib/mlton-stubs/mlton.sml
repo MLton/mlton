@@ -38,6 +38,7 @@ structure MLton: MLTON =
       type pointer = Word32.word
 	 
       val cleanAtExit = fn _ => raise Fail "cleanAtExit"
+      val debug = false
       val deserialize = fn _ => raise Fail "deserialize"
       val eq = fn _ => false
       val errno = fn _ => raise Fail "errno"

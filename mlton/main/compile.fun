@@ -121,14 +121,21 @@ structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
 val commandLineConstants: {name: string, value: string} list ref = ref []
 fun setCommandLineConstant (c as {name, value}) =
    let
+      fun make (fromString, control) =
+	 let
+	    fun set () =
+	       case fromString value of
+		  NONE => Error.bug (concat ["bad value for ", name])
+		| SOME v => control := v
+	 in
+	    set
+	 end
       val () =
-	 case List.peek ([("Exn.keepHistory", Control.exnHistory)],
+	 case List.peek ([("Exn.keepHistory", 
+			   make (Bool.fromString, Control.exnHistory))],
 			 fn (s, _) => s = name) of
 	    NONE => ()
-	  | SOME (_, r) =>
-	       (case Bool.fromString value of
-		   NONE => Error.bug (concat ["bad value for ", name])
-		 | SOME b => r := b)
+	  | SOME (_,set) => set ()
    in
       List.push (commandLineConstants, c)
    end
@@ -440,7 +447,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
 	       case lookupConstant ({default = NONE, name = name},
 				    ConstType.Word) of
 		  Const.Word w => Bytes.fromInt (WordX.toInt w)
-		| _ => Error.bug "GC_state offset must be an int"
+		| _ => Error.bug "Compile.elaborate: GC_state offset must be an int"
 	 in
 	    Runtime.GCField.setOffsets
 	    {
@@ -465,7 +472,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
 	        case lookupConstant ({default = NONE, name = name},
 				     ConstType.Bool) of
 		   Const.Word w => 1 = WordX.toInt w
-		 | _ => Error.bug "endian unknown"
+		 | _ => Error.bug "Compile.elaborate: endian unknown"
 	 in
 	    Control.setTargetBigEndian (get "MLton_Platform_Arch_bigendian")
 	 end

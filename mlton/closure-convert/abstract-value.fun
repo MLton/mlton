@@ -93,7 +93,9 @@ structure LambdaNode:
 	 end
 
       val send =
-	 Trace.trace2 ("LambdaNode.send", layout, Lambdas.layout, Unit.layout)
+	 Trace.trace2 
+	 ("AbstractValue.LambdaNode.send", 
+	  layout, Lambdas.layout, Unit.layout)
 	 send
 
       fun equals (LambdaNode d, LambdaNode d') = Dset.equals (d, d')
@@ -143,9 +145,12 @@ structure LambdaNode:
 	       ; update (c', h', diff)
 	    end
 
-(*       val unify =
- * 	 Trace.trace2 ("LambdaNode.unify", layout, layout, Unit.layout) unify
- *)
+(*
+      val unify =
+ 	 Trace.trace2 
+	 ("AbstractValue.LambdaNode.unify", layout, layout, Unit.layout) 
+	 unify
+*)	 
    end
 
 structure UnaryTycon =
@@ -210,18 +215,18 @@ fun equals (v, v') =
        (Type t,        Type t')   =>
 	  if Type.equals (t, t')
 	     then true
-	  else Error.bug "Value.equals called on different types"
+	  else Error.bug "AbstractValue.equals: different types"
      | (Unify (t, v), Unify (t', v'))     =>
 	  UnaryTycon.equals (t, t') andalso equals (v, v')
      | (Tuple vs,  Tuple vs')  => Vector.forall2 (vs, vs', equals)
      | (Lambdas n, Lambdas n') => Lambdas.equals (LambdaNode.toSet n,
 						 LambdaNode.toSet n')
-     | _ => Error.bug "Value.equals called on different kinds of values")
+     | _ => Error.bug "AbstractValue.equals: different values")
 
 fun addHandler (v, h) =
    case tree v of
       Lambdas n => LambdaNode.addHandler (n, h)
-    | _ => Error.bug "can't addHandler to non lambda"
+    | _ => Error.bug "AbstractValue.addHandler: non-lambda"
 
 local
    val {hom, destroy} =
@@ -255,7 +260,7 @@ local
 					 new (Tuple
 					      (Vector.map (vs, fn {make, ...} =>
 							   make ()))))
-				else Error.bug "fromType saw non-arrow type"
+			   else Error.bug "AbstractValue.fromType: non-arrow"
 			end}
        end}
 in
@@ -264,7 +269,7 @@ in
    fun fromType t = #make (hom t) ()
 end
 
-val fromType = Trace.trace ("Value.fromType", Type.layout, layout) fromType
+val fromType = Trace.trace ("AbstractValue.fromType", Type.layout, layout) fromType
 
 fun tuple (vs: t vector): t = new (Tuple vs,
 				   Type.tuple (Vector.map (vs, ty)))
@@ -273,27 +278,27 @@ fun select (v, i) =
    case tree v of
       Type t => fromType (Vector.sub (Type.deTuple t, i))
     | Tuple vs => Vector.sub (vs, i)
-    | _ => Error.bug "Value.select expected tuple"
+    | _ => Error.bug "AbstractValue.select: expected tuple"
 
 fun deRef v =
    case tree v of
       Type t => fromType (Type.deRef t)
     | Unify (_, v) => v
-    | _ => Error.bug "Value.deRef"
+    | _ => Error.bug "AbstractValue.deRef"
 
-val deRef = Trace.trace ("Value.deRef", layout, layout) deRef
+val deRef = Trace.trace ("AbstractValue.deRef", layout, layout) deRef
 
 fun deWeak v =
    case tree v of
       Type t => fromType (Type.deWeak t)
     | Unify (_, v) => v
-    | _ => Error.bug "Value.deWeak"
+    | _ => Error.bug "AbstractValue.deWeak"
 
 fun deArray v =
    case tree v of
       Type t => fromType (Type.deArray t)
     | Unify (_, v) => v
-    | _ => Error.bug "Value.deArray"
+    | _ => Error.bug "AbstractValue.deArray"
 
 fun lambda (l: Sxml.Lambda.t, t: Type.t): t =
    new (Lambdas (LambdaNode.lambda l), t)       
@@ -307,14 +312,14 @@ fun unify (v, v') =
 	   ; (case (t, t') of
 		 (Type t, Type t') => if Type.equals (t, t')
 					 then ()
-				      else Error.bug "unify"
+				      else Error.bug "AbstractValue.unify: different types"
 	       | (Unify (_, v), Unify (_, v')) => unify (v, v')
 	       | (Tuple vs, Tuple vs') => Vector.foreach2 (vs, vs', unify)
 	       | (Lambdas l, Lambdas l') => LambdaNode.unify (l, l')
-	       | _ => Error.bug "impossible unify")
+	       | _ => Error.bug "AbstractValue.unify: different values")
 	end
 
-val unify = Trace.trace2 ("Value.unify", layout, layout, Unit.layout) unify
+val unify = Trace.trace2 ("AbstractValue.unify", layout, layout, Unit.layout) unify
 
 fun coerce {from: t, to: t}: unit =
    if Dset.equals (from, to)
@@ -332,9 +337,9 @@ fun coerce {from: t, to: t}: unit =
 	       Vector.foreach2 (vs, vs', fn (v, v') =>
 				coerce {from = v, to = v'})
 	  | (Lambdas l, Lambdas l') => LambdaNode.coerce {from = l, to = l'}
-	  | _ => Error.bug "impossible coerce")
+	  | _ => Error.bug "AbstractValue.coerce: different values")
 
-val coerce = Trace.trace ("Value.coerce",
+val coerce = Trace.trace ("AbstractValue.coerce",
 			  fn {from, to} =>
 			  let open Layout
 			  in record [("from", layout from),
@@ -383,21 +388,21 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
 	   in align [seq [str "prim: ", Prim.layout prim],
 		     seq [str "args: ", Vector.layout layout args]]
 	   end)
-	  ; Error.bug "Value.primApply: type error")
+	  ; Error.bug "AbstractValue.primApply: type error")
       fun arg i = Vector.sub (args, i)
       val n = Vector.length args
       fun oneArg () =
 	 if n = 1
 	    then arg 0
-	 else Error.bug "wrong number of args for primitive"
+	 else Error.bug "AbstractValue.primApply.oneArg"
       fun twoArgs () =
 	 if n = 2
 	    then (arg 0, arg 1)
-	 else Error.bug "wrong number of args for primitive"
+	 else Error.bug "AbstractValue.primApply.twoArgs"
       fun threeArgs () =
 	 if n = 3
 	    then (arg 0, arg 1, arg 2)
-	 else Error.bug "wrong number of args for primitive"
+	 else Error.bug "AbstractValue.primApply.threeArgs"
       datatype z = datatype Prim.Name.t
    in
       case Prim.name prim of

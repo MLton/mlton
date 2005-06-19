@@ -232,10 +232,8 @@ struct
 
 	      val _ =
 		 Assert.assert
-		 ("x86CodeGen.output: invalid",
-		  fn () => 
-		  x86Validate.validate 
-		  {assembly = allocated_assembly})
+		 ("x86CodeGen.outputChunk", fn () => 
+		  x86Validate.validate {assembly = allocated_assembly})
 
 	      val validated_assembly = allocated_assembly
 
