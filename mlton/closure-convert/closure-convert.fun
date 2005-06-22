@@ -83,13 +83,14 @@ structure Accum =
 	     (* Must shrink because coercions may be inserted at constructor
 	      * applications.  I'm pretty sure the shrinking will eliminate
 	      * any case expressions/local functions.
-	      * The "NoDelete" is because the shrinker is just processing
-	      * globals and hence cannot safely delete a variable that
-	      * has no occurrences, since there may still be occurrences in
-	      * functions.
+	      * We must rebind eliminated variables because the shrinker is 
+              * just processing globals and hence cannot safely delete a 
+              * variable that has no occurrences, since there may still be 
+              * occurrences in functions.
 	      *)
 	     val globals = AL.toList globals
 	     val vars = Vector.fromListMap (globals, #var)
+	     val tys = Vector.fromListMap (globals, #ty)
 	     val (start, blocks) =
 		Dexp.linearize
 		(Dexp.lett
@@ -98,7 +99,7 @@ structure Accum =
 		  body = Dexp.tuple {exps = (Vector.fromListMap
 					     (globals, fn {var, ty, ...} =>
 					      Dexp.var (var, ty))),
-				     ty = Type.unit (* bogus *)}},
+				     ty = Type.tuple tys}},
 		 Ssa.Handler.Caller)
 	     val {blocks, ...} =
 		Function.dest
@@ -109,31 +110,46 @@ structure Accum =
 				mayInline = false, (* doesn't matter *)
 				name = Func.newNoname (),
 				raises = NONE,
-				returns = NONE, (* bogus *)
+				returns = SOME (Vector.new1 (Type.tuple tys)),
 				start = start}))
 	  in
 	     if 1 <> Vector.length blocks
-		then Error.bug "ClosureConvert.Accum.done: shrinker didn't completely simplify"
+		then Error.bug (concat ["ClosureConvert.Accum.done: ",
+					"shrinker didn't completely simplify"])
 	     else
 		let
 		   val ss = Block.statements (Vector.sub (blocks, 0))
-		   val _ = 
+		   val vs = 
 		      case Ssa.Statement.exp (Vector.last ss) of
-			 Ssa.Exp.Tuple v =>
-			    if Vector.equals (vars, v, Var.equals)
-			       then ()
-			    else Error.bug "ClosureConvert.Accum.done: shrinker didn't simplify right"
-		       | _ => Error.bug "ClosureConvert.Accum.done: shrinker didn't produce tuple"
+			 Ssa.Exp.Tuple vs =>
+			    if Vector.length vars = Vector.length vs
+			       then vs
+			    else Error.bug (concat ["ClosureConvert.Accum.done: ",
+						    "shrinker didn't simplify right"])
+		       | _ => Error.bug (concat ["ClosureConvert.Accum.done: ",
+						 "shrinker didn't produce tuple"])
+		   val ss = Vector.dropSuffix (ss, 1)
+		   val rebinds =
+		      Vector.keepAllMapi
+		      (vs, fn (i, v) =>
+		       if Var.equals (v, Vector.sub (vars, i))
+			  then NONE
+			  else SOME (Ssa.Statement.T 
+				     {exp = Ssa.Exp.Var v,
+				      ty = Vector.sub (tys, i),
+				      var = SOME (Vector.sub (vars, i))}))
 		in
-		   Vector.tabulate (Vector.length ss - 1, fn i =>
-				    Vector.sub (ss, i))
+		   Vector.concat [ss, rebinds]
 		end
 	  end}
    end
 
-(* val traceConvertExp =
- *    Trace.trace2 ("convertExp", Sexp.layout, Instance.layout, Dexp.layout)
- *)
+(*
+val traceConvertExp =
+   Trace.trace2 
+   ("ClosureConvert.convertExp", 
+    Sexp.layout, Instance.layout, Dexp.layout)
+*)
 
 val convertPrimExpInfo = Trace.info "ClosureConvert.convertPrimExp"
 val valueTypeInfo = Trace.info "ClosureConvert.valueType"
