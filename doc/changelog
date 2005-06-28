@@ -1,5 +1,9 @@
 Here are the changes since version 20041109.
 
+* 2005-06-28
+  - The front end now reports errors on encountering undefined or
+    cyclicly defined MLB path variables.
+
 * 2005-05-22
   - Fixed bug in Posix.IO.{getlk,setlk,setlkw} that caused a link-time
     error: undefined reference to Posix_IO_FLock_typ.
