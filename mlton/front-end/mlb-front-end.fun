@@ -117,7 +117,7 @@ val lexAndParseString =
 			 Option.layout Dir.layout)
 	    peekPathMap
       end
-      fun regularize {fileOrig, cwd, relativize} =
+      fun regularize {fileOrig, cwd, region, relativize} =
 	 let
 	    val fileExp = 
 	       let
@@ -125,20 +125,31 @@ val lexAndParseString =
 		     case s of
 			[] => String.concat (List.rev
 					     (String.fromListRev acc :: accs))
-		      | (#"$")::(#"(")::s => 
+		      | #"$" :: #"(" :: s => 
 			   let
-			      val accs = (String.fromListRev acc)::accs
+			      val accs = String.fromListRev acc :: accs
 			      fun loopVar (s, acc) =
 				 case s of
 				    [] => Error.bug "MLBFrontEnd.lexAndParseString.regularize"
-				  | (#")")::s => (s, String.fromListRev acc)
-				  | c::s => loopVar (s, c::acc)
+				  | #")" :: s => (s, String.fromListRev acc)
+				  | c :: s => loopVar (s, c :: acc)
 			      val (s, var) = loopVar (s, [])
 			   in
 			      case peekPathMap var of
-				 NONE => loop (s, [], accs)
+				 NONE =>
+				    let
+				       open Layout
+				    in
+				       Control.error
+				       (region,
+					seq [str "Undefined MLB path variable: ",
+					     str var],
+					empty)
+					; loop (s, [], accs)
+				    end
+
 			       | SOME path => 
-				    loop ((String.explode path) @ s, [], accs)
+				    loop (String.explode path @ s, [], accs)
 			   end
 		      | c::s => loop (s, c::acc, accs)
 	       in
@@ -161,7 +172,7 @@ val lexAndParseString =
 	 end
       val regularize =
 	 Trace.trace ("MLBFrontEnd.lexAndParseString.regularize", 
-		      fn {fileOrig, cwd, relativize} =>
+		      fn {fileOrig, cwd, relativize, ...} =>
 		      Layout.record
 		      [("fileOrig", File.layout fileOrig),
 		       ("cwd", Dir.layout cwd),
@@ -235,6 +246,7 @@ val lexAndParseString =
 	    val {fileAbs, fileUse, relativize, ...} = 
 	       regularize {cwd = cwd,
 			   fileOrig = fileOrig,
+			   region = reg,
 			   relativize = relativize}
 	    fun fail default msg =
 	       let
