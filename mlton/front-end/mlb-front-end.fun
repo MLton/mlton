@@ -117,45 +117,59 @@ val lexAndParseString =
 			 Option.layout Dir.layout)
 	    peekPathMap
       end
+      fun expandPathVars (path, seen, region) =
+	 let
+	    fun loop (s, acc, accs) =
+	       case s of
+		  [] => String.concat (List.rev
+				       (String.fromListRev acc :: accs))
+		| #"$" :: #"(" :: s => 
+		     let
+			val accs = String.fromListRev acc :: accs
+			fun loopVar (s, acc) =
+			   case s of
+			      [] => Error.bug "MLBFrontEnd.lexAndParseString.expandPathVars"
+			    | #")" :: s => (s, String.fromListRev acc)
+			    | c :: s => loopVar (s, c :: acc)
+			val (s, var) = loopVar (s, [])
+		     in
+			if List.exists (seen, fn x => x = var)
+			   then
+			      let
+				 open Layout
+			      in
+				 Control.error
+				 (region,
+				  str "Cyclic MLB path variables",
+				  List.layout Layout.str (var :: seen))
+				 ; loop (s, [], accs)
+			      end
+			else
+			   case peekPathMap var of
+			      NONE =>
+				 let
+				    open Layout
+				 in
+				    Control.error
+				    (region,
+				     seq [str "Undefined MLB path variable: ",
+					  str var],
+				     empty)
+				    ; loop (s, [], accs)
+				 end
+			    | SOME path => 
+				 loop (s, [],
+				       expandPathVars (path, var :: seen, region)
+				       :: accs)
+		     end
+		| c :: s => loop (s, c :: acc, accs)
+	 in
+	    loop (String.explode path, [], [])
+	 end
       fun regularize {fileOrig, cwd, region, relativize} =
 	 let
-	    val fileExp = 
-	       let
-		  fun loop (s, acc, accs) =
-		     case s of
-			[] => String.concat (List.rev
-					     (String.fromListRev acc :: accs))
-		      | #"$" :: #"(" :: s => 
-			   let
-			      val accs = String.fromListRev acc :: accs
-			      fun loopVar (s, acc) =
-				 case s of
-				    [] => Error.bug "MLBFrontEnd.lexAndParseString.regularize"
-				  | #")" :: s => (s, String.fromListRev acc)
-				  | c :: s => loopVar (s, c :: acc)
-			      val (s, var) = loopVar (s, [])
-			   in
-			      case peekPathMap var of
-				 NONE =>
-				    let
-				       open Layout
-				    in
-				       Control.error
-				       (region,
-					seq [str "Undefined MLB path variable: ",
-					     str var],
-					empty)
-					; loop (s, [], accs)
-				    end
-
-			       | SOME path => 
-				    loop (String.explode path @ s, [], accs)
-			   end
-		      | c::s => loop (s, c::acc, accs)
-	       in
-		  loop (String.explode fileOrig, [], [])
-	       end
-	    val fileAbs = OS.Path.mkAbsolute {path = fileExp, relativeTo = cwd}
+	    val fileExp = expandPathVars (fileOrig, [], region)
+ 	    val fileAbs = OS.Path.mkAbsolute {path = fileExp, relativeTo = cwd}
 	    val fileAbs = OS.Path.mkCanonical fileAbs
 	    val relativize =
 	       if OS.Path.isAbsolute fileExp
