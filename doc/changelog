@@ -1,5 +1,9 @@
 Here are the changes since version 20041109.
 
+* 2005-07-02
+  - Fixed bug in Socket.recvVecFrom{,',NB,NB'}.  The type was too 
+    polymorphic and allowed the creation of a bogus sock_addr.
+
 * 2005-06-28
   - The front end now reports errors on encountering undefined or
     cyclicly defined MLB path variables.

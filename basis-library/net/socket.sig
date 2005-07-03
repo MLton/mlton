@@ -94,13 +94,13 @@ signature SOCKET =
       val recvVec': (('af, active stream) sock * int * in_flags
 		     -> Word8Vector.vector)
       val recvVecFrom: (('af, dgram) sock * int
-			-> Word8Vector.vector * 'sock_type sock_addr)
+			-> Word8Vector.vector * 'af sock_addr)
       val recvVecFrom': (('af, dgram) sock * int * in_flags
-			 -> Word8Vector.vector * 'sock_type sock_addr)
+			 -> Word8Vector.vector * 'af sock_addr)
       val recvVecFromNB: (('af, dgram) sock * int
-			  -> (Word8Vector.vector * 'sock_type sock_addr) option)
+			  -> (Word8Vector.vector * 'af sock_addr) option)
       val recvVecFromNB': (('af, dgram) sock * int * in_flags
-			   -> (Word8Vector.vector * 'sock_type sock_addr) option)
+			   -> (Word8Vector.vector * 'af sock_addr) option)
       val recvVecNB: ('af, active stream) sock * int -> Word8Vector.vector option
       val recvVecNB': (('af, active stream) sock * int * in_flags
 		       -> Word8Vector.vector option)
