@@ -194,8 +194,10 @@ structure PosixPrimitive =
 	       : Status.t -> bool;
 	    val ifStopped = _import "Posix_Process_ifStopped": Status.t -> bool;
 	    val kill = _import "Posix_Process_kill": Pid.t * Signal.t -> int;
+	    val nanosleep =
+	       _import "Posix_Process_nanosleep": int ref * int ref -> int;
 	    val pause = _import "Posix_Process_pause": unit -> int;
-	    val sleep = _import "Posix_Process_sleep": int -> int;
+(*	    val sleep = _import "Posix_Process_sleep": int -> int; *)
 	    val stopSig = _import "Posix_Process_stopSig": Status.t -> Signal.t;
 	    val system =
 	       _import "Posix_Process_system": NullString.t -> Status.t;

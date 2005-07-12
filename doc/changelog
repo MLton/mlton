@@ -1,6 +1,10 @@
 Here are the changes since version 20041109.
 
-* 2005-07-02
+* 2005-07-12
+  - Changed {OS,Posix}.Process.sleep to call nanosleep() instead of
+    sleep().
+
+* 2005-07-11
   - InetSock.{any,toAddr} raise SysErr if port is not in [0, 2^16).
 
 * 2005-07-02

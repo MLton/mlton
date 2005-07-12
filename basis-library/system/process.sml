@@ -50,7 +50,8 @@ structure OS_Process: OS_PROCESS_EXTRA =
 
       val getEnv = Posix.ProcEnv.getenv
 
-      fun sleep t = if Time.<= (t, Time.zeroTime)
-		       then ()
-		    else (ignore (Posix.Process.sleep t); ())
+      fun sleep t =
+	 if Time.<= (t, Time.zeroTime)
+	    then ()
+	 else sleep (Posix.Process.sleep t)
    end

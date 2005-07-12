@@ -168,9 +168,28 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	       handle Overflow => Error.raiseSys Error.inval)))
       in
 	 val alarm = wrap Prim.alarm
-	 val sleep = wrap Prim.sleep
+(*	 val sleep = wrap Prim.sleep *)
       end
-	 
+
+      fun sleep (t: Time.time): Time.time =
+	 let
+	    val (sec, nsec) = IntInf.quotRem (Time.toNanoseconds t, 1000000000)
+	    val (sec, nsec) =
+	       (IntInf.toInt sec, IntInf.toInt nsec)
+	       handle Overflow => Error.raiseSys Error.inval
+	    val secRem = ref sec
+	    val nsecRem = ref nsec
+	    fun remaining () =
+	       Time.+ (Time.fromSeconds (Int.toLarge (!secRem)),
+		       Time.fromNanoseconds (Int.toLarge (!nsecRem)))
+	 in
+	    SysCall.syscallErr
+	    ({clear = false, restart = false}, fn () =>
+	     {handlers = [(Error.intr, remaining)],
+	      post = remaining,
+	      return = Prim.nanosleep (secRem, nsecRem)})
+	 end
+
       (* FIXME: pause *)
       fun pause () =
 	 SysCall.syscallErr
