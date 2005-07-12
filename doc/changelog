@@ -1,6 +1,9 @@
 Here are the changes since version 20041109.
 
 * 2005-07-02
+  - InetSock.{any,toAddr} raise SysErr if port is not in [0, 2^16).
+
+* 2005-07-02
   - Fixed bug in Socket.recvVecFrom{,',NB,NB'}.  The type was too 
     polymorphic and allowed the creation of a bogus sock_addr.
 

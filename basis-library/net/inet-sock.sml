@@ -11,13 +11,16 @@ structure INetSock:> INET_SOCK =
       val inetAF = NetHostDB.intToAddrFamily Primitive.Socket.AF.INET
 
       fun toAddr (in_addr, port) =
-	let
-	  val (sa, salen, finish) = Socket.new_sock_addr ()
-	  val _ = Prim.toAddr (NetHostDB.inAddrToWord8Vector in_addr,
-			       Net.htons port, sa, salen)
-	in
-	  finish ()
-	end
+	 if port < 0 orelse port >= 0x10000
+	    then PosixError.raiseSys PosixError.inval
+	 else
+	    let
+	       val (sa, salen, finish) = Socket.new_sock_addr ()
+	       val _ = Prim.toAddr (NetHostDB.inAddrToWord8Vector in_addr,
+				    Net.htons port, sa, salen)
+	    in
+	       finish ()
+	    end
 
       fun any port = toAddr (NetHostDB.any (), port)
 
