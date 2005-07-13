@@ -255,6 +255,8 @@ local
 				   then mutable UnaryTycon.Array
 			   else if Tycon.equals (tycon, Tycon.vector)
 				   then mutable UnaryTycon.Vector
+			   else if Tycon.equals (tycon, Tycon.weak)
+				   then mutable UnaryTycon.Weak
 			   else if Tycon.equals (tycon, Tycon.tuple)
 				   then (fn () =>
 					 new (Tuple
@@ -475,8 +477,8 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
 	       val r = result ()
 	       val _ =
 		  case dest r of
-		     Ref x => coerce {from = oneArg (), to = x}
-		   | Type _ => ()
+		     Type _ => ()
+		   | Weak x => coerce {from = oneArg (), to = x}
 		   | _ => typeError ()
 	    in
 	       r
