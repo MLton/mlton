@@ -9,9 +9,9 @@ structure Error = Posix.Error
 structure Syscall = Error.SysCall
 structure FileSys = Posix.FileSys
 
-datatype sock = S of Prim.sock
-fun sockToWord (S s) = SysWord.fromInt s
-fun wordToSock s = S (SysWord.toInt s)
+type sock = Prim.sock
+val sockToWord = SysWord.fromInt o Prim.toInt
+val wordToSock = Prim.fromInt o SysWord.toInt
 fun sockToFD sock = FileSys.wordToFD (sockToWord sock)
 fun fdToSock fd = wordToSock (FileSys.fdToWord fd)
 
@@ -129,7 +129,7 @@ structure CtlExtra =
 		     write (x, wa, 0)
 		     ; Word8Array.vector wa
 		  end
-	       fun getSockOpt (level: level, optname: optname) (S s) =
+	       fun getSockOpt (level: level, optname: optname) s =
 		  let
 		     val optval = Word8Array.array (optlen, 0wx0)
 		     val optlen = ref optlen
@@ -141,7 +141,7 @@ structure CtlExtra =
 					   optlen))
 		     ; unmarshal (optval, !optlen, 0)
 		  end
-	       fun setSockOpt (level: level, optname: optname) (S s, optval) =
+	       fun setSockOpt (level: level, optname: optname) (s, optval) =
 		  let
 		     val optval = marshal optval
 		     val optlen = Word8Vector.length optval
@@ -152,7 +152,7 @@ structure CtlExtra =
 					   Word8Vector.toPoly optval,
 					   optlen))
 		  end
-	       fun getIOCtl (request: request) (S s): 'a =
+	       fun getIOCtl (request: request) s : 'a =
 		  let
 		     val optval = Word8Array.array (optlen, 0wx0)
 		  in
@@ -162,7 +162,7 @@ structure CtlExtra =
 		      (s, request, Word8Array.toPoly optval))
 		     ; unmarshal (optval, optlen, 0)
 		  end
-	       fun setIOCtl (request: request) (S s, optval: 'a): unit =
+	       fun setIOCtl (request: request) (s, optval: 'a): unit =
 		  let
 		     val optval = marshal optval
 		  in
@@ -210,9 +210,7 @@ structure Ctl =
 	 Prim.SOCK.fromInt (getSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.TYPE) s)
       val getERROR = getSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.ERROR)
       local
-	 fun getName 
-	    (f: Prim.sock * pre_sock_addr * int ref -> int)
-	    (S s) =
+	 fun getName (s, f: Prim.sock * pre_sock_addr * int ref -> int) =
 	    let
 	       val (sa, salen, finish) = new_sock_addr ()
 	       val () = Syscall.simple (fn () => f (s, sa, salen))
@@ -220,8 +218,8 @@ structure Ctl =
 	       finish ()
 	    end
       in
-	 fun getPeerName sock = getName Prim.Ctl.getPeerName sock
-	 fun getSockName sock = getName Prim.Ctl.getSockName sock
+	 fun getPeerName s = getName (s, Prim.Ctl.getPeerName)
+	 fun getSockName s = getName (s, Prim.Ctl.getSockName)
       end
       val getNREAD = getIOCtlInt Prim.Ctl.NREAD
       val getATMARK = getIOCtlBool Prim.Ctl.ATMARK
@@ -231,10 +229,10 @@ fun sameAddr (SA sa1, SA sa2) = sa1 = sa2
 
 fun familyOfAddr (SA sa) = NetHostDB.intToAddrFamily (Prim.familyOfAddr sa)
 
-fun bind (S s, SA sa) =
+fun bind (s, SA sa) =
    Syscall.simple (fn () => Prim.bind (s, sa, Vector.length sa))
 
-fun listen (S s, n) = 
+fun listen (s, n) = 
    Syscall.simple (fn () => Prim.listen (s, n))
 
 fun nonBlock' ({restart: bool},
@@ -254,11 +252,11 @@ fun nonBlock (f, post, no) =
 local
    structure PIO = PosixPrimitive.IO
 in
-   fun withNonBlock (fd, f: unit -> 'a) =
+   fun withNonBlock (s, f: unit -> 'a) =
       let
+	 val fd = Prim.toInt s
 	 val flags = 
-	    Syscall.simpleResultRestart 
-	    (fn () => PIO.fcntl2 (fd, PIO.F_GETFL))
+	    Syscall.simpleResultRestart (fn () => PIO.fcntl2 (fd, PIO.F_GETFL))
 	 val _ =
 	    Syscall.simpleResultRestart
 	    (fn () => 
@@ -268,39 +266,40 @@ in
 				    PosixPrimitive.FileSys.O.nonblock))))
       in
 	 DynamicWind.wind
-	 (f, fn () => Syscall.simple (fn () => PIO.fcntl3 (fd, PIO.F_SETFL, flags)))
+	 (f, fn () =>
+	  Syscall.simple (fn () => PIO.fcntl3 (fd, PIO.F_SETFL, flags)))
       end
 end
 
-fun connect (S s, SA sa) =
+fun connect (s, SA sa) =
    Syscall.simple (fn () => Prim.connect (s, sa, Vector.length sa))
 
-fun connectNB (S s, SA sa) =
+fun connectNB (s, SA sa) =
    nonBlock'
    ({restart = false}, fn () => 
     withNonBlock (s, fn () => Prim.connect (s, sa, Vector.length sa)),
     fn _ => true,
     Error.inprogress, false)
 
-fun accept (S s) =
+fun accept s =
    let
       val (sa, salen, finish) = new_sock_addr ()
       val s = Syscall.simpleResultRestart (fn () => Prim.accept (s, sa, salen))
    in
-      (S s, finish ())
+      (Prim.fromInt s, finish ())
    end
 
-fun acceptNB (S s) =
+fun acceptNB s =
    let
       val (sa, salen, finish) = new_sock_addr ()
    in
       nonBlock
       (fn () => withNonBlock (s, fn () => Prim.accept (s, sa, salen)),
-       fn s => SOME (S s, finish ()),
+       fn s => SOME (Prim.fromInt s, finish ()),
        NONE)
    end
 
-fun close (S s) = Syscall.simple (fn () => Prim.close (s))
+fun close s = Syscall.simple (fn () => Prim.close s)
 
 datatype shutdown_mode = NO_RECVS | NO_SENDS | NO_RECVS_OR_SENDS
 
@@ -310,7 +309,7 @@ fun shutdownModeToHow m =
     | NO_SENDS => Prim.SHUT_WR
     | NO_RECVS_OR_SENDS => Prim.SHUT_RDWR
 
-fun shutdown (S s, m) =
+fun shutdown (s, m) =
    let val m = shutdownModeToHow m
    in Syscall.simple (fn () => Prim.shutdown (s, m))
    end
@@ -375,7 +374,7 @@ local
 	 val base = fn sl => let val (buf, i, sz) = base sl
 			     in (toPoly buf, i, sz)
 			     end
-	 fun send' (S s, sl, out_flags) =
+	 fun send' (s, sl, out_flags) =
 	    let
 	       val (buf, i, sz) = base sl
 	    in
@@ -383,32 +382,39 @@ local
 	       (fn () => primSend (s, buf, i, sz, mk_out_flags out_flags))
 	    end
 	 fun send (sock, buf) = send' (sock, buf, no_out_flags)
-	 fun sendNB' (S s, sl, out_flags) =
+	 fun sendNB' (s, sl, out_flags) =
 	    let
 	       val (buf, i, sz) = base sl
 	    in
 	       nonBlock
-	       (fn () => primSend (s, buf, i, sz, Word.orb (Prim.MSG_DONTWAIT, mk_out_flags out_flags)),
+	       (fn () =>
+		primSend (s, buf, i, sz,
+			  Word.orb (Prim.MSG_DONTWAIT, mk_out_flags out_flags)),
 		SOME, 
 		NONE)
 	    end
 	 fun sendNB (sock, sl) = sendNB' (sock, sl, no_out_flags)
-	 fun sendTo' (S s, SA sa, sl, out_flags) =
+	 fun sendTo' (s, SA sa, sl, out_flags) =
 	    let
 	       val (buf, i, sz) = base sl
 	    in
 	       Syscall.simpleRestart
-	       (fn () => primSendTo (s, buf, i, sz, mk_out_flags out_flags, sa, Vector.length sa))
+	       (fn () =>
+		primSendTo (s, buf, i, sz,
+			    mk_out_flags out_flags, sa, Vector.length sa))
 	    end
 	 fun sendTo (sock, sock_addr, sl) =
 	    sendTo' (sock, sock_addr, sl, no_out_flags)
-	 fun sendToNB' (S s, SA sa, sl, out_flags) =
+	 fun sendToNB' (s, SA sa, sl, out_flags) =
 	    let
 	       val (buf, i, sz) = base sl
 	    in
 	       nonBlock 
-	       (fn () => primSendTo (s, buf, i, sz, Word.orb (Prim.MSG_DONTWAIT, mk_out_flags out_flags),
-				     sa, Vector.length sa),
+	       (fn () =>
+		primSendTo (s, buf, i, sz,
+			    Word.orb (Prim.MSG_DONTWAIT,
+				      mk_out_flags out_flags),
+			    sa, Vector.length sa),
 		fn _ => true,
 		false)
 	    end
@@ -437,7 +443,7 @@ fun mk_in_flags {peek, oob} =
 		Word.orb (if oob then Prim.MSG_OOB else 0wx0,
 			     0wx0))
 
-fun recvArr' (S s, sl, in_flags) =
+fun recvArr' (s, sl, in_flags) =
    let
       val (buf, i, sz) = Word8ArraySlice.base sl
    in
@@ -463,13 +469,14 @@ fun recvArr (sock, sl) = recvArr' (sock, sl, no_in_flags)
 
 fun recvVec (sock, n) = recvVec' (sock, n, no_in_flags)
 
-fun recvArrFrom' (S s, sl, in_flags) =
+fun recvArrFrom' (s, sl, in_flags) =
    let
       val (buf, i, sz) = Word8ArraySlice.base sl
       val (sa, salen, finish) = new_sock_addr ()
       val n =
 	 Syscall.simpleResultRestart
-	 (fn () => Prim.recvFrom (s, Word8Array.toPoly buf, i, sz, mk_in_flags in_flags, sa, salen))
+	 (fn () => Prim.recvFrom (s, Word8Array.toPoly buf, i, sz,
+				  mk_in_flags in_flags, sa, salen))
    in
       (n, finish ())
    end
@@ -489,22 +496,24 @@ fun recvVecFrom (sock, n) = recvVecFrom' (sock, n, no_in_flags)
 
 fun mk_in_flagsNB z = Word.orb (mk_in_flags z, Prim.MSG_DONTWAIT)
 
-fun recvArrNB' (S s, sl, in_flags) =
+fun recvArrNB' (s, sl, in_flags) =
    let
       val (buf, i, sz) = Word8ArraySlice.base sl
    in
       nonBlock
-      (fn () => Prim.recv (s, Word8Array.toPoly buf, i, sz, mk_in_flagsNB in_flags),
+      (fn () => Prim.recv (s, Word8Array.toPoly buf, i, sz,
+			   mk_in_flagsNB in_flags),
        SOME, 
        NONE)
    end
 
-fun recvVecNB' (S s, n, in_flags) =
+fun recvVecNB' (s, n, in_flags) =
    let
       val a = Word8Array.rawArray n
    in
       nonBlock
-      (fn () => Prim.recv (s, Word8Array.toPoly a, 0, n, mk_in_flagsNB in_flags),
+      (fn () => Prim.recv (s, Word8Array.toPoly a, 0, n,
+			   mk_in_flagsNB in_flags),
        fn bytesRead => SOME (getVec (a, n, bytesRead)),
        NONE)
    end
@@ -513,24 +522,26 @@ fun recvArrNB (sock, sl) = recvArrNB' (sock, sl, no_in_flags)
 
 fun recvVecNB (sock, n) = recvVecNB' (sock, n, no_in_flags)
 
-fun recvArrFromNB' (S s, sl, in_flags) =
+fun recvArrFromNB' (s, sl, in_flags) =
    let
       val (buf, i, sz) = Word8ArraySlice.base sl
       val (sa, salen, finish) = new_sock_addr ()
    in
       nonBlock
-      (fn () => Prim.recvFrom (s, Word8Array.toPoly buf, i, sz, mk_in_flagsNB in_flags, sa, salen),
+      (fn () => Prim.recvFrom (s, Word8Array.toPoly buf, i, sz,
+			       mk_in_flagsNB in_flags, sa, salen),
        fn n => SOME (n, finish ()),
        NONE)
    end
 
-fun recvVecFromNB' (S s, n, in_flags) =
+fun recvVecFromNB' (s, n, in_flags) =
    let
       val a = Word8Array.fromPoly (Primitive.Array.array n)
       val (sa, salen, finish) = new_sock_addr ()
    in
       nonBlock
-      (fn () => Prim.recvFrom (s, Word8Array.toPoly a, 0, n, mk_in_flagsNB in_flags, sa, salen),
+      (fn () => Prim.recvFrom (s, Word8Array.toPoly a, 0, n,
+			       mk_in_flagsNB in_flags, sa, salen),
        fn bytesRead => SOME (getVec (a, n, bytesRead), finish ()),
        NONE)
    end
@@ -540,7 +551,7 @@ fun recvArrFromNB (sock, sl) = recvArrFromNB' (sock, sl, no_in_flags)
 fun recvVecFromNB (sock, n) = recvVecFromNB' (sock, n, no_in_flags)
 
 (* Phantom type. *)
-type ('af,'sock_type) sock = sock
+type ('af, 'sock_type) sock = sock
 
 type 'af sock_addr = sock_addr
 

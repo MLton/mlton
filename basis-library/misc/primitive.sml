@@ -1466,9 +1466,24 @@ structure Primitive =
 	    val toInt = fn s => s
 	 end
 
-      structure Socket =
+      structure Socket:>
+	 sig
+	    type sock
+
+	    val fromInt: int -> sock
+	    val toInt: sock -> int
+	 end =
 	 struct
 	    type sock = int
+
+	    fun fromInt i = i
+	    fun toInt i = i
+	 end
+	    
+      structure Socket =
+	 struct
+	    open Socket
+
 	    type pre_sock_addr = word8 array
 	    type sock_addr = word8 vector
 	    val sockAddrLenMax = _const "Socket_sockAddrLenMax": int;
@@ -1549,11 +1564,14 @@ structure Primitive =
 		  val ATMARK = _const "Socket_Ctl_SIOCATMARK": request;
 	       end
 
-	    val familyOfAddr = _import "Socket_familyOfAddr": sock_addr -> AF.addr_family;
+	    val familyOfAddr =
+	       _import "Socket_familyOfAddr": sock_addr -> AF.addr_family;
 	    val bind = _import "Socket_bind": sock * sock_addr * int -> int;
 	    val listen = _import "Socket_listen": sock * int -> int;
-	    val connect = _import "Socket_connect": sock * sock_addr * int -> int;
-	    val accept = _import "Socket_accept": sock * pre_sock_addr * int ref -> int;
+	    val connect =
+	       _import "Socket_connect": sock * sock_addr * int -> int;
+	    val accept =
+	       _import "Socket_accept": sock * pre_sock_addr * int ref -> int;
 	    val close = _import "Socket_close": sock -> int;
 
 	    type how = int
