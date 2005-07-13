@@ -8,4 +8,8 @@ structure MLtonProcEnv: MLTON_PROC_ENV =
 	    PosixError.SysCall.simple
 	    (fn () => PosixPrimitive.ProcEnv.setenv (name, value))
 	 end
+
+      fun setgroups gs =
+	 PosixError.SysCall.simple
+	 (fn () => PosixPrimitive.ProcEnv.setgroups (Array.fromList gs))
    end
