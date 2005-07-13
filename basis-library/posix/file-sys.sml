@@ -29,12 +29,12 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       structure Stat = Prim.Stat
       structure Flags = BitFlags
 
-      datatype file_desc = datatype Prim.file_desc
+      type file_desc = Prim.file_desc
       type uid = Prim.uid
       type gid = Prim.gid
 
-      fun fdToWord (FD n) = SysWord.fromInt n
-      val wordToFD = FD o SysWord.toInt
+      val fdToWord = PosixPrimitive.FileDesc.toWord
+      val wordToFD = PosixPrimitive.FileDesc.fromWord
       val fdToIOD = OS.IO.fromFD
       val iodToFD = SOME o OS.IO.toFD
 
@@ -155,7 +155,9 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 		     ; getcwd ())
 	    else extract (!buffer)
       end
-	 
+
+      val FD = PosixPrimitive.FileDesc.fromInt
+
       val stdin = FD 0
       val stdout = FD 1
       val stderr = FD 2
@@ -192,7 +194,8 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	    val fd =
 	       SysCall.simpleResult
 	       (fn () => Prim.openn (pathname, flags, mode))
-	 in FD fd
+	 in
+	    FD fd
 	 end
 
       fun openf (pathname, openMode, flags) =
@@ -225,11 +228,11 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	 val rename = wrapOldNew Prim.rename
 	 val symlink = wrapOldNew Prim.symlink
 	 val chmod = wrap (fn (p, m) => Prim.chmod (NullString.nullTerm p, m))
-	 val fchmod = wrap (fn (FD n, m) => Prim.fchmod (n, m))
+	 val fchmod = wrap Prim.fchmod 
 	 val chown =
 	    wrap (fn (s, u, g) => Prim.chown (NullString.nullTerm s, u, g))
-	 val fchown = wrap (fn (FD n, u, g) => Prim.fchown (n, u, g))
-	 val ftruncate = wrapRestart (fn (FD n, pos) => Prim.ftruncate (n, pos))
+	 val fchown = wrap Prim.fchown
+	 val ftruncate = wrapRestart Prim.ftruncate
       end	    
 
       local
@@ -315,14 +318,11 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       local
 	 fun make prim arg =
-	    SysCall.syscall
-	    (fn () =>
-	     (prim arg, fn () => 
-	      ST.fromC ()))
+	    SysCall.syscall (fn () => (prim arg, fn () => ST.fromC ()))
       in
 	 val stat = (make Prim.Stat.stat) o NullString.nullTerm
 	 val lstat = (make Prim.Stat.lstat) o NullString.nullTerm
-	 val fstat = (make Prim.Stat.fstat) o (fn FD fd => fd)
+	 val fstat = make Prim.Stat.fstat
       end
 
       datatype access_mode = A_READ | A_WRITE | A_EXEC
@@ -398,6 +398,6 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       in
 	 val pathconf =
 	    make (fn (path, s) => Prim.pathconf (NullString.nullTerm path, s))
-	 val fpathconf = make (fn (FD n, s) => Prim.fpathconf (n, s))
+	 val fpathconf = make Prim.fpathconf
       end
    end

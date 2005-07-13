@@ -131,12 +131,12 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
       fun ctermid () = CS.toString (Prim.ctermid ())
 
-      fun isatty (FD n) = Prim.isatty n
+      fun isatty fd = Prim.isatty fd
 
-      fun ttyname (FD n) =
+      fun ttyname fd =
 	 SysCall.syscall
 	 (fn () =>
-	  let val cs = Prim.ttyname n
+	  let val cs = Prim.ttyname fd
 	  in 
 	     (if Primitive.Pointer.isNull cs then ~1 else 0,
 	      fn () => CS.toString cs)

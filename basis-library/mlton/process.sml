@@ -13,8 +13,6 @@ structure MLtonProcess =
       structure Mask = MLtonSignal.Mask
       structure SysCall = PosixError.SysCall
 
-      datatype z = datatype PosixPrimitive.file_desc
-      
       type pid = Pid.t
 
       exception MisuseOfForget
@@ -248,7 +246,7 @@ structure MLtonProcess =
 		 (fn #"\"" => "\\\"" | #"\\" => "\\\\" | x => String.str x) y,
 		 dquote]
 
-      fun create (cmd, args, env, FD stdin, FD stdout, FD stderr) =
+      fun create (cmd, args, env, stdin, stdout, stderr) =
 	 SysCall.syscall
 	 (fn () =>
 	  let

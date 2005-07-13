@@ -1738,25 +1738,6 @@ structure Primitive =
 	    val fromArray = _prim "Array_toVector": 'a array -> 'a vector;
 	 end
 
-      structure Cygwin =
-	 struct
-	    val toFullWindowsPath =
-	       _import "Cygwin_toFullWindowsPath": NullString.t -> CString.t;
-	 end
-
-      structure Windows =
-	 struct
-	    structure Process =
-	       struct
-		  val create = 
-		     _import "Windows_Process_create"
-		     : (NullString.t * NullString.t * NullString.t
-			* int * int * int) -> Pid.t;
-		  val terminate =
-		     _import "Windows_terminate": Pid.t * Signal.t -> int;
-	       end
-	 end
-
       structure Word1 =
 	 struct
 	    type big = Word8.word
@@ -2155,6 +2136,43 @@ structure Primitive =
 	    in
 	       open S
 	    end
+	 end
+
+      structure Cygwin =
+	 struct
+	    val toFullWindowsPath =
+	       _import "Cygwin_toFullWindowsPath": NullString.t -> CString.t;
+	 end
+
+      structure FileDesc:>
+	 sig
+	    eqtype t
+
+	    val fromWord: word -> t
+	    val fromInt: int -> t
+	    val toInt: t -> int
+	    val toWord: t -> word
+	 end =
+	 struct
+	    type t = int
+
+	    val fromWord = Word32.toInt
+	    fun fromInt i = i
+	    fun toInt i = i
+	    val toWord = Word32.fromInt
+	 end
+
+      structure Windows =
+	 struct
+	    structure Process =
+	       struct
+		  val create = 
+		     _import "Windows_Process_create"
+		     : (NullString.t * NullString.t * NullString.t
+			* FileDesc.t * FileDesc.t * FileDesc.t) -> Pid.t;
+		  val terminate =
+		     _import "Windows_terminate": Pid.t * Signal.t -> int;
+	       end
 	 end
 
       structure World =

@@ -10,14 +10,16 @@ structure PosixPrimitive =
       type cstring = Pointer.t
       type cstringArray = Pointer.t
 
-      type fd = int
       type uid = word
       type gid = word
       type size = int
       type ssize = int
       type mode = word
       type time = int
-      datatype file_desc = FD of int
+
+      structure FileDesc = Primitive.FileDesc
+      type file_desc = FileDesc.t
+      type fd = file_desc
 	 
       structure Error =
 	 struct
@@ -252,7 +254,7 @@ structure PosixPrimitive =
 	       
 	    type gid = gid
 	    type uid = uid
-	    datatype file_desc = datatype file_desc
+	    type file_desc = file_desc
 
 	    val getegid = _import "Posix_ProcEnv_getegid": unit -> gid;
 	    val geteuid = _import "Posix_ProcEnv_geteuid": unit -> uid;
@@ -306,7 +308,7 @@ structure PosixPrimitive =
       
       structure FileSys =
 	 struct
-	    datatype file_desc = datatype file_desc
+	    type file_desc = file_desc
 
 	    type ino = int
 	    type dev = word
@@ -452,7 +454,7 @@ structure PosixPrimitive =
 	    val mkfifo =
 	       _import "Posix_FileSys_mkfifo": NullString.t * word -> int;
 	    val openn =
-	       _import "Posix_FileSys_open": NullString.t * word * mode -> fd;
+	       _import "Posix_FileSys_open": NullString.t * word * mode -> int;
 	    val pathconf =
 	       _import "Posix_FileSys_pathconf": NullString.t * int -> int;
 	    val readlink =
@@ -508,7 +510,7 @@ structure PosixPrimitive =
 		  val cloexec = _const "Posix_IO_FD_cloexec": flags;
 	       end
 	    
-	    datatype file_desc = datatype file_desc
+	    type file_desc = file_desc
 
 	    structure FLock =
 	       struct
@@ -531,8 +533,8 @@ structure PosixPrimitive =
 	       end
 	    
 	    val close = _import "Posix_IO_close": fd -> int;
-	    val dup = _import "Posix_IO_dup": fd -> fd;
-	    val dup2 = _import "Posix_IO_dup2": fd * fd -> fd;
+	    val dup = _import "Posix_IO_dup": fd -> int;
+	    val dup2 = _import "Posix_IO_dup2": fd * fd -> int;
 	    val fcntl2 = _import "Posix_IO_fcntl2": fd * int -> int;
 	    val fcntl3 = _import "Posix_IO_fcntl3": fd * int * int -> int;
 	    val fsync = _import "Posix_IO_fsync": fd -> int;
@@ -605,7 +607,7 @@ structure PosixPrimitive =
 	    val b75 = _const "Posix_TTY_b75": speed;
 	    val b9600 = _const "Posix_TTY_b9600": speed;
 	       
-	    datatype file_desc = datatype file_desc
+	    type file_desc = file_desc
 
 	    structure V =
 	       struct

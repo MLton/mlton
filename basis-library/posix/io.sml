@@ -15,26 +15,28 @@ structure Error = PosixError
 structure SysCall = Error.SysCall
 structure FS = PosixFileSys
 
-datatype file_desc = datatype Prim.file_desc
+type file_desc = Prim.file_desc
 type pid = Pid.t
 
+val FD = PosixPrimitive.FileDesc.fromInt
+val unFD = PosixPrimitive.FileDesc.toInt
+   
 local
-   val a: PosixPrimitive.fd array = Array.array (2, 0)
+   val a: file_desc array = Array.array (2, FD 0)
 in
    fun pipe () =
       SysCall.syscall
       (fn () =>
        (Prim.pipe a,
-	fn () => {infd = FD (Array.sub (a, 0)),
-		  outfd = FD (Array.sub (a, 1))}))
+	fn () => {infd = Array.sub (a, 0),
+		  outfd = Array.sub (a, 1)}))
 end
 
-fun dup (FD fd) = FD (SysCall.simpleResult (fn () => Prim.dup fd))
+fun dup fd = FD (SysCall.simpleResult (fn () => Prim.dup fd))
 
-fun dup2 {old = FD old, new = FD new} =
-   SysCall.simple (fn () => Prim.dup2 (old, new))
+fun dup2 {new, old} = SysCall.simple (fn () => Prim.dup2 (old, new))
 
-fun close (FD fd) = SysCall.simpleRestart (fn () => Prim.close fd)
+fun close fd = SysCall.simpleRestart (fn () => Prim.close fd)
 
 structure FD =
    struct
@@ -45,19 +47,19 @@ structure O = PosixFileSys.O
 
 datatype open_mode = datatype PosixFileSys.open_mode
 	 
-fun dupfd {old = FD old, base = FD base} =
+fun dupfd {base, old} =
    FD (SysCall.simpleResultRestart 
-       (fn () => Prim.fcntl3 (old, F_DUPFD, base)))
+       (fn () => Prim.fcntl3 (old, F_DUPFD, unFD base)))
 
-fun getfd (FD fd) =
+fun getfd fd =
    Word.fromInt (SysCall.simpleResultRestart 
 		 (fn () => Prim.fcntl2 (fd, F_GETFD)))
 
-fun setfd (FD fd, flags): unit =
+fun setfd (fd, flags): unit =
    SysCall.simpleRestart
    (fn () => Prim.fcntl3 (fd, F_SETFD, Word.toIntX flags))
 			    
-fun getfl (FD fd): O.flags * open_mode =
+fun getfl fd : O.flags * open_mode =
    let 
       val n =
 	 SysCall.simpleResultRestart (fn () => Prim.fcntl2 (fd, F_GETFL))
@@ -67,7 +69,7 @@ fun getfl (FD fd): O.flags * open_mode =
    in (flags, PosixFileSys.wordToOpenMode mode)
    end
       
-fun setfl (FD fd, flags: O.flags): unit  =
+fun setfl (fd, flags: O.flags): unit  =
    SysCall.simpleRestart
    (fn () => Prim.fcntl3 (fd, F_SETFL, Word.toIntX flags))
 	 
@@ -87,14 +89,14 @@ fun intToWhence n =
 		then SEEK_END
 	     else raise Fail "Posix.IO.intToWhence"
 		      
-fun lseek (FD fd, n: Position.int, w: whence): Position.int =
+fun lseek (fd, n: Position.int, w: whence): Position.int =
    SysCall.syscall
    (fn () =>
     let val n = Prim.lseek (fd, n, whenceToInt w)
     in (if n = ~1 then ~1 else 0, fn () => n)
     end)
 	 
-fun fsync (FD fd): unit = SysCall.simple (fn () => Prim.fsync fd)
+fun fsync fd : unit = SysCall.simple (fn () => Prim.fsync fd)
 	 
 datatype lock_type =
    F_RDLCK
@@ -135,7 +137,7 @@ local
    structure P = Prim.FLock
    fun make
       (cmd, usepid)
-      (FD fd, {ltype, whence, start, len, ...}: FLock.flock)
+      (fd, {ltype, whence, start, len, ...}: FLock.flock)
       : FLock.flock  =
       SysCall.syscallRestart
       (fn () =>
@@ -200,8 +202,6 @@ local
 	    endPos = NONE, 
 	    verifyPos = NONE}
 
-   fun fdToInt (FD fd) = fd
-
    fun make {RD, WR, fromVector, read, setMode, toArraySlice, toVectorSlice,
 	     vectorLength, write, writeVec} =
       let
@@ -216,19 +216,17 @@ local
 	       end
 	       then setMode fd
 	    else ()
-	 fun readArr (FD fd, sl): int =
+	 fun readArr (fd, sl): int =
 	    let
 	       val (buf, i, sz) = ArraySlice.base (toArraySlice sl)
 	    in
-	       SysCall.simpleResultRestart
-	       (fn () => read (fd, buf, i, sz))
+	       SysCall.simpleResultRestart (fn () => read (fd, buf, i, sz))
 	    end
-	 fun readVec (FD fd, n) =
+	 fun readVec (fd, n) =
 	    let
 	       val a = Primitive.Array.array n
 	       val bytesRead = 
-		  SysCall.simpleResultRestart
-		  (fn () => read (fd, a, 0, n))
+		  SysCall.simpleResultRestart (fn () => read (fd, a, 0, n))
 	    in 
 	       fromVector
 	       (if n = bytesRead
@@ -236,7 +234,7 @@ local
 		else ArraySlice.vector (ArraySlice.slice
 					(a, 0, SOME bytesRead)))
 	    end
-	 fun writeArr (FD fd, sl) =
+	 fun writeArr (fd, sl) =
 	    let
 	       val (buf, i, sz) = ArraySlice.base (toArraySlice sl)
 	    in
@@ -244,7 +242,7 @@ local
 	       (fn () => write (fd, buf, i, sz))
 	    end
 	 val writeVec =
-	    fn (FD fd, sl) =>
+	    fn (fd, sl) =>
 	    let
 	       val (buf, i, sz) = VectorSlice.base (toVectorSlice sl)
 	    in
@@ -293,7 +291,7 @@ local
 					       (FS.ST.size (FS.fstat fd),
 						!pos)))
 		  else fn () => if !closed then SOME 0 else NONE
-	       val () = setMode (fdToInt fd)
+	       val () = setMode fd
 	    in
 	       RD {avail = avail,
 		   block = NONE,
@@ -341,7 +339,7 @@ local
 		     if cause = PosixError.again then NONE else raise e
 	       val close = 
 		  fn () => if !closed then () else (closed := true; close fd)
-	       val () = setMode (fdToInt fd)
+	       val () = setMode fd
 	    in
 	       WR {block = NONE,
 		   canOutput = NONE,

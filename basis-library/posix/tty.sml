@@ -120,7 +120,7 @@ structure PosixTTY: POSIX_TTY =
 	 struct
 	    open Prim.TC 
 
-	    fun getattr (FD fd) =
+	    fun getattr fd =
 	       SysCall.syscallRestart
 	       (fn () =>
 		(Prim.getattr fd, fn () =>
@@ -132,7 +132,8 @@ structure PosixTTY: POSIX_TTY =
 		  ispeed = Termios.ispeed (),
 		  ospeed = Termios.ospeed ()}))
 
-	    fun setattr (FD fd, a, {iflag, oflag, cflag, lflag, cc, ispeed, ospeed}) =
+	    fun setattr (fd, a,
+			 {iflag, oflag, cflag, lflag, cc, ispeed, ospeed}) =
 	       SysCall.syscallRestart
 	       (fn () =>
 		(Termios.setiflag iflag
@@ -147,26 +148,25 @@ structure PosixTTY: POSIX_TTY =
 		   end
 		 ; (Prim.setattr (fd, a), fn () => ())))
 
-	    fun sendbreak (FD fd, n) =
+	    fun sendbreak (fd, n) =
 	       SysCall.simpleRestart (fn () => Prim.sendbreak (fd, n))
 
-	    fun drain (FD fd) = 
-	       SysCall.simpleRestart (fn () => Prim.drain fd)
+	    fun drain fd = SysCall.simpleRestart (fn () => Prim.drain fd)
 	      
-	    fun flush (FD fd, n) = 
+	    fun flush (fd, n) =
 	       SysCall.simpleRestart (fn () => Prim.flush (fd, n))
 	      
-	    fun flow (FD fd, n) = 
+	    fun flow (fd, n) =
 	       SysCall.simpleRestart (fn () => Prim.flow (fd, n))
 	      
-	    fun getpgrp (FD fd) =
+	    fun getpgrp fd =
 	       SysCall.syscallRestart
 	       (fn () =>
 		let val pid = Prim.getpgrp fd
 		in (Pid.toInt pid, fn () => pid)
 		end)
 	      
-	    fun setpgrp (FD fd, pid) = 
+	    fun setpgrp (fd, pid) = 
 	       SysCall.simpleRestart (fn () => Prim.setpgrp (fd, pid))
 	 end
    end

@@ -254,7 +254,7 @@ local
 in
    fun withNonBlock (s, f: unit -> 'a) =
       let
-	 val fd = Prim.toInt s
+	 val fd = PosixPrimitive.FileDesc.fromInt (Prim.toInt s)
 	 val flags = 
 	    Syscall.simpleResultRestart (fn () => PIO.fcntl2 (fd, PIO.F_GETFL))
 	 val _ =
