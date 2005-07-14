@@ -3027,7 +3027,7 @@ static inline void leaveGC (GC_state s) {
  * defined in a file all to itself (basis/MLton/rusage.c), it is called iff it
  * is linked in, which we can test via a weak symbol.
  */
-#if SUPPORTS_WEAK
+#if HAS_WEAK
 void MLton_Rusage_ru () __attribute__ ((weak));
 #else
 void MLton_Rusage_ru ();

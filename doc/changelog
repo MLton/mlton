@@ -1,5 +1,13 @@
 Here are the changes since version 20041109.
 
+* 2005-07-14
+  - Fixed bug in runtime that caused getrusage to be called on every
+    GC, even if timing info isn't needed.
+
+* 2005-07-13
+  - Fixed bug in closure conversion tickled by making a weak pointer
+    to a closure.
+
 * 2005-07-12
   - Changed {OS,Posix}.Process.sleep to call nanosleep() instead of
     sleep().
