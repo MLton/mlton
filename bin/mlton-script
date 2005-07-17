@@ -59,7 +59,7 @@ doit () {
 # that the linker can find libgmp.
 
 if [ -d '/sw/lib' ]; then
-	darwinLinkOpts = '-L/sw/lib'
+	darwinLinkOpts='-L/sw/lib'
 fi
 
 doit "$lib" \
