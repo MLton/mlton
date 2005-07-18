@@ -14,7 +14,7 @@ GCC_VERSION = $(shell gcc -v 2>&1 | grep 'gcc version' | sed 's/.*gcc version \(
 
 FLAGS = -fomit-frame-pointer
 
-ifeq ($(GCC_VERSION), 3)
+ifneq ($(findstring $(GCC_VERSION), 3 4),)
 FLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 else
 FLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
