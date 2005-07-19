@@ -1,5 +1,8 @@
 Here are the changes since version 20041109.
 
+* 2005-07-19
+  - Eliminated _ffi, which has been deprecated for some time.
+
 * 2005-07-14
   - Fixed bug in runtime that caused getrusage to be called on every
     GC, even if timing info isn't needed.

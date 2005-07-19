@@ -232,8 +232,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
     | RBRACKET | REC | RPAREN | SEMICOLON | SHARING | SIG | SIGNATURE | STRUCT
     | STRUCTURE | THEN | TYPE | VAL | WHERE | WHILE | WILD | WITH | WITHTYPE
       (* Extensions *)
-    | BUILD_CONST | COMMAND_LINE_CONST | CONST | EXPORT | FFI
-    | IMPORT | PRIM
+    | BUILD_CONST | COMMAND_LINE_CONST | CONST | EXPORT | IMPORT | PRIM
 
 %nonterm
          aexp of Exp.node
@@ -1017,14 +1016,6 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
         | CONST string COLON ty SEMICOLON
 	  (Exp.Prim {kind = PrimKind.Const {name = string}, 
                      ty = ty})
-        | FFI string COLON ty SEMICOLON
-	  (Control.warning
-	   (reg (FFIleft, SEMICOLONright),
-	    Layout.str "_ffi is deprecated.  Use _import.",
-	    Layout.empty)
-	   ; Exp.Prim {kind = PrimKind.Import {attributes = [], 
-                                               name = string}, 
-                       ty = ty})
 	| EXPORT string attributes COLON ty SEMICOLON
           (Exp.Prim {kind = PrimKind.Export {attributes = attributes,
                                              name = string},
