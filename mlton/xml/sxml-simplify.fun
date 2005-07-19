@@ -24,19 +24,26 @@ fun polyvariance (rounds, small, product) p =
 type pass = {name: string,
 	     doit: Program.t -> Program.t}
 
-val sxmlPasses : pass list ref = ref
-   [
-    {name = "sxmlShrink1", doit = S.shrink},
-    {name = "implementSuffix", doit = ImplementSuffix.doit},
-    {name = "sxmlShrink2", doit = S.shrink},
-    {name = "implementExceptions", doit = ImplementExceptions.doit},
-    {name = "sxmlShrink3", doit = S.shrink},
+val sxmlPassesDefault =
+   {name = "sxmlShrink1", doit = S.shrink} ::
+   {name = "implementSuffix", doit = ImplementSuffix.doit} ::
+   {name = "sxmlShrink2", doit = S.shrink} ::
+   {name = "implementExceptions", doit = ImplementExceptions.doit} ::
+   {name = "sxmlShrink3", doit = S.shrink} ::
 (*
-    {name = "uncurry", doit = Uncurry.uncurry},
-    {name = "sxmlShrink4", doit = S.shrink},
+   {name = "uncurry", doit = Uncurry.uncurry} ::
+   {name = "sxmlShrink4", doit = S.shrink} ::
 *)
-    {name = "polyvariance", doit = Polyvariance.duplicate}
-   ]
+   {name = "polyvariance", doit = Polyvariance.duplicate} ::
+   nil
+
+val sxmlPassesMinimal =
+   {name = "implementSuffix", doit = ImplementSuffix.doit} ::
+   {name = "sxmlShrink2", doit = S.shrink} ::
+   {name = "implementExceptions", doit = ImplementExceptions.doit} ::
+   nil
+
+val sxmlPasses : pass list ref = ref sxmlPassesDefault
 
 local
    type passGen = string -> pass option
@@ -98,7 +105,7 @@ local
 		 ("implementSuffix", ImplementSuffix.doit)],
 		mkSimplePassGen))
 
-   fun sxmlPassesSet s =
+   fun sxmlPassesSetCustom s =
       Exn.withEscape
       (fn esc =>
        (let val ss = String.split (s, #":")
@@ -108,10 +115,23 @@ local
 		    case (List.peekMap (passGens, fn gen => gen s)) of
 		       NONE => esc (Result.No s)
 		     | SOME pass => pass)
-	   ; Result.Yes ss
+	   ; Control.sxmlPasses := ss
+	   ; Result.Yes ()
 	end))
+
+   datatype t = datatype Control.optimizationPasses
+   fun sxmlPassesSet opt =
+      case opt of
+	 OptPassesDefault => (sxmlPasses := sxmlPassesDefault
+			      ; Control.sxmlPasses := ["default"]
+			      ; Result.Yes ())
+       | OptPassesMinimal => (sxmlPasses := sxmlPassesMinimal
+			      ; Control.sxmlPasses := ["minimal"]
+			      ; Result.Yes ())
+       | OptPassesCustom s => sxmlPassesSetCustom s
 in
    val _ = Control.sxmlPassesSet := sxmlPassesSet
+   val _ = List.push (Control.optimizationPassesSet, ("sxml", sxmlPassesSet))
 end
    
 fun stats p =

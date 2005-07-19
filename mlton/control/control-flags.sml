@@ -90,8 +90,8 @@ val diagPasses =
    control {name = "diag passes",
 	    default = [],
 	    toString = List.toString 
-	    (Layout.toString o 
-	     Regexp.Compiled.layout)}
+	               (Layout.toString o 
+			Regexp.Compiled.layout)}
 
 val dropPasses =
    control {name = "drop passes",
@@ -528,6 +528,30 @@ structure Native =
 			   toString = Option.toString Int.toString}
    end
 
+structure OptimizationPasses =
+   struct
+      datatype t = 
+	 OptPassesCustom of string
+       | OptPassesDefault
+       | OptPassesMinimal
+
+      local open Layout
+      in
+	 val layout =
+	    fn OptPassesCustom s => seq [str "Limit: ", str s]
+	     | OptPassesDefault => str "Default"
+	     | OptPassesMinimal => str "Minimal"
+      end
+      val toString = Layout.toString o layout
+   end
+datatype optimizationPasses = datatype OptimizationPasses.t
+val optimizationPassesSet : 
+   (string * (optimizationPasses -> unit Result.t)) list ref =
+   control {name = "optimizationPassesSet",
+	    default = [],
+	    toString = List.toString 
+	               (fn (s,_) => concat ["<",s,"PassesSet>"])}
+
 val polyvariance =
    control {name = "polyvariance",
 	    default = SOME {rounds = 2,
@@ -631,7 +655,7 @@ val showTypes = control {name = "show types",
 			 default = false,
 			 toString = Bool.toString}
 
-val ssaPassesSet : (string -> string list Result.t) ref = 
+val ssaPassesSet : (optimizationPasses -> unit Result.t) ref = 
    control {name = "ssaPassesSet",
 	    default = fn _ => Error.bug ("ControlFlags.ssaPassesSet: not installed"),
 	    toString = fn _ => "<ssaPassesSet>"}
@@ -639,7 +663,7 @@ val ssaPasses : string list ref =
    control {name = "ssaPasses",
 	    default = ["default"],
 	    toString = List.toString String.toString}
-val ssa2PassesSet : (string -> string list Result.t) ref = 
+val ssa2PassesSet : (optimizationPasses -> unit Result.t) ref = 
    control {name = "ssa2PassesSet",
 	    default = fn _ => Error.bug ("ControlFlags.ssa2PassesSet: not installed"),
 	    toString = fn _ => "<ssa2PassesSet>"}
@@ -648,7 +672,7 @@ val ssa2Passes : string list ref =
 	    default = ["default"],
 	    toString = List.toString String.toString}
 
-val sxmlPassesSet : (string -> string list Result.t) ref = 
+val sxmlPassesSet : (optimizationPasses -> unit Result.t) ref = 
    control {name = "sxmlPassesSet",
 	    default = fn _ => Error.bug ("ControlFlags.sxmlPassesSet: not installed"),
 	    toString = fn _ => "<sxmlPassesSet>"}
@@ -727,7 +751,7 @@ val warnAnn = control {name = "warn unrecognized annotation",
 		       default = true,
 		       toString = Bool.toString}
 
-val xmlPassesSet: (string -> string list Result.t) ref = 
+val xmlPassesSet: (optimizationPasses -> unit Result.t) ref = 
    control {name = "xmlPassesSet",
 	    default = fn _ => Error.bug ("ControlFlags.xmlPassesSet: not installed"),
 	    toString = fn _ => "<xmlPassesSet>"}

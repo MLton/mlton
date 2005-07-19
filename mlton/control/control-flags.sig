@@ -204,6 +204,13 @@ signature CONTROL_FLAGS =
 	    val split: int option ref
 	 end
 
+      datatype optimizationPasses =
+	 OptPassesCustom of string
+       | OptPassesDefault
+       | OptPassesMinimal
+      val optimizationPassesSet: 
+	 (string * (optimizationPasses -> unit Result.t)) list ref
+
       (* Only duplicate big functions when
        * (size - small) * (number of occurrences - 1) <= product
        *)
@@ -251,13 +258,13 @@ signature CONTROL_FLAGS =
       val showTypes: bool ref
 
       (* SSA Passes *)
-      val ssaPassesSet: (string -> string list Result.t) ref
+      val ssaPassesSet: (optimizationPasses -> unit Result.t) ref
       val ssaPasses: string list ref
-      val ssa2PassesSet: (string -> string list Result.t) ref
+      val ssa2PassesSet: (optimizationPasses -> unit Result.t) ref
       val ssa2Passes: string list ref
 
       (* SXML Passes *)
-      val sxmlPassesSet: (string -> string list Result.t) ref
+      val sxmlPassesSet: (optimizationPasses -> unit Result.t) ref
       val sxmlPasses: string list ref
 
       datatype target =
@@ -290,7 +297,7 @@ signature CONTROL_FLAGS =
       val warnAnn: bool ref
 
       (* XML Passes *)
-      val xmlPassesSet: (string -> string list Result.t) ref
+      val xmlPassesSet: (optimizationPasses -> unit Result.t) ref
       val xmlPasses: string list ref
 
       val zoneCutDepth: int ref

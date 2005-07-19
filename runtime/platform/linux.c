@@ -105,3 +105,23 @@ int fixedGetrusage (int who, struct rusage *rup) {
 void *remap (void *old,  size_t oldSize, size_t newSize) {
 	return mremap (old, oldSize, newSize, MREMAP_MAYMOVE);
 }
+
+/* ------------------------------------------------- */
+/*                       Posix                       */
+/* ------------------------------------------------- */
+
+void Posix_IO_setbin (Fd fd) {
+	die("Posix_IO_setbin not implemented");
+}
+
+void Posix_IO_settext (Fd fd) {
+	die("Posix_IO_settext not implemented");
+}
+
+/* ------------------------------------------------- */
+/*                      Process                      */
+/* ------------------------------------------------- */
+
+Pid MLton_Process_cwait (Pid pid, Pointer status) {
+	die("MLton_Process_cwait not implemented");
+}

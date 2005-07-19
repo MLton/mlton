@@ -710,7 +710,9 @@ fun closureConvert
 			      blocks = Vector.fromList blocks,
 			      mayInline = mayInline,
 			      name = name,
-			      raises = raises,
+			      raises = if isMain
+					  then NONE
+					  else raises,
 			      returns = SOME returns,
 			      start = start})
 	    val f =

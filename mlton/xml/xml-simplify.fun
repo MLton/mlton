@@ -16,11 +16,15 @@ structure SimplifyTypes = SimplifyTypes (structure Input = S
 type pass = {name: string,
 	     doit: Program.t -> Program.t}
 
-val xmlPasses : pass list ref = ref
-   [
-    {name = "xmlShrink", doit = S.shrink},
-    {name = "xmlSimplifyTypes", doit = SimplifyTypes.simplifyTypes}
-   ]
+val xmlPassesDefault =
+   {name = "xmlShrink", doit = S.shrink} ::
+   {name = "xmlSimplifyTypes", doit = SimplifyTypes.simplifyTypes} ::
+   nil
+
+val xmlPassesMinimal =
+   nil
+
+val xmlPasses : pass list ref = ref xmlPassesDefault
 
 local
    type passGen = string -> pass option
@@ -39,7 +43,7 @@ local
 		 ("xmlSimplifyTypes", SimplifyTypes.simplifyTypes)],
 		mkSimplePassGen))
 
-   fun xmlPassesSet s =
+   fun xmlPassesSetCustom s =
       Exn.withEscape
       (fn esc =>
        (let val ss = String.split (s, #":")
@@ -49,10 +53,23 @@ local
 		    case (List.peekMap (passGens, fn gen => gen s)) of
 		       NONE => esc (Result.No s)
 		     | SOME pass => pass)
-	   ; Result.Yes ss
+	   ; Control.xmlPasses := ss
+	   ; Result.Yes ()
 	end))
+
+   datatype t = datatype Control.optimizationPasses
+   fun xmlPassesSet opt =
+      case opt of
+	 OptPassesDefault => (xmlPasses := xmlPassesDefault
+			      ; Control.xmlPasses := ["default"]
+			      ; Result.Yes ())
+       | OptPassesMinimal => (xmlPasses := xmlPassesMinimal
+			      ; Control.xmlPasses := ["minimal"]
+			      ; Result.Yes ())
+       | OptPassesCustom s => xmlPassesSetCustom s
 in
    val _ = Control.xmlPassesSet := xmlPassesSet
+   val _ = List.push (Control.optimizationPassesSet, ("xml", xmlPassesSet))
 end
 
    

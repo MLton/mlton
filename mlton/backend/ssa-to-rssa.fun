@@ -650,7 +650,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				    {con = con,
 				     dst = dst,
 				     dstHasArg =
-				     0 < Vector.length (#args (labelInfo dst))})
+				     Vector.fold
+				     (#args (labelInfo dst), false, fn ((_,ty),b) =>
+				      b orelse isSome (toRtype ty))})
 				val (ss, t, blocks) =
 				   genCase {cases = cases,
 					    default = default,

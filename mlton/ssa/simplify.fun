@@ -49,47 +49,51 @@ fun inlineLeafNoLoop size p =
 type pass = {name: string,
 	     doit: Program.t -> Program.t}
 
-val ssaPasses : pass list ref = ref
-   [
-    {name = "removeUnused1", doit = RemoveUnused.remove},
-    {name = "leafInline", doit = inlineLeaf 20},
-    (* contify should be run before constant propagation because of the once
-     * pass that only looks at main -- hence want as much in main as possible.
-     *)
-    {name = "contify1", doit = Contify.contify},
-    {name = "localFlatten1", doit = LocalFlatten.flatten},
-    (* constantPropagation cannot be omitted. It implements Array_array0. *)
-    {name = "constantPropagation", doit = ConstantPropagation.simplify},
-    (* useless should run after constantPropagation because constantPropagation
-     * makes slots of tuples that are constant useless.
-     *)
-    {name = "useless", doit = Useless.useless},
-    {name = "removeUnused2", doit = RemoveUnused.remove},
-    {name = "simplifyTypes", doit = SimplifyTypes.simplify},
-    (* polyEqual cannot be omitted.  It implements MLton_equal.
-     * polyEqual should run
-     *   - after types are simplified so that many equals are turned into eqs
-     *   - before inlining so that equality functions can be inlined
-     *)
-    {name = "polyEqual", doit = PolyEqual.polyEqual},
-    {name = "contify2", doit = Contify.contify},
-    {name = "inline", doit = Inline.inline},
-    {name = "localFlatten2", doit = LocalFlatten.flatten},
-    {name = "removeUnused3", doit = RemoveUnused.remove},
-    {name = "contify3", doit = Contify.contify},
-    {name = "introduceLoops", doit = IntroduceLoops.introduceLoops},
-    {name = "loopInvariant", doit = LoopInvariant.loopInvariant},
-    {name = "localRef", doit = LocalRef.eliminate},
-    {name = "flatten", doit = Flatten.flatten},
-    {name = "localFlatten3", doit = LocalFlatten.flatten},
-    {name = "commonArg", doit = CommonArg.eliminate},
-    {name = "commonSubexp", doit = CommonSubexp.eliminate},
-    {name = "commonBlock", doit = CommonBlock.eliminate},
-    {name = "redundantTests", doit = RedundantTests.simplify},
-    {name = "redundant", doit = Redundant.redundant},
-    {name = "knownCase", doit = KnownCase.simplify}, 
-    {name = "removeUnused4", doit = RemoveUnused.remove}
-    ]
+val ssaPassesDefault =
+   {name = "removeUnused1", doit = RemoveUnused.remove} ::
+   {name = "leafInline", doit = inlineLeaf 20} ::
+   {name = "contify1", doit = Contify.contify} ::
+   {name = "localFlatten1", doit = LocalFlatten.flatten} ::
+   {name = "constantPropagation", doit = ConstantPropagation.simplify} ::
+   (* useless should run 
+    *   - after constant propagation because constant propagation makes
+    *     slots of tuples that are constant useless
+    *)
+   {name = "useless", doit = Useless.useless} ::
+   {name = "removeUnused2", doit = RemoveUnused.remove} ::
+   {name = "simplifyTypes", doit = SimplifyTypes.simplify} ::
+   (* polyEqual should run
+    *   - after types are simplified so that many equals are turned into eqs
+    *   - before inlining so that equality functions can be inlined
+    *)
+   {name = "polyEqual", doit = PolyEqual.polyEqual} ::
+   {name = "contify2", doit = Contify.contify} ::
+   {name = "inline", doit = Inline.inline} ::
+   {name = "localFlatten2", doit = LocalFlatten.flatten} ::
+   {name = "removeUnused3", doit = RemoveUnused.remove} ::
+   {name = "contify3", doit = Contify.contify} ::
+   {name = "introduceLoops", doit = IntroduceLoops.introduceLoops} ::
+   {name = "loopInvariant", doit = LoopInvariant.loopInvariant} ::
+   {name = "localRef", doit = LocalRef.eliminate} ::
+   {name = "flatten", doit = Flatten.flatten} ::
+   {name = "localFlatten3", doit = LocalFlatten.flatten} ::
+   {name = "commonArg", doit = CommonArg.eliminate} ::
+   {name = "commonSubexp", doit = CommonSubexp.eliminate} ::
+   {name = "commonBlock", doit = CommonBlock.eliminate} ::
+   {name = "redundantTests", doit = RedundantTests.simplify} ::
+   {name = "redundant", doit = Redundant.redundant} ::
+   {name = "knownCase", doit = KnownCase.simplify} ::
+   {name = "removeUnused4", doit = RemoveUnused.remove} ::
+   nil
+
+val ssaPassesMinimal =
+   (* constantPropagation cannot be omitted. It implements Array_array0. *)
+   {name = "constantPropagation", doit = ConstantPropagation.simplify} ::
+   (* polyEqual cannot be omitted.  It implements MLton_equal. *)
+   {name = "polyEqual", doit = PolyEqual.polyEqual} ::
+   nil
+
+val ssaPasses : pass list ref = ref ssaPassesDefault
 
 local
    type passGen = string -> pass option
@@ -198,7 +202,7 @@ local
 		 ("shrink", S.shrink)], 
 		mkSimplePassGen))
 
-   fun ssaPassesSet s =
+   fun ssaPassesSetCustom s =
       Exn.withEscape
       (fn esc =>
        (let val ss = String.split (s, #":")
@@ -208,10 +212,23 @@ local
 		    case (List.peekMap (passGens, fn gen => gen s)) of
 		       NONE => esc (Result.No s)
 		     | SOME pass => pass)
-	   ; Result.Yes ss
+	   ; Control.ssaPasses := ss
+	   ; Result.Yes ()
 	end))
+
+   datatype t = datatype Control.optimizationPasses
+   fun ssaPassesSet opt =
+      case opt of
+	 OptPassesDefault => (ssaPasses := ssaPassesDefault
+			      ; Control.ssaPasses := ["default"]
+			      ; Result.Yes ())
+       | OptPassesMinimal => (ssaPasses := ssaPassesMinimal
+			      ; Control.ssaPasses := ["minimal"]
+			      ; Result.Yes ())
+       | OptPassesCustom s => ssaPassesSetCustom s
 in
    val _ = Control.ssaPassesSet := ssaPassesSet
+   val _ = List.push (Control.optimizationPassesSet, ("ssa", ssaPassesSet))
 end
 
 fun stats p = Control.message (Control.Detail, fn () => Program.layoutStats p)

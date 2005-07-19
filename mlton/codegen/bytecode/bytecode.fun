@@ -718,6 +718,20 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	       end
       val () = List.push (needToEmit, #label main)
       val () = loop ()
+      (* Discard unreachable blocks *)
+      val chunks =
+	 List.map
+	 (chunks, fn Chunk.T {blocks, chunkLabel, regMax} =>
+	  let
+	     val blocks =
+		Vector.keepAll
+		(blocks, fn Block.T {label, ...} =>
+		 ! (#emitted (labelInfo label)))
+	  in
+	     Chunk.T {blocks = blocks,
+		      chunkLabel = chunkLabel,
+		      regMax = regMax}
+	  end)
       fun labelOffset l = valOf (! (#offset (labelInfo l)))
       val code = Array.fromListRev (!code)
       (* Backpatch all label references. *)

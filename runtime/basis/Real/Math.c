@@ -8,6 +8,7 @@
 	Real32 Real32_##f (Real32 x) {		\
 		return (Real32)(Real64_##f ((Real64)x));	\
 	}
+unaryReal(abs, fabs)
 unaryReal(round, rint)
 #undef unaryReal
 

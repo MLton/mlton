@@ -1463,7 +1463,17 @@ structure Small =
 					  transfer = transfer})
 		      end
 		 | ConRep.Tag {tag, ...} =>
-		      SOME (WordX.resize (tag, wordSize), dst)
+		      let
+			 val transfer =
+			    Goto {args = if dstHasArg
+					    then Vector.new1 test
+					    else Vector.new0 (),
+				  dst = dst}
+		      in
+			 SOME (WordX.resize (tag, wordSize), 
+			       Block.new {statements = Vector.new0 (),
+					  transfer = transfer})
+		      end
 		 | _ => NONE)
 	    val cases = QuickSort.sortVector (cases, fn ((w, _), (w', _)) =>
 					      WordX.le (w, w', {signed = false}))

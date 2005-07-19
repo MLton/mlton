@@ -27,4 +27,8 @@ Int MLton_Process_spawne (NullString p, Pointer a, Pointer e) {
 	env[en] = esaved;
 	return result;
 }
+#else
+Int MLton_Process_spawne (NullString p, Pointer a, Pointer e) {
+	die ("MLton_Process_spawne not implemented");
+}
 #endif

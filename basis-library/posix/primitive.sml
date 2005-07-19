@@ -544,8 +544,26 @@ structure PosixPrimitive =
 	    val pipe = _import "Posix_IO_pipe": fd array -> int;
 	    val readChar =
 	       _import "Posix_IO_read": fd * char array * int * size -> ssize;
-	    val setbin = _import "Posix_IO_setbin": fd -> unit;
-	    val settext = _import "Posix_IO_settext": fd -> unit;
+	    val setbin = 
+	       if let
+		     open Primitive.MLton.Platform.OS
+		  in
+		     case host of
+			MinGW => true
+		      | _ => false
+		  end
+		  then _import "Posix_IO_setbin": fd -> unit;
+	       else fn _ => raise Fail "setbin not defined"
+	    val settext = 
+	       if let
+		     open Primitive.MLton.Platform.OS
+		  in
+		     case host of
+			MinGW => true
+		      | _ => false
+		  end
+		  then _import "Posix_IO_settext": fd -> unit;
+	       else fn _ => raise Fail "settext not defined"
 	    val writeChar =
 	       _import "Posix_IO_write": fd * char array * int * size -> ssize;
 	    val writeCharVec =

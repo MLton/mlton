@@ -294,6 +294,23 @@ fun makeOptions {usage} =
        (Expert, "native-shuffle", " {true|false}",
 	"shuffle registers at C-calls",
 	Bool (fn b => Native.shuffle := b)),
+       (Expert, "opt-passes", " {default|minimal}", "level of optimizations",
+	SpaceString (fn s =>
+		     let
+			fun err s =
+			   usage (concat ["invalid -opt-passes flag: ", s])
+			fun doit optPasses =
+			   List.foreach
+			   (!optimizationPassesSet, fn (il,optPassesSet) =>
+			    case optPassesSet optPasses of
+			       Result.Yes () => ()
+			     | Result.No s' => err ("il :: " ^ s')) 
+		     in
+			case s of
+			   "default" => doit OptPassesDefault
+			 | "minimal" => doit OptPassesMinimal
+			 | _ => err s
+		     end)),
        (Normal, "output", " <file>", "name of output file",
 	SpaceString (fn s => output := SOME s)),
        (Expert, "polyvariance", " {true|false}", "use polyvariance",
@@ -387,14 +404,14 @@ fun makeOptions {usage} =
        (Expert, "ssa-passes", " <passes>", "ssa optimization passes",
 	SpaceString
 	(fn s =>
-	 case !Control.ssaPassesSet s of
-	    Result.Yes ss => Control.ssaPasses := ss
+	 case !Control.ssaPassesSet (OptPassesCustom s) of
+	    Result.Yes () => ()
 	  | Result.No s' => usage (concat ["invalid -ssa-pass arg: ", s']))),
        (Expert, "ssa2-passes", " <passes>", "ssa2 optimization passes",
 	SpaceString
 	(fn s =>
-	 case !Control.ssa2PassesSet s of
-	    Result.Yes ss => Control.ssa2Passes := ss
+	 case !Control.ssa2PassesSet (OptPassesCustom s) of
+	    Result.Yes () => ()
 	  | Result.No s' => usage (concat ["invalid -ssa2-pass arg: ", s']))),
        (Normal, "stop", " {f|g|o|sml|tc}", "where to stop",
 	SpaceString
@@ -409,8 +426,8 @@ fun makeOptions {usage} =
        (Expert, "sxml-passes", " <passes>", "sxml optimization passes",
 	SpaceString
 	(fn s =>
-	 case !Control.sxmlPassesSet s of
-	    Result.Yes ss => Control.sxmlPasses := ss
+	 case !Control.sxmlPassesSet (OptPassesCustom s) of
+	    Result.Yes () => ()
 	  | Result.No s' => usage (concat ["invalid -sxml-pass arg: ", s']))),
        (Normal, "target",
 	concat [" {",
@@ -454,8 +471,8 @@ fun makeOptions {usage} =
        (Expert, "xml-passes", " <passes>", "xml optimization passes",
 	SpaceString
 	(fn s =>
-	 case !Control.xmlPassesSet s of
-	    Result.Yes ss => Control.xmlPasses := ss
+	 case !Control.xmlPassesSet (OptPassesCustom s) of
+	    Result.Yes () => ()
 	  | Result.No s' => usage (concat ["invalid -xml-pass arg: ", s']))),
        (Expert, "zone-cut-depth", " <n>", "zone cut depth",
 	intRef zoneCutDepth)
