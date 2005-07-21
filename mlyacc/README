@@ -11,9 +11,13 @@ installing ML-Yacc):
 	INSTALL		- installation instructions.
 	COPYRIGHT	- this software is distributed subject to the
 		          terms of this file.
-	lib		- common source code used by both ML-Yacc and applications
-			  that use ML-Yacc.
+	lib		- implementation of the ML-Yacc library
+			  (aka $/ml-yacc-lib.cm);  this library is used
+			  by both by applications and by ML-Yacc itself
+			  (because ML-Yacc IS an ML-Yacc application)
 	src		- source code for the parser-generator part of ML-Yacc.
 	doc		- documentation for ML-Yacc.  Please read this before
 			  using ML-Yacc
 	examples	- sample parsers built with ML-Yacc
+	build		- script that invokes ../../bin/ml-build to construct
+			  the stand-alone version of ML-Yacc

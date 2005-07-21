@@ -1,13 +1,4 @@
-(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
- *
- * $Log: coreutils.sml,v $
- * Revision 1.1.1.1  1997/01/14 01:38:05  george
- *   Version 109.24
- *
- * Revision 1.1.1.1  1996/01/31  16:01:45  george
- * Version 109
- * 
- *)
+(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 functor mkCoreUtils(structure Core : CORE) : CORE_UTILS =
 	struct

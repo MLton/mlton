@@ -1,21 +1,4 @@
-(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
- *
- * $Log: lalr.sml,v $
- * Revision 1.1.1.1  1997/01/14 01:38:05  george
- *   Version 109.24
- *
- * Revision 1.3  1996/10/03  03:37:12  jhr
- * Qualified identifiers that are no-longer top-level (quot, rem, min, max).
- *
- * Revision 1.2  1996/02/26  15:02:35  george
- *    print no longer overloaded.
- *    use of makestring has been removed and replaced with Int.toString ..
- *    use of IO replaced with TextIO
- *
- * Revision 1.1.1.1  1996/01/31  16:01:45  george
- * Version 109
- * 
- *)
+(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 functor mkLalr ( structure IntGrammar : INTGRAMMAR
 		structure Core : CORE
@@ -119,33 +102,24 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
 (* rule_pos: calculate place in the rhs of a rule at which we should start
    placing lookahead ref cells *)
 
-		      val rule_pos = fn (RULE {rhs,...}) =>
-			case (rev rhs)
-			  of nil => 0
-			   | (TERM t) :: r => length rhs
-			   | (l as (NONTERM n) :: r) =>
-
-			      (* f assumes that everything after n in the
-				 rule has proven to be nullable so far.
-				 Remember that the rhs has been reversed,
-				 implying that this is true initially *)
-				
-					(* A -> .z t B y, where y is nullable *)
-
-			      let fun f (NONTERM b :: (r as (TERM _ :: _))) =
-					(length r)
-
-					(* A -> .z B C y *)
-
-				    | f (NONTERM c :: (r as (NONTERM b :: _))) =
-					 if nullable c then f r
-					 else (length r)
-
-					(* A -> .B y, where y is nullable *)
-
-				    | f (NONTERM b :: nil) = 0
-				    | f _ = raise Fail "f"
-			      in  f l
+		      fun rule_pos (RULE {rhs,...}) =
+			  case (rev rhs) of
+			      nil => 0
+			    | (TERM t) :: r => length rhs
+			    | (NONTERM n :: r) => let
+				  (* f assumes that everything after n in the
+				   * rule has proven to be nullable so far.
+				   * Remember that the rhs has been reversed,
+				   * implying that this is true initially *)
+				  (* A -> .z t B y, where y is nullable *)
+				  fun f (b, (r as (TERM _ :: _))) = length r
+				    (* A -> .z B C y *)
+				    | f (c, (NONTERM b :: r)) =
+				      if nullable c then f (b, r)
+				      else length r + 1
+				    (* A -> .B y, where y is nullable *)
+				    | f (_, []) = 0
+			      in  f (n, r)
 			      end
 			     
 		 	val check_rule = fn (rule as RULE {num,...}) =>

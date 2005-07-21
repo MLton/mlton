@@ -1,6 +1,10 @@
+(* Modified by mfluet@acm.org on 2005-7-21.
+ * Update with SML/NJ 110.55.
+ *)
 (* Modified by sweeks@acm.org on 2000-8-24.
  * Ported to MLton.
  *)
+
 (*  Lexical analyzer generator for Standard ML.
         Version 1.7.0, June 1998
 
@@ -48,11 +52,7 @@ see the COPYRIGHT NOTICE for details and restrictions.
 		and characters.
 	02/08/95 (jhr) Modified to use new List module interface.
 	05/18/95 (jhr) changed Vector.vector to Vector.fromList
-*
- * $Log: lexgen.sml,v $
- * Revision 1.1.1.1  1998/04/08 18:40:10  george
- * Version 110.5
- *
+ 
  * Revision 1.9  1998/01/06 19:23:53  appel
  *   added %posarg feature to permit position-within-file to be passed
  *   as a parameter to makeLexer
@@ -75,17 +75,9 @@ see the COPYRIGHT NOTICE for details and restrictions.
 # Revision 1.3  1997/10/04  03:52:13  dbm
 #   Fix to remove output file if ml-lex fails.
 #
-# Revision 1.2  1997/05/06  01:12:38  george
-# *** empty log message ***
-#
- * Revision 1.2  1996/02/26  15:02:27  george
- *    print no longer overloaded.
- *    use of makestring has been removed and replaced with Int.toString ..
- *    use of IO replaced with TextIO
- *
- * Revision 1.1.1.1  1996/01/31  16:01:15  george
- * Version 109
- * 
+        10/17/02 (jhr) changed bad character error message to properly
+		print the bad character.
+        10/17/02 (jhr) fixed skipws to use Char.isSpace test.
  *)
 
 (* Subject: lookahead in sml-lex
@@ -439,12 +431,12 @@ fun AdvanceTok () : unit = let
 	      num (explode s, 0)
 	    end
 
-      fun skipws () = (case nextch()
-	     of #" " => skipws()
-	      | #"\t" => skipws() 
-	      | #"\n" => skipws()
-	      | x => x
-	    (* end case *))
+      fun skipws () = let val ch = nextch()
+	    in
+	      if Char.isSpace ch
+		then skipws()
+		else ch
+	    end
 		
       and nextch () = getch(!LexBuf) 
 
@@ -516,7 +508,9 @@ fun AdvanceTok () : unit = let
 			     end
 			in ID(getID [ch])
 			end
-		      else (prSynErr ("bad character: " ^ String.str ch))
+		      else prSynErr (String.concat[
+			  "bad character: \"", Char.toString ch, "\""
+			])
 	in NextTok := makeTok()
 	end
 	| 1 => let val rec makeTok = fn () =>
@@ -621,20 +615,39 @@ fun AdvanceTok () : unit = let
 		| ch => onechar(ch)
 	in NextTok := makeTok()
 	end
-	| 2 => NextTok :=
-	     (case skipws()
-		 of #"(" => let
-			fun GetAct (lpct,x) = (case getch(!LexBuf)
-			       of #"(" => GetAct (lpct+1, #"("::x)
-				| #")" => if lpct = 0 then (implode (rev x))
-					 	      else GetAct(lpct-1, #")"::x)
-				| y => GetAct(lpct,y::x)
-			      (* end case *))
-			in ACTION (GetAct (0,nil))
-			end
-		 | #";" => SEMI
-		 | c => (prSynErr ("invalid character " ^ String.str c)))
-	| _ => raise LexError
+        | 2 => NextTok :=
+               (case skipws() of
+                  #"(" =>
+                  let
+                    fun loop_to_end (backslash, x) =
+                      let
+                        val c    = getch (! LexBuf)
+                        val notb = not backslash
+                        val nstr = c :: x
+                      in
+                        case c of
+                          #"\"" => if notb then nstr
+                                   else loop_to_end (false, nstr)
+                        | _ => loop_to_end (c = #"\\" andalso notb, nstr)
+                      end
+                    fun GetAct (lpct, x) =
+                      let
+                        val c    = getch (! LexBuf)
+                        val nstr = c :: x
+                      in
+                        case c of
+                          #"\"" => GetAct (lpct, loop_to_end (false, nstr))
+                        | #"(" => GetAct (lpct + 1, nstr)
+                        | #")" => if lpct = 0 then implode (rev x)
+                                  else GetAct(lpct - 1, nstr)
+                        | _ => GetAct(lpct, nstr)
+                      end
+                  in
+                    ACTION (GetAct (0,nil))
+                  end
+                | #";" => SEMI
+                | c => (prSynErr ("invalid character " ^ String.str c)))
+        | _ => raise LexError
 end
 handle eof => NextTok := EOF ;
 
@@ -913,10 +926,10 @@ fun maketable (fins:(int * (int list)) list,
 	     let fun f ((l,e)::r) = if (e=t) then true else f r
 		   | f nil = false in f tcpairs end
 
-	 fun GetEndLeaf t = 
+	 fun GetEndLeaf t =
 	   let fun f ((tl,el)::r) = if (tl=t) then el else f r
-		 | f [] = raise Fail "GetEndLeaf"
-           in f tcpairs
+		 | f _ = raise Match
+	   in f tcpairs
 	   end
 	 fun GetTrConLeaves s =
 	   let fun f ((s',l)::r) = if (s = s') then l else f r
@@ -998,6 +1011,35 @@ fun maketable (fins:(int * (int list)) list,
  	 in res
 	end
 
+	fun makeTable args = let
+	    fun makeOne (a, b) = let
+		fun item (N i) = ("N", i)
+		  | item (T i) = ("T", i)
+		  | item (D i) = ("D", i)
+		fun makeItem x = let
+		    val (t, n) = item x
+		in
+		    app say ["(", t, " ", Int.toString n, ")"]
+		end
+		fun makeItems [] = ()
+		  | makeItems [x] = makeItem x
+		  | makeItems (hd :: tl) =
+		    (makeItem hd; say ","; makeItems tl)
+	    in
+		say "{fin = [";
+		makeItems b;
+		app say ["], trans = ", a, "}"]
+	    end
+	    fun mt ([], []) = ()
+	      | mt ([a], [b]) = makeOne (a, b)
+	      | mt (a :: a', b :: b') =
+		(makeOne (a, b); say ",\n"; mt (a', b'))
+	      | mt _ = raise Match
+	in
+	    mt args
+	end
+			
+(*
 	fun makeTable(nil,nil) = ()
 	  | makeTable(a::a',b::b') =
 	     let fun makeItems nil = ()
@@ -1018,7 +1060,7 @@ fun maketable (fins:(int * (int list)) list,
 		  then ()
 		  else (say ",\n"; makeTable(a',b')))
 	      end
-	  | makeTable _ = raise Fail "makeTable"
+*)
 
 	fun msg x = TextIO.output(TextIO.stdOut, x)
 
@@ -1189,7 +1231,7 @@ val skel_mid2 =
 \                          end\n\
 \"
 
-fun lexGen infile =
+fun lexGen(infile) =
     let val outfile = infile ^ ".sml"
       fun PrintLexer (ends) =
     let val sayln = fn x => (say x; say "\n")
@@ -1215,8 +1257,8 @@ fun lexGen infile =
 	 sayln "\t\t\t(let fun yymktext() = String.substring(!yyb,i0,i-i0)\n\
 	       \\t\t\t     val yypos: int = i0+ !yygone";
 	 if !CountNewLines 
-	    then (sayln "\t\t\tval _ = yylineno := CharVector.foldl";
-	  	  sayln "\t\t\t\t(fn (_,#\"\\n\", n) => n+1 | (_,_, n) => n) (!yylineno) (!yyb,i0,SOME(i-i0))")
+	    then (sayln "\t\t\tval _ = yylineno := CharVectorSlice.foldli";
+	  	  sayln "\t\t\t\t(fn (_,#\"\\n\", n) => n+1 | (_,_, n) => n) (!yylineno) (CharVectorSlice.slice (!yyb,i0,SOME(i-i0)))")
 	    else ();
 	 if !HaveReject
 	     then (say "\t\t\tfun REJECT() = action(i,acts::l";

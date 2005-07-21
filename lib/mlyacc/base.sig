@@ -1,18 +1,12 @@
+(* Modified by mfluet@acm.org on 2005-7-21.
+ * Update with SML/NJ 110.55.
+ *)
 (* Modified by sweeks@acm.org on 2000-8-24.
  * Ported to MLton.
  *)
 type int = Int.int
-   
-(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
- *
- * $Log: base.sig,v $
- * Revision 1.1.1.1  1997/01/14 01:38:04  george
- *   Version 109.24
- *
- * Revision 1.1.1.1  1996/01/31  16:01:42  george
- * Version 109
- * 
- *)
+
+(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 (* base.sig: Base signature file for SML-Yacc.  This file contains signatures
    that must be loaded before any of the files produced by ML-Yacc are loaded

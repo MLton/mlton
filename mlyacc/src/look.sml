@@ -1,13 +1,4 @@
-(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
- *
- * $Log: look.sml,v $
- * Revision 1.1.1.1  1997/01/14 01:38:05  george
- *   Version 109.24
- *
- * Revision 1.1.1.1  1996/01/31  16:01:46  george
- * Version 109
- * 
- *)
+(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
     struct
@@ -71,27 +62,26 @@ functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
 	   We have found all the possible nullable rules. 
       *)
 
-	val nullable =
-	  let fun ok_rhs nil = true
-		| ok_rhs ((TERM _)::_) = false
-		| ok_rhs ((NONTERM i)::r) = ok_rhs r
-	      fun add_rule (RULE {lhs,rhs,...},r) =
-		 if ok_rhs rhs
-		    then (lhs,
-			  map
-			  (fn NONTERM (NT i) => i | _ => raise Fail "add_rule")
-			  rhs) :: r
-		 else r
-	      val items = List.foldr add_rule [] rules
-	      val nullable = array(nonterms,false)
-	      val f = fn ((NT i,nil),(l,_)) => (update(nullable,i,true);
-				 	       (l,true))
-		       | (a as (lhs,(h::t)),(l,change)) =>
-				case (nullable sub h) 
-				  of false => (a::l,change)
-				   | true => ((lhs,t)::l,true)
-	      fun prove(l,true) = prove(List.foldr f (nil,false) l)
-		| prove(_,false) = ()
+	val nullable = let
+	    fun add_rule (RULE { lhs, rhs, ... }, r) = let
+		fun addNT (TERM _, _) = NONE
+		  | addNT (_, NONE) = NONE
+		  | addNT (NONTERM (NT i), SOME ntlist) = SOME (i :: ntlist)
+	    in
+		case foldr addNT (SOME []) rhs of
+		    NONE => r
+		  | SOME ntlist => (lhs, ntlist) :: r
+	    end
+	    val items = List.foldr add_rule [] rules
+	    val nullable = array(nonterms,false)
+	    fun f ((NT i,nil),(l,_)) = (update(nullable,i,true);
+					(l,true))
+	      | f (a as (lhs,(h::t)),(l,change)) =
+		(case (nullable sub h) of
+		     false => (a::l,change)
+		   | true => ((lhs,t)::l,true))
+	    fun prove(l,true) = prove(List.foldr f (nil,false) l)
+	      | prove(_,false) = ()
 	in (prove(items,true); fn (NT i) => nullable sub i)
 	end
 

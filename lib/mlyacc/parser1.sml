@@ -1,16 +1,4 @@
-(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
- *
- * $Log: parser1.sml,v $
- * Revision 1.2  1997/09/10 18:34:22  jhr
- *   Changed "abstraction" to ":>".
- *
-# Revision 1.1.1.1  1997/01/14  01:38:04  george
-#   Version 109.24
-#
- * Revision 1.1.1.1  1996/01/31  16:01:42  george
- * Version 109
- * 
- *)
+(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 (* drt (12/15/89) -- the functor should be used during development work,
    but it is wastes space in the release version.
@@ -108,9 +96,3 @@ structure LrParser :> LR_PARSER =
    end
 end;
 
-(* drt (12/15/89) -- this needs to be used only when the parsing engine
-  (the code above) is functorized.  
-
-structure LrParser = ParserGen(structure LrTable = LrTable
-			     structure Stream = Stream);
-*)

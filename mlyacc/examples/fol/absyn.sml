@@ -4,7 +4,7 @@ signature ABSYN =
      val null : absyn
   end
 
-abstraction Absyn : ABSYN =
+structure Absyn :> ABSYN =
    struct
       datatype absyn = NULL
       val null = NULL

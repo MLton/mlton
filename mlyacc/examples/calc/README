@@ -1,21 +1,46 @@
 This is a sample interactive calculator built using ML-Yacc and ML-Lex.
 
+The calculator is defined by the files
+
+  calc.lex       (* defines lexer *)
+  calc.grm       (* defines grammar *)
+  calc.sml       (* defines driver function, Calc.parse *)
+  sources.cm     (* cm description file *)
+
 To compile this example, type
 
-	- CM.make();
+	- CM.make "sources.cm";
 
-in this directory.
+in this directory.  CM will invoke ml-lex and ml-yacc to process the
+lexer specification calc.lex and the grammar specification calc.grm
+respectively.  Then it will compile the resulting SML source files
+
+  calc.lex.sml
+  calc.grm.sig
+  calc.grm.sml
+
+and the calc.sml file containing the driver code.
 
 The end result of loading these files is a structure Calc containing a
-function named parse.  The calculator can be invoked by applying that
-function to a value of type unit.  The calculator reads from the
-standard input.  There is no attempt to fix input errors since this
-is an interactive parser.
+top-level driver function named parse.  
+
+  Calc.parse : unit -> unit
+
+The calculator can be invoked by applying Calc.parse to the unit value.
+
+  - Calc.parse();
+  1+3;
+  result = 4
 
 The calculator reads a sequence of expressions from the standard input
 and prints the value of each expression after reading the expression.
 Expressions must be separated by semicolons.  An expression is not
 evaluated until the semicolon is encountered.  The calculator
-terminates when an end-of-file is encountered.
+terminates when an end-of-file is encountered. There is no attempt to
+fix input errors: a lexical error will cause exception LexError to be
+raised, while a syntax error will cause ParseError to be raised.
 
-
+NOTE: The CM description file sources.cm mentions the ml-yacc library
+(ml-yacc-lib.cm). CM's search path should be configured so that this
+library will be found.  This should normally be the case if SML/NJ is
+properly installed.

@@ -1,23 +1,12 @@
+(* Modified by mfluet@acm.org on 2005-7-21.
+ * Update with SML/NJ 110.55.
+ *)
 (* Modified by sweeks@acm.org on 2000-8-24.
  * Ported to MLton.
  *)
 type int = Int.int
 
-(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
- *
- * $Log: verbose.sml,v $
- * Revision 1.1.1.1  1997/01/14 01:38:06  george
- *   Version 109.24
- *
- * Revision 1.2  1996/02/26  15:02:39  george
- *    print no longer overloaded.
- *    use of makestring has been removed and replaced with Int.toString ..
- *    use of IO replaced with TextIO
- *
- * Revision 1.1.1.1  1996/01/31  16:01:47  george
- * Version 109
- * 
- *)
+(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 functor mkVerbose(structure Errs : LR_ERRS) : VERBOSE =
 struct

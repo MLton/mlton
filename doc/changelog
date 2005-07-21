@@ -1,5 +1,9 @@
 Here are the changes since version 20041109.
-
+	
+* 2005-07-21
+  - Update mllex and mlyacc with SML/NJ 110.55 versions.  This 
+    incorporates a small number of minor bug fixes.
+	
 * 2005-07-20
   - Fixed bug in front end that allowed unary constructors to be used
     without an argument in patterns.

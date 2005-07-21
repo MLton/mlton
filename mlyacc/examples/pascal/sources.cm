@@ -7,7 +7,8 @@ Group is
   ml-yacc-lib.cm
 #endif
 
-  calc.grm
-  calc.lex
-  calc.sml
+  pascal.grm
+  pascal.lex
+
+  parser.sml
 

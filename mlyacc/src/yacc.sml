@@ -1,33 +1,12 @@
+(* Modified by mfluet@acm.org on 2005-7-21.
+ * Update with SML/NJ 110.55.
+ *)
 (* Modified by sweeks@acm.org on 2000-8-24.
  * Ported to MLton.
  *)
 type int = Int.int
-   
-(* ML-Yacc Parser Generator (c) 1989, 1990 Andrew W. Appel, David R. Tarditi 
- *
- * $Log: yacc.sml,v $
- * Revision 1.1.1.1  1998/04/08 18:40:17  george
- * Version 110.5
- *
- * Revision 1.2  1997/07/25 16:01:29  jhr
- *   Fixed bug with long constructor names (#1237).
- *
-# Revision 1.1.1.1  1997/01/14  01:38:06  george
-#   Version 109.24
-#
- * Revision 1.3  1996/05/30  18:05:09  dbm
- * Made changes to generate code that conforms to the value restriction by
- * lifting lets to locals in the code generated to define errtermvalue and action.
- *
- * Revision 1.2  1996/02/26  15:02:40  george
- *    print no longer overloaded.
- *    use of makestring has been removed and replaced with Int.toString ..
- *    use of IO replaced with TextIO
- *
- * Revision 1.1.1.1  1996/01/31  16:01:48  george
- * Version 109
- * 
- *)
+
+(* ML-Yacc Parser Generator (c) 1989, 1990 Andrew W. Appel, David R. Tarditi *)
 
 functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
 		    structure MakeTable : MAKE_LR_TABLE
@@ -49,7 +28,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
 
     (* approx. maximum length of a line *)
 
-    val lineLength: int = 70
+    val lineLength : int = 70
 
     (* record type describing names of structures in the program being
  	generated *)
@@ -236,10 +215,11 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
 	     sayln "_ => false")
 
 	 val printTermList = fn (l : term list) =>
-	    (app (fn t => (sayterm t; say " :: ")) l; sayln "nil")
+           (sayln "nil"; app (fn t => (say " $$ "; sayterm t)) (rev l))
+
 
 	 fun printChange () =
-	    (sayln "val preferred_change = ";
+	    (sayln "val preferred_change : (term list * term list) list = ";
 	     app (fn (d,i) =>
 		    (say"("; printTermList d; say ","; printTermList i; 
 		     sayln ")::"
@@ -289,6 +269,8 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
 	    sayln "struct";
 	    say "open ";
 	    sayln tableStruct;
+            sayln "infix 5 $$";
+            sayln "fun x $$ y = y::x";
 	    sayln "val is_keyword =";
 	    printBoolCase keyword;
 	    printChange();
@@ -296,7 +278,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
 	    printBoolCase noshift;
 	    printNames ();
 	    printErrValues value;
-	    say "val terms = ";
+	    say "val terms : term list = ";
 	    printTermList ecTerms;
 	    sayln "end"
 	end
@@ -336,12 +318,12 @@ let val printAbsynRule = Absyn.printRule(say,sayln)
 			   else	
 			       PAPP(valueStruct^"."^symString,
 			         if num=1 andalso pureActions
-				     then AS(PVAR symNum,PVAR symString)
+				     then AS(symNum,PVAR symString)
 				 else PVAR symNum),
-			     if num=1 then AS(PVAR (symString^"left"),
+			     if num=1 then AS(symString^"left",
 					      PVAR(symNum^"left"))
 			     else PVAR(symNum^"left"),
-			     if num=1 then AS(PVAR(symString^"right"),
+			     if num=1 then AS(symString^"right",
 					      PVAR(symNum^"right"))
 			     else PVAR(symNum^"right")]]
 	     end
@@ -350,8 +332,8 @@ let val printAbsynRule = Absyn.printRule(say,sayln)
 
 	(* construct case pattern *)
 
-	   val pat = PTUPLE[PINT i,PLIST(map mkToken numberedRhs @
-					   [PVAR "rest671"])]
+	   val pat = PTUPLE[PINT i,PLIST(map mkToken numberedRhs,
+					 SOME (PVAR "rest671"))]
 
 	(* remove terminals in argument list w/o types *)
 
@@ -382,7 +364,7 @@ let val printAbsynRule = Absyn.printRule(say,sayln)
 				  let val symString = symbolToString sym
 				      val symNum = symString ^ Int.toString num
 				  in VB(if num=1 then
-					     AS(PVAR symString,PVAR symNum)
+					     AS(symString,PVAR symNum)
 					else PVAR symNum,
 					EAPP(EVAR symNum,UNIT))
 				  end) (rev argsWithTypes),
@@ -640,10 +622,10 @@ let val printAbsynRule = Absyn.printRule(say,sayln)
 	       val unmap = fn (symbol,_) =>
 		   let val name = symbolName symbol
                    in update(data,
-			     case SymbolHash.find (name,symbolHash) of
-				NONE => raise Fail "termToString"
-			      | SOME i => i,
-		             name)
+			     case SymbolHash.find(name,symbolHash) of
+				 SOME i => i
+			       | NONE => raise Fail "termToString",
+			     name)
                    end
 	       val _ = app unmap term
 	   in fn T i =>
@@ -657,10 +639,10 @@ let val printAbsynRule = Absyn.printRule(say,sayln)
 	       val unmap = fn (symbol,_) =>
 		    let val name = symbolName symbol
 		    in update(data,
-			      case SymbolHash.find (name,symbolHash) of
-				 NONE => raise Fail "nontermToString"
-			       | SOME i => i-numTerms,
-                              name)
+			      case SymbolHash.find(name,symbolHash) of
+				  SOME i => i-numTerms
+				| NONE => raise Fail "nontermToString",
+			      name)
 		    end
 	       val _ = app unmap nonterm
 	   in fn NT i =>
@@ -749,13 +731,12 @@ precedences of the rule and the terminal are equal.
 
 	val symbolType = 
 	   let val data = array(numTerms+numNonterms,NONE : ty option)
-	       val unmap =
-		  fn (symbol,ty) =>
-		  update (data,
+	       fun unmap (symbol,ty) =
+		   update(data,
 			  case SymbolHash.find(symbolName symbol,symbolHash) of
-			     NONE => raise Fail "unmap"
-			   | SOME i => i,
-                          ty)
+			      SOME i => i
+			    | NONE => raise Fail "symbolType",
+			  ty)
 	       val _ = (app unmap term; app unmap nonterm)
 	   in fn NONTERM(NT i) =>
 		if DEBUG andalso (i<0 orelse i>=numNonterms)

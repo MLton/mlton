@@ -1,7 +1,7 @@
-Installation instructions for ML-Yacc
+Installation instructions for ML-Lex
 -------------------------------------
 
-ML-Yacc will normally be automatically
+ML-Lex will normally be automatically
 installed as part of the SML/NJ system
 by the SML/NJ installer.
 
@@ -13,14 +13,9 @@ your own modifications), run the
 script in this directory and then move
 the file
 
-    src/ml-yacc.$ARCH-$OS
+    ml-lex.$ARCH-$OS
 
 to the heap-file directory.
 
 Running ./build requires a properly
 functioning installation of SML/NJ.
-If you make modifications to lexer or
-parser, be sure to also have properly
-functioning instances of ml-lex and
-ml-yacc installed before you run
-./build.

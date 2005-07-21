@@ -1,18 +1,4 @@
-(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
- *
- * $Log: graph.sml,v $
- * Revision 1.1.1.1  1997/01/14 01:38:05  george
- *   Version 109.24
- *
- * Revision 1.2  1996/02/26  15:02:34  george
- *    print no longer overloaded.
- *    use of makestring has been removed and replaced with Int.toString ..
- *    use of IO replaced with TextIO
- *
- * Revision 1.1.1.1  1996/01/31  16:01:45  george
- * Version 109
- * 
- *)
+(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 functor mkGraph(structure IntGrammar : INTGRAMMAR
 		structure Core : CORE

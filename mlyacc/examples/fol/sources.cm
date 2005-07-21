@@ -7,7 +7,14 @@ Group is
   ml-yacc-lib.cm
 #endif
 
-  calc.grm
-  calc.lex
-  calc.sml
+  fol.lex
+  fol.grm
+
+  absyn.sml
+
+  interface.sml
+
+  parse.sml
+  link.sml
+
 

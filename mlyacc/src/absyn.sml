@@ -1,21 +1,4 @@
-(* ML-Yacc Parser Generator (c) 1991 Andrew W. Appel, David R. Tarditi 
- *
- * $Log: absyn.sml,v $
- * Revision 1.1.1.1  1997/01/14 01:38:05  george
- *   Version 109.24
- *
- * Revision 1.3  1996/02/26  15:02:30  george
- *    print no longer overloaded.
- *    use of makestring has been removed and replaced with Int.toString ..
- *    use of IO replaced with TextIO
- *
- * Revision 1.2  1996/02/15  01:51:38  jhr
- * Replaced character predicates (isalpha, isnum) with functions from Char.
- *
- * Revision 1.1.1.1  1996/01/31  16:01:44  george
- * Version 109
- * 
- *)
+(* ML-Yacc Parser Generator (c) 1991 Andrew W. Appel, David R. Tarditi *)
 
 structure Absyn : ABSYN =
   struct
@@ -33,10 +16,10 @@ structure Absyn : ABSYN =
       = PVAR of string
       | PAPP of string * pat
       | PINT of int
-      | PLIST of pat list
+      | PLIST of pat list * pat option
       | PTUPLE of pat list
       | WILD
-      | AS of pat * pat
+      | AS of string * pat
     and decl = VB of pat * exp
     and rule = RULE of pat * exp
 
@@ -75,12 +58,17 @@ structure Absyn : ABSYN =
                          (case f pat
                           of WILD => WILD
                            | pat' => PAPP(s,pat'))
-                     | (PLIST l) =>
-	                  let val l' = map f l
-                          in if List.exists(fn WILD=>false | _ => true) l'
-                                then PLIST l'
-                             else WILD
-                          end
+		     | (PLIST (l, topt)) =>
+		         let val l' = map f l
+			     val topt' = Option.map f topt
+			     fun notWild WILD = false
+			       | notWild _ = true
+			 in case topt' of
+				SOME WILD => if List.exists notWild l' then
+						 PLIST (l', topt')
+					     else WILD
+			      | _ => PLIST (l', topt')
+			 end
                      | (PTUPLE l) =>
                           let val l' = map f l
                           in if List.exists(fn WILD=>false | _ => true) l'
@@ -88,13 +76,11 @@ structure Absyn : ABSYN =
                              else WILD
                           end
                      | (AS(a,b)) =>
-                         let val a'=f a
-                             val b'=f b
-                         in case(a',b')
-                            of (WILD,_) => b'
-                             | (_,WILD) => a'
-                             | _ => AS(a',b')
-                         end
+		         if used a then
+			     case f b of
+				 WILD => PVAR a
+			       | b' => AS(a,b')
+			 else f b
                      | _ => a
                in f
                end
@@ -113,74 +99,64 @@ structure Absyn : ABSYN =
        in RULE(simplifyPat p,simplifyExp e)
        end
 
-       fun printRule (say : string -> unit, sayln:string -> unit) = let
-	 val lp = ["("]
-         val rp = [")"]
-         val sp = [" "]
-         val sm = [";"]
-         val cm = [","]
-         val cr = ["\n"]
-         val unit = ["()"]
-          fun printExp c =
-	   let fun f (CODE c) = ["(",c,")"]
-                 | f (EAPP(EVAR a,UNIT)) = [a," ","()"]
-                 | f (EAPP(EVAR a,EINT i)) =  [a," ",Int.toString i]
-                 | f (EAPP(EVAR a,EVAR b)) = [a," ",b]
-                 | f (EAPP(EVAR a,b)) = List.concat[[a],lp,f b,rp]
-                 | f (EAPP(a,b)) = List.concat [lp,f a,rp,lp,f b,rp]
-	         | f (EINT i) = [Int.toString i]
-                 | f (ETUPLE (a::r)) = 
-	              let fun scan nil = [rp]
-                            | scan (h :: t) = cm :: f h :: scan t
-                      in List.concat (lp :: f a :: scan r)
-                      end
-                 | f (ETUPLE _) = ["<bogus-tuple>"]
-                 | f (EVAR s) = [s]
-                 | f (FN (p,b)) = List.concat[["fn "],printPat p,[" => "],f b]
-                 | f (LET (nil,body)) = f body
-                 | f (LET (dl,body)) =
-	              let fun scan nil = [[" in "],f body,[" end"],cr]
-                            | scan (h :: t) = printDecl h :: scan t
-	              in List.concat(["let "] :: scan dl)
-	              end
-                 | f (SEQ (a,b)) = List.concat [lp,f a,sm,f b,rp]
-                 | f (UNIT) = unit
-          in f c
-          end
-         and printDecl (VB (pat,exp)) =
-                  List.concat[["val "],printPat pat,["="],printExp exp,cr]
-         and printPat c =
-	   let fun f (AS(PVAR a,PVAR b)) = [a," as ",b]
-                 | f (AS(a,b)) = List.concat [lp,f a,[") as ("],f b,rp]
-                 | f (PAPP(a,WILD)) = [a," ","_"]
-                 | f (PAPP(a,PINT i)) =  [a," ",Int.toString i]
-                 | f (PAPP(a,PVAR b)) = [a," ",b]
-                 | f (PAPP(a,b)) = List.concat [lp,[a],sp,f b,rp]
-	         | f (PINT i) = [Int.toString i]
-                 | f (PLIST nil) = ["<bogus-list>"]
-                 | f (PLIST l) =
-	              let fun scan (h :: nil) = [f h]
-                            | scan (h :: t) = f h :: ["::"] :: scan t
-			    | scan _ = raise Fail "scan"
-                      in List.concat (scan l)
-                      end
-                 | f (PTUPLE (a::r)) = 
-	              let fun scan nil = [rp]
-                            | scan (h :: t) = cm :: f h :: scan t
-                      in List.concat (lp :: f a :: scan r)
-                      end
-                 | f (PTUPLE nil) = ["<bogus-pattern-tuple>"]
-                 | f (PVAR a) = [a]
-                 | f WILD = ["_"]
-           in f c
-           end
-	   fun oursay "\n" = sayln ""
-	     | oursay a = say a
-         in fn a => 
-	      let val RULE(p,e) = simplifyRule a
-              in app oursay (printPat p);
-	         say " => ";
-                 app oursay (printExp e)
-              end
-         end
+       fun printRule (say : string -> unit, sayln:string -> unit) r = let
+	   fun flat (a, []) = rev a
+	     | flat (a, SEQ (e1, e2) :: el) = flat (a, e1 :: e2 :: el)
+	     | flat (a, e :: el) = flat (e :: a, el)
+	   fun pl (lb, rb, c, f, [], a) = " " :: lb :: rb :: a
+	     | pl (lb, rb, c, f, h :: t, a) =
+	         " " :: lb :: f (h, foldr (fn (x, a) => c :: f (x, a))
+					  (rb :: a)
+					  t)
+	   fun pe (CODE c, a) = " (" :: c :: ")" :: a
+	     | pe (EAPP (x, y as (EAPP _)), a) =
+	         pe (x, " (" :: pe (y, ")" :: a))
+	     | pe (EAPP (x, y), a) =
+	         pe (x, pe (y, a))
+	     | pe (EINT i, a) =
+	         " " :: Int.toString i :: a
+	     | pe (ETUPLE l, a) = pl ("(", ")", ",", pe, l, a)
+	     | pe (EVAR v, a) =
+	         " " :: v :: a
+	     | pe (FN (p, b), a) =
+	         " (fn" :: pp (p, " =>" :: pe (b, ")" :: a))
+	     | pe (LET ([], b), a) =
+	         pe (b, a)
+	     | pe (LET (dl, b), a) =
+	       let fun pr (VB (p, e), a) =
+		       " val " :: pp (p, " =" :: pe (e, "\n" :: a))
+	       in " let" :: foldr pr (" in" :: pe (b, "\nend" :: a)) dl
+	       end
+	     | pe (SEQ (e1, e2), a) =
+	         pl ("(", ")", ";", pe, flat ([], [e1, e2]), a)
+	     | pe (UNIT, a) =
+	         " ()" :: a
+	   and pp (PVAR v, a) =
+	         " " :: v :: a
+	     | pp (PAPP (x, y as PAPP _), a) =
+	         " " :: x :: " (" :: pp (y, ")" :: a)
+	     | pp (PAPP (x, y), a) =
+	         " " :: x :: pp (y, a)
+	     | pp (PINT i, a) =
+	         " " :: Int.toString i :: a
+	     | pp (PLIST (l, NONE), a) =
+	         pl ("[", "]", ",", pp, l, a)
+	     | pp (PLIST (l, SOME t), a) =
+	         " (" :: foldr (fn (x, a) => pp (x, " ::" :: a))
+			       (pp (t, ")" :: a))
+			       l
+	     | pp (PTUPLE l, a) =
+	         pl ("(", ")", ",", pp, l, a)
+	     | pp (WILD, a) =
+	         " _" :: a
+	     | pp (AS (v, PVAR v'), a) =
+	         " (" :: v :: " as " :: v' :: ")" :: a
+	     | pp (AS (v, p), a) =
+	         " (" :: v :: " as (" :: pp (p, "))" :: a)
+	   fun out "\n" = sayln ""
+	     | out s = say s
+       in
+	   case simplifyRule r of
+	       RULE (p, e) => app out (pp (p, " =>" :: pe (e, ["\n"])))
+       end
 end;

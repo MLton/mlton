@@ -1,24 +1,4 @@
-(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
- *
- * $Log: parser2.sml,v $
- * Revision 1.2  1997/08/26 19:18:54  jhr
- *   Replaced used of "abstraction" with ":>".
- *
-# Revision 1.1.1.1  1997/01/14  01:38:04  george
-#   Version 109.24
-#
- * Revision 1.3  1996/10/03  03:36:58  jhr
- * Qualified identifiers that are no-longer top-level (quot, rem, min, max).
- *
- * Revision 1.2  1996/02/26  15:02:29  george
- *    print no longer overloaded.
- *    use of makestring has been removed and replaced with Int.toString ..
- *    use of IO replaced with TextIO
- *
- * Revision 1.1.1.1  1996/01/31  16:01:42  george
- * Version 109
- * 
- *)
+(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 (* parser.sml:  This is a parser driver for LR tables with an error-recovery
    routine added to it.  The routine used is described in detail in this
@@ -119,11 +99,13 @@ structure LrParser :> LR_PARSER =
       structure LrTable = LrTable
       structure Stream = Stream
 
+      fun eqT (LrTable.T i, LrTable.T i') = i = i'
+
       structure Token : TOKEN =
 	struct
 	    structure LrTable = LrTable
 	    datatype ('a,'b) token = TOKEN of LrTable.term * ('a * 'b * 'b)
-	    val sameToken = fn (TOKEN(t,_),TOKEN(t',_)) => t=t'
+	    val sameToken = fn (TOKEN(t,_),TOKEN(t',_)) => eqT (t,t')
         end
 
       open LrTable
@@ -183,7 +165,7 @@ structure LrParser :> LR_PARSER =
             | nil => ()
                 
         fun prAction showTerminal
-		 (stack as (state,_) :: _, (TOKEN (term,_), _), action) =
+		 (stack as (state,_) :: _, next as (TOKEN (term,_),_), action) =
              (println "Parse: state stack:";
               printStack(stack, 0);
               print("       state="
@@ -197,7 +179,7 @@ structure LrParser :> LR_PARSER =
                  | REDUCE i => println ("REDUCE " ^ (Int.toString i))
                  | ERROR => println "ERROR"
 		 | ACCEPT => println "ACCEPT")
-        | prAction _ _ = ()
+        | prAction _ (_,_,action) = ()
      end
 
     (* ssParse: parser which maintains the queue of (state * lexvalues) in a
@@ -300,7 +282,7 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 	     distanceParse : ('_a,'_b) distanceParse,
 	     minAdvance,maxAdvance) 
 
-            ((TOKEN (term, (_, leftPos, _)), _), _, queue) =
+            (lexv as (TOKEN (term,value as (_,leftPos,_)),_),stack,queue) =
     let val _ = if DEBUG2 then
 			error("syntax error found at " ^ (showTerminal term),
 			      leftPos,leftPos)
@@ -344,6 +326,17 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 
          val showTerms = concat o map (fn TOKEN(t,_) => " " ^ showTerminal t)
 
+	 val printChange = fn c =>
+	  let val CHANGE {distance,new,orig,pos,...} = c
+	  in (print ("{distance= " ^ (Int.toString distance));
+	      print (",orig ="); print(showTerms orig);
+	      print (",new ="); print(showTerms new);
+	      print (",pos= " ^ (Int.toString pos));
+	      print "}\n")
+	  end
+
+	val printChangeList = app printChange
+
 (* parse: given a lexPair, a stack, and the distance from the error
    token, return the distance past the error token that we are able to parse.*)
 
@@ -364,8 +357,7 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 
         fun tryChange{lex,stack,pos,leftPos,rightPos,orig,new} =
 	     let val lex' = List.foldr (fn (t',p)=>(t',Stream.cons p)) lex new
-		 val distance = parse(lex',stack,
-				      pos + List.length new - List.length orig)
+		 val distance = parse(lex',stack,pos+length new-length orig)
 	      in if distance >= minAdvance + keywordsDelta new 
 		   then [CHANGE{pos=pos,leftPos=leftPos,rightPos=rightPos,
 				distance=distance,orig=orig,new=new}] 
@@ -378,12 +370,12 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 	      Do not delete unshiftable terminals. *)
 
 
-    fun tryDelete n ((stack, lexPair as (TOKEN (_, (_, l, r)), _)), qPos) =
+    fun tryDelete n ((stack,lexPair as (TOKEN(term,(_,l,r)),_)),qPos) =
 	let fun del(0,accum,left,right,lexPair) =
 	          tryChange{lex=lexPair,stack=stack,
 			    pos=qPos,leftPos=left,rightPos=right,
 			    orig=rev accum, new=[]}
-	      | del(n,accum,left,_,(tok as TOKEN(term,(_,_,r)),lexer)) =
+	      | del(n,accum,left,right,(tok as TOKEN(term,(_,_,r)),lexer)) =
 		   if noShift term then []
 		   else del(n-1,tok::accum,left,r,Stream.get lexer)
          in del(n,[],l,r,lexPair)
@@ -401,7 +393,7 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 (* trySubst: try to substitute tokens for the current terminal;
        return a list of the successes  *)
 
-        fun trySubst ((stack, (orig as TOKEN (term,(_,l,r)),lexer)),
+        fun trySubst ((stack,lexPair as (orig as TOKEN (term,(_,l,r)),lexer)),
 		      queuePos) =
 	      if noShift term then []
 	      else
@@ -419,13 +411,13 @@ fun mkFixError({is_keyword,terms,errtermvalue,
      *)
         fun do_delete(nil,lp as (TOKEN(_,(_,l,_)),_)) = SOME(nil,l,l,lp)
           | do_delete([t],(tok as TOKEN(t',(_,l,r)),lp')) =
-	       if t=t'
+	       if eqT (t, t')
 		   then SOME([tok],l,r,Stream.get lp')
                    else NONE
-          | do_delete(t::rest,(tok as TOKEN(t',(_,l,_)),lp')) =
-	       if t=t'
+          | do_delete(t::rest,(tok as TOKEN(t',(_,l,r)),lp')) =
+	       if eqT (t,t')
 		   then case do_delete(rest,Stream.get lp')
-                         of SOME(deleted,_,r',lp'') =>
+                         of SOME(deleted,l',r',lp'') =>
 			       SOME(tok::deleted,l,r',lp'')
 			  | NONE => NONE
 		   else NONE
@@ -495,7 +487,7 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 
 		  val findNth = fn n =>
 		      let fun f (h::t,0) = (h,rev t)
-			    | f (_::t,n) = f(t,n-1)
+			    | f (h::t,n) = f(t,n-1)
 			    | f (nil,_) = let exception FindNth
 					  in raise FindNth
 					  end
@@ -548,8 +540,3 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 	end
  end;
 
-(* drt (12/15/89) -- needed only when the code above is functorized
-
-structure LrParser = ParserGen(structure LrTable=LrTable
-			     structure Stream=Stream);
-*)

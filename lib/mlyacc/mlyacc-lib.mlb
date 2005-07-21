@@ -1,7 +1,7 @@
 ann
   "sequenceUnit true"
   "warnMatch true"
-  "warnUnused true" "forceUsed"
+  "warnUnused false" "forceUsed"
 in
 local
     $(SML_LIB)/basis/basis.mlb

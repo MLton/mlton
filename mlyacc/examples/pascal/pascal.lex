@@ -20,7 +20,7 @@ structure KeyWord : sig
 	val HashFactor = 5
 
 	val hash = fn s =>
-	   fold (fn (c,v)=>(v*HashFactor+(ord c)) mod TableSize) (explode s) 0
+	   foldl (fn (c,v)=>(v*HashFactor+(ord c)) mod TableSize) 0 (explode s)
 
 
 	val HashTable = Array.array(TableSize,nil) :
@@ -98,7 +98,7 @@ octdigit=[0-7];
 ws = [\ \t];
 %%
 <INITIAL>{ws}+	=> (lex());
-<INITIAL>\n+	=> (lineNum := (!lineNum) + (String.length yytext); lex());
+<INITIAL>\n+	=> (lineNum := (!lineNum) + (String.size yytext); lex());
 <INITIAL>{alpha}+ => (case find yytext of SOME v => v(!lineNum,!lineNum)
 						  | _ => YID(!lineNum,!lineNum));
 <INITIAL>{alpha}({alpha}|{digit})*  => (YID(!lineNum,!lineNum));
@@ -128,12 +128,12 @@ ws = [\ \t];
 <INITIAL>"/"	=> (YSLASH(!lineNum,!lineNum));
 <INITIAL>"{"	=> (YYBEGIN B; lex());
 <INITIAL>.	=> (YILLCH(!lineNum,!lineNum));
-<C>\n+		=> (lineNum := (!lineNum) + (String.length yytext); lex());
+<C>\n+		=> (lineNum := (!lineNum) + (String.size yytext); lex());
 <C>[^()*\n]+	=> (lex());
 <C>"(*"		=> (lex());
 <C>"*)"		=> (YYBEGIN INITIAL; lex());
 <C>[*()]	=> (lex());
-<B>\n+		=> (lineNum := (!lineNum) + (String.length yytext); lex());
+<B>\n+		=> (lineNum := (!lineNum) + (String.size yytext); lex());
 <B>[^{}\n]+	=> (lex());
 <B>"{"		=> (lex());
 <B>"}"		=> (YYBEGIN INITIAL; lex());

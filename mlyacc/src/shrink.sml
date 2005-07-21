@@ -1,22 +1,12 @@
+(* Modified by mfluet@acm.org on 2005-7-21.
+ * Update with SML/NJ 110.55.
+ *)
 (* Modified by sweeks@acm.org on 2000-8-24.
  * Ported to MLton.
  *)
 type int = Int.int
 
-(* ML-Yacc Parser Generator (c) 1991 Andrew W. Appel, David R. Tarditi 
- *
- * $Log: shrink.sml,v $
- * Revision 1.1.1.1  1997/01/14 01:38:06  george
- *   Version 109.24
- *
- * Revision 1.2  1996/05/30  17:52:58  dbm
- * Lifted a let to a local in definition of createEquivalences to conform with
- * value restriction.
- *
- * Revision 1.1.1.1  1996/01/31  16:01:46  george
- * Version 109
- * 
- *)
+(* ML-Yacc Parser Generator (c) 1991 Andrew W. Appel, David R. Tarditi *)
 
 signature SORT_ARG =
   sig
@@ -182,22 +172,24 @@ functor ShrinkLrTableFun(structure LrTable : LR_TABLE) : SHRINK_LR_TABLE =
                | ERROR =>  false
         structure ActionEntryList =
 	    struct
-		type entry = (term,action) pairlist * action
-		val rec eqlist =
-                      fn (EMPTY,EMPTY) => true
-                       | (PAIR (T t,d,r),PAIR(T t',d',r')) =>
-                             t=t' andalso d=d' andalso eqlist(r,r')
-                       | _ => false
-                 val rec gtlist =
-                            fn (PAIR _,EMPTY) => true
-                             | (PAIR(T t,d,r),PAIR(T t',d',r')) =>
-				     t>t' orelse (t=t' andalso
-                                       (gtAction(d,d') orelse
-					 (d=d' andalso gtlist(r,r'))))
-                             | _ => false
-		 val eq = fn ((l,a),(l',a')) => a=a' andalso eqlist(l,l')
-                 val gt = fn ((l,a),(l',a')) => gtAction(a,a')
-		                orelse (a=a' andalso gtlist(l,l'))
+		type entry = (term, action) pairlist * action
+		local
+		    fun eqlist (EMPTY, EMPTY) = true
+		      | eqlist (PAIR (T t,d,r),PAIR(T t',d',r')) =
+			t=t' andalso d=d' andalso eqlist(r,r')
+		      | eqlist _ = false
+		    fun gtlist (PAIR _,EMPTY) = true
+		      | gtlist (PAIR(T t,d,r),PAIR(T t',d',r')) =
+			t>t' orelse (t=t' andalso
+				     (gtAction(d,d') orelse
+				      (d=d' andalso gtlist(r,r'))))
+		      | gtlist _ = false
+		in
+		    fun eq ((l,a): entry, (l',a'): entry) =
+			a = a' andalso eqlist (l,l')
+		    fun gt ((l,a): entry, (l',a'): entry) =
+			gtAction(a,a') orelse (a=a' andalso gtlist(l,l'))
+		end
             end
 (*        structure GotoEntryList =
             struct

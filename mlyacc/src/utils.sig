@@ -1,18 +1,12 @@
+(* Modified by mfluet@acm.org on 2005-7-21.
+ * Update with SML/NJ 110.55.
+ *)
 (* Modified by sweeks@acm.org on 2000-8-24.
  * Ported to MLton.
  *)
 type int = Int.int
-   
-(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
- *
- * $Log: utils.sig,v $
- * Revision 1.1.1.1  1997/01/14 01:38:06  george
- *   Version 109.24
- *
- * Revision 1.1.1.1  1996/01/31  16:01:46  george
- * Version 109
- * 
- *)
+
+(* ML-Yacc Parser Generator (c) 1991 Andrew W. Appel, David R. Tarditi *)
 
 signature ORDSET =
    sig

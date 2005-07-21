@@ -1,13 +1,4 @@
-(* Externally visible aspects of the lexer and parser 
- *
- * $Log: interface.sml,v $
- * Revision 1.1.1.1  1997/01/14 01:38:03  george
- *   Version 109.24
- *
- * Revision 1.1.1.1  1996/01/31  16:01:39  george
- * Version 109
- * 
- *)
+(* Externally visible aspects of the lexer and parser *)
 
 signature INTERFACE =
 sig
@@ -31,7 +22,7 @@ val line = ref 0
 fun init_line () = (line := 1)
 fun next_line () = (line := !line + 1)
 fun error (errmsg,line:pos,_) =
-  output(std_out,"Line " ^ (makestring line) ^ ": " ^ errmsg ^ "\n")
+  TextIO.output(TextIO.stdOut,"Line " ^ (Int.toString line) ^ ": " ^ errmsg ^ "\n")
 
 type arg = unit
 

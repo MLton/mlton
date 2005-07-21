@@ -1,19 +1,17 @@
 \documentstyle{article}
 \title{                        ML-Yacc User's Manual \\
-			       Version 2.3
+			       Version 2.4
       }
 \author{                David R. Tarditi$^1$\\
                         Andrew W. Appel$^2$\\
 \\              
-$^1$School of Computer Science \\
-Carnegie Mellon University \\
-Pittsburgh, PA 15213 \\
+$^1$Microsoft Research \\
 \\
 $^2$Department of Computer Science \\
     Princeton University \\
     Princeton, NJ 08544 
 }
-\date{October 6, 1994}
+\date{April 24, 2000}
 
 \begin{document}
 \maketitle
@@ -29,6 +27,8 @@ file COPYRIGHT distributed with this software).
 
 New in this version:  Improved error correction directive \verb|%change|
 that allows multi-token insertions, deletions, substitutions.
+Explanation of how to build a parser (Section 5) and the Calc example
+(Section 7) revised for SML/NJ Version 110 and the use of CM.
 
 \newpage
 \tableofcontents
@@ -139,17 +139,17 @@ lexical analyzer & & \\
 
 \subsection{Error Recovery}
 
-The error recovery algorithm is able to accurately recover
-from many single token syntax errors.
-It tries to make a single token correction at the token in the
-input stream at which the syntax error was detected and any of
-the 15 tokens\footnote{An arbitrary number chosen because numbers
-above this do not seem to improve error correction much.} before that token.  The algorithm
-checks corrections before the point of error detection because
-a syntax error is often not detected until several tokens beyond
-the token which caused the error.\footnote{An LR parser detects a syntax error
-as soon as possible, but this does not necessarily mean that the
-token at which the error was detected caused the error.}
+The error recovery algorithm is able to accurately recover from many
+single token syntax errors.  It tries to make a single token
+correction at the token in the input stream at which the syntax error
+was detected and any of the 15 tokens\footnote{An arbitrary number
+chosen because numbers above this do not seem to improve error
+correction much.} before that token.  The algorithm checks corrections
+before the point of error detection because a syntax error is often
+not detected until several tokens beyond the token which caused the
+error.\footnote{An LR parser detects a syntax error as soon as
+possible, but this does not necessarily mean that the token at which
+the error was detected caused the error.}
 
 The algorithm works by trying corrections at each
 of the 16 tokens up to and including the token at which the
@@ -333,8 +333,7 @@ The following classes of non-ML symbols are used:
 \begin{quote}
 \raggedright
 \tt
-                \%arg \%eop \%header \%token\_sig\_info \%keyword
-		\%left \%name \%nodefault
+                \%arg \%eop \%header \%keyword \%left \%name \%nodefault
                 \%nonassoc \%nonterm \%noshift \%pos \%prec \%prefer
                 \%pure \%right \%start \%subst \%term \%value \%verbose
 \end{quote}
@@ -366,7 +365,6 @@ This is the grammar for specifications:
 \mbox{cmd} & ::= & \mbox{{\tt \%arg} (Any-ML-pattern) {\tt :} ML-type} \\
  & | & \mbox{{\tt \%eop} symbol-list} \\
  & | & \mbox{{\tt \%header} code} \\
- & | & \mbox{{\tt \%token\_sig\_info} code} \\
  & | & \mbox{{\tt \%keyword} symbol-list} \\
  & | & \mbox{{\tt \%left} symbol-list} \\
  & | & \mbox{{\tt \%name} identifier} \\
@@ -490,40 +488,22 @@ The error-correcting parser may attempt to read past such terminals
 while evaluating a correction to a syntax error otherwise.  This may
 confuse the lexer.
 \item[{\tt \%header}]
-\begin{samepage}
 You may define code to head the functor \{parser name\}LrValsFun here.  This
 may be useful for adding additonal parameter structures to the functor.
 The functor must be parameterized by the Token structure, so
 the declaration should always have the form:
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 %header (functor {parser name}LrValsFun(
                                 structure Token : TOKEN
                                        ...) 
         )
 \end{verbatim}
-\end{tt}
-\end{samepage}
-\item[{\tt \%token\_sig\_info}]
-\begin{samepage}
-You may add specifications to the signature \{parser name\}\_TOKENS
-here.  This may be useful in adding structures or types that
-subsequently occur as arguments to various tokens.  The declartion
-should be of the form:
-\begin{tt}
-\begin{verbatim}
-%token_sig_info (type mytype
-                 structure MyStructure : MyStructure_sig
-                 ...
-                )
-\end{verbatim}
-\end{tt}
-Any specification you put here must be satisfied by the code you give
-in the user declarations.%
-\end{samepage}
+\end{quote}
+
 \item[{\tt \%left},{\tt \%right},{\tt \%nonassoc}]
 You should list the precedence declarations in order of increasing (tighter-binding)
- precedence.  Each precedence declaration consists
+precedence.  Each precedence declaration consists
 of \% keyword specifying associativity followed by a list of terminals.
 The keywords are {\tt \%left}, {\tt \%right}, and {\tt \%nonassoc},
 standing for their respective associativities.
@@ -566,7 +546,7 @@ the name of the specification file with a ``.desc'' appended to it.
 \end{enumerate}
 \end{description}
 
-\subsection{Declarations for improving error-recovery.}
+\subsection{Declarations for improving error-recovery}
 
 These optional declarations improve error-recovery:
 
@@ -652,7 +632,7 @@ nonterminal.  The type of the value and the nonterminal must match.
 The value is ignored if the nonterminal has no value, but is still
 evaluated for side-effects.
 
-\section{Producing files with ML-Yacc.}
+\section{Producing files with ML-Yacc}
 
 ML-Yacc may be used from the interactive system or built as a
 stand-alone program which may be run from the Unix command line.
@@ -747,56 +727,60 @@ You may use a lexer constructed using ML-Lex with the {\tt \%arg}
 declaration, but you must follow special instructions for tying the parser
 and lexer together.
  
-\section{Creating the parser.}
+\section{Creating the parser}
 \label{create-parser}
-Let the name of the specification file be denoted by \{spec name\} and
-the parser name in the specification be \{n\}.
+Let the name of the grammar specification file be denoted by
+\{grammar\} and the name of the lexer specification file be
+denoted by \{lexer\} (e.g. in our calculator example these would
+stand for calc.grm and calc.lex, respectively).
+Let the parser name in the specification be represented by \{n\}
+(e.g. Calc in our calculator example).
+
 To construct a parser, do the following:
-
 \begin{enumerate}
-
-\item Run ML-Yacc on the specification file for a grammar.
-\item Run ML-Lex to create the lexical analyzer.
-\item Load the file base.sml from the ML-Yacc directory.  This file contains
-the common modules.  If you have already loaded this file, you do not need
-to load it again.
-\item Load the file \{spec name\}.sig produced by ML-Yacc.
-\item Load the file produced by ML-Lex.
-\item Load the file \{spec name\}.sml by ML-Yacc.
-\item Apply functors to create the parser:
-
-\end{enumerate}
+\item In the appropriate CM description file (e.g. for your main
+program or one of its subgroups or libraries), include the lines:
 \begin{quote}
-\tt
 \begin{verbatim}
-   structure {n}LrVals =
-        {n}LrValsFun(structure Token = LrParser.Token)
-   structure {n}Lex = 
-        {n}LexFun(structure Tokens = 
-                             {n}LrVals.Tokens)
-   structure {n}Parser=
-         Join(structure ParserData = {n}LrVals.ParserData
-              structure Lex={n}Lex
-              structure LrParser=LrParser)
+ml-yacc-lib.cm
+{lexer}
+{grammar}
+\end{verbatim}  
+\end{quote}
+This will cause ML-Yacc to be run on \{grammar\}, producing source files
+\{grammar\}.sig and \{grammar\}.sml, and ML-Lex to be run on
+\{lexer\}, producing a source file \{lexer\}.sml.  Then these files
+will be compiled after loading the necessary signatures and modules
+from the ML-Yacc library as specified by {\tt ml-yacc-lib.cm}.
+\item Apply functors to create the parser:
+\begin{quote}
+\begin{verbatim}
+structure {n}LrVals =
+  {n}LrValsFun(structure Token = LrParser.Token)
+structure {n}Lex = 
+  {n}LexFun(structure Tokens = {n}LrVals.Tokens)
+structure {n}Parser=
+  Join(structure ParserData = {n}LrVals.ParserData
+       structure Lex={n}Lex
+       structure LrParser=LrParser)
 \end{verbatim}
 \end{quote}
 If the lexer was created using the {\tt \%arg} declaration in ML-Lex,
-the last step
-must be changed to use another functor called JoinWithArg:
+the definition of \{n\}Parser must be changed to use another functor
+called JoinWithArg:
 \begin{quote}
-\tt
 \begin{verbatim}
-     structure {n}Parser=
-         JoinWithArg
-             (structure ParserData={n}LrVals.ParserData
-              structure Lex={n}Lex
-              structure LrParser=LrParser)
+structure {n}Parser=
+  JoinWithArg
+    (structure ParserData={n}LrVals.ParserData
+     structure Lex={n}Lex
+     structure LrParser=LrParser)
 \end{verbatim}
 \end{quote}
+\end{enumerate}
 
 The following outline summarizes this process:
 \begin{quote}
-\tt
 \begin{verbatim}
 (* available at top level *)
 
@@ -810,127 +794,128 @@ structure LrParser : LR_PARSER
 (* printed out in .sig file created by parser generator: *)
 
 signature {n}_TOKENS = 
-  sig
-      structure Token : TOKEN
-      type svalue
-      val PLUS : 'pos * 'pos ->
-                         (svalue,'pos) Token.token
-      val INTLIT : int * 'pos * 'pos ->
-                         (svalue,'pos) Token.token
-      ...
-  end
+sig
+  structure Token : TOKEN
+  type svalue
+  val PLUS : 'pos * 'pos ->
+             (svalue,'pos) Token.token
+  val INTLIT : int * 'pos * 'pos ->
+               (svalue,'pos) Token.token
+  ...
+end
 
 signature {n}_LRVALS =
-  sig
-     structure Tokens : {n}_TOKENS
-     structure ParserData : PARSER_DATA
-     sharing ParserData.Token = Tokens.Token
-     sharing type ParserData.svalue = Tokens.svalue
-  end
+sig
+  structure Tokens : {n}_TOKENS
+  structure ParserData : PARSER_DATA
+  sharing ParserData.Token = Tokens.Token
+  sharing type ParserData.svalue = Tokens.svalue
+end
 
 (* printed out by lexer generator: *)
 
 functor {n}LexFun(structure Tokens : {n}_TOKENS)=
-   struct
-        ...
-   end
+struct
+  ...
+end
 
 (* printed out in .sml file created by parser generator: *)
 
 functor {n}LrValsFun(structure Token : TOKENS) =
+struct
+
+  structure ParserData =
   struct
+    structure Token = Token
 
-        structure ParserData =
-          struct
-            structure Token = Token
+    (* code in header section of specification *)
 
-        (* code in header section of specification *)
+    structure Header = ...
+    type svalue = ...
+    type result = ...
+    type pos = ...
+    structure Actions = ...
+    structure EC = ...
+    val table = ...
+  end
 
-            structure Header = ...
-            type svalue
-            type result
-            type pos
-            structure Actions = ...
-            structure EC = ...
-            val table = ...
-          end
-        structure Tokens : {n}_TOKENS =
-           struct
-             structure Token = ParserData.Token
-             type svalue
-             fun PLUS(p1,p2) = ...
-             fun INTLIT(i,p1,p2) = ... 
-          end
-   end
+  structure Tokens : {n}_TOKENS =
+  struct
+    structure Token = ParserData.Token
+    type svalue = ...
+    fun PLUS(p1,p2) = ...
+    fun INTLIT(i,p1,p2) = ... 
+  end
+
+end
 
 (* to be done by the user: *)
  
 structure {n}LrVals =
-         {n}LrValsFun(structure Token = LrParser.Token)
+  {n}LrValsFun(structure Token = LrParser.Token)
+
 structure {n}Lex = 
-         {n}LexFun(structure Tokens =
-                            {n}LrVals.Tokens)
+  {n}LexFun(structure Tokens = {n}LrVals.Tokens)
+
 structure {n}Parser =
-           Join(structure Lex = {n}Lex
-                ParserData = {n}ParserData
-                structure LrParser = LrParser)
+  Join(structure Lex = {n}Lex
+       structure ParserData = {n}ParserData
+       structure LrParser = LrParser)
 \end{verbatim}
 \end{quote}
 
 \section{Using the parser}
 \subsection{Parser Structure Signatures}
 The final structure created will have the signature PARSER:
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 signature PARSER =
-    sig
-        structure Token : TOKEN
-        structure Stream : STREAM
-        exception ParseError
+sig
+  structure Token : TOKEN
+  structure Stream : STREAM
+  exception ParseError
 
-        type pos    (* pos is the type of line numbers *)
-        type result (* value returned by the parser *)
-        type arg    (* type of the user-supplied argument  *)
-        type svalue (* the types of semantic values *)
+  type pos    (* pos is the type of line numbers *)
+  type result (* value returned by the parser *)
+  type arg    (* type of the user-supplied argument  *)
+  type svalue (* the types of semantic values *)
 
-        val makeLexer : (int -> string) ->
-                         (svalue,pos) Token.token Stream.stream
-
-        val parse :
-            int * ((svalue,pos) Token.token Stream.stream) *
-            (string * pos * pos -> unit) * arg ->
-                result * (svalue,pos) Token.token Stream.stream
-        val sameToken :
-          (svalue,pos) Token.token * (svalue,pos) Token.token ->
-              bool
-     end
+  val makeLexer : (int -> string) ->
+		    (svalue,pos) Token.token Stream.stream
+  val parse :
+      int * ((svalue,pos) Token.token Stream.stream) *
+      (string * pos * pos -> unit) * arg ->
+	result * (svalue,pos) Token.token Stream.stream
+  val sameToken :
+      (svalue,pos) Token.token * (svalue,pos) Token.token ->
+	bool
+end
 \end{verbatim}
-\end{tt}
+\end{quote}
 or the signature ARG\_PARSER if you used {\tt \%arg} to create the lexer.
 This signature differs from ARG\_PARSER in that it
 which has an additional type {\tt lexarg} and a different type
 for {\tt makeLexer}:
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
-    type lexarg
-    val makeLexer : (int -> string)  -> lexarg ->
-                         (svalue,pos) token stream
+type lexarg
+val makeLexer : (int -> string)  -> lexarg ->
+                  (svalue,pos) token stream
 \end{verbatim}
-\end{tt}
+\end{quote}
 
-The signature STREAM is:
-\begin{tt}
+The signature STREAM (providing lazy streams) is:
+\begin{quote}
 \begin{verbatim}
-(* STREAM: signature for a lazy stream.*)
-
 signature STREAM =
- sig type 'a stream
-     val streamify : (unit -> '_a) -> '_a stream
-     val cons : '_a * '_a stream -> '_a stream
-     val get : '_a stream -> '_a * '_a stream
- end
+sig
+  type 'a stream
+  val streamify : (unit -> 'a) -> 'a stream
+  val cons : 'a * 'a stream -> 'a stream
+  val get : 'a stream -> 'a * 'a stream
+end
 \end{verbatim}
-\end{tt}
+\end{quote}
 
 \subsection{Using the parser structure}
 
@@ -991,14 +976,14 @@ the type associated with the start symbol in the ML-Yacc specification.
 
 \section{Examples}
 
-  See the directory examples for examples of parsers constructed using
+See the directory examples for examples of parsers constructed using
 ML-Yacc.  Here is a small sample parser and lexer for an interactive
-calculator, from the directory examples/calc, along with code for 
-creating a parsing function.  The calculator reads one or
-more expressions from the standard input, evaluates the expression, and
-prints its value.  Expressions should be separated by semicolons, and may
-also be ended by using an end-of-file.  This shows
-how to construct an interactive parser which reads a top-level declaration
+calculator, from the directory examples/calc, along with code for
+creating a parsing function.  The calculator reads one or more
+expressions from the standard input, evaluates the expressions, and
+prints their values.  Expressions should be separated by semicolons,
+and may also be ended by using an end-of-file.  This shows how to
+construct an interactive parser which reads a top-level declaration
 and processes the declaration before reading the next top-level
 declaration.
 
@@ -1101,73 +1086,66 @@ ws = [\ \t];
 \end{tt}
 \subsection{Top-level code}
 
-You must follow instructions one through six in Section~\ref{create-parser}
+You must follow the instructions in Section~\ref{create-parser}
 to create the parser and lexer functors and load them.  After you have
 done this, you must then apply the functors to produce the {\tt CalcParser}
 structure.  The code for doing this is shown below.
+\begin{quote}
 \begin{verbatim}
 structure CalcLrVals =
-    CalcLrValsFun(structure Token = LrParser.Token)
+  CalcLrValsFun(structure Token = LrParser.Token)
+
 structure CalcLex =
-    CalcLexFun(structure Tokens = CalcLrVals.Tokens);
+  CalcLexFun(structure Tokens = CalcLrVals.Tokens);
+
 structure CalcParser =
-     Join(structure LrParser = LrParser
-          structure ParserData = CalcLrVals.ParserData
-          structure Lex = CalcLex)
+  Join(structure LrParser = LrParser
+       structure ParserData = CalcLrVals.ParserData
+       structure Lex = CalcLex)
 \end{verbatim}
+\end{quote}
  
 Now we need a function which given a lexer invokes the parser.  The
 function {\tt invoke} does this.
 
+\begin{quote}
 \begin{verbatim}
-val invoke = fn lexstream =>
-  let val print_error = fn (s,i:int,_) =>
-       output(std_out,"Error, line " ^
-                      (makestring i) ^ ", " ^ s ^ "\n")
-  in CalcParser.parse(0,lexstream,print_error,())
-  end
-\end{verbatim}
-
-We also need a function which reads a line of input from the terminal
-\footnote{Standard ML of New Jersey has a function input\_line in its
-built-in environment that also does this.}:
-\begin{verbatim}
-  val input_line = fn f =>
-    let fun loop result =
-          let val c = input (f,1)
-              val result = c :: result
-          in if String.size c = 0 orelse c = "\n" then
-                String.implode (rev result)
-             else loop result
-          end
-    in loop nil
+fun invoke lexstream =
+    let fun print_error (s,i:int,_) =
+	    TextIO.output(TextIO.stdOut,
+			  "Error, line " ^ (Int.toString i) ^ ", " ^ s ^ "\n")
+     in CalcParser.parse(0,lexstream,print_error,())
     end
 \end{verbatim}
+\end{quote}
 
 Finally, we need a function which can read one or more expressions from
 the standard input.  The function {\tt parse}, shown below, does this.
 It runs the calculator on the standard input and terminates 
 when an end-of-file is encountered.
 
+\begin{quote}
 \begin{verbatim}
-val parse = fn () => 
-    let val lexer = CalcParser.makeLexer (fn _ => input_line std_in)
-        val dummyEOF = CalcLrVals.Tokens.EOF(0,0)
-        val dummySEMI = CalcLrVals.Tokens.SEMI(0,0)
-        fun loop lexer =
-           let val (result,lexer) = invoke lexer
-               val (nextToken,lexer) = CalcParser.Stream.get lexer
-               val _ = case result
-                  of SOME r =>
-                      output(std_out,
-                         "result = " ^ (makestring r) ^ "\n")
-                   | NONE => ()
-           in if CalcParser.sameToken(nextToken,dummyEOF) then ()
-              else loop lexer
-           end
+fun parse () = 
+    let val lexer = CalcParser.makeLexer
+                      (fn _ => TextIO.inputLine TextIO.stdIn)
+	val dummyEOF = CalcLrVals.Tokens.EOF(0,0)
+	val dummySEMI = CalcLrVals.Tokens.SEMI(0,0)
+	fun loop lexer =
+	    let val (result,lexer) = invoke lexer
+		val (nextToken,lexer) = CalcParser.Stream.get lexer
+	     in case result
+		  of SOME r =>
+		      TextIO.output(TextIO.stdOut,
+			     "result = " ^ (Int.toString r) ^ "\n")
+		   | NONE => ();
+	        if CalcParser.sameToken(nextToken,dummyEOF) then ()
+		else loop lexer
+	    end
      in loop lexer
-     end
+    end
 \end{verbatim}
+\end{quote}
 
 \section{Signatures}
 
@@ -1177,272 +1155,277 @@ the signatures of lexer structures supplied by you.
 
 \subsection{Parsing structure signatures}
 
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 (* STREAM: signature for a lazy stream.*)
 
 signature STREAM =
- sig type 'a stream
-     val streamify : (unit -> '_a) -> '_a stream
-     val cons : '_a * '_a stream -> '_a stream
-     val get : '_a stream -> '_a * '_a stream
- end
+sig
+  type 'a stream
+  val streamify : (unit -> 'a) -> 'a stream
+  val cons : 'a * 'a stream -> 'a stream
+  val get : 'a stream -> 'a * 'a stream
+end
 
 (* LR_TABLE: signature for an LR Table.*)
 
 signature LR_TABLE =
- sig
-   datatype ('a,'b) pairlist = EMPTY
-                             | PAIR of 'a * 'b * ('a,'b) pairlist
-   datatype state = STATE of int
-   datatype term = T of int
-   datatype nonterm = NT of int
-   datatype action = SHIFT of state
-                   | REDUCE of int
-                   | ACCEPT
-                   | ERROR
-   type table
+sig
+  datatype ('a,'b) pairlist
+    = EMPTY
+    | PAIR of 'a * 'b * ('a,'b) pairlist
+  datatype state = STATE of int
+  datatype term = T of int
+  datatype nonterm = NT of int
+  datatype action = SHIFT of state
+                  | REDUCE of int
+                  | ACCEPT
+                  | ERROR
+  type table
 	
-   val numStates : table -> int
-   val numRules : table -> int
-   val describeActions : table -> state ->
-                     (term,action) pairlist * action
-   val describeGoto : table -> state -> (nonterm,state) pairlist
-   val action : table -> state * term -> action
-   val goto : table -> state * nonterm -> state
-   val initialState : table -> state
-   exception Goto of state * nonterm
+  val numStates : table -> int
+  val numRules : table -> int
+  val describeActions : table -> state ->
+                          (term,action) pairlist * action
+  val describeGoto : table -> state ->
+                       (nonterm,state) pairlist
+  val action : table -> state * term -> action
+  val goto : table -> state * nonterm -> state
+  val initialState : table -> state
+  exception Goto of state * nonterm
 
-   val mkLrTable :
-     {actions : ((term,action) pairlist * action) array,
-      gotos : (nonterm,state) pairlist array,
-      numStates : int, numRules : int,
-      initialState : state} -> table
- end
+  val mkLrTable :
+      {actions : ((term,action) pairlist * action) array,
+       gotos : (nonterm,state) pairlist array,
+       numStates : int, numRules : int,
+       initialState : state} -> table
+end
 
 (* TOKEN: signature for the internal structure of a token.*)
 
 signature TOKEN =
- sig
-   structure LrTable : LR_TABLE
-   datatype ('a,'b) token = TOKEN of LrTable.term *
-                                     ('a * 'b * 'b)
-   val sameToken : ('a,'b) token * ('a,'b) token -> bool
- end
+sig
+  structure LrTable : LR_TABLE
+  datatype ('a,'b) token = TOKEN of LrTable.term *
+                                    ('a * 'b * 'b)
+  val sameToken : ('a,'b) token * ('a,'b) token -> bool
+end
 
 (* LR_PARSER: signature for a polymorphic LR parser *)
 
 signature LR_PARSER =
-    sig
-      structure Stream: STREAM
-      structure LrTable : LR_TABLE
-      structure Token : TOKEN
+sig
+  structure Stream: STREAM
+  structure LrTable : LR_TABLE
+  structure Token : TOKEN
 
-      sharing LrTable = Token.LrTable
+  sharing LrTable = Token.LrTable
 
-      exception ParseError
+  exception ParseError
 
-      val parse:
+  val parse:
        {table : LrTable.table,
-        lexer : ('_b,'_c) Token.token Stream.stream,
+        lexer : ('b,'c) Token.token Stream.stream,
         arg: 'arg,
         saction : int *
-                 '_c *
-                 (LrTable.state * ('_b * '_c * '_c)) list * 
+                 'c *
+                 (LrTable.state * ('b * 'c * 'c)) list * 
                  'arg ->
                   LrTable.nonterm *
-                  ('_b * '_c * '_c) *
-                  ((LrTable.state *('_b * '_c * '_c)) list),
-        void : '_b,
-        ec : {is_keyword : LrTable.term -> bool,
-              noShift : LrTable.term -> bool,
-              preferred_subst:LrTable.term -> LrTable.term list,
-              preferred_insert : LrTable.term -> bool,
-              errtermvalue : LrTable.term -> '_b,
-              showTerminal : LrTable.term -> string,
-              terms: LrTable.term list,
-              error : string * '_c * '_c -> unit
-              },
-        lookahead : int  (* max amount of lookahead used in *)
-                         (* error correction *)
-       } -> '_b * (('_b,'_c) Token.token Stream.stream)
-  end
+                  ('b * 'c * 'c) *
+                  ((LrTable.state *('b * 'c * 'c)) list),
+        void : 'b,
+        ec: {is_keyword : LrTable.term -> bool,
+             noShift : LrTable.term -> bool,
+             preferred_subst:LrTable.term -> LrTable.term list,
+             preferred_insert : LrTable.term -> bool,
+             errtermvalue : LrTable.term -> 'b,
+             showTerminal : LrTable.term -> string,
+             terms: LrTable.term list,
+             error : string * 'c * 'c -> unit
+            },
+        lookahead : int (* max amount of lookahead used in
+                         * error correction *)
+       } -> 'b * (('b,'c) Token.token Stream.stream)
+end
 \end{verbatim}
-\end{tt}
+\end{quote}
 
 \subsection{Lexers}
 
 Lexers for use with ML-Yacc's output must match one of these signatures.
 
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 signature LEXER =
-   sig
-       structure UserDeclarations :
-           sig
-                type ('a,'b) token
-                type pos
-                type svalue
-           end
-        val makeLexer : (int -> string) -> unit -> 
-          (UserDeclarations.svalue,
-           UserDeclarations.pos) UserDeclarations.token
-   end
+sig
+  structure UserDeclarations :
+    sig
+      type ('a,'b) token
+      type pos
+      type svalue
+    end
+  val makeLexer : (int -> string) -> unit -> 
+       (UserDeclarations.svalue, UserDeclarations.pos)
+       UserDeclarations.token
+end
 
-(* ARG_LEXER: the %arg option of ML-Lex allows users to produce
-   lexers which also take an argument before yielding a function
-   from unit to a token.
+(* ARG_LEXER: the %arg option of ML-Lex allows users to
+   produce lexers which also take an argument before
+   yielding a function from unit to a token.
 *)
 
 signature ARG_LEXER =
-  sig
-    structure UserDeclarations :
-      sig
-        type ('a,'b) token
-        type pos
-        type svalue
-        type arg
-      end
-     val makeLexer : (int -> string) -> UserDeclarations.arg ->
-          unit -> 
-            (UserDeclarations.svalue,
-             UserDeclarations.pos) UserDeclarations.token
-   end
+sig
+  structure UserDeclarations :
+    sig
+      type ('a,'b) token
+      type pos
+      type svalue
+      type arg
+    end
+  val makeLexer :
+      (int -> string) ->
+      UserDeclarations.arg ->
+      unit -> 
+       (UserDeclarations.svalue, UserDeclarations.pos)
+       UserDeclarations.token
+end
 \end{verbatim}
-\end{tt}
+\end{quote}
 
 \subsection{Signatures for the functor produced by ML-Yacc}
 
 The following signature is used in signatures generated by
 ML-Yacc:
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 (* PARSER_DATA: the signature of ParserData structures in
-   {n}LrValsFun functor produced by ML-Yacc. All such structures
-   match this signature.*)
+   {n}LrValsFun functor produced by ML-Yacc. All such
+   structures match this signature. *)
 
 signature PARSER_DATA =
-   sig
-        type pos       (* the type of line numbers *)
-        type svalue    (* the type of semantic values *)
-        type arg       (* the type of the user-supplied *)
-                       (* argument to the parser *)
-        type result
+sig
+  type pos       (* the type of line numbers *)
+  type svalue    (* the type of semantic values *)
+  type arg       (* the type of the user-supplied *)
+		 (* argument to the parser *)
+  type result
 
-        structure LrTable : LR_TABLE
-        structure Token : TOKEN
-        sharing Token.LrTable = LrTable
+  structure LrTable : LR_TABLE
+  structure Token : TOKEN
+  sharing Token.LrTable = LrTable
 
-        structure Actions : 
-          sig
-            val actions : int * pos *
-             (LrTable.state * (svalue * pos * pos)) list * arg ->
-                     LrTable.nonterm * (svalue * pos * pos) *
-                   ((LrTable.state *(svalue * pos * pos)) list)
-            val void : svalue
-            val extract : svalue -> result
-          end
-
-        (* structure EC contains information used to improve
-           error recovery in an error-correcting parser *)
-
-        structure EC :
-          sig
-           val is_keyword : LrTable.term -> bool
-           val noShift : LrTable.term -> bool
-           val preferred_subst: LrTable.term -> LrTable.term list
-           val preferred_insert : LrTable.term -> bool
-           val errtermvalue : LrTable.term -> svalue
-           val showTerminal : LrTable.term -> string
-           val terms: LrTable.term list
-          end
-
-        (* table is the LR table for the parser *)
-
-        val table : LrTable.table
+  structure Actions : 
+    sig
+      val actions : int * pos *
+       (LrTable.state * (svalue * pos * pos)) list * arg ->
+	       LrTable.nonterm * (svalue * pos * pos) *
+	     ((LrTable.state *(svalue * pos * pos)) list)
+      val void : svalue
+      val extract : svalue -> result
     end
+
+  (* structure EC contains information used to improve
+     error recovery in an error-correcting parser *)
+
+  structure EC :
+    sig
+      val is_keyword : LrTable.term -> bool
+      val noShift : LrTable.term -> bool
+      val preferred_subst: LrTable.term -> LrTable.term list
+      val preferred_insert : LrTable.term -> bool
+      val errtermvalue : LrTable.term -> svalue
+      val showTerminal : LrTable.term -> string
+      val terms: LrTable.term list
+    end
+
+  (* table is the LR table for the parser *)
+
+  val table : LrTable.table
+end
 \end{verbatim}
-\end{tt}
+\end{quote}
 
 ML-Yacc generates these two signatures:
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 (* printed out in .sig file created by parser generator: *)
 
 signature {n}_TOKENS = 
-  sig
-      type ('a,'b) token
-      type svalue
-      ...
-  end
+sig
+  type ('a,'b) token
+  type svalue
+  ...
+end
 
 signature {n}_LRVALS =
-  sig
-     structure Tokens : {n}_TOKENS
-     structure ParserData : PARSER_DATA
-     sharing type ParserData.Token.token = Tokens.token
-     sharing type ParserData.svalue = Tokens.svalue
-  end
+sig
+  structure Tokens : {n}_TOKENS
+  structure ParserData : PARSER_DATA
+  sharing type ParserData.Token.token = Tokens.token
+  sharing type ParserData.svalue = Tokens.svalue
+end
 \end{verbatim}
-\end{tt}
+\end{quote}
 \subsection{User parser signatures}
 
 Parsers created by applying the Join functor will match this signature:
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 signature PARSER =
-    sig
-        structure Token : TOKEN
-        structure Stream : STREAM
-        exception ParseError
+sig
+  structure Token : TOKEN
+  structure Stream : STREAM
+  exception ParseError
 
-        type pos    (* pos is the type of line numbers *)
-        type result (* value returned by the parser *)
-        type arg    (* type of the user-supplied argument  *)
-        type svalue (* the types of semantic values *)
+  type pos    (* pos is the type of line numbers *)
+  type result (* value returned by the parser *)
+  type arg    (* type of the user-supplied argument  *)
+  type svalue (* the types of semantic values *)
 
-        val makeLexer : (int -> string) ->
-                         (svalue,pos) Token.token Stream.stream
+  val makeLexer : (int -> string) ->
+		   (svalue,pos) Token.token Stream.stream
 
-        val parse :
-            int * ((svalue,pos) Token.token Stream.stream) *
-            (string * pos * pos -> unit) * arg ->
-                result * (svalue,pos) Token.token Stream.stream
-        val sameToken :
-          (svalue,pos) Token.token * (svalue,pos) Token.token ->
-              bool
-     end
+  val parse :
+      int * ((svalue,pos) Token.token Stream.stream) *
+      (string * pos * pos -> unit) * arg ->
+	  result * (svalue,pos) Token.token Stream.stream
+  val sameToken :
+    (svalue,pos) Token.token * (svalue,pos) Token.token ->
+	bool
+end
 \end{verbatim}
-\end{tt}
+\end{quote}
 Parsers created by applying the JoinWithArg functor will match this
 signature:
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 signature ARG_PARSER = 
-  sig
-    structure Token : TOKEN
-    structure Stream : STREAM
-    exception ParseError
+sig
+  structure Token : TOKEN
+  structure Stream : STREAM
+  exception ParseError
 
-    type arg
-    type lexarg
-    type pos
-    type result
-    type svalue
+  type arg
+  type lexarg
+  type pos
+  type result
+  type svalue
 
-    val makeLexer : (int -> string) -> lexarg ->
-                       (svalue,pos) Token.token Stream.stream
-    val parse : int *
-                ((svalue,pos) Token.token Stream.stream) *
-                (string * pos * pos -> unit) *
-                arg ->
-                 result * (svalue,pos) Token.token Stream.stream
-    val sameToken :
-        (svalue,pos) Token.token * (svalue,pos) Token.token ->
-             bool
-  end
+  val makeLexer : (int -> string) -> lexarg ->
+		     (svalue,pos) Token.token Stream.stream
+  val parse : int *
+	      ((svalue,pos) Token.token Stream.stream) *
+	      (string * pos * pos -> unit) *
+	      arg ->
+	       result * (svalue,pos) Token.token Stream.stream
+  val sameToken :
+      (svalue,pos) Token.token * (svalue,pos) Token.token ->
+	   bool
+end
 \end{verbatim}
-\end{tt}
+\end{quote}
 
 \section{Sharing constraints}
 
@@ -1450,7 +1433,7 @@ Let the name of the parser be denoted by \{n\}.  If
 you have not created a lexer which takes an argument, and
 you have followed the directions given earlier for creating the parser, you
 will have the following structures with the following signatures:
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 (* always present *)
 
@@ -1472,10 +1455,10 @@ structure {n}LrVals : {n}_LRVALS
 structure Lex : LEXER
 structure {n}Parser : PARSER
 \end{verbatim}
-\end{tt}
+\end{quote}
 
 The following sharing constraints will exist:
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 sharing {n}Parser.Token = LrParser.Token =
           {n}LrVals.ParserData.Token
@@ -1495,11 +1478,11 @@ sharing type {n}Parser.Token.token =
 sharing {n}LrVals.LrTable = LrParser.LrTable
         
 \end{verbatim}
-\end{tt}
+\end{quote}
 
 If you used a lexer which takes an argument, then you will
 have:
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 structure ARG_LEXER
 structure {n}Parser : PARSER
@@ -1508,7 +1491,7 @@ structure {n}Parser : PARSER
 
 sharing type {n}Parser.lexarg = Lex.UserDeclarations.arg
 \end{verbatim}
-\end{tt}
+\end{quote}
 
 \section{Hints}
 \subsection{Multiple start symbols}
@@ -1522,7 +1505,7 @@ from which to begin parsing.
 Assuming that you have followed the naming conventions used before,
 create the lexer using the makeLexer function in the \{n\}Parser structure.
 Then, place the dummy token on the front of the lexer:
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 val dummyLexer =
     {n}Parser.Stream.cons
@@ -1530,14 +1513,14 @@ val dummyLexer =
                  ({dummy lineno},{dummy lineno}),
         lexer)
 \end{verbatim}
-\end{tt}
-   You have to pass a Tokens structure to the lexer.  This Tokens structure
+\end{quote}
+You have to pass a Tokens structure to the lexer.  This Tokens structure
 contains functions which construct tokens from values and line numbers.
 So to create your dummy token just apply the appropriate token constructor
 function from this Tokens structure to a value (if there is one) and the
 line numbers.   This is exactly what you do in the lexer to construct tokens.
 
-   Then you must place the dummy token on the front of your lex stream.
+Then you must place the dummy token on the front of your lex stream.
 The structure \{n\}Parser contains a structure Stream which implements
 lazy streams.  So you just cons the dummy token on to stream returned
 by makeLexer.
@@ -1562,7 +1545,7 @@ number type and associated operations.
 
 If you wish to encapsulate the code necessary to invoke the
 parser, your functor generally will have form:
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 functor Encapsulate(
      structure Parser : PARSER
@@ -1577,7 +1560,7 @@ functor Encapsulate(
         ...
   end
 \end{verbatim}
-\end{tt}
+\end{quote}
 
 The signature INTERFACE, defined below, is a possible signature for
 a structure
@@ -1587,21 +1570,21 @@ along with operations for them.  You need this structure
 because
 these types will be abstract types inside the body of your
 functor.
-\begin{tt}
+\begin{quote}
 \begin{verbatim}
 signature INTERFACE = 
-  sig
-     type pos
-     val line : pos ref
-     val reset : unit -> unit
-     val next : unit -> unit
-     val error : string * pos * pos -> unit
+sig
+   type pos
+   val line : pos ref
+   val reset : unit -> unit
+   val next : unit -> unit
+   val error : string * pos * pos -> unit
 
-     type arg
-     val nothing : arg
-  end
+   type arg
+   val nothing : arg
+end
 \end{verbatim}
-\end{tt}
+\end{quote}
 
 The directory example/fol contains a sample parser in which
 the code for tying together the lexer and parser has been

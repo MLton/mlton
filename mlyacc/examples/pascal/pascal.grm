@@ -25,6 +25,7 @@
 %eop EOF
 %pos int
 %pure
+%noshift EOF
 
 %nonassoc YLESS	YEQUAL	YGREATER	YIN
 %left	YPLUS	YMINUS	YOR	YBAR

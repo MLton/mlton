@@ -13,7 +13,10 @@ Files of interest:
 
 lexgen.doc		- User's manual for ML-Lex
 lexgen.sml		- ML version of Lex
-export-lex.sml          - to be loaded by Standard ML of New Jersey users
-                          after loading lexgen.sml to create a stand-alone
-                          version of ML-Lex that takes the specification
-                          file name as a command line argument.
+export-lex.sml          - implements an exportable (via SMLofNJ.exportFn)
+			  toplevel driver for ML-Lex;  the resulting
+			  stand-alone program takes the specification
+			  file name as a command line argument
+ml-lex.cm		- CM description file for ML-Lex
+build			- script that invokes ../../bin/ml-build in order
+			  to construct the stand-alone version of ML-Lex
