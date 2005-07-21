@@ -1,5 +1,9 @@
 Here are the changes since version 20041109.
 
+* 2005-07-20
+  - Fixed bug in front end that allowed unary constructors to be used
+    without an argument in patterns.
+
 * 2005-07-19
   - Eliminated _ffi, which has been deprecated for some time.
 

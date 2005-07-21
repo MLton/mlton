@@ -653,11 +653,23 @@ val elaboratePat:
 					   val {args, instance} =
 					      Scheme.instantiate s
 					in
-					   Cpat.make
-					   (Cpat.Con {arg = NONE,
-						      con = c,
-						      targs = args ()},
-					    instance)
+					   if Type.canUnify
+					      (instance,
+					       Type.arrow (Type.new (),
+							   Type.new ()))
+					      then
+						 (Control.error
+						  (region,
+						   seq [str "contructor must be used with argument in pattern: ",
+							Ast.Longvid.layout name],
+						   empty)
+						  ; dontCare ())
+					   else
+					      Cpat.make
+					      (Cpat.Con {arg = NONE,
+							 con = c,
+							 targs = args ()},
+					       instance)
 					end
 			       end
 		      end
