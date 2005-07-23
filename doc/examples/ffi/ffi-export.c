@@ -27,3 +27,9 @@ void g4 (Int i) {
 	fprintf (stderr, "g4 (%d)\n", i);
 	f4 (i);
 }
+
+void g5 () {
+	fprintf (stderr, "g5 ()\n");
+	fprintf (stderr, "zzz = %i\n", zzz);
+	fprintf (stderr, "g5 done\n");
+}

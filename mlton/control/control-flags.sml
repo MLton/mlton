@@ -263,6 +263,9 @@ structure Elaborate =
 				  [arg'] => Bool.fromString arg'
 				| _ => NONE}, 
 		  ac)
+	
+	fun setCur (T {cur, ...}, x) = cur := x
+	fun setDef (T {def, ...}, x) = def := x
       in
 	 val ac =
 	    {parseId = fn _ => NONE,
@@ -281,8 +284,28 @@ structure Elaborate =
 	    makeBool ({name = "allowOverload", default = false, expert = false}, ac)
 	 val (allowRebindEquals, ac) =
 	    makeBool ({name = "allowRebindEquals", default = false, expert = true}, ac)
+	 val (allowSymbol, ac) =
+	    makeBool ({name = "allowSymbol", default = false, expert = false}, ac)
 	 val (deadCode, ac) =
 	    makeBool ({name = "deadCode", default = false, expert = false}, ac)
+	 val (allowFFI, ac) =
+	    make ({default = false,
+	           expert = false,
+	           toString = Bool.toString,
+	           name = "allowFFI",
+	           newCur = fn (_, b) => (setCur (allowExport, b)
+	          			  ; setCur (allowImport, b)
+	          			  ; setCur (allowSymbol, b)
+	          			  ; b),
+	           newDef = fn (_, b) => (setDef (allowExport, b)
+	          			  ; setDef (allowImport, b)
+	          			  ; setDef (allowSymbol, b)
+	          			  ; b),
+		   parseArgs = fn args' =>
+		               case args' of
+				  [arg'] => Bool.fromString arg'
+				| _ => NONE}, 
+		  ac)
 	 val (forceUsed, ac) =
 	    make ({default = false,
 		   expert = false,

@@ -1,4 +1,10 @@
 Here are the changes since version 20041109.
+
+* 2005-07-23
+  - Overhaul of FFI.
+    Deprecated _import of C base types.
+    Added _symbol for address, getter, and setter of C base types.
+    See documentation for more detail.
 	
 * 2005-07-21
   - Update mllex and mlyacc with SML/NJ 110.55 versions.  This 

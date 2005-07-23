@@ -17,6 +17,8 @@ val exports: {args: CType.t vector,
 	      id: int,
 	      name: string,
 	      res: CType.t option} list ref = ref []
+val symbols: {name: string,
+              ty: CType.t} list ref = ref []
 
 fun numExports () = List.length (!exports)
 
@@ -34,6 +36,8 @@ in
       in
 	 id
       end
+   fun addSymbol {name, ty} = 
+      ignore (List.push (symbols, {name=name, ty=ty}))
 end
 
 val headers: string list ref = ref []
@@ -77,6 +81,14 @@ fun declareExports {print} =
 	  end)
       val _ = print "Int MLton_FFI_op;\n"
    in
+      List.foreach
+      (!symbols, fn {name, ty} =>
+       let
+          val decl = CType.toString ty ^ " " ^ name;
+       in
+         List.push (headers, "extern " ^ decl);
+         print (decl ^ ";\n")
+       end);
       List.foreach
       (!exports, fn {args, convention, id, name, res} =>
        let

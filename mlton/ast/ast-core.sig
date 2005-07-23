@@ -85,22 +85,44 @@ signature AST_CORE =
 
       structure PrimKind:
 	 sig
-	    structure Attribute:
+	    structure ImportExportAttribute:
 	       sig
 		  datatype t = Cdecl | Stdcall
 		     
 		  val layout: t -> Layout.t
 	       end
+            
+            structure SymbolAttribute:
+               sig
+                  datatype t = Define
+		     
+		  val layout: t -> Layout.t
+               end
 	    
 	    datatype t =
-	       BuildConst of {name: string}
-	     | CommandLineConst of {name: string, value: Const.t}
-	     | Const of {name: string}
-	     | Export of {attributes: Attribute.t list, name: string}
-	     | IImport of {attributes: Attribute.t list}
-	     | Import of {attributes: Attribute.t list, name: string}
-	     | Symbol of {name: string}
-	     | Prim of {name: string}
+	       BuildConst of {name: string, 
+			      ty: Type.t}
+	     | CommandLineConst of {name: string, 
+				    ty: Type.t,
+				    value: Const.t}
+	     | Const of {name: string, 
+			 ty: Type.t}
+	     | Export of {attributes: ImportExportAttribute.t list, 
+			  name: string,
+			  cfTy: Type.t}
+	     | IImport of {attributes: ImportExportAttribute.t list,
+			   cfTy: Type.t}
+	     | Import of {attributes: ImportExportAttribute.t list, 
+			  name: string,
+			  cfTy: Type.t}
+	     | ISymbol of {cbTy: Type.t,
+                           ptrTy: Type.t}
+	     | Prim of {name: string, 
+			ty: Type.t}
+	     | Symbol of {attributes: SymbolAttribute.t list, 
+			  name: string,
+			  cbTy: Type.t,
+			  ptrTy: Type.t}
 	 end
 
       structure Priority:
@@ -129,8 +151,7 @@ signature AST_CORE =
 	     | Let of dec * t
 	     | List of t vector
 	     | Orelse of t * t
-	     | Prim of {kind: PrimKind.t,
-			ty: Type.t}
+	     | Prim of PrimKind.t
 	     | Raise of t
 	     | Record of t Record.t
 	     | Selector of Record.Field.t

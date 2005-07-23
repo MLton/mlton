@@ -38,7 +38,8 @@ in
    structure Longvid = Longvid
    structure Longtycon = Longtycon
    structure PrimKind = PrimKind
-   structure Attribute = PrimKind.Attribute
+   structure ImportExportAttribute = PrimKind.ImportExportAttribute
+   structure SymbolAttribute = PrimKind.SymbolAttribute
    structure Priority = Priority
    structure Record = Record
    structure SortedRecord = SortedRecord
@@ -822,13 +823,13 @@ structure Type =
 	       end
    end
 
-fun parseAttributes (attributes: Attribute.t list): Convention.t option =
+fun parseIEAttributes (attributes: ImportExportAttribute.t list): Convention.t option =
    case attributes of
       [] => SOME Convention.Cdecl
     | [a] =>
 	 SOME (case a of
-		  Attribute.Cdecl => Convention.Cdecl
-		| Attribute.Stdcall =>
+		  ImportExportAttribute.Cdecl => Convention.Cdecl
+		| ImportExportAttribute.Stdcall =>
 		     if let
 			   open Control
 			in
@@ -841,7 +842,7 @@ fun parseAttributes (attributes: Attribute.t list): Convention.t option =
 		     else Convention.Cdecl)
     | _ => NONE
 
-fun import {attributes: Attribute.t list,
+fun import {attributes: ImportExportAttribute.t list,
 	    name: string option,
 	    region: Region.t,
 	    ty: Type.t}: Type.t Prim.t =
@@ -849,15 +850,16 @@ fun import {attributes: Attribute.t list,
       fun error l = Control.error (region, l, Layout.empty)
       fun invalidAttributes () =
 	 error (seq [str "invalid attributes for import: ",
-		     List.layout Attribute.layout attributes])
+		     List.layout ImportExportAttribute.layout attributes])
+      fun invalidType () =
+	 Control.error (region,
+			str "invalid type for import",
+			Type.layoutPretty ty)
    in
       case Type.parse ty of
 	 NONE =>
 	    let
-	       val () =
-		  Control.error (region,
-				 str "invalid type for import",
-				 Type.layoutPretty ty)
+	       val () = invalidType ()
 	    in
 	       Prim.bogus
 	    end
@@ -865,7 +867,7 @@ fun import {attributes: Attribute.t list,
 	    let
 	       datatype z = datatype CFunction.Target.t
 	       val convention =
-		  case parseAttributes attributes of
+		  case parseIEAttributes attributes of
 		     NONE => (invalidAttributes ()
 			      ; Convention.Cdecl)
 		   | SOME c => c
@@ -895,116 +897,273 @@ fun import {attributes: Attribute.t list,
 					    NONE => Indirect
 					  | SOME name => Direct name),
 			       writesStackTop = true}
-
 	    in
 	       Prim.ffi func
 	    end
    end
 
-fun fetchSymbol {attributes: Attribute.t list,
-		 name: string,
-		 primApp: {args: Cexp.t vector, 
-			   prim: Type.t Prim.t, 
-			   result: Type.t} -> Cexp.t,
-		 ty: Type.t,
-		 region: Region.t}: Cexp.t =
+fun primApp {args, prim, result: Type.t} =
    let
-      fun error l = Control.error (region, l, Layout.empty)
-      fun invalidAttributes () =
-	 error (seq [str "invalid attributes for import: ",
-		     List.layout Attribute.layout attributes])
-      val bogus = primApp {args = Vector.new0 (), 
-			   prim = Prim.bogus,
-			   result = ty}
+      val targs = Prim.extractTargs (prim,
+			             {args = Vector.map (args, Cexp.ty),
+			              deArray = Type.deArray,
+			              deArrow = Type.deArrow,
+			              deVector = Type.deVector,
+			              deWeak = Type.deWeak,
+				      result = result})
    in
-      case Type.toCType ty of
-	 NONE => 
-	    let
-	       val () =
-		  Control.error 
-		  (region,
-		   str "invalid type for import",
-		   Type.layoutPretty ty)
-	    in
-	       bogus
-	    end
-       | SOME {ctype, ...} => 
-	    (case attributes of
-		[] => 
-		   let
-		      val isBool =
-			 case Type.deConOpt ty of
-			    NONE => false
-			  | SOME (c,_) => Tycon.equals (c, Tycon.bool)
-		      val addrTy = 
-			 Type.word (WordSize.pointer ())
-		      val addrExp = 
-			 primApp
-			 {args = Vector.new0 (),
-			  prim = Prim.ffiSymbol {name = name},
-			  result = addrTy}
-		      val zeroExp =
-			 Cexp.make
-			 (Cexp.Const
-			  (fn () => Const.word (WordX.zero WordSize.default)),
-			  Type.defaultWord)
-		      val fetchTy =
-			 if isBool then Type.defaultWord else ty
-		      val fetchExp = 
-			 primApp 
-			 {args = Vector.new2 (addrExp,zeroExp),
-			  prim = Prim.pointerGet ctype,
-			  result = fetchTy}
-		   in
-		      if isBool 
-			 then Cexp.casee
-			      {kind = "",
-			       lay = fn () => Layout.empty,
-			       noMatch = Cexp.Impossible,
-			       region = Region.bogus,
-			       rules = Vector.new2
-			               ({exp = Cexp.truee,
-					 lay = NONE,
-					 pat = Cpat.falsee},
-					{exp = Cexp.falsee,
-					 lay = NONE,
-					 pat = Cpat.truee}),
-			       test = primApp
-				      {args = Vector.new2 (fetchExp, zeroExp),
-				       prim = Prim.wordEqual WordSize.default,
-				       result = ty},
-				      warnMatch = false}
-			 else fetchExp
-		   end
-	      | _ => 
-		   (invalidAttributes ()
-		    ; bogus))
+      Cexp.make (Cexp.PrimApp {args = args,
+			       prim = prim,
+			       targs = targs},
+                 result)
    end
 
-fun symbol {name: string,
-	    ty: Type.t,
-	    region: Region.t}: Type.t Prim.t =
-   case Type.toCType ty of
-      SOME {ctype = CType.Pointer, ...} =>
-	 Prim.ffiSymbol {name = name}
-    | _ =>
-	 let
-	    val () =
-	       Control.error (region,
-			      str "invalid type for import",
-			      Type.layoutPretty ty)
-	 in
-	    Prim.bogus
-	 end
+local
+   val zeroExp = Cexp.make (Cexp.Const
+			    (fn () => Const.word (WordX.zero WordSize.default)),
+			    Type.defaultWord)
+   val oneExp = Cexp.make (Cexp.Const
+			   (fn () => Const.word (WordX.one WordSize.default)),
+			   Type.defaultWord)
 
-fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
+   fun address {ctypeCbTy: CType.t,
+		expandedPtrTy: Type.t,
+		name: string}: Cexp.t =
+      primApp {args = Vector.new0 (),
+	       prim = Prim.ffiSymbol {name = name,
+				      cty = ctypeCbTy},
+	       result = expandedPtrTy}
+
+   fun fetch {ctypeCbTy, isBool,
+	      expandedCbTy,
+	      ptrExp: Cexp.t}: Cexp.t =
+      let
+	 val fetchExp = 
+	    primApp {args = Vector.new2 (ptrExp, zeroExp),
+		     prim = Prim.pointerGet ctypeCbTy,
+		     result = if isBool 
+				 then Type.defaultWord 
+				 else expandedCbTy}
+      in
+	 if not isBool then fetchExp else
+         Cexp.casee {kind = "",
+		     lay = fn () => Layout.empty,
+		     noMatch = Cexp.Impossible,
+		     region = Region.bogus,
+		     rules = Vector.new2
+		             ({exp = Cexp.truee, lay = NONE, pat = Cpat.falsee},
+			      {exp = Cexp.falsee, lay = NONE, pat = Cpat.truee}),
+		     test = primApp
+		            {args = Vector.new2 (fetchExp, zeroExp),
+			     prim = Prim.wordEqual WordSize.default,
+			     result = expandedCbTy},
+		     warnMatch = false}
+      end
+
+   fun store {ctypeCbTy, isBool,
+	      ptrExp: Cexp.t, valueExp: Cexp.t}: Cexp.t =
+      let
+	 val valueExp =
+	    if not isBool then valueExp else
+	    Cexp.casee {kind = "",
+			lay = fn () => Layout.empty,
+			noMatch = Cexp.Impossible,
+			region = Region.bogus,
+			rules = Vector.new2 
+                                ({exp = oneExp, lay = NONE, pat = Cpat.truee},
+				 {exp = zeroExp, lay = NONE, pat = Cpat.falsee}),
+			test = valueExp,
+			warnMatch = false}
+      in
+	 primApp {args = Vector.new3 (ptrExp, zeroExp, valueExp),
+		  prim = Prim.pointerSet ctypeCbTy,
+		  result = Type.unit}
+      end
+in
+   fun symbolDirect {attributes: SymbolAttribute.t list,
+		     elabedCbTy: Type.t,
+		     expandedCbTy: Type.t,
+		     elabedPtrTy: Type.t,
+		     expandedPtrTy: Type.t,
+		     name: string,
+		     region: Region.t}: Cexp.t =
+      let
+	 val ctypeCbTy =
+	    case Type.toCType expandedCbTy of
+	       SOME {ctype, ...} => ctype
+	     | NONE => 
+		  (Control.error
+		   (region, str "invalid type for _symbol object",
+		    Type.layoutPretty elabedCbTy)
+		   ; CType.Pointer)
+	 val isBool =
+	    case Type.deConOpt expandedCbTy of
+	       NONE => false
+	     | SOME (c,_) => Tycon.equals (c, Tycon.bool)
+	 val ctypePtrTy =
+	    case Type.toCType expandedPtrTy of
+	       SOME {ctype = CType.Pointer, ...} => CType.Pointer
+	     | _ =>
+		  (Control.error
+		   (region, str "invalid type for _symbol ptr",
+		    Type.layoutPretty elabedCbTy)
+		   ; CType.Pointer)
+	 val addrExp =
+	    address {ctypeCbTy = ctypeCbTy,
+		     expandedPtrTy = expandedPtrTy,
+		     name = name}
+	 val () =
+	    if List.exists (attributes, fn attr =>
+			    attr = SymbolAttribute.Define)
+	       then Ffi.addSymbol {name = name, ty = ctypeCbTy}
+	       else ()
+	 val getArg = Var.newNoname ()
+	 val setArg = Var.newNoname ()
+	 fun wrap (e, t) = Cexp.make (Cexp.node e, t)
+      in
+	 (Cexp.tuple o Vector.new3)
+	 (wrap (addrExp, elabedPtrTy),
+	  wrap ((Cexp.lambda o Lambda.make)
+		{arg = getArg,
+		 argType = Type.unit,
+		 body = fetch {ctypeCbTy = ctypeCbTy, 
+			       isBool = isBool,
+			       expandedCbTy = expandedCbTy,
+			       ptrExp = addrExp},
+		 mayInline = true},
+		Type.arrow (Type.unit, elabedCbTy)),
+	  wrap ((Cexp.lambda o Lambda.make)
+		{arg = setArg,
+		 argType = elabedCbTy,
+		 body = store {ctypeCbTy = ctypeCbTy,
+			       isBool = isBool,
+			       ptrExp = addrExp,
+			       valueExp = Cexp.var (setArg, expandedCbTy)},
+		 mayInline = true},
+		Type.arrow (elabedCbTy, Type.unit)))
+      end
+
+   fun symbolIndirect {elabedCbTy: Type.t,
+		       expandedCbTy: Type.t,
+		       elabedPtrTy: Type.t,
+		       expandedPtrTy: Type.t,
+		       region: Region.t}: Cexp.t =
+      let
+	 val ctypeCbTy =
+	    case Type.toCType expandedCbTy of
+	       SOME {ctype, ...} => ctype
+	     | NONE => 
+		  (Control.error
+		   (region, str "invalid type for _symbol object",
+		    Type.layoutPretty elabedCbTy)
+		   ; CType.Pointer)
+	 val isBool =
+	    case Type.deConOpt expandedCbTy of
+	       NONE => false
+	     | SOME (c,_) => Tycon.equals (c, Tycon.bool)
+	 val ctypePtrTy =
+	    case Type.toCType expandedPtrTy of
+	       SOME {ctype = CType.Pointer, ...} => CType.Pointer
+	     | _ =>
+		  (Control.error
+		   (region, str "invalid type for _symbol ptr",
+		    Type.layoutPretty elabedCbTy)
+		   ; CType.Pointer)
+	 fun wrap (e, t) = Cexp.make (Cexp.node e, t)
+	 val getArg = Var.newNoname ()
+	 val setArg = Var.newNoname ()
+	 val elabedSetArgTy =
+	    Type.tuple (Vector.new2 (elabedPtrTy, elabedCbTy))
+	 val setArgPtr = Var.newNoname ()
+	 val setArgValue = Var.newNoname ()
+	 val setPat =
+	    Cpat.tuple (Vector.new2 (Cpat.var (setArgPtr, expandedPtrTy), 
+				     Cpat.var (setArgValue, expandedCbTy)))
+	 val setExp = store {ctypeCbTy = ctypeCbTy,
+			     isBool = isBool,
+			     ptrExp = Cexp.var (setArgPtr, expandedPtrTy),
+			     valueExp = Cexp.var (setArgValue, expandedCbTy)}
+	 val setBody =
+	    Cexp.casee {kind = "",
+			lay = fn () => Layout.empty,
+			noMatch = Cexp.Impossible,
+			region = Region.bogus,
+			rules = Vector.new1 ({exp = setExp, lay = NONE, pat = setPat}),
+			test = Cexp.var (setArg, elabedSetArgTy),
+			warnMatch = false}
+      in
+	 (Cexp.tuple o Vector.new2)
+	 (wrap ((Cexp.lambda o Lambda.make)
+		{arg = getArg,
+		 argType = expandedPtrTy,
+		 body = fetch {ctypeCbTy = ctypeCbTy,
+			       expandedCbTy = expandedCbTy,
+			       isBool = isBool,
+			       ptrExp = Cexp.var (getArg, expandedPtrTy)},
+		 mayInline = true},
+		Type.arrow (elabedPtrTy, elabedCbTy)),
+	  wrap ((Cexp.lambda o Lambda.make)
+		{arg = setArg,
+		 argType = elabedCbTy,
+		 body = setBody,
+		 mayInline = true},
+		Type.arrow (elabedSetArgTy, Type.unit)))
+      end
+
+   fun importSymbol {attributes: ImportExportAttribute.t list,
+		     elabedCbTy: Type.t,
+		     expandedCbTy: Type.t,
+		     name: string,
+		     region: Region.t}: Cexp.t =
+      let
+	 val () =
+	    Control.warning 
+	    (region,
+	     str "_import of non-function is deprecated, use _symbol",
+	     empty)
+	 fun error l = Control.error (region, l, Layout.empty)
+	 fun invalidAttributes () =
+	    error (seq [str "invalid attributes for import: ",
+			List.layout ImportExportAttribute.layout attributes])
+	 val () =
+	    if List.isEmpty attributes
+	       then ()
+	       else invalidAttributes ()
+	 val ctypeCbTy =
+	    case Type.toCType elabedCbTy of
+	       SOME {ctype, ...} => ctype
+	     | NONE => 
+		  (Control.error
+		   (region, str "invalid type for import",
+		    Type.layoutPretty elabedCbTy)
+		   ; CType.Pointer)
+	 val isBool =
+	    case Type.deConOpt expandedCbTy of
+	       NONE => false
+	     | SOME (c,_) => Tycon.equals (c, Tycon.bool)
+	 val addrExp =
+	    address {ctypeCbTy = ctypeCbTy,
+		     expandedPtrTy = Type.word (WordSize.pointer ()),
+		     name = name}
+      in
+	 fetch {ctypeCbTy = ctypeCbTy, 
+		isBool = isBool,
+		expandedCbTy = expandedCbTy,
+		ptrExp = addrExp}
+      end
+end
+
+fun export {attributes: ImportExportAttribute.t list,
+	    name: string, 
+	    region: Region.t, 
+	    ty: Type.t}: Aexp.t =
    let
       fun error l = Control.error (region, l, Layout.empty)
       fun invalidAttributes () =
 	 error (seq [str "invalid attributes for export: ",
-		     List.layout Attribute.layout attributes])
+		     List.layout ImportExportAttribute.layout attributes])
       val convention =
-	 case parseAttributes attributes of
+	 case parseIEAttributes attributes of
 	    NONE => (invalidAttributes ()
 		     ; Convention.Cdecl)
 	  | SOME c => c
@@ -2263,58 +2422,46 @@ fun elaborateDec (d, {env = E, nest}) =
 		   in
 		      Cexp.orElse (ce, ce')
 		   end
-	      | Aexp.Prim {kind, ty} => 
+	      | Aexp.Prim kind => 
 		   let
-		      val ty = elabType ty
-		      fun expandTy ty =
-			 Type.hom
-			 (ty, {con = Type.con,
-			       expandOpaque = true,
-			       record = Type.record,
-			       replaceSynonyms = false,
-			       var = Type.var})
-		      val expandedTy = expandTy ty
+		      fun elabAndExpandTy ty =
+			 let
+			    val elabedTy = elabType ty
+			    val expandedTy =
+			       Type.hom
+			       (elabedTy, {con = Type.con,
+					   expandOpaque = true,
+					   record = Type.record,
+					   replaceSynonyms = false,
+					   var = Type.var})
+			 in
+			    (elabedTy, expandedTy)
+			 end
 		      (* We use expandedTy to get the underlying primitive right
 		       * but we use wrap in the end to make the result of the
 		       * final expression be ty, because that is what the rest
 		       * of the code expects to see.
 		       *)
 		      fun wrap (e, t) = Cexp.make (Cexp.node e, t)
-		      fun primApp {args, prim, result: Type.t} =
-			 let
-			    val targs =
-			       Prim.extractTargs
-			       (prim,
-				{args = Vector.map (args, Cexp.ty),
-				 deArray = Type.deArray,
-				 deArrow = Type.deArrow,
-				 deVector = Type.deVector,
-				 deWeak = Type.deWeak,
-				 result = result})
-			 in
-			    Cexp.make (Cexp.PrimApp {args = args,
-						     prim = prim,
-						     targs = targs},
-				       result)
-			 end
-		      fun etaExtra (extra, ty, expandedTy,
-				    p: Type.t Prim.t): Cexp.t =
+		      fun etaExtra {elabedTy, expandedTy, 
+				    extra,
+				    prim: Type.t Prim.t} : Cexp.t =
 			 case Type.deArrowOpt expandedTy of
 			    NONE =>
 			       wrap (primApp {args = extra,
-					      prim = p,
-					      result = ty},
-				     ty)
+					      prim = prim,
+					      result = elabedTy},
+				     elabedTy)
 			  | SOME (argType, bodyType) =>
 			       let
 				  val arg = Var.newNoname ()
 				  fun app args =
 				     primApp {args = Vector.concat [extra, args],
-					      prim = p,
+					      prim = prim,
 					      result = bodyType}
 				  val body =
 				     case Type.deTupleOpt argType of
-					NONE =>
+					NONE => 
 					   app (Vector.new1
 						(Cexp.var (arg, argType)))
 				      | SOME ts =>
@@ -2329,16 +2476,15 @@ fun elaborateDec (d, {env = E, nest}) =
 					       lay = fn _ => Layout.empty,
 					       noMatch = Cexp.Impossible,
 					       region = Region.bogus,
-					       rules =
-					       Vector.new1
-					       {exp = app (Vector.map
-							   (vars, Cexp.var)),
-						lay = NONE,
-						pat =
-						(Cpat.tuple
-						 (Vector.map (vars, Cpat.var)))},
-					       test = Cexp.var (arg, argType),
-					       warnMatch = warnMatch ()}
+					       rules = Vector.new1
+					               {exp = app (Vector.map
+								   (vars, Cexp.var)),
+							lay = NONE,
+							pat = Cpat.tuple 
+							      (Vector.map 
+							       (vars, Cpat.var))},
+					        test = Cexp.var (arg, argType),
+						warnMatch = false}
 					   end
 			       in
 				  Cexp.make (Cexp.Lambda
@@ -2346,11 +2492,17 @@ fun elaborateDec (d, {env = E, nest}) =
 							   argType = argType,
 							   body = body,
 							   mayInline = true}),
-					     ty)
+					     elabedTy)
 			       end
-		      fun eta (p: Type.t Prim.t): Cexp.t =
-			 etaExtra (Vector.new0 (), ty, expandedTy, p)
-		      fun lookConst {default: string option, name: string} =
+		      fun eta {elabedTy, expandedTy, 
+			       prim: Type.t Prim.t} : Cexp.t =
+			 etaExtra {elabedTy = elabedTy,
+				   expandedTy = expandedTy,
+				   extra = Vector.new0 (),
+				   prim = prim}
+		      fun lookConst {default: string option, 
+				     elabedTy, expandedTy,
+				     name: string} =
 			 let
 			    fun bug () =
 			       let
@@ -2391,22 +2543,34 @@ fun elaborateDec (d, {env = E, nest}) =
 				  val finish =
 				     fn () => ! Const.lookup ({default = default,
 							       name = name}, ct)
-			       in
-				  Cexp.make (Cexp.Const finish, ty)
-			       end
+				  in
+				     Cexp.make (Cexp.Const finish, elabedTy)
+				  end
 			 end
 		      val check = fn (c, n) => check (c, n, region)
 		      datatype z = datatype Ast.PrimKind.t
 		   in
 		      case kind of
-			 BuildConst {name} =>
-			    (check (ElabControl.allowConstant, "_build_const")
-			     ; lookConst {default = NONE, name = name})
-		       | CommandLineConst {name, value} =>
+			 BuildConst {name, ty} =>
+			    let
+			       val () =
+				  check (ElabControl.allowConstant, 
+					 "_build_const")
+			       val (elabedTy, expandedTy) = 
+				  elabAndExpandTy ty
+			    in
+			       lookConst {default = NONE,
+					  elabedTy = elabedTy,
+					  expandedTy = expandedTy,
+					  name = name}
+			    end
+		       | CommandLineConst {name, ty, value} =>
 			    let
 			       val () =
 				  check (ElabControl.allowConstant,
 					 "_command_line_const")
+			       val (elabedTy, expandedTy) = 
+				  elabAndExpandTy ty
 			       val value =
 				  elabConst
 				  (value,
@@ -2417,106 +2581,177 @@ fun elaborateDec (d, {env = E, nest}) =
 				    | c => Const.toString c,
 				   {false = "false", true = "true"})
 			    in
-			       lookConst {default = SOME value, name = name}
+			       lookConst {default = SOME value, 
+					  elabedTy = elabedTy,
+					  expandedTy = expandedTy,
+					  name = name}
 			    end
-		       | Const {name} => 
-			    (check (ElabControl.allowConstant, "_const")
-			     ; lookConst {default = NONE, name = name})
-		       | Export {attributes, name} =>
-			    (check (ElabControl.allowExport, "_export")
-			     ; let
-				  val e =
-				     Env.scope
-				     (E, fn () =>
-				      (Env.openStructure
-				       (E, valOf (!Env.Structure.ffi))
-				       ; elab (export {attributes = attributes,
-						       name = name,
-						       region = region,
-						       ty = expandedTy})))
-				  val _ =
-				     unify
-				     (Cexp.ty e,
-				      Type.arrow (expandedTy, Type.unit),
-				      fn (l1, l2) =>
-				      let
-					 open Layout
-				      in
-					 (region,
-					  str "_export unify bug",
-					  align [seq [str "inferred: ", l1],
-						 seq [str "expanded: ", l2]])
-				      end)
-			       in
-				  wrap (e, Type.arrow (ty, Type.unit))
-			       end)
-		       | IImport {attributes} =>
+		       | Const {name, ty} => 
 			    let
 			       val () =
-				  check (ElabControl.allowImport, "_import")
+				  check (ElabControl.allowConstant, 
+					 "_const")
+			       val (elabedTy, expandedTy) = 
+				  elabAndExpandTy ty
 			    in
-			       case (Type.deArrowOpt ty,
-				     Type.deArrowOpt expandedTy) of
-				  (SOME ty, SOME expandedTy) =>
+			       lookConst {default = NONE,
+					  elabedTy = elabedTy,
+					  expandedTy = expandedTy,
+					  name = name}
+			    end
+		       | Export {attributes, cfTy, name} =>
+			    let
+			       val () =
+				  check (ElabControl.allowExport, 
+					 "_export")
+			       val (elabedTy, expandedTy) = 
+				  elabAndExpandTy cfTy
+			       val exp =
+				  Env.scope
+				  (E, fn () =>
+				   (Env.openStructure
+				    (E, valOf (!Env.Structure.ffi))
+				    ; elab (export {attributes = attributes,
+						    name = name,
+						    region = region,
+						    ty = expandedTy})))
+			       val _ =
+				  unify
+				  (Cexp.ty exp,
+				   Type.arrow (expandedTy, Type.unit),
+				   fn (l1, l2) =>
+				   let
+				      open Layout
+				   in
+				      (region,
+				       str "_export unify bug",
+				       align [seq [str "inferred: ", l1],
+					      seq [str "expanded: ", l2]])
+				   end)
+			    in
+			       wrap (exp, Type.arrow (elabedTy, Type.unit))
+			    end
+		       | IImport {attributes, cfTy} =>
+			    let
+			       val () =
+				  check (ElabControl.allowImport, 
+					 "_import")
+			       val (elabedCfTy, expandedCfTy) =
+				  elabAndExpandTy cfTy
+			    in
+			       case (Type.deArrowOpt elabedCfTy,
+				     Type.deArrowOpt expandedCfTy) of
+				  (SOME elabedTy, SOME expandedTy) =>
 				     let
-					val ((fptrTy,ty), 
-					     (fptrExpandedTy,expandedTy)) =
-					   (ty, expandedTy)
+					val ((elabedFPtrTy,elabedCfTy), 
+					     (expandedFPtrTy,expandedCfTy)) =
+					   (elabedTy, expandedTy)
 					val () =
-					   case Type.toCType fptrExpandedTy of
+					   case Type.toCType expandedFPtrTy of
 					      SOME {ctype = CType.Pointer, ...} => ()
 					    | _ => 
 						 Control.error
 						 (region,
 						  str "invalid type for import",
-						  Type.layoutPretty fptrExpandedTy)
+						  Type.layoutPretty expandedFPtrTy)
 					val fptr = Var.newNoname ()
-					val fptrArg = Cexp.var (fptr, fptrTy)
+					val fptrArg = Cexp.var (fptr, expandedFPtrTy)
 				     in
 					Cexp.make
 					(Cexp.Lambda
 					 (Lambda.make 
 					  {arg = fptr,
-					   argType = fptrTy,
-					   body = etaExtra (Vector.new1 fptrArg,
-							    ty, expandedTy,
-							    import
-							    {attributes = attributes,
-							     name = NONE,
-							     region = region,
-							     ty = expandedTy}),
+					   argType = elabedFPtrTy,
+					   body = etaExtra 
+                                                  {elabedTy = elabedCfTy,
+						   expandedTy = expandedCfTy,
+						   extra = Vector.new1 fptrArg,
+						   prim = import
+							  {attributes = attributes,
+							   name = NONE,
+							   region = region,
+							   ty = expandedCfTy}},
 					   mayInline = true}),
-					 Type.arrow (fptrTy, ty))
+					 Type.arrow (elabedFPtrTy, elabedCfTy))
 				     end
 				| _ => 
 				     (Control.error
 				      (region,
 				       str "invalid type for import",
-				       Type.layoutPretty ty);
-				      eta Prim.bogus)
+				       Type.layoutPretty elabedCfTy);
+				      eta {elabedTy = elabedCfTy,
+					   expandedTy = expandedCfTy,
+					   prim = Prim.bogus})
 			    end
-		       | Import {attributes, name} =>
-			    (check (ElabControl.allowImport, "_import")
-			     ; (case Type.deArrowOpt expandedTy of
-				   NONE => 
-				      wrap (fetchSymbol {attributes = attributes,
-							 name = name,
-							 primApp = primApp,
-							 region = region,
-							 ty = expandedTy}, ty)
-				 | SOME _ =>
-				      eta (import {attributes = attributes,
-						   name = SOME name,
-						   region = region,
-						   ty = expandedTy})))
-		       | Symbol {name} =>
-			    (check (ElabControl.allowImport, "_import")
-			     ; eta (symbol {name = name,
-					    region = region,
-					    ty = expandedTy}))
-		       | Prim {name} => 
-			    (check (ElabControl.allowPrim, "_prim")
-			     ; eta (Prim.fromString name))
+		       | Import {attributes, name, cfTy} =>
+			    let
+			       val () =
+				  check (ElabControl.allowImport, 
+					 "_import")
+			       val (elabedCfTy, expandedCfTy) =
+				  elabAndExpandTy cfTy
+			    in
+			       case Type.deArrowOpt expandedCfTy of
+				  NONE => 
+				     importSymbol {attributes = attributes,
+						   elabedCbTy = elabedCfTy,
+						   expandedCbTy = expandedCfTy,
+						   name = name,
+						   region = region}
+				| SOME _ =>
+				     eta ({elabedTy = elabedCfTy,
+					   expandedTy = expandedCfTy,
+					   prim = import {attributes = attributes,
+							  name = SOME name,
+							  region = region,
+							  ty = expandedCfTy}})
+			    end
+                       | ISymbol {cbTy, ptrTy} =>
+			    let
+			       val () =
+				  check (ElabControl.allowSymbol, 
+					 "_symbol")
+			       val (elabedCbTy, expandedCbTy) =
+				  elabAndExpandTy cbTy
+			       val (elabedPtrTy, expandedPtrTy) =
+				  elabAndExpandTy ptrTy
+			    in
+			       symbolIndirect {elabedCbTy = elabedCbTy,
+					       expandedCbTy = expandedCbTy,
+					       elabedPtrTy = elabedPtrTy,
+					       expandedPtrTy = expandedPtrTy,
+					       region = region}
+			    end
+		       | Prim {name, ty} => 
+			    let
+			       val () =
+				  check (ElabControl.allowPrim, 
+					 "_prim")
+			       val (elabedTy, expandedTy) = 
+				  elabAndExpandTy ty
+			    in
+			       eta {elabedTy = elabedTy,
+				    expandedTy = expandedTy,
+				    prim = Prim.fromString name}
+			    end
+                       | Symbol {attributes, cbTy, ptrTy, name} =>
+			    let
+			       val () =
+				  check (ElabControl.allowSymbol, 
+					 "_symbol")
+			       val (elabedCbTy, expandedCbTy) =
+				  elabAndExpandTy cbTy
+			       val (elabedPtrTy, expandedPtrTy) =
+				  elabAndExpandTy ptrTy
+			    in
+			       symbolDirect {attributes = attributes,
+					     elabedCbTy = elabedCbTy,
+					     expandedCbTy = expandedCbTy,
+					     elabedPtrTy = elabedPtrTy,
+					     expandedPtrTy = expandedPtrTy,
+					     name = name,
+					     region = region}
+			    end
 		   end
 	      | Aexp.Raise exn =>
 		   let

@@ -13,9 +13,9 @@ val n = 17
 (* Call the C function *)
 val c = ffi (a, r, n)
 
-val n = _import "FFI_INT": int;
+val (addrN, getN, setN) = _symbol "FFI_INT": MLton.Pointer.t, int;
 
-val _ = print (concat [Int.toString n, "\n"])
+val _ = print (concat [Int.toString (getN ()), "\n"])
 
 val _ =
    print (if c = #"c" andalso !r = 45

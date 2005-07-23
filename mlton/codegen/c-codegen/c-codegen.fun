@@ -461,13 +461,10 @@ fun declareFFI (Chunk.T {blocks, ...}, {print: string -> unit}) =
 	      case s of
 		 Statement.PrimApp {prim, ...} =>
 		    (case Prim.name prim of
-			Prim.Name.FFI_Symbol {name, ...} =>
+			Prim.Name.FFI_Symbol {name, cty} =>
 			   doit
 			   (name, fn () =>
-			    (* Only take address of FFI_Symbol,
-			     * so no need for a type specifier
-			     *)
-			    concat ["extern ", name, ";\n"])
+			    concat ["extern ", CType.toString cty, " ", name, ";\n"])
 		      | _ => ())
 	       | _ => ())
 	  val _ =

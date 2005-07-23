@@ -215,6 +215,43 @@ fun ('down, 'up)
 	 in
 	    loop p
 	 end
+      fun loopPrimKind (kind: PrimKind.t, d: 'down): PrimKind.t * 'up =
+	 let
+	    datatype z = datatype PrimKind.t
+	    fun do1 ((a, u), f) = (f a, u)
+	    fun do2 ((a1, u1), (a2, u2), f) =
+	       (f (a1, a2), combineUp (u1, u2))
+	 in
+	    case kind of
+	        BuildConst {name, ty} =>
+		  do1 (loopTy (ty, d), fn ty =>
+		       BuildConst {name = name, ty = ty})
+	      | CommandLineConst {name, ty, value} =>
+		  do1 (loopTy (ty, d), fn ty =>
+		       CommandLineConst {name = name, ty = ty, value = value})
+	      | Const {name, ty} =>
+		  do1 (loopTy (ty, d), fn ty =>
+		       Const {name = name, ty = ty})
+	      | Export {attributes, name, cfTy} =>
+		  do1 (loopTy (cfTy, d), fn cfTy =>
+		       Export {attributes = attributes, name = name, cfTy = cfTy})
+	      | IImport {attributes, cfTy} =>
+		  do1 (loopTy (cfTy, d), fn cfTy =>
+		       IImport {attributes = attributes, cfTy = cfTy})
+	      | Import {attributes, name, cfTy} =>
+		  do1 (loopTy (cfTy, d), fn cfTy =>
+		       Import {attributes = attributes, name = name, cfTy = cfTy})
+	      | ISymbol {cbTy, ptrTy} =>
+		  do2 (loopTy (cbTy, d), loopTy (ptrTy, d), fn (cbTy, ptrTy) =>
+		       ISymbol {cbTy = cbTy, ptrTy = ptrTy})
+	      | Prim {name, ty} =>
+		  do1 (loopTy (ty, d), fn ty =>
+		       Prim {name = name, ty = ty})
+	      | Symbol {attributes, name, cbTy, ptrTy} =>
+		  do2 (loopTy (cbTy, d), loopTy (ptrTy, d), fn (cbTy, ptrTy) =>
+		       Symbol {attributes = attributes, name = name, 
+			       cbTy = cbTy, ptrTy = ptrTy})
+	 end
       fun loopDec (d: Dec.t, down: 'down): Dec.t * 'up =
 	 let
 	    fun doit n = Dec.makeRegion (n, Dec.region d)
@@ -389,10 +426,7 @@ fun ('down, 'up)
 		   | Let (dec, e) => do2 (loopDec (dec, d), loop e, Let)
 		   | List ts => doVec (ts, List)
 		   | Orelse (e1, e2) => do2 (loop e1, loop e2, Orelse)
-		   | Prim {kind, ty} =>
-			do1 (loopTy (ty, d), fn ty =>
-			     Prim {kind = kind,
-				   ty = ty})
+		   | Prim kind => do1 (loopPrimKind (kind, d), Prim)
 		   | Raise exn => do1 (loop exn, Raise)
 		   | Record r =>
 			let

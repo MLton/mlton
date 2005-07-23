@@ -259,7 +259,7 @@ structure EbRhs = Eb.Rhs
 
 structure PrimKind =
    struct
-      structure Attribute =
+      structure ImportExportAttribute =
 	 struct
 	    datatype t = Cdecl | Stdcall
 
@@ -270,15 +270,40 @@ structure PrimKind =
 	    val layout = Layout.str o toString
 	 end
 
+      structure SymbolAttribute =
+	 struct
+	    datatype t = Define
+
+	    val toString: t -> string =
+	       fn Define => "define"
+
+	    val layout = Layout.str o toString
+	 end
+      
       datatype t =
-	 BuildConst of {name: string}
-       | CommandLineConst of {name: string, value: Const.t}
-       | Const of {name: string}
-       | Export of {attributes: Attribute.t list, name: string}
-       | IImport of {attributes: Attribute.t list}
-       | Import of {attributes: Attribute.t list, name: string}
-       | Symbol of {name: string}
-       | Prim of {name: string}
+	 BuildConst of {name: string, 
+			ty: Type.t}
+       | CommandLineConst of {name: string, 
+			      ty: Type.t,
+			      value: Const.t}
+       | Const of {name: string, 
+		   ty: Type.t}
+       | Export of {attributes: ImportExportAttribute.t list, 
+		    name: string,
+		    cfTy: Type.t}
+       | IImport of {attributes: ImportExportAttribute.t list,
+		     cfTy: Type.t}
+       | Import of {attributes: ImportExportAttribute.t list, 
+		    name: string,
+		    cfTy: Type.t}
+       | ISymbol of {cbTy: Type.t,
+		     ptrTy: Type.t}
+       | Prim of {name: string, 
+		  ty: Type.t}
+       | Symbol of {attributes: SymbolAttribute.t list, 
+		    name: string,
+		    cbTy: Type.t,
+		    ptrTy: Type.t}
 
       fun name pk =
 	 case pk of
@@ -288,9 +313,9 @@ structure PrimKind =
 	  | Export {name, ...} => name
 	  | IImport {...} => "<iimport>"
 	  | Import {name, ...} => name
-	  | Symbol {name, ...} => name
+	  | ISymbol {...} => "<isymbol>"
 	  | Prim {name, ...} => name
-
+	  | Symbol {name, ...} => name
    end
 
 structure Priority =
@@ -328,8 +353,7 @@ datatype expNode =
   | Andalso of exp * exp
   | Orelse of exp * exp
   | While of {test: exp, expr: exp}
-  | Prim of {kind: PrimKind.t,
-	     ty: Type.t}
+  | Prim of PrimKind.t
 and decNode =
    Abstype of {body: dec,
 	       datBind: DatBind.t}
@@ -441,7 +465,7 @@ fun layoutExp arg =
        | Orelse (e, e') =>
 	    delimit (mayAlign [layoutExpF e,
 			       seq [str "orelse ", layoutExpF e']])
-       | Prim {kind, ...} => str (PrimKind.name kind)
+       | Prim kind => str (PrimKind.name kind)
        | Raise exn => delimit (seq [str "raise ", layoutExpF exn])
        | Record r =>
 	    let

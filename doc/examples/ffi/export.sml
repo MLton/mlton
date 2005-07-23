@@ -24,6 +24,11 @@ val e = _export "f4": int -> unit;
 val g4 = _import "g4": int -> unit;
 val _ = e (fn i => if i = 0 then () else g4 (i - 1))
 val _ = g4 13
+
+val (_, _, zzzSet) = _symbol "zzz" define: MLton.Pointer.t, int;
+val () = zzzSet 42
+val g5 = _import "g5": unit -> unit;
+val _ = g5 ()
    
 val _ = print "success\n"
 

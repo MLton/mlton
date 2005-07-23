@@ -232,7 +232,9 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
     | RBRACKET | REC | RPAREN | SEMICOLON | SHARING | SIG | SIGNATURE | STRUCT
     | STRUCTURE | THEN | TYPE | VAL | WHERE | WHILE | WILD | WITH | WITHTYPE
       (* Extensions *)
-    | BUILD_CONST | COMMAND_LINE_CONST | CONST | EXPORT | IMPORT | PRIM
+    | BUILD_CONST | COMMAND_LINE_CONST | CONST 
+    | EXPORT | IMPORT | SYMBOL 
+    | PRIM
 
 %nonterm
          aexp of Exp.node
@@ -244,7 +246,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | app_exp of Exp.t list
        | app_exp1 of Exp.t list
        | arg_fct of Strexp.t
-       | attributes of PrimKind.Attribute.t list
+       | ieattributes of PrimKind.ImportExportAttribute.t list
        | clause of clause
        | clauses of clause list
        | clausesTop of clauses
@@ -365,6 +367,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | strexpnode of Strexp.node
        | strid of Strid.t
        | string of string
+       | symattributes of PrimKind.SymbolAttribute.t list
        | tlabel of (Field.t * Type.t)
        | tlabels  of (Field.t * Type.t) list
        | topdec of Topdec.t
@@ -1007,45 +1010,61 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 					     exp_psleft,
 					     exp_psright)))
         | BUILD_CONST string COLON ty SEMICOLON
-	  (Exp.Prim {kind = PrimKind.BuildConst {name = string}, 
-                     ty = ty})
+	  (Exp.Prim (PrimKind.BuildConst {name = string, ty = ty}))
 	| COMMAND_LINE_CONST string COLON ty EQUALOP constOrBool SEMICOLON
-	  (Exp.Prim {kind = PrimKind.CommandLineConst {name = string,
-                                                       value = constOrBool},
-		     ty = ty})
+	  (Exp.Prim (PrimKind.CommandLineConst {name = string,
+                                                ty = ty,
+                                                value = constOrBool}))
         | CONST string COLON ty SEMICOLON
-	  (Exp.Prim {kind = PrimKind.Const {name = string}, 
-                     ty = ty})
-	| EXPORT string attributes COLON ty SEMICOLON
-          (Exp.Prim {kind = PrimKind.Export {attributes = attributes,
-                                             name = string},
-		     ty = ty})
-	| IMPORT string attributes COLON ty SEMICOLON
-	  (Exp.Prim {kind = PrimKind.Import {attributes = attributes,
-                                             name = string},
-		     ty = ty})
-	| IMPORT ASTERISK attributes COLON ty SEMICOLON
-	  (Exp.Prim {kind = PrimKind.IImport {attributes = attributes},
-		     ty = ty})
-	| IMPORT HASH string COLON ty SEMICOLON
-	  (Exp.Prim {kind = PrimKind.Symbol {name = string},
-		     ty = ty})
+	  (Exp.Prim (PrimKind.Const {name = string, ty = ty}))
+	| EXPORT string ieattributes COLON ty SEMICOLON
+          (Exp.Prim (PrimKind.Export {attributes = ieattributes,
+                                      name = string,
+                                      cfTy = ty}))
+	| IMPORT string ieattributes COLON ty SEMICOLON
+	  (Exp.Prim (PrimKind.Import {attributes = ieattributes,
+                                      cfTy = ty,
+                                      name = string}))
+	| IMPORT ASTERISK ieattributes COLON ty SEMICOLON
+          (Exp.Prim (PrimKind.IImport {attributes = ieattributes,
+                                       cfTy = ty}))
         | PRIM string COLON ty SEMICOLON
-	  (Exp.Prim {kind = PrimKind.Prim {name = string}, 
-                     ty = ty})
+	  (Exp.Prim (PrimKind.Prim {name = string,
+                                    ty = ty}))
+        | SYMBOL string symattributes COLON ty COMMA ty SEMICOLON
+          (Exp.Prim (PrimKind.Symbol {attributes = symattributes,
+                                      cbTy = ty2,
+	                              ptrTy = ty1,
+                                      name = string}))
+        | SYMBOL ASTERISK COLON ty COMMA ty SEMICOLON
+          (Exp.Prim (PrimKind.ISymbol {cbTy = ty2,
+                                       ptrTy = ty1}))
 
-attributes
+ieattributes
    :
      ([])
-   | id attributes
+   | id ieattributes
      (let
 	 val id = Symbol.toString (#1 id)
       in
 	 case id of
-	    "cdecl" => PrimKind.Attribute.Cdecl :: attributes
-	  | "stdcall" => PrimKind.Attribute.Stdcall :: attributes
+	    "cdecl" => PrimKind.ImportExportAttribute.Cdecl :: ieattributes
+	  | "stdcall" => PrimKind.ImportExportAttribute.Stdcall :: ieattributes
 	  | _ => (error (reg (idleft, idright), concat ["invalid attribute", id])
-		  ; attributes)
+		  ; ieattributes)
+      end)
+
+symattributes
+   :
+     ([])
+   | id symattributes
+     (let
+	 val id = Symbol.toString (#1 id)
+      in
+	 case id of
+	    "define" => PrimKind.SymbolAttribute.Define :: symattributes
+	  | _ => (error (reg (idleft, idright), concat ["invalid attribute", id])
+		  ; symattributes)
       end)
 
 exp_2c	: exp COMMA exp_2c	(exp :: exp_2c)

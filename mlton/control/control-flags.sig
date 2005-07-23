@@ -65,6 +65,7 @@ signature CONTROL_FLAGS =
 	    val allowOverload: (bool,bool) t
 	    val allowPrim: (bool,bool) t
 	    val allowRebindEquals: (bool,bool) t
+	    val allowSymbol: (bool,bool) t
 	    val deadCode: (bool,bool) t
 	    val forceUsed: (unit,bool) t
 	    val ffiStr: (string,string option) t

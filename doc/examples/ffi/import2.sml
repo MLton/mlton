@@ -1,7 +1,7 @@
 (* main.sml *)
 
 (* Declare ffi to be implemented by calling the C function ffi. *)
-val ffi_addr = _import # "ffi" : MLton.Pointer.t;
+val (ffi_addr, _, _) = _symbol "ffi" : MLton.Pointer.t, MLton.Pointer.t;
 val ffi_schema = _import * : MLton.Pointer.t -> real array * int ref * int -> char;
 open Array
 
@@ -19,13 +19,13 @@ val _ =
 	     then "success\n"
 	  else "fail\n")
 
-val n = _import "FFI_INT": int;
+val n = #2 (_symbol "FFI_INT": MLton.Pointer.t, int;) ()
 val _ = print (concat [Int.toString n, "\n"])
-val w = _import "FFI_WORD": word;
+val w = #2 (_symbol "FFI_WORD": MLton.Pointer.t, word;) ()
 val _ = print (concat [Word.toString w, "\n"])
-val b = _import "FFI_BOOL": bool;
+val b = #2 (_symbol "FFI_BOOL": MLton.Pointer.t, bool;) ()
 val _ = print (concat [Bool.toString b, "\n"])
-val r = _import "FFI_REAL": real;
+val r = #2 (_symbol "FFI_REAL": MLton.Pointer.t, real;) ()
 val _ = print (concat [Real.toString r, "\n"])
 
 signature OPAQUE =
@@ -55,24 +55,20 @@ structure OpaqueReal :> OPAQUE =
       val toString = Real.toString
    end
 
-val n = _import "FFI_INT": OpaqueInt.t;
-val _ = print (concat [OpaqueInt.toString n, "\n"])
-val w = _import "FFI_WORD": OpaqueWord.t;
-val _ = print (concat [OpaqueWord.toString w, "\n"])
-val b = _import "FFI_BOOL": OpaqueBool.t;
-val _ = print (concat [OpaqueBool.toString b, "\n"])
-val r = _import "FFI_REAL": OpaqueReal.t;
-val _ = print (concat [OpaqueReal.toString r, "\n"])
+val (n_addr, n, _) = _symbol "FFI_INT": MLton.Pointer.t, OpaqueInt.t;
+val _ = print (concat [OpaqueInt.toString (n ()), "\n"])
+val (w_addr, w, _) = _symbol "FFI_WORD": MLton.Pointer.t, OpaqueWord.t;
+val _ = print (concat [OpaqueWord.toString (w ()), "\n"])
+val (b_addr, b, _) = _symbol "FFI_BOOL": MLton.Pointer.t, OpaqueBool.t;
+val _ = print (concat [OpaqueBool.toString (b ()), "\n"])
+val (r_addr, r, _) = _symbol "FFI_REAL": MLton.Pointer.t, OpaqueReal.t;
+val _ = print (concat [OpaqueReal.toString (r ()), "\n"])
 
-val n_addr = _import # "FFI_INT": MLton.Pointer.t;
 val n = MLton.Pointer.getInt32 (n_addr, 0);
 val _ = print (concat [Int.toString n, "\n"])
-val w_addr = _import # "FFI_WORD": MLton.Pointer.t;
 val w = MLton.Pointer.getWord32 (w_addr, 0);
 val _ = print (concat [Word.toString w, "\n"])
-val b_addr = _import # "FFI_BOOL": MLton.Pointer.t;
 val b = (MLton.Pointer.getInt32 (n_addr, 0)) <> 0
 val _ = print (concat [Bool.toString b, "\n"])
-val r_addr = _import # "FFI_REAL": MLton.Pointer.t;
 val r = MLton.Pointer.getReal64 (r_addr, 0)
 val _ = print (concat [Real.toString r, "\n"])

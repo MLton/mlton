@@ -127,8 +127,7 @@ for f in `ls *.sml`; do
 				\$(SML_LIB)/basis/mlton.mlb
 				\$(SML_LIB)/basis/sml-nj.mlb
  				ann 
-					\"allowExport true\"
-					\"allowImport true\"
+					\"allowFFI true\"
 					\"allowOverload true\"
 					\"warnMatch false\"
 				in $f.sml 

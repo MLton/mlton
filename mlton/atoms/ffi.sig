@@ -21,6 +21,8 @@ signature FFI =
 		      convention: CFunction.Convention.t,
 		      name: string,
 		      res: CType.t option} -> int
+      val addSymbol: {ty: CType.t,
+                      name: string} -> unit
       val declareExports: {print: string -> unit} -> unit
       val declareHeaders: {print: string -> unit} -> unit
       val numExports: unit -> int

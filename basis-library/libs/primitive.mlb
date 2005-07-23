@@ -3,6 +3,7 @@ ann
    "allowImport true"
    "allowPrim true"
    "allowRebindEquals true"
+   "allowSymbol true"
    "deadCode true"
    "sequenceUnit true"
    "warnMatch true"

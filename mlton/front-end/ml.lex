@@ -151,6 +151,8 @@ hexnum={hexDigit}+;
    (tok (Tokens.IMPORT, source, yypos, yypos + size yytext));
 <INITIAL>"_overload" =>
    (tok (Tokens.OVERLOAD, source, yypos, yypos + size yytext));
+<INITIAL>"_symbol" =>
+   (tok (Tokens.SYMBOL, source, yypos, yypos + size yytext));
 <INITIAL>"_prim" =>
    (tok (Tokens.PRIM, source, yypos, yypos + size yytext));
 <INITIAL>"_"	=> (tok (Tokens.WILD, source, yypos, yypos + 1));

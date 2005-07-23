@@ -46,7 +46,7 @@ datatype 'a t =
  | Exn_setExtendExtra (* implement exceptions *)
  | Exn_setInitExtra (* implement exceptions *)
  | FFI of 'a CFunction.t (* ssa to rssa *)
- | FFI_Symbol of {name: string} (* codegen *)
+ | FFI_Symbol of {name: string, cty: CType.t} (* codegen *)
  | GC_collect (* ssa to rssa *)
  | IntInf_add (* ssa to rssa *)
  | IntInf_andb (* ssa to rssa *)
@@ -486,7 +486,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Exn_setExtendExtra => Exn_setExtendExtra
     | Exn_setInitExtra => Exn_setInitExtra
     | FFI func => FFI (CFunction.map (func, f))
-    | FFI_Symbol {name} => FFI_Symbol {name = name}
+    | FFI_Symbol {name, cty} => FFI_Symbol {name = name, cty = cty}
     | GC_collect => GC_collect
     | IntInf_add => IntInf_add
     | IntInf_andb => IntInf_andb
@@ -631,6 +631,22 @@ fun pointerGet ctype =
        | Word16 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 16))
        | Word32 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 32))
        | Word64 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 64))
+   end
+fun pointerSet ctype =
+   let datatype z = datatype CType.t
+   in
+      case ctype of
+	 Int8 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 8))
+       | Int16 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 16))
+       | Int32 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 32))
+       | Int64 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 64))
+       | Pointer => Pointer_setPointer
+       | Real32 => Pointer_setReal RealSize.R32
+       | Real64 => Pointer_setReal RealSize.R64
+       | Word8 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 8))
+       | Word16 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 16))
+       | Word32 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 32))
+       | Word64 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 64))
    end
 
 val reff = Ref_ref
