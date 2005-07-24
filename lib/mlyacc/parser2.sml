@@ -1,3 +1,11 @@
+(* Modified by mfluet@acm.org on 2005-7-21.
+ * Update with SML/NJ 110.55.
+ *)
+(* Modified by sweeks@acm.org on 2000-8-24.
+ * Ported to MLton.
+ *)
+type int = Int.int
+
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 (* parser.sml:  This is a parser driver for LR tables with an error-recovery
@@ -355,9 +363,9 @@ fun mkFixError({is_keyword,terms,errtermvalue,
         fun keywordsDelta new = if List.exists (fn(TOKEN(t,_))=>is_keyword t) new
 	               then minDelta else 0
 
-        fun tryChange{lex,stack,pos,leftPos,rightPos,orig,new} =
+        fun tryChange{lex,stack,pos:int,leftPos,rightPos,orig,new} =
 	     let val lex' = List.foldr (fn (t',p)=>(t',Stream.cons p)) lex new
-		 val distance = parse(lex',stack,pos+length new-length orig)
+		 val distance = parse(lex',stack,pos+List.length new-List.length orig)
 	      in if distance >= minAdvance + keywordsDelta new 
 		   then [CHANGE{pos=pos,leftPos=leftPos,rightPos=rightPos,
 				distance=distance,orig=orig,new=new}] 
