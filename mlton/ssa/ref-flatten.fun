@@ -605,7 +605,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		      case Value.value (varValue var) of
 			 Value.Ground _ => ()
 		       | Value.Object obj => f (var, args, obj)
-		       | _ => Error.bug "RefFlatten.foreachObject: Object with strange value")
+		       | _ => 
+			    Error.bug 
+			    "RefFlatten.foreachObject: Object with strange value")
 		| _ => ()
 	    val () = Vector.foreach (globals, loopStatement)
 	    val () =
@@ -802,7 +804,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	  end)
       (* Conversion from values to types. *)
       datatype z = datatype Finish.t
-      val traceValueType = Trace.trace ("RefFlatten.valueType", Value.layout, Type.layout)
+      val traceValueType = 
+	 Trace.trace ("RefFlatten.valueType", Value.layout, Type.layout)
       fun valueType arg: Type.t =
 	 traceValueType
 	 (fn (v: Value.t) =>
@@ -971,9 +974,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	  | Update {base, offset, value} =>
 	       (case base of
 		   Base.Object object =>
-		      Vector.new1
 		      (case varObject object of
-			  NONE => s
+			  NONE => Vector.new1 s
 			| SOME obj =>
 			     let
 				val base =
@@ -984,10 +986,20 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 						Base.Object objectVar
 					   | _ => base)
 				    | Unflattenable => base
+				val value =
+				   case flattenArgs (Vector.new1 value, obj, []) of
+				      [value] => value
+				    | _ => Error.bug 
+                                           "RefFlatten.transformStatement.Update"
+				val extra = !extraSelects
+				val () = extraSelects := []
 			     in
-				Update {base = base,
-					offset = objectOffset (obj, offset),
-					value = value}
+				Vector.concat
+				[Vector.fromList extra,
+				 (Vector.new1 o Update) 
+				 {base = base,
+				  offset = objectOffset (obj, offset),
+				  value = value}]
 			     end)
 		 | Base.VectorSub _ => Vector.new1 s)
       val transformStatement =
