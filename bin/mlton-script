@@ -14,7 +14,7 @@ eval `$lib/platform`
 if .arch-n-opsys >/dev/null 2>&1; then
 	eval `.arch-n-opsys`
 	njHeap="$lib/mlton.$HEAP_SUFFIX"
-	unset ARCHNOPSYS ARCH OPSYS HEAP_SUFFIX
+	unset `.arch-n-opsys | sed 's#=[^ ]*##g'`
 else
 	njHeap="$lib/mlton.$HOST_ARCH-$HOST_OS"
 fi
