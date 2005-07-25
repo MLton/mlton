@@ -480,8 +480,12 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	     | _ => Error.bug "RefFlatten.select"
 	 end
       fun update {base, offset, value} =
-	 coerce {from = value,
-		 to = select {base = base, offset = offset}}
+	 (coerce {from = value,
+		  to = select {base = base, offset = offset}}
+	  (* Don't flatten the component of the update, 
+	   * else sharing will be broken.
+	   *)
+	  ; Value.dontFlatten value)
       fun const c = typeValue (Type.ofConst c)
       val {func, value = varValue, ...} =
 	 analyze {coerce = coerce,
@@ -972,10 +976,11 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	    Bind b => transformBind b
 	  | Profile _ => Vector.new1 s
 	  | Update {base, offset, value} =>
+	       Vector.new1
 	       (case base of
 		   Base.Object object =>
 		      (case varObject object of
-			  NONE => Vector.new1 s
+			  NONE => s
 			| SOME obj =>
 			     let
 				val base =
@@ -986,22 +991,12 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 						Base.Object objectVar
 					   | _ => base)
 				    | Unflattenable => base
-				val value =
-				   case flattenArgs (Vector.new1 value, obj, []) of
-				      [value] => value
-				    | _ => Error.bug 
-                                           "RefFlatten.transformStatement.Update"
-				val extra = !extraSelects
-				val () = extraSelects := []
 			     in
-				Vector.concat
-				[Vector.fromList extra,
-				 (Vector.new1 o Update) 
-				 {base = base,
-				  offset = objectOffset (obj, offset),
-				  value = value}]
+				Update {base = base,
+					offset = objectOffset (obj, offset),
+					value = value}
 			     end)
-		 | Base.VectorSub _ => Vector.new1 s)
+		 | Base.VectorSub _ => s)
       val transformStatement =
 	 Trace.trace ("RefFlatten.transformStatement",
 		      Statement.layout,
