@@ -537,8 +537,8 @@ far ahead is canInput expected to read?
 A few other notes of things I've discovered, some of which are trivial:
 
 The signature for TextIO.StreamIO contains duplicates of
-  where type StreamIO.reader = TextPrimIO.reader
-  where type StreamIO.writer = TextPrimIO.writer
+  where type StreamIO.reader = TextPrimIO.reader
+  where type StreamIO.writer = TextPrimIO.writer
 
 There are declared constants for platformWin32Windows2000 and 
 platformWin32WindowsXP in the Windows structure.  When I proposed the 

@@ -824,14 +824,14 @@ datatype svalue = VOID | ntVOID of unit | PSEUDOTEXT of  (string)
  | cobol_program of  (Cobol.cobol_program)
 end
 type svalue = MlyValue.svalue
-(*TODO 13/01/1998 14:54. hojfeld.: mine erklæringer:*)
+(*TODO 13/01/1998 14:54. hojfeld.: mine erklringer:*)
 type pos = unit
 type arg = unit
 datatype nonterm = hojfelds_NT of int
 exception Hojfeld of string
-(*og så: LrTable.NT |-> hojfelds_NT*)
+(*og s: LrTable.NT |-> hojfelds_NT*)
 
-(*TODO 13/01/1998 14:54. hojfeld.: mine erklæringer slut*)
+(*TODO 13/01/1998 14:54. hojfeld.: mine erklringer slut*)
   
 fun actions(i392:int, defaultPos:pos, stack:(unit (*LrTable.state*) * (svalue * pos * pos)) list,  
             ():arg
