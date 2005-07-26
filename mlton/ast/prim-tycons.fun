@@ -31,6 +31,9 @@ val weak = fromString "weak"
 datatype z = datatype Kind.t
 datatype z = datatype AdmitsEquality.t
 
+val isBool = fn c => equals (c, bool)
+val isExn = fn c => equals (c, exn)
+
 local
    fun 'a make (prefix: string,
 		all: 'a list,

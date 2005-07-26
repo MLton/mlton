@@ -72,6 +72,7 @@ signature CONTROL_FLAGS =
 	    (* in (e1; e2), require e1: unit. *)
 	    val sequenceUnit: (bool,bool) t
 	    val warnMatch: (bool,bool) t
+	    val warnExnMatch: (bool,bool) t
 	    val warnUnused: (bool,bool) t
 
 	    val current: ('args, 'st) t -> 'st

@@ -45,7 +45,9 @@ signature PRIM_TYCONS =
       val int: IntSize.t -> tycon
       val ints: (tycon * IntSize.t) vector
       val intInf: tycon
+      val isBool: tycon -> bool
       val isCharX: tycon -> bool
+      val isExn: tycon -> bool
       val isIntX: tycon -> bool
       val isRealX: tycon -> bool
       val isWordX: tycon -> bool

@@ -334,6 +334,8 @@ structure Elaborate =
 	    makeBool ({name = "sequenceUnit", default = false, expert = false}, ac)
 	 val (warnMatch, ac) =
 	    makeBool ({name = "warnMatch", default = true, expert = false}, ac)
+	 val (warnExnMatch, ac) =
+	    makeBool ({name = "warnExnMatch", default = true, expert = false}, ac)
 	 val (warnUnused, ac) =
 	    makeBool ({name = "warnUnused", default = false, expert = false}, ac)
 	 val {parseId, parseIdAndArgs, withDef, snapshot} = ac

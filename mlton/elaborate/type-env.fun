@@ -768,11 +768,21 @@ structure Type =
 	 
       val unit = tuple (Vector.new0 ())
 
+      fun isBool t =
+         case toType t of
+            Con (c, _) => Tycon.isBool c
+          | _ => false
+
       fun isCharX t =
 	 case toType t of
  	    Con (c, _) => Tycon.isCharX c
 	  | Overload Overload.Char => true
  	  | _ => false
+
+      fun isExn t =
+         case toType t of
+            Con (c, _) => Tycon.isExn c
+          | _ => false
 
       fun isInt t =
 	 case toType t of

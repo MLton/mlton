@@ -17,6 +17,7 @@ in
    val allowRebindEquals = fn () => current allowRebindEquals
    val sequenceUnit = fn () => current sequenceUnit
    val warnMatch = fn () => current warnMatch
+   val warnExnMatch = fn () => current warnExnMatch
 end
 
 local
@@ -996,10 +997,7 @@ in
 		   (region, str "invalid type for _symbol object",
 		    Type.layoutPretty elabedCbTy)
 		   ; CType.Pointer)
-	 val isBool =
-	    case Type.deConOpt expandedCbTy of
-	       NONE => false
-	     | SOME (c,_) => Tycon.equals (c, Tycon.bool)
+	 val isBool = Type.isBool expandedCbTy
 	 val ctypePtrTy =
 	    case Type.toCType expandedPtrTy of
 	       SOME {ctype = CType.Pointer, ...} => CType.Pointer
@@ -1057,10 +1055,7 @@ in
 		   (region, str "invalid type for _symbol object",
 		    Type.layoutPretty elabedCbTy)
 		   ; CType.Pointer)
-	 val isBool =
-	    case Type.deConOpt expandedCbTy of
-	       NONE => false
-	     | SOME (c,_) => Tycon.equals (c, Tycon.bool)
+	 val isBool = Type.isBool expandedCbTy
 	 val ctypePtrTy =
 	    case Type.toCType expandedPtrTy of
 	       SOME {ctype = CType.Pointer, ...} => CType.Pointer
@@ -1137,10 +1132,7 @@ in
 		   (region, str "invalid type for import",
 		    Type.layoutPretty elabedCbTy)
 		   ; CType.Pointer)
-	 val isBool =
-	    case Type.deConOpt expandedCbTy of
-	       NONE => false
-	     | SOME (c,_) => Tycon.equals (c, Tycon.bool)
+	 val isBool = Type.isBool expandedCbTy
 	 val addrExp =
 	    address {ctypeCbTy = ctypeCbTy,
 		     expandedPtrTy = Type.word (WordSize.pointer ()),
@@ -1909,7 +1901,11 @@ fun elaborateDec (d, {env = E, nest}) =
 					     Cexp.tuple
 					     (Vector.map2
 					      (xs, argTypes, Cexp.var)),
-					     warnMatch = warnMatch ()}
+					     warnMatch =
+                                             warnMatch ()
+                                             andalso (not (Type.isExn 
+							   (Type.tuple argTypes))
+                                                      orelse warnExnMatch ())}
 				      in
 					 Cexp.enterLeave
 					 (e, profileBody, sourceInfo)
@@ -2106,7 +2102,9 @@ fun elaborateDec (d, {env = E, nest}) =
 					     region = region,
 					     rules = rules,
 					     test = Cexp.var (arg, argType),
-					     warnMatch = warnMatch ()},
+					     warnMatch = warnMatch ()
+                                                         andalso (not (Type.isExn argType)
+                                                                  orelse warnExnMatch ())},
 				 profileBody,
 				 fn () => SourceInfo.function {name = nest,
 							       region = region})
@@ -2197,7 +2195,11 @@ fun elaborateDec (d, {env = E, nest}) =
 		      (Cdec.Val {rvbs = rvbs,
 				 tyvars = bound,
 				 vbs = vbs,
-				 warnMatch = warnMatch ()})
+				 warnMatch = warnMatch ()
+                                             andalso (not (Vector.forall
+                                                           (vbs,
+                                                            Type.isExn o Cexp.ty o #exp))
+                                                      orelse warnExnMatch ())})
 		   end
 	  end) arg
       and elabExp (arg: Aexp.t * Nest.t * string option): Cexp.t =
@@ -2279,7 +2281,9 @@ fun elaborateDec (d, {env = E, nest}) =
 				  region = region,
 				  rules = rules,
 				  test = e,
-				  warnMatch = warnMatch ()}
+				  warnMatch = warnMatch ()
+                                              andalso (not (Type.isExn argType)
+                                                       orelse warnExnMatch ())}
 		   end
 	      | Aexp.Const c =>
 		   elabConst
@@ -2911,7 +2915,9 @@ fun elaborateDec (d, {env = E, nest}) =
 			   region = region,
 			   rules = rules,
 			   test = Cexp.var (arg, argType),
-			   warnMatch = warnMatch ()}
+			   warnMatch = warnMatch ()
+                                       andalso (not (Type.isExn argType)
+                                                orelse warnExnMatch ())}
 	 in
 	   {arg = arg,
 	    argType = argType,

@@ -37,7 +37,9 @@ signature TYPE_ENV =
 			  record: 'a SortedRecord.t -> 'a,
 			  replaceSynonyms: bool,
 			  var: Tyvar.t -> 'a} -> 'a
+            val isBool: t -> bool
 	    val isCharX: t -> bool
+            val isExn: t -> bool
 	    val isInt: t -> bool
 	    val isUnit: t -> bool
 	    val layout: t -> Layout.t
