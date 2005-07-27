@@ -370,7 +370,7 @@ typedef struct GC_state {
 	 */
 	float copyGenerationalRatio;
 	float copyRatio;	/* Minimum live ratio to use copying GC. */
-	pointer crossMap;
+	uchar *crossMap;
 	uint crossMapSize;
 	/* crossMapValidEnd is the size of the prefix of the old generation for
 	 * which the crossMap is valid.

@@ -356,7 +356,7 @@ void GC_display (GC_state s, FILE *stream) {
 
 		fprintf (stderr, "crossMap trues\n");
 		for (i = 0; i < s->crossMapSize; ++i)
-			unless (CROSS_MAP_EMPTY == (uchar)(s->crossMap[i]))
+			unless (CROSS_MAP_EMPTY == s->crossMap[i])
 				fprintf (stderr, "\t%u\n", i);
 		fprintf (stderr, "\n");
 	}		
@@ -1689,7 +1689,7 @@ static void forwardInterGenerationalPointers (GC_state s) {
 	pointer cardMap;
 	uint cardNum;
 	pointer cardStart;
-	pointer crossMap;
+	uchar *crossMap;
 	GC_heap h;
 	uint numCards;
 	pointer objectStart;
@@ -1762,7 +1762,7 @@ skipObjects:
 		cardStart = oldGenStart + cardNumToSize (s, cardNum);
 		goto checkCard;
 	} else {
-		unless (CROSS_MAP_EMPTY == (uchar)(crossMap[cardNum]))
+		unless (CROSS_MAP_EMPTY == crossMap[cardNum])
 			objectStart = cardStart + crossMap[cardNum] * WORD_SIZE;
 		if (DEBUG_GENERATIONAL)
 			fprintf (stderr, "card %u is not marked  crossMap[%u] == %u  objectStart = 0x%08x\n", 
