@@ -80,6 +80,7 @@ signature CORE_ML =
 				lay: (unit -> Layout.t) option,
 				pat: Pat.t} vector,
 			test: t,
+                        warnExnMatch: bool,
 			warnMatch: bool}
 	     | Con of Con.t * Type.t vector
 	     | Const of unit -> Const.t
@@ -107,6 +108,7 @@ signature CORE_ML =
 				lay: (unit -> Layout.t) option,
 				pat: Pat.t} vector,
 			test: t,
+                        warnExnMatch: bool,
 			warnMatch: bool} -> t
 	    val dest: t -> node * Type.t
 	    val iff: t * t * t -> t
@@ -163,6 +165,7 @@ signature CORE_ML =
 			     lay: unit -> Layout.t,
 			     pat: Pat.t,
 			     patRegion: Region.t} vector,
+                       warnExnMatch: bool,
 		       warnMatch: bool}
 
 	    val layout: t -> Layout.t

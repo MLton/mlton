@@ -15,6 +15,7 @@ type int = Int.t
 local
    open Control.Elaborate
 in
+   val warnExnMatch = fn () => current warnExnMatch
    val warnMatch = fn () => current warnMatch
    val warnUnused = fn () => current warnUnused
 end
@@ -2902,7 +2903,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 						    lay = fn _ => Layout.empty,
 						    pat = Pat.var (x, strType),
 						    patRegion = region}),
-					    warnMatch = warnMatch ()})
+					    warnMatch = warnMatch (),
+                                            warnExnMatch = warnExnMatch ()})
 			    in
 			       Vid.Var x
 			    end

@@ -151,6 +151,7 @@ datatype dec =
 		 lay: unit -> Layout.t,
 		 pat: Pat.t,
 		 patRegion: Region.t} vector,
+           warnExnMatch: bool,
 	   warnMatch: bool}
 and exp = Exp of {node: expNode,
 		  ty: Type.t}
@@ -164,6 +165,7 @@ and expNode =
 		     lay: (unit -> Layout.t) option,
 		     pat: Pat.t} vector,
 	     test: exp,
+             warnExnMatch: bool,
 	     warnMatch: bool}
   | Con of Con.t * Type.t vector
   | Const of unit -> Const.t
@@ -373,6 +375,7 @@ structure Exp =
 				      lay = NONE,
 				      pat = Pat.falsee}),
 		test = test,
+                warnExnMatch = false,
 		warnMatch = false}
 
       fun andAlso (e1, e2) = iff (e1, e2, falsee)

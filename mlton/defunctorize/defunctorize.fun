@@ -110,11 +110,12 @@ fun casee {caseType: Xtype.t,
 	   conTycon,
 	   kind: string,
 	   lay: unit -> Layout.t,
-	   mayWarn: bool,
 	   noMatch,
 	   region: Region.t,
 	   test = (test: Xexp.t, testType: Xtype.t),
-	   tyconCons}: Xexp.t =
+	   tyconCons,
+           warnExnMatch: bool,
+           warnMatch: bool}: Xexp.t =
    let
       val cases = Vector.map (cases, fn {exp, lay, pat} =>
 			      {exp = fn () => exp,
@@ -272,24 +273,38 @@ fun casee {caseType: Xtype.t,
       fun warn () =
 	 let
 	    val _ =
-	       if noMatch <> Cexp.RaiseAgain
-		  then
-		     case Vector.peeki (cases,
-					fn (_, {isDefault, numUses, ...}) =>
-					isDefault andalso !numUses > 0) of
-			NONE => ()
-		      | SOME (i, _) =>
-			   let
-			      open Layout
-			   in
-			      Control.warning
-			      (region,
-			       str (concat [kind, " is not exhaustive"]),
-			       align [seq [str "missing pattern: ",
-					   Vector.sub (!examples (), i)],
-				      lay ()])
-			   end
-	       else ()
+	       if noMatch = Cexp.RaiseAgain
+                  then ()
+               else
+                  case Vector.peeki (cases,
+                                     fn (_, {isDefault, numUses, ...}) =>
+                                     isDefault andalso !numUses > 0) of
+                     NONE => ()
+                   | SOME (i, _) =>
+                        let
+                           val es = Vector.sub (!examples (), i)
+                           val es =
+                              if warnExnMatch
+                                 then Vector.map (es, #1)
+                              else
+                                 Vector.keepAllMap
+                                 (es, fn (e, {isOnlyExns}) =>
+                                  if isOnlyExns
+                                     then NONE
+                                  else SOME e)
+                           open Layout
+                        in
+                           if 0 = Vector.length es
+                              then ()
+                           else
+                              Control.warning
+                              (region,
+                               str (concat [kind, " is not exhaustive"]),
+                               align [seq [str "missing pattern: ",
+                                           Layout.alignPrefix
+                                           (Vector.toList es, "| ")],
+                                      lay ()])
+                        end
 	    val redundant =
 	       Vector.keepAll (cases, fn {isDefault, numUses, ...} =>
 			       not isDefault andalso !numUses = 0)
@@ -315,7 +330,7 @@ fun casee {caseType: Xtype.t,
 	 in
 	    ()
 	 end
-      val _ = if mayWarn then List.push (warnings, warn) else ()
+      val _ = if warnMatch then List.push (warnings, warn) else ()
    in
       exp
    end
@@ -699,7 +714,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 	     | Fun {decs, tyvars} =>
 		  prefix (Xdec.Fun {decs = processLambdas decs,
 				    tyvars = tyvars ()})
-	     | Val {rvbs, tyvars, vbs, warnMatch} =>
+	     | Val {rvbs, tyvars, vbs, warnExnMatch, warnMatch} =>
 	       let
 		  val tyvars = tyvars ()
 		  val bodyType = et
@@ -719,11 +734,12 @@ fun defunctorize (CoreML.Program.T {decs}) =
 				   conTycon = conTycon,
 				   kind = "declaration",
 				   lay = lay,
-				   mayWarn = warnMatch andalso mayWarn,
 				   noMatch = Cexp.RaiseBind,
 				   region = patRegion,
 				   test = (e, NestedPat.ty p),
-				   tyconCons = tyconCons}
+				   tyconCons = tyconCons,
+                                   warnExnMatch = warnExnMatch,
+                                   warnMatch = warnMatch andalso mayWarn}
 			 val isExpansive = Cexp.isExpansive exp
 			 val (exp, expType) = loopExp exp
 			 val pat = loopPat pat
@@ -906,7 +922,8 @@ fun defunctorize (CoreML.Program.T {decs}) =
 					func = #1 (loopExp e1),
 					ty = ty}
 		     end
-		| Case {kind, lay, noMatch, region, rules, test, warnMatch, ...} =>
+		| Case {kind, lay, noMatch, region, rules, test, warnExnMatch,
+                        warnMatch, ...} =>
 		     casee {caseType = ty,
 			    cases = Vector.map (rules, fn {exp, lay, pat} =>
 						{exp = #1 (loopExp exp),
@@ -915,11 +932,12 @@ fun defunctorize (CoreML.Program.T {decs}) =
 			    conTycon = conTycon,
 			    kind = kind,
 			    lay = lay,
-			    mayWarn = warnMatch,
 			    noMatch = noMatch,
 			    region = region,
 			    test = loopExp test,
-			    tyconCons = tyconCons}
+			    tyconCons = tyconCons,
+                            warnExnMatch = warnExnMatch,
+                            warnMatch = warnMatch}
 		| Con (con, targs) =>
 		     let
 			val targs = conTargs (con, targs)

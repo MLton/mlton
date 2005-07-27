@@ -52,13 +52,17 @@ structure Fact =
 
 structure Examples =
    struct
-      datatype t = T of (Var.t * Layout.t) list
+      datatype t = T of {es: (Var.t * Layout.t) list,
+                         isOnlyExns: bool}
 
-      fun layout (T l) = List.layout (Layout.tuple2 (Var.layout, fn l => l)) l
+      fun layout (T {es, ...}) =
+         List.layout (Layout.tuple2 (Var.layout, fn l => l)) es
 
-      val empty = T []
+      val empty = T {es = [], isOnlyExns = true}
 	 
-      fun add (T es, x, l) = T ((x, l) :: es)
+      fun add (T {es, isOnlyExns = is}, x, l, {isOnlyExns: bool}) =
+         T {es = (x, l) :: es,
+            isOnlyExns = is andalso isOnlyExns}
    end
 
 structure Facts =
@@ -121,7 +125,7 @@ structure Facts =
 		       layout, Var.layout, NestedPat.layout, Env.layout)
 	 bind
 
-      fun example (T facts, Examples.T es, x: Var.t): Layout.t =
+      fun example (T facts, Examples.T {es, ...}, x: Var.t): Layout.t =
 	 let
 	    val {destroy,
 		 get = fact: Var.t -> Fact.t option,
@@ -216,10 +220,11 @@ structure Vector =
 
 structure Rule =
    struct
-      datatype t = T of {pats: Pat.t vector,
-			 rest: {examples: Layout.t list ref,
-				finish: (Var.t -> Var.t) -> Exp.t,
-				nestedPat: NestedPat.t}}
+      datatype t =
+         T of {pats: Pat.t vector,
+               rest: {examples: (Layout.t * {isOnlyExns: bool}) list ref,
+                      finish: (Var.t -> Var.t) -> Exp.t,
+                      nestedPat: NestedPat.t}}
 
 
       fun layout (T {pats, ...}) =
@@ -397,7 +402,11 @@ fun matchCompile {caseType: Type.t,
 		  val Rule.T {rest = {examples, finish, nestedPat, ...}, ...} =
 		     Vector.sub (rules, 0)
 		  val env = Facts.bind (facts, test, nestedPat)
-		  val () = List.push (examples, Facts.example (facts, es, test))
+                  val Examples.T {isOnlyExns, ...} = es
+		  val () =
+                     List.push (examples,
+                                (Facts.example (facts, es, test),
+                                 {isOnlyExns = isOnlyExns}))
 	       in
 		  finish (fn x => Env.lookup (env, x))
 	       end
@@ -418,7 +427,8 @@ fun matchCompile {caseType: Type.t,
 			case Vector.sub (pats, i) of
 			   Const _ => const (vars, rules, facts, es, i, test)
 			 | Con {con, ...} =>
-			      sum (vars, rules, facts, es, i, test, conTycon con)
+			      sum (vars, rules, facts, es, i, test,
+                                   conTycon con)
 			 | Tuple _ => tuple (vars, rules, facts, es, i, test)
 			 | Wild => Error.bug "MatchCompile.match: Wild"
 		     end
@@ -448,18 +458,20 @@ fun matchCompile {caseType: Type.t,
 				   Char.layout (WordX.toChar w),
 				   str String.dquote]
 			   end
-		      | _ => Error.bug (concat ["MatchCompile.const.layoutConst: ",
-						"strange char: ", 
-						Layout.toString (Const.layout c)])
+		      | _ => Error.bug (concat
+                                        ["MatchCompile.const.layoutConst: ",
+                                         "strange char: ", 
+                                         Layout.toString (Const.layout c)])
 	       else if isInt
 		  then
 		     case c of
 			Const.IntInf i => IntInf.layout i
 		      | Const.Word w =>
 			   IntInf.layout (WordX.toIntInfX w)
-		      | _ => Error.bug (concat ["MatchCompile.const.layoutConst: ",
-						"strange int: ", 
-						Layout.toString (Const.layout c)])
+		      | _ => Error.bug (concat
+                                        ["MatchCompile.const.layoutConst: ",
+                                         "strange int: ", 
+                                         Layout.toString (Const.layout c)])
 	       else Const.layout c
 	    val (cases, defaults) =
 	       Vector.foldr
@@ -495,14 +507,20 @@ fun matchCompile {caseType: Type.t,
 					     rules = Vector.fromList rules})
 	    val defaults = Vector.fromList defaults
 	    val vars = Vector.dropNth (vars, i)
-	    fun finish (rules: Rule.t vector, e): Exp.t =
-	       match (vars, rules, facts, Examples.add (es, var, e))
+	    fun finish (rules: Rule.t vector, e, isOnlyExns): Exp.t =
+	       match (vars, rules, facts,
+                      Examples.add (es, var, e, {isOnlyExns = isOnlyExns}))
 	    fun default (): Exp.t =
-	       finish (defaults,
-		       if 0 = Vector.length cases
-			  then wild
-		       else layoutConst (unhandledConst
-					 (Vector.map (cases, #const))))
+               let
+                  val (e, ioe) =
+                     if 0 = Vector.length cases
+                        then (wild, true)
+                     else (layoutConst (unhandledConst
+                                        (Vector.map (cases, #const))),
+                           false)
+               in
+                  finish (defaults, e, ioe)
+               end
 	 in
 	    case List.peek (directCases, fn {ty = ty', ...} =>
 			    Type.equals (ty, ty')) of
@@ -510,7 +528,7 @@ fun matchCompile {caseType: Type.t,
 		  Vector.fold
 		  (cases, default (), fn ({const, rules}, rest) =>
 		   Exp.iff {test = Exp.equal (test, Exp.const const),
-			    thenn = finish (rules, Const.layout const),
+			    thenn = finish (rules, Const.layout const, true),
 			    elsee = rest,
 			    ty = caseType})
 	     | SOME {size, ...} =>
@@ -529,7 +547,7 @@ fun matchCompile {caseType: Type.t,
 				  Const.Word w => w
 				| _ => Error.bug "MatchCompile.const: caseWord type error"
 			 in
-			    (w, finish (rules, layoutConst const))
+			    (w, finish (rules, layoutConst const, true))
 			 end)
 		  in
 		     Exp.casee {cases = Cases.word (size, cases),
@@ -625,16 +643,17 @@ fun matchCompile {caseType: Type.t,
 		    rhs = match (vars, rules, facts, es),
 		    targs = targs}
 		end)
-	    fun done e =
+	    fun done (e, isOnlyExns) =
 	       SOME (match (Vector.dropNth (vars, i),
 			    Rules.dropNth (Vector.fromList defaults, i),
 			    facts,
-			    Examples.add (es, var, e)))
+			    Examples.add (es, var, e,
+                                          {isOnlyExns = isOnlyExns})))
 	    val default =
 	       if Vector.isEmpty cases
-		  then done wild
+		  then done (wild, true)
 	       else if Tycon.equals (tycon, Tycon.exn)
-		  then done (Layout.str "e")
+		  then done (Layout.str "e", true)
 	       else
 		  let
 		     val cons = tyconCons tycon
@@ -654,7 +673,9 @@ fun matchCompile {caseType: Type.t,
 					   if hasArg then SOME wild else NONE)))
 			   open Layout
 			in
-			   done (seq (separate (Vector.toList unhandled, " | ")))
+			   done
+                           (seq (separate (Vector.toList unhandled, " | ")),
+                            false)
 			end
 		  end
 	    fun normal () =
@@ -733,8 +754,7 @@ fun matchCompile {caseType: Type.t,
 		Facts.empty,
 		Examples.empty)
    in
-      (res,
-       fn () => Vector.map (examples, fn r => Layout.alignPrefix (! r, "| ")))
+      (res, fn () => Vector.map (examples, fn r => Vector.fromList (!r)))
    end
 
 val matchCompile =

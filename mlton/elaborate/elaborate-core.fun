@@ -958,6 +958,7 @@ local
 		            {args = Vector.new2 (fetchExp, zeroExp),
 			     prim = Prim.wordEqual WordSize.default,
 			     result = expandedCbTy},
+                     warnExnMatch = false,
 		     warnMatch = false}
       end
 
@@ -974,6 +975,7 @@ local
                                 ({exp = oneExp, lay = NONE, pat = Cpat.truee},
 				 {exp = zeroExp, lay = NONE, pat = Cpat.falsee}),
 			test = valueExp,
+                        warnExnMatch = false,
 			warnMatch = false}
       in
 	 primApp {args = Vector.new3 (ptrExp, zeroExp, valueExp),
@@ -1085,6 +1087,7 @@ in
 			region = Region.bogus,
 			rules = Vector.new1 ({exp = setExp, lay = NONE, pat = setPat}),
 			test = Cexp.var (setArg, elabedSetArgTy),
+                        warnExnMatch = false,
 			warnMatch = false}
       in
 	 (Cexp.tuple o Vector.new2)
@@ -1901,11 +1904,8 @@ fun elaborateDec (d, {env = E, nest}) =
 					     Cexp.tuple
 					     (Vector.map2
 					      (xs, argTypes, Cexp.var)),
-					     warnMatch =
-                                             warnMatch ()
-                                             andalso (not (Type.isExn 
-							   (Type.tuple argTypes))
-                                                      orelse warnExnMatch ())}
+                                             warnExnMatch = warnExnMatch (),
+					     warnMatch = warnMatch ()}
 				      in
 					 Cexp.enterLeave
 					 (e, profileBody, sourceInfo)
@@ -2102,9 +2102,8 @@ fun elaborateDec (d, {env = E, nest}) =
 					     region = region,
 					     rules = rules,
 					     test = Cexp.var (arg, argType),
-					     warnMatch = warnMatch ()
-                                                         andalso (not (Type.isExn argType)
-                                                                  orelse warnExnMatch ())},
+					     warnExnMatch = warnExnMatch (),
+					     warnMatch = warnMatch ()},
 				 profileBody,
 				 fn () => SourceInfo.function {name = nest,
 							       region = region})
@@ -2195,11 +2194,8 @@ fun elaborateDec (d, {env = E, nest}) =
 		      (Cdec.Val {rvbs = rvbs,
 				 tyvars = bound,
 				 vbs = vbs,
-				 warnMatch = warnMatch ()
-                                             andalso (not (Vector.forall
-                                                           (vbs,
-                                                            Type.isExn o Cexp.ty o #exp))
-                                                      orelse warnExnMatch ())})
+                                 warnExnMatch = warnExnMatch (),
+				 warnMatch = warnMatch ()})
 		   end
 	  end) arg
       and elabExp (arg: Aexp.t * Nest.t * string option): Cexp.t =
@@ -2281,9 +2277,8 @@ fun elaborateDec (d, {env = E, nest}) =
 				  region = region,
 				  rules = rules,
 				  test = e,
-				  warnMatch = warnMatch ()
-                                              andalso (not (Type.isExn argType)
-                                                       orelse warnExnMatch ())}
+				  warnExnMatch = warnExnMatch (),
+				  warnMatch = warnMatch ()}
 		   end
 	      | Aexp.Const c =>
 		   elabConst
@@ -2488,6 +2483,7 @@ fun elaborateDec (d, {env = E, nest}) =
 							      (Vector.map 
 							       (vars, Cpat.var))},
 					        test = Cexp.var (arg, argType),
+						warnExnMatch = false,
 						warnMatch = false}
 					   end
 			       in
@@ -2915,9 +2911,8 @@ fun elaborateDec (d, {env = E, nest}) =
 			   region = region,
 			   rules = rules,
 			   test = Cexp.var (arg, argType),
-			   warnMatch = warnMatch ()
-                                       andalso (not (Type.isExn argType)
-                                                orelse warnExnMatch ())}
+			   warnExnMatch = warnExnMatch (),
+			   warnMatch = warnMatch ()}
 	 in
 	   {arg = arg,
 	    argType = argType,
