@@ -1269,7 +1269,7 @@ static void createCardMapAndCrossMap (GC_state s) {
 				uintToCommaString
 					(s->cardMapSize + s->crossMapSize));
 	s->cardMap = smmap (s->cardMapSize + s->crossMapSize);
-	s->crossMap = s->cardMap + s->cardMapSize;
+	s->crossMap = (uchar *)s->cardMap + s->cardMapSize;
 	if (DEBUG_CARD_MARKING)
 		fprintf (stderr, "cardMap = 0x%08x  crossMap = 0x%08x\n", 
 				(uint)s->cardMap,
@@ -2876,7 +2876,7 @@ static void resizeCardMapAndCrossMap (GC_state s) {
 		and s->cardMapSize != 
 			align (divCardSize (s, s->heap.size), s->pageSize)) {
 		pointer oldCardMap;
-		pointer oldCrossMap;
+		uchar *oldCrossMap;
 		uint oldCardMapSize;
 		uint oldCrossMapSize;
 
@@ -2885,7 +2885,7 @@ static void resizeCardMapAndCrossMap (GC_state s) {
 		oldCrossMap = s->crossMap;
 		oldCrossMapSize = s->crossMapSize;
 		createCardMapAndCrossMap (s);
-		copy (oldCrossMap, s->crossMap,
+		copy ((pointer)oldCrossMap, (pointer)s->crossMap,
 			min (s->crossMapSize, oldCrossMapSize));
 		if (DEBUG_MEM)
 			fprintf (stderr, "Releasing card/cross map.\n");
