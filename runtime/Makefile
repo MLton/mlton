@@ -14,10 +14,12 @@ GCC_VERSION = $(shell gcc -v 2>&1 | grep 'gcc version' | sed 's/.*gcc version \(
 
 FLAGS = -fomit-frame-pointer
 
+ifeq ($(TARGET_ARCH), x86)
 ifneq ($(findstring $(GCC_VERSION), 3 4),)
 FLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 else
 FLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
+endif
 endif
 
 ifeq ($(TARGET_ARCH), amd64)
