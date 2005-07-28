@@ -96,7 +96,7 @@ libgdtoa.a: gdtoa/arith.h
 	$(RANLIB) libgdtoa.a
 
 gdtoa/arithchk.c:
-	zcat gdtoa.tgz | tar xf -	
+	gzip -dc gdtoa.tgz | tar xf -	
 	patch -p0 <gdtoa-patch
 
 gdtoa/arithchk.out: gdtoa/arithchk.c
@@ -147,7 +147,7 @@ clean:
 gdtoa-patch:
 	cd gdtoa && $(MAKE) clean && rm -f &~
 	mv gdtoa gdtoa-new
-	zcat gdtoa.tgz | tar xf -
+	gzip -dc gdtoa.tgz | tar xf -
 	diff -P -C 2 -r gdtoa gdtoa-new >gdtoa-patch || exit 0
 	rm -rf gdtoa
 	mv gdtoa-new gdtoa

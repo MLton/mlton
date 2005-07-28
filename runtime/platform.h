@@ -11,7 +11,12 @@
 
 #define _ISOC99_SOURCE
 #define _BSD_SOURCE
+#ifndef __APPLE_CC__
+/* Apple system headers are broken; they use u_char, u_int, ...
+ * That's fine except _POSIX_C_SOURCE (correctly) turns this off.
+ */
 #define _POSIX_C_SOURCE 200112L
+#endif
 
 #include <sys/types.h> // lots of includes depend on this
 #include <dirent.h>

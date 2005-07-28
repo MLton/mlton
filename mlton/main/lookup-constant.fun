@@ -73,10 +73,7 @@ fun build (constants, out) =
    in
       List.foreach
       (List.concat
-       [["#define _ISOC99_SOURCE",
-	 "#define _POSIX_C_SOURCE 200112L",
-	 "",
-	 "#include \"platform.h\"",
+       [["#include \"platform.h\"",
 	 "struct GC_state gcState;",
 	 "",
 	 "int main (int argc, char **argv) {"],
