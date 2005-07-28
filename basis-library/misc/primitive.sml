@@ -914,11 +914,11 @@ structure Primitive =
 		  datatype t = Bytecode | C | Native
 
 		  val codegen =
-		     case _build_const "MLton_codegen": int; of
+		     case _build_const "MLton_Codegen_codegen": int; of
 			0 => Bytecode
 		      | 1 => C
 		      | 2 => Native
-		      | _ => raise Fail "MLton_codegen"
+		      | _ => raise Fail "MLton_Codegen_codegen"
 
 		  val isBytecode = codegen = Bytecode
 		  (* val isC = codegen = C *)
@@ -1028,7 +1028,7 @@ structure Primitive =
 	    
 	    structure Profile =
 	       struct
-		  val isOn = _build_const "MLton_profile_isOn": bool;
+		  val isOn = _build_const "MLton_Profile_isOn": bool;
 		  structure Data =
 		     struct
 		        type t = word

@@ -25,17 +25,17 @@ val buildConstants: (string * (unit -> string)) list =
       val int = Int.toString
       open Control
    in
-      [("MLton_codegen", fn () => int (case !codegen of
-					  Bytecode => 0
-					| CCodegen => 1
-					| Native => 2)),
-       ("MLton_profile_isOn", fn () => bool (case !profile of
+      [("MLton_Codegen_codegen", fn () => int (case !codegen of
+						  Bytecode => 0
+						| CCodegen => 1
+						| Native => 2)),
+       ("MLton_FFI_numExports", fn () => int (Ffi.numExports ())),
+       ("MLton_Profile_isOn", fn () => bool (case !profile of
 						ProfileNone => false
 					      | ProfileCallStack => false
 					      | ProfileDrop => false
 					      | ProfileLabel => false
-					      | _ => true)),
-       ("MLton_FFI_numExports", fn () => int (Ffi.numExports ()))]
+					      | _ => true))]
    end
 
 datatype z = datatype ConstType.t
