@@ -1,3 +1,4 @@
+#include <fenv.h>
 #include <grp.h>
 #include <netdb.h>
 #include <netinet/in.h>

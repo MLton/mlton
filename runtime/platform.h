@@ -37,12 +37,11 @@
 #include <utime.h>
 
 /* C99-specific headers */
-#include <fenv.h>
 #include <stdint.h>
 #include <inttypes.h>
 
 /* On FreeBSD and OpenBSD the default gmp.h is installed in /usr/include, 
- * but that is version 2.  We want gmp version 4, which the is installed in 
+ * but that is version 2.  We want gmp version 4, which is installed in 
  * /usr/local/include, and is ensured to exist because it is required by the
  * MLton package.
  * On NetBSD, we want gmp to be installed into the pkg tree (which represents

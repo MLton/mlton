@@ -1,3 +1,4 @@
+#include <fenv.h>
 #include <grp.h>
 #include <limits.h>
 #include <netdb.h>
