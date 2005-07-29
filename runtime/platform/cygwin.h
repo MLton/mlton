@@ -30,6 +30,14 @@
 #define HAS_TIME_PROFILING FALSE
 #define HAS_WEAK FALSE
 
+#define FE_TONEAREST 0
+#define FE_DOWNWARD 1
+#define FE_UPWARD 2
+#define FE_TOWARDZERO 3
+
+int fegetround ();
+void fesetround (int mode);
+
 #define _SC_BOGUS 0xFFFFFFFF
 #define _SC_2_FORT_DEV _SC_BOGUS
 #define _SC_2_FORT_RUN _SC_BOGUS
