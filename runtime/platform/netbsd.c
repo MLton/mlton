@@ -1,5 +1,6 @@
 #include "platform.h"
 
+#include "feround.c"
 #include "getrusage.c"
 #include "getText.c"
 #include "mkdir2.c"
@@ -9,10 +10,10 @@
 #include "use-mmap.c"
 
 static void catcher (int sig, int code, struct sigcontext *ucp) {
-	GC_catcher ((pointer) ucp->sc_eip);
+	GC_handleSigProf ((pointer) ucp->sc_eip);
 }
 
 void setSigProfHandler (struct sigaction *sa) {
-	sa.sa_flags = SA_ONSTACK | SA_RESTART;
-	sa.sa_handler = (void (*)(int))catcher;
+	sa->sa_flags = SA_ONSTACK | SA_RESTART;
+	sa->sa_handler = (void (*)(int))catcher;
 }

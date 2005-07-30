@@ -396,7 +396,7 @@ post-install-debian:
 	$(CP) $(SRC)/debian/copyright $(SRC)/debian/README.Debian $(TDOC)/
 	$(CP) $(SRC)/debian/changelog $(TDOC)/changelog.Debian
 	mkdir -p $(TDOCBASE)
-	for f in mllex mlton mlyacc; do \
+	for f in mllex mlyacc; do \
 		$(CP) $(SRC)/debian/$$f.doc-base $(TDOCBASE)/$$f; \
 	done
 	cd $(TDOC)/ && $(GZIP) changelog changelog.Debian

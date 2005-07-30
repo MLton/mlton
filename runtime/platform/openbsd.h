@@ -1,5 +1,5 @@
-#include <fenv.h>
 #include <grp.h>
+#include <inttypes.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -19,11 +19,24 @@
 #include <syslog.h>
 #include <termios.h>
 
+#include "feround.h"
+
+#define FP_INFINITE 1
+#define FP_NAN 0
+#define FP_NORMAL 4
+#define FP_SUBNORMAL 3
+#define FP_ZERO 2
+
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
-#define HAS_WEAK TRUE
+#define HAS_WEAK FALSE
 
 #define MLton_Platform_OS_host "openbsd"
+
+int fpclassify32 (float f);
+int fpclassify64 (double d);
+int signbit32 (float f);
+int signbit64 (double f);

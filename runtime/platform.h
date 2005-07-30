@@ -37,7 +37,6 @@
 #include <utime.h>
 
 /* C99-specific headers */
-#include <stdint.h>
 #include <inttypes.h>
 
 /* On FreeBSD and OpenBSD the default gmp.h is installed in /usr/include, 

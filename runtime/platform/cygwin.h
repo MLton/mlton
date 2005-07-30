@@ -21,6 +21,12 @@
 #include <sys/cygwin.h>
 #include <io.h>
 
+#include "feround.h"
+#define signbit32 signbit
+#define signbit64 signbit
+#define fpclassify32 fpclassify
+#define fpclassify64 fpclassify
+
 #define MLton_Platform_OS_host "cygwin"
 
 #define HAS_PTRACE FALSE
@@ -29,14 +35,6 @@
 #define HAS_SPAWN TRUE
 #define HAS_TIME_PROFILING FALSE
 #define HAS_WEAK FALSE
-
-#define FE_TONEAREST 0
-#define FE_DOWNWARD 1
-#define FE_UPWARD 2
-#define FE_TOWARDZERO 3
-
-int fegetround ();
-void fesetround (int mode);
 
 #define _SC_BOGUS 0xFFFFFFFF
 #define _SC_2_FORT_DEV _SC_BOGUS

@@ -16,7 +16,13 @@
 #ifndef _ISOC99_SOURCE
 #define _ISOC99_SOURCE
 #endif
+#if (defined (__OpenBSD__))
+#include <inttypes.h>
+#elif (defined (__sun__))
+#include <sys/int_types.h>
+#else
 #include <stdint.h>
+#endif
 
 typedef int8_t Int8;
 typedef int16_t Int16;

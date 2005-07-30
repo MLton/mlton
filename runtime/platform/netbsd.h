@@ -1,4 +1,5 @@
-#include <fenv.h>
+#include <stdint.h>
+
 #include <grp.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -19,11 +20,17 @@
 #include <syslog.h>
 #include <termios.h>
 
+#include "feround.h"
+#define signbit32 signbit
+#define signbit64 signbit
+#define fpclassify32 fpclassify
+#define fpclassify64 fpclassify
+
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
-#define HAS_WEAK TRUE
+#define HAS_WEAK FALSE
 
 #define MLton_Platform_OS_host "netbsd"

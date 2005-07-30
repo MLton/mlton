@@ -1,4 +1,6 @@
-#include <fenv.h>
+#include "normal-fenv.h"
+#include <stdint.h>
+
 #include <grp.h>
 #include <netdb.h>
 #include <netinet/in.h>

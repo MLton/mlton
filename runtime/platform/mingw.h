@@ -1,4 +1,6 @@
-#include <fenv.h>
+#include "normal-fenv.h"
+#include <stdint.h>
+
 #include <windows.h> // lots of stuff depends on this
 #include <io.h>
 #include <limits.h>

@@ -97,7 +97,7 @@ doit "$lib" \
 	-target-link-opt netbsd					\
 		'-Wl,-R/usr/pkg/lib -L/usr/local/lib/ -lgmp'	\
 	-target-link-opt openbsd '-L/usr/local/lib/ -lgmp'	\
-	-target-link-opt solaris '-lgmp -lnsl -lsocket'		\
+	-target-link-opt solaris '-lgmp -lnsl -lsocket -lrt'	\
 	-link-opt '-lgdtoa -lm'					\
 	-profile-exclude '<basis>'				\
 	"$@"
