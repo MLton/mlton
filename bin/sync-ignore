@@ -1,0 +1,29 @@
+#!/bin/sh
+
+set -e
+set -x
+
+name=`basename $0`
+dir=`dirname $0`
+root=`cd $dir/.. && pwd`
+
+die () {
+	echo >&2 "$1"
+	exit 1
+}
+
+usage () {
+	die "usage: $name"
+}
+
+case "$#" in
+0)
+;;
+*)
+	usage
+;;
+esac
+
+for i in `find $root -type f -name .ignore`; do
+	svn propset 'svn:ignore' -F $i `dirname $i`
+done
