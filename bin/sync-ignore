@@ -1,7 +1,6 @@
 #!/bin/sh
 
 set -e
-set -x
 
 name=`basename $0`
 dir=`dirname $0`
@@ -24,6 +23,13 @@ case "$#" in
 ;;
 esac
 
+p='svn:ignore'
+
 for i in `find $root -type f -name .ignore`; do
-	svn propset 'svn:ignore' -F $i `dirname $i`
+	d=`dirname $i`
+	tmp='/tmp/z.ign'
+	svn propget $p $d | head -n -1 >$tmp
+	if ! diff -q $i $tmp >/dev/null; then
+		svn propset $p -F $i $d
+	fi
 done
