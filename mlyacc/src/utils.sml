@@ -1,12 +1,12 @@
-(* Modified by mfluet@acm.org on 2005-7-21.
- * Update with SML/NJ 110.55.
+(* Modified by mfluet@acm.org on 2005-8-01.
+ * Update with SML/NJ 110.55+.
  *)
 (* Modified by sweeks@acm.org on 2000-8-24.
  * Ported to MLton.
  *)
 type int = Int.int
 
-(* ML-Yacc Parser Generator (c) 1991 Andrew W. Appel, David R. Tarditi *)
+(* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 (* Implementation of ordered sets using ordered lists and red-black trees.  The
    code for red-black trees was originally written by Norris Boyd, which was

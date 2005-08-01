@@ -1,5 +1,5 @@
-(* Modified by mfluet@acm.org on 2005-7-21.
- * Update with SML/NJ 110.55.
+(* Modified by mfluet@acm.org on 2005-8-01.
+ * Update with SML/NJ 110.55+.
  *)
 (* Modified by sweeks@acm.org on 2000-8-24.
  * Ported to MLton.
@@ -78,6 +78,7 @@ see the COPYRIGHT NOTICE for details and restrictions.
         10/17/02 (jhr) changed bad character error message to properly
 		print the bad character.
         10/17/02 (jhr) fixed skipws to use Char.isSpace test.
+	07/27/05 (jhr) add \r as a recognized escape sequence.
  *)
 
 (* Subject: lookahead in sml-lex
@@ -443,6 +444,7 @@ fun AdvanceTok () : unit = let
       and escaped () = (case nextch()
 	     of #"b" => #"\008"
 	      | #"n" => #"\n"
+	      | #"r" => #"\r"
 	      | #"t" => #"\t"
 	      | #"h" => #"\128"
 	      | x => let
