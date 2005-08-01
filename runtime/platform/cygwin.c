@@ -2,7 +2,6 @@
 
 #include "platform.h"
 
-#include "feround.c"
 #include "getrusage.c"
 #include "mkdir2.c"
 #include "mmap.c"

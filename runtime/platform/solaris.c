@@ -2,7 +2,6 @@
 
 #include <ieeefp.h>
 
-#include "fpclassify32.c"
 #include "getrusage.c"
 #include "getText.c"
 #include "mkdir2.c"

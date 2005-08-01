@@ -1,4 +1,4 @@
-#include "normal-fenv.h"
+#include <fenv.h>
 #include <stdint.h>
 
 #include <grp.h>
@@ -23,9 +23,12 @@
 #include <termios.h>
 #include <ucontext.h>
 
+#define HAS_FEROUND TRUE
+#define HAS_FPCLASSIFY TRUE
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
+#define HAS_SIGNBIT TRUE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
 #define HAS_WEAK FALSE

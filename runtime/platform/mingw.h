@@ -1,4 +1,4 @@
-#include "normal-fenv.h"
+#include <fenv.h>
 #include <stdint.h>
 
 #include <windows.h> // lots of stuff depends on this
@@ -14,9 +14,12 @@
 #include <ws2tcpip.h>
 #undef max
 
+#define HAS_FEROUND TRUE
+#define HAS_FPCLASSIFY TRUE
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK FALSE
+#define HAS_SIGNBIT TRUE
 #define HAS_SPAWN TRUE
 #define HAS_TIME_PROFILING FALSE
 #define HAS_WEAK FALSE

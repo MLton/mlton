@@ -1,8 +1,5 @@
 #include "platform.h"
 
-#include "feround.c"
-#include "fpclassify32.c"
-#include "fpclassify64.c"
 #include "getrusage.c"
 #include "getText.c"
 #include "mkdir2.c"

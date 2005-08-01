@@ -21,17 +21,14 @@
 #include <sys/cygwin.h>
 #include <io.h>
 
-#include "feround.h"
-#define signbit32 signbit
-#define signbit64 signbit
-#define fpclassify32 fpclassify
-#define fpclassify64 fpclassify
-
 #define MLton_Platform_OS_host "cygwin"
 
+#define HAS_FPCLASSIFY TRUE
+#define HAS_FEROUND FALSE
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK FALSE
+#define HAS_SIGNBIT TRUE
 #define HAS_SPAWN TRUE
 #define HAS_TIME_PROFILING FALSE
 #define HAS_WEAK FALSE

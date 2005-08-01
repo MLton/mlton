@@ -20,15 +20,12 @@
 #include <syslog.h>
 #include <termios.h>
 
-#include "feround.h"
-#define signbit32 signbit
-#define signbit64 signbit
-#define fpclassify32 fpclassify
-#define fpclassify64 fpclassify
-
+#define HAS_FEROUND FALSE
+#define HAS_FPCLASSIFY TRUE
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
+#define HAS_SIGNBIT TRUE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
 #define HAS_WEAK FALSE

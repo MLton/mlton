@@ -78,58 +78,6 @@
 #error unknown platform
 #endif
 
-#ifndef EXECVP
-#define EXECVP execvp
-#endif
-
-#ifndef EXECVE
-#define EXECVE execve
-#endif
-
-#ifndef MLton_Platform_OS_host
-#error MLton_Platform_OS_host not defined
-#endif
-
-#ifndef HAS_PTRACE
-#error HAS_PTRACE not defined
-#endif
-
-#ifndef HAS_REMAP
-#error HAS_REMAP not defined
-#endif
-
-#ifndef HAS_SIGALTSTACK
-#error HAS_SIGALTSTACK not defined
-#endif
-
-#ifndef HAS_SPAWN
-#error HAS_SPAWN not defined
-#endif
-
-#ifndef HAS_TIME_PROFILING
-#error HAS_TIME_PROFILING not defined
-#endif
-
-/* If HAS_TIME_PROFILING, then you must define these. */
-void *getTextStart ();
-void *getTextEnd ();
-
-/* HAS_WEAK is true if the platform supports the weak attribute. */
-#ifndef HAS_WEAK
-#error HAS_WEAK not defined
-#endif
-
-#ifndef SPAWN_MODE
-#define SPAWN_MODE 0
-#endif
-
-#ifndef INT_MIN
-#define INT_MIN ((int)0x80000000)
-#endif
-#ifndef INT_MAX
-#define	INT_MAX ((int)0x7FFFFFFF)
-#endif
-
 #define	bool	int			/* boolean type */
 #define	uint	unsigned int		/* short names for unsigned types */
 #define	ulong	unsigned long
@@ -170,6 +118,85 @@ void *getTextEnd ();
 
 #ifndef min
 #define min(a, b) ((a)<(b)?(a):(b))
+#endif
+
+#ifndef MLton_Platform_OS_host
+#error MLton_Platform_OS_host not defined
+#endif
+
+#ifndef HAS_FPCLASSIFY
+#error HAS_FPCLASSIFY not defined
+#endif
+
+#ifndef HAS_FEROUND
+#error HAS_FEROUND not defined
+#endif
+
+#ifndef HAS_PTRACE
+#error HAS_PTRACE not defined
+#endif
+
+#ifndef HAS_REMAP
+#error HAS_REMAP not defined
+#endif
+
+#ifndef HAS_SIGALTSTACK
+#error HAS_SIGALTSTACK not defined
+#endif
+
+#ifndef HAS_SIGNBIT
+#error HAS_SIGNBIT not defined
+#endif
+
+#ifndef HAS_SPAWN
+#error HAS_SPAWN not defined
+#endif
+
+#ifndef HAS_TIME_PROFILING
+#error HAS_TIME_PROFILING not defined
+#endif
+
+#ifndef EXECVP
+#define EXECVP execvp
+#endif
+
+#ifndef EXECVE
+#define EXECVE execve
+#endif
+
+#if not HAS_FEROUND
+#define FE_TONEAREST 0
+#define FE_DOWNWARD 1
+#define FE_UPWARD 2
+#define FE_TOWARDZERO 3
+#endif
+
+#if not HAS_FPCLASSIFY
+#define FP_INFINITE 1
+#define FP_NAN 0
+#define FP_NORMAL 4
+#define FP_SUBNORMAL 3
+#define FP_ZERO 2
+#endif
+
+/* If HAS_TIME_PROFILING, then you must define these. */
+void *getTextStart ();
+void *getTextEnd ();
+
+/* HAS_WEAK is true if the platform supports the weak attribute. */
+#ifndef HAS_WEAK
+#error HAS_WEAK not defined
+#endif
+
+#ifndef SPAWN_MODE
+#define SPAWN_MODE 0
+#endif
+
+#ifndef INT_MIN
+#define INT_MIN ((int)0x80000000)
+#endif
+#ifndef INT_MAX
+#define	INT_MAX ((int)0x7FFFFFFF)
 #endif
 
 enum {

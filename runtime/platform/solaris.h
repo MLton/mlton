@@ -21,18 +21,23 @@
 #include <termios.h>
 #include <ucontext.h>
 
-#include "feround.h"
 #include "setenv.h"
 
-#define FP_INFINITE 1
-#define FP_NAN 0
-#define FP_NORMAL 4
-#define FP_SUBNORMAL 3
-#define FP_ZERO 2
+#define FE_TONEAREST 0
+#define FE_DOWNWARD 1
+#define FE_UPWARD 2
+#define FE_TOWARDZERO 3
+int fegetround ();
+void fesetround (int mode);
+int fpclassify64 (double d);
 
+#define HAS_FEROUND TRUE
+#define HAS_FPCLASSIFY FALSE
+#define HAS_FPCLASSIFY64 TRUE
 #define HAS_PTRACE TRUE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
+#define HAS_SIGNBIT TRUE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
 #define HAS_WEAK FALSE
