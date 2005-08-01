@@ -37,7 +37,7 @@ int fpclassify64 (double d);
 #define HAS_PTRACE TRUE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
-#define HAS_SIGNBIT TRUE
+#define HAS_SIGNBIT FALSE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
 #define HAS_WEAK FALSE
