@@ -1102,7 +1102,7 @@ in
 		Type.arrow (elabedPtrTy, elabedCbTy)),
 	  wrap ((Cexp.lambda o Lambda.make)
 		{arg = setArg,
-		 argType = elabedCbTy,
+		 argType = elabedSetArgTy,
 		 body = setBody,
 		 mayInline = true},
 		Type.arrow (elabedSetArgTy, Type.unit)))
