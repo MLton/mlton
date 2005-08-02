@@ -67,9 +67,9 @@ bootstrap-nj:
 clean:
 	bin/clean
 
-.PHONY: clean-cvs
-clean-cvs:
-	find . -type d | grep CVS | xargs rm -rf
+.PHONY: clean-svn
+clean-svn:
+	find . -type d | grep .svn | xargs rm -rf
 
 .PHONY: cm
 cm:
@@ -95,7 +95,7 @@ constants:
 DEBSRC = mlton-$(VERSION).orig
 .PHONY: deb
 deb:
-	$(MAKE) clean clean-cvs version
+	$(MAKE) clean clean-svn version
 	tar -cpf - . | \
 		( cd .. && mkdir $(DEBSRC) && cd $(DEBSRC) && tar -xpf - )
 	cd .. && tar -cpf - $(DEBSRC) | $(GZIP) >mlton_$(VERSION).orig.tar.gz
@@ -139,7 +139,7 @@ docs: dirs
 BSDSRC = /tmp/mlton-$(VERSION)
 .PHONY: freebsd
 freebsd:
-	$(MAKE) clean clean-cvs version
+	$(MAKE) clean clean-svn version
 	rm -rf $(BSDSRC)
 	mkdir -p $(BSDSRC)
 	( cd $(SRC) && tar -cpf - . ) | ( cd $(BSDSRC) && tar -xpf - )
@@ -233,7 +233,7 @@ TOPDIR = 'TOPDIR-unset'
 SOURCEDIR = $(TOPDIR)/SOURCES/mlton-$(VERSION)
 .PHONY: rpms
 rpms:
-	$(MAKE) clean clean-cvs version
+	$(MAKE) clean clean-svn version
 	mkdir -p $(TOPDIR)
 	cd $(TOPDIR) && mkdir -p BUILD RPMS/i386 SOURCES SPECS SRPMS
 	rm -rf $(SOURCEDIR)
@@ -383,10 +383,10 @@ install-docs:
 	done
 	$(GZIP) -c $(LEX)/$(LEX).ps >$(TDOC)/$(LEX).ps.gz
 	$(GZIP) -c $(YACC)/$(YACC).ps >$(TDOC)/$(YACC).ps.gz
-	find $(TDOC)/ -name CVS -type d | xargs rm -rf
-	find $(TDOC)/ -name .cvsignore -type f | xargs rm -rf
-	find $(TEXM)/ -name CVS -type d | xargs rm -rf
-	find $(TEXM)/ -name .cvsignore -type f | xargs rm -rf
+	find $(TDOC)/ -name SVN -type d | xargs rm -rf
+	find $(TDOC)/ -name .ignore -type f | xargs rm -rf
+	find $(TEXM)/ -name SVN -type d | xargs rm -rf
+	find $(TEXM)/ -name .ignore -type f | xargs rm -rf
 
 TDOCBASE = $(DESTDIR)$(prefix)/share/doc-base
 
