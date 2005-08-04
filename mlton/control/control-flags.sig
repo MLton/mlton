@@ -57,12 +57,18 @@ signature CONTROL_FLAGS =
 
       structure Elaborate:
 	 sig
-	    structure Diagnostic :
+	    structure DiagEIW :
 	       sig
 		  datatype t =
 		     Error
 		   | Ignore
 		   | Warn
+	       end
+	    structure DiagDI :
+	       sig
+		  datatype t =
+		     Default
+		   | Ignore
 	       end
 
 	    type ('args, 'st) t
@@ -77,9 +83,9 @@ signature CONTROL_FLAGS =
 	    val deadCode: (bool,bool) t
 	    val forceUsed: (unit,bool) t
 	    val ffiStr: (string,string option) t
-	    val ignoreNonexhaustiveExnMatch: (bool,bool) t
-	    val nonexhaustiveMatch: (Diagnostic.t,Diagnostic.t) t
-	    val redundantMatch: (Diagnostic.t,Diagnostic.t) t
+	    val nonexhaustiveExnMatch: (DiagDI.t,DiagDI.t) t
+	    val nonexhaustiveMatch: (DiagEIW.t,DiagEIW.t) t
+	    val redundantMatch: (DiagEIW.t,DiagEIW.t) t
 	    (* in (e1; e2), require e1: unit. *)
 	    val sequenceUnit: (bool,bool) t
 	    val warnUnused: (bool,bool) t

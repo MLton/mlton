@@ -72,12 +72,12 @@ signature CORE_ML =
 	    datatype noMatch = Impossible | RaiseAgain | RaiseBind | RaiseMatch
 	    datatype node =
 	       App of t * t
-	     | Case of {ignoreNonexhaustiveExnMatch: bool,
-			kind: string,
+	     | Case of {kind: string,
 			lay: unit -> Layout.t,
 			noMatch: noMatch,
-			nonexhaustiveMatch: Control.Elaborate.Diagnostic.t,
-			redundantMatch: Control.Elaborate.Diagnostic.t,
+			nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
+			nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
+			redundantMatch: Control.Elaborate.DiagEIW.t,
 			region: Region.t,
 			rules: {exp: t,
 				lay: (unit -> Layout.t) option,
@@ -101,12 +101,12 @@ signature CORE_ML =
 	     | Var of (unit -> Var.t) * (unit -> Type.t vector)
 
 	    val andAlso: t * t -> t
-	    val casee: {ignoreNonexhaustiveExnMatch: bool,
-			kind: string,
+	    val casee: {kind: string,
 			lay: unit -> Layout.t,
 			noMatch: noMatch,
-			nonexhaustiveMatch: Control.Elaborate.Diagnostic.t,
-			redundantMatch: Control.Elaborate.Diagnostic.t,
+			nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
+			nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
+			redundantMatch: Control.Elaborate.DiagEIW.t,
 			region: Region.t,
 			rules: {exp: t,
 				lay: (unit -> Layout.t) option,
@@ -160,8 +160,8 @@ signature CORE_ML =
 	     | Fun of {decs: {lambda: Lambda.t,
 			      var: Var.t} vector,
 		       tyvars: unit -> Tyvar.t vector}
-	     | Val of {ignoreNonexhaustiveExnMatch: bool,
-		       nonexhaustiveMatch: Control.Elaborate.Diagnostic.t,
+	     | Val of {nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
+		       nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
 		       rvbs: {lambda: Lambda.t,
 			      var: Var.t} vector,
 		       tyvars: unit -> Tyvar.t vector,

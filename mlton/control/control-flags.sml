@@ -102,7 +102,7 @@ val dropPasses =
 
 structure Elaborate =
    struct
-      structure Diagnostic =
+      structure DiagEIW =
 	 struct
 	    datatype t =
 	       Error
@@ -120,7 +120,21 @@ structure Elaborate =
 		| Ignore => "ignore"
 		| Warn => "warn"
 	 end
-      datatype z = datatype Diagnostic.t
+      structure DiagDI =
+	 struct
+	    datatype t =
+	       Default
+	     | Ignore
+
+	    val fromString: string -> t option =
+	       fn "default" => SOME Default
+		| "ignore" => SOME Ignore
+		| _ => NONE
+
+	    val toString: t -> string = 
+	       fn Default => "default"
+		| Ignore => "ignore"
+	 end
 
       structure Id =
 	 struct
@@ -284,20 +298,38 @@ structure Elaborate =
 				| _ => NONE}, 
 		  ac)
 
-	 fun makeDiagnostic ({default: Diagnostic.t,
+	 fun makeDiagnostic ({default,
+			      diagToString,
+			      diagFromString,
 			      expert: bool,
 			      name: string}, ac) =
 	     make ({default = default,
 		    expert = expert,
-		    toString = Diagnostic.toString,
+		    toString = diagToString,
 		    name = name,
 		    newCur = fn (_,d) => d,
 		    newDef = fn (_,d) => d,
 		    parseArgs = fn args' =>
 		                case args' of
-				   [arg'] => Diagnostic.fromString arg'
+				   [arg'] => diagFromString arg'
 				 | _ => NONE},
 		   ac)
+	 fun makeDiagEIW ({default: DiagEIW.t,
+			   expert: bool,
+			   name: string}, ac) =
+	    makeDiagnostic ({default = default,
+			     diagToString = DiagEIW.toString,
+			     diagFromString = DiagEIW.fromString,
+			     expert = expert,
+			     name = name}, ac)
+	 fun makeDiagDI ({default: DiagDI.t,
+			  expert: bool,
+			  name: string}, ac) =
+	    makeDiagnostic ({default = default,
+			     diagToString = DiagDI.toString,
+			     diagFromString = DiagDI.fromString,
+			     expert = expert,
+			     name = name}, ac)
 
 	fun setCur (T {cur, ...}, x) = cur := x
 	fun setDef (T {def, ...}, x) = def := x
@@ -373,23 +405,15 @@ structure Elaborate =
 				  [s] => SOME s
 				| _ => NONE},
 		  ac)
-	 val (ignoreNonexhaustiveExnMatch, ac) =
-	     make ({default = false,
-		    expert = false,
-		    toString = fn true => "ignore" | false => "default",
-		    name = "nonexhaustiveExnMatch",
-		    newCur = fn (_,b) => b,
-		    newDef = fn (_,b) => b,
-		    parseArgs = fn  ["default"] => SOME false
-				  | ["ignore"] => SOME true
-				  | _ => NONE}, 
-		   ac)
+	 val (nonexhaustiveExnMatch, ac) =
+	     makeDiagDI ({name = "nonexhaustiveExnMatch",
+			  default = DiagDI.Default, expert = false}, ac)
 	 val (nonexhaustiveMatch, ac) =
-	     makeDiagnostic ({name = "nonexhaustiveMatch", 
-			      default = Warn, expert = false}, ac)
+	     makeDiagEIW ({name = "nonexhaustiveMatch", 
+			   default = DiagEIW.Warn, expert = false}, ac)
 	 val (redundantMatch, ac) =
-	     makeDiagnostic ({name = "redundantMatch", 
-			      default = Warn, expert = false}, ac)
+	     makeDiagEIW ({name = "redundantMatch", 
+			   default = DiagEIW.Warn, expert = false}, ac)
 	 val (sequenceUnit, ac) =
 	    makeBool ({name = "sequenceUnit", 
 		       default = false, expert = false}, ac)
@@ -400,7 +424,9 @@ structure Elaborate =
 		   name = "warnMatch",
 		   newCur = fn (_, b) =>
 			       let
-				  val d = if b then Warn else Ignore
+				  val d = if b 
+					     then DiagEIW.Warn 
+					     else DiagEIW.Ignore
 			       in
 				  setCur (nonexhaustiveMatch, d)
 				  ; setCur (redundantMatch, d)
@@ -408,7 +434,9 @@ structure Elaborate =
 			       end,
 		   newDef = fn (_, b) =>
 			       let
-				  val d = if b then Warn else Ignore
+				  val d = if b 
+					     then DiagEIW.Warn 
+					     else DiagEIW.Ignore
 			       in
 				  setDef (nonexhaustiveMatch, d)
 				  ; setDef (redundantMatch, d)

@@ -15,7 +15,7 @@ type int = Int.t
 local
    open Control.Elaborate
 in
-   val ignoreNonexhaustiveExnMatch = fn () => current ignoreNonexhaustiveExnMatch
+   val nonexhaustiveExnMatch = fn () => current nonexhaustiveExnMatch
    val nonexhaustiveMatch = fn () => current nonexhaustiveMatch
    val warnUnused = fn () => current warnUnused
 end
@@ -2896,7 +2896,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			       val _ =
 				  List.push
 				  (decs,
-				   Dec.Val {ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch (),
+				   Dec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
 					    nonexhaustiveMatch = nonexhaustiveMatch (),
 					    rvbs = Vector.new0 (),
 					    tyvars = fn () => sigArgs,

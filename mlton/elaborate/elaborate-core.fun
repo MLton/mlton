@@ -15,7 +15,7 @@ local
    open Control.Elaborate
 in
    val allowRebindEquals = fn () => current allowRebindEquals
-   val ignoreNonexhaustiveExnMatch = fn () => current ignoreNonexhaustiveExnMatch
+   val nonexhaustiveExnMatch = fn () => current nonexhaustiveExnMatch
    val nonexhaustiveMatch = fn () => current nonexhaustiveMatch
    val redundantMatch = fn () => current redundantMatch
    val sequenceUnit = fn () => current sequenceUnit
@@ -948,12 +948,12 @@ local
 				 else expandedCbTy}
       in
 	 if not isBool then fetchExp else
-	 Cexp.casee {ignoreNonexhaustiveExnMatch = false,
-		     kind = "",
+	 Cexp.casee {kind = "",
 		     lay = fn () => Layout.empty,
 		     noMatch = Cexp.Impossible,
-		     nonexhaustiveMatch = Control.Elaborate.Diagnostic.Ignore,
-		     redundantMatch = Control.Elaborate.Diagnostic.Ignore,
+		     nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
+		     nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
+		     redundantMatch = Control.Elaborate.DiagEIW.Ignore,
 		     region = Region.bogus,
 		     rules = Vector.new2
 		             ({exp = Cexp.truee, lay = NONE, pat = Cpat.falsee},
@@ -969,12 +969,12 @@ local
       let
 	 val valueExp =
 	    if not isBool then valueExp else
-	    Cexp.casee {ignoreNonexhaustiveExnMatch = false,
-			kind = "",
+	    Cexp.casee {kind = "",
 			lay = fn () => Layout.empty,
 			noMatch = Cexp.Impossible,
-			nonexhaustiveMatch = Control.Elaborate.Diagnostic.Ignore,
-			redundantMatch = Control.Elaborate.Diagnostic.Ignore,
+			nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
+			nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
+			redundantMatch = Control.Elaborate.DiagEIW.Ignore,
 			region = Region.bogus,
 			rules = Vector.new2 
                                 ({exp = oneExp, lay = NONE, pat = Cpat.truee},
@@ -1084,12 +1084,12 @@ in
 			     ptrExp = Cexp.var (setArgPtr, expandedPtrTy),
 			     valueExp = Cexp.var (setArgValue, expandedCbTy)}
 	 val setBody =
-	    Cexp.casee {ignoreNonexhaustiveExnMatch = false,
-			kind = "",
+	    Cexp.casee {kind = "",
 			lay = fn () => Layout.empty,
 			noMatch = Cexp.Impossible,
-			nonexhaustiveMatch = Control.Elaborate.Diagnostic.Ignore,
-			redundantMatch = Control.Elaborate.Diagnostic.Ignore,
+			nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
+			nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
+			redundantMatch = Control.Elaborate.DiagEIW.Ignore,
 			region = Region.bogus,
 			rules = Vector.new1 ({exp = setExp, lay = NONE, pat = setPat}),
 			test = Cexp.var (setArg, elabedSetArgTy)}
@@ -1885,10 +1885,10 @@ fun elaborateDec (d, {env = E, nest}) =
 				      let
 					 val e =
 					    Cexp.casee
-					    {ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch (),
-					     kind = "function",
+					    {kind = "function",
 					     lay = lay,
 					     noMatch = Cexp.RaiseMatch,
+					     nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
 					     nonexhaustiveMatch = nonexhaustiveMatch (),
 					     redundantMatch = redundantMatch (),
 					     region = region,
@@ -2101,10 +2101,10 @@ fun elaborateDec (d, {env = E, nest}) =
 			     val arg = Var.newNoname ()
 			     val body =
 				Cexp.enterLeave
-				(Cexp.casee {ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch (),
-					     kind = "function",
+				(Cexp.casee {kind = "function",
 					     lay = lay,
 					     noMatch = Cexp.RaiseMatch,
+					     nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
 					     nonexhaustiveMatch = nonexhaustiveMatch (),
 					     redundantMatch = redundantMatch (),
 					     region = region,
@@ -2197,7 +2197,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		       *)
 		   in
 		      Decs.single
-		      (Cdec.Val {ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch (),
+		      (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
 				 nonexhaustiveMatch = nonexhaustiveMatch (),
 				 rvbs = rvbs,
 				 tyvars = bound,
@@ -2277,10 +2277,10 @@ fun elaborateDec (d, {env = E, nest}) =
 			   align [seq [str "object type:  ", l1],
 				  seq [str "rules expect: ", l2]]))
 		   in
-		      Cexp.casee {ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch (),
-				  kind = "case",
+		      Cexp.casee {kind = "case",
 				  lay = lay,
 				  noMatch = Cexp.RaiseMatch,
+				  nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
 				  nonexhaustiveMatch = nonexhaustiveMatch (),
 				  redundantMatch = redundantMatch (),
 				  region = region,
@@ -2478,12 +2478,12 @@ fun elaborateDec (d, {env = E, nest}) =
 						  (Var.newNoname (), t))
 					   in
 					      Cexp.casee
-					      {ignoreNonexhaustiveExnMatch = false,
-					       kind = "",
+					      {kind = "",
 					       lay = fn _ => Layout.empty,
 					       noMatch = Cexp.Impossible,
-					       nonexhaustiveMatch = Control.Elaborate.Diagnostic.Ignore,
-					       redundantMatch = Control.Elaborate.Diagnostic.Ignore,
+					       nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
+					       nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
+					       redundantMatch = Control.Elaborate.DiagEIW.Ignore,
 					       region = Region.bogus,
 					       rules = Vector.new1
 					               {exp = app (Vector.map
@@ -2913,10 +2913,10 @@ fun elaborateDec (d, {env = E, nest}) =
 	    val arg = Var.newNoname ()
 	    val {argType, region, rules, ...} = elabMatch (m, preError, nest)
 	    val body =
-	       Cexp.casee {ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch (),
-			   kind = kind,
+	       Cexp.casee {kind = kind,
 			   lay = lay,
 			   noMatch = noMatch,
+			   nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
 			   nonexhaustiveMatch = nonexhaustiveMatch (),
 			   redundantMatch = redundantMatch (),
 			   region = region,

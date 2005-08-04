@@ -144,8 +144,8 @@ datatype dec =
  | Fun of {decs: {lambda: lambda,
 		  var: Var.t} vector,
 	   tyvars: unit -> Tyvar.t vector}
- | Val of {ignoreNonexhaustiveExnMatch: bool,
-	   nonexhaustiveMatch: Control.Elaborate.Diagnostic.t,
+ | Val of {nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
+	   nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
 	   rvbs: {lambda: lambda,
 		  var: Var.t} vector,
 	   tyvars: unit -> Tyvar.t vector,
@@ -157,12 +157,12 @@ and exp = Exp of {node: expNode,
 		  ty: Type.t}
 and expNode =
    App of exp * exp
-  | Case of {ignoreNonexhaustiveExnMatch: bool,
-	     kind: string,
+  | Case of {kind: string,
 	     lay: unit -> Layout.t,
 	     noMatch: noMatch,
-	     nonexhaustiveMatch: Control.Elaborate.Diagnostic.t,
-	     redundantMatch: Control.Elaborate.Diagnostic.t,
+	     nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
+	     nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
+	     redundantMatch: Control.Elaborate.DiagEIW.t,
 	     region: Region.t,
 	     rules: {exp: exp,
 		     lay: (unit -> Layout.t) option,
@@ -365,12 +365,12 @@ structure Exp =
 	 else make (Case z, ty (#exp (Vector.sub (rules, 0))))
 
       fun iff (test, thenCase, elseCase): t =
-	 casee {ignoreNonexhaustiveExnMatch = false,
-		kind = "if",
+	 casee {kind = "if",
 		lay = fn () => Layout.empty,
 		noMatch = Impossible,
-		nonexhaustiveMatch = Control.Elaborate.Diagnostic.Ignore,
-		redundantMatch = Control.Elaborate.Diagnostic.Ignore,
+		nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
+		nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
+		redundantMatch = Control.Elaborate.DiagEIW.Ignore,
 		region = Region.bogus,
 		rules = Vector.new2 ({exp = thenCase,
 				      lay = NONE,

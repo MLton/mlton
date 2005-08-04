@@ -108,12 +108,12 @@ fun casee {caseType: Xtype.t,
 		   lay: (unit -> Layout.t) option,
 		   pat: NestedPat.t} vector,
 	   conTycon,
-	   ignoreNonexhaustiveExnMatch: bool,
 	   kind: string,
 	   lay: unit -> Layout.t,
 	   noMatch,
-	   nonexhaustiveMatch: Control.Elaborate.Diagnostic.t,
-	   redundantMatch: Control.Elaborate.Diagnostic.t,
+	   nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
+	   nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
+	   redundantMatch: Control.Elaborate.DiagEIW.t,
 	   region: Region.t,
 	   test = (test: Xexp.t, testType: Xtype.t),
 	   tyconCons}: Xexp.t =
@@ -283,20 +283,22 @@ fun casee {caseType: Xtype.t,
 	       let
 		  val es = Vector.sub (!examples (), i)
 		  val es =
-		      if ignoreNonexhaustiveExnMatch
-			 then Vector.keepAllMap
-			      (es, fn (e, {isOnlyExns}) =>
-			       if isOnlyExns
-				  then NONE
-				  else SOME e)
-		      else Vector.map (es, #1)
+		     case nonexhaustiveExnMatch of
+			Control.Elaborate.DiagDI.Default =>
+			   Vector.map (es, #1)
+		      | Control.Elaborate.DiagDI.Ignore =>
+			   Vector.keepAllMap
+			   (es, fn (e, {isOnlyExns}) =>
+			    if isOnlyExns
+			       then NONE
+			       else SOME e)
 
 		  open Layout
 	       in
 		  if 0 = Vector.length es
 		     then ()
 		  else
-		     (if nonexhaustiveMatch = Control.Elaborate.Diagnostic.Error
+		     (if nonexhaustiveMatch = Control.Elaborate.DiagEIW.Error
 			 then Control.error
 			 else Control.warning)
 		     (region,
@@ -318,7 +320,7 @@ fun casee {caseType: Xtype.t,
 	       let
 		  open Layout
 	       in
-		  (if redundantMatch = Control.Elaborate.Diagnostic.Error
+		  (if redundantMatch = Control.Elaborate.DiagEIW.Error
 		      then Control.error
 		      else Control.warning)
 		  (region,
@@ -334,10 +336,10 @@ fun casee {caseType: Xtype.t,
 	       end
 	 end
    in
-      if redundantMatch <> Control.Elaborate.Diagnostic.Ignore
+      if redundantMatch <> Control.Elaborate.DiagEIW.Ignore
 	 then List.push (diagnostics, diagnoseRedundantMatch)
 	 else ()
-      ; if nonexhaustiveMatch  <> Control.Elaborate.Diagnostic.Ignore
+      ; if nonexhaustiveMatch  <> Control.Elaborate.DiagEIW.Ignore
 	   then List.push (diagnostics, diagnoseNonexhaustiveMatch)
 	   else ()
       ; exp
@@ -722,7 +724,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 	     | Fun {decs, tyvars} =>
 		  prefix (Xdec.Fun {decs = processLambdas decs,
 				    tyvars = tyvars ()})
-	     | Val {ignoreNonexhaustiveExnMatch, nonexhaustiveMatch, rvbs, tyvars, vbs} =>
+	     | Val {nonexhaustiveExnMatch, nonexhaustiveMatch, rvbs, tyvars, vbs} =>
 	       let
 		  val tyvars = tyvars ()
 		  val bodyType = et
@@ -740,14 +742,14 @@ fun defunctorize (CoreML.Program.T {decs}) =
 							lay = SOME lay,
 							pat = p},
 				   conTycon = conTycon,
-				   ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch,
 				   kind = "declaration",
 				   lay = lay,
 				   noMatch = Cexp.RaiseBind,
+				   nonexhaustiveExnMatch = nonexhaustiveExnMatch,
 				   nonexhaustiveMatch = if mayWarn
 							   then nonexhaustiveMatch
-							else Control.Elaborate.Diagnostic.Ignore,
-				   redundantMatch = Control.Elaborate.Diagnostic.Ignore,
+							else Control.Elaborate.DiagEIW.Ignore,
+				   redundantMatch = Control.Elaborate.DiagEIW.Ignore,
 				   region = patRegion,
 				   test = (e, NestedPat.ty p),
 				   tyconCons = tyconCons}
@@ -933,19 +935,19 @@ fun defunctorize (CoreML.Program.T {decs}) =
 					func = #1 (loopExp e1),
 					ty = ty}
 		     end
-		| Case {ignoreNonexhaustiveExnMatch, kind, lay, noMatch,
-			nonexhaustiveMatch, redundantMatch, region, rules,
-			test, ...} =>
+		| Case {kind, lay, noMatch,
+			nonexhaustiveExnMatch, nonexhaustiveMatch, redundantMatch, 
+			region, rules, test, ...} =>
 		     casee {caseType = ty,
 			    cases = Vector.map (rules, fn {exp, lay, pat} =>
 						{exp = #1 (loopExp exp),
 						 lay = lay,
 						 pat = loopPat pat}),
 			    conTycon = conTycon,
-			    ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch,
 			    kind = kind,
 			    lay = lay,
 			    noMatch = noMatch,
+			    nonexhaustiveExnMatch = nonexhaustiveExnMatch,
 			    nonexhaustiveMatch = nonexhaustiveMatch,
 			    redundantMatch = redundantMatch,
 			    region = region,
