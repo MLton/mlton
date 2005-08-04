@@ -6,31 +6,31 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 local
-    ../../lib/mlton/sources.mlb
+   ../../lib/mlton/sources.mlb
 
-    bits.sml
-    control-flags.sig
-    control-flags.sml
-    source-pos.sig
-    source-pos.sml
-    region.sig
-    region.sml
-    source.sig
-    source.sml
-    control.sig
-    control.sml
-    system.sig
-    system.sml
-    pretty.sig
-    pretty.sml
+   bits.sml
+   control-flags.sig
+   control-flags.sml
+   source-pos.sig
+   source-pos.sml
+   region.sig
+   region.sml
+   source.sig
+   source.sml
+   control.sig
+   control.sml
+   system.sig
+   system.sml
+   pretty.sig
+   pretty.sml
 in
-    structure Bits
-    structure Bytes
-    structure Control
-    structure Pretty
-    structure Region
-    structure Source
-    structure SourcePos
-    structure System
-    structure Words
+   structure Bits
+   structure Bytes
+   structure Control
+   structure Pretty
+   structure Region
+   structure Source
+   structure SourcePos
+   structure System
+   structure Words
 end

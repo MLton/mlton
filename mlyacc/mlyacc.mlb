@@ -1,5 +1,5 @@
 local
-  sources.mlb
+   sources.mlb
 in
-  call-main.sml
+   call-main.sml
 end

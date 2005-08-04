@@ -6,12 +6,11 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 local
-    c-codegen/sources.mlb
-    bytecode/sources.mlb
-    x86-codegen/sources.mlb
+   c-codegen/sources.mlb
+   bytecode/sources.mlb
+   x86-codegen/sources.mlb
 in
-    functor Bytecode
-    functor CCodegen
-    functor x86Codegen
+   functor Bytecode
+   functor CCodegen
+   functor x86Codegen
 end
-

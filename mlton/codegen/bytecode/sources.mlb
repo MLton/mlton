@@ -6,13 +6,13 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 local
-    ../../../lib/mlton/sources.mlb
-    ../../backend/sources.mlb
-    ../../control/sources.mlb
-    ../c-codegen/sources.mlb
+   ../../../lib/mlton/sources.mlb
+   ../../backend/sources.mlb
+   ../../control/sources.mlb
+   ../c-codegen/sources.mlb
 
-    bytecode.sig
-    bytecode.fun
+   bytecode.sig
+   bytecode.fun
 in
-    functor Bytecode
-end
+   functor Bytecode
+   end

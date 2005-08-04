@@ -1,35 +1,35 @@
 local
-  $(MLTON_ROOT)/basis/basis.mlb
+   $(MLTON_ROOT)/basis/basis.mlb
 
-  ../memory/memory.x86-unix.mlb
+   ../memory/memory.x86-unix.mlb
 
-  ../c.sig
-  ../c-debug.sig
-  c-int.sig
-  c-int.sml
-  c.sml
-  c-debug.sml
+   ../c.sig
+   ../c-debug.sig
+   c-int.sig
+   c-int.sml
+   c.sml
+   c-debug.sml
 
-  ../zstring.sig
-  zstring.sml
-  tag.sml
+   ../zstring.sig
+   zstring.sml
+   tag.sml
 in
-  structure Tag
+   structure Tag
 
-  structure MLRep
-  signature C
-  structure C
-  signature C_INT
-  structure C_Int
-  signature C_DEBUG
-  structure C_Debug
+   structure MLRep
+   signature C
+   structure C
+   signature C_INT
+   structure C_Int
+   signature C_DEBUG
+   structure C_Debug
 
-  signature ZSTRING
-  structure ZString
+   signature ZSTRING
+   structure ZString
 
-  signature DYN_LINKAGE
-  structure DynLinkage
+   signature DYN_LINKAGE
+   structure DynLinkage
 
-  signature CMEMORY
-  structure CMemory
+   signature CMEMORY
+   structure CMemory
 end

@@ -1,8 +1,8 @@
 local
-    $(SML_LIB)/basis/basis.mlb
-    pervasive.sml
+   $(SML_LIB)/basis/basis.mlb
+   pervasive.sml
 in
-    signature PERVASIVE_REAL
-    signature PERVASIVE_WORD
-    structure Pervasive
+   signature PERVASIVE_REAL
+   signature PERVASIVE_WORD
+   structure Pervasive
 end

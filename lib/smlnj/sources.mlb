@@ -17,17 +17,17 @@ ann
    "nonexhaustiveMatch warn" "redundantMatch warn"
    "warnUnused false" "forceUsed"
 in
-local
-    $(SML_LIB)/basis/basis.mlb
+   local
+      $(SML_LIB)/basis/basis.mlb
 
-    splaytree-sig.sml
-    splaytree.sml
-    ord-key-sig.sml
-    lib-base-sig.sml
-    lib-base.sml
-    ord-map-sig.sml
-    splay-map-fn.sml
-in
-    functor SplayMapFn
-end
+      splaytree-sig.sml
+      splaytree.sml
+      ord-key-sig.sml
+      lib-base-sig.sml
+      lib-base.sml
+      ord-map-sig.sml
+      splay-map-fn.sml
+   in
+      functor SplayMapFn
+   end
 end

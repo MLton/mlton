@@ -10,5 +10,5 @@ in
       top-level/basis.sml
    in
       structure Basis2002
-    end
+   end
 end

@@ -1,29 +1,29 @@
 ann
-  "sequenceUnit true"
-  "nonexhaustiveMatch warn" "redundantMatch warn"
-  "warnUnused false" "forceUsed"
+   "sequenceUnit true"
+   "nonexhaustiveMatch warn" "redundantMatch warn"
+   "warnUnused false" "forceUsed"
 in
-local
-    $(SML_LIB)/basis/basis.mlb
-    base.sig
-    join.sml
-    lrtable.sml
-    stream.sml
-    parser2.sml  (* error correcting version *)
-in
-    signature STREAM
-    signature LR_TABLE
-    signature TOKEN
-    signature LR_PARSER
-    signature LEXER
-    signature ARG_LEXER
-    signature PARSER_DATA
-    signature PARSER
-    signature ARG_PARSER
-    functor Join
-    functor JoinWithArg
-    structure LrTable
-    structure Stream
-    structure LrParser
-end
+   local
+      $(SML_LIB)/basis/basis.mlb
+      base.sig
+      join.sml
+      lrtable.sml
+      stream.sml
+      parser2.sml  (* error correcting version *)
+   in
+      signature STREAM
+      signature LR_TABLE
+      signature TOKEN
+      signature LR_PARSER
+      signature LEXER
+      signature ARG_LEXER
+      signature PARSER_DATA
+      signature PARSER
+      signature ARG_PARSER
+      functor Join
+      functor JoinWithArg
+      structure LrTable
+      structure Stream
+      structure LrParser
+   end
 end

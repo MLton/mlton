@@ -1,15 +1,15 @@
 local
-  local 
-    $(SML_LIB)/basis/basis.mlb
-    lexgen.sml
-  in
-    structure LexGen
-  end
-  local
-    ../lib/mlton/sources.mlb
-  in
-    main.sml
-  end
+   local 
+      $(SML_LIB)/basis/basis.mlb
+      lexgen.sml
+   in
+      structure LexGen
+   end
+   local
+      ../lib/mlton/sources.mlb
+   in
+      main.sml
+   end
 in
-  structure Main
+   structure Main
 end

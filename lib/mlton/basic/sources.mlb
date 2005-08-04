@@ -3,294 +3,294 @@ ann
    "nonexhaustiveMatch warn" "redundantMatch warn"
    "warnUnused false" "forceUsed"
 in
-local
-    $(SML_LIB)/basis/basis.mlb
-    $(SML_LIB)/basis/mlton.mlb
-    $(SML_LIB)/basis/sml-nj.mlb
-    $(SML_LIB)/basis/unsafe.mlb
-    ../pervasive/sources.mlb
-    error.sig
-    error.sml
-    exn0.sml
-    outstream0.sml
-    layout.sig
-    relation0.sml
-    char0.sml
-    string0.sml
-    layout.sml
-    substring.sig
-    assert.sig
-    assert.sml
-    list.sig
-    fold.sig
-    fold.fun
-    list.sml
-    word.sig
-    word8.sml
-    word32.sig
-    max-pow-2-that-divides.fun
-    word.sml
-    string1.sml
-    substring.sml
-    outstream.sig
-    outstream.sml
-    relation.sig
-    relation.sml
-    order0.sig
-    order.sig
-    time.sig
-    time.sml
-    instream.sig
-    char.sig
-    computation.sig
-    trace.sig
-    exn.sig
-    exn.sml
-    date.sig
-    date.sml
-    pid.sig
-    option.sig
-    option.sml
-    pid.sml
-    intermediate-computation.sig
-    instream0.sml
-    intermediate-computation.sml
-    string-map.sig
-    string-map.sml
-    t.sig
-    unit.sig
-    unit.sml
-    trace.sml
-    bool.sig
-    bool.sml
-    char.sml
-    string.sig
-    stream.sig
-    promise.sig
-    promise.sml
-    stream.sml
-    ring.sig
-    ring-with-identity.sig
-    euclidean-ring.sig
-    integer.sig
-    euclidean-ring.fun
-    ring.fun
-    ordered-ring.sig
-    ordered-ring.fun
-    power.sml
-    ring-with-identity.fun
-    integer.fun
-    int.sml
-    real.sig
-    field.sig
-    field.fun
-    ordered-field.sig
-    ordered-field.fun
-    real.sml
-    random.sig
-    random.sml
-    vector.sig
-    vector.fun
-    vector.sml
-    array.sig
-    array.fun
-    array.sml
-    binary-search.sig
-    binary-search.sml
-    hash-set.sig
-    hash-set.sml
-    string.sml
-    instream.sml
-    file.sig
-    file.sml
-    signal.sml
-    process.sig
-    dir.sig
-    dir.sml
-    function.sig
-    function.sml
-    file-desc.sig
-    file-desc.sml
-    process.sml
-    append-list.sig
-    append-list.sml
-    property-list.sig
-    ref.sig
-    ref.sml
-    het-container.sig
-    property-list.fun
-    het-container.fun
-    property.sig
-    property.fun
-    dot-color.sml
-    dot.sig
-    dot.sml
-    tree.sig
-    counter.sig
-    counter.sml
-    tree.sml
-    int-inf.sig
-    int-inf.sml
-    control.sig
-    control.fun
-    queue.sig
-    two-list-queue.sml
-    array2.sig
-    array2.sml
-    env.sig
-    env.fun
-    unique-id.sig
-    unique-id.fun
-    clearable-promise.sig
-    clearable-promise.sml
-    justify.sig
-    justify.sml
-    directed-graph.sig
-    directed-graph.sml
-    large-word.sml
-    quick-sort.sig
-    insertion-sort.sig
-    insertion-sort.sml
-    quick-sort.sml
-    unique-set.sig
-    unique-set.fun
-    fixed-point.sig
-    fixed-point.sml
-    mono-vector.fun
-    result.sig
-    result.sml
-    regexp.sig
-    regexp.sml
-    popt.sig
-    popt.sml
-    sexp.sig
-    sexp.sml
-    choice-pattern.sig
-    choice-pattern.sml
-    escape.sig
-    escape.sml
-    buffer.sig
-    buffer.sml
-    base64.sig
-    base64.sml
-in
-    signature ARRAY
-    signature ENV
-    signature ERROR
-    signature EUCLIDEAN_RING
-    signature INTEGER
-    signature INT_INF
-    signature LIST
-    signature OPTION
-    signature ORDER
-    signature ORDERED_RING
-    signature PROMISE
-    signature REAL
-    signature RING
-    signature RING_WITH_IDENTITY
-    signature STRING
-    signature T
-    signature UNIQUE_ID
+   local
+      $(SML_LIB)/basis/basis.mlb
+      $(SML_LIB)/basis/mlton.mlb
+      $(SML_LIB)/basis/sml-nj.mlb
+      $(SML_LIB)/basis/unsafe.mlb
+      ../pervasive/sources.mlb
+      error.sig
+      error.sml
+      exn0.sml
+      outstream0.sml
+      layout.sig
+      relation0.sml
+      char0.sml
+      string0.sml
+      layout.sml
+      substring.sig
+      assert.sig
+      assert.sml
+      list.sig
+      fold.sig
+      fold.fun
+      list.sml
+      word.sig
+      word8.sml
+      word32.sig
+      max-pow-2-that-divides.fun
+      word.sml
+      string1.sml
+      substring.sml
+      outstream.sig
+      outstream.sml
+      relation.sig
+      relation.sml
+      order0.sig
+      order.sig
+      time.sig
+      time.sml
+      instream.sig
+      char.sig
+      computation.sig
+      trace.sig
+      exn.sig
+      exn.sml
+      date.sig
+      date.sml
+      pid.sig
+      option.sig
+      option.sml
+      pid.sml
+      intermediate-computation.sig
+      instream0.sml
+      intermediate-computation.sml
+      string-map.sig
+      string-map.sml
+      t.sig
+      unit.sig
+      unit.sml
+      trace.sml
+      bool.sig
+      bool.sml
+      char.sml
+      string.sig
+      stream.sig
+      promise.sig
+      promise.sml
+      stream.sml
+      ring.sig
+      ring-with-identity.sig
+      euclidean-ring.sig
+      integer.sig
+      euclidean-ring.fun
+      ring.fun
+      ordered-ring.sig
+      ordered-ring.fun
+      power.sml
+      ring-with-identity.fun
+      integer.fun
+      int.sml
+      real.sig
+      field.sig
+      field.fun
+      ordered-field.sig
+      ordered-field.fun
+      real.sml
+      random.sig
+      random.sml
+      vector.sig
+      vector.fun
+      vector.sml
+      array.sig
+      array.fun
+      array.sml
+      binary-search.sig
+      binary-search.sml
+      hash-set.sig
+      hash-set.sml
+      string.sml
+      instream.sml
+      file.sig
+      file.sml
+      signal.sml
+      process.sig
+      dir.sig
+      dir.sml
+      function.sig
+      function.sml
+      file-desc.sig
+      file-desc.sml
+      process.sml
+      append-list.sig
+      append-list.sml
+      property-list.sig
+      ref.sig
+      ref.sml
+      het-container.sig
+      property-list.fun
+      het-container.fun
+      property.sig
+      property.fun
+      dot-color.sml
+      dot.sig
+      dot.sml
+      tree.sig
+      counter.sig
+      counter.sml
+      tree.sml
+      int-inf.sig
+      int-inf.sml
+      control.sig
+      control.fun
+      queue.sig
+      two-list-queue.sml
+      array2.sig
+      array2.sml
+      env.sig
+      env.fun
+      unique-id.sig
+      unique-id.fun
+      clearable-promise.sig
+      clearable-promise.sml
+      justify.sig
+      justify.sml
+      directed-graph.sig
+      directed-graph.sml
+      large-word.sml
+      quick-sort.sig
+      insertion-sort.sig
+      insertion-sort.sml
+      quick-sort.sml
+      unique-set.sig
+      unique-set.fun
+      fixed-point.sig
+      fixed-point.sml
+      mono-vector.fun
+      result.sig
+      result.sml
+      regexp.sig
+      regexp.sml
+      popt.sig
+      popt.sml
+      sexp.sig
+      sexp.sml
+      choice-pattern.sig
+      choice-pattern.sml
+      escape.sig
+      escape.sml
+      buffer.sig
+      buffer.sml
+      base64.sig
+      base64.sml
+   in
+      signature ARRAY
+      signature ENV
+      signature ERROR
+      signature EUCLIDEAN_RING
+      signature INTEGER
+      signature INT_INF
+      signature LIST
+      signature OPTION
+      signature ORDER
+      signature ORDERED_RING
+      signature PROMISE
+      signature REAL
+      signature RING
+      signature RING_WITH_IDENTITY
+      signature STRING
+      signature T
+      signature UNIQUE_ID
 
-    structure AppendList
-    structure Array
-    structure Array2
-    structure Assert
-    structure Base64
-    structure BinarySearch
-    structure Bool
-    structure Buffer
-    structure Char
-    structure CharArray
-    structure CharVector
-    structure ChoicePattern
-    structure ClearablePromise
-    structure CommandLine
-    structure Computation
-    structure Counter
-    structure Date
-    structure Dir
-    structure DirectedGraph
-    structure Dot
-    structure DotColor
-    structure Error
-    structure Escape
-    structure Exn
-    structure File
-    structure FileDesc
-    structure FixedPoint
-    structure Function
-    structure HashSet
-(*    structure Http *)
-    structure In
-    structure Int
-    structure Int32
-    structure IntInf
-    structure InsertionSort
-    structure Justify
-    structure LargeInt
-    structure LargeWord
-    structure Layout
-    structure List
-    structure List
-    structure MLton
-    (* structure MergeSortList *)
-    (* structure MergeSortVector *)
-    structure OS
-    structure Option
-    structure Out
-    structure Pervasive
-    structure Pid
-    structure Popt
-    structure Position
-    structure Power
-    structure Process
-    structure Promise
-    structure Property
-    structure PropertyList
-    structure Queue
-    structure QuickSort
-    structure Random
-    structure Real
-    structure RealVector
-    structure Real32
-    structure Real64
-    structure Ref
-    structure Regexp
-    structure Relation
-    structure Result
-    structure SMLofNJ
-    structure Sexp
-    structure Signal
-    structure Stream
-    structure String
-    structure StringCvt
-    structure Substring
-    structure SysWord
-    structure Time
-    structure Trace
-    structure Tree
-    structure TwoListQueue
-    structure Unit
-    structure Vector
-    structure Word
-    structure Word32
-    structure Word8
-    structure Word8Array
-    structure Word8Vector
+      structure AppendList
+      structure Array
+      structure Array2
+      structure Assert
+      structure Base64
+      structure BinarySearch
+      structure Bool
+      structure Buffer
+      structure Char
+      structure CharArray
+      structure CharVector
+      structure ChoicePattern
+      structure ClearablePromise
+      structure CommandLine
+      structure Computation
+      structure Counter
+      structure Date
+      structure Dir
+      structure DirectedGraph
+      structure Dot
+      structure DotColor
+      structure Error
+      structure Escape
+      structure Exn
+      structure File
+      structure FileDesc
+      structure FixedPoint
+      structure Function
+      structure HashSet
+      (*    structure Http *)
+      structure In
+      structure Int
+      structure Int32
+      structure IntInf
+      structure InsertionSort
+      structure Justify
+      structure LargeInt
+      structure LargeWord
+      structure Layout
+      structure List
+      structure List
+      structure MLton
+      (* structure MergeSortList *)
+      (* structure MergeSortVector *)
+      structure OS
+      structure Option
+      structure Out
+      structure Pervasive
+      structure Pid
+      structure Popt
+      structure Position
+      structure Power
+      structure Process
+      structure Promise
+      structure Property
+      structure PropertyList
+      structure Queue
+      structure QuickSort
+      structure Random
+      structure Real
+      structure RealVector
+      structure Real32
+      structure Real64
+      structure Ref
+      structure Regexp
+      structure Relation
+      structure Result
+      structure SMLofNJ
+      structure Sexp
+      structure Signal
+      structure Stream
+      structure String
+      structure StringCvt
+      structure Substring
+      structure SysWord
+      structure Time
+      structure Trace
+      structure Tree
+      structure TwoListQueue
+      structure Unit
+      structure Vector
+      structure Word
+      structure Word32
+      structure Word8
+      structure Word8Array
+      structure Word8Vector
 
-    functor Control
-    functor Env
-    functor EuclideanRing
-    functor IntUniqueId
-    functor MonoArray
-    functor MonoVector
-    functor OrderedField
-    functor PolyEnv
-    functor Ring
-    functor RingWithIdentity
-    functor Tree
-    functor UniqueId
-    functor UniqueSet
-end
+      functor Control
+      functor Env
+      functor EuclideanRing
+      functor IntUniqueId
+      functor MonoArray
+      functor MonoVector
+      functor OrderedField
+      functor PolyEnv
+      functor Ring
+      functor RingWithIdentity
+      functor Tree
+      functor UniqueId
+      functor UniqueSet
+   end
 end

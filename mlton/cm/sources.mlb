@@ -6,15 +6,15 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 local
-    ../../lib/mlton/sources.mlb
-    ../control/sources.mlb
+   ../../lib/mlton/sources.mlb
+   ../control/sources.mlb
 
-    lexer.sig
-    lexer.sml
-    parse.sig
-    parse.sml
-    cm.sig
-    cm.sml
+   lexer.sig
+   lexer.sml
+   parse.sig
+   parse.sml
+   cm.sig
+   cm.sml
 in
-    structure CM
+   structure CM
 end

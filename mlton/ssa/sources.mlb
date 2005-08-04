@@ -11,106 +11,106 @@ local
    ../atoms/sources.mlb
    ../control/sources.mlb
 
-    equatable.sig
-    equatable.sml
-    ssa-tree.sig
-    ssa-tree2.sig
-    ssa-tree.fun
-    ssa-tree2.fun
-    direct-exp.sig
-    direct-exp.fun
-    analyze.sig
-    analyze2.sig
-    analyze.fun
-    analyze2.fun
-    type-check.sig
-    type-check2.sig
-    type-check.fun
-    type-check2.fun
-    prepasses.sig
-    prepasses2.sig
-    prepasses.fun
-    prepasses2.fun
-    shrink.sig
-    shrink2.sig
-    shrink.fun
-    shrink2.fun
-    flat-lattice.sig
-    flat-lattice.fun
-    common-arg.sig
-    common-arg.fun
-    common-block.sig
-    common-block.fun
-    common-subexp.sig
-    common-subexp.fun
-    global.sig
-    global.fun
-    two-point-lattice.sig
-    two-point-lattice.fun
-    multi.sig
-    multi.fun
-    constant-propagation.sig
-    constant-propagation.fun
-    contify.sig
-    contify.fun
-    deep-flatten.sig
-    deep-flatten.fun
-    flatten.sig
-    flatten.fun
-    inline.sig
-    inline.fun
-    introduce-loops.sig
-    introduce-loops.fun
-    n-point-lattice.sig
-    n-point-lattice.fun
-    three-point-lattice.sig
-    three-point-lattice.fun
-    restore.sig
-    restore.fun
-    known-case.sig
-    known-case.fun
-    local-flatten.sig
-    local-flatten.fun
-    local-ref.sig
-    local-ref.fun
-    loop-invariant.sig
-    loop-invariant.fun
-    poly-equal.sig
-    poly-equal.fun
-    redundant-tests.sig
-    redundant-tests.fun
-    redundant.sig
-    redundant.fun
-    ref-flatten.sig
-    ref-flatten.fun
-    remove-unused.sig
-    remove-unused2.sig
-    remove-unused.fun
-    remove-unused2.fun
-    simplify-types.sig
-    simplify-types.fun
-    useless.sig
-    useless.fun
-    zone.sig
-    zone.fun
-    simplify.sig
-    simplify2.sig
-    simplify.fun
-    simplify2.fun
-    ssa.sig
-    ssa2.sig
-    ssa.fun
-    ssa2.fun
-    ssa-to-ssa2.sig
-    ssa-to-ssa2.fun
+   equatable.sig
+   equatable.sml
+   ssa-tree.sig
+   ssa-tree2.sig
+   ssa-tree.fun
+   ssa-tree2.fun
+   direct-exp.sig
+   direct-exp.fun
+   analyze.sig
+   analyze2.sig
+   analyze.fun
+   analyze2.fun
+   type-check.sig
+   type-check2.sig
+   type-check.fun
+   type-check2.fun
+   prepasses.sig
+   prepasses2.sig
+   prepasses.fun
+   prepasses2.fun
+   shrink.sig
+   shrink2.sig
+   shrink.fun
+   shrink2.fun
+   flat-lattice.sig
+   flat-lattice.fun
+   common-arg.sig
+   common-arg.fun
+   common-block.sig
+   common-block.fun
+   common-subexp.sig
+   common-subexp.fun
+   global.sig
+   global.fun
+   two-point-lattice.sig
+   two-point-lattice.fun
+   multi.sig
+   multi.fun
+   constant-propagation.sig
+   constant-propagation.fun
+   contify.sig
+   contify.fun
+   deep-flatten.sig
+   deep-flatten.fun
+   flatten.sig
+   flatten.fun
+   inline.sig
+   inline.fun
+   introduce-loops.sig
+   introduce-loops.fun
+   n-point-lattice.sig
+   n-point-lattice.fun
+   three-point-lattice.sig
+   three-point-lattice.fun
+   restore.sig
+   restore.fun
+   known-case.sig
+   known-case.fun
+   local-flatten.sig
+   local-flatten.fun
+   local-ref.sig
+   local-ref.fun
+   loop-invariant.sig
+   loop-invariant.fun
+   poly-equal.sig
+   poly-equal.fun
+   redundant-tests.sig
+   redundant-tests.fun
+   redundant.sig
+   redundant.fun
+   ref-flatten.sig
+   ref-flatten.fun
+   remove-unused.sig
+   remove-unused2.sig
+   remove-unused.fun
+   remove-unused2.fun
+   simplify-types.sig
+   simplify-types.fun
+   useless.sig
+   useless.fun
+   zone.sig
+   zone.fun
+   simplify.sig
+   simplify2.sig
+   simplify.fun
+   simplify2.fun
+   ssa.sig
+   ssa2.sig
+   ssa.fun
+   ssa2.fun
+   ssa-to-ssa2.sig
+   ssa-to-ssa2.fun
 in
-    signature HANDLER
-    signature RETURN
-    signature SSA
-    signature SSA2
+   signature HANDLER
+   signature RETURN
+   signature SSA
+   signature SSA2
 
-    functor FlatLattice
-    functor Ssa
-    functor Ssa2
-    functor SsaToSsa2
+   functor FlatLattice
+   functor Ssa
+   functor Ssa2
+   functor SsaToSsa2
 end

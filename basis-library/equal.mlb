@@ -10,5 +10,5 @@ in
       libs/basis-2002/top-level/basis-equal.sig
    in
       libs/basis-2002/top-level/pervasive-equal.sml
-    end
+   end
 end

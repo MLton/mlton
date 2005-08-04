@@ -6,28 +6,28 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 local
-    ../../lib/mlton/sources.mlb
-    ../ast/sources.mlb
-    ../atoms/sources.mlb
-    ../backend/sources.mlb
-    ../closure-convert/sources.mlb
-    ../cm/sources.mlb
-    ../codegen/sources.mlb
-    ../control/sources.mlb
-    ../core-ml/sources.mlb
-    ../defunctorize/sources.mlb
-    ../elaborate/sources.mlb
-    ../front-end/sources.mlb
-    ../ssa/sources.mlb
-    ../xml/sources.mlb
+   ../../lib/mlton/sources.mlb
+   ../ast/sources.mlb
+   ../atoms/sources.mlb
+   ../backend/sources.mlb
+   ../closure-convert/sources.mlb
+   ../cm/sources.mlb
+   ../codegen/sources.mlb
+   ../control/sources.mlb
+   ../core-ml/sources.mlb
+   ../defunctorize/sources.mlb
+   ../elaborate/sources.mlb
+   ../front-end/sources.mlb
+   ../ssa/sources.mlb
+   ../xml/sources.mlb
 
-    lookup-constant.sig
-    lookup-constant.fun
-    compile.sig
-    compile.fun
-    main.sig
-    main.fun
-    main.sml
+   lookup-constant.sig
+   lookup-constant.fun
+   compile.sig
+   compile.fun
+   main.sig
+   main.fun
+   main.sml
 in
-    structure Main
+   structure Main
 end

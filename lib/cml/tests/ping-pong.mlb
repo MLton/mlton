@@ -1,8 +1,8 @@
 local
-  $(SML_LIB)/basis/basis.mlb
-  ../cml.mlb
-  print.mlb
+   $(SML_LIB)/basis/basis.mlb
+   ../cml.mlb
+   print.mlb
 in
-  ping-pong.sml 
-  run-main.sml
+   ping-pong.sml 
+   run-main.sml
 end

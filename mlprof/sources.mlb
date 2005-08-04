@@ -1,7 +1,7 @@
 local
-  ../lib/mlton/sources.mlb
-  main.sml
+   ../lib/mlton/sources.mlb
+   main.sml
 in
-  structure Main
+   structure Main
 end
 

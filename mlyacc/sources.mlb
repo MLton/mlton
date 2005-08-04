@@ -1,10 +1,10 @@
 local
-  src/sources.mlb
-  local
-    ../lib/mlton/sources.mlb
-  in
-    main.sml
-  end
+   src/sources.mlb
+   local
+      ../lib/mlton/sources.mlb
+   in
+      main.sml
+   end
 in
-  structure Main
+   structure Main
 end

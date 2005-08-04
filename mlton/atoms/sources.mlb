@@ -6,78 +6,78 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 local
-    ../../lib/mlton/sources.mlb
-    ../ast/sources.mlb
-    ../control/sources.mlb
+   ../../lib/mlton/sources.mlb
+   ../ast/sources.mlb
+   ../control/sources.mlb
 
-    id.sig
-    id.fun
-    (* Windows doesn't like files named con, so use con- instead. *)
-    con-.sig
-    con-.fun
-    real-x.sig
-    real-x.fun
-    word-x.sig
-    word-x.fun
-    word-x-vector.sig
-    word-x-vector.fun
-    c-type.sig
-    c-type.fun
-    label.sig
-    c-function.sig
-    c-function.fun
-    const-type.sig
-    const-type.fun
-    const.sig
-    const.fun
-    prim.sig
-    prim.fun
-    ffi.sig
-    ffi.fun
-    func.sig
-    generic-scheme.sig
-    generic-scheme.fun
-    profile-label.sig
-    profile-label.fun
-    source-info.sig
-    source-info.fun
-    profile-exp.sig
-    profile-exp.fun
-    tycon.sig
-    tycon.fun
-    type-ops.sig
-    type-ops.fun
-    use-name.fun
-    var.sig
-    var.fun
-    atoms.sig
-    atoms.fun
-    hash-type.sig
-    hash-type.fun
+   id.sig
+   id.fun
+   (* Windows doesn't like files named con, so use con- instead. *)
+   con-.sig
+   con-.fun
+   real-x.sig
+   real-x.fun
+   word-x.sig
+   word-x.fun
+   word-x-vector.sig
+   word-x-vector.fun
+   c-type.sig
+   c-type.fun
+   label.sig
+   c-function.sig
+   c-function.fun
+   const-type.sig
+   const-type.fun
+   const.sig
+   const.fun
+   prim.sig
+   prim.fun
+   ffi.sig
+   ffi.fun
+   func.sig
+   generic-scheme.sig
+   generic-scheme.fun
+   profile-label.sig
+   profile-label.fun
+   source-info.sig
+   source-info.fun
+   profile-exp.sig
+   profile-exp.fun
+   tycon.sig
+   tycon.fun
+   type-ops.sig
+   type-ops.fun
+   use-name.fun
+   var.sig
+   var.fun
+   atoms.sig
+   atoms.fun
+   hash-type.sig
+   hash-type.fun
 in
-    signature AST
-    signature ATOMS
-    signature ID
-    signature C_FUNCTION
-    signature C_TYPE
-    signature CONST
-    signature CONST_TYPE
-    signature FFI
-    signature ID
-    signature HASH_TYPE
-    signature LABEL
-    signature PRIM
-    signature PROFILE_LABEL
-    signature RECORD
-    signature TYCON
-    signature TYPE_OPS
-    signature WORD_X
-    signature WORD_X_VECTOR
+   signature AST
+   signature ATOMS
+   signature ID
+   signature C_FUNCTION
+   signature C_TYPE
+   signature CONST
+   signature CONST_TYPE
+   signature FFI
+   signature ID
+   signature HASH_TYPE
+   signature LABEL
+   signature PRIM
+   signature PROFILE_LABEL
+   signature RECORD
+   signature TYCON
+   signature TYPE_OPS
+   signature WORD_X
+   signature WORD_X_VECTOR
 
-    functor Atoms
-    functor Id
-    functor GenericScheme
-    functor HashType
-    functor TypeOps
-    functor UseName
+   functor Atoms
+   functor Id
+   functor GenericScheme
+   functor HashType
+   functor TypeOps
+   functor UseName
 end

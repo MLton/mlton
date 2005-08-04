@@ -6,17 +6,17 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 local
-    ../ast/sources.mlb
-    ../atoms/sources.mlb
-    ../control/sources.mlb
-    ../../lib/mlton/sources.mlb
+   ../ast/sources.mlb
+   ../atoms/sources.mlb
+   ../control/sources.mlb
+   ../../lib/mlton/sources.mlb
 
-    core-ml.sig
-    core-ml.fun
-    dead-code.sig
-    dead-code.fun
+   core-ml.sig
+   core-ml.fun
+   dead-code.sig
+   dead-code.fun
 in
-    signature CORE_ML
-    functor CoreML
-    functor DeadCode
+   signature CORE_ML
+   functor CoreML
+   functor DeadCode
 end

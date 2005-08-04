@@ -34,7 +34,7 @@ in
       signature MLTON_WEAK
       signature MLTON_WORD
       signature MLTON_WORLD
-   
+
       structure MLton
    end
 end

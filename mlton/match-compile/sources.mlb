@@ -6,15 +6,15 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 local
-    ../../lib/mlton/sources.mlb
-    ../atoms/sources.mlb
-    ../control/sources.mlb
+   ../../lib/mlton/sources.mlb
+   ../atoms/sources.mlb
+   ../control/sources.mlb
 
-    nested-pat.sig
-    nested-pat.fun
-    match-compile.sig
-    match-compile.fun
+   nested-pat.sig
+   nested-pat.fun
+   match-compile.sig
+   match-compile.fun
 in
-    functor MatchCompile
-    functor NestedPat
+   functor MatchCompile
+   functor NestedPat
 end

@@ -6,14 +6,14 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 local
-    ../../atoms/sources.mlb
-    ../../control/sources.mlb
-    ../../../lib/mlton/sources.mlb
-    ../../backend/sources.mlb
+   ../../atoms/sources.mlb
+   ../../control/sources.mlb
+   ../../../lib/mlton/sources.mlb
+   ../../backend/sources.mlb
 
-    c-codegen.sig
-    c-codegen.fun
+   c-codegen.sig
+   c-codegen.fun
 in
-    signature C_CODEGEN
-    functor CCodegen
+   signature C_CODEGEN
+   functor CCodegen
 end

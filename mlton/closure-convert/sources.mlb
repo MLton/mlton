@@ -6,20 +6,20 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 local
-    ../../lib/mlton/sources.mlb
-    ../atoms/sources.mlb
-    ../control/sources.mlb
-    ../ssa/sources.mlb
-    ../xml/sources.mlb
+   ../../lib/mlton/sources.mlb
+   ../atoms/sources.mlb
+   ../control/sources.mlb
+   ../ssa/sources.mlb
+   ../xml/sources.mlb
 
-    abstract-value.sig
-    abstract-value.fun
-    globalize.sig
-    globalize.fun
-    lambda-free.sig
-    lambda-free.fun
-    closure-convert.sig
-    closure-convert.fun
+   abstract-value.sig
+   abstract-value.fun
+   globalize.sig
+   globalize.fun
+   lambda-free.sig
+   lambda-free.fun
+   closure-convert.sig
+   closure-convert.fun
 in
-    functor ClosureConvert
+   functor ClosureConvert
 end

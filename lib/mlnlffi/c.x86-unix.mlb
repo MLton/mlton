@@ -15,20 +15,20 @@
  * author: Matthias Blume (blume@research.bell-labs.com)
  *)
 local
-  internals/c-int.x86-unix.mlb
+   internals/c-int.x86-unix.mlb
 in
-  structure Tag
+   structure Tag
 
-  structure MLRep
+   structure MLRep
 
-  signature C
-  structure C
-  signature C_DEBUG
-  structure C_Debug
+   signature C
+   structure C
+   signature C_DEBUG
+   structure C_Debug
 
-  signature ZSTRING
-  structure ZString
+   signature ZSTRING
+   structure ZString
 
-  signature DYN_LINKAGE
-  structure DynLinkage
+   signature DYN_LINKAGE
+   structure DynLinkage
 end

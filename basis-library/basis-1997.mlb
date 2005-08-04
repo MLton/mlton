@@ -2,16 +2,19 @@ ann
    "deadCode true"
    "sequenceUnit true"
    "nonexhaustiveMatch warn" "redundantMatch warn"
-   "warnUnused true" "forceUsed"
+   "warnUnused true" "forceUsed" 
 in
    local
       basis-2002.mlb
-      libs/basis-1997/basis-1997.mlb
+      libs/basis-1997/basis-1997.mlb 
    in
       libs/basis-1997/top-level/basis-funs.sml
       libs/basis-1997/top-level/basis-sigs.sml
       libs/basis-1997/top-level/top-level.sml
       libs/basis-1997/top-level/infixes.sml
-      ann "allowOverload true" in libs/basis-1997/top-level/overloads.sml end
-  end
+      ann "allowOverload true" 
+      in
+	 libs/basis-1997/top-level/overloads.sml 
+      end
+   end
 end

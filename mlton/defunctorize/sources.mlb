@@ -6,14 +6,14 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 local
-    ../../lib/mlton/sources.mlb
-    ../control/sources.mlb
-    ../core-ml/sources.mlb
-    ../match-compile/sources.mlb
-    ../xml/sources.mlb
+   ../../lib/mlton/sources.mlb
+   ../control/sources.mlb
+   ../core-ml/sources.mlb
+   ../match-compile/sources.mlb
+   ../xml/sources.mlb
 
-    defunctorize.sig
-    defunctorize.fun
+   defunctorize.sig
+   defunctorize.fun
 in
-    functor Defunctorize
+   functor Defunctorize
 end

@@ -6,38 +6,38 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 local
-    ../../lib/mlton/sources.mlb
-    ../ast/sources.mlb
-    ../atoms/sources.mlb
-    ../control/sources.mlb
-    ../core-ml/sources.mlb
+   ../../lib/mlton/sources.mlb
+   ../ast/sources.mlb
+   ../atoms/sources.mlb
+   ../control/sources.mlb
+   ../core-ml/sources.mlb
 
-    decs.sig
-    decs.fun
-    type-env.sig
-    type-env.fun
-    interface.sig
-    interface.fun
-    elaborate-env.sig
-    elaborate-env.fun
-    precedence-parse.sig
-    precedence-parse.fun
-    scope.sig
-    scope.fun
-    elaborate-core.sig
-    elaborate-core.fun
-    elaborate-sigexp.sig
-    elaborate-sigexp.fun
-    elaborate-modules.sig
-    elaborate-modules.fun
-    elaborate-programs.sig
-    elaborate-programs.fun
-    elaborate-mlbs.sig
-    elaborate-mlbs.fun
-    elaborate.sig
-    elaborate.fun
+   decs.sig
+   decs.fun
+   type-env.sig
+   type-env.fun
+   interface.sig
+   interface.fun
+   elaborate-env.sig
+   elaborate-env.fun
+   precedence-parse.sig
+   precedence-parse.fun
+   scope.sig
+   scope.fun
+   elaborate-core.sig
+   elaborate-core.fun
+   elaborate-sigexp.sig
+   elaborate-sigexp.fun
+   elaborate-modules.sig
+   elaborate-modules.fun
+   elaborate-programs.sig
+   elaborate-programs.fun
+   elaborate-mlbs.sig
+   elaborate-mlbs.fun
+   elaborate.sig
+   elaborate.fun
 in
-    signature CONST_TYPE
-    functor Elaborate
-    functor TypeEnv
+   signature CONST_TYPE
+   functor Elaborate
+   functor TypeEnv
 end
