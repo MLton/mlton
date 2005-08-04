@@ -72,16 +72,17 @@ signature CORE_ML =
 	    datatype noMatch = Impossible | RaiseAgain | RaiseBind | RaiseMatch
 	    datatype node =
 	       App of t * t
-	     | Case of {kind: string,
+	     | Case of {ignoreNonexhaustiveExnMatch: bool,
+			kind: string,
 			lay: unit -> Layout.t,
 			noMatch: noMatch,
+			nonexhaustiveMatch: Control.Elaborate.Diagnostic.t,
+			redundantMatch: Control.Elaborate.Diagnostic.t,
 			region: Region.t,
 			rules: {exp: t,
 				lay: (unit -> Layout.t) option,
 				pat: Pat.t} vector,
-			test: t,
-                        warnExnMatch: bool,
-			warnMatch: bool}
+			test: t}
 	     | Con of Con.t * Type.t vector
 	     | Const of unit -> Const.t
 	     | EnterLeave of t * SourceInfo.t
@@ -100,16 +101,17 @@ signature CORE_ML =
 	     | Var of (unit -> Var.t) * (unit -> Type.t vector)
 
 	    val andAlso: t * t -> t
-	    val casee: {kind: string,
+	    val casee: {ignoreNonexhaustiveExnMatch: bool,
+			kind: string,
 			lay: unit -> Layout.t,
 			noMatch: noMatch,
+			nonexhaustiveMatch: Control.Elaborate.Diagnostic.t,
+			redundantMatch: Control.Elaborate.Diagnostic.t,
 			region: Region.t,
 			rules: {exp: t,
 				lay: (unit -> Layout.t) option,
 				pat: Pat.t} vector,
-			test: t,
-                        warnExnMatch: bool,
-			warnMatch: bool} -> t
+			test: t} -> t
 	    val dest: t -> node * Type.t
 	    val iff: t * t * t -> t
 	    val falsee: t
@@ -158,15 +160,15 @@ signature CORE_ML =
 	     | Fun of {decs: {lambda: Lambda.t,
 			      var: Var.t} vector,
 		       tyvars: unit -> Tyvar.t vector}
-	     | Val of {rvbs: {lambda: Lambda.t,
+	     | Val of {ignoreNonexhaustiveExnMatch: bool,
+		       nonexhaustiveMatch: Control.Elaborate.Diagnostic.t,
+		       rvbs: {lambda: Lambda.t,
 			      var: Var.t} vector,
 		       tyvars: unit -> Tyvar.t vector,
 		       vbs: {exp: Exp.t,
 			     lay: unit -> Layout.t,
 			     pat: Pat.t,
-			     patRegion: Region.t} vector,
-                       warnExnMatch: bool,
-		       warnMatch: bool}
+			     patRegion: Region.t} vector}
 
 	    val layout: t -> Layout.t
 	 end

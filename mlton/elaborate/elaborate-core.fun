@@ -15,9 +15,10 @@ local
    open Control.Elaborate
 in
    val allowRebindEquals = fn () => current allowRebindEquals
+   val ignoreNonexhaustiveExnMatch = fn () => current ignoreNonexhaustiveExnMatch
+   val nonexhaustiveMatch = fn () => current nonexhaustiveMatch
+   val redundantMatch = fn () => current redundantMatch
    val sequenceUnit = fn () => current sequenceUnit
-   val warnMatch = fn () => current warnMatch
-   val warnExnMatch = fn () => current warnExnMatch
 end
 
 local
@@ -947,9 +948,12 @@ local
 				 else expandedCbTy}
       in
 	 if not isBool then fetchExp else
-         Cexp.casee {kind = "",
+	 Cexp.casee {ignoreNonexhaustiveExnMatch = false,
+		     kind = "",
 		     lay = fn () => Layout.empty,
 		     noMatch = Cexp.Impossible,
+		     nonexhaustiveMatch = Control.Elaborate.Diagnostic.Ignore,
+		     redundantMatch = Control.Elaborate.Diagnostic.Ignore,
 		     region = Region.bogus,
 		     rules = Vector.new2
 		             ({exp = Cexp.truee, lay = NONE, pat = Cpat.falsee},
@@ -957,9 +961,7 @@ local
 		     test = primApp
 		            {args = Vector.new2 (fetchExp, zeroExp),
 			     prim = Prim.wordEqual WordSize.default,
-			     result = expandedCbTy},
-                     warnExnMatch = false,
-		     warnMatch = false}
+			     result = expandedCbTy}}
       end
 
    fun store {ctypeCbTy, isBool,
@@ -967,16 +969,17 @@ local
       let
 	 val valueExp =
 	    if not isBool then valueExp else
-	    Cexp.casee {kind = "",
+	    Cexp.casee {ignoreNonexhaustiveExnMatch = false,
+			kind = "",
 			lay = fn () => Layout.empty,
 			noMatch = Cexp.Impossible,
+			nonexhaustiveMatch = Control.Elaborate.Diagnostic.Ignore,
+			redundantMatch = Control.Elaborate.Diagnostic.Ignore,
 			region = Region.bogus,
 			rules = Vector.new2 
                                 ({exp = oneExp, lay = NONE, pat = Cpat.truee},
 				 {exp = zeroExp, lay = NONE, pat = Cpat.falsee}),
-			test = valueExp,
-                        warnExnMatch = false,
-			warnMatch = false}
+			test = valueExp}
       in
 	 primApp {args = Vector.new3 (ptrExp, zeroExp, valueExp),
 		  prim = Prim.pointerSet ctypeCbTy,
@@ -1081,14 +1084,15 @@ in
 			     ptrExp = Cexp.var (setArgPtr, expandedPtrTy),
 			     valueExp = Cexp.var (setArgValue, expandedCbTy)}
 	 val setBody =
-	    Cexp.casee {kind = "",
+	    Cexp.casee {ignoreNonexhaustiveExnMatch = false,
+			kind = "",
 			lay = fn () => Layout.empty,
 			noMatch = Cexp.Impossible,
+			nonexhaustiveMatch = Control.Elaborate.Diagnostic.Ignore,
+			redundantMatch = Control.Elaborate.Diagnostic.Ignore,
 			region = Region.bogus,
 			rules = Vector.new1 ({exp = setExp, lay = NONE, pat = setPat}),
-			test = Cexp.var (setArg, elabedSetArgTy),
-                        warnExnMatch = false,
-			warnMatch = false}
+			test = Cexp.var (setArg, elabedSetArgTy)}
       in
 	 (Cexp.tuple o Vector.new2)
 	 (wrap ((Cexp.lambda o Lambda.make)
@@ -1881,9 +1885,12 @@ fun elaborateDec (d, {env = E, nest}) =
 				      let
 					 val e =
 					    Cexp.casee
-					    {kind = "function",
+					    {ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch (),
+					     kind = "function",
 					     lay = lay,
 					     noMatch = Cexp.RaiseMatch,
+					     nonexhaustiveMatch = nonexhaustiveMatch (),
+					     redundantMatch = redundantMatch (),
 					     region = region,
 					     rules =
 					     Vector.map
@@ -1903,9 +1910,7 @@ fun elaborateDec (d, {env = E, nest}) =
 					     test = 
 					     Cexp.tuple
 					     (Vector.map2
-					      (xs, argTypes, Cexp.var)),
-                                             warnExnMatch = warnExnMatch (),
-					     warnMatch = warnMatch ()}
+					      (xs, argTypes, Cexp.var))}
 				      in
 					 Cexp.enterLeave
 					 (e, profileBody, sourceInfo)
@@ -2096,14 +2101,15 @@ fun elaborateDec (d, {env = E, nest}) =
 			     val arg = Var.newNoname ()
 			     val body =
 				Cexp.enterLeave
-				(Cexp.casee {kind = "function",
+				(Cexp.casee {ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch (),
+					     kind = "function",
 					     lay = lay,
 					     noMatch = Cexp.RaiseMatch,
+					     nonexhaustiveMatch = nonexhaustiveMatch (),
+					     redundantMatch = redundantMatch (),
 					     region = region,
 					     rules = rules,
-					     test = Cexp.var (arg, argType),
-					     warnExnMatch = warnExnMatch (),
-					     warnMatch = warnMatch ()},
+					     test = Cexp.var (arg, argType)},
 				 profileBody,
 				 fn () => SourceInfo.function {name = nest,
 							       region = region})
@@ -2191,11 +2197,11 @@ fun elaborateDec (d, {env = E, nest}) =
 		       *)
 		   in
 		      Decs.single
-		      (Cdec.Val {rvbs = rvbs,
+		      (Cdec.Val {ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch (),
+				 nonexhaustiveMatch = nonexhaustiveMatch (),
+				 rvbs = rvbs,
 				 tyvars = bound,
-				 vbs = vbs,
-                                 warnExnMatch = warnExnMatch (),
-				 warnMatch = warnMatch ()})
+				 vbs = vbs})
 		   end
 	  end) arg
       and elabExp (arg: Aexp.t * Nest.t * string option): Cexp.t =
@@ -2271,14 +2277,15 @@ fun elaborateDec (d, {env = E, nest}) =
 			   align [seq [str "object type:  ", l1],
 				  seq [str "rules expect: ", l2]]))
 		   in
-		      Cexp.casee {kind = "case",
+		      Cexp.casee {ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch (),
+				  kind = "case",
 				  lay = lay,
 				  noMatch = Cexp.RaiseMatch,
+				  nonexhaustiveMatch = nonexhaustiveMatch (),
+				  redundantMatch = redundantMatch (),
 				  region = region,
 				  rules = rules,
-				  test = e,
-				  warnExnMatch = warnExnMatch (),
-				  warnMatch = warnMatch ()}
+				  test = e}
 		   end
 	      | Aexp.Const c =>
 		   elabConst
@@ -2471,9 +2478,12 @@ fun elaborateDec (d, {env = E, nest}) =
 						  (Var.newNoname (), t))
 					   in
 					      Cexp.casee
-					      {kind = "",
+					      {ignoreNonexhaustiveExnMatch = false,
+					       kind = "",
 					       lay = fn _ => Layout.empty,
 					       noMatch = Cexp.Impossible,
+					       nonexhaustiveMatch = Control.Elaborate.Diagnostic.Ignore,
+					       redundantMatch = Control.Elaborate.Diagnostic.Ignore,
 					       region = Region.bogus,
 					       rules = Vector.new1
 					               {exp = app (Vector.map
@@ -2482,9 +2492,7 @@ fun elaborateDec (d, {env = E, nest}) =
 							pat = Cpat.tuple 
 							      (Vector.map 
 							       (vars, Cpat.var))},
-					        test = Cexp.var (arg, argType),
-						warnExnMatch = false,
-						warnMatch = false}
+					       test = Cexp.var (arg, argType)}
 					   end
 			       in
 				  Cexp.make (Cexp.Lambda
@@ -2905,14 +2913,15 @@ fun elaborateDec (d, {env = E, nest}) =
 	    val arg = Var.newNoname ()
 	    val {argType, region, rules, ...} = elabMatch (m, preError, nest)
 	    val body =
-	       Cexp.casee {kind = kind,
+	       Cexp.casee {ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch (),
+			   kind = kind,
 			   lay = lay,
 			   noMatch = noMatch,
+			   nonexhaustiveMatch = nonexhaustiveMatch (),
+			   redundantMatch = redundantMatch (),
 			   region = region,
 			   rules = rules,
-			   test = Cexp.var (arg, argType),
-			   warnExnMatch = warnExnMatch (),
-			   warnMatch = warnMatch ()}
+			   test = Cexp.var (arg, argType)}
 	 in
 	   {arg = arg,
 	    argType = argType,

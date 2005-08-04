@@ -102,6 +102,26 @@ val dropPasses =
 
 structure Elaborate =
    struct
+      structure Diagnostic =
+	 struct
+	    datatype t =
+	       Error
+	     | Ignore
+	     | Warn
+
+	    val fromString: string -> t option =
+	       fn "error" => SOME Error
+		| "ignore" => SOME Ignore
+		| "warn" => SOME Warn
+		| _ => NONE
+
+	    val toString: t -> string = 
+	       fn Error => "error"
+		| Ignore => "ignore"
+		| Warn => "warn"
+	 end
+      datatype z = datatype Diagnostic.t
+
       structure Id =
 	 struct
 	    datatype t = T of {enabled: bool ref,
@@ -263,7 +283,22 @@ structure Elaborate =
 				  [arg'] => Bool.fromString arg'
 				| _ => NONE}, 
 		  ac)
-	
+
+	 fun makeDiagnostic ({default: Diagnostic.t,
+			      expert: bool,
+			      name: string}, ac) =
+	     make ({default = default,
+		    expert = expert,
+		    toString = Diagnostic.toString,
+		    name = name,
+		    newCur = fn (_,d) => d,
+		    newDef = fn (_,d) => d,
+		    parseArgs = fn args' =>
+		                case args' of
+				   [arg'] => Diagnostic.fromString arg'
+				 | _ => NONE},
+		   ac)
+
 	fun setCur (T {cur, ...}, x) = cur := x
 	fun setDef (T {def, ...}, x) = def := x
       in
@@ -273,21 +308,29 @@ structure Elaborate =
 	     withDef = fn () => (fn () => ()),
 	     snapshot = fn () => fn () => (fn () => ())}
 	 val (allowConstant, ac) =
-	    makeBool ({name = "allowConstant", default = false, expert = true}, ac)
+	    makeBool ({name = "allowConstant", 
+		       default = false, expert = true}, ac)
 	 val (allowExport, ac) =
-	    makeBool ({name = "allowExport", default = false, expert = false}, ac)
+	    makeBool ({name = "allowExport", 
+		       default = false, expert = false}, ac)
 	 val (allowImport, ac) =
-	    makeBool ({name = "allowImport", default = false, expert = false}, ac)
+	    makeBool ({name = "allowImport", 
+		       default = false, expert = false}, ac)
 	 val (allowPrim, ac) =
-	    makeBool ({name = "allowPrim", default = false, expert = true}, ac)
+	    makeBool ({name = "allowPrim", 
+		       default = false, expert = true}, ac)
 	 val (allowOverload, ac) =
-	    makeBool ({name = "allowOverload", default = false, expert = false}, ac)
+	    makeBool ({name = "allowOverload", 
+		       default = false, expert = false}, ac)
 	 val (allowRebindEquals, ac) =
-	    makeBool ({name = "allowRebindEquals", default = false, expert = true}, ac)
+	    makeBool ({name = "allowRebindEquals", 
+		       default = false, expert = true}, ac)
 	 val (allowSymbol, ac) =
-	    makeBool ({name = "allowSymbol", default = false, expert = false}, ac)
+	    makeBool ({name = "allowSymbol", 
+		       default = false, expert = false}, ac)
 	 val (deadCode, ac) =
-	    makeBool ({name = "deadCode", default = false, expert = false}, ac)
+	    makeBool ({name = "deadCode", 
+		       default = false, expert = false}, ac)
 	 val (allowFFI, ac) =
 	    make ({default = false,
 	           expert = false,
@@ -330,14 +373,53 @@ structure Elaborate =
 				  [s] => SOME s
 				| _ => NONE},
 		  ac)
+	 val (ignoreNonexhaustiveExnMatch, ac) =
+	     make ({default = false,
+		    expert = false,
+		    toString = fn true => "ignore" | false => "default",
+		    name = "nonexhaustiveExnMatch",
+		    newCur = fn (_,b) => b,
+		    newDef = fn (_,b) => b,
+		    parseArgs = fn  ["default"] => SOME false
+				  | ["ignore"] => SOME true
+				  | _ => NONE}, 
+		   ac)
+	 val (nonexhaustiveMatch, ac) =
+	     makeDiagnostic ({name = "nonexhaustiveMatch", 
+			      default = Warn, expert = false}, ac)
+	 val (redundantMatch, ac) =
+	     makeDiagnostic ({name = "redundantMatch", 
+			      default = Warn, expert = false}, ac)
 	 val (sequenceUnit, ac) =
-	    makeBool ({name = "sequenceUnit", default = false, expert = false}, ac)
+	    makeBool ({name = "sequenceUnit", 
+		       default = false, expert = false}, ac)
 	 val (warnMatch, ac) =
-	    makeBool ({name = "warnMatch", default = true, expert = false}, ac)
-	 val (warnExnMatch, ac) =
-	    makeBool ({name = "warnExnMatch", default = true, expert = false}, ac)
+	    make ({default = true,
+		   expert = false,
+		   toString = Bool.toString,
+		   name = "warnMatch",
+		   newCur = fn (_, b) =>
+			       let
+				  val d = if b then Warn else Ignore
+			       in
+				  setCur (nonexhaustiveMatch, d)
+				  ; setCur (redundantMatch, d)
+				  ; b
+			       end,
+		   newDef = fn (_, b) =>
+			       let
+				  val d = if b then Warn else Ignore
+			       in
+				  setDef (nonexhaustiveMatch, d)
+				  ; setDef (redundantMatch, d)
+				  ; b
+			       end,
+		   parseArgs = fn [arg'] => Bool.fromString arg'
+				| _ => NONE}, 
+		  ac)
 	 val (warnUnused, ac) =
-	    makeBool ({name = "warnUnused", default = false, expert = false}, ac)
+	    makeBool ({name = "warnUnused", 
+		       default = false, expert = false}, ac)
 	 val {parseId, parseIdAndArgs, withDef, snapshot} = ac
       end
 

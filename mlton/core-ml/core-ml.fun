@@ -144,29 +144,30 @@ datatype dec =
  | Fun of {decs: {lambda: lambda,
 		  var: Var.t} vector,
 	   tyvars: unit -> Tyvar.t vector}
- | Val of {rvbs: {lambda: lambda,
+ | Val of {ignoreNonexhaustiveExnMatch: bool,
+	   nonexhaustiveMatch: Control.Elaborate.Diagnostic.t,
+	   rvbs: {lambda: lambda,
 		  var: Var.t} vector,
 	   tyvars: unit -> Tyvar.t vector,
 	   vbs: {exp: exp,
 		 lay: unit -> Layout.t,
 		 pat: Pat.t,
-		 patRegion: Region.t} vector,
-           warnExnMatch: bool,
-	   warnMatch: bool}
+		 patRegion: Region.t} vector}
 and exp = Exp of {node: expNode,
 		  ty: Type.t}
 and expNode =
    App of exp * exp
-  | Case of {kind: string,
+  | Case of {ignoreNonexhaustiveExnMatch: bool,
+	     kind: string,
 	     lay: unit -> Layout.t,
 	     noMatch: noMatch,
+	     nonexhaustiveMatch: Control.Elaborate.Diagnostic.t,
+	     redundantMatch: Control.Elaborate.Diagnostic.t,
 	     region: Region.t,
 	     rules: {exp: exp,
 		     lay: (unit -> Layout.t) option,
 		     pat: Pat.t} vector,
-	     test: exp,
-             warnExnMatch: bool,
-	     warnMatch: bool}
+	     test: exp}
   | Con of Con.t * Type.t vector
   | Const of unit -> Const.t
   | EnterLeave of exp * SourceInfo.t
@@ -364,9 +365,12 @@ structure Exp =
 	 else make (Case z, ty (#exp (Vector.sub (rules, 0))))
 
       fun iff (test, thenCase, elseCase): t =
-	 casee {kind = "if",
+	 casee {ignoreNonexhaustiveExnMatch = false,
+		kind = "if",
 		lay = fn () => Layout.empty,
 		noMatch = Impossible,
+		nonexhaustiveMatch = Control.Elaborate.Diagnostic.Ignore,
+		redundantMatch = Control.Elaborate.Diagnostic.Ignore,
 		region = Region.bogus,
 		rules = Vector.new2 ({exp = thenCase,
 				      lay = NONE,
@@ -374,9 +378,7 @@ structure Exp =
 				     {exp = elseCase,
 				      lay = NONE,
 				      pat = Pat.falsee}),
-		test = test,
-                warnExnMatch = false,
-		warnMatch = false}
+		test = test}
 
       fun andAlso (e1, e2) = iff (e1, e2, falsee)
 	 

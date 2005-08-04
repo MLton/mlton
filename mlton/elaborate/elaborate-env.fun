@@ -15,8 +15,8 @@ type int = Int.t
 local
    open Control.Elaborate
 in
-   val warnExnMatch = fn () => current warnExnMatch
-   val warnMatch = fn () => current warnMatch
+   val ignoreNonexhaustiveExnMatch = fn () => current ignoreNonexhaustiveExnMatch
+   val nonexhaustiveMatch = fn () => current nonexhaustiveMatch
    val warnUnused = fn () => current warnUnused
 end
 
@@ -2896,15 +2896,15 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			       val _ =
 				  List.push
 				  (decs,
-				   Dec.Val {rvbs = Vector.new0 (),
+				   Dec.Val {ignoreNonexhaustiveExnMatch = ignoreNonexhaustiveExnMatch (),
+					    nonexhaustiveMatch = nonexhaustiveMatch (),
+					    rvbs = Vector.new0 (),
 					    tyvars = fn () => sigArgs,
 					    vbs = (Vector.new1
 						   {exp = e,
 						    lay = fn _ => Layout.empty,
 						    pat = Pat.var (x, strType),
-						    patRegion = region}),
-					    warnMatch = warnMatch (),
-                                            warnExnMatch = warnExnMatch ()})
+						    patRegion = region})})
 			    in
 			       Vid.Var x
 			    end

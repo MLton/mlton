@@ -589,8 +589,12 @@ fun commandLine (args: string list): unit =
 	 orelse (Control.Elaborate.enabled Control.Elaborate.warnUnused)
 	 orelse (Control.Elaborate.default Control.Elaborate.warnUnused)
       val warnMatch =
-	 (Control.Elaborate.enabled Control.Elaborate.warnMatch)
-	 orelse (Control.Elaborate.default Control.Elaborate.warnMatch)
+	  (Control.Elaborate.enabled Control.Elaborate.nonexhaustiveMatch)
+	  orelse (Control.Elaborate.enabled Control.Elaborate.redundantMatch)
+	  orelse (Control.Elaborate.Diagnostic.Ignore <> 
+		  Control.Elaborate.default Control.Elaborate.nonexhaustiveMatch)
+	  orelse (Control.Elaborate.Diagnostic.Ignore <> 
+		  Control.Elaborate.default Control.Elaborate.redundantMatch)
       val _ = elaborateOnly := (stop = Place.TypeCheck
 				andalso not (warnMatch)
 				andalso not (keepDefUse))
