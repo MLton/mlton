@@ -3,7 +3,7 @@ local
   $(MLTON_ROOT)/basis/mlton.mlb
 
   linkage.sig
-  ann "allowImport true" in
+  ann "allowFFI true" in
     linkage-libdl.sml
   end
   bitop-fn.sml
@@ -11,7 +11,7 @@ local
   memaccess.sig
   memaccess-a4c1s2i4l4ll8f4d8.sml
   memalloc.sig
-  ann "allowImport true" in
+  ann "allowFFI true" in
     memalloc-a4-unix.sml
   end
   memory.sig

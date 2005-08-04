@@ -2610,8 +2610,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		       | Export {attributes, cfTy, name} =>
 			    let
 			       val () =
-				  check (ElabControl.allowExport, 
-					 "_export")
+				  check (ElabControl.allowFFI, "_export")
 			       val (elabedTy, expandedTy) = 
 				  elabAndExpandTy cfTy
 			       val exp =
@@ -2642,8 +2641,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		       | IImport {attributes, cfTy} =>
 			    let
 			       val () =
-				  check (ElabControl.allowImport, 
-					 "_import")
+				  check (ElabControl.allowFFI, "_import")
 			       val (elabedCfTy, expandedCfTy) =
 				  elabAndExpandTy cfTy
 			    in
@@ -2694,8 +2692,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		       | Import {attributes, name, cfTy} =>
 			    let
 			       val () =
-				  check (ElabControl.allowImport, 
-					 "_import")
+				  check (ElabControl.allowFFI, "_import")
 			       val (elabedCfTy, expandedCfTy) =
 				  elabAndExpandTy cfTy
 			    in
@@ -2717,8 +2714,7 @@ fun elaborateDec (d, {env = E, nest}) =
                        | ISymbol {cbTy, ptrTy} =>
 			    let
 			       val () =
-				  check (ElabControl.allowSymbol, 
-					 "_symbol")
+				  check (ElabControl.allowFFI, "_symbol")
 			       val (elabedCbTy, expandedCbTy) =
 				  elabAndExpandTy cbTy
 			       val (elabedPtrTy, expandedPtrTy) =
@@ -2745,8 +2741,7 @@ fun elaborateDec (d, {env = E, nest}) =
                        | Symbol {attributes, cbTy, ptrTy, name} =>
 			    let
 			       val () =
-				  check (ElabControl.allowSymbol, 
-					 "_symbol")
+				  check (ElabControl.allowFFI, "_symbol")
 			       val (elabedCbTy, expandedCbTy) =
 				  elabAndExpandTy cbTy
 			       val (elabedPtrTy, expandedPtrTy) =

@@ -1,6 +1,6 @@
 ann
   "sequenceUnit true"
-  "warnMatch true"
+  "nonexhaustiveMatch warn" "redundantMatch warn"
   "warnUnused false" "forceUsed"
 in
 local

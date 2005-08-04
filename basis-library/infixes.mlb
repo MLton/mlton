@@ -1,7 +1,7 @@
 ann  
    "deadCode true"
    "sequenceUnit true"
-   "warnMatch true"
+   "nonexhaustiveMatch warn" "redundantMatch warn"
    "warnUnused true" "forceUsed"
 in
    libs/basis-2002/top-level/infixes.sml

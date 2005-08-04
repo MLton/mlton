@@ -177,6 +177,12 @@ structure Elaborate =
       fun name ctrl = Id.name (id ctrl)
       fun equalsId (ctrl, id') = Id.equals (id ctrl, id')
 
+      datatype ('a, 'b) parseResult =
+	 Bad | Deprecated of 'a | Good of 'b
+      val deGood = 
+	 fn Good z => z
+	  | _ => Error.bug "Control.Elaborate.deGood"
+
       local 
 	 fun make ({default: 'st,
 		    expert: bool,
@@ -185,8 +191,8 @@ structure Elaborate =
 		    newCur: 'st * 'args -> 'st,
 		    newDef: 'st * 'args -> 'st,
 		    parseArgs: string list -> 'args option},
-		   {parseId: string -> Id.t option,
-		    parseIdAndArgs: string -> (Id.t * Args.t) option,
+		   {parseId: string -> (Id.t list, Id.t) parseResult,
+		    parseIdAndArgs: string -> ((Id.t * Args.t) list, (Id.t * Args.t)) parseResult,
 		    withDef: unit -> (unit -> unit),
 		    snapshot: unit -> unit -> (unit -> unit)}) =
 	    let
@@ -206,7 +212,7 @@ structure Elaborate =
 				name = name}}
 	       val parseId = fn name' =>
 		  if String.equals (name', name) 
-		     then SOME id 
+		     then Good id 
 		     else parseId name'
 	       val parseIdAndArgs = fn s =>
 		  case String.tokens (s, Char.isSpace) of
@@ -244,11 +250,11 @@ structure Elaborate =
 						  processAnn = processAnn,
 						  processDef = processDef}
 				    in
-				       SOME (id, args)
+				       Good (id, args)
 				    end
-			       | NONE => NONE
+			       | NONE => Bad
 			   else parseIdAndArgs s
-		   | _ => NONE
+		   | _ => Bad
 	       val withDef : unit -> (unit -> unit) =
 		  fn () =>
 		  let
@@ -330,23 +336,17 @@ structure Elaborate =
 			     diagFromString = DiagDI.fromString,
 			     expert = expert,
 			     name = name}, ac)
-
-	fun setCur (T {cur, ...}, x) = cur := x
-	fun setDef (T {def, ...}, x) = def := x
       in
 	 val ac =
-	    {parseId = fn _ => NONE,
-	     parseIdAndArgs = fn _ => NONE,
+	    {parseId = fn _ => Bad,
+	     parseIdAndArgs = fn _ => Bad,
 	     withDef = fn () => (fn () => ()),
 	     snapshot = fn () => fn () => (fn () => ())}
 	 val (allowConstant, ac) =
 	    makeBool ({name = "allowConstant", 
 		       default = false, expert = true}, ac)
-	 val (allowExport, ac) =
-	    makeBool ({name = "allowExport", 
-		       default = false, expert = false}, ac)
-	 val (allowImport, ac) =
-	    makeBool ({name = "allowImport", 
+	 val (allowFFI, ac) =
+	    makeBool ({name = "allowFFI",
 		       default = false, expert = false}, ac)
 	 val (allowPrim, ac) =
 	    makeBool ({name = "allowPrim", 
@@ -357,30 +357,9 @@ structure Elaborate =
 	 val (allowRebindEquals, ac) =
 	    makeBool ({name = "allowRebindEquals", 
 		       default = false, expert = true}, ac)
-	 val (allowSymbol, ac) =
-	    makeBool ({name = "allowSymbol", 
-		       default = false, expert = false}, ac)
 	 val (deadCode, ac) =
 	    makeBool ({name = "deadCode", 
 		       default = false, expert = false}, ac)
-	 val (allowFFI, ac) =
-	    make ({default = false,
-	           expert = false,
-	           toString = Bool.toString,
-	           name = "allowFFI",
-	           newCur = fn (_, b) => (setCur (allowExport, b)
-	          			  ; setCur (allowImport, b)
-	          			  ; setCur (allowSymbol, b)
-	          			  ; b),
-	           newDef = fn (_, b) => (setDef (allowExport, b)
-	          			  ; setDef (allowImport, b)
-	          			  ; setDef (allowSymbol, b)
-	          			  ; b),
-		   parseArgs = fn args' =>
-		               case args' of
-				  [arg'] => Bool.fromString arg'
-				| _ => NONE}, 
-		  ac)
 	 val (forceUsed, ac) =
 	    make ({default = false,
 		   expert = false,
@@ -417,48 +396,101 @@ structure Elaborate =
 	 val (sequenceUnit, ac) =
 	    makeBool ({name = "sequenceUnit", 
 		       default = false, expert = false}, ac)
-	 val (warnMatch, ac) =
-	    make ({default = true,
-		   expert = false,
-		   toString = Bool.toString,
-		   name = "warnMatch",
-		   newCur = fn (_, b) =>
-			       let
-				  val d = if b 
-					     then DiagEIW.Warn 
-					     else DiagEIW.Ignore
-			       in
-				  setCur (nonexhaustiveMatch, d)
-				  ; setCur (redundantMatch, d)
-				  ; b
-			       end,
-		   newDef = fn (_, b) =>
-			       let
-				  val d = if b 
-					     then DiagEIW.Warn 
-					     else DiagEIW.Ignore
-			       in
-				  setDef (nonexhaustiveMatch, d)
-				  ; setDef (redundantMatch, d)
-				  ; b
-			       end,
-		   parseArgs = fn [arg'] => Bool.fromString arg'
-				| _ => NONE}, 
-		  ac)
 	 val (warnUnused, ac) =
 	    makeBool ({name = "warnUnused", 
 		       default = false, expert = false}, ac)
+
 	 val {parseId, parseIdAndArgs, withDef, snapshot} = ac
+      end
+
+      local
+	 fun makeDeprecated ({alts: string list,
+			      name: string,
+			      parseArgs: string list -> string list option},
+			     {parseId: string -> (Id.t list, Id.t) parseResult,
+			      parseIdAndArgs: string -> ((Id.t * Args.t) list, (Id.t * Args.t)) parseResult}) =
+	    let
+	       val parseId = fn name' =>
+		  if String.equals (name', name) 
+		     then Deprecated (List.map (alts, deGood o parseId))
+		     else parseId name'
+	       val parseIdAndArgs = fn s =>
+		  case String.tokens (s, Char.isSpace) of
+		     name'::args' =>
+			if String.equals (name', name)
+			   then 
+			      case parseArgs args' of
+				 SOME alts => 
+				    Deprecated (List.map (alts, deGood o parseIdAndArgs))
+			       | NONE => Bad
+			   else parseIdAndArgs s
+		   | _ => Bad
+	    in
+	       {parseId = parseId,
+		parseIdAndArgs = parseIdAndArgs}
+	    end
+	 fun makeDeprecatedBool ({altIds: string list,
+				  altArgs: bool -> string list list,
+				  name: string},
+				 ac) =
+	    let
+	       local
+		  fun make b =
+		     List.map2
+		     (altIds, altArgs b, fn (altId, altArgs) =>
+		      String.concatWith (altId::altArgs, " "))
+	       in
+		  val trueAltIdAndArgs = make true
+		  val falseAltIdAndArgs = make false
+	       end
+	    in
+	       makeDeprecated ({alts = altIds,
+				name = name,
+				parseArgs = fn args' =>
+				            case args' of
+					       [arg'] => 
+						  (case Bool.fromString arg' of
+						      SOME true => SOME trueAltIdAndArgs
+						    | SOME false => SOME falseAltIdAndArgs
+						    | NONE => NONE)
+					     | _ => NONE}, 
+			       ac)
+	    end
+      in
+	 val ac = {parseId = parseId, parseIdAndArgs = parseIdAndArgs}
+
+	 val ac =
+	    makeDeprecatedBool ({altIds = ["allowFFI"],
+				 altArgs = fn b => [[Bool.toString b]],
+				 name = "allowExport"}, ac)
+	 val ac =
+	    makeDeprecatedBool ({altIds = ["allowFFI"],
+				 altArgs = fn b => [[Bool.toString b]],
+				 name = "allowImport"}, ac)
+	 val ac =
+	    makeDeprecatedBool ({altIds = ["nonexhaustiveMatch", "redundantMatch"],
+				 altArgs = fn true => [["warn"], ["warn"]] | false => [["ignore"], ["ignore"]],
+				 name = "warnMatch"}, ac)
+	 val {parseId, parseIdAndArgs} = ac
       end
 
       val processDefault = fn s =>
 	 case parseIdAndArgs s of
-	    SOME (_, args) => Args.processDef args
-	  | NONE => false
+	    Bad => Bad
+	  | Deprecated alts =>
+	       List.fold
+	       (alts, Deprecated (List.map (alts, #1)), fn ((_,args),res) =>
+		if Args.processDef args then res else Bad)
+	  | Good (_, args) => if Args.processDef args then Good () else Bad
+
       val processEnabled = fn (s, b) =>
 	 case parseId s of
-	    SOME id => Id.setEnabled (id, b)
-	  | NONE => false
+	    Bad => Bad
+	  | Deprecated alts => 
+	       List.fold
+	       (alts, Deprecated alts, fn (id,res) =>
+		if Id.setEnabled (id, b) then res else Bad)
+	  | Good id => if Id.setEnabled (id, b) then Good () else Bad
 
       val withDef : (unit -> 'a) -> 'a = fn f =>
 	 let

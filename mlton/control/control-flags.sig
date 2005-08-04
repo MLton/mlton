@@ -74,12 +74,10 @@ signature CONTROL_FLAGS =
 	    type ('args, 'st) t
 
 	    val allowConstant: (bool,bool) t
-	    val allowExport: (bool,bool) t
-	    val allowImport: (bool,bool) t
+	    val allowFFI: (bool,bool) t
 	    val allowOverload: (bool,bool) t
 	    val allowPrim: (bool,bool) t
 	    val allowRebindEquals: (bool,bool) t
-	    val allowSymbol: (bool,bool) t
 	    val deadCode: (bool,bool) t
 	    val forceUsed: (unit,bool) t
 	    val ffiStr: (string,string option) t
@@ -96,22 +94,26 @@ signature CONTROL_FLAGS =
 	    val expert: ('args, 'st) t -> bool
 	    val name: ('args, 'st) t -> string
 
+	    datatype ('a, 'b) parseResult =
+	       Bad | Deprecated of 'a | Good of 'b
+
 	    structure Id :
 	       sig
 		  type t
+		  val name: t -> string
 	       end
 	    val equalsId: ('args, 'st) t * Id.t -> bool
-	    val parseId: string -> Id.t option
+	    val parseId: string -> (Id.t list , Id.t) parseResult
 
 	    structure Args :
 	       sig
 		  type t
 		  val processAnn: t -> (unit -> unit)
 	       end
-	    val parseIdAndArgs: string -> (Id.t * Args.t) option
+	    val parseIdAndArgs: string -> ((Id.t * Args.t) list, Id.t * Args.t) parseResult
 
-	    val processDefault: string -> bool
-	    val processEnabled: string * bool -> bool
+	    val processDefault: string -> (Id.t list, unit) parseResult
+	    val processEnabled: string * bool -> (Id.t list, unit) parseResult
 
 	    val withDef: (unit -> 'a) -> 'a
 	    val snapshot: unit -> (unit -> 'a) -> 'a

@@ -129,7 +129,8 @@ for f in `ls *.sml`; do
  				ann 
 					\"allowFFI true\"
 					\"allowOverload true\"
-					\"warnMatch false\"
+					\"nonexhaustiveMatch ignore\"
+					\"redundantMatch ignore\"
 				in $f.sml 
 				end" >$mlb
 			cmd="$mlton $flags $extraFlags -output $f $mlb"
@@ -210,7 +211,8 @@ for f in `ls *.sml`; do
 			echo "testing $f"
 		echo "val _ = Main.doit 0" | cat $f.sml - > $tmpf.sml
 		$mlton -output $tmpf $flags 			\
-			-default-ann 'warnMatch false'		\
+			-default-ann 'nonexhaustiveMatch ignore'\
+			-default-ann 'redundantMatch ignore'	\
 			$tmpf.sml
 		if [ $? -ne 0 ]; then
 			compFail $f

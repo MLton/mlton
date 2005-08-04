@@ -207,9 +207,28 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 			 else ()
 		in
 		   case parseIdAndArgs ann of
-		      NONE => (warn ()
-			       ; elabBasdec basdec)
-		    | SOME (id, args) =>
+		      Control.Elaborate.Bad => 
+			 (warn ()
+			  ; elabBasdec basdec)
+		    | Control.Elaborate.Deprecated alts =>
+			 let
+			    val (ids, args) = List.unzip alts
+			    val () =
+			       let open Layout
+			       in
+				  Control.warning
+				  (reg, seq [str "deprecated annotation: ", str ann, str ", use ",
+					     List.layout (str o Control.Elaborate.Id.name) ids],
+				   empty)
+			       end
+			    val restores =
+			       List.map (args, Args.processAnn)
+			 in
+			    Exn.finally
+			    (fn () => elabBasdec basdec,
+			     fn () => List.foreach (List.rev restores, fn restore => restore ()))
+			 end
+		    | Control.Elaborate.Good (id, args) =>
 			 let
 			    val restore = Args.processAnn args
 			 in

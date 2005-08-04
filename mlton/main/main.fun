@@ -184,9 +184,15 @@ fun makeOptions {usage} =
        (Normal, "default-ann", " <ann>", "set annotation default for mlb files",
 	SpaceString 
 	(fn s =>
-	 if Control.Elaborate.processDefault s
-	    then ()
-	    else usage (concat ["invalid -default-ann flag: ", s]))),
+	 (case Control.Elaborate.processDefault s of
+	     Control.Elaborate.Bad => 
+		usage (concat ["invalid -default-ann flag: ", s])
+	   | Control.Elaborate.Deprecated ids =>
+		Out.output 
+		(Out.error,
+		 concat ["Warning: ", "deprecated annotation: ", s, ", use ",
+			 List.toString Control.Elaborate.Id.name ids, "."])
+	   | Control.Elaborate.Good () => ()))),
        (Expert, "diag-pass", " <pass>", "keep diagnostic info for pass",
 	SpaceString 
 	(fn s =>
@@ -200,9 +206,15 @@ fun makeOptions {usage} =
        (Normal, "disable-ann", " <ann>", "disable annotation in mlb files",
 	SpaceString 
 	(fn s =>
-	 if Control.Elaborate.processEnabled (s, false)
-	    then ()
-	    else usage (concat ["invalid -disable-ann flag: ", s]))),
+	 (case Control.Elaborate.processEnabled (s, false) of
+	     Control.Elaborate.Bad => 
+		usage (concat ["invalid -disable-ann flag: ", s])
+	   | Control.Elaborate.Deprecated ids =>
+		Out.output 
+		(Out.error,
+		 concat ["Warning: ", "deprecated annotation: ", s, ", use ",
+			 List.toString Control.Elaborate.Id.name ids, "."])
+	   | Control.Elaborate.Good () => ()))),
        (Expert, "drop-pass", " <pass>", "omit optimization pass",
 	SpaceString
 	(fn s => (case Regexp.fromString s of
@@ -213,9 +225,15 @@ fun makeOptions {usage} =
        (Expert, "enable-ann", " <ann>", "globally enable annotation",
 	SpaceString 
 	(fn s =>
-	 if Control.Elaborate.processEnabled (s, true)
-	    then ()
-	    else usage (concat ["invalid -enable-ann flag: ", s]))),
+	 (case Control.Elaborate.processEnabled (s, true) of
+	     Control.Elaborate.Bad => 
+		usage (concat ["invalid -enable-ann flag: ", s])
+	   | Control.Elaborate.Deprecated ids =>
+		Out.output 
+		(Out.error,
+		 concat ["Warning: ", "deprecated annotation: ", s, ", use ",
+			 List.toString Control.Elaborate.Id.name ids, "."])
+	   | Control.Elaborate.Good () => ()))),
        (Expert, "error-threshhold", " 20", "error threshhold",
 	intRef errorThreshhold),
        (Expert, "expert", " {false|true}", "enable expert status",

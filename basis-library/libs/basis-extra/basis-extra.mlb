@@ -1,7 +1,7 @@
 ann  
    "deadCode true"
    "sequenceUnit true"
-   "warnMatch true"
+   "nonexhaustiveMatch warn" "redundantMatch warn"
    "warnUnused true" "forceUsed"
 in
   local
@@ -229,7 +229,7 @@ in
     ../../mlton/socket.sig
     ../../mlton/socket.sml
     ../../mlton/syslog.sig
-    ann "allowImport true" in 
+    ann "allowFFI true" in 
       ../../mlton/syslog.sml 
     end
     ../../mlton/vector.sig

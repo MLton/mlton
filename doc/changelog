@@ -1,5 +1,15 @@
 Here are the changes since version 20041109.
 
+* 2005-08-03
+  - Annotation changes.
+    Deprecated: allowExport, allowImport, warnMatch
+    Added: allowFFI, nonexhaustiveExnMatch, nonexhaustiveMatch, 
+      redundantMatch
+	
+* 2005-08-01
+  - Update mllex and mlyacc with SML/NJ 110.55+ versions.  This 
+    incorporates a small number of minor bug fixes.
+
 * 2005-07-23
   - Fixed bug in pass to flatten refs into containing data structure.
 	
