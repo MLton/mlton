@@ -383,9 +383,9 @@ install-docs:
 	done
 	$(GZIP) -c $(LEX)/$(LEX).ps >$(TDOC)/$(LEX).ps.gz
 	$(GZIP) -c $(YACC)/$(YACC).ps >$(TDOC)/$(YACC).ps.gz
-	find $(TDOC)/ -name SVN -type d | xargs rm -rf
+	find $(TDOC)/ -name .svn -type d | xargs rm -rf
 	find $(TDOC)/ -name .ignore -type f | xargs rm -rf
-	find $(TEXM)/ -name SVN -type d | xargs rm -rf
+	find $(TEXM)/ -name .svn -type d | xargs rm -rf
 	find $(TEXM)/ -name .ignore -type f | xargs rm -rf
 
 TDOCBASE = $(DESTDIR)$(prefix)/share/doc-base
