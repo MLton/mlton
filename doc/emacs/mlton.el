@@ -111,3 +111,4 @@ source file."
   (mlton-parse-errors (file-name-directory mlton-main-file)
 		      (current-buffer)))
   
+(provide 'sml-mlton)
