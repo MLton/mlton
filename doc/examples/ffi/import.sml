@@ -12,7 +12,7 @@ val n = 17
 (* Call the C function *)
 val c = ffi (a, r, n)
 
-val (addrN, getN, setN) = _symbol "FFI_INT": MLton.Pointer.t, int;
+val (getN, setN) = _symbol "FFI_INT": int;
 
 val _ = print (concat [Int.toString (getN ()), "\n"])
 

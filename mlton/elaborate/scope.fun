@@ -250,10 +250,9 @@ fun ('down, 'up)
 	     | Prim {name, ty} =>
 		  do1 (loopTy (ty, d), fn ty =>
 		       Prim {name = name, ty = ty})
-	     | Symbol {attributes, name, cbTy, ptrTy} =>
-		  do2 (loopTy (cbTy, d), loopTy (ptrTy, d), fn (cbTy, ptrTy) =>
-		       Symbol {attributes = attributes, name = name, 
-			       cbTy = cbTy, ptrTy = ptrTy})
+	     | Symbol {attributes, name, cbTy} =>
+		  do1 (loopTy (cbTy, d), fn cbTy=>
+		       Symbol {attributes = attributes, name = name, cbTy = cbTy})
 	 end
       fun loopDec (d: Dec.t, down: 'down): Dec.t * 'up =
 	 let

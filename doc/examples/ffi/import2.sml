@@ -18,13 +18,13 @@ val _ =
 	     then "success\n"
 	  else "fail\n")
 
-val n = #2 (_symbol "FFI_INT": MLton.Pointer.t, int;) ()
+val n = #1 (_symbol "FFI_INT": int;) ()
 val _ = print (concat [Int.toString n, "\n"])
-val w = #2 (_symbol "FFI_WORD": MLton.Pointer.t, word;) ()
+val w = #1 (_symbol "FFI_WORD": word;) ()
 val _ = print (concat [Word.toString w, "\n"])
-val b = #2 (_symbol "FFI_BOOL": MLton.Pointer.t, bool;) ()
+val b = #1 (_symbol "FFI_BOOL": bool;) ()
 val _ = print (concat [Bool.toString b, "\n"])
-val r = #2 (_symbol "FFI_REAL": MLton.Pointer.t, real;) ()
+val r = #1 (_symbol "FFI_REAL": real;) ()
 val _ = print (concat [Real.toString r, "\n"])
 
 signature OPAQUE =
@@ -54,20 +54,24 @@ structure OpaqueReal :> OPAQUE =
       val toString = Real.toString
    end
 
-val (n_addr, n, _) = _symbol "FFI_INT": MLton.Pointer.t, OpaqueInt.t;
+val (n, _) = _symbol "FFI_INT": OpaqueInt.t;
 val _ = print (concat [OpaqueInt.toString (n ()), "\n"])
-val (w_addr, w, _) = _symbol "FFI_WORD": MLton.Pointer.t, OpaqueWord.t;
+val (w, _) = _symbol "FFI_WORD": OpaqueWord.t;
 val _ = print (concat [OpaqueWord.toString (w ()), "\n"])
-val (b_addr, b, _) = _symbol "FFI_BOOL": MLton.Pointer.t, OpaqueBool.t;
+val (b, _) = _symbol "FFI_BOOL": OpaqueBool.t;
 val _ = print (concat [OpaqueBool.toString (b ()), "\n"])
-val (r_addr, r, _) = _symbol "FFI_REAL": MLton.Pointer.t, OpaqueReal.t;
+val (r, _) = _symbol "FFI_REAL": OpaqueReal.t;
 val _ = print (concat [OpaqueReal.toString (r ()), "\n"])
 
+val n_addr = _address "FFI_INT": MLton.Pointer.t;
 val n = MLton.Pointer.getInt32 (n_addr, 0);
 val _ = print (concat [Int.toString n, "\n"])
+val w_addr = _address "FFI_WORD": MLton.Pointer.t;
 val w = MLton.Pointer.getWord32 (w_addr, 0);
 val _ = print (concat [Word.toString w, "\n"])
+val b_addr = _address "FFI_BOOL": MLton.Pointer.t;
 val b = (MLton.Pointer.getInt32 (n_addr, 0)) <> 0
 val _ = print (concat [Bool.toString b, "\n"])
+val r_addr = _address "FFI_REAL": MLton.Pointer.t;
 val r = MLton.Pointer.getReal64 (r_addr, 0)
 val _ = print (concat [Real.toString r, "\n"])

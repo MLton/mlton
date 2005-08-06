@@ -200,7 +200,7 @@ functor RealComparisons (type t
 
 structure Primitive =
    struct
-      val bug = _import "MLton_bug" : NullString.t -> unit;
+      val bug = _import "MLton_bug": NullString.t -> unit;
       val debug = _command_line_const "MLton.debug": bool = false;
       val detectOverflow =
 	 _command_line_const "MLton.detectOverflow": bool = true;
@@ -241,7 +241,7 @@ structure Primitive =
 	 struct
 	    type t = Pointer.t
 
-	    val gcState = #2 _symbol "gcStateAddress": Pointer.t, t; ()
+	    val gcState = #1 _symbol "gcStateAddress": t; ()
 	 end
       
       structure CallStack =
@@ -310,9 +310,9 @@ structure Primitive =
 
       structure CommandLine =
 	 struct
-	    val argc = #2 _symbol "CommandLine_argc": Pointer.t, int;
-	    val argv = #2 _symbol "CommandLine_argv": Pointer.t, CStringArray.t;
-	    val commandName = #2 _symbol "CommandLine_commandName": Pointer.t, CString.t;
+	    val argc = #1 _symbol "CommandLine_argc": int;
+	    val argv = #1 _symbol "CommandLine_argv": CStringArray.t;
+	    val commandName = #1 _symbol "CommandLine_commandName": CString.t;
 	 end
 
       structure Date =
@@ -373,19 +373,19 @@ structure Primitive =
 
       structure FFI =
 	 struct
-	    val getOp = #2 _symbol "MLton_FFI_op": Pointer.t, int;
-	    val int8Array = #2 _symbol "MLton_FFI_Int8": Pointer.t, Pointer.t; ()
-	    val int16Array = #2 _symbol "MLton_FFI_Int16": Pointer.t, Pointer.t; ()
-	    val int32Array = #2 _symbol "MLton_FFI_Int32": Pointer.t, Pointer.t; ()
-	    val int64Array = #2 _symbol "MLton_FFI_Int64": Pointer.t, Pointer.t; ()
+	    val getOp = #1 _symbol "MLton_FFI_op": int;
+	    val int8Array = #1 _symbol "MLton_FFI_Int8": Pointer.t; ()
+	    val int16Array = #1 _symbol "MLton_FFI_Int16": Pointer.t; ()
+	    val int32Array = #1 _symbol "MLton_FFI_Int32": Pointer.t; ()
+	    val int64Array = #1 _symbol "MLton_FFI_Int64": Pointer.t; ()
 	    val numExports = _build_const "MLton_FFI_numExports": int;
-	    val pointerArray = #2 _symbol "MLton_FFI_Pointer": Pointer.t, Pointer.t; ()
-	    val real32Array = #2 _symbol "MLton_FFI_Real32": Pointer.t, Pointer.t; ()
-	    val real64Array = #2 _symbol "MLton_FFI_Real64": Pointer.t, Pointer.t; ()
-	    val word8Array = #2 _symbol "MLton_FFI_Word8": Pointer.t, Pointer.t; ()
-	    val word16Array = #2 _symbol "MLton_FFI_Word16": Pointer.t, Pointer.t; ()
-	    val word32Array = #2 _symbol "MLton_FFI_Word32": Pointer.t, Pointer.t; ()
-	    val word64Array = #2 _symbol "MLton_FFI_Word64": Pointer.t, Pointer.t; ()
+	    val pointerArray = #1 _symbol "MLton_FFI_Pointer": Pointer.t; ()
+	    val real32Array = #1 _symbol "MLton_FFI_Real32": Pointer.t; ()
+	    val real64Array = #1 _symbol "MLton_FFI_Real64": Pointer.t; ()
+	    val word8Array = #1 _symbol "MLton_FFI_Word8": Pointer.t; ()
+	    val word16Array = #1 _symbol "MLton_FFI_Word16": Pointer.t; ()
+	    val word32Array = #1 _symbol "MLton_FFI_Word32": Pointer.t; ()
+	    val word64Array = #1 _symbol "MLton_FFI_Word64": Pointer.t; ()
 	 end
 
       structure GC =
@@ -983,7 +983,7 @@ structure Primitive =
 			val forkIsEnabled =
 			   case host of
 			      Cygwin =>
-				 #2 _symbol "MLton_Platform_CygwinUseMmap": Pointer.t, bool; ()
+				 #1 _symbol "MLton_Platform_CygwinUseMmap": bool; ()
 			    | MinGW => false
 			    | _ => true
 
@@ -1095,42 +1095,42 @@ structure Primitive =
 	       struct
 		  type openflag = int
 		     
-		  val CONS = _const "LOG_CONS" : openflag;
-		  val NDELAY = _const "LOG_NDELAY" : openflag;
-		  val PERROR = _const "LOG_PERROR" : openflag;
-		  val PID = _const "LOG_PID" : openflag;
+		  val CONS = _const "LOG_CONS": openflag;
+		  val NDELAY = _const "LOG_NDELAY": openflag;
+		  val PERROR = _const "LOG_PERROR": openflag;
+		  val PID = _const "LOG_PID": openflag;
 		     
 		  type facility = int
 		     
-		  val AUTHPRIV = _const "LOG_AUTHPRIV" : facility;
-		  val CRON = _const "LOG_CRON" : facility;
-		  val DAEMON = _const "LOG_DAEMON" : facility;
-		  val KERN = _const "LOG_KERN" : facility;
-		  val LOCAL0 = _const "LOG_LOCAL0" : facility;
-		  val LOCAL1 = _const "LOG_LOCAL1" : facility;
-		  val LOCAL2 = _const "LOG_LOCAL2" : facility;
-		  val LOCAL3 = _const "LOG_LOCAL3" : facility;
-		  val LOCAL4 = _const "LOG_LOCAL4" : facility;
-		  val LOCAL5 = _const "LOG_LOCAL5" : facility;
-		  val LOCAL6 = _const "LOG_LOCAL6" : facility;
-		  val LOCAL7 = _const "LOG_LOCAL7" : facility;
-		  val LPR = _const "LOG_LPR" : facility;
-		  val MAIL = _const "LOG_MAIL" : facility;
-		  val NEWS = _const "LOG_NEWS" : facility;
-		  val SYSLOG = _const "LOG_SYSLOG" : facility;
-		  val USER = _const "LOG_USER" : facility;
-		  val UUCP = _const "LOG_UUCP" : facility;
+		  val AUTHPRIV = _const "LOG_AUTHPRIV": facility;
+		  val CRON = _const "LOG_CRON": facility;
+		  val DAEMON = _const "LOG_DAEMON": facility;
+		  val KERN = _const "LOG_KERN": facility;
+		  val LOCAL0 = _const "LOG_LOCAL0": facility;
+		  val LOCAL1 = _const "LOG_LOCAL1": facility;
+		  val LOCAL2 = _const "LOG_LOCAL2": facility;
+		  val LOCAL3 = _const "LOG_LOCAL3": facility;
+		  val LOCAL4 = _const "LOG_LOCAL4": facility;
+		  val LOCAL5 = _const "LOG_LOCAL5": facility;
+		  val LOCAL6 = _const "LOG_LOCAL6": facility;
+		  val LOCAL7 = _const "LOG_LOCAL7": facility;
+		  val LPR = _const "LOG_LPR": facility;
+		  val MAIL = _const "LOG_MAIL": facility;
+		  val NEWS = _const "LOG_NEWS": facility;
+		  val SYSLOG = _const "LOG_SYSLOG": facility;
+		  val USER = _const "LOG_USER": facility;
+		  val UUCP = _const "LOG_UUCP": facility;
 		     
 		  type loglevel = int
 		     
-		  val EMERG = _const "LOG_EMERG" : loglevel;
-		  val ALERT = _const "LOG_ALERT" : loglevel;
-		  val CRIT = _const "LOG_CRIT" : loglevel;
-		  val ERR = _const "LOG_ERR" : loglevel;
-		  val WARNING = _const "LOG_WARNING" : loglevel;
-		  val NOTICE = _const "LOG_NOTICE" : loglevel;
-		  val INFO = _const "LOG_INFO" : loglevel;
-		  val DEBUG = _const "LOG_DEBUG" : loglevel;
+		  val EMERG = _const "LOG_EMERG": loglevel;
+		  val ALERT = _const "LOG_ALERT": loglevel;
+		  val CRIT = _const "LOG_CRIT": loglevel;
+		  val ERR = _const "LOG_ERR": loglevel;
+		  val WARNING = _const "LOG_WARNING": loglevel;
+		  val NOTICE = _const "LOG_NOTICE": loglevel;
+		  val INFO = _const "LOG_INFO": loglevel;
+		  val DEBUG = _const "LOG_DEBUG": loglevel;
 	       end
 
 	    structure Weak =
@@ -1139,7 +1139,7 @@ structure Primitive =
 		     
 		  val canGet = _prim "Weak_canGet": 'a t -> bool;
 		  val get = _prim "Weak_get": 'a t -> 'a;
-		  val new = _prim "Weak_new" : 'a -> 'a t;
+		  val new = _prim "Weak_new": 'a -> 'a t;
 	       end
 	 end
 
@@ -1247,7 +1247,7 @@ structure Primitive =
 	    fun isNull p = p = null
 
 	    (* val + = _prim "Pointer_add": t * t -> t; *)
-	    (* val op < = _prim "Pointer_lt" : t * t -> bool; *)
+	    (* val op < = _prim "Pointer_lt": t * t -> bool; *)
 	    (* val - = _prim "Pointer_sub": t * t -> t; *)
 	    val free = _import "free": t -> unit;
 	    val getInt8 = _prim "Pointer_getWord8": t * int -> Int8.int;
@@ -1308,11 +1308,11 @@ structure Primitive =
 		  val atan2 = _prim "Real64_Math_atan2": real * real -> real;
 		  val cos = _prim "Real64_Math_cos": real -> real;
 		  val cosh = _import "cosh": real -> real;
-		  val e = #2 _symbol "Real64_Math_e": Pointer.t, real; ()
+		  val e = #1 _symbol "Real64_Math_e": real; ()
 		  val exp = _prim "Real64_Math_exp": real -> real;
 		  val ln = _prim "Real64_Math_ln": real -> real;
 		  val log10 = _prim "Real64_Math_log10": real -> real;
-		  val pi = #2 _symbol "Real64_Math_pi": Pointer.t, real; ()
+		  val pi = #1 _symbol "Real64_Math_pi": real; ()
 		  val pow = _import "pow": real * real -> real;
 		  val sin = _prim "Real64_Math_sin": real -> real;
 		  val sinh = _import "sinh": real -> real;
@@ -1338,9 +1338,9 @@ structure Primitive =
 	       _import "Real64_gdtoa": real * int * int * int ref -> CString.t;
 	    val fromInt = _prim "WordS32_toReal64": int -> real;
 	    val ldexp = _prim "Real64_ldexp": real * int -> real;
-	    val maxFinite = #2 _symbol "Real64_maxFinite": Pointer.t, real; ()
-	    val minNormalPos = #2 _symbol "Real64_minNormalPos": Pointer.t, real; ()
-	    val minPos = #2 _symbol "Real64_minPos": Pointer.t, real; ()
+	    val maxFinite = #1 _symbol "Real64_maxFinite": real; ()
+	    val minNormalPos = #1 _symbol "Real64_minNormalPos": real; ()
+	    val minPos = #1 _symbol "Real64_minPos": real; ()
 	    val modf = _import "Real64_modf": real * real ref -> real;
 	    val nextAfter = _import "Real64_nextAfter": real * real -> real;
 	    val round = _prim "Real64_round": real -> real;
@@ -1382,11 +1382,11 @@ structure Primitive =
 		  val atan2 = _prim "Real32_Math_atan2": real * real -> real;
 		  val cos = _prim "Real32_Math_cos": real -> real;
 		  val cosh = unary Real64.Math.cosh
-		  val e = #2 _symbol "Real32_Math_e": Pointer.t, real; ()
+		  val e = #1 _symbol "Real32_Math_e": real; ()
 		  val exp = _prim "Real32_Math_exp": real -> real;
 		  val ln = _prim "Real32_Math_ln": real -> real;
 		  val log10 = _prim "Real32_Math_log10": real -> real;
-		  val pi = #2 _symbol "Real32_Math_pi": Pointer.t, real; ()
+		  val pi = #1 _symbol "Real32_Math_pi": real; ()
 		  val pow = binary Real64.Math.pow
 		  val sin = _prim "Real32_Math_sin": real -> real;
 		  val sinh = unary Real64.Math.sinh
@@ -1413,9 +1413,9 @@ structure Primitive =
 	       _import "Real32_gdtoa": real * int * int * int ref -> CString.t;
 	    val fromInt = _prim "WordS32_toReal32": int -> real;
 	    val ldexp = _prim "Real32_ldexp": real * int -> real;
-	    val maxFinite = #2 _symbol "Real32_maxFinite": Pointer.t, real; ()
-	    val minNormalPos = #2 _symbol "Real32_minNormalPos": Pointer.t, real; ()
-	    val minPos = #2 _symbol "Real32_minPos": Pointer.t, real; ()
+	    val maxFinite = #1 _symbol "Real32_maxFinite": real; ()
+	    val minNormalPos = #1 _symbol "Real32_minNormalPos": real; ()
+	    val minPos = #1 _symbol "Real32_minPos": real; ()
 	    val modf = _import "Real32_modf": real * real ref -> real;
 	    val signBit = _import "Real32_signBit": real -> bool;
 	    val strto = _import "Real32_strto": NullString.t -> real;
@@ -1806,7 +1806,7 @@ structure Primitive =
 	    val fromInt = _prim "WordU32_toWord8": int -> word;
 	    val fromLarge = _prim "WordU64_toWord8": LargeWord.word -> word;
 	    val << = _prim "Word8_lshift": word * Word.word -> word;
-	    val op < = _prim "WordU8_lt" : word * word -> bool;
+	    val op < = _prim "WordU8_lt": word * word -> bool;
 	    val mod = _prim "WordU8_rem": word * word -> word;
 	    val * = _prim "WordU8_mul": word * word -> word;
 	    val ~ = _prim "Word8_neg": word -> word;
@@ -1918,7 +1918,7 @@ structure Primitive =
 	    val fromInt = _prim "WordU32_toWord16": int -> word;
 	    val fromLarge = _prim "WordU64_toWord16": LargeWord.word -> word;
 	    val << = _prim "Word16_lshift": word * Word.word -> word;
-	    val op < = _prim "WordU16_lt" : word * word -> bool;
+	    val op < = _prim "WordU16_lt": word * word -> bool;
 	    val mod = _prim "WordU16_rem": word * word -> word;
 	    val * = _prim "WordU16_mul": word * word -> word;
 	    val ~ = _prim "Word16_neg": word -> word;
@@ -2074,7 +2074,7 @@ structure Primitive =
 	    val fromInt = _prim "WordU32_toWord32": int -> word;
 	    val fromLarge = _prim "WordU64_toWord32": LargeWord.word -> word;
 	    val << = _prim "Word32_lshift": word * word -> word;
-	    val op < = _prim "WordU32_lt" : word * word -> bool;
+	    val op < = _prim "WordU32_lt": word * word -> bool;
 	    val mod = _prim "WordU32_rem": word * word -> word;
 	    val * = _prim "WordU32_mul": word * word -> word;
 	    val ~ = _prim "Word32_neg": word -> word;
@@ -2113,7 +2113,7 @@ structure Primitive =
 	    val fromInt = _prim "WordS32_toWord64": int -> word;
 	    val fromLarge: LargeWord.word -> word = fn x => x
 	    val << = _prim "Word64_lshift": word * Word.word -> word;
-	    val op < = _prim "WordU64_lt" : word * word -> bool;
+	    val op < = _prim "WordU64_lt": word * word -> bool;
 	    val mod = _prim "WordU64_rem": word * word -> word;
 	    val * = _prim "WordU64_mul": word * word -> word;
 	    val ~ = _prim "Word64_neg": word -> word;

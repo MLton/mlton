@@ -937,12 +937,10 @@ local
 			   (fn () => Const.word (WordX.one WordSize.default)),
 			   Type.defaultWord)
 
-   fun mkAddress {ctypeCbTy: CType.t,
-		  expandedPtrTy: Type.t,
+   fun mkAddress {expandedPtrTy: Type.t,
 		  name: string}: Cexp.t =
       primApp {args = Vector.new0 (),
-	       prim = Prim.ffiSymbol {name = name,
-				      cty = ctypeCbTy},
+	       prim = Prim.ffiSymbol {name = name},
 	       result = expandedPtrTy}
 
    fun mkFetch {ctypeCbTy, isBool,
@@ -1010,8 +1008,7 @@ in
 		    Type.layoutPretty elabedPtrTy)
 		   ; CType.Pointer)
 	 val addrExp =
-	    mkAddress {ctypeCbTy = CType.Pointer,
-		       expandedPtrTy = expandedPtrTy,
+	    mkAddress {expandedPtrTy = expandedPtrTy,
 		       name = name}
 	 fun wrap (e, t) = Cexp.make (Cexp.node e, t)
       in
@@ -1021,8 +1018,6 @@ in
    fun symbolDirect {attributes: SymbolAttribute.t list,
 		     elabedCbTy: Type.t,
 		     expandedCbTy: Type.t,
-		     elabedPtrTy: Type.t,
-		     expandedPtrTy: Type.t,
 		     name: string,
 		     region: Region.t}: Cexp.t =
       let
@@ -1035,17 +1030,8 @@ in
 		    Type.layoutPretty elabedCbTy)
 		   ; CType.Pointer)
 	 val isBool = Type.isBool expandedCbTy
-	 val ctypePtrTy =
-	    case Type.toCType expandedPtrTy of
-	       SOME {ctype = CType.Pointer, ...} => CType.Pointer
-	     | _ =>
-		  (Control.error
-		   (region, str "invalid type for _symbol ptr",
-		    Type.layoutPretty elabedPtrTy)
-		   ; CType.Pointer)
 	 val addrExp =
-	    mkAddress {ctypeCbTy = ctypeCbTy,
-		       expandedPtrTy = expandedPtrTy,
+	    mkAddress {expandedPtrTy = Type.word (WordSize.pointer ()),
 		       name = name}
 	 val () =
 	    if List.exists (attributes, fn attr =>
@@ -1056,9 +1042,8 @@ in
 	 val setArg = Var.newNoname ()
 	 fun wrap (e, t) = Cexp.make (Cexp.node e, t)
       in
-	 (Cexp.tuple o Vector.new3)
-	 (wrap (addrExp, elabedPtrTy),
-	  wrap ((Cexp.lambda o Lambda.make)
+	 (Cexp.tuple o Vector.new2)
+	 (wrap ((Cexp.lambda o Lambda.make)
 		{arg = getArg,
 		 argType = Type.unit,
 		 body = mkFetch {ctypeCbTy = ctypeCbTy, 
@@ -1173,8 +1158,7 @@ in
 		   ; CType.Pointer)
 	 val isBool = Type.isBool expandedCbTy
 	 val addrExp =
-	    mkAddress {ctypeCbTy = ctypeCbTy,
-		       expandedPtrTy = Type.word (WordSize.pointer ()),
+	    mkAddress {expandedPtrTy = Type.word (WordSize.pointer ()),
 		       name = name}
       in
 	 mkFetch {ctypeCbTy = ctypeCbTy, 
@@ -2783,20 +2767,16 @@ fun elaborateDec (d, {env = E, nest}) =
 				    expandedTy = expandedTy,
 				    prim = Prim.fromString name}
 			    end
-                       | Symbol {attributes, cbTy, ptrTy, name} =>
+                       | Symbol {attributes, cbTy, name} =>
 			    let
 			       val () =
 				  check (ElabControl.allowFFI, "_symbol")
 			       val (elabedCbTy, expandedCbTy) =
 				  elabAndExpandTy cbTy
-			       val (elabedPtrTy, expandedPtrTy) =
-				  elabAndExpandTy ptrTy
 			    in
 			       symbolDirect {attributes = attributes,
 					     elabedCbTy = elabedCbTy,
 					     expandedCbTy = expandedCbTy,
-					     elabedPtrTy = elabedPtrTy,
-					     expandedPtrTy = expandedPtrTy,
 					     name = name,
 					     region = region}
 			    end

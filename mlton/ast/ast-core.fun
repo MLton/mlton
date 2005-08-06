@@ -304,8 +304,7 @@ structure PrimKind =
 		  ty: Type.t}
        | Symbol of {attributes: SymbolAttribute.t list, 
 		    name: string,
-		    cbTy: Type.t,
-		    ptrTy: Type.t}
+		    cbTy: Type.t}
 
       fun name pk =
 	 case pk of

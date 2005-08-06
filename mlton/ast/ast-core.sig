@@ -123,8 +123,7 @@ signature AST_CORE =
 			ty: Type.t}
 	     | Symbol of {attributes: SymbolAttribute.t list, 
 			  name: string,
-			  cbTy: Type.t,
-			  ptrTy: Type.t}
+			  cbTy: Type.t}
 	 end
 
       structure Priority:

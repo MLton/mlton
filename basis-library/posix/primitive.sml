@@ -298,13 +298,13 @@ structure PosixPrimitive =
 		  val cstime = _import "Posix_ProcEnv_Tms_cstime": unit -> clock_t;
 	       end
 
-	    val ctermid = _import "Posix_ProcEnv_ctermid" : unit -> cstring;
-	    val environ = #2 _symbol "Posix_ProcEnv_environ" : Pointer.t, cstringArray; ()
-	    val getenv = _import "Posix_ProcEnv_getenv" : NullString.t -> cstring;
-	    val isatty = _import "Posix_ProcEnv_isatty" : fd -> bool;
-	    val sysconf = _import "Posix_ProcEnv_sysconf" : int -> int;
-	    val times = _import "Posix_ProcEnv_times" : unit -> clock_t;
-	    val ttyname = _import "Posix_ProcEnv_ttyname" : fd -> cstring;
+	    val ctermid = _import "Posix_ProcEnv_ctermid": unit -> cstring;
+	    val environ = #1 _symbol "Posix_ProcEnv_environ": cstringArray; ()
+	    val getenv = _import "Posix_ProcEnv_getenv": NullString.t -> cstring;
+	    val isatty = _import "Posix_ProcEnv_isatty": fd -> bool;
+	    val sysconf = _import "Posix_ProcEnv_sysconf": int -> int;
+	    val times = _import "Posix_ProcEnv_times": unit -> clock_t;
+	    val ttyname = _import "Posix_ProcEnv_ttyname": fd -> cstring;
 	 end 
       
       structure FileSys =

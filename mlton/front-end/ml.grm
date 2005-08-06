@@ -1034,11 +1034,10 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
         | PRIM string COLON ty SEMICOLON
 	  (Exp.Prim (PrimKind.Prim {name = string,
                                     ty = ty}))
-        | SYMBOL string symattributes COLON ty COMMA ty SEMICOLON
+        | SYMBOL string symattributes COLON ty SEMICOLON
           (Exp.Prim (PrimKind.Symbol {attributes = symattributes,
-                                      cbTy = ty2,
-                                      name = string,
-                                      ptrTy = ty1}))
+                                      cbTy = ty,
+                                      name = string}))
         | SYMBOL ASTERISK COLON ty COMMA ty SEMICOLON
           (Exp.Prim (PrimKind.ISymbol {cbTy = ty2,
                                        ptrTy = ty1}))
