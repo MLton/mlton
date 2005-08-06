@@ -145,7 +145,7 @@ freebsd:
 	( cd $(SRC) && tar -cpf - . ) | ( cd $(BSDSRC) && tar -xpf - )
 	cd /tmp && tar -cpf - mlton-$(VERSION) | \
 		 $(GZIP) >/usr/ports/distfiles/mlton-$(VERSION)-1.freebsd.src.tgz
-			     # vvvv do not change make to $(MAKE)
+			      # vvvv do not change make to $(MAKE)
 	cd $(BSDSRC)/freebsd && make build-package  
 
 .PHONY: libraries-no-check
@@ -373,7 +373,11 @@ install-docs:
 	mkdir -p $(TDOC)
 	(									\
 		cd $(SRC)/doc &&						\
-		$(CP) changelog cm2mlb cmcat examples license README $(TDOC)/	\
+		$(CP) changelog examples license README $(TDOC)/		\
+	)
+	(									\
+		cd $(SRC)/util &&						\
+		$(CP) cmcat cm2mlb $(TDOC)/					\
 	)
 	rm -rf $(TDOC)/user-guide
 	for f in callcc command-line hello-world same-fringe signals	\
