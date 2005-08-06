@@ -1,5 +1,5 @@
 ann
-   "sequenceUnit true"
+   "sequenceNonUnit warn"
    "nonexhaustiveMatch warn" "redundantMatch warn"
    "warnUnused false" "forceUsed"
 in

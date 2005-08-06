@@ -19,10 +19,10 @@ structure Critical : CRITICAL =
 	       AtomicState.NonAtomic => "[NonAtomic]"
 	     | AtomicState.Atomic n => concat ["[ Atomic ", Int.toString n, "]"]
       end
-      fun doAtomic f = (atomicBegin (); f (); atomicEnd ())
+      fun doAtomic (f: unit -> unit) = (atomicBegin (); f (); atomicEnd ())
 
       val mask = Signal.Mask.some [Itimer.signal Itimer.Real]
       fun maskBegin () = Signal.Mask.block mask
       fun maskEnd () = Signal.Mask.unblock mask
-      fun doMasked f = (maskBegin (); f (); maskEnd ())
+      fun doMasked (f: unit -> unit) = (maskBegin (); f (); maskEnd ())
    end

@@ -494,7 +494,7 @@ fun restoreFunction {globals: Statement.t vector}
 	  = case VarInfo.peekVar (varInfo x)
 	      of NONE => x
 	       | SOME x' => x'
-	fun rewriteStatement addPost (Statement.T {var, ty, exp})
+	fun rewriteStatement (addPost: (unit -> unit) -> unit) (Statement.T {var, ty, exp})
 	  = let
 	      val exp = Exp.replaceVar (exp, rewriteVar)
 	      val var

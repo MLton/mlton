@@ -67,7 +67,7 @@ structure Date :> DATE =
 		 tm_year   : int}
 
     local
-       fun make f (n: int): tmoz =
+       fun make (f: int ref -> unit) (n: int): tmoz =
 	  (f (ref n)
 	   ; {tm_hour = Tm.hour (),
 	      tm_isdst = Tm.isdst (),

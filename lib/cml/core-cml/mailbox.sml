@@ -133,7 +133,7 @@ structure Mailbox : MAILBOX_EXTRA =
 
       fun recvEvt (MB state) = 
 	 let
-	    fun blockFn {transId, cleanUp, next} = 
+	    fun blockFn {transId, cleanUp: unit -> unit, next} = 
 	       let
 		  val q = 
 		     case !state of

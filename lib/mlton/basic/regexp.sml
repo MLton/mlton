@@ -1603,7 +1603,7 @@ in
 	       fun findLong (c, s, i) = find (c, s, i, false)
 	       fun findShort (c, s, i) = find (c, s, i, true)
 
-	       fun foreachMatchShort (c, s, f) =
+	       fun foreachMatchShort (c, s, f: Match.t -> unit) =
 		  let
 		     fun loop i =
 			case findShort (c, s, i) of

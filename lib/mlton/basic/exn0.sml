@@ -25,7 +25,7 @@ in
        | Raise e => h e
 end
 
-fun finally (thunk, cleanup) =
+fun finally (thunk, cleanup: unit -> unit) =
    try (thunk, fn a => (cleanup (); a), fn e => (cleanup (); raise e))
 
 fun windFail (f: unit -> 'a, g: unit -> unit): 'a =

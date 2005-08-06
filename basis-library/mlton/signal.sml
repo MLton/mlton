@@ -196,7 +196,7 @@ structure Handler =
 	    Handler
 	 end
 
-      fun simple f = handler (fn t => (f (); t))
+      fun simple (f: unit -> unit) = handler (fn t => (f (); t))
    end
 
 val setHandler = fn (s, h) =>

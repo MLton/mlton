@@ -393,9 +393,9 @@ structure Elaborate =
 	 val (redundantMatch, ac) =
 	     makeDiagEIW ({name = "redundantMatch", 
 			   default = DiagEIW.Warn, expert = false}, ac)
-	 val (sequenceUnit, ac) =
-	    makeBool ({name = "sequenceUnit", 
-		       default = false, expert = false}, ac)
+	 val (sequenceNonUnit, ac) =
+	    makeDiagEIW ({name = "sequenceNonUnit", 
+			  default = DiagEIW.Ignore, expert = false}, ac)
 	 val (warnUnused, ac) =
 	    makeBool ({name = "warnUnused", 
 		       default = false, expert = false}, ac)
@@ -467,6 +467,10 @@ structure Elaborate =
 	    makeDeprecatedBool ({altIds = ["allowFFI"],
 				 altArgs = fn b => [[Bool.toString b]],
 				 name = "allowImport"}, ac)
+	 val ac =
+	    makeDeprecatedBool ({altIds = ["sequenceNonUnit"],
+				 altArgs = fn true => [["warn"]] | false => [["ignore"]],
+				 name = "sequenceUnit"}, ac)
 	 val ac =
 	    makeDeprecatedBool ({altIds = ["nonexhaustiveMatch", "redundantMatch"],
 				 altArgs = fn true => [["warn"], ["warn"]] | false => [["ignore"], ["ignore"]],

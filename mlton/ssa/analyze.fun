@@ -132,7 +132,7 @@ fun 'a analyze
 		     else Error.bug (concat ["Analyze.loopTransfer: Case:",
 					     Label.toString j,
 					     " must be nullary"])
-		  fun doit (s, cs, filter) =
+		  fun doit (s, cs, filter: 'a * 'b -> unit) =
 		     (filter (test, s)
 		      ; Vector.foreach (cs, fn (_, j) => ensureNullary j))
 		  datatype z = datatype Cases.t

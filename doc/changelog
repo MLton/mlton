@@ -1,5 +1,10 @@
 Here are the changes since version 20041109.
 
+* 2005-08-06
+  - Annotation changes.
+    Deprecated: sequenceUnit
+    Added: sequenceNonUnit
+
 * 2005-08-03
   - Annotation changes.
     Deprecated: allowExport, allowImport, warnMatch

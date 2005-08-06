@@ -12,7 +12,7 @@ fun try (f: unit -> 'a, k: 'a -> 'b, h: exn -> 'b) =
        | E e => h e
    end
 	 
-fun wind (thunk, cleanup) =
+fun wind (thunk, cleanup: unit -> unit) =
    try (thunk, fn a => (cleanup (); a), fn e => (cleanup (); raise e))
 
 end

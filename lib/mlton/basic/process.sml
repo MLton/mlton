@@ -233,7 +233,7 @@ val doesSucceed =
    Trace.trace ("Process.doesSucceed", Function.layout, Bool.layout)
    doesSucceed
 
-fun makeCommandLine commandLine args =
+fun makeCommandLine (commandLine: string list -> unit) args =
    ((commandLine args; OS.Process.success)
     handle e =>
        let

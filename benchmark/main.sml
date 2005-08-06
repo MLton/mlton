@@ -10,8 +10,6 @@ struct
 
 type int = Int.t
 
-val fail = Process.fail
-
 fun usage msg =
    Process.usage {usage = "[-mlkit] [-mosml] [-smlnj] bench1 bench2 ...",
 		  msg = msg}
@@ -433,7 +431,7 @@ fun main args =
 		  let
 		     open MLton.Signal
 		  in
-		     setHandler (Posix.Signal.pipe, Handler.ignore)
+		     setHandler (Pervasive.Posix.Signal.pipe, Handler.ignore)
 		  end
 	       fun r2s n r = Real.format (r, Real.Format.fix (SOME n))
 	       val i2s = Int.toCommaString

@@ -80,6 +80,7 @@ lock table."
     ("nonexhaustiveMatch" "warn" "error" "ignore")
     ("forceUsed")
     ("redundantMatch" "warn" "error" "ignore")
+    ("sequenceNonUnit" "ignore" "warn" "error")
     ("sequenceUnit" "false" "true")
     ("warnMatch" "true" "false")
     ("warnUnused" "false" "true"))

@@ -216,7 +216,7 @@ structure Array2: ARRAY2 =
 	    val ncols = stopCol -? col
 	    val _ = checkRegion {base = dst, row = dst_row, col = dst_col,
 				nrows = SOME nrows, ncols = SOME ncols}
-	    fun for (start, stop, f) =
+	    fun for (start, stop, f: int -> unit) =
 	       let
 		  fun loop i =
 		     if i >= stop
@@ -224,7 +224,7 @@ structure Array2: ARRAY2 =
 		     else (f i; loop (i + 1))
 	       in loop start
 	       end
-	    fun forDown (start, stop, f) =
+	    fun forDown (start, stop, f: int -> unit) =
 	       let
 		  fun loop i =
 		     if i < start

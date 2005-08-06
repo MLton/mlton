@@ -103,7 +103,7 @@ fun withTemp f =
       Exn.finally (fn () => f name, fn () => remove name)
    end
    
-fun withTempOut' (z, f, g) =
+fun withTempOut' (z, f: Out.t -> unit, g) =
    let
       val (name, out) = temp z
    in

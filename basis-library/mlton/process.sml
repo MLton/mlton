@@ -234,7 +234,7 @@ structure MLtonProcess =
 		  dup2 (stdin, FileSys.stdin)
 		  ; dup2 (stdout, FileSys.stdout)
 		  ; dup2 (stderr, FileSys.stderr)
-		  ; Process.exece (path, base :: args, env)
+		  ; ignore (Process.exece (path, base :: args, env))
 		  ; Process.exit 0w1 (* just in case *)
 	       end
 	  | SOME pid => pid (* parent *)

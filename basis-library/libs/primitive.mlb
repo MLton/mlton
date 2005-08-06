@@ -6,7 +6,7 @@ ann
    "deadCode true"
    "nonexhaustiveMatch warn"
    "redundantMatch warn"
-   "sequenceUnit true"
+   "sequenceNonUnit warn"
    "warnUnused true"
 in
    _prim

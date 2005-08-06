@@ -33,7 +33,7 @@ fun traverse (t, f) =
       loop t
    end
 
-fun foreachPre (t, f) = traverse (t, fn a => (f a; fn () => ()))
+fun foreachPre (t, f: 'a -> unit) = traverse (t, fn a => (f a; fn () => ()))
 fun foreachPost (t, f) = traverse (t, fn a => fn () => f a)
 
 fun 'a layoutDot (t: 'a t, {nodeOptions: 'a -> Dot.NodeOption.t list,

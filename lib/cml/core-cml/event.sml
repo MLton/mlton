@@ -82,7 +82,7 @@ structure Event : EVENT_EXTRA =
 		     fun add waiting : unit =
 			case waiting of 
 			   [] => ()
-			 | ({transId = TXID txst, cleanUp, thread}::waiting) =>
+			 | ({transId = TXID txst, cleanUp: unit -> unit, thread}::waiting) =>
 			      (case !txst of 
 				  CANCEL => ()
 				| TRANS =>

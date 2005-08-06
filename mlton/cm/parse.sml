@@ -28,7 +28,7 @@ fun parse {cmfile: string} =
    Exn.withEscape
    (fn escape =>
     let
-       fun bad m = (escape (Bad m); raise Fail "impossible")
+       fun bad m = (ignore (escape (Bad m)); raise Fail "impossible")
     in
        File.withIn
        (cmfile, fn ins =>

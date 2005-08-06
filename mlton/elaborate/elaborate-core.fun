@@ -18,7 +18,7 @@ in
    val nonexhaustiveExnMatch = fn () => current nonexhaustiveExnMatch
    val nonexhaustiveMatch = fn () => current nonexhaustiveMatch
    val redundantMatch = fn () => current redundantMatch
-   val sequenceUnit = fn () => current sequenceUnit
+   val sequenceNonUnit = fn () => current sequenceNonUnit
 end
 
 local
@@ -198,6 +198,8 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
 val overloads: (Ast.Priority.t * (unit -> unit)) list ref = ref []
 
 val freeTyvarChecks: (unit -> unit) list ref = ref []
+
+val sequenceTypeChecks: (unit -> unit) list ref = ref []
 
 val {hom = typeTycon: Type.t -> Tycon.t option, ...} =
    Type.makeHom {con = fn (c, _) => SOME c,
@@ -704,6 +706,13 @@ val elabExpInfo = Trace.info "ElaborateCore.elabExp"
 structure Type =
    struct
       open Type
+
+      fun layoutPrettyBracket ty =
+	 let 
+	    open Layout
+	 in
+	    seq [str "[", layoutPretty ty, str "]"]
+	 end
 
       val nullary: (string * CType.t * Tycon.t) list =
 	 let
@@ -2789,36 +2798,38 @@ fun elaborateDec (d, {env = E, nest}) =
 		   let
 		      val es' = Vector.map (es, elab)
 		      val last = Vector.length es - 1
-		      (* Error for expressions before a ; that don't return
-		       * unit.
-		       *)
+		      (* Diagnose expressions before a ; that don't return unit. *)
 		      val _ =
-			 if not (sequenceUnit ())
-			    then ()
-			 else
-			    Vector.foreachi
-			    (es', fn (i, e') =>
-			     if i = last
-				then ()
-			     else
-				let
-				   fun error (l, _) =
-				      let
-					 val e = Vector.sub (es, i)
-					 open Layout
-				      in
-					 Control.error
-					 (Aexp.region e,
-					  str "sequence expression not of type unit",
-					  align [seq [str "type: ", l],
-						 seq [str "in: ",
-						      approximate (Aexp.layout e)]])
-				      end
-				in
-				   Type.unify (Cexp.ty e', Type.unit,
-					       {error = error,
-						preError = preError})
-				end)
+			 let
+			    fun doit f =
+			       List.push
+			       (sequenceTypeChecks, fn () =>
+				Vector.foreachi
+				(es', fn (i, e') =>
+				 if i = last 
+				    then ()
+				    else let
+					    val ty = Cexp.ty e'
+					 in
+					    if Type.isUnit ty
+					       then ()
+					       else let
+						       val e = Vector.sub (es, i)
+						       open Layout
+						    in 
+						       f (Aexp.region e,
+							  str "sequence expression not of type unit",
+							  align [seq [str "type: ", Type.layoutPrettyBracket ty],
+								 seq [str "in: ",
+								      approximate (Aexp.layout e)]])
+						    end
+					 end))
+			 in
+			    case sequenceNonUnit () of
+			       Control.Elaborate.DiagEIW.Error => doit Control.error
+			     | Control.Elaborate.DiagEIW.Ignore => ()
+			     | Control.Elaborate.DiagEIW.Warn => doit Control.warning
+			 end
 		   in
 		      Cexp.make (Cexp.Seq es', Cexp.ty (Vector.sub (es', last)))
 		   end
@@ -2889,18 +2900,30 @@ fun elaborateDec (d, {env = E, nest}) =
 			  (Aexp.region test,
 			   str "while test not of type bool",
 			   seq [str "test type: ", l1]))
-		      val expr = elab expr
-		      (* Error if expr is not of type unit. *)
+		      val expr' = elab expr
+		      (* Diagnose if expr is not of type unit. *)
 		      val _ =
-			 if not (sequenceUnit ())
-			    then ()
-			 else
-			    unify (Cexp.ty expr, Type.unit, fn (l, _) =>
-				   (region,
-				    str "while body not of type unit",
-				    seq [str "body type: ", l]))
+			 let
+			    fun doit f =
+			       List.push
+			       (sequenceTypeChecks, fn () =>
+				let
+				   val ty = Cexp.ty expr'
+				in
+				   if Type.isUnit ty 
+				      then ()
+				      else f (Aexp.region expr,
+					      str "while body not of type unit",
+					      seq [str "body type: ", Type.layoutPrettyBracket ty])
+				end)
+			 in
+			    case sequenceNonUnit () of
+			       Control.Elaborate.DiagEIW.Error => doit Control.error
+			     | Control.Elaborate.DiagEIW.Ignore => ()
+			     | Control.Elaborate.DiagEIW.Warn => doit Control.warning
+			 end
 		   in
-		      Cexp.whilee {expr = expr, test = test'}
+		      Cexp.whilee {expr = expr', test = test'}
 		   end
 	  end) arg
       and elabMatchFn (m: Amatch.t, preError, nest, kind, lay, noMatch) =
@@ -2995,5 +3018,9 @@ fun elaborateDec (d, {env = E, nest}) =
 fun reportUndeterminedTypes () =
    (List.foreach (rev (!freeTyvarChecks), fn p => p ())
     ; freeTyvarChecks := [])
+
+fun reportSequenceNonUnit () =
+   (List.foreach (rev (!sequenceTypeChecks), fn p => p ())
+    ; sequenceTypeChecks := [])
 
 end

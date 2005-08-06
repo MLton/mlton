@@ -48,10 +48,10 @@ structure TimeOut : TIME_OUT_EXTRA =
       type item = trans_id * (unit -> unit) * S.rdy_thread
       val timeQ : item TQ.t ref = ref (TQ.new ())
 
-      fun cleaner readied elt =
+      fun cleaner (readied: unit -> unit) elt =
 	 let 
 	    val now = getTime ()
-	    val (TXID txst, cleanUp, t) = TQ.Elt.value elt
+	    val (TXID txst, cleanUp: unit -> unit, t) = TQ.Elt.value elt
 	 in 
 	    case !txst of 
 	       CANCEL => true 

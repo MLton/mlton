@@ -132,21 +132,21 @@ structure Scheduler : SCHEDULER =
 				  t'
 			       end))
       in
-	 fun atomicSwitch f =
+	 fun atomicSwitch (f: 'a thread -> rdy_thread) =
 	    atomicSwitchAux "atomicSwitch" f
-	 fun switch f =
+	 fun switch (f: 'a thread -> rdy_thread) =
 	    (atomicBegin (); atomicSwitch f)
-	 fun atomicSwitchToNext f =
+	 fun atomicSwitchToNext (f: 'a thread -> unit) =
 	    atomicSwitchAux "atomicSwitchToNext" (fn thrd => (f thrd; next ()))
-	 fun switchToNext f =
+	 fun switchToNext (f: 'a thread -> unit) =
 	    (atomicBegin (); atomicSwitchToNext f)
-	 fun atomicReadyAndSwitch f =
+	 fun atomicReadyAndSwitch (f: unit -> rdy_thread) =
 	    atomicSwitchAux "atomicReadyAndSwitch" (fn thrd => (ready (prep thrd); f ()))
-	 fun readyAndSwitch f =
+	 fun readyAndSwitch (f: unit -> rdy_thread) =
 	    (atomicBegin (); atomicReadyAndSwitch f)
-	 fun atomicReadyAndSwitchToNext f =
+	 fun atomicReadyAndSwitchToNext (f: unit -> unit) =
 	    atomicSwitchAux "atomicReadyAndSwitchToNext" (fn thrd => (ready (prep thrd); f (); next ()))
-	 fun readyAndSwitchToNext f =
+	 fun readyAndSwitchToNext (f: unit -> unit) =
 	    (atomicBegin (); atomicReadyAndSwitchToNext f)
       end
 

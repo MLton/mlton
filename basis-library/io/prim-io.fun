@@ -172,7 +172,7 @@ functor PrimIO (S: PRIM_IO_ARG): PRIM_IO =
 		writeVecNB = SOME (function "writeVecNB" (SOME o VS.length))}
 	 end
 
-      fun doBlock (f, block) x = (block (); valOf (f x))
+      fun doBlock (f, block: unit -> unit) x = (block (); valOf (f x))
       fun doCanInput (f, canInput) x = if canInput ()
 					  then SOME (f x)
 					  else NONE

@@ -140,7 +140,7 @@ structure VarInfo =
 
     fun deactivate (T {active, ...}) = active := false
     fun activate (T {active, ...}) = active := true
-    fun activate' (vi, addPost)
+    fun activate' (vi, addPost: (unit -> unit) -> unit)
       = (addPost (fn () => deactivate vi);
 	 activate vi)
     val active = active'

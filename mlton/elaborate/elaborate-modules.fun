@@ -269,6 +269,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
 	 let
 	    val res = elabTopdec d
 	    val _ = ElaborateCore.reportUndeterminedTypes ()
+	    val _ = ElaborateCore.reportSequenceNonUnit ()
 	 in
 	    res
 	 end

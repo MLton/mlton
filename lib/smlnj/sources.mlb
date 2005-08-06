@@ -13,7 +13,7 @@
  *)
 
 ann  
-   "sequenceUnit true"
+   "sequenceNonUnit ignore"
    "nonexhaustiveMatch warn" "redundantMatch warn"
    "warnUnused false" "forceUsed"
 in

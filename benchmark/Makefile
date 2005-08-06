@@ -5,16 +5,16 @@ LIB = $(BUILD)/lib
 MLTON = mlton
 TARGET = self
 FLAGS = -target $(TARGET)	\
-	-default-ann 'sequenceUnit true' \
+	-default-ann 'sequenceNonUnit warn' \
 	-default-ann 'warnUnused true'
 NAME = benchmark
 PATH = $(BIN):$(shell echo $$PATH)
 
 all: 	$(NAME)
 
-$(NAME): $(shell $(MLTON) -stop f $(NAME).cm)
+$(NAME): $(NAME).mlb $(shell PATH=$(BIN):$$PATH && $(MLTON) -stop f $(NAME).mlb)
 	@echo 'Compiling $(NAME)'
-	$(MLTON) $(FLAGS) $(NAME).cm
+	$(MLTON) $(FLAGS) $(NAME).mlb
 	size $(NAME)
 
 $(NAME).sml: $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)

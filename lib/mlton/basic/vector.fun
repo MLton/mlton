@@ -172,7 +172,7 @@ fun fold3From (a, a', a'', start, b, f) =
 
 fun fold3 (a, a', a'', b, f) = fold3From (a, a', a'', 0, b, f)
 
-fun foreachR (v, start, stop, f) =
+fun foreachR (v, start, stop, f: 'a -> unit) =
    if 0 <= start andalso start <= stop andalso stop <= length v
       then
 	 let
@@ -201,7 +201,7 @@ fun forall2 (v, v', f) =
       else Error.bug "Vector.forall2"
    end
 
-fun foreach3 (v1, v2, v3, f) =
+fun foreach3 (v1, v2, v3, f: 'a * 'b * 'c -> unit) =
    let
       val n = length v1
       val _ =

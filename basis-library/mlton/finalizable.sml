@@ -28,7 +28,8 @@ val finalize =
       val r: {clean: unit -> unit,
 	      isAlive: unit -> bool} list ref = ref []
       fun clean l =
-	 List.foldl (fn (z as {clean, isAlive}, (gotOne, zs)) =>
+	 List.foldl (fn (z as {clean: unit -> unit, isAlive}, 
+			 (gotOne, zs)) =>
 		     if isAlive ()
 			then (gotOne, z :: zs)
 		     else (clean (); (true, zs)))

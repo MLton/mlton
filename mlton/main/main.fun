@@ -119,7 +119,7 @@ fun hasNative () =
 
 fun makeOptions {usage} = 
    let
-      val usage = fn s => (usage s; raise Fail "unreachable")
+      val usage = fn s => (ignore (usage s); raise Fail "unreachable")
       open Control Popt
       fun push r = SpaceString (fn s => List.push (r, s))
       datatype z = datatype MLton.Platform.Arch.t

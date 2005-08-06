@@ -1,6 +1,6 @@
 ann  
    "deadCode true"
-   "sequenceUnit true"
+   "sequenceNonUnit warn"
    "nonexhaustiveMatch warn" "redundantMatch warn"
    "warnUnused true" "forceUsed" 
 in

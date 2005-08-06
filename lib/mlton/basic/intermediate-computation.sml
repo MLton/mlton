@@ -130,7 +130,7 @@ structure Computation =
 				    NONE => raise Input
 				  | SOME n => n))
 
-	       fun inputBetween{ins, error, min, max} =
+	       fun inputBetween{ins, error: unit -> unit, min, max} =
 		  let
 		     fun loop() =
 			let fun continue() = (error() ; loop())

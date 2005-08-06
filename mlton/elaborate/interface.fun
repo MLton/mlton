@@ -1057,7 +1057,7 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
 	       val T s' = I'
 	       val {strs, types, ...} = Set.! s
 	       val {strs = strs', types = types', ...} = Set.! s'
-	       fun walk2 (a, a', compareNames, f) =
+	       fun walk2 (a, a', compareNames, f: 'a * 'a * 'b -> unit) =
 		  let
 		     val n = Array.length a
 		     val n' = Array.length a'

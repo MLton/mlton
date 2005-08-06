@@ -18,7 +18,7 @@ fun fix{start, step, equals} =
    in loop start
    end
 
-fun fix' f =
+fun fix' (f: (unit -> unit) -> unit) =
    let
       fun loop() =
 	 let val changed = ref false

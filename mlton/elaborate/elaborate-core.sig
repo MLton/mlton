@@ -26,5 +26,6 @@ signature ELABORATE_CORE =
 
       (* Elaborate dec in env, returning Core ML decs. *)
       val elaborateDec: Ast.Dec.t * {env: Env.t, nest: string list} -> Decs.t
+      val reportSequenceNonUnit: unit -> unit
       val reportUndeterminedTypes: unit -> unit
    end

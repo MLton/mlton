@@ -119,7 +119,7 @@ fun parse {switches: string list,
 			   end
 		      | SOME (_, arg) =>
 			   let
-			      fun next (f, get, msg) =
+			      fun next (f: 'a -> unit, get, msg) =
 				 case switches of
 				    [] =>
 				       error (concat ["-", switch, " requires an argument"])

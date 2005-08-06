@@ -35,7 +35,7 @@ open Types
 structure Int = Pervasive.Int
 structure Array = Pervasive.Array
 
-fun for(a: Int.int, b: Int.int, f) =
+fun for(a: Int.int, b: Int.int, f: Int.int -> unit) =
    let fun loop i = if i >= b then () else (f i; loop(i + 1))
    in loop a
    end

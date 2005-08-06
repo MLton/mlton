@@ -910,7 +910,7 @@ structure Type =
 	 Trace.trace2 
 	 ("TypeEnv.Type.unify", layout, layout, UnifyResult.layout)
 
-      fun unify (t, t', {preError}): UnifyResult.t =
+      fun unify (t, t', {preError: unit -> unit}): UnifyResult.t =
 	 let
 	    val {destroy, lay = layoutPretty} = makeLayoutPretty ()
 	    val dontCare' = fn _ => dontCare

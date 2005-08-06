@@ -84,8 +84,7 @@ signature CONTROL_FLAGS =
 	    val nonexhaustiveExnMatch: (DiagDI.t,DiagDI.t) t
 	    val nonexhaustiveMatch: (DiagEIW.t,DiagEIW.t) t
 	    val redundantMatch: (DiagEIW.t,DiagEIW.t) t
-	    (* in (e1; e2), require e1: unit. *)
-	    val sequenceUnit: (bool,bool) t
+	    val sequenceNonUnit: (DiagEIW.t,DiagEIW.t) t
 	    val warnUnused: (bool,bool) t
 
 	    val current: ('args, 'st) t -> 'st

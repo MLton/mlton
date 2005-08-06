@@ -593,7 +593,7 @@ structure Transfer =
 		  test = test}
 	 end
 	 
-      fun foreachFuncLabelVar (t, func, label: Label.t -> unit, var) =
+      fun foreachFuncLabelVar (t, func: Func.t -> unit, label: Label.t -> unit, var) =
 	 let
 	    fun vars xs = Vector.foreach (xs, var)
 	 in

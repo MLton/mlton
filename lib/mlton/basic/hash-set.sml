@@ -146,7 +146,8 @@ fun peek (t, w, p) = peekGen (t, w, p, fn _ => NONE, SOME)
  *    end
  *)
 
-fun insertIfNew (table as T {buckets, numItems, ...}, w, p, f, g) =
+fun insertIfNew (table as T {buckets, numItems, ...}, w, p, f, 
+		 g: 'a -> unit) =
    let
       fun no (j, b) =
 	 let val a = f ()

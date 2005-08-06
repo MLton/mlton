@@ -25,7 +25,7 @@ functor RefHetContainer():> HET_CONTAINER =
 	    val id = ref()
 	    val r: 'a option ref = ref NONE
 	    fun make v = (id, fn () => r := SOME v)
-	    fun peek(id', f) =
+	    fun peek ((id', f): t) =
 	       if id = id' then (f(); !r before r := NONE)
 	       else NONE
 	    fun pred(id', _) = id = id'

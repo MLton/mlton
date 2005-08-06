@@ -2189,7 +2189,7 @@ end
 fun forceUsedLocal (E as T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, ...},
 		    th) =
    let
-      fun doit (forceRange, ns as NameSpace.T {current, ...}, s0) =
+      fun doit (forceRange: 'b -> unit, ns as NameSpace.T {current, ...}, s0) =
 	 let
 	    val old = !current
 	    val _ = current := []
