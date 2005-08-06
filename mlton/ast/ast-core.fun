@@ -272,16 +272,18 @@ structure PrimKind =
 
       structure SymbolAttribute =
 	 struct
-	    datatype t = Define
+	    datatype t = Alloc
 
 	    val toString: t -> string =
-	       fn Define => "define"
+	       fn Alloc => "alloc"
 
 	    val layout = Layout.str o toString
 	 end
       
       datatype t =
-	 BuildConst of {name: string, 
+	 Address of {name: string,
+		     ptrTy: Type.t}
+       | BuildConst of {name: string, 
 			ty: Type.t}
        | CommandLineConst of {name: string, 
 			      ty: Type.t,
@@ -307,7 +309,8 @@ structure PrimKind =
 
       fun name pk =
 	 case pk of
-	    BuildConst {name, ...} => name
+	    Address {name, ...} => name
+	  | BuildConst {name, ...} => name
 	  | CommandLineConst {name, ...} => name
 	  | Const {name, ...} => name
 	  | Export {name, ...} => name

@@ -4,7 +4,6 @@
 val ffi = _import "ffi": real array * int ref * int -> char;
 open Array
 
-(* val size = _const "FFI_SIZE": int; *)
 val size = 10
 val a = tabulate (size, fn i => real i)
 val r = ref 0

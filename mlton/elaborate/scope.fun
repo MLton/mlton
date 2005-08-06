@@ -223,31 +223,34 @@ fun ('down, 'up)
 	       (f (a1, a2), combineUp (u1, u2))
 	 in
 	    case kind of
-	        BuildConst {name, ty} =>
+	       Address {name, ptrTy} =>
+		  do1 (loopTy (ptrTy, d), fn ptrTy =>
+		       Address {name = name, ptrTy = ptrTy})
+	     | BuildConst {name, ty} =>
 		  do1 (loopTy (ty, d), fn ty =>
 		       BuildConst {name = name, ty = ty})
-	      | CommandLineConst {name, ty, value} =>
+	     | CommandLineConst {name, ty, value} =>
 		  do1 (loopTy (ty, d), fn ty =>
 		       CommandLineConst {name = name, ty = ty, value = value})
-	      | Const {name, ty} =>
+	     | Const {name, ty} =>
 		  do1 (loopTy (ty, d), fn ty =>
 		       Const {name = name, ty = ty})
-	      | Export {attributes, name, cfTy} =>
+	     | Export {attributes, name, cfTy} =>
 		  do1 (loopTy (cfTy, d), fn cfTy =>
 		       Export {attributes = attributes, name = name, cfTy = cfTy})
-	      | IImport {attributes, cfTy} =>
+	     | IImport {attributes, cfTy} =>
 		  do1 (loopTy (cfTy, d), fn cfTy =>
 		       IImport {attributes = attributes, cfTy = cfTy})
-	      | Import {attributes, name, cfTy} =>
+	     | Import {attributes, name, cfTy} =>
 		  do1 (loopTy (cfTy, d), fn cfTy =>
 		       Import {attributes = attributes, name = name, cfTy = cfTy})
-	      | ISymbol {cbTy, ptrTy} =>
+	     | ISymbol {cbTy, ptrTy} =>
 		  do2 (loopTy (cbTy, d), loopTy (ptrTy, d), fn (cbTy, ptrTy) =>
 		       ISymbol {cbTy = cbTy, ptrTy = ptrTy})
-	      | Prim {name, ty} =>
+	     | Prim {name, ty} =>
 		  do1 (loopTy (ty, d), fn ty =>
 		       Prim {name = name, ty = ty})
-	      | Symbol {attributes, name, cbTy, ptrTy} =>
+	     | Symbol {attributes, name, cbTy, ptrTy} =>
 		  do2 (loopTy (cbTy, d), loopTy (ptrTy, d), fn (cbTy, ptrTy) =>
 		       Symbol {attributes = attributes, name = name, 
 			       cbTy = cbTy, ptrTy = ptrTy})

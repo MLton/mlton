@@ -937,17 +937,17 @@ local
 			   (fn () => Const.word (WordX.one WordSize.default)),
 			   Type.defaultWord)
 
-   fun address {ctypeCbTy: CType.t,
-		expandedPtrTy: Type.t,
-		name: string}: Cexp.t =
+   fun mkAddress {ctypeCbTy: CType.t,
+		  expandedPtrTy: Type.t,
+		  name: string}: Cexp.t =
       primApp {args = Vector.new0 (),
 	       prim = Prim.ffiSymbol {name = name,
 				      cty = ctypeCbTy},
 	       result = expandedPtrTy}
 
-   fun fetch {ctypeCbTy, isBool,
-	      expandedCbTy,
-	      ptrExp: Cexp.t}: Cexp.t =
+   fun mkFetch {ctypeCbTy, isBool,
+		expandedCbTy,
+		ptrExp: Cexp.t}: Cexp.t =
       let
 	 val fetchExp = 
 	    primApp {args = Vector.new2 (ptrExp, zeroExp),
@@ -973,8 +973,8 @@ local
 			     result = expandedCbTy}}
       end
 
-   fun store {ctypeCbTy, isBool,
-	      ptrExp: Cexp.t, valueExp: Cexp.t}: Cexp.t =
+   fun mkStore {ctypeCbTy, isBool,
+		ptrExp: Cexp.t, valueExp: Cexp.t}: Cexp.t =
       let
 	 val valueExp =
 	    if not isBool then valueExp else
@@ -995,6 +995,29 @@ local
 		  result = Type.unit}
       end
 in
+   fun address {elabedPtrTy: Type.t,
+		expandedPtrTy: Type.t,
+		name: string,
+		region: Region.t}: Cexp.t =
+      let
+	 fun error l = Control.error (region, l, Layout.empty)
+	 val ctypePtrTy =
+	    case Type.toCType expandedPtrTy of
+	       SOME {ctype = CType.Pointer, ...} => CType.Pointer
+	     | _ =>
+		  (Control.error
+		   (region, str "invalid type for _address ptr",
+		    Type.layoutPretty elabedPtrTy)
+		   ; CType.Pointer)
+	 val addrExp =
+	    mkAddress {ctypeCbTy = CType.Pointer,
+		       expandedPtrTy = expandedPtrTy,
+		       name = name}
+	 fun wrap (e, t) = Cexp.make (Cexp.node e, t)
+      in
+	 wrap (addrExp, elabedPtrTy)
+      end
+
    fun symbolDirect {attributes: SymbolAttribute.t list,
 		     elabedCbTy: Type.t,
 		     expandedCbTy: Type.t,
@@ -1018,15 +1041,15 @@ in
 	     | _ =>
 		  (Control.error
 		   (region, str "invalid type for _symbol ptr",
-		    Type.layoutPretty elabedCbTy)
+		    Type.layoutPretty elabedPtrTy)
 		   ; CType.Pointer)
 	 val addrExp =
-	    address {ctypeCbTy = ctypeCbTy,
-		     expandedPtrTy = expandedPtrTy,
-		     name = name}
+	    mkAddress {ctypeCbTy = ctypeCbTy,
+		       expandedPtrTy = expandedPtrTy,
+		       name = name}
 	 val () =
 	    if List.exists (attributes, fn attr =>
-			    attr = SymbolAttribute.Define)
+			    attr = SymbolAttribute.Alloc)
 	       then Ffi.addSymbol {name = name, ty = ctypeCbTy}
 	       else ()
 	 val getArg = Var.newNoname ()
@@ -1038,19 +1061,19 @@ in
 	  wrap ((Cexp.lambda o Lambda.make)
 		{arg = getArg,
 		 argType = Type.unit,
-		 body = fetch {ctypeCbTy = ctypeCbTy, 
-			       isBool = isBool,
-			       expandedCbTy = expandedCbTy,
-			       ptrExp = addrExp},
+		 body = mkFetch {ctypeCbTy = ctypeCbTy, 
+				 isBool = isBool,
+				 expandedCbTy = expandedCbTy,
+				 ptrExp = addrExp},
 		 mayInline = true},
 		Type.arrow (Type.unit, elabedCbTy)),
 	  wrap ((Cexp.lambda o Lambda.make)
 		{arg = setArg,
 		 argType = elabedCbTy,
-		 body = store {ctypeCbTy = ctypeCbTy,
-			       isBool = isBool,
-			       ptrExp = addrExp,
-			       valueExp = Cexp.var (setArg, expandedCbTy)},
+		 body = mkStore {ctypeCbTy = ctypeCbTy,
+				 isBool = isBool,
+				 ptrExp = addrExp,
+				 valueExp = Cexp.var (setArg, expandedCbTy)},
 		 mayInline = true},
 		Type.arrow (elabedCbTy, Type.unit)))
       end
@@ -1076,7 +1099,7 @@ in
 	     | _ =>
 		  (Control.error
 		   (region, str "invalid type for _symbol ptr",
-		    Type.layoutPretty elabedCbTy)
+		    Type.layoutPretty elabedPtrTy)
 		   ; CType.Pointer)
 	 fun wrap (e, t) = Cexp.make (Cexp.node e, t)
 	 val getArg = Var.newNoname ()
@@ -1088,10 +1111,10 @@ in
 	 val setPat =
 	    Cpat.tuple (Vector.new2 (Cpat.var (setArgPtr, expandedPtrTy), 
 				     Cpat.var (setArgValue, expandedCbTy)))
-	 val setExp = store {ctypeCbTy = ctypeCbTy,
-			     isBool = isBool,
-			     ptrExp = Cexp.var (setArgPtr, expandedPtrTy),
-			     valueExp = Cexp.var (setArgValue, expandedCbTy)}
+	 val setExp = mkStore {ctypeCbTy = ctypeCbTy,
+			       isBool = isBool,
+			       ptrExp = Cexp.var (setArgPtr, expandedPtrTy),
+			       valueExp = Cexp.var (setArgValue, expandedCbTy)}
 	 val setBody =
 	    Cexp.casee {kind = "",
 			lay = fn () => Layout.empty,
@@ -1107,10 +1130,10 @@ in
 	 (wrap ((Cexp.lambda o Lambda.make)
 		{arg = getArg,
 		 argType = expandedPtrTy,
-		 body = fetch {ctypeCbTy = ctypeCbTy,
-			       expandedCbTy = expandedCbTy,
-			       isBool = isBool,
-			       ptrExp = Cexp.var (getArg, expandedPtrTy)},
+		 body = mkFetch {ctypeCbTy = ctypeCbTy,
+				 expandedCbTy = expandedCbTy,
+				 isBool = isBool,
+				 ptrExp = Cexp.var (getArg, expandedPtrTy)},
 		 mayInline = true},
 		Type.arrow (elabedPtrTy, elabedCbTy)),
 	  wrap ((Cexp.lambda o Lambda.make)
@@ -1150,14 +1173,14 @@ in
 		   ; CType.Pointer)
 	 val isBool = Type.isBool expandedCbTy
 	 val addrExp =
-	    address {ctypeCbTy = ctypeCbTy,
-		     expandedPtrTy = Type.word (WordSize.pointer ()),
-		     name = name}
+	    mkAddress {ctypeCbTy = ctypeCbTy,
+		       expandedPtrTy = Type.word (WordSize.pointer ()),
+		       name = name}
       in
-	 fetch {ctypeCbTy = ctypeCbTy, 
-		isBool = isBool,
-		expandedCbTy = expandedCbTy,
-		ptrExp = addrExp}
+	 mkFetch {ctypeCbTy = ctypeCbTy, 
+		  isBool = isBool,
+		  expandedCbTy = expandedCbTy,
+		  ptrExp = addrExp}
       end
 end
 
@@ -2568,7 +2591,20 @@ fun elaborateDec (d, {env = E, nest}) =
 		      datatype z = datatype Ast.PrimKind.t
 		   in
 		      case kind of
-			 BuildConst {name, ty} =>
+                         Address {name, ptrTy} =>
+			    let
+			       val () =
+				  check (ElabControl.allowFFI, "_address")
+			       val (elabedPtrTy, expandedPtrTy) =
+				  elabAndExpandTy ptrTy
+			    in
+			       address {elabedPtrTy = elabedPtrTy,
+					expandedPtrTy = expandedPtrTy,
+					name = name,
+					region = region}
+			    end
+
+		       | BuildConst {name, ty} =>
 			    let
 			       val () =
 				  check (ElabControl.allowConstant, 

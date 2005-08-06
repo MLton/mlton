@@ -233,7 +233,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
     | STRUCTURE | THEN | TYPE | VAL | WHERE | WHILE | WILD | WITH | WITHTYPE
       (* Extensions *)
     | BUILD_CONST | COMMAND_LINE_CONST | CONST 
-    | EXPORT | IMPORT | SYMBOL 
+    | ADDRESS | EXPORT | IMPORT | SYMBOL 
     | PRIM
 
 %nonterm
@@ -1009,6 +1009,9 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 	    (Exp.Let (decs, Exp.makeRegion' (Exp.Seq (Vector.fromList exp_ps),
 					     exp_psleft,
 					     exp_psright)))
+        | ADDRESS string COLON ty SEMICOLON
+          (Exp.Prim (PrimKind.Address {name = string,
+                                       ptrTy = ty}))
         | BUILD_CONST string COLON ty SEMICOLON
 	  (Exp.Prim (PrimKind.BuildConst {name = string, ty = ty}))
 	| COMMAND_LINE_CONST string COLON ty EQUALOP constOrBool SEMICOLON
@@ -1034,8 +1037,8 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
         | SYMBOL string symattributes COLON ty COMMA ty SEMICOLON
           (Exp.Prim (PrimKind.Symbol {attributes = symattributes,
                                       cbTy = ty2,
-	                              ptrTy = ty1,
-                                      name = string}))
+                                      name = string,
+                                      ptrTy = ty1}))
         | SYMBOL ASTERISK COLON ty COMMA ty SEMICOLON
           (Exp.Prim (PrimKind.ISymbol {cbTy = ty2,
                                        ptrTy = ty1}))
@@ -1062,7 +1065,7 @@ symattributes
 	 val id = Symbol.toString (#1 id)
       in
 	 case id of
-	    "define" => PrimKind.SymbolAttribute.Define :: symattributes
+	    "alloc" => PrimKind.SymbolAttribute.Alloc :: symattributes
 	  | _ => (error (reg (idleft, idright), concat ["invalid attribute", id])
 		  ; symattributes)
       end)

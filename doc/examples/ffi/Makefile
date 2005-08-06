@@ -1,6 +1,6 @@
 PATH = ../../../build/bin:$(shell echo $$PATH)
 
-mlton = mlton -default-ann 'allowFFI true'
+mlton = mlton -default-ann 'allowFFI true' -codegen c
 
 .PHONY: all
 all: import import2 export iimport test_quot

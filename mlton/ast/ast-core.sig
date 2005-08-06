@@ -94,13 +94,15 @@ signature AST_CORE =
             
             structure SymbolAttribute:
                sig
-                  datatype t = Define
+                  datatype t = Alloc
 		     
 		  val layout: t -> Layout.t
                end
 	    
 	    datatype t =
-	       BuildConst of {name: string, 
+	       Address of {name: string,
+                           ptrTy: Type.t}
+	     | BuildConst of {name: string, 
 			      ty: Type.t}
 	     | CommandLineConst of {name: string, 
 				    ty: Type.t,

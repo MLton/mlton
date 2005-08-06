@@ -1,11 +1,10 @@
 (* main.sml *)
 
 (* Declare ffi to be implemented by calling the C function ffi. *)
-val (ffi_addr, _, _) = _symbol "ffi" : MLton.Pointer.t, MLton.Pointer.t;
+val ffi_addr = _address "ffi" : MLton.Pointer.t;
 val ffi_schema = _import * : MLton.Pointer.t -> real array * int ref * int -> char;
 open Array
 
-(* val size = _const "FFI_SIZE": int; *)
 val size = 10
 val a = tabulate (size, fn i => real i)
 val r = ref 0
