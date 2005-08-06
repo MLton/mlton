@@ -21,6 +21,7 @@ structure Int
 structure IntInf
 structure Layout
 structure List
+structure MLton
 structure Option
 structure OS
 structure Out
