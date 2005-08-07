@@ -106,9 +106,11 @@ val lexAndParseString =
 	     [{var = "LIB_MLTON_DIR", 
 	       path = !Control.libDir},
 	      {var = "TARGET_ARCH",
-	       path = MLton.Platform.Arch.toString (!Control.targetArch)},
+	       path = (String.toLower o MLton.Platform.Arch.toString) 
+	              (!Control.targetArch)},
 	      {var = "TARGET_OS",
-	       path = MLton.Platform.OS.toString (!Control.targetOS)}]]
+	       path = (String.toLower o MLton.Platform.OS.toString) 
+	              (!Control.targetOS)}]]
 	 fun peekPathMap var' =
 	    case List.peek (pathMap, fn {var,...} =>
 			    var = var') of
