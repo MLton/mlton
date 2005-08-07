@@ -155,6 +155,11 @@ structure Pointer =
       type t = pointer
    end
 
+structure GetSet =
+   struct
+      type 'a t = (unit -> 'a) * ('a -> unit)
+   end
+
 structure Pid :> sig
 		    eqtype t
 
@@ -241,7 +246,7 @@ structure Primitive =
 	 struct
 	    type t = Pointer.t
 
-	    val gcState = #1 _symbol "gcStateAddress": t; ()
+	    val gcState = #1 _symbol "gcStateAddress": t GetSet.t; ()
 	 end
       
       structure CallStack =
@@ -310,9 +315,9 @@ structure Primitive =
 
       structure CommandLine =
 	 struct
-	    val argc = #1 _symbol "CommandLine_argc": int;
-	    val argv = #1 _symbol "CommandLine_argv": CStringArray.t;
-	    val commandName = #1 _symbol "CommandLine_commandName": CString.t;
+	    val argc = #1 _symbol "CommandLine_argc": int GetSet.t;
+	    val argv = #1 _symbol "CommandLine_argv": CStringArray.t GetSet.t;
+	    val commandName = #1 _symbol "CommandLine_commandName": CString.t GetSet.t;
 	 end
 
       structure Date =
@@ -373,19 +378,19 @@ structure Primitive =
 
       structure FFI =
 	 struct
-	    val getOp = #1 _symbol "MLton_FFI_op": int;
-	    val int8Array = #1 _symbol "MLton_FFI_Int8": Pointer.t; ()
-	    val int16Array = #1 _symbol "MLton_FFI_Int16": Pointer.t; ()
-	    val int32Array = #1 _symbol "MLton_FFI_Int32": Pointer.t; ()
-	    val int64Array = #1 _symbol "MLton_FFI_Int64": Pointer.t; ()
+	    val getOp = #1 _symbol "MLton_FFI_op": int GetSet.t;
+	    val int8Array = #1 _symbol "MLton_FFI_Int8": Pointer.t GetSet.t; ()
+	    val int16Array = #1 _symbol "MLton_FFI_Int16": Pointer.t GetSet.t; ()
+	    val int32Array = #1 _symbol "MLton_FFI_Int32": Pointer.t GetSet.t; ()
+	    val int64Array = #1 _symbol "MLton_FFI_Int64": Pointer.t GetSet.t; ()
 	    val numExports = _build_const "MLton_FFI_numExports": int;
-	    val pointerArray = #1 _symbol "MLton_FFI_Pointer": Pointer.t; ()
-	    val real32Array = #1 _symbol "MLton_FFI_Real32": Pointer.t; ()
-	    val real64Array = #1 _symbol "MLton_FFI_Real64": Pointer.t; ()
-	    val word8Array = #1 _symbol "MLton_FFI_Word8": Pointer.t; ()
-	    val word16Array = #1 _symbol "MLton_FFI_Word16": Pointer.t; ()
-	    val word32Array = #1 _symbol "MLton_FFI_Word32": Pointer.t; ()
-	    val word64Array = #1 _symbol "MLton_FFI_Word64": Pointer.t; ()
+	    val pointerArray = #1 _symbol "MLton_FFI_Pointer": Pointer.t GetSet.t; ()
+	    val real32Array = #1 _symbol "MLton_FFI_Real32": Pointer.t GetSet.t; ()
+	    val real64Array = #1 _symbol "MLton_FFI_Real64": Pointer.t GetSet.t; ()
+	    val word8Array = #1 _symbol "MLton_FFI_Word8": Pointer.t GetSet.t; ()
+	    val word16Array = #1 _symbol "MLton_FFI_Word16": Pointer.t GetSet.t; ()
+	    val word32Array = #1 _symbol "MLton_FFI_Word32": Pointer.t GetSet.t; ()
+	    val word64Array = #1 _symbol "MLton_FFI_Word64": Pointer.t GetSet.t; ()
 	 end
 
       structure GC =
@@ -983,7 +988,7 @@ structure Primitive =
 			val forkIsEnabled =
 			   case host of
 			      Cygwin =>
-				 #1 _symbol "MLton_Platform_CygwinUseMmap": bool; ()
+				 #1 _symbol "MLton_Platform_CygwinUseMmap": bool GetSet.t; ()
 			    | MinGW => false
 			    | _ => true
 
@@ -1308,11 +1313,11 @@ structure Primitive =
 		  val atan2 = _prim "Real64_Math_atan2": real * real -> real;
 		  val cos = _prim "Real64_Math_cos": real -> real;
 		  val cosh = _import "cosh": real -> real;
-		  val e = #1 _symbol "Real64_Math_e": real; ()
+		  val e = #1 _symbol "Real64_Math_e": real GetSet.t; ()
 		  val exp = _prim "Real64_Math_exp": real -> real;
 		  val ln = _prim "Real64_Math_ln": real -> real;
 		  val log10 = _prim "Real64_Math_log10": real -> real;
-		  val pi = #1 _symbol "Real64_Math_pi": real; ()
+		  val pi = #1 _symbol "Real64_Math_pi": real GetSet.t; ()
 		  val pow = _import "pow": real * real -> real;
 		  val sin = _prim "Real64_Math_sin": real -> real;
 		  val sinh = _import "sinh": real -> real;
@@ -1338,9 +1343,9 @@ structure Primitive =
 	       _import "Real64_gdtoa": real * int * int * int ref -> CString.t;
 	    val fromInt = _prim "WordS32_toReal64": int -> real;
 	    val ldexp = _prim "Real64_ldexp": real * int -> real;
-	    val maxFinite = #1 _symbol "Real64_maxFinite": real; ()
-	    val minNormalPos = #1 _symbol "Real64_minNormalPos": real; ()
-	    val minPos = #1 _symbol "Real64_minPos": real; ()
+	    val maxFinite = #1 _symbol "Real64_maxFinite": real GetSet.t; ()
+	    val minNormalPos = #1 _symbol "Real64_minNormalPos": real GetSet.t; ()
+	    val minPos = #1 _symbol "Real64_minPos": real GetSet.t; ()
 	    val modf = _import "Real64_modf": real * real ref -> real;
 	    val nextAfter = _import "Real64_nextAfter": real * real -> real;
 	    val round = _prim "Real64_round": real -> real;
@@ -1382,11 +1387,11 @@ structure Primitive =
 		  val atan2 = _prim "Real32_Math_atan2": real * real -> real;
 		  val cos = _prim "Real32_Math_cos": real -> real;
 		  val cosh = unary Real64.Math.cosh
-		  val e = #1 _symbol "Real32_Math_e": real; ()
+		  val e = #1 _symbol "Real32_Math_e": real GetSet.t; ()
 		  val exp = _prim "Real32_Math_exp": real -> real;
 		  val ln = _prim "Real32_Math_ln": real -> real;
 		  val log10 = _prim "Real32_Math_log10": real -> real;
-		  val pi = #1 _symbol "Real32_Math_pi": real; ()
+		  val pi = #1 _symbol "Real32_Math_pi": real GetSet.t; ()
 		  val pow = binary Real64.Math.pow
 		  val sin = _prim "Real32_Math_sin": real -> real;
 		  val sinh = unary Real64.Math.sinh
@@ -1413,9 +1418,9 @@ structure Primitive =
 	       _import "Real32_gdtoa": real * int * int * int ref -> CString.t;
 	    val fromInt = _prim "WordS32_toReal32": int -> real;
 	    val ldexp = _prim "Real32_ldexp": real * int -> real;
-	    val maxFinite = #1 _symbol "Real32_maxFinite": real; ()
-	    val minNormalPos = #1 _symbol "Real32_minNormalPos": real; ()
-	    val minPos = #1 _symbol "Real32_minPos": real; ()
+	    val maxFinite = #1 _symbol "Real32_maxFinite": real GetSet.t; ()
+	    val minNormalPos = #1 _symbol "Real32_minNormalPos": real GetSet.t; ()
+	    val minPos = #1 _symbol "Real32_minPos": real GetSet.t; ()
 	    val modf = _import "Real32_modf": real * real ref -> real;
 	    val signBit = _import "Real32_signBit": real -> bool;
 	    val strto = _import "Real32_strto": NullString.t -> real;

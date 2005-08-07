@@ -1,7 +1,7 @@
 
 val c_quot = _import "c_quot": Int8.int * Int8.int -> Int8.int;
 
-val sml_quot = _export "sml_quot": Int8.int * Int8.int -> Int8.int;
+val sml_quot = _export "sml_quot": (Int8.int * Int8.int -> Int8.int) -> unit;
 val _ = sml_quot Int8.quot
 
 val call_sml_quot = _import "call_sml_quot": unit -> unit;

@@ -223,9 +223,9 @@ fun ('down, 'up)
 	       (f (a1, a2), combineUp (u1, u2))
 	 in
 	    case kind of
-	       Address {name, ptrTy} =>
-		  do1 (loopTy (ptrTy, d), fn ptrTy =>
-		       Address {name = name, ptrTy = ptrTy})
+	       Address {name, ty} =>
+		  do1 (loopTy (ty, d), fn ty =>
+		       Address {name = name, ty = ty})
 	     | BuildConst {name, ty} =>
 		  do1 (loopTy (ty, d), fn ty =>
 		       BuildConst {name = name, ty = ty})
@@ -235,24 +235,24 @@ fun ('down, 'up)
 	     | Const {name, ty} =>
 		  do1 (loopTy (ty, d), fn ty =>
 		       Const {name = name, ty = ty})
-	     | Export {attributes, name, cfTy} =>
-		  do1 (loopTy (cfTy, d), fn cfTy =>
-		       Export {attributes = attributes, name = name, cfTy = cfTy})
-	     | IImport {attributes, cfTy} =>
-		  do1 (loopTy (cfTy, d), fn cfTy =>
-		       IImport {attributes = attributes, cfTy = cfTy})
-	     | Import {attributes, name, cfTy} =>
-		  do1 (loopTy (cfTy, d), fn cfTy =>
-		       Import {attributes = attributes, name = name, cfTy = cfTy})
-	     | ISymbol {cbTy, ptrTy} =>
-		  do2 (loopTy (cbTy, d), loopTy (ptrTy, d), fn (cbTy, ptrTy) =>
-		       ISymbol {cbTy = cbTy, ptrTy = ptrTy})
+	     | Export {attributes, name, ty} =>
+		  do1 (loopTy (ty, d), fn ty =>
+		       Export {attributes = attributes, name = name, ty = ty})
+	     | IImport {attributes, ty} =>
+		  do1 (loopTy (ty, d), fn ty =>
+		       IImport {attributes = attributes, ty = ty})
+	     | Import {attributes, name, ty} =>
+		  do1 (loopTy (ty, d), fn ty =>
+		       Import {attributes = attributes, name = name, ty = ty})
+	     | ISymbol {ty} =>
+		  do1 (loopTy (ty, d), fn ty =>
+		       ISymbol {ty = ty})
 	     | Prim {name, ty} =>
 		  do1 (loopTy (ty, d), fn ty =>
 		       Prim {name = name, ty = ty})
-	     | Symbol {attributes, name, cbTy} =>
-		  do1 (loopTy (cbTy, d), fn cbTy=>
-		       Symbol {attributes = attributes, name = name, cbTy = cbTy})
+	     | Symbol {attributes, name, ty} =>
+		  do1 (loopTy (ty, d), fn ty =>
+		       Symbol {attributes = attributes, name = name, ty = ty})
 	 end
       fun loopDec (d: Dec.t, down: 'down): Dec.t * 'up =
 	 let

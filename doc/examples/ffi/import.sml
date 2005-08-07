@@ -12,7 +12,7 @@ val n = 17
 (* Call the C function *)
 val c = ffi (a, r, n)
 
-val (getN, setN) = _symbol "FFI_INT": int;
+val (getN, setN) = _symbol "FFI_INT": (unit -> int) * (int -> unit);
 
 val _ = print (concat [Int.toString (getN ()), "\n"])
 

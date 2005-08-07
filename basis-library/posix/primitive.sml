@@ -299,7 +299,7 @@ structure PosixPrimitive =
 	       end
 
 	    val ctermid = _import "Posix_ProcEnv_ctermid": unit -> cstring;
-	    val environ = #1 _symbol "Posix_ProcEnv_environ": cstringArray; ()
+	    val environ = #1 _symbol "Posix_ProcEnv_environ": cstringArray GetSet.t; ()
 	    val getenv = _import "Posix_ProcEnv_getenv": NullString.t -> cstring;
 	    val isatty = _import "Posix_ProcEnv_isatty": fd -> bool;
 	    val sysconf = _import "Posix_ProcEnv_sysconf": int -> int;

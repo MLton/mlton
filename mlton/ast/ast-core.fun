@@ -282,7 +282,7 @@ structure PrimKind =
       
       datatype t =
 	 Address of {name: string,
-		     ptrTy: Type.t}
+		     ty: Type.t}
        | BuildConst of {name: string, 
 			ty: Type.t}
        | CommandLineConst of {name: string, 
@@ -292,19 +292,18 @@ structure PrimKind =
 		   ty: Type.t}
        | Export of {attributes: ImportExportAttribute.t list, 
 		    name: string,
-		    cfTy: Type.t}
+		    ty: Type.t}
        | IImport of {attributes: ImportExportAttribute.t list,
-		     cfTy: Type.t}
+		     ty: Type.t}
        | Import of {attributes: ImportExportAttribute.t list, 
 		    name: string,
-		    cfTy: Type.t}
-       | ISymbol of {cbTy: Type.t,
-		     ptrTy: Type.t}
+		    ty: Type.t}
+       | ISymbol of {ty: Type.t}
        | Prim of {name: string, 
 		  ty: Type.t}
        | Symbol of {attributes: SymbolAttribute.t list, 
 		    name: string,
-		    cbTy: Type.t}
+		    ty: Type.t}
 
       fun name pk =
 	 case pk of

@@ -1011,7 +1011,7 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 					     exp_psright)))
         | ADDRESS string COLON ty SEMICOLON
           (Exp.Prim (PrimKind.Address {name = string,
-                                       ptrTy = ty}))
+                                       ty = ty}))
         | BUILD_CONST string COLON ty SEMICOLON
 	  (Exp.Prim (PrimKind.BuildConst {name = string, ty = ty}))
 	| COMMAND_LINE_CONST string COLON ty EQUALOP constOrBool SEMICOLON
@@ -1023,24 +1023,23 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 	| EXPORT string ieattributes COLON ty SEMICOLON
           (Exp.Prim (PrimKind.Export {attributes = ieattributes,
                                       name = string,
-                                      cfTy = ty}))
+                                      ty = ty}))
 	| IMPORT string ieattributes COLON ty SEMICOLON
 	  (Exp.Prim (PrimKind.Import {attributes = ieattributes,
-                                      cfTy = ty,
-                                      name = string}))
+                                      name = string,
+                                      ty = ty}))
 	| IMPORT ASTERISK ieattributes COLON ty SEMICOLON
           (Exp.Prim (PrimKind.IImport {attributes = ieattributes,
-                                       cfTy = ty}))
+                                       ty = ty}))
         | PRIM string COLON ty SEMICOLON
 	  (Exp.Prim (PrimKind.Prim {name = string,
                                     ty = ty}))
         | SYMBOL string symattributes COLON ty SEMICOLON
           (Exp.Prim (PrimKind.Symbol {attributes = symattributes,
-                                      cbTy = ty,
-                                      name = string}))
-        | SYMBOL ASTERISK COLON ty COMMA ty SEMICOLON
-          (Exp.Prim (PrimKind.ISymbol {cbTy = ty2,
-                                       ptrTy = ty1}))
+                                      name = string,
+                                      ty = ty}))
+        | SYMBOL ASTERISK COLON ty SEMICOLON
+          (Exp.Prim (PrimKind.ISymbol {ty = ty}))
 
 ieattributes
    :

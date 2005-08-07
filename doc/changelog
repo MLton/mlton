@@ -1,6 +1,14 @@
 Here are the changes since version 20041109.
 
 * 2005-08-06
+  - Additional revisions of FFI.
+    Deprecated _export with incomplete annotation.
+    Added _address for address of C objects.
+    Eliminated address component of _symbol.
+    Changed the type of the _symbol* expression.
+    See documentation for more detail.
+
+* 2005-08-06
   - Annotation changes.
     Deprecated: sequenceUnit
     Added: sequenceNonUnit

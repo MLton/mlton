@@ -18,13 +18,13 @@ val _ =
 	     then "success\n"
 	  else "fail\n")
 
-val n = #1 (_symbol "FFI_INT": int;) ()
+val n = #1 (_symbol "FFI_INT": (unit -> int) * (int -> unit);) ()
 val _ = print (concat [Int.toString n, "\n"])
-val w = #1 (_symbol "FFI_WORD": word;) ()
+val w = #1 (_symbol "FFI_WORD": (unit -> word) * (word -> unit);) ()
 val _ = print (concat [Word.toString w, "\n"])
-val b = #1 (_symbol "FFI_BOOL": bool;) ()
+val b = #1 (_symbol "FFI_BOOL": (unit -> bool) * (bool -> unit);) ()
 val _ = print (concat [Bool.toString b, "\n"])
-val r = #1 (_symbol "FFI_REAL": real;) ()
+val r = #1 (_symbol "FFI_REAL": (unit -> real) * (real -> unit);) ()
 val _ = print (concat [Real.toString r, "\n"])
 
 signature OPAQUE =
@@ -54,13 +54,13 @@ structure OpaqueReal :> OPAQUE =
       val toString = Real.toString
    end
 
-val (n, _) = _symbol "FFI_INT": OpaqueInt.t;
+val (n, _) = _symbol "FFI_INT": (unit -> OpaqueInt.t) * (OpaqueInt.t -> unit);
 val _ = print (concat [OpaqueInt.toString (n ()), "\n"])
-val (w, _) = _symbol "FFI_WORD": OpaqueWord.t;
+val (w, _) = _symbol "FFI_WORD": (unit -> OpaqueWord.t) * (OpaqueWord.t -> unit);
 val _ = print (concat [OpaqueWord.toString (w ()), "\n"])
-val (b, _) = _symbol "FFI_BOOL": OpaqueBool.t;
+val (b, _) = _symbol "FFI_BOOL": (unit -> OpaqueBool.t) * (OpaqueBool.t -> unit);
 val _ = print (concat [OpaqueBool.toString (b ()), "\n"])
-val (r, _) = _symbol "FFI_REAL": OpaqueReal.t;
+val (r, _) = _symbol "FFI_REAL": (unit -> OpaqueReal.t) * (OpaqueReal.t -> unit);
 val _ = print (concat [OpaqueReal.toString (r ()), "\n"])
 
 val n_addr = _address "FFI_INT": MLton.Pointer.t;
