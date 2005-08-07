@@ -715,7 +715,7 @@ let
 		    pr_vdef ("h", EApp (EVar libhandle, EString name))
 	       | Control.Linkage.Static =>
 		    pr_fdef ("h", [EUnit],
-			     EPrim ("_import # \"" ^ name ^ "\"",
+			     EPrim ("_address \"" ^ name ^ "\"",
 				    Type "CMemory.addr"));
 	      endBox ();
 	      nl (); str "in";
@@ -829,7 +829,7 @@ let
 		    pr_vdef ("h", EApp (EVar libhandle, EString name))
 	       | Control.Linkage.Static =>
 		    pr_fdef ("h", [EUnit],
-			     EPrim ("_import # \"" ^ name ^ "\"",
+			     EPrim ("_address \"" ^ name ^ "\"",
 				    Type "CMemory.addr"));
 	      endBox ();
 	      nl (); str "in";
@@ -1391,7 +1391,7 @@ let
 			  loop ("  ", spec);
 			  endBox ()
 		       end
-		    fun pfl (fname, arg, res, fini) = 
+		    fun pfl (fname, arg, res, fini: unit -> unit) = 
 		       let
 			  fun loop (pfx, l) =
 			     case l of 
@@ -1472,7 +1472,7 @@ let
 	 val {closePP, line, str, nl, VBox, endBox, ... } =
 	    openPP (file, NONE)
       in
-	 line "local ann \"allowImport true\" in";
+	 line "local ann \"allowFFI true\" in";
 	 VBox 4;
 	 app line ["$(SML_LIB)/basis/basis.mlb",
 		   "$(SML_LIB)/mlnlffi-lib/internals/c-int."^targetName^".mlb"];
