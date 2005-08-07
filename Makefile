@@ -17,6 +17,7 @@ SPEC = $(SRC)/doc/mlton.spec
 LEX = mllex
 PROF = mlprof
 YACC = mlyacc
+NLFFIGEN = mlnlffigen
 PATH = $(BIN):$(SRC)/bin:$(shell echo $$PATH)
 CP = /bin/cp -fpR
 GZIP = gzip --force --best
@@ -282,6 +283,10 @@ tools:
 	$(MAKE) -C $(PROF)
 	$(MAKE) -C $(YACC)
 	$(CP) $(LEX)/$(LEX) $(PROF)/$(PROF) $(YACC)/$(YACC) $(BIN)/
+	if $(MLTON) -stop tc '$$(CKIT_LIB)/ckit-lib.mlb'; then		\
+		$(MAKE) -C $(NLFFIGEN) ;				\
+		$(CP) $(NLFFIGEN)/$(NLFFIGEN) $(BIN)/ ;			\
+	fi
 
 .PHONY: version
 version:
