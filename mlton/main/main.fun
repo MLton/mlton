@@ -139,6 +139,9 @@ fun makeOptions {usage} =
 			   | "8" => Align8
 			   | _ => usage (concat ["invalid -align flag: ",
 						 s]))))),
+       (Normal, "as-opt", " <opt>", "pass option to assembler",
+	SpaceString (fn s =>
+		     List.push (asOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "build-constants", " {false|true}",
 	"output C file that prints basis constants",
 	boolRef buildConstants),
@@ -447,16 +450,15 @@ fun makeOptions {usage} =
 	SpaceString (fn s =>
 		     (setTargetType (s, usage)
 		      ; target := (if s = "self" then Self else Cross s)))),
-       (Expert, "target-as-opt", "<target> <opt>", "target-dependent assembler option",
+       (Normal, "target-as-opt", " <target> <opt>", "target-dependent assembler option",
 	(SpaceString2
 	 (fn (target, opt) =>
 	  List.push (asOpts, {opt = opt, pred = OptPred.Target target})))),
-       (Expert, "target-cc-opt", " <target> <opt>", "target-dependent CC option",
+       (Normal, "target-cc-opt", " <target> <opt>", "target-dependent C compiler option",
 	(SpaceString2
 	 (fn (target, opt) =>
 	  List.push (ccOpts, {opt = opt, pred = OptPred.Target target})))),
-       (Normal, "target-link-opt", " <os> <opt>",
-	"target-dependent link option",
+       (Normal, "target-link-opt", " <target> <opt>", "target-dependent linker option",
 	(SpaceString2
 	 (fn (target, opt) =>
 	  List.push (linkOpts, {opt = opt, pred = OptPred.Target target})))),

@@ -50,6 +50,10 @@ On x86, the default is \fB4\fP and on Sparc the default is
 \fB8\fP.
 
 .TP
+\fB-as-opt \fIopt\fR
+Pass the option to \fBgcc\fP when assembling.
+
+.TP
 \fB-cc-opt \fIoption\fP\fP
 Pass the option to \fBgcc\fP when compiling C code.
 
@@ -193,10 +197,21 @@ install a cross compiler.  See the \fBMLton User Guide\fP for
 details.
 
 .TP
-\fB-target-link-opt \fIos\fP \fIopt\fR
-Like \fB-link-opt\fP, this passes \fIopt\fP to the linker, except it
-only passes \fIopt\fP when the target operating system is \fIos\fP.
-Valid values for \fIos\fP are:
+\fB-target-as-opt \fItarget\fP \fIopt\fR
+Like \fB-as-opt\fP, this passes \fIopt\fP to \fBgcc\fP when assembling,
+except it only passes \fIopt\fP when the target architecture or
+operating system is \fItarget\fP.
+Valid values for \fItarget\fP are as for \fB-target-cc-opt\fP.
+
+.TP
+\fB-target-cc-opt \fItarget\fP \fIopt\fR
+Like \fB-cc-opt\fP, this passes \fIopt\fP to \fBgcc\fP when compiling
+C code, except it only passes \fIopt\fP when the target architecture
+or operating system is \fItarget\fP.
+Valid values for \fItarget\fP are:
+\fBpowerpc\fP,
+\fBsparc\fP,
+\fBx86\fP,
 \fBcygwin\fP,
 \fBdarwin\fP,
 \fBfreebsd\fP,
@@ -205,6 +220,13 @@ Valid values for \fIos\fP are:
 \fBnetbsd\fP,
 \fBopenbsd\fP,
 and \fBsolaris\fP.
+
+.TP
+\fB-target-link-opt \fItarget\fP \fIopt\fR
+Like \fB-link-opt\fP, this passes \fIopt\fP to \fBgcc\fP when linking,
+except it only passes \fIopt\fP when the target architecture or
+operating system is \fItarget\fP.
+Valid values for \fItarget\fP are as for \fB-target-cc-opt\fP.
 
 .TP
 \fB-verbose\fP \fI{\fB0\fP|\fB1\fP|\fB2\fP|\fB3\fP}\fP
