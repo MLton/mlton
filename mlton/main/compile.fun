@@ -655,7 +655,7 @@ local
       let
 	 val basis =
 	    String.concat
-	    (List.map ([!Control.basisLibrary, "mlton", "sml-nj", "unsafe"],
+	    (List.map (["basis", "mlton", "sml-nj", "unsafe"],
 		       fn s => concat ["$(SML_LIB)/basis/", s, ".mlb\n"]))
       in
 	 MLBString.fromString

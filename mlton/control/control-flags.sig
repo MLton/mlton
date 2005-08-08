@@ -24,9 +24,6 @@ signature CONTROL_FLAGS =
 
       val atMLtons: string vector ref
 
-      val basisLibs: string list
-      val basisLibrary: string ref
-
       (* build identifies the machine on which this MLton was built. *)
       val build: string
 

@@ -139,17 +139,6 @@ fun makeOptions {usage} =
 			   | "8" => Align8
 			   | _ => usage (concat ["invalid -align flag: ",
 						 s]))))),
-       (Expert, "basis", " {2002|1997|...}",
-	"select Basis Library revision to prefix to the program",
-	SpaceString (fn s =>
-		     let
-			val () = warnDeprecated ("basis", "mlb files")
-			val s' = concat ["basis-", s]
-		     in
-			if List.contains (basisLibs, s', String.equals)
-			   then basisLibrary := s'
-			else usage (concat ["invalid -basis flag: ", s])
-		     end)),
        (Expert, "build-constants", " {false|true}",
 	"output C file that prints basis constants",
 	boolRef buildConstants),
