@@ -17,7 +17,7 @@ val f = _import "f": S.t -> unit;
 
 val _ = fn () => f S.x
 
-val e = _export "g1": S.t -> unit;
+val e = _export "g1": (S.t -> unit) -> unit;
 
 val _ = fn () => e S.g
 
@@ -40,6 +40,6 @@ val p = _import "f": S.t;
 
 val _ = fn () => S.f p
 
-val e = _export "g2": S.t;
+val e = _export "g2": S.t -> unit;
 
 val _ = fn () => e S.x
