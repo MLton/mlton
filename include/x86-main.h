@@ -1,3 +1,10 @@
+/* Copyright (C) 2000-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
+ */
+
 #ifndef _X86_MAIN_H_
 #define _X86_MAIN_H_
 
