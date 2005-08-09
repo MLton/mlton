@@ -78,7 +78,9 @@
 #error unknown platform
 #endif
 
+#ifndef bool
 #define	bool	int			/* boolean type */
+#endif
 #define	uint	unsigned int		/* short names for unsigned types */
 #define	ulong	unsigned long
 #define	ullong	unsigned long long	/* GCC extension */
