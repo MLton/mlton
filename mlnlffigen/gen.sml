@@ -1,7 +1,7 @@
 (* gen.sml
  * 2005 Matthew Fluet (mfluet@acm.org)
  *  Adapted for MLton.
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
@@ -1027,9 +1027,9 @@ let
 		    case h of
 		       S.BASIC basic_t => sel (wrap (p, stem basic_t))
 		     | S.STRUCT t => (* sel (suwrap p) *)
-			  raise Fail "unexpected struct argument"
+			  raise Fail "struct argument not (yet) supported"
 		     | S.UNION t => (* sel (suwrap p) *)
-			  raise Fail "unexpected union argument"
+			  raise Fail "union argument not (yet) supported"
 		     | S.ENUM _ => sel (ewrap p)
 		     | S.VOIDPTR => sel (vwrap p)
 		     | S.FPTR _ => sel (fwrap p)
