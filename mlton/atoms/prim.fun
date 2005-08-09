@@ -1011,14 +1011,12 @@ local
 		       ()
 		    end)
 in
-   val fromString: string -> 'a t =
+   val fromString: string -> 'a t option =
       fn name =>
-      cast
-      (#prim
-       (HashSet.lookupOrInsert
-	(table, String.hash name,
-	 fn {string, ...} => name = string,
-	 fn () => Error.bug (concat ["Prim.fromString: unknown primitive: ", name]))))
+      Option.map
+      (HashSet.peek
+       (table, String.hash name, fn {string, ...} => name = string),
+       fn {prim, ...} => cast prim)
 end
 
 fun ('a, 'b) extractTargs (prim: 'b t,

@@ -2864,10 +2864,20 @@ fun elaborateDec (d, {env = E, nest}) =
 					 "_prim")
 			       val (elabedTy, expandedTy) = 
 				  elabAndExpandTy ty
+                               val prim =
+                                  case Prim.fromString name of
+                                     NONE =>
+                                        (Control.error
+                                         (region,
+                                          str (concat ["unknown primitive: ",
+                                                       name]),
+                                          empty)
+                                         ; Prim.bogus)
+                                   | SOME p => p
 			    in
 			       eta {elabedTy = elabedTy,
 				    expandedTy = expandedTy,
-				    prim = Prim.fromString name}
+				    prim = prim}
 			    end
                        | Symbol {attributes, name, ty} =>
 			    let

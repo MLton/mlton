@@ -216,7 +216,7 @@ signature PRIM =
 				result: 'b} -> 'b vector
       val ffi: 'a CFunction.t -> 'a t
       val ffiSymbol: {name: string} -> 'a t
-      val fromString: string -> 'a t
+      val fromString: string -> 'a t option
       val gcCollect: 'a t
       val intInfEqual: 'a t
       val isCommutative: 'a t -> bool
