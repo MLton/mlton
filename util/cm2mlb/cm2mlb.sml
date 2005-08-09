@@ -1,5 +1,5 @@
 (*
- * Author: Matthew Fluet (fluet@cs.cornell.edu) 
+ * Author: Matthew Fluet (mfluet@acm.org) 
  *
  * This requires that you have SML/NJ installed.
  * It works with SML/NJ 110.47 and may require changes to work with other
