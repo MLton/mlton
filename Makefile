@@ -56,7 +56,8 @@ basis-no-check:
 	mkdir -p $(LIB)/sml
 	rm -rf $(LIB)/sml/basis
 	$(CP) $(SRC)/basis-library/. $(LIB)/sml/basis
-	find $(LIB)/sml -type f -name .cvsignore | xargs rm -rf
+	find $(LIB)/sml/basis -type d -name .svn | xargs rm -rf
+	find $(LIB)/sml/basis -type f -name .ignore | xargs rm -rf
 
 .PHONY: basis
 basis:
@@ -159,10 +160,16 @@ freebsd:
 
 .PHONY: libraries-no-check
 libraries-no-check:
-	cd $(LIB)/sml && rm -rf cml mlyacc-lib
+	cd $(LIB)/sml && rm -rf cml mlyacc-lib mlnlffi-lib
 	$(CP) $(SRC)/lib/mlyacc/. $(LIB)/sml/mlyacc-lib
+	find $(LIB)/sml/mlyacc -type d -name .svn | xargs rm -rf
+	find $(LIB)/sml/mlyacc -type f -name .ignore | xargs rm -rf
 	$(CP) $(SRC)/lib/cml/. $(LIB)/sml/cml
+	find $(LIB)/sml/cml -type d -name .svn | xargs rm -rf
+	find $(LIB)/sml/cml -type f -name .ignore | xargs rm -rf
 	$(CP) $(SRC)/lib/mlnlffi/. $(LIB)/sml/mlnlffi-lib
+	find $(LIB)/sml/mlnlffi -type d -name .svn | xargs rm -rf
+	find $(LIB)/sml/mlnlffi -type f -name .ignore | xargs rm -rf
 
 .PHONY: libraries
 libraries:
