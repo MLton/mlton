@@ -1,3 +1,10 @@
+(* Copyright (C) 2002-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
+ *)
+
 structure Socket:> SOCKET_EXTRA
    where type SOCK.sock_type = Primitive.Socket.SOCK.sock_type
    where type pre_sock_addr = Word8.word array

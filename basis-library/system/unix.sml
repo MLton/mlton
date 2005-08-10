@@ -3,8 +3,9 @@
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
- * 
- * Rewritten by wesley@terpstra.ca on 2004-11-23 to use MLtonProcess for the
+ *)
+
+(* Rewritten by wesley@terpstra.ca on 2004-11-23 to use MLtonProcess for the
  * implementation.
  *)
 

@@ -1,3 +1,11 @@
+## Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ #    Jagannathan, and Stephen Weeks.
+ # Copyright (C) 1997-1999 NEC Research Institute.
+ #
+ # MLton is released under the GNU General Public License (GPL).
+ # Please see the file MLton-LICENSE for license information.
+ ##
+
 TEX_FILES = \
 	abstract.tex		\
 	main.tex		\
@@ -17,7 +25,7 @@ main/main.html: $(TEX_FILES)
 
 main.dvi: $(TEX_FILES) $(FIG_FILES)
 	latex main; bibtex main; latex main; latex main
-	
+
 main.ps: main.dvi
 	dvips -o main.ps main
 

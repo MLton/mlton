@@ -1,3 +1,10 @@
+(* Copyright (C) 2002-2003 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
+ *)
+
 functor PosixIOConvert (structure IO: POSIX_IO): POSIX_IO_1997 =
   struct
      open IO
