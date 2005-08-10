@@ -60,8 +60,14 @@ SOURCES =			\
 .PHONY: all
 all: $(AOUT)
 
-front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml front-end/mlb.lex.sml front-end/mlb.grm.sig front-end/mlb.grm.sml:
-	$(MAKE) -C front-end
+front-end/ml.lex.sml: front-end/ml.lex
+	$(MAKE) -C front-end ml.lex.sml
+front-end/ml.grm.sig front-end/ml.grm.sml: front-end/ml.grm
+	$(MAKE) -C front-end ml.grm.sig ml.grm.sml
+front-end/mlb.lex.sml: front-end/mlb.lex
+	$(MAKE) -C front-end mlb.lex.sml
+front-end/mlb.grm.sig front-end/mlb.grm.sml: front-end/mlb.grm
+	$(MAKE) -C front-end mlb.grm.sig mlb.grm.sml
 
 $(AOUT): $(SOURCES)
 	rm -f $(UP)
