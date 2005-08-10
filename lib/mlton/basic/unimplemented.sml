@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 structure Unimplemented =
    struct
       val op equals = fn _ => Error.unimplemented "equals"

@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor ElaborateEnv (S: ELABORATE_ENV_STRUCTS): ELABORATE_ENV =
 struct
 

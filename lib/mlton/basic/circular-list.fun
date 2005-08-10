@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor CircularList(S: CIRCULAR_LIST_STRUCTS): CIRCULAR_LIST =
 struct
 

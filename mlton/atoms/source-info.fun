@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor SourceInfo (S: SOURCE_INFO_STRUCTS): SOURCE_INFO =
 struct
 

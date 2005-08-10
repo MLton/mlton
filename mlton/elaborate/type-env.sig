@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 signature TYPE_ENV_STRUCTS = 
    sig
       include ATOMS

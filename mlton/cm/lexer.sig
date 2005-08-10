@@ -4,6 +4,7 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 (* Based on the file entity/lexer.sig in the SML/NJ CM sources.
+
  *
  * entity/lexer.sig: lexical analysis of description files
  *

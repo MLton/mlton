@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor CallCount(S: CALL_COUNT_STRUCTS): CALL_COUNT = 
 struct
 

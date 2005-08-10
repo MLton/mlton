@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 signature GENERIC_SCHEME_STRUCTS = 
    sig
       structure Tyvar: TYVAR

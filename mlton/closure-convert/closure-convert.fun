@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 (*
  * All local variables in the Sxml are renamed to new variables in Ssa,
  * unless they are global, as determined by the Globalization pass.

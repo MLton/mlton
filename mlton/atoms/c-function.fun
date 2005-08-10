@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor CFunction (S: C_FUNCTION_STRUCTS): C_FUNCTION = 
 struct
 

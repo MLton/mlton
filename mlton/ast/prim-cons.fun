@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor PrimCons (S: PRIM_CONS_STRUCTS): PRIM_CONS =
 struct
 

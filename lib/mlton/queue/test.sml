@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 structure Q = QueueLogarithmicExplicit();
 fun p q = Q.output(q, ", ", Int.output, Out.standard);
 let val q = ref(Q.empty())

@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 (* Patch in fromLarge and toLarge now that IntInf is defined. *)
 
 structure Int8: INTEGER_EXTRA =

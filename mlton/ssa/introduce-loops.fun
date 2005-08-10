@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 (* Change any toplevel function that only calls itself in tail position
  * into one with a local loop and no self calls.
  *)

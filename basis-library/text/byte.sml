@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 structure Byte: BYTE =
    struct
       val byteToChar = Primitive.Char.fromWord8

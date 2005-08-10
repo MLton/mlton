@@ -4,8 +4,8 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-(* Based on RFC 2616. *)
 
+(* Based on RFC 2616. *)
 type int = Int.t
 
 signature HTTP =

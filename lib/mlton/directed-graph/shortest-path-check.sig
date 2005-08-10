@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 signature SHORTEST_PATH_CHECK_STRUCTS =
    sig
       include DIRECTED_GRAPH

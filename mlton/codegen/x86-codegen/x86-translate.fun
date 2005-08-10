@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor x86Translate(S: X86_TRANSLATE_STRUCTS): X86_TRANSLATE =
 struct
 

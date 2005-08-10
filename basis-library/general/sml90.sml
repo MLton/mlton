@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 structure SML90:> SML90 =
    struct
       type instream = TextIO.instream

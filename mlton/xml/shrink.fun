@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 (* This simplifier is based on the following article.
  *   Shrinking Lambda Expressions in Linear Time.
  *   Journal of Functional Programming. Vol 7, no 5, 1997.

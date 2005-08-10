@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor DeadCode (S: DEAD_CODE_STRUCTS): DEAD_CODE = 
 struct
 

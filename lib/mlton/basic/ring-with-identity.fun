@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor RingWithIdentity (S: RING_WITH_IDENTITY_STRUCTS)
    :> RING_WITH_IDENTITY where type t = S.t = 
 struct

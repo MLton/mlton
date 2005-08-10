@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 signature C_CODEGEN_STRUCTS =
    sig
       structure Ffi: FFI

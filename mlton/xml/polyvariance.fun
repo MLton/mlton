@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 (*
  * Duplicate a let bound function at each variable reference
  * if cost is smaller than threshold.

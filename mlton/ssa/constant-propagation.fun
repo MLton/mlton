@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 (*
  * Invariant: Created globals only refer to other globals.
  *            Hence, the newly created globals may appear at the

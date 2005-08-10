@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 signature OBJECT_TYPE =
    sig
       structure PointerTycon: POINTER_TYCON

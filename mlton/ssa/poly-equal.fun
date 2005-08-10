@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor PolyEqual (S: POLY_EQUAL_STRUCTS): POLY_EQUAL = 
 struct
 

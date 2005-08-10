@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 structure Assert: ASSERT =
    struct
       val debug = MLton.debug orelse (not MLton.isMLton)

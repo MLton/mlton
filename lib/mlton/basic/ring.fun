@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor Ring(S: RING_STRUCTS):> RING where type t = S.t = 
 struct
 

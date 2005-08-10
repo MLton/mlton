@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 structure StringCvt: STRING_CVT_EXTRA =
    struct
       open Reader

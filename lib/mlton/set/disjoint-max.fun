@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 (* Taken from
  * Applications of Path Compression on Balanced Trees
  * Robert Endre Tarjan

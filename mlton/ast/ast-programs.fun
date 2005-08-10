@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor AstPrograms (S: AST_PROGRAMS_STRUCTS): AST_PROGRAMS = 
 struct
 

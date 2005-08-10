@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 (* Has a special case to make sure that true is represented as 1
  * and false is represented as 0.
  *)

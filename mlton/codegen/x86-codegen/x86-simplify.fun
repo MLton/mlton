@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor x86Simplify(S: X86_SIMPLIFY_STRUCTS): X86_SIMPLIFY =
 struct
 

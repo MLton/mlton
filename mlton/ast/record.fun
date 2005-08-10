@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 (* empty tuple is also a record *)
 
 functor Record (S: RECORD_STRUCTS): RECORD = 

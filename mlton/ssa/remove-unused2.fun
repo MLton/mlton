@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor RemoveUnused2 (S: REMOVE_UNUSED2_STRUCTS): REMOVE_UNUSED2 = 
 struct
 

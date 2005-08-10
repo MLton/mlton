@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 signature XML_STRUCTS =
    sig
       include XML_TREE_STRUCTS

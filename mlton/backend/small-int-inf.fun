@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor SmallIntInf(S: SMALL_INT_INF_STRUCTS): SMALL_INT_INF = 
 struct
 

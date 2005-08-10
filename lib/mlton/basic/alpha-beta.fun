@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor AlphaBeta (S: ALPHA_BETA_STRUCTS): ALPHA_BETA = 
 struct
 

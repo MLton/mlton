@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor x86Validate(S: X86_VALIDATE_STRUCTS): X86_VALIDATE =
 struct
 

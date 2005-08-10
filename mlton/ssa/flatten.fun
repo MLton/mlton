@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 (*
  * Flatten arguments to jumps, constructors, and functions.
  * If a tuple is explicitly available at all uses of a jump (resp. function)

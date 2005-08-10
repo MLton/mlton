@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor PrePasses2 (S: PREPASSES2_STRUCTS): PREPASSES2 = 
 struct
 

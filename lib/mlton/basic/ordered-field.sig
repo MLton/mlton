@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 signature ORDERED_FIELD_STRUCTS =
    sig
       include ORDERED_RING

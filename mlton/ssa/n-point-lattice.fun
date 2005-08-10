@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor NPointLattice (S: N_POINT_LATTICE_STRUCTS): N_POINT_LATTICE = 
 struct
 

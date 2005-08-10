@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor SsaToRssa (S: SSA_TO_RSSA_STRUCTS): SSA_TO_RSSA =
 struct
 

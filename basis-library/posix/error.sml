@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 structure PosixError: POSIX_ERROR_EXTRA =
    struct
       structure Prim = PosixPrimitive.Error

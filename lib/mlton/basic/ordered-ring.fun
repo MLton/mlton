@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor OrderedRing(S: ORDERED_RING_STRUCTS):> ORDERED_RING where type t = S.t =
 struct
 

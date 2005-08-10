@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 (* This pass must happen before polymorphic equality is implemented becuase
  * 1. it will make polymorphic equality faster because some types are simpler
  * 2. it removes uses of polymorphic equality that must return true

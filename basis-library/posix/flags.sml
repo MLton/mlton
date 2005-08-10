@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor BitFlags(val all: SysWord.word): BIT_FLAGS_EXTRA =
    struct
       type flags = SysWord.word

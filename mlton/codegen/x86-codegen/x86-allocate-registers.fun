@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor x86AllocateRegisters(S: X86_ALLOCATE_REGISTERS_STRUCTS) : X86_ALLOCATE_REGISTERS =
 struct
   

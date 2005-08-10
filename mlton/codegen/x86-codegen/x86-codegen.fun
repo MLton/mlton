@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor x86Codegen (S: X86_CODEGEN_STRUCTS): X86_CODEGEN =
 struct
   open S
