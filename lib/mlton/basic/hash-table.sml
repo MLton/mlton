@@ -1,11 +1,11 @@
 (* This code is not working -- it is not even in sources.cm *)
 
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
+ * MLton is released under a BSD-style license.
 
- * Please see the file MLton-LICENSE for license information.
+ * See the file MLton-LICENSE for details.
  *)
 structure HashTable: HASH_TABLE =
 struct

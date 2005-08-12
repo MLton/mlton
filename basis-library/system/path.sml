@@ -1,5 +1,7 @@
-(* Modified from MLKitV3 basislib/Path.sml
- * by sweeks@research.nj.nec.com on 1999-1-5.
+(* Modified from the ML Kit 4.1.4; basislib/Path.sml
+ * by mfluet@acm.org on 2005-8-10 based on
+ *  modifications from the ML Kit 3 Version; basislib/Path.sml
+ *  by sweeks@research.nj.nec.com on 1999-1-5.
  *)
 
 structure OS_Path: OS_PATH =

@@ -1,16 +1,16 @@
-package		license			use
---------------  -----------		------------
-MLton		MLton-LICENSE (GPL)	
+package		license				use
+--------------  ------------------------------	------------
+MLton		MLton-LICENSE (BSD-style)
 
-SML/NJ		NJ-LICENSE		lexer, parser, 
-                                        precedence parser,
-					OS.IO, Posix.IO, Process, Unix
-					splay trees,
-                                        Concurrent ML Library
-                                        MLNLFFI Library, mlnlffigen
+SML/NJ		NJ-LICENSE (BDD-style)		lexer, parser, 
+                                        	precedence parser,
+						OS.IO, Posix.IO, Process, Unix
+						splay trees,
+                                        	Concurrent ML Library
+                                        	MLNLFFI Library, mlnlffigen
 
-ML Kit		MLKit-LICENSE (GPL)	Path, Time, Date
+ML Kit		MLKit-LICENSE (MIT)		Path, Time, Date
 
-gdtoa		gdtoa-LICENSE		Real binary <-> decimal conversions
+gdtoa		gdtoa-LICENSE (BSD-style) 	Real binary <-> decimal conversions
 
-gmp		gmp-LICENSE (LGPL)	IntInf
+gmp		gmp-LICENSE (LGPL)		IntInf

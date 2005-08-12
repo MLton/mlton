@@ -1,9 +1,9 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 structure Time: TIME_EXTRA =
@@ -91,7 +91,11 @@ val fmt: int -> time -> string =
 
 val toString = fmt 3
 
-(* Adapted from MLKitV3 basislib/Time.sml*)
+(* Adapted from the ML Kit 4.1.4; basislib/Time.sml
+ * by mfluet@acm.org on 2005-8-10 based on
+ *  adaptations from the ML Kit 3 Version; basislib/Time.sml
+ *  by sweeks@research.nj.nec.com on 1999-1-3.
+ *)
 fun scan getc src =
    let
       val charToDigit = StringCvt.charToDigit StringCvt.DEC

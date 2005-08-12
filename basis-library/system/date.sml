@@ -1,5 +1,8 @@
-(* Modified from the ML Kit Version 3 by sweeks@research.nj.nec.com on 1999-1-3.
- * Further modifications by sweeks@acm.org on 2000-1-18.
+(* Modified from the ML Kit 4.1.4; basislib/Date.sml
+ * by mfluet@acm.org on 2005-8-10 based on
+ *  modifications from the ML Kit Version 3; basislib/Date.sml
+ *  by sweeks@research.nj.nec.com on 1999-1-3 and
+ *  by sweeks@acm.org on 2000-1-18.
  *)
  
 (* Date -- 1995-07-03, 1998-04-07 *)
