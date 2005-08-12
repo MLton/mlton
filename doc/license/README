@@ -2,7 +2,7 @@ package		license				use
 --------------  ------------------------------	------------
 MLton		MLton-LICENSE (BSD-style)
 
-SML/NJ		NJ-LICENSE (BDD-style)		lexer, parser, 
+SML/NJ		NJ-LICENSE (BSD-style)		lexer, parser, 
                                         	precedence parser,
 						OS.IO, Posix.IO, Process, Unix
 						splay trees,
