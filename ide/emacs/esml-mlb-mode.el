@@ -3,8 +3,8 @@
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
 
-(provide 'esml-mlb-mode)
-(require 'cl)
+(eval-when-compile
+  (require 'cl))
 
 ;; Emacs mode for editing ML Basis files
 ;;
@@ -41,22 +41,26 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Prelude
 
+(defvar esml-mlb-load-time t)
+
 (add-to-list 'auto-mode-alist '("\\.mlb\\'" . esml-mlb-mode))
 
-(defun esml-mlb-build-font-lock-table ()
-  "This is a dummy setter for load-time.") ;; TBD: Is this the best way?
-
 (defun esml-mlb-set-custom-and-build-font-lock-table (sym val)
-  "Sets customization variable `sym' to `val' and then builds the font
-lock table."
   (custom-set-default sym val)
-  (esml-mlb-build-font-lock-table))
+  (unless esml-mlb-load-time
+    (esml-mlb-build-font-lock-table)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Customization
 
 (defgroup esml-mlb nil
-  "Major mode for editing ML Basis files."
+  "Major mode for editing ML Basis files.
+
+Unrecognized
+- annotations (see `esml-mlb-annotations'),
+- path variables (see `esml-mlb-mlb-path-map-files'), and
+- path name suffices (see `esml-mlb-path-suffix-regexp') are
+highlighed as warnings."
   :group 'sml)
 
 (defcustom esml-mlb-annotations
@@ -75,7 +79,10 @@ lock table."
     ("warnMatch" "true" "false")
     ("warnUnused" "false" "true"))
   "Annotations accepted by your compiler(s)."
-  :type '(repeat (cons string (repeat string)))
+  :type '(repeat (cons :tag "Annotation"
+                       (string :tag "Name")
+                       (repeat :tag "Values starting with the default"
+                               string)))
   :set 'esml-mlb-set-custom-and-build-font-lock-table
   :group 'esml-mlb)
 
@@ -112,17 +119,17 @@ lock table."
            (lambda (char-flags)
              (modify-syntax-entry (car char-flags) (cdr char-flags)
                                   table)))
-          '((?\( . "$ 1")
+          '((?\( . "()1")
             (?\* . ". 23")
-            (?\) . "$ 4")
-            (?\" . "$")
-            (?\\ . "\\")
+            (?\) . ")(4")
+            (?\" . "$") ;; not '"' to allow custom highlighting of ann
+            (?\\ . "/") ;; not '\' due to class of '"'
             (?/  . "_")
             (?-  . "_")
             (?_  . "_")
             (?.  . "_")
+            (?$  . "_")
             (?\; . ".")
-            (?$  . ".")
             (?=  . ".")))
     table)
   "Syntax table for ML Basis mode.")
@@ -132,14 +139,15 @@ lock table."
     "signature" "structure")
   "Keywords of ML Basis syntax.")
 
+(defconst esml-mlb-str-chr-regexp "\\([^\"\\]\\|\\\\.\\)")
+
 (defun esml-mlb-build-font-lock-table ()
-  "Builds the font-lock table for ML Basis mode. Unrecognized
-- annotations (see `esml-mlb-annotations'),
-- path variables (see `esml-mlb-mlb-path-map-files'), and
-- path name suffices (see `esml-mlb-path-suffix-regexp') are
-highlighed as warnings."
+  "Builds the font-lock table for ML Basis mode."
   (setq esml-mlb-font-lock-table
-        `(;; annotations
+        `(;; quoted path names
+          (,(concat "\"" esml-mlb-str-chr-regexp "*\\.\\(" esml-mlb-path-suffix-regexp "\\)\"")
+           . font-lock-constant-face)
+          ;; annotations
           (,(apply
              'concat
              "\"[ \t\n]*\\("
@@ -156,7 +164,7 @@ highlighed as warnings."
               esml-mlb-annotations
               :initial-value '("\\)[ \t\n]*\"")))
            . font-lock-string-face)
-          ("\"[^\"]*\""
+          (,(concat "\"" esml-mlb-str-chr-regexp "*\"")
            . font-lock-warning-face)
           ;; path variables
           (,(concat
@@ -181,7 +189,7 @@ highlighed as warnings."
            . font-lock-reference-face)
           ("\\$([^)]*?)"
            . font-lock-warning-face)
-          ;; path names
+          ;; unquoted path names
           (,(concat "[-A-Za-z0-9_/.]*\\.\\(" esml-mlb-path-suffix-regexp "\\)\\>")
            . font-lock-constant-face)
           ("[-A-Za-z0-9_/.]*\\.[-A-Za-z0-9_/.]*"
@@ -241,44 +249,47 @@ highlighed as warnings."
   (let* ((indent-evidence (esml-mlb-previous-indentation))
          (indent (car indent-evidence))
          (evidence (cdr indent-evidence)))
-    (beginning-of-line)
-    (skip-chars-forward " \t")
-    (cond ((looking-at ";")
-           (case evidence
-             ((in)
-              (indent-line-to (max 0 (+ indent -2 esml-mlb-indent-offset))))
-             (t
-              (indent-line-to (max 0 (- indent 2))))))
-          ((looking-at "end[ \t\n]")
-           (case evidence
-             ((ann bas in let local)
-              (indent-line-to indent))
-             (t
-              (indent-line-to (max 0 (- indent esml-mlb-indent-offset))))))
-          ((looking-at "in[ \t\n]")
-           (case evidence
-             ((ann let local)
-              (indent-line-to indent))
-             (t
-              (indent-line-to (- indent esml-mlb-indent-offset)))))
-          ((looking-at "and[ \t\n]")
-           (case evidence
-             ((basis functor signature structure)
-              (indent-line-to (+ indent -3 (length (symbol-name evidence)))))
-             (t
-              (indent-line-to indent))))
-          ((looking-at "\\*")
-           (case evidence
-             ((*)
-              (indent-line-to (+ indent 1)))
-             (t
-              (indent-line-to indent))))
-          (t
-           (case evidence
-             ((ann bas in let local)
-              (indent-line-to (+ indent esml-mlb-indent-offset)))
-             (t
-              (indent-line-to indent)))))))
+    (save-excursion
+      (beginning-of-line)
+      (skip-chars-forward " \t")
+      (cond ((looking-at ";")
+             (case evidence
+               ((in)
+                (indent-line-to (max 0 (+ indent -2 esml-mlb-indent-offset))))
+               (t
+                (indent-line-to (max 0 (- indent 2))))))
+            ((looking-at "end[ \t\n]")
+             (case evidence
+               ((ann bas in let local)
+                (indent-line-to indent))
+               (t
+                (indent-line-to (max 0 (- indent esml-mlb-indent-offset))))))
+            ((looking-at "in[ \t\n]")
+             (case evidence
+               ((ann let local)
+                (indent-line-to indent))
+               (t
+                (indent-line-to (- indent esml-mlb-indent-offset)))))
+            ((looking-at "and[ \t\n]")
+             (case evidence
+               ((basis functor signature structure)
+                (indent-line-to (+ indent -3 (length (symbol-name evidence)))))
+               (t
+                (indent-line-to indent))))
+            ((looking-at "\\*")
+             (case evidence
+               ((*)
+                (indent-line-to (+ indent 1)))
+               (t
+                (indent-line-to indent))))
+            (t
+             (case evidence
+               ((ann bas in let local)
+                (indent-line-to (+ indent esml-mlb-indent-offset)))
+               (t
+                (indent-line-to indent))))))
+    (if (< (current-column) (current-indentation))
+        (forward-char (- (current-indentation) (current-column))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Define mode
@@ -288,7 +299,6 @@ highlighed as warnings."
 
 (defvar esml-mlb-mode-map
   (let ((esml-mlb-mode-map (make-keymap)))
-    ;;(define-key wpdl-mode-map "\C-j" 'newline-and-indent)
     esml-mlb-mode-map)
   "Keymap for ML Basis mode.")
 
@@ -299,3 +309,10 @@ highlighed as warnings."
        '(esml-mlb-font-lock-table))
   (set (make-local-variable 'indent-line-function)
        'esml-mlb-indent-line))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Finalization
+
+(setq esml-mlb-load-time nil)
+
+(provide 'esml-mlb-mode)
