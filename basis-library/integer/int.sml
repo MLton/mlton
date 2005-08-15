@@ -157,62 +157,57 @@ end
 
 val toString = fmt StringCvt.DEC
 	 
-fun scan radix reader state =
-  let
-    (* Works with the negative of the number so that minInt can
-     * be scanned.
-     *)
-    val state = StringCvt.skipWS reader state
-    fun charToDigit c =
-      case StringCvt.charToDigit radix c of
-	NONE => NONE
-      | SOME n => SOME (fromInt n)
-    val radixInt = fromInt (StringCvt.radixToInt radix)
-    fun finishNum (state, n) =
-      case reader state of
-	NONE => SOME (n, state)
-      | SOME (c, state') =>
-	  case charToDigit c of
-	    NONE => SOME (n, state)
-	  | SOME n' => finishNum (state', n * radixInt - n')
-    fun num state =
-      case (reader state, radix) of
-	(NONE, _) => NONE
-      | (SOME (#"0", state), StringCvt.HEX) =>
-	  (case reader state of
-	     NONE => SOME (zero, state)
-	   | SOME (c, state') =>
-	       let
-		 fun rest () =
-		   case reader state' of
-		     NONE => SOME (zero, state)
-		   | SOME (c, state') =>
-		       case charToDigit c of
-			 NONE => SOME (zero, state)
-		       | SOME n => finishNum (state', ~? n)
-	       in case c of
-		 #"x" => rest ()
-	       | #"X" => rest ()
-	       | _ => (case charToDigit c of
-			 NONE => SOME (zero, state)
-		       | SOME n => finishNum (state', ~? n))
-	       end)
-      | (SOME (c, state), _) =>
-	     (case charToDigit c of
-		NONE => NONE
-	      | SOME n => finishNum (state, ~? n))
-    fun negate state =
-      case num state of
-	NONE => NONE
-      | SOME (n, s) => SOME (~ n, s)
-  in case reader state of
-    NONE => NONE
-  | SOME (c, state') =>
-      case c of
-	#"~" => num state'
-      | #"-" => num state'
-      | #"+" => negate state'
-      | _ => negate state
+fun scan radix reader s =
+   let
+      (* Works with the negative of the number so that minInt can be scanned. *)
+      val s = StringCvt.skipWS reader s
+      fun charToDigit c =
+         case StringCvt.charToDigit radix c of
+            NONE => NONE
+          | SOME n => SOME (fromInt n)
+      val radixInt = fromInt (StringCvt.radixToInt radix)
+      fun finishNum (s, n) =
+         case reader s of
+            NONE => SOME (n, s)
+          | SOME (c, s') =>
+               case charToDigit c of
+                  NONE => SOME (n, s)
+                | SOME n' => finishNum (s', n * radixInt - n')
+      fun num s =
+         case (reader s, radix) of
+            (NONE, _) => NONE
+          | (SOME (#"0", s), StringCvt.HEX) =>
+               (case reader s of
+                   NONE => SOME (zero, s)
+                 | SOME (c, s') =>
+                      if c = #"x" orelse c = #"X" then
+                         case reader s' of
+                            NONE => SOME (zero, s)
+                          | SOME (c, s') =>
+                               case charToDigit c of
+                                  NONE => SOME (zero, s)
+                                | SOME n => finishNum (s', ~? n)
+                      else
+                         case charToDigit c of
+                            NONE => SOME (zero, s)
+                          | SOME n => finishNum (s', ~? n))
+          | (SOME (c, s), _) =>
+               case charToDigit c of
+                  NONE => NONE
+                | SOME n => finishNum (s, ~? n)
+    fun negate s =
+       case num s of
+          NONE => NONE
+        | SOME (n, s) => SOME (~ n, s)
+  in
+     case reader s of
+        NONE => NONE
+      | SOME (c, s') =>
+           case c of
+              #"~" => num s'
+            | #"-" => num s'
+            | #"+" => negate s'
+            | _ => negate s
   end
       
 val fromString = StringCvt.scanString (scan StringCvt.DEC)
