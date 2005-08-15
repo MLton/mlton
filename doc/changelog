@@ -1,5 +1,9 @@
 Here are the changes since version 20041109.
 
+* 2005-08-15
+  - Fixed bug in LargeInt.scan, which should skip leading "0x" and
+    "0X".  Thanks to Wesley Terpstra for the bug report and fix.
+
 * 2005-08-06
   - Additional revisions of FFI.
     Deprecated _export with incomplete annotation.

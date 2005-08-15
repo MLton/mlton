@@ -736,6 +736,21 @@ structure IntInf: INT_INF_EXTRA =
 	    end
 	 
 	 (*
+          * Given a char reader and an unsigned reader, return an unsigned
+	  * reader that includes skipping the option hex '0x'.
+          *)
+	 fun toHexR (cread: (char, 'a) reader, uread: (bigInt, 'a) reader) 
+	    s =
+            case Reader.reader2 cread s of
+               NONE => NONE
+             | SOME ((c1, c2), s') =>
+                  if c1 = #"0" andalso (c2 = #"x" orelse c2 = #"X") then
+                     case uread s' of 
+                        NONE => uread s
+                      | SOME x => SOME x
+                  else uread s
+
+	 (*
 	  * Given a char reader and an unsigned reader, return a signed
 	  * reader.  This includes skipping any initial white space.
 	  *)
@@ -778,14 +793,16 @@ structure IntInf: INT_INF_EXTRA =
 	       let val dread = toDigR (dig, cread)
 		  val ckread = toChunkR (base, dpc, dread)
 		  val uread = toUnsR ckread
-		  val reader = toSign (cread, uread)
+		  val hread =
+                     if base = 0w16 then toHexR (cread, uread) else uread
+		  val reader = toSign (cread, hread)
 	       in reader
 	       end
 	 in
 	    fun binReader z = reader (0w2, 29, binDig) z
 	    fun octReader z = reader (0w8, 9, octDig) z
 	    fun decReader z = reader (0w10, 9, decDig) z
-	    fun hexReader z = reader (0wx10, 7, hexDig) z
+	    fun hexReader z = reader (0w16, 7, hexDig) z
 	 end	 
       in
 	 
