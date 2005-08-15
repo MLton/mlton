@@ -645,14 +645,14 @@ structure IntInf: INT_INF_EXTRA =
 	  *)
 	 fun toDigR (charToDig: char -> Word.word option,
 		     cread: (char, 'a) reader)
-	    (state: 'a)
+	    (s: 'a)
 	    : (Word.word * 'a) option =
-	    case cread state of
+	    case cread s of
 	       NONE => NONE
-	     | SOME (ch, state') =>
+	     | SOME (ch, s') =>
 		  case charToDig ch of
 		     NONE => NONE
-		   | SOME dig => SOME (dig, state')
+		   | SOME dig => SOME (dig, s')
 			
 	 (*
 	  * A chunk represents the result of processing some digits.
@@ -677,36 +677,36 @@ structure IntInf: INT_INF_EXTRA =
 	    let fun loop {left: smallInt,
 			  shift: Word.word,
 			  chunk: Word.word,
-			  state: 'a}
+			  s: 'a}
 	       : chunk * 'a =
 	       if left <= 0
 		  then ({more = true,
 			 shift = shift,
 			 chunk = chunk },
-			state)
+			s)
 	       else
-		  case dread state of
+		  case dread s of
 		     NONE => ({more = false,
 			       shift = shift,
 			       chunk = chunk},
-			      state)
-		   | SOME (dig, state') =>
+			      s)
+		   | SOME (dig, s') =>
 			loop {
 			      left = left - 1,
 			      shift = Word.* (base, shift),
 			      chunk = Word.+ (Word.* (base,
 						      chunk),
 					      dig),
-			      state = state'
+			      s = s'
 			      }
-		fun reader (state: 'a): (chunk * 'a) option =
-		   case dread state of
+		fun reader (s: 'a): (chunk * 'a) option =
+		   case dread s of
 		      NONE => NONE
 		    | SOME (dig, next) =>
 			 SOME (loop {left = dpc - 1,
 				     shift = base,
 				     chunk = dig,
-				     state = next})
+				     s = next})
 	    in reader
 	    end
 	 
@@ -714,24 +714,24 @@ structure IntInf: INT_INF_EXTRA =
 	  * Given a chunk reader, return an unsigned reader.
 	  *)
 	 fun toUnsR (ckread: (chunk, 'a) reader): (bigInt, 'a) reader =
-	    let fun loop (more: bool, ac: bigInt, state: 'a) =
+	    let fun loop (more: bool, ac: bigInt, s: 'a) =
 	       if more
-		  then case ckread state of
-		     NONE => (ac, state)
-		   | SOME ({more, shift, chunk}, state') =>
+		  then case ckread s of
+		     NONE => (ac, s)
+		   | SOME ({more, shift, chunk}, s') =>
 			loop (more,
 			      bigPlus (bigMul (smallToBig shift,
 					       ac),
 				       smallToBig chunk),
-			      state')
-	       else (ac, state)
-		fun reader (state: 'a): (bigInt * 'a) option =
-		   case ckread state of
+			      s')
+	       else (ac, s)
+		fun reader (s: 'a): (bigInt * 'a) option =
+		   case ckread s of
 		      NONE => NONE
-		    | SOME ({more, chunk, ...}, state') =>
+		    | SOME ({more, chunk, ...}, s') =>
 			 SOME (loop (more,
 				     smallToBig chunk,
-				     state'))
+				     s'))
 	    in reader
 	    end
 	 
@@ -741,13 +741,18 @@ structure IntInf: INT_INF_EXTRA =
           *)
 	 fun toHexR (cread: (char, 'a) reader, uread: (bigInt, 'a) reader) 
 	    s =
-            case Reader.reader2 cread s of
+            case cread s of
                NONE => NONE
-             | SOME ((c1, c2), s') =>
-                  if c1 = #"0" andalso (c2 = #"x" orelse c2 = #"X") then
-                     case uread s' of 
-                        NONE => uread s
-                      | SOME x => SOME x
+             | SOME (c1, s1) =>
+                  if c1 = #"0" then
+                     case cread s1 of
+                        NONE => SOME (zero, s1)
+                      | SOME (c2, s2) =>
+                           if c2 = #"x" orelse c2 = #"X" then
+                              case uread s2 of 
+                                 NONE => SOME (zero, s1)
+                               | SOME x => SOME x
+                           else uread s
                   else uread s
 
 	 (*
@@ -756,31 +761,30 @@ structure IntInf: INT_INF_EXTRA =
 	  *)
 	 fun toSign (cread: (char, 'a) reader, uread: (bigInt, 'a) reader)
 	    : (bigInt, 'a) reader =
-	    let fun reader (state: 'a): (bigInt * 'a) option =
-	       case cread state of
-		  NONE => NONE
-		| SOME (ch, state') =>
-		     if Char.isSpace ch
-			then reader state'
-		     else let val (isNeg, state'') =
-			case ch of
-			   #"+" =>
-			   (false, state')
-			 | #"-" =>
-			      (true, state')
-			 | #"~" =>
-			      (true, state')
-			 | _ =>
-			      (false, state)
-			  in if isNeg
-				then case uread state'' of
-				   NONE => NONE
-				 | SOME (abs, state''') =>
-				      SOME (bigNegate abs,
-					    state''')
-			     else uread state''
-			  end
-	    in reader
+	    let
+               fun reader (s: 'a): (bigInt * 'a) option =
+                  case cread s of
+                     NONE => NONE
+                   | SOME (ch, s') =>
+                        if Char.isSpace ch then reader s'
+                        else
+                           let
+                              val (isNeg, s'') =
+                                 case ch of
+                                    #"+" => (false, s')
+                                  | #"-" => (true, s')
+                                  | #"~" => (true, s')
+                                  | _ => (false, s)
+                           in
+                              if isNeg then
+                                 case uread s'' of
+                                    NONE => NONE
+                                  | SOME (abs, s''') =>
+                                       SOME (bigNegate abs, s''')
+                              else uread s''
+                           end
+	    in
+               reader
 	    end
 		  
 	 (*
@@ -809,8 +813,7 @@ structure IntInf: INT_INF_EXTRA =
 	 local fun stringReader (pos, str) =
 	    if pos >= String.size str
 	       then NONE
-	    else SOME (String.sub (str, pos),
-		       (pos + 1, str))
+	    else SOME (String.sub (str, pos), (pos + 1, str))
 	       val reader = decReader stringReader
 	 in
 	    fun bigFromString str =
@@ -831,30 +834,23 @@ structure IntInf: INT_INF_EXTRA =
 	 fun isEven (n: int) = Int.mod (Int.abs n, 2) = 0
       in
 	 fun pow (i: bigInt, j: int): bigInt =
-	    if j < 0
-	       then
-		  if i = zero
-		     then raise Div
-		  else if i = one
-			  then one
-		       else if i = negOne
-			       then if isEven j
-				       then one
-				    else negOne
-			    else zero
+	    if j < 0 then
+               if i = zero then
+                  raise Div
+               else
+                  if i = one then one
+                  else if i = negOne then if isEven j then one else negOne
+                  else zero
 	    else
-	       if j = 0
-		  then one
+	       if j = 0 then one
 	       else
 		  let
 		     fun square (n: bigInt): bigInt = bigMul (n, n)
 		     (* pow (j) returns (i ^ j) *)
 		     fun pow (j: int): bigInt =
-			if j <= 0
-			   then one
-			else if isEven j
-				then evenPow j
-			     else bigMul (i, evenPow (j - 1))
+			if j <= 0 then one
+			else if isEven j then evenPow j
+			else bigMul (i, evenPow (j - 1))
 		     (* evenPow (j) returns (i ^ j), assuming j is even *)
 		     and evenPow (j: int): bigInt =
 			square (pow (Int.quot (j, 2)))
