@@ -88,6 +88,19 @@ Unrecognized
 highlighed as warnings."
   :group 'sml)
 
+(defcustom esml-mlb-additional-path-variables
+  '(("LIB_MLTON_DIR" . "/usr/lib/mlton"))
+  "Additional path variables that can not be found in the path map files
+specified by `esml-mlb-mlb-path-map-files'."
+  :type '(repeat (cons (string :tag "Name") (string :tag "Value")))
+  :set 'esml-mlb-set-custom-and-update
+  :group 'esml-mlb)
+
+(defcustom esml-mlb-allow-completion t
+  "Allow tab-completion if non-nil."
+  :type 'boolean
+  :group 'esml-mlb)
+
 (defcustom esml-mlb-annotations
   '(("allowExport" "false" "true")
     ("allowFFI" "false" "true")
@@ -111,13 +124,8 @@ highlighed as warnings."
   :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
 
-(defcustom esml-mlb-allow-completion t
-  "Allow completion if non-nil."
-  :type 'boolean
-  :group 'esml-mlb)
-
-(defcustom esml-mlb-indent-offset 3
-  "Indentation offset."
+(defcustom esml-mlb-indentation-offset 3
+  "Basic offset for indentation."
   :type 'integer
   :group 'esml-mlb)
 
@@ -129,19 +137,14 @@ highlighed as warnings."
   :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
 
-(defcustom esml-mlb-additional-path-variables
-  '(("LIB_MLTON_DIR" . "/usr/lib/mlton"))
-  "Additional path variables that can not be found in the path map files
-as specified by `esml-mlb-mlb-path-map-files'."
-  :type '(repeat (cons (string :tag "Name") (string :tag "Value")))
-  :set 'esml-mlb-set-custom-and-update
-  :group 'esml-mlb)
-
 (defcustom esml-mlb-path-suffix-regexp "fun\\|mlb\\|sig\\|sml"
   "Regexp for matching valid path name suffices."
   :type 'regexp
   :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Faces
 
 (defface font-lock-interface-def-face
   '((t (:bold t)))
@@ -151,7 +154,9 @@ as specified by `esml-mlb-mlb-path-map-files'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Path variables
 
-(defvar esml-mlb-path-variables nil)
+(defvar esml-mlb-path-variables nil
+  "An association list of known path variables. This variable is updated
+by `esml-mlb-update'.")
 
 (defun esml-mlb-parse-path-variables ()
   (setq esml-mlb-path-variables nil)
@@ -178,6 +183,7 @@ as specified by `esml-mlb-mlb-path-map-files'."
                           (string-lessp (car a) (car b)))))))
 
 (defun esml-mlb-expand-path (path)
+  "Expands path variable references in the given path."
   (let ((parts nil))
     (with-temp-buffer
       (insert path)
@@ -201,9 +207,13 @@ as specified by `esml-mlb-mlb-path-map-files'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Syntax and highlighting
 
-(defconst esml-mlb-str-chr-regexp "\\([^\"\\]\\|\\\\.\\)")
+(defconst esml-mlb-str-chr-regexp "\\([^\n\"\\]\\|\\\\.\\)")
 (defconst esml-mlb-string-regexp (concat "\"" esml-mlb-str-chr-regexp "+\""))
 (defconst esml-mlb-comment-regexp "(\\*\\([^*]\\|\\*[^)]\\)*\\*)")
+(defconst esml-mlb-path-var-chars "A-Za-z0-9_")
+(defconst esml-mlb-unquoted-path-chars "-A-Za-z0-9_/.")
+(defconst esml-mlb-unquoted-path-or-ref-chars
+  (concat esml-mlb-unquoted-path-chars "()$"))
 
 (defconst esml-mlb-keywords
   '("and" "ann" "bas" "basis" "end" "functor" "in" "let" "local" "open"
@@ -326,7 +336,7 @@ as specified by `esml-mlb-mlb-path-map-files'."
       (cond ((looking-at ";")
              (case evidence
                ((in bas)
-                (indent-line-to (max 0 (+ indent -2 esml-mlb-indent-offset))))
+                (indent-line-to (max 0 (+ indent -2 esml-mlb-indentation-offset))))
                (t
                 (indent-line-to (max 0 (- indent 2))))))
             ((looking-at "end[ \t\n]")
@@ -334,13 +344,13 @@ as specified by `esml-mlb-mlb-path-map-files'."
                ((ann bas in let local)
                 (indent-line-to indent))
                (t
-                (indent-line-to (max 0 (- indent esml-mlb-indent-offset))))))
+                (indent-line-to (max 0 (- indent esml-mlb-indentation-offset))))))
             ((looking-at "in[ \t\n]")
              (case evidence
                ((ann let local)
                 (indent-line-to indent))
                (t
-                (indent-line-to (- indent esml-mlb-indent-offset)))))
+                (indent-line-to (- indent esml-mlb-indentation-offset)))))
             ((looking-at "and[ \t\n]")
              (case evidence
                ((basis functor signature structure)
@@ -356,7 +366,7 @@ as specified by `esml-mlb-mlb-path-map-files'."
             (t
              (case evidence
                ((ann bas in let local)
-                (indent-line-to (+ indent esml-mlb-indent-offset)))
+                (indent-line-to (+ indent esml-mlb-indentation-offset)))
                (t
                 (indent-line-to indent))))))
     (if (< (current-column) (current-indentation))
@@ -368,14 +378,28 @@ as specified by `esml-mlb-mlb-path-map-files'."
 (defun esml-mlb-complete ()
   "Performs context sensitive completion."
   (interactive)
-  ;; TBD: Refactor regexps
   (cond
-   ((and (esml-point-preceded-by (concat
-                                  "\\<ann[ \t\n]+"
-                                  "\\([ \t\n]+\\|" esml-mlb-string-regexp
-                                  "\\|" esml-mlb-comment-regexp "\\)*"
-                                  "\"[^\"]*"))
-         (esml-point-preceded-by "\"[ \t\n]*\\([^ \t\n\"]*\\)"))
+   ((esml-point-preceded-by (concat "\"[ \t\n]*\\("
+                                    (regexp-opt (mapcar 'car esml-mlb-annotations))
+                                    "\\)[ \t\n]+\\(" esml-mlb-str-chr-regexp "*\\)"))
+    (let* ((annot (assoc (match-string 1) esml-mlb-annotations))
+           (values (cdr annot))
+           (value-prefix (match-string 2))
+           (value-completion (try-completion value-prefix (mapcar 'list values)))
+           (value (if (eq t value-completion) value-prefix value-completion)))
+      (message "Annotation: %s %s" (car annot) (if values values ""))
+      (when (stringp value-completion)
+        (esml-insert-or-skip-if-looking-at
+         (substring value (length value-prefix))))
+      (when (and value
+                 (eq t (try-completion value (mapcar 'list values))))
+        (esml-insert-or-skip-if-looking-at "\""))))
+
+   ((and (esml-point-preceded-by
+          (concat "\\<ann[ \t\n]+\\([ \t\n]+\\|" esml-mlb-string-regexp
+                  "\\|" esml-mlb-comment-regexp "\\)*\"[^\"]*"))
+         (esml-point-preceded-by
+          (concat "\"[ \t\n]*\\(" esml-mlb-str-chr-regexp "*\\)")))
     (let* ((name-prefix (match-string 1))
            (name-completion (try-completion name-prefix esml-mlb-annotations))
            (name (if (eq t name-completion) name-prefix name-completion)))
@@ -392,23 +416,7 @@ as specified by `esml-mlb-mlb-path-map-files'."
           (message "Annotations: %s"
                    (all-completions name-prefix esml-mlb-annotations))))))
 
-   ((esml-point-preceded-by (concat "\"[ \t\n]*\\("
-                                    (regexp-opt (mapcar 'car esml-mlb-annotations))
-                                    "\\)[ \t\n]+\\([A-Za-z0-9]*\\)"))
-    (let* ((annot (assoc (match-string 1) esml-mlb-annotations))
-           (values (cdr annot))
-           (value-prefix (match-string 2))
-           (value-completion (try-completion value-prefix (mapcar 'list values)))
-           (value (if (eq t value-completion) value-prefix value-completion)))
-      (message "Annotation: %s %s" (car annot) (if values values ""))
-      (when (stringp value-completion)
-        (esml-insert-or-skip-if-looking-at
-         (substring value (length value-prefix))))
-      (when (and value
-                 (eq t (try-completion value (mapcar 'list values))))
-        (esml-insert-or-skip-if-looking-at "\""))))
-
-   ((esml-point-preceded-by "\\$(\\([A-Za-z0-9_]*\\)")
+   ((esml-point-preceded-by (concat "\\$(\\([" esml-mlb-path-var-chars "]*\\)"))
     (let* ((name-prefix (match-string 1))
            (name-completion (try-completion name-prefix esml-mlb-path-variables))
            (name (if (eq t name-completion) name-prefix name-completion)))
@@ -419,16 +427,19 @@ as specified by `esml-mlb-mlb-path-map-files'."
            (substring name (length name-prefix))))
         (if (and name
                  (eq t (try-completion name esml-mlb-path-variables)))
-            (progn
+            (let* ((value (cdr (assoc name esml-mlb-path-variables)))
+                   (expanded (esml-mlb-expand-path value)))
               (esml-insert-or-skip-if-looking-at ")")
-              (message "Path variable: %s %s"
-                       name
-                       (cdr (assoc name esml-mlb-path-variables))))
+              (if (string= value expanded)
+                  (message "Path variable: %s [%s]" name value)
+                (message "Path variable: %s [%s ==> %s]" name value expanded)))
           (message "Path variables: %s"
                    (all-completions name-prefix esml-mlb-path-variables))))))
 
-   ((or (esml-point-preceded-by "\\([ \t\n\"]\\)\\(\\(\\$([A-Za-z0-9_]*)\\|[-A-Za-z0-9_/.]\\)+\\)")
-        (esml-point-preceded-by "^\\(\\)\\(\\(\\$([A-Za-z0-9_]*)\\|[-A-Za-z0-9_/.]\\)+\\)"))
+   ((or (esml-point-preceded-by
+         (concat "\\(\"\\)\\(" esml-mlb-str-chr-regexp "+\\)"))
+        (esml-point-preceded-by
+         (concat "\\([ \t\n]\\)\\([" esml-mlb-unquoted-path-or-ref-chars "]+\\)")))
     (let* ((quoted (string= "\"" (match-string 1)))
            (path-prefix (match-string 2))
            (path-expanded (esml-mlb-expand-path path-prefix))
@@ -441,7 +452,9 @@ as specified by `esml-mlb-mlb-path-map-files'."
                        nondir-prefix
                      nondir-completion)))
       (if (not nondir-completion)
-          (message "No completions for %s (%s)." path-prefix path-expanded)
+          (if (string= path-prefix path-expanded)
+              (message "No completions for %s" path-prefix)
+            (message "No completions for %s ==> %s" path-prefix path-expanded))
         (when (stringp nondir-completion)
           (esml-insert-or-skip-if-looking-at
            (substring nondir-completion (length nondir-prefix))))
@@ -449,9 +462,11 @@ as specified by `esml-mlb-mlb-path-map-files'."
                  (eq t (file-name-completion nondir dir)))
             (progn
               (esml-insert-or-skip-if-looking-at (if quoted "\"" ""))
-              (message "Complete path: %s%s" dir nondir))
+              (message "Expanded path: %s%s" dir nondir))
           (message "File name completions: %s"
-                   (file-name-all-completions nondir-prefix dir))))))))
+                   (if (file-name-directory nondir)
+                       (file-name-all-completions "" (concat dir nondir))
+                     (file-name-all-completions nondir dir)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Commands
@@ -475,9 +490,9 @@ perform context sensitive completion."
                     (let ((end (point)))
                       (backward-sexp)
                       (buffer-substring (+ (point) 1) (- end 1)))
-                  (skip-chars-backward "-A-Za-z0-9_/.()$")
+                  (skip-chars-backward esml-mlb-unquoted-path-or-ref-chars)
                   (let ((start (point)))
-                    (skip-chars-forward "-A-Za-z0-9_/.()$")
+                    (skip-chars-forward esml-mlb-unquoted-path-or-ref-chars)
                     (buffer-substring start (point)))))))
     (find-file (esml-mlb-expand-path path))))
 
