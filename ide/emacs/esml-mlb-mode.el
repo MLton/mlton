@@ -31,12 +31,37 @@
 ;;
 ;; - customisable indentation
 ;; - movement
-;; - completition of path names and variables
 ;; - type-check / show-basis / compile / compile-and-run
 ;; - open-file / open-structure / open-signature / open-functor
 ;; - highlight only binding occurances of basid's
 ;; - goto-binding-occurance (of a basid)
 ;; - support doc strings in mlb files
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Utility functions
+
+(defun esml-point-preceded-by (regexp)
+  "Determines whether point is immediately preceded by the given regexp.
+If the result is non-nil, the regexp match data will contain the
+corresponding match. As with `re-search-backward' the beginning of the
+match is as close to the starting point as possible. The end of the match
+is always the same as the starting point."
+  (save-excursion
+    (let ((limit (point))
+          (start (re-search-backward regexp 0 t)))
+      (when start
+        (re-search-forward regexp limit t)
+        (= limit (match-end 0))))))
+
+(defun esml-insert-or-skip-if-looking-at (str)
+  "Inserts the specified string unless it already follows the point. The
+point is moved to the end of the string."
+  (if (string= str
+               (buffer-substring (point)
+                                 (min (+ (point) (length str))
+                                      (point-max))))
+      (forward-char (length str))
+    (insert str)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Prelude
@@ -45,10 +70,10 @@
 
 (add-to-list 'auto-mode-alist '("\\.mlb\\'" . esml-mlb-mode))
 
-(defun esml-mlb-set-custom-and-build-font-lock-table (sym val)
+(defun esml-mlb-set-custom-and-update (sym val)
   (custom-set-default sym val)
   (unless esml-mlb-load-time
-    (esml-mlb-build-font-lock-table)))
+    (esml-mlb-update)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Customization
@@ -83,7 +108,12 @@ highlighed as warnings."
                        (string :tag "Name")
                        (repeat :tag "Values starting with the default"
                                string)))
-  :set 'esml-mlb-set-custom-and-build-font-lock-table
+  :set 'esml-mlb-set-custom-and-update
+  :group 'esml-mlb)
+
+(defcustom esml-mlb-allow-completion t
+  "Allow completion if non-nil."
+  :type 'boolean
   :group 'esml-mlb)
 
 (defcustom esml-mlb-indent-offset 3
@@ -96,13 +126,21 @@ highlighed as warnings."
     "/usr/lib/mlton/mlb-path-map")
   "Files to search for definitions of path variables."
   :type '(repeat file)
-  :set 'esml-mlb-set-custom-and-build-font-lock-table
+  :set 'esml-mlb-set-custom-and-update
+  :group 'esml-mlb)
+
+(defcustom esml-mlb-additional-path-variables
+  '(("LIB_MLTON_DIR" . "/usr/lib/mlton"))
+  "Additional path variables that can not be found in the path map files
+as specified by `esml-mlb-mlb-path-map-files'."
+  :type '(repeat (cons (string :tag "Name") (string :tag "Value")))
+  :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
 
 (defcustom esml-mlb-path-suffix-regexp "fun\\|mlb\\|sig\\|sml"
   "Regexp for matching valid path name suffices."
   :type 'regexp
-  :set 'esml-mlb-set-custom-and-build-font-lock-table
+  :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
 
 (defface font-lock-interface-def-face
@@ -111,7 +149,66 @@ highlighed as warnings."
   :group 'font-lock-highlighting-faces)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Path variables
+
+(defvar esml-mlb-path-variables nil)
+
+(defun esml-mlb-parse-path-variables ()
+  (setq esml-mlb-path-variables nil)
+  (loop for file in esml-mlb-mlb-path-map-files
+    do (if (file-readable-p file)
+           (with-temp-buffer
+             (insert-file-contents file)
+             (skip-chars-forward " \t\n")
+             (while (not (eobp))
+               (push (cons (let ((start (point)))
+                             (skip-chars-forward "^ \t\n")
+                             (buffer-substring start (point)))
+                           (progn
+                             (skip-chars-forward " \t")
+                             (let ((start (point)))
+                               (skip-chars-forward "^ \t\n")
+                               (buffer-substring start (point)))))
+                     esml-mlb-path-variables)
+               (skip-chars-forward " \t\n")))))
+  (setq esml-mlb-path-variables
+        (sort (function (lambda (a b)
+                          (string-lessp (car a) (car b))))
+              (append esml-mlb-additional-path-variables
+                      esml-mlb-path-variables))))
+
+(defun esml-mlb-expand-path (path)
+  (let ((parts nil))
+    (with-temp-buffer
+      (insert path)
+      (goto-char 0)
+      (while (not (eobp))
+        (if (looking-at "\\$(\\([^)]+\\))")
+            (let* ((name (match-string 1))
+                   (name-value (assoc name esml-mlb-path-variables)))
+              (unless name-value
+                (error 'invalid-argument name))
+              (delete-char (length (match-string 0)))
+              (insert (cdr name-value)))
+          (forward-char 1)
+          (skip-chars-forward "[^$]")
+          (push (buffer-substring 1 (point))
+                parts)
+          (delete-char (- 1 (point))))
+        (goto-char 0)))
+    (apply 'concat (reverse parts))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Syntax and highlighting
+
+(defconst esml-mlb-str-chr-regexp "\\([^\"\\]\\|\\\\.\\)")
+(defconst esml-mlb-string-regexp (concat "\"" esml-mlb-str-chr-regexp "+\""))
+(defconst esml-mlb-comment-regexp "(\\*\\([^*]\\|\\*[^)]\\)*\\*)")
+
+(defconst esml-mlb-keywords
+  '("and" "ann" "bas" "basis" "end" "functor" "in" "let" "local" "open"
+    "signature" "structure")
+  "Keywords of ML Basis syntax.")
 
 (defconst esml-mlb-mode-syntax-table
   (let ((table (make-syntax-table)))
@@ -133,13 +230,6 @@ highlighed as warnings."
             (?=  . ".")))
     table)
   "Syntax table for ML Basis mode.")
-
-(defconst esml-mlb-keywords
-  '("and" "ann" "bas" "basis" "end" "functor" "in" "let" "local" "open"
-    "signature" "structure")
-  "Keywords of ML Basis syntax.")
-
-(defconst esml-mlb-str-chr-regexp "\\([^\"\\]\\|\\\\.\\)")
 
 (defun esml-mlb-build-font-lock-table ()
   "Builds the font-lock table for ML Basis mode."
@@ -167,25 +257,7 @@ highlighed as warnings."
           (,(concat "\"" esml-mlb-str-chr-regexp "*\"")
            . font-lock-warning-face)
           ;; path variables
-          (,(concat
-             "\\$(\\("
-             (regexp-opt
-              (let ((vars nil)
-                    (files esml-mlb-mlb-path-map-files))
-                (while files
-                  (let ((file (pop files)))
-                    (if (file-readable-p file)
-                        (with-temp-buffer
-                          (insert-file-contents file)
-                          (skip-chars-forward " \t\n")
-                          (while (not (eobp))
-                            (let ((start (point)))
-                              (skip-chars-forward "^ \t\n")
-                              (push (buffer-substring start (point)) vars)
-                              (skip-chars-forward "^\n"))
-                            (skip-chars-forward " \t\n"))))))
-                vars))
-             "\\))")
+          (,(concat "\\$(\\(" (regexp-opt (mapcar 'car esml-mlb-path-variables)) "\\))")
            . font-lock-reference-face)
           ("\\$([^)]*?)"
            . font-lock-warning-face)
@@ -200,9 +272,6 @@ highlighed as warnings."
           ;; variables
           ("[A-Za-z][A-Za-z0-9_']*"
            . font-lock-interface-def-face))))
-
-;; We are now ready to actually build the font-lock table.
-(esml-mlb-build-font-lock-table)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Indentation
@@ -254,7 +323,7 @@ highlighed as warnings."
       (skip-chars-forward " \t")
       (cond ((looking-at ";")
              (case evidence
-               ((in)
+               ((in bas)
                 (indent-line-to (max 0 (+ indent -2 esml-mlb-indent-offset))))
                (t
                 (indent-line-to (max 0 (- indent 2))))))
@@ -292,13 +361,120 @@ highlighed as warnings."
         (forward-char (- (current-indentation) (current-column))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Completion
+
+(defun esml-mlb-complete ()
+  "Performs context sensitive completion."
+  (interactive)
+  ;; TBD: Refactor regexps
+  (cond
+   ((and (esml-point-preceded-by (concat
+                                  "\\<ann[ \t\n]+"
+                                  "\\([ \t\n]+\\|" esml-mlb-string-regexp
+                                  "\\|" esml-mlb-comment-regexp "\\)*"
+                                  "\"[^\"]*"))
+         (esml-point-preceded-by "\"[ \t\n]*\\([^ \t\n\"]*\\)"))
+    (let* ((name-prefix (match-string 1))
+           (name-completion (try-completion name-prefix esml-mlb-annotations))
+           (name (if (eq t name-completion) name-prefix name-completion)))
+      (if (not name-completion)
+          (message "Annotations: %s" (mapcar 'car esml-mlb-annotations))
+        (when (stringp name-completion)
+          (esml-insert-or-skip-if-looking-at
+           (substring name (length name-prefix))))
+        (if (and name
+                 (eq t (try-completion name esml-mlb-annotations)))
+            (let ((values (cdr (assoc name esml-mlb-annotations))))
+              (esml-insert-or-skip-if-looking-at (if values " " "\""))
+              (message "Annotation: %s %s" name (if values values "")))
+          (message "Annotations: %s"
+                   (all-completions name-prefix esml-mlb-annotations))))))
+
+   ((esml-point-preceded-by (concat "\"[ \t\n]*\\("
+                                    (regexp-opt (mapcar 'car esml-mlb-annotations))
+                                    "\\)[ \t\n]+\\([A-Za-z0-9]*\\)"))
+    (let* ((annot (assoc (match-string 1) esml-mlb-annotations))
+           (values (cdr annot))
+           (value-prefix (match-string 2))
+           (value-completion (try-completion value-prefix (mapcar 'list values)))
+           (value (if (eq t value-completion) value-prefix value-completion)))
+      (message "Annotation: %s %s" (car annot) (if values values ""))
+      (when (stringp value-completion)
+        (esml-insert-or-skip-if-looking-at
+         (substring value (length value-prefix))))
+      (when (and value
+                 (eq t (try-completion value (mapcar 'list values))))
+        (esml-insert-or-skip-if-looking-at "\""))))
+
+   ((esml-point-preceded-by "\\$(\\([A-Za-z0-9_]*\\)")
+    (let* ((name-prefix (match-string 1))
+           (name-completion (try-completion name-prefix esml-mlb-path-variables))
+           (name (if (eq t name-completion) name-prefix name-completion)))
+      (if (not name-completion)
+          (message "Path variables: %s" (mapcar 'car esml-mlb-path-variables))
+        (when (stringp name-completion)
+          (esml-insert-or-skip-if-looking-at
+           (substring name (length name-prefix))))
+        (if (and name
+                 (eq t (try-completion name esml-mlb-path-variables)))
+            (progn
+              (esml-insert-or-skip-if-looking-at ")")
+              (message "Path variable: %s %s"
+                       name
+                       (cdr (assoc name esml-mlb-path-variables))))
+          (message "Path variables: %s"
+                   (all-completions name-prefix esml-mlb-path-variables))))))
+
+   ((or (esml-point-preceded-by "\\([ \t\n\"]\\)\\(\\(\\$([A-Za-z0-9_]*)\\|[-A-Za-z0-9_/.]\\)+\\)")
+        (esml-point-preceded-by "^\\(\\)\\(\\(\\$([A-Za-z0-9_]*)\\|[-A-Za-z0-9_/.]\\)+\\)"))
+    (let* ((quoted (string= "\"" (match-string 1)))
+           (path-prefix (match-string 2))
+           (path-expanded (esml-mlb-expand-path path-prefix))
+           (dir (if (file-name-directory path-expanded)
+                    (file-name-directory path-expanded)
+                  ""))
+           (nondir-prefix (file-name-nondirectory path-expanded))
+           (nondir-completion (file-name-completion nondir-prefix dir))
+           (nondir (if (eq t nondir-completion)
+                       nondir-prefix
+                     nondir-completion)))
+      (if (not nondir-completion)
+          (message "No completions for %s (%s)." path-prefix path-expanded)
+        (when (stringp nondir-completion)
+          (esml-insert-or-skip-if-looking-at
+           (substring nondir-completion (length nondir-prefix))))
+        (if (and nondir
+                 (eq t (file-name-completion nondir dir)))
+            (progn
+              (esml-insert-or-skip-if-looking-at (if quoted "\"" ""))
+              (message "Complete path: %s%s" dir nondir))
+          (message "File name completions: %s"
+                   (file-name-all-completions nondir-prefix dir))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Commands
+
+(defun esml-mlb-indent-or-complete-command ()
+  (interactive)
+  (let ((old-indentation (current-indentation)))
+    (esml-mlb-indent-line)
+    (when (and esml-mlb-allow-completion
+               (= old-indentation (current-indentation)))
+      (esml-mlb-complete))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Define mode
 
 (defvar esml-mlb-mode-hook nil
   "Hook run when entering ML Basis mode.")
 
 (defvar esml-mlb-mode-map
-  (let ((esml-mlb-mode-map (make-keymap)))
+  (let ((esml-mlb-mode-map (make-sparse-keymap)))
+    (mapc (function
+           (lambda (key-command)
+             (define-key esml-mlb-mode-map
+               (car key-command) (cdr key-command))))
+          '(([tab] . esml-mlb-indent-or-complete-command)))
     esml-mlb-mode-map)
   "Keymap for ML Basis mode.")
 
@@ -314,5 +490,15 @@ highlighed as warnings."
 ;; Finalization
 
 (setq esml-mlb-load-time nil)
+
+(defun esml-mlb-update ()
+  "Updates data based on customization variables."
+  (interactive)
+  ;; Warning: order dependencies
+  (esml-mlb-parse-path-variables)
+  (esml-mlb-build-font-lock-table))
+
+;; We are finally ready to update everything the first time.
+(esml-mlb-update)
 
 (provide 'esml-mlb-mode)
