@@ -172,10 +172,10 @@ as specified by `esml-mlb-mlb-path-map-files'."
                      esml-mlb-path-variables)
                (skip-chars-forward " \t\n")))))
   (setq esml-mlb-path-variables
-        (sort (function (lambda (a b)
-                          (string-lessp (car a) (car b))))
-              (append esml-mlb-additional-path-variables
-                      esml-mlb-path-variables))))
+        (sort (append esml-mlb-additional-path-variables
+                      esml-mlb-path-variables)
+              (function (lambda (a b)
+                          (string-lessp (car a) (car b)))))))
 
 (defun esml-mlb-expand-path (path)
   (let ((parts nil))
@@ -230,6 +230,8 @@ as specified by `esml-mlb-mlb-path-map-files'."
             (?=  . ".")))
     table)
   "Syntax table for ML Basis mode.")
+
+(defvar esml-mlb-font-lock-table nil)
 
 (defun esml-mlb-build-font-lock-table ()
   "Builds the font-lock table for ML Basis mode."
