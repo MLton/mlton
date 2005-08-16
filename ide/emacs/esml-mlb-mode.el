@@ -32,7 +32,7 @@
 ;; - customisable indentation
 ;; - movement
 ;; - type-check / show-basis / compile / compile-and-run
-;; - open-file / open-structure / open-signature / open-functor
+;; - open-structure / open-signature / open-functor
 ;; - highlight only binding occurances of basid's
 ;; - goto-binding-occurance (of a basid)
 ;; - support doc strings in mlb files
@@ -456,13 +456,30 @@ as specified by `esml-mlb-mlb-path-map-files'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Commands
 
-(defun esml-mlb-indent-or-complete-command ()
+(defun esml-mlb-indent-or-complete ()
+  "Indents the current line. If indentation does not change, attempts to
+perform context sensitive completion."
   (interactive)
   (let ((old-indentation (current-indentation)))
     (esml-mlb-indent-line)
     (when (and esml-mlb-allow-completion
                (= old-indentation (current-indentation)))
       (esml-mlb-complete))))
+
+(defun esml-mlb-find-file-at-point ()
+  "Grabs the path surrounding point and attempts to find the file."
+  (interactive)
+  (let ((path (save-excursion
+                (if (and (not (bobp))
+                         (= ?\" (char-before)))
+                    (let ((end (point)))
+                      (backward-sexp)
+                      (buffer-substring (+ (point) 1) (- end 1)))
+                  (skip-chars-backward "-A-Za-z0-9_/.()$")
+                  (let ((start (point)))
+                    (skip-chars-forward "-A-Za-z0-9_/.()$")
+                    (buffer-substring start (point)))))))
+    (find-file (esml-mlb-expand-path path))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Define mode
@@ -476,7 +493,10 @@ as specified by `esml-mlb-mlb-path-map-files'."
            (lambda (key-command)
              (define-key esml-mlb-mode-map
                (car key-command) (cdr key-command))))
-          '(([tab] . esml-mlb-indent-or-complete-command)))
+          '(([tab]
+             . esml-mlb-indent-or-complete)
+            ([(control c) (control f)]
+             . esml-mlb-find-file-at-point)))
     esml-mlb-mode-map)
   "Keymap for ML Basis mode.")
 
