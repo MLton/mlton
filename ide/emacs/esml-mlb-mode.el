@@ -209,7 +209,8 @@ by `esml-mlb-update'.")
 
 (defconst esml-mlb-str-chr-regexp "\\([^\n\"\\]\\|\\\\.\\)")
 (defconst esml-mlb-string-regexp (concat "\"" esml-mlb-str-chr-regexp "+\""))
-(defconst esml-mlb-comment-regexp "(\\*\\([^*]\\|\\*[^)]\\)*\\*)")
+(defconst esml-mlb-inside-comment-regexp "(\\*\\([^*]\\|\\*[^)]\\)*")
+(defconst esml-mlb-comment-regexp (concat esml-mlb-inside-comment-regexp "\\*)"))
 (defconst esml-mlb-path-var-chars "A-Za-z0-9_")
 (defconst esml-mlb-unquoted-path-chars "-A-Za-z0-9_/.")
 (defconst esml-mlb-unquoted-path-or-ref-chars
@@ -379,6 +380,9 @@ by `esml-mlb-update'.")
   "Performs context sensitive completion."
   (interactive)
   (cond
+   ((esml-point-preceded-by esml-mlb-inside-comment-regexp)
+    nil)
+
    ((esml-point-preceded-by (concat "\"[ \t\n]*\\("
                                     (regexp-opt (mapcar 'car esml-mlb-annotations))
                                     "\\)[ \t\n]+\\(" esml-mlb-str-chr-regexp "*\\)"))
@@ -484,17 +488,23 @@ perform context sensitive completion."
 (defun esml-mlb-find-file-at-point ()
   "Grabs the path surrounding point and attempts to find the file."
   (interactive)
-  (let ((path (save-excursion
-                (if (and (not (bobp))
-                         (= ?\" (char-before)))
-                    (let ((end (point)))
-                      (backward-sexp)
-                      (buffer-substring (+ (point) 1) (- end 1)))
-                  (skip-chars-backward esml-mlb-unquoted-path-or-ref-chars)
-                  (let ((start (point)))
-                    (skip-chars-forward esml-mlb-unquoted-path-or-ref-chars)
-                    (buffer-substring start (point)))))))
-    (find-file (esml-mlb-expand-path path))))
+  (let ((file (esml-mlb-expand-path
+               (save-excursion
+                 (if (and (not (bobp))
+                          (= ?\" (char-before)))
+                     (let ((end (point)))
+                       (backward-sexp)
+                       (buffer-substring (+ (point) 1) (- end 1)))
+                   (skip-chars-backward esml-mlb-unquoted-path-or-ref-chars)
+                   (let ((start (point)))
+                     (skip-chars-forward esml-mlb-unquoted-path-or-ref-chars)
+                     (buffer-substring start (point))))))))
+    (if (file-readable-p file)
+        (find-file file)
+      (message (if (file-exists-p file)
+                   "Not readable: %s"
+                 "Does not exists: %s")
+               file))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Define mode
