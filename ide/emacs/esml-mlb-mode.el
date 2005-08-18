@@ -68,8 +68,6 @@ point is moved to the end of the string."
 
 (defvar esml-mlb-load-time t)
 
-(add-to-list 'auto-mode-alist '("\\.mlb\\'" . esml-mlb-mode))
-
 (defun esml-mlb-set-custom-and-update (sym val)
   (custom-set-default sym val)
   (unless esml-mlb-load-time
@@ -124,6 +122,12 @@ specified by `esml-mlb-mlb-path-map-files'."
   :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
 
+(defcustom esml-mlb-completion-ignored-files-regexp "\\.[^.].*\\|CVS/"
+  "Completion ignores files (and directories) whose names match this
+regexp."
+  :type 'regexp
+  :group 'esml-mlb)
+
 (defcustom esml-mlb-indentation-offset 3
   "Basic offset for indentation."
   :type 'integer
@@ -138,7 +142,8 @@ specified by `esml-mlb-mlb-path-map-files'."
   :group 'esml-mlb)
 
 (defcustom esml-mlb-path-suffix-regexp "fun\\|mlb\\|sig\\|sml"
-  "Regexp for matching valid path name suffices."
+  "Regexp for matching valid path name suffices. Completion only considers
+files whose extension matches this regexp."
   :type 'regexp
   :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
@@ -220,6 +225,11 @@ by `esml-mlb-update'.")
   '("and" "ann" "bas" "basis" "end" "functor" "in" "let" "local" "open"
     "signature" "structure")
   "Keywords of ML Basis syntax.")
+
+(defconst esml-mlb-keywords-usually-followed-by-space
+  '("and" "functor" "open" "signature" "structure")
+  "Keywords of ML Basis syntax that are under most circumstances followed
+by a space.")
 
 (defconst esml-mlb-mode-syntax-table
   (let ((table (make-syntax-table)))
@@ -376,13 +386,35 @@ by `esml-mlb-update'.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Completion
 
+(defun esml-mlb-filter-file-completions (completions &optional allow-dots)
+  "Removes the directories `./' and `../' as well as files whose suffix
+does not appear in `esml-mlb-path-suffix-regexp' from the list of file
+name completions."
+  (let ((ignored-files-regexp
+         (concat "^\\(" esml-mlb-completion-ignored-files-regexp "\\)$"))
+        (valid-suffices-regexp
+         (concat "^\\(" esml-mlb-path-suffix-regexp "\\)$")))
+    (remove*
+     nil
+     completions
+     :test (function
+            (lambda (_ x)
+              (or (and (not allow-dots)
+                       (member x '("./" "../")))
+                  (string-match ignored-files-regexp x)
+                  (not (or (file-name-directory x)
+                           (let ((ext (file-name-extension x)))
+                             (when ext
+                               (string-match valid-suffices-regexp ext)))))))))))
+
 (defun esml-mlb-complete ()
   "Performs context sensitive completion."
   (interactive)
   (cond
-   ((esml-point-preceded-by esml-mlb-inside-comment-regexp)
-    nil)
+   ;; no completion inside comments
+   ((esml-point-preceded-by esml-mlb-inside-comment-regexp))
 
+   ;; annotation values
    ((esml-point-preceded-by (concat "\"[ \t\n]*\\("
                                     (regexp-opt (mapcar 'car esml-mlb-annotations))
                                     "\\)[ \t\n]+\\(" esml-mlb-str-chr-regexp "*\\)"))
@@ -399,6 +431,7 @@ by `esml-mlb-update'.")
                  (eq t (try-completion value (mapcar 'list values))))
         (esml-insert-or-skip-if-looking-at "\""))))
 
+   ;; annotation names
    ((and (esml-point-preceded-by
           (concat "\\<ann[ \t\n]+\\([ \t\n]+\\|" esml-mlb-string-regexp
                   "\\|" esml-mlb-comment-regexp "\\)*\"[^\"]*"))
@@ -420,6 +453,7 @@ by `esml-mlb-update'.")
           (message "Annotations: %s"
                    (all-completions name-prefix esml-mlb-annotations))))))
 
+   ;; path variables
    ((esml-point-preceded-by (concat "\\$(\\([" esml-mlb-path-var-chars "]*\\)"))
     (let* ((name-prefix (match-string 1))
            (name-completion (try-completion name-prefix esml-mlb-path-variables))
@@ -440,6 +474,7 @@ by `esml-mlb-update'.")
           (message "Path variables: %s"
                    (all-completions name-prefix esml-mlb-path-variables))))))
 
+   ;; filenames and keywords
    ((or (esml-point-preceded-by
          (concat "\\(\"\\)\\(" esml-mlb-str-chr-regexp "+\\)"))
         (esml-point-preceded-by
@@ -451,7 +486,20 @@ by `esml-mlb-update'.")
                     (file-name-directory path-expanded)
                   ""))
            (nondir-prefix (file-name-nondirectory path-expanded))
-           (nondir-completion (file-name-completion nondir-prefix dir))
+           (nondir-completions
+            (mapcar 'list
+                    (let ((files (esml-mlb-filter-file-completions
+                                  (file-name-all-completions nondir-prefix dir)
+                                  t)))
+                      (if (string= "" dir)
+                          (if quoted
+                              files
+                            (append (all-completions
+                                     nondir-prefix
+                                     (mapcar 'list esml-mlb-keywords))
+                                    files))
+                        (esml-mlb-filter-file-completions files)))))
+           (nondir-completion (try-completion nondir-prefix nondir-completions))
            (nondir (if (eq t nondir-completion)
                        nondir-prefix
                      nondir-completion)))
@@ -461,16 +509,25 @@ by `esml-mlb-update'.")
             (message "No completions for %s ==> %s" path-prefix path-expanded))
         (when (stringp nondir-completion)
           (esml-insert-or-skip-if-looking-at
-           (substring nondir-completion (length nondir-prefix))))
-        (if (and nondir
-                 (eq t (file-name-completion nondir dir)))
-            (progn
-              (esml-insert-or-skip-if-looking-at (if quoted "\"" ""))
-              (message "Expanded path: %s%s" dir nondir))
-          (message "File name completions: %s"
-                   (if (file-name-directory nondir)
-                       (file-name-all-completions "" (concat dir nondir))
-                     (file-name-all-completions nondir dir)))))))))
+           (substring nondir (length nondir-prefix))))
+        (if (eq t (try-completion nondir nondir-completions))
+            (cond ((file-name-directory nondir)
+                   (message "Completions: %s"
+                            (sort (esml-mlb-filter-file-completions
+                                   (file-name-all-completions
+                                    ""
+                                    (concat dir nondir)))
+                                  'string-lessp)))
+                  ((member nondir esml-mlb-keywords)
+                   (esml-mlb-indent-line)
+                   (message "Keyword: %s" nondir)
+                   (when (member nondir esml-mlb-keywords-usually-followed-by-space)
+                     (esml-insert-or-skip-if-looking-at " ")))
+                  (t
+                   (message "Expanded path: %s%s" dir nondir)))
+          (message "Completions: %s"
+                   (sort (mapcar 'car nondir-completions)
+                         'string-lessp))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Commands
@@ -526,7 +583,10 @@ perform context sensitive completion."
   "Keymap for ML Basis mode.")
 
 (define-derived-mode esml-mlb-mode fundamental-mode "MLB"
-  "Major mode for editing ML Basis files."
+  "Major mode for editing ML Basis files. Provides syntax highlighting,
+indentation, and context sensitive completion.
+
+See the customization group `esml-mlb'."
   :group 'esml-mlb
   (set (make-local-variable 'font-lock-defaults)
        '(esml-mlb-font-lock-table))
@@ -547,5 +607,7 @@ perform context sensitive completion."
 
 ;; We are finally ready to update everything the first time.
 (esml-mlb-update)
+
+(add-to-list 'auto-mode-alist '("\\.mlb\\'" . esml-mlb-mode))
 
 (provide 'esml-mlb-mode)
