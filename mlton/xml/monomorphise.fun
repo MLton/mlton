@@ -46,45 +46,31 @@ structure Cache:
       val toList: 'a t -> (Stype.t vector * 'a) list
    end =
    struct
-      (* use a splay tree based on lexicographic ordering of vectors of hash
-       * values of types.  Use an alist (i.e. polycache) within each bucket
-       * of the splay tree
-       *)
-      structure Cache = PolyCache
-	       
-      structure S =
-	 SplayMapFn
-	 (type ord_key = Stype.t vector
-	  val compare =
-	     fn (ts, ts') =>
-	     Vector.compare (ts, ts',
-			     fn (t, t') =>
-			     Word.compare (Stype.hash t,
-					   Stype.hash t')))
-
-      type 'a t = (Stype.t vector, 'a) Cache.t S.map ref
-
-      fun new () : 'a t = ref S.empty
+      type 'a t = (Stype.t vector * Word.t * 'a) HashSet.t
 
       local
-	 fun equal (v, v') =
-	    Vector.equals (v, v', Stype.equals)
+	 val generator: Word.t = 0wx5555
+	 val base = Random.word ()
       in
-	 fun getOrAdd (m, k, th) =
-	    case S.find (!m, k) of
-	       NONE => let
-			  val x = th ()
-			  val cache =
-			     Cache.fromList {equal = equal, 
-					     elements = [(k, x)]}
-		       in m := S.insert (!m, k, cache); x
-		       end
-	     | SOME cache => Cache.getOrAdd (cache, k, th)
+	 fun hash ts =
+	    Vector.fold (ts, base, fn (t, w) =>
+			 Word.xorb (w * generator, Stype.hash t))
+	 fun equal (ts, ts') =
+	    Vector.equals (ts, ts', Stype.equals)
       end
-	 
-      fun toList c =
-	 List.fold (S.listItems (! c), [], fn (cache, items) =>
-		    Cache.toList cache @ items)
+
+      fun new () : 'a t = HashSet.new {hash = #2}
+
+      fun getOrAdd (c, ts, th) =
+	 let
+	    val hash = hash ts
+	 in
+	    (#3 o HashSet.lookupOrInsert)
+	    (c, hash, fn (ts', _, _) => equal (ts, ts'), 
+	     fn () => (ts, hash, th ()))
+	 end
+
+      fun toList c = HashSet.fold (c, [], fn ((ts, _, v), l) => (ts, v) :: l)
    end
 
 fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =

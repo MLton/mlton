@@ -18,11 +18,10 @@ functor Cache
 functor MakeMonoEnv
 functor MonoEnv
 functor MoveToFrontEnv
-functor SplayMonoEnv
+(* functor SplayMonoEnv *)
 
 is
 
-../../smlnj/sources.cm
 ../basic/sources.cm
 
 mono-env.sig
@@ -35,7 +34,7 @@ poly-cache.fun
 #if (defined (SMLNJ_VERSION))
 
 move-to-front.fun
-splay-env.fun
+(* splay-env.fun *)
 cache.sig
 cache.fun
 

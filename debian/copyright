@@ -34,11 +34,21 @@ is released under a BSD-style license.
    arising out of or in connection with the use or performance of this
    software.
 
-The following portions of the software are taken from the Standard ML
-of New Jersey system:
+The following portions of the software are derived from the Standard ML
+of New Jersey compiler:
 
-  lexer, parser, precedence parser, splay trees, basis library: Real,
-  IO, Timer, Unix, Process, Option.
+  front-end mllex specification, front-end mlyacc specification,
+  precedence parser, CM lexer and parser
+
+Parts of MLton's Basis Library are derived from the following portions
+of the Basis Library code of the SMLNJ compiler:
+
+  OS.IO, Posix.IO, Process, and Unix
+
+The following utilities and libraries are derived from the SMLNJ system:
+
+  mllex, mlyacc and MLYacc Library, Concurrent ML Library, SML/NJ
+  Library, CKit Library, mlnlffigen and MLNLFFI Library
 
 SMLNJ's copyright is held by Lucent Technologies.  It was released
 under a BSD-style license.
@@ -64,12 +74,12 @@ under a BSD-style license.
    other tortious action, arising out of or in connection with the use
    or performance of this software.
 
-Parts of MLton's basis library are derived from the following portions
-of the basis library code of the ML Kit compiler:
+Parts of MLton's Basis Library are derived from the following portions
+of the Basis Library code of the ML Kit compiler:
 
    Path, Time, and Date
 
-The ML Kit basis libraries are distributed unde the MIT License.
+The ML Kit Basis Bibrary is distributed under the MIT License.
 
    Copyright (c) 2004 IT University of Copenhagen
    

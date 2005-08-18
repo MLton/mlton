@@ -12,7 +12,6 @@ ann
 in
    local
       $(SML_LIB)/basis/basis.mlb
-      ../../smlnj/sources.mlb
       ../basic/sources.mlb
 
       mono-env.sig

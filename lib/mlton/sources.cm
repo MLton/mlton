@@ -8,10 +8,6 @@
 
 Library
 
-(* from sml-nj-lib *)
-functor SplayMapFn
-(* end from sml-nj-lib *)
-   
 (* from mlyacc-lib *)
 signature LR_TABLE
 signature TOKEN
@@ -185,7 +181,7 @@ functor Pair
 functor PolyEnv
 functor Ring
 functor RingWithIdentity
-functor SplayMonoEnv
+(*functor SplayMonoEnv*)
 functor Sum
 functor Tree
 functor UniqueId
@@ -195,7 +191,6 @@ functor UnorderedSet
 is
 
 ../mlyacc/sources.cm
-../smlnj/sources.cm
 basic/sources.cm
 set/sources.cm
 env/sources.cm

@@ -7,7 +7,6 @@ SML/NJ		NJ-LICENSE (BSD-style)		front-end mllex specification
                                         	precedence parser
                                         	CM lexer and parser
 						OS.IO, Posix.IO, Process, Unix
-						splay trees
 						mllex
 						mlyacc and MLYacc Library
 						Concurrent ML Library
