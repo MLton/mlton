@@ -478,7 +478,8 @@ name completions."
    ((or (esml-point-preceded-by
          (concat "\\(\"\\)\\(" esml-mlb-str-chr-regexp "+\\)"))
         (esml-point-preceded-by
-         (concat "\\([ \t\n]\\)\\([" esml-mlb-unquoted-path-or-ref-chars "]+\\)")))
+         (concat "\\([ \t\n]\\|^\\)\\([" esml-mlb-unquoted-path-or-ref-chars "]+\\)")))
+    ;; TBD: escape sequences in quoted pathnames
     (let* ((quoted (string= "\"" (match-string 1)))
            (path-prefix (match-string 2))
            (path-expanded (esml-mlb-expand-path path-prefix))
