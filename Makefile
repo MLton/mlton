@@ -160,21 +160,38 @@ freebsd:
 
 .PHONY: libraries-no-check
 libraries-no-check:
-	cd $(LIB)/sml && rm -rf cml mlyacc-lib mlnlffi-lib
+	mkdir -p $(LIB)/sml
+#
+	cd $(LIB)/sml && rm -rf mlyacc-lib
 	$(CP) $(SRC)/lib/mlyacc/. $(LIB)/sml/mlyacc-lib
 	find $(LIB)/sml/mlyacc -type d -name .svn | xargs rm -rf
 	find $(LIB)/sml/mlyacc -type f -name .ignore | xargs rm -rf
+#
+	cd $(LIB)/sml && rm -rf cml
 	$(CP) $(SRC)/lib/cml/. $(LIB)/sml/cml
 	find $(LIB)/sml/cml -type d -name .svn | xargs rm -rf
 	find $(LIB)/sml/cml -type f -name .ignore | xargs rm -rf
+#
+	cd $(LIB)/sml && rm -rf smlnj-lib
+	$(MAKE) -C $(SRC)/lib/smlnj-lib
+	$(CP) $(SRC)/lib/smlnj-lib/smlnj-lib/. $(LIB)/sml/smlnj-lib
+	$(MAKE) -C $(SRC)/lib/smlnj-lib clean
+#
+	cd $(LIB)/sml && rm -rf ckit-lib
+	$(MAKE) -C $(SRC)/lib/ckit-lib
+	$(CP) $(SRC)/lib/ckit-lib/ckit/. $(LIB)/sml/ckit-lib
+	$(MAKE) -C $(SRC)/lib/ckit-lib clean
+#
+	cd $(LIB)/sml && rm -rf mlnlffi-lib
 	$(CP) $(SRC)/lib/mlnlffi/. $(LIB)/sml/mlnlffi-lib
-	find $(LIB)/sml/mlnlffi -type d -name .svn | xargs rm -rf
-	find $(LIB)/sml/mlnlffi -type f -name .ignore | xargs rm -rf
+	find $(LIB)/sml/mlnlffi-lib -type d -name .svn | xargs rm -rf
+	find $(LIB)/sml/mlnlffi-lib -type f -name .ignore | xargs rm -rf
+
 
 .PHONY: libraries
 libraries:
 	$(MAKE) libraries-no-check
-	for f in cml mlyacc-lib mlnlffi-lib; do			\
+	for f in mlyacc-lib cml smlnj-lib ckit-lib mlnlffi-lib; do	\
 		echo "Type checking $$f library.";		\
 		$(MLTON) -disable-ann deadCode 			\
 			-stop tc 				\
@@ -295,13 +312,10 @@ targetmap:
 .PHONY: tools
 tools:
 	$(MAKE) -C $(LEX)
+	$(MAKE) -C $(NLFFIGEN)
 	$(MAKE) -C $(PROF)
 	$(MAKE) -C $(YACC)
-	$(CP) $(LEX)/$(LEX) $(PROF)/$(PROF) $(YACC)/$(YACC) $(BIN)/
-	if $(MLTON) -stop tc '$$(CKIT_LIB)/ckit-lib.mlb'; then		\
-		$(MAKE) -C $(NLFFIGEN) ;				\
-		$(CP) $(NLFFIGEN)/$(NLFFIGEN) $(BIN)/ ;			\
-	fi
+	$(CP) $(LEX)/$(LEX) $(NLFFIGEN)/$(NLFFIGEN) $(PROF)/$(PROF) $(YACC)/$(YACC) $(BIN)/
 
 .PHONY: version
 version:

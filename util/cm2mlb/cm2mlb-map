@@ -1,0 +1,15 @@
+ml-yacc-lib     $(SML_LIB)/mlyacc-lib
+
+smlnj-lib       $(SML_LIB)/smlnj-lib/Util
+controls-lib    $(SML_LIB)/smlnj-lib/Controls
+hash-cons-lib   $(SML_LIB)/smlnj-lib/HashCons
+inet-lib        $(SML_LIB)/smlnj-lib/INet
+unix-lib        $(SML_LIB)/smlnj-lib/Unix
+pp-lib          $(SML_LIB)/smlnj-lib/PP
+html-lib        $(SML_LIB)/smlnj-lib/HTML
+regexp-lib      $(SML_LIB)/smlnj-lib/RegExp
+reactive-lib    $(SML_LIB)/smlnj-lib/Reactive
+
+ckit-lib        $(SML_LIB)/ckit-lib/src
+
+c               $(SML_LIB)/mlnlffi-lib

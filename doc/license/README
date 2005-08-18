@@ -6,7 +6,9 @@ SML/NJ		NJ-LICENSE (BSD-style)		lexer, parser,
                                         	precedence parser,
 						OS.IO, Posix.IO, Process, Unix
 						splay trees,
-                                        	Concurrent ML Library
+						Concurrent ML Library
+						SML/NJ Library
+						CKit Library
                                         	MLNLFFI Library, mlnlffigen
 
 ML Kit		MLKit-LICENSE (MIT)		Path, Time, Date

@@ -1,5 +1,9 @@
 Here are the changes since version 20041109.
 
+* 2005-08-18
+  - Added SML/NJ Library and CKit Library from SML/NJ 110.55 to 
+    standard distribution.
+
 * 2005-08-15
   - Fixed bug in LargeInt.scan, which should skip leading "0x" and
     "0X".  Thanks to Wesley Terpstra for the bug report and fix.
@@ -110,6 +114,13 @@ Here are the changes since version 20041109.
 
 * 2005-02-26
   - Fixed an off-by-one error in mkstemp defined in mingw.c.
+
+* 2005-02-13
+  - Added mlnlffigen tool (heavily adapted from SML/NJ).
+
+* 2005-02-12
+  - Added MLNLFFI Library (heavily adapted from SML/NJ) to standard 
+    distribution.
 
 * 2005-02-04
   - Fixed a bug in OS.path.toString, which did not raise InvalidArc
