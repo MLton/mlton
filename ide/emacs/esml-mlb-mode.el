@@ -234,7 +234,7 @@ by `esml-mlb-update'.")
             (?\\ . "/") ;; not '\' due to class of '"'
             (?/  . "_")
             (?-  . "_")
-            (?_  . "_")
+            (?_  . "w") ;; not "_" due to variables regexp
             (?.  . "_")
             (?$  . "_")
             (?\; . ".")
