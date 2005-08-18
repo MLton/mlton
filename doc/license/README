@@ -2,8 +2,10 @@ package		license				use
 --------------  ------------------------------	------------
 MLton		MLton-LICENSE (BSD-style)
 
-SML/NJ		NJ-LICENSE (BSD-style)		lexer, parser,
+SML/NJ		NJ-LICENSE (BSD-style)		front-end mllex specification
+                                        	front-end mlyacc specification
                                         	precedence parser
+                                        	CM lexer and parser
 						OS.IO, Posix.IO, Process, Unix
 						splay trees
 						mllex

@@ -1,11 +1,6 @@
-(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
- *    Jagannathan, and Stephen Weeks.
- * MLton is released under a BSD-style license.
- * See the file MLton-LICENSE for details.
- *)
-(* Based on the file entity/lexer.sml in the SML/NJ CM sources.
+(* Based on the file entity/lexer.sml in the SML/NJ CM sources. *)
 
- *
+(*
  * entity/lexer.sml: lexical analysis of description files
  *
  *   Copyright (c) 1995 by AT&T Bell Laboratories

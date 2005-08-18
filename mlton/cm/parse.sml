@@ -1,11 +1,13 @@
 (* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
+ *
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
  *)
-(* Based on the file entity/description.sml in the SML/NJ CM sources.
 
- *
+(* Based on the file entity/description.sml in the SML/NJ CM sources. *)
+
+(*
  * entity/description.sml: Entity description file parser.
  *
  *   Copyright (c) 1995 by AT&T Bell Laboratories
@@ -102,7 +104,7 @@ fun parse {cmfile: string} =
 	      case normal () of
 		 Lexer.T_KEYWORD Lexer.K_IS =>
 		    (if !lookahead <> [] then fail "Bug in parser" else ()
-			; readList readMember)
+		     ; readList readMember)
 	       | _ => bad "missing keyword 'is'"
 	   fun parseAlias () =
 	      case getFileName () of
