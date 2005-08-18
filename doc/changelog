@@ -3,6 +3,9 @@ Here are the changes since version 20041109.
 * 2005-08-18
   - Added SML/NJ Library and CKit Library from SML/NJ 110.55 to 
     standard distribution.
+  - Fixed bug in Socket.Ctl.*, which got the endianness wrong on
+    big-endian machines.  Thanks to Wesley Terpstra for the bug report
+    and fix.
 
 * 2005-08-15
   - Fixed bug in LargeInt.scan, which should skip leading "0x" and

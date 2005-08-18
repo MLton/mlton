@@ -85,8 +85,9 @@ structure CtlExtra =
       type level = Prim.Ctl.level
       type optname = Prim.Ctl.optname
       type request = Prim.Ctl.request
-      (* host byte order (LSB) *)
-      structure PW = PackWord32Little
+      
+      (* host byte order *)
+      structure PW = PackWord32Host
 
       val wordLen = PW.bytesPerElem
       fun unmarshalWord (wa, _, s): word = 

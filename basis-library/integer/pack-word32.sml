@@ -60,3 +60,5 @@ end
 
 structure PackWord32Big = PackWord32 (val isBigEndian = true)
 structure PackWord32Little = PackWord32 (val isBigEndian = false)
+structure PackWord32Host = 
+   PackWord32(val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian)
