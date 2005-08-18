@@ -2,14 +2,16 @@ package		license				use
 --------------  ------------------------------	------------
 MLton		MLton-LICENSE (BSD-style)
 
-SML/NJ		NJ-LICENSE (BSD-style)		lexer, parser, 
-                                        	precedence parser,
+SML/NJ		NJ-LICENSE (BSD-style)		lexer, parser,
+                                        	precedence parser
 						OS.IO, Posix.IO, Process, Unix
-						splay trees,
+						splay trees
+						mllex
+						mlyacc and MLYacc Library
 						Concurrent ML Library
 						SML/NJ Library
 						CKit Library
-                                        	MLNLFFI Library, mlnlffigen
+                                        	mlnlffigen and MLNLFFI Library
 
 ML Kit		MLKit-LICENSE (MIT)		Path, Time, Date
 
