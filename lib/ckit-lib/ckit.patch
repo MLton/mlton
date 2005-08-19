@@ -16161,7 +16161,7 @@ diff -Naur ckit/src/parser/grammar/c.lex.sml ckit-mlton/src/parser/grammar/c.lex
 +
 +type int = Int.int
 +fun makeLexer (yyinput: int -> string) =
-+let	val yygone0:int=1
++let	val yygone0:int= ~1
 +	val yyb = ref "\n" 		(* buffer *)
 +	val yybl: int ref = ref 1		(*buffer length *)
 +	val yybufpos: int ref = ref 1		(* location of next character to use *)

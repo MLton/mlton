@@ -162,27 +162,20 @@ freebsd:
 .PHONY: libraries-no-check
 libraries-no-check:
 	mkdir -p $(LIB)/sml
-#
 	cd $(LIB)/sml && rm -rf mlyacc-lib
 	$(CP) $(SRC)/lib/mlyacc/. $(LIB)/sml/mlyacc-lib
 	find $(LIB)/sml/mlyacc -type d -name .svn | xargs rm -rf
 	find $(LIB)/sml/mlyacc -type f -name .ignore | xargs rm -rf
-#
 	cd $(LIB)/sml && rm -rf cml
 	$(CP) $(SRC)/lib/cml/. $(LIB)/sml/cml
 	find $(LIB)/sml/cml -type d -name .svn | xargs rm -rf
 	find $(LIB)/sml/cml -type f -name .ignore | xargs rm -rf
-#
 	cd $(LIB)/sml && rm -rf smlnj-lib
 	$(MAKE) -C $(SRC)/lib/smlnj-lib
 	$(CP) $(SRC)/lib/smlnj-lib/smlnj-lib/. $(LIB)/sml/smlnj-lib
-	$(MAKE) -C $(SRC)/lib/smlnj-lib clean
-#
 	cd $(LIB)/sml && rm -rf ckit-lib
 	$(MAKE) -C $(SRC)/lib/ckit-lib
 	$(CP) $(SRC)/lib/ckit-lib/ckit/. $(LIB)/sml/ckit-lib
-	$(MAKE) -C $(SRC)/lib/ckit-lib clean
-#
 	cd $(LIB)/sml && rm -rf mlnlffi-lib
 	$(CP) $(SRC)/lib/mlnlffi/. $(LIB)/sml/mlnlffi-lib
 	find $(LIB)/sml/mlnlffi-lib -type d -name .svn | xargs rm -rf

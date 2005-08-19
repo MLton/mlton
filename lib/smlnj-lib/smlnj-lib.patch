@@ -9712,7 +9712,7 @@ diff -Naur smlnj-lib/HTML/html-lex.sml smlnj-lib-mlton/HTML/html-lex.sml
 +
 +type int = Int.int
 +fun makeLexer (yyinput: int -> string) =
-+let	val yygone0:int=1
++let	val yygone0:int= ~1
 +	val yylineno: int ref = ref 0
 +
 +	val yyb = ref "\n" 		(* buffer *)

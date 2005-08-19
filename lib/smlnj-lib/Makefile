@@ -8,7 +8,7 @@
 
 all: smlnj-lib/README.mlton
 
-smlnj-lib/README.mlton: 
+smlnj-lib/README.mlton: smlnj-lib.tgz smlnj-lib.patch
 	gzip -dc smlnj-lib.tgz | tar xf -
 	patch -p0 < smlnj-lib.patch	
 
