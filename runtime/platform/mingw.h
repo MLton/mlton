@@ -22,7 +22,6 @@
 #define HAS_SIGNBIT TRUE
 #define HAS_SPAWN TRUE
 #define HAS_TIME_PROFILING FALSE
-#define HAS_WEAK FALSE
 
 #define MLton_Platform_OS_host "mingw"
 

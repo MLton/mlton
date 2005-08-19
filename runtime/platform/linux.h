@@ -30,7 +30,6 @@
 #define HAS_SIGNBIT TRUE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
-#define HAS_WEAK TRUE
 
 #define MLton_Platform_OS_host "linux"
 

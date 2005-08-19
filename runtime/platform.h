@@ -185,11 +185,6 @@
 void *getTextStart ();
 void *getTextEnd ();
 
-/* HAS_WEAK is true if the platform supports the weak attribute. */
-#ifndef HAS_WEAK
-#error HAS_WEAK not defined
-#endif
-
 #ifndef SPAWN_MODE
 #define SPAWN_MODE 0
 #endif

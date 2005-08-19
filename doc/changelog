@@ -6,6 +6,7 @@ Here are the changes since version 20041109.
   - Fixed bug in Socket.Ctl.*, which got the endianness wrong on
     big-endian machines.  Thanks to Wesley Terpstra for the bug report
     and fix.
+  - Added MLton.GC.setRusage.
 
 * 2005-08-15
   - Fixed bug in LargeInt.scan, which should skip leading "0x" and

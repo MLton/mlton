@@ -16,6 +16,10 @@ void GC_setSummary (Int b) {
 	gcState.summary = b;
 }
 
+void GC_setRusage () {
+	gcState.rusageIsEnabled = TRUE;
+}
+
 void MLton_GC_pack () {
 	GC_pack (&gcState);
 }

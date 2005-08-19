@@ -11,6 +11,7 @@ signature MLTON_GC =
       val collect: unit -> unit
       val pack: unit -> unit
       val setMessages: bool -> unit
+      val setRusage: bool -> unit
       val setSummary: bool -> unit
       val unpack: unit -> unit
    end

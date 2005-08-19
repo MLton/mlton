@@ -27,7 +27,6 @@
 #define HAS_SIGNBIT FALSE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
-#define HAS_WEAK FALSE
 
 #define MLton_Platform_OS_host "openbsd"
 

@@ -3022,19 +3022,8 @@ static inline void leaveGC (GC_state s) {
 	}
 }
 
-/* MLton_Rusage_ru is the only code outside of gc.c that uses gcState.ru_gc.
- * So, we only need to keep gcTime if gc.c needs it due to s->summary or 
- * s->messages, or if MLton_Rusage_ru is called.  Because MLton_Rusage_ru is
- * defined in a file all to itself (basis/MLton/rusage.c), it is called iff it
- * is linked in, which we can test via a weak symbol.
- */
-#if HAS_WEAK
-void MLton_Rusage_ru () __attribute__ ((weak));
-#else
-void MLton_Rusage_ru ();
-#endif
 static inline bool needGCTime (GC_state s) {
-	return DEBUG or s->summary or s->messages or (0 != MLton_Rusage_ru);
+	return DEBUG or s->summary or s->messages or s->rusageIsEnabled;
 }
 
 static void doGC (GC_state s, 
@@ -4487,6 +4476,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->oldGenArraySize = 0x100000;
 	s->pageSize = getpagesize ();
 	s->ramSlop = 0.5;
+	s->rusageIsEnabled = FALSE;
 	s->savedThread = BOGUS_THREAD;
 	s->signalHandler = BOGUS_THREAD;
 	s->signalIsPending = FALSE;
