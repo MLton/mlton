@@ -4,12 +4,14 @@
 ;; See the file MLton-LICENSE for details.
 
 (eval-when-compile
-  (require 'cl))
+  (require 'cl)
+  (require 'esml-util))
 
 ;; Installation
 ;; ============
 ;;
-;; Push the path to this file to `load-path' and use (require 'esml-gen).
+;; Push the path to this file (and `esml-util.el') to `load-path' and use
+;; (require 'esml-gen).
 ;;
 ;; Ideas for future development
 ;; ============================
@@ -35,13 +37,6 @@
   "abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ0123456789'_"
   "A string of all Standard ML alphanumeric characters as defined in
 section 2.4 of the Definition.")
-
-;; workaround for incompatibility between GNU Emacs and XEmacs
-(if (string-match "XEmacs" emacs-version)
-    (defun esml-replace-regexp-in-string (str regexp rep)
-      (replace-in-string str regexp rep t))
-  (defun esml-replace-regexp-in-string (str regexp rep)
-    (replace-regexp-in-string regexp rep str t t)))
 
 (defun esml-extract-field-names (pattern-or-type)
   (let ((fields nil))

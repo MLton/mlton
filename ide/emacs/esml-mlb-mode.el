@@ -4,14 +4,16 @@
 ;; See the file MLton-LICENSE for details.
 
 (eval-when-compile
-  (require 'cl))
+  (require 'cl)
+  (require 'esml-util))
 
 ;; Emacs mode for editing ML Basis files
 ;;
 ;; Installation
 ;; ============
 ;;
-;; - Push the path to this file to `load-path' and either
+;; - Push the path to this file (and `esml-util.el') to `load-path' and
+;;   either
 ;;     (require 'esml-mlb-mode)
 ;;   or
 ;;     (autoload 'esml-mlb-mode "esml-mlb-mode")
@@ -32,36 +34,10 @@
 ;; - customisable indentation
 ;; - movement
 ;; - type-check / show-basis / compile / compile-and-run
-;; - open-structure / open-signature / open-functor
+;; - find-structure / find-signature / find-functor
 ;; - highlight only binding occurances of basid's
-;; - goto-binding-occurance (of a basid)
+;; - find-binding-occurance (of a basid)
 ;; - support doc strings in mlb files
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Utility functions
-
-(defun esml-point-preceded-by (regexp)
-  "Determines whether point is immediately preceded by the given regexp.
-If the result is non-nil, the regexp match data will contain the
-corresponding match. As with `re-search-backward' the beginning of the
-match is as close to the starting point as possible. The end of the match
-is always the same as the starting point."
-  (save-excursion
-    (let ((limit (point))
-          (start (re-search-backward regexp 0 t)))
-      (when start
-        (re-search-forward regexp limit t)
-        (= limit (match-end 0))))))
-
-(defun esml-insert-or-skip-if-looking-at (str)
-  "Inserts the specified string unless it already follows the point. The
-point is moved to the end of the string."
-  (if (string= str
-               (buffer-substring (point)
-                                 (min (+ (point) (length str))
-                                      (point-max))))
-      (forward-char (length str))
-    (insert str)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Prelude
@@ -80,11 +56,35 @@ point is moved to the end of the string."
   "Major mode for editing ML Basis files.
 
 Unrecognized
-- annotations (see `esml-mlb-annotations'),
-- path variables (see `esml-mlb-mlb-path-map-files'), and
+- annotations (see `esml-mlb-show-annotations-command' and
+                   `esml-mlb-additional-annotations'),
+- path variables (see `esml-mlb-mlb-path-map-files' and
+                      `esml-mlb-additional-path-variables'), and
 - path name suffices (see `esml-mlb-path-suffix-regexp') are
 highlighed as warnings."
   :group 'sml)
+
+(defcustom esml-mlb-additional-annotations
+  '(("allowConstant" "false" "true")
+    ("allowFFI" "false" "true")
+    ("allowOverload" "false" "true")
+    ("allowPrim" "false" "true")
+    ("allowRebindEquals" "false" "true")
+    ("deadCode" "false" "true")
+    ("ffiStr" "[A-Za-z0-9_]*")
+    ("forceUsed")
+    ("nonexhaustiveExnMatch" "default" "ignore")
+    ("nonexhaustiveMatch" "warn" "ignore" "error")
+    ("redundantMatch" "warn" "ignore" "error")
+    ("sequenceNonUnit" "ignore" "error" "warn")
+    ("warnUnused" "false" "true"))
+  "Additional annotations accepted by your compiler(s)."
+  :type '(repeat (cons :tag "Annotation"
+                       (string :tag "Name")
+                       (repeat :tag "Values starting with the default"
+                               regexp)))
+  :set 'esml-mlb-set-custom-and-update
+  :group 'esml-mlb)
 
 (defcustom esml-mlb-additional-path-variables
   '(("LIB_MLTON_DIR" . "/usr/lib/mlton"))
@@ -97,29 +97,6 @@ specified by `esml-mlb-mlb-path-map-files'."
 (defcustom esml-mlb-allow-completion t
   "Allow tab-completion if non-nil."
   :type 'boolean
-  :group 'esml-mlb)
-
-(defcustom esml-mlb-annotations
-  '(("allowExport" "false" "true")
-    ("allowFFI" "false" "true")
-    ("allowImport" "false" "true")
-    ("allowOverload" "false" "true")
-    ("allowSymbol" "false" "true")
-    ("deadCode" "false" "true")
-    ("nonexhaustiveExnMatch" "default" "ignore")
-    ("nonexhaustiveMatch" "warn" "error" "ignore")
-    ("forceUsed")
-    ("redundantMatch" "warn" "error" "ignore")
-    ("sequenceNonUnit" "ignore" "warn" "error")
-    ("sequenceUnit" "false" "true")
-    ("warnMatch" "true" "false")
-    ("warnUnused" "false" "true"))
-  "Annotations accepted by your compiler(s)."
-  :type '(repeat (cons :tag "Annotation"
-                       (string :tag "Name")
-                       (repeat :tag "Values starting with the default"
-                               string)))
-  :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
 
 (defcustom esml-mlb-completion-ignored-files-regexp "\\.[^.].*\\|CVS/"
@@ -148,6 +125,13 @@ files whose extension matches this regexp."
   :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
 
+(defcustom esml-mlb-show-annotations-command
+  "mlton -expert true -show-anns true"
+  "Command used to determine the annotations accepted by a compiler."
+  :type 'string
+  :set 'esml-mlb-set-custom-and-update
+  :group 'esml-mlb)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Faces
 
@@ -157,6 +141,46 @@ files whose extension matches this regexp."
   :group 'font-lock-highlighting-faces)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Annotations
+
+(defvar esml-mlb-annotations nil
+  "An association list of known annotations. This variable is updated by
+`esml-mlb-update'.")
+
+(defun esml-mlb-parse-annotations ()
+  (setq esml-mlb-annotations
+        (remove-duplicates
+         (sort (append esml-mlb-additional-annotations
+                       (when (not (string= "" esml-mlb-show-annotations-command))
+                         (mapcar (function
+                                  (lambda (s)
+                                    (esml-split-string s "[ \t]*[{}|][ \t]*")))
+                                 (esml-split-string
+                                  (with-temp-buffer
+                                    (if (zerop
+                                         (condition-case nil
+                                             (let ((cmd-and-args
+                                                    (esml-split-string
+                                                     esml-mlb-show-annotations-command
+                                                     " +")))
+                                               (apply 'call-process
+                                                      (car cmd-and-args) nil t nil (cdr cmd-and-args)))
+                                           (error -1)))
+                                        (esml-replace-regexp-in-string
+                                         (buffer-string)
+                                         "{[ \t]*None[ \t]*|[ \t]*Some[ \t]*<[^>]+>}"
+                                         "{[A-Za-z0-9_]*}")
+                                      (message "Show annotations command failed.")
+                                      ""))
+                                  "[ \t]*\n+[ \t]*"))))
+               (function
+                (lambda (a b)
+                  (string-lessp (car a) (car b)))))
+         :test (function
+                (lambda (a b)
+                  (string= (car a) (car b)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Path variables
 
 (defvar esml-mlb-path-variables nil
@@ -164,28 +188,24 @@ files whose extension matches this regexp."
 by `esml-mlb-update'.")
 
 (defun esml-mlb-parse-path-variables ()
-  (setq esml-mlb-path-variables nil)
-  (loop for file in esml-mlb-mlb-path-map-files
-    do (if (file-readable-p file)
-           (with-temp-buffer
-             (insert-file-contents file)
-             (skip-chars-forward " \t\n")
-             (while (not (eobp))
-               (push (cons (let ((start (point)))
-                             (skip-chars-forward "^ \t\n")
-                             (buffer-substring start (point)))
-                           (progn
-                             (skip-chars-forward " \t")
-                             (let ((start (point)))
-                               (skip-chars-forward "^ \t\n")
-                               (buffer-substring start (point)))))
-                     esml-mlb-path-variables)
-               (skip-chars-forward " \t\n")))))
   (setq esml-mlb-path-variables
-        (sort (append esml-mlb-additional-path-variables
-                      esml-mlb-path-variables)
-              (function (lambda (a b)
-                          (string-lessp (car a) (car b)))))))
+        (remove-duplicates
+         (sort (append esml-mlb-additional-path-variables
+                       (loop for file in esml-mlb-mlb-path-map-files
+                         append (mapcar (function
+                                         (lambda (s)
+                                           (apply 'cons
+                                                  (esml-split-string s "[ \t]+"))))
+                                        (esml-split-string (with-temp-buffer
+                                                             (insert-file-contents file)
+                                                             (buffer-string))
+                                                           "[ \t]*\n+[ \t]*"))))
+               (function
+                (lambda (a b)
+                  (string-lessp (car a) (car b)))))
+         :test (function
+                (lambda (a b)
+                  (string= (car a) (car b)))))))
 
 (defun esml-mlb-expand-path (path)
   "Expands path variable references in the given path."
@@ -271,7 +291,12 @@ by a space.")
                      (push "\\|" regexps))
                  (cons (if (cdr name-values)
                            (concat (car name-values) "[ \t\n]+\\("
-                                   (regexp-opt (cdr name-values)) "\\)")
+                                   (reduce (function
+                                            (lambda (r s)
+                                              (concat r "\\|\\(" s "\\)")))
+                                           (cddr name-values)
+                                           :initial-value (concat "\\(" (cadr name-values) "\\)"))
+                                   "\\)")
                          (car name-values))
                        regexps)))
               esml-mlb-annotations
@@ -418,6 +443,7 @@ name completions."
    ((esml-point-preceded-by (concat "\"[ \t\n]*\\("
                                     (regexp-opt (mapcar 'car esml-mlb-annotations))
                                     "\\)[ \t\n]+\\(" esml-mlb-str-chr-regexp "*\\)"))
+    ;; TBD: do not auto-complete non-trivial regexps
     (let* ((annot (assoc (match-string 1) esml-mlb-annotations))
            (values (cdr annot))
            (value-prefix (match-string 2))
@@ -480,6 +506,7 @@ name completions."
         (esml-point-preceded-by
          (concat "\\([ \t\n]\\|^\\)\\([" esml-mlb-unquoted-path-or-ref-chars "]+\\)")))
     ;; TBD: escape sequences in quoted pathnames
+    ;; TBD: ../../
     (let* ((quoted (string= "\"" (match-string 1)))
            (path-prefix (match-string 2))
            (path-expanded (esml-mlb-expand-path path-prefix))
@@ -604,6 +631,7 @@ See the customization group `esml-mlb'."
   (interactive)
   ;; Warning: order dependencies
   (esml-mlb-parse-path-variables)
+  (esml-mlb-parse-annotations)
   (esml-mlb-build-font-lock-table))
 
 ;; We are finally ready to update everything the first time.
