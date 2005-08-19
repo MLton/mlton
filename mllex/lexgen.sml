@@ -1371,7 +1371,7 @@ fun lexGen(infile) =
 	  say "end\n\n";
 	  say "type int = Int.int\n";
 	  say (if (!PosArg) then "fun makeLexer (yyinput: int -> string,yygone0:int) =\nlet\n"
-		else "fun makeLexer (yyinput: int -> string) =\nlet\tval yygone0:int=1\n");
+		else "fun makeLexer (yyinput: int -> string) =\nlet\tval yygone0:int= ~1\n");
 	  if !CountNewLines then say "\tval yylineno: int ref = ref 0\n\n" else ();
 	  say "\tval yyb = ref \"\\n\" \t\t(* buffer *)\n\
 	  \\tval yybl: int ref = ref 1\t\t(*buffer length *)\n\

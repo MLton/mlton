@@ -7,6 +7,8 @@ Here are the changes since version 20041109.
     big-endian machines.  Thanks to Wesley Terpstra for the bug report
     and fix.
   - Added MLton.GC.setRusage.
+  - Fixed bug in mllex, which had file positions starting at 2.  They
+    now start at zero.
 
 * 2005-08-15
   - Fixed bug in LargeInt.scan, which should skip leading "0x" and
