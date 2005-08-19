@@ -190,11 +190,6 @@ structure CtlExtra =
 	 val (getSockOptTimeOpt, _, setSockOptTimeOpt, _) =
 	    make (timeOptLen, marshalTimeOpt, unmarshalTimeOpt)
       end
-   end
-
-structure Ctl =
-   struct
-      open CtlExtra
 
       val getDEBUG = getSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.DEBUG)
       val setDEBUG = setSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.DEBUG)
@@ -216,7 +211,12 @@ structure Ctl =
       val setRCVBUF = setSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.RCVBUF)
       fun getTYPE s =
 	 Prim.SOCK.fromInt (getSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.TYPE) s)
-      val getERROR = getSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.ERROR)
+      fun getERROR s =
+         getSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.ERROR) s
+         handle Error.SysErr (_, e) =>
+            case e of
+               NONE => raise Fail "Socket.Ctl.getERROR"
+             | SOME s => s
       local
 	 fun getName (s, f: Prim.sock * pre_sock_addr * int ref -> int) =
 	    let
@@ -231,6 +231,13 @@ structure Ctl =
       end
       val getNREAD = getIOCtlInt Prim.Ctl.NREAD
       val getATMARK = getIOCtlBool Prim.Ctl.ATMARK
+   end
+
+structure Ctl =
+   struct
+      open CtlExtra
+
+      fun getERROR s = 0 < CtlExtra.getERROR s
    end
 
 fun sameAddr (SA sa1, SA sa2) = sa1 = sa2

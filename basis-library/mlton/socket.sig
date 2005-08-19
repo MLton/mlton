@@ -16,6 +16,11 @@ signature MLTON_SOCKET =
 	    type t = word
 	 end
 
+      structure Ctl:
+         sig
+            val getERROR: ('af, 'sock_type) Socket.sock -> int
+         end
+
       structure Host:
 	 sig
 	    type t = {name: string}

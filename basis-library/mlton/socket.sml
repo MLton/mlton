@@ -101,5 +101,7 @@ fun shutdownWrite out =
     ; shutdown (TextIO.outFd out, Socket.NO_SENDS))
 
 val fdToSock = Socket.fdToSock
+
+structure Ctl = Socket.CtlExtra
    
 end
