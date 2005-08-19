@@ -106,6 +106,7 @@ DEBSRC = mlton-$(VERSION).orig
 .PHONY: deb
 deb:
 	$(MAKE) clean clean-svn version
+	mv package/debian .
 	tar -cpf - . | \
 		( cd .. && mkdir $(DEBSRC) && cd $(DEBSRC) && tar -xpf - )
 	cd .. && tar -cpf - $(DEBSRC) | $(GZIP) >mlton_$(VERSION).orig.tar.gz
@@ -125,9 +126,9 @@ deb-change:
 		echo;							\
 		echo ' -- Stephen Weeks <sweeks@sweeks.com>  '`date -R`;\
 		echo;							\
-		cat debian/changelog;					\
+		cat package/debian/changelog;				\
 	) >/tmp/changelog
-	mv /tmp/changelog debian/changelog
+	mv /tmp/changelog package/debian/changelog
 
 .PHONY: deb-lint
 deb-lint:
@@ -135,7 +136,7 @@ deb-lint:
 
 .PHONY: deb-spell
 deb-spell:
-	ispell -g debian/control
+	ispell -g package/debian/control
 
 .PHONY: dirs
 dirs:
@@ -321,9 +322,9 @@ tools:
 version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
-		debian/changelog					\
-		doc/mlton.spec						\
-		freebsd/Makefile					\
+		package/debian/changelog				\
+		package/rpm/mlton.spec					\
+		package/freebsd/Makefile				\
 		mlton/control/control.sml; 				\
 	do								\
 		sed "s/\(.*\)MLTONVERSION\(.*\)/\1$(VERSION)\2/" <$$f >z && \
