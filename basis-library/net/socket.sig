@@ -183,7 +183,9 @@ signature SOCKET_EXTRA =
 (* 	  val setSockOptWord:
  * 	     level * optname -> ('af, 'sock_type) sock * word -> unit
  *)
-          val getERROR: ('af, 'sock_type) sock -> int
+          val getERROR:
+             ('af, 'sock_type) sock
+             -> (string * Posix.Error.syserror option) option
 	  val getSockOptInt: level * optname -> ('af, 'sock_type) sock -> int
 	  val setSockOptInt:
 	     level * optname -> ('af, 'sock_type) sock * int -> unit

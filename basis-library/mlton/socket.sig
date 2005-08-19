@@ -18,7 +18,9 @@ signature MLTON_SOCKET =
 
       structure Ctl:
          sig
-            val getERROR: ('af, 'sock_type) Socket.sock -> int
+            val getERROR:
+               ('af, 'sock_type) Socket.sock
+               -> (string * Posix.Error.syserror option) option
          end
 
       structure Host:

@@ -212,11 +212,13 @@ structure CtlExtra =
       fun getTYPE s =
 	 Prim.SOCK.fromInt (getSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.TYPE) s)
       fun getERROR s =
-         getSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.ERROR) s
-         handle Error.SysErr (_, e) =>
-            case e of
-               NONE => raise Fail "Socket.Ctl.getERROR"
-             | SOME s => s
+         let
+            val se = getSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.ERROR) s
+         in
+            if 0 = se
+               then NONE
+            else SOME (Posix.Error.errorMsg se, SOME se)
+         end handle Error.SysErr z => SOME z
       local
 	 fun getName (s, f: Prim.sock * pre_sock_addr * int ref -> int) =
 	    let
@@ -237,7 +239,7 @@ structure Ctl =
    struct
       open CtlExtra
 
-      fun getERROR s = 0 < CtlExtra.getERROR s
+      val getERROR = isSome o CtlExtra.getERROR
    end
 
 fun sameAddr (SA sa1, SA sa2) = sa1 = sa2
