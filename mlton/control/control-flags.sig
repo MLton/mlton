@@ -71,6 +71,8 @@ signature CONTROL_FLAGS =
 
 	    type ('args, 'st) t
 
+            val document: {expert: bool} -> Layout.t
+
 	    val allowConstant: (bool,bool) t
 	    val allowFFI: (bool,bool) t
 	    val allowOverload: (bool,bool) t

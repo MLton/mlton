@@ -115,6 +115,7 @@ structure Elaborate =
 		| Ignore => "ignore"
 		| Warn => "warn"
 	 end
+      
       structure DiagDI =
 	 struct
 	    datatype t =
@@ -178,8 +179,33 @@ structure Elaborate =
 	 fn Good z => z
 	  | _ => Error.bug "Control.Elaborate.deGood"
 
+      val documentation: {choices: string list,
+                          expert: bool,
+                          name: string} list ref = ref []
+
+      fun document {expert} =
+         let
+            val all = !documentation
+            val all =
+               if expert then all
+               else List.keepAll (all, not o #expert)
+            val all =
+               List.insertionSort
+               (all, fn ({name = n, ...}, {name = n', ...}) => n <= n')
+            open Layout
+         in
+            align
+            (List.map
+             (all, fn {choices, name, ...} =>
+              str (concat [name,
+                           " {",
+                           concat (List.separate (choices, "|")),
+                           "}"])))
+         end
+         
       local 
-	 fun make ({default: 'st,
+	 fun make ({choices: 'st list,
+                    default: 'st,
 		    expert: bool,
 		    toString: 'st -> string,
 		    name: string,
@@ -191,6 +217,12 @@ structure Elaborate =
 		    withDef: unit -> (unit -> unit),
 		    snapshot: unit -> unit -> (unit -> unit)}) =
 	    let
+               val () =
+                  List.push
+                  (documentation,
+                   {choices = List.map (choices, toString),
+                    expert = expert,
+                    name = name})
 	       val ctrl as T {args = argsRef, cur, def, 
 			      id as Id.T {enabled, ...}, ...} =
 		  T {args = ref NONE,
@@ -287,7 +319,8 @@ structure Elaborate =
 	 fun makeBool ({default: bool,
 			expert: bool,
 			name: string}, ac) =
-	    make ({default = default,
+	    make ({choices = if default then [true, false] else [false, true],
+                   default = default,
 		   expert = expert,
 		   toString = Bool.toString,
 		   name = name,
@@ -299,12 +332,14 @@ structure Elaborate =
 				| _ => NONE}, 
 		  ac)
 
-	 fun makeDiagnostic ({default,
+	 fun makeDiagnostic ({choices,
+                              default,
 			      diagToString,
 			      diagFromString,
 			      expert: bool,
 			      name: string}, ac) =
-	     make ({default = default,
+	     make ({choices = choices,
+                    default = default,
 		    expert = expert,
 		    toString = diagToString,
 		    name = name,
@@ -318,7 +353,15 @@ structure Elaborate =
 	 fun makeDiagEIW ({default: DiagEIW.t,
 			   expert: bool,
 			   name: string}, ac) =
-	    makeDiagnostic ({default = default,
+	    makeDiagnostic ({choices = let
+                                          datatype z = datatype DiagEIW.t
+                                       in
+                                          case default of
+                                             Error => [Error, Ignore, Warn]
+                                           | Ignore => [Ignore, Error, Warn]
+                                           | Warn => [Warn, Ignore, Error]
+                                       end,
+                             default = default,
 			     diagToString = DiagEIW.toString,
 			     diagFromString = DiagEIW.fromString,
 			     expert = expert,
@@ -326,7 +369,14 @@ structure Elaborate =
 	 fun makeDiagDI ({default: DiagDI.t,
 			  expert: bool,
 			  name: string}, ac) =
-	    makeDiagnostic ({default = default,
+	    makeDiagnostic ({choices = let
+                                          datatype z = datatype DiagDI.t
+                                       in
+                                          case default of
+                                             Default => [Default, Ignore]
+                                           | Ignore => [Ignore, Default]
+                                       end,
+                             default = default,
 			     diagToString = DiagDI.toString,
 			     diagFromString = DiagDI.fromString,
 			     expert = expert,
@@ -356,7 +406,8 @@ structure Elaborate =
 	    makeBool ({name = "deadCode", 
 		       default = false, expert = false}, ac)
 	 val (forceUsed, ac) =
-	    make ({default = false,
+	    make ({choices = [false, true],
+                   default = false,
 		   expert = false,
 		   toString = Bool.toString,
 		   name = "forceUsed",
@@ -368,7 +419,8 @@ structure Elaborate =
 				| _ => NONE},
 		  ac)
 	 val (ffiStr, ac) =
-	    make ({default = NONE,
+	    make ({choices = [NONE, SOME "<longstrid>"],
+                   default = NONE,
 		   expert = true,
 		   toString = Option.toString String.toString,
 		   name = "ffiStr",

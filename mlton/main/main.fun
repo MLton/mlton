@@ -60,6 +60,7 @@ val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val output: string option ref = ref NONE
 val profileSet: bool ref = ref false
 val runtimeArgs: string list ref = ref ["@MLton"]
+val showAnns: bool ref = ref false
 val stop = ref Place.OUT
 
 val targetMap: unit -> {arch: MLton.Platform.Arch.t,
@@ -405,6 +406,8 @@ fun makeOptions {usage} =
 	boolRef profileStack),
        (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
 	push runtimeArgs),
+       (Expert, "show-anns", " {false|true}", "show annotations",
+        boolRef showAnns),
        (Normal, "show-basis", " <file>", "write out the final basis environment",
 	SpaceString (fn s => showBasis := SOME s)),
        (Normal, "show-def-use", " <file>", "write def-use information",
@@ -511,6 +514,12 @@ fun commandLine (args: string list): unit =
 	  | _ => Error.bug "incorrect args from shell script"
       val _ = setTargetType ("self", usage)
       val result = parse args
+      val () =
+         if !showAnns then
+            (Layout.outputl (Control.Elaborate.document {expert = !expert}, 
+                             Out.standard)
+             ; let open OS.Process in exit success end)
+         else ()
       val () = if !exnHistory
 		  then (case !profile of
 			   ProfileNone => profile := ProfileCallStack
