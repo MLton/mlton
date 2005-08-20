@@ -18,9 +18,9 @@ signature FFI =
       include FFI_STRUCTS
 
       val addExport: {args: CType.t vector,
-		      convention: CFunction.Convention.t,
-		      name: string,
-		      res: CType.t option} -> int
+                      convention: CFunction.Convention.t,
+                      name: string,
+                      res: CType.t option} -> int
       val addSymbol: {ty: CType.t,
                       name: string} -> unit
       val declareExports: {print: string -> unit} -> unit

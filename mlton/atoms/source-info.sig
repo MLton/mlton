@@ -14,7 +14,7 @@ signature SOURCE_INFO_STRUCTS =
 signature SOURCE_INFO =
    sig
       include SOURCE_INFO_STRUCTS
-	 
+         
       type t
 
       val all: unit -> t list
@@ -26,7 +26,7 @@ signature SOURCE_INFO =
       val hash: t -> word
       val fromC: string -> t
       val function: {name: string list,
-		     region: Region.t} -> t
+                     region: Region.t} -> t
       val isC: t -> bool
       val layout: t -> Layout.t
       val main: t

@@ -15,55 +15,55 @@ structure PosixTTY: POSIX_TTY =
       structure SysCall = Error.SysCall
 
       type pid = Pid.t
-	 
+         
       datatype file_desc = datatype Prim.file_desc
-	 
+         
       structure V =
-	 struct
-	    open V
+         struct
+            open V
 
-	    type cc = char array
+            type cc = char array
 
-	    val default = #"\000"
+            val default = #"\000"
 
-	    fun new () = Array.array (nccs, default)
+            fun new () = Array.array (nccs, default)
 
-	    fun updates (a, l) = List.app (fn (i, c) => Array.update (a, i, c)) l
+            fun updates (a, l) = List.app (fn (i, c) => Array.update (a, i, c)) l
 
-	    fun cc l = let val a = new ()
-		       in updates (a, l)
-			  ; a
-		       end
+            fun cc l = let val a = new ()
+                       in updates (a, l)
+                          ; a
+                       end
 
-	    fun update (a, l) =
-	       let val a' = new ()
-	       in Array.copy {src = a, dst = a', di = 0}
-		  ; updates (a', l)
-		  ; a'
-	       end
+            fun update (a, l) =
+               let val a' = new ()
+               in Array.copy {src = a, dst = a', di = 0}
+                  ; updates (a', l)
+                  ; a'
+               end
 
-	    val sub = Array.sub
-	 end
+            val sub = Array.sub
+         end
       
       structure I =
-	 struct
-	    open I BitFlags
-	 end
+         struct
+            open I BitFlags
+         end
       
       structure O =
-	 struct
-	    open O BitFlags
-	 end
+         struct
+            open O BitFlags
+         end
       
       structure C =
-	 struct
-	    open C BitFlags
-	 end
+         struct
+            open C BitFlags
+         end
       
       structure L =
-	 struct
-	    open L BitFlags
-	 end
+         struct
+            open L BitFlags
+         end
 
       type speed = Prim.speed
 
@@ -73,12 +73,12 @@ structure PosixTTY: POSIX_TTY =
       val wordToSpeed = id
 
       type termios = {iflag: I.flags,
-		      oflag: O.flags,
-		      cflag: C.flags,
-		      lflag: L.flags,
-		      cc: V.cc,
-		      ispeed: speed,
-		      ospeed: speed}
+                      oflag: O.flags,
+                      cflag: C.flags,
+                      lflag: L.flags,
+                      cc: V.cc,
+                      ispeed: speed,
+                      ospeed: speed}
 
       val termios = id
       val fieldsOf = id
@@ -90,84 +90,84 @@ structure PosixTTY: POSIX_TTY =
       val getcc: termios -> V.cc = #cc
 
       structure CF =
-	 struct
-	    val getospeed: termios -> speed = #ospeed
-	    fun setospeed ({iflag, oflag, cflag, lflag, cc, ispeed, ...}: termios,
-			  ospeed: speed): termios =
-	       {iflag = iflag,
-		oflag = oflag,
-		cflag = cflag,
-		lflag = lflag,
-		cc = cc,
-		ispeed = ispeed,
-		ospeed = ospeed}
-		
-	    val getispeed: termios -> speed = #ispeed
-	       
-	    fun setispeed ({iflag, oflag, cflag, lflag, cc, ospeed, ...}: termios,
-			  ispeed: speed): termios =
-	       {iflag = iflag,
-		oflag = oflag,
-		cflag = cflag,
-		lflag = lflag,
-		cc = cc,
-		ispeed = ispeed,
-		ospeed = ospeed}
-	 end
+         struct
+            val getospeed: termios -> speed = #ospeed
+            fun setospeed ({iflag, oflag, cflag, lflag, cc, ispeed, ...}: termios,
+                          ospeed: speed): termios =
+               {iflag = iflag,
+                oflag = oflag,
+                cflag = cflag,
+                lflag = lflag,
+                cc = cc,
+                ispeed = ispeed,
+                ospeed = ospeed}
+                
+            val getispeed: termios -> speed = #ispeed
+               
+            fun setispeed ({iflag, oflag, cflag, lflag, cc, ospeed, ...}: termios,
+                          ispeed: speed): termios =
+               {iflag = iflag,
+                oflag = oflag,
+                cflag = cflag,
+                lflag = lflag,
+                cc = cc,
+                ispeed = ispeed,
+                ospeed = ospeed}
+         end
       
       structure Termios = Prim.Termios
-	 
+         
       structure TC =
-	 struct
-	    open Prim.TC 
+         struct
+            open Prim.TC 
 
-	    fun getattr fd =
-	       SysCall.syscallRestart
-	       (fn () =>
-		(Prim.getattr fd, fn () =>
-		 {iflag = Termios.iflag (),
-		  oflag = Termios.oflag (),
-		  cflag = Termios.cflag (),
-		  lflag = Termios.lflag (),
-		  cc = Cstring.toCharArrayOfLength (Termios.cc (), V.nccs),
-		  ispeed = Termios.ispeed (),
-		  ospeed = Termios.ospeed ()}))
+            fun getattr fd =
+               SysCall.syscallRestart
+               (fn () =>
+                (Prim.getattr fd, fn () =>
+                 {iflag = Termios.iflag (),
+                  oflag = Termios.oflag (),
+                  cflag = Termios.cflag (),
+                  lflag = Termios.lflag (),
+                  cc = Cstring.toCharArrayOfLength (Termios.cc (), V.nccs),
+                  ispeed = Termios.ispeed (),
+                  ospeed = Termios.ospeed ()}))
 
-	    fun setattr (fd, a,
-			 {iflag, oflag, cflag, lflag, cc, ispeed, ospeed}) =
-	       SysCall.syscallRestart
-	       (fn () =>
-		(Termios.setiflag iflag
-		 ; Termios.setoflag oflag
-		 ; Termios.setcflag cflag
-		 ; Termios.setlflag lflag
-		 ; SysCall.simple (fn () => Termios.setospeed ospeed)
-		 ; SysCall.simple (fn () => Termios.setispeed ispeed)
-		 ; let val cs = Termios.cc () 
-		   in Util.naturalForeach
-		      (V.nccs, fn i => Cstring.update (cs, i, V.sub (cc, i)))
-		   end
-		 ; (Prim.setattr (fd, a), fn () => ())))
+            fun setattr (fd, a,
+                         {iflag, oflag, cflag, lflag, cc, ispeed, ospeed}) =
+               SysCall.syscallRestart
+               (fn () =>
+                (Termios.setiflag iflag
+                 ; Termios.setoflag oflag
+                 ; Termios.setcflag cflag
+                 ; Termios.setlflag lflag
+                 ; SysCall.simple (fn () => Termios.setospeed ospeed)
+                 ; SysCall.simple (fn () => Termios.setispeed ispeed)
+                 ; let val cs = Termios.cc () 
+                   in Util.naturalForeach
+                      (V.nccs, fn i => Cstring.update (cs, i, V.sub (cc, i)))
+                   end
+                 ; (Prim.setattr (fd, a), fn () => ())))
 
-	    fun sendbreak (fd, n) =
-	       SysCall.simpleRestart (fn () => Prim.sendbreak (fd, n))
+            fun sendbreak (fd, n) =
+               SysCall.simpleRestart (fn () => Prim.sendbreak (fd, n))
 
-	    fun drain fd = SysCall.simpleRestart (fn () => Prim.drain fd)
-	      
-	    fun flush (fd, n) =
-	       SysCall.simpleRestart (fn () => Prim.flush (fd, n))
-	      
-	    fun flow (fd, n) =
-	       SysCall.simpleRestart (fn () => Prim.flow (fd, n))
-	      
-	    fun getpgrp fd =
-	       SysCall.syscallRestart
-	       (fn () =>
-		let val pid = Prim.getpgrp fd
-		in (Pid.toInt pid, fn () => pid)
-		end)
-	      
-	    fun setpgrp (fd, pid) = 
-	       SysCall.simpleRestart (fn () => Prim.setpgrp (fd, pid))
-	 end
+            fun drain fd = SysCall.simpleRestart (fn () => Prim.drain fd)
+              
+            fun flush (fd, n) =
+               SysCall.simpleRestart (fn () => Prim.flush (fd, n))
+              
+            fun flow (fd, n) =
+               SysCall.simpleRestart (fn () => Prim.flow (fd, n))
+              
+            fun getpgrp fd =
+               SysCall.syscallRestart
+               (fn () =>
+                let val pid = Prim.getpgrp fd
+                in (Pid.toInt pid, fn () => pid)
+                end)
+              
+            fun setpgrp (fd, pid) = 
+               SysCall.simpleRestart (fn () => Prim.setpgrp (fd, pid))
+         end
    end

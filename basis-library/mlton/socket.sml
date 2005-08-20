@@ -24,7 +24,7 @@ structure Host =
       type t = {name: string}
 
       val get: NetHostDB.entry option -> t option =
-	Option.map (fn entry => {name = NetHostDB.name entry})
+        Option.map (fn entry => {name = NetHostDB.name entry})
 
       val getByAddress = get o NetHostDB.getByAddr o NetHostDB.wordToInAddr
       val getByName = get o NetHostDB.getByName
@@ -71,7 +71,7 @@ fun sockToIO (sock: activeSocket) =
 fun accept s =
    let
       val (sock: activeSocket, addr: INetSock.inet Socket.sock_addr) =
-	 Socket.accept s
+         Socket.accept s
       val (in_addr: NetHostDB.in_addr, port: int) = INetSock.fromAddr addr
       val (ins, out) = sockToIO sock
    in
@@ -83,7 +83,7 @@ fun connect (host, port) =
       val hp: NetHostDB.entry = valOf (NetHostDB.getByName host)
       val res: activeSocket = INetSock.TCP.socket ()
       val addr: INetSock.inet Socket.sock_addr =
-	 INetSock.toAddr (NetHostDB.addr hp, port)
+         INetSock.toAddr (NetHostDB.addr hp, port)
       val _ = Socket.connect (res, addr)
       val (ins, out) = sockToIO res
    in 

@@ -7,10 +7,10 @@ val i2s = Int.toString
 fun test trv =
    let
       val a =
-	 tabulate trv
-	 (3, 4, fn (r, c) =>
-	  (x := !x + 1
-	   ; concat["(", i2s r, ", ", i2s c, ", ", i2s(!x), ")"]))
+         tabulate trv
+         (3, 4, fn (r, c) =>
+          (x := !x + 1
+           ; concat["(", i2s r, ", ", i2s c, ", ", i2s(!x), ")"]))
       val _ = app trv (fn s => (print s; print "\n")) a
    in ()
    end

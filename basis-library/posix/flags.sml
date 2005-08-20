@@ -9,7 +9,7 @@
 functor BitFlags(val all: SysWord.word): BIT_FLAGS_EXTRA =
    struct
       type flags = SysWord.word
-	 
+         
       val all: flags = all
       val empty: flags = 0w0
 

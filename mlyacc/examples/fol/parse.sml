@@ -26,14 +26,14 @@ end  (* signature PARSE *)
 
 
 functor Parse (structure Absyn : ABSYN
-	       structure Interface : INTERFACE
-	       structure Parser : PARSER
-	          sharing type Parser.arg = Interface.arg
-	          sharing type Parser.pos = Interface.pos
-		  sharing type Parser.result = Absyn.absyn
-	       structure Tokens : Fol_TOKENS
-	          sharing type Tokens.token = Parser.Token.token
-		  sharing type Tokens.svalue = Parser.svalue
+               structure Interface : INTERFACE
+               structure Parser : PARSER
+                  sharing type Parser.arg = Interface.arg
+                  sharing type Parser.pos = Interface.pos
+                  sharing type Parser.result = Absyn.absyn
+               structure Tokens : Fol_TOKENS
+                  sharing type Tokens.token = Parser.Token.token
+                  sharing type Tokens.svalue = Parser.svalue
                ) : PARSE =
 struct
 
@@ -41,20 +41,20 @@ structure Absyn = Absyn
 
 fun parse (dummyToken,lookahead,reader : int -> string) =
     let val _ = Interface.init_line()
-	val empty = !Interface.line
-	val dummyEOF = Tokens.EOF(empty,empty)
-	val dummyTOKEN = dummyToken(empty,empty)
-	fun invoke lexer = 
-	   let val newLexer = Parser.Stream.cons(dummyTOKEN,lexer)
-	   in Parser.parse(lookahead,newLexer,Interface.error,
-				Interface.nothing)
-	   end
+        val empty = !Interface.line
+        val dummyEOF = Tokens.EOF(empty,empty)
+        val dummyTOKEN = dummyToken(empty,empty)
+        fun invoke lexer = 
+           let val newLexer = Parser.Stream.cons(dummyTOKEN,lexer)
+           in Parser.parse(lookahead,newLexer,Interface.error,
+                                Interface.nothing)
+           end
         fun loop lexer =
-	  let val (result,lexer) = invoke lexer
-	      val (nextToken,lexer) = Parser.Stream.get lexer
-	  in if Parser.sameToken(nextToken,dummyEOF) then result
-	     else loop lexer
-	  end
+          let val (result,lexer) = invoke lexer
+              val (nextToken,lexer) = Parser.Stream.get lexer
+          in if Parser.sameToken(nextToken,dummyEOF) then result
+             else loop lexer
+          end
      in loop (Parser.makeLexer reader)
     end
 

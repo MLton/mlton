@@ -27,28 +27,28 @@ structure Substring
       val slice = subslice
       val explode = toList
       local
-	 fun make f = f (op = : char * char -> bool)
+         fun make f = f (op = : char * char -> bool)
       in
-	val isPrefix = make isPrefix
-	val isSubstring = make isSubvector
-	val isSuffix = make isSuffix
-	val position = make position
+        val isPrefix = make isPrefix
+        val isSubstring = make isSubvector
+        val isSuffix = make isSuffix
+        val position = make position
       end
       val compare = collate Char.compare
 (*
       type cs = int
-	 
+         
       fun reader (T {str, start, size}): (char, cs) Reader.reader =
-	 fn i => if i >= size
-		    then NONE
-		 else SOME (String.sub (str, start +? i), i + 1)
-		    
+         fn i => if i >= size
+                    then NONE
+                 else SOME (String.sub (str, start +? i), i + 1)
+                    
       fun 'a scanSubstring
-	 (f: (char, cs) Reader.reader -> ('a, int) Reader.reader)
-	 (ss: substring): 'a option =
-	 case f (reader ss) 0 of
-	    NONE => NONE
-	  | SOME (a, _) => SOME a
+         (f: (char, cs) Reader.reader -> ('a, int) Reader.reader)
+         (ss: substring): 'a option =
+         case f (reader ss) 0 of
+            NONE => NONE
+          | SOME (a, _) => SOME a
 *)
    end
 

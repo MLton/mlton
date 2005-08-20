@@ -52,8 +52,8 @@ signature PRIM_TYCONS =
       val isRealX: tycon -> bool
       val isWordX: tycon -> bool
       val layoutApp:
-	 tycon * (Layout.t * {isChar: bool, needsParen: bool}) vector
-	 -> Layout.t * {isChar: bool, needsParen: bool}
+         tycon * (Layout.t * {isChar: bool, needsParen: bool}) vector
+         -> Layout.t * {isChar: bool, needsParen: bool}
       val list: tycon
       val pointer: tycon
       val prims: (tycon * Kind.t * AdmitsEquality.t) list

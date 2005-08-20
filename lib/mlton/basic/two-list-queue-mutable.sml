@@ -25,12 +25,12 @@ structure MutableQueue:
             [] => (case !back of
                       [] => NONE
                     | l => let
-			      val _ = back := []
-			      val l = rev l
+                              val _ = back := []
+                              val l = rev l
                            in
-			      case l of
-				 [] => raise Fail "MutableQueue.deque"
-			       | x :: l => (front := l; SOME x)
+                              case l of
+                                 [] => raise Fail "MutableQueue.deque"
+                               | x :: l => (front := l; SOME x)
                            end)
           | x :: l => (front := l; SOME x) 
    end

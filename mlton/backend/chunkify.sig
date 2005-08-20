@@ -23,7 +23,7 @@ signature CHUNKIFY =
        * All conts and handlers are assumed to be return points.
        *)
       val chunkify: Program.t -> {
-				  funcs: Func.t vector,
-				  labels: Label.t vector
-				  } vector
+                                  funcs: Func.t vector,
+                                  labels: Label.t vector
+                                  } vector
    end

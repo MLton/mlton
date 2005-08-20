@@ -233,7 +233,7 @@ Trivial bugs, typos, cosmetics
   - Typo in description of findi: s/appi/findi/.
   - Signature sometimes uses Vector.vector instead of plain vector.
   - The equation for mapi can be simplified to:
-	Vector.fromList (foldri (fn (i,a,l) => f(i,a)::l) [] slice)
+        Vector.fromList (foldri (fn (i,a,l) => f(i,a)::l) [] slice)
 
 * MONO_VECTOR_SLICE and ARRAY_SLICE and MONO_ARRAY_SLICE:
   - Typo in synopsis of subslice: s/opt/sz/.
@@ -285,10 +285,10 @@ Ambiguities / Unclear Details
 
 * The type specification of String.string and CharVector.vector
   is circular:
-	structure String :> STRING
-	       where type string = CharVector.vector
-	structure CharVector :> MONO_VECTOR
-	       where type vector = String.string
+        structure String :> STRING
+               where type string = CharVector.vector
+        structure CharVector :> MONO_VECTOR
+               where type vector = String.string
   Likewise for Substring.substring and CharVectorSlice.slice.
   A respective defining structure should be chosen.
 
@@ -344,12 +344,12 @@ conventions.
     consistency I propose:
     (1) changing the type of Substring.substring to
         string * int * int option -> substring
-	(for consistency with VectorSlice.slice),
+        (for consistency with VectorSlice.slice),
     (2) renaming Substring.slice to Substring.subsubstring,
         (for consistency with VectorSlice.subslice),
     (3) removing Substring.{app,foldl,foldr} (there are no similar
         functions in the STRING signature, and in both cases they
-	are available through CharVector/CharVectorSlice),
+        are available through CharVector/CharVectorSlice),
     (4) removing String.extract and Substring.extract (the same
         functionality is available through CharVector[Slice]).
   - I believe the deprecated Substring.all can be removed for good.
@@ -387,7 +387,7 @@ conventions.
     network functionality. More precisely, I propose
     (1) moving the structures Socket, INetSock, GenericSock, and
         the three Net*DB structures into a new wrapper structure
-	Net (renaming Net*DB to *DB),
+        Net (renaming Net*DB to *DB),
     (2) defining a corresponding signature NET,
     (3) renaming the signatures SOCKET, GENERIC_SOCK and INET_SOCK
         to NET_SOCKET, NET_GENERIC_SOCK and NET_INET_SOCK, resp.,
@@ -405,22 +405,22 @@ useful or because they would make the library more regular.
 * LIST and LIST_PAIR:
   - The IMHO single most convenient extension to the library would
     be indexed morphisms on lists, i.e. adding
-	val appi : (int * 'a -> unit) -> 'a list -> unit
-	val mapi : (int * 'a -> 'b) -> 'a list -> 'b list
-	val foldli : (int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
-	val foldri : (int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
-	val findi : (int * 'a -> bool) -> 'a list -> (int * 'a) option
+        val appi : (int * 'a -> unit) -> 'a list -> unit
+        val mapi : (int * 'a -> 'b) -> 'a list -> 'b list
+        val foldli : (int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
+        val foldri : (int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
+        val findi : (int * 'a -> bool) -> 'a list -> (int * 'a) option
   - Likewise for LIST_PAIR.
   - LIST_PAIR does not support partial mapping:
-	val mapPartial : ('a * 'b -> 'c option) ->
-				'a list * 'b list -> 'c list
+        val mapPartial : ('a * 'b -> 'c option) ->
+                                'a list * 'b list -> 'c list
 
 * LIST, VECTOR, ARRAY, etc.:
   - Another function on lists that would be very useful from my
     perspective is
-	val appr : ('a -> unit) -> 'a list -> unit
+        val appr : ('a -> unit) -> 'a list -> unit
     and its indexed sibling
-	val appri : (int * 'a -> unit) -> 'a list -> unit
+        val appri : (int * 'a -> unit) -> 'a list -> unit
     which traverse the list from right to left.
   - Likewise for all aggregate types.
   - All aggregates come with a fromList function. I often feel the
@@ -428,16 +428,16 @@ useful or because they would make the library more regular.
 
 * OPTION:
   - Often using isSome is a bit clumsy. I thus propose adding the dual
-	val isNone : 'a option -> bool
+        val isNone : 'a option -> bool
 
 * STRING and SUBSTRING:
   - For historical reasons we have {String,Substring}.size instead
     of *.length, which is inconsistent with all other aggregates and
     frequently lets me mix them up when I use them side by side.
     I propose adding aliases
-	String.maxLen
-	String.length
-	Substring.length
+        String.maxLen
+        String.length
+        Substring.length
 
 * WideChar and WideString:
   - There is no convenient way to convert between the standard and
@@ -453,12 +453,12 @@ useful or because they would make the library more regular.
     scan function and which don't. I believe it makes sense to have
     scan in every signature that has fromString.
   - There should be a function
-	val scanC : (Char.char, 'a) StringCvt.reader
+        val scanC : (Char.char, 'a) StringCvt.reader
                         -> (char, 'a) StringCvt.reader
     to scan strings as C characters. This would make Char.fromCString
     and particularly String.fromCString more modular.
   - How about a dual writer abstraction as with
-	type ('a,'b) writer = 'a * 'b -> 'b option
+        type ('a,'b) writer = 'a * 'b -> 'b option
     and supporting fmt functions for basic types? Such a thing might
     be useful for writing to streams or buffers.
 
@@ -480,14 +480,14 @@ useful or because they would make the library more regular.
     libraries.
 
 * There is no defining structure for references. I would like to see
-	signature REF
-	structure Ref : REF
+        signature REF
+        structure Ref : REF
   where REF contains:
-	datatype ref = datatype ref
-	val ! : 'a ref -> 'a
-	val := : 'a ref * 'a -> unit
-	val swap : 'a ref * 'a ref -> unit	(* or :=: ? *)
-	val map : ('a -> 'a) -> 'a ref -> 'a ref
+        datatype ref = datatype ref
+        val ! : 'a ref -> 'a
+        val := : 'a ref * 'a -> unit
+        val swap : 'a ref * 'a ref -> unit        (* or :=: ? *)
+        val map : ('a -> 'a) -> 'a ref -> 'a ref
   You might then consider removing ! and := from GENERAL.
 
 * Signature conventions:
@@ -498,7 +498,7 @@ useful or because they would make the library more regular.
     monomorphic types as well as polymorphic ones).
   - Every equality type should come with an explicit equality
     function
-	val eq : t * t -> bool
+        val eq : t * t -> bool
     to move away from the reliance on eqtypes.
   - There should be a uniform name for canonical constructor
     functions, e.g. "new" (or at least an alias).
@@ -755,7 +755,7 @@ cannot be made thread-safe, AFAWCS. This is a bit of a problem for us,
 since Alice is relying on concurrency. However, that does not seem to be
 an issue easily solved.
 
-	- Leif Kornstaedt, Andreas Rossberg
+        - Leif Kornstaedt, Andreas Rossberg
 
 
 The IO structure
@@ -930,7 +930,7 @@ The STREAM_IO signature
   - The signature of this function is inconsistent with all other
     input functions. It should rather have type
 
-	instream -> elem option * instream
+        instream -> elem option * instream
 
     which in fact appears to be the type assumed in the discussion
     example relating input1 to inputN.
@@ -1221,9 +1221,9 @@ The BinIO structure
   - Type sharing with BinPrimIO is not specified (unlike for
     TextIO), i.e. the following constraints are missing:
 
-	where type StreamIO.reader = BinPrimIO.reader
-	where type StreamIO.writer = BinPrimIO.writer
-	where type StreamIO.pos = BinPrimIO.pos
+        where type StreamIO.reader = BinPrimIO.reader
+        where type StreamIO.writer = BinPrimIO.writer
+        where type StreamIO.pos = BinPrimIO.pos
 
 ******************************************************************************
 ******************************************************************************

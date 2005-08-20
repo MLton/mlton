@@ -8,7 +8,7 @@
 signature OUTSTREAM =
    sig
       type t
-	 
+         
       val close: t -> unit
       val error: t
       val fluidLet: t * t * (unit -> 'a) -> 'a

@@ -8,29 +8,29 @@
 signature MLTON_PLATFORM =
    sig
       structure Arch:
-	 sig
+         sig
             datatype t = Alpha | AMD64 | ARM | HPPA | IA64 | m68k |
                          MIPS | PowerPC | S390 | Sparc | X86
 
-	    val fromString: string -> t option
-	    val host: t
-	    val toString: t -> string
-	 end
-	 
+            val fromString: string -> t option
+            val host: t
+            val toString: t -> string
+         end
+         
       structure OS:
-	 sig
-	    datatype t =
-	       Cygwin
-	     | Darwin
-	     | FreeBSD
-	     | Linux
-	     | MinGW
-	     | NetBSD
-	     | OpenBSD
-	     | Solaris
+         sig
+            datatype t =
+               Cygwin
+             | Darwin
+             | FreeBSD
+             | Linux
+             | MinGW
+             | NetBSD
+             | OpenBSD
+             | Solaris
 
-	    val fromString: string -> t option
-	    val host: t
-	    val toString: t -> string
-	 end
+            val fromString: string -> t option
+            val host: t
+            val toString: t -> string
+         end
    end

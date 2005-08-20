@@ -26,15 +26,15 @@ signature X86_LIVE_TRANSFERS =
     type t
 
     val computeLiveTransfers : {chunk : x86.Chunk.t,
-				transferRegs : x86.Entry.t -> x86.Register.t list,
-				transferFltRegs : x86.Entry.t -> Int.t, 
-				liveInfo : x86Liveness.LiveInfo.t,
-				jumpInfo : x86JumpInfo.t,
-				loopInfo : x86LoopInfo.t} -> t
+                                transferRegs : x86.Entry.t -> x86.Register.t list,
+                                transferFltRegs : x86.Entry.t -> Int.t, 
+                                liveInfo : x86Liveness.LiveInfo.t,
+                                jumpInfo : x86JumpInfo.t,
+                                loopInfo : x86LoopInfo.t} -> t
     val computeLiveTransfers_totals : unit -> unit
 
     val getLiveTransfers : t * x86.Label.t -> 
                            ((x86.MemLoc.t * x86.Register.t * bool) list *
-			    (x86.MemLoc.t * bool) list)
+                            (x86.MemLoc.t * bool) list)
     val setLiveTransfersEmpty : t * x86.Label.t -> unit 
   end

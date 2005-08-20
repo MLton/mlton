@@ -16,14 +16,14 @@ functor TextConvert (structure Text: TEXT):
    struct
       structure Char = Text.Char
       structure String =
-	 struct
-	    structure Char = Char
-	    open Text.String
-	 end
+         struct
+            structure Char = Char
+            open Text.String
+         end
       structure Substring =
-	 struct
-	    structure String = String
-	    open Text.Substring
-	    val all = full
-	 end
+         struct
+            structure String = String
+            open Text.Substring
+            val all = full
+         end
    end

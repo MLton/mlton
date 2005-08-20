@@ -6,9 +6,9 @@
  *)
 
 functor MakeMonoEnv(S: sig
-			   structure Env: ENV
-			   structure Range: T
-			end): MONO_ENV =
+                           structure Env: ENV
+                           structure Range: T
+                        end): MONO_ENV =
 struct
 
 open S
@@ -28,7 +28,7 @@ end
 
 functor MonoEnv(S: MONO_ENV_STRUCTS): MONO_ENV =
    MakeMonoEnv(structure Env = Env(S)
-	       structure Range = S.Range)
+               structure Range = S.Range)
 *)
 
 functor MonoEnv(S: MONO_ENV_STRUCTS): MONO_ENV =
@@ -50,5 +50,5 @@ BasicEnvToEnv
     case List.peek(l, equalTo d) of
        NONE => NONE
      | SOME (_, r) => SOME r
-	  )
+          )
 

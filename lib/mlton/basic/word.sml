@@ -16,21 +16,21 @@ structure Word: WORD32 =
       val equals: t * t -> bool = op =
  
       fun fromWord8s (f: int -> Word8.t): t =
-	 let
-	    fun w (i, shift) =
-	       Pervasive.Word.<< (Word8.toWord (f i), shift)
-	 in orb (orb (w (0, 0w0), w (1, 0w8)),
-		 orb (w (2, 0w16), w (3, 0w24)))
-	 end
+         let
+            fun w (i, shift) =
+               Pervasive.Word.<< (Word8.toWord (f i), shift)
+         in orb (orb (w (0, 0w0), w (1, 0w8)),
+                 orb (w (2, 0w16), w (3, 0w24)))
+         end
 
       local
-	 val wordSize = fromInt wordSize
+         val wordSize = fromInt wordSize
       in
-	 fun rotateLeft (w: t, n: t) =
-	    let val l = n mod wordSize
-	       val r = wordSize - l
-	    in orb (<< (w, l), >> (w, r))
-	    end
+         fun rotateLeft (w: t, n: t) =
+            let val l = n mod wordSize
+               val r = wordSize - l
+            in orb (<< (w, l), >> (w, r))
+            end
       end
 
       val fromWord = fn x => x
@@ -45,47 +45,47 @@ structure Word: WORD32 =
       val toWord8 = Word8.fromWord
 
       fun log2 (w: t): t =
-	 if w = 0w0
-	    then Error.bug "Word.log2: 0"
-	 else
-	    let
-	       fun loop (n, s, ac): word =
-		  if n = 0w1
-		     then ac
-		  else
-		     let
-			val (n, ac) =
-			   if n >= << (0w1, s)
-			      then (>> (n, s), ac + s)
-			   else (n, ac)
-		     in
-			loop (n, >> (s, 0w1), ac)
-		     end
-	    in
-	       loop (w, 0w16, 0w0)
-	    end
+         if w = 0w0
+            then Error.bug "Word.log2: 0"
+         else
+            let
+               fun loop (n, s, ac): word =
+                  if n = 0w1
+                     then ac
+                  else
+                     let
+                        val (n, ac) =
+                           if n >= << (0w1, s)
+                              then (>> (n, s), ac + s)
+                           else (n, ac)
+                     in
+                        loop (n, >> (s, 0w1), ac)
+                     end
+            in
+               loop (w, 0w16, 0w0)
+            end
 
       fun roundDownToPowerOfTwo (w: t) = << (0w1, log2 w)
 
       fun roundUpToPowerOfTwo w =
-	 let
-	    val w' = roundDownToPowerOfTwo w
-	 in
-	    if w = w'
-	       then w
-	    else w' * 0w2
-	 end
+         let
+            val w' = roundDownToPowerOfTwo w
+         in
+            if w = w'
+               then w
+            else w' * 0w2
+         end
 
       structure M = MaxPow2ThatDivides (open Word
-					type t = word
-					val equals = op =
-					val one: t = 0w1
-					val zero: t = 0w0)
+                                        type t = word
+                                        val equals = op =
+                                        val one: t = 0w1
+                                        val zero: t = 0w0)
       open M
 
       fun addCheck (w, w') =
-	 if w <= ~ 0w1 - w'
-	    then w + w'
-	 else raise Overflow
+         if w <= ~ 0w1 - w'
+            then w + w'
+         else raise Overflow
    end
 

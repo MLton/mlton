@@ -24,6 +24,6 @@ val equals =
     | _ => false
 
 val equals = Trace.trace2 ("TyconKind.equals", layout, layout, Bool.layout) equals
-	 
+         
 end
 

@@ -75,9 +75,9 @@ signature SLICE =
        * (int * (int -> 'b elt) -> 'c  should be a tabulate function.
        *)
       val createi: (int * (int -> 'b elt) -> 'c) ->
-	           (int * 'a elt -> 'b elt) -> 'a slice -> 'c
+                   (int * 'a elt -> 'b elt) -> 'a slice -> 'c
       val create: (int * (int -> 'b elt) -> 'c) ->
-	          ('a elt -> 'b elt) -> 'a slice -> 'c
+                  ('a elt -> 'b elt) -> 'a slice -> 'c
       val toList: 'a slice -> 'a elt list
       val sequence: 'a slice -> 'a sequence
    end

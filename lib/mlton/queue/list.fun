@@ -23,7 +23,7 @@ fun destruct(T l) =
 fun empty () = T(L.empty())
    
 fun isEmpty(T l) = L.isEmpty l
-	 
+         
 fun enque(T l, x) = T(L.append(l, L.single x))
    
 end

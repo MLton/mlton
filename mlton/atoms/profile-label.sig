@@ -12,7 +12,7 @@ signature PROFILE_LABEL_STRUCTS =
 signature PROFILE_LABEL =
    sig
       type t
-	
+        
       val clear: t -> unit
       val equals: t * t -> bool
       val layout: t -> Layout.t

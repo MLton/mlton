@@ -10,14 +10,14 @@ type int = Int.t
 signature PROCESS =
    sig
       structure Command:
-	 sig
-	    type t = In.t * Out.t -> unit
-	 end
+         sig
+            type t = In.t * Out.t -> unit
+         end
 
       structure Status:
-	 sig
-	    type t
-	 end
+         sig
+            type t
+         end
 
       (* Execute a program in a subprocess and wait for it to finish.
        * call (file, args) (i, o) searches PATH for an executable named file,
@@ -90,17 +90,17 @@ signature PROCESS =
       val watch: (unit -> unit) -> unit
 
       structure State:
-	 sig
-	    datatype t = DiskSleep | Running | Sleeping | Traced | Zombie
+         sig
+            datatype t = DiskSleep | Running | Sleeping | Traced | Zombie
 
-	    val toString: t -> string
-	 end
+            val toString: t -> string
+         end
 
       val ps: unit -> {name: string,
-		       pgrp: Pid.t,
-		       pid: Pid.t,
-		       ppid: Pid.t,
-		       state: State.t} list
+                       pgrp: Pid.t,
+                       pid: Pid.t,
+                       ppid: Pid.t,
+                       state: State.t} list
 
    end
 

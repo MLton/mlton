@@ -33,10 +33,10 @@ fun toReal (T i) =
 local
    fun make ticksPer =
       let
-	 val d = LargeInt.quot (ticksPerSecond, ticksPer)
+         val d = LargeInt.quot (ticksPerSecond, ticksPer)
       in
-	 (fn i => T (LargeInt.* (i, d)),
-	  fn T i => LargeInt.quot (i, d))
+         (fn i => T (LargeInt.* (i, d)),
+          fn T i => LargeInt.quot (i, d))
       end
 in
    val (fromSeconds, toSeconds) = make 1
@@ -69,20 +69,20 @@ end
 local
    fun getNow (): time =
       (if ~1 = Prim.gettimeofday ()
-	  then raise Fail "Time.now"
+          then raise Fail "Time.now"
        else ()
        ; timeAdd(fromSeconds (LargeInt.fromInt (Prim.sec ())),
-		 fromMicroseconds (LargeInt.fromInt (Prim.usec ()))))
+                 fromMicroseconds (LargeInt.fromInt (Prim.usec ()))))
    val prev = ref (getNow ())
 in
    fun now (): time =
       let
-	 val old = !prev
-	 val t = getNow ()
+         val old = !prev
+         val t = getNow ()
       in
-	 case compare (old, t) of
-	    GREATER => old
-	  | _ => (prev := t; t)
+         case compare (old, t) of
+            GREATER => old
+          | _ => (prev := t; t)
       end
 end
 
@@ -100,60 +100,60 @@ fun scan getc src =
    let
       val charToDigit = StringCvt.charToDigit StringCvt.DEC
       fun pow10 0 = 1
-	| pow10 n = 10 * pow10 (n-1)
+        | pow10 n = 10 * pow10 (n-1)
       fun mkTime sign intv fracv decs =
-	 let
-	    val nsec = (pow10 (10-decs) * fracv + 5) div 10
-	    val t =
-	       LargeInt.+ (LargeInt.* (Int.toLarge intv, ticksPerSecond),
-			   Int.toLarge nsec)
-	    val t = if sign then t else LargeInt.~ t 
-	 in
-	    T t
-	 end
+         let
+            val nsec = (pow10 (10-decs) * fracv + 5) div 10
+            val t =
+               LargeInt.+ (LargeInt.* (Int.toLarge intv, ticksPerSecond),
+                           Int.toLarge nsec)
+            val t = if sign then t else LargeInt.~ t 
+         in
+            T t
+         end
       fun frac' sign intv fracv decs src =
-	 if Int.>= (decs, 7)
-	    then SOME (mkTime sign intv fracv decs, 
-		       StringCvt.dropl Char.isDigit getc src)
-	 else case getc src of
-	    NONE           => SOME (mkTime sign intv fracv decs, src)
-	  | SOME (c, rest) =>
- 	       (case charToDigit c of
- 		   NONE   => SOME (mkTime sign intv fracv decs, src)
- 		 | SOME d => frac' sign intv (10 * fracv + d) (decs + 1) rest)
+         if Int.>= (decs, 7)
+            then SOME (mkTime sign intv fracv decs, 
+                       StringCvt.dropl Char.isDigit getc src)
+         else case getc src of
+            NONE           => SOME (mkTime sign intv fracv decs, src)
+          | SOME (c, rest) =>
+                (case charToDigit c of
+                    NONE   => SOME (mkTime sign intv fracv decs, src)
+                  | SOME d => frac' sign intv (10 * fracv + d) (decs + 1) rest)
       fun frac sign intv src =
-	 case getc src of
-	    NONE           => NONE
-	  | SOME (c, rest) =>
-	       (case charToDigit c of
-		   NONE   => NONE
-		 | SOME d => frac' sign intv d 1 rest)
+         case getc src of
+            NONE           => NONE
+          | SOME (c, rest) =>
+               (case charToDigit c of
+                   NONE   => NONE
+                 | SOME d => frac' sign intv d 1 rest)
       fun int' sign intv src =
-	 case getc src of
-	    NONE              => SOME (mkTime sign intv 0 7, src)
-	  | SOME (#".", rest) => frac sign intv rest
-	  | SOME (c, rest)    =>
-	       (case charToDigit c of
-		   NONE   => SOME (mkTime sign intv 0 7, src)
-		 | SOME d => int' sign (10 * intv + d) rest)
+         case getc src of
+            NONE              => SOME (mkTime sign intv 0 7, src)
+          | SOME (#".", rest) => frac sign intv rest
+          | SOME (c, rest)    =>
+               (case charToDigit c of
+                   NONE   => SOME (mkTime sign intv 0 7, src)
+                 | SOME d => int' sign (10 * intv + d) rest)
       fun int sign src =
-	 case getc src of
-	    NONE           => NONE
-	  | SOME (c, rest) => 
-	       (case charToDigit c of
-		   NONE   => NONE
-		 | SOME d => int' sign d rest)
+         case getc src of
+            NONE           => NONE
+          | SOME (c, rest) => 
+               (case charToDigit c of
+                   NONE   => NONE
+                 | SOME d => int' sign d rest)
    in 
       case getc (StringCvt.skipWS getc src) of
-	 NONE              => NONE
+         NONE              => NONE
        | SOME (#"+", rest) => int true rest
        | SOME (#"~", rest) => int false rest
        | SOME (#"-", rest) => int false rest
        | SOME (#".", rest) => frac true 0 rest
        | SOME (c, rest)    => 
-	    (case charToDigit c of
-		NONE => NONE
-	      | SOME d => int' true d rest)
+            (case charToDigit c of
+                NONE => NONE
+              | SOME d => int' true d rest)
    end
 handle Overflow => raise Time
 

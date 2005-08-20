@@ -17,8 +17,8 @@ val (op :=) = op :=
 fun equals (r: 'a t, r') = r = r'
    
 fun swap (r, r') = let val v = !r
-		  in r := !r'; r' := v
-		  end
+                  in r := !r'; r' := v
+                  end
 
 fun getAndSet sel = (! o sel, fn (x, v) => sel x := v)
 
@@ -33,9 +33,9 @@ fun ('a, 'b) fluidLet (r: 'a t, x: 'a, th: unit -> 'b): 'b =
 fun getSet layout = 
    let val r = ref NONE
       fun get () =
-	 case !r of
-	    NONE => Error.bug "Ref.getSet.get: not available"
-	  | SOME v => v
+         case !r of
+            NONE => Error.bug "Ref.getSet.get: not available"
+          | SOME v => v
       fun set v = r := SOME v
       fun clear () = r := NONE
       val layout = fn () => layout (get ())
@@ -54,12 +54,12 @@ fun layout layoutX r = layoutX (!r)
 fun memoize (r: 'a option ref, f: unit -> 'a): 'a =
    case !r of
       NONE =>
-	 let
-	    val a = f ()
-	    val () = r := SOME a
-	 in
-	    a
-	 end
+         let
+            val a = f ()
+            val () = r := SOME a
+         in
+            a
+         end
     | SOME a => a
    
 end

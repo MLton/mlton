@@ -12,16 +12,16 @@ structure String0 =
       type char = elem
       type string = vector
       structure Substring0 =
-	 struct
-	    open CharVectorSlice
-	    type char = elem
-	    type string = vector
-	    type substring = slice
-	 end
+         struct
+            open CharVectorSlice
+            type char = elem
+            type string = vector
+            type substring = slice
+         end
       val maxSize = maxLen
       val size = length
       fun extract (s, start, len) = 
-	 CharVectorSlice.vector (CharVectorSlice.slice (s, start, len))
+         CharVectorSlice.vector (CharVectorSlice.slice (s, start, len))
       fun substring (s, start, len) = extract (s, start, SOME len)
       val op ^ = append
       val new = vector

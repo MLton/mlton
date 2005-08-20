@@ -20,7 +20,7 @@ signature PROFILE =
       include PROFILE_STRUCTS
       
       val profile:
-	 Rssa.Program.t
-	 -> Rssa.Program.t * ({frames: Rssa.Label.t vector}
-			      -> Machine.ProfileInfo.t option)
+         Rssa.Program.t
+         -> Rssa.Program.t * ({frames: Rssa.Label.t vector}
+                              -> Machine.ProfileInfo.t option)
    end

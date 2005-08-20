@@ -383,7 +383,7 @@ signature VAR =
 signature EXP =
    sig
       structure Var: VAR
-	 
+         
       datatype t =
          Var of Var.t
        | Lam of Var.t * t
@@ -393,7 +393,7 @@ signature EXP =
 signature VAL =
    sig
       structure Var: VAR
-	 
+         
       type t
 
       val var: Var.t -> t
@@ -413,7 +413,7 @@ signature INTERP =
 signature ENV =
    sig
       structure Var: VAR
-	 
+         
       type 'a t
 
       val lookup: 'a t * Var.t -> 'a

@@ -27,7 +27,7 @@ fun toVector r =
    case r of
       Tuple v => Vector.mapi (v, fn (i, x) => (Field.Int i, x))
     | Record r => r
-	 
+         
 fun detupleOpt (r: 'a t): 'a vector option =
    case r of
       Tuple t => SOME t
@@ -39,15 +39,15 @@ fun sort v =
 fun fromVector v =
    let
       fun isTuple v : bool =
-	 Vector.foralli
-	 (v, fn (i, (f, _)) =>
-	  case f of
-	     Field.Int i' => Int.equals (i, i')
-	   | _ => false)
+         Vector.foralli
+         (v, fn (i, (f, _)) =>
+          case f of
+             Field.Int i' => Int.equals (i, i')
+           | _ => false)
       val v = if isSorted then sort v else v
    in
       if isTuple v
-	 then Tuple (Vector.map (v, #2))
+         then Tuple (Vector.map (v, #2))
       else Record v
    end
 
@@ -55,27 +55,27 @@ fun equals (r, r', eq) =
    case (r, r') of
       (Tuple v, Tuple v') => Vector.equals (v, v', eq)
     | (Record fs, Record fs') =>
-	 Vector.equals
-	 (fs, sort fs', fn ((f, v), (f', v')) =>
-	  Field.equals (f, f') andalso eq (v, v'))
+         Vector.equals
+         (fs, sort fs', fn ((f, v), (f', v')) =>
+          Field.equals (f, f') andalso eq (v, v'))
     | _ => false
 
 val peek: 'a t * Field.t -> 'a option =
    fn (r, f) =>
    case r of
       Record r =>
-	 (case Vector.peek (r, fn (f', _) => Field.equals (f, f')) of
-	     NONE => NONE
-	   | SOME (_, x) => SOME x)
+         (case Vector.peek (r, fn (f', _) => Field.equals (f, f')) of
+             NONE => NONE
+           | SOME (_, x) => SOME x)
     | Tuple t =>
-	 if Vector.isEmpty t
-	    then NONE
-	 else (case f of
-		  Field.Int i =>
-		     if 0 <= i andalso i < Vector.length t
-			then SOME (Vector.sub (t, i))
-		     else NONE
-		| Field.Symbol _ => NONE)
+         if Vector.isEmpty t
+            then NONE
+         else (case f of
+                  Field.Int i =>
+                     if 0 <= i andalso i < Vector.length t
+                        then SOME (Vector.sub (t, i))
+                     else NONE
+                | Field.Symbol _ => NONE)
 
 fun range r =
    case r of
@@ -95,7 +95,7 @@ fun foldi (r, b, f) =
     | Record r => Vector.fold (r, b, fn ((i, x), b) => f (i, x, b))
 
 fun fold (r, b, f) = foldi (r, b, fn (_, a, b) => f (a, b))
-	  
+          
 fun map (r: 'a t, f: 'a -> 'b): 'b t =
    case r of
       Tuple xs => Tuple (Vector.map (xs, f))
@@ -109,37 +109,37 @@ fun foreach (r: 'a t, f: 'a -> unit): unit =
 fun change (r: 'a t, f: 'a vector -> 'b vector * 'c): 'b t * 'c =
    case r of
       Tuple xs => let val (ys, c) = f xs
-		  in (Tuple ys, c)
-		  end
+                  in (Tuple ys, c)
+                  end
     | Record r => let val (fs, xs) = Vector.unzip r
-		      val (ys, c) = f xs
-		  in (Record (Vector.zip (fs, ys)), c)
-		  end
+                      val (ys, c) = f xs
+                  in (Record (Vector.zip (fs, ys)), c)
+                  end
 
 fun zip z = fromVector (Vector.zip z)
 
 fun unzip r =
    case r of
       Tuple v => (Vector.tabulate (Vector.length v, Field.Int),
-		  v)
+                  v)
     | Record r => Vector.unzip r
 
 fun layout {record, layoutTuple, separator, extra, layoutElt} =
    case (record, extra) of
       (Tuple xs, "") => layoutTuple xs
     | _ =>
-	 let
-	    val r = toVector record
-	    open Layout
-	 in seq [str "{",
-		 mayAlign (separateRight (Vector.toListMap
-					  (r, fn (f, x) =>
-					   seq [Field.layout f,
-						str separator,
-						layoutElt x]),
-					  ",")),
-		 str extra,
-		 str "}"]
-	 end
+         let
+            val r = toVector record
+            open Layout
+         in seq [str "{",
+                 mayAlign (separateRight (Vector.toListMap
+                                          (r, fn (f, x) =>
+                                           seq [Field.layout f,
+                                                str separator,
+                                                layoutElt x]),
+                                          ",")),
+                 str extra,
+                 str "}"]
+         end
 
 end

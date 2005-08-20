@@ -10,6 +10,6 @@ signature HET_CONTAINER =
       type t
 
       val new: unit -> {make: 'a -> t,
-			pred: t -> bool,
-			peek: t -> 'a option}
+                        pred: t -> bool,
+                        peek: t -> 'a option}
    end

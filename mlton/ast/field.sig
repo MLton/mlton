@@ -18,7 +18,7 @@ signature FIELD =
       include FIELD_STRUCTS
       
       datatype t =
-	 Int of int
+         Int of int
        | Symbol of Symbol.t
 
       val <= : t * t -> bool (* ordering used for sorting *)

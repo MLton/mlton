@@ -16,7 +16,7 @@ signature SOURCE =
        *)
       val getPos: t * int -> SourcePos.t
       val lineDirective:
-	 t * File.t option * {lineNum: int, lineStart: int} -> unit
+         t * File.t option * {lineNum: int, lineStart: int} -> unit
       val lineStart: t -> SourcePos.t
       val new: File.t -> t
       val newline: t * int -> unit

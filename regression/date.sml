@@ -8,7 +8,7 @@ fun check' f = (if f () then "OK" else "WRONG") handle _ => "EXN";
 fun range (from, to) p = 
     let open Int 
     in
-	(from > to) orelse (p from) andalso (range (from+1, to) p)
+        (from > to) orelse (p from) andalso (range (from+1, to) p)
     end;
 
 fun checkrange bounds = check o range bounds;
@@ -30,30 +30,30 @@ val _ = print "\nFile date.sml: Testing structure Date...\n"
 local
     open Time Date 
     fun later h = 
-	toString(fromTimeLocal(now() + fromReal (3600.0 * real h))) ^ "\n";
+        toString(fromTimeLocal(now() + fromReal (3600.0 * real h))) ^ "\n";
     fun nowdate () = Date.fromTimeLocal(now());
     fun mkdate(y,mo,d,h,mi,s) =
-	date {year=y, month=mo, day=d, hour=h, minute=mi, second=s,
-	      offset = NONE}
+        date {year=y, month=mo, day=d, hour=h, minute=mi, second=s,
+              offset = NONE}
     fun cmp(dt1, dt2) = compare(mkdate dt1, mkdate dt2)
 
     fun fromto dt = 
-	toString (valOf (fromString (toString dt))) = toString dt
+        toString (valOf (fromString (toString dt))) = toString dt
 
     fun tofrom s =
-	toString (valOf (fromString s)) = s
+        toString (valOf (fromString s)) = s
 
     val y2k = 
-	date {year=2000, month=Jan, day=1, hour=0, minute=0, second=0,
-	      offset = SOME Time.zeroTime}
+        date {year=2000, month=Jan, day=1, hour=0, minute=0, second=0,
+              offset = SOME Time.zeroTime}
 
     val y2kE1 = 
-	date {year=2000, month=Jan, day=1, hour=0, minute=0, second=0,
-	      offset = SOME (Time.fromSeconds 82800) }
+        date {year=2000, month=Jan, day=1, hour=0, minute=0, second=0,
+              offset = SOME (Time.fromSeconds 82800) }
 
     val y2kW1 = 
-	date {year=2000, month=Jan, day=1, hour=0, minute=0, second=0,
-	      offset = SOME (Time.fromSeconds 3600) }
+        date {year=2000, month=Jan, day=1, hour=0, minute=0, second=0,
+              offset = SOME (Time.fromSeconds 3600) }
     
 val _ = 
     ((*print "This is (local time) now:        "; print (later 0);
@@ -73,13 +73,13 @@ val _ =
      print (toString y2k ^ "\n");   
      print "The UTC millenium minus 5 sec:   "; 
      print (toString (date {year=2000, month=Jan, day=1, hour=0, 
-			    minute=0, second= ~5, offset = SOME Time.zeroTime})
-	    ^ "\n")
+                            minute=0, second= ~5, offset = SOME Time.zeroTime})
+            ^ "\n")
 (*     print "The UTC millenium (local time):  "; 
      print (toString (fromTimeLocal (toTime y2k)) ^ "\n");   
      print "The local millenium (UTC time):  "; 
      print (toString (fromTimeUniv (toTime (mkdate(2000, Jan, 1, 0, 0, 0))))
-	    ^ "\n");   
+            ^ "\n");   
      print "The UTC+01 millenium (UTC):      "; 
      print (toString (fromTimeUniv (toTime y2kE1)) ^ "\n");
      print "The UTC-01 millenium (UTC):      "; 
@@ -113,63 +113,63 @@ tst' "test1" (fn _ =>
 
 val test2 = 
     tst' "test2" (fn _ => 
-	   fmt "%A" (mkdate(1995,May,22,4,0,1)) = "Monday");
+           fmt "%A" (mkdate(1995,May,22,4,0,1)) = "Monday");
 
 val test3 = 
     tst' "test3" (fn _ => 
-	   List.all fromto 
-	   [mkdate(1995,Aug,22,4,0,1),
-	    mkdate(1996,Apr, 5, 0, 7, 21),
-	    mkdate(1996,Mar, 5, 6, 13, 58)]);
+           List.all fromto 
+           [mkdate(1995,Aug,22,4,0,1),
+            mkdate(1996,Apr, 5, 0, 7, 21),
+            mkdate(1996,Mar, 5, 6, 13, 58)]);
 
 val test4 = 
     tst' "test4" (fn _ => 
-	   List.all tofrom 
-	   ["Fri Jul 05 14:25:16 1996",
-	   "Mon Feb 05 04:25:16 1996",
-	   "Sat Jan 06 04:25:16 1996"])
+           List.all tofrom 
+           ["Fri Jul 05 14:25:16 1996",
+           "Mon Feb 05 04:25:16 1996",
+           "Sat Jan 06 04:25:16 1996"])
 
 val test5 = 
     tst' "test5" (fn _ => 
-	   weekDay(mkdate(1962, Jun, 25, 1, 2, 3)) = Mon
-	   andalso weekDay(mkdate(1998, Mar, 6, 1, 2, 3)) = Fri
-	   andalso weekDay(mkdate(1998, Apr, 6, 1, 2, 3)) = Mon
-	   andalso weekDay(mkdate(1900, Feb, 28, 1, 2, 3)) = Wed
-	   andalso weekDay(mkdate(1900, Mar, 1, 1, 2, 3)) = Thu
-	   andalso weekDay(mkdate(1850, Feb, 28, 1, 2, 3)) = Thu
-	   andalso weekDay(mkdate(1850, Mar, 1, 1, 2, 3)) = Fri
-	   andalso weekDay(mkdate(1860, Feb, 28, 1, 2, 3)) = Tue
-	   andalso weekDay(mkdate(1860, Feb, 29, 1, 2, 3)) = Wed
-	   andalso weekDay(mkdate(1860, Mar, 1, 1, 2, 3)) = Thu
-	   andalso weekDay(mkdate(2000, Feb, 28, 1, 2, 3)) = Mon
-	   andalso weekDay(mkdate(2000, Feb, 29, 1, 2, 3)) = Tue
-	   andalso weekDay(mkdate(2000, Mar, 1, 1, 2, 3)) = Wed)
+           weekDay(mkdate(1962, Jun, 25, 1, 2, 3)) = Mon
+           andalso weekDay(mkdate(1998, Mar, 6, 1, 2, 3)) = Fri
+           andalso weekDay(mkdate(1998, Apr, 6, 1, 2, 3)) = Mon
+           andalso weekDay(mkdate(1900, Feb, 28, 1, 2, 3)) = Wed
+           andalso weekDay(mkdate(1900, Mar, 1, 1, 2, 3)) = Thu
+           andalso weekDay(mkdate(1850, Feb, 28, 1, 2, 3)) = Thu
+           andalso weekDay(mkdate(1850, Mar, 1, 1, 2, 3)) = Fri
+           andalso weekDay(mkdate(1860, Feb, 28, 1, 2, 3)) = Tue
+           andalso weekDay(mkdate(1860, Feb, 29, 1, 2, 3)) = Wed
+           andalso weekDay(mkdate(1860, Mar, 1, 1, 2, 3)) = Thu
+           andalso weekDay(mkdate(2000, Feb, 28, 1, 2, 3)) = Mon
+           andalso weekDay(mkdate(2000, Feb, 29, 1, 2, 3)) = Tue
+           andalso weekDay(mkdate(2000, Mar, 1, 1, 2, 3)) = Wed)
 
 val test6 = 
     tst' "test6" (fn _ => 
-	   yearDay(mkdate(1962, Jan, 1, 1, 2, 3)) = 0
-	   andalso yearDay(mkdate(1998, Mar, 6, 1, 2, 3)) = 64
-	   andalso yearDay(mkdate(1900, Feb, 28, 1, 2, 3)) = 58
-	   andalso yearDay(mkdate(1900, Mar, 1, 1, 2, 3)) = 59
-	   andalso yearDay(mkdate(1900, Dec, 31, 1, 2, 3)) = 364
-	   andalso yearDay(mkdate(1850, Feb, 28, 1, 2, 3)) = 58
-	   andalso yearDay(mkdate(1850, Mar, 1, 1, 2, 3)) = 59
-	   andalso yearDay(mkdate(1850, Dec, 31, 1, 2, 3)) = 364
-	   andalso yearDay(mkdate(1860, Feb, 28, 1, 2, 3)) = 58
-	   andalso yearDay(mkdate(1860, Feb, 29, 1, 2, 3)) = 59
-	   andalso yearDay(mkdate(1860, Mar, 1, 1, 2, 3)) = 60
-	   andalso yearDay(mkdate(1860, Dec, 31, 1, 2, 3)) = 365
-	   andalso yearDay(mkdate(2000, Feb, 28, 1, 2, 3)) = 58
-	   andalso yearDay(mkdate(2000, Feb, 29, 1, 2, 3)) = 59
-	   andalso yearDay(mkdate(2000, Mar, 1, 1, 2, 3)) = 60
-	   andalso yearDay(mkdate(2000, Dec, 31, 1, 2, 3)) = 365
-	   andalso yearDay(mkdate(1959, Feb, 28, 1, 2, 3)) = 58
-	   andalso yearDay(mkdate(1959, Mar, 1, 1, 2, 3)) = 59
-	   andalso yearDay(mkdate(1959, Dec, 31, 1, 2, 3)) = 364
-	   andalso yearDay(mkdate(1960, Feb, 28, 1, 2, 3)) = 58
-	   andalso yearDay(mkdate(1960, Feb, 29, 1, 2, 3)) = 59
-	   andalso yearDay(mkdate(1960, Mar, 1, 1, 2, 3)) = 60
-	   andalso yearDay(mkdate(1960, Dec, 31, 1, 2, 3)) = 365)
+           yearDay(mkdate(1962, Jan, 1, 1, 2, 3)) = 0
+           andalso yearDay(mkdate(1998, Mar, 6, 1, 2, 3)) = 64
+           andalso yearDay(mkdate(1900, Feb, 28, 1, 2, 3)) = 58
+           andalso yearDay(mkdate(1900, Mar, 1, 1, 2, 3)) = 59
+           andalso yearDay(mkdate(1900, Dec, 31, 1, 2, 3)) = 364
+           andalso yearDay(mkdate(1850, Feb, 28, 1, 2, 3)) = 58
+           andalso yearDay(mkdate(1850, Mar, 1, 1, 2, 3)) = 59
+           andalso yearDay(mkdate(1850, Dec, 31, 1, 2, 3)) = 364
+           andalso yearDay(mkdate(1860, Feb, 28, 1, 2, 3)) = 58
+           andalso yearDay(mkdate(1860, Feb, 29, 1, 2, 3)) = 59
+           andalso yearDay(mkdate(1860, Mar, 1, 1, 2, 3)) = 60
+           andalso yearDay(mkdate(1860, Dec, 31, 1, 2, 3)) = 365
+           andalso yearDay(mkdate(2000, Feb, 28, 1, 2, 3)) = 58
+           andalso yearDay(mkdate(2000, Feb, 29, 1, 2, 3)) = 59
+           andalso yearDay(mkdate(2000, Mar, 1, 1, 2, 3)) = 60
+           andalso yearDay(mkdate(2000, Dec, 31, 1, 2, 3)) = 365
+           andalso yearDay(mkdate(1959, Feb, 28, 1, 2, 3)) = 58
+           andalso yearDay(mkdate(1959, Mar, 1, 1, 2, 3)) = 59
+           andalso yearDay(mkdate(1959, Dec, 31, 1, 2, 3)) = 364
+           andalso yearDay(mkdate(1960, Feb, 28, 1, 2, 3)) = 58
+           andalso yearDay(mkdate(1960, Feb, 29, 1, 2, 3)) = 59
+           andalso yearDay(mkdate(1960, Mar, 1, 1, 2, 3)) = 60
+           andalso yearDay(mkdate(1960, Dec, 31, 1, 2, 3)) = 365)
 
 fun addh h = 
     let val dt = mkdate(1998, Apr, 6, h, 0, 0)
@@ -177,18 +177,18 @@ fun addh h =
 
 val test7 = 
     tst' "test7" (fn _ => 
-	   addh 0 = (Apr, 6, 0)
-	   andalso addh 23 = (Apr, 6, 23)
-	   andalso addh 24 = (Apr, 7, 0)
-	   andalso addh 36 = (Apr, 7, 12)
-	   andalso addh 600 = (May, 1, 0)
-	   andalso addh 610 = (May, 1, 10)
-	   andalso addh 625 = (May, 2, 1))
+           addh 0 = (Apr, 6, 0)
+           andalso addh 23 = (Apr, 6, 23)
+           andalso addh 24 = (Apr, 7, 0)
+           andalso addh 36 = (Apr, 7, 12)
+           andalso addh 600 = (May, 1, 0)
+           andalso addh 610 = (May, 1, 10)
+           andalso addh 625 = (May, 2, 1))
 
 val test8 = 
     tst' "test8" (fn _ => 
-	   hour (mkdate(1998, Mar, 28, 12, 0, 0)) = 12
-	   andalso hour (mkdate(1998, Mar, 28, 36, 0, 0)) = 12)
+           hour (mkdate(1998, Mar, 28, 12, 0, 0)) = 12
+           andalso hour (mkdate(1998, Mar, 28, 36, 0, 0)) = 12)
 
 in
 end

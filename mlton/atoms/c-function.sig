@@ -17,44 +17,44 @@ signature C_FUNCTION =
       include C_FUNCTION_STRUCTS
 
       structure Convention:
-	 sig
-	    datatype t = Cdecl | Stdcall
+         sig
+            datatype t = Cdecl | Stdcall
 
-	    val layout: t -> Layout.t
-	    val toString: t -> string
-	 end
+            val layout: t -> Layout.t
+            val toString: t -> string
+         end
 
       structure Target:
-	 sig
-	    datatype t = Direct of string | Indirect
+         sig
+            datatype t = Direct of string | Indirect
 
-	    val layout: t -> Layout.t
-	    val toString: t -> string
-	 end
+            val layout: t -> Layout.t
+            val toString: t -> string
+         end
 
       datatype 'a t = T of {args: 'a vector,
-			    (* bytesNeeded = SOME i means that the i'th
-			     * argument to the function is a word that
-			     * specifies the number of bytes that must be
-			     * free in order for the C function to succeed.
-			     * Limit check insertion is responsible for
-			     * making sure that the bytesNeeded is available.
-			     *)
-			    bytesNeeded: int option,
-			    convention: Convention.t,
-			    ensuresBytesFree: bool,
-			    mayGC: bool,
-			    maySwitchThreads: bool,
-			    modifiesFrontier: bool,
-			    prototype: CType.t vector * CType.t option,
-			    readsStackTop: bool,
-			    return: 'a,
-			    (* target = Indirect means that the 0'th
-			     * argument to the function is a word
-			     * that specifies the target.
-			     *)
-			    target: Target.t,
-			    writesStackTop: bool}
+                            (* bytesNeeded = SOME i means that the i'th
+                             * argument to the function is a word that
+                             * specifies the number of bytes that must be
+                             * free in order for the C function to succeed.
+                             * Limit check insertion is responsible for
+                             * making sure that the bytesNeeded is available.
+                             *)
+                            bytesNeeded: int option,
+                            convention: Convention.t,
+                            ensuresBytesFree: bool,
+                            mayGC: bool,
+                            maySwitchThreads: bool,
+                            modifiesFrontier: bool,
+                            prototype: CType.t vector * CType.t option,
+                            readsStackTop: bool,
+                            return: 'a,
+                            (* target = Indirect means that the 0'th
+                             * argument to the function is a word
+                             * that specifies the target.
+                             *)
+                            target: Target.t,
+                            writesStackTop: bool}
 
       val args: 'a t -> 'a vector
       val bytesNeeded: 'a t -> int option
@@ -75,7 +75,7 @@ signature C_FUNCTION =
       val target: 'a t -> Target.t
       val writesStackTop: 'a t -> bool
       val vanilla: {args: 'a vector,
-		    name: string,
-		    prototype: CType.t vector * CType.t option,
-		    return: 'a} -> 'a t
+                    name: string,
+                    prototype: CType.t vector * CType.t option,
+                    return: 'a} -> 'a t
    end

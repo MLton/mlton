@@ -11,11 +11,11 @@ type word = Word.word
 signature MLTON_RLIMIT =
    sig
       type rlim = word
-	       
+               
       val infinity: rlim
 
       type t
-	       
+               
       val coreFileSize: t        (* CORE    max core file size *)
       val cpuTime: t             (* CPU     CPU time in seconds *)
       val dataSize: t            (* DATA    max data size *)

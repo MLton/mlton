@@ -16,10 +16,10 @@ signature READER =
       (* never return NONE *)
 (*      val tokens: ('a -> bool) -> ('a, 'b) reader -> ('a list list, 'b) reader*)
 (*      val fields: ('a -> bool) -> ('a, 'b) reader -> ('a list list, 'b) reader *)
-	 
+         
       val map: ('a -> 'c) -> ('a, 'b) reader -> ('c, 'b) reader
       val mapOpt: ('a -> 'c option) -> ('a, 'b) reader -> ('c, 'b) reader
-	 
+         
       val ignore: ('a -> bool) -> ('a, 'b) reader -> ('a, 'b) reader
 
       (* read excatly N items *)

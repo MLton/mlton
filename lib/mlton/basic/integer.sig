@@ -35,8 +35,8 @@ signature INTEGER_STRUCTS =
       val rem: int * int -> int
       val sameSign: int * int -> bool 
       val scan: StringCvt.radix
-	 -> (char, 'a) StringCvt.reader
-	 -> (int, 'a) StringCvt.reader
+         -> (char, 'a) StringCvt.reader
+         -> (int, 'a) StringCvt.reader
       val sign: int -> Pervasive.Int.int 
       val toInt: int -> Pervasive.Int.int 
       val toIntInf: int -> Pervasive.IntInf.int
@@ -82,7 +82,7 @@ signature INTEGER =
       val quotRem: t * t -> t * t
       val rem: t * t -> t
       val scan: (StringCvt.radix * (char, 'a) StringCvt.reader)
-	 -> (t, 'a) StringCvt.reader
+         -> (t, 'a) StringCvt.reader
       (* smallest (i, f) is the smallest j >= i such that f j *)
       val smallest: t * (t -> bool) -> t
       (* val sum: {from: t, to: t, term: t -> t} -> t *)

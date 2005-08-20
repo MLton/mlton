@@ -10,4 +10,4 @@ structure BinIO =
       type instream = unit
       type outstream = unit
    end
-	 
+         

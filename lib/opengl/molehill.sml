@@ -31,7 +31,7 @@ fun initRedControlPoints u v w =
     if w = 0 then ( 2.0 * (Real32.fromInt u) ) else
     if w = 1 then ( 2.0 * (Real32.fromInt v) ) else
     if ( u = 1 orelse u = 2 ) andalso ( v = 1 orelse v = 2 ) then
-	6.0
+        6.0
     else 0.0
 )
     
@@ -40,8 +40,8 @@ fun initGreenControlPoints u v w =
     if w = 0 then ( 2.0 * ((Real32.fromInt u) - 3.0 )) else
     if w = 1 then ( 2.0 * ((Real32.fromInt v) - 3.0 )) else
     if ( u = 1 orelse u = 2 ) andalso ( v = 1 orelse v = 2 ) then
-	if u = 1 andalso v = 1 then 15.0
-	else (~2.0)
+        if u = 1 andalso v = 1 then 15.0
+        else (~2.0)
     else 0.0
 )
     
@@ -50,8 +50,8 @@ fun initBlueControlPoints u v w =
     if w = 0 then ( 2.0 * ((Real32.fromInt u) - 3.0 )) else
     if w = 1 then ( 2.0 * (Real32.fromInt v) ) else
     if ( u = 1 orelse u = 2 ) andalso ( v = 1 orelse v = 2 ) then
-	if u = 1 andalso v = 2 then 11.0
-	else 2.0
+        if u = 1 andalso v = 2 then 11.0
+        else 2.0
     else 0.0
 )
     
@@ -60,8 +60,8 @@ fun initYellowControlPoints u v w =
     if w = 0 then ( 2.0 * (Real32.fromInt u) ) else
     if w = 1 then ( 2.0 * ((Real32.fromInt v) - 3.0) ) else
     if ( u = 1 orelse u = 2 orelse u = 3 ) andalso ( v = 1 orelse v = 2 ) then
-	if v = 1 then (~2.0)
-	else 5.0
+        if v = 1 then (~2.0)
+        else 5.0
     else 0.0
 )
 
@@ -70,8 +70,8 @@ fun renderHill nurb knots diffuse controlpts =
  glMaterialfv GL_FRONT GL_DIFFUSE diffuse;
  gluBeginSurface nurb;
  gluNurbsSurface nurb 8 knots 8 knots
-		 (4 * 3) 3 controlpts
-		 4 4 GL_MAP2_VERTEX_3;
+                 (4 * 3) 3 controlpts
+                 4 4 GL_MAP2_VERTEX_3;
  gluEndSurface nurb
 )
 

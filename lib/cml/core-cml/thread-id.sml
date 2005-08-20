@@ -24,44 +24,44 @@ structure ThreadID : THREAD_ID_EXTRA =
       fun hashTid (TID{id, ...}) = Word.fromInt id
 
       fun tidToString (TID{id, ...}) =
-	 concat["[", StringCvt.padLeft #"0" 6 (Int.toString id), "]"]
+         concat["[", StringCvt.padLeft #"0" 6 (Int.toString id), "]"]
 
       fun exnHandler (_ : exn) = ()
       val defaultExnHandler = ref exnHandler
 
       fun new' n =
-	 TID {id = n,
-	      alert = ref false,
-	      done_comm = ref false,
-	      exnHandler = ref (!defaultExnHandler),
-	      props = ref [],
-	      dead = CVar.new ()}
+         TID {id = n,
+              alert = ref false,
+              done_comm = ref false,
+              exnHandler = ref (!defaultExnHandler),
+              props = ref [],
+              dead = CVar.new ()}
 
       local
-	 val tidCounter = ref 0
+         val tidCounter = ref 0
       in
-	 fun new () =
-	    let 
-	       val _ = Assert.assertAtomic' ("ThreadID.newTid", NONE)
-	       val n = !tidCounter
-	       val _ = tidCounter := n + 1
-	    in
-	       new' n
-	    end
+         fun new () =
+            let 
+               val _ = Assert.assertAtomic' ("ThreadID.newTid", NONE)
+               val n = !tidCounter
+               val _ = tidCounter := n + 1
+            in
+               new' n
+            end
 
-	 fun reset () = tidCounter := 0
+         fun reset () = tidCounter := 0
       end
 
       fun bogus s =
-	 let val n = CharVector.foldr (fn (c, n) => 2 * n - Char.ord c) 0 s
-	 in new' n
-	 end
+         let val n = CharVector.foldr (fn (c, n) => 2 * n - Char.ord c) 0 s
+         in new' n
+         end
 
       fun mark (TID{done_comm, ...}) = 
-	 (Assert.assertAtomic' ("ThreadID.mark", NONE)
-	  ; done_comm := true)
+         (Assert.assertAtomic' ("ThreadID.mark", NONE)
+          ; done_comm := true)
       fun unmark (TID{done_comm, ...}) = 
-	 (Assert.assertAtomic' ("ThreadID.unmark", NONE)
-	  ; done_comm := false)
+         (Assert.assertAtomic' ("ThreadID.unmark", NONE)
+          ; done_comm := false)
       fun isMarked (TID{done_comm, ...}) = !done_comm
    end

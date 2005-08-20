@@ -15,10 +15,10 @@ fun layout e =
       open Layout
    in
       case e of
-	 OS.SysErr (s, _) => str s
+         OS.SysErr (s, _) => str s
        | Fail s => str s
        | IO.Io {cause, function, name, ...} =>
-	    seq [str (concat [function, " ", name, ": "]), layout cause]
+            seq [str (concat [function, " ", name, ": "]), layout cause]
        | _ => seq [str "unhandled exception: ", str (exnName e)]
    end
 

@@ -12,14 +12,14 @@ struct
 datatype t =
    Bogus
  | T of {left: SourcePos.t,
-	 right: SourcePos.t}
+         right: SourcePos.t}
 
 val bogus = Bogus
 
 local
    fun make f r =
       case r of
-	 Bogus => NONE
+         Bogus => NONE
        | T r => SOME (f r)
 in
    val left = make #left
@@ -33,8 +33,8 @@ val extendRight =
 val toString =
    fn Bogus => "Bogus"
     | T {left, right} =>
-	 concat [SourcePos.file left, ":",
-		 SourcePos.posToString left, "-", SourcePos.posToString right]
+         concat [SourcePos.file left, ":",
+                 SourcePos.posToString left, "-", SourcePos.posToString right]
 
 val layout = Layout.str o toString
 
@@ -51,10 +51,10 @@ fun compare (r, r') =
     | (NONE, _) => LESS
     | (_, NONE) => GREATER
     | (SOME p, SOME p') => SourcePos.compare (p, p')
-	 
+         
 val compare =
    Trace.trace2 ("Region.compare", layout, layout, Relation.layout) compare
-	 
+         
 fun equals (r, r') = compare (r, r') = EQUAL
    
 fun r <= r' =
@@ -67,14 +67,14 @@ structure Wrap =
    struct
       type region = t
       datatype 'a t = T of {node: 'a,
-			    region: region}
+                            region: region}
 
       fun node (T {node, ...}) = node
       fun region (T {region, ...}) = region
       fun makeRegion (node, region) = T {node = node, region = region}
       fun makeRegion' (node, left, right) = T {node = node,
-					       region = make {left = left,
-							      right = right}}
+                                               region = make {left = left,
+                                                              right = right}}
 
       fun dest (T {node, region}) = (node, region)
    end

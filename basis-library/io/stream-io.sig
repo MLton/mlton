@@ -38,13 +38,13 @@ signature STREAM_IO_EXTRA =
       type vector_slice
 
       structure Close:
-	 sig
-	    type t
+         sig
+            type t
 
-	    val close: t -> unit
-	    val equalsInstream: t * instream -> bool
-	    val make: instream -> t
-	 end
+            val close: t -> unit
+            val equalsInstream: t * instream -> bool
+            val make: instream -> t
+         end
 
       val equalsIn: instream * instream -> bool
       val equalsOut: outstream * outstream -> bool
@@ -52,11 +52,11 @@ signature STREAM_IO_EXTRA =
       val inputLine: instream -> (vector * instream) option
       val instreamReader: instream -> reader
       val mkInstream': {bufferContents: (bool * vector) option,
-			closed: bool,
-			reader: reader} -> instream
+                        closed: bool,
+                        reader: reader} -> instream
       val mkOutstream': {bufferMode: IO.buffer_mode,
-			 closed: bool,
-			 writer: writer} -> outstream
+                         closed: bool,
+                         writer: writer} -> outstream
       val outputSlice: outstream * vector_slice -> unit
       val outstreamWriter: outstream -> writer
    end
@@ -67,12 +67,12 @@ signature STREAM_IO_EXTRA_FILE =
 
       val inFd: instream -> Posix.IO.file_desc
       val mkInstream'': {bufferContents: (bool * vector) option,
-			 closeAtExit: bool,
-			 closed: bool,
-			 reader: reader} -> instream
+                         closeAtExit: bool,
+                         closed: bool,
+                         reader: reader} -> instream
       val outFd: outstream -> Posix.IO.file_desc
       val mkOutstream'': {bufferMode: IO.buffer_mode,
-			  closeAtExit: bool,
-			  closed: bool,
-			  writer: writer} -> outstream
+                          closeAtExit: bool,
+                          closed: bool,
+                          writer: writer} -> outstream
   end

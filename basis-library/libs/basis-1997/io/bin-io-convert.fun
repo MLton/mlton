@@ -13,7 +13,7 @@ functor BinIOConvert
 
      structure StreamIO =
         struct
-	   open StreamIO
-	   val inputAll = #1 o inputAll
-	end
+           open StreamIO
+           val inputAll = #1 o inputAll
+        end
   end

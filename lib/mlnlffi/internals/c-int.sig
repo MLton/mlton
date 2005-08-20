@@ -54,27 +54,27 @@ signature C_INT = sig
 
     (* making normal signed bitfields *)
     val mk_rw_sbf : int * word * word -> (* offset * bits * shift *)
-		    ('s, 'c) su_obj -> 'c sbf
+                    ('s, 'c) su_obj -> 'c sbf
     val mk_ro_sbf : int * word * word -> (* offset * bits * shift *)
-		    ('s, 'c) su_obj -> ro sbf
+                    ('s, 'c) su_obj -> ro sbf
 
     (* light versions *)
     val mk_rw_sbf' : int * word * word -> (* offset * bits * shift *)
-		     ('s, 'c) su_obj' -> 'c sbf
+                     ('s, 'c) su_obj' -> 'c sbf
     val mk_ro_sbf' : int * word * word -> (* offset * bits * shift *)
-		     ('s, 'c) su_obj' -> ro sbf
+                     ('s, 'c) su_obj' -> ro sbf
 
     (* making normal unsigned bitfields *)
     val mk_rw_ubf : int * word * word -> (* offset * bits * shift *)
-		    ('s, 'c) su_obj -> 'c ubf
+                    ('s, 'c) su_obj -> 'c ubf
     val mk_ro_ubf : int * word * word -> (* offset * bits * shift *)
-		    ('s, 'c) su_obj -> ro ubf
+                    ('s, 'c) su_obj -> ro ubf
 
     (* light versions *)
     val mk_rw_ubf' : int * word * word -> (* offset * bits * shift *)
-		     ('s, 'c) su_obj' -> 'c ubf
+                     ('s, 'c) su_obj' -> 'c ubf
     val mk_ro_ubf' : int * word * word -> (* offset * bits * shift *)
-		     ('s, 'c) su_obj' -> ro ubf
+                     ('s, 'c) su_obj' -> ro ubf
 
     (* reveal address behind void*; this is used to
      * implement the function-call protocol for functions that have
@@ -87,7 +87,7 @@ signature C_INT = sig
     val fcast : addr -> 'f fptr'
 
     (* unsafe low-level array subscript that does not require RTTI *)
-    val unsafe_sub : int ->		(* element size *)
-		     (('t, 'n) arr, 'c) obj' * int ->
-		     ('t, 'n) obj'
+    val unsafe_sub : int ->                (* element size *)
+                     (('t, 'n) arr, 'c) obj' * int ->
+                     ('t, 'n) obj'
 end

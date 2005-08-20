@@ -13,7 +13,7 @@ structure StringCvt =
       open OpenInt32
 
       datatype realfmt =
-	 EXACT
+         EXACT
        | FIX of Pervasive.Int32.int option 
        | GEN of Pervasive.Int32.int option 
        | SCI of Pervasive.Int32.int option 

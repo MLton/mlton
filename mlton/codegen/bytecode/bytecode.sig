@@ -18,7 +18,7 @@ signature BYTECODE =
       
       val implementsPrim: 'a Machine.Prim.t -> bool
       val output: {program: Machine.Program.t,
-		   outputC: unit -> {file: File.t,
-				     print: string -> unit,
-				     done: unit -> unit}} -> unit
+                   outputC: unit -> {file: File.t,
+                                     print: string -> unit,
+                                     done: unit -> unit}} -> unit
    end

@@ -9,7 +9,7 @@ The calculator is defined by the files
 
 To compile this example, type
 
-	- CM.make "sources.cm";
+        - CM.make "sources.cm";
 
 in this directory.  CM will invoke ml-lex and ml-yacc to process the
 lexer specification calc.lex and the grammar specification calc.grm

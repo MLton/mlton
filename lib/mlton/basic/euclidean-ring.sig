@@ -27,7 +27,7 @@ signature EUCLIDEAN_RING_STRUCTS =
 signature EUCLIDEAN_RING =
    sig
       include EUCLIDEAN_RING_STRUCTS
-	 
+         
       val div: t * t -> t
       val divides: t * t -> bool
       val extendedEuclid: t * t -> t * t * t

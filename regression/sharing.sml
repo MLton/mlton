@@ -9,7 +9,7 @@ sig
     sharing type t = s
 end;
 
-signature T =	(* from SML/NJ doc *)
+signature T =        (* from SML/NJ doc *)
 sig
     type s
     structure A :
@@ -29,9 +29,9 @@ signature S =
    end
 
 functor F (structure A: sig type t end
-	   structure B: sig end
-	   structure C: sig type t end
-	   sharing A = B = C) =
+           structure B: sig end
+           structure C: sig type t end
+           sharing A = B = C) =
    struct
       val _: A.t -> C.t = fn x => x
    end
@@ -44,9 +44,9 @@ signature T =
    sig
       type t
       structure U:
-	 sig
-	    val x: t
-	 end
+         sig
+            val x: t
+         end
    end
 
 structure S:
@@ -57,20 +57,20 @@ structure S:
    end =
    struct
       structure T1 =
-	 struct
-	    type t = int
-	    structure U =
-	       struct
-		  val x = 13
-	       end
-	 end
+         struct
+            type t = int
+            structure U =
+               struct
+                  val x = 13
+               end
+         end
       structure T2 =
-	 struct
-	    type t = real
-	    structure U =
-	       struct
-		  val x = 13.0
-	       end
-	 end
+         struct
+            type t = real
+            structure U =
+               struct
+                  val x = 13.0
+               end
+         end
    end
 ;

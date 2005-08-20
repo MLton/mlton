@@ -18,5 +18,5 @@ val toString =
     | Real => "Real"
     | String => "String"
     | Word => "Word"
-	 
+         
 end

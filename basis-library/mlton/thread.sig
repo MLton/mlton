@@ -10,18 +10,18 @@ type int = Int.int
 signature MLTON_THREAD =
    sig
       structure AtomicState :
-	 sig
-	    datatype t = NonAtomic | Atomic of int
-	 end
+         sig
+            datatype t = NonAtomic | Atomic of int
+         end
       val atomicBegin: unit -> unit
       val atomicEnd: unit -> unit
       val atomically: (unit -> 'a) -> 'a
       val atomicState: unit -> AtomicState.t
 
       structure Runnable :
-	 sig
-	    type t
-	 end
+         sig
+            type t
+         end
 
       type 'a t
 

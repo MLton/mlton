@@ -3,23 +3,23 @@
 set -e
 
 die () {
-	echo >&2 "$1"
-	exit 1
+        echo >&2 "$1"
+        exit 1
 }
 
 bin=`dirname $0`
 name=`basename $0`
 
 usage () {
-	die "usage: $name <PATH>"
+        die "usage: $name <PATH>"
 }
 
 case "$#" in
 1)
-	PATH="$1"
+        PATH="$1"
 ;;
 *)
-	usage
+        usage
 ;;
 esac
 
@@ -27,16 +27,16 @@ tmp="$$.sml"
 
 echo "val () = print \"I work\"" >$tmp
 if ! mlton $tmp 1>&2; then
-	die "Error: cannot upgrade basis because the compiler doesn't work" 
+        die "Error: cannot upgrade basis because the compiler doesn't work" 
 fi
 
 feature () {
-	feature="$1"
-	sml="$2"
-	echo "$feature" >$tmp
-	if ! mlton -stop tc $tmp >/dev/null 2>&1; then
-		echo "$sml"
-	fi
+        feature="$1"
+        sml="$2"
+        echo "$feature" >$tmp
+        if ! mlton -stop tc $tmp >/dev/null 2>&1; then
+                echo "$sml"
+        fi
 }
 
 feature 'fun f x : string option = TextIO.inputLine x' '
@@ -49,7 +49,7 @@ structure TextIO =
             "" => NONE
           | s => SOME s
    end'
-	
+        
 feature 'fun f x : string option = OS.FileSys.readDir x' '
 structure OS =
    struct
@@ -70,7 +70,7 @@ structure IntInf =
       open IntInf
 
       val ~>> : int * Word.word -> int =
-	 fn _ => raise Fail "IntInf.~>>"
+         fn _ => raise Fail "IntInf.~>>"
    end'
 
 feature 'val _ = Real32.+' 'structure Real32 = Real64'
@@ -96,69 +96,69 @@ structure LargeWord = Word'
 eval `$bin/platform`
 case $HOST_ARCH in
 alpha)
-	arch='Alpha'
+        arch='Alpha'
 ;;
 amd64)
-	arch='AMD64'
+        arch='AMD64'
 ;;
 arm)
-	arch='ARM'
+        arch='ARM'
 ;;
 hppa)
-	arch='HPPA'
+        arch='HPPA'
 ;;
 ia64)
-	arch='IA64'
+        arch='IA64'
 ;;
 m68k)
-	arch='m68k'
+        arch='m68k'
 ;;
 mips)
-	arch='MIPS'
+        arch='MIPS'
 ;;
 powerpc)
-	arch='PowerPC'
+        arch='PowerPC'
 ;;
 s390)
-	arch='S390'
+        arch='S390'
 ;;
 sparc)
-	arch='Sparc'
+        arch='Sparc'
 ;;
 x86)
-	arch='X86'
+        arch='X86'
 ;;
 *)
-	die "strange HOST_ARCH: $HOST_ARCH"
+        die "strange HOST_ARCH: $HOST_ARCH"
 esac
 
 case $HOST_OS in
 cygwin)
-	os='Cygwin'
+        os='Cygwin'
 ;;
 darwin)
-	os='Darwin'
+        os='Darwin'
 ;;
 freebsd)
-	os='FreeBSD'
+        os='FreeBSD'
 ;;
 linux)
-	os='Linux'
+        os='Linux'
 ;;
 mingw)
-	os='MinGW'
+        os='MinGW'
 ;;
 netbsd)
-	os='NetBSD'
+        os='NetBSD'
 ;;
 openbsd)
-	os='OpenBSD'
+        os='OpenBSD'
 ;;
 solaris)
-	os='Solaris'
+        os='Solaris'
 ;;
 *)
-	die "strange HOST_OS: $HOST_OS"
+        die "strange HOST_OS: $HOST_OS"
 ;;
 esac
 

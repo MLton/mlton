@@ -8,19 +8,19 @@ signature TEXT =
       structure String: STRING
       structure Substring: SUBSTRING
       sharing type Char.char
-	 = CharArray.elem
-	 = CharArraySlice.elem
-	 = CharVector.elem
-	 = CharVectorSlice.elem
-	 = String.char
-	 = Substring.char
+         = CharArray.elem
+         = CharArraySlice.elem
+         = CharVector.elem
+         = CharVectorSlice.elem
+         = String.char
+         = Substring.char
       sharing type Char.string
-	 = CharArraySlice.vector
-	 = CharVector.vector
-	 = CharArray.vector
-	 = CharVectorSlice.vector
-	 = String.string
-	 = Substring.string
+         = CharArraySlice.vector
+         = CharVector.vector
+         = CharArray.vector
+         = CharVectorSlice.vector
+         = String.string
+         = Substring.string
       sharing type CharArray.array = CharArraySlice.array
       sharing type CharVectorSlice.slice = CharArraySlice.vector_slice
    end

@@ -3,29 +3,29 @@ signature IEEE_REAL =
       exception Unordered
       
       datatype real_order = LESS | EQUAL | GREATER | UNORDERED
-	 
+         
       datatype float_class =
-	 NAN
+         NAN
        | INF
        | ZERO
        | NORMAL
        | SUBNORMAL
-	 
+         
       datatype rounding_mode =
-	 TO_NEAREST
+         TO_NEAREST
        | TO_NEGINF
        | TO_POSINF
        | TO_ZERO
 
       type decimal_approx = {class: float_class,
-			     digits: int list,
-			     exp: int,
-			     sign: bool}
-	 
+                             digits: int list,
+                             exp: int,
+                             sign: bool}
+         
       val fromString: string -> decimal_approx option
       val getRoundingMode: unit -> rounding_mode
       val scan: (char, 'a) StringCvt.reader
-	        -> (decimal_approx, 'a) StringCvt.reader
+                -> (decimal_approx, 'a) StringCvt.reader
       val setRoundingMode: rounding_mode -> unit 
       val toString: decimal_approx -> string 
    end

@@ -16,20 +16,20 @@ val isBigEndian = isBigEndian
 val (sub, up, subV) =
    if isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
       then (Primitive.Word8Array.subWord,
-	    Primitive.Word8Array.updateWord,
-	    Primitive.Word8Vector.subWord)
+            Primitive.Word8Array.updateWord,
+            Primitive.Word8Vector.subWord)
    else (Primitive.Word8Array.subWordRev,
-	 Primitive.Word8Array.updateWordRev,
-	 Primitive.Word8Vector.subWordRev)
+         Primitive.Word8Array.updateWordRev,
+         Primitive.Word8Vector.subWordRev)
 
 fun start (i, n) = 
    let
       val i = Int.* (bytesPerElem, i)
       val _ =
-	 if Primitive.safe
-	    andalso Primitive.Int.geu (Int.+ (i, Int.- (bytesPerElem, 1)), n)
-	    then raise Subscript
-	 else ()
+         if Primitive.safe
+            andalso Primitive.Int.geu (Int.+ (i, Int.- (bytesPerElem, 1)), n)
+            then raise Subscript
+         else ()
    in
       i
    end handle Overflow => raise Subscript
@@ -37,9 +37,9 @@ fun start (i, n) =
 local
    fun make (sub, length, toPoly) (av, i) =
       let
-	 val _ = start (i, length av)
+         val _ = start (i, length av)
       in
-	 Word.toLarge (sub (toPoly av, i))
+         Word.toLarge (sub (toPoly av, i))
       end
 in
    val subArr = make (sub, Word8Array.length, Word8Array.toPoly)

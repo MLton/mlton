@@ -6,13 +6,13 @@ signature TEXT_IO_GLOBAL =
 signature TEXT_IO =
    sig
       include TEXT_IO_GLOBAL
-	 
+         
       structure StreamIO: TEXT_STREAM_IO
-(*	 where type elem = Char.char *)  (* redundant *)
-	 where type pos = TextPrimIO.pos
-	 where type reader = TextPrimIO.reader
-(*	 where type vector = CharVector.vector *) (* redundant *)
-	 where type writer = TextPrimIO.writer
+(*         where type elem = Char.char *)  (* redundant *)
+         where type pos = TextPrimIO.pos
+         where type reader = TextPrimIO.reader
+(*         where type vector = CharVector.vector *) (* redundant *)
+         where type writer = TextPrimIO.writer
 
       type elem = StreamIO.elem
       type instream
@@ -43,9 +43,9 @@ signature TEXT_IO =
       val output: outstream * vector -> unit 
       val outputSubstr: outstream * substring -> unit
       val scanStream:
- 	 ((Char.char, StreamIO.instream) StringCvt.reader
-	  -> ('a, StreamIO.instream) StringCvt.reader)
-	 -> instream -> 'a option
+          ((Char.char, StreamIO.instream) StringCvt.reader
+          -> ('a, StreamIO.instream) StringCvt.reader)
+         -> instream -> 'a option
       val setInstream: (instream * StreamIO.instream) -> unit
       val setOutstream: outstream * StreamIO.outstream -> unit
       val setPosOut: outstream * StreamIO.out_pos -> unit

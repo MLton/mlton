@@ -13,40 +13,40 @@ nj='sml'
 eval `$lib/platform`
 # Try to use the SML/NJ .arch-n-opsys
 if .arch-n-opsys >/dev/null 2>&1; then
-	eval `.arch-n-opsys`
-	njHeap="$lib/mlton.$HEAP_SUFFIX"
-	unset `.arch-n-opsys | sed 's#=[^ ]*##g'`
+        eval `.arch-n-opsys`
+        njHeap="$lib/mlton.$HEAP_SUFFIX"
+        unset `.arch-n-opsys | sed 's#=[^ ]*##g'`
 else
-	njHeap="$lib/mlton.$HOST_ARCH-$HOST_OS"
+        njHeap="$lib/mlton.$HOST_ARCH-$HOST_OS"
 fi
 
 rargs=""
 case "$1" in
 @MLton)
-	shift
-	while [ "$#" -gt 0 -a "$1" != "--" ]; do
-		rargs="$rargs $1"
-		shift
-	done
-	if [ "$#" -gt 0 -a "$1" == "--" ]; then
-		shift
-	else	
-		echo '@MLton missing --'
-		exit 1
-	fi
-	;;
+        shift
+        while [ "$#" -gt 0 -a "$1" != "--" ]; do
+                rargs="$rargs $1"
+                shift
+        done
+        if [ "$#" -gt 0 -a "$1" == "--" ]; then
+                shift
+        else        
+                echo '@MLton missing --'
+                exit 1
+        fi
+        ;;
 esac
 
 # If $mlton is executable and $world exists and is not older than
 # $njHeap (which exists), then use MLton, otherwise use SML/NJ.
 doit () {
-	if [ -x "$mlton" -a -s "$world" -a ! "$njHeap" -nt "$world" ]; then
-		exec "$mlton" @MLton load-world "$world" ram-slop 0.5 $rargs -- "$@"
-	elif [ -s "$njHeap" ]; then
-		exec "$nj" @SMLload="$njHeap" "$@"
-	fi
-	echo 'Unable to run MLton.  Check that lib is set properly.' >&2
-	exit 1
+        if [ -x "$mlton" -a -s "$world" -a ! "$njHeap" -nt "$world" ]; then
+                exec "$mlton" @MLton load-world "$world" ram-slop 0.5 $rargs -- "$@"
+        elif [ -s "$njHeap" ]; then
+                exec "$nj" @SMLload="$njHeap" "$@"
+        fi
+        echo 'Unable to run MLton.  Check that lib is set properly.' >&2
+        exit 1
 }
 
 # For align-{functions,jumps,loops}, we use -m for now instead of
@@ -60,45 +60,45 @@ doit () {
 # that the linker can find libgmp.
 
 if [ -d '/sw/lib' ]; then
-	darwinLinkOpts='-L/sw/lib'
+        darwinLinkOpts='-L/sw/lib'
 fi
 
 doit "$lib" \
-	-cc "$gcc"						\
-	-cc-opt "-I$lib/include"				\
-	-cc-opt '-O1'						\
-	-cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'	\
-	-target-as-opt amd64					\
-		'-m32
-		-mtune=opteron'  				\
-	-target-cc-opt amd64					\
-		'-m32
-		-mtune=opteron'  				\
-	-target-cc-opt darwin '-I/sw/include'			\
-	-target-cc-opt solaris 					\
-		'-Wa,-xarch=v8plusa
-		-fcall-used-g5
-		-fcall-used-g7
-		-mcpu=ultrasparc'				\
-	-target-cc-opt sparc '-mv8 -m32'			\
-	-target-cc-opt x86					\
-		'-fno-strength-reduce
-		-fschedule-insns
-		-fschedule-insns2
-		-malign-functions=5
-		-malign-jumps=2
-		-malign-loops=2'				\
-	-target-link-opt amd64 '-m32'           	        \
-	-target-link-opt cygwin '-lgmp'				\
-	-target-link-opt darwin "$darwinLinkOpts -lgmp"		\
-	-target-link-opt freebsd '-L/usr/local/lib/ -lgmp'	\
-	-target-link-opt linux '-lgmp'				\
-	-target-link-opt mingw 					\
-		'-lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32'	\
-	-target-link-opt netbsd					\
-		'-Wl,-R/usr/pkg/lib -L/usr/local/lib/ -lgmp'	\
-	-target-link-opt openbsd '-L/usr/local/lib/ -lgmp'	\
-	-target-link-opt solaris '-lgmp -lnsl -lsocket -lrt'	\
-	-link-opt '-lgdtoa -lm'					\
-	-profile-exclude '<basis>'				\
-	"$@"
+        -cc "$gcc"                                                \
+        -cc-opt "-I$lib/include"                                \
+        -cc-opt '-O1'                                                \
+        -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'        \
+        -target-as-opt amd64                                        \
+                '-m32
+                -mtune=opteron'                                  \
+        -target-cc-opt amd64                                        \
+                '-m32
+                -mtune=opteron'                                  \
+        -target-cc-opt darwin '-I/sw/include'                        \
+        -target-cc-opt solaris                                         \
+                '-Wa,-xarch=v8plusa
+                -fcall-used-g5
+                -fcall-used-g7
+                -mcpu=ultrasparc'                                \
+        -target-cc-opt sparc '-mv8 -m32'                        \
+        -target-cc-opt x86                                        \
+                '-fno-strength-reduce
+                -fschedule-insns
+                -fschedule-insns2
+                -malign-functions=5
+                -malign-jumps=2
+                -malign-loops=2'                                \
+        -target-link-opt amd64 '-m32'                           \
+        -target-link-opt cygwin '-lgmp'                                \
+        -target-link-opt darwin "$darwinLinkOpts -lgmp"                \
+        -target-link-opt freebsd '-L/usr/local/lib/ -lgmp'        \
+        -target-link-opt linux '-lgmp'                                \
+        -target-link-opt mingw                                         \
+                '-lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32'        \
+        -target-link-opt netbsd                                        \
+                '-Wl,-R/usr/pkg/lib -L/usr/local/lib/ -lgmp'        \
+        -target-link-opt openbsd '-L/usr/local/lib/ -lgmp'        \
+        -target-link-opt solaris '-lgmp -lnsl -lsocket -lrt'        \
+        -link-opt '-lgdtoa -lm'                                        \
+        -profile-exclude '<basis>'                                \
+        "$@"

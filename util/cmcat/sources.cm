@@ -1,8 +1,8 @@
 Group
-	structure CMcat
+        structure CMcat
 is
-	$/pgraph.cm
-	$smlnj/cm.cm
-	$smlnj/viscomp/core.cm
-	../../lib/mlton/sources.cm
-	cmcat.sml
+        $/pgraph.cm
+        $smlnj/cm.cm
+        $smlnj/viscomp/core.cm
+        ../../lib/mlton/sources.cm
+        cmcat.sml

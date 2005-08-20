@@ -36,13 +36,13 @@ val list: ('a, 'b -> 'a) t -> ('a, 'b list -> 'a) t =
    fn f => fn (k, ss) =>
    fn [] => k ("[]" :: ss)
     | x :: xs =>
-	 let
-	    fun loop xs ss =
-	       case xs of
-		  [] => k ("]" :: ss)
-		| x :: xs => f (loop xs, ", " :: ss) x
-	 in f (loop xs, "[" :: ss) x
-	 end
+         let
+            fun loop xs ss =
+               case xs of
+                  [] => k ("]" :: ss)
+                | x :: xs => f (loop xs, ", " :: ss) x
+         in f (loop xs, "[" :: ss) x
+         end
 
 val op o: ('a, 'b) t * ('c, 'a) t -> ('c, 'b) t =
    fn (f, g) => fn (k, ss) => f (fn ss => g (k, ss), ss)

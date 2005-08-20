@@ -31,11 +31,11 @@ type ('in, 'out) proc = ('out, 'in, Process.none) Process.t
 local
    fun create {args, env, path} =
       Process.create {args = args,
-		      env = env,
-		      path = path,
-		      stderr = Param.self,
-		      stdin = Param.pipe,
-		      stdout = Param.pipe}
+                      env = env,
+                      path = path,
+                      stderr = Param.self,
+                      stdin = Param.pipe,
+                      stdout = Param.pipe}
 in
    fun execute (path, args) =
       create {args = args, env = NONE, path = path}

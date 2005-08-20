@@ -7,14 +7,14 @@
  *)
 
 functor PackReal (S: sig
-			type real
-			val bytesPerElem: int
-			val isBigEndian: bool
-			val subVec: word8 vector * int -> real
-			val subVecRev: word8 vector * int -> real
-			val update: word8 array * int * real -> unit
-			val updateRev: word8 array * int * real -> unit
-		     end): PACK_REAL =
+                        type real
+                        val bytesPerElem: int
+                        val isBigEndian: bool
+                        val subVec: word8 vector * int -> real
+                        val subVecRev: word8 vector * int -> real
+                        val update: word8 array * int * real -> unit
+                        val updateRev: word8 array * int * real -> unit
+                     end): PACK_REAL =
 struct
 
 open S
@@ -52,27 +52,27 @@ fun fromBytes v = subVec (v, 0)
 
 fun subArr (a, i) =
    subVec (Word8Vector.fromPoly
-	   (Primitive.Vector.fromArray (Word8Array.toPoly a)),
-	   i)
+           (Primitive.Vector.fromArray (Word8Array.toPoly a)),
+           i)
    
 end
 
 structure PackReal32Big: PACK_REAL =
    PackReal (val bytesPerElem: int = 4
-	     val isBigEndian = true
-	     open Primitive.PackReal32)
+             val isBigEndian = true
+             open Primitive.PackReal32)
 structure PackReal32Little: PACK_REAL =
    PackReal (val bytesPerElem: int = 4
-	     val isBigEndian = false
-	     open Primitive.PackReal32)
+             val isBigEndian = false
+             open Primitive.PackReal32)
 structure PackReal64Big: PACK_REAL =
    PackReal (val bytesPerElem: int = 8
-	     val isBigEndian = true
-	     open Primitive.PackReal64)
+             val isBigEndian = true
+             open Primitive.PackReal64)
 structure PackReal64Little: PACK_REAL =
    PackReal (val bytesPerElem: int = 8
-	     val isBigEndian = false
-	     open Primitive.PackReal64)
+             val isBigEndian = false
+             open Primitive.PackReal64)
 
 structure PackRealBig = PackReal64Big
 structure PackRealLittle = PackReal64Little

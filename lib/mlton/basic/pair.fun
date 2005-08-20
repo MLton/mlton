@@ -9,7 +9,7 @@
 (*-------------------------------------------------------------------*)
 
 functor Pair(structure X: T
-	     structure Y: T): PAIR =
+             structure Y: T): PAIR =
 struct
 
 structure X = X 

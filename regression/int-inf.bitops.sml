@@ -1,5 +1,5 @@
 fun pr i = (print (IntInf.fmt StringCvt.HEX i);
-	    print "\n")
+            print "\n")
 
 fun prBin oper a b c =
   (print "    A: ";
@@ -27,8 +27,8 @@ fun prSh oper w a c =
   end
 
 fun mkInt i n = if n = 0
-		  then i
-		  else mkInt (IntInf.+ (IntInf.* (i, IntInf.fromInt 10),i)) 
+                  then i
+                  else mkInt (IntInf.+ (IntInf.* (i, IntInf.fromInt 10),i)) 
                              (n - 1)
 
 val mkInt = fn i => fn n => mkInt (IntInf.fromInt i) n
@@ -86,20 +86,20 @@ fun loop (n', m') (n, m) =
   let
     fun loop' i =
       let
-	fun loop'' j = 
-	  if j > m
-	    then loop' (i + 1)
-	    else (tryBin (mkInt i j, mkInt i j);
-		  tryBin (mkInt i j, mkInt (i + 1) j);
-		  tryBin (mkInt i j, mkInt i (j + 1));
-		  tryBin (mkInt i j, mkInt (i + 1) (j + 1));
-		  tryUn (mkInt i j);
+        fun loop'' j = 
+          if j > m
+            then loop' (i + 1)
+            else (tryBin (mkInt i j, mkInt i j);
+                  tryBin (mkInt i j, mkInt (i + 1) j);
+                  tryBin (mkInt i j, mkInt i (j + 1));
+                  tryBin (mkInt i j, mkInt (i + 1) (j + 1));
+                  tryUn (mkInt i j);
                   trySh (mkInt i j);
-		  loop'' (j + 1))
+                  loop'' (j + 1))
       in
-	if i > n
-	  then ()
-	  else loop'' m'
+        if i > n
+          then ()
+          else loop'' m'
       end
   in
     loop' n'

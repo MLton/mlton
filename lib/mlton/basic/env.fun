@@ -53,8 +53,8 @@ fun peek (T l, d) =
 fun lookup (env, d) = case peek (env, d) of
    SOME r => r
  | NONE => (Layout.output (Domain.layout d, Out.error) ;
-	    Out.newline Out.error ;
-	    Error.bug "Env.lookup")
+            Out.newline Out.error ;
+            Error.bug "Env.lookup")
 
 fun restrict (env, ds) = new (ds, fn d => lookup (env, d))
 
@@ -73,23 +73,23 @@ fun foralli (e, f) = List.forall (toList e, f)
 fun equals rangeEqual (e1, e2) =
    size e1 = size e2
    andalso foralli (e1, fn (d, r) =>
-		   case peek (e2, d) of
-		      NONE => false
-		    | SOME r' => rangeEqual (r, r'))
+                   case peek (e2, d) of
+                      NONE => false
+                    | SOME r' => rangeEqual (r, r'))
    
 fun layout layoutR (T ps) =
    let open Layout
    in seq [str "[",
-	  align (List.map (ps, fn (d, r) =>
-			 seq [Domain.layout d, str " -> ", layoutR r])),
-	  str"]"]
+          align (List.map (ps, fn (d, r) =>
+                         seq [Domain.layout d, str " -> ", layoutR r])),
+          str"]"]
    end
 
 fun maybeLayout (name, layoutR) env =
    if isEmpty env then Layout.empty
    else let open Layout
-	in seq [str name, str " = ", layout layoutR env]
-	end
+        in seq [str name, str " = ", layout layoutR env]
+        end
 
 end
 

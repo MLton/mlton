@@ -9,6 +9,6 @@
 signature UNIQUE_ID =
    sig
       type t
-	 
+         
       val new: unit -> t
    end

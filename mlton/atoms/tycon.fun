@@ -18,12 +18,12 @@ structure AdmitsEquality = AdmitsEquality ()
 structure Kind = TyconKind ()
    
 structure P = PrimTycons (structure AdmitsEquality = AdmitsEquality
-			  structure CharSize = CharSize
-			  structure IntSize = IntSize
-			  structure Kind = Kind
-			  structure RealSize = RealSize
-			  structure WordSize = WordSize
-			  open Id)
+                          structure CharSize = CharSize
+                          structure IntSize = IntSize
+                          structure Kind = Kind
+                          structure RealSize = RealSize
+                          structure WordSize = WordSize
+                          open Id)
 open P
 
 val setPrintName =
@@ -36,10 +36,10 @@ fun stats () =
    in
       align
       (List.map (prims, fn (c, _, _) =>
-		 seq [layout c, str " size is ",
-		      Int.layout (MLton.size c),
-		      str " plist length is ",
-		      Int.layout (PropertyList.length (plist c))]))
+                 seq [layout c, str " size is ",
+                      Int.layout (MLton.size c),
+                      str " plist length is ",
+                      Int.layout (PropertyList.length (plist c))]))
    end
 
 end

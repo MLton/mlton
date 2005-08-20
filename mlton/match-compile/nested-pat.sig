@@ -10,12 +10,12 @@ signature NESTED_PAT_STRUCTS =
    sig
       include ATOMS
       structure Type:
-	 sig
-	    type t
+         sig
+            type t
 
-	    val layout: t -> Layout.t
-	    val tuple: t vector -> t
-	 end
+            val layout: t -> Layout.t
+            val tuple: t vector -> t
+         end
    end
 
 signature NESTED_PAT = 
@@ -24,16 +24,16 @@ signature NESTED_PAT =
       
       datatype t = T of {pat: node, ty: Type.t}
       and node =
-	 Con of {arg: t option,
-		 con: Con.t,
-		 targs: Type.t vector}
-	| Const of {const: Const.t,
-		    isChar: bool,
-		    isInt: bool}
-	| Layered of Var.t * t
-	| Tuple of t vector
-	| Var of Var.t
-	| Wild
+         Con of {arg: t option,
+                 con: Con.t,
+                 targs: Type.t vector}
+        | Const of {const: Const.t,
+                    isChar: bool,
+                    isInt: bool}
+        | Layered of Var.t * t
+        | Tuple of t vector
+        | Var of Var.t
+        | Wild
 
       (* isRefutable p iff p contains a constant, constructor or variable. *)
       val isRefutable: t -> bool

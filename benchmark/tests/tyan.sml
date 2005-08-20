@@ -81,13 +81,13 @@ structure Util = struct
 
     (* arr[i] := obj :: arr[i]; extend non-empty arr if necessary *)
     fun insert (obj,i,arr) = let
-	  val len = length1 arr
+          val len = length1 arr
           val res =  if i<len then (update1(arr,i,obj::sub1(arr,i)); arr)
-	     else let val arr' = array1(Int.max(i+1,len+len),[])
-		      fun copy ~1 = (update1(arr',i,[obj]); arr')
-			| copy j = (update1(arr',j,sub1(arr,j));
-				    copy(j-1))
-		      in copy(len-1) end 
+             else let val arr' = array1(Int.max(i+1,len+len),[])
+                      fun copy ~1 = (update1(arr',i,[obj]); arr')
+                        | copy j = (update1(arr',j,sub1(arr,j));
+                                    copy(j-1))
+                      in copy(len-1) end 
           in res
           end
 
@@ -95,10 +95,10 @@ structure Util = struct
     fun arrayoflists [] = arrayoflist []
       | arrayoflists ([]::ls) = arrayoflists ls
       | arrayoflists [l] = arrayoflist l
-      | arrayoflists (ls as (obj0::_)::_) = let	 
-	  val a = array1(revfold (fn (l,n) => length l + n) ls 0,obj0)
-	  fun ins (i,[]) = i | ins (i,x::l) = (update1(a,i,x); ins(i+1,l))
-	  fun insert (i,[]) = a | insert (i,l::ll) = insert(ins(i,l),ll)
+      | arrayoflists (ls as (obj0::_)::_) = let         
+          val a = array1(revfold (fn (l,n) => length l + n) ls 0,obj0)
+          fun ins (i,[]) = i | ins (i,x::l) = (update1(a,i,x); ins(i+1,l))
+          fun insert (i,[]) = a | insert (i,l::ll) = insert(ins(i,l),ll)
           in insert(0,ls) end
 *)
 
@@ -107,27 +107,27 @@ structure Util = struct
      * remains is random.  NOTE that a is modified.
      *)
     fun stripSort compare = fn a => let
-	  infix sub
+          infix sub
 
 
-	  val op sub = sub1 and update = update1
-	  fun swap (i,j) = let val ai = a sub i
-			   in update(a,i,a sub j); update(a,j,ai) end
-	  (* sort all a[k], 0<=i<=k<j<=length a *)
-	  fun s (i,j,acc) = if i=j then acc else let
-	        val pivot = a sub ((i+j) smlnj_div 2)
-		fun partition (lo,k,hi) = if k=hi then (lo,hi) else
-		      case compare (pivot,a sub k) of
-			  Less => (swap (lo,k); partition (lo+1,k+1,hi))
-			| Equal => partition (lo,k+1,hi)
-			| Greater => (swap (k,hi-1); partition (lo,k,hi-1))
-		val (lo,hi) = partition (i,i,j)
-	        in s(i,lo,pivot::s(hi,j,acc)) end
-	   val res = s(0,length1 a,[]) 
+          val op sub = sub1 and update = update1
+          fun swap (i,j) = let val ai = a sub i
+                           in update(a,i,a sub j); update(a,j,ai) end
+          (* sort all a[k], 0<=i<=k<j<=length a *)
+          fun s (i,j,acc) = if i=j then acc else let
+                val pivot = a sub ((i+j) smlnj_div 2)
+                fun partition (lo,k,hi) = if k=hi then (lo,hi) else
+                      case compare (pivot,a sub k) of
+                          Less => (swap (lo,k); partition (lo+1,k+1,hi))
+                        | Equal => partition (lo,k+1,hi)
+                        | Greater => (swap (k,hi-1); partition (lo,k,hi-1))
+                val (lo,hi) = partition (i,i,j)
+                in s(i,lo,pivot::s(hi,j,acc)) end
+           val res = s(0,length1 a,[]) 
 
           in 
-	   res
-	  end
+           res
+          end
 end
 
 structure F = struct
@@ -156,14 +156,14 @@ structure F = struct
       | reciprocal (F n) = let
           (* consider euclid gcd alg on (a,b) starting with a=p, b=n.
            * if maintain a = a1 n + a2 p, b = b1 n + b2 p, a>b,
-	   * then when 1 = a = a1 n + a2 p, have a1 = inverse of n mod p
+           * then when 1 = a = a1 n + a2 p, have a1 = inverse of n mod p
            * note that it is not necessary to keep a2, b2 around.
            *)
- 	  fun gcd ((a,a1),(b,b1)) =
-	      if b=1 then (* by continued fraction expansion, 0<|b1|<p *)
-		 if b1<0 then F(p+b1) else F b1
-	      else let val q = a smlnj_div b
-	           in gcd((b,b1),(a-q*b,a1-q*b1)) end
+           fun gcd ((a,a1),(b,b1)) =
+              if b=1 then (* by continued fraction expansion, 0<|b1|<p *)
+                 if b1<0 then F(p+b1) else F b1
+              else let val q = a smlnj_div b
+                   in gcd((b,b1),(a-q*b,a1-q*b1)) end
           in gcd ((p,0),(n,1)) end
 (* unused code
     fun divide (n,m) = multiply (n, reciprocal m)
@@ -176,14 +176,14 @@ structure F = struct
 
 (* unused code
     fun power(n,k) =
-	  if k<=3 then case k of
-	      0 => one
-	    | 1 => n
-	    | 2 => multiply(n,n)
-	    | 3 => multiply(n,multiply(n,n))
-	    | _ => reciprocal (power (n,~k)) (* know k<0 *)
-	  else if andb(k,1)=0 then power(multiply(n,n),rshift(k,1))
-	       else multiply(n,power(multiply(n,n),rshift(k,1)))
+          if k<=3 then case k of
+              0 => one
+            | 1 => n
+            | 2 => multiply(n,n)
+            | 3 => multiply(n,multiply(n,n))
+            | _ => reciprocal (power (n,~k)) (* know k<0 *)
+          else if andb(k,1)=0 then power(multiply(n,n),rshift(k,1))
+               else multiply(n,power(multiply(n,n),rshift(k,1)))
 *)
 
     fun isZero (F n) = n=0
@@ -191,15 +191,15 @@ structure F = struct
     fun equal (F n,F m) = n=m
 
     fun display (F n) = if n<=p smlnj_div 2 then Int.toString n
-			else "-" ^ Int.toString (p-n)
+                        else "-" ^ Int.toString (p-n)
 *)
 end
 
 structure M = struct (* MONO *)
     local
         val andb = op &&
-	infix sub << >> andb
-(*	val op << = Bits.lshift and op >> = Bits.rshift and op andb = Bits.andb
+        infix sub << >> andb
+(*        val op << = Bits.lshift and op >> = Bits.rshift and op andb = Bits.andb
 *)
     in
 
@@ -228,64 +228,64 @@ structure M = struct (* MONO *)
 
     (* x^k > y^l if x>k or x=y and k>l *)
     val compare = let
-	  fun cmp ([],[]) = Util.Equal
-	    | cmp (_::_,[]) = Util.Greater
-	    | cmp ([],_::_) = Util.Less
-	    | cmp ((u::us), (v::vs)) = if u=v then cmp (us,vs)
-		                  else if u<v then Util.Less
-		                  else (* u>v *)   Util.Greater
+          fun cmp ([],[]) = Util.Equal
+            | cmp (_::_,[]) = Util.Greater
+            | cmp ([],_::_) = Util.Less
+            | cmp ((u::us), (v::vs)) = if u=v then cmp (us,vs)
+                                  else if u<v then Util.Less
+                                  else (* u>v *)   Util.Greater
           in fn (M m,M m') => cmp(m,m') end
 
     fun display (M (l : int list)) : string = 
       let
-	fun dv v = if v<26 then chr (v+ord #"a") else chr (v-26+ord #"A")
-	fun d (vv,acc) = let val v = vv>>16 and p = vv andb 65535
-			 in if p=1 then dv v::acc
-			    else 
-			      (dv v)::(String.explode (Int.toString p)) @ acc
-			 end
+        fun dv v = if v<26 then chr (v+ord #"a") else chr (v-26+ord #"A")
+        fun d (vv,acc) = let val v = vv>>16 and p = vv andb 65535
+                         in if p=1 then dv v::acc
+                            else 
+                              (dv v)::(String.explode (Int.toString p)) @ acc
+                         end
       in String.implode(fold d l []) end
 
     val multiply = let
-	  fun mul ([],m) = m
-	    | mul (m,[]) = m
-	    | mul (u::us, v::vs) = let
-	        val uu = u andb ~65536
-		in if uu = (v andb ~65536) then let
-		      val w = u + (v andb 65535)
-		      in if uu = (w andb ~65536) then w::mul(us,vs)
-			 else 
-			   (Util.illegal 
-			    (String.concat ["Mono.multiply overflow: ",
-					    display (M(u::us)),", ",
-					    display (M(v::vs))]))
-		      end
-	           else if u>v then u :: mul(us,v::vs)
-		   else (* u<v *) v :: mul(u::us,vs)
-		end
+          fun mul ([],m) = m
+            | mul (m,[]) = m
+            | mul (u::us, v::vs) = let
+                val uu = u andb ~65536
+                in if uu = (v andb ~65536) then let
+                      val w = u + (v andb 65535)
+                      in if uu = (w andb ~65536) then w::mul(us,vs)
+                         else 
+                           (Util.illegal 
+                            (String.concat ["Mono.multiply overflow: ",
+                                            display (M(u::us)),", ",
+                                            display (M(v::vs))]))
+                      end
+                   else if u>v then u :: mul(us,v::vs)
+                   else (* u<v *) v :: mul(u::us,vs)
+                end
           in fn (M m,M m') => M (mul (m,m')) end
 
     val lcm = let
-	  fun lcm ([],m) = m
-	    | lcm (m,[]) = m
-	    | lcm (u::us, v::vs) =
-	        if u>=v then if (u andb ~65536)<v then u::lcm(us,vs)
-			     			    else u::lcm(us,v::vs)
-			else if (v andb ~65536)<u then v::lcm(us,vs)
-			     			    else v::lcm(u::us,vs)
+          fun lcm ([],m) = m
+            | lcm (m,[]) = m
+            | lcm (u::us, v::vs) =
+                if u>=v then if (u andb ~65536)<v then u::lcm(us,vs)
+                                                         else u::lcm(us,v::vs)
+                        else if (v andb ~65536)<u then v::lcm(us,vs)
+                                                         else v::lcm(u::us,vs)
           in fn (M m,M m') => M (lcm (m,m')) end
     val tryDivide = let
-	  fun rev([],l) = l | rev(x::xs,l)=rev(xs,x::l)
-	  fun d (m,[],q) = SOME(M(rev(q,m)))
-	    | d ([],_::_,_) = NONE
-	    | d (u::us,v::vs,q) =
-	        if u<v then NONE
-		else if (u andb ~65536) = (v andb ~65536) then
-		    if u=v then d(us,vs,q) else d(us,vs,u-(v andb 65535)::q)
-	        else d(us,v::vs,u::q)
+          fun rev([],l) = l | rev(x::xs,l)=rev(xs,x::l)
+          fun d (m,[],q) = SOME(M(rev(q,m)))
+            | d ([],_::_,_) = NONE
+            | d (u::us,v::vs,q) =
+                if u<v then NONE
+                else if (u andb ~65536) = (v andb ~65536) then
+                    if u=v then d(us,vs,q) else d(us,vs,u-(v andb 65535)::q)
+                else d(us,v::vs,u::q)
           in fn (M m,M m') => d (m,m',[]) end
     fun divide (m,m') =
-	  case tryDivide(m,m') of SOME q => q | NONE => raise DoesntDivide
+          case tryDivide(m,m') of SOME q => q | NONE => raise DoesntDivide
 
 end end (* local, structure M *)
 
@@ -296,9 +296,9 @@ structure MI = struct (* MONO_IDEAL *)
      * children listed in increasing degree order
      *)
     datatype 'a mono_trie = MT of 'a option * (int * 'a mono_trie) list
-	                    (* tag, encoded (var,pwr) and children *)
+                            (* tag, encoded (var,pwr) and children *)
     datatype 'a mono_ideal = MI of (int * 'a mono_trie) ref
-	                    (* int maxDegree = least degree > all elements *)
+                            (* int maxDegree = least degree > all elements *)
     
     fun rev ([],l) = l | rev (x::xs,l) = rev(xs,x::l)
 (* unused code
@@ -330,83 +330,83 @@ structure MI = struct (* MONO_IDEAL *)
 
     exception Found
     fun search (MI(x),M.M m') = let 
-	  val (d,mt) = !x
-	  val result = ref NONE
-	  (* exception Found of M.mono * '_a *)
-	  (* s works on remaining input mono, current output mono, tag, trie *)
-	  fun s (_,m,MT(SOME a,_)) =
-	        raise(result := SOME (M.M m,a); Found)
-	    | s (m',m,MT(NONE,trie)) = s'(m',m,trie)
-	  and s'([],_,_) = NONE
-	    | s'(_,_,[]) = NONE
-	    | s'(vp'::m',m,trie as (vp,child)::children) =
-		if smallerVar(vp',vp) then s'(m',m,trie)
-		else if grabPwr vp = 0 then (s(vp'::m',m,child);
-					     s'(vp'::m',m,children))
-		else if smallerVar(vp,vp') then NONE 
-		else if vp<=vp' then (s(m',vp::m,child);
-				      s'(vp'::m',m,children))
-		else NONE
+          val (d,mt) = !x
+          val result = ref NONE
+          (* exception Found of M.mono * '_a *)
+          (* s works on remaining input mono, current output mono, tag, trie *)
+          fun s (_,m,MT(SOME a,_)) =
+                raise(result := SOME (M.M m,a); Found)
+            | s (m',m,MT(NONE,trie)) = s'(m',m,trie)
+          and s'([],_,_) = NONE
+            | s'(_,_,[]) = NONE
+            | s'(vp'::m',m,trie as (vp,child)::children) =
+                if smallerVar(vp',vp) then s'(m',m,trie)
+                else if grabPwr vp = 0 then (s(vp'::m',m,child);
+                                             s'(vp'::m',m,children))
+                else if smallerVar(vp,vp') then NONE 
+                else if vp<=vp' then (s(m',vp::m,child);
+                                      s'(vp'::m',m,children))
+                else NONE
           in s(rev(m',[]),[],mt)
              handle Found (* (m,a) => SOME(m,a) *) => !result
           end
 
    (* assume m is a new generator, i.e. not a multiple of an existing one *)
     fun insert (MI (mi),m,a) = let
-	  val (d,mt) = !mi
-	  fun i ([],MT (SOME _,_)) = Util.illegal "MONO_IDEAL.insert duplicate"
-	    | i ([],MT (NONE,children)) = MT(SOME a,children)
-	    | i (vp::m,MT(a',[])) = MT(a',[(vp,i(m,emptyTrie))])
-	    | i (vp::m,mt as MT(a',trie as (vp',_)::_)) = let
-		fun j [] = [(vp,i(m,emptyTrie))]
-		  | j ((vp',child)::children) =
-		      if vp<vp' then (vp,i(m,emptyTrie))::(vp',child)::children
-		      else if vp=vp' then (vp',i(m,child))::children
-		      else (vp',child) :: j children
-		in 
-		   if smallerVar(vp,vp') then
-		       MT(a',[(grabVar vp,MT(NONE,trie)),(vp,i(m,emptyTrie))])
-		   else if smallerVar(vp',vp) then i(grabVar vp'::vp::m,mt)
-		   else MT(a',j trie)
-	        end
-	  in mi := (Int.max(d,M.deg m),i (rev(map encode(M.explode m),[]),mt)) end
+          val (d,mt) = !mi
+          fun i ([],MT (SOME _,_)) = Util.illegal "MONO_IDEAL.insert duplicate"
+            | i ([],MT (NONE,children)) = MT(SOME a,children)
+            | i (vp::m,MT(a',[])) = MT(a',[(vp,i(m,emptyTrie))])
+            | i (vp::m,mt as MT(a',trie as (vp',_)::_)) = let
+                fun j [] = [(vp,i(m,emptyTrie))]
+                  | j ((vp',child)::children) =
+                      if vp<vp' then (vp,i(m,emptyTrie))::(vp',child)::children
+                      else if vp=vp' then (vp',i(m,child))::children
+                      else (vp',child) :: j children
+                in 
+                   if smallerVar(vp,vp') then
+                       MT(a',[(grabVar vp,MT(NONE,trie)),(vp,i(m,emptyTrie))])
+                   else if smallerVar(vp',vp) then i(grabVar vp'::vp::m,mt)
+                   else MT(a',j trie)
+                end
+          in mi := (Int.max(d,M.deg m),i (rev(map encode(M.explode m),[]),mt)) end
 
     fun mkIdeal [] = mkEmpty() 
       | mkIdeal (orig_ms : (M.mono * '_a) list)= let
-	  fun ins ((m,a),arr) = Util.insert((m,a),M.deg m,arr)
-	  val msa = arrayoflist orig_ms
-	  val ms : (M.mono * '_a) list = 
-	      Util.stripSort (fn ((m,_),(m',_)) => M.compare (m,m')) msa
-	  val buckets = revfold ins ms (array1(0,[]))
-	  val n = length1 buckets
-	  val mi = mkEmpty()
+          fun ins ((m,a),arr) = Util.insert((m,a),M.deg m,arr)
+          val msa = arrayoflist orig_ms
+          val ms : (M.mono * '_a) list = 
+              Util.stripSort (fn ((m,_),(m',_)) => M.compare (m,m')) msa
+          val buckets = revfold ins ms (array1(0,[]))
+          val n = length1 buckets
+          val mi = mkEmpty()
           fun sort i = if i>=n then mi else let
-	        fun redundant (m,_) = case search(mi,m) of NONE => false
-						         | SOME _ => true
-		fun filter ([],l) = app (fn (m,a) => insert(mi,m,a)) l
-		  | filter (x::xx,l) = if redundant x then filter(xx,l)
-				       else filter(xx,x::l)
-		in filter(sub1(buckets,i),[]);
-		   update1(buckets,i,[]);
-		   sort(i+1)
-		end
+                fun redundant (m,_) = case search(mi,m) of NONE => false
+                                                         | SOME _ => true
+                fun filter ([],l) = app (fn (m,a) => insert(mi,m,a)) l
+                  | filter (x::xx,l) = if redundant x then filter(xx,l)
+                                       else filter(xx,x::l)
+                in filter(sub1(buckets,i),[]);
+                   update1(buckets,i,[]);
+                   sort(i+1)
+                end
           in sort 0 end
 
     fun fold g (MI(x)) init = let
-	  val (_,mt) = !x
-	  fun f(acc,m,MT(NONE,children)) = f'(acc,m,children)
-	    | f(acc,m,MT(SOME a,children)) =
-	        f'(g((M.M m,a),acc),m,children)
-	  and f'(acc,m,[]) = acc
-	    | f'(acc,m,(vp,child)::children) =
-	        if grabPwr vp=0 then f'(f(acc,m,child),m,children)
-		else f'(f(acc,vp::m,child),m,children)
-	  in f(init,[],mt) end
+          val (_,mt) = !x
+          fun f(acc,m,MT(NONE,children)) = f'(acc,m,children)
+            | f(acc,m,MT(SOME a,children)) =
+                f'(g((M.M m,a),acc),m,children)
+          and f'(acc,m,[]) = acc
+            | f'(acc,m,(vp,child)::children) =
+                if grabPwr vp=0 then f'(f(acc,m,child),m,children)
+                else f'(f(acc,vp::m,child),m,children)
+          in f(init,[],mt) end
 
 (* unused code
     fun searchDeg (mi,d) =
-	  if d>maxDeg mi then []
-	  else fold (fn ((m,a),l) => if M.deg m=d then (m,a)::l else l) mi []
+          if d>maxDeg mi then []
+          else fold (fn ((m,a),l) => if M.deg m=d then (m,a)::l else l) mi []
 *)
 
 end (* structure MI *)
@@ -436,11 +436,11 @@ fun getCounts () =
 structure P = struct
 
     datatype poly = P of (F.field*M.mono) list (* descending mono order *)
-(*	
+(*        
     fun show (P x) = (print "[ "; 
-		      app (fn (f, m) =>
-			   (print "("; F.show f; print ","; M.show m; print ") ")) x;
-		      print " ]")
+                      app (fn (f, m) =>
+                           (print "("; F.show f; print ","; M.show m; print ") ")) x;
+                      print " ]")
 *)
     val zero = P []
 (* unused code unless power is used
@@ -460,23 +460,23 @@ local
     fun plus ([],p2) = p2
       | plus (p1,[]) = p1
       | plus ((a,m)::ms,(b,n)::ns) = case M.compare(m,n) of
-	    Util.Less => (b,n) :: plus ((a,m)::ms,ns)
-	  | Util.Greater => (a,m) :: plus (ms,(b,n)::ns)
-	  | Util.Equal => let val c = F.add(a,b)
-       		             in if F.isZero c then plus(ms,ns)
-		                else (c,m)::plus(ms,ns)
-		             end
+            Util.Less => (b,n) :: plus ((a,m)::ms,ns)
+          | Util.Greater => (a,m) :: plus (ms,(b,n)::ns)
+          | Util.Equal => let val c = F.add(a,b)
+                                    in if F.isZero c then plus(ms,ns)
+                                else (c,m)::plus(ms,ns)
+                             end
     fun minus ([],p2) = neg p2
       | minus (p1,[]) = p1
       | minus ((a,m)::ms,(b,n)::ns) = case M.compare(m,n) of
-	    Util.Less => (F.negate b,n) :: minus ((a,m)::ms,ns)
-	  | Util.Greater => (a,m) :: minus (ms,(b,n)::ns)
-	  | Util.Equal => let val c = F.subtract(a,b)
-       		             in if F.isZero c then minus(ms,ns)
-			        else (c,m)::minus(ms,ns)
-		             end
+            Util.Less => (F.negate b,n) :: minus ((a,m)::ms,ns)
+          | Util.Greater => (a,m) :: minus (ms,(b,n)::ns)
+          | Util.Equal => let val c = F.subtract(a,b)
+                                    in if F.isZero c then minus(ms,ns)
+                                else (c,m)::minus(ms,ns)
+                             end
     fun termMult (a,m,p) =
-	  (map (fn (a',m') => (F.multiply(a,a'),M.multiply(m,m'))) p)
+          (map (fn (a',m') => (F.multiply(a,a'),M.multiply(m,m'))) p)
 in
 (* unused code
     fun negate (P p) = P (neg p)
@@ -486,10 +486,10 @@ in
 
 (* unused code unless power is used
     val multiply = let
-	  fun times (p1,p2) = 
-	        revfold (fn ((a,m),tot) => plus (termMult(a,m,p2),tot)) p1 []
+          fun times (p1,p2) = 
+                revfold (fn ((a,m),tot) => plus (termMult(a,m,p2),tot)) p1 []
           in fn (P p1,P p2) => if length p1 > length p2 then P(times (p2,p1))
-			       else P(times (p1,p2))
+                               else P(times (p1,p2))
           end
 *)
 
@@ -518,26 +518,26 @@ end
 
 (* unused code
     fun power(p,k) =
-	  if k<=3 then case k of
-	      0 => one
-	    | 1 => p
-	    | 2 => multiply(p,p)
-	    | 3 => multiply(p,multiply(p,p))
-	    | _ => Util.illegal "POLY.power with k<0"
-	  else if andb(k,1)=0 then power(multiply(p,p),rshift(k,1))
-	       else multiply(p,power(multiply(p,p),rshift(k,1)))
+          if k<=3 then case k of
+              0 => one
+            | 1 => p
+            | 2 => multiply(p,p)
+            | 3 => multiply(p,multiply(p,p))
+            | _ => Util.illegal "POLY.power with k<0"
+          else if andb(k,1)=0 then power(multiply(p,p),rshift(k,1))
+               else multiply(p,power(multiply(p,p),rshift(k,1)))
 *)
 
     fun isZero (P []) = true | isZero (P (_::_)) = false
 
 (* unused code
     val equal = let
-	  fun eq ([],[]) = true
-	    | eq (_::_,[]) = false
-	    | eq ([],_::_) = false
-	    | eq ((a,m)::p,(b,n)::q) =
-	        F.equal(a,b) andalso M.compare(m,n)=Util.Equal
-		andalso eq (p,q)
+          fun eq ([],[]) = true
+            | eq (_::_,[]) = false
+            | eq ([],_::_) = false
+            | eq ((a,m)::p,(b,n)::q) =
+                F.equal(a,b) andalso M.compare(m,n)=Util.Equal
+                andalso eq (p,q)
           in fn (P p,P q) => eq (p,q) end
 *)
 
@@ -562,59 +562,59 @@ end
 (* only used if r is used
     fun display (P []) = F.display F.zero
       | display (P p) = let
-	  fun dsp (a,m) = let
-	        val s = 
-		      if M.deg m = 0 then F.display a
- 		      else if F.equal(F.one,F.negate a) then "-" ^ M.display m
-		      else if F.equal(F.one,a) then M.display m
-		      else F.display a ^ M.display m
-	        in if substring(s,0,1)="-" then s else "+" ^ s end
-	  in String.concat(map dsp p) end
+          fun dsp (a,m) = let
+                val s = 
+                      if M.deg m = 0 then F.display a
+                       else if F.equal(F.one,F.negate a) then "-" ^ M.display m
+                      else if F.equal(F.one,a) then M.display m
+                      else F.display a ^ M.display m
+                in if substring(s,0,1)="-" then s else "+" ^ s end
+          in String.concat(map dsp p) end
 *)
 end
 
 structure HP = struct
-	datatype hpoly = HP of P.poly array1
-	val log = let
-	      fun log(n,l) = if n<8 then l else log((n >> 2),1+l)
-	      in fn n => log(n,0) end
-	fun mkHPoly p = let
-	      val l = log(P.numTerms p)
-	      in HP(tabulate(l+1,fn i => if i=l then p else P.zero)) end
-	fun add(p,HP ps) = let
-	      val l = log(P.numTerms p)
-	      in if l>=length1 ps then let
-		   val n = length1 ps
-		   in HP(tabulate(n+n,
-			 fn i => if i<n then sub1(ps,i)
-			         else if i=l then p else P.zero))
-		   end
-		 else let
-		   val p = P.add(p,sub1(ps,l))
-		   in if l=log(P.numTerms p) then (update1(ps,l,p); HP ps)
-		      else (update1(ps,l,P.zero); add (p,HP ps))
-		   end
-	      end
-	fun leadAndRest (HP ps) = let
-	      val n = length1 ps
-	      fun lar (m,indices,i) = if i>=n then lar'(m,indices) else let
-		    val p = sub1(ps,i)
-		    in if P.isZero p then lar(m,indices,i+1)
-		       else if null indices then lar(P.leadMono p,[i],i+1)
-			    else case M.compare(m,P.leadMono p) of
-				Util.Less => lar(P.leadMono p,[i],i+1)
-			      | Util.Equal => lar(m,i::indices,i+1)
-			      | Util.Greater => lar(m,indices,i+1)
-		    end
-	      and lar' (_,[]) = NONE
-		| lar' (m,i::is) = let
-		    fun extract i = case P.leadAndRest(sub1(ps,i)) of
-			  ((a,_),rest) => (update1(ps,i,rest); a)
-		    val a = revfold (fn (j,b) => F.add(extract j,b))
-				    is (extract i)
-		    in if F.isZero a then lar(M.one,[],0) else SOME(a,m,HP ps)
-		    end
-	      in lar(M.one,[],0) end
+        datatype hpoly = HP of P.poly array1
+        val log = let
+              fun log(n,l) = if n<8 then l else log((n >> 2),1+l)
+              in fn n => log(n,0) end
+        fun mkHPoly p = let
+              val l = log(P.numTerms p)
+              in HP(tabulate(l+1,fn i => if i=l then p else P.zero)) end
+        fun add(p,HP ps) = let
+              val l = log(P.numTerms p)
+              in if l>=length1 ps then let
+                   val n = length1 ps
+                   in HP(tabulate(n+n,
+                         fn i => if i<n then sub1(ps,i)
+                                 else if i=l then p else P.zero))
+                   end
+                 else let
+                   val p = P.add(p,sub1(ps,l))
+                   in if l=log(P.numTerms p) then (update1(ps,l,p); HP ps)
+                      else (update1(ps,l,P.zero); add (p,HP ps))
+                   end
+              end
+        fun leadAndRest (HP ps) = let
+              val n = length1 ps
+              fun lar (m,indices,i) = if i>=n then lar'(m,indices) else let
+                    val p = sub1(ps,i)
+                    in if P.isZero p then lar(m,indices,i+1)
+                       else if null indices then lar(P.leadMono p,[i],i+1)
+                            else case M.compare(m,P.leadMono p) of
+                                Util.Less => lar(P.leadMono p,[i],i+1)
+                              | Util.Equal => lar(m,i::indices,i+1)
+                              | Util.Greater => lar(m,indices,i+1)
+                    end
+              and lar' (_,[]) = NONE
+                | lar' (m,i::is) = let
+                    fun extract i = case P.leadAndRest(sub1(ps,i)) of
+                          ((a,_),rest) => (update1(ps,i,rest); a)
+                    val a = revfold (fn (j,b) => F.add(extract j,b))
+                                    is (extract i)
+                    in if F.isZero a then lar(M.one,[],0) else SOME(a,m,HP ps)
+                    end
+              in lar(M.one,[],0) end
 end
 
 structure G = struct
@@ -631,12 +631,12 @@ structure G = struct
 
     fun reduce (f,mi) = if P.isZero f then f else let
           (* use accumulator and reverse at end? *)
-	  fun r hp = case HP.leadAndRest hp of
-	        NONE => []
-	      | (SOME(a,m,hp)) => case MI.search(mi,m) of
-		    NONE => (a,m)::(r hp)
-		  | SOME (m',p) => r (HP.add(P.termMult(F.negate a,M.divide(m,m'),!p),hp))
-	  in P.implode(r (HP.mkHPoly f)) end
+          fun r hp = case HP.leadAndRest hp of
+                NONE => []
+              | (SOME(a,m,hp)) => case MI.search(mi,m) of
+                    NONE => (a,m)::(r hp)
+                  | SOME (m',p) => r (HP.add(P.termMult(F.negate a,M.divide(m,m'),!p),hp))
+          in P.implode(r (HP.mkHPoly f)) end
 
     (* assume f<>0 *)
     fun mkMonic f = P.scalarMult(F.reciprocal(P.leadCoeff f),f)
@@ -652,114 +652,114 @@ structure G = struct
      * 4) store list of pairs (h,g1),...,(h,gn) as vector (h,g1,...,gn)
      *)
     fun addPairs (h,mi,pairs) = let
-	  val m = P.leadMono h
-	  val d = M.deg m
-	  fun tag ((m' : M.mono,g' : P.poly ref),quots) = (inc maybePairs;
-				     (M.divide(M.lcm(m,m'),m),(m',!g'))::quots)
-	  fun insert ((mm,(m',g')),arr) = (* recall mm = m':m *)
-	        if M.compare(m',mm)=Util.Equal then (* rel. prime *)
-		    (inc primePairs; arr)
-		else (inc usedPairs;
-		      Util.insert(P.cons((F.one,m'),g'),M.deg mm+d,arr))
-	  val buckets = MI.fold insert (MI.mkIdeal (MI.fold tag mi []))
-	      			       (array1(0,[]))
-	  fun ins (~1,pairs) = pairs
-	    | ins (i,pairs) = case sub1(buckets,i) of
-	            [] => ins(i-1,pairs)
-		  | gs => ins(i-1,Util.insert(arrayoflist(h::gs),i,pairs))
-	  in ins(length1 buckets - 1,pairs) end
+          val m = P.leadMono h
+          val d = M.deg m
+          fun tag ((m' : M.mono,g' : P.poly ref),quots) = (inc maybePairs;
+                                     (M.divide(M.lcm(m,m'),m),(m',!g'))::quots)
+          fun insert ((mm,(m',g')),arr) = (* recall mm = m':m *)
+                if M.compare(m',mm)=Util.Equal then (* rel. prime *)
+                    (inc primePairs; arr)
+                else (inc usedPairs;
+                      Util.insert(P.cons((F.one,m'),g'),M.deg mm+d,arr))
+          val buckets = MI.fold insert (MI.mkIdeal (MI.fold tag mi []))
+                                             (array1(0,[]))
+          fun ins (~1,pairs) = pairs
+            | ins (i,pairs) = case sub1(buckets,i) of
+                    [] => ins(i-1,pairs)
+                  | gs => ins(i-1,Util.insert(arrayoflist(h::gs),i,pairs))
+          in ins(length1 buckets - 1,pairs) end
 
     fun grobner fs = let
-	 fun pr l = print (String.concat (l@["\n"]))
-	  val fs = revfold (fn (f,fs) => Util.insert(f,P.deg f,fs))
-	      		   fs (array1(0,[]))
-	  (* pairs at least as long as fs, so done when done w/ all pairs *)
-	  val pairs = ref(array1(length1 fs,[]))
-	  val mi = MI.mkEmpty()
-	  val newDegGens = ref []
+         fun pr l = print (String.concat (l@["\n"]))
+          val fs = revfold (fn (f,fs) => Util.insert(f,P.deg f,fs))
+                                 fs (array1(0,[]))
+          (* pairs at least as long as fs, so done when done w/ all pairs *)
+          val pairs = ref(array1(length1 fs,[]))
+          val mi = MI.mkEmpty()
+          val newDegGens = ref []
           val addGen = (* add and maybe auto-reduce new monic generator h *)
-	        if not(!autoReduce) then
-		    fn h => MI.insert (mi,P.leadMono h,ref (P.rest h))
-		else fn h => let
-		    val ((_,m),rh) = P.leadAndRest h
-		    fun autoReduce f =
-			  if P.isZero f then f
-			  else let val ((a,m'),rf) = P.leadAndRest f
-			       in case M.compare(m,m') of
-				   Util.Less => P.cons((a,m'),autoReduce rf)
-				 | Util.Equal => P.subtract(rf,P.scalarMult(a,rh))
-				 | Util.Greater => f
-			       end
-		    val rrh = ref rh
-		    in
-			MI.insert (mi,P.leadMono h,rrh);
-			app (fn f => f:=autoReduce(!f)) (!newDegGens);
-			newDegGens := rrh :: !newDegGens
-		    end
-	  val tasksleft = ref 0
-	  fun feedback () = let
-	        val n = !tasksleft
-	        in 
-		    if (n && 15)=0 then print (Int.toString n) else (); 
-			print "."; 
-			TextIO.flushOut TextIO.stdOut;
-			tasksleft := n-1
-		end
+                if not(!autoReduce) then
+                    fn h => MI.insert (mi,P.leadMono h,ref (P.rest h))
+                else fn h => let
+                    val ((_,m),rh) = P.leadAndRest h
+                    fun autoReduce f =
+                          if P.isZero f then f
+                          else let val ((a,m'),rf) = P.leadAndRest f
+                               in case M.compare(m,m') of
+                                   Util.Less => P.cons((a,m'),autoReduce rf)
+                                 | Util.Equal => P.subtract(rf,P.scalarMult(a,rh))
+                                 | Util.Greater => f
+                               end
+                    val rrh = ref rh
+                    in
+                        MI.insert (mi,P.leadMono h,rrh);
+                        app (fn f => f:=autoReduce(!f)) (!newDegGens);
+                        newDegGens := rrh :: !newDegGens
+                    end
+          val tasksleft = ref 0
+          fun feedback () = let
+                val n = !tasksleft
+                in 
+                    if (n && 15)=0 then print (Int.toString n) else (); 
+                        print "."; 
+                        TextIO.flushOut TextIO.stdOut;
+                        tasksleft := n-1
+                end
 
-	  fun try h = 
-	      let
-		  val _ = feedback ()
-		  val h = reduce(h,mi)
-	      in if P.isZero h 
-		     then ()
-		 else let val h = mkMonic h
-			  val _ = (print "#"; TextIO.flushOut TextIO.stdOut)
-		      in pairs := addPairs(h,mi,!pairs);
-			  addGen h;
-			  inc newGens
-		      end
-	      end
+          fun try h = 
+              let
+                  val _ = feedback ()
+                  val h = reduce(h,mi)
+              in if P.isZero h 
+                     then ()
+                 else let val h = mkMonic h
+                          val _ = (print "#"; TextIO.flushOut TextIO.stdOut)
+                      in pairs := addPairs(h,mi,!pairs);
+                          addGen h;
+                          inc newGens
+                      end
+              end
 
-	  fun tryPairs fgs = let
-		val ((a,m),f) = P.leadAndRest (sub1(fgs,0))
-		fun tryPair i = if i=0 then () else let
-		      val ((b,n),g) = P.leadAndRest (sub1(fgs,i))
-		      val k = M.lcm(m,n)
-		      in 
-			 try (P.spair(b,M.divide(k,m),f,a,M.divide(k,n),g));
-			 tryPair (i-1)
-		      end
-		in tryPair (length1 fgs -1) end
+          fun tryPairs fgs = let
+                val ((a,m),f) = P.leadAndRest (sub1(fgs,0))
+                fun tryPair i = if i=0 then () else let
+                      val ((b,n),g) = P.leadAndRest (sub1(fgs,i))
+                      val k = M.lcm(m,n)
+                      in 
+                         try (P.spair(b,M.divide(k,m),f,a,M.divide(k,n),g));
+                         tryPair (i-1)
+                      end
+                in tryPair (length1 fgs -1) end
 
-	  fun numPairs ([],n) = n
-	    | numPairs (p::ps,n) = numPairs(ps,n-1+length1 p)
+          fun numPairs ([],n) = n
+            | numPairs (p::ps,n) = numPairs(ps,n-1+length1 p)
 
-	  fun gb d = if d>=length1(!pairs) then mi else
-	        (* note: i nullify entries to reclaim space *)
-	        (
+          fun gb d = if d>=length1(!pairs) then mi else
+                (* note: i nullify entries to reclaim space *)
+                (
 pr ["DEGREE ",Int.toString d," with ",
     Int.toString(numPairs(sub1(!pairs,d),0))," pairs ",
     if d>=length1 fs then "0" else Int.toString(length(sub1(fs,d))),
       " generators to do"];
-		 tasksleft := numPairs(sub1(!pairs,d),0);
-		 if d>=length1 fs then () 
-		 else tasksleft := !tasksleft + length (sub1(fs,d));
-		   if d>(!maxDeg) then ()
-		   else (             
-			 reset();
-			 newDegGens := [];
-			 app tryPairs (sub1(!pairs,d));
-			 update1(!pairs,d,[]);
-			 if d>=length1 fs then ()
-			 else (app try (sub1(fs,d)); update1(fs,d,[]));
-			   pr ["maybe ",Int.toString(!maybePairs)," prime ",
-			       Int.toString (!primePairs),
-			       " using ",Int.toString (!usedPairs),
-			       "; found ",Int.toString (!newGens)]
-			   );
-		 gb(d+1)
-		)
-	  in gb 0 end
+                 tasksleft := numPairs(sub1(!pairs,d),0);
+                 if d>=length1 fs then () 
+                 else tasksleft := !tasksleft + length (sub1(fs,d));
+                   if d>(!maxDeg) then ()
+                   else (             
+                         reset();
+                         newDegGens := [];
+                         app tryPairs (sub1(!pairs,d));
+                         update1(!pairs,d,[]);
+                         if d>=length1 fs then ()
+                         else (app try (sub1(fs,d)); update1(fs,d,[]));
+                           pr ["maybe ",Int.toString(!maybePairs)," prime ",
+                               Int.toString (!primePairs),
+                               " using ",Int.toString (!usedPairs),
+                               "; found ",Int.toString (!newGens)]
+                           );
+                 gb(d+1)
+                )
+          in gb 0 end
 
 local
     (* grammar:
@@ -773,58 +773,58 @@ local
     *)
     datatype char = Dig of int | Var of int | Sign of int
     fun char ch =
-	let val och = ord ch in
-	  if ord #"0"<=och andalso och<=ord #"9" then Dig (och - ord #"0")
-	  else if ord #"a"<=och andalso och<=ord #"z" then Var (och - ord #"a")
-	  else if ord #"A"<=och andalso och<=ord #"Z" then Var (och - ord #"A" + 26)
-	  else if och = ord #"+" then Sign 1
-	  else if och = ord #"-" then Sign ~1
-	       else Util.illegal ("bad ch in poly: " ^ (Char.toString(ch)))
+        let val och = ord ch in
+          if ord #"0"<=och andalso och<=ord #"9" then Dig (och - ord #"0")
+          else if ord #"a"<=och andalso och<=ord #"z" then Var (och - ord #"a")
+          else if ord #"A"<=och andalso och<=ord #"Z" then Var (och - ord #"A" + 26)
+          else if och = ord #"+" then Sign 1
+          else if och = ord #"-" then Sign ~1
+               else Util.illegal ("bad ch in poly: " ^ (Char.toString(ch)))
         end
 
     fun nat (n,Dig d::l) = nat(n*10+d,l) | nat (n,l) = (n,l)
     fun mono (m,Var v::Dig d::l) =
-	  let val (n,l) = nat(d,l)
-	  in mono(M.multiply(M.implode[(v,n)],m),l) end
+          let val (n,l) = nat(d,l)
+          in mono(M.multiply(M.implode[(v,n)],m),l) end
       | mono (m,Var v::l) = mono(M.multiply(M.x_i v,m),l)
       | mono (m,l) = (m,l)
 
     fun term l = let
-	  val (n,l) = case l of (Dig d::l) => nat(d,l) | _ => (1,l)
-	  val (m,l) = mono(M.one,l)
-    	  in ((F.coerceInt n,m),l) end
+          val (n,l) = case l of (Dig d::l) => nat(d,l) | _ => (1,l)
+          val (m,l) = mono(M.one,l)
+              in ((F.coerceInt n,m),l) end
     fun poly (p,[]) = p
       | poly (p,l) = let
-	  val (s,l) = case l of Sign s::l => (F.coerceInt s,l) | _ => (F.one,l)
-	  val ((a,m),l) = term l
-	  in poly(P.add(P.coerce(F.multiply(s,a),m),p),l) end
+          val (s,l) = case l of Sign s::l => (F.coerceInt s,l) | _ => (F.one,l)
+          val ((a,m),l) = term l
+          in poly(P.add(P.coerce(F.multiply(s,a),m),p),l) end
 
 in
     fun parsePoly s = poly (P.zero,map char(String.explode s))
 
 (* unused code
     fun readIdeal stream = let
-	  fun readLine () = let
-	        val s = input_line stream
-		val n = size s
-		val n = if n>0 andalso substring(s,n-1,1)="\n" then n-1 else n
-		fun r i = if i>=n then []
-			  else case substring(s,i,1) of
-			      ";" => r(i+1)
-			    | " " => r(i+1)
-			    | _ => map char (String.explode(substring(s,i,n-i)))
-		in r 0 end
-	  fun r () = if end_of_stream stream then []
-		     else poly(P.zero,readLine()) :: r()
-	  fun num() = if end_of_stream stream then Util.illegal "missing #"
-		      else case nat(0,readLine()) of
-			  (_,_::_) => Util.illegal "junk after #"
-			| (n,_) => n
-	  val _ = 1=num() orelse Util.illegal "stream doesn't start w/ `1'"
-	  val n = num()
-	  val i = r()
-	  val _ = length i = n orelse Util.illegal "wrong # poly's"
-	  in i end
+          fun readLine () = let
+                val s = input_line stream
+                val n = size s
+                val n = if n>0 andalso substring(s,n-1,1)="\n" then n-1 else n
+                fun r i = if i>=n then []
+                          else case substring(s,i,1) of
+                              ";" => r(i+1)
+                            | " " => r(i+1)
+                            | _ => map char (String.explode(substring(s,i,n-i)))
+                in r 0 end
+          fun r () = if end_of_stream stream then []
+                     else poly(P.zero,readLine()) :: r()
+          fun num() = if end_of_stream stream then Util.illegal "missing #"
+                      else case nat(0,readLine()) of
+                          (_,_::_) => Util.illegal "junk after #"
+                        | (n,_) => n
+          val _ = 1=num() orelse Util.illegal "stream doesn't start w/ `1'"
+          val n = num()
+          val i = r()
+          val _ = length i = n orelse Util.illegal "wrong # poly's"
+          in i end
 *)
 
 (* unused code
@@ -848,20 +848,20 @@ fun grab mi = MI.fold (fn ((m,g),l) => P.cons((F.one,m),!g)::l) mi []
 fun r mi s = let
       val p = G.parsePoly s
       in print (P.display p); print "\n";
-	 print (P.display(G.reduce(p,mi))); print "\n"
+         print (P.display(G.reduce(p,mi))); print "\n"
       end
 *)
 
 (* unused code unless printCounts is used
 fun p6 i= let val s= Int.toString (i:int)
-	      val n= size s
+              val n= size s
           in print(substring("      ",0,6-n)); print s end
 *)
 
 (* unused code
 fun hex n = let
       fun h n = if n=0 then ""
-		else h(n smlnj_div 16) ^ substring("0123456789ABCDEF",n smlnj_mod 16,1)
+                else h(n smlnj_div 16) ^ substring("0123456789ABCDEF",n smlnj_mod 16,1)
       in if n=0 then "0" else h n end
 fun printCounts () = map (fn l => (map p6 l; print "\n")) (getCounts())
 fun totalCount () = revfold (fn (l,c) => revfold op + l c) (getCounts()) 0
@@ -901,13 +901,13 @@ let
     (* sort all k, 0<=i<=k<j<=length a *)
     fun s (i,j,acc) = if i=j then acc else let
         val pivot = a sub (b sub (i+random(j-i)))
-	fun partition (dup,lo,k,hi) = if k=hi then (dup,lo,hi) else
-	    (case M.compare (pivot, a sub (b sub k)) of
-		 Util.Less => (swap (lo,k); partition (dup,lo+1,k+1,hi))
-	       | Util.Equal => partition (dup+1,lo,k+1,hi)
-	       | Util.Greater => (swap (k,hi-1); partition (dup,lo,k,hi-1)))
-	val (dup,lo,hi) = partition (0,i,i,j)
-	in s(i,lo,(dup,pivot)::s(hi,j,acc)) end
+        fun partition (dup,lo,k,hi) = if k=hi then (dup,lo,hi) else
+            (case M.compare (pivot, a sub (b sub k)) of
+                 Util.Less => (swap (lo,k); partition (dup,lo+1,k+1,hi))
+               | Util.Equal => partition (dup+1,lo,k+1,hi)
+               | Util.Greater => (swap (k,hi-1); partition (dup,lo,k,hi-1)))
+        val (dup,lo,hi) = partition (0,i,i,j)
+        in s(i,lo,(dup,pivot)::s(hi,j,acc)) end
     in s(0,length1 a,[]) end
 *)
 
@@ -975,7 +975,7 @@ fun report (e as Tabulate) = (print "exn: Tabulate\n"; raise e)
 
 
 (* val u5 = map G.parsePoly ["abcde-f5","a+b+c+d+e","ab+bc+cd+de+ea",
- * 			  "abc+bcd+cde+dea+eab","abcd+bcde+cdea+deab+eabc"]
+ *                           "abc+bcd+cde+dea+eab","abcd+bcde+cdea+deab+eabc"]
  * 
  * val u4 = map G.parsePoly ["abcd-e4","a+b+c+d","ab+bc+cd+da","abc+bcd+cda+dab"]
  * 
@@ -984,13 +984,13 @@ fun report (e as Tabulate) = (print "exn: Tabulate\n"; raise e)
 (* fun runit () = 
  *   let
  *     val _ = (print "Enter fs, u7, u6, u5, or u4: "; 
- * 	     TextIO.flushOut TextIO.stdOut)
+ *              TextIO.flushOut TextIO.stdOut)
  *     val s = TextIO.inputN(TextIO.stdIn,2)
  *     val data = 
  *       if (s = "fs") then fs else if (s = "u7") then u7 
  *       else if (s = "u6") then u6 else if (s = "u5") then u5 
  *       else if (s = "u4") then u4 else 
- * 	(print "no such data\n"; raise (Util.Impossible "no such data"))
+ *         (print "no such data\n"; raise (Util.Impossible "no such data"))
  *   in
  *     gb data handle e => report e
  *   end
@@ -999,18 +999,18 @@ fun report (e as Tabulate) = (print "exn: Tabulate\n"; raise e)
 structure Main =
    struct
       fun doit n =
-	 let
-	    val u6 =
-	       map G.parsePoly
-	       ["abcdef-g6","a+b+c+d+e+f","ab+bc+cd+de+ef+fa",
-		"abc+bcd+cde+def+efa+fab",
-		"abcd+bcde+cdef+defa+efab+fabc",
-		"abcde+bcdef+cdefa+defab+efabc+fabcd"]
-	    fun loop n =
-	       if n = 0
-		  then ()
-	       else (gb u6; loop (n - 1))
-	 in
-	    loop n
-	 end
+         let
+            val u6 =
+               map G.parsePoly
+               ["abcdef-g6","a+b+c+d+e+f","ab+bc+cd+de+ef+fa",
+                "abc+bcd+cde+def+efa+fab",
+                "abcd+bcde+cdef+defa+efab+fabc",
+                "abcde+bcdef+cdefa+defab+efabc+fabcd"]
+            fun loop n =
+               if n = 0
+                  then ()
+               else (gb u6; loop (n - 1))
+         in
+            loop n
+         end
    end

@@ -9,8 +9,8 @@ structure Buffer: BUFFER =
 struct
 
 datatype 'a t = T of {dummy: 'a,
-		      elts: 'a array ref,
-		      length: int ref}
+                      elts: 'a array ref,
+                      length: int ref}
    
 fun new {dummy} =
    T {dummy = dummy,
@@ -33,17 +33,17 @@ fun ensureFree (T {dummy, elts, length, ...}, amount: int): unit =
       val maxLength = Array.length (!elts)
    in
       if amount <= maxLength - !length
-	 then ()
+         then ()
       else
-	 let
-	    val n = Int.max (maxLength * growFactor, !length + amount)
-	    val e = !elts
-	 in
-	    elts := Array.tabulate (n, fn i =>
-				    if i < maxLength
-				       then Array.sub (e, i)
-				    else dummy)
-	 end
+         let
+            val n = Int.max (maxLength * growFactor, !length + amount)
+            val e = !elts
+         in
+            elts := Array.tabulate (n, fn i =>
+                                    if i < maxLength
+                                       then Array.sub (e, i)
+                                    else dummy)
+         end
    end
 
 fun add (v as T {elts, length, ...}, e) =

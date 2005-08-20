@@ -15,14 +15,14 @@ signature HEAP_STRUCTS =
 signature HEAP =
    sig
       include HEAP_STRUCTS
-	 
+         
       structure Elt:
-	 sig
-	    type 'a t
+         sig
+            type 'a t
 
-	    val key: 'a t -> Key.t
-	    val value: 'a t -> 'a
-	 end
+            val key: 'a t -> Key.t
+            val value: 'a t -> 'a
+         end
       
       type 'a t
 

@@ -8,8 +8,8 @@ set -e
 name=`basename $0`
 
 usage () {
-	echo >&2 "usage: $name [-cross target] [-run-only target] [-short] [mlton flags ...]"
-	exit 1
+        echo >&2 "usage: $name [-cross target] [-run-only target] [-short] [mlton flags ...]"
+        exit 1
 }
 
 cross='no'
@@ -17,38 +17,38 @@ fail='no'
 runOnly='no'
 short='no'
 while [ "$#" -gt 0 ]; do
-	case "$1" in
-	-cross)
-		cross='yes'
-		shift
-		if [ "$#" = 0 ]; then
-			usage
-		fi
-		crossTarget="$1"
-		shift
-		;;
-	-fail)
-		fail='yes'
-		shift
-		;;
-	-run-only)
-		runOnly='yes'
-		shift
-		if [ "$#" = 0 ]; then
-			usage
-		fi
-		crossTarget="$1"
-		shift
-		;;
-	-short)
-		short='yes'
-		shift
-		;;
-	*)
-		flags="$@"
-		break
-		;;
-	esac
+        case "$1" in
+        -cross)
+                cross='yes'
+                shift
+                if [ "$#" = 0 ]; then
+                        usage
+                fi
+                crossTarget="$1"
+                shift
+                ;;
+        -fail)
+                fail='yes'
+                shift
+                ;;
+        -run-only)
+                runOnly='yes'
+                shift
+                if [ "$#" = 0 ]; then
+                        usage
+                fi
+                crossTarget="$1"
+                shift
+                ;;
+        -short)
+                short='yes'
+                shift
+                ;;
+        *)
+                flags="$@"
+                break
+                ;;
+        esac
 done
 
 dir=`dirname $0`
@@ -57,7 +57,7 @@ bin="$src/build/bin"
 mlton="$bin/mlton"
 flags="-type-check true $flags"
 if [ $cross = 'yes' ]; then
-	flags="$flags -target $crossTarget -stop g"
+        flags="$flags -target $crossTarget -stop g"
 fi
 cont='callcc.sml callcc2.sml callcc3.sml once.sml'
 flatArray='finalize.sml flat-array.sml flat-array.2.sml'
@@ -69,7 +69,7 @@ tmp=/tmp/z.regression.$$
 PATH=$bin:$src/bin/.:$PATH
 
 compFail () {
-	echo "compilation of $f failed with $flags"
+        echo "compilation of $f failed with $flags"
 }
 
 $mlton -verbose 1 || echo 'no mlton present'
@@ -78,148 +78,148 @@ echo "flags = $flags"
 cd $src/regression
 
 if [ "$fail" = 'yes' ]; then
-	for f in `ls fail/*.sml`; do
-		echo "testing $f"
-		( $mlton $flags -stop tc $f >/dev/null 2>&1 &&
-			echo "compilation of $f should have failed but did not" ) ||
-			true
-	done
-	exit 0
+        for f in `ls fail/*.sml`; do
+                echo "testing $f"
+                ( $mlton $flags -stop tc $f >/dev/null 2>&1 &&
+                        echo "compilation of $f should have failed but did not" ) ||
+                        true
+        done
+        exit 0
 fi
 
 for f in `ls *.sml`; do
-	f=`basename $f .sml`
-	case `host-os` in
-	cygwin|mingw)
-		case "$f" in
-		echo|signals|socket|suspend|textio.2|thread2|world*)
-			continue
-		;;
-		esac
-	;;
-	esac
-	case `host-os` in
-	mingw)
-		case "$f" in
-		mutex|prodcons|signals2)
-			continue
-		;;
-		esac
-	esac
-	case "$f" in
-	serialize)
-		echo "skipping $f"
-	;;
-	*)
-		echo "testing $f"
-		case "$f" in
-		exnHistory*)
-			extraFlags="-const 'Exn.keepHistory true'"
-		;;
-		*)
-			extraFlags=""
-		;;
-		esac
-		case "$runOnly" in
-		no)
-			mlb="$f.mlb"
-			echo "\$(SML_LIB)/basis/basis.mlb
-				\$(SML_LIB)/basis/mlton.mlb
-				\$(SML_LIB)/basis/sml-nj.mlb
- 				ann 
-					\"allowFFI true\"
-					\"allowOverload true\"
-					\"nonexhaustiveMatch ignore\"
-					\"redundantMatch ignore\"
-				in $f.sml 
-				end" >$mlb
-			cmd="$mlton $flags $extraFlags -output $f $mlb"
-			eval $cmd
-			rm $mlb
-			if [ "$?" -ne '0' ] || 
-				[ "$cross" = 'no' -a ! -x "$f" ]; then
-				compFail $f
-			fi
-		;;
-		yes)
-			case $crossTarget in
-			*mingw)
-				libs='-lws2_32 -lkernel32 -lpsapi -lnetapi32'
-			;;
-			*solaris)
-				libs='-lnsl -lsocket'
-			;;
-			*)
-				libs=''
-			;;
-			esac
-			libs="-lmlton -lgmp $libs -lgdtoa -lm"
-			# Must use $f.[0-9].[cS], not $f.*.[cS], because the
-			# latter will include other files, e.g. for finalize,
-			# it will also include finalize.2.
-			files="$f.[0-9].[cS]"
-			if ls $f.[0-9][0-9].[cS] >/dev/null 2>&1; then 
-				files="$files $f.[0-9][0-9].[cS]"
-			fi
-			gcc -o $f -w -O1				\
-				-I "../build/lib/include"		\
-				-L"../build/lib/$crossTarget"		\
-				-L/usr/pkg/lib				\
-				-L/usr/local/lib			\
-				$files $libs
-		;;
-		esac
-		if [ ! -r $f.nonterm -a $cross = 'no' -a -x $f ]; then
-			nonZeroMsg='Nonzero exit status.'
-			case $crossTarget in
-			*mingw)
-				nonZeroMsg="$nonZeroMsg"'\r'
-			;;
-			esac
-			( ./$f || echo -e "$nonZeroMsg" ) >$tmp 2>&1 
-			if [ -r $f.ok ]; then
-				case $crossTarget in
-				*mingw)
-					compare="$f.sed.ok"
-					sed 's/$/\r/' <"$f.ok" >"$compare"
-				;;
-				*)
-					compare="$f.ok"
-				;;
-				esac
-				if ! diff $compare $tmp; then
-					echo "difference with $flags"
-				fi
-			fi
-		fi
-	;;
-	esac
+        f=`basename $f .sml`
+        case `host-os` in
+        cygwin|mingw)
+                case "$f" in
+                echo|signals|socket|suspend|textio.2|thread2|world*)
+                        continue
+                ;;
+                esac
+        ;;
+        esac
+        case `host-os` in
+        mingw)
+                case "$f" in
+                mutex|prodcons|signals2)
+                        continue
+                ;;
+                esac
+        esac
+        case "$f" in
+        serialize)
+                echo "skipping $f"
+        ;;
+        *)
+                echo "testing $f"
+                case "$f" in
+                exnHistory*)
+                        extraFlags="-const 'Exn.keepHistory true'"
+                ;;
+                *)
+                        extraFlags=""
+                ;;
+                esac
+                case "$runOnly" in
+                no)
+                        mlb="$f.mlb"
+                        echo "\$(SML_LIB)/basis/basis.mlb
+                                \$(SML_LIB)/basis/mlton.mlb
+                                \$(SML_LIB)/basis/sml-nj.mlb
+                                 ann 
+                                        \"allowFFI true\"
+                                        \"allowOverload true\"
+                                        \"nonexhaustiveMatch ignore\"
+                                        \"redundantMatch ignore\"
+                                in $f.sml 
+                                end" >$mlb
+                        cmd="$mlton $flags $extraFlags -output $f $mlb"
+                        eval $cmd
+                        rm $mlb
+                        if [ "$?" -ne '0' ] || 
+                                [ "$cross" = 'no' -a ! -x "$f" ]; then
+                                compFail $f
+                        fi
+                ;;
+                yes)
+                        case $crossTarget in
+                        *mingw)
+                                libs='-lws2_32 -lkernel32 -lpsapi -lnetapi32'
+                        ;;
+                        *solaris)
+                                libs='-lnsl -lsocket'
+                        ;;
+                        *)
+                                libs=''
+                        ;;
+                        esac
+                        libs="-lmlton -lgmp $libs -lgdtoa -lm"
+                        # Must use $f.[0-9].[cS], not $f.*.[cS], because the
+                        # latter will include other files, e.g. for finalize,
+                        # it will also include finalize.2.
+                        files="$f.[0-9].[cS]"
+                        if ls $f.[0-9][0-9].[cS] >/dev/null 2>&1; then 
+                                files="$files $f.[0-9][0-9].[cS]"
+                        fi
+                        gcc -o $f -w -O1                                \
+                                -I "../build/lib/include"                \
+                                -L"../build/lib/$crossTarget"                \
+                                -L/usr/pkg/lib                                \
+                                -L/usr/local/lib                        \
+                                $files $libs
+                ;;
+                esac
+                if [ ! -r $f.nonterm -a $cross = 'no' -a -x $f ]; then
+                        nonZeroMsg='Nonzero exit status.'
+                        case $crossTarget in
+                        *mingw)
+                                nonZeroMsg="$nonZeroMsg"'\r'
+                        ;;
+                        esac
+                        ( ./$f || echo -e "$nonZeroMsg" ) >$tmp 2>&1 
+                        if [ -r $f.ok ]; then
+                                case $crossTarget in
+                                *mingw)
+                                        compare="$f.sed.ok"
+                                        sed 's/$/\r/' <"$f.ok" >"$compare"
+                                ;;
+                                *)
+                                        compare="$f.ok"
+                                ;;
+                                esac
+                                if ! diff $compare $tmp; then
+                                        echo "difference with $flags"
+                                fi
+                        fi
+                fi
+        ;;
+        esac
 done
 if [ "$cross" = 'yes' -o "$runOnly" = 'yes' -o "$short" = 'yes' ]; then
- 	exit 0
+         exit 0
 fi
 mmake clean >/dev/null
 cd $src/benchmark/tests
 for f in `ls *.sml`; do
-	f=`basename $f .sml`
-	tmpf=/tmp/$f.$$
-	case "$f" in
-	fxp)
-		echo "skipping $f"
-	;;
-	*)
-			echo "testing $f"
-		echo "val _ = Main.doit 0" | cat $f.sml - > $tmpf.sml
-		$mlton -output $tmpf $flags 			\
-			-default-ann 'nonexhaustiveMatch ignore'\
-			-default-ann 'redundantMatch ignore'	\
-			$tmpf.sml
-		if [ $? -ne 0 ]; then
-			compFail $f
-		fi
-		rm -f $tmpf $tmpf.sml
-	;;
-	esac
+        f=`basename $f .sml`
+        tmpf=/tmp/$f.$$
+        case "$f" in
+        fxp)
+                echo "skipping $f"
+        ;;
+        *)
+                        echo "testing $f"
+                echo "val _ = Main.doit 0" | cat $f.sml - > $tmpf.sml
+                $mlton -output $tmpf $flags                         \
+                        -default-ann 'nonexhaustiveMatch ignore'\
+                        -default-ann 'redundantMatch ignore'        \
+                        $tmpf.sml
+                if [ $? -ne 0 ]; then
+                        compFail $f
+                fi
+                rm -f $tmpf $tmpf.sml
+        ;;
+        esac
 done 
 mmake clean >/dev/null
 cd $src
@@ -228,16 +228,16 @@ for f in mllex mlyacc mlprof; do
     cd $src/$f
     case "$f" in
     foobar)
-	    echo "skipping $f"
+            echo "skipping $f"
     ;;
     *)
-	echo "testing $f"
-	mmake -W $f >/dev/null
-	$mlton $flags -output $tmpf $f.mlb
-	if [ $? -ne 0 ]; then
-		compFail $f
-	fi
-	rm -f $tmpf
+        echo "testing $f"
+        mmake -W $f >/dev/null
+        $mlton $flags -output $tmpf $f.mlb
+        if [ $? -ne 0 ]; then
+                compFail $f
+        fi
+        rm -f $tmpf
     ;;
     esac
 done

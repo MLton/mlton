@@ -8,17 +8,17 @@ fun generate(f: ('a -> unit) -> unit): unit -> 'a option =
       val paused: 'a option Thread.t option ref = ref NONE
       val gen: unit Thread.t option ref = ref NONE
       fun return(a: 'a option): unit =
-	 Thread.switch(fn t' =>
-		       let val _ = gen := SOME t'
-			  val t = valOf(!paused)
-			  val _ = paused := NONE
-		       in Thread.prepare (t, a)
-		       end)
+         Thread.switch(fn t' =>
+                       let val _ = gen := SOME t'
+                          val t = valOf(!paused)
+                          val _ = paused := NONE
+                       in Thread.prepare (t, a)
+                       end)
       val _ =
-	 gen := SOME(Thread.new(fn () => (f (return o SOME)
-					  ; return NONE)))
+         gen := SOME(Thread.new(fn () => (f (return o SOME)
+                                          ; return NONE)))
    in fn () => Thread.switch(fn t => (paused := SOME t
-				      ; Thread.prepare (valOf(!gen), ())))
+                                      ; Thread.prepare (valOf(!gen), ())))
    end
    
 datatype 'a tree =
@@ -28,20 +28,20 @@ datatype 'a tree =
 fun foreach(t: 'a tree, f: 'a -> unit): unit =
    let
       val rec loop =
-	 fn L a => f a
-	  | N(l, r) => (loop l; loop r)
+         fn L a => f a
+          | N(l, r) => (loop l; loop r)
    in loop t
    end
 
 fun same(f: unit -> 'a option,
-	 g: unit -> 'a option,
-	 eq: 'a * 'a -> bool): bool =
+         g: unit -> 'a option,
+         eq: 'a * 'a -> bool): bool =
    let
       fun loop() =
-	 case (f(), g()) of
-	    (NONE, NONE) => true
-	  | (SOME x, SOME y) => eq(x, y) andalso loop()
-	  | _ => false
+         case (f(), g()) of
+            (NONE, NONE) => true
+          | (SOME x, SOME y) => eq(x, y) andalso loop()
+          | _ => false
    in loop()
    end
 
@@ -58,5 +58,5 @@ val _ =
    if sameFringe(t1, t2, op =)
       then print "success\n"
    else print "failure\n"
-	 
+         
 end

@@ -3,7 +3,7 @@ signature UNIX =
       type ('a, 'b) proc
       type signal
       datatype exit_status = 
-	 W_EXITED
+         W_EXITED
        | W_EXITSTATUS of Word8.word
        | W_SIGNALED of signal
        | W_STOPPED of signal
@@ -17,7 +17,7 @@ signature UNIX =
       val kill: ('a, 'b) proc * signal -> unit
       val reap: ('a, 'b) proc -> OS.Process.status
       val streamsOf: ((TextIO.instream, TextIO.outstream) proc
-		      -> TextIO.instream * TextIO.outstream)
+                      -> TextIO.instream * TextIO.outstream)
       val textInstreamOf: (TextIO.instream, 'a) proc -> TextIO.instream
       val textOutstreamOf: ('a, TextIO.outstream) proc -> TextIO.outstream
    end

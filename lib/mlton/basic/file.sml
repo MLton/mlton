@@ -50,8 +50,8 @@ end
 fun remove f =
    if doesExist f
       then (FS.remove f
-	    handle e => Error.bug (concat ["File.remove: ", f, ": ",
-					   Layout.toString (Exn.layout e)]))
+            handle e => Error.bug (concat ["File.remove: ", f, ": ",
+                                           Layout.toString (Exn.layout e)]))
    else ()
 
 local
@@ -66,8 +66,8 @@ end
 fun sameContents (f1, f2) =
    size f1 = size f2
    andalso withIn (f1, fn in1 =>
-		   withIn (f2, fn in2 =>
-			   In.sameContents (in1, in2)))
+                   withIn (f2, fn in2 =>
+                           In.sameContents (in1, in2)))
 
 fun output (file, out) = Out.output (out, file)
    
@@ -85,7 +85,7 @@ fun copy (source, dest) =
    
 fun concat (sources, dest) =
    withOut (dest, fn out =>
-	   List.foreach (sources, fn f => outputContents (f, out)))
+           List.foreach (sources, fn f => outputContents (f, out)))
 
 val temp = MLton.TextIO.mkstemps
 
@@ -109,10 +109,10 @@ fun withTempOut' (z, f: Out.t -> unit, g) =
       val (name, out) = temp z
    in
       Exn.finally (fn () =>
-		   (Exn.finally (fn () => f out,
-				 fn () => Out.close out)
-		    ; g name),
-		   fn () => remove name)
+                   (Exn.finally (fn () => f out,
+                                 fn () => Out.close out)
+                    ; g name),
+                   fn () => remove name)
    end
 
 fun withTempOut (f, g) =
@@ -126,7 +126,7 @@ fun withOutIn (fout, fin) =
 
 fun withStringIn (s, fin) =
    withOutIn (fn out => Out.output (out, s),
-	      fin)
+              fin)
 
 fun create f = withOut (f, fn _ => ())
 

@@ -28,7 +28,7 @@ in
    val try: (unit -> 'a) * ('a -> 'b) * (exn -> 'b) -> 'b =
       fn (t, k, h) =>
       case Ok (t ()) handle e => Raise e of
-	 Ok x => k x
+         Ok x => k x
        | Raise e => h e
 end
 

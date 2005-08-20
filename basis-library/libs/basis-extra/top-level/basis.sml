@@ -246,21 +246,21 @@ structure BasisExtra :> BASIS_EXTRA =
       structure MLton = MLton
       structure SMLofNJ = SMLofNJ
       structure Unsafe = Unsafe
-	 
+         
       open ArrayGlobal
-	   BoolGlobal
-	   CharGlobal
-	   IntGlobal
-	   GeneralGlobal
-	   ListGlobal
-	   OptionGlobal
-	   RealGlobal
-	   StringGlobal
-	   RealGlobal
-	   SubstringGlobal
-	   TextIOGlobal
-	   VectorGlobal
-	   WordGlobal
+           BoolGlobal
+           CharGlobal
+           IntGlobal
+           GeneralGlobal
+           ListGlobal
+           OptionGlobal
+           RealGlobal
+           StringGlobal
+           RealGlobal
+           SubstringGlobal
+           TextIOGlobal
+           VectorGlobal
+           WordGlobal
       val real = real
       val op = = op =
       val op <> = op <>

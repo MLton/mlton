@@ -3,8 +3,8 @@ extern char _start;
 extern char etext;
 
 void *getTextStart () {
-	return &_start;
+        return &_start;
 }
 void *getTextEnd () {
-	return &etext;
+        return &etext;
 }

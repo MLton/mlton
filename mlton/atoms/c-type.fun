@@ -24,9 +24,9 @@ datatype t =
  | Word64
 
 val all = [Int8, Int16, Int32, Int64,
-	   Pointer,
-	   Real32, Real64,
-	   Word8, Word16, Word32, Word64]
+           Pointer,
+           Real32, Real64,
+           Word8, Word16, Word32, Word64]
 
 val bool = Int32
 

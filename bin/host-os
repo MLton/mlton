@@ -6,19 +6,19 @@ dir=`dirname $0`
 bin=`cd $dir && pwd`
 
 die () {
-	echo >&2 "$1"
-	exit 1
+        echo >&2 "$1"
+        exit 1
 }
 
 usage () {
-	die "usage: $name"
+        die "usage: $name"
 }
 
 case "$#" in
 0)
 ;;
 *)
-	usage
+        usage
 ;;
 esac
 

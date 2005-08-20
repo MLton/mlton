@@ -38,7 +38,7 @@ fun rotate p =
 fun deleteSafe(p, d) =
    (if Elt.eqPrev(Pointer.! p, d)
        then if isSingle p then makeEmpty p
-	    else Pointer.:=(p, Elt.next d)
+            else Pointer.:=(p, Elt.next d)
     else ()
     ; Elt.unlink d)
 
@@ -50,14 +50,14 @@ fun foreach(p, f) =
    if Pointer.isNull p then ()
    else
       let
-	 val start = Pointer.! p
-	 fun foreach d =
-	    let val next = Elt.next d
-	    in (f d
-		; if Elt.eqPrev(start, next)
-		     then ()
-		  else foreach next)
-	    end
+         val start = Pointer.! p
+         fun foreach d =
+            let val next = Elt.next d
+            in (f d
+                ; if Elt.eqPrev(start, next)
+                     then ()
+                  else foreach next)
+            end
       in foreach start
       end
 
@@ -66,12 +66,12 @@ fun deleteEach(p, f) = foreach(p, fn d => (Elt.unlink d; f d))
 fun splice(p, p') =
    if Pointer.isNull p then Pointer.copy(p, p')
    else if Pointer.isNull p' then ()
-	else let val e1 = Pointer.! p
-		 val e1' = Pointer.! p'
-		 val e2 = Elt.next e1
-		 val e2' = Elt.next e1'
-	     in Elt.link(e1, e2')
-		; Elt.link(e1', e2)
-	     end
+        else let val e1 = Pointer.! p
+                 val e1' = Pointer.! p'
+                 val e2 = Elt.next e1
+                 val e2' = Elt.next e1'
+             in Elt.link(e1, e2')
+                ; Elt.link(e1', e2)
+             end
 
 end

@@ -32,23 +32,23 @@ structure General: GENERAL_EXTRA =
       val exnName = Primitive.Exn.name
 
       local
-	 val messagers: (exn -> string option) list ref = ref []
+         val messagers: (exn -> string option) list ref = ref []
       in
-	 val addExnMessager: (exn -> string option) -> unit =
-	    fn f => messagers := f :: !messagers
-	    
-	 val rec exnMessage: exn -> string =
-	    fn e =>
-	    let
-	       val rec find =
-		  fn [] => exnName e
-		   | m :: ms =>
-			case m e of
-			   NONE => find ms
-			 | SOME s => s
-	    in
-	       find (!messagers)
-	    end
+         val addExnMessager: (exn -> string option) -> unit =
+            fn f => messagers := f :: !messagers
+            
+         val rec exnMessage: exn -> string =
+            fn e =>
+            let
+               val rec find =
+                  fn [] => exnName e
+                   | m :: ms =>
+                        case m e of
+                           NONE => find ms
+                         | SOME s => s
+            in
+               find (!messagers)
+            end
       end
    end
 

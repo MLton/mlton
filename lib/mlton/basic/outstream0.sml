@@ -46,9 +46,9 @@ fun withClose (out: t, f: t -> 'a): 'a =
 local
    fun 'a withh (f, p: t -> 'a, openn): 'a =
       let
-	 val out = openn f handle IO.Io _ => Error.bug ("OutStream0.withh: cannot open " ^ f)
+         val out = openn f handle IO.Io _ => Error.bug ("OutStream0.withh: cannot open " ^ f)
       in
-	 withClose (out, p)
+         withClose (out, p)
       end
 in
    fun 'a withOut (f, p: t -> 'a): 'a = withh (f, p, openOut)

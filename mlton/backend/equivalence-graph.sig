@@ -25,12 +25,12 @@ signature EQUIVALENCE_GRAPH =
       include EQUIVALENCE_GRAPH_STRUCTS
       
       structure Class:
-	 sig
-	    (* The type of equivalence classes. *)
-	    type t
+         sig
+            (* The type of equivalence classes. *)
+            type t
 
-	    val plist: t -> PropertyList.t
-	 end
+            val plist: t -> PropertyList.t
+         end
 
       (* The type of equivalence graphs. *)
       type t

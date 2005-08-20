@@ -11,22 +11,22 @@ struct
 structure Domain =
    struct
       type 'a t =
-	 {size: int, fromInt: int -> 'a, toInt: 'a -> int}
+         {size: int, fromInt: int -> 'a, toInt: 'a -> int}
 
       fun pair({size, fromInt, toInt}: 'a1 t,
-	       {size=size', fromInt=fromInt', toInt=toInt'}: 'a2 t,
-	       inj: 'a1 -> 'a,
-	       inj': 'a2 -> 'a,
-	       out: 'a * ('a1 -> int) * ('a2 -> int) -> int) =
-	 {size = size + size',
-	  toInt = fn d => out(d, toInt, fn d' => size + toInt' d'),
-	  fromInt = fn n => if n < size then inj(fromInt n)
-			    else inj'(fromInt'(n - size))}
+               {size=size', fromInt=fromInt', toInt=toInt'}: 'a2 t,
+               inj: 'a1 -> 'a,
+               inj': 'a2 -> 'a,
+               out: 'a * ('a1 -> int) * ('a2 -> int) -> int) =
+         {size = size + size',
+          toInt = fn d => out(d, toInt, fn d' => size + toInt' d'),
+          fromInt = fn n => if n < size then inj(fromInt n)
+                            else inj'(fromInt'(n - size))}
    end
    
 datatype ('a, 'b) t =
    T of {domain: 'a Domain.t,
-	 array: 'b Array.t}
+         array: 'b Array.t}
 
 fun empty(domain: 'a Domain.t) =
    T{domain = domain,

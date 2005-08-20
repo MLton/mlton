@@ -8,15 +8,15 @@ signature OS_IO =
       val kind: iodesc -> iodesc_kind
 
       structure Kind: 
-	 sig
-	    val file: iodesc_kind
-	    val dir: iodesc_kind
-	    val symlink: iodesc_kind
-	    val tty: iodesc_kind
-	    val pipe: iodesc_kind
-	    val socket: iodesc_kind
-	    val device: iodesc_kind
-	 end
+         sig
+            val file: iodesc_kind
+            val dir: iodesc_kind
+            val symlink: iodesc_kind
+            val tty: iodesc_kind
+            val pipe: iodesc_kind
+            val socket: iodesc_kind
+            val device: iodesc_kind
+         end
 
       eqtype poll_desc
       type poll_info

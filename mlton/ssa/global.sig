@@ -18,8 +18,8 @@ signature GLOBAL =
       include GLOBAL_STRUCTS
       
       val make:
-	 unit -> {
-		  new: Type.t * Exp.t -> Var.t,
-		  all: unit -> Statement.t vector
-		 }
+         unit -> {
+                  new: Type.t * Exp.t -> Var.t,
+                  all: unit -> Statement.t vector
+                 }
    end

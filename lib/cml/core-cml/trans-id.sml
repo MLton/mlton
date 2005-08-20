@@ -27,26 +27,26 @@ structure TransID : TRANS_ID =
 
       (* create a transaction flag (ID and cleanUp). *)
       fun mkFlg () =
-	 let 
-	    val txid as TXID txst = mkTxId ()
-	    val cleanUp = fn () =>
-	       (Assert.assertAtomic' ("TransID.mkFlg.cleanUp", NONE)
-		; txst := CANCEL)
-	 in 
-	    (txid, cleanUp)
-	 end
+         let 
+            val txid as TXID txst = mkTxId ()
+            val cleanUp = fn () =>
+               (Assert.assertAtomic' ("TransID.mkFlg.cleanUp", NONE)
+                ; txst := CANCEL)
+         in 
+            (txid, cleanUp)
+         end
 
       (* given a transaction ID, mark it cancelled. *)
       fun force (TXID txst) =
-	 (Assert.assertAtomic' ("TransID.force", NONE)
-	  ; case !txst of
-	       TRANS => txst := CANCEL
-	     | CANCEL => raise Fail "TransID.force")
+         (Assert.assertAtomic' ("TransID.force", NONE)
+          ; case !txst of
+               TRANS => txst := CANCEL
+             | CANCEL => raise Fail "TransID.force")
 
       (*
       fun toString (TXID txst) =
-	 case !txst of
-	    TRANS => "TRANS"
-	  | CANCEL => "CANCEL"
+         case !txst of
+            TRANS => "TRANS"
+          | CANCEL => "CANCEL"
       *)
    end

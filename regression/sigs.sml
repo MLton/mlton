@@ -11,7 +11,7 @@ functor f () =
 signature A = 
   sig type t val a : t
   end
-	    
+            
 signature B =
   sig
     type s

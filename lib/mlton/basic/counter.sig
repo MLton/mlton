@@ -10,7 +10,7 @@ type int = Int.t
 signature COUNTER =
    sig
       type t
-	 
+         
       val new: int -> t
       val next: t -> int
       val tick: t -> unit

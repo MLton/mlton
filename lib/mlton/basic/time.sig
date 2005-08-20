@@ -14,17 +14,17 @@ signature TIME =
       include ORDER
 
       type times =
-	  {
-	    self:     {utime: t, (* user time of process *)
-		       stime: t  (* system time of process *)
-		       },
-	    children: {utime: t, (* user time of terminated child processes *)
-		       stime: t  (* system time of terminated child processes *)
-		       },
-	    gc:       {utime: t, (* user time of gc *)
-		       stime: t  (* system time of gc *)
-		       }
-	   }
+          {
+            self:     {utime: t, (* user time of process *)
+                       stime: t  (* system time of process *)
+                       },
+            children: {utime: t, (* user time of terminated child processes *)
+                       stime: t  (* system time of terminated child processes *)
+                       },
+            gc:       {utime: t, (* user time of gc *)
+                       stime: t  (* system time of gc *)
+                       }
+           }
 
       val + : t * t -> t
       val - : t * t -> t

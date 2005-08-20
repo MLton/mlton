@@ -1,8 +1,8 @@
 #include "platform.h"
 
 Signal Posix_Process_termSig (Status s) {
-	int i;
+        int i;
 
-	i = s;
-	return WTERMSIG (i);
+        i = s;
+        return WTERMSIG (i);
 }

@@ -12,6 +12,6 @@ functor OSFileSysConvert
      open FileSys
      val readDir = fn d =>
        case readDir d of
-	 NONE => ""
+         NONE => ""
        | SOME s => s
   end

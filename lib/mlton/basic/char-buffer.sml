@@ -9,12 +9,12 @@ structure CharBuffer: CHAR_BUFFER =
 struct
 
 datatype t = T of {length: int ref,
-		   chars: char array ref}
+                   chars: char array ref}
 
 val initChar = #"\013"
    
 fun new () = T {length = ref 0,
-	      chars = ref (Array.array (1, initChar))}
+              chars = ref (Array.array (1, initChar))}
 
 fun length (T {length, ...}) = !length
 
@@ -31,15 +31,15 @@ structure Int =
 fun ensureFree (T {length, chars, ...}, amount: int): unit =
    let val maxLength = Array.length (!chars)
    in if amount <= maxLength - !length
-	 then ()
+         then ()
       else
-	 let val n = Int.max (maxLength * growFactor, !length + amount)
-	    val a = !chars
-	 in chars := Array.tabulate (n, fn i =>
-				    if i < maxLength
-				       then Array.sub (a, i)
-				    else initChar)
-	 end
+         let val n = Int.max (maxLength * growFactor, !length + amount)
+            val a = !chars
+         in chars := Array.tabulate (n, fn i =>
+                                    if i < maxLength
+                                       then Array.sub (a, i)
+                                    else initChar)
+         end
    end
 
 fun addChar (v as T {length, chars, ...}, c) =

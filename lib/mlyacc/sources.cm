@@ -30,4 +30,4 @@ base.sig
 join.sml
 lrtable.sml
 stream.sml
-parser2.sml	(* error correcting version *)
+parser2.sml        (* error correcting version *)

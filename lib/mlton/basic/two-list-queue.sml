@@ -21,11 +21,11 @@ fun toList q = foldr (q, [], op ::)
 fun deque (T (l, r)) =
    let
       val (l, r) = (case l of
-		       [] => (rev r, [])
-		     | _ =>  (l, r))
+                       [] => (rev r, [])
+                     | _ =>  (l, r))
    in
       case l of
-	 [] => NONE
+         [] => NONE
        | x :: l => SOME (T (l, r), x)
    end
 

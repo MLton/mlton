@@ -7,4 +7,4 @@ val r = ref (1, 2)
 val _ = r := (3, 4)
 val _ = f r
 val _ = print (concat [Int.toString (#1 (!r)), " ",
-		       Int.toString (#2 (!r)), "\n"])
+                       Int.toString (#2 (!r)), "\n"])

@@ -18,10 +18,10 @@ signature OS_PROCESS_EXTRA =
       include OS_PROCESS
 
       structure Status:
-	 sig
-	    type t
+         sig
+            type t
 
-	    val fromInt: int -> t
-	    val fromPosix: Posix.Process.exit_status -> t
-	 end
+            val fromInt: int -> t
+            val fromPosix: Posix.Process.exit_status -> t
+         end
    end

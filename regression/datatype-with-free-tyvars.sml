@@ -6,7 +6,7 @@ fun 'a f (x1: 'a, x2: 'a, aToString: 'a -> string): unit =
       val _: u = U y1
       val y2 = T (x2, "foo")
       fun 'b g (T (a, b), bToString: 'b -> string): unit =
-	 print (concat [aToString a, " ", bToString b, "\n"])
+         print (concat [aToString a, " ", bToString b, "\n"])
       val _ = g (y1, Int.toString)
       val _ = g (y2, fn s => s)
    in

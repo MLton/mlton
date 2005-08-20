@@ -13,7 +13,7 @@ signature CONST_TYPE_STRUCTS =
 signature CONST_TYPE =
    sig
       include CONST_TYPE_STRUCTS
-	 
+         
       datatype t = Bool | Real | String | Word
 
       val toString: t -> string

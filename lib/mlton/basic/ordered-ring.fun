@@ -20,7 +20,7 @@ fun abs n = if isPositive n then n else ~ n
 
 fun foldl(from, to, b, f) =
    let fun fold(n, a) = if n > to then a
-		       else fold(add1 n, f(a,n))
+                       else fold(add1 n, f(a,n))
    in fold(from, b)
    end
 

@@ -17,8 +17,8 @@ datatype 'a t = T of 'a L.t * 'a L.t
    
 fun destruct(T(l, r)) =
    let val (l, r) = if L.isEmpty l
-		      then (L.reverse r, L.empty())
-		   else (l, r)
+                      then (L.reverse r, L.empty())
+                   else (l, r)
    in case L.destruct l of
       NONE => NONE
     | SOME(x, l) => SOME(x, T(l, r))

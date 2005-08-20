@@ -8,7 +8,7 @@
 signature PROMISE =
    sig
       type 'a t
-	 
+         
       exception Force
 
       val delay: (unit -> 'a) -> 'a t

@@ -7,9 +7,9 @@
  *)
 
 functor MonoArray (type elem
-		   structure V: MONO_VECTOR_EXTRA
-		     where type elem = elem
-		       and type vector = elem Vector.vector
+                   structure V: MONO_VECTOR_EXTRA
+                     where type elem = elem
+                       and type vector = elem Vector.vector
                        and type MonoVectorSlice.slice = elem VectorSlice.slice
                   ): MONO_ARRAY_EXTRA 
                      where type elem = elem
@@ -27,15 +27,15 @@ functor MonoArray (type elem
       val toPoly = fn a => a
 
       structure MonoArraySlice =
-	 struct
-	    open ArraySlice
+         struct
+            open ArraySlice
 
-	    type elem = elem
-	    type array = array
-	    type slice = elem slice
-	    type vector = vector
-	    type vector_slice = vector_slice
+            type elem = elem
+            type array = array
+            type slice = elem slice
+            type vector = vector
+            type vector_slice = vector_slice
 
-	    val toPoly = fn s => s
-	 end
+            val toPoly = fn s => s
+         end
    end

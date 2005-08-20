@@ -10,15 +10,15 @@ signature INET_SOCK =
       val fromAddr: sock_addr -> NetHostDB.in_addr * int
       val any: int -> sock_addr
       structure UDP: 
-	 sig
-	   val socket: unit -> dgram_sock
-	   val socket': int -> dgram_sock
-	 end
+         sig
+           val socket: unit -> dgram_sock
+           val socket': int -> dgram_sock
+         end
       structure TCP: 
-	 sig
-	   val socket: unit -> 'mode stream_sock
-	   val socket': int -> 'mode stream_sock
-	   val getNODELAY: 'mode stream_sock -> bool
-	   val setNODELAY: 'mode stream_sock * bool -> unit
-	 end
+         sig
+           val socket: unit -> 'mode stream_sock
+           val socket': int -> 'mode stream_sock
+           val getNODELAY: 'mode stream_sock -> bool
+           val setNODELAY: 'mode stream_sock * bool -> unit
+         end
    end

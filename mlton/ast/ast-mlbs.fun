@@ -48,22 +48,22 @@ fun layoutBasexp exp =
 and layoutBasdec dec =
    case node dec of
       Ann (anns,_, dec) =>
-	 align [str "ann", 
-		indent (seq [str String.dquote, str anns, str String.dquote], 3),
-		str "in", 
-		indent (layoutBasdec dec, 3), 
-		str "end"]
+         align [str "ann", 
+                indent (seq [str String.dquote, str anns, str String.dquote], 3),
+                str "in", 
+                indent (layoutBasdec dec, 3), 
+                str "end"]
     | Basis basbnds =>
-	 layoutAndsBind
-	 ("basis", "=", basbnds, fn {name, def} =>
-	  (case node def of Var _ => OneLine | _ => Split 3,
-	   Basid.layout name, layoutBasexp def))
+         layoutAndsBind
+         ("basis", "=", basbnds, fn {name, def} =>
+          (case node def of Var _ => OneLine | _ => Split 3,
+           Basid.layout name, layoutBasexp def))
     | Defs def => ModIdBind.layout def
     | Local (dec1, dec2) => Pretty.locall (layoutBasdec dec1, layoutBasdec dec2) 
     | MLB ({fileUse, ...}, _) => File.layout fileUse
     | Open bs => seq [str "open ",
-		      seq (separate (Vector.toListMap (bs, Basid.layout),
-				     " "))] 
+                      seq (separate (Vector.toListMap (bs, Basid.layout),
+                                     " "))] 
     | Prim => str "_prim"
     | Prog ({fileUse, ...}, _) => File.layout fileUse
     | Seq decs => align (layoutBasdecs decs)
@@ -73,23 +73,23 @@ fun checkSyntaxBasexp (e: basexp): unit =
    case node e of
       Bas dec => checkSyntaxBasdec dec
     | Let (dec, exp) => (checkSyntaxBasdec dec
-			 ; checkSyntaxBasexp exp)
+                         ; checkSyntaxBasexp exp)
     | Var _ => ()
 and checkSyntaxBasdec (d: basdec): unit =
    case node d of
       Ann (_, _, dec) => checkSyntaxBasdec dec
     | Basis basbnds =>
-	 reportDuplicates
-	 (basbnds, {equals = (fn ({name = id, ...}, {name = id', ...}) =>
-			      Basid.equals (id, id')),
-		    layout = Basid.layout o #name,
-		    name = "basis definition",
-		    region = Basid.region o #name,
-		    term = fn () => layoutBasdec d})
+         reportDuplicates
+         (basbnds, {equals = (fn ({name = id, ...}, {name = id', ...}) =>
+                              Basid.equals (id, id')),
+                    layout = Basid.layout o #name,
+                    name = "basis definition",
+                    region = Basid.region o #name,
+                    term = fn () => layoutBasdec d})
     | Defs def => ModIdBind.checkSyntax def
     | Local (dec1, dec2) => 
-	 (checkSyntaxBasdec dec1
-	  ; checkSyntaxBasdec dec2)
+         (checkSyntaxBasdec dec1
+          ; checkSyntaxBasdec dec2)
     | MLB _ => ()
     | Open _ => ()
     | Prim => ()
@@ -99,42 +99,42 @@ and checkSyntaxBasdec (d: basdec): unit =
 fun sourceFiles (d: basdec): File.t vector =
    let
       val sourceFiles : File.t Buffer.t =
-	 Buffer.new {dummy = "<dummy>"}
+         Buffer.new {dummy = "<dummy>"}
       val psi : File.t -> bool ref =
-	 String.memoize (fn _ => ref false)
+         String.memoize (fn _ => ref false)
 
       fun sourceFilesBasexp (e: basexp): unit =
-	 case node e of
-	    Bas dec => sourceFilesBasdec dec
-	  | Let (dec, exp) => (sourceFilesBasdec dec
-			       ; sourceFilesBasexp exp)
-	  | Var _ => ()
+         case node e of
+            Bas dec => sourceFilesBasdec dec
+          | Let (dec, exp) => (sourceFilesBasdec dec
+                               ; sourceFilesBasexp exp)
+          | Var _ => ()
       and sourceFilesBasdec (d: basdec): unit =
-	 case node d of
-	    Ann (_, _, dec) => sourceFilesBasdec dec
-	  | Basis basbnds =>
-	       Vector.foreach
-	       (basbnds, fn {def, ...} =>
-		sourceFilesBasexp def)
-	  | Defs _ => ()
-	  | Local (dec1, dec2) => (sourceFilesBasdec dec1
-				   ; sourceFilesBasdec dec2)
-	  | MLB ({fileAbs, ...}, dec) =>
-	       let
-		  val b = psi fileAbs
-	       in
-		  if !b
-		     then ()
-		     else let
-			     val () = b := true
-			  in
-			     sourceFilesBasdec (Promise.force dec)
-			  end
-	       end
-	  | Open _ => ()
-	  | Prim => ()
-	  | Prog ({fileUse, ...}, _) => Buffer.add (sourceFiles, fileUse)
-	  | Seq decs => List.foreach (decs, sourceFilesBasdec)
+         case node d of
+            Ann (_, _, dec) => sourceFilesBasdec dec
+          | Basis basbnds =>
+               Vector.foreach
+               (basbnds, fn {def, ...} =>
+                sourceFilesBasexp def)
+          | Defs _ => ()
+          | Local (dec1, dec2) => (sourceFilesBasdec dec1
+                                   ; sourceFilesBasdec dec2)
+          | MLB ({fileAbs, ...}, dec) =>
+               let
+                  val b = psi fileAbs
+               in
+                  if !b
+                     then ()
+                     else let
+                             val () = b := true
+                          in
+                             sourceFilesBasdec (Promise.force dec)
+                          end
+               end
+          | Open _ => ()
+          | Prim => ()
+          | Prog ({fileUse, ...}, _) => Buffer.add (sourceFiles, fileUse)
+          | Seq decs => List.foreach (decs, sourceFilesBasdec)
       val () = sourceFilesBasdec d
    in
       Buffer.toVector sourceFiles

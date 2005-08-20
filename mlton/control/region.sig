@@ -29,17 +29,17 @@ signature REGION =
       val toString: t -> string
 
       structure Wrap:
-	 sig
-	    type region
-	    type 'a t
-	    val region: 'a t -> region
-	    val node: 'a t -> 'a
-	    val makeRegion: 'a * region -> 'a t
-	    val makeRegion':  'a * SourcePos.t * SourcePos.t -> 'a t
-(*	    val make: 'a -> 'a t *)
-	    val dest: 'a t -> 'a * region
-(*	    val left: 'a t -> int *)
-(*	    val right: 'a t -> int *)
-	 end
+         sig
+            type region
+            type 'a t
+            val region: 'a t -> region
+            val node: 'a t -> 'a
+            val makeRegion: 'a * region -> 'a t
+            val makeRegion':  'a * SourcePos.t * SourcePos.t -> 'a t
+(*            val make: 'a -> 'a t *)
+            val dest: 'a t -> 'a * region
+(*            val left: 'a t -> int *)
+(*            val right: 'a t -> int *)
+         end
       sharing type Wrap.region = t
    end

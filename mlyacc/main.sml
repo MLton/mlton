@@ -11,15 +11,15 @@ struct
 
 fun usage s =
    Process.usage {usage = "file.grm",
-		  msg = s}
+                  msg = s}
 
 fun main args =
    let
       val rest =
-	 let open Popt
-	 in parse {switches = args,
-		   opts = []}
-	 end
+         let open Popt
+         in parse {switches = args,
+                   opts = []}
+         end
    in case rest of
       Result.No msg => usage msg
     | Result.Yes [file] => ParseGen.parseGen file

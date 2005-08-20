@@ -11,22 +11,22 @@ type word = Word.word
 signature MLTON_SOCKET =
    sig
       structure Address:
-	 sig
-	    type t = word
-	 end
+         sig
+            type t = word
+         end
 
       structure Host:
-	 sig
-	    type t = {name: string}
+         sig
+            type t = {name: string}
 
-	    val getByAddress: Address.t -> t option
-	    val getByName: string -> t option
-	 end
+            val getByAddress: Address.t -> t option
+            val getByName: string -> t option
+         end
 
       structure Port:
-	 sig
-	    type t = int
-	 end
+         sig
+            type t = int
+         end
 
       type t
 

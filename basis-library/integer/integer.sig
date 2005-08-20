@@ -66,8 +66,8 @@ signature INTEGER =
       val precision: Int.int option 
       val sameSign: int * int -> bool 
       val scan: (StringCvt.radix
-		 -> (char, 'a) StringCvt.reader
-		 -> (int, 'a) StringCvt.reader)
+                 -> (char, 'a) StringCvt.reader
+                 -> (int, 'a) StringCvt.reader)
       val sign: int -> Int.int 
       val toLarge: int -> LargeInt.int 
       val toString: int -> string 

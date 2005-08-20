@@ -1,10 +1,10 @@
 Group
-	structure CM2MLB
+        structure CM2MLB
 is
-	$/pgraph.cm
-	$smlnj/cm.cm
-	$smlnj/viscomp/core.cm
-	$/smlnj-lib.cm
-	$/basis.cm
-	gen-mlb.sml
+        $/pgraph.cm
+        $smlnj/cm.cm
+        $smlnj/viscomp/core.cm
+        $/smlnj-lib.cm
+        $/basis.cm
+        gen-mlb.sml
         cm2mlb.sml

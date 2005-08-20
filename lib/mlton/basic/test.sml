@@ -8,16 +8,16 @@
 structure Z =
    struct
       val _ =
-	 let open Trace.Immediate
-	 in debug := Out Out.error
-	    ; flagged()
-	    ; ["concat"]
-	    ; ["Uri.fromString", "Uri.resolve", "Uri.relativize",
-	       "Authority.equals"]
-	    ; ["Uri.fromString", "Uri.resolve", "Uri.toString",
-		  "Uri.relativize", "Uri.checkResolve"]
-	    ; ["Regexp.match"]
-	 end
+         let open Trace.Immediate
+         in debug := Out Out.error
+            ; flagged()
+            ; ["concat"]
+            ; ["Uri.fromString", "Uri.resolve", "Uri.relativize",
+               "Authority.equals"]
+            ; ["Uri.fromString", "Uri.resolve", "Uri.toString",
+                  "Uri.relativize", "Uri.checkResolve"]
+            ; ["Regexp.match"]
+         end
    end
 structure Z = TestBase64 (Base64)
 structure Z = TestBinarySearch (BinarySearch)

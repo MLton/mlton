@@ -19,10 +19,10 @@ signature RATIONAL =
       val toInt : t -> I.t
       val numerator : t -> I.t
       val denominator : t -> I.t
-	 
+         
 (*      val toInt : t -> int
       val intTo : int -> t
       val intIntTo : int * int -> t
-	 *)
+         *)
       val toReal : t -> real
    end

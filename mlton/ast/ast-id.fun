@@ -12,7 +12,7 @@ struct
 open S
 
 datatype t = T of {name: Symbol.t,
-		   region: Region.t}
+                   region: Region.t}
 
 type obj = t
 type node' = Symbol.t
@@ -28,7 +28,7 @@ val node = name
 val toSymbol = name
 
 fun makeRegion (s, r) = T {name = s,
-			   region = r}
+                           region = r}
 
 val fromSymbol = makeRegion
 

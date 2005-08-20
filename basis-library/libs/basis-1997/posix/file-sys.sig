@@ -10,7 +10,7 @@ signature POSIX_FILE_SYS_1997 =
       (* identity functions *)
       val fdToIOD: file_desc -> OS.IO.iodesc
       val iodToFD: OS.IO.iodesc -> file_desc option
-	 
+         
       type dirstream
       val opendir: string -> dirstream
       val readdir: dirstream -> string
@@ -19,44 +19,44 @@ signature POSIX_FILE_SYS_1997 =
 
       val chdir: string -> unit
       val getcwd: unit -> string
-	 
+         
       val stdin: file_desc 
       val stdout: file_desc 
       val stderr: file_desc
-	 
+         
       structure S:
-	 sig
-	    eqtype mode
-	    include POSIX_FLAGS_1997 where type flags = mode 
+         sig
+            eqtype mode
+            include POSIX_FLAGS_1997 where type flags = mode 
 
-	    val irwxu: mode 
-	    val irusr: mode 
-	    val iwusr: mode 
-	    val ixusr: mode 
-	    val irwxg: mode 
-	    val irgrp: mode 
-	    val iwgrp: mode 
-	    val ixgrp: mode 
-	    val irwxo: mode 
-	    val iroth: mode 
-	    val iwoth: mode 
-	    val ixoth: mode 
-	    val isuid: mode 
-	    val isgid: mode 
-	 end
+            val irwxu: mode 
+            val irusr: mode 
+            val iwusr: mode 
+            val ixusr: mode 
+            val irwxg: mode 
+            val irgrp: mode 
+            val iwgrp: mode 
+            val ixgrp: mode 
+            val irwxo: mode 
+            val iroth: mode 
+            val iwoth: mode 
+            val ixoth: mode 
+            val isuid: mode 
+            val isgid: mode 
+         end
 
       structure O:
-	 sig
-	    include POSIX_FLAGS_1997
+         sig
+            include POSIX_FLAGS_1997
 
             val append: flags 
-	    val excl: flags 
-	    val noctty: flags 
-	    val nonblock: flags 
-	    val sync: flags 
-	    val trunc: flags 
-	 end
-	 
+            val excl: flags 
+            val noctty: flags 
+            val nonblock: flags 
+            val sync: flags 
+            val trunc: flags 
+         end
+         
        datatype open_mode  = O_RDONLY  | O_WRONLY  | O_RDWR
 
        val openf: string * open_mode * O.flags -> file_desc 
@@ -81,37 +81,37 @@ signature POSIX_FILE_SYS_1997 =
        val inoToWord: ino -> SysWord.word 
 
        structure ST:
-	  sig
-	     type stat
+          sig
+             type stat
 
-	     val isDir: stat -> bool 
-	     val isChr: stat -> bool 
-	     val isBlk: stat -> bool 
-	     val isReg: stat -> bool 
-	     val isFIFO: stat -> bool 
-	     val isLink: stat -> bool 
-	     val isSock: stat -> bool 
-	     val mode: stat -> S.mode 
-	     val ino: stat -> ino 
-	     val dev: stat -> dev 
-	     val nlink: stat -> int 
-	     val uid: stat -> uid 
-	     val gid: stat -> gid 
-	     val size: stat -> Position.int 
-	     val atime: stat -> Time.time 
-	     val mtime: stat -> Time.time 
-	     val ctime: stat -> Time.time 
-	  end
+             val isDir: stat -> bool 
+             val isChr: stat -> bool 
+             val isBlk: stat -> bool 
+             val isReg: stat -> bool 
+             val isFIFO: stat -> bool 
+             val isLink: stat -> bool 
+             val isSock: stat -> bool 
+             val mode: stat -> S.mode 
+             val ino: stat -> ino 
+             val dev: stat -> dev 
+             val nlink: stat -> int 
+             val uid: stat -> uid 
+             val gid: stat -> gid 
+             val size: stat -> Position.int 
+             val atime: stat -> Time.time 
+             val mtime: stat -> Time.time 
+             val ctime: stat -> Time.time 
+          end
 
        val stat: string -> ST.stat
        val lstat: string -> ST.stat
        val fstat: file_desc -> ST.stat
 
        datatype access_mode =
-	  A_READ
-	| A_WRITE
-	| A_EXEC
-	  
+          A_READ
+        | A_WRITE
+        | A_EXEC
+          
        val access: string * access_mode list -> bool
        val chmod: string * S.mode -> unit
        val fchmod: file_desc * S.mode -> unit

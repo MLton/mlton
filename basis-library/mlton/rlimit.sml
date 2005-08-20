@@ -11,15 +11,15 @@ structure MLtonRlimit: MLTON_RLIMIT =
       open Primitive.MLton.Rlimit
 
       val get =
-	 fn (r: t) =>
-	 PosixError.SysCall.syscall
-	 (fn () =>
-	  (get r, fn () => 
-	   {hard = getHard (),
-	    soft = getSoft ()}))
+         fn (r: t) =>
+         PosixError.SysCall.syscall
+         (fn () =>
+          (get r, fn () => 
+           {hard = getHard (),
+            soft = getSoft ()}))
 
       val set =
-	 fn (r: t, {hard, soft}) =>
-	 PosixError.SysCall.simple
-	 (fn () => set (r, hard, soft))
+         fn (r: t, {hard, soft}) =>
+         PosixError.SysCall.simple
+         (fn () => set (r, hard, soft))
    end

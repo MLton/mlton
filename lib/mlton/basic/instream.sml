@@ -14,13 +14,13 @@ structure String = ZString
 
 val input =
    Trace.trace ("Instream.input", layout, String.layout) input
-	       
+               
 fun outputAll (ins: t, out: Out.t): unit =
    let
       fun loop () =
          case input ins of
-	    "" => ()
-	  | s => (Out.output (out, s); loop ())
+            "" => ()
+          | s => (Out.output (out, s); loop ())
    in
       loop ()
    end
@@ -33,7 +33,7 @@ fun 'a withClose (ins: t, f: t -> 'a): 'a =
 
 fun 'a withIn (f: string, g: t -> 'a): 'a =
    withClose (openIn f handle IO.Io _ =>
-	      Error.bug (concat ["Instream.withIn: cannot open ", f]), g)
+              Error.bug (concat ["Instream.withIn: cannot open ", f]), g)
 
 fun withNull f = withIn ("/dev/zero", f)
 

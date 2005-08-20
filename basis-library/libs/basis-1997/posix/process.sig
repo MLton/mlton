@@ -11,22 +11,22 @@ signature POSIX_PROCESS_1997 =
       val execp: string * string list -> 'a 
 
       datatype waitpid_arg =
-	 W_ANY_CHILD
+         W_ANY_CHILD
        | W_CHILD of pid
        | W_SAME_GROUP
        | W_GROUP of pid 
 
       datatype exit_status =
-	 W_EXITED
+         W_EXITED
        | W_EXITSTATUS of Word8.word
        | W_SIGNALED of signal
        | W_STOPPED of signal 
 
       structure W :
-	 sig
-	    include POSIX_FLAGS_1997
+         sig
+            include POSIX_FLAGS_1997
             val untraced: flags 
-	 end
+         end
 
       val wait: unit -> pid * exit_status
       val waitpid: waitpid_arg * W.flags list -> pid * exit_status
@@ -34,7 +34,7 @@ signature POSIX_PROCESS_1997 =
       val exit: Word8.word -> 'a 
 
       datatype killpid_arg  =
-	 K_PROC of pid
+         K_PROC of pid
        | K_SAME_GROUP
        | K_GROUP of pid 
 

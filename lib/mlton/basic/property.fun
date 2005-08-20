@@ -29,28 +29,28 @@ fun initRaise (name, layout) =
      end))
    
 fun ('sym, 'val) nondestructable (plist: 'sym -> Plist.t,
-				  init: ('sym, 'val) init) =
+                                  init: ('sym, 'val) init) =
    let
       val {add, peek, remove, ...} = Plist.newProperty ()
       fun get (s: 'sym) =
-	 let
-	    val p = plist s
-	 in
-	    case peek p of
-	    NONE => (case init of
-			Const c => c
-		      | Fun f =>
-			   let val v = f (s, get)
-			   in add (p, v); v
-			   end)
-	  | SOME v => v
-	 end
+         let
+            val p = plist s
+         in
+            case peek p of
+            NONE => (case init of
+                        Const c => c
+                      | Fun f =>
+                           let val v = f (s, get)
+                           in add (p, v); v
+                           end)
+          | SOME v => v
+         end
       fun set (s: 'sym, none: unit -> 'val, some: 'val -> unit): unit =
-	 let val p = plist s
-	 in case peek p of
-	    NONE => add (p, none ())
-	  | SOME v => some v
-	 end
+         let val p = plist s
+         in case peek p of
+            NONE => add (p, none ())
+          | SOME v => some v
+         end
    in {get = get, rem = remove o plist, remove = remove, set = set}
    end
 
@@ -59,15 +59,15 @@ fun ('sym, 'val) destructable (plist, init) =
       val plists = ref []
       fun add s = List.push (plists, plist s)
       val {get, remove, set, ...} =
-	 nondestructable (plist,
-			  case init of
-			     Const _ => init
-			   | Fun f => Fun (fn z as (s, _) => (add s; f z)))
+         nondestructable (plist,
+                          case init of
+                             Const _ => init
+                           | Fun f => Fun (fn z as (s, _) => (add s; f z)))
       val set: 'sym * (unit -> 'val) * ('val -> unit) -> unit =
-	 fn (s, none, some) => set (s, fn () => (add s; none ()), some)
+         fn (s, none, some) => set (s, fn () => (add s; none ()), some)
       fun destroy () =
-	 (List.foreach (!plists, remove)
-	  ; plists := [])
+         (List.foreach (!plists, remove)
+          ; plists := [])
    in {destroy = destroy, get = get, set = set}
    end
 
@@ -78,7 +78,7 @@ fun destGetSetOnce z =
    let val {destroy, get, set} = destructable z
    in {destroy = destroy, get = get, set = setToSetOnce set}
    end
-			   
+                           
 fun destGet z =
    let val {destroy, get, ...} = destGetSetOnce z
    in {destroy = destroy, get = get}

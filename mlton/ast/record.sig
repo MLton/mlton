@@ -15,7 +15,7 @@ signature RECORD_STRUCTS =
 signature RECORD = 
    sig
       include RECORD_STRUCTS
-	 
+         
       type 'a t
 
       (* Create a record with the same fields but a new range.
@@ -33,10 +33,10 @@ signature RECORD =
       val fromVector: (Field.t * 'a) vector -> 'a t
       val isTuple: 'a t -> bool
       val layout: {record: 'a t,
-		   separator: string,
-		   extra: string,
-		   layoutTuple: 'a vector -> Layout.t,
-		   layoutElt: 'a -> Layout.t} -> Layout.t
+                   separator: string,
+                   extra: string,
+                   layoutTuple: 'a vector -> Layout.t,
+                   layoutElt: 'a -> Layout.t} -> Layout.t
       val map: 'a t * ('a -> 'b) -> 'b t
       val peek: 'a t * Field.t -> 'a option
       (* range {1 = a, 2 = b, 3 = c} returns [a, b, c] *)

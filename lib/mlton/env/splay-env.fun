@@ -17,11 +17,11 @@ BasicEnvToEnv
 (open S
 
  structure E = SplayMapFn(type ord_key = Domain.t
-			  val compare = Domain.compare)
+                          val compare = Domain.compare)
     
  type t = Range.t E.map
  fun extend(env, d, r) = E.insert(env, d, r)
  fun fromList l = List.fold(l, E.empty, fn ((d, r), env) =>
-			    extend(env, d, r))
+                            extend(env, d, r))
  val toList = E.listItemsi
  val peek = E.find)

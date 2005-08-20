@@ -9,11 +9,11 @@ structure Q = QueueLogarithmicExplicit();
 fun p q = Q.output(q, ", ", Int.output, Out.standard);
 let val q = ref(Q.empty())
 in Iterate.for(1, 20, fn n =>
-	       (p(!q) ;
-		Out.newline Out.standard ;
-		q := Q.enqueue(!q,n)))
+               (p(!q) ;
+                Out.newline Out.standard ;
+                q := Q.enqueue(!q,n)))
 end
-	       
+               
 
 structure Q = QueuePersistentTwoList
 
@@ -47,6 +47,6 @@ local
    val numOps = 1000
 in
    val _ = (Ephemeral.test numOps ;
-	    PersistentTwoList.test numOps ;
-	    OrderOne.test numOps)
+            PersistentTwoList.test numOps ;
+            OrderOne.test numOps)
 end

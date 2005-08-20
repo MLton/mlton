@@ -20,10 +20,10 @@ signature LONGID =
       include T
 
       datatype node = T of {strids: Strid.t list,
-			    id: Id.t}
+                            id: Id.t}
 
       include WRAPPED sharing type node' = node
-		      sharing type obj = t
+                      sharing type obj = t
 
       val bogus: t
       val fromSymbols: Symbol.t list * Region.t -> t

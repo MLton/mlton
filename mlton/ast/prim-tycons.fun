@@ -36,54 +36,54 @@ val isExn = fn c => equals (c, exn)
 
 local
    fun 'a make (prefix: string,
-		all: 'a list,
-		bits: 'a -> Bits.t,
-		default: 'a,
-		equalsA: 'a * 'a -> bool,
-		memo: ('a -> t) -> ('a -> t),
-		admitsEquality: AdmitsEquality.t) =
+                all: 'a list,
+                bits: 'a -> Bits.t,
+                default: 'a,
+                equalsA: 'a * 'a -> bool,
+                memo: ('a -> t) -> ('a -> t),
+                admitsEquality: AdmitsEquality.t) =
       let
-	 val all =
-	    Vector.fromListMap
-	    (all, fn s =>
-	     (fromString (concat [prefix, Bits.toString (bits s)]), s))
-	 val fromSize =
-	    memo
-	    (fn s =>
-	     case Vector.peek (all, fn (_, s') => equalsA (s, s')) of
-		NONE => Error.bug "PrimTycons.make"
-	      | SOME (tycon, _) => tycon)
-	 fun is t = Vector.exists (all, fn (t', _) => equals (t, t'))
-	 val prims =
-	    Vector.toListMap (all, fn (tycon, _) =>
-			      (tycon, Arity 0, admitsEquality))
+         val all =
+            Vector.fromListMap
+            (all, fn s =>
+             (fromString (concat [prefix, Bits.toString (bits s)]), s))
+         val fromSize =
+            memo
+            (fn s =>
+             case Vector.peek (all, fn (_, s') => equalsA (s, s')) of
+                NONE => Error.bug "PrimTycons.make"
+              | SOME (tycon, _) => tycon)
+         fun is t = Vector.exists (all, fn (t', _) => equals (t, t'))
+         val prims =
+            Vector.toListMap (all, fn (tycon, _) =>
+                              (tycon, Arity 0, admitsEquality))
       in
-	 (fromSize default, fromSize, all, is, prims)
+         (fromSize default, fromSize, all, is, prims)
       end
 in
    val (defaultChar, char, _, isCharX, primChars) =
       let
-	 open CharSize
+         open CharSize
       in
-	 make ("char", all, bits, default, equals, memoize, Sometimes)
+         make ("char", all, bits, default, equals, memoize, Sometimes)
       end
    val (defaultInt, int, ints, isIntX, primInts) =
       let
-	 open IntSize
+         open IntSize
       in
-	 make ("int", all, bits, default, equals, memoize, Sometimes)
+         make ("int", all, bits, default, equals, memoize, Sometimes)
       end
    val (defaultReal, real, reals, isRealX, primReals) =
       let
-	 open RealSize
+         open RealSize
       in
-	 make ("real", all, bits, default, equals, memoize, Never)
+         make ("real", all, bits, default, equals, memoize, Never)
       end
    val (defaultWord, word, words, isWordX, primWords) =
       let
-	 open WordSize
+         open WordSize
       in
-	 make ("word", all, bits, default, equals, memoize, Sometimes)
+         make ("word", all, bits, default, equals, memoize, Sometimes)
       end
 end
 
@@ -105,49 +105,49 @@ val prims =
    @ primChars @ primInts @ primReals @ primWords
 
 fun layoutApp (c: t,
-	       args: (Layout.t * {isChar: bool, needsParen: bool}) vector) =
+               args: (Layout.t * {isChar: bool, needsParen: bool}) vector) =
    let
       local
-	 open Layout
+         open Layout
       in
-	 val mayAlign = mayAlign
-	 val seq = seq
-	 val str = str
+         val mayAlign = mayAlign
+         val seq = seq
+         val str = str
       end
       fun maybe (l, {isChar = _, needsParen}) =
-	 if needsParen
-	    then Layout.paren l
-	 else l
+         if needsParen
+            then Layout.paren l
+         else l
       fun normal () =
-	 let
-	    val ({isChar}, lay) =
-	       case Vector.length args of
-		  0 => ({isChar = equals (c, defaultChar)}, layout c)
-		| 1 => ({isChar = false},
-			seq [maybe (Vector.sub (args, 0)), str " ", layout c])
-		| _ => ({isChar = false},
-			seq [Layout.tuple (Vector.toListMap (args, maybe)),
-			     str " ", layout c])
-	 in
-	    (lay, {isChar = isChar, needsParen = false})
-	 end
+         let
+            val ({isChar}, lay) =
+               case Vector.length args of
+                  0 => ({isChar = equals (c, defaultChar)}, layout c)
+                | 1 => ({isChar = false},
+                        seq [maybe (Vector.sub (args, 0)), str " ", layout c])
+                | _ => ({isChar = false},
+                        seq [Layout.tuple (Vector.toListMap (args, maybe)),
+                             str " ", layout c])
+         in
+            (lay, {isChar = isChar, needsParen = false})
+         end
    in
       if equals (c, arrow)
-	 then (mayAlign [maybe (Vector.sub (args, 0)),
-			 seq [str "-> ", maybe (Vector.sub (args, 1))]],
-	       {isChar = false, needsParen = true})
+         then (mayAlign [maybe (Vector.sub (args, 0)),
+                         seq [str "-> ", maybe (Vector.sub (args, 1))]],
+               {isChar = false, needsParen = true})
       else if equals (c, tuple)
          then if 0 = Vector.length args
-		 then (str "unit", {isChar = false, needsParen = false})
-	      else (mayAlign (Layout.separateLeft
-			      (Vector.toListMap (args, maybe), "* ")),
-		    {isChar = false, needsParen = true})
+                 then (str "unit", {isChar = false, needsParen = false})
+              else (mayAlign (Layout.separateLeft
+                              (Vector.toListMap (args, maybe), "* ")),
+                    {isChar = false, needsParen = true})
       else if equals (c, vector)
          then if #isChar (#2 (Vector.sub (args, 0)))
-		 then (str "string", {isChar = false, needsParen = false})
-	      else normal ()
+                 then (str "string", {isChar = false, needsParen = false})
+              else normal ()
       else normal ()
    end
 
 end
-	  
+          

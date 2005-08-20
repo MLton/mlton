@@ -26,18 +26,18 @@ functor UnsafeMonoVector (V: MONO_VECTOR_EXTRA): UNSAFE_MONO_VECTOR =
 structure Unsafe: UNSAFE =
    struct
       structure Array =
-	 struct
-	    val sub = Array.unsafeSub
-	    val update = Array.unsafeUpdate
-	    val create = Array.array
-	 end
+         struct
+            val sub = Array.unsafeSub
+            val update = Array.unsafeUpdate
+            val create = Array.array
+         end
       structure CharArray = UnsafeMonoArray (CharArray)
       structure CharVector = UnsafeMonoVector (CharVector)
       structure Real64Array = UnsafeMonoArray (Real64Array)
       structure Vector =
-      	 struct
-	    val sub = Vector.unsafeSub
-	 end
+               struct
+            val sub = Vector.unsafeSub
+         end
       structure Word8Array = UnsafeMonoArray (Word8Array)
       structure Word8Vector = UnsafeMonoVector (Word8Vector)
    end

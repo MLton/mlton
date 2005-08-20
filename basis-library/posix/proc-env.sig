@@ -25,10 +25,10 @@ signature POSIX_PROC_ENV =
       val uname: unit -> (string * string) list
       val time: unit -> Time.time
       val times: unit -> {elapsed: Time.time,
-			  utime: Time.time,
-			  stime: Time.time,
-			  cutime: Time.time,
-			  cstime: Time.time}
+                          utime: Time.time,
+                          stime: Time.time,
+                          cutime: Time.time,
+                          cstime: Time.time}
       val getenv: string -> string option
       val environ: unit -> string list
       val ctermid: unit -> string

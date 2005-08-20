@@ -83,16 +83,16 @@ signature LIST =
       val nth: 'a t * int -> 'a
       val nthTail: 'a t * int -> 'a t
 (*       val ordered :
- * 	 {< : 'a * 'a -> bool}
- * 	 -> {insert: 'a t * 'a -> 'a t,
- * 	     insertionSort: 'a t  -> 'a t,
- * 	     median: 'a t -> 'a,
- * 	     orderStatistic: 'a t * int -> 'a,
- * 	     partition: 'a t * 'a -> 'a t * 'a t,
- * 	     max: 'a t -> 'a,
- * 	     min: 'a t -> 'a,
- * 	     largest: 'a t * int -> 'a t,
- * 	     smallest: 'a t * int -> 'a t}
+ *          {< : 'a * 'a -> bool}
+ *          -> {insert: 'a t * 'a -> 'a t,
+ *              insertionSort: 'a t  -> 'a t,
+ *              median: 'a t -> 'a,
+ *              orderStatistic: 'a t * int -> 'a,
+ *              partition: 'a t * 'a -> 'a t * 'a t,
+ *              max: 'a t -> 'a,
+ *              min: 'a t -> 'a,
+ *              largest: 'a t * int -> 'a t,
+ *              smallest: 'a t * int -> 'a t}
  *)
       (* partition ([1, 2, 3, 4], isOdd) = {no = [4, 2], yes = [3, 1]} *)
       val partition: 'a t * ('a -> bool) -> {no: 'a t, yes: 'a t}
@@ -128,28 +128,28 @@ signature LIST =
       val revRemoveAll: 'a t * ('a -> bool) -> 'a t
       val separate: 'a t * 'a -> 'a t
       val set: {equals: 'a * 'a -> bool,
-		layout: 'a -> Layout.t}
-	 -> {empty: 'a t,
-	     singleton: 'a -> 'a t,
-	     size: 'a t -> int,
-	     equals: 'a t * 'a t -> bool,
-	     <= : 'a t * 'a t -> bool,
-	     >= : 'a t * 'a t -> bool,
-	     < : 'a t * 'a t -> bool,
-	     > : 'a t * 'a t -> bool,
-	     + : 'a t * 'a t -> 'a t,
-	     - : 'a t * 'a t -> 'a t,
-	     intersect: 'a t * 'a t -> 'a t,
-	     unions: 'a t t -> 'a t,
-	     add: 'a t * 'a -> 'a t,
-	     remove: 'a t * 'a -> 'a t,
-	     contains: 'a t * 'a -> bool,
-	     areDisjoint: 'a t * 'a t -> bool,
-	     subset: 'a t * ('a -> bool) -> 'a t,
-	     subsetSize: 'a t * ('a -> bool) -> int,
-	     replace: 'a t * ('a -> 'a option) -> 'a t,
-	     map: 'a t * ('a -> 'a) -> 'a t,
-	     layout: 'a t -> Layout.t}
+                layout: 'a -> Layout.t}
+         -> {empty: 'a t,
+             singleton: 'a -> 'a t,
+             size: 'a t -> int,
+             equals: 'a t * 'a t -> bool,
+             <= : 'a t * 'a t -> bool,
+             >= : 'a t * 'a t -> bool,
+             < : 'a t * 'a t -> bool,
+             > : 'a t * 'a t -> bool,
+             + : 'a t * 'a t -> 'a t,
+             - : 'a t * 'a t -> 'a t,
+             intersect: 'a t * 'a t -> 'a t,
+             unions: 'a t t -> 'a t,
+             add: 'a t * 'a -> 'a t,
+             remove: 'a t * 'a -> 'a t,
+             contains: 'a t * 'a -> bool,
+             areDisjoint: 'a t * 'a t -> bool,
+             subset: 'a t * ('a -> bool) -> 'a t,
+             subsetSize: 'a t * ('a -> bool) -> int,
+             replace: 'a t * ('a -> 'a option) -> 'a t,
+             map: 'a t * ('a -> 'a) -> 'a t,
+             layout: 'a t -> Layout.t}
 (*      val splitAtMost: 'a t * int -> ('a t * 'a t) option *)
       val splitAt: 'a t * int -> 'a t * 'a t
       val splitLast: 'a t -> 'a t * 'a

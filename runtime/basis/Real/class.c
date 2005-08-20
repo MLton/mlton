@@ -3,13 +3,13 @@
 #if HAS_FPCLASSIFY
 
 Int Real32_class (Real32 f) {
-	return fpclassify (f);
+        return fpclassify (f);
 }
 
 #elif HAS_FPCLASSIFY32
 
 Int Real32_class (Real32 f) {
-	return fpclassify32 (f);
+        return fpclassify32 (f);
 }
 
 #else
@@ -21,22 +21,22 @@ Int Real32_class (Real32 f) {
 #define MANTISSA_HIGHBIT_MASK32 0x00400000
 
 Int Real32_class (Real32 f) {
-	uint word0;
-	int res;
+        uint word0;
+        int res;
 
-	word0 = ((uint *)&f)[0];  /* this generates a gcc warning */
-	if ((word0 & EXPONENT_MASK32) == EXPONENT_MASK32) {
-		if (word0 & MANTISSA_MASK32)
-			res = FP_NAN;
-		else
-			res = FP_INFINITE;
-	} else if (word0 & EXPONENT_MASK32)
- 		res = FP_NORMAL;
-	else if (word0 & MANTISSA_MASK32)
-		res = FP_SUBNORMAL;
-	else
-		res = FP_ZERO;
-	return res;
+        word0 = ((uint *)&f)[0];  /* this generates a gcc warning */
+        if ((word0 & EXPONENT_MASK32) == EXPONENT_MASK32) {
+                if (word0 & MANTISSA_MASK32)
+                        res = FP_NAN;
+                else
+                        res = FP_INFINITE;
+        } else if (word0 & EXPONENT_MASK32)
+                 res = FP_NORMAL;
+        else if (word0 & MANTISSA_MASK32)
+                res = FP_SUBNORMAL;
+        else
+                res = FP_ZERO;
+        return res;
 }
 
 #endif
@@ -45,13 +45,13 @@ Int Real32_class (Real32 f) {
 #if HAS_FPCLASSIFY
 
 Int Real64_class (Real64 d) {
-	return fpclassify (d);
+        return fpclassify (d);
 }
 
 #elif HAS_FPCLASSIFY64
 
 Int Real64_class (Real64 d) {
-	return fpclassify64 (d);
+        return fpclassify64 (d);
 }
 
 #else
@@ -91,23 +91,23 @@ Int Real64_class (Real64 d) {
 #define MANTISSA_HIGHBIT_MASK64 0x00080000
 
 Int Real64_class (Real64 d) {
-	Word word0, word1;
-	Int res;
+        Word word0, word1;
+        Int res;
 
-	word0 = ((Word *)&d)[0];
-	word1 = ((Word *)&d)[1];
-	if ((word1 & EXPONENT_MASK64) == EXPONENT_MASK64) {
-		if (word0 or (word1 & MANTISSA_MASK64))
-       			res = FP_NAN;
-		else
-			res = FP_INFINITE;
-	} else if (word1 & EXPONENT_MASK64)
-		res = FP_NORMAL;
-	else if (word0 or (word1 & MANTISSA_MASK64))
-		res = FP_SUBNORMAL;
-	else
-		res = FP_ZERO;
-	return res;
+        word0 = ((Word *)&d)[0];
+        word1 = ((Word *)&d)[1];
+        if ((word1 & EXPONENT_MASK64) == EXPONENT_MASK64) {
+                if (word0 or (word1 & MANTISSA_MASK64))
+                               res = FP_NAN;
+                else
+                        res = FP_INFINITE;
+        } else if (word1 & EXPONENT_MASK64)
+                res = FP_NORMAL;
+        else if (word0 or (word1 & MANTISSA_MASK64))
+                res = FP_SUBNORMAL;
+        else
+                res = FP_ZERO;
+        return res;
 }
 
 #else

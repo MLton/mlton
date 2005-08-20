@@ -8,7 +8,7 @@ fun check' f = (if f () then "OK" else "WRONG") handle _ => "EXN";
 fun range (from, to) p = 
     let open Int 
     in
-	(from > to) orelse (p from) andalso (range (from+1, to) p)
+        (from > to) orelse (p from) andalso (range (from+1, to) p)
     end;
 
 fun checkrange bounds = check o range bounds;
@@ -35,11 +35,11 @@ local
     val eps = 1E~8
     infix 4 ===
     fun x === y = 
-	abs (x - y) <= eps orelse abs(x-y) <= eps * (abs x + abs y)
+        abs (x - y) <= eps orelse abs(x-y) <= eps * (abs x + abs y)
 
     fun check1 (opr, a, r) = if opr a === r then "OK" else "WRONG"
     fun check2 (opr, a1, a2, r) =
-	if opr(a1, a2) === r then "OK" else "WRONG"
+        if opr(a1, a2) === r then "OK" else "WRONG"
     fun tst1 s (opr, a, r) = tst0 s (check1 (opr, a, r))
     fun tst2 s (opr, a1, a2, r) = tst0 s (check2 (opr, a1, a2, r))
 

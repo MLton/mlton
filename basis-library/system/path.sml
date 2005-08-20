@@ -79,9 +79,9 @@ fun isVolumeName v =
 fun volumeMatch (root, relative) =
    relative = ""
    orelse (isVolumeName root
-	   andalso isVolumeName relative
-	   andalso (Char.toUpper (root sub 0)
-		    = Char.toUpper (relative sub 0)))
+           andalso isVolumeName relative
+           andalso (Char.toUpper (root sub 0)
+                    = Char.toUpper (relative sub 0)))
        
 fun canonName a = 
    if isWindows
@@ -105,17 +105,17 @@ fun validVolume {isAbs, vol} =
 fun fromString s =
    let
       val (vol, rest) = (* 4:foo has a volume of "4:" even tho invalid *)
-	 if isWindows andalso size s >= 2 andalso iscolon (s sub 1)
-	    then (substring (s, 0, SOME 2), substring (s, 2, NONE))
-	 else 
-	    if volumeHack andalso size s >= 1 andalso s sub 0 = #"/"
-	       then ("/", s)
-	    else ("", s)
+         if isWindows andalso size s >= 2 andalso iscolon (s sub 1)
+            then (substring (s, 0, SOME 2), substring (s, 2, NONE))
+         else 
+            if volumeHack andalso size s >= 1 andalso s sub 0 = #"/"
+               then ("/", s)
+            else ("", s)
       val (isAbs, arcs) =
-	 case (String.fields isslash rest) of
-	    "" :: [] => (false, [])
-	  | "" :: r => (true, r)
-	  | r => (false, r)
+         case (String.fields isslash rest) of
+            "" :: [] => (false, [])
+          | "" :: r => (true, r)
+          | r => (false, r)
    in
       {arcs = arcs, isAbs = isAbs, vol = vol}
    end
@@ -127,8 +127,8 @@ val isRelative = not o isAbsolute
 fun isArc s =
    s = ""
    orelse (case fromString s of
-	      {arcs = [_], isAbs = false, vol = ""} => true
-	    | _ => false)
+              {arcs = [_], isAbs = false, vol = ""} => true
+            | _ => false)
   
 fun toString {arcs, isAbs, vol} =
    if not (validVolume {isAbs = isAbs, vol = vol})
@@ -139,9 +139,9 @@ fun toString {arcs, isAbs, vol} =
       then raise InvalidArc
    else 
       concat [vol,
-	      if isAbs andalso (not volumeHack orelse vol <> "/")
-		 then slash
-	      else "",
+              if isAbs andalso (not volumeHack orelse vol <> "/")
+                 then slash
+              else "",
               String.concatWith slash arcs]
 
 fun concatArcs (a1, a2) =
@@ -157,7 +157,7 @@ fun concat (p1, p2) =
       val {arcs = a2, isAbs = isAbs2, vol = v2} = fromString p2
    in
       if isAbs2 orelse not (volumeMatch (v1, v2))
-	 then raise Path
+         then raise Path
       else toString {arcs = concatArcs (a1, a2), isAbs = isAbs, vol = v1}
    end
 
@@ -165,13 +165,13 @@ fun getParent p =
    let
       val {isAbs, vol, arcs} = fromString p
       val arcs =
-	 List.rev (case List.rev arcs of
-		      [] => [parentArc]
-		    | "." :: r => parentArc :: r
-		    | ".." :: r => parentArc :: parentArc :: r
-		    | _ :: [] => if isAbs then [""] else [currentArc]
-		    | "" :: r => parentArc :: r
-		    | _ :: r => r)
+         List.rev (case List.rev arcs of
+                      [] => [parentArc]
+                    | "." :: r => parentArc :: r
+                    | ".." :: r => parentArc :: parentArc :: r
+                    | _ :: [] => if isAbs then [""] else [currentArc]
+                    | "" :: r => parentArc :: r
+                    | _ :: r => r)
    in
       toString {arcs = arcs, isAbs = isAbs, vol = vol}
    end
@@ -180,32 +180,32 @@ fun mkCanonical p =
    let
       val {arcs, isAbs, vol} = fromString p
       fun backup l =
-	 case l of
-	    [] => if isAbs then [] else [parentArc]
-	  | first :: res =>
-	       if first = ".."
-		  then parentArc :: parentArc :: res
-	       else res
+         case l of
+            [] => if isAbs then [] else [parentArc]
+          | first :: res =>
+               if first = ".."
+                  then parentArc :: parentArc :: res
+               else res
       fun reduce arcs =
-	 let
-	    fun h (l, res) =
-	       case l of
-		  [] => (case res of
-			    [] => if isAbs then [""] else [currentArc]
-			  | _ => res )
-		| a1 :: ar =>
-		     if a1 = "" orelse a1 = "."
-			then h (ar, res)
-		     else if a1 = ".."
-			     then h (ar, backup res)
-			  else h (ar, canonName a1 :: res)
-	 in
-	    h (arcs, [])
-	 end
+         let
+            fun h (l, res) =
+               case l of
+                  [] => (case res of
+                            [] => if isAbs then [""] else [currentArc]
+                          | _ => res )
+                | a1 :: ar =>
+                     if a1 = "" orelse a1 = "."
+                        then h (ar, res)
+                     else if a1 = ".."
+                             then h (ar, backup res)
+                          else h (ar, canonName a1 :: res)
+         in
+            h (arcs, [])
+         end
    in
       toString {arcs = List.rev (reduce arcs),
-		isAbs = isAbs,
-		vol = canonName vol}
+                isAbs = isAbs,
+                vol = canonName vol}
    end
 
 val rec parentize =
@@ -216,27 +216,27 @@ fun mkRelative {path = p1, relativeTo = p2} =
    let
       val {arcs = arcs1, isAbs = isAbs1, vol = vol1} = fromString p1
       val {arcs = arcs2, isAbs = isAbs2, vol = vol2} =
-	 fromString (mkCanonical p2)
+         fromString (mkCanonical p2)
    in
       if not isAbs2 then raise Path
       else if not isAbs1 then p1
            else
-	      let
-		 fun h (a1, a2) =
-		    case (a1, a2) of
-		       ([], []) => ["."]
-		     | (_, []) => a1
-		     | ([], a2) => parentize a2
-		     | (a11 :: a1r, a21 :: a2r) =>
-			  if canonName a11 = a21 then h (a1r, a2r)
-			  else parentize a2 @ (if arcs1 = [""] then [] else a1)
-	      in
-		 if not (volumeMatch (vol2, vol1))
-		    then raise Path
-		 else toString {arcs = h (arcs1, arcs2),
-				isAbs = false,
-				vol = ""}
-	      end
+              let
+                 fun h (a1, a2) =
+                    case (a1, a2) of
+                       ([], []) => ["."]
+                     | (_, []) => a1
+                     | ([], a2) => parentize a2
+                     | (a11 :: a1r, a21 :: a2r) =>
+                          if canonName a11 = a21 then h (a1r, a2r)
+                          else parentize a2 @ (if arcs1 = [""] then [] else a1)
+              in
+                 if not (volumeMatch (vol2, vol1))
+                    then raise Path
+                 else toString {arcs = h (arcs1, arcs2),
+                                isAbs = false,
+                                vol = ""}
+              end
    end
 
 fun mkAbsolute {path = p1, relativeTo = p2} =
@@ -250,13 +250,13 @@ fun joinDirFile {dir, file} =
    let
       val {arcs, isAbs, vol} = fromString dir
       val arcs = 
-	 case (arcs, file) of
-	    ([], "") => []
-	  | _ => concatArcs (arcs, [file])
+         case (arcs, file) of
+            ([], "") => []
+          | _ => concatArcs (arcs, [file])
    in
       toString {arcs = arcs,
-		isAbs = isAbs,
-		vol = vol}
+                isAbs = isAbs,
+                vol = vol}
    end
 
 fun splitDirFile p =
@@ -265,10 +265,10 @@ fun splitDirFile p =
       val {isAbs, vol, arcs} = fromString p
    in
       case rev arcs of
-	 [] => {dir = p, file = ""}
+         [] => {dir = p, file = ""}
        | arcn :: farcs =>
-	    {dir = toString {arcs = rev farcs, isAbs = isAbs, vol = vol},
-	     file = arcn}
+            {dir = toString {arcs = rev farcs, isAbs = isAbs, vol = vol},
+             file = arcn}
 
    end
 
@@ -280,8 +280,8 @@ fun joinBaseExt {base, ext} =
    case ext of
       NONE => base
     | SOME ex =>
-	 if ex = "" then base
-	 else String.concat [base, ".", ex]
+         if ex = "" then base
+         else String.concat [base, ".", ex]
 
 fun splitBaseExt s =
    let
@@ -290,12 +290,12 @@ fun splitBaseExt s =
       val (fst, snd) = splitr (fn c => c <> #".") (full file)
    in
       if isEmpty snd         (* dot at right end     *)
-	 orelse isEmpty fst  (* no dot               *)
-	 orelse size fst = 1 (* dot at left end only *)
-	 then {base = s, ext = NONE}
+         orelse isEmpty fst  (* no dot               *)
+         orelse size fst = 1 (* dot at left end only *)
+         then {base = s, ext = NONE}
       else {base = joinDirFile {dir = dir,
-				file = string (trimr 1 fst)},
-	    ext = SOME (string snd)}
+                                file = string (trimr 1 fst)},
+            ext = SOME (string snd)}
    end
 
 val ext = #ext o splitBaseExt
@@ -315,11 +315,11 @@ fun toUnixPath s =
    if not isWindows then s
    else
       let
-	 val {arcs, isAbs, vol} = fromString s
+         val {arcs, isAbs, vol} = fromString s
       in
-	 if vol <> "" andalso not (volumeHack andalso vol = "/") 
-	    then raise Path 
-	 else (if isAbs then "/" else "") ^ String.concatWith "/" arcs
+         if vol <> "" andalso not (volumeHack andalso vol = "/") 
+            then raise Path 
+         else (if isAbs then "/" else "") ^ String.concatWith "/" arcs
       end
 
 end

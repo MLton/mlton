@@ -33,7 +33,7 @@ signature INSTREAM =
       val layout: t -> Layout.t
       (* Each line includes the newline. *)
       val lines: t -> string list
-      val openIn: string -> t	 
+      val openIn: string -> t         
       val openString: string -> t
       val outputAll: t * Out.t -> unit
       val peekChar: t -> char option

@@ -9,7 +9,7 @@ functor PolyCache(): POLY_CACHE =
 struct
 
 datatype ('a, 'b) t = T of {equal: ('a * 'a) -> bool,
-			   elts: ('a * 'b ref) list ref}
+                           elts: ('a * 'b ref) list ref}
 
 fun fromList 
    
@@ -40,8 +40,8 @@ fun set(c, x, y) =
 fun getOrAdd(c, x, th) =
    case peek(c, x) of
       NONE => let val y = th()
-	      in addNew(c, x, y) ; y
-	      end
+              in addNew(c, x, y) ; y
+              end
     | SOME y => y
 
 fun eq(T{elts=r, ...}, T{elts=r', ...}) = r = r'

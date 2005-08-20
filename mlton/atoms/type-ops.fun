@@ -61,8 +61,8 @@ val arrow =
 fun deUnaryOpt tycon t =
    case deConOpt t of
       SOME (c, ts) => if Tycon.equals (c, tycon)
-			 then SOME (Vector.sub (ts, 0))
-		      else NONE
+                         then SOME (Vector.sub (ts, 0))
+                      else NONE
     | _ => NONE
 
 val deArrayOpt = deUnaryOpt Tycon.array
@@ -111,24 +111,24 @@ fun deConConstOpt t =
    Option.map
    (deConOpt t, fn (c, ts) =>
     (c, Vector.map (ts, fn t =>
-		    case deConOpt t of
-		       SOME (c, _) => c
-		     | NONE => Error.bug "TypeOps.deConConstOpt")))
+                    case deConOpt t of
+                       SOME (c, _) => c
+                     | NONE => Error.bug "TypeOps.deConConstOpt")))
 
 fun deConConst t =
    case deConOpt t of
       NONE => Error.bug "TypeOps.deConConst"
     | SOME (c, ts) => (c, Vector.map (ts, fn t =>
-				      case deConOpt t of
-					 NONE => Error.bug "TypeOps.deConConst"
-				       | SOME (c, _) => c))
+                                      case deConOpt t of
+                                         NONE => Error.bug "TypeOps.deConConst"
+                                       | SOME (c, _) => c))
 
 
 fun deArrowOpt t =
    case deConOpt t of
       SOME (c, ts) => if Tycon.equals (c, Tycon.arrow)
-			       then SOME (Vector.sub (ts, 0), Vector.sub (ts, 1))
-			    else NONE
+                               then SOME (Vector.sub (ts, 0), Vector.sub (ts, 1))
+                            else NONE
     | _ => NONE
 
 fun deArrow t =

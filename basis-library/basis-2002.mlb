@@ -20,7 +20,7 @@ in
       libs/basis-2002/top-level/top-level.sml
       libs/basis-2002/top-level/infixes.sml
       ann "allowOverload true" in 
-	 libs/basis-2002/top-level/overloads.sml 
+         libs/basis-2002/top-level/overloads.sml 
       end
    end
 end

@@ -35,24 +35,24 @@ val _ =
    Assert.assert
    ("TestLinkedList", fn () =>
     List.forall ([[],
-		  [1],
-		  [1, 2],
-		  [1, 2, 3]],
-		 fn l =>
-		 l = toList (fromList l)
-		 andalso rev l = toList (let
-					    val l' = fromList l
-					    val _ = reverse l'
-					 in
-					    l'
-					 end)
-		 andalso
-		 let
-		    val l' = fromList l
-		    val l'' = fromList l
-		    val _ = splice (l', l'')
-		 in
-		    l @ l = toList l'
-		 end))
+                  [1],
+                  [1, 2],
+                  [1, 2, 3]],
+                 fn l =>
+                 l = toList (fromList l)
+                 andalso rev l = toList (let
+                                            val l' = fromList l
+                                            val _ = reverse l'
+                                         in
+                                            l'
+                                         end)
+                 andalso
+                 let
+                    val l' = fromList l
+                    val l'' = fromList l
+                    val _ = splice (l', l'')
+                 in
+                    l @ l = toList l'
+                 end))
 
 end

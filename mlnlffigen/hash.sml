@@ -38,61 +38,61 @@ end = struct
       | conConId S.RO = 1
 
     fun look (next, find, insert) tab k =
-	case find (!tab, k) of
-	    SOME i => i
-	  | NONE => let
-		val i = !next
-	    in
-		next := i + 1;
-		tab := insert (!tab, k, i);
-		i
-	    end
+        case find (!tab, k) of
+            SOME i => i
+          | NONE => let
+                val i = !next
+            in
+                next := i + 1;
+                tab := insert (!tab, k, i);
+                i
+            end
 
     fun mkFHasher () = let
-	val stab = ref SM.empty
-	val utab = ref SM.empty
-	val etab = ref SM.empty
-	val ltab = ref LM.empty
+        val stab = ref SM.empty
+        val utab = ref SM.empty
+        val etab = ref SM.empty
+        val ltab = ref LM.empty
 
-	val next = ref 13
+        val next = ref 13
 
-	val tlook = look (next, SM.find, SM.insert)
-	val llook = look (next, LM.find, LM.insert) ltab
+        val tlook = look (next, SM.find, SM.insert)
+        val llook = look (next, LM.find, LM.insert) ltab
 
-	fun hash (S.STRUCT t) = tlook stab t
-	  | hash (S.UNION t) = tlook utab t
-	  | hash (S.ENUM (t, _)) = tlook etab t
-	  | hash (S.FPTR x) = cfthash x
-	  | hash (S.PTR (c, ty)) = llook [1, conConId c, hash ty]
-	  | hash (S.ARR { t, d, esz }) = llook [2, hash t, d, esz]
-	  | hash (S.BASIC ty) = tyConId ty
-	  | hash (S.VOIDPTR) = 12
-	  | hash _ = raise Fail "hash"
+        fun hash (S.STRUCT t) = tlook stab t
+          | hash (S.UNION t) = tlook utab t
+          | hash (S.ENUM (t, _)) = tlook etab t
+          | hash (S.FPTR x) = cfthash x
+          | hash (S.PTR (c, ty)) = llook [1, conConId c, hash ty]
+          | hash (S.ARR { t, d, esz }) = llook [2, hash t, d, esz]
+          | hash (S.BASIC ty) = tyConId ty
+          | hash (S.VOIDPTR) = 12
+          | hash _ = raise Fail "hash"
 
-	and cfthash { args, res } = llook (0 :: opthash res :: map hash args)
+        and cfthash { args, res } = llook (0 :: opthash res :: map hash args)
 
-	and opthash NONE = 0
-	  | opthash (SOME ty) = 1 + hash ty
+        and opthash NONE = 0
+          | opthash (SOME ty) = 1 + hash ty
     in
-	cfthash
+        cfthash
     end
 
     fun mkTHasher () = let
-	val stab = ref SM.empty
-	val ltab = ref LM.empty
+        val stab = ref SM.empty
+        val ltab = ref LM.empty
 
-	val next = ref 0
+        val next = ref 0
 
-	val slook = look (next, SM.find, SM.insert) stab
-	val llook = look (next, LM.find, LM.insert) ltab
+        val slook = look (next, SM.find, SM.insert) stab
+        val llook = look (next, LM.find, LM.insert) ltab
 
-	fun hash (PP.ARROW (t, t')) = llook [0, hash t, hash t']
-	  | hash (PP.TUPLE tl) = llook (1 :: map hash tl)
-	  | hash (PP.CON (c, tl)) = llook (2 :: slook c :: map hash tl)
-	  | hash (PP.RECORD pl) = llook (3 :: map phash pl)
+        fun hash (PP.ARROW (t, t')) = llook [0, hash t, hash t']
+          | hash (PP.TUPLE tl) = llook (1 :: map hash tl)
+          | hash (PP.CON (c, tl)) = llook (2 :: slook c :: map hash tl)
+          | hash (PP.RECORD pl) = llook (3 :: map phash pl)
 
-	and phash (n, t) = llook [4, slook n, hash t]
+        and phash (n, t) = llook [4, slook n, hash t]
     in
-	hash
+        hash
     end
 end

@@ -36,13 +36,13 @@ fun force (T r) =
    case !r of
       Evaluated x => x
     | Unevaluated th =>
-	 (let
-	     val _ = r := Evaluating
-	     val x = th ()
-	     val _ = r := Evaluated x
-	  in
-	     x
-	  end handle exn => (r := Unevaluated th; raise exn))
+         (let
+             val _ = r := Evaluating
+             val x = th ()
+             val _ = r := Evaluated x
+          in
+             x
+          end handle exn => (r := Unevaluated th; raise exn))
     | Evaluating => raise Force
 
 fun lazy th =

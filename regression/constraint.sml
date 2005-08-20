@@ -1,7 +1,7 @@
 signature S = sig type ('a, 'b) t 
-		  val A : 'a * int -> ('a, int) t
-		  val pr : ('a -> string) -> ('b -> string) -> ('a, 'b) t -> string
-	      end
+                  val A : 'a * int -> ('a, int) t
+                  val pr : ('a -> string) -> ('b -> string) -> ('a, 'b) t -> string
+              end
 
 structure S = 
   struct

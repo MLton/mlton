@@ -19,9 +19,9 @@ signature BIN_IO_1997 =
       val openIn: string -> instream 
 (*
       val scanStream:
- 	 ((Char.char, StreamIO.instream) StringCvt.reader
-	  -> ('a, StreamIO.instream) StringCvt.reader)
-	 -> instream -> 'a option 
+          ((Char.char, StreamIO.instream) StringCvt.reader
+          -> ('a, StreamIO.instream) StringCvt.reader)
+         -> instream -> 'a option 
 *)
       val setInstream: (instream * StreamIO.instream) -> unit
 (*

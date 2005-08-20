@@ -63,10 +63,10 @@ val _ =
       val _: string = #1 x
       fun id z = z
       fun g () =
-	 let
-	    val (_, a) = x
-	 in a
-	 end
+         let
+            val (_, a) = x
+         in a
+         end
    in
       g ()
    end

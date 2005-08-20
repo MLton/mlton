@@ -13,53 +13,53 @@ open S
 structure Pos =
    struct
       datatype t =
-	 Known of SourcePos.t
+         Known of SourcePos.t
        | Unknown
 
       fun toString p =
-	 case p of
-	    Known p =>
-	       if !Control.profile = Control.ProfileCallStack
-		  then SourcePos.toString p
-	       else concat [SourcePos.file p, ": ",
-			    Int.toString (SourcePos.line p)]
-	  | Unknown => "<unknown>"
+         case p of
+            Known p =>
+               if !Control.profile = Control.ProfileCallStack
+                  then SourcePos.toString p
+               else concat [SourcePos.file p, ": ",
+                            Int.toString (SourcePos.line p)]
+          | Unknown => "<unknown>"
 
       fun fromRegion r =
-	 case Region.left r of
-	    NONE => Unknown
-	  | SOME p => Known p
+         case Region.left r of
+            NONE => Unknown
+          | SOME p => Known p
 
       fun file p =
-	 case p of
-	    Known p => SOME (SourcePos.file p)
-	  | Unknown => NONE
+         case p of
+            Known p => SOME (SourcePos.file p)
+          | Unknown => NONE
    end
 
 datatype info =
    Anonymous of Pos.t
  | C of string
  | Function of {name: string list,
-		pos: Pos.t}
+                pos: Pos.t}
 
 datatype t = T of {hash: word,
-		   info: info,
-		   plist: PropertyList.t}
+                   info: info,
+                   plist: PropertyList.t}
 
 local
    val r: t list ref = ref []
 in
    fun new info =
       let
-	 val res = T {hash = Random.word (),
-		      info = info,
-		      plist = PropertyList.new ()}
-	 val () =
-	    if !Control.profile = Control.ProfileCount
-	       then List.push (r, res)
-	    else ()
+         val res = T {hash = Random.word (),
+                      info = info,
+                      plist = PropertyList.new ()}
+         val () =
+            if !Control.profile = Control.ProfileCount
+               then List.push (r, res)
+            else ()
       in
-	 res
+         res
       end
    fun all () = !r
 end
@@ -76,34 +76,34 @@ fun anonymous r = new (Anonymous (Pos.fromRegion r))
 
 local
    val set: {hash: word,
-	     name: string,
-	     sourceInfo: t} HashSet.t =
+             name: string,
+             sourceInfo: t} HashSet.t =
       HashSet.new {hash = #hash}
 in   
    fun fromC (name: string) =
       let
-	 val hash = String.hash name
+         val hash = String.hash name
       in
-	 #sourceInfo
-	 (HashSet.lookupOrInsert
-	  (set, hash, fn {hash = h, ...} => hash = h,
-	   fn () => {hash = hash,
-		     name = name,
-		     sourceInfo = new (C name)}))
+         #sourceInfo
+         (HashSet.lookupOrInsert
+          (set, hash, fn {hash = h, ...} => hash = h,
+           fn () => {hash = hash,
+                     name = name,
+                     sourceInfo = new (C name)}))
       end
 end
 
 fun function {name, region} =
    new (Function {name = name,
-		  pos = Pos.fromRegion region})
+                  pos = Pos.fromRegion region})
 
 fun toString' (si, sep) =
    case info si of
       Anonymous pos => Pos.toString pos
     | C s => concat ["<", s, ">"]
     | Function {name, pos} =>
-	 concat [concat (List.separate (List.rev name, ".")),
-		 sep, Pos.toString pos]
+         concat [concat (List.separate (List.rev name, ".")),
+                 sep, Pos.toString pos]
 
 fun toString si = toString' (si, " ")
    

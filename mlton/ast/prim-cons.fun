@@ -12,7 +12,7 @@ struct
 open S
 
 type con = t
-	 
+         
 val cons = fromString "::"
 val falsee = fromString "false"
 val nill = fromString "nil"

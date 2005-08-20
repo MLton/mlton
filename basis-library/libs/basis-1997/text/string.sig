@@ -19,7 +19,7 @@ signature STRING_1997 =
       val isPrefix: string -> string -> bool
       val compare: (string * string) -> order
       val collate: (((Char.char * Char.char) -> order)
-		    -> (string * string) -> order)
+                    -> (string * string) -> order)
       val < : (string * string) -> bool
       val <= : (string * string) -> bool
       val > : (string * string) -> bool

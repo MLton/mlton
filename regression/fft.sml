@@ -45,10 +45,10 @@ fun fft ([(a,b)], 1)  = [(a+0.0,b+0.0)]
         val a = fft (evens x, n)
         val cb = fmul (0.0,pi/(real n),fft (odds x, n))
     in
-	let val l1 =  zipWith ~+ (a,cb)
-	    val l2 =  zipWith ~- (a,cb)
-	in (*resetRegions a; resetRegions cb;*) l1 @ l2
-	end
+        let val l1 =  zipWith ~+ (a,cb)
+            val l2 =  zipWith ~- (a,cb)
+        in (*resetRegions a; resetRegions cb;*) l1 @ l2
+        end
     end
 
 local val a = 16807.0 and m = 2147483678.0
@@ -65,8 +65,8 @@ fun mkList(tr as (seed,0,acc)) = tr
 val n = 256 * 256
 
 fun run () = (pr "\nfft by Torben Mogensen (torbenm@diku.dk)\n\nfft'ing... ";
-	      let val r = fft (zip (#3(mkList(7.0,n,[])),
-				    #3(mkList(8.0,n,[]))), n) in
-	      pr " done\n" end);
+              let val r = fft (zip (#3(mkList(7.0,n,[])),
+                                    #3(mkList(8.0,n,[]))), n) in
+              pr " done\n" end);
 
 val _ = run ()

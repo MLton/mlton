@@ -21,17 +21,17 @@ signature HASH_TYPE =
       sharing type wordSize = WordSize.t
 
       structure Dest:
-	 sig
-	    datatype dest =
-	       Con of Tycon.t * t vector
-	     | Var of Tyvar.t
-	    val dest: t -> dest
-	 end
+         sig
+            datatype dest =
+               Con of Tycon.t * t vector
+             | Var of Tyvar.t
+            val dest: t -> dest
+         end
 
       val checkPrimApp: {args: t vector,
-			 prim: t Prim.t,
-			 result: t,
-			 targs: t vector} -> bool
+                         prim: t Prim.t,
+                         result: t,
+                         targs: t vector} -> bool
       val containsTycon: t * Tycon.t -> bool
       (* O(1) time *)
       val equals: t * t -> bool
@@ -39,19 +39,19 @@ signature HASH_TYPE =
       val error: string * Layout.t -> 'a
       val hash: t -> Word.t
       val hom: {ty: t,
-		var: Tyvar.t -> 'a,
-		con: Tycon.t * 'a vector -> 'a} -> 'a
+                var: Tyvar.t -> 'a,
+                con: Tycon.t * 'a vector -> 'a} -> 'a
       val isUnit: t -> bool
       val layout: t -> Layout.t
       val makeHom:
-	 {var: t * Tyvar.t -> 'a,
-	  con: t * Tycon.t * 'a vector -> 'a}
-	 -> {hom: t -> 'a,
-	     destroy: unit -> unit}
+         {var: t * Tyvar.t -> 'a,
+          con: t * Tycon.t * 'a vector -> 'a}
+         -> {hom: t -> 'a,
+             destroy: unit -> unit}
       val makeMonoHom:
-	 {con: t * Tycon.t * 'a vector -> 'a}
-	 -> {hom: t -> 'a,
-	     destroy: unit -> unit}
+         {con: t * Tycon.t * 'a vector -> 'a}
+         -> {hom: t -> 'a,
+             destroy: unit -> unit}
       val ofConst: Const.t -> t
       val plist: t -> PropertyList.t
       val stats: unit -> Layout.t

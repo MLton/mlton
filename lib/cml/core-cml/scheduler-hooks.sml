@@ -15,16 +15,16 @@ structure SchedulerHooks: SCHEDULER_HOOKS =
       type rdy_thread = RepTypes.rdy_thread
 
       val pauseHookDefault : unit -> rdy_thread =
-	 fn _ => raise Fail "SchedulerHooks.pauseHook"
+         fn _ => raise Fail "SchedulerHooks.pauseHook"
       val pauseHook = ref pauseHookDefault
 
       val shutdownHookDefault : (bool * OS.Process.status) thread =
-	 THRD (ThreadID.bogus "shutdownHook", MLton.Thread.new (fn _ =>
-	       raise Fail "SchedulerHooks.shutdownHook"))
+         THRD (ThreadID.bogus "shutdownHook", MLton.Thread.new (fn _ =>
+               raise Fail "SchedulerHooks.shutdownHook"))
       val shutdownHook = ref shutdownHookDefault
 
       fun reset () =
-	 (pauseHook := pauseHookDefault
-	  ; shutdownHook := shutdownHookDefault
-	  ; ())
+         (pauseHook := pauseHookDefault
+          ; shutdownHook := shutdownHookDefault
+          ; ())
    end

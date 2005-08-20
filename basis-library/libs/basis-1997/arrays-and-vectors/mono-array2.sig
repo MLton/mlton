@@ -3,8 +3,8 @@ signature MONO_ARRAY2_1997 =
       eqtype array
       type elem
       type region = {base: array, 
-		     row: int, col: int, 
-		     nrows: int option, ncols: int option}
+                     row: int, col: int, 
+                     nrows: int option, ncols: int option}
       datatype traversal = datatype Array2.traversal
       structure Vector: MONO_VECTOR_1997
       val array: (int * int * elem) -> array

@@ -15,7 +15,7 @@ signature CM_LEXER = sig
     exception UserError of string * string
 
     datatype keyword =
-	K_GROUP | K_LIBRARY | K_ALIAS | K_IS
+        K_GROUP | K_LIBRARY | K_ALIAS | K_IS
       | K_SIGNATURE | K_STRUCTURE | K_FUNSIG | K_FUNCTOR
       | K_IF | K_ELIF | K_ELSE | K_ENDIF | K_DEFINED
       | K_ERROR
@@ -27,7 +27,7 @@ signature CM_LEXER = sig
     datatype compare = C_LT | C_LE | C_GT | C_GE | C_EQ | C_NE
 
     datatype token =
-	T_COLON
+        T_COLON
       | T_HASH
       | T_KEYWORD of keyword
       | T_SYMBOL of string
@@ -47,12 +47,12 @@ signature CM_LEXER = sig
     val MEMBERS: mode
 
     val lexer: {
-		strdef: string -> bool,
-		sigdef: string -> bool,
-		fctdef: string -> bool,
-		fsigdef: string -> bool,
-		symval: string -> int option
-	       } ->
-	string * In.t -> mode -> token
+                strdef: string -> bool,
+                sigdef: string -> bool,
+                fctdef: string -> bool,
+                fsigdef: string -> bool,
+                symval: string -> int option
+               } ->
+        string * In.t -> mode -> token
 
 end

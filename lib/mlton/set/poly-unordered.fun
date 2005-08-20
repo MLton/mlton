@@ -12,7 +12,7 @@ structure I = Int
 structure L = List
 
 type 'a info = {equal: 'a * 'a -> bool,
-		output: 'a * Out.t -> unit}
+                output: 'a * Out.t -> unit}
 
 datatype 'a t = T of 'a List.t * 'a info
 
@@ -51,8 +51,8 @@ fun subset(T(elts, info), f) =
 fun s1 - s2 = subset(s1, fn x => not(contains(s2, x)))
 
 fun s1 + (s2 as T(x2s, _)) = let val T(x1s, info) = s1 - s2
-			    in T(L.append(x1s, x2s), info)
-			    end
+                            in T(L.append(x1s, x2s), info)
+                            end
 
 (*fun union ss = L.foldl(ss, empty, op +)*)
 

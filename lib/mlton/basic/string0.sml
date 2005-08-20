@@ -77,7 +77,7 @@ fun prefix (s, len) =
 
 fun suffix (s, len) =
    substring1 (s, {start = length s - len,
-		  length = len})
+                  length = len})
    
 fun dropPrefix (s,n) =
    substring1 (s, {start=n, length = length s - n})
@@ -95,11 +95,11 @@ fun hasPrefix (string, {prefix}) = PS.isPrefix prefix string
 fun removeTrailing (s: t, p: char -> bool): t =
    let
       fun loop (i: int) =
-	 if i < 0
-	    then i
-	 else if p (sub (s, i))
-		 then loop (i - 1)
-	      else i
+         if i < 0
+            then i
+         else if p (sub (s, i))
+                 then loop (i - 1)
+              else i
    in substring (s, 0, 1 + (loop (size s - 1)))
    end
 
@@ -108,8 +108,8 @@ fun hasSuffix (string, {suffix}) =
       val n = length string
       val n' = length suffix
       fun loop (i: int, j: int): bool =
-	 i >= n orelse (Char.equals (sub (string, i), sub (suffix, j))
-			andalso loop (i + 1, j + 1))
+         i >= n orelse (Char.equals (sub (string, i), sub (suffix, j))
+                        andalso loop (i + 1, j + 1))
    in n' <= n andalso loop (n - n', 0)
    end
 
@@ -118,21 +118,21 @@ fun findSubstring (string: t, {substring: t}) =
       val n = length substring
       val maxIndex = length string - n
       fun loopString i =
-	 if i > maxIndex
-	    then NONE
-	 else
-	    let
-	       val start = i
-	       fun loopSubstring (i, j) =
-		  if j >= n
-		     then SOME start
-		  else
-		     if Char.equals (sub (string, i), sub (substring, j))
-			then loopSubstring (i + 1, j + 1)
-		     else loopString (i + 1)
-	    in
-	       loopSubstring (i, 0)
-	    end
+         if i > maxIndex
+            then NONE
+         else
+            let
+               val start = i
+               fun loopSubstring (i, j) =
+                  if j >= n
+                     then SOME start
+                  else
+                     if Char.equals (sub (string, i), sub (substring, j))
+                        then loopSubstring (i + 1, j + 1)
+                     else loopString (i + 1)
+            in
+               loopSubstring (i, 0)
+            end
    in
       loopString 0
    end
@@ -148,9 +148,9 @@ fun fold (s, b, f) =
    let
       val n = size s
       fun loop (i, b) =
-	 if i >= n
-	    then b
-	 else loop (i + 1, f (sub (s, i), b))
+         if i >= n
+            then b
+         else loop (i + 1, f (sub (s, i), b))
    in loop (0, b)
    end
 
@@ -165,9 +165,9 @@ fun dropTrailing (s, c) =
    let
       val n = size s
       fun loop i =
-	 if PInt.< (i, 0) orelse c <> sub (s, i)
-	    then i
-	 else loop (i - 1)
+         if PInt.< (i, 0) orelse c <> sub (s, i)
+            then i
+         else loop (i - 1)
    in dropSuffix (s, n - 1 - loop (n - 1))
    end
 
@@ -179,18 +179,18 @@ fun toLower s = translateChar (s, Char.toLower)
 fun sort (l, f) =
    let
       fun loop l =
-	 case l of
-	    [] => []
-	  | x :: l =>
-	       let
-		  fun loop' l =
-		     case l of
-			[] => [x]
-		      | x' :: l => if f (x, x')
-				      then x :: x' :: l
-				   else x' :: loop' l
-	       in loop' (loop l)
-	       end
+         case l of
+            [] => []
+          | x :: l =>
+               let
+                  fun loop' l =
+                     case l of
+                        [] => [x]
+                      | x' :: l => if f (x, x')
+                                      then x :: x' :: l
+                                   else x' :: loop' l
+               in loop' (loop l)
+               end
    in loop l
    end
    

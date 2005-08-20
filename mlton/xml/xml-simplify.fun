@@ -12,10 +12,10 @@ struct
 open S
 
 structure SimplifyTypes = SimplifyTypes (structure Input = S
-					 structure Output = S)
+                                         structure Output = S)
 
 type pass = {name: string,
-	     doit: Program.t -> Program.t}
+             doit: Program.t -> Program.t}
 
 val xmlPassesDefault =
    {name = "xmlShrink", doit = S.shrink} ::
@@ -33,40 +33,40 @@ local
    fun mkSimplePassGen (name, doit): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
-		    then SOME {name = concat [name, "#",
-					      Int.toString (Counter.next count)],
-			       doit = doit}
-		    else NONE
+                    then SOME {name = concat [name, "#",
+                                              Int.toString (Counter.next count)],
+                               doit = doit}
+                    else NONE
       end
 
    val passGens =
       (List.map([("xmlShrink", S.shrink),
-		 ("xmlSimplifyTypes", SimplifyTypes.simplifyTypes)],
-		mkSimplePassGen))
+                 ("xmlSimplifyTypes", SimplifyTypes.simplifyTypes)],
+                mkSimplePassGen))
 
    fun xmlPassesSetCustom s =
       Exn.withEscape
       (fn esc =>
        (let val ss = String.split (s, #":")
-	in
-	   xmlPasses :=
-	   List.map(ss, fn s =>
-		    case (List.peekMap (passGens, fn gen => gen s)) of
-		       NONE => esc (Result.No s)
-		     | SOME pass => pass)
-	   ; Control.xmlPasses := ss
-	   ; Result.Yes ()
-	end))
+        in
+           xmlPasses :=
+           List.map(ss, fn s =>
+                    case (List.peekMap (passGens, fn gen => gen s)) of
+                       NONE => esc (Result.No s)
+                     | SOME pass => pass)
+           ; Control.xmlPasses := ss
+           ; Result.Yes ()
+        end))
 
    datatype t = datatype Control.optimizationPasses
    fun xmlPassesSet opt =
       case opt of
-	 OptPassesDefault => (xmlPasses := xmlPassesDefault
-			      ; Control.xmlPasses := ["default"]
-			      ; Result.Yes ())
+         OptPassesDefault => (xmlPasses := xmlPassesDefault
+                              ; Control.xmlPasses := ["default"]
+                              ; Result.Yes ())
        | OptPassesMinimal => (xmlPasses := xmlPassesMinimal
-			      ; Control.xmlPasses := ["minimal"]
-			      ; Result.Yes ())
+                              ; Control.xmlPasses := ["minimal"]
+                              ; Result.Yes ())
        | OptPassesCustom s => xmlPassesSetCustom s
 in
    val _ = Control.xmlPassesSet := xmlPassesSet
@@ -82,16 +82,16 @@ fun simplify p =
     ; (List.fold
        (!xmlPasses, p, fn ({name, doit}, p) =>
       if List.exists (!Control.dropPasses, fn re =>
-		      Regexp.Compiled.matchesAll (re, name))
+                      Regexp.Compiled.matchesAll (re, name))
          then p
       else
          let
             val _ =
-	       let open Control
-	       in maybeSaveToFile
-		  ({name = name, suffix = "pre.xml"},
-		   Control.No, p, Control.Layout Program.layout)
-	       end
+               let open Control
+               in maybeSaveToFile
+                  ({name = name, suffix = "pre.xml"},
+                   Control.No, p, Control.Layout Program.layout)
+               end
             val p =
                Control.passTypeCheck
                {name = name,
@@ -106,15 +106,15 @@ fun simplify p =
          end)))
 
 val simplify = fn p => let
-			 (* Always want to type check the initial and final XML
-			  * programs, even if type checking is turned off, just
-			  * to catch bugs.
-			  *)
-			 val _ = typeCheck p
-			 val p' = simplify p
-			 val _ = typeCheck p'
-		       in
-			 p'
-		       end
+                         (* Always want to type check the initial and final XML
+                          * programs, even if type checking is turned off, just
+                          * to catch bugs.
+                          *)
+                         val _ = typeCheck p
+                         val p' = simplify p
+                         val _ = typeCheck p'
+                       in
+                         p'
+                       end
 
 end

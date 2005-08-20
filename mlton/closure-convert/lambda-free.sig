@@ -16,11 +16,11 @@ signature LAMBDA_FREE =
       include LAMBDA_FREE_STRUCTS
 
       structure Status:
-	 sig
-	    type t
+         sig
+            type t
 
-	    val init: t
-	 end
+            val init: t
+         end
       (*
        * When called, descends the entire program and attaches a property
        * to each lambda primExp in the program.  Then, you can use
@@ -41,11 +41,11 @@ signature LAMBDA_FREE =
        * lambdaRec(fn z =>) = [f]
        *)
       val lambdaFree:
-	 {program: Program.t,
-	  overflow: Var.t,
-	  varInfo: Var.t -> {frees: Var.t list ref ref,
-			     status: Status.t ref},
-	  lambdaInfo: Lambda.t -> {frees: Var.t vector ref,
-				   recs: Var.t vector ref}}
-	 -> unit
+         {program: Program.t,
+          overflow: Var.t,
+          varInfo: Var.t -> {frees: Var.t list ref ref,
+                             status: Status.t ref},
+          lambdaInfo: Lambda.t -> {frees: Var.t vector ref,
+                                   recs: Var.t vector ref}}
+         -> unit
    end

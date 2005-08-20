@@ -13,20 +13,20 @@ signature MLTON_RANDOM =
    sig
       (* Return a random alphanumeric character. *)
       val alphaNumChar: unit -> char
-	 
+         
       (* Return a string of random alphanumeric characters of specified
        * length.
        *)
       val alphaNumString: int -> string
-	 
+         
       (* Get the next pseudrandom. *)
       val rand: unit -> word
-	 
+         
       (* Use /dev/random to get a word.  Useful as an arg to srand.
        * Return NONE if /dev/random can't be read.
        *)
       val seed: unit -> word option
-	 
+         
       (* Set the seed used by rand. *)
       val srand: word -> unit
 

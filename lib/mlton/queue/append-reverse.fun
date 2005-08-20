@@ -48,18 +48,18 @@ datatype 'a t =
 fun empty() = List(L.empty())
    
 fun destruct(List l) = (case L.destruct l of
-			   NONE => NONE
-			 | SOME(x, l) => SOME(x, List l))
+                           NONE => NONE
+                         | SOME(x, l) => SOME(x, List l))
   | destruct(Cons(x, r)) = (force r ; SOME(x, !r))
   | destruct _ = error "destruct"
 and force r = (case !r of
-		  Rot lra => r := rot lra
-		| _ => ())
-and rot(l, r, a) = 			   
+                  Rot lra => r := rot lra
+                | _ => ())
+and rot(l, r, a) =                            
    (case (destruct l, L.destruct r) of
        (NONE, SOME(x, _)) => List(L.cons(x, a))
      | (SOME(x, l), SOME(x', r)) =>
-	  Cons(x, ref(Rot(l, r, L.cons(x', a))))
+          Cons(x, ref(Rot(l, r, L.cons(x', a))))
      | _ => error "rot")
        
 fun appendReverse(l, r) = rot(l, r, L.empty())
@@ -76,16 +76,16 @@ fun output(r, sep, outElt, out) =
    let val print = Out.outputc out
       fun outputList l = L.output(l, sep, outElt, out)
       fun output(List l) = outputList l
-	| output(Rot(l, r, a)) = (print "Rot(" ;
-				output l ;
-				print ", [" ;
-				outputList r ;
-				print "], " ;
-				outputList a ;
-				print ")")
-	| output(Cons(x, ref r)) = (outElt(x, out) ;
-				   print sep ;
-				   output r)
+        | output(Rot(l, r, a)) = (print "Rot(" ;
+                                output l ;
+                                print ", [" ;
+                                outputList r ;
+                                print "], " ;
+                                outputList a ;
+                                print ")")
+        | output(Cons(x, ref r)) = (outElt(x, out) ;
+                                   print sep ;
+                                   output r)
    in output r
    end
 

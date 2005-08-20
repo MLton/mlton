@@ -14,6 +14,6 @@ signature FRONT_END_STRUCTS =
 signature FRONT_END = 
    sig
       include FRONT_END_STRUCTS
-	 
+         
       val lexAndParseFile: File.t -> Ast.Program.t
    end

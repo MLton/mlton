@@ -210,9 +210,9 @@ in
       ../../mlton/itimer.sml
       ../../mlton/ffi.sig
       ann 
-	 "ffiStr MLtonFFI" 
+         "ffiStr MLtonFFI" 
       in
-	 ../../mlton/ffi.sml
+         ../../mlton/ffi.sml
       end
       ../../mlton/gc.sig
       ../../mlton/gc.sml
@@ -233,9 +233,9 @@ in
       ../../mlton/socket.sml
       ../../mlton/syslog.sig
       ann
-	 "allowFFI true" 
+         "allowFFI true" 
       in 
-	 ../../mlton/syslog.sml 
+         ../../mlton/syslog.sml 
       end
       ../../mlton/vector.sig
       ../../mlton/weak.sig
@@ -255,9 +255,9 @@ in
 
       top-level/basis.sig
       ann
-	 "allowRebindEquals true"
+         "allowRebindEquals true"
       in 
-	 top-level/basis.sml 
+         top-level/basis.sml 
       end
    in
       structure BasisExtra 

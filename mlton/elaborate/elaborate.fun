@@ -12,8 +12,8 @@ struct
 open S
 
 structure Env = ElaborateEnv (structure Ast = Ast
-			      structure CoreML = CoreML
-			      structure TypeEnv = TypeEnv)
+                              structure CoreML = CoreML
+                              structure TypeEnv = TypeEnv)
 
 local
    open Env
@@ -22,9 +22,9 @@ in
 end
 
 structure ElaborateMLBs = ElaborateMLBs (structure Ast = Ast
-					 structure CoreML = CoreML
-					 structure Decs = Decs
-					 structure Env = Env)
+                                         structure CoreML = CoreML
+                                         structure Decs = Decs
+                                         structure Env = Env)
 
 open ElaborateMLBs
 end

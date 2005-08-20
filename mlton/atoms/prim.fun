@@ -28,7 +28,7 @@ end
 structure Kind =
    struct
       datatype t =
-	 DependsOnState
+         DependsOnState
        | Functional
        | Moveable
        | SideEffect
@@ -120,7 +120,7 @@ datatype 'a t =
  | Real_mul of RealSize.t (* codegen *)
  | Real_muladd of RealSize.t (* codegen *)
  | Real_mulsub of RealSize.t (* codegen *)
- | Real_neg of RealSize.t	  (* codegen *)
+ | Real_neg of RealSize.t          (* codegen *)
  | Real_qequal of RealSize.t (* codegen *)
  | Real_round of RealSize.t (* codegen *)
  | Real_sub of RealSize.t (* codegen *)
@@ -186,22 +186,22 @@ fun name p = p
 fun toString (n: 'a t): string =
    let
       fun real (s: RealSize.t, str: string): string =
-	 concat ["Real", RealSize.toString s, "_", str]
+         concat ["Real", RealSize.toString s, "_", str]
       fun sign {signed} = if signed then "WordS" else "WordU"
       fun word (s: WordSize.t, str: string): string =
-	 concat ["Word", WordSize.toString s, "_", str]
+         concat ["Word", WordSize.toString s, "_", str]
       fun wordS (s: WordSize.t, sg, str: string): string =
-	 concat [sign sg, WordSize.toString s, "_", str]
+         concat [sign sg, WordSize.toString s, "_", str]
       val realC = ("Real", RealSize.toString)
       val wordC = ("Word", WordSize.toString)
       fun wordCS sg = (sign sg, WordSize.toString)
       fun coerce ((n, sizeToString), (n', sizeToString'), s, s'): string =
-	 concat [n, sizeToString s, "_to", n', sizeToString' s']
+         concat [n, sizeToString s, "_to", n', sizeToString' s']
       fun pointerGet (ty, s) = concat ["Pointer_get", ty, s]
       fun pointerSet (ty, s) = concat ["Pointer_set", ty, s]
    in
       case n of
-	 Array_array => "Array_array"
+         Array_array => "Array_array"
        | Array_array0Const => "Array_array0Const"
        | Array_length => "Array_length"
        | Array_sub => "Array_sub"
@@ -404,11 +404,11 @@ val equals: 'a t * 'a t -> bool =
     | (Real_round s, Real_round s') => RealSize.equals (s, s')
     | (Real_sub s, Real_sub s') => RealSize.equals (s, s')
     | (Real_toReal (s1, s2), Real_toReal (s1', s2')) =>
-	 RealSize.equals (s1, s1') andalso RealSize.equals (s2, s2')
+         RealSize.equals (s1, s1') andalso RealSize.equals (s2, s2')
     | (Real_toWord (s1, s2, sg), Real_toWord (s1', s2', sg')) =>
-	 RealSize.equals (s1, s1')
-	 andalso WordSize.equals (s2, s2')
-	 andalso sg = sg'
+         RealSize.equals (s1, s1')
+         andalso WordSize.equals (s2, s2')
+         andalso sg = sg'
     | (Ref_assign, Ref_assign) => true
     | (Ref_deref, Ref_deref) => true
     | (Ref_ref, Ref_ref) => true
@@ -429,40 +429,40 @@ val equals: 'a t * 'a t -> bool =
     | (Weak_new, Weak_new) => true
     | (Word_add s, Word_add s') => WordSize.equals (s, s')
     | (Word_addCheck (s, sg), Word_addCheck (s', sg')) =>
-	 WordSize.equals (s, s') andalso sg = sg'
+         WordSize.equals (s, s') andalso sg = sg'
     | (Word_andb s, Word_andb s') => WordSize.equals (s, s')
     | (Word_equal s, Word_equal s') => WordSize.equals (s, s')
     | (Word_lshift s, Word_lshift s') => WordSize.equals (s, s')
     | (Word_lt (s, sg), Word_lt (s', sg')) =>
-	 WordSize.equals (s, s') andalso sg = sg'
+         WordSize.equals (s, s') andalso sg = sg'
     | (Word_mul (s, sg), Word_mul (s', sg')) =>
-	 WordSize.equals (s, s') andalso sg = sg'
+         WordSize.equals (s, s') andalso sg = sg'
     | (Word_mulCheck (s, sg), Word_mulCheck (s', sg')) =>
-	 WordSize.equals (s, s') andalso sg = sg'
+         WordSize.equals (s, s') andalso sg = sg'
     | (Word_neg s, Word_neg s') => WordSize.equals (s, s')
     | (Word_negCheck s, Word_negCheck s') => WordSize.equals (s, s')
     | (Word_notb s, Word_notb s') => WordSize.equals (s, s')
     | (Word_orb s, Word_orb s') => WordSize.equals (s, s')
     | (Word_quot (s, sg), Word_quot (s', sg')) =>
-	 WordSize.equals (s, s') andalso sg = sg'
+         WordSize.equals (s, s') andalso sg = sg'
     | (Word_rem (s, sg), Word_rem (s', sg')) =>
-	 WordSize.equals (s, s') andalso sg = sg'
+         WordSize.equals (s, s') andalso sg = sg'
     | (Word_rol s, Word_rol s') => WordSize.equals (s, s')
     | (Word_ror s, Word_ror s') => WordSize.equals (s, s')
     | (Word_rshift (s, sg), Word_rshift (s', sg')) =>
-	 WordSize.equals (s, s') andalso sg = sg'
+         WordSize.equals (s, s') andalso sg = sg'
     | (Word_sub s, Word_sub s') => WordSize.equals (s, s')
     | (Word_subCheck (s, sg), Word_subCheck (s', sg')) =>
-	 WordSize.equals (s, s') andalso sg = sg'
+         WordSize.equals (s, s') andalso sg = sg'
     | (Word_toIntInf, Word_toIntInf) => true
     | (Word_toReal (s1, s2, sg), Word_toReal (s1', s2', sg')) =>
-	 WordSize.equals (s1, s1')
-	 andalso RealSize.equals (s2, s2')
-	 andalso sg = sg'
+         WordSize.equals (s1, s1')
+         andalso RealSize.equals (s2, s2')
+         andalso sg = sg'
     | (Word_toWord (s1, s2, sg), Word_toWord (s1', s2', sg')) =>
-	 WordSize.equals (s1, s1')
-	 andalso WordSize.equals (s2, s2')
-	 andalso sg = sg'
+         WordSize.equals (s1, s1')
+         andalso WordSize.equals (s2, s2')
+         andalso sg = sg'
     | (Word_xorb s, Word_xorb s') => WordSize.equals (s, s')
     | (WordVector_toIntInf, WordVector_toIntInf) => true
     | (Word8Array_subWord, Word8Array_subWord) => true
@@ -620,7 +620,7 @@ fun pointerGet ctype =
    let datatype z = datatype CType.t
    in
       case ctype of
-	 Int8 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 8))
+         Int8 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 8))
        | Int16 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 16))
        | Int32 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 32))
        | Int64 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 64))
@@ -636,7 +636,7 @@ fun pointerSet ctype =
    let datatype z = datatype CType.t
    in
       case ctype of
-	 Int8 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 8))
+         Int8 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 8))
        | Int16 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 16))
        | Int32 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 32))
        | Int64 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 64))
@@ -703,7 +703,7 @@ val kind: 'a t -> Kind.t =
       datatype z = datatype Kind.t
    in
       case p of
-	 Array_array => Moveable
+         Array_array => Moveable
        | Array_array0Const => Moveable
        | Array_length => Functional
        | Array_sub => DependsOnState
@@ -862,17 +862,17 @@ local
 
    fun wordSigns (s: WordSize.t, signed: bool) =
       let
-	 val sg = {signed = signed}
+         val sg = {signed = signed}
       in
-	 List.map ([Word_addCheck,
-		    Word_lt,
-		    Word_mul,
-		    Word_mulCheck,
-		    Word_quot,
-		    Word_rem,
-		    Word_rshift,
-		    Word_subCheck],
-		   fn p => p (s, sg))
+         List.map ([Word_addCheck,
+                    Word_lt,
+                    Word_mul,
+                    Word_mulCheck,
+                    Word_quot,
+                    Word_rem,
+                    Word_rshift,
+                    Word_subCheck],
+                   fn p => p (s, sg))
       end
 
    fun words (s: WordSize.t) =
@@ -961,55 +961,55 @@ in
        Word8Vector_toString,
        World_save]
       @ List.concat [List.concatMap (RealSize.all, reals),
-		     List.concatMap (WordSize.prims, words)]
+                     List.concatMap (WordSize.prims, words)]
       @ let
-	   val real = RealSize.all
-	   val word = WordSize.all
-	   fun coerces (name, sizes, sizes', ac) =
-	      List.fold
-	      ([false, true], ac, fn (signed, ac) =>
-	       List.fold
-	       (sizes, ac, fn (s, ac) =>
-		List.fold (sizes', ac, fn (s', ac) =>
-			   name (s, s', {signed = signed}) :: ac)))
-	in
-	   coerces (Real_toWord, real, word,
-		    coerces (Word_toReal, word, real,
-			     coerces (Word_toWord, word, word,
-				      List.fold
-				      (real, [], fn (s, ac) =>
-				       List.fold
-				       (real, ac, fn (s', ac) =>
-					Real_toReal (s, s') :: ac)))))
-	end
+           val real = RealSize.all
+           val word = WordSize.all
+           fun coerces (name, sizes, sizes', ac) =
+              List.fold
+              ([false, true], ac, fn (signed, ac) =>
+               List.fold
+               (sizes, ac, fn (s, ac) =>
+                List.fold (sizes', ac, fn (s', ac) =>
+                           name (s, s', {signed = signed}) :: ac)))
+        in
+           coerces (Real_toWord, real, word,
+                    coerces (Word_toReal, word, real,
+                             coerces (Word_toWord, word, word,
+                                      List.fold
+                                      (real, [], fn (s, ac) =>
+                                       List.fold
+                                       (real, ac, fn (s', ac) =>
+                                        Real_toReal (s, s') :: ac)))))
+        end
      @ let
-	  fun doit (all, get, set) =
-	     List.concatMap (all, fn s => [get s, set s])
+          fun doit (all, get, set) =
+             List.concatMap (all, fn s => [get s, set s])
        in
-	  List.concat [doit (RealSize.all, Pointer_getReal, Pointer_setReal),
-		       doit (WordSize.prims, Pointer_getWord, Pointer_setWord)]
+          List.concat [doit (RealSize.all, Pointer_getReal, Pointer_setReal),
+                       doit (WordSize.prims, Pointer_getWord, Pointer_setWord)]
        end
 end
 
 local
    val table: {hash: word,
-	       prim: unit t,
-	       string: string} HashSet.t =
+               prim: unit t,
+               string: string} HashSet.t =
       HashSet.new {hash = #hash}
    val () =
       List.foreach (all, fn prim =>
-		    let
-		       val string = toString prim
-		       val hash = String.hash string
-		       val _ =
-			  HashSet.lookupOrInsert (table, hash,
-						  fn _ => false,
-						  fn () => {hash = hash,
-							    prim = prim,
-							    string = string})
-		    in
-		       ()
-		    end)
+                    let
+                       val string = toString prim
+                       val hash = String.hash string
+                       val _ =
+                          HashSet.lookupOrInsert (table, hash,
+                                                  fn _ => false,
+                                                  fn () => {hash = hash,
+                                                            prim = prim,
+                                                            string = string})
+                    in
+                       ()
+                    end)
 in
    val fromString: string -> 'a t option =
       fn name =>
@@ -1020,19 +1020,19 @@ in
 end
 
 fun ('a, 'b) extractTargs (prim: 'b t,
-			   {args: 'a vector,
-			    deArray: 'a -> 'a,
-			    deArrow: 'a -> 'a * 'a,
-			    deVector: 'a -> 'a,
-			    deWeak: 'a -> 'a,
-			    result: 'a}) =
+                           {args: 'a vector,
+                            deArray: 'a -> 'a,
+                            deArrow: 'a -> 'a * 'a,
+                            deVector: 'a -> 'a,
+                            deWeak: 'a -> 'a,
+                            result: 'a}) =
    let
       val one = Vector.new1
       fun arg i = Vector.sub (args, i)
       datatype z = datatype t
    in
       case prim of
-	 Array_array => one (deArray result)
+         Array_array => one (deArray result)
        | Array_array0Const => one (deArray result)
        | Array_sub => one (deArray (arg 0))
        | Array_toVector => one (deArray (arg 0))
@@ -1071,16 +1071,16 @@ structure SmallIntInf = Const.SmallIntInf
 structure ApplyArg =
    struct
       datatype 'a t =
-	 Con of {con: Con.t, hasArg: bool}
+         Con of {con: Con.t, hasArg: bool}
        | Const of Const.t
        | Var of 'a
 
       fun layout layoutX =
-	 fn Con {con, hasArg} =>
-	      Layout.record [("con", Con.layout con),
-			     ("hasArg", Bool.layout hasArg)]
-	  | Const c => Const.layout c
-	  | Var x => layoutX x
+         fn Con {con, hasArg} =>
+              Layout.record [("con", Con.layout con),
+                             ("hasArg", Bool.layout hasArg)]
+          | Const c => Const.layout c
+          | Var x => layoutX x
    end
 
 structure ApplyResult =
@@ -1088,7 +1088,7 @@ structure ApplyResult =
       type 'a prim = 'a t
 
       datatype ('a, 'b) t =
-	 Apply of 'a prim * 'b list
+         Apply of 'a prim * 'b list
        | Bool of bool
        | Const of Const.t
        | Overflow
@@ -1101,17 +1101,17 @@ structure ApplyResult =
       val layoutPrim = layout
 
       fun layout layoutX ar =
-	 let
-	    open Layout
-	 in
-	    case ar of
-	       Apply (p, args) => seq [layoutPrim p, List.layout layoutX args]
-	     | Bool b => Bool.layout b
-	     | Const c => Const.layout c
-	     | Overflow => str "Overflow"
-	     | Unknown => str "Unknown"
-	     | Var x => layoutX x
-	 end
+         let
+            open Layout
+         in
+            case ar of
+               Apply (p, args) => seq [layoutPrim p, List.layout layoutX args]
+             | Bool b => Bool.layout b
+             | Const c => Const.layout c
+             | Overflow => str "Overflow"
+             | Unknown => str "Unknown"
+             | Var x => layoutX x
+         end
    end
 
 (*
@@ -1142,8 +1142,8 @@ structure ApplyResult =
  *)
    
 fun ('a, 'b) apply (p: 'a t,
-		    args: 'b ApplyArg.t list,
-		    varEquals: 'b * 'b -> bool): ('a, 'b) ApplyResult.t =
+                    args: 'b ApplyArg.t list,
+                    varEquals: 'b * 'b -> bool): ('a, 'b) ApplyResult.t =
    let
       datatype z = datatype t
       datatype z = datatype Const.t
@@ -1151,389 +1151,389 @@ fun ('a, 'b) apply (p: 'a t,
       val intInf = ApplyResult.Const o Const.intInf
       val intInfConst = intInf o IntInf.fromInt
       fun word (w: WordX.t): ('a, 'b) ApplyResult.t =
-	 ApplyResult.Const (Const.word w)
+         ApplyResult.Const (Const.word w)
       val f = ApplyResult.falsee
       fun iio (f, c1, c2) = intInf (f (c1, c2))
       fun wordS (f: WordX.t * WordX.t * {signed: bool} -> WordX.t,
-		 (_: WordSize.t, sg),
-		 w: WordX.t,
-		 w': WordX.t) =
-	 word (f (w, w', sg))
+                 (_: WordSize.t, sg),
+                 w: WordX.t,
+                 w': WordX.t) =
+         word (f (w, w', sg))
       fun wordCmp (f: WordX.t * WordX.t * {signed: bool} -> bool,
-		   (_: WordSize.t, sg),
-		   w: WordX.t,
-		   w': WordX.t) =
-	 bool (f (w, w', sg))
+                   (_: WordSize.t, sg),
+                   w: WordX.t,
+                   w': WordX.t) =
+         bool (f (w, w', sg))
       fun wordOrOverflow (s, sg, w) =
-	 if WordSize.isInRange (s, w, sg)
-	    then word (WordX.fromIntInf (w, s))
-	 else ApplyResult.Overflow
+         if WordSize.isInRange (s, w, sg)
+            then word (WordX.fromIntInf (w, s))
+         else ApplyResult.Overflow
       fun wcheck (f: IntInf.t * IntInf.t -> IntInf.t,
-		  (s: WordSize.t, sg as {signed}),
-		  w: WordX.t,
-		  w': WordX.t) =
-	 let
-	    val conv = if signed then WordX.toIntInfX else WordX.toIntInf
-	 in
-	    wordOrOverflow (s, sg, f (conv w, conv w'))
-	 end
+                  (s: WordSize.t, sg as {signed}),
+                  w: WordX.t,
+                  w': WordX.t) =
+         let
+            val conv = if signed then WordX.toIntInfX else WordX.toIntInf
+         in
+            wordOrOverflow (s, sg, f (conv w, conv w'))
+         end
       val eq =
- 	 fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
- 	  | _ => ApplyResult.Unknown
+          fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
+           | _ => ApplyResult.Unknown
       val equal =
-	 fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
-	  | (WordVector v1, WordVector v2) => bool (WordXVector.equals (v1, v2))
-	  | _ => ApplyResult.Unknown
+         fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
+          | (WordVector v1, WordVector v2) => bool (WordXVector.equals (v1, v2))
+          | _ => ApplyResult.Unknown
       fun allConsts (cs: Const.t list) =
-	 (case (p, cs) of
-	     (IntInf_compare, [IntInf i1, IntInf i2]) =>
-		let
-		   val i =
-		      case IntInf.compare (i1, i2) of
-			 Relation.LESS => ~1
-		       | Relation.EQUAL => 0
-		       | Relation.GREATER => 1
-		in
-		   word (WordX.fromIntInf (i, WordSize.default))
-		end
-	   | (IntInf_equal, [IntInf i1, IntInf i2]) => bool (i1 = i2)
-	   | (IntInf_toWord, [IntInf i]) =>
-		(case SmallIntInf.toWord i of
-		    NONE => ApplyResult.Unknown
-		  | SOME w => word (WordX.fromIntInf (Word.toIntInf w,
-						      WordSize.default)))
-	   | (MLton_eq, [c1, c2]) => eq (c1, c2)
-	   | (MLton_equal, [c1, c2]) => equal (c1, c2)
-	   | (Word_add _, [Word w1, Word w2]) => word (WordX.add (w1, w2))
-	   | (Word_addCheck s, [Word w1, Word w2]) => wcheck (op +, s, w1, w2)
-	   | (Word_andb _, [Word w1, Word w2]) => word (WordX.andb (w1, w2))
+         (case (p, cs) of
+             (IntInf_compare, [IntInf i1, IntInf i2]) =>
+                let
+                   val i =
+                      case IntInf.compare (i1, i2) of
+                         Relation.LESS => ~1
+                       | Relation.EQUAL => 0
+                       | Relation.GREATER => 1
+                in
+                   word (WordX.fromIntInf (i, WordSize.default))
+                end
+           | (IntInf_equal, [IntInf i1, IntInf i2]) => bool (i1 = i2)
+           | (IntInf_toWord, [IntInf i]) =>
+                (case SmallIntInf.toWord i of
+                    NONE => ApplyResult.Unknown
+                  | SOME w => word (WordX.fromIntInf (Word.toIntInf w,
+                                                      WordSize.default)))
+           | (MLton_eq, [c1, c2]) => eq (c1, c2)
+           | (MLton_equal, [c1, c2]) => equal (c1, c2)
+           | (Word_add _, [Word w1, Word w2]) => word (WordX.add (w1, w2))
+           | (Word_addCheck s, [Word w1, Word w2]) => wcheck (op +, s, w1, w2)
+           | (Word_andb _, [Word w1, Word w2]) => word (WordX.andb (w1, w2))
            | (Word_equal _, [Word w1, Word w2]) => bool (WordX.equals (w1, w2))
-	   | (Word_lshift _, [Word w1, Word w2]) => word (WordX.lshift (w1, w2))
-	   | (Word_lt s, [Word w1, Word w2]) => wordCmp (WordX.lt, s, w1, w2)
-	   | (Word_mul s, [Word w1, Word w2]) => wordS (WordX.mul, s, w1, w2)
-	   | (Word_mulCheck s, [Word w1, Word w2]) => wcheck (op *, s, w1, w2)
-	   | (Word_neg _, [Word w]) => word (WordX.neg w)
-	   | (Word_negCheck s, [Word w]) =>
-		wordOrOverflow (s, {signed = true}, ~ (WordX.toIntInfX w))
-	   | (Word_notb _, [Word w]) => word (WordX.notb w)
-	   | (Word_orb _, [Word w1, Word w2]) => word (WordX.orb (w1, w2))
-	   | (Word_quot s, [Word w1, Word w2]) =>
-		if WordX.isZero w2
-		   then ApplyResult.Unknown
-		else wordS (WordX.quot, s, w1, w2)
-	   | (Word_rem s, [Word w1, Word w2]) =>
-		if WordX.isZero w2
-		   then ApplyResult.Unknown
-		else wordS (WordX.rem, s, w1, w2)
-	   | (Word_rol _, [Word w1, Word w2]) => word (WordX.rol (w1, w2))
-	   | (Word_ror _, [Word w1, Word w2]) => word (WordX.ror (w1, w2))
-	   | (Word_rshift s, [Word w1, Word w2]) =>
-		wordS (WordX.rshift, s, w1, w2)
-	   | (Word_sub _, [Word w1, Word w2]) => word (WordX.sub (w1, w2))
-	   | (Word_subCheck s, [Word w1, Word w2]) => wcheck (op -, s, w1, w2)
-	   | (Word_toIntInf, [Word w]) =>
-		intInf (SmallIntInf.fromWord
-			(Word.fromIntInf (WordX.toIntInf w)))
-	   | (Word_toWord (_, s, {signed}), [Word w]) =>
-		word (if signed then WordX.resizeX (w, s)
-		      else WordX.resize (w, s))
-	   | (Word_xorb _, [Word w1, Word w2]) => word (WordX.xorb (w1, w2))
-	   | _ => ApplyResult.Unknown)
-	     handle Chr => ApplyResult.Unknown
-		  | Div => ApplyResult.Unknown
-		  | Exn.Overflow => ApplyResult.Overflow
-		  | Subscript => ApplyResult.Unknown
+           | (Word_lshift _, [Word w1, Word w2]) => word (WordX.lshift (w1, w2))
+           | (Word_lt s, [Word w1, Word w2]) => wordCmp (WordX.lt, s, w1, w2)
+           | (Word_mul s, [Word w1, Word w2]) => wordS (WordX.mul, s, w1, w2)
+           | (Word_mulCheck s, [Word w1, Word w2]) => wcheck (op *, s, w1, w2)
+           | (Word_neg _, [Word w]) => word (WordX.neg w)
+           | (Word_negCheck s, [Word w]) =>
+                wordOrOverflow (s, {signed = true}, ~ (WordX.toIntInfX w))
+           | (Word_notb _, [Word w]) => word (WordX.notb w)
+           | (Word_orb _, [Word w1, Word w2]) => word (WordX.orb (w1, w2))
+           | (Word_quot s, [Word w1, Word w2]) =>
+                if WordX.isZero w2
+                   then ApplyResult.Unknown
+                else wordS (WordX.quot, s, w1, w2)
+           | (Word_rem s, [Word w1, Word w2]) =>
+                if WordX.isZero w2
+                   then ApplyResult.Unknown
+                else wordS (WordX.rem, s, w1, w2)
+           | (Word_rol _, [Word w1, Word w2]) => word (WordX.rol (w1, w2))
+           | (Word_ror _, [Word w1, Word w2]) => word (WordX.ror (w1, w2))
+           | (Word_rshift s, [Word w1, Word w2]) =>
+                wordS (WordX.rshift, s, w1, w2)
+           | (Word_sub _, [Word w1, Word w2]) => word (WordX.sub (w1, w2))
+           | (Word_subCheck s, [Word w1, Word w2]) => wcheck (op -, s, w1, w2)
+           | (Word_toIntInf, [Word w]) =>
+                intInf (SmallIntInf.fromWord
+                        (Word.fromIntInf (WordX.toIntInf w)))
+           | (Word_toWord (_, s, {signed}), [Word w]) =>
+                word (if signed then WordX.resizeX (w, s)
+                      else WordX.resize (w, s))
+           | (Word_xorb _, [Word w1, Word w2]) => word (WordX.xorb (w1, w2))
+           | _ => ApplyResult.Unknown)
+             handle Chr => ApplyResult.Unknown
+                  | Div => ApplyResult.Unknown
+                  | Exn.Overflow => ApplyResult.Overflow
+                  | Subscript => ApplyResult.Unknown
       fun someVars () =
-	 let
-	    datatype z = datatype ApplyResult.t
-	    fun varIntInf (x, i: IntInf.t, space, inOrder) =
-	       let
-		  fun neg () = Apply (intInfNeg, [x, space])
-		  fun notb () = Apply (intInfNotb, [x, space])
-		  val i = IntInf.toInt i
-	       in
-		  case p of
-		     IntInf_add => if i = 0 then Var x else Unknown
-		   | IntInf_andb => if i = 0
-				       then intInfConst 0
-				    else if i = ~1
-				       then Var x
-				    else Unknown
-		   | IntInf_gcd => if (i = ~1 orelse i = 1)
-				      then intInfConst 1
-				   else Unknown
-		   | IntInf_mul =>
-			(case i of
-			    0 => intInfConst 0
-			  | 1 => Var x
-			  | ~1 => neg ()
-			  | _ => Unknown)
-		   | IntInf_orb => if i = 0
-				      then Var x
-				   else if i = ~1
-				      then intInfConst ~1
-				   else Unknown
-		   | IntInf_quot => if inOrder
-				       then (case i of
-						1 => Var x
-					      | ~1 => neg ()
-					      | _ => Unknown)
-				    else Unknown
-		   | IntInf_rem => if inOrder andalso (i = ~1 orelse i = 1)
-				      then intInfConst 0
-				   else Unknown
-		   | IntInf_sub => if i = 0
-				      then if inOrder
-					      then Var x
-					   else neg ()
-				   else Unknown
-		   | IntInf_xorb => if i = 0
-				       then Var x
-				    else if i = ~1
-				       then notb ()
-				    else Unknown
-		   | _ => Unknown
-	       end handle Exn.Overflow => Unknown
-	    fun varWord (x, w, inOrder) =
-	       let
-		  val zero = word o WordX.zero
-		  fun add () = if WordX.isZero w then Var x else Unknown
-		  fun mul ((s, {signed}), neg) =
-		     if WordX.isZero w
-			then word w
-		     else if WordX.isOne w
-			     then Var x
-			  else if signed andalso WordX.isNegOne w
-				  then Apply (neg s, [x])
-			       else Unknown
-		  fun sub (s, neg) =
-		     if WordX.isZero w
-			then if inOrder
-				then Var x
-			     else Apply (neg s, [x])
-		     else Unknown
-		  fun ro () =
-		     if inOrder
-			then
-			   let
-			      val s = WordX.size w
-			   in
-			      if WordX.isZero
-				 (WordX.rem
-				  (w,
-				   WordX.fromIntInf
-				   (IntInf.fromInt
-				    (Bits.toInt (WordSize.bits s)),
-				    s),
-				   {signed = false}))
-				 then Var x
-			      else Unknown
-			   end
-		     else
-			if WordX.isZero w orelse WordX.isAllOnes w
-			   then word w
-			else Unknown
-		  fun shift s =
-		     if inOrder
-			then if WordX.isZero w
-				then Var x
-			     else if (WordX.ge
-				      (w,
-				       WordX.fromIntInf (Bits.toIntInf
-							 (WordSize.bits s),
-							 WordSize.default),
-				       {signed = false}))
-				     then zero s
-				  else Unknown
-		     else if WordX.isZero w
-			     then zero s
-			  else Unknown
-	       in
-		  case p of
-		     Word_add _ => add ()
-		   | Word_addCheck _ => add ()
-		   | Word_andb s =>
-			if WordX.isZero w
-			   then zero s
-			else if WordX.isAllOnes w
-				then Var x
-			     else Unknown
-		   | Word_lshift s => shift s
-		   | Word_lt (_, sg) =>
-			if inOrder
-			   then if WordX.isMin (w, sg) then f else Unknown
-			else if WordX.isMax (w, sg) then f else Unknown
-		   | Word_mul s => mul (s, wordNeg)
-		   | Word_mulCheck s => mul (s, wordNegCheck)
-		   | Word_orb _ =>
-			if WordX.isZero w
-			   then Var x
-			else if WordX.isAllOnes w
-				then word w
-			     else Unknown
-		   | Word_quot (s, {signed}) =>
-			if inOrder
-			   then
-			      if WordX.isOne w
-				 then Var x
-			      else if signed andalso WordX.isNegOne w
-				      then Apply (wordNeg s, [x])
-				   else Unknown
-			else Unknown
-		   | Word_rem (s, {signed}) =>
-			if inOrder
-			   andalso (WordX.isOne w
-				    orelse signed andalso WordX.isNegOne w)
-			   then zero s
-			else Unknown
-		   | Word_rol _ => ro ()
-		   | Word_ror _ => ro ()
-		   | Word_rshift (s, {signed}) =>
-			if signed
-			   then
-			      if WordX.isZero w
-				 then if inOrder then Var x else zero s
-			      else if WordX.isAllOnes w andalso not inOrder
-				      then word w
-				   else Unknown
-			else
-			   shift s
-		   | Word_sub s => sub (s, wordNeg)
-		   | Word_subCheck s => sub (s, wordNegCheck o #1)
-		   | Word_xorb s =>
-			if WordX.isZero w
-			   then Var x
-			else if WordX.isAllOnes w
-				then Apply (wordNotb s, [x])
-			     else Unknown
-		   | _ => Unknown
-	       end
-	    datatype z = datatype ApplyArg.t
-	 in
-	    case (p, args) of
-	       (IntInf_toString, [Const (IntInf i), Const (Word base), _]) =>
-		  let
-		     val base =
-			case WordX.toInt base of
-			   2 => StringCvt.BIN
-			 | 8 => StringCvt.OCT 
-			 | 10 => StringCvt.DEC
-			 | 16 => StringCvt.HEX
-			 | _ => Error.bug "Prim.apply: strange base for IntInf_toString"
-		  in
-		     ApplyResult.Const (Const.string (IntInf.format (i, base)))
-		  end
-	     | (_, [Con {con = c, hasArg = h}, Con {con = c', ...}]) =>
-		  if (case p of
-			 MLton_eq => true
-		       | MLton_equal => true
-		       | _ => false)
-		     then if Con.equals (c, c')
-			     then if h
-				     then Unknown
-				  else bool true
-			  else bool false
-		  else Unknown
-	     | (_, [Var x, Const (Word i)]) => varWord (x, i, true)
-	     | (_, [Const (Word i), Var x]) => varWord (x, i, false)
-	     | (_, [Const (IntInf i1), Const (IntInf i2), _]) =>
-		  (case p of
-		      IntInf_add => iio (IntInf.+, i1, i2)
-		    | IntInf_andb => iio (IntInf.andb, i1, i2)
-		    | IntInf_gcd => iio (IntInf.gcd, i1, i2)
-		    | IntInf_mul => iio (IntInf.*, i1, i2)
-		    | IntInf_orb => iio (IntInf.orb, i1, i2)
-		    | IntInf_quot => iio (IntInf.quot, i1, i2)
-		    | IntInf_rem => iio (IntInf.rem, i1, i2)
-		    | IntInf_sub => iio (IntInf.-, i1, i2)
-		    | IntInf_xorb => iio (IntInf.xorb, i1, i2)
-		    | _ => Unknown)
-	     | (_, [Const (IntInf i1), Const (Word w2), _]) =>
-		  (case p of
-		      IntInf_arshift =>
-			 intInf (IntInf.~>>
-				 (i1, Word.fromIntInf (WordX.toIntInf w2)))
-		    | IntInf_lshift =>
-			 intInf (IntInf.<<
-				 (i1, Word.fromIntInf (WordX.toIntInf w2)))
-		    | _ => Unknown)
-	     | (_, [Const (IntInf i1), _]) =>
-		  (case p of
-		      IntInf_neg => intInf (IntInf.~ i1)
-		    | IntInf_notb => intInf (IntInf.notb i1)
-		    | _ => Unknown)
-	     | (_, [Var x, Const (IntInf i), Var space]) =>
-		  varIntInf (x, i, space, true)
-	     | (_, [Const (IntInf i), Var x, Var space]) =>
-		  varIntInf (x, i, space, false)
-	     | (_, [Var x, Const (Word w), _]) =>
-		  if WordX.isZero w
-		     then
-			let
-			   datatype z = datatype ApplyResult.t
-			in
-			   case p of
-			      IntInf_arshift => Var x
-			    | IntInf_lshift => Var x
-			    | _ => Unknown
-			end
-		  else Unknown
+         let
+            datatype z = datatype ApplyResult.t
+            fun varIntInf (x, i: IntInf.t, space, inOrder) =
+               let
+                  fun neg () = Apply (intInfNeg, [x, space])
+                  fun notb () = Apply (intInfNotb, [x, space])
+                  val i = IntInf.toInt i
+               in
+                  case p of
+                     IntInf_add => if i = 0 then Var x else Unknown
+                   | IntInf_andb => if i = 0
+                                       then intInfConst 0
+                                    else if i = ~1
+                                       then Var x
+                                    else Unknown
+                   | IntInf_gcd => if (i = ~1 orelse i = 1)
+                                      then intInfConst 1
+                                   else Unknown
+                   | IntInf_mul =>
+                        (case i of
+                            0 => intInfConst 0
+                          | 1 => Var x
+                          | ~1 => neg ()
+                          | _ => Unknown)
+                   | IntInf_orb => if i = 0
+                                      then Var x
+                                   else if i = ~1
+                                      then intInfConst ~1
+                                   else Unknown
+                   | IntInf_quot => if inOrder
+                                       then (case i of
+                                                1 => Var x
+                                              | ~1 => neg ()
+                                              | _ => Unknown)
+                                    else Unknown
+                   | IntInf_rem => if inOrder andalso (i = ~1 orelse i = 1)
+                                      then intInfConst 0
+                                   else Unknown
+                   | IntInf_sub => if i = 0
+                                      then if inOrder
+                                              then Var x
+                                           else neg ()
+                                   else Unknown
+                   | IntInf_xorb => if i = 0
+                                       then Var x
+                                    else if i = ~1
+                                       then notb ()
+                                    else Unknown
+                   | _ => Unknown
+               end handle Exn.Overflow => Unknown
+            fun varWord (x, w, inOrder) =
+               let
+                  val zero = word o WordX.zero
+                  fun add () = if WordX.isZero w then Var x else Unknown
+                  fun mul ((s, {signed}), neg) =
+                     if WordX.isZero w
+                        then word w
+                     else if WordX.isOne w
+                             then Var x
+                          else if signed andalso WordX.isNegOne w
+                                  then Apply (neg s, [x])
+                               else Unknown
+                  fun sub (s, neg) =
+                     if WordX.isZero w
+                        then if inOrder
+                                then Var x
+                             else Apply (neg s, [x])
+                     else Unknown
+                  fun ro () =
+                     if inOrder
+                        then
+                           let
+                              val s = WordX.size w
+                           in
+                              if WordX.isZero
+                                 (WordX.rem
+                                  (w,
+                                   WordX.fromIntInf
+                                   (IntInf.fromInt
+                                    (Bits.toInt (WordSize.bits s)),
+                                    s),
+                                   {signed = false}))
+                                 then Var x
+                              else Unknown
+                           end
+                     else
+                        if WordX.isZero w orelse WordX.isAllOnes w
+                           then word w
+                        else Unknown
+                  fun shift s =
+                     if inOrder
+                        then if WordX.isZero w
+                                then Var x
+                             else if (WordX.ge
+                                      (w,
+                                       WordX.fromIntInf (Bits.toIntInf
+                                                         (WordSize.bits s),
+                                                         WordSize.default),
+                                       {signed = false}))
+                                     then zero s
+                                  else Unknown
+                     else if WordX.isZero w
+                             then zero s
+                          else Unknown
+               in
+                  case p of
+                     Word_add _ => add ()
+                   | Word_addCheck _ => add ()
+                   | Word_andb s =>
+                        if WordX.isZero w
+                           then zero s
+                        else if WordX.isAllOnes w
+                                then Var x
+                             else Unknown
+                   | Word_lshift s => shift s
+                   | Word_lt (_, sg) =>
+                        if inOrder
+                           then if WordX.isMin (w, sg) then f else Unknown
+                        else if WordX.isMax (w, sg) then f else Unknown
+                   | Word_mul s => mul (s, wordNeg)
+                   | Word_mulCheck s => mul (s, wordNegCheck)
+                   | Word_orb _ =>
+                        if WordX.isZero w
+                           then Var x
+                        else if WordX.isAllOnes w
+                                then word w
+                             else Unknown
+                   | Word_quot (s, {signed}) =>
+                        if inOrder
+                           then
+                              if WordX.isOne w
+                                 then Var x
+                              else if signed andalso WordX.isNegOne w
+                                      then Apply (wordNeg s, [x])
+                                   else Unknown
+                        else Unknown
+                   | Word_rem (s, {signed}) =>
+                        if inOrder
+                           andalso (WordX.isOne w
+                                    orelse signed andalso WordX.isNegOne w)
+                           then zero s
+                        else Unknown
+                   | Word_rol _ => ro ()
+                   | Word_ror _ => ro ()
+                   | Word_rshift (s, {signed}) =>
+                        if signed
+                           then
+                              if WordX.isZero w
+                                 then if inOrder then Var x else zero s
+                              else if WordX.isAllOnes w andalso not inOrder
+                                      then word w
+                                   else Unknown
+                        else
+                           shift s
+                   | Word_sub s => sub (s, wordNeg)
+                   | Word_subCheck s => sub (s, wordNegCheck o #1)
+                   | Word_xorb s =>
+                        if WordX.isZero w
+                           then Var x
+                        else if WordX.isAllOnes w
+                                then Apply (wordNotb s, [x])
+                             else Unknown
+                   | _ => Unknown
+               end
+            datatype z = datatype ApplyArg.t
+         in
+            case (p, args) of
+               (IntInf_toString, [Const (IntInf i), Const (Word base), _]) =>
+                  let
+                     val base =
+                        case WordX.toInt base of
+                           2 => StringCvt.BIN
+                         | 8 => StringCvt.OCT 
+                         | 10 => StringCvt.DEC
+                         | 16 => StringCvt.HEX
+                         | _ => Error.bug "Prim.apply: strange base for IntInf_toString"
+                  in
+                     ApplyResult.Const (Const.string (IntInf.format (i, base)))
+                  end
+             | (_, [Con {con = c, hasArg = h}, Con {con = c', ...}]) =>
+                  if (case p of
+                         MLton_eq => true
+                       | MLton_equal => true
+                       | _ => false)
+                     then if Con.equals (c, c')
+                             then if h
+                                     then Unknown
+                                  else bool true
+                          else bool false
+                  else Unknown
+             | (_, [Var x, Const (Word i)]) => varWord (x, i, true)
+             | (_, [Const (Word i), Var x]) => varWord (x, i, false)
+             | (_, [Const (IntInf i1), Const (IntInf i2), _]) =>
+                  (case p of
+                      IntInf_add => iio (IntInf.+, i1, i2)
+                    | IntInf_andb => iio (IntInf.andb, i1, i2)
+                    | IntInf_gcd => iio (IntInf.gcd, i1, i2)
+                    | IntInf_mul => iio (IntInf.*, i1, i2)
+                    | IntInf_orb => iio (IntInf.orb, i1, i2)
+                    | IntInf_quot => iio (IntInf.quot, i1, i2)
+                    | IntInf_rem => iio (IntInf.rem, i1, i2)
+                    | IntInf_sub => iio (IntInf.-, i1, i2)
+                    | IntInf_xorb => iio (IntInf.xorb, i1, i2)
+                    | _ => Unknown)
+             | (_, [Const (IntInf i1), Const (Word w2), _]) =>
+                  (case p of
+                      IntInf_arshift =>
+                         intInf (IntInf.~>>
+                                 (i1, Word.fromIntInf (WordX.toIntInf w2)))
+                    | IntInf_lshift =>
+                         intInf (IntInf.<<
+                                 (i1, Word.fromIntInf (WordX.toIntInf w2)))
+                    | _ => Unknown)
+             | (_, [Const (IntInf i1), _]) =>
+                  (case p of
+                      IntInf_neg => intInf (IntInf.~ i1)
+                    | IntInf_notb => intInf (IntInf.notb i1)
+                    | _ => Unknown)
+             | (_, [Var x, Const (IntInf i), Var space]) =>
+                  varIntInf (x, i, space, true)
+             | (_, [Const (IntInf i), Var x, Var space]) =>
+                  varIntInf (x, i, space, false)
+             | (_, [Var x, Const (Word w), _]) =>
+                  if WordX.isZero w
+                     then
+                        let
+                           datatype z = datatype ApplyResult.t
+                        in
+                           case p of
+                              IntInf_arshift => Var x
+                            | IntInf_lshift => Var x
+                            | _ => Unknown
+                        end
+                  else Unknown
              | (_, [Var x, Var y, _]) =>
-		  if varEquals (x, y)
-		     then let datatype z = datatype ApplyResult.t
-			  in
-			     case p of
-			        IntInf_andb => Var x
-			      | IntInf_orb => Var x
-			      | IntInf_quot => intInfConst 1
-			      | IntInf_rem => intInfConst 0
-			      | IntInf_sub => intInfConst 0
-			      | IntInf_xorb => intInfConst 0
-			      | _ => Unknown
-			  end
-		  else Unknown
-	     | (_, [Var x, Var y]) =>
-		  if varEquals (x, y)
-		     then let
-			     val t = ApplyResult.truee
-			     val f = ApplyResult.falsee
-			     datatype z = datatype ApplyResult.t
-			  in
-			     case p of
-				IntInf_compare =>
-				   word (WordX.zero WordSize.default)
-			      | IntInf_equal => t
-			      | MLton_eq => t
-			      | MLton_equal => t
-			      | Real_lt _ => f
-			      | Real_le _ => t
-			      | Real_equal _ => t
-			      | Real_qequal _ => t
-			      | Word_andb _ => Var x
+                  if varEquals (x, y)
+                     then let datatype z = datatype ApplyResult.t
+                          in
+                             case p of
+                                IntInf_andb => Var x
+                              | IntInf_orb => Var x
+                              | IntInf_quot => intInfConst 1
+                              | IntInf_rem => intInfConst 0
+                              | IntInf_sub => intInfConst 0
+                              | IntInf_xorb => intInfConst 0
+                              | _ => Unknown
+                          end
+                  else Unknown
+             | (_, [Var x, Var y]) =>
+                  if varEquals (x, y)
+                     then let
+                             val t = ApplyResult.truee
+                             val f = ApplyResult.falsee
+                             datatype z = datatype ApplyResult.t
+                          in
+                             case p of
+                                IntInf_compare =>
+                                   word (WordX.zero WordSize.default)
+                              | IntInf_equal => t
+                              | MLton_eq => t
+                              | MLton_equal => t
+                              | Real_lt _ => f
+                              | Real_le _ => t
+                              | Real_equal _ => t
+                              | Real_qequal _ => t
+                              | Word_andb _ => Var x
                               | Word_equal _ => t
-			      | Word_lt _ => f
-			      | Word_orb _ => Var x
-			      | Word_quot (s, _) => word (WordX.one s)
-			      | Word_rem (s, _) => word (WordX.zero s)
-			      | Word_sub s => word (WordX.zero s)
-			      | Word_xorb s => word (WordX.zero s)
-			      | _ => Unknown
-			  end
-		  else Unknown
+                              | Word_lt _ => f
+                              | Word_orb _ => Var x
+                              | Word_quot (s, _) => word (WordX.one s)
+                              | Word_rem (s, _) => word (WordX.zero s)
+                              | Word_sub s => word (WordX.zero s)
+                              | Word_xorb s => word (WordX.zero s)
+                              | _ => Unknown
+                          end
+                  else Unknown
              | _ => Unknown
-	 end
+         end
    in
       if List.forall (args, fn ApplyArg.Const _ => true | _ => false)
-	 then
-	    allConsts
-	    (List.map
-	     (args, fn ApplyArg.Const c => c | _ => Error.bug "Prim.apply"))
+         then
+            allConsts
+            (List.map
+             (args, fn ApplyArg.Const c => c | _ => Error.bug "Prim.apply"))
       else someVars ()
    end
 
 fun ('a, 'b) layoutApp (p: 'a t,
-			args: 'b vector,
-			layoutArg: 'b -> Layout.t): Layout.t =
+                        args: 'b vector,
+                        layoutArg: 'b -> Layout.t): Layout.t =
    let
       fun arg i = layoutArg (Vector.sub (args, i))
       open Layout
@@ -1541,7 +1541,7 @@ fun ('a, 'b) layoutApp (p: 'a t,
       fun two name = seq [arg 0, str " ", str name, str " ", arg 1]
    in
       case p of
-	 IntInf_equal => two "="
+         IntInf_equal => two "="
        | MLton_eq => two "="
        | Real_Math_acos _ => one "acos"
        | Real_Math_asin _ => one "asin"

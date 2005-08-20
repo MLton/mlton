@@ -1,8 +1,8 @@
 signature IO =
    sig
       exception Io of {name : string,
-		       function : string,
-		       cause : exn}
+                       function : string,
+                       cause : exn}
       exception BlockingNotSupported
       exception NonblockingNotSupported
       exception RandomAccessNotSupported

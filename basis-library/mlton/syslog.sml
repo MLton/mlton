@@ -26,7 +26,7 @@ fun zt s = s ^ "\000"
 fun openlog (s, opt, fac) =
    let 
       val optf = 
-	 Word32.toInt (foldl Word32.orb 0w0 (map Word32.fromInt opt))
+         Word32.toInt (foldl Word32.orb 0w0 (map Word32.fromInt opt))
       val sys_strdup  = _import "strdup" : string -> word ;
       val sys_openlog = _import "openlog" : word * int * int -> unit ;
    in

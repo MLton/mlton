@@ -8,7 +8,7 @@
 signature PID =
    sig
       type t
-	 
+         
       val current: unit -> t
       val equals: t * t -> bool
       val fromString: string -> t option

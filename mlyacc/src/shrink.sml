@@ -33,7 +33,7 @@ signature EQUIV =
 
         It returns a triple consisting of:
 
-	  * the number of equivalence classes
+          * the number of equivalence classes
           * a list which maps each original entry to an equivalence
             class.  The nth entry in this list gives the equivalence
             class for the nth entry in the original entry list.
@@ -71,7 +71,7 @@ functor MergeSortFun(A : SORT_ARG) : SORT =
                  fun scan (a :: b :: rest) = merge(a,b) :: scan rest
                    | scan l = l
 
-	         (* loop: calls scan on a list of lists until only
+                 (* loop: calls scan on a list of lists until only
                     one list is left.  It terminates only if the list of
                     lists is nonempty.  (The pattern match for sort
                     ensures this.) *)
@@ -108,14 +108,14 @@ functor EquivFun(A : EQUIV_ARG) : EQUIV =
 
          We then return the length of R, R, and the list that results from
          permuting SE by P.
-     *)	
+     *)        
 
        type entry = A.entry
              
        val gt = fn ((a,_),(b,_)) => A.gt(a,b)
 
        structure Sort = MergeSortFun(type entry = A.entry * int
-     				     val gt = gt)
+                                          val gt = gt)
        val assignIndex =
           fn l =>
              let fun loop (index,nil) = nil
@@ -124,13 +124,13 @@ functor EquivFun(A : EQUIV_ARG) : EQUIV =
              end 
     
        local fun loop ((e,_) :: t, prev, class, R , SE: int list) =
-	       if A.eq(e,prev)
-		 then loop(t,e,class,R, class :: SE)
-		 else loop(t,e,class+1,e :: R, (class + 1) :: SE)
-	     | loop (nil,_,_,R,SE) = (rev R, rev SE)
+               if A.eq(e,prev)
+                 then loop(t,e,class,R, class :: SE)
+                 else loop(t,e,class+1,e :: R, (class + 1) :: SE)
+             | loop (nil,_,_,R,SE) = (rev R, rev SE)
        in val createEquivalences =
-	   fn nil => (nil,nil)
-	    | (e,_) :: t => loop(t, e, 0, [e],[0: int])
+           fn nil => (nil,nil)
+            | (e,_) :: t => loop(t, e, 0, [e],[0: int])
        end
 
        val inversePermute = fn permutation =>
@@ -138,20 +138,20 @@ functor EquivFun(A : EQUIV_ARG) : EQUIV =
                | l as h :: _ =>
                    let val result = array(length l,h)
                        fun loop (elem :: r, dest :: s) =
-			     (update(result,dest,elem); loop(r,s))
+                             (update(result,dest,elem); loop(r,s))
                          | loop _ = ()
                        fun listofarray(i: int): int list =
-			  if i < Array.length result then 
-				(result sub i) :: listofarray (i+1)
+                          if i < Array.length result then 
+                                (result sub i) :: listofarray (i+1)
                           else nil
                     in loop (l,permutation); listofarray 0
-		    end
+                    end
 
        fun makePermutation x = map (fn (_,b) => b) x
 
        val equivalences = fn l =>
-	   let val EP = assignIndex l
-	       val sorted = Sort.sort EP
+           let val EP = assignIndex l
+               val sorted = Sort.sort EP
                val P = makePermutation sorted
                val (R, SE) = createEquivalences sorted
             in (length R, inversePermute P SE, R)
@@ -160,41 +160,41 @@ end
 
 functor ShrinkLrTableFun(structure LrTable : LR_TABLE) : SHRINK_LR_TABLE =
     struct
-	structure LrTable = LrTable
+        structure LrTable = LrTable
         open LrTable
         val gtAction = fn (a,b) =>
-	      case a
+              case a
               of SHIFT (STATE s) => 
-		   (case b of SHIFT (STATE s') => s>s' | _ => true)
+                   (case b of SHIFT (STATE s') => s>s' | _ => true)
                | REDUCE i => (case b of SHIFT _ => false | REDUCE i' => i>i'
                                       | _ => true)
                | ACCEPT => (case b of ERROR => true | _ => false)
                | ERROR =>  false
         structure ActionEntryList =
-	    struct
-		type entry = (term, action) pairlist * action
-		local
-		    fun eqlist (EMPTY, EMPTY) = true
-		      | eqlist (PAIR (T t,d,r),PAIR(T t',d',r')) =
-			t=t' andalso d=d' andalso eqlist(r,r')
-		      | eqlist _ = false
-		    fun gtlist (PAIR _,EMPTY) = true
-		      | gtlist (PAIR(T t,d,r),PAIR(T t',d',r')) =
-			t>t' orelse (t=t' andalso
-				     (gtAction(d,d') orelse
-				      (d=d' andalso gtlist(r,r'))))
-		      | gtlist _ = false
-		in
-		    fun eq ((l,a): entry, (l',a'): entry) =
-			a = a' andalso eqlist (l,l')
-		    fun gt ((l,a): entry, (l',a'): entry) =
-			gtAction(a,a') orelse (a=a' andalso gtlist(l,l'))
-		end
+            struct
+                type entry = (term, action) pairlist * action
+                local
+                    fun eqlist (EMPTY, EMPTY) = true
+                      | eqlist (PAIR (T t,d,r),PAIR(T t',d',r')) =
+                        t=t' andalso d=d' andalso eqlist(r,r')
+                      | eqlist _ = false
+                    fun gtlist (PAIR _,EMPTY) = true
+                      | gtlist (PAIR(T t,d,r),PAIR(T t',d',r')) =
+                        t>t' orelse (t=t' andalso
+                                     (gtAction(d,d') orelse
+                                      (d=d' andalso gtlist(r,r'))))
+                      | gtlist _ = false
+                in
+                    fun eq ((l,a): entry, (l',a'): entry) =
+                        a = a' andalso eqlist (l,l')
+                    fun gt ((l,a): entry, (l',a'): entry) =
+                        gtAction(a,a') orelse (a=a' andalso gtlist(l,l'))
+                end
             end
 (*        structure GotoEntryList =
             struct
-	       type entry = (nonterm,state) pairlist
-	       val rec eq = 
+               type entry = (nonterm,state) pairlist
+               val rec eq = 
                     fn (EMPTY,EMPTY) => true
                      | (PAIR (t,d,r),PAIR(t',d',r')) =>
                             t=t' andalso d=d' andalso eq(r,r')
@@ -208,23 +208,23 @@ functor ShrinkLrTableFun(structure LrTable : LR_TABLE) : SHRINK_LR_TABLE =
             end *)
         structure EquivActionList = EquivFun(ActionEntryList)
         val states = fn max =>
-	    let fun f i=if i<max then STATE i :: f(i+1) else nil
+            let fun f i=if i<max then STATE i :: f(i+1) else nil
             in f 0
             end
         val length : ('a,'b) pairlist -> int =
            fn l =>
-	     let fun g(EMPTY,len) = len
+             let fun g(EMPTY,len) = len
                    | g(PAIR(_,_,r),len) = g(r,len+1)
              in g(l,0)
              end
         val size : (('a,'b) pairlist * 'c) list -> int =
-	   fn l =>
-	     let val c = ref 0
+           fn l =>
+             let val c = ref 0
              in (app (fn (row,_) => c := !c + length row) l; !c)
              end
        val shrinkActionList = 
-	 fn (table,verbose) =>
-	   case EquivActionList.equivalences
-	             (map (describeActions table) (states (numStates table)))
+         fn (table,verbose) =>
+           case EquivActionList.equivalences
+                     (map (describeActions table) (states (numStates table)))
            of result as (_,_,l) => (result,if verbose then size l else 0)
 end;

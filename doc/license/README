@@ -1,21 +1,21 @@
-package		license				use
---------------  ------------------------------	------------
-MLton		MLton-LICENSE (BSD-style)
+package                license                                use
+--------------  ------------------------------        ------------
+MLton                MLton-LICENSE (BSD-style)
 
-SML/NJ		NJ-LICENSE (BSD-style)		front-end mllex specification
-                                        	front-end mlyacc specification
-                                        	precedence parser
-                                        	CM lexer and parser
-						OS.IO, Posix.IO, Process, Unix
-						mllex
-						mlyacc and MLYacc Library
-						Concurrent ML Library
-						SML/NJ Library
-						CKit Library
-                                        	mlnlffigen and MLNLFFI Library
+SML/NJ                NJ-LICENSE (BSD-style)                front-end mllex specification
+                                                front-end mlyacc specification
+                                                precedence parser
+                                                CM lexer and parser
+                                                OS.IO, Posix.IO, Process, Unix
+                                                mllex
+                                                mlyacc and MLYacc Library
+                                                Concurrent ML Library
+                                                SML/NJ Library
+                                                CKit Library
+                                                mlnlffigen and MLNLFFI Library
 
-ML Kit		MLKit-LICENSE (MIT)		Path, Time, Date
+ML Kit                MLKit-LICENSE (MIT)                Path, Time, Date
 
-gdtoa		gdtoa-LICENSE (BSD-style) 	Real binary <-> decimal conversions
+gdtoa                gdtoa-LICENSE (BSD-style)         Real binary <-> decimal conversions
 
-gmp		gmp-LICENSE (LGPL)		IntInf
+gmp                gmp-LICENSE (LGPL)                IntInf

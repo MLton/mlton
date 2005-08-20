@@ -16,23 +16,23 @@ type ('a, 'b) reader = 'b -> ('a * 'b) option
 (* local
  *    fun make finish p reader state =
  *       let
- * 	 fun loop (state, token, tokens) =
- * 	    case reader state of
- * 	       NONE => SOME (rev (finish (token, tokens)), state)
- * 	     | SOME (x, state) =>
- * 		  let
- * 		     val (token, tokens) =
- * 			if p x then ([], finish (token, tokens))
- * 			else (x :: token, tokens)
- * 		  in loop (state, token, tokens)
- * 		  end
+ *          fun loop (state, token, tokens) =
+ *             case reader state of
+ *                NONE => SOME (rev (finish (token, tokens)), state)
+ *              | SOME (x, state) =>
+ *                   let
+ *                      val (token, tokens) =
+ *                         if p x then ([], finish (token, tokens))
+ *                         else (x :: token, tokens)
+ *                   in loop (state, token, tokens)
+ *                   end
  *       in loop (state, [], [])
  *       end
  * in
  *     fun tokens p = make (fn (token, tokens) =>
- *  		       case token of
- *  			  [] => tokens
- *  			| _ => (rev token) :: tokens) p
+ *                         case token of
+ *                            [] => tokens
+ *                          | _ => (rev token) :: tokens) p
  *    fun fields p = make (fn (field, fields) => (rev field) :: fields) p
  * end
  *)
@@ -41,33 +41,33 @@ fun list (reader: ('a, 'b) reader): ('a list, 'b) reader =
    fn state =>
    let
       fun loop (state, accum) =
-	 case reader state of
-	    NONE => SOME (rev accum, state)
-	  | SOME (a, state) => loop (state, a :: accum)
+         case reader state of
+            NONE => SOME (rev accum, state)
+          | SOME (a, state) => loop (state, a :: accum)
    in loop (state, [])
    end
-	       
+               
 fun readerN (reader: ('a, 'b) reader, n: int): ('a list, 'b) reader =
    fn (state :'b) =>
    let
       fun loop (n, state, accum) =
-	 if n <= 0
-	    then SOME (rev accum, state)
-	 else case reader state of
-	    NONE => NONE
-	  | SOME (x, state) => loop (n - 1, state, x :: accum)
+         if n <= 0
+            then SOME (rev accum, state)
+         else case reader state of
+            NONE => NONE
+          | SOME (x, state) => loop (n - 1, state, x :: accum)
    in loop (n, state, [])
    end
 
 fun ignore f reader =
    let
       fun loop state =
-	 case reader state of
-	    NONE => NONE
-	  | SOME (x, state) =>
-	       if f x
-		  then loop state
-	       else SOME (x, state)
+         case reader state of
+            NONE => NONE
+          | SOME (x, state) =>
+               if f x
+                  then loop state
+               else SOME (x, state)
    in loop
    end
 val _ = ignore
@@ -83,9 +83,9 @@ fun mapOpt (f: 'a -> 'c option) (reader: ('a, 'b) reader): ('c, 'b) reader =
    case reader b of
       NONE => NONE
     | SOME (a, b) =>
-	 case f a of
-	    NONE => NONE
-	  | SOME c => SOME (c, b)
+         case f a of
+            NONE => NONE
+          | SOME c => SOME (c, b)
 
 fun reader2 reader =
    map (fn [y, z] => (y, z) | _ => raise Fail "Reader.reader2")

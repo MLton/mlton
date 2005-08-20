@@ -21,17 +21,17 @@ structure SmallIntInf =
       val maxSmall: IntInf.t = 0x3FFFFFFF
 
       fun isSmall (i: IntInf.t): bool =
-	 minSmall <= i andalso i <= maxSmall
+         minSmall <= i andalso i <= maxSmall
 
       fun toWord (i: IntInf.t): word option =
-	 if isSmall i
-	    then SOME (Word.orb (0w1,
-				 Word.<< (Word.fromInt (IntInf.toInt i),
-					  0w1)))
-	 else NONE
+         if isSmall i
+            then SOME (Word.orb (0w1,
+                                 Word.<< (Word.fromInt (IntInf.toInt i),
+                                          0w1)))
+         else NONE
 
       fun fromWord (w: word): IntInf.t =
-	 IntInf.fromInt (Word.toIntX (Word.~>> (w, 0w1)))
+         IntInf.fromInt (Word.toIntX (Word.~>> (w, 0w1)))
    end
 
 datatype t =
@@ -57,7 +57,7 @@ in
        | Real r => RealX.layout r
        | Word w => WordX.layout w
        | WordVector v => wrap ("\"", "\"", WordXVector.toString v)
-end	 
+end         
 
 val toString = Layout.toString o layout
 

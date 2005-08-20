@@ -16,8 +16,8 @@ signature GLOBALIZE =
       include GLOBALIZE_STRUCTS
       
       val globalize: {
-		      program: Program.t,
-		      lambdaFree: Lambda.t -> Var.t vector,
-		      varGlobal: Var.t -> bool ref
-		     } -> unit
+                      program: Program.t,
+                      lambdaFree: Lambda.t -> Var.t vector,
+                      varGlobal: Var.t -> bool ref
+                     } -> unit
    end

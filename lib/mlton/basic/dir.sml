@@ -45,20 +45,20 @@ fun fold (d: t, a: 'a, f: string * 'a -> 'a): 'a =
    let
       val stream = FS.openDir d
       fun loop a =
-	 case FS.readDir stream of
-	    NONE => a
-	  | SOME s => loop (f (s, a))
+         case FS.readDir stream of
+            NONE => a
+          | SOME s => loop (f (s, a))
    in
       Exn.finally (fn () => loop a, fn () => FS.closeDir stream)
    end
 
 fun ls d =
    fold (d, ([], []), fn (x, (dirs, files)) =>
-	 if FS.isLink x
-	    then (dirs, files)
-	 else if isDir x
-		 then (x :: dirs, files)
-	      else (dirs, x :: files))
+         if FS.isLink x
+            then (dirs, files)
+         else if isDir x
+                 then (x :: dirs, files)
+              else (dirs, x :: files))
    
 val lsDirs = #1 o ls
 val lsFiles = #2 o ls
@@ -69,13 +69,13 @@ fun removeR d =
       val _ = cd d
       (* loop removes everything in the current directory *)
       fun loop () =
-	 fold (".", (), fn (s, ()) =>
-	       if isDir s
-		  then (cd s
-			; loop ()
-			; cd ".."
-			; remove s)
-	       else File.remove s)
+         fold (".", (), fn (s, ()) =>
+               if isDir s
+                  then (cd s
+                        ; loop ()
+                        ; cd ".."
+                        ; remove s)
+               else File.remove s)
       val _ = loop ()
       val _ = cd old
       val _ = remove d
@@ -89,6 +89,6 @@ fun inTemp thunk =
       val _ = make d
    in
       Exn.finally (fn () => inDir (d, fn _ => thunk ()),
-		   fn () => removeR d)
+                   fn () => removeR d)
    end
 end

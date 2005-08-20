@@ -5,7 +5,7 @@
 *)
 
 structure Calc : sig
-	           val parse : unit -> unit
+                   val parse : unit -> unit
                  end = 
 struct
 
@@ -22,8 +22,8 @@ struct
 
   structure CalcParser =
     Join(structure LrParser = LrParser
-	 structure ParserData = CalcLrVals.ParserData
-	 structure Lex = CalcLex)
+         structure ParserData = CalcLrVals.ParserData
+         structure Lex = CalcLex)
 
 (* 
  * We need a function which given a lexer invokes the parser. The
@@ -32,8 +32,8 @@ struct
 
   fun invoke lexstream =
       let fun print_error (s,i:int,_) =
-	      TextIO.output(TextIO.stdOut,
-			    "Error, line " ^ (Int.toString i) ^ ", " ^ s ^ "\n")
+              TextIO.output(TextIO.stdOut,
+                            "Error, line " ^ (Int.toString i) ^ ", " ^ s ^ "\n")
        in CalcParser.parse(0,lexstream,print_error,())
       end
 
@@ -46,19 +46,19 @@ struct
 
   fun parse () = 
       let val lexer = CalcParser.makeLexer (fn _ => TextIO.inputLine TextIO.stdIn)
-	  val dummyEOF = CalcLrVals.Tokens.EOF(0,0)
-	  val dummySEMI = CalcLrVals.Tokens.SEMI(0,0)
-	  fun loop lexer =
-	      let val (result,lexer) = invoke lexer
-		  val (nextToken,lexer) = CalcParser.Stream.get lexer
-		  val _ = case result
-			    of SOME r =>
-				TextIO.output(TextIO.stdOut,
-				       "result = " ^ (Int.toString r) ^ "\n")
-			     | NONE => ()
-	       in if CalcParser.sameToken(nextToken,dummyEOF) then ()
-		  else loop lexer
-	      end
+          val dummyEOF = CalcLrVals.Tokens.EOF(0,0)
+          val dummySEMI = CalcLrVals.Tokens.SEMI(0,0)
+          fun loop lexer =
+              let val (result,lexer) = invoke lexer
+                  val (nextToken,lexer) = CalcParser.Stream.get lexer
+                  val _ = case result
+                            of SOME r =>
+                                TextIO.output(TextIO.stdOut,
+                                       "result = " ^ (Int.toString r) ^ "\n")
+                             | NONE => ()
+               in if CalcParser.sameToken(nextToken,dummyEOF) then ()
+                  else loop lexer
+              end
        in loop lexer
       end
 

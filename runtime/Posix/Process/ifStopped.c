@@ -1,8 +1,8 @@
 #include "platform.h"
 
 Bool Posix_Process_ifStopped (Status s) {
-	int i;
+        int i;
 
-	i = s;
-	return WIFSTOPPED (i);
+        i = s;
+        return WIFSTOPPED (i);
 }

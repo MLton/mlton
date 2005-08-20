@@ -24,19 +24,19 @@ fun for (f: W.word -> unit) = foreach (words, f)
 structure Answer =
    struct
       datatype t =
-	 Div
+         Div
        | Overflow
        | Word of W.word
 
       val toString =
-	 fn Div => "Div"
-	  | Overflow => "Overflow"
-	  | Word w => W.toString w
+         fn Div => "Div"
+          | Overflow => "Overflow"
+          | Word w => W.toString w
 
       fun run (f: unit -> W.word): t =
-	 Word (f ())
-	 handle General.Div => Div
-	      | General.Overflow => Overflow
+         Word (f ())
+         handle General.Div => Div
+              | General.Overflow => Overflow
 
       val equals: t * t -> bool = op =
    end
@@ -48,11 +48,11 @@ val _ = print (concat ["Testing ", m, "\n"])
 fun err msg = print (concat [m, ": ", concat msg, "\n"])
 
 val _ = for (fn w =>
-	     print (concat [W.toString w, "\n",
-			    "\t", W.fmt StringCvt.BIN w, "\n",
-			    "\t", W.fmt StringCvt.OCT w, "\n",
-			    "\t", W.fmt StringCvt.DEC w, "\n",
-			    "\t", W.fmt StringCvt.HEX w, "\n"]))
+             print (concat [W.toString w, "\n",
+                            "\t", W.fmt StringCvt.BIN w, "\n",
+                            "\t", W.fmt StringCvt.OCT w, "\n",
+                            "\t", W.fmt StringCvt.DEC w, "\n",
+                            "\t", W.fmt StringCvt.HEX w, "\n"]))
 
 val _ =
    foreach
@@ -72,22 +72,22 @@ val _ =
      for
      (fn w' =>
       let
-	 val a = Answer.run (fn () => f (w, w'))
-	 val a' = Answer.run (fn () =>
-			      W.fromLarge (f' (W.toLarge w, W.toLarge w')))
+         val a = Answer.run (fn () => f (w, w'))
+         val a' = Answer.run (fn () =>
+                              W.fromLarge (f' (W.toLarge w, W.toLarge w')))
 
       in
-	 if Answer.equals (a, a')
-	    then ()
-	 else err [W.toString w, " ", name, " ", W.toString w',
-		   " = ", Answer.toString a, " <> ", Answer.toString a']
+         if Answer.equals (a, a')
+            then ()
+         else err [W.toString w, " ", name, " ", W.toString w',
+                   " = ", Answer.toString a, " <> ", Answer.toString a']
       end)))
 
 val _ =
    for (fn w =>
-	if w = valOf (W.fromString (W.toString w))
-	   then ()
-	else err ["{from,to}String"])
+        if w = valOf (W.fromString (W.toString w))
+           then ()
+        else err ["{from,to}String"])
    
 val _ =
    foreach
@@ -100,13 +100,13 @@ val _ =
      ([0w0, 0w1, 0w2, 0w4, 0w8, 0w15, 0w30, 0wxFF],
       fn w' =>
       let
-	 val a = f (w, w')
-	 val a' = W.fromLarge (f' (W.toLarge w, w'))
+         val a = f (w, w')
+         val a' = W.fromLarge (f' (W.toLarge w, w'))
       in
-	 if a = a'
-	    then ()
-	 else err [W.toString w, " ", name, " ", Word.toString w',
-		   " = ", W.toString a, " <> ", W.toString a']
+         if a = a'
+            then ()
+         else err [W.toString w, " ", name, " ", Word.toString w',
+                   " = ", W.toString a, " <> ", W.toString a']
       end)))
 
 val _ =
@@ -119,13 +119,13 @@ val _ =
      ([0w0, 0w1, 0w2, 0w4, 0w8, 0w15, 0w30, 0wxFF],
       fn w' =>
       let
-	 val a = f (w, w')
-	 val a' = W.fromLarge (f' (W.toLargeX w, w'))
+         val a = f (w, w')
+         val a' = W.fromLarge (f' (W.toLargeX w, w'))
       in
-	 if a = a'
-	    then ()
-	 else err [W.toString w, " ", name, " ", Word.toString w',
-		   " = ", W.toString a, " <> ", W.toString a']
+         if a = a'
+            then ()
+         else err [W.toString w, " ", name, " ", Word.toString w',
+                   " = ", W.toString a, " <> ", W.toString a']
       end)))
 
 val _ =
@@ -140,13 +140,13 @@ val _ =
      for
      (fn w' =>
       let
-	 val b = f (w, w')
-	 val b' = f' (W.toLarge w, W.toLarge w')
+         val b = f (w, w')
+         val b' = f' (W.toLarge w, W.toLarge w')
       in
-	 if b = b'
-	    then ()
-	 else err [W.toString w, " ", name, " ", W.toString w',
-		   " = ", Bool.toString b, " <> ", Bool.toString b']
+         if b = b'
+            then ()
+         else err [W.toString w, " ", name, " ", W.toString w',
+                   " = ", Bool.toString b, " <> ", Bool.toString b']
       end)))
 
 val _ =
@@ -158,12 +158,12 @@ val _ =
      for
      (fn w' =>
       let
-	 val or = f (w, w')
-	 val or' = f' (W.toLarge w, W.toLarge w')
+         val or = f (w, w')
+         val or' = f' (W.toLarge w, W.toLarge w')
       in
-	 if or = or'
-	    then ()
-	 else err [W.toString w, " ", name, " ", W.toString w']
+         if or = or'
+            then ()
+         else err [W.toString w, " ", name, " ", W.toString w']
       end)))
 
 val _ =
@@ -172,31 +172,31 @@ val _ =
     if w = W.fromLargeInt (W.toLargeInt w)
        andalso w = W.fromLargeInt (W.toLargeIntX w)
        andalso (case SOME (W.toInt w) handle Overflow => NONE of
-		   NONE => true
-		 | SOME i => w = W.fromInt i)
+                   NONE => true
+                 | SOME i => w = W.fromInt i)
        andalso (case SOME (W.toIntX w) handle Overflow => NONE of
-		   NONE => true
-		 | SOME i => w = W.fromInt i)
+                   NONE => true
+                 | SOME i => w = W.fromInt i)
        then ()
     else err ["{from,to}Large"])
 
 val _ =
    for (fn w =>
-	let
-	   val a = W.notb w
-	   val a' = W.fromLarge (LW.notb (W.toLarge w))
-	in
-	   if a = a'
-	      then ()
-	   else err ["notb ", W.toString w, " = ", W.toString a, " <> ",
-		     W.toString a']
-	end)
+        let
+           val a = W.notb w
+           val a' = W.fromLarge (LW.notb (W.toLarge w))
+        in
+           if a = a'
+              then ()
+           else err ["notb ", W.toString w, " = ", W.toString a, " <> ",
+                     W.toString a']
+        end)
 
 val _ =
    for (fn w =>
-	if W.~ w = W.- (zero, w)
-	   then ()
-	else err ["~"])
+        if W.~ w = W.- (zero, w)
+           then ()
+        else err ["~"])
 
 end
 

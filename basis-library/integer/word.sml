@@ -33,7 +33,7 @@ fun toInt w =
       andalso w > fromInt Int.maxInt'
       then raise Overflow
    else W.toInt w
-		      
+                      
 fun toIntX w =
   if detectOverflow
      andalso Int.> (wordSize, Int.precision')
@@ -45,7 +45,7 @@ fun toIntX w =
 local
    fun make f (w, w') =
       if Primitive.safe andalso w' = zero
-	 then raise Div
+         then raise Div
       else f (w, w')
 in
    val op div = make (op div)
@@ -72,12 +72,12 @@ val {compare, min, max} = Util.makeCompare(op <)
 fun fmt radix (w: word): string =
    let val radix = fromInt (StringCvt.radixToInt radix)
       fun loop (q, chars) =
-	 let val chars = StringCvt.digitToChar (toInt (q mod radix)) :: chars
-	    val q = q div radix
-	 in if q = zero
-	       then String0.implode chars
-	    else loop (q, chars)
-	 end
+         let val chars = StringCvt.digitToChar (toInt (q mod radix)) :: chars
+            val q = q div radix
+         in if q = zero
+               then String0.implode chars
+            else loop (q, chars)
+         end
    in loop (w, [])
    end
 
@@ -89,61 +89,61 @@ fun scan radix reader state =
       val charToDigit = StringCvt.charToDigit radix
       val radixWord = fromInt (StringCvt.radixToInt radix)
       fun finishNum (state, n) =
-	 case reader state of
-	    NONE => SOME (n, state)
-	  | SOME (c, state') =>
-	       case charToDigit c of
-		  NONE => SOME (n, state)
-		| SOME n' =>
-		     let val n'' = n * radixWord
-		     in if n'' div radixWord = n
-			   then let val n' = fromInt n'
-				   val n''' = n'' + n'
-				in if n''' >= n''
-				      then finishNum (state', n''')
-				   else raise Overflow
-				end
-			else raise Overflow
-		     end
+         case reader state of
+            NONE => SOME (n, state)
+          | SOME (c, state') =>
+               case charToDigit c of
+                  NONE => SOME (n, state)
+                | SOME n' =>
+                     let val n'' = n * radixWord
+                     in if n'' div radixWord = n
+                           then let val n' = fromInt n'
+                                   val n''' = n'' + n'
+                                in if n''' >= n''
+                                      then finishNum (state', n''')
+                                   else raise Overflow
+                                end
+                        else raise Overflow
+                     end
       fun num state = finishNum (state, zero)
    in
       case reader state of
-	 NONE => NONE
+         NONE => NONE
        | SOME (c, state) =>
-	    case c of
-	       #"0" =>
-	       (case reader state of
-		   NONE => SOME (zero, state)
-		 | SOME (c, state') =>
-		      case c of
-			 #"w" => (case radix of
-				     StringCvt.HEX =>
-					(case reader state' of
-					    NONE =>
-					       (* the #"w" was not followed by
-						* an #"X" or #"x", therefore we
-						* return 0 *)
-					       SOME (zero, state)
-					  | SOME (c, state) =>
-					       (case c of
-						   #"x" => num state
-						 | #"X" => num state
-						 | _ =>
-						 (* the #"w" was not followed by
-						  * an #"X" or #"x", therefore we
-						  * return 0 *)
-						      SOME (zero, state)))
-				   | _ => num state')
-		       | #"x" => (case radix of
-				     StringCvt.HEX => num state'
-				   | _ => NONE)
-		       | #"X" => (case radix of
-				     StringCvt.HEX => num state'
-				   | _ => NONE)
-		       | _ => num state)
-	     | _ => (case charToDigit c of
-			NONE => NONE
-		      | SOME n => finishNum (state, fromInt n))
+            case c of
+               #"0" =>
+               (case reader state of
+                   NONE => SOME (zero, state)
+                 | SOME (c, state') =>
+                      case c of
+                         #"w" => (case radix of
+                                     StringCvt.HEX =>
+                                        (case reader state' of
+                                            NONE =>
+                                               (* the #"w" was not followed by
+                                                * an #"X" or #"x", therefore we
+                                                * return 0 *)
+                                               SOME (zero, state)
+                                          | SOME (c, state) =>
+                                               (case c of
+                                                   #"x" => num state
+                                                 | #"X" => num state
+                                                 | _ =>
+                                                 (* the #"w" was not followed by
+                                                  * an #"X" or #"x", therefore we
+                                                  * return 0 *)
+                                                      SOME (zero, state)))
+                                   | _ => num state')
+                       | #"x" => (case radix of
+                                     StringCvt.HEX => num state'
+                                   | _ => NONE)
+                       | #"X" => (case radix of
+                                     StringCvt.HEX => num state'
+                                   | _ => NONE)
+                       | _ => num state)
+             | _ => (case charToDigit c of
+                        NONE => NONE
+                      | SOME n => finishNum (state, fromInt n))
    end
 
 val fromString = StringCvt.scanString (scan StringCvt.HEX)

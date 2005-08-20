@@ -125,9 +125,9 @@ fun lexordset x = tmergesort x
                 | ( xover, x3, x2, x1, (a::x)) =>
                    if member eq_int_pair_curry xover a then f( xover, x3, x2, x1, x) else
                    if member eq_int_pair_curry x3 a then f ((a::xover), x3, x2, x1, x) else
-		   if member eq_int_pair_curry x2 a then f (xover, (a::x3), x2, x1, x) else
+                   if member eq_int_pair_curry x2 a then f (xover, (a::x3), x2, x1, x) else
                    if member eq_int_pair_curry x1 a then f (xover, x3, (a::x2), x1, x) else
-		                       f (xover, x3, x2, (a::x1), x)
+                                       f (xover, x3, x2, (a::x1), x)
               fun diff x y = filter (fn x => not(member eq_int_pair_curry y x)) x  (* unfolded o *)
               val (xover, x3, _, _, _) = f ([],[],[],[],x)
            in diff x3 xover end
@@ -137,8 +137,8 @@ fun lexordset x = tmergesort x
         | copy_bool false = false
 
       fun neighbours (i,j) = [(i-1,j-1),(i-1,j),(i-1,j+1),
-			    (i,j-1),(i,j+1),
-			    (i+1,j-1),(i+1,j),(i+1,j+1)]
+                            (i,j-1),(i,j+1),
+                            (i+1,j-1),(i+1,j),(i+1,j+1)]
 
 
       abstype generation = GEN of (int*int) list
@@ -152,10 +152,10 @@ fun lexordset x = tmergesort x
                   fun isalive x = copy_bool(member eq_int_pair_curry living x) (* eta *)
                   fun liveneighbours x = length( filter isalive ( neighbours x)) (*eta*)
                   fun twoorthree n = eq_integer(n,2) orelse eq_integer(n,3)
-	          val survivors = copy_list(filter (twoorthree o liveneighbours) living)
-	          val newnbrlist = copy_list(collect (fn z => filter (fn x => not( isalive x)) ( neighbours z)) living) (* unfolded o twice*)
-	          val newborn = copy_list(occurs3 newnbrlist)
-	       in mkgen (survivors @ newborn) end
+                  val survivors = copy_list(filter (twoorthree o liveneighbours) living)
+                  val newnbrlist = copy_list(collect (fn z => filter (fn x => not( isalive x)) ( neighbours z)) living) (* unfolded o twice*)
+                  val newborn = copy_list(occurs3 newnbrlist)
+               in mkgen (survivors @ newborn) end
               else gen
      end
 
@@ -191,7 +191,7 @@ fun lexordset x = tmergesort x
        end
 
     val genB = mkgen(glider at (2,2) @ bail at (2,12)
-		     @ rotate (barberpole 4) at (5,20))
+                     @ rotate (barberpole 4) at (5,20))
 
     fun copy_whole_arg (p, g) = (copy_int p, copy g)
 

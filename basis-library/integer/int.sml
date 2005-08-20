@@ -18,18 +18,18 @@ val (toInt, fromInt) =
    if detectOverflow andalso
       precision' <> PI.precision'
       then if PI.<(precision', PI.precision')
-	     then (I.toInt, 
-		   fn i =>
-		   if (PI.<= (I.toInt minInt', i)
-		       andalso PI.<= (i, I.toInt maxInt'))
-		      then I.fromInt i
-		   else raise Overflow)
-	     else (fn i => 
-		   if (I.<= (I.fromInt PI.minInt', i)
-		       andalso I.<= (i, I.fromInt PI.maxInt'))
-		      then I.toInt i
-		   else raise Overflow,
-		   I.fromInt)
+             then (I.toInt, 
+                   fn i =>
+                   if (PI.<= (I.toInt minInt', i)
+                       andalso PI.<= (i, I.toInt maxInt'))
+                      then I.fromInt i
+                   else raise Overflow)
+             else (fn i => 
+                   if (I.<= (I.fromInt PI.minInt', i)
+                       andalso I.<= (i, I.fromInt PI.maxInt'))
+                      then I.toInt i
+                   else raise Overflow,
+                   I.fromInt)
    else (I.toInt, I.fromInt)
 
 val precision: Int.int option = SOME precision'
@@ -44,57 +44,57 @@ fun quot (x, y) =
   if y = zero
     then raise Div
     else if detectOverflow andalso x = minInt' andalso y = ~one
-	   then raise Overflow
-	   else I.quot (x, y)
-	     
+           then raise Overflow
+           else I.quot (x, y)
+             
 fun rem (x, y) =
   if y = zero
     then raise Div
     else if x = minInt' andalso y = ~one
-	   then zero
-	   else I.rem (x, y)
+           then zero
+           else I.rem (x, y)
    
 fun x div y =
   if x >= zero
     then if y > zero
-	   then I.quot (x, y)
-	   else if y < zero
-		  then if x = zero
-			 then zero
-			 else I.quot (x - one, y) -? one
-		  else raise Div
+           then I.quot (x, y)
+           else if y < zero
+                  then if x = zero
+                         then zero
+                         else I.quot (x - one, y) -? one
+                  else raise Div
     else if y < zero
-	   then if detectOverflow andalso x = minInt' andalso y = ~one
-		  then raise Overflow
-		  else I.quot (x, y)
-	   else if y > zero
-		  then I.quot (x + one, y) -? one
-		  else raise Div
+           then if detectOverflow andalso x = minInt' andalso y = ~one
+                  then raise Overflow
+                  else I.quot (x, y)
+           else if y > zero
+                  then I.quot (x + one, y) -? one
+                  else raise Div
 
 fun x mod y =
   if x >= zero
     then if y > zero
-	   then I.rem (x, y)
-	   else if y < zero
-		  then if x = zero
-			 then zero
-			 else I.rem (x - one, y) +? (y + one)
-		  else raise Div
+           then I.rem (x, y)
+           else if y < zero
+                  then if x = zero
+                         then zero
+                         else I.rem (x - one, y) +? (y + one)
+                  else raise Div
     else if y < zero
-	   then if x = minInt' andalso y = ~one
-		  then zero
-		  else I.rem (x, y)
-	   else if y > zero
-		  then I.rem (x + one, y) +? (y - one)
-		  else raise Div
+           then if x = minInt' andalso y = ~one
+                  then zero
+                  else I.rem (x, y)
+           else if y > zero
+                  then I.rem (x + one, y) +? (y - one)
+                  else raise Div
 
 val sign: int -> Int.int =
   fn i => if i = zero
-	    then (0: Int.int)
-	  else if i < zero
-	    then (~1: Int.int)
-	  else (1: Int.int)
-	       
+            then (0: Int.int)
+          else if i < zero
+            then (~1: Int.int)
+          else (1: Int.int)
+               
 fun sameSign (x, y) = sign x = sign y
   
 fun abs (x: int) = if x < zero then ~ x else x
@@ -123,40 +123,40 @@ local
 in
    fun fmt radix (n: int): string =
       let
-	 val radix = fromInt (StringCvt.radixToInt radix)
-	 fun loop (q, i: Int.int) =
-	    let
-	       val _ =
-		  CharArray.update
-		  (buf, i, StringCvt.digitToChar (toInt (~? (rem (q, radix)))))
-	       val q = quot (q, radix)
-	    in
-	       if q = zero
-		  then
-		     let
-			val start =
-			   if n < zero
-			      then
-				 let
-				    val i = PI.- (i, 1)
-				    val () = CharArray.update (buf, i, #"~")
-				 in
-				    i
-				 end
-			   else i
-		     in
-			CharArraySlice.vector
-			(CharArraySlice.slice (buf, start, NONE))
-		     end
-	       else loop (q, PI.- (i, 1))
-	    end
+         val radix = fromInt (StringCvt.radixToInt radix)
+         fun loop (q, i: Int.int) =
+            let
+               val _ =
+                  CharArray.update
+                  (buf, i, StringCvt.digitToChar (toInt (~? (rem (q, radix)))))
+               val q = quot (q, radix)
+            in
+               if q = zero
+                  then
+                     let
+                        val start =
+                           if n < zero
+                              then
+                                 let
+                                    val i = PI.- (i, 1)
+                                    val () = CharArray.update (buf, i, #"~")
+                                 in
+                                    i
+                                 end
+                           else i
+                     in
+                        CharArraySlice.vector
+                        (CharArraySlice.slice (buf, start, NONE))
+                     end
+               else loop (q, PI.- (i, 1))
+            end
       in
-	 loop (if n < zero then n else ~? n, PI.- (maxNumDigits, 1))
+         loop (if n < zero then n else ~? n, PI.- (maxNumDigits, 1))
       end
 end      
 
 val toString = fmt StringCvt.DEC
-	 
+         
 fun scan radix reader s =
    let
       (* Works with the negative of the number so that minInt can be scanned. *)
@@ -216,12 +216,12 @@ fun power {base, exp} =
   if Primitive.safe andalso exp < zero
     then raise Fail "Int.power"
     else let
-	   fun loop (exp, accum) =
-	     if exp <= zero
-	       then accum
-	       else loop (exp - one, base * accum)
-	 in loop (exp, one)
-	 end
+           fun loop (exp, accum) =
+             if exp <= zero
+               then accum
+               else loop (exp - one, base * accum)
+         in loop (exp, one)
+         end
 end
 
 structure Int8 = Integer (Primitive.Int8)
@@ -236,10 +236,10 @@ open IntGlobal
 structure Int64 = 
    struct
       local
-	 structure P = Primitive.Int64
-	 structure I = Integer (P)
+         structure P = Primitive.Int64
+         structure I = Integer (P)
       in
-	 open I
-	 val toWord = P.toWord
+         open I
+         val toWord = P.toWord
       end
    end

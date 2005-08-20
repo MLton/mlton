@@ -38,7 +38,7 @@ val _ =
        val n = 17
        val a = Array.fromList (Pervasive.List.tabulate (n, fn i => i))
     in Int.forall (0, n, fn i =>
-		   SOME i = search (a, fn x => Int.compare (i, x)))
+                   SOME i = search (a, fn x => Int.compare (i, x)))
     end)
 
 end

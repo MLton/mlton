@@ -14,10 +14,10 @@ structure Critical : CRITICAL =
       val atomicEnd = Thread.atomicEnd
       local datatype z = datatype Thread.AtomicState.t
       in
-	 fun atomicMsg () =
-	    case Thread.atomicState () of
-	       AtomicState.NonAtomic => "[NonAtomic]"
-	     | AtomicState.Atomic n => concat ["[ Atomic ", Int.toString n, "]"]
+         fun atomicMsg () =
+            case Thread.atomicState () of
+               AtomicState.NonAtomic => "[NonAtomic]"
+             | AtomicState.Atomic n => concat ["[ Atomic ", Int.toString n, "]"]
       end
       fun doAtomic (f: unit -> unit) = (atomicBegin (); f (); atomicEnd ())
 

@@ -13,7 +13,7 @@ open S
 structure GCField =
    struct
       datatype t =
-	 CanHandle
+         CanHandle
        | CardMap
        | CurrentThread
        | ExnStack
@@ -27,20 +27,20 @@ structure GCField =
        | StackTop
 
       val equals: t * t -> bool = op =
-	 
+         
 (*       val ty =
- * 	 fn CanHandle => CType.defaultInt
- * 	  | CardMap => CType.pointer
- * 	  | CurrentThread => CType.pointer
- * 	  | ExnStack => CType.defaultWord
- * 	  | Frontier => CType.pointer
- * 	  | Limit => CType.pointer
- * 	  | LimitPlusSlop => CType.pointer
- * 	  | MaxFrameSize => CType.defaultWord
- * 	  | SignalIsPending => CType.defaultInt
- * 	  | StackBottom => CType.pointer
- * 	  | StackLimit => CType.pointer
- * 	  | StackTop => CType.pointer
+ *          fn CanHandle => CType.defaultInt
+ *           | CardMap => CType.pointer
+ *           | CurrentThread => CType.pointer
+ *           | ExnStack => CType.defaultWord
+ *           | Frontier => CType.pointer
+ *           | Limit => CType.pointer
+ *           | LimitPlusSlop => CType.pointer
+ *           | MaxFrameSize => CType.defaultWord
+ *           | SignalIsPending => CType.defaultInt
+ *           | StackBottom => CType.pointer
+ *           | StackLimit => CType.pointer
+ *           | StackTop => CType.pointer
  *)
 
       val canHandleOffset: Bytes.t ref = ref Bytes.zero
@@ -57,48 +57,48 @@ structure GCField =
       val stackTopOffset: Bytes.t ref = ref Bytes.zero
 
       fun setOffsets {canHandle, cardMap, currentThread, exnStack, frontier,
-		      limit, limitPlusSlop, maxFrameSize, signalIsPending,
-		      stackBottom, stackLimit, stackTop} =
-	 (canHandleOffset := canHandle
-	  ; cardMapOffset := cardMap
-	  ; currentThreadOffset := currentThread
-	  ; exnStackOffset := exnStack
-	  ; frontierOffset := frontier
-	  ; limitOffset := limit
-	  ; limitPlusSlopOffset := limitPlusSlop
-	  ; maxFrameSizeOffset := maxFrameSize
-	  ; signalIsPendingOffset := signalIsPending
-	  ; stackBottomOffset := stackBottom
-	  ; stackLimitOffset := stackLimit
-	  ; stackTopOffset := stackTop)
+                      limit, limitPlusSlop, maxFrameSize, signalIsPending,
+                      stackBottom, stackLimit, stackTop} =
+         (canHandleOffset := canHandle
+          ; cardMapOffset := cardMap
+          ; currentThreadOffset := currentThread
+          ; exnStackOffset := exnStack
+          ; frontierOffset := frontier
+          ; limitOffset := limit
+          ; limitPlusSlopOffset := limitPlusSlop
+          ; maxFrameSizeOffset := maxFrameSize
+          ; signalIsPendingOffset := signalIsPending
+          ; stackBottomOffset := stackBottom
+          ; stackLimitOffset := stackLimit
+          ; stackTopOffset := stackTop)
 
       val offset =
-	 fn CanHandle => !canHandleOffset
-	  | CardMap => !cardMapOffset
-	  | CurrentThread => !currentThreadOffset
-	  | ExnStack => !exnStackOffset
-	  | Frontier => !frontierOffset
-	  | Limit => !limitOffset
-	  | LimitPlusSlop => !limitPlusSlopOffset
-	  | MaxFrameSize => !maxFrameSizeOffset
-	  | SignalIsPending => !signalIsPendingOffset
-	  | StackBottom => !stackBottomOffset
-	  | StackLimit => !stackLimitOffset
-	  | StackTop => !stackTopOffset
+         fn CanHandle => !canHandleOffset
+          | CardMap => !cardMapOffset
+          | CurrentThread => !currentThreadOffset
+          | ExnStack => !exnStackOffset
+          | Frontier => !frontierOffset
+          | Limit => !limitOffset
+          | LimitPlusSlop => !limitPlusSlopOffset
+          | MaxFrameSize => !maxFrameSizeOffset
+          | SignalIsPending => !signalIsPendingOffset
+          | StackBottom => !stackBottomOffset
+          | StackLimit => !stackLimitOffset
+          | StackTop => !stackTopOffset
 
       val toString =
-	 fn CanHandle => "CanHandle"
-	  | CardMap => "CardMap"
-	  | CurrentThread => "CurrentThread"
-	  | ExnStack => "ExnStack"
-	  | Frontier => "Frontier"
-	  | Limit => "Limit"
-	  | LimitPlusSlop => "LimitPlusSlop"
-	  | MaxFrameSize => "MaxFrameSize"
-	  | SignalIsPending => "SignalIsPending"
-	  | StackBottom => "StackBottom"
-	  | StackLimit => "StackLimit"
-	  | StackTop => "StackTop"
+         fn CanHandle => "CanHandle"
+          | CardMap => "CardMap"
+          | CurrentThread => "CurrentThread"
+          | ExnStack => "ExnStack"
+          | Frontier => "Frontier"
+          | Limit => "Limit"
+          | LimitPlusSlop => "LimitPlusSlop"
+          | MaxFrameSize => "MaxFrameSize"
+          | SignalIsPending => "SignalIsPending"
+          | StackBottom => "StackBottom"
+          | StackLimit => "StackLimit"
+          | StackTop => "StackTop"
 
       val layout = Layout.str o toString
    end
@@ -106,35 +106,35 @@ structure GCField =
 structure RObjectType =
    struct
       datatype t =
-	 Array of {hasIdentity: bool,
-		   nonPointer: Bytes.t,
-		   pointers: int}
+         Array of {hasIdentity: bool,
+                   nonPointer: Bytes.t,
+                   pointers: int}
        | Normal of {hasIdentity: bool,
-		    nonPointer: Words.t,
-		    pointers: int}
+                    nonPointer: Words.t,
+                    pointers: int}
        | Stack
        | Weak
        | WeakGone
 
       fun layout (t: t): Layout.t =
-	 let
-	    open Layout
-	 in
-	    case t of
-	       Array {hasIdentity, nonPointer = np, pointers = p} =>
-		  seq [str "Array ",
-		       record [("hasIdentity", Bool.layout hasIdentity),
-			       ("nonPointer", Bytes.layout np),
-			       ("pointers", Int.layout p)]]
-	     | Normal {hasIdentity, nonPointer = np, pointers = p} =>
-		  seq [str "Normal ",
-		       record [("hasIdentity", Bool.layout hasIdentity),
-			       ("nonPointer", Words.layout np),
-			       ("pointers", Int.layout p)]]
-	     | Stack => str "Stack"
-	     | Weak => str "Weak"
-	     | WeakGone => str "WeakGone"
-	 end
+         let
+            open Layout
+         in
+            case t of
+               Array {hasIdentity, nonPointer = np, pointers = p} =>
+                  seq [str "Array ",
+                       record [("hasIdentity", Bool.layout hasIdentity),
+                               ("nonPointer", Bytes.layout np),
+                               ("pointers", Int.layout p)]]
+             | Normal {hasIdentity, nonPointer = np, pointers = p} =>
+                  seq [str "Normal ",
+                       record [("hasIdentity", Bool.layout hasIdentity),
+                               ("nonPointer", Words.layout np),
+                               ("pointers", Int.layout p)]]
+             | Stack => str "Stack"
+             | Weak => str "Weak"
+             | WeakGone => str "WeakGone"
+         end
       val _ = layout (* quell unused warning *)
    end
 
@@ -142,8 +142,8 @@ val maxTypeIndex = Int.pow (2, 19)
    
 fun typeIndexToHeader typeIndex =
    (Assert.assert ("Runtime.header", fn () =>
-		   0 <= typeIndex
-		   andalso typeIndex < maxTypeIndex)
+                   0 <= typeIndex
+                   andalso typeIndex < maxTypeIndex)
     ; Word.orb (0w1, Word.<< (Word.fromInt typeIndex, 0w1)))
 
 fun headerToTypeIndex w = Word.toInt (Word.>> (w, 0w1))
@@ -171,7 +171,7 @@ val headerOffset = Bytes.~ Bytes.inWord
 
 fun normalSize {nonPointers, pointers} =
    Bytes.+ (Words.toBytes nonPointers,
-	    Bytes.scale (pointerSize, pointers))
+            Bytes.scale (pointerSize, pointers))
  
 val maxFrameSize = Bytes.fromInt (Int.pow (2, 16))
 

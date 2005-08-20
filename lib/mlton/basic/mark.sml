@@ -10,7 +10,7 @@ struct
 
 datatype t =
    T of {string: string,
-	 pos: int}
+         pos: int}
 
 fun pos (T {pos, ...}) = pos
 
@@ -56,8 +56,8 @@ fun lookingAtChar (m, c) = Char.equals (charAt m, c)
 local
    fun searchChar move (m, c) =
       let
-	 fun loop m =
-	    if lookingAtChar (m, c) then m else loop (move m)
+         fun loop m =
+            if lookingAtChar (m, c) then m else loop (move m)
       in loop m
       end
 in 
@@ -78,15 +78,15 @@ fun numColumns m = diff (eol m, bol m)
 local
    fun moveLines move =
       let
-	 fun moves (m as T {string, pos}, n: int) =
-	 let
-	    val c = whatColumn m
-	    fun loop (m, n) =
-	       if n <= 0 then forwardChars (m, Int.min (c, numColumns m))
-	       else loop (move m, n - 1)
-	 in loop (bol m, n)
-	 end
-	  fun move m = moves (m, 1)
+         fun moves (m as T {string, pos}, n: int) =
+         let
+            val c = whatColumn m
+            fun loop (m, n) =
+               if n <= 0 then forwardChars (m, Int.min (c, numColumns m))
+               else loop (move m, n - 1)
+         in loop (bol m, n)
+         end
+          fun move m = moves (m, 1)
       in (move, moves)
       end
 in
@@ -99,11 +99,11 @@ fun lookingAtString (T {string, pos}, string') =
       val len = String.size string
       val len' = String.size string'
       fun loop (pos, pos') =
-	 pos < len
-	 andalso (pos' >= len'
-		  orelse (Char.equals (String.sub (string, pos),
-				       String.sub (string', pos'))
-			  andalso loop (pos + 1, pos' + 1)))
+         pos < len
+         andalso (pos' >= len'
+                  orelse (Char.equals (String.sub (string, pos),
+                                       String.sub (string', pos'))
+                          andalso loop (pos + 1, pos' + 1)))
    in loop (pos, 0)
    end
 val lookingAtString =
@@ -114,9 +114,9 @@ exception Search
 fun makeSearch move (m, s) =
    let
       fun search m =
-	 if lookingAtString (m, s)
-	    then forwardChars (m, String.size s)
-	 else (search (move m) handle _ => raise Search)
+         if lookingAtString (m, s)
+            then forwardChars (m, String.size s)
+         else (search (move m) handle _ => raise Search)
    in search m
    end
 
@@ -125,7 +125,7 @@ val searchBackward = makeSearch backwardChar
 
 fun skip p =
    let fun skip m = if p (charAt m) then skip (forwardChar m)
-		    else m
+                    else m
    in skip
    end
 

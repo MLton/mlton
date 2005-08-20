@@ -12,7 +12,7 @@
 signature RESULT = 
    sig
       type 'a result
-	 
+         
       val result : unit -> 'a result
       val put    : ('a result * 'a) -> unit
       val putExn : ('a result * exn) -> unit

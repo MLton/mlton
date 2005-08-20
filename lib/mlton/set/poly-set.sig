@@ -12,7 +12,7 @@ signature POLY_SET =
       type 'a t
 
       val empty: {equal: 'a * 'a -> bool,
-		   output: 'a * Out.t -> unit} -> 'a t
+                   output: 'a * Out.t -> unit} -> 'a t
 
       val size: 'a t -> I.t
       val foreach: 'a t * ('a -> unit) -> unit
@@ -33,7 +33,7 @@ signature POLY_SET =
 
       val add: 'a t * 'a -> 'a t
       val remove: 'a t * 'a -> 'a t
-	 
+         
       val contains: 'a t * 'a -> bool
       val isEmpty: 'a t -> bool
 

@@ -16,7 +16,7 @@ signature TYCON_KIND =
       include TYCON_KIND_STRUCTS
       
       datatype t =
-	 Arity of int
+         Arity of int
        | Nary
 
       val equals: t * t -> bool

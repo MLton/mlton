@@ -23,7 +23,7 @@ local val r = ref 0
 in
 fun etst s e1 e2 =
       prl (int_to_string (r := !r + 1; !r)
-	   ^ (if e1 = e2 then " ok" else " * n o t   o k ! *"))
+           ^ (if e1 = e2 then " ok" else " * n o t   o k ! *"))
 end
 
 val () = etst "1" ("" < "abc") true;         (*den ene tom*)
@@ -83,17 +83,17 @@ fun repeat 0 s = ""
   | repeat n s = s ^ repeat (n-1) s
 val long = repeat  50 "Der laa den Ridder i Graesset og drev.\n\
                       \Hejsa, nu sadler vi af.\n\
-		      \Der laa hans Harnisk, hans Skjold og Vaerge,\n\
-		      \Hans Tanker de floej over alle Bjerge.\n\
-		      \De floej paa Skyer gennem Luften den blaa ---\n\
-		      \Den Rejse man bruger ej Vaaben paa.\n\
-		      \\n\
-		      \Den Ridder han laa, hvor han steded sig foerst\n\
-		      \Han kendte ej Sult, han kendte ej Toerst\n\
-		      \Og Solen kom og Stedet og gik;\n\
-		      \Han lytted som efter en sagte Musik.\n\
-		      \\n\
-		      \\n"
+                      \Der laa hans Harnisk, hans Skjold og Vaerge,\n\
+                      \Hans Tanker de floej over alle Bjerge.\n\
+                      \De floej paa Skyer gennem Luften den blaa ---\n\
+                      \Den Rejse man bruger ej Vaaben paa.\n\
+                      \\n\
+                      \Den Ridder han laa, hvor han steded sig foerst\n\
+                      \Han kendte ej Sult, han kendte ej Toerst\n\
+                      \Og Solen kom og Stedet og gik;\n\
+                      \Han lytted som efter en sagte Musik.\n\
+                      \\n\
+                      \\n"
 
 val () = etst "1" (long ^ "" < long ^ "abc") true;         (*den ene tom*)
 val () = etst "2" (long ^ "" > long ^ "abc") false;

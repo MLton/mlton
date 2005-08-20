@@ -9,31 +9,31 @@
 structure Vector: VECTOR_EXTRA =
    struct
       structure V = Sequence (type 'a sequence = 'a vector
-			      type 'a elt = 'a
-			      val fromArray = Primitive.Vector.fromArray
-			      val isMutable = false
-			      val length = Primitive.Vector.length
-			      val sub = Primitive.Vector.sub)
+                              type 'a elt = 'a
+                              val fromArray = Primitive.Vector.fromArray
+                              val isMutable = false
+                              val length = Primitive.Vector.length
+                              val sub = Primitive.Vector.sub)
       open V
 
       type 'a vector = 'a vector
 
       structure VectorSlice = 
-	 struct
-	    open Slice
-	    type 'a vector = 'a vector
-	    val vector = sequence
+         struct
+            open Slice
+            type 'a vector = 'a vector
+            val vector = sequence
 
-	    val isSubvector = isSubsequence
-	    val span = fn (sl, sl') => 
-	       span (op = : ''a vector * ''a vector -> bool) (sl, sl')
-	 end
+            val isSubvector = isSubsequence
+            val span = fn (sl, sl') => 
+               span (op = : ''a vector * ''a vector -> bool) (sl, sl')
+         end
 
       fun update (v, i, x) = 
-	tabulate (length v,
-		  fn j => if i = j 
-			     then x
-			  else unsafeSub (v, j))
+        tabulate (length v,
+                  fn j => if i = j 
+                             then x
+                          else unsafeSub (v, j))
 
       val unsafeSub = Primitive.Vector.sub
 

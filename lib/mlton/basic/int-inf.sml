@@ -6,31 +6,31 @@
  *)
 
 structure IntInf: INTEGER = Integer (open Pervasive.IntInf
-				     fun toIntInf x = x)
+                                     fun toIntInf x = x)
 
 structure IntInf: INT_INF =
    struct
       open IntInf 
 
       val hash = String.hash o toString
-	 
+         
       local
-	 open Pervasive.IntInf
+         open Pervasive.IntInf
       in
-	 val andb = andb
-	 val log2 = log2
-	 val notb = notb
-	 val orb = orb
-	 val xorb = xorb
-	 val op ~>> = ~>>
-	 val op << = <<
+         val andb = andb
+         val log2 = log2
+         val notb = notb
+         val orb = orb
+         val xorb = xorb
+         val op ~>> = ~>>
+         val op << = <<
       end
 
       structure M = MaxPow2ThatDivides (open IntInf
-					val andb = andb
-					val orb = orb
-					val << = <<
-					val >> = ~>>)
+                                        val andb = andb
+                                        val orb = orb
+                                        val << = <<
+                                        val >> = ~>>)
       open M
    end
 

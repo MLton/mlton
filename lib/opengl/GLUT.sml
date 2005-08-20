@@ -319,7 +319,7 @@ structure GLUT :> GLUT =
             fun glutVisibilityFunc (vis: Word32.word -> unit) = ( gVisibilityFA vis; callGVisibilityF ())
 
             val c_glutGetModifiers = _import "glutGetModifiers" stdcall: unit -> GL.GLenum;
-	    fun glutGetModifiers () = c_glutGetModifiers () :  GL.GLenum;
+            fun glutGetModifiers () = c_glutGetModifiers () :  GL.GLenum;
 
             val c_glutDestroyMenu = _import "glutDestroyMenu" stdcall: int -> unit;
             fun glutDestroyMenu (a:int) = c_glutDestroyMenu (a): unit;
@@ -369,10 +369,10 @@ structure GLUT :> GLUT =
 
             val glutCreateWindow = _import "glutCreateWindow" stdcall: string -> int;
 
-	    val c_glutCreateSubWindow = _import "glutCreateSubWindow" stdcall: int * int * int * int * int -> int;
-	    fun glutCreateSubWindow (a:int) (b:int) (c:int) (d:int) (e:int) = c_glutCreateSubWindow (a, b, c, d, e) :int
+            val c_glutCreateSubWindow = _import "glutCreateSubWindow" stdcall: int * int * int * int * int -> int;
+            fun glutCreateSubWindow (a:int) (b:int) (c:int) (d:int) (e:int) = c_glutCreateSubWindow (a, b, c, d, e) :int
 
-	    val glutDestroyWindow = _import "glutDestroyWindow" stdcall: int -> unit;
+            val glutDestroyWindow = _import "glutDestroyWindow" stdcall: int -> unit;
 
             val glutMainLoop = _import "glutMainLoop" stdcall: unit -> unit;
 

@@ -22,43 +22,43 @@
 structure MLRep = struct
     structure Char =
        struct
-	  structure Signed = Int8
-	  structure Unsigned = Word8
-	  (* word-style bit-operations on integers... *)
-	  structure SignedBitops = IntBitOps(structure I = Signed
-					     structure W = Unsigned)
+          structure Signed = Int8
+          structure Unsigned = Word8
+          (* word-style bit-operations on integers... *)
+          structure SignedBitops = IntBitOps(structure I = Signed
+                                             structure W = Unsigned)
        end
     structure Short =
        struct
-	  structure Signed = Int16
-	  structure Unsigned = Word16
-	  (* word-style bit-operations on integers... *)
-	  structure SignedBitops = IntBitOps(structure I = Signed
-					     structure W = Unsigned)
+          structure Signed = Int16
+          structure Unsigned = Word16
+          (* word-style bit-operations on integers... *)
+          structure SignedBitops = IntBitOps(structure I = Signed
+                                             structure W = Unsigned)
        end
     structure Int =
        struct
-	  structure Signed = Int32
-	  structure Unsigned = Word32
-	  (* word-style bit-operations on integers... *)
-	  structure SignedBitops = IntBitOps(structure I = Signed
-					     structure W = Unsigned)
+          structure Signed = Int32
+          structure Unsigned = Word32
+          (* word-style bit-operations on integers... *)
+          structure SignedBitops = IntBitOps(structure I = Signed
+                                             structure W = Unsigned)
        end  
     structure Long =
        struct
-	  structure Signed = Int32
-	  structure Unsigned = Word32
-	  (* word-style bit-operations on integers... *)
-	  structure SignedBitops = IntBitOps(structure I = Signed
-					     structure W = Unsigned)
+          structure Signed = Int32
+          structure Unsigned = Word32
+          (* word-style bit-operations on integers... *)
+          structure SignedBitops = IntBitOps(structure I = Signed
+                                             structure W = Unsigned)
        end
     structure LongLong =
        struct
-	  structure Signed = Int64
-	  structure Unsigned = Word64
-	  (* word-style bit-operations on integers... *)
-	  structure SignedBitops = IntBitOps(structure I = Signed
-					     structure W = Unsigned)
+          structure Signed = Int64
+          structure Unsigned = Word64
+          (* word-style bit-operations on integers... *)
+          structure SignedBitops = IntBitOps(structure I = Signed
+                                             structure W = Unsigned)
        end
     structure Float = Real32
     structure Double = Real64

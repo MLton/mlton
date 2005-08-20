@@ -38,9 +38,9 @@ signature INT_INF =
       val rem: int * int -> int
       val sameSign: int * int -> bool
       val scan:
-	 StringCvt.radix
-	 -> (char, 'a) StringCvt.reader
-	 -> (int, 'a) StringCvt.reader
+         StringCvt.radix
+         -> (char, 'a) StringCvt.reader
+         -> (int, 'a) StringCvt.reader
       val sign: int -> Pervasive.Int32.int
       val toInt: int -> Pervasive.Int32.int
       val toLarge: int -> Pervasive.IntInf.int
@@ -66,29 +66,29 @@ structure IntInf: INT_INF =
       fun pow (a, b) = Pervasive.IntInf.pow (a, Pervasive.Int32.toInt b)
 
       local
-	fun pow2 w = 
-	  if w = 0wx0
-	    then 1
-	  else
-	     let
-		val p = pow2 (Pervasive.Word32.>> (w, 0wx1))
-		val pp = p * p
-	     in
-		if 0wx1 = Pervasive.Word32.andb (0wx1, w)
-		  then 2 * pp
-		else pp
-	     end
+        fun pow2 w = 
+          if w = 0wx0
+            then 1
+          else
+             let
+                val p = pow2 (Pervasive.Word32.>> (w, 0wx1))
+                val pp = p * p
+             in
+                if 0wx1 = Pervasive.Word32.andb (0wx1, w)
+                  then 2 * pp
+                else pp
+             end
       in
-	val << = fn (a, b) => a * (pow2 b)
-	val ~>> = fn (a, b) => a div (pow2 b)
+        val << = fn (a, b) => a * (pow2 b)
+        val ~>> = fn (a, b) => a div (pow2 b)
       end
 
       local
-	 (* Bug in SML/NJ -- they use lower instead of upper case. *)
-	 val toUpper = Pervasive.String.translate (Char.toString o Char.toUpper)
+         (* Bug in SML/NJ -- they use lower instead of upper case. *)
+         val toUpper = Pervasive.String.translate (Char.toString o Char.toUpper)
       in
-	 fun fmt r i = toUpper (Pervasive.IntInf.fmt r i)
-	 val toString = toUpper o Pervasive.IntInf.toString
+         fun fmt r i = toUpper (Pervasive.IntInf.fmt r i)
+         val toString = toUpper o Pervasive.IntInf.toString
       end
    end
 

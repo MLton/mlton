@@ -23,30 +23,30 @@
 set -e
 
 die () {
-	echo >&2 "$1"
-	exit 1
+        echo >&2 "$1"
+        exit 1
 }
 
 root=`pwd`
 name=`basename $0`
 
 usage () {
-	die "usage: $name {cygwin|mingw|sun}"
+        die "usage: $name {cygwin|mingw|sun}"
 }
 
 case "$#" in
 1)
-	case "$1" in
-	cygwin|mingw|sun)
-		targetType="$1"
-	;;
-	*)
-		usage
-	;;
-	esac
+        case "$1" in
+        cygwin|mingw|sun)
+                targetType="$1"
+        ;;
+        *)
+                usage
+        ;;
+        esac
 ;;
 *)
-	usage
+        usage
 esac
 
 # You may want to change the installation prefix, which is where the
@@ -64,53 +64,53 @@ gccTar="gcc-core-$gccVers.tar"
 # You may want to set the target.
 case "$targetType" in
 cygwin)
-	target='i386-pc-cygwin'
-	configureGCCFlags=''
-	makeGCCFlags=''
-	# For Cygwin, we also need the cygwin and w32api packages,
-	# which contain necessary header files and libraries.  I got
-	# them by installing cygwin in a Windows machine (using #
-	# Cygwin's setup.exe program) and then getting the bzip'ed tar
-	# files out of their Cygwin packages dir.  I had problems with
-	# cygwin-1.3.18-1, since its libcygwin.a contained a file,
-	# pseudo-reloc.o, with some strangeness that binutils didn't
-	# correctly handle.
-	cygwin='cygwin-1.3.17-1'
-	w32api='w32api-2.1-1'
+        target='i386-pc-cygwin'
+        configureGCCFlags=''
+        makeGCCFlags=''
+        # For Cygwin, we also need the cygwin and w32api packages,
+        # which contain necessary header files and libraries.  I got
+        # them by installing cygwin in a Windows machine (using #
+        # Cygwin's setup.exe program) and then getting the bzip'ed tar
+        # files out of their Cygwin packages dir.  I had problems with
+        # cygwin-1.3.18-1, since its libcygwin.a contained a file,
+        # pseudo-reloc.o, with some strangeness that binutils didn't
+        # correctly handle.
+        cygwin='cygwin-1.3.17-1'
+        w32api='w32api-2.1-1'
 ;;
 mingw)
-	target='i386-pc-mingw32'
-	# target='mingw32'
-	# These flags are from build-cross.sh from www.libsdl.org except:
-	# I added --disable-nls because of undefined references to dcgettext__
-	configureGCCFlags='--with-headers=$prefix/$target/include --with-gnu-as --with-gnu-ld --without-newlib --disable-multilib --disable-nls'
-	makeGCCFlags='LANGUAGES=c'
-	# For MinGW, we also need the mingw-runtime and w32api packages,
-	# which contain necessary header files and libraries.  I got
-	# them from www.mingw.org.
-	mingw='mingw-runtime-3.2'
-	w32api='w32api-2.4'
+        target='i386-pc-mingw32'
+        # target='mingw32'
+        # These flags are from build-cross.sh from www.libsdl.org except:
+        # I added --disable-nls because of undefined references to dcgettext__
+        configureGCCFlags='--with-headers=$prefix/$target/include --with-gnu-as --with-gnu-ld --without-newlib --disable-multilib --disable-nls'
+        makeGCCFlags='LANGUAGES=c'
+        # For MinGW, we also need the mingw-runtime and w32api packages,
+        # which contain necessary header files and libraries.  I got
+        # them from www.mingw.org.
+        mingw='mingw-runtime-3.2'
+        w32api='w32api-2.4'
 ;;
 sun)
-	target='sparc-sun-solaris'
-	configureGCCFlags=''
-	makeGCCFlags=''
-	# For sun, we assume that you have already copied the includes
-	# and libraries from a Solaris machine to the host machine.
-	if ! [ -d "$prefix/$target/include" -a -d "$prefix/$target/lib" ]; then
-		die "Must create $prefix/$target/{include,lib}."
-	fi
-	# The GCC tools expect limits.h to be in sys-include, not include.
-	( cd $prefix/$target && 
-		mkdir -p sys-include &&
-		mv include/limits.h sys-include )
+        target='sparc-sun-solaris'
+        configureGCCFlags=''
+        makeGCCFlags=''
+        # For sun, we assume that you have already copied the includes
+        # and libraries from a Solaris machine to the host machine.
+        if ! [ -d "$prefix/$target/include" -a -d "$prefix/$target/lib" ]; then
+                die "Must create $prefix/$target/{include,lib}."
+        fi
+        # The GCC tools expect limits.h to be in sys-include, not include.
+        ( cd $prefix/$target && 
+                mkdir -p sys-include &&
+                mv include/limits.h sys-include )
 ;;
 esac
 
 exists () {
-	if [ ! -r "$1" ]; then
-		die "$1 does not exist"
-	fi
+        if [ ! -r "$1" ]; then
+                die "$1 does not exist"
+        fi
 }
 
 echo 'Checking that needed files exist.'
@@ -118,30 +118,30 @@ exists $binutils.tar
 exists $gccTar
 case "$targetType" in
 cygwin)
-	exists $cygwin.tar
-	exists $w32api.tar
-	echo 'Copying include files and libraries needed by cross compiler.'
-	cd $root
-	mkdir -p cygwin
-	cd cygwin
-	tar x <../$cygwin.tar
-	tar x <../$w32api.tar
-	mkdir -p $prefix/$target || 
-		die "Cannot create $prefix/$target."
-	(cd usr && tar c include lib) | (cd $prefix/$target/ && tar x)
+        exists $cygwin.tar
+        exists $w32api.tar
+        echo 'Copying include files and libraries needed by cross compiler.'
+        cd $root
+        mkdir -p cygwin
+        cd cygwin
+        tar x <../$cygwin.tar
+        tar x <../$w32api.tar
+        mkdir -p $prefix/$target || 
+                die "Cannot create $prefix/$target."
+        (cd usr && tar c include lib) | (cd $prefix/$target/ && tar x)
 ;;
 mingw)
-	exists $mingw.tar
-	exists $w32api.tar
-	echo 'Copying include files and libraries needed by cross compiler.'
-	cd $root
-	mkdir -p mingw
-	cd mingw
-	tar x <../$mingw.tar
-	tar x <../$w32api.tar
-	mkdir -p $prefix/$target || 
-		die "Cannot create $prefix/$target."
-	(tar c include lib) | (cd $prefix/$target/ && tar x)
+        exists $mingw.tar
+        exists $w32api.tar
+        echo 'Copying include files and libraries needed by cross compiler.'
+        cd $root
+        mkdir -p mingw
+        cd mingw
+        tar x <../$mingw.tar
+        tar x <../$w32api.tar
+        mkdir -p $prefix/$target || 
+                die "Cannot create $prefix/$target."
+        (tar c include lib) | (cd $prefix/$target/ && tar x)
 ;;
 *)
 ;;
@@ -150,15 +150,15 @@ esac
 echo 'Building binutils.'
 cd $root
 if [ ! -d $binutils ]; then
-	tar x <$binutils.tar
+        tar x <$binutils.tar
 fi
 mkdir -p build-binutils
 cd build-binutils
 ../$binutils/configure --prefix=$prefix --target=$target \
-	>$root/configure-binutils-log 2>&1 ||
-	die "Configure of binutils failed."
+        >$root/configure-binutils-log 2>&1 ||
+        die "Configure of binutils failed."
 make all install >$root/build-binutils-log 2>&1 ||
-	die "Build of binutils failed."
+        die "Build of binutils failed."
 
 echo 'Building gcc.'
 cd $root
@@ -166,12 +166,12 @@ tar x <$gccTar
 mkdir -p build-gcc
 cd build-gcc
 eval ../gcc-$gccVers/configure -v $configureGCCFlags \
-	--enable-languages=c \
-	--prefix=$prefix \
-	--target=$target \
-	>$root/configure-gcc-log 2>&1 || 
-	die "Configure of gcc failed."
+        --enable-languages=c \
+        --prefix=$prefix \
+        --target=$target \
+        >$root/configure-gcc-log 2>&1 || 
+        die "Configure of gcc failed."
 eval make $makeGCCFlags all install >$root/build-gcc-log 2>&1 || 
-	die "Build of gcc failed."
+        die "Build of gcc failed."
 
 echo 'Success.'

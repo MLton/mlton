@@ -17,7 +17,7 @@
 signature MLTON_SYSLOG =
    sig
       type openflag
-	 
+         
       val CONS     : openflag
       val NDELAY   : openflag
       val PERROR   : openflag

@@ -16,7 +16,7 @@ in
    in
       ann "allowOverload true" 
       in 
-	 libs/basis-2002/top-level/overloads.sml 
+         libs/basis-2002/top-level/overloads.sml 
       end
    end
 end

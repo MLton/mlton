@@ -10,9 +10,9 @@ type int = Int.int
 structure MLtonThread =
    struct
       structure AtomicState =
-	 struct
-	    datatype t = NonAtomic | Atomic of int
-	 end
+         struct
+            datatype t = NonAtomic | Atomic of int
+         end
       val atomicBegin = fn _ => raise Fail "Thread.atomicBegin"
       val atomicEnd = fn _ => raise Fail "Thread.atomicEnd"
       val atomically = fn _ => raise Fail "Thread.atomically"
@@ -21,9 +21,9 @@ structure MLtonThread =
       type 'a t = unit
 
       structure Runnable =
-	 struct
-	    type t = unit
-	 end
+         struct
+            type t = unit
+         end
 
       val atomicSwitch = fn _ => raise Fail "Thread.atomicSwitch"
       val new = fn _ => raise Fail "Thread.new"

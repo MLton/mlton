@@ -12,18 +12,18 @@ functor PosixFileSysConvert
      open FileSys
      val readdir = fn d =>
        case readdir d of
-	 NONE => ""
+         NONE => ""
        | SOME s => s
      structure S =
         struct
-	   open S
-	   structure Flags = FlagsConvert(structure Flags = S)
-	   open Flags
-	end
+           open S
+           structure Flags = FlagsConvert(structure Flags = S)
+           open Flags
+        end
      structure O =
         struct
-	   open O
-	   structure Flags = FlagsConvert(structure Flags = O)
-	   open Flags
-	end
+           open O
+           structure Flags = FlagsConvert(structure Flags = O)
+           open Flags
+        end
   end

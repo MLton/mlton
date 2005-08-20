@@ -8,7 +8,7 @@ fun check' f = (if f () then "OK" else "WRONG") handle _ => "EXN";
 fun range (from, to) p = 
     let open Int 
     in
-	(from > to) orelse (p from) andalso (range (from+1, to) p)
+        (from > to) orelse (p from) andalso (range (from+1, to) p)
     end;
 
 fun checkrange bounds = check o range bounds;
@@ -33,9 +33,9 @@ use "auxil.sml";
 local 
     (* Isn't this disgusting: *)
     val [gt,  lt,  ge,   le] = 
-	[op>, op<, op>=, op<=] : (int * int -> bool) list
+        [op>, op<, op>=, op<=] : (int * int -> bool) list
     val [add, sub, mul, idiv,   imod] = 
-	[op+, op-, op*, op div, op mod] : (int * int -> int) list
+        [op+, op-, op*, op div, op mod] : (int * int -> int) list
     open Word;
     val op > = gt and op < = lt and op >= = ge and op <= = le;
     val op + = add and op - = sub and op * = mul 
@@ -197,137 +197,137 @@ val test12s = (i2w 17 mod i2w 0 seq "WRONG")
 val _ = pr_ln "test12s" test12s
 fun chk f (s, r) = 
     check'(fn _ => 
-	   case f s of
-	       SOME res => res = i2w r
-	     | NONE     => false)
+           case f s of
+               SOME res => res = i2w r
+             | NONE     => false)
 
 fun chkScan fmt = chk (StringCvt.scanString (scan fmt))
 
 val test13a = 
     List.map (chk fromString)
              [("20Af", 8367),
-	      (" \n\t20AfGrap", 8367),
-	      ("0w20Af", 0 (*8367*)),
-	      (" \n\t0w20AfGrap", 0 (*8367*)),
-	      ("0", 0),
-	      ("0w", 0),
-	      ("0W1", 0),
-	      ("0w ", 0),
-	      ("0wx", 0),
-	      ("0wX", 0),
-	      ("0wx1", 1),
-	      ("0wX1", 1),
-	      ("0wx ", 0),
-	      ("0wX ", 0)];
+              (" \n\t20AfGrap", 8367),
+              ("0w20Af", 0 (*8367*)),
+              (" \n\t0w20AfGrap", 0 (*8367*)),
+              ("0", 0),
+              ("0w", 0),
+              ("0W1", 0),
+              ("0w ", 0),
+              ("0wx", 0),
+              ("0wX", 0),
+              ("0wx1", 1),
+              ("0wX1", 1),
+              ("0wx ", 0),
+              ("0wX ", 0)];
 val _ = pr_ln "test13a" (concat test13a)
 val test13b = 
     List.map (fn s => case fromString s of NONE => "OK" | _ => "WRONG")
-	   ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
-	    "+1", "~1", "-1", "GG"];	    
+           ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
+            "+1", "~1", "-1", "GG"];            
 val _ = pr_ln "test13b" (concat test13b)
 
 val test14a = 
     List.map (chkScan StringCvt.DEC)
              [("10789", 10789),
-	      (" \n\t10789crap", 10789),
-	      ("0w10789", 10789),
-	      (" \n\t0w10789crap", 10789),
-	      ("0", 0),
-	      ("0w", 0),
-	      ("0W1", 0),
-	      ("0w ", 0),
-	      ("0wx", 0),
-	      ("0wX", 0),
-	      ("0wx1", 0),
-	      ("0wX1", 0),
-	      ("0wx ", 0),
-	      ("0wX ", 0)];
+              (" \n\t10789crap", 10789),
+              ("0w10789", 10789),
+              (" \n\t0w10789crap", 10789),
+              ("0", 0),
+              ("0w", 0),
+              ("0W1", 0),
+              ("0w ", 0),
+              ("0wx", 0),
+              ("0wX", 0),
+              ("0wx1", 0),
+              ("0wX1", 0),
+              ("0wx ", 0),
+              ("0wX ", 0)];
 val _ = pr_ln "test14a" (concat test14a)
 val test14b = 
     List.map (fn s => case StringCvt.scanString (scan StringCvt.DEC) s 
-	              of NONE => "OK" | _ => "WRONG")
-	   ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
-	    "+1", "~1", "-1", "ff"];	    
+                      of NONE => "OK" | _ => "WRONG")
+           ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
+            "+1", "~1", "-1", "ff"];            
 val _ = pr_ln "test14b" (concat test14b)
 val test15a = 
     List.map (chkScan StringCvt.BIN)
              [("10010", 18),
-	      (" \n\t10010crap", 18),
-	      ("0w10010", 18),
-	      (" \n\t0w10010crap", 18),
-	      ("0", 0),
-	      ("0w", 0),
-	      ("0W1", 0),
-	      ("0w ", 0),
-	      ("0wx", 0),
-	      ("0wX", 0),
-	      ("0wx1", 0),
-	      ("0wX1", 0),
-	      ("0wx ", 0),
-	      ("0wX ", 0)];
+              (" \n\t10010crap", 18),
+              ("0w10010", 18),
+              (" \n\t0w10010crap", 18),
+              ("0", 0),
+              ("0w", 0),
+              ("0W1", 0),
+              ("0w ", 0),
+              ("0wx", 0),
+              ("0wX", 0),
+              ("0wx1", 0),
+              ("0wX1", 0),
+              ("0wx ", 0),
+              ("0wX ", 0)];
 val _ = pr_ln "test15a" (concat test15a)
 val test15b = 
     List.map (fn s => case StringCvt.scanString (scan StringCvt.BIN) s 
-	              of NONE => "OK" | _ => "WRONG")
-	   ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
-	    "+1", "~1", "-1", "2", "8", "ff"];
+                      of NONE => "OK" | _ => "WRONG")
+           ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
+            "+1", "~1", "-1", "2", "8", "ff"];
 val _ = pr_ln "test15b" (concat test15b)
 val test16a = 
     List.map (chkScan StringCvt.OCT)
              [("2071", 1081),
-	      (" \n\t2071crap", 1081),
-	      ("0w2071", 1081),
-	      (" \n\t0w2071crap", 1081),
-	      ("0", 0),
-	      ("0w", 0),
-	      ("0W1", 0),
-	      ("0w ", 0),
-	      ("0wx", 0),
-	      ("0wX", 0),
-	      ("0wx1", 0),
-	      ("0wX1", 0),
-	      ("0wx ", 0),
-	      ("0wX ", 0)];
+              (" \n\t2071crap", 1081),
+              ("0w2071", 1081),
+              (" \n\t0w2071crap", 1081),
+              ("0", 0),
+              ("0w", 0),
+              ("0W1", 0),
+              ("0w ", 0),
+              ("0wx", 0),
+              ("0wX", 0),
+              ("0wx1", 0),
+              ("0wX1", 0),
+              ("0wx ", 0),
+              ("0wX ", 0)];
 val _ = pr_ln "test16a" (concat test16a)
 val test16b = 
     List.map (fn s => case StringCvt.scanString (scan StringCvt.OCT) s 
-	              of NONE => "OK" | _ => "WRONG")
-	   ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
-	    "+1", "~1", "-1", "8", "ff"];
+                      of NONE => "OK" | _ => "WRONG")
+           ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
+            "+1", "~1", "-1", "8", "ff"];
 val _ = pr_ln "test16b" (concat test16b)
 val test17a = 
     List.map (chkScan StringCvt.HEX)
              [("20Af", 8367), (" \n\t20AfGrap", 8367),
-	      ("0wx20Af", 8367), (" \n\t0wx20AfGrap", 8367),
-	      ("0wX20Af", 8367), (" \n\t0wX20AfGrap", 8367),
-	      ("0x20Af", 8367), (" \n\t0x20AfGrap", 8367),
-	      ("0X20Af", 8367), (" \n\t0X20AfGrap", 8367),
-	      ("0", 0),
-	      ("0w", 0),
-	      ("0w ", 0),
-	      ("0w1", 0 (*1*)),
-	      ("0W1", 0),
-	      ("0wx", 0),
-	      ("0wX", 0),
-	      ("0wx1", 1),
-	      ("0wX1", 1)];
+              ("0wx20Af", 8367), (" \n\t0wx20AfGrap", 8367),
+              ("0wX20Af", 8367), (" \n\t0wX20AfGrap", 8367),
+              ("0x20Af", 8367), (" \n\t0x20AfGrap", 8367),
+              ("0X20Af", 8367), (" \n\t0X20AfGrap", 8367),
+              ("0", 0),
+              ("0w", 0),
+              ("0w ", 0),
+              ("0w1", 0 (*1*)),
+              ("0W1", 0),
+              ("0wx", 0),
+              ("0wX", 0),
+              ("0wx1", 1),
+              ("0wX1", 1)];
 val _ = pr_ln "test17a" (concat test17a)
 val test17b = 
     List.map (fn s => case StringCvt.scanString (scan StringCvt.HEX) s 
-	              of NONE => "OK" | _ => "WRONG")
-	   ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
-	    "+1", "~1", "-1"];
+                      of NONE => "OK" | _ => "WRONG")
+           ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
+            "+1", "~1", "-1"];
 val _ = pr_ln "test17b" (concat test17b)
 end;
 
 local 
     fun fromToString i = 
-	fromString (toString (fromInt i)) = SOME (fromInt i);
+        fromString (toString (fromInt i)) = SOME (fromInt i);
 
     fun scanFmt radix i = 
-	let val w = fromInt i
-	    val s = fmt radix w
-	in StringCvt.scanString (scan radix) s = SOME w end;
+        let val w = fromInt i
+            val s = fmt radix w
+        in StringCvt.scanString (scan radix) s = SOME w end;
 
 in
 val test18 = 

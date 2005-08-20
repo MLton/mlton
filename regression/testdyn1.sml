@@ -20,7 +20,7 @@
     else digits (n div 10, digit(n mod 10) :: acc)
 
   fun int_to_string(n) = if n >= 0 then implode(digits(n,[]))
-			 else "~" ^ int_to_string(~n)
+                         else "~" ^ int_to_string(~n)
 
   fun error b s = print ((if b then "Ok - " else "Error - ") ^ s ^ "...\n")
 
@@ -40,7 +40,7 @@
       val _ = print "Testing string operations:\n\
        \  [implode, explode, chr, ord, size]...\n"
       fun hds [] = #"-"
-	| hds (x::_) = x
+        | hds (x::_) = x
     in
       error (int_to_string 232 = "232") "int_to_string";
       error (implode [#"h", #"e", #"l", #"l", #" "] = "hell ") "implode";
@@ -93,15 +93,15 @@
       val _ = print "Testing arithmetic integer operations:\n\
        \  [~, abs, floor, +, -, *, div, mod, <, >, <=, >=] ...\n"
       fun checkdivmod (i, d) =
-	let
-	  val (r, q) = (i mod d, i div d)
-	  val gt_zero = fn a => a > 0
-	in
-	  error (gt_zero r = gt_zero d andalso d * q + r = i) 
-	  ("intdivmod - " ^ int_to_string i ^ " mod " ^ int_to_string d ^ 
-	   " = " ^ int_to_string r ^ ", " ^  int_to_string i ^ " div " 
-	   ^ int_to_string d ^ " = " ^ int_to_string q)  
-	end
+        let
+          val (r, q) = (i mod d, i div d)
+          val gt_zero = fn a => a > 0
+        in
+          error (gt_zero r = gt_zero d andalso d * q + r = i) 
+          ("intdivmod - " ^ int_to_string i ^ " mod " ^ int_to_string d ^ 
+           " = " ^ int_to_string r ^ ", " ^  int_to_string i ^ " div " 
+           ^ int_to_string d ^ " = " ^ int_to_string q)  
+        end
     in
       error (~ 5 = ~5) "~1";
       error (~ (~2) = 2) "~2";
@@ -176,17 +176,17 @@
     let
       val _ = print "Testing generative exceptions:\n"
       fun g a =
-	let
-	  fun f x =
-	    let
-	      exception E
-	    in
-	      if x < 1 then raise E 
-	      else ((f (x-1)) handle E => 7) (* should not handle this.. *)
-	    end
-	in
-	  (f a) handle _ => a
-	end (* a *)
+        let
+          fun f x =
+            let
+              exception E
+            in
+              if x < 1 then raise E 
+              else ((f (x-1)) handle E => 7) (* should not handle this.. *)
+            end
+        in
+          (f a) handle _ => a
+        end (* a *)
     in
       error (g 10 = 10) "exn - generative"
     end
@@ -197,6 +197,6 @@
             "backslash u does not work or somepin";
 
   val _ = etst (map ord [#"a", #"A", #" ", chr 42, #"\117"] =
-		[97, 65, 32, 42, 117]) "char problem, maybe #"
+                [97, 65, 32, 42, 117]) "char problem, maybe #"
 
   val _ = print "End of test.\n"

@@ -12,33 +12,33 @@ struct
 open S
 
 structure LrVals = MLLrValsFun (structure Token = LrParser.Token
-				structure Ast = Ast)
+                                structure Ast = Ast)
 structure Lex = MLLexFun (structure Tokens = LrVals.Tokens)
 structure Parse = JoinWithArg (structure ParserData = LrVals.ParserData
-			       structure Lex = Lex
-			       structure LrParser = LrParser)
+                               structure Lex = Lex
+                               structure LrParser = LrParser)
    
 fun lexAndParse (source: Source.t, ins: In.t): Ast.Program.t =
    let
       val stream =
-	 Parse.makeLexer (fn n => In.inputN (ins, n))
-	 {source = source}
+         Parse.makeLexer (fn n => In.inputN (ins, n))
+         {source = source}
       val lookahead = 30
       val result =
-	 (#1 (Parse.parse (lookahead, stream, fn (s, left, right) =>
-			   Control.errorStr (Region.make {left = left,
-							  right = right},
-					     s),
-			   ())))
-	 handle _ =>
-	    let
-	       val i = Source.lineStart source
-	       val _ = 
-		  Control.errorStr (Region.make {left = i, right = i},
-				    "parse error")
-	    in
-	       Ast.Program.T []
-	    end
+         (#1 (Parse.parse (lookahead, stream, fn (s, left, right) =>
+                           Control.errorStr (Region.make {left = left,
+                                                          right = right},
+                                             s),
+                           ())))
+         handle _ =>
+            let
+               val i = Source.lineStart source
+               val _ = 
+                  Control.errorStr (Region.make {left = i, right = i},
+                                    "parse error")
+            in
+               Ast.Program.T []
+            end
       val () = Ast.Program.checkSyntax result
    in
       result

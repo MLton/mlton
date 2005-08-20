@@ -12,7 +12,7 @@ signature SEQUENCE =
       type 'a elt
 
       structure Slice : SLICE where type 'a sequence = 'a sequence
-	                        and type 'a elt = 'a elt
+                                and type 'a elt = 'a elt
 
       val maxLen: int
       val fromList: 'a elt list -> 'a sequence

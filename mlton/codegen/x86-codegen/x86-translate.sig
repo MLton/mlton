@@ -23,9 +23,9 @@ signature X86_TRANSLATE =
     include X86_TRANSLATE_STRUCTS
 
     val translateChunk : {chunk: x86MLton.Machine.Chunk.t,
-			  frameInfoToX86: (x86MLton.Machine.FrameInfo.t
-					   -> x86.FrameInfo.t),
-			  liveInfo: x86Liveness.LiveInfo.t}
+                          frameInfoToX86: (x86MLton.Machine.FrameInfo.t
+                                           -> x86.FrameInfo.t),
+                          liveInfo: x86Liveness.LiveInfo.t}
                          -> {chunk: x86.Chunk.t}
 
     val translateChunk_totals : unit -> unit

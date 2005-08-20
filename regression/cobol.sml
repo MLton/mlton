@@ -73,7 +73,7 @@ structure Cobol = struct
 
   datatype identifier =
     QUALIFIED_IDENTIFIER of string * qualifications * subscript_phrase
-			    * pos * pos
+                            * pos * pos
   | SPECIAL_REGISTER of special_register * pos * pos
 
   datatype identifiers =
@@ -86,7 +86,7 @@ structure Cobol = struct
 
   datatype identifier_or_literals =
     SEVERAL_IDENTIFIER_OR_LITERALS of identifier_or_literals
-				    * identifier_or_literal
+                                    * identifier_or_literal
   | ONE_IDENTIFIER_OR_LITERAL of identifier_or_literal
 
   datatype rounded =
@@ -141,7 +141,7 @@ structure Cobol = struct
 
   datatype special_names_clauses =
     SEVERAL_SPECIAL_NAMES_CLAUSES of special_names_clauses
-				   * special_names_clause
+                                   * special_names_clause
   | NO_SPECIAL_NAMES_CLAUSES
 
   datatype special_names_paragraph =
@@ -150,7 +150,7 @@ structure Cobol = struct
 
   datatype configuration_section =
     CONFIGURATION_SECTION of
-	source_computer_paragraph
+        source_computer_paragraph
       * object_computer_paragraph
       * special_names_paragraph
 
@@ -222,31 +222,31 @@ structure Cobol = struct
 
   datatype data_description_clause =
     DATA_DESCRIPTION_CLAUSE_IS_USAGE_CLAUSE of usage_specifier
-	            * pos * pos
+                    * pos * pos
   | DATA_DESCRIPTION_CLAUSE_IS_SIGN_CLAUSE of leading_trailing *
                                               separate_character
-	            * pos * pos
+                    * pos * pos
   | DATA_DESCRIPTION_CLAUSE_IS_OCCURS_CLAUSE
        of table_length_description *
           ascending_descending_key_phrases *
           indexed_by_phrase
-	            * pos * pos
+                    * pos * pos
   | DATA_DESCRIPTION_CLAUSE_IS_SYNCHRONIZED_CLAUSE of left_right
-	            * pos * pos
+                    * pos * pos
   | DATA_DESCRIPTION_CLAUSE_IS_JUSTIFIED_CLAUSE of
-	            pos * pos
+                    pos * pos
   | DATA_DESCRIPTION_CLAUSE_IS_BLANK_WHEN_ZERO_CLAUSE of
-	            pos * pos
+                    pos * pos
   | DATA_DESCRIPTION_CLAUSE_IS_VALUE_CLAUSE of literal_ranges
-	            * pos * pos
+                    * pos * pos
   | DATA_DESCRIPTION_CLAUSE_IS_PICTURE_CLAUSE of string
-	            * pos * pos
+                    * pos * pos
   | DATA_DESCRIPTION_CLAUSE_IS_INDICATOR_CLAUSE of string
-	            * pos * pos
+                    * pos * pos
 
   datatype data_description_clauses =
     DATA_DESCRIPTION_CLAUSES of data_description_clauses *
-				data_description_clause
+                                data_description_clause
   | NO_DATA_DESCRIPTION_CLAUSES
 
   datatype redefines_clause =
@@ -266,12 +266,12 @@ structure Cobol = struct
                                 * data_name_or_filler
                                 * redefines_clause
                                 * data_description_clauses
-			        * pos * pos
+                                * pos * pos
   | RENAMES_CLAUSE of string               (* levelnumber *)
                     * string               (* data-name *)
                     * string               (* data-name *)
                     * through_data_name
-	            * pos * pos
+                    * pos * pos
   | TS2K_NOARROW of ts2k * pos * pos
   | TS2K_ARROW  of ts2k * ts2k * pos * pos
   | TS2K_ALL of ts2k * ts2k * pos * pos
@@ -317,13 +317,13 @@ structure Cobol = struct
 
   datatype sort_description_clause =
     SORT_DESCRIPTION_CLAUSE_IS_RECORD of record_contains_clause
-	            * pos * pos
+                    * pos * pos
   | SORT_DESCRIPTION_CLAUSE_IS_DATA of data_records_clause
-	            * pos * pos
+                    * pos * pos
 
   datatype sort_description_clauses =
     SORT_DESCRIPTION_CLAUSES of sort_description_clauses *
-				sort_description_clause
+                                sort_description_clause
   | NO_SORT_DESCRIPTION_CLAUSE
 
   datatype sort_description_entry =
@@ -339,7 +339,7 @@ structure Cobol = struct
 
   datatype top_bottom_specifications =
     TOP_BOTTOM_SPECIFICATIONS of top_bottom_specifications *
-				 top_bottom_specification
+                                 top_bottom_specification
   | NO_TOP_BOTTOM_SPECIFICATION
 
   datatype value_of_phrase =
@@ -365,7 +365,7 @@ structure Cobol = struct
   | FILE_DESCRIPTION_CLAUSE_IS_DATA of data_records_clause
            * pos * pos
   | LINAGE_CLAUSE of data_name_or_integer *
-		     footing_specification *
+                     footing_specification *
                      top_bottom_specifications
            * pos * pos
   | CODE_SET_CLAUSE of string
@@ -373,7 +373,7 @@ structure Cobol = struct
 
   datatype file_description_clauses =
     FILE_DESCRIPTION_CLAUSES of file_description_clauses *
-				file_description_clause
+                                file_description_clause
   | NO_FILE_DESCRIPTION_CLAUSES
 
   datatype file_description_entry =
@@ -385,11 +385,11 @@ structure Cobol = struct
     
   datatype file_description_paragraph =
     FILE_DESCRIPTION_PARAGRAPH of file_and_sort_description_entry *
-			          record_description_entries
+                                  record_description_entries
 
   datatype file_description_paragraphs =
     FILE_DESCRIPTION_PARAGRAPHS of file_description_paragraphs *
-			           file_description_paragraph
+                                   file_description_paragraph
   | NO_FILE_DESCRIPTION_PARAGRAPHS
 
   datatype file_section =
@@ -406,28 +406,28 @@ structure Cobol = struct
   | ARITHMETIC_EXPRESSION_IS_NONNUMERICLITERAL of string * pos * pos
   | ARITHMETIC_EXPRESSION_IS_BOOLEANLITERAL of bool * pos * pos
   | ARITHMETIC_EXPRESSION_IS_FIGURATIVE_CONSTANT of figurative_constant *
-						    pos * pos
+                                                    pos * pos
   | ARITHMETIC_EXPRESSION_IS_IDENTIFIER of identifier
   | ARITHMETIC_EXPRESSION_IS_PLUS_SIGN of arithmetic_expression
   | ARITHMETIC_EXPRESSION_IS_MINUS_SIGN of arithmetic_expression
   | ARITHMETIC_EXPRESSION_IS_EXPONENTIATION of arithmetic_expression *
-					       arithmetic_expression
+                                               arithmetic_expression
   | ARITHMETIC_EXPRESSION_IS_MULTIPLY of arithmetic_expression *
-					 arithmetic_expression
+                                         arithmetic_expression
   | ARITHMETIC_EXPRESSION_IS_DIVIDE of arithmetic_expression *
-				       arithmetic_expression
+                                       arithmetic_expression
   | ARITHMETIC_EXPRESSION_IS_ADD of arithmetic_expression *
-				    arithmetic_expression
+                                    arithmetic_expression
   | ARITHMETIC_EXPRESSION_IS_SUBTRACT of arithmetic_expression *
-					 arithmetic_expression
+                                         arithmetic_expression
 
   datatype simple_condition =
     CLASS_CONDITION of identifier * is_not * data_class
   | CONDITION_NAME of identifier
   | RELATION_CONDITION of arithmetic_expression *
-			  is_not *
-			  relational_operator *
-			  arithmetic_expression * pos * pos
+                          is_not *
+                          relational_operator *
+                          arithmetic_expression * pos * pos
   (* Unclear if TRUE and FALSE are allowed in conditions  *)
   (* at all (TRUE is reserved word but not FALSE)         *)
   | SIMPLE_CONDITION_IS_TRUE of pos * pos
@@ -489,65 +489,65 @@ structure Cobol = struct
 
   and add_or_subtract_statement =
     ADD_OR_SUBTRACT of add_or_subtract * identifier_or_literals
-	 * identifier_roundeds
-	 * size_error_clause * pos * pos
+         * identifier_roundeds
+         * size_error_clause * pos * pos
   | ADD_OR_SUBTRACT_GIVING of add_or_subtract * identifier_or_literals
-		* identifier_or_literal
-		* identifier_roundeds
-		* size_error_clause * pos * pos
+                * identifier_or_literal
+                * identifier_roundeds
+                * size_error_clause * pos * pos
   | ADD_OR_SUBTRACT_CORRESPONDING of add_or_subtract * identifier
-		       * identifier
-		       * rounded
-		       * size_error_clause * pos * pos
+                       * identifier
+                       * rounded
+                       * size_error_clause * pos * pos
 
   and compute_statement =
     COMPUTE of identifier_roundeds *
-	       arithmetic_expression *
-	       size_error_clause * pos * pos
+               arithmetic_expression *
+               size_error_clause * pos * pos
 
   and multiply_statement =
     MULTIPLY of identifier_or_literal
-	 * identifier_roundeds
-	 * size_error_clause * pos * pos
+         * identifier_roundeds
+         * size_error_clause * pos * pos
   | MULTIPLY_GIVING of identifier_or_literal
-		* identifier_or_literal
-		* identifier_roundeds
-		* size_error_clause * pos * pos
+                * identifier_or_literal
+                * identifier_roundeds
+                * size_error_clause * pos * pos
 
   (* NOTE: the following is not checked against the manual *)
   (*       neither is it tested                            *)
   and divide_statement =
   (* DIVIDE a INTO b [[ON] SIZE ERROR c]                         *)
     DIVIDE_INTO of identifier_or_literal                    (* a *)
-		 * identifier_roundeds                      (* b *)
-		 * size_error_clause                        (* c *)
-		 * pos * pos
+                 * identifier_roundeds                      (* b *)
+                 * size_error_clause                        (* c *)
+                 * pos * pos
   (* DIVIDE a INTO b GIVING c [[ON] SIZE ERROR d]                *)
   | DIVIDE_INTO_GIVING of identifier_or_literal             (* a *)
-		 * identifier_or_literal                    (* b *)
-		 * identifier_roundeds                      (* c *)
-		 * size_error_clause                        (* d *)
-		 * pos * pos
+                 * identifier_or_literal                    (* b *)
+                 * identifier_roundeds                      (* c *)
+                 * size_error_clause                        (* d *)
+                 * pos * pos
   (* DIVIDE a INTO b GIVING c REMAINDER d [[ON] SIZE ERROR e]    *)
   | DIVIDE_INTO_GIVING_REMAINDER of identifier_or_literal   (* a *)
-		 * identifier_or_literal                    (* b *)
-		 * identifier_roundeds                      (* c *)
-		 * identifier                               (* d *)
-		 * size_error_clause                        (* e *)
-		 * pos * pos
+                 * identifier_or_literal                    (* b *)
+                 * identifier_roundeds                      (* c *)
+                 * identifier                               (* d *)
+                 * size_error_clause                        (* e *)
+                 * pos * pos
   (* DIVIDE a BY b GIVING c [[ON] SIZE ERROR d]                  *)
   | DIVIDE_BY_GIVING of identifier_or_literal               (* a *)
-		 * identifier_or_literal                    (* b *)
-		 * identifier_roundeds                      (* c *)
-		 * size_error_clause                        (* d *)
-		 * pos * pos
+                 * identifier_or_literal                    (* b *)
+                 * identifier_roundeds                      (* c *)
+                 * size_error_clause                        (* d *)
+                 * pos * pos
   (* DIVIDE a BY b GIVING c REMAINDER d [[ON] SIZE ERROR e]      *)
   | DIVIDE_BY_GIVING_REMAINDER of identifier_or_literal     (* a *)
-		 * identifier_or_literal                    (* b *)
-		 * identifier_roundeds                      (* c *)
-		 * identifier                               (* d *)
-		 * size_error_clause                        (* e *)
-		 * pos * pos
+                 * identifier_or_literal                    (* b *)
+                 * identifier_roundeds                      (* c *)
+                 * identifier                               (* d *)
+                 * size_error_clause                        (* e *)
+                 * pos * pos
 
   and size_error_clause =
     SIZE_ERROR of statements
@@ -593,11 +593,11 @@ structure Cobol = struct
   datatype sections =
     NO_BODY_SECTION of section_name * segment_number_opt
   | NO_BODY_SECTION_FOLLOWED_BY_SECTION of section_name *
-					   segment_number_opt *
-					   sections
+                                           segment_number_opt *
+                                           sections
   | SECTION of section_name *
-	       segment_number_opt *
-	       paragraphs_and_sections
+               segment_number_opt *
+               paragraphs_and_sections
 
   and paragraphs_and_sections =
     SEVERAL_PARAGRAPHS_AND_SECTIONS of paragraph * paragraphs_and_sections
@@ -610,15 +610,15 @@ structure Cobol = struct
 
   datatype procedure_division =
     PROCEDURE_DIVISION_FORMAT_1_DECLARATIVES of using_clause *
-						declaratives_section *
-						sections *
-						pos * pos
+                                                declaratives_section *
+                                                sections *
+                                                pos * pos
   | PROCEDURE_DIVISION_FORMAT_1_NO_DECLARATIVES of using_clause *
-						   sections *
-						   pos * pos
+                                                   sections *
+                                                   pos * pos
   | PROCEDURE_DIVISION_FORMAT_2 of using_clause *
-				   paragraphs * 
-				   pos * pos
+                                   paragraphs * 
+                                   pos * pos
   | EMPTY_PROCEDURE_DIVISION
      (* no procedure division allowed by our parser though mandatory in S/36 *)
 
@@ -635,15 +635,15 @@ structure Cobol = struct
   datatype environment_division =
     ENVIRONMENT_DIVISION of 
                             configuration_section *
-			    input_output_section
+                            input_output_section
   | NO_ENVIRONMENT_DIVISION
 
   type identification_division = unit
 
   datatype cobol_program =
     PROGRAM of identification_division *
-	       environment_division *
-	       data_division *
+               environment_division *
+               data_division *
                procedure_division
 
   datatype test_cobol_programs =
@@ -661,17 +661,17 @@ end;
 datatype cexpression =
   CE_AE of Cobol.arithmetic_expression * Cobol.pos * Cobol.pos
 | CE_SINGLE_REL of Cobol.relational_operator * Cobol.arithmetic_expression *
-		   Cobol.pos * Cobol.pos
+                   Cobol.pos * Cobol.pos
 | CE_REL of Cobol.arithmetic_expression *
-	    Cobol.is_not *
-	    Cobol.relational_operator *
-	    Cobol.arithmetic_expression * Cobol.pos * Cobol.pos
+            Cobol.is_not *
+            Cobol.relational_operator *
+            Cobol.arithmetic_expression * Cobol.pos * Cobol.pos
 | CE_DC of Cobol.arithmetic_expression *
-	   Cobol.is_not *
-	   Cobol.data_class
+           Cobol.is_not *
+           Cobol.data_class
 | CE_SIGN of Cobol.arithmetic_expression *
-	     Cobol.is_not *
-	     Cobol.sign_specification
+             Cobol.is_not *
+             Cobol.sign_specification
 | CE_SWITCH of Cobol.pos * Cobol.pos
 | CE_TRUE of Cobol.pos * Cobol.pos
 | CE_FALSE of Cobol.pos * Cobol.pos
@@ -684,7 +684,7 @@ datatype cexpression =
 
 
 
-	     
+             
 structure MlyValue = 
 struct
 datatype svalue = VOID | ntVOID of unit | PSEUDOTEXT of  (string)
@@ -1585,10 +1585,10 @@ MlyValue.USERDEFINEDWORD USERDEFINEDWORD,USERDEFINEDWORDleft as
 USERDEFINEDWORD1left,_))::rest671) => let val result=
 MlyValue.identifier((
 Cobol.QUALIFIED_IDENTIFIER(USERDEFINEDWORD,
-				       qualifications,
-				       subscript_phrase,
+                                       qualifications,
+                                       subscript_phrase,
                                        USERDEFINEDWORDleft,
-				       subscript_phraseright)
+                                       subscript_phraseright)
 ))
  in (hojfelds_NT 228,(result,USERDEFINEDWORD1left,
 subscript_phrase1right),rest671) end
@@ -1682,7 +1682,7 @@ identifier_or_literal1right))::(_,(MlyValue.identifier_or_literals
 identifier_or_literals,identifier_or_literals1left,_))::rest671) => 
 let val result=MlyValue.identifier_or_literals((
 Cobol.SEVERAL_IDENTIFIER_OR_LITERALS(identifier_or_literals,
-					  identifier_or_literal)
+                                          identifier_or_literal)
 ))
  in (hojfelds_NT 234,(result,identifier_or_literals1left,
 identifier_or_literal1right),rest671) end
@@ -1804,10 +1804,10 @@ procedure_division1right))::(_,(MlyValue.data_division data_division,_
 _,process_statement1left,_))::rest671) => let val result=
 MlyValue.cobol_program((
 condition_names := [];
-			    Cobol.PROGRAM(identification_division,
-					  environment_division,
-					  data_division,
-					  procedure_division)
+                            Cobol.PROGRAM(identification_division,
+                                          environment_division,
+                                          data_division,
+                                          procedure_division)
 ))
  in (hojfelds_NT 0,(result,process_statement1left,
 procedure_division1right),rest671) end
@@ -1917,7 +1917,7 @@ input_output_section1right))::(_,(MlyValue.configuration_section
 configuration_section,_,_))::_::_::(_,(_,ENVIRONMENT1left,_))::rest671
 ) => let val result=MlyValue.environment_division((
 Cobol.ENVIRONMENT_DIVISION
-		   (configuration_section,input_output_section)
+                   (configuration_section,input_output_section)
 ))
  in (hojfelds_NT 153,(result,ENVIRONMENT1left,
 input_output_section1right),rest671) end
@@ -1931,8 +1931,8 @@ MlyValue.object_computer_paragraph object_computer_paragraph,_,_))::(_
 _::_::(_,(_,CONFIGURATION1left,_))::rest671) => let val result=
 MlyValue.configuration_section((
 Cobol.CONFIGURATION_SECTION
-	      (source_computer_paragraph,object_computer_paragraph
-	       ,special_names_paragraph)
+              (source_computer_paragraph,object_computer_paragraph
+               ,special_names_paragraph)
 ))
  in (hojfelds_NT 77,(result,CONFIGURATION1left,
 special_names_paragraph1right),rest671) end
@@ -2011,7 +2011,7 @@ special_names_clause1right))::(_,(MlyValue.special_names_clauses
 special_names_clauses,special_names_clauses1left,_))::rest671) => let 
 val result=MlyValue.special_names_clauses((
 Cobol.SEVERAL_SPECIAL_NAMES_CLAUSES(special_names_clauses,
-					       special_names_clause)
+                                               special_names_clause)
 ))
  in (hojfelds_NT 102,(result,special_names_clauses1left,
 special_names_clause1right),rest671) end
@@ -2402,8 +2402,8 @@ working_storage_section,_,_))::(_,(MlyValue.file_section file_section,
 _,_))::_::_::(_,(_,DATA1left,_))::rest671) => let val result=
 MlyValue.data_division((
 Cobol.DATA_DIVISION(file_section,
-					     working_storage_section,
-					     linkage_section)
+                                             working_storage_section,
+                                             linkage_section)
 ))
  in (hojfelds_NT 91,(result,DATA1left,linkage_section1right),rest671)
  end
@@ -2427,7 +2427,7 @@ MlyValue.file_description_paragraphs file_description_paragraphs,
 file_description_paragraphs1left,_))::rest671) => let val result=
 MlyValue.file_description_paragraphs((
 Cobol.FILE_DESCRIPTION_PARAGRAPHS(file_description_paragraphs,
-					      file_description_paragraph)
+                                              file_description_paragraph)
 ))
  in (hojfelds_NT 195,(result,file_description_paragraphs1left,
 file_description_paragraph1right),rest671) end
@@ -2485,8 +2485,8 @@ record_contains_clauseleft as record_contains_clause1left,
 record_contains_clauseright as record_contains_clause1right))::rest671
 ) => let val result=MlyValue.file_description_clause((
 Cobol.FILE_DESCRIPTION_CLAUSE_IS_RECORD(record_contains_clause,
-						   record_contains_clauseleft,
-						   record_contains_clauseright)
+                                                   record_contains_clauseleft,
+                                                   record_contains_clauseright)
 ))
  in (hojfelds_NT 191,(result,record_contains_clause1left,
 record_contains_clause1right),rest671) end
@@ -2506,8 +2506,8 @@ data_records_clauseleft as data_records_clause1left,
 data_records_clauseright as data_records_clause1right))::rest671) => 
 let val result=MlyValue.file_description_clause((
 Cobol.FILE_DESCRIPTION_CLAUSE_IS_DATA(data_records_clause,
-						 data_records_clauseleft,
-						 data_records_clauseright)
+                                                 data_records_clauseleft,
+                                                 data_records_clauseright)
 ))
  in (hojfelds_NT 191,(result,data_records_clause1left,
 data_records_clause1right),rest671) end
@@ -2527,7 +2527,7 @@ MlyValue.integer_range integer_range,_,_))::_::(_,(_,BLOCKleft as
 BLOCK1left,_))::rest671) => let val result=
 MlyValue.block_contains_clause((
 Cobol.BLOCK(integer_range,
-		     characters_or_records,
+                     characters_or_records,
                      BLOCKleft,
                      characters_or_recordsright)
 ))
@@ -2576,7 +2576,7 @@ value_of_phrasesright as value_of_phrases1right))::_::(_,(_,VALUEleft
 MlyValue.value_of_clause((
 Cobol.VALUE_OF_CLAUSE(value_of_phrases,
                                  VALUEleft,
-				 value_of_phrasesright)
+                                 value_of_phrasesright)
 ))
  in (hojfelds_NT 518,(result,VALUE1left,value_of_phrases1right),rest671
 ) end
@@ -2611,10 +2611,10 @@ footing_specification,_,_))::_::(_,(MlyValue.data_name_or_integer
 data_name_or_integer,_,_))::_::(_,(_,LINAGEleft as LINAGE1left,_))::
 rest671) => let val result=MlyValue.linage_clause((
 Cobol.LINAGE_CLAUSE(data_name_or_integer,
-				 footing_specification,
-				 top_bottom_specifications,
-				 LINAGEleft,
-				 top_bottom_specificationsright)
+                                 footing_specification,
+                                 top_bottom_specifications,
+                                 LINAGEleft,
+                                 top_bottom_specificationsright)
 ))
  in (hojfelds_NT 293,(result,LINAGE1left,
 top_bottom_specifications1right),rest671) end
@@ -2655,8 +2655,8 @@ MlyValue.top_bottom((Cobol.BOTTOM))
  as alphabet_name1right))::_::(_,(_,CODESETleft as CODESET1left,_))::
 rest671) => let val result=MlyValue.code_set_clause((
 Cobol.CODE_SET_CLAUSE(alphabet_name,
-				 CODESETleft,
-				 alphabet_nameright)
+                                 CODESETleft,
+                                 alphabet_nameright)
 ))
  in (hojfelds_NT 65,(result,CODESET1left,alphabet_name1right),rest671)
  end
@@ -2683,9 +2683,9 @@ record_contains_clauseleft as record_contains_clause1left,
 record_contains_clauseright as record_contains_clause1right))::rest671
 ) => let val result=MlyValue.sort_description_clause((
 Cobol.SORT_DESCRIPTION_CLAUSE_IS_RECORD
-		(record_contains_clause,
-		 record_contains_clauseleft,
-		 record_contains_clauseright)
+                (record_contains_clause,
+                 record_contains_clauseleft,
+                 record_contains_clauseright)
 ))
  in (hojfelds_NT 445,(result,record_contains_clause1left,
 record_contains_clause1right),rest671) end
@@ -2694,8 +2694,8 @@ data_records_clauseleft as data_records_clause1left,
 data_records_clauseright as data_records_clause1right))::rest671) => 
 let val result=MlyValue.sort_description_clause((
 Cobol.SORT_DESCRIPTION_CLAUSE_IS_DATA(data_records_clause,
-						 data_records_clauseleft,
-						 data_records_clauseright)
+                                                 data_records_clauseleft,
+                                                 data_records_clauseright)
 ))
  in (hojfelds_NT 445,(result,data_records_clause1left,
 data_records_clause1right),rest671) end
@@ -2783,17 +2783,17 @@ MlyValue.level_number level_number,level_numberleft as
 level_number1left,_))::rest671) => let val result=
 MlyValue.data_description_entry_134((
 (if (level_number = "88")
-	   then (case data_name_or_filler of
-		  Cobol.DATA_NAME_OR_FILLER_IS_DATA_NAME(data_name)
-		   => condition_names := data_name :: (!condition_names)
-		| _ => ())
-	   else ());
+           then (case data_name_or_filler of
+                  Cobol.DATA_NAME_OR_FILLER_IS_DATA_NAME(data_name)
+                   => condition_names := data_name :: (!condition_names)
+                | _ => ())
+           else ());
            Cobol.DATA_DESCRIPTION_ENTRY_134(level_number,
-					    data_name_or_filler,
-					    redefines_clause,
-					    data_description_clauses,
-					    level_numberleft,
-					    PERIODright)
+                                            data_name_or_filler,
+                                            redefines_clause,
+                                            data_description_clauses,
+                                            level_numberleft,
+                                            PERIODright)
 ))
  in (hojfelds_NT 90,(result,level_number1left,PERIOD1right),rest671)
  end
@@ -2810,7 +2810,7 @@ data_description_clause1right))::(_,(MlyValue.data_description_clauses
  data_description_clauses,data_description_clauses1left,_))::rest671)
  => let val result=MlyValue.data_description_clauses((
 Cobol.DATA_DESCRIPTION_CLAUSES(data_description_clauses,
-					  data_description_clause)
+                                          data_description_clause)
 ))
  in (hojfelds_NT 88,(result,data_description_clauses1left,
 data_description_clause1right),rest671) end
@@ -2821,8 +2821,8 @@ Cobol.NO_DATA_DESCRIPTION_CLAUSES))
 usage_clause1left,usage_clauseright as usage_clause1right))::rest671)
  => let val result=MlyValue.data_description_clause((
 Cobol.DATA_DESCRIPTION_CLAUSE_IS_USAGE_CLAUSE(usage_clause,
-							 usage_clauseleft,
-							 usage_clauseright)
+                                                         usage_clauseleft,
+                                                         usage_clauseright)
 ))
  in (hojfelds_NT 87,(result,usage_clause1left,usage_clause1right),
 rest671) end
@@ -2831,7 +2831,7 @@ sign_clause1left,sign_clauseright as sign_clause1right))::rest671) =>
 let val result=MlyValue.data_description_clause((
 let val (lt,sc) = sign_clause
                  in Cobol.DATA_DESCRIPTION_CLAUSE_IS_SIGN_CLAUSE
-		     (lt,sc,sign_clauseleft,sign_clauseright)
+                     (lt,sc,sign_clauseleft,sign_clauseright)
                  end
 ))
  in (hojfelds_NT 87,(result,sign_clause1left,sign_clause1right),rest671
@@ -2840,9 +2840,9 @@ let val (lt,sc) = sign_clause
 occurs_clause1left,occurs_clauseright as occurs_clause1right))::
 rest671) => let val result=MlyValue.data_description_clause((
 let val (tld, adkp, ibp) = occurs_clause
-	   in Cobol.DATA_DESCRIPTION_CLAUSE_IS_OCCURS_CLAUSE
-		(tld, adkp, ibp, occurs_clauseleft, occurs_clauseright)
-	   end
+           in Cobol.DATA_DESCRIPTION_CLAUSE_IS_OCCURS_CLAUSE
+                (tld, adkp, ibp, occurs_clauseleft, occurs_clauseright)
+           end
 ))
  in (hojfelds_NT 87,(result,occurs_clause1left,occurs_clause1right),
 rest671) end
@@ -2879,8 +2879,8 @@ blank_when_zero_clause1right),rest671) end
 value_clause1left,value_clauseright as value_clause1right))::rest671)
  => let val result=MlyValue.data_description_clause((
 Cobol.DATA_DESCRIPTION_CLAUSE_IS_VALUE_CLAUSE(value_clause,
-							 value_clauseleft,
-							 value_clauseright)
+                                                         value_clauseleft,
+                                                         value_clauseright)
 ))
  in (hojfelds_NT 87,(result,value_clause1left,value_clause1right),
 rest671) end
@@ -2888,8 +2888,8 @@ rest671) end
  as picture_clause1left,picture_clauseright as picture_clause1right))
 ::rest671) => let val result=MlyValue.data_description_clause((
 Cobol.DATA_DESCRIPTION_CLAUSE_IS_PICTURE_CLAUSE(picture_clause,
-							   picture_clauseleft,
-							   picture_clauseright)
+                                                           picture_clauseleft,
+                                                           picture_clauseright)
 ))
  in (hojfelds_NT 87,(result,picture_clause1left,picture_clause1right),
 rest671) end
@@ -2899,8 +2899,8 @@ indicator_clauseleft as indicator_clause1left,indicator_clauseright
 MlyValue.data_description_clause((
 Cobol.DATA_DESCRIPTION_CLAUSE_IS_INDICATOR_CLAUSE
                 (indicator_clause,
-		 indicator_clauseleft,
-		 indicator_clauseright)
+                 indicator_clauseleft,
+                 indicator_clauseright)
 ))
  in (hojfelds_NT 87,(result,indicator_clause1left,
 indicator_clause1right),rest671) end
@@ -3086,8 +3086,8 @@ Cobol.RENAMES_CLAUSE(level_number,
                                 data_name1,
                                 data_name2,
                                 through_data_name,
-				level_numberleft,
-				PERIODright)
+                                level_numberleft,
+                                PERIODright)
 ))
  in (hojfelds_NT 401,(result,level_number1left,PERIOD1right),rest671)
  end
@@ -3104,7 +3104,7 @@ record_description_entries_opt,_,record_description_entries_optright
 WORKINGSTORAGEleft as WORKINGSTORAGE1left,_))::rest671) => let val 
 result=MlyValue.working_storage_section((
 Cobol.WORKINGSTORAGE_SECTION(record_description_entries_opt,
-	                                WORKINGSTORAGEleft,record_description_entries_optright)
+                                        WORKINGSTORAGEleft,record_description_entries_optright)
 ))
  in (hojfelds_NT 529,(result,WORKINGSTORAGE1left,
 record_description_entries_opt1right),rest671) end
@@ -3117,7 +3117,7 @@ record_description_entries_opt,_,record_description_entries_optright
  as LINKAGE1left,_))::rest671) => let val result=
 MlyValue.linkage_section((
 Cobol.LINKAGE_SECTION(record_description_entries_opt,
-	                         LINKAGEleft,record_description_entries_optright)
+                                 LINKAGEleft,record_description_entries_optright)
 ))
  in (hojfelds_NT 297,(result,LINKAGE1left,
 record_description_entries_opt1right),rest671) end
@@ -3130,9 +3130,9 @@ declaratives_section,_,_))::_::(_,(MlyValue.using_clause using_clause,
 _,_))::_::(_,(_,PROCEDUREleft as PROCEDURE1left,_))::rest671) => let 
 val result=MlyValue.procedure_division((
 Cobol.PROCEDURE_DIVISION_FORMAT_1_DECLARATIVES(using_clause,
-							  declaratives_section,
-							  sections,
-	                                                  PROCEDUREleft,
+                                                          declaratives_section,
+                                                          sections,
+                                                          PROCEDUREleft,
                                                           sectionsright)
 ))
  in (hojfelds_NT 367,(result,PROCEDURE1left,sections1right),rest671)
@@ -3142,7 +3142,7 @@ sections1right))::_::(_,(MlyValue.using_clause using_clause,_,_))::_::
 (_,(_,PROCEDUREleft as PROCEDURE1left,_))::rest671) => let val result=
 MlyValue.procedure_division((
 Cobol.PROCEDURE_DIVISION_FORMAT_1_NO_DECLARATIVES(using_clause,
-							     sections,
+                                                             sections,
                                                              PROCEDUREleft,
                                                              sectionsright)
 ))
@@ -3208,8 +3208,8 @@ MlyValue.segment_number_opt segment_number_opt,_,_))::_::(_,(
 MlyValue.section_name section_name,section_name1left,_))::rest671) => 
 let val result=MlyValue.sections((
 Cobol.NO_BODY_SECTION_FOLLOWED_BY_SECTION(section_name,
-						     segment_number_opt,
-						     sections)
+                                                     segment_number_opt,
+                                                     sections)
 ))
  in (hojfelds_NT 424,(result,section_name1left,sections1right),rest671)
  end
@@ -3218,8 +3218,8 @@ paragraphs_and_sections1right))::_::(_,(MlyValue.segment_number_opt
 segment_number_opt,_,_))::_::(_,(MlyValue.section_name section_name,
 section_name1left,_))::rest671) => let val result=MlyValue.sections((
 Cobol.SECTION(section_name,
-			 segment_number_opt,
-			 paragraphs_and_sections)
+                         segment_number_opt,
+                         paragraphs_and_sections)
 ))
  in (hojfelds_NT 424,(result,section_name1left,
 paragraphs_and_sections1right),rest671) end
@@ -3228,7 +3228,7 @@ paragraphs_and_sections1right))::(_,(MlyValue.paragraph paragraph,
 paragraph1left,_))::rest671) => let val result=
 MlyValue.paragraphs_and_sections((
 Cobol.SEVERAL_PARAGRAPHS_AND_SECTIONS(paragraph,
-						 paragraphs_and_sections)
+                                                 paragraphs_and_sections)
 ))
  in (hojfelds_NT 359,(result,paragraph1left,
 paragraphs_and_sections1right),rest671) end
@@ -3298,7 +3298,7 @@ Cobol.ARITHMETIC_EXPRESSION_IS_INTEGER(INTEGER,INTEGERleft,INTEGERright)
 DECIMALNUMBER1left,DECIMALNUMBERright as DECIMALNUMBER1right))::
 rest671) => let val result=MlyValue.arithmetic_expression((
 Cobol.ARITHMETIC_EXPRESSION_IS_DECIMALNUMBER
-		(DECIMALNUMBER,DECIMALNUMBERleft,DECIMALNUMBERright)
+                (DECIMALNUMBER,DECIMALNUMBERleft,DECIMALNUMBERright)
 ))
  in (hojfelds_NT 476,(result,DECIMALNUMBER1left,DECIMALNUMBER1right),
 rest671) end
@@ -3307,8 +3307,8 @@ NONNUMERICLITERALleft as NONNUMERICLITERAL1left,NONNUMERICLITERALright
  as NONNUMERICLITERAL1right))::rest671) => let val result=
 MlyValue.arithmetic_expression((
 Cobol.ARITHMETIC_EXPRESSION_IS_NONNUMERICLITERAL(NONNUMERICLITERAL,
-							    NONNUMERICLITERALleft,
-							    NONNUMERICLITERALright)
+                                                            NONNUMERICLITERALleft,
+                                                            NONNUMERICLITERALright)
 ))
  in (hojfelds_NT 476,(result,NONNUMERICLITERAL1left,
 NONNUMERICLITERAL1right),rest671) end
@@ -3316,7 +3316,7 @@ NONNUMERICLITERAL1right),rest671) end
  as BOOLEANLITERAL1left,BOOLEANLITERALright as BOOLEANLITERAL1right))
 ::rest671) => let val result=MlyValue.arithmetic_expression((
 Cobol.ARITHMETIC_EXPRESSION_IS_BOOLEANLITERAL
-		(BOOLEANLITERAL,BOOLEANLITERALleft,BOOLEANLITERALright)
+                (BOOLEANLITERAL,BOOLEANLITERALleft,BOOLEANLITERALright)
 ))
  in (hojfelds_NT 476,(result,BOOLEANLITERAL1left,BOOLEANLITERAL1right),
 rest671) end
@@ -3409,8 +3409,8 @@ arithmetic_expressionleft as arithmetic_expression1left,
 arithmetic_expressionright as arithmetic_expression1right))::rest671)
  => let val result=MlyValue.expression((
 CE_AE(arithmetic_expression,
-		 arithmetic_expressionleft,
-		 arithmetic_expressionright)
+                 arithmetic_expressionleft,
+                 arithmetic_expressionright)
 ))
  in (hojfelds_NT 42,(result,arithmetic_expression1left,
 arithmetic_expression1right),rest671) end
@@ -3420,9 +3420,9 @@ MlyValue.relational_operator relational_operator,
 relational_operatorleft as relational_operator1left,_))::rest671) => 
 let val result=MlyValue.expression((
 CE_SINGLE_REL(relational_operator,
-			 arithmetic_expression,
-			 relational_operatorleft,
-			 arithmetic_expressionright)
+                         arithmetic_expression,
+                         relational_operatorleft,
+                         arithmetic_expressionright)
 ))
  in (hojfelds_NT 42,(result,relational_operator1left,
 arithmetic_expression1right),rest671) end
@@ -3433,11 +3433,11 @@ MlyValue.arithmetic_expression arithmetic_expression1,
 arithmetic_expression1left,_))::rest671) => let val result=
 MlyValue.expression((
 CE_REL(arithmetic_expression1,
-		  is_not,
-		  relational_operator,
-		  arithmetic_expression2,
-		  arithmetic_expression1left,
-		  arithmetic_expression2right)
+                  is_not,
+                  relational_operator,
+                  arithmetic_expression2,
+                  arithmetic_expression1left,
+                  arithmetic_expression2right)
 ))
  in (hojfelds_NT 42,(result,arithmetic_expression1left,
 arithmetic_expression2right),rest671) end
@@ -3778,8 +3778,8 @@ MlyValue.identifier_or_literals identifier_or_literals,_,_))::(_,(_,
 ADDleft as ADD1left,_))::rest671) => let val result=
 MlyValue.add_statement((
 Cobol.ADD_OR_SUBTRACT
-		    (Cobol.ADD,identifier_or_literals,identifier_roundeds,
-		     size_error_clauses,
+                    (Cobol.ADD,identifier_or_literals,identifier_roundeds,
+                     size_error_clauses,
                      ADDleft,end_addright)
 ))
  in (hojfelds_NT 10,(result,ADD1left,end_add1right),rest671) end
@@ -3792,8 +3792,8 @@ ADDleft as ADD1left,_))::rest671) => let val result=
 MlyValue.add_statement((
 Cobol.ADD_OR_SUBTRACT_GIVING
            (Cobol.ADD,identifier_or_literals,identifier_or_literal,
-	    identifier_roundeds,
-	    size_error_clauses,ADDleft,end_addright)
+            identifier_roundeds,
+            size_error_clauses,ADDleft,end_addright)
 ))
  in (hojfelds_NT 10,(result,ADD1left,end_add1right),rest671) end
 | (686,(_,(_,_,end_addright as end_add1right))::(_,(
@@ -3802,8 +3802,8 @@ MlyValue.rounded rounded,_,_))::(_,(MlyValue.identifier identifier2,_,
 _))::_::(_,(MlyValue.identifier identifier1,_,_))::_::(_,(_,ADDleft
  as ADD1left,_))::rest671) => let val result=MlyValue.add_statement((
 Cobol.ADD_OR_SUBTRACT_CORRESPONDING
-		(Cobol.ADD,identifier1,identifier2,rounded,
-	         size_error_clauses,ADDleft,end_addright)
+                (Cobol.ADD,identifier1,identifier2,rounded,
+                 size_error_clauses,ADDleft,end_addright)
 ))
  in (hojfelds_NT 10,(result,ADD1left,end_add1right),rest671) end
 | (687,(_,(MlyValue.identifier_rounded identifier_rounded,_,
@@ -3811,7 +3811,7 @@ identifier_rounded1right))::(_,(MlyValue.identifier_roundeds
 identifier_roundeds,identifier_roundeds1left,_))::rest671) => let val 
 result=MlyValue.identifier_roundeds((
 Cobol.SEVERAL_IDENTIFIER_ROUNDEDS(identifier_roundeds,
-					     identifier_rounded)
+                                             identifier_rounded)
 ))
  in (hojfelds_NT 236,(result,identifier_roundeds1left,
 identifier_rounded1right),rest671) end
@@ -3915,9 +3915,9 @@ MlyValue.identifier_roundeds identifier_roundeds,_,_))::(_,(_,
 COMPUTEleft as COMPUTE1left,_))::rest671) => let val result=
 MlyValue.compute_statement((
 Cobol.COMPUTE(identifier_roundeds,
-				   arithmetic_expression,
-				   size_error_clauses,
-				   COMPUTEleft,end_computeright)
+                                   arithmetic_expression,
+                                   size_error_clauses,
+                                   COMPUTEleft,end_computeright)
 ))
  in (hojfelds_NT 72,(result,COMPUTE1left,end_compute1right),rest671)
  end
@@ -3969,9 +3969,9 @@ MlyValue.identifier_or_literal identifier_or_literal1,_,_))::(_,(_,
 DIVIDEleft as DIVIDE1left,_))::rest671) => let val result=
 MlyValue.divide_statement((
 Cobol.DIVIDE_INTO_GIVING
-			    (identifier_or_literal1,identifier_or_literal2,
-			     identifier_roundeds, size_error_clauses,
-			     DIVIDEleft,end_divideright)
+                            (identifier_or_literal1,identifier_or_literal2,
+                             identifier_roundeds, size_error_clauses,
+                             DIVIDEleft,end_divideright)
 ))
  in (hojfelds_NT 127,(result,DIVIDE1left,end_divide1right),rest671) end
 | (724,(_,(_,_,end_divideright as end_divide1right))::(_,(
@@ -3982,9 +3982,9 @@ MlyValue.identifier_or_literal identifier_or_literal1,_,_))::(_,(_,
 DIVIDEleft as DIVIDE1left,_))::rest671) => let val result=
 MlyValue.divide_statement((
 Cobol.DIVIDE_BY_GIVING
-			    (identifier_or_literal1,identifier_or_literal2,
-			     identifier_roundeds,size_error_clauses,
-			     DIVIDEleft,end_divideright)
+                            (identifier_or_literal1,identifier_or_literal2,
+                             identifier_roundeds,size_error_clauses,
+                             DIVIDEleft,end_divideright)
 ))
  in (hojfelds_NT 127,(result,DIVIDE1left,end_divide1right),rest671) end
 | (725,(_,(_,_,end_divideright as end_divide1right))::(_,(
@@ -3996,9 +3996,9 @@ MlyValue.identifier_or_literal identifier_or_literal1,_,_))::(_,(_,
 DIVIDEleft as DIVIDE1left,_))::rest671) => let val result=
 MlyValue.divide_statement((
 Cobol.DIVIDE_INTO_GIVING_REMAINDER
-			    (identifier_or_literal1,identifier_or_literal2,
-			     identifier_roundeds,identifier,size_error_clauses,
-			     DIVIDEleft,end_divideright)
+                            (identifier_or_literal1,identifier_or_literal2,
+                             identifier_roundeds,identifier,size_error_clauses,
+                             DIVIDEleft,end_divideright)
 ))
  in (hojfelds_NT 127,(result,DIVIDE1left,end_divide1right),rest671) end
 | (726,(_,(_,_,end_divideright as end_divide1right))::(_,(
@@ -4010,9 +4010,9 @@ MlyValue.identifier_or_literal identifier_or_literal1,_,_))::(_,(_,
 DIVIDEleft as DIVIDE1left,_))::rest671) => let val result=
 MlyValue.divide_statement((
 Cobol.DIVIDE_BY_GIVING_REMAINDER
-			    (identifier_or_literal1,identifier_or_literal2,
-			     identifier_roundeds,identifier,size_error_clauses,
-			     DIVIDEleft,end_divideright)
+                            (identifier_or_literal1,identifier_or_literal2,
+                             identifier_roundeds,identifier,size_error_clauses,
+                             DIVIDEleft,end_divideright)
 ))
  in (hojfelds_NT 127,(result,DIVIDE1left,end_divide1right),rest671) end
 | (727,(_,(_,_,routine_name_opt1right))::_::(_,(_,ENTER1left,_))::
@@ -4268,7 +4268,7 @@ MlyValue.identifier_or_literal identifier_or_literal,_,_))::(_,(_,
 MULTIPLYleft as MULTIPLY1left,_))::rest671) => let val result=
 MlyValue.multiply_statement((
 Cobol.MULTIPLY(identifier_or_literal,identifier_roundeds
-			  ,size_error_clauses,MULTIPLYleft,end_multiplyright)
+                          ,size_error_clauses,MULTIPLYleft,end_multiplyright)
 ))
  in (hojfelds_NT 317,(result,MULTIPLY1left,end_multiply1right),rest671)
  end
@@ -4280,8 +4280,8 @@ MlyValue.identifier_or_literal identifier_or_literal1,_,_))::(_,(_,
 MULTIPLYleft as MULTIPLY1left,_))::rest671) => let val result=
 MlyValue.multiply_statement((
 Cobol.MULTIPLY_GIVING(identifier_or_literal1,identifier_or_literal2
-				 ,identifier_roundeds,size_error_clauses
-				 ,MULTIPLYleft,end_multiplyright)
+                                 ,identifier_roundeds,size_error_clauses
+                                 ,MULTIPLYleft,end_multiplyright)
 ))
  in (hojfelds_NT 317,(result,MULTIPLY1left,end_multiply1right),rest671)
  end
@@ -4592,8 +4592,8 @@ MlyValue.identifier_or_literals identifier_or_literals,_,_))::(_,(_,
 SUBTRACTleft as SUBTRACT1left,_))::rest671) => let val result=
 MlyValue.subtract_statement((
 Cobol.ADD_OR_SUBTRACT
-		    (Cobol.SUBTRACT,identifier_or_literals,identifier_roundeds,
-		     size_error_clauses,
+                    (Cobol.SUBTRACT,identifier_or_literals,identifier_roundeds,
+                     size_error_clauses,
                      SUBTRACTleft,end_subtractright)
 ))
  in (hojfelds_NT 473,(result,SUBTRACT1left,end_subtract1right),rest671)
@@ -4607,8 +4607,8 @@ SUBTRACTleft as SUBTRACT1left,_))::rest671) => let val result=
 MlyValue.subtract_statement((
 Cobol.ADD_OR_SUBTRACT_GIVING
            (Cobol.SUBTRACT,identifier_or_literals,identifier_or_literal,
-	    identifier_roundeds,
-	    size_error_clauses,SUBTRACTleft,end_subtractright)
+            identifier_roundeds,
+            size_error_clauses,SUBTRACTleft,end_subtractright)
 ))
  in (hojfelds_NT 473,(result,SUBTRACT1left,end_subtract1right),rest671)
  end
@@ -4619,8 +4619,8 @@ _))::_::(_,(MlyValue.identifier identifier1,_,_))::_::(_,(_,
 SUBTRACTleft as SUBTRACT1left,_))::rest671) => let val result=
 MlyValue.subtract_statement((
 Cobol.ADD_OR_SUBTRACT_CORRESPONDING
-		(Cobol.SUBTRACT,identifier1,identifier2,rounded,
-	         size_error_clauses,SUBTRACTleft,end_subtractright)
+                (Cobol.SUBTRACT,identifier1,identifier2,rounded,
+                 size_error_clauses,SUBTRACTleft,end_subtractright)
 ))
  in (hojfelds_NT 473,(result,SUBTRACT1left,end_subtract1right),rest671)
  end
@@ -4868,4 +4868,4 @@ result=MlyValue.ntVOID(())
 val void = MlyValue.VOID
 val extract = fn a => (fn MlyValue.test_cobol x => x
 | _ => let exception ParseInternal
-	in raise ParseInternal end) a 
+        in raise ParseInternal end) a 

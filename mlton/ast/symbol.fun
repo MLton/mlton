@@ -11,8 +11,8 @@ struct
 open S
 
 datatype t = T of {hash: word,
-		   name: string,
-		   plist: PropertyList.t}
+                   name: string,
+                   plist: PropertyList.t}
 
 local
    fun make f (T r) = f r
@@ -31,8 +31,8 @@ fun fromString s =
       HashSet.lookupOrInsert
       (table, hash, fn T {name, ...} => s = name,
        fn () => T {hash = hash,
-		   name = s,
-		   plist = PropertyList.new ()})
+                   name = s,
+                   plist = PropertyList.new ()})
    end
 
 fun foreach f = HashSet.foreach (table, f)

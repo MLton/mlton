@@ -8,7 +8,7 @@ fun check' f = (if f () then "OK" else "WRONG") handle _ => "EXN";
 fun range (from, to) p = 
     let open Int 
     in
-	(from > to) orelse (p from) andalso (range (from+1, to) p)
+        (from > to) orelse (p from) andalso (range (from+1, to) p)
     end;
 
 fun checkrange bounds = check o range bounds;
@@ -75,7 +75,7 @@ val f = extract (e, 100, SOME 3);
 val test9 = check'(fn _ => f = b);
 val _ = prtest("test9", test9);
 val test9a = check'(fn _ => e = extract(e, 0, SOME (length e)) 
-		    andalso e = extract(e, 0, NONE));
+                    andalso e = extract(e, 0, NONE));
 val _ = prtest("test9a", test9a);
 val test9b = check'(fn _ => fromList [] = extract(e, 100, SOME 0));
 val _ = prtest("test9b", test9b);
@@ -98,19 +98,19 @@ val test9h = (extract(e, length e + 1, NONE)  seq "WRONG")
              handle Subscript => "OK" | _ => "WRONG"
 val _ = prtest("test9h", test9h);
 val test9i = check'(fn _ => fromList [] = extract(e, length e, SOME 0)
-		    andalso fromList [] = extract(e, length e, NONE));
+                    andalso fromList [] = extract(e, length e, NONE));
 val _ = prtest("test9i", test9i);
 fun chkiter iter f vec reslast =
     check'(fn _ =>
-	   let val last = ref ~1
-	       val res = iter (fn x => (last := x; f x)) vec
-	   in (res, !last) = reslast end)
+           let val last = ref ~1
+               val res = iter (fn x => (last := x; f x)) vec
+           in (res, !last) = reslast end)
 
 fun chkiteri iter f vec reslast =
     check'(fn _ =>
-	   let val last = ref ~1
-	       val res = iter (fn (i, x) => (last := i; f x)) vec
-	   in (res, !last) = reslast end)
+           let val last = ref ~1
+               val res = iter (fn (i, x) => (last := i; f x)) vec
+           in (res, !last) = reslast end)
 
 val test10a = 
     chkiter map (fn x => 2*x) b (fromList [88,110,132], 66)

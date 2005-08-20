@@ -8,7 +8,7 @@ val rec depth: int t -> int =
    fn R _ => 0
     | L (R z) => 1 + depth z
     | _ => raise Match
-	 
+         
 val n = depth (build 13)
 val _ =
    if n = 13
@@ -26,11 +26,11 @@ val rec build: int -> int t =
 val _ = f 13
   *) 
 (*
-	 
+         
 val rec f =
    fn R _ => 0
     | L (R z) => 1 + f z
-	 
+         
 val v0: int t = R 13
 val v2: int t t = R v0
 val v1: int t = L (v2: int t t)

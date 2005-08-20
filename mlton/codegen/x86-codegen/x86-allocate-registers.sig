@@ -20,7 +20,7 @@ signature X86_ALLOCATE_REGISTERS =
     include X86_ALLOCATE_REGISTERS_STRUCTS
 
     val allocateRegisters : {assembly: x86.Assembly.t list list,
-			     liveness: bool} -> 
+                             liveness: bool} -> 
                             x86.Assembly.t list list
 
     val allocateRegisters_totals : unit -> unit

@@ -9,7 +9,7 @@ signature MLTON_IO_ARG =
    sig
       type instream
       type outstream
-	 
+         
       val inFd: instream -> Posix.IO.file_desc
       val newIn: Posix.IO.file_desc * string -> instream
       val newOut: Posix.IO.file_desc * string -> outstream

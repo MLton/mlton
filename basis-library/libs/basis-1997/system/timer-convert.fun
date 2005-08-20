@@ -13,9 +13,9 @@ functor TimerConvert
 
      val checkCPUTimer = fn cput =>
        let
-	 val {usr, sys} = checkCPUTimer cput
-	 val gc = checkGCTime cput
+         val {usr, sys} = checkCPUTimer cput
+         val gc = checkGCTime cput
        in
-	 {usr = usr, sys = sys, gc = gc}
+         {usr = usr, sys = sys, gc = gc}
        end
   end

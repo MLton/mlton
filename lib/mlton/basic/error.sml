@@ -12,9 +12,9 @@ fun bug msg = raise (Fail msg)
 
 fun reraise (exn, msg) =
    bug (concat [msg, "::",
-		case exn of
-		   Fail msg => msg
-		 | _ => "?"])
+                case exn of
+                   Fail msg => msg
+                 | _ => "?"])
 
 fun unimplemented msg = raise Fail (concat ["unimplemented: ", msg])
 

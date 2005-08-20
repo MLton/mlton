@@ -21,7 +21,7 @@ local
    fun extract (arr, s, l) = ArraySlice.vector (ArraySlice.slice (arr, s, l))
    val copy = fn {src, si, len, dst, di} =>
       ArraySlice.copy {src = ArraySlice.slice (src, si, len),
-		       dst = dst, di = di}
+                       dst = dst, di = di}
    fun appi f (arr, s, l) = 
       ArraySlice.appi (fn (i,x) => f (i+s,x)) (ArraySlice.slice (arr, s, l))
 
@@ -40,7 +40,7 @@ local
 
    val a4 = array (10,47)
    val _ = copy {src = a3, si = 10, len = SOME 3,
-		dst = a4, di = 1}
+                dst = a4, di = 1}
 
    val a5 = array (100, 0)
    val _ = appi (fn (i,_) => update (a5,i,i)) (a5, 0, NONE)
@@ -65,33 +65,33 @@ local
    fun swap (a,i,j) =
       let val t = sub (a,i)
       in update (a, i, sub (a,j)) ;
-	 update (a, j, t)
+         update (a, j, t)
       end
    
    fun bubbleSort (a, op <) =
       let val n = length a
-	 fun loop i =
-	    if i = n
-	       then ()
-	    else (let
-		     fun loop j =
-			if j = 0
-			   then ()
-			else if sub (a,j) < sub (a,j-1)
-				then (swap (a,j,j-1) ; loop (j-1))
-			     else ()
-		  in loop i
-		  end ;
-		     loop (i+1))
+         fun loop i =
+            if i = n
+               then ()
+            else (let
+                     fun loop j =
+                        if j = 0
+                           then ()
+                        else if sub (a,j) < sub (a,j-1)
+                                then (swap (a,j,j-1) ; loop (j-1))
+                             else ()
+                  in loop i
+                  end ;
+                     loop (i+1))
       in loop 0
       end
 
    fun isSorted (a, op <=) =
       let
-	 val max = length a - 1
-	 fun loop i =
-	    i = max orelse (sub (a, i) <= sub (a, i + 1)
-			    andalso loop (i + 1))
+         val max = length a - 1
+         fun loop i =
+            i = max orelse (sub (a, i) <= sub (a, i + 1)
+                            andalso loop (i + 1))
       in loop 0
       end
 

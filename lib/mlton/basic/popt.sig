@@ -16,18 +16,18 @@ signature POPT =
       datatype t =
          (* one arg: a boolean (true, false), after a space *)
          Bool of bool -> unit
-	 (* one arg: an integer, after a space *)
+         (* one arg: an integer, after a space *)
        | Digit of int -> unit
-	 (* one arg: an integer followed by tional k or m. *)
+         (* one arg: an integer followed by tional k or m. *)
        | Int of int -> unit
-	 (* one arg: a single digit, no space. *)
+         (* one arg: a single digit, no space. *)
        | Mem of int -> unit
-	 (* no args *)
+         (* no args *)
        | None of unit -> unit
        | Real of real -> unit
-	 (* Any string immediately follows the switch. *)
+         (* Any string immediately follows the switch. *)
        | String of string -> unit
-	 (* one arg: any string *)
+         (* one arg: any string *)
        | SpaceString of string -> unit
        | SpaceString2 of string * string -> unit
 
@@ -38,7 +38,7 @@ signature POPT =
       val trueRef: bool ref -> t
 
       val trace: string * t
-	 
+         
       (* Parse the switches, applying the first matching t to each switch,
        * and return any remaining args.
        * Returns NONE if it encounters an error.
@@ -49,21 +49,21 @@ signature POPT =
        * then parse will call f() and return "bar".
        *)
       val parse:
-	 {
-	  switches: string list,
-	  opts: (string * t) list
-	 }
-	 -> string list Result.t
+         {
+          switches: string list,
+          opts: (string * t) list
+         }
+         -> string list Result.t
 
       datatype optionStyle = Normal | Expert
       val makeUsage: {mainUsage: string,
-		      makeOptions: ({usage: string -> unit}
-				    -> {style: optionStyle,
-					name: string,
-					arg: string,
-					desc: string,
-					opt: t} list),
-		      showExpert: unit -> bool
-		      } -> {parse: string list -> string list Result.t,
-			    usage: string -> unit}
+                      makeOptions: ({usage: string -> unit}
+                                    -> {style: optionStyle,
+                                        name: string,
+                                        arg: string,
+                                        desc: string,
+                                        opt: t} list),
+                      showExpert: unit -> bool
+                      } -> {parse: string list -> string list Result.t,
+                            usage: string -> unit}
    end

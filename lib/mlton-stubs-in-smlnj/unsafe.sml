@@ -17,10 +17,10 @@ functor ConvertMonoArray (A: UNSAFE_MONO_ARRAY) =
    end
 
 functor ConvertMonoVector (V: sig
-			       type vector
-			       type elem
-			       val sub: vector * Int31.int -> elem
-			      end) =
+                               type vector
+                               type elem
+                               val sub: vector * Int31.int -> elem
+                              end) =
    struct
       open V
 
@@ -33,20 +33,20 @@ structure Unsafe =
       open Unsafe
 
       structure Array =
-	 struct
-	    open Array
+         struct
+            open Array
 
-	    val create = fn (i, x) => create (toInt i, x)
-	    val sub = fn (a, i) => sub (a, toInt i)
-	    val update = fn (a, i, x) => update (a, toInt i, x)
-	 end
+            val create = fn (i, x) => create (toInt i, x)
+            val sub = fn (a, i) => sub (a, toInt i)
+            val update = fn (a, i, x) => update (a, toInt i, x)
+         end
 
       structure Vector =
-	 struct
-	    open Vector
+         struct
+            open Vector
 
-	    val sub = fn (a, i) => sub (a, toInt i)
-	 end
+            val sub = fn (a, i) => sub (a, toInt i)
+         end
 
       structure CharVector = ConvertMonoVector (CharVector)
       structure Word8Vector = ConvertMonoVector (Word8Vector)

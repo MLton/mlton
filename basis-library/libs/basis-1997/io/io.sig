@@ -1,8 +1,8 @@
 signature IO_1997 =
    sig
       exception Io of {cause: exn,
-		       function: string,
-		       name: string}
+                       function: string,
+                       name: string}
       exception BlockingNotSupported
       exception NonblockingNotSupported
       exception RandomAccessNotSupported

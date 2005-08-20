@@ -15,9 +15,9 @@ val isEmpty = List.isEmpty o toList
 fun layout e =
    let open Layout
    in seq[str "[",
-	  align(List.map(toList e, fn (d, r) =>
-			 seq[Domain.layout d, str " -> ", Range.layout r])),
-	  str"]"]
+          align(List.map(toList e, fn (d, r) =>
+                         seq[Domain.layout d, str " -> ", Range.layout r])),
+          str"]"]
    end
 
 val size = List.length o toList
@@ -47,8 +47,8 @@ fun remove(env, d) =
 fun lookup(env, d) = case peek(env, d) of
    SOME r => r
  | NONE => (Layout.output(Domain.layout d, Out.error) ;
-	    Out.newline Out.error ;
-	    Error.bug "BasicEnvToEnv.lookup")
+            Out.newline Out.error ;
+            Error.bug "BasicEnvToEnv.lookup")
 
 fun restrict(env, ds) = new(ds, fn d => lookup(env, d))
 
@@ -70,8 +70,8 @@ val equals =
    fn (e1, e2) =>
    size e1 = size e2
    andalso foralli(e1, fn (d, r) =>
-		   case peek(e2, d) of
-		      NONE => false
-		    | SOME r' => Range.equals(r, r'))
+                   case peek(e2, d) of
+                      NONE => false
+                    | SOME r' => Range.equals(r, r'))
    
 end

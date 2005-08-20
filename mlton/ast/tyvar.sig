@@ -30,7 +30,7 @@ signature TYVAR =
        * newString "''a" creates an equality type variable named a
        *)
       val newString: string * {left: SourcePos.t,
-			       right: SourcePos.t} -> t
+                               right: SourcePos.t} -> t
       val plist: t -> PropertyList.t
       (* reset the counter for new type variables *)
       val reset: unit -> unit 

@@ -90,15 +90,15 @@ structure OS =
       open OS
 
       structure FileSys =
-	 struct
-	    open FileSys
+         struct
+            open FileSys
 
-	    fun tmpName () =
-	       let
-		  val (f, out) = MLton.TextIO.mkstemp "/tmp/file"
-		  val _ = TextIO.closeOut out
-	       in
-		  f
-	       end
-	 end
+            fun tmpName () =
+               let
+                  val (f, out) = MLton.TextIO.mkstemp "/tmp/file"
+                  val _ = TextIO.closeOut out
+               in
+                  f
+               end
+         end
    end

@@ -12,19 +12,19 @@
 #define ROUNDING_CONTROL_SHIFT 10
 
 int fegetround () {
-	unsigned short controlWord;
+        unsigned short controlWord;
 
-	_FPU_GETCW (controlWord);
-	return (controlWord & ROUNDING_CONTROL_MASK) >> ROUNDING_CONTROL_SHIFT;
+        _FPU_GETCW (controlWord);
+        return (controlWord & ROUNDING_CONTROL_MASK) >> ROUNDING_CONTROL_SHIFT;
 }
 
 static inline void fesetround (int mode) {
-	unsigned short controlWord;
+        unsigned short controlWord;
 
-	_FPU_GETCW (controlWord);
-	controlWord &= ~ROUNDING_CONTROL_MASK;
-	controlWord |= mode << ROUNDING_CONTROL_SHIFT;
-	_FPU_SETCW (controlWord);
+        _FPU_GETCW (controlWord);
+        controlWord &= ~ROUNDING_CONTROL_MASK;
+        controlWord |= mode << ROUNDING_CONTROL_SHIFT;
+        _FPU_SETCW (controlWord);
 }
 
 #else
@@ -36,10 +36,10 @@ static inline void fesetround (int mode) {
 #endif
 
 Int IEEEReal_getRoundingMode () {
-	return fegetround ();
+        return fegetround ();
 }
 
 void IEEEReal_setRoundingMode (Int m) {
-	assert (m != FE_NOSUPPORT);
-	fesetround (m);
+        assert (m != FE_NOSUPPORT);
+        fesetround (m);
 }

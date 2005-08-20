@@ -16,7 +16,7 @@ signature C_TYPE =
       include C_TYPE_STRUCTS
 
       datatype t =
-	 Int8
+         Int8
        | Int16
        | Int32
        | Int64

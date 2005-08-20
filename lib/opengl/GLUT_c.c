@@ -60,7 +60,7 @@ Pointer mlton_glut_stroke_mono_roman(void)
 {
   return ((Pointer) GLUT_STROKE_MONO_ROMAN);
 }
-	    
+            
 Pointer mlton_glut_bitmap_9_by_15(void)
 {
   return ((Pointer) GLUT_BITMAP_9_BY_15);

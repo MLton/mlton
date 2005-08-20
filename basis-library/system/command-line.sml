@@ -9,9 +9,9 @@
 structure CommandLine: COMMAND_LINE =
    struct
       structure Prim = Primitive.CommandLine
-	 
+         
       fun name () = C.CS.toString (Prim.commandName ())
 
       fun arguments () =
-	 Array.toList (C.CSS.toArrayOfLength (Prim.argv (), Prim.argc ()))
+         Array.toList (C.CSS.toArrayOfLength (Prim.argv (), Prim.argc ()))
    end

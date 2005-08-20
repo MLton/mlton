@@ -22,14 +22,14 @@ signature CONST =
       structure ConstType: CONST_TYPE
 
       structure SmallIntInf:
-	 sig
-	    val fromWord: word -> IntInf.t
-	    val isSmall: IntInf.t -> bool
-	    val toWord: IntInf.t -> word option
-	 end
+         sig
+            val fromWord: word -> IntInf.t
+            val isSmall: IntInf.t -> bool
+            val toWord: IntInf.t -> word option
+         end
 
       datatype t =
-	 IntInf of IntInf.t
+         IntInf of IntInf.t
        | Real of RealX.t
        | Word of WordX.t
        | WordVector of WordXVector.t
@@ -42,7 +42,7 @@ signature CONST =
        * _command_line_const.  It is set in main/compile.fun.
        *)
       val lookup: ({default: string option,
-		    name: string} * ConstType.t -> t) ref
+                    name: string} * ConstType.t -> t) ref
       val real: RealX.t -> t
       val string: string -> t
       val toString: t -> string

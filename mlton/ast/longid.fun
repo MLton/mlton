@@ -12,7 +12,7 @@ struct
 open S
 
 datatype node = T of {strids: Strid.t list,
-		      id: Id.t}
+                      id: Id.t}
    
 type node' = node
 structure Wrap = Region.Wrap
@@ -32,7 +32,7 @@ fun prepend (id, strid) =
       val (T {strids, id}, region) = dest id
    in
       makeRegion (T {strids = strid :: strids, id = id},
-		 region)
+                 region)
    end
 
 fun prepends (id, strids') =
@@ -40,7 +40,7 @@ fun prepends (id, strids') =
       val (T {strids, id}, region) = dest id
    in
       makeRegion (T {strids = strids' @ strids, id = id},
-		 region)
+                 region)
    end
 
 fun isLong id =
@@ -68,9 +68,9 @@ val equals =
    
 fun long (strids, id) =
    makeRegion (T {strids = strids, id = id},
-	       case strids of
-		  [] => Id.region id
-		| s :: _ => Region.append (Strid.region s, Id.region id))
+               case strids of
+                  [] => Id.region id
+                | s :: _ => Region.append (Strid.region s, Id.region id))
 
 fun short id = long ([], id)
 
@@ -80,10 +80,10 @@ fun layout id =
       open Layout
    in
       seq [case strids of
-	      [] => empty
-	    | _ => seq [seq (separate (List.map (strids, Strid.layout), ".")),
-			str "."],
-	   Id.layout id]
+              [] => empty
+            | _ => seq [seq (separate (List.map (strids, Strid.layout), ".")),
+                        str "."],
+           Id.layout id]
    end
 
 val toString = Layout.toString o layout
@@ -93,9 +93,9 @@ fun fromSymbols (ss: Symbol.t list, region: Region.t): t =
       val (strids, id) = List.splitLast ss
    in
       makeRegion (T {strids = List.map (strids, fn s =>
-					Strid.fromSymbol (s, region)),
-		     id = Id.fromSymbol (id, region)},
-		  region)
+                                        Strid.fromSymbol (s, region)),
+                     id = Id.fromSymbol (id, region)},
+                  region)
    end
 
 val bogus = short Id.bogus

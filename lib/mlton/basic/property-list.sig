@@ -20,17 +20,17 @@ signature PROPERTY_LIST =
       val new: unit -> t
       (* create a new property *)
       val newProperty:
-	 unit -> {
+         unit -> {
                   (* See if a property is in a property list.
-		   * NONE if it isn't.
-		   *)
-		  peek: t -> 'a option,
-		  (* Add the value of the property -- must not already exist. *)
-		  add: t * 'a -> unit,
-		  (* Remove a property from a property list.
-		   * Noop if the property isn't there.
-		   *)
-		  remove: t -> unit
-		  }
+                   * NONE if it isn't.
+                   *)
+                  peek: t -> 'a option,
+                  (* Add the value of the property -- must not already exist. *)
+                  add: t * 'a -> unit,
+                  (* Remove a property from a property list.
+                   * Noop if the property isn't there.
+                   *)
+                  remove: t -> unit
+                  }
       val stats: unit -> Layout.t
    end

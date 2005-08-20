@@ -8,7 +8,7 @@
 signature RESULT =
    sig
       datatype 'a t =
-	 No of string
+         No of string
        | Yes of 'a
 
       val isNo: 'a t -> bool

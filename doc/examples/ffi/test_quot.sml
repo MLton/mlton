@@ -28,6 +28,6 @@ val bad_z =
 
 val () = 
    print (concat [" bad_z = ", Int8.toString bad_z, "\n",
-		  "     z = ", Int8.toString z, "\n",
-		  "   c_z = ", Int8.toString c_z, "\n"])
+                  "     z = ", Int8.toString z, "\n",
+                  "   c_z = ", Int8.toString c_z, "\n"])
 val () = call_sml_quot ()

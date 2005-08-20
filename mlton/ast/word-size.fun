@@ -35,9 +35,9 @@ val one = fromBits (Bits.fromInt 1)
 val byte = fromBits (Bits.fromInt 8)
 
 val allVector = Vector.tabulate (65, fn i =>
-				  if isValidSize i
-				     then SOME (fromBits (Bits.fromInt i))
-				  else NONE)
+                                  if isValidSize i
+                                     then SOME (fromBits (Bits.fromInt i))
+                                  else NONE)
 
 val all: t list = Vector.toList (Vector.keepAllMap (allVector, fn so => so))
 
@@ -59,15 +59,15 @@ fun roundUpToPrim s =
    let
       val bits = Bits.toInt (bits s)
       val bits =
-	 if bits <= 8
-	    then 8
-	 else if bits <= 16
-		 then 16
-	      else if bits <= 32
-		      then 32
-		   else if bits = 64
-			   then 64
-			else Error.bug "WordSize.roundUpToPrim"
+         if bits <= 8
+            then 8
+         else if bits <= 16
+                 then 16
+              else if bits <= 32
+                      then 32
+                   else if bits = 64
+                           then 64
+                        else Error.bug "WordSize.roundUpToPrim"
    in
       fromBits (Bits.fromInt bits)
    end
@@ -79,11 +79,11 @@ fun cardinality s = IntInf.<< (1, Bits.toWord (bits s))
 fun range (s, {signed}) =
    if signed
       then
-	 let
-	    val pow = IntInf.pow (2, Bits.toInt (bits s) - 1)
-	 in
-	    (~ pow, pow - 1)
-	 end
+         let
+            val pow = IntInf.pow (2, Bits.toInt (bits s) - 1)
+         in
+            (~ pow, pow - 1)
+         end
    else (0, cardinality s - 1)
 
 val min = #1 o range
@@ -103,7 +103,7 @@ fun primOpt (s: t): prim option =
       val b = Bits.toInt (bits s)
    in
       List.peekMap ([(8, W8), (16, W16), (32, W32), (64, W64)],
-		    fn (b', p) => if b = b' then SOME p else NONE)
+                    fn (b', p) => if b = b' then SOME p else NONE)
    end
 
 fun prim s =

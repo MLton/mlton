@@ -65,39 +65,39 @@ signature POSIX_ERROR_EXTRA =
       val raiseSys: syserror -> 'a
 
       structure SysCall :
-	 sig
-	    val blocker: (unit -> (unit -> unit)) ref
-	    val restartFlag: bool ref
+         sig
+            val blocker: (unit -> (unit -> unit)) ref
+            val restartFlag: bool ref
 
-	    val syscallErr: 
-	       {clear: bool, restart: bool} * 
-	       (unit -> {return: int,
-			 post: unit -> 'a,
-			 handlers: (syserror * (unit -> 'a)) list}) -> 'a
+            val syscallErr: 
+               {clear: bool, restart: bool} * 
+               (unit -> {return: int,
+                         post: unit -> 'a,
+                         handlers: (syserror * (unit -> 'a)) list}) -> 'a
 
-	    (* clear = false, restart = false,
-	     * post = fn () => (), handlers = []
-	     *)
-	    val simple: (unit -> int) -> unit
-	    (* clear = false, restart = true,
-	     * post = fn () => (), handlers = []
-	     *)
-	    val simpleRestart: (unit -> int) -> unit
-	    (* clear = false, restart = false,
-	     * post = fn () => return, handlers = []
-	     *)
-	    val simpleResult: (unit -> int) -> int
-	    (* clear = false, restart = true,
-	     * post = fn () => return, handlers = []
-	     *)
-	    val simpleResultRestart: (unit -> int) -> int
-	    (* clear = false, restart = false,
-	     * handlers = []
-	     *)
-	    val syscall: (unit -> int * (unit -> 'a)) -> 'a
-	    (* clear = false, restart = true,
-	     * handlers = []
-	     *)
-	    val syscallRestart: (unit -> int * (unit -> 'a)) -> 'a
-	 end
+            (* clear = false, restart = false,
+             * post = fn () => (), handlers = []
+             *)
+            val simple: (unit -> int) -> unit
+            (* clear = false, restart = true,
+             * post = fn () => (), handlers = []
+             *)
+            val simpleRestart: (unit -> int) -> unit
+            (* clear = false, restart = false,
+             * post = fn () => return, handlers = []
+             *)
+            val simpleResult: (unit -> int) -> int
+            (* clear = false, restart = true,
+             * post = fn () => return, handlers = []
+             *)
+            val simpleResultRestart: (unit -> int) -> int
+            (* clear = false, restart = false,
+             * handlers = []
+             *)
+            val syscall: (unit -> int * (unit -> 'a)) -> 'a
+            (* clear = false, restart = true,
+             * handlers = []
+             *)
+            val syscallRestart: (unit -> int * (unit -> 'a)) -> 'a
+         end
    end

@@ -7,9 +7,9 @@
  *)
 
 functor UseName(S: sig
-		       include T
-		       val sameName: t * t -> bool
-		    end): T =
+                       include T
+                       val sameName: t * t -> bool
+                    end): T =
    struct
       open S
       val equals = sameName

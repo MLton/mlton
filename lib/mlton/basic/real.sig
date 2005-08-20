@@ -10,14 +10,14 @@ type int = Int.t
 signature REAL =
    sig
       structure Format:
-	 sig
-	    type t
+         sig
+            type t
 
-	    val exact: t
-	    val fix: int option -> t
-	    val gen: int option -> t
-	    val sci: int option -> t
-	 end
+            val exact: t
+            val fix: int option -> t
+            val gen: int option -> t
+            val sci: int option -> t
+         end
 
       type t
       exception Input
@@ -38,14 +38,14 @@ signature REAL =
       val ceiling: t -> int
       val choose: t * t -> t
       structure Class:
-	 sig
-	     datatype t =
-		INF
-	      | NAN
-	      | NORMAL
-	      | SUBNORMAL
-	      | ZERO
-	 end
+         sig
+             datatype t =
+                INF
+              | NAN
+              | NORMAL
+              | SUBNORMAL
+              | ZERO
+         end
       val class: t -> Class.t
       val compare: t * t -> Relation.t
       val cos: t -> t

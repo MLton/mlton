@@ -17,7 +17,7 @@ structure Spec = struct
     type tag = string
 
     datatype basic_ctype =
-	SCHAR | UCHAR 
+        SCHAR | UCHAR 
       | SSHORT | USHORT 
       | SINT | UINT 
       | SLONG | ULONG
@@ -40,75 +40,75 @@ structure Spec = struct
     and cobj = constness * ctype
 
     datatype fieldspec =
-	OFIELD of { offset: int, spec: cobj, synthetic: bool }
+        OFIELD of { offset: int, spec: cobj, synthetic: bool }
       | SBF of { offset: int, constness: constness, bits: word, shift: word }
       | UBF of { offset: int, constness: constness, bits: word, shift: word }
 
     type field = { name: string, spec: fieldspec }
 
     type s =
-	 { src: string,
-	   tag: tag, 
-	   anon: bool, 
-	   size: word, 
-	   fields: field list,
-	   exclude: bool }
+         { src: string,
+           tag: tag, 
+           anon: bool, 
+           size: word, 
+           fields: field list,
+           exclude: bool }
     type u =
-	 { src: string,
-	   tag: tag, 
-	   anon: bool, 
-	   size: word, 
-	   all: field list,
-	   exclude: bool }
+         { src: string,
+           tag: tag, 
+           anon: bool, 
+           size: word, 
+           all: field list,
+           exclude: bool }
 
     type gty = { src: string, name: string, spec: ctype }
 
     type gvar = { src: string, name: string, spec: cobj }
 
     type gfun = { src: string,
-		  name: string, 
-		  spec: cft, 
-		  argnames: string list option }
+                  name: string, 
+                  spec: cft, 
+                  argnames: string list option }
 
     type enumval = { name: string, spec: LargeInt.int }
 
     type enum = { src: string,
-		  tag: tag, 
-		  anon: bool, 
-		  descr: string, 
-		  spec: enumval list,
-		  exclude: bool }
+                  tag: tag, 
+                  anon: bool, 
+                  descr: string, 
+                  spec: enumval list,
+                  exclude: bool }
 
     type spec = { structs: s list,
-		  unions: u list,
-		  gtys: gty list,
-		  gvars: gvar list,
-		  gfuns: gfun list,
-		  enums: enum list }
+                  unions: u list,
+                  gtys: gty list,
+                  gvars: gvar list,
+                  gfuns: gfun list,
+                  enums: enum list }
 
     fun join (x: spec, y: spec) = let
-	fun uniq sel = let
-	    fun loop ([], a) = rev a
-	      | loop (h :: t, a) =
-		loop (t, if List.exists
-				(fn x => (sel x : string) = sel h) a then a
-			 else h :: a)
-	in
-	    loop
-	end
+        fun uniq sel = let
+            fun loop ([], a) = rev a
+              | loop (h :: t, a) =
+                loop (t, if List.exists
+                                (fn x => (sel x : string) = sel h) a then a
+                         else h :: a)
+        in
+            loop
+        end
     in
-	{ structs = uniq #tag (#structs x, #structs y),
-	  unions = uniq #tag (#unions x, #unions y),
-	  gtys = uniq #name (#gtys x, #gtys y),
-	  gvars = uniq #name (#gvars x, #gvars y),
-	  gfuns = uniq #name (#gfuns x, #gfuns y),
-	  enums = uniq #tag (#enums x, #enums y) } : spec
+        { structs = uniq #tag (#structs x, #structs y),
+          unions = uniq #tag (#unions x, #unions y),
+          gtys = uniq #name (#gtys x, #gtys y),
+          gvars = uniq #name (#gvars x, #gvars y),
+          gfuns = uniq #name (#gfuns x, #gfuns y),
+          enums = uniq #tag (#enums x, #enums y) } : spec
     end
 
     val empty : spec = { structs = [], 
-			 unions = [], 
-			 gtys = [], 
-			 gvars = [],
-			 gfuns = [], 
-			 enums = [] }
+                         unions = [], 
+                         gtys = [], 
+                         gvars = [],
+                         gfuns = [], 
+                         enums = [] }
 end

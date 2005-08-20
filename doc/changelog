@@ -32,24 +32,24 @@ Here are the changes since version 20041109.
     Deprecated: allowExport, allowImport, warnMatch
     Added: allowFFI, nonexhaustiveExnMatch, nonexhaustiveMatch, 
       redundantMatch
-	
+        
 * 2005-08-01
   - Update mllex and mlyacc with SML/NJ 110.55+ versions.  This 
     incorporates a small number of minor bug fixes.
 
 * 2005-07-23
   - Fixed bug in pass to flatten refs into containing data structure.
-	
+        
 * 2005-07-23
   - Overhaul of FFI.
     Deprecated _import of C base types.
     Added _symbol for address, getter, and setter of C base types.
     See documentation for more detail.
-	
+        
 * 2005-07-21
   - Update mllex and mlyacc with SML/NJ 110.55 versions.  This 
     incorporates a small number of minor bug fixes.
-	
+        
 * 2005-07-20
   - Fixed bug in front end that allowed unary constructors to be used
     without an argument in patterns.
@@ -202,7 +202,7 @@ Summary:
 
 * 2004-09-22
   - Extended _import to support indirect function calls.
-	
+        
 * 2004-09-13
   - Made Date.{fromString,scan} accept a space (treated as zero) in
     the first character of the day of the month.
@@ -229,7 +229,7 @@ Summary:
 * 2004-08-18
   - Changed MLton.{Thread,Signal,World} to distinguish between 
     implicitly and explicitly paused threads.
-	
+        
 * 2004-07-28
   - Added support for programming in the large using the ML Basis
     system.
@@ -266,7 +266,7 @@ Summary:
 * 2004-05-17
   - Automatically restart functions in the Basis Library that correspond
     directly to interruptable system calls.
-	
+        
 * 2004-05-13
   - Added -profile count, for dynamic counts of function calls and branches.
   - Equate the types Posix.Signal.signal and Unix.signal.
@@ -284,7 +284,7 @@ Summary:
 
 * 2004-04-30
   - Added MLton.Signal.{handled,restart}.
-	
+        
 * 2004-04-23
   - Added Timer.checkCPUTimes, and updated the Timer structure to
     match the latest basis spec.  Also fixed totalCPUTimer and
@@ -292,7 +292,7 @@ Summary:
 
 * 2004-04-13
   - Added MLton.Signal.Mask.{getBlocked,isMember}.
-	
+        
 * 2004-04-12
   - Fix bug that mistakenly generalized variable types containing
     unknown types when matching against a signature.
@@ -605,7 +605,7 @@ Summary:
 * 2003-06-25
   - Added {Int{8,16},Word8}{,Array,ArraySlice,Vector,VectorSlice,Array2}
     structures.
-	
+        
 * 2003-06-25
   - Fixed bug in IntInf.sign, which returned the wrong value for zero.
 
@@ -614,9 +614,9 @@ Summary:
 
 * 2003-06-18
   - Regularization of options.
-	-diag --> -diag-pass
-	-drop-pass takes a regexp
-	
+        -diag --> -diag-pass
+        -drop-pass takes a regexp
+        
 * 2003-06-06
   - Fixed bug in OS.IO.poll that caused it to return the input event
     types polled for instead of what was actually available.
@@ -624,13 +624,13 @@ Summary:
 * 2003-06-04
   - Fixed bug in known case SSA optimization that could case incorrect 
     results in compiled programs.
-	
+        
 * 2003-06-03
   - Fixed bug in SSA optimizer that could cause the error message
-	Type error: Type.equals
-	{from = char vector, to = unit vector}
-	Type error: analyze raised exception loopStatement: ...
-	unhandled exception: TypeError
+        Type error: Type.equals
+        {from = char vector, to = unit vector}
+        Type error: analyze raised exception loopStatement: ...
+        unhandled exception: TypeError
 
 * 2003-06-02
   - Fixed Real.rem to work correctly on infs and nans.
@@ -683,7 +683,7 @@ Summary:
   - Fixed bug in HashType that raised "Vector.forall2" when the 
     arity of a type constructor is changed by simplifyTypes, but
     a newly constructed type has the same hash value.
-	
+        
 * 2003-05-02
   - Switched over to new layered IO implementation, which completes
     the implementation of the BinIO and TextIO modules.
@@ -692,7 +692,7 @@ Summary:
   - Fixed bug that caused an assertion failure when generating a jump 
     table for a case dispatch on a non-word sized index with non-zero
     lower bound on the range.
-	
+        
 * 2003-04-24
   - Added -align {4|8}, which controls alignment of objects.  With
     -align 8, memory accesses to doubles are guaranteed to be aligned
@@ -739,21 +739,21 @@ Summary:
 
 * 2003-02-11
   - Regularization of options.
-	-l --> -link
-	-L --> -lib-search
-	-o --> -output
-	-v --> -verbose
+        -l --> -link
+        -L --> -lib-search
+        -o --> -output
+        -v --> -verbose
 
 * 2003-02-10
   - Added option to mlton: -profile-combine {false|true}
 
 * 2003-02-09
   - Added options to mlprof: -graph-title, -gray, -ignore, -mlmon,
-	-tolerant.
+        -tolerant.
 
 * 2002-11 - 2003-01
   - Added source-level allocation and time profiling.  This includes
-	the new options to mlton: -profile and -profile-stack.
+        the new options to mlton: -profile and -profile-stack.
 
 * 2002-12-28
   - Added NetHostDB,NetProtDB,NetServDB structures.
@@ -766,7 +766,7 @@ Summary:
 
 * 2002-12-10
   - Fixed bug in runtime that might cause the message
-	Unable to set cardMapForMutator.
+        Unable to set cardMapForMutator.
 
 * 2002-11-23
   - Added support for the latest Basis Library specification.
@@ -778,7 +778,7 @@ Summary:
   - Added OS.IO.{pollIn,pollOut,pollPri,poll,isIn,isOut,isPri} values.
   - Added BinPrimIO,TextPrimIO structures.
   - Added StreamIO,ImperativeIO functors.
-	
+        
 * 2002-11-22
   - Fixed bug that caused time profiling to fail (with a segfault) when resuming
     a saved world. 
@@ -846,7 +846,7 @@ Summary:
     
 * 2002-08-20
   - Fixed SSA optimizer bug that could cause the following error message
-	x_0 has no analyze var value property 
+        x_0 has no analyze var value property 
 
 * 2002-07-28
   - Added MLton.GC.{pack,unpack}.  pack shrinks the heap so that other processes
@@ -867,7 +867,7 @@ Summary:
 
 * 2002-05-31
   - Fixed bug in overloading of / so that the following now type checks:
-	fun f (x, y) = x + y / y
+        fun f (x, y) = x + y / y
 
 * 2002-04-26
   - Added back max-heap runtime option.
@@ -895,9 +895,9 @@ Here are the changes from version 20011006 to version 20020410.
 
 * 2002-03-27
   - Regularization of options
-	-g	-->	-degug {false|true}
-	-h n	--> 	-fixed-heap n
-	-p 	--> 	-profile {false|true}
+        -g        -->        -degug {false|true}
+        -h n        -->         -fixed-heap n
+        -p         -->         -profile {false|true}
 
 * 2002-03-22
   - Set up the stubs so that MLton can be compiled in the standard basis
@@ -1025,20 +1025,20 @@ Summary:
 
 * 2001-10-5
   - Fixed a bug in polymorphic layered patterns, like
-	val 'a a as b = []
+        val 'a a as b = []
     These would always fail due to the variable "a" not being handled correctly.
   - Fixed the syntax of "val rec" so that a pattern is allowed on the left-hand
     side of the =.  Thus, we used to reject, but now accept, the following.
-	val rec a as b as c = fn _ => ()
-	val rec a : unit -> unit : unit -> unit = fn () => ()
+        val rec a as b as c = fn _ => ()
+        val rec a : unit -> unit : unit -> unit = fn () => ()
     Thanks again to Andreas Rossberg's test files.  This is now tested for in
     valrec.sml.
   - Fixed dynamic semantics of "val rec" so that if "val rec" is used to
     override constructor status, then at run time, the Bind exception is raised
     as per rule 126 of the Definition.  So, for example, the following program
     type checks and compiles, but raises Bind at run time.
-	val rec NONE = fn () => ()
-	val _ = NONE ()
+        val rec NONE = fn () => ()
+        val _ = NONE ()
     Again, this is checked in valrec.sml.
   - Added '\r\n' to ml.lex so that Windows style newlines are acceptable in 
     input files.
@@ -1086,15 +1086,15 @@ Summary:
 
 * 2001-8-22
   - Added support for #line directives of the form
-	(*#line line.col "file"*)
+        (*#line line.col "file"*)
     These directives only affect error messages produced by the parser and 
     elaborator.   
 
 * 2001-8-17
   - Fixed bug in removeUnused optimzation that caused the following program to
     fail to compile.
-	fun f l = case l of [] => f l | _ :: l => f l
-	val _ = f [13]
+        fun f l = case l of [] => f l | _ :: l => f l
+        val _ = f [13]
 
 * 2001-8-14
   - New x86-codegen infrastructure.
@@ -1166,23 +1166,23 @@ Summary:
     values in the stack across basic blocks.
   - Added production to the grammar on page 58 of the Definition that had been
     missing from MLton since day one.
-		program ::= exp ; <program>
+                program ::= exp ; <program>
     Also updated docs to reflect change.
   - Modified grammar to accept the empty program.
   - Added -type-check expert flag to turn on type checking in ILs.
 
 * 2001-7-15
   - Bug fix to the algebraic simplifier.  It had been rewriting
-		Word32.andb (w, 0wxFF) to w
+                Word32.andb (w, 0wxFF) to w
     instead of  Word32.andb (w, 0wxFFFFFFFF) to w.
 
 * 2001-7-13
   - Improved CPS shrinker so that if-tests where the then and else branch jump
     to the same label is turned into a direct jump.
   - Improved CPS shrinker (Prim.apply) to handle constructors
-	A = A --> true
- 	A = B --> false
-	A x = B y --> false
+        A = A --> true
+         A = B --> false
+        A x = B y --> false
   - Rewrote a lot of loops in the basis library to use inequalities instead of
     equality for the loop termination test so that the (forthcoming) overflow
     detection elimination will work on the loop index variable.
@@ -1260,44 +1260,44 @@ Summary:
   - Fixed bug in remove-unused that caused polymorphic equality to return 
     true sometimes when constructors were never used in a pattern match.
     For example, the following (in which A and B are not used as patterns):
-	datatype t = A | B
-	datatype u = C of t
-	val _ = if C A = C B then raise Fail "bug" else ()
+        datatype t = A | B
+        datatype u = C of t
+        val _ = if C A = C B then raise Fail "bug" else ()
 
 * 2001-3-27
   - Fixed bug that caused all of the following to fail
-	{LargeWord,Word,SysWord}.{toLargeInt,toLargeIntX,fromLargeInt}
+        {LargeWord,Word,SysWord}.{toLargeInt,toLargeIntX,fromLargeInt}
     The problem was the basis library file integer/patch.sml which fixed Word32
     but not the other structures that are the same.
 
 * 2001-2-12
   - Fixed bug in match compiler that caused it to spend a lot of extra time in
-	deep patterns.  It still could be exponential however.  Hopefully this
-	will get fixed in the release after next.
-	This bug could cause very slow compile times in some cases.
-	Anyways, this fix cut the "finish infer" time of a self compile down
-	from 22 to under 4 seconds.  I.E. most of the time used to be spent due
-	to this bug.
+        deep patterns.  It still could be exponential however.  Hopefully this
+        will get fixed in the release after next.
+        This bug could cause very slow compile times in some cases.
+        Anyways, this fix cut the "finish infer" time of a self compile down
+        from 22 to under 4 seconds.  I.E. most of the time used to be spent due
+        to this bug.
 
 * 2001-2-6
   - Fixed bug in frontend that caused the wrong file and line number to be
-	reported with errors in functor bodys.
+        reported with errors in functor bodys.
 
 * 2001-1-3 - 2000-2-5
   - Changes to CoreML, XML, SXML, and CPS ILs to replace lists by vectors in
-	order to decrease space usage.
+        order to decrease space usage.
 
 * 2001-1-16
   - Fixed a bug in constant propagation where the length of vectors was not
-	propagated properly.
+        propagated properly.
 
 * 2000-12-11 - 2001-1-3
   - Major rewrite of elaborator to use a single hash table for each namespace
-	instead of a hash table for every environment.
+        instead of a hash table for every environment.
 
 * 2000-12-20
   - Fixed some bugs in the SML/NJ compatibility library,
-	src/lib/mlton-subs-in-smlnj.
+        src/lib/mlton-subs-in-smlnj.
 
 * 2000-12-8
   - More careful removal of tracing code when compiling MLton_debug=0.
@@ -1340,13 +1340,13 @@ Summary:
 
 * 2000-11-15
   - Fixed a (performance) bug in constant propagation that caused the hashing
-	to be bad.
+        to be bad.
   - Improved translation to XML so that the match compiler isn't called on
-	tuple or if expressions.  This should speed up the translation and
-	make the output smaller.
+        tuple or if expressions.  This should speed up the translation and
+        make the output smaller.
   - Fixed a bug in the match compiler that caused it to not generate integer
-	case statements.  This should speed up the mlyacc benchmark and the 
-	MLton front end.
+        case statements.  This should speed up the mlyacc benchmark and the 
+        MLton front end.
 
 * 2000-11-9
   - Added IntInf_equal and IntInf_compare primitives.
@@ -1392,11 +1392,11 @@ Summary:
     hand generated ones.  Took out make depend from src/Makefile.  makedepend
     was behaving really badly on RHAT 7.0.
   - Tweaked compiler to shorten width of C output lines to work around
-	bug in RHAT 7.0 cpp which silently truncates (very) long lines.
+        bug in RHAT 7.0 cpp which silently truncates (very) long lines.
   - Fixed bug in grammar that didn't allow "op" to occur in datatype and 
     exception bindings, causing the following to fail
-	datatype t = op T
-	exception op E = op Fail
+        datatype t = op T
+        exception op E = op Fail
   - Improved error messages in CM processor.  Fixed bug in CM Alias handling.
 
 * 2000-10-18
@@ -1477,8 +1477,8 @@ Here are the changes from the 20000712 version to the 20000906 version.
 
 * 2000-9-6
   - Fixed Socket_listen in mlton-lib.c so that it closes the socket if the 
-	bind, listen, or getsockname fails.  This could have caused a file
-	descriptor leak.
+        bind, listen, or getsockname fails.  This could have caused a file
+        descriptor leak.
 
 * 2000-9-5
   - Added -static commandline switch.
@@ -1543,7 +1543,7 @@ Here are the changes from the 20000712 version to the 20000906 version.
 
 * 2000-8-3
   - Fixed bug in constant folding.  
-	Word8.>> had been used to implement Word8.~>>.
+        Word8.>> had been used to implement Word8.~>>.
   - Fixed bug in allocate registers that was not forcing the size argument to
     Primitive.Array.array to be a stack slot.  This could cause problems if
     there was a thread switch in the limit check, since upon return the size
@@ -1591,7 +1591,7 @@ Here are the changes from the 1999-7-12 to the 20000712 version.
 
 * 2000-6-10 - 2000-7-12
   Too many changes to count: bug fixes, new basis library modules,
-	optimizer improvements.
+        optimizer improvements.
 * 2000-6-30
   Fixed bug in monomorphiser that caused programs with non-value
   carrying exception declarations in polymorphic functions to have a
@@ -1601,12 +1601,12 @@ Here are the changes from the 1999-7-12 to the 20000712 version.
   Finished the changes for the new Cps IL.
 * 2000-1-1
   Fixed some errors in the basis library.
-	Real.copySign
-	Posix.FileSys.fpathconf
-	Posix.IO.{lseek, getlk, setlk, setlkw}
-	Posix.ProcEnv.setpgid
-	Posix.TTY.getattr
-	System.FileSys.realPath
+        Real.copySign
+        Posix.FileSys.fpathconf
+        Posix.IO.{lseek, getlk, setlk, setlkw}
+        Posix.ProcEnv.setpgid
+        Posix.TTY.getattr
+        System.FileSys.realPath
 * 1999-12-22
   Fixed bug in src/closure-convert/abstract-value.fun that caused a
   compiler failure whenever a program had a vector where the element
@@ -1641,14 +1641,14 @@ Here are the changes from the 1999-7-12 to the 20000712 version.
 * 1999-11-21
   - Runtime system
     o Fixed a bug introduced by the signal code
-	(presumably on 1999-8-9) that caused a gc to *not* be performed when
-	doing a save world.  This caused the heaps created by save world to
-	be the same size as the heap -- not the live data.  This was quite
-	bad. 
+        (presumably on 1999-8-9) that caused a gc to *not* be performed when
+        doing a save world.  This caused the heaps created by save world to
+        be the same size as the heap -- not the live data.  This was quite
+        bad. 
     o Cleaned up the Makefile.  Add make depend.
     o Added max gc pause to gc-summary info.
     o Move heap translation variables that had been file statics into
-	the GC_state.
+        the GC_state.
   - Made structure Position available at toplevel.
   - Basis Library
     o Added MLton.loadWorld
@@ -1745,14 +1745,14 @@ Here are the changes from the 1999-3-19 version to the 1999-7-12 version.
   frequent.
 * 1999-6-27
   Fixed src/main.sml so that when compiling -p, the .c file is compiled 
-	-g and the .o is linked -p. 
+        -g and the .o is linked -p. 
   In bakend/machine.fun, added profiling comments before chunkswitches 
-	and put in an optimization to avoid printing repeated profiling
-	comments.  Also, profiling comments are only output when
-	compiling -p.
+        and put in an optimization to avoid printing repeated profiling
+        comments.  Also, profiling comments are only output when
+        compiling -p.
 * 1999-6-17
   Changed -i to -inline, -f to -flatten, -np to -no-polyvariance, 
-	-u to -unsafe.
+        -u to -unsafe.
   Added -i, -I, -l, -L flags for includes and libraries.
   Updated documentation for these options and for ffi.
 * 1999-6-16
@@ -1767,7 +1767,7 @@ Here are the changes from the 1999-3-19 version to the 1999-7-12 version.
      added #include <math.h>
      and deleted all of the function signatures I had copied from math.h
   Changed Real.{minNormalPos, minPos, maxFinite} so that they are
-	computed in real.sml instead of appearing as constants in the C.
+        computed in real.sml instead of appearing as constants in the C.
 * 1999-6-7
   IntInf.pow added to basis library.
 * 1999-6-4

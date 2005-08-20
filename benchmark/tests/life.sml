@@ -14,17 +14,17 @@ structure Main : BMARK =
     fun error str = raise ex_undefined str
 
     fun accumulate f = let
-	  fun foldf a [] = a
+          fun foldf a [] = a
             | foldf a (b::x) = foldf (f a b) x
           in
-	    foldf
-	  end
+            foldf
+          end
 
     fun filter p = let
-	  fun consifp x a = if p a then a::x else x
+          fun consifp x a = if p a then a::x else x
           in
-	    rev o accumulate consifp []
-	  end
+            rev o accumulate consifp []
+          end
 
 
     fun exists p = let fun existsp [] = false
@@ -71,7 +71,7 @@ structure Main : BMARK =
                    if member x3 a then f (a::xover) x3 x2 x1 x else
                    if member x2 a then f xover (a::x3) x2 x1 x else
                    if member x1 a then f xover x3 (a::x2) x1 x else
-		                       f xover x3 x2 (a::x1) x
+                                       f xover x3 x2 (a::x1) x
               and diff x y = filter (not o member y) x
            in f [] [] [] [] x end
      in 
@@ -84,16 +84,16 @@ structure Main : BMARK =
                   val isalive = member living
                   val liveneighbours = length o filter isalive o neighbours
                   fun twoorthree n = n=2 orelse n=3
-	          val survivors = filter (twoorthree o liveneighbours) living
-	          val newnbrlist = collect (filter (not o isalive) o neighbours) living
-	          val newborn = occurs3 newnbrlist
-	       in mkgen (survivors @ newborn) end
+                  val survivors = filter (twoorthree o liveneighbours) living
+                  val newnbrlist = collect (filter (not o isalive) o neighbours) living
+                  val newborn = occurs3 newnbrlist
+               in mkgen (survivors @ newborn) end
      end
     end
 
     fun neighbours (i,j) = [(i-1,j-1),(i-1,j),(i-1,j+1),
-			    (i,j-1),(i,j+1),
-			    (i+1,j-1),(i+1,j),(i+1,j+1)]
+                            (i,j-1),(i,j+1),
+                            (i+1,j-1),(i+1,j),(i+1,j+1)]
 
     local val xstart = 0 and ystart = 0
           fun markafter n string = string ^ spaces n ^ "0"
@@ -126,7 +126,7 @@ structure Main : BMARK =
        end
 
     val genB = mkgen(glider at (2,2) @ bail at (2,12)
-		     @ rotate (barberpole 4) at (5,20))
+                     @ rotate (barberpole 4) at (5,20))
 
     fun nthgen g 0 = g | nthgen g i = nthgen (mk_nextgen_fn neighbours g) (i-1)
 
@@ -144,11 +144,11 @@ structure Main : BMARK =
     val doit =
        fn size =>
        let
-	  fun loop n =
-	     if n = 0
-		then ()
-	     else (doit();
-		   loop(n-1))
+          fun loop n =
+             if n = 0
+                then ()
+             else (doit();
+                   loop(n-1))
        in loop size
        end
     

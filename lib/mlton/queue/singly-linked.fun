@@ -15,7 +15,7 @@ structure P = Pointer
 structure E = SimpleSinglyLinkedElement
 
 datatype 'a t = T of {head: 'a E.t P.t,
-		      tail: 'a E.t P.t}
+                      tail: 'a E.t P.t}
 
 fun empty() = T{head = P.null(), tail = P.null()}
 

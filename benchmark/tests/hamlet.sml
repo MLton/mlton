@@ -84,15 +84,15 @@ signature LIB_BASE =
   sig
 
     exception Unimplemented of string
-	(* raised to report unimplemented features *)
+        (* raised to report unimplemented features *)
     exception Impossible of string
-	(* raised to report internal errors *)
+        (* raised to report internal errors *)
 
     exception NotFound
-	(* raised by searching operations *)
+        (* raised by searching operations *)
 
     val failure : {module : string, func : string, msg : string} -> 'a
-	(* raise the exception Fail with a standard format message. *)
+        (* raise the exception Fail with a standard format message. *)
 
     val version : {date : string, system : string, version_id : int list}
     val banner : string
@@ -120,21 +120,21 @@ structure LibBase : LIB_BASE =
 
   (* raise the exception Fail with a standard format message. *)
     fun failure {module, func, msg} =
-	  raise (Fail(concat[module, ".", func, ": ", msg]))
+          raise (Fail(concat[module, ".", func, ": ", msg]))
 
     val version = {
-	    date = "June 1, 1996", 
-	    system = "SML/NJ Library",
-	    version_id = [1, 0]
-	  }
+            date = "June 1, 1996", 
+            system = "SML/NJ Library",
+            version_id = [1, 0]
+          }
 
     fun f ([], l) = l
       | f ([x : int], l) = (Int.toString x)::l
       | f (x::r, l) = (Int.toString x) :: "." :: f(r, l)
 
     val banner = concat (
-	    #system version :: ", Version " ::
-	    f (#version_id version, [", ", #date version]))
+            #system version :: ", Version " ::
+            f (#version_id version, [", ", #date version]))
 
   end (* LibBase *)
 
@@ -156,94 +156,94 @@ signature ORD_MAP =
     type 'a map
 
     val empty : 'a map
-	(* The empty map *)
+        (* The empty map *)
 
     val isEmpty : 'a map -> bool
-	(* Return true if and only if the map is empty *)
+        (* Return true if and only if the map is empty *)
 
     val singleton : (Key.ord_key * 'a) -> 'a map
-	(* return the specified singleton map *)
+        (* return the specified singleton map *)
 
     val insert  : 'a map * Key.ord_key * 'a -> 'a map
     val insert' : ((Key.ord_key * 'a) * 'a map) -> 'a map
-	(* Insert an item. *)
+        (* Insert an item. *)
 
     val find : 'a map * Key.ord_key -> 'a option
-	(* Look for an item, return NONE if the item doesn't exist *)
+        (* Look for an item, return NONE if the item doesn't exist *)
 
     val inDomain : ('a map * Key.ord_key) -> bool
-	(* return true, if the key is in the domain of the map *)
+        (* return true, if the key is in the domain of the map *)
 
     val remove : 'a map * Key.ord_key -> 'a map * 'a
-	(* Remove an item, returning new map and value removed.
+        (* Remove an item, returning new map and value removed.
          * Raises LibBase.NotFound if not found.
-	 *)
+         *)
 
     val first : 'a map -> 'a option
     val firsti : 'a map -> (Key.ord_key * 'a) option
-	(* return the first item in the map (or NONE if it is empty) *)
+        (* return the first item in the map (or NONE if it is empty) *)
 
     val numItems : 'a map ->  int
-	(* Return the number of items in the map *)
+        (* Return the number of items in the map *)
 
     val listItems  : 'a map -> 'a list
     val listItemsi : 'a map -> (Key.ord_key * 'a) list
-	(* Return an ordered list of the items (and their keys) in the map. *)
+        (* Return an ordered list of the items (and their keys) in the map. *)
 
     val listKeys : 'a map -> Key.ord_key list
-	(* return an ordered list of the keys in the map. *)
+        (* return an ordered list of the keys in the map. *)
 
     val collate : ('a * 'a -> order) -> ('a map * 'a map) -> order
-	(* given an ordering on the map's range, return an ordering
-	 * on the map.
-	 *)
+        (* given an ordering on the map's range, return an ordering
+         * on the map.
+         *)
 
     val unionWith  : ('a * 'a -> 'a) -> ('a map * 'a map) -> 'a map
     val unionWithi : (Key.ord_key * 'a * 'a -> 'a) -> ('a map * 'a map) -> 'a map
-	(* return a map whose domain is the union of the domains of the two input
-	 * maps, using the supplied function to define the map on elements that
-	 * are in both domains.
-	 *)
+        (* return a map whose domain is the union of the domains of the two input
+         * maps, using the supplied function to define the map on elements that
+         * are in both domains.
+         *)
 
     val intersectWith  : ('a * 'b -> 'c) -> ('a map * 'b map) -> 'c map
     val intersectWithi : (Key.ord_key * 'a * 'b -> 'c) -> ('a map * 'b map) -> 'c map
-	(* return a map whose domain is the intersection of the domains of the
-	 * two input maps, using the supplied function to define the range.
-	 *)
+        (* return a map whose domain is the intersection of the domains of the
+         * two input maps, using the supplied function to define the range.
+         *)
 
     val app  : ('a -> unit) -> 'a map -> unit
     val appi : ((Key.ord_key * 'a) -> unit) -> 'a map -> unit
-	(* Apply a function to the entries of the map in map order. *)
+        (* Apply a function to the entries of the map in map order. *)
 
     val map  : ('a -> 'b) -> 'a map -> 'b map
     val mapi : (Key.ord_key * 'a -> 'b) -> 'a map -> 'b map
-	(* Create a new map by applying a map function to the
+        (* Create a new map by applying a map function to the
          * name/value pairs in the map.
          *)
 
     val foldl  : ('a * 'b -> 'b) -> 'b -> 'a map -> 'b
     val foldli : (Key.ord_key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
-	(* Apply a folding function to the entries of the map
+        (* Apply a folding function to the entries of the map
          * in increasing map order.
          *)
 
     val foldr  : ('a * 'b -> 'b) -> 'b -> 'a map -> 'b
     val foldri : (Key.ord_key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
-	(* Apply a folding function to the entries of the map
+        (* Apply a folding function to the entries of the map
          * in decreasing map order.
          *)
 
     val filter  : ('a -> bool) -> 'a map -> 'a map
     val filteri : (Key.ord_key * 'a -> bool) -> 'a map -> 'a map
-	(* Filter out those elements of the map that do not satisfy the
-	 * predicate.  The filtering is done in increasing map order.
-	 *)
+        (* Filter out those elements of the map that do not satisfy the
+         * predicate.  The filtering is done in increasing map order.
+         *)
 
     val mapPartial  : ('a -> 'b option) -> 'a map -> 'b map
     val mapPartiali : (Key.ord_key * 'a -> 'b option) -> 'a map -> 'b map
-	(* map a partial function over the elements of a map in increasing
-	 * map order.
-	 *)
+        (* map a partial function over the elements of a map in increasing
+         * map order.
+         *)
 
   end (* ORD_MAP *)
 (* stop of smlnj-lib/Util/ord-map-sig.sml *)
@@ -269,8 +269,8 @@ signature ORD_MAP =
  *      University of Southampton
  *   Address:  Electronics & Computer Science
  *             University of Southampton
- *	     Southampton  SO9 5NH
- *	     Great Britian
+ *             Southampton  SO9 5NH
+ *             Great Britian
  *   E-mail:   sra@ecs.soton.ac.uk
  *
  *   Comments:
@@ -309,7 +309,7 @@ functor BinaryMapFn (K : ORD_KEY) : ORD_MAP =
           cnt : int, 
           left : 'a map, 
           right : 'a map
-	}
+        }
 
     val empty = E
 
@@ -414,136 +414,136 @@ in
     fun insert' ((k, x), m) = insert(m, k, x)
 
     fun inDomain (set, x) = let 
-	  fun mem E = false
-	    | mem (T(n as {key,left,right,...})) = (case K.compare (x,key)
-		 of GREATER => mem right
-		  | EQUAL => true
-		  | LESS => mem left
-		(* end case *))
-	  in
-	    mem set
-	  end
+          fun mem E = false
+            | mem (T(n as {key,left,right,...})) = (case K.compare (x,key)
+                 of GREATER => mem right
+                  | EQUAL => true
+                  | LESS => mem left
+                (* end case *))
+          in
+            mem set
+          end
 
     fun find (set, x) = let 
-	  fun mem E = NONE
-	    | mem (T(n as {key,left,right,...})) = (case K.compare (x,key)
-		 of GREATER => mem right
-		  | EQUAL => SOME(#value n)
-		  | LESS => mem left
-		(* end case *))
-	  in
-	    mem set
-	  end
+          fun mem E = NONE
+            | mem (T(n as {key,left,right,...})) = (case K.compare (x,key)
+                 of GREATER => mem right
+                  | EQUAL => SOME(#value n)
+                  | LESS => mem left
+                (* end case *))
+          in
+            mem set
+          end
 
     fun remove (E,x) = raise LibBase.NotFound
       | remove (set as T{key,left,right,value,...},x) = (
           case K.compare (key,x)
-	   of GREATER => let
-		val (left', v) = remove(left, x)
-		in
-		  (T'(key, value, left', right), v)
-		end
+           of GREATER => let
+                val (left', v) = remove(left, x)
+                in
+                  (T'(key, value, left', right), v)
+                end
             | LESS => let
-		val (right', v) = remove (right, x)
-		in
-		  (T'(key, value, left, right'), v)
-		end
+                val (right', v) = remove (right, x)
+                in
+                  (T'(key, value, left, right'), v)
+                end
             | _ => (delete'(left,right),value)
-	  (* end case *))
+          (* end case *))
 
     fun listItems d = let
-	  fun d2l (E, l) = l
-	    | d2l (T{key,value,left,right,...}, l) =
-		d2l(left, value::(d2l(right,l)))
-	  in
-	    d2l (d,[])
-	  end
+          fun d2l (E, l) = l
+            | d2l (T{key,value,left,right,...}, l) =
+                d2l(left, value::(d2l(right,l)))
+          in
+            d2l (d,[])
+          end
 
     fun listItemsi d = let
-	  fun d2l (E, l) = l
-	    | d2l (T{key,value,left,right,...}, l) =
-		d2l(left, (key,value)::(d2l(right,l)))
-	  in
-	    d2l (d,[])
-	  end
+          fun d2l (E, l) = l
+            | d2l (T{key,value,left,right,...}, l) =
+                d2l(left, (key,value)::(d2l(right,l)))
+          in
+            d2l (d,[])
+          end
 
     fun listKeys d = let
-	  fun d2l (E, l) = l
-	    | d2l (T{key,left,right,...}, l) = d2l(left, key::(d2l(right,l)))
-	  in
-	    d2l (d,[])
-	  end
+          fun d2l (E, l) = l
+            | d2l (T{key,left,right,...}, l) = d2l(left, key::(d2l(right,l)))
+          in
+            d2l (d,[])
+          end
 
     local
       fun next ((t as T{right, ...})::rest) = (t, left(right, rest))
-	| next _ = (E, [])
+        | next _ = (E, [])
       and left (E, rest) = rest
-	| left (t as T{left=l, ...}, rest) = left(l, t::rest)
+        | left (t as T{left=l, ...}, rest) = left(l, t::rest)
     in
     fun collate cmpRng (s1, s2) = let
-	  fun cmp (t1, t2) = (case (next t1, next t2)
-		 of ((E, _), (E, _)) => EQUAL
-		  | ((E, _), _) => LESS
-		  | (_, (E, _)) => GREATER
-		  | ((T{key=x1, value=y1, ...}, r1), (T{key=x2, value=y2, ...}, r2)) => (
-		      case Key.compare(x1, x2)
-		       of EQUAL => (case cmpRng(y1, y2)
-			     of EQUAL => cmp (r1, r2)
-			      | order => order
-			    (* end case *))
-			| order => order
-		      (* end case *))
-		(* end case *))
-	  in
-	    cmp (left(s1, []), left(s2, []))
-	  end
+          fun cmp (t1, t2) = (case (next t1, next t2)
+                 of ((E, _), (E, _)) => EQUAL
+                  | ((E, _), _) => LESS
+                  | (_, (E, _)) => GREATER
+                  | ((T{key=x1, value=y1, ...}, r1), (T{key=x2, value=y2, ...}, r2)) => (
+                      case Key.compare(x1, x2)
+                       of EQUAL => (case cmpRng(y1, y2)
+                             of EQUAL => cmp (r1, r2)
+                              | order => order
+                            (* end case *))
+                        | order => order
+                      (* end case *))
+                (* end case *))
+          in
+            cmp (left(s1, []), left(s2, []))
+          end
     end (* local *)
 
     fun appi f d = let
-	  fun app' E = ()
-	    | app' (T{key,value,left,right,...}) = (
-		app' left; f(key, value); app' right)
-	  in
-	    app' d
-	  end
+          fun app' E = ()
+            | app' (T{key,value,left,right,...}) = (
+                app' left; f(key, value); app' right)
+          in
+            app' d
+          end
     fun app f d = let
-	  fun app' E = ()
-	    | app' (T{value,left,right,...}) = (
-		app' left; f value; app' right)
-	  in
-	    app' d
-	  end
+          fun app' E = ()
+            | app' (T{value,left,right,...}) = (
+                app' left; f value; app' right)
+          in
+            app' d
+          end
 
     fun mapi f d = let
-	  fun map' E = E
-	    | map' (T{key,value,left,right,cnt}) = let
-		val left' = map' left
-		val value' = f(key, value)
-		val right' = map' right
-		in
-		  T{cnt=cnt, key=key, value=value', left = left', right = right'}
-		end
-	  in
-	    map' d
-	  end
+          fun map' E = E
+            | map' (T{key,value,left,right,cnt}) = let
+                val left' = map' left
+                val value' = f(key, value)
+                val right' = map' right
+                in
+                  T{cnt=cnt, key=key, value=value', left = left', right = right'}
+                end
+          in
+            map' d
+          end
     fun map f d = mapi (fn (_, x) => f x) d
 
     fun foldli f init d = let
-	  fun fold (E, v) = v
-	    | fold (T{key,value,left,right,...}, v) =
-		fold (right, f(key, value, fold(left, v)))
-	  in
-	    fold (d, init)
-	  end
+          fun fold (E, v) = v
+            | fold (T{key,value,left,right,...}, v) =
+                fold (right, f(key, value, fold(left, v)))
+          in
+            fold (d, init)
+          end
     fun foldl f init d = foldli (fn (_, v, accum) => f (v, accum)) init d
 
     fun foldri f init d = let
-	  fun fold (E,v) = v
-	    | fold (T{key,value,left,right,...},v) =
-		fold (left, f(key, value, fold(right, v)))
-	  in
-	    fold (d, init)
-	  end
+          fun fold (E,v) = v
+            | fold (T{key,value,left,right,...},v) =
+                fold (left, f(key, value, fold(right, v)))
+          in
+            fold (d, init)
+          end
     fun foldr f init d = foldri (fn (_, v, accum) => f (v, accum)) init d
 
 (** To be implemented **
@@ -558,94 +558,94 @@ in
  * at some point.
  *)
     fun unionWith f (m1, m2) = let
-	  fun ins  f (key, x, m) = (case find(m, key)
-		 of NONE => insert(m, key, x)
-		  | (SOME x') => insert(m, key, f(x, x'))
-		(* end case *))
-	  in
-	    if (numItems m1 > numItems m2)
-	      then foldli (ins (fn (a, b) => f (b, a))) m1 m2
-	      else foldli (ins f) m2 m1
-	  end
+          fun ins  f (key, x, m) = (case find(m, key)
+                 of NONE => insert(m, key, x)
+                  | (SOME x') => insert(m, key, f(x, x'))
+                (* end case *))
+          in
+            if (numItems m1 > numItems m2)
+              then foldli (ins (fn (a, b) => f (b, a))) m1 m2
+              else foldli (ins f) m2 m1
+          end
     fun unionWithi f (m1, m2) = let
-	  fun ins f (key, x, m) = (case find(m, key)
-		 of NONE => insert(m, key, x)
-		  | (SOME x') => insert(m, key, f(key, x, x'))
-		(* end case *))
-	  in
-	    if (numItems m1 > numItems m2)
-	      then foldli (ins (fn (k, a, b) => f (k, b, a))) m1 m2
-	      else foldli (ins f) m2 m1
-	  end
+          fun ins f (key, x, m) = (case find(m, key)
+                 of NONE => insert(m, key, x)
+                  | (SOME x') => insert(m, key, f(key, x, x'))
+                (* end case *))
+          in
+            if (numItems m1 > numItems m2)
+              then foldli (ins (fn (k, a, b) => f (k, b, a))) m1 m2
+              else foldli (ins f) m2 m1
+          end
 
     fun intersectWith f (m1, m2) = let
-	(* iterate over the elements of m1, checking for membership in m2 *)
-	  fun intersect f (m1, m2) = let
-		fun ins (key, x, m) = (case find(m2, key)
-		       of NONE => m
-			| (SOME x') => insert(m, key, f(x, x'))
-		      (* end case *))
-		in
-		  foldli ins empty m1
-		end
-	  in
-	    if (numItems m1 > numItems m2)
-	      then intersect f (m1, m2)
-	      else intersect (fn (a, b) => f(b, a)) (m2, m1)
-	  end
+        (* iterate over the elements of m1, checking for membership in m2 *)
+          fun intersect f (m1, m2) = let
+                fun ins (key, x, m) = (case find(m2, key)
+                       of NONE => m
+                        | (SOME x') => insert(m, key, f(x, x'))
+                      (* end case *))
+                in
+                  foldli ins empty m1
+                end
+          in
+            if (numItems m1 > numItems m2)
+              then intersect f (m1, m2)
+              else intersect (fn (a, b) => f(b, a)) (m2, m1)
+          end
     fun intersectWithi f (m1, m2) = let
-	(* iterate over the elements of m1, checking for membership in m2 *)
-	  fun intersect f (m1, m2) = let
-		fun ins (key, x, m) = (case find(m2, key)
-		       of NONE => m
-			| (SOME x') => insert(m, key, f(key, x, x'))
-		      (* end case *))
-		in
-		  foldli ins empty m1
-		end
-	  in
-	    if (numItems m1 > numItems m2)
-	      then intersect f (m1, m2)
-	      else intersect (fn (k, a, b) => f(k, b, a)) (m2, m1)
-	  end
+        (* iterate over the elements of m1, checking for membership in m2 *)
+          fun intersect f (m1, m2) = let
+                fun ins (key, x, m) = (case find(m2, key)
+                       of NONE => m
+                        | (SOME x') => insert(m, key, f(key, x, x'))
+                      (* end case *))
+                in
+                  foldli ins empty m1
+                end
+          in
+            if (numItems m1 > numItems m2)
+              then intersect f (m1, m2)
+              else intersect (fn (k, a, b) => f(k, b, a)) (m2, m1)
+          end
 
   (* this is a generic implementation of filter.  It should
    * be specialized to the data-structure at some point.
    *)
     fun filter predFn m = let
-	  fun f (key, item, m) = if predFn item
-		then insert(m, key, item)
-		else m
-	  in
-	    foldli f empty m
-	  end
+          fun f (key, item, m) = if predFn item
+                then insert(m, key, item)
+                else m
+          in
+            foldli f empty m
+          end
     fun filteri predFn m = let
-	  fun f (key, item, m) = if predFn(key, item)
-		then insert(m, key, item)
-		else m
-	  in
-	    foldli f empty m
-	  end
+          fun f (key, item, m) = if predFn(key, item)
+                then insert(m, key, item)
+                else m
+          in
+            foldli f empty m
+          end
 
   (* this is a generic implementation of mapPartial.  It should
    * be specialized to the data-structure at some point.
    *)
     fun mapPartial f m = let
-	  fun g (key, item, m) = (case f item
-		 of NONE => m
-		  | (SOME item') => insert(m, key, item')
-		(* end case *))
-	  in
-	    foldli g empty m
-	  end
+          fun g (key, item, m) = (case f item
+                 of NONE => m
+                  | (SOME item') => insert(m, key, item')
+                (* end case *))
+          in
+            foldli g empty m
+          end
     fun mapPartiali f m = let
-	  fun g (key, item, m) = (case f(key, item)
-		 of NONE => m
-		  | (SOME item') => insert(m, key, item')
-		(* end case *))
-	  in
-	    foldli g empty m
-	  end
+          fun g (key, item, m) = (case f(key, item)
+                 of NONE => m
+                  | (SOME item') => insert(m, key, item')
+                (* end case *))
+          in
+            foldli g empty m
+          end
 
   end (* functor BinaryMapFn *)
 (* stop of smlnj-lib/Util/binary-map-fn.sml *)
@@ -666,14 +666,14 @@ signature FIN_MAP =
 
     include ORD_MAP
 
-    val fromList:	(Key.ord_key * 'a) list -> 'a map
+    val fromList:        (Key.ord_key * 'a) list -> 'a map
 
-    val all:		('a -> bool) -> 'a map -> bool
-    val exists:		('a -> bool) -> 'a map -> bool
-    val alli:		(Key.ord_key * 'a -> bool) -> 'a map -> bool
-    val existsi:	(Key.ord_key * 'a -> bool) -> 'a map -> bool
+    val all:                ('a -> bool) -> 'a map -> bool
+    val exists:                ('a -> bool) -> 'a map -> bool
+    val alli:                (Key.ord_key * 'a -> bool) -> 'a map -> bool
+    val existsi:        (Key.ord_key * 'a -> bool) -> 'a map -> bool
 
-    val disjoint:	'a map * 'a map -> bool
+    val disjoint:        'a map * 'a map -> bool
 
   end
 (* stop of FIN_MAP.sml *)
@@ -696,14 +696,14 @@ functor FinMapFn(Key: ORD_KEY) :> FIN_MAP where type Key.ord_key = Key.ord_key =
 
     open BinaryMap
 
-    fun fromList kvs	= List.foldl (fn((k, v),m) => insert(m, k, v)) empty kvs
+    fun fromList kvs        = List.foldl (fn((k, v),m) => insert(m, k, v)) empty kvs
 
-    fun all p		= foldl (fn(v, b) => b andalso p v) true
-    fun exists p	= foldl (fn(v, b) => b orelse p v) false
-    fun alli p		= foldli (fn(k, v, b) => b andalso p(k, v)) true
-    fun existsi p	= foldli (fn(k, v, b) => b orelse p(k, v)) false
+    fun all p                = foldl (fn(v, b) => b andalso p v) true
+    fun exists p        = foldl (fn(v, b) => b orelse p v) false
+    fun alli p                = foldli (fn(k, v, b) => b andalso p(k, v)) true
+    fun existsi p        = foldli (fn(k, v, b) => b orelse p(k, v)) false
 
-    fun disjoint(m1,m2)	= isEmpty(intersectWith #2 (m1, m2))
+    fun disjoint(m1,m2)        = isEmpty(intersectWith #2 (m1, m2))
 
   end
 (* stop of FinMapFn.sml *)
@@ -724,16 +724,16 @@ signature ID =
 
     (* Type [Section 2.4] *)
 
-    eqtype Id					(* [id] *)
+    eqtype Id                                        (* [id] *)
 
     (* Operations *)
 
-    val invent:		unit -> Id
+    val invent:                unit -> Id
 
-    val fromString:	string -> Id
-    val toString:	Id -> string
+    val fromString:        string -> Id
+    val toString:        Id -> string
 
-    val compare:	Id * Id -> order
+    val compare:        Id * Id -> order
 
   end
 (* stop of ID.sml *)
@@ -754,7 +754,7 @@ functor IdFn() :> ID =
 
     (* Type [Section 2.4] *)
 
-    type Id = string				(* [id] *)
+    type Id = string                                (* [id] *)
 
 
     (* Creation *)
@@ -790,10 +790,10 @@ structure FunId = IdFn()
  *)
 
 structure SigIdMap   = FinMapFn(type ord_key = SigId.Id
-				val  compare = SigId.compare)
+                                val  compare = SigId.compare)
 
 structure FunIdMap   = FinMapFn(type ord_key = FunId.Id
-				val  compare = FunId.compare)
+                                val  compare = FunId.compare)
 (* stop of AssembliesModule.sml *)
 (* start of LONGID.sml *)
 (*
@@ -820,23 +820,23 @@ signature LONGID =
 
     (* Type [Section 2.4] *)
 
-    eqtype longId				(* [longid] *)
+    eqtype longId                                (* [longid] *)
 
 
     (* Operations *)
 
-    val invent:		unit   -> longId
-    val fromId:		Id     -> longId
-    val toId:		longId -> Id
-    val toString:	longId -> string
+    val invent:                unit   -> longId
+    val fromId:                Id     -> longId
+    val toId:                longId -> Id
+    val toString:        longId -> string
 
-    val strengthen:	StrId * longId -> longId
-    val implode:	StrId list * Id -> longId
-    val explode:	longId -> StrId list * Id
+    val strengthen:        StrId * longId -> longId
+    val implode:        StrId list * Id -> longId
+    val explode:        longId -> StrId list * Id
 
-    val isUnqualified:	longId -> bool
+    val isUnqualified:        longId -> bool
 
-    val compare:	longId * longId -> order
+    val compare:        longId * longId -> order
 
   end
 (* stop of LONGID.sml *)
@@ -853,10 +853,10 @@ signature LONGID =
 
 
 functor LongIdFn(structure Id:    ID
-		 structure StrId: ID
-		) :> LONGID where type Id.Id    = Id.Id
-			    and   type StrId.Id = StrId.Id
-		  =
+                 structure StrId: ID
+                ) :> LONGID where type Id.Id    = Id.Id
+                            and   type StrId.Id = StrId.Id
+                  =
   struct
 
     (* Import *)
@@ -870,7 +870,7 @@ functor LongIdFn(structure Id:    ID
 
     (* Type [Section 2.4] *)
 
-    type longId	= StrId list * Id			(* [longid] *)
+    type longId        = StrId list * Id                        (* [longid] *)
 
 
     (* Conversions *)
@@ -880,12 +880,12 @@ functor LongIdFn(structure Id:    ID
     fun invent()        = ([],Id.invent())
 
     fun toString(strids, id) =
-	let
-	    fun prefix   []     = Id.toString id
-	      | prefix(id::ids) = StrId.toString id ^ "." ^ prefix ids
-	in
-	    prefix strids
-	end
+        let
+            fun prefix   []     = Id.toString id
+              | prefix(id::ids) = StrId.toString id ^ "." ^ prefix ids
+        in
+            prefix strids
+        end
 
     fun strengthen(strid, (strids, id)) = (strid::strids, id)
 
@@ -898,7 +898,7 @@ functor LongIdFn(structure Id:    ID
     (* Ordering *)
 
     fun compare(longid1, longid2) =
-	    String.compare(toString longid1, toString longid2)
+            String.compare(toString longid1, toString longid2)
 
   end
 (* stop of LongIdFn.sml *)
@@ -915,11 +915,11 @@ structure TyCon     = IdFn()
 structure StrId     = IdFn()
 
 structure LongVId   = LongIdFn(structure Id    = VId
-			       structure StrId = StrId)
+                               structure StrId = StrId)
 structure LongTyCon = LongIdFn(structure Id    = TyCon
-			       structure StrId = StrId)
+                               structure StrId = StrId)
 structure LongStrId = LongIdFn(structure Id    = StrId
-			       structure StrId = StrId)
+                               structure StrId = StrId)
 (* stop of IdsCore.sml *)
 (* start of smlnj-lib/Util/ord-set-sig.sml *)
 (* ordset-sig.sml
@@ -938,41 +938,41 @@ signature ORD_SET =
     type set
 
     val empty : set
-	(* The empty set *)
+        (* The empty set *)
 
     val singleton : item -> set
-	(* Create a singleton set *)
+        (* Create a singleton set *)
 
     val add  : set * item -> set
     val add' : (item * set) -> set
-	(* Insert an item. *)
+        (* Insert an item. *)
 
     val addList : set * item list -> set
-	(* Insert items from list. *)
+        (* Insert items from list. *)
 
     val delete : set * item -> set
-	(* Remove an item. Raise NotFound if not found. *)
+        (* Remove an item. Raise NotFound if not found. *)
 
     val member : set * item -> bool
-	(* Return true if and only if item is an element in the set *)
+        (* Return true if and only if item is an element in the set *)
 
     val isEmpty : set -> bool
-	(* Return true if and only if the set is empty *)
+        (* Return true if and only if the set is empty *)
 
     val equal : (set * set) -> bool
-	(* Return true if and only if the two sets are equal *)
+        (* Return true if and only if the two sets are equal *)
 
     val compare : (set * set) -> order
-	(* does a lexical comparison of two sets *)
+        (* does a lexical comparison of two sets *)
 
     val isSubset : (set * set) -> bool
-	(* Return true if and only if the first set is a subset of the second *)
+        (* Return true if and only if the first set is a subset of the second *)
 
     val numItems : set ->  int
-	(* Return the number of items in the table *)
+        (* Return the number of items in the table *)
 
     val listItems : set -> item list
-	(* Return an ordered list of the items in the set *)
+        (* Return an ordered list of the items in the set *)
 
     val union : set * set -> set
         (* Union *)
@@ -984,22 +984,22 @@ signature ORD_SET =
         (* Difference *)
 
     val map : (item -> item) -> set -> set
-	(* Create a new set by applying a map function to the elements
-	 * of the set.
+        (* Create a new set by applying a map function to the elements
+         * of the set.
          *)
      
     val app : (item -> unit) -> set -> unit
-	(* Apply a function to the entries of the set 
+        (* Apply a function to the entries of the set 
          * in decreasing order
          *)
 
     val foldl : (item * 'b -> 'b) -> 'b -> set -> 'b
-	(* Apply a folding function to the entries of the set 
+        (* Apply a folding function to the entries of the set 
          * in increasing order
          *)
 
     val foldr : (item * 'b -> 'b) -> 'b -> set -> 'b
-	(* Apply a folding function to the entries of the set 
+        (* Apply a folding function to the entries of the set 
          * in decreasing order
          *)
 
@@ -1084,11 +1084,11 @@ functor BinarySetFn (K : ORD_KEY) : ORD_SET =
     datatype set
       = E 
       | T of {
-	  elt : item, 
+          elt : item, 
           cnt : int, 
           left : set,
           right : set
-	}
+        }
 
     fun numItems E = 0
       | numItems (T{cnt,...}) = cnt
@@ -1284,16 +1284,16 @@ functor BinarySetFn (K : ORD_KEY) : ORD_SET =
     val add = add
 
     fun member (set, x) = let
-	  fun pk E = false
-	    | pk (T{elt=v, left=l, right=r, ...}) = (
-		case K.compare(x,v)
-		 of LESS => pk l
-		  | EQUAL => true
-		  | GREATER => pk r
-		(* end case *))
-	  in
-	    pk set
-	  end
+          fun pk E = false
+            | pk (T{elt=v, left=l, right=r, ...}) = (
+                case K.compare(x,v)
+                 of LESS => pk l
+                  | EQUAL => true
+                  | GREATER => pk r
+                (* end case *))
+          in
+            pk set
+          end
 
     local
         (* true if every item in t is in t' *)
@@ -1323,24 +1323,24 @@ functor BinarySetFn (K : ORD_KEY) : ORD_SET =
 
     local
       fun next ((t as T{right, ...})::rest) = (t, left(right, rest))
-	| next _ = (E, [])
+        | next _ = (E, [])
       and left (E, rest) = rest
-	| left (t as T{left=l, ...}, rest) = left(l, t::rest)
+        | left (t as T{left=l, ...}, rest) = left(l, t::rest)
     in
     fun compare (s1, s2) = let
-	  fun cmp (t1, t2) = (case (next t1, next t2)
-		 of ((E, _), (E, _)) => EQUAL
-		  | ((E, _), _) => LESS
-		  | (_, (E, _)) => GREATER
-		  | ((T{elt=e1, ...}, r1), (T{elt=e2, ...}, r2)) => (
-		      case Key.compare(e1, e2)
-		       of EQUAL => cmp (r1, r2)
-			| order => order
-		      (* end case *))
-		(* end case *))
-	  in
-	    cmp (left(s1, []), left(s2, []))
-	  end
+          fun cmp (t1, t2) = (case (next t1, next t2)
+                 of ((E, _), (E, _)) => EQUAL
+                  | ((E, _), _) => LESS
+                  | (_, (E, _)) => GREATER
+                  | ((T{elt=e1, ...}, r1), (T{elt=e2, ...}, r2)) => (
+                      case Key.compare(e1, e2)
+                       of EQUAL => cmp (r1, r2)
+                        | order => order
+                      (* end case *))
+                (* end case *))
+          in
+            cmp (left(s1, []), left(s2, []))
+          end
     end
 
     fun delete (E,x) = raise LibBase.NotFound
@@ -1355,12 +1355,12 @@ functor BinarySetFn (K : ORD_KEY) : ORD_SET =
     fun intersection (E, _) = E
       | intersection (_, E) = E
       | intersection (s, T{elt=v,left=l,right=r,...}) = let
-	  val l2 = split_lt(s,v)
-	  val r2 = split_gt(s,v)
+          val l2 = split_lt(s,v)
+          val r2 = split_gt(s,v)
           in
             if member(s,v)
-	      then concat3(intersection(l2,l),v,intersection(r2,r))
-	      else concat(intersection(l2,l),intersection(r2,r))
+              then concat3(intersection(l2,l),v,intersection(r2,r))
+              else concat(intersection(l2,l),intersection(r2,r))
           end
 
     fun difference (E,s) = E
@@ -1373,12 +1373,12 @@ functor BinarySetFn (K : ORD_KEY) : ORD_SET =
           end
 
     fun map f set = let
-	  fun map'(acc, E) = acc
-	    | map'(acc, T{elt,left,right,...}) =
-		map' (add (map' (acc, left), f elt), right)
-	  in 
-	    map' (E, set)
-	  end
+          fun map'(acc, E) = acc
+            | map'(acc, T{elt,left,right,...}) =
+                map' (add (map' (acc, left), f elt), right)
+          in 
+            map' (E, set)
+          end
 
     fun app apf =
          let fun apply E = ()
@@ -1389,17 +1389,17 @@ functor BinarySetFn (K : ORD_KEY) : ORD_SET =
          end
 
     fun foldl f b set = let
-	  fun foldf (E, b) = b
-	    | foldf (T{elt,left,right,...}, b) = 
-		foldf (right, f(elt, foldf (left, b)))
+          fun foldf (E, b) = b
+            | foldf (T{elt,left,right,...}, b) = 
+                foldf (right, f(elt, foldf (left, b)))
           in
             foldf (set, b)
           end
 
     fun foldr f b set = let
-	  fun foldf (E, b) = b
-	    | foldf (T{elt,left,right,...}, b) = 
-		foldf (left, f(elt, foldf (right, b)))
+          fun foldf (E, b) = b
+            | foldf (T{elt,left,right,...}, b) = 
+                foldf (left, f(elt, foldf (right, b)))
           in
             foldf (set, b)
           end
@@ -1407,20 +1407,20 @@ functor BinarySetFn (K : ORD_KEY) : ORD_SET =
     fun listItems set = foldr (op::) [] set
 
     fun filter pred set =
-	  foldl (fn (item, s) => if (pred item) then add(s, item) else s)
-	    empty set
+          foldl (fn (item, s) => if (pred item) then add(s, item) else s)
+            empty set
 
     fun find p E = NONE
       | find p (T{elt,left,right,...}) = (case find p left
-	   of NONE => if (p elt)
-		then SOME elt
-		else find p right
-	    | a => a
-	  (* end case *))
+           of NONE => if (p elt)
+                then SOME elt
+                else find p right
+            | a => a
+          (* end case *))
 
     fun exists p E = false
       | exists p (T{elt, left, right,...}) =
-	  (exists p left) orelse (p elt) orelse (exists p right)
+          (exists p left) orelse (p elt) orelse (exists p right)
 
   end (* BinarySetFn *)
 (* stop of smlnj-lib/Util/binary-set-fn.sml *)
@@ -1481,23 +1481,23 @@ signature TYVAR =
 
     (* Type [Sections 2.4 and 4.1]*)
 
-    eqtype TyVar			(* [alpha] or [tyvar] *)
+    eqtype TyVar                        (* [alpha] or [tyvar] *)
 
 
     (* Operations *)
 
-    val invent:		bool -> TyVar
-    val fromIndex:	bool -> int -> TyVar
-    val fromString:	string -> TyVar
-    val toString:	TyVar -> string
+    val invent:                bool -> TyVar
+    val fromIndex:        bool -> int -> TyVar
+    val fromString:        string -> TyVar
+    val toString:        TyVar -> string
 
-    val admitsEquality:	TyVar -> bool
-    val isExplicit:	TyVar -> bool
+    val admitsEquality:        TyVar -> bool
+    val isExplicit:        TyVar -> bool
 
-    val instance:	TyVar -> TyVar
-    val normalise:	TyVar * int -> TyVar
+    val instance:        TyVar -> TyVar
+    val normalise:        TyVar * int -> TyVar
 
-    val compare:	TyVar * TyVar -> order
+    val compare:        TyVar * TyVar -> order
 
   end
 (* stop of TYVAR.sml *)
@@ -1519,29 +1519,29 @@ structure TyVar :> TYVAR =
 
     (* Type [Sections 2.4 and 4.1]*)
 
-    type TyVar = { name: string, equality: bool }	(* [alpha] or [tyvar] *)
+    type TyVar = { name: string, equality: bool }        (* [alpha] or [tyvar] *)
 
 
     (* Creation *)
 
     fun invent equality =
-	{ name="'#" ^ Stamp.toString(Stamp.stamp()),
-	  equality=equality }
+        { name="'#" ^ Stamp.toString(Stamp.stamp()),
+          equality=equality }
 
     fun fromIndex equality n =
-	let
-	    fun rep(0,c) = c
-	      | rep(n,c) = c ^ rep(n-1,c)
+        let
+            fun rep(0,c) = c
+              | rep(n,c) = c ^ rep(n-1,c)
 
-	    val c    = String.str(Char.chr(Char.ord #"a" + n mod 26))
-	    val name = (if equality then "''" else "'") ^ rep(n div 26, c)
-	in
-	    { name=name, equality=equality }
-	end
+            val c    = String.str(Char.chr(Char.ord #"a" + n mod 26))
+            val name = (if equality then "''" else "'") ^ rep(n div 26, c)
+        in
+            { name=name, equality=equality }
+        end
 
     fun fromString s =
-    	{ name = s,
-    	  equality = String.size(s) > 1 andalso String.sub(s,1) = #"'" }
+            { name = s,
+              equality = String.size(s) > 1 andalso String.sub(s,1) = #"'" }
 
     fun toString{name,equality}       = name
 
@@ -1551,7 +1551,7 @@ structure TyVar :> TYVAR =
     fun admitsEquality{name,equality} = equality
 
     fun isExplicit{name,equality} =
-	String.size name = 1 orelse String.sub(name,1) <> #"#"
+        String.size name = 1 orelse String.sub(name,1) <> #"#"
 
 
     (* Small helpers *)
@@ -1564,7 +1564,7 @@ structure TyVar :> TYVAR =
     (* Ordering *)
 
     fun compare(alpha1: TyVar, alpha2: TyVar) =
-	String.compare(#name alpha1, #name alpha2)
+        String.compare(#name alpha1, #name alpha2)
 
   end
 (* stop of TyVar.sml *)
@@ -1593,26 +1593,26 @@ signature TYNAME =
 
     (* Type [Section 4.1] *)
 
-    eqtype TyName					(* [t] *)
+    eqtype TyName                                        (* [t] *)
 
     datatype Equality = NOEQ | EQ | SPECIALEQ
 
 
     (* Operations *)
 
-    val tyname:		TyCon * int * Equality * int -> TyName
-    val invent:		int * Equality -> TyName
-    val rename:		TyName -> TyName
-    val removeEquality:	TyName -> TyName
-    val Abs:		TyName -> TyName
+    val tyname:                TyCon * int * Equality * int -> TyName
+    val invent:                int * Equality -> TyName
+    val rename:                TyName -> TyName
+    val removeEquality:        TyName -> TyName
+    val Abs:                TyName -> TyName
 
-    val arity:		TyName -> int
-    val equality:	TyName -> Equality
-    val span:		TyName -> int
-    val tycon:		TyName -> TyCon
-    val toString:	TyName -> string
+    val arity:                TyName -> int
+    val equality:        TyName -> Equality
+    val span:                TyName -> int
+    val tycon:                TyName -> TyCon
+    val toString:        TyName -> string
 
-    val compare:	TyName * TyName -> order
+    val compare:        TyName * TyName -> order
 
   end
 (* stop of TYNAME.sml *)
@@ -1644,24 +1644,24 @@ structure TyName :> TYNAME =
 
     datatype Equality = NOEQ | EQ | SPECIALEQ
 
-    type TyName =				      (* [t] *)
-	 { tycon:       TyCon
-	 , stamp:       stamp
-	 , arity:       int
-	 , equality:    Equality
-	 , span: 	int
-	 }
+    type TyName =                                      (* [t] *)
+         { tycon:       TyCon
+         , stamp:       stamp
+         , arity:       int
+         , equality:    Equality
+         , span:         int
+         }
 
 
     (* Creation *)
 
     fun tyname(tycon, arity, equality, span) =
-	{ tycon    = tycon
-	, stamp    = Stamp.stamp()
-	, arity    = arity
-	, equality = equality
-	, span     = span
-	}
+        { tycon    = tycon
+        , stamp    = Stamp.stamp()
+        , arity    = arity
+        , equality = equality
+        , span     = span
+        }
 
     fun invent(arity, equality) = tyname(TyCon.invent(), arity, equality, 0)
 
@@ -1669,13 +1669,13 @@ structure TyName :> TYNAME =
     (* Creation from existing *)
 
     fun rename{tycon, stamp, arity, equality, span} =
-	    tyname(tycon, arity, equality, span)
+            tyname(tycon, arity, equality, span)
 
     fun removeEquality{tycon, stamp, arity, equality, span} =
-	    tyname(tycon, arity, NOEQ, span)
+            tyname(tycon, arity, NOEQ, span)
 
     fun Abs{tycon, stamp, arity, equality, span} =
-	    tyname(tycon, arity, NOEQ, 0)
+            tyname(tycon, arity, NOEQ, 0)
 
 
     (* Attributes [Section 4.1] *)
@@ -1707,12 +1707,12 @@ signature SCON =
 
     (* Type [Section 2.2] *)
 
-    datatype SCon =				(* [scon] *)
-	  INT    of int
-	| WORD   of word
-	| STRING of string
-	| CHAR   of char
-	| REAL   of real
+    datatype SCon =                                (* [scon] *)
+          INT    of int
+        | WORD   of word
+        | STRING of string
+        | CHAR   of char
+        | REAL   of real
 
     (* Operations *)
 
@@ -1741,12 +1741,12 @@ structure SCon :> SCON =
 
     (* Type [Section 2.2] *)
 
-    datatype SCon =				(* [scon] *)
-	  INT    of int
-	| WORD   of word
-	| STRING of string
-	| CHAR   of char
-	| REAL   of real
+    datatype SCon =                                (* [scon] *)
+          INT    of int
+        | WORD   of word
+        | STRING of string
+        | CHAR   of char
+        | REAL   of real
 
 
     (* Conversions *)
@@ -1788,16 +1788,16 @@ signature LAB =
 
     (* Type [Section 2.4] *)
 
-    eqtype Lab					(* [lab] *)
+    eqtype Lab                                        (* [lab] *)
 
 
     (* Operations *)
 
-    val fromString:	string -> Lab
-    val fromInt:	int    -> Lab
-    val toString:	Lab    -> string
+    val fromString:        string -> Lab
+    val fromInt:        int    -> Lab
+    val toString:        Lab    -> string
 
-    val compare:	Lab * Lab -> order
+    val compare:        Lab * Lab -> order
 
   end
 (* stop of LAB.sml *)
@@ -1814,7 +1814,7 @@ structure Lab :> LAB =
 
     (* Type [Section 2.4] *)
 
-    type Lab = string					(* [lab] *)
+    type Lab = string                                        (* [lab] *)
 
 
     (* Conversions *)
@@ -1828,8 +1828,8 @@ structure Lab :> LAB =
 
     fun compare(lab1,lab2) =
       case (Int.fromString lab1, Int.fromString lab2)
-	of (SOME i1, SOME i2) => Int.compare(i1,i2)
-	 |     _              => String.compare(lab1,lab2)
+        of (SOME i1, SOME i2) => Int.compare(i1,i2)
+         |     _              => String.compare(lab1,lab2)
 
   end
 (* stop of Lab.sml *)
@@ -1841,38 +1841,38 @@ structure Lab :> LAB =
  *)
 
 structure TyVarSet   = FinSetFn(type ord_key = TyVar.TyVar
-				val  compare = TyVar.compare)
+                                val  compare = TyVar.compare)
 
 structure TyNameSet  = FinSetFn(type ord_key = TyName.TyName
-				val  compare = TyName.compare)
+                                val  compare = TyName.compare)
 
 structure SConSet    = FinSetFn(type ord_key = SCon.SCon
-				val  compare = SCon.compare)
+                                val  compare = SCon.compare)
 
 structure VIdSet     = FinSetFn(type ord_key = VId.Id
-				val  compare = VId.compare)
+                                val  compare = VId.compare)
 
 structure LongVIdSet = FinSetFn(type ord_key = LongVId.longId
-				val  compare = LongVId.compare)
+                                val  compare = LongVId.compare)
 
 
 structure LabMap     = FinMapFn(type ord_key = Lab.Lab
-				val  compare = Lab.compare)
+                                val  compare = Lab.compare)
 
 structure VIdMap     = FinMapFn(type ord_key = VId.Id
-				val  compare = VId.compare)
+                                val  compare = VId.compare)
 
 structure TyConMap   = FinMapFn(type ord_key = TyCon.Id
-				val  compare = TyCon.compare)
+                                val  compare = TyCon.compare)
 
 structure TyVarMap   = FinMapFn(type ord_key = TyVar.TyVar
-				val  compare = TyVar.compare)
+                                val  compare = TyVar.compare)
 
 structure TyNameMap  = FinMapFn(type ord_key = TyName.TyName
-				val  compare = TyName.compare)
+                                val  compare = TyName.compare)
 
 structure StrIdMap   = FinMapFn(type ord_key = StrId.Id
-				val  compare = StrId.compare)
+                                val  compare = StrId.compare)
 (* stop of AssembliesCoreStatic.sml *)
 (* start of OVERLOADINGCLASS.sml *)
 (*
@@ -1908,25 +1908,25 @@ signature OVERLOADINGCLASS =
 
     (* Type *)
 
-    type OverloadingClass				(* [O] *)
+    type OverloadingClass                                (* [O] *)
 
 
     (* Operations *)
 
-    val make:		TyNameSet * TyName -> OverloadingClass
+    val make:                TyNameSet * TyName -> OverloadingClass
 
-    val isEmpty:	OverloadingClass -> bool
-    val isSingular:	OverloadingClass -> bool
-    val default:	OverloadingClass -> TyName
-    val set:		OverloadingClass -> TyNameSet
-    val member:		OverloadingClass * TyName -> bool
-    val getItem:	OverloadingClass -> TyName
+    val isEmpty:        OverloadingClass -> bool
+    val isSingular:        OverloadingClass -> bool
+    val default:        OverloadingClass -> TyName
+    val set:                OverloadingClass -> TyNameSet
+    val member:                OverloadingClass * TyName -> bool
+    val getItem:        OverloadingClass -> TyName
 
-    val makeEquality:	OverloadingClass -> OverloadingClass option
-    val intersection:	OverloadingClass * OverloadingClass ->
-					   OverloadingClass option
-    val union:		OverloadingClass * OverloadingClass ->
-					   OverloadingClass
+    val makeEquality:        OverloadingClass -> OverloadingClass option
+    val intersection:        OverloadingClass * OverloadingClass ->
+                                           OverloadingClass option
+    val union:                OverloadingClass * OverloadingClass ->
+                                           OverloadingClass
 
   end
 (* stop of OVERLOADINGCLASS.sml *)
@@ -1964,7 +1964,7 @@ structure OverloadingClass :> OVERLOADINGCLASS =
 
     (* Type *)
 
-    type OverloadingClass = TyNameSet * TyName		(* [O] *)
+    type OverloadingClass = TyNameSet * TyName                (* [O] *)
 
 
     (* Simple operations *)
@@ -1982,33 +1982,33 @@ structure OverloadingClass :> OVERLOADINGCLASS =
     (* Filter equality types *)
 
     fun makeEquality (T,t) =
-	let
-	    val T' = TyNameSet.filter (fn t => TyName.equality t = TyName.EQ) T
-	in
-	    if TyNameSet.isEmpty T' then
-		NONE
-	    else if TyName.equality t <> TyName.NOEQ then
-		SOME(T',t)
-	    else
-		raise Fail "OverloadingClass.makeEquality: \
-			   \inconsistent overloading classes"
-	end
+        let
+            val T' = TyNameSet.filter (fn t => TyName.equality t = TyName.EQ) T
+        in
+            if TyNameSet.isEmpty T' then
+                NONE
+            else if TyName.equality t <> TyName.NOEQ then
+                SOME(T',t)
+            else
+                raise Fail "OverloadingClass.makeEquality: \
+                           \inconsistent overloading classes"
+        end
 
 
     (* Intersection and union *)
 
     fun intersection((T1,t1), (T2,t2)) =
-	let
-	    val T' = TyNameSet.intersection(T1,T2)
-	in
-	    if TyNameSet.isEmpty T' then
-		NONE
-	    else if t1 = t2 then
-		SOME(T',t1)
-	    else
-		raise Fail "OverloadingClass.intersect: \
-			   \inconsistent overloading classes"
-	end
+        let
+            val T' = TyNameSet.intersection(T1,T2)
+        in
+            if TyNameSet.isEmpty T' then
+                NONE
+            else if t1 = t2 then
+                SOME(T',t1)
+            else
+                raise Fail "OverloadingClass.intersect: \
+                           \inconsistent overloading classes"
+        end
 
 
     fun union((T1,t1), (T2,t2)) = ( TyNameSet.union(T1,T2), t2 )
@@ -2053,64 +2053,64 @@ signature TYPE =
 
     (* Types [Section 4.2] *)
 
-    datatype RowVar = CLOSEDRow | FLEXRow of bool		(* [r] *)
+    datatype RowVar = CLOSEDRow | FLEXRow of bool                (* [r] *)
 
-    datatype Type' =						(* [tau] *)
-	  TyVar      of TyVar
-	| RowType    of (*RowType*) (Type' ref LabMap * RowVar)
-	| FunType    of (*FunType*) (Type' ref * Type' ref)
-	| ConsType   of (*ConsType*)(Type' ref list * TyName)
-	| Overloaded of OverloadingClass
-	| Link       of (*Type*) Type' ref
+    datatype Type' =                                                (* [tau] *)
+          TyVar      of TyVar
+        | RowType    of (*RowType*) (Type' ref LabMap * RowVar)
+        | FunType    of (*FunType*) (Type' ref * Type' ref)
+        | ConsType   of (*ConsType*)(Type' ref list * TyName)
+        | Overloaded of OverloadingClass
+        | Link       of (*Type*) Type' ref
 
     type Type         = Type' ref
 
-    type RowType      = Type LabMap * RowVar			(* [rho] *)
+    type RowType      = Type LabMap * RowVar                        (* [rho] *)
     type FunType      = Type * Type
     type ConsType     = Type list * TyName
 
-    type TypeFcn      = TyVar list * Type			(* [theta] *)
+    type TypeFcn      = TyVar list * Type                        (* [theta] *)
 
-    type Substitution = Type TyVarMap				(* [mu] *)
-    type Realisation  = TypeFcn TyNameMap			(* [phi] *)
+    type Substitution = Type TyVarMap                                (* [mu] *)
+    type Realisation  = TypeFcn TyNameMap                        (* [phi] *)
 
 
     (* Operations *)
 
-    val invent:			unit -> Type
-    val fromTyVar:		TyVar -> Type
-    val fromRowType:		RowType -> Type
-    val fromFunType:		FunType -> Type
-    val fromConsType:		ConsType -> Type
-    val fromOverloadingClass:	OverloadingClass -> Type
+    val invent:                        unit -> Type
+    val fromTyVar:                TyVar -> Type
+    val fromRowType:                RowType -> Type
+    val fromFunType:                FunType -> Type
+    val fromConsType:                ConsType -> Type
+    val fromOverloadingClass:        OverloadingClass -> Type
 
-    val range:			Type -> Type
-    val tyname:			Type -> TyName
+    val range:                        Type -> Type
+    val tyname:                        Type -> TyName
 
-    val normalise:		Type -> Type
-    val substitute:		Substitution -> Type -> Type
-    val realise:		Realisation  -> Type -> Type
+    val normalise:                Type -> Type
+    val substitute:                Substitution -> Type -> Type
+    val realise:                Realisation  -> Type -> Type
 
-    val tyvars:			Type -> TyVarSet
-    val tynames:		Type -> TyNameSet
-    val admitsEquality:		Type -> bool
-    val isFlexible:		Type -> bool
+    val tyvars:                        Type -> TyVarSet
+    val tynames:                Type -> TyNameSet
+    val admitsEquality:                Type -> bool
+    val isFlexible:                Type -> bool
 
     exception Unify
-    val unify:			Type * Type -> unit (* Unify *)
-    val unifyRestricted:	TyVarSet -> Type * Type -> unit (* Unify *)
-    val makeEquality:		Type -> unit (* Unify *)
+    val unify:                        Type * Type -> unit (* Unify *)
+    val unifyRestricted:        TyVarSet -> Type * Type -> unit (* Unify *)
+    val makeEquality:                Type -> unit (* Unify *)
 
-    val defaultOverloaded:	Type -> unit
+    val defaultOverloaded:        Type -> unit
 
 
     (* Operations on rows *)
 
-    val emptyRho:		RowType
-    val singletonRho:		Lab * Type -> RowType
-    val insertRho:		RowType * Lab * Type -> RowType
-    val inventRho:		unit -> RowType
-    val findLab:		RowType * Lab -> Type option
+    val emptyRho:                RowType
+    val singletonRho:                Lab * Type -> RowType
+    val insertRho:                RowType * Lab * Type -> RowType
+    val inventRho:                unit -> RowType
+    val findLab:                RowType * Lab -> Type option
 
   end
 (* stop of TYPE.sml *)
@@ -2152,26 +2152,26 @@ structure Type :> TYPE =
 
     (* Types [Section 4.2] *)
 
-    datatype RowVar = CLOSEDRow | FLEXRow of bool	(* [r] *)
+    datatype RowVar = CLOSEDRow | FLEXRow of bool        (* [r] *)
 
-    datatype Type' =					(* [tau] *)
-	  TyVar      of TyVar
-	| RowType    of RowType
-	| FunType    of FunType
-	| ConsType   of ConsType
-	| Overloaded of OverloadingClass
-	| Link       of Type
+    datatype Type' =                                        (* [tau] *)
+          TyVar      of TyVar
+        | RowType    of RowType
+        | FunType    of FunType
+        | ConsType   of ConsType
+        | Overloaded of OverloadingClass
+        | Link       of Type
 
     withtype Type     = Type' ref
 
-    and RowType       = Type' ref LabMap * RowVar	(* [rho] *)
+    and RowType       = Type' ref LabMap * RowVar        (* [rho] *)
     and FunType       = Type' ref * Type' ref
     and ConsType      = Type' ref list * TyName
 
-    type TypeFcn      = TyVar list * Type		(* [theta] *)
+    type TypeFcn      = TyVar list * Type                (* [theta] *)
 
-    type Substitution = Type TyVarMap			(* [mu] *)
-    type Realisation  = TypeFcn TyNameMap		(* [phi] *)
+    type Substitution = Type TyVarMap                        (* [mu] *)
+    type Realisation  = TypeFcn TyNameMap                (* [phi] *)
 
 
     (* Creation *)
@@ -2192,108 +2192,108 @@ structure Type :> TYPE =
 
     fun tyname(ref(ConsType(taus,t)))  = t
       | tyname  _                      =
-	    raise Fail "Type.tyname: non-constructed type"
+            raise Fail "Type.tyname: non-constructed type"
 
 
     (* Induce sharing on equal type variables in a type *)
 
     fun normalise tau =
-	let
-	    (* Note that Overloaded nodes also have to be shared.
-	     * But since such types are always pre-built rather than
-	     * infered, we just take care that we construct them with
-	     * proper sharing and ignore Overloaded nodes here.
-	     *)
+        let
+            (* Note that Overloaded nodes also have to be shared.
+             * But since such types are always pre-built rather than
+             * infered, we just take care that we construct them with
+             * proper sharing and ignore Overloaded nodes here.
+             *)
 
-	    val alphas = ref []
+            val alphas = ref []
 
-	    fun normalise(tau as ref(TyVar(alpha))) =
-		(case List.find (fn(alpha1,_) => alpha1 = alpha) (!alphas)
-		   of SOME(_,tau1) => tau1
-		    | NONE         => ( alphas := (alpha,tau) :: !alphas
-				      ; tau
-				      )
-		)
-	      | normalise(ref(Link(tau)))  = normalise tau
-	      | normalise(tau as ref tau') = ( tau := normalise' tau' ; tau )
+            fun normalise(tau as ref(TyVar(alpha))) =
+                (case List.find (fn(alpha1,_) => alpha1 = alpha) (!alphas)
+                   of SOME(_,tau1) => tau1
+                    | NONE         => ( alphas := (alpha,tau) :: !alphas
+                                      ; tau
+                                      )
+                )
+              | normalise(ref(Link(tau)))  = normalise tau
+              | normalise(tau as ref tau') = ( tau := normalise' tau' ; tau )
 
-	    and normalise'(RowType(Rho,r)) =
-		    RowType(LabMap.map normalise Rho, r)
+            and normalise'(RowType(Rho,r)) =
+                    RowType(LabMap.map normalise Rho, r)
 
-	      | normalise'(FunType(tau1,tau2)) =
-		    FunType(normalise tau1, normalise tau2)
+              | normalise'(FunType(tau1,tau2)) =
+                    FunType(normalise tau1, normalise tau2)
 
-	      | normalise'(ConsType(taus,t)) =
-		    ConsType(List.map normalise taus, t)
+              | normalise'(ConsType(taus,t)) =
+                    ConsType(List.map normalise taus, t)
 
-	      | normalise'(Overloaded(O)) =
-		    Overloaded(O)
+              | normalise'(Overloaded(O)) =
+                    Overloaded(O)
 
-	      | normalise' _ =
-		    raise Fail "Type.normalise: bypassed type variable or link"
-	in
-	    normalise tau
-	end
+              | normalise' _ =
+                    raise Fail "Type.normalise: bypassed type variable or link"
+        in
+            normalise tau
+        end
 
 
 
     (* Cloning under a substitution and a type realisation *)
 
     fun clone (mu,phi) tau =
-	let
-	    (* Cloning must respect sharing, so an association list is used
-	     * to remember nodes already visited together with their copy.
-	     *)
+        let
+            (* Cloning must respect sharing, so an association list is used
+             * to remember nodes already visited together with their copy.
+             *)
 
-	    val mu'    = ref mu
-	    val cloned = ref []
+            val mu'    = ref mu
+            val cloned = ref []
 
-	    fun clone tau =
-		case List.find (fn(tau1,_) => tau1 = tau) (!cloned)
-		  of SOME(_,tau2) => tau2
-		   | NONE         => let val tau2 = clone' tau in
-					 cloned := (tau,tau2) :: !cloned
-					; tau2
-				     end
+            fun clone tau =
+                case List.find (fn(tau1,_) => tau1 = tau) (!cloned)
+                  of SOME(_,tau2) => tau2
+                   | NONE         => let val tau2 = clone' tau in
+                                         cloned := (tau,tau2) :: !cloned
+                                        ; tau2
+                                     end
 
-	    and clone'(tau as ref(TyVar(alpha))) =
-		(case TyVarMap.find(!mu', alpha)
-		   of NONE     => tau
-		    | SOME tau => tau
-		)
-	      | clone'(ref(RowType(Rho,r))) =
-		    ref(RowType(LabMap.map clone Rho, r))
+            and clone'(tau as ref(TyVar(alpha))) =
+                (case TyVarMap.find(!mu', alpha)
+                   of NONE     => tau
+                    | SOME tau => tau
+                )
+              | clone'(ref(RowType(Rho,r))) =
+                    ref(RowType(LabMap.map clone Rho, r))
 
-	      | clone'(ref(FunType(tau1,tau2))) =
-		    ref(FunType(clone tau1, clone tau2))
+              | clone'(ref(FunType(tau1,tau2))) =
+                    ref(FunType(clone tau1, clone tau2))
 
-	      | clone'(tau as ref(ConsType(taus,t))) =
-		let
-		    val taus2 = List.map clone taus
-		in
-		    case TyNameMap.find(phi, t)
-		      of NONE              => ref(ConsType(taus2,t))
-		       | SOME(alphas,tau1) =>
-			 let
-			    val cloned' = !cloned
-			 in
-			    mu' := ListPair.foldl
-				    (fn(alpha,tau2,mu) =>
-					TyVarMap.insert(mu,alpha,tau2))
-				    (!mu') (alphas,taus2)
-			    ; clone' tau1
-			    before cloned := cloned'
-			 end
-		end
+              | clone'(tau as ref(ConsType(taus,t))) =
+                let
+                    val taus2 = List.map clone taus
+                in
+                    case TyNameMap.find(phi, t)
+                      of NONE              => ref(ConsType(taus2,t))
+                       | SOME(alphas,tau1) =>
+                         let
+                            val cloned' = !cloned
+                         in
+                            mu' := ListPair.foldl
+                                    (fn(alpha,tau2,mu) =>
+                                        TyVarMap.insert(mu,alpha,tau2))
+                                    (!mu') (alphas,taus2)
+                            ; clone' tau1
+                            before cloned := cloned'
+                         end
+                end
 
-	      | clone'(ref(Overloaded(O))) =
-		    ref(Overloaded(O))
+              | clone'(ref(Overloaded(O))) =
+                    ref(Overloaded(O))
 
-	      | clone'(ref(Link(tau))) =
-		    clone tau
-	in
-	    clone tau
-	end
+              | clone'(ref(Link(tau))) =
+                    clone tau
+        in
+            clone tau
+        end
 
 
     (* Substitution, and realisation [Section 5.2] *)
@@ -2309,21 +2309,21 @@ structure Type :> TYPE =
     and tyvars'(TyVar(alpha)) = TyVarSet.singleton alpha
 
       | tyvars'(RowType(Rho,r)) =
-	    LabMap.foldl (fn(tau,U) => TyVarSet.union(U, tyvars tau))
-			 TyVarSet.empty Rho
+            LabMap.foldl (fn(tau,U) => TyVarSet.union(U, tyvars tau))
+                         TyVarSet.empty Rho
 
       | tyvars'(FunType(tau1,tau2)) =
-	    TyVarSet.union(tyvars tau1, tyvars tau2)
+            TyVarSet.union(tyvars tau1, tyvars tau2)
  
       | tyvars'(ConsType(taus,t)) =
-	    List.foldl (fn(tau,U) => TyVarSet.union(U, tyvars tau))
-		       TyVarSet.empty taus
+            List.foldl (fn(tau,U) => TyVarSet.union(U, tyvars tau))
+                       TyVarSet.empty taus
 
       | tyvars'(Overloaded(O)) =
-	    TyVarSet.empty
+            TyVarSet.empty
 
       | tyvars'(Link(tau)) =
-	    tyvars tau
+            tyvars tau
 
 
     fun tynames(ref tau') = tynames' tau'
@@ -2331,26 +2331,26 @@ structure Type :> TYPE =
     and tynames'(TyVar(alpha)) = TyNameSet.empty
 
       | tynames'(RowType(Rho,r)) =
-	    LabMap.foldl (fn(tau,T) =>
-			  TyNameSet.union(T, tynames tau)) TyNameSet.empty Rho
+            LabMap.foldl (fn(tau,T) =>
+                          TyNameSet.union(T, tynames tau)) TyNameSet.empty Rho
 
       | tynames'(FunType(tau1,tau2)) =
-	    TyNameSet.union(tynames tau1, tynames tau2)
+            TyNameSet.union(tynames tau1, tynames tau2)
  
       | tynames'(ConsType(taus,t)) =
-	let
-	    val T = List.foldl (fn(tau,T) => TyNameSet.union(T, tynames tau))
-			       TyNameSet.empty taus
-	in
-	    TyNameSet.add(T, t)
-	end
+        let
+            val T = List.foldl (fn(tau,T) => TyNameSet.union(T, tynames tau))
+                               TyNameSet.empty taus
+        in
+            TyNameSet.add(T, t)
+        end
 
       | tynames'(Overloaded(O)) =
-	    (* Conservative approximation *)
-	    OverloadingClass.set O
+            (* Conservative approximation *)
+            OverloadingClass.set O
 
       | tynames'(Link(tau)) =
-	    tynames tau
+            tynames tau
 
 
 
@@ -2359,29 +2359,29 @@ structure Type :> TYPE =
     fun admitsEquality(ref tau') = admitsEquality' tau'
 
     and admitsEquality'(TyVar alpha) =
-	    TyVar.admitsEquality alpha orelse
-	    not(TyVar.isExplicit alpha)
+            TyVar.admitsEquality alpha orelse
+            not(TyVar.isExplicit alpha)
 
       | admitsEquality'(RowType(Rho,CLOSEDRow)) =
-	    LabMap.all admitsEquality Rho
+            LabMap.all admitsEquality Rho
 
       | admitsEquality'(RowType(Rho,FLEXRow _)) =
-	    raise Fail "Type.admitsEquality: flexible row"
+            raise Fail "Type.admitsEquality: flexible row"
 
       | admitsEquality'(FunType _) = false
 
       | admitsEquality'(ConsType(taus,t)) =
-	(case TyName.equality t
-	   of TyName.SPECIALEQ => true
-	    | TyName.EQ        => List.all admitsEquality taus
-	    | TyName.NOEQ      => false
-	)
+        (case TyName.equality t
+           of TyName.SPECIALEQ => true
+            | TyName.EQ        => List.all admitsEquality taus
+            | TyName.NOEQ      => false
+        )
 
       | admitsEquality'(Overloaded(O)) =
-	    raise Fail "Type.admitsEquality: overloaded type"
+            raise Fail "Type.admitsEquality: overloaded type"
 
       | admitsEquality'(Link(tau)) =
-	    admitsEquality tau
+            admitsEquality tau
 
 
 
@@ -2392,13 +2392,13 @@ structure Type :> TYPE =
     and isFlexible'(TyVar(alpha')) = false
 
       | isFlexible'(RowType(Rho,r)) =
-	    r <> CLOSEDRow orelse LabMap.exists isFlexible Rho
+            r <> CLOSEDRow orelse LabMap.exists isFlexible Rho
 
       | isFlexible'(FunType(tau1,tau2)) =
-	    isFlexible tau1 orelse isFlexible tau2
+            isFlexible tau1 orelse isFlexible tau2
 
       | isFlexible'(ConsType(taus,t)) =
-	    List.exists isFlexible taus
+            List.exists isFlexible taus
 
       | isFlexible'(Overloaded(O)) = false
 
@@ -2414,34 +2414,34 @@ structure Type :> TYPE =
     fun occurs(alpha, ref tau') = occurs'(alpha, tau')
 
     and occurs'(alpha, TyVar(alpha')) =
-	    alpha = alpha'
+            alpha = alpha'
 
       | occurs'(alpha, RowType(Rho,r)) =
-	    LabMap.exists (fn tau => occurs(alpha, tau)) Rho
+            LabMap.exists (fn tau => occurs(alpha, tau)) Rho
 
       | occurs'(alpha, FunType(tau1,tau2)) =
-	    occurs(alpha, tau1) orelse occurs(alpha, tau2)
+            occurs(alpha, tau1) orelse occurs(alpha, tau2)
 
       | occurs'(alpha, ConsType(taus,t)) =
-	    List.exists (fn tau => occurs(alpha, tau)) taus
+            List.exists (fn tau => occurs(alpha, tau)) taus
 
       | occurs'(alpha, Overloaded(O)) =
-	    false
+            false
 
       | occurs'(alpha, Link(tau)) =
-	    occurs(alpha, tau)
+            occurs(alpha, tau)
 
 
     fun unify(ref(Link(tau1)), tau2) = unify(tau1, tau2)
       | unify(tau1, ref(Link(tau2))) = unify(tau1, tau2)
 
       | unify(tau1 as ref tau1', tau2 as ref tau2') =
-	if tau1 = tau2 then () else
-	let
-	    val tau' = Link(ref(unify'(tau1',tau2')))
-	in
-	    tau1 := tau' ; tau2 := tau'
-	end
+        if tau1 = tau2 then () else
+        let
+            val tau' = Link(ref(unify'(tau1',tau2')))
+        in
+            tau1 := tau' ; tau2 := tau'
+        end
 
     and unify'(TyVar(alpha), tau')  = unifyTyVar(alpha, tau')
       | unify'(tau', TyVar(alpha))  = unifyTyVar(alpha, tau')
@@ -2449,167 +2449,167 @@ structure Type :> TYPE =
       | unify'(tau', Overloaded(O)) = unifyOverloaded(O, tau')
 
       | unify'(tau' as FunType(tau11,tau12), FunType(tau21,tau22)) =
-	  ( unify(tau11,tau21)
-	  ; unify(tau12,tau22)
-	  ; tau'
-	  )
+          ( unify(tau11,tau21)
+          ; unify(tau12,tau22)
+          ; tau'
+          )
 
       | unify'(RowType(Rho1,r1), RowType(Rho2,r2)) =
-	let
-	    fun unifyField r (lab, tau1, Rho) =
-		case LabMap.find(Rho, lab)
-		  of SOME tau2  => ( unify(tau1,tau2)
-				   ; #1(LabMap.remove(Rho,lab))
-				   )
-		   | NONE =>
-		case r
-		  of CLOSEDRow  => raise Unify
-		   | FLEXRow eq => ( if eq then makeEquality tau1 else ()
-				   ; Rho
-				   )
+        let
+            fun unifyField r (lab, tau1, Rho) =
+                case LabMap.find(Rho, lab)
+                  of SOME tau2  => ( unify(tau1,tau2)
+                                   ; #1(LabMap.remove(Rho,lab))
+                                   )
+                   | NONE =>
+                case r
+                  of CLOSEDRow  => raise Unify
+                   | FLEXRow eq => ( if eq then makeEquality tau1 else ()
+                                   ; Rho
+                                   )
 
-	    val Rho1'  = LabMap.foldli (unifyField r1) Rho1 Rho2
-	    val _      = LabMap.foldli (unifyField r2) Rho2 Rho1'
-	    val r      = case (r1,r2)
-			   of (CLOSEDRow, _) => CLOSEDRow
-			    | (_, CLOSEDRow) => CLOSEDRow
-			    | (FLEXRow eq1, FLEXRow eq2) =>
-				  FLEXRow(eq1 orelse eq2)
-	in
-	    RowType(LabMap.unionWith #2 (Rho2,Rho1'), r)
-	end
+            val Rho1'  = LabMap.foldli (unifyField r1) Rho1 Rho2
+            val _      = LabMap.foldli (unifyField r2) Rho2 Rho1'
+            val r      = case (r1,r2)
+                           of (CLOSEDRow, _) => CLOSEDRow
+                            | (_, CLOSEDRow) => CLOSEDRow
+                            | (FLEXRow eq1, FLEXRow eq2) =>
+                                  FLEXRow(eq1 orelse eq2)
+        in
+            RowType(LabMap.unionWith #2 (Rho2,Rho1'), r)
+        end
 
 
       | unify'(tau' as ConsType(taus1,t1), ConsType(taus2,t2)) =
-	if t1 = t2 then
-	    ( ListPair.app unify (taus1,taus2)
-	    ; tau'
-	    )
-	else
-	    raise Unify
+        if t1 = t2 then
+            ( ListPair.app unify (taus1,taus2)
+            ; tau'
+            )
+        else
+            raise Unify
 
       | unify' _ = raise Unify
 
 
     and unifyTyVar(alpha1, TyVar(alpha2)) =
-	if alpha1 = alpha2 then
-	    TyVar(alpha2)
-	else if not(TyVar.isExplicit alpha1) then
-	    bindTyVar(alpha1, TyVar(alpha2))
-	else if not(TyVar.isExplicit alpha2) then
-	    bindTyVar(alpha2, TyVar(alpha1))
-	else
-	    raise Unify
+        if alpha1 = alpha2 then
+            TyVar(alpha2)
+        else if not(TyVar.isExplicit alpha1) then
+            bindTyVar(alpha1, TyVar(alpha2))
+        else if not(TyVar.isExplicit alpha2) then
+            bindTyVar(alpha2, TyVar(alpha1))
+        else
+            raise Unify
 
       | unifyTyVar(alpha, tau') =
-	if TyVar.isExplicit alpha orelse occurs'(alpha, tau') then
-	    raise Unify
-	else
-	    bindTyVar(alpha, tau')
+        if TyVar.isExplicit alpha orelse occurs'(alpha, tau') then
+            raise Unify
+        else
+            bindTyVar(alpha, tau')
 
     and bindTyVar(alpha, tau') =
-	if TyVar.admitsEquality alpha then
-	    makeEquality' tau'
-	else
-	    tau'
+        if TyVar.admitsEquality alpha then
+            makeEquality' tau'
+        else
+            tau'
 
 
     and unifyOverloaded(O, TyVar(alpha2)) =
-	    unifyTyVar(alpha2, Overloaded(O))
+            unifyTyVar(alpha2, Overloaded(O))
 
       | unifyOverloaded(O, tau' as ConsType([],t)) =
-	if OverloadingClass.member(O, t) then
-	    tau'
-	else
-	    raise Unify
+        if OverloadingClass.member(O, t) then
+            tau'
+        else
+            raise Unify
 
       | unifyOverloaded(O1, Overloaded(O2)) =
-	(case OverloadingClass.intersection(O1,O2)
-	   of NONE   => raise Unify
-	    | SOME O => Overloaded(O)
-	)
+        (case OverloadingClass.intersection(O1,O2)
+           of NONE   => raise Unify
+            | SOME O => Overloaded(O)
+        )
 
       | unifyOverloaded(O, _) =
-	    raise Unify
+            raise Unify
 
 
     and makeEquality(tau as ref tau') = tau := makeEquality' tau'
 
     and makeEquality'(TyVar(alpha)) =
-	if TyVar.admitsEquality alpha then
-	    TyVar(alpha)
-	else if TyVar.isExplicit alpha then
-	    raise Unify
-	else
-	    TyVar(TyVar.invent true)
+        if TyVar.admitsEquality alpha then
+            TyVar(alpha)
+        else if TyVar.isExplicit alpha then
+            raise Unify
+        else
+            TyVar(TyVar.invent true)
 
       | makeEquality'(RowType(Rho,r)) =
-	    ( LabMap.app makeEquality Rho
-	    ; RowType(Rho, case r of CLOSEDRow => CLOSEDRow
-				   | FLEXRow _ => FLEXRow true)
-	    )
+            ( LabMap.app makeEquality Rho
+            ; RowType(Rho, case r of CLOSEDRow => CLOSEDRow
+                                   | FLEXRow _ => FLEXRow true)
+            )
 
       | makeEquality'(FunType _) =
-	    raise Unify
+            raise Unify
 
       | makeEquality'(tau' as ConsType(taus,t)) =
-	(case TyName.equality t
-	   of TyName.SPECIALEQ => tau'
-	    | TyName.EQ        => ( List.app makeEquality taus ; tau' )
-	    | TyName.NOEQ      => raise Unify
-	)
+        (case TyName.equality t
+           of TyName.SPECIALEQ => tau'
+            | TyName.EQ        => ( List.app makeEquality taus ; tau' )
+            | TyName.NOEQ      => raise Unify
+        )
 
       | makeEquality'(Overloaded(O)) =
-	(case OverloadingClass.makeEquality O
-	   of NONE    => raise Unify
-	    | SOME O' => Overloaded(O')
-	)
+        (case OverloadingClass.makeEquality O
+           of NONE    => raise Unify
+            | SOME O' => Overloaded(O')
+        )
       | makeEquality'(Link(tau)) =
-	    ( makeEquality tau ; Link(tau) )
+            ( makeEquality tau ; Link(tau) )
 
 
 
     fun unifyRestricted U (tau1,tau2) =
-	let
-	    fun skolemise(alpha, mu) =
-		let
-		   val equality = if TyVar.admitsEquality alpha then TyName.EQ
-								else TyName.NOEQ
-		   val tau'     = ConsType([], TyName.invent(0,equality))
-		in
-		   TyVarMap.insert(mu, alpha, ref tau')
-		end
+        let
+            fun skolemise(alpha, mu) =
+                let
+                   val equality = if TyVar.admitsEquality alpha then TyName.EQ
+                                                                else TyName.NOEQ
+                   val tau'     = ConsType([], TyName.invent(0,equality))
+                in
+                   TyVarMap.insert(mu, alpha, ref tau')
+                end
 
-	    val mu = TyVarSet.foldl skolemise TyVarMap.empty U
-	in
-	    unify(substitute mu tau1, substitute mu tau2)
-	end
+            val mu = TyVarSet.foldl skolemise TyVarMap.empty U
+        in
+            unify(substitute mu tau1, substitute mu tau2)
+        end
 
 
 
     (* Assign default type to overloaded type components [Appendix E] *)
 
     fun defaultOverloaded(tau as ref(Overloaded(O))) =
-	    tau := ConsType([], OverloadingClass.default O)
+            tau := ConsType([], OverloadingClass.default O)
 
       | defaultOverloaded(ref tau') = defaultOverloaded' tau'
 
     and defaultOverloaded'(TyVar(alpha')) = ()
 
       | defaultOverloaded'(RowType(Rho,r)) =
-	    LabMap.app defaultOverloaded Rho
+            LabMap.app defaultOverloaded Rho
 
       | defaultOverloaded'(FunType(tau1,tau2)) =
-	    ( defaultOverloaded tau1 ; defaultOverloaded tau2 )
+            ( defaultOverloaded tau1 ; defaultOverloaded tau2 )
 
       | defaultOverloaded'(ConsType(taus,t)) =
-	    List.app defaultOverloaded taus
+            List.app defaultOverloaded taus
 
       | defaultOverloaded'(Overloaded(O)) =
-	    raise Fail "Type.defaultOverloaded: bypassed overloaded type"
+            raise Fail "Type.defaultOverloaded: bypassed overloaded type"
 
       | defaultOverloaded'(Link(tau)) =
-	    defaultOverloaded tau
+            defaultOverloaded tau
 
 
 
@@ -2651,26 +2651,26 @@ signature TYPESCHEME =
 
     (* Type [Section 4.2] *)
 
-    type TypeScheme = TyVar list * Type			(* [sigma] *)
+    type TypeScheme = TyVar list * Type                        (* [sigma] *)
 
 
     (* Operations *)
 
-    val instance:	TypeScheme -> Type
-    val instance':	TypeScheme -> TyVar list * Type
-    val Clos:		Type -> TypeScheme
-    val ClosRestricted:	TyVarSet -> Type -> TypeScheme
-    val isClosed:	TypeScheme -> bool
+    val instance:        TypeScheme -> Type
+    val instance':        TypeScheme -> TyVar list * Type
+    val Clos:                Type -> TypeScheme
+    val ClosRestricted:        TyVarSet -> Type -> TypeScheme
+    val isClosed:        TypeScheme -> bool
 
-    val tyvars:		TypeScheme -> TyVarSet
-    val tynames:	TypeScheme -> TyNameSet
-    val normalise:	TypeScheme -> TypeScheme
+    val tyvars:                TypeScheme -> TyVarSet
+    val tynames:        TypeScheme -> TyNameSet
+    val normalise:        TypeScheme -> TypeScheme
 
-    val generalises:	TypeScheme * TypeScheme -> bool
-    val equals:		TypeScheme * TypeScheme -> bool
+    val generalises:        TypeScheme * TypeScheme -> bool
+    val equals:                TypeScheme * TypeScheme -> bool
 
-    val substitute:	Substitution -> TypeScheme -> TypeScheme
-    val realise:	Realisation  -> TypeScheme -> TypeScheme
+    val substitute:        Substitution -> TypeScheme -> TypeScheme
+    val realise:        Realisation  -> TypeScheme -> TypeScheme
 
   end
 (* stop of TYPESCHEME.sml *)
@@ -2702,32 +2702,32 @@ structure TypeScheme :> TYPESCHEME =
 
     (* Type [Section 4.2] *)
 
-    type TypeScheme = TyVar list * Type			(* [sigma] *)
+    type TypeScheme = TyVar list * Type                        (* [sigma] *)
 
 
     (* Some helper (this should be in the library...) *)
 
     fun List_foldri f y0 xs =
-	let
-	    fun fold(n,  [])   = y0
-	      | fold(n, x::xs) = f(n, x, fold(n+1,xs))
-	in
-	    fold(0,xs)
-	end
+        let
+            fun fold(n,  [])   = y0
+              | fold(n, x::xs) = f(n, x, fold(n+1,xs))
+        in
+            fold(0,xs)
+        end
 
 
 
     (* Type variable and type name extraction [Section 4.2] *)
 
     fun tyvars (alphas,tau) =
-	let
-	    val U = Type.tyvars tau
-	in
-	    List.foldl
-		(fn(alpha,U) => TyVarSet.delete(U,alpha)
-				handle LibBase.NotFound => U)
-		U alphas
-	end
+        let
+            val U = Type.tyvars tau
+        in
+            List.foldl
+                (fn(alpha,U) => TyVarSet.delete(U,alpha)
+                                handle LibBase.NotFound => U)
+                U alphas
+        end
 
     fun tynames (alphas,tau) = Type.tynames tau
 
@@ -2736,15 +2736,15 @@ structure TypeScheme :> TYPESCHEME =
     (* Instantiation *)
 
     fun instance' (alphas,tau) =
-	let
-	    val alphas' = List.map TyVar.instance alphas
-	    val mu      = ListPair.foldl
-			     (fn(alpha, alpha', mu) =>
-			      TyVarMap.insert(mu, alpha, Type.fromTyVar alpha'))
-			     TyVarMap.empty (alphas, alphas')
-	in
-	    ( alphas', Type.substitute mu tau )
-	end
+        let
+            val alphas' = List.map TyVar.instance alphas
+            val mu      = ListPair.foldl
+                             (fn(alpha, alpha', mu) =>
+                              TyVarMap.insert(mu, alpha, Type.fromTyVar alpha'))
+                             TyVarMap.empty (alphas, alphas')
+        in
+            ( alphas', Type.substitute mu tau )
+        end
 
     fun instance sigma = #2(instance' sigma)
 
@@ -2753,77 +2753,77 @@ structure TypeScheme :> TYPESCHEME =
     (* Generalisation [Section 4.5] *)
 
     fun generalisesType(sigma, tau) =
-	let
-	    val U = Type.tyvars tau
-	in
-	    ( Type.unifyRestricted U (instance sigma, tau) ; true )
-	    handle Type.Unify => false
-	end
+        let
+            val U = Type.tyvars tau
+        in
+            ( Type.unifyRestricted U (instance sigma, tau) ; true )
+            handle Type.Unify => false
+        end
 
     fun generalises(sigma1, sigma2) =
-	    generalisesType(sigma1, instance sigma2)
+            generalisesType(sigma1, instance sigma2)
 
 
 
     (* Closure [Section 4.8] *)
 
     fun Clos tau =
-	    (* Does not copy! *)
-	    ( TyVarSet.listItems(Type.tyvars tau), tau )
+            (* Does not copy! *)
+            ( TyVarSet.listItems(Type.tyvars tau), tau )
 
     fun ClosRestricted U tau =
-	    ( TyVarSet.listItems(TyVarSet.difference(Type.tyvars tau, U)), tau )
+            ( TyVarSet.listItems(TyVarSet.difference(Type.tyvars tau, U)), tau )
 
     fun isClosed (alphas,tau) =
-	TyVarSet.isSubset(Type.tyvars tau, TyVarSet.fromList alphas)
+        TyVarSet.isSubset(Type.tyvars tau, TyVarSet.fromList alphas)
 
 
     (* Comparison [Section 4.5] *)
 
     fun equals((alphas1,tau1), (alphas2,tau2)) =
-	List.length alphas1 = List.length alphas2 andalso
-	let
-	    fun insert(alpha1, alpha2, mu) =
-		TyVarMap.insert(mu, alpha1, Type.fromTyVar alpha2)
+        List.length alphas1 = List.length alphas2 andalso
+        let
+            fun insert(alpha1, alpha2, mu) =
+                TyVarMap.insert(mu, alpha1, Type.fromTyVar alpha2)
 
-	    val (alphas2',tau2') = instance' (alphas2,tau2)
-	    val mu    = ListPair.foldl insert TyVarMap.empty (alphas1,alphas2')
-	    val tau1' = Type.substitute mu tau1
-	    val U     = TyVarSet.fromList alphas2'
-	in
-	    ( Type.unifyRestricted U (tau1',tau2') ; true )
-	    handle Type.Unify => false
-	end
+            val (alphas2',tau2') = instance' (alphas2,tau2)
+            val mu    = ListPair.foldl insert TyVarMap.empty (alphas1,alphas2')
+            val tau1' = Type.substitute mu tau1
+            val U     = TyVarSet.fromList alphas2'
+        in
+            ( Type.unifyRestricted U (tau1',tau2') ; true )
+            handle Type.Unify => false
+        end
 
 
     (* Normalisation (for output) *)
 
     fun normalise (alphas,tau) =
-	let
-	    fun insert(n, alpha, (alphas',mu)) =
-		let
-		    val alpha' = TyVar.normalise(alpha, n)
-		    val tau    = Type.fromTyVar alpha'
-		in
-		    ( alpha'::alphas', TyVarMap.insert(mu, alpha,tau) )
-		end
+        let
+            fun insert(n, alpha, (alphas',mu)) =
+                let
+                    val alpha' = TyVar.normalise(alpha, n)
+                    val tau    = Type.fromTyVar alpha'
+                in
+                    ( alpha'::alphas', TyVarMap.insert(mu, alpha,tau) )
+                end
 
-	    val (alphas',mu) = List_foldri insert (nil,TyVarMap.empty) alphas
-	in
-	    ( alphas', Type.substitute mu tau )
-	end
+            val (alphas',mu) = List_foldri insert (nil,TyVarMap.empty) alphas
+        in
+            ( alphas', Type.substitute mu tau )
+        end
 
 
     (* Substitution *)
 
     fun substitute mu (alphas,tau) =
-	let
-	    val mu' = List.foldl (fn(alpha,mu) =>
-				    #1(TyVarMap.remove(mu,alpha))
-				    handle LibBase.NotFound => mu) mu alphas
-	in
-	    ( alphas, Type.substitute mu' tau )
-	end
+        let
+            val mu' = List.foldl (fn(alpha,mu) =>
+                                    #1(TyVarMap.remove(mu,alpha))
+                                    handle LibBase.NotFound => mu) mu alphas
+        in
+            ( alphas, Type.substitute mu' tau )
+        end
 
 
     (* Realisation [Section 5.2] *)
@@ -2857,31 +2857,31 @@ signature TYPEFCN =
 
     (* Type [Section 4.2] *)
 
-    type TypeFcn = Type.TypeFcn			(* [theta] *)
+    type TypeFcn = Type.TypeFcn                        (* [theta] *)
 
 
     (* Operations *)
 
-    val fromTyName:	TyName  -> TypeFcn
-    val toTyName:	TypeFcn -> TyName option
-    val isClosed:	TypeFcn -> bool
+    val fromTyName:        TyName  -> TypeFcn
+    val toTyName:        TypeFcn -> TyName option
+    val isClosed:        TypeFcn -> bool
 
-    val arity:		TypeFcn -> int
-    val admitsEquality:	TypeFcn -> bool
+    val arity:                TypeFcn -> int
+    val admitsEquality:        TypeFcn -> bool
 
-    val tyvars:		TypeFcn -> TyVarSet
-    val tynames:	TypeFcn -> TyNameSet
-    val normalise:	TypeFcn -> TypeFcn
-    val rename:		TypeFcn -> TypeFcn
+    val tyvars:                TypeFcn -> TyVarSet
+    val tynames:        TypeFcn -> TyNameSet
+    val normalise:        TypeFcn -> TypeFcn
+    val rename:                TypeFcn -> TypeFcn
 
-    val equals:		TypeFcn * TypeFcn -> bool
+    val equals:                TypeFcn * TypeFcn -> bool
 
     exception Apply
-    val apply:		Type list * TypeFcn -> Type	(* may raise Apply *)
+    val apply:                Type list * TypeFcn -> Type        (* may raise Apply *)
 
-    val realise:	Realisation -> TypeFcn -> TypeFcn
+    val realise:        Realisation -> TypeFcn -> TypeFcn
 
-    val makeEquality:	TypeFcn -> unit
+    val makeEquality:        TypeFcn -> unit
 
   end
 (* stop of TYPEFCN.sml *)
@@ -2910,12 +2910,12 @@ structure TypeFcn :> TYPEFCN =
 
     (* Type [Section 4.2] *)
 
-    type TypeFcn = Type.TypeFcn				(* [theta] *)
+    type TypeFcn = Type.TypeFcn                                (* [theta] *)
 
 
     (* Operations *)
 
-    val tyvars    = TypeScheme.tyvars		(* same type ;-) *)
+    val tyvars    = TypeScheme.tyvars                (* same type ;-) *)
     val tynames   = TypeScheme.tynames
     val equals    = TypeScheme.equals
     val isClosed  = TypeScheme.isClosed
@@ -2932,39 +2932,39 @@ structure TypeFcn :> TYPEFCN =
     (* Equality [Section 4.4] *)
 
     fun admitsEquality (alphas,tau) =
-	let
-	    fun insert(alpha, mu) =
-		TyVarMap.insert(mu, alpha, Type.fromTyVar(TyVar.invent true))
+        let
+            fun insert(alpha, mu) =
+                TyVarMap.insert(mu, alpha, Type.fromTyVar(TyVar.invent true))
 
-	    val mu = List.foldl insert TyVarMap.empty alphas
-	in
-	    Type.admitsEquality(Type.substitute mu tau)
-	end
+            val mu = List.foldl insert TyVarMap.empty alphas
+        in
+            Type.admitsEquality(Type.substitute mu tau)
+        end
     
 
     (* Eta-conversion [Section 4.4] *)
 
     fun fromTyName t =
-	let
-	    val alphas = List.tabulate(TyName.arity t, TyVar.fromIndex false)
-	in
-	    ( alphas, Type.fromConsType(List.map Type.fromTyVar alphas, t) )
-	end
+        let
+            val alphas = List.tabulate(TyName.arity t, TyVar.fromIndex false)
+        in
+            ( alphas, Type.fromConsType(List.map Type.fromTyVar alphas, t) )
+        end
 
     fun toTyName(alphas, ref(Type.ConsType(taus,t))) = t
       | toTyName _ = raise Fail "TypeFcn.toTyName: invalid type function"
 
     fun toTyName(alphas, ref(Type.ConsType(taus,t))) =
-	let
-	    fun isSame(alpha, ref(Type.TyVar alpha')) = alpha = alpha'
-	      | isSame(alpha,            _          ) = false
-	in
-	    if List.length alphas = List.length taus
-	    andalso ListPair.all isSame (alphas, taus) then
-		SOME t
-	    else
-		NONE
-	end
+        let
+            fun isSame(alpha, ref(Type.TyVar alpha')) = alpha = alpha'
+              | isSame(alpha,            _          ) = false
+        in
+            if List.length alphas = List.length taus
+            andalso ListPair.all isSame (alphas, taus) then
+                SOME t
+            else
+                NONE
+        end
 
       | toTyName _ = NONE
 
@@ -2974,13 +2974,13 @@ structure TypeFcn :> TYPEFCN =
     exception Apply
 
     fun apply(taus, (alphas,tau)) =
-	if List.length taus <> List.length alphas then raise Apply else
-	let
-	    fun insert(alpha, tau, mu) = TyVarMap.insert(mu, alpha, tau)
-	    val mu = ListPair.foldl insert TyVarMap.empty (alphas, taus)
-	in
-	    Type.substitute mu tau
-	end
+        if List.length taus <> List.length alphas then raise Apply else
+        let
+            fun insert(alpha, tau, mu) = TyVarMap.insert(mu, alpha, tau)
+            val mu = ListPair.foldl insert TyVarMap.empty (alphas, taus)
+        in
+            Type.substitute mu tau
+        end
 
 
     (* Make it an equality type *)
@@ -3002,7 +3002,7 @@ signature IDSTATUS =
 
     (* Type [Section 4.1] *)
 
-    datatype IdStatus = c | e | v			(* [is] *)
+    datatype IdStatus = c | e | v                        (* [is] *)
 
 
     (* Operations *)
@@ -3024,7 +3024,7 @@ structure IdStatus :> IDSTATUS =
 
     (* Type [Section 4.1] *)
 
-    datatype IdStatus = c | e | v			(* [is] *)
+    datatype IdStatus = c | e | v                        (* [is] *)
 
 
     (* Generalisation [Section 5.5] *)
@@ -3069,7 +3069,7 @@ signature GENERIC_ENV =
     (* Export types [Section 4.2 and 6.3] *)
 
     datatype ('a,'b) Str' = Str of (*Env*)
-			    ('a,'b) Str' StrIdMap * 'b TyConMap * 'a VIdMap
+                            ('a,'b) Str' StrIdMap * 'b TyConMap * 'a VIdMap
 
     type 'a ValEnv'       = 'a VIdMap
     type 'b TyEnv'        = 'b TyConMap
@@ -3080,27 +3080,27 @@ signature GENERIC_ENV =
 
     (* Operations *)
 
-    val empty:		('a,'b) Env'
+    val empty:                ('a,'b) Env'
 
-    val fromSE:		('a,'b) StrEnv'		-> ('a,'b) Env'
-    val fromTE:		'b TyEnv'		-> ('a,'b) Env'
-    val fromVE:		'a ValEnv'		-> ('a,'b) Env'
-    val fromVEandTE:	'a ValEnv' * 'b TyEnv'	-> ('a,'b) Env'
+    val fromSE:                ('a,'b) StrEnv'                -> ('a,'b) Env'
+    val fromTE:                'b TyEnv'                -> ('a,'b) Env'
+    val fromVE:                'a ValEnv'                -> ('a,'b) Env'
+    val fromVEandTE:        'a ValEnv' * 'b TyEnv'        -> ('a,'b) Env'
 
-    val plus:		('a,'b) Env' * ('a,'b) Env'    -> ('a,'b) Env'
-    val plusVE:		('a,'b) Env' * 'a ValEnv'      -> ('a,'b) Env'
-    val plusTE:		('a,'b) Env' * 'b TyEnv'       -> ('a,'b) Env'
-    val plusSE:		('a,'b) Env' * ('a,'b) StrEnv' -> ('a,'b) Env'
-    val plusVEandTE:	('a,'b) Env' * ('a ValEnv' * 'b TyEnv') -> ('a,'b) Env'
+    val plus:                ('a,'b) Env' * ('a,'b) Env'    -> ('a,'b) Env'
+    val plusVE:                ('a,'b) Env' * 'a ValEnv'      -> ('a,'b) Env'
+    val plusTE:                ('a,'b) Env' * 'b TyEnv'       -> ('a,'b) Env'
+    val plusSE:                ('a,'b) Env' * ('a,'b) StrEnv' -> ('a,'b) Env'
+    val plusVEandTE:        ('a,'b) Env' * ('a ValEnv' * 'b TyEnv') -> ('a,'b) Env'
 
-    val findVId:	('a,'b) Env' * VId       -> 'a option
-    val findTyCon:	('a,'b) Env' * TyCon     -> 'b option
-    val findStrId:	('a,'b) Env' * StrId     -> ('a,'b) Str' option
-    val findLongVId:	('a,'b) Env' * longVId   -> 'a option
-    val findLongTyCon:	('a,'b) Env' * longTyCon -> 'b option
-    val findLongStrId:	('a,'b) Env' * longStrId -> ('a,'b) Str' option
+    val findVId:        ('a,'b) Env' * VId       -> 'a option
+    val findTyCon:        ('a,'b) Env' * TyCon     -> 'b option
+    val findStrId:        ('a,'b) Env' * StrId     -> ('a,'b) Str' option
+    val findLongVId:        ('a,'b) Env' * longVId   -> 'a option
+    val findLongTyCon:        ('a,'b) Env' * longTyCon -> 'b option
+    val findLongStrId:        ('a,'b) Env' * longStrId -> ('a,'b) Str' option
 
-    val disjoint:	('a,'b) Env' * ('a,'b) Env' -> bool
+    val disjoint:        ('a,'b) Env' * ('a,'b) Env' -> bool
 
   end
 (* stop of GENERIC_ENV.sml *)
@@ -3140,11 +3140,11 @@ functor GenericEnvFn() :> GENERIC_ENV =
     (* Export types [Section 4.2 and 6.3] *)
 
     datatype ('a,'b) Str' = Str of (*Env*)
-			   ('a,'b) Str' StrIdMap * 'b TyConMap * 'a VIdMap
+                           ('a,'b) Str' StrIdMap * 'b TyConMap * 'a VIdMap
 
-    type 'a ValEnv'       = 'a VIdMap				(* [VE] *)
-    type 'b TyEnv'        = 'b TyConMap				(* [TE] *)
-    type ('a,'b) StrEnv'  = ('a,'b) Str' StrIdMap		(* [SE] *)
+    type 'a ValEnv'       = 'a VIdMap                                (* [VE] *)
+    type 'b TyEnv'        = 'b TyConMap                                (* [TE] *)
+    type ('a,'b) StrEnv'  = ('a,'b) Str' StrIdMap                (* [SE] *)
 
     type ('a,'b) Env'     = ('a,'b) StrEnv' * 'b TyEnv' * 'a ValEnv' (* [E] *)
 
@@ -3164,19 +3164,19 @@ functor GenericEnvFn() :> GENERIC_ENV =
     infix plus plusVE plusTE plusSE plusVEandTE
 
     fun (SE,TE,VE) plus (SE',TE',VE') =
-	( StrIdMap.unionWith #2 (SE,SE')
-	, TyConMap.unionWith #2 (TE,TE')
-	, VIdMap.unionWith   #2 (VE,VE')
-	)
+        ( StrIdMap.unionWith #2 (SE,SE')
+        , TyConMap.unionWith #2 (TE,TE')
+        , VIdMap.unionWith   #2 (VE,VE')
+        )
 
     fun (SE,TE,VE) plusVE VE' = ( SE, TE, VIdMap.unionWith #2 (VE,VE') )
     fun (SE,TE,VE) plusTE TE' = ( SE, TyConMap.unionWith #2 (TE,TE'), VE )
     fun (SE,TE,VE) plusSE SE' = ( StrIdMap.unionWith #2 (SE,SE'), TE, VE )
     fun (SE,TE,VE) plusVEandTE (VE',TE') =
-	( SE
-	, TyConMap.unionWith #2 (TE,TE')
-	, VIdMap.unionWith   #2 (VE,VE')
-	)
+        ( SE
+        , TyConMap.unionWith #2 (TE,TE')
+        , VIdMap.unionWith   #2 (VE,VE')
+        )
 
 
     (* Application (lookup) [Section 4.3] *)
@@ -3187,15 +3187,15 @@ functor GenericEnvFn() :> GENERIC_ENV =
 
     fun findLongX'(E, findX,      [],       x) = findX(E, x)
       | findLongX'(E, findX, strid::strids, x) =
-	    Option.mapPartial (fn E => findLongX'(E, findX, strids, x))
-			      (Option.map (fn Str E => E) (findStrId(E, strid)))
+            Option.mapPartial (fn E => findLongX'(E, findX, strids, x))
+                              (Option.map (fn Str E => E) (findStrId(E, strid)))
 
     fun findLongX (explodeLongX, findX) (E, longX) =
-	let
-	    val (strids,x) = explodeLongX longX
-	in
-	    findLongX'(E, findX, strids, x)
-	end
+        let
+            val (strids,x) = explodeLongX longX
+        in
+            findLongX'(E, findX, strids, x)
+        end
 
     fun findLongVId   x = findLongX (LongVId.explode,   findVId) x
     fun findLongTyCon x = findLongX (LongTyCon.explode, findTyCon) x
@@ -3205,9 +3205,9 @@ functor GenericEnvFn() :> GENERIC_ENV =
     (* Disjointness *)
 
     fun disjoint((SE1,TE1,VE1), (SE2,TE2,VE2)) =
-	    StrIdMap.disjoint(SE1,SE2) andalso
-	    TyConMap.disjoint(TE1,TE2) andalso
-	    VIdMap.disjoint(VE1,VE2)
+            StrIdMap.disjoint(SE1,SE2) andalso
+            TyConMap.disjoint(TE1,TE2) andalso
+            VIdMap.disjoint(VE1,VE2)
 
   end
 (* stop of GenericEnvFn.sml *)
@@ -3243,36 +3243,36 @@ signature STATIC_ENV =
     (* Export types [Section 4.2] *)
 
     type ValStr = TypeScheme * IdStatus
-    type ValEnv = ValStr VIdMap					(* [VE] *)
+    type ValEnv = ValStr VIdMap                                        (* [VE] *)
 
     type TyStr  = TypeFcn * ValEnv
-    type TyEnv  = TyStr TyConMap				(* [TE] *)
+    type TyEnv  = TyStr TyConMap                                (* [TE] *)
 
     type Str    = (ValStr, TyStr) Str'
-    type StrEnv = Str StrIdMap					(* [SE] *)
+    type StrEnv = Str StrIdMap                                        (* [SE] *)
  
-    type Env    = StrEnv * TyEnv * ValEnv			(* [E] *)
+    type Env    = StrEnv * TyEnv * ValEnv                        (* [E] *)
 
 
     (* Operations *)
 
-    val tyvarsVE:		ValEnv -> TyVarSet
-    val tyvars:			Env    -> TyVarSet
-    val tynamesTE:		TyEnv  -> TyNameSet
-    val tynamesSE:		StrEnv -> TyNameSet
-    val tynames:		Env    -> TyNameSet
+    val tyvarsVE:                ValEnv -> TyVarSet
+    val tyvars:                        Env    -> TyVarSet
+    val tynamesTE:                TyEnv  -> TyNameSet
+    val tynamesSE:                StrEnv -> TyNameSet
+    val tynames:                Env    -> TyNameSet
 
-    val isWellFormed:		Env -> bool
+    val isWellFormed:                Env -> bool
 
-    val Clos:			ValEnv -> ValEnv
-    val containsFlexibleType:	ValEnv -> bool
-    val defaultOverloaded:	ValEnv -> unit
-    val makeEquality:		TyEnv  -> unit
-    val maximiseEquality:	TyEnv * ValEnv -> TyEnv * ValEnv
-    val Abs:			TyEnv * Env -> Env
-    val realise:		Realisation -> Env -> Env
+    val Clos:                        ValEnv -> ValEnv
+    val containsFlexibleType:        ValEnv -> bool
+    val defaultOverloaded:        ValEnv -> unit
+    val makeEquality:                TyEnv  -> unit
+    val maximiseEquality:        TyEnv * ValEnv -> TyEnv * ValEnv
+    val Abs:                        TyEnv * Env -> Env
+    val realise:                Realisation -> Env -> Env
 
-    val enriches:		Env * Env -> bool
+    val enriches:                Env * Env -> bool
 
   end
 (* stop of STATIC_ENV.sml *)
@@ -3310,15 +3310,15 @@ structure StaticEnv :> STATIC_ENV =
     (* Export types [Section 4.2] *)
 
     type ValStr = TypeScheme * IdStatus
-    type ValEnv = ValStr VIdMap					(* [VE] *)
+    type ValEnv = ValStr VIdMap                                        (* [VE] *)
 
     type TyStr  = TypeFcn * ValEnv
-    type TyEnv  = TyStr TyConMap				(* [TE] *)
+    type TyEnv  = TyStr TyConMap                                (* [TE] *)
 
     type Str    = (ValStr, TyStr) Str'
-    type StrEnv = Str StrIdMap					(* [SE] *)
+    type StrEnv = Str StrIdMap                                        (* [SE] *)
  
-    type Env    = StrEnv * TyEnv * ValEnv			(* [E] *)
+    type Env    = StrEnv * TyEnv * ValEnv                        (* [E] *)
 
 
     (* Further modifications [Section 4.3] *)
@@ -3331,97 +3331,97 @@ structure StaticEnv :> STATIC_ENV =
     (* Type variable and type name set [Section 4.2] *)
 
     fun tyvarsVE VE =
-	VIdMap.foldl
-	    (fn((sigma,is), U) => TyVarSet.union(U, TypeScheme.tyvars sigma))
-	    TyVarSet.empty VE
+        VIdMap.foldl
+            (fn((sigma,is), U) => TyVarSet.union(U, TypeScheme.tyvars sigma))
+            TyVarSet.empty VE
 
     fun tyvarsTE TE =
-	TyConMap.foldl
-	    (fn((theta,VE), U) => TyVarSet.union(TyVarSet.union
-				(U, TypeFcn.tyvars theta), tyvarsVE VE))
-	    TyVarSet.empty TE
+        TyConMap.foldl
+            (fn((theta,VE), U) => TyVarSet.union(TyVarSet.union
+                                (U, TypeFcn.tyvars theta), tyvarsVE VE))
+            TyVarSet.empty TE
 
     fun tyvarsSE SE =
-	StrIdMap.foldl
-	    (fn(Str E, U) => TyVarSet.union(U, tyvars E))
-	    TyVarSet.empty SE
+        StrIdMap.foldl
+            (fn(Str E, U) => TyVarSet.union(U, tyvars E))
+            TyVarSet.empty SE
 
     and tyvars (SE,TE,VE) =
-	TyVarSet.union(TyVarSet.union(tyvarsSE SE, tyvarsTE TE), tyvarsVE VE)
+        TyVarSet.union(TyVarSet.union(tyvarsSE SE, tyvarsTE TE), tyvarsVE VE)
 
 
     fun tynamesVE VE =
-	VIdMap.foldl
-	    (fn((sigma,is), T) => TyNameSet.union(T, TypeScheme.tynames sigma))
-	    TyNameSet.empty VE
+        VIdMap.foldl
+            (fn((sigma,is), T) => TyNameSet.union(T, TypeScheme.tynames sigma))
+            TyNameSet.empty VE
 
     fun tynamesTE TE =
-	TyConMap.foldl
-	    (fn((theta,VE), T) => TyNameSet.union(TyNameSet.union
-				(T, TypeFcn.tynames theta), tynamesVE VE))
-	    TyNameSet.empty TE
+        TyConMap.foldl
+            (fn((theta,VE), T) => TyNameSet.union(TyNameSet.union
+                                (T, TypeFcn.tynames theta), tynamesVE VE))
+            TyNameSet.empty TE
 
     fun tynamesSE SE =
-	StrIdMap.foldl
-	    (fn(Str E, T) => TyNameSet.union(T, tynames E))
-	    TyNameSet.empty SE
+        StrIdMap.foldl
+            (fn(Str E, T) => TyNameSet.union(T, tynames E))
+            TyNameSet.empty SE
 
     and tynames (SE,TE,VE) =
-	TyNameSet.union(TyNameSet.union(tynamesSE SE, tynamesTE TE),
-					tynamesVE VE)
+        TyNameSet.union(TyNameSet.union(tynamesSE SE, tynamesTE TE),
+                                        tynamesVE VE)
 
 
     (* Well-formedness [Section 4.9] *)
 
     fun isWellFormedTyStr (theta,VE) =
-	VIdMap.isEmpty VE orelse isSome(TypeFcn.toTyName theta)
+        VIdMap.isEmpty VE orelse isSome(TypeFcn.toTyName theta)
 
     fun isWellFormedTE TE =
-	TyConMap.all isWellFormedTyStr TE
+        TyConMap.all isWellFormedTyStr TE
 
     fun isWellFormedSE SE =
-	StrIdMap.all (fn Str E => isWellFormed E) SE
+        StrIdMap.all (fn Str E => isWellFormed E) SE
 
     and isWellFormed (SE,TE,VE) =
-	isWellFormedTE TE andalso isWellFormedSE SE
+        isWellFormedTE TE andalso isWellFormedSE SE
 
 
 
     (* Closure [Section 4.8] *)
 
     fun Clos VE =
-	    VIdMap.map (fn((_,tau), is) => (TypeScheme.Clos tau, is)) VE
+            VIdMap.map (fn((_,tau), is) => (TypeScheme.Clos tau, is)) VE
 
 
     (* Check for unresolved flexible record types [Section 4.11, item 1] *)
 
     fun containsFlexibleType VE =
-	    VIdMap.exists (fn((_,tau), is) => Type.isFlexible tau) VE
+            VIdMap.exists (fn((_,tau), is) => Type.isFlexible tau) VE
 
 
     (* Assign default types to overloaded types [Appendix E] *)
 
     fun defaultOverloaded VE =
-	    VIdMap.app (fn((_,tau), is) => Type.defaultOverloaded tau) VE
+            VIdMap.app (fn((_,tau), is) => Type.defaultOverloaded tau) VE
 
 
     (* Realisation [Section 5.2] *)
 
     fun realiseVE phi VE =
-	VIdMap.map (fn(sigma,is) => ( TypeScheme.realise phi sigma, is )) VE
+        VIdMap.map (fn(sigma,is) => ( TypeScheme.realise phi sigma, is )) VE
 
     and realiseTE phi TE =
-	TyConMap.map (fn(theta,VE) => ( TypeFcn.realise phi theta
-				      , realiseVE phi VE
-				      )) TE
+        TyConMap.map (fn(theta,VE) => ( TypeFcn.realise phi theta
+                                      , realiseVE phi VE
+                                      )) TE
     and realiseSE phi SE =
-	StrIdMap.map (fn(Str E) => Str(realise phi E)) SE
+        StrIdMap.map (fn(Str E) => Str(realise phi E)) SE
 
     and realise phi (SE,TE,VE) =
-	( realiseSE phi SE
-	, realiseTE phi TE
-	, realiseVE phi VE
-	)
+        ( realiseSE phi SE
+        , realiseTE phi TE
+        , realiseVE phi VE
+        )
 
 
     (* Make all type names bound in a type environment equality types *)
@@ -3429,7 +3429,7 @@ structure StaticEnv :> STATIC_ENV =
     (* Assumes abstract types, i.e. no constructors. *)
 
     fun makeEquality TE =
-	TyConMap.app (fn(theta,VE) => TypeFcn.makeEquality theta) TE
+        TyConMap.app (fn(theta,VE) => TypeFcn.makeEquality theta) TE
 
 
 
@@ -3440,37 +3440,37 @@ structure StaticEnv :> STATIC_ENV =
     fun admitsEqualityValStr ((_,tau),_) = Type.admitsEquality tau
 
     fun maximiseEquality(TE,VE) =
-	let
-	    fun checkTyStr((theta,VE), (phi,changed)) = 
-		let
-		    val t = valOf(TypeFcn.toTyName theta)
-		in
-		    if TyName.equality t = TyName.EQ
-		    andalso not(VIdMap.all admitsEqualityValStr VE) then
-			( TyNameMap.insert(phi,
-					   t,
-					   TypeFcn.fromTyName
-						(TyName.removeEquality t)
-					  )
-			, true
-			)
-		    else
-			( phi, changed )
-		end
+        let
+            fun checkTyStr((theta,VE), (phi,changed)) = 
+                let
+                    val t = valOf(TypeFcn.toTyName theta)
+                in
+                    if TyName.equality t = TyName.EQ
+                    andalso not(VIdMap.all admitsEqualityValStr VE) then
+                        ( TyNameMap.insert(phi,
+                                           t,
+                                           TypeFcn.fromTyName
+                                                (TyName.removeEquality t)
+                                          )
+                        , true
+                        )
+                    else
+                        ( phi, changed )
+                end
 
-	    fun checkTE(TE, phi) =
-		let
-		    val (phi',change) = TyConMap.foldl checkTyStr (phi,false) TE
-		    val TE'           = realiseTE phi' TE
-		in
-		    if change then checkTE(TE', phi')
-			      else (TE', phi')
-		end
+            fun checkTE(TE, phi) =
+                let
+                    val (phi',change) = TyConMap.foldl checkTyStr (phi,false) TE
+                    val TE'           = realiseTE phi' TE
+                in
+                    if change then checkTE(TE', phi')
+                              else (TE', phi')
+                end
 
-	    val (TE',phi) = checkTE(TE, TyNameMap.empty)
-	in
-	    ( TE', realiseVE phi VE )
-	end
+            val (TE',phi) = checkTE(TE, TyNameMap.empty)
+        in
+            ( TE', realiseVE phi VE )
+        end
 
 
 
@@ -3479,78 +3479,78 @@ structure StaticEnv :> STATIC_ENV =
     fun AbsTE(TE) = TyConMap.map (fn(theta,_) => (theta,VIdMap.empty)) TE
 
     fun Abs(TE,E) =
-	let
-	    val ts  = tynamesTE TE
-	    val phi = TyNameSet.foldl
-			(fn(t,phi) => TyNameMap.insert(phi, t,
-					TypeFcn.fromTyName(TyName.Abs t)))
-			TyNameMap.empty ts
-	in
-	    realise phi (AbsTE(TE) TEplus E)
-	end
+        let
+            val ts  = tynamesTE TE
+            val phi = TyNameSet.foldl
+                        (fn(t,phi) => TyNameMap.insert(phi, t,
+                                        TypeFcn.fromTyName(TyName.Abs t)))
+                        TyNameMap.empty ts
+        in
+            realise phi (AbsTE(TE) TEplus E)
+        end
 
 
     (* Disjointness *)
 
     fun disjoint((SE1,TE1,VE1), (SE2,TE2,VE2)) =
-	    StrIdMap.disjoint(SE1,SE2) andalso
-	    TyConMap.disjoint(TE1,TE2) andalso
-	    VIdMap.disjoint(VE1,VE2)
+            StrIdMap.disjoint(SE1,SE2) andalso
+            TyConMap.disjoint(TE1,TE2) andalso
+            VIdMap.disjoint(VE1,VE2)
 
 
     (* Enrichment [Section 5.5] *)
 
     fun equalsVE(VE1,VE2) =
-	VIdMap.numItems VE1 = VIdMap.numItems VE2 andalso
-	VIdMap.alli
-	    (fn(vid, (sigma1,is1)) =>
-		case VIdMap.find(VE2, vid)
-		  of NONE             => false
-		   | SOME(sigma2,is2) =>
-			TypeScheme.equals(sigma1,sigma2) andalso is1 = is2
-	    )
-	    VE1
+        VIdMap.numItems VE1 = VIdMap.numItems VE2 andalso
+        VIdMap.alli
+            (fn(vid, (sigma1,is1)) =>
+                case VIdMap.find(VE2, vid)
+                  of NONE             => false
+                   | SOME(sigma2,is2) =>
+                        TypeScheme.equals(sigma1,sigma2) andalso is1 = is2
+            )
+            VE1
 
 
     fun enriches((SE1,TE1,VE1), (SE2,TE2,VE2)) =
-	    enrichesSE(SE1,SE2) andalso
-	    enrichesTE(TE1,TE2) andalso
-	    enrichesVE(VE1,VE2)
+            enrichesSE(SE1,SE2) andalso
+            enrichesTE(TE1,TE2) andalso
+            enrichesVE(VE1,VE2)
 
     and enrichesSE(SE1,SE2) =
-	StrIdMap.alli
-	    (fn(strid, Str E2) =>
-		case StrIdMap.find(SE1, strid)
-		  of NONE         => false
-		   | SOME(Str E1) => enriches(E1,E2)
-	    )
-	    SE2
+        StrIdMap.alli
+            (fn(strid, Str E2) =>
+                case StrIdMap.find(SE1, strid)
+                  of NONE         => false
+                   | SOME(Str E1) => enriches(E1,E2)
+            )
+            SE2
 
     and enrichesTE(TE1,TE2) =
-	TyConMap.alli
-	    (fn(tycon, tystr2) =>
-		case TyConMap.find(TE1, tycon)
-		  of NONE        => false
-		   | SOME tystr1 => enrichesTyStr(tystr1,tystr2)
-	    )
-	    TE2
+        TyConMap.alli
+            (fn(tycon, tystr2) =>
+                case TyConMap.find(TE1, tycon)
+                  of NONE        => false
+                   | SOME tystr1 => enrichesTyStr(tystr1,tystr2)
+            )
+            TE2
 
     and enrichesVE(VE1,VE2) =
-	VIdMap.alli
-	    (fn(vid, valstr2) =>
-		case VIdMap.find(VE1, vid)
-		  of NONE         => false
-		   | SOME valstr1 => enrichesValStr(valstr1,valstr2)
-	    )
-	    VE2
+        VIdMap.alli
+            (fn(vid, valstr2) =>
+                case VIdMap.find(VE1, vid)
+                  of NONE         => false
+                   | SOME valstr1 => enrichesValStr(valstr1,valstr2)
+            )
+            VE2
 
     and enrichesTyStr((theta1,VE1), (theta2,VE2)) =
-	    TypeFcn.equals(theta1,theta2) andalso
-	    ( VIdMap.isEmpty VE2 orelse equalsVE(VE1,VE2) )
+            TypeFcn.equals(theta1,theta2) andalso
+            ( VIdMap.isEmpty VE2 orelse equalsVE(VE1,VE2) )
 
     and enrichesValStr((sigma1,is1), (sigma2,is2)) =
-	    TypeScheme.generalises(sigma1,sigma2) andalso
-	    IdStatus.generalises(is1,is2)
+            TypeScheme.generalises(sigma1,sigma2) andalso
+            IdStatus.generalises(is1,is2)
 
   end
 (* stop of StaticEnv.sml *)
@@ -3575,18 +3575,18 @@ signature SIG =
 
     (* Type [Section 5.1] *)
 
-    type Sig = TyNameSet * Env				(* [Sigma] *)
+    type Sig = TyNameSet * Env                                (* [Sigma] *)
 
 
     (* Operations *)
 
-    val tyvars:		Sig -> TyVarSet
-    val tynames:	Sig -> TyNameSet
+    val tyvars:                Sig -> TyVarSet
+    val tynames:        Sig -> TyNameSet
 
-    val rename:		Sig -> Sig
+    val rename:                Sig -> Sig
 
     exception Match
-    val match:		Env * Sig -> Env * Realisation (* Matching *)
+    val match:                Env * Sig -> Env * Realisation (* Matching *)
 
   end
 (* stop of SIG.sml *)
@@ -3611,7 +3611,7 @@ structure Sig :> SIG =
 
     (* Type [Section 5.1] *)
 
-    type Sig = TyNameSet * Env				(* [Sigma] *)
+    type Sig = TyNameSet * Env                                (* [Sigma] *)
 
 
     (* Type variable and type name extraction [Section 4.2] *)
@@ -3623,16 +3623,16 @@ structure Sig :> SIG =
     (* Alpha Renaming *)
 
     fun rename (T,E) =
-	let
-	    val phi' = TyNameSet.foldl
-			 (fn(t,phi')=> TyNameMap.insert(phi',t,TyName.rename t))
-			 TyNameMap.empty T
-	    val phi = TyNameMap.map TypeFcn.fromTyName phi'
-	    val T'  = TyNameSet.map (fn t => valOf(TyNameMap.find(phi',t))) T
-	    val E'  = StaticEnv.realise phi E
-	in
-	    (T',E')
-	end
+        let
+            val phi' = TyNameSet.foldl
+                         (fn(t,phi')=> TyNameMap.insert(phi',t,TyName.rename t))
+                         TyNameMap.empty T
+            val phi = TyNameMap.map TypeFcn.fromTyName phi'
+            val T'  = TyNameSet.map (fn t => valOf(TyNameMap.find(phi',t))) T
+            val E'  = StaticEnv.realise phi E
+        in
+            (T',E')
+        end
 
 
     (* Matching [Section 5.6] *)
@@ -3640,60 +3640,60 @@ structure Sig :> SIG =
     exception Match
 
     fun matchTypeFcn(theta', theta, phi, T) =
-	if TypeFcn.arity theta <> TypeFcn.arity theta' then
-	    raise Match
-	else
-	case TypeFcn.toTyName theta
-	  of NONE   => phi
-	   | SOME t =>
-		if isSome(TyNameMap.find(phi, t))
-		orelse not(TyNameSet.member(T, t)) then
-		    phi
-		else
-		let
-		    val phi' = TyNameMap.insert(phi, t, TypeFcn.rename theta')
-		in
-		    TyNameMap.map (TypeFcn.realise phi') phi'
-		end
+        if TypeFcn.arity theta <> TypeFcn.arity theta' then
+            raise Match
+        else
+        case TypeFcn.toTyName theta
+          of NONE   => phi
+           | SOME t =>
+                if isSome(TyNameMap.find(phi, t))
+                orelse not(TyNameSet.member(T, t)) then
+                    phi
+                else
+                let
+                    val phi' = TyNameMap.insert(phi, t, TypeFcn.rename theta')
+                in
+                    TyNameMap.map (TypeFcn.realise phi') phi'
+                end
 
     fun matchTE(TE', TE, phi, T) =
-	let
-	    fun matchTyStr(tycon, (theta,VE), phi) =
-		case TyConMap.find(TE', tycon)
-		  of NONE             => raise Match
-		   | SOME(theta',VE') => matchTypeFcn(theta', theta, phi, T)
-	in
-	    TyConMap.foldli matchTyStr phi TE
-	end
+        let
+            fun matchTyStr(tycon, (theta,VE), phi) =
+                case TyConMap.find(TE', tycon)
+                  of NONE             => raise Match
+                   | SOME(theta',VE') => matchTypeFcn(theta', theta, phi, T)
+        in
+            TyConMap.foldli matchTyStr phi TE
+        end
 
     fun matchSE(SE', SE, phi, T) =
-	let
-	    fun matchStr(strid, StaticEnv.Str E, phi) =
-		case StrIdMap.find(SE', strid)
-		  of NONE                   => raise Match
-		   | SOME(StaticEnv.Str E') => matchE(E', E, phi, T)
-	in
-	    StrIdMap.foldli matchStr phi SE
-	end
+        let
+            fun matchStr(strid, StaticEnv.Str E, phi) =
+                case StrIdMap.find(SE', strid)
+                  of NONE                   => raise Match
+                   | SOME(StaticEnv.Str E') => matchE(E', E, phi, T)
+        in
+            StrIdMap.foldli matchStr phi SE
+        end
 
     and matchE((SE',TE',VE'), (SE,TE,VE), phi, T) =
-	let
-	    val phi1 = matchTE(TE', TE, phi, T)
-	    val phi2 = matchSE(SE', SE, phi1, T)
-	in
-	    phi2
-	end
+        let
+            val phi1 = matchTE(TE', TE, phi, T)
+            val phi2 = matchSE(SE', SE, phi1, T)
+        in
+            phi2
+        end
 
     fun match(E', (T,E)) =
-	let
-	    val phi = matchE(E', E, TyNameMap.empty, T)
-	    val E'' = StaticEnv.realise phi E
-	in
-	    if StaticEnv.enriches(E',E'') then
-		(E'', phi)
-	    else
-		raise Match
-	end
+        let
+            val phi = matchE(E', E, TyNameMap.empty, T)
+            val E'' = StaticEnv.realise phi E
+        in
+            if StaticEnv.enriches(E',E'') then
+                (E'', phi)
+            else
+                raise Match
+        end
 
   end
 (* stop of Sig.sml *)
@@ -3718,13 +3718,13 @@ signature FUNSIG =
 
     (* Type [Section 5.1] *)
 
-    type FunSig = TyNameSet * (Env * Sig)		(* [Phi] *)
+    type FunSig = TyNameSet * (Env * Sig)                (* [Phi] *)
 
 
     (* Operations *)
 
-    val tyvars:		FunSig -> TyVarSet
-    val tynames:	FunSig -> TyNameSet
+    val tyvars:                FunSig -> TyVarSet
+    val tynames:        FunSig -> TyNameSet
 
   end
 (* stop of FUNSIG.sml *)
@@ -3749,17 +3749,17 @@ structure FunSig :> FUNSIG =
 
     (* Type [Section 5.1] *)
 
-    type FunSig = TyNameSet * (Env * Sig)		(* [Phi] *)
+    type FunSig = TyNameSet * (Env * Sig)                (* [Phi] *)
 
 
     (* Type variable and type name extraction [Section 4.2] *)
 
     fun tyvars (T,(E,Sigma)) =
-	TyVarSet.union(StaticEnv.tyvars E, Sig.tyvars Sigma)
+        TyVarSet.union(StaticEnv.tyvars E, Sig.tyvars Sigma)
 
     fun tynames (T,(E,Sigma)) =
-	TyNameSet.difference(TyNameSet.union(StaticEnv.tynames E,
-					     Sig.tynames Sigma), T)
+        TyNameSet.difference(TyNameSet.union(StaticEnv.tynames E,
+                                             Sig.tynames Sigma), T)
 
   end
 (* stop of FunSig.sml *)
@@ -3798,29 +3798,29 @@ signature CONTEXT =
 
     (* Type [Section 4.2] *)
 
-    type Context = TyNameSet * TyVarSet * Env		(* [C] *)
+    type Context = TyNameSet * TyVarSet * Env                (* [C] *)
 
 
     (* Operations *)
 
-    val Tof:		Context -> TyNameSet
-    val Uof:		Context -> TyVarSet
-    val Eof:		Context -> Env
+    val Tof:                Context -> TyNameSet
+    val Uof:                Context -> TyVarSet
+    val Eof:                Context -> Env
 
-    val plusVE:		Context * ValEnv   -> Context
-    val plusU:		Context * TyVarSet -> Context
-    val oplusE:		Context * Env      -> Context
-    val oplusTE:	Context * TyEnv    -> Context
-    val oplusVEandTE:	Context * (ValEnv * TyEnv) -> Context
+    val plusVE:                Context * ValEnv   -> Context
+    val plusU:                Context * TyVarSet -> Context
+    val oplusE:                Context * Env      -> Context
+    val oplusTE:        Context * TyEnv    -> Context
+    val oplusVEandTE:        Context * (ValEnv * TyEnv) -> Context
 
-    val findVId:	Context * VId       -> ValStr option
-    val findTyCon:	Context * TyCon     -> TyStr option
-    val findStrId:	Context * StrId     -> Str option
-    val findLongVId:	Context * longVId   -> ValStr option
-    val findLongTyCon:	Context * longTyCon -> TyStr option
-    val findLongStrId:	Context * longStrId -> Str option
+    val findVId:        Context * VId       -> ValStr option
+    val findTyCon:        Context * TyCon     -> TyStr option
+    val findStrId:        Context * StrId     -> Str option
+    val findLongVId:        Context * longVId   -> ValStr option
+    val findLongTyCon:        Context * longTyCon -> TyStr option
+    val findLongStrId:        Context * longStrId -> Str option
 
-    val tyvars:		Context -> TyVarSet
+    val tyvars:                Context -> TyVarSet
 
   end
 (* stop of CONTEXT.sml *)
@@ -3859,7 +3859,7 @@ structure Context :> CONTEXT =
 
     (* Type [Section 4.2] *)
 
-    type Context = TyNameSet * TyVarSet * Env		(* [C] *)
+    type Context = TyNameSet * TyVarSet * Env                (* [C] *)
 
 
     (* Projections [Section 4.3] *)
@@ -3877,22 +3877,22 @@ structure Context :> CONTEXT =
     fun (T,U,E) plusU  U' = ( T, TyVarSet.union(U,U'), E )
 
     fun (T,U,E) oplusE E' =
-	( TyNameSet.union(T, StaticEnv.tynames E)
-	, U
-	, StaticEnv.plus(E,E')
-	)
+        ( TyNameSet.union(T, StaticEnv.tynames E)
+        , U
+        , StaticEnv.plus(E,E')
+        )
 
     fun (T,U,E) oplusTE TE =
-	( TyNameSet.union(T, StaticEnv.tynamesTE TE)
-	, U
-	, StaticEnv.plusTE(E,TE)
-	)
+        ( TyNameSet.union(T, StaticEnv.tynamesTE TE)
+        , U
+        , StaticEnv.plusTE(E,TE)
+        )
 
     fun (T,U,E) oplusVEandTE (VE,TE) =
-	( TyNameSet.union(T, StaticEnv.tynamesTE TE)
-	, U
-	, StaticEnv.plusVEandTE(E, (VE,TE))
-	)
+        ( TyNameSet.union(T, StaticEnv.tynamesTE TE)
+        , U
+        , StaticEnv.plusVEandTE(E, (VE,TE))
+        )
 
 
     (* Application (lookup) [Section 4.3] *)
@@ -3944,38 +3944,38 @@ signature STATIC_BASIS =
 
     (* Types [Section 5.1] *)
 
-    type SigEnv = Sig SigIdMap					(* [G] *)
-    type FunEnv = FunSig FunIdMap				(* [F] *)
+    type SigEnv = Sig SigIdMap                                        (* [G] *)
+    type FunEnv = FunSig FunIdMap                                (* [F] *)
 
-    type Basis  = TyNameSet * FunEnv * SigEnv * Env		(* [B] *)
+    type Basis  = TyNameSet * FunEnv * SigEnv * Env                (* [B] *)
 
 
     (* Operations *)
 
-    val empty:		Basis
-    val fromTandE:	TyNameSet * Env    -> Basis
-    val fromTandF:	TyNameSet * FunEnv -> Basis
-    val fromTandG:	TyNameSet * SigEnv -> Basis
+    val empty:                Basis
+    val fromTandE:        TyNameSet * Env    -> Basis
+    val fromTandF:        TyNameSet * FunEnv -> Basis
+    val fromTandG:        TyNameSet * SigEnv -> Basis
 
-    val Tof:		Basis -> TyNameSet
-    val Cof:		Basis -> Context
+    val Tof:                Basis -> TyNameSet
+    val Cof:                Basis -> Context
 
-    val plus:		Basis * Basis     -> Basis
-    val plusT:		Basis * TyNameSet -> Basis
-    val oplusSE:	Basis * StrEnv    -> Basis
-    val oplusG:		Basis * SigEnv    -> Basis
-    val oplusF:		Basis * FunEnv    -> Basis
-    val oplusE:		Basis * Env       -> Basis
+    val plus:                Basis * Basis     -> Basis
+    val plusT:                Basis * TyNameSet -> Basis
+    val oplusSE:        Basis * StrEnv    -> Basis
+    val oplusG:                Basis * SigEnv    -> Basis
+    val oplusF:                Basis * FunEnv    -> Basis
+    val oplusE:                Basis * Env       -> Basis
 
-    val findStrId:	Basis * StrId     -> Str option
-    val findSigId:	Basis * SigId     -> Sig option
-    val findFunId:	Basis * FunId     -> FunSig option
-    val findLongStrId:	Basis * longStrId -> Str option
-    val findLongTyCon:	Basis * longTyCon -> TyStr option
+    val findStrId:        Basis * StrId     -> Str option
+    val findSigId:        Basis * SigId     -> Sig option
+    val findFunId:        Basis * FunId     -> FunSig option
+    val findLongStrId:        Basis * longStrId -> Str option
+    val findLongTyCon:        Basis * longTyCon -> TyStr option
 
     val tyvars:         Basis  -> TyVarSet
-    val tynamesF:	FunEnv -> TyNameSet
-    val tynamesG:	SigEnv -> TyNameSet
+    val tynamesF:        FunEnv -> TyNameSet
+    val tynamesG:        SigEnv -> TyNameSet
  
   end
 (* stop of STATIC_BASIS.sml *)
@@ -4011,46 +4011,46 @@ structure StaticBasis :> STATIC_BASIS =
 
     (* Types [Section 5.1] *)
 
-    type SigEnv = Sig SigIdMap					(* [G] *)
-    type FunEnv = FunSig FunIdMap				(* [F] *)
+    type SigEnv = Sig SigIdMap                                        (* [G] *)
+    type FunEnv = FunSig FunIdMap                                (* [F] *)
 
-    type Basis  = TyNameSet * FunEnv * SigEnv * Env		(* [B] *)
+    type Basis  = TyNameSet * FunEnv * SigEnv * Env                (* [B] *)
 
 
 
     (* Calculation of type variable and type name sets [Section 4.2] *)
 
     fun tyvarsG G =
-	SigIdMap.foldl
-	    (fn(Sigma, U) => TyVarSet.union(U, Sig.tyvars Sigma))
-	    TyVarSet.empty G
+        SigIdMap.foldl
+            (fn(Sigma, U) => TyVarSet.union(U, Sig.tyvars Sigma))
+            TyVarSet.empty G
 
     fun tyvarsF F =
-	FunIdMap.foldl
-	    (fn(Phi, U) => TyVarSet.union(U, FunSig.tyvars Phi))
-	    TyVarSet.empty F
+        FunIdMap.foldl
+            (fn(Phi, U) => TyVarSet.union(U, FunSig.tyvars Phi))
+            TyVarSet.empty F
 
     fun tyvars (T,F,G,E) = TyVarSet.union(TyVarSet.union(
-				tyvarsF F, tyvarsG G), StaticEnv.tyvars E)
+                                tyvarsF F, tyvarsG G), StaticEnv.tyvars E)
     
 
 
     fun tynamesG G =
-	SigIdMap.foldl
-	    (fn(Sigma, T) => TyNameSet.union(T, Sig.tynames Sigma))
-	    TyNameSet.empty G
+        SigIdMap.foldl
+            (fn(Sigma, T) => TyNameSet.union(T, Sig.tynames Sigma))
+            TyNameSet.empty G
 
     fun tynamesF F =
-	FunIdMap.foldl
-	    (fn(Phi, T) => TyNameSet.union(T, FunSig.tynames Phi))
-	    TyNameSet.empty F
+        FunIdMap.foldl
+            (fn(Phi, T) => TyNameSet.union(T, FunSig.tynames Phi))
+            TyNameSet.empty F
 
 
 
     (* Injection [Sections 4.3 and 5.1] *)
 
     val empty =
-	( TyNameSet.empty, FunIdMap.empty, SigIdMap.empty, StaticEnv.empty )
+        ( TyNameSet.empty, FunIdMap.empty, SigIdMap.empty, StaticEnv.empty )
 
     fun fromTandE(T,E) = ( T, FunIdMap.empty, SigIdMap.empty, E )
     fun fromTandF(T,F) = ( T, F, SigIdMap.empty, StaticEnv.empty )
@@ -4068,41 +4068,41 @@ structure StaticBasis :> STATIC_BASIS =
     infix plus plusT oplusG oplusF oplusE oplusSE
 
     fun (T,F,G,E) plus (T',F',G',E') =
-	( TyNameSet.union(T,T')
-	, FunIdMap.unionWith #2 (F,F')
-	, SigIdMap.unionWith #2 (G,G')
-	, StaticEnv.plus(E,E')
-	)
+        ( TyNameSet.union(T,T')
+        , FunIdMap.unionWith #2 (F,F')
+        , SigIdMap.unionWith #2 (G,G')
+        , StaticEnv.plus(E,E')
+        )
 
     fun (T,F,G,E) plusT T' = ( TyNameSet.union(T,T'), F, G, E )
 
     fun (T,F,G,E) oplusG G' =
-	( TyNameSet.union(T, tynamesG G')
-	, F
-	, SigIdMap.unionWith #2 (G,G')
-	, E
-	)
+        ( TyNameSet.union(T, tynamesG G')
+        , F
+        , SigIdMap.unionWith #2 (G,G')
+        , E
+        )
 
     fun (T,F,G,E) oplusF F' =
-	( TyNameSet.union(T, tynamesF F')
-	, FunIdMap.unionWith #2 (F,F')
-	, G
-	, E
-	)
+        ( TyNameSet.union(T, tynamesF F')
+        , FunIdMap.unionWith #2 (F,F')
+        , G
+        , E
+        )
 
     fun (T,F,G,E) oplusE E' =
-	( TyNameSet.union(T, StaticEnv.tynames E')
-	, F
-	, G
-	, StaticEnv.plus(E,E')
-	)
+        ( TyNameSet.union(T, StaticEnv.tynames E')
+        , F
+        , G
+        , StaticEnv.plus(E,E')
+        )
 
     fun (T,F,G,E) oplusSE SE =
-	( TyNameSet.union(T, StaticEnv.tynamesSE SE)
-	, F
-	, G
-	, StaticEnv.plusSE(E,SE)
-	)
+        ( TyNameSet.union(T, StaticEnv.tynamesSE SE)
+        , F
+        , G
+        , StaticEnv.plusSE(E,SE)
+        )
 
     (* Application (lookup) [Sections 5.1 and 4.3] *)
 
@@ -4110,9 +4110,9 @@ structure StaticBasis :> STATIC_BASIS =
     fun findSigId((T,F,G,E), sigid) = SigIdMap.find(G, sigid)
     fun findFunId((T,F,G,E), funid) = FunIdMap.find(F, funid)
     fun findLongStrId((T,F,G,E), longstrid) =
-	StaticEnv.findLongStrId(E, longstrid)
+        StaticEnv.findLongStrId(E, longstrid)
     fun findLongTyCon((T,F,G,E), longtycon) =
-	StaticEnv.findLongTyCon(E, longtycon)
+        StaticEnv.findLongTyCon(E, longtycon)
 
   end
 (* stop of StaticBasis.sml *)
@@ -4136,30 +4136,30 @@ signature INITIAL_STATIC_ENV =
 
     (* Predefined monomorphic types [Figure 24] *)
 
-    val tauBool:	Type
-    val tauInt:		Type
-    val tauWord:	Type
-    val tauReal:	Type
-    val tauString:	Type
-    val tauChar:	Type
-    val tauExn:		Type
+    val tauBool:        Type
+    val tauInt:                Type
+    val tauWord:        Type
+    val tauReal:        Type
+    val tauString:        Type
+    val tauChar:        Type
+    val tauExn:                Type
 
     (* Overloading classes [Appendix E.1] *)
 
-    val Int:		OverloadingClass
-    val Real:		OverloadingClass
-    val Word:		OverloadingClass
-    val String:		OverloadingClass
-    val Char:		OverloadingClass
-    val WordInt:	OverloadingClass
-    val RealInt:	OverloadingClass
-    val Num:		OverloadingClass
-    val NumTxt:		OverloadingClass
+    val Int:                OverloadingClass
+    val Real:                OverloadingClass
+    val Word:                OverloadingClass
+    val String:                OverloadingClass
+    val Char:                OverloadingClass
+    val WordInt:        OverloadingClass
+    val RealInt:        OverloadingClass
+    val Num:                OverloadingClass
+    val NumTxt:                OverloadingClass
 
     (* Initial environment [Appendix C] *)
 
-    val T0:		TyNameSet
-    val E0:		Env
+    val T0:                TyNameSet
+    val E0:                Env
 
   end
 (* stop of INITIAL_STATIC_ENV.sml *)
@@ -4190,13 +4190,13 @@ structure InitialStaticEnv :> INITIAL_STATIC_ENV =
     (* Helpers *)
 
     fun pairType(tau1,tau2) =
-	let
-	    val Rho = LabMap.insert(LabMap.insert(LabMap.empty,
-						  Lab.fromInt 1, tau1),
-						  Lab.fromInt 2, tau2)
-	in
-	    fromRowType (Rho,CLOSEDRow)
-	end
+        let
+            val Rho = LabMap.insert(LabMap.insert(LabMap.empty,
+                                                  Lab.fromInt 1, tau1),
+                                                  Lab.fromInt 2, tau2)
+        in
+            fromRowType (Rho,CLOSEDRow)
+        end
 
 
     (* VIds [Figure 25] *)
@@ -4241,7 +4241,7 @@ structure InitialStaticEnv :> INITIAL_STATIC_ENV =
     val tExn    = TyName.tyname(tyconExn,    0, TyName.NOEQ, 0)
 
     val T0      = TyNameSet.fromList[tBool, tInt, tWord, tReal, tString, tChar,
-				     tList, tRef, tExn]
+                                     tList, tRef, tExn]
 
 
     (* Types *)
@@ -4266,14 +4266,14 @@ structure InitialStaticEnv :> INITIAL_STATIC_ENV =
     (* TypeSchemes [Figure 25] *)
 
     val sigmaEq     = ([alphaEq], fromFunType(pairType(tauAlphaEq,tauAlphaEq),
-					      tauBool))
+                                              tauBool))
     val sigmaAssign = ([alpha],   fromFunType(pairType(tauAlphaRef,tauAlpha),
-					      tauUnit))
+                                              tauUnit))
     val sigmaFalse  = ([], tauBool)
     val sigmaTrue   = ([], tauBool)
     val sigmaNil    = ([alpha], tauAlphaList)
     val sigmaCons   = ([alpha], fromFunType(pairType(tauAlpha, tauAlphaList),
-					    tauAlphaList))
+                                            tauAlphaList))
     val sigmaRef    = ([alpha], fromFunType(tauAlpha, tauAlphaRef))
 
     val sigmaMatch  = ([], tauExn)
@@ -4313,9 +4313,9 @@ structure InitialStaticEnv :> INITIAL_STATIC_ENV =
 
     val VEEmpty = VIdMap.empty
     val VEBool  = VIdMap.fromList[(vidFalse, valstrFalse),
-				  (vidTrue,  valstrTrue)] : ValEnv
+                                  (vidTrue,  valstrTrue)] : ValEnv
     val VEList  = VIdMap.fromList[(vidNil,   valstrNil),
-				  (vidCons,  valstrCons)]
+                                  (vidCons,  valstrCons)]
     val VERef   = VIdMap.fromList[(vidRef,   valstrRef)]
 
     val tystrUnit   = (thetaUnit,   VEEmpty)
@@ -4335,41 +4335,41 @@ structure InitialStaticEnv :> INITIAL_STATIC_ENV =
     val SE0 = StrIdMap.empty
 
     val TE0 = TyConMap.fromList[(tyconUnit,   tystrUnit),
- 				(tyconBool,   tystrBool),
- 				(tyconInt,    tystrInt),
- 				(tyconWord,   tystrWord),
- 				(tyconReal,   tystrReal),
- 				(tyconString, tystrString),
- 				(tyconChar,   tystrChar),
- 				(tyconList,   tystrList),
- 				(tyconRef,    tystrRef),
- 				(tyconExn,    tystrExn)]
+                                 (tyconBool,   tystrBool),
+                                 (tyconInt,    tystrInt),
+                                 (tyconWord,   tystrWord),
+                                 (tyconReal,   tystrReal),
+                                 (tyconString, tystrString),
+                                 (tyconChar,   tystrChar),
+                                 (tyconList,   tystrList),
+                                 (tyconRef,    tystrRef),
+                                 (tyconExn,    tystrExn)]
 
     val VE0 = VIdMap.fromList  [(vidEq,     valstrEq),
-				(vidAssign, valstrAssign),
-				(vidRef,    valstrRef),
-				(vidNil,    valstrNil),
-				(vidCons,   valstrCons),
-				(vidFalse,  valstrFalse),
-				(vidTrue,   valstrTrue),
-				(vidMatch,  valstrMatch),
-				(vidBind,   valstrBind)]
+                                (vidAssign, valstrAssign),
+                                (vidRef,    valstrRef),
+                                (vidNil,    valstrNil),
+                                (vidCons,   valstrCons),
+                                (vidFalse,  valstrFalse),
+                                (vidTrue,   valstrTrue),
+                                (vidMatch,  valstrMatch),
+                                (vidBind,   valstrBind)]
 
     val E0 = (SE0,TE0,VE0)
 
 
     (* Overloading classes [Section E.1] *)
 
-    val Int	= OverloadingClass.make(TyNameSet.singleton tInt,    tInt)
-    val Real	= OverloadingClass.make(TyNameSet.singleton tReal,   tReal)
-    val Word	= OverloadingClass.make(TyNameSet.singleton tWord,   tWord)
-    val String	= OverloadingClass.make(TyNameSet.singleton tString, tString)
-    val Char	= OverloadingClass.make(TyNameSet.singleton tChar,   tChar)
-    val WordInt	= OverloadingClass.union(Word, Int)	(* default is 2nd *)
-    val RealInt	= OverloadingClass.union(Real, Int)
-    val Num	= OverloadingClass.union(Word, RealInt)
-    val Txt	= OverloadingClass.union(String, Char)
-    val NumTxt	= OverloadingClass.union(Txt, Num)
+    val Int        = OverloadingClass.make(TyNameSet.singleton tInt,    tInt)
+    val Real        = OverloadingClass.make(TyNameSet.singleton tReal,   tReal)
+    val Word        = OverloadingClass.make(TyNameSet.singleton tWord,   tWord)
+    val String        = OverloadingClass.make(TyNameSet.singleton tString, tString)
+    val Char        = OverloadingClass.make(TyNameSet.singleton tChar,   tChar)
+    val WordInt        = OverloadingClass.union(Word, Int)        (* default is 2nd *)
+    val RealInt        = OverloadingClass.union(Real, Int)
+    val Num        = OverloadingClass.union(Word, RealInt)
+    val Txt        = OverloadingClass.union(String, Char)
+    val NumTxt        = OverloadingClass.union(Txt, Num)
 
   end
 (* stop of InitialStaticEnv.sml *)
@@ -4437,7 +4437,7 @@ signature EXNAME =
 
     (* Type [Section 6.2] *)
 
-    eqtype ExName					(* [en] *)
+    eqtype ExName                                        (* [en] *)
 
 
     (* Operations *)
@@ -4468,10 +4468,10 @@ structure ExName :> EXNAME =
 
     (* Type [Section 6.2] *)
 
-    type ExName =				      (* [en] *)
-	 { vid:   VId
-	 , stamp: stamp
-	 }
+    type ExName =                                      (* [en] *)
+         { vid:   VId
+         , stamp: stamp
+         }
 
 
     (* Creation *)
@@ -4487,7 +4487,7 @@ structure ExName :> EXNAME =
     (* Ordering *)
 
     fun compare(en1: ExName, en2: ExName) =
-	    Stamp.compare(#stamp en1, #stamp en2)
+            Stamp.compare(#stamp en1, #stamp en2)
 
   end
 (* stop of ExName.sml *)
@@ -4503,7 +4503,7 @@ signature ADDR =
 
     (* Type [Section 6.2] *)
 
-    eqtype Addr					(* [a] *)
+    eqtype Addr                                        (* [a] *)
 
 
     (* Operations *)
@@ -4526,7 +4526,7 @@ structure Addr :> ADDR =
 
     (* Type [Section 6.2] *)
 
-    type Addr =	Stamp.stamp				(* [a] *)
+    type Addr =        Stamp.stamp                                (* [a] *)
 
 
     (* Operations *)
@@ -4544,10 +4544,10 @@ structure Addr :> ADDR =
  *)
 
 structure ExNameSet  = FinSetFn(type ord_key = ExName.ExName
-				val  compare = ExName.compare)
+                                val  compare = ExName.compare)
 
 structure AddrMap    = FinMapFn(type ord_key = Addr.Addr
-				val  compare = Addr.compare)
+                                val  compare = Addr.compare)
 (* stop of AssembliesCoreDynamic.sml *)
 (* start of SVAL.sml *)
 (*
@@ -4562,12 +4562,12 @@ signature SVAL =
 
     (* Type [Section 6.2] *)
 
-    datatype SVal =				(* [sv] *)
-	  INT    of int
-	| WORD   of word
-	| STRING of string
-	| CHAR   of char
-	| REAL   of real
+    datatype SVal =                                (* [sv] *)
+          INT    of int
+        | WORD   of word
+        | STRING of string
+        | CHAR   of char
+        | REAL   of real
 
     (* Operations *)
 
@@ -4589,12 +4589,12 @@ structure SVal :> SVAL =
 
     (* Type [Section 6.2] *)
 
-    datatype SVal =				(* [sv] *)
-	  INT    of int
-	| WORD   of word
-	| STRING of string
-	| CHAR   of char
-	| REAL   of real
+    datatype SVal =                                (* [sv] *)
+          INT    of int
+        | WORD   of word
+        | STRING of string
+        | CHAR   of char
+        | REAL   of real
 
 
     (* Conversions *)
@@ -4642,24 +4642,24 @@ signature VAL =
 
     (* Types [Sections 6.2 and 6.3] *)
 
-    type BasVal = string			(* [b] *)
+    type BasVal = string                        (* [b] *)
 
-    datatype 'a Val =				(* [v] *)
-	  :=
-	| SVal   of SVal
-	| BasVal of BasVal
-	| VId    of VId
-	| VIdVal of VId * 'a Val
-	| ExVal  of 'a ExVal
-	| Record of (*Record*) 'a Val LabMap
-	| Addr   of Addr
-	| FcnClosure of 'a
+    datatype 'a Val =                                (* [v] *)
+          :=
+        | SVal   of SVal
+        | BasVal of BasVal
+        | VId    of VId
+        | VIdVal of VId * 'a Val
+        | ExVal  of 'a ExVal
+        | Record of (*Record*) 'a Val LabMap
+        | Addr   of Addr
+        | FcnClosure of 'a
 
-    and 'a ExVal =				(* [e] *)
-	  ExName    of ExName
-	| ExNameVal of ExName * 'a Val
+    and 'a ExVal =                                (* [e] *)
+          ExName    of ExName
+        | ExNameVal of ExName * 'a Val
 
-    type 'a Record = 'a Val LabMap		(* [r] *)
+    type 'a Record = 'a Val LabMap                (* [r] *)
 
 
     (* Operations *)
@@ -4698,25 +4698,25 @@ structure Val :> VAL =
 
     (* Types [Sections 6.2 and 6.3] *)
 
-    type BasVal = string			(* [b] *)
+    type BasVal = string                        (* [b] *)
 
 
-    datatype 'a Val =				(* [v] *)
-	  op:=
-	| SVal   of SVal
-	| BasVal of BasVal
-	| VId    of VId
-	| VIdVal of VId * 'a Val
-	| ExVal  of 'a ExVal
-	| Record of 'a Record
-	| Addr   of Addr
-	| FcnClosure of 'a
+    datatype 'a Val =                                (* [v] *)
+          op:=
+        | SVal   of SVal
+        | BasVal of BasVal
+        | VId    of VId
+        | VIdVal of VId * 'a Val
+        | ExVal  of 'a ExVal
+        | Record of 'a Record
+        | Addr   of Addr
+        | FcnClosure of 'a
 
-    and 'a ExVal =				(* [e] *)
-	  ExName    of ExName
-	| ExNameVal of ExName * 'a Val
+    and 'a ExVal =                                (* [e] *)
+          ExName    of ExName
+        | ExNameVal of ExName * 'a Val
 
-    withtype 'a Record = 'a Val LabMap		(* [r] *)
+    withtype 'a Record = 'a Val LabMap                (* [r] *)
 
 
     (* Operations *)
@@ -4725,10 +4725,10 @@ structure Val :> VAL =
 
 
     fun unpair(Record r) =
-	(case (LabMap.find(r, Lab.fromInt 1), LabMap.find(r, Lab.fromInt 2))
-	   of (SOME v1, SOME v2) => SOME(v1, v2)
-	    | _ => NONE
-	)
+        (case (LabMap.find(r, Lab.fromInt 1), LabMap.find(r, Lab.fromInt 2))
+           of (SOME v1, SOME v2) => SOME(v1, v2)
+            | _ => NONE
+        )
       | unpair _ = NONE
 
 
@@ -4741,18 +4741,18 @@ structure Val :> VAL =
       | equal(Addr a1,           Addr a2          ) = a1 = a2
 
       | equal(VIdVal(vid1, v1), VIdVal(vid2, v2)) =
-	    vid1 = vid2 andalso equal(v1, v2)
+            vid1 = vid2 andalso equal(v1, v2)
 
       | equal(ExVal(ExNameVal(en1,v1)), ExVal(ExNameVal(en2,v2))) =
-	    en1 = en2 andalso equal(v1, v2)
+            en1 = en2 andalso equal(v1, v2)
 
       | equal(Record r1, Record r2) =
-	    LabMap.numItems r1 = LabMap.numItems r2 andalso
-	    LabMap.alli (fn(lab, v1) =>
-			   case LabMap.find(r2, lab)
-			     of SOME v2 => equal(v1, v2)
-			      | NONE    => false
-			) r1
+            LabMap.numItems r1 = LabMap.numItems r2 andalso
+            LabMap.alli (fn(lab, v1) =>
+                           case LabMap.find(r2, lab)
+                             of SOME v2 => equal(v1, v2)
+                              | NONE    => false
+                        ) r1
 
       | equal _ = false
 
@@ -4785,17 +4785,17 @@ signature STATE =
 
     (* Types [Section 6.3] *)
 
-    type 'a Mem   = 'a Val AddrMap			(* [mem] *)
+    type 'a Mem   = 'a Val AddrMap                        (* [mem] *)
 
-    type 'a State = 'a Mem * ExNameSet			(* [s] *)
+    type 'a State = 'a Mem * ExNameSet                        (* [s] *)
 
 
     (* Operations *)
 
-    val insertAddr:	'a State * Addr * 'a Val -> 'a State
-    val insertExName:	'a State * ExName        -> 'a State
+    val insertAddr:        'a State * Addr * 'a Val -> 'a State
+    val insertExName:        'a State * ExName        -> 'a State
 
-    val findAddr:	'a State * Addr -> 'a Val option
+    val findAddr:        'a State * Addr -> 'a Val option
 
   end
 (* stop of STATE.sml *)
@@ -4826,9 +4826,9 @@ structure State :> STATE =
 
     (* Types [Section 6.3] *)
 
-    type 'a Mem   = 'a Val AddrMap			(* [mem] *)
+    type 'a Mem   = 'a Val AddrMap                        (* [mem] *)
 
-    type 'a State = 'a Mem * ExNameSet			(* [s] *)
+    type 'a State = 'a Mem * ExNameSet                        (* [s] *)
 
 
     (* Operations *)
@@ -4865,15 +4865,15 @@ signature GRAMMAR_CORE =
 
     type Info
 
-    type SCon		= SCon.SCon
-    type Lab		= Lab.Lab
-    type VId		= VId.Id
-    type TyCon		= TyCon.Id
-    type TyVar		= TyVar.TyVar
-    type StrId		= StrId.Id
-    type longVId	= LongVId.longId
-    type longTyCon	= LongTyCon.longId
-    type longStrId	= LongStrId.longId
+    type SCon                = SCon.SCon
+    type Lab                = Lab.Lab
+    type VId                = VId.Id
+    type TyCon                = TyCon.Id
+    type TyVar                = TyVar.TyVar
+    type StrId                = StrId.Id
+    type longVId        = LongVId.longId
+    type longTyCon        = LongTyCon.longId
+    type longStrId        = LongStrId.longId
 
 
     (* Optional keyword `op' *)
@@ -4884,124 +4884,124 @@ signature GRAMMAR_CORE =
     (* Expressions [Figures 2 and 4] *)
 
     datatype AtExp =
-	  SCONAtExp      of Info * SCon
-	| LONGVIDAtExp   of Info * Op * longVId
-	| RECORDAtExp    of Info * ExpRow option
-	| LETAtExp       of Info * Dec * Exp
-	| PARAtExp       of Info * Exp
+          SCONAtExp      of Info * SCon
+        | LONGVIDAtExp   of Info * Op * longVId
+        | RECORDAtExp    of Info * ExpRow option
+        | LETAtExp       of Info * Dec * Exp
+        | PARAtExp       of Info * Exp
 
     and ExpRow =
-	  ExpRow         of Info * Lab * Exp * ExpRow option
+          ExpRow         of Info * Lab * Exp * ExpRow option
 
     and Exp =
-	  ATEXPExp       of Info * AtExp
-	| APPExp         of Info * Exp * AtExp
-	| TYPEDExp       of Info * Exp * Ty
-	| HANDLEExp      of Info * Exp * Match
-	| RAISEExp       of Info * Exp
-	| FNExp          of Info * Match
+          ATEXPExp       of Info * AtExp
+        | APPExp         of Info * Exp * AtExp
+        | TYPEDExp       of Info * Exp * Ty
+        | HANDLEExp      of Info * Exp * Match
+        | RAISEExp       of Info * Exp
+        | FNExp          of Info * Match
 
     (* Matches [Figures 2 and 4] *)
 
     and Match =
-	  Match          of Info * Mrule * Match option
+          Match          of Info * Mrule * Match option
 
     and Mrule =
-	  Mrule          of Info * Pat * Exp
+          Mrule          of Info * Pat * Exp
 
     (* Declarations [Figures 2 and 4] *)
 
     and Dec =
-	  VALDec         of Info * TyVarseq * ValBind
-	| TYPEDec        of Info * TypBind
-	| DATATYPEDec    of Info * DatBind
-	| REPLICATIONDec of Info * TyCon * longTyCon
-	| ABSTYPEDec     of Info * DatBind * Dec
-	| EXCEPTIONDec   of Info * ExBind
-	| LOCALDec       of Info * Dec * Dec
-	| OPENDec        of Info * longStrId list
-	| EMPTYDec       of Info
-	| SEQDec         of Info * Dec * Dec
+          VALDec         of Info * TyVarseq * ValBind
+        | TYPEDec        of Info * TypBind
+        | DATATYPEDec    of Info * DatBind
+        | REPLICATIONDec of Info * TyCon * longTyCon
+        | ABSTYPEDec     of Info * DatBind * Dec
+        | EXCEPTIONDec   of Info * ExBind
+        | LOCALDec       of Info * Dec * Dec
+        | OPENDec        of Info * longStrId list
+        | EMPTYDec       of Info
+        | SEQDec         of Info * Dec * Dec
 
     (* Bindings [Figures 2 and 4] *)
 
     and ValBind =
-	  PLAINValBind   of Info * Pat * Exp * ValBind option
-	| RECValBind     of Info * ValBind
+          PLAINValBind   of Info * Pat * Exp * ValBind option
+        | RECValBind     of Info * ValBind
 
     and TypBind =
-	  TypBind        of Info * TyVarseq * TyCon * Ty * TypBind option
+          TypBind        of Info * TyVarseq * TyCon * Ty * TypBind option
 
     and DatBind =
-	  DatBind        of Info * TyVarseq * TyCon * ConBind * DatBind option
+          DatBind        of Info * TyVarseq * TyCon * ConBind * DatBind option
 
     and ConBind =
-	  ConBind        of Info * Op * VId * Ty option * ConBind option
+          ConBind        of Info * Op * VId * Ty option * ConBind option
 
     and ExBind =
-	  NEWExBind      of Info * Op * VId * Ty option * ExBind option
-	| EQUALExBind    of Info * Op * VId * Op * longVId * ExBind option
+          NEWExBind      of Info * Op * VId * Ty option * ExBind option
+        | EQUALExBind    of Info * Op * VId * Op * longVId * ExBind option
 
     (* Patterns [Figures 2 and 3] *)
 
     and AtPat =
-	  WILDCARDAtPat  of Info
-	| SCONAtPat      of Info * SCon
-	| LONGVIDAtPat   of Info * Op * longVId
-	| RECORDAtPat    of Info * PatRow option
-	| PARAtPat       of Info * Pat
+          WILDCARDAtPat  of Info
+        | SCONAtPat      of Info * SCon
+        | LONGVIDAtPat   of Info * Op * longVId
+        | RECORDAtPat    of Info * PatRow option
+        | PARAtPat       of Info * Pat
 
     and PatRow =
-	  WILDCARDPatRow of Info
-	| ROWPatRow      of Info * Lab * Pat * PatRow option
+          WILDCARDPatRow of Info
+        | ROWPatRow      of Info * Lab * Pat * PatRow option
 
     and Pat =
-	  ATPATPat       of Info * AtPat
-	| CONPat         of Info * Op * longVId * AtPat
-	| TYPEDPat       of Info * Pat * Ty
-	| ASPat          of Info * Op * VId * Ty option * Pat
+          ATPATPat       of Info * AtPat
+        | CONPat         of Info * Op * longVId * AtPat
+        | TYPEDPat       of Info * Pat * Ty
+        | ASPat          of Info * Op * VId * Ty option * Pat
 
     (* Type expressions [Figures 2 and 3] *)
 
     and Ty =
-	  TYVARTy        of Info * TyVar
-	| RECORDTy       of Info * TyRow option
-	| TYCONTy        of Info * Tyseq * longTyCon
-	| ARROWTy        of Info * Ty * Ty
-	| PARTy          of Info * Ty
+          TYVARTy        of Info * TyVar
+        | RECORDTy       of Info * TyRow option
+        | TYCONTy        of Info * Tyseq * longTyCon
+        | ARROWTy        of Info * Ty * Ty
+        | PARTy          of Info * Ty
 
     and TyRow =
-	  TyRow          of Info * Lab * Ty * TyRow option
+          TyRow          of Info * Lab * Ty * TyRow option
 
     (* Sequences [Section 2.8] *)
 
     and Tyseq =
-	  Tyseq          of Info * Ty list
+          Tyseq          of Info * Ty list
 
     and TyVarseq =
-	  TyVarseq       of Info * TyVar list
+          TyVarseq       of Info * TyVar list
 
 
     (* Operations *)
 
-    val infoAtExp:	AtExp	-> Info
-    val infoExpRow:	ExpRow	-> Info
-    val infoExp:	Exp	-> Info
-    val infoMatch:	Match	-> Info
-    val infoMrule:	Mrule	-> Info
-    val infoDec:	Dec	-> Info
-    val infoValBind:	ValBind	-> Info
-    val infoTypBind:	TypBind	-> Info
-    val infoDatBind:	DatBind	-> Info
-    val infoConBind:	ConBind	-> Info
-    val infoExBind:	ExBind	-> Info
-    val infoAtPat:	AtPat	-> Info
-    val infoPatRow:	PatRow	-> Info
-    val infoPat:	Pat	-> Info
-    val infoTy:		Ty	-> Info
-    val infoTyRow:	TyRow	-> Info
-    val infoTyseq:	Tyseq	-> Info
-    val infoTyVarseq:	TyVarseq -> Info
+    val infoAtExp:        AtExp        -> Info
+    val infoExpRow:        ExpRow        -> Info
+    val infoExp:        Exp        -> Info
+    val infoMatch:        Match        -> Info
+    val infoMrule:        Mrule        -> Info
+    val infoDec:        Dec        -> Info
+    val infoValBind:        ValBind        -> Info
+    val infoTypBind:        TypBind        -> Info
+    val infoDatBind:        DatBind        -> Info
+    val infoConBind:        ConBind        -> Info
+    val infoExBind:        ExBind        -> Info
+    val infoAtPat:        AtPat        -> Info
+    val infoPatRow:        PatRow        -> Info
+    val infoPat:        Pat        -> Info
+    val infoTy:                Ty        -> Info
+    val infoTyRow:        TyRow        -> Info
+    val infoTyseq:        Tyseq        -> Info
+    val infoTyVarseq:        TyVarseq -> Info
 
   end
 (* stop of GRAMMAR_CORE.sml *)
@@ -5028,17 +5028,17 @@ functor GrammarCoreFn(type Info) : GRAMMAR_CORE =
 
     (* Import *)
 
-    type Info		= Info
+    type Info                = Info
 
-    type SCon		= SCon.SCon
-    type Lab		= Lab.Lab
-    type VId		= VId.Id
-    type TyCon		= TyCon.Id
-    type TyVar		= TyVar.TyVar
-    type StrId		= StrId.Id
-    type longVId	= LongVId.longId
-    type longTyCon	= LongTyCon.longId
-    type longStrId	= LongStrId.longId
+    type SCon                = SCon.SCon
+    type Lab                = Lab.Lab
+    type VId                = VId.Id
+    type TyCon                = TyCon.Id
+    type TyVar                = TyVar.TyVar
+    type StrId                = StrId.Id
+    type longVId        = LongVId.longId
+    type longTyCon        = LongTyCon.longId
+    type longStrId        = LongStrId.longId
 
 
     (* Optional keyword `op' *)
@@ -5049,173 +5049,173 @@ functor GrammarCoreFn(type Info) : GRAMMAR_CORE =
     (* Expressions [Figures 2 and 4] *)
 
     datatype AtExp =
-	  SCONAtExp      of Info * SCon
-	| LONGVIDAtExp   of Info * Op * longVId
-	| RECORDAtExp    of Info * ExpRow option
-	| LETAtExp       of Info * Dec * Exp
-	| PARAtExp       of Info * Exp
+          SCONAtExp      of Info * SCon
+        | LONGVIDAtExp   of Info * Op * longVId
+        | RECORDAtExp    of Info * ExpRow option
+        | LETAtExp       of Info * Dec * Exp
+        | PARAtExp       of Info * Exp
 
     and ExpRow =
-	  ExpRow         of Info * Lab * Exp * ExpRow option
+          ExpRow         of Info * Lab * Exp * ExpRow option
 
     and Exp =
-	  ATEXPExp       of Info * AtExp
-	| APPExp         of Info * Exp * AtExp
-	| TYPEDExp       of Info * Exp * Ty
-	| HANDLEExp      of Info * Exp * Match
-	| RAISEExp       of Info * Exp
-	| FNExp          of Info * Match
+          ATEXPExp       of Info * AtExp
+        | APPExp         of Info * Exp * AtExp
+        | TYPEDExp       of Info * Exp * Ty
+        | HANDLEExp      of Info * Exp * Match
+        | RAISEExp       of Info * Exp
+        | FNExp          of Info * Match
 
     (* Matches [Figures 2 and 4] *)
 
     and Match =
-	  Match          of Info * Mrule * Match option
+          Match          of Info * Mrule * Match option
 
     and Mrule =
-	  Mrule          of Info * Pat * Exp
+          Mrule          of Info * Pat * Exp
 
     (* Declarations [Figures 2 and 4] *)
 
     and Dec =
-	  VALDec         of Info * TyVarseq * ValBind
-	| TYPEDec        of Info * TypBind
-	| DATATYPEDec    of Info * DatBind
-	| REPLICATIONDec of Info * TyCon * longTyCon
-	| ABSTYPEDec     of Info * DatBind * Dec
-	| EXCEPTIONDec   of Info * ExBind
-	| LOCALDec       of Info * Dec * Dec
-	| OPENDec        of Info * longStrId list
-	| EMPTYDec       of Info
-	| SEQDec         of Info * Dec * Dec
+          VALDec         of Info * TyVarseq * ValBind
+        | TYPEDec        of Info * TypBind
+        | DATATYPEDec    of Info * DatBind
+        | REPLICATIONDec of Info * TyCon * longTyCon
+        | ABSTYPEDec     of Info * DatBind * Dec
+        | EXCEPTIONDec   of Info * ExBind
+        | LOCALDec       of Info * Dec * Dec
+        | OPENDec        of Info * longStrId list
+        | EMPTYDec       of Info
+        | SEQDec         of Info * Dec * Dec
 
     (* Bindings [Figures 2 and 4] *)
 
     and ValBind =
-	  PLAINValBind   of Info * Pat * Exp * ValBind option
-	| RECValBind     of Info * ValBind
+          PLAINValBind   of Info * Pat * Exp * ValBind option
+        | RECValBind     of Info * ValBind
 
     and TypBind =
-	  TypBind        of Info * TyVarseq * TyCon * Ty * TypBind option
+          TypBind        of Info * TyVarseq * TyCon * Ty * TypBind option
 
     and DatBind =
-	  DatBind        of Info * TyVarseq * TyCon * ConBind * DatBind option
+          DatBind        of Info * TyVarseq * TyCon * ConBind * DatBind option
 
     and ConBind =
-	  ConBind        of Info * Op * VId * Ty option * ConBind option
+          ConBind        of Info * Op * VId * Ty option * ConBind option
 
     and ExBind =
-	  NEWExBind      of Info * Op * VId * Ty option * ExBind option
-	| EQUALExBind    of Info * Op * VId * Op * longVId * ExBind option
+          NEWExBind      of Info * Op * VId * Ty option * ExBind option
+        | EQUALExBind    of Info * Op * VId * Op * longVId * ExBind option
 
     (* Patterns [Figures 2 and 3] *)
 
     and AtPat =
-	  WILDCARDAtPat  of Info
-	| SCONAtPat      of Info * SCon
-	| LONGVIDAtPat   of Info * Op * longVId
-	| RECORDAtPat    of Info * PatRow option
-	| PARAtPat       of Info * Pat
+          WILDCARDAtPat  of Info
+        | SCONAtPat      of Info * SCon
+        | LONGVIDAtPat   of Info * Op * longVId
+        | RECORDAtPat    of Info * PatRow option
+        | PARAtPat       of Info * Pat
 
     and PatRow =
-	  WILDCARDPatRow of Info
-	| ROWPatRow      of Info * Lab * Pat * PatRow option
+          WILDCARDPatRow of Info
+        | ROWPatRow      of Info * Lab * Pat * PatRow option
 
     and Pat =
-	  ATPATPat       of Info * AtPat
-	| CONPat         of Info * Op * longVId * AtPat
-	| TYPEDPat       of Info * Pat * Ty
-	| ASPat          of Info * Op * VId * Ty option * Pat
+          ATPATPat       of Info * AtPat
+        | CONPat         of Info * Op * longVId * AtPat
+        | TYPEDPat       of Info * Pat * Ty
+        | ASPat          of Info * Op * VId * Ty option * Pat
 
     (* Type expressions [Figures 2 and 3] *)
 
     and Ty =
-	  TYVARTy        of Info * TyVar
-	| RECORDTy       of Info * TyRow option
-	| TYCONTy        of Info * Tyseq * longTyCon
-	| ARROWTy        of Info * Ty * Ty
-	| PARTy          of Info * Ty
+          TYVARTy        of Info * TyVar
+        | RECORDTy       of Info * TyRow option
+        | TYCONTy        of Info * Tyseq * longTyCon
+        | ARROWTy        of Info * Ty * Ty
+        | PARTy          of Info * Ty
 
     and TyRow =
-	  TyRow          of Info * Lab * Ty * TyRow option
+          TyRow          of Info * Lab * Ty * TyRow option
 
     (* Sequences [Section 2.8] *)
 
     and Tyseq =
-	  Tyseq          of Info * Ty list
+          Tyseq          of Info * Ty list
 
     and TyVarseq =
-	  TyVarseq       of Info * TyVar list
+          TyVarseq       of Info * TyVar list
 
 
 
     (* Extracting info fields *)
 
-    fun infoAtExp(SCONAtExp(I,_))		= I
-      | infoAtExp(LONGVIDAtExp(I,_,_))		= I
-      | infoAtExp(RECORDAtExp(I,_))		= I
-      | infoAtExp(LETAtExp(I,_,_))		= I
-      | infoAtExp(PARAtExp(I,_))		= I
+    fun infoAtExp(SCONAtExp(I,_))                = I
+      | infoAtExp(LONGVIDAtExp(I,_,_))                = I
+      | infoAtExp(RECORDAtExp(I,_))                = I
+      | infoAtExp(LETAtExp(I,_,_))                = I
+      | infoAtExp(PARAtExp(I,_))                = I
 
-    fun infoExpRow(ExpRow(I,_,_,_))		= I
+    fun infoExpRow(ExpRow(I,_,_,_))                = I
 
-    fun infoExp(ATEXPExp(I,_))			= I
-      | infoExp(APPExp(I,_,_))			= I
-      | infoExp(TYPEDExp(I,_,_))		= I
-      | infoExp(HANDLEExp(I,_,_))		= I
-      | infoExp(RAISEExp(I,_))			= I
-      | infoExp(FNExp(I,_))			= I
+    fun infoExp(ATEXPExp(I,_))                        = I
+      | infoExp(APPExp(I,_,_))                        = I
+      | infoExp(TYPEDExp(I,_,_))                = I
+      | infoExp(HANDLEExp(I,_,_))                = I
+      | infoExp(RAISEExp(I,_))                        = I
+      | infoExp(FNExp(I,_))                        = I
 
-    fun infoMatch(Match(I,_,_))			= I
+    fun infoMatch(Match(I,_,_))                        = I
 
-    fun infoMrule(Mrule(I,_,_))			= I
+    fun infoMrule(Mrule(I,_,_))                        = I
 
-    fun infoDec(VALDec(I,_,_))			= I
-      | infoDec(TYPEDec(I,_))			= I
-      | infoDec(DATATYPEDec(I,_))		= I
-      | infoDec(REPLICATIONDec(I,_,_))		= I
-      | infoDec(ABSTYPEDec(I,_,_))		= I
-      | infoDec(EXCEPTIONDec(I,_))		= I
-      | infoDec(LOCALDec(I,_,_))		= I
-      | infoDec(OPENDec(I,_))			= I
-      | infoDec(EMPTYDec(I))			= I
-      | infoDec(SEQDec(I,_,_))			= I
+    fun infoDec(VALDec(I,_,_))                        = I
+      | infoDec(TYPEDec(I,_))                        = I
+      | infoDec(DATATYPEDec(I,_))                = I
+      | infoDec(REPLICATIONDec(I,_,_))                = I
+      | infoDec(ABSTYPEDec(I,_,_))                = I
+      | infoDec(EXCEPTIONDec(I,_))                = I
+      | infoDec(LOCALDec(I,_,_))                = I
+      | infoDec(OPENDec(I,_))                        = I
+      | infoDec(EMPTYDec(I))                        = I
+      | infoDec(SEQDec(I,_,_))                        = I
 
-    fun infoValBind(PLAINValBind(I,_,_,_))	= I
-      | infoValBind(RECValBind(I,_))		= I
+    fun infoValBind(PLAINValBind(I,_,_,_))        = I
+      | infoValBind(RECValBind(I,_))                = I
 
-    fun infoTypBind(TypBind(I,_,_,_,_))		= I
+    fun infoTypBind(TypBind(I,_,_,_,_))                = I
 
-    fun infoDatBind(DatBind(I,_,_,_,_))		= I
+    fun infoDatBind(DatBind(I,_,_,_,_))                = I
 
-    fun infoConBind(ConBind(I,_,_,_,_))		= I
+    fun infoConBind(ConBind(I,_,_,_,_))                = I
 
-    fun infoExBind(NEWExBind(I,_,_,_,_))	= I
-      | infoExBind(EQUALExBind(I,_,_,_,_,_))	= I
+    fun infoExBind(NEWExBind(I,_,_,_,_))        = I
+      | infoExBind(EQUALExBind(I,_,_,_,_,_))        = I
 
-    fun infoAtPat(WILDCARDAtPat(I))		= I
-      | infoAtPat(SCONAtPat(I,_))		= I
-      | infoAtPat(LONGVIDAtPat(I,_,_))		= I
-      | infoAtPat(RECORDAtPat(I,_))		= I
-      | infoAtPat(PARAtPat(I,_))		= I
+    fun infoAtPat(WILDCARDAtPat(I))                = I
+      | infoAtPat(SCONAtPat(I,_))                = I
+      | infoAtPat(LONGVIDAtPat(I,_,_))                = I
+      | infoAtPat(RECORDAtPat(I,_))                = I
+      | infoAtPat(PARAtPat(I,_))                = I
 
-    fun infoPatRow(WILDCARDPatRow(I))		= I
-      | infoPatRow(ROWPatRow(I,_,_,_))		= I
+    fun infoPatRow(WILDCARDPatRow(I))                = I
+      | infoPatRow(ROWPatRow(I,_,_,_))                = I
 
-    fun infoPat(ATPATPat(I,_))			= I
-      | infoPat(CONPat(I,_,_,_))		= I
-      | infoPat(TYPEDPat(I,_,_))		= I
-      | infoPat(ASPat(I,_,_,_,_))		= I
+    fun infoPat(ATPATPat(I,_))                        = I
+      | infoPat(CONPat(I,_,_,_))                = I
+      | infoPat(TYPEDPat(I,_,_))                = I
+      | infoPat(ASPat(I,_,_,_,_))                = I
 
-    fun infoTy(TYVARTy(I,_))			= I
-      | infoTy(RECORDTy(I,_))			= I
-      | infoTy(TYCONTy(I,_,_))			= I
-      | infoTy(ARROWTy(I,_,_))			= I
-      | infoTy(PARTy(I,_))			= I
+    fun infoTy(TYVARTy(I,_))                        = I
+      | infoTy(RECORDTy(I,_))                        = I
+      | infoTy(TYCONTy(I,_,_))                        = I
+      | infoTy(ARROWTy(I,_,_))                        = I
+      | infoTy(PARTy(I,_))                        = I
 
-    fun infoTyRow(TyRow(I,_,_,_))		= I
+    fun infoTyRow(TyRow(I,_,_,_))                = I
 
-    fun infoTyseq(Tyseq(I,_))			= I
-    fun infoTyVarseq(TyVarseq(I,_))		= I
+    fun infoTyseq(Tyseq(I,_))                        = I
+    fun infoTyVarseq(TyVarseq(I,_))                = I
 
   end
 (* stop of GrammarCoreFn.sml *)
@@ -5252,9 +5252,9 @@ structure Source :> SOURCE =
     fun between(r1: region, r2: region) = (#2 r1, #1 r2)
 
     fun compare((m1,n1), (m2,n2)) =
-	case Int.compare(m1, m2)
-	  of EQUAL => Int.compare(n1, n2)
-	   | order => order
+        case Int.compare(m1, m2)
+          of EQUAL => Int.compare(n1, n2)
+           | order => order
 
   end
 (* stop of Source.sml *)
@@ -5281,30 +5281,30 @@ signature GRAMMAR_MODULE =
 
     type Info
 
-    type VId		= Core.VId
-    type TyCon		= Core.TyCon
-    type TyVar		= Core.TyVar
-    type StrId		= Core.StrId
-    type longVId	= Core.longVId
-    type longTyCon	= Core.longTyCon
-    type longStrId	= Core.longStrId
-    type Dec		= Core.Dec
-    type Ty		= Core.Ty
-    type TyVarseq	= Core.TyVarseq
+    type VId                = Core.VId
+    type TyCon                = Core.TyCon
+    type TyVar                = Core.TyVar
+    type StrId                = Core.StrId
+    type longVId        = Core.longVId
+    type longTyCon        = Core.longTyCon
+    type longStrId        = Core.longStrId
+    type Dec                = Core.Dec
+    type Ty                = Core.Ty
+    type TyVarseq        = Core.TyVarseq
 
-    type SigId		= SigId.Id
-    type FunId		= FunId.Id
+    type SigId                = SigId.Id
+    type FunId                = FunId.Id
 
 
     (* Structures [Figures 5 and 6] *)
 
     datatype StrExp =
-	  STRUCTStrExp    of Info * StrDec
-	| LONGSTRIDStrExp of Info * longStrId
-	| TRANSStrExp     of Info * StrExp * SigExp
-	| OPAQStrExp      of Info * StrExp * SigExp
-	| APPStrExp       of Info * FunId * StrExp
-	| LETStrExp       of Info * StrDec * StrExp
+          STRUCTStrExp    of Info * StrDec
+        | LONGSTRIDStrExp of Info * longStrId
+        | TRANSStrExp     of Info * StrExp * SigExp
+        | OPAQStrExp      of Info * StrExp * SigExp
+        | APPStrExp       of Info * FunId * StrExp
+        | LETStrExp       of Info * StrDec * StrExp
 
     and StrDec =
           DECStrDec       of Info * Dec
@@ -5332,33 +5332,33 @@ signature GRAMMAR_MODULE =
     (* Specifications [Figures 5 and 7] *)
 
     and Spec =
-	  VALSpec         of Info * ValDesc
-	| TYPESpec        of Info * TypDesc
-	| EQTYPESpec      of Info * TypDesc
-	| DATATYPESpec    of Info * DatDesc
-	| REPLICATIONSpec of Info * TyCon * longTyCon
-	| EXCEPTIONSpec   of Info * ExDesc
-	| STRUCTURESpec   of Info * StrDesc
-	| INCLUDESpec     of Info * SigExp
-	| EMPTYSpec       of Info
-	| SEQSpec         of Info * Spec * Spec
-	| SHARINGTYPESpec of Info * Spec * longTyCon list
-	| SHARINGSpec     of Info * Spec * longStrId list
+          VALSpec         of Info * ValDesc
+        | TYPESpec        of Info * TypDesc
+        | EQTYPESpec      of Info * TypDesc
+        | DATATYPESpec    of Info * DatDesc
+        | REPLICATIONSpec of Info * TyCon * longTyCon
+        | EXCEPTIONSpec   of Info * ExDesc
+        | STRUCTURESpec   of Info * StrDesc
+        | INCLUDESpec     of Info * SigExp
+        | EMPTYSpec       of Info
+        | SEQSpec         of Info * Spec * Spec
+        | SHARINGTYPESpec of Info * Spec * longTyCon list
+        | SHARINGSpec     of Info * Spec * longStrId list
 
     and ValDesc =
-	  ValDesc         of Info * VId * Ty * ValDesc option
+          ValDesc         of Info * VId * Ty * ValDesc option
 
     and TypDesc =
-	  TypDesc         of Info * TyVarseq * TyCon * TypDesc option
+          TypDesc         of Info * TyVarseq * TyCon * TypDesc option
 
     and DatDesc =
-	  DatDesc         of Info * TyVarseq * TyCon * ConDesc * DatDesc option
+          DatDesc         of Info * TyVarseq * TyCon * ConDesc * DatDesc option
 
     and ConDesc =
-	  ConDesc         of Info * VId * Ty option * ConDesc option
+          ConDesc         of Info * VId * Ty option * ConDesc option
 
     and ExDesc =
-	  ExDesc          of Info * VId * Ty option * ExDesc option
+          ExDesc          of Info * VId * Ty option * ExDesc option
 
     and StrDesc =
           StrDesc         of Info * StrId * SigExp * StrDesc option
@@ -5382,21 +5382,21 @@ signature GRAMMAR_MODULE =
 
     (* Operations *)
 
-    val infoStrExp:	StrExp  -> Info
-    val infoStrDec:	StrDec  -> Info
-    val infoStrBind:	StrBind -> Info
-    val infoSigExp:	SigExp  -> Info
-    val infoSigBind:	SigBind -> Info
-    val infoSpec:	Spec    -> Info
-    val infoValDesc:	ValDesc -> Info
-    val infoTypDesc:	TypDesc -> Info
-    val infoDatDesc:	DatDesc -> Info
-    val infoConDesc:	ConDesc -> Info
-    val infoExDesc:	ExDesc  -> Info
-    val infoStrDesc:	StrDesc -> Info
-    val infoFunDec:	FunDec  -> Info
-    val infoFunBind:	FunBind -> Info
-    val infoTopDec:	TopDec  -> Info
+    val infoStrExp:        StrExp  -> Info
+    val infoStrDec:        StrDec  -> Info
+    val infoStrBind:        StrBind -> Info
+    val infoSigExp:        SigExp  -> Info
+    val infoSigBind:        SigBind -> Info
+    val infoSpec:        Spec    -> Info
+    val infoValDesc:        ValDesc -> Info
+    val infoTypDesc:        TypDesc -> Info
+    val infoDatDesc:        DatDesc -> Info
+    val infoConDesc:        ConDesc -> Info
+    val infoExDesc:        ExDesc  -> Info
+    val infoStrDesc:        StrDesc -> Info
+    val infoFunDec:        FunDec  -> Info
+    val infoFunBind:        FunBind -> Info
+    val infoTopDec:        TopDec  -> Info
 
   end
 (* stop of GRAMMAR_MODULE.sml *)
@@ -5415,8 +5415,8 @@ signature GRAMMAR_MODULE =
 
 
 functor GrammarModuleFn(type Info
-			structure Core: GRAMMAR_CORE
-		       ) : GRAMMAR_MODULE =
+                        structure Core: GRAMMAR_CORE
+                       ) : GRAMMAR_MODULE =
   struct
 
     (* Import *)
@@ -5433,12 +5433,12 @@ functor GrammarModuleFn(type Info
     (* Structures [Figures 5 and 6] *)
 
     datatype StrExp =
-	  STRUCTStrExp    of Info * StrDec
-	| LONGSTRIDStrExp of Info * longStrId
-	| TRANSStrExp     of Info * StrExp * SigExp
-	| OPAQStrExp      of Info * StrExp * SigExp
-	| APPStrExp       of Info * FunId * StrExp
-	| LETStrExp       of Info * StrDec * StrExp
+          STRUCTStrExp    of Info * StrDec
+        | LONGSTRIDStrExp of Info * longStrId
+        | TRANSStrExp     of Info * StrExp * SigExp
+        | OPAQStrExp      of Info * StrExp * SigExp
+        | APPStrExp       of Info * FunId * StrExp
+        | LETStrExp       of Info * StrDec * StrExp
 
     and StrDec =
           DECStrDec       of Info * Dec
@@ -5466,33 +5466,33 @@ functor GrammarModuleFn(type Info
     (* Specifications [Figures 5 and 7] *)
 
     and Spec =
-	  VALSpec         of Info * ValDesc
-	| TYPESpec        of Info * TypDesc
-	| EQTYPESpec      of Info * TypDesc
-	| DATATYPESpec    of Info * DatDesc
-	| REPLICATIONSpec of Info * TyCon * longTyCon
-	| EXCEPTIONSpec   of Info * ExDesc
-	| STRUCTURESpec   of Info * StrDesc
-	| INCLUDESpec     of Info * SigExp
-	| EMPTYSpec       of Info
-	| SEQSpec         of Info * Spec * Spec
-	| SHARINGTYPESpec of Info * Spec * longTyCon list
-	| SHARINGSpec     of Info * Spec * longStrId list
+          VALSpec         of Info * ValDesc
+        | TYPESpec        of Info * TypDesc
+        | EQTYPESpec      of Info * TypDesc
+        | DATATYPESpec    of Info * DatDesc
+        | REPLICATIONSpec of Info * TyCon * longTyCon
+        | EXCEPTIONSpec   of Info * ExDesc
+        | STRUCTURESpec   of Info * StrDesc
+        | INCLUDESpec     of Info * SigExp
+        | EMPTYSpec       of Info
+        | SEQSpec         of Info * Spec * Spec
+        | SHARINGTYPESpec of Info * Spec * longTyCon list
+        | SHARINGSpec     of Info * Spec * longStrId list
 
     and ValDesc =
-	  ValDesc         of Info * VId * Ty * ValDesc option
+          ValDesc         of Info * VId * Ty * ValDesc option
 
     and TypDesc =
-	  TypDesc         of Info * TyVarseq * TyCon * TypDesc option
+          TypDesc         of Info * TyVarseq * TyCon * TypDesc option
 
     and DatDesc =
-	  DatDesc         of Info * TyVarseq * TyCon * ConDesc * DatDesc option
+          DatDesc         of Info * TyVarseq * TyCon * ConDesc * DatDesc option
 
     and ConDesc =
-	  ConDesc         of Info * VId * Ty option * ConDesc option
+          ConDesc         of Info * VId * Ty option * ConDesc option
 
     and ExDesc =
-	  ExDesc          of Info * VId * Ty option * ExDesc option
+          ExDesc          of Info * VId * Ty option * ExDesc option
 
     and StrDesc =
           StrDesc         of Info * StrId * SigExp * StrDesc option
@@ -5516,56 +5516,56 @@ functor GrammarModuleFn(type Info
 
     (* Extracting info fields *)
 
-    fun infoStrExp(STRUCTStrExp(I,_))		= I
-      | infoStrExp(LONGSTRIDStrExp(I,_))	= I
-      | infoStrExp(TRANSStrExp(I,_,_))		= I
-      | infoStrExp(OPAQStrExp(I,_,_))		= I
-      | infoStrExp(APPStrExp(I,_,_))		= I
-      | infoStrExp(LETStrExp(I,_,_))		= I
+    fun infoStrExp(STRUCTStrExp(I,_))                = I
+      | infoStrExp(LONGSTRIDStrExp(I,_))        = I
+      | infoStrExp(TRANSStrExp(I,_,_))                = I
+      | infoStrExp(OPAQStrExp(I,_,_))                = I
+      | infoStrExp(APPStrExp(I,_,_))                = I
+      | infoStrExp(LETStrExp(I,_,_))                = I
 
-    fun infoStrDec(DECStrDec(I,_))		= I
-      | infoStrDec(STRUCTUREStrDec(I,_))	= I
-      | infoStrDec(LOCALStrDec(I,_,_))		= I
-      | infoStrDec(EMPTYStrDec(I))		= I
-      | infoStrDec(SEQStrDec(I,_,_))		= I
+    fun infoStrDec(DECStrDec(I,_))                = I
+      | infoStrDec(STRUCTUREStrDec(I,_))        = I
+      | infoStrDec(LOCALStrDec(I,_,_))                = I
+      | infoStrDec(EMPTYStrDec(I))                = I
+      | infoStrDec(SEQStrDec(I,_,_))                = I
 
-    fun infoStrBind(StrBind(I,_,_,_))		= I
+    fun infoStrBind(StrBind(I,_,_,_))                = I
 
-    fun infoSigExp(SIGSigExp(I,_))		= I
-      | infoSigExp(SIGIDSigExp(I,_))		= I
-      | infoSigExp(WHERETYPESigExp(I,_,_,_,_))	= I
+    fun infoSigExp(SIGSigExp(I,_))                = I
+      | infoSigExp(SIGIDSigExp(I,_))                = I
+      | infoSigExp(WHERETYPESigExp(I,_,_,_,_))        = I
 
-    fun infoSigDec(SigDec(I,_))			= I
+    fun infoSigDec(SigDec(I,_))                        = I
 
-    fun infoSigBind(SigBind(I,_,_,_))		= I
+    fun infoSigBind(SigBind(I,_,_,_))                = I
 
-    fun infoSpec(VALSpec(I,_))			= I
-      | infoSpec(TYPESpec(I,_))			= I
-      | infoSpec(EQTYPESpec(I,_))		= I
-      | infoSpec(DATATYPESpec(I,_))		= I
-      | infoSpec(REPLICATIONSpec(I,_,_))	= I
-      | infoSpec(EXCEPTIONSpec(I,_))		= I
-      | infoSpec(STRUCTURESpec(I,_))		= I
-      | infoSpec(INCLUDESpec(I,_))		= I
-      | infoSpec(EMPTYSpec(I))			= I
-      | infoSpec(SEQSpec(I,_,_))		= I
-      | infoSpec(SHARINGTYPESpec(I,_,_))	= I
-      | infoSpec(SHARINGSpec(I,_,_))		= I
+    fun infoSpec(VALSpec(I,_))                        = I
+      | infoSpec(TYPESpec(I,_))                        = I
+      | infoSpec(EQTYPESpec(I,_))                = I
+      | infoSpec(DATATYPESpec(I,_))                = I
+      | infoSpec(REPLICATIONSpec(I,_,_))        = I
+      | infoSpec(EXCEPTIONSpec(I,_))                = I
+      | infoSpec(STRUCTURESpec(I,_))                = I
+      | infoSpec(INCLUDESpec(I,_))                = I
+      | infoSpec(EMPTYSpec(I))                        = I
+      | infoSpec(SEQSpec(I,_,_))                = I
+      | infoSpec(SHARINGTYPESpec(I,_,_))        = I
+      | infoSpec(SHARINGSpec(I,_,_))                = I
 
-    fun infoValDesc(ValDesc(I,_,_,_))		= I
-    fun infoTypDesc(TypDesc(I,_,_,_))		= I
-    fun infoDatDesc(DatDesc(I,_,_,_,_))		= I
-    fun infoConDesc(ConDesc(I,_,_,_))		= I
-    fun infoExDesc(ExDesc(I,_,_,_))		= I
-    fun infoStrDesc(StrDesc(I,_,_,_))		= I
+    fun infoValDesc(ValDesc(I,_,_,_))                = I
+    fun infoTypDesc(TypDesc(I,_,_,_))                = I
+    fun infoDatDesc(DatDesc(I,_,_,_,_))                = I
+    fun infoConDesc(ConDesc(I,_,_,_))                = I
+    fun infoExDesc(ExDesc(I,_,_,_))                = I
+    fun infoStrDesc(StrDesc(I,_,_,_))                = I
 
-    fun infoFunDec(FunDec(I,_))			= I
+    fun infoFunDec(FunDec(I,_))                        = I
 
-    fun infoFunBind(FunBind(I,_,_,_,_,_))	= I
+    fun infoFunBind(FunBind(I,_,_,_,_,_))        = I
 
-    fun infoTopDec(STRDECTopDec(I,_,_))		= I
-      | infoTopDec(SIGDECTopDec(I,_,_))		= I
-      | infoTopDec(FUNDECTopDec(I,_,_))		= I
+    fun infoTopDec(STRDECTopDec(I,_,_))                = I
+      | infoTopDec(SIGDECTopDec(I,_,_))                = I
+      | infoTopDec(FUNDECTopDec(I,_,_))                = I
 
   end
 (* stop of GrammarModuleFn.sml *)
@@ -5584,7 +5584,7 @@ signature GRAMMAR_PROGRAM =
 
     structure Module: GRAMMAR_MODULE
 
-    type Info	= Module.Info
+    type Info        = Module.Info
 
     type TopDec = Module.TopDec
 
@@ -5609,8 +5609,8 @@ signature GRAMMAR_PROGRAM =
 
 
 functor GrammarProgramFn(type Info
-			 structure Module: GRAMMAR_MODULE
-			) : GRAMMAR_PROGRAM =
+                         structure Module: GRAMMAR_MODULE
+                        ) : GRAMMAR_PROGRAM =
   struct
 
     (* Import *)
@@ -5636,10 +5636,10 @@ functor GrammarProgramFn(type Info
 structure GrammarCore    = GrammarCoreFn(type Info = Source.region)
 
 structure GrammarModule  = GrammarModuleFn(type Info = Source.region
-					   structure Core = GrammarCore)
+                                           structure Core = GrammarCore)
 
 structure GrammarProgram = GrammarProgramFn(type Info = Source.region
-					    structure Module = GrammarModule)
+                                            structure Module = GrammarModule)
 (* stop of Grammars.sml *)
 (* start of DYNAMIC_ENV.sml *)
 (*
@@ -5670,31 +5670,31 @@ signature DYNAMIC_ENV =
     (* Export types [Section 6.6] *)
 
     datatype FcnClosure =
-	     FcnClosure of Match
-			* ( (*Env*)
-			    ( FcnClosure Val * IdStatus
-			    , (FcnClosure Val * IdStatus) VIdMap
-			    ) Str' StrIdMap
-			  * (FcnClosure Val * IdStatus) VIdMap TyConMap 
-			  * (FcnClosure Val * IdStatus) VIdMap
-			  )
-			* (*ValEnv*) (FcnClosure Val * IdStatus) VIdMap
+             FcnClosure of Match
+                        * ( (*Env*)
+                            ( FcnClosure Val * IdStatus
+                            , (FcnClosure Val * IdStatus) VIdMap
+                            ) Str' StrIdMap
+                          * (FcnClosure Val * IdStatus) VIdMap TyConMap 
+                          * (FcnClosure Val * IdStatus) VIdMap
+                          )
+                        * (*ValEnv*) (FcnClosure Val * IdStatus) VIdMap
 
     type ValStr = FcnClosure Val * IdStatus
-    type ValEnv = ValStr VIdMap				(* [VE] *)
+    type ValEnv = ValStr VIdMap                                (* [VE] *)
 
     type TyStr  = ValEnv
-    type TyEnv  = TyStr TyConMap			(* [TE] *)
+    type TyEnv  = TyStr TyConMap                        (* [TE] *)
 
     type Str    = (ValStr, TyStr) Str'
-    type StrEnv = Str StrIdMap				(* [SE] *)
+    type StrEnv = Str StrIdMap                                (* [SE] *)
 
-    type Env    = StrEnv * TyEnv * ValEnv		(* [E] *)
+    type Env    = StrEnv * TyEnv * ValEnv                (* [E] *)
 
 
     (* Operations *)
 
-    val Rec:	ValEnv -> ValEnv
+    val Rec:        ValEnv -> ValEnv
 
   end
 (* stop of DYNAMIC_ENV.sml *)
@@ -5730,28 +5730,28 @@ structure DynamicEnv :> DYNAMIC_ENV =
     (* Export types [Section 6.6] *)
 
     datatype FcnClosure =
-	     FcnClosure of Match * ((*Env*) StrEnv * TyEnv * ValEnv) * ValEnv
+             FcnClosure of Match * ((*Env*) StrEnv * TyEnv * ValEnv) * ValEnv
 
-    withtype ValEnv = (FcnClosure Val * IdStatus) VIdMap	  (* [VE] *)
+    withtype ValEnv = (FcnClosure Val * IdStatus) VIdMap          (* [VE] *)
     and      TyEnv  = (FcnClosure Val * IdStatus) VIdMap TyConMap (* [TE] *)
     and      StrEnv = (FcnClosure Val * IdStatus,
-		       (FcnClosure Val * IdStatus) VIdMap) Str' StrIdMap
-    								  (* [SE] *)
+                       (FcnClosure Val * IdStatus) VIdMap) Str' StrIdMap
+                                                                      (* [SE] *)
     type ValStr = FcnClosure Val * IdStatus
     type TyStr  = ValEnv
     type Str    = (ValStr, TyStr) Str'
 
-    type Env    = StrEnv * TyEnv * ValEnv			  (* [E] *)
+    type Env    = StrEnv * TyEnv * ValEnv                          (* [E] *)
 
 
     (* Unrolling [Section 6.6] *)
 
     fun Rec VE =
-	    VIdMap.map
-		(fn (Val.FcnClosure(FcnClosure(match',E',VE')), IdStatus.v) =>
-		    (Val.FcnClosure(FcnClosure(match',E',VE)), IdStatus.v)
-		  | valstr => valstr
-		) VE
+            VIdMap.map
+                (fn (Val.FcnClosure(FcnClosure(match',E',VE')), IdStatus.v) =>
+                    (Val.FcnClosure(FcnClosure(match',E',VE)), IdStatus.v)
+                  | valstr => valstr
+                ) VE
 
   end
 (* stop of DynamicEnv.sml *)
@@ -5875,14 +5875,14 @@ structure InitialDynamicEnv :> INITIAL_DYNAMIC_ENV =
 
     val VEUnit   = VIdMap.empty
     val VEBool   = VIdMap.fromList[(vidFalse, valstrFalse),
-				   (vidTrue,  valstrTrue)] : ValEnv
+                                   (vidTrue,  valstrTrue)] : ValEnv
     val VEInt    = VIdMap.empty
     val VEWord   = VIdMap.empty
     val VEReal   = VIdMap.empty
     val VEString = VIdMap.empty
     val VEChar   = VIdMap.empty
     val VEList   = VIdMap.fromList[(vidNil,   valstrNil),
-				   (vidCons,  valstrCons)] : ValEnv
+                                   (vidCons,  valstrCons)] : ValEnv
     val VERef    = VIdMap.fromList[(vidRef,   valstrRef)] : ValEnv
     val VEExn    = VIdMap.empty
 
@@ -5892,25 +5892,25 @@ structure InitialDynamicEnv :> INITIAL_DYNAMIC_ENV =
     val SE0 = StrIdMap.empty
 
     val TE0 = TyConMap.fromList[(tyconUnit,   VEUnit),
- 				(tyconBool,   VEBool),
- 				(tyconInt,    VEInt),
- 				(tyconWord,   VEWord),
- 				(tyconReal,   VEReal),
- 				(tyconString, VEString),
- 				(tyconChar,   VEChar),
- 				(tyconList,   VEList),
- 				(tyconRef,    VERef),
- 				(tyconExn,    VEExn)]
+                                 (tyconBool,   VEBool),
+                                 (tyconInt,    VEInt),
+                                 (tyconWord,   VEWord),
+                                 (tyconReal,   VEReal),
+                                 (tyconString, VEString),
+                                 (tyconChar,   VEChar),
+                                 (tyconList,   VEList),
+                                 (tyconRef,    VERef),
+                                 (tyconExn,    VEExn)]
 
     val VE0 = VIdMap.fromList  [(vidEq,     valstrEq),
-				(vidAssign, valstrAssign),
-				(vidRef,    valstrRef),
-				(vidNil,    valstrNil),
-				(vidCons,   valstrCons),
-				(vidFalse,  valstrFalse),
-				(vidTrue,   valstrTrue),
-				(vidMatch,  valstrMatch),
-				(vidBind,   valstrBind)] : ValEnv
+                                (vidAssign, valstrAssign),
+                                (vidRef,    valstrRef),
+                                (vidNil,    valstrNil),
+                                (vidCons,   valstrCons),
+                                (vidFalse,  valstrFalse),
+                                (vidTrue,   valstrTrue),
+                                (vidMatch,  valstrMatch),
+                                (vidBind,   valstrBind)] : ValEnv
 
     val E0 = (SE0,TE0,VE0)
 
@@ -5946,24 +5946,24 @@ signature INTERFACE =
 
     (* Export types [Section 7.2] *)
 
-    type ValInt = IdStatus VIdMap				(* [VI] *)
-    type TyInt  = ValInt TyConMap				(* [TI] *)
+    type ValInt = IdStatus VIdMap                                (* [VI] *)
+    type TyInt  = ValInt TyConMap                                (* [TI] *)
 
     type Str    = (IdStatus, ValInt) Str'
-    type StrInt = Str StrIdMap					(* [SI] *)
+    type StrInt = Str StrIdMap                                        (* [SI] *)
  
-    type Int    = StrInt * TyInt * ValInt			(* [I] *)
+    type Int    = StrInt * TyInt * ValInt                        (* [I] *)
 
 
     (* Operations *)
 
-    val fromSI:		StrInt -> Int
-    val fromTI:		TyInt  -> Int
-    val fromVI:		ValInt -> Int
-    val fromVIandTI:	ValInt * TyInt -> Int
+    val fromSI:                StrInt -> Int
+    val fromTI:                TyInt  -> Int
+    val fromVI:                ValInt -> Int
+    val fromVIandTI:        ValInt * TyInt -> Int
 
-    val Inter:		Env -> Int
-    val cutdown:	Env * Int -> Env
+    val Inter:                Env -> Int
+    val cutdown:        Env * Int -> Env
 
   end
 (* stop of INTERFACE.sml *)
@@ -5992,13 +5992,13 @@ structure Interface :> INTERFACE =
 
     (* Export types [Section 7.2] *)
 
-    type ValInt = IdStatus VIdMap				(* [VI] *)
-    type TyInt  = ValInt TyConMap				(* [TI] *)
+    type ValInt = IdStatus VIdMap                                (* [VI] *)
+    type TyInt  = ValInt TyConMap                                (* [TI] *)
 
     type Str    = (IdStatus, ValInt) Str'
-    type StrInt = Str StrIdMap					(* [SI] *)
+    type StrInt = Str StrIdMap                                        (* [SI] *)
  
-    type Int    = StrInt * TyInt * ValInt			(* [I] *)
+    type Int    = StrInt * TyInt * ValInt                        (* [I] *)
 
 
     (* Injections [Section 4.3] *)
@@ -6021,32 +6021,32 @@ structure Interface :> INTERFACE =
     (* Cutting down environments [Section 7.2] *)
 
     fun cutdownVE(VE, VI) =
-	VIdMap.foldli
-	    (fn(vid, is, VE') =>
-		case VIdMap.find(VE, vid)
-		  of SOME(v,is') => VIdMap.insert(VE', vid, (v,is))
-		   | NONE        => VE'
-	    ) VIdMap.empty VI
+        VIdMap.foldli
+            (fn(vid, is, VE') =>
+                case VIdMap.find(VE, vid)
+                  of SOME(v,is') => VIdMap.insert(VE', vid, (v,is))
+                   | NONE        => VE'
+            ) VIdMap.empty VI
 
     fun cutdownTE(TE, TI) =
-	TyConMap.foldli
-	    (fn(tycon, VI', TE') =>
-		case TyConMap.find(TE, tycon)
-		  of SOME VE' => TyConMap.insert(TE', tycon, cutdownVE(VE',VI'))
-		   | NONE     => TE'
-	    ) TyConMap.empty TI
+        TyConMap.foldli
+            (fn(tycon, VI', TE') =>
+                case TyConMap.find(TE, tycon)
+                  of SOME VE' => TyConMap.insert(TE', tycon, cutdownVE(VE',VI'))
+                   | NONE     => TE'
+            ) TyConMap.empty TI
 
     fun cutdownSE(SE, SI) =
-	StrIdMap.foldli
-	    (fn(strid, Str I, SE') =>
-		case StrIdMap.find(SE, strid)
-		  of SOME(DynamicEnv.Str E) =>
-		       StrIdMap.insert(SE', strid, DynamicEnv.Str(cutdown(E,I)))
-		   | NONE => SE'
-	    ) StrIdMap.empty SI
+        StrIdMap.foldli
+            (fn(strid, Str I, SE') =>
+                case StrIdMap.find(SE, strid)
+                  of SOME(DynamicEnv.Str E) =>
+                       StrIdMap.insert(SE', strid, DynamicEnv.Str(cutdown(E,I)))
+                   | NONE => SE'
+            ) StrIdMap.empty SI
 
     and cutdown((SE,TE,VE), (SI,TI,VI)) =
-	( cutdownSE(SE, SI), cutdownTE(TE, TI), cutdownVE(VE, VI) )
+        ( cutdownSE(SE, SI), cutdownTE(TE, TI), cutdownVE(VE, VI) )
 
   end
 (* stop of Interface.sml *)
@@ -6081,35 +6081,35 @@ signature DYNAMIC_BASIS =
     (* Types [Section 7.2] *)
 
     datatype FunctorClosure =
-	FunctorClosure of (StrId * Int) * StrExp *
-			(*Basis*) (FunctorClosure FunIdMap * Int SigIdMap * Env)
+        FunctorClosure of (StrId * Int) * StrExp *
+                        (*Basis*) (FunctorClosure FunIdMap * Int SigIdMap * Env)
 
-    type SigEnv   = Int SigIdMap				(* [G] *)
-    type FunEnv   = FunctorClosure FunIdMap			(* [F] *)
+    type SigEnv   = Int SigIdMap                                (* [G] *)
+    type FunEnv   = FunctorClosure FunIdMap                        (* [F] *)
 
-    type Basis    = FunEnv * SigEnv * Env			(* [B] *)
+    type Basis    = FunEnv * SigEnv * Env                        (* [B] *)
 
 
     (* Operations *)
 
-    val empty:		Basis
-    val fromE:		Env    -> Basis
-    val fromF:		FunEnv -> Basis
-    val fromG:		SigEnv -> Basis
+    val empty:                Basis
+    val fromE:                Env    -> Basis
+    val fromF:                FunEnv -> Basis
+    val fromG:                SigEnv -> Basis
 
-    val Eof:		Basis    -> Env
+    val Eof:                Basis    -> Env
 
-    val plus:		Basis * Basis     -> Basis
-    val plusSE:		Basis * StrEnv    -> Basis
-    val plusG:		Basis * SigEnv    -> Basis
-    val plusF:		Basis * FunEnv    -> Basis
-    val plusE:		Basis * Env       -> Basis
+    val plus:                Basis * Basis     -> Basis
+    val plusSE:                Basis * StrEnv    -> Basis
+    val plusG:                Basis * SigEnv    -> Basis
+    val plusF:                Basis * FunEnv    -> Basis
+    val plusE:                Basis * Env       -> Basis
 
-    val findStrId:	Basis * StrId     -> Str option
-    val findSigId:	Basis * SigId     -> Int option
-    val findFunId:	Basis * FunId     -> FunctorClosure option
-    val findLongStrId:	Basis * longStrId -> Str option
-    val findLongTyCon:	Basis * longTyCon -> ValEnv option
+    val findStrId:        Basis * StrId     -> Str option
+    val findSigId:        Basis * SigId     -> Int option
+    val findFunId:        Basis * FunId     -> FunctorClosure option
+    val findLongStrId:        Basis * longStrId -> Str option
+    val findLongTyCon:        Basis * longTyCon -> ValEnv option
  
   end
 (* stop of DYNAMIC_BASIS.sml *)
@@ -6145,13 +6145,13 @@ structure DynamicBasis :> DYNAMIC_BASIS =
     (* Types [Section 7.2] *)
 
     datatype FunctorClosure =
-	FunctorClosure of (StrId * Int) * StrExp *
-			  (*Basis*) (FunEnv * SigEnv * Env)
+        FunctorClosure of (StrId * Int) * StrExp *
+                          (*Basis*) (FunEnv * SigEnv * Env)
 
-    withtype SigEnv   = Int SigIdMap				(* [G] *)
-    and      FunEnv   = FunctorClosure FunIdMap			(* [F] *)
+    withtype SigEnv   = Int SigIdMap                                (* [G] *)
+    and      FunEnv   = FunctorClosure FunIdMap                        (* [F] *)
 
-    type     Basis    = FunEnv * SigEnv * Env			(* [B] *)
+    type     Basis    = FunEnv * SigEnv * Env                        (* [B] *)
 
 
 
@@ -6174,10 +6174,10 @@ structure DynamicBasis :> DYNAMIC_BASIS =
     infix plus plusG plusF plusE plusSE IBplusI
 
     fun (F,G,E) plus (F',G',E') =
-	( FunIdMap.unionWith #2 (F,F')
-	, SigIdMap.unionWith #2 (G,G')
-	, DynamicEnv.plus(E,E')
-	)
+        ( FunIdMap.unionWith #2 (F,F')
+        , SigIdMap.unionWith #2 (G,G')
+        , DynamicEnv.plus(E,E')
+        )
 
     fun (F,G,E) plusG  G' = ( F, SigIdMap.unionWith #2 (G,G'), E )
     fun (F,G,E) plusF  F' = ( FunIdMap.unionWith #2 (F,F'), G, E )
@@ -6191,9 +6191,9 @@ structure DynamicBasis :> DYNAMIC_BASIS =
     fun findSigId((F,G,E), sigid) = SigIdMap.find(G, sigid)
     fun findFunId((F,G,E), funid) = FunIdMap.find(F, funid)
     fun findLongStrId((F,G,E), longstrid) =
-	DynamicEnv.findLongStrId(E, longstrid)
+        DynamicEnv.findLongStrId(E, longstrid)
     fun findLongTyCon((F,G,E), longtycon) =
-	DynamicEnv.findLongTyCon(E, longtycon)
+        DynamicEnv.findLongTyCon(E, longtycon)
 
   end
 (* stop of DynamicBasis.sml *)
@@ -6303,13 +6303,13 @@ structure Error :> ERROR =
     (* Helper *)
 
     fun print((pos1,pos2), message) =
-	let
-	    val a = Int.toString pos1
-	    val b = Int.toString pos2
-	in
-	    TextIO.output(TextIO.stdErr, a ^ "-" ^ b ^ ": " ^ message ^ "\n")
-	  ; TextIO.flushOut TextIO.stdErr
-	end
+        let
+            val a = Int.toString pos1
+            val b = Int.toString pos2
+        in
+            TextIO.output(TextIO.stdErr, a ^ "-" ^ b ^ ": " ^ message ^ "\n")
+          ; TextIO.flushOut TextIO.stdErr
+        end
 
 
     (* Export *)
@@ -6317,12 +6317,12 @@ structure Error :> ERROR =
     exception Error of position * string
 
     fun error(pos, message) =
-	( print(pos, message)
-	; raise Error(pos, message)
-	)
+        ( print(pos, message)
+        ; raise Error(pos, message)
+        )
 
     fun warning(pos, message) =
-	print(pos, "warning: " ^ message)
+        print(pos, "warning: " ^ message)
 
   end
 (* stop of Error.sml *)
@@ -6355,18 +6355,18 @@ signature INFIX =
     datatype Assoc = LEFT | RIGHT
 
     type InfStatus = Assoc * int
-    type InfEnv    = InfStatus VIdMap.map	(* [J] *)
+    type InfEnv    = InfStatus VIdMap.map        (* [J] *)
 
-    val empty:		InfEnv
-    val assign:		InfEnv * VId list * InfStatus -> InfEnv
-    val cancel:		InfEnv * VId list -> InfEnv
+    val empty:                InfEnv
+    val assign:                InfEnv * VId list * InfStatus -> InfEnv
+    val cancel:                InfEnv * VId list -> InfEnv
 
 
     (* Resolving phrases containing infixed identifiers *)
 
-    val parseExp:	InfEnv * AtExp list -> Exp
-    val parsePat:	InfEnv * AtPat list -> Pat
-    val parseFmrule:	InfEnv * AtPat list -> Op * VId * AtPat list
+    val parseExp:        InfEnv * AtExp list -> Exp
+    val parsePat:        InfEnv * AtPat list -> Pat
+    val parseFmrule:        InfEnv * AtPat list -> Op * VId * AtPat list
 
   end
 (* stop of INFIX.sml *)
@@ -6392,7 +6392,7 @@ structure Infix :> INFIX =
 
     type InfStatus = Assoc * int
 
-    type InfEnv    = InfStatus VIdMap.map		(* [J] *)
+    type InfEnv    = InfStatus VIdMap.map                (* [J] *)
 
 
 
@@ -6401,56 +6401,56 @@ structure Infix :> INFIX =
     val empty = VIdMap.empty
 
     fun assign(J, vids, infstatus) =
-	let
-	    fun insert(vid, J) = VIdMap.insert(J, vid, infstatus)
-	in
-	    List.foldl insert J vids
-	end
+        let
+            fun insert(vid, J) = VIdMap.insert(J, vid, infstatus)
+        in
+            List.foldl insert J vids
+        end
 
     fun cancel(J, vids) =
-	let
-	    fun remove(vid, J) = #1(VIdMap.remove(J, vid))
-	in
-	    List.foldl remove J vids
-	end
+        let
+            fun remove(vid, J) = #1(VIdMap.remove(J, vid))
+        in
+            List.foldl remove J vids
+        end
 
 
 
     (* Helpers for error messages *)
 
-    val error				= Error.error
-    fun errorVId(I, s, vid)		= error(I, s ^ VId.toString vid)
-    fun errorLongVId(I, s, longvid)	= error(I, s ^ LongVId.toString longvid)
+    val error                                = Error.error
+    fun errorVId(I, s, vid)                = error(I, s ^ VId.toString vid)
+    fun errorLongVId(I, s, longvid)        = error(I, s ^ LongVId.toString longvid)
 
 
 
     (* Categorisation of atomic expressions and patterns *)
 
     datatype 'a FixityCategory = NONFIX of 'a
-			       | INFIX  of InfStatus * VId * Info
+                               | INFIX  of InfStatus * VId * Info
 
     fun isInfix J (longvid) =
-	LongVId.isUnqualified longvid andalso
-	VIdMap.find(J, LongVId.toId longvid) <> NONE
+        LongVId.isUnqualified longvid andalso
+        VIdMap.find(J, LongVId.toId longvid) <> NONE
 
     fun categoriseLongVId J (atomic, I, longvid) =
-	if LongVId.isUnqualified longvid then
-	    let
-		val vid = LongVId.toId longvid
-	    in
-		case VIdMap.find(J, vid)
-		  of NONE           => NONFIX(atomic)
-		   | SOME infstatus => INFIX(infstatus, vid, I)
-	    end
-	else
-	    NONFIX(atomic)
+        if LongVId.isUnqualified longvid then
+            let
+                val vid = LongVId.toId longvid
+            in
+                case VIdMap.find(J, vid)
+                  of NONE           => NONFIX(atomic)
+                   | SOME infstatus => INFIX(infstatus, vid, I)
+            end
+        else
+            NONFIX(atomic)
 
     fun categoriseAtExp J (atexp as LONGVIDAtExp(I, SANSOp, longvid)) =
-	    categoriseLongVId J (atexp, I, longvid)
+            categoriseLongVId J (atexp, I, longvid)
       | categoriseAtExp J (atexp) = NONFIX(atexp)
 
     fun categoriseAtPat J (atpat as LONGVIDAtPat(I, SANSOp, longvid)) =
-	    categoriseLongVId J (atpat, I, longvid)
+            categoriseLongVId J (atpat, I, longvid)
       | categoriseAtPat J (atpat) = NONFIX(atpat)
 
 
@@ -6458,55 +6458,55 @@ structure Infix :> INFIX =
     (* Resolving infixing [Section 2.6] *)
 
     fun parse(app, infapp, es) =
-	let
-	    fun loop(NONFIX(e)::[], []) = e
+        let
+            fun loop(NONFIX(e)::[], []) = e
 
-	      | loop(NONFIX(e2)::NONFIX(e1)::s', i) =
-		    (* reduce nonfix application *)
-		    loop(NONFIX(app(e1, e2))::s', i)
+              | loop(NONFIX(e2)::NONFIX(e1)::s', i) =
+                    (* reduce nonfix application *)
+                    loop(NONFIX(app(e1, e2))::s', i)
 
-	      | loop(s, NONFIX(e)::i') =
-		    (* shift *)
-		    loop(NONFIX(e)::s, i')
+              | loop(s, NONFIX(e)::i') =
+                    (* shift *)
+                    loop(NONFIX(e)::s, i')
 
-	      | loop(s as NONFIX(e)::[], INFIX(x)::i') =
-		    (* shift *)
-		    loop(INFIX(x)::s, i')
+              | loop(s as NONFIX(e)::[], INFIX(x)::i') =
+                    (* shift *)
+                    loop(INFIX(x)::s, i')
 
-	      | loop(NONFIX(e2)::INFIX(_,vid,_)::NONFIX(e1)::s', []) =
-		    (* reduce infix application *)
-		    loop(NONFIX(infapp(e1, vid, e2))::s', [])
+              | loop(NONFIX(e2)::INFIX(_,vid,_)::NONFIX(e1)::s', []) =
+                    (* reduce infix application *)
+                    loop(NONFIX(infapp(e1, vid, e2))::s', [])
 
-	      | loop(s as NONFIX(e2)::INFIX((a1,p1),vid1,I1)::NONFIX(e1)::s',
-		       i as INFIX(x2 as ((a2,p2),vid2,I2))::i') =
-		if p1 > p2 then
-		    (* reduce infix application *)
-		    loop(NONFIX(infapp(e1, vid1, e2))::s', i)
-		else if p1 < p2 then
-		    (* shift *)
-		    loop(INFIX(x2)::s, i')
-		else if a1 <> a2 then
-		    error(Source.over(I1,I2), "conflicting infix associativity")
-		else if a1 = LEFT then
-		    (* reduce infix application *)
-		    loop(NONFIX(infapp(e1, vid1, e2))::s', i)
-		else (* a1 = RIGHT *)
-		    (* shift *)
-		    loop(INFIX(x2)::s, i')
+              | loop(s as NONFIX(e2)::INFIX((a1,p1),vid1,I1)::NONFIX(e1)::s',
+                       i as INFIX(x2 as ((a2,p2),vid2,I2))::i') =
+                if p1 > p2 then
+                    (* reduce infix application *)
+                    loop(NONFIX(infapp(e1, vid1, e2))::s', i)
+                else if p1 < p2 then
+                    (* shift *)
+                    loop(INFIX(x2)::s, i')
+                else if a1 <> a2 then
+                    error(Source.over(I1,I2), "conflicting infix associativity")
+                else if a1 = LEFT then
+                    (* reduce infix application *)
+                    loop(NONFIX(infapp(e1, vid1, e2))::s', i)
+                else (* a1 = RIGHT *)
+                    (* shift *)
+                    loop(INFIX(x2)::s, i')
 
-	      | loop(INFIX(_, vid, I)::s, []) =
-		    errorVId(I, "misplaced infix identifier ", vid)
+              | loop(INFIX(_, vid, I)::s, []) =
+                    errorVId(I, "misplaced infix identifier ", vid)
 
-	      | loop(INFIX(x)::s, INFIX(_, vid, I)::i) =
-		    errorVId(I, "misplaced infix identifier ", vid)
+              | loop(INFIX(x)::s, INFIX(_, vid, I)::i) =
+                    errorVId(I, "misplaced infix identifier ", vid)
 
-	      | loop([], INFIX(_, vid, I)::i) =
-		    errorVId(I, "misplaced infix identifier ", vid)
+              | loop([], INFIX(_, vid, I)::i) =
+                    errorVId(I, "misplaced infix identifier ", vid)
 
-	      | loop _ = raise Fail "Infix.parse: inconsistency"
-	in
-	    loop([], es)
-	end
+              | loop _ = raise Fail "Infix.parse: inconsistency"
+        in
+            loop([], es)
+        end
 
 
     (* Resolving infixed expressions [Section 2.6] *)
@@ -6515,44 +6515,44 @@ structure Infix :> INFIX =
       | atexpExp atexp             = ATEXPExp(infoAtExp atexp, atexp)
 
     fun appExp(atexp1, atexp2) =
-	let
-	    val I1 = infoAtExp atexp1
-	    val I2 = infoAtExp atexp2
-	    val I  = Source.over(I1, I2)
-	in
-	    PARAtExp(I, APPExp(I, atexpExp atexp1, atexp2))
-	end
+        let
+            val I1 = infoAtExp atexp1
+            val I2 = infoAtExp atexp2
+            val I  = Source.over(I1, I2)
+        in
+            PARAtExp(I, APPExp(I, atexpExp atexp1, atexp2))
+        end
 
     fun pairExp(atexp1, atexp2) =
-	let
-	    val I1	= infoAtExp atexp1
-	    val I2	= infoAtExp atexp2
-	    val lab1	= Lab.fromInt 1
-	    val lab2	= Lab.fromInt 2
-	    val exprow2	= ExpRow(I2, lab2, atexpExp atexp2, NONE)
-	    val exprow1	= ExpRow(I1, lab1, atexpExp atexp1, SOME exprow2)
-	in
-	    RECORDAtExp(Source.over(I1,I2), SOME exprow1)
-	end
+        let
+            val I1        = infoAtExp atexp1
+            val I2        = infoAtExp atexp2
+            val lab1        = Lab.fromInt 1
+            val lab2        = Lab.fromInt 2
+            val exprow2        = ExpRow(I2, lab2, atexpExp atexp2, NONE)
+            val exprow1        = ExpRow(I1, lab1, atexpExp atexp1, SOME exprow2)
+        in
+            RECORDAtExp(Source.over(I1,I2), SOME exprow1)
+        end
 
     fun infappExp(atexp1, vid, atexp2) =
-	let
-	    val Ivid	= Source.between(infoAtExp atexp1, infoAtExp atexp2)
-	    val longvid	= LongVId.fromId vid
-	    val atexp1'	= LONGVIDAtExp(Ivid, SANSOp, longvid)
-	    val atexp2'	= pairExp(atexp1, atexp2)
-	in
-	    appExp(atexp1', atexp2')
-	end
+        let
+            val Ivid        = Source.between(infoAtExp atexp1, infoAtExp atexp2)
+            val longvid        = LongVId.fromId vid
+            val atexp1'        = LONGVIDAtExp(Ivid, SANSOp, longvid)
+            val atexp2'        = pairExp(atexp1, atexp2)
+        in
+            appExp(atexp1', atexp2')
+        end
 
 
     fun parseExp(J, atexps) =
-	let
-	    val atexp = parse(appExp, infappExp,
-			      List.map (categoriseAtExp J) atexps)
-	in
-	    atexpExp atexp
-	end
+        let
+            val atexp = parse(appExp, infappExp,
+                              List.map (categoriseAtExp J) atexps)
+        in
+            atexpExp atexp
+        end
 
 
     (* Resolving infixed patterns [Section 2.6] *)
@@ -6561,115 +6561,115 @@ structure Infix :> INFIX =
       | atpatPat atpat             = ATPATPat(infoAtPat atpat, atpat)
 
     fun conPat(LONGVIDAtPat(I1, op_opt, longvid), atpat) =
-	let
-	    val I2 = infoAtPat atpat
-	    val I  = Source.over(I1, I2)
-	in
-	    PARAtPat(I, CONPat(I, op_opt, longvid, atpat))
-	end
+        let
+            val I2 = infoAtPat atpat
+            val I  = Source.over(I1, I2)
+        in
+            PARAtPat(I, CONPat(I, op_opt, longvid, atpat))
+        end
 
       | conPat(_, atpat) =
-	    error(infoAtPat atpat, "misplaced atomic pattern")
+            error(infoAtPat atpat, "misplaced atomic pattern")
 
     fun pairPat(atpat1, atpat2) =
-	let
-	    val I1	= infoAtPat atpat1
-	    val I2	= infoAtPat atpat2
-	    val lab1	= Lab.fromInt 1
-	    val lab2	= Lab.fromInt 2
-	    val patrow2	= ROWPatRow(I2, lab2, atpatPat atpat2, NONE)
-	    val patrow1	= ROWPatRow(I1, lab1, atpatPat atpat1, SOME patrow2)
-	in
-	    RECORDAtPat(Source.over(I1,I2), SOME patrow1)
-	end
+        let
+            val I1        = infoAtPat atpat1
+            val I2        = infoAtPat atpat2
+            val lab1        = Lab.fromInt 1
+            val lab2        = Lab.fromInt 2
+            val patrow2        = ROWPatRow(I2, lab2, atpatPat atpat2, NONE)
+            val patrow1        = ROWPatRow(I1, lab1, atpatPat atpat1, SOME patrow2)
+        in
+            RECORDAtPat(Source.over(I1,I2), SOME patrow1)
+        end
 
     fun infconPat(atpat1, vid, atpat2) =
-	let
-	    val Ivid	= Source.between(infoAtPat atpat1, infoAtPat atpat2)
-	    val longvid	= LongVId.fromId vid
-	    val atpat1'	= LONGVIDAtPat(Ivid, SANSOp, longvid)
-	    val atpat2'	= pairPat(atpat1, atpat2)
-	in
-	    conPat(atpat1', atpat2')
-	end
+        let
+            val Ivid        = Source.between(infoAtPat atpat1, infoAtPat atpat2)
+            val longvid        = LongVId.fromId vid
+            val atpat1'        = LONGVIDAtPat(Ivid, SANSOp, longvid)
+            val atpat2'        = pairPat(atpat1, atpat2)
+        in
+            conPat(atpat1', atpat2')
+        end
 
 
     fun parsePat(J, atpats) =
-	let
-	    val atpat = parse(conPat, infconPat,
-			      List.map (categoriseAtPat J) atpats)
-	in
-	    atpatPat atpat
-	end
+        let
+            val atpat = parse(conPat, infconPat,
+                              List.map (categoriseAtPat J) atpats)
+        in
+            atpatPat atpat
+        end
 
 
     (* Resolving fun match rules [Figure 21, note] *)
 
     fun parseFmrule(J, atpats) =
-	(*
-	 * Allowed is the following:
-	 * (1) <op> vid atpat+
-	 * (2) (atpat infix_vid atpat) atpat*
-	 * (3) atpat infix_vid atpat
-	 *)
-	let
-	    fun checkNonfixity []           = true
-	      | checkNonfixity(NONFIX _::t) = checkNonfixity t
-	      | checkNonfixity(INFIX(_, vid, I)::t) =
-		    errorVId(I, "misplaced infix identifier ", vid)
+        (*
+         * Allowed is the following:
+         * (1) <op> vid atpat+
+         * (2) (atpat infix_vid atpat) atpat*
+         * (3) atpat infix_vid atpat
+         *)
+        let
+            fun checkNonfixity []           = true
+              | checkNonfixity(NONFIX _::t) = checkNonfixity t
+              | checkNonfixity(INFIX(_, vid, I)::t) =
+                    errorVId(I, "misplaced infix identifier ", vid)
 
-	    fun maybeNonfixClause(ps) =
-		case List.hd atpats
-		  of LONGVIDAtPat(I, op_opt, longvid) =>
-			if not(LongVId.isUnqualified longvid) then
-			    errorLongVId(I, "misplaced long identifier ",
-					 longvid)
-			else if List.length atpats < 2 then
-			    error(I, "missing function arguments")
-			else
-			    ( checkNonfixity ps	(* including 1st *)
-			    ; ( op_opt, LongVId.toId longvid, List.tl atpats )
-			    )
-		   | WILDCARDAtPat(I) =>
-			error(I, "misplaced wildcard pattern")
-		   | SCONAtPat(I, _) =>
-			error(I, "misplaced constant pattern")
-		   | RECORDAtPat(I, _) =>
-			error(I, "misplaced record or tuple pattern")
-		   | PARAtPat(I, _) =>
-			error(I, "misplaced parenthesised pattern")
+            fun maybeNonfixClause(ps) =
+                case List.hd atpats
+                  of LONGVIDAtPat(I, op_opt, longvid) =>
+                        if not(LongVId.isUnqualified longvid) then
+                            errorLongVId(I, "misplaced long identifier ",
+                                         longvid)
+                        else if List.length atpats < 2 then
+                            error(I, "missing function arguments")
+                        else
+                            ( checkNonfixity ps        (* including 1st *)
+                            ; ( op_opt, LongVId.toId longvid, List.tl atpats )
+                            )
+                   | WILDCARDAtPat(I) =>
+                        error(I, "misplaced wildcard pattern")
+                   | SCONAtPat(I, _) =>
+                        error(I, "misplaced constant pattern")
+                   | RECORDAtPat(I, _) =>
+                        error(I, "misplaced record or tuple pattern")
+                   | PARAtPat(I, _) =>
+                        error(I, "misplaced parenthesised pattern")
 
-	    fun maybeParenthesisedInfixClause(ps) =
-	        case List.hd ps
-		  of NONFIX(PARAtPat(_, CONPat(I, SANSOp, longvid, atpat))) =>
-			if not(LongVId.isUnqualified longvid) then
-			    errorLongVId(I, "misplaced long identifier ",
-					 longvid)
-			else if not(isInfix J longvid) then
-			    error(I, "misplaced non-infix pattern")
-			else
-			    (* Now, longvid has infix status but is sans `op',
-			       so it can only result from resolving an
-			       appropriate infix construction. *)
-			    ( checkNonfixity(List.tl ps)
-			    ; ( SANSOp, LongVId.toId longvid,
-				atpat::List.tl atpats )
-			    )
+            fun maybeParenthesisedInfixClause(ps) =
+                case List.hd ps
+                  of NONFIX(PARAtPat(_, CONPat(I, SANSOp, longvid, atpat))) =>
+                        if not(LongVId.isUnqualified longvid) then
+                            errorLongVId(I, "misplaced long identifier ",
+                                         longvid)
+                        else if not(isInfix J longvid) then
+                            error(I, "misplaced non-infix pattern")
+                        else
+                            (* Now, longvid has infix status but is sans `op',
+                               so it can only result from resolving an
+                               appropriate infix construction. *)
+                            ( checkNonfixity(List.tl ps)
+                            ; ( SANSOp, LongVId.toId longvid,
+                                atpat::List.tl atpats )
+                            )
 
-	           | NONFIX(PARAtPat(_, pat)) =>
-			error(infoPat pat, "misplaced non-infix pattern")
+                   | NONFIX(PARAtPat(_, pat)) =>
+                        error(infoPat pat, "misplaced non-infix pattern")
 
-	 	   | _ => maybeNonfixClause(ps)
+                    | _ => maybeNonfixClause(ps)
 
-	    fun maybePlainInfixClause(ps) =
-	        case ps
-	          of [NONFIX atpat1, INFIX(_, vid, I), NONFIX atpat2] =>
-			 ( SANSOp, vid, pairPat(atpat1, atpat2)::[] )
+            fun maybePlainInfixClause(ps) =
+                case ps
+                  of [NONFIX atpat1, INFIX(_, vid, I), NONFIX atpat2] =>
+                         ( SANSOp, vid, pairPat(atpat1, atpat2)::[] )
 
-		   | _ => maybeParenthesisedInfixClause(ps)
-	in
-	    maybePlainInfixClause(List.map (categoriseAtPat J) atpats)
-	end
+                   | _ => maybeParenthesisedInfixClause(ps)
+        in
+            maybePlainInfixClause(List.map (categoriseAtPat J) atpats)
+        end
 
   end
 (* stop of Infix.sml *)
@@ -6716,8 +6716,8 @@ structure InitialInfixEnv :> INITIAL_INFIX_ENV =
     (* Export *)
 
     val J0 = VIdMap.fromList[(vidCons,   (Infix.RIGHT, 5)),
-			     (vidEqual,  (Infix.LEFT,  4)),
-			     (vidAssign, (Infix.LEFT,  3))]
+                             (vidEqual,  (Infix.LEFT,  4)),
+                             (vidAssign, (Infix.LEFT,  3))]
   end
 (* stop of InitialInfixEnv.sml *)
 (* start of BASIS.sml *)
@@ -6732,20 +6732,20 @@ signature BASIS =
 
     (* Import types *)
 
-    type StaticBasis  = StaticBasis.Basis		(* [B_STAT] *)
-    type DynamicBasis = DynamicBasis.Basis		(* [B_DYN] *)
+    type StaticBasis  = StaticBasis.Basis                (* [B_STAT] *)
+    type DynamicBasis = DynamicBasis.Basis                (* [B_DYN] *)
 
     (* Type [Section 8] *)
 
-    type Basis = StaticBasis * DynamicBasis		(* [B] *)
+    type Basis = StaticBasis * DynamicBasis                (* [B] *)
 
 
     (* Operations *)
 
-    val B_STATof:	Basis -> StaticBasis
-    val B_DYNof:	Basis -> DynamicBasis
+    val B_STATof:        Basis -> StaticBasis
+    val B_DYNof:        Basis -> DynamicBasis
 
-    val oplus:		Basis * Basis -> Basis
+    val oplus:                Basis * Basis -> Basis
 
   end
 (* stop of BASIS.sml *)
@@ -6761,12 +6761,12 @@ structure Basis :> BASIS =
 
     (* Import types *)
 
-    type StaticBasis  = StaticBasis.Basis		(* [B_STAT] *)
-    type DynamicBasis = DynamicBasis.Basis		(* [B_DYN] *)
+    type StaticBasis  = StaticBasis.Basis                (* [B_STAT] *)
+    type DynamicBasis = DynamicBasis.Basis                (* [B_DYN] *)
 
     (* Type [Section 8] *)
 
-    type Basis = StaticBasis * DynamicBasis		(* [B] *)
+    type Basis = StaticBasis * DynamicBasis                (* [B] *)
 
 
     (* Projections *)
@@ -6780,9 +6780,9 @@ structure Basis :> BASIS =
     infix oplus
 
     fun (B_STAT,B_DYN) oplus (B_STAT',B_DYN') =
-	    ( StaticBasis.plus(B_STAT, B_STAT')
-	    , DynamicBasis.plus(B_DYN, B_DYN')
-	    )
+            ( StaticBasis.plus(B_STAT, B_STAT')
+            , DynamicBasis.plus(B_DYN, B_DYN')
+            )
 
   end
 (* stop of Basis.sml *)
@@ -6805,7 +6805,7 @@ signature PACK =
 
     (* Definitions [Section 6.2] *)
 
-    type Pack = FcnClosure ExVal			(* [p] *)
+    type Pack = FcnClosure ExVal                        (* [p] *)
 
     exception Pack of Pack
 
@@ -6830,7 +6830,7 @@ structure Pack :> PACK =
 
     (* Definitions [Section 6.2] *)
 
-    type Pack = FcnClosure ExVal			(* [p] *)
+    type Pack = FcnClosure ExVal                        (* [p] *)
 
     exception Pack of Pack
 
@@ -6894,10 +6894,10 @@ structure BasVal :> BASVAL =
     exception TypeError
 
     fun APPLY("=", v) =
-	(case Val.unpair v
-	   of SOME vv => Val.toBoolVal(Val.equal vv)
-	    | NONE    => raise TypeError
-	)
+        (case Val.unpair v
+           of SOME vv => Val.toBoolVal(Val.equal vv)
+            | NONE    => raise TypeError
+        )
       | APPLY _ = raise Fail "BasVal.APPLY: unknown basic value"
 
   end
@@ -6971,9 +6971,9 @@ structure EvalCore :> EVAL_CORE =
     fun errorLab(I, s, lab)         = error(I, s ^ Lab.toString lab)
     fun errorLongVId(I, s, longvid) = error(I, s ^ LongVId.toString longvid)
     fun errorLongTyCon(I, s, longtycon) =
-	    error(I, s ^ LongTyCon.toString longtycon)
+            error(I, s ^ LongTyCon.toString longtycon)
     fun errorLongStrId(I, s, longstrid) =
-	    error(I, s ^ LongStrId.toString longstrid)
+            error(I, s ^ LongStrId.toString longstrid)
 
 
     (* Helpers for environment modification *)
@@ -7004,579 +7004,579 @@ structure EvalCore :> EVAL_CORE =
     (* Atomic Expressions *)
 
     fun evalAtExp(s,E, SCONAtExp(I, scon)) =
-	(* [Rule 90] *)
-	valSCon scon
+        (* [Rule 90] *)
+        valSCon scon
 
       | evalAtExp(s,E, LONGVIDAtExp(I, _, longvid)) =
-	(* [Rule 91] *)
-	let
-	    val (v,is) = case DynamicEnv.findLongVId(E, longvid)
-			   of SOME valstr => valstr
-			    | NONE =>
-			      errorLongVId(I, "runtime error: \
-					      \unknown identifier ", longvid)
-	in
-	    v
-	end
+        (* [Rule 91] *)
+        let
+            val (v,is) = case DynamicEnv.findLongVId(E, longvid)
+                           of SOME valstr => valstr
+                            | NONE =>
+                              errorLongVId(I, "runtime error: \
+                                              \unknown identifier ", longvid)
+        in
+            v
+        end
 
       | evalAtExp(s,E, RECORDAtExp(I, exprow_opt)) =
-	(* [Rule 92] *)
-	let
-	    val r = case exprow_opt
-		      of NONE        => LabMap.empty
-		       | SOME exprow => evalExpRow(s,E, exprow)
-	in
-	    Val.Record r
-	end
+        (* [Rule 92] *)
+        let
+            val r = case exprow_opt
+                      of NONE        => LabMap.empty
+                       | SOME exprow => evalExpRow(s,E, exprow)
+        in
+            Val.Record r
+        end
 
       | evalAtExp(s,E, LETAtExp(I, dec, exp)) =
-	(* [Rule 93] *)
-	let
-	    val E' = evalDec(s,E, dec)
-	    val v  = evalExp(s,E plus E', exp)
-	in
-	    v
-	end
+        (* [Rule 93] *)
+        let
+            val E' = evalDec(s,E, dec)
+            val v  = evalExp(s,E plus E', exp)
+        in
+            v
+        end
 
       | evalAtExp(s,E, PARAtExp(I, exp)) =
-	(* [Rule 94] *)
-	let
-	    val v = evalExp(s,E, exp)
-	in
-	    v
-	end
+        (* [Rule 94] *)
+        let
+            val v = evalExp(s,E, exp)
+        in
+            v
+        end
 
 
     (* Expression Rows *)
 
     and evalExpRow(s,E, ExpRow(I, lab, exp, exprow_opt)) =
-	(* [Rule 95] *)
-	let
-	    val v = evalExp(s,E, exp)
-	    val r = case exprow_opt
-		      of NONE        => LabMap.empty
-		       | SOME exprow => evalExpRow(s,E, exprow)
-	in
-	    LabMap.insert(r, lab, v)
-	end
+        (* [Rule 95] *)
+        let
+            val v = evalExp(s,E, exp)
+            val r = case exprow_opt
+                      of NONE        => LabMap.empty
+                       | SOME exprow => evalExpRow(s,E, exprow)
+        in
+            LabMap.insert(r, lab, v)
+        end
 
 
     (* Expressions *)
 
     and evalExp(s,E, ATEXPExp(I, atexp)) =
-	(* [Rule 96] *)
-	let
-	    val v = evalAtExp(s,E, atexp)
-	in
-	    v
-	end
+        (* [Rule 96] *)
+        let
+            val v = evalAtExp(s,E, atexp)
+        in
+            v
+        end
 
       | evalExp(s,E, APPExp(I, exp, atexp)) =
-	(* [Rules 97 to 103] *)
-	let
-	    val v1 = evalExp(s,E, exp)
-	    val v  = evalAtExp(s,E, atexp)
-	in
-	    case v1
-	      of Val.VId vid =>
-		 if vid = VId.fromString "ref" then
-		     (* [Rule 99] *)
-		     let
-		         val a = Addr.addr()
-		     in
-			  s := State.insertAddr(!s, a, v)
-			; Val.Addr a
-		     end
-		 else
-		     (* [Rule 97] *)
-		     Val.VIdVal (vid,v)
+        (* [Rules 97 to 103] *)
+        let
+            val v1 = evalExp(s,E, exp)
+            val v  = evalAtExp(s,E, atexp)
+        in
+            case v1
+              of Val.VId vid =>
+                 if vid = VId.fromString "ref" then
+                     (* [Rule 99] *)
+                     let
+                         val a = Addr.addr()
+                     in
+                          s := State.insertAddr(!s, a, v)
+                        ; Val.Addr a
+                     end
+                 else
+                     (* [Rule 97] *)
+                     Val.VIdVal (vid,v)
 
-	       | Val.ExVal(Val.ExName en) =>
-		 (* [Rule 98] *)
-		 Val.ExVal(Val.ExNameVal(en,v))
+               | Val.ExVal(Val.ExName en) =>
+                 (* [Rule 98] *)
+                 Val.ExVal(Val.ExNameVal(en,v))
 
-	       | Val.:= =>
-		 (* [Rule 100] *)
-		 (case Val.unpair v
-		    of SOME(Val.Addr a, v) =>
-			( s := State.insertAddr(!s, a, v)
-			; Val.Record LabMap.empty
-			)
-		     | _ => error(I, "runtime type error: address expected")
-		 )
+               | Val.:= =>
+                 (* [Rule 100] *)
+                 (case Val.unpair v
+                    of SOME(Val.Addr a, v) =>
+                        ( s := State.insertAddr(!s, a, v)
+                        ; Val.Record LabMap.empty
+                        )
+                     | _ => error(I, "runtime type error: address expected")
+                 )
 
-	       | Val.BasVal b =>
-		 (* [Rule 101] *)
-		 BasVal.APPLY(b, v)
+               | Val.BasVal b =>
+                 (* [Rule 101] *)
+                 BasVal.APPLY(b, v)
 
-	       | Val.FcnClosure(DynamicEnv.FcnClosure(match,E',VE)) =>
-		 (* [Rule 102] *)
-		 (let
-		     val v' = evalMatch(s,E' plusVE DynamicEnv.Rec VE, v, match)
-		  in
-		     v'
-		  end
-		  handle FAIL =>
-		     (* [Rule 103] *)
-		     raise Pack(Val.ExName InitialDynamicEnv.enMatch)
-		 )
-	       | _ =>
-		 error(I, "runtime type error: applicative value expected")
-	end
+               | Val.FcnClosure(DynamicEnv.FcnClosure(match,E',VE)) =>
+                 (* [Rule 102] *)
+                 (let
+                     val v' = evalMatch(s,E' plusVE DynamicEnv.Rec VE, v, match)
+                  in
+                     v'
+                  end
+                  handle FAIL =>
+                     (* [Rule 103] *)
+                     raise Pack(Val.ExName InitialDynamicEnv.enMatch)
+                 )
+               | _ =>
+                 error(I, "runtime type error: applicative value expected")
+        end
 
       | evalExp(s,E, TYPEDExp(I, exp, _)) =
-	(* Omitted [Section 6.1] *)
-	evalExp(s,E, exp)
+        (* Omitted [Section 6.1] *)
+        evalExp(s,E, exp)
 
       | evalExp(s,E, HANDLEExp(I, exp, match)) =
-	(* [Rule 104 to 106] *)
-	(let
-	    val v = evalExp(s,E, exp)
-	 in
-	    (* [Rule 104] *)
-	    v
-	 end
-	 handle Pack.Pack e =>
-	    let
-		val v = evalMatch(s,E,Val.ExVal e, match)
-	    in
-		(* [Rule 105] *)
-		v
-	    end
-	    handle FAIL =>
-		(* [Rule 106] *)
-		raise Pack.Pack e
-	)
+        (* [Rule 104 to 106] *)
+        (let
+            val v = evalExp(s,E, exp)
+         in
+            (* [Rule 104] *)
+            v
+         end
+         handle Pack.Pack e =>
+            let
+                val v = evalMatch(s,E,Val.ExVal e, match)
+            in
+                (* [Rule 105] *)
+                v
+            end
+            handle FAIL =>
+                (* [Rule 106] *)
+                raise Pack.Pack e
+        )
 
       | evalExp(s,E, RAISEExp(I, exp)) =
-	(* [Rule 107] *)
-	let
-	    val e = case evalExp(s,E, exp)
-		      of Val.ExVal e => e
-		       | _ => error(I, "runtime type error: \
-				       \exception value expected")
-	in
-	    raise Pack.Pack e
-	end
+        (* [Rule 107] *)
+        let
+            val e = case evalExp(s,E, exp)
+                      of Val.ExVal e => e
+                       | _ => error(I, "runtime type error: \
+                                       \exception value expected")
+        in
+            raise Pack.Pack e
+        end
 
       | evalExp(s,E, FNExp(I, match)) =
-	(* [Rule 108] *)
-	Val.FcnClosure(DynamicEnv.FcnClosure(match,E,VIdMap.empty))
+        (* [Rule 108] *)
+        Val.FcnClosure(DynamicEnv.FcnClosure(match,E,VIdMap.empty))
 
 
     (* Matches *)
 
     and evalMatch(s,E,v, Match(I, mrule, match_opt)) =
-	(* [Rules 109 to 111] *)
-	let
-	    val v' = evalMrule(s,E,v, mrule)
-	in
-	    (* [Rule 109] *)
-	    v'
-	end
-	handle FAIL =>
-	    case match_opt
-	      of NONE =>
-		 (* [Rule 110] *)
-		 raise FAIL
+        (* [Rules 109 to 111] *)
+        let
+            val v' = evalMrule(s,E,v, mrule)
+        in
+            (* [Rule 109] *)
+            v'
+        end
+        handle FAIL =>
+            case match_opt
+              of NONE =>
+                 (* [Rule 110] *)
+                 raise FAIL
 
-	       | SOME match =>
-		 (* [Rule 111] *)
-		 let
-		     val v' = evalMatch(s,E,v, match)
-		 in
-		     v'
-		 end
+               | SOME match =>
+                 (* [Rule 111] *)
+                 let
+                     val v' = evalMatch(s,E,v, match)
+                 in
+                     v'
+                 end
 
 
     (* Match rules *)
 
     and evalMrule(s,E,v, Mrule(I, pat, exp)) =
-	(* [Rules 112 and 113] *)
-	let
-	    val VE = evalPat(s,E,v, pat)
-	    (* [Rule 112] *)
-	    val v' = evalExp(s,E plusVE VE, exp)
-	in
-	    v'
-	end
-	(* FAIL on evalPat propagates through [Rule 113] *)
+        (* [Rules 112 and 113] *)
+        let
+            val VE = evalPat(s,E,v, pat)
+            (* [Rule 112] *)
+            val v' = evalExp(s,E plusVE VE, exp)
+        in
+            v'
+        end
+        (* FAIL on evalPat propagates through [Rule 113] *)
 
 
     (* Declarations *)
 
     and evalDec(s,E, VALDec(I, tyvarseq, valbind)) =
-	(* [Rule 114] *)
-	let
-	    val VE = evalValBind(s,E, valbind)
-	in
-	    DynamicEnv.fromVE VE
-	end
+        (* [Rule 114] *)
+        let
+            val VE = evalValBind(s,E, valbind)
+        in
+            DynamicEnv.fromVE VE
+        end
 
       | evalDec(s,E, TYPEDec(I, typbind)) =
-	(* [Rule 115] *)
-	let
-	    val TE = evalTypBind(typbind)
-	in
-	    DynamicEnv.fromTE TE
-	end
+        (* [Rule 115] *)
+        let
+            val TE = evalTypBind(typbind)
+        in
+            DynamicEnv.fromTE TE
+        end
 
       | evalDec(s,E, DATATYPEDec(I, datbind)) =
-	(* [Rule 116] *)
-	let
-	    val (VE,TE) = evalDatBind(datbind)
-	in
-	    DynamicEnv.fromVEandTE(VE,TE)
-	end
+        (* [Rule 116] *)
+        let
+            val (VE,TE) = evalDatBind(datbind)
+        in
+            DynamicEnv.fromVEandTE(VE,TE)
+        end
 
       | evalDec(s,E, REPLICATIONDec(I, tycon, longtycon)) =
-	(* [Rule 117] *)
-	let
-	    val VE = case DynamicEnv.findLongTyCon(E, longtycon)
-		       of SOME VE => VE
-			| NONE =>
-			  errorLongTyCon(I, "runtime error: unknown type ",
-					    longtycon)
-	in
-	    DynamicEnv.fromVEandTE(VE, TyConMap.singleton(tycon, VE))
-	end
+        (* [Rule 117] *)
+        let
+            val VE = case DynamicEnv.findLongTyCon(E, longtycon)
+                       of SOME VE => VE
+                        | NONE =>
+                          errorLongTyCon(I, "runtime error: unknown type ",
+                                            longtycon)
+        in
+            DynamicEnv.fromVEandTE(VE, TyConMap.singleton(tycon, VE))
+        end
 
       | evalDec(s,E, ABSTYPEDec(I, datbind, dec)) =
-	(* [Rule 118] *)
-	let
-	    val (VE,TE) = evalDatBind(datbind)
-	    val    E'   = evalDec(s,E plusVEandTE (VE,TE), dec)
-	in
-	    E'
-	end
+        (* [Rule 118] *)
+        let
+            val (VE,TE) = evalDatBind(datbind)
+            val    E'   = evalDec(s,E plusVEandTE (VE,TE), dec)
+        in
+            E'
+        end
 
       | evalDec(s,E, EXCEPTIONDec(I, exbind)) =
-	(* [Rule 119] *)
-	let
-	    val VE = evalExBind(s,E, exbind)
-	in
-	    DynamicEnv.fromVE VE
-	end
+        (* [Rule 119] *)
+        let
+            val VE = evalExBind(s,E, exbind)
+        in
+            DynamicEnv.fromVE VE
+        end
 
       | evalDec(s,E, LOCALDec(I, dec1, dec2)) =
-	(* [Rule 120] *)
-	let
-	    val E1 = evalDec(s,E, dec1)
-	    val E2 = evalDec(s,E plus E1, dec2)
-	in
-	    E2
-	end
+        (* [Rule 120] *)
+        let
+            val E1 = evalDec(s,E, dec1)
+            val E2 = evalDec(s,E plus E1, dec2)
+        in
+            E2
+        end
 
       | evalDec(s,E, OPENDec(I, longstrids)) =
-	(* [Rule 121] *)
-	let
-	    val Es =
-		List.map
-		    (fn longstrid =>
-			case DynamicEnv.findLongStrId(E, longstrid)
-			  of SOME(DynamicEnv.Str E) => E
-			   | NONE =>
-			     errorLongStrId(I, "runtime error: unknown \
-					       \structure ", longstrid) )
-		    longstrids
-	in
-	    List.foldl DynamicEnv.plus DynamicEnv.empty Es
-	end
+        (* [Rule 121] *)
+        let
+            val Es =
+                List.map
+                    (fn longstrid =>
+                        case DynamicEnv.findLongStrId(E, longstrid)
+                          of SOME(DynamicEnv.Str E) => E
+                           | NONE =>
+                             errorLongStrId(I, "runtime error: unknown \
+                                               \structure ", longstrid) )
+                    longstrids
+        in
+            List.foldl DynamicEnv.plus DynamicEnv.empty Es
+        end
 
       | evalDec(s,E, EMPTYDec(I)) =
-	(* [Rule 122] *)
-	DynamicEnv.empty
+        (* [Rule 122] *)
+        DynamicEnv.empty
 
       | evalDec(s,E, SEQDec(I, dec1, dec2)) =
-	(* [Rule 123] *)
-	let
-	    val E1 = evalDec(s,E, dec1)
-	    val E2 = evalDec(s,E plus E1, dec2)
-	in
-	    E1 plus E2
-	end
+        (* [Rule 123] *)
+        let
+            val E1 = evalDec(s,E, dec1)
+            val E2 = evalDec(s,E plus E1, dec2)
+        in
+            E1 plus E2
+        end
 
 
     (* Value Bindings *)
 
     and evalValBind(s,E, PLAINValBind(I, pat, exp, valbind_opt)) =
-	(* [Rule 124 and 125] *)
-	(let
-	    val v   = evalExp(s,E, exp)
-	    val VE  = evalPat(s,E,v, pat)
-	    (* [Rule 124] *)
-	    val VE' = case valbind_opt
-			of NONE         => VIdMap.empty
-			 | SOME valbind => evalValBind(s,E, valbind)
-	 in
-	    VIdMap.unionWith #2 (VE, VE')
-	 end
-	 handle FAIL =>
-	    (* [Rule 125] *)
-	    raise Pack.Pack(Val.ExName InitialDynamicEnv.enBind)
-	)
+        (* [Rule 124 and 125] *)
+        (let
+            val v   = evalExp(s,E, exp)
+            val VE  = evalPat(s,E,v, pat)
+            (* [Rule 124] *)
+            val VE' = case valbind_opt
+                        of NONE         => VIdMap.empty
+                         | SOME valbind => evalValBind(s,E, valbind)
+         in
+            VIdMap.unionWith #2 (VE, VE')
+         end
+         handle FAIL =>
+            (* [Rule 125] *)
+            raise Pack.Pack(Val.ExName InitialDynamicEnv.enBind)
+        )
 
       | evalValBind(s,E, RECValBind(I, valbind)) =
-	(* [Rule 126] *)
-	let
-	    val VE = evalValBind(s,E, valbind)
-	in
-	    DynamicEnv.Rec VE
-	end
+        (* [Rule 126] *)
+        let
+            val VE = evalValBind(s,E, valbind)
+        in
+            DynamicEnv.Rec VE
+        end
 
 
     (* Type Bindings *)
 
     and evalTypBind(TypBind(I, tyvarseq, tycon, ty, typbind_opt)) =
-	(* [Rule 127] *)
-	let
-	    val TE = case typbind_opt
-		       of NONE         => TyConMap.empty
-			| SOME typbind => evalTypBind(typbind)
-	in
-	    TyConMap.insert(TE, tycon, VIdMap.empty)
-	end
+        (* [Rule 127] *)
+        let
+            val TE = case typbind_opt
+                       of NONE         => TyConMap.empty
+                        | SOME typbind => evalTypBind(typbind)
+        in
+            TyConMap.insert(TE, tycon, VIdMap.empty)
+        end
 
 
     (* Datatype Bindings *)
 
     and evalDatBind(DatBind(I, tyvarseq, tycon, conbind, datbind_opt)) =
-	(* [Rule 128] *)
-	let
-	    val  VE       = evalConBind(conbind)
-	    val (VE',TE') = case datbind_opt
-			      of NONE          => ( VIdMap.empty, TyConMap.empty )
-			       | SOME datbind' => evalDatBind(datbind')
-	in
-	    ( VIdMap.unionWith #2 (VE, VE')
-	    , TyConMap.insert(TE', tycon, VE)
-	    )
-	end
+        (* [Rule 128] *)
+        let
+            val  VE       = evalConBind(conbind)
+            val (VE',TE') = case datbind_opt
+                              of NONE          => ( VIdMap.empty, TyConMap.empty )
+                               | SOME datbind' => evalDatBind(datbind')
+        in
+            ( VIdMap.unionWith #2 (VE, VE')
+            , TyConMap.insert(TE', tycon, VE)
+            )
+        end
 
 
     (* Constructor Bindings *)
 
     and evalConBind(ConBind(I, _, vid, _, conbind_opt)) =
-	(* [Rule 129] *)
-	let
-	    val VE = case conbind_opt
-		       of NONE         => VIdMap.empty
-			| SOME conbind => evalConBind(conbind)
-	in
-	    VIdMap.insert(VE, vid, (Val.VId vid,IdStatus.c))
-	end
+        (* [Rule 129] *)
+        let
+            val VE = case conbind_opt
+                       of NONE         => VIdMap.empty
+                        | SOME conbind => evalConBind(conbind)
+        in
+            VIdMap.insert(VE, vid, (Val.VId vid,IdStatus.c))
+        end
 
 
     (* Exception Bindings *)
 
     and evalExBind(s,E, NEWExBind(I, _, vid, _, exbind_opt)) =
-	(* [Rule 130] *)
-	let
-	    val en = ExName.exname vid
-	    val VE = case exbind_opt
-		       of NONE        => VIdMap.empty
-			| SOME exbind => evalExBind(s,E, exbind)
-	in
-	    s := State.insertExName(!s, en)
-	  ; VIdMap.insert(VE, vid, (Val.ExVal(Val.ExName en),IdStatus.e))
-	end
+        (* [Rule 130] *)
+        let
+            val en = ExName.exname vid
+            val VE = case exbind_opt
+                       of NONE        => VIdMap.empty
+                        | SOME exbind => evalExBind(s,E, exbind)
+        in
+            s := State.insertExName(!s, en)
+          ; VIdMap.insert(VE, vid, (Val.ExVal(Val.ExName en),IdStatus.e))
+        end
 
       | evalExBind(s,E, EQUALExBind(I, _, vid, _, longvid, exbind_opt)) =
-	(* [Rule 131] *)
-	let
-	    val en = case DynamicEnv.findLongVId(E, longvid)
-		       of SOME(en,IdStatus.e) => en
-			| SOME _ =>
-			  errorLongVId(I, "runtime error: non-exception \
-					  \identifier ", longvid)
-			| NONE =>
-			  errorLongVId(I, "runtime error: unknown identifier ",
-					  longvid)
-	    val VE = case exbind_opt
-		       of NONE        => VIdMap.empty
-			| SOME exbind => evalExBind(s,E, exbind)
-	in
-	    VIdMap.insert(VE, vid, (en,IdStatus.e))
-	end
+        (* [Rule 131] *)
+        let
+            val en = case DynamicEnv.findLongVId(E, longvid)
+                       of SOME(en,IdStatus.e) => en
+                        | SOME _ =>
+                          errorLongVId(I, "runtime error: non-exception \
+                                          \identifier ", longvid)
+                        | NONE =>
+                          errorLongVId(I, "runtime error: unknown identifier ",
+                                          longvid)
+            val VE = case exbind_opt
+                       of NONE        => VIdMap.empty
+                        | SOME exbind => evalExBind(s,E, exbind)
+        in
+            VIdMap.insert(VE, vid, (en,IdStatus.e))
+        end
 
 
     (* Atomic Patterns *)
 
     and evalAtPat(s,E,v, WILDCARDAtPat(I)) =
-	(* [Rule 132] *)
-	VIdMap.empty
+        (* [Rule 132] *)
+        VIdMap.empty
 
       | evalAtPat(s,E,v, SCONAtPat(I, scon)) =
-	(* [Rule 133 and 134] *)
-	(case v
-	   of Val.SVal sv =>
-	      if Val.equal(v, valSCon(scon)) then
-		 (* [Rule 133] *)
-		 VIdMap.empty
-	      else
-		 (* [Rule 134] *)
-		 raise FAIL
+        (* [Rule 133 and 134] *)
+        (case v
+           of Val.SVal sv =>
+              if Val.equal(v, valSCon(scon)) then
+                 (* [Rule 133] *)
+                 VIdMap.empty
+              else
+                 (* [Rule 134] *)
+                 raise FAIL
 
-	    | _ => error(I, "runtime type error: special constant expected")
-	)
+            | _ => error(I, "runtime type error: special constant expected")
+        )
 
       | evalAtPat(s,E,v, LONGVIDAtPat(I, _, longvid)) =
-	(* [Rule 135 to 137] *)
-	let
-	    val (strids,vid) = LongVId.explode longvid
-	in
-	    if List.null strids andalso
-	       ( case DynamicEnv.findVId(E, vid)
-		   of NONE       => true
-		    | SOME(_,is) => is = IdStatus.v ) then
-		(* [Rule 135] *)
-		VIdMap.singleton(vid, (v,IdStatus.v))
-	    else
-		let
-		    val (v',is) = case DynamicEnv.findLongVId(E, longvid)
-				    of SOME valstr => valstr
-				     | NONE =>
-					errorLongVId(I,"runtime error: \
-						       \unknown constructor ",
-							longvid)
-		in
-		    if Val.equal(v, v') then
-			(* [Rule 136] *)
-			VIdMap.empty
-		    else
-			(* [Rule 137] *)
-			raise FAIL
-		end
-	end
+        (* [Rule 135 to 137] *)
+        let
+            val (strids,vid) = LongVId.explode longvid
+        in
+            if List.null strids andalso
+               ( case DynamicEnv.findVId(E, vid)
+                   of NONE       => true
+                    | SOME(_,is) => is = IdStatus.v ) then
+                (* [Rule 135] *)
+                VIdMap.singleton(vid, (v,IdStatus.v))
+            else
+                let
+                    val (v',is) = case DynamicEnv.findLongVId(E, longvid)
+                                    of SOME valstr => valstr
+                                     | NONE =>
+                                        errorLongVId(I,"runtime error: \
+                                                       \unknown constructor ",
+                                                        longvid)
+                in
+                    if Val.equal(v, v') then
+                        (* [Rule 136] *)
+                        VIdMap.empty
+                    else
+                        (* [Rule 137] *)
+                        raise FAIL
+                end
+        end
 
       | evalAtPat(s,E,v, RECORDAtPat(I, patrow_opt)) =
-	(* [Rule 138] *)
-	let
-	    val r  = case v
-		       of Val.Record r => r
-		        | _ =>
-			  error(I, "runtime type error: record expected")
+        (* [Rule 138] *)
+        let
+            val r  = case v
+                       of Val.Record r => r
+                        | _ =>
+                          error(I, "runtime type error: record expected")
 
-	    val VE = case patrow_opt
-		       of NONE        =>
-			  if LabMap.isEmpty r then
-			     VIdMap.empty
-			  else
-			     error(I, "runtime type error: \
-				      \empty record expected")
+            val VE = case patrow_opt
+                       of NONE        =>
+                          if LabMap.isEmpty r then
+                             VIdMap.empty
+                          else
+                             error(I, "runtime type error: \
+                                      \empty record expected")
 
-			| SOME patrow =>
-			      evalPatRow(s,E,r, patrow)
-	in
-	    VE
-	end
+                        | SOME patrow =>
+                              evalPatRow(s,E,r, patrow)
+        in
+            VE
+        end
 
       | evalAtPat(s,E,v, PARAtPat(I, pat)) =
-	(* [Rule 139] *)
-	let
-	    val VE = evalPat(s,E,v, pat)
-	in
-	    VE
-	end
+        (* [Rule 139] *)
+        let
+            val VE = evalPat(s,E,v, pat)
+        in
+            VE
+        end
 
 
     (* Pattern Rows *)
 
     and evalPatRow(s,E,r, WILDCARDPatRow(I)) =
-	(* [Rule 140] *)
-	VIdMap.empty
+        (* [Rule 140] *)
+        VIdMap.empty
 
       | evalPatRow(s,E,r, ROWPatRow(I, lab, pat, patrow_opt)) =
-	(* [Rule 141 and 142] *)
-	let
-	    val v   = case LabMap.find(r, lab)
-		        of SOME v => v
-		         | _ => errorLab(I, "runtime type error: \
-					    \unmatched label ", lab)
-	    val VE  = evalPat(s,E,v, pat)
-	    (* [Rule 142] *)
-	    val VE' = case patrow_opt
-			of NONE        => VIdMap.empty
-			 | SOME patrow => evalPatRow(s,E,r, patrow)
-	in
-	    VIdMap.unionWithi #2 (VE, VE')
-	end
-	(* FAIL on evalPat propagates through [Rule 142] *)
+        (* [Rule 141 and 142] *)
+        let
+            val v   = case LabMap.find(r, lab)
+                        of SOME v => v
+                         | _ => errorLab(I, "runtime type error: \
+                                            \unmatched label ", lab)
+            val VE  = evalPat(s,E,v, pat)
+            (* [Rule 142] *)
+            val VE' = case patrow_opt
+                        of NONE        => VIdMap.empty
+                         | SOME patrow => evalPatRow(s,E,r, patrow)
+        in
+            VIdMap.unionWithi #2 (VE, VE')
+        end
+        (* FAIL on evalPat propagates through [Rule 142] *)
 
 
     (* Patterns *)
 
     and evalPat(s,E,v, ATPATPat(I, atpat)) =
-	(* [Rule 143] *)
-	let
-	    val VE = evalAtPat(s,E,v, atpat)
-	in
-	    VE
-	end
+        (* [Rule 143] *)
+        let
+            val VE = evalAtPat(s,E,v, atpat)
+        in
+            VE
+        end
 
       | evalPat(s,E,v, CONPat(I, _, longvid, atpat)) =
-	(* [Rules 144 to 148] *)
-	(case (DynamicEnv.findLongVId(E, longvid), v)
-	   of ( SOME(Val.VId vid, IdStatus.c),
-		     Val.VIdVal(vid',v') ) =>	
-		 if vid = VId.fromString "ref" then
-		    error(I, "runtime type error: address expected")
-		 else if vid = vid' then
-		    (* [Rule 144] *)
-		    let
-			val VE = evalAtPat(s,E,v', atpat)
-		    in
-			VE
-		    end
-		 else
-		    (* [Rule 145] *)
-		    raise FAIL
+        (* [Rules 144 to 148] *)
+        (case (DynamicEnv.findLongVId(E, longvid), v)
+           of ( SOME(Val.VId vid, IdStatus.c),
+                     Val.VIdVal(vid',v') ) =>        
+                 if vid = VId.fromString "ref" then
+                    error(I, "runtime type error: address expected")
+                 else if vid = vid' then
+                    (* [Rule 144] *)
+                    let
+                        val VE = evalAtPat(s,E,v', atpat)
+                    in
+                        VE
+                    end
+                 else
+                    (* [Rule 145] *)
+                    raise FAIL
 
-	    | ( SOME(Val.ExVal(Val.ExName en),IdStatus.e),
-		     Val.ExVal(Val.ExNameVal(en',v')) ) =>	
-	         if en = en' then
-		    (* [Rule 146] *)
-		    let
-			val VE = evalAtPat(s,E,v', atpat)
-		    in
-			VE
-		    end
-		 else
-		    (* [Rule 147] *)
-		    raise FAIL
+            | ( SOME(Val.ExVal(Val.ExName en),IdStatus.e),
+                     Val.ExVal(Val.ExNameVal(en',v')) ) =>        
+                 if en = en' then
+                    (* [Rule 146] *)
+                    let
+                        val VE = evalAtPat(s,E,v', atpat)
+                    in
+                        VE
+                    end
+                 else
+                    (* [Rule 147] *)
+                    raise FAIL
 
-	    | ( SOME(Val.VId vid, IdStatus.c),
-		     Val.Addr a ) =>	
-		 if vid = VId.fromString "ref" then
-		    (* [Rule 148] *)
-		    let
-			val v =  case State.findAddr(!s, a)
-				   of SOME v => v
-				    | NONE   =>
-				      raise Fail "EvalCore.evalPat: \
-						 \invalid address"
-			val VE = evalAtPat(s,E,v, atpat)
-		    in
-			VE
-		    end
-		else
-		    error(I, "runtime type error: reference expected")
+            | ( SOME(Val.VId vid, IdStatus.c),
+                     Val.Addr a ) =>        
+                 if vid = VId.fromString "ref" then
+                    (* [Rule 148] *)
+                    let
+                        val v =  case State.findAddr(!s, a)
+                                   of SOME v => v
+                                    | NONE   =>
+                                      raise Fail "EvalCore.evalPat: \
+                                                 \invalid address"
+                        val VE = evalAtPat(s,E,v, atpat)
+                    in
+                        VE
+                    end
+                else
+                    error(I, "runtime type error: reference expected")
 
-	    | _ =>
-		 error(I, "runtime type error: constructor expected")
-	)
+            | _ =>
+                 error(I, "runtime type error: constructor expected")
+        )
 
       | evalPat(s,E,v, TYPEDPat(I, pat, _)) =
-	(* Omitted [Section 6.1] *)
-	evalPat(s,E,v, pat)
+        (* Omitted [Section 6.1] *)
+        evalPat(s,E,v, pat)
 
       | evalPat(s,E,v, ASPat(I, _, vid, _, pat)) =
-	(* [Rule 149] *)
-	let
-	    val VE = evalPat(s,E,v, pat)
-	in
-	    VIdMap.insert(VE, vid, (v,IdStatus.v))
-	end
+        (* [Rule 149] *)
+        let
+            val VE = evalPat(s,E,v, pat)
+        in
+            VIdMap.insert(VE, vid, (v,IdStatus.v))
+        end
 
   end
 (* stop of EvalCore.sml *)
@@ -7605,17 +7605,17 @@ signature INTBASIS =
 
     (* Types [Section 7.2] *)
 
-    type IntBasis = SigEnv * Int				(* [IB] *)
+    type IntBasis = SigEnv * Int                                (* [IB] *)
 
 
     (* Operations *)
 
-    val Inter:		Basis -> IntBasis
+    val Inter:                Basis -> IntBasis
 
-    val plusI:		IntBasis * Int    -> IntBasis
+    val plusI:                IntBasis * Int    -> IntBasis
 
-    val findSigId:	IntBasis * SigId     -> Int option
-    val findLongTyCon:	IntBasis * longTyCon -> ValInt option
+    val findSigId:        IntBasis * SigId     -> Int option
+    val findLongTyCon:        IntBasis * longTyCon -> ValInt option
  
   end
 (* stop of INTBASIS.sml *)
@@ -7645,7 +7645,7 @@ structure IntBasis :> INTBASIS =
 
     (* Types [Section 7.2] *)
 
-    type IntBasis = SigEnv * Int				(* [IB] *)
+    type IntBasis = SigEnv * Int                                (* [IB] *)
 
 
     (* Injections [Section 7.2] *)
@@ -7742,9 +7742,9 @@ structure EvalModule :> EVAL_MODULE =
     fun errorFunId(I, s, funid) = error(I, s ^ FunId.toString funid)
 
     fun errorLongTyCon(I, s, longtycon) =
-	error(I, s ^ LongTyCon.toString longtycon)
+        error(I, s ^ LongTyCon.toString longtycon)
     fun errorLongStrId(I, s, longstrid) =
-	error(I, s ^ LongStrId.toString longstrid)
+        error(I, s ^ LongStrId.toString longstrid)
 
 
     (* Helpers for basis modification *)
@@ -7765,419 +7765,419 @@ structure EvalModule :> EVAL_MODULE =
     (* Structure Expressions *)
 
     fun evalStrExp(s,B, STRUCTStrExp(I, strdec)) =
-	(* [Rule 150] *)
-	let
-	    val E = evalStrDec(s,B, strdec)
-	in
-	    E
-	end
+        (* [Rule 150] *)
+        let
+            val E = evalStrDec(s,B, strdec)
+        in
+            E
+        end
 
       | evalStrExp(s,B, LONGSTRIDStrExp(I, longstrid)) =
-	(* [Rule 151] *)
-	let
-	    val E = case DynamicBasis.findLongStrId(B, longstrid)
-		      of SOME(DynamicEnv.Str E) => E
-		       | NONE =>
-			 errorLongStrId(I, "runtime error: unknown structure ",
-					   longstrid)
-	in
-	    E
-	end
+        (* [Rule 151] *)
+        let
+            val E = case DynamicBasis.findLongStrId(B, longstrid)
+                      of SOME(DynamicEnv.Str E) => E
+                       | NONE =>
+                         errorLongStrId(I, "runtime error: unknown structure ",
+                                           longstrid)
+        in
+            E
+        end
 
       | evalStrExp(s,B, TRANSStrExp(I, strexp, sigexp)) =
-	(* [Rule 152] *)
-	let
-	    val E = evalStrExp(s,B, strexp)
-	    val I = evalSigExp(IntBasis.Inter B, sigexp)
-	in
-	    Interface.cutdown(E, I)
-	end
+        (* [Rule 152] *)
+        let
+            val E = evalStrExp(s,B, strexp)
+            val I = evalSigExp(IntBasis.Inter B, sigexp)
+        in
+            Interface.cutdown(E, I)
+        end
 
       | evalStrExp(s,B, OPAQStrExp(I, strexp, sigexp)) =
-	(* [Rule 153] *)
-	let
-	    val E = evalStrExp(s,B, strexp)
-	    val I = evalSigExp(IntBasis.Inter B, sigexp)
-	in
-	    Interface.cutdown(E, I)
-	end
+        (* [Rule 153] *)
+        let
+            val E = evalStrExp(s,B, strexp)
+            val I = evalSigExp(IntBasis.Inter B, sigexp)
+        in
+            Interface.cutdown(E, I)
+        end
 
       | evalStrExp(s,B, APPStrExp(I, funid, strexp)) =
-	(* [Rule 154] *)
-	let
-	    val DynamicBasis.FunctorClosure((strid, I), strexp', B') =
-		      case DynamicBasis.findFunId(B, funid)
-			of SOME funcclos => funcclos
-			 | NONE => errorFunId(I, "runtime error: \
-						 \unknown functor ", funid)
-	    val E  = evalStrExp(s,B, strexp)
-	    val E' = evalStrExp(
-			s,
-			B' plusSE
-			    StrIdMap.singleton(strid, 
-			    	DynamicEnv.Str(Interface.cutdown(E, I))),
-			strexp')
-	in
-	    E'
-	end
+        (* [Rule 154] *)
+        let
+            val DynamicBasis.FunctorClosure((strid, I), strexp', B') =
+                      case DynamicBasis.findFunId(B, funid)
+                        of SOME funcclos => funcclos
+                         | NONE => errorFunId(I, "runtime error: \
+                                                 \unknown functor ", funid)
+            val E  = evalStrExp(s,B, strexp)
+            val E' = evalStrExp(
+                        s,
+                        B' plusSE
+                            StrIdMap.singleton(strid, 
+                                    DynamicEnv.Str(Interface.cutdown(E, I))),
+                        strexp')
+        in
+            E'
+        end
 
       | evalStrExp(s,B, LETStrExp(I, strdec, strexp)) =
-	(* [Rule 155] *)
-	let
-	    val E  = evalStrDec(s,B, strdec)
-	    val E' = evalStrExp(s,B plusE E, strexp)
-	in
-	    E'
-	end
+        (* [Rule 155] *)
+        let
+            val E  = evalStrDec(s,B, strdec)
+            val E' = evalStrExp(s,B plusE E, strexp)
+        in
+            E'
+        end
 
 
     (* Structure-level Declarations *)
 
     and evalStrDec(s,B, DECStrDec(I, dec)) =
-	(* [Rule 156] *)
-	let
-	    val E' = EvalCore.evalDec(s,DynamicBasis.Eof B, dec)
-	in
-	    E'
-	end
+        (* [Rule 156] *)
+        let
+            val E' = EvalCore.evalDec(s,DynamicBasis.Eof B, dec)
+        in
+            E'
+        end
 
       | evalStrDec(s,B, STRUCTUREStrDec(I, strbind)) =
-	(* [Rule 157] *)
-	let
-	    val SE = evalStrBind(s,B, strbind)
-	in
-	    DynamicEnv.fromSE SE
-	end
+        (* [Rule 157] *)
+        let
+            val SE = evalStrBind(s,B, strbind)
+        in
+            DynamicEnv.fromSE SE
+        end
 
       | evalStrDec(s,B, LOCALStrDec(I, strdec1, strdec2)) =
-	(* [Rule 158] *)
-	let
-	    val E1 = evalStrDec(s,B, strdec1)
-	    val E2 = evalStrDec(s,B plusE E1, strdec2)
-	in
-	    E2
-	end
+        (* [Rule 158] *)
+        let
+            val E1 = evalStrDec(s,B, strdec1)
+            val E2 = evalStrDec(s,B plusE E1, strdec2)
+        in
+            E2
+        end
 
       | evalStrDec(s,B, EMPTYStrDec(I)) =
-	(* [Rule 159] *)
-	DynamicEnv.empty
+        (* [Rule 159] *)
+        DynamicEnv.empty
 
       | evalStrDec(s,B, SEQStrDec(I, strdec1, strdec2)) =
-	(* [Rule 160] *)
-	let
-	    val E1 = evalStrDec(s,B, strdec1)
-	    val E2 = evalStrDec(s,B plusE E1, strdec2)
-	in
-	    DynamicEnv.plus(E1, E2)
-	end
+        (* [Rule 160] *)
+        let
+            val E1 = evalStrDec(s,B, strdec1)
+            val E2 = evalStrDec(s,B plusE E1, strdec2)
+        in
+            DynamicEnv.plus(E1, E2)
+        end
 
 
     (* Structure Bindings *)
 
     and evalStrBind(s,B, StrBind(I, strid, strexp, strbind_opt)) =
-	(* [Rule 161] *)
-	let
-	    val E  = evalStrExp(s,B, strexp)
-	    val SE = case strbind_opt
-		       of NONE         => StrIdMap.empty
-		        | SOME strbind => evalStrBind(s,B, strbind)
-	in
-	    StrIdMap.insert(SE, strid, DynamicEnv.Str E)
-	end
+        (* [Rule 161] *)
+        let
+            val E  = evalStrExp(s,B, strexp)
+            val SE = case strbind_opt
+                       of NONE         => StrIdMap.empty
+                        | SOME strbind => evalStrBind(s,B, strbind)
+        in
+            StrIdMap.insert(SE, strid, DynamicEnv.Str E)
+        end
 
 
     (* Signature Expressions *)
 
     and evalSigExp(IB, SIGSigExp(I, spec)) =
-	(* [Rule 162] *)
-	let
-	    val I = evalSpec(IB, spec)
-	in
-	    I
-	end
+        (* [Rule 162] *)
+        let
+            val I = evalSpec(IB, spec)
+        in
+            I
+        end
 
       | evalSigExp(IB, SIGIDSigExp(I, sigid)) =
-	(* [Rule 163] *)
-	let
-	    val I = case IntBasis.findSigId(IB, sigid)
-		      of SOME I => I
-		       | NONE   => errorSigId(I, "runtime error: unknown \
-						 \signature ",sigid)
-	in
-	    I
-	end
+        (* [Rule 163] *)
+        let
+            val I = case IntBasis.findSigId(IB, sigid)
+                      of SOME I => I
+                       | NONE   => errorSigId(I, "runtime error: unknown \
+                                                 \signature ",sigid)
+        in
+            I
+        end
 
       | evalSigExp(IB, WHERETYPESigExp(I, sigexp, _, _, _)) =
-	(* Omitted [Section 7.1] *)
-	evalSigExp(IB, sigexp)
+        (* Omitted [Section 7.1] *)
+        evalSigExp(IB, sigexp)
 
 
     (* Signature Declarations *)
 
     and evalSigDec(IB, SigDec(I, sigbind)) =
-	(* [Rule 164] *)
-	let
-	    val G = evalSigBind(IB, sigbind)
-	in
-	    G
-	end
+        (* [Rule 164] *)
+        let
+            val G = evalSigBind(IB, sigbind)
+        in
+            G
+        end
 
 
     (* Signature Bindings *)
 
     and evalSigBind(IB, SigBind(I, sigid, sigexp, sigbind_opt)) =
-	(* [Rule 165] *)
-	let
-	    val I = evalSigExp(IB, sigexp)
-	    val G = case sigbind_opt
-		      of NONE         => SigIdMap.empty
-		       | SOME sigbind => evalSigBind(IB, sigbind)
-	in
-	    SigIdMap.insert(G, sigid, I)
-	end
+        (* [Rule 165] *)
+        let
+            val I = evalSigExp(IB, sigexp)
+            val G = case sigbind_opt
+                      of NONE         => SigIdMap.empty
+                       | SOME sigbind => evalSigBind(IB, sigbind)
+        in
+            SigIdMap.insert(G, sigid, I)
+        end
 
 
     (* Specifications *)
 
     and evalSpec(IB, VALSpec(I, valdesc)) =
-	(* [Rule 166] *)
-	let
-	    val VI = evalValDesc(valdesc)
-	in
-	    Interface.fromVI VI
-	end
+        (* [Rule 166] *)
+        let
+            val VI = evalValDesc(valdesc)
+        in
+            Interface.fromVI VI
+        end
 
       | evalSpec(IB, TYPESpec(I, typdesc)) =
-	(* [Rule 167] *)
-	let
-	    val TI = evalTypDesc(typdesc)
-	in
-	    Interface.fromTI TI
-	end
+        (* [Rule 167] *)
+        let
+            val TI = evalTypDesc(typdesc)
+        in
+            Interface.fromTI TI
+        end
 
       | evalSpec(IB, EQTYPESpec(I, typdesc)) =
-	(* [Rule 168] *)
-	let
-	    val TI = evalTypDesc(typdesc)
-	in
-	    Interface.fromTI TI
-	end
+        (* [Rule 168] *)
+        let
+            val TI = evalTypDesc(typdesc)
+        in
+            Interface.fromTI TI
+        end
 
       | evalSpec(IB, DATATYPESpec(I, datdesc)) =
-	(* [Rule 169] *)
-	let
-	    val (VI,TI) = evalDatDesc(datdesc)
-	in
-	    Interface.fromVIandTI(VI,TI)
-	end
+        (* [Rule 169] *)
+        let
+            val (VI,TI) = evalDatDesc(datdesc)
+        in
+            Interface.fromVIandTI(VI,TI)
+        end
 
       | evalSpec(IB, REPLICATIONSpec(I, tycon, longtycon)) =
-	(* [Rule 170] *)
-	let
-	    val VI = case IntBasis.findLongTyCon(IB, longtycon)
-		       of SOME VI => VI
-			| NONE => errorLongTyCon(I, "runtime error: \
-						    \unknown type ", longtycon)
-	    val TI = TyConMap.singleton(tycon, VI)
-	in
-	    Interface.fromVIandTI(VI,TI)
-	end
+        (* [Rule 170] *)
+        let
+            val VI = case IntBasis.findLongTyCon(IB, longtycon)
+                       of SOME VI => VI
+                        | NONE => errorLongTyCon(I, "runtime error: \
+                                                    \unknown type ", longtycon)
+            val TI = TyConMap.singleton(tycon, VI)
+        in
+            Interface.fromVIandTI(VI,TI)
+        end
 
       | evalSpec(IB, EXCEPTIONSpec(I, exdesc)) =
-	(* [Rule 171] *)
-	let
-	    val VI = evalExDesc(exdesc)
-	in
-	    Interface.fromVI VI
-	end
+        (* [Rule 171] *)
+        let
+            val VI = evalExDesc(exdesc)
+        in
+            Interface.fromVI VI
+        end
 
       | evalSpec(IB, STRUCTURESpec(I, strdesc)) =
-	(* [Rule 172] *)
-	let
-	    val SI = evalStrDesc(IB, strdesc)
-	in
-	    Interface.fromSI SI
-	end
+        (* [Rule 172] *)
+        let
+            val SI = evalStrDesc(IB, strdesc)
+        in
+            Interface.fromSI SI
+        end
 
       | evalSpec(IB, INCLUDESpec(I, sigexp)) =
-	(* [Rule 173] *)
-	let
-	    val I = evalSigExp(IB, sigexp)
-	in
-	    I
-	end
+        (* [Rule 173] *)
+        let
+            val I = evalSigExp(IB, sigexp)
+        in
+            I
+        end
 
       | evalSpec(IB, EMPTYSpec(I)) =
-	(* [Rule 174] *)
-	Interface.empty
+        (* [Rule 174] *)
+        Interface.empty
 
       | evalSpec(IB, SEQSpec(I, spec1, spec2)) =
-	(* [Rule 77] *)
-	let
-	    val I1 = evalSpec(IB, spec1)
-	    val I2 = evalSpec(IntBasis.plusI(IB, I1), spec2)
-	in
-	    Interface.plus(I1,I2)
-	end
+        (* [Rule 77] *)
+        let
+            val I1 = evalSpec(IB, spec1)
+            val I2 = evalSpec(IntBasis.plusI(IB, I1), spec2)
+        in
+            Interface.plus(I1,I2)
+        end
 
       | evalSpec(IB, SHARINGTYPESpec(I, spec, longtycons)) =
-	(* Omitted [Section 7.1] *)
-	evalSpec(IB, spec)
+        (* Omitted [Section 7.1] *)
+        evalSpec(IB, spec)
 
       | evalSpec(IB, SHARINGSpec(I, spec, longstrids)) =
-	(* Omitted [Section 7.1] *)
-	evalSpec(IB, spec)
+        (* Omitted [Section 7.1] *)
+        evalSpec(IB, spec)
 
 
     (* Value Descriptions *)
 
     and evalValDesc(ValDesc(I, vid, _, valdesc_opt)) =
-	(* [Rule 176] *)
-	let
-	    val VI = case valdesc_opt
-		       of NONE         => VIdMap.empty
-			| SOME valdesc => evalValDesc(valdesc)
-	in
-	    VIdMap.insert(VI, vid, IdStatus.v)
-	end
+        (* [Rule 176] *)
+        let
+            val VI = case valdesc_opt
+                       of NONE         => VIdMap.empty
+                        | SOME valdesc => evalValDesc(valdesc)
+        in
+            VIdMap.insert(VI, vid, IdStatus.v)
+        end
 
 
     (* Type Descriptions *)
 
     and evalTypDesc(TypDesc(I, tyvarseq, tycon, typdesc_opt)) =
-	(* [Rule 177] *)
-	let
-	    val TI = case typdesc_opt
-		       of NONE         => TyConMap.empty
-			| SOME typdesc => evalTypDesc(typdesc)
-	in
-	    TyConMap.insert(TI, tycon, VIdMap.empty)
-	end
+        (* [Rule 177] *)
+        let
+            val TI = case typdesc_opt
+                       of NONE         => TyConMap.empty
+                        | SOME typdesc => evalTypDesc(typdesc)
+        in
+            TyConMap.insert(TI, tycon, VIdMap.empty)
+        end
 
 
     (* Datatype Descriptions *)
 
     and evalDatDesc(DatDesc(I, tyvarseq, tycon, condesc, datdesc_opt)) =
-	(* [Rule 178] *)
-	let
-	    val  VI       = evalConDesc(condesc)
-	    val (VI',TI') = case datdesc_opt
-			      of NONE          => ( VIdMap.empty, TyConMap.empty )
-			       | SOME datdesc' => evalDatDesc(datdesc')
-	in
-	    ( VIdMap.unionWith #2 (VI, VI')
-	    , TyConMap.insert(TI', tycon, VI)
-	    )
-	end
+        (* [Rule 178] *)
+        let
+            val  VI       = evalConDesc(condesc)
+            val (VI',TI') = case datdesc_opt
+                              of NONE          => ( VIdMap.empty, TyConMap.empty )
+                               | SOME datdesc' => evalDatDesc(datdesc')
+        in
+            ( VIdMap.unionWith #2 (VI, VI')
+            , TyConMap.insert(TI', tycon, VI)
+            )
+        end
 
 
     (* Constructor Descriptions *)
 
     and evalConDesc(ConDesc(I, vid, _, condesc_opt)) =
-	(* [Rule 179] *)
-	let
-	    val VI = case condesc_opt
-		       of NONE         => VIdMap.empty
-			| SOME condesc => evalConDesc(condesc)
-	in
-	    VIdMap.insert(VI, vid, IdStatus.c)
-	end
+        (* [Rule 179] *)
+        let
+            val VI = case condesc_opt
+                       of NONE         => VIdMap.empty
+                        | SOME condesc => evalConDesc(condesc)
+        in
+            VIdMap.insert(VI, vid, IdStatus.c)
+        end
 
 
     (* Exception Description *)
 
     and evalExDesc(ExDesc(I, vid, _, exdesc_opt)) =
-	(* [Rule 180] *)
-	let
-	    val VI = case exdesc_opt
-		       of NONE        => VIdMap.empty
-			| SOME exdesc => evalExDesc(exdesc)
-	in
-	    VIdMap.insert(VI, vid, IdStatus.e)
-	end
+        (* [Rule 180] *)
+        let
+            val VI = case exdesc_opt
+                       of NONE        => VIdMap.empty
+                        | SOME exdesc => evalExDesc(exdesc)
+        in
+            VIdMap.insert(VI, vid, IdStatus.e)
+        end
 
 
     (* Structure Descriptions *)
 
     and evalStrDesc(IB, StrDesc(I, strid, sigexp, strdesc_opt)) =
-	(* [Rule 181] *)
-	let
-	    val I  = evalSigExp(IB, sigexp)
-	    val SI = case strdesc_opt
-		       of NONE         => StrIdMap.empty
-		        | SOME strdesc => evalStrDesc(IB, strdesc)
-	in
-	    StrIdMap.insert(SI, strid, Interface.Str I)
-	end
+        (* [Rule 181] *)
+        let
+            val I  = evalSigExp(IB, sigexp)
+            val SI = case strdesc_opt
+                       of NONE         => StrIdMap.empty
+                        | SOME strdesc => evalStrDesc(IB, strdesc)
+        in
+            StrIdMap.insert(SI, strid, Interface.Str I)
+        end
 
 
     (* Functor Bindings *)
 
     and evalFunBind(B, FunBind(I, funid, strid, sigexp, strexp, funbind_opt)) =
-	(* [Rule 182] *)
-	(* Note that there is a typo in this rule. *)
-	let
-	    val I  = evalSigExp(IntBasis.Inter B, sigexp)
-	    val F  = case funbind_opt
-		       of NONE         => FunIdMap.empty
-			| SOME funbind => evalFunBind(B, funbind)
-	in
-	    FunIdMap.insert(F, funid,
-			    DynamicBasis.FunctorClosure((strid,I),strexp,B))
-	end
+        (* [Rule 182] *)
+        (* Note that there is a typo in this rule. *)
+        let
+            val I  = evalSigExp(IntBasis.Inter B, sigexp)
+            val F  = case funbind_opt
+                       of NONE         => FunIdMap.empty
+                        | SOME funbind => evalFunBind(B, funbind)
+        in
+            FunIdMap.insert(F, funid,
+                            DynamicBasis.FunctorClosure((strid,I),strexp,B))
+        end
 
 
     (* Functor Declarations *)
 
     and evalFunDec(B, FunDec(I, funbind)) =
-	(* [Rule 183] *)
-	let
-	    val F = evalFunBind(B, funbind)
-	in
-	    F
-	end
+        (* [Rule 183] *)
+        let
+            val F = evalFunBind(B, funbind)
+        in
+            F
+        end
 
 
     (* Top-level Declarations *)
 
     and evalTopDec(s,B, STRDECTopDec(I, strdec, topdec_opt)) =
-	(* [Rule 184] *)
-	(* Note the mistake in the conclusion of this rule. *)
-	let
-	    val E   = evalStrDec(s,B, strdec)
-	    val B'  = DynamicBasis.fromE E
-	    val B'' = case topdec_opt
-			of NONE        => DynamicBasis.empty
-			 | SOME topdec => evalTopDec(s,B plus B', topdec)
-	in
-	    B' plus B''
-	end
+        (* [Rule 184] *)
+        (* Note the mistake in the conclusion of this rule. *)
+        let
+            val E   = evalStrDec(s,B, strdec)
+            val B'  = DynamicBasis.fromE E
+            val B'' = case topdec_opt
+                        of NONE        => DynamicBasis.empty
+                         | SOME topdec => evalTopDec(s,B plus B', topdec)
+        in
+            B' plus B''
+        end
 
       | evalTopDec(s,B, SIGDECTopDec(I, sigdec, topdec_opt)) =
-	(* [Rule 185] *)
-	(* Note the mistake in the conclusion of this rule. *)
-	let
-	    val G   = evalSigDec(IntBasis.Inter B, sigdec)
-	    val B'  = DynamicBasis.fromG G
-	    val B'' = case topdec_opt
-			of NONE        => DynamicBasis.empty
-			 | SOME topdec => evalTopDec(s,B plus B', topdec)
-	in
-	    B' plus B''
-	end
+        (* [Rule 185] *)
+        (* Note the mistake in the conclusion of this rule. *)
+        let
+            val G   = evalSigDec(IntBasis.Inter B, sigdec)
+            val B'  = DynamicBasis.fromG G
+            val B'' = case topdec_opt
+                        of NONE        => DynamicBasis.empty
+                         | SOME topdec => evalTopDec(s,B plus B', topdec)
+        in
+            B' plus B''
+        end
 
       | evalTopDec(s,B, FUNDECTopDec(I, fundec, topdec_opt)) =
-	(* [Rule 186] *)
-	(* Note the mistake in the conclusion of this rule. *)
-	let
-	    val F   = evalFunDec(B, fundec)
-	    val B'  = DynamicBasis.fromF F
-	    val B'' = case topdec_opt
-			of NONE        => DynamicBasis.empty
-			 | SOME topdec => evalTopDec(s,B plus B', topdec)
-	in
-	    B' plus B''
-	end
+        (* [Rule 186] *)
+        (* Note the mistake in the conclusion of this rule. *)
+        let
+            val F   = evalFunDec(B, fundec)
+            val B'  = DynamicBasis.fromF F
+            val B'' = case topdec_opt
+                        of NONE        => DynamicBasis.empty
+                         | SOME topdec => evalTopDec(s,B plus B', topdec)
+        in
+            B' plus B''
+        end
 
   end
 (* stop of EvalModule.sml *)
@@ -8201,26 +8201,26 @@ signature PRETTY_PRINT =
 
     type doc
 
-    val empty :		doc			(* empty document *)
-    val break :		doc			(* space or line break *)
-    val ebreak :	doc			(* empty or line break *)
-    val text :		string -> doc		(* raw text *)
+    val empty :                doc                        (* empty document *)
+    val break :                doc                        (* space or line break *)
+    val ebreak :        doc                        (* empty or line break *)
+    val text :                string -> doc                (* raw text *)
 
-    val ^^ :		doc * doc -> doc	(* concatenation *)
-    val ^/^ :		doc * doc -> doc	(* concatenation with break *)
+    val ^^ :                doc * doc -> doc        (* concatenation *)
+    val ^/^ :                doc * doc -> doc        (* concatenation with break *)
 
-    val hbox :		doc -> doc		(* horizontal box *)
-    val vbox :		doc -> doc		(* vertical box *)
-    val fbox :		doc -> doc		(* fill box (h and v) *)
-    val abox :		doc -> doc		(* auto box (h or v) *)
+    val hbox :                doc -> doc                (* horizontal box *)
+    val vbox :                doc -> doc                (* vertical box *)
+    val fbox :                doc -> doc                (* fill box (h and v) *)
+    val abox :                doc -> doc                (* auto box (h or v) *)
 
-    val nest :		int -> doc -> doc	(* indentation by k char's *)
-    val below :		doc -> doc		(* keep current indentation *)
+    val nest :                int -> doc -> doc        (* indentation by k char's *)
+    val below :                doc -> doc                (* keep current indentation *)
 
-    val isEmpty :	doc -> bool
+    val isEmpty :        doc -> bool
 
-    val toString :	doc * int -> string
-    val output :	TextIO.outstream * doc * int -> unit
+    val toString :        doc * int -> string
+    val output :        TextIO.outstream * doc * int -> unit
 
   end
 (* stop of PRETTY_PRINT.sml *)
@@ -8247,57 +8247,57 @@ structure PrettyPrint :> PRETTY_PRINT =
     datatype mode = H | V | F | A
 
     datatype doc =
-	  EMPTY
-	| BREAK of string
-	| TEXT  of string
-	| CONS  of doc * doc
-	| BOX   of mode * doc
-	| NEST  of int * doc
-	| BELOW of doc
+          EMPTY
+        | BREAK of string
+        | TEXT  of string
+        | CONS  of doc * doc
+        | BOX   of mode * doc
+        | NEST  of int * doc
+        | BELOW of doc
 
     datatype prim =
-	  PTEXT of string
-	| PLINE of int
+          PTEXT of string
+        | PLINE of int
 
 
     (* Interface operators *)
 
     infixr ^^ ^/^
 
-    val empty	= EMPTY
-    val break	= BREAK " "
-    val ebreak	= BREAK ""
-    val text	= TEXT
+    val empty        = EMPTY
+    val break        = BREAK " "
+    val ebreak        = BREAK ""
+    val text        = TEXT
 
-    fun x ^^ EMPTY	= x
-      | EMPTY ^^ y	= y
-      | x ^^ y		= CONS(x, y)
+    fun x ^^ EMPTY        = x
+      | EMPTY ^^ y        = y
+      | x ^^ y                = CONS(x, y)
 
-    fun x ^/^ EMPTY	= x
-      | EMPTY ^/^ y	= y
-      | x ^/^ y		= CONS(x, CONS(break, y))
+    fun x ^/^ EMPTY        = x
+      | EMPTY ^/^ y        = y
+      | x ^/^ y                = CONS(x, CONS(break, y))
 
-    fun below EMPTY	= EMPTY
-      | below x		= BELOW x
+    fun below EMPTY        = EMPTY
+      | below x                = BELOW x
 
-    fun hbox EMPTY	= EMPTY
-      | hbox x		= BOX(H, x)
+    fun hbox EMPTY        = EMPTY
+      | hbox x                = BOX(H, x)
 
-    fun vbox EMPTY	= EMPTY
-      | vbox x		= BOX(V, x)
+    fun vbox EMPTY        = EMPTY
+      | vbox x                = BOX(V, x)
 
-    fun fbox EMPTY	= EMPTY
-      | fbox x		= BOX(F, x)
+    fun fbox EMPTY        = EMPTY
+      | fbox x                = BOX(F, x)
 
-    fun abox EMPTY	= EMPTY
-      | abox x		= BOX(A, x)
+    fun abox EMPTY        = EMPTY
+      | abox x                = BOX(A, x)
 
-    fun nest k EMPTY	= EMPTY
-      | nest k x	= NEST(k, x)
+    fun nest k EMPTY        = EMPTY
+      | nest k x        = NEST(k, x)
 
 
-    fun isEmpty EMPTY	= true
-      | isEmpty _	= false
+    fun isEmpty EMPTY        = true
+      | isEmpty _        = false
 
 
     (* Check whether the first line of a document fits into remaining characters *)
@@ -8307,47 +8307,47 @@ structure PrettyPrint :> PRETTY_PRINT =
      *)
 
     fun fits(w, z) =
-	w >= 0 andalso
-	case z
-	  of []			=> true
-	   | (i,m,EMPTY)::z	=> fits(w, z)
-	   | (i,m,CONS(x,y))::z	=> fits(w, (i,m,x)::(i,m,y)::z)
-	   | (i,m,TEXT s)::z	=> fits(w - String.size s, z)
-	   | (i,H,BREAK s)::z	=> fits(w - String.size s, z)
-	   | (i,A,BREAK s)::z	=> false
-	   | (i,m,BREAK s)::z	=> true
-	   | (i,m,BOX(V,x))::z	=> fits(w, (i,A,x)::z)
-	   | (i,m,BOX(n,x))::z	=> fits(w, (i,H,x)::z)
-	   | (i,m,NEST(j,x))::z	=> fits(w, (i,m,x)::z)
-	   | (i,m,BELOW x)::z	=> fits(w, (i,m,x)::z)
+        w >= 0 andalso
+        case z
+          of []                        => true
+           | (i,m,EMPTY)::z        => fits(w, z)
+           | (i,m,CONS(x,y))::z        => fits(w, (i,m,x)::(i,m,y)::z)
+           | (i,m,TEXT s)::z        => fits(w - String.size s, z)
+           | (i,H,BREAK s)::z        => fits(w - String.size s, z)
+           | (i,A,BREAK s)::z        => false
+           | (i,m,BREAK s)::z        => true
+           | (i,m,BOX(V,x))::z        => fits(w, (i,A,x)::z)
+           | (i,m,BOX(n,x))::z        => fits(w, (i,H,x)::z)
+           | (i,m,NEST(j,x))::z        => fits(w, (i,m,x)::z)
+           | (i,m,BELOW x)::z        => fits(w, (i,m,x)::z)
 
 
     (* Layout *)
 
     fun best(w, k, z, a) =
-	case z
-	  of []			=> List.rev a
-	   | (i,m,EMPTY)::z	=> best(w, k, z, a)
-	   | (i,m,CONS(x,y))::z	=> best(w, k, (i,m,x)::(i,m,y)::z, a)
-	   | (i,m,TEXT s)::z	=> best(w, k + String.size s, z, PTEXT(s)::a)
-	   | (i,H,BREAK s)::z	=> horizontal(w, k, s, z, a)
-	   | (i,V,BREAK s)::z	=> vertical(w, i, z, a)
-	   | (i,F,BREAK s)::z	=> if fits(w - k - String.size s, z)
-				   then horizontal(w, k, s, z, a)
-				   else vertical(w, i, z, a)
-	   | (i,A,BREAK s)::z	=> raise Fail "PrettyPrint.best"
-	   | (i,m,BOX(A,x))::z	=> if fits(w - k, (i,H,x)::z)
-				   then best(w, k, (i,H,x)::z, a)
-				   else best(w, k, (i,V,x)::z, a)
-	   | (i,m,BOX(n,x))::z	=> best(w, k, (i,n,x)::z, a)
-	   | (i,m,NEST(j,x))::z	=> best(w, k, (i+j,m,x)::z, a)
-	   | (i,m,BELOW x)::z	=> best(w, k, (k,m,x)::z, a)
+        case z
+          of []                        => List.rev a
+           | (i,m,EMPTY)::z        => best(w, k, z, a)
+           | (i,m,CONS(x,y))::z        => best(w, k, (i,m,x)::(i,m,y)::z, a)
+           | (i,m,TEXT s)::z        => best(w, k + String.size s, z, PTEXT(s)::a)
+           | (i,H,BREAK s)::z        => horizontal(w, k, s, z, a)
+           | (i,V,BREAK s)::z        => vertical(w, i, z, a)
+           | (i,F,BREAK s)::z        => if fits(w - k - String.size s, z)
+                                   then horizontal(w, k, s, z, a)
+                                   else vertical(w, i, z, a)
+           | (i,A,BREAK s)::z        => raise Fail "PrettyPrint.best"
+           | (i,m,BOX(A,x))::z        => if fits(w - k, (i,H,x)::z)
+                                   then best(w, k, (i,H,x)::z, a)
+                                   else best(w, k, (i,V,x)::z, a)
+           | (i,m,BOX(n,x))::z        => best(w, k, (i,n,x)::z, a)
+           | (i,m,NEST(j,x))::z        => best(w, k, (i+j,m,x)::z, a)
+           | (i,m,BELOW x)::z        => best(w, k, (k,m,x)::z, a)
 
     and horizontal(w, k, s, z, a) =
-	    best(w, k + String.size s, z, PTEXT(s)::a)
+            best(w, k + String.size s, z, PTEXT(s)::a)
 
     and vertical(w, i, z, a) =
-	    best(w, i, z, PLINE(i)::a)
+            best(w, i, z, PLINE(i)::a)
 
 
     fun layout(doc, w) = best(w, 0, [(0,V,doc)], [])
@@ -8358,7 +8358,7 @@ structure PrettyPrint :> PRETTY_PRINT =
 
     fun primToString(PTEXT s) = s
       | primToString(PLINE i) = 
-	    String.implode(#"\n" :: List.tabulate(i, fn _ => #" "))
+            String.implode(#"\n" :: List.tabulate(i, fn _ => #" "))
 
     val toString = String.concat o List.map primToString o layout
 
@@ -8371,9 +8371,9 @@ structure PrettyPrint :> PRETTY_PRINT =
 
     fun outputPrim os (PTEXT s) = TextIO.output(os, s)
       | outputPrim os (PLINE i) =
-	    ( TextIO.output1(os, #"\n")
-	    ; loop i (fn() => TextIO.output1(os, #" "))
-	    )
+            ( TextIO.output1(os, #"\n")
+            ; loop i (fn() => TextIO.output1(os, #" "))
+            )
 
     fun output(os, doc, w) = List.app (outputPrim os) (layout(doc, w))
 
@@ -8389,16 +8389,16 @@ signature PP_MISC =
 
     type doc = PrettyPrint.doc
 
-    val nest:		doc -> doc
+    val nest:                doc -> doc
 
-    val paren:		doc -> doc
-    val brace:		doc -> doc
-    val brack:		doc -> doc
+    val paren:                doc -> doc
+    val brace:                doc -> doc
+    val brack:                doc -> doc
 
-    val ppCommaList:	('a -> doc) -> 'a list -> doc
-    val ppStarList:	('a -> doc) -> 'a list -> doc
-    val ppSeq:		('a -> doc) -> 'a list -> doc
-    val ppSeqPrec:	(int -> 'a -> doc) -> int -> 'a list -> doc
+    val ppCommaList:        ('a -> doc) -> 'a list -> doc
+    val ppStarList:        ('a -> doc) -> 'a list -> doc
+    val ppSeq:                ('a -> doc) -> 'a list -> doc
+    val ppSeqPrec:        (int -> 'a -> doc) -> int -> 'a list -> doc
 
   end
 (* stop of PP_MISC.sml *)
@@ -8428,12 +8428,12 @@ structure PPMisc :> PP_MISC =
     fun ppCommaList ppX   []    = empty
       | ppCommaList ppX   [x]   = ppX x
       | ppCommaList ppX (x::xs) = ppX x ^^ text "," ^^ break ^^
-				  ppCommaList ppX xs
+                                  ppCommaList ppX xs
 
     fun ppStarList ppX   []     = empty
       | ppStarList ppX   [x]    = ppX x
       | ppStarList ppX (x::xs)  = hbox(ppX x ^^ break ^^ text "*") ^^ break ^^
-				  ppStarList ppX xs
+                                  ppStarList ppX xs
 
     fun ppSeqPrec ppXPrec n []  = empty
       | ppSeqPrec ppXPrec n [x] = ppXPrec n x
@@ -8493,124 +8493,124 @@ structure PPVal :> PP_VAL =
     (* Values *)
 
     (* Precedence:
-     *	0 : plain expressions
-     *	1 : constructor arguments
+     *        0 : plain expressions
+     *        1 : constructor arguments
      *)
 
     fun ppVal  (s, v) = fbox(below(nest(ppValPrec (0, s) v)))
     and ppExVal(s, e) = fbox(below(nest(ppExValPrec (0, s) e)))
 
     and ppValPrec (p, s) (op:=) =
-	    ppFn
+            ppFn
 
       | ppValPrec (p, s) (SVal sv) =
-	    ppSVal sv
+            ppSVal sv
 
       | ppValPrec (p, s) (BasVal b) =
-	    ppFn
+            ppFn
 
       | ppValPrec (p, s) (VId vid) =
-	    ppVId vid
+            ppVId vid
 
       | ppValPrec (p, s) (v as VIdVal(vid, v')) =
-	let
-	    exception NotAList
+        let
+            exception NotAList
 
-	    fun items(VId vid, vs) =
-		if vid <> VId.fromString "nil" then
-		    raise NotAList
-		else
-		    List.rev vs
+            fun items(VId vid, vs) =
+                if vid <> VId.fromString "nil" then
+                    raise NotAList
+                else
+                    List.rev vs
 
-	      | items(VIdVal(vid, v), vs) =
-		if vid <> VId.fromString "::" then
-		    raise NotAList
-		else
-		    (case Val.unpair v
-		       of NONE         => raise NotAList
-		        | SOME(v1, v2) => items(v2, v1::vs)
-		    )
+              | items(VIdVal(vid, v), vs) =
+                if vid <> VId.fromString "::" then
+                    raise NotAList
+                else
+                    (case Val.unpair v
+                       of NONE         => raise NotAList
+                        | SOME(v1, v2) => items(v2, v1::vs)
+                    )
 
-	      | items(_, vs) = raise NotAList
-	in
-	    let
-		val vs = items(v, [])
-	    in
-		brack(ppCommaList (ppValPrec (0, s)) vs)
-	    end
-	    handle NotAList =>
-	    let
-		val doc = ppVId vid ^/^ ppValPrec (1, s) v'
-	    in
-		if p = 0 then
-		    doc
-		else
-		    paren doc
-	    end
-	end
+              | items(_, vs) = raise NotAList
+        in
+            let
+                val vs = items(v, [])
+            in
+                brack(ppCommaList (ppValPrec (0, s)) vs)
+            end
+            handle NotAList =>
+            let
+                val doc = ppVId vid ^/^ ppValPrec (1, s) v'
+            in
+                if p = 0 then
+                    doc
+                else
+                    paren doc
+            end
+        end
 
       | ppValPrec (p, s) (ExVal e) =
-	    ppExValPrec (p, s) e
+            ppExValPrec (p, s) e
 
       | ppValPrec (p, s) (Record r) =
-	let
-	    fun isTuple(   [],     n) = n > 2
-	      | isTuple(lab::labs, n) =
-		    lab = Lab.fromInt n andalso isTuple(labs, n+1)
+        let
+            fun isTuple(   [],     n) = n > 2
+              | isTuple(lab::labs, n) =
+                    lab = Lab.fromInt n andalso isTuple(labs, n+1)
 
-	    val labvs     = LabMap.listItemsi r
-	    val (labs,vs) = ListPair.unzip labvs
-	in
-	    if List.null labs then
-		text "()"
-	    else if isTuple(labs, 1) then
-		paren(ppCommaList (ppValPrec (0, s)) vs)
-	    else
-		brace(ppCommaList (ppLabVal s) labvs)
-	end
+            val labvs     = LabMap.listItemsi r
+            val (labs,vs) = ListPair.unzip labvs
+        in
+            if List.null labs then
+                text "()"
+            else if isTuple(labs, 1) then
+                paren(ppCommaList (ppValPrec (0, s)) vs)
+            else
+                brace(ppCommaList (ppLabVal s) labvs)
+        end
 
       | ppValPrec (p, s) (Addr a) =
-	let
-	    val v   = case State.findAddr(s, a)
-			of SOME v => v
-			 | NONE   => raise Fail "PPVal.ppVal: invalid address"
+        let
+            val v   = case State.findAddr(s, a)
+                        of SOME v => v
+                         | NONE   => raise Fail "PPVal.ppVal: invalid address"
 
-	    val doc = text "ref" ^/^ ppValPrec (1, s) v
-	in
-	    if p = 0 then
-		doc
-	    else
-		paren doc
-	end
+            val doc = text "ref" ^/^ ppValPrec (1, s) v
+        in
+            if p = 0 then
+                doc
+            else
+                paren doc
+        end
 
       | ppValPrec (p, s) (FcnClosure _) =
-	    ppFn
+            ppFn
 
 
     and ppLabVal s (lab, v) =
-	    abox(
-		hbox(
-		    ppLab lab ^/^
-		    text "="
-		) ^^
-		below(nest(break ^^
-		    ppVal(s, v)
-		))
-	    )
+            abox(
+                hbox(
+                    ppLab lab ^/^
+                    text "="
+                ) ^^
+                below(nest(break ^^
+                    ppVal(s, v)
+                ))
+            )
 
 
     and ppExValPrec (p, s) (ExName en) =
-	    ppExName en
+            ppExName en
 
       | ppExValPrec (p, s) (ExNameVal(en, v)) =
-	let
-	    val doc = ppExName en ^/^ ppValPrec (1, s) v
-	in
-	    if p = 0 then
-		doc
-	    else
-		paren doc
-	end
+        let
+            val doc = ppExName en ^/^ ppValPrec (1, s) v
+        in
+            if p = 0 then
+                doc
+            else
+                paren doc
+        end
 
   end
 (* stop of PPVal.sml *)
@@ -8661,92 +8661,92 @@ structure PPDynamicEnv :> PP_DYNAMIC_ENV =
     (* Environments *)
 
     fun ppValEnv(s, VE) =
-	VIdMap.foldri
-	    (fn(vid, (v,IdStatus.v), doc) =>
-		abox(
-		    hbox(
-			text "val" ^/^
-			ppVId vid ^/^
-			text "="
-		    ) ^^
-		    nest(break ^^
-			abox(PPVal.ppVal(s, v))
-		    )
-		) ^/^
-		doc
+        VIdMap.foldri
+            (fn(vid, (v,IdStatus.v), doc) =>
+                abox(
+                    hbox(
+                        text "val" ^/^
+                        ppVId vid ^/^
+                        text "="
+                    ) ^^
+                    nest(break ^^
+                        abox(PPVal.ppVal(s, v))
+                    )
+                ) ^/^
+                doc
 
-	     | (vid, (v,_), doc) => doc
-	    )
-	    empty VE
+             | (vid, (v,_), doc) => doc
+            )
+            empty VE
 
     fun ppExEnv VE =
-	VIdMap.foldri
-	    (fn(vid, (v,IdStatus.e), doc) =>
-		hbox(
-		    text "exception" ^/^
-		    ppVId vid
-		) ^/^
-		doc
+        VIdMap.foldri
+            (fn(vid, (v,IdStatus.e), doc) =>
+                hbox(
+                    text "exception" ^/^
+                    ppVId vid
+                ) ^/^
+                doc
 
-	     | (vid, (v,_), doc) => doc
-	    )
-	    empty VE
+             | (vid, (v,_), doc) => doc
+            )
+            empty VE
 
     fun ppConEnv VE =
-	VIdMap.foldli
-	    (fn(vid, (v,IdStatus.c), doc) =>
-		hbox(
-		    text "con" ^/^
-		    ppVId vid
-		) ^/^
-		doc
+        VIdMap.foldli
+            (fn(vid, (v,IdStatus.c), doc) =>
+                hbox(
+                    text "con" ^/^
+                    ppVId vid
+                ) ^/^
+                doc
 
-	     | (vid, (v,_), doc) => doc
-	    )
-	    empty VE
+             | (vid, (v,_), doc) => doc
+            )
+            empty VE
 
     fun ppStrEnv(s, SE) =
-	StrIdMap.foldri
-	    (fn(strid, S, doc) =>
-		abox(
-		    hbox(
-			text "structure" ^/^
-			ppStrId strid ^/^
-			text "="
-		    ) ^^
-		    nest(break ^^
-			ppStr(s, S)
-		    )
-		) ^/^
-		doc
-	    )
-	    empty SE
+        StrIdMap.foldri
+            (fn(strid, S, doc) =>
+                abox(
+                    hbox(
+                        text "structure" ^/^
+                        ppStrId strid ^/^
+                        text "="
+                    ) ^^
+                    nest(break ^^
+                        ppStr(s, S)
+                    )
+                ) ^/^
+                doc
+            )
+            empty SE
 
     and ppEnv(s, (SE,TE,VE)) =
-	    vbox(
-		ppStrEnv(s, SE) ^/^
-		ppConEnv VE ^/^
-		ppExEnv  VE ^/^
-		ppValEnv(s, VE)
-	    )
+            vbox(
+                ppStrEnv(s, SE) ^/^
+                ppConEnv VE ^/^
+                ppExEnv  VE ^/^
+                ppValEnv(s, VE)
+            )
 
 
     (* Structures *)
 
     and ppStr(s, DynamicEnv.Str E) =
-	let
-	    val doc = ppEnv(s, E)
-	in
-	    abox(below(
-		text "struct" ^^
-		(if isEmpty doc then
-		    empty
-		 else
-		    nest(vbox(break ^^ doc))
-		) ^^ break ^^
-		text "end"
-	    ))
-	end
+        let
+            val doc = ppEnv(s, E)
+        in
+            abox(below(
+                text "struct" ^^
+                (if isEmpty doc then
+                    empty
+                 else
+                    nest(vbox(break ^^ doc))
+                ) ^^ break ^^
+                text "end"
+            ))
+        end
 
   end
 (* stop of PPDynamicEnv.sml *)
@@ -8792,25 +8792,25 @@ structure PPDynamicBasis :> PP_DYNAMIC_BASIS =
     (* Environments *)
 
     fun ppFunEnv F =
-	FunIdMap.foldri
-	    (fn(funid, _, doc) =>
-		hbox(
-		    text "functor" ^/^
-		    ppFunId funid
-		) ^/^
-		doc
-	    )
-	    empty F
+        FunIdMap.foldri
+            (fn(funid, _, doc) =>
+                hbox(
+                    text "functor" ^/^
+                    ppFunId funid
+                ) ^/^
+                doc
+            )
+            empty F
 
 
     (* Basis *)
 
     fun ppBasis(s, (F,G,E)) =
-	    vbox(
-		ppFunEnv F ^/^
-		PPDynamicEnv.ppEnv(s, E) ^/^
-		text ""
-	    )
+            vbox(
+                ppFunEnv F ^/^
+                PPDynamicEnv.ppEnv(s, E) ^/^
+                text ""
+            )
 
   end
 (* stop of PPDynamicBasis.sml *)
@@ -8831,9 +8831,9 @@ structure PPDynamicBasis :> PP_DYNAMIC_BASIS =
  *     (2) There is no requirement of consistency for constructors in
  *         sharing specifications or type realisations (actually, we
  *         consider this a serious bug). For example,
- *		datatype t1 = A | B
- *		datatype t2 = C
- *		sharing type t1 = t2
+ *                datatype t1 = A | B
+ *                datatype t2 = C
+ *                sharing type t1 = t2
  *         is a legal specification. This allows a mix of the constructors
  *         to appear in matches, rendering the terms of irredundancy and
  *         exhaustiveness meaningless. We make no attempt to detect this,
@@ -8853,8 +8853,8 @@ signature CHECK_PATTERN =
 
     (* Operations *)
 
-    val checkPat:	Env * Pat   -> unit
-    val checkMatch:	Env * Match -> unit
+    val checkPat:        Env * Pat   -> unit
+    val checkMatch:        Env * Match -> unit
 
   end
 (* stop of CHECK_PATTERN.sml *)
@@ -8875,9 +8875,9 @@ signature CHECK_PATTERN =
  *     (2) There is no requirement of consistency for constructors in
  *         sharing specifications or type realisations (actually, we
  *         consider this a serious bug). For example,
- *		datatype t1 = A | B
- *		datatype t2 = C
- *		sharing type t1 = t2
+ *                datatype t1 = A | B
+ *                datatype t2 = C
+ *                sharing type t1 = t2
  *         is a legal specification. This allows a mix of the constructors
  *         to appear in matches, rendering the terms of irredundancy and
  *         exhaustiveness meaningless. We make no attempt to detect this,
@@ -8928,20 +8928,20 @@ structure CheckPattern :> CHECK_PATTERN =
     (* Value description *)
 
     datatype description =
-	  ANY
-	| SCON      of SCon
-	| NOT_SCON  of SConSet
-	| EXCON     of longVId * description option
-	| NOT_EXCON of LongVIdSet
-	| CON       of VId * description option
-	| NOT_CON   of VIdSet
-	| RECORD    of description LabMap
+          ANY
+        | SCON      of SCon
+        | NOT_SCON  of SConSet
+        | EXCON     of longVId * description option
+        | NOT_EXCON of LongVIdSet
+        | CON       of VId * description option
+        | NOT_CON   of VIdSet
+        | RECORD    of description LabMap
 
     datatype context =
-	  EXCON'  of longVId
-	| CON'    of VId
-	| LAB'    of Lab
-	| RECORD' of description LabMap
+          EXCON'  of longVId
+        | CON'    of VId
+        | LAB'    of Lab
+        | RECORD' of description LabMap
 
     type knowledge = description * context list
 
@@ -8952,13 +8952,13 @@ structure CheckPattern :> CHECK_PATTERN =
     (* Extending the context on partial success *)
 
     fun augment(EXCON'(longvid)::context, desc) =
-	    augment(context, EXCON(longvid, SOME desc))
+            augment(context, EXCON(longvid, SOME desc))
 
       | augment(CON'(vid)::context, desc) =
-	    augment(context, CON(vid, SOME desc))
+            augment(context, CON(vid, SOME desc))
 
       | augment(LAB'(lab)::RECORD'(descs)::context, desc) =
-	    RECORD'(LabMap.insert(descs, lab, desc)) :: context
+            RECORD'(LabMap.insert(descs, lab, desc)) :: context
 
       | augment _ = raise Fail "CheckPattern.augment: invalid context"
 
@@ -8966,16 +8966,16 @@ structure CheckPattern :> CHECK_PATTERN =
     (* Building the description on failure *)
 
     fun build([], desc) =
-	    desc
+            desc
 
       | build(EXCON'(longvid)::context, desc) =
-	    build(context, EXCON(longvid, SOME desc))
+            build(context, EXCON(longvid, SOME desc))
 
       | build(CON'(vid)::context, desc) =
-	    build(context, CON(vid, SOME desc))
+            build(context, CON(vid, SOME desc))
 
       | build(LAB'(lab)::RECORD'(descs)::context, desc) =
-	    build(context, RECORD(LabMap.insert(descs, lab, desc)))
+            build(context, RECORD(LabMap.insert(descs, lab, desc)))
 
       | build _ = raise Fail "CheckPattern.build: invalid context"
 
@@ -8983,7 +8983,7 @@ structure CheckPattern :> CHECK_PATTERN =
     (* Result type for static matching *)
 
     structure RegionSet = FinSetFn(type ord_key = Source.region
-				   val compare  = Source.compare)
+                                   val compare  = Source.compare)
 
     type result = RegionSet.set * bool
 
@@ -8991,279 +8991,279 @@ structure CheckPattern :> CHECK_PATTERN =
     val failure = ( RegionSet.empty, false )
 
     fun branch((P1, exhaustive1), (P2, exhaustive2)) =
-	    ( RegionSet.union(P1, P2), exhaustive1 andalso exhaustive2 )
+            ( RegionSet.union(P1, P2), exhaustive1 andalso exhaustive2 )
 
     fun reached(I, (P, exhaustive)) =
-	    ( RegionSet.add(P, I), exhaustive )
+            ( RegionSet.add(P, I), exhaustive )
 
 
 
     (* Static pattern matching *)
 
     fun matchMatch(E, desc, Match(_, mrule, match_opt)) =
-	    matchMrule(E, desc, mrule, match_opt)
+            matchMrule(E, desc, mrule, match_opt)
 
 
     and matchMrule(E, desc, Mrule(I, pat, exp), match_opt) =
-	    reached(I, matchPat(E, (desc, []), pat, ([], match_opt)))
+            reached(I, matchPat(E, (desc, []), pat, ([], match_opt)))
 
 
     and matchAtPat(E, know, atpat, cont) =
-	case atpat
-	  of WILDCARDAtPat(_) =>
-		succeed(E, know, cont)
+        case atpat
+          of WILDCARDAtPat(_) =>
+                succeed(E, know, cont)
 
-	   | SCONAtPat(_, scon) =>
-		matchSCon(E, know, scon, cont)
+           | SCONAtPat(_, scon) =>
+                matchSCon(E, know, scon, cont)
 
-	   | LONGVIDAtPat(_, _, longvid) =>
-	       (case StaticEnv.findLongVId(E, longvid)
-		  of NONE =>
-			succeed(E, know, cont)
+           | LONGVIDAtPat(_, _, longvid) =>
+               (case StaticEnv.findLongVId(E, longvid)
+                  of NONE =>
+                        succeed(E, know, cont)
 
-		   | SOME(sigma, IdStatus.v) =>
-			succeed(E, know, cont)
+                   | SOME(sigma, IdStatus.v) =>
+                        succeed(E, know, cont)
 
-		   | SOME(sigma, IdStatus.e) =>
-			matchExCon(E, know, longvid, NONE, cont)
+                   | SOME(sigma, IdStatus.e) =>
+                        matchExCon(E, know, longvid, NONE, cont)
 
-		   | SOME((_,tau), IdStatus.c) =>
-		     let
-			val vid  = LongVId.toId longvid
-			val span = TyName.span(Type.tyname(Type.range tau))
-		     in
-			matchCon(E, know, vid, span, NONE, cont)
-		     end
-	       )
+                   | SOME((_,tau), IdStatus.c) =>
+                     let
+                        val vid  = LongVId.toId longvid
+                        val span = TyName.span(Type.tyname(Type.range tau))
+                     in
+                        matchCon(E, know, vid, span, NONE, cont)
+                     end
+               )
 
-	   | RECORDAtPat(_, patrow_opt) =>
-		matchRecord(E, know, patrow_opt, cont)
+           | RECORDAtPat(_, patrow_opt) =>
+                matchRecord(E, know, patrow_opt, cont)
 
-	   | PARAtPat(_, pat) =>
-		matchPat(E, know, pat, cont)
+           | PARAtPat(_, pat) =>
+                matchPat(E, know, pat, cont)
 
 
     and matchPat(E, know, pat, cont) =
-	case pat
-	  of ATPATPat(_, atpat) =>
-		matchAtPat(E, know, atpat, cont)
+        case pat
+          of ATPATPat(_, atpat) =>
+                matchAtPat(E, know, atpat, cont)
 
-	   | CONPat(_, _, longvid, atpat) =>
-	       (case StaticEnv.findLongVId(E, longvid)
-		  of SOME(sigma, IdStatus.e) =>
-			matchExCon(E, know, longvid, SOME atpat, cont)
+           | CONPat(_, _, longvid, atpat) =>
+               (case StaticEnv.findLongVId(E, longvid)
+                  of SOME(sigma, IdStatus.e) =>
+                        matchExCon(E, know, longvid, SOME atpat, cont)
 
-		   | SOME((_,tau), IdStatus.c) =>
-		     let
-			val vid  = LongVId.toId longvid
-			val span = TyName.span(Type.tyname(Type.range tau))
-		     in
-			matchCon(E, know, vid, span, SOME atpat, cont)
-		     end
+                   | SOME((_,tau), IdStatus.c) =>
+                     let
+                        val vid  = LongVId.toId longvid
+                        val span = TyName.span(Type.tyname(Type.range tau))
+                     in
+                        matchCon(E, know, vid, span, SOME atpat, cont)
+                     end
 
-		   | _ => raise Fail "CheckMatching.matchPat: \
-				     \invalid constructed pattern"
-	       )
+                   | _ => raise Fail "CheckMatching.matchPat: \
+                                     \invalid constructed pattern"
+               )
 
-	  | TYPEDPat(_, pat, ty) =>
-		matchPat(E, know, pat, cont)
+          | TYPEDPat(_, pat, ty) =>
+                matchPat(E, know, pat, cont)
 
-	  | ASPat(_, _, vid, ty_opt, pat) =>
-		matchPat(E, know, pat, cont)
+          | ASPat(_, _, vid, ty_opt, pat) =>
+                matchPat(E, know, pat, cont)
 
 
     and matchRecord(E, (desc, context), patrow_opt, cont) =
-	let
-	    val descs = case desc
-			  of ANY          => LabMap.empty
-			   | RECORD descs => descs
-			   | _ =>
-			     raise Fail "CheckPattern.matchRecord: type error"
-	in
-	    matchPatRowOpt(E, RECORD'(descs)::context, patrow_opt, cont)
-	end
+        let
+            val descs = case desc
+                          of ANY          => LabMap.empty
+                           | RECORD descs => descs
+                           | _ =>
+                             raise Fail "CheckPattern.matchRecord: type error"
+        in
+            matchPatRowOpt(E, RECORD'(descs)::context, patrow_opt, cont)
+        end
 
 
     and matchPatRowOpt(E, RECORD'(descs)::context, patrow_opt,
-					cont as (patrow_opts, match_opt)) =
-	(case patrow_opt
-	   of SOME(ROWPatRow(_, lab, pat, patrow_opt')) =>
-	      let
-		  val desc' = case LabMap.find(descs, lab)
-				of NONE       => ANY
-				 | SOME desc' => desc'
-	      in
-		  matchPat(E, (desc', LAB'(lab)::RECORD'(descs)::context), pat,
-			   (patrow_opt'::patrow_opts, match_opt))
-	      end
+                                        cont as (patrow_opts, match_opt)) =
+        (case patrow_opt
+           of SOME(ROWPatRow(_, lab, pat, patrow_opt')) =>
+              let
+                  val desc' = case LabMap.find(descs, lab)
+                                of NONE       => ANY
+                                 | SOME desc' => desc'
+              in
+                  matchPat(E, (desc', LAB'(lab)::RECORD'(descs)::context), pat,
+                           (patrow_opt'::patrow_opts, match_opt))
+              end
 
-	    | _ =>
-		  succeed(E, (RECORD descs, context), cont)
-	)
+            | _ =>
+                  succeed(E, (RECORD descs, context), cont)
+        )
       | matchPatRowOpt _ =
-	    raise Fail "CheckPattern.matchPatRowOpt: inconsistent context"
+            raise Fail "CheckPattern.matchPatRowOpt: inconsistent context"
 
 
     and matchSCon(E, know as (desc, context), scon, cont) =
-	let
-	   val knowSucc       = (SCON scon, context)
-	   fun knowFail scons = (NOT_SCON(SConSet.add(scons, scon)), context)
-	in
-	   case desc
-	     of ANY =>
-		branch(succeed(E, knowSucc, cont),
-		       fail(E, knowFail SConSet.empty, cont)
-		      )
+        let
+           val knowSucc       = (SCON scon, context)
+           fun knowFail scons = (NOT_SCON(SConSet.add(scons, scon)), context)
+        in
+           case desc
+             of ANY =>
+                branch(succeed(E, knowSucc, cont),
+                       fail(E, knowFail SConSet.empty, cont)
+                      )
 
-	      | SCON scon' =>
-		if SCon.compare(scon, scon') = EQUAL then
-		    succeed(E, know, cont)
-		else
-		    fail(E, know, cont)
+              | SCON scon' =>
+                if SCon.compare(scon, scon') = EQUAL then
+                    succeed(E, know, cont)
+                else
+                    fail(E, know, cont)
 
-	      | NOT_SCON scons =>
-		if SConSet.member(scons, scon) then
-		    fail(E, know, cont)
-		else
-		    branch(succeed(E, knowSucc, cont),
-		 	   fail(E, knowFail scons, cont)
-			  )
+              | NOT_SCON scons =>
+                if SConSet.member(scons, scon) then
+                    fail(E, know, cont)
+                else
+                    branch(succeed(E, knowSucc, cont),
+                            fail(E, knowFail scons, cont)
+                          )
 
-	      | _ => raise Fail "CheckPattern.matchSCon: type error"
-	end
+              | _ => raise Fail "CheckPattern.matchSCon: type error"
+        end
 
 
     and matchExCon(E, know as (desc, context), longvid, atpat_opt, cont) =
-	let
-	   val knowSucc = (EXCON(longvid, NONE), EXCON'(longvid)::context)
-	   fun knowFail longvids =
-		(NOT_EXCON(LongVIdSet.add(longvids, longvid)), context)
-	in
-	   case desc
-	     of ANY =>
-		branch(matchArgOpt(E, knowSucc, SOME ANY, atpat_opt, cont),
-		       fail(E, knowFail LongVIdSet.empty, cont)
-		      )
+        let
+           val knowSucc = (EXCON(longvid, NONE), EXCON'(longvid)::context)
+           fun knowFail longvids =
+                (NOT_EXCON(LongVIdSet.add(longvids, longvid)), context)
+        in
+           case desc
+             of ANY =>
+                branch(matchArgOpt(E, knowSucc, SOME ANY, atpat_opt, cont),
+                       fail(E, knowFail LongVIdSet.empty, cont)
+                      )
 
-	      | EXCON(longvid', desc_opt) =>
-		if longvid = longvid' then
-		    matchArgOpt(E, knowSucc, desc_opt, atpat_opt, cont)
-		else
-		    fail(E, know, cont)
+              | EXCON(longvid', desc_opt) =>
+                if longvid = longvid' then
+                    matchArgOpt(E, knowSucc, desc_opt, atpat_opt, cont)
+                else
+                    fail(E, know, cont)
 
-	      | NOT_EXCON longvids =>
-		if LongVIdSet.member(longvids, longvid) then
-		    fail(E, know, cont)
-		else
-		    branch(matchArgOpt(E, knowSucc, SOME ANY, atpat_opt, cont),
-			   fail(E, knowFail longvids, cont)
-			  )
+              | NOT_EXCON longvids =>
+                if LongVIdSet.member(longvids, longvid) then
+                    fail(E, know, cont)
+                else
+                    branch(matchArgOpt(E, knowSucc, SOME ANY, atpat_opt, cont),
+                           fail(E, knowFail longvids, cont)
+                          )
 
-	      | _ => raise Fail "CheckPattern.matchSCon: type error"
-	end
+              | _ => raise Fail "CheckPattern.matchSCon: type error"
+        end
 
 
     and matchCon(E, know as (desc, context), vid, span, atpat_opt, cont) =
-	let
-	   val knowSucc      = (CON(vid, NONE), CON'(vid)::context)
-	   fun knowFail vids = (NOT_CON(VIdSet.add(vids, vid)), context)
-	in
-	   case desc
-	     of ANY =>
-		if span = 1 then
-		    matchArgOpt(E, knowSucc, SOME ANY, atpat_opt, cont)
-		else
-		    branch(matchArgOpt(E, knowSucc, SOME ANY, atpat_opt, cont),
-			   fail(E, knowFail VIdSet.empty, cont)
-		    )
+        let
+           val knowSucc      = (CON(vid, NONE), CON'(vid)::context)
+           fun knowFail vids = (NOT_CON(VIdSet.add(vids, vid)), context)
+        in
+           case desc
+             of ANY =>
+                if span = 1 then
+                    matchArgOpt(E, knowSucc, SOME ANY, atpat_opt, cont)
+                else
+                    branch(matchArgOpt(E, knowSucc, SOME ANY, atpat_opt, cont),
+                           fail(E, knowFail VIdSet.empty, cont)
+                    )
 
-	      | CON(vid', desc_opt) =>
-		if vid = vid' then
-		    matchArgOpt(E, knowSucc, desc_opt, atpat_opt, cont)
-		else
-		    fail(E, know, cont)
+              | CON(vid', desc_opt) =>
+                if vid = vid' then
+                    matchArgOpt(E, knowSucc, desc_opt, atpat_opt, cont)
+                else
+                    fail(E, know, cont)
 
-	      | NOT_CON vids =>
-		if VIdSet.member(vids, vid) then
-		    fail(E, know, cont)
-		else if VIdSet.numItems vids = span - 1 then
-		    matchArgOpt(E, knowSucc, SOME ANY, atpat_opt, cont)
-		else
-		    branch(matchArgOpt(E, knowSucc, SOME ANY, atpat_opt, cont),
-			   fail(E, knowFail vids, cont)
-			  )
+              | NOT_CON vids =>
+                if VIdSet.member(vids, vid) then
+                    fail(E, know, cont)
+                else if VIdSet.numItems vids = span - 1 then
+                    matchArgOpt(E, knowSucc, SOME ANY, atpat_opt, cont)
+                else
+                    branch(matchArgOpt(E, knowSucc, SOME ANY, atpat_opt, cont),
+                           fail(E, knowFail vids, cont)
+                          )
 
-	      | _ => raise Fail "CheckPattern.matchSCon: type error"
-	end
+              | _ => raise Fail "CheckPattern.matchSCon: type error"
+        end
 
 
     and matchArgOpt(E, (desc, context), desc_opt, atpat_opt, cont) =
-	case atpat_opt
-	  of NONE =>
-		succeed(E, (desc, List.tl context), cont)
+        case atpat_opt
+          of NONE =>
+                succeed(E, (desc, List.tl context), cont)
 
-	   | SOME atpat =>
-		matchAtPat(E, (valOf desc_opt, context), atpat, cont)
+           | SOME atpat =>
+                matchAtPat(E, (valOf desc_opt, context), atpat, cont)
 
 
 
     and succeed(E, know, ([], match_opt)) =
-	    success
+            success
 
       | succeed(E, (desc, context), (patrow_opt::patrow_opts, match_opt)) =
-	let
-	    val context' = augment(context, desc)
-	in
-	    matchPatRowOpt(E, context', patrow_opt, (patrow_opts, match_opt))
-	end
+        let
+            val context' = augment(context, desc)
+        in
+            matchPatRowOpt(E, context', patrow_opt, (patrow_opts, match_opt))
+        end
 
 
     and fail(E, know, (_, NONE)) =
-	    failure
+            failure
 
       | fail(E, (desc, context), (_, SOME match)) =
-	    matchMatch(E, build(context, desc), match)
+            matchMatch(E, build(context, desc), match)
 
 
 
     (* Checking matches [Section 4.11, item 2] *)
 
     fun checkReachableMrule(reachables, Mrule(I, _, _)) =
-	    if RegionSet.member(reachables, I) then
-		()
-	    else
-		Error.warning(I, "redundant match rule")
+            if RegionSet.member(reachables, I) then
+                ()
+            else
+                Error.warning(I, "redundant match rule")
 
     fun checkReachableMatchOpt(reachables, NONE)                             = ()
       | checkReachableMatchOpt(reachables, SOME(Match(_, mrule, match_opt))) =
-	    ( checkReachableMrule(reachables, mrule)
-	    ; checkReachableMatchOpt(reachables, match_opt)
-	    )
+            ( checkReachableMrule(reachables, mrule)
+            ; checkReachableMatchOpt(reachables, match_opt)
+            )
 
     fun checkMatch(E, match) =
-	let
-	    val (reachables, exhaustive) = matchMatch(E, ANY, match)
-	in
-	    checkReachableMatchOpt(reachables, SOME match)
-	  ; if exhaustive then
-		()
-	    else
-		Error.warning(infoMatch match, "match not exhaustive")
-	end
+        let
+            val (reachables, exhaustive) = matchMatch(E, ANY, match)
+        in
+            checkReachableMatchOpt(reachables, SOME match)
+          ; if exhaustive then
+                ()
+            else
+                Error.warning(infoMatch match, "match not exhaustive")
+        end
 
 
 
     (* Checking single patterns [Section 4.11, item 3] *)
 
     fun checkPat(E, pat) =
-	let
-	    val (_, exhaustive) = matchPat(E, (ANY, []), pat, ([], NONE))
-	in
-	    if exhaustive then
-		()
-	    else
-		Error.warning(infoPat pat, "pattern not exhaustive")
-	end
+        let
+            val (_, exhaustive) = matchPat(E, (ANY, []), pat, ([], NONE))
+        in
+            if exhaustive then
+                ()
+            else
+                Error.warning(infoPat pat, "pattern not exhaustive")
+        end
 
   end
 (* stop of CheckPattern.sml *)
@@ -9300,13 +9300,13 @@ signature ELAB_CORE =
 
     (* Export *)
 
-    val elabDec:		bool * Context * Dec -> Env
-    val elabTy:			Context * Ty -> Type
+    val elabDec:                bool * Context * Dec -> Env
+    val elabTy:                        Context * Ty -> Type
 
-    val tyvars:			TyVarseq -> TyVarSet * TyVar list
+    val tyvars:                        TyVarseq -> TyVarSet * TyVar list
 
-    val validBindVId:		VId -> bool
-    val validConBindVId:	VId -> bool
+    val validBindVId:                VId -> bool
+    val validConBindVId:        VId -> bool
 
   end
 (* stop of ELAB_CORE.sml *)
@@ -9377,9 +9377,9 @@ structure ElabCore :> ELAB_CORE =
 
     fun errorLongVId(I, s, longvid) = error(I, s ^ LongVId.toString longvid)
     fun errorLongTyCon(I, s, longtycon) =
-	    error(I, s ^ LongTyCon.toString longtycon)
+            error(I, s ^ LongTyCon.toString longtycon)
     fun errorLongStrId(I, s, longstrid) =
-	    error(I, s ^ LongStrId.toString longstrid)
+            error(I, s ^ LongStrId.toString longstrid)
 
 
 
@@ -9399,31 +9399,31 @@ structure ElabCore :> ELAB_CORE =
     (* Checking restriction for vids in binding [Section 2.9, 5th bullet] *)
 
     fun validBindVId vid =
-	    vid <> VId.fromString "true" andalso
-	    vid <> VId.fromString "false" andalso
-	    vid <> VId.fromString "nil" andalso
-	    vid <> VId.fromString "::"  andalso
-	    vid <> VId.fromString "ref"
+            vid <> VId.fromString "true" andalso
+            vid <> VId.fromString "false" andalso
+            vid <> VId.fromString "nil" andalso
+            vid <> VId.fromString "::"  andalso
+            vid <> VId.fromString "ref"
 
     fun validConBindVId vid =
-	    validBindVId vid andalso
-	    vid <> VId.fromString "it"
+            validBindVId vid andalso
+            vid <> VId.fromString "it"
 
 
     (* Treating tyvarseqs *)
 
     fun tyvars(TyVarseq(I, tyvars)) =
-	let
-	    fun collect(     [],       U) = U
-	      | collect(tyvar::tyvars, U) =
-		    if TyVarSet.member(U, tyvar) then
-			(* Syntactic restriction [Section 2.9, 3rd bullet] *)
-			errorTyVar(I, "duplicate type variable ", tyvar)
-		    else
-			collect(tyvars, TyVarSet.add(U, tyvar))
-	in
-	    ( collect(tyvars, TyVarSet.empty), tyvars )
-	end
+        let
+            fun collect(     [],       U) = U
+              | collect(tyvar::tyvars, U) =
+                    if TyVarSet.member(U, tyvar) then
+                        (* Syntactic restriction [Section 2.9, 3rd bullet] *)
+                        errorTyVar(I, "duplicate type variable ", tyvar)
+                    else
+                        collect(tyvars, TyVarSet.add(U, tyvar))
+        in
+            ( collect(tyvars, TyVarSet.empty), tyvars )
+        end
 
 
 
@@ -9434,7 +9434,7 @@ structure ElabCore :> ELAB_CORE =
       | typeSCon(SCon.CHAR _) = Type.fromOverloadingClass InitialStaticEnv.Char
       | typeSCon(SCon.REAL _) = Type.fromOverloadingClass InitialStaticEnv.Real
       | typeSCon(SCon.STRING _) =
-	    Type.fromOverloadingClass InitialStaticEnv.String
+            Type.fromOverloadingClass InitialStaticEnv.String
 
 
     (* Calculate sets of unguarded explicit type variables [Section 4.6] *)
@@ -9443,94 +9443,94 @@ structure ElabCore :> ELAB_CORE =
         val op+ = TyVarSet.union
 
         fun ? tyvarsX  NONE    = TyVarSet.empty
-	  | ? tyvarsX (SOME x) = tyvarsX x
+          | ? tyvarsX (SOME x) = tyvarsX x
     in
 
     fun unguardedTyVarsAtExp(RECORDAtExp(_, exprow_opt)) =
-	    ?unguardedTyVarsExpRow exprow_opt
+            ?unguardedTyVarsExpRow exprow_opt
       | unguardedTyVarsAtExp(LETAtExp(_, dec, exp)) =
-	    unguardedTyVarsDec dec + unguardedTyVarsExp exp
+            unguardedTyVarsDec dec + unguardedTyVarsExp exp
       | unguardedTyVarsAtExp(PARAtExp(_, exp)) =
-	    unguardedTyVarsExp exp
+            unguardedTyVarsExp exp
       | unguardedTyVarsAtExp _ = TyVarSet.empty
 
     and unguardedTyVarsExpRow(ExpRow(_, lab, exp, exprow_opt)) =
-	    unguardedTyVarsExp exp + ?unguardedTyVarsExpRow exprow_opt
+            unguardedTyVarsExp exp + ?unguardedTyVarsExpRow exprow_opt
 
     and unguardedTyVarsExp(ATEXPExp(_, atexp)) =
-	    unguardedTyVarsAtExp atexp
+            unguardedTyVarsAtExp atexp
       | unguardedTyVarsExp(APPExp(_, exp, atexp)) =
-	    unguardedTyVarsExp exp + unguardedTyVarsAtExp atexp
+            unguardedTyVarsExp exp + unguardedTyVarsAtExp atexp
       | unguardedTyVarsExp(TYPEDExp(_, exp, ty)) =
-	    unguardedTyVarsExp exp + unguardedTyVarsTy ty
+            unguardedTyVarsExp exp + unguardedTyVarsTy ty
       | unguardedTyVarsExp(HANDLEExp(_, exp, match)) =
-	    unguardedTyVarsExp exp + unguardedTyVarsMatch match
+            unguardedTyVarsExp exp + unguardedTyVarsMatch match
       | unguardedTyVarsExp(RAISEExp(_, exp)) =
-	    unguardedTyVarsExp exp
+            unguardedTyVarsExp exp
       | unguardedTyVarsExp(FNExp(_, match)) =
-	    unguardedTyVarsMatch match
+            unguardedTyVarsMatch match
 
     and unguardedTyVarsMatch(Match(_, mrule, match_opt)) =
-	    unguardedTyVarsMrule mrule + ?unguardedTyVarsMatch match_opt
+            unguardedTyVarsMrule mrule + ?unguardedTyVarsMatch match_opt
 
     and unguardedTyVarsMrule(Mrule(_, pat, exp)) =
-	    unguardedTyVarsPat pat + unguardedTyVarsExp exp
+            unguardedTyVarsPat pat + unguardedTyVarsExp exp
 
     and unguardedTyVarsDec(ABSTYPEDec(_, datbind, dec)) =
-	    unguardedTyVarsDec dec
+            unguardedTyVarsDec dec
       | unguardedTyVarsDec(EXCEPTIONDec(_, exbind)) =
-	    unguardedTyVarsExBind exbind
+            unguardedTyVarsExBind exbind
       | unguardedTyVarsDec(LOCALDec(_, dec1, dec2)) =
-	    unguardedTyVarsDec dec1 + unguardedTyVarsDec dec2
+            unguardedTyVarsDec dec1 + unguardedTyVarsDec dec2
       | unguardedTyVarsDec(SEQDec(_, dec1, dec2)) =
-	    unguardedTyVarsDec dec1 + unguardedTyVarsDec dec2
+            unguardedTyVarsDec dec1 + unguardedTyVarsDec dec2
       | unguardedTyVarsDec _ = TyVarSet.empty
 
     and unguardedTyVarsValBind(PLAINValBind(_, pat, exp, valbind_opt)) =
-	    unguardedTyVarsPat pat + unguardedTyVarsExp exp +
-	    ?unguardedTyVarsValBind valbind_opt
+            unguardedTyVarsPat pat + unguardedTyVarsExp exp +
+            ?unguardedTyVarsValBind valbind_opt
       | unguardedTyVarsValBind(RECValBind(_, valbind)) =
-	    unguardedTyVarsValBind valbind
+            unguardedTyVarsValBind valbind
 
     and unguardedTyVarsExBind(NEWExBind(_, _, vid, ty_opt, exbind_opt)) =
-	    ?unguardedTyVarsTy ty_opt + ?unguardedTyVarsExBind exbind_opt
+            ?unguardedTyVarsTy ty_opt + ?unguardedTyVarsExBind exbind_opt
       | unguardedTyVarsExBind(EQUALExBind(_, _, vid, _, longvid, exbind_opt)) =
-	    ?unguardedTyVarsExBind exbind_opt
+            ?unguardedTyVarsExBind exbind_opt
 
     and unguardedTyVarsAtPat(RECORDAtPat(_, patrow_opt)) =
-	    ?unguardedTyVarsPatRow patrow_opt
+            ?unguardedTyVarsPatRow patrow_opt
       | unguardedTyVarsAtPat(PARAtPat(_, pat)) =
-	    unguardedTyVarsPat pat
+            unguardedTyVarsPat pat
       | unguardedTyVarsAtPat _ = TyVarSet.empty
 
     and unguardedTyVarsPatRow(WILDCARDPatRow(_)) = TyVarSet.empty
       | unguardedTyVarsPatRow(ROWPatRow(_, lab, pat, patrow_opt)) =
-	    unguardedTyVarsPat pat + ?unguardedTyVarsPatRow patrow_opt
+            unguardedTyVarsPat pat + ?unguardedTyVarsPatRow patrow_opt
 
     and unguardedTyVarsPat(ATPATPat(_, atpat)) =
-	    unguardedTyVarsAtPat atpat
+            unguardedTyVarsAtPat atpat
       | unguardedTyVarsPat(CONPat(_, _, longvid, atpat)) =
-	    unguardedTyVarsAtPat atpat
+            unguardedTyVarsAtPat atpat
       | unguardedTyVarsPat(TYPEDPat(_, pat, ty)) =
-	    unguardedTyVarsPat pat + unguardedTyVarsTy ty
+            unguardedTyVarsPat pat + unguardedTyVarsTy ty
       | unguardedTyVarsPat(ASPat(_, _, vid, ty_opt, pat)) =
-	    ?unguardedTyVarsTy ty_opt + unguardedTyVarsPat pat
+            ?unguardedTyVarsTy ty_opt + unguardedTyVarsPat pat
 
     and unguardedTyVarsTy(TYVARTy(_, tyvar)) = TyVarSet.singleton tyvar
       | unguardedTyVarsTy(RECORDTy(_, tyrow_opt)) =
-	    ?unguardedTyVarsTyRow tyrow_opt
+            ?unguardedTyVarsTyRow tyrow_opt
       | unguardedTyVarsTy(TYCONTy(_, tyseq, longtycon)) =
-	    unguardedTyVarsTyseq tyseq
+            unguardedTyVarsTyseq tyseq
       | unguardedTyVarsTy(ARROWTy(_, ty, ty')) =
-	    unguardedTyVarsTy ty + unguardedTyVarsTy ty'
+            unguardedTyVarsTy ty + unguardedTyVarsTy ty'
       | unguardedTyVarsTy(PARTy(_, ty)) =
-	    unguardedTyVarsTy ty
+            unguardedTyVarsTy ty
 
     and unguardedTyVarsTyRow(TyRow(_, lab, ty, tyrow_opt)) =
-	    unguardedTyVarsTy ty + ?unguardedTyVarsTyRow tyrow_opt
+            unguardedTyVarsTy ty + ?unguardedTyVarsTyRow tyrow_opt
 
     and unguardedTyVarsTyseq(Tyseq(_, tys)) =
-	    List.foldl (fn(ty,U) => unguardedTyVarsTy ty + U) TyVarSet.empty tys
+            List.foldl (fn(ty,U) => unguardedTyVarsTy ty + U) TyVarSet.empty tys
 
     end (* local *)
 
@@ -9540,30 +9540,30 @@ structure ElabCore :> ELAB_CORE =
 
     local
         fun ? boundByX(NONE,   vid) = false
-	  | ? boundByX(SOME x, vid) = boundByX(x, vid)
+          | ? boundByX(SOME x, vid) = boundByX(x, vid)
     in
 
     fun boundByAtPat(WILDCARDAtPat(_), vid)   = false
       | boundByAtPat(SCONAtPat(_, scon), vid) = false
       | boundByAtPat(LONGVIDAtPat(_, _, longvid), vid) =
-	let
-	    val (strids,vid') = LongVId.explode longvid
-	in
-	    List.null strids andalso vid = vid'
-	end
+        let
+            val (strids,vid') = LongVId.explode longvid
+        in
+            List.null strids andalso vid = vid'
+        end
       | boundByAtPat(RECORDAtPat(_, patrow_opt), vid) =
-	    ?boundByPatRow(patrow_opt, vid)
+            ?boundByPatRow(patrow_opt, vid)
       | boundByAtPat(PARAtPat(_, pat), vid) = boundByPat(pat, vid)
 
     and boundByPatRow(WILDCARDPatRow(_), vid) = false
       | boundByPatRow(ROWPatRow(_, lab, pat, patrow_opt), vid) =
-	    boundByPat(pat, vid) orelse ?boundByPatRow(patrow_opt, vid)
+            boundByPat(pat, vid) orelse ?boundByPatRow(patrow_opt, vid)
 
     and boundByPat(ATPATPat(_, atpat), vid)           = boundByAtPat(atpat, vid)
       | boundByPat(CONPat(_, _, longvid, atpat), vid) = boundByAtPat(atpat, vid)
       | boundByPat(TYPEDPat(_, pat, ty), vid)         = boundByPat(pat, vid)
       | boundByPat(ASPat(_, _, vid', ty_opt, pat), vid) =
-	    vid = vid' orelse boundByPat(pat, vid)
+            vid = vid' orelse boundByPat(pat, vid)
 
     end (* local *)
 
@@ -9573,33 +9573,33 @@ structure ElabCore :> ELAB_CORE =
 
     local
         fun ? isNonExpansiveX C  NONE    = true
-	  | ? isNonExpansiveX C (SOME x) = isNonExpansiveX C x
+          | ? isNonExpansiveX C (SOME x) = isNonExpansiveX C x
     in
 
     fun isNonExpansiveAtExp C (SCONAtExp(_, scon))          = true
       | isNonExpansiveAtExp C (LONGVIDAtExp(_, _, longvid)) = true
       | isNonExpansiveAtExp C (RECORDAtExp(_, exprow_opt))  =
-	    ?isNonExpansiveExpRow C exprow_opt
+            ?isNonExpansiveExpRow C exprow_opt
       | isNonExpansiveAtExp C (PARAtExp(_, exp))    = isNonExpansiveExp C exp
       | isNonExpansiveAtExp C  _                    = false
 
     and isNonExpansiveExpRow C (ExpRow(_, lab, exp, exprow_opt)) =
-	    isNonExpansiveExp C exp andalso ?isNonExpansiveExpRow C exprow_opt
+            isNonExpansiveExp C exp andalso ?isNonExpansiveExpRow C exprow_opt
 
     and isNonExpansiveExp C (ATEXPExp(_, atexp))   = isNonExpansiveAtExp C atexp
       | isNonExpansiveExp C (APPExp(_, exp, atexp)) =
-	    isConExp C exp andalso isNonExpansiveAtExp C atexp
+            isConExp C exp andalso isNonExpansiveAtExp C atexp
       | isNonExpansiveExp C (TYPEDExp(_, exp, ty))  = isNonExpansiveExp C exp
       | isNonExpansiveExp C (FNExp(_, match))       = true
       | isNonExpansiveExp C  _                      = false
 
     and isConAtExp C (PARAtExp(_, exp))            = isConExp C exp
       | isConAtExp C (LONGVIDAtExp(_, _, longvid)) =
-	    LongVId.explode longvid <> ([],VId.fromString "ref") andalso
-	    (case Context.findLongVId(C, longvid)
-	       of SOME(_,is) => is=IdStatus.c orelse is=IdStatus.e
-		| NONE       => false
-	    )
+            LongVId.explode longvid <> ([],VId.fromString "ref") andalso
+            (case Context.findLongVId(C, longvid)
+               of SOME(_,is) => is=IdStatus.c orelse is=IdStatus.e
+                | NONE       => false
+            )
       | isConAtExp C  _                            = false
 
     and isConExp C (ATEXPExp(_, atexp))                  = isConAtExp C atexp
@@ -9613,30 +9613,30 @@ structure ElabCore :> ELAB_CORE =
     (* Closure of value environments [Section 4.8] *)
 
     fun hasNonExpansiveRHS C (vid, PLAINValBind(I, pat, exp, valbind_opt)) =
-	if boundByPat(pat, vid) then
-	    isNonExpansiveExp C exp
-	else
-	    hasNonExpansiveRHS C (vid, valOf valbind_opt)
+        if boundByPat(pat, vid) then
+            isNonExpansiveExp C exp
+        else
+            hasNonExpansiveRHS C (vid, valOf valbind_opt)
 
       | hasNonExpansiveRHS C (vid, RECValBind _) =
-	    (* A rec valbind can only contain functions. *)
-	    true
+            (* A rec valbind can only contain functions. *)
+            true
 
     fun Clos (C,valbind) VE =
-	let
-	    val tyvarsC = Context.tyvars C
+        let
+            val tyvarsC = Context.tyvars C
 
-	    fun alphas(vid, tau) =
-		if hasNonExpansiveRHS C (vid, valbind) then
-		    TyVarSet.listItems
-			(TyVarSet.difference(Type.tyvars tau, tyvarsC))
-		else
-		    []
-	in
-	    VIdMap.mapi
-		(fn(vid, ((_,tau),is)) => ((alphas(vid,tau),tau),is))
-		VE
-	end
+            fun alphas(vid, tau) =
+                if hasNonExpansiveRHS C (vid, valbind) then
+                    TyVarSet.listItems
+                        (TyVarSet.difference(Type.tyvars tau, tyvarsC))
+                else
+                    []
+        in
+            VIdMap.mapi
+                (fn(vid, ((_,tau),is)) => ((alphas(vid,tau),tau),is))
+                VE
+        end
 
 
     (* Inference rules [Section 4.10] *)
@@ -9645,619 +9645,619 @@ structure ElabCore :> ELAB_CORE =
     (* Atomic Expressions *)
 
     fun elabAtExp(C, SCONAtExp(I, scon)) =
-	(* [Rule 1] *)
-	typeSCon scon
+        (* [Rule 1] *)
+        typeSCon scon
 
       | elabAtExp(C, LONGVIDAtExp(I, _, longvid)) =
-	(* [Rule 2] *)
-	let
-	    val (sigma,is) = case Context.findLongVId(C, longvid)
-			       of SOME valstr => valstr
-			        | NONE =>
-				  errorLongVId(I, "unknown identifier ",longvid)
-	    val tau = TypeScheme.instance sigma
-	in
-	    tau
-	end
+        (* [Rule 2] *)
+        let
+            val (sigma,is) = case Context.findLongVId(C, longvid)
+                               of SOME valstr => valstr
+                                | NONE =>
+                                  errorLongVId(I, "unknown identifier ",longvid)
+            val tau = TypeScheme.instance sigma
+        in
+            tau
+        end
 
       | elabAtExp(C, RECORDAtExp(I, exprow_opt)) =
-	(* [Rule 3] *)
-	let
-	    val rho = case exprow_opt
-			of NONE        => Type.emptyRho
-			 | SOME exprow => elabExpRow(C, exprow)
-	in
-	    Type.fromRowType rho
-	end
+        (* [Rule 3] *)
+        let
+            val rho = case exprow_opt
+                        of NONE        => Type.emptyRho
+                         | SOME exprow => elabExpRow(C, exprow)
+        in
+            Type.fromRowType rho
+        end
 
       | elabAtExp(C, LETAtExp(I, dec, exp)) =
-	(* [Rule 4] *)
-	let
-	    val E   = elabDec(false, C, dec)
-	    val tau = elabExp(C oplusE E, exp)
-	in
-	    if TyNameSet.isSubset(Type.tynames tau, Context.Tof C) then
-		tau
-	    else
-		error(I, "escaping local type name in let expression")
-	end
+        (* [Rule 4] *)
+        let
+            val E   = elabDec(false, C, dec)
+            val tau = elabExp(C oplusE E, exp)
+        in
+            if TyNameSet.isSubset(Type.tynames tau, Context.Tof C) then
+                tau
+            else
+                error(I, "escaping local type name in let expression")
+        end
 
       | elabAtExp(C, PARAtExp(I, exp)) =
-	(* [Rule 5] *)
-	let
-	    val tau = elabExp(C, exp)
-	in
-	    tau
-	end
+        (* [Rule 5] *)
+        let
+            val tau = elabExp(C, exp)
+        in
+            tau
+        end
 
 
     (* Expression Rows *)
 
     and elabExpRow(C, ExpRow(I, lab, exp, exprow_opt)) =
-	(* [Rule 6] *)
-	let
-	    val tau = elabExp(C, exp)
-	    val rho = case exprow_opt
-			of NONE        => Type.emptyRho
-			 | SOME exprow => elabExpRow(C, exprow)
-	in
-	    if isSome(Type.findLab(rho, lab)) then
-		(* Syntactic restriction [Section 2.9, 1st bullet] *)
-		errorLab(I, "duplicate label ", lab)
-	    else
-		Type.insertRho(rho, lab, tau)
-	end
+        (* [Rule 6] *)
+        let
+            val tau = elabExp(C, exp)
+            val rho = case exprow_opt
+                        of NONE        => Type.emptyRho
+                         | SOME exprow => elabExpRow(C, exprow)
+        in
+            if isSome(Type.findLab(rho, lab)) then
+                (* Syntactic restriction [Section 2.9, 1st bullet] *)
+                errorLab(I, "duplicate label ", lab)
+            else
+                Type.insertRho(rho, lab, tau)
+        end
 
 
     (* Expressions *)
 
     and elabExp(C, ATEXPExp(I, atexp)) =
-	(* [Rule 7] *)
-	let
-	    val tau = elabAtExp(C, atexp)
-	in
-	    tau
-	end
+        (* [Rule 7] *)
+        let
+            val tau = elabAtExp(C, atexp)
+        in
+            tau
+        end
 
       | elabExp(C, APPExp(I, exp, atexp)) =
-	(* [Rule 8] *)
-	let
-	    val tau1 = elabExp(C, exp)
-	    val tau' = elabAtExp(C, atexp)
-	    val tau  = Type.invent()
-	in
-	    Type.unify(tau1, Type.fromFunType(tau',tau))
-	    handle Type.Unify => error(I, "type mismatch on application")
-	  ; tau
-	end
+        (* [Rule 8] *)
+        let
+            val tau1 = elabExp(C, exp)
+            val tau' = elabAtExp(C, atexp)
+            val tau  = Type.invent()
+        in
+            Type.unify(tau1, Type.fromFunType(tau',tau))
+            handle Type.Unify => error(I, "type mismatch on application")
+          ; tau
+        end
 
       | elabExp(C, TYPEDExp(I, exp, ty)) =
-	(* [Rule 9] *)
-	let
-	    val tau1 = elabExp(C, exp)
-	    val tau  = elabTy(C, ty)
-	in
-	    Type.unify(tau1,tau)
-	    handle Type.Unify =>
-		   error(I, "expression does not match annotation")
-	  ; tau
-	end
+        (* [Rule 9] *)
+        let
+            val tau1 = elabExp(C, exp)
+            val tau  = elabTy(C, ty)
+        in
+            Type.unify(tau1,tau)
+            handle Type.Unify =>
+                   error(I, "expression does not match annotation")
+          ; tau
+        end
 
       | elabExp(C, HANDLEExp(I, exp, match)) =
-	(* [Rule 10] *)
-	let
-	    val tau1 = elabExp(C, exp)
-	    val tau2 = elabMatch(C, match)
-	in
-	    Type.unify(tau1,tau2)
-	    handle Type.Unify =>
-		   error(I, "type mismatch between expression and handler")
-	  ; tau1
-	end
+        (* [Rule 10] *)
+        let
+            val tau1 = elabExp(C, exp)
+            val tau2 = elabMatch(C, match)
+        in
+            Type.unify(tau1,tau2)
+            handle Type.Unify =>
+                   error(I, "type mismatch between expression and handler")
+          ; tau1
+        end
 
       | elabExp(C, RAISEExp(I, exp)) =
-	(* [Rule 11] *)
-	let
-	    val tau1 = elabExp(C, exp)
-	in
-	    Type.unify(tau1, InitialStaticEnv.tauExn)
-	    handle Type.Unify =>
-		   error(I, "raised expression is not an exception")
-	  ; Type.invent()
-	end
+        (* [Rule 11] *)
+        let
+            val tau1 = elabExp(C, exp)
+        in
+            Type.unify(tau1, InitialStaticEnv.tauExn)
+            handle Type.Unify =>
+                   error(I, "raised expression is not an exception")
+          ; Type.invent()
+        end
 
       | elabExp(C, FNExp(I, match)) =
-	(* [Rule 12] *)
-	let
-	    val tau = elabMatch(C, match)
-	in
-	    (* Further restriction [Section 4.11, item 2] *)
-	    CheckPattern.checkMatch(Context.Eof C, match)
-	  ; tau
-	end
+        (* [Rule 12] *)
+        let
+            val tau = elabMatch(C, match)
+        in
+            (* Further restriction [Section 4.11, item 2] *)
+            CheckPattern.checkMatch(Context.Eof C, match)
+          ; tau
+        end
 
 
     (* Matches *)
 
     and elabMatch(C, Match(I, mrule, match_opt)) =
-	(* [Rule 13] *)
-	let
-	    val tau = elabMrule(C, mrule)
-	in
-	    case match_opt
-	      of NONE       => tau
-	       | SOME match =>
-		 let
-		     val tau2 = elabMatch(C, match)
-		 in
-		     Type.unify(tau, tau2)
-		     handle Type.Unify =>
-			    error(I, "type mismatch between different matches")
-		   ; tau
-		 end
-	end
+        (* [Rule 13] *)
+        let
+            val tau = elabMrule(C, mrule)
+        in
+            case match_opt
+              of NONE       => tau
+               | SOME match =>
+                 let
+                     val tau2 = elabMatch(C, match)
+                 in
+                     Type.unify(tau, tau2)
+                     handle Type.Unify =>
+                            error(I, "type mismatch between different matches")
+                   ; tau
+                 end
+        end
 
 
     (* Match rules *)
 
     and elabMrule(C, Mrule(I, pat, exp)) =
-	(* [Rule 14] *)
-	let
-	    val (VE,tau) = elabPat(C, pat)
-	    val  tau'    = elabExp(C plusVE VE, exp)
-	    (* Side condition on type names is always ensured. *)
-	in
-	    Type.fromFunType(tau,tau')
-	end
+        (* [Rule 14] *)
+        let
+            val (VE,tau) = elabPat(C, pat)
+            val  tau'    = elabExp(C plusVE VE, exp)
+            (* Side condition on type names is always ensured. *)
+        in
+            Type.fromFunType(tau,tau')
+        end
 
 
     (* Declarations *)
 
     and elabDec(toplevel, C, VALDec(I, tyvarseq, valbind)) =
-	(* [Rule 15] *)
-	let
-	    val U'  = #1(tyvars(tyvarseq))
-		      (* Collect implicitly bound tyvars [Section 4.6] *)
-	    val U   = TyVarSet.union(U',
-			TyVarSet.difference(unguardedTyVarsValBind valbind,
-					    Context.Uof C))
-	    val VE  = elabValBind(toplevel, C plusU U, valbind)
-	    val VE' = Clos(C,valbind) VE
-	    val  _  = StaticEnv.defaultOverloaded VE'
-	in
-	    if not(TyVarSet.isEmpty(
-				TyVarSet.intersection(Context.Uof C, U))) then
-		(* Syntactic restriction [Section 2.9, last bullet] *)
-		error(I, "some type variables shadow previous ones")
-	    else if StaticEnv.containsFlexibleType VE' then
-		(* Further restriction [Section 4.11, item 1] *)
-		error(I, "unresolved flexible record type")
-	    else if TyVarSet.isEmpty(
-			TyVarSet.intersection(U, StaticEnv.tyvarsVE VE')) then
-		StaticEnv.fromVE VE'
-	    else
-		error(I, "some explicit type variables cannot be generalised")
-	end
+        (* [Rule 15] *)
+        let
+            val U'  = #1(tyvars(tyvarseq))
+                      (* Collect implicitly bound tyvars [Section 4.6] *)
+            val U   = TyVarSet.union(U',
+                        TyVarSet.difference(unguardedTyVarsValBind valbind,
+                                            Context.Uof C))
+            val VE  = elabValBind(toplevel, C plusU U, valbind)
+            val VE' = Clos(C,valbind) VE
+            val  _  = StaticEnv.defaultOverloaded VE'
+        in
+            if not(TyVarSet.isEmpty(
+                                TyVarSet.intersection(Context.Uof C, U))) then
+                (* Syntactic restriction [Section 2.9, last bullet] *)
+                error(I, "some type variables shadow previous ones")
+            else if StaticEnv.containsFlexibleType VE' then
+                (* Further restriction [Section 4.11, item 1] *)
+                error(I, "unresolved flexible record type")
+            else if TyVarSet.isEmpty(
+                        TyVarSet.intersection(U, StaticEnv.tyvarsVE VE')) then
+                StaticEnv.fromVE VE'
+            else
+                error(I, "some explicit type variables cannot be generalised")
+        end
 
       | elabDec(toplevel, C, TYPEDec(I, typbind)) =
-	(* [Rule 16] *)
-	let
-	    val TE = elabTypBind(C, typbind)
-	in
-	    StaticEnv.fromTE TE
-	end
+        (* [Rule 16] *)
+        let
+            val TE = elabTypBind(C, typbind)
+        in
+            StaticEnv.fromTE TE
+        end
 
       | elabDec(toplevel, C, DATATYPEDec(I, datbind)) =
-	(* [Rule 17] *)
-	let
-	    val      TE1  = lhsDatBind datbind
-	    val (VE2,TE2) = elabDatBind(C oplusTE TE1, datbind)
-	    val (TE, VE)  = StaticEnv.maximiseEquality(TE2,VE2)
-	    (* Side condition on type names is always ensured. *)
-	in
-	    StaticEnv.fromVEandTE(VE,TE)
-	end
+        (* [Rule 17] *)
+        let
+            val      TE1  = lhsDatBind datbind
+            val (VE2,TE2) = elabDatBind(C oplusTE TE1, datbind)
+            val (TE, VE)  = StaticEnv.maximiseEquality(TE2,VE2)
+            (* Side condition on type names is always ensured. *)
+        in
+            StaticEnv.fromVEandTE(VE,TE)
+        end
 
       | elabDec(toplevel, C, REPLICATIONDec(I, tycon, longtycon)) =
-	(* [Rule 18] *)
-	let
-	    val (theta,VE) = case Context.findLongTyCon(C, longtycon)
-			      of SOME tystr => tystr
-			       | NONE =>
-				 errorLongTyCon(I, "unknown type ", longtycon)
-	    val  TE        = TyConMap.singleton(tycon, (theta,VE))
-	in
-	    StaticEnv.fromVEandTE(VE,TE)
-	end
+        (* [Rule 18] *)
+        let
+            val (theta,VE) = case Context.findLongTyCon(C, longtycon)
+                              of SOME tystr => tystr
+                               | NONE =>
+                                 errorLongTyCon(I, "unknown type ", longtycon)
+            val  TE        = TyConMap.singleton(tycon, (theta,VE))
+        in
+            StaticEnv.fromVEandTE(VE,TE)
+        end
 
       | elabDec(toplevel, C, ABSTYPEDec(I, datbind, dec)) =
-	(* [Rule 19] *)
-	let
-	    val      TE1  = lhsDatBind datbind
-	    val (VE2,TE2) = elabDatBind(C oplusTE TE1, datbind)
-	    val (TE, VE)  = StaticEnv.maximiseEquality(TE2,VE2)
-	    val    E      = elabDec(false, C oplusVEandTE (VE,TE), dec)
-	    (* Side condition on type names is always ensured. *)
-	in
-	    StaticEnv.Abs(TE,E)
-	end
+        (* [Rule 19] *)
+        let
+            val      TE1  = lhsDatBind datbind
+            val (VE2,TE2) = elabDatBind(C oplusTE TE1, datbind)
+            val (TE, VE)  = StaticEnv.maximiseEquality(TE2,VE2)
+            val    E      = elabDec(false, C oplusVEandTE (VE,TE), dec)
+            (* Side condition on type names is always ensured. *)
+        in
+            StaticEnv.Abs(TE,E)
+        end
 
       | elabDec(toplevel, C, EXCEPTIONDec(I, exbind)) =
-	(* [Rule 20] *)
-	let
-	    val VE = elabExBind(C, exbind)
-	in
-	    StaticEnv.fromVE VE
-	end
+        (* [Rule 20] *)
+        let
+            val VE = elabExBind(C, exbind)
+        in
+            StaticEnv.fromVE VE
+        end
 
       | elabDec(toplevel, C, LOCALDec(I, dec1, dec2)) =
-	(* [Rule 21] *)
-	let
-	    val E1 = elabDec(false, C, dec1)
-	    val E2 = elabDec(false, C oplusE E1, dec2)
-	in
-	    E2
-	end
+        (* [Rule 21] *)
+        let
+            val E1 = elabDec(false, C, dec1)
+            val E2 = elabDec(false, C oplusE E1, dec2)
+        in
+            E2
+        end
 
       | elabDec(toplevel, C, OPENDec(I, longstrids)) =
-	(* [Rule 22] *)
-	let
-	    val Es =
-		List.map
-		    (fn longstrid =>
-			case Context.findLongStrId(C, longstrid)
-			  of SOME(StaticEnv.Str E) => E
-			   | NONE =>
-			     errorLongStrId(I, "unknown structure ", longstrid))
-		    longstrids
-	in
-	    List.foldl StaticEnv.plus StaticEnv.empty Es
-	end
+        (* [Rule 22] *)
+        let
+            val Es =
+                List.map
+                    (fn longstrid =>
+                        case Context.findLongStrId(C, longstrid)
+                          of SOME(StaticEnv.Str E) => E
+                           | NONE =>
+                             errorLongStrId(I, "unknown structure ", longstrid))
+                    longstrids
+        in
+            List.foldl StaticEnv.plus StaticEnv.empty Es
+        end
 
       | elabDec(toplevel, C, EMPTYDec(I)) =
-	(* [Rule 23] *)
-	StaticEnv.empty
+        (* [Rule 23] *)
+        StaticEnv.empty
 
       | elabDec(toplevel, C, SEQDec(I, dec1, dec2)) =
-	(* [Rule 24] *)
-	let
-	    val E1 = elabDec(toplevel, C, dec1)
-	    val E2 = elabDec(toplevel, C oplusE E1, dec2)
-	in
-	    StaticEnv.plus(E1, E2)
-	end
+        (* [Rule 24] *)
+        let
+            val E1 = elabDec(toplevel, C, dec1)
+            val E2 = elabDec(toplevel, C oplusE E1, dec2)
+        in
+            StaticEnv.plus(E1, E2)
+        end
 
 
     (* Value Bindings *)
 
     and elabValBind(toplevel, C, PLAINValBind(I, pat, exp, valbind_opt)) =
-	(* [Rule 25] *)
-	let
-	    val (VE,tau1) = elabPat(C, pat)
-	    val     tau2  = elabExp(C, exp)
-	    val VE'       = case valbind_opt
-			      of NONE         => VIdMap.empty
-			       | SOME valbind => elabValBind(toplevel, C, valbind)
-	in
-	    Type.unify(tau1,tau2)
-	    handle Type.Unify =>
-		   error(I, "type mismatch between pattern and expression")
-	  ; if toplevel then () else
-		(* Further restriction [Section 4.11, item 3] *)
-		CheckPattern.checkPat(Context.Eof C, pat)
-	  ; VIdMap.unionWithi
-		(fn(vid,_,_) =>
-		 (* Syntactic restriction [Section 2.9, 2nd bullet] *)
-		 errorVId(I, "duplicate variable ", vid))
-		(VE,VE')
-	end
+        (* [Rule 25] *)
+        let
+            val (VE,tau1) = elabPat(C, pat)
+            val     tau2  = elabExp(C, exp)
+            val VE'       = case valbind_opt
+                              of NONE         => VIdMap.empty
+                               | SOME valbind => elabValBind(toplevel, C, valbind)
+        in
+            Type.unify(tau1,tau2)
+            handle Type.Unify =>
+                   error(I, "type mismatch between pattern and expression")
+          ; if toplevel then () else
+                (* Further restriction [Section 4.11, item 3] *)
+                CheckPattern.checkPat(Context.Eof C, pat)
+          ; VIdMap.unionWithi
+                (fn(vid,_,_) =>
+                 (* Syntactic restriction [Section 2.9, 2nd bullet] *)
+                 errorVId(I, "duplicate variable ", vid))
+                (VE,VE')
+        end
 
       | elabValBind(toplevel, C, RECValBind(I, valbind)) =
-	(* [Rule 26] *)
-	let
-	    val VE1 = lhsRecValBind valbind
-	    val VE  = elabValBind(toplevel, C plusVE VE1, valbind)
-	    (* Side condition on type names is always ensured. *)
-	in
-	    VE
-	end
+        (* [Rule 26] *)
+        let
+            val VE1 = lhsRecValBind valbind
+            val VE  = elabValBind(toplevel, C plusVE VE1, valbind)
+            (* Side condition on type names is always ensured. *)
+        in
+            VE
+        end
 
 
     (* Type Bindings *)
 
     and elabTypBind(C, TypBind(I, tyvarseq, tycon, ty, typbind_opt)) =
-	(* [Rule 27] *)
-	let
-	    val (U,alphas) = tyvars tyvarseq
-	    val tau        = elabTy(C, ty)
-	    val TE         = case typbind_opt
-			       of NONE         => TyConMap.empty
-				| SOME typbind => elabTypBind(C, typbind)
-	in
-	    if not(TyVarSet.isSubset(Type.tyvars tau, U)) then
-		(* Syntactic restriction (missing in the Definition!) *)
-		error(I, "free type variables in type binding")
-	    else if isSome(TyConMap.find(TE, tycon)) then
-		(* Syntactic restriction [Section 2.9, 2nd bullet] *)
-		errorTyCon(I, "duplicate type constructor ", tycon)
-	    else
-		TyConMap.insert(TE, tycon, ((alphas,tau),VIdMap.empty))
-	end
+        (* [Rule 27] *)
+        let
+            val (U,alphas) = tyvars tyvarseq
+            val tau        = elabTy(C, ty)
+            val TE         = case typbind_opt
+                               of NONE         => TyConMap.empty
+                                | SOME typbind => elabTypBind(C, typbind)
+        in
+            if not(TyVarSet.isSubset(Type.tyvars tau, U)) then
+                (* Syntactic restriction (missing in the Definition!) *)
+                error(I, "free type variables in type binding")
+            else if isSome(TyConMap.find(TE, tycon)) then
+                (* Syntactic restriction [Section 2.9, 2nd bullet] *)
+                errorTyCon(I, "duplicate type constructor ", tycon)
+            else
+                TyConMap.insert(TE, tycon, ((alphas,tau),VIdMap.empty))
+        end
 
 
     (* Datatype Bindings *)
 
     and elabDatBind(C, DatBind(I, tyvarseq, tycon, conbind, datbind_opt)) =
-	(* [Rule 28, part 2] *)
-	let
-	    val (U,alphas)   = tyvars tyvarseq
-	    val (alphas,tau) = case Context.findTyCon(C, tycon)
-				 of SOME(theta,VE) => theta
-				  | NONE => (* lhsDatBind inserted it! *)
-				    raise Fail "ElabCore.elabDatBind: \
-						\tycon not pre-bound"
-	    val VE       = elabConBind(C,tau, conbind)
-	    val(VE',TE') = case datbind_opt
-			     of NONE         => ( VIdMap.empty, TyConMap.empty )
-			      | SOME datbind => elabDatBind(C, datbind)
-				(* Side condition on t is always true. *)
-	    val ClosVE   = if TyVarSet.isSubset(StaticEnv.tyvarsVE VE, U) then
-			     StaticEnv.Clos VE
-			   else
-			     (* Syntactic restriction (missing in Definition!)*)
-			     error(I, "free type variables in datatype binding")
-	in
-	    if isSome(TyConMap.find(TE', tycon)) then
-		  (* Syntactic restriction [Section 2.9, 2nd bullet] *)
-		  errorTyCon(I, "duplicate type constructor ", tycon)
-	    else
-	    ( VIdMap.unionWithi (fn(vid,_,_) =>
-		  (* Syntactic restriction [Section 2.9, 2nd bullet] *)
-		  errorVId(I, "duplicate data cnstructor ", vid)) (ClosVE,VE')
-	    , TyConMap.insert(TE', tycon, ((alphas,tau),ClosVE))
-	    )
-	end
+        (* [Rule 28, part 2] *)
+        let
+            val (U,alphas)   = tyvars tyvarseq
+            val (alphas,tau) = case Context.findTyCon(C, tycon)
+                                 of SOME(theta,VE) => theta
+                                  | NONE => (* lhsDatBind inserted it! *)
+                                    raise Fail "ElabCore.elabDatBind: \
+                                                \tycon not pre-bound"
+            val VE       = elabConBind(C,tau, conbind)
+            val(VE',TE') = case datbind_opt
+                             of NONE         => ( VIdMap.empty, TyConMap.empty )
+                              | SOME datbind => elabDatBind(C, datbind)
+                                (* Side condition on t is always true. *)
+            val ClosVE   = if TyVarSet.isSubset(StaticEnv.tyvarsVE VE, U) then
+                             StaticEnv.Clos VE
+                           else
+                             (* Syntactic restriction (missing in Definition!)*)
+                             error(I, "free type variables in datatype binding")
+        in
+            if isSome(TyConMap.find(TE', tycon)) then
+                  (* Syntactic restriction [Section 2.9, 2nd bullet] *)
+                  errorTyCon(I, "duplicate type constructor ", tycon)
+            else
+            ( VIdMap.unionWithi (fn(vid,_,_) =>
+                  (* Syntactic restriction [Section 2.9, 2nd bullet] *)
+                  errorVId(I, "duplicate data cnstructor ", vid)) (ClosVE,VE')
+            , TyConMap.insert(TE', tycon, ((alphas,tau),ClosVE))
+            )
+        end
 
 
     (* Constructor Bindings *)
 
     and elabConBind(C,tau, ConBind(I, _, vid, ty_opt, conbind_opt)) =
-	(* [Rule 29] *)
-	let
-	    val tau1 = case ty_opt
-			 of NONE    => tau
-			  | SOME ty =>
-			    let
-				val tau' = elabTy(C, ty)
-			    in
-			        Type.fromFunType(tau',tau)
-			    end
-	    val VE   = case conbind_opt
-			 of NONE         => VIdMap.empty
-			  | SOME conbind => elabConBind(C,tau, conbind)
-	in
-	    if isSome(VIdMap.find(VE, vid)) then
-		(* Syntactic restriction [Section 2.9, 2nd bullet] *)
-		errorVId(I, "duplicate data constructor ", vid)
-	    else if not(validConBindVId vid) then
-		(* Syntactic restriction [Section 2.9, 5th bullet] *)
-		errorVId(I, "illegal rebinding of identifier ", vid)
-	    else
-		VIdMap.insert(VE, vid, (([],tau1),IdStatus.c))
-	end
+        (* [Rule 29] *)
+        let
+            val tau1 = case ty_opt
+                         of NONE    => tau
+                          | SOME ty =>
+                            let
+                                val tau' = elabTy(C, ty)
+                            in
+                                Type.fromFunType(tau',tau)
+                            end
+            val VE   = case conbind_opt
+                         of NONE         => VIdMap.empty
+                          | SOME conbind => elabConBind(C,tau, conbind)
+        in
+            if isSome(VIdMap.find(VE, vid)) then
+                (* Syntactic restriction [Section 2.9, 2nd bullet] *)
+                errorVId(I, "duplicate data constructor ", vid)
+            else if not(validConBindVId vid) then
+                (* Syntactic restriction [Section 2.9, 5th bullet] *)
+                errorVId(I, "illegal rebinding of identifier ", vid)
+            else
+                VIdMap.insert(VE, vid, (([],tau1),IdStatus.c))
+        end
 
 
     (* Exception Bindings *)
 
     and elabExBind(C, NEWExBind(I, _, vid, ty_opt, exbind_opt)) =
-	(* [Rule 30] *)
-	let
-	    val tau1 = case ty_opt
-			 of NONE    => InitialStaticEnv.tauExn
-			  | SOME ty =>
-			    let
-				val tau = elabTy(C, ty)
-			    in
-			        Type.fromFunType(tau, InitialStaticEnv.tauExn)
-			    end
-	    val VE   = case exbind_opt
-			 of NONE        => VIdMap.empty
-			  | SOME exbind => elabExBind(C, exbind)
-	in
-	    if isSome(VIdMap.find(VE, vid)) then
-		(* Syntactic restriction [Section 2.9, 2nd bullet] *)
-		errorVId(I, "duplicate exception constructor ", vid)
-	    else if not(validConBindVId vid) then
-		(* Syntactic restriction [Section 2.9, 5th bullet] *)
-		errorVId(I, "illegal rebinding of identifier ", vid)
-	    else
-		VIdMap.insert(VE, vid, (([],tau1),IdStatus.e))
-	end
+        (* [Rule 30] *)
+        let
+            val tau1 = case ty_opt
+                         of NONE    => InitialStaticEnv.tauExn
+                          | SOME ty =>
+                            let
+                                val tau = elabTy(C, ty)
+                            in
+                                Type.fromFunType(tau, InitialStaticEnv.tauExn)
+                            end
+            val VE   = case exbind_opt
+                         of NONE        => VIdMap.empty
+                          | SOME exbind => elabExBind(C, exbind)
+        in
+            if isSome(VIdMap.find(VE, vid)) then
+                (* Syntactic restriction [Section 2.9, 2nd bullet] *)
+                errorVId(I, "duplicate exception constructor ", vid)
+            else if not(validConBindVId vid) then
+                (* Syntactic restriction [Section 2.9, 5th bullet] *)
+                errorVId(I, "illegal rebinding of identifier ", vid)
+            else
+                VIdMap.insert(VE, vid, (([],tau1),IdStatus.e))
+        end
 
       | elabExBind(C, EQUALExBind(I, _, vid, _, longvid, exbind_opt)) =
-	(* [Rule 31] *)
-	let
-	    val tau = case Context.findLongVId(C, longvid)
-		        of SOME(([],tau),IdStatus.e) => tau
-			 | SOME _ =>
-			   errorLongVId(I, "non-exception identifier ", longvid)
-			 | NONE =>
-			   errorLongVId(I, "unknown identifier ", longvid)
-	    val VE  = case exbind_opt
-			of NONE        => VIdMap.empty
-			 | SOME exbind => elabExBind(C, exbind)
-	in
-	    if isSome(VIdMap.find(VE, vid)) then
-		(* Syntactic restriction [Section 2.9, 2nd bullet] *)
-		errorVId(I, "duplicate exception constructor ", vid)
-	    else
-		VIdMap.insert(VE, vid, (([],tau),IdStatus.e))
-	end
+        (* [Rule 31] *)
+        let
+            val tau = case Context.findLongVId(C, longvid)
+                        of SOME(([],tau),IdStatus.e) => tau
+                         | SOME _ =>
+                           errorLongVId(I, "non-exception identifier ", longvid)
+                         | NONE =>
+                           errorLongVId(I, "unknown identifier ", longvid)
+            val VE  = case exbind_opt
+                        of NONE        => VIdMap.empty
+                         | SOME exbind => elabExBind(C, exbind)
+        in
+            if isSome(VIdMap.find(VE, vid)) then
+                (* Syntactic restriction [Section 2.9, 2nd bullet] *)
+                errorVId(I, "duplicate exception constructor ", vid)
+            else
+                VIdMap.insert(VE, vid, (([],tau),IdStatus.e))
+        end
 
 
     (* Atomic Patterns *)
 
     and elabAtPat(C, WILDCARDAtPat(I)) =
-	(* [Rule 32] *)
-	( VIdMap.empty, Type.invent() )
+        (* [Rule 32] *)
+        ( VIdMap.empty, Type.invent() )
 
       | elabAtPat(C, SCONAtPat(I, scon)) =
-	(* [Rule 33] *)
-	(case scon
-	   of SCon.REAL _ =>
-	      (* Syntactic restriction [Section 2.9, 6th bullet] *)
-	      error(I, "real constant in pattern")
-	    | _ =>
-	      ( VIdMap.empty, typeSCon scon )
-	)
+        (* [Rule 33] *)
+        (case scon
+           of SCon.REAL _ =>
+              (* Syntactic restriction [Section 2.9, 6th bullet] *)
+              error(I, "real constant in pattern")
+            | _ =>
+              ( VIdMap.empty, typeSCon scon )
+        )
 
       | elabAtPat(C, LONGVIDAtPat(I, _, longvid)) =
-	(* [Rule 34 and 35] *)
-	let
-	    val (strids,vid) = LongVId.explode longvid
-	in
-	    if List.null strids andalso
-	       ( case Context.findVId(C, vid)
-		   of NONE           => true
-		    | SOME(sigma,is) => is = IdStatus.v ) then
-		(* [Rule 34] *)
-		let
-		    val tau = Type.invent()
-		in
-		    ( VIdMap.singleton(vid, (([],tau),IdStatus.v))
-		    , tau )
-		end
-	    else
-		(* [Rule 35] *)
-		let
-		    val (sigma,is) = case Context.findLongVId(C, longvid)
-				       of SOME valstr => valstr
-				        | NONE =>
-					  errorLongVId(I,"unknown constructor ",
-							 longvid)
-		    val  tau       = TypeScheme.instance sigma
-		    (* Note that tau will always be a ConsType. *)
-		in
-		    if is <> IdStatus.v then
-			( VIdMap.empty, tau )
-		    else
-			error(I, "non-constructor long identifier in pattern")
-		end
-	end
+        (* [Rule 34 and 35] *)
+        let
+            val (strids,vid) = LongVId.explode longvid
+        in
+            if List.null strids andalso
+               ( case Context.findVId(C, vid)
+                   of NONE           => true
+                    | SOME(sigma,is) => is = IdStatus.v ) then
+                (* [Rule 34] *)
+                let
+                    val tau = Type.invent()
+                in
+                    ( VIdMap.singleton(vid, (([],tau),IdStatus.v))
+                    , tau )
+                end
+            else
+                (* [Rule 35] *)
+                let
+                    val (sigma,is) = case Context.findLongVId(C, longvid)
+                                       of SOME valstr => valstr
+                                        | NONE =>
+                                          errorLongVId(I,"unknown constructor ",
+                                                         longvid)
+                    val  tau       = TypeScheme.instance sigma
+                    (* Note that tau will always be a ConsType. *)
+                in
+                    if is <> IdStatus.v then
+                        ( VIdMap.empty, tau )
+                    else
+                        error(I, "non-constructor long identifier in pattern")
+                end
+        end
 
       | elabAtPat(C, RECORDAtPat(I, patrow_opt)) =
-	(* [Rule 36] *)
-	let
-	    val (VE,rho) = case patrow_opt
-			     of NONE        => ( VIdMap.empty, Type.emptyRho )
-			      | SOME patrow => elabPatRow(C, patrow)
-	in
-	    (VE, Type.fromRowType rho)
-	end
+        (* [Rule 36] *)
+        let
+            val (VE,rho) = case patrow_opt
+                             of NONE        => ( VIdMap.empty, Type.emptyRho )
+                              | SOME patrow => elabPatRow(C, patrow)
+        in
+            (VE, Type.fromRowType rho)
+        end
 
       | elabAtPat(C, PARAtPat(I, pat)) =
-	(* [Rule 37] *)
-	let
-	    val (VE,tau) = elabPat(C, pat)
-	in
-	    (VE,tau)
-	end
+        (* [Rule 37] *)
+        let
+            val (VE,tau) = elabPat(C, pat)
+        in
+            (VE,tau)
+        end
 
 
     (* Pattern Rows *)
 
     and elabPatRow(C, WILDCARDPatRow(I)) =
-	(* [Rule 38] *)
-	( VIdMap.empty, Type.inventRho() )
+        (* [Rule 38] *)
+        ( VIdMap.empty, Type.inventRho() )
 
       | elabPatRow(C, ROWPatRow(I, lab, pat, patrow_opt)) =
-	(* [Rule 39] *)
-	let
-	    val (VE,tau)  = elabPat(C, pat)
-	    val (VE',rho) = case patrow_opt
-			      of NONE        => ( VIdMap.empty, Type.emptyRho )
-			       | SOME patrow => elabPatRow(C, patrow)
-	in
-	    if isSome(Type.findLab(rho, lab)) then
-		(* Syntactic restriction [Section 2.9, 1st bullet] *)
-		errorLab(I, "duplicate label ", lab)
-	    else
-		( VIdMap.unionWithi (fn(vid,_,_) =>
-		      errorVId(I, "duplicate variable ", vid)) (VE,VE')
-		, Type.insertRho(rho, lab, tau)
-		)
-	end
+        (* [Rule 39] *)
+        let
+            val (VE,tau)  = elabPat(C, pat)
+            val (VE',rho) = case patrow_opt
+                              of NONE        => ( VIdMap.empty, Type.emptyRho )
+                               | SOME patrow => elabPatRow(C, patrow)
+        in
+            if isSome(Type.findLab(rho, lab)) then
+                (* Syntactic restriction [Section 2.9, 1st bullet] *)
+                errorLab(I, "duplicate label ", lab)
+            else
+                ( VIdMap.unionWithi (fn(vid,_,_) =>
+                      errorVId(I, "duplicate variable ", vid)) (VE,VE')
+                , Type.insertRho(rho, lab, tau)
+                )
+        end
 
 
     (* Patterns *)
 
     and elabPat(C, ATPATPat(I, atpat)) =
-	(* [Rule 40] *)
-	let
-	    val (VE,tau) = elabAtPat(C, atpat)
-	in
-	    (VE,tau)
-	end
+        (* [Rule 40] *)
+        let
+            val (VE,tau) = elabAtPat(C, atpat)
+        in
+            (VE,tau)
+        end
 
       | elabPat(C, CONPat(I, _, longvid, atpat)) =
-	(* [Rule 41] *)
-	let
-	    val (sigma,is) = case Context.findLongVId(C, longvid)
-			       of SOME valstr => valstr
-			        | NONE =>
-				errorLongVId(I, "unknown constructor ", longvid)
-	    val _          = if is <> IdStatus.v then () else
-				errorLongVId(I, "non-constructor ", longvid)
-	    val (tau',tau) = case !(TypeScheme.instance sigma)
-			       of Type.FunType(tau',tau) => (tau', tau)
-			        | _ =>
-				errorLongVId(I,"misplaced nullary constructor ",
-						longvid)
-	    val (VE,tau'2)  = elabAtPat(C, atpat)
-	in
-	    Type.unify(tau',tau'2)
-	    handle Type.Unify =>
-		   error(I, "type mismatch in constructor pattern")
-	  ; (VE,tau)
-	end
+        (* [Rule 41] *)
+        let
+            val (sigma,is) = case Context.findLongVId(C, longvid)
+                               of SOME valstr => valstr
+                                | NONE =>
+                                errorLongVId(I, "unknown constructor ", longvid)
+            val _          = if is <> IdStatus.v then () else
+                                errorLongVId(I, "non-constructor ", longvid)
+            val (tau',tau) = case !(TypeScheme.instance sigma)
+                               of Type.FunType(tau',tau) => (tau', tau)
+                                | _ =>
+                                errorLongVId(I,"misplaced nullary constructor ",
+                                                longvid)
+            val (VE,tau'2)  = elabAtPat(C, atpat)
+        in
+            Type.unify(tau',tau'2)
+            handle Type.Unify =>
+                   error(I, "type mismatch in constructor pattern")
+          ; (VE,tau)
+        end
 
       | elabPat(C, TYPEDPat(I, pat, ty)) =
-	(* [Rule 42] *)
-	let
-	    val (VE,tau1) = elabPat(C, pat)
-	    val     tau   = elabTy(C, ty)
-	in
-	    Type.unify(tau1,tau)
-	    handle Type.Unify => error(I, "pattern does not match annotation")
-	  ; (VE,tau)
-	end
+        (* [Rule 42] *)
+        let
+            val (VE,tau1) = elabPat(C, pat)
+            val     tau   = elabTy(C, ty)
+        in
+            Type.unify(tau1,tau)
+            handle Type.Unify => error(I, "pattern does not match annotation")
+          ; (VE,tau)
+        end
 
       | elabPat(C, ASPat(I, _, vid, ty_opt, pat)) =
-	(* [Rule 43] *)
-	let
-	    val (VE1,tau1) = elabPat(C, pat)
-	    val (VE, tau)  =
-		case ty_opt
-		  of NONE    => (VE1,tau1)
-		   | SOME ty =>
-		     let
-			 val tau = elabTy(C, ty)
-		     in
-			 Type.unify(tau1,tau)
-			 handle Type.Unify =>
-				error(I, "pattern does not match annotation")
-		       ; (VE1,tau)
-		     end
-	in
-	    if not( case Context.findVId(C, vid)
-		      of NONE           => true
-		       | SOME(sigma,is) => is = IdStatus.v ) then
-		errorVId(I, "misplaced constructor ", vid)
-	    else if isSome(VIdMap.find(VE, vid)) then
-		errorVId(I, "duplicate variable ", vid)
-	    else
-		( VIdMap.insert(VE, vid, (([],tau),IdStatus.v)), tau )
-	end
+        (* [Rule 43] *)
+        let
+            val (VE1,tau1) = elabPat(C, pat)
+            val (VE, tau)  =
+                case ty_opt
+                  of NONE    => (VE1,tau1)
+                   | SOME ty =>
+                     let
+                         val tau = elabTy(C, ty)
+                     in
+                         Type.unify(tau1,tau)
+                         handle Type.Unify =>
+                                error(I, "pattern does not match annotation")
+                       ; (VE1,tau)
+                     end
+        in
+            if not( case Context.findVId(C, vid)
+                      of NONE           => true
+                       | SOME(sigma,is) => is = IdStatus.v ) then
+                errorVId(I, "misplaced constructor ", vid)
+            else if isSome(VIdMap.find(VE, vid)) then
+                errorVId(I, "duplicate variable ", vid)
+            else
+                ( VIdMap.insert(VE, vid, (([],tau),IdStatus.v)), tau )
+        end
 
 
     (* Type Expressions *)
@@ -10265,198 +10265,198 @@ structure ElabCore :> ELAB_CORE =
     and elabTy(C, ty) = Type.normalise(elabTy'(C, ty))
 
     and elabTy'(C, TYVARTy(I, tyvar)) =
-	(* [Rule 44] *)
-	let
-	    val alpha = tyvar
-	in
-	    Type.fromTyVar alpha
-	end
+        (* [Rule 44] *)
+        let
+            val alpha = tyvar
+        in
+            Type.fromTyVar alpha
+        end
 
       | elabTy'(C, RECORDTy(I, tyrow_opt)) =
-	(* [Rule 45] *)
-	let
-	    val rho = case tyrow_opt
-			of NONE       => Type.emptyRho
-			 | SOME tyrow => elabTyRow'(C, tyrow)
-	in
-	    Type.fromRowType rho
-	end
+        (* [Rule 45] *)
+        let
+            val rho = case tyrow_opt
+                        of NONE       => Type.emptyRho
+                         | SOME tyrow => elabTyRow'(C, tyrow)
+        in
+            Type.fromRowType rho
+        end
 
       | elabTy'(C, TYCONTy(I, tyseq, longtycon)) =
-	(* [Rule 46] *)
-	let
-	    val Tyseq(I',tys) = tyseq
-	    val k             = List.length tys
-	    val taus          = List.map (fn ty => elabTy'(C, ty)) tys
-	    val (theta,VE)    =
-		case Context.findLongTyCon(C, longtycon)
-		  of SOME tystr => tystr
-		   | NONE =>
-		     errorLongTyCon(I, "unknown type constructor ", longtycon)
-	in
-	    TypeFcn.apply(taus, theta)
-	    handle TypeFcn.Apply =>
-		errorLongTyCon(I, "arity mismatch at type application ",
-				  longtycon)
-	end
+        (* [Rule 46] *)
+        let
+            val Tyseq(I',tys) = tyseq
+            val k             = List.length tys
+            val taus          = List.map (fn ty => elabTy'(C, ty)) tys
+            val (theta,VE)    =
+                case Context.findLongTyCon(C, longtycon)
+                  of SOME tystr => tystr
+                   | NONE =>
+                     errorLongTyCon(I, "unknown type constructor ", longtycon)
+        in
+            TypeFcn.apply(taus, theta)
+            handle TypeFcn.Apply =>
+                errorLongTyCon(I, "arity mismatch at type application ",
+                                  longtycon)
+        end
 
       | elabTy'(C, ARROWTy(I, ty, ty')) =
-	(* [Rule 47] *)
-	let
-	    val tau  = elabTy'(C, ty)
-	    val tau' = elabTy'(C, ty')
-	in
-	    Type.fromFunType(tau,tau')
-	end
+        (* [Rule 47] *)
+        let
+            val tau  = elabTy'(C, ty)
+            val tau' = elabTy'(C, ty')
+        in
+            Type.fromFunType(tau,tau')
+        end
 
       | elabTy'(C, PARTy(I, ty)) =
-	(* [Rule 48] *)
-	let
-	    val tau = elabTy'(C, ty)
-	in
-	    tau
-	end
+        (* [Rule 48] *)
+        let
+            val tau = elabTy'(C, ty)
+        in
+            tau
+        end
 
 
     (* Type-expression Rows *)
 
     and elabTyRow'(C, TyRow(I, lab, ty, tyrow_opt)) =
-	(* [Rule 49] *)
-	let
-	    val tau = elabTy'(C, ty)
-	    val rho = case tyrow_opt
-			of NONE       => Type.emptyRho
-			 | SOME tyrow => elabTyRow'(C, tyrow)
-	in
-	    if isSome(Type.findLab(rho, lab)) then
-		(* Syntactic restriction [Section 2.9, 1st bullet] *)
-		errorLab(I, "duplicate label ", lab)
-	    else
-		Type.insertRho(rho, lab, tau)
-	end
+        (* [Rule 49] *)
+        let
+            val tau = elabTy'(C, ty)
+            val rho = case tyrow_opt
+                        of NONE       => Type.emptyRho
+                         | SOME tyrow => elabTyRow'(C, tyrow)
+        in
+            if isSome(Type.findLab(rho, lab)) then
+                (* Syntactic restriction [Section 2.9, 1st bullet] *)
+                errorLab(I, "duplicate label ", lab)
+            else
+                Type.insertRho(rho, lab, tau)
+        end
 
 
 
     (* Build tentative VE from LHSs of recursive valbind *)
 
     and lhsRecValBind(PLAINValBind(I, pat, exp, valbind_opt)) =
-	let
-	    val VE  = lhsRecValBindPat pat
-	    val VE' = case valbind_opt
-			of NONE         => VIdMap.empty
-			 | SOME valbind => lhsRecValBind valbind
-	    val _   = case exp
-			of FNExp _ => ()
-			 | _ =>
-			   (* Syntactic restriction [Section 2.9, 4th bullet] *)
-			   error(I, "illegal expression within recursive \
-				    \value binding")
-	in
-	    VIdMap.unionWithi
-		(fn(vid,_,_) =>
-		       (* Syntactic restriction [Section 2.9, 2nd bullet] *)
-		       errorVId(I, "duplicate variable ", vid))  (VE,VE')
-	end
+        let
+            val VE  = lhsRecValBindPat pat
+            val VE' = case valbind_opt
+                        of NONE         => VIdMap.empty
+                         | SOME valbind => lhsRecValBind valbind
+            val _   = case exp
+                        of FNExp _ => ()
+                         | _ =>
+                           (* Syntactic restriction [Section 2.9, 4th bullet] *)
+                           error(I, "illegal expression within recursive \
+                                    \value binding")
+        in
+            VIdMap.unionWithi
+                (fn(vid,_,_) =>
+                       (* Syntactic restriction [Section 2.9, 2nd bullet] *)
+                       errorVId(I, "duplicate variable ", vid))  (VE,VE')
+        end
 
       | lhsRecValBind(RECValBind(I, valbind)) =
-	    lhsRecValBind valbind
+            lhsRecValBind valbind
 
     and lhsRecValBindPat(ATPATPat(I, atpat)) =
-	    lhsRecValBindAtPat atpat
+            lhsRecValBindAtPat atpat
 
       | lhsRecValBindPat(CONPat(I, _, longvid, atpat)) =
-	    lhsRecValBindAtPat atpat
+            lhsRecValBindAtPat atpat
 
       | lhsRecValBindPat(TYPEDPat(I, pat, ty)) =
-	    lhsRecValBindPat pat
+            lhsRecValBindPat pat
 
       | lhsRecValBindPat(ASPat(I, _, vid, ty_opt, pat)) =
-	let
-	    val VE = lhsRecValBindPat pat
-	in
-	    if isSome(VIdMap.find(VE, vid)) then
-		(* Syntactic restriction [Section 2.9, 2nd bullet] *)
-		errorVId(I, "duplicate variable ", vid)
-	    else if not(validBindVId vid) then
-		(* Syntactic restriction [Section 2.9, 5th bullet] *)
-		errorVId(I, "illegal rebinding of identifier ", vid)
-	    else
-		VIdMap.insert(VE, vid, (([],Type.invent()), IdStatus.v))
-	end
+        let
+            val VE = lhsRecValBindPat pat
+        in
+            if isSome(VIdMap.find(VE, vid)) then
+                (* Syntactic restriction [Section 2.9, 2nd bullet] *)
+                errorVId(I, "duplicate variable ", vid)
+            else if not(validBindVId vid) then
+                (* Syntactic restriction [Section 2.9, 5th bullet] *)
+                errorVId(I, "illegal rebinding of identifier ", vid)
+            else
+                VIdMap.insert(VE, vid, (([],Type.invent()), IdStatus.v))
+        end
 
     and lhsRecValBindAtPat(WILDCARDAtPat(I)) =
-	    VIdMap.empty
+            VIdMap.empty
 
       | lhsRecValBindAtPat(SCONAtPat(I, scon)) =
-	    VIdMap.empty
+            VIdMap.empty
 
       | lhsRecValBindAtPat(LONGVIDAtPat(I, _, longvid)) =
-	   (case LongVId.explode longvid
-	      of ([], vid) =>
-	 	    if not(validBindVId vid) then
-			(* Syntactic restriction [Section 2.9, 5th bullet] *)
-			errorVId(I, "illegal rebinding of identifier ", vid)
-		    else
-			VIdMap.singleton(vid, (([],Type.invent()),IdStatus.v))
+           (case LongVId.explode longvid
+              of ([], vid) =>
+                     if not(validBindVId vid) then
+                        (* Syntactic restriction [Section 2.9, 5th bullet] *)
+                        errorVId(I, "illegal rebinding of identifier ", vid)
+                    else
+                        VIdMap.singleton(vid, (([],Type.invent()),IdStatus.v))
 
-	       | _ => VIdMap.empty
-	   )
+               | _ => VIdMap.empty
+           )
 
       | lhsRecValBindAtPat(RECORDAtPat(I, patrow_opt)) =
-	   (case patrow_opt
-	      of NONE        => VIdMap.empty
-	       | SOME patrow => lhsRecValBindPatRow patrow
-	   )
+           (case patrow_opt
+              of NONE        => VIdMap.empty
+               | SOME patrow => lhsRecValBindPatRow patrow
+           )
 
       | lhsRecValBindAtPat(PARAtPat(I, pat)) =
-	    lhsRecValBindPat pat
+            lhsRecValBindPat pat
 
     and lhsRecValBindPatRow(WILDCARDPatRow(I)) =
-	    VIdMap.empty
+            VIdMap.empty
 
       | lhsRecValBindPatRow(ROWPatRow(I, lab, pat, patrow_opt)) =
-	let
-	    val VE = lhsRecValBindPat pat
-	in
-	    case patrow_opt
-	      of NONE        => VE
-	       | SOME patrow =>
-		 let
-		     val VE' = lhsRecValBindPatRow patrow
-		 in
-		     VIdMap.unionWithi (fn(vid,_,_) =>
-			 (* Syntactic restriction [Section 2.9, 2nd bullet] *)
-			 errorVId(I, "duplicate variable ", vid)) (VE,VE')
-		 end
-	end
+        let
+            val VE = lhsRecValBindPat pat
+        in
+            case patrow_opt
+              of NONE        => VE
+               | SOME patrow =>
+                 let
+                     val VE' = lhsRecValBindPatRow patrow
+                 in
+                     VIdMap.unionWithi (fn(vid,_,_) =>
+                         (* Syntactic restriction [Section 2.9, 2nd bullet] *)
+                         errorVId(I, "duplicate variable ", vid)) (VE,VE')
+                 end
+        end
 
 
 
     (* Build tentative TE from LHSs of datbind *)
 
     and lhsDatBind(DatBind(I, tyvarseq, tycon, conbind, datbind_opt)) =
-	(* [Rule 28, part 1] *)
-	let
-	    val (U,alphas) = tyvars tyvarseq
-	    val k          = List.length alphas
-	    val span       = lhsConBind conbind
-	    val t          = TyName.tyname(tycon, k, TyName.EQ, span)
-	    val tau        = Type.fromConsType(List.map Type.fromTyVar alphas,t)
-	    val TE'        = case datbind_opt
-			       of NONE         => TyConMap.empty
-				| SOME datbind => lhsDatBind datbind
-	in
-	    if isSome(TyConMap.find(TE', tycon)) then
-		(* Syntactic restriction [Section 2.9, 2nd bullet] *)
-		errorTyCon(I, "duplicate type constructor ", tycon)
-	    else
-		TyConMap.insert(TE', tycon, ((alphas,tau), VIdMap.empty))
-	end
+        (* [Rule 28, part 1] *)
+        let
+            val (U,alphas) = tyvars tyvarseq
+            val k          = List.length alphas
+            val span       = lhsConBind conbind
+            val t          = TyName.tyname(tycon, k, TyName.EQ, span)
+            val tau        = Type.fromConsType(List.map Type.fromTyVar alphas,t)
+            val TE'        = case datbind_opt
+                               of NONE         => TyConMap.empty
+                                | SOME datbind => lhsDatBind datbind
+        in
+            if isSome(TyConMap.find(TE', tycon)) then
+                (* Syntactic restriction [Section 2.9, 2nd bullet] *)
+                errorTyCon(I, "duplicate type constructor ", tycon)
+            else
+                TyConMap.insert(TE', tycon, ((alphas,tau), VIdMap.empty))
+        end
 
     and lhsConBind(ConBind(I, _, vid, ty_opt, conbind_opt)) =
-	case conbind_opt
-	  of NONE         => 1
-	   | SOME conbind => 1 + lhsConBind conbind
+        case conbind_opt
+          of NONE         => 1
+           | SOME conbind => 1 + lhsConBind conbind
 
   end
 (* stop of ElabCore.sml *)
@@ -10481,7 +10481,7 @@ signature ELAB_MODULE =
 
     (* Export *)
 
-    val elabTopDec:	Basis * TopDec -> Basis
+    val elabTopDec:        Basis * TopDec -> Basis
 
   end
 (* stop of ELAB_MODULE.sml *)
@@ -10520,9 +10520,9 @@ structure ElabModule :> ELAB_MODULE =
     fun errorFunId(I, s, funid) = error(I, s ^ FunId.toString funid)
 
     fun errorLongTyCon(I, s, longtycon) =
-	error(I, s ^ LongTyCon.toString longtycon)
+        error(I, s ^ LongTyCon.toString longtycon)
     fun errorLongStrId(I, s, longstrid) =
-	error(I, s ^ LongStrId.toString longstrid)
+        error(I, s ^ LongStrId.toString longstrid)
 
 
     (* Helpers for basis modification *)
@@ -10544,707 +10544,707 @@ structure ElabModule :> ELAB_MODULE =
     (* Structure Expressions *)
 
     fun elabStrExp(B, STRUCTStrExp(I, strdec)) =
-	(* [Rule 50] *)
-	let
-	    val E = elabStrDec(false, B, strdec)
-	in
-	    E
-	end
+        (* [Rule 50] *)
+        let
+            val E = elabStrDec(false, B, strdec)
+        in
+            E
+        end
 
       | elabStrExp(B, LONGSTRIDStrExp(I, longstrid)) =
-	(* [Rule 51] *)
-	let
-	    val E = case StaticBasis.findLongStrId(B, longstrid)
-		      of SOME(StaticEnv.Str E) => E
-		       | NONE =>
-			 errorLongStrId(I, "unknown structure ", longstrid)
-	in
-	    E
-	end
+        (* [Rule 51] *)
+        let
+            val E = case StaticBasis.findLongStrId(B, longstrid)
+                      of SOME(StaticEnv.Str E) => E
+                       | NONE =>
+                         errorLongStrId(I, "unknown structure ", longstrid)
+        in
+            E
+        end
 
       | elabStrExp(B, TRANSStrExp(I, strexp, sigexp)) =
-	(* [Rule 52] *)
-	let
-	    val E      = elabStrExp(B, strexp)
-	    val Sigma  = elabSigExp(B, sigexp)
-	    val (E',_) = Sig.match(E, Sigma)
-			 handle Sig.Match =>
-				error(I, "structure does not match constraint")
-	in
-	    E'
-	end
+        (* [Rule 52] *)
+        let
+            val E      = elabStrExp(B, strexp)
+            val Sigma  = elabSigExp(B, sigexp)
+            val (E',_) = Sig.match(E, Sigma)
+                         handle Sig.Match =>
+                                error(I, "structure does not match constraint")
+        in
+            E'
+        end
 
       | elabStrExp(B, OPAQStrExp(I, strexp, sigexp)) =
-	(* [Rule 53] *)
-	let
-	    val E       = elabStrExp(B, strexp)
-	    val (T',E') = Sig.rename(elabSigExp(B, sigexp))
-	    val (E'',_) = Sig.match(E, (T',E'))
-			  handle Sig.Match =>
-				 error(I, "structure does not match constraint")
-	    (* Renaming ensures side condition on T' *)
-	in
-	    E'
-	end
+        (* [Rule 53] *)
+        let
+            val E       = elabStrExp(B, strexp)
+            val (T',E') = Sig.rename(elabSigExp(B, sigexp))
+            val (E'',_) = Sig.match(E, (T',E'))
+                          handle Sig.Match =>
+                                 error(I, "structure does not match constraint")
+            (* Renaming ensures side condition on T' *)
+        in
+            E'
+        end
 
       | elabStrExp(B, APPStrExp(I, funid, strexp)) =
-	(* [Rule 54] *)
-	let
-	    val E = elabStrExp(B, strexp)
-	    val (T1'',(E1'',(T1',E1'))) =
-		      case StaticBasis.findFunId(B, funid)
-			of SOME Phi => Phi
-			 | NONE     => errorFunId(I, "unknown functor ", funid)
-	    val (E'',phi) = Sig.match(E, (T1'',E1''))
-			    handle Sig.Match =>
-				error(I, "structure does not match constraint")
-	    val (T',E')   = Sig.rename (T1', StaticEnv.realise phi E1')
-	    (* Renaming ensures side condition on T' *)
-	in
-	    E'
-	end
+        (* [Rule 54] *)
+        let
+            val E = elabStrExp(B, strexp)
+            val (T1'',(E1'',(T1',E1'))) =
+                      case StaticBasis.findFunId(B, funid)
+                        of SOME Phi => Phi
+                         | NONE     => errorFunId(I, "unknown functor ", funid)
+            val (E'',phi) = Sig.match(E, (T1'',E1''))
+                            handle Sig.Match =>
+                                error(I, "structure does not match constraint")
+            val (T',E')   = Sig.rename (T1', StaticEnv.realise phi E1')
+            (* Renaming ensures side condition on T' *)
+        in
+            E'
+        end
 
       | elabStrExp(B, LETStrExp(I, strdec, strexp)) =
-	(* [Rule 55] *)
-	let
-	    val E1 = elabStrDec(false, B, strdec)
-	    val E2 = elabStrExp(B oplusE E1, strexp)
-	in
-	    E2
-	end
+        (* [Rule 55] *)
+        let
+            val E1 = elabStrDec(false, B, strdec)
+            val E2 = elabStrExp(B oplusE E1, strexp)
+        in
+            E2
+        end
 
 
     (* Structure-level Declarations *)
 
     and elabStrDec(toplevel, B, DECStrDec(I, dec)) =
-	(* [Rule 56] *)
-	let
-	    val E = ElabCore.elabDec(toplevel, StaticBasis.Cof B, dec)
-	in
-	    E
-	end
+        (* [Rule 56] *)
+        let
+            val E = ElabCore.elabDec(toplevel, StaticBasis.Cof B, dec)
+        in
+            E
+        end
 
       | elabStrDec(toplevel, B, STRUCTUREStrDec(I, strbind)) =
-	(* [Rule 57] *)
-	let
-	    val SE = elabStrBind(B, strbind)
-	in
-	    StaticEnv.fromSE SE
-	end
+        (* [Rule 57] *)
+        let
+            val SE = elabStrBind(B, strbind)
+        in
+            StaticEnv.fromSE SE
+        end
 
       | elabStrDec(toplevel, B, LOCALStrDec(I, strdec1, strdec2)) =
-	(* [Rule 58] *)
-	let
-	    val E1 = elabStrDec(false, B, strdec1)
-	    val E2 = elabStrDec(false, B oplusE E1, strdec2)
-	in
-	    E2
-	end
+        (* [Rule 58] *)
+        let
+            val E1 = elabStrDec(false, B, strdec1)
+            val E2 = elabStrDec(false, B oplusE E1, strdec2)
+        in
+            E2
+        end
 
       | elabStrDec(toplevel, B, EMPTYStrDec(I)) =
-	(* [Rule 59] *)
-	StaticEnv.empty
+        (* [Rule 59] *)
+        StaticEnv.empty
 
       | elabStrDec(toplevel, B, SEQStrDec(I, strdec1, strdec2)) =
-	(* [Rule 60] *)
-	let
-	    val E1 = elabStrDec(toplevel, B, strdec1)
-	    val E2 = elabStrDec(toplevel, B oplusE E1, strdec2)
-	in
-	    StaticEnv.plus(E1,E2)
-	end
+        (* [Rule 60] *)
+        let
+            val E1 = elabStrDec(toplevel, B, strdec1)
+            val E2 = elabStrDec(toplevel, B oplusE E1, strdec2)
+        in
+            StaticEnv.plus(E1,E2)
+        end
 
 
     (* Structure Bindings *)
 
     and elabStrBind(B, StrBind(I, strid, strexp, strbind_opt)) =
-	(* [Rule 61] *)
-	let
-	    val E  = elabStrExp(B, strexp)
-	    val SE = case strbind_opt
-		       of NONE         => StrIdMap.empty
-		        | SOME strbind =>
-			  elabStrBind(B plusT StaticEnv.tynames E, strbind)
-	in
-	    if isSome(StrIdMap.find(SE, strid)) then
-		(* Syntactic restriction [Section 3.5, 1st bullet] *)
-		errorStrId(I, "duplicate structure identifier ", strid)
-	    else
-		StrIdMap.insert(SE, strid, StaticEnv.Str E)
-	end
+        (* [Rule 61] *)
+        let
+            val E  = elabStrExp(B, strexp)
+            val SE = case strbind_opt
+                       of NONE         => StrIdMap.empty
+                        | SOME strbind =>
+                          elabStrBind(B plusT StaticEnv.tynames E, strbind)
+        in
+            if isSome(StrIdMap.find(SE, strid)) then
+                (* Syntactic restriction [Section 3.5, 1st bullet] *)
+                errorStrId(I, "duplicate structure identifier ", strid)
+            else
+                StrIdMap.insert(SE, strid, StaticEnv.Str E)
+        end
 
 
     (* Signature Expressions *)
 
     and elabSigExpE(B, SIGSigExp(I, spec)) =
-	(* [Rule 62] *)
-	let
-	    val E = elabSpec(B, spec)
-	in
-	    E
-	end
+        (* [Rule 62] *)
+        let
+            val E = elabSpec(B, spec)
+        in
+            E
+        end
 
       | elabSigExpE(B, SIGIDSigExp(I, sigid)) =
-	(* [Rule 63] *)
-	let
-	    val (T,E) = case StaticBasis.findSigId(B, sigid)
-			  of SOME Sigma => Sig.rename Sigma
-			   | NONE => errorSigId(I, "unknown signature ",sigid)
-	in
-	    E
-	end
+        (* [Rule 63] *)
+        let
+            val (T,E) = case StaticBasis.findSigId(B, sigid)
+                          of SOME Sigma => Sig.rename Sigma
+                           | NONE => errorSigId(I, "unknown signature ",sigid)
+        in
+            E
+        end
 
       | elabSigExpE(B, WHERETYPESigExp(I, sigexp, tyvarseq, longtycon, ty)) =
-	(* [Rule 64] *)
-	let
-	    val E      = elabSigExpE(B, sigexp)
-	    val alphas = #2(ElabCore.tyvars tyvarseq)
-	    val tau    = ElabCore.elabTy(StaticBasis.Cof B, ty)
-	    val t      = case StaticEnv.findLongTyCon(E,longtycon)
-			   of NONE =>
-			      errorLongTyCon(I, "unknown type ", longtycon)
-			    | SOME(theta,VE) =>
-			 case TypeFcn.toTyName theta
-			   of NONE =>
-			      errorLongTyCon(I, "non-flexible type ", longtycon)
-			    | SOME t => t
-	    val  _     = if not(TyNameSet.member(StaticBasis.Tof B, t)) then ()
-			 else errorLongTyCon(I, "rigid type ", longtycon)
-	    val phi    = TyNameMap.singleton(t, (alphas,tau))
-	    val  _     = if TyName.equality t = TyName.NOEQ
-			 orelse TypeFcn.admitsEquality (alphas,tau) then () else
-			  error(I, "type realisation does not respect equality")
-	    val E'     = StaticEnv.realise phi E
-	    val  _     = if StaticEnv.isWellFormed E' then () else
-			  error(I, "type realisation does not respect datatype")
-	in
-	    E'
-	end
+        (* [Rule 64] *)
+        let
+            val E      = elabSigExpE(B, sigexp)
+            val alphas = #2(ElabCore.tyvars tyvarseq)
+            val tau    = ElabCore.elabTy(StaticBasis.Cof B, ty)
+            val t      = case StaticEnv.findLongTyCon(E,longtycon)
+                           of NONE =>
+                              errorLongTyCon(I, "unknown type ", longtycon)
+                            | SOME(theta,VE) =>
+                         case TypeFcn.toTyName theta
+                           of NONE =>
+                              errorLongTyCon(I, "non-flexible type ", longtycon)
+                            | SOME t => t
+            val  _     = if not(TyNameSet.member(StaticBasis.Tof B, t)) then ()
+                         else errorLongTyCon(I, "rigid type ", longtycon)
+            val phi    = TyNameMap.singleton(t, (alphas,tau))
+            val  _     = if TyName.equality t = TyName.NOEQ
+                         orelse TypeFcn.admitsEquality (alphas,tau) then () else
+                          error(I, "type realisation does not respect equality")
+            val E'     = StaticEnv.realise phi E
+            val  _     = if StaticEnv.isWellFormed E' then () else
+                          error(I, "type realisation does not respect datatype")
+        in
+            E'
+        end
 
     and elabSigExp(B, sigexp) =
-	(* [Rule 65] *)
-	let
-	    val E = elabSigExpE(B, sigexp)
-	    val T = TyNameSet.difference(StaticEnv.tynames E, StaticBasis.Tof B)
-	in
-	    (T,E)
-	end
+        (* [Rule 65] *)
+        let
+            val E = elabSigExpE(B, sigexp)
+            val T = TyNameSet.difference(StaticEnv.tynames E, StaticBasis.Tof B)
+        in
+            (T,E)
+        end
 
 
     (* Signature Declarations *)
 
     and elabSigDec(B, SigDec(I, sigbind)) =
-	(* [Rule 66] *)
-	let
-	    val G = elabSigBind(B, sigbind)
-	in
-	    G
-	end
+        (* [Rule 66] *)
+        let
+            val G = elabSigBind(B, sigbind)
+        in
+            G
+        end
 
 
     (* Signature Bindings *)
 
     and elabSigBind(B, SigBind(I, sigid, sigexp, sigbind_opt)) =
-	(* [Rule 67] *)
-	let
-	    val Sigma = elabSigExp(B, sigexp)
-	    val G     = case sigbind_opt
-			  of NONE         => SigIdMap.empty
-			   | SOME sigbind => elabSigBind(B, sigbind)
-	in
-	    if isSome(SigIdMap.find(G, sigid)) then
-		(* Syntactic restriction [Section 3.5, 1st bullet] *)
-		errorSigId(I, "duplicate signature identifier ", sigid)
-	    else
-		SigIdMap.insert(G, sigid, Sigma)
-	end
+        (* [Rule 67] *)
+        let
+            val Sigma = elabSigExp(B, sigexp)
+            val G     = case sigbind_opt
+                          of NONE         => SigIdMap.empty
+                           | SOME sigbind => elabSigBind(B, sigbind)
+        in
+            if isSome(SigIdMap.find(G, sigid)) then
+                (* Syntactic restriction [Section 3.5, 1st bullet] *)
+                errorSigId(I, "duplicate signature identifier ", sigid)
+            else
+                SigIdMap.insert(G, sigid, Sigma)
+        end
 
 
     (* Specifications *)
 
     and elabSpec(B, VALSpec(I, valdesc)) =
-	(* [Rule 68] *)
-	let
-	    val VE = elabValDesc(StaticBasis.Cof B, valdesc)
-	in
-	    StaticEnv.fromVE(StaticEnv.Clos VE)
-	end
+        (* [Rule 68] *)
+        let
+            val VE = elabValDesc(StaticBasis.Cof B, valdesc)
+        in
+            StaticEnv.fromVE(StaticEnv.Clos VE)
+        end
 
       | elabSpec(B, TYPESpec(I, typdesc)) =
-	(* [Rule 69] *)
-	let
-	    val TE = elabTypDesc(StaticBasis.Cof B, typdesc)
-	    (* Side condition on type names is always ensured. *)
-	in
-	    StaticEnv.fromTE TE
-	end
+        (* [Rule 69] *)
+        let
+            val TE = elabTypDesc(StaticBasis.Cof B, typdesc)
+            (* Side condition on type names is always ensured. *)
+        in
+            StaticEnv.fromTE TE
+        end
 
       | elabSpec(B, EQTYPESpec(I, typdesc)) =
-	(* [Rule 70] *)
-	let
-	    val TE = elabTypDesc(StaticBasis.Cof B, typdesc)
-	    val _  = StaticEnv.makeEquality TE
-	in
-	    StaticEnv.fromTE TE
-	end
+        (* [Rule 70] *)
+        let
+            val TE = elabTypDesc(StaticBasis.Cof B, typdesc)
+            val _  = StaticEnv.makeEquality TE
+        in
+            StaticEnv.fromTE TE
+        end
 
       | elabSpec(B, DATATYPESpec(I, datdesc)) =
-	(* [Rule 71] *)
-	let
-	    val      TE1  = lhsDatDesc datdesc
-	    val (VE2,TE2) = elabDatDesc(Context.oplusTE(StaticBasis.Cof B,TE1),
-					datdesc)
-	    val (TE, VE)  = StaticEnv.maximiseEquality(TE2,VE2)
-	    (* Side condition on type names is always ensured. *)
-	in
-	    StaticEnv.fromVEandTE(VE,TE)
-	end
+        (* [Rule 71] *)
+        let
+            val      TE1  = lhsDatDesc datdesc
+            val (VE2,TE2) = elabDatDesc(Context.oplusTE(StaticBasis.Cof B,TE1),
+                                        datdesc)
+            val (TE, VE)  = StaticEnv.maximiseEquality(TE2,VE2)
+            (* Side condition on type names is always ensured. *)
+        in
+            StaticEnv.fromVEandTE(VE,TE)
+        end
 
       | elabSpec(B, REPLICATIONSpec(I, tycon, longtycon)) =
-	(* [Rule 72] *)
-	let
-	    val (theta,VE) = case StaticBasis.findLongTyCon(B, longtycon)
-			      of SOME tystr => tystr
-			       | NONE =>
-				 errorLongTyCon(I, "unknown type ", longtycon)
-	    val  TE        = TyConMap.singleton(tycon, (theta,VE))
-	in
-	    StaticEnv.fromVEandTE(VE,TE)
-	end
+        (* [Rule 72] *)
+        let
+            val (theta,VE) = case StaticBasis.findLongTyCon(B, longtycon)
+                              of SOME tystr => tystr
+                               | NONE =>
+                                 errorLongTyCon(I, "unknown type ", longtycon)
+            val  TE        = TyConMap.singleton(tycon, (theta,VE))
+        in
+            StaticEnv.fromVEandTE(VE,TE)
+        end
 
       | elabSpec(B, EXCEPTIONSpec(I, exdesc)) =
-	(* [Rule 73] *)
-	let
-	    val VE = elabExDesc(StaticBasis.Cof B, exdesc)
-	in
-	    StaticEnv.fromVE VE
-	end
+        (* [Rule 73] *)
+        let
+            val VE = elabExDesc(StaticBasis.Cof B, exdesc)
+        in
+            StaticEnv.fromVE VE
+        end
 
       | elabSpec(B, STRUCTURESpec(I, strdesc)) =
-	(* [Rule 74] *)
-	let
-	    val SE = elabStrDesc(B, strdesc)
-	in
-	    StaticEnv.fromSE SE
-	end
+        (* [Rule 74] *)
+        let
+            val SE = elabStrDesc(B, strdesc)
+        in
+            StaticEnv.fromSE SE
+        end
 
       | elabSpec(B, INCLUDESpec(I, sigexp)) =
-	(* [Rule 75] *)
-	let
-	    val E = elabSigExpE(B, sigexp)
-	in
-	    E
-	end
+        (* [Rule 75] *)
+        let
+            val E = elabSigExpE(B, sigexp)
+        in
+            E
+        end
 
       | elabSpec(B, EMPTYSpec(I)) =
-	(* [Rule 76] *)
-	StaticEnv.empty
+        (* [Rule 76] *)
+        StaticEnv.empty
 
       | elabSpec(B, SEQSpec(I, spec1, spec2)) =
-	(* [Rule 77] *)
-	let
-	    val E1 = elabSpec(B, spec1)
-	    val E2 = elabSpec(B oplusE E1, spec2)
-	    val _  = if StaticEnv.disjoint(E1,E2) then () else
-		     error(I, "duplicate specifications in signature")
-	in
-	    StaticEnv.plus(E1,E2)
-	end
+        (* [Rule 77] *)
+        let
+            val E1 = elabSpec(B, spec1)
+            val E2 = elabSpec(B oplusE E1, spec2)
+            val _  = if StaticEnv.disjoint(E1,E2) then () else
+                     error(I, "duplicate specifications in signature")
+        in
+            StaticEnv.plus(E1,E2)
+        end
 
       | elabSpec(B, SHARINGTYPESpec(I, spec, longtycons)) =
-	(* [Rule 78] *)
-	let
-	    val E  = elabSpec(B, spec)
-	    val ts =
-		List.map
-		(fn longtycon =>
-		 case StaticEnv.findLongTyCon(E, longtycon)
-		   of NONE =>
-			errorLongTyCon(I, "unknown type ", longtycon)
-		    | SOME(theta,VE) =>
-		 case TypeFcn.toTyName theta
-		   of NONE =>
-			errorLongTyCon(I, "non-flexible type ", longtycon)
-		    | SOME t =>
-		      if TyNameSet.member(StaticBasis.Tof B, t) then
-			errorLongTyCon(I, "rigid type ", longtycon)
-		      else
-			t
-		)
-		longtycons
-	    val equality = if List.exists
-				(fn t => TyName.equality t <> TyName.NOEQ) ts
-			   then TyName.EQ
-			   else TyName.NOEQ
-	    val span  = List.foldl
-				(fn(t, span) => Int.max(TyName.span t, span))
-				0 ts
-	    val t1    = List.hd ts
-	    val t     = TyName.tyname(TyName.tycon t1, TyName.arity t1,
-				      equality, span)
-	    val theta = TypeFcn.fromTyName t
-	    val phi   = List.foldl
-			    (fn(ti, phi) => TyNameMap.insert(phi, ti, theta))
-			    TyNameMap.empty ts
-	in
-	    StaticEnv.realise phi E
-	end
+        (* [Rule 78] *)
+        let
+            val E  = elabSpec(B, spec)
+            val ts =
+                List.map
+                (fn longtycon =>
+                 case StaticEnv.findLongTyCon(E, longtycon)
+                   of NONE =>
+                        errorLongTyCon(I, "unknown type ", longtycon)
+                    | SOME(theta,VE) =>
+                 case TypeFcn.toTyName theta
+                   of NONE =>
+                        errorLongTyCon(I, "non-flexible type ", longtycon)
+                    | SOME t =>
+                      if TyNameSet.member(StaticBasis.Tof B, t) then
+                        errorLongTyCon(I, "rigid type ", longtycon)
+                      else
+                        t
+                )
+                longtycons
+            val equality = if List.exists
+                                (fn t => TyName.equality t <> TyName.NOEQ) ts
+                           then TyName.EQ
+                           else TyName.NOEQ
+            val span  = List.foldl
+                                (fn(t, span) => Int.max(TyName.span t, span))
+                                0 ts
+            val t1    = List.hd ts
+            val t     = TyName.tyname(TyName.tycon t1, TyName.arity t1,
+                                      equality, span)
+            val theta = TypeFcn.fromTyName t
+            val phi   = List.foldl
+                            (fn(ti, phi) => TyNameMap.insert(phi, ti, theta))
+                            TyNameMap.empty ts
+        in
+            StaticEnv.realise phi E
+        end
 
       | elabSpec(B, SHARINGSpec(I, spec, longstrids)) =
-	(* [Appendix A] *)
-	let
-	    fun shareFlexibleTyName(t1, t2, phi) =
-		let
-		    val equality = if TyName.equality t1 <> TyName.NOEQ
-				   orelse TyName.equality t2 <> TyName.NOEQ
-				   then TyName.EQ
-				   else TyName.NOEQ
-		    val t        = TyName.tyname(TyName.tycon t1,
-						 TyName.arity t1,
-						 equality,
-						 Int.max(TyName.span t1,
-							 TyName.span t2))
-		    val theta    = TypeFcn.fromTyName t
-		in
-		    TyNameMap.insert(TyNameMap.insert(phi,
-			t1, theta),
-			t2, theta)
-		end
+        (* [Appendix A] *)
+        let
+            fun shareFlexibleTyName(t1, t2, phi) =
+                let
+                    val equality = if TyName.equality t1 <> TyName.NOEQ
+                                   orelse TyName.equality t2 <> TyName.NOEQ
+                                   then TyName.EQ
+                                   else TyName.NOEQ
+                    val t        = TyName.tyname(TyName.tycon t1,
+                                                 TyName.arity t1,
+                                                 equality,
+                                                 Int.max(TyName.span t1,
+                                                         TyName.span t2))
+                    val theta    = TypeFcn.fromTyName t
+                in
+                    TyNameMap.insert(TyNameMap.insert(phi,
+                        t1, theta),
+                        t2, theta)
+                end
 
-	    fun shareTE(TE1, TE2, phi) =
-		TyConMap.foldli
-		    (fn(tycon, (theta1,VE1), phi) =>
-			case TyConMap.find(TE2, tycon)
-			  of NONE             => phi
-			   | SOME(theta2,VE2) =>
-			case (TypeFcn.toTyName(TypeFcn.realise phi theta1),
-			      TypeFcn.toTyName(TypeFcn.realise phi theta2))
-			  of (SOME t1, SOME t2) =>
-			     if TyNameSet.member(StaticBasis.Tof B, t1)
-			     orelse TyNameSet.member(StaticBasis.Tof B,t2) then
-				errorTyCon(I, "structure contains rigid type ",
-					      tycon)
-			     else
-				shareFlexibleTyName(t1, t2, phi)
-			   | _ =>
-			     errorTyCon(I, "structure contains non-flexible \
-					   \type ", tycon)
-		    )
-		    phi TE1
+            fun shareTE(TE1, TE2, phi) =
+                TyConMap.foldli
+                    (fn(tycon, (theta1,VE1), phi) =>
+                        case TyConMap.find(TE2, tycon)
+                          of NONE             => phi
+                           | SOME(theta2,VE2) =>
+                        case (TypeFcn.toTyName(TypeFcn.realise phi theta1),
+                              TypeFcn.toTyName(TypeFcn.realise phi theta2))
+                          of (SOME t1, SOME t2) =>
+                             if TyNameSet.member(StaticBasis.Tof B, t1)
+                             orelse TyNameSet.member(StaticBasis.Tof B,t2) then
+                                errorTyCon(I, "structure contains rigid type ",
+                                              tycon)
+                             else
+                                shareFlexibleTyName(t1, t2, phi)
+                           | _ =>
+                             errorTyCon(I, "structure contains non-flexible \
+                                           \type ", tycon)
+                    )
+                    phi TE1
 
-	    fun shareSE(SE1, SE2, phi) =
-		StrIdMap.foldli
-		    (fn(strid, StaticEnv.Str E1, phi) =>
-			case StrIdMap.find(SE2, strid)
-			  of NONE                   => phi
-			   | SOME(StaticEnv.Str E2) => shareE(E1, E2, phi)
-		    )
-		    phi SE1
+            fun shareSE(SE1, SE2, phi) =
+                StrIdMap.foldli
+                    (fn(strid, StaticEnv.Str E1, phi) =>
+                        case StrIdMap.find(SE2, strid)
+                          of NONE                   => phi
+                           | SOME(StaticEnv.Str E2) => shareE(E1, E2, phi)
+                    )
+                    phi SE1
 
-	    and shareE((SE1,TE1,VE1), (SE2,TE2,VE2), phi) =
-		let
-		    val phi'  = shareTE(TE1, TE2, phi)
-		    val phi'' = shareSE(SE1, SE2, phi')
-		in
-		    phi''
-		end
+            and shareE((SE1,TE1,VE1), (SE2,TE2,VE2), phi) =
+                let
+                    val phi'  = shareTE(TE1, TE2, phi)
+                    val phi'' = shareSE(SE1, SE2, phi')
+                in
+                    phi''
+                end
 
-	    fun share1(E1,   [],   phi) = phi
-	      | share1(E1, E2::Es, phi) =
-		let
-		    val phi' = shareE(E1, E2, phi)
-		in
-		    share1(E1, Es, phi')
-		end
+            fun share1(E1,   [],   phi) = phi
+              | share1(E1, E2::Es, phi) =
+                let
+                    val phi' = shareE(E1, E2, phi)
+                in
+                    share1(E1, Es, phi')
+                end
 
-	    fun shareAll( [],   phi) = phi
-	      | shareAll(E::Es, phi) =
-		let
-		    val phi' = share1(E, Es, phi)
-		in
-		    shareAll(Es, phi')
-		end
+            fun shareAll( [],   phi) = phi
+              | shareAll(E::Es, phi) =
+                let
+                    val phi' = share1(E, Es, phi)
+                in
+                    shareAll(Es, phi')
+                end
 
-	    val E   = elabSpec(B, spec)
-	    val Es  = List.map
-			(fn longstrid =>
-			 case StaticEnv.findLongStrId(E, longstrid)
-			   of SOME(StaticEnv.Str E') => E'
-			    | NONE =>
-			      errorLongStrId(I, "unknown structure ", longstrid)
-			) longstrids
-	    val phi = shareAll(Es, TyNameMap.empty)
-	in
-	    StaticEnv.realise phi E
-	end
+            val E   = elabSpec(B, spec)
+            val Es  = List.map
+                        (fn longstrid =>
+                         case StaticEnv.findLongStrId(E, longstrid)
+                           of SOME(StaticEnv.Str E') => E'
+                            | NONE =>
+                              errorLongStrId(I, "unknown structure ", longstrid)
+                        ) longstrids
+            val phi = shareAll(Es, TyNameMap.empty)
+        in
+            StaticEnv.realise phi E
+        end
 
 
     (* Value Descriptions *)
 
     and elabValDesc(C, ValDesc(I, vid, ty, valdesc_opt)) =
-	(* [Rule 79] *)
-	let
-	    val tau = ElabCore.elabTy(C, ty)
-	    val VE  = case valdesc_opt
-			of NONE         => VIdMap.empty
-			 | SOME valdesc => elabValDesc(C, valdesc)
-	in
-	    if isSome(VIdMap.find(VE, vid)) then
-		(* Syntactic restriction [Section 3.5, 2nd bullet] *)
-		errorVId(I, "duplicate variable ", vid)
-	    else if not(ElabCore.validBindVId vid) then
-		(* Syntactic restriction [Section 3.5, 5th bullet] *)
-		errorVId(I, "illegal specification of identifier ", vid)
-	    else
-		VIdMap.insert(VE, vid, (([],tau),IdStatus.v))
-	end
+        (* [Rule 79] *)
+        let
+            val tau = ElabCore.elabTy(C, ty)
+            val VE  = case valdesc_opt
+                        of NONE         => VIdMap.empty
+                         | SOME valdesc => elabValDesc(C, valdesc)
+        in
+            if isSome(VIdMap.find(VE, vid)) then
+                (* Syntactic restriction [Section 3.5, 2nd bullet] *)
+                errorVId(I, "duplicate variable ", vid)
+            else if not(ElabCore.validBindVId vid) then
+                (* Syntactic restriction [Section 3.5, 5th bullet] *)
+                errorVId(I, "illegal specification of identifier ", vid)
+            else
+                VIdMap.insert(VE, vid, (([],tau),IdStatus.v))
+        end
 
 
     (* Type Descriptions *)
 
     and elabTypDesc(C, TypDesc(I, tyvarseq, tycon, typdesc_opt)) =
-	(* [Rule 80] *)
-	let
-	    val alphas = #2(ElabCore.tyvars tyvarseq)
-	    val k      = List.length alphas
-	    val t      = TyName.tyname(tycon, k, TyName.NOEQ, 0)
-	    val TE     = case typdesc_opt
-			   of NONE         => TyConMap.empty
-			    | SOME typdesc => elabTypDesc(C, typdesc)
-			      (* Side condition on t is always true. *)
-	    val tau    = Type.fromConsType (List.map Type.fromTyVar alphas, t)
-	in
-	    if isSome(TyConMap.find(TE, tycon)) then
-		(* Syntactic restriction [Section 3.5, 2nd bullet] *)
-		errorTyCon(I, "duplicate type constructor ", tycon)
-	    else
-		TyConMap.insert(TE, tycon, ((alphas,tau),VIdMap.empty))
-	end
+        (* [Rule 80] *)
+        let
+            val alphas = #2(ElabCore.tyvars tyvarseq)
+            val k      = List.length alphas
+            val t      = TyName.tyname(tycon, k, TyName.NOEQ, 0)
+            val TE     = case typdesc_opt
+                           of NONE         => TyConMap.empty
+                            | SOME typdesc => elabTypDesc(C, typdesc)
+                              (* Side condition on t is always true. *)
+            val tau    = Type.fromConsType (List.map Type.fromTyVar alphas, t)
+        in
+            if isSome(TyConMap.find(TE, tycon)) then
+                (* Syntactic restriction [Section 3.5, 2nd bullet] *)
+                errorTyCon(I, "duplicate type constructor ", tycon)
+            else
+                TyConMap.insert(TE, tycon, ((alphas,tau),VIdMap.empty))
+        end
 
 
     (* Datatype Descriptions *)
 
     and elabDatDesc(C, DatDesc(I, tyvarseq, tycon, condesc, datdesc_opt)) =
-	(* [Rule 81, part 2] *)
-	let
-	    val (U,alphas)   = ElabCore.tyvars tyvarseq
-	    val (alphas,tau) = case Context.findTyCon(C, tycon)
-				 of SOME(theta,VE) => theta
-				  | NONE => (* lhsDatDesc inserted it! *)
-				    raise Fail "ElabCore.elabDatDesc: \
-						\tycon not pre-bound"
-	    val VE       = elabConDesc(C,tau, condesc)
-	    val(VE',TE') = case datdesc_opt
-			     of NONE         => ( VIdMap.empty, TyConMap.empty )
-			      | SOME datdesc => elabDatDesc(C, datdesc)
-				(* Side condition on t is always true. *)
-	    val ClosVE   = if TyVarSet.isSubset(StaticEnv.tyvarsVE VE, U) then
-			     StaticEnv.Clos VE
-			   else
-			     (* Syntactic restriction [Section 3.5,4th bullet]*)
-			     error(I, "free type variables \
-				      \in datatype description")
-	in
-	    if isSome(TyConMap.find(TE', tycon)) then
-		  (* Syntactic restriction [Section 3.5, 2nd bullet] *)
-		  errorTyCon(I, "duplicate type constructor ", tycon)
-	    else
-	    ( VIdMap.unionWithi (fn(vid,_,_) =>
-		  (* Syntactic restriction [Section 3.5, 2nd bullet] *)
-		  errorVId(I, "duplicate data cnstructor ", vid)) (ClosVE,VE')
-	    , TyConMap.insert(TE', tycon, ((alphas,tau),ClosVE))
-	    )
-	end
+        (* [Rule 81, part 2] *)
+        let
+            val (U,alphas)   = ElabCore.tyvars tyvarseq
+            val (alphas,tau) = case Context.findTyCon(C, tycon)
+                                 of SOME(theta,VE) => theta
+                                  | NONE => (* lhsDatDesc inserted it! *)
+                                    raise Fail "ElabCore.elabDatDesc: \
+                                                \tycon not pre-bound"
+            val VE       = elabConDesc(C,tau, condesc)
+            val(VE',TE') = case datdesc_opt
+                             of NONE         => ( VIdMap.empty, TyConMap.empty )
+                              | SOME datdesc => elabDatDesc(C, datdesc)
+                                (* Side condition on t is always true. *)
+            val ClosVE   = if TyVarSet.isSubset(StaticEnv.tyvarsVE VE, U) then
+                             StaticEnv.Clos VE
+                           else
+                             (* Syntactic restriction [Section 3.5,4th bullet]*)
+                             error(I, "free type variables \
+                                      \in datatype description")
+        in
+            if isSome(TyConMap.find(TE', tycon)) then
+                  (* Syntactic restriction [Section 3.5, 2nd bullet] *)
+                  errorTyCon(I, "duplicate type constructor ", tycon)
+            else
+            ( VIdMap.unionWithi (fn(vid,_,_) =>
+                  (* Syntactic restriction [Section 3.5, 2nd bullet] *)
+                  errorVId(I, "duplicate data cnstructor ", vid)) (ClosVE,VE')
+            , TyConMap.insert(TE', tycon, ((alphas,tau),ClosVE))
+            )
+        end
 
 
     (* Constructor Descriptions *)
 
     and elabConDesc(C,tau, ConDesc(I, vid, ty_opt, condesc_opt)) =
-	(* [Rule 82] *)
-	let
-	    val tau1 = case ty_opt
-			 of NONE    => tau
-			  | SOME ty =>
-			    let
-				val tau' = ElabCore.elabTy(C, ty)
-			    in
-			        Type.fromFunType(tau',tau)
-			    end
-	    val VE   = case condesc_opt
-			 of NONE         => VIdMap.empty
-			  | SOME condesc => elabConDesc(C,tau, condesc)
-	in
-	    if isSome(VIdMap.find(VE, vid)) then
-		(* Syntactic restriction [Section 3.5, 2nd bullet] *)
-		errorVId(I, "duplicate data constructor ", vid)
-	    else if not(ElabCore.validConBindVId vid) then
-		(* Syntactic restriction [Section 3.5, 5th bullet] *)
-		errorVId(I, "illegal specifiation of identifier ", vid)
-	    else
-		VIdMap.insert(VE, vid, (([],tau1),IdStatus.c))
-	end
+        (* [Rule 82] *)
+        let
+            val tau1 = case ty_opt
+                         of NONE    => tau
+                          | SOME ty =>
+                            let
+                                val tau' = ElabCore.elabTy(C, ty)
+                            in
+                                Type.fromFunType(tau',tau)
+                            end
+            val VE   = case condesc_opt
+                         of NONE         => VIdMap.empty
+                          | SOME condesc => elabConDesc(C,tau, condesc)
+        in
+            if isSome(VIdMap.find(VE, vid)) then
+                (* Syntactic restriction [Section 3.5, 2nd bullet] *)
+                errorVId(I, "duplicate data constructor ", vid)
+            else if not(ElabCore.validConBindVId vid) then
+                (* Syntactic restriction [Section 3.5, 5th bullet] *)
+                errorVId(I, "illegal specifiation of identifier ", vid)
+            else
+                VIdMap.insert(VE, vid, (([],tau1),IdStatus.c))
+        end
 
 
     (* Exception Description *)
 
     and elabExDesc(C, ExDesc(I, vid, ty_opt, exdesc_opt)) =
-	(* [Rule 83] *)
-	let
-	    val tau1 = case ty_opt
-			 of NONE    => InitialStaticEnv.tauExn
-			  | SOME ty =>
-			    let
-				val tau = ElabCore.elabTy(C, ty)
-				val  _  = if TyVarSet.isEmpty(Type.tyvars tau)
-					  then () else
-					  error(I, "free type variables \
-						   \in exception description")
-			    in
-			        Type.fromFunType(tau, InitialStaticEnv.tauExn)
-			    end
-	    val VE   = case exdesc_opt
-			 of NONE        => VIdMap.empty
-			  | SOME exdesc => elabExDesc(C, exdesc)
-	in
-	    if isSome(VIdMap.find(VE, vid)) then
-		(* Syntactic restriction [Section 3.5, 2nd bullet] *)
-		errorVId(I, "duplicate exception constructor ", vid)
-	    else if not(ElabCore.validConBindVId vid) then
-		(* Syntactic restriction [Section 3.5, 5th bullet] *)
-		errorVId(I, "illegal specification of identifier ", vid)
-	    else
-		VIdMap.insert(VE, vid, (([],tau1),IdStatus.e))
-	end
+        (* [Rule 83] *)
+        let
+            val tau1 = case ty_opt
+                         of NONE    => InitialStaticEnv.tauExn
+                          | SOME ty =>
+                            let
+                                val tau = ElabCore.elabTy(C, ty)
+                                val  _  = if TyVarSet.isEmpty(Type.tyvars tau)
+                                          then () else
+                                          error(I, "free type variables \
+                                                   \in exception description")
+                            in
+                                Type.fromFunType(tau, InitialStaticEnv.tauExn)
+                            end
+            val VE   = case exdesc_opt
+                         of NONE        => VIdMap.empty
+                          | SOME exdesc => elabExDesc(C, exdesc)
+        in
+            if isSome(VIdMap.find(VE, vid)) then
+                (* Syntactic restriction [Section 3.5, 2nd bullet] *)
+                errorVId(I, "duplicate exception constructor ", vid)
+            else if not(ElabCore.validConBindVId vid) then
+                (* Syntactic restriction [Section 3.5, 5th bullet] *)
+                errorVId(I, "illegal specification of identifier ", vid)
+            else
+                VIdMap.insert(VE, vid, (([],tau1),IdStatus.e))
+        end
 
 
     (* Structure Descriptions *)
 
     and elabStrDesc(B, StrDesc(I, strid, sigexp, strdesc_opt)) =
-	(* [Rule 84] *)
-	let
-	    val E  = elabSigExpE(B, sigexp)
-	    val SE = case strdesc_opt
-		       of NONE         => StrIdMap.empty
-		        | SOME strdesc =>
-			  elabStrDesc(B plusT StaticEnv.tynames E, strdesc)
-	in
-	    if isSome(StrIdMap.find(SE, strid)) then
-		(* Syntactic restriction [Section 3.5, 2nd bullet] *)
-		errorStrId(I, "duplicate structure identifier ", strid)
-	    else
-		StrIdMap.insert(SE, strid, StaticEnv.Str E)
-	end
+        (* [Rule 84] *)
+        let
+            val E  = elabSigExpE(B, sigexp)
+            val SE = case strdesc_opt
+                       of NONE         => StrIdMap.empty
+                        | SOME strdesc =>
+                          elabStrDesc(B plusT StaticEnv.tynames E, strdesc)
+        in
+            if isSome(StrIdMap.find(SE, strid)) then
+                (* Syntactic restriction [Section 3.5, 2nd bullet] *)
+                errorStrId(I, "duplicate structure identifier ", strid)
+            else
+                StrIdMap.insert(SE, strid, StaticEnv.Str E)
+        end
 
 
     (* Functor Declarations *)
 
     and elabFunDec(B, FunDec(I, funbind)) =
-	(* [Rule 85] *)
-	let
-	    val F = elabFunBind(B, funbind)
-	in
-	    F
-	end
+        (* [Rule 85] *)
+        let
+            val F = elabFunBind(B, funbind)
+        in
+            F
+        end
 
 
     (* Functor Bindings *)
 
     and elabFunBind(B, FunBind(I, funid, strid, sigexp, strexp, funbind_opt)) =
-	(* [Rule 86] *)
-	let
-	    val (T,E) = elabSigExp(B, sigexp)
-	    val  E'   = elabStrExp(
-			   B oplusSE StrIdMap.singleton(strid,StaticEnv.Str E),
-			   strexp)
-	    (* Side condition on T is always ensured. *)
-	    val T'    = TyNameSet.difference(StaticEnv.tynames E',
-				TyNameSet.union(StaticBasis.Tof B, T))
-	    val F     = case funbind_opt
-			  of NONE         => FunIdMap.empty
-			   | SOME funbind => elabFunBind(B, funbind)
-	in
-	    if isSome(FunIdMap.find(F, funid)) then
-		(* Syntactic restriction [Section 3.5, 1st bullet] *)
-		errorFunId(I, "duplicate functor identifier ", funid)
-	    else
-		FunIdMap.insert(F, funid, (T,(E,(T',E'))))
-	end
+        (* [Rule 86] *)
+        let
+            val (T,E) = elabSigExp(B, sigexp)
+            val  E'   = elabStrExp(
+                           B oplusSE StrIdMap.singleton(strid,StaticEnv.Str E),
+                           strexp)
+            (* Side condition on T is always ensured. *)
+            val T'    = TyNameSet.difference(StaticEnv.tynames E',
+                                TyNameSet.union(StaticBasis.Tof B, T))
+            val F     = case funbind_opt
+                          of NONE         => FunIdMap.empty
+                           | SOME funbind => elabFunBind(B, funbind)
+        in
+            if isSome(FunIdMap.find(F, funid)) then
+                (* Syntactic restriction [Section 3.5, 1st bullet] *)
+                errorFunId(I, "duplicate functor identifier ", funid)
+            else
+                FunIdMap.insert(F, funid, (T,(E,(T',E'))))
+        end
 
 
     (* Top-level Declarations *)
 
     and elabTopDec(B, STRDECTopDec(I, strdec, topdec_opt)) =
-	(* [Rule 87] *)
-	let
-	    val E   = elabStrDec(true, B, strdec)
-	    val B'  = case topdec_opt
-			of NONE        => StaticBasis.empty
-			 | SOME topdec => elabTopDec(B oplusE E, topdec)
-	    val B'' = StaticBasis.plus
-			(StaticBasis.fromTandE(StaticEnv.tynames E, E), B')
-	in
-	    if TyVarSet.isEmpty(StaticBasis.tyvars B'') then
-		B''
-	    else
-		error(I, "free type variables on top-level")
-	end
+        (* [Rule 87] *)
+        let
+            val E   = elabStrDec(true, B, strdec)
+            val B'  = case topdec_opt
+                        of NONE        => StaticBasis.empty
+                         | SOME topdec => elabTopDec(B oplusE E, topdec)
+            val B'' = StaticBasis.plus
+                        (StaticBasis.fromTandE(StaticEnv.tynames E, E), B')
+        in
+            if TyVarSet.isEmpty(StaticBasis.tyvars B'') then
+                B''
+            else
+                error(I, "free type variables on top-level")
+        end
 
       | elabTopDec(B, SIGDECTopDec(I, sigdec, topdec_opt)) =
-	(* [Rule 88] *)
-	let
-	    val G   = elabSigDec(B, sigdec)
-	    val B'  = case topdec_opt
-			of NONE        => StaticBasis.empty
-			 | SOME topdec => elabTopDec(B oplusG G, topdec)
-	    val B'' = StaticBasis.plus
-			(StaticBasis.fromTandG(StaticBasis.tynamesG G, G), B')
-	in
-	    B''
-	end
+        (* [Rule 88] *)
+        let
+            val G   = elabSigDec(B, sigdec)
+            val B'  = case topdec_opt
+                        of NONE        => StaticBasis.empty
+                         | SOME topdec => elabTopDec(B oplusG G, topdec)
+            val B'' = StaticBasis.plus
+                        (StaticBasis.fromTandG(StaticBasis.tynamesG G, G), B')
+        in
+            B''
+        end
 
       | elabTopDec(B, FUNDECTopDec(I, fundec, topdec_opt)) =
-	(* [Rule 89] *)
-	let
-	    val F   = elabFunDec(B, fundec)
-	    val B'  = case topdec_opt
-			of NONE        => StaticBasis.empty
-			 | SOME topdec => elabTopDec(B oplusF F, topdec)
-	    val B'' = StaticBasis.plus
-			(StaticBasis.fromTandF(StaticBasis.tynamesF F, F), B')
-	in
-	    if TyVarSet.isEmpty(StaticBasis.tyvars B'') then
-		B''
-	    else
-		error(I, "free type variables on top-level")
-	end
+        (* [Rule 89] *)
+        let
+            val F   = elabFunDec(B, fundec)
+            val B'  = case topdec_opt
+                        of NONE        => StaticBasis.empty
+                         | SOME topdec => elabTopDec(B oplusF F, topdec)
+            val B'' = StaticBasis.plus
+                        (StaticBasis.fromTandF(StaticBasis.tynamesF F, F), B')
+        in
+            if TyVarSet.isEmpty(StaticBasis.tyvars B'') then
+                B''
+            else
+                error(I, "free type variables on top-level")
+        end
 
 
 
     (* Build tentative TE from LHSs of datdesc *)
 
     and lhsDatDesc(DatDesc(I, tyvarseq, tycon, condesc, datdesc_opt)) =
-	(* [Rule 81, part 1] *)
-	let
-	    val (U,alphas) = ElabCore.tyvars tyvarseq
-	    val k          = List.length alphas
-	    val span       = lhsConDesc condesc
-	    val t          = TyName.tyname(tycon, k, TyName.EQ, span)
-	    val tau        = Type.fromConsType(List.map Type.fromTyVar alphas,t)
-	    val TE'        = case datdesc_opt
-			       of NONE         => TyConMap.empty
-				| SOME datdesc => lhsDatDesc datdesc
-	in
-	    if isSome(TyConMap.find(TE', tycon)) then
-		(* Syntactic restriction [Section 3.5, 2nd bullet] *)
-		errorTyCon(I, "duplicate type constructor ", tycon)
-	    else
-		TyConMap.insert(TE', tycon, ((alphas,tau), VIdMap.empty))
-	end
+        (* [Rule 81, part 1] *)
+        let
+            val (U,alphas) = ElabCore.tyvars tyvarseq
+            val k          = List.length alphas
+            val span       = lhsConDesc condesc
+            val t          = TyName.tyname(tycon, k, TyName.EQ, span)
+            val tau        = Type.fromConsType(List.map Type.fromTyVar alphas,t)
+            val TE'        = case datdesc_opt
+                               of NONE         => TyConMap.empty
+                                | SOME datdesc => lhsDatDesc datdesc
+        in
+            if isSome(TyConMap.find(TE', tycon)) then
+                (* Syntactic restriction [Section 3.5, 2nd bullet] *)
+                errorTyCon(I, "duplicate type constructor ", tycon)
+            else
+                TyConMap.insert(TE', tycon, ((alphas,tau), VIdMap.empty))
+        end
 
     and lhsConDesc(ConDesc(I, vid, ty_opt, condesc_opt)) =
-	case condesc_opt
-	  of NONE         => 1
-	   | SOME condesc => 1 + lhsConDesc condesc
+        case condesc_opt
+          of NONE         => 1
+           | SOME condesc => 1 + lhsConDesc condesc
 
   end
 (* stop of ElabModule.sml *)
@@ -11260,8 +11260,8 @@ signature PP_TYPE =
     type Type       = Type.Type
     type TypeScheme = TypeScheme.TypeScheme
 
-    val ppType:		Type -> doc
-    val ppTypeScheme:	TypeScheme -> doc
+    val ppType:                Type -> doc
+    val ppTypeScheme:        TypeScheme -> doc
 
   end
 (* stop of PP_TYPE.sml *)
@@ -11291,13 +11291,13 @@ structure PPType :> PP_TYPE =
     fun ppTyName t    = text(TyName.toString t)
 
     fun ppOverloadingClass O =
-	let
-	    val T  = OverloadingClass.set O
-	    val t  = OverloadingClass.default O
-	    val ts = t :: TyNameSet.listItems(TyNameSet.delete(T,t))
-	in
-	    brack(ppCommaList ppTyName ts)
-	end
+        let
+            val T  = OverloadingClass.set O
+            val t  = OverloadingClass.default O
+            val ts = t :: TyNameSet.listItems(TyNameSet.delete(T,t))
+        in
+            brack(ppCommaList ppTyName ts)
+        end
 
 
     fun ppRowVar CLOSEDRow  = empty
@@ -11307,9 +11307,9 @@ structure PPType :> PP_TYPE =
     (* Types *)
 
     (* Precedence:
-     *	0 : function arrow (ty1 -> ty2)
-     *	1 : tuple (ty1 * ... * tyn)
-     *	2 : constructed type (tyseq tycon)
+     *        0 : function arrow (ty1 -> ty2)
+     *        1 : tuple (ty1 * ... * tyn)
+     *        2 : constructed type (tyseq tycon)
      *)
 
     fun ppType tau = fbox(below(nest(ppTypePrec 0 tau)))
@@ -11319,70 +11319,70 @@ structure PPType :> PP_TYPE =
     and ppType'Prec p (TyVar(alpha))   = ppTyVar alpha
 
       | ppType'Prec p (RowType(Rho,r)) =
-	let
-	    fun isTuple(   [],     n) = n > 2
-	      | isTuple(lab::labs, n) =
-		    lab = Lab.fromInt n andalso isTuple(labs, n+1)
+        let
+            fun isTuple(   [],     n) = n > 2
+              | isTuple(lab::labs, n) =
+                    lab = Lab.fromInt n andalso isTuple(labs, n+1)
 
-	    val labtaus     = LabMap.listItemsi Rho
-	    val (labs,taus) = ListPair.unzip labtaus
-	in
-	    if r = CLOSEDRow andalso List.null labs then
-		text "unit"
-	    else if r = CLOSEDRow andalso isTuple(labs, 1) then
-		let
-		    val doc = ppStarList (ppTypePrec 2) taus
-		in
-		    if p > 1 then
-			paren doc
-		    else
-			fbox(below(nest doc))
-		end
-	    else
-		brace(ppCommaList ppLabType labtaus ^^ ppRowVar r)
-	end
+            val labtaus     = LabMap.listItemsi Rho
+            val (labs,taus) = ListPair.unzip labtaus
+        in
+            if r = CLOSEDRow andalso List.null labs then
+                text "unit"
+            else if r = CLOSEDRow andalso isTuple(labs, 1) then
+                let
+                    val doc = ppStarList (ppTypePrec 2) taus
+                in
+                    if p > 1 then
+                        paren doc
+                    else
+                        fbox(below(nest doc))
+                end
+            else
+                brace(ppCommaList ppLabType labtaus ^^ ppRowVar r)
+        end
 
       | ppType'Prec p (FunType(tau1,tau2)) =
-	let
-	    val doc = ppTypePrec 1 tau1 ^/^
-		      text "->" ^/^
-		      ppTypePrec 0 tau2
-	in
-	    if p > 0 then
-		paren doc
-	    else
-		doc
-	end
+        let
+            val doc = ppTypePrec 1 tau1 ^/^
+                      text "->" ^/^
+                      ppTypePrec 0 tau2
+        in
+            if p > 0 then
+                paren doc
+            else
+                doc
+        end
 
       | ppType'Prec p (ConsType(taus,t)) =
-	    fbox(nest(ppSeqPrec ppTypePrec 2 taus ^/^ ppTyName t))
+            fbox(nest(ppSeqPrec ppTypePrec 2 taus ^/^ ppTyName t))
 
       | ppType'Prec p (Overloaded(O)) =
-	    text "'" ^^ ppOverloadingClass O
+            text "'" ^^ ppOverloadingClass O
 
       | ppType'Prec p (Link tau) =
-	    ppTypePrec p tau
+            ppTypePrec p tau
 
     and ppLabType(lab, tau) =
-	    abox(
-		hbox(
-		    ppLab lab ^/^
-		    text ":"
-		) ^^
-		below(nest(break ^^
-		    ppType tau
-		))
-	    )
+            abox(
+                hbox(
+                    ppLab lab ^/^
+                    text ":"
+                ) ^^
+                below(nest(break ^^
+                    ppType tau
+                ))
+            )
 
 
     (* Type schemes *)
 
     fun ppTypeScheme sigma =
-	let
-	    val (alphas,tau) = TypeScheme.normalise sigma
-	in
-	    ppType tau
-	end
+        let
+            val (alphas,tau) = TypeScheme.normalise sigma
+        in
+            ppType tau
+        end
 
   end
 (* stop of PPType.sml *)
@@ -11442,168 +11442,168 @@ structure PPStaticEnv :> PP_STATIC_ENV =
     (* Environments *)
 
     fun ppConTypeScheme (_, ref(Type.FunType(tau,_))) =
-	    text "of" ^^ break ^^ PPType.ppType tau
+            text "of" ^^ break ^^ PPType.ppType tau
 
       | ppConTypeScheme _ = empty
 
 
     fun ppValEnv VE =
-	VIdMap.foldri
-	    (fn(vid, (sigma,IdStatus.v), doc) =>
-		abox(
-		    hbox(
-			text "val" ^/^
-			ppVId vid ^/^
-			text ":"
-		    ) ^^
-		    nest(break ^^
-			abox(PPType.ppTypeScheme sigma)
-		    )
-		) ^/^
-		doc
+        VIdMap.foldri
+            (fn(vid, (sigma,IdStatus.v), doc) =>
+                abox(
+                    hbox(
+                        text "val" ^/^
+                        ppVId vid ^/^
+                        text ":"
+                    ) ^^
+                    nest(break ^^
+                        abox(PPType.ppTypeScheme sigma)
+                    )
+                ) ^/^
+                doc
 
-	     | (vid, (sigma,_), doc) => doc
-	    )
-	    empty VE
+             | (vid, (sigma,_), doc) => doc
+            )
+            empty VE
 
     fun ppExEnv VE =
-	VIdMap.foldri
-	    (fn(vid, (sigma,IdStatus.e), doc) =>
-		abox(
-		    hbox(
-			text "exception" ^/^
-			ppVId vid
-		    ) ^^
-		    nest(break ^^
-			abox(ppConTypeScheme sigma)
-		    )
-		) ^/^
-		doc
+        VIdMap.foldri
+            (fn(vid, (sigma,IdStatus.e), doc) =>
+                abox(
+                    hbox(
+                        text "exception" ^/^
+                        ppVId vid
+                    ) ^^
+                    nest(break ^^
+                        abox(ppConTypeScheme sigma)
+                    )
+                ) ^/^
+                doc
 
-	     | (vid, (sigma,_), doc) => doc
-	    )
-	    empty VE
+             | (vid, (sigma,_), doc) => doc
+            )
+            empty VE
 
     fun ppConEnv VE =
-	VIdMap.foldli
-	    (fn(vid, (sigma,_), doc) =>
-		doc ^/^
-		abox(
-		    hbox(
-			(if isEmpty doc then empty else text "|") ^/^
-			ppVId vid
-		    ) ^^
-		    nest(text "" ^/^
-			abox(ppConTypeScheme sigma)
-		    )
-		)
-	    )
-	    empty VE
+        VIdMap.foldli
+            (fn(vid, (sigma,_), doc) =>
+                doc ^/^
+                abox(
+                    hbox(
+                        (if isEmpty doc then empty else text "|") ^/^
+                        ppVId vid
+                    ) ^^
+                    nest(text "" ^/^
+                        abox(ppConTypeScheme sigma)
+                    )
+                )
+            )
+            empty VE
 
 
     fun absTy(T, tycon, theta) =
-	case TypeFcn.toTyName theta
-	  of NONE    => NONE
-	   | SOME t  => if TyName.tycon t = tycon
-			andalso TyNameSet.member(T, t) then
-			    SOME(TyName.equality t <> TyName.NOEQ)
-			else
-			    NONE
+        case TypeFcn.toTyName theta
+          of NONE    => NONE
+           | SOME t  => if TyName.tycon t = tycon
+                        andalso TyNameSet.member(T, t) then
+                            SOME(TyName.equality t <> TyName.NOEQ)
+                        else
+                            NONE
 
     fun ppAbsTyEnv(T,TE) =
-	TyConMap.foldri
-	    (fn(tycon, (theta as (alphas,tau), VE), doc) =>
-		if VIdMap.isEmpty VE then
-		case absTy(T, tycon, theta)
-		 of NONE    => doc
-		  | SOME eq =>
-		    abox(
-			hbox(
-			    text(if eq then "eqtype" else "type") ^/^
-			    ppSeq ppTyVar alphas ^/^
-			    ppTyCon tycon
-			)
-		    ) ^/^
-		    doc
-		else
-		    doc
-	    )
-	    empty TE
+        TyConMap.foldri
+            (fn(tycon, (theta as (alphas,tau), VE), doc) =>
+                if VIdMap.isEmpty VE then
+                case absTy(T, tycon, theta)
+                 of NONE    => doc
+                  | SOME eq =>
+                    abox(
+                        hbox(
+                            text(if eq then "eqtype" else "type") ^/^
+                            ppSeq ppTyVar alphas ^/^
+                            ppTyCon tycon
+                        )
+                    ) ^/^
+                    doc
+                else
+                    doc
+            )
+            empty TE
 
     fun ppSynTyEnv(T,TE) =
-	TyConMap.foldri
-	    (fn(tycon, (theta as (alphas,tau), VE), doc) =>
-		if VIdMap.isEmpty VE
-		andalso not(isSome(absTy(T, tycon, theta))) then
-		    abox(
-			hbox(
-			    text "type" ^/^
-			    ppSeq ppTyVar alphas ^/^
-			    ppTyCon tycon ^/^
-			    text "="
-			) ^^
-			nest(break ^^
-			    abox(PPType.ppType tau)
-			)
-		    ) ^/^
-		    doc
-		else
-		    doc
-	    )
-	    empty TE
+        TyConMap.foldri
+            (fn(tycon, (theta as (alphas,tau), VE), doc) =>
+                if VIdMap.isEmpty VE
+                andalso not(isSome(absTy(T, tycon, theta))) then
+                    abox(
+                        hbox(
+                            text "type" ^/^
+                            ppSeq ppTyVar alphas ^/^
+                            ppTyCon tycon ^/^
+                            text "="
+                        ) ^^
+                        nest(break ^^
+                            abox(PPType.ppType tau)
+                        )
+                    ) ^/^
+                    doc
+                else
+                    doc
+            )
+            empty TE
 
     fun ppDataTyEnv TE =
-	TyConMap.foldri
-	    (fn(tycon, ((alphas,tau),VE), doc) =>
-		if VIdMap.isEmpty VE then
-		    doc
-		else
-		    abox(
-		        hbox(
-			    text "datatype" ^/^
-			    ppSeq ppTyVar alphas ^/^
-			    ppTyCon tycon ^/^
-			    text "="
-			) ^^
-			nest(break ^^
-			    abox(ppConEnv VE)
-			)
-		    ) ^/^
-		    doc
-	    )
-	    empty TE
+        TyConMap.foldri
+            (fn(tycon, ((alphas,tau),VE), doc) =>
+                if VIdMap.isEmpty VE then
+                    doc
+                else
+                    abox(
+                        hbox(
+                            text "datatype" ^/^
+                            ppSeq ppTyVar alphas ^/^
+                            ppTyCon tycon ^/^
+                            text "="
+                        ) ^^
+                        nest(break ^^
+                            abox(ppConEnv VE)
+                        )
+                    ) ^/^
+                    doc
+            )
+            empty TE
 
     fun ppTyEnv(T,TE) =
-	    vbox(
-		ppAbsTyEnv(T,TE) ^/^
-		ppSynTyEnv(T,TE) ^/^
-		ppDataTyEnv TE
-	    )
+            vbox(
+                ppAbsTyEnv(T,TE) ^/^
+                ppSynTyEnv(T,TE) ^/^
+                ppDataTyEnv TE
+            )
 
     fun ppStrEnv(T,SE) =
-	StrIdMap.foldri
-	    (fn(strid, StaticEnv.Str E, doc) =>
-		abox(
-		    hbox(
-			text "structure" ^/^
-			ppStrId strid ^/^
-			text ":"
-		    ) ^^
-		    nest(break ^^
-			ppSig (T,E)
-		    )
-		) ^/^
-		doc
-	    )
-	    empty SE
+        StrIdMap.foldri
+            (fn(strid, StaticEnv.Str E, doc) =>
+                abox(
+                    hbox(
+                        text "structure" ^/^
+                        ppStrId strid ^/^
+                        text ":"
+                    ) ^^
+                    nest(break ^^
+                        ppSig (T,E)
+                    )
+                ) ^/^
+                doc
+            )
+            empty SE
 
     and ppEnv'(T,(SE,TE,VE)) =
-	    vbox(
-		ppStrEnv(T,SE) ^/^
-		ppTyEnv(T,TE) ^/^
-		ppExEnv VE ^/^
-		ppValEnv VE
-	    )
+            vbox(
+                ppStrEnv(T,SE) ^/^
+                ppTyEnv(T,TE) ^/^
+                ppExEnv VE ^/^
+                ppValEnv VE
+            )
 
     and ppEnv E = ppEnv'(TyNameSet.empty,E)
 
@@ -11611,20 +11611,20 @@ structure PPStaticEnv :> PP_STATIC_ENV =
     (* Signatures *)
 
     and ppSig (T,E) =
-	let
-	    val doc = ppEnv'(T, E)
-	in
-	    abox(below(
-		text "sig" ^^
-		brace(ppCommaList ppTyName (TyNameSet.listItems T)) ^^
-		(if isEmpty doc then
-		    empty
-		 else
-		    nest(vbox(break ^^ doc))
-		) ^^ break ^^
-		text "end"
-	    ))
-	end
+        let
+            val doc = ppEnv'(T, E)
+        in
+            abox(below(
+                text "sig" ^^
+                brace(ppCommaList ppTyName (TyNameSet.listItems T)) ^^
+                (if isEmpty doc then
+                    empty
+                 else
+                    nest(vbox(break ^^ doc))
+                ) ^^ break ^^
+                text "end"
+            ))
+        end
 
   end
 (* stop of PPStaticEnv.sml *)
@@ -11676,62 +11676,62 @@ structure PPStaticBasis :> PP_STATIC_BASIS =
     (* Environments *)
 
     fun ppSigEnv G =
-	SigIdMap.foldri
-	    (fn(sigid, Sigma, doc) =>
-		abox(
-		    hbox(
-			text "signature" ^/^
-			ppSigId sigid ^/^
-			text "="
-		    ) ^^
-		    nest(break ^^
-			PPStaticEnv.ppSig Sigma
-		    )
-		) ^/^
-		doc
-	    )
-	    empty G
+        SigIdMap.foldri
+            (fn(sigid, Sigma, doc) =>
+                abox(
+                    hbox(
+                        text "signature" ^/^
+                        ppSigId sigid ^/^
+                        text "="
+                    ) ^^
+                    nest(break ^^
+                        PPStaticEnv.ppSig Sigma
+                    )
+                ) ^/^
+                doc
+            )
+            empty G
 
     fun ppFunEnv F =
-	FunIdMap.foldri
-	    (fn(funid, (T,(E,Sigma)), doc) =>
-		abox(
-		    hbox(
-			text "functor" ^/^
-			ppFunId funid
-		    ) ^^
-		    nest(ebreak ^^
-			abox(
-			    hbox(
-				text "(" ^^
-				text "Arg" ^/^
-				text ":"
-			    ) ^^
-			    nest(break ^^
-				PPStaticEnv.ppSig(T,E)
-			    ) ^^ ebreak ^^
-			    hbox(
-				text ")" ^/^
-				text ":"
-			    )
-			) ^/^
-			PPStaticEnv.ppSig Sigma
-		    )
-		) ^/^
-		doc
-	    )
-	    empty F
+        FunIdMap.foldri
+            (fn(funid, (T,(E,Sigma)), doc) =>
+                abox(
+                    hbox(
+                        text "functor" ^/^
+                        ppFunId funid
+                    ) ^^
+                    nest(ebreak ^^
+                        abox(
+                            hbox(
+                                text "(" ^^
+                                text "Arg" ^/^
+                                text ":"
+                            ) ^^
+                            nest(break ^^
+                                PPStaticEnv.ppSig(T,E)
+                            ) ^^ ebreak ^^
+                            hbox(
+                                text ")" ^/^
+                                text ":"
+                            )
+                        ) ^/^
+                        PPStaticEnv.ppSig Sigma
+                    )
+                ) ^/^
+                doc
+            )
+            empty F
 
 
     (* Basis *)
 
     fun ppBasis (T,F,G,E) =
-	    vbox(
-		ppSigEnv G ^/^
-		ppFunEnv F ^/^
-		PPStaticEnv.ppEnv E ^/^
-		text ""
-	    )
+            vbox(
+                ppSigEnv G ^/^
+                ppFunEnv F ^/^
+                PPStaticEnv.ppEnv E ^/^
+                text ""
+            )
 
   end
 (* stop of PPStaticBasis.sml *)
@@ -11779,58 +11779,58 @@ structure PPEnv :> PP_ENV =
     (* Environments *)
 
     fun ppValEnv(s, (VE_STAT,VE_DYN)) =
-	VIdMap.foldri
-	    (fn(vid, (sigma,IdStatus.v), doc) =>
-	     let
-		val (v,is) = valOf(VIdMap.find(VE_DYN, vid))
-	     in
-		fbox(
-		    hbox(
-			text "val" ^/^
-			ppVId vid
-		    ) ^^
-		    nest(break ^^
-			text "=" ^/^
-			below(abox(PPVal.ppVal(s, v))) ^/^
-			text ":" ^/^
-			below(abox(PPType.ppTypeScheme sigma))
-		    )
-		) ^/^
-		doc
-	     end
+        VIdMap.foldri
+            (fn(vid, (sigma,IdStatus.v), doc) =>
+             let
+                val (v,is) = valOf(VIdMap.find(VE_DYN, vid))
+             in
+                fbox(
+                    hbox(
+                        text "val" ^/^
+                        ppVId vid
+                    ) ^^
+                    nest(break ^^
+                        text "=" ^/^
+                        below(abox(PPVal.ppVal(s, v))) ^/^
+                        text ":" ^/^
+                        below(abox(PPType.ppTypeScheme sigma))
+                    )
+                ) ^/^
+                doc
+             end
 
-	     | (vid, (sigma,_), doc) => doc
-	    )
-	    empty VE_STAT
+             | (vid, (sigma,_), doc) => doc
+            )
+            empty VE_STAT
 
     fun ppStrEnv(s, T, (SE_STAT,SE_DYN)) =
-	StrIdMap.foldri
-	    (fn(strid, StaticEnv.Str E_STAT, doc) =>
-	     let
-		val DynamicEnv.Str E_DYN = valOf(StrIdMap.find(SE_DYN, strid))
-	     in
-		abox(
-		    hbox(
-			text "structure" ^/^
-			ppStrId strid ^/^
-			text "="
-		    ) ^^
-		    nest(break ^^
-			ppStr (s, T, (E_STAT,E_DYN))
-		    )
-		) ^/^
-		doc
-	     end
-	    )
-	    empty SE_STAT
+        StrIdMap.foldri
+            (fn(strid, StaticEnv.Str E_STAT, doc) =>
+             let
+                val DynamicEnv.Str E_DYN = valOf(StrIdMap.find(SE_DYN, strid))
+             in
+                abox(
+                    hbox(
+                        text "structure" ^/^
+                        ppStrId strid ^/^
+                        text "="
+                    ) ^^
+                    nest(break ^^
+                        ppStr (s, T, (E_STAT,E_DYN))
+                    )
+                ) ^/^
+                doc
+             end
+            )
+            empty SE_STAT
 
     and ppEnv'(s, T, ((SE_STAT,TE_STAT,VE_STAT), (SE_DYN, TE_DYN, VE_DYN))) =
-	    vbox(
-		ppStrEnv(s, T, (SE_STAT,SE_DYN)) ^/^
-		PPStaticEnv.ppTyEnv(T,TE_STAT) ^/^
-		PPStaticEnv.ppExEnv VE_STAT ^/^
-		ppValEnv(s, (VE_STAT,VE_DYN))
-	    )
+            vbox(
+                ppStrEnv(s, T, (SE_STAT,SE_DYN)) ^/^
+                PPStaticEnv.ppTyEnv(T,TE_STAT) ^/^
+                PPStaticEnv.ppExEnv VE_STAT ^/^
+                ppValEnv(s, (VE_STAT,VE_DYN))
+            )
 
     and ppEnv(s, E) = ppEnv'(s, TyNameSet.empty, E)
 
@@ -11838,19 +11838,19 @@ structure PPEnv :> PP_ENV =
     (* Structures *)
 
     and ppStr(s, T, E) =
-	let
-	    val doc = ppEnv'(s, T, E)
-	in
-	    abox(below(
-		text "struct" ^^
-		(if isEmpty doc then
-		    empty
-		 else
-		    nest(vbox(break ^^ doc))
-		) ^^ break ^^
-		text "end"
-	    ))
-	end
+        let
+            val doc = ppEnv'(s, T, E)
+        in
+            abox(below(
+                text "struct" ^^
+                (if isEmpty doc then
+                    empty
+                 else
+                    nest(vbox(break ^^ doc))
+                ) ^^ break ^^
+                text "end"
+            ))
+        end
 
   end
 (* stop of PPEnv.sml *)
@@ -11891,12 +11891,12 @@ structure PPBasis :> PP_BASIS =
     (* Basis *)
 
     fun ppBasis (s, ((T,F_STAT,G_STAT,E_STAT), (F_DYN,G_DYN,E_DYN))) =
-	    vbox(
-		PPStaticBasis.ppSigEnv G_STAT ^/^
-		PPStaticBasis.ppFunEnv F_STAT ^/^
-		PPEnv.ppEnv(s, (E_STAT,E_DYN)) ^/^
-		text ""
-	    )
+            vbox(
+                PPStaticBasis.ppSigEnv G_STAT ^/^
+                PPStaticBasis.ppFunEnv F_STAT ^/^
+                PPEnv.ppEnv(s, (E_STAT,E_DYN)) ^/^
+                text ""
+            )
 
   end
 (* stop of PPBasis.sml *)
@@ -11927,9 +11927,9 @@ signature PROGRAM =
 
     (* Export *)
 
-    val execProgram:	State ref * Basis * Program -> Basis
-    val elabProgram:	StaticBasis * Program -> StaticBasis
-    val evalProgram:	State ref * DynamicBasis * Program -> DynamicBasis
+    val execProgram:        State ref * Basis * Program -> Basis
+    val elabProgram:        StaticBasis * Program -> StaticBasis
+    val evalProgram:        State ref * DynamicBasis * Program -> DynamicBasis
 
   end
 (* stop of PROGRAM.sml *)
@@ -11965,28 +11965,28 @@ structure Program :> PROGRAM =
     val width = 79
 
     fun printException(s, e) =
-	( TextIO.output(TextIO.stdOut, "Uncaught exception: ")
-	; PrettyPrint.output(TextIO.stdOut, PPVal.ppExVal(s, e), width)
-	; TextIO.output1(TextIO.stdOut, #"\n")
-	; TextIO.flushOut TextIO.stdOut
-	)
+        ( TextIO.output(TextIO.stdOut, "Uncaught exception: ")
+        ; PrettyPrint.output(TextIO.stdOut, PPVal.ppExVal(s, e), width)
+        ; TextIO.output1(TextIO.stdOut, #"\n")
+        ; TextIO.flushOut TextIO.stdOut
+        )
 
     fun printStaticBasis B_STAT =
-	( PrettyPrint.output(TextIO.stdOut, PPStaticBasis.ppBasis B_STAT,
-			     width)
-	; TextIO.flushOut TextIO.stdOut
-	)
+        ( PrettyPrint.output(TextIO.stdOut, PPStaticBasis.ppBasis B_STAT,
+                             width)
+        ; TextIO.flushOut TextIO.stdOut
+        )
 
     fun printDynamicBasis(s, B_DYN) =
-	( PrettyPrint.output(TextIO.stdOut, PPDynamicBasis.ppBasis(s, B_DYN),
-			     width)
-	; TextIO.flushOut TextIO.stdOut
-	)
+        ( PrettyPrint.output(TextIO.stdOut, PPDynamicBasis.ppBasis(s, B_DYN),
+                             width)
+        ; TextIO.flushOut TextIO.stdOut
+        )
 
     fun printBasis(s, B) =
-	( PrettyPrint.output(TextIO.stdOut, PPBasis.ppBasis(s, B), width)
-	; TextIO.flushOut TextIO.stdOut
-	)
+        ( PrettyPrint.output(TextIO.stdOut, PPBasis.ppBasis(s, B), width)
+        ; TextIO.flushOut TextIO.stdOut
+        )
 
 
     (* Helpers for basis modification *)
@@ -11999,92 +11999,92 @@ structure Program :> PROGRAM =
     (* Inference rules [Section 8] *)
 
     fun execProgram(s,B, Program(I, topdec, program_opt)) =
-	(* [Rules 187 to 189] *)
-	let
-	    val B_STAT1 = ElabModule.elabTopDec(Basis.B_STATof B, topdec)
-	    val B_DYN1  = EvalModule.evalTopDec(s,Basis.B_DYNof B, topdec)
-	    (* [Rule 189] *)
-	    val _   = printBasis(!s, (B_STAT1,B_DYN1))
-	    val B'  = B oplus (B_STAT1,B_DYN1)
-	    val B'' = case program_opt
-			of NONE         => B'
-			 | SOME program => execProgram(s,B', program)
-	in
-	    B''
-	end
-	handle Error.Error m =>
-	       (* [Rule 187] *)
-	       let
-		   val B' = case program_opt
-			      of NONE         => B
-			       | SOME program => execProgram(s,B, program)
-	       in
-		   B'
-	       end
+        (* [Rules 187 to 189] *)
+        let
+            val B_STAT1 = ElabModule.elabTopDec(Basis.B_STATof B, topdec)
+            val B_DYN1  = EvalModule.evalTopDec(s,Basis.B_DYNof B, topdec)
+            (* [Rule 189] *)
+            val _   = printBasis(!s, (B_STAT1,B_DYN1))
+            val B'  = B oplus (B_STAT1,B_DYN1)
+            val B'' = case program_opt
+                        of NONE         => B'
+                         | SOME program => execProgram(s,B', program)
+        in
+            B''
+        end
+        handle Error.Error m =>
+               (* [Rule 187] *)
+               let
+                   val B' = case program_opt
+                              of NONE         => B
+                               | SOME program => execProgram(s,B, program)
+               in
+                   B'
+               end
 
-	     | Pack.Pack e =>
-	       (* [Rule 188] *)
-	       let
-		   val _  = printException(!s, e)
-		   val B' = case program_opt
-			      of NONE         => B
-			       | SOME program => execProgram(s,B, program)
-	       in
-		   B'
-	       end
+             | Pack.Pack e =>
+               (* [Rule 188] *)
+               let
+                   val _  = printException(!s, e)
+                   val B' = case program_opt
+                              of NONE         => B
+                               | SOME program => execProgram(s,B, program)
+               in
+                   B'
+               end
 
 
     (* Elaboration only *)
 
     fun elabProgram(B_STAT, Program(I, topdec, program_opt)) =
-	let
-	    val B_STAT1  = ElabModule.elabTopDec(B_STAT, topdec)
-	    val  _       = printStaticBasis B_STAT1
-	    val B_STAT'  = StaticBasis.plus(B_STAT, B_STAT1)
-	    val B_STAT'' = case program_opt
-			     of NONE         => B_STAT'
-			      | SOME program => elabProgram(B_STAT', program)
-	in
-	    B_STAT''
-	end
-	handle Error.Error m =>
-	       B_STAT
+        let
+            val B_STAT1  = ElabModule.elabTopDec(B_STAT, topdec)
+            val  _       = printStaticBasis B_STAT1
+            val B_STAT'  = StaticBasis.plus(B_STAT, B_STAT1)
+            val B_STAT'' = case program_opt
+                             of NONE         => B_STAT'
+                              | SOME program => elabProgram(B_STAT', program)
+        in
+            B_STAT''
+        end
+        handle Error.Error m =>
+               B_STAT
 
 
     (* Evaluation only *)
 
     fun evalProgram(s,B_DYN, Program(I, topdec, program_opt)) =
-	let
-	    val B_DYN1  = EvalModule.evalTopDec(s,B_DYN, topdec)
-	    val  _      = printDynamicBasis(!s, B_DYN1)
-	    val B_DYN'  = DynamicBasis.plus(B_DYN, B_DYN1)
-	    val B_DYN'' = case program_opt
-			    of NONE         => B_DYN'
-			     | SOME program => evalProgram(s,B_DYN', program)
-	in
-	    B_DYN''
-	end
-	handle Error.Error m =>
-	       (* Runtime error *)
-	       let
-		   val B_DYN' = case program_opt
-				  of NONE         => B_DYN
-				   | SOME program =>
-					evalProgram(s,B_DYN, program)
-	       in
-		   B_DYN'
-	       end
+        let
+            val B_DYN1  = EvalModule.evalTopDec(s,B_DYN, topdec)
+            val  _      = printDynamicBasis(!s, B_DYN1)
+            val B_DYN'  = DynamicBasis.plus(B_DYN, B_DYN1)
+            val B_DYN'' = case program_opt
+                            of NONE         => B_DYN'
+                             | SOME program => evalProgram(s,B_DYN', program)
+        in
+            B_DYN''
+        end
+        handle Error.Error m =>
+               (* Runtime error *)
+               let
+                   val B_DYN' = case program_opt
+                                  of NONE         => B_DYN
+                                   | SOME program =>
+                                        evalProgram(s,B_DYN, program)
+               in
+                   B_DYN'
+               end
 
-	     | Pack.Pack e =>
-	       let
-		   val  _     = printException(!s, e)
-		   val B_DYN' = case program_opt
-				  of NONE         => B_DYN
-				   | SOME program =>
-					evalProgram(s,B_DYN, program)
-	       in
-		   B_DYN'
-	       end
+             | Pack.Pack e =>
+               let
+                   val  _     = printException(!s, e)
+                   val B_DYN' = case program_opt
+                                  of NONE         => B_DYN
+                                   | SOME program =>
+                                        evalProgram(s,B_DYN, program)
+               in
+                   B_DYN'
+               end
 
   end
 (* stop of Program.sml *)
@@ -12114,29 +12114,29 @@ signature STREAM =
 signature LR_TABLE =
     sig
         datatype ('a,'b) pairlist = EMPTY | PAIR of 'a * 'b * ('a,'b) pairlist
-	datatype state = STATE of int
-	datatype term = T of int
-	datatype nonterm = NT of int
-	datatype action = SHIFT of state
-			| REDUCE of int
-			| ACCEPT
-			| ERROR
-	type table
-	
-	val numStates : table -> int
-	val numRules : table -> int
-	val describeActions : table -> state ->
-				(term,action) pairlist * action
-	val describeGoto : table -> state -> (nonterm,state) pairlist
-	val action : table -> state * term -> action
-	val goto : table -> state * nonterm -> state
-	val initialState : table -> state
-	exception Goto of state * nonterm
+        datatype state = STATE of int
+        datatype term = T of int
+        datatype nonterm = NT of int
+        datatype action = SHIFT of state
+                        | REDUCE of int
+                        | ACCEPT
+                        | ERROR
+        type table
+        
+        val numStates : table -> int
+        val numRules : table -> int
+        val describeActions : table -> state ->
+                                (term,action) pairlist * action
+        val describeGoto : table -> state -> (nonterm,state) pairlist
+        val action : table -> state * term -> action
+        val goto : table -> state * nonterm -> state
+        val initialState : table -> state
+        exception Goto of state * nonterm
 
-	val mkLrTable : {actions : ((term,action) pairlist * action) array,
-			 gotos : (nonterm,state) pairlist array,
-			 numStates : int, numRules : int,
-			 initialState : state} -> table
+        val mkLrTable : {actions : ((term,action) pairlist * action) array,
+                         gotos : (nonterm,state) pairlist array,
+                         numStates : int, numRules : int,
+                         initialState : state} -> table
     end
 
 (* TOKEN: signature revealing the internal structure of a token. This signature
@@ -12153,14 +12153,14 @@ signature LR_TABLE =
    type 'a token which functions to construct tokens would create.  A
    constructor function for a integer token might be
 
-	  INT: int * 'a * 'a -> 'a token.
+          INT: int * 'a * 'a -> 'a token.
  
    This is not possible because we need to have tokens with the representation
    given below for the polymorphic parser.
 
    Thus our constructur functions for tokens have the form:
 
-	  INT: int * 'a * 'a -> (svalue,'a) token
+          INT: int * 'a * 'a -> (svalue,'a) token
 
    This in turn has had an impact on the signature that lexers for SML-Yacc
    must match and the types that a user must declare in the user declarations
@@ -12169,46 +12169,46 @@ signature LR_TABLE =
 
 signature TOKEN =
     sig
-	structure LrTable : LR_TABLE
+        structure LrTable : LR_TABLE
         datatype ('a,'b) token = TOKEN of LrTable.term * ('a * 'b * 'b)
-	val sameToken : ('a,'b) token * ('a,'b) token -> bool
+        val sameToken : ('a,'b) token * ('a,'b) token -> bool
     end
 
 (* LR_PARSER: signature for a polymorphic LR parser *)
 
 signature LR_PARSER =
     sig
-	structure Stream: STREAM
-	structure LrTable : LR_TABLE
-	structure Token : TOKEN
+        structure Stream: STREAM
+        structure LrTable : LR_TABLE
+        structure Token : TOKEN
 
-	sharing LrTable = Token.LrTable
+        sharing LrTable = Token.LrTable
 
-	exception ParseError
+        exception ParseError
 
-	val parse : {table : LrTable.table,
-		     lexer : ('_b,'_c) Token.token Stream.stream,
-		     arg: 'arg,
-		     saction : int *
-			       '_c *
-				(LrTable.state * ('_b * '_c * '_c)) list * 
-				'arg ->
-				     LrTable.nonterm *
-				     ('_b * '_c * '_c) *
-				     ((LrTable.state *('_b * '_c * '_c)) list),
-		     void : '_b,
-		     ec : { is_keyword : LrTable.term -> bool,
-			    noShift : LrTable.term -> bool,
-			    preferred_change : (LrTable.term list * LrTable.term list) list,
-			    errtermvalue : LrTable.term -> '_b,
-			    showTerminal : LrTable.term -> string,
-			    terms: LrTable.term list,
-			    error : string * '_c * '_c -> unit
-			   },
-		     lookahead : int  (* max amount of lookahead used in *)
-				      (* error correction *)
-			} -> '_b *
-			     (('_b,'_c) Token.token Stream.stream)
+        val parse : {table : LrTable.table,
+                     lexer : ('_b,'_c) Token.token Stream.stream,
+                     arg: 'arg,
+                     saction : int *
+                               '_c *
+                                (LrTable.state * ('_b * '_c * '_c)) list * 
+                                'arg ->
+                                     LrTable.nonterm *
+                                     ('_b * '_c * '_c) *
+                                     ((LrTable.state *('_b * '_c * '_c)) list),
+                     void : '_b,
+                     ec : { is_keyword : LrTable.term -> bool,
+                            noShift : LrTable.term -> bool,
+                            preferred_change : (LrTable.term list * LrTable.term list) list,
+                            errtermvalue : LrTable.term -> '_b,
+                            showTerminal : LrTable.term -> string,
+                            terms: LrTable.term list,
+                            error : string * '_c * '_c -> unit
+                           },
+                     lookahead : int  (* max amount of lookahead used in *)
+                                      (* error correction *)
+                        } -> '_b *
+                             (('_b,'_c) Token.token Stream.stream)
     end
 
 (* LEXER: a signature that most lexers produced for use with SML-Yacc's
@@ -12225,12 +12225,12 @@ signature LR_PARSER =
 signature LEXER =
    sig
        structure UserDeclarations :
-	   sig
-	        type ('a,'b) token
-		type pos
-		type svalue
-	   end
-	val makeLexer : (int -> string) -> unit -> 
+           sig
+                type ('a,'b) token
+                type pos
+                type svalue
+           end
+        val makeLexer : (int -> string) -> unit -> 
          (UserDeclarations.svalue,UserDeclarations.pos) UserDeclarations.token
    end
 
@@ -12241,13 +12241,13 @@ signature LEXER =
 signature ARG_LEXER =
    sig
        structure UserDeclarations :
-	   sig
-	        type ('a,'b) token
-		type pos
-		type svalue
-		type arg
-	   end
-	val makeLexer : (int -> string) -> UserDeclarations.arg -> unit -> 
+           sig
+                type ('a,'b) token
+                type pos
+                type svalue
+                type arg
+           end
+        val makeLexer : (int -> string) -> UserDeclarations.arg -> unit -> 
          (UserDeclarations.svalue,UserDeclarations.pos) UserDeclarations.token
    end
 
@@ -12264,57 +12264,57 @@ signature PARSER_DATA =
    sig
         (* the type of line numbers *)
 
-	type pos
+        type pos
 
-	(* the type of semantic values *)
+        (* the type of semantic values *)
 
-	type svalue
+        type svalue
 
          (* the type of the user-supplied argument to the parser *)
- 	type arg
+         type arg
  
-	(* the intended type of the result of the parser.  This value is
-	   produced by applying extract from the structure Actions to the
-	   final semantic value resultiing from a parse.
-	 *)
+        (* the intended type of the result of the parser.  This value is
+           produced by applying extract from the structure Actions to the
+           final semantic value resultiing from a parse.
+         *)
 
-	type result
+        type result
 
-	structure LrTable : LR_TABLE
-	structure Token : TOKEN
-	sharing Token.LrTable = LrTable
+        structure LrTable : LR_TABLE
+        structure Token : TOKEN
+        sharing Token.LrTable = LrTable
 
-	(* structure Actions contains the functions which mantain the
-	   semantic values stack in the parser.  Void is used to provide
-	   a default value for the semantic stack.
-	 *)
+        (* structure Actions contains the functions which mantain the
+           semantic values stack in the parser.  Void is used to provide
+           a default value for the semantic stack.
+         *)
 
-	structure Actions : 
-	  sig
-	      val actions : int * pos *
-		   (LrTable.state * (svalue * pos * pos)) list * arg->
-		         LrTable.nonterm * (svalue * pos * pos) *
-			 ((LrTable.state *(svalue * pos * pos)) list)
-	      val void : svalue
-	      val extract : svalue -> result
-	  end
+        structure Actions : 
+          sig
+              val actions : int * pos *
+                   (LrTable.state * (svalue * pos * pos)) list * arg->
+                         LrTable.nonterm * (svalue * pos * pos) *
+                         ((LrTable.state *(svalue * pos * pos)) list)
+              val void : svalue
+              val extract : svalue -> result
+          end
 
-	(* structure EC contains information used to improve error
-	   recovery in an error-correcting parser *)
+        (* structure EC contains information used to improve error
+           recovery in an error-correcting parser *)
 
-	structure EC :
-	   sig
-	     val is_keyword : LrTable.term -> bool
-	     val noShift : LrTable.term -> bool
- 	     val preferred_change : (LrTable.term list * LrTable.term list) list
-	     val errtermvalue : LrTable.term -> svalue
-	     val showTerminal : LrTable.term -> string
-	     val terms: LrTable.term list
-	   end
+        structure EC :
+           sig
+             val is_keyword : LrTable.term -> bool
+             val noShift : LrTable.term -> bool
+              val preferred_change : (LrTable.term list * LrTable.term list) list
+             val errtermvalue : LrTable.term -> svalue
+             val showTerminal : LrTable.term -> string
+             val terms: LrTable.term list
+           end
 
-	(* table is the LR table for the parser *)
+        (* table is the LR table for the parser *)
 
-	val table : LrTable.table
+        val table : LrTable.table
     end
 
 (* signature PARSER is the signature that most user parsers created by 
@@ -12324,42 +12324,42 @@ signature PARSER_DATA =
 signature PARSER =
     sig
         structure Token : TOKEN
-	structure Stream : STREAM
-	exception ParseError
+        structure Stream : STREAM
+        exception ParseError
 
-	(* type pos is the type of line numbers *)
+        (* type pos is the type of line numbers *)
 
-	type pos
+        type pos
 
-	(* type result is the type of the result from the parser *)
+        (* type result is the type of the result from the parser *)
 
-	type result
+        type result
 
          (* the type of the user-supplied argument to the parser *)
- 	type arg
-	
-	(* type svalue is the type of semantic values for the semantic value
-	   stack
-	 *)
+         type arg
+        
+        (* type svalue is the type of semantic values for the semantic value
+           stack
+         *)
 
-	type svalue
+        type svalue
 
-	(* val makeLexer is used to create a stream of tokens for the parser *)
+        (* val makeLexer is used to create a stream of tokens for the parser *)
 
-	val makeLexer : (int -> string) ->
-			 (svalue,pos) Token.token Stream.stream
+        val makeLexer : (int -> string) ->
+                         (svalue,pos) Token.token Stream.stream
 
-	(* val parse takes a stream of tokens and a function to print
-	   errors and returns a value of type result and a stream containing
-	   the unused tokens
-	 *)
+        (* val parse takes a stream of tokens and a function to print
+           errors and returns a value of type result and a stream containing
+           the unused tokens
+         *)
 
-	val parse : int * ((svalue,pos) Token.token Stream.stream) *
-		    (string * pos * pos -> unit) * arg ->
-				result * (svalue,pos) Token.token Stream.stream
+        val parse : int * ((svalue,pos) Token.token Stream.stream) *
+                    (string * pos * pos -> unit) * arg ->
+                                result * (svalue,pos) Token.token Stream.stream
 
-	val sameToken : (svalue,pos) Token.token * (svalue,pos) Token.token ->
-				bool
+        val sameToken : (svalue,pos) Token.token * (svalue,pos) Token.token ->
+                                bool
      end
 
 (* signature ARG_PARSER is the signature that will be matched by parsers whose
@@ -12369,23 +12369,23 @@ signature PARSER =
 signature ARG_PARSER = 
     sig
         structure Token : TOKEN
-	structure Stream : STREAM
-	exception ParseError
+        structure Stream : STREAM
+        exception ParseError
 
-	type arg
-	type lexarg
-	type pos
-	type result
-	type svalue
+        type arg
+        type lexarg
+        type pos
+        type result
+        type svalue
 
-	val makeLexer : (int -> string) -> lexarg ->
-			 (svalue,pos) Token.token Stream.stream
-	val parse : int * ((svalue,pos) Token.token Stream.stream) *
-		    (string * pos * pos -> unit) * arg ->
-				result * (svalue,pos) Token.token Stream.stream
+        val makeLexer : (int -> string) -> lexarg ->
+                         (svalue,pos) Token.token Stream.stream
+        val parse : int * ((svalue,pos) Token.token Stream.stream) *
+                    (string * pos * pos -> unit) * arg ->
+                                result * (svalue,pos) Token.token Stream.stream
 
-	val sameToken : (svalue,pos) Token.token * (svalue,pos) Token.token ->
-				bool
+        val sameToken : (svalue,pos) Token.token * (svalue,pos) Token.token ->
+                                bool
      end
 
 (* stop of ml-yacc/lib/base.sig *)
@@ -12400,14 +12400,14 @@ signature ARG_PARSER =
 *)
 
 functor Join(structure Lex : LEXER
-	     structure ParserData: PARSER_DATA
-	     structure LrParser : LR_PARSER
-	     sharing ParserData.LrTable = LrParser.LrTable
-	     sharing ParserData.Token = LrParser.Token
-	     sharing type Lex.UserDeclarations.svalue = ParserData.svalue
-	     sharing type Lex.UserDeclarations.pos = ParserData.pos
-	     sharing type Lex.UserDeclarations.token = ParserData.Token.token)
-		 : PARSER =
+             structure ParserData: PARSER_DATA
+             structure LrParser : LR_PARSER
+             sharing ParserData.LrTable = LrParser.LrTable
+             sharing ParserData.Token = LrParser.Token
+             sharing type Lex.UserDeclarations.svalue = ParserData.svalue
+             sharing type Lex.UserDeclarations.pos = ParserData.pos
+             sharing type Lex.UserDeclarations.token = ParserData.Token.token)
+                 : PARSER =
 struct
     structure Token = ParserData.Token
     structure Stream = LrParser.Stream
@@ -12420,20 +12420,20 @@ struct
     type svalue = ParserData.svalue
     val makeLexer = LrParser.Stream.streamify o Lex.makeLexer
     val parse = fn (lookahead,lexer,error,arg) =>
-	(fn (a,b) => (ParserData.Actions.extract a,b))
+        (fn (a,b) => (ParserData.Actions.extract a,b))
      (LrParser.parse {table = ParserData.table,
-	        lexer=lexer,
-		lookahead=lookahead,
-		saction = ParserData.Actions.actions,
-		arg=arg,
-		void= ParserData.Actions.void,
-	        ec = {is_keyword = ParserData.EC.is_keyword,
-		      noShift = ParserData.EC.noShift,
-		      preferred_change = ParserData.EC.preferred_change,
-		      errtermvalue = ParserData.EC.errtermvalue,
-		      error=error,
-		      showTerminal = ParserData.EC.showTerminal,
-		      terms = ParserData.EC.terms}}
+                lexer=lexer,
+                lookahead=lookahead,
+                saction = ParserData.Actions.actions,
+                arg=arg,
+                void= ParserData.Actions.void,
+                ec = {is_keyword = ParserData.EC.is_keyword,
+                      noShift = ParserData.EC.noShift,
+                      preferred_change = ParserData.EC.preferred_change,
+                      errtermvalue = ParserData.EC.errtermvalue,
+                      error=error,
+                      showTerminal = ParserData.EC.showTerminal,
+                      terms = ParserData.EC.terms}}
       )
      val sameToken = Token.sameToken
 end
@@ -12444,14 +12444,14 @@ end
  *)
 
 functor JoinWithArg(structure Lex : ARG_LEXER
-	     structure ParserData: PARSER_DATA
-	     structure LrParser : LR_PARSER
-	     sharing ParserData.LrTable = LrParser.LrTable
-	     sharing ParserData.Token = LrParser.Token
-	     sharing type Lex.UserDeclarations.svalue = ParserData.svalue
-	     sharing type Lex.UserDeclarations.pos = ParserData.pos
-	     sharing type Lex.UserDeclarations.token = ParserData.Token.token)
-		 : ARG_PARSER  =
+             structure ParserData: PARSER_DATA
+             structure LrParser : LR_PARSER
+             sharing ParserData.LrTable = LrParser.LrTable
+             sharing ParserData.Token = LrParser.Token
+             sharing type Lex.UserDeclarations.svalue = ParserData.svalue
+             sharing type Lex.UserDeclarations.pos = ParserData.pos
+             sharing type Lex.UserDeclarations.token = ParserData.Token.token)
+                 : ARG_PARSER  =
 struct
     structure Token = ParserData.Token
     structure Stream = LrParser.Stream
@@ -12465,22 +12465,22 @@ struct
     type svalue = ParserData.svalue
 
     val makeLexer = fn s => fn arg =>
-		 LrParser.Stream.streamify (Lex.makeLexer s arg)
+                 LrParser.Stream.streamify (Lex.makeLexer s arg)
     val parse = fn (lookahead,lexer,error,arg) =>
-	(fn (a,b) => (ParserData.Actions.extract a,b))
+        (fn (a,b) => (ParserData.Actions.extract a,b))
      (LrParser.parse {table = ParserData.table,
-	        lexer=lexer,
-		lookahead=lookahead,
-		saction = ParserData.Actions.actions,
-		arg=arg,
-		void= ParserData.Actions.void,
-	        ec = {is_keyword = ParserData.EC.is_keyword,
-		      noShift = ParserData.EC.noShift,
-		      preferred_change = ParserData.EC.preferred_change,
-		      errtermvalue = ParserData.EC.errtermvalue,
-		      error=error,
-		      showTerminal = ParserData.EC.showTerminal,
-		      terms = ParserData.EC.terms}}
+                lexer=lexer,
+                lookahead=lookahead,
+                saction = ParserData.Actions.actions,
+                arg=arg,
+                void= ParserData.Actions.void,
+                ec = {is_keyword = ParserData.EC.is_keyword,
+                      noShift = ParserData.EC.noShift,
+                      preferred_change = ParserData.EC.preferred_change,
+                      errtermvalue = ParserData.EC.errtermvalue,
+                      error=error,
+                      showTerminal = ParserData.EC.showTerminal,
+                      terms = ParserData.EC.terms}}
       )
     val sameToken = Token.sameToken
 end;
@@ -12489,60 +12489,60 @@ end;
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 structure LrTable : LR_TABLE = 
     struct
-	open Array List
-	infix 9 sub
-	datatype ('a,'b) pairlist = EMPTY
-				  | PAIR of 'a * 'b * ('a,'b) pairlist
-	datatype term = T of int
-	datatype nonterm = NT of int
-	datatype state = STATE of int
-	datatype action = SHIFT of state
-			| REDUCE of int (* rulenum from grammar *)
-			| ACCEPT
-			| ERROR
-	exception Goto of state * nonterm
-	type table = {states: int, rules : int,initialState: state,
-		      action: ((term,action) pairlist * action) array,
-		      goto :  (nonterm,state) pairlist array}
-	val numStates = fn ({states,...} : table) => states
-	val numRules = fn ({rules,...} : table) => rules
-	val describeActions =
-	   fn ({action,...} : table) => 
-	           fn (STATE s) => action sub s
-	val describeGoto =
-	   fn ({goto,...} : table) =>
-	           fn (STATE s) => goto sub s
-	fun findTerm (T term,row,default) =
-	    let fun find (PAIR (T key,data,r)) =
-		       if key < term then find r
-		       else if key=term then data
-		       else default
-		   | find EMPTY = default
-	    in find row
-	    end
-	fun findNonterm (NT nt,row) =
-	    let fun find (PAIR (NT key,data,r)) =
-		       if key < nt then find r
-		       else if key=nt then SOME data
-		       else NONE
-		   | find EMPTY = NONE
-	    in find row
-	    end
-	val action = fn ({action,...} : table) =>
-		fn (STATE state,term) =>
-		  let val (row,default) = action sub state
-		  in findTerm(term,row,default)
-		  end
-	val goto = fn ({goto,...} : table) =>
-			fn (a as (STATE state,nonterm)) =>
-			  case findNonterm(nonterm,goto sub state)
-			  of SOME state => state
-			   | NONE => raise (Goto a)
-	val initialState = fn ({initialState,...} : table) => initialState
-	val mkLrTable = fn {actions,gotos,initialState,numStates,numRules} =>
-	     ({action=actions,goto=gotos,
-	       states=numStates,
-	       rules=numRules,
+        open Array List
+        infix 9 sub
+        datatype ('a,'b) pairlist = EMPTY
+                                  | PAIR of 'a * 'b * ('a,'b) pairlist
+        datatype term = T of int
+        datatype nonterm = NT of int
+        datatype state = STATE of int
+        datatype action = SHIFT of state
+                        | REDUCE of int (* rulenum from grammar *)
+                        | ACCEPT
+                        | ERROR
+        exception Goto of state * nonterm
+        type table = {states: int, rules : int,initialState: state,
+                      action: ((term,action) pairlist * action) array,
+                      goto :  (nonterm,state) pairlist array}
+        val numStates = fn ({states,...} : table) => states
+        val numRules = fn ({rules,...} : table) => rules
+        val describeActions =
+           fn ({action,...} : table) => 
+                   fn (STATE s) => action sub s
+        val describeGoto =
+           fn ({goto,...} : table) =>
+                   fn (STATE s) => goto sub s
+        fun findTerm (T term,row,default) =
+            let fun find (PAIR (T key,data,r)) =
+                       if key < term then find r
+                       else if key=term then data
+                       else default
+                   | find EMPTY = default
+            in find row
+            end
+        fun findNonterm (NT nt,row) =
+            let fun find (PAIR (NT key,data,r)) =
+                       if key < nt then find r
+                       else if key=nt then SOME data
+                       else NONE
+                   | find EMPTY = NONE
+            in find row
+            end
+        val action = fn ({action,...} : table) =>
+                fn (STATE state,term) =>
+                  let val (row,default) = action sub state
+                  in findTerm(term,row,default)
+                  end
+        val goto = fn ({goto,...} : table) =>
+                        fn (a as (STATE state,nonterm)) =>
+                          case findNonterm(nonterm,goto sub state)
+                          of SOME state => state
+                           | NONE => raise (Goto a)
+        val initialState = fn ({initialState,...} : table) => initialState
+        val mkLrTable = fn {actions,gotos,initialState,numStates,numRules} =>
+             ({action=actions,goto=gotos,
+               states=numStates,
+               rules=numRules,
                initialState=initialState} : table)
 end;
 (* stop of ml-yacc/lib/lrtable.sml *)
@@ -12560,7 +12560,7 @@ struct
 
    fun get(ref(EVAL t)) = t
      | get(s as ref(UNEVAL f)) = 
-	    let val t = (f(), ref(UNEVAL f)) in s := EVAL t; t end
+            let val t = (f(), ref(UNEVAL f)) in s := EVAL t; t end
 
    fun streamify f = ref(UNEVAL f)
    fun cons(a,s) = ref(EVAL(a,s))
@@ -12574,10 +12574,10 @@ end;
    routine added to it.  The routine used is described in detail in this
    article:
 
-	'A Practical Method for LR and LL Syntactic Error Diagnosis and
-	 Recovery', by M. Burke and G. Fisher, ACM Transactions on
-	 Programming Langauges and Systems, Vol. 9, No. 2, April 1987,
-	 pp. 164-197.
+        'A Practical Method for LR and LL Syntactic Error Diagnosis and
+         Recovery', by M. Burke and G. Fisher, ACM Transactions on
+         Programming Langauges and Systems, Vol. 9, No. 2, April 1987,
+         pp. 164-197.
 
     This program is an implementation is the partial, deferred method discussed
     in the article.  The algorithm and data structures used in the program
@@ -12593,60 +12593,60 @@ end;
 
     Data Structures:
     ----------------
-	
-	* The parser:
+        
+        * The parser:
 
-	   The state stack has the type
+           The state stack has the type
 
-		 (state * (semantic value * line # * line #)) list
+                 (state * (semantic value * line # * line #)) list
 
-	   The parser keeps a queue of (state stack * lexer pair).  A lexer pair
-	 consists of a terminal * value pair and a lexer.  This allows the 
-	 parser to reconstruct the states for terminals to the left of a
-	 syntax error, and attempt to make error corrections there.
+           The parser keeps a queue of (state stack * lexer pair).  A lexer pair
+         consists of a terminal * value pair and a lexer.  This allows the 
+         parser to reconstruct the states for terminals to the left of a
+         syntax error, and attempt to make error corrections there.
 
-	   The queue consists of a pair of lists (x,y).  New additions to
-	 the queue are cons'ed onto y.  The first element of x is the top
-	 of the queue.  If x is nil, then y is reversed and used
-	 in place of x.
+           The queue consists of a pair of lists (x,y).  New additions to
+         the queue are cons'ed onto y.  The first element of x is the top
+         of the queue.  If x is nil, then y is reversed and used
+         in place of x.
 
     Algorithm:
     ----------
 
-	* The steady-state parser:  
+        * The steady-state parser:  
 
-	    This parser keeps the length of the queue of state stacks at
-	a steady state by always removing an element from the front when
-	another element is placed on the end.
+            This parser keeps the length of the queue of state stacks at
+        a steady state by always removing an element from the front when
+        another element is placed on the end.
 
-	    It has these arguments:
+            It has these arguments:
 
-	   stack: current stack
-	   queue: value of the queue
-	   lexPair ((terminal,value),lex stream)
+           stack: current stack
+           queue: value of the queue
+           lexPair ((terminal,value),lex stream)
 
-	When SHIFT is encountered, the state to shift to and the value are
-	are pushed onto the state stack.  The state stack and lexPair are
-	placed on the queue.  The front element of the queue is removed.
+        When SHIFT is encountered, the state to shift to and the value are
+        are pushed onto the state stack.  The state stack and lexPair are
+        placed on the queue.  The front element of the queue is removed.
 
-	When REDUCTION is encountered, the rule is applied to the current
-	stack to yield a triple (nonterm,value,new stack).  A new
-	stack is formed by adding (goto(top state of stack,nonterm),value)
-	to the stack.
+        When REDUCTION is encountered, the rule is applied to the current
+        stack to yield a triple (nonterm,value,new stack).  A new
+        stack is formed by adding (goto(top state of stack,nonterm),value)
+        to the stack.
 
-	When ACCEPT is encountered, the top value from the stack and the
-	lexer are returned.
+        When ACCEPT is encountered, the top value from the stack and the
+        lexer are returned.
 
-	When an ERROR is encountered, fixError is called.  FixError
-	takes the arguments to the parser, fixes the error if possible and
+        When an ERROR is encountered, fixError is called.  FixError
+        takes the arguments to the parser, fixes the error if possible and
         returns a new set of arguments.
 
-	* The distance-parser:
+        * The distance-parser:
 
-	This parser includes an additional argument distance.  It pushes
-	elements on the queue until it has parsed distance tokens, or an
-	ACCEPT or ERROR occurs.  It returns a stack, lexer, the number of
-	tokens left unparsed, a queue, and an action option.
+        This parser includes an additional argument distance.  It pushes
+        elements on the queue until it has parsed distance tokens, or an
+        ACCEPT or ERROR occurs.  It returns a stack, lexer, the number of
+        tokens left unparsed, a queue, and an action option.
 *)
 
 signature FIFO = 
@@ -12661,7 +12661,7 @@ signature FIFO =
    it wastes space in the release version.
 
 functor ParserGen(structure LrTable : LR_TABLE
-		  structure Stream : STREAM) : LR_PARSER =
+                  structure Stream : STREAM) : LR_PARSER =
 *)
 
 structure LrParser :> LR_PARSER =
@@ -12670,10 +12670,10 @@ structure LrParser :> LR_PARSER =
       structure Stream = Stream
 
       structure Token : TOKEN =
-	struct
-	    structure LrTable = LrTable
-	    datatype ('a,'b) token = TOKEN of LrTable.term * ('a * 'b * 'b)
-	    val sameToken = fn (TOKEN(t,_),TOKEN(t',_)) => t=t'
+        struct
+            structure LrTable = LrTable
+            datatype ('a,'b) token = TOKEN of LrTable.term * ('a * 'b * 'b)
+            val sameToken = fn (TOKEN(t,_),TOKEN(t',_)) => t=t'
         end
 
       open LrTable
@@ -12686,13 +12686,13 @@ structure LrParser :> LR_PARSER =
 
       structure Fifo :> FIFO =
         struct
-	  type 'a queue = ('a list * 'a list)
-	  val empty = (nil,nil)
-	  exception Empty
-	  fun get(a::x, y) = (a, (x,y))
-	    | get(nil, nil) = raise Empty
-	    | get(nil, y) = get(rev y, nil)
- 	  fun put(a,(x,y)) = (x,a::y)
+          type 'a queue = ('a list * 'a list)
+          val empty = (nil,nil)
+          exception Empty
+          fun get(a::x, y) = (a, (x,y))
+            | get(nil, nil) = raise Empty
+            | get(nil, y) = get(rev y, nil)
+           fun put(a,(x,y)) = (x,a::y)
         end
 
       type ('a,'b) elem = (state * ('a * 'b * 'b))
@@ -12700,29 +12700,29 @@ structure LrParser :> LR_PARSER =
       type ('a,'b) lexv = ('a,'b) token
       type ('a,'b) lexpair = ('a,'b) lexv * (('a,'b) lexv Stream.stream)
       type ('a,'b) distanceParse =
-		 ('a,'b) lexpair *
-		 ('a,'b) stack * 
-		 (('a,'b) stack * ('a,'b) lexpair) Fifo.queue *
-		 int ->
-		   ('a,'b) lexpair *
-		   ('a,'b) stack * 
-		   (('a,'b) stack * ('a,'b) lexpair) Fifo.queue *
-		   int *
-		   action option
+                 ('a,'b) lexpair *
+                 ('a,'b) stack * 
+                 (('a,'b) stack * ('a,'b) lexpair) Fifo.queue *
+                 int ->
+                   ('a,'b) lexpair *
+                   ('a,'b) stack * 
+                   (('a,'b) stack * ('a,'b) lexpair) Fifo.queue *
+                   int *
+                   action option
 
       type ('a,'b) ecRecord =
-	 {is_keyword : term -> bool,
+         {is_keyword : term -> bool,
           preferred_change : (term list * term list) list,
-	  error : string * 'b * 'b -> unit,
-	  errtermvalue : term -> 'a,
-	  terms : term list,
-	  showTerminal : term -> string,
-	  noShift : term -> bool}
+          error : string * 'b * 'b -> unit,
+          errtermvalue : term -> 'a,
+          terms : term list,
+          showTerminal : term -> string,
+          noShift : term -> bool}
 
       local 
-	 val print = fn s => TextIO.output(TextIO.stdOut,s)
-	 val println = fn s => (print s; print "\n")
-	 val showState = fn (STATE s) => "STATE " ^ (Int.toString s)
+         val print = fn s => TextIO.output(TextIO.stdOut,s)
+         val println = fn s => (print s; print "\n")
+         val showState = fn (STATE s) => "STATE " ^ (Int.toString s)
       in
         fun printStack(stack: ('a,'b) stack, n: int) =
          case stack
@@ -12733,11 +12733,11 @@ structure LrParser :> LR_PARSER =
             | nil => ()
                 
         fun prAction showTerminal
-		 (stack as (state,_) :: _, next as (TOKEN (term,_),_), action) =
+                 (stack as (state,_) :: _, next as (TOKEN (term,_),_), action) =
              (println "Parse: state stack:";
               printStack(stack, 0);
               print("       state="
-                         ^ showState state	
+                         ^ showState state        
                          ^ " next="
                          ^ showTerminal term
                          ^ " action="
@@ -12746,206 +12746,206 @@ structure LrParser :> LR_PARSER =
                 of SHIFT state => println ("SHIFT " ^ (showState state))
                  | REDUCE i => println ("REDUCE " ^ (Int.toString i))
                  | ERROR => println "ERROR"
-		 | ACCEPT => println "ACCEPT")
+                 | ACCEPT => println "ACCEPT")
         | prAction _ (_,_,action) = ()
      end
 
     (* ssParse: parser which maintains the queue of (state * lexvalues) in a
-	steady-state.  It takes a table, showTerminal function, saction
-	function, and fixError function.  It parses until an ACCEPT is
-	encountered, or an exception is raised.  When an error is encountered,
-	fixError is called with the arguments of parseStep (lexv,stack,and
-	queue).  It returns the lexv, and a new stack and queue adjusted so
-	that the lexv can be parsed *)
-	
+        steady-state.  It takes a table, showTerminal function, saction
+        function, and fixError function.  It parses until an ACCEPT is
+        encountered, or an exception is raised.  When an error is encountered,
+        fixError is called with the arguments of parseStep (lexv,stack,and
+        queue).  It returns the lexv, and a new stack and queue adjusted so
+        that the lexv can be parsed *)
+        
     val ssParse =
       fn (table,showTerminal,saction,fixError,arg) =>
-	let val prAction = prAction showTerminal
-	    val action = LrTable.action table
-	    val goto = LrTable.goto table
-	    fun parseStep(args as
-			 (lexPair as (TOKEN (terminal, value as (_,leftPos,_)),
-				      lexer
-				      ),
-			  stack as (state,_) :: _,
-			  queue)) =
-	      let val nextAction = action (state,terminal)
-	          val _ = if DEBUG1 then prAction(stack,lexPair,nextAction)
-			  else ()
-	      in case nextAction
-		 of SHIFT s =>
-		  let val newStack = (s,value) :: stack
-		      val newLexPair = Stream.get lexer
-		      val (_,newQueue) =Fifo.get(Fifo.put((newStack,newLexPair),
-							    queue))
-		  in parseStep(newLexPair,(s,value)::stack,newQueue)
-		  end
-		 | REDUCE i =>
-		     (case saction(i,leftPos,stack,arg)
-		      of (nonterm,value,stack as (state,_) :: _) =>
-		          parseStep(lexPair,(goto(state,nonterm),value)::stack,
-				    queue)
-		       | _ => raise (ParseImpossible 197))
-		 | ERROR => parseStep(fixError args)
-		 | ACCEPT => 
-			(case stack
-			 of (_,(topvalue,_,_)) :: _ =>
-				let val (token,restLexer) = lexPair
-				in (topvalue,Stream.cons(token,restLexer))
-				end
-			  | _ => raise (ParseImpossible 202))
-	      end
-	    | parseStep _ = raise (ParseImpossible 204)
-	in parseStep
-	end
+        let val prAction = prAction showTerminal
+            val action = LrTable.action table
+            val goto = LrTable.goto table
+            fun parseStep(args as
+                         (lexPair as (TOKEN (terminal, value as (_,leftPos,_)),
+                                      lexer
+                                      ),
+                          stack as (state,_) :: _,
+                          queue)) =
+              let val nextAction = action (state,terminal)
+                  val _ = if DEBUG1 then prAction(stack,lexPair,nextAction)
+                          else ()
+              in case nextAction
+                 of SHIFT s =>
+                  let val newStack = (s,value) :: stack
+                      val newLexPair = Stream.get lexer
+                      val (_,newQueue) =Fifo.get(Fifo.put((newStack,newLexPair),
+                                                            queue))
+                  in parseStep(newLexPair,(s,value)::stack,newQueue)
+                  end
+                 | REDUCE i =>
+                     (case saction(i,leftPos,stack,arg)
+                      of (nonterm,value,stack as (state,_) :: _) =>
+                          parseStep(lexPair,(goto(state,nonterm),value)::stack,
+                                    queue)
+                       | _ => raise (ParseImpossible 197))
+                 | ERROR => parseStep(fixError args)
+                 | ACCEPT => 
+                        (case stack
+                         of (_,(topvalue,_,_)) :: _ =>
+                                let val (token,restLexer) = lexPair
+                                in (topvalue,Stream.cons(token,restLexer))
+                                end
+                          | _ => raise (ParseImpossible 202))
+              end
+            | parseStep _ = raise (ParseImpossible 204)
+        in parseStep
+        end
 
     (*  distanceParse: parse until n tokens are shifted, or accept or
-	error are encountered.  Takes a table, showTerminal function, and
-	semantic action function.  Returns a parser which takes a lexPair
-	(lex result * lexer), a state stack, a queue, and a distance
-	(must be > 0) to parse.  The parser returns a new lex-value, a stack
-	with the nth token shifted on top, a queue, a distance, and action
-	option. *)
+        error are encountered.  Takes a table, showTerminal function, and
+        semantic action function.  Returns a parser which takes a lexPair
+        (lex result * lexer), a state stack, a queue, and a distance
+        (must be > 0) to parse.  The parser returns a new lex-value, a stack
+        with the nth token shifted on top, a queue, a distance, and action
+        option. *)
 
     val distanceParse =
       fn (table,showTerminal,saction,arg) =>
-	let val prAction = prAction showTerminal
-	    val action = LrTable.action table
-	    val goto = LrTable.goto table
-	    fun parseStep(lexPair,stack,queue,0) = (lexPair,stack,queue,0,NONE)
-	      | parseStep(lexPair as (TOKEN (terminal, value as (_,leftPos,_)),
-				      lexer
-				     ),
-			  stack as (state,_) :: _,
-			  queue,distance) =
-	      let val nextAction = action(state,terminal)
-	          val _ = if DEBUG1 then prAction(stack,lexPair,nextAction)
-			  else ()
-	      in case nextAction
-		 of SHIFT s =>
-		  let val newStack = (s,value) :: stack
-		      val newLexPair = Stream.get lexer
-		  in parseStep(newLexPair,(s,value)::stack,
-			       Fifo.put((newStack,newLexPair),queue),distance-1)
-		  end
-		 | REDUCE i =>
-		    (case saction(i,leftPos,stack,arg)
-		      of (nonterm,value,stack as (state,_) :: _) =>
-		         parseStep(lexPair,(goto(state,nonterm),value)::stack,
-				 queue,distance)
-		      | _ => raise (ParseImpossible 240))
-		 | ERROR => (lexPair,stack,queue,distance,SOME nextAction)
-		 | ACCEPT => (lexPair,stack,queue,distance,SOME nextAction)
-	      end
-	   | parseStep _ = raise (ParseImpossible 242)
-	in parseStep : ('_a,'_b) distanceParse 
-	end
+        let val prAction = prAction showTerminal
+            val action = LrTable.action table
+            val goto = LrTable.goto table
+            fun parseStep(lexPair,stack,queue,0) = (lexPair,stack,queue,0,NONE)
+              | parseStep(lexPair as (TOKEN (terminal, value as (_,leftPos,_)),
+                                      lexer
+                                     ),
+                          stack as (state,_) :: _,
+                          queue,distance) =
+              let val nextAction = action(state,terminal)
+                  val _ = if DEBUG1 then prAction(stack,lexPair,nextAction)
+                          else ()
+              in case nextAction
+                 of SHIFT s =>
+                  let val newStack = (s,value) :: stack
+                      val newLexPair = Stream.get lexer
+                  in parseStep(newLexPair,(s,value)::stack,
+                               Fifo.put((newStack,newLexPair),queue),distance-1)
+                  end
+                 | REDUCE i =>
+                    (case saction(i,leftPos,stack,arg)
+                      of (nonterm,value,stack as (state,_) :: _) =>
+                         parseStep(lexPair,(goto(state,nonterm),value)::stack,
+                                 queue,distance)
+                      | _ => raise (ParseImpossible 240))
+                 | ERROR => (lexPair,stack,queue,distance,SOME nextAction)
+                 | ACCEPT => (lexPair,stack,queue,distance,SOME nextAction)
+              end
+           | parseStep _ = raise (ParseImpossible 242)
+        in parseStep : ('_a,'_b) distanceParse 
+        end
 
 (* mkFixError: function to create fixError function which adjusts parser state
    so that parse may continue in the presence of an error *)
 
 fun mkFixError({is_keyword,terms,errtermvalue,
-	      preferred_change,noShift,
-	      showTerminal,error,...} : ('_a,'_b) ecRecord,
-	     distanceParse : ('_a,'_b) distanceParse,
-	     minAdvance,maxAdvance) 
+              preferred_change,noShift,
+              showTerminal,error,...} : ('_a,'_b) ecRecord,
+             distanceParse : ('_a,'_b) distanceParse,
+             minAdvance,maxAdvance) 
 
             (lexv as (TOKEN (term,value as (_,leftPos,_)),_),stack,queue) =
     let val _ = if DEBUG2 then
-			error("syntax error found at " ^ (showTerminal term),
-			      leftPos,leftPos)
-		else ()
+                        error("syntax error found at " ^ (showTerminal term),
+                              leftPos,leftPos)
+                else ()
 
         fun tokAt(t,p) = TOKEN(t,(errtermvalue t,p,p))
 
-	val minDelta = 3
+        val minDelta = 3
 
-	(* pull all the state * lexv elements from the queue *)
+        (* pull all the state * lexv elements from the queue *)
 
-	val stateList = 
-	   let fun f q = let val (elem,newQueue) = Fifo.get q
-			 in elem :: (f newQueue)
-			 end handle Fifo.Empty => nil
-	   in f queue
-	   end
+        val stateList = 
+           let fun f q = let val (elem,newQueue) = Fifo.get q
+                         in elem :: (f newQueue)
+                         end handle Fifo.Empty => nil
+           in f queue
+           end
 
-	(* now number elements of stateList, giving distance from
-	   error token *)
+        (* now number elements of stateList, giving distance from
+           error token *)
 
-	val (_, numStateList) =
-	      List.foldr (fn (a,(num,r)) => (num+1,(a,num)::r)) (0, []) stateList
+        val (_, numStateList) =
+              List.foldr (fn (a,(num,r)) => (num+1,(a,num)::r)) (0, []) stateList
 
-	(* Represent the set of potential changes as a linked list.
+        (* Represent the set of potential changes as a linked list.
 
-	   Values of datatype Change hold information about a potential change.
+           Values of datatype Change hold information about a potential change.
 
-	   oper = oper to be applied
-	   pos = the # of the element in stateList that would be altered.
-	   distance = the number of tokens beyond the error token which the
-	     change allows us to parse.
-	   new = new terminal * value pair at that point
-	   orig = original terminal * value pair at the point being changed.
-	 *)
+           oper = oper to be applied
+           pos = the # of the element in stateList that would be altered.
+           distance = the number of tokens beyond the error token which the
+             change allows us to parse.
+           new = new terminal * value pair at that point
+           orig = original terminal * value pair at the point being changed.
+         *)
 
-	datatype ('a,'b) change = CHANGE of
-	   {pos : int, distance : int, leftPos: 'b, rightPos: 'b,
-	    new : ('a,'b) lexv list, orig : ('a,'b) lexv list}
+        datatype ('a,'b) change = CHANGE of
+           {pos : int, distance : int, leftPos: 'b, rightPos: 'b,
+            new : ('a,'b) lexv list, orig : ('a,'b) lexv list}
 
 
          val showTerms = concat o map (fn TOKEN(t,_) => " " ^ showTerminal t)
 
-	 val printChange = fn c =>
-	  let val CHANGE {distance,new,orig,pos,...} = c
-	  in (print ("{distance= " ^ (Int.toString distance));
-	      print (",orig ="); print(showTerms orig);
-	      print (",new ="); print(showTerms new);
-	      print (",pos= " ^ (Int.toString pos));
-	      print "}\n")
-	  end
+         val printChange = fn c =>
+          let val CHANGE {distance,new,orig,pos,...} = c
+          in (print ("{distance= " ^ (Int.toString distance));
+              print (",orig ="); print(showTerms orig);
+              print (",new ="); print(showTerms new);
+              print (",pos= " ^ (Int.toString pos));
+              print "}\n")
+          end
 
-	val printChangeList = app printChange
+        val printChangeList = app printChange
 
 (* parse: given a lexPair, a stack, and the distance from the error
    token, return the distance past the error token that we are able to parse.*)
 
-	fun parse (lexPair,stack,queuePos : int) =
-	    case distanceParse(lexPair,stack,Fifo.empty,queuePos+maxAdvance+1)
+        fun parse (lexPair,stack,queuePos : int) =
+            case distanceParse(lexPair,stack,Fifo.empty,queuePos+maxAdvance+1)
              of (_,_,_,distance,SOME ACCEPT) => 
-		        if maxAdvance-distance-1 >= 0 
-			    then maxAdvance 
-			    else maxAdvance-distance-1
-	      | (_,_,_,distance,_) => maxAdvance - distance - 1
+                        if maxAdvance-distance-1 >= 0 
+                            then maxAdvance 
+                            else maxAdvance-distance-1
+              | (_,_,_,distance,_) => maxAdvance - distance - 1
 
 (* catList: concatenate results of scanning list *)
 
-	fun catList l f = List.foldr (fn(a,r)=> f a @ r) [] l
+        fun catList l f = List.foldr (fn(a,r)=> f a @ r) [] l
 
         fun keywordsDelta new = if List.exists (fn(TOKEN(t,_))=>is_keyword t) new
-	               then minDelta else 0
+                       then minDelta else 0
 
         fun tryChange{lex,stack,pos,leftPos,rightPos,orig,new} =
-	     let val lex' = List.foldr (fn (t',p)=>(t',Stream.cons p)) lex new
-		 val distance = parse(lex',stack,pos+length new-length orig)
-	      in if distance >= minAdvance + keywordsDelta new 
-		   then [CHANGE{pos=pos,leftPos=leftPos,rightPos=rightPos,
-				distance=distance,orig=orig,new=new}] 
-		   else []
-	     end
+             let val lex' = List.foldr (fn (t',p)=>(t',Stream.cons p)) lex new
+                 val distance = parse(lex',stack,pos+length new-length orig)
+              in if distance >= minAdvance + keywordsDelta new 
+                   then [CHANGE{pos=pos,leftPos=leftPos,rightPos=rightPos,
+                                distance=distance,orig=orig,new=new}] 
+                   else []
+             end
 
 
 (* tryDelete: Try to delete n terminals.
               Return single-element [success] or nil.
-	      Do not delete unshiftable terminals. *)
+              Do not delete unshiftable terminals. *)
 
 
     fun tryDelete n ((stack,lexPair as (TOKEN(term,(_,l,r)),_)),qPos) =
-	let fun del(0,accum,left,right,lexPair) =
-	          tryChange{lex=lexPair,stack=stack,
-			    pos=qPos,leftPos=left,rightPos=right,
-			    orig=rev accum, new=[]}
-	      | del(n,accum,left,right,(tok as TOKEN(term,(_,_,r)),lexer)) =
-		   if noShift term then []
-		   else del(n-1,tok::accum,left,r,Stream.get lexer)
+        let fun del(0,accum,left,right,lexPair) =
+                  tryChange{lex=lexPair,stack=stack,
+                            pos=qPos,leftPos=left,rightPos=right,
+                            orig=rev accum, new=[]}
+              | del(n,accum,left,right,(tok as TOKEN(term,(_,_,r)),lexer)) =
+                   if noShift term then []
+                   else del(n-1,tok::accum,left,r,Stream.get lexer)
          in del(n,[],l,r,lexPair)
         end
 
@@ -12953,159 +12953,159 @@ fun mkFixError({is_keyword,terms,errtermvalue,
        return a list of the successes  *)
 
         fun tryInsert((stack,lexPair as (TOKEN(_,(_,l,_)),_)),queuePos) =
-	       catList terms (fn t =>
-		 tryChange{lex=lexPair,stack=stack,
-			   pos=queuePos,orig=[],new=[tokAt(t,l)],
-			   leftPos=l,rightPos=l})
-			      
+               catList terms (fn t =>
+                 tryChange{lex=lexPair,stack=stack,
+                           pos=queuePos,orig=[],new=[tokAt(t,l)],
+                           leftPos=l,rightPos=l})
+                              
 (* trySubst: try to substitute tokens for the current terminal;
        return a list of the successes  *)
 
         fun trySubst ((stack,lexPair as (orig as TOKEN (term,(_,l,r)),lexer)),
-		      queuePos) =
-	      if noShift term then []
-	      else
-		  catList terms (fn t =>
-		      tryChange{lex=Stream.get lexer,stack=stack,
-				pos=queuePos,
-				leftPos=l,rightPos=r,orig=[orig],
-				new=[tokAt(t,r)]})
+                      queuePos) =
+              if noShift term then []
+              else
+                  catList terms (fn t =>
+                      tryChange{lex=Stream.get lexer,stack=stack,
+                                pos=queuePos,
+                                leftPos=l,rightPos=r,orig=[orig],
+                                new=[tokAt(t,r)]})
 
      (* do_delete(toks,lexPair) tries to delete tokens "toks" from "lexPair".
          If it succeeds, returns SOME(toks',l,r,lp), where
-	     toks' is the actual tokens (with positions and values) deleted,
-	     (l,r) are the (leftmost,rightmost) position of toks', 
-	     lp is what remains of the stream after deletion 
+             toks' is the actual tokens (with positions and values) deleted,
+             (l,r) are the (leftmost,rightmost) position of toks', 
+             lp is what remains of the stream after deletion 
      *)
         fun do_delete(nil,lp as (TOKEN(_,(_,l,_)),_)) = SOME(nil,l,l,lp)
           | do_delete([t],(tok as TOKEN(t',(_,l,r)),lp')) =
-	       if t=t'
-		   then SOME([tok],l,r,Stream.get lp')
+               if t=t'
+                   then SOME([tok],l,r,Stream.get lp')
                    else NONE
           | do_delete(t::rest,(tok as TOKEN(t',(_,l,r)),lp')) =
-	       if t=t'
-		   then case do_delete(rest,Stream.get lp')
+               if t=t'
+                   then case do_delete(rest,Stream.get lp')
                          of SOME(deleted,l',r',lp'') =>
-			       SOME(tok::deleted,l,r',lp'')
-			  | NONE => NONE
-		   else NONE
-			     
+                               SOME(tok::deleted,l,r',lp'')
+                          | NONE => NONE
+                   else NONE
+                             
         fun tryPreferred((stack,lexPair),queuePos) =
-	    catList preferred_change (fn (delete,insert) =>
-	       if List.exists noShift delete then [] (* should give warning at
-						 parser-generation time *)
+            catList preferred_change (fn (delete,insert) =>
+               if List.exists noShift delete then [] (* should give warning at
+                                                 parser-generation time *)
                else case do_delete(delete,lexPair)
                      of SOME(deleted,l,r,lp) => 
-			    tryChange{lex=lp,stack=stack,pos=queuePos,
-				      leftPos=l,rightPos=r,orig=deleted,
-				      new=map (fn t=>(tokAt(t,r))) insert}
-		      | NONE => [])
+                            tryChange{lex=lp,stack=stack,pos=queuePos,
+                                      leftPos=l,rightPos=r,orig=deleted,
+                                      new=map (fn t=>(tokAt(t,r))) insert}
+                      | NONE => [])
 
-	val changes = catList numStateList tryPreferred @
-	                catList numStateList tryInsert @
-			  catList numStateList trySubst @
-			    catList numStateList (tryDelete 1) @
-			      catList numStateList (tryDelete 2) @
-			        catList numStateList (tryDelete 3)
+        val changes = catList numStateList tryPreferred @
+                        catList numStateList tryInsert @
+                          catList numStateList trySubst @
+                            catList numStateList (tryDelete 1) @
+                              catList numStateList (tryDelete 2) @
+                                catList numStateList (tryDelete 3)
 
-	val findMaxDist = fn l => 
-	  foldr (fn (CHANGE {distance,...},high) => Int.max(distance,high)) 0 l
+        val findMaxDist = fn l => 
+          foldr (fn (CHANGE {distance,...},high) => Int.max(distance,high)) 0 l
 
 (* maxDist: max distance past error taken that we could parse *)
 
-	val maxDist = findMaxDist changes
+        val maxDist = findMaxDist changes
 
 (* remove changes which did not parse maxDist tokens past the error token *)
 
         val changes = catList changes 
-	      (fn(c as CHANGE{distance,...}) => 
-		  if distance=maxDist then [c] else [])
+              (fn(c as CHANGE{distance,...}) => 
+                  if distance=maxDist then [c] else [])
 
       in case changes 
-	  of (l as change :: _) =>
-	      let fun print_msg (CHANGE {new,orig,leftPos,rightPos,...}) =
-		  let val s = 
-		      case (orig,new)
-			  of (_::_,[]) => "deleting " ^ (showTerms orig)
-	                   | ([],_::_) => "inserting " ^ (showTerms new)
-			   | _ => "replacing " ^ (showTerms orig) ^
-				 " with " ^ (showTerms new)
-		  in error ("syntax error: " ^ s,leftPos,rightPos)
-		  end
-		   
-		  val _ = 
-		      (if length l > 1 andalso DEBUG2 then
-			   (print "multiple fixes possible; could fix it by:\n";
-			    app print_msg l;
-			    print "chosen correction:\n")
-		       else ();
-		       print_msg change)
+          of (l as change :: _) =>
+              let fun print_msg (CHANGE {new,orig,leftPos,rightPos,...}) =
+                  let val s = 
+                      case (orig,new)
+                          of (_::_,[]) => "deleting " ^ (showTerms orig)
+                           | ([],_::_) => "inserting " ^ (showTerms new)
+                           | _ => "replacing " ^ (showTerms orig) ^
+                                 " with " ^ (showTerms new)
+                  in error ("syntax error: " ^ s,leftPos,rightPos)
+                  end
+                   
+                  val _ = 
+                      (if length l > 1 andalso DEBUG2 then
+                           (print "multiple fixes possible; could fix it by:\n";
+                            app print_msg l;
+                            print "chosen correction:\n")
+                       else ();
+                       print_msg change)
 
-		  (* findNth: find nth queue entry from the error
-		   entry.  Returns the Nth queue entry and the  portion of
-		   the queue from the beginning to the nth-1 entry.  The
-		   error entry is at the end of the queue.
+                  (* findNth: find nth queue entry from the error
+                   entry.  Returns the Nth queue entry and the  portion of
+                   the queue from the beginning to the nth-1 entry.  The
+                   error entry is at the end of the queue.
 
-		   Examples:
+                   Examples:
 
-		   queue = a b c d e
-		   findNth 0 = (e,a b c d)
-		   findNth 1 =  (d,a b c)
-		   *)
+                   queue = a b c d e
+                   findNth 0 = (e,a b c d)
+                   findNth 1 =  (d,a b c)
+                   *)
 
-		  val findNth = fn n =>
-		      let fun f (h::t,0) = (h,rev t)
-			    | f (h::t,n) = f(t,n-1)
-			    | f (nil,_) = let exception FindNth
-					  in raise FindNth
-					  end
-		      in f (rev stateList,n)
-		      end
-		
-		  val CHANGE {pos,orig,new,...} = change
-		  val (last,queueFront) = findNth pos
-		  val (stack,lexPair) = last
+                  val findNth = fn n =>
+                      let fun f (h::t,0) = (h,rev t)
+                            | f (h::t,n) = f(t,n-1)
+                            | f (nil,_) = let exception FindNth
+                                          in raise FindNth
+                                          end
+                      in f (rev stateList,n)
+                      end
+                
+                  val CHANGE {pos,orig,new,...} = change
+                  val (last,queueFront) = findNth pos
+                  val (stack,lexPair) = last
 
-		  val lp1 = foldl(fn (_,(_,r)) => Stream.get r) lexPair orig
-		  val lp2 = foldr(fn(t,r)=>(t,Stream.cons r)) lp1 new
+                  val lp1 = foldl(fn (_,(_,r)) => Stream.get r) lexPair orig
+                  val lp2 = foldr(fn(t,r)=>(t,Stream.cons r)) lp1 new
 
-		  val restQueue = 
-		      Fifo.put((stack,lp2),
-			       foldl Fifo.put Fifo.empty queueFront)
+                  val restQueue = 
+                      Fifo.put((stack,lp2),
+                               foldl Fifo.put Fifo.empty queueFront)
 
-		  val (lexPair,stack,queue,_,_) =
-		      distanceParse(lp2,stack,restQueue,pos)
+                  val (lexPair,stack,queue,_,_) =
+                      distanceParse(lp2,stack,restQueue,pos)
 
-	      in (lexPair,stack,queue)
-	      end
-	| nil => (error("syntax error found at " ^ (showTerminal term),
-			leftPos,leftPos); raise ParseError)
+              in (lexPair,stack,queue)
+              end
+        | nil => (error("syntax error found at " ^ (showTerminal term),
+                        leftPos,leftPos); raise ParseError)
     end
 
    val parse = fn {arg,table,lexer,saction,void,lookahead,
-		   ec=ec as {showTerminal,...} : ('_a,'_b) ecRecord} =>
-	let val distance = 15   (* defer distance tokens *)
-	    val minAdvance = 1  (* must parse at least 1 token past error *)
-	    val maxAdvance = Int.max(lookahead,0)(* max distance for parse check *)
-	    val lexPair = Stream.get lexer
-	    val (TOKEN (_,(_,leftPos,_)),_) = lexPair
-	    val startStack = [(initialState table,(void,leftPos,leftPos))]
-	    val startQueue = Fifo.put((startStack,lexPair),Fifo.empty)
-	    val distanceParse = distanceParse(table,showTerminal,saction,arg)
-	    val fixError = mkFixError(ec,distanceParse,minAdvance,maxAdvance)
-	    val ssParse = ssParse(table,showTerminal,saction,fixError,arg)
-	    fun loop (lexPair,stack,queue,_,SOME ACCEPT) =
-		   ssParse(lexPair,stack,queue)
-	      | loop (lexPair,stack,queue,0,_) = ssParse(lexPair,stack,queue)
-	      | loop (lexPair,stack,queue,distance,SOME ERROR) =
-		 let val (lexPair,stack,queue) = fixError(lexPair,stack,queue)
-		 in loop (distanceParse(lexPair,stack,queue,distance))
-		 end
-	      | loop _ = let exception ParseInternal
-			 in raise ParseInternal
-			 end
-	in loop (distanceParse(lexPair,startStack,startQueue,distance))
-	end
+                   ec=ec as {showTerminal,...} : ('_a,'_b) ecRecord} =>
+        let val distance = 15   (* defer distance tokens *)
+            val minAdvance = 1  (* must parse at least 1 token past error *)
+            val maxAdvance = Int.max(lookahead,0)(* max distance for parse check *)
+            val lexPair = Stream.get lexer
+            val (TOKEN (_,(_,leftPos,_)),_) = lexPair
+            val startStack = [(initialState table,(void,leftPos,leftPos))]
+            val startQueue = Fifo.put((startStack,lexPair),Fifo.empty)
+            val distanceParse = distanceParse(table,showTerminal,saction,arg)
+            val fixError = mkFixError(ec,distanceParse,minAdvance,maxAdvance)
+            val ssParse = ssParse(table,showTerminal,saction,fixError,arg)
+            fun loop (lexPair,stack,queue,_,SOME ACCEPT) =
+                   ssParse(lexPair,stack,queue)
+              | loop (lexPair,stack,queue,0,_) = ssParse(lexPair,stack,queue)
+              | loop (lexPair,stack,queue,distance,SOME ERROR) =
+                 let val (lexPair,stack,queue) = fixError(lexPair,stack,queue)
+                 in loop (distanceParse(lexPair,stack,queue,distance))
+                 end
+              | loop _ = let exception ParseInternal
+                         in raise ParseInternal
+                         end
+        in loop (distanceParse(lexPair,startStack,startQueue,distance))
+        end
  end;
 
 (* stop of ml-yacc/lib/parser2.sml *)
@@ -13153,41 +13153,41 @@ signature DERIVED_FORMS_CORE =
 
     (* Expressions [Figure 15] *)
 
-    val UNITAtExp:	Info					-> AtExp
-    val TUPLEAtExp:	Info * Exp list				-> AtExp
-    val HASHAtExp:	Info * Lab				-> AtExp
-    val CASEExp:	Info * Exp * Match			-> Exp
-    val IFExp:		Info * Exp * Exp * Exp			-> Exp
-    val ANDALSOExp:	Info * Exp * Exp			-> Exp
-    val ORELSEExp:	Info * Exp * Exp			-> Exp
-    val SEQAtExp:	Info * Exp list				-> AtExp
-    val LETAtExp:	Info * Dec * Exp list			-> AtExp
-    val WHILEExp:	Info * Exp * Exp			-> Exp
-    val LISTAtExp:	Info * Exp list				-> AtExp
+    val UNITAtExp:        Info                                        -> AtExp
+    val TUPLEAtExp:        Info * Exp list                                -> AtExp
+    val HASHAtExp:        Info * Lab                                -> AtExp
+    val CASEExp:        Info * Exp * Match                        -> Exp
+    val IFExp:                Info * Exp * Exp * Exp                        -> Exp
+    val ANDALSOExp:        Info * Exp * Exp                        -> Exp
+    val ORELSEExp:        Info * Exp * Exp                        -> Exp
+    val SEQAtExp:        Info * Exp list                                -> AtExp
+    val LETAtExp:        Info * Dec * Exp list                        -> AtExp
+    val WHILEExp:        Info * Exp * Exp                        -> Exp
+    val LISTAtExp:        Info * Exp list                                -> AtExp
 
     (* Patterns [Figure 16] *)
 
-    val UNITAtPat:	Info					-> AtPat
-    val TUPLEAtPat:	Info * Pat list				-> AtPat
-    val LISTAtPat:	Info * Pat list				-> AtPat
+    val UNITAtPat:        Info                                        -> AtPat
+    val TUPLEAtPat:        Info * Pat list                                -> AtPat
+    val LISTAtPat:        Info * Pat list                                -> AtPat
 
-    val VIDPatRow:	Info * VId * Ty option * Pat option * PatRow option
-								-> PatRow
+    val VIDPatRow:        Info * VId * Ty option * Pat option * PatRow option
+                                                                -> PatRow
     (* Types [Figure 16] *)
 
-    val TUPLETy:	Info * Ty list				-> Ty
+    val TUPLETy:        Info * Ty list                                -> Ty
 
     (* Function-value bindings [Figure 17] *)
 
-    val FvalBind:	Info * Fmatch * FvalBind option		-> FvalBind
-    val Fmatch:		Info * Fmrule * Fmatch option		-> Fmatch
-    val Fmrule:		Info * Op * VId * AtPat list * Ty option * Exp -> Fmrule
+    val FvalBind:        Info * Fmatch * FvalBind option                -> FvalBind
+    val Fmatch:                Info * Fmrule * Fmatch option                -> Fmatch
+    val Fmrule:                Info * Op * VId * AtPat list * Ty option * Exp -> Fmrule
 
     (* Declarations [Figure 17] *)
 
-    val FUNDec:		Info * TyVarseq * FvalBind		-> Dec
-    val DATATYPEDec:	Info * DatBind * TypBind option		-> Dec
-    val ABSTYPEDec:	Info * DatBind * TypBind option * Dec	-> Dec
+    val FUNDec:                Info * TyVarseq * FvalBind                -> Dec
+    val DATATYPEDec:        Info * DatBind * TypBind option                -> Dec
+    val ABSTYPEDec:        Info * DatBind * TypBind option * Dec        -> Dec
 
   end
 (* stop of DERIVED_FORMS_CORE.sml *)
@@ -13256,9 +13256,9 @@ structure DerivedFormsCore :> DERIVED_FORMS_CORE =
 
 
     fun LONGVIDExp(I, longvid) = C.ATEXPExp(I, C.LONGVIDAtExp(I, C.SANSOp,
-								 longvid))
+                                                                 longvid))
     fun LONGVIDPat(I, longvid) = C.ATPATPat(I, C.LONGVIDAtPat(I, C.SANSOp,
-								 longvid))
+                                                                 longvid))
 
     fun VIDExp(I, vid)         = LONGVIDExp(I, LongVId.fromId vid)
     fun VIDPat(I, vid)         = LONGVIDPat(I, LongVId.fromId vid)
@@ -13276,92 +13276,92 @@ structure DerivedFormsCore :> DERIVED_FORMS_CORE =
     (* Rewriting of withtype declarations [Appendix A, 2nd bullet] *)
 
     fun lookupTyCon(tycon, C.TypBind(_, tyvarseq, tycon', ty, typbind_opt)) =
-	    if tycon' = tycon then
-		(tyvarseq, ty)
-	    else
-	  	lookupTyCon(tycon, Option.valOf typbind_opt)
-		(* may raise Option *)
+            if tycon' = tycon then
+                (tyvarseq, ty)
+            else
+                  lookupTyCon(tycon, Option.valOf typbind_opt)
+                (* may raise Option *)
 
 
     fun replaceTy (C.TyVarseq(_,tyvars), C.Tyseq(i',tys)) (C.TYVARTy(i,tyvar)) =
-	let
-	    fun loop(tyvar'::tyvars', ty'::tys') =
-		    if tyvar' = tyvar then
-			ty'
-		    else
-			loop(tyvars', tys')
-	      | loop([],_) =
-		    Error.error(i, "unbound type variable")
-	      | loop(_,[]) =
-		    Error.error(i', "type sequence has wrong arity")
-	in
-	    loop(tyvars, tys)
-	end
+        let
+            fun loop(tyvar'::tyvars', ty'::tys') =
+                    if tyvar' = tyvar then
+                        ty'
+                    else
+                        loop(tyvars', tys')
+              | loop([],_) =
+                    Error.error(i, "unbound type variable")
+              | loop(_,[]) =
+                    Error.error(i', "type sequence has wrong arity")
+        in
+            loop(tyvars, tys)
+        end
 
       | replaceTy tyvarseq_tyseq (C.RECORDTy(I, tyrow_opt)) =
-	    C.RECORDTy(I, Option.map (replaceTyRow tyvarseq_tyseq) tyrow_opt)
+            C.RECORDTy(I, Option.map (replaceTyRow tyvarseq_tyseq) tyrow_opt)
 
       | replaceTy tyvarseq_tyseq (C.TYCONTy(I, tyseq', tycon)) =
-	    C.TYCONTy(I, replaceTyseq tyvarseq_tyseq tyseq', tycon)
+            C.TYCONTy(I, replaceTyseq tyvarseq_tyseq tyseq', tycon)
 
       | replaceTy tyvarseq_tyseq (C.ARROWTy(I, ty1, ty2)) =
-	    C.ARROWTy(I, replaceTy tyvarseq_tyseq ty1,
-			 replaceTy tyvarseq_tyseq ty2)
+            C.ARROWTy(I, replaceTy tyvarseq_tyseq ty1,
+                         replaceTy tyvarseq_tyseq ty2)
 
       | replaceTy tyvarseq_tyseq (C.PARTy(I, ty)) =
-	    C.PARTy(I, replaceTy tyvarseq_tyseq ty)
+            C.PARTy(I, replaceTy tyvarseq_tyseq ty)
 
     and replaceTyRow tyvarseq_tyseq (C.TyRow(I, lab, ty, tyrow_opt)) =
-	    C.TyRow(I, lab, replaceTy tyvarseq_tyseq ty, 
-		       Option.map (replaceTyRow tyvarseq_tyseq) tyrow_opt)
+            C.TyRow(I, lab, replaceTy tyvarseq_tyseq ty, 
+                       Option.map (replaceTyRow tyvarseq_tyseq) tyrow_opt)
 
-    and replaceTyseq tyvarseq_tyseq (C.Tyseq(I, tys)) =	  
-	    C.Tyseq(I, List.map (replaceTy tyvarseq_tyseq) tys)
+    and replaceTyseq tyvarseq_tyseq (C.Tyseq(I, tys)) =          
+            C.Tyseq(I, List.map (replaceTy tyvarseq_tyseq) tys)
 
 
     fun rewriteTy typbind (ty as C.TYVARTy _) = ty
 
       | rewriteTy typbind (C.RECORDTy(I, tyrow_opt)) =
-	    C.RECORDTy(I, Option.map (rewriteTyRow typbind) tyrow_opt)
+            C.RECORDTy(I, Option.map (rewriteTyRow typbind) tyrow_opt)
 
       | rewriteTy typbind (C.TYCONTy(I, tyseq, longtycon)) =
-	let 
-	    val tyseq'          = rewriteTyseq typbind tyseq
-	    val (strids, tycon) = LongTyCon.explode longtycon
-	in
-	    if not(List.null strids) then
-		C.TYCONTy(I, tyseq', longtycon)
-	    else
-		let 
-	            val (tyvarseq', ty') = lookupTyCon(tycon, typbind)
-		in
-		    replaceTy (tyvarseq',tyseq') ty'
-		end
-		handle Option => C.TYCONTy(I, tyseq', longtycon)
-	end
+        let 
+            val tyseq'          = rewriteTyseq typbind tyseq
+            val (strids, tycon) = LongTyCon.explode longtycon
+        in
+            if not(List.null strids) then
+                C.TYCONTy(I, tyseq', longtycon)
+            else
+                let 
+                    val (tyvarseq', ty') = lookupTyCon(tycon, typbind)
+                in
+                    replaceTy (tyvarseq',tyseq') ty'
+                end
+                handle Option => C.TYCONTy(I, tyseq', longtycon)
+        end
 
       | rewriteTy typbind (C.ARROWTy(I, ty1, ty2)) =
-	    C.ARROWTy(I, rewriteTy typbind ty1, rewriteTy typbind ty2)
+            C.ARROWTy(I, rewriteTy typbind ty1, rewriteTy typbind ty2)
 
       | rewriteTy typbind (C.PARTy(I, ty)) =
-	    C.PARTy(I, rewriteTy typbind ty)
+            C.PARTy(I, rewriteTy typbind ty)
 
     and rewriteTyRow typbind (C.TyRow(I, lab, ty, tyrow_opt)) =
-	    C.TyRow(I, lab, rewriteTy typbind ty,
-		       Option.map (rewriteTyRow typbind) tyrow_opt)
+            C.TyRow(I, lab, rewriteTy typbind ty,
+                       Option.map (rewriteTyRow typbind) tyrow_opt)
 
     and rewriteTyseq typbind (C.Tyseq(I, tys)) =
-	    C.Tyseq(I, List.map (rewriteTy typbind) tys)
+            C.Tyseq(I, List.map (rewriteTy typbind) tys)
 
     fun rewriteConBind typbind (C.ConBind(I, op_opt, vid, ty_opt, conbind_opt))=
-	    C.ConBind(I, op_opt, vid,
-			 Option.map (rewriteTy typbind) ty_opt,
-			 Option.map (rewriteConBind typbind) conbind_opt)
+            C.ConBind(I, op_opt, vid,
+                         Option.map (rewriteTy typbind) ty_opt,
+                         Option.map (rewriteConBind typbind) conbind_opt)
 
     fun rewriteDatBind typbind (C.DatBind(I, tyvarseq, tycon, conbind,
-							      datbind_opt)) =
-	    C.DatBind(I, tyvarseq, tycon, rewriteConBind typbind conbind,
-			 Option.map (rewriteDatBind typbind) datbind_opt)
+                                                              datbind_opt)) =
+            C.DatBind(I, tyvarseq, tycon, rewriteConBind typbind conbind,
+                         Option.map (rewriteDatBind typbind) datbind_opt)
 
 
     (* Patterns [Figure 16] *)
@@ -13370,39 +13370,39 @@ structure DerivedFormsCore :> DERIVED_FORMS_CORE =
 
     fun TUPLEAtPat(I, [pat]) = C.PARAtPat(I, pat)
       | TUPLEAtPat(I,  pats) =
-	let
-	    fun toPatRow(n,    []     ) = NONE
-	      | toPatRow(n, pat::pats') =
-		  SOME(C.ROWPatRow(I, Lab.fromInt n, pat, toPatRow(n+1,pats')))
-	in
-	    C.RECORDAtPat(I, toPatRow(1, pats))
-	end
+        let
+            fun toPatRow(n,    []     ) = NONE
+              | toPatRow(n, pat::pats') =
+                  SOME(C.ROWPatRow(I, Lab.fromInt n, pat, toPatRow(n+1,pats')))
+        in
+            C.RECORDAtPat(I, toPatRow(1, pats))
+        end
 
     fun LISTAtPat(I, pats)  =
-	let
-	    fun toPatList    []       = NILPat(I)
-	      | toPatList(pat::pats') =
-		C.CONPat(I, C.SANSOp, longvidCONS,
-			     TUPLEAtPat(I, [pat,toPatList pats']))
-	in
-	    C.PARAtPat(I, toPatList pats)
-	end
+        let
+            fun toPatList    []       = NILPat(I)
+              | toPatList(pat::pats') =
+                C.CONPat(I, C.SANSOp, longvidCONS,
+                             TUPLEAtPat(I, [pat,toPatList pats']))
+        in
+            C.PARAtPat(I, toPatList pats)
+        end
 
 
     (* Pattern Rows [Figure 16] *)
 
     fun VIDPatRow(I, vid, ty_opt, pat_opt, patrow_opt) =
-	let
-	    val lab    = Lab.fromString(VId.toString vid)
-	    val vidPat = VIDPat(I, vid)
-	    val pat    =
-		case (ty_opt, pat_opt)
-		  of (NONE,    NONE) => vidPat
-		   | (SOME ty, NONE) => C.TYPEDPat(I, vidPat, ty)
-		   | ( _ , SOME pat) => C.ASPat(I, C.SANSOp,vid,ty_opt,pat)
-	in
-	    C.ROWPatRow(I, lab, pat, patrow_opt)
-	end
+        let
+            val lab    = Lab.fromString(VId.toString vid)
+            val vidPat = VIDPat(I, vid)
+            val pat    =
+                case (ty_opt, pat_opt)
+                  of (NONE,    NONE) => vidPat
+                   | (SOME ty, NONE) => C.TYPEDPat(I, vidPat, ty)
+                   | ( _ , SOME pat) => C.ASPat(I, C.SANSOp,vid,ty_opt,pat)
+        in
+            C.ROWPatRow(I, lab, pat, patrow_opt)
+        end
 
 
     (* Expressions [Figure 15] *)
@@ -13411,187 +13411,187 @@ structure DerivedFormsCore :> DERIVED_FORMS_CORE =
 
     fun TUPLEAtExp(I, [exp]) = C.PARAtExp(I, exp)
       | TUPLEAtExp(I,  exps) =
-	let
-	    fun toExpRow(n,    []     ) = NONE
-	      | toExpRow(n, exp::exps') =
-		  SOME(C.ExpRow(I, Lab.fromInt n, exp, toExpRow(n+1, exps')))
-	in
-	    C.RECORDAtExp(I, toExpRow(1, exps))
-	end
+        let
+            fun toExpRow(n,    []     ) = NONE
+              | toExpRow(n, exp::exps') =
+                  SOME(C.ExpRow(I, Lab.fromInt n, exp, toExpRow(n+1, exps')))
+        in
+            C.RECORDAtExp(I, toExpRow(1, exps))
+        end
 
     fun HASHAtExp(I, lab) =
-	let
-	    val vid    = VId.invent()
-	    val dots   = C.WILDCARDPatRow(I)
-	    val patrow = C.ROWPatRow(I, lab, VIDPat(I, vid), SOME dots)
-	    val pat    = C.ATPATPat(I, C.RECORDAtPat(I, SOME patrow))
-	    val mrule  = C.Mrule(I, pat, VIDExp(I, vid))
-	    val match  = C.Match(I, mrule, NONE)
-	in
-	    C.PARAtExp(I, C.FNExp(I, match))
-	end
+        let
+            val vid    = VId.invent()
+            val dots   = C.WILDCARDPatRow(I)
+            val patrow = C.ROWPatRow(I, lab, VIDPat(I, vid), SOME dots)
+            val pat    = C.ATPATPat(I, C.RECORDAtPat(I, SOME patrow))
+            val mrule  = C.Mrule(I, pat, VIDExp(I, vid))
+            val match  = C.Match(I, mrule, NONE)
+        in
+            C.PARAtExp(I, C.FNExp(I, match))
+        end
 
     fun CASEExp(I, exp, match) =
-	let
-	    val function = C.ATEXPExp(I, C.PARAtExp(I, C.FNExp(I, match)))
-	in
-	    C.APPExp(I, function, C.PARAtExp(I, exp))
-	end
+        let
+            val function = C.ATEXPExp(I, C.PARAtExp(I, C.FNExp(I, match)))
+        in
+            C.APPExp(I, function, C.PARAtExp(I, exp))
+        end
 
     fun IFExp(I, exp1, exp2, exp3) =
-	let
-	    val mruleTrue  = C.Mrule(I, TRUEPat(I), exp2)
-	    val mruleFalse = C.Mrule(I, FALSEPat(I), exp3)
-	    val matchFalse = C.Match(I, mruleFalse, NONE)
-	    val matchTrue  = C.Match(I, mruleTrue, SOME matchFalse)
-	in
-	    CASEExp(I, exp1, matchTrue)
-	end
+        let
+            val mruleTrue  = C.Mrule(I, TRUEPat(I), exp2)
+            val mruleFalse = C.Mrule(I, FALSEPat(I), exp3)
+            val matchFalse = C.Match(I, mruleFalse, NONE)
+            val matchTrue  = C.Match(I, mruleTrue, SOME matchFalse)
+        in
+            CASEExp(I, exp1, matchTrue)
+        end
 
     fun ORELSEExp (I, exp1, exp2) = IFExp(I, exp1, TRUEExp(I), exp2)
 
     fun ANDALSOExp(I, exp1, exp2) = IFExp(I, exp1, exp2, FALSEExp(I))
 
     fun SEQAtExp(I, exps) =
-	let
-	    val wildcard             = C.ATPATPat(I, C.WILDCARDAtPat(I))
+        let
+            val wildcard             = C.ATPATPat(I, C.WILDCARDAtPat(I))
 
-	    fun toExpSeq []          = raise Fail "DerivedFormsCore.SEQAtExp: \
-						  \empty exp list"
-	      | toExpSeq [exp]       = exp
-	      | toExpSeq(exp::exps') =
-		  let
-		      val mrule = C.Mrule(I, wildcard, toExpSeq exps')
-		      val match = C.Match(I, mrule, NONE)
-		  in
-		      CASEExp(I, exp, match)
-		  end
-	in
-	    C.PARAtExp(I, toExpSeq exps)
-	end
+            fun toExpSeq []          = raise Fail "DerivedFormsCore.SEQAtExp: \
+                                                  \empty exp list"
+              | toExpSeq [exp]       = exp
+              | toExpSeq(exp::exps') =
+                  let
+                      val mrule = C.Mrule(I, wildcard, toExpSeq exps')
+                      val match = C.Match(I, mrule, NONE)
+                  in
+                      CASEExp(I, exp, match)
+                  end
+        in
+            C.PARAtExp(I, toExpSeq exps)
+        end
 
     fun LETAtExp(I, dec, [exp]) = C.LETAtExp(I, dec, exp)
       | LETAtExp(I, dec,  exps) =
-	    C.LETAtExp(I, dec, C.ATEXPExp(I, SEQAtExp(I, exps)))
+            C.LETAtExp(I, dec, C.ATEXPExp(I, SEQAtExp(I, exps)))
 
     fun WHILEExp(I, exp1, exp2) =
-	let
-	    val vid       = VId.invent()
-	    val vidExp    = VIDExp(I, vid)
-	    val unitAtExp = UNITAtExp(I)
-	    val unitExp   = C.ATEXPExp(I, unitAtExp)
-	    val callVid   = C.APPExp(I, vidExp, unitAtExp)
+        let
+            val vid       = VId.invent()
+            val vidExp    = VIDExp(I, vid)
+            val unitAtExp = UNITAtExp(I)
+            val unitExp   = C.ATEXPExp(I, unitAtExp)
+            val callVid   = C.APPExp(I, vidExp, unitAtExp)
 
-	    val seqExp    = C.ATEXPExp(I, SEQAtExp(I, [exp2, callVid]))
-	    val fnBody    = IFExp(I, exp1, seqExp, unitExp)
-	    val mrule     = C.Mrule(I, C.ATPATPat(I, UNITAtPat(I)), fnBody)
-	    val match     = C.Match(I, mrule, NONE)
-	    val fnExp     = C.FNExp(I, match)
-	    val fnBind    = C.PLAINValBind(I, VIDPat(I, vid), fnExp, NONE)
-	    val valbind   = C.RECValBind(I, fnBind)
-	    val dec       = C.VALDec(I, C.TyVarseq(I, []), valbind)
-	in
-	    C.ATEXPExp(I, C.LETAtExp(I, dec, callVid))
-	end
+            val seqExp    = C.ATEXPExp(I, SEQAtExp(I, [exp2, callVid]))
+            val fnBody    = IFExp(I, exp1, seqExp, unitExp)
+            val mrule     = C.Mrule(I, C.ATPATPat(I, UNITAtPat(I)), fnBody)
+            val match     = C.Match(I, mrule, NONE)
+            val fnExp     = C.FNExp(I, match)
+            val fnBind    = C.PLAINValBind(I, VIDPat(I, vid), fnExp, NONE)
+            val valbind   = C.RECValBind(I, fnBind)
+            val dec       = C.VALDec(I, C.TyVarseq(I, []), valbind)
+        in
+            C.ATEXPExp(I, C.LETAtExp(I, dec, callVid))
+        end
 
     fun LISTAtExp(I, exps) =
-	let
-	    fun toExpList    []       = NILExp(I)
-	      | toExpList(exp::exps') =
-		  C.APPExp(I, CONSExp(I), TUPLEAtExp(I, [exp, toExpList exps']))
-	in
-	    C.PARAtExp(I, toExpList exps)
-	end
+        let
+            fun toExpList    []       = NILExp(I)
+              | toExpList(exp::exps') =
+                  C.APPExp(I, CONSExp(I), TUPLEAtExp(I, [exp, toExpList exps']))
+        in
+            C.PARAtExp(I, toExpList exps)
+        end
 
 
     (* Type Expressions [Figure 16] *)
 
     fun TUPLETy(I, [ty]) = ty
       | TUPLETy(I,  tys) =
-	let
-	    fun toTyRow(n,   []    ) = NONE
-	      | toTyRow(n, ty::tys') =
-		  SOME(C.TyRow(I, Lab.fromInt n, ty, toTyRow(n+1, tys')))
-	in
-	    C.RECORDTy(I, toTyRow(1, tys))
-	end
+        let
+            fun toTyRow(n,   []    ) = NONE
+              | toTyRow(n, ty::tys') =
+                  SOME(C.TyRow(I, Lab.fromInt n, ty, toTyRow(n+1, tys')))
+        in
+            C.RECORDTy(I, toTyRow(1, tys))
+        end
 
 
     (* Function-value Bindings [Figure 17] *)
 
     fun FvalBind(I, (match, vid, arity), fvalbind_opt) =
-	let
-	    fun abstract(0, vidExps) =
-		let
-		    val exp = C.ATEXPExp(I, TUPLEAtExp(I, List.rev vidExps))
-		in
-		    CASEExp(I, exp, match)
-		end
+        let
+            fun abstract(0, vidExps) =
+                let
+                    val exp = C.ATEXPExp(I, TUPLEAtExp(I, List.rev vidExps))
+                in
+                    CASEExp(I, exp, match)
+                end
 
-	      | abstract(n, vidExps) =
-		let
-		    val vid   = VId.invent()
-		    val exp   = VIDExp(I, vid)
-		    val pat   = VIDPat(I, vid)
-		    val mrule = C.Mrule(I, pat, abstract(n-1, exp::vidExps))
-		in
-		    C.FNExp(I, C.Match(I, mrule, NONE))
-		end
+              | abstract(n, vidExps) =
+                let
+                    val vid   = VId.invent()
+                    val exp   = VIDExp(I, vid)
+                    val pat   = VIDPat(I, vid)
+                    val mrule = C.Mrule(I, pat, abstract(n-1, exp::vidExps))
+                in
+                    C.FNExp(I, C.Match(I, mrule, NONE))
+                end
 
-	    val exp = abstract(arity, [])
-	    val pat = VIDPat(I, vid)
-	in
-	    C.PLAINValBind(I, pat, exp, fvalbind_opt)
-	end
+            val exp = abstract(arity, [])
+            val pat = VIDPat(I, vid)
+        in
+            C.PLAINValBind(I, pat, exp, fvalbind_opt)
+        end
 
 
     fun Fmatch(I, (mrule, vid, arity), NONE) =
-	    ( C.Match(I, mrule, NONE), vid, arity )
+            ( C.Match(I, mrule, NONE), vid, arity )
 
       | Fmatch(I, (mrule, vid, arity), SOME(match, vid', arity')) =
-	    if vid <> vid' then
-		Error.error(I, "inconsistent function identifier")
-	     else if arity <> arity' then
-		Error.error(I, "inconsistent function arity")
-	     else
-		( C.Match(I, mrule, SOME match), vid, arity )
+            if vid <> vid' then
+                Error.error(I, "inconsistent function identifier")
+             else if arity <> arity' then
+                Error.error(I, "inconsistent function arity")
+             else
+                ( C.Match(I, mrule, SOME match), vid, arity )
 
 
     fun Fmrule(I, _, vid, atpats, ty_opt, exp) =
-	let
-	    val pats = List.map (fn atpat => C.ATPATPat(I, atpat)) atpats
-	    val pat' = C.ATPATPat(I, TUPLEAtPat(I, pats))
-	    val exp' = case ty_opt
-			 of NONE    => exp
-			  | SOME ty => C.TYPEDExp(I, exp, ty)
-	    val arity = List.length atpats
-	in
-	    ( C.Mrule(I, pat', exp'), vid, arity )
-	end
+        let
+            val pats = List.map (fn atpat => C.ATPATPat(I, atpat)) atpats
+            val pat' = C.ATPATPat(I, TUPLEAtPat(I, pats))
+            val exp' = case ty_opt
+                         of NONE    => exp
+                          | SOME ty => C.TYPEDExp(I, exp, ty)
+            val arity = List.length atpats
+        in
+            ( C.Mrule(I, pat', exp'), vid, arity )
+        end
 
 
     (* Declarations [Figure 17] *)
 
     fun FUNDec(I, tyvarseq, fvalbind) =
-	    C.VALDec(I, tyvarseq, C.RECValBind(I, fvalbind))
+            C.VALDec(I, tyvarseq, C.RECValBind(I, fvalbind))
 
     fun DATATYPEDec(I, datbind, NONE)         = C.DATATYPEDec(I, datbind)
       | DATATYPEDec(I, datbind, SOME typbind) =
-	let
-	    val datbind' = rewriteDatBind typbind datbind
-	in
-	    C.SEQDec(I, C.DATATYPEDec(C.infoDatBind datbind, datbind'),
-			C.TYPEDec(C.infoTypBind typbind, typbind))
-	end
+        let
+            val datbind' = rewriteDatBind typbind datbind
+        in
+            C.SEQDec(I, C.DATATYPEDec(C.infoDatBind datbind, datbind'),
+                        C.TYPEDec(C.infoTypBind typbind, typbind))
+        end
 
     fun ABSTYPEDec(I, datbind, NONE, dec)         = C.ABSTYPEDec(I, datbind,dec)
       | ABSTYPEDec(I, datbind, SOME typbind, dec) =
-	let
-	    val I'       = C.infoTypBind typbind
-	    val datbind' = rewriteDatBind typbind datbind
-	in
-	    C.ABSTYPEDec(I, datbind', C.SEQDec(I, C.TYPEDec(I', typbind), dec))
-	end
+        let
+            val I'       = C.infoTypBind typbind
+            val datbind' = rewriteDatBind typbind datbind
+        in
+            C.ABSTYPEDec(I, datbind', C.SEQDec(I, C.TYPEDec(I', typbind), dec))
+        end
 
   end
 (* stop of DerivedFormsCore.sml *)
@@ -13641,39 +13641,39 @@ signature DERIVED_FORMS_MODULE =
     (* Structure Bindings [Figure 18] *)
 
     val TRANSStrBind:     Info * StrId * SigExp option * StrExp
-			       * StrBind option			-> StrBind
+                               * StrBind option                        -> StrBind
     val OPAQStrBind:      Info * StrId * SigExp * StrExp
-			       * StrBind option			-> StrBind
+                               * StrBind option                        -> StrBind
 
     (* Structure Expressions [Figure 18] *)
 
-    val APPDECStrExp:     Info * FunId * StrDec			-> StrExp
+    val APPDECStrExp:     Info * FunId * StrDec                        -> StrExp
 
     (* Functor Bindings [Figure 18] *)
 
     val TRANSFunBind:     Info * FunId * StrId * SigExp * SigExp option
-			       * StrExp * FunBind option	-> FunBind
+                               * StrExp * FunBind option        -> FunBind
     val OPAQFunBind:      Info * FunId * StrId * SigExp * SigExp
-			       * StrExp * FunBind option	-> FunBind
+                               * StrExp * FunBind option        -> FunBind
     val TRANSSPECFunBind: Info * FunId * Spec * SigExp option
-			       * StrExp * FunBind option	-> FunBind
+                               * StrExp * FunBind option        -> FunBind
     val OPAQSPECFunBind:  Info * FunId * Spec * SigExp
-                               * StrExp * FunBind option	-> FunBind
+                               * StrExp * FunBind option        -> FunBind
 
     (* Specifications [Figure 19] *)
 
-    val SYNSpec:          Info * SynDesc			-> Spec
-    val INCLUDEMULTISpec: Info * SigId list			-> Spec
+    val SYNSpec:          Info * SynDesc                        -> Spec
+    val INCLUDEMULTISpec: Info * SigId list                        -> Spec
 
     val SynDesc:          Info * TyVarseq * TyCon * Ty
-			       * SynDesc option			-> SynDesc
+                               * SynDesc option                        -> SynDesc
 
     (* Signature Expressions [Figure 19] *)
 
-    val WHERETYPESigExp:  Info * SigExp * TyReaDesc		-> SigExp
+    val WHERETYPESigExp:  Info * SigExp * TyReaDesc                -> SigExp
 
     val TyReaDesc:        Info * TyVarseq * longTyCon * Ty
-			       * TyReaDesc option		-> TyReaDesc
+                               * TyReaDesc option                -> TyReaDesc
   end
 (* stop of DERIVED_FORMS_MODULE.sml *)
 (* start of DerivedFormsModule.sml *)
@@ -13725,110 +13725,110 @@ structure DerivedFormsModule :> DERIVED_FORMS_MODULE =
     (* Structure Bindings [Figure 18] *)
 
     fun TRANSStrBind(I, strid, NONE, strexp, strbind_opt) =
-	    M.StrBind(I, strid, strexp, strbind_opt)
+            M.StrBind(I, strid, strexp, strbind_opt)
 
       | TRANSStrBind(I, strid, SOME sigexp, strexp, strbind_opt) =
-	    M.StrBind(I, strid, M.TRANSStrExp(I, strexp, sigexp), strbind_opt)
+            M.StrBind(I, strid, M.TRANSStrExp(I, strexp, sigexp), strbind_opt)
 
     fun OPAQStrBind(I, strid, sigexp, strexp, strbind_opt) =
-	    M.StrBind(I, strid, M.OPAQStrExp(I, strexp, sigexp), strbind_opt)
+            M.StrBind(I, strid, M.OPAQStrExp(I, strexp, sigexp), strbind_opt)
 
 
     (* Structure Expressions [Figure 18] *)
 
     fun APPDECStrExp(I, funid, strdec) =
-	    M.APPStrExp(I, funid, M.STRUCTStrExp(M.infoStrDec strdec, strdec))
+            M.APPStrExp(I, funid, M.STRUCTStrExp(M.infoStrDec strdec, strdec))
 
 
     (* Functor Bindings [Figure 18] *)
 
     fun TRANSFunBind(I, funid, strid, sigexp, NONE, strexp, funbind_opt) =
-	    M.FunBind(I, funid, strid, sigexp, strexp, funbind_opt)
+            M.FunBind(I, funid, strid, sigexp, strexp, funbind_opt)
 
       | TRANSFunBind(I, funid, strid,sigexp, SOME sigexp', strexp, funbind_opt)=
-	    M.FunBind(I, funid, strid, sigexp, M.TRANSStrExp(I, strexp,sigexp'),
-			 funbind_opt)
+            M.FunBind(I, funid, strid, sigexp, M.TRANSStrExp(I, strexp,sigexp'),
+                         funbind_opt)
 
     fun OPAQFunBind(I, funid, strid, sigexp, sigexp', strexp, funbind_opt) =
-	    M.FunBind(I, funid, strid, sigexp, M.OPAQStrExp(I, strexp, sigexp'),
-			 funbind_opt)
+            M.FunBind(I, funid, strid, sigexp, M.OPAQStrExp(I, strexp, sigexp'),
+                         funbind_opt)
 
 
     fun TRANSSPECFunBind(I, funid, spec, sigexp_opt, strexp, funbind_opt) =
-	let
-	    val I'     = M.infoStrExp strexp
-	    val strid  = StrId.invent()
-	    val sigexp = M.SIGSigExp(M.infoSpec spec, spec)
+        let
+            val I'     = M.infoStrExp strexp
+            val strid  = StrId.invent()
+            val sigexp = M.SIGSigExp(M.infoSpec spec, spec)
 
-	    val strdec = M.DECStrDec(I', C.OPENDec(I',[LongStrId.fromId strid]))
-	    val strexp'= case sigexp_opt
-			   of NONE         => strexp
-			    | SOME sigexp' => M.TRANSStrExp(I', strexp, sigexp')
-	    val letexp = M.LETStrExp(I', strdec, strexp')
-	in
-	    M.FunBind(I, funid, strid, sigexp, letexp, funbind_opt)
-	end
+            val strdec = M.DECStrDec(I', C.OPENDec(I',[LongStrId.fromId strid]))
+            val strexp'= case sigexp_opt
+                           of NONE         => strexp
+                            | SOME sigexp' => M.TRANSStrExp(I', strexp, sigexp')
+            val letexp = M.LETStrExp(I', strdec, strexp')
+        in
+            M.FunBind(I, funid, strid, sigexp, letexp, funbind_opt)
+        end
 
     fun OPAQSPECFunBind(I, funid, spec, sigexp', strexp, funbind_opt) =
-	let
-	    val I'     = M.infoStrExp strexp
-	    val strid  = StrId.invent()
-	    val sigexp = M.SIGSigExp(M.infoSpec spec, spec)
+        let
+            val I'     = M.infoStrExp strexp
+            val strid  = StrId.invent()
+            val sigexp = M.SIGSigExp(M.infoSpec spec, spec)
 
-	    val strdec = M.DECStrDec(I', C.OPENDec(I',[LongStrId.fromId strid]))
-	    val strexp'= M.TRANSStrExp(I', strexp, sigexp')
-	    val letexp = M.LETStrExp(I', strdec, strexp')
-	in
-	    M.FunBind(I, funid, strid, sigexp, letexp, funbind_opt)
-	end
+            val strdec = M.DECStrDec(I', C.OPENDec(I',[LongStrId.fromId strid]))
+            val strexp'= M.TRANSStrExp(I', strexp, sigexp')
+            val letexp = M.LETStrExp(I', strdec, strexp')
+        in
+            M.FunBind(I, funid, strid, sigexp, letexp, funbind_opt)
+        end
 
 
     (* Specifications [Figure 19] *)
 
     fun SYNSpec(I, [])                            = M.EMPTYSpec(I)
       | SYNSpec(I, (I',tyvarseq,tycon,ty)::syns') =
-	let
-	    val longtycon = LongTyCon.fromId tycon
-	    val typdesc = M.TypDesc(I', tyvarseq, tycon, NONE)
-	    val sigexp  = M.SIGSigExp(I', M.TYPESpec(I', typdesc))
-	    val sigexp' = M.WHERETYPESigExp(I', sigexp, tyvarseq, longtycon, ty)
-	    val spec1   = M.INCLUDESpec(I', sigexp')
-	in
-	    M.SEQSpec(I, spec1, SYNSpec(I, syns'))
-	end
+        let
+            val longtycon = LongTyCon.fromId tycon
+            val typdesc = M.TypDesc(I', tyvarseq, tycon, NONE)
+            val sigexp  = M.SIGSigExp(I', M.TYPESpec(I', typdesc))
+            val sigexp' = M.WHERETYPESigExp(I', sigexp, tyvarseq, longtycon, ty)
+            val spec1   = M.INCLUDESpec(I', sigexp')
+        in
+            M.SEQSpec(I, spec1, SYNSpec(I, syns'))
+        end
 
     fun INCLUDEMULTISpec(I,      []       ) = M.EMPTYSpec(I)
       | INCLUDEMULTISpec(I, sigid::sigids') =
-	let
-	    val spec1 = M.INCLUDESpec(I, M.SIGIDSigExp(I, sigid))
-	in
-	    M.SEQSpec(I, spec1, INCLUDEMULTISpec(I, sigids'))
-	end
+        let
+            val spec1 = M.INCLUDESpec(I, M.SIGIDSigExp(I, sigid))
+        in
+            M.SEQSpec(I, spec1, INCLUDEMULTISpec(I, sigids'))
+        end
 
 
     fun SynDesc(I, tyvarseq, tycon, ty, NONE) =
-	    (I, tyvarseq, tycon, ty) :: []
+            (I, tyvarseq, tycon, ty) :: []
 
       | SynDesc(I, tyvarseq, tycon, ty, SOME syndesc) =
-	    (I, tyvarseq, tycon, ty) :: syndesc
+            (I, tyvarseq, tycon, ty) :: syndesc
 
 
     (* Signature Expressions [Figure 19] *)
 
     fun WHERETYPESigExp(I, sigexp,                           []     ) = sigexp
       | WHERETYPESigExp(I, sigexp, (I',tyvarseq,longtycon,ty)::reas') =
-	let
-	    val sigexp' = M.WHERETYPESigExp(I', sigexp, tyvarseq, longtycon, ty)
-	in
-	    WHERETYPESigExp(I, sigexp', reas')
-	end
+        let
+            val sigexp' = M.WHERETYPESigExp(I', sigexp, tyvarseq, longtycon, ty)
+        in
+            WHERETYPESigExp(I, sigexp', reas')
+        end
 
 
     fun TyReaDesc(I, tyvarseq, longtycon, ty, NONE) =
-	    (I, tyvarseq, longtycon, ty) :: []
+            (I, tyvarseq, longtycon, ty) :: []
 
       | TyReaDesc(I, tyvarseq, longtycon, ty, SOME tyreadesc) =
-	    (I, tyvarseq, longtycon, ty) :: tyreadesc
+            (I, tyvarseq, longtycon, ty) :: tyreadesc
 
   end
 (* stop of DerivedFormsModule.sml *)
@@ -13854,8 +13854,8 @@ signature DERIVED_FORMS_PROGRAM =
 
     (* Programs [Figure 18] *)
 
-    val TOPDECProgram:	Info * TopDec * Program option -> Program
-    val EXPProgram:	Info *  Exp   * Program option -> Program
+    val TOPDECProgram:        Info * TopDec * Program option -> Program
+    val EXPProgram:        Info *  Exp   * Program option -> Program
 
   end
 (* stop of DERIVED_FORMS_PROGRAM.sml *)
@@ -13886,18 +13886,18 @@ structure DerivedFormsProgram :> DERIVED_FORMS_PROGRAM =
     (* Programs [Figure 18] *)
 
     fun TOPDECProgram(I, topdec, program_opt) =
-	    P.Program(I, topdec, program_opt)
+            P.Program(I, topdec, program_opt)
 
     fun EXPProgram(I, exp, program_opt) =
-	let
-	    val longvid = LongVId.fromId(VId.fromString "it")
-	    val pat     = C.ATPATPat(I, C.LONGVIDAtPat(I, C.SANSOp, longvid))
-	    val valbind = C.PLAINValBind(I, pat, exp, NONE)
-	    val dec     = C.VALDec(I, C.TyVarseq(I, []), valbind)
-	    val topdec  = M.STRDECTopDec(I, M.DECStrDec(I, dec), NONE)
-	in
-	    P.Program(I, topdec, program_opt)
-	end
+        let
+            val longvid = LongVId.fromId(VId.fromString "it")
+            val pat     = C.ATPATPat(I, C.LONGVIDAtPat(I, C.SANSOp, longvid))
+            val valbind = C.PLAINValBind(I, pat, exp, NONE)
+            val dec     = C.VALDec(I, C.TyVarseq(I, []), valbind)
+            val topdec  = M.STRDECTopDec(I, M.DECStrDec(I, dec), NONE)
+        in
+            P.Program(I, topdec, program_opt)
+        end
 
   end
 (* stop of DerivedFormsProgram.sml *)
@@ -13995,49 +13995,49 @@ structure ParserData=
 struct
 structure Header = 
 struct
-(*										*)
-(* Standard ML syntactical analysis						*)
-(*										*)
-(* Definition, sections 2, 3, and 8, Appendix A and B				*)
-(*										*)
-(* Notes:									*)
-(*   - Two phrases named Fmatch and Fmrule have been added to factorize		*)
-(*     Fvalbind.								*)
-(*   - A phrase named SynDesc has been added to factorize type synonym		*)
-(*     specifications. Similarly, a phrase named TyReaDesc has been added to	*)
-(*     factorize type realisation signature expressions.			*)
-(*   - Infix expressions [Definition, section 2.6] are resolved externally in	*)
-(*     structure Infix. The parser just maintains the infix environment J by	*)
-(*     side effect. To achieve correct treatment of scoped fixity directives,	*)
-(*     a stack of environments is used. To handle `local' we even need a	*)
-(*     second environment J' (together with a a second stack).			*)
-(*   - Syntactic restrictions [Definition, sections 2.9 and 3.5] are checked	*)
-(*     during elaboration, as well as the Fvalbind derived form.		*)
-(*   - The Definition is not clear about whether `=' should also be legal as	*)
-(*     a tycon. Since this would result in massive conflicts, and a type named	*)
-(*     `=' could only be used legally if an implementation would be mad enough	*)
-(*     to predefine it anyway, we simply disallow it.				*)
-(*   - The Definition is also vague about what consists a non-infixed occurance	*)
-(*     of an infix identifier: we assume any occurances in expressions		*)
-(*     or patterns. This implies that uses of the keyword `op' in constructor	*)
-(*     and exception bindings are completely redundant.				*)
-(*   - Datatype replication requires rules for datatype to be duplicated to	*)
-(*     avoid conflicts on empty tyvarseqs.					*)
-(*   - Layered patterns require some grammar transformation hack, see pat.	*)
-(*   - The messy `sigexp where type ... and type ...' syntax requires some	*)
-(*     really ugly transformations (in absence of a lookahead of 2), watch out	*)
-(*     for non-terminals of the form xxx__AND_yyybind_opt.			*)
-(*   - ML-Yacc does not seem to like comments that stretch over several		*)
-(*     lines... Similarly, comments in semantic actions make it puke...		*)
-(*										*)
-(* Bugs:									*)
-(*   - We do NOT support declarations like					*)
-(*	  fun f p1 = case e1 of p2 => e2					*)
-(*	    | f p3 = e3								*)
-(*     (without parentheses around the case) because the transformations	*)
-(*     required to support this would be even a magnitude uglier than those	*)
-(*     above. In fact, no compiler I know of supports this.			*)
-(*										*)
+(*                                                                                *)
+(* Standard ML syntactical analysis                                                *)
+(*                                                                                *)
+(* Definition, sections 2, 3, and 8, Appendix A and B                                *)
+(*                                                                                *)
+(* Notes:                                                                        *)
+(*   - Two phrases named Fmatch and Fmrule have been added to factorize                *)
+(*     Fvalbind.                                                                *)
+(*   - A phrase named SynDesc has been added to factorize type synonym                *)
+(*     specifications. Similarly, a phrase named TyReaDesc has been added to        *)
+(*     factorize type realisation signature expressions.                        *)
+(*   - Infix expressions [Definition, section 2.6] are resolved externally in        *)
+(*     structure Infix. The parser just maintains the infix environment J by        *)
+(*     side effect. To achieve correct treatment of scoped fixity directives,        *)
+(*     a stack of environments is used. To handle `local' we even need a        *)
+(*     second environment J' (together with a a second stack).                        *)
+(*   - Syntactic restrictions [Definition, sections 2.9 and 3.5] are checked        *)
+(*     during elaboration, as well as the Fvalbind derived form.                *)
+(*   - The Definition is not clear about whether `=' should also be legal as        *)
+(*     a tycon. Since this would result in massive conflicts, and a type named        *)
+(*     `=' could only be used legally if an implementation would be mad enough        *)
+(*     to predefine it anyway, we simply disallow it.                                *)
+(*   - The Definition is also vague about what consists a non-infixed occurance        *)
+(*     of an infix identifier: we assume any occurances in expressions                *)
+(*     or patterns. This implies that uses of the keyword `op' in constructor        *)
+(*     and exception bindings are completely redundant.                                *)
+(*   - Datatype replication requires rules for datatype to be duplicated to        *)
+(*     avoid conflicts on empty tyvarseqs.                                        *)
+(*   - Layered patterns require some grammar transformation hack, see pat.        *)
+(*   - The messy `sigexp where type ... and type ...' syntax requires some        *)
+(*     really ugly transformations (in absence of a lookahead of 2), watch out        *)
+(*     for non-terminals of the form xxx__AND_yyybind_opt.                        *)
+(*   - ML-Yacc does not seem to like comments that stretch over several                *)
+(*     lines... Similarly, comments in semantic actions make it puke...                *)
+(*                                                                                *)
+(* Bugs:                                                                        *)
+(*   - We do NOT support declarations like                                        *)
+(*          fun f p1 = case e1 of p2 => e2                                        *)
+(*            | f p3 = e3                                                                *)
+(*     (without parentheses around the case) because the transformations        *)
+(*     required to support this would be even a magnitude uglier than those        *)
+(*     above. In fact, no compiler I know of supports this.                        *)
+(*                                                                                *)
 
 
 
@@ -14058,74 +14058,74 @@ struct
 
     (* Handling infix environments *)
 
-    val J  = ref Infix.empty	(* context *)
-    val J' = ref Infix.empty	(* local environment (+ enclosing one) *)
+    val J  = ref Infix.empty        (* context *)
+    val J' = ref Infix.empty        (* local environment (+ enclosing one) *)
 
     val stackJ  = ref [] : Infix.InfEnv list ref
     val stackJ' = ref [] : Infix.InfEnv list ref
 
     fun initJandJ'(J0) =
-	(
-	    J       := J0;
-	    J'      := J0;
-	    stackJ  := [];
-	    stackJ' := []
-	)
+        (
+            J       := J0;
+            J'      := J0;
+            stackJ  := [];
+            stackJ' := []
+        )
 
     fun pushJ() =
-	(
-	    stackJ  := !J :: !stackJ
-	)
+        (
+            stackJ  := !J :: !stackJ
+        )
 
     fun popJ() =
-	(
-	    J       := List.hd(!stackJ);
-	    stackJ  := List.tl(!stackJ)
-	)
+        (
+            J       := List.hd(!stackJ);
+            stackJ  := List.tl(!stackJ)
+        )
 
     fun pushJ'shiftJ() =
-	(
-	    stackJ' := !J' :: !stackJ';
-	    J'      := List.hd(!stackJ)
-	)
+        (
+            stackJ' := !J' :: !stackJ';
+            J'      := List.hd(!stackJ)
+        )
 
     fun popJandJ'() =
-	(
-	    J       := !J';
-	    J'      := List.hd(!stackJ');
-	    stackJ  := List.tl(!stackJ);
-	    stackJ' := List.tl(!stackJ')
-	)
+        (
+            J       := !J';
+            J'      := List.hd(!stackJ');
+            stackJ  := List.tl(!stackJ);
+            stackJ' := List.tl(!stackJ')
+        )
 
 
     fun assignInfix(infstatus, vids) =
-	(
-	    J  := Infix.assign(!J, vids, infstatus);
-	    J' := Infix.assign(!J', vids, infstatus)
-	)
+        (
+            J  := Infix.assign(!J, vids, infstatus);
+            J' := Infix.assign(!J', vids, infstatus)
+        )
 
     fun cancelInfix(vids) =
-	(
-	    J  := Infix.cancel(!J, vids);
-	    J' := Infix.cancel(!J', vids)
-	)
+        (
+            J  := Infix.cancel(!J, vids);
+            J' := Infix.cancel(!J', vids)
+        )
 
 
     (* Helper for long identifiers *)
 
     fun toLongId toId (strids, id) =
-	    ( List.map StrId.fromString strids, toId id )
+            ( List.map StrId.fromString strids, toId id )
 
 
     (* Helper to handle typed patterns (needed because of layered patterns) *)
 
     fun typedPat(pat,   []   ) = pat
       | typedPat(pat, ty::tys) =
-	let
-	    val I = Source.over(infoPat pat, infoTy ty)
-	in
-	    typedPat(TYPEDPat(I, pat, ty), tys)
-	end
+        let
+            val I = Source.over(infoPat pat, infoTy ty)
+        in
+            typedPat(TYPEDPat(I, pat, ty), tys)
+        end
 
 
 
@@ -16167,7 +16167,7 @@ OP_opt1 ()
 val longvid as longvid1=longvid1 ()
  in (
  LONGVIDAtExp(I(OP_optleft,longvidright),
-				       OP_opt, longvid) 
+                                       OP_opt, longvid) 
 ) end
 )
  in (LrTable.NT 15,(result,OP_opt1left,longvid1right),rest671) end
@@ -16200,7 +16200,7 @@ MlyValue.exp_COMMA_list0 exp_COMMA_list01,_,_))::(_,(_,LBRACKleft as
 LBRACK1left,_))::rest671) => let val result=MlyValue.atexp(fn _ => 
 let val exp_COMMA_list0 as exp_COMMA_list01=exp_COMMA_list01 ()
  in ( LISTAtExp(I(LBRACKleft,RBRACKright),
-				    exp_COMMA_list0 ))
+                                    exp_COMMA_list0 ))
  end
 )
  in (LrTable.NT 15,(result,LBRACK1left,RBRACK1right),rest671) end
@@ -16222,7 +16222,7 @@ val exp_SEMICOLON_list1 as exp_SEMICOLON_list11=exp_SEMICOLON_list11
 ()
 val popInfix1=popInfix1 ()
  in ( LETAtExp(I(LETleft,ENDright),
-				   dec, exp_SEMICOLON_list1) )
+                                   dec, exp_SEMICOLON_list1) )
  end
 )
  in (LrTable.NT 15,(result,LET1left,END1right),rest671) end
@@ -16307,7 +16307,7 @@ val exp as exp1=exp1 ()
 val COMMA_exprow_opt as COMMA_exprow_opt1=COMMA_exprow_opt1 ()
  in (
  ExpRow(I(lableft,COMMA_exprow_optright),
-	  				 lab, exp, COMMA_exprow_opt) 
+                                           lab, exp, COMMA_exprow_opt) 
 ) end
 )
  in (LrTable.NT 21,(result,lab1left,COMMA_exprow_opt1right),rest671)
@@ -16423,7 +16423,7 @@ val mrule as mrule1=mrule1 ()
 val BAR_match_opt as BAR_match_opt1=BAR_match_opt1 ()
  in (
  Match(I(mruleleft,BAR_match_optright),
-					mrule, BAR_match_opt) )
+                                        mrule, BAR_match_opt) )
  end
 )
  in (LrTable.NT 27,(result,mrule1left,BAR_match_opt1right),rest671)
@@ -16486,7 +16486,7 @@ result=MlyValue.dec1(fn _ => ( EMPTYDec(I(defaultPos,defaultPos)) ))
 MlyValue.dec1'(fn _ => let val valbind as valbind1=valbind1 ()
  in (
  VALDec(I(VALleft,valbindright),
-			     TyVarseq(I(defaultPos,defaultPos), []), valbind) 
+                             TyVarseq(I(defaultPos,defaultPos), []), valbind) 
 ) end
 )
  in (LrTable.NT 32,(result,VAL1left,valbind1right),rest671) end
@@ -16504,7 +16504,7 @@ result=MlyValue.dec1'(fn _ => let val fvalbind as fvalbind1=fvalbind1
 ()
  in (
  FUNDec(I(FUNleft,fvalbindright),
-			    TyVarseq(I(defaultPos,defaultPos), []), fvalbind) 
+                            TyVarseq(I(defaultPos,defaultPos), []), fvalbind) 
 ) end
 )
  in (LrTable.NT 32,(result,FUN1left,fvalbind1right),rest671) end
@@ -16531,7 +16531,7 @@ val WITHTYPE_typbind_opt as WITHTYPE_typbind_opt1=
 WITHTYPE_typbind_opt1 ()
  in (
  DATATYPEDec(I(DATATYPEleft,WITHTYPE_typbind_optright),
-				     datbind0, WITHTYPE_typbind_opt) 
+                                     datbind0, WITHTYPE_typbind_opt) 
 ) end
 )
  in (LrTable.NT 32,(result,DATATYPE1left,WITHTYPE_typbind_opt1right),
@@ -16545,7 +16545,7 @@ val WITHTYPE_typbind_opt as WITHTYPE_typbind_opt1=
 WITHTYPE_typbind_opt1 ()
  in (
  DATATYPEDec(I(DATATYPEleft,WITHTYPE_typbind_optright),
-				      datbind1, WITHTYPE_typbind_opt) 
+                                      datbind1, WITHTYPE_typbind_opt) 
 ) end
 )
  in (LrTable.NT 32,(result,DATATYPE1left,WITHTYPE_typbind_opt1right),
@@ -16557,7 +16557,7 @@ MlyValue.dec1'(fn _ => let val tycon as tycon1=tycon1 ()
 val longtycon as longtycon1=longtycon1 ()
  in (
  REPLICATIONDec(I(DATATYPEleft,longtyconright),
-					 tycon, longtycon) 
+                                         tycon, longtycon) 
 ) end
 )
  in (LrTable.NT 32,(result,DATATYPE1left,longtycon1right),rest671) end
@@ -16571,7 +16571,7 @@ WITHTYPE_typbind_opt1 ()
 val dec as dec1=dec1 ()
  in (
  ABSTYPEDec(I(ABSTYPEleft,ENDright), datbind,
-				     WITHTYPE_typbind_opt, dec) 
+                                     WITHTYPE_typbind_opt, dec) 
 ) end
 )
  in (LrTable.NT 32,(result,ABSTYPE1left,END1right),rest671) end
@@ -16587,7 +16587,7 @@ OPEN1left,_))::rest671) => let val result=MlyValue.dec1'(fn _ => let
 val longstrid_list1 as longstrid_list11=longstrid_list11 ()
  in (
  OPENDec(I(OPENleft,longstrid_list1right),
-				  longstrid_list1) )
+                                  longstrid_list1) )
  end
 )
  in (LrTable.NT 32,(result,OPEN1left,longstrid_list11right),rest671)
@@ -16599,7 +16599,7 @@ let val d_opt as d_opt1=d_opt1 ()
 val vid_list1 as vid_list11=vid_list11 ()
  in (
  assignInfix((Infix.LEFT, d_opt), vid_list1);
-			  EMPTYDec(I(INFIXleft,vid_list1right)) 
+                          EMPTYDec(I(INFIXleft,vid_list1right)) 
 ) end
 )
  in (LrTable.NT 32,(result,INFIX1left,vid_list11right),rest671) end
@@ -16610,7 +16610,7 @@ vid_list11right))::(_,(MlyValue.d_opt d_opt1,_,_))::(_,(_,INFIXRleft
 val vid_list1 as vid_list11=vid_list11 ()
  in (
  assignInfix((Infix.RIGHT, d_opt), vid_list1);
-			  EMPTYDec(I(INFIXRleft,vid_list1right)) 
+                          EMPTYDec(I(INFIXRleft,vid_list1right)) 
 ) end
 )
  in (LrTable.NT 32,(result,INFIXR1left,vid_list11right),rest671) end
@@ -16620,7 +16620,7 @@ let val result=MlyValue.dec1'(fn _ => let val vid_list1 as vid_list11=
 vid_list11 ()
  in (
  cancelInfix(vid_list1);
-			  EMPTYDec(I(NONFIXleft,vid_list1right)) )
+                          EMPTYDec(I(NONFIXleft,vid_list1right)) )
  end
 )
  in (LrTable.NT 32,(result,NONFIX1left,vid_list11right),rest671) end
@@ -16678,7 +16678,7 @@ val exp as exp1=exp1 ()
 val AND_valbind_opt as AND_valbind_opt1=AND_valbind_opt1 ()
  in (
  PLAINValBind(I(patleft,AND_valbind_optright),
-				       pat, exp, AND_valbind_opt) 
+                                       pat, exp, AND_valbind_opt) 
 ) end
 )
  in (LrTable.NT 37,(result,pat1left,AND_valbind_opt1right),rest671)
@@ -16705,7 +16705,7 @@ MlyValue.fvalbind(fn _ => let val fmatch as fmatch1=fmatch1 ()
 val AND_fvalbind_opt as AND_fvalbind_opt1=AND_fvalbind_opt1 ()
  in (
  FvalBind(I(fmatchleft,AND_fvalbind_optright),
-				     fmatch, AND_fvalbind_opt) 
+                                     fmatch, AND_fvalbind_opt) 
 ) end
 )
  in (LrTable.NT 39,(result,fmatch1left,AND_fvalbind_opt1right),rest671
@@ -16726,7 +16726,7 @@ MlyValue.fmatch(fn _ => let val fmrule as fmrule1=fmrule1 ()
 val BAR_fmatch_opt as BAR_fmatch_opt1=BAR_fmatch_opt1 ()
  in (
  Fmatch(I(fmruleleft,BAR_fmatch_optright),
-				 fmrule, BAR_fmatch_opt) 
+                                 fmrule, BAR_fmatch_opt) 
 ) end
 )
  in (LrTable.NT 41,(result,fmrule1left,BAR_fmatch_opt1right),rest671)
@@ -16749,12 +16749,12 @@ val COLON_ty_opt as COLON_ty_opt1=COLON_ty_opt1 ()
 val exp as exp1=exp1 ()
  in (
  let
-			    val (op_opt, vid, atpats) =
-				Infix.parseFmrule(!J, atpat_list1)
-			  in
-			    Fmrule(I(atpat_list1left,expright),
-				   op_opt, vid, atpats, COLON_ty_opt, exp)
-			  end 
+                            val (op_opt, vid, atpats) =
+                                Infix.parseFmrule(!J, atpat_list1)
+                          in
+                            Fmrule(I(atpat_list1left,expright),
+                                   op_opt, vid, atpats, COLON_ty_opt, exp)
+                          end 
 ) end
 )
  in (LrTable.NT 43,(result,atpat_list11left,exp1right),rest671) end
@@ -16769,7 +16769,7 @@ val ty as ty1=ty1 ()
 val AND_typbind_opt as AND_typbind_opt1=AND_typbind_opt1 ()
  in (
  TypBind(I(tyvarseqleft,AND_typbind_optright),
-				  tyvarseq, tycon, ty, AND_typbind_opt) 
+                                  tyvarseq, tycon, ty, AND_typbind_opt) 
 ) end
 )
  in (LrTable.NT 44,(result,tyvarseq1left,AND_typbind_opt1right),
@@ -16794,7 +16794,7 @@ val conbind as conbind1=conbind1 ()
 val AND_datbind_opt as AND_datbind_opt1=AND_datbind_opt1 ()
  in (
  DatBind(I(tyvarseqleft,AND_datbind_optright),
-				  tyvarseq, tycon, conbind, AND_datbind_opt) 
+                                  tyvarseq, tycon, conbind, AND_datbind_opt) 
 ) end
 )
  in (LrTable.NT 46,(result,tyvarseq1left,AND_datbind_opt1right),
@@ -16808,8 +16808,8 @@ val conbind as conbind1=conbind1 ()
 val AND_datbind_opt as AND_datbind_opt1=AND_datbind_opt1 ()
  in (
  DatBind(I(tyconleft,AND_datbind_optright),
-				  TyVarseq(I(defaultPos,defaultPos), []),
-				  tycon, conbind, AND_datbind_opt) 
+                                  TyVarseq(I(defaultPos,defaultPos), []),
+                                  tycon, conbind, AND_datbind_opt) 
 ) end
 )
  in (LrTable.NT 47,(result,tycon1left,AND_datbind_opt1right),rest671)
@@ -16825,7 +16825,7 @@ val conbind as conbind1=conbind1 ()
 val AND_datbind_opt as AND_datbind_opt1=AND_datbind_opt1 ()
  in (
  DatBind(I(tyvarseq1left,AND_datbind_optright),
-				  tyvarseq1, tycon, conbind, AND_datbind_opt) 
+                                  tyvarseq1, tycon, conbind, AND_datbind_opt) 
 ) end
 )
  in (LrTable.NT 48,(result,tyvarseq11left,AND_datbind_opt1right),
@@ -16850,7 +16850,7 @@ val OF_ty_opt as OF_ty_opt1=OF_ty_opt1 ()
 val BAR_conbind_opt as BAR_conbind_opt1=BAR_conbind_opt1 ()
  in (
  ConBind(I(OP_optleft,BAR_conbind_optright),
-				  OP_opt, vid', OF_ty_opt, BAR_conbind_opt) 
+                                  OP_opt, vid', OF_ty_opt, BAR_conbind_opt) 
 ) end
 )
  in (LrTable.NT 50,(result,OP_opt1left,BAR_conbind_opt1right),rest671)
@@ -16881,7 +16881,7 @@ val OF_ty_opt as OF_ty_opt1=OF_ty_opt1 ()
 val AND_exbind_opt as AND_exbind_opt1=AND_exbind_opt1 ()
  in (
  NEWExBind(I(OP_optleft,AND_exbind_optright),
-				    OP_opt, vid', OF_ty_opt, AND_exbind_opt) 
+                                    OP_opt, vid', OF_ty_opt, AND_exbind_opt) 
 ) end
 )
  in (LrTable.NT 53,(result,OP_opt1left,AND_exbind_opt1right),rest671)
@@ -16898,8 +16898,8 @@ val longvid as longvid1=longvid1 ()
 val AND_exbind_opt as AND_exbind_opt1=AND_exbind_opt1 ()
  in (
  EQUALExBind(I(OP_opt1left,AND_exbind_optright),
-				      OP_opt1, vid', OP_opt2, longvid,
-				      AND_exbind_opt) 
+                                      OP_opt1, vid', OP_opt2, longvid,
+                                      AND_exbind_opt) 
 ) end
 )
  in (LrTable.NT 53,(result,OP_opt1left,AND_exbind_opt1right),rest671)
@@ -16926,7 +16926,7 @@ let val OP_opt as OP_opt1=OP_opt1 ()
 val longvid' as longvid'1=longvid'1 ()
  in (
  LONGVIDAtPat(I(OP_optleft,longvid'right),
-				       OP_opt, longvid') 
+                                       OP_opt, longvid') 
 ) end
 )
  in (LrTable.NT 55,(result,OP_opt1left,longvid'1right),rest671) end
@@ -16963,7 +16963,7 @@ MlyValue.pat_COMMA_list0 pat_COMMA_list01,_,_))::(_,(_,LBRACKleft as
 LBRACK1left,_))::rest671) => let val result=MlyValue.atpat'(fn _ => 
 let val pat_COMMA_list0 as pat_COMMA_list01=pat_COMMA_list01 ()
  in ( LISTAtPat(I(LBRACKleft,RBRACKright),
-				    pat_COMMA_list0) )
+                                    pat_COMMA_list0) )
  end
 )
  in (LrTable.NT 56,(result,LBRACK1left,RBRACK1right),rest671) end
@@ -17020,7 +17020,7 @@ val pat as pat1=pat1 ()
 val COMMA_patrow_opt as COMMA_patrow_opt1=COMMA_patrow_opt1 ()
  in (
  ROWPatRow(I(lableft,COMMA_patrow_optright),
-				      lab, pat, COMMA_patrow_opt) 
+                                      lab, pat, COMMA_patrow_opt) 
 ) end
 )
  in (LrTable.NT 60,(result,lab1left,COMMA_patrow_opt1right),rest671)
@@ -17036,8 +17036,8 @@ val AS_pat_opt as AS_pat_opt1=AS_pat_opt1 ()
 val COMMA_patrow_opt as COMMA_patrow_opt1=COMMA_patrow_opt1 ()
  in (
  VIDPatRow(I(vid'left,COMMA_patrow_optright),
-				    vid', COLON_ty_opt, AS_pat_opt,
-				    COMMA_patrow_opt) 
+                                    vid', COLON_ty_opt, AS_pat_opt,
+                                    COMMA_patrow_opt) 
 ) end
 )
  in (LrTable.NT 60,(result,vid'1left,COMMA_patrow_opt1right),rest671)
@@ -17098,7 +17098,7 @@ atpat'1=atpat'1 ()
 val COLON_ty_list1 as COLON_ty_list11=COLON_ty_list11 ()
  in (
  let val pat = Infix.parsePat(!J, [atpat'])
-			  in typedPat(pat, COLON_ty_list1) end 
+                          in typedPat(pat, COLON_ty_list1) end 
 ) end
 )
  in (LrTable.NT 65,(result,atpat'1left,COLON_ty_list11right),rest671)
@@ -17110,7 +17110,7 @@ let val atpat_list2 as atpat_list21=atpat_list21 ()
 val COLON_ty_list1 as COLON_ty_list11=COLON_ty_list11 ()
  in (
  let val pat = Infix.parsePat(!J, atpat_list2)
-			  in typedPat(pat, COLON_ty_list1) end 
+                          in typedPat(pat, COLON_ty_list1) end 
 ) end
 )
  in (LrTable.NT 65,(result,atpat_list21left,COLON_ty_list11right),
@@ -17124,10 +17124,10 @@ val vid' as vid'1=vid'1 ()
 val COLON_ty_list1 as COLON_ty_list11=COLON_ty_list11 ()
  in (
  let val atpat = LONGVIDAtPat(I(OP_optleft,vid'right),
-						       OP_opt,
-						       LongVId.fromId vid')
-			      val pat   = Infix.parsePat(!J, [atpat])
-			  in typedPat(pat, COLON_ty_list1) end 
+                                                       OP_opt,
+                                                       LongVId.fromId vid')
+                              val pat   = Infix.parsePat(!J, [atpat])
+                          in typedPat(pat, COLON_ty_list1) end 
 ) end
 )
  in (LrTable.NT 65,(result,OP_opt1left,COLON_ty_list11right),rest671)
@@ -17141,11 +17141,11 @@ val LONGID as LONGID1=LONGID1 ()
 val COLON_ty_list1 as COLON_ty_list11=COLON_ty_list11 ()
  in (
  let val longvid = LongVId.implode
-						(toLongId VId.fromString LONGID)
-			      val atpat = LONGVIDAtPat(I(OP_optleft,LONGIDright),
-						       OP_opt, longvid)
-			      val pat   = Infix.parsePat(!J, [atpat])
-			  in typedPat(pat, COLON_ty_list1) end 
+                                                (toLongId VId.fromString LONGID)
+                              val atpat = LONGVIDAtPat(I(OP_optleft,LONGIDright),
+                                                       OP_opt, longvid)
+                              val pat   = Infix.parsePat(!J, [atpat])
+                          in typedPat(pat, COLON_ty_list1) end 
 ) end
 )
  in (LrTable.NT 65,(result,OP_opt1left,COLON_ty_list11right),rest671)
@@ -17160,11 +17160,11 @@ val COLON_ty_opt as COLON_ty_opt1=COLON_ty_opt1 ()
 val pat as pat1=pat1 ()
  in (
  Infix.parsePat(!J,
-				 [ LONGVIDAtPat(I(OP_optleft,vid'right),
-						OP_opt,
-						LongVId.implode([],vid')) ] ) ;
-			  ASPat(I(OP_optleft,patright),
-				OP_opt, vid', COLON_ty_opt, pat) 
+                                 [ LONGVIDAtPat(I(OP_optleft,vid'right),
+                                                OP_opt,
+                                                LongVId.implode([],vid')) ] ) ;
+                          ASPat(I(OP_optleft,patright),
+                                OP_opt, vid', COLON_ty_opt, pat) 
 ) end
 )
  in (LrTable.NT 65,(result,OP_opt1left,pat1right),rest671) end
@@ -17222,7 +17222,7 @@ ty_STAR_list1left,ty_STAR_listright as ty_STAR_list1right))::rest671)
 ty_STAR_list1=ty_STAR_list1 ()
  in (
  TUPLETy(I(ty_STAR_listleft,ty_STAR_listright),
-				   ty_STAR_list) )
+                                   ty_STAR_list) )
  end
 )
  in (LrTable.NT 70,(result,ty_STAR_list1left,ty_STAR_list1right),
@@ -17253,7 +17253,7 @@ longtycon1right))::(_,(MlyValue.tyseq tyseq1,tyseqleft as tyseq1left,_
  as tyseq1=tyseq1 ()
 val longtycon as longtycon1=longtycon1 ()
  in ( TYCONTy(I(tyseqleft,longtyconright),
-					  tyseq, longtycon) )
+                                          tyseq, longtycon) )
  end
 )
  in (LrTable.NT 72,(result,tyseq1left,longtycon1right),rest671) end
@@ -17284,7 +17284,7 @@ val ty as ty1=ty1 ()
 val COMMA_tyrow_opt as COMMA_tyrow_opt1=COMMA_tyrow_opt1 ()
  in (
  TyRow(I(lableft,COMMA_tyrow_optright),
-				lab, ty, COMMA_tyrow_opt) 
+                                lab, ty, COMMA_tyrow_opt) 
 ) end
 )
  in (LrTable.NT 74,(result,lab1left,COMMA_tyrow_opt1right),rest671)
@@ -17310,7 +17310,7 @@ tyrow1 ()
 constyright as consty1right))::rest671) => let val result=
 MlyValue.tyseq(fn _ => let val consty as consty1=consty1 ()
  in ( Tyseq(I(constyleft,constyright),
-						[consty]) ) end
+                                                [consty]) ) end
 )
  in (LrTable.NT 77,(result,consty1left,consty1right),rest671) end
 | (191,rest671) => let val result=MlyValue.tyseq(fn _ => (
@@ -17321,7 +17321,7 @@ ty_COMMA_list21,_,_))::(_,(_,LPARleft as LPAR1left,_))::rest671) =>
 let val result=MlyValue.tyseq(fn _ => let val ty_COMMA_list2 as 
 ty_COMMA_list21=ty_COMMA_list21 ()
  in ( Tyseq(I(LPARleft,RPARright),
-						ty_COMMA_list2) ) end
+                                                ty_COMMA_list2) ) end
 )
  in (LrTable.NT 77,(result,LPAR1left,RPAR1right),rest671) end
 | (193,(_,(MlyValue.ty_COMMA_list2 ty_COMMA_list21,_,
@@ -17348,13 +17348,13 @@ tyvarseq11right))::rest671) => let val result=MlyValue.tyvarseq(fn _
  end
 | (196,rest671) => let val result=MlyValue.tyvarseq(fn _ => (
  TyVarseq(I(defaultPos,defaultPos),
-						   []) ))
+                                                   []) ))
  in (LrTable.NT 79,(result,defaultPos,defaultPos),rest671) end
 | (197,(_,(MlyValue.tyvar tyvar1,tyvarleft as tyvar1left,tyvarright
  as tyvar1right))::rest671) => let val result=MlyValue.tyvarseq1(fn _
  => let val tyvar as tyvar1=tyvar1 ()
  in ( TyVarseq(I(tyvarleft,tyvarright),
-						   [tyvar]) ) end
+                                                   [tyvar]) ) end
 )
  in (LrTable.NT 80,(result,tyvar1left,tyvar1right),rest671) end
 | (198,(_,(_,_,RPARright as RPAR1right))::(_,(
@@ -17363,7 +17363,7 @@ MlyValue.tyvar_COMMA_list1 tyvar_COMMA_list11,_,_))::(_,(_,LPARleft
  => let val tyvar_COMMA_list1 as tyvar_COMMA_list11=tyvar_COMMA_list11
  ()
  in ( TyVarseq(I(LPARleft,RPARright),
-						   tyvar_COMMA_list1) )
+                                                   tyvar_COMMA_list1) )
  end
 )
  in (LrTable.NT 80,(result,LPAR1left,RPAR1right),rest671) end
@@ -17395,7 +17395,7 @@ strexp1 ()
 val sigexp as sigexp1=sigexp1 ()
  in (
  TRANSStrExp(I(strexpleft,sigexpright),
-				      strexp, sigexp) )
+                                      strexp, sigexp) )
  end
 )
  in (LrTable.NT 82,(result,strexp1left,sigexp1right),rest671) end
@@ -17423,7 +17423,7 @@ val result=MlyValue.strexp'(fn _ => let val longstrid as longstrid1=
 longstrid1 ()
  in (
  LONGSTRIDStrExp(I(longstridleft,longstridright),
-					  longstrid) )
+                                          longstrid) )
  end
 )
  in (LrTable.NT 83,(result,longstrid1left,longstrid1right),rest671)
@@ -17476,7 +17476,7 @@ MlyValue.strdec1 strdec11,strdec11left,_))::rest671) => let val result
 val strdec12=strdec12 ()
  in (
  SEQStrDec(I(strdec11left,strdec12right),
-				    strdec11, strdec12) 
+                                    strdec11, strdec12) 
 ) end
 )
  in (LrTable.NT 85,(result,strdec11left,strdec12right),rest671) end
@@ -17496,7 +17496,7 @@ SEMICOLON1right))::rest671) => let val result=MlyValue.strdec1(fn _
 result=MlyValue.strdec1'(fn _ => let val strbind as strbind1=strbind1 
 ()
  in ( STRUCTUREStrDec(I(STRUCTUREleft,strbindright),
-					  strbind) )
+                                          strbind) )
  end
 )
  in (LrTable.NT 86,(result,STRUCTURE1left,strbind1right),rest671) end
@@ -17523,10 +17523,10 @@ val strexp__AND_strbind_opt as strexp__AND_strbind_opt1=
 strexp__AND_strbind_opt1 ()
  in (
  TRANSStrBind(I(stridleft,
-					 strexp__AND_strbind_optright),
-				       strid, COLON_sigexp_opt,
-				       #1 strexp__AND_strbind_opt,
-				       #2 strexp__AND_strbind_opt) 
+                                         strexp__AND_strbind_optright),
+                                       strid, COLON_sigexp_opt,
+                                       #1 strexp__AND_strbind_opt,
+                                       #2 strexp__AND_strbind_opt) 
 ) end
 )
  in (LrTable.NT 87,(result,strid1left,strexp__AND_strbind_opt1right),
@@ -17541,8 +17541,8 @@ val strexp__AND_strbind_opt as strexp__AND_strbind_opt1=
 strexp__AND_strbind_opt1 ()
  in (
  OPAQStrBind(I(stridleft,strexp__AND_strbind_optright),
-				      strid, sigexp, #1 strexp__AND_strbind_opt,
-				      #2 strexp__AND_strbind_opt) 
+                                      strid, sigexp, #1 strexp__AND_strbind_opt,
+                                      #2 strexp__AND_strbind_opt) 
 ) end
 )
  in (LrTable.NT 87,(result,strid1left,strexp__AND_strbind_opt1right),
@@ -17574,9 +17574,9 @@ val sigexp__AND_strbind_opt as sigexp__AND_strbind_opt1=
 sigexp__AND_strbind_opt1 ()
  in (
  ( TRANSStrExp(I(strexpleft,
-					  sigexp__AND_strbind_optright),
-					strexp, #1 sigexp__AND_strbind_opt),
-			    #2 sigexp__AND_strbind_opt ) 
+                                          sigexp__AND_strbind_optright),
+                                        strexp, #1 sigexp__AND_strbind_opt),
+                            #2 sigexp__AND_strbind_opt ) 
 ) end
 )
  in (LrTable.NT 89,(result,strexp1left,sigexp__AND_strbind_opt1right),
@@ -17590,9 +17590,9 @@ val sigexp__AND_strbind_opt as sigexp__AND_strbind_opt1=
 sigexp__AND_strbind_opt1 ()
  in (
  ( OPAQStrExp(I(strexpleft,
-					 sigexp__AND_strbind_optright),
-				       strexp, #1 sigexp__AND_strbind_opt),
-			    #2 sigexp__AND_strbind_opt ) 
+                                         sigexp__AND_strbind_optright),
+                                       strexp, #1 sigexp__AND_strbind_opt),
+                            #2 sigexp__AND_strbind_opt ) 
 ) end
 )
  in (LrTable.NT 89,(result,strexp1left,sigexp__AND_strbind_opt1right),
@@ -17616,10 +17616,10 @@ val tyreadesc__AND_strbind_opt as tyreadesc__AND_strbind_opt1=
 tyreadesc__AND_strbind_opt1 ()
  in (
  ( WHERETYPESigExp(I(sigexpleft,
-					      tyreadesc__AND_strbind_optright),
-					   sigexp,
-					   #1 tyreadesc__AND_strbind_opt),
-			    #2 tyreadesc__AND_strbind_opt ) 
+                                              tyreadesc__AND_strbind_optright),
+                                           sigexp,
+                                           #1 tyreadesc__AND_strbind_opt),
+                            #2 tyreadesc__AND_strbind_opt ) 
 ) end
 )
  in (LrTable.NT 90,(result,sigexp1left,
@@ -17639,10 +17639,10 @@ AND_tyreadesc_opt__AND_strbind_opt1=
 AND_tyreadesc_opt__AND_strbind_opt1 ()
  in (
  ( TyReaDesc(I(TYPEleft,
-				       AND_tyreadesc_opt__AND_strbind_optright),
-				      tyvarseq, longtycon, ty,
-				      #1 AND_tyreadesc_opt__AND_strbind_opt),
-			    #2 AND_tyreadesc_opt__AND_strbind_opt ) 
+                                       AND_tyreadesc_opt__AND_strbind_optright),
+                                      tyvarseq, longtycon, ty,
+                                      #1 AND_tyreadesc_opt__AND_strbind_opt),
+                            #2 AND_tyreadesc_opt__AND_strbind_opt ) 
 ) end
 )
  in (LrTable.NT 91,(result,TYPE1left,
@@ -17663,7 +17663,7 @@ tyreadesc__AND_strbind_opt as tyreadesc__AND_strbind_opt1=
 tyreadesc__AND_strbind_opt1 ()
  in (
  ( SOME(#1 tyreadesc__AND_strbind_opt),
-				    #2 tyreadesc__AND_strbind_opt ) 
+                                    #2 tyreadesc__AND_strbind_opt ) 
 ) end
 )
  in (LrTable.NT 92,(result,AND1left,tyreadesc__AND_strbind_opt1right),
@@ -17690,7 +17690,7 @@ let val sigexp as sigexp1=sigexp1 ()
 val tyreadesc as tyreadesc1=tyreadesc1 ()
  in (
  WHERETYPESigExp(I(sigexpleft,tyreadescright),
-					  sigexp, tyreadesc) 
+                                          sigexp, tyreadesc) 
 ) end
 )
  in (LrTable.NT 94,(result,sigexp1left,tyreadesc1right),rest671) end
@@ -17720,8 +17720,8 @@ val sigexp__AND_sigbind_opt as sigexp__AND_sigbind_opt1=
 sigexp__AND_sigbind_opt1 ()
  in (
  SigBind(I(sigidleft,sigexp__AND_sigbind_optright),
-				  sigid, #1 sigexp__AND_sigbind_opt,
-				  #2 sigexp__AND_sigbind_opt) 
+                                  sigid, #1 sigexp__AND_sigbind_opt,
+                                  #2 sigexp__AND_sigbind_opt) 
 ) end
 )
  in (LrTable.NT 97,(result,sigid1left,sigexp__AND_sigbind_opt1right),
@@ -17754,10 +17754,10 @@ val tyreadesc__AND_sigbind_opt as tyreadesc__AND_sigbind_opt1=
 tyreadesc__AND_sigbind_opt1 ()
  in (
  ( WHERETYPESigExp(I(sigexpleft,
-					      tyreadesc__AND_sigbind_optright),
-					   sigexp,
-					   #1 tyreadesc__AND_sigbind_opt),
-			    #2 tyreadesc__AND_sigbind_opt ) 
+                                              tyreadesc__AND_sigbind_optright),
+                                           sigexp,
+                                           #1 tyreadesc__AND_sigbind_opt),
+                            #2 tyreadesc__AND_sigbind_opt ) 
 ) end
 )
  in (LrTable.NT 99,(result,sigexp1left,
@@ -17777,10 +17777,10 @@ AND_tyreadesc_opt__AND_sigbind_opt1=
 AND_tyreadesc_opt__AND_sigbind_opt1 ()
  in (
  ( TyReaDesc(I(TYPEleft,
-				       AND_tyreadesc_opt__AND_sigbind_optright),
-				      tyvarseq, longtycon, ty,
-				      #1 AND_tyreadesc_opt__AND_sigbind_opt),
-			    #2 AND_tyreadesc_opt__AND_sigbind_opt ) 
+                                       AND_tyreadesc_opt__AND_sigbind_optright),
+                                      tyvarseq, longtycon, ty,
+                                      #1 AND_tyreadesc_opt__AND_sigbind_opt),
+                            #2 AND_tyreadesc_opt__AND_sigbind_opt ) 
 ) end
 )
  in (LrTable.NT 100,(result,TYPE1left,
@@ -17801,7 +17801,7 @@ tyreadesc__AND_sigbind_opt as tyreadesc__AND_sigbind_opt1=
 tyreadesc__AND_sigbind_opt1 ()
  in (
  ( SOME(#1 tyreadesc__AND_sigbind_opt),
-				    #2 tyreadesc__AND_sigbind_opt ) 
+                                    #2 tyreadesc__AND_sigbind_opt ) 
 ) end
 )
  in (LrTable.NT 101,(result,AND1left,tyreadesc__AND_sigbind_opt1right)
@@ -17817,8 +17817,8 @@ val ty as ty1=ty1 ()
 val AND_tyreadesc_opt as AND_tyreadesc_opt1=AND_tyreadesc_opt1 ()
  in (
  TyReaDesc(I(TYPEleft,AND_tyreadesc_optright),
-				    tyvarseq, longtycon, ty,
-				    AND_tyreadesc_opt) 
+                                    tyvarseq, longtycon, ty,
+                                    AND_tyreadesc_opt) 
 ) end
 )
  in (LrTable.NT 102,(result,TYPE1left,AND_tyreadesc_opt1right),rest671
@@ -17865,9 +17865,9 @@ MlyValue.spec1(fn _ => let val longtycon_EQUALS_list2 as
 longtycon_EQUALS_list21=longtycon_EQUALS_list21 ()
  in (
  SHARINGTYPESpec(I(SHARINGleft,
-					    longtycon_EQUALS_list2right),
-					  EMPTYSpec(I(SHARINGleft,SHARINGleft)),
-					  longtycon_EQUALS_list2) 
+                                            longtycon_EQUALS_list2right),
+                                          EMPTYSpec(I(SHARINGleft,SHARINGleft)),
+                                          longtycon_EQUALS_list2) 
 ) end
 )
  in (LrTable.NT 105,(result,SHARING1left,longtycon_EQUALS_list21right)
@@ -17880,8 +17880,8 @@ val longtycon_EQUALS_list2 as longtycon_EQUALS_list21=
 longtycon_EQUALS_list21 ()
  in (
  SHARINGTYPESpec(I(spec1left,
-					    longtycon_EQUALS_list2right),
-					  spec1, longtycon_EQUALS_list2) 
+                                            longtycon_EQUALS_list2right),
+                                          spec1, longtycon_EQUALS_list2) 
 ) end
 )
  in (LrTable.NT 105,(result,spec11left,longtycon_EQUALS_list21right),
@@ -17893,9 +17893,9 @@ MlyValue.spec1(fn _ => let val longstrid_EQUALS_list2 as
 longstrid_EQUALS_list21=longstrid_EQUALS_list21 ()
  in (
  SHARINGSpec(I(SHARINGleft,
-					longstrid_EQUALS_list2right),
-				      EMPTYSpec(I(SHARINGleft,SHARINGleft)),
-				      longstrid_EQUALS_list2) 
+                                        longstrid_EQUALS_list2right),
+                                      EMPTYSpec(I(SHARINGleft,SHARINGleft)),
+                                      longstrid_EQUALS_list2) 
 ) end
 )
  in (LrTable.NT 105,(result,SHARING1left,longstrid_EQUALS_list21right)
@@ -17908,7 +17908,7 @@ val longstrid_EQUALS_list2 as longstrid_EQUALS_list21=
 longstrid_EQUALS_list21 ()
  in (
  SHARINGSpec(I(spec1left,longstrid_EQUALS_list2right),
-				      spec1, longstrid_EQUALS_list2) 
+                                      spec1, longstrid_EQUALS_list2) 
 ) end
 )
  in (LrTable.NT 105,(result,spec11left,longstrid_EQUALS_list21right),
@@ -17958,7 +17958,7 @@ MlyValue.spec1'(fn _ => let val tycon as tycon1=tycon1 ()
 val longtycon as longtycon1=longtycon1 ()
  in (
  REPLICATIONSpec(I(DATATYPEleft,longtyconright),
-					  tycon, longtycon) 
+                                          tycon, longtycon) 
 ) end
 )
  in (LrTable.NT 106,(result,DATATYPE1left,longtycon1right),rest671)
@@ -17987,7 +17987,7 @@ sigid_list21right))::(_,(_,INCLUDEleft as INCLUDE1left,_))::rest671)
 sigid_list21=sigid_list21 ()
  in (
  INCLUDEMULTISpec(I(INCLUDEleft,sigid_list2right),
-					   sigid_list2) 
+                                           sigid_list2) 
 ) end
 )
  in (LrTable.NT 106,(result,INCLUDE1left,sigid_list21right),rest671)
@@ -18075,7 +18075,7 @@ val ty as ty1=ty1 ()
 val AND_valdesc_opt as AND_valdesc_opt1=AND_valdesc_opt1 ()
  in (
  ValDesc(I(vid'left,AND_valdesc_optright),
-				  vid', ty, AND_valdesc_opt) 
+                                  vid', ty, AND_valdesc_opt) 
 ) end
 )
  in (LrTable.NT 112,(result,vid'1left,AND_valdesc_opt1right),rest671)
@@ -18098,7 +18098,7 @@ val tycon as tycon1=tycon1 ()
 val AND_typdesc_opt as AND_typdesc_opt1=AND_typdesc_opt1 ()
  in (
  TypDesc(I(tyvarseqleft,AND_typdesc_optright),
-				  tyvarseq, tycon, AND_typdesc_opt) 
+                                  tyvarseq, tycon, AND_typdesc_opt) 
 ) end
 )
  in (LrTable.NT 114,(result,tyvarseq1left,AND_typdesc_opt1right),
@@ -18123,7 +18123,7 @@ val ty as ty1=ty1 ()
 val AND_syndesc_opt as AND_syndesc_opt1=AND_syndesc_opt1 ()
  in (
  SynDesc(I(tyvarseqleft,AND_syndesc_optright),
-				  tyvarseq, tycon, ty, AND_syndesc_opt) 
+                                  tyvarseq, tycon, ty, AND_syndesc_opt) 
 ) end
 )
  in (LrTable.NT 116,(result,tyvarseq1left,AND_syndesc_opt1right),
@@ -18148,7 +18148,7 @@ val condesc as condesc1=condesc1 ()
 val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
  in (
  DatDesc(I(tyvarseqleft,AND_datdesc_optright),
-	  			  tyvarseq, tycon, condesc, AND_datdesc_opt) 
+                                    tyvarseq, tycon, condesc, AND_datdesc_opt) 
 ) end
 )
  in (LrTable.NT 118,(result,tyvarseq1left,AND_datdesc_opt1right),
@@ -18162,8 +18162,8 @@ val condesc as condesc1=condesc1 ()
 val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
  in (
  DatDesc(I(tyconleft,AND_datdesc_optright),
-	  			  TyVarseq(I(defaultPos,defaultPos), []),
-				  tycon, condesc, AND_datdesc_opt) 
+                                    TyVarseq(I(defaultPos,defaultPos), []),
+                                  tycon, condesc, AND_datdesc_opt) 
 ) end
 )
  in (LrTable.NT 119,(result,tycon1left,AND_datdesc_opt1right),rest671)
@@ -18179,7 +18179,7 @@ val condesc as condesc1=condesc1 ()
 val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
  in (
  DatDesc(I(tyvarseq1left,AND_datdesc_optright),
-	  			  tyvarseq1, tycon, condesc, AND_datdesc_opt) 
+                                    tyvarseq1, tycon, condesc, AND_datdesc_opt) 
 ) end
 )
  in (LrTable.NT 120,(result,tyvarseq11left,AND_datdesc_opt1right),
@@ -18202,7 +18202,7 @@ val OF_ty_opt as OF_ty_opt1=OF_ty_opt1 ()
 val BAR_condesc_opt as BAR_condesc_opt1=BAR_condesc_opt1 ()
  in (
  ConDesc(I(vid'left,BAR_condesc_optright),
-				  vid', OF_ty_opt, BAR_condesc_opt) 
+                                  vid', OF_ty_opt, BAR_condesc_opt) 
 ) end
 )
  in (LrTable.NT 122,(result,vid'1left,BAR_condesc_opt1right),rest671)
@@ -18225,7 +18225,7 @@ val OF_ty_opt as OF_ty_opt1=OF_ty_opt1 ()
 val AND_exdesc_opt as AND_exdesc_opt1=AND_exdesc_opt1 ()
  in (
  ExDesc(I(vid'left,AND_exdesc_optright),
-	  			 vid', OF_ty_opt, AND_exdesc_opt) 
+                                   vid', OF_ty_opt, AND_exdesc_opt) 
 ) end
 )
  in (LrTable.NT 124,(result,vid'1left,AND_exdesc_opt1right),rest671)
@@ -18247,8 +18247,8 @@ val sigexp__AND_strdesc_opt as sigexp__AND_strdesc_opt1=
 sigexp__AND_strdesc_opt1 ()
  in (
  StrDesc(I(stridleft,sigexp__AND_strdesc_optright),
-	  			  strid, #1 sigexp__AND_strdesc_opt,
-				  #2 sigexp__AND_strdesc_opt) 
+                                    strid, #1 sigexp__AND_strdesc_opt,
+                                  #2 sigexp__AND_strdesc_opt) 
 ) end
 )
  in (LrTable.NT 126,(result,strid1left,sigexp__AND_strdesc_opt1right),
@@ -18281,10 +18281,10 @@ val tyreadesc__AND_strdesc_opt as tyreadesc__AND_strdesc_opt1=
 tyreadesc__AND_strdesc_opt1 ()
  in (
  ( WHERETYPESigExp(I(sigexpleft,
-					      tyreadesc__AND_strdesc_optright),
-					   sigexp,
-					   #1 tyreadesc__AND_strdesc_opt),
-			    #2 tyreadesc__AND_strdesc_opt ) 
+                                              tyreadesc__AND_strdesc_optright),
+                                           sigexp,
+                                           #1 tyreadesc__AND_strdesc_opt),
+                            #2 tyreadesc__AND_strdesc_opt ) 
 ) end
 )
  in (LrTable.NT 128,(result,sigexp1left,
@@ -18304,10 +18304,10 @@ AND_tyreadesc_opt__AND_strdesc_opt1=
 AND_tyreadesc_opt__AND_strdesc_opt1 ()
  in (
  ( TyReaDesc(I(TYPEleft,
-				       AND_tyreadesc_opt__AND_strdesc_optright),
-				      tyvarseq, longtycon, ty,
-				      #1 AND_tyreadesc_opt__AND_strdesc_opt),
-			    #2 AND_tyreadesc_opt__AND_strdesc_opt ) 
+                                       AND_tyreadesc_opt__AND_strdesc_optright),
+                                      tyvarseq, longtycon, ty,
+                                      #1 AND_tyreadesc_opt__AND_strdesc_opt),
+                            #2 AND_tyreadesc_opt__AND_strdesc_opt ) 
 ) end
 )
  in (LrTable.NT 129,(result,TYPE1left,
@@ -18328,7 +18328,7 @@ tyreadesc__AND_strdesc_opt as tyreadesc__AND_strdesc_opt1=
 tyreadesc__AND_strdesc_opt1 ()
  in (
  ( SOME(#1 tyreadesc__AND_strdesc_opt),
-				    #2 tyreadesc__AND_strdesc_opt ) 
+                                    #2 tyreadesc__AND_strdesc_opt ) 
 ) end
 )
  in (LrTable.NT 130,(result,AND1left,tyreadesc__AND_strdesc_opt1right)
@@ -18353,10 +18353,10 @@ val strexp__AND_funbind_opt as strexp__AND_funbind_opt1=
 strexp__AND_funbind_opt1 ()
  in (
  TRANSFunBind(I(funidleft,
-					 strexp__AND_funbind_optright),
-				       funid, strid, sigexp, COLON_sigexp_opt,
-				       #1 strexp__AND_funbind_opt,
-				       #2 strexp__AND_funbind_opt) 
+                                         strexp__AND_funbind_optright),
+                                       funid, strid, sigexp, COLON_sigexp_opt,
+                                       #1 strexp__AND_funbind_opt,
+                                       #2 strexp__AND_funbind_opt) 
 ) end
 )
  in (LrTable.NT 132,(result,funid1left,strexp__AND_funbind_opt1right),
@@ -18374,9 +18374,9 @@ val strexp__AND_funbind_opt as strexp__AND_funbind_opt1=
 strexp__AND_funbind_opt1 ()
  in (
  OPAQFunBind(I(funidleft,strexp__AND_funbind_optright),
-				      funid, strid, sigexp1, sigexp2,
-				      #1 strexp__AND_funbind_opt,
-				      #2 strexp__AND_funbind_opt) 
+                                      funid, strid, sigexp1, sigexp2,
+                                      #1 strexp__AND_funbind_opt,
+                                      #2 strexp__AND_funbind_opt) 
 ) end
 )
  in (LrTable.NT 132,(result,funid1left,strexp__AND_funbind_opt1right),
@@ -18393,10 +18393,10 @@ val strexp__AND_funbind_opt as strexp__AND_funbind_opt1=
 strexp__AND_funbind_opt1 ()
  in (
  TRANSSPECFunBind(I(funidleft,
-					     strexp__AND_funbind_optright),
-					   funid, spec, COLON_sigexp_opt,
-					   #1 strexp__AND_funbind_opt,
-					   #2 strexp__AND_funbind_opt) 
+                                             strexp__AND_funbind_optright),
+                                           funid, spec, COLON_sigexp_opt,
+                                           #1 strexp__AND_funbind_opt,
+                                           #2 strexp__AND_funbind_opt) 
 ) end
 )
  in (LrTable.NT 132,(result,funid1left,strexp__AND_funbind_opt1right),
@@ -18413,10 +18413,10 @@ val strexp__AND_funbind_opt as strexp__AND_funbind_opt1=
 strexp__AND_funbind_opt1 ()
  in (
  OPAQSPECFunBind(I(funidleft,
-					    strexp__AND_funbind_optright),
-					  funid, spec, sigexp,
-					  #1 strexp__AND_funbind_opt,
-					  #2 strexp__AND_funbind_opt) 
+                                            strexp__AND_funbind_optright),
+                                          funid, spec, sigexp,
+                                          #1 strexp__AND_funbind_opt,
+                                          #2 strexp__AND_funbind_opt) 
 ) end
 )
  in (LrTable.NT 132,(result,funid1left,strexp__AND_funbind_opt1right),
@@ -18448,9 +18448,9 @@ val sigexp__AND_funbind_opt as sigexp__AND_funbind_opt1=
 sigexp__AND_funbind_opt1 ()
  in (
  ( TRANSStrExp(I(strexpleft,
-					  sigexp__AND_funbind_optright),
-					strexp, #1 sigexp__AND_funbind_opt),
-			    #2 sigexp__AND_funbind_opt ) 
+                                          sigexp__AND_funbind_optright),
+                                        strexp, #1 sigexp__AND_funbind_opt),
+                            #2 sigexp__AND_funbind_opt ) 
 ) end
 )
  in (LrTable.NT 134,(result,strexp1left,sigexp__AND_funbind_opt1right)
@@ -18464,9 +18464,9 @@ val sigexp__AND_funbind_opt as sigexp__AND_funbind_opt1=
 sigexp__AND_funbind_opt1 ()
  in (
  ( OPAQStrExp(I(strexpleft,
-					 sigexp__AND_funbind_optright),
-				       strexp, #1 sigexp__AND_funbind_opt),
-			    #2 sigexp__AND_funbind_opt ) 
+                                         sigexp__AND_funbind_optright),
+                                       strexp, #1 sigexp__AND_funbind_opt),
+                            #2 sigexp__AND_funbind_opt ) 
 ) end
 )
  in (LrTable.NT 134,(result,strexp1left,sigexp__AND_funbind_opt1right)
@@ -18490,10 +18490,10 @@ val tyreadesc__AND_funbind_opt as tyreadesc__AND_funbind_opt1=
 tyreadesc__AND_funbind_opt1 ()
  in (
  ( WHERETYPESigExp(I(sigexpleft,
-					      tyreadesc__AND_funbind_optright),
-					   sigexp,
-					   #1 tyreadesc__AND_funbind_opt),
-			    #2 tyreadesc__AND_funbind_opt ) 
+                                              tyreadesc__AND_funbind_optright),
+                                           sigexp,
+                                           #1 tyreadesc__AND_funbind_opt),
+                            #2 tyreadesc__AND_funbind_opt ) 
 ) end
 )
  in (LrTable.NT 135,(result,sigexp1left,
@@ -18513,10 +18513,10 @@ AND_tyreadesc_opt__AND_funbind_opt1=
 AND_tyreadesc_opt__AND_funbind_opt1 ()
  in (
  ( TyReaDesc(I(TYPEleft,
-				       AND_tyreadesc_opt__AND_funbind_optright),
-				      tyvarseq, longtycon, ty,
-				      #1 AND_tyreadesc_opt__AND_funbind_opt),
-			    #2 AND_tyreadesc_opt__AND_funbind_opt ) 
+                                       AND_tyreadesc_opt__AND_funbind_optright),
+                                      tyvarseq, longtycon, ty,
+                                      #1 AND_tyreadesc_opt__AND_funbind_opt),
+                            #2 AND_tyreadesc_opt__AND_funbind_opt ) 
 ) end
 )
  in (LrTable.NT 136,(result,TYPE1left,
@@ -18537,7 +18537,7 @@ tyreadesc__AND_funbind_opt as tyreadesc__AND_funbind_opt1=
 tyreadesc__AND_funbind_opt1 ()
  in (
  ( SOME(#1 tyreadesc__AND_funbind_opt),
-			    #2 tyreadesc__AND_funbind_opt ) 
+                            #2 tyreadesc__AND_funbind_opt ) 
 ) end
 )
  in (LrTable.NT 137,(result,AND1left,tyreadesc__AND_funbind_opt1right)
@@ -18550,8 +18550,8 @@ topdec11=topdec11 ()
  in (LrTable.NT 138,(result,topdec11left,topdec11right),rest671) end
 | (319,rest671) => let val result=MlyValue.topdec(fn _ => (
  STRDECTopDec(I(defaultPos,defaultPos),
-				       EMPTYStrDec(I(defaultPos,defaultPos)),
-				       NONE) 
+                                       EMPTYStrDec(I(defaultPos,defaultPos)),
+                                       NONE) 
 ))
  in (LrTable.NT 138,(result,defaultPos,defaultPos),rest671) end
 | (320,(_,(MlyValue.topdec_opt topdec_opt1,_,topdec_optright as 
@@ -18561,7 +18561,7 @@ strdec1'1left,_))::rest671) => let val result=MlyValue.topdec1(fn _
 val topdec_opt as topdec_opt1=topdec_opt1 ()
  in (
  STRDECTopDec(I(strdec1'left,topdec_optright),
-				       strdec1', topdec_opt) 
+                                       strdec1', topdec_opt) 
 ) end
 )
  in (LrTable.NT 139,(result,strdec1'1left,topdec_opt1right),rest671)
@@ -18573,7 +18573,7 @@ let val sigdec as sigdec1=sigdec1 ()
 val topdec_opt as topdec_opt1=topdec_opt1 ()
  in (
  SIGDECTopDec(I(sigdecleft,topdec_optright),
-				       sigdec, topdec_opt) 
+                                       sigdec, topdec_opt) 
 ) end
 )
  in (LrTable.NT 139,(result,sigdec1left,topdec_opt1right),rest671) end
@@ -18584,7 +18584,7 @@ let val fundec as fundec1=fundec1 ()
 val topdec_opt as topdec_opt1=topdec_opt1 ()
  in (
  FUNDECTopDec(I(fundecleft,topdec_optright),
-				       fundec, topdec_opt) 
+                                       fundec, topdec_opt) 
 ) end
 )
  in (LrTable.NT 139,(result,fundec1left,topdec_opt1right),rest671) end
@@ -18612,7 +18612,7 @@ let val topdec as topdec1=topdec1 ()
 val program_opt as program_opt1=program_opt1 ()
  in (
  TOPDECProgram(I(topdecleft,SEMICOLONright),
-					topdec, program_opt) 
+                                        topdec, program_opt) 
 ) end
 )
  in (LrTable.NT 142,(result,topdec1left,program_opt1right),rest671)
@@ -18624,7 +18624,7 @@ exp1=exp1 ()
 val program_opt as program_opt1=program_opt1 ()
  in (
  EXPProgram(I(expleft,SEMICOLONright),
-				     exp, program_opt) )
+                                     exp, program_opt) )
  end
 )
  in (LrTable.NT 142,(result,exp1left,program_opt1right),rest671) end
@@ -18642,7 +18642,7 @@ end
 val void = MlyValue.VOID
 val extract = fn a => (fn MlyValue.program x => x
 | _ => let exception ParseInternal
-	in raise ParseInternal end) a ()
+        in raise ParseInternal end) a ()
 end
 end
 structure Tokens : Parser_TOKENS =
@@ -18839,14 +18839,14 @@ type int = Int.int
 
     (* Handling nested comments *)
 
-    val nesting = ref 0		(* non-reentrant side-effect way :-P *)
+    val nesting = ref 0                (* non-reentrant side-effect way :-P *)
 
 
     fun eof() =
-	if !nesting = 0 then
-	    Tokens.EOF(0, 0)
-	else
-	    Error.error((0,0), "unclosed comment")
+        if !nesting = 0 then
+            Tokens.EOF(0, 0)
+        else
+            Error.error((0,0), "unclosed comment")
 
 
 
@@ -18856,31 +18856,31 @@ type int = Int.int
 
 
     fun toLRPos(yypos, yytext) =
-	let
-	    val yypos = yypos - 2	(* bug in ML-Lex... *)
-	in
-	    (yypos, yypos + String.size yytext)
-	end
+        let
+            val yypos = yypos - 2        (* bug in ML-Lex... *)
+        in
+            (yypos, yypos + String.size yytext)
+        end
 
     fun token(TOKEN, yypos, yytext) =
         TOKEN(toLRPos(yypos, yytext))
 
     fun tokenOf(TOKEN, toVal, yypos, yytext) =
-	let
-	    val i as (l,r) = toLRPos(yypos, yytext)
-	in
-	    TOKEN(toVal(yytext, i), l, r)
-	end
+        let
+            val i as (l,r) = toLRPos(yypos, yytext)
+        in
+            TOKEN(toVal(yytext, i), l, r)
+        end
 
     fun error(yypos, yytext, s) =
-	    Error.error(toLRPos(yypos,yytext), s)
+            Error.error(toLRPos(yypos,yytext), s)
 
     fun invalid(yypos, yytext) =
-	let
-	    val s = "invalid character `" ^ String.toCString yytext ^ "'"
-	in
-	    error(yypos, yytext, s)
-	end
+        let
+            val s = "invalid character `" ^ String.toCString yytext ^ "'"
+        in
+            error(yypos, yytext, s)
+        end
 
 
 
@@ -18889,13 +18889,13 @@ type int = Int.int
     fun toId(s, i)     = s
 
     fun toLongId(s, i) =
-	let
-	    fun split  []    = raise Fail "Lexer.toLongId: empty longid"
-	      | split [x]    = ([],x)
-	      | split(x::xs) = let val (ys,y) = split xs in (x::ys,y) end
-	in
-	    split(String.fields (fn c => c = #".") s)
-	end
+        let
+            fun split  []    = raise Fail "Lexer.toLongId: empty longid"
+              | split [x]    = ([],x)
+              | split(x::xs) = let val (ys,y) = split xs in (x::ys,y) end
+        in
+            split(String.fields (fn c => c = #".") s)
+        end
 
 
     (* Convert constants [Section 2.2] *)
@@ -18903,106 +18903,106 @@ type int = Int.int
     local open StringCvt in
 
     fun toInt(s,i) =
-	(case String.explode s
-	  of #"0" :: #"x" :: s' =>
-		  valOf(scanString (Int.scan HEX) (String.implode s'))
-	   | #"~" :: #"0" :: #"x" :: s' =>
-		  ~(valOf(scanString (Int.scan HEX) (String.implode s')))
-	   | _ => valOf(scanString (Int.scan DEC) s)
-	) handle Overflow =>
-		Error.error(i, "integer constant too big")
+        (case String.explode s
+          of #"0" :: #"x" :: s' =>
+                  valOf(scanString (Int.scan HEX) (String.implode s'))
+           | #"~" :: #"0" :: #"x" :: s' =>
+                  ~(valOf(scanString (Int.scan HEX) (String.implode s')))
+           | _ => valOf(scanString (Int.scan DEC) s)
+        ) handle Overflow =>
+                Error.error(i, "integer constant too big")
 
     fun toWord(s,i) =
-	(case String.explode s
-	  of #"0" :: #"w" :: #"x" :: s' =>
-		valOf(scanString (Word.scan HEX) (String.implode s'))
-	   | #"0" :: #"w" :: s' =>
-		valOf(scanString (Word.scan DEC) (String.implode s'))
-	   | _ => raise Fail "Lexer.toWord: invalid word constant"
-	) handle Overflow =>
-		Error.error(i, "word constant too big")
+        (case String.explode s
+          of #"0" :: #"w" :: #"x" :: s' =>
+                valOf(scanString (Word.scan HEX) (String.implode s'))
+           | #"0" :: #"w" :: s' =>
+                valOf(scanString (Word.scan DEC) (String.implode s'))
+           | _ => raise Fail "Lexer.toWord: invalid word constant"
+        ) handle Overflow =>
+                Error.error(i, "word constant too big")
 
     fun toReal(s,i) = valOf(scanString Real.scan s)
 
 
     fun toString(s,i) =
-	let
-	    fun convert(#"\\"::s, cs)  = escape(s, cs)
-	      | convert([#"\""],  cs)  = cs
-	      | convert(c::s,     cs)  = convert(s, c::cs)
-	      | convert([],       cs)  =
-		    raise Fail "Lexer.toString: unclosed string literal"
+        let
+            fun convert(#"\\"::s, cs)  = escape(s, cs)
+              | convert([#"\""],  cs)  = cs
+              | convert(c::s,     cs)  = convert(s, c::cs)
+              | convert([],       cs)  =
+                    raise Fail "Lexer.toString: unclosed string literal"
 
-	    and escape(#"a"::s, cs)    = convert(s, #"\a"::cs)
-	      | escape(#"b"::s, cs)    = convert(s, #"\b"::cs)
-	      | escape(#"t"::s, cs)    = convert(s, #"\t"::cs)
-	      | escape(#"n"::s, cs)    = convert(s, #"\n"::cs)
-	      | escape(#"v"::s, cs)    = convert(s, #"\v"::cs)
-	      | escape(#"f"::s, cs)    = convert(s, #"\f"::cs)
-	      | escape(#"r"::s, cs)    = convert(s, #"\r"::cs)
-	      | escape(#"\""::s, cs)   = convert(s, #"\""::cs)
-	      | escape(#"\\"::s, cs)   = convert(s, #"\\"::cs)
-	      | escape(#"^"::c::s, cs) =
-		    convert(s, Char.chr(Char.ord c - 64)::cs)
+            and escape(#"a"::s, cs)    = convert(s, #"\a"::cs)
+              | escape(#"b"::s, cs)    = convert(s, #"\b"::cs)
+              | escape(#"t"::s, cs)    = convert(s, #"\t"::cs)
+              | escape(#"n"::s, cs)    = convert(s, #"\n"::cs)
+              | escape(#"v"::s, cs)    = convert(s, #"\v"::cs)
+              | escape(#"f"::s, cs)    = convert(s, #"\f"::cs)
+              | escape(#"r"::s, cs)    = convert(s, #"\r"::cs)
+              | escape(#"\""::s, cs)   = convert(s, #"\""::cs)
+              | escape(#"\\"::s, cs)   = convert(s, #"\\"::cs)
+              | escape(#"^"::c::s, cs) =
+                    convert(s, Char.chr(Char.ord c - 64)::cs)
 
-	      | escape(#"u"::x1::x2::x3::x4::s, cs) =
-		    convert(s, unicode[x1,x2,x3,x4]::cs)
+              | escape(#"u"::x1::x2::x3::x4::s, cs) =
+                    convert(s, unicode[x1,x2,x3,x4]::cs)
 
-	      | escape(c::s, cs) =
-		if Char.isDigit c then
-		    case s
-		      of c2::c3::s => convert(s, ascii[c,c2,c3]::cs)
-		       | _ => raise Fail
-				"Lexer.toString: invalid ASCII escape sequence"
-		else if Char.isSpace c then
-		    escapeGap(s,cs)
-		else
-		    raise Fail "Lexer.toString: invalid escape sequence"
+              | escape(c::s, cs) =
+                if Char.isDigit c then
+                    case s
+                      of c2::c3::s => convert(s, ascii[c,c2,c3]::cs)
+                       | _ => raise Fail
+                                "Lexer.toString: invalid ASCII escape sequence"
+                else if Char.isSpace c then
+                    escapeGap(s,cs)
+                else
+                    raise Fail "Lexer.toString: invalid escape sequence"
 
-	      | escape([], cs) =
-		    raise Fail "Lexer.toString: empty escape character"
+              | escape([], cs) =
+                    raise Fail "Lexer.toString: empty escape character"
 
-	    and escapeGap(c::s, cs) =
-		    if Char.isSpace c then
-			escapeGap(s, cs)
-		    else (* c = #"\\" *)
-			convert(s, cs)
+            and escapeGap(c::s, cs) =
+                    if Char.isSpace c then
+                        escapeGap(s, cs)
+                    else (* c = #"\\" *)
+                        convert(s, cs)
 
-	      | escapeGap([], cs) =
-		    raise Fail "Lexer.toString: invalid string gap"
+              | escapeGap([], cs) =
+                    raise Fail "Lexer.toString: invalid string gap"
 
             and ascii s =
-		Char.chr(valOf(scanString (Int.scan DEC) (String.implode s)))
-		handle Chr =>
-			 Error.error(i, "ASCII escape character too big")
-		     | Overflow =>
-			 Error.error(i, "ASCII escape character too big")
+                Char.chr(valOf(scanString (Int.scan DEC) (String.implode s)))
+                handle Chr =>
+                         Error.error(i, "ASCII escape character too big")
+                     | Overflow =>
+                         Error.error(i, "ASCII escape character too big")
 
-	    and unicode s =
-		Char.chr(valOf(scanString (Int.scan HEX) (String.implode s)))
-		handle Chr =>
-			 Error.error(i, "unicode escape character too big")
-		     | Overflow =>
-			 Error.error(i, "unicode escape character too big")
+            and unicode s =
+                Char.chr(valOf(scanString (Int.scan HEX) (String.implode s)))
+                handle Chr =>
+                         Error.error(i, "unicode escape character too big")
+                     | Overflow =>
+                         Error.error(i, "unicode escape character too big")
 
-	    val cs = List.tl(String.explode s)
-	in
-	    String.implode(List.rev(convert(cs, [])))
-	end
+            val cs = List.tl(String.explode s)
+        in
+            String.implode(List.rev(convert(cs, [])))
+        end
 
 
     fun toChar(s,i) =
-	let
-	    val s'  = String.substring(s, 1, String.size s-1)
-	    val ss' = toString(s',i)
-	in
-	    if String.size ss' = 1 then
-		String.sub(ss',0)
-	    else if ss' = "" then
-		Error.error(i, "empty character constant")
-	    else
-		Error.error(i, "character constant too long")
-	end
+        let
+            val s'  = String.substring(s, 1, String.size s-1)
+            val ss' = toString(s',i)
+        in
+            if String.size ss' = 1 then
+                String.sub(ss',0)
+            else if ss' = "" then
+                Error.error(i, "empty character constant")
+            else
+                Error.error(i, "character constant too long")
+        end
 
     end (* local *)
 
@@ -19010,7 +19010,7 @@ type int = Int.int
 end (* end of user routines *)
 exception LexError (* raised if illegal leaf action tried *)
 structure Internal =
-	struct
+        struct
 
 datatype yyfinstate = N of int
 type statedata = {fin : yyfinstate list, trans: string}
@@ -22420,8 +22420,8 @@ in Vector.fromList(map g
 {fin = [(N 468)], trans = 0}])
 end
 structure StartStates =
-	struct
-	datatype yystartstate = STARTSTATE of int
+        struct
+        datatype yystartstate = STARTSTATE of int
 
 (* start state definitions *)
 
@@ -22430,36 +22430,36 @@ val INITIAL = STARTSTATE 1;
 
 end
 type result = UserDeclarations.lexresult
-	exception LexerError (* raised if illegal leaf action tried *)
+        exception LexerError (* raised if illegal leaf action tried *)
 end
 
 type int = Int.int
 fun makeLexer (yyinput: int -> string) =
-let	val yygone0:int=1
-	val yyb = ref "\n" 		(* buffer *)
-	val yybl: int ref = ref 1		(*buffer length *)
-	val yybufpos: int ref = ref 1		(* location of next character to use *)
-	val yygone: int ref = ref yygone0	(* position in file of beginning of buffer *)
-	val yydone = ref false		(* eof found yet? *)
-	val yybegin: int ref = ref 1		(*Current 'start state' for lexer *)
+let        val yygone0:int=1
+        val yyb = ref "\n"                 (* buffer *)
+        val yybl: int ref = ref 1                (*buffer length *)
+        val yybufpos: int ref = ref 1                (* location of next character to use *)
+        val yygone: int ref = ref yygone0        (* position in file of beginning of buffer *)
+        val yydone = ref false                (* eof found yet? *)
+        val yybegin: int ref = ref 1                (*Current 'start state' for lexer *)
 
-	val YYBEGIN = fn (Internal.StartStates.STARTSTATE x) =>
-		 yybegin := x
+        val YYBEGIN = fn (Internal.StartStates.STARTSTATE x) =>
+                 yybegin := x
 
 fun lex () : Internal.result =
 let fun continue() = lex() in
   let fun scan (s,AcceptingLeaves : Internal.yyfinstate list list,l,i0: int) =
-	let fun action (i: int,nil) = raise LexError
-	| action (i,nil::l) = action (i-1,l)
-	| action (i,(node::acts)::l) =
-		case node of
-		    Internal.N yyk => 
-			(let fun yymktext() = String.substring(!yyb,i0,i-i0)
-			     val yypos: int = i0+ !yygone
-			open UserDeclarations Internal.StartStates
+        let fun action (i: int,nil) = raise LexError
+        | action (i,nil::l) = action (i-1,l)
+        | action (i,(node::acts)::l) =
+                case node of
+                    Internal.N yyk => 
+                        (let fun yymktext() = String.substring(!yyb,i0,i-i0)
+                             val yypos: int = i0+ !yygone
+                        open UserDeclarations Internal.StartStates
  in (yybufpos := i; case yyk of 
 
-			(* Application actions *)
+                        (* Application actions *)
 
   10 => let val yytext=yymktext() in  token(STAR,      yypos, yytext)  end
 | 109 => let val yytext=yymktext() in  token(EXCEPTION, yypos, yytext)  end
@@ -22524,8 +22524,8 @@ let fun continue() = lex() in
 | 458 => ( nesting := 1 ; YYBEGIN COMMENT ; continue() )
 | 461 => ( nesting := !nesting+1 ; continue() )
 | 464 => ( nesting := !nesting-1 ;
-			     if !nesting = 0 then YYBEGIN INITIAL else () ;
-			     continue() )
+                             if !nesting = 0 then YYBEGIN INITIAL else () ;
+                             continue() )
 | 466 => ( continue() )
 | 468 => ( continue() )
 | 470 => let val yytext=yymktext() in  error(yypos, yytext, "invalid string")  end
@@ -22544,35 +22544,35 @@ let fun continue() = lex() in
 | 99 => let val yytext=yymktext() in  token(EQTYPE,    yypos, yytext)  end
 | _ => raise Internal.LexerError
 
-		) end )
+                ) end )
 
-	val {fin,trans} = Vector.sub(Internal.tab, s)
-	val NewAcceptingLeaves = fin::AcceptingLeaves
-	in if l = !yybl then
-	     if trans = #trans(Vector.sub(Internal.tab,0))
-	       then action(l,NewAcceptingLeaves
-) else	    let val newchars= if !yydone then "" else yyinput 1024
-	    in if (String.size newchars)=0
-		  then (yydone := true;
-		        if (l=i0) then UserDeclarations.eof ()
-		                  else action(l,NewAcceptingLeaves))
-		  else (if i0=l then yyb := newchars
-		     else yyb := String.substring(!yyb,i0,l-i0)^newchars;
-		     yygone := !yygone+i0;
-		     yybl := String.size (!yyb);
-		     scan (s,AcceptingLeaves,l-i0,0))
-	    end
-	  else let val NewChar = Char.ord(CharVector.sub(!yyb,l))
-		val NewState = Char.ord(CharVector.sub(trans,NewChar))
-		in if NewState=0 then action(l,NewAcceptingLeaves)
-		else scan(NewState,NewAcceptingLeaves,l+1,i0)
-	end
-	end
+        val {fin,trans} = Vector.sub(Internal.tab, s)
+        val NewAcceptingLeaves = fin::AcceptingLeaves
+        in if l = !yybl then
+             if trans = #trans(Vector.sub(Internal.tab,0))
+               then action(l,NewAcceptingLeaves
+) else            let val newchars= if !yydone then "" else yyinput 1024
+            in if (String.size newchars)=0
+                  then (yydone := true;
+                        if (l=i0) then UserDeclarations.eof ()
+                                  else action(l,NewAcceptingLeaves))
+                  else (if i0=l then yyb := newchars
+                     else yyb := String.substring(!yyb,i0,l-i0)^newchars;
+                     yygone := !yygone+i0;
+                     yybl := String.size (!yyb);
+                     scan (s,AcceptingLeaves,l-i0,0))
+            end
+          else let val NewChar = Char.ord(CharVector.sub(!yyb,l))
+                val NewState = Char.ord(CharVector.sub(trans,NewChar))
+                in if NewState=0 then action(l,NewAcceptingLeaves)
+                else scan(NewState,NewAcceptingLeaves,l+1,i0)
+        end
+        end
 (*
-	val start= if String.substring(!yyb,!yybufpos-1,1)="\n"
+        val start= if String.substring(!yyb,!yybufpos-1,1)="\n"
 then !yybegin+1 else !yybegin
 *)
-	in scan(!yybegin (* start *),nil,!yybufpos,!yybufpos)
+        in scan(!yybegin (* start *),nil,!yybufpos,!yybufpos)
     end
 end
   in lex
@@ -22612,29 +22612,29 @@ structure Parse :> PARSE =
     structure LrVals = LrValsFn(structure Token      = LrParser.Token)
     structure Lexer  = LexerFn (structure Tokens     = LrVals.Tokens)
     structure Parser = Join    (structure LrParser   = LrParser
-				structure ParserData = LrVals.ParserData
-				structure Lex        = Lexer)
+                                structure ParserData = LrVals.ParserData
+                                structure Lex        = Lexer)
 
 
     (* The actual parsing function *)
 
     fun parse(J, source) =
-	let
-	    val yyread = ref false
-	    fun yyinput _ =
-		if !yyread then
-		    ""
-		else
-		    ( yyread := true; source )
+        let
+            val yyread = ref false
+            fun yyinput _ =
+                if !yyread then
+                    ""
+                else
+                    ( yyread := true; source )
 
-	    val lexer = Parser.makeLexer yyinput
+            val lexer = Parser.makeLexer yyinput
 
-	    fun onError(s, pos1, pos2) = Error.error((pos1,pos2), s)
+            fun onError(s, pos1, pos2) = Error.error((pos1,pos2), s)
 
-	    val ((program,J'), lexer') = Parser.parse(0, lexer, onError, J)
-	in
-	    (J',program)
-	end
+            val ((program,J'), lexer') = Parser.parse(0, lexer, onError, J)
+        in
+            (J',program)
+        end
 
   end
 (* stop of Parse.sml *)
@@ -22646,25 +22646,25 @@ structure Parse :> PARSE =
 signature SML =
   sig
 
-    val parseString:	string -> unit	(* Parse only *)
-    val elabString:	string -> unit	(* Parse and elaborate *)
-    val evalString:	string -> unit	(* Parse and evaluate *)
-    val execString:	string -> unit	(* Parse, elaborate, and evaluate *)
+    val parseString:        string -> unit        (* Parse only *)
+    val elabString:        string -> unit        (* Parse and elaborate *)
+    val evalString:        string -> unit        (* Parse and evaluate *)
+    val execString:        string -> unit        (* Parse, elaborate, and evaluate *)
 
-    val parseFile:	string -> unit
-    val elabFile:	string -> unit
-    val evalFile:	string -> unit
-    val execFile:	string -> unit
+    val parseFile:        string -> unit
+    val elabFile:        string -> unit
+    val evalFile:        string -> unit
+    val execFile:        string -> unit
 
-    val parseFiles:	string -> unit
-    val elabFiles:	string -> unit
-    val evalFiles:	string -> unit
-    val execFiles:	string -> unit
+    val parseFiles:        string -> unit
+    val elabFiles:        string -> unit
+    val evalFiles:        string -> unit
+    val execFiles:        string -> unit
 
-    val parseSession:	unit -> unit
-    val elabSession:	unit -> unit
-    val evalSession:	unit -> unit
-    val execSession:	unit -> unit
+    val parseSession:        unit -> unit
+    val elabSession:        unit -> unit
+    val evalSession:        unit -> unit
+    val execSession:        unit -> unit
 
   end
 (* stop of SML.sml *)
@@ -22688,12 +22688,12 @@ structure Sml :> SML =
     (* Parsing only *)
 
     fun parse J source =
-	let
-	    val (J',program) = Parse.parse(J, source)
-	    val    _         = TextIO.output(TextIO.stdOut, "OK\n")
-	in
-	    J'
-	end
+        let
+            val (J',program) = Parse.parse(J, source)
+            val    _         = TextIO.output(TextIO.stdOut, "OK\n")
+        in
+            J'
+        end
 
     val parseInitialArg = J0
     val parseInitial    = parse parseInitialArg
@@ -22704,12 +22704,12 @@ structure Sml :> SML =
     val elabInitialArg = (J0, B_STAT0)
 
     fun elab (J, B_STAT) source =
-	let
-	    val (J',program) = Parse.parse(J, source)
-	    val B_STAT'      = Program.elabProgram(B_STAT, program)
-	in
-	    (J', B_STAT')
-	end
+        let
+            val (J',program) = Parse.parse(J, source)
+            val B_STAT'      = Program.elabProgram(B_STAT, program)
+        in
+            (J', B_STAT')
+        end
 
 
     (* Parsing and evaluation *)
@@ -22717,13 +22717,13 @@ structure Sml :> SML =
     val evalInitialArg = (J0, B_DYN0, s0)
 
     fun eval (J, B_DYN, s) source =
-	let
-	    val (J',program) = Parse.parse(J, source)
-	    val s'           = ref s
-	    val B_DYN'       = Program.evalProgram(s', B_DYN, program)
-	in
-	    (J', B_DYN', !s')
-	end
+        let
+            val (J',program) = Parse.parse(J, source)
+            val s'           = ref s
+            val B_DYN'       = Program.evalProgram(s', B_DYN, program)
+        in
+            (J', B_DYN', !s')
+        end
 
 
     (* Parsing, elaboration, and evaluation *)
@@ -22731,20 +22731,20 @@ structure Sml :> SML =
     val execInitialArg = (J0, B0, s0)
 
     fun exec (J, B, s) source =
-	let
-	    val (J',program) = Parse.parse(J, source)
-	    val s'           = ref s
-	    val B'           = Program.execProgram(s', B, program)
-	in
-	    (J', B', !s' )
-	end
+        let
+            val (J',program) = Parse.parse(J, source)
+            val s'           = ref s
+            val B'           = Program.execProgram(s', B, program)
+        in
+            (J', B', !s' )
+        end
 
 
     (* Processing of strings *)
 
     fun processString (process, arg) source =
-	    ignore(process arg source)
-	    handle Error.Error _ => ()	(* Syntax error *)
+            ignore(process arg source)
+            handle Error.Error _ => ()        (* Syntax error *)
 
     val parseString = processString(parse, parseInitialArg)
     val elabString  = processString(elab, elabInitialArg)
@@ -22755,14 +22755,14 @@ structure Sml :> SML =
     (* Processing of files *)
 
     fun processFile (process, arg) name =
-	let
-	    val file   = TextIO.openIn name
-	    val source = TextIO.inputAll file
-	    val _      = TextIO.closeIn file
-	in
-	    ignore(process arg source)
-	    handle Error.Error _ => ()	(* Syntax error *)
-	end
+        let
+            val file   = TextIO.openIn name
+            val source = TextIO.inputAll file
+            val _      = TextIO.closeIn file
+        in
+            ignore(process arg source)
+            handle Error.Error _ => ()        (* Syntax error *)
+        end
 
     val parseFile = processFile(parse, parseInitialArg)
     val elabFile  = processFile(elab, elabInitialArg)
@@ -22773,30 +22773,30 @@ structure Sml :> SML =
     (* Processing several files mentioned in a list file *)
 
     fun processFiles (process, initialArg) name =
-	let
-	    val file    = TextIO.openIn name
-	    val content = TextIO.inputAll file
-	    val _       = TextIO.closeIn file
+        let
+            val file    = TextIO.openIn name
+            val content = TextIO.inputAll file
+            val _       = TextIO.closeIn file
 
-	    val _       = Stamp.reset()
+            val _       = Stamp.reset()
 
-	    fun loop(arg,     [] )     = ()
-	      | loop(arg,  "" ::names) = loop(arg, names)
-	      | loop(arg, name::names) =
-		let
-		    val file   = TextIO.openIn name
-		    val source = TextIO.inputAll file
-		    val _      = TextIO.closeIn file
-		    val _      = TextIO.output(TextIO.stdOut,
-					       ">> File \"" ^ name ^ "\":\n")
-		in
-		    loop(process arg source, names)
-		    handle Error.Error _ =>	(* Syntax error *)
-			loop(arg, names)
-		end
-	in
-	    loop(initialArg, String.fields Char.isSpace content)
-	end
+            fun loop(arg,     [] )     = ()
+              | loop(arg,  "" ::names) = loop(arg, names)
+              | loop(arg, name::names) =
+                let
+                    val file   = TextIO.openIn name
+                    val source = TextIO.inputAll file
+                    val _      = TextIO.closeIn file
+                    val _      = TextIO.output(TextIO.stdOut,
+                                               ">> File \"" ^ name ^ "\":\n")
+                in
+                    loop(process arg source, names)
+                    handle Error.Error _ =>        (* Syntax error *)
+                        loop(arg, names)
+                end
+        in
+            loop(initialArg, String.fields Char.isSpace content)
+        end
 
     val parseFiles = processFiles(parse, parseInitialArg)
     val elabFiles  = processFiles(elab,  elabInitialArg)
@@ -22807,23 +22807,23 @@ structure Sml :> SML =
     (* Session *)
 
     fun processSession(process, initialArg) =
-	let
-	   val ins = !ins
-	    fun loop arg =
-		let
-		    val _      = TextIO.output(TextIO.stdOut, "SML> ")
-		    val _      = TextIO.flushOut TextIO.stdOut
-		in
-		   case TextIO.inputLine ins of
-		      NONE => ()
-		    | SOME source =>
-			loop(process arg source)
-			handle Error.Error _ =>	(* Syntax error *)
-			    loop arg
-		end
-	in
-	    loop initialArg
-	end
+        let
+           val ins = !ins
+            fun loop arg =
+                let
+                    val _      = TextIO.output(TextIO.stdOut, "SML> ")
+                    val _      = TextIO.flushOut TextIO.stdOut
+                in
+                   case TextIO.inputLine ins of
+                      NONE => ()
+                    | SOME source =>
+                        loop(process arg source)
+                        handle Error.Error _ =>        (* Syntax error *)
+                            loop arg
+                end
+        in
+            loop initialArg
+        end
 
     fun parseSession() = processSession(parse, parseInitialArg)
     fun elabSession()  = processSession(elab,  elabInitialArg)
@@ -22843,28 +22843,28 @@ structure Main =
     val version = "0.5"
 
     fun usage() =
-	( TextIO.output(TextIO.stdErr,
-	    "Usage: hamlet -<mode>\n\
-	    \where <mode> is one of:\n\
-	    \  h   help:       print this message\n\
-	    \  p   parse mode: just parse input\n\
-	    \  l   elab mode:  parse and elaborate\n\
-	    \  v   eval mode:  parse and evaluate (no type checking!)\n\
-	    \  x   exec mode:  parse, elaborate, and evaluate\n"
-	  )
-	; TextIO.flushOut TextIO.stdErr
-	; OS.Process.failure
-	)
+        ( TextIO.output(TextIO.stdErr,
+            "Usage: hamlet -<mode>\n\
+            \where <mode> is one of:\n\
+            \  h   help:       print this message\n\
+            \  p   parse mode: just parse input\n\
+            \  l   elab mode:  parse and elaborate\n\
+            \  v   eval mode:  parse and evaluate (no type checking!)\n\
+            \  x   exec mode:  parse, elaborate, and evaluate\n"
+          )
+        ; TextIO.flushOut TextIO.stdErr
+        ; OS.Process.failure
+        )
 
     fun start process =
-	( TextIO.output(TextIO.stdOut, "HaMLet " ^ version ^
-				       " - to be or not to be SML\n")
-	; TextIO.flushOut TextIO.stdOut
-	; process()
-	; TextIO.output(TextIO.stdOut, "\n")
-	; TextIO.flushOut TextIO.stdOut
-	; OS.Process.success
-	)
+        ( TextIO.output(TextIO.stdOut, "HaMLet " ^ version ^
+                                       " - to be or not to be SML\n")
+        ; TextIO.flushOut TextIO.stdOut
+        ; process()
+        ; TextIO.output(TextIO.stdOut, "\n")
+        ; TextIO.flushOut TextIO.stdOut
+        ; OS.Process.success
+        )
 
     fun main' ["-h"] = ( usage() ; OS.Process.success )
       | main' ["-p"] = start Sml.parseSession
@@ -22883,18 +22883,18 @@ structure Main =
 structure Main =
    struct
       fun doit size =
-	 let
-	    open TextIO
-	    fun loop n =
-	       if n < 0
-		  then ()
-	       else
-		  let
-		     val _ = ins := openIn "DATA/hamlet-input.sml"
-		     val _ = Main.main' ["-x"]
-		  in loop (n - 1)
-		  end
-	 in 
-	    loop size
-	 end
+         let
+            open TextIO
+            fun loop n =
+               if n < 0
+                  then ()
+               else
+                  let
+                     val _ = ins := openIn "DATA/hamlet-input.sml"
+                     val _ = Main.main' ["-x"]
+                  in loop (n - 1)
+                  end
+         in 
+            loop size
+         end
    end

@@ -52,7 +52,7 @@ local
 in
    fun wordVector (b: Bits.t): t =
       case Bits.toInt b of
-	 8 => word8Vector
+         8 => word8Vector
        | 16 => word16Vector
        | 32 => word32Vector
        | _ => Error.bug "PointerTycon.wordVector"

@@ -34,10 +34,10 @@ signature VECTOR =
       val existsR: 'a t * int * int * ('a -> bool) -> bool
       val fold2: 'a t * 'b t * 'c * ('a * 'b * 'c -> 'c) -> 'c
       val fold3From:
-	 'a t * 'b t * 'c t * int * 'd * ('a * 'b * 'c * 'd -> 'd) -> 'd
+         'a t * 'b t * 'c t * int * 'd * ('a * 'b * 'c * 'd -> 'd) -> 'd
       val fold3: 'a t * 'b t * 'c t * 'd * ('a * 'b * 'c * 'd -> 'd) -> 'd
       datatype ('a, 'b) continue =
-	 Continue of 'a
+         Continue of 'a
        | Done of 'b
       (* fold' (v, i, b, f, g)
        * folds over v starting at index i with state b, applying f to each
@@ -46,8 +46,8 @@ signature VECTOR =
        * state.
        *)
       val fold':
-	 'a t * int * 'b * (int * 'a * 'b -> ('b, 'c) continue) * ('b -> 'c)
-	 -> 'c
+         'a t * int * 'b * (int * 'a * 'b -> ('b, 'c) continue) * ('b -> 'c)
+         -> 'c
       val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
       val foldFrom: 'a t * int * 'b * ('a * 'b -> 'b) -> 'b
       val foldi: 'a t * 'b * (int * 'a * 'b -> 'b) -> 'b
@@ -134,17 +134,17 @@ val _ =
    ("TestVector", fn () =>
     let
        fun check ls =
-	  List.concat ls = toList (concat (List.map (ls, fromList)))
-	  andalso List.concat ls = toList (concatV (fromListMap (ls, fromList)))
+          List.concat ls = toList (concat (List.map (ls, fromList)))
+          andalso List.concat ls = toList (concatV (fromListMap (ls, fromList)))
     in
        List.forall
        ([[],
-	 [[]],
-	 [[], [1]],
-	 [[1], []],
-	 [[1], [], [2]],
-	 [[1, 2], [3, 4]]],
-	check)
+         [[]],
+         [[], [1]],
+         [[1], []],
+         [[1], [], [2]],
+         [[1, 2], [3, 4]]],
+        check)
     end)
 
 end

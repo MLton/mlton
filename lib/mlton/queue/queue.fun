@@ -11,7 +11,7 @@ struct
 val {error, ...} = Error.errors("queue", "queue")
    
 structure Q' = Sequence(structure I = Integer
-			structure S = Q)
+                        structure S = Q)
    
 open Q Q'
 

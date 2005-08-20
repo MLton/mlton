@@ -14,9 +14,9 @@ open S
 structure Wrap = Region.Wrap
 open Wrap
 type node' = {name: string,
-	      equality: bool,
-	      hash: Word.t,
-	      plist: PropertyList.t}
+              equality: bool,
+              hash: Word.t,
+              plist: PropertyList.t}
 type t = node' Wrap.t
 type obj = t
 
@@ -42,42 +42,42 @@ fun sameName (a, a') = String.equals (name a, name a')
    
 fun newRegion ({name, equality}, region) =
    makeRegion ({name = name,
-		equality = equality,
-		hash = Random.word (),
-		plist = PropertyList.new ()},
-	       region)
+                equality = equality,
+                hash = Random.word (),
+                plist = PropertyList.new ()},
+               region)
 
 fun new f = newRegion (f, Region.bogus)
 
 fun newLike a = newRegion ({equality = isEquality a,
-			    name = name a},
-			   region a)
+                            name = name a},
+                           region a)
 
 fun newString (s, {left, right}) =
    newRegion (if String.size s > 1
-		 andalso Char.equals (#"'", String.sub (s, 1))
-		 then {name = String.dropPrefix (s, 2),
-		       equality = true}
-	      else {name = String.dropPrefix (s, 1),
-		    equality = false},
-	      Region.make {left = left, right = right})
+                 andalso Char.equals (#"'", String.sub (s, 1))
+                 then {name = String.dropPrefix (s, 2),
+                       equality = true}
+              else {name = String.dropPrefix (s, 1),
+                    equality = false},
+              Region.make {left = left, right = right})
 
 (*val make = Trace.trace2 ("Tyvar.make", String.layout, Bool.layout,
- *			layout) make
+ *                        layout) make
  *)
 
 local val c = Counter.new 0
 in fun reset () = Counter.reset (c, 0)
    fun newNoname {equality} =
       new {name = "a_" ^ Int.toString (Counter.next c),
-	   equality = equality}
+           equality = equality}
 end
 
 local open Layout
 in
    fun layouts ts =
       case Vector.length ts of
-	 0 => empty
+         0 => empty
        | 1 => layout (Vector.sub (ts, 0))
        | _ => Vector.layout layout ts
 end

@@ -68,9 +68,9 @@ signature IMPERATIVE_IO_EXTRA =
       val output: outstream * vector -> unit
       val outputSlice: outstream * vector_slice -> unit
       val scanStream:
-	 ((elem, StreamIO.instream) StringCvt.reader
-	  -> ('a, StreamIO.instream) StringCvt.reader)
-	 -> instream -> 'a option
+         ((elem, StreamIO.instream) StringCvt.reader
+          -> ('a, StreamIO.instream) StringCvt.reader)
+         -> instream -> 'a option
       val setInstream: instream * StreamIO.instream -> unit
       val setOutstream: outstream * StreamIO.outstream -> unit
       val setPosOut: outstream * StreamIO.out_pos -> unit

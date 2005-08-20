@@ -34,8 +34,8 @@ val stringtype = ref false
 
 fun lineDirective (source, file, yypos) =
    Source.lineDirective (source, file,
-			 {lineNum = !lineNum,
-			  lineStart = yypos - !colNum})
+                         {lineNum = !lineNum,
+                          lineStart = yypos - !colNum})
 
 fun addString (s: string) =
    charlist :=
@@ -49,13 +49,13 @@ fun dec (ri as ref (i: int)) = ri := i - 1
 
 fun error (source, left, right, msg) = 
    Control.errorStr (Region.make {left = Source.getPos (source, left),
-				  right = Source.getPos (source, right)},
-		     msg)
+                                  right = Source.getPos (source, right)},
+                     msg)
 
 fun stringError (source, right, msg) =
    Control.errorStr (Region.make {left = !stringStart,
-				  right = Source.getPos (source, right)},
-		     msg)
+                                  right = Source.getPos (source, right)},
+                     msg)
 
 fun addOrd (i: IntInf.t): unit = List.push (charlist, i)
 
@@ -69,11 +69,11 @@ val eof: lexarg -> lexresult =
    let
       val pos = Source.lineStart source
       val _ =
-	 if !commentLevel > 0
-	    then Control.errorStr (Region.make {left = !commentStart,
-						right = pos},
-				   "unclosed comment")
-	 else ()
+         if !commentLevel > 0
+            then Control.errorStr (Region.make {left = !commentStart,
+                                                right = pos},
+                                   "unclosed comment")
+         else ()
    in
       Tokens.EOF (pos, pos)
    end
@@ -85,14 +85,14 @@ fun tok (t, s, l, r) =
       val l = Source.getPos (s, l)
       val r = Source.getPos (s, r)
       val _ =
-	 if true
-	    then ()
-	 else
-	    print (concat ["tok (",
-			   SourcePos.toString l,
-			   ", " ,
-			   SourcePos.toString r,
-			   ")\n"])
+         if true
+            then ()
+         else
+            print (concat ["tok (",
+                           SourcePos.toString l,
+                           ", " ,
+                           SourcePos.toString r,
+                           ")\n"])
    in
       t (l, r)
    end
@@ -101,16 +101,16 @@ fun tok' (t, x, s, l) = tok (fn (l, r) => t (x, l, r), s, l, l + size x)
 
 fun int (yytext, drop, source, yypos, {negate: bool}, radix) =
    Tokens.INT ({digits = String.dropPrefix (yytext, drop),
-		negate = negate,
-		radix = radix},
-	       Source.getPos (source, yypos),
-	       Source.getPos (source, yypos + size yytext))
+                negate = negate,
+                radix = radix},
+               Source.getPos (source, yypos),
+               Source.getPos (source, yypos + size yytext))
 
 fun word (yytext, drop, source, yypos, radix) =
    Tokens.WORD ({digits = String.dropPrefix (yytext, drop),
-		 radix = radix},
-		Source.getPos (source, yypos),
-		Source.getPos (source, yypos + size yytext))
+                 radix = radix},
+                Source.getPos (source, yypos),
+                Source.getPos (source, yypos + size yytext))
 
 
 %% 
@@ -137,8 +137,8 @@ hexDigit=[0-9a-fA-F];
 hexnum={hexDigit}+;
 
 %%
-<INITIAL>{ws}	=> (continue ());
-<INITIAL>{eol}	=> (Source.newline (source, yypos); continue ());
+<INITIAL>{ws}        => (continue ());
+<INITIAL>{eol}        => (Source.newline (source, yypos); continue ());
 <INITIAL>"_address" =>
    (tok (Tokens.ADDRESS, source, yypos, yypos + size yytext));
 <INITIAL>"_build_const" =>
@@ -157,15 +157,15 @@ hexnum={hexDigit}+;
    (tok (Tokens.SYMBOL, source, yypos, yypos + size yytext));
 <INITIAL>"_prim" =>
    (tok (Tokens.PRIM, source, yypos, yypos + size yytext));
-<INITIAL>"_"	=> (tok (Tokens.WILD, source, yypos, yypos + 1));
-<INITIAL>","	=> (tok (Tokens.COMMA, source, yypos, yypos + 1));
-<INITIAL>"{"	=> (tok (Tokens.LBRACE, source, yypos, yypos + 1));
-<INITIAL>"}"	=> (tok (Tokens.RBRACE, source, yypos, yypos + 1));
-<INITIAL>"["	=> (tok (Tokens.LBRACKET, source, yypos, yypos + 1));
-<INITIAL>"]"	=> (tok (Tokens.RBRACKET, source, yypos, yypos + 1));
-<INITIAL>";"	=> (tok (Tokens.SEMICOLON, source, yypos, yypos + 1));
-<INITIAL>"("	=> (tok (Tokens.LPAREN, source, yypos, yypos + 1));
-<INITIAL>")"	=> (tok (Tokens.RPAREN, source, yypos, yypos + 1));
+<INITIAL>"_"        => (tok (Tokens.WILD, source, yypos, yypos + 1));
+<INITIAL>","        => (tok (Tokens.COMMA, source, yypos, yypos + 1));
+<INITIAL>"{"        => (tok (Tokens.LBRACE, source, yypos, yypos + 1));
+<INITIAL>"}"        => (tok (Tokens.RBRACE, source, yypos, yypos + 1));
+<INITIAL>"["        => (tok (Tokens.LBRACKET, source, yypos, yypos + 1));
+<INITIAL>"]"        => (tok (Tokens.RBRACKET, source, yypos, yypos + 1));
+<INITIAL>";"        => (tok (Tokens.SEMICOLON, source, yypos, yypos + 1));
+<INITIAL>"("        => (tok (Tokens.LPAREN, source, yypos, yypos + 1));
+<INITIAL>")"        => (tok (Tokens.RPAREN, source, yypos, yypos + 1));
 <INITIAL>"..."  => (tok (Tokens.DOTDOTDOT, source, yypos, yypos + 3));
 <INITIAL>"|" => (tok (Tokens.BAR, source, yypos, yypos + 1));
 <INITIAL>":" => (tok (Tokens.COLON, source, yypos, yypos + 1));
@@ -220,7 +220,7 @@ hexnum={hexDigit}+;
    (case yytext of
        "*" => tok (Tokens.ASTERISK, source, yypos, yypos + 1)
      | _ => tok' (Tokens.LONGID, yytext, source, yypos));
-<INITIAL>{real}	=> (tok' (Tokens.REAL, yytext, source, yypos));
+<INITIAL>{real}        => (tok' (Tokens.REAL, yytext, source, yypos));
 <INITIAL>{num} =>
    (int (yytext, 0, source, yypos, {negate = false}, StringCvt.DEC));
 <INITIAL>"~"{num} =>
@@ -233,27 +233,27 @@ hexnum={hexDigit}+;
    (word (yytext, 2, source, yypos, StringCvt.DEC));
 <INITIAL>"0wx"{hexnum} =>
    (word (yytext, 3, source, yypos, StringCvt.HEX));
-<INITIAL>\"	=> (charlist := []
+<INITIAL>\"        => (charlist := []
                     ; stringStart := Source.getPos (source, yypos)
                     ; stringtype := true
                     ; YYBEGIN S
                     ; continue ());
-<INITIAL>\#\"	=> (charlist := []
+<INITIAL>\#\"        => (charlist := []
                     ; stringStart := Source.getPos (source, yypos)
                     ; stringtype := false
                     ; YYBEGIN S
                     ; continue ());
 <INITIAL>"(*#line"{nrws}
                 => (YYBEGIN L
-		    ; commentStart := Source.getPos (source, yypos)
-		    ; commentLevel := 1
-		    ; continue ());
-<INITIAL>"(*"	=> (YYBEGIN A
+                    ; commentStart := Source.getPos (source, yypos)
+                    ; commentLevel := 1
+                    ; continue ());
+<INITIAL>"(*"        => (YYBEGIN A
                     ; commentLevel := 1
                     ; commentStart := Source.getPos (source, yypos)
                     ; continue ());
-<INITIAL>.	=> (error (source, yypos, yypos + 1, "illegal token") ;
-		    continue ());
+<INITIAL>.        => (error (source, yypos, yypos + 1, "illegal token") ;
+                    continue ());
 
 <L>[0-9]+       => (YYBEGIN LL
                     ; (lineNum := valOf (Int.fromString yytext)
@@ -262,15 +262,15 @@ hexnum={hexDigit}+;
                     ; continue ());
 <LL>\.          => ((* cheat: take n > 0 dots *) continue ());
 <LL>[0-9]+      => (YYBEGIN LLC
-		    ; (colNum := valOf (Int.fromString yytext))
-		      handle Overflow => YYBEGIN A
-	            ; continue ());
+                    ; (colNum := valOf (Int.fromString yytext))
+                      handle Overflow => YYBEGIN A
+                    ; continue ());
 <LL>.          => (YYBEGIN LLC; continue ()
-		(* note hack, since ml-lex chokes on the empty string for 0* *));
+                (* note hack, since ml-lex chokes on the empty string for 0* *));
 <LLC>"*)"       => (YYBEGIN INITIAL
-		    ; lineDirective (source, NONE, yypos + 2)
-		    ; commentLevel := 0; charlist := []; continue ());
-<LLC>{ws}\"	=> (YYBEGIN LLCQ; continue ());
+                    ; lineDirective (source, NONE, yypos + 2)
+                    ; commentLevel := 0; charlist := []; continue ());
+<LLC>{ws}\"        => (YYBEGIN LLCQ; continue ());
 <LLCQ>[^\"]*    => (lineFile := yytext; continue ());
 <LLCQ>\""*)"    => (YYBEGIN INITIAL
                     ; lineDirective (source, SOME (!lineFile), yypos + 3)
@@ -278,78 +278,78 @@ hexnum={hexDigit}+;
 <L,LLC,LLCQ>"*)" => (YYBEGIN INITIAL; commentLevel := 0; charlist := []; continue ());
 <L,LLC,LLCQ>.   => (YYBEGIN A; continue ());
 
-<A>"(*"		=> (inc commentLevel; continue ());
-<A>\n		=> (Source.newline (source, yypos) ; continue ());
+<A>"(*"                => (inc commentLevel; continue ());
+<A>\n                => (Source.newline (source, yypos) ; continue ());
 <A>"*)"         => (dec commentLevel
-		    ; if 0 = !commentLevel then YYBEGIN INITIAL else ()
-		    ; continue ());
-<A>.		=> (continue ());
+                    ; if 0 = !commentLevel then YYBEGIN INITIAL else ()
+                    ; continue ());
+<A>.                => (continue ());
 
-<S>\"	        => (let
-		       val s = Vector.fromListRev (!charlist)
-		       val _ = charlist := nil
-		       fun make (t, v) =
-			  t (v, !stringStart, Source.getPos (source, yypos + 1))
-		       val () = YYBEGIN INITIAL
-		    in
-		       if !stringtype
-			  then make (Tokens.STRING, s)
-		       else
-			  make (Tokens.CHAR,
-				if 1 <> Vector.length s
-				   then (error
-					 (source, yypos, yypos + 1,
-					  "character constant not length 1")
-					 ; 0)
-				else Vector.sub (s, 0))
+<S>\"                => (let
+                       val s = Vector.fromListRev (!charlist)
+                       val _ = charlist := nil
+                       fun make (t, v) =
+                          t (v, !stringStart, Source.getPos (source, yypos + 1))
+                       val () = YYBEGIN INITIAL
+                    in
+                       if !stringtype
+                          then make (Tokens.STRING, s)
+                       else
+                          make (Tokens.CHAR,
+                                if 1 <> Vector.length s
+                                   then (error
+                                         (source, yypos, yypos + 1,
+                                          "character constant not length 1")
+                                         ; 0)
+                                else Vector.sub (s, 0))
                     end);
-<S>\\a		=> (addChar #"\a"; continue ());
-<S>\\b		=> (addChar #"\b"; continue ());
-<S>\\f		=> (addChar #"\f"; continue ());
-<S>\\n		=> (addChar #"\n"; continue ());
-<S>\\r		=> (addChar #"\r"; continue ());
-<S>\\t		=> (addChar #"\t"; continue ());
-<S>\\v		=> (addChar #"\v"; continue ());
-<S>\\\^[@-_]	=> (addChar (Char.chr(Char.ord(String.sub(yytext, 2))
-				      -Char.ord #"@"));
-		    continue ());
-<S>\\\^.	=>
-	(error (source, yypos, yypos + 2,
-		"illegal control escape; must be one of @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
-	continue ());
-<S>\\[0-9]{3}	=> (let
-		       fun c (i, scale) =
-			  scale * (Char.ord (String.sub (yytext, i))
-				   - Char.ord #"0")
-		       val () = addOrd (IntInf.fromInt
-					(c (1, 100) + c (2, 10) + c (3, 1)))
-		    in
-		       continue ()
-		    end);
+<S>\\a                => (addChar #"\a"; continue ());
+<S>\\b                => (addChar #"\b"; continue ());
+<S>\\f                => (addChar #"\f"; continue ());
+<S>\\n                => (addChar #"\n"; continue ());
+<S>\\r                => (addChar #"\r"; continue ());
+<S>\\t                => (addChar #"\t"; continue ());
+<S>\\v                => (addChar #"\v"; continue ());
+<S>\\\^[@-_]        => (addChar (Char.chr(Char.ord(String.sub(yytext, 2))
+                                      -Char.ord #"@"));
+                    continue ());
+<S>\\\^.        =>
+        (error (source, yypos, yypos + 2,
+                "illegal control escape; must be one of @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
+        continue ());
+<S>\\[0-9]{3}        => (let
+                       fun c (i, scale) =
+                          scale * (Char.ord (String.sub (yytext, i))
+                                   - Char.ord #"0")
+                       val () = addOrd (IntInf.fromInt
+                                        (c (1, 100) + c (2, 10) + c (3, 1)))
+                    in
+                       continue ()
+                    end);
 <S>\\u{hexDigit}{4} => (addHexEscape (String.substring (yytext, 2, 4),
-				      source, yypos)
-			; continue ());
+                                      source, yypos)
+                        ; continue ());
 <S>\\U{hexDigit}{8} => (addHexEscape (String.substring (yytext, 2, 8),
-				      source, yypos)
-			; continue ());
-<S>\\\"		=> (addString "\""; continue ());
-<S>\\\\		=> (addString "\\"; continue ());
-<S>\\{nrws}   	=> (YYBEGIN F; continue ());
+                                      source, yypos)
+                        ; continue ());
+<S>\\\"                => (addString "\""; continue ());
+<S>\\\\                => (addString "\\"; continue ());
+<S>\\{nrws}           => (YYBEGIN F; continue ());
 <S>\\{eol}      => (Source.newline (source, yypos) ; YYBEGIN F ; continue ());   
-<S>\\		=> (stringError (source, yypos, "illegal string escape")
-		    ; continue ());
-<S>{eol}	=> (Source.newline (source, yypos)
-		    ; stringError (source, yypos, "unclosed string")
-		    ; continue ());
+<S>\\                => (stringError (source, yypos, "illegal string escape")
+                    ; continue ());
+<S>{eol}        => (Source.newline (source, yypos)
+                    ; stringError (source, yypos, "unclosed string")
+                    ; continue ());
 <S>" "|[\033-\126]  => (addString yytext; continue ());
 <S>. =>  (stringError (source, yypos + 1, "illegal character in string")
-	  ; continue ());
+          ; continue ());
 
 <F>{eol}        => (Source.newline (source, yypos) ; continue ());
-<F>{ws}		=> (continue ());
-<F>\\		=> (YYBEGIN S
-		    ; stringStart := Source.getPos (source, yypos)
-		    ; continue ());
-<F>.		=> (stringError (source, yypos, "unclosed string")
-		    ; continue ());
+<F>{ws}                => (continue ());
+<F>\\                => (YYBEGIN S
+                    ; stringStart := Source.getPos (source, yypos)
+                    ; continue ());
+<F>.                => (stringError (source, yypos, "unclosed string")
+                    ; continue ());
    

@@ -17,12 +17,12 @@ val toTycon =
    fn Ref => Tycon.reff
     | Array => Tycon.array
     | Vector => Tycon.vector
-	 
+         
 val toString =
    fn Ref => "Ref"
     | Array => "Array"
     | Vector => "Vector"
-	 
+         
 val equals: t * t -> bool = op =
    
 val layout = Layout.str o toString

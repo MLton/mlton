@@ -12,9 +12,9 @@ struct
 open S
 
 structure ElaborateModules = ElaborateModules (structure Ast = Ast
-					       structure CoreML = CoreML
-					       structure Decs = Decs
-					       structure Env = Env)
+                                               structure CoreML = CoreML
+                                               structure Decs = Decs
+                                               structure Env = Env)
 
 fun elaborateProgram (program, {env = E: Env.t}) =
    let
@@ -22,8 +22,8 @@ fun elaborateProgram (program, {env = E: Env.t}) =
       fun elabTopdec d = ElaborateModules.elaborateTopdec (d, {env = E})
    in
       List.fold (decs, Decs.empty, fn (ds, decs) =>
-		 List.fold (ds, decs, fn (d, decs) =>
-			    Decs.append (decs, elabTopdec d)))
+                 List.fold (ds, decs, fn (d, decs) =>
+                            Decs.append (decs, elabTopdec d)))
    end
 
 end

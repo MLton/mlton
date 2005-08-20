@@ -34,7 +34,7 @@ fun peek(T l, d) =
 fun lookup ed = case peek ed of
    SOME r => r
  | NONE => Error.error "Env.lookup"
-			 
+                         
 fun dom(T l) = L.map(l, #1)
 
 fun range(T l) = L.map(l, #2)
@@ -53,22 +53,22 @@ fun multiExtend(env, [], []) = env
 
 fun merge(e as T p, e' as T p', f) =
    let val leftAndBoth = L.map(p, fn (d, r) =>
-			       case peek(e', d) of
-				  NONE => (d, r)
-				| SOME r' => (d, f(r, r')))
+                               case peek(e', d) of
+                                  NONE => (d, r)
+                                | SOME r' => (d, f(r, r')))
       val right = L.keepAll(p',
-			    fn (d, _) =>
-			    case peek(e, d) of
-			       NONE => true
-			     | SOME _ => false)
+                            fn (d, _) =>
+                            case peek(e, d) of
+                               NONE => true
+                             | SOME _ => false)
    in T(leftAndBoth @ right)
    end
 
 fun output(T ps, outputR, out) =
    let val print = Out.outputc out
       fun outputDR((d, r), out) = (D.output(d, out) ;
-				  print "->" ;
-				  outputR(r, out))
+                                  print "->" ;
+                                  outputR(r, out))
    in (print "[" ;
        L.output(ps, ", ", outputDR, out) ;
        print "]")

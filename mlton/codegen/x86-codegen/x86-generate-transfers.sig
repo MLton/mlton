@@ -30,10 +30,10 @@ signature X86_GENERATE_TRANSFERS =
 
     val generateTransfers:
        {chunk: x86.Chunk.t,
-	optimize: int,
-	newProfileLabel: x86.ProfileLabel.t -> x86.ProfileLabel.t,
-	liveInfo: x86Liveness.LiveInfo.t,
-	jumpInfo: x86JumpInfo.t,
-	reserveEsp: bool} -> x86.Assembly.t list list
+        optimize: int,
+        newProfileLabel: x86.ProfileLabel.t -> x86.ProfileLabel.t,
+        liveInfo: x86Liveness.LiveInfo.t,
+        jumpInfo: x86JumpInfo.t,
+        reserveEsp: bool} -> x86.Assembly.t list list
     val generateTransfers_totals : unit -> unit
   end

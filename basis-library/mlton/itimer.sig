@@ -9,7 +9,7 @@
 signature MLTON_ITIMER =
    sig
       datatype t =
-	 Prof
+         Prof
        | Real
        | Virtual
 

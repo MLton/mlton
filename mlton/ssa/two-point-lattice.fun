@@ -59,7 +59,7 @@ fun from <= to =
       then ()
    else
       case (value from, value to) of
-	 (_, Top) => ()
+         (_, Top) => ()
        | (Top, _) => makeTop to
        | (Bottom hs, _) => hs := List.cons (fn () => makeTop to, !hs)
 
@@ -68,15 +68,15 @@ fun == (T s, T s') =
       then ()
    else
       let val e = Set.! s
-	 val e' = Set.! s'
-	 val _ = Set.union (s, s')
+         val e' = Set.! s'
+         val _ = Set.union (s, s')
       in
-	 case (e, e') of
-	    (Top, Top) => ()
-	  | (Bottom hs, Top) => (Set.:= (s, e'); runHandlers hs)
-	  | (Top, Bottom hs) => (Set.:= (s, e); runHandlers hs)
-	  | (Bottom hs, Bottom hs') =>
-	       Set.:= (s, Bottom (ref (List.append (!hs, !hs'))))
+         case (e, e') of
+            (Top, Top) => ()
+          | (Bottom hs, Top) => (Set.:= (s, e'); runHandlers hs)
+          | (Top, Bottom hs) => (Set.:= (s, e); runHandlers hs)
+          | (Bottom hs, Bottom hs') =>
+               Set.:= (s, Bottom (ref (List.append (!hs, !hs'))))
       end
 
 end

@@ -10,11 +10,11 @@ signature GENERIC_SCHEME_STRUCTS =
    sig
       structure Tyvar: TYVAR
       structure Type: sig
-			  type t
-			  val var: Tyvar.t -> t
-			  val substitute: t * (Tyvar.t * t) vector -> t
-			  val layout: t -> Layout.t
-		       end
+                          type t
+                          val var: Tyvar.t -> t
+                          val substitute: t * (Tyvar.t * t) vector -> t
+                          val layout: t -> Layout.t
+                       end
    end
 
 signature GENERIC_SCHEME = 
@@ -23,7 +23,7 @@ signature GENERIC_SCHEME =
       type ty
 
       datatype t = T of {tyvars: tyvar vector,
-			 ty: ty}
+                         ty: ty}
 
       val apply: t * ty vector -> ty
       val equals: t * t -> bool

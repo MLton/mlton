@@ -8,7 +8,7 @@
 signature DISJOINT_SET =
    sig
       type 'a t
-	 
+         
       (* Each set is associated with a single value, like a ref cell. *)
       val := : 'a t * 'a -> unit
       val ! : 'a t -> 'a

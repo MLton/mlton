@@ -16,6 +16,6 @@ signature RESTORE =
       include RESTORE_STRUCTS
 
       val restoreFunction: 
-	 {globals: Statement.t vector} -> Function.t -> Function.t
+         {globals: Statement.t vector} -> Function.t -> Function.t
       val restore: Program.t -> Program.t
    end

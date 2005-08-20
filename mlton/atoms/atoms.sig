@@ -51,11 +51,11 @@ signature ATOMS' =
       sharing Const = Prim.Const
       sharing IntSize = Tycon.IntSize
       sharing RealSize = CType.RealSize = Prim.RealSize = RealX.RealSize
-	 = Tycon.RealSize
+         = Tycon.RealSize
       sharing RealX = Const.RealX
       sharing SourceInfo = ProfileExp.SourceInfo
       sharing WordSize = CType.WordSize = Prim.WordSize = Tycon.WordSize
-	 = WordX.WordSize
+         = WordX.WordSize
       sharing WordX = Const.WordX = WordXVector.WordX
       sharing WordXVector = Const.WordXVector
    end
@@ -63,7 +63,7 @@ signature ATOMS' =
 signature ATOMS =
    sig
       structure Atoms: ATOMS'
-	 
+         
       include ATOMS'
 
       (* For each structure, like CFunction, I would like to write two sharing

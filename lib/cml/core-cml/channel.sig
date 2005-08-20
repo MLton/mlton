@@ -15,12 +15,12 @@ signature CHANNEL =
    sig
       type 'a chan
 
-      val channel : unit -> 'a chan	 
+      val channel : unit -> 'a chan         
       val sameChannel : ('a chan * 'a chan) -> bool
 
       val send : ('a chan * 'a) -> unit
       val recv : 'a chan -> 'a
-	 
+         
       val sendEvt  : ('a chan * 'a) -> unit Event.event
       val recvEvt  : 'a chan -> 'a Event.event
 

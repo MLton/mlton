@@ -6,11 +6,11 @@ signature MONO_ARRAY2 =
       type vector
 
       type region = {base: array,
-		     row: int,
-		     col: int,
-		     nrows: int option,
-		     ncols: int option}
-	 
+                     row: int,
+                     col: int,
+                     nrows: int option,
+                     ncols: int option}
+         
       datatype traversal = datatype Array2.traversal
 
       val array: int * int * elem -> array 

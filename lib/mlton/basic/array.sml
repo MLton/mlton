@@ -7,11 +7,11 @@
 
 structure Array =
    Array (open Pervasive.Array
-	  type 'a t = 'a array
-	  exception New = Size
-	  val unsafeSub = Unsafe.Array.sub
-	  val unsafeUpdate = Unsafe.Array.update
-	  val unfoldi = MLton.Array.unfoldi)
+          type 'a t = 'a array
+          exception New = Size
+          val unsafeSub = Unsafe.Array.sub
+          val unsafeUpdate = Unsafe.Array.update
+          val unfoldi = MLton.Array.unfoldi)
 
 functor MonoArray (Elt: T) =
    struct

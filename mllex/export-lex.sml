@@ -30,16 +30,16 @@ end = struct
     fun err msg = TextIO.output(TextIO.stdErr, String.concat msg)
 
     fun lexGen (name, args) = let
-	fun lex_gen () =
-	    case args of
-		[] => (err [name, ": missing filename\n"];
-		       OS.Process.exit OS.Process.failure)
-	      | files => List.app LexGen.lexGen files
+        fun lex_gen () =
+            case args of
+                [] => (err [name, ": missing filename\n"];
+                       OS.Process.exit OS.Process.failure)
+              | files => List.app LexGen.lexGen files
     in
-	(handleInterrupt lex_gen; OS.Process.success)
-	handle Interrupt => (err [name, ": Interrupt\n"]; OS.Process.failure)
-	     | any => (err [name, ": uncaught exception ",
-			    General.exnMessage any, "\n"];
-		       OS.Process.failure)
+        (handleInterrupt lex_gen; OS.Process.success)
+        handle Interrupt => (err [name, ": Interrupt\n"]; OS.Process.failure)
+             | any => (err [name, ": uncaught exception ",
+                            General.exnMessage any, "\n"];
+                       OS.Process.failure)
     end
 end

@@ -18,16 +18,16 @@ signature PARALLEL_MOVE =
        * Hence, has to be careful to use temps.
        *)
       val move:
-	 {
-	  (* Are two registers the same. *)
-	  equals: 'register * 'register -> bool,
-	  (* How to create a move statement. *)
-	  move: {src: 'register, dst: 'register} -> 'statement,
-	  (* The moves to occur. *)
-	  moves: {src: 'register, dst: 'register} list,
-	  (* Would writing the write invalidate the read? *)
-	  interfere: 'register * 'register -> bool,
-	  (* Return a new temporary register like input register. *)
-	  temp: 'register -> 'register
-	 } -> 'statement list
+         {
+          (* Are two registers the same. *)
+          equals: 'register * 'register -> bool,
+          (* How to create a move statement. *)
+          move: {src: 'register, dst: 'register} -> 'statement,
+          (* The moves to occur. *)
+          moves: {src: 'register, dst: 'register} list,
+          (* Would writing the write invalidate the read? *)
+          interfere: 'register * 'register -> bool,
+          (* Return a new temporary register like input register. *)
+          temp: 'register -> 'register
+         } -> 'statement list
    end

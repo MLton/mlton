@@ -17,7 +17,7 @@ signature PROFILE_EXP =
       include PROFILE_EXP_STRUCTS
 
       datatype t =
-	 Enter of SourceInfo.t
+         Enter of SourceInfo.t
        | Leave of SourceInfo.t
 
       val equals: t * t -> bool

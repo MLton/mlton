@@ -16,11 +16,11 @@ signature SWITCH_STRUCTS =
       sharing WordX = Type.WordX
 
       structure Use: sig
-			type t
+                        type t
 
-			val layout: t -> Layout.t
-			val ty: t -> Type.t
-		     end
+                        val layout: t -> Layout.t
+                        val ty: t -> Type.t
+                     end
    end
 
 signature SWITCH =
@@ -28,17 +28,17 @@ signature SWITCH =
       include SWITCH_STRUCTS
 
       datatype t =
-	 T of {(* Cases are in increasing order of word. *)
-	       cases: (WordX.t * Label.t) vector,
-	       default: Label.t option,
-	       size: WordSize.t,
-	       test: Use.t}
+         T of {(* Cases are in increasing order of word. *)
+               cases: (WordX.t * Label.t) vector,
+               default: Label.t option,
+               size: WordSize.t,
+               test: Use.t}
 
       val foldLabelUse: t * 'a * {label: Label.t * 'a -> 'a,
-				  use: Use.t * 'a -> 'a} -> 'a
+                                  use: Use.t * 'a -> 'a} -> 'a
       val foreachLabel: t * (Label.t -> unit) -> unit
       val isOk: t * {checkUse: Use.t -> unit,
-		     labelIsOk: Label.t -> bool} -> bool
+                     labelIsOk: Label.t -> bool} -> bool
       val layout: t -> Layout.t
    end
 

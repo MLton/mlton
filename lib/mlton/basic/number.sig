@@ -18,7 +18,7 @@ signature NUMBER =
       val log2 : t -> t
 
       val fromReal : real -> t
-	 
+         
       (* Rational Specific *)
       val numerator : t -> I.t
       val denominator : t -> I.t

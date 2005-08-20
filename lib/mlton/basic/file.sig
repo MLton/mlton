@@ -51,5 +51,5 @@ signature FILE =
       val withTemp: (t -> 'a) -> 'a
       val withTempOut: (Out.t -> unit) * (t -> 'a) -> 'a
       val withTempOut':
-	 {prefix: string, suffix: string} * (Out.t -> unit) * (t -> 'a) -> 'a
+         {prefix: string, suffix: string} * (Out.t -> unit) * (t -> 'a) -> 'a
    end

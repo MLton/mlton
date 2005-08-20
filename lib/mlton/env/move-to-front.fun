@@ -17,21 +17,21 @@ BasicEnvToEnv
 
  fun extend(T(ref drs), d, r) =
     T(ref((d, r) ::
-	  (* poor man's profiling *)
-	  let fun f() = List.remove(drs, fn (d', _) => Domain.equals(d, d'))
-	  in (*f() ;*) f()
-	  end))
+          (* poor man's profiling *)
+          let fun f() = List.remove(drs, fn (d', _) => Domain.equals(d, d'))
+          in (*f() ;*) f()
+          end))
 
  fun peek(T reff, d) =
     let
        fun loop(drs, accum) =
-	  case drs of
-	     (d', r) :: drs =>
-		if Domain.equals(d, d')
-		   then (reff := (d, r) :: List.appendRev(accum, drs)
-			 ; SOME r)
-		else loop(drs, (d', r) :: accum)
-	   | [] => NONE
+          case drs of
+             (d', r) :: drs =>
+                if Domain.equals(d, d')
+                   then (reff := (d, r) :: List.appendRev(accum, drs)
+                         ; SOME r)
+                else loop(drs, (d', r) :: accum)
+           | [] => NONE
        (* poor man's profiling *)
        fun f() = loop(!reff, [])
     in (*f() ;*) f()

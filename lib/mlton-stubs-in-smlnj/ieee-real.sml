@@ -10,7 +10,7 @@ structure IEEEReal =
       open IEEEReal
 
       datatype float_class =
-	 NAN
+         NAN
        | INF
        | ZERO
        | NORMAL

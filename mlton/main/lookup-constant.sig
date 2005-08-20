@@ -22,6 +22,6 @@ signature LOOKUP_CONSTANT =
 
       val build: (string * ConstType.t) list * Out.t -> unit
       val load:
-	 In.t * {name: string, value: string} list
-	 -> {default: string option, name: string} * ConstType.t -> Const.t
+         In.t * {name: string, value: string} list
+         -> {default: string option, name: string} * ConstType.t -> Const.t
    end

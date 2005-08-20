@@ -24,8 +24,8 @@ signature SOURCE_POS =
       val file: t -> File.t
       val line: t -> int
       val make: {column: int,
-		 file: File.t,
-		 line: int} -> t
+                 file: File.t,
+                 line: int} -> t
       val posToString: t -> string
       val toString: t -> string
    end

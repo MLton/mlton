@@ -20,14 +20,14 @@ signature C_CODEGEN =
       val declareFFI: Machine.Chunk.t * {print: string -> unit} -> unit
       val implementsPrim: 'a Machine.Prim.t -> bool
       val output: {program: Machine.Program.t,
-		   outputC: unit -> {file: File.t,
-				     print: string -> unit,
-				     done: unit -> unit}
-		   } -> unit
+                   outputC: unit -> {file: File.t,
+                                     print: string -> unit,
+                                     done: unit -> unit}
+                   } -> unit
       val outputDeclarations: {additionalMainArgs: string list,
-			       includes: string list,
-			       print: string -> unit,
-			       program: Machine.Program.t,
-			       rest: unit -> unit
-			       } -> unit
+                               includes: string list,
+                               print: string -> unit,
+                               program: Machine.Program.t,
+                               rest: unit -> unit
+                               } -> unit
    end

@@ -52,7 +52,7 @@ val getBool = intToBool o getInt32
 val getChar8 = Primitive.Char.fromInt8 o getInt8
 val getChar16 = Primitive.Char2.fromInt16 o getInt16
 val getChar32 = Primitive.Char4.fromInt32 o getInt32
-	       
+               
 fun boolToInt (b: bool): int = if b then 1 else 0
 
 val setBool = setInt32 o boolToInt

@@ -40,36 +40,36 @@ signature CONTROL =
       val errorThreshhold: int ref
       val numErrors: int ref
       val warning: Region.t * Layout.t * Layout.t -> unit
-	 
+         
       (*------------------------------------*)
       (*          Compiler Passes           *)
       (*------------------------------------*)
       datatype style = No | Assembly | C | Dot | ML
 
       datatype 'a display =
-	 NoDisplay
+         NoDisplay
        | Layout of 'a -> Layout.t
        | Layouts of 'a * (Layout.t -> unit) -> unit
 
       val diagnostic: (unit -> Layout.t) -> unit
       val diagnostics: ((Layout.t -> unit) -> unit) -> unit
       val maybeSaveToFile:
-	 {name: string, suffix: string} * style * 'a * 'a display -> unit
+         {name: string, suffix: string} * style * 'a * 'a display -> unit
       val saveToFile:
-	 {suffix: string} * style * 'a * 'a display -> unit
+         {suffix: string} * style * 'a * 'a display -> unit
       val outputHeader: style * (Layout.t -> unit) -> unit
       val outputHeader': style * Out.t -> unit
 
       val pass: {name: string,
-		 suffix: string,
-		 style: style,
-		 thunk: unit -> 'a,
-		 display: 'a display} -> 'a
-	 
+                 suffix: string,
+                 style: style,
+                 thunk: unit -> 'a,
+                 display: 'a display} -> 'a
+         
       val passTypeCheck: {name: string,
-			  suffix: string,
-			  style: style,
-			  thunk: unit -> 'a,
-			  display: 'a display,
-			  typeCheck: 'a -> unit} -> 'a
+                          suffix: string,
+                          style: style,
+                          thunk: unit -> 'a,
+                          display: 'a display,
+                          typeCheck: 'a -> unit} -> 'a
    end

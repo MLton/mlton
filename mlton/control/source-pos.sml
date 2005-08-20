@@ -10,8 +10,8 @@ structure SourcePos: SOURCE_POS =
 struct
 
 datatype t = T of {column: int,
-		   file: File.t,
-		   line: int}
+                   file: File.t,
+                   line: int}
 
 local
    fun f g (T r) = g r
@@ -20,12 +20,12 @@ in
 end
 
 fun compare (T {column = c, file = f, line = l},
-	     T {column = c', file = f', line = l'}) =
+             T {column = c', file = f', line = l'}) =
    case String.compare (f, f') of
       EQUAL =>
-	 (case Int.compare (l, l') of
-	     EQUAL => Int.compare (c, c')
-	   | r => r)
+         (case Int.compare (l, l') of
+             EQUAL => Int.compare (c, c')
+           | r => r)
     | r => r
 
 fun equals (T r, T r') = r = r'
@@ -41,23 +41,23 @@ fun getLib (T {file, ...}) =
       val libDir = concat [!ControlFlags.libDir, "/sml"]
    in 
       if String.hasPrefix (file, {prefix = libDir})
-	 then SOME (String.size libDir)
-	 else NONE
+         then SOME (String.size libDir)
+         else NONE
    end
 
 fun file (p as T {file, ...}) =
    case getLib p of
       NONE => file
     | SOME i =>
-	 String.substituteFirst
-	 (String.substituteFirst
-	  (String.dropPrefix (file, i), 
-	   {substring = "/", replacement = "<"}),
-	  {substring = "/", replacement = ">/"})
+         String.substituteFirst
+         (String.substituteFirst
+          (String.dropPrefix (file, i), 
+           {substring = "/", replacement = "<"}),
+          {substring = "/", replacement = ">/"})
 
 val bogus = T {column = ~1,
-	       file = "<bogus>",
-	       line = ~1}
+               file = "<bogus>",
+               line = ~1}
 
 fun toString (p as T {column, line, ...}) =
    concat [file p, " ", Int.toString line, ".", Int.toString column]

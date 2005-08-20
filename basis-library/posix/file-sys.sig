@@ -25,37 +25,37 @@ signature POSIX_FILE_SYS =
       val stderr: file_desc
 
       structure S: 
-	 sig
-	    eqtype mode
-	    include BIT_FLAGS where type flags = mode
+         sig
+            eqtype mode
+            include BIT_FLAGS where type flags = mode
 
-	    val irwxu: mode
-	    val irusr: mode
-	    val iwusr: mode
-	    val ixusr: mode
-	    val irwxg: mode
-	    val irgrp: mode
-	    val iwgrp: mode
-	    val ixgrp: mode
-	    val irwxo: mode
-	    val iroth: mode
-	    val iwoth: mode
-	    val ixoth: mode
-	    val isuid: mode
-	    val isgid: mode
-	 end
+            val irwxu: mode
+            val irusr: mode
+            val iwusr: mode
+            val ixusr: mode
+            val irwxg: mode
+            val irgrp: mode
+            val iwgrp: mode
+            val ixgrp: mode
+            val irwxo: mode
+            val iroth: mode
+            val iwoth: mode
+            val ixoth: mode
+            val isuid: mode
+            val isgid: mode
+         end
 
       structure O: 
-	 sig
-	   include BIT_FLAGS
+         sig
+           include BIT_FLAGS
 
            val append: flags
-	   val excl: flags
-	   val noctty: flags
-	   val nonblock: flags
-	   val sync: flags
-	   val trunc: flags
-	 end
+           val excl: flags
+           val noctty: flags
+           val nonblock: flags
+           val sync: flags
+           val trunc: flags
+         end
 
       datatype open_mode = O_RDONLY | O_WRONLY | O_RDWR
 
@@ -81,27 +81,27 @@ signature POSIX_FILE_SYS =
       val inoToWord: ino -> SysWord.word
 
       structure ST: 
-	 sig
-	    type stat
+         sig
+            type stat
 
-	    val isDir: stat -> bool
-	    val isChr: stat -> bool
-	    val isBlk: stat -> bool
-	    val isReg: stat -> bool
-	    val isFIFO: stat -> bool
-	    val isLink: stat -> bool
-	    val isSock: stat -> bool
-	    val mode: stat -> S.mode
-	    val ino: stat -> ino
-	    val dev: stat -> dev
-	    val nlink: stat -> int
-	    val uid: stat -> uid
-	    val gid: stat -> gid
-	    val size: stat -> Position.int
-	    val atime: stat -> Time.time
-	    val mtime: stat -> Time.time
-	    val ctime: stat -> Time.time
-	 end
+            val isDir: stat -> bool
+            val isChr: stat -> bool
+            val isBlk: stat -> bool
+            val isReg: stat -> bool
+            val isFIFO: stat -> bool
+            val isLink: stat -> bool
+            val isSock: stat -> bool
+            val mode: stat -> S.mode
+            val ino: stat -> ino
+            val dev: stat -> dev
+            val nlink: stat -> int
+            val uid: stat -> uid
+            val gid: stat -> gid
+            val size: stat -> Position.int
+            val atime: stat -> Time.time
+            val mtime: stat -> Time.time
+            val ctime: stat -> Time.time
+         end
 
       val stat: string -> ST.stat
       val lstat: string -> ST.stat

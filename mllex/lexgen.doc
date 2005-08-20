@@ -132,77 +132,77 @@ The syntax and semantics of regular expressions will be described in
 order of decreasing precedence (from the most tightly-binding operators
 to the most weakly-binding):
 
-	An individual character stands for itself, except for the
-	reserved characters  ? * + | ( ) ^ $ / ; . = < > [ { " \
+        An individual character stands for itself, except for the
+        reserved characters  ? * + | ( ) ^ $ / ; . = < > [ { " \
 
-	A backslash followed by one of the reserved characters stands
-	for that character.
+        A backslash followed by one of the reserved characters stands
+        for that character.
 
-	A set of characters enclosed in square brackets [ ] stands
-	for any one of those characters.  Inside the brackets, only
-	the symbols  \ - ^ are reserved.  An initial up-arrow ^ stands
-	for the complement of the characters listed, e.g. [^abc]
-	stands any character except a, b, or c.  The hyphen - denotes
-	a range of characters, e.g. [a-z] stands for any lower-case
-	alphabetic character, and [0-9a-fA-F] stands for any hexadecimal
-	digit.  To include ^ literally in a bracketed set, put it anywhere
-	but first; to include - literally in a set, put it first or last.
+        A set of characters enclosed in square brackets [ ] stands
+        for any one of those characters.  Inside the brackets, only
+        the symbols  \ - ^ are reserved.  An initial up-arrow ^ stands
+        for the complement of the characters listed, e.g. [^abc]
+        stands any character except a, b, or c.  The hyphen - denotes
+        a range of characters, e.g. [a-z] stands for any lower-case
+        alphabetic character, and [0-9a-fA-F] stands for any hexadecimal
+        digit.  To include ^ literally in a bracketed set, put it anywhere
+        but first; to include - literally in a set, put it first or last.
 
-	The dot . character stands for any character except newline,
-	i.e. the same as [^\n]	
+        The dot . character stands for any character except newline,
+        i.e. the same as [^\n]        
 
-	The following special escape sequences are available, inside
-	or outside of square-brackets:
-	        \b      - backspace
-	        \n      - newline
-	        \t      - tab
-		\h	- stands for all characters with codes >127,
-			          when 7-bit characters are used.
-	        \ddd    - where ddd is a 3 digit decimal escape.
+        The following special escape sequences are available, inside
+        or outside of square-brackets:
+                \b      - backspace
+                \n      - newline
+                \t      - tab
+                \h        - stands for all characters with codes >127,
+                                  when 7-bit characters are used.
+                \ddd    - where ddd is a 3 digit decimal escape.
 
-	A sequence of characters will stand for itself (reserved
+        A sequence of characters will stand for itself (reserved
         characters will be taken literally) if it is enclosed in
-	double quotes " ".
+        double quotes " ".
 
-	A named regular expression (defined in the "definitions"
-	section) may be referred to by enclosing its name in
-	braces { }.
+        A named regular expression (defined in the "definitions"
+        section) may be referred to by enclosing its name in
+        braces { }.
 
-	Any regular expression may be enclosed in parentheses ( )
-	for syntactic (but, as usual, not semantic) effect.
+        Any regular expression may be enclosed in parentheses ( )
+        for syntactic (but, as usual, not semantic) effect.
 
-	The postfix operator * stands for Kleene closure:
-	zero or more repetitions of the preceding expression.
+        The postfix operator * stands for Kleene closure:
+        zero or more repetitions of the preceding expression.
 
-	The postfix operator + stands for one or more repetitions
-	of the preceding expression.
+        The postfix operator + stands for one or more repetitions
+        of the preceding expression.
 
-	The postfix operator ? stands for zero or one occurrence of
-	the preceding expression.
+        The postfix operator ? stands for zero or one occurrence of
+        the preceding expression.
 
-	A postfix repetition range {n1,n2} where n1 and n2 are small
-	integers stands for any number of repetitions between n1 and n2
-	of the preceding expression.  The notation {n1} stands for
-	exactly n1 repetitions.
+        A postfix repetition range {n1,n2} where n1 and n2 are small
+        integers stands for any number of repetitions between n1 and n2
+        of the preceding expression.  The notation {n1} stands for
+        exactly n1 repetitions.
 
-	Concatenation of expressions denotes concatenation of strings.
-	The expression e1 e2 stands for any string that results from
-	the concatenation of one string that matches e1 with another
-	string that matches e2.
+        Concatenation of expressions denotes concatenation of strings.
+        The expression e1 e2 stands for any string that results from
+        the concatenation of one string that matches e1 with another
+        string that matches e2.
 
-	The infix operator | stands for alternation.  The expression
-	e1 | e2  stands for anything that either e1 or e2 stands for.
+        The infix operator | stands for alternation.  The expression
+        e1 | e2  stands for anything that either e1 or e2 stands for.
     
-	The infix operator / denotes lookahead.  Lookahead is not
+        The infix operator / denotes lookahead.  Lookahead is not
         implemented and cannot be used, because there is a bug
         in the algorithm for generating lexers with lookahead.  If
         it could be used, the expression e1 / e2 would match any string
         that e1 stands for, but only when that string is followed by a
         string that matches e2.
 
-	When the up-arrow ^ occurs at the beginning of an expression,
-	that expression will only match strings that occur at the
-	beginning of a line (right after a newline character).
+        When the up-arrow ^ occurs at the beginning of an expression,
+        that expression will only match strings that occur at the
+        beginning of a line (right after a newline character).
 
         The dollar sign $ is not implemented, since it is an abbreviation
         for lookahead involving the newline character (that is, it
@@ -210,19 +210,19 @@ to the most weakly-binding):
         sign $ occurred at the end of an expression, that expression
         would only match strings that occur at the end of a line
         (right before a newline character).
-	
+        
 Here are some examples of regular expressions, and descriptions of the
 set of strings they denote:
 
         0 | 1 | 2 | 3           A single digit between 0 and 3
-	[0123]			A single digit between 0 and 3
+        [0123]                        A single digit between 0 and 3
         0123                    The string "0123"
         0*                      All strings of 0 or more 0's
         00*                     All strings of 1  or more 0's
-	0+                      All strings of 1  or more 0's
-	[0-9]{3}		Any three-digit decimal number.
-	\\[ntb]			The strings "\n" "\t" "\b"
-	(00)*			Any string with an even number of 0's.
+        0+                      All strings of 1  or more 0's
+        [0-9]{3}                Any three-digit decimal number.
+        \\[ntb]                        The strings "\n" "\t" "\b"
+        (00)*                        Any string with an even number of 0's.
 
 IV. ML-Lex syntax summary
 
@@ -260,11 +260,11 @@ The following % commands are also available:
                           as input.
         %structure {identifier} - name the structure in the output program
                           {identifier} instead of Mlex
-	%header 	- use code following it to create header for lexer
-			  structure
+        %header         - use code following it to create header for lexer
+                          structure
         %arg            - extra (curried) formal parameter argument to be
-			  passed to the lex functions, and to be passed
-			  to the eof function in place of ()
+                          passed to the lex functions, and to be passed
+                          to the eof function in place of ()
         These functions are discussed below, under values available to
         actions.
 
@@ -318,16 +318,16 @@ command is in the ML-Lex definitions sections:
         value           %command        description
         -----           --------        -----------
         REJECT          %reject         REJECT() causes the current
-					rule to be "rejected."
-					The lexer behaves as if the
-					current rule had not matched;
-					another rule that matches this
-					string, or that matches the longest
-					possible prefix of this string,
-					is used instead.
+                                        rule to be "rejected."
+                                        The lexer behaves as if the
+                                        current rule had not matched;
+                                        another rule that matches this
+                                        string, or that matches the longest
+                                        possible prefix of this string,
+                                        is used instead.
                                 
-	yypos				Current character position from
-					beginning of file.
+        yypos                                Current character position from
+                                        beginning of file.
 
         yylineno        %count          Current line number
         
@@ -374,11 +374,11 @@ return any non-zero number of characters.  For example,
     let val input_line = fn f =>
           let fun loop result =
              let val c = input (f,1)
-	         val result = c :: result
+                 val result = c :: result
              in if String.size c = 0 orelse c = "\n" then
-	  	   String.implode (rev result)
-	         else loop result
-	     end
+                     String.implode (rev result)
+                 else loop result
+             end
           in loop nil
           end
      in Mlex.makeLexer (fn n => input_line std_in)
@@ -476,11 +476,11 @@ structure Calc =
       val input_line = fn f =>
           let fun loop result =
              let val c = input (f,1)
-	         val result = c :: result
+                 val result = c :: result
              in if String.size c = 0 orelse c = "\n" then
-	  	   String.implode (rev result)
-	         else loop result
-	     end
+                     String.implode (rev result)
+                 else loop result
+             end
           in loop nil
           end
       val lexer = makeLexer (fn n => input_line strm)

@@ -8,7 +8,7 @@
 signature CACHE =
    sig
       structure Domain: T
-	 
+         
       type 'a t
       val new: unit -> 'a t
       val peek: 'a t * Domain.t -> 'a option

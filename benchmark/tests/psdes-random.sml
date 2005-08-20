@@ -6,10 +6,10 @@ fun once () =
    let
    fun natFold (start, stop, ac, f) =
       let
-	 fun loop (i, ac) =
-	    if i = stop
-	       then ac
-	    else loop (i + 1, f (i, ac))
+         fun loop (i, ac) =
+            if i = stop
+               then ac
+            else loop (i + 1, f (i, ac))
       in loop (start, ac)
       end
    val niter: int = 4
@@ -26,12 +26,12 @@ fun once () =
       natFold
       (0, niter, (lword, irword), fn (i, (lword, irword)) =>
        let
-	  val ia = xorb (irword, c1 i)
-	  val itmpl = andb (ia, 0wxffff)
-	  val itmph = >> (ia, half)
-	  val ib = itmpl * itmpl + notb (itmph * itmph)
+          val ia = xorb (irword, c1 i)
+          val itmpl = andb (ia, 0wxffff)
+          val itmph = >> (ia, half)
+          val ib = itmpl * itmpl + notb (itmph * itmph)
        in (irword,
-	   xorb (lword, itmpl * itmph + xorb (c2 i, reverse ib)))
+           xorb (lword, itmpl * itmph + xorb (c2 i, reverse ib)))
        end)
    val zero: word = 0wx13 
    val lword: word ref = ref 0w13
@@ -39,23 +39,23 @@ fun once () =
    val needTo = ref true
    fun word () =
       if !needTo
-	 then
-	    let
-	       val (l, i) = psdes (!lword, !irword)
-	       val _ = lword := l
-	       val _ = irword := i
-	       val _ = needTo := false
-	    in
-	       l
-	    end
+         then
+            let
+               val (l, i) = psdes (!lword, !irword)
+               val _ = lword := l
+               val _ = irword := i
+               val _ = needTo := false
+            in
+               l
+            end
       else (needTo := true
-	    ; !irword)
+            ; !irword)
    fun loop (i, w) =
       if i = 0
-	 then
-	    if w = 0wx132B1B67
-	       then ()
-	    else raise Fail "bug"
+         then
+            if w = 0wx132B1B67
+               then ()
+            else raise Fail "bug"
       else loop (Int.- (i, 1), w + word())
    in
       loop (150000000, 0w0)
@@ -64,10 +64,10 @@ fun once () =
 structure Main =
    struct
       fun doit n =
-	 if n = 0
-	    then ()
-	 else (once ()
-	       ; doit (n - 1))
+         if n = 0
+            then ()
+         else (once ()
+               ; doit (n - 1))
    end
 
 val _ = Main.doit 2

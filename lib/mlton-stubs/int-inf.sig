@@ -16,7 +16,7 @@ signature MLTON_INT_INF =
       val gcd: t * t -> t
       val isSmall: t -> bool
       datatype rep =
-	 Big of word vector
+         Big of word vector
        | Small of int
       val rep: t -> rep
    end

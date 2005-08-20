@@ -14,7 +14,7 @@ signature INT_SIZE_STRUCTS =
 signature INT_SIZE =
    sig
       include INT_SIZE_STRUCTS
-	 
+         
       type t
 
       val all: t list

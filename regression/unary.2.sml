@@ -13,4 +13,4 @@ val rec fact =
     | n as S m => times (n, fact m)
 
 val x = fact (S (S (S Z)))
-	      
+              

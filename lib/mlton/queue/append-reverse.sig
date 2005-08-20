@@ -10,7 +10,7 @@ signature APPEND_REVERSE =
       structure L: LIST
       structure I: INTEGER
       sharing L.I = I
-	 
+         
       type 'a t
       val empty: unit -> 'a t
       val isEmpty: 'a t -> bool

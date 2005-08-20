@@ -15,6 +15,6 @@ signature DISJOINT_MAX =
 
       val link: t * t -> unit  (* must link roots *)
       (* Make second tree a child of first tree *)
-	 
+         
       val update: t * O.t -> unit (* must update a root *)
    end

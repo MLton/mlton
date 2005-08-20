@@ -23,10 +23,10 @@ signature X86_JUMP_INFO =
     val newJumpInfo : unit -> t
 
     val completeJumpInfo : {chunk: x86.Chunk.t,
-			    jumpInfo: t} -> unit
+                            jumpInfo: t} -> unit
     val completeJumpInfo_msg : unit -> unit
     val verifyJumpInfo : {chunk: x86.Chunk.t,
-			  jumpInfo: t} -> bool
+                          jumpInfo: t} -> bool
     val verifyJumpInfo_msg : unit -> unit
 
     val incNear : t * x86.Label.t -> unit

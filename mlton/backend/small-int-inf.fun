@@ -26,15 +26,15 @@ fun toMLstring w = Int.toString(Word.toIntX(Word.~>>(w, 0w1)))
 fun fromString (str: string): t option =
    if IntInf.<= (minSmall, v) andalso IntInf.<= (v, maxSmall)
       then let val w = Word.fromInt (IntInf.toInt v)
-	       val res = Word.orb (0w1, Word.<< (w, 0w1))
-	   in SOME res
-	   end
+               val res = Word.orb (0w1, Word.<< (w, 0w1))
+           in SOME res
+           end
    else NONE
 
 (* val fromString =
  *    Trace.trace("SmallIntInf.fromString",
- * 	       String.layout,
- * 	       Option.layout layout) fromString
+ *                String.layout,
+ *                Option.layout layout) fromString
  *)
 
 (*

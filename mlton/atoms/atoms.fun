@@ -18,38 +18,38 @@ structure Atoms =
       structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)
       structure Var = Var ()
       structure Tycon = Tycon (structure CharSize = CharSize
-			       structure IntSize = IntSize
-			       structure RealSize = RealSize
-			       structure WordSize = WordSize)
+                               structure IntSize = IntSize
+                               structure RealSize = RealSize
+                               structure WordSize = WordSize)
       structure Con = Con ()
       structure CType = CType (structure RealSize = RealSize
-			       structure WordSize = WordSize)
+                               structure WordSize = WordSize)
       structure RealX = RealX (structure RealSize = RealSize)
       structure WordX = WordX (structure WordSize = WordSize)
       structure WordXVector = WordXVector (structure WordSize = WordSize
-					   structure WordX = WordX)
+                                           structure WordX = WordX)
       structure Func =
-	 struct
-	    open Var
-	    fun newNoname () = newString "F"
-	 end
+         struct
+            open Var
+            fun newNoname () = newString "F"
+         end
       structure Label =
-	 struct
-	    open Func
-	    fun newNoname () = newString "L"
-	 end
+         struct
+            open Func
+            fun newNoname () = newString "L"
+         end
       structure Const = Const (structure RealX = RealX
-			       structure WordX = WordX
-			       structure WordXVector = WordXVector)
+                               structure WordX = WordX
+                               structure WordXVector = WordXVector)
       structure CFunction = CFunction (structure CType = CType)
       structure Prim = Prim (structure CFunction = CFunction
-			     structure CType = CType
-			     structure Con = Con
-			     structure Const = Const
-			     structure RealSize = RealSize
-			     structure WordSize = WordSize)
+                             structure CType = CType
+                             structure Con = Con
+                             structure Const = Const
+                             structure RealSize = RealSize
+                             structure WordSize = WordSize)
       structure Ffi = Ffi (structure CFunction = CFunction
-			   structure CType = CType)
+                           structure CType = CType)
       structure Tyvars = UnorderedSet (Tyvar)
       structure Vars = UnorderedSet (Var)
       structure Cons = UnorderedSet (Con)

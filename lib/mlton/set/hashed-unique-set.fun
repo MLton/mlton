@@ -9,8 +9,8 @@ type int = Int.t
 type word = Word.t
 
 functor HashedUniqueSet(structure Set : SET
-			structure Element : sig include T val hash : t -> word end
-			sharing type Set.Element.t = Element.t) : SET =
+                        structure Element : sig include T val hash : t -> word end
+                        sharing type Set.Element.t = Element.t) : SET =
 struct
 
 structure Set = Set
@@ -21,19 +21,19 @@ fun index (w: word, mask: word): int
   = Word.toInt (Word.andb (w, mask))
 
 datatype t = T of {buckets: Set.t vector,
-		   mask: word} ref
+                   mask: word} ref
 
 fun stats' {buckets, mask}
   = Vector.fold
     (buckets,
      (0, Int.maxInt, Int.minInt),
      fn (s', (size, min, max)) => let 
-				    val n = Set.size s'
-				  in
-				    (size + n,
-				     Int.min(min, n),
-				     Int.max(max, n))
-				  end)
+                                    val n = Set.size s'
+                                  in
+                                    (size + n,
+                                     Int.min(min, n),
+                                     Int.max(max, n))
+                                  end)
 fun stats s 
   = let
       val T (ref {buckets, mask}) = s
@@ -50,26 +50,26 @@ fun grow {buckets, mask}
       val n = Vector.length buckets
 
       val buckets
-	= Vector.unfoldi
-	  (2 * n,
-	   ([], false),
-	   fn (i, (l, b))
-	    => if b
-		 then case l
-			of h::t => (h, (t, b))
-			 | _ => Error.bug "HashedUniqueSet.grow"
-		 else if i = n
-			then case List.rev l
-			       of h::t => (h, (t, true))
-				| _ => Error.bug "HashedUniqueSet.grow"
-			else let
-			       val {yes, no}
-				 = Set.partition
-				   (Vector.sub(buckets, i),
-				    fn x => Word.andb(high, hash x) = 0wx0)
-			     in
-			       (yes, (no::l, b))
-			     end)
+        = Vector.unfoldi
+          (2 * n,
+           ([], false),
+           fn (i, (l, b))
+            => if b
+                 then case l
+                        of h::t => (h, (t, b))
+                         | _ => Error.bug "HashedUniqueSet.grow"
+                 else if i = n
+                        then case List.rev l
+                               of h::t => (h, (t, true))
+                                | _ => Error.bug "HashedUniqueSet.grow"
+                        else let
+                               val {yes, no}
+                                 = Set.partition
+                                   (Vector.sub(buckets, i),
+                                    fn x => Word.andb(high, hash x) = 0wx0)
+                             in
+                               (yes, (no::l, b))
+                             end)
     in
       {buckets = buckets, mask = mask}
     end
@@ -81,15 +81,15 @@ fun shrink {buckets, mask}
       val n = (Vector.length buckets) div 2
 
       val buckets
-	= Vector.unfoldi
-	  (n,
-	   (),
-	   fn (i, _) => let
-			  val s1 = Vector.sub(buckets, i)
-			  val s2 = Vector.sub(buckets, i + n)
-			in
-			  (Set.+(s1, s2), ())
-			end)
+        = Vector.unfoldi
+          (n,
+           (),
+           fn (i, _) => let
+                          val s1 = Vector.sub(buckets, i)
+                          val s2 = Vector.sub(buckets, i + n)
+                        in
+                          (Set.+(s1, s2), ())
+                        end)
     in
       {buckets = buckets, mask = mask}
     end
@@ -100,21 +100,21 @@ fun T' {buckets, mask}
       val n = Vector.length buckets
     in
       if max > n
-	then T (ref (grow {buckets = buckets, mask = mask}))
+        then T (ref (grow {buckets = buckets, mask = mask}))
       else if max < n div 2 andalso n > 2
-	then T (ref (shrink {buckets = buckets, mask = mask}))
+        then T (ref (shrink {buckets = buckets, mask = mask}))
       else T (ref {buckets = buckets, mask = mask})
     end
       
 fun coerce (s1 as T (s1' as ref (s1'' as {buckets = buckets1, mask = mask1})),
-	    s2 as T (s2' as ref (s2'' as {buckets = buckets2, mask = mask2})))
+            s2 as T (s2' as ref (s2'' as {buckets = buckets2, mask = mask2})))
   = if mask1 = mask2
       then ()
       else if mask1 < mask2
-	     then (s1' := grow s1'';
-		   coerce (s1, s2))
-	     else (s2' := grow s2'';
-		   coerce (s1, s2))
+             then (s1' := grow s1'';
+                   coerce (s1, s2))
+             else (s2' := grow s2'';
+                   coerce (s1, s2))
 
 
 val empty 
@@ -123,18 +123,18 @@ val empty
       val buckets = Vector.new2 (Set.empty, Set.empty)
     in 
       T (ref {buckets = buckets,
-	      mask = mask})
+              mask = mask})
     end
 fun singleton x
   = let
       val mask = 0wx1
       val buckets
-	= if Word.andb(mask, hash x) = 0wx0
-	    then Vector.new2 (Set.singleton x, Set.empty)
-	    else Vector.new2 (Set.empty, Set.singleton x)
+        = if Word.andb(mask, hash x) = 0wx0
+            then Vector.new2 (Set.singleton x, Set.empty)
+            else Vector.new2 (Set.empty, Set.singleton x)
     in
       T (ref {buckets = buckets,
-	      mask = mask})
+              mask = mask})
     end
 
 
@@ -164,14 +164,14 @@ fun build1 sb s
       val T (ref {buckets, mask}) = s
 
       val buckets
-	= Vector.unfoldi
-	  (Vector.length buckets,
-	   (),
-	   fn (i, _) => let
-			  val s' = Vector.sub(buckets, i)
-			in
-			  (sb s', ())
-			end)
+        = Vector.unfoldi
+          (Vector.length buckets,
+           (),
+           fn (i, _) => let
+                          val s' = Vector.sub(buckets, i)
+                        in
+                          (sb s', ())
+                        end)
     in
       T' {buckets = buckets, mask = mask}
     end
@@ -182,15 +182,15 @@ fun build2 sb (s1, s2)
       val T (ref {buckets = buckets2, mask}) = s2
 
       val buckets
-	= Vector.unfoldi
-	  (Vector.length buckets1,
-	   (),
-	   fn (i, _) => let
-			  val s1' = Vector.sub(buckets1, i)
-			  val s2' = Vector.sub(buckets2, i)
-			in
-			  (sb(s1', s2'), ())
-			end)
+        = Vector.unfoldi
+          (Vector.length buckets1,
+           (),
+           fn (i, _) => let
+                          val s1' = Vector.sub(buckets1, i)
+                          val s2' = Vector.sub(buckets2, i)
+                        in
+                          (sb(s1', s2'), ())
+                        end)
     in
       T' {buckets = buckets, mask = mask}
     end
@@ -215,75 +215,75 @@ fun add (s, x)
   = if contains(s, x)
       then s
       else let
-	     val T (ref {buckets, mask}) = s
-	     val ix = index(hash x, mask)
-	     val buckets
-	       = Vector.unfoldi
-	         (Vector.length buckets,
-		  (),
-		  fn (i, _) 
-		   => let
-			val s' = Vector.sub(buckets, i)
-		      in
-			if i = ix
-			  then (Set.add(s', x), ())
-			  else (s', ())
-		      end)
-	   in 
-	     T' {buckets = buckets,
-		 mask = mask}
-	   end
+             val T (ref {buckets, mask}) = s
+             val ix = index(hash x, mask)
+             val buckets
+               = Vector.unfoldi
+                 (Vector.length buckets,
+                  (),
+                  fn (i, _) 
+                   => let
+                        val s' = Vector.sub(buckets, i)
+                      in
+                        if i = ix
+                          then (Set.add(s', x), ())
+                          else (s', ())
+                      end)
+           in 
+             T' {buckets = buckets,
+                 mask = mask}
+           end
 fun remove (s, x)
   = if not (contains(s, x))
       then s
       else let
-	     val T (ref {buckets, mask}) = s
-	     val ix = index(hash x, mask)
-	     val buckets
-	       = Vector.unfoldi
-	         (Vector.length buckets,
-		  (),
-		  fn (i, _) 
-		   => let
-			val s' = Vector.sub(buckets, i)
-		      in
-			if i = ix
-			  then (Set.remove(s', x), ())
-			  else (s', ())
-		      end)
-	   in 
-	     T' {buckets = buckets,
-		 mask = mask}
-	   end
+             val T (ref {buckets, mask}) = s
+             val ix = index(hash x, mask)
+             val buckets
+               = Vector.unfoldi
+                 (Vector.length buckets,
+                  (),
+                  fn (i, _) 
+                   => let
+                        val s' = Vector.sub(buckets, i)
+                      in
+                        if i = ix
+                          then (Set.remove(s', x), ())
+                          else (s', ())
+                      end)
+           in 
+             T' {buckets = buckets,
+                 mask = mask}
+           end
 fun partition (s, p)
   = let
       val T (ref {buckets, mask}) = s 
       val n = Vector.length buckets
       val {yes, no}
-	= Vector.fold
-	  (buckets,
-	   {yes = [], no = []},
-	   fn (s', {yes, no})
-	    => let
-		 val {yes = yes', no = no'} = Set.partition (s', p)
-	       in
-		 {yes = yes'::yes,
-		  no = no'::no}
-	       end)
+        = Vector.fold
+          (buckets,
+           {yes = [], no = []},
+           fn (s', {yes, no})
+            => let
+                 val {yes = yes', no = no'} = Set.partition (s', p)
+               in
+                 {yes = yes'::yes,
+                  no = no'::no}
+               end)
       val yes 
-	= Vector.unfoldi
-	  (n,
-	   List.rev yes,
-	   fn (_, l) => case l
-			  of h::t => (h, t)
-			   | _ => Error.bug "HashedUniqueSet.partition.yes")
+        = Vector.unfoldi
+          (n,
+           List.rev yes,
+           fn (_, l) => case l
+                          of h::t => (h, t)
+                           | _ => Error.bug "HashedUniqueSet.partition.yes")
       val no
-	= Vector.unfoldi
-	  (n,
-	   List.rev no,
-	   fn (_, l) => case l
-			  of h::t => (h, t)
-			   | _ => Error.bug "HashedUniqueSet.partition.no")
+        = Vector.unfoldi
+          (n,
+           List.rev no,
+           fn (_, l) => case l
+                          of h::t => (h, t)
+                           | _ => Error.bug "HashedUniqueSet.partition.no")
     in
       {yes = T' {buckets = yes, mask = mask},
        no = T' {buckets = no, mask = mask}}
@@ -305,8 +305,8 @@ fun toList s = fold(s, [], op ::)
 fun map (s, f) = fold(s, empty, fn (x, s) => add(s, f x))
 fun replace (s, f)
   = fold(s, empty, fn (x, s) => case f x
-				  of NONE => s
-				   | SOME x' => add(s, x'))
+                                  of NONE => s
+                                   | SOME x' => add(s, x'))
 fun subsetSize (s, p) 
   = fold(s, 0: int, fn (x, n) => if p x then n + 1 else n)
 fun size s = subsetSize(s, fn _ => true)

@@ -27,31 +27,31 @@ structure Main : KB =
     val name = "Knuth-Bendix"
 
     fun length l = let
-	  fun j(k, nil) = k
-	    | j(k, a::x) = j(k+1,x)
-	  in
-	    j(0,l)
-	  end
+          fun j(k, nil) = k
+            | j(k, a::x) = j(k+1,x)
+          in
+            j(0,l)
+          end
     fun op @ (nil, l) = l
       | op @ (a::r, l) = a :: (r@l)
     fun rev l = let
-	  fun f (nil, h) = h
-	    | f (a::r, h) = f(r, a::h)
-	  in
-	    f(l,nil)
-	  end
+          fun f (nil, h) = h
+            | f (a::r, h) = f(r, a::h)
+          in
+            f(l,nil)
+          end
     fun app f = let
-	  fun app_rec [] = ()
+          fun app_rec [] = ()
             | app_rec (a::L) = (f a; app_rec L)
         in
-	  app_rec
+          app_rec
         end
     fun map f = let
-	  fun map_rec [] = []
+          fun map_rec [] = []
             | map_rec (a::L) = f a :: map_rec L
           in
-	    map_rec
-  	  end
+            map_rec
+            end
 
 (******* Quelques definitions du prelude CAML **************)
 
@@ -191,7 +191,7 @@ fun matching term1 term2 =
           else
             (v,M) :: subst
         | match_rec subst (Term(op1,sons1), Term(op2,sons2)) =
-	  if op1 = op2 then it_list2 match_rec subst sons1 sons2
+          if op1 = op2 then it_list2 match_rec subst sons1 sons2
                        else failwith "matching"
         | match_rec _ _ = failwith "matching"
   in match_rec [] (term1,term2)
@@ -217,7 +217,7 @@ fun unify ((term1 as (Var n1)), term2) =
       else [(n2,term1)]
   | unify (Term(op1,sons1), Term(op2,sons2)) =
       if op1 = op2 then 
-	it_list2 (fn s => fn (t1,t2) => compsubst (unify(substitute s t1,
+        it_list2 (fn s => fn (t1,t2) => compsubst (unify(substitute s t1,
                                                          substitute s t2)) s)
                  [] sons1 sons2
       else failwith "unify"
@@ -239,7 +239,7 @@ fun pretty_term (Var n) =
       else
        (print_string oper;
         case sons of
-	     []   => ()
+             []   => ()
           | t::lt =>(print_string "(";
                      pretty_term t;
                      app (fn t => (print_string ","; pretty_term t)) lt;
@@ -264,8 +264,8 @@ fun mk_rule M N =
 
 (* checks that rules are numbered in sequence and returns their number *)
 fun check_rules l = it_list (fn n => fn (k,_) =>
-	  if k=n+1 then k else failwith "Rule numbers not in sequence")
-	0 l
+          if k=n+1 then k else failwith "Rule numbers not in sequence")
+        0 l
 
 fun pretty_rule (k,(n,(M,N))) =
  (print_num k; print_string " : ";
@@ -589,11 +589,11 @@ fun Group_precedence op1 op2 =
     val doit =
        fn size =>
        let
-	  fun loop n =
-	     if n = 0
-		then ()
-	     else (doit();
-		   loop(n-1))
+          fun loop n =
+             if n = 0
+                then ()
+             else (doit();
+                   loop(n-1))
        in loop size
        end
     

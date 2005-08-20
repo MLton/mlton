@@ -3,7 +3,7 @@ signature NET_HOST_DB =
       eqtype addr_family
       type entry
       eqtype in_addr
-	 
+         
       val addr: entry -> in_addr
       val addrType: entry -> addr_family
       val addrs: entry -> in_addr list

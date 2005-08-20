@@ -18,5 +18,5 @@ val _ = print (concat [Int.toString (nGet ()), "\n"])
 
 val _ =
    print (if c = #"c" andalso !r = 45
-	     then "success\n"
-	  else "fail\n")
+             then "success\n"
+          else "fail\n")

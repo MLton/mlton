@@ -1,15 +1,15 @@
 val e = _export "f": (int * real * char -> char) -> unit;
 val _ = e (fn (i, r, _) =>
-	   (print (concat ["i = ", Int.toString i,
-			   "  r = ", Real.toString r, "\n"])
-	    ; #"g"))
+           (print (concat ["i = ", Int.toString i,
+                           "  r = ", Real.toString r, "\n"])
+            ; #"g"))
 val g = _import "g": unit -> unit;
 val _ = g ()
 val _ = g ()
    
 val e = _export "f2": (Word8.word -> word array) -> unit;
 val _ = e (fn w =>
-	   Array.tabulate (10, fn _ => Word.fromLargeWord (Word8.toLargeWord w)))
+           Array.tabulate (10, fn _ => Word.fromLargeWord (Word8.toLargeWord w)))
 val g2 = _import "g2": unit -> word array;
 val a = g2 ()
 val _ = print (concat ["0wx", Word.toString (Array.sub (a, 0)), "\n"])

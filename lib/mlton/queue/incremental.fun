@@ -30,12 +30,12 @@ fun tail l =
 fun queue(l, l', r) =
    if AR.length l >= L.length r then T(l, l', r)
    else let val l = AR.appendReverse(l, r)
-	in T(l, l, L.empty())
-	end
+        in T(l, l, L.empty())
+        end
 
 fun empty() = let val l = AR.empty()
-	      in T(l, l, L.empty())
-	      end
+              in T(l, l, L.empty())
+              end
    
 fun isEmpty(T(l, _, _)) = AR.isEmpty l
 

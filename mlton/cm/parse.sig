@@ -9,7 +9,7 @@
 signature PARSE =
    sig
       datatype result =
-	 Alias of File.t
+         Alias of File.t
        | Bad of string (* error message *)
        | Members of File.t list
 

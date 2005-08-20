@@ -9,10 +9,10 @@
 signature XML_TYPE =
    sig
       include HASH_TYPE
-	 
+         
       datatype dest =
-	 Var of Tyvar.t
+         Var of Tyvar.t
        | Con of Tycon.t * t vector
-	 
+         
       val dest: t -> dest
    end

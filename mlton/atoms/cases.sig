@@ -22,7 +22,7 @@ signature CASES =
       include CASES_STRUCTS
       
       datatype 'a t =
-	 Char of (char * 'a) vector
+         Char of (char * 'a) vector
        | Con of (con * 'a) vector
        | Int of (IntInf.t * 'a) vector
        | Word of (word * 'a) vector

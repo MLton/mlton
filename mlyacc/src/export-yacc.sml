@@ -31,16 +31,16 @@ end = struct
     val exit = OS.Process.exit
 
     fun parseGen (_, argv) = let
-	fun parse_gen () =
-	    case argv of
-		[file] => (ParseGen.parseGen file; exit OS.Process.success)
-	      | _ => (err("Usage: ml-yacc filename\n");
-		      exit OS.Process.failure)
+        fun parse_gen () =
+            case argv of
+                [file] => (ParseGen.parseGen file; exit OS.Process.success)
+              | _ => (err("Usage: ml-yacc filename\n");
+                      exit OS.Process.failure)
     in
-	(handleInterrupt parse_gen; OS.Process.success)
-	handle Interrupt => OS.Process.failure
-	     | ex => (err (String.concat ["? ml-yacc: uncaught exception ",
-					  General.exnMessage ex, "\n"]);
-		      OS.Process.failure)
+        (handleInterrupt parse_gen; OS.Process.success)
+        handle Interrupt => OS.Process.failure
+             | ex => (err (String.concat ["? ml-yacc: uncaught exception ",
+                                          General.exnMessage ex, "\n"]);
+                      OS.Process.failure)
     end
 end

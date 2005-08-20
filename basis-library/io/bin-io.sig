@@ -6,7 +6,7 @@ signature BIN_IO =
       type instream
       type outstream
       type vector = StreamIO.vector
-	 
+         
       val canInput: instream * int -> int option 
       val closeIn: instream -> unit 
       val closeOut: outstream -> unit 

@@ -25,10 +25,10 @@ signature X86_SIMPLIFY =
     include X86_SIMPLIFY_STRUCTS
 
     val simplify : {chunk : x86.Chunk.t,
-		    optimize : int,
-		    delProfileLabel : x86.ProfileLabel.t -> unit,
-		    liveInfo : x86Liveness.LiveInfo.t,
-		    jumpInfo : x86JumpInfo.t} -> x86.Chunk.t
+                    optimize : int,
+                    delProfileLabel : x86.ProfileLabel.t -> unit,
+                    liveInfo : x86Liveness.LiveInfo.t,
+                    jumpInfo : x86JumpInfo.t} -> x86.Chunk.t
 
     val simplify_totals : unit -> unit
   end

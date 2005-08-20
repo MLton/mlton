@@ -35,9 +35,9 @@ fun layout f l = Layout.list (map (l, f))
 
 fun revKeepAllMap (l, f) =
    fold (l, [], fn (x, ac) =>
-	 case f x of
-	    NONE => ac
-	  | SOME y => y :: ac)
+         case f x of
+            NONE => ac
+          | SOME y => y :: ac)
 
 fun keepAllMap z = rev (revKeepAllMap z)
 

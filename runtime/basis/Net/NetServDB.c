@@ -6,41 +6,41 @@
 static struct servent *servent;
 
 Cstring NetServDB_Entry_name() {
-	return (Cstring)servent->s_name;
+        return (Cstring)servent->s_name;
 }
 
 Int NetServDB_Entry_numAliases() {
-	int num = 0;
-	while (servent->s_aliases[num] != NULL) num++;
-	return num;
+        int num = 0;
+        while (servent->s_aliases[num] != NULL) num++;
+        return num;
 }
 
 Cstring NetServDB_Entry_aliasesN(Int n) {
-	return (Cstring)servent->s_aliases[n];
+        return (Cstring)servent->s_aliases[n];
 }
 
 Int NetServDB_Entry_port() {
-	return servent->s_port;
+        return servent->s_port;
 }
 
 Cstring NetServDB_Entry_protocol() {
-	return (Cstring)servent->s_proto;
+        return (Cstring)servent->s_proto;
 }
 
 Int NetServDB_getByName(Cstring name, Cstring proto) {
-	servent = getservbyname((char*)name, (char*)proto);
-	return (servent != NULL and servent->s_name != NULL);
+        servent = getservbyname((char*)name, (char*)proto);
+        return (servent != NULL and servent->s_name != NULL);
 }
 
 Int NetServDB_getByNameNull(Cstring name) {
-	return NetServDB_getByName(name, (Cstring)NULL);
+        return NetServDB_getByName(name, (Cstring)NULL);
 }
 
 Int NetServDB_getByPort(Int port, Cstring proto) {
-	servent = getservbyport(port, (char*)proto);
-	return (servent != NULL and servent->s_name != NULL);
+        servent = getservbyport(port, (char*)proto);
+        return (servent != NULL and servent->s_name != NULL);
 }
 
 Int NetServDB_getByPortNull(Int port) {
-	return NetServDB_getByPort(port, (Cstring)NULL);
+        return NetServDB_getByPort(port, (Cstring)NULL);
 }

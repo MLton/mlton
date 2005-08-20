@@ -1,30 +1,30 @@
 functor Test (structure PackReal: PACK_REAL
-	      structure Real: REAL
-	      val tests: Real.real list
-	      sharing type PackReal.real = Real.real) =
+              structure Real: REAL
+              val tests: Real.real list
+              sharing type PackReal.real = Real.real) =
 struct
    
 val _ =
    if List.all (fn r =>
-		let
-		   val v = PackReal.toBytes r
-		   val _ =
-		      print (concat ["r = ", Real.fmt StringCvt.EXACT r, "\t"])
-		   val _ =
-		      Word8Vector.app
-		      (fn w =>
-		       let
-			  val s = Word8.toString w
-		       in
-			  print (if String.size s = 1
-				    then concat ["0", s]
-				 else s)
-		       end)
-		      v
-		   val _ = print "\n"
-		in 
-		   Real.== (r, PackReal.fromBytes v)
-		end)
+                let
+                   val v = PackReal.toBytes r
+                   val _ =
+                      print (concat ["r = ", Real.fmt StringCvt.EXACT r, "\t"])
+                   val _ =
+                      Word8Vector.app
+                      (fn w =>
+                       let
+                          val s = Word8.toString w
+                       in
+                          print (if String.size s = 1
+                                    then concat ["0", s]
+                                 else s)
+                       end)
+                      v
+                   val _ = print "\n"
+                in 
+                   Real.== (r, PackReal.fromBytes v)
+                end)
       tests
       then ()
    else raise Fail "failure"
@@ -70,14 +70,14 @@ val real64Tests =
    end
 
 structure Z = Test (structure PackReal = PackReal32Big
-		    structure Real = Real32
-		    val tests = real32Tests)
+                    structure Real = Real32
+                    val tests = real32Tests)
 structure Z = Test (structure PackReal = PackReal32Little
-		    structure Real = Real32
-		    val tests = real32Tests)
+                    structure Real = Real32
+                    val tests = real32Tests)
 structure Z = Test (structure PackReal = PackReal64Big
-		    structure Real = Real64
-		    val tests = real64Tests)
+                    structure Real = Real64
+                    val tests = real64Tests)
 structure Z = Test (structure PackReal = PackReal64Little
-		    structure Real = Real64
-		    val tests = real64Tests)
+                    structure Real = Real64
+                    val tests = real64Tests)

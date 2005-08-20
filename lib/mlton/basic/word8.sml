@@ -13,25 +13,25 @@ functor FixWord (W: PERVASIVE_WORD) =
       type t = W.word
 
       local
-	 structure LargeWord = Pervasive.LargeWord
-	 structure Word = Pervasive.Word
-	 structure Word8 = Pervasive.Word8
+         structure LargeWord = Pervasive.LargeWord
+         structure Word = Pervasive.Word
+         structure Word8 = Pervasive.Word8
       in
-	 fun format (w, f) = W.fmt f w
-	 val fromChar = W.fromLargeWord o Word8.toLargeWord o Byte.charToByte
-	 val fromIntInf = W.fromLargeInt
-	 val fromLarge = W.fromLargeWord o LargeWord.toLargeWord
-	 val fromWord = W.fromLargeWord o Word.toLargeWord
-	 val layout = Layout.str o W.toString
-	 fun nthBitIsSet (w: t, n: int): bool =
-	    W.fromInt 1 = W.andb (W.fromInt 1, W.>> (w, Word.fromInt n))
-	 val toChar = Byte.byteToChar o Word8.fromLargeWord o W.toLargeWord
-	 val toIntInf = W.toLargeInt
-	 val toIntInfX = W.toLargeIntX
-	 val toLarge = LargeWord.fromLargeWord o W.toLargeWord
-	 val toLargeX = LargeWord.fromLargeWord o W.toLargeWordX
-	 val toWord = Word.fromLargeWord o W.toLargeWord
-	 val toWordX = Word.fromLargeWord o W.toLargeWordX
+         fun format (w, f) = W.fmt f w
+         val fromChar = W.fromLargeWord o Word8.toLargeWord o Byte.charToByte
+         val fromIntInf = W.fromLargeInt
+         val fromLarge = W.fromLargeWord o LargeWord.toLargeWord
+         val fromWord = W.fromLargeWord o Word.toLargeWord
+         val layout = Layout.str o W.toString
+         fun nthBitIsSet (w: t, n: int): bool =
+            W.fromInt 1 = W.andb (W.fromInt 1, W.>> (w, Word.fromInt n))
+         val toChar = Byte.byteToChar o Word8.fromLargeWord o W.toLargeWord
+         val toIntInf = W.toLargeInt
+         val toIntInfX = W.toLargeIntX
+         val toLarge = LargeWord.fromLargeWord o W.toLargeWord
+         val toLargeX = LargeWord.fromLargeWord o W.toLargeWordX
+         val toWord = Word.fromLargeWord o W.toLargeWord
+         val toWordX = Word.fromLargeWord o W.toLargeWordX
       end
    end
 
@@ -50,10 +50,10 @@ structure Word8:
       val equals: t * t -> bool = op =
 
       fun vectorToString v =
-	 CharVector.tabulate (Pervasive.Vector.length v, fn i =>
-			      toChar (Pervasive.Vector.sub (v, i)))
+         CharVector.tabulate (Pervasive.Vector.length v, fn i =>
+                              toChar (Pervasive.Vector.sub (v, i)))
 
       fun stringToVector s =
-	 Pervasive.Vector.tabulate (Pervasive.String.size s, fn i =>
-				    fromChar (Pervasive.String.sub (s, i)))
+         Pervasive.Vector.tabulate (Pervasive.String.size s, fn i =>
+                                    fromChar (Pervasive.String.sub (s, i)))
    end

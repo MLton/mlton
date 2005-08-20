@@ -6,7 +6,7 @@
 functor LocalDebug(val debug: bool): DEBUG =
    struct
       fun make f =
-	 if debug then f else fn _ => ()
+         if debug then f else fn _ => ()
       val sayDebug' = make Debug.sayDebug'
       val sayDebug = make Debug.sayDebug
    end

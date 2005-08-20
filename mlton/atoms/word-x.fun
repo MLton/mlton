@@ -18,12 +18,12 @@ val modulus: WordSize.t -> IntInf.t =
 
 local
    datatype t = T of {size: WordSize.t,
-		      value: IntInf.t}
+                      value: IntInf.t}
 in
    type t = t
    fun make (i: IntInf.t, s: WordSize.t) =
       T {size = s,
-	 value = i mod modulus s}
+         value = i mod modulus s}
    fun dest (T r) = r
 end
 
@@ -42,7 +42,7 @@ fun toIntInfX w =
       val m = modulus (size w)
    in
       if v >= m div 2
-	 then v - m
+         then v - m
       else v
    end
 
@@ -58,12 +58,12 @@ local
    val make: (IntInf.t * Word.t -> IntInf.t) -> t * t -> t =
       fn f => fn (w, w') =>
       let
-	 val s = size w
-	 val v' = value w'
+         val s = size w
+         val v' = value w'
       in
-	 if v' >= Bits.toIntInf (WordSize.bits s)
-	    then zero s
-	 else make (f (value w, Word.fromIntInf v'), s)
+         if v' >= Bits.toIntInf (WordSize.bits s)
+            then zero s
+         else make (f (value w, Word.fromIntInf v'), s)
       end
 in
    val lshift = make IntInf.<<
@@ -121,8 +121,8 @@ fun ~>> (w, w') =
       val s = size w
       val b = WordSize.bits s
       val shift = if shift > Bits.toIntInf b
-		     then Bits.toWord b
-		  else Word.fromIntInf shift
+                     then Bits.toWord b
+                  else Word.fromIntInf shift
    in
       make (IntInf.~>> (toIntInfX w, shift), s)
    end
@@ -157,8 +157,8 @@ fun ror (w, w') =
 
 fun splice {hi, lo} =
    fromIntInf (value lo
-	       + IntInf.<< (value hi, Bits.toWord (WordSize.bits (size lo))),
-	       WordSize.+ (size hi, size lo))
+               + IntInf.<< (value hi, Bits.toWord (WordSize.bits (size lo))),
+               WordSize.+ (size hi, size lo))
    
 fun split (w, {lo}) =
    let
@@ -176,7 +176,7 @@ local
    val make: ((IntInf.t * IntInf.t -> IntInf.t) * string) -> t * t -> t =
       fn (f,name) => fn (w, w') =>
       if WordSize.equals (size w, size w')
-	 then make (f (value w, value w'), size w)
+         then make (f (value w, value w'), size w)
       else Error.bug (concat ["WordX.", name])
 in
    val add = make (IntInf.+, "add")
@@ -192,7 +192,7 @@ local
    val make: ((IntInf.t * IntInf.t -> IntInf.t) * string) -> t * t * {signed: bool}-> t =
       fn (f,name) => fn (w, w', s) =>
       if WordSize.equals (size w, size w')
-	 then make (f (toIntInfSg (w, s), toIntInfSg (w', s)), size w)
+         then make (f (toIntInfSg (w, s), toIntInfSg (w', s)), size w)
       else Error.bug (concat ["WordX.", name])
 in
    val mul = make (IntInf.*, "mul")
@@ -204,7 +204,7 @@ local
    val make: ((IntInf.t * IntInf.t -> 'a) * string) -> t * t * {signed: bool} -> 'a =
       fn (f,name) => fn (w, w', sg) =>
       if WordSize.equals (size w, size w')
-	 then f (toIntInfSg (w, sg), toIntInfSg (w', sg))
+         then f (toIntInfSg (w, sg), toIntInfSg (w', sg))
       else Error.bug (concat ["WordX.", name])
 in
    val lt = make (IntInf.<, "lt")

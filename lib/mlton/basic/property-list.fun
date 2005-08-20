@@ -28,38 +28,38 @@ fun stats () =
       [seq [str "numPeeks = ", Int.layout (!numPeeks)],
        seq [str "maxLength = ", Int.layout (!maxLength)],
        seq [str "average position in property list = ",
-	    str let open Real
-		in format (fromInt (!numLinks) / fromInt (!numPeeks),
-			   Format.fix (SOME 3))
-		end]]
+            str let open Real
+                in format (fromInt (!numLinks) / fromInt (!numPeeks),
+                           Format.fix (SOME 3))
+                end]]
    end
 
 fun 'a newProperty () =
    let
       val {make, pred, peek = peekH} = H.new ()
       fun peek (T hs) =
-	 let
-	    fun loop (l, n) =
-	       let
-		  fun update () =
-		     ((numLinks := n + !numLinks
-		       handle Overflow => Error.bug "PropertyList: numLinks overflow")
-		      ; if n > !maxLength
-			   then maxLength := n
-			else ())
-	       in case l of
-		  [] => (update (); NONE)
-		| e :: l =>
-		     case peekH e of
-			r as SOME _ => (update (); r)
-		      | NONE => loop (l, n + 1)
-	       end
-	    val _ =
-	       numPeeks := 1 + !numPeeks
-	       handle Overflow => Error.bug "PropertyList: numPeeks overflow"
-	 in
-	    loop (!hs, 0)
-	 end
+         let
+            fun loop (l, n) =
+               let
+                  fun update () =
+                     ((numLinks := n + !numLinks
+                       handle Overflow => Error.bug "PropertyList: numLinks overflow")
+                      ; if n > !maxLength
+                           then maxLength := n
+                        else ())
+               in case l of
+                  [] => (update (); NONE)
+                | e :: l =>
+                     case peekH e of
+                        r as SOME _ => (update (); r)
+                      | NONE => loop (l, n + 1)
+               end
+            val _ =
+               numPeeks := 1 + !numPeeks
+               handle Overflow => Error.bug "PropertyList: numPeeks overflow"
+         in
+            loop (!hs, 0)
+         end
 
       fun add (T hs, v: 'a): unit = hs := make v :: !hs
 

@@ -14,12 +14,12 @@ signature SEXP =
       include SEXP_STRUCTS
       
       datatype t =
-	 Atom of string
+         Atom of string
        | List of t list
        | String of string
 
       datatype parseResult =
-	 Eof
+         Eof
        | Error of string
        | Sexp of t
 

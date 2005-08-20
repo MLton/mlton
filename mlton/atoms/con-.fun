@@ -25,10 +25,10 @@ fun stats () =
    in
       align
       (List.map (all, fn c =>
-		 seq [layout c, str " size is ",
-		      Int.layout (MLton.size c),
-		      str " plist length is ",
-		      Int.layout (PropertyList.length (plist c))]))
+                 seq [layout c, str " size is ",
+                      Int.layout (MLton.size c),
+                      str " plist length is ",
+                      Int.layout (PropertyList.length (plist c))]))
    end
    
 fun fromBool b = if b then truee else falsee

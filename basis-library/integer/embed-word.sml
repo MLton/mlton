@@ -9,115 +9,115 @@ signature EMBED_WORD =
    sig
       eqtype word
       type big
-	 
+         
       val fromBigUnsafe: big -> word
       val toBig: word -> big
       val wordSize: Int.int
    end
 
 functor EmbedWord (structure Big: WORD
-		   structure Small: EMBED_WORD where type big = Big.word): WORD =
+                   structure Small: EMBED_WORD where type big = Big.word): WORD =
    struct
       val () = if Int.< (Small.wordSize, Big.wordSize) then ()
-	       else raise Fail "EmbedWord"
-		  
+               else raise Fail "EmbedWord"
+                  
       open Small
 
       fun ones size =
-	 Big.- (Big.<< (Big.fromLarge 0w1, Word.fromInt size),
-		Big.fromLarge 0w1)
-	 
+         Big.- (Big.<< (Big.fromLarge 0w1, Word.fromInt size),
+                Big.fromLarge 0w1)
+         
       val maxWord = ones wordSize
 
       fun fromBig (w: Big.word): word =
-	 fromBigUnsafe (Big.andb (w, maxWord))
+         fromBigUnsafe (Big.andb (w, maxWord))
 
       fun fromBigOverflow (w: Big.word): word =
-	 if Big.<= (w, maxWord)
-	    then fromBigUnsafe w
-	 else raise Overflow
+         if Big.<= (w, maxWord)
+            then fromBigUnsafe w
+         else raise Overflow
 
       fun highBitIsSet (w: Big.word): bool =
-	 Big.> (w, ones (Int.- (wordSize, 1)))
-	 
+         Big.> (w, ones (Int.- (wordSize, 1)))
+         
       fun toBigX (w: word): Big.word =
-	 let
-	    val w = toBig w
-	 in
-	    if highBitIsSet w
-	       then Big.orb (w, Big.notb maxWord)
-	    else w
-	 end
+         let
+            val w = toBig w
+         in
+            if highBitIsSet w
+               then Big.orb (w, Big.notb maxWord)
+            else w
+         end
 
       local
-	 val make: (Big.word * Big.word -> Big.word) -> (word * word -> word) =
-	    fn f => fn (x, y) => fromBig (f (toBig x, toBig y))
+         val make: (Big.word * Big.word -> Big.word) -> (word * word -> word) =
+            fn f => fn (x, y) => fromBig (f (toBig x, toBig y))
       in
-	 val op * = make Big.*
-	 val op + = make Big.+
-	 val op - = make Big.-
-	 val andb = make Big.andb
-	 val op div = make Big.div
-	 val op mod = make Big.mod
-	 val orb  = make Big.orb
-	 val xorb  = make Big.xorb
+         val op * = make Big.*
+         val op + = make Big.+
+         val op - = make Big.-
+         val andb = make Big.andb
+         val op div = make Big.div
+         val op mod = make Big.mod
+         val orb  = make Big.orb
+         val xorb  = make Big.xorb
       end
 
       local
-	 val make: ((Big.word * Word.word -> Big.word)
-		    -> word * Word.word -> word) =
-	    fn f => fn (w, w') => fromBig (f (toBig w, w'))
+         val make: ((Big.word * Word.word -> Big.word)
+                    -> word * Word.word -> word) =
+            fn f => fn (w, w') => fromBig (f (toBig w, w'))
       in
-	 val >> = make Big.>>
-	 val << = make Big.<<
+         val >> = make Big.>>
+         val << = make Big.<<
       end
 
       fun ~>> (w, w') = fromBig (Big.~>> (toBigX w, w'))
 
       local
-	 val make: (Big.word * Big.word -> 'a) -> (word * word -> 'a) =
-	    fn f => fn (x, y) => f (toBig x, toBig y)
+         val make: (Big.word * Big.word -> 'a) -> (word * word -> 'a) =
+            fn f => fn (x, y) => f (toBig x, toBig y)
       in
-	 val op < = make Big.<
-	 val op <= = make Big.<=
-	 val op > = make Big.>
-	 val op >= = make Big.>=
-	 val compare = make Big.compare
+         val op < = make Big.<
+         val op <= = make Big.<=
+         val op > = make Big.>
+         val op >= = make Big.>=
+         val compare = make Big.compare
       end
 
       local
-	 val make: (Big.word -> Big.word) -> word -> word =
-	    fn f => fn w => fromBig (f (toBig w))
+         val make: (Big.word -> Big.word) -> word -> word =
+            fn f => fn w => fromBig (f (toBig w))
       in
-	 val notb = make Big.notb
+         val notb = make Big.notb
       end
 
       local
-	 val make: ('a -> Big.word) -> 'a -> word =
-	    fn f => fn a => fromBig (f a)
+         val make: ('a -> Big.word) -> 'a -> word =
+            fn f => fn a => fromBig (f a)
       in
-	 val fromInt = make Big.fromInt
-	 val fromLarge = make Big.fromLarge
-	 val fromLargeInt = make Big.fromLargeInt
+         val fromInt = make Big.fromInt
+         val fromLarge = make Big.fromLarge
+         val fromLargeInt = make Big.fromLargeInt
       end
 
       local
-	 val make: (Big.word -> 'a) -> word -> 'a =
-	    fn f => fn w => f (toBig w)
+         val make: (Big.word -> 'a) -> word -> 'a =
+            fn f => fn w => f (toBig w)
       in
-	 val toInt = make Big.toInt
-	 val toLarge = make Big.toLarge
-	 val toLargeInt = make Big.toLargeInt
-	 val toString = make Big.toString
+         val toInt = make Big.toInt
+         val toLarge = make Big.toLarge
+         val toLargeInt = make Big.toLargeInt
+         val toString = make Big.toString
       end
 
       local
-	 val make: (Big.word -> 'a) -> word -> 'a =
-	    fn f => fn w => f (toBigX w)
+         val make: (Big.word -> 'a) -> word -> 'a =
+            fn f => fn w => f (toBigX w)
       in
-	 val toIntX = make Big.toIntX
-	 val toLargeIntX = make Big.toLargeIntX
-	 val toLargeX = make Big.toLargeX
+         val toIntX = make Big.toIntX
+         val toLargeIntX = make Big.toLargeIntX
+         val toLargeX = make Big.toLargeX
       end
 
       fun fmt r i = Big.fmt r (toBig i)
@@ -131,28 +131,28 @@ functor EmbedWord (structure Big: WORD
       fun min (w, w') = if w <= w' then w else w'
 
       fun scan r reader state =
-	 Option.map
-	 (fn (w, state) => (fromBigOverflow w, state))
-	 (Big.scan r reader state)
+         Option.map
+         (fn (w, state) => (fromBigOverflow w, state))
+         (Big.scan r reader state)
 
       val toLargeWord = toLarge
 
       val toLargeWordX = toLargeX
-	 
+         
       fun ~ w = fromLarge 0w0 - w
    end
 
 functor EmbedWord8 (Small: EMBED_WORD where type big = Word8.word): WORD =
    EmbedWord (structure Big = Word8
-	      structure Small = Small)
+              structure Small = Small)
 
 functor EmbedWord16 (Small: EMBED_WORD where type big = Word16.word): WORD =
    EmbedWord (structure Big = Word16
-	      structure Small = Small)
+              structure Small = Small)
 
 functor EmbedWord32 (Small: EMBED_WORD where type big = Word32.word): WORD =
    EmbedWord (structure Big = Word32
-	      structure Small = Small)
+              structure Small = Small)
 
 structure Word1 = EmbedWord8 (Primitive.Word1)
 structure Word2 = EmbedWord8 (Primitive.Word2)

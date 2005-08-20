@@ -17,39 +17,39 @@ structure Main =
    struct
       structure Signal = MLton.Signal
       structure Itimer = MLton.Itimer
-	 
+         
       val alrmHandler = fn t => t
       fun setItimer t =
-	 Itimer.set (Itimer.Real,
-		     {value = t,
-		      interval = t})
+         Itimer.set (Itimer.Real,
+                     {value = t,
+                      interval = t})
       fun setAlrmHandler h =
-	 Signal.setHandler (Itimer.signal Itimer.Real, h)
+         Signal.setHandler (Itimer.signal Itimer.Real, h)
 
       fun print s =
-	 Critical.doAtomic (fn () => TextIO.print s)
+         Critical.doAtomic (fn () => TextIO.print s)
 
       fun doit n =
-	 let
-	    val () = setAlrmHandler (Signal.Handler.handler alrmHandler)
-	    val () = setItimer (Time.fromMilliseconds 10)
+         let
+            val () = setAlrmHandler (Signal.Handler.handler alrmHandler)
+            val () = setItimer (Time.fromMilliseconds 10)
 
-	    fun loop i =
-	       if i > n 
-		  then OS.Process.exit OS.Process.success
-		  else let
-			  val i' = (Int.toString i) ^ "\n"
-			  fun loop' j =
-			     if j > i then ()
-			     else (print i'
-				   ; loop' (j + 1))
-		       in
-			  loop' 0
-			  ; loop (i + 1)
-		       end
-	 in
-	    loop 0
-	 end
+            fun loop i =
+               if i > n 
+                  then OS.Process.exit OS.Process.success
+                  else let
+                          val i' = (Int.toString i) ^ "\n"
+                          fun loop' j =
+                             if j > i then ()
+                             else (print i'
+                                   ; loop' (j + 1))
+                       in
+                          loop' 0
+                          ; loop (i + 1)
+                       end
+         in
+            loop 0
+         end
    end
 
 val _ = Main.doit 500

@@ -26,7 +26,7 @@ fun forall (z, f) =
    case z of
       NONE => true
     | SOME x => f x
-	 
+         
 fun foreach (opt, f) =
    case opt of
       NONE => ()
@@ -60,7 +60,7 @@ fun layout layoutX opt =
       open Layout
    in
       case opt of
-	 NONE => str "None"
+         NONE => str "None"
        | SOME x => seq [str "Some ", layoutX x]
    end
 

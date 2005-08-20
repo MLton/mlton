@@ -49,13 +49,13 @@ val isRoot  =
     | _ => false
     
 val isRepresentative = isRoot
-			
+                        
 fun root s = if isRoot s then s
-	     else let val r = root (parent s)
-		  in setParent (s, r)
-		     ; r
-		  end
-	       
+             else let val r = root (parent s)
+                  in setParent (s, r)
+                     ; r
+                  end
+               
 val representative = root
 
 fun ! s = rootValue (root s)
@@ -69,20 +69,20 @@ fun union (s, s') =
       val r' = root s'
    in if equal (r, r') then ()
       else let val n = rank r
-	       val n' = rank r'
-	   in if n < n' then setParent (r, r')
-	      else (setParent (r', r)
-		    ; if Int.equals (n, n') then incrementRank r else ())
-	   end
+               val n' = rank r'
+           in if n < n' then setParent (r, r')
+              else (setParent (r', r)
+                    ; if Int.equals (n, n') then incrementRank r else ())
+           end
    end
 
 fun canUnion (s, s', f) =
    equals (s, s')
    orelse (case f (! s, ! s') of
-	      NONE => false
-	    | SOME v => (union (s, s')
-			 ; s := v
-			 ; true))
+              NONE => false
+            | SOME v => (union (s, s')
+                         ; s := v
+                         ; true))
 
 end
 

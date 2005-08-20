@@ -12,8 +12,8 @@ functor PosixProcessConvert
      open Process
      structure W =
         struct
-	   open W
-	   structure Flags = FlagsConvert(structure Flags = W)
-	   open Flags
-	end
+           open W
+           structure Flags = FlagsConvert(structure Flags = W)
+           open Flags
+        end
   end

@@ -8,19 +8,19 @@
 #define ROUNDING_CONTROL_SHIFT 10
 
 int fegetround () {
-	unsigned short controlWord;
+        unsigned short controlWord;
 
-	_FPU_GETCW (controlWord);
-	return (controlWord & ROUNDING_CONTROL_MASK) >> ROUNDING_CONTROL_SHIFT;
+        _FPU_GETCW (controlWord);
+        return (controlWord & ROUNDING_CONTROL_MASK) >> ROUNDING_CONTROL_SHIFT;
 }
 
 void fesetround (int mode) {
-	unsigned short controlWord;
+        unsigned short controlWord;
 
-	_FPU_GETCW (controlWord);
-	controlWord &= ~ROUNDING_CONTROL_MASK;
-	controlWord |= mode << ROUNDING_CONTROL_SHIFT;
-	_FPU_SETCW (controlWord);
+        _FPU_GETCW (controlWord);
+        controlWord &= ~ROUNDING_CONTROL_MASK;
+        controlWord |= mode << ROUNDING_CONTROL_SHIFT;
+        _FPU_SETCW (controlWord);
 }
 
 #else

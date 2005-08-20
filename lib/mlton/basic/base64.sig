@@ -25,7 +25,7 @@ val _ =
    Assert.assert
    ("TestBase64", fn () =>
     List.forall(["a", "aa", "aaa", "aaaa", "aaaaa", "aaaaaa", "aaaaaaa",
-		 "a", "ab", "abc", "abcd", "abcde", "abcdef", "abcdefg",
-		 "bb:new.site"],
-		fn s => decode(encode s) = s))
+                 "a", "ab", "abc", "abcd", "abcde", "abcdef", "abcdefg",
+                 "bb:new.site"],
+                fn s => decode(encode s) = s))
 end

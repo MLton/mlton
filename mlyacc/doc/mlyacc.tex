@@ -1,6 +1,6 @@
 \documentstyle{article}
 \title{                        ML-Yacc User's Manual \\
-			       Version 2.4
+                               Version 2.4
       }
 \author{                David R. Tarditi$^1$\\
                         Andrew W. Appel$^2$\\
@@ -881,14 +881,14 @@ sig
   type svalue (* the types of semantic values *)
 
   val makeLexer : (int -> string) ->
-		    (svalue,pos) Token.token Stream.stream
+                    (svalue,pos) Token.token Stream.stream
   val parse :
       int * ((svalue,pos) Token.token Stream.stream) *
       (string * pos * pos -> unit) * arg ->
-	result * (svalue,pos) Token.token Stream.stream
+        result * (svalue,pos) Token.token Stream.stream
   val sameToken :
       (svalue,pos) Token.token * (svalue,pos) Token.token ->
-	bool
+        bool
 end
 \end{verbatim}
 \end{quote}
@@ -1112,8 +1112,8 @@ function {\tt invoke} does this.
 \begin{verbatim}
 fun invoke lexstream =
     let fun print_error (s,i:int,_) =
-	    TextIO.output(TextIO.stdOut,
-			  "Error, line " ^ (Int.toString i) ^ ", " ^ s ^ "\n")
+            TextIO.output(TextIO.stdOut,
+                          "Error, line " ^ (Int.toString i) ^ ", " ^ s ^ "\n")
      in CalcParser.parse(0,lexstream,print_error,())
     end
 \end{verbatim}
@@ -1129,19 +1129,19 @@ when an end-of-file is encountered.
 fun parse () = 
     let val lexer = CalcParser.makeLexer
                       (fn _ => TextIO.inputLine TextIO.stdIn)
-	val dummyEOF = CalcLrVals.Tokens.EOF(0,0)
-	val dummySEMI = CalcLrVals.Tokens.SEMI(0,0)
-	fun loop lexer =
-	    let val (result,lexer) = invoke lexer
-		val (nextToken,lexer) = CalcParser.Stream.get lexer
-	     in case result
-		  of SOME r =>
-		      TextIO.output(TextIO.stdOut,
-			     "result = " ^ (Int.toString r) ^ "\n")
-		   | NONE => ();
-	        if CalcParser.sameToken(nextToken,dummyEOF) then ()
-		else loop lexer
-	    end
+        val dummyEOF = CalcLrVals.Tokens.EOF(0,0)
+        val dummySEMI = CalcLrVals.Tokens.SEMI(0,0)
+        fun loop lexer =
+            let val (result,lexer) = invoke lexer
+                val (nextToken,lexer) = CalcParser.Stream.get lexer
+             in case result
+                  of SOME r =>
+                      TextIO.output(TextIO.stdOut,
+                             "result = " ^ (Int.toString r) ^ "\n")
+                   | NONE => ();
+                if CalcParser.sameToken(nextToken,dummyEOF) then ()
+                else loop lexer
+            end
      in loop lexer
     end
 \end{verbatim}
@@ -1182,7 +1182,7 @@ sig
                   | ACCEPT
                   | ERROR
   type table
-	
+        
   val numStates : table -> int
   val numRules : table -> int
   val describeActions : table -> state ->
@@ -1309,7 +1309,7 @@ sig
   type pos       (* the type of line numbers *)
   type svalue    (* the type of semantic values *)
   type arg       (* the type of the user-supplied *)
-		 (* argument to the parser *)
+                 (* argument to the parser *)
   type result
 
   structure LrTable : LR_TABLE
@@ -1320,8 +1320,8 @@ sig
     sig
       val actions : int * pos *
        (LrTable.state * (svalue * pos * pos)) list * arg ->
-	       LrTable.nonterm * (svalue * pos * pos) *
-	     ((LrTable.state *(svalue * pos * pos)) list)
+               LrTable.nonterm * (svalue * pos * pos) *
+             ((LrTable.state *(svalue * pos * pos)) list)
       val void : svalue
       val extract : svalue -> result
     end
@@ -1385,15 +1385,15 @@ sig
   type svalue (* the types of semantic values *)
 
   val makeLexer : (int -> string) ->
-		   (svalue,pos) Token.token Stream.stream
+                   (svalue,pos) Token.token Stream.stream
 
   val parse :
       int * ((svalue,pos) Token.token Stream.stream) *
       (string * pos * pos -> unit) * arg ->
-	  result * (svalue,pos) Token.token Stream.stream
+          result * (svalue,pos) Token.token Stream.stream
   val sameToken :
     (svalue,pos) Token.token * (svalue,pos) Token.token ->
-	bool
+        bool
 end
 \end{verbatim}
 \end{quote}
@@ -1414,15 +1414,15 @@ sig
   type svalue
 
   val makeLexer : (int -> string) -> lexarg ->
-		     (svalue,pos) Token.token Stream.stream
+                     (svalue,pos) Token.token Stream.stream
   val parse : int *
-	      ((svalue,pos) Token.token Stream.stream) *
-	      (string * pos * pos -> unit) *
-	      arg ->
-	       result * (svalue,pos) Token.token Stream.stream
+              ((svalue,pos) Token.token Stream.stream) *
+              (string * pos * pos -> unit) *
+              arg ->
+               result * (svalue,pos) Token.token Stream.stream
   val sameToken :
       (svalue,pos) Token.token * (svalue,pos) Token.token ->
-	   bool
+           bool
 end
 \end{verbatim}
 \end{quote}

@@ -10,16 +10,16 @@ signature ARRAY_FINITE_FUNCTION =
       include FINITE_FUNCTION
 
       structure Domain :
-	 sig
-	    type 'a t = {size: int,
-			 fromInt: int -> 'a,
-			 toInt: 'a -> int}
+         sig
+            type 'a t = {size: int,
+                         fromInt: int -> 'a,
+                         toInt: 'a -> int}
 
-	    val pair: 'a1 t * 'a2 t
-	       * ('a1 -> 'a) * ('a2 -> 'a)
-	       * (('a * ('a1 -> int) * ('a2 -> int)) -> int)
-	       -> 'a t
-	 end
+            val pair: 'a1 t * 'a2 t
+               * ('a1 -> 'a) * ('a2 -> 'a)
+               * (('a * ('a1 -> int) * ('a2 -> int)) -> int)
+               -> 'a t
+         end
 
       val empty: 'a Domain.t -> ('a, 'b option) t
       val new: 'a Domain.t * 'b -> ('a, 'b) t

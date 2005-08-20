@@ -11,7 +11,7 @@ struct
 open S
 
 datatype t = T of {elementSize: WordSize.t,
-		   elements: WordX.t vector}
+                   elements: WordX.t vector}
 
 local
    fun make f (T r) = f r
@@ -27,20 +27,20 @@ fun toString (T {elements, elementSize}): string =
       implode
       (rev
        (Vector.fold (elements, [], fn (w, ac) =>
-		     let
-			fun loop (i, w, ac) =
-			   if i = 0
-			      then ac
-			   else
-			      let
-				 val (q, r) = IntInf.quotRem (w, 0x100)
-			      in
-				 loop (i - 8, q,
-				       Char.fromInt (IntInf.toInt r) :: ac)
-			      end
-		     in
-			loop (n, WordX.toIntInf w, ac)
-		     end)))
+                     let
+                        fun loop (i, w, ac) =
+                           if i = 0
+                              then ac
+                           else
+                              let
+                                 val (q, r) = IntInf.quotRem (w, 0x100)
+                              in
+                                 loop (i - 8, q,
+                                       Char.fromInt (IntInf.toInt r) :: ac)
+                              end
+                     in
+                        loop (n, WordX.toIntInf w, ac)
+                     end)))
    end
    
 val layout = Layout.str o toString
@@ -52,8 +52,8 @@ fun forall (v, f) = Vector.forall (elements v, f)
 fun fromString s =
    T {elementSize = WordSize.byte,
       elements = Vector.tabulate (String.size s, fn i =>
-				  WordX.fromChar (String.sub (s, i)))}
-				  
+                                  WordX.fromChar (String.sub (s, i)))}
+                                  
 fun length v = Vector.length (elements v)
 
 fun sub (v, i) = Vector.sub (elements v, i)

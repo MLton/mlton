@@ -21,15 +21,15 @@ fun server () =
                 NONE => let in
                           Posix.Process.wait ();
                           print (concat ["server processed ",
-					 Int.toString b,
-					 " bytes\n"])
+                                         Int.toString b,
+                                         " bytes\n"])
                       end
               | SOME i =>
-		   let in 
-		      TextIO.output(outs, i);
-		      TextIO.flushOut outs;
-		      s (b + 19)
-		   end
+                   let in 
+                      TextIO.output(outs, i);
+                      TextIO.flushOut outs;
+                      s (b + 19)
+                   end
     in s 0
     end
 
@@ -42,7 +42,7 @@ fun client () =
                   end
           | c n = let in
                       TextIO.output(outs, data);
-		      TextIO.flushOut outs;
+                      TextIO.flushOut outs;
                       TextIO.inputLine ins = SOME data
                           orelse raise Error "Didn't receive the same data";
                       c (n - 1)

@@ -29,26 +29,26 @@ structure CMemAlloc : CMEMALLOC = struct
 
     fun sys_malloc (n : Word32.word) = 
         let val w_p = _import * : MLton.Pointer.t -> Word32.word -> addr;
-	    val a = w_p (DL.addr malloc_h) n
-	in if a = Ptr.null then raise OutOfMemory else a
-	end
+            val a = w_p (DL.addr malloc_h) n
+        in if a = Ptr.null then raise OutOfMemory else a
+        end
 
     fun sys_free (a : addr) = 
         let val p_u = _import * : MLton.Pointer.t -> addr -> unit;
-	in p_u (DL.addr free_h) a
-	end
+        in p_u (DL.addr free_h) a
+        end
 
 (*
     fun sys_malloc (n : Word32.word) = 
         let val w_p = _import "malloc" : Word32.word -> addr;
-	    val a = w_p n
-	in if a = Ptr.null then raise OutOfMemory else a
-	end
+            val a = w_p n
+        in if a = Ptr.null then raise OutOfMemory else a
+        end
 
     fun sys_free (a : addr) = 
         let val p_u = _import "free" : addr -> unit;
-	in p_u a
-	end
+        in p_u a
+        end
 *)
 
     fun alloc bytes = sys_malloc bytes
