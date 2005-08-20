@@ -44,6 +44,12 @@ point is moved to the end of the string."
       (replace-in-string str regexp rep t)
     (replace-regexp-in-string regexp rep str t t)))
 
+;; workaround for incompatibility between GNU Emacs and XEmacs
+(defun esml-error (str &rest objs)
+  (if (string-match "XEmacs" emacs-version)
+      (error 'error (apply 'format str objs))
+    (apply 'error str objs)))
+
 (defun esml-string-matches-p (regexp str)
   "Non-nil iff the entire string matches the regexp."
   (and (string-match regexp str)

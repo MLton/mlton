@@ -32,9 +32,9 @@
 ;;
 ;; - customisable indentation
 ;; - movement
-;; - type-check / show-basis / compile / compile-and-run
+;; - type-check / compile / compile-and-run
 ;; - find-structure / find-signature / find-functor
-;; - highlight only binding occurances of basid's
+;; - highlight only binding occurances of basids
 ;; - find-binding-occurance (of a basid)
 ;; - support doc strings in mlb files
 
@@ -126,9 +126,17 @@ files whose extension matches this regexp."
 
 (defcustom esml-mlb-show-annotations-command
   "mlton -expert true -show-anns true"
-  "Command used to determine the annotations accepted by a compiler."
+  "Shell command used to determine the annotations accepted by a compiler."
   :type 'string
   :set 'esml-mlb-set-custom-and-update
+  :group 'esml-mlb)
+
+(defcustom esml-mlb-show-basis-command
+  "mlton -stop tc -show-basis %t %f"
+  "Shell command used to pretty print the basis defined by an MLB file.
+`%t' is replaced by the name of a temporary file and `%f' is replaced by
+the name of the MLB file."
+  :type 'string
   :group 'esml-mlb)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -156,18 +164,10 @@ files whose extension matches this regexp."
                                     (esml-split-string s "[ \t]*[{}|][ \t]*")))
                                  (esml-split-string
                                   (with-temp-buffer
-                                    (if (zerop
-                                         (condition-case nil
-                                             (let ((cmd-and-args
-                                                    (esml-split-string
-                                                     esml-mlb-show-annotations-command
-                                                     " +")))
-                                               (apply 'call-process
-                                                      (car cmd-and-args) nil t nil (cdr cmd-and-args)))
-                                           (error -1)))
-                                        (buffer-string)
-                                      (message "Show annotations command failed.")
-                                      ""))
+                                    (shell-command
+                                     esml-mlb-show-annotations-command
+                                     (current-buffer))
+                                    (buffer-string))
                                   "[ \t]*\n+[ \t]*"))))
                (function
                 (lambda (a b)
@@ -214,7 +214,7 @@ by `esml-mlb-update'.")
             (let* ((name (match-string 1))
                    (name-value (assoc name esml-mlb-path-variables)))
               (unless name-value
-                (error 'invalid-argument name))
+                (esml-error "Unknown path variable: %s" name))
               (delete-char (length (match-string 0)))
               (insert (cdr name-value)))
           (forward-char 1)
@@ -606,6 +606,48 @@ perform context sensitive completion."
                  "Does not exists: %s")
                file))))
 
+(defconst esml-mlb-show-basis-process-name "*mlb-show-basis*")
+
+(defun esml-mlb-show-basis ()
+  (interactive)
+  ;; TBD: find-error / error output mode
+  (when (get-process esml-mlb-show-basis-process-name)
+    (esml-error "show-basis already running"))
+  (save-some-buffers)
+  (lexical-let ((tmp-file (concat
+                           (file-name-directory (buffer-file-name))
+                           "." (file-name-nondirectory (buffer-file-name))
+                           ".basis"))
+                (buffer (get-buffer-create esml-mlb-show-basis-process-name)))
+    (when (file-exists-p tmp-file)
+      (esml-error "temporary basis file already exists: %s" tmp-file))
+    (save-excursion
+      (set-buffer buffer)
+      (delete-region (point-min) (point-max)))
+    (let ((process (start-process-shell-command
+                    esml-mlb-show-basis-process-name
+                    buffer
+                    (esml-replace-regexp-in-string
+                     (esml-replace-regexp-in-string
+                      esml-mlb-show-basis-command
+                      "%t"
+                      tmp-file)
+                     "%f"
+                     (buffer-file-name)))))
+      (set-process-sentinel
+       process
+       (function
+        (lambda (process event)
+          (if (and (esml-string-matches-p "finished\n" event)
+                   (file-readable-p tmp-file))
+              (save-excursion
+                (set-buffer (find-file-other-window tmp-file))
+                (toggle-read-only)
+                (delete-file tmp-file))
+            (switch-to-buffer buffer))
+          (message event)))))
+    (message "show-basis running...")))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Define mode
 
@@ -621,7 +663,9 @@ perform context sensitive completion."
           '(([tab]
              . esml-mlb-indent-or-complete)
             ([(control c) (control f)]
-             . esml-mlb-find-file-at-point)))
+             . esml-mlb-find-file-at-point)
+            ([(control c) (control s)]
+             . esml-mlb-show-basis)))
     esml-mlb-mode-map)
   "Keymap for ML Basis mode.")
 
@@ -653,5 +697,6 @@ See the customization group `esml-mlb'."
 (esml-mlb-update)
 
 (add-to-list 'auto-mode-alist '("\\.mlb\\'" . esml-mlb-mode))
+(add-to-list 'auto-mode-alist '("\\.basis\\'" . sml-mode))
 
 (provide 'esml-mlb-mode)
