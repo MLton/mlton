@@ -4,7 +4,8 @@
 
 set -e
 
-lib='lib unset'
+dir=`dirname $0`
+lib=`cd $dir/../lib && pwd`
 gcc='gcc'
 mlton="$lib/mlton-compile"
 world="$lib/world.mlton"
