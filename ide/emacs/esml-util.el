@@ -3,8 +3,7 @@
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
 
-(eval-when-compile
-  (require 'cl))
+(require 'cl)
 
 ;; Some general purpose Emacs Lisp utility functions
 
@@ -34,18 +33,22 @@ point is moved to the end of the string."
     (insert str)))
 
 ;; workaround for incompatibility between GNU Emacs and XEmacs
-(if (string-match "XEmacs" emacs-version)
-    (defun esml-split-string (string separator)
-      (split-string string separator t))
-  (defun esml-split-string (string separator)
+(defun esml-split-string (string separator)
+  (if (string-match "XEmacs" emacs-version)
+      (split-string string separator t)
     (remove* "" (split-string string separator))))
 
 ;; workaround for incompatibility between GNU Emacs and XEmacs
-(if (string-match "XEmacs" emacs-version)
-    (defun esml-replace-regexp-in-string (str regexp rep)
-      (replace-in-string str regexp rep t))
-  (defun esml-replace-regexp-in-string (str regexp rep)
+(defun esml-replace-regexp-in-string (str regexp rep)
+  (if (string-match "XEmacs" emacs-version)
+      (replace-in-string str regexp rep t)
     (replace-regexp-in-string regexp rep str t t)))
+
+(defun esml-string-matches-p (regexp str)
+  "Non-nil iff the entire string matches the regexp."
+  (and (string-match regexp str)
+       (= 0 (match-beginning 0))
+       (= (length str) (match-end 0))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

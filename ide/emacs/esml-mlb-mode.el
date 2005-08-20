@@ -3,9 +3,8 @@
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
 
-(eval-when-compile
-  (require 'cl)
-  (require 'esml-util))
+(require 'cl)
+(require 'esml-util)
 
 ;; Emacs mode for editing ML Basis files
 ;;
@@ -71,7 +70,7 @@ highlighed as warnings."
     ("allowPrim" "false" "true")
     ("allowRebindEquals" "false" "true")
     ("deadCode" "false" "true")
-    ("ffiStr" "[A-Za-z0-9_]*")
+    ("ffiStr" "<longstrid>")
     ("forceUsed")
     ("nonexhaustiveExnMatch" "default" "ignore")
     ("nonexhaustiveMatch" "warn" "ignore" "error")
@@ -82,7 +81,7 @@ highlighed as warnings."
   :type '(repeat (cons :tag "Annotation"
                        (string :tag "Name")
                        (repeat :tag "Values starting with the default"
-                               regexp)))
+                               string)))
   :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
 
@@ -166,10 +165,7 @@ files whose extension matches this regexp."
                                                (apply 'call-process
                                                       (car cmd-and-args) nil t nil (cdr cmd-and-args)))
                                            (error -1)))
-                                        (esml-replace-regexp-in-string
-                                         (buffer-string)
-                                         "{[ \t]*None[ \t]*|[ \t]*Some[ \t]*<[^>]+>}"
-                                         "{[A-Za-z0-9_]*}")
+                                        (buffer-string)
                                       (message "Show annotations command failed.")
                                       ""))
                                   "[ \t]*\n+[ \t]*"))))
@@ -241,6 +237,14 @@ by `esml-mlb-update'.")
 (defconst esml-mlb-unquoted-path-or-ref-chars
   (concat esml-mlb-unquoted-path-chars "()$"))
 
+(defun esml-mlb-<token>-to-regexp (<token>)
+  (let* ((<token>-to-regexp
+          '(("<longstrid>" . "[A-Za-z0-9_]*")))
+         (<token>-regexp (assoc <token> <token>-to-regexp)))
+    (if <token>-regexp
+        (cdr <token>-regexp)
+      <token>)))
+
 (defconst esml-mlb-keywords
   '("and" "ann" "bas" "basis" "end" "functor" "in" "let" "local" "open"
     "signature" "structure")
@@ -293,9 +297,14 @@ by a space.")
                            (concat (car name-values) "[ \t\n]+\\("
                                    (reduce (function
                                             (lambda (r s)
-                                              (concat r "\\|\\(" s "\\)")))
+                                              (concat r "\\|\\("
+                                                      (esml-mlb-<token>-to-regexp s)
+                                                      "\\)")))
                                            (cddr name-values)
-                                           :initial-value (concat "\\(" (cadr name-values) "\\)"))
+                                           :initial-value (concat "\\("
+                                                                  (esml-mlb-<token>-to-regexp
+                                                                   (cadr name-values))
+                                                                  "\\)"))
                                    "\\)")
                          (car name-values))
                        regexps)))
@@ -443,13 +452,17 @@ name completions."
    ((esml-point-preceded-by (concat "\"[ \t\n]*\\("
                                     (regexp-opt (mapcar 'car esml-mlb-annotations))
                                     "\\)[ \t\n]+\\(" esml-mlb-str-chr-regexp "*\\)"))
-    ;; TBD: do not auto-complete non-trivial regexps
     (let* ((annot (assoc (match-string 1) esml-mlb-annotations))
-           (values (cdr annot))
+           (all-values (cdr annot))
+           (values (remove* nil all-values
+                            :test (function
+                                   (lambda (_ s)
+                                     (and (< 0 (length s))
+                                          (= ?< (aref s 0)))))))
            (value-prefix (match-string 2))
            (value-completion (try-completion value-prefix (mapcar 'list values)))
            (value (if (eq t value-completion) value-prefix value-completion)))
-      (message "Annotation: %s %s" (car annot) (if values values ""))
+      (message "Annotation: %s %s" (car annot) (if all-values all-values ""))
       (when (stringp value-completion)
         (esml-insert-or-skip-if-looking-at
          (substring value (length value-prefix))))
@@ -526,7 +539,9 @@ name completions."
                                      nondir-prefix
                                      (mapcar 'list esml-mlb-keywords))
                                     files))
-                        (esml-mlb-filter-file-completions files)))))
+                        (esml-mlb-filter-file-completions
+                         files
+                         (esml-string-matches-p "\\(\.\./\\)+" dir))))))
            (nondir-completion (try-completion nondir-prefix nondir-completions))
            (nondir (if (eq t nondir-completion)
                        nondir-prefix
@@ -541,10 +556,10 @@ name completions."
         (if (eq t (try-completion nondir nondir-completions))
             (cond ((file-name-directory nondir)
                    (message "Completions: %s"
-                            (sort (esml-mlb-filter-file-completions
-                                   (file-name-all-completions
-                                    ""
-                                    (concat dir nondir)))
+                            (sort (let ((dir (concat dir nondir)))
+                                    (esml-mlb-filter-file-completions
+                                     (file-name-all-completions "" dir)
+                                     (esml-string-matches-p "\\(\.\./\\)+" dir)))
                                   'string-lessp)))
                   ((member nondir esml-mlb-keywords)
                    (esml-mlb-indent-line)

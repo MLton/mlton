@@ -3,9 +3,8 @@
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
 
-(eval-when-compile
-  (require 'cl)
-  (require 'esml-util))
+(require 'cl)
+(require 'esml-util)
 
 ;; Installation
 ;; ============
