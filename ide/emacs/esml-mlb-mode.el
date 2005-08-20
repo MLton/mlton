@@ -519,7 +519,6 @@ name completions."
         (esml-point-preceded-by
          (concat "\\([ \t\n]\\|^\\)\\([" esml-mlb-unquoted-path-or-ref-chars "]+\\)")))
     ;; TBD: escape sequences in quoted pathnames
-    ;; TBD: ../../
     (let* ((quoted (string= "\"" (match-string 1)))
            (path-prefix (match-string 2))
            (path-expanded (esml-mlb-expand-path path-prefix))
@@ -609,8 +608,11 @@ perform context sensitive completion."
 (defconst esml-mlb-show-basis-process-name "*mlb-show-basis*")
 
 (defun esml-mlb-show-basis ()
+  "Shows the basis defined by the MLB file in the current buffer."
   (interactive)
   ;; TBD: find-error / error output mode
+  (unless (eq major-mode 'esml-mlb-mode)
+    (esml-error "show-basis is only meaningful on MLB files"))
   (when (get-process esml-mlb-show-basis-process-name)
     (esml-error "show-basis already running"))
   (save-some-buffers)
