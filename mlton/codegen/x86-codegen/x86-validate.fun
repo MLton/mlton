@@ -1276,7 +1276,7 @@ struct
     = (if List.forall(assembly,
 		      fn assembly
 		       => Assembly.validate {assembly = assembly}
-		          handle Fail msg
+		          handle Fail _
 			   => (List.foreach
 			       (assembly,
 				fn assembly

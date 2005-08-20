@@ -184,7 +184,7 @@ fun 'a analyze
 	  Option.layout (Vector.layout layout),
 	  Layout.ignore)
 	 loopTransfer
-      fun loopStatement (s as Statement.T {var, exp, ty}): unit =
+      fun loopStatement (Statement.T {var, exp, ty}): unit =
 	 let
 	    val v =
 	       case exp of

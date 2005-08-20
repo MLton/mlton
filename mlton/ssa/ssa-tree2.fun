@@ -1427,7 +1427,7 @@ structure Function =
 	 structure Node = Graph.Node
 	 structure Edge = Graph.Edge
       in
-	 fun determineControlFlow ({blocks, name, start, ...}: dest) =
+	 fun determineControlFlow ({blocks, start, ...}: dest) =
 	    let
     	       open Dot
 	       val g = Graph.new ()

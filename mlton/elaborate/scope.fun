@@ -220,8 +220,6 @@ fun ('down, 'up)
 	 let
 	    datatype z = datatype PrimKind.t
 	    fun do1 ((a, u), f) = (f a, u)
-	    fun do2 ((a1, u1), (a2, u2), f) =
-	       (f (a1, a2), combineUp (u1, u2))
 	 in
 	    case kind of
 	       Address {name, ty} =>

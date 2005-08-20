@@ -137,6 +137,7 @@ struct
 			  post: future list},
 		hint: hint list}
 
+(*
       fun toString {dead, commit, remove, futures = {pre, post}, hint}
 	= let
 	    fun doit (name, l, toString, s)
@@ -155,6 +156,7 @@ struct
 	    doit("future (post): ", List.rev post, future_toString, 
 	    doit("hint: ", hint, hint_toString, ""))))))
 	  end
+*)
 
       fun toComments {dead, commit, remove, futures = {pre, post}, hint} 
 	= let
@@ -712,6 +714,7 @@ struct
 		reserved: Register.t list,
 		fltstack: fltvalue list}
 
+(*
       fun unique ({entries, fltstack, ...}: t)
 	= let
 	    fun check_entries (entries: value list, res) =
@@ -745,6 +748,7 @@ struct
 	    andalso
 	    check_fltstack(fltstack, true)
 	  end
+*)
 
       fun toString ({entries, reserved, fltstack}: t) 
 	= let

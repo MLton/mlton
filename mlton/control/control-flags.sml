@@ -760,6 +760,7 @@ structure OptimizationPasses =
        | OptPassesDefault
        | OptPassesMinimal
 
+(*
       local open Layout
       in
 	 val layout =
@@ -768,6 +769,7 @@ structure OptimizationPasses =
 	     | OptPassesMinimal => str "Minimal"
       end
       val toString = Layout.toString o layout
+*)
    end
 datatype optimizationPasses = datatype OptimizationPasses.t
 val optimizationPassesSet : 

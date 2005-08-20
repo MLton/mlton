@@ -312,7 +312,7 @@ fun makeOptions {usage} =
 			   usage (concat ["invalid -opt-passes flag: ", s])
 			fun doit optPasses =
 			   List.foreach
-			   (!optimizationPassesSet, fn (il,optPassesSet) =>
+			   (!optimizationPassesSet, fn (_,optPassesSet) =>
 			    case optPassesSet optPasses of
 			       Result.Yes () => ()
 			     | Result.No s' => err ("il :: " ^ s')) 

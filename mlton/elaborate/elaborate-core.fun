@@ -1032,10 +1032,10 @@ in
 	    (region, str "invalid type for _address",
 	     Type.layoutPretty elabedTy)
 	 val expandedPtrTy = expandedTy
-	 val ctypePtrTy =
+	 val () =
 	    case Type.toCType expandedPtrTy of
-	       SOME {ctype = CType.Pointer, ...} => CType.Pointer
-	     | _ => (error (); CType.Pointer)
+	       SOME {ctype = CType.Pointer, ...} => ()
+	     | _ => (error (); ())
 	 val addrExp =
 	    mkAddress {expandedPtrTy = expandedPtrTy,
 		       name = name}
@@ -1168,10 +1168,10 @@ in
 	    case Type.toCType expandedCbTy of
 	       SOME {ctype, ...} => ctype
 	     | NONE => (error (); CType.word (WordSize.default, {signed = false}))
-	 val ctypePtrTy =
+	 val () =
 	    case Type.toCType expandedPtrTy of
-	       SOME {ctype = CType.Pointer, ...} => CType.Pointer
-	     | _ => (error (); CType.Pointer)
+	       SOME {ctype = CType.Pointer, ...} => ()
+	     | _ => (error (); ())
 	 val ptrArg = Var.newNoname ()
 	 val ptrExp = Cexp.var (ptrArg, expandedPtrTy)
 	 val symExp =
